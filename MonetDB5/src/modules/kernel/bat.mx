@@ -357,7 +357,7 @@ allocated arena gets to be large, BATs may be swapped out.
 Note, we should move old-fashioned mil operator definitions
 into a separate module. 
 
-THIS PART IS ALSO COVERED BY THE BBP MODULE
+@mal
 command setName ( b:bat[any::1,any::2] , s:str) : bat[any::1,any::2] = CMDsetName
 comment "Give a logical name to a BAT. ";
 
@@ -370,6 +370,10 @@ comment "Give a logical name to the columns of a BAT.";
 
 command setColumn( b:bat[any::1,any::2],t:str):bat[any::1,any::2] = CMDsetColumn
 comment "Give a logical name to the tail column of a BAT.";
+command setColumn( b:bat[any::1,any::2] , h:str, t:str):bat[any::1,any::2]
+        = CMDsetColumns
+comment "Give both columns of a BAT a new name.";
+
 
 command isTransient( b:BAT) :bit = CMDisTransient;
 command setTransient( b:BAT) :bit = CMDsetTransient
@@ -385,8 +389,8 @@ command release(b:BAT[any,any] ) : lng = CMDrelease
 comment "Change the BAT mode to session and return a unique numerical ID 
 for the BAT";
 
-command resurrect(id:str ) :bit = CMDresurrect
-comment "Try to get back a session BAT from its ID.";
+#command resurrect(id:str ) :bit = CMDresurrect
+#comment "Try to get back a session BAT from its ID.";
 
 command save(nme:bat[any,any]) : bit = CMDsave2;
 
@@ -407,19 +411,19 @@ comment "Swapout a BAT to disk. Transient BATs can also be swapped out.
 command isCached(b:bat[any,any]):bit = CMDisCached
 comment "Bat is stored in main memory.";
 
-command hot(name:str) :void = CMDhot
+command setHot(name:str) :void = CMDhot
 comment "Makes a BAT very hot for the BBP. The chance of being chosen 
 for swapout is small, afterwards.  Returns the BAT itself.";
 
 command heat(name:str) :lng = CMDheat
 comment "Obtain the heat of BAT";
 
-command cold(nme:str) :void = CMDcold
+command setCold(nme:str) :void = CMDcold
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
 for swapout is big, afterwards.  Returns the BAT itself.";
 
-command cold(b:BAT) :void = CMDcoldBAT;
-command hot(b:BAT) :void = CMDhotBAT;
+command setCold(b:BAT) :void = CMDcoldBAT;
+command setHot(b:BAT) :void = CMDhotBAT;
 
 @- Heap Specific Commands
 @T
@@ -1194,6 +1198,7 @@ str CMDisTransient(bit *res, int *bid) {
 	*res= b->batPersistence & TRANSIENT;
         return MAL_SUCCEED;
 }
+
 str CMDrelease(lng *res, int *bid) {
 	BAT *b;
         int *p = (int*) res;
@@ -1521,6 +1526,15 @@ str CMDsetColumn(int *r, int *bid, str *tname){
 	*r= b->batCacheid;
 	return MAL_SUCCEED;
 }
+str CMDsetColumns(int *r, int *bid, str *hname, str *tname){
+        BAT *b;
+        @:getBATdescriptor(r,bid,b,setColumns)@
+        BATroles(b, *hname, *tname);
+        *r= b->batCacheid;
+        BBPfix(b->batCacheid);
+        return MAL_SUCCEED;
+}
+
 
 str CMDsetName(int *retval, int *bid, str *s){
 	BAT *b;

@@ -32,11 +32,9 @@ This module is loaded directly after the kernel modules and provides
 a first abstraction layer. 
 
 Note that the modules located in the kernel directory should not
-rely on the MAL datastructures.
+rely on the MAL datastructures. That's why we have to deal with
+some bat operations here.
 
-@+ BAT declarations
-A pattern block may be required to make the proper translation to
-the BAT library.
 @mal
 # The routines below are linked with the kernel by default
 
@@ -48,36 +46,8 @@ comment "Retrieve current scenario name";
 command setScenario(msg:str):str = CMDsetScenario
 comment "Switch to other scenario handler, return previous one";
 
-command mil():void = CMDlanguageMIL
-comment "Switch to processing MIL statements";
-
 command raise(msg:str) :str = CMDraise
 comment "Raise an exception labelled with a specific message.";
-
-
-pattern bat(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
-comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
-
-pattern new(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
-comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
-
-pattern new(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
-comment "Creates a new empty BAT, directly allocating for 'size' elements.";
-
-pattern new(ht:any::1, tt:any::2, size:lng) : bat[any::1,any::2] = CMDBATnew
-comment "Creates a new empty BAT, directly allocating for 'size' elements.";
-
-pattern bat(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
-comment "Creates a new empty BAT, directly allocating for 'size' elements.";
-
-@+ Algebraic operators
-Those that rely on knowledge of the runtime environment
-@mal
-command project(b:bat[any::1,any]):bat[any::1,void]= CMDprojectNil
-comment "Extract the head of a BAT.";
-pattern project( b:bat[any::1,any], val:any::2) :
-			bat[any::1, any::2] = CMDproject
-comment "Fill the tail column with a constant value.";
 
 @+ Iterator primitives
 Iterators enumerate elements in a collection defined by a few paramaters,
@@ -103,51 +73,6 @@ command nextElement(i:int, first:int, last:int):bit = intForloop
 comment "This routine provides an iterator over a scalar domain.
          A default, type-specific step size is assumed."; 
 
-@+ BAT iterator
-
-@mal
-command batloop(i:lng,b:bat[any,any]):bit = CMDnextElement_lng
-comment "A BATloop iterator uses an integer cursor to keep track of its
-	position in the underlying table. 
-	The head and tail elements can be obtained using the getHead and 
-	getTail functions, which are to be defined for all atomary types.";
-
-pattern batloop(i:lng,b:bat[any::1,any::2],h:any::1,t:any::2):bit 
-	= CMDnextElement
-comment "Iterate over the elements of a BAT using a cursor.";
-
-pattern bunStream(b:bat[any::1,any::2],h:any::1,t:any::2):lng
-	 = CMDbunStream
-comment "Produce a stream of buns for subsequent processing.";
-
-pattern batStream(b:bat[any,any],size:lng,v:bat[any::1,any::2]):lng
-        = CMDbatstream
-comment "Produce a stream of buns for subsequent processing. Each
-of a given fixed size. equivalent to batstream(b,v,slice,1)";
-
-pattern batStream(b:bat[any,any],v:bat[any::1,any::2],size:lng,step:lng):lng
-        = CMDbatstream
-comment "Produce a stream of buns for subsequent processing. Each
-of a given fixed size";
-
-command batSlice(i:int,b:bat[any,any],low:int,high:int):bit = CMDnextSlice
-comment "Iterator over all BUNs of b.slice(low,high)";
-
-command hashloop(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop
-comment "Iterate over the elements of a BAT using its hash index.
-Each call we set 'i' to denote the next element";
-@-
-The head and tail values can be extracted using the cursor,
-but is often more effective due to overhead involved in
-location of the underlying BAT.
-The generic solutions are also provided as patterns, because this
-trims the number of function signatures in the symbol table.
-@mal
-pattern getHead(b:bat[any::1,any],i:lng):any::1 = CMDgetHead
-comment "return the BUN head value using the cursor.";
-
-pattern getTail(b:bat[any,any::1],i:lng):any::1 = CMDgetTail
-comment "return the BUN tail value using the cursor.";
 
 @- Monet help system
 All procedural abstractions may contain a string with commentary text.
@@ -199,19 +124,6 @@ comment "Generate a synopsis of a module";
 command manual()= CMDmanual0
 comment "Produces a XML-formatted manual over all modules loaded.";
 
-@+ The Monet Debugger interface
-To enable ease of debugging and performance monitoring, the MAL interpreter
-comes with a hardwired gdb-like text-based debugger.
-@mal
-pattern mdb(c:chr):void = mdbSetCmd
-	comment "Start debugger with command 'c'";
-pattern mdb(b:bit):void = mdbToggle
-	comment "Start interactive debugger";
-pattern mdb():void = mdbToggle
-	comment "Start interactive debugger";
-
-command debugmask(i:int):int= CMDdebug
-"Return the debug mask. If a MASK is nonzero, set it to that value.";
 @+ MAL inspection
 The command below inspect the MAL administration and, therefore,
 can not be included in the kernel library.
@@ -220,12 +132,6 @@ pattern getType(v:any) : int = CMDtype
 comment "Return the type of a value (expression). Returns an type number.";
 
 command typename(v:int): str = CMDtypename;
-
-command getListingDetails():int = CMDgetListingDetails
-comment "capture listing parameter and safe it on the MAL stack";
-
-command setListingDetails(z:int) = CMDsetListingDetails
-comment "Set listing parameter";
 
 @- Monet module code
 
@@ -386,13 +292,6 @@ pattern source(f:str):void= CMDevalFile
 
 @+ BAT declarations
 @c
-str CMDlanguageMIL(str *ret){
-	str msg= MAL_SUCCEED;
-	stream_printf(GDKout,"#Continue as MIL session\n");
-	msg= setScenario(getClient(),"mil");
-	*ret = 0;
-	return msg;
-}
 str CMDgetScenario(str *ret){
 	Client c = getClient();
 	if( c->scenario) *ret = GDKstrdup(c->scenario);
@@ -408,298 +307,11 @@ str CMDsetScenario(str *ret,str *nme){
 	if( msg== NULL) *ret= GDKstrdup(c->scenario);
 	return msg;
 }
-str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-        int ht, tt, cap=0;
-	int *res;
-
-        ht= getArgType(m,p,1);
-        tt= getArgType(m,p,2);
-        if( p->argc>3)
-                cap= *(int *) getArgReference(s,p,3);
-	res= (int *) getArgReference(s,p,0);
-
-	return (str) CMDnewBat2(res,&ht,&tt,&cap);
-}
 @+ Exception implementation
 @c
 str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
 	return GDKstrdup(*msg);
-}
-str CMDcast_str(str *new, str *src){
-	ValRecord vr;
-	vr.len=0; vr.vtype=0;
-	VALconvert(TYPE_str,&vr,FALSE);
-	*new = vr.val.sval;
-	return MAL_SUCCEED;
-}
-str CMDcast(int *new, int *src){
-	ValRecord vr;
-	vr.len=0; vr.vtype=0;
-	VALconvert(TYPE_str,&vr,FALSE);
-	memcpy(new,&vr,sizeof(vr.val.lval));
-	return MAL_SUCCEED;
-}
-@+
-Algebraic operators
-@c
-str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int *result, *bid, tt;
-	ptr *p;
-        BAT *b, *bn;
-
-	result= (int*) getArgReference(stk,pci,0);
-	bid= (int*) getArgReference(stk,pci,1);
-	p= (ptr*) getArgReference(stk,pci,2);
-	tt=  getArgType(mb,pci,2);
-        @:getBATdescriptor(result,bid,b,project)@
-        bn= BATconst(b, tt, p);
-        if( bn ) {
-               *result = bn->batCacheid;
-                return MAL_SUCCEED;
-        }
-        return throwMessage("mal.project","GDKerror");
-}
-
-str CMDprojectNil(int *ret, int *bid){
-	BAT *b,*bn;
-        @:getBATdescriptor(ret,bid,b,project)@
-
-	bn= BATconst(b,TYPE_void, &int_nil);
-        if( bn ) {
-               *ret = bn->batCacheid;
-                return MAL_SUCCEED;
-        }
-        return throwMessage("mal.project","GDKerror");
-}
-@+ BAT Iterator Implementation
-Part of the code is copied from the V 4.3 bat.mx file.
-@= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("mal.@4","cannot access bat @2 in bbp");
-        @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0; 
-                return throwMessage("mal.@4","cannot access descriptor @2");
-	}
-	if(*@2 <0) @3= BATmirror(@3);
-@-
-@= hashiter
-	if (b->tvarsized) {
-		HASHloop@1(b, b->hhash, idx, v, p)
-			if ((i = ITERATE(v, BUNtvar(b,p), h)) < 0) return i;
-	} else {
-		HASHloop@1(b, b->hhash, idx, v, p)
-			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
-	} break;
-@c
-str CMDhashloop(int *ret, lng *cursor, int *bid)
-{
-	BAT *b;
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	return throwMessage("mal.hashloop","not yet implemented");
-}
-
-@-
-In principle, we could add iterators with other range bounds.
-@= nextLoop
-str CMDnextElement_@1(bit *ret, @1 *cursor, int *bid)
-{
-	BAT *b;
-	int limit;
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
-	if( *cursor <0)
-		*cursor = BUNindex(b,BUNfirst(b));
-	else	*cursor = *cursor+1;
-	*ret = *cursor < limit;
-	return MAL_SUCCEED;
-}
-@-
-@c
-	@:nextLoop(lng)@
-
-str CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *b;
-	lng *cursor;
-	bit *ret;
-	int *bid;
-	int limit;
-	BUN p;
-	ValPtr head, tail;
-
-	if( pci->argc != 5) stream_printf(GDKout,"CMDnextElement:exception\n");
-	ret = (bit *) getArgReference(stk,pci,0);
-	cursor = (lng *) getArgReference(stk,pci,1);
-	bid = (int *) getArgReference(stk,pci,2);
-	head = &stk->stk[pci->argv[3]];
-	tail = &stk->stk[pci->argv[4]];
-
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
-
-	if( *cursor <0)
-		*cursor = BUNindex(b,BUNfirst(b));
-	else	*cursor = *cursor+1;
-	*ret = *cursor < limit;
-
-	if( *ret== FALSE) return MAL_SUCCEED;
-	/* get head = ... tail = ... */
-	p = BUNptr(b,*cursor);
-	garbageElement(head);
-	garbageElement(tail); 
-	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
-	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
-stream_printf(GDKout,"%s",BUNtail(b,p));
-	return MAL_SUCCEED;
-}
-@-
-The BUN- and BAT-stream manipulate a long handle, i.e.
-the destination variable. It assumes it has been set to
-zero as part of runtime stack initialization. Subsequently,
-it fetches a bun and returns the increment to the control
-variable. If it returns zero the control variable has been reset
-to zero and end of stream has been reached.
-
-The head and tail variables may have to be set to the type
-extracted from the BAT descriptor. If there occurs a type
-error.
-@c
-str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *b;
-	lng *cursor;
-	bit *ret;
-	int *bid;
-	int limit,tp;
-	BUN p;
-	ValPtr head, tail;
-
-	if( pci->argc != 4) stream_printf(GDKout,"exception in nextElement\n");
-	cursor = (lng *) getArgReference(stk,pci,0);
-	bid = (int *) getArgReference(stk,pci,1);
-	head = &stk->stk[pci->argv[2]];
-	tail = &stk->stk[pci->argv[3]];
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
-
-	if( *cursor >=limit){
-		*cursor = 0;
-		return MAL_SUCCEED;
-	} 
-	if( *cursor == 0)
-		*cursor = BUNindex(b,BUNfirst(b));
-
-/*
-stream_printf(GDKout,"head type %s\n", malTypeName(getArgType(mb,pci,2)));
-stream_printf(GDKout,"tail type %s\n", malTypeName(getArgType(mb,pci,3)));
-*/
-	/* get head = ... tail = ... */
-	p = BUNptr(b,*cursor);
-	garbageElement(head);
-	garbageElement(tail); 
-	tp = getArgType(mb,pci,2);
-	if( tp == TYPE_void  && b->hseqbase!= oid_nil){
-		VALinit( head, TYPE_oid, BUNhead(b,p));
-		head->vtype= TYPE_void;
-	} else 	VALinit( head, tp, BUNhead(b,p));
-	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
-	*cursor = *cursor+1;
-	return MAL_SUCCEED;
-}
-str CMDbatstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return throwMessage("mal.batstream"," not yet implemented");
-}
-
-str CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
-{
-	BAT *b;
-	@:getBATdescriptor(ret,bid,b,nextSlice)@
-	if( *cursor > *high){
-		*ret = FALSE;
-	} else 
-	if( *cursor < *low){
-		*ret = TRUE;
-		*cursor = BUNindex(b,BUNfirst(b));
-	} else
-		*cursor = *cursor+1;
-	return MAL_SUCCEED;
-}
-@-
-The fetch operations are all pretty straight forward, provided
-you know the underlying type. Often it is cheaper to use
-the extended BAT iterator, because then it can re-use the
-BAT descriptor.
-@c
-str CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *b;
-	lng *cursor;
-	int *bid;
-	int limit;
-	BUN p;
-	ValPtr head;
-	int r, *ret=&r;
-
-	cursor = (lng *) getArgReference(stk,pci,2);
-	bid = (int *) getArgReference(stk,pci,1);
-	head = &stk->stk[pci->argv[0]];
-
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
-	if( *cursor<0  || *cursor >=limit) {
-		return throwMessage("mal.getHead","range error");
-	}
-
-	/* get head = ... */
-	p = BUNptr(b,*cursor);
-	garbageElement(head);
-	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
-	return MAL_SUCCEED;
-}
-str CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *b;
-	lng *cursor;
-	int *bid;
-	int limit;
-	BUN p;
-	ValPtr tail;
-	int r, *ret=&r;
-
-	cursor = (lng *) getArgReference(stk,pci,2);
-	bid = (int *) getArgReference(stk,pci,1);
-	tail = &stk->stk[pci->argv[0]];
-
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
-	if( *cursor<0  || *cursor >=limit) {
-		return throwMessage("mal.getTail","range error");
-	}
-
-	/* get head = ... */
-	p = BUNptr(b,*cursor);
-	garbageElement(tail);
-	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
-	return MAL_SUCCEED;
-}
-@+ Basic value operations
-Version 4 contained primitives for self-reflection.
-@c
-str CMDtypename(str *ret, int *tpe){
-	*ret = malTypeName(*tpe);
-	return MAL_SUCCEED;
-}
-str CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int *ret;
-	ret= (int*) getArgReference(stk,pci,0);
-	*ret= getArgType(mb,pci,1);
-	return MAL_SUCCEED;
-}
-str CMDgetListingDetails(int *ret){
-	*ret = getClient()->listing;
-	return MAL_SUCCEED;
-}
-str CMDsetListingDetails(int *ret, int *l){
-	Client c=getClient();
-	if(c) c->listing= *l;
-	return MAL_SUCCEED;
 }
 @+ Printing
 The print commands are implemented as single instruction rules,
@@ -946,3 +558,15 @@ str CMDhelpComment2(int *ret, str *mod, str *fcn)
 	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
+
+str CMDtypename(str *ret, int *tpe){
+        *ret = malTypeName(*tpe);
+        return MAL_SUCCEED;
+}
+str CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+        int *ret;
+        ret= (int*) getArgReference(stk,pci,0);
+        *ret= getArgType(mb,pci,1);
+        return MAL_SUCCEED;
+}
+

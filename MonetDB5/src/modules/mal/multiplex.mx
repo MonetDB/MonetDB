@@ -448,7 +448,7 @@ find the actule arguments at the proper place of the callee.
 	/* resB := new(headtype,tailtype */
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= resB = newVariable(m,GDKstrdup("resB"),refType);
-	q->modname= GDKstrdup("mal");
+	q->modname= GDKstrdup("bbp");
 	q->fcnname= GDKstrdup("new");
 	q->argv[1]= newVariable(m, malTypeName(getHeadType(refType)),TYPE_any);
 	q->argv[2]= newVariable(m, malTypeName(getTailType(refType)),TYPE_any);
@@ -495,6 +495,7 @@ find the actule arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	q->barrier = BARRIERsymbol;
 	q->argv[0]= mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
+	q->modname= GDKstrdup("bbp");
 	q->fcnname= GDKstrdup("bunStream");
 	q->argv[1] = refBat;
 	hvar= q->argv[2] = newVariable(m,GDKstrdup("h"),getHeadType(refType));

@@ -52,7 +52,7 @@ use "mal/profiler";
 use "mal/const"; 
 use "mal/bbp";
 use "mal/box"; 
-use "mal/catalog";
+use "mal/inspect";
 use "mal/optimizer";
 use "sql/sql_server";
 use "sql/sql";

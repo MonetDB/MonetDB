@@ -20,8 +20,8 @@
 @'              Peter Boncz <Peter.Boncz@cwi.nl>
 @'              Niels Nes <Niels.Nes@cwi.nl>
 @'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-@f catalog
-@t Monet Catalog
+@f inspect
+@t Monet Runtime Inspection
 @a Martin Kersten
 @v 1
 @* Introduction
@@ -35,7 +35,7 @@ successively access it components. This can be avoided by first assigning
 the pseudo BAT to a variable.
 
 @mal 
-module catalog;
+module inspect;
 
 @- MAL interpreter status
 The prime scheme to inspect the MAL interpreter status is to use
@@ -46,46 +46,49 @@ and the instruction(s) where an exception occurred.
 The inspection typically occurs in the exception handling part of the
 MAL block.
 @mal
-pattern getStackDepth():int = CATALOGStkDepth
+pattern getStackDepth():int = INSPECTStkDepth
         comment "Return the depth of the calling stack.";
 
-pattern getStackFrame(i:int):bat[str,str] = CATALOGStkFrameN;
-pattern getStackFrame():bat[str,str] = CATALOGStkFrame
+pattern getStackFrame(i:int):bat[str,str] = INSPECTStkFrameN;
+pattern getStackFrame():bat[str,str] = INSPECTStkFrame
 	comment "Collect variable binding of current stack frame.";
-#pattern getStackTrace():bat[str,str]= CATALOGStkTrace;
+#pattern getStackTrace():bat[str,str]= INSPECTStkTrace;
 
 @+ MAL modules and scopes inspection
 Each module forms a separately named scope. Scopes visible to a user
 are relevant for resolving function names.
 
 @mal
-command scopeNames() : bat[void,str] = CATALOGscopeNames
-        comment "Collect bat with all visible scopes" ;
+command getModules() : bat[void,str] = INSPECTmoduleNames
+        comment "Collect bat with all modules loaded" ;
 
-command symbolNames():bat[str,str] = CATALOGsymbolNames
-	comment "Create bat with the module and function pairs";
-command patternNames():bat[str,str] = CATALOGpatternNames
+command getPatterns():bat[str,str] = INSPECTpatternNames
 	comment "Create bat with the module and pattern pairs";
-command commandNames():bat[str,str] = CATALOGcommandNames
+command getCommands():bat[str,str] = INSPECTcommandNames
 	comment "Create bat with the module and commands pairs";
-command functionNames():bat[str,str] = CATALOGfunctionNames
+command getFunctions():bat[str,str] = INSPECTfunctionNames
 	comment "Create bat with the module and function pairs";
 
-pattern symbolDump():bat[void,str] = CATALOGsymbolDump
+pattern getCode():bat[void,str] = INSPECTcodeDump
 comment "Returns a string representation of the current function 
-with typing information attached";
-pattern symbolDefinition():bat[void,str] = CATALOGcurrSymbolDef
+	with typing information attached";
+
+pattern getDefinition():bat[void,str] = INSPECTcurrSymbolDef
 comment "Returns a string representation of the current function";
-command symbolDefinition(mod:str,fcn:str):bat[int,str] = CATALOGsymbolDef
+command getDefinition(mod:str,fcn:str):bat[int,str] = INSPECTsymbolDef
 comment "Returns a string representation of a specific function";
 
-command symbolSignature(mod:str,fcn:str):bat[str,str] = CATALOGsymbolSignature
+command getSignature(mod:str,fcn:str):bat[str,str] = INSPECTsymbolSignature
 comment "Returns the signature(s) of a function";
 
-command symbolType(mod:str,fcn:str):bat[str,str] = CATALOGsymbolType
+command getType(mod:str,fcn:str):bat[str,str] = INSPECTsymbolType
 comment "Get the return type of a particular function";
+pattern getType(v:any) : int = INSPECTtype
+comment "Return the type of a variable (expression)";
+command getTypeName(v:int): str = INSPECTtypename;
 
-command atomNames():bat[int,str] = CATALOGatom_names
+
+command getAtoms():bat[int,str] = INSPECTatom_names
 comment "Collect a BAT with the atom names";
 
 @- Display code
@@ -93,45 +96,35 @@ A key tool for analysis of the MAL code is being able to dump
 any routine, module. For queries, it is also illustrative to display
 the flow graph.
 @mal
-pattern showFunction(M:any,F:any,full:bit,s:str):void = CMDshowFunction1
+pattern showFunction(M:any,F:any,full:bit,s:str):void = INSPECTshowFunction1
 comment "Dump the routine M.F on the file s. The flag indicates the level
 of detail needed";
-pattern showFunction(M:any,F:any,full:bit):void = CMDshowFunction2
+pattern showFunction(M:any,F:any,full:bit):void = INSPECTshowFunction2
 comment "Dump the routine M.F on standard out. The flag indicates the level
 of detail needed";
-pattern showFunction(M:any,F:any):void = CMDshowFunction3
+pattern showFunction(M:any,F:any):void = INSPECTshowFunction3
 comment "Dump the routine M.F on standard out.";
-pattern showFunction():void = CMDshowFunction4
+pattern showFunction():void = INSPECTshowFunction4
 comment "Dump the current routine on standard out.";
 
+@+ The Monet Debugger interface
+To enable ease of debugging and performance monitoring, the MAL interpreter
+comes with a hardwired gdb-like text-based debugger.
+@mal
+pattern mdb(c:chr):void = mdbSetCmd
+        comment "Start debugger with command 'c'";
+pattern mdb(b:bit):void = mdbToggle
+        comment "Start interactive debugger";
+pattern mdb():void = mdbToggle
+        comment "Start interactive debugger";
+
+command debugmask(i:int):int= CMDdebug
+"Return the debug mask. If a MASK is nonzero, set it to that value.";
 
 @+ Implementation
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
- */
-#ifdef _CATALOG_H
-#endif /* _CATALOG_H*/
+#ifdef _INSPECT_H
+#endif /* _INSPECT_H*/
 @c
 #include <stdarg.h>
 #include <time.h>
@@ -153,7 +146,7 @@ The variable information can be turned into a BAT for inspection as well.
 
 @c
 
-str CATALOGStkDepth(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str INSPECTStkDepth(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {       int i=0, *ret= (int*) getArgReference(s,p,0);
         while(s!= 0){
                 i++;
@@ -163,11 +156,11 @@ str CATALOGStkDepth(MalBlkPtr m, MalStkPtr s, InstrPtr p)
         return MAL_SUCCEED;
 }
 
-str CATALOGgetFrame(BAT *b, MalBlkPtr mb, MalStkPtr s,int depth){
+str INSPECTgetFrame(BAT *b, MalBlkPtr mb, MalStkPtr s,int depth){
 	ValPtr v;
 	int i;
 	char *buf=0;
-	if(depth> 0) return CATALOGgetFrame(b,mb,s->up,depth-1);
+	if(depth> 0) return INSPECTgetFrame(b,mb,s->up,depth-1);
 	if( s!= 0)
 	for(i=0 ; i<s->stktop ; i++,v++){
 		v= &s->stk[i];
@@ -176,33 +169,33 @@ str CATALOGgetFrame(BAT *b, MalBlkPtr mb, MalStkPtr s,int depth){
 	}
 	return MAL_SUCCEED;
 }
-str CATALOGStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str INSPECTStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	int *ret= (int*) getArgReference(s,p,0);
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-	if (b == 0) return throwMessage("catalog.stkFrame", "failed to create BAT");
+	if (b == 0) return throwMessage("inspect.stkFrame", "failed to create BAT");
 	@:Pseudo(stk,frame)@
-	return CATALOGgetFrame(b,m,s,0);
+	return INSPECTgetFrame(b,m,s,0);
 }
-str CATALOGStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+str INSPECTStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	int n, *ret= (int*) getArgReference(s,p,0);
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
 	n= *(int*) getArgReference(s,p,1);
-	if(n<0) return throwMessage("catalog.stkFrame", "illegal depth.");
+	if(n<0) return throwMessage("inspect.stkFrame", "illegal depth.");
 	@:Pseudo(stk,frame)@
-	return CATALOGgetFrame(b,m,s,n-1);
+	return INSPECTgetFrame(b,m,s,n-1);
 }
 @+ Symbol table 
 Mal symbol table and environment analysis.
 @c
 
-str CATALOGscopeNames(int *ret){
+str INSPECTmoduleNames(int *ret){
 	Client c;
 	Scope s;
 	int i=0;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 
-        if (b == 0) return throwMessage("catalog.scopeNames", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.moduleNames", "failed to create BAT");
 	c= getClient();
 
 	for(s=c->nspace; s; s= s->outer,i++)
@@ -211,14 +204,14 @@ str CATALOGscopeNames(int *ret){
 	@:Pseudo(scope,names)@
 	return MAL_SUCCEED;
 }
-str CATALOGsymbolFind(int *ret,int kind)
+str INSPECTsymbolFind(int *ret,int kind)
 {	Client c;
 	Scope s;
 	Symbol t;
 	int i;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
-        if (b == 0) return throwMessage("catalog.symbolFind", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.symbolFind", "failed to create BAT");
 	c= getClient();
 	s= c->nspace;
 	while(s){
@@ -235,15 +228,14 @@ str CATALOGsymbolFind(int *ret,int kind)
 	@:Pseudo(symbol,name)@
 	return MAL_SUCCEED;
 }
-str CATALOGsymbolNames(int *ret){ return CATALOGsymbolFind(ret,0); }
-str CATALOGfunctionNames(int *ret){ return CATALOGsymbolFind(ret,FUNCTIONsymbol); }
-str CATALOGpatternNames(int *ret){ return CATALOGsymbolFind(ret,PATTERNsymbol); }
-str CATALOGcommandNames(int *ret){ return CATALOGsymbolFind(ret,COMMANDsymbol); }
+str INSPECTfunctionNames(int *ret){ return INSPECTsymbolFind(ret,FUNCTIONsymbol); }
+str INSPECTpatternNames(int *ret){ return INSPECTsymbolFind(ret,PATTERNsymbol); }
+str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); }
 
-str CATALOGsymbolDef(int *ret, str *nme, str *fcn)
+str INSPECTsymbolDef(int *ret, str *nme, str *fcn)
 {	Symbol s;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if(b == 0) return throwMessage("catalog.symbolDefinition", "failed to create BAT");
+        if(b == 0) return throwMessage("inspect.symbolDefinition", "failed to create BAT");
 	
 	s= findSymbol(*nme,*fcn);
 	while(s){
@@ -259,11 +251,11 @@ str CATALOGsymbolDef(int *ret, str *nme, str *fcn)
 	@:Pseudo(fcn,stmt)@
 	return MAL_SUCCEED;
 }
-str CATALOGsymbolDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
+str INSPECTcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {	int i, *ret= (int*)getArgReference(stk,p,0);
 	str ps, cm;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
-        if(b == 0) return throwMessage("catalog.symbolDump", "failed to create BAT");
+        if(b == 0) return throwMessage("inspect.codeDump", "failed to create BAT");
 	
 	for(i=0;i<m->stop;i++){
 		ps= instruction2str(m, getInstrPtr(m,i),1);
@@ -273,11 +265,11 @@ str CATALOGsymbolDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	@:Pseudo(fcn,stmt)@
 	return MAL_SUCCEED;
 }
-str CATALOGcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
+str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {	int i, *ret= (int*)getArgReference(stk,p,0);
 	str ps, cm;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
-        if(b == 0) return throwMessage("catalog.symbolDefinition", "failed to create BAT");
+        if(b == 0) return throwMessage("inspect.symbolDefinition", "failed to create BAT");
 	
 	for(i=0;i<m->stop;i++){
 		ps= instruction2str(m, getInstrPtr(m,i),0);
@@ -287,12 +279,12 @@ str CATALOGcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	@:Pseudo(fcn,stmt)@
 	return MAL_SUCCEED;
 }
-str CATALOGsymbolSignature(int *ret, str *mod, str *fcn)
+str INSPECTsymbolSignature(int *ret, str *mod, str *fcn)
 {	Symbol s;
 	str msg;
 	str ps,cm;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-        if (b == 0) return throwMessage("catalog.symbolSignature", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.symbolSignature", "failed to create BAT");
 
 	s= findSymbol(*mod,*fcn);
 	while(s!= NULL){
@@ -308,10 +300,10 @@ str CATALOGsymbolSignature(int *ret, str *mod, str *fcn)
 	@:Pseudo(fcn,sig)@
 	return MAL_SUCCEED;
 }
-str CATALOGsymbolType(int *ret, str *mod, str *fcn) 
+str INSPECTsymbolType(int *ret, str *mod, str *fcn) 
 {	Symbol s;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) return throwMessage("catalog.symbolType", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.symbolType", "failed to create BAT");
 
 	s= findSymbol(*mod,*fcn);
 	while(s!= NULL){
@@ -326,10 +318,10 @@ str CATALOGsymbolType(int *ret, str *mod, str *fcn)
 	return MAL_SUCCEED;
 }
 
-str CATALOGatom_names(int *ret)
+str INSPECTatom_names(int *ret)
 {	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("catalog.atomNames", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.atomNames", "failed to create BAT");
 
 	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(i));
 
@@ -352,34 +344,46 @@ if( s == NULL)
 	GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
 
 @c
-void CMDshowFunction(MalBlkPtr m, lng flg, stream *f) {
+void INSPECTshowFunction(MalBlkPtr m, lng flg, stream *f) {
 	printFunction(f,m,flg);
 }
-str CMDshowFunction1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str INSPECTshowFunction1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng flg= *(lng*) getArgValue(stk,p,3);
 	str fname= (str) getArgValue(stk,p,4);
 	@:getFunction(showFunction)@
 	else { 
-		CMDshowFunction(s->def,LIST_MAL_INSTR,GDKout);
+		INSPECTshowFunction(s->def,LIST_MAL_INSTR,GDKout);
 	}
 	return NULL;
 }
-str CMDshowFunction2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str INSPECTshowFunction2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng flg= *(lng*) getArgValue(stk,p,3);
 	@:getFunction(showFunction)@
 	else { 
-		CMDshowFunction(s->def,LIST_MAL_INSTR,GDKout);
+		INSPECTshowFunction(s->def,LIST_MAL_INSTR,GDKout);
 	}
 	return NULL;
 }
-str CMDshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	@:getFunction(showFunction)@
 	else { 
-		CMDshowFunction(s->def,(lng) FALSE,GDKout);
+		INSPECTshowFunction(s->def,(lng) FALSE,GDKout);
 	}
 	return NULL;
 }
-str CMDshowFunction4(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	CMDshowFunction(mb,(lng) FALSE,GDKout);
+str INSPECTshowFunction4(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	INSPECTshowFunction(mb,(lng) FALSE,GDKout);
 	return NULL;
 }
+
+str INSPECTtypename(str *ret, int *tpe){
+        *ret = malTypeName(*tpe);
+        return MAL_SUCCEED;
+}
+str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+        int *ret;
+        ret= (int*) getArgReference(stk,pci,0);
+        *ret= getArgType(mb,pci,1);
+        return MAL_SUCCEED;
+}
+
