@@ -463,7 +463,7 @@ called sql_optimizer.
 #include "mal_client.h"
 #include "mal_scenario.h"
 
-#define DEBUG_MAL_OPTIMIZER2     /* show partial result */
+/* #define DEBUG_MAL_OPTIMIZER     show partial result */
 
 #define isAlife(M,I,X)          ( (M)->var[I]->beginLifespan<=X && \
                                   (M)->var[I]->endLifespan>=X)
@@ -563,7 +563,7 @@ str optimizeMALBlock(MalBlkPtr mb)
         }
     } while(qot && cnt++ < 64);
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( c->debugoptimizer && oldstop!=mb->stop){
+    if( getClient()->debugoptimizer && oldstop!=mb->stop){
     stream_printf(GDKout,"Optimizer effect %d -> %d instructions\n",
         oldstop,mb->stop);
     }
@@ -679,7 +679,7 @@ int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
 {   int i,k, blkcount=0;
     InstrPtr p,q;
     p= getInstrPtr(mb,pc);
-    for(i=pc+1; i< mb->stop && isAlife(mb,varid,i); i++){
+    for(i=pc; i< mb->stop && isAlife(mb,varid,i); i++){
         q= getInstrPtr(mb,i);
         for(k=0; k < q->retc; k++)
         if( q->argv[k]== varid) {
@@ -713,7 +713,7 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
 
     for(k=0;k<p->retc; k++){
        int m;
-       m= ARnxtAssignment(mb,pc,p->argv[k]);
+       m= ARnxtAssignment(mb,pc+1,p->argv[k]);
        if( m!=pc ){
         ARreplaceAlias(mb,pc+1,m,p->argv[k], p->argv[p->retc+k]);
         kn++;
@@ -986,7 +986,7 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         for(j= i-1; j>=1; j--) {
             if( safetyBarrier(mb,p,q=getInstrPtr(mb,j)) )
                 goto nxtCommonSubExpression;
-#ifdef DEBUG_MAL_OPTIMIZER
+#ifdef DEBUG_MAL_OPTIMIZER2
     printf("%d, %d  %d %d ",i,j, hasSameSignature(p,q), hasSameArguments(mb,p,q) );
     printf(" :%d %d %d \n", !isUpdated(mb,i), !hasCommonResults(p,q), !hasSideEffects(p));
 
@@ -996,7 +996,7 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                !isUpdated(mb,i) &&
                !hasCommonResults(p,q) &&
                !hasSideEffects(p) ){
-#ifdef DEBUG_MAL_OPTIMIZER2
+#ifdef DEBUG_MAL_OPTIMIZER
     if( getClient()->debugoptimizer){
 		stream_printf(GDKout,"Found a common expression %d <-> %d\n",j,i);
 		printInstruction(GDKout,mb,q,LIST_MAL_ALL);
@@ -1009,9 +1009,10 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 for(k=0; k<q->retc; k++)
                 p->argv[p->retc+k]= q->argv[k];
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( cntxt->debugoptimizer){
-    printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-    }
+    if( getClient()->debugoptimizer){
+		stream_printf(GDKout,"common expression");
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	}
 #endif
                 i= ARoptimizerStep(mb,i);
                 goto nxtCommonSubExpression;

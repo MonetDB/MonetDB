@@ -549,7 +549,7 @@ mal_export void     setVarType(MalBlkPtr mb, int i, int tpe);
 mal_export void     setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void     setReturnArgument(InstrPtr p, int varid);
 mal_export malType  destinationType(MalBlkPtr mb, InstrPtr p);
-mal_export void setVarProperty(MalBlkPtr mb, int i, int idx, str name, int tpe, ptr val);
+mal_export void 	setVarProperty(MalBlkPtr mb, int i, str name, int tpe, ptr val);
 mal_export str      fcnClass(InstrPtr p);
 mal_export str      fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg );
 mal_export void     printInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
@@ -1592,10 +1592,10 @@ void pushEndInstruction(MalBlkPtr mb){
 @-
 Property value setting.
 @c
-void setVarProperty(MalBlkPtr mb, int i, int idx, str name, int tpe, ptr val){
+void setVarProperty(MalBlkPtr mb, int i, str name, int tpe, ptr val){
 	if( mb->var[i]->props == NULL)
 		mb->var[i]->props = newPropertySet();
-	setProperty(mb->var[i]->props,idx,name,tpe,val);
+	setProperty(mb->var[i]->props,name,tpe,val);
 }
 @}
 @-
@@ -1684,7 +1684,7 @@ beginning of each line.
 @= showParam
         tpe= getTypeName(getArgType(mb,p,i));
         ps= getVar(mb,getArg(p,i))->props;
-        pstring= propertySet2str(ps,0);
+        pstring= propertySet2str(ps);
         advance(t);
         sprintf(t,"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
         advance(t);
@@ -1743,7 +1743,7 @@ Variables and MAL blocks, and instructions can be associated with a
 property list. At least for debugging purposes, the latest known value
 should be displayed.
 @= propertyList
-    {char *tmp= propertySet2str(ps,0); strcat(t,tmp); GDKfree(tmp);}
+    {char *tmp= propertySet2str(ps); strcat(t,tmp); GDKfree(tmp);}
     advance(t);
 @c
 
@@ -1786,7 +1786,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         nme= nmebuf;
     } else  nme = getArgName(mb,p,0);
     ps= getVar(mb,getArg(p,0))->props;
-    pstring= propertySet2str(ps,0);
+    pstring= propertySet2str(ps);
     advance(t);
     if( p->barrier){
         if( p->barrier == LEAVEsymbol || 
@@ -1824,7 +1824,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
                     *t++ = '(';
                     for(i=0;i<p->retc;i++){
                         ps= getVar(mb,getArg(p,i))->props;
-                        pstring= propertySet2str(ps,i);
+                        pstring= propertySet2str(ps);
                         sprintf(t,"%s%s",getArgName(mb,p,i),
                             pstring);
                         if(pstring){GDKfree(pstring);pstring=0;}
@@ -1865,7 +1865,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 
     for(i=low;i<high;i++){
         ps= getVar(mb,getArg(p,i))->props;
-        pstring= propertySet2str(ps,0);
+        pstring= propertySet2str(ps);
         advance(t);
         if( i+1==high && p->varargs ) {sprintf(t,"...");break;}
         if( (def=getArgDefault(mb,p,i)) != NULL){
@@ -1897,8 +1897,8 @@ Dump the type and value information.
             str hprop=0, tprop=0;
             str d1=getTypeName(getHeadType( getArgType(mb,p,i))),
                 d2 =getTypeName(getTailType(getArgType(mb,p,i)));
-            hprop= propertySet2str(ps,1);
-            tprop= propertySet2str(ps,2);
+            hprop= propertySet2str(ps);
+            tprop= propertySet2str(ps);
             if(hprop==NULL && tprop==NULL)
                 sprintf(t,"[:%s,:%s]%s",d1,d2,pstring);
             else if(tprop==NULL)

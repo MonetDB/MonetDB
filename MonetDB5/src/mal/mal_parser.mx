@@ -1024,7 +1024,26 @@ optimizers to make decisions. (See the section on properties).
             pname= idCopy(cntxt,l);
             if( curBlk->var[@1]->props== NULL)
                 curBlk->var[@1]->props= newPropertySet();
-            setVarProperty(curBlk,@1,0,pname, TYPE_str,GDKstrdup(""));
+			/* localize value , simplified version */
+			skipSpace(cntxt);
+			if(keyphrase1(cntxt,"=")) {
+				int i,lt;
+				if( (i= cstLength(cntxt,&lt))){
+					switch(lt){
+					case TYPE_int:{
+						int l= strtol(CURRENT(cntxt), NULL,10);
+						int i= (int)l;
+						setVarProperty(curBlk,@1,pname, lt, &i);
+						break;
+						}
+					case TYPE_str:
+						setVarProperty(curBlk,@1,pname, lt,
+							GDKstrdup(cstCopy(cntxt,i)));
+					}
+					advance(cntxt,i);
+				}
+			} else 
+            setVarProperty(curBlk,@1,pname, TYPE_str,GDKstrdup(""));
             GDKfree(pname); 
         } while( keyphrase1(cntxt,","));
         if( !keyphrase1(cntxt,"}") )

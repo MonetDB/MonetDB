@@ -346,24 +346,9 @@ The MAL language uses a few defaults, recognizable as properties
 @tab data can be appended
 @end multitable
 @-
-A poperty set contains a multi-list of (name,value) pairs.
-Each list corresponds to an element in the corresponding group, e.g.
-for simple objects we have a single lists, which for a BAT we have three
-lists, the group properties, the head, and the tail list.
-
-Since property lists are propagated throughout a program block,
-its implementation should be geared at keeping the volatile properties
-in the head. This way, in most cases it suffices to pass a pointer to a next
-statement.
-
-To make it work efficiently, we also require each name-value pair to be 
-accessed only once.
-
-In the implementation below we limit the number of property lists
-per variable to 3, the upperbound for BATs. at a later stage we can
-extend it to support arbitrary sized groups. A reference count is used
-to simplify garbage collection.
 @{
+The code base supports multiple property sets.
+Not used right now.
 @h
 #include "mal.h"
 
@@ -384,9 +369,13 @@ typedef struct PROPSET{
 mal_export PropertySet newPropertySet();
 mal_export void freePropertySet(PropertySet ps);
 mal_export PropertySet cpyPropertySet(PropertySet old);
-mal_export Property fndProperty(PropertySet ps, int first, int last, str nme);
-mal_export void setProperty(PropertySet ps, int idx, str nme, int tpe, ptr val);
-mal_export str propertySet2str(PropertySet ps, int idx);
+mal_export Property cpyProperty(PropertySet *target, Property src);
+mal_export Property fndProperty(PropertySet ps, str nme);
+mal_export Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme);
+mal_export Property setProperty(PropertySet ps, str nme, int tpe, ptr val);
+mal_export ptr getPropertyValue(PropertySet ps, str nme);
+mal_export int getPropertyType(PropertySet ps, str nme);
+mal_export str propertySet2str(PropertySet ps);
 @c
 #include "mal_properties.h"
 #include "mal_type.h"	/* for idcmp() */
@@ -408,6 +397,11 @@ PropertySet cpyPropertySet(PropertySet old){
 	GDKwarning("Property set copying not finished\n");
 	return ps;
 }
+
+Property cpyProperty(PropertySet *target, Property src){
+	if( *target == 0) *target = newPropertySet();
+	return setProperty(*target,src->nme, src->val.vtype, VALptr(&src->val));
+}
 void freePropertySet(PropertySet ps){
 	Property p1,p2;
 	int i;
@@ -422,10 +416,25 @@ void freePropertySet(PropertySet ps){
 	}
 	GDKfree(ps);
 }
-Property fndProperty(PropertySet ps, int first, int last, str nme){
+Property fndProperty(PropertySet ps, str nme){
 	Property pr;
 	int i;
 
+	if( ps == NULL) return NULL;
+	for(i=0; i<MAXPROPLIST; i++){
+		pr= ps->prop[i];
+		while(pr){
+			if( idcmp(pr->nme,nme)==0) return pr;
+			pr= pr->nxt;
+		}
+	}
+	return 0;
+}
+Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme){
+	Property pr;
+	int i;
+
+	if( ps == NULL) return NULL;
 	for(i=first; i<last;i++){
 		pr= ps->prop[i];
 		while(pr){
@@ -438,26 +447,48 @@ Property fndProperty(PropertySet ps, int first, int last, str nme){
 @-
 A property is assigned to a specific property list.
 @c
-void setProperty(PropertySet ps, int idx, str nme, int tpe, ptr val)
+Property setPropertyIndexed(PropertySet ps, int idx, str nme, int tpe, ptr val)
 {	Property pr;
 
-	pr= fndProperty(ps,idx,idx,nme);	
+	pr= fndPropertyIndexed(ps,idx,idx+1,nme);	
 	if(pr == 0){
 		pr = (Property) GDKmalloc(sizeof(struct PROPrecord));
 		pr->nxt= ps->prop[idx];
 		ps->prop[idx]= pr;
 		pr->nme= GDKstrdup(nme);
 	}
-	VALset(&pr->val, tpe, val);
+	if( val ) 
+		VALset(&pr->val, tpe, val);
+	return pr;
+}
+Property setProperty(PropertySet ps, str nme, int tpe, ptr val){
+	return setPropertyIndexed(ps, 0, nme, tpe, val);
+}
+@-
+The users of properties need a simple scheme to localize a
+property.
+@c
+ptr getPropertyValue(PropertySet ps, str nme){
+	Property pr;
+	pr= fndProperty(ps,nme);
+	if( pr) return VALptr(&pr->val);
+	return NULL;
+}
+int getPropertyType(PropertySet ps, str nme){
+	Property pr;
+	pr= fndProperty(ps,nme);
+	if( pr) return pr->val.vtype;
+	return TYPE_void;
 }
 @-
 For debugging purposes we should be able to convert any property set
 back into a string. We simple assume the space required is limited.
 @c
-str propertySet2str(PropertySet ps, int idx){
+str propertySet2str(PropertySet ps){
 	char buf[128*1024];
 	str s=buf,t=0;
 	Property pr;
+	int idx =0;
 
 	if(ps== NULL || ps->prop[idx]==NULL) return GDKstrdup("");
 	pr= ps->prop[idx];
@@ -465,9 +496,7 @@ str propertySet2str(PropertySet ps, int idx){
 	while(pr){
 		t=0;
 		ATOMformat(pr->val.vtype, VALget(&pr->val), &t);
-		if( strlen(t)==2)
-			sprintf(s,"%s",pr->nme);
-		else 	sprintf(s,"%s=%s",pr->nme,t);
+		sprintf(s,"%s=%s",pr->nme,t);
 		while(*s) s++;
 		pr= pr->nxt;
 		if( pr) *s++ = ',';
