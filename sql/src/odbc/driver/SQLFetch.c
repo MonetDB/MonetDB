@@ -840,7 +840,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				       (SQLWCHAR *) origptr, origbuflen,
 				       &n);
 			if (origlenp)
-				*origlenp = n;
+				*origlenp = n * 2; /* # of bytes, not chars */
 			free(ptr);
 		}
 		break;
