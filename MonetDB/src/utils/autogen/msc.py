@@ -246,7 +246,12 @@ def msc_deps(fd, deps, objext, msc):
                 fd.write("%s: %s\n" % (x, y))
                 fd.write("\tif exist %s $(CONFIGURE) %s > %s\n" % (y, y, x))
                 msc['_IN'].append(y)
+            getsrc = ""
+            src = msc_translate_dir(msc_translate_ext(msc_translate_file(deplist[0], msc)), msc)
+            if os.path.split(src)[0]:
+                getsrc = "\tif exist %s $(INSTALL) %s %s\n" % (src, src, os.path.split(src)[1])
             if ext == "tab.h":
+                fd.write(getsrc)
                 x, de = split_filename(deplist[0])
                 if de == 'y':
                     fd.write("\t$(YACC) $(YFLAGS) %s.y\n" % b)
@@ -257,23 +262,29 @@ def msc_deps(fd, deps, objext, msc):
                     fd.write("\tif exist y.tab.c $(DEL) y.tab.c\n")
                     fd.write("\tif exist y.tab.h $(MV) y.tab.h %s.tab.h\n" % b)
             if ext == "tab.c":
+                fd.write(getsrc)
                 fd.write("\t$(YACC) $(YFLAGS) %s.y\n" % b)
                 fd.write("\tif exist y.tab.c $(MV) y.tab.c %s.tab.c\n" % b)
                 fd.write("\tif exist y.tab.h $(DEL) y.tab.h\n")
             if ext == "tab.cxx":
+                fd.write(getsrc)
                 fd.write("\t$(YACC) $(YFLAGS) %s.yy\n" % b)
                 fd.write("\tif exist y.tab.c $(MV) y.tab.c %s.tab.cxx\n" % b)
                 fd.write("\tif exist y.tab.h $(DEL) y.tab.h\n")
             if ext == "yy.c":
+                fd.write(getsrc)
                 fd.write("\t$(LEX) $(LFLAGS) %s.l\n" % b)
                 fd.write("\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.c\n" % b)
             if ext == "yy.cxx":
+                fd.write(getsrc)
                 fd.write("\t$(LEX) $(LFLAGS) %s.ll\n" % b)
                 fd.write("\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.cxx\n" % b)
 
             if ext == "glue.c":
+                fd.write(getsrc)
                 fd.write("\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t, b))
             if ext == "proto.h":
+                fd.write(getsrc)
                 fd.write("\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t, b))
             if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
                 target, name = msc_find_target(tar, msc)
@@ -282,9 +293,11 @@ def msc_deps(fd, deps, objext, msc):
                 if target == "LIB":
                     d, dext = split_filename(deplist[0])
                     if dext == "c" or dext == "glue.c":
+                        fd.write(getsrc)
                         fd.write("\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s -c %s\n" %
                                  (name, msc_translate_ext(deplist[0])))
                     elif dext == "cc":
+                        fd.write(getsrc)
                         fd.write("\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c %s\n" %
                                  (name, msc_translate_ext(deplist[0])))
     msc['DEPS'].append("DONE")
@@ -866,10 +879,17 @@ CXXEXT = \\\"cxx\\\"
                 td.append(dir)
 
     fd.write("install-data:")
-##    if len(msc['HDRS']) > 0:
-##        if len(name) > 0:
-##            fd.write(" install-%s" % v)
-##            for v in msc['HDRS']:
-##                fd.write("%sincludedir = $(includedir)/%s\n" % (name, name))
-##        fd.write("%sinclude_HEADERS = %s\n" % (name, msc_list2string(am['HDRS'], " ", "")))
+    if cwd != topdir and len(msc['HDRS']) > 0:
+        name=os.path.split(cwd)[1]
+        if len(name) > 0:
+            tHDRS = []
+            for h in msc['HDRS']:
+                tHDRS.append(msc_translate_dir(msc_translate_file(h, msc), msc))
+            fd.write(" install-%sinclude_HEADERS\n" % name)
+            fd.write("%sincludedir = $(includedir)\\%s\n" % (name, name))
+            fd.write("%sinclude_HEADERS = %s\n" % (name, msc_list2string(tHDRS, " ", "")))
+            fd.write("install-%sinclude_HEADERS: $(%sinclude_HEADERS)\n" % (name,name))
+            fd.write("\tif not exist $(%sincludedir) $(MKDIR) $(%sincludedir)\n" % (name,name))
+            for h in tHDRS:
+                fd.write("\tif exist %s $(INSTALL) %s $(%sincludedir)\n" % (h,h,name))
     fd.write("\n")
