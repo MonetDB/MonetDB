@@ -835,6 +835,7 @@ mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_ping(Mapi mid);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
+mapi_export int mapi_more_results(MapiHdl hdl);
 mapi_export MapiHdl mapi_new_handle(Mapi mid);
 mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username,
@@ -1305,13 +1306,43 @@ mapi_next_result(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_next_result");
 
-	if (hdl->result == NULL)
-		return MOK;
-	if (close_result(&hdl->result) != MOK)
-		return MERROR;
-	if (hdl->result)
-		return 1;
+	while (hdl->result != NULL) {
+		if (close_result(&hdl->result) != MOK)
+			return MERROR;
+		if (hdl->result &&
+		    (hdl->result->querytype == -1 ||
+		     hdl->result->querytype == 3 ||
+		     hdl->result->querytype == 4))
+			return 1;
+	}
 	return MOK;
+}
+
+int
+mapi_more_results(MapiHdl hdl)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check(hdl, "mapi_more_results");
+
+	if ((result = hdl->result) == 0) {
+		/* there are no results at all */
+		return 0;
+	}
+	if (result->querytype == 3 /* result set */ &&
+	    hdl->mid->active != NULL) {
+		/* read until next result (if any) */
+		read_into_cache(hdl, -1);
+	}
+	while (result->next) {
+		result = result->next;
+		if (result->querytype == -1 ||
+		    result->querytype == 3 ||
+		    result->querytype == 4)
+			return 1;
+	}
+	/* no more results */
+	return 0;
 }
 
 MapiHdl
@@ -2713,6 +2744,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			add_error(mid, line, "read_into_cache");
 			break;
 		case '#':
+			if (lookahead < 0)
+				lookahead = 1;
 			copy = strdup(line);
 			result = parse_header_line(hdl, line);
 			hdl->active = result;
@@ -2724,7 +2757,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				hdl->active = result;
 			}
 			add_cache(result, strdup(line));
-			if (lookahead &&
+			if (lookahead > 0 &&
 			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == 3 /* result set */))
 				return mid->error;
@@ -2744,12 +2777,11 @@ mapi_execute_internal(MapiHdl hdl)
 	if (mid->active && read_into_cache(mid->active, 0) != MOK)
 		return MERROR;
 	assert(mid->active == NULL);
-	assert(hdl->result == NULL);
+	finish_handle(hdl);
 	mapi_param_store(hdl);
 	cmd = hdl->query;
 	size = strlen(cmd);
 
-	finish_handle(hdl);
 	if (mid->trace) {
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
