@@ -21,12 +21,17 @@ module 'sqlserver'
 #---------------------------------------------------------------------------------#
 # signature									  #
 #---------------------------------------------------------------------------------#
+[ "append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]"			  ]
+[ "append(BAT[oid,any::1], any::1) : BAT[oid,any::1]"				  ]
+[ "append(BAT[oid,void], BAT[oid,void]) : BAT[oid,void]"			  ]
 [ "append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
 [ "append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]"		  ]
 [ "append(BAT[void,any::1], any::1) : BAT[void,any::1]"				  ]
+[ "hash(any::1) : int"								  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_column(mvc, sql_table, str) : sql_column"				  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"			  ]
+[ "mvc_bind_kbat(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_key(mvc, sql_table, str) : sql_key"					  ]
 [ "mvc_bind_obat(mvc, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_schema(mvc, str) : sql_schema"					  ]

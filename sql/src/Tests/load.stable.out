@@ -23,6 +23,7 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 mods@batloop{
 	printf("loading module '%s'\n",$t);
 	module($t);
@@ -35,25 +36,25 @@ loading module 'sqlserver'
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "aggrX3",	  1		  ]
-[ "alarm",	  1		  ]
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "ascii_io",	  1		  ]
-[ "bat",	  1		  ]
-[ "decimal",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "mapi",	  1		  ]
-[ "mmath",	  1		  ]
-[ "monettime",	  1		  ]
-[ "sqlserver",	  1		  ]
-[ "str",	  1		  ]
-[ "streams",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "uchr",	  1		  ]
-[ "xtables",	  1		  ]
+[ "aggrX3",	  3		  ]
+[ "alarm",	  3		  ]
+[ "algebra",	  3		  ]
+[ "arith",	  3		  ]
+[ "ascii_io",	  3		  ]
+[ "bat",	  3		  ]
+[ "decimal",	  3		  ]
+[ "kernel",	  3		  ]
+[ "main",	  3		  ]
+[ "mapi",	  3		  ]
+[ "mmath",	  3		  ]
+[ "monettime",	  3		  ]
+[ "sqlserver",	  3		  ]
+[ "str",	  3		  ]
+[ "streams",	  6		  ]
+[ "sys",	  3		  ]
+[ "trans",	  3		  ]
+[ "uchr",	  9		  ]
+[ "xtables",	  3		  ]
 dropping module 'sqlserver'
 #---------------------------------#
 # module	| usage_count	  #

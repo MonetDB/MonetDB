@@ -26,8 +26,8 @@ SQL  connected to database mTests_src_test using schema sys
 1	3
 3	7
 SQL  2 Rows affected
-SQL ERROR -1: Cannot compare sets with values, probably a aggrate function missing
-SQL ERROR -1: Cannot compare sets with values, probably a aggrate function missing
+SQL ERROR -1: Cannot compare sets with values, probably a aggregate function missing
+SQL ERROR -1: Cannot compare sets with values, probably a aggregate function missing
 SQL ERROR -1: Column: valsum unknown
 
 # 20:07:35 >  
