@@ -50,6 +50,9 @@ command clearDebug(flg:int):void
 address CLTclearDebug
 comment "Clear the flag in the debugging bitset";
 
+command users( ):bat[:int,:str] 
+address CLTusers
+comment "Pseudo bat of users logged in";
 command login( ):bat[:int,:str] 
 address CLTLogin
 comment "Pseudo bat of client login time";
@@ -59,7 +62,7 @@ comment "Pseudo bat with client attributes";
 
 command quit():void
 address CLTquit
-comment "Terminate the session"'
+comment "Terminate the session for this client"'
 
 @-
 @{
@@ -174,6 +177,20 @@ str CLTLogin(int *ret){
                 BUNins(b, &i, s);
         }
 
+	@:Pseudo(client,login)@
+	return MAL_SUCCEED;
+}
+@-
+Produce a list of clients currently logged in
+@c
+str CLTusers(int *ret){       
+	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+	int i;
+        if (b == 0) 
+		return throwMessage("clients.users", "failed to create BAT");
+        for(i=0; i < MAL_MAXCLIENTS; i++)
+        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user)
+                BUNins(b, &i, mal_clients[i].user);
 	@:Pseudo(client,login)@
 	return MAL_SUCCEED;
 }

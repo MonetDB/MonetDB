@@ -146,6 +146,7 @@ int operatorModifier(str name, str fcnname){
 int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 	int dt= getDestType(mb,p);
 	int rt;
+	str dtname, tpename;
 	Client c;
 
 	rt= resolveType(dt,tpe);
@@ -153,11 +154,17 @@ int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 		setDestType(mb,p,tpe);
 		return rt;
 	}
+	tpename= getTypeName(tpe);
+	dtname= getTypeName(dt);
 	if(moduleId(p))
-		GDKerror("type conflict in statement %s.%s[%d]\n",
-			moduleName(p), functionName(p), getPC(mb,p));
-	else 	GDKerror("type conflict in statement %s[%d]\n",
-			functionName(p), getPC(mb,p));
+		GDKerror("type conflict in statement %s.%s[%d] %s<>%s\n",
+			moduleName(p), functionName(p), getPC(mb,p),
+			dtname,tpename);
+	else 	GDKerror("type conflict in statement %s[%d] %s<>%s\n",
+			functionName(p), getPC(mb,p),
+			dtname,tpename);
+	GDKfree(tpename);
+	GDKfree(dtname);
 	c= getClient();
 	if( c && c->listing &(LIST_MAL_INSTR))
 		printFunction(c->fdout,mb,c->listing);
@@ -434,7 +441,7 @@ The call multiplex.script(CMD,A1,...An) introduces the following function:
 \begin{verbatim}
 function CMD000(A1,....,An):bat
 	resB:= new(headtype,tailtype);
-barrier mloop:= bunStream(Ai,h,t);
+barrier (mloop,h,t):= newIterator(Ai);
 	$1:= bat.find(A1,h);
 	$2:= A2;	# in case of constant?
 	...
@@ -443,7 +450,7 @@ barrier mloop:= bunStream(Ai,h,t);
 catch 	MALexception;
 	#ignore errors
 end	MALexception;
-	redo mloop:= bunStream(Ai,h,t);
+	redo (mloop,h,t):= hasMoreElements(Ai);
 end mloop;
 	return resB;
 end CMD000;
@@ -466,7 +473,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i,k,l,mloop,refBat=0,resB,refType,cr;
 	int nilVar=0 /*, mvar*/;
 	str ret= MAL_SUCCEED;
-	int hvar,ivar=0, rIndex=0;
+	int hvar,tvar, rIndex=0;
 #ifdef DEBUG_MULTIPLEX
 	int assignop = FALSE;
 #endif
@@ -581,17 +588,17 @@ find the actule arguments at the proper place of the callee.
 	pushInstruction(m,q);
 */
 
-	/* barrier mloop:= bunStream(refBat,h,rIndex); */
+	/* barrier (mloop,h,r):= newIterator(refBat); */
 	q= newInstruction(ASSIGNsymbol);
+	setModuleId(q, GDKstrdup("chopper"));
+	setFunctionId(q, GDKstrdup("newIterator"));
 	q->barrier = BARRIERsymbol;
 	q->argv[0]= mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
-	setModuleId(q, GDKstrdup("chopper"));
-	setFunctionId(q, GDKstrdup("bunStream"));
-	q->argv[1] = refBat;
-	hvar= q->argv[2] = newVariable(m,GDKstrdup("h"),getHeadType(refType));
+	hvar= q->argv[1] = newVariable(m,GDKstrdup("h"),getHeadType(refType));
 	sprintf(name,"B%d",rIndex);
-	q->argv[3] = ivar = newVariable(m,GDKstrdup(name),
-		getTailType(getArgType(mb,pci,refBat)));
+	tvar= q->argv[2] = newVariable(m,GDKstrdup(name),getTailType(refType));
+	q->argv[3] = refBat;
+	q->retc= 3;
 	q->argc= 4;
 	pushInstruction(m,q);
 
@@ -709,15 +716,16 @@ find the actule arguments at the proper place of the callee.
 	pushInstruction(m,q);
 #endif
 	@:malInstr(EXIT,k)@	/* end  MALexception; */
-	/* redo mloop:= bunStream(refBat,h,rIndex); */
+	/* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q= newInstruction(ASSIGNsymbol);
+	setModuleId(q, GDKstrdup("chopper"));
+	setFunctionId(q, GDKstrdup("hasMoreElements"));
 	q->barrier = REDOsymbol;
 	q->argv[0]= mloop;
-	setModuleId(q, GDKstrdup("chopper"));
-	setFunctionId(q, GDKstrdup("bunStream"));
-	q->argv[1] = refBat;
-	q->argv[2] = hvar; 
-	q->argv[3] = ivar;
+	q->argv[1] = hvar; 
+	q->argv[2] = tvar;
+	q->retc= 3;
+	q->argv[3] = refBat;
 	q->argc= 4;
 	pushInstruction(m,q);
 	@:malInstr(EXIT,mloop)@	/* redo mloop; */

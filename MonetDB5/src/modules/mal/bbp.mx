@@ -102,12 +102,15 @@ comment "Get the string representation of an
 pattern discard(name:str):void 
 address CMDbbpdiscard
 comment "Remove the BAT from the box";
+
 pattern iterator(nme:str):lng 	
 address CMDbbpiterator
 comment "Locates the next element in the box";
+
 pattern prelude():void 
 address CMDbbpprelude
 comment "Initialize the bbp box";
+
 pattern bind(name:str,loc:str)
 	:bat[:any,:any] 	
 address CMDbbpbindDefinition
@@ -168,6 +171,10 @@ address CMDprojectNil
 comment "Extract the head of a BAT.";
 
 pattern project( b:bat[:any$1,:any], val:any$2) 
+		:bat[:any$1,:any$2] 	
+address CMDproject
+comment "Fill the tail column with a constant.";
+pattern project( b:bat[:any$1,:any], val:bat[:any$1,:any$2]) 
 		:bat[:any$1,:any$2] 	
 address CMDproject
 comment "Fill the tail column with a constant.";

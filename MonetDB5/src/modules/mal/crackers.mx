@@ -562,14 +562,6 @@ The pieces of a cracked BAT are obtained through bat view.
 The nextPiece simply changes the dimensions of the BATview
 returned previously to represent a cracker piece.
 @c
-static void setViewBound(BAT *b, BAT *view, int l, int h){
-	view->batBuns->base = BUNptr(b, l-1);
-	view->batInserted = BUNptr(b, l);
-	view->batHole = view->batDeleted = view->batBuns->base;
-	view->batBuns->maxsize = view->batBuns->size =
-	view->batBuns->free = BUNptr(b,h+1) - view->batBuns->base;
-}
-
 int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
 	int l,h;
 	size_t low;
@@ -580,18 +572,7 @@ int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
 #ifdef DEBUG_CRACKERS
 	printf("set view to new dimension[%d,%d]: %d-%d\n",mid, pid,l,h);
 #endif
-	setViewBound(b,view,l,h);
-	view->hsorted = BAThordered(b);
-        view->tsorted = BATtordered(b);
-
-        BATkey(view, BAThkey(b));
-        BATkey(BATmirror(view), BATtkey(b));
-        if (BAThdense(b)) {
-                BATseqbase(view, b->hseqbase+l);
-        }
-        if (BATtdense(b)) {
-                BATseqbase(BATmirror(view), b->tseqbase+low);
-        }
+	VIEWbounds(view,l,h);
 
 	if (pid > 0 && (size_t)pid == BATcount(b)) return 0;
 	return pid+1;
@@ -735,7 +716,7 @@ str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	intervalSelect(m,0,low,high, &left, &right);
 	/* printf("get range from %d %d\n",left,right);*/
 	if( left >=0 && right >=0 )
-		setViewBound(b,view, 
+		VIEWbounds(view, 
 			crackMap[m].pieces[left].idx_first, 
 			crackMap[m].pieces[right].idx_last);
 	return MAL_SUCCEED;
@@ -788,7 +769,7 @@ Select an interval with a desirable value to start the glueing process
 /* no little speedup, disgarded
 			if( crackMap[m].pieces[i].idx_first < idxlow &&
 			    crackMap[m].pieces[i].idx_last > idxhgh){
-				setViewBound(b,view,
+				VIEWbounds(view,
 					idxlow= crackMap[m].pieces[i].idx_first,
 					idxhgh=crackMap[m].pieces[i].idx_last);
 				glued++;
@@ -800,7 +781,7 @@ Select an interval with a desirable value to start the glueing process
 					crackMap[m].pieces[i].idx_first,
 					idxhgh);
 #endif
-				setViewBound(b,view,
+				VIEWbounds(view,
 					idxlow= crackMap[m].pieces[i].idx_first,
 					idxhgh);
 				glued++;
@@ -810,7 +791,7 @@ Select an interval with a desirable value to start the glueing process
 				printf("rglue: [%d][%d]%d %d\n",m,i, idxlow,
 					crackMap[m].pieces[i].idx_last);
 #endif
-				setViewBound(b,view, idxlow,
+				VIEWbounds(view, idxlow,
 					idxhgh=crackMap[m].pieces[i].idx_last);
 				glued++;
 			} else 

@@ -14,42 +14,21 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 @f language
 @a Martin Kersten
-@v 0.1
-@* MAL extensions
-This module contains enhances to the MAL interpreter layer, such as
-iterators over ranges and bats, object management, access to the debugger, ....
-This module is loaded directly after the kernel modules and provides
-a first abstraction layer. 
+@v 1.0
+@+ Scalar iterators
+Iterators are also defined for the built-in scalar types.
+They can be used to model ordinary for-loops.
 
-Note that the modules located in the kernel directory should not
-rely on the MAL datastructures. That's why we have to deal with
-some bat operations here.
-
-The routines below are linked with the kernel by default
-@mal
-module mal;
-
-command raise(msg:str) :str 
-address CMDraise
-comment "Raise an exception labelled 
-	with a specific message.";
-
-@+ Iterator primitives
 Iterators enumerate elements in a collection defined by a few paramaters,
 e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
 call by recognizing that the control variable lies outside the intended
 collection.
 
 @mal
+module mal;
+
 command nextElement(i:flt,f:flt,l:flt,s:flt):bit 
 address fltForloopStep; 
 command nextElement(i:dbl,f:dbl,l:dbl,s:dbl):bit 
@@ -75,6 +54,17 @@ address intForloop
 comment "This routine provides an iterator
 	over a scalar domain. The step size 
 	depends on the underlying type."; 
+@-
+Note that the modules located in the kernel directory should not
+rely on the MAL datastructures. That's why we have to deal with
+some bat operations here.
+
+The routines below are linked with the kernel by default
+@mal
+command raise(msg:str) :str 
+address CMDraise
+comment "Raise an exception labelled 
+	with a specific message.";
 @- Monet help system
 All procedural abstractions may contain a string with commentary text.
 This information is retained in the symbol table for subsequent use.
@@ -435,13 +425,6 @@ str @1Forloop(bit *res, @1 *i, @1 *first, @1 *last){
 	*res = TRUE;
 	*i= *first;
 	return MAL_SUCCEED;
-/*
-        if( v < *first || v >= *last)
-                *i = *first;
-        else    *i = ++v;
-        *res= *i < *last;
-        return MAL_SUCCEED;
-*/
 }
 
 @= forloopStep
