@@ -160,12 +160,6 @@ Client initClient(str nme, str prompt, int thread)
 	c->top = c->input;
 	*c->top = 0;
 	c->mode = BLOCKMODE;
-
-        if( GDKprotected ==0) 
-		if( protectMonet()) {
-			killClient(c, TRUE); 
-			return NULL;
-		}
 	return c;
 }
 

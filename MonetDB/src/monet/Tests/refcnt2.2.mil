@@ -1,5 +1,3 @@
-dir();
-ls();
 bat("a").print();
 bat("b").print();
 bat("c").print();
