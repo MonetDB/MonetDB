@@ -20,6 +20,7 @@ function choptest(b:bat[:void,:lng], size:lng, base:lng);
     printf(" at %f usec\n",f);
 end choptest;
 
+mdb();
 b:= new(:void,:lng);
 barrier (go,i):= newRange(0:lng);
 	k:= rand();
