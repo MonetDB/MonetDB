@@ -1215,7 +1215,7 @@ int decimal_from_lng(decimal **ret, lng* val) {
 		} else {
 			while(l > 0) {
 				lng div = l / 10000; /* uhff1 */ 
-				rest = l - div*10000;
+				rest = (int) (l - div*10000);
 				num[y++] = val_table[rest]; /* uhff2 */
 				l = div;
 		        }

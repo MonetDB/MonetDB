@@ -235,7 +235,7 @@ int blob_fromstr(char* instr,int* l,blob** val)
       *val = (blob*)NULL;
       return(0);
    }
-   nitems = strtol(s + 1,&s,10);
+   nitems = (int) strtol(s + 1,&s,10);
    nbytes = blobsize(nitems);
    if (s == NULL)
    {
@@ -271,7 +271,7 @@ int blob_fromstr(char* instr,int* l,blob** val)
    */
    for (i = 0;i < nitems; ++i)
    {
-      result->data[i] = strtol(s,&s,16);
+      result->data[i] = (char) strtol(s,&s,16);
       if (s == 0)
       {
 	 GDKerror("blob too short \n");

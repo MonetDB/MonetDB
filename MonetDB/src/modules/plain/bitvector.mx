@@ -129,12 +129,12 @@ bitvector_allocate(BAT **b_dst, int *nbits, bit *initial)
 bitvector_export int
 bitvector_set(BAT *b_src, int *bnum)
 {
-  int entry;
+  size_t entry;
   lng *v;
 
-  entry = *bnum / (sizeof(lng) * 8);
+  entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_set]: BAT too small %d < %d\n",
+    GDKerror("[bitvector_set]: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
@@ -148,30 +148,30 @@ bitvector_set(BAT *b_src, int *bnum)
 bitvector_export int
 bitvector_isset(bit *rv, BAT *b_src, int *bnum)
 {
-  int entry;
+  size_t entry;
   lng v;
 
-  entry = *bnum / (sizeof(lng) * 8);
+  entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_isset]: BAT too small %d < %d\n",
+    GDKerror("[bitvector_isset]: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
 
   v   = *(lng *)BUNtail(b_src, BUNfirst(b_src) + entry * BUNsize(b_src));
-  *rv = v & ((lng)1 << (*bnum % (sizeof(lng) * 8)));
+  *rv = (bit) (v & ((lng)1 << (*bnum % (sizeof(lng) * 8))));
   return GDK_SUCCEED;
 }
 
 bitvector_export int
 bitvector_clr(BAT *b_src, int *bnum)
 {
-  int entry;
+  size_t entry;
   lng *v;
 
-  entry = *bnum / (sizeof(lng) * 8);
+  entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_clr]: BAT too small %d < %d\n",
+    GDKerror("[bitvector_clr]: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
@@ -185,12 +185,12 @@ bitvector_clr(BAT *b_src, int *bnum)
 bitvector_export int
 bitvector_isclr(bit *rv, BAT *b_src, int *bnum)
 {
-  int entry;
+  size_t entry;
   lng v;
 
-  entry = *bnum / (sizeof(lng) * 8);
+  entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_isclr]: BAT too small %d < %d\n",
+    GDKerror("[bitvector_isclr]: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
