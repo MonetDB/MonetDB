@@ -23,13 +23,7 @@ Over..
 
 # 6 # querytype
 # 4 # querytype
-# tables # table_name
-# count_name # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 1 # id
-[ 26	]
+[ 23	]
 # 3 # querytype
 # tmp # table_name
 # count_name # name
@@ -37,15 +31,9 @@ Over..
 # 0 # length
 # 1 # tuplecount
 # 2 # id
-[ 26	]
+[ 23	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 3 # id
-[ 26	]
+[ 23	]
 # 3 # querytype
 # tmp # table_name
 # count_name # name
@@ -55,13 +43,7 @@ Over..
 # 3 # id
 [ 0	]
 # 4 # querytype
-# tables # table_name
-# count_name # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 5 # id
-[ 29	]
+[ 23	]
 # 3 # querytype
 # tmp # table_name
 # count_name # name
@@ -69,15 +51,9 @@ Over..
 # 0 # length
 # 1 # tuplecount
 # 6 # id
-[ 29	]
+[ 23	]
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 7 # id
-[ 29	]
+[ 23	]
 # 3 # querytype
 # tmp # table_name
 # count_name # name

@@ -265,34 +265,14 @@ tmp_table_name()
 	return buf;
 }
 
-static sql_table *
-create_table_intern(mvc *sql, sql_schema *schema, char *name, char *query, stmt *sq)
-{
-	node *m;
-	sql_table *table = mvc_create_table(sql, schema, name, 0, 0, 0, -1);
-
-	(void) query;		/* Stefan: unused!? */
-
-	for (m = sq->op1.lval->h; m; m = m->next) {
-		stmt *st = m->data;
-		sql_subtype *tp = sql_dup_subtype(tail_type(st));
-		char *cname = column_name(st);
-
-		(void) mvc_create_column(sql, table, cname, tp);
-		_DELETE(cname);
-	}
-	return table;
-}
-
 static tvar *
-table_optname(mvc *sql, scope *scp, stmt *sq, char *query, symbol *optname)
+table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 {
 	node *m;
 	char *tmpname = NULL;
 	char *tname = NULL;
 	dlist *columnrefs = NULL;
 	tvar *tv;
-	sql_schema *schema = cur_schema(sql);
 
 	if (optname && optname->token == SQL_NAME) {
 		tmpname = tname = optname->data.lval->h->data.sval;
@@ -300,7 +280,6 @@ table_optname(mvc *sql, scope *scp, stmt *sq, char *query, symbol *optname)
 	} else {
 		tmpname = tmp_table_name();
 	}
-	(void) create_table_intern(sql, schema, tmpname, query, sq);
 	tv = scope_add_table(scp, sq, tname, NULL);
 	if (columnrefs) {
 		dnode *d;
@@ -374,7 +353,7 @@ sql_subquery_optname(mvc *sql, scope *scp, symbol *query)
 		stmt_destroy(sq);
 		sq = stmt_list(l);
 	}
-	return table_optname(sql, scp, sq, QUERY(sql->scanner), sn->name);
+	return table_optname(sql, scp, sq, sn->name);
 }
 
 static stmt *
@@ -1509,7 +1488,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 
 		if (!tq)
 			return NULL;
-		res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
+		res = table_optname(sql, scp, tq, q->data.lval->t->data.sym);
 		scp = scope_close(nscp);
 		return res;
 	}
@@ -1520,7 +1499,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 
 		if (!tq)
 			return NULL;
-		res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
+		res = table_optname(sql, scp, tq, q->data.lval->t->data.sym);
 		scp = scope_close(nscp);
 		return res;
 	}
@@ -1531,7 +1510,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 
 		if (!tq)
 			return NULL;
-		res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
+		res = table_optname(sql, scp, tq, q->data.lval->t->data.sym);
 		scp = scope_close(nscp);
 		return res;
 	}
@@ -1567,7 +1546,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 
 			list_append(unions, stmt_union(l, r));
 		}
-		res = table_optname(sql, scp, stmt_list(unions), QUERY(sql->scanner), q->data.lval->t->data.sym);
+		res = table_optname(sql, scp, stmt_list(unions), q->data.lval->t->data.sym);
 		list_destroy(matching_columns);
 		scp = scope_close(nscp);
 		return res;
