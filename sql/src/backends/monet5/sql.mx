@@ -450,8 +450,8 @@ str mvc_bind_single_wrap(int *ret, int *bid, str *name){
 
 	@:getBATdescriptor(&res,bid,bn,sql.bind)@
 
-	BATprint(bn);
 	p=  BUNfnd(bn,*name);
+	r= *(int*) BUNtail(bn,p);
 	@:getBATdescriptor(&res,&r,b,sql.bind)@
 	*ret = b->batCacheid;
 	return MAL_SUCCEED;
@@ -605,6 +605,21 @@ ptr *dec_frstr( void *extra, int type, char *s){
 	}
 	return NULL;
 }
+static char *coerce(char *s){
+	char *n= GDKmalloc(strlen(s)+1);
+	char *t=n;
+	for(; *s; s++)
+	switch(*s){
+	case '\\':
+		s++;
+		if( *s == 'n') *t++ = '\n'; else
+		if( *s == 't') *t++ = '\t'; else
+		if( *s == '\\') *t++ = '\\'; else
+	default: *t ++ = *s;
+	}
+	*t=0;
+	return n;
+}
 
 BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
 		char *sep, char *rsep, int sz)
@@ -643,7 +658,7 @@ BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
 			sql_column *col = n->data;
 
 			fmt[i].name = _strdup(col->base.name);
-                	fmt[i].sep = (n->next)?_strdup(sep):_strdup(rsep);
+                	fmt[i].sep = (n->next)?coerce(sep):coerce(rsep);
                 	fmt[i].seplen = (int) strlen( fmt[i].sep );
                 	fmt[i].type = _strdup(col->type->type->base.name);
                 	fmt[i].adt = ATOMindex( fmt[i].type );
