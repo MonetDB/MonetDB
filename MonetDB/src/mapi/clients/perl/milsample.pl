@@ -46,12 +46,9 @@ print "\nstart simple Monet MIL interaction\n";
   my @row= $sth->fetchrow_array();
   print "field[0]:".$row[0]."size:".$#row."\n";
 
-   $sth= $dbh->prepare("( xyz 1);\n");
-   $sth->execute() ;#||  die "Excution error:\n".$sth->{errstr};
-   if($sth->{err}){
- 	print "ERROR REPORTED:".$sth->{errstr}."\n";
-   }
-   print "STH:".$sth->{row}."\n";
+  # deliberately executing a wrong MIL statement:
+  $sth= $dbh->prepare("( xyz 1);\n");
+  eval { $sth->execute }; print "ERROR REPORTED: $@" if $@;
 
  $dbh->do("b:=new(int,int);");
  $dbh->do("insert(b,3,7);");
