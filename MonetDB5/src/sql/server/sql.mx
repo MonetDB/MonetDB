@@ -27,7 +27,8 @@ comment "Switch to processing SQL statements";
 command header(i:int) = SQLheader
 comment "Generate a table header for an SQL frontend";
 command column(i:any, v:str,t:str) = SQLcolumnsingle;
-command column(b:bat, v:str,t:str) = SQLcolumn;
+command column(b:bat, v:str,t:str) = SQLcolumn
+comment "Rename a table column";
 
 pattern output(a:any...)= SQLoutput;
 pattern output(a:bat[any,any]...)= SQLoutputBats
@@ -51,16 +52,10 @@ command sqlFunc(name:str, imp:str, tp1:str, tp2:str, tp3:str, rtp:str):void
 		= sql_func_wrap
 comment "Add a new sql function";
 
-command init(debug:int):void = mvc_init_wrap
-comment "Initialize the global catalog";
-
-command finish() = mvc_finish_wrap
-comment "Cleanup the global catalog";
-
 command createCatalog( debug:int ) : void = mvc_create_wrap
 comment "Create multi version catalog";
 
-command destroy() = mvc_destroy_wrap
+command destroyCatalog() = mvc_destroy_wrap
 comment "Destroy multi version catalog";
 
 command login( user:str, passwd:str ):str= mvc_login_wrap
@@ -96,35 +91,21 @@ comment "Locate the column in the current table and make it the focus";
 command bindKey(s:str, t:str, v:str ) = mvc_bind_key_wrap
 comment "Bind key, t.(cols)";
 
-command bindUbatWrite(sname:str, tname:str, cname:str) : 
-		BAT[any::1,any::2] = mvc_bind_ubat_wrapWRITE
-comment "Bind bat with the updates to tname.cname";
-command bindUbat(sname:str, tname:str, cname:str ) : 
+command bindUbat(sname:str, tname:str, cname:str, access:int ) : 
 		BAT[any::1,any::2] = mvc_bind_ubat_wrapREAD
-comment "Bind bat with the updates to tname.cname";
+comment "Bind bat with the updates to tname.cname with specific access mode";
 
-command bindObatWrite(sname:str, tname:str) : 
-		BAT[any::1,any::2] = mvc_bind_obat_wrapWRITE
-comment "Bind the oid bat, tname.OID";
-command bindObat(sname:str, tname:str) : 
-		BAT[any::1,any::2] = mvc_bind_obat_wrapREAD
-comment "Bind the oid bat, tname.OID";
+command bindObat(sname:str, tname:str, access:int) : 
+		BAT[any::1,any::2] = mvc_bind_obat_wrap
+comment "Bind the oid bat, tname.OI with specific access modeD";
 
-command bindDbatWrite(sname:str, tname:str) : 
-		BAT[any::1,any::2] = mvc_bind_dbat_wrapWRITE
-comment "Bind the table deletes bat, tname.deletes";
-command bindDbat(sname:str, tname:str) : 
-		BAT[any::1,any::2] = mvc_bind_dbat_wrapREAD
-comment "Bind the table deletes bat, tname.deletes";
+command bindDbat(sname:str, tname:str, access:int) : 
+		BAT[any::1,any::2] = mvc_bind_dbat_wrap
+comment "Bind the table deletes bat, tname.delete with specific access modes";
 
 command bind(sname:str, tname:str, cname:str, access:int ):BAT[any::1,any::2] 
 	= mvc_bind_wrap
-comment "Bind the bat, tname.cname";
-command bind(sname:str, tname:str, cname:str):BAT[any::1,any::2] = mvc_bind_wrapREAD
-comment "Bind the bat, tname.cname";
-
-command bindWrite(sname:str, tname:str, cname:str):BAT[any::1,any::2] = mvc_bind_wrapWRITE
-comment "Bind the bat, tname.cname";
+comment "Bind the bat tname.cname into the focus with specific access mode";
 
 command dropSchema( name:str ) = mvc_drop_schema_wrap
 comment "Drop schema";
@@ -164,18 +145,19 @@ comment "Set current column default value";
 #command keyAddColumn( s:str, t:str, k:sql_key, c:sql_column ) = mvc_key_add_column_wrap
 #comment "Key add column";
 
-command export(s:stream, order:bat, bats:bat, sep:str, rsep:str) =
+command exportTable(s:stream, order:bat, bats:bat, sep:str, rsep:str) =
 		mvc_export_wrap
-comment "export a table (in order) to stream s with the 
+comment "Export a table (in order) to stream s with the 
 given tuple and record seperators (sep/rsep)";
 
 command importTable( s:stream, tname:str, 
 	sep:str, rsep:str, nr:int) : int = mvc_import_table_wrap
-comment "import a table from stream s with the given 
+comment "Import a table from stream s with the given 
 tuple and record seperators (sep/rsep)";
-command inputTable(tname:str, fname:bat[void,str], 
+
+command importTable(tname:str, fname:bat[void,str], 
 	sep:str, rsep:str, nr:int) : int = mvc_input_table_wrap
-comment "import table from multiple files with the given 
+comment "Import table from multiple files with the given 
 tuple and record seperators (sep/rsep)";
 
 #command exportSchema( s:stream ) = mvc_export_schema_wrap

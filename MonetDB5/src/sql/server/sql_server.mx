@@ -3,9 +3,8 @@
 @* The SQL multi-version catalog
 DUmmy code file to enable load of necessary library.
 @mal
-module sql_server;
+#module sql_server;
 #empty, just to enable load of corresponding module
-command dummy()= CMDprint_val;
 @-
 @c
 #include "mal.h"

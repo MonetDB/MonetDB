@@ -294,15 +294,6 @@ getschemas(@1,lc,lc->cat, "default-schema", "default-user");
 #include "mal_scenario.h"
 #include "sql_mvc.h"
 
-str mvc_init_wrap(int *ret, int* debug, str *dir_name){
-	mvc_init(*debug);
-	return MAL_SUCCEED;
-}
-str mvc_finish_wrap(int *ret ){
-	mvc_exit();
-	return MAL_SUCCEED;
-}
-
 str sql_type_wrap(str *sqlname, int *digits, int *scale, int *radix, str *name){
 	sql_create_type( *sqlname, *digits, *scale, *radix,*name);
 	return MAL_SUCCEED;
@@ -394,14 +385,6 @@ str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access){
 	}
 	return throwException(MALEXCEPTION,"mvc_bind_wrap","error");
 }
-str mvc_bind_wrapWRITE(int *bid, str *sname, str *tname, str *cname){
-	int i=1;
-	return mvc_bind_wrap(bid, sname, tname, cname, &i);
-}
-str mvc_bind_wrapREAD(int *bid, str *sname, str *tname, str *cname){
-	int i=0;
-	return mvc_bind_wrap(bid, sname, tname, cname, &i);
-}
 
 str mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access ){
 	mvc *c;
@@ -434,14 +417,6 @@ str mvc_bind_obat_wrap(int *ret, str *sname, str *tname, int *access ){
 	}
 	return throwException(MALEXCEPTION,"mvc_bind_obat_wrap","error");
 }
-str mvc_bind_obat_wrapWRITE(int *bid, str *sname, str *tname){
-	int i=1;
-	return mvc_bind_obat_wrap(bid, sname, tname, &i);
-}
-str mvc_bind_obat_wrapREAD(int *bid, str *sname, str *tname){
-	int i=0;
-	return mvc_bind_obat_wrap(bid, sname, tname, &i);
-}
 
 str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
 	mvc *c;
@@ -453,14 +428,6 @@ str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION,"mvc_bind_dbat_wrap","error");
-}
-str mvc_bind_dbat_wrapWRITE(int *bid, str *sname, str *tname){
-	int i=1;
-	return mvc_bind_dbat_wrap(bid, sname, tname, &i);
-}
-str mvc_bind_dbat_wrapREAD(int *bid, str *sname, str *tname){
-	int i=0;
-	return mvc_bind_dbat_wrap(bid, sname, tname, &i);
 }
 str mvc_bind_schema_wrap(int *ret, str *sname){
 	mvc *c;

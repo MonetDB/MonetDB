@@ -816,7 +816,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	}
 	case st_bat:
 	case st_ubat: {
-		char *type = (s->type==st_bat)?"":"_ubat";
+		char *type = (s->type==st_bat)?"":"Ubat";
 		char buf[256];
 
 		@:SQLprelude@
@@ -861,6 +861,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		@:newStmt("sql",buf)@
 		@:pushStr(s->op1.tval->schema->name)@
 		@:pushStr(s->op1.tval->name)@
+		@:pushInt(s->flag)@
 		@:getReturn(k)@
 		if( s->flag >RDONLY) {
 			@:newStmt("bat","setWriteMode")@
@@ -1254,7 +1255,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 				@:pushStr(file)@
 			}
 		}
-		@:newStmt("sql","inputTable")@
+		@:newStmt("sql","importTable")@
 		@:pushStr(s->op1.tval->name)@
 		@:pushArg(k)@
 		@:pushStr(tsep)@
