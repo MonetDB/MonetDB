@@ -13,7 +13,7 @@ Introduction:
 To enable the usage of the SQL frontend of MonetDB in a generic way,
  access has to be provided via industry standard open database API(s).
 Two standard SQL APIs are currently widely accepted: ODBC and JDBC.
-ODBC is choosen to be implemented first because:
+ODBC is chosen to be implemented first because:
 - it can be implemented as a C library (same programming language as MonetDB)
 - its driver manager is available on all platforms where MonetDB is ported
   (on UNIX/Linux we use unixODBC as the driver manager)
@@ -40,7 +40,7 @@ We use the ones distributed with unixODBC.
 At CWI these are located in /usr/include/
 
 
-Files organisation (in sql/src/odbc/driver/*):
+Files organization (in sql/src/odbc/driver/*):
 =======================================================================
 All ODBC driver implementation files are located in sql/src/odbc/driver/
 
@@ -76,28 +76,13 @@ the source file is Makefile.ag.
 
 Lastly there is this README documentation file:
 
-The next files have all become obsolete (since the new ODBC*.[ch] files):
-- _FreeDbc.c
-- _FreeDbcList.c
-- _FreeResults.c
-- _FreeStmt.c
-- _FreeStmtList.c
-- _GetData.c
-- _NativeToSQLColumnHeader.c
-- _NativeToSQLType.c
-- _NativeTypedesc.c
-- _NativeTypeLength.c
-- _NativeTypePrecision.c
-- driver.h
-- driverextras.h
-
 
 Implementation:
 =======================================================================
 ODBC exists is several versions (1.0, 2.0, 2.1, 2.5, 3.0, 3.5, 3.51 and 3.52).
 The latest version was released by Microsoft around 1997.
 The unixODBC driver manager and include files support up to version 3.51.
-Hence we choose to implement version 3.51.
+Hence we chose to implement version 3.51.
 The version we want to comply with is defined in ODBCGlobal.h. It must
 be defined before the ODBC header files (sql.h etc.) are included!
 
@@ -105,7 +90,7 @@ In ODBC the API functions can be grouped in several ways:
 a) ODBC 1 or 2 API compliance (Core, extension level 1, extension level 2)
 b) ODBC 3 API compliance (ISO 92, X/Open, ODBC, Deprecated)
 c) handle type (environment, connection, statement, descriptor)
-I choose to use the handle type organisation and created new files
+I chose to use the handle type organization and created new files
 ODBC*[ch] to define the structs and functions for the first three handle
 types. Descriptor handles are currently not supported.
 
@@ -147,7 +132,7 @@ Although 73 SQL*() functions are implemented, many do not implement the
  requested behavior (e.g. SQLBindParameter()). They just set an error
 and return SQL_ERROR.
 
-The next ODBC API functions are functionaly implemented (some with TODO's):
+The next ODBC API functions are functionally implemented (some with TODO's):
 ------------------------------------------------------------------------
 - SQLAllocEnv() - SQLAllocConnect() - SQLAllocStmt() - SQLAllocHanlde()
 - SQLFreeEnv()  - SQLFreeConnect()  - SQLFreeStmt()  - SQLFreeHanlde()
@@ -208,7 +193,7 @@ Implementation of the deprecated ODBC API functions:
 Some ODBC API functions are deprecated in ODBC 3.0 (and higher).
 They are currently implemented as wrappers around their ODBC 3.0 equivalent.
 If you do not implement them you need an ODBC 3.0 (or higher) driver manager
-to do the mapping for you else old ODBC applciations (pre ODBC 3.0)
+to do the mapping for you else old ODBC applications (pre ODBC 3.0)
 will not work with our ODBC driver.
 
 Not implementation ODBC API functions:
@@ -235,7 +220,7 @@ Most important are:
 - SQLBindParameter()	/* needed for executing parametrized SQL commands */
 - more SQLGetInfo() types	/* needed by apps and JDBC-ODBC bridge */
 - SQLGetConnectAttr(), SQLSetConnectAttr()	/* especially AUTOCOMMIT */
-- SQLGetStmttAttr(), SQLSetStmtAttr()	/* especially ROW_ARRAY_SIZE */
+- SQLGetStmtAttr(), SQLSetStmtAttr()	/* especially ROW_ARRAY_SIZE */
 - SQLExentedFetch()			/* fetch multiple rows at once */
 - SQLAllocHandle(SQL_HANDLE_DESC)	/* support descriptor handles */
 - SQLFreeHandle(SQL_HANDLE_DESC)	/* support descriptor handles */
@@ -255,7 +240,7 @@ This can be done simply via a wrapper mechanism and two converter functions:
 
 TODO 3) on MS Windows you need a dll instead of a lib as the resulting ODBC
  driver. This driver dll needs to be installed (placed in some dir and the
- registry needs to be updated). Only than the DOBC driver will be visible for
+ registry needs to be updated). Only than the ODBC driver will be visible for
  the MS ODBC administrator (Control Panel, Data Sources (ODBC), Drivers tab)
  or simply type: odbcad32.exe  from a DOS command line.
 Also on MS Windows you need a setup dll which is called by the ODBC
@@ -271,7 +256,7 @@ The performance depends a lot on:
 - what API the Monet SQL frontend provides (is data fetchable row wise, can multiple
  rows be returned at once, is data represented in the most optimal form (so
  as int or dbl instead of str) so extra conversions are eliminated)
-- how the communication with the SQL frontend is realised (is all SQL
+- how the communication with the SQL frontend is realized (is all SQL
  processing done on the client or done on the server (or both), how many
  network calls are needed for fetching 1 row of data, how many client memory)
 - how the SQL frontend converts the SQL table into bats and makes use of extra
