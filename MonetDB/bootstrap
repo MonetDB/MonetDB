@@ -240,7 +240,7 @@ grep 'when bootstrap was executed' configure >/dev/null || cat << "EOF" | patch 
 EOF
 
 # patch configure to run also gcc/gxx with only -g (i.e., w/o -O2) by default
-grep 'CX*FLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
+grep 'CFLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
 --- configure	Fri Oct  4 11:38:50 2002
 +++ configure.new	Fri Oct  4 11:38:40 2002
 @@ -1293,17 +1299,9 @@
@@ -263,6 +263,10 @@ grep 'CX*FLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
  fi
  
  for ac_prog in $CCC c++ g++ gcc CC cxx cc++ cl
+EOF
+grep 'CXXFLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
+--- configure	Fri Oct  4 11:38:50 2002
++++ configure.new	Fri Oct  4 11:38:40 2002
 @@ -1436,17 +1434,9 @@
  if test "$ac_test_CXXFLAGS" = set; then
    CXXFLAGS="$ac_save_CXXFLAGS"
