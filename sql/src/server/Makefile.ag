@@ -27,7 +27,6 @@ lib_sqlserver = {
 	SOURCES = \
 		sql_atom.mx \
 		sql_datetime.mx \
-		sql_string.mx \
 		sql_decimal.mx \
 		sql_scope.mx \
 		sql_statement.mx \
@@ -47,9 +46,7 @@ lib_sqlserver = {
 		sql_env.mx \    
 		sql_sequence.mx \    
 		sql_privileges.mx \  
-		sql_query.mx \
-		sql_list.mx \
-		sql_mem.mx
+		sql_query.mx
 
 	WINLIBS = ../storage/bat/libbatstore ../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra 
 	LIBS = $(MONETDB_LIBS)

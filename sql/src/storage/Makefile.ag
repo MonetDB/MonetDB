@@ -19,4 +19,6 @@
 
 EXTRA_HEADERS = sql_storage.h
 
+EXTRA_DIST = sql_storage.h
+
 SUBDIRS = bat
