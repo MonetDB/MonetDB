@@ -1,4 +1,4 @@
-@a M.L. Kersten, P. Boncz -- $Id$
+@a M.L. Kersten, P. Boncz, A.P. de Vries -- $Id$
 @f xtables
 @t Cross Table Module
 @v 2.2
@@ -13,6 +13,10 @@ without permission of the copyright owner. }
 @{
 @+ Document control
 @T
+(May 2001:) Arjen added some minor changes to better handle `clustered' groups;
+for now, limited applicability to a derived property using
+$$ \mathrm{sorted} \land \mathrm{keyed} \implies \mathrm{clustered} $$
+
 \begin{verbatim}
 New implementation of xtables *from*scratch*. Got fed up with histolink. 
 This is simple stable and fast. good memory performance.
@@ -565,6 +569,29 @@ hashing.
 
 #define STANDARD_MASK 1023
 
+/* 
+   Note:
+     following macros take advantage of clustered property;
+     if b is clustered, then we can stop early traversing collision lists.
+
+     BTW, simply stopping possibly breaks chain construction, so the resulting
+     map is not directly reuseable as a hash table; the current Monet cannot
+     however handle multiple accellerators, so this ain't a real problem for now :)
+ */
+						    
+  /* TODO: this _unclustered def. should go!!! */
+#define declare_unclustered int samecluster = -1; /* avoid warning */
+#define declare_clustered   int samecluster = TRUE;
+
+#define chain_unclustered   for (zz = hash[c]; zz > 0; zz = e->link)
+#define chain_clustered     for (zz = hash[c]; (zz > 0) && (samecluster); zz = e->link)
+
+#define tst_grp_unclustered(eq,p,t)    (eq(p, tcur, t))
+#define tst_grp_clustered(eq,p,t)      (samecluster = eq(p, tcur, t))
+
+#define tst_derive_unclustered(eq,p,t) (e->hcur == hcur && eq(p, tcur, t))
+#define tst_derive_clustered(eq,p,t)   ((samecluster = e->hcur == hcur) && eq(p, tcur, t))
+
 typedef struct {
 	oid hcur;		/* old group id */
 	int link;		/* hash link */
@@ -651,13 +678,14 @@ BAT *map2histo(BAT *map) {
 }
 
 @= group
-BAT *CTgroup_@1(BAT *b, BAT *bn, map_T *m){
+BAT *CTgroup_@1_@4(BAT *b, BAT *bn, map_T *m){
 	oid *dst = (oid*) BUNfirst(bn);
 	int xx, zz, *hash, mask, mapsize;
 	mapentry_t entry, *e;
 	BUN p, q, r;
 	BAT *map;
 	declare_@3
+	declare_@4
  
 	map_init(map,hash,mask,entry,mapsize); 
 
@@ -668,10 +696,10 @@ BAT *CTgroup_@1(BAT *b, BAT *bn, map_T *m){
 		/* hash-lookup of 'tcur' in map */
     		unsigned int c = HASH_@1(tcur);
 		c = mix_int(c) & mask;
-		for(zz = hash[c]; zz > 0; zz = e->link) {
+		chain_@4 {
 			r = BUNptr(map,zz);
 			e = (mapentry_t*) BUNhloc(map,r);
-			if (@3_EQ(BUN@2(map,r), tcur, @1)) {
+			if (tst_grp_@4(@3_EQ, BUN@2(map,r), @1)) {
 				if (m == NULL) e->cnt++; 
 				goto found;
 			} 
@@ -712,11 +740,32 @@ int tailtype(BAT *b, int str_trick) {
 	return tpe;
 }
 
-@:group(chr,tloc,simple)@
-@:group(sht,tloc,simple)@
-@:group(int,tloc,simple)@
-@:group(lng,tloc,simple)@
-@:group(any,tail,atom)@
+/* Generate both 'normal' CTgroup and clustered CTgroup */
+@= wrappedgroup
+@:group(chr,tloc,simple,@1)@
+@:group(sht,tloc,simple,@1)@
+@:group(int,tloc,simple,@1)@
+@:group(lng,tloc,simple,@1)@
+@:group(any,tail,atom,@1)@
+@c
+
+@:wrappedgroup(unclustered)@
+@:wrappedgroup(clustered)@
+
+@= returnvalue
+        @1 =
+@c
+
+@= choosegroup
+	/* Choose appropriate @4 CTgroup implementation */
+	switch(@1) {
+	case TYPE_chr: @?@5:returnvalue(@5)@ CTgroup_chr_@4(b,@2,@3); break;
+	case TYPE_sht: @?@5:returnvalue(@5)@ CTgroup_sht_@4(b,@2,@3); break;
+	case TYPE_int: @?@5:returnvalue(@5)@ CTgroup_int_@4(b,@2,@3); break;
+	case TYPE_lng: @?@5:returnvalue(@5)@ CTgroup_lng_@4(b,@2,@3); break;
+	default:       @?@5:returnvalue(@5)@ CTgroup_any_@4(b,@2,@3);
+	}
+@c
 
 int
 CTgroup(
@@ -725,13 +774,13 @@ CTgroup(
 )
 {		
 	BAT *histo, *bn = BATnew(b->htype, TYPE_oid, BATcount(b));
-	switch(tailtype(b, TRUE)) {
-	case TYPE_chr: histo = CTgroup_chr(b,bn,NULL); break;
-	case TYPE_sht: histo = CTgroup_sht(b,bn,NULL); break;
-	case TYPE_int: histo = CTgroup_int(b,bn,NULL); break;
-	case TYPE_lng: histo = CTgroup_lng(b,bn,NULL); break;
-	default:       histo = CTgroup_any(b,bn,NULL);
+	/* Poor man's clustered test: sorted & !keyed => clustered  */
+	if ( (b->tsorted) && !(b->tkey) ) {
+	  @:choosegroup(tailtype(b,TRUE),bn,NULL,clustered,histo)@
+	} else {
+	  @:choosegroup(tailtype(b,TRUE),bn,NULL,unclustered,histo)@
 	}
+
 	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
 	CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
@@ -810,13 +859,12 @@ CTmultigroup(
 		b = BATdescriptor(bid);
 		if (tt != ATOMstorage(TYPE_oid)) {
 			ct = BATnew(b->htype, TYPE_oid, BATcount(b));
-			switch(tt) {
-			case TYPE_chr:	CTgroup_chr(b,ct,&m); break;
-			case TYPE_sht:	CTgroup_sht(b,ct,&m); break;
-			case TYPE_int:	CTgroup_int(b,ct,&m); break;
-			case TYPE_lng:	CTgroup_lng(b,ct,&m); break;
-			default:	CTgroup_any(b,ct,&m);
-			} 
+			/* Poor man's clustered test: sorted & !keyed => clustered  */
+			if ( (b->tsorted) && !(b->tkey) ) {
+			  @:choosegroup(tt,ct,&m,clustered)@
+			} else {
+			  @:choosegroup(tt,ct,&m,unclustered)@
+			}
 		} else {
 			if (t < TYPE_int && t > TYPE_oid) {
 				ct = VIEWcreate_(b, TRUE);
@@ -841,13 +889,14 @@ CTmultigroup(
 }
 
 @= derive
-BAT* CTderive_@1_@2(BAT* ct, BAT *b, BAT *bn, map_T *m) { 
+BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) { 
 	oid *dst = (oid*) BUNfirst(bn);
 	int zz, xx, yy = BUNsize(ct), *hash, mask, mapsize;
 	BUN p, q, r, cp = BUNfirst(ct) - yy;
 	mapentry_t entry, *e;
 	BAT *map;
 	declare_@4
+	declare_@5
    
 	map_init(map,hash,mask,entry,mapsize); 
 
@@ -864,10 +913,11 @@ BAT* CTderive_@1_@2(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 		/* hash-lookup of [hcur,tcur] in map */
 		c = (((unsigned int) hcur) ^ HASH_@2(tcur));
 		c = mix_int(c) & mask;
-		for(zz = hash[c]; zz > 0; zz = e->link) {
+		chain_@5 {
 			r = BUNptr(map,zz);
 			e = (mapentry_t*) BUNhloc(map,r);
-			if (e->hcur == hcur && @4_EQ(BUN@3(map,r), tcur, @2)) {
+			/* if (e->hcur == hcur && @4_EQ(BUN@3(map,r), tcur, @2)) { */
+			if (tst_derive_@5(@4_EQ, BUN@3(map,r), @2)) {
 				if (m == NULL) e->cnt++; 
 				goto found;
 			} 
@@ -894,16 +944,33 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 }
 
 @c
-@:derive(sync,chr,tloc,simple)@
-@:derive(sync,sht,tloc,simple)@
-@:derive(sync,int,tloc,simple)@
-@:derive(sync,lng,tloc,simple)@
-@:derive(sync,any,tail,atom)@
-@:derive(hash,chr,tloc,simple)@
-@:derive(hash,sht,tloc,simple)@
-@:derive(hash,int,tloc,simple)@
-@:derive(hash,lng,tloc,simple)@
-@:derive(hash,any,tail,atom)@
+
+/* Generate both 'normal' CTderive and clustered CTderive */
+@= wrappedderive
+@:derive(sync,chr,tloc,simple,@1)@
+@:derive(sync,sht,tloc,simple,@1)@
+@:derive(sync,int,tloc,simple,@1)@
+@:derive(sync,lng,tloc,simple,@1)@
+@:derive(sync,any,tail,atom,@1)@
+@:derive(hash,chr,tloc,simple,@1)@
+@:derive(hash,sht,tloc,simple,@1)@
+@:derive(hash,int,tloc,simple,@1)@
+@:derive(hash,lng,tloc,simple,@1)@
+@:derive(hash,any,tail,atom,@1)@
+@c
+@:wrappedderive(unclustered)@
+@:wrappedderive(clustered)@
+
+@= choosederive
+	/* Choose appropriate (@1 && @2) CTderive implementation */
+	switch(tt) {
+	case TYPE_chr: histo = CTderive_@1_chr_@2(ct,b,bn,m); break;
+	case TYPE_sht: histo = CTderive_@1_sht_@2(ct,b,bn,m); break;
+	case TYPE_int: histo = CTderive_@1_int_@2(ct,b,bn,m); break;
+	case TYPE_lng: histo = CTderive_@1_lng_@2(ct,b,bn,m); break;
+	default:       histo = CTderive_@1_any_@2(ct,b,bn,m);
+	}
+@c
 
 int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 	BAT *histo, *bn = *retval;
@@ -919,21 +986,17 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 
 	/* CTderive with correct lookup method (hash,synced) and type */
 	if (synced) {
-		switch(tt) {
-		case TYPE_chr: histo = CTderive_sync_chr(ct,b,bn,m); break;
-		case TYPE_sht: histo = CTderive_sync_sht(ct,b,bn,m); break;
-		case TYPE_int: histo = CTderive_sync_int(ct,b,bn,m); break;
-		case TYPE_lng: histo = CTderive_sync_lng(ct,b,bn,m); break;
-		default:       histo = CTderive_sync_any(ct,b,bn,m);
-		}
+	   if ((ct->tsorted) && !(ct->tkey)) {
+		@:choosederive(sync,clustered)@
+	   } else {
+		@:choosederive(sync,unclustered)@
+           }
 	} else {
-		switch(tt) {
-		case TYPE_chr: histo = CTderive_hash_chr(ct,b,bn,m); break;
-		case TYPE_sht: histo = CTderive_hash_sht(ct,b,bn,m); break;
-		case TYPE_int: histo = CTderive_hash_int(ct,b,bn,m); break;
-		case TYPE_lng: histo = CTderive_hash_lng(ct,b,bn,m); break;
-		default:       histo = CTderive_hash_any(ct,b,bn,m);
-		}
+	   if ((ct->tsorted) && !(ct->tkey)) {
+		@:choosederive(hash,clustered)@
+	   } else {
+		@:choosederive(hash,unclustered)@
+           }
 	}
 
 	/* postprocess the result bat 'bn' */
