@@ -414,9 +414,9 @@ sql_create_sessions(mvc *m, sql_schema *s)
 	sql_table *t;
 
 	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1);
-	mvc_create_column_(m, t, "name", "clob", 0);
-	mvc_create_column_(m, t, "value", "clob", 0);
-	mvc_create_column_(m, t, "type", "clob", 0);
+	mvc_create_column_(m, t, "name", "varchar", 1024);
+	mvc_create_column_(m, t, "value", "varchar", 2048);
+	mvc_create_column_(m, t, "type", "varchar", 1024);
 	mvc_create_column_(m, t, "access", "int", 9);
 	/* access 0     read/write
 	   1    via sql_privileges (role/user)  
@@ -426,8 +426,8 @@ sql_create_sessions(mvc *m, sql_schema *s)
 	 */
 
 	t = mvc_create_table(m, s, "env", 1, 1, 0, -1);
-	mvc_create_column_(m, t, "name", "clob", 0);
-	mvc_create_column_(m, t, "value", "clob", 0);
+	mvc_create_column_(m, t, "name", "varchar", 1024);
+	mvc_create_column_(m, t, "value", "varchar", 2048);
 
 	BATloop(GDKenv, p, q) {
 		char *name = BUNhead(GDKenv, p);
@@ -450,12 +450,12 @@ sql_create_history(mvc *m, sql_schema *s)
 	sql_table *t = mvc_create_table(m, s, "history", 1, 1, 0, -1);
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
-	mvc_create_column_(m, t, "query", "clob", 0);
+	mvc_create_column_(m, t, "query", "varchar", 2048);
 	mvc_create_column_(m, t, "parse", "int", 9);
 	mvc_create_column_(m, t, "optimize", "int", 9);
 	mvc_create_column_(m, t, "exec", "int", 9);
 	mvc_create_column_(m, t, "total", "int", 9);
-	mvc_create_column_(m, t, "user", "clob", 0);
+	mvc_create_column_(m, t, "user", "varchar", 512);
 
 	return 0;
 }

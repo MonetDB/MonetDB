@@ -1517,30 +1517,30 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN);
 		t = bootstrap_create_table(tr, s, "modules", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "clob", 0);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 
 		t = bootstrap_create_table(tr, s, "schemas", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "clob", 0);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "authorization", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "ptables", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "clob", 0);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "schema_id", "int", 9);
-		bootstrap_create_column(tr, t, "query", "clob", 0);
+		bootstrap_create_column(tr, t, "query", "varchar", 2048);
 		bootstrap_create_column(tr, t, "istable", "boolean", 0);
 		bootstrap_create_column(tr, t, "system", "boolean", 0);
 		bootstrap_create_column(tr, t, "clear", "boolean", 0);
 
 		t = bootstrap_create_table(tr, s, "pcolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "clob", 0);
-		bootstrap_create_column(tr, t, "type", "clob", 0);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "type", "varchar", 1024);
 		bootstrap_create_column(tr, t, "type_digits", "int", 9);
 		bootstrap_create_column(tr, t, "type_scale", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
-		bootstrap_create_column(tr, t, "default", "clob", 0);
+		bootstrap_create_column(tr, t, "default", "varchar", 2048);
 		bootstrap_create_column(tr, t, "null", "boolean", 0);
 		bootstrap_create_column(tr, t, "number", "int", 9);
 
@@ -1548,25 +1548,25 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
-		bootstrap_create_column(tr, t, "name", "clob", 0);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "rkey", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "idxs", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
-		bootstrap_create_column(tr, t, "name", "clob", 0);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 
 		t = bootstrap_create_table(tr, s, "keycolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "column", "clob", 0);
+		bootstrap_create_column(tr, t, "column", "varchar", 1024);
 		bootstrap_create_column(tr, t, "trunc", "int", 9);
 		bootstrap_create_column(tr, t, "nr", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "types", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "systemname", "clob", 0);
-		bootstrap_create_column(tr, t, "sqlname", "clob", 0);
+		bootstrap_create_column(tr, t, "systemname", "varchar", 256);
+		bootstrap_create_column(tr, t, "sqlname", "varchar", 256);
 		bootstrap_create_column(tr, t, "digits", "int", 9);
 		bootstrap_create_column(tr, t, "scale", "int", 9);
 		bootstrap_create_column(tr, t, "radix", "int", 9);

@@ -199,29 +199,29 @@ mvc_init(int debug, backend_stack stk)
 
 		t = mvc_create_table(m, s, "ttables", 1, 1, 1, -1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "clob", 0);
+		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 9);
-		mvc_create_column_(m, t, "query", "clob", 0);
+		mvc_create_column_(m, t, "query", "varchar", 2048);
 		mvc_create_column_(m, t, "istable", "boolean", 0);
 		mvc_create_column_(m, t, "system", "boolean", 0);
 		mvc_create_column_(m, t, "clear", "boolean", 0);
 
 		t = mvc_create_table(m, s, "tcolumns", 1, 1, 1, -1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "clob", 0);
-		mvc_create_column_(m, t, "type", "clob", 0);
+		mvc_create_column_(m, t, "name", "varchar", 1024);
+		mvc_create_column_(m, t, "type", "varchar", 1024);
 		mvc_create_column_(m, t, "type_digits", "int", 9);
 		mvc_create_column_(m, t, "type_scale", "int", 9);
 		mvc_create_column_(m, t, "table_id", "int", 9);
-		mvc_create_column_(m, t, "default", "clob", 0);
+		mvc_create_column_(m, t, "default", "varchar", 2048);
 		mvc_create_column_(m, t, "null", "boolean", 0);
 		mvc_create_column_(m, t, "number", "int", 9);
 
 		t = mvc_create_view(m, s, "tables", "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"ptables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"sys\".\"ttables\" AS t) AS tables;", 1, 1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "clob", 0);
+		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 9);
-		mvc_create_column_(m, t, "query", "clob", 0);
+		mvc_create_column_(m, t, "query", "varchar", 2048);
 		mvc_create_column_(m, t, "istable", "boolean", 0);
 		mvc_create_column_(m, t, "system", "boolean", 0);
 		mvc_create_column_(m, t, "clear", "boolean", 0);
@@ -229,12 +229,12 @@ mvc_init(int debug, backend_stack stk)
 
 		t = mvc_create_view(m, s, "columns", "SELECT * FROM (SELECT p.* FROM \"sys\".\"pcolumns\" AS p UNION ALL SELECT t.* FROM \"sys\".\"tcolumns\" AS t) AS columns;", 1, 1);
 		mvc_create_column_(m, t, "id", "int", 9);
-		mvc_create_column_(m, t, "name", "clob", 0);
-		mvc_create_column_(m, t, "type", "clob", 0);
+		mvc_create_column_(m, t, "name", "varchar", 1024);
+		mvc_create_column_(m, t, "type", "varchar", 1024);
 		mvc_create_column_(m, t, "type_digits", "int", 9);
 		mvc_create_column_(m, t, "type_scale", "int", 9);
 		mvc_create_column_(m, t, "table_id", "int", 9);
-		mvc_create_column_(m, t, "default", "clob", 0);
+		mvc_create_column_(m, t, "default", "varchar", 2048);
 		mvc_create_column_(m, t, "null", "boolean", 0);
 		mvc_create_column_(m, t, "number", "int", 9);
 
