@@ -161,10 +161,6 @@ MALrestart:
 MALevalExit:
 	/* garbage collect and return */
 	if( glb == 0) garbageCollector(mb,stk);
-	/* pass any left-over exception */
-	if( stk->exception >= 0){
-		ret= raiseException(mb,stk->pc,"MALexception", ret);
-	}
 	return ret;
 }
 @+ Safeguarding
@@ -520,6 +516,7 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 		if( env == NULL) 
 		fprintf(cntxt->fdout,"CATCH ERROR %s\n",ret);
 */
+		ret= raiseException(mb,stk->pc,"MALexception", ret);
 		goto MALevalExit;
 	}
 	msg++;

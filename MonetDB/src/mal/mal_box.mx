@@ -1,6 +1,6 @@
-@t MAL object space management
+@t MAL object management
 @a M.L. Kersten
-@* MAL object space management
+@* MAL object management
 The key objects managed by Monet are the persistent BATs, which
 call for an efficient scheme to make them accessible for manipulation
 in the MAL procedures taking into account a possibly hostile
