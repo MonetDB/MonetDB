@@ -1298,7 +1298,7 @@ private void keepProp(String name, String colname){
 // type information. It should be ignored while reading the tuples.
 private void headerDecoder(){
 	String line= cache.rows[cache.reader];
-	if( trace) System.out.print("header:"+line);
+	if( trace) System.out.println("header:"+line);
 	int etag= line.lastIndexOf("#");
 	if( etag==0 || etag== line.length()) return;
 	String tag= line.substring(etag);
@@ -1323,7 +1323,7 @@ private void headerDecoder(){
 			if(columns[i]==null) columns[i]= new Column();
 			String s= columns[i].columntype= fetchField(i);
 			if(i==cnt-1) {
-				int k= s.indexOf("# name");
+				int k= s.indexOf("# type");
 				columns[i].columntype= s.substring(0,k);
 			}
 		}
@@ -1414,8 +1414,9 @@ public String unquote(String msg){
 	if( f<p.length) bracket = p[f];
 	if( bracket == '"' || bracket== '\''){
 		l= msg.lastIndexOf(bracket);
-		if( l<0){
-			if(trace) System.out.println("closing "+bracket+" not found:"+msg);
+		if( l<=f){
+			if(trace) 
+			System.out.println("closing '"+bracket+"' not found:"+msg);
 			return msg;
 		}
 		return msg.substring(f+1,l);
@@ -1427,6 +1428,9 @@ public String unquote(String msg){
 
 public boolean gotError(){
 	return error!=MOK;
+}
+public String getErrorMsg(){
+	return errortext;
 }
 public String getExplanation(){
     return "Mapi:"+dbname+"\nERROR:"+errortext+"\nERRNR:"+error+
