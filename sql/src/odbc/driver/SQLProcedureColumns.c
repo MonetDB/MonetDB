@@ -106,7 +106,7 @@ SQLProcedureColumnsW(SQLHSTMT hStmt,
 		     SQLWCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLRETURN rc;
+	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL, *column = NULL;
 
 #ifdef ODBCDEBUG

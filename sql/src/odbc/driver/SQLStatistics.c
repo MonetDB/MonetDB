@@ -188,7 +188,7 @@ SQLStatisticsW(SQLHSTMT hStmt,
 	       SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLRETURN rc;
+	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG

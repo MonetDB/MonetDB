@@ -139,7 +139,7 @@ SQLPrimaryKeysW(SQLHSTMT hStmt,
 		SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLRETURN rc;
+	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG

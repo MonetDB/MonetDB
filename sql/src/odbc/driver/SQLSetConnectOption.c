@@ -78,7 +78,7 @@ SQLRETURN SQL_API
 SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-	SQLPOINTER ptr;
+	SQLPOINTER ptr = (SQLPOINTER) vParam;
 	SQLULEN p;
 	SQLRETURN rc;
 

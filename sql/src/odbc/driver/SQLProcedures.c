@@ -97,7 +97,7 @@ SQLProceduresW(SQLHSTMT hStmt,
 	       SQLWCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLRETURN rc;
+	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL;
 
 #ifdef ODBCDEBUG

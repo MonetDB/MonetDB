@@ -232,7 +232,7 @@ SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		   SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLRETURN rc;
+	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG

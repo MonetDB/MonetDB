@@ -196,7 +196,7 @@ SQLForeignKeysW(SQLHSTMT hStmt,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLCHAR *PKcatalog = NULL, *PKschema = NULL, *PKtable = NULL;
 	SQLCHAR *FKcatalog = NULL, *FKschema = NULL, *FKtable = NULL;
-	SQLRETURN rc;
+	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLForeignKeysW\n");

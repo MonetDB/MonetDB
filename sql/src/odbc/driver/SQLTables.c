@@ -227,7 +227,7 @@ SQLTablesW(SQLHSTMT hStmt,
 	   SQLWCHAR *szTableType, SQLSMALLINT nTableTypeLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLRETURN rc;
+	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *type = NULL;
 
 #ifdef ODBCDEBUG
