@@ -291,7 +291,7 @@ void initDB(char *db) {
 The routine getarguments is shared by most tools.
 It locates the .MonetDB.conf file and initializes the dbfarm parameter.
 The location of the source scripts for the database are localized in the
-MONET-PREFIX directory, where all installation files are maintained.
+MONETDB-PREFIX directory, where all installation files are maintained.
 
 It subsequently analyses the calling parameters to determine the actual
 database name. To avoid errors, such as accidentally destroying the
@@ -309,9 +309,9 @@ void dbargs(int argc,char **argv) {
 	s = strrchr(prog,'\\'); if( s ){ prog = s+1;}
 
 	/* use the compiled-in prefix as a start */
-	strcpy(dist, MONET_PREFIX);
+	strcpy(dist, MONETDB_PREFIX);
         if(dist == 0) {
-                fprintf(stderr, "%s: MONET_PREFIX missing\n",prog);
+                fprintf(stderr, "%s: MONETDB_PREFIX missing\n",prog);
 		exit(0);
         }
 

@@ -1,4 +1,4 @@
-INCLUDES = $(MONET_INCS) ../mal
+INCLUDES = $(MONETDB_INCS) ../mal
 
 YFLAGS = -v -d
 

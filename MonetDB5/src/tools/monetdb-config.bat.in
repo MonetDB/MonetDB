@@ -5,8 +5,8 @@ REM	set prefix=%prefix:~0,-4%
 
 set pkg=@PACKAGE@
 set version=@VERSION@
-set source=@MONET_SOURCE@
-set build=@MONET_BUILD@
+set source=@MONET5_SOURCE@
+set build=@MONET5_BUILD@
 set prefix=@prefix@
 set exec_prefix=@exec_prefix@
 set bindir=@bindir@
@@ -54,7 +54,7 @@ if "%1" == "--modpath"		echo %modpath%		& goto shift
 
 :usage
 	echo.
-	echo Usage: monet-config [OPTION]
+	echo Usage: monetdb-config [OPTION]
 	echo.
 	echo Known values for OPTION are:
 	echo.

@@ -1,4 +1,4 @@
-INCLUDES = $(MONET_INCS)
+INCLUDES = $(MONETDB_INCS)
 
 MTSAFE
 
@@ -14,11 +14,11 @@ lib_mal = {
 
 	HEADERS = h 
 	SCRIPTS = mal
-	LIBS = $(MONET_LIBS) -lbat -lstream \
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
-doc_mal = {
+doc_ml = {
 	DIR = pkgdatadir/docs/mal
 	SOURCES = \
 	mal.mx mal_type.mx mal_instruction.mx mal_box.mx mal_scope.mx \

@@ -21,13 +21,13 @@
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-@f monet-config
+@f monetdb-config
 @sh
 #!@BASH@
 
 pkg=@PACKAGE@
-source=@MONET_SOURCE@
-build=@MONET_BUILD@
+source=@MONET5_SOURCE@
+build=@MONET5_BUILD@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 
@@ -48,7 +48,7 @@ pkgincludedir=${includedir}/${pkg}
 usage()
 {
     cat <<EOF
-Usage: monet-config [OPTION]
+Usage: monetdb-config [OPTION]
 
 Known values for OPTION are:
 
@@ -121,24 +121,16 @@ while test $# -gt 0; do
 
     --includes)
        	echo \
-		-I\${MONET_INCLUDEDIR} \
-		-I\${MONET_INCLUDEDIR}/common \
-		-I\${MONET_INCLUDEDIR}/gdk \
-	  	-I\${MONET_INCLUDEDIR}/mal \
-	  	-I\${MONET_INCLUDEDIR}/kernel \
-	  	-I\${MONET_INCLUDEDIR}/atoms \
-	  	-I\${MONET_INCLUDEDIR}/C 
+	  	-I\${MONET5_INCLUDEDIR}/mal \
+	  	-I\${MONET5_INCLUDEDIR}/kernel \
+	  	-I\${MONET5_INCLUDEDIR}/atoms 
        	;;
 
     --cflags)
        	echo \
-		-I$pkgincludedir \
-		-I$pkgincludedir/common \
-		-I$pkgincludedir/gdk \
 		-I$pkgincludedir/mal \
 		-I$pkgincludedir/kernel \
-		-I$pkgincludedir/atoms \
-		-I$pkgincludedir/C 
+		-I$pkgincludedir/atoms 
        	;;
 
     --libs)

@@ -202,8 +202,6 @@ as well as in user defined module implementations.
 #define mal_export extern
 #endif
 
-#define MONET_ADMIN	"admin"
-
 @+ Monet Calling Options
 The number of invocation arguments is kept to a minimum.
 See the MonetDB.conf file for additional system variable settings

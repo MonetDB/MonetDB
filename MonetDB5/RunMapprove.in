@@ -1,6 +1,6 @@
 #!/bin/sh
 
-builddir=@QMONET_BUILD@
+builddir=@QMONETDB_BUILD@
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 

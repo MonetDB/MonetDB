@@ -6,8 +6,8 @@ goto end
 
 :skip
 
-set builddir=@MONET_BUILD@
-set srcdir=@MONET_SOURCE@
+set builddir=@MONETDB_BUILD@
+set srcdir=@MONETDB_SOURCE@
 
 set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\calibrator\.libs;%builddir%\src\mapi\.libs
 

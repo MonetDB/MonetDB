@@ -22,7 +22,7 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 MTSAFE
-INCLUDES = $(MONET_INCS) -I../mal \
+INCLUDES = $(MONETDB_INCS) -I../mal \
 		$(PTHREAD_INCS) 
 
 bin_Mserver = {
@@ -35,10 +35,10 @@ bin_Mserver = {
 scripts_sh = {
 	EXT = ""
 	DIR = bindir
-	SOURCES = monet-config.mx.in 
+	SOURCES = monetdb-config.mx.in 
 }
 
 scripts_bat = {
 	DIR = bindir
-	SOURCES = monet-config.bat.in 
+	SOURCES = monetdb-config.bat.in 
 }
