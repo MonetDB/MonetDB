@@ -531,7 +531,7 @@ scanner_getc_s(struct scanner * lc)
 	return c;
 }
 
-inline int
+static inline int
 scanner_getc_bs(struct scanner * lc)
 {
 	bstream *b = lc->rs;
