@@ -1164,17 +1164,20 @@ void BBPunshare(bat parent)
 }
 
 int BBPunload(bat i) {
+	MT_Id pid = MT_getpid_();
 	BAT *b = NULL;
 	if (BBPcheck(i, "BBPunload") == 0) {
 		return -1;
 	}
 	if (i < 0) i = -i;
-	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunload"); 
+	if (pid != locked_by) 
+		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunload"); 
 	BBP_refs(i)--;
 	if (BBP_refs(i) <= 0 && !(BBP_status(i)&BBPWAITING) && (b=BBP_cache(i)) != NULL) {
 		BBP_status_on(i, BBPUNLOADING, "BBPunload");
 	}
-	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunload"); 
+	if (pid != locked_by) 
+		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunload"); 
 	if (b) {
 		BBPfree(b);
 		return TRUE;
@@ -1189,16 +1192,19 @@ the BAT handle. This routine can be used for implementing a
 dynamic caching scheme for transient BATs on top of the BBP 
 caching mechanism.
 BAT* BBPresurrect(bat i, int stamp){
+	MT_Id pid = MT_getpid_();
 	BAT *b = NULL;
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPresurrect")) {
-		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPresurrect"); 
+		if (pid != locked_by)
+		    MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPresurrect"); 
  		if (!(BBP_status(i)&BBPWAITING)) {
 			b = BBP_cache(i);
 			if (b && b->batStamp != stamp) b = NULL;
 			else BBP_refs(i)++;
 		}
-		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPresurrect"); 
+		if (pid != locked_by)
+		    MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPresurrect"); 
 	}
 	return b;
 }
@@ -1206,9 +1212,11 @@ BAT* BBPresurrect(bat i, int stamp){
 BBPreclaim is a user-exported function; the common way to destroy a BAT the hard way. 
 @c
 int BBPreclaim(BAT* b) {
+	MT_Id pid = MT_getpid_();
 	int debug, i = ABS(b->batCacheid);
 
-	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
+	if (pid != locked_by)
+		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
 	if (BBP_lrefs(i) > 0)
 		printf("BBPreclaim(%d) lrefs > 0\n", i);
 	if (BBP_refs(b->batCacheid) == 1) {
@@ -1221,7 +1229,8 @@ int BBPreclaim(BAT* b) {
 	BBP_status_on(i, BBPUNLOADING, "BBPreclaim");
 	BBP_plevel(i) = 0;
 	BBP_lrefs(i) = 0;
-	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
+	if (pid != locked_by)
+		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
 
 	if (debug) THRprintf(GDKerr, 
 	    "BBPreclaim: bat(%d) view=%d lrefs=%d plevel=%d ref=%d stat=%d\n", 
@@ -1235,19 +1244,23 @@ int BBPreclaim(BAT* b) {
 BBPdescriptor checks whether BAT needs loading and does so if necessary.
 @c
 BAT *BBPdescriptor(int i) {
+	MT_Id pid = MT_getpid_();
 	if (BBPcheck(i, "BBPdescriptor")) {
 		BAT *b = BBP_cache(i);
 
 		if (b == NULL) {
 			int j = ABS(i);
-			MT_set_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
+			if (pid != locked_by)
+				MT_set_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 			if (BBP_status(j) & BBPLOADING) { /* wait for bat to be loaded by other thread */
-				MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
+				if (pid != locked_by)
+					MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 				BBPspin(j, "BATdescriptor", BBPWAITING);
 				b = BBP_cache(i);
 			} else {
 				BBP_status_on(j, BBPLOADING, "BBPdescriptor");
-				MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
+				if (pid != locked_by)
+					MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 
 				b = BATload_intern(i); 
 				BBP_status_off(j, BBPLOADING, "BBPdescriptor");
@@ -1394,12 +1407,14 @@ that want to save or unload this BAT must spin lock on the BBP_status field.
 extern void DESCclean(BAT*);
 
 int BBPsave(BAT* b) {
+	MT_Id pid = MT_getpid_();
 	int ret = 0, bid = ABS(b->batCacheid);
 
 	IODEBUG THRprintf(GDKerr, "save %s\n", b->batId); 
 
 	if ((BBP_lrefs(bid)) && BATdirty(b)) {
-		MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
+		if (pid != locked_by)
+			MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 		if ((BBP_status(bid)&BBPSAVING) == 0) {
 			int flags = BBPSAVING;
  			if (DELTAdirty(b)) {
@@ -1407,7 +1422,8 @@ int BBPsave(BAT* b) {
 				BBPdirty(1);
 			}
 			BBP_status_on(bid, flags, "BBPsave");
-			MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
+			if (pid != locked_by)
+				MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 
 			/* do the time-consuming work unlocked */
 			if ( BBP_status(bid) & BBPEXISTING )
@@ -1420,7 +1436,8 @@ int BBPsave(BAT* b) {
 			}
 			BBP_status_off(bid, BBPSAVING, "BBPsave");
 		} else {
-			MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
+			if (pid != locked_by)
+				MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BBPsave"); 
 		}
 	}
 	return ret;
@@ -1728,22 +1745,27 @@ void BBPtrim(lng memtarget, lng vmtarget) {
 }
 
 void BBPhot(int i) {
+	MT_Id pid = MT_getpid_();
 	BAT *b;
 	if (i < 0) i = -i;
         if (BBPcheck(i, "BBPhot")) {
-		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
+		if (pid != locked_by)
+			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
                 b = BBP_cache(i);
                 if (b) b->batLastused = 0x7fffffff & (GDKcsec() + 30000);
-		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
+		if (pid != locked_by)
+			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPhot");
         }
 }
 
 void BBPcold(int i) {
+	MT_Id pid = MT_getpid_();
 	BAT *b;
 	if (i < 0) i = -i;
         if (BBPcheck(i, "BBPcold")) {
 		MT_set_lock(GDKtrimLock, "BBPcold");
-		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcold");
+		if (pid != locked_by)
+			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcold");
                 b = BBP_cache(i);
                 if (b) {
 			/* make very cold and insert on top of trim list */
@@ -1755,7 +1777,8 @@ void BBPcold(int i) {
 				bbptrimfirst = bbptrimmax;
 			}
 		}
-		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcold");
+		if (pid != locked_by)
+			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcold");
 		MT_unset_lock(GDKtrimLock, "BBPcold");
         }
 }
