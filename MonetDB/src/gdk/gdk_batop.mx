@@ -1488,7 +1488,7 @@ bunins_failed:
 #endif
 
 @:sort(1,,,_rev,>)@
-@:sort(GDK_SORTED,_REV,_rev,,<)@
+@:sort(GDK_SORTED_REV,_REV,_rev,,<)@
 
 @= sort_tpe
 static int chk_order@3_@1(@1*__r col) {
