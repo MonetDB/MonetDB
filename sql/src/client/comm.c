@@ -25,13 +25,26 @@
 
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#ifdef HAVE_NETDB_H
 #include <netinet/in.h>
 #include <netdb.h>
+#endif
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
-#include <sys/time.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 #include <unistd.h>
 #include <stream.h>
 
