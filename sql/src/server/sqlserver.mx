@@ -12,10 +12,6 @@
 	.COMMAND socket_close( int s ) = socket_close_wrap;
 		"close a socket"
 
-	.COMMAND stream_read( stream ) : str = sqlserver_read;
-		"read a string of commands"
-
-
     	.ATOM context = ptr;
     	.END;
 
@@ -333,26 +329,6 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 
 int socket_close_wrap( int *s ){
 	close(*s);
-	return GDK_SUCCEED;
-}
-
-#define CHUNK (64*1024)
-
-int sqlserver_read( str *res, stream *S ){
-	stream *s = *(stream**)S;
-	int len = 0;
-	int size = CHUNK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
-
-	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
-		size += CHUNK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - CHUNK - 1;
-		*start = '\0';
-	}
-	start += len;
-	*start = '\0';
-	*res = buf;
 	return GDK_SUCCEED;
 }
 
