@@ -576,6 +576,7 @@ BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 			temp_destroy(c->bat.ibid);
 			c->bat.ibid = 0;
 			i = b;
+			i->batDirty |= 2;
 		}
 		return i;
 	} else {
@@ -1463,7 +1464,7 @@ static sql_idx *idx_dup(sql_trans *tr, int flag, sql_idx *i, sql_table *t)
 static sql_column *column_dup(sql_trans *tr, int flag, sql_column * oc, sql_table *t)
 {
 	sql_column *c = NEW(sql_column);
-	(void)tr;
+
 	base_init( &c->base, oc->base.id, tr_flag(&oc->base, flag), oc->base.name);
 	c->type = sql_dup_subtype(oc->type);
 	c->def = NULL;
@@ -1471,10 +1472,22 @@ static sql_column *column_dup(sql_trans *tr, int flag, sql_column * oc, sql_tabl
 		c->def = _strdup(oc->def);
 	c->null = oc->null;
 	c->colnr = oc->colnr;
-	c->bat.bid = oc->bat.bid;
 	c->bat.ibid = oc->bat.ibid;
-	if (oc->bat.ibid)
-		c->bat.ibid = temp_copy(c->bat.ibid, 0);
+
+	if (oc->bat.ibid) {
+		if (c->base.flag == TR_NEW) {
+			c->bat.ibid = temp_copy(c->bat.ibid, 0);
+		} else { 
+			/* The column flag == TR_OLD, ie recusive transaction.
+			   We should make sure we don't have ibids 
+			   within recursive transaction trees
+			*/
+			BAT *b = bind_bat(tr->parent, oc, UPD);
+			bat_destroy(b);
+			c->bat.ibid = 0;
+		}
+	}
+	c->bat.bid = oc->bat.bid;
 	c->bat.ubid = oc->bat.ubid;
 
 	c->t = t;
@@ -1587,7 +1600,6 @@ static sql_trans *trans_dup(backend_stack stk, sql_trans *ot, char *newname ){
 	t->stime = timestamp();
 	t->level = ot->level;
 	t->parent = ot;
-	t->bm = bm_dup(ot->bm);
 	t->stk = stk;
 
 	cs_init( &t->modules, (fdestroy)&module_destroy );
@@ -1607,6 +1619,8 @@ static sql_trans *trans_dup(backend_stack stk, sql_trans *ot, char *newname ){
 	if (ot->schemas.set) for (n = ot->schemas.set->h; n; n = n->next) {
 		cs_add( &t->schemas, schema_dup(t, TR_OLD, n->data, t), TR_OLD);
 	}
+	/* needed last because the ot->bm may change (ibid->bid conversions)*/
+	t->bm = bm_dup(ot->bm);
 	return t;
 }
 

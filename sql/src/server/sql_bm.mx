@@ -133,6 +133,7 @@ BAT *bat_new(int ht, int tt, size_t size, char *func)
 
 	if (bm_debug)
 		printf("bat_new(%s) %d (%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid));
+	nb->batDirty |= 2;
 	return nb;
 }
 
@@ -536,8 +537,7 @@ static void _bm_new_bat(bm *bm, oid lbid, oid bid )
 
 void bm_new_bat(bm *bm, oid lbid, BAT *b )
 {
-	if (b->batRestricted)
-		BATsetaccess(b, BAT_WRITE);
+	assert(!b->batRestricted);
 	_bm_new_bat(bm, lbid, (oid)b->batCacheid);
 }
 
