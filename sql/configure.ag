@@ -16,6 +16,9 @@ AM_MONET_TOOLS()
 AM_MONET_OPTIONS()
 AM_MONET_LIBS()
 AM_MONET_CLIENT()
+if test "x$have_monet" != xyes; then
+	AC_MSG_ERROR(Monet is not found.)
+fi
 
 dnl libodbc
 have_odbc=auto
@@ -53,6 +56,7 @@ AM_CONDITIONAL(HAVE_ODBC,test "x$have_odbc" = xyes)
 AC_SUBST(ODBC_LIBS)
 AC_SUBST(ODBC_INCS)
 
+dnl static or shared linking
 SHARED_LIBS=''
 [
 if [ "$enable_static" = "yes" ]; then
@@ -60,27 +64,13 @@ if [ "$enable_static" = "yes" ]; then
 	SHARED_LIBS='$(smallTOC_SHARED_LIBS)'
 	case "$host_os" in
 	*)	CFLAGS="$CFLAGS -DsmallTOC -DSQLmodules";;
-#	aix*)	CFLAGS="$CFLAGS -DsmallTOC";;
-#	*)	SHARED_LIBS="$SHARED_LIBS "'$(largeTOC_SHARED_LIBS)';;
 	esac
 	if test "x$GCC" != xyes; then
 		case "$host_os" in
 		irix*)	SHARED_LIBS="$SHARED_LIBS -lm";;
-		linux*) CFLAGS="$CFLAGS -O0";;
-		esac
-	fi
-  else
-	if test "x$GCC" != xyes; then
-		case "$host_os" in
-		linux*) CFLAGS="$CFLAGS -O0";;
 		esac
 	fi
 fi
 ]
 AC_SUBST(SHARED_LIBS)
 AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
-
-dnl Checks for library functions.
-AC_SUBST(thread_safe_flag_spec)
-AC_SUBST(CFLAGS)
-AC_SUBST(CXXFLAGS)

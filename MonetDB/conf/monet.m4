@@ -142,6 +142,7 @@ aix*)
     ;;
 esac
 AC_SUBST(MEL_LIBS)
+AC_SUBST(thread_safe_flag_spec)
 ])
 
 AC_DEFUN(AM_MONET_TOOLS,[

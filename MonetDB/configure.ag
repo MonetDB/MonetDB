@@ -97,6 +97,7 @@ AC_TRY_COMPILE( [#include <time.h> ],
 [ AC_DEFINE(HAVE_CTIME_R3) ], [ ctime_r3=no ])
 AC_MSG_RESULT($ctime_r3)
 
+dnl static or shared linking
 SHARED_LIBS=''
 [
 if [ "$enable_static" = "yes" ]; then
@@ -113,11 +114,8 @@ if [ "$enable_static" = "yes" ]; then
 	fi
 fi
 ]
-
 AC_SUBST(SHARED_LIBS)
-AC_SUBST(thread_safe_flag_spec)
-AC_SUBST(CFLAGS)
-AC_SUBST(CXXFLAGS)
+AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
 dnl Mx and mel are used during make
 MEL="$MONET_BUILD/src/mel/mel"
