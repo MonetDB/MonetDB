@@ -40,7 +40,7 @@ var _MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print();
 # This gives <0,10>,<1,20> instead of <0,20>,<0,30>
 # The cause is that _MMjoin_8 has 0,1 instead of 1,2:
 
-print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").delete("void_tid").col_name("indexA"),
+print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delete("lastUsed").delete("curStamp").delete("void_cnt").delete("void_tid").sort().col_name("indexA"),
       valuesA.info().col_name("valuesA"),
       _MMoper_2.info().col_name("MMoper_2"),
       _MMuselect_3.info().col_name("MMuselect_3"),
