@@ -33,6 +33,8 @@
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
 
+#include "variable.h"
+
 /* ............... atomic values ............... */
 
 /**
@@ -47,6 +49,9 @@ enum PFalg_simple_type_t {
     , aat_int   = 0x02  /**< algebra simple atomic type integer */
     , aat_str   = 0x04  /**< algebra simple atomic type string  */
     , aat_node  = 0x08  /**< algebra simple atomic type node */
+    , aat_flt   = 0x10  /**< algebra simple atomic type float  */
+    , aat_dbl   = 0x20  /**< algebra simple atomic type double  */
+    , aat_bln   = 0x40  /**< algebra simple atomic type boolean  */
 };
 /** Simple atomic types in our algebra */
 typedef enum PFalg_simple_type_t PFalg_simple_type_t;
@@ -67,6 +72,9 @@ union PFalg_atom_val_t {
     int   int_;    /**< value for integer atoms (#aat_int) */
     char *str;     /**< value for string atoms (#aat_str)  */
     int   node;    /**< value for node atoms (#aat_node) */
+    float  flt;    /**< value for float atoms (#aat_flt) */
+    double dbl;    /**< value for double atoms (#aat_dbl) */
+    bool bln;      /**< value for boolean atoms (#aat_bln) */
 };
 /** algebra values */
 typedef union PFalg_atom_val_t PFalg_atom_val_t;
@@ -129,18 +137,63 @@ typedef struct PFalg_proj_t PFalg_proj_t;
 
 
 
-/* ............... algebra operators (operators on relations) ............... */
+/* ....... staircase join specs (semantic infos of scj operators) ....... */
+
+/** location steps */
+enum PFalg_axis_t {
+      aop_anc          /**< ancestor axis */
+    , aop_anc_s        /**< ancestor-or-self axis */
+    , aop_attr         /**< attribute axis */
+    , aop_chld         /**< child axis */
+    , aop_desc         /**< descendant axis */
+    , aop_desc_s       /**< descendant-or-self axis */
+    , aop_fol          /**< following axis */
+    , aop_fol_s        /**< following-sibling axis */
+    , aop_par          /**< parent axis */
+    , aop_prec         /**< preceding axis */
+    , aop_prec_s       /**< preceding-sibling axis */
+    , aop_self         /**< self axis */
+};
+/** location steps */
+typedef enum PFalg_axis_t PFalg_axis_t;
+
+/** kind tests */
+enum PFalg_test_t {
+      aop_name         /**< name test */
+    , aop_node         /**< node test */
+    , aop_comm         /**< comment nodes */
+    , aop_text         /**< text nodes */
+    , aop_pi           /**< processing instructions */
+    , aop_pi_tar       /**< processing instructions with target specified */
+    , aop_doc          /**< document node */
+    , aop_elem         /**< element nodes */
+    , aop_at_tst       /**< attribute test TODO: difference to axis? */
+};
+/** location steps */
+typedef enum PFalg_test_t PFalg_test_t;
+
+
+
+/* .............. algebra operators (operators on relations) .............. */
 
 /** algebra operator kinds */
 enum PFalg_op_kind_t {
       aop_lit_tbl       /**< literal table */
     , aop_disjunion     /**< union two relations with same schema */
     , aop_cross         /**< cross product (Cartesian product) */
+    , aop_eqjoin        /**< equi-join */
+    , aop_scjoin        /**< staircase join */
+    , aop_doc_tbl       /**< document relation */
+    , aop_select        /**< selection of rows where column value != 0 */
+    , aop_negate        /**< negation */
     , aop_project       /**< algebra projection and renaming operator */
     , aop_rownum        /**< consecutive number generation */
-
     , aop_serialize     /**< serialize algebra expression
                              (Placed on the very top of the tree.) */
+    , aop_add           /**< arithmetic plus operator */
+    , aop_subtract      /**< arithmetic minus operator */
+    , aop_multiply      /**< arithmetic times operator */
+    , aop_divide        /**< arithmetic divide operator */
 };
 /** algebra operator kinds */
 typedef enum PFalg_op_kind_t PFalg_op_kind_t;
@@ -169,6 +222,40 @@ union PFalg_op_sem_t {
                                        otherwise NULL */
     } rownum;
 
+    /* semantic content for equi-join operator */
+    struct {
+        PFalg_att_t     att1;     /**< name of attribute from "left" rel */
+        PFalg_att_t     att2;     /**< name of attribute from "right" rel */
+    } eqjoin;
+
+    /* semantic content for staircase join operator */
+    struct {
+        PFalg_axis_t    axis;     /**< represented axis */
+        PFalg_test_t    test;     /**< represented kind test */
+	union {
+	    char *target;         /**< target specified in pi's */
+	    PFqname_t  qname;     /**< for name tests */
+	} str;
+    } scjoin;
+
+    /* semantic content for selection operator */
+    struct {
+        PFalg_att_t     att;     /**< name of selected attribute */
+    } select;
+
+    /* semantic content for negation operator */
+    struct {
+        PFalg_att_t     att;     /**< name of negated attribute */
+	PFalg_att_t     res;     /**< column to store negated result */
+    } negate;
+
+    /* semantic content for arithmetic operators */
+    struct {
+	PFalg_att_t     att1;     /**< first operand */
+	PFalg_att_t     att2;     /**< second operand */
+	PFalg_att_t     res;      /**< attribute to hold the result */
+    } arithm;
+
 };
 /** semantic content in algebra operators */
 typedef union PFalg_op_sem_t PFalg_op_sem_t;
@@ -192,9 +279,32 @@ struct PFalg_op_t {
                                         full BAT name (there's one BAT for
                                         each attribute). */
     struct PFalg_op_t *child[PFALG_OP_MAXCHILD];
+    int                node_id;    /**< specifies the id of this operator
+				        node; required exclusively to
+					create dot output. */
 };
 /** algebra operator node */
 typedef struct PFalg_op_t PFalg_op_t;
+
+
+
+/* ............. environment entry specification .............. */
+
+/**
+ * Each entry in the (variable) environment consists of a reference to
+ * the variable (pointer to PFvar_t) and the algebra operator that
+ * represents the variable. The environment itself will be represented
+ * by an array.
+ */
+
+/** environment entry node */
+struct PFalg_env_t {
+    PFvar_t        *var;
+    PFalg_op_t     *op;
+};
+/** environment entry node */
+typedef struct PFalg_env_t PFalg_env_t;
+
 
 
 
@@ -208,6 +318,16 @@ PFalg_atom_t PFalg_lit_int (int value);
 
 /** construct literal string (atom) */
 PFalg_atom_t PFalg_lit_str (char *value);
+
+/** construct literal float (atom) */
+PFalg_atom_t PFalg_lit_flt (float value);
+
+/** construct literal double (atom) */
+PFalg_atom_t PFalg_lit_dbl (double value);
+
+/** construct literal boolean (atom) */
+PFalg_atom_t PFalg_lit_bln (bool value);
+
 
 /**
  * Construct a literal table tuple, a list of atoms.
@@ -264,6 +384,30 @@ PFalg_op_t *PFalg_lit_tbl_ (PFalg_attlist_t a, int count, PFalg_tuple_t *tpls);
  */
 PFalg_op_t * PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2);
 
+
+/**
+ * Equi-join between two relations.
+ * No duplicate attribute names allowed.
+ */
+PFalg_op_t * PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2,
+			   PFalg_att_t a1, PFalg_att_t a2);
+
+/**
+ * Staircase join between two relations. Each such join corresponds
+ * to the evaluation of an XPath location step. 'scj' is just a
+ * container for the semantic information on the kind test and location
+ * step represented by this join.
+ */
+PFalg_op_t * PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni,
+			   PFalg_op_t *scj);
+
+/**
+ * Creates a representation for the doc table if there is none
+ * already. Otherwise returns the already created one.
+ */
+PFalg_op_t * PFalg_doc_tbl (void);
+
+
 /**
  * Disjoint union of two relations.
  * Both argument must have the same schema.
@@ -302,7 +446,50 @@ PFalg_op_t *PFalg_project_ (PFalg_op_t *n, int count, PFalg_proj_t *p);
 PFalg_op_t * PFalg_rownum (PFalg_op_t *n, PFalg_att_t a,
                            PFalg_attlist_t s, PFalg_att_t p);
 
+
+/** Constructor for selection of not-0 column values. */
+PFalg_op_t * PFalg_select (PFalg_op_t *n, PFalg_att_t att);
+
+/**
+ * Constructor for negation of column values. Result is stored
+ * in newly created column.
+ */
+PFalg_op_t * PFalg_negate (PFalg_op_t *n, PFalg_att_t att,
+			   PFalg_att_t res);
+
+/** Constructor for arithmetic addition operators. */
+PFalg_op_t * PFalg_add (PFalg_op_t *n, PFalg_att_t att1,
+			PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for arithmetic subtraction operators. */
+PFalg_op_t * PFalg_subtract (PFalg_op_t *n, PFalg_att_t att1,
+			     PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for arithmetic multiplication operators. */
+PFalg_op_t * PFalg_multiply (PFalg_op_t *n, PFalg_att_t att1,
+			     PFalg_att_t att2, PFalg_att_t res);
+
+/** Constructor for arithmetic division operators. */
+PFalg_op_t * PFalg_divide (PFalg_op_t *n1, PFalg_op_t *n2,
+			   PFalg_att_t att1, PFalg_att_t att2,
+			   PFalg_att_t res);
+
+/**
+ * The four arithmetic operators have a lot in common. Do
+ * common stuff here.
+ */
+PFalg_op_t * PFalg_arith (PFalg_op_t * res);
+
+/** Cast nat to int. */
+PFalg_op_t * PFalg_cast (PFalg_op_t * o);
+
+
 PFalg_op_t * PFalg_serialize (PFalg_op_t *);
+
+
+/** Constructor for environment entry */
+PFalg_env_t PFalg_enventry (PFvar_t *var, PFalg_op_t *op);
+
 
 /**
  * Core to algebra tree compilation

@@ -309,7 +309,8 @@ fun_add_user (PFqname_t     qn,
                                         arity, 
                                         false, 
                                         0,
-                                        0)))
+                                        0,
+                                        NULL)))
         PFoops (OOPS_FUNCREDEF, "`%s'", PFqname_str (qn));
 }
 
@@ -324,6 +325,9 @@ fun_add_user (PFqname_t     qn,
  *                are not known yet, pass @c NULL.
  * @param ret_ty  Pointer to return type. If return type is not known
  *                yet, pass @c NULL.
+ * @param alg     In case of built-in functions, pointer to the
+ *                routine that creates the algebra representation
+ *                of the function. 
  * @return a pointer to the newly allocated struct
  */
 PFfun_t *
@@ -331,7 +335,10 @@ PFfun_new (PFqname_t qn,
            unsigned int arity,
            bool builtin,
            PFty_t *par_tys,
-           PFty_t *ret_ty)
+           PFty_t *ret_ty,
+           struct PFalg_op_t * (*alg) (struct PFalg_op_t *,
+                                       struct PFalg_op_t **,
+                                       struct PFalg_op_t **))
 {
     PFfun_t *n;
 
@@ -340,6 +347,7 @@ PFfun_new (PFqname_t qn,
     n->qname   = qn;
     n->arity   = arity;
     n->builtin = builtin;
+    n->alg = alg;
 
     /* copy array of formal parameter types (if present) */
     if (arity > 0 && par_tys) {

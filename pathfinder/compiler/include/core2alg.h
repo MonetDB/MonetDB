@@ -39,6 +39,38 @@
 /** Compile XQuery Core into Relational Algebra */
 PFalg_op_t *PFcore2alg (PFcnode_t *);
 
+
+/**
+ * Collect info on kind tests within an XPath expression.
+ */
+PFalg_op_t *PFnameTest (PFqname_t  qname);
+PFalg_op_t *PFnodeTest (void);
+PFalg_op_t *PFcommTest (void);
+PFalg_op_t *PFtextTest (void);
+PFalg_op_t *PFpiTest (void);
+PFalg_op_t *PFpitarTest (char *target);
+PFalg_op_t *PFdocTest (void);
+PFalg_op_t *PFelemTest (void);
+PFalg_op_t *PFattrTest (void);
+
+/**
+ * Collect info on location steps within an XPath expression.
+ */
+PFalg_op_t *PFanc (PFalg_op_t *n);
+PFalg_op_t *PFanc_self (PFalg_op_t *n);
+PFalg_op_t *PFattr (PFalg_op_t *n);
+PFalg_op_t *PFchild (PFalg_op_t *n);
+PFalg_op_t *PFdesc (PFalg_op_t *n);
+PFalg_op_t *PFdesc_self (PFalg_op_t *n);
+PFalg_op_t *PFfol (PFalg_op_t *n);
+PFalg_op_t *PFfol_sibl (PFalg_op_t *n);
+PFalg_op_t *PFpar (PFalg_op_t *n);
+PFalg_op_t *PFprec (PFalg_op_t *n);
+PFalg_op_t *PFprec_sibl (PFalg_op_t *n);
+PFalg_op_t *PFself (PFalg_op_t *n);
+
+
+
 #endif   /* CORE2ALG_H */
 
 /* vim:set shiftwidth=4 expandtab: */

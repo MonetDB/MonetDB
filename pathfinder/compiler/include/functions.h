@@ -63,6 +63,8 @@ struct PFfun_t {
   bool         builtin;    /**< is this a builtin (XQuery F&O) function? */
   PFty_t      *par_ty;     /**< builtin: array of formal parameter types */
   PFty_t       ret_ty;     /**< builtin: return type */
+  struct PFalg_op_t * (*alg) (struct PFalg_op_t *, struct PFalg_op_t **,
+                              struct PFalg_op_t **);
 };
 
 /**
@@ -71,7 +73,10 @@ struct PFfun_t {
 extern PFenv_t *PFfun_env;
 
 /** allocate a new struct to describe a (built-in or user) function */
-PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, PFty_t *, PFty_t *);
+PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, PFty_t *, PFty_t *,
+                    struct PFalg_op_t * (*alg) (struct PFalg_op_t *,
+                                                struct PFalg_op_t **,
+                                                struct PFalg_op_t **));
 
 #endif   /* FUNCTIONS_H */
 

@@ -66,6 +66,19 @@
 #include "algebra_mnemonic.h"
 
 
+/**
+ * Create (and remember) the schema (attribute names and data types)
+ * of the document table.
+ */
+static PFalg_schema_t doc_schm = { 
+    .count = 6,
+    .items = (struct PFalg_schm_item_t[]) {{.name = "pre", .type = aat_node},
+					   {.name = "size", .type = aat_int},
+					   {.name = "level", .type = aat_int},
+					   {.name = "kind", .type = aat_int},
+					   {.name = "prop", .type = aat_str},
+					   {.name = "frag", .type = aat_nat}}};
+
 /** construct literal integer (atom) */
 PFalg_atom_t
 PFalg_lit_nat (nat value)
@@ -86,6 +99,28 @@ PFalg_lit_str (char *value)
 {
     return (PFalg_atom_t) { .type = aat_str, .val = { .str = value } };
 }
+
+/** construct literal float (atom) */
+PFalg_atom_t
+PFalg_lit_flt (float value)
+{
+    return (PFalg_atom_t) { .type = aat_flt, .val = { .flt = value } };
+}
+
+/** construct literal double (atom) */
+PFalg_atom_t
+PFalg_lit_dbl (double value)
+{
+    return (PFalg_atom_t) { .type = aat_dbl, .val = { .dbl = value } };
+}
+
+/** construct literal boolean (atom) */
+PFalg_atom_t
+PFalg_lit_bln (bool value)
+{
+    return (PFalg_atom_t) { .type = aat_bln, .val = { .bln = value } };
+}
+
 
 /**
  * Construct a tuple for a literal table.
@@ -162,23 +197,57 @@ static bool
 tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 {
     int i;
+    bool mismatch = false;
 
     /* schemata are not equal if they have a different number of attributes */
     if (a.count != b.count)
         return false;
 
-    for (i = 0; i < a.count; i++)
-        if ((a.atoms[i].type != b.atoms[i].type)
-            /* if type is int, compare int member of union */
-            || (a.atoms[i].type == aat_int
-                && a.atoms[i].val.int_ != b.atoms[i].val.node)
-            /* if type is str, compare str member of union */
-            || (a.atoms[i].type == aat_str
-                && strcmp (a.atoms[i].val.str, b.atoms[i].val.str))
-            /* if type is node, compare node member of union */
-            || (a.atoms[i].type == aat_node
-                && a.atoms[i].val.node != b.atoms[i].val.node))
-            break;
+    for (i = 0; i < a.count; i++) {
+        if (a.atoms[i].type != b.atoms[i].type)
+	    break;
+
+	switch (a.atoms[i].type) {
+	    /* if type is nat, compare nat member of union */
+	    case aat_nat:
+		if (a.atoms[i].val.nat != b.atoms[i].val.nat)
+		    mismatch = true;
+		break;
+	    /* if type is int, compare int member of union */
+	    case aat_int:
+		if (a.atoms[i].val.int_ != b.atoms[i].val.int_)
+		    mismatch = true;
+		break;
+	    /* if type is str, compare str member of union */
+	    case aat_str:
+		if (strcmp(a.atoms[i].val.str, b.atoms[i].val.str))
+		    mismatch = true;
+		break;
+	    /* if type is node, compare node member of union */
+	    case aat_node:
+		if (a.atoms[i].val.node != b.atoms[i].val.node)
+		    mismatch = true;
+		break;
+	    /* if type is float, compare float member of union */
+	    case aat_flt:
+		if (a.atoms[i].val.flt != b.atoms[i].val.flt)
+		    mismatch = true;
+		break;
+	    /* if type is double, compare double member of union */
+	    case aat_dbl:
+		if (a.atoms[i].val.dbl != b.atoms[i].val.dbl)
+		    mismatch = true;
+		break;
+	    /* if type is double, compare double member of union */
+	    case aat_bln:
+		if ((a.atoms[i].val.bln && !b.atoms[i].val.bln) ||
+		    (!a.atoms[i].val.bln && b.atoms[i].val.bln))
+		    mismatch = true;
+		break;
+	}
+	if (mismatch)
+	    break;
+    }
 
     return (i == a.count);
 }
@@ -263,6 +332,8 @@ alg_op_leaf (PFalg_op_kind_t kind)
 
     for (i = 0; i < PFALG_OP_MAXCHILD; i++)
         ret->child[i] = NULL;
+
+    ret->node_id = 0;
 
     return ret;
 }
@@ -581,7 +652,7 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
     if (!old)
         old = PFarray (sizeof (PFalg_op_t *));
 
-    /* Search table in the array of existing project operators */
+    /* search product in the array of existing cross product operators */
     for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
 
         PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
@@ -592,7 +663,7 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
             continue;
 
         /*
-         * If we came until here, old and new table must be equal.
+         * If we come up to here, old and new table must be equal.
          * So we don't create a new one, but return the existing one.
          */
         return o;
@@ -624,6 +695,246 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
 
     /* remember this node for future calls */
     *((PFalg_op_t **) PFarray_add (old)) = ret;
+
+    return ret;
+}
+
+
+/**
+ * Equi-join between two operator nodes.
+ *
+ * Verify that a1 is an attribute of n1 and a2 is an attribute of n2.
+ * Determine whether we have already built an equi-join operator for
+ * this very join. If so, return the old  one. If not, build a new one.
+ * Verify that n1 and n2 do not have duplicate attribute name and create
+ * a new schema for the join result (schema(n1) + schema(n2)).
+ */
+PFalg_op_t * PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2,
+			   PFalg_att_t a1, PFalg_att_t a2)
+{
+    PFalg_op_t *ret;
+    int         i;
+    int         j;
+
+    /*
+     * Remember all nodes we built in here. If the same expression is
+     * requested twice, we just return a reference to the old one.
+     */
+    static PFarray_t *old = NULL;
+    unsigned int old_idx;
+    
+    assert (n1); assert (n2);
+
+    /* initialize variable on first call */
+    if (!old)
+        old = PFarray (sizeof (PFalg_op_t *));
+
+    /* search join in the array of existing equi-join operators */
+    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
+
+        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
+
+        /* see if the old node has the same argument */
+        if (!((o->child[0] == n1 && o->child[1] == n2)
+           || (o->child[1] == n1 && o->child[0] == n2)
+           || (o->sem.eqjoin.att1 == a1 && o->sem.eqjoin.att2 == a2)
+	   || (o->sem.eqjoin.att1 == a2 && o->sem.eqjoin.att2 == a1)))
+            continue;
+
+        /*
+         * If we come up to here, old and new join must be equal.
+         * So we don't create a new one, but return the existing one.
+         */
+        return o;
+    }
+
+
+    /* verify that a1 is attribute of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+	if (!strcmp (a1, n1->schema.items[i].name))
+	    break;
+
+    /* did we find attribute a1? */
+    if (i >= n1->schema.count)
+	PFoops (OOPS_FATAL,
+		"attribute `%s' referenced in join not found", a1);
+
+    /* ... and a2 is attribute of n2 */
+    for (i = 0; i < n2->schema.count; i++)
+	if (!strcmp (a2, n2->schema.items[i].name))
+	    break;
+
+    /* did we find attribute a2? */
+    if (i >= n2->schema.count)
+	PFoops (OOPS_FATAL,
+		"attribute `%s' referenced in join not found", a2);
+
+    /* build new equi-join node */
+    ret = alg_op_wire2 (aop_eqjoin, n1, n2);
+
+    /* insert semantic value (join attributes) into the result */
+    ret->sem.eqjoin.att1 = a1;
+    ret->sem.eqjoin.att2 = a2;
+
+    /* allocate memory for the result schema (schema(n1) + schema(n2)) */
+    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 'n1' */
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    /* copy schema from argument 'n2', check for duplicate attribute names */
+    for (j = 0; j < n2->schema.count; j++) {
+
+        ret->schema.items[n1->schema.count + j] = n2->schema.items[j];
+
+#ifndef NDEBUG
+        for (i = 0; i < n1->schema.count; i++)
+            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name))
+                PFoops (OOPS_FATAL,
+                        "duplicate attribute `%s' in equi-join",
+                        n2->schema.items[j].name);
+#endif
+    }
+
+    /* remember this node for future calls */
+    *((PFalg_op_t **) PFarray_add (old)) = ret;
+
+    return ret;
+}
+
+
+/**
+ * Staircase join between two operator nodes. Each such join corresponds
+ * to the evaluation of an XPath location step. 'scj' serves just as a
+ * container for the semantic information on the kind test and location
+ * step represented by this join. We extract this information, store it
+ * in the newly created join operator and discard the 'scj' node. 
+ */
+PFalg_op_t * PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni,
+			   PFalg_op_t *scj)
+{
+    PFalg_op_t *ret;
+    int         i;
+
+    /*
+     * Remember all nodes we built in here. If the same expression is
+     * requested twice, we just return a reference to the old one.
+     */
+    static PFarray_t *old = NULL;
+    unsigned int old_idx;
+    
+    assert (proj); assert (uni);
+
+    /* verify node types because the schema of the projection node
+     * will become the overall schema
+     */
+    assert (proj->kind == aop_project);
+    assert (uni->kind == aop_disjunion);
+
+    /* initialize join on first call */
+    if (!old)
+        old = PFarray (sizeof (PFalg_op_t *));
+
+    /* search join in the array of existing staircase join operators */
+    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
+
+        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
+
+        /* see if the old node has the same arguments */
+        if (!((o->child[0] == proj && o->child[1] == uni)
+	   || (o->child[1] == proj && o->child[0] == uni))
+           || (o->sem.scjoin.test != scj->sem.scjoin.test)
+	   || (o->sem.scjoin.axis != scj->sem.scjoin.axis)
+	   || (o->sem.scjoin.test == aop_name
+	   &&  PFqname_eq(o->sem.scjoin.str.qname,
+			  scj->sem.scjoin.str.qname))
+	   || (o->sem.scjoin.test == aop_pi_tar
+	   &&  strcmp(o->sem.scjoin.str.target,
+		      scj->sem.scjoin.str.target)))
+            continue;
+
+        /*
+         * If we come up to here, old and new join must be equal.
+         * So we don't create a new one, but return the existing one.
+         */
+        return o;
+    }
+
+    /* create new join node */
+    ret = alg_op_wire2 (aop_scjoin, proj, uni);
+
+    /* insert semantic value (axis/kind test) into the result */
+    ret->sem = scj->sem;
+
+#ifndef NDEBUG
+    /* verify both schemata */
+    for (i = 0; i < proj->schema.count; i++) {
+	if (!strcmp(proj->schema.items[i].name, "iter")
+	 || !strcmp(proj->schema.items[i].name, "item"))
+	    continue;
+	else
+	    PFoops (OOPS_FATAL,
+		    "illegal attribute `%s' in staircase join",
+		    proj->schema.items[i].name);
+    }
+    for (i = 0; i < uni->schema.count; i++) {
+	if (!strcmp(uni->schema.items[i].name, "pre")
+	 || !strcmp(uni->schema.items[i].name, "size")
+	 || !strcmp(uni->schema.items[i].name, "level")
+	 || !strcmp(uni->schema.items[i].name, "kind")
+	 || !strcmp(uni->schema.items[i].name, "prop")
+	 || !strcmp(uni->schema.items[i].name, "frag"))
+	    continue;
+	else
+	    PFoops (OOPS_FATAL,
+		    "illegal attribute `%s' in staircase join",
+		    uni->schema.items[i].name);
+    }
+#endif
+
+    /* allocate memory for the result schema (= schema(proj)) */
+    ret->schema.count = proj->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'proj' argument */
+    for (i = 0; i < proj->schema.count; i++)
+        ret->schema.items[i] = proj->schema.items[i];
+
+    /* remember this node for future calls */
+    *((PFalg_op_t **) PFarray_add (old)) = ret;
+
+    return ret;
+}
+
+
+/**
+ * Creates a representation of the doc table if there is none
+ * already. Otherwise returns the already created one.
+ */
+PFalg_op_t * PFalg_doc_tbl (void)
+{
+    PFalg_op_t         *ret;      /* return value we are building */
+
+    static PFalg_op_t *old = NULL;
+    
+    /* doc table was already initialized */
+    if (old)
+	return old;
+
+    /* instantiate a new document table representation */
+    ret = alg_op_leaf (aop_doc_tbl);
+
+    /* set doc table schema */
+    ret->schema = doc_schm;
+
+    /* doc table was newly initialized, so remember it for future calls */
+    old = PFmalloc (sizeof (PFalg_op_t *));
+    old = ret;
 
     return ret;
 }
@@ -737,6 +1048,250 @@ PFalg_rownum (PFalg_op_t *n, PFalg_att_t a,
     }
 
     return ret;
+}
+
+
+/**
+ * Selects all rows where the value of column 'att' is not 0.
+ * The result schema corresponds to the schema of the input
+ * relation 'n'.
+ */
+PFalg_op_t * PFalg_select (PFalg_op_t *n, PFalg_att_t att)
+{
+    PFalg_op_t *ret;
+    int         i;
+
+    /*
+     * Remember all nodes we built in here. If the same expression is
+     * requested twice, we just return a reference to the old one.
+     */
+    static PFarray_t *old = NULL;
+    unsigned int old_idx;
+    
+    assert (n);
+
+    /* initialize array on first call */
+    if (!old)
+        old = PFarray (sizeof (PFalg_op_t *));
+
+    /* search selection in the array of existing selection operators */
+    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
+
+        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
+
+        /* see if the old node has the same argument */
+        if (o->child[0] != n || strcmp (att, o->sem.negate.att))
+            continue;
+
+        /*
+         * If we come up to here, old and new selection must be equal.
+         * So we don't create a new one, but return the existing one.
+         */
+        return o;
+    }
+
+    /* verify that att is an attribute of n ... */
+    for (i = 0; i < n->schema.count; i++)
+	if (!strcmp (att, n->schema.items[i].name))
+	    break;
+
+    /* did we find attribute att? */
+    if (i >= n->schema.count)
+	PFoops (OOPS_FATAL,
+		"attribute `%s' referenced in selection not found", att);
+
+    /* build a new selection node */
+    ret = alg_op_wire1 (aop_select, n);
+
+    /* insert semantic value (select-attribute) into the result */
+    ret->sem.negate.att = att;
+
+    /* allocate memory for the result schema (= schema(n)) */
+    ret->schema.count = n->schema.count;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* remember this node for future calls */
+    *((PFalg_op_t **) PFarray_add (old)) = ret;
+
+    return ret;
+}
+
+/**
+ * Negates the value in column 'att' and stores it in the newly
+ * created column 'res'. The result schema corresponds to the schema
+ * of the input relation 'n' plus 'res'.
+ */
+PFalg_op_t * PFalg_negate (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res)
+{
+    PFalg_op_t *ret;
+    int         i;
+    int         ix = 0;
+
+    /*
+     * Remember all nodes we built in here. If the same expression is
+     * requested twice, we just return a reference to the old one.
+     */
+    static PFarray_t *old = NULL;
+    unsigned int old_idx;
+    
+    assert (n);
+
+    /* initialize array on first call */
+    if (!old)
+        old = PFarray (sizeof (PFalg_op_t *));
+
+    /* search selection in the array of existing selection operators */
+    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
+
+        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
+
+        /* see if the old node has the same argument */
+        if (o->child[0] != n || strcmp (att,o->sem.negate.att)
+	 || strcmp (res, o->sem.negate.res))
+            continue;
+
+        /*
+         * If we come up to here, old and new negation must be equal.
+         * So we don't create a new one, but return the existing one.
+         */
+        return o;
+    }
+
+    /* verify that att is an attribute of n ... */
+    for (i = 0; i < n->schema.count; i++)
+	if (!strcmp (att, n->schema.items[i].name)) {
+	    ix = i;                /* remember array index of att */
+	    break;
+	}
+
+    /* did we find attribute att? */
+    if (i >= n->schema.count)
+	PFoops (OOPS_FATAL,
+		"attribute `%s' referenced in negation not found", att);
+
+    /* create new negation */
+    ret = alg_op_wire1 (aop_negate, n);
+
+    /* insert semantic value (negated and result attribute) into the result */
+    ret->sem.negate.att = att;
+    ret->sem.negate.res = res;
+
+    /* allocate memory for the result schema (= schema(n) + 1 for
+     * the 'res' attribute which is to hold the result of the negation) 
+     */
+    ret->schema.count = n->schema.count + 1;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res attribute'; it has the same type
+     * as the negated attribute 'att', but a different name
+     */
+    ret->schema.items[ret->schema.count - 1] = n->schema.items[ix];
+    ret->schema.items[ret->schema.count - 1].name = res;
+
+    /* remember this node for future calls */
+    *((PFalg_op_t **) PFarray_add (old)) = ret;
+
+    return ret;
+}
+
+
+/**
+ * Adds the two values of columns 'att1' and 'att2' and stores the
+ * result in newly created attribute 'res'. 'res' gets the same data
+ * type as 'att1' and 'att2'. The result schema corresponds to the
+ * schema of the input relation 'n' plus 'res'. TODO: common
+ * subexpression elimination
+ */
+PFalg_op_t * PFalg_add (PFalg_op_t *n, PFalg_att_t att1,
+			PFalg_att_t att2, PFalg_att_t res)
+{
+    PFalg_op_t *ret;
+    int         i;
+    int         found = 0;
+    int         ix = 0;
+    
+    assert (n);
+
+    /* verify that 'att1' and 'att2' are attributes of n ... */
+    for (i = 0; i < n->schema.count; i++) {
+	if (!strcmp (att1, n->schema.items[i].name)) {
+	    ix = i;                /* remember array index of att1 */
+	    found++;
+	}
+	else if (!strcmp (att2, n->schema.items[i].name))
+	    found++;
+    }
+
+    /* did we find attribute 'att1' and 'att2'? */
+    if (found != 2)
+	PFoops (OOPS_FATAL,
+		"attribute `%s' or '%s' referenced in addition not found",
+		att1, att2);
+
+    /* create new addition node */
+    ret = alg_op_wire1 (aop_add, n);
+
+    /* insert semantic value (added attributes and result attribute)
+     * into the result
+     */
+    ret->sem.arithm.att1 = att1;
+    ret->sem.arithm.att2 = att2;
+    ret->sem.arithm.res = res;
+
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res attribute'; it has the same type
+     * as attribute 'att1' (and 'att2'), but a different name
+     */
+    ret->schema.items[ret->schema.count - 1] = n->schema.items[ix];
+    ret->schema.items[ret->schema.count - 1].name = res;
+
+    return ret;
+}
+
+
+/**
+ * In case an optional variable $p is present in a let expression,
+ * we use rownum() to create the item values bound to the variable.
+ * However, the item values of $p must be of type int (instead
+ * of nat), so we cast it accordingly.
+ */
+PFalg_op_t * PFalg_cast (PFalg_op_t * o)
+{
+    assert(o->kind == aop_rownum);
+
+    o->schema.items[o->schema.count - 1].type = aat_int;
+
+    return o;
+}
+
+
+/**
+ * Construct a new entry to be inserted into the variable environment.
+ * Called whenever a new variable is declared.
+ */
+PFalg_env_t PFalg_enventry (PFvar_t *var, PFalg_op_t *op)
+{
+    return (PFalg_env_t) { .var = var, .op = op };
 }
 
 

@@ -63,6 +63,7 @@
 #include "env.h"
 #include "types.h"
 #include "functions.h"
+#include "builtins.h"
 
 /**
  * maxmimum arity for all XQuery F&O functions
@@ -426,9 +427,13 @@ void
 PFfun_xquery_fo ()
 {
     struct {  
-        PFns_t ns; char *loc;                                 
-        unsigned int arity; PFty_t par_ty[XQUERY_FO_MAX_ARITY]; 
-        PFty_t ret_ty; 
+        PFns_t ns;
+        char *loc;                                 
+        unsigned int arity;
+        PFty_t par_ty[XQUERY_FO_MAX_ARITY]; 
+        PFty_t ret_ty;
+        struct PFalg_op_t * (*alg) (struct PFalg_op_t *, struct PFalg_op_t **,
+                                    struct PFalg_op_t **);
     } xquery_fo[] = XQUERY_FO;
 
     PFqname_t    qn;
@@ -449,7 +454,8 @@ PFfun_xquery_fo ()
                                         xquery_fo[n].arity, 
                                         true,
                                         xquery_fo[n].par_ty,
-                                        &(xquery_fo[n].ret_ty)));
+                                        &(xquery_fo[n].ret_ty),
+                                        xquery_fo[n].alg));
     }
                                            
 }

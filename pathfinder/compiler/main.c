@@ -942,7 +942,6 @@ main (int argc, char *argv[])
     /* ***** end of temporary unfolding code ***** */
 #endif
 
-
     /*
      * map core to algebra tree
      */

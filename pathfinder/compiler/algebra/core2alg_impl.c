@@ -156,8 +156,10 @@ static int TWIG_ID[] = {
 
 #include "algebra_mnemonic.h"
 
+static PFarray_t  *env = NULL;
 static PFalg_op_t *loop = NULL;
 static PFalg_op_t *delta __attribute__((unused)) = NULL;
+
 
 PFalg_op_t *
 PFcore2alg (PFcnode_t *c)
@@ -166,8 +168,11 @@ PFcore2alg (PFcnode_t *c)
 
     assert (c);
 
+    /* yet empty environment */
+    env = PFarray (sizeof (PFalg_env_t));
+
     /* loop is initially a table with just one tuple */
-    loop = lit_tbl (attlist ("iter"), tuple (lit_int (1)));
+    loop = lit_tbl (attlist ("iter"), tuple (lit_nat (1)));
 
     delta = lit_tbl (attlist ("pre", "size", "level", "kind", "prop", "frag"));
 
@@ -225,8 +230,8 @@ PFcore2alg (PFcnode_t *c)
                                          tuple (lit_int (0))),
                                 proj ("item1", "item"))))
             );
-
     */
+
     /*
     return serialize (
               cross (lit_tbl (schema (att ("pos", aat_int),
@@ -247,6 +252,189 @@ PFcore2alg (PFcnode_t *c)
                       "row", sortby("pos"), "item"));
                       */
 
+}
+
+
+/*
+ * Required for XPath processing, i.e. staircase join evaluation.
+ * Dummy operator that collects the kind test information during
+ * the bottom-up traversal of the core tree. The collected semantic
+ * information will later be incorporated into the "real" staircase
+ * join node.
+ */
+PFalg_op_t *PFnameTest (PFqname_t qname)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_name;
+    ret->sem.scjoin.str.qname = qname;
+
+    return ret;
+}
+
+PFalg_op_t *PFnodeTest (void)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_node;
+
+    return ret;
+}
+
+PFalg_op_t *PFcommTest (void)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_comm;
+
+    return ret;
+}
+
+PFalg_op_t *PFtextTest (void)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_text;
+
+    return ret;
+}
+
+PFalg_op_t *PFpiTest (void)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_pi;
+
+    return ret;
+}
+
+PFalg_op_t *PFpitarTest (char *target)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_pi_tar;
+    ret->sem.scjoin.str.target = target;
+
+    return ret;
+}
+
+PFalg_op_t *PFdocTest (void)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_doc;
+
+    return ret;
+}
+
+PFalg_op_t *PFelemTest (void)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_elem;
+
+    return ret;
+}
+
+PFalg_op_t *PFattrTest (void)
+{
+    PFalg_op_t *ret = PFmalloc (sizeof (PFalg_op_t));
+
+    ret->sem.scjoin.test = aop_at_tst;
+
+    return ret;
+}
+
+
+/*
+ * Required for XPath processing, i.e. staircase join evaluation.
+ * Dummy operator that collects the location step information
+ * during the bottom-up traversal of the core tree. The collected
+ * semantic information will later be incorporated into the "real"
+ * staircase join node.
+ */
+PFalg_op_t *PFanc (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_anc;
+
+    return n;
+}
+
+PFalg_op_t *PFanc_self (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_anc_s;
+
+    return n;
+}
+
+PFalg_op_t *PFattr (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_attr;
+
+    return n;
+}
+
+PFalg_op_t *PFchild (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_chld;
+
+    return n;
+}
+
+PFalg_op_t *PFdesc (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_desc;
+
+    return n;
+}
+
+PFalg_op_t *PFdesc_self (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_desc_s;
+
+    return n;
+}
+
+PFalg_op_t *PFfol (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_fol;
+
+    return n;
+}
+
+PFalg_op_t *PFfol_sibl (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_fol_s;
+
+    return n;
+}
+
+PFalg_op_t *PFpar (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_par;
+
+    return n;
+}
+
+PFalg_op_t *PFprec (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_prec;
+
+    return n;
+}
+
+PFalg_op_t *PFprec_sibl (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_prec_s;
+
+    return n;
+}
+
+PFalg_op_t *PFself (PFalg_op_t *n)
+{
+    n->sem.scjoin.axis = aop_self;
+
+    return n;
 }
 
 /* vim:set shiftwidth=4 expandtab: */
