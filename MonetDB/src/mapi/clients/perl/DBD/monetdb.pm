@@ -147,6 +147,7 @@ sub connect {
     if (MapiLib::mapi_error($mapi)) {
 	return $dbh->DBI::set_err(MapiLib::mapi_error($mapi), MapiLib::mapi_error_str($mapi));
     }
+    $dbh->STORE('Active', 1 );
     return $dbh;
 }
 
@@ -296,6 +297,7 @@ sub disconnect {
     my $dbh = shift;
     my $mapi = $dbh->FETCH('monetdb_connection');
     MapiLib::mapi_disconnect($mapi);
+    $dbh->STORE('Active', 0 );
     return 1;
 }
 
@@ -331,6 +333,7 @@ sub STORE {
 
 sub DESTROY {
     my $dbh = shift;
+    $dbh->disconnect if $dbh->FETCH('Active');
     my $mapi = $dbh->FETCH('monetdb_connection');
     MapiLib::mapi_destroy($mapi) if $mapi;
 }
