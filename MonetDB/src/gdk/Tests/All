@@ -3,6 +3,7 @@ refcnt
 bat_insert
 reload
 BATkey
+semijoin
 binsemijoin
 binsemijoin2
 binsemijoin3
