@@ -49,6 +49,7 @@ if [ ! -x bootstrap ] ; then
   else
 	binpath=""
 	libpath=""
+	libpath64=""
 
 	# check for not or incorrectly set variables (SQL_BUILD, SQL_PREFIX, COMP, BITS, LINK)
 
@@ -183,6 +184,10 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -xarch=v9"
 			cxx="${cxx} -xarch=v9"
 		fi
+		if [ "${COMP}" = "ntv" ] ; then
+			# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
+			cc="${cc} -I/usr/local/include"
+		fi
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
@@ -224,6 +229,10 @@ if [ ! -x bootstrap ] ; then
 	# remove trailing ':'
 	binpath=`echo "${binpath}" | sed 's|:$||'`
 	libpath=`echo "${libpath}" | sed 's|:$||'`
+	if [ "${OS}-${BITS}-${LINK}" = "IRIX64-64-d" ] ; then
+		# ld64 seems to need this ...
+		libpath64="${libpath}"
+	fi
 
 	# export new settings
 	echo ""
@@ -259,6 +268,18 @@ if [ ! -x bootstrap ] ; then
 			export LD_LIBRARY_PATH="${libpath}"
 		fi
 		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+	fi
+	if [ "${libpath64}" ] ; then
+		if [ "${LD_LIBRARY64_PATH}" ] ; then
+			# prepend new libpath64 to existing LD_LIBRARY64_PATH, if LD_LIBRARY64_PATH doesn't contain libpath64, yet
+			if [ "`echo ":${LD_LIBRARY64_PATH}:" | sed "s|:${libpath64}:|:|"`" = ":${LD_LIBRARY64_PATH}:" ] ; then
+				export LD_LIBRARY64_PATH="${libpath64}:${LD_LIBRARY64_PATH}"
+			fi
+		  else
+			# set LD_LIBRARY64_PATH as libpath64
+			export LD_LIBRARY64_PATH="${libpath64}"
+		fi
+		echo " LD_LIBRARY64_PATH=${LD_LIBRARY64_PATH}"
 	fi
 
 #	# we shouldn't need this
