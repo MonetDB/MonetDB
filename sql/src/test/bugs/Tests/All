@@ -6,7 +6,7 @@ bug-sf-904025
 bug-sf-936386
 bug-sf-937835
 bug-sf-938733
-bug-sf-941788
+union_all-bug-sf-941788
 subselect_ambigious_columns-bug-sf-949071
 insert_into_groupby-bug-sf-949135
 arith-bug-sf-949228
