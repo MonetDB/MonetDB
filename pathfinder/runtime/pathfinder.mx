@@ -93,6 +93,19 @@ axis step evaluation on the @2 axis from the given context."
   upperbound: upperbound for size of result context node sequence
 DESCRIPTION
 axis step evaluation on the @2 axis from the given context."
+
+@m
+.COMMAND ebv(BAT[oid, bit] b) : BAT[oid, bit] = CMDebv;
+"PARAMETERS
+BAT[oid, bit], sorted on head values.
+DESCRIPTION:
+This is a helper function to implement the XQuery ``effective boolean\n
+value.'' Grouped by the head values, it will look at the tail values.\n
+If for a head value there is exactly one BUN whose tail equals `true',\n
+the result for this group will be `true' as well. In any other case\n
+(a single `false' BUN, or multiple BUNs for this group), a `false'\n
+tuple will be in the result for this group."
+
 @m
 .END pathfinder;
 
@@ -1549,3 +1562,73 @@ ADDHELP("combine_strings", "tsheyar", "Aug 2004",
 "DESCRIPITON:\n\
 pseudonym for {combine_string}(BAT[oid,str])",
 "pathfinder");
+
+@h
+#ifndef PATHFINDER_H
+#define PATHFINDER_H
+
+#include "pathfinder.proto.h"
+
+#endif
+
+@c
+#include "pathfinder.h"
+
+/*
+ * Worker for the ebv() function.
+ */
+BAT *
+BATebv (BAT *b)
+{
+    BAT *ret = NULL;    /* return value */
+    BUN p = 0, q = 0;   /* BUN variables for iteration */
+    oid old;            /* Last head value we had seen */
+    bit val;            /* Boolean result value that belongs to `old' */
+
+    /* Input must be sorted by head value, tail must be boolean */
+    ERRORcheck (!b->hsorted, "BATebv: head of BAT must be sorted.\n");
+    ERRORcheck (!(b->htype == TYPE_oid),
+                "BATebv: head of BAT must have oid type.\n");
+    ERRORcheck (!(b->ttype == TYPE_bit),
+                "BATebv: tail of BAT must have bit type.\n");
+
+    /* Create return BAT */
+    ret = BATnew (b->htype, TYPE_bit, 200);
+    if (!ret)
+        return ret;
+
+    /*
+     * Iterate over the input BAT.
+     * Whenever we see a head value the first time, we record its tail
+     * value in val. If we see the same head value a second (third,...)
+     * time, we re-set val to false. When we reach the next head
+     * value, (old, val) will be the correct BUN for the last group.
+     */
+    p = BUNfirst (b);
+    goto first;         /* Deal with uninitialized case */
+
+    BATloop (b, p, q) {
+        if (*(oid *) BUNhead (b, p) == old)
+            val = FALSE;
+        else {
+            BUNins (ret, &old, &val);
+        first:
+            old = *(oid *) BUNhead (b, p);
+            val = *(bit *) BUNtail (b, p);
+        }
+    }
+    /* Don't forget to produce the last BUN. */
+    BUNins (ret, &old, &val);
+
+    return ret;
+}
+
+/*
+ * Implementation of ebv(). Basically just calls BATebv().
+ */
+int
+CMDebv (BAT **result, BAT *b)
+{
+    return (*result = BATebv (b)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
