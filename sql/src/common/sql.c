@@ -1136,7 +1136,7 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 			while(n){
 				char *cname = n->data.sval;
 				statement *st = m->data.stval;
-				char *ctype = column_type(st);
+				char *ctype = (char*)column_type(st);
 				column *col = cat->create_column( cat, 0,  
 					table, cname, ctype, "NULL", 1, seqnr);
 				list_append_statement( newcolumns, 
@@ -1153,7 +1153,7 @@ statement *create_view( context *sql, schema *schema, dlist *qname,
 			while(m){
 				statement *st = m->data.stval;
 				char *cname = column_name(st);
-				char *ctype = column_type(st);
+				char *ctype = (char*)column_type(st);
 				column *col =cat->create_column( cat, 0,
 					table, cname, ctype, "NULL", 1, seqnr);
 				list_append_statement( newcolumns, 
@@ -1335,7 +1335,7 @@ statement * create_schema( context *sql, dlist *auth_name,
 
 
 statement *check_types( context *sql, column *c, statement *s ){
-	char *stype = column_type(s);
+	char *stype = (char*)column_type(s);
 
 	if (stype){
 		type *st = sql->cat->bind_type( sql->cat, stype );
