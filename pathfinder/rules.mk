@@ -28,7 +28,6 @@
 
 CP=cp
 MV=mv
-MXFLAGS= -n
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
@@ -129,6 +128,16 @@ MXFLAGS= -n
 
 %.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
+
+# The following two rules both generate two files, the .py.c and the
+# .py file.  There may be a race condition here when using a parallel
+# make.  We try to alleviate the problem by sending the .py.c output
+# to a dummy file in the second rule.
+%.py.c: %.py.i
+	$(SWIG) -python $(SWIGFLAGS) -outdir . -o $@ $<
+
+%.py: %.py.i
+	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.tex: %.mx
 	cat $< > /tmp/doc.mx
