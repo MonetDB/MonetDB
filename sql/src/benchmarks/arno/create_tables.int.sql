@@ -1,4 +1,3 @@
-
 CREATE TABLE MODEL (
    MODEL_ID int(11) DEFAULT '0' NOT NULL,
    IS_MUTAGEN char(3),
@@ -24,5 +23,3 @@ CREATE TABLE BOND (
    TYPE char(3),
    PRIMARY KEY (BOND_ID)
 );
-
-
