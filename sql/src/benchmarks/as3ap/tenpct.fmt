@@ -1,0 +1,11 @@
+k,",",int
+i,",",int
+si,",",int
+f,",",dbl
+d,",",dbl
+decim,",",int
+date,",",str
+code,",",str
+name,",",str
+address,",",str
+fill,"\n",str

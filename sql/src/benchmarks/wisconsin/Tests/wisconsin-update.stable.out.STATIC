@@ -1,0 +1,47 @@
+stdout of test 'wisconsin-update` in directory 'src/benchmarks/wisconsin` itself:
+
+
+# 16:52:03 >  
+# 16:52:03 >  Mtimeout -timeout 480 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.30619/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_src_benchmarks_wisconsin /export/scratch1/monet/tmp/manegold.GNU_32-d.30619/sql/src/server/catalog.mil /export/scratch1/monet/tmp/manegold.GNU_32-d.30619/sql/src/server/sqlserver.mil ; echo  ; echo Over..
+# 16:52:03 >  
+
+# Monet Database Server V4.3.3
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.30619/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
+# dbname:Tests_src_benchmarks_wisconsin
+# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.30619/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_benchmarks_wisconsin
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
+[ 5 ]
+quit;
+
+Over..
+
+# 16:52:04 >  
+# 16:52:04 >  Mtimeout -timeout 210 sql_client --port=52771  < wisconsin-update.sql
+# 16:52:04 >  
+
+
+# 16:52:04 >  
+# 16:52:04 >  Done.
+# 16:52:04 >  
+

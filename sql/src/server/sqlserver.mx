@@ -1,0 +1,374 @@
+@f sqlserver
+@a N.J. Nes
+@* 
+
+@m
+.MODULE sqlserver;
+	.USE streams;
+
+	.BUILTIN sqlserver_start(int port, str cmd) = sqlserver_start;
+		"start the sql server, calls cmd on each accepted connection"
+
+	.COMMAND stream_read( stream ) : str = sqlserver_read;
+		"read a string of commands"
+.END sqlserver;
+
+@h
+#ifndef _SQLSERVER_H_
+#define _SQLSERVER_H_
+
+#include <streams.h>
+#include "monet_context.h"
+#include "sqlserver.proto.h"
+
+#endif /*_SQLSERVER_H_*/
+
+@c
+#include "sqlserver.h"
+#include "mem.h"
+
+#include  <sys/types.h> 
+#include  <sys/socket.h> 
+
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res, 0);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
+}
+@c
+
+int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
+  int port, *Port, sock, fd = 0, i, server_run = 1;
+  char *cmd, *Cmd;
+  struct sockaddr_in server, client;
+
+  if (lt->cnt != 2) {
+        return handle_argerror(res,lt->cnt,2);
+  }
+  @:builtin_operand(0,TYPE_int,Port)@
+  port = *Port;
+  @:builtin_operand(1,TYPE_str,Cmd)@
+  cmd = _strdup(Cmd);
+
+  sock = socket (AF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+    perror ("could not create socket");
+    exit (1);
+  }
+   
+  server.sin_family = AF_INET;
+  server.sin_addr.s_addr = htonl (INADDR_ANY);
+  server.sin_port = htons (port);
+
+  if (bind (sock, (struct sockaddr *) &server, sizeof (server)) < 0) {
+    perror ("could not bind socket");
+    return;
+  }
+
+  listen (sock, 5);
+
+  fprintf (stderr, "server listening on port %i\n", port);
+
+  while (monet_running && server_run) {
+    int retval;
+    size_t client_len = sizeof (client);
+    struct timeval tv;
+    fd_set fds;
+
+    FD_ZERO(&fds);
+    FD_SET(sock, &fds);
+    /* Wait up to five seconds. */
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    retval = select(sock+1, &fds, &fds, &fds, &tv);
+    /* Don't rely on the value of tv now! */
+
+    if (retval &&
+        (fd = accept(sock, (struct sockaddr *) &client, &client_len))<0 ){
+      	perror ("accept () failed");
+	break;
+    } else if(retval){
+	char buf[BUFSIZ];
+	
+	snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, fd );
+	interpret_str( stk, buf, res);
+	/*
+	int res = 0;
+	if ((res = close(fd)) < 0){
+		fprintf(stderr, "Error closing socket %d\n", res );
+		return;
+	}
+	*/
+    }
+  }
+}
+
+#define CHUNK (64*1024)
+
+int sqlserver_read( str *res, stream *S ){
+	stream *s = *(stream**)S;
+	int len = 0;
+	int size = CHUNK + 1;
+	char *buf = NEW_ARRAY(char, size ), *start = buf;
+
+	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+		size += CHUNK;
+		buf = RENEW_ARRAY(char, buf, size); 
+		start = buf + size - CHUNK - 1;
+		*start = '\0';
+	}
+	start += len;
+	*start = '\0';
+	*res = buf;
+	return GDK_SUCCEED;
+}
+
+@mil
+module(sqlserver);
+module(sql);
+module(ascii_io);
+module(str);
+module(alarm);
+module(unix);
+module(ddbench);
+module(aggrX3);
+module(mvc);
+module(monettime);
+
+proc {min}(val,grp, extent) := {
+	return {min}(grp.reverse.join(val), extent);
+}
+proc {max}(val,grp,extent) := {
+	return {max}(grp.reverse.join(val), extent);
+}
+
+proc default_val( myc, cid, val ) := {
+	return mvc_default( myc, cid, str(val));
+}
+
+proc atom(val):= {
+	return val;
+}
+
+proc avg(BAT b):= {
+	var s := b.sum();
+	return s/b.count();
+}
+
+proc date_sub_sec_interval( date d, int sec ) := {
+	if (sec > 0){
+		return d.adddays( -1 * sec/86400);
+	}
+	return d;
+}
+
+proc date_add_sec_interval( date d, int sec ) := {
+	if (sec > 0){
+		return d.adddays(sec/86400);
+	}
+	return d;
+}
+proc date_sub_month_interval( date d, int months ) := {
+	return d.addmonths(months);
+}
+
+proc add(x, y):= return x + y;
+proc sub(x, y):= return x - y;
+proc mul(x, y):= return x * y;
+proc div(x, y):= return x / y;
+proc neg(val):= return -1 * val;
+
+proc sep():= {
+	return "\t";
+}
+
+proc load_seps( BAT[void,BAT] bats, str Sep ) : BAT[void,str] := {
+	var seps := new(void,str); seps.seqbase(oid(0));
+	var id := 0;
+	var cnt := bats.count - 1;
+	bats@batloop(){
+		if (id != cnt) {
+			seps.insert(nil,Sep);
+		} else {
+			seps.insert(nil,(Sep + "\n"));
+		}
+		id += 1;
+	}
+	return seps;
+}
+
+proc bat_name(b):= return str(b);
+proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
+
+proc bulkload( tab, file, Sep, sze ):= {
+	var lid := table_name.reverse().find( tab );
+	var tid := table_id.find( lid );
+        var columns := column_name.semijoin(column_table.select(tid));
+	var bats := column_bat.semijoin(columns);
+	bats := column_number.reverse().join(bats).sort();
+	bats := bats.reverse().mark(oid(0)).reverse();
+	
+	var names := [bat_name](bats);
+	var types := [bat_type](bats);
+	var seps := load_seps(bats,Sep);
+	var res := load(names, seps, types, file, sze);
+	# merge result
+	var t := names.join(res);
+	var x := bats.reverse().join(t);
+	x@batloop(){ $h.insert($t); }
+}
+Stdout := file_wastream( stdout, "test" );
+
+proc write_output( stream Output, str v ) := {
+	var buf := v + "\n";
+	stream_write(Output, buf );
+}
+
+proc output_count( bat b, stream Output ) := {
+	write_output( Output, str(b.count()) );
+}
+
+proc ascii_io_output( bat Order, bat bats, stream Output, str Sep ) : int := {
+	var Max := bats.reverse.max();
+	var seps := [ bats ~ const Sep];
+	seps.access(BAT_WRITE);
+	seps.replace(Max, "\n");
+
+	seps := seps.reverse.mark(oid(0));
+	bats := bats.reverse.mark(oid(0));
+	return output( Order, seps.reverse, bats.reverse, Output );
+}
+
+proc oidrange( output_stream, nr ) := {
+	stream_write( output_stream, ("" + newoid( nr )) + "\n" );
+	stream_flush( output_stream );
+}
+
+proc server_output( stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
+	var cnt := $0;
+	var bats := new(oid,bat);
+	var id := 0;
+	while((id + 2) < cnt ){
+		bats.insert(oid(id), $(id+3));
+		id :+= 1;
+	}
+	ascii_io_output(Order, bats, Output, "\t");
+}
+
+proc ascii_export_functions(Output):= {
+	output_count( type_sql, Output);
+	server_output( Output, type_sql, type_sql, type_db, type_cast );
+
+	output_count( sql_aggr_name, Output);
+	server_output( Output, sql_aggr_name, sql_aggr_name, sql_aggr_imp, sql_aggr_type, sql_aggr_result );
+		
+	output_count( sql_func_name, Output);
+	server_output( Output, sql_func_name, sql_func_name, sql_func_imp, sql_func_type1, sql_func_type2, sql_func_type3, sql_func_result );
+
+	#output_count( schema_name, Output);
+	#server_output( Output, schema_id, schema_id, schema_name, schema_auth);
+	stream_flush(Output);
+}
+
+proc ascii_export_schema(Output, schema):= {
+	var sid := oid(-1);
+	if (schema_name.reverse().exist(schema)){
+		sid := schema_id.find(schema_name.reverse().find(schema));
+	}
+	write_output ( Output, str(int(sid)) );
+	
+	var tables := table_name.semijoin(table_schema.select(sid));
+	tables := tables.kdiff( table_query );
+	output_count( tables, Output);
+	var tableids := table_id.semijoin(tables);
+	server_output( Output, tableids, tableids, tables, table_temp.semijoin(tables) );
+
+	var table_ids := column_table.join(table_id.reverse().join(tables));
+	output_count( table_ids, Output);
+	var columnids := column_id.semijoin(table_ids);
+	server_output( Output, columnids, columnids, table_ids, column_name, column_type, column_default, column_null, column_number );
+
+	var views := table_name.semijoin(table_query); 
+	output_count( views, Output);
+	var viewids := table_id.semijoin(views);
+	server_output( Output, viewids, viewids, views, table_query );
+
+	stream_flush(Output);
+}
+
+proc SQLclient_module( Output, Input, myc, cmd ) := {
+	# TODO get schema/user/debug/opt from skipped cmd
+	var c := create_context( 0, 1, Output);
+
+	cmd := stream_read( Input );
+	while(cmd != ""){
+		sql(c, cmd );
+		stream_write( Output, "0\n" );
+		stream_flush( Output );
+		cmd := stream_read( Input );
+	}
+	destroy_context( c );
+	#stream_close( Output );
+	stream_close( Input );
+}
+
+proc SQLclient_thread( int sock ):= {
+
+	var Output := block_stream(
+		socket_wstream( sock, sprintf("SQLserver-%d", sock) ));
+	var Input := block_stream(
+		socket_rstream( sock, sprintf("SQLserver-%d", sock) ));
+
+	var myc := mvc_create(0);
+
+	var cmd := stream_read( Input );
+	if (cmd.startsWith("module")){
+		return SQLclient_module( Output, Input, myc, cmd );
+	}
+
+	while(cmd != ""){
+		if (cmd.startsWith("0")){
+			mvc_insert( myc, cmd );
+		} else {
+			sqlexecute(cmd, Output );
+		}
+		cmd := stream_read( Input );
+	}
+	stream_close( Output );
+	stream_close( Input );
+}
+
+proc hjoin( b1, b2 ) := {
+	b1.reverse().accbuild(hash);
+	b2.accbuild(hash);
+	return b1.join(b2);
+}
+
+proc sqlexecute( str cmd, stream Output ):= {
+	#print(cmd);
+	eval(cmd);
+}
+
+proc SQLclient( int sock ) := {
+	print(sock);
+	SQLclient_thread(sock).fork();
+}
+
+proc get_sql_port() := {
+	var port := 45123;
+	var sqlport := getenv("SQLPORT");
+	if (length(sqlport) > 0){
+		port := int(sqlport);
+	}
+	return port;
+}
+
+sqlserver_start(get_sql_port(), "SQLclient").fork();
+
+

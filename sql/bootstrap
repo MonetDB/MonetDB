@@ -1,0 +1,73 @@
+#! /bin/sh
+
+# helps bootstrapping Monet, when checked out from CVS
+# requires GNU autoconf, automake and libtool
+# this is not meant to go into the distributions
+
+if [ "$1" != ""  -a  -x "$1" ] ; then
+	AUTOGEN=$1
+ else
+	if [ "$MONET_PREFIX" = "" ]; then
+		which monet-config > /dev/null 2>&1
+		ERROR=$?
+		if [ $ERROR -eq 0 ]; then
+			MONET_PREFIX=`monet-config --prefix`
+		else
+			echo "!ERROR: requires MONET_PREFIX to be set or monet-config in your PATH"
+			exit 1
+		fi
+	fi
+	AUTOGEN=$MONET_PREFIX/lib/autogen/autogen.py
+fi
+
+find . -name .cache\* \-exec rm {} \;
+$AUTOGEN
+
+cat configure.ag > configure.in
+echo "AC_OUTPUT(" >> configure.in
+cat acout.in  >> configure.in
+echo ")" >> configure.in
+
+test -f conf/ltmain.sh || libtoolize -c -f; 
+#if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
+#  perl -i -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
+
+#fi
+# default deplibs_check_method (pass all libs)
+# needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
+#perl -i -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+
+aclocal -I . -I conf
+# patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
+# (just adding -IPA to LDFLAGS somehow doesn't help ...)
+perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
+autoheader
+automake -a -c
+
+#autoupdate
+autoconf
+
+cat << "EOF" | patch configure
+--- configure~	Wed May 23 20:46:51 2001
++++ configure	Wed May 23 20:49:57 2001
+@@ -1046,7 +1046,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.c
+-if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
++if test -z "`${CC-cc} -g -c conftest.c 2>&1 | egrep -v '^conftest.c:$|^icc: NOTE: The evaluation period for this product ends on .* UTC.$'`"; then
+   ac_cv_prog_cc_g=yes
+ else
+   ac_cv_prog_cc_g=no
+@@ -1218,7 +1218,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   echo 'void f(){}' > conftest.cc
+-if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
++if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | egrep -v '^conftest.cc:$|^icc: NOTE: The evaluation period for this product ends on .* UTC.$'`"; then
+   ac_cv_prog_cxx_g=yes
+ else
+   ac_cv_prog_cxx_g=no
+EOF
+
+exit 0

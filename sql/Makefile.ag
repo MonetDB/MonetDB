@@ -1,0 +1,6 @@
+
+SUBDIRS = conf src 
+
+EXTRA_DIST = 
+
+EXTRA_HEADERS = sql_config.h

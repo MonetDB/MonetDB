@@ -1,0 +1,18 @@
+stderr of test 'example` in directory 'src/test` itself:
+
+
+# 15:49:45 >  
+# 15:49:45 >  Mtimeout -timeout 480 Mserver -monetrc /var/tmp/manegold.GNU_32-d.6756/monet/.GNU_32-d/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf -db Tests_src_test /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/catalog.mil /var/tmp/manegold.GNU_32-d.6756/sql/src/parser/aserver.mil
+# 15:49:45 >  
+
+server listening on port 45123
+
+# 15:49:54 >  
+# 15:49:54 >  Mtimeout -timeout 210 sql_aclient  < example.sql
+# 15:49:54 >  
+
+
+# 15:49:54 >  
+# 15:49:54 >  Done.
+# 15:49:54 >  
+
