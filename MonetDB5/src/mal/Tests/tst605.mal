@@ -12,7 +12,7 @@
 #barrier (b,nme):= const.iterator();
 print("Contents of the 'const' box");
 barrier b:= const.iterator(nme:str);
-	printf("%s=",nme);
+	printf("# %s=",nme);
 	val:str := const.toString(nme);
 	printf("%s\n",val);
 	redo b:= const.iterator(nme:str);

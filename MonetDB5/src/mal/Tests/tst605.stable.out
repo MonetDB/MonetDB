@@ -25,7 +25,7 @@ stdout of test 'tst605` in directory 'src/mal` itself:
 ## how to obtain a copy of all objects in a space?
 ##barrier (b,nme):= const.iterator();
 #barrier b:= const.iterator(nme:str);
-#	printf("%s=",nme);
+#	printf("# %s=",nme);
 #	val:str := const.toString(nme);
 #	printf("%s\n",val);
 #	redo b:= const.iterator(nme:str);
@@ -38,17 +38,17 @@ function Admin.main():int;	# 0  (main:int)
     df := const.take(dbfarm);	# 4 CSTtake (df:str)<-(dbfarm:any)
     io.print("Contents of the 'const' box");	# 5 IOprint_val ($9:int)<-($10:str)
 barrier b := const.iterator(nme);	# 6 CSTiterator (b:lng)<-(nme:str) jump 11
-    io.printf("%s=",nme);	# 7 IOprint_formatted_str ($13:int)<-($14:str)(nme:str)
+    io.printf("# %s=",nme);	# 7 IOprint_formatted_str ($13:int)<-($14:str)(nme:str)
     val := const.toString(nme);	# 8 CSTtoString (val:str)<-(nme:str)
     io.printf("%s\n",val);	# 9 IOprint_formatted_str ($16:int)<-($17:str)(val:str)
     redo b := const.iterator(nme);	# 10 CSTiterator (b:lng)<-(nme:str) jump 7
 exit b;	# 11  (b:lng)
 end main;	# 12  
 [ "Contents of the 'const' box" ]
-user=Admin
-dbname=mTests_src_mal
-dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
-version=5.0
-config=/ufs/mk/monet5/src/mal/Tests/All.conf
+# user=Admin
+# dbname=mTests_src_mal
+# dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
+# version=5.0
+# config=/ufs/mk/monet5/src/mal/Tests/All.conf
 pi=3.14700007
 >
