@@ -70,7 +70,7 @@ public class MonetSavepoint implements Savepoint {
 		return(name);
 	}
 
-	//== end of methods froom Savepoint interface
+	//== end of methods from Savepoint interface
 
 	/**
 	 * Retrieves the savepoint id, like the getSavepointId method with the only
