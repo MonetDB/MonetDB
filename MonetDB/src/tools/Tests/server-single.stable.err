@@ -1,15 +1,15 @@
 stderr of test 'server-single` in directory 'src/tools` itself:
 
 
-# 11:58:01 >  
-# 11:58:01 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_tools server-single.prelude < server-single.milS
-# 11:58:01 >  
+# 11:37:31 >  
+# 11:37:31 >  Mtimeout -timeout 60 Mserver "--config=/db1/niels/MonetDB/IRIX64/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_tools server-single.prelude < server-single.milS
+# 11:37:31 >  
 
-# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
+# builtin opt 	gdk_arch = 64bitmips-sgi-irix6.5
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 19985
-# builtin opt 	prefix = /ufs/niels/data/monet/Linux
-# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	monet_pid = 1670046
+# builtin opt 	prefix = /db1/niels/MonetDB/IRIX64
+# builtin opt 	exec_prefix = NONE
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -25,10 +25,10 @@ stderr of test 'server-single` in directory 'src/tools` itself:
 # builtin opt 	mapi_debug = 0
 # builtin opt 	sql_port = 45123
 # builtin opt 	sql_debug = 0
-# builtin opt 	sql_api = sql
-# builtin opt 	sql_user = sqladmin
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/monet/Linux
+# config opt 	prefix = /db1/niels/MonetDB/IRIX64
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -43,7 +43,7 @@ stderr of test 'server-single` in directory 'src/tools` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_src_tools
 
-# 11:58:01 >  
-# 11:58:01 >  Done.
-# 11:58:01 >  
+# 11:37:32 >  
+# 11:37:32 >  Done.
+# 11:37:32 >  
 
