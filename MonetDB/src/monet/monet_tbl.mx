@@ -30,7 +30,7 @@ m_export void  TBL_exitclient(Client c);
             
 m_export void  TBL_newproc(Client c, str nme, 
 			 YYSTREE body, YYSTREE sig, YYSTREE ret);
-m_export void  TBL_delproc(Client client, str nme, int lock);
+m_export void  TBL_delproc(Client client, str nme, oid pid, int lock);
 
 
 /* old info functions */
@@ -930,6 +930,7 @@ BAT *TBL_create(Client client, str nme, BAT *b) {
 			BAT *o = BATdescriptor(v->binding.val.bval);
 			BBPreclaim(b);
 			b = BATcopy(o);
+			BBPunfix(o->batCacheid);
    			v->binding.val.bval = b->batCacheid;
 		}
 	}
@@ -2097,9 +2098,10 @@ void TBL_incproc(Client client) {
 }
 
 @- TBL_delproc
-deletes a MIL procedure.
+deletes a MIL procedure. If pid is less than 0 all procs with the 
+given name are deleted.
 @c
-void TBL_delproc(Client client, str nme, int lock) {
+void TBL_delproc(Client client, str nme, oid pid, int lock) {
    	int xx, yy = TOK_PROC;
         BAT *sb, *tb, *bb, *cb = BATmirror(client->fcntbl);
 	BUN p,q,r;
@@ -2112,7 +2114,8 @@ void TBL_delproc(Client client, str nme, int lock) {
         bb = BATuselect(tb, &yy, &yy);
 	BBPreclaim(tb);
 
-	BATloopFast(bb, p, q, xx) {
+	if (pid < 0){
+	  BATloopFast(bb, p, q, xx) {
 	    oid pid = *(oid*) BUNhloc(bb, p);
 	    BUN s = BUNfnd(cb, &pid);
 	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
@@ -2134,6 +2137,26 @@ void TBL_delproc(Client client, str nme, int lock) {
 		cnt--;
   		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 	    }
+ 	  }
+	} else {
+	  if (BUNfnd(bb, &pid)){
+	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
+	    if (cnt == 1){
+		YYSTREE *x = (YYSTREE*)
+			BUNtloc(TBL_fcn_imp,BUNfnd(TBL_fcn_imp,&pid));
+
+		if (x && *x) {
+	    		/* free disguised name */
+	    		GDKfree((*x)->yyval.val.pval); 
+	    		yyfree((*x));
+		}
+	    	BUNdelete(cb, BUNfnd(cb, &pid));
+	    	TBL_Deinstall_Function(pid);
+	    } else {
+		cnt--;
+  		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
+	    }
+	  }
 	}
 	BBPreclaim(bb);
 	if (lock) TBL_M_unlock(client);
@@ -2263,7 +2286,7 @@ operation cheap.
 The space occupied by user defined functions should be reclaimed.
 @c
 void TBL_exitclient(Client client) {
-	BAT	*b, *bn, *uprocs, *procs, *fcns;
+	BAT	*b, *bn, *procs, *fcns;
 	BUN 	p, q, r;
 	int	xx, proc=TOK_PROC;
 
@@ -2286,14 +2309,13 @@ void TBL_exitclient(Client client) {
 	}
 
 	/* Check for procs in your fcn table.  */
-	fcns = BATjoin(client->fcntbl, TBL_fcn_tpe);
-	procs = BAT_select(fcns, &proc, &proc, FALSE);
-	uprocs = BATkunique(procs);
+	procs = BAT_select(TBL_fcn_tpe, &proc, &proc, FALSE);
+	fcns = BATsemijoin(BATmirror(client->fcntbl), procs);
 
-	BATloopFast(uprocs, p, q, xx) {
-		TBL_delproc(client, (str) BUNhvar(uprocs, p), FALSE);
+	BATloopFast(fcns, p, q, xx) {
+		TBL_delproc(client, (str) BUNtvar(fcns, p), 
+			*(oid*) BUNhloc(fcns, p), FALSE);
 	}
-	BBPreclaim(uprocs);
 	BBPreclaim(procs);
 	BBPreclaim(fcns);
 

@@ -747,7 +747,7 @@ proc_definition:
             $2->token = TOK_CONSTANT;
             $2->yyval.vtype = TYPE_int;                                       }
     |   TOK_UNDEF TOK_PROC ';'
-        {   TBL_delproc(ll_client, $2->yyval.val.sval, TRUE); /* DIRECT */  }
+        {   TBL_delproc(ll_client, $2->yyval.val.sval, -1, TRUE); /* DIRECT */  }
 
 proc_assign:
 	TOK_ASSIGNMENT
