@@ -34,7 +34,8 @@ sub new {
     $self->{USER} = $user;
     $self->{SOCKET} = new IO::Socket::INET( $server )
 	|| die "can't connect to $server : $!";
-    bless($self);
+    binmode($self->{SOCKET},":utf8");
+    bless($self,"Mapi");
     $self->{BUF} = "";
     $self->{PROMPT} = "";
     $self->cmd_intern("$user\n");
