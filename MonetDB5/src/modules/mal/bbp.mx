@@ -276,20 +276,27 @@ to a named box.
 	if( box ==0) 
 	return throwMessage("bbp.@1","box is not open");
 @-
+Beware that onces you deposit a BAT into a box, it should
+increment the reference count to assure it is not
+garbage collected. Moreover, it should be done so only once.
 @c
 str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	ValPtr v;
 	Box box;
+	int flg;
 	(void) mb; /* fool compiler */
 
 	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk,pci,1);
 	@:chkIdentifier(name,deposit)@
 	v = &stk->stk[pci->argv[2]];
+	flg= findVariable(box->sym,name)>=0;
 	if(depositBox(box,name,v) ) 
 	return throwException(MALEXCEPTION,"bbp.deposit",
 		"failed to deposit '%s' into box",name);
+	if(!flg)
+		BBPincref(v->val.bval,TRUE);
 	return MAL_SUCCEED;
 }
 
