@@ -319,7 +319,7 @@ int main(int ac, char **av) {
 	while(1){
 		int option_index = 0;
 
-                int c = getopt_long( ac, av, "c:ds:",
+                int c = getopt_long( ac, av, "c:dh:p:?",
                                 long_options, &option_index);
 
 		if (c == -1)
@@ -347,10 +347,6 @@ int main(int ac, char **av) {
 				setlen = mo_add_option( &set, setlen, 
 					opt_cmdline, "mapi_debug", "1" );
 			}
-			break;
-		case 'e':
-			setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "mapi_everything", "yes" );
 			break;
 		case 'h':
 			setlen = mo_add_option( &set, setlen, 
