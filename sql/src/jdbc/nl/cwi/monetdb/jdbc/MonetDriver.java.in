@@ -5,7 +5,7 @@ import java.util.*;
 import java.net.*;
 
 /**
- * A Driver suitable for the Monet database
+ * A Driver suitable for the MonetDB database.
  * <br /><br />
  * This driver will be used by the DriverManager to determine if an URL is to be
  * handled by this driver, and if it does, then this driver will supply a
@@ -15,7 +15,7 @@ import java.net.*;
  * the Java compiler will be sufficient since nothing has to be set in order to
  * use this driver.
  * <br /><br />
- * This Driver supports Monet database URLs. MonetDB URLs are defined as:<br />
+ * This Driver supports MonetDB database URLs. MonetDB URLs are defined as:<br />
  * <tt>jdbc:monetdb://&lt;host&gt;[:&lt;port&gt]/&lt;database&gt;</tt><br />
  * where [:&lt;port&gt] denotes that a port is optional. If not given the default
  * (@JDBC_DEF_PORT@) will be used.
@@ -39,7 +39,7 @@ public class MonetDriver implements Driver {
 	/** Whether this driver is JDBC compliant or not */
 	private static final boolean MONETJDBCCOMPLIANT = false;
 
-	/** Monet default port to connect to */
+	/** MonetDB default port to connect to */
 	private static final String PORT = "@JDBC_DEF_PORT@";
 
 	/** Do we connect with blockmode by default or not */
@@ -282,9 +282,9 @@ public class MonetDriver implements Driver {
 	}
 
 	/**
-	 * Returns the java.sql.Types equivalent of the given Monet type.
+	 * Returns the java.sql.Types equivalent of the given MonetDB type.
 	 *
-	 * @param type the type as used by Monet
+	 * @param type the type as used by MonetDB
 	 * @return the mathing java.sql.Types constant or java.sql.Types.OTHER if
 	 *         nothing matched on the given string
 	 */

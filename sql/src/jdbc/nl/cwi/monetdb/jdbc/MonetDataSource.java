@@ -6,7 +6,7 @@ import java.util.*;
 import java.io.*;
 
 /**
- * A DataSource suitable for the Monet database
+ * A DataSource suitable for the MonetDB database.
  * <br /><br />
  * This DataSource allows retrieval of a Connection using the JNDI bean like
  * framework.  A DataSource has numerous advantages over using the DriverManager
@@ -26,7 +26,7 @@ public class MonetDataSource implements DataSource {
 	private String description;
 	private int loginTimeout = 0;
 	private String user;
-	// insecure, but no big issue as long as Monet itself doesn't do decent authorisation
+	// insecure, but no big issue as long as MonetDB itself doesn't do decent authorisation
 	private String password;
 
 	// the following properties are also standard:

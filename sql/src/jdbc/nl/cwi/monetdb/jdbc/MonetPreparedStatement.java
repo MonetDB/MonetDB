@@ -7,7 +7,7 @@ import java.io.*;
 import java.math.*;	// BigDecimal, etc.
 
 /**
- * A PreparedStatement suitable for the Monet database
+ * A PreparedStatement suitable for the MonetDB database.
  * <br /><br />
  * This implementation is purely for enabling applications to use the interface
  * PreparedStatement, for it does currently not use a PREPARE call on the
@@ -33,7 +33,7 @@ public class MonetPreparedStatement
 
 	/**
 	 * MonetStatement constructor which checks the arguments for validity, tries
-	 * to set up a socket to Monet and attempts to login.
+	 * to set up a socket to MonetDB and attempts to login.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
 	 * @param monet the connection to Mserver to use

@@ -5,7 +5,7 @@ import java.nio.*;
 import java.net.*;
 
 /**
- * A Socket for communicating with the Monet database in block mode
+ * A Socket for communicating with the MonetDB database in block mode.
  * <br /><br />
  * This MonetSocket performs basic operations like sending the server a message
  * and/or receiving a line from it. A small interpretation of all what is read
@@ -16,7 +16,7 @@ import java.net.*;
  * last line read.
  * <br /><br />
  * For debugging purposes a socket level debugging is implemented where each and
- * every interaction to and from the Monet server is logged to a file on disk.
+ * every interaction to and from the MonetDB server is logged to a file on disk.
  * Incomming messages are prefixed by "&lt;&lt;", outgoing messages by
  * "&gt;&gt;".
  * <br /><br />
@@ -235,7 +235,7 @@ class MonetSocketBlockMode extends MonetSocket {
 	}
 
 	/**
-	 * disconnect closes the streams and socket connected to the Monet server
+	 * disconnect closes the streams and socket connected to the MonetDB server
 	 * if possible. If an error occurs during disconnecting it is ignored.
 	 */
 	public synchronized void disconnect() {

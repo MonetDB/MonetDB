@@ -8,11 +8,11 @@ import java.text.SimpleDateFormat;
 import java.util.regex.*;
 
 /**
- * A Connection suitable for the Monet database.
+ * A Connection suitable for the MonetDB database.
  * <br /><br />
- * This connection represents a connection (session) to a Monet database. SQL
+ * This connection represents a connection (session) to a MonetDB database. SQL
  * statements are executed and results are returned within the context of a
- * connection. This Connection object holds a physical connection to the Monet
+ * connection. This Connection object holds a physical connection to the MonetDB
  * database.
  * <br /><br />
  * A Connection object's database should able to provide information describing
@@ -134,7 +134,7 @@ public class MonetConnection extends Thread implements Connection {
 		/** language ?!? */
 
 		try {
-			// make connection to Monet
+			// make connection to MonetDB
 			if (blockMode) {
 				int blocksize;
 				try {
@@ -365,7 +365,7 @@ public class MonetConnection extends Thread implements Connection {
 		} else {
 			rs.close();
 			stmt.close();
-			throw new SQLException("Driver Panic!!! Monet doesn't want to tell us what we need! BAAAAAAAAAAAD MONET!");
+			throw new SQLException("Driver Panic!!! MonetDB doesn't want to tell us what we need! BAAAAAAAAAAAD MONET!");
 		}
 	}
 
@@ -742,7 +742,7 @@ public class MonetConnection extends Thread implements Connection {
 		// send commit to the server (note the s in front is a protocol issue)
 		String error = sendIndependantCommand("sCOMMIT;");
 		// I don't know why and how an error could be produced, but you never
-		// know with Monet
+		// know with MonetDB
 		if (error != null) throw new SQLException(error);
 	}
 
@@ -757,23 +757,23 @@ public class MonetConnection extends Thread implements Connection {
 		// send commit to the server (note the s in front is a protocol issue)
 		String error = sendIndependantCommand("sROLLBACK;");
 		// I don't know why and how an error could be produced, but you never
-		// know with Monet
+		// know with MonetDB
 		if (error != null) throw new SQLException(error);
 	}
 
 	/**
-	 * Sends the given string to Monet, making sure there is a prompt before
+	 * Sends the given string to MonetDB, making sure there is a prompt before
 	 * and after the command has sent. All possible returned information is
 	 * discarded.
 	 *
-	 * @param command the exact string to send to Monet
+	 * @param command the exact string to send to MonetDB
 	 * @return a string containing errors that occurred after the command was
 	 *         executed, or null if no errors occurred
 	 * @throws SQLException if an IO exception occurs
 	 */
 	String sendIndependantCommand(String command) throws SQLException {
 		String error;
-		// get lock on Monet
+		// get lock on MonetDB
 		synchronized(monet) {
 			try {
 				// make sure we have the prompt
@@ -1038,7 +1038,7 @@ public class MonetConnection extends Thread implements Connection {
 				}
 			} catch (SQLException e) {
 				hdrl.addError(e.getMessage());
-				// if Monet sent us an incomplete or malformed header, we have
+				// if MonetDB sent us an incomplete or malformed header, we have
 				// big problems, thus discard the whole bunch and quit processing
 				// this one
 				try {

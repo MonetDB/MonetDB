@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.*;
 
 /**
- * A DatabaseMetaData object suitable for the Monet database.
+ * A DatabaseMetaData object suitable for the MonetDB database.
  * <br /><br />
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
@@ -99,7 +99,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	/**
 	 * Are NULL values sorted high?
 	 *
-	 * @return true because Monet puts NULL values on top upon ORDER BY
+	 * @return true because MonetDB puts NULL values on top upon ORDER BY
 	 */
 	public boolean nullsAreSortedHigh() {
 		return(true);
@@ -118,7 +118,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	/**
 	 * Are NULL values sorted at the start regardless of sort order?
 	 *
-	 * @return false, since Monet doesn't do this
+	 * @return false, since MonetDB doesn't do this
 	 */
 	public boolean nullsAreSortedAtStart() {
 		return(false);
@@ -127,7 +127,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	/**
 	 * Are NULL values sorted at the end regardless of sort order?
 	 *
-	 * @return false, since Monet doesn't do this
+	 * @return false, since MonetDB doesn't do this
 	 */
 	public boolean nullsAreSortedAtEnd() {
 		return(false);
@@ -196,7 +196,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * Does the database store tables in a local file?	No - it
 	 * stores them in a file on the server.
 	 *
-	 * @return false because that's what Monet is for
+	 * @return false because that's what MonetDB is for
 	 */
 	public boolean usesLocalFiles() {
 		return(false);
@@ -346,7 +346,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	/**
 	 * Get all the "extra" characters that can be used in unquoted
 	 * identifier names (those beyond a-zA-Z0-9 and _)
-	 * Monet has no extras
+	 * MonetDB has no extras
 	 *
 	 * @return a string containing the extra characters
 	 */
@@ -449,7 +449,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Can an "ORDER BY" clause use columns not in the SELECT?
-	 * Monet = SQL99 = false
+	 * MonetDB = SQL03 = false
 	 *
 	 * @return true if so
 	 */
@@ -481,7 +481,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * Can a "GROUP BY" clause add columns not in the SELECT provided
 	 * it specifies all the columns in the SELECT?
 	 *
-	 * (Monet already supports the more difficult supportsGroupByUnrelated(),
+	 * (MonetDB already supports the more difficult supportsGroupByUnrelated(),
 	 * so this is a piece of cake)
 	 *
 	 * @return true if so
@@ -705,7 +705,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Can a schema name be used in a procedure call statement?
-	 * Ohw probably, but I don't know of procedures in Monet
+	 * Ohw probably, but I don't know of procedures in MonetDB
 	 *
 	 * @return true if so
 	 */
@@ -1008,7 +1008,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * What is the maximum number of columns in a table?
-	 * wasn't Monet designed for datamining? (= much columns)
+	 * wasn't MonetDB designed for datamining? (= much columns)
 	 *
 	 * @return the max columns
 	 */
@@ -1021,7 +1021,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * database?  Well, since it depends on Mserver, which just listens
 	 * for new connections and creates a new thread for each connection,
 	 * this number can be very high, and theoretically till the system
-	 * runs out of resources. However, knowing Monet is knowing that you
+	 * runs out of resources. However, knowing MonetDB is knowing that you
 	 * should handle it a little bit with care, so I give a very minimalistic
 	 * number here.
 	 *
@@ -1501,8 +1501,6 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	<LI><B>TABLE_CAT</B> String => catalog name
 	 *	</OL>
 	 *
-	 * Note: this will return a resultset with 'default', since there are no catalogs
-	 *       in Monet
 	 *
 	 * @return ResultSet each row has a single String column that is a
 	 *         catalog name
@@ -2672,7 +2670,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Return user defined types in a schema
-	 * Probably not possible within Monet
+	 * Probably not possible within MonetDB
 	 *
 	 * @throws SQLException if I made a Boo-Boo
 	 */

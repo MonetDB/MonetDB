@@ -86,14 +86,14 @@ public class MonetSavepoint implements Savepoint {
 	}
 
 	/**
-	 * Returns the name to use when referencing this save point to the Monet
+	 * Returns the name to use when referencing this save point to the MonetDB
 	 * database. The returned value is guaranteed to be unique and consists of
 	 * a prefix string and a sequence number.
 	 *
 	 * @return the unique savepoint name
 	 */
 	String getName() {
-		return("MonetSP" + id);
+		return("MonetDBSP" + id);
 	}
 
 

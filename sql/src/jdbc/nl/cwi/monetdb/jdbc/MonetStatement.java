@@ -5,7 +5,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- * A Statement suitable for the Monet database.
+ * A Statement suitable for the MonetDB database.
  * <br /><br />
  * The object used for executing a static SQL statement and returning the
  * results it produces.<br />
@@ -73,7 +73,7 @@ public class MonetStatement implements Statement {
 
 	/**
 	 * MonetStatement constructor which checks the arguments for validity, tries
-	 * to set up a socket to Monet and attempts to login.
+	 * to set up a socket to MonetDB and attempts to login.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
 	 * @param monet the connection to Mserver to use
