@@ -50,9 +50,13 @@ address ARRAYgridBAT
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
 
-command *(b:bat[:void,:int],c:bat[:void,:int]):bat[:void,:int]
-address ARRAYmultiply_int_int
-comment "Calculate the array product";
+#command *(b:bat[:void,:int],c:bat[:void,:int]):bat[:void,:int]
+#address ARRAYmultiply_int_int
+#comment "Calculate the array product";
+
+command product(b:bat[:void,:any$1],c:bat[:void,:any$2]):bat[:any$1,:any$2]
+address ARRAYproduct
+comment "Produce an array product";
 
 command project(b:bat[:void,:any],i:int):bat[:void,:int]
 address ARRAYproject
@@ -455,6 +459,37 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 @:arraymultiply(int,lng)@
 @:arraymultiply(lng,lng)@
 
+str
+ARRAYproduct(int *ret, int *bid, int *rid){
+	BAT *bn, *b, *r;
+	BUN p,q, s,t;
+	int x1,x2;
+
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("array.product", "Cannot access descriptor");
+    }
+    if( (r= BATdescriptor(*rid)) == NULL ){
+		BBPunfix(b->batCacheid);
+         return throwMessage("array.product", "Cannot access descriptor");
+    }
+    if( BATcount(b) > BATcount(r) || (BATcount(b)% BATcount(r)) !=BATcount(b)){
+		BBPunfix(b->batCacheid);
+		BBPunfix(r->batCacheid);
+        return throwMessage("array.product", "Illegal argument bounds");
+    }
+	bn= BATnew(b->ttype, r->ttype, BATcount(r));
+
+	BATloopFast(r,s,t,x2){
+		BATloopFast(b,p,q,x1){
+			BUNfastins(bn,BUNtail(b,p),BUNtail(r,s));
+			s+= x2;
+		}
+		s-= x2;
+	}
+	BBPincref( *ret= bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
 str
 ARRAYproject(int *ret, int *bid, int *cst){
 	BAT *bn,*b;
