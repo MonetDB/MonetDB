@@ -123,6 +123,10 @@ comment "Retrieve the subset using a cracker
 command drop(b:bat[:int,:int])
 address CRKdropPiece
 comment	"Garbage collect the piece representation";
+command dropView(b:bat[:int,:int])
+address CRKdropView
+comment	"Garbage collect the piece representation.
+	Should be a side-effect of dropping the bat!";
 @{
 @* Implementation
 The implementation is geared at early experimentation
@@ -186,10 +190,10 @@ the value ranges supported.
 #include "crackers.h"
 
 static CrackMap *crackMap;
-static int maxCrackMap;
+static int maxCrackMap=0;
 
 int findCrackMap(int bid){
-	int i,freemap= -1;
+	int i,freemap= -1, units=1024;
 	for(i=0; i<maxCrackMap; i++)
 	if( crackMap[i].bid== bid) return i;
 	else 
@@ -201,14 +205,16 @@ int findCrackMap(int bid){
 	}
 
 	if( i== maxCrackMap){
-		CrackMap *x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * (i+10));
+		if(maxCrackMap >0) units *= 1.2;
+		CrackMap *x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * units);
+		bzero(x,sizeof(CrackMap) * units);
 		if(crackMap){
 			fprintf(stderr,"reallocate Crackmap\n");
 			memcpy(x,crackMap, sizeof(CrackMap)* i);
 			GDKfree(crackMap);
 		}
 		crackMap= x;
-		maxCrackMap = i+10;
+		maxCrackMap = units;
 	}
 	/* init the crackmap */
 	crackMap[i].bid= bid;
@@ -224,7 +230,6 @@ void freeCrackMap(int m){
         crackMap[m].bid= -1;
         bzero((void*) crackMap[m].pieces, sizeof(Piece) * crackMap[m].maxpiece);
         crackMap[m].freepiece= 0;
-
 }
 void printCrackMapElement(Piece *list, int i, int bid){
 	stream_printf(GDKout,"[ %3d %3d, ",i,bid);
@@ -659,6 +664,12 @@ inspecting the cracker table to extend the scope.
 It keeps a count of number of leftover pieces.
 If it can not glue the pieces together it should
 create a BAT and insert all the left over elements;
+
+The cracking strategy ensures that you don;t have to pick
+the left/right pieces. Any piece that qualifies the search
+would be sufficient. This works because we know that
+the reshuffling of a range always takes place within the
+space of its origin.
 @c
 str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	BAT *b, *view;
@@ -672,10 +683,11 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 
 	b->batRestricted= BAT_READ;
 	view= VIEWcreate_(b,TRUE);
-	BBPfix(*vid=  view->batCacheid);
+	/*BBPfix(*vid=  view->batCacheid);*/
+	*vid=  view->batCacheid;
 
 	for(i=0; i<crackMap[m].freepiece; i++)
-	if( crackMap[m].pieces[i].kind == LEAF &&
+	if( /* crackMap[m].pieces[i].kind == LEAF && NOT NEEDED */
 	    crackMap[m].pieces[i].rng_min>= *(int*) low &&
 	    crackMap[m].pieces[i].rng_max<= *(int*) high
 	) {
@@ -694,10 +706,17 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 	do{
 		glued=0; leftover=0;
 		for(i=0; i<crackMap[m].freepiece; i++)
-		if( crackMap[m].pieces[i].kind == LEAF &&
+		if( /* crackMap[m].pieces[i].kind == LEAF && NOT NEEDED */
 		    crackMap[m].pieces[i].rng_min>= *(int*) low &&
 		    crackMap[m].pieces[i].rng_max<= *(int*) high
 		) {
+			if( crackMap[m].pieces[i].idx_first < idxlow &&
+			    crackMap[m].pieces[i].idx_last > idxhgh){
+				setViewBound(b,view,
+					idxlow= crackMap[m].pieces[i].idx_first,
+					idxhgh=crackMap[m].pieces[i].idx_last);
+				glued++;
+			} else
 			if( crackMap[m].pieces[i].idx_last == idxlow-1){
 #ifdef DEBUG_CRACKERS
 				printf("lglue: [%d][%d]%d %d\n",m,i, 
@@ -726,7 +745,7 @@ str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
 #ifdef DEBUG_CRACKERS
 		printf("glued %d leftover %d\n", glued,leftover);
 #endif
-	}while(glued && leftover);
+	}while(leftover);
 	return MAL_SUCCEED;
 }
 @-
@@ -755,15 +774,23 @@ str CRKselectPieces(int *result, int *bid, int *low, int *hgh)
 @-
 The GDK kernel contains an error wrt garbage collection
 of BATview objects. They have to be freed explicitly
+too.
 @c
 str CRKdropPiece(int *newpid, int *bid){
+	BAT *b;
+	int result=0,m;
+	(void) newpid;
+        @:getBATdescriptor(&result,bid,b,dropPiece)@
+	m= findCrackMap(*bid);
+	freeCrackMap(m);
+	return MAL_SUCCEED;
+} 
+str CRKdropView(int *newpid, int *bid){
 	BAT *b;
 	int result=0;
 	(void) newpid;
         @:getBATdescriptor(&result,bid,b,dropPiece)@
-	(void) result;
-	VIEWdestroy(b);
-	freeCrackMap(findCrackMap(*bid));
+	/* VIEWdestroy(b);*/
 	return MAL_SUCCEED;
 } 
 @-
