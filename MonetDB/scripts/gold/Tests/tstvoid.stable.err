@@ -1,25 +1,25 @@
 stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 
 
-# 12:45:16 >  
-# 12:45:16 >  Mtimeout -timeout 540 ./tstvoid tstvoid 
-# 12:45:16 >  
+# 09:31:19 >  
+# 09:31:19 >  Mtimeout -timeout 540 ./tstvoid tstvoid 
+# 09:31:19 >  
 
 
-# 12:45:16 >  
-# 12:45:16 >  mkdir -p /export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp/var/dbfarm/Tests_scripts_gold_tstvoid
-# 12:45:16 >  
+# 09:31:19 >  
+# 09:31:19 >  mkdir -p /ufs/niels/data/monet/Linux/var/dbfarm/Tests_scripts_gold_tstvoid
+# 09:31:19 >  
 
 
-# 12:45:16 >  
-# 12:45:16 >  Mtimeout -timeout 60 Mserver --config=/export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid < load.mil
-# 12:45:16 >  
+# 09:31:19 >  
+# 09:31:19 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
+# 09:31:19 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 1927
-# builtin opt 	prefix = /export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp
-# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	monet_pid = 14631
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	exec_prefix = NONE
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -29,18 +29,16 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # builtin opt 	monet_deamon = yes
-# system opt 	prefix = /export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp
-# system opt 	exec_prefix = ${prefix}
-# system opt 	gdk_dbfarm = ${prefix}/var/dbfarm
-# system opt 	gdk_dbname = demo
-# system opt 	gdk_debug = 0
-# system opt 	gdk_mmap = 33554432
-# system opt 	monet_admin = adm
-# system opt 	monet_prompt = monet>
-# system opt 	monet_welcome = yes
-# system opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# system opt 	monet_deamon = no
-# config opt 	prefix = /export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -55,15 +53,15 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
 
-# 12:45:19 >  
-# 12:45:19 >  Mtimeout -timeout 60 Mserver --config=/export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid < init.mil
-# 12:45:19 >  
+# 09:31:20 >  
+# 09:31:20 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
+# 09:31:20 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 1934
-# builtin opt 	prefix = /export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp
-# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	monet_pid = 14638
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	exec_prefix = NONE
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -73,18 +71,16 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # builtin opt 	monet_deamon = yes
-# system opt 	prefix = /export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp
-# system opt 	exec_prefix = ${prefix}
-# system opt 	gdk_dbfarm = ${prefix}/var/dbfarm
-# system opt 	gdk_dbname = demo
-# system opt 	gdk_debug = 0
-# system opt 	gdk_mmap = 33554432
-# system opt 	monet_admin = adm
-# system opt 	monet_prompt = monet>
-# system opt 	monet_welcome = yes
-# system opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# system opt 	monet_deamon = no
-# config opt 	prefix = /export/scratch1/monet/tmp/manegold.GNU_32-d.30206/monet/.GNU_32-d/Linux2.4.9-14smp
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -99,7 +95,96 @@ stderr of test 'tstvoid` in directory 'scripts/gold` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
 
-# 12:56:01 >  
-# 12:56:01 >  Done.
-# 12:56:01 >  
+# 09:31:20 >  
+# 09:31:20 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
+# 09:31:20 >  
+
+# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
+# builtin opt 	gdk_version = 4.3.5
+# builtin opt 	monet_pid = 14645
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	exec_prefix = NONE
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mmap = 32M
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_deamon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/niels/data/monet/Linux
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_debug = 0
+# config opt 	gdk_mmap = 33554432
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = monet>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# config opt 	monet_deamon = no
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
+
+# 09:31:21 >  
+# 09:31:21 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_scripts_gold_tstvoid
+# 09:31:21 >  
+
+# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
+# builtin opt 	gdk_version = 4.3.5
+# builtin opt 	monet_pid = 14656
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	exec_prefix = NONE
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mmap = 32M
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_deamon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/niels/data/monet/Linux
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_debug = 0
+# config opt 	gdk_mmap = 33554432
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = monet>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# config opt 	monet_deamon = no
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = Tests_scripts_gold_tstvoid
+
+# 09:31:22 >  
+# 09:31:22 >  sh summary
+# 09:31:22 >  
+
+
+# 09:31:22 >  
+# 09:31:22 >  Done.
+# 09:31:22 >  
 

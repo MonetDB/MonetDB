@@ -1,5 +1,5 @@
 PROC tmp() : void := {
-        var sts := view_bbp_status.semijoin(view_bbp_kind.select("tran"));
+        var sts := view_bbp_status;
         var nme := view_bbp_name.access(BAT_WRITE).col_name("name");
         var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
         nme.replace(rev).table(view_bbp_heat, sts.col_name("status"),
