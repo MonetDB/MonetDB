@@ -23,10 +23,8 @@
 
 MTSAFE
 
-SUBDIRS = DBD
-
 scripts_perl = {
 	EXT = pl pm
-	DIR = pkgdatadir/perl
-	SOURCES = Mapi.pm 
+	DIR = pkgdatadir/perl/DBD
+	SOURCES = monet.pm 
 }

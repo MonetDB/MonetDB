@@ -307,16 +307,11 @@ str atom_name(int tpe) {
 #define TCPPORT		49153
 #define MAX_CONN	256
 
-#ifdef __sgi
-#define SOCKPTR void *
-#define SOCKLEN int
-#else
 #define SOCKPTR struct sockaddr *
 #if HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
 #endif
 
 #endif /*_TCPIP_H_*/

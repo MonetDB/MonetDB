@@ -327,51 +327,17 @@ static char *sep_dup( char *sep ){
 }
 
 
-char *str2monet ( char *src){
-	int l = strlen(src) + 1;
-	char *cur, *dst = GDKmalloc(l), *p = dst;
-	int escaped = 0;
-
-        /* copy it in, while performing the correct escapes */
-        for(cur = src; *cur; cur++) {
-                if (escaped) {
-                        if (*cur == 'n') {
-                                *p++ = '\n';
-                        } else if (*cur == 't') {
-                                *p++ = '\t';
-                        } else if ((cur[0] >= '0' && cur[0] <= '7') &&
-                                   (cur[1] >= '0' && cur[1] <= '7') &&
-                                   (cur[2] >= '0' && cur[2] <= '7'))
-                        {
-                                *p++ =  (cur[2] & 7)     |
-                                       ((cur[1] & 7) <<3)|
-                                       ((cur[0] & 7) <<6);
-                                cur += 2;
-                        } else {
-                                *p++ = *cur;
-                        }
-                        escaped = FALSE;
-                } else if (*cur == '\\') {
-                        escaped = TRUE;
-                } else {
-                        *p++ = *cur;
-                }
-        }
-        *p++ = 0;
-        return dst;
-}
-
-ptr *ASCIIadt_frStr( void *extra, int type, char *s){
-        int l = 0;
+ptr *ASCIIadt_frStr( void *extra, int type, char *s)
+{
         ptr *res = NULL;
+
 	(void) extra;
-        if (type == TYPE_str) {
-        	if (s == NULL || strcmp(s,"nil") == 0)
-        		res = (ptr*)ATOMnil(TYPE_str);
-        	else
-                	res = (ptr*)str2monet(s);
-        } else
+        if (s == NULL || strcmp(s,"nil") == 0) {
+        	res = (ptr*)ATOMnil(TYPE_str);
+        } else {
+        	int l = 0;
                 (void) (*BATatoms[type].atomFromStr)(s, &l, (ptr)&res);
+	}
         return res;
 }
 
@@ -544,8 +510,9 @@ int myisspace(int s ){
 	return s == ' ' || s == '\t' || s == '\n';
 }
 
-static INLINE
-char *strip( char *s, char *e ){
+static INLINE char *
+strip( char *s, char *e )
+{
         while(myisspace((int)*s)){
 		s++;
 	}
@@ -560,13 +527,57 @@ char *strip( char *s, char *e ){
 	return s;
 }
 
-static INLINE
-int insert_val( ascii_io *fmt, char *s, char *e, int need2strip ){
+static INLINE char *
+find_quote(char *s, char quote )
+{
+	while(*s != quote) 
+		s++;
+	return s;
+}
+
+static INLINE char *
+rfind_quote(char *s, char quote )
+{
+	while(*s != quote) 
+		s--;
+	return s;
+}
+
+static INLINE int 
+insert_val( ascii_io *fmt, char *s, char *e, char quote )
+{
+	char r = 0;
 	ptr *adt;
 	oid on = oid_nil;	/* can't use &oid_nil because of the
 				   way it's defined */
-	if (need2strip) s = strip(s,e);
+	if (quote){
+		/* string needs the quotes included */
+		s = find_quote(s, quote);
+		if (!s) 
+			return 1;
+		if (fmt->adt != TYPE_str) 
+			s++;
+		else if (quote != '"')
+			*s = '"';
+		e = rfind_quote(e, quote);
+		if (fmt->adt == TYPE_str) {
+			*e = '"';
+			e++;
+		}
+		*e = 0;
+	} else if (fmt->adt == TYPE_str) {
+		s--;
+		*s = '"';
+		*e = '"';
+		e++;
+		r = *e;
+		*e = 0;
+	} else {
+		s = strip(s,e);
+	}
 	adt = fmt->frstr( fmt->extra, fmt->adt, s );
+	if (r) 
+		*e = r;
 	
 	if (!adt){
 		GDKerror("%lx not inserted %s\n", (size_t)adt, s);
@@ -578,17 +589,9 @@ int insert_val( ascii_io *fmt, char *s, char *e, int need2strip ){
 	return 0;
 }
 
-static char *find_quote(char *s, char quote ){
-	while(*s != quote) 
-		s++;
-	return s;
-}
-static char *rfind_quote(char *s, char quote ){
-	while(*s != quote) 
-		s--;
-	return s;
-}
-static char *skip_string(char *s, char quote ){
+static INLINE char *
+skip_string(char *s, char quote )
+{
 	int esc = 0;
 	while(*s){
 		if (*s == '\\' && !esc)
@@ -606,25 +609,25 @@ static char *skip_string(char *s, char quote ){
 	return s;
 }
 
-static INLINE
-int insert_line( ascii *as, char *line ){
+static INLINE int 
+insert_line( ascii *as, char *line )
+{
 	int res = 0;
 	ascii_io *fmt = as->format;
-        char *s,*e = 0, quote = '\"';
+        char *s,*e = 0, quote = 0;
 	size_t i;
-	int quotes = 0;
 	int first = 0;
+
 	for( i = 0; i<as->nr_attrs-1 && res == 0; i++){
 		first = 1;
 		s=line;
 		while(*line){
 			if (*line == *(fmt[i].sep) && 
-			     strncmp( fmt[i].sep, line, fmt[i].seplen) == 0 ){
-				e = line; /*strstr( line, fmt[i].sep ); */
+			     strncmp( fmt[i].sep, line, fmt[i].seplen) == 0 ) {
+				e = line; 
 				break;
 		     	} else if(first && (*line == '\"' || *line == '\'') 
-					&& *(line-1) != '\\'){
-				quotes = 1;
+					&& *(line-1) != '\\') {
 				quote = *line;
 				line++;
 				line = skip_string( line, quote );
@@ -638,15 +641,8 @@ int insert_line( ascii *as, char *line ){
 		}
 		if (e){
 			char *end = e;
-			if (quotes){
-				s = find_quote(s, quote);
-				if (!s) return -1;
-				s++;
-				e = rfind_quote(e, quote);
-			}
-			*e = 0;
-			res |= insert_val( &fmt[i], s, e, !quotes );
-			quotes = 0;
+			res |= insert_val( &fmt[i], s, e, quote );
+			quote = 0;
 			line = end + fmt[i].seplen;
 		} else {
 		        GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
@@ -664,7 +660,6 @@ int insert_line( ascii *as, char *line ){
 			break;
 		} else if(first && (*line == '\"' || *line == '\'')
 			        && *(line-1) != '\\'){
-			quotes = 1;
 			quote = *line;
 			line++;
 			line = skip_string( line, quote );
@@ -679,15 +674,8 @@ int insert_line( ascii *as, char *line ){
 	if (!e) e = line;
 	if (e){
 		char *end = e;
-		if (quotes){
-			s = find_quote(s, quote);
-			if (!s) return -1;
-			s++;
-			e = rfind_quote(e, quote);
-		}
-		*e = 0;
-		res |= insert_val( &fmt[as->nr_attrs-1], s, e, !quotes );
-		quotes = 0;
+		res |= insert_val( &fmt[as->nr_attrs-1], s, e, quote );
+		quote = 0;
 		line = end + fmt[as->nr_attrs-1].seplen;
 	} else {
 		GDKerror("Error: missing sep %s line %d field %d\n", fmt->sep, BATcount(fmt->c), i);
