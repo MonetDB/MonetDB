@@ -231,13 +231,17 @@ malInclude also needs a scenario. To break this cycle, the system should
 call once the routine default scenario for each client first.
 @c
 str initScenario(Client c, Scenario s){
+    str msg =0;
     if(s->initScenario && s->initScenarioCmd==0){
         /* prepare for conclicts */
         mal_set_lock(mal_contextLock,"Scenario");
         s->initScenarioCmd= (MALfcn)getAddress( s->initScenario);
-        if(s->initScenarioCmd) (*s->initScenarioCmd)(c);
+        if(s->initScenarioCmd) {
+            msg = (*s->initScenarioCmd)(c);
+        }
         mal_unset_lock(mal_contextLock,"Scenario");
     }
+    if( msg) return msg;
     @:initScen(s,exitScenario)@
     @:initScen(s,initClient)@
     @:initScen(s,exitClient)@
