@@ -28,6 +28,7 @@
 
 CP=cp
 MV=mv
+HIDE=1
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
@@ -140,16 +141,24 @@ MV=mv
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o dymmy.c $<
 
 %.tex: %.mx
-	cat $< > /tmp/doc.mx
-	$(MX) -1 -H$(HIDE) -t /tmp/doc.mx 
-	$(MV) doc.tex $@
-	$(RM) /tmp/doc.mx
+	$(MX) -1 -H$(HIDE) -t $< 
+
+%.bdy.tex: %.mx
+	$(MX) -1 -H$(HIDE) -t -B $<
 
 %.html: %.mx
-	cat $< > /tmp/doc.mx
-	$(MX) -1 -H$(HIDE) -w /tmp/doc.mx 
-	$(MV) doc.html $@
-	$(RM) /tmp/doc.mx
+	$(MX) -1 -H$(HIDE) -w $<
+
+%.bdy.html: %.mx
+	$(MX) -1 -H$(HIDE) -w -B $<
+
+%.html: %.tex
+	# if the .tex source file is found in srcdir (via VPATH), there might be a '.'
+	# in the path, which latex2html doesn't like; hence, we temporarly link the
+	# .tex file to the local build dir.
+	if [ "$<" != "$(<F)" ] ; then $(LN_S) $< $(<F) ; fi
+	$(LATEX2HTML) -split 0 -noimages -rootdir ./ -norooted -noinfo -nosubdir  $(<F)
+	$(RM) -f $(<F)
 
 %.pdf: %.tex
 	$(PDFLATEX) $< 
