@@ -233,7 +233,7 @@ static int mo_config_file(opt **Set, int setlen, char *file )
                 val = strchr(s,'=');
                 if( val == NULL) {
                         fprintf(stderr, 
-				"mo_config_file: syntax error in %s\n", file);
+				"mo_config_file: syntax error in %s at %s\n", file, s);
 			fclose(fd);
 			exit(1);
                 }
@@ -257,7 +257,7 @@ static int mo_config_file(opt **Set, int setlen, char *file )
 		}
 		if (quote) {
 			fprintf(stderr,
-				"mo_config_file: syntax error in %s\n", file);
+				"mo_config_file: wrong number of quotes in %s at %s\n", file, val);
 			fclose(fd);
 			exit(1);
 		}
