@@ -23,13 +23,17 @@ script+
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient -?
 # 16:36:12 >  
 
-usage: MapiClient
-[-c or --config config_file ]
-[-h or --host hostname ]
-[-p or --port portnr ]
-[-d or --debug [debug_level] ]
-[      --noheaders ]
-[-? or --help ]
+Usage: MapiClient [ options ]
+Options are:
+ -d          | --debug=[level]
+ -h hostname | --host=hostname  /* host to connect to */
+ -p portnr   | --port=portnr    /* port to connect to */
+ -l language | --language=lang  /* {mal,sql,mil} */
+ -u user     | --user=user      /* user id */
+ -P passwd   | --passwd=passwd  /* password */
+ -e          | --error          /* exit on error */
+ -s stmt     | --statement=stmt /* run single statement */
+ -t          | --trace          /* trace Monet interaction */
 
 # 16:36:12 >  
 # 16:36:12 >  Mtimeout -timeout 60 MapiClient.py -?
