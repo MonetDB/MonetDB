@@ -1423,7 +1423,7 @@ the fourth param is the array-index operator({\small\tt \[i\]}).
 
 	/* optimized versions are only tried if there is no head column to care
            about and the start of the values in the BAT is integer-aligned */
-	if (BUNsize(b) == ATOMsize(b->ttype) && (((int) p)&3) == 0) 
+	if (BUNsize(b) == ATOMsize(b->ttype) && (((size_t) p)&3) == 0) 
 	if (ATOMstorage(b->ttype) == TYPE_chr) {
 		int *src = (int*) p;
 		/* treat 32 tuples = 32 (=2^5) bytes per iteration */

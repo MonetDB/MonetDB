@@ -669,7 +669,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   int nfeatures, c_color, i, id_size, hsv_size, noid, rv;
   cross_t *c;
   gdk_int16 *quadtree;
-  BUN ip, iq, hp, hq, sp, sq, vp, vq;
+  BUN ip, iq, hp, /*hq,*/ sp, sq, vp, vq;
   Time delta;
   zid_t lastid;
   oid soid, _ioid;
@@ -778,7 +778,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum,
   memset(quadtree, -1, nfeatures * sizeof(gdk_int16));
 
   for (ip = BUNfirst(qt_id) + soid * id_size, iq = ip + noid * id_size,
-	 hp = BUNfirst(qt_hue) + soid * hsv_size, hq = hp + noid * hsv_size,
+	 hp = BUNfirst(qt_hue) + soid * hsv_size, /*hq = hp + noid * hsv_size,*/
 	 sp = BUNfirst(qt_sat) + soid * hsv_size, sq = sp + noid * hsv_size,
 	 vp = BUNfirst(qt_val) + soid * hsv_size, vq = vp + noid * hsv_size;
        ip < iq /* && hp < hq && sp < sq && vp < vq */;
@@ -1067,7 +1067,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum,
 {
   int n, nimages, nfeatures, id_size, hsv_size;
   gdk_int16 *quadtree;
-  BUN inum_p, inum_q, ioffs_p, ioffs_q, ip, iq, hp, hq, sp, sq, vp, vq;
+  BUN inum_p, inum_q, ioffs_p, ioffs_q, ip, iq, hp, /*hq,*/ sp, sq, vp, vq;
 
   /* Validity checks */
   if (BATcount(qt_ioffs) != BATcount(qt_inum) ||
@@ -1148,7 +1148,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum,
     for (ip = BUNfirst(qt_id) + ioffs * id_size, 
 	   iq = BUNfirst(qt_id) + (ioffs + inum) * id_size,
 	   hp = BUNfirst(qt_hue) + ioffs * hsv_size, 
-	   hq = BUNfirst(qt_hue) + (ioffs + inum) * hsv_size,
+	   /* hq = BUNfirst(qt_hue) + (ioffs + inum) * hsv_size, */
 	   sp = BUNfirst(qt_sat) + ioffs * hsv_size,
 	   sq = BUNfirst(qt_sat) + (ioffs + inum) * hsv_size,
 	   vp = BUNfirst(qt_val) + ioffs * hsv_size,

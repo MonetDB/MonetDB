@@ -826,11 +826,11 @@ does not affect the BATloop [it doesn't!]
 #undef  INSERT_ANTICHECK
 
 #define INSERT_ANTICHECK(dst, src, chk) {\
-        BUN p, q, v;\
+        BUN p, q;\
         BATloopFast(src, p, q, xx) {\
             ANTICHECK(src, p, dst);\
 	    ANTICHECK(src, p, chk);\
-            BUNins(dst, (v=BUNh@2(src, p)), BUNt@2(src, p));\
+            BUNins(dst, BUNh@2(src, p), BUNt@2(src, p));\
         } BBPreclaim(src); }
 
 while (BATcount(delta) > 0) {

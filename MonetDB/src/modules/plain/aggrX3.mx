@@ -356,14 +356,15 @@ HASHfnd_int for void- and hash-lookups, respectively
        		GDKfree(sums);
 	} else {
 		/* sums in-place */
-		yy = 0;
+		int yy = 0;
 		BATloopFast(bn, p, q, xx) {
 			@6 *dst = (@6*) BUNt@7(bn, p);
 			if (cnt[yy] == 0) {
 				*dst = @6_nil;
 			} else if (*dst != @6_nil) {
 				*dst /= cnt[yy];
-			} yy++;
+			}
+			yy++;
 		} 
 	
 	}
@@ -420,7 +421,7 @@ int CMDaggrX3_sum_@1(BAT **ret, BAT *b, BAT *e){
 
 int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
+	int xx, off = BUNindex(bn,BUNfirst(bn));
 	int *cnt;
 	size_t slots; 
 	oid range, min, max;
@@ -536,8 +537,8 @@ int CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e){
 int aggrX3_@1_@3_@4(BAT **ret, BAT *b, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
-	ptr nil = ATOMnilptr(bn->ttype), zero = nil;
-	int xx, yy = 0, off = BUNindex(e,BUNfirst(e));
+	ptr nil = ATOMnilptr(bn->ttype);
+	int xx, off = BUNindex(e,BUNfirst(e));
 	ptr *extremes;
 	BUN p, q, r;
 	oid range, min, max;
@@ -900,14 +901,15 @@ int CMDaggrX3_size(BAT **ret, BAT *b, BAT *e){
        		GDKfree(sums);
 	} else {
 		/* sums in-place */
-		yy = 0;
+		int yy = 0;
 		BATloopFast(bn, p, q, xx) {
 			@6 *dst = (@6*) BUNt@7(bn, p);
 			if (cnt[yy] == 0) {
 				*dst = @6_nil;
 			} else if (*dst != @6_nil) {
 				*dst /= cnt[yy];
-			} yy++;
+			}
+			yy++;
 		} 
 	
 	}
@@ -999,7 +1001,7 @@ int CMDaggrX3_sum3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 
 int CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
-	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
+	int xx, off = BUNindex(bn,BUNfirst(bn));
 	int *cnt;
 	oid range, min, max; 
 	@1 zero = (@1) 0, *sums, slots;
@@ -1131,7 +1133,7 @@ int aggrX3_@13_@3_@4(BAT **ret, BAT *b, BAT *g, BAT *e){
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int (*cmp)(ptr,ptr) = BATatoms[bn->ttype].atomCmp;
 	ptr nil = ATOMnilptr(bn->ttype), zero = nil;
-	int xx, yy = 0, off = BUNindex(e,BUNfirst(e));
+	int xx, off = BUNindex(e,BUNfirst(e));
 	ptr *extremes;
 	BUN p, q, r;
 	oid range, min, max;
