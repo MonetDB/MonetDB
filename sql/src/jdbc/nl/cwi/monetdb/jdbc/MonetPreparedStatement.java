@@ -459,7 +459,10 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setClob(int i, Clob x) throws SQLException {
-		throw new SQLException("Operation currently not supported!");
+		// simply serialise the CLOB into a variable for now... far from
+		// efficient, but might work for a few cases...
+		// be on your marks: we have to cast the length down!
+		setString(i, x.getSubString(1L, (int)(x.length())));
 	}
 
 	/**

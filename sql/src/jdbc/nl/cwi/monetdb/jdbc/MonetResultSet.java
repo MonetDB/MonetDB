@@ -407,8 +407,40 @@ public class MonetResultSet implements ResultSet {
 	public Blob getBlob(String colName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 	public Reader getCharacterStream(int columnIndex) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 	public Reader getCharacterStream(String columnName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
-	public Clob getClob(int i) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
-	public Clob getClob(String colName) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a Clob object in the
+	 * Java programming language.
+	 *
+	 * @param i the first column is 1, the second is 2, ...
+	 * @return a Clob object representing the SQL CLOB value in the
+	 *         specified column
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Clob getClob(int i) throws SQLException {
+		String tmp = getString(i);
+		if (tmp == null) {
+			return(null);
+		} else {
+			return(new MonetClob(tmp));
+		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object as a Clob object in the
+	 * Java programming language.
+	 *
+	 * @param colName the name of the column from which to retrieve
+	 *        the value
+	 * @return a Clob object representing the SQL CLOB value in the
+	 *         specified column
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Clob getClob(String colName) throws SQLException {
+		return(getClob(findColumn(colName)));
+	}
 
 	/**
 	 * Retrieves the value of the designated column in the current row of this
