@@ -951,6 +951,7 @@ str RSdePopulate(int* retval, int* handle) {
 	cs->length = -1;
 	cs->complete = (char)0;
 	cs->nextSet = NULL;
+	rs->length = 0;
 
 	*retval = *handle;
 	return(MAL_SUCCEED);
