@@ -1,14 +1,18 @@
 stdout of test '09_Modules_UNKNOWN` in directory 'tests/Availability` itself:
 
-#> Mtest (20:53:32):	milS 09_Modules_UNKNOWN milS
-#> Mtest (20:53:32):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 09_Modules_UNKNOWN.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:09_Modules_UNKNOWN.milS
 
+# 11:06:13 >  
+# 11:06:13 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_Availability  < 09_Modules_UNKNOWN.milS
+# 11:06:13 >  
 
-#You are system administrator (adm)!
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
 # 0 modules	  #
 #-----------------#
+
+# 11:06:14 >  
+# 11:06:14 >  Done.
+# 11:06:14 >  
+

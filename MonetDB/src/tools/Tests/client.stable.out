@@ -1,9 +1,9 @@
 stdout of test 'client` in directory 'src/tools` itself:
 
 
-# 13:09:23 >  
-# 13:09:23 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_tools --set mapi_port=59123 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil ; echo  ; echo Over..
-# 13:09:23 >  
+# 10:57:36 >  
+# 10:57:36 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_tools --set mapi_port=57556 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil ; echo  ; echo Over..
+# 10:57:36 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -14,9 +14,9 @@ Ready.
 
 Over..
 
-# 13:09:24 >  
-# 13:09:24 >  Mtimeout -timeout 60 MapiClient --port=59123 --config=/ufs/niels/data/monet/Linux/etc/monet.conf < client.milC
-# 13:09:24 >  
+# 10:57:36 >  
+# 10:57:36 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=57556 < client.milC
+# 10:57:36 >  
 
 Start of MIL script.
 [ 1 ]
@@ -40,8 +40,6 @@ Start of MIL script.
 [ "algebra",	  2		  ]
 [ "arith",	  2		  ]
 [ "bat",	  2		  ]
-[ "blob",	  2		  ]
-[ "io",		  2		  ]
 [ "kernel",	  2		  ]
 [ "mapi",	  2		  ]
 [ "str",	  4		  ]
@@ -114,9 +112,9 @@ Start of MIL script.
 [ "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]"			  ]
 [ "sigs(str) : void"									  ]
 [ "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
-[ "stream_line(stream) : str"								  ]
-[ "stream_read(stream) : str"								  ]
-[ "stream_strip(stream, str) : str"							  ]
+[ "stream_line(Stream) : str"								  ]
+[ "stream_read(Stream) : str"								  ]
+[ "stream_strip(Stream, str) : str"							  ]
 [ "tail(BAT[any,any]) : int"								  ]
 [ "threads() : void"									  ]
 [ "ttype(BAT[any,any]) : int"								  ]
@@ -332,10 +330,6 @@ Start of MIL script.
 [ "nr",			  "changeable"	  ]
 [ "mapi_params",	  "changeable"	  ]
 [ "_params",		  "changeable"	  ]
-[ "SEEK_END",		  "constant"	  ]
-[ "SEEK_CUR",		  "constant"	  ]
-[ "SEEK_SET",		  "constant"	  ]
-[ "EOF",		  "constant"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -407,10 +401,6 @@ Start of MIL script.
 [ "nr",			  "liquid"	  ]
 [ "mapi_params",	  "liquid"	  ]
 [ "_params",		  "liquid"	  ]
-[ "SEEK_END",		  "liquid"	  ]
-[ "SEEK_CUR",		  "liquid"	  ]
-[ "SEEK_SET",		  "liquid"	  ]
-[ "EOF",		  "liquid"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -482,10 +472,6 @@ Start of MIL script.
 [ "nr",			  "int"	  ]
 [ "mapi_params",	  "BAT"	  ]
 [ "_params",		  "BAT"	  ]
-[ "SEEK_END",		  "int"	  ]
-[ "SEEK_CUR",		  "int"	  ]
-[ "SEEK_SET",		  "int"	  ]
-[ "EOF",		  "int"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -543,43 +529,43 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 0,	  6,		  0	  ]
+[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_atomtbl",	  "str",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_environment",	  "str",  "str",  24,	  0,	  "dirty",	  "load", "tran", 2,	  0,		  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  581,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  612,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  581,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  581,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  537,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  612,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  581,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1525,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  38,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  612,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  612,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_atm",	  "oid",  "str",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  9,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  9,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_load",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_nme",	  "oid",  "str",  9,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  20,	  0,	  "dirty",	  "load", "tran", 1,	  2,		  0	  ]
+[ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "tmp_27",		  "str",  "oid",  612,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "tmp_28",		  "str",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "tmp_29",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "tmp_30",		  "str",  "oid",  612,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
+[ "tmp_31",		  "str",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  0,		  0	  ]
 #---------------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	| plevel  #
 #---------------------------------------------------------------------------------------------------------#
-[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 0,	  6	  ]
-[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_atomtbl",	  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_environment",	  "str",  "str",  23,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  606,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  637,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  606,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  606,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  562,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  637,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  606,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  637,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1594,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  38,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  637,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_fcntbl",	  "str",  "oid",  637,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_atm",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  11,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_dep",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  11,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_nme",	  "oid",  "str",  11,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  24,	  0,	  "dirty",	  "load", "tran", 1,	  2	  ]
-[ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_27",		  "str",  "oid",  637,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_28",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_29",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_30",		  "str",  "oid",  637,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "tmp_31",		  "str",  "int",  18,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-#-----------------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
-#-----------------------------------------------------------------------------------------#
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -619,20 +605,16 @@ Start of MIL script.
 #-----------------------------------------------------------------------------------------#
 # type			| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
-[ "port",		  "int",  "liquid",	  "changeable",	  "59123"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57556"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "cmd",		  "str",  "liquid",	  "changeable",	  "\"\""		  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "59123"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57556"		  ]
 [ "maxusers",		  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "l",			  "int",  "liquid",	  "changeable",	  "0"			  ]
-[ "port",		  "int",  "liquid",	  "changeable",	  "59123"		  ]
+[ "port",		  "int",  "liquid",	  "changeable",	  "57556"		  ]
 [ "nr",			  "int",  "liquid",	  "changeable",	  "5"			  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
-[ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
-[ "SEEK_CUR",		  "int",  "liquid",	  "constant",	  "1"			  ]
-[ "SEEK_SET",		  "int",  "liquid",	  "constant",	  "0"			  ]
-[ "EOF",		  "int",  "liquid",	  "constant",	  "-1"			  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -694,206 +676,14 @@ Start of MIL script.
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
 #[      2,         1,   running,         0, "mapi_server(get_mapi_port#"                            ]
-#[      3,         2,   running,         0, "!ERROR: TBL_getname: inexistent function 0x400344fc.
-unknown(0)#"                            ]
-#[     52,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x400344fc.
-unknown(1)#"                            ]
-#[     53,         3,   running,        52, "queue()#"                            ]
-[ 3 ]
-#-----------------------------------------------------------------------------------------#
-# name		| login				| mil					  #
-#-----------------------------------------------------------------------------------------#
-[ "adm",	  "Thu Jul 25 13:09:24 2002",	  "printf(\"\\nReady.\\n\")"		  ]
-[ "niels",	  "Thu Jul 25 13:09:24 2002",	  "clients()"				  ]
-[ "adm",	  "Thu Jul 25 13:09:24 2002",	  "mapi_server(get_mapi_port(),5)"	  ]
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  0	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  0	  ]
-[ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------#
-# BAT:			  monet_environment				  #
-# (str)			  (str)						  #
-#-------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
-[ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "23720"					  ]
-[ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
-[ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
-[ "gdk_dbname",		  "Tests_src_tools"				  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/monet/Linux/var/dbfarm"	  ]
-[ "gdk_debug",		  "10"						  ]
-[ "gdk_mmap",		  "33554432"					  ]
-[ "monet_admin",	  "adm"						  ]
-[ "monet_prompt",	  ""						  ]
-[ "monet_welcome",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/niels/data/monet/Linux/lib/MonetDB"	  ]
-[ "monet_deamon",	  "no"						  ]
-[ "host",		  "localhost"					  ]
-[ "mapi_port",		  "59123"					  ]
-[ "mapi_noheaders",	  "no"						  ]
-[ "mapi_debug",		  "0"						  ]
-[ "sql_port",		  "45123"					  ]
-[ "sql_debug",		  "0"						  ]
-[ "sql_api",		  "sql"						  ]
-[ "sql_user",		  "sqladmin"					  ]
-[ "sql_schema",		  "default-schema"				  ]
-#-------------------------------------------------------------------------#
-# BAT:			  monet_environment				  #
-# (str)			  (str)						  #
-#-------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
-[ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "23720"					  ]
-[ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
-[ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
-[ "gdk_dbname",		  "Tests_src_tools"				  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/monet/Linux/var/dbfarm"	  ]
-[ "gdk_debug",		  "10"						  ]
-[ "gdk_mmap",		  "33554432"					  ]
-[ "monet_admin",	  "adm"						  ]
-[ "monet_prompt",	  ""						  ]
-[ "monet_welcome",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/niels/data/monet/Linux/lib/MonetDB"	  ]
-[ "monet_deamon",	  "no"						  ]
-[ "host",		  "localhost"					  ]
-[ "mapi_port",		  "59123"					  ]
-[ "mapi_noheaders",	  "no"						  ]
-[ "mapi_debug",		  "0"						  ]
-[ "sql_port",		  "45123"					  ]
-[ "sql_debug",		  "0"						  ]
-[ "sql_api",		  "sql"						  ]
-[ "sql_user",		  "sqladmin"					  ]
-[ "sql_schema",		  "default-schema"				  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  20	  ]
-[ "majflt",	  32	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  1003520	  ]
-[ "arena",	  1059360	  ]
-[ "ordblks",	  103		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  899592	  ]
-[ "fordblks",	  159768	  ]
-#-------------------------#
-# BAT:	  thread	  #
-# (int)	  (str)		  #
-#-------------------------#
-[ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
-#-----------------------------------------#
-# BAT:	  login				  #
-# (int)	  (str)				  #
-#-----------------------------------------#
-[ 0,	  "Thu Jul 25 13:09:24 2002"	  ]
-[ 1,	  "Thu Jul 25 13:09:24 2002"	  ]
-[ 2,	  "Thu Jul 25 13:09:24 2002"	  ]
-#-------------------------#
-# BAT:	  name		  #
-# (int)	  (str)		  #
-#-------------------------#
-[ 0,	  "adm"		  ]
-[ 1,	  "niels"	  ]
-[ 2,	  "adm"		  ]
-#-------------------------#
-# BAT:		  cpu	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  0	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  0	  ]
-[ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------#
-# BAT:			  monet_environment				  #
-# (str)			  (str)						  #
-#-------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
-[ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "23720"					  ]
-[ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
-[ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
-[ "gdk_dbname",		  "Tests_src_tools"				  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/monet/Linux/var/dbfarm"	  ]
-[ "gdk_debug",		  "10"						  ]
-[ "gdk_mmap",		  "33554432"					  ]
-[ "monet_admin",	  "adm"						  ]
-[ "monet_prompt",	  ""						  ]
-[ "monet_welcome",	  "yes"						  ]
-[ "monet_mod_path",	  "/ufs/niels/data/monet/Linux/lib/MonetDB"	  ]
-[ "monet_deamon",	  "no"						  ]
-[ "host",		  "localhost"					  ]
-[ "mapi_port",		  "59123"					  ]
-[ "mapi_noheaders",	  "no"						  ]
-[ "mapi_debug",		  "0"						  ]
-[ "sql_port",		  "45123"					  ]
-[ "sql_debug",		  "0"						  ]
-[ "sql_api",		  "sql"						  ]
-[ "sql_user",		  "sqladmin"					  ]
-[ "sql_schema",		  "default-schema"				  ]
-#-------------------------#
-# BAT:		  io	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  20	  ]
-[ "majflt",	  32	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  0	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1059360	  ]
-[ "ordblks",	  109		  ]
-[ "smblks",	  0		  ]
-[ "hblkhd",	  0		  ]
-[ "hblks",	  0		  ]
-[ "usmblks",	  0		  ]
-[ "fsmblks",	  0		  ]
-[ "uordblks",	  898504	  ]
-[ "fordblks",	  160856	  ]
-#-------------------------#
-# BAT:	  thread	  #
-# (int)	  (str)		  #
-#-------------------------#
-[ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
-#~EndVariableOutput~#
-End of MIL script.
+#[      3,         2,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003439c.
 
-# 13:09:25 >  
-# 13:09:25 >  Mtimeout -timeout 60 Mshutdown.py --config=/ufs/niels/data/monet/Linux/etc/monet.conf --set mapi_port=59123
-# 13:09:25 >  
+# 10:57:37 >  
+# 10:57:37 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=57556
+# 10:57:37 >  
 
 
-# 13:09:25 >  
-# 13:09:25 >  Done.
-# 13:09:25 >  
+# 10:57:37 >  
+# 10:57:37 >  Done.
+# 10:57:37 >  
 

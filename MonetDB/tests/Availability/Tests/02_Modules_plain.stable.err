@@ -1,15 +1,15 @@
 stderr of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
 
-# 12:48:10 >  
-# 12:48:10 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
-# 12:48:10 >  
+# 11:06:11 >  
+# 11:06:11 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
+# 11:06:11 >  
 
-# builtin opt 	gdk_arch = 64bitmips-sgi-irix6.5
+# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 8110982
-# builtin opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
-# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	monet_pid = 28848
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	exec_prefix = NONE
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -19,18 +19,16 @@ stderr of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # builtin opt 	monet_deamon = yes
-# system opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
-# system opt 	exec_prefix = ${prefix}
-# system opt 	gdk_dbfarm = ${prefix}/var/dbfarm
-# system opt 	gdk_dbname = demo
-# system opt 	gdk_debug = 0
-# system opt 	gdk_mmap = 33554432
-# system opt 	monet_admin = adm
-# system opt 	monet_prompt = monet>
-# system opt 	monet_welcome = yes
-# system opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# system opt 	monet_deamon = no
-# config opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql(default-schema)
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -45,7 +43,7 @@ stderr of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_tests_Availability
 
-# 12:48:11 >  
-# 12:48:11 >  Done.
-# 12:48:11 >  
+# 11:06:13 >  
+# 11:06:13 >  Done.
+# 11:06:13 >  
 
