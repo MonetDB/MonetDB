@@ -40,8 +40,7 @@ database first.
 
 The scheme also isolates the functionality embedded in modules from
 inadvertise use on non-compliant databases.
-[access control issue, how to limit what a user can do on a database?
-first solution, static decision by squeezer]
+[access control issue, how to limit what a user can do on a database?]
 
 Unlike previous versions of Monet, dynamically loaded modules can not 
 be unloaded. Dynamic libraries are always global and, therefore, it
@@ -51,8 +50,7 @@ The MAL program should be compiled with -rdynamic and -ldl.
 This enables loading the routines and finding out the address
 of a particular routine
 
-For the time being we assume that all commands are statically linked,
-because we now focus on the squeezer.
+For the time being we assume that all commands are statically linked.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -78,7 +76,7 @@ html
 #include "mal_scope.h"
 #include <dlfcn.h>
 
-/* #define DEBUG_MAL_LINKER */
+/*#define DEBUG_MAL_LINKER  */
 #define MONET64 1
 mal_export void *getAddress(str fcnname);
 mal_export str loadModuleLibrary(str modname);
@@ -138,7 +136,7 @@ A module loading conflict emerges if a function is redefined.
 A duplicate load is simply ignored by keeping track of modules
 already loaded.
 @c
-#define LIBPATH "lib/Monet"
+#define LIBPATH "lib/MonetDB"
 
 static str modulesLoaded[128];
 
@@ -207,6 +205,7 @@ str loadModuleLibrary(str modname){
 #endif
 		msg= dlerror();
 		if( msg != NULL)
+			stream_printf(GDKout,"attempt to load:%s failed\n",modname);
 			return (str) throwException("loaderException",
 				"loadModuleLibrary", msg);
 	}

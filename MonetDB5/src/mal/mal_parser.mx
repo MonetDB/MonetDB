@@ -700,7 +700,7 @@ melElm  : identifier | any ['::'digit]\\
 propList : '\{' identifier [ ',' identifier] '\}'\\
 @-
 Variables will later be extended with a property list to enable
-squeezers to make decisions. An example is :int{key, notnull} for
+optimizers to make decisions. An example is :int{key, notnull} for
 a column of a BAT. BATs are composed of two components, which leads
 to three possible property list.
 The argument to propList is the variable that owns the properties.

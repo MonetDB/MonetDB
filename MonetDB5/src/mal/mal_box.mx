@@ -190,7 +190,7 @@ mal_export int takeBox(Box box, str name, ValPtr val);
 mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
-mal_export str getBoxNameme(Box box, lng i);
+mal_export str getBoxName(Box box, lng i);
 mal_export str toString(Box box, lng i);
 mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
@@ -438,11 +438,11 @@ int nextBoxElement(Box box, lng *cursor, ValPtr v){
 	}
         garbageElement(v);
 	v->vtype= TYPE_str;
-        v->val.pval= getBoxNameme(box,*cursor);
+        v->val.pval= getBoxName(box,*cursor);
 	*cursor= *cursor+1;
 	return 0;
 }
-str getBoxNameme(Box box, lng i){
+str getBoxName(Box box, lng i){
 	str s;
 	s= getVarName(box->sym,i);
 	return GDKstrdup(s);

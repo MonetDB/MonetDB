@@ -49,6 +49,7 @@ are located in mal_startup.
 
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
+#define bitset int
 #include "mal_resolve.h"
 #include "mal.h"
 
@@ -124,7 +125,17 @@ the interaction on the system console (sysmon).
 	str	prompt;			/* acknowledge prompt */
 	int	promptlength;
 	int	blkmode;		/* control block reading */
-	int	listing;		/* listing/trace bit set */
+@-
+The listing bit set controls the level of detail to be generated during
+program execution tracing. The lowest level (1) simply dumps the input,
+(2) also demonstrates the MAL internal structur (4) adds the hidden information
+@h
+	bitset	listing;		
+@-
+The debug bit set contains the debugger flags for both the GDK kernel and
+the MAL layer.
+@h
+	bitset debug;
 	stream	*sysmon;		/* trace interaction */
 	stream	*journal;
 	int	mode;			/* FREECLIENT..BLOCKED */
@@ -376,7 +387,6 @@ void freeClient(Client c)
 		(void) c->fdin->close(c->fdin);
 		(void) c->fdout->flush(c->fdout); 
         	(void) c->fdout->close(c->fdout);
-		c->fdout->destroy(c->fdout);
 		c->fdout= c->fdin= NULL;
 		if( c->socket) close(c->socket); c->socket=0;
 	} 
@@ -484,7 +494,6 @@ void killClient(Client c){
 	(void) c->fdin->close(c->fdout);
 	if( c->socket) close(c->socket); c->socket=0;
 
-	/*c->fdin->destroy(c->fdin);*/
 	GDKwarning("killClient:about to kill process ...\n");
 	sleep(PROCESSTIMEOUT);
 	pthread_kill((pthread_t)(pid-1),SIGKILL);

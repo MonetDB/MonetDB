@@ -106,7 +106,7 @@ ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 } 
 @-
 Alternatively, the routines can obtain a reference to a particular
-value. This particularly handy for the squeezers, while the former
+value. This particularly handy for the optimizers, while the former
 is mostly used to prepare a call to the linked libraries.
 
 @c
@@ -172,7 +172,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env, InstrP
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
 the minimum amount of stack space needed, some slack resources
-are included to permit code squeezers to add a few variables at run time,
+are included to permit code optimizers to add a few variables at run time,
 (2) copying the arguments into the new stack frame.
 Notice that arguments are always the first entries on the stack.
 
@@ -482,7 +482,7 @@ The PATcall initiates a call which contains the MAL context.
 i.e. f(MalBlkPtr mb, MalStkPtr stk, int argc, int argv[])
 The blk provides access to the code definitions. It is primarilly
 used by routines intended to manipulate the code base itself, such
-as the squeezers. The Mal stack frame pointer provides access
+as the optimizers. The Mal stack frame pointer provides access
 to the values maintained. The arguments passed are offsets
 into the stack frame rather than pointers to the actual value.
 
@@ -671,7 +671,7 @@ reaching end of function block.
 @-
 Each time we enter a barrier block, we could keep its position in the
 interpreter stack frame. It forms the starting point to issue a redo.
-Unfortunately, this does not easily work in the presence of squeezers, which
+Unfortunately, this does not easily work in the presence of optimizers, which
 may change the order/block structure. Therefore, we simple have to search
 the beginning or ensure that during chkProgram the barrier/redo/leave/catch
 jumps are re-established.

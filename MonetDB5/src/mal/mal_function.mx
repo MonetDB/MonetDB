@@ -134,7 +134,7 @@ block.
 
 To speed-up interpretation of the control statements, we also
 include the program-counter in instruction record. This implies
-that any subsequent change to a program, i.e. squeezers,
+that any subsequent change to a program, i.e. optimizers,
 should be followed by a call to this procedure.
 
 @c
