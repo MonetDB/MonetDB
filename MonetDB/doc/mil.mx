@@ -138,11 +138,10 @@ and can be looked up from their corresponding strings in the BAT
 @-
 @T
 {\small\begin{verbatim}
-# Monet Database Server V3.05
-# Copyright (c) 1993-1996, CWI & UvA.  # All rights reserved.
-#
-# You are system administrator (adm)!
->monet_atomtbl.print;
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+monet>monet_atomtbl.print;
 #-----------------#
 # h       | t     #
 #-----------------#
@@ -239,11 +238,10 @@ and their mapping to strings can be looked up in system BAT by the name of
 @\#monet\_acctbl@:
 @T
 {\small\begin{verbatim}
-# Monet Database Server V3.05
-# Copyright (c) 1993-1996, CWI & UvA.  # All rights reserved.
-#
-# You are system administrator (adm)!
->monet_acctbl.print;
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+monet>monet_acctbl.print;
 #-----------------#
 # h       | t     #
 #-----------------#

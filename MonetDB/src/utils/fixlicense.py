@@ -76,8 +76,10 @@ license = [
 
 def main():
     func = addlicense
+    pre = post = start = end = None
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'arl:')
+        opts, args = getopt.getopt(sys.argv[1:], 'arl:',
+                                   ['pre=', 'post=', 'start=', 'end='])
     except getopt.GetoptError:
         print >> sys.stderr, usage % {'prog': sys.argv[0]}
         sys.exit(1)
@@ -99,16 +101,24 @@ def main():
                     break
                 license.append(line[:-1])
             f.close()
+        elif o == '--pre':
+            pre = a
+        elif o == '--post':
+            post = a
+        elif o == '--start':
+            start = a
+        elif o == '--end':
+            end = a
 
     if args:
         for a in args:
-            func(a)
+            func(a, pre=pre, post=post, start=start, end=end)
     else:
         while True:
             filename = sys.stdin.readline()
             if not filename:
                 break
-            func(filename[:-1])
+            func(filename[:-1], pre=pre, post=post, start=start, end=end)
 
 suffixrules = {
     # suffix:(pre,     post,  start,  end)
@@ -132,15 +142,24 @@ suffixrules = {
     '.tcl':  ('',      '',    '# ',   ''),
     }
 
-def addlicense(file):
-    root, ext = os.path.splitext(file)
-    if ext == '.in':
-        # special case: .in suffix doesn't count
-        root, ext = os.path.splitext(root)
-    if not suffixrules.has_key(ext):
-        # no known suffix
-        return
-    pre, post, start, end = suffixrules[ext]
+def addlicense(file, pre = None, post = None, start = None, end = None):
+    if pre is None and post is None and start is None and end is None:
+        root, ext = os.path.splitext(file)
+        if ext == '.in':
+            # special case: .in suffix doesn't count
+            root, ext = os.path.splitext(root)
+        if not suffixrules.has_key(ext):
+            # no known suffix
+            return
+        pre, post, start, end = suffixrules[ext]
+    if not pre:
+        pre = ''
+    if not post:
+        post = ''
+    if not start:
+        start = ''
+    if not end:
+        end = ''
     try:
         f = open(file)
     except IOError:
@@ -192,15 +211,24 @@ def addlicense(file):
     except OSError:
         print >> sys.stderr, 'Cannot move file %s into position' % file
 
-def dellicense(file):
-    root, ext = os.path.splitext(file)
-    if ext == '.in':
-        # special case: .in suffix doesn't count
-        root, ext = os.path.splitext(root)
-    if not suffixrules.has_key(ext):
-        # no known suffix
-        return
-    pre, post, start, end = suffixrules[ext]
+def dellicense(file, pre = None, post = None, start = None, end = None):
+    if pre is None and post is None and start is None and end is None:
+        root, ext = os.path.splitext(file)
+        if ext == '.in':
+            # special case: .in suffix doesn't count
+            root, ext = os.path.splitext(root)
+        if not suffixrules.has_key(ext):
+            # no known suffix
+            return
+        pre, post, start, end = suffixrules[ext]
+    if not pre:
+        pre = ''
+    if not post:
+        post = ''
+    if not start:
+        start = ''
+    if not end:
+        end = ''
     try:
         f = open(file)
     except IOError:
