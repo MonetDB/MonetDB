@@ -51,14 +51,15 @@ Such language scopes may be nested, e.g. SQL->MIL->MAL->kernel.
 The client layer typically contains a collection of private MAL-procedures.
 It contains a procedure 'main' to be executed by default. 
 
-Each user has a separate scope, but the secondary clients have shared
+Each user has a private scope list, but they have shared
 access to the definitions available to the administrator.
 This is (will) be realized by copying the scope resolution path.
 The global scope and private scopes are separated by an a priori known
 scope name "MAL_scope".
 
 
-Unlike Monet V4, a MAL function scope is privately assigned to a single client
+Unlike previous versions, a MAL function scope is privately assigned 
+to a single client
 thread. Moreover, all dynamically loaded functions remain in existing
 for the duration of the server session. Only the administrator can
 load functions (upon system restart). Therefore, we do not have
@@ -82,10 +83,10 @@ management)
 #define MAXSCOPE 256
 
 typedef struct SCOPEDEF {
-		struct SCOPEDEF   *outer; /* outer level in the scope tree */
-		str     name;
+	struct SCOPEDEF   *outer; /* outer level in the scope tree */
+	str     name;
 	MALfcn  typeChecker;    /* function address for type checker */
-		Symbol *subscope; /* type dispatcher table */
+	Symbol *subscope; /* type dispatcher table */
 	Box box;    /* module related objects */
 	int isAtomModule; /* atom module definition ? */
 	str help;   /* short description of module functionality*/
@@ -96,6 +97,7 @@ mal_export Scope    mal_scope;  /* the start of the module list */
 
 mal_export void     setScopeJump(str nme, Scope cur);
 mal_export Scope    newScope(Scope scope, str nme);
+mal_export Scope	cpyScopeList(Scope scope);
 mal_export Scope    fixateScope(Scope scope, str nme, int len);
 mal_export void     freeScope(Scope cur);
 mal_export void     freeScopeList(Scope cur);
@@ -124,7 +126,7 @@ point for the modules to be added later.
 	if( nme == NULL){
 		GDKfatal("@1:unexpected name (=null)\n");
 	}
-		cur = (Scope) GDKmalloc(sizeof(ScopeDefinition));
+	cur = (Scope) GDKmalloc(sizeof(ScopeDefinition));
 	if( cur == NULL){
 		GDKfatal("@1: cannot initialize scope\n");
 	}
@@ -156,6 +158,10 @@ table to find the correct one. This simple scheme safes about
 100ms/100K calls
 @c
 
+void clrScopeJump(str nme, Scope cur){
+		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]== cur)
+			scopeJump[(int)(*nme)][(int)(*(nme+1))]= NULL;
+}
 void setScopeJump(str nme, Scope cur){
 		scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur;
 }
@@ -168,6 +174,17 @@ Scope newScope(Scope scope, str nme){
 		scope->outer= cur;
 		setScopeJump(nme,cur);
 	} 
+	return cur;
+}
+Scope cpyScope(Scope scope){
+	Scope nxt= NULL;
+	Scope cur;
+	str nme;
+	if( scope->outer) nxt= cpyScope(scope->outer);
+	nme= GDKstrdup(scope->name);
+	@:newscope(newScope)@
+	newSubScope(cur);
+	cur->outer = nxt;
 	return cur;
 }
 @-
@@ -220,6 +237,7 @@ void freeSubScope(Scope scope){
 void freeScope(Scope s){
 	if(s==NULL) return;
 	freeSubScope(s);
+	clrScopeJump(s->name, s);
 	if( s->name) { GDKfree(s->name); s->name = NULL;}
 	GDKfree(s);
 }
@@ -305,6 +323,7 @@ void deleteSymbol(Scope scope, Symbol prg){
 @+ Searching the scope structure.
 Finding a scope is unrestricted. For modules we explicitly look for
 the start of a new module scope.
+All core modules are accessed through the jumptable.
 @c
 Scope findModule(Scope scope, str name){
 	if( scope->name==NULL) return NULL;

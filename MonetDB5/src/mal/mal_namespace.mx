@@ -15,14 +15,6 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
-
 @a M.L. Kersten
 @* MAL name space.
 A separate namespace organisation seems in place for module and function

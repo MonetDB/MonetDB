@@ -27,18 +27,33 @@ as soon as possible.
 Recall that the MAL optimizer already had an opportunity to massage the program
 into something that has a better execution behaviour. These optimizations
 necessarily rely on static (or stale) information, such as histograms, indices,
-and rewrite heuristics. It is the task of the scheduler to achieve this performance
+and rewrite heuristics. It is the task of the scheduler to achieve this 
+performance
 objective (or better), while at the same time guaranteeing a great throughput.
+
+Unlike the optimizer, the scheduler has access to the calling parameters,
+runtime stack for the about-to-be-executed plan, and system resources,
+such as cached results. Moreover, a scheduler can be called at any time
+during a MAL interpreter loop to re-consider the actions to be taken.
+This gives many more opportunities to improve performance.
+This does not hold for e.g. compiled code, nor X100 backends)
 
 Much like the optimizer framework, there are many aspects you can deal with
 at scheduling time. The easiest is to simply do nothing and rely on
 the MAL interpreter, which is the default action when no scheduler directive 
-is found.
+is found. This still costs time, because the schedule processor
+has to go thru the program once to detect any pre-execution action.
+
+To make its life easy, it is assumed that all scheduler decisions to be
+taken before the back-end is called recide in the module 'scheduler'.
+Any action to be taken during execution is kept in module 'reschduler'.
 
 In most cases, however,  you would like a scheduler to take a specific action.
 It typically rewrites, extends, or reshuffles the query plan. In this process
 it can use the optimizer infrastructure, provided the changes are isolated
-to a private instance.
+to a private instance. The upfront cost attached is to make a complete
+copy of the program, so as to assure that the definitions in the
+symbol table remain intact.
 
 What scheduler operators are provided?
 
@@ -123,7 +138,7 @@ str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 @-
 The implementation approach of the scheduler aligns with that of the
-optimizer. We look for specific scheduler module call and act accordingly.
+optimizer. We look for specific scheduler module calls and act accordingly.
 The result should be a MAL block that can be executed by the corresponding
 engine. 
 [how to assure that a proper optimizer-scheduler-engine triple is used]
@@ -174,11 +189,12 @@ str MALscheduler(Client c)
 {
 	return schedulerMALBlock(c->curprg->def);
 }
+@}
 @+ Run isolation
 Run isolation involves maken available private copies for further massageing.
 The easiest is to simply take a copy of the current MAL program. It is the
-first example. The next one is to  make modules or operaions private.
-The isolated versions are may private to the client.
+first example. The next one is to  make modules or operations private.
+The isolated versions are made private to the client.
 
 @example
 function main();
@@ -206,6 +222,7 @@ by the engine and reset after the execution. It should free up
 the space.
 The pointer passed can be used to remove the scheduler call
 from the dummy.
+@{
 @c
 str RUNisolationTop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();

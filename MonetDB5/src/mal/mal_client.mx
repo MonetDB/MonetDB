@@ -202,7 +202,7 @@ object space (the global variables).
 Moreover, the parser needs some administration variables
 to keep track of critical elements.
 @h
-    Scope       nspace;
+    Scope       nspace;     /* private scope resolution list */
     Symbol      curprg;     /* focus of parser */
     Symbol      backup;     /* save parsing context */
     MalStkPtr   glb;        /* global variable stack */
