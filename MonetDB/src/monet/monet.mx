@@ -699,6 +699,8 @@ static char type_error[80] =
 #define return_error(x)\
 	GDKerror(x, argc); GDKfree(buf); return GDK_FAIL;
 
+static char niltext[4] = "nil";
+
 int monet_sprintf(str *res, str format, va_list ap){
 #ifdef HAVE_SNPRINTF
 	int n;
@@ -733,7 +735,7 @@ int monet_sprintf(str *res, str format, va_list ap){
 				dotseen = 1;
 				continue;
 			} else if (cur == paramseen + 1 && 
-				   (*cur == '+' || *cur == '-')) {
+				   (*cur == '+' || *cur == '-' || *cur == ' ')) {
 				continue;
 			} else if (*cur == 'l') {
 				cur++;
@@ -747,8 +749,19 @@ int monet_sprintf(str *res, str format, va_list ap){
 			type = ATOMstorage(va_arg(ap,int));
 			memcpy(meta, paramseen, 1+(cur-paramseen));
 			meta[1+(cur-paramseen)] = 0;
-
-			if (strchr("cdiouxX", *cur) && !extra) {
+                        if (ATOMcmp(type, ATOMnilptr(type), p) == 0) {
+                                /* value is nil; attempt to print formatted 'nil'
+                                   without generating %ls etc. */
+                                char *csrc, *ctrg = meta;
+                                for(csrc = paramseen; csrc < cur; csrc++) {
+                                  if (*csrc == '.') break;
+                                  if (GDKisdigit(*csrc) || *csrc == '-')
+			            *(++ctrg) = *csrc;
+                                }
+                                *(++ctrg) = 's';
+                                *(++ctrg) = 0;
+				@:sprintf(niltext)@
+			} else if (strchr("cdiouxX", *cur) && !extra) {
 				int ival;
 				if (dotseen) {
 					return_error(format_error);
@@ -793,7 +806,6 @@ int monet_sprintf(str *res, str format, va_list ap){
 				} else {
 					return_error(type_error);
 				}
-				/* width += (1+prec); */
 				width += (1+prec);
 #ifndef HAVE_SNPRINTF
 				/* Brute force; this size always fits a double */
