@@ -23,7 +23,6 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-import re
 import sys
 import fileinput
 import os
@@ -33,9 +32,10 @@ prefix=os.path.abspath(sys.argv[1]);
 build=prefix
 source=os.path.abspath(os.path.join(build,os.pardir))
 
-prefix = string.replace(prefix, '\\', '\\\\\\\\')
-build  = string.replace(build,  '\\', '\\\\\\\\')
-source = string.replace(source, '\\', '\\\\\\\\')
+# double back slashes
+prefix = string.replace(prefix, '\\', r'\\')
+build  = string.replace(build,  '\\', r'\\')
+source = string.replace(source, '\\', r'\\')
 
 subs = [
     ('@exec_prefix@',       "@prefix@"),
@@ -50,7 +50,7 @@ subs = [
     ('@libexecdir@',        "@prefix@@DIRSEP@libexec"),
     ('@PACKAGE@',           "MonetDB"),
     ('@VERSION@',           "4.3.5"),
-    ('@DIRSEP@',            "\\\\\\\\"),
+    ('@DIRSEP@',            r"\\"),
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
     ('@MONET_SOURCE@',      source),
@@ -59,7 +59,7 @@ subs = [
 
 def substitute(line):
     for (p,v) in subs:
-        line = re.sub(p,v,line);
+        line = string.replace(line, p, v);
     return line
 
 for line in fileinput.input(sys.argv[2:]):
