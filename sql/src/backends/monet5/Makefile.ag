@@ -1,3 +1,0 @@
-
-INCLUDES = ../../common ../../server $(MONET_INCS)
-

@@ -1,9 +1,0 @@
-
-# Second client does load module "lock" him/herself.
-# Works as expected.
-
-module(lock);
-
-loaded;
-test.print;
-test.count.print;
