@@ -1771,30 +1771,31 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		return 0;
 	}
 
+	if (s->itotal == 0) {
+		/* The internal buffer is empty and there is
+		   nothing more to read in the current block,
+		   so read the count for the next block */
+		int nr;
+		if (!stream_readInt(s->s, &nr) || nr < 0) {
+			ss->errnr = READ_ERROR;
+			return -1;
+		}
+		s->itotal = (unsigned) nr;
+		s->nr = sizeof(s->buf);
+		if (nr == 0) {
+			/* We read the count for the closing
+			   empty block.  Stop reading and
+			   return what we have.  Note that
+			   s->nr == sizeof(s->buf).  That is
+			   important for the next call to this
+			   function. */
+			return 0;
+		}
+	}
+
 	/* Fill the caller's buffer. */
 	cnt = 0;		/* count how much we put into the buffer */
 	while (todo > 0) {
-		if (s->itotal == 0) {
-			/* The internal buffer is empty and there is
-			   nothing more to read in the current block,
-			   so read the count for the next block */
-			int nr;
-			if (!stream_readInt(s->s, &nr) || nr < 0) {
-				ss->errnr = READ_ERROR;
-				return -1;
-			}
-			s->itotal = (unsigned) nr;
-			s->nr = sizeof(s->buf);
-			if (nr == 0) {
-				/* We read the count for the closing
-				   empty block.  Stop reading and
-				   return what we have.  Note that
-				   s->nr == sizeof(s->buf).  That is
-				   important for the next call to this
-				   function. */
-				break;
-			}
-		}
 		assert(s->itotal > 0);
 		if (s->nr == sizeof(s->buf)) {
 			/* there is more data waiting in the current block,
@@ -1831,6 +1832,28 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		todo -= n;
 		buf = (void *) ((char *) buf + n);
 		cnt += n;
+
+		if (s->itotal == 0) {
+			/* The internal buffer is empty and there is
+			   nothing more to read in the current block,
+			   so read the count for the next block */
+			int nr;
+			if (!stream_readInt(s->s, &nr) || nr < 0) {
+				ss->errnr = READ_ERROR;
+				return -1;
+			}
+			s->itotal = (unsigned) nr;
+			s->nr = sizeof(s->buf);
+			if (nr == 0) {
+				/* We read the count for the closing
+				   empty block.  Stop reading and
+				   return what we have.  Note that
+				   s->nr == sizeof(s->buf).  That is
+				   important for the next call to this
+				   function. */
+				break;
+			}
+		}
 	}
 	return cnt / elmsize;
 }
