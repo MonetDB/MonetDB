@@ -900,10 +900,8 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 
 static stmt *sql_bulkinsert(mvc * sql, sql_table *t, char *tsep, char *rsep, char *filename, int nr )
 {
-	sql_subtype *strtype = sql_bind_localtype( "str" );
 	stmt *bats = NULL;
-	stmt *fname = (filename)?stmt_atom(atom_string(
-			sql_dup_subtype(strtype), _strdup(filename))):NULL;
+	stmt *fname = (filename)?stmt_atom_string(_strdup(filename)):NULL;
 	node *n;
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
@@ -919,9 +917,8 @@ static stmt *sql_bulkinsert(mvc * sql, sql_table *t, char *tsep, char *rsep, cha
 		sql_column *c = n->data;
 		inserts[i] = stmt_append( 
 		  stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), 
-		    stmt_find(stmt_dup(bats), stmt_atom(atom_string(
-				sql_dup_subtype(strtype), 
-				_strdup(c->base.name)))));
+		    stmt_find(stmt_dup(bats), stmt_atom_string(
+				_strdup(c->base.name))));
 	}
 	stmt_destroy(bats);
 	res = sql_insert(sql, t, inserts, len, 1);

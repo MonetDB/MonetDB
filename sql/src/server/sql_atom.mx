@@ -98,7 +98,7 @@ atom *atom_string(sql_subtype * tpe, char *val)
 	a->data.len = 0;
 	if (val){
 		a->isnull = 0;
-		a->data.val.sval = sql2str(val);
+		a->data.val.sval = val;
 		a->data.len = strlen(a->data.val.sval); 
 	}
 

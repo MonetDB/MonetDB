@@ -542,25 +542,29 @@ set:
 			{ dlist *l = dlist_create();
 		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($4), 0 ); 
 			dlist_append_string(l, _strdup("current_user") );
-			dlist_append_symbol(l, _newAtomNode( atom_string(t,$4)) );
+			dlist_append_symbol(l, 
+				_newAtomNode( atom_string(t,sql2str($4))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET SCHEMA ident	
 			{ dlist *l = dlist_create();
 		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($3), 0 ); 
 			dlist_append_string(l, _strdup("current_schema") );
-			dlist_append_symbol(l, _newAtomNode( atom_string(t,$3)) );
+			dlist_append_symbol(l, 
+				_newAtomNode( atom_string(t,sql2str($3))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET user '=' ident	
 			{ dlist *l = dlist_create();
 		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($4), 0 ); 
 			dlist_append_string(l, _strdup("current_user") );
-			dlist_append_symbol(l, _newAtomNode( atom_string(t,$4)) );
+			dlist_append_symbol(l, 
+				_newAtomNode( atom_string(t,sql2str($4))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   |	SET ROLE ident	
 			{ dlist *l = dlist_create();
 		          sql_subtype *t = sql_bind_subtype("CHAR", strlen($3), 0 ); 
 			dlist_append_string(l, _strdup("current_role") );
-			dlist_append_symbol(l, _newAtomNode( atom_string(t,$3)) );
+			dlist_append_symbol(l, 
+				_newAtomNode( atom_string(t,sql2str($3))) );
 			$$ = _symbol_create_list( SQL_SET, l); }
   | 	SET TIME ZONE LOCAL
 			{ dlist *l = dlist_create();
@@ -2274,14 +2278,15 @@ user:
 
 literal:
     string
-		{  char *s = sql2str($1);
-		   int len = strlen(s);
-		   sql_subtype *t = sql_bind_subtype("CHAR", len, 0 ); 
-		   $$ = _newAtomNode( atom_string(t, s)); }
+		{ char *s = sql2str($1);
+		  int len = strlen(s);
+		  sql_subtype *t = sql_bind_subtype("CHAR", len, 0 ); 
+		  $$ = _newAtomNode( atom_string(t, s)); }
  |  user 
-		{  mvc *m = (mvc*)parm;
-		   sql_subtype *t = sql_bind_subtype("CHAR", strlen(m->user),0);
-		   $$ = _newAtomNode( atom_string(t, _strdup(m->user))); }
+		{ mvc *m = (mvc*)parm;
+		  sql_subtype *t = sql_bind_subtype("CHAR", strlen(m->user),0);
+		  $$ = _newAtomNode( atom_string(t,sql2str(_strdup(m->user))));
+		}
 
  |  sqlINT   	{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value; 
