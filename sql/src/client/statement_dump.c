@@ -192,9 +192,9 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int l = statement_dump( s->op1.stval, nr, sql );
 		if (s->op2.stval){
 			int r = statement_dump( s->op2.stval, nr, sql );
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().mark(oid(s%d)).reverse();\n", *nr, l, r);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().access(BAT_READ).mark(oid(s%d)).reverse();\n", *nr, l, r);
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().mark(oid(%d)).reverse();\n", *nr, l, s->flag);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().access(BAT_READ).mark(oid(%d)).reverse();\n", *nr, l, s->flag);
 		}
 		s->nr = (*nr)++;
 	} 	break;

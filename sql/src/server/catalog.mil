@@ -63,8 +63,8 @@ numerical.insert("NUMERIC", "int");
 numerical.insert("DECIMAL", "int");
 numerical.insert("INTEGER", "int");
 numerical.insert("SMALLINT", "int");
-numerical.insert("FLOAT", "dbl");
-numerical.insert("REAL", "dbl");
+numerical.insert("FLOAT", "flt");
+numerical.insert("REAL", "flt");
 numerical.insert("DOUBLE", "dbl");
 
 if (type_sql.count() <= 0){
@@ -78,8 +78,8 @@ if (type_sql.count() <= 0){
 	new_type( "INTEGER", "int", "DECIMAL", "" );
 	new_type( "SMALLINT", "int", "INTEGER", "" );
 
-	new_type( "FLOAT", "dbl", "INTEGER", "" );
-	new_type( "REAL", "dbl", "FLOAT", "" );
+	new_type( "FLOAT", "flt", "INTEGER", "" );
+	new_type( "REAL", "flt", "FLOAT", "" );
 	new_type( "DOUBLE", "dbl", "REAL", "" );
 
 	new_type( "MONTH_INTERVAL", "int", "INTEGER", "monettime" );
