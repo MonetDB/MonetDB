@@ -535,7 +535,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 		stmt *os, *ns;
 
 		os = stmt_reverse(rel2bin(c, s->op1.stval));
-		if ( (c->debug&4096)) {
+		if (!(c->debug&4096)) {
 			ns = eliminate_reverse(os);
 		} else {
 			ns = stmt_dup(os);
