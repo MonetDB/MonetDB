@@ -40,7 +40,7 @@ MX=$(TOPDIR)\src\utils\Mx\Mx
 CP=copy
 MV=copy
 DEL=del
-CONFIGURE=$(TOPDIR)\configure.py.bat
+CONFIGURE=$(TOPDIR)\configure.py.bat $(TOPDIR)
 
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -x h $<
