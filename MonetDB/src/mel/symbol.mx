@@ -28,8 +28,9 @@
 #ifndef _SYMBOL_H_
 #define _SYMBOL_H_
 
-#include  <iostream.h>
-#include  <stdio.h>
+#include <iostream>
+#include  <cstdio>
+using namespace std;
 #include  "list.h"
 
 class language;

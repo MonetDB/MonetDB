@@ -29,7 +29,8 @@
 #define _SYMTABLE_H_
 
 #include "symbol.h"
-#include <iostream.h>
+#include <iostream>
+using namespace std;
 
 class Symtable {
 	
