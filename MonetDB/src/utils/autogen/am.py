@@ -67,7 +67,7 @@ def cond_subdir(fd, dir, i):
 
 def am_sort_libs( libs, tree ):
     res = []
-    for lib in libs:
+    for (lib,sep) in libs:
         after = -1
         # does lib depend on a other library 
         if tree.has_key('lib_'+ lib):
@@ -90,7 +90,7 @@ def am_sort_libs( libs, tree ):
                         pos = res.index(l)
                         if (pos > after):
                             after = pos 
-        res.insert(after+1,lib)
+        res.insert(after+1,(lib,sep))
     return res
 
 def am_subdirs(fd, var, values, am ):
@@ -207,6 +207,17 @@ def am_additional_libs(name,sep,type,list, am):
             add = add + " " + l
         else:
             add = add + " " + am_translate_dir(l,am) + ".la"
+    return add + "\n"
+
+def am_additional_install_libs(name,sep,list, am):
+    add = "install-" + name + "LTLIBRARIES : "
+    for l in list:
+        if (l[0] not in  ("-", "$", "@", "." )):
+	    if l[3] == '_':
+			l = l[4:]
+	    else:
+			l = l[3:]
+            add = add + " install-" + l + "LTLIBRARIES"
     return add + "\n"
 
 def am_deps(fd,deps,objext, am):
@@ -451,10 +462,8 @@ def am_library(fd, var, libmap, am ):
         sep = "_"
         libname = libname[1:]
 
-    lib = "lib"
     ld = "libdir"
     if (libmap.has_key("DIR")):
-        lib = libname
         ld = libmap["DIR"][0] # use first name given
 
     SCRIPTS = []
@@ -462,13 +471,10 @@ def am_library(fd, var, libmap, am ):
     if (libmap.has_key('SCRIPTS')):
         scripts_ext = libmap['SCRIPTS']
 
-    if ld == "libdir":
-    	am['LIBS'].append(sep+libname)
-    else:
-    	ld = am_translate_dir(ld,am)
-	fd.write("%sdir = %s\n" % (lib,ld))
-	fd.write("%s_LTLIBRARIES = lib%s.la\n" % (lib,sep+libname))
-        am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
+    ld = am_translate_dir(ld,am)
+    fd.write("%sdir = %s\n" % (libname,ld))
+    am['LIBS'].append( (libname, sep) )
+    am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if (libmap.has_key('MTSAFE')):
         fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
@@ -476,6 +482,7 @@ def am_library(fd, var, libmap, am ):
 
     if (libmap.has_key("LIBS")):
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
+        fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"],am))
 
     for src in libmap['SOURCES']:
         base,ext = split_filename(src)
@@ -504,10 +511,8 @@ def am_library(fd, var, libmap, am ):
 
 def am_libs(fd, var, libsmap, am ):
 
-    lib = "lib"
     ld = "libdir"
     if (libsmap.has_key("DIR")):
-        lib = "libs"
         ld = libsmap["DIR"][0] # use first name given
 
     sep = ""
@@ -539,6 +544,7 @@ def am_libs(fd, var, libsmap, am ):
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap["LIBS"],am))
         if (libsmap.has_key(libname + "_DLIBS")):
             fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_DLIBS"],am))
+            fd.write(am_additional_install_libs(libname, sep, libsmap[libname+ "_DLIBS"],am))
 
         srcs = "lib"+sep+libname+"_la_SOURCES ="
         for target in libsmap['TARGETS']:
@@ -556,14 +562,10 @@ def am_libs(fd, var, libsmap, am ):
             fd.write("all-local-%s: $(%s_scripts)\n" % (libname,libname))
             am['ALL'].append(libname)
 
-    if ld == 'libdir':
-    	am['LIBS'].extend(libnames)
-    else:
-        ld = am_translate_dir(ld,am)
-	fd.write("%sdir = %s\n" % (lib,ld))
-	am['libs'] = libnames
-        for i in libnames:
-            am['InstallList'].append("\t" + ld + "/lib"+i+".so\n")
+    	ld = am_translate_dir(ld,am)
+    	fd.write("%sdir = %s\n" % (libname,ld))
+    	am['LIBS'].append( (libname, sep) )
+    	am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if (libsmap.has_key('HEADERS')):
         HDRS = []
@@ -730,7 +732,6 @@ CXXEXT = \\\"cc\\\"
     am['BUILT_SOURCES'] = []
     am['EXTRA_DIST'] = []
     am['LIBS'] = [] 	; # all libraries (am_libs and am_library)
-    am['libs'] = []	; # result of am_libs
     am['BINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []
@@ -769,15 +770,9 @@ CXXEXT = \\\"cc\\\"
 		lib = 'ag'
 
         libs = am_sort_libs( am['LIBS'], tree)
-        fd.write("%s_LTLIBRARIES = %s\n" % \
-                    (lib, am_list2string(libs," lib",".la")))
-        for i in libs:
-            am['InstallList'].append("\t"+ ld + "/lib"+i+".so\n" )
-
-    if (len(am['libs']) > 0):
-        libnames = am_sort_libs( am['libs'], tree)
-        fd.write("libs_LTLIBRARIES = %s\n" % \
-                    (am_list2string(libnames, " lib", ".la")))
+	s = ""
+	for (lib,sep) in am['LIBS']:
+        	fd.write("%s_LTLIBRARIES = lib%s%s.la\n" % (lib,sep,lib))
 
     if (len(am['BINS']) > 0):
         fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS']," ",""))
