@@ -270,9 +270,10 @@ int CMDheapclustercopy(BAT *b, BAT* order){
 		if (r) (*fcn)(&hn, BUNtloc(b, r), BUNtvar(b, r));
 	    }
 	} else {
-	    BATloopFast(order, p, q, bunsize) 
+	    BATloopFast(order, p, q, bunsize) {
 		r = BUNfnd(b, BUNhead(order,p));
 		if (r) (*fcn)(&hn, BUNtloc(b, r), BUNtvar(b, r));
+	    }
 	}
  
 	/* reassign */
