@@ -1010,7 +1010,10 @@ PFcore_fn_data (PFcnode_t *n)
                                              (PFcore_case 
                                                   (PFcore_seqtype (PFty_node ()),
                   /*return */                      PFcore_let (PFcore_var (v5),
-                                                               PFcore_var (v4),
+                                                               PFcore_seqcast 
+                                                                   (PFcore_seqtype 
+                                                                        (PFty_node ()),
+                                                                    PFcore_var (v4)),
                                                                APPLY (op_tv, PFcore_var (v5))
                                                               )
                                                   ),
