@@ -130,9 +130,9 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 			uid = attr;
 		else if (strcasecmp(key, "pwd") == 0 && pwd == NULL)
 			pwd = attr;
-		else if (strcasecmp(key, "host") == 0 && pwd == NULL)
+		else if (strcasecmp(key, "host") == 0 && host == NULL)
 			host = attr;
-		else if (strcasecmp(key, "port") == 0 && pwd == NULL)
+		else if (strcasecmp(key, "port") == 0 && port == 0)
 			port = atoi(attr);
 		else
 			free(attr);
