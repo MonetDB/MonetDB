@@ -285,7 +285,10 @@ str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
             }
             l= strlen(buf);
             snprintf(buf+l,BLOCK-l,");");
-        } else strcpy(buf,instruction2str(mb,p,FALSE));
+        } else{
+			strcpy(buf,instruction2str(mb,p,FALSE));
+			strcpy(buf,target);
+		}
     }
     if( extra){
         p= getInstrPtr(mb,0);
@@ -308,6 +311,9 @@ void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
     msg= instruction2str(mb,p,FALSE);
     s= strchr(msg,'(');
+	if( p->retc > 1 && s){
+		s= strchr(s+1,'(');
+	}
     if(s){
         s++;
         *s = 0;
@@ -684,17 +690,19 @@ signatures satisfying the pattern.
 void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
     InstrPtr p;
 
-    p= getInstrPtr(mb,pc);
     switch(stk->cmd){
     case 'c':
+		p= getInstrPtr(mb,pc);
         if( isBreakpoint(cntxt,p) ){
             mdbCommand(cntxt,mb,stk,p,pc);
         } 
         break;
     case 's': case 'n':
+		p= getInstrPtr(mb,pc);
         mdbCommand(cntxt,mb,stk,p,pc);
         break;
-    case 'r': stk->cmd = 'n';
+    case 'r': stk->cmd = 'n'; 
+	case 'T': ;
     }
     if( cntxt->timer) cntxt->timer = GDKusec();
     stream_flush(cntxt->fdout);

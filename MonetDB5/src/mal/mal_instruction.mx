@@ -1812,7 +1812,10 @@ char *fillTarget(MalBlkPtr mb, InstrPtr p, char *t){
         nme= nmebuf;
     } else  nme = getArgName(mb,p,0);
 	if( p->retc == 1){
+		ps= getVar(mb,getArg(p,0))->props;
+		pstring= propertySet2str(ps);
 		sprintf(t,"%s%s ",nme,(pstring?pstring:"")); 
+		if(pstring){GDKfree(pstring);pstring=0;}
 		advance(t);
 		if( p->argc > p->retc || functionId(p))
 		{ 
@@ -1823,10 +1826,15 @@ char *fillTarget(MalBlkPtr mb, InstrPtr p, char *t){
 	/* display multi-assignment */
 	*t++ = '(';
 	for(i=0;i<p->retc;i++){
+		if( isTmpVar(mb, getArg(p,i)) ) {
+			snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER,
+				getVarTmp(mb, getArg(p,i)));
+			nme= nmebuf;
+		} else  nme = getArgName(mb,p,i);
+
 		ps= getVar(mb,getArg(p,i))->props;
 		pstring= propertySet2str(ps);
-		sprintf(t,"%s%s",getArgName(mb,p,i),
-			(pstring?pstring:""));
+		sprintf(t,"%s%s",nme, (pstring?pstring:""));
 		if(pstring){GDKfree(pstring);pstring=0;}
 		advance(t);
 		if( i<p->retc-1) 
