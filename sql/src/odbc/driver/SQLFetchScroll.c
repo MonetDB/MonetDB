@@ -41,9 +41,6 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 		return SQL_ERROR;
 	}
 
-	if (mapi_get_row_count(stmt->Dbc->mid) <= 0)
-		return SQL_NO_DATA;
-
 	switch (nOrientation) {
 	case SQL_FETCH_NEXT:
 		break;
@@ -51,7 +48,7 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 		mapi_seek_row(stmt->Dbc->mid, 0, MAPI_SEEK_SET);
 		break;
 	case SQL_FETCH_LAST:
-		mapi_seek_row(stmt->Dbc->mid, 0, MAPI_SEEK_END);
+		mapi_seek_row(stmt->Dbc->mid, -1, MAPI_SEEK_END);
 		break;
 	case SQL_FETCH_PRIOR:
 		mapi_seek_row(stmt->Dbc->mid, -1, MAPI_SEEK_CUR);
