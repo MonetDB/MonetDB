@@ -10,11 +10,13 @@ MODULES.commit;
 view_modules.reverse.kunique.sort@batloop { MODULES.insert($h,"UNKNOWN"); }
 
 MODULES.replace("aggr",      "plain");
+MODULES.replace("aggrX3",    "plain");
 MODULES.replace("alarm",     "plain");
 MODULES.replace("algebra",   "plain");
 MODULES.replace("arith",     "plain");
 MODULES.replace("ascii_io",  "plain");
 MODULES.replace("bat",       "plain");
+MODULES.replace("bat_arith", "plain");
 MODULES.replace("bitset",    "plain");
 MODULES.replace("bitvector", "plain");
 MODULES.replace("blob",      "plain");

@@ -54,11 +54,13 @@ Try: modules;                - for other modules.
 # (str)		  (void)  #
 #-------------------------#
 [ "aggr",	  nil	  ]
+[ "aggrX3",	  nil	  ]
 [ "alarm",	  nil	  ]
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "bat",	  nil	  ]
+[ "bat_arith",	  nil	  ]
 [ "bitset",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "blob",	  nil	  ]
@@ -162,8 +164,10 @@ Try: modules;                - for other modules.
 [ "blob",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "bitset",	  nil	  ]
+[ "bat_arith",	  nil	  ]
 [ "ascii_io",	  nil	  ]
 [ "alarm",	  nil	  ]
+[ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
 [ "mprof",	  nil	  ]
 
@@ -1246,6 +1250,41 @@ Try: modules;                - for other modules.
 
 	dropping bitset
 
+#BBPreclaim: bat(26) view=0 mod=0 ref=2 stat=129
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading bat_arith
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "bat_arith",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "bat_arith",	  nil	  ]
+
+	dropping bat_arith
+
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1328,6 +1367,40 @@ Try: modules;                - for other modules.
 [ "alarm",	  nil	  ]
 
 	dropping alarm
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading aggrX3
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_30  #
+# (str)		  (void)  #
+#-------------------------#
+[ "aggrX3",	  nil	  ]
+
+	dropping aggrX3
 
 #---------------------------------#
 # module	| usage_count	  #

@@ -58,21 +58,25 @@ malalgebra: loading... done.
      blob: loaded.
 bitvector: loaded.
    bitset: loading... done.
+bat_arith: loading... done.
       bat: loaded.
  ascii_io: loading... done.
     arith: loaded.
   algebra: loaded.
     alarm: loading... done.
+   aggrX3: loading... done.
      aggr: loading... done.
 #-----------------#
 # 40 modules	  #
 #-----------------#
 [ "aggr"	  ]
+[ "aggrX3"	  ]
 [ "alarm"	  ]
 [ "algebra"	  ]
 [ "arith"	  ]
 [ "ascii_io"	  ]
 [ "bat"		  ]
+[ "bat_arith"	  ]
 [ "bitset"	  ]
 [ "bitvector"	  ]
 [ "blob"	  ]
