@@ -1,9 +1,0 @@
-module("enum");
-module("pathfinder");
-
-Pdoc_init();
-import_doc("/home_local/keulen/Pathfinder/pf-import/A.xml","A.xml",12);
-import_doc("/home_local/keulen/Pathfinder/pf-import/B.xml","B.xml",12);
-doc_finalize();
-
-Tdoc_init();

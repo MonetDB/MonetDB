@@ -304,7 +304,7 @@ def am_headers(fd, var, headers, am):
             fd.write("install-exec-local-%s: %s\n" % (header, header))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, header))
-            fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
+            fd.write("\t$(INSTALL_DATA) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
             fd.write("uninstall-exec-local-%s: \n" % header)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
@@ -694,10 +694,12 @@ def am_translate_dir(path, am):
         dir, rest = string.split(path, os.sep, 1)
         rest = os.sep + rest
 
-    if dir in ("top_srcdir", "top_builddir", "srcdir", "builddir",
-               "pkglibdir", "libdir", "pkgbindir", "bindir",
-               "pkgdatadir", "datadir", "pkglocalstatedir", "localstatedir",
-               "pkgsysconfdir", "sysconfdir"):
+    if dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
+               'libdir', 'libexecdir', 'localstatedir', 'mandir',
+               'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
+               'pkglibdir', 'pkglocalstatedir', 'pkgsysconfdir', 'sbindir',
+               'sharedstatedir', 'srcdir', 'sysconfdir', 'top_builddir',
+               'top_srcdir'):
         dir = "$("+dir+")"
     dir = dir + rest
     return string.replace(dir, os.sep, '/')
@@ -762,12 +764,7 @@ CXXEXT = \\\"cc\\\"
         am['NAME'] = tree['NAME']
     else:
         if cwd != topdir:
-            path = cwd
-            if string.find(path, os.sep) >= 0:
-                l = string.split(path, os.sep)
-                am['NAME'] = l[len(l)-1]
-            else:
-                am['NAME'] = path
+            am['NAME'] = os.path.basename(cwd)
         else:
             am['NAME'] = ''
 

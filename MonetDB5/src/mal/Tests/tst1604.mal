@@ -1,6 +1,0 @@
-# handling of correct header printing
-
-t:= new(:int,:str);
-setColumn(t,"first");
-u:= new(:int,:str);
-print(t,u);

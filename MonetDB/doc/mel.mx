@@ -85,7 +85,7 @@ interface for implementing extensions.
 
 Checking and installing your MEL extension modules is done   
 using the 
-@[<a href="mel.html">mel utility</a>@.
+@[<a href="www/mel.html">mel utility</a>@.
 @T
 It checks the MEL syntax, and depending on the switch:
 \begin{description}
@@ -126,7 +126,7 @@ and the existing GDK library of BAT operations, see the
 The Monet extension module loader expects unmangled routine names, 
 so C++ programmers have to declare their top-level functions as 
 @!extern "C" { }@ blocks (see the 
-@[<a href="www/monettime.html">monettime module</a>@ 
+@[<a href="www/modules/monettime.html">monettime module</a>@ 
 for an example of use of C++ as implementation language).
 
 @- The Development Process
@@ -401,7 +401,7 @@ for variable-sized extension atoms. Since such values are managed
 in a separate heap, users have to implement heap managing ADT operations 
 for e.g. the {\tt polygon} type. To facilitate development, you 
 can declare a polygon as the {\tt blob} type from the 
-@[<a href="www/blob.html">standard library</a>@.
+@[<a href="www/modules/blob.html">standard library</a>@.
 
 @+ New Primitives
 Apart from new atomic types, the MEL extension mechanism also allows
@@ -852,7 +852,7 @@ This simple function just returns a pointer to a static nil value.
 
 @+ Variable-size Atoms
 Probably the easiest way to create variable sized atoms is to
-overload functions from the @[<a href="www/blob.html">blob</a>@
+overload functions from the @[<a href="www/modules/blob.html">blob</a>@
 module; which is provided in the standard collection of extension modules.
 
 Only if very specific functionality is required, will you need to

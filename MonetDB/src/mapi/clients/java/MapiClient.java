@@ -24,8 +24,7 @@
  */
 
 import java.io.*;
-//import mapi.*;
-
+import mapi.*;
 
 public class MapiClient 
 {

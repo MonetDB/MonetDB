@@ -28,7 +28,7 @@
 
 @* Introduction
 Apart from its grammatical structure, described in the
-@[<a href="../mil.html">MIL Manual</a>@ MIL is just a set 
+@[<a href="../../mil.html">MIL Manual</a>@ MIL is just a set 
 of commands. When MIL is bootstrapped, this set of commands 
 is the empty set. 
 

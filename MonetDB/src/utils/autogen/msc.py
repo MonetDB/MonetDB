@@ -151,10 +151,12 @@ def msc_translate_dir(path, msc):
         dir = "."
     elif dir == "srcdir":
         dir = "$(SRCDIR)"
-    elif dir in ['bindir', 'sbindir', 'libexecdir', 'datadir', 'sysconfdir',
-                 'sharedstatedir', 'localstatedir', 'libdir', 'infodir',
-                 'mandir', 'includedir', 'oldincludedir', 'pkgdatadir',
-                 'pkglibdir', 'pkgincludedir']:
+    elif dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
+                 'libdir', 'libexecdir', 'localstatedir', 'mandir',
+                 'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
+                 'pkglibdir', 'pkglocalstatedir', 'pkgsysconfdir', 'sbindir',
+                 'sharedstatedir', 'srcdir', 'sysconfdir', 'top_builddir',
+                 'top_srcdir'):
         dir = "$("+dir+")"
     if len(rest) > 0:
         dir = dir+ "\\" + rest

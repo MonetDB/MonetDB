@@ -1183,6 +1183,11 @@ def RunTest(env, TST, BusyPorts) :
                     killed = 1
                 p.close()
 
+        if SERVER in ["MAPI", "SQL"]:
+            CheckSocket3(env, SERVER, TestErrFile)
+            if SERVER == "SQL":
+                CheckSocket3(env, "MAPI", TestErrFile)
+
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
         ##LEFTOVERTMPBATS="`find $MONETFARM/dbfarm/*/bat/ -name tmp_\* -print 2> /dev/null`"
@@ -1343,6 +1348,40 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
         STDERR.flush()
 ### CheckSocket(env,SERVER,SrvrErr,LogLine) #
 
+def CheckSocket2(env,SERVER,SrvrErr) :
+    host = ''
+    port = int(env[SERVER+'PORT'])
+    busy, Serrno, Serrstr = CheckPort(host,port)
+    if busy:
+        env[SERVER+'PORT'] = eval(dft[SERVER+'PORT'])
+        os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
+        Smsg = """
+! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
+! Using new %sPORT=%s !
+""" % (SERVER, host, port, Serrno, Serrstr, SERVER, env[SERVER+'PORT'])
+        STDERR.write(Smsg)
+        STDERR.flush()
+        SrvrErr.write(Smsg)
+        SrvrErr.flush()
+### CheckSocket2(env,SERVER,SrvrErr) #
+
+def CheckSocket3(env,SERVER,ErrFileName) :
+    host = ''
+    port = int(env[SERVER+'PORT'])
+    busy, Serrno, Serrstr = CheckPort(host,port)
+    if busy:
+        Smsg = """
+! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
+! %sPORT was not properly released by Mserver !
+""" % (SERVER, host, port, Serrno, Serrstr, SERVER)
+        STDERR.write(Smsg)
+        STDERR.flush()
+        ErrFile = open(ErrFileName, 'a')
+        ErrFile.write(Smsg)
+        ErrFile.flush()
+        ErrFile.close()
+### CheckSocket3(env,SERVER,ErrFileName) #
+
 def prompt() :
     return time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### prompt() #
@@ -1487,9 +1526,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         open(ClntOutFile,"w").close()
         open(ClntErrFile,"w").close()
 
-        CheckSocket(env, SERVER, SrvrErr, LogLine)
+        CheckSocket2(env, SERVER, SrvrErr)
         if SERVER == "SQL":
-            CheckSocket(env, "MAPI", SrvrErr, LogLine)
+            CheckSocket2(env, "MAPI", SrvrErr)
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
@@ -1837,7 +1876,7 @@ def main(argv) :
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX'                                   ]
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars = vars + [ 'MAPIPORT', 'SQLPORT', 'SQLCLIENT', 'MAPICLIENT' ]    #, 'MONET_MOD_PATH' ]
+        vars = vars + [ 'SQLCLIENT', 'MAPICLIENT' ]    #, 'MONET_MOD_PATH' ]
     if THISFILE == "Mprofile.py":
         vars = vars + ['CMDLST']
 
@@ -1855,7 +1894,7 @@ def main(argv) :
         dft['setMONET_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONET_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
-        dft['MAPIPORT']       = "str(randomPort(50000,59999))"
+        dft['MAPIPORT']       = "str(randomPort(40000,49999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'Msql'" # --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
@@ -1912,12 +1951,8 @@ def main(argv) :
              "override default location of database directory"),
             ('sql_logdir', None, 'sql_logdir', '<directory>',
              "override default location of transaction-log directory"),
-            ('MAPIPORT', None, 'mapiport', '<port-no.>',
-             'default: %s' % dft['MAPIPORT']),
             ('MAPICLIENT', None, 'mapiclient', '<mapi-client program>',
              'default: %s' % dft['MAPICLIENT']),
-            ('SQLPORT', None, 'sqlport', '<port-no.>',
-             'default: %s' % dft['SQLPORT']),
             ('SQLCLIENT', None, 'sqlclient', '<sql-client program>',
              'default: %s' % dft['SQLCLIENT']),
             ]
@@ -2026,7 +2061,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars + ['GDK_DEBUG', 'MONET_MOD_PATH']
+        vars_ = vars + ['MAPIPORT', 'SQLPORT', 'GDK_DEBUG', 'MONET_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
