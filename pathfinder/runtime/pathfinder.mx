@@ -2375,5 +2375,5 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	close_stream(out);
 	close_stream(in);
 	monetSetChannel(XQthread, bkin, bkout);
-	return GDK_SUCCEED;
+	return ret;
 }
