@@ -97,6 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,monetdb,monetdb) 
 %{prefix}/include/sql/*.h
 %{prefix}/lib/sql/Tests/odbcsample1
+%{prefix}/lib/sql/Tests/Test_*.class
 %{prefix}/lib/pkgconfig/MonetDB-SQL.pc
 
 %if %{DOCTOOLS}
