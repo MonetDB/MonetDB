@@ -63,7 +63,6 @@ The options have the following meaning:
 #ifndef _MONET_GLOBAL_H_
 #define _MONET_GLOBAL_H_
 
-int debugger();
 #include "monet.h"
 #include "yytree.h"
 
@@ -87,9 +86,8 @@ extern "C" {
 #include "monet_client.h"
 #include "monet_process.h"
 #include "monet_options.h"
+#include "initmodules.h"
 #include <locale.h>
-
-extern void		static_module_init(Client c, char buf[]); 
 }
 
 #ifdef HAVE_NEW
@@ -247,14 +245,14 @@ static Client Monet_init( opt *set, int setlen )
 		monet_daemon=1;
 	}
 
-	return (Client) monet_init();
+	return monet_init();
 }
 
 @C
 int main(int argc, char **av)
 {
 	Client c;
-	char buf[BUFSIZ], *prog = *av;
+	char *prog = *av;
 	opt *set = NULL;
 	int idx=0,debug = 0, setlen = 0, status = 1;
 
@@ -414,7 +412,7 @@ capabilities depend on the malloc implementation used at run time.
 		usage(prog);
 
 	monet_hello(NULL);
-	static_module_init(c,buf);
+	static_module_init();
 @-
 Execute scripts.
 	if (monet_script ) printf("#script:%s\n",monet_script);
