@@ -296,7 +296,7 @@ actions are to go on unlocked while other entries in the BBP may be modified).
 
 #define BBP_unload_on(bid, nme) {						\
 		MT_set_lock(GDKunloadLock, nme);				\
-		if (++BBPunloadCnt == 0) MT_set_lock(GDKunloadBarrier, nme);	\
+		if (BBPunloadCnt++ == 0) MT_set_lock(GDKunloadBarrier, nme);	\
 		MT_unset_lock(GDKunloadLock, nme);				\
 		BBP_status_on(bid, BBPUNLOADING, nme);				}
 
@@ -2021,7 +2021,8 @@ out:
 		ret = GDKmove( BATDIR,"BBP","dir", BAKDIR,"BBP","dir" );
 	}
 
-	BBPunlock("BBPsync");
+	if (!commit)
+		BBPunlock("BBPsync");
         PERFDEBUG THRprintf(GDKerr, "BBPsync (ready time %d)\n", (t0=GDKms()) - t1);
 	return ret;
 }
