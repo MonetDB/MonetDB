@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+PATH=/cwi/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH
 
 THISPATH=${0%/*}
 THISFILE=${0##*/}
@@ -28,7 +28,7 @@ function  LOG2x () {  LOG2 $* ; "$@" ; }
 
 cpids=""
 if [ "$PARENT" ] ; then
-  cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PARENT"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ ' | sort +4.0 | awk '{printf "%s ",$2}' | sed 's|  *$||'`"
+  cpids="`ps -ef | egrep '^ *[a-zA-Z0-9_]+ +[0-9]+ +'"$PARENT"' ' | egrep -v '^ *[a-zA-Z0-9_]+ +'"$CHILD"' +[0-9]+ ' | sort +4.0 | awk '{printf  "%s " , $2}' | perl -pe 's|  *$||'`"
   if [ "$cpids" ] ; then
 	cpids="$cpids "
   fi
@@ -67,6 +67,7 @@ esac
 
 if [ "$pids1" ] ; then
 	pids2="(`echo $pids1 | sed 's/ /|/g'`)"
+	echo cpids=$cpids
 	echo pids1=$pids1
 	echo pids2=$pids2
 	LOG2x	$PS
