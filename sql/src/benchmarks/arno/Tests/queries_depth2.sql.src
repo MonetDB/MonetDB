@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/queries_depth2.sql
+$RELSRCDIR/../queries_depth2.sql

@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/example-delete1.sql
+$RELSRCDIR/../example-delete1.sql

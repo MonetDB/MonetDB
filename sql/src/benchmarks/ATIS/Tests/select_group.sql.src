@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/select_group.sql
+$RELSRCDIR/../select_group.sql

@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/example-transaction.sql
+$RELSRCDIR/../example-transaction.sql

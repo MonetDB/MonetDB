@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/wisconsin-select.sql
+$RELSRCDIR/../wisconsin-select.sql

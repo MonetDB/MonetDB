@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/04.sql
+$RELSRCDIR/../04.sql

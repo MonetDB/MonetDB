@@ -59,14 +59,25 @@ dropping module 'sql_server'
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
+[ "aggrX3",	  2		  ]
+[ "alarm",	  2		  ]
+[ "algebra",	  3		  ]
+[ "arith",	  3		  ]
+[ "ascii_io",	  2		  ]
+[ "bat",	  3		  ]
+[ "kernel",	  3		  ]
+[ "main",	  3		  ]
+[ "mapi",	  2		  ]
+[ "mkey",	  2		  ]
+[ "mmath",	  2		  ]
+[ "monettime",	  2		  ]
+[ "sql_server",	  2		  ]
+[ "str",	  3		  ]
+[ "streams",	  4		  ]
+[ "sys",	  3		  ]
+[ "trans",	  3		  ]
+[ "uchr",	  8		  ]
+[ "xtables",	  2		  ]
 
 quit;
 

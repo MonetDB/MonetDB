@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/moa1_ordered.sql
+$RELSRCDIR/../moa1_ordered.sql

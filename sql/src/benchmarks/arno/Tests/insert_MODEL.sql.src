@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/insert_MODEL.int.sql
+$RELSRCDIR/../insert_MODEL.int.sql

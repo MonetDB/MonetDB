@@ -6,7 +6,7 @@ PRELUDE="$2 $3"
 for i in README awkscript column format gcol summary test100k init.mil tst100.mil load.mil; do
     if [ ! -f $i ]; then
         /bin/rm -f $i
-        ln -s $TSTSRCDIR/../$i .
+        ln -s $RELSRCDIR/../$i .
     fi
 done
 

@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/example-drop.sql
+$RELSRCDIR/../example-drop.sql

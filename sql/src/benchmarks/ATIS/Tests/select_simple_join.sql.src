@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/select_simple_join.sql
+$RELSRCDIR/../select_simple_join.sql

@@ -586,6 +586,11 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
     os.environ['RELBLDDIR'] = env['RELBLDDIR']
 
+    #STDERR.flush()
+    #for v in 'RELSRCDIR', 'RELBLDDIR':
+    #       print v+" = "+str(env[v])
+    #STDOUT.flush()
+
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR':
             LogDBdir = os.path.join(env[LogDBvar],TSTDB)
@@ -931,6 +936,7 @@ def RunTest(env, TST, BusyPorts) :
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
+    RELSRCDIR = env['RELSRCDIR']
     TSTTRGDIR = env['TSTTRGDIR']
     TSTTRGBASE = env['TSTTRGBASE']
     os.chdir(TSTSRCDIR)
@@ -1043,15 +1049,15 @@ def RunTest(env, TST, BusyPorts) :
             SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
-        for f in os.listdir(TSTSRCDIR):
+        for f in os.listdir(RELSRCDIR):
             if test.match(f):
-                shutil.copy(os.path.join(TSTSRCDIR,f),TSTTRGDIR)
+                SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = open(TST+EXT+".src","r")
             TSTSRC = os.path.expandvars(path(string.strip(f.readline())))
             f.close()
             if os.path.isfile(TSTSRC):
-                shutil.copy(TSTSRC,TST+EXT)
+                SymlinkOrCopy(TSTSRC,TST+EXT)
             else:
                 SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
                 return TX,Failed
@@ -1062,7 +1068,7 @@ def RunTest(env, TST, BusyPorts) :
                 TSTSRC = os.path.expandvars(path(string.strip(f.readline())))
                 f.close()
                 if os.path.isfile(TSTSRC):
-                    shutil.copy(TSTSRC,ff[:-4])
+                    SymlinkOrCopy(TSTSRC,ff[:-4])
                 else:
                     Warn("source file '"+TSTSRC+"` is missing.")
 
@@ -1813,6 +1819,11 @@ else: # THISFILE in ["Mtest.py", "Mapprove.py"]
     dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
 
+if hasattr(os,"symlink"):
+    SymlinkOrCopy = os.symlink
+else:
+    SymlinkOrCopy = shutil.copy
+
 if os.environ.has_key('HOST'):
     HOST = os.environ['HOST']
 elif os.name != "nt":
@@ -2187,7 +2198,7 @@ def main(argv) :
         RELBLDBASE = os.curdir
     else:
         TSTBASE = os.path.dirname(os.path.commonprefix([env['TSTSRCBASE'],env['TSTBLDBASE'],env['TSTTRGBASE']]))
-        RELBASE = ((os.sep+os.pardir)*len(string.split(env['TSTTRGBASE'][len(TSTBASE+os.sep):],os.sep)))[len(os.sep):]
+        RELBASE = ((os.pardir+os.sep)*len(string.split(env['TSTTRGBASE'][len(TSTBASE+os.sep):],os.sep)))
         RELSRCBASE = RELBASE+env['TSTSRCBASE'][len(TSTBASE):]
         RELBLDBASE = RELBASE+env['TSTBLDBASE'][len(TSTBASE):]
     env['RELSRCBASE'] = RELSRCBASE

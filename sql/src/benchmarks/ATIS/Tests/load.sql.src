@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/load.sql
+$RELSRCDIR/../load.sql

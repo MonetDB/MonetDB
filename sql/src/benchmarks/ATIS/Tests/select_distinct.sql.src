@@ -1,1 +1,1 @@
-$TSTSRCBASE/$TSTDIR/select_distinct.sql
+$RELSRCDIR/../select_distinct.sql
