@@ -88,8 +88,8 @@ comment "Locate the table in the current schema and make it the focus";
 command bindColumn( cname:str ) = mvc_bind_column_wrap
 comment "Locate the column in the current table and make it the focus";
 
-command bindKey(s:str, t:str, v:str ) = mvc_bind_key_wrap
-comment "Bind key, t.(cols)";
+command bindKey(s:str, t:str, kname:str ):ptr = mvc_bind_key_wrap
+comment "Bind table key with name, kname";
 
 command bindUbat(sname:str, tname:str, cname:str, access:int ) : 
 		BAT[any::1,any::2] = mvc_bind_ubat_wrapREAD
@@ -129,16 +129,16 @@ command createColumn( name:str, type:str,digits:int,scale:int,seqnr:int ) :int
 	= mvc_create_column_wrap
 comment "Create column within the current table";
 
-command setNull(col:int,flg:int ) = mvc_null_wrap
-comment "Set current column not null";
+command setNotNull(flg:int) = mvc_null_wrap
+comment "Set current column (not) null";
 
 command default(val:str ) = mvc_default_wrap
 comment "Set current column default value";
 
-#command createKey( s:str, t:str, col:str, kt:int) = mvc_create_key_wrap
-#comment "Create a table key";
+command createKey(name:str,kt:int,skey:bat,fk:bat):void = mvc_create_key_wrap
+comment "Create a (compound) table key";
 
-#command createForeignKey( s:str, t:str, col:str, kt:str, ft:str, fk:str ) 
+#command createForeignKey( nme:str, kt:str, ft:str, fk:str ) 
 		#= mvc_create_fkey_wrap
 #comment "Create a table key";
 
@@ -151,7 +151,7 @@ comment "Export a table (in order) to stream s with the
 given tuple and record seperators (sep/rsep)";
 
 command importTable( s:stream, tname:str, 
-	sep:str, rsep:str, nr:int) : int = mvc_import_table_wrap
+	sep:str, rsep:str, nr:int) : str = mvc_import_table_wrap
 comment "Import a table from stream s with the given 
 tuple and record seperators (sep/rsep)";
 
@@ -198,7 +198,11 @@ tuple and record seperators (sep/rsep)";
 #include "mal_session.h"
 
 
-/* #define _SQL_SCENARIO_DEBUG */
+/* #define _SQL_SCENARIO_DEBUG  */
+mal_export str SQLexitClient(Client c);
+mal_export str SQLinitClient(Client c);
+mal_export str SQLexit(Client c);
+mal_export str SQLinit(Client c);
 
 mal_export str SQLparser(Client c);
 mal_export str SQLengine(Client c);
@@ -213,9 +217,67 @@ mal_export str SQLengine(Client c);
 #include "sqlexecute.h"
 #include "sql_codegen.h"
 
-@-
+@+ Scenario routines
 Consume input and concatenate it until you find a ';<nl>' combination.
 @c
+str SQLinit(Client c){
+	mvc_init(0);
+	return MAL_SUCCEED;
+}
+str SQLexit(Client c){
+	mvc_exit();
+	return MAL_SUCCEED;
+}
+str SQLinitClient(Client c){
+	context *lc;
+	int i;
+	mvc *m;
+	str schema;
+
+	lc = c->state[PARSER];
+	if( lc == 0){
+		m= mvc_create(0);
+		/* replace user name with client record setting later on */
+		schema= mvc_login(m,"monetdb","monetdb");
+		if( !schema){
+			return throwMessage("SQLparser","No schema defined\n");
+		}
+		lc = NEW(context);
+		sql_init_context(lc,c->fdout,0, default_catalog_create());
+		mvc_catalog_create(m,lc);
+		c->state[PARSER] = lc;
+		c->state[OPTIMIZE]=m;
+		m->btop= 0;
+	} else m = c->state[OPTIMIZE];
+	for(i=0;i< m->btop; i++)
+		mvc_clear_binding(m,i);
+	m->btop = 0;
+	
+	return MAL_SUCCEED;
+}
+str SQLexitClient(Client c){
+	int i;
+	mvc *m;
+	context *lc;
+
+	lc = c->state[PARSER];
+	m = (mvc *) c->state[OPTIMIZE];
+	if(lc && m){
+		mvc_destroy(m);
+		/*sql_exit_context(lc); not completely needed*/
+		/* files are already closed */
+		        catalog_destroy(lc->cat);
+		lc->cat = NULL;
+
+		if (lc->sql != NULL)
+			_DELETE(lc->sql);
+		lc->sql = NULL;
+		_DELETE(lc->yytext);
+
+	}
+	clrScenario(c);
+	return MAL_SUCCEED;
+}
 str SQLlanguage(str *ret){
         str msg= MAL_SUCCEED;
         stream_printf(GDKout,"#Continue as SQL session\n");
@@ -263,36 +325,6 @@ The SQL block is stored in the client input buffer, from which it
 can be parsed by the SQL parser. The client structure contains
 a small table of bounded tables. This should be reset before we
 parse a new statement sequence.
-@c
-str SQLparserInit(int *ret){
-	Client c= getClient();
-	context *lc;
-	int i;
-	mvc *m;
-	str schema;
-
-	lc = c->state[PARSER];
-	if( lc == 0){
-		mvc_init(0);
-		m= mvc_create(0);
-		/* replace user name with client record setting later on */
-		schema= mvc_login(m,"monetdb","monetdb");
-		if( !schema){
-			return throwMessage("SQLparser","No schema defined\n");
-		}
-		lc = NEW(context);
-		sql_init_context(lc,c->fdout,0, default_catalog_create());
-		mvc_catalog_create(m,lc);
-		c->state[PARSER] = lc;
-		c->state[OPTIMIZE]=m;
-		m->btop= 0;
-	} else m = c->state[OPTIMIZE];
-	for(i=0;i< m->btop; i++)
-		mvc_clear_binding(m,i);
-	m->btop = 0;
-	
-	return MAL_SUCCEED;
-}
 @-
 Before we parse the sql statement, we look for any variable settings
 for specific commands.
@@ -361,7 +393,6 @@ str SQLparser(Client c) {
 	int stop,vtop;
 	MalBlkRecord oldstate;
 
-	SQLparserInit(&i);
 	oldstate= *c->curprg->def;
 #ifdef _SQL_SCENARIO_DEBUG
 	printf("SQL start compilation \n");
@@ -398,6 +429,7 @@ str SQLparser(Client c) {
 				       GDKstrdup("false"),0));
 		pushInstruction(c->curprg->def,q);
 	}
+	pushEndInstruction(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if( c->curprg->def->errors){
 		showErrors(c);

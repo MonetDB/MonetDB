@@ -604,56 +604,8 @@ str mvc_default_wrap(int *ret, str *val){
 	mvc_default( c, sc, *val );
 	return MAL_SUCCEED;
 }
-
-@- old stuff
-str mvc_create_key_wrap(int *ret, str *sname, str *tname, str*col){
-	mvc *c;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *sc;
-	@:getContext(c,mvc)@
-
-	s= find_schema(c->trans,*sname);
-	if( s== NULL) return throwMessage("default","Schema not found");
-
-	t= find_table(s,*tname);
-	if( t== NULL) return throwMessage("default","Table not found");
-
-	mvc_create_key( c, t, *kt, *(sql_key**)fk);
-	return MAL_SUCCEED;
-}
-str mvc_create_fkey_wrap(int *ret, str *sname, str *tname, str*col){
-	mvc *c;
-	sql_schema *s;
-	sql_table *t;
-	sql_column *sc;
-	@:getContext(c,mvc)@
-
-	s= find_schema(c->trans,*sname);
-	if( s== NULL) return throwMessage("default","Schema not found");
-
-	t= find_table(s,*tname);
-	if( t== NULL) return throwMessage("default","Table not found");
-
-	sc= find_column(t,*col);
-	if( sc== NULL) return throwMessage("default","Table not found");
-
-	if (*(ptr*)fk == ptr_nil){
-		*(sql_key**)res = mvc_create_key( c, *(sql_table**)t, *kt, NULL);
-	} else {
-		*(sql_key**)res = mvc_create_key( c, *(sql_table**)t, *kt, *(sql_key**)fk);
-	}
-	return MAL_SUCCEED;
-}
-
-str mvc_key_add_column_wrap(int *ret, sql_key* res, sql_key* k, sql_column *c){
-	mvc *m;
-	@:getContext(m,mvc)@
-	*(sql_key**)res = mvc_key_add_column( m, *(sql_key**)k, *(sql_column**)c);
-	return MAL_SUCCEED;
-}
-@- end old stuff
-
+@-
+The recurring structure to handle bat descriptors
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0)
                 return throwMessage("algebra.@4", "cannot access bat @2 in bbp");
@@ -663,6 +615,34 @@ str mvc_key_add_column_wrap(int *ret, sql_key* res, sql_key* k, sql_column *c){
         }
         if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
 @-
+@c
+str mvc_create_key_wrap( int *ret, str *name, int *kt, int *bid, int *fk){
+	mvc *c;
+	sql_schema *s;
+	sql_table *t;
+	BAT *columns, *fkcols;
+	@:getContext(c,mvc)@
+
+	s= c->currSchema;
+	if( s== NULL) return throwMessage("notNull","Schema not found");
+	t= c->currTable;
+	if( t== NULL) return throwMessage("notNull","Table not found");
+
+	@:getBATdescriptor(ret,bid,columns,mvc_create_key_wrap)@
+	if( *fk != bat_nil){
+		@:getBATdescriptor(ret,fk,fkcols,mvc_create_key_wrap)@
+	}
+
+        if (*fk == int_nil){
+                mvc_create_key(c, s->name, t->name, *name, *kt, columns, NULL);
+        } else {
+                mvc_create_key(c, s->name, t->name, *name, *kt, columns, NULL/*WRONG*/);
+        }
+	*ret =0;
+        return MAL_SUCCEED;
+}
+@-
+OLD stuff
 str mvc_export_schema_wrap(int *ret, stream *s ){
 	mvc *c;
 	@:getContext(c,mvc)@
@@ -679,10 +659,10 @@ str mvc_export_wrap(int *ret, stream *s, int *border, int *bids, str *sep, str *
 	return MAL_SUCCEED;
 }
 
-str mvc_import_table_wrap(int *ret, int *res, stream *s, str *tname , str *sep, str *rsep, int *sz ){
+str mvc_import_table_wrap(int *ret, stream *s, str *tname , str *sep, str *rsep, int *sz ){
 	mvc *c;
 	@:getContext(c,mvc)@
-	*res = mvc_import_table( c, *(stream**)s, *tname, *sep, *rsep, *sz );
+	*ret= mvc_import_table( c, *(stream**)s, *tname, *sep, *rsep, *sz );
 	return MAL_SUCCEED;
 }
 /* code of the old mvc.input proc */
@@ -1912,6 +1892,7 @@ void mvc_exit()
 	if (mvc_debug)
 		fprintf(stderr, "mvc_exit\n");
 
+printf("cleaning up the user stuff \n");
 	logger_exit(logger); 
 	logger_destroy(logger); 
 	parser_exit();
@@ -3486,7 +3467,7 @@ void mvc_export(stream * s, BAT * order, BAT * bats, char *sep,
 	BBPreclaim(seps);
 }
 
-ssize_t mvc_import_table( mvc *m, stream *s, char *tname, 
+int mvc_import_table( mvc *m, stream *s, char *tname, 
 		char *sep, char *rsep, int sz)
 {
 	BUN p;

@@ -409,7 +409,9 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	case st_null: {
 		int c = sql2MAL(m,mb, s->op1.stval, sql);
 		@:SQLprelude@
-		@:newStmt("sql","notNull")@
+		/* the column context is already known */
+		@:newStmt("sql","setNotNull")@
+		@:pushInt(0)@
 		@:SQLpostlude@
 	} break;
 	case st_default: {
@@ -431,7 +433,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		int r;
 		str sv;
 		@:SQLprelude@
-		@:newStmt("mal","new")@
+		@:newStmt("bbp","new")@
 		@:pushArgId("str")@
 		@:pushArgId("int")@
 		@:getReturn(r)@
@@ -445,24 +447,22 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		if (s->flag == fkey){
 			int ft = sql2MAL(m,mb, s->op2.stval, sql);
 			@:newStmt("sql","createKey")@
-			@:pushStr(ky->t->schema->name)@
-			@:pushStr(ky->t->name)@
+			/* @:pushStr(ky->t->schema->name)@
+			@:pushStr(ky->t->name)@ */
 			sv= (ky->name)?ky->name:"";
 			@:pushStr(sv)@
 			@:pushInt(ky->type)@
+			@:pushArg(r)@
 			@:pushArg(ft)@
 		} else {
-			int k;
-			@:newStmt("sql","sql_key_nil")@
-			@:getReturn(k)@
-
 			@:newStmt("sql","createKey")@
-			@:pushStr(ky->t->schema->name)@
-			@:pushStr(ky->t->name)@
+			/* @:pushStr(ky->t->schema->name)@
+			@:pushStr(ky->t->name)@ */
 			sv= (ky->name)?ky->name:"";
 			@:pushStr(sv)@
 			@:pushInt(ky->type)@
-			@:pushArg(k)@
+			@:pushArg(r)@
+			@:pushNil@
 		}
 		@:SQLpostlude@
 	} break;
@@ -1240,7 +1240,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		int k;
 
 		@:SQLprelude@
-		@:newStmt("mal","new")@
+		@:newStmt("bbp","new")@
 		@:pushArgId("void")@
 		@:pushArgId("str")@
 		@:getReturn(k)@
