@@ -946,6 +946,7 @@ def msc_java(fd, var, java, msc):
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
     msc['SCRIPTS'].append(name)
+    msc['INSTALL'].append((name, name, '', None))
 
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
