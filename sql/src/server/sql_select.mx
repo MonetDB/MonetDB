@@ -379,6 +379,7 @@ static stmt *complex_find_subset(stmt * subset, stmt * t)
  */
 static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist * when_search_list, symbol * opt_else, group * grp, stmt * subset, int f)
 {
+	sql_subtype *tpe = NULL;
 	list *conds = create_stmt_list();
 	list *results = create_stmt_list();
 	dnode *dn = when_search_list->h;
@@ -456,7 +457,6 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 		return sql_error(sql, 02, "Error: result type missing");
 	}
 	for (; dn; dn = dn->next) {
-		sql_subtype *tpe = NULL;
 		stmt *cond = NULL, *result = NULL;
 
 		if (token == SQL_COALESCE){
@@ -524,23 +524,28 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 		if (!result)
 		 	result = sql_value_exp(sql, scp, opt_else, grp, subset, f);
 
-		if (!result || !(result = check_types(sql, restype, result))) {
-			list_destroy(conds);
-			list_destroy(results);
-			return NULL;
-		}
 		if (result->nrcols <= 0) {
 			res = stmt_const(res, result);
 		} else {
 			if (res) stmt_destroy(res);
 			res = result;
 		}
+
+		if (!res) {
+			list_destroy(conds);
+			list_destroy(results);
+			return NULL;
+		}
 	} else {
 		res = stmt_const(res, stmt_atom( atom_general( sql_dup_subtype(restype), NULL)));
 	}
-	if (restype) 
-		sql_subtype_destroy(restype);
-	restype = tail_type(res);
+	tpe = tail_type(res);
+	if (tpe && restype) {
+		tpe = supertype(restype, tpe);
+		sql_subtype_destroy( restype );
+	}
+	restype = tpe;
+
 	for (n = conds->h, m = results->h; n && m;
 	     n = n->next, m = m->next) {
 		stmt *cond = stmt_dup(n->data);
