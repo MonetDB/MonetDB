@@ -245,7 +245,7 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 		SQLPOINTER pnValue)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttribute\n");
+	ODBCLOG("SQLColAttribute %d\n", nFieldIdentifier);
 #endif
 
 	return SQLColAttribute_(hStmt, nCol, nFieldIdentifier, pszValue,

@@ -76,7 +76,7 @@ typedef struct {
 	void *pTargetValue;
 	SQLINTEGER *pnLengthOrIndicator;
 	SQLINTEGER nTargetValueMax;
-	char *pszTargetStr;
+	char **ppszTargetStr;
 	SQLUSMALLINT column;
 } ODBCBIND;
 	

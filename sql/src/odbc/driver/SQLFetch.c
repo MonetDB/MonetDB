@@ -51,13 +51,13 @@ SQLFetch_(SQLHSTMT hStmt)
 	for (i = 0; i < stmt->maxbindings; i++) {
 		ODBCBIND *p = &stmt->bindings[i];
 
-		if (p->pTargetValue && p->pszTargetStr) {
-			strncpy(p->pTargetValue, p->pszTargetStr,
+		if (p->pTargetValue && p->ppszTargetStr && *p->ppszTargetStr) {
+			strncpy(p->pTargetValue, *p->ppszTargetStr,
 				p->nTargetValueMax);
 			((char *) p->pTargetValue)[p->nTargetValueMax - 1] = 0;
 		}
-		if (p->pnLengthOrIndicator && p->pszTargetStr)
-			*p->pnLengthOrIndicator = strlen(p->pszTargetStr);
+		if (p->pnLengthOrIndicator && p->ppszTargetStr && *p->ppszTargetStr)
+			*p->pnLengthOrIndicator = strlen(*p->ppszTargetStr);
 	}
 
 	stmt->currentRow++;

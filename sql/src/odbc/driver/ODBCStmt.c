@@ -240,9 +240,13 @@ ODBCaddbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLPOINTER pTargetValue,
 	stmt->bindings[i].pTargetValue = pTargetValue;
 	stmt->bindings[i].pnLengthOrIndicator = pnLengthOrIndicator;
 	stmt->bindings[i].nTargetValueMax = nTargetValueMax;
-	stmt->bindings[i].pszTargetStr = 0;
+	/* allocate space for a char * so that we're safe against the
+	   realloc above (we need a space where a char * is put that
+	   we can give to MAPI and that has to stay fixed until
+	   released, possibly many calls to this function later) */
+	stmt->bindings[i].ppszTargetStr = malloc(sizeof(char *));
 
-	return &stmt->bindings[i].pszTargetStr;
+	return stmt->bindings[i].ppszTargetStr;
 }
 
 void
@@ -252,6 +256,8 @@ ODBCdelbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol)
 
 	for (i = 0; i < stmt->maxbindings; i++)
 		if (stmt->bindings[i].column == nCol) {
+			if (stmt->bindings[i].ppszTargetStr)
+				free(stmt->bindings[i].ppszTargetStr);
 			memset(&stmt->bindings[i], 0, sizeof(ODBCBIND));
 			break;
 		}
@@ -260,8 +266,14 @@ ODBCdelbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol)
 void
 ODBCfreebindcol(ODBCStmt *stmt)
 {
-	if (stmt->bindings)
+	int i;
+
+	if (stmt->bindings) {
+		for (i = 0; i < stmt->maxbindings; i++)
+			if (stmt->bindings[i].ppszTargetStr)
+				free(stmt->bindings[i].ppszTargetStr);
 		free(stmt->bindings);
+	}
 	stmt->bindings = NULL;
 	stmt->maxbindings = 0;
 }
