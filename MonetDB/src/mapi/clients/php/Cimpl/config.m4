@@ -24,24 +24,24 @@ if test "$PHP_MONETDB" != "no"; then
   SEARCH_PATH="/usr/local /usr /opt"
   SEARCH_FOR="include/MonetDB/C/Mapi.h"
   if test -r $PHP_MONETDB/; then # path given as parameter
-    MONET_PREFIX=$PHP_MONETDB
+    MONETDB_PREFIX=$PHP_MONETDB
   else # search default path list
      AC_MSG_CHECKING([for monetdb/Mapi files in default path])
      for i in $SEARCH_PATH ; do
        if test -r $i/$SEARCH_FOR; then
-         MONET_PREFIX=$i
+         MONETDB_PREFIX=$i
          AC_MSG_RESULT(found in $i)
        fi
      done
   fi
 
-  if test -z "$MONET_PREFIX"; then
+  if test -z "$MONETDB_PREFIX"; then
     AC_MSG_RESULT([not found])
     AC_MSG_ERROR([Please reinstall the MonetDB distribution])
   fi
 
   # --with-monetdb -> add include path
-  PHP_ADD_INCLUDE($MONET_PREFIX/include/MonetDB/C)
+  PHP_ADD_INCLUDE($MONETDB_PREFIX/include/MonetDB/C)
 
   # --with-monetdb -> check for lib and symbol presence
   LIBNAME=Mapi   # you may want to change this
@@ -49,13 +49,13 @@ if test "$PHP_MONETDB" != "no"; then
 
   PHP_CHECK_LIBRARY($LIBNAME,$LIBSYMBOL,
   [
-    PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $MONET_PREFIX/lib, MONETDB_SHARED_LIBADD)
+    PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $MONETDB_PREFIX/lib, MONETDB_SHARED_LIBADD)
     AC_DEFINE(HAVE_MONETDBLIB,1,[ ])
   ],[
-    echo "-L$MONET_PREFIX/lib"
+    echo "-L$MONETDB_PREFIX/lib"
     AC_MSG_ERROR([wrong monetdb/Mapi version or lib not found])
   ],[
-    -L$MONET_PREFIX/lib
+    -L$MONETDB_PREFIX/lib
   ])
  
   PHP_SUBST(MONETDB_SHARED_LIBADD)

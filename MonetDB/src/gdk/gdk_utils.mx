@@ -92,7 +92,7 @@ BAT 	*GDKenv = NULL;
 @- Monet configuration file
 Parse a possible MonetDB.conf file (either in the default location
 <prefix>/etc/MonetDB.conf, or as specified by either an enviroment variable
-$MONET_CONFIG, or by command line option -c/--config) 
+$MONETDB_CONFIG, or by command line option -c/--config) 
 to extract pre-settings of system variables.
 Un-recognized parameters are simply skipped, because they  may be
 picked up by other components of the system.

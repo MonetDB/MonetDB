@@ -123,16 +123,16 @@ printing as offered by the table.print() commands.
 The Mapi application uses include files found in the MonetDB
 distribution directory or at a central location on your machine.
 Assuming the location of the distribution is marked in the environment
-variable $MONET_PREFIX, the following actions are needed to get a
+variable $MONETDB_PREFIX, the following actions are needed to get a
 working program.
 @T
 \begin{verbatim}
-cc sample.c -I$MONET_PREFIX \
-        -I$MONET_PREFIX/include/common \
-        -I$MONET_PREFIX/include/mapi  \
-        -L$MONET_PREFIX/lib \
+cc sample.c -I$MONETDB_PREFIX \
+        -I$MONETDB_PREFIX/include/common \
+        -I$MONETDB_PREFIX/include/mapi  \
+        -L$MONETDB_PREFIX/lib \
         -lMapi -lutils -lstream \
-        -Wl,--rpath -Wl,$MONET_PREFIX/lib/MonetDB:$MONET_PREFIX/lib \
+        -Wl,--rpath -Wl,$MONETDB_PREFIX/lib/MonetDB:$MONETDB_PREFIX/lib \
         -o sample
 \end{verbatim}
 
