@@ -107,5 +107,5 @@ lib_MonetODBC = {
 	gdk.c 
 	LIBS = \
 	../../common/libsql \
-	-L$(MONET_PREFIX)/lib/Monet -lstream  -lm
+	-L$(MONET_PREFIX)/lib -lstream  -lm
 }

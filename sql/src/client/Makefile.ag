@@ -14,11 +14,11 @@ bin_sql_client = {
 	SOURCES = sql_client.c catalog_client.c statement_dump.c \
 		  comm.c comm.h gdk.c query.h
 	LIBS = ../common/libsql \
-		-L$(MONET_PREFIX)/lib/Monet -lstream $(GETOPT_LIBS)
+		-L$(MONET_PREFIX)/lib -lstream $(GETOPT_LIBS)
 }
 
 bin_Msql = {
 	SOURCES = Msql.c comm.c comm.h gdk.c query.h
-	LIBS = -L$(MONET_PREFIX)/lib/Monet -lstream \
+	LIBS = -L$(MONET_PREFIX)/lib -lstream \
 			$(READLINE_LIBS) $(GETOPT_LIBS) $(PTHREAD_LIBS)
 }
