@@ -2140,7 +2140,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #include <monet.h>
 #include <kernel.h>
 #include <streams.h>
-#include "pathfinder.proto.h"
 
 @:define_ws_constants@
 
