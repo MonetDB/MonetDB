@@ -85,6 +85,64 @@ AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 ]) dnl AC_DEFUN AM_MONET
 
+AC_DEFUN([AM_MONET5],
+[
+
+dnl check for monet5
+have_monet5=auto
+MONET5_CFLAGS=""
+MONET5_LIBS=""
+MONET5_MOD_PATH=""
+MONET5_PREFIX="."
+if test "x$1" = "x"; then
+  MONET5_REQUIRED_VERSION="4.99.19"
+else
+  MONET5_REQUIRED_VERSION="$1"
+fi
+AC_ARG_WITH(monet5,
+	AC_HELP_STRING([--with-monet5=DIR], [monet5 is installed in DIR]),
+	have_monet5="$withval")
+if test "x$have_monet5" != xno; then
+  MPATH="$withval/bin:$PATH"
+  AC_PATH_PROG(MONET5_CONFIG,monet5-config,,$MPATH)
+
+  if test "x$MONET5_CONFIG" != x; then
+    AC_MSG_CHECKING(whether MonetDB version $MONET5_REQUIRED_VERSION or newer is installed) 
+    MONET5VERS=`$MONET5_CONFIG --version`
+    if test MONET_VERSION_TO_NUMBER(echo $MONET5VERS) -ge MONET_VERSION_TO_NUMBER(echo $MONET5_REQUIRED_VERSION); then
+      have_monet5=yes
+      AC_MSG_RESULT($have_monet5: found version $MONET5VERS)
+    else
+      have_monet5=no
+      AC_MSG_RESULT($have_monet5: found only version $MONET5VERS)
+    fi
+  fi
+
+  if test "x$have_monet5" != xyes; then
+    MONET5_CFLAGS=""
+    MONET5_INCS=""
+    MONET5_INCLUDEDIR=""
+    MONET5_LIBS=""
+    MONET5_MOD_PATH=""
+    MONET5_PREFIX=""
+  else
+    MONET5_CFLAGS=`$MONET5_CONFIG --cflags`
+    MONET5_INCS=`$MONET5_CONFIG --includes`
+    MONET5_INCLUDEDIR=`$MONET5_CONFIG --pkgincludedir`
+    MONET5_LIBS=`$MONET5_CONFIG --libs`
+    MONET5_MOD_PATH=`$MONET5_CONFIG --modpath`
+    MONET5_PREFIX=`$MONET5_CONFIG --prefix`
+  fi
+fi
+AC_SUBST(MONET5_CFLAGS)
+AC_SUBST(MONET5_INCS)
+AC_SUBST(MONET5_INCLUDEDIR)
+AC_SUBST(MONET5_LIBS)
+AC_SUBST(MONET5_MOD_PATH)
+AC_SUBST(MONET5_PREFIX)
+AM_CONDITIONAL(HAVE_MONET5,test x$have_monet5 = xyes)
+]) dnl AC_DEFUN AM_MONET5
+
 AC_DEFUN([AM_MONET_COMPILER],
 [
 
