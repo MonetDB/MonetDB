@@ -1,5 +1,5 @@
 @f arith
-@a N.J. Nes, P. Boncz
+@a N.J. Nes, P. Boncz, Arjen P. de Vries
 @t The Arithmetics Module
 @* Introduction
 @T
@@ -50,6 +50,11 @@ This module also contains the rand and srand functions. The {\tt srand}()
 function initializes the random number generator using a seed value. The 
 subsequent calls to {\tt rand}() are pseudo random numbers (with the same 
 seed the sequence can be repeated).
+
+\item[constants]
+The module also provides access to constants {\tt RAND_MAX}, and the maximum
+and minimum of the domains of numeric types {\tt chr, sht, int, lng}
+(excluding nil).
 \end{description}
 
 {\bf The general interpretation for the NIL value is "unknown".
@@ -211,6 +216,32 @@ array. Specific operations work with this interpretation.
 		"return a random number"
 	.COMMAND srand(int seed) : void = int_srand; 
 		"initialize the rand() function with a seed"
+
+@- constants
+@m
+.COMMAND getRAND_MAX (): int = CMDgetRAND_MAX; "Maximum value returned by rand()"
+@:limit_definition(CHR,chr)@
+@:limit_definition(SHT,sht)@
+@:limit_definition(INT,int)@
+@:limit_definition(LNG,lng)@
+@= limit_definition
+.COMMAND get@1_MAX (): @2 = CMDget@1_MAX; "Get maximum value of ordered type @2"
+.COMMAND get@1_MIN (): @2 = CMDget@1_MIN; "Get minimum value of ordered type @2"
+@
+The constants defined in limit.h are defined using autoloaded mil code.
+@m
+.LOAD
+        const RAND_MAX   := getRAND_MAX();
+@:limit_milconst(CHR)@
+@:limit_milconst(SHT)@
+@:limit_milconst(INT)@
+@:limit_milconst(LNG)@
+@= limit_milconst
+        const @1_MAX   := get@1_MAX();
+        const @1_MIN   := get@1_MIN();
+@m
+.END;
+
 .END arith;
 
 @+ Example script 
@@ -736,7 +767,6 @@ int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b ) {
 }
 @
 
-
 @= c_bitwise_ops
 @:arith_binop(_OR,|,@1,@1,@1)@
 @:arith_binop(_AND,&,@1,@1,@1)@
@@ -760,4 +790,27 @@ int @3_binary@1(@3 *res , @3 *a, @3 *b ) {
    return(GDK_SUCCEED);
 }
 @
+
+@= limit_implementation
+int CMDget@1_MAX(@2* maxval) {
+  *maxval = GDK_@2_max;
+  return GDK_SUCCEED;
+}
+int CMDget@1_MIN(@2* minval) {
+  /* the real minimum is used as `nil' value */
+  *minval = GDK_@2_min + 1;
+  return GDK_SUCCEED;
+}
+@
+@c
+@:limit_implementation(CHR,chr)@
+@:limit_implementation(SHT,sht)@
+@:limit_implementation(INT,int)@
+@:limit_implementation(LNG,lng)@
+
+int CMDgetRAND_MAX(int* randmaxval) {
+  *randmaxval = RAND_MAX;
+  return GDK_SUCCEED;
+}
+
 @}
