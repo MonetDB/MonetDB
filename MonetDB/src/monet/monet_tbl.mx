@@ -54,8 +54,7 @@ m_export void  TBL_initclient(Client c, Client father);
 m_export void  TBL_exitclient(Client c);
 
 m_export void  TBL_newproc(Client c, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE ret);
-m_export void  TBL_undefproc(Client client, str nme);
-m_export void  TBL_delproc(Client client, oid pid, int lock);
+m_export void  TBL_delproc(Client client, str nme);
 
 m_export int   TBL_M_client_install(Client client, oid mid);
 m_export int   TBL_M_incref(Client client, oid mid);
@@ -973,6 +972,212 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
   	return mid;
 }
 
+@+ MIL Procedure Management
+
+@- MIL Proc Ref counting
+@T
+While MIL procs are typically introduced by MIL modules, they can be typed in at anytime 
+in a MIL session (not belonging to any specific module). They are represented as parsed
+MIL trees, with their root in TBL_fcn_imp and shared in all client fcntbl-s. As a consequence, 
+we must do indiviual refcounting for them (i.e. they cannot use the module refcnt mechanism). 
+
+The following rules apply:
+\begin{itemize}
+\item each client having the proc in its fcntbl adds a refcnt
+\item each module that defines the proc adds a refcnt
+\end{itemize}
+
+Thus, procs introduces by a module that are explicitly 'undef-ed' by the user keep existing. 
+Thus, a second user that loads the module (logical load only, as he is the second user) still 
+gets this proc as expected.
+@c
+void TBL_incproc(oid pid) {
+	int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
+	cnt++;
+	BUNreplace(TBL_fcn_cnt, &pid, &cnt);
+}
+
+void TBL_decproc(oid pid) {
+	int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
+	if (cnt > 1) {
+		cnt--;
+		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
+	} else {
+		/* remove last reference: free MIL tree, remove from TBL structures */
+		YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
+		if (x && *x) {
+	    		GDKfree((*x)->yyval.val.pval); /* free disguised name */
+	    		yyfree((*x));
+		}
+		TBL_Deinstall_Function(pid);
+	}
+}
+
+@- TBL_newproc 
+registers a new MIL procedure.
+@c
+#define PROC_TYPE1(t)	((sht*) (&t->yyval.len))[0]
+#define PROC_TYPE2(t)	((sht*) (&t->yyval.len))[1]
+	
+static 
+int format_type(YYSTREE t, str *p) {
+	int ret = 32768;
+	str s = *p;
+
+	if (t == NULL) {
+		strcpy(s, "any"); 
+	} else if (t->token == TOK_ANY) {
+		strcpy(s, "any"); 
+		if (t->yyval.val.ival >= 0) {
+			sprintf(s+3, "::%d", t->yyval.val.ival);
+		}
+		ret = t->yyval.val.ival;
+	} else {
+		strcpy(s, t->yyval.val.sval);
+	}
+	*p += strlen(s);
+	return ret; 
+}
+
+void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE ret) {
+	int i, j, tpe = TOK_PROC;
+	oid pid = TBL_oid++;
+
+	TBL_M_lock(NULL);
+	TBL_fcn_pro_size++;
+	if (body == sig) {
+		/* forward definitions will never actually match */
+		BUNins(TBL_fcn_pro, &pid, "<predefinition>");  
+	} else {
+		sht anynum, *any1 = NULL, *any2 = NULL;
+		char returntpe[128];
+
+		PROC_TYPE1(body) = PROC_TYPE2(body) = 0;
+		if (ret) {
+			char *p=returntpe;
+			format_type(ret, &p); 
+
+			/* analyze the return type specification */
+			if (ret->token==TOK_ATOM) {
+				PROC_TYPE1(body) = ATOMindex(ret->yyval.val.sval); 
+				if (PROC_TYPE1(body) == TYPE_bat) {
+					*(p++) = '[';
+					format_type(ret->yysons[0], &p);
+					*(p++) = ',';
+					format_type(ret->yysons[1], &p);
+					*(p++) = ']'; *(p++) = 0;
+					if (ret->yysons[0]->token == TOK_ATOM) {
+						PROC_TYPE1(body) += 8192 + ATOMindex(ret->yysons[0]->yyval.val.sval);
+					} else { /* TOK_ANY */
+						PROC_TYPE1(body) = ret->yysons[0]->yyval.val.ival;
+						any1 = &PROC_TYPE1(body);
+					}
+					if (ret->yysons[1]->token == TOK_ATOM) {
+						PROC_TYPE2(body) += 8192 + ATOMindex(ret->yysons[1]->yyval.val.sval);
+					} else { /* TOK_ANY */
+						PROC_TYPE1(body) = ret->yysons[1]->yyval.val.ival;
+						any2 = &PROC_TYPE1(body);
+					}
+				} else { /* simple atom */
+					PROC_TYPE1(body) += 8192;
+				}
+			} else { /* TOK_ANY */
+				PROC_TYPE1(body) = ret->yyval.val.ival; 
+				any1 = &PROC_TYPE1(body);
+			}
+	    
+		} else {
+			strcpy(returntpe, "any");
+		} 
+
+		/* insert a signature in TBL_fcn_pro */
+		if (sig == NULL) {
+			BUNins(TBL_fcn_pro, &pid, "*any"); 
+		} else {
+			YYSTREE cur=sig; 
+			for(j=1; cur; cur=cur->overflow) {
+				for(i=0; i<cur->cnt; i++,j++) {
+					char tpenme[512], *p=tpenme;
+					YYSTREE t = cur->yysons[i];
+
+					if (t->token == TOK_RANGETEMP) {
+						*(p++) = '*';
+						t = t->yysons[0];
+					} 
+			
+					/* the any stuff resolves any::X expressions in
+					   the return type specification, when we encounter
+					   the any::X in the signature */
+					anynum = format_type(t, &p);
+					if (t->token==TOK_ATOM && strcmp(t->yyval.val.sval, "BAT")==0) {
+						*(p++) = '[';
+						anynum = format_type(t->yysons[0], &p);
+						if (any1 && *any1==anynum) *any1 = 2048+j;
+						if (any2 && *any2==anynum) *any2 = 2048+j;
+						*(p++) = ',';
+						anynum = format_type(t->yysons[1], &p);
+						if (any1 && *any1==anynum) *any1 = 1024+j;
+						if (any2 && *any2==anynum) *any2 = 1024+j;
+						*(p++) = ']'; *(p++) = 0; 
+					} else {
+						if (any1 && *any1==anynum) *any1 = 4096+j;
+						if (any2 && *any2==anynum) *any2 = 4096+j;
+						if (t->cnt > 0) t = t->yysons[0];
+						if (t->token == TOK_STRING) {
+							*(p++) = '('; 
+							strcpy(p, t->yyval.val.sval); 
+							p += strlen(p);
+							*(p++) = ')'; *(p++) = 0; 
+						}
+					}
+					BUNins(TBL_fcn_pro, &pid, tpenme); 
+				}
+			}
+		} 
+		if ((any1 && *any1 < 1024) || (any2 && *any2 < 1024)) {
+			if (any1 && *any1 < 1024) PROC_TYPE1(body) = 4096;
+			if (any2 && *any2 < 1024) PROC_TYPE2(body) = 4096;
+		}
+		BUNins(TBL_fcn_pro, &pid, returntpe); 
+	}
+	i = 1; /* initial reference count */
+	if (mod) {
+		BUNins(TBL_mod_proc, mod, &pid);
+		i++; /* extra reference if it belongs to a module */
+	}
+	BUNins(TBL_fcn_cnt, &pid, &i);
+	BUNins(TBL_fcn_nme, &pid, nme);
+	BUNins(TBL_fcn_imp, &pid, &body);
+	BUNins(TBL_fcn_tpe, &pid, &tpe);
+	BUNins(client->fcntbl, nme, &pid);
+
+	/* use this space only once, so disguise name str as a ptr */
+	body->yyval.vtype = TYPE_ptr; 
+	body->yyval.len = 0; 
+
+	TBL_M_unlock(client);
+}
+
+@- TBL_delproc 
+forcedly removes it from a client fcntbl.
+
+depending on its refcnt, the proc may continue to exist for other clients
+and for the module it was defined in.
+@c
+void TBL_delproc(Client client, str nme) {
+	int i;
+	TBL_M_lock(client);
+	(void) BATprepareHash(client->fcntbl);
+	HASHloop_str(client->fcntbl, client->fcntbl->hhash, i, nme) {
+		BUN p = BUNptr(client->fcntbl, i);
+		oid pid = *(oid*) BUNtloc(client->fcntbl, p);
+		if (*(int*) BUNtloc(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
+			TBL_decproc(pid);
+			BUNdelete(client->fcntbl, p);
+		}
+	}
+	TBL_M_unlock(client);
+}
 
 @+ Initialization
 Most dictionary tables are created once and loaded upon system 
@@ -1010,7 +1215,7 @@ static BAT *TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int 
 	return b;
 }
 
-static BAT *TBL_lookup( Client client, Client father, str nme ){
+static BAT *TBL_fathercopy( Client client, Client father, str nme ){
 	char buf[128];
 	Variable v;
 	BAT *b = NULL;
@@ -1578,26 +1783,41 @@ decrease the refount of the module. we are ready if it isn't zero (LOGICAL DROP)
 @c
 	refcnt = TBL_M_decref(father, mid); 
 @-
-drop will go through; delete all the C-modules's atoms, accelerators and functions 
+drop will go through; 
 @c
 	if (TBL_M_clientrefs(mid, client) == 0) {
-		for(j=0; j<ntpes; j++)
-			BUNdelHead(BATmirror(father->atomtbl), tpes+j);
-		for(j=0; j<naccs; j++)
-			BUNdelHead(BATmirror(father->acctbl), accs+j);
+		/* LOGICAL DROP */
+		if (*module != '_') {
+			/* decrease references to MIL procs and remove from client fcntbl */
+			(void) BATprepareHash(TBL_mod_proc);
+			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
+				fid = *(oid*) BUNtloc(TBL_mod_proc,BUNptr(TBL_mod_proc, j));
+				BUNfndOID(r, fcntbl, &fid);
+				if (r) {
+					TBL_decproc(fid);
+					BUNdelete(fcntbl, r);
+				}
+			}
+		} else {
+			/* delete all the C-modules's atoms, accelerators and functions */
+			for(j=0; j<ntpes; j++)
+				BUNdelHead(BATmirror(father->atomtbl), tpes+j);
+			for(j=0; j<naccs; j++)
+				BUNdelHead(BATmirror(father->acctbl), accs+j);
 
-		(void) BATprepareHash(fcn_mid);
-		HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
-			fid = * (oid *) BUNtail(fcn_mid, r);
-			BUNfndOID(r,fcntbl, &fid);
-			if (r) BUNdelete(fcntbl, r);
+			(void) BATprepareHash(fcn_mid);
+			HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
+				fid = * (oid *) BUNtail(fcn_mid, r);
+				BUNfndOID(r,fcntbl, &fid);
+				if (r) BUNdelete(fcntbl, r);
+			}
 		}
 	}
 	b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE);
 	if (refcnt == 0) { 
 		/* PHYSICAL DROP */
 		if (*module != '_') {
-			/* MIL-modules drop the procs they introduced as well as the load-script variables */	
+			/* MIL-modules kill the procs they introduced as well as the load-script variables */	
 			BATprepareHash(TBL_mod_proc);
 			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
 				oid pid = *(oid*) BUNtloc(TBL_mod_proc,BUNptr(TBL_mod_proc, j));
@@ -1605,7 +1825,7 @@ drop will go through; delete all the C-modules's atoms, accelerators and functio
 					int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 					if (cnt != 1) GDKwarning("drop(%s): MIL proc '%s' has %d dangling references.\n", 
 								module, BUNtail(TBL_fcn_nme,r), cnt-1);
-					TBL_delproc(client, pid, FALSE);
+					TBL_decproc(pid);
 				}
 			} 
 			BATprepareHash(TBL_mod_var);
@@ -2131,222 +2351,6 @@ void *TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv){
 	return (void *) 0;
 }
 
-@+ MIL Procedure Management
-@- TBL_newproc
-registers a new MIL procedure.
-@c
-#define PROC_TYPE1(t)	((sht*) (&t->yyval.len))[0]
-#define PROC_TYPE2(t)	((sht*) (&t->yyval.len))[1]
-	
-static 
-int format_type(YYSTREE t, str *p) {
-	int ret = 32768;
-	str s = *p;
-
-	if (t == NULL) {
-		strcpy(s, "any"); 
-	} else if (t->token == TOK_ANY) {
-		strcpy(s, "any"); 
-		if (t->yyval.val.ival >= 0) {
-			sprintf(s+3, "::%d", t->yyval.val.ival);
-		}
-		ret = t->yyval.val.ival;
-	} else {
-		strcpy(s, t->yyval.val.sval);
-	}
-	*p += strlen(s);
-	return ret; 
-}
-
-void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE ret) {
-	int i, j, tpe = TOK_PROC;
-	oid pid = TBL_oid++;
-
-	TBL_M_lock(NULL);
-	TBL_fcn_pro_size++;
-	if (body == sig) {
-		/* forward definitions will never actually match */
-		BUNins(TBL_fcn_pro, &pid, "<predefinition>");  
-	} else { 
-		sht anynum, *any1 = NULL, *any2 = NULL;
-		char returntpe[128];
-
-		PROC_TYPE1(body) = PROC_TYPE2(body) = 0;
-		if (ret) {
-			char *p=returntpe;
-			format_type(ret, &p); 
-
-			/* analyze the return type specification */
-			if (ret->token==TOK_ATOM) {
-				PROC_TYPE1(body) = ATOMindex(ret->yyval.val.sval); 
-				if (PROC_TYPE1(body) == TYPE_bat) {
-					*(p++) = '[';
-					format_type(ret->yysons[0], &p);
-					*(p++) = ',';
-					format_type(ret->yysons[1], &p);
-					*(p++) = ']'; *(p++) = 0;
-					if (ret->yysons[0]->token == TOK_ATOM) {
-						PROC_TYPE1(body) += 8192 + ATOMindex(ret->yysons[0]->yyval.val.sval);
-					} else { /* TOK_ANY */
-						PROC_TYPE1(body) = ret->yysons[0]->yyval.val.ival;
-						any1 = &PROC_TYPE1(body);
-					}
-					if (ret->yysons[1]->token == TOK_ATOM) {
-						PROC_TYPE2(body) += 8192 + ATOMindex(ret->yysons[1]->yyval.val.sval);
-					} else { /* TOK_ANY */
-						PROC_TYPE1(body) = ret->yysons[1]->yyval.val.ival;
-						any2 = &PROC_TYPE1(body);
-					}
-				} else { /* simple atom */
-					PROC_TYPE1(body) += 8192;
-				}
-			} else { /* TOK_ANY */
-				PROC_TYPE1(body) = ret->yyval.val.ival; 
-				any1 = &PROC_TYPE1(body);
-			}
-	    
-		} else {
-			strcpy(returntpe, "any");
-		} 
-
-		/* insert a signature in TBL_fcn_pro */
-		if (sig == NULL) {
-			BUNins(TBL_fcn_pro, &pid, "*any"); 
-		} else {
-			YYSTREE cur=sig; 
-			for(j=1; cur; cur=cur->overflow) {
-				for(i=0; i<cur->cnt; i++,j++) {
-					char tpenme[512], *p=tpenme;
-					YYSTREE t = cur->yysons[i];
-
-					if (t->token == TOK_RANGETEMP) {
-						*(p++) = '*';
-						t = t->yysons[0];
-					} 
-			
-					/* the any stuff resolves any::X expressions in
-					   the return type specification, when we encounter
-					   the any::X in the signature */
-					anynum = format_type(t, &p);
-					if (t->token==TOK_ATOM && strcmp(t->yyval.val.sval, "BAT")==0) {
-						*(p++) = '[';
-						anynum = format_type(t->yysons[0], &p);
-						if (any1 && *any1==anynum) *any1 = 2048+j;
-						if (any2 && *any2==anynum) *any2 = 2048+j;
-						*(p++) = ',';
-						anynum = format_type(t->yysons[1], &p);
-						if (any1 && *any1==anynum) *any1 = 1024+j;
-						if (any2 && *any2==anynum) *any2 = 1024+j;
-						*(p++) = ']'; *(p++) = 0; 
-					} else {
-						if (any1 && *any1==anynum) *any1 = 4096+j;
-						if (any2 && *any2==anynum) *any2 = 4096+j;
-						if (t->cnt > 0) t = t->yysons[0];
-						if (t->token == TOK_STRING) {
-							*(p++) = '('; 
-							strcpy(p, t->yyval.val.sval); 
-							p += strlen(p);
-							*(p++) = ')'; *(p++) = 0; 
-						}
-					}
-					BUNins(TBL_fcn_pro, &pid, tpenme); 
-				}
-			}
-		} 
-		if ((any1 && *any1 < 1024) || (any2 && *any2 < 1024)) {
-			if (any1 && *any1 < 1024) PROC_TYPE1(body) = 4096;
-			if (any2 && *any2 < 1024) PROC_TYPE2(body) = 4096;
-		}
-		BUNins(TBL_fcn_pro, &pid, returntpe); 
-	}
-	i = 1; /* initial reference count */
-	if (mod) {
-		BUNins(TBL_mod_proc, mod, &pid);
-		i++; /* extra reference if it belongs to a module */
-	}
-	BUNins(TBL_fcn_cnt, &pid, &i);
-	BUNins(TBL_fcn_nme, &pid, nme);
-	BUNins(TBL_fcn_imp, &pid, &body);
-	BUNins(TBL_fcn_tpe, &pid, &tpe);
-	BUNins(client->fcntbl, nme, &pid);
-
-	/* use this space only once, so disguise name str as a ptr */
-	body->yyval.vtype = TYPE_ptr; 
-	body->yyval.len = 0; 
-
-	TBL_M_unlock(client);
-}
-
-@- MIL Proc Ref counting
-
-While MIL procs are typically introduced by MIL modules, they can be typed in at anytime 
-in a MIL session (not belonging to any specific module). They are represented as parsed
-MIL trees, with their root in TBL_fcn_imp. As a consequence, we must do indiviual refcounting
-for them. The following rules apply:
-- when a proc is defined, it gets a reference count
-- each client sharing a reference to the proc increments this count (via TBL_incproc)
-- when a module introduces a proc, it gives one extra reference count
-- each time a client disconnects, it decreases the reference count of its procs
-- when a module is physically dropped, it removes the final reference count
-@c
-void TBL_incproc(Client client) {
-   	int xx, yy = TOK_PROC;
-        BAT *tb, *bb, *cb = BATmirror(client->fcntbl);
-	BUN p,q;
-
-	TBL_M_lock(client);
-	/* first select procs from function table */
-        tb = BATsemijoin(TBL_fcn_tpe, cb);
-        bb = BATuselect(tb, &yy, &yy);
-	BBPreclaim(tb);
-
-	BATloopFast(bb, p, q, xx) {
-	    	oid pid = *(oid*) BUNhloc(bb, p);
-	    	int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
-		cnt++;
-  		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
-	}
-	BBPreclaim(bb);
-	TBL_M_unlock(client);
-}
-
-void TBL_delproc(Client client, oid pid, int lock) {
-	if (lock) TBL_M_lock(client);
-	if (*(int*) BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
-		int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
-		if (cnt == 1){
-			YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
-			if (x && *x) {
-	    			GDKfree((*x)->yyval.val.pval); /* free disguised name */
-	    			yyfree((*x));
-			}
-	    		TBL_Deinstall_Function(pid);
-		} else {
-			cnt--;
-			BUNreplace(TBL_fcn_cnt, &pid, &cnt);
-		}
-		/* remove from user's function table. MIL will not recognize it anymore */
-		BUNdelHead(BATmirror(client->fcntbl), &pid);
-	}
-	if (lock) TBL_M_unlock(client);
-}
-
-void TBL_undefproc(Client client, str nme) {
-   	int xx, yy = TOK_PROC;
-	BAT *sb = BATuselect(BATmirror(client->fcntbl), nme, nme);
-        BAT *tb = BATsemijoin(TBL_fcn_tpe, sb);
-        BAT *bb = BATuselect(tb, &yy, &yy);
-	BUN p,q;
-
-	BBPreclaim(sb);
-	BBPreclaim(tb);
-
-	BATloopFast(bb, p, q, xx) {
-		TBL_delproc(client, *(oid*) BUNhead(bb,p), TRUE);
-	}
-	BBPreclaim(bb);
-}
-
 @- TBL_procreturn
 @T
 We now allow the user to specify a procedure return value.
@@ -2421,13 +2425,22 @@ Both tables are session and user specific.
 #define TBL_SIZE	750
 
 void TBL_initclient(Client client, Client father) {
-	int	i;
+	BUN 	p, q;
+	int	i, xx;
 
+	TBL_M_lock(client);
 	if (monet_clients != client){
-		client->fcntbl = TBL_lookup(client, father, "fcntbl");
-		client->acctbl = TBL_lookup(client, father, "acctbl"); 
-		client->atomtbl = TBL_lookup(client, father, "atomtbl"); 
-		TBL_incproc(client); /* inc reference counts to functions */
+		client->fcntbl = TBL_fathercopy(client, father, "fcntbl");
+		client->acctbl = TBL_fathercopy(client, father, "acctbl"); 
+		client->atomtbl = TBL_fathercopy(client, father, "atomtbl"); 
+
+		/* for all procs in the client fcntbl, increment their refcnt */
+		BATloopFast(client->fcntbl, p, q, xx) {
+			oid pid = *(oid*) BUNtloc(client->fcntbl, p);
+			if (*(int*) BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
+		    		TBL_incproc(pid);
+			}
+		}
 		if (father)
 		    TBL_inc_mod_use(client, father); /* inc mod use counters */
 	} else {
@@ -2458,6 +2471,7 @@ void TBL_initclient(Client client, Client father) {
 		i = TYPE_lng; BUNins(client->atomtbl, "lng", &i);
 		i = TYPE_str; BUNins(client->atomtbl, "str", &i);
 	}
+	TBL_M_unlock(client);
 
 #ifdef MKMODS
 	TEM_initclient(client);
@@ -2476,7 +2490,7 @@ delete all procs, and finally we drop the modules (with level=1). Due to the lev
 it will not execute the drop scripts again. 
 @c
 void TBL_exitclient(Client client) {
-	BAT	*b, *bn, *tmp = BATcopy(client->fcntbl);
+	BAT	*b, *bn;
 	BUN 	p, q, r;
 	int	xx;
 
@@ -2485,16 +2499,9 @@ void TBL_exitclient(Client client) {
 #endif
 	TBL_M_lock(client);
 
-	/* Check for procs in your fcn table.  */
-	BATloopFast(tmp, p, q, xx) {
-		TBL_delproc(client, *(oid*) BUNtloc(tmp, p), FALSE);
-	}
-	BBPreclaim(tmp);
-
 	/* Unload all loaded modules in reverse loading order. */
 	bn = BATselect(TBL_mod_use, &client, &client);
-	tmp = BATsetaccess(BATsort(bn), BAT_WRITE);
-	b = BATrevert(tmp);
+	b = BATrevert(BATsetaccess(BATsort(bn), BAT_WRITE));
 	BATloopFast(b, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(b,p); 
 	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {
@@ -2506,6 +2513,15 @@ void TBL_exitclient(Client client) {
 	BBPreclaim(b);
 	BBPreclaim(bn);
 
+	/* Unload any remaining procs in your fcn table.  */
+	BATloopFast(client->fcntbl, p, q, xx) {
+		oid pid = *(oid*) BUNtloc(client->fcntbl, p);
+		if (*(int*) BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
+			TBL_decproc(*(oid*) BUNtloc(client->fcntbl, p));
+		}
+	}
+
+	/* Clean up all client parser BATs */
 	BBPunfix(client->fcntbl->batCacheid);
 	BBPunfix(client->atomtbl->batCacheid);
 	BBPunfix(client->acctbl->batCacheid);

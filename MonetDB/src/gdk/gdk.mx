@@ -54,7 +54,7 @@ hash tables, for accelerating lookup searches on BATs.
 indices, for accelerating range searches on BATs.
 \item[-] ACC routines that define the ADT for user defined search
 accelerators.
-\item[-] TM routines that implement a transaction protocol.
+\item[-] TM routines that provide basic transaction management primitives.
 \item[-] TRG routines that provided active database support.
 \item[-] ALIGN routines that implement BAT alignment management.
 \end{itemize}
@@ -879,18 +879,6 @@ typedef struct {
 	BATrec*		P;		/* cache and sort info */
 	BUNrec*		U;		/* cache and sort info */
 	/* void hack fields */
-#if 0
-/* PETER: 
-	usage of a long here might solve some (harmless) casting warnings
-	but breaks the 32/64 bit compatibility of bat images. I have actually
-	decided to give up on that in the very near future, but why then not use
-	the MT_Id type right away?? As DD expects 32/64 compatability now, I roll
-	back, expecting this to be reversed in the enhanced 64-bit release spring '03
-
-*/
-	ssize_t 	void_tid;	/* thread that reads this bat */
-	ssize_t		void_cnt;	/* nr of reads */
-#endif
 	int 		void_tid;	/* thread that reads this bat */
 	int 		void_cnt;	/* nr of reads */
 	oid		void_seq1;
@@ -1104,7 +1092,6 @@ transaction in which it is created.
 gdk_export BAT*	     	BATnew     (int hdtype, int tltype, size_t capacity); 
 gdk_export BAT*		BATtmp     (BAT *b, int mode); 
 gdk_export BAT*		BATextend  (BAT *b, size_t newcap); 
-gdk_export int		BATdestroy (BAT *b);
 
 		/* internal */
 gdk_export BAT*		BATnewstorage (int ht, int tt, size_t cap);
@@ -1698,7 +1685,6 @@ gdk_export void BBPhot        (bat b);
 gdk_export void BBPcold       (bat b);
 gdk_export void BBPtrim       (size_t memdelta, size_t vmdelta);
 gdk_export void BBPunlock     (str s);
-gdk_export int  BBPfree       (BAT *b);
 
 gdk_export bat  BBPindex      (str nme);
 gdk_export BAT* BBPdescriptor (bat b);

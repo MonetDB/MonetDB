@@ -183,6 +183,7 @@ bat		BBP_mask = 0;		/* number of buckets = & mask */
 #endif
 
 static void BBPspin(bat bid, str debug, int event);
+static int BBPfree(BAT *b);
 
 
 void BBP_insert(bat i) {
@@ -913,7 +914,6 @@ void BBPuncacheit(bat i, int unloaddesc) {
 		}
 		BBP_cache(i) = BBP_cache(-i) = NULL; 
 		BBP_status_off(i, BBPLOADED, "BBPuncacheit");
-		BBP_unload_off(i, "BBPuncacheit");
 		if (pid != locked_by) 
 			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPuncacheit");
 	}
@@ -1147,6 +1147,7 @@ int BBPdecref(bat i, int logical) {
         if (swap) {
                 b = BBPquickdesc(i, TRUE);
                 if (b) BBPfree(b); /* free memory (if loaded) and delete from disk (if transient but saved) */
+		BBP_unload_off(i, "BBPdecref");
 	}
 	return refs;
 }
@@ -1202,14 +1203,15 @@ int BBPresurrect(str nme){
 @- 
 BBPreclaim is a user-exported function; the common way to destroy a BAT the hard way. 
 
-Return values: 
+Return values:
 -1 = bat cannot be unloaded (it has more than your own memory fix)
- 0 = unloaded succesfully 
- 1 = unload failed (due to write-to-disk failure) 
+ 0 = unloaded succesfully
+ 1 = unload failed (due to write-to-disk failure)
 @c
 int BBPreclaim(BAT* b) {
 	MT_Id pid = BBP_getpid();
 	bat i = ABS(b->batCacheid);
+	int ret = 0;
 
 	if (pid != locked_by)
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
@@ -1222,16 +1224,21 @@ int BBPreclaim(BAT* b) {
 
 	if (BBP_refs(b->batCacheid) > 1) {
 		GDKerror("BBPreclaim(%d) refs > 1 (%d)\n", i, BBP_refs(i));
-		if (pid != locked_by)
-			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
-		return -1;
+		ret = -1;
 	} else {
+		/* unload whatever the LRU in the BBP */
 		BBP_refs(b->batCacheid) = 0;
+		BBP_unload_on(i, "BBPreclaim"); 
 	}
-	BBP_unload_on(i, "BBPreclaim"); /* unload whatever the LRU in the BBP */
 	if (pid != locked_by)
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPreclaim");
-	return BBPfree(b);
+
+	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
+	if (ret == 0) {
+		ret = BBPfree(b);
+		BBP_unload_off(i, "BBPreclaim");
+	}
+	return ret;
 }
 @-
 BBPdescriptor checks whether BAT needs loading and does so if necessary. You must
@@ -1465,6 +1472,7 @@ int BBPsave(BAT* b) {
 TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
+static
 int BBPfree(BAT *b) {
 	int ret;
 	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
@@ -1477,7 +1485,6 @@ int BBPfree(BAT *b) {
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
 	if (ret) {
-		BBP_unload_off(bid, "BBPfree");
 		return ret; /* error while saving: no go */
 	}
 
@@ -1822,6 +1829,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
 			bats_unloaded++;
 			BBPfree(b);
+			BBP_unload_off(bbptrim[i].bid, "BBPtrim");
 		} 
 		/* continue while we can scan for more candiates */
 		if (!scan) break;

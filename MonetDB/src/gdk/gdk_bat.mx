@@ -201,10 +201,6 @@ BAT *BATnew(int ht, int tt, size_t cap) {
 	return b;
 }
 
-int BATdestroy(BAT *b) {
-	return BBPreclaim(b);
-}
-
 BAT *BATtmp(BAT *b, int keys)
 {
 	int	ht ,tt;

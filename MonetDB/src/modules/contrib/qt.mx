@@ -1079,9 +1079,9 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum,
 
     /* Remove old clusters, if any */
     if (ir_nclusters[n])
-      BATdestroy(ir_nclusters[n]);
+      BBPreclaim(ir_nclusters[n]);
     if (ir_wclusters[n])
-      BATdestroy(ir_wclusters[n]);
+      BBPreclaim(ir_wclusters[n]);
 
     initial = 0;
     if (bitvector_allocate(&ir_wclusters[n], &nimages, &initial) !=
