@@ -486,7 +486,8 @@ In case we are dealing with fixed size atoms, it suffices to
 ensure enough space (already done by BATnew) and a fast memory
 copy of the valid BUN sequence.
 @c
-                if((ht <TYPE_str && tt<TYPE_str) &&
+                if(!VIEWparent(b) &&
+		   (ht <TYPE_str && tt<TYPE_str) &&
                   !(ht==TYPE_bat || ht== TYPE_ptr) &&
                   !(tt==TYPE_bat || tt== TYPE_ptr) ){
                         memcpy( (char*)BUNfirst(bn),
