@@ -868,14 +868,14 @@ unknown(1)#"                   ]
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
-MAPI  = anonymous@draco:59482
+MAPI  = anonymous@draco:53613
 ACTION= mapi_fetch_line
 QUERY = quit();
 ERROR = Lost connection with server
-MAPI  = anonymous@draco:59482
-ACTION= mapi_fetch_line
+MAPI  = anonymous@draco:53613
+ACTION= mapi_execute
 QUERY = 
-ERROR = Lost connection with server
+ERROR = Connection lost
 
 # 18:26:55 >  
 # 18:26:55 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708
