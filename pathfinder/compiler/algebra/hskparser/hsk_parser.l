@@ -23,7 +23,7 @@
 /* bison 1.33 does not include this line in hsk_parser.tab.h.
  * So we do it here.
  */
-extern YYLTYPE yylloc;
+YYLTYPE yylloc;
 
 /** increment row and column numbers (required in YY_USER_ACTION) */
 static int i;
