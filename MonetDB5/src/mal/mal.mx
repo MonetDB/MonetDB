@@ -301,7 +301,7 @@ mal_export int mal_init();
 #define MAL_SUCCEED	(str) 0	/* apparently no error */
 #define MALexception	"MALexception"
 
-#define STRUCT_ALIGNED
+/* #define STRUCT_ALIGNED does not seem to work on SunOS ? */
 
 #endif /*  _MAL_H*/
 @c
