@@ -230,41 +230,45 @@ TagName:            tag                                         =  43 (10);
 TagName:            CoreExpr                                    =  44 (10);
 
 CoreExpr:           apply (FunctionArgs)                        =  45 (10);
+CoreExpr:           apply (arg (Atom,
+                                arg (Atom,
+                                     arg (Atom,
+                                          FunctionArgs))))      =  46 (10);
 
-FunctionArgs:       arg (Atom, FunctionArgs)                    =  46 (10);
-FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  47 (10);
-FunctionArgs:       nil                                         =  48 (10);
+FunctionArgs:       arg (Atom, FunctionArgs)                    =  47 (10);
+FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  48 (10);
+FunctionArgs:       nil                                         =  49 (10);
 
-CoreExpr:           ordered (CoreExpr)                          =  49 (10);
-CoreExpr:           unordered (CoreExpr)                        =  50 (10);
+CoreExpr:           ordered (CoreExpr)                          =  50 (10);
+CoreExpr:           unordered (CoreExpr)                        =  51 (10);
 
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  51 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  52 (10);
 
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  52 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  53 (10);
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  53 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  54 (10);
 
-Atom:               var                                         =  54 (10);
-Atom:               empty                                       =  55 (10);
-Atom:               LiteralValue                                =  56 (10);
+Atom:               var                                         =  55 (10);
+Atom:               empty                                       =  56 (10);
+Atom:               LiteralValue                                =  57 (10);
 
-LiteralValue:       lit_str                                     =  57 (10);
-LiteralValue:       lit_int                                     =  58 (10);
-LiteralValue:       lit_dec                                     =  59 (10);
-LiteralValue:       lit_dbl                                     =  60 (10);
-LiteralValue:       true_                                       =  61 (10);
-LiteralValue:       false_                                      =  62 (10);
+LiteralValue:       lit_str                                     =  58 (10);
+LiteralValue:       lit_int                                     =  59 (10);
+LiteralValue:       lit_dec                                     =  60 (10);
+LiteralValue:       lit_dbl                                     =  61 (10);
+LiteralValue:       true_                                       =  62 (10);
+LiteralValue:       false_                                      =  63 (10);
 
-FunctionDecls:      nil                                         =  63 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  64 (10);
+FunctionDecls:      nil                                         =  64 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  65 (10);
 
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  65 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  66 (10);
 
-ParamList:          nil                                         =  66 (10);
-ParamList:          params (FunParam, ParamList)                =  67 (10);
+ParamList:          nil                                         =  67 (10);
+ParamList:          params (FunParam, ParamList)                =  68 (10);
 
-FunctionBody:       CoreExpr                                    =  68 (10);
+FunctionBody:       CoreExpr                                    =  69 (10);
 
-FunParam:           param (SequenceType, var)                   =  69 (10);
+FunParam:           param (SequenceType, var)                   =  70 (10);
 
 %%
 
@@ -294,6 +298,7 @@ FunParam:           param (SequenceType, var)                   =  69 (10);
 #define LRR(p) R(R(L(p)))
 #define LRLL(p) L(L(R(L(p))))
 #define LRLR(p) R(L(R(L(p))))
+#define LRL(p) L(R(L(p)))
 
 /** Maximum number of pattern leaves */
 #define MAX_KIDS 10
@@ -479,8 +484,34 @@ reduce (PFcnode_t * p, int goalnt)
             rewritten = true;
             break;
 
+        /* CoreExpr:           apply (arg (Atom,
+                                           arg (Atom,
+                                                arg (Atom,
+                                                     FunctionArgs)))) */
+        case 46:
+            /*
+             * There's exactly one function defined with an arbitrary
+             * number of arguments: fn:concat(). We normalize it here
+             * to subsequent calls with just two arguments.
+             */
+            if (! PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "concat"))) {
+
+                PFvar_t *v = new_var (NULL);
+                PFfun_t *fn_concat   = function (PFqname (PFns_fn, "concat"));
+
+                *p = *let (
+                        letbind (
+                            var (v), 
+                            apply (fn_concat,
+                                   arg (LL(p), arg (LRL(p), nil ())))),
+                        apply (fn_concat, arg (var (v), LRR(p))));
+                relabel (p, kids);
+                rewritten = true;
+            }
+            break;
+
         /* FunctionDecl:       fun_decl (ParamList, FunctionBody) */
-        case 65:
+        case 66:
             /* During simplification, the function body root may have
              * changed. Fix it in the corresponding PFfun_t struct.
              */

@@ -288,6 +288,29 @@ check_fun_usage (PFpnode_t * n)
         /* avoid warning about uninitialized variable 'fun' */ 
         fun = *((PFfun_t **) PFarray_at (funs, 0));
 
+        /*
+         * There's exactly one function defined in XQuery that has
+         * an arbitrary number (>= 2) of arguments: fn:concat().
+         * (see http://www.w3.org/TR/xpath-functions/#func-concat)
+         */
+        if (PFqname_eq (n->sem.qname, PFqname (PFns_fn, "concat")) == 0) {
+
+            if (arity < 2)
+                PFoops_loc (OOPS_APPLYERROR, n->loc,
+                            "fn:concat expects at least two arguments "
+                            "(got %u)", arity);
+
+            n->sem.fun = fun;
+            n->kind = p_apply;
+            break;
+        }
+
+        /*
+         * For all the other functions, we search for the variant with
+         * the correct number of arguments.
+         * (We may overload user-defined functions, as soon as they
+         * have a different number of parameters.)
+         */
         for (i = 0; i < PFarray_last (funs); i++) { 
             fun = *((PFfun_t **) PFarray_at (funs, i));
             if (arity == fun->arity)

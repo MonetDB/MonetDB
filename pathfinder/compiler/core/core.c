@@ -1136,6 +1136,20 @@ PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
     fun = fn;
     funs = PFenv_lookup (PFfun_env, fun->qname);
 
+    /*
+     * There's exactly one function defined in XQuery that allows
+     * an arbitrary number of arguments: fn:concat().
+     * We allow that here (and when we compile to Core). The
+     * simplification phase (simplify.brg) will normalized all
+     * such calls of fn:concat() to subsequent calls with only
+     * two arguments.
+     */
+    if (PFqname_eq (fun->qname, PFqname (PFns_fn, "concat")) == 0) {
+        core = PFcore_wire1 (c_apply, e);
+        core->sem.fun = fun;
+        return core;
+    }
+
     /* get the function where the number of arguments fit */
     for (i = 0; i < PFarray_last (funs); i++) {
         fun_prev = fun;
@@ -1159,16 +1173,6 @@ PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
     core = PFcore_wire1 (c_apply, e);
     core->sem.fun = fun;
 
-    /* add 'conversion rule' specific code for functions whose most 
-       non-specific type is subtype of 'atomic+' 
-       (and where the conversion rules are not already appliedif necessary)
-       - e.g., to allow doc(<name>foo.xml</name> if signature is doc(string?) 
-    */
-    /*
-    if (!already_converted (fun))
-        core = apply_function_conversion (core);
-    */
-  
     return core;
 }
 

@@ -2836,23 +2836,6 @@ reduce (PFpnode_t * p, int goalnt)
         {
             PFfun_t *fun = *(PFfun_t **) PFarray_top (funs);
 
-            /*
-             * Special implicit semantics for some built-in functions.
-             */
-            /* apply fn:boolean() before fn:not() */
-            if (!PFqname_eq (fun->qname, PFqname (PFns_fn, "not"))) {
-
-                PFvar_t *v = new_var (NULL);
-                PFfun_t *fn_bool = function (PFqname (PFns_fn, "boolean"));
-
-                C(p) = let (
-                        letbind (
-                            var (v),
-                            apply (fn_bool, *(PFcnode_t **) PFarray_top(args))),
-                        APPLY (fun, var (v)));
-                break;
-            }
-
             C(p) = apply (fun, *(PFcnode_t **) PFarray_top (args));
 
         } break;
@@ -2866,8 +2849,10 @@ reduce (PFpnode_t * p, int goalnt)
              * See also helper function function_conversion().
              */
             PFvar_t      *v        = new_var (NULL);
+            PFfun_t      *fun;
             PFty_t        expected;
             unsigned int  param_num;
+            PFfun_t      *implicit = NULL;
 
             /* translate function argument */
             reduce (kids[0], nts[0]);
@@ -2882,14 +2867,48 @@ reduce (PFpnode_t * p, int goalnt)
             /* translate other arguments */
             reduce (kids[1], nts[1]);
 
-            /* look up expected argument type */
-            expected = 
-                (*(PFfun_t **) PFarray_top (funs))->par_ty[param_num];
+            /* What function are we actually talking about? */
+            fun = *(PFfun_t **) PFarray_top (funs);
 
-            /* construct return value */
-            C(p) = let (letbind (var (v),
-                                 function_conversion (C(L(p)), expected)),
-                        C(R(p)));
+            /*
+             * There's exactly one function that allows an arbitrary
+             * number of arguments: fn:concat(). Looking at the
+             * parameter types here doesn't really make sense, we
+             * use atomic? instead.
+             */
+            if (PFqname_eq (fun->qname,
+                            PFqname (PFns_fn, "concat")) == 0)
+                expected = PFty_opt (PFty_atomic ());
+            else
+                /* look up expected argument type */
+                expected = fun->par_ty[param_num];
+
+            /*
+             * There's implicit semantics for some functions.
+             */
+            /* Implicitly call fn:boolean() before fn:not(). */
+            if (! PFqname_eq (fun->qname, PFqname (PFns_fn, "not")))
+                implicit = function (PFqname (PFns_fn, "boolean"));
+
+            /* Implicitly call fn:string() before fn:concat(). */
+            if (! PFqname_eq (fun->qname, PFqname (PFns_fn, "concat")))
+                implicit = function (PFqname (PFns_fn, "string"));
+
+            if (implicit) {
+                PFvar_t *v1 = new_var (NULL);
+
+                C(p) = let (letbind (var (v1),
+                                     function_conversion (C(L(p)), expected)),
+                            let (letbind (var (v),
+                                          APPLY (implicit, var (v1))),
+                                 C(R(p))));
+            }
+            else {
+                /* construct return value */
+                C(p) = let (letbind (var (v),
+                                     function_conversion (C(L(p)), expected)),
+                            C(R(p)));
+            }
 
         } break;
 
