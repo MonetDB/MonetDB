@@ -175,7 +175,7 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		    icc_ver="`$CC --version 2>/dev/null`"
 		    case $icc_ver in
-		    8.*)	CC="icc -no-gcc -fPIC"	CXX="icpc -no-gcc";;
+		    8.*)	CC="icc -no-gcc"	CXX="icpc -no-gcc";;
 		    esac
 		    ;;
 		esac
