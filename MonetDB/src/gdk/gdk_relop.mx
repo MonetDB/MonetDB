@@ -641,12 +641,12 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
         }
         if (BATtordered(l)&1) {
                 /* optimization to be able to carry over more void head columns */
-                oid r_lo = *(oid*) BUNhead(r, BUNfirst(r));
-                oid r_hi = *(oid*) BUNhead(r, BUNlast(r)-BUNsize(r));
-                oid l_lo = *(oid*) BUNtail(l, BUNfirst(l));
-                oid l_hi = *(oid*) BUNtail(l, BUNlast(l)-BUNsize(l));
+                ssize_t r_lo = *(ssize_t*) BUNhead(r, BUNfirst(r));
+                ssize_t r_hi = *(ssize_t*) BUNhead(r, BUNlast(r)-BUNsize(r));
+                ssize_t l_lo = *(ssize_t*) BUNtail(l, BUNfirst(l));
+                ssize_t l_hi = *(ssize_t*) BUNtail(l, BUNlast(l)-BUNsize(l));
 	        ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATtordered(l)&1\n");
-		ALGODEBUG THRprintf(GDKout, "r_lo=" SZFMT ", r_hi=" SZFMT ", l_lo=" SZFMT ", l_hi=" SZFMT ".\n", (size_t) r_lo, (size_t) r_hi, (size_t) l_lo, (size_t) l_hi);
+		ALGODEBUG THRprintf(GDKout, "r_lo=" SSZFMT ", r_hi=" SSZFMT ", l_lo=" SSZFMT ", l_hi=" SSZFMT ".\n", r_lo, r_hi, l_lo, l_hi);
                 if (r_lo > l_lo || r_hi < l_hi) {
 			ALGODEBUG THRprintf(GDKout, "shrinking!\n");
 	        	ALGODEBUG THRprintf(GDKout, "BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
