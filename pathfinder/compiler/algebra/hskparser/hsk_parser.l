@@ -23,7 +23,7 @@
 /* bison 1.33 does not include this line in hsk_parser.tab.h.
  * So we do it here.
  */
-YYLTYPE yylloc;
+YYLTYPE hsklloc;
 
 /** increment row and column numbers (required in YY_USER_ACTION) */
 static int i;
@@ -39,16 +39,16 @@ static int i;
  */ 
 #define YY_USER_ACTION                                      \
  do {                                                       \
-   yylloc.first_col = yylloc.last_col + 1;                  \
-   yylloc.first_row = yylloc.last_row;                      \
+   hsklloc.first_col = hsklloc.last_col + 1;                  \
+   hsklloc.first_row = hsklloc.last_row;                      \
                                                             \
    for (i = 0; i < hskleng; i++) {                          \
      if (hsktext[i] == '\n') {                              \
-       yylloc.last_col = 0;                                 \
-       yylloc.last_row++;                                   \
+       hsklloc.last_col = 0;                                 \
+       hsklloc.last_row++;                                   \
      }                                                      \
      else {                                                 \
-       yylloc.last_col++;                                   \
+       hsklloc.last_col++;                                   \
      }                                                      \
    }                                                        \
  } while(0);
@@ -235,6 +235,6 @@ text\(\)               {return PFTEXT;}
                         BEGIN(ANY); continue;}
 
 .                      {
-                         PFoops_loc (OOPS_PARSE, yylloc,
+                         PFoops_loc (OOPS_PARSE, hsklloc,
                                      "illegal token `%s'", hsktext);
                        }
