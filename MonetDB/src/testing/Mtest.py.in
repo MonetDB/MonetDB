@@ -1640,9 +1640,11 @@ else:
         HTMLTITLE = " for "+COMPILER
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+OSVER       #"+ ("`date`")"
 
-URLPREFIX   = 'http://monetdb.cwi.nl/htbin/monet/viewcvs/viewcvs.cgi/monet/'
-URLSUFFIX_F = '?cvsroot=Monet-4.3'
-URLSUFFIX_D = '?cvsroot=Monet-4.3'
+URLPREFIX   = 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/MonetDB/'
+##URLSUFFIX_F = '?cvsroot=Monet-4.3'
+URLSUFFIX_F = ''
+##URLSUFFIX_D = '?cvsroot=Monet-4.3'
+URLSUFFIX_D = ''
 
 par = {}
 
