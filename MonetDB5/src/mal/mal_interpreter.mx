@@ -769,18 +769,8 @@ call to the factory manager.
     if( pci->blk== NULL)
         ret= raiseException(mb,stkpc,MALexception,
             "reference to MAL function missing\n");
-    else{
-        mal_set_lock(stk->stklock,"callFactory");
-        /* the caller stack may not disappear */
-        stk->shares++;
-        mal_unset_lock(stk->stklock,"callFactory");
+    else
         ret= callFactory(cntxt,pci->blk,mb,stk,pci);
-        /* release the stack */
-        mal_set_lock(stk->stklock,"callFactory");
-        /* the caller stack may not disappear */
-        stk->shares--;
-        mal_unset_lock(stk->stklock,"callFactory");
-    }
     @:resultParameter@
 @-
 The type dispatching table in getArgValue can be removed if we 
