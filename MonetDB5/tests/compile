@@ -1,11 +1,14 @@
-for i in `ls *milS`
+for i in `ls *mil[SM]`
 do
 	base=`basename $i .milS`
+	if test $base = $i
+	then
+		base=`basename $i .milM`
+	fi
 	echo "====>" $base
 	M2m --trace=1 $i >$base.mal
 	if test -e $base.patch
 	then
-		echo "apply patch"
-		sh $base.patch
+		$base.patch
 	fi
 done
