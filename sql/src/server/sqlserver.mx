@@ -698,8 +698,8 @@ type_sql.insert(dates.reverse());
 
 type_sql@batloop(){ sql_aggr( "min", "min", $t, $t ); }
 type_sql@batloop(){ sql_aggr( "max", "max", $t, $t ); }
-type_sql@batloop(){ sql_aggr( "sum", "sum", $t, $t ); }
-type_sql@batloop(){ sql_aggr( "avg", "avg", $t, $t ); }
+numerical@batloop(){ sql_aggr( "sum", "sum", $h, $h ); }
+numerical@batloop(){ sql_aggr( "avg", "avg", $h, $h ); }
 sql_aggr( "count", "count", "", "INTEGER" ); 
 
 numerical@batloop(){ sql_func( "sub", "-", $h, $h, "", $h ); }
