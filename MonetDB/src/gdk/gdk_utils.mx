@@ -110,6 +110,15 @@ static char name[PATHLENGTH];
 		return GDKstrdup(name);
 	} else return fname;
 }
+void GDKusage(){
+	fprintf(stderr,"usage: <program> [-db <db_name>] [-monetrc <file>]\n");
+	fprintf(stderr,"<program>\tprogram using the GDK library\n");
+	fprintf(stderr,"<db-name>\tdatabase to open\n");
+	fprintf(stderr,"<file>\t\tsystem variable settings\n");
+	fprintf(stderr,"\t\tdefault: .monet.conf in current/home directory\n");
+	fprintf(stderr,"Other arguments are dealt with in the application startup routine\n");
+}
+
 void GDKenvironment(str db, str monetrc)
 {
 	char buf[2*PATHLENGTH];
@@ -179,7 +188,8 @@ void GDKenvironment(str db, str monetrc)
 	}
 	if( fd != NULL) (void) fclose(fd);
 	if( db == NULL && GDKdbnameStr[0]==0) {
-		fprintf(stderr,"GDKenvironment: database path missing\n");
+		fprintf(stderr,"ERROR:database name missing\n");
+		GDKusage();
 		exit(-1);
 	}
 	if( db != NULL) strcpy(GDKdbnameStr,db);

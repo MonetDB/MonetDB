@@ -460,19 +460,32 @@ void MILenvironment()
 	if( fd != NULL) (void) fclose(fd);
 }
 
+monet_usage(str nme){
+    printf("usage: %s { option }\n", nme);
+    printf("option:\t-db <db-name>\t\tdatabase to open\n");
+    printf("\t-monetrc <file>\t\tsystem variable settings\n");
+    printf("\t<script(s)>\t\texecute MIL files first \n");
+    printf("\t\tdefault is .monet.conf in current/home directory\n");
+}
 static void getoptions(int argc, char **argv){
         int i;
  
         for (i = 1; i < argc; i++) 
 	if( argv[i][0]){
             if (argv[i][0] == '-') {
+		switch(argv[i][1]){
+		case '-': if( argv[i][2]!= 'h') goto explain;
+		case '?':
+		case 'h':
+		    monet_usage(argv[0]);
+		    break;
+		default:
+		explain:
 		    monet_hello();
 		    printf("unknown calling option %s\n", argv[i]);
-                    printf("usage: %s { option }\n", argv[0]);
-		    printf("option:\t-db <db-name>\t\tdatabase to open\n");
-		    printf("\t-monetrc <file>\t\tsystem variable settings\n");
-		    printf("\t<script(s)>\t\texecute MIL files first \n");
+		    monet_usage(argv[0]);
                     exit(-1);
+		}
             } else {
 		int k;
 		for(k=0;monet_script[k]!= 0; k++) ;
