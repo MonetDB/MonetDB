@@ -118,7 +118,6 @@ test_radix();
 # (oid)	  (int)	  #
 #-----------------#
 [ nil,	  0	  ]
-[ nil,	  0	  ]
 [ nil,	  1	  ]
 [ nil,	  2	  ]
 [ nil,	  3	  ]
@@ -150,6 +149,7 @@ test_radix();
 [ nil,	  29	  ]
 [ nil,	  30	  ]
 [ nil,	  31	  ]
+[ nil,	  32	  ]
 [ nil,	  33	  ]
 [ nil,	  34	  ]
 [ nil,	  35	  ]
@@ -323,7 +323,6 @@ test_radix();
 # BAT:	  tmp_26  #
 # (oid)	  (int)	  #
 #-----------------#
-[ nil,	  0	  ]
 [ nil,	  34	  ]
 [ nil,	  35	  ]
 [ nil,	  36	  ]
@@ -341,6 +340,7 @@ test_radix();
 [ nil,	  43	  ]
 [ nil,	  43	  ]
 [ nil,	  43	  ]
+[ nil,	  44	  ]
 [ nil,	  44	  ]
 [ nil,	  44	  ]
 [ nil,	  44	  ]

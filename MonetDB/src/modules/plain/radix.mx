@@ -1102,7 +1102,7 @@ radix_cluster(attr_int,
 int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
         size_t n = (size_t) *size, i, r;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *bunbase = (char *) Bunbase(b);
+	char *firstbun = (char *) BUNfirst(b);
 	int bunsize;		/* initialized in BATloopFast */
         oid bs = *base;
 	int j = 0;
@@ -1120,8 +1120,8 @@ int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
         for(r=i=0; i<n; i++) {
                 size_t idx = i + ((r += rand()) % (n-i));
 		int val;
-		p = (BUN) (bunbase + i*bunsize); /* fast version of BUNptr */
-		q = (BUN) (bunbase + idx*bunsize);
+		p = (BUN) (firstbun + i*bunsize); /* fast version of BUNptr */
+		q = (BUN) (firstbun + idx*bunsize);
 		val = * (int *) BUNtloc(b, p);
 		* (int *) BUNtloc(b, p) = * (int *) BUNtloc(b, q);
                 * (int *) BUNtloc(b, q) = val;
@@ -1140,7 +1140,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 	unsigned int r = (unsigned int) n;
         size_t d = (size_t) *domain;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *bunbase = (char *) Bunbase(b);
+	char *firstbun = (char *) BUNfirst(b);
 	int bunsize;
 	BUN p, q;
   	int m = *mean, s = *stddev; 
@@ -1178,8 +1178,8 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
         for(r=0,i=0; i<n; i++) {
                 size_t idx = i + ((r += rand()) % (n-i));
 		int val;
-		p = (BUN) (bunbase + i*bunsize); /* fast version of BUNptr */
-		q = (BUN) (bunbase + idx*bunsize);
+		p = (BUN) (firstbun + i*bunsize); /* fast version of BUNptr */
+		q = (BUN) (firstbun + idx*bunsize);
 		val = * (int *) BUNtloc(b, p);
 		* (int *) BUNtloc(b, p) = * (int *) BUNtloc(b, q);
                 * (int *) BUNtloc(b, q) = val;
