@@ -1893,7 +1893,7 @@ def Log() :
 def mapi_ping(port) :
     retry = 0
     wait = 1
-    host = ''
+    host = 'localhost'
     while (retry < 3):
 	retry += 1
     	try:
