@@ -452,7 +452,7 @@ str INSPECTatom_sup_names(int *ret)
         if (b == 0) return throwMessage("inspect.getAtomSuperNames", 
 			"failed to create BAT");
 
-	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(i));
+	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(ATOMstorage(i)));
 
 	@:Pseudo(atom,sup_name)@
 	return MAL_SUCCEED;
