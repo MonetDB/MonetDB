@@ -950,7 +950,7 @@ PFcnode_t *
 PFcore_fs_convert_op (PFcnode_t *n, PFty_t cast_type)
 {
     PFvar_t *v = PFcore_new_var (0);
-    assert (n && cast_type);
+    assert (n /*&& cast_type*/);
     
     return PFcore_let 
               (PFcore_var (v), n,

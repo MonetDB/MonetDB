@@ -528,7 +528,7 @@ ConstructorExpr: elem (tag, CoreExpr)
         PFty_t t1;
         PFqname_t n1;
 
-        assert (($1$)->sem.qname);
+/*        assert (($1$)->sem.qname); *//* qname is a struct... */
 
         n1 = ($1$)->sem.qname;
         t1 = [[ $2$ ]];
@@ -551,7 +551,7 @@ ConstructorExpr: attr (tag, CoreExpr)
         PFty_t t1;
         PFqname_t n1;
 
-        assert (($1$)->sem.qname);
+/*        assert (($1$)->sem.qname); *//* qname is a struct... */
 
         n1 = ($1$)->sem.qname;
         t1 = [[ $1$ ]];
