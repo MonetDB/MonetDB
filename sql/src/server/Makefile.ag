@@ -6,7 +6,7 @@ lib__sqlserver = {
 	DIR = libdir/MonetDB
 	SOURCES = sqlserver.mx sqlconnect.mx mvc.mx bm.mx logger.mx \
 		privileges.mx catalog_module.c statement_exec.c 
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
 	LIBS = ../common/libsql $(MONET_LIBS)
 	LDFLAGS = -module
 }

@@ -234,7 +234,7 @@ sql_export char *column_name(stmt * st);
 extern char *table_name(stmt * st);
 extern stmt *head_column(stmt * st);
 extern stmt *tail_column(stmt * st);
-extern column *basecolumn(stmt *st);
+sql_export column *basecolumn(stmt *st);
 
 extern int stmt_dump(stmt * s, int *nr, context * sql);
 

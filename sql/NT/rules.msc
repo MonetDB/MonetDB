@@ -94,8 +94,25 @@ MONET_LIBS=/LIBPATH:$(MONET_PREFIX)\lib /LIBPATH:$(MONET_PREFIX)\lib\MonetDB
 .mx.m:
 	$(MX) $(MXFLAGS) -x m $<
 
+.m.mil: 
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	type $*.tmpmil >> $@
+
+.m.mil:
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+
+{$(SRCDIR)}.mx.tmpmil:
+	$(MX) $(MXFLAGS) -x mil $<
+	$(MV) $*.mil $*.tmpmil
+	$(DEL) $*.mil
+
 {$(SRCDIR)}.mx.mil:
 	$(MX) $(MXFLAGS) -x mil $<
+
+.mx.tmpmil:
+	$(MX) $(MXFLAGS) -x mil $<
+	$(MV) $*.mil $*.tmpmil
+	$(DEL) $*.mil
 
 .mx.mil:
 	$(MX) $(MXFLAGS) -x mil $<
