@@ -775,7 +775,11 @@ if test "x$have_readline" != xno; then
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap" 
           AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library]) 
 	  have_readline=yes ]
-	, have_readline=no, "-ltermcap" ) ], )
+	, [ AC_CHECK_LIB(readline, rl_reverse_search_history,
+	[ READLINE_LIBS="$READLINE_LIBS -lreadline -lncurses" 
+          AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library]) 
+	  have_readline=yes ] 
+	, have_readline=no, "-lncurses" ) ], "-ltermcap" ) ],)
   LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_readline" != xyes; then
