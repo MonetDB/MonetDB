@@ -413,6 +413,7 @@ str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @-
 A BAT designated as garbage can be removed, provided we
 do not keep additional references in the stack frame
+Be careful here not to remove persistent BATs.
 @c
 str
 CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -430,6 +431,8 @@ CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if( BBP_lrefs(*bid) == 2 && b->batPersistence == PERSISTENT){
 		/* release BAT from pool altogether */
 		BBPdecref(*bid,TRUE);
+		*bid =0;
+		return MAL_SUCCEED;
 	} 
 	if( *bid)
 		BBPdecref(*bid,TRUE);
