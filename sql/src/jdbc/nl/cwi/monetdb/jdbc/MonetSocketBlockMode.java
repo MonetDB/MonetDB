@@ -296,4 +296,14 @@ class MonetSocketBlockMode extends MonetSocket {
 			// ignore it
 		}
 	}
+
+	/**
+	 * destructor called by garbage collector before destroying this object
+	 * tries to disconnect the MonetDB connection if it has not been disconnected
+	 * already
+	 */
+	protected void finalize() throw Throwable {
+		disconnect();
+		super.finalize();
+	}
 }

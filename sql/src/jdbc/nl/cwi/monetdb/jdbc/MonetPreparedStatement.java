@@ -261,15 +261,15 @@ public class MonetPreparedStatement
 	 * it and then invoking the ResultSet.getMetaData method on the ResultSet
 	 * object that is returned.
 	 * <br /><br />
-	 * NOTE: Using this method is expensive for this drivers due to the lack of
-	 * underlying DBMS support.  Currently just returns null.
+	 * NOTE: Using this method is expensive for this driver due to the lack of
+	 * underlying DBMS support.  Currently not implemented
 	 *
 	 * @return the description of a ResultSet object's columns or null if the
 	 *         driver cannot return a ResultSetMetaData object
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ResultSetMetaData getMetaData() throws SQLException {
-		return(null);
+		throw new SQLException("Method currently not supported, sorry!");
 	}
 
     /**
@@ -282,7 +282,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ParameterMetaData getParameterMetaData() throws SQLException {
-		return(null);
+		throw new SQLException("Method currently not supported, sorry!");
 	}
 
 	/**

@@ -1759,8 +1759,9 @@ public class MonetResultSet implements ResultSet {
 
 	//== end methods of interface ResultSet
 
-	protected void finalize() {
+	protected void finalize() throws Throwable {
 		close();
+		super.finalize();
 	}
 
 	/**
