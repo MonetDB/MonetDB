@@ -88,7 +88,8 @@ int *TMfakeCommit(){
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
 			BBP_status_on(i, BBPEXISTING, "TMfakeCommit");
-		} else if ((BBP_status(i)&BBPDELETED) && BBP_refs(i) <= 0) {
+		} else if ((BBP_status(i)&BBPDELETED) && 
+			BBP_refs(i) <= 0 && BBP_lrefs(i) <= 0 ){
 			/* We cannot kill here, because some complex accelerators (histolink)
                          * need BBP locks in their delete sequence. Hence we must postpone 
                          * their destruction until after the commit has released all locks.

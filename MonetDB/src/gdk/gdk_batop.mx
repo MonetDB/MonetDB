@@ -541,15 +541,16 @@ Note that the BATslice() is used indirectly as well as a special
 case for BATselect (range selection on sorted column), BATrangesplit
 (fragmentation on sorted column) and BATsemijoin (when two dense columns
 are semijoined).
+
+NOTE new semantics, the selected range is excluding the high value.
 @c
 BAT *BATslice(BAT *b, size_t l, size_t h) {
 	int low = l;
         int xx;
 	BAT *bn;
 
-/*        if (l < 0) l = 0; */
-	if (h >= l && h >= BATcount(b)) h = BATcount(b)-1;
-	if (h < l) h = l-1;
+	if (h > BATcount(b)) h = BATcount(b);
+	if (h < l) h = l;
         l += BUNindex(b, BUNfirst(b));
         h += BUNindex(b, BUNfirst(b));
 
@@ -564,9 +565,9 @@ independent view on the virtual memory.
 	 * besides, for most query evaulation pruposes, the horizontal view creation
          * below is suffiecient. Peter/dec99
 	 */
-	if (i <= h && (BATrestricted(b) != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
+	if (i < h && (BATrestricted(b) != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
 		BUN start = BUNptr(b,l-1);
-		BUN end = BUNptr(b,h+1);
+		BUN end = BUNptr(b,h);
 		int add;
 	        bn = BATcreatedesc(b->htype, b->ttype);
 		bn->dims = b->dims;
@@ -590,7 +591,7 @@ that just reuses the memory of the source.
                 bn->batInserted = BUNptr(b, l);  
                 bn->batHole = bn->batDeleted = bn->batBuns->base; 
 		bn->batBuns->maxsize = bn->batBuns->size = 
-		    bn->batBuns->free = BUNptr(b,h+1) - bn->batBuns->base; 
+		    bn->batBuns->free = BUNptr(b,h) - bn->batBuns->base; 
 @-
 We have to do it: create a new BAT and put everything into it.
 @c
@@ -602,7 +603,7 @@ We have to do it: create a new BAT and put everything into it.
 		if (bn == NULL) {
 			return bn;
 		}
-        	for (xx=BUNsize(b); p<=q; p+=xx) {
+        	for (xx=BUNsize(b); p<q; p+=xx) {
                 	BUNfastins(bn, BUNhead(b,p), BUNtail(b,p));
         	}
 	}
@@ -780,18 +781,26 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 @c
 	if (BATtordered(b)) {
 	    BAT *v = tail?b:VIEWhead_(b,b->batRestricted); 
-	    size_t high = batcnt-1;
+	    size_t high = batcnt;
 	    size_t low = 0;
 
 	    if (BATtdense(b)) {
 	       /* Selections on voids are positional. */
 		if (hval) {
-		    size_t h = (*(oid*) th) - b->tseqbase;
+		    size_t h = (*(oid*) th) +1;
+		    if (h > b->tseqbase)
+			h -= b->tseqbase;
+		    else
+			h = 0;
 		    if (h < high) high = h;
 		
 		} 
 		if (lval) {
-		    size_t l = (*(oid*) tl) - b->tseqbase;
+		    size_t l = (*(oid*) tl);
+		    if (l > b->tseqbase)
+			l -= b->tseqbase;
+		    else
+			l = 0;
 		    if (l > low) low = l;
 		}
 	    } else {
@@ -805,10 +814,18 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		    */
 		    p = SORTfndlast(b,nil);
 		}
-		low = BUNindex(b,p) - offset;
+		low = BUNindex(b,p);
+		if (low > offset)
+ 			low -= offset;
+		else
+			low = 0;
 		if (hval) {
 		    q = SORTfndlast(b,th);
-		    high = BUNindex(b,q) - (offset+1);
+		    high = BUNindex(b,q);
+		    if (high > offset)
+		    	high -= offset;
+		    else
+			high = 0;
 		}
 	    }
 	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BATslice(v=%s, low=%u, high=%u);\n",
@@ -825,7 +842,7 @@ We do not sample in an equi-select on a BAT with a hash table, as the
 BAT_hashselect code already ensures a good allocation estimate. 
 @c
 	if (batcnt > 10000 && (equi == 0 || b->thash_heap == NULL)) {
-            size_t _lo = batcnt/2, _hi = _lo + 104;
+            size_t _lo = batcnt/2, _hi = _lo + 105;
 	    BAT *tmp1;
 	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%u, _hi=%u);\n",
 	                                b->batId, b->batId, _lo, _hi);
@@ -1379,18 +1396,18 @@ Virtual oids (void) is a special subcase with positional lookup instead
 of binary search.
 @c
 	} else if (BATtvoid(b) || BATtordered(b)) {
-	    size_t l, h = -1, o = BUNindex(b,BUNfirst(b));
+	    size_t l, h = 0, o = BUNindex(b,BUNfirst(b));
 
 	    for(yy=0; yy<n; yy++) {
-		l = h+1;
+		l = h;
 		if (yy == n-1) {
 			r = BUNlast(m);
-			h = BUNindex(b,r) - (o+1);
+			h = BUNindex(b,r) - o;
 		} else if (BATtdense(b)) {
-			h = ((*(oid*) seps[yy]) - b->tseqbase);
+			h = ((*(oid*) seps[yy]) - b->tseqbase) +1;
 		} else {
 			r = SORTfndlast(m, seps[yy]);
-			h = BUNindex(b,r) - (o+1);
+			h = BUNindex(b,r) - o;
 		}
 		bf = BATslice(bn, l, h); /* produces view bat */
 		BUNins(metabat, seps[yy], &bf->batCacheid); 

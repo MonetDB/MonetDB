@@ -629,7 +629,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                 oid lo_val = MAX(l->tseqbase,r->hseqbase);
                 oid hi_val = MIN(l->tseqbase+BATcount(l),r->hseqbase+BATcount(r));
                 size_t lo_pos = lo_val - r->hseqbase;
-                size_t hi_pos = hi_val - (r->hseqbase+1);
+                size_t hi_pos = hi_val - r->hseqbase;
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos, hi_pos);\n");
                 bn = BATslice(v, lo_pos, hi_pos);
                 if (seqbase != oid_nil) seqbase += lo_val - l->tseqbase;
