@@ -35,7 +35,7 @@ Created clusterhash ti
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "26"	  ]
+[ "batId",	  "39"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "3"	  ]
 #-------------------------#
@@ -45,14 +45,14 @@ Created clusterhash ti
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "26"	  ]
+[ "batId",	  "39"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "2"	  ]
 #---------------------------------------------------------#
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 26,	  "ti",		  2,		  ti		  ]
+[ 39,	  "ti",		  2,		  ti		  ]
 #-----------------#
 # BAT:	  tmp_44  #
 # (oid)	  (void)  #
@@ -92,4 +92,4 @@ Created clusterhash ti
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 26,	  "ti",		  2,		  ti		  ]
+[ 39,	  "ti",		  2,		  ti		  ]

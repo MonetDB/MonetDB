@@ -1550,16 +1550,7 @@ unknown(1)#"                   ]
 End of MIL script.
 ! Terminating connection
 ! Connection broken
-#> Mtest (05:39:15):	Mtimeout -timeout 210 Mshutdown
-Shutdown of server in progress
-connection= medusa:26670
-template= shutdown;
-query= shutdown;
-Error text= !terminating connection
-
-Reply= 
-# shutdown finished
-#> Mtest (05:39:16):	sleep 9
+#> Mtest (05:07:18):	Mtimeout -timeout 210 Mshutdown
 
 Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
@@ -1567,3 +1558,12 @@ Try: modules;                - for other modules.
      help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
+Shutdown of server in progress
+connection= grumpy.cwi.nl:42042
+template= shutdown;
+query= shutdown;
+Error text= !terminating connection
+
+Reply= 
+# shutdown finished
+#> Mtest (05:07:19):	sleep 9

@@ -18,17 +18,8 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
-#> Mtest (21:13:12):	sleep 9
-#> Mtest (21:13:21):	Mtimeout -timeout 600 Mclient -prelude client.prelude < client.milC
-# start session on src_tools:50072
-Start of MIL prelude.
+# start session on src_tools
+Start of MIL server prelude.
 [ 1 ]
 [ 10 ]
 ##------------------------------------------------------------------------#
@@ -304,8 +295,9 @@ Start of MIL prelude.
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "listen(get_monet_port(),5)"	  ]
+[ 0,	  ""				  ]
 [ 1,	  "print(view_client_tree())"	  ]
+[ 2,	  "listen(get_monet_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -542,153 +534,150 @@ Start of MIL prelude.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      7,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
-unknown(0)#"                   ]
-#[      8,         1,   running,         7, "listen(get_monet_port(),5#"    ]
-#[     57,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
+#[      4,         1,   running,         0, "listen(get_monet_port(),5#"    ]
+#[     53,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
 unknown(1)#"                   ]
 #[     58,         2,   running,        57, "queue()#"                      ]
 [ 2 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Wed Oct  4 10:53:19 2000",	  "listen(get_monet_port(),5)"	  ]
-[ "monet",	  "Wed Oct  4 10:53:29 2000",	  "clients()"			  ]
+[ "adm",	  "Mon Jan 22 05:37:52 2001",	  ""				  ]
+[ "monet",	  "Mon Jan 22 05:37:59 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jan 22 05:37:52 2001",	  "listen(get_monet_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  240	  ]
+[ "user",	  1080	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  110	  ]
+[ "system",	  15430	  ]
 [ "elapsystem",	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:		  env									  #
 # (str)		  (str)									  #
 #-----------------------------------------------------------------------------------------#
 [ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
 [ "owner",	  "monet"								  ]
 [ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "processid",	  "17925804"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
 [ "version",	  "4.2"									  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:		  env									  #
 # (str)		  (str)									  #
 #-----------------------------------------------------------------------------------------#
 [ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
 [ "owner",	  "monet"								  ]
 [ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "processid",	  "17925804"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
 [ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4736	  ]
-[ "minflt",	  166	  ]
+[ "maxrss",	  4704	  ]
+[ "minflt",	  169	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  116	  ]
-[ "ninvcsw",	  93	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  21244	  ]
+[ "ninvcsw",	  71	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1277952	  ]
-[ "arena",	  1327088	  ]
-[ "ordblks",	  3337		  ]
+[ "memincr",	  1327104	  ]
+[ "arena",	  1368048	  ]
+[ "ordblks",	  3385		  ]
 [ "smblks",	  2000		  ]
 [ "hblkhd",	  640		  ]
 [ "hblks",	  20		  ]
-[ "usmblks",	  25208		  ]
-[ "fsmblks",	  17992		  ]
-[ "uordblks",	  833296	  ]
-[ "fordblks",	  449952	  ]
+[ "usmblks",	  25072		  ]
+[ "fsmblks",	  18128		  ]
+[ "uordblks",	  799488	  ]
+[ "fordblks",	  524720	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
 [ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Wed Oct  4 10:53:19 2000"	  ]
-[ 1,	  "Wed Oct  4 10:53:29 2000"	  ]
+[ 0,	  "Mon Jan 22 05:37:52 2001"	  ]
+[ 1,	  "Mon Jan 22 05:37:59 2001"	  ]
+[ 2,	  "Mon Jan 22 05:37:52 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
 [ 1,	  "monet"	  ]
+[ 2,	  "adm"		  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  2	  ]
-[ "user",	  260	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  110	  ]
-[ "elapsystem",	  0	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  1090	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  15440	  ]
+[ "elapsystem",	  10	  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:		  env									  #
 # (str)		  (str)									  #
 #-----------------------------------------------------------------------------------------#
 [ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
 [ "owner",	  "monet"								  ]
 [ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "processid",	  "17925804"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
 [ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4736	  ]
-[ "minflt",	  166	  ]
+[ "maxrss",	  4704	  ]
+[ "minflt",	  169	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  123	  ]
-[ "ninvcsw",	  97	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  21247	  ]
+[ "ninvcsw",	  77	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1327088	  ]
-[ "ordblks",	  3329		  ]
+[ "arena",	  1368048	  ]
+[ "ordblks",	  3382		  ]
 [ "smblks",	  2000		  ]
 [ "hblkhd",	  640		  ]
 [ "hblks",	  20		  ]
-[ "usmblks",	  25184		  ]
-[ "fsmblks",	  18016		  ]
-[ "uordblks",	  832216	  ]
-[ "fordblks",	  451032	  ]
+[ "usmblks",	  25048		  ]
+[ "fsmblks",	  18152		  ]
+[ "uordblks",	  798400	  ]
+[ "fordblks",	  525808	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
 [ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
-End of MIL prelude.
+End of MIL server prelude.
 Start of MIL script.
 [ 1 ]
 [ 10 ]
@@ -965,8 +954,9 @@ Start of MIL script.
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "listen(get_monet_port(),5)"	  ]
+[ 0,	  ""				  ]
 [ 1,	  "print(view_client_tree())"	  ]
+[ 2,	  "listen(get_monet_port(),5)"	  ]
 #-------------------------#
 # BAT:		  bbp	  #
 # (str)		  (int)	  #
@@ -1203,161 +1193,166 @@ Start of MIL script.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      7,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
-unknown(0)#"                   ]
-#[      8,         1,   running,         7, "listen(get_monet_port(),5#"    ]
-#[    141,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff95630.
+#[      4,         1,   running,         0, "listen(get_monet_port(),5#"    ]
+#[    137,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
 unknown(1)#"                   ]
 #[    142,         2,   running,       141, "queue()#"                      ]
 [ 2 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Wed Oct  4 10:53:19 2000",	  "listen(get_monet_port(),5)"	  ]
-[ "monet",	  "Wed Oct  4 10:53:29 2000",	  "clients()"			  ]
+[ "adm",	  "Mon Jan 22 05:37:52 2001",	  ""				  ]
+[ "monet",	  "Mon Jan 22 05:37:59 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jan 22 05:37:52 2001",	  "listen(get_monet_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  8	  ]
-[ "user",	  350	  ]
-[ "elapuser",	  90	  ]
-[ "system",	  120	  ]
+[ "elapsed",	  5	  ]
+[ "user",	  1160	  ]
+[ "elapuser",	  70	  ]
+[ "system",	  15450	  ]
 [ "elapsystem",	  10	  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:		  env									  #
 # (str)		  (str)									  #
 #-----------------------------------------------------------------------------------------#
 [ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
 [ "owner",	  "monet"								  ]
 [ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "processid",	  "17925804"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
 [ "version",	  "4.2"									  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:		  env									  #
 # (str)		  (str)									  #
 #-----------------------------------------------------------------------------------------#
 [ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
 [ "owner",	  "monet"								  ]
 [ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "processid",	  "17925804"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
 [ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4864	  ]
-[ "minflt",	  166	  ]
+[ "maxrss",	  4720	  ]
+[ "minflt",	  169	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  161	  ]
-[ "ninvcsw",	  203	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  21282	  ]
+[ "ninvcsw",	  113	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  8192		  ]
-[ "arena",	  1335280	  ]
-[ "ordblks",	  3336		  ]
+[ "memincr",	  16384		  ]
+[ "arena",	  1384432	  ]
+[ "ordblks",	  3387		  ]
 [ "smblks",	  2000		  ]
 [ "hblkhd",	  640		  ]
 [ "hblks",	  20		  ]
-[ "usmblks",	  25208		  ]
-[ "fsmblks",	  17992		  ]
-[ "uordblks",	  833336	  ]
-[ "fordblks",	  458104	  ]
+[ "usmblks",	  25072		  ]
+[ "fsmblks",	  18128		  ]
+[ "uordblks",	  799528	  ]
+[ "fordblks",	  541064	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
 [ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Wed Oct  4 10:53:19 2000"	  ]
-[ 1,	  "Wed Oct  4 10:53:29 2000"	  ]
+[ 0,	  "Mon Jan 22 05:37:52 2001"	  ]
+[ 1,	  "Mon Jan 22 05:37:59 2001"	  ]
+[ 2,	  "Mon Jan 22 05:37:52 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
 [ 1,	  "monet"	  ]
+[ 2,	  "adm"		  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  10	  ]
-[ "user",	  370	  ]
-[ "elapuser",	  20	  ]
-[ "system",	  130	  ]
-[ "elapsystem",	  10	  ]
+[ "elapsed",	  7	  ]
+[ "user",	  1170	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  15450	  ]
+[ "elapsystem",	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # BAT:		  env									  #
 # (str)		  (str)									  #
 #-----------------------------------------------------------------------------------------#
 [ "dbname",	  "src_tools"								  ]
-[ "server",	  "medusa"								  ]
-[ "port",	  "29215"								  ]
-[ "directory",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5/dbfarm/src_tools"	  ]
 [ "owner",	  "monet"								  ]
 [ "prefix",	  "32bitmips-sgi-irix6.5"						  ]
-[ "processid",	  "2603848"								  ]
-[ "home",	  "/var/tmp/monet.GNU_32.4769/monet/.GNU_32/IRIX646.5"			  ]
+[ "processid",	  "17925804"								  ]
+[ "home",	  "/var/tmp/monet.GNU_32.3374/monet/.GNU_32/IRIX646.5"			  ]
 [ "version",	  "4.2"									  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  4864	  ]
-[ "minflt",	  166	  ]
+[ "maxrss",	  4720	  ]
+[ "minflt",	  169	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  2	  ]
-[ "oublock",	  0	  ]
-[ "nvcsw",	  168	  ]
-[ "ninvcsw",	  215	  ]
+[ "inblock",	  0	  ]
+[ "oublock",	  1	  ]
+[ "nvcsw",	  21289	  ]
+[ "ninvcsw",	  121	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1335280	  ]
-[ "ordblks",	  3333		  ]
+[ "arena",	  1384432	  ]
+[ "ordblks",	  3385		  ]
 [ "smblks",	  2000		  ]
 [ "hblkhd",	  640		  ]
 [ "hblks",	  20		  ]
-[ "usmblks",	  25184		  ]
-[ "fsmblks",	  18016		  ]
-[ "uordblks",	  832248	  ]
-[ "fordblks",	  459192	  ]
+[ "usmblks",	  25048		  ]
+[ "fsmblks",	  18152		  ]
+[ "uordblks",	  798440	  ]
+[ "fordblks",	  542152	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "Interpreter"	  ]
 [ 2,	  "Interpreter"	  ]
+[ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
 ! Terminating connection
 ! Connection broken
-#> Mtest (10:53:46):	Mtimeout -timeout 210 Mshutdown
-connection= medusa:29215
+#> Mtest (05:38:08):	Mtimeout -timeout 210 Mshutdown
+Shutdown of server in progress
+connection= medusa:26670
 template= shutdown;
 query= shutdown;
 Error text= !terminating connection
 
 Reply= 
 # shutdown finished
-#> Mtest (21:13:22):	sleep 9
+#> Mtest (05:38:09):	sleep 9
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
