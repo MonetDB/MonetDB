@@ -1,9 +1,10 @@
 #CHANGES TO ORIGINAL:
-# seqbase -> setSequenceBase
+# seqbase -> setSequenceBase	(**)
 # persists(FALSE) -> setTransient
 # persists(TRUE) -> setPersistent
+# (**) the return value is not necessarily a BAT id anymore.
 #line 23 "../../../src/gmm/gmm.mx"
-  module(io,alarm,lock,mmath,xtables,mgsl,space);
+  module(io,alarm,lock,mmath,xtables);
   CONST Nthreads  := 4;
   CONST sessionId := "S" + int(newoid());
   VAR   randomseed;
@@ -31,12 +32,14 @@ vm_maxsize( 2000000000LL);
   PROC x_(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(nil);}
   PROC xn(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(oid(0));}
   PROC Nseq(int N):BAT[void,int] := {
-    VAR i := 0; VAR seq := new(void,int).setSequenceBase(oid(0));
+    VAR i := 0; VAR seq := new(void,int);
+    seq.setSequenceBase(oid(0));
     WHILE (i<N) { seq.insert(nil,i); i:+=1; }
     RETURN seq;
   }
   PROC randseq(int N):BAT[void,int] := {
-    VAR i := 0; VAR seq := new(void,int).setSequenceBase(oid(0));
+    VAR i := 0; VAR seq := new(void,int);
+    seq.setSequenceBase(oid(0));
     WHILE (i<N) { seq.insert(nil,rand()); i:+=1; }
     RETURN seq;
   }
@@ -112,10 +115,18 @@ vm_maxsize( 2000000000LL);
   PROC coeffName(int i): str := { RETURN "Icoeff_" + str(i); }
   PROC newCollection( str cname, int Nimg ): BAT[str,bat] := {
     VAR res := new(str,bat).rename(cname);
-    VAR I := new( void, str, Nimg ).setSequenceBase(oid(0)).rename( cname + "_I" );
-    VAR Ib := new( oid, void, Nimg ).reverse.setSequenceBase(oid(0)).reverse.rename( cname + "_Ib" );
-    VAR Ix := new( void, int, Nimg ).setSequenceBase(oid(0)).rename( cname + "_Ix" );
-    VAR Iy := new( void, int, Nimg ).setSequenceBase(oid(0)).rename( cname + "_Iy" );
+    VAR I := new( void, str, Nimg );
+    I.setSequenceBase(oid(0)).rename( cname + "_I" );
+    VAR Ib := new( oid, void, Nimg );
+    VAR Ibr:= Ib.reverse;
+    Ibr.setSequenceBase(oid(0));
+    Ib.rename( cname + "_Ib" );
+    VAR Ix := new( void, int, Nimg );
+    Ix.setSequenceBase(oid(0));
+    Ix.rename( cname + "_Ix" );
+    VAR Iy := new( void, int, Nimg );
+    Iy.setSequenceBase(oid(0));
+    Iy.rename( cname + "_Iy" );
     res.insert( "I", I );
     res.insert( "Ib", Ib );
     res.insert( "Ix", Ix );
@@ -123,7 +134,9 @@ vm_maxsize( 2000000000LL);
     VAR coeffs := new(int,bat,N).rename(cname + "_Icoeffs" );
     VAR i := 0;
     WHILE (i < N) {
-      VAR x_i := new(void,sht,Nimg).setSequenceBase(oid(0)).rename( cname + "_" + coeffName(i) );
+      VAR x_i := new(void,sht,Nimg);
+      x_i.setSequenceBase(oid(0));
+      x_i.rename( cname + "_" + coeffName(i) );
       coeffs.insert( i, x_i );
       x_i := nil;
       i :+= 1;
@@ -164,15 +177,18 @@ PROC newGMM( int Nimg ): BAT[str,bat] := {
   mCIdx.reverse.setSequenceBase(oid(0));
   mCIdx.access( BAT_APPEND );
   model.insert("mCIdx", mCIdx);
-  VAR prior := new(void,flt,Nimg * C).setSequenceBase(oid(0));
+  VAR prior := new(void,flt,Nimg * C);
+  prior.setSequenceBase(oid(0));
   prior.access( BAT_APPEND );
   model.insert("Prior", prior);
   VAR mean := new(int,bat,N);
   VAR covar := new(int,bat,N);
   VAR i := 0;
   WHILE (i < N) {
-    VAR mean_i := new(void,flt,Nimg*C).setSequenceBase(oid(0));
-    VAR variance_i := new(void,flt,Nimg*C).setSequenceBase(oid(0));
+    VAR mean_i := new(void,flt,Nimg*C);
+    mean_i.setSequenceBase(oid(0));
+    VAR variance_i := new(void,flt,Nimg*C);
+    variance_i.setSequenceBase(oid(0));
     mean_i.access( BAT_APPEND );
     variance_i.access( BAT_APPEND );
     mean.insert( i, mean_i );
@@ -185,7 +201,8 @@ PROC newGMM( int Nimg ): BAT[str,bat] := {
   covar.access( BAT_READ );
   model.insert( "Mean", mean );
   model.insert( "Covar", covar );
-  VAR init_variances := new(void,flt,Nimg * C).setSequenceBase(oid(0));
+  VAR init_variances := new(void,flt,Nimg * C);
+  init_variances.setSequenceBase(oid(0));
   init_variances.access( BAT_APPEND );
   model.insert("init_variances", init_variances);
   model.access( BAT_READ );
@@ -214,7 +231,7 @@ PROC newGMM( str mname ): BAT[str,bat] := {
 #line 1264 "../../../src/gmm/gmm.mx"
   CONST Niter     := 100;
   CONST MIN_COVAR := 0.005;           # 0.005LL;
-  CONST MIN_S     := 1.0E-300LL;
+  CONST MIN_S     := 1.0e-10;	#1.0E-300LL;
   CONST COVAR_INIT_FRACTION := 0.1;   # 1.0LL/10;
 
   VAR olde;
@@ -1006,7 +1023,8 @@ VAR minvars;
   }
 
   PROC gen2mix(int Nel):BAT[void,dbl] := {
-    VAR res := new(void,dbl).setSequenceBase(oid(0));
+    VAR res := new(void,dbl);
+    res.setSequenceBase(oid(0));
     VAR i := 0;
     WHILE (i < Nel) {
       res.insert(nil, mix2g());
@@ -1099,7 +1117,12 @@ VAR minvars;
   PROC gmmsamp_diag( int Nsamples, bat[str,bat] gmm ): bat[str,bat] := {
     VAR res := new(str,bat,2);
     VAR samples := new(int,bat,N);
-    nseq@batloop{ samples.insert($t,new(void,dbl,Nsamples).setSequenceBase(oid(0))); }
+    VAR XX;
+    nseq@batloop{ 
+	XX:= new(void,dbl,Nsamples);
+	XX.setSequenceBase(oid(0))); }
+	samples.insert($t,XX);
+    }
     samples.access(BAT_READ);
     # do it...
     VAR mean := gmm.find("Mean");
@@ -1189,7 +1212,9 @@ PROC initGMM( bat[str,bat] coll ):bat[str,bat] := {
 
 
 #line 1727 "../../../src/gmm/gmm.mx"
-  VAR aSample := new(oid,void,I.count * C).reverse.setSequenceBase(oid(0)).reverse;
+  VAR aSample := new(oid,void,I.count * C).reverse;
+   VAR aSampleR:= aSample.revers;
+  aSampleR.setSequenceBase(oid(0));
   I.mark(oid(0))@batloop(){
     aSample.insert( Ib.reverse.select($h).sample(C).mark(oid(C * int($t))) );
   }
