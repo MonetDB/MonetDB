@@ -152,39 +152,35 @@ For the groups we assume a bat structure where the head indicates the group
 and the tail contains the group elements. This leads to the situation that
 most value-based operators work on the tail, while counting groups
 is focussed on the head.
+@= grpSignature
+command sum(b:bat[:any$2,:@1], e:bat[:any$2,:any]) :bat[:any$2,:@1] 
+address GRPsum_@1
+comment "grouped tail sum";
+
+command sum(b:bat[:any$2,:@1], size:int) :bat[:any$2,:@1] 
+address GRPwindowsum_@1
+comment "Tail sum of groups of a fixed size";
+
+command sum(b:bat[:any$2,:@1], size:int, shift:int) :bat[:any$2,:@1] 
+address GRPslidingsum_@1
+comment "Tail sum of groups of a sliding window of fixed size";
+
+command avg(b:bat[:any$2,:@1], e:bat[:any$2,:any]) :bat[:any$2,:@1] 
+address GRPavg_@1
+comment "grouped tail average";
+
+#command min(b:bat[:any$2,:@1], size:int) :bat[:any$2,:@1] 
+#address GRPwindowmin@1
+#comment "Tail minimum of groups of a fixed size";
+#command max(b:bat[:any$2,:@1], size:int) :bat[:any$2,:@1] 
+#address GRPwindowmax@1
+#comment "Tail minimum of groups of a fixed size";
 @mal
-
-command sum(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] 
-address GRPsum_sht
-comment "grouped tail sum";
-command sum(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] 
-address GRPsum_int
-comment "grouped tail sum";
-command sum(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] 
-address GRPsum_lng
-comment "grouped tail sum";
-command sum(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] 
-address GRPsum_flt
-comment "grouped tail sum";
-command sum(b:bat[:any$2,:dbl], e:bat[:any$2,:any]) :bat[:any$2,:dbl] 
-address GRPsum_dbl
-comment "grouped tail sum";
-
-command avg(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] 
-address GRPavg_sht
-comment "grouped tail average";
-command avg(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] 
-address GRPavg_int
-comment "grouped tail average";
-command avg(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] 
-address GRPavg_lng
-comment "grouped tail average";
-command avg(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] 
-address GRPavg_flt
-comment "grouped tail average";
-command avg(b:bat[:int,:dbl], e:bat[:int,:any]) :bat[:int,:dbl] 
-address GRPavg_dbl
-comment "grouped tail average";
+	@:grpSignature(sht)@
+	@:grpSignature(int)@
+	@:grpSignature(lng)@
+	@:grpSignature(flt)@
+	@:grpSignature(dbl)@
 
 command min(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] 
 address GRPmin
@@ -1601,7 +1597,6 @@ str GRPavg_@1(int *retval, int *bid,int  *eid){
 @:arithpump(lng,tloc)@
 @:arithpump(flt,tloc)@
 @:arithpump(dbl,tloc)@
-
 @= extreme
 str GRP@1(int *retval, int *bid,int  *eid){
         BAT *b = NULL, *e = NULL;
@@ -1824,5 +1819,55 @@ str GRPsize(int *retval, int *bid,int  *eid){
 	BBPunfix(e->batCacheid);
 	return MAL_SUCCEED;
 }
+@-
+The window aggregate functions
+@= windowsum
+str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift){
+        BAT *b, *bn;
+		@2 sum;
+		oid o= oid_nil;
+        BUN p, q;
+        int xx,i;
 
+		if( (b= BATdescriptor(*bid)) == NULL ){
+			return throwMessage("group.sum", "Cannot access descriptor");
+		}
+        @:chkHeader(b,GRPwindowsum_@1)@
+
+        /* init: set all sums to zero */
+		bn= BATnew( TYPE_void, TYPE_@2, BATcount(b)/ *size +1);
+        bn->tsorted = bn->hsorted = 0;
+		BATseqbase(bn,0);
+
+		i= *size;
+		sum =0;
+		BATloopFast(b, p, q, xx) {
+				sum += *(@1*) BUNtail(b,p);
+				if( --i == 0){
+					BUNfastins(bn, &o, &sum);
+					/* slide here */
+					if( *size != *shift ){
+						p-= (*size-*shift)*xx;
+					}
+					i= *size;
+					sum =0;
+				}
+		}
+		if(i != *size)
+			BUNfastins(bn, &o, &sum);
+
+		BBPincref(*retval= bn->batCacheid, TRUE);
+		BBPunfix(*retval);
+		BBPunfix(b->batCacheid);
+        return MAL_SUCCEED;
+}
+str GRPwindowsum_@1(int *retval, int *bid, int  *size){
+	return GRPslidingsum_@1(retval,bid,size,size);
+}
+@c
+@:windowsum(sht,lng)@;
+@:windowsum(int,lng)@;
+@:windowsum(lng,lng)@;
+@:windowsum(flt,dbl)@;
+@:windowsum(dbl,dbl)@;
 @}
