@@ -557,12 +557,18 @@ if [ "${modpath}" ] ; then
 	echo " MONETDB_MOD_PATH=${MONETDB_MOD_PATH}"
 fi
 
+if [ "${what}" = "MONET5" ] ; then
+	mtest_config="--config=${WHAT_PREFIX}/etc/MonetDB5.conf"
+  else
+	mtest_config=""
+fi
+
 # for convenience: store the complete configure-call in ${what}_CONFIGURE
 WHAT_CONFIGURE="${base}/configure ${conf_opts} --prefix=${WHAT_PREFIX}"
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
 eval "alias configure_${wh_t}"
-eval "alias Mtest_${wh_t}='Mtest.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}'"
+eval "alias Mtest_${wh_t}='Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}'"
 eval "alias Mtest_${wh_t}"
 eval "alias Mapprove_${wh_t}='Mapprove.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 eval "alias Mapprove_${wh_t}"
