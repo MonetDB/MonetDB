@@ -245,39 +245,39 @@ merge with existing bats with the merge_data script.
 
 The dump_format scripts dump a format file for a given set of 
 to be dumped bats. These bats can be dumped with dump_data.
-
+@{
 @mal
 # the major tablet shuffling routiens
 module tablet;
 
-command load( names:bat[void,str], seps:bat[void,str], types:bat[void,str],
-	datafile:str, nr:int ) : bat[str,bat] = CMDtablet_load
+command load( names:bat[:void,:str], seps:bat[:void,:str], types:bat[:void,:str],
+	datafile:str, nr:int ) :bat[:str,:bat] = CMDtablet_load
 comment "Load a bat using specific format.";
 
-command input( names:bat[void,str], seps:bat[void,str], types:bat[void,str],
-	s:stream, nr:int ) : bat[str,bat] = CMDtablet_input
+command input( names:bat[:void,:str], seps:bat[:void,:str], types:bat[:void,:str],
+	s:stream, nr:int ) :bat[:str,:bat] = CMDtablet_input
 comment "Load a bat using specific format.";
 
-command dump(names:bat[void,str], seps:bat[void,str], bats:bat[void,bat],
+command dump(names:bat[:void,:str], seps:bat[:void,:str], bats:bat[:void,:bat],
 	datafile:str, nr:int):void = CMDtablet_dump 
 comment "Dump the bat in ascii format";
 
-command output(order:bat[any,any], seps:bat[void,str], bats:bat[void,bat],
+command output(order:bat[:any,:any], seps:bat[:void,:str], bats:bat[:void,:bat],
 	s:stream):void = CMDtablet_output 
 comment "Send the bat to an output stream.";
 
 pattern display(v:any...):int = TABdisplayRow
 	comment "Display a formatted row";
-pattern display(v:bat[any,any]...):int = TABdisplayTable
+pattern display(v:bat[:any,:any]...):int = TABdisplayTable
 	comment "Display a formatted table";
 
-pattern page(b:bat[any,any]...):int = TABpage
+pattern page(b:bat[:any,:any]...):int = TABpage
 	comment "Display all pages at once without header";
 pattern header(b:any...):int = TABheader
 	comment "Display the minimal header for the table";
 command setProperties(prop:str):int = TABsetProperties
 	comment "Define the set of properties";
-pattern dump(s:stream,b:bat[any,any]...):int = TABdump
+pattern dump(s:stream,b:bat[:any,:any]...):int = TABdump
 	comment "Print all pages with information header to a stream";
 
 pattern setFormat(b:any...):void = TABsetFormat
@@ -286,7 +286,7 @@ command finish():void = TABfinishReport
 	comment "Free the storage space of the report descriptor";
 command setStream(s:stream):void = TABsetStream
 	comment "Redirect the output of the report to a stream.";
-command setPivot(b:bat[void,oid]) :void= TABsetPivot
+command setPivot(b:bat[:void,:oid]) :void= TABsetPivot
 	comment "The pivot bat identifies the tuples of interest.
 	The only requirement is that all keys mentioned in the pivot
 	tail exist in all BAT parameters of the print comment.
@@ -1822,3 +1822,4 @@ static int setTabwidth(Column *c) {
 	c->name= GDKstrdup(title);
 	return c->width;
 }
+@}

@@ -59,8 +59,8 @@ The {\tt inv} unary operation calculates the inverse of the input value.
 An error message is given when the input value is zero.
 
 \item[bitwise operators]
-For integers there are some additional operations. The {\tt $%$} operator
-implements the congruent modulo operation. The {\tt $<<$} and {\tt $>>$} 
+For integers there are some additional operations. The {\tt \%} operator
+implements the congruent modulo operation. The {\tt $<$$<$} and {\tt $>$$>$} 
 are the left and right bit shift. The {\tt or}, {\tt and}, {\tt xor} and 
 {\tt not} for integers are implemented as bitwise boolean operations. 
 
@@ -111,7 +111,7 @@ module calc;
 	@:mal_isnil(dbl)@
 	@:mal_isnil(str)@
 
-@- comparisons { <, <=, ==, !=, >=, > } 
+@- comparisons 
 @T 
 The {\tt mel\_comp\_ops} Mx macro implements the mel interface to the
 arithmetic operations. Note that comparison operators with unequal
@@ -122,7 +122,6 @@ A heuristic is to organize the routines along the types
 at function resoluton. The least interesting one is pushed
 first onto the symbol table stack.
 Default case excluded for the time being
-        @:mal_comp_ops(any$1,any)@
 @= mal_eq_ops
 	command ==(left:@1, right:@2) :bit = CALCcompEQ@1@2;
 	command !=(left:@1, right:@2) :bit = CALCcompNEQ@1@2;
@@ -251,7 +250,7 @@ The coercions described below ensure that there is never any information loss.
 The unary operators include coercion routines for built-in types
 @= mal_unary_ops
    	command abs(x:@1) :@1 = CALCunary@1ABS comment "absolute value";
-   	command inv(x:@1)  @1 = CALCunarycheck@1INV comment "inverse value (1/x)";
+   	command inv(x:@1) :@1 = CALCunarycheck@1INV comment "inverse value (1/x)";
    	command -(x:@1) :@1 = CALCunary@1NEG comment "negative value";
 @-
 @mal
@@ -365,8 +364,11 @@ command @1(v:void) :@1 = CALCnil2@1;
 @:convertCmd(dbl)@
 @:convertCmd(bit)@
 @:convertCmd(ptr)@
-@:convertCmd(bat)@
 @:convertCmd(chr)@
+
+command bat(v:str):bat[:any,:any] = CALCstr2bat;
+command str(v:bat[:any,:any]):str = CALCbat2str;
+command bat(v:void) :bat[:any,:any] = CALCnil2bat;
 
 command str(v:void) :str = CALCnil2str;
 command void(v:void) :void = CALCnil2void;

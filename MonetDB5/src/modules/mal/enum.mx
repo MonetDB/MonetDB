@@ -77,46 +77,46 @@ try to encode/decode a value.
 atom enum:int;
 module enum;
 
-pattern create(e:any$2, src:bat[any,any$1]):bat[any$1,any$2]= ENUMcreate
+pattern create(e:any$2, src:bat[:any,:any$1]):bat[:any$1,:any$2]= ENUMcreate
 comment "Associate a value domain with an enumerated type.";
 
-pattern load(map:any$1):bat[any,any$1] = ENUMload
+pattern load(map:any$1):bat[:any,:any$1] = ENUMload
 comment "Load/activate a previously created enumeration type.";
 
 pattern destroy(map:any):void = ENUMdestroy
 comment "Destroy an enumeration type";
 
-pattern encode(e:any::1,v:any::2):any::1 = ENUMencode
+pattern encode(e:any$1,v:any$2):any$1 = ENUMencode
 comment "Encode a value using a small map";
 
-pattern encode(e:any::2,b:bat[any::1,any]):bat[any::1,any::2] = ENUMencode_multi
+pattern encode(e:any$2,b:bat[:any$1,:any]):bat[:any$1,:any$2] = ENUMencode_multi
 comment "Encode a BAT of tail values, into a new BAT of encoded values.
 This action is actually a join operation.";
 
-pattern lower(e:any::1, v:any::2):any::1 = ENUMlower
+pattern lower(e:any$1, v:any):any$1 = ENUMlower
 comment "Encode to the lowest value in the encoded domain that is 
 	equal to or larger than v";
 
-pattern upper(e:any::1, v:any::2):any::1 = ENUMupper
+pattern upper(e:any$1, v:any):any$1 = ENUMupper
 comment "Encode to the highest value in the encoded domain that is 
 	equal to or less than v";
 
 pattern decode(e:any):any = ENUMdecode
 comment "Decode a value";
 
-pattern decode(b:bat[any::2,any::1]) : bat[any::2,any] = ENUMdecode_multi
+pattern decode(b:bat[:any$2,:any$1]) :bat[:any$2,:any] = ENUMdecode_multi
 comment "Decode a BAT of tail values, into a new BAT of decoded values";
 
-pattern getTable(e:any::1) :bat = ENUMtable
+pattern getTable(e:any) :bat[:any,:any] = ENUMtable
 comment "Return the enumeration BAT of an enum type";
 
-command isEnum(tpe:bat) :bit = isEnum
+command isEnum(tpe:bat[:any,:any]) :bit = isEnum
 comment "Returns true iff the bat is used as an enumerated type";
 
-pattern setHistogram(tpe:any::1, b:bat[any,any]):void = ENUMsethisto
+pattern setHistogram(tpe:any$1, b:bat[:any,:any]):void = ENUMsethisto
 comment "registers the fact that ENUMtable(tpe) is a histogram on b's head column";
 
-pattern isHistogram(tpe:any,b:bat[any,any]) :bit = ENUMishisto
+pattern isHistogram(tpe:any,b:bat[:any,:any]) :bit = ENUMishisto
 comment "returns whether ENUMtable(tpe) is a histogram on b's head column";
 
 @{

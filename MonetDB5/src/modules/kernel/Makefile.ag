@@ -8,7 +8,8 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \
+	SOURCES = \
+		calc.mx bat.mx algebra.mx system.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
 		batcalc.mx group.mx mkey.mx aggrX3.mx 
 # pcl.mx
@@ -19,6 +20,14 @@ LIBS = {
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 	LDFLAGS = -lm
 }
+doc_kernel = {
+	DIR = pkgdatadir/docs/modules/kernel
+	SOURCES = \
+		calc.mx bat.mx algebra.mx system.mx unix.mx \
+		mapi.mx mmath.mx lock.mx alarm.mx \
+		batcalc.mx group.mx mkey.mx aggrX3.mx 
+}
+
 scripts_mal = {
 	DIR = pkglibdir/kernel
 	SOURCES = calc.mx bat.mx algebra.mx system.mx unix.mx \

@@ -71,10 +71,10 @@ This information is retained in the symbol table for subsequent use.
 Often, it is more appropriate to extract the comments into a BAT
 for subsequent analysis.
 @mal
-command help(k:str):bat[str,str] = CMDhelp
+command help(k:str):bat[:str,:str] = CMDhelp
 comment "Search the commentary strings for one matching the keyword";
 
-command help(mod:str,fcn:str):bat[int,str] = CMDhelpComment2
+command help(mod:str,fcn:str):bat[:int,:str] = CMDhelpComment2
 comment "Collect the comments for a given function pattern";
 @- Monet Manual construction
 The manual operations ease offline inspection of the all the Monet function.
@@ -121,7 +121,7 @@ to determine an easy way to exchange the parameter/return values.
 @mal
 command call(s:str):void= CMDcallString
 	comment "Evaluate a string representing a program";
-pattern call(s:bat[any,str]):void= CMDcallBAT
+pattern call(s:bat[:any,:str]):void= CMDcallBAT
 	comment "Evaluate a program stored in a BAT of instructions";
 command source(f:str):void= CMDevalFile
 	comment "Execute the program in a (local) file";

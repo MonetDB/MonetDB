@@ -1,6 +1,6 @@
 @f group
 @t The group module
-@a M.L. Kersten, P. Boncz, A.P. de Vries 
+@a M.L. Kersten, P. Boncz, A.P. de Vries
 @v 2.3
 @* Introduction
 @T
@@ -25,8 +25,8 @@ structures produced in the process, i.e. the histogram and
 the sub-group mapping. They can be used for various optimization
 schemes at the MAL level.
 
-The prime limitation of the current implementation is that an 
-underlying database of {oid->any} BATs is assumed. 
+The prime limitation of the current implementation is that an
+underlying database of {oid->any} BATs is assumed.
 This enables representation of each group using an oid,
 and the value representation of the group can be accordingly be
 retrieved easily. An optimized implementation in which we use positional
@@ -47,7 +47,7 @@ A cross table is an <oid,oid> BAT where the first (head) denotes a tuple in
 the cross table and the second (tail) marks all identical lists.
 The tail-oids contain group identifiers; that is, {\em this value is equal
 {\bf iff} two tuples belong to the same group}. The group identifiers are
-chosen from the domain of the tuple-identifiers. This simplifies 
+chosen from the domain of the tuple-identifiers. This simplifies
 getting back to the original tuples, when talking about a group.
 If the tuple-oid of 'John' is chosen as a group-id, you might view this
 as saying that each member of the group is 'like John' with respect
@@ -59,69 +59,68 @@ Successively the subgroups can be identified by modifying the CT BAT or
 to derive a new CT BAT for the subgroups. After all groups have been
 identified this way, a BAT histogram operation can be used to obtain
 the counts of each data cube. Other aggregation operations using the MIL
-set aggregate construct \{X\}(bat) (see the 
-@[<a href="../mil.body.html#mod_3_2_0">MIL Reference Manual</a>@)  
-can be used as well; note for instance that histogram == \{count\}(b.reverse). 
+set aggregate construct \{X\}(bat) (see the
+@[<a href="../mil.body.html#mod_3_2_0">MIL Reference Manual</a>@) 
+can be used as well; note for instance that histogram == \{count\}(b.reverse).
 
 @* Module Definition
 The Monet interface module specification is shown below.
 Ideally we should defined stronger type constraints, e.g.
-command group(attr:bat[{void,oid},any$1]
+command group(attr:bat[{void,oid},:any$1]
 
 @mal
 module group;
 
-command group(b:bat[any$1, any], start:int, incr:int, grpsize:int):bat[any$1, int] = CTgroup0
-	comment "Produces a new BAT with identical head column, and in the tail 
-	column groups of equally valued integers within each group. Parameters: 
+command group(b:bat[:any$1,:any], start:int, incr:int, grpsize:int):bat[:any$1,:int] = CTgroup0
+	comment "Produces a new BAT with identical head column, and in the tail
+	column groups of equally valued integers within each group. Parameters:
 	a start group value, group number increment, group size.";
 
 
-command group(attr:bat[any$2,any$1] ) 
-	:(histo:bat[any$1,int], grp:bat[any$2,oid]) = CTgroup
+command group(attr:bat[:any$2,:any$1] )
+	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) = CTgroup
 comment "Cross tabulation group initialization.
          Returned head values are identical as in 'attr'. Tail values are from
          the same domain and indicate unique groups in 'attr' tail column.";
-command group(attr:bat[any$2,any$1] ) 
-	:bat[any$2,oid] = CTgroup2
- 
-command group(attr:bat[any$2,any$1], N:int, rng:int) 
-	:(histo:bat[any$1,int],grp:bat[any$2,oid]) = CTgroup_custom 
+command group(attr:bat[:any$2,:any$1] )
+	:bat[:any$2,:oid] = CTgroup2
+
+command group(attr:bat[:any$2,:any$1], N:int, rng:int)
+	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) = CTgroup_custom
 comment "Cross tabulation group initialization like CTgroup, but with user
          provided #bits in hashmask and #distinct values in range.";
- 
-command group(ct:bat[any$2,any], attr:bat[any$2,any$1]) 
-	:(map:bat[any$1,oid],grp:bat[any$2,oid]) = CTderive 
+
+command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
+	(map:bat[:any$1,:oid],grp:bat[:any$2,:oid]) = CTderive
 comment "Cross tabulation group extension step.
          Returned head values are identical as in 'ct'. Tail values are from
          the same domain and indicate further refinement of the groups in 'ct',
          taking into account also the tail-values in 'attr'.";
-command group(ct:bat[any$2,any], attr:bat[any$2,any$1]) 
-	:bat[any$2,oid] = CTderive2;
+command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
+	:bat[:any$2,:oid] = CTderive2;
 
-command regroup(ct:bat[any$2,oid],attr:bat[any$2,any]) :
-	 bat[any$2,oid] = CTregroup
+command regroup(ct:bat[:any$2,:oid],attr:bat[:any$2,:any]) :bat[:any$2,:oid] = CTregroup
 comment "Performs a regrouping, modifying ct doing a group";
 
-command refine(b:bat[any$2,any], a:bat[any$2,any]) :bat[any$2,oid] = CTrefine 
-comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
-         values of a second bat 'a' (where the heads of a and b match 1-1).  
-         The effect of this is similar to (hash-based) CTderive, with the 
+command refine(b:bat[:any$2,:any], a:bat[:any$2,:any]) :bat[:any$2,:oid] = CTrefine
+comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
+         values of a second bat 'a' (where the heads of a and b match 1-1). 
+         The effect of this is similar to (hash-based) CTderive, with the
 	 distinction that the group ids respect the ordering of the group values.";
 @-
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
 oldstuff
-command subhisto(sel:bat[void,bit], grp:bat[void,oid], domain:bat[oid,any]) 
-	:bat[oid,int] = CTsubhisto
-comment "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] 
+command subhisto(sel:bat[:void,:bit], grp:bat[:void,:oid], domain:bat[:oid,:any])
+	:bat[:oid,:int] = CTsubhisto
+comment "optimized sub-histogram for synced grp[:void,:oid] and sel[:void,:bit]
          bats on a previously known domain ";
 
 @+ Group Aggregate operations
 
 This module also contains some efficient aggregate functions over
-groups that compute their 
-result in one scan, rather than in the iterative manner of the generic 
+groups that compute their
+result in one scan, rather than in the iterative manner of the generic
 MIL aggr_ implementations.
 
 For the groups we assume a bat structure where the head indicates the group
@@ -130,36 +129,36 @@ most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @mal
 
-command sum(b:bat[any$2,sht], e:bat[any$2,any]) :bat[any$2,sht] = CTsum_sht 
+command sum(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] = CTsum_sht
 	comment "grouped tail sum";
-command sum(b:bat[any$2,int], e:bat[any$2,any]) :bat[any$2,int] = CTsum_int 
+command sum(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] = CTsum_int
 	comment "grouped tail sum";
-command sum(b:bat[any$2,lng], e:bat[any$2,any]) :bat[any$2,lng] = CTsum_lng 
+command sum(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] = CTsum_lng
 	comment "grouped tail sum";
-command sum(b:bat[any$2,flt], e:bat[any$2,any]) :bat[any$2,flt] = CTsum_flt 
+command sum(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] = CTsum_flt
 	comment "grouped tail sum";
-command sum(b:bat[any$2,dbl], e:bat[any$2,any]) :bat[any$2,dbl] = CTsum_dbl 
+command sum(b:bat[:any$2,:dbl], e:bat[:any$2,:any]) :bat[:any$2,:dbl] = CTsum_dbl
 	comment "grouped tail sum";
 
-command avg(b:bat[any$2,sht], e:bat[any$2,any]) :bat[any$2,sht] = CTavg_sht 
+command avg(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] = CTavg_sht
 	comment "grouped tail average";
-command avg(b:bat[any$2,int], e:bat[any$2,any]) :bat[any$2,int] = CTavg_int 
+command avg(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] = CTavg_int
 	comment "grouped tail average";
-command avg(b:bat[any$2,lng], e:bat[any$2,any]) :bat[any$2,lng] = CTavg_lng 
+command avg(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] = CTavg_lng
 	comment "grouped tail average";
-command avg(b:bat[any$2,flt], e:bat[any$2,any]) :bat[any$2,flt] = CTavg_flt 
+command avg(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] = CTavg_flt
 	comment "grouped tail average";
-command avg(b:bat[int,dbl], e:bat[int,any]) :bat[int,dbl] = CTavg_dbl 
+command avg(b:bat[:int,:dbl], e:bat[:int,:any]) :bat[:int,:dbl] = CTavg_dbl
 	comment "grouped tail average";
 
-command min(b:bat[any$2,any$1], e:bat[any$2,any]) :bat[any$2,any$1] = CTmin 
+command min(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] = CTmin
 	comment "grouped tail minimum";
-command max(b:bat[any$2,any$1], e:bat[any$2,any]) :bat[any$2,any$1] = CTmax 
+command max(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] = CTmax
 	comment "grouped tail maximum";
 
-command count(b:bat[any$2,any], e:bat[any$2,any], nonils:bit) :bat[any$2,int] = CMDaggr_count 
+command count(b:bat[:any$2,:any], e:bat[:any$2,:any], nonils:bit) :bat[:any$2,:int] = CMDaggr_count
 	comment "grouped count";
-command size(b:bat[any$2,bit], e:bat[any$2,any]) :bat[any$2,int] = CTsize
+command size(b:bat[:any$2,:bit], e:bat[:any$2,:any]) :bat[:any$2,:int] = CTsize
 	comment "grouped count of true values";
 
 
@@ -167,25 +166,25 @@ command prelude()= groupPrelude;
 prelude();
 @-
 old stuff
-    proc size(bat[any,bit] b) :int {
+    proc size(bat[:any,bit] b) :int {
 	var h := b.histogram;
-	if (h.exist(true)) 
+	if (h.exist(true))
 	    return h.find(true);
 	return 0;
     }
 
-    proc avg(bat[any, any$1] b) :any$1 {
+    proc avg(bat[:any, any$1] b) :any$1 {
 	var cnt := count(b);
-        if (cnt = 0) 
+        if (cnt = 0)
 	    return cast(0,ttype(b));
 	return /(sum(b),cast(cnt,ttype(b)));
     }
 
-    proc card(bat[any,any] b) :int {
+    proc card(bat[:any,:any] b) :int {
 	return b.tunique.count;
     }
 
-    proc {card}(bat[oid,any] b, bat[oid,any] e) :bat[oid,int] {
+    proc {card}(bat[oid,:any] b, bat[oid,:any] e) :bat[oid,int] {
 	return {count}(b.sunique,e);
     }
 
@@ -203,7 +202,7 @@ extern ptr BATmax(BAT *b, ptr aggr);
 
 @-
 @= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0) 
+        if( BBPcheck(*@2,"@4")==0)
 		return throwMessage("group.@4", "cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) {
@@ -224,13 +223,13 @@ a simple sequential scan through the operands, adding group
 values to a hash-table. This hash-table gives access to the group
 identifiers, which are always OIDs.
 
-This strategy is also followed on binary groupings; here 
-we construct a special integer consisting of the XORed hashnumber 
+This strategy is also followed on binary groupings; here
+we construct a special integer consisting of the XORed hashnumber
 of both columns. In such a way, we can build a hash table on
 map\_entries (instead of simple atomic values -- the unary case).
 
 In the unary group case, we optimized processing on 1-byte
-and 2-byte values by using direct mapping in an array instead of 
+and 2-byte values by using direct mapping in an array instead of
 hashing.
 @c
 #define HASH_chr(p) ((unsigned int) (*(unsigned char*) (p)))
@@ -248,12 +247,12 @@ hashing.
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid
 #define htype_hash(b) TYPE_oid
 
-#define ttype_simple(b,t) t 
-#define ttype_atom(b,t) b->ttype 
+#define ttype_simple(b,t) t
+#define ttype_atom(b,t) b->ttype
 
 #define STANDARD_MASK 1023
 
-/* 
+/*
    Note:
      following macros take advantage of clustered property;
      if b is clustered, then we can stop early traversing collision lists.
@@ -262,7 +261,7 @@ hashing.
      map is not directly reuseable as a hash table; the current Monet cannot
      however handle multiple accellerators, so this ain't a real problem for now :)
  */
-						    
+						   
 #define declare_unclustered /* avoid warning */
 #define declare_clustered   int samecluster = TRUE;
 
@@ -321,12 +320,12 @@ str groupPrelude(){
 
 BAT *map2histo(BAT *map) {
 	if (map == NULL || map->htype != TYPE_mapentry || VIEWparent(map) ||
-	    map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE) 
+	    map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE)
 	{
 		if (map) BBPreclaim(map);
 		return NULL;
 	}
-        /* trickily transform a bat[mapentry,any] into bat[oid,int] */
+        /* trickily transform a bat[mapentry,:any] into bat[oid,int] */
 	map->htype = BATmirror(map)->ttype = TYPE_oid;
 	map->ttype = BATmirror(map)->htype = TYPE_int;
 	strcpy(map->hatom, "oid");
@@ -335,33 +334,33 @@ BAT *map2histo(BAT *map) {
 		HEAPfree(&map->theap);
 	}
 	BATmirror(map)->hvarsized = map->tvarsized = 0;
-	BATmirror(map)->dims.tailloc = 
+	BATmirror(map)->dims.tailloc =
 	    map->dims.headloc = map->dims.headloc + 8;
-	BATmirror(map)->dims.headloc = 
+	BATmirror(map)->dims.headloc =
 	    map->dims.tailloc = map->dims.headloc + 4;
 	return map;
 }
- 
+
 @T
 The group macro is split along three dimensions:
 \begin{description}
 \item [type:] Type specific implementation for selecting the right
 hash function and data size etc.;
 \item [clustered:] The \{clustered and unclustered\} select the
-appropriate algorithm, i.e., with or without taking advantage of 
+appropriate algorithm, i.e., with or without taking advantage of
 an order of values in the parent groups;
-\item [physical properties:] Values \{standard and custom\}, 
+\item [physical properties:] Values \{standard and custom\},
 chosing between a fixed predefined and a custom hashmask. Custom
-allows the user to determine the size of the hashmask (and indirectly 
-the estimated size of the result). The hashmask is $2^n - 1$ where $n$ 
+allows the user to determine the size of the hashmask (and indirectly
+the estimated size of the result). The hashmask is $2^n - 1$ where $n$
 is given by the user, or 1023 otherwise, and the derived result
 size is $4 \cdot 2^n$.
 \end{description}
 
-Further research should point out whether fitting a simple statistical 
-model (possibly a simple mixture model) can help choose these parameters 
+Further research should point out whether fitting a simple statistical
+model (possibly a simple mixture model) can help choose these parameters
 automatically; the current idea is that the user (which could be a
-domain-specific extension of the higher-level language) knows the 
+domain-specific extension of the higher-level language) knows the
 properties of the data, especially for IR in which the standard grouping
 settings differ significantly from the original datamining application.
 @c
@@ -378,8 +377,8 @@ BAT *CTgroup_@1_@4_@5( group_params_@5 BAT *b, BAT *bn, map_T *m ){
 	BUN p, q, r;
 	BAT *map;
 	declare_@3
- 
-	map_init_@5(map,hash,mask,entry,mapsize); 
+
+	map_init_@5(map,hash,mask,entry,mapsize);
 
 	/* core hash grouping algorithm */
 	BATloopFast(b, p, q, xx) {
@@ -393,12 +392,12 @@ BAT *CTgroup_@1_@4_@5( group_params_@5 BAT *b, BAT *bn, map_T *m ){
 			r = BUNptr(map,zz);
 			e = (mapentry_t*) BUNhloc(map,r);
 			if (tst_grp_@4(@3_EQ, BUN@2(map,r), @1)) {
-				if (m == NULL) e->cnt++; 
+				if (m == NULL) e->cnt++;
 				goto found;
-			} 
-		} 
+			}
+		}
 
-		/* not found-> insert new element in map (and hash) */ 
+		/* not found-> insert new element in map (and hash) */
 		if (m) {
 		  	zz = mapsize;
 		} else {
@@ -414,27 +413,27 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		*dst++ = m?zz:e->gid;
 	}
 bunins_failed:
-	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base; 
+	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	bn->tsorted = 0;
 	ALIGNsetH(bn,b);
 	return m?NULL:map2histo(map);
-} 
+}
 @c
 int tailtype(BAT *b, int str_trick) {
 	int tpe = ATOMstorage(b->ttype); /* standard type remappings */
 
 	/* more daring remappings possible under simple equality */
 	if (tpe == TYPE_flt) {
-		return TYPE_int; 
+		return TYPE_int;
 	} else if (tpe == TYPE_dbl) {
-		return TYPE_lng; 
+		return TYPE_lng;
 	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((&b->theap))) {
 		return TYPE_int; /* string offsets are identifying integers */
 	}
 	return tpe;
 }
 @-
-Generate both 'normal' CTgroup and clustered CTgroups 
+Generate both 'normal' CTgroup and clustered CTgroups
 @= wrappedgroupinner
 @:CTgroup(chr,tloc,simple,@1,@2)@
 @:CTgroup(sht,tloc,simple,@1,@2)@
@@ -503,7 +502,7 @@ str CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 }
 
 @= CTgroupbody
-        declare_mask_@1 
+        declare_mask_@1
 	BAT *histo= 0, *bn=0;
 	BAT *b;
 	@:getBATdescriptor(retbid,bid,b,group)@
@@ -533,25 +532,25 @@ str CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 @= choosegroupCUSTOM
 	/* Choose appropriate @4 CTgroup implementation */
 	switch(@1) {
-	case TYPE_chr: 
-	  @?@5:returnvalue(@5)@ CTgroup_chr_@4_CUSTOM(mask,*rng,b,@2,@3); 
+	case TYPE_chr:
+	  @?@5:returnvalue(@5)@ CTgroup_chr_@4_CUSTOM(mask,*rng,b,@2,@3);
 	  break;
-	case TYPE_sht: 
+	case TYPE_sht:
 	  @?@5:returnvalue(@5)@ CTgroup_sht_@4_CUSTOM(mask,*rng,b,@2,@3);
 	  break;
-	case TYPE_int: 
-	  @?@5:returnvalue(@5)@ CTgroup_int_@4_CUSTOM(mask,*rng,b,@2,@3); 
+	case TYPE_int:
+	  @?@5:returnvalue(@5)@ CTgroup_int_@4_CUSTOM(mask,*rng,b,@2,@3);
 	  break;
-	case TYPE_lng: 
-	  @?@5:returnvalue(@5)@ CTgroup_lng_@4_CUSTOM(mask,*rng,b,@2,@3); 
+	case TYPE_lng:
+	  @?@5:returnvalue(@5)@ CTgroup_lng_@4_CUSTOM(mask,*rng,b,@2,@3);
 	  break;
-	default:       
+	default:      
 	  @?@5:returnvalue(@5)@ CTgroup_any_@4_CUSTOM(mask,*rng,b,@2,@3);
 	}
 @-
 
 @= derive
-BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) { 
+BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 	oid *dst = (oid*) BUNfirst(bn);
 	int xx, yy = BUNsize(ct), *hash, mask, mapsize;
 	BUN p, q, r, cp = BUNfirst(ct) - yy;
@@ -559,8 +558,8 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 	oid zz;
 	BAT *map;
 	declare_@4
-   
-	map_init_STANDARD(map,hash,mask,entry,mapsize); 
+  
+	map_init_STANDARD(map,hash,mask,entry,mapsize);
 
 	/* core hash grouping algorithm */
 	BATloopFast(b, p, q, xx) {
@@ -570,7 +569,7 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 		declare_@5
 
 		/* find corresponding value in 'ct' */
-		match_@1(ct, BUNhead(b,p), cp); 
+		match_@1(ct, BUNhead(b,p), cp);
 		hcur = *(oid*) BUNtloc(ct,cp);
 
 		/* hash-lookup of [hcur,tcur] in map */
@@ -580,11 +579,11 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 			r = BUNptr(map,zz);
 			e = (mapentry_t*) BUNhloc(map,r);
 			if (tst_derive_@5(@4_EQ, BUN@3(map,r), @2)) {
-				if (m == NULL) e->cnt++; 
+				if (m == NULL) e->cnt++;
 				goto found;
-			} 
-		} 
-		/* not found-> insert new element in map (and hash) */ 
+			}
+		}
+		/* not found-> insert new element in map (and hash) */
 		if (m) {
 			zz = mapsize;
 		} else {
@@ -601,7 +600,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		*dst++ = m?zz:e->gid;
 	}
 bunins_failed:
-	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base; 
+	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	return m?NULL:map2histo(map);
 }
 
@@ -712,12 +711,12 @@ str CTderive(int* mapid, int* retid, int  *ctid, int* bid) {
 		int rethisto,retbid, bid= ct->batCacheid;
 		str s;
 
-		/* if (!CTgroup(&rethisto,&retbid, &bid)) 
+		/* if (!CTgroup(&rethisto,&retbid, &bid))
 			return GDK_FAIL; */
 		s= CTgroup(&rethisto,&retbid, &bid);
 		if(s) return s;
 		ct = bn;
-	} 
+	}
 	retval= &dummy; *retval = NULL;
 	ret = derive(retval, ct, b, tailtype(b, TRUE), NULL);
 	if (bn) BBPreclaim(bn);
@@ -760,13 +759,13 @@ str CTsubhisto(int *retid, int *selid, int *grpid, int *domid) {
 	bn = BATnew(TYPE_idxentry, TYPE_int, size);
 	base = (unsigned int*) bn->batHole;
 	r = base + yy;
-        BATloopFast(dom, p, q, xx) { 
+        BATloopFast(dom, p, q, xx) {
 		unsigned int v = *(unsigned int*) BUNhloc(dom,p);
-                unsigned int c = v & mask; 
+                unsigned int c = v & mask;
 		*r++ = v;
-		*r++ = hash[c]; 
+		*r++ = hash[c];
 		*r++ = 0;
-                hash[c] = yy; 
+                hash[c] = yy;
 		yy += 3;
 	}
 	bn->batBuns->free = ((BUN) r) - bn->batBuns->base;
@@ -776,10 +775,10 @@ str CTsubhisto(int *retid, int *selid, int *grpid, int *domid) {
 	ALIGNsetH(bn, dom);
 
         /* add the counts for this selection using the hash table */
-        BATloopFast(grp, p, q, xx) { 
+        BATloopFast(grp, p, q, xx) {
 	    if (*filter == TRUE) {
 		unsigned int v = *(unsigned int*) BUNtloc(grp,p);
-                unsigned int c = v & mask; 
+                unsigned int c = v & mask;
                 for(yy = hash[c]; yy > 0; yy = r[1]) {
 			r = base + yy;
 			if (r[0] == v) {
@@ -787,7 +786,7 @@ str CTsubhisto(int *retid, int *selid, int *grpid, int *domid) {
                         }
                 }
   	    } filter += zz;
-     
+    
 	}
 	GDKfree(hash);
 	*retid = bn->batCacheid;
@@ -801,12 +800,12 @@ str CTsubhisto(int *retid, int *selid, int *grpid, int *domid) {
 static INLINE
 oid* sort_flush(int *buf, int size, int tpe, BUN base, oid* dst, oid *idp) {
 	int (*cmp)(ptr,ptr) = BATatoms[tpe].atomCmp;
-	int *end = buf + size; 
+	int *end = buf + size;
 	oid id = *idp + 1;
 	ptr cur, val;
 
 	/* qsort works fine for small amount of tuples; with few duplicates */
-	GDKqsort(buf, base, size/2, 2*sizeof(int), tpe, 0);  
+	GDKqsort(buf, base, size/2, 2*sizeof(int), tpe, 0); 
 	cur = base + buf[0];
 	while(buf < end) {
 		val = base + *(int*) buf++;
@@ -836,15 +835,15 @@ str CTrefine(int *retid, int *bid, int *aid) {
 	oid *dst, o, id = 0;
 
 	/* create tmp BAT that holds one cluster; estimate required size using sampling */
-	if (BATcount(b) > DEFAULT_SIZE) { 
+	if (BATcount(b) > DEFAULT_SIZE) {
 		BAT *sample = BATsample(b, DEFAULT_SIZE);
 		BAT *histo = BAThistogram(sample);
 		BATmax(histo,&xx);
-		if (xx > 1) 
+		if (xx > 1)
 			size = MAX(size, xx*(((float) BATcount(b))/DEFAULT_SIZE));
 		BBPreclaim(sample);
 		BBPreclaim(histo);
-	} 
+	}
 	/* create a temporary BAT of the estimated size holding pointers to the a tail atoms */
 	buf = cur = (int*) GDKmalloc(size*2*sizeof(int));
 	end = buf + (size*2);
@@ -876,12 +875,12 @@ str CTrefine(int *retid, int *bid, int *aid) {
 		r += a->tloc;
 		*cur++ = (base)?(r-base):*(int*) r;
 		*cur++ = o;
-	} 
+	}
 	dst = sort_flush(buf, cur-buf, a->ttype, base?base:a->theap.base, dst, &id);
 	GDKfree(buf);
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	bn->tsorted = 1;
-    } 
+    }
     *retid = bn->batCacheid;
     return MAL_SUCCEED;
 }
@@ -913,15 +912,15 @@ proc aggrtst(int num, int fanout, str aggr) {
 	        } else {
 	                b := bat(oid,(*tpe)());
 	        }
-	        var n := 0; 
+	        var n := 0;
 	        e@batloop() {
-	                i := 0; 
+	                i := 0;
 	                while(i < fanout) {
 	                        if  (($h = 0@0) and (i = 0)) {
 	                                b.insert($h, (*tpe)(nil));
 	                        } else {
 	                                b.insert($h, (*tpe)(n));
-                        	} 
+                        	}
                         	n :+= 1; i :+= 1;
                 	}
                 }
@@ -941,7 +940,7 @@ aggrtst(16,160,"{count}","sht","int","lng","flt","dbl","decimal");
 
 @+ Implementation
 These implementations need just one scan and a simple hash-maintained data
-structure to compute a group of common aggregates. 
+structure to compute a group of common aggregates.
 
 With group OIDs spanning a range of less SMALL_AGGR_MAX (the actual number
 of groups might be even less, in case there are "holes" in the group OID
@@ -1112,7 +1111,7 @@ str CTavg_@1(int *retval, int *bid,int  *eid){
 	BAT *b = NULL, *e = NULL;
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
-	int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int)); 
+	int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int));
 	@1 zero = (@1) 0;
 	BUN p, q, r;
 
@@ -1143,9 +1142,9 @@ str CTavg_@1(int *retval, int *bid,int  *eid){
 					*dst += *t;
 				}
 				cnt[BUNindex(bn,r)-off]++;
-			} 
+			}
 		}
-	} 
+	}
 	/* postprocess by dividing sums by counts */
 	BATloopFast(bn, p, q, xx) {
 		@1 *dst = (@1*) BUNtail(bn, p);
@@ -1154,7 +1153,7 @@ str CTavg_@1(int *retval, int *bid,int  *eid){
 		} else if (*dst != @1_nil) {
 			*dst /= cnt[yy];
 		} yy++;
-	} 
+	}
 	GDKfree(cnt);
 	*retval = bn->batCacheid;
 	return MAL_SUCCEED;
@@ -1185,10 +1184,10 @@ str CT@1(int *retval, int *bid,int  *eid){
 	cmp = BATatoms[bn->ttype].atomCmp;
 	nil = ATOMnilptr(bn->ttype);
 	yy = 0; off = BUNindex(e,BUNfirst(e));
-	extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr)); 
+	extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr));
 
 	/* init: set all extremes to the zero pointer */
-	memset(extremes, 0, BATcount(e)*sizeof(ptr)); 
+	memset(extremes, 0, BATcount(e)*sizeof(ptr));
 
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	(void) BATprepareHash(e);
@@ -1207,12 +1206,12 @@ str CT@1(int *retval, int *bid,int  *eid){
 				}
 			}
 		}
-	} 
+	}
 	/* insert the extreme values into the result */
 	BATloopFast(e, p, q, xx) {
 		ptr val = extremes[yy++];
-		BUNfastins(bn, BUNhead(e,p), val?val:nil); 
-	} 
+		BUNfastins(bn, BUNhead(e,p), val?val:nil);
+	}
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
 	GDKfree(extremes);
@@ -1356,7 +1355,7 @@ str CTsize(int *retval, int *bid,int  *eid){
 				(*dst)++;
 			}
 		}
-	} 
+	}
 	*retval = bn->batCacheid;
 	return MAL_SUCCEED;
 }

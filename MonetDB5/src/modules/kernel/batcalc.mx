@@ -60,20 +60,20 @@ The first group of functions provide abstractions over the
 binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
 operands.
 @= calcGrp
-#command CMD000(l:bat[lng,lng],r:bat[lng,lng]):bat[lng,lng]= CMD000;
+#command CMD000(l:bat[:lng,:lng],r:bat[:lng,:lng]):bat[:lng,:lng]= CMD000;
 
-command @1(b:bat[any$1,any$2], cst:any$2):bat[any$1,any$2] = CMDbat@3cst
+command @1(b:bat[:any$1,:any$2], cst:any$2):bat[:any$1,:any$2] = CMDbat@3cst
 comment "(BAT,Constant) calculator function with new BAT result";
 
-command @1(a:bat[any$1,any$2],b:bat[any$1,any$2], cst:any$2):bat[any$1,any$2] = CMDbataccum@3cst
+command @1(a:bat[:any$1,:any$2],b:bat[:any$1,:any$2], cst:any$2):bat[:any$1,:any$2] = CMDbataccum@3cst
 comment "(BAT,Constant) calculator function with accumulator BAT result";
 
-command @1(b:bat[any$1,any$2], c:bat[any$1,any$2]):bat[any$1,any$2] 
+command @1(b:bat[:any$1,:any$2], c:bat[:any$1,:any$2]):bat[:any$1,:any$2] 
 	= CMDbat@3
 comment "Binary BAT calculator function with new BAT result";
 
-command @1(a:bat[any$1,any$2],b:bat[any$1,any$2], 
-	     c:bat[any$1,any$2]):bat[any$1,any$2] = CMDbataccum@3
+command @1(a:bat[:any$1,:any$2],b:bat[:any$1,:any$2], 
+	     c:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDbataccum@3
 comment "Binary BAT calculator function with accumulator BAT result";
 
 @-
@@ -94,22 +94,22 @@ but should limit modulo functions to integer-based types.
 	@:calculations(+,ADD)@
 @-
 @= unary
-command -(b:bat[any$1,@1]):bat[any$1,@1] = CMDunaryMIN
+command -(b:bat[:any$1,:@1]):bat[:any$1,:@1] = CMDunaryMIN
 comment "Unary minus over the tail of the bat";
 
-command --(b:bat[any$1,@1]):bat[any$1,@1] = CMDunaryMINMIN
+command --(b:bat[:any$1,:@1]):bat[:any$1,:@1] = CMDunaryMINMIN
 comment "Unary minus over the tail of the bat";
 
-command ++(b:bat[any$1,@1]):bat[any$1,@1] = CMDunaryPLUSPLUS
+command ++(b:bat[:any$1,:@1]):bat[:any$1,:@1] = CMDunaryPLUSPLUS
 comment "Unary minus over the tail of the bat";
 
-#command -(a:bat[any$1,@1],b:bat[any$1,@1]):bat[any$1,@1] 
+#command -(a:bat[:any$1,:@1],b:bat[:any$1,:@1]):bat[:any$1,:@1] 
 	#= CMDunaryAccumMIN comment "Unary - over the tail of the bat";
 
-#command --(a:bat[any$1,@1],b:bat[any$1,@1]):bat[any$1,@1] 
+#command --(a:bat[:any$1,:@1],b:bat[:any$1,:@1]):bat[:any$1,:@1] 
 	#= CMDunaryAccumMINMIN comment "Unary -- over the tail of the bat";
 #
-#command ++(a:bat[any$1,@1],b:bat[any$1,@1]):bat[any$1,@1] 
+#command ++(a:bat[:any$1,:@1],b:bat[:any$1,:@1]):bat[:any$1,:@1] 
 	#= CMDunaryAccumPLUSPLUS comment "Unary ++ over the tail of the bat";
 @mal
 @:unary(oid)@
@@ -122,11 +122,11 @@ comment "Unary minus over the tail of the bat";
 @- Comparison routines
 The command signatures are similar to those above, producing a bit result.
 @= comparison
-command @1(b:bat[any$1,@2],c:bat[any$1,@2]):bat[any$1,bit]= CMDcmp@3;
-command @1(a:bat[any$1,bit],b:bat[any$1,@2],
-	   c:bat[any$1,@2]):bat[any$1,bit]= CMDcmpaccum@3;
-command @1(b:bat[any$1,@2],cst:@2):bat[any$1,bit]= CMDcmp@3cst;
-command @1(a:bat[any$1,bit],b:bat[any$1,@2],cst:@2):bat[any$1,bit]
+command @1(b:bat[:any$1,:@2],c:bat[:any$1,:@2]):bat[:any$1,:bit]= CMDcmp@3;
+command @1(a:bat[:any$1,:bit],b:bat[:any$1,:@2],
+	   c:bat[:any$1,:@2]):bat[:any$1,:bit]= CMDcmpaccum@3;
+command @1(b:bat[:any$1,:@2],cst:@2):bat[:any$1,:bit]= CMDcmp@3cst;
+command @1(a:bat[:any$1,:bit],b:bat[:any$1,:@2],cst:@2):bat[:any$1,:bit]
 	= CMDcmpaccum@3cst;
 
 @= compareGrp
@@ -151,37 +151,37 @@ command @1(a:bat[any$1,bit],b:bat[any$1,@2],cst:@2):bat[any$1,bit]
 The command signature can mostly be borrowed from the arithmetic.
 
 @mal
-command not(b:bat[any$1,bit]):bat[any$1,bit] = CMDbitbatNOT
+command not(b:bat[:any$1,:bit]):bat[:any$1,:bit] = CMDbitbatNOT
 comment "Return a new BAT with the negated tail";
 
-command not(a:bat[any$1,bit],b:bat[any$1,bit]):bat[any$1,bit] 
+command not(a:bat[:any$1,:bit],b:bat[:any$1,:bit]):bat[:any$1,:bit] 
 	= CMDbitbataccumNOT
 comment "Return a BAT with the negated tail";
 
-command ifthenelse(b:bat[any$1,bit],e:any$2, t:bat[any$1,any$2]):bat[any$1,any$2] = CMDifThenElseCst1
+command ifthenelse(b:bat[:any$1,:bit],e:any$2, t:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDifThenElseCst1
 comment "If-then-else operation to assemble a conditional result ";
 
-command ifthenelse(b:bat[any$1,bit], t:bat[any$1,any$2], e:any$2):bat[any$1,any$2] = CMDifThenElseCst2
+command ifthenelse(b:bat[:any$1,:bit], t:bat[:any$1,:any$2], e:any$2):bat[:any$1,:any$2] = CMDifThenElseCst2
 comment "If-then-else operation to assemble a conditional result ";
 
-command ifthen(b:bat[any$1,bit], t:bat[any$1,any$2]):bat[any$1,any$2] = CMDifThen
+command ifthen(b:bat[:any$1,:bit], t:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDifThen
 comment "Ifthen operation to assemble a conditional result ";
 
-command ifthenelse(b:bat[any$1,bit], t:bat[any$1,any$2], e:bat[any$1,any$2]):bat[any$1,any$2] = CMDifThenElse
+command ifthenelse(b:bat[:any$1,:bit], t:bat[:any$1,:any$2], e:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDifThenElse
 comment "If-then-else operation to assemble a conditional result ";
 
 @-
 @= ifthenGrp
-command zipper(v:@1,b:bat[any,any$1]):bat[@1,any$1] = CMDfillhead_@1
+command zipper(v:@1,b:bat[:any,:any$1]):bat[:@1,:any$1] = CMDfillhead_@1
 comment "Fill the head with a constant, e.g.  [0~b]";
 
-command zipper(b:bat[any$1,any], v:@1):bat[any$1,@1] = CMDfilltail_@1
+command zipper(b:bat[:any$1,:any], v:@1):bat[:any$1,:@1] = CMDfilltail_@1
 comment "Fill the tail with a constant, eg [b~0].";
 
-command ifthen(b:bat[any$1,bit], v:@1):bat[any$1,@1] = CMDifThenCst_@1
+command ifthen(b:bat[:any$1,:bit], v:@1):bat[:any$1,:@1] = CMDifThenCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 
-command ifthenelse(b:bat[any$1,bit], v:@1,w:@1):bat[any$1,@1] = CMDifThenElseCst_@1
+command ifthenelse(b:bat[:any$1,:bit], v:@1,w:@1):bat[:any$1,:@1] = CMDifThenElseCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 @mal
 	@:ifthenGrp(bit)@
@@ -201,7 +201,7 @@ Nevertheless, the implementation provided here are much faster compared
 to theVersion 4.3 implementation.
 
 @= coercion
-command @2(b:bat[any$1,@1]):bat[any$1,@2] = CMDconvert@1_@2
+command @2(b:bat[:any$1,:@1]):bat[:any$1,:@2] = CMDconvert@1_@2
 comment "Coerce an @1 tail to a bat with a @2 tail.";
 @-
 @= coerceList
@@ -217,22 +217,22 @@ comment "Coerce an @1 tail to a bat with a @2 tail.";
 	@:coerceList(flt)@
 	@:coerceList(dbl)@
 
-command int(b:bat[any$1,str]):bat[any$1,int] = CMDconvertstr_int
+command int(b:bat[:any$1,:str]):bat[:any$1,:int] = CMDconvertstr_int
 comment "Coerce an str tail to a bat with a int tail.";
 
-command oid(b:bat[void,any$1]):bat[oid,any$1] = CMDconvertvoid_oid
+command oid(b:bat[:void,:any$1]):bat[:oid,:any$1] = CMDconvertvoid_oid
 comment "Materialize the virtual oid into an oid";
 
-command oid(b:bat[oid,any$1]):bat[oid,any$1] = CMDconvertoid_oid
+command oid(b:bat[:oid,:any$1]):bat[:oid,:any$1] = CMDconvertoid_oid
 comment "Materialize the virtual oid into an oid";
 @- Scientific routines
 The mmath functions are also overloaded to provide for
 the fast execution of expanded code blocks.
 
 @= scienceFcn
-command @1(x:bat[any$1,dbl])  :bat[any$1,dbl] = CMDscience_@1;
+command @1(x:bat[:any$1,:dbl])  :bat[:any$1,:dbl] = CMDscience_@1;
 @= scienceFcnBinary
-command @1(x:bat[any$1,dbl],y:@2)  :bat[any$1,dbl] = CMDscience_@1;
+command @1(x:bat[:any$1,:dbl],y:@2)  :bat[:any$1,:dbl] = CMDscience_@1;
 @-
 @mal
 	@:scienceFcn(asin)@
@@ -262,7 +262,7 @@ command @1(x:bat[any$1,dbl],y:@2)  :bat[any$1,dbl] = CMDscience_@1;
 An expensive operation is to match a pattern against a string.
 The regexp library permits a pre-compilation.
 @mal
-command match(b:bat[any$1,str], pat:str):bat[any$1,bit] = CMDmatchStr
+command match(b:bat[:any$1,:str], pat:str):bat[:any$1,:bit] = CMDmatchStr
         comment "POSIX pattern matching against a string BAT";
 @- Implementation
 @h

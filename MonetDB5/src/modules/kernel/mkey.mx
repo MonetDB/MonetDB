@@ -19,7 +19,7 @@ command hash(v:dbl) :int = CMDhash_dbl;
 command hash(v:lng) :int = CMDhash_lng;
 command hash(v:str) :int = CMDhash_str;
 
-command bulk_rotate_xor_hash(h:bat[oid,int], nbits:int, b:bat[oid,any]) :bat[oid,int] = CMDbulk_rotate_xor_hash
+command bulk_rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any]) :bat[:oid,:int] = CMDbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
@@ -33,7 +33,7 @@ Example :
 \begin{verbatim}
 orders                  customer                link
 ====================    =====================   ===========
-        zipcode h_nr            zipcode h_nr    oid     cid
+        zipcode h\_nr            zipcode h\_nr    oid     cid
 o1      13      9       c1      11      10      o1      c5
 o2      11      10      c2      11      11      o2      c1
 o3      11      11      c3      12      2       o3      c2
@@ -44,22 +44,22 @@ o7      13      9                               o7      c5
 o8      12      1                               o8      c4
 o9      13      9                               o9      c5
                                                 nil     c6
+\end{verbatim}
 Mil code :
 
-o_pcd := new(oid,int).insert(1@0,13).insert(2@0,11).insert(3@0,11).insert(4@0,12);
-o_pcd.insert(5@0,11).insert(6@0,12).insert(7@0,13).insert(8@0,12).insert(9@0,13);
+opcd := new(oid,int).insert(1@0,13).insert(2@0,11).insert(3@0,11).insert(4@0,12);
+opcd.insert(5@0,11).insert(6@0,12).insert(7@0,13).insert(8@0,12).insert(9@0,13);
 
-o_hnr := new(oid,int).insert(1@0,9).insert(2@0,10).insert(3@0,11).insert(4@0,5);
-o_hnr.insert(5@0,10).insert(6@0,2).insert(7@0,9).insert(8@0,1).insert(9@0,9);
+ohnr := new(oid,int).insert(1@0,9).insert(2@0,10).insert(3@0,11).insert(4@0,5);
+ohnr.insert(5@0,10).insert(6@0,2).insert(7@0,9).insert(8@0,1).insert(9@0,9);
 
-c_pcd := new(oid,int).insert(1@0,11).insert(2@0,11);
-c_pcd.insert(3@0,12).insert(4@0,12).insert(5@0,13).insert(6@0,14);
+cpcd := new(oid,int).insert(1@0,11).insert(2@0,11);
+cpcd.insert(3@0,12).insert(4@0,12).insert(5@0,13).insert(6@0,14);
 
-c_hnr := new(oid,int).insert(1@0,10).insert(2@0,11);
-c_hnr.insert(3@0,2).insert(4@0,1).insert(5@0,9).insert(6@0,7);
+chnr := new(oid,int).insert(1@0,10).insert(2@0,11);
+chnr.insert(3@0,2).insert(4@0,1).insert(5@0,9).insert(6@0,7);
 
-solution
-========
+@- Solution
 
 The current approach is designed to take minimal memory, as our previous 
 solutions to the problem did not scale well. In case of singular keys,
@@ -72,7 +72,7 @@ sum([*](histogram(b).reverse,histogram(r)));
 
 The MIL join was also improved to do dynamic sampling in order to determine
 with high accuracy the join size, so that we can alloc in one go a memory
-region of sufficient size. This also reduces the ds_link memory requirements.
+region of sufficient size. This also reduces the ds\_link memory requirements.
 
 For compound keys, those that consist of multiple attributes, we now compute
 a derived column that contains an integer hash value derived from all
@@ -86,7 +86,7 @@ Computing the hash value for all columns in the key for one table is done
 by the MIL proc ds_hash(). Hence, we do ds_hash on both sides, and join
 that together with a simple MIL join:
 
-join(ds_hash(keys), ds_hash(keys.reverse);
+join(ds\_hash(keys), ds\_hash(keys.reverse);
 @T
 One complication of this procedure are nil values:
 \begin{itemize}
@@ -96,7 +96,7 @@ Notice that MIL join never matches nil values.
 Hence these accidental nils must be replaced by a begin value (currently: 0).
 \item in case any of the compound key values is nil, our nil semantics
 require us that those tuples may never match on a join. Consequently,
-during the ds_hash() processing of all compound key columns for computing
+during the ds\_hash() processing of all compound key columns for computing
 the hash value, we also maintain a bit-bat that records which tuples had
 a nil value. The bit-bat is initialized to false, and the results of the
 nil-check on each column is OR-ed to it.
@@ -107,7 +107,7 @@ TRUE are forced to int(nil), which will exclude them from matching.
 Joining on hash values produces a {\em superset} of the join result:
 it may happen that  two different key combinations hash on the same value,
 which will make them match on the join (false hits). The final part
-of the ds_link therefore consists of filtering out the false hits.
+of the ds\_link therefore consists of filtering out the false hits.
 This is done incrementally by joining back the join result to the original
 columns, incrementally one by one for each pair of corresponding
 columns. These values are compared with each other and we AND the
@@ -125,11 +125,11 @@ on hash number, which takes N*24 bytes (where N= |L| = |R|).
 In comparison, the previous CTmultigroup/CTmultiderive approach
 took N*48 bytes. Additionally, by making it possible to use merge-sort, 
 it avoids severe performance degradation (memory thrashing) as produced 
-by the old ds_link when the inner join relation would be larger than memory.
+by the old ds\_link when the inner join relation would be larger than memory.
 
-If ds_link performance is still an issue, the sort-merge join used here 
+If ds\_link performance is still an issue, the sort-merge join used here 
 could be replaced by partitioned hash-join with radix-cluster/decluster.
-
+@{
 @mil
 
 # Stefan Manegold:
@@ -411,3 +411,4 @@ str CMDbulk_rotate_xor_hash(int *res, int *bnid, int *rotate, int *bid) {
     *res= bn->batCacheid;
     return MAL_SUCCEED;
 }
+@}

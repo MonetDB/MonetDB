@@ -60,7 +60,7 @@ command getContent(u:url)   :str        = URLgetContent
 	comment "Get the URL resource in a local file";
 command getContext(u:url)   :str        = URLgetContext 
 	comment "Get the path context of a URL ";
-command getDirectory(u:url) : bat[int,str]  = URLgetDirectory 
+command getDirectory(u:url) :bat[:int,:str]  = URLgetDirectory 
 	comment "Extract the directory names from the URL";
 command getDomain(u:url) :str        = URLgetDomain 
 	comment "Extract the Internet domain from the URL";
@@ -76,17 +76,17 @@ command getProtocol(u:url) :str        = URLgetProtocol
 	comment "Extract the protocol from the URL";
 command getQuery(u:url) :str        = URLgetQuery 
 	comment "Extract the query string from the URL";
-command getQueryArg(u:url) : bat[str,str]  = URLgetQueryArg 
+command getQueryArg(u:url) :bat[:str,:str]  = URLgetQueryArg 
 	comment "Extract the argument mappings from the URL";
 command getUser(u:url) :str        = URLgetUser 
 	comment "Extract the user identity from the URL";
 command getRobotURL(u:url) :str        = URLgetRobotURL 
 	comment "Extract the location of the robot control file";
-command isaURL(u:url)   : bit        = URLisaURL 
+command isaURL(u:url)   :bit        = URLisaURL 
 	comment "Check conformity of the URL syntax";
-command newurl(prot:str,host:str,port:int,fnme:str)   : url        = URLnew4 
+command newurl(prot:str,host:str,port:int,fnme:str)   :url        = URLnew4 
 	comment "Construct a URL from protocol, host,port,and file";
-command newurl(prot:str,host:str,fnme:str)   : url        = URLnew3 
+command newurl(prot:str,host:str,fnme:str)   :url        = URLnew3 
 	comment "Construct a URL from protocol, host,and file";
 
 # the remaining instructions replace the string equivalent versions

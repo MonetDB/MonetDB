@@ -15,6 +15,11 @@ LIBS = {
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
+doc_atoms = {
+	DIR = pkgdatadir/docs/modules/atoms
+	SOURCES = str.mx blob.mx url.mx mtime.mx \
+		uchr.mx 
+}
 scripts_mal = {
 	DIR = pkglibdir/atoms
 	SOURCES = atoms_init.mx str.mx blob.mx url.mx mtime.mx \

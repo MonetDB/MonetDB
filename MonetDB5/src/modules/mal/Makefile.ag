@@ -8,7 +8,8 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = language.mx box.mx multiplex.mx  \
+	SOURCES = \
+		language.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx  streams.mx inspect.mx \
 		thread.mx optimizer.mx clients.mx tablet.mx
@@ -18,6 +19,15 @@ LIBS = {
 	LIBS = ../common/libmutils ../common/libstream ../../gdk/libbat \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
+doc_mal = {
+	DIR = pkgdatadir/docs/modules/mal
+	SOURCES = \
+		language.mx box.mx multiplex.mx  \
+		atoms.mx profiler.mx const.mx bbp.mx io.mx \
+		enum.mx  streams.mx inspect.mx \
+		thread.mx optimizer.mx clients.mx tablet.mx
+}
+
 scripts_mal = {
 	DIR = pkglibdir/mal
 	SOURCES = language.mx mal_init.mx box.mx multiplex.mx  \

@@ -86,13 +86,13 @@ command length( s:str ) :int = STRLength
 	comment "Return the length of a string.";
 command nbytes( s:str ) :int = STRBytes
 	comment "Return the length of a string in bytes.";
-command chrAt( s:str, index:lng) : chr = STRChrAt
+command chrAt( s:str, index:lng) :chr = STRChrAt
 	comment "String array lookup operation.";
-command chrAt( s:str, index:sht) : chr = STRChrAt
+command chrAt( s:str, index:sht) :chr = STRChrAt
 	comment "String array lookup operation.";
-command chrAt( s:str, index:int) : chr = STRChrAt
+command chrAt( s:str, index:int) :chr = STRChrAt
 	comment "String array lookup operation.";
-command match(s:str, pat:str): bit = STRmatch
+command match(s:str, pat:str):bit = STRmatch
 	comment "POSIX pattern matching against a string";
 command unicodeAt(s:str, index:int) :int = STRWChrAt
         comment "get a unicode character (as an int) from a string position.";
@@ -104,9 +104,9 @@ command codeset() :str = STRcodeset
 command iconv(org:str, fromCodeset:str, toCodeset:str ) :str = STRIconv
         comment "String codeset conversion";
 
-command startsWith( s:str, prefix:str ) : bit = STRPrefix
+command startsWith( s:str, prefix:str ) :bit = STRPrefix
         comment "Prefix check.";
-command endsWith( s:str, suffix:str ) : bit = STRSuffix
+command endsWith( s:str, suffix:str ) :bit = STRSuffix
         comment "Suffix check.";
 
 command toLower( s:str ) :str = STRLower

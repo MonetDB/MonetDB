@@ -28,7 +28,7 @@
 
 This module contains some efficient aggregate functions that compute their 
 result in one scan, rather than in the iterative manner of the generic 
-MIL aggr_ implementations.
+MIL aggregrate implementations.
 
 The implementation code is derived from the original 'aggr' module. 
 Major changes are
@@ -40,8 +40,8 @@ where feasable, replaced (expansive) hash-lookup by significantly cheaper positi
 void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by 
 (also positional) array lookups (in case the group-ids span a reasonably small range);
 \item
-in addition to the 2-parameter {}(BAT[oid,any$1] b, BAT[oid,any] e)
-functions, there are now also 3-parameter {}(BAT[void,any$1] b,
+in addition to the 2-parameter \{\}(BAT[oid,any$1] b, BAT[oid,any] e)
+functions, there are now also 3-parameter \{\}(BAT[void,any$1] b,
 BAT[void,oid] g, BAT[oid,any] e) functions, that require b & g to be
 head-aligned, and to the fetchjoin(reverse(g),b) on-the-fly;
 \end{itemize}
@@ -54,29 +54,29 @@ module aggrX3;
 #module group;
 
 @= sum_avg_signatures
-command sum(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum_@1_@1
+command sum(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum_@1_@1
 	comment "grouped tail sum on @1";
-command prod(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_prod_@1_@1
+command prod(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_prod_@1_@1
 	comment "grouped tail product on @1";
-command sum(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum3_@1_@1
+command sum(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum3_@1_@1
 	comment "grouped tail sum on @1";
-command avg(b:bat[oid,@1], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_avg_@1
+command avg(b:bat[:oid,:@1], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_avg_@1
 	comment "grouped tail average on @1";
-command avg(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_avg3_@1
+command avg(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_avg3_@1
 	comment "grouped tail average on @1";
 
 @= sum_avg_signatures2
-command sum(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum_@1_@1
+command sum(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum_@1_@1
 	comment "grouped tail sum on @1";
-command sum(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@1] = CMDaggrX3_sum3_@1_@1
+command sum(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@1] = CMDaggrX3_sum3_@1_@1
 	comment "grouped tail sum on @1";
-command sum(b:bat[oid,@1],e:bat[oid,any]) :bat[oid,@2] = CMDaggrX3_sum_@1_@2
+command sum(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@2] = CMDaggrX3_sum_@1_@2
 	comment "grouped tail sum on @1";
-command sum(b:bat[oid,@1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,@2] = CMDaggrX3_sum3_@1_@2
+command sum(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:@2] = CMDaggrX3_sum3_@1_@2
 	comment "grouped tail sum on @1";
 
 @= var_signature
-command variance(b:bat[oid,@1],e:bat[oid,any]):bat[oid,@1] = CMDaggr_variance_@1
+command variance(b:bat[:oid,:@1],e:bat[:oid,:any]):bat[:oid,:@1] = CMDaggr_variance_@1
 comment "grouped tail on variance";
 
 @mal
@@ -95,29 +95,29 @@ comment "grouped tail on variance";
 @:var_signature(dbl)@
 @:var_signature(flt)@
 
-command min(b:bat[oid,any$1], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_min
+command min(b:bat[:oid,:any$1], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_min
 	comment "grouped tail minimum";
-command max(b:bat[oid,any$1], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_max
+command max(b:bat[:oid,:any$1], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_max
 	comment "grouped tail maximum";
-command min(b:bat[oid,any$1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_min3
+command min(b:bat[:oid,:any$1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_min3
 	comment "grouped tail minimum";
-command max(b:bat[oid,any$1], g:bat[oid,oid], e:bat[oid,any]) :bat[oid,any$1] = CMDaggrX3_max3
+command max(b:bat[:oid,:any$1], g:bat[:oid,:oid], e:bat[:oid,:any]) :bat[:oid,:any$1] = CMDaggrX3_max3
 	comment "grouped tail maximum";
 
-command count(b:bat[oid,any], e:bat[oid,any]) :bat[oid,int] = CMDaggrX3_count
+command count(b:bat[:oid,:any], e:bat[:oid,:any]) :bat[:oid,:int] = CMDaggrX3_count
 	comment "grouped count";
-command count(b:bat[oid,any], g:bat[oid,oid], e:bat[oid,any], nonils:bit) :bat[oid,int] = CMDaggrX3_count3
+command count(b:bat[:oid,:any], g:bat[:oid,:oid], e:bat[:oid,:any], nonils:bit) :bat[:oid,:int] = CMDaggrX3_count3
 	comment "grouped count";
 
-command size(b:bat[oid,bit], e:bat[oid,any]) :bat[oid,int] = CMDaggrX3_size
+command size(b:bat[:oid,:bit], e:bat[:oid,:any]) :bat[:oid,:int] = CMDaggrX3_size
 	comment "grouped count of true values";
-command size(b:bat[oid,bit]) :int = CMDsize
+command size(b:bat[:oid,:bit]) :int = CMDsize
 	comment "grouped count of true values in the tail";
-command hasNil(b:bat[any,any]) :bit = CMDhasNil
+command hasNil(b:bat[:any,:any]) :bit = CMDhasNil
         comment "return if there is a nil value in the tail column";
-command card(b:bat[any,any]) :lng = CMDcard_unlimited
+command card(b:bat[:any,:any]) :lng = CMDcard_unlimited
         comment "return the number of different values in a tail column";
-command card(b:bat[any,any], maxelements:int) :lng = CMDcard
+command card(b:bat[:any,:any], maxelements:int) :lng = CMDcard
         comment "as card(b), but returns nil if card(b) > maxelements";
 @-
 OLD STUFF, recast in MAL proc 

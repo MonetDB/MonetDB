@@ -61,13 +61,13 @@ atom module blob;
 Manipulation functions to extract strings from blobs and vice versa.
 Not to be confused with blob parsing and printing.
 @mal
-   command tostring(v:blob) : str = fromblob
+   command tostring(v:blob) :str = fromblob
 	comment "get the bytes from blob as a string, till the first 0 byte
          or the end of the blob";
-   command tostring(v:blob, index:int ) : str = BLOBfromidx
+   command tostring(v:blob, index:int ) :str = BLOBfromidx
 	comment "get the bytes from blob as a string, starting at byte 'index'
          till the first 0 byte or the end of the blob.";
-   command toblob(v:str) : blob = toblob
+   command toblob(v:str) :blob = toblob
 	comment "store a string as a blob.";
    command nitems(b:blob):int = BLOBnitems
 	comment " get the number of bytes in this blob.";

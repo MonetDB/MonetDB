@@ -165,20 +165,20 @@ would just set the string name of the tzone.
 @- Comparison operators
 
 @= compareGrp
-command =(v:$1,w:$1):bit = CMD@1_EQ
+command =(v:@1,w:@1):bit = CMD@1_EQ
         comment "Equality of two @1s";
-command !=(v:$1,w:$1):bit = CMD@1_NEQ
+command !=(v:@1,w:@1):bit = CMD@1_NEQ
         comment "Equality of two @1s";
-command <(v:$1,w:$1):bit = CMD@1_LT
+command <(v:@1,w:@1):bit = CMD@1_LT
         comment "Equality of two @1s";
-command <=(v:$1,w:$1):bit = CMD@1_LE
+command <=(v:@1,w:@1):bit = CMD@1_LE
         comment "Equality of two @1s";
-command >(v:$1,w:$1):bit = CMD@1_GT
+command >(v:@1,w:@1):bit = CMD@1_GT
         comment "Equality of two @1s";
-command >=(v:$1,w:$1):bit = CMD@1_GE
+command >=(v:@1,w:@1):bit = CMD@1_GE
         comment "Equality of two @1s";
 
-command isnil(v:$1):bit = CMD@1_isnil
+command isnil(v:@1):bit = CMD@1_isnil
         comment "Nil test for @1 value";
 @mal
 

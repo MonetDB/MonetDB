@@ -60,19 +60,19 @@ The BATs created below are rather expensive views over the
 GDK kernel. They have been retained for backward compatibility.
 
 @mal
-command cpuStatistics() :bat[str,int] = SYScpuStatistics
+command cpuStatistics() :bat[:str,:int] = SYScpuStatistics
 	comment "Global cpu usage information";
-command memStatistics():bat[str,int] = SYSmemStatistics
+command memStatistics():bat[:str,:int] = SYSmemStatistics
 	comment "Global memory usage information";
-command ioStatistics():bat[str,int] = SYSioStatistics
+command ioStatistics():bat[:str,:int] = SYSioStatistics
 	comment "Global IO activity information";
-command bbpStatistics():bat[str,int] = SYSbbpStatistics
+command bbpStatistics():bat[:str,:int] = SYSbbpStatistics
 	comment "Global BBP usage information";
 command memMap() :void = SYSmemMap
         comment "print a map of all memory that is in use";
 @-
 @T
-For each 64KB block in the first 3GB of the virtual memory {\tt mem_printmap()} prints a character:
+For each 64KB block in the first 3GB of the virtual memory {\tt mem\_printmap()} prints a character:
 \begin{verbatim}
 0-9 - thread stack space of thread <num>
 B - in use for a large BAT heap (i.e. anonymous virtual memory).
@@ -91,53 +91,53 @@ If you want to see all your memory in the map, lower the gdk\_mmap threshold in 
 low value (say 64KB).
 @-
 @mal
-command vmUsage(minsize:lng) :bat[str,lng] = SYSvm_usage
+command vmUsage(minsize:lng) :bat[:str,:lng] = SYSvm_usage
         comment "Get a split-up of how much virtual memory blocks are in use.";
-command memUsage(minsize:lng) :bat[str,lng] = SYSmem_usage
+command memUsage(minsize:lng) :bat[:str,:lng] = SYSmem_usage
         comment "Get a split-up of how much memory blocks are in use.";
 @-
 @T
-Some explanation of what mem_usage() and vm_usage() display:
+Some explanation of what mem\_usage() and vm\_usage() display:
 \begin{verbatim}
 > mem_usage.print;
 #------------------------------#
 # BAT:                 tmp_42  #
 # (str)                (lng)   #
 #------------------------------#
-[ "buns/car_category",  400012 ] 100.000 string offsets
-[ "buns/car_town",      400012 ] idem
-[ "buns/car_class",     400012 ] idem
-[ "tail/car_category",  266244 ] string tail heap
-[ "tail/car_town",      266244 ] idem
-[ "tail/car_class",     266244 ] idem
-[ "_tot/buns",         1322996 ] the three bun heaps
-[ "_tot/tail",          967762 ] the three tail heaps
-[ "_tot/head",           70984 ] negligable
-[ "_tot/bbp",            98866 ] BBP metadata structure
-[ "_tot/mil",           102400 ] MIL interpreter stack space
-[ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
-[ "_tot/malloc_heap",  2956048 ] in malloc heap
-[ "_tot/malloc",       2956048 ] total consumed via malloc
-[ "_tot/valloc",        201266 ] total consumed via virtualalloc
-[ "_tot/mem",          3157314 ] total RAM+swap-file consumption
+[ "buns/car\_category",  400012 ] 100.000 string offsets
+[ "buns/car\_town",      400012 ] idem
+[ "buns/car\_class",     400012 ] idem
+[ "tail/car\_category",  266244 ] string tail heap
+[ "tail/car\_town",      266244 ] idem
+[ "tail/car\_class",     266244 ] idem
+[ "\_tot/buns",         1322996 ] the three bun heaps
+[ "\_tot/tail",          967762 ] the three tail heaps
+[ "\_tot/head",           70984 ] negligable
+[ "\_tot/bbp",            98866 ] BBP metadata structure
+[ "\_tot/mil",           102400 ] MIL interpreter stack space
+[ "\_tot/found",        2590144 ] buns+head+tail+bbp+mil
+[ "\_tot/malloc\_heap",  2956048 ] in malloc heap
+[ "\_tot/malloc",       2956048 ] total consumed via malloc
+[ "\_tot/valloc",        201266 ] total consumed via virtualalloc
+[ "\_tot/mem",          3157314 ] total RAM+swap-file consumption
 
 >
-> vm_usage.print;
+> vm\_usage.print;
 #------------------------------#
-# BAT:               tmp_42    #
+# BAT:               tmp\_42    #
 # (str)              (lng)     #
 #------------------------------#
-[ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
-[ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
-[ "_tot/found",      67108864  ] bbp+mil
-[ "_tot/vm",         71244560  ] total address space consumption
+[ "\_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
+[ "\_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
+[ "\_tot/found",      67108864  ] bbp+mil
+[ "\_tot/vm",         71244560  ] total address space consumption
 >
 \end{verbatim}
 @- MAL runtime status 
 @mal
-command gdkEnv( ):bat[str,str] = SYSgdkEnv
+command gdkEnv( ):bat[:str,:str] = SYSgdkEnv
 	comment "Pseudo bat to map thread to name";
-command gdkThread( ):bat[int,str] = SYSgdkThread
+command gdkThread( ):bat[:int,:str] = SYSgdkThread
 	comment "Pseudo bat to map thread to name";
 
 command mem_cursize() :lng = SYSgetmem_cursize
