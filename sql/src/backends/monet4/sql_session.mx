@@ -1517,7 +1517,7 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 					c->mtype, c->p);
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
-		} else if (c->type->type->scale == SCALE_FIX &&
+		} else if (c->type->scale == SCALE_FIX &&
 	            strcmp(c->type->type->sqlname, "timestamp")==0){
 			char *buf = NULL;
 			int len = 0;
@@ -1614,7 +1614,7 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;
 		} else 
-		if (c->type->type->scale == SCALE_FIX && 
+		if (c->type->scale == SCALE_FIX && 
 	            strcmp(c->type->type->sqlname, "timestamp")==0){
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;

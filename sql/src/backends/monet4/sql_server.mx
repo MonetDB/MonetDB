@@ -649,6 +649,7 @@ module(mapi); # mapi_listen
 #vm_maxsize(0LL);
 var err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
 
+tzone_local(TIMEZONE("GMT"));
 proc SQLclient( Stream s_in, Stream s_out ) : void {
 	fork(sqlclient(s_in, s_out));
 }
