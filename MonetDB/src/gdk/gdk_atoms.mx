@@ -1753,7 +1753,7 @@ str strRead(str a, stream *s, size_t cnt) {
 		return NULL;
 	if ((a = GDKmalloc(len + 1)) == NULL)
 		return NULL;
-	if (stream_read(s, a, len, 1) != 1) {
+	if (len && stream_read(s, a, len, 1) != 1) {
 		GDKfree(a);
 		return NULL;
 	}
@@ -1764,7 +1764,7 @@ str strRead(str a, stream *s, size_t cnt) {
 void strWrite(str a, stream *s, size_t cnt) {
 	size_t len = strlen(a);
 	assert(cnt==1);
-	if (stream_writeInt(s, (int) len) == 0)
+	if (stream_writeInt(s, (int) len))
 		stream_write(s, a, len, 1 );
 }
 
