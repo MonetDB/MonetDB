@@ -27,7 +27,7 @@
 #endif
 
 static int
-get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, SQLCHAR **key, SQLCHAR **attr)
+get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 {
 	SQLCHAR *p;
 	size_t len;
@@ -44,14 +44,14 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, SQLCHAR **key, SQLCHAR **attr)
 	if (*nconn == 0 || !**conn || **conn == ';')
 		return 0;
 	len = *conn - p;
-	*key = (SQLCHAR*)malloc(len + 1);
-	strncpy((char*)*key, (char*)p, len);
+	*key = malloc(len + 1);
+	strncpy(*key, (char *) p, len);
 	(*key)[len] = 0;
 	(*conn)++;
 	(*nconn)--;
 	p = *conn;
 
-	if (*nconn > 0 && **conn == '{' && strcasecmp((char*)*key, "DRIVER") == 0) {
+	if (*nconn > 0 && **conn == '{' && strcasecmp(*key, "DRIVER") == 0) {
 		(*conn)++;
 		(*nconn)--;
 		p++;
@@ -60,8 +60,8 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, SQLCHAR **key, SQLCHAR **attr)
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = (SQLCHAR*)malloc(len + 1);
-		strncpy((char*)*attr, (char*)p, len);
+		*attr = malloc(len + 1);
+		strncpy(*attr, (char *) p, len);
 		(*attr)[len] = 0;
 		(*conn)++;
 		(*nconn)--;
@@ -72,8 +72,8 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, SQLCHAR **key, SQLCHAR **attr)
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = (SQLCHAR*)malloc(len + 1);
-		strncpy((char*)*attr, (char*)p, len);
+		*attr = malloc(len + 1);
+		strncpy(*attr, (char *) p, len);
 		(*attr)[len] = 0;
 	}
 	if (*nconn > 0 && **conn) {
@@ -90,8 +90,8 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		 SQLUSMALLINT nDriverCompletion)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
-	SQLCHAR *key, *attr;
-	SQLCHAR *dsn = 0, *uid = 0, *pwd = 0;
+	char *key, *attr;
+	char *dsn = 0, *uid = 0, *pwd = 0;
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
@@ -133,24 +133,25 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	}
 
 	while (get_key_attr(&szConnStrIn, &nConnStrIn, &key, &attr)) {
-		if (strcasecmp((char*)key, "DSN") == 0 && dsn == NULL)
+		if (strcasecmp(key, "DSN") == 0 && dsn == NULL)
 			dsn = attr;
-		else if (strcasecmp((char*)key, "UID") == 0 && uid == NULL)
+		else if (strcasecmp(key, "UID") == 0 && uid == NULL)
 			uid = attr;
-		else if (strcasecmp((char*)key, "PWD") == 0 && pwd == NULL)
+		else if (strcasecmp(key, "PWD") == 0 && pwd == NULL)
 			pwd = attr;
 		else
 			free(attr);
-		free((char*)key);
+		free(key);
 	}
 
-	if (dsn && strlen((char*)dsn) > SQL_MAX_DSN_LENGTH) {
+	if (dsn && strlen(dsn) > SQL_MAX_DSN_LENGTH) {
 		/* IM010 = Data source name too long */
 		addDbcError(dbc, "IM010", NULL, 0);
 		rc = SQL_ERROR;
 	} else {
-		rc = SQLConnect_(dbc, dsn, SQL_NTS, uid, SQL_NTS,
-				 pwd, SQL_NTS);
+		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS,
+				 (SQLCHAR *) uid, SQL_NTS,
+				 (SQLCHAR *) pwd, SQL_NTS);
 	}
 
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
@@ -159,9 +160,9 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		if (szConnStrOut == NULL)
 			cbConnStrOutMax = -1;
 		if (cbConnStrOutMax > 0) {
-			n = snprintf((char*)szConnStrOut, 
+			n = snprintf((char *) szConnStrOut, 
 				cbConnStrOutMax, "DSN=%s;",
-				dsn ? dsn : (SQLCHAR*)"DEFAULT");
+				dsn ? dsn : "DEFAULT");
 			/* some snprintf's return -1 if buffer too small */
 			if (n < 0)
 				n = cbConnStrOutMax + 1; /* make sure it becomes < 0 */
@@ -172,7 +173,7 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		}
 		if (uid) {
 			if (cbConnStrOutMax > 0) {
-				n = snprintf((char*)szConnStrOut, 
+				n = snprintf((char *) szConnStrOut, 
 					     cbConnStrOutMax,
 					     "UID=%s;", uid);
 				if (n < 0)
@@ -185,7 +186,7 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		}
 		if (pwd) {
 			if (cbConnStrOutMax > 0) {
-				n = snprintf((char*)szConnStrOut, 
+				n = snprintf((char *) szConnStrOut, 
 					     cbConnStrOutMax,
 					     "PWD=%s;", pwd);
 				if (n < 0)
@@ -199,10 +200,10 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 
 		/* calculate how much space was needed */
 		if (pnConnStrOut)
-			*pnConnStrOut = strlen(dsn ? (char*)dsn : "DEFAULT") 
+			*pnConnStrOut = strlen(dsn ? dsn : "DEFAULT") 
 				+ 5 +
-				(uid ? strlen((char*)uid) + 5 : 0) +
-				(pwd ? strlen((char*)pwd) + 5 : 0);
+				(uid ? strlen(uid) + 5 : 0) +
+				(pwd ? strlen(pwd) + 5 : 0);
 
 		/* if it didn't fit, say so */
 		if (cbConnStrOutMax < 0) {
@@ -211,10 +212,10 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		}
 	}
 	if (dsn)
-		free((char*)dsn);
+		free(dsn);
 	if (uid)
-		free((char*)uid);
+		free(uid);
 	if (pwd)
-		free((char*)pwd);
+		free(pwd);
 	return rc;
 }
