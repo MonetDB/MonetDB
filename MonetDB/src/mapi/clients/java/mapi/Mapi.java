@@ -577,6 +577,39 @@ private void storeBind(){
 }
 
 /**
+ * unescape a MIL string
+ **/
+public String unescapeMILstr(String str) {
+	if (str == null)
+		return null;
+	char[] src = str.toCharArray();
+	char[] dst = new char[src.length];
+	boolean unescape = false;
+	int d = 0;
+	for (int s=0;s<src.length;s++) {
+		switch (src[s]) {
+		case '\\':
+			if (!unescape) {
+				unescape = true;
+				continue;
+			} else
+				dst[d++] = '\\';
+			break;
+		case 'n':
+			dst[d++] = (unescape?'\n':'n');
+			break;
+		case 't':
+			dst[d++] = (unescape?'\t':'t');
+			break;
+		default:
+			dst[d++] = src[s];
+		}
+		unescape = false;
+	}
+	return new String(dst);
+}
+
+/**
  * The slice row constructs a list of string field values.
  * It trims the string quotes but nothing else.
 */
@@ -668,11 +701,8 @@ public int sliceRow(){
 		}
 
 		String fld= s.substring(f,l);
-		if (unescape) {
-			fld = fld.replaceAll("\\\\n","\n");
-			fld = fld.replaceAll("\\\\t","\t");
-			fld = fld.replaceAll("\\\\","\\");
-		}
+		if (unescape)
+			fld = unescapeMILstr(fld);
 
 		if(trace) traceLog.println("field ["+cr+"]["
 				+i+" "+l+"]"+fld+":"+instring+":");
