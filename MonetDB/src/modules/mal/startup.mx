@@ -12,12 +12,11 @@ It should be loaded after the bat module.
 The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
-
 @mal
-use "kernel/startup";
 use "mal/atoms";
+use "kernel/startup";
 use "mal/mal";
-use "atoms/blob";
+use "mal/profiler";
 use "mal/squeezer"; 
 use "mal/multiplex";
 use "mal/space"; 

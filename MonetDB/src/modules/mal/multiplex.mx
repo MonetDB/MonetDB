@@ -1,0 +1,56 @@
+@t Multiplex module
+@a Martin Kersten
+@* Introduction
+This module contains the implementations of the interpretation
+of the MIL [X]() multiplex operators.
+Multiplex operators provide the possibility of executing any
+command "CMD" (or operators or FUNCTIONs) with signature:
+@
+CMD(T1,..,Tn) : Tr
+@
+on a series of BATs with corresponding head values
+by putting the command between square brackets, giving the
+following corresponding signature:.
+[CMD](bat[any::1,T1],...,bat[any::1,Tn]) : bat[any::1,Tr]
+@
+and
+@
+CMD(T1,...,Tn) : Tr
+@
+Implementation of the multiplex is done by performing the
+natural join on all bat-valued parameters, and executing the
+CMD for each combination of matching tuples. All results are
+collected in a result BAT.
+
+@+ Design considerations
+In Monet V4 we used a generic solution for dealing with the multiplex.
+This lead to a compact and complex piece of code, that combined
+type checking, optimization, and execution.
+
+Given the design objective that MAL programs should be type-correct
+before being handed over to execution, we have to 1) use a
+operator-specific type resolution scheme, or 2) make all permissible multi-cast
+operators explicit.
+A great disadvantage of 2) is that it possibly leads to an explosion of
+operator signatures, which affects all type checking.
+Solution 1) effectively calls for a clear hook in the type resolver.
+This hook is currently provided at the module level and should take
+care of all type analysis related to functions presumably provided
+by the module.
+@mal
+module multiplex check = CHKmultiplex;
+
+pattern multiplex(CMD:str, b:bat[any::1,any::2],c:bat[any::1,any::2],
+	d:bat[any::1,any::2]): bat[any::1,any::2] = CMDmultiplex;
+
+pattern multiplex(CMD:str, b:bat[any::1,any::2])
+	: bat[any::1,any::2] = CMDmultiplex;
+
+pattern multiplex(CMD:str, b:bat[any::1,any::2],c:bat[any::1,any::2])
+	: bat[any::1,any::2] = CMDmultiplex
+comment "Generic processor for mutiplexed instructions.";
+
+pattern generic(CMD:str, b:bat[any::1,any::2],c:bat[any::1,any::2])
+	: bat[any::1,any::2] = CMDmultiplexGeneric
+comment "Generic processor for mutiplexed instructions.";
+

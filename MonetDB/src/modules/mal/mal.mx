@@ -60,15 +60,30 @@ A BATloop iterator uses an integer cursor to keep track of its
 position in the underlying table. 
 The head and tail elements can be obtained using the getHead and 
 getTail functions, which are to be defined for all atomary types.
+
 @mal
-command batloop(i:int,b:bat[any,any]):bit = CMDnextElement_int
+command batloop(i:lng,b:bat[any,any]):bit = CMDnextElement_lng
 comment "Iterate over the elements of a BAT using a cursor.";
 
-pattern batloop(i:int,b:bat[any::1,any::2],h:any::1,t:any::2):bit 
+pattern batloop(i:lng,b:bat[any::1,any::2],h:any::1,t:any::2):bit 
 	= CMDnextElement
 comment "Iterate over the elements of a BAT using a cursor.";
 
-command batslice(i:int,b:bat[any,any],low:int,high:int):bit = CMDnextSlice
+pattern bunStream(b:bat[any::1,any::2],h:any::1,t:any::2):lng
+	 = CMDbunstream
+comment "Produce a stream of buns for subsequent processing.";
+
+pattern batStream(b:bat[any,any],size:lng,v:bat[any::1,any::2]):lng
+        = CMDbatstream
+comment "Produce a stream of buns for subsequent processing. Each
+of a given fixed size. equivalent to batstream(b,v,slice,1)";
+
+pattern batStream(b:bat[any,any],v:bat[any::1,any::2],size:lng,step:lng):lng
+        = CMDbatstream
+comment "Produce a stream of buns for subsequent processing. Each
+of a given fixed size";
+
+command batSlice(i:int,b:bat[any,any],low:int,high:int):bit = CMDnextSlice
 comment "Iterator over all BUNs of b.slice(low,high)";
 
 command hashloop(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop
@@ -81,10 +96,10 @@ location of the underlying BAT.
 The generic solutions are also provided as patterns, because this
 trims the number of function signatures in the symbol table.
 @mal
-pattern getHead(i:int, b:bat[any::1,any]):any::1 = CMDgetHead
+pattern getHead(b:bat[any::1,any],i:lng):any::1 = CMDgetHead
 comment "return the BUN head value using the cursor.";
 
-pattern getTail(i:int, b:bat[any,any::1]):any::1 = CMDgetTail
+pattern getTail(b:bat[any,any::1],i:lng):any::1 = CMDgetTail
 comment "return the BUN tail value using the cursor.";
 
 @-
@@ -265,20 +280,20 @@ int CMDnextElement_@1(bit *ret, @1 *cursor, int *bid)
 }
 @-
 @c
-	@:nextLoop(int)@
+	@:nextLoop(lng)@
 
 int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
-	int *cursor;
+	lng *cursor;
 	bit *ret;
 	int *bid;
 	int limit;
 	BUN p;
 	ValPtr head, tail;
 
-	if( pci->argc != 5) printf("exception in nextElement\n");
+	if( pci->argc != 5) printf("CMDnextElement:exception\n");
 	ret = (bit *) getArgReference(stk,pci,0);
-	cursor = (int *) getArgReference(stk,pci,1);
+	cursor = (lng *) getArgReference(stk,pci,1);
 	bid = (int *) getArgReference(stk,pci,2);
 	head = &stk->stk[pci->argv[3]];
 	tail = &stk->stk[pci->argv[4]];
@@ -300,6 +315,53 @@ int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
 	return GDK_SUCCEED;
 }
+@-
+The BUN- and BAT-stream manipulate a long handle, i.e.
+the destination variable. It assumes it has been set to
+zero as part of runtime stack initialization. Subsequently,
+it fetches a bun and returns the increment to the control
+variable. If returns zero the control variable has been reset
+to zero and end of stream has been reached.
+@c
+int CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	BAT *b;
+	lng *cursor;
+	bit *ret;
+	int *bid;
+	int limit;
+	BUN p;
+	ValPtr head, tail;
+
+	if( pci->argc != 4) printf("exception in nextElement\n");
+	cursor = (lng *) getArgReference(stk,pci,0);
+	bid = (int *) getArgReference(stk,pci,1);
+	head = &stk->stk[pci->argv[2]];
+	tail = &stk->stk[pci->argv[3]];
+
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	limit=  BUNindex(b,BUNlast(b));
+
+	if( *cursor >=limit){
+		*cursor = 0;
+		return GDK_SUCCEED;
+	} 
+	if( *cursor == 0)
+		*cursor = BUNindex(b,BUNfirst(b));
+
+	/* get head = ... tail = ... */
+	p = BUNptr(b,*cursor);
+	garbageElement(head);
+	garbageElement(tail); 
+	VALinit( head, getArgType(mb,pci,2),BUNhead(b,p));
+	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
+	*cursor = *cursor+1;
+	return GDK_SUCCEED;
+}
+int CMDbatstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	GDKerror("batstream not yet implemented\n");
+	return GDK_SUCCEED;
+}
+
 int CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
 {
 	BAT *b;
@@ -322,15 +384,15 @@ BAT descriptor.
 @c
 int CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
-	int *cursor;
+	lng *cursor;
 	int *bid;
 	int limit;
 	BUN p;
 	ValPtr head;
 	int r, *ret=&r;
 
-	cursor = (int *) getArgReference(stk,pci,1);
-	bid = (int *) getArgReference(stk,pci,2);
+	cursor = (lng *) getArgReference(stk,pci,2);
+	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[0]];
 
 	@:batcheck(ret,bid,b,"CMDnextElement")@
@@ -348,15 +410,15 @@ int CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 int CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
-	int *cursor;
+	lng *cursor;
 	int *bid;
 	int limit;
 	BUN p;
 	ValPtr tail;
 	int r, *ret=&r;
 
-	cursor = (int *) getArgReference(stk,pci,1);
-	bid = (int *) getArgReference(stk,pci,2);
+	cursor = (lng *) getArgReference(stk,pci,2);
+	bid = (int *) getArgReference(stk,pci,1);
 	tail = &stk->stk[pci->argv[0]];
 
 	@:batcheck(ret,bid,b,"CMDnextElement")@
