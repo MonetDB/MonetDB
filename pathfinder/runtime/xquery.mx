@@ -702,7 +702,7 @@ static int ws_documentIndex(BAT* ws, str docName) {
          */
         BAT* doc_loaded = BATdescriptor(*(bat*)b);
 
-        BATprintf(GDKout,doc_loaded);
+        /* BATprintf(GDKout,doc_loaded); */
 
         BUN p, q; 
         BATloop(doc_loaded, p, q) {
@@ -933,8 +933,8 @@ int xquery_print_result_main(
                         break;
                         };
                  case NODE: {
-                        // incomplete. Suppose just ignore ?
-                        // stream_printf(GDKout,"<!--node-not-impl-yet-->\n");
+                        /* incomplete. Suppose just ignore ?*/
+                        /* stream_printf(GDKout,"<!--node-not-impl-yet-->\n");*/
                         break;
                         };
                  case BOOL: {

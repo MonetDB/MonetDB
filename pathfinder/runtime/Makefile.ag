@@ -22,7 +22,7 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONETDB_INCS) ../compiler/include
+INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
 PF_LIBS = $(LIBGC_LDADD) $(LIBXML2_LDADD)
 
 lib__pathfinder = {
@@ -33,6 +33,7 @@ lib__pathfinder = {
 		ll_staircasejoin.mx \
 		prec_foll.mx \
 		levelsteps.mx \ 
+		shredder.mx \
 		xquery.mx
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
