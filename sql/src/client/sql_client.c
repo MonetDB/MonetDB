@@ -115,7 +115,7 @@ static void forward_data(stream *in, context *sql)
 }
 
 
-void clientAccept( context *lc, stream *rs ){
+int clientAccept( context *lc, stream *rs ){
 	int err = 0;
 	int i;
 	stream *in = file_rastream( stdin, "<stdin>" );
@@ -167,6 +167,8 @@ void clientAccept( context *lc, stream *rs ){
 	buf[0] = EOT; 
 	ws->write( ws, buf, 1, 1 );
 	ws->flush( ws );
+
+	return err;
 }
 
 int
@@ -175,7 +177,7 @@ main(int ac, char **av)
 	char buf[BUFSIZ];
 	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
 	char *login = NULL, *schema = NULL;
-	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0;
+	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, res = 0;
 	opt 	*set = NULL;
 	context lc;
 
@@ -307,7 +309,7 @@ main(int ac, char **av)
 			ws = lc.out;
 			lc.out = file_wastream(stdout, "<stdout>" );
 		}
-		clientAccept( &lc, rs );
+		res = clientAccept( &lc, rs );
 
 		if (debug&64){
 	       		lc.out->close(lc.out);
@@ -330,5 +332,5 @@ main(int ac, char **av)
 	       	rs->destroy(rs);
 	}
 	mo_free_options(set,setlen);
-	return 0;
+	return -res;
 } /* main */

@@ -32,8 +32,6 @@
 	.ATOM sql_key = ptr;
 	.END;
 	
-	.COMMAND savebats() = savebats; "savebats"
-
     	.COMMAND sql_create_context( int debug, Stream o, mvc c, str schema, str user ) : context = 
 		sql_create_context; "create a context for the sql interpreter"
 
@@ -645,6 +643,7 @@ module(ddbench);
 module(aggrX3);
 module(monettime);
 module(sqlserver);
+module(mmath);
 
 var sql_debug := int(monet_environment.find("sql_debug"));
 
@@ -754,7 +753,36 @@ strings@batloop(){
 var floats := numerical.select("dbl").union(numerical.select("flt"));
 floats@batloop(){ 
 	sql_func( "floor", "floor", $h, "", "", $h ); 
+	sql_func( "ceil", "ceil", $h, "", "", $h ); 
+	sql_func( "sin", "sin", $h, "", "", $h ); 
+	sql_func( "cos", "cos", $h, "", "", $h ); 
+	sql_func( "tan", "tan", $h, "", "", $h ); 
+	sql_func( "asin", "asin", $h, "", "", $h ); 
+	sql_func( "acos", "acos", $h, "", "", $h ); 
+	sql_func( "atan", "atan", $h, "", "", $h ); 
+	sql_func( "sinh", "sinh", $h, "", "", $h ); 
+	sql_func( "cosh", "cosh", $h, "", "", $h ); 
+	sql_func( "tanh", "tanh", $h, "", "", $h ); 
+	sql_func( "sqrt", "sqrt", $h, "", "", $h ); 
+	sql_func( "exp", "exp", $h, "", "", $h ); 
+	sql_func( "log", "log", $h, "", "", $h ); 
+	sql_func( "log10", "log10", $h, "", "", $h ); 
 }
+proc floor(flt f):= return flt(floor(dbl(f)));
+proc ceil(flt f):= return flt(ceil(dbl(f)));
+proc sin(flt f):= return flt(sin(dbl(f)));
+proc cos(flt f):= return flt(cos(dbl(f)));
+proc tan(flt f):= return flt(tan(dbl(f)));
+proc asin(flt f):= return flt(asin(dbl(f)));
+proc acos(flt f):= return flt(acos(dbl(f)));
+proc atan(flt f):= return flt(atan(dbl(f)));
+proc sinh(flt f):= return flt(sinh(dbl(f)));
+proc cosh(flt f):= return flt(cosh(dbl(f)));
+proc tanh(flt f):= return flt(tanh(dbl(f)));
+proc sqrt(flt f):= return flt(sqrt(dbl(f)));
+proc exp(flt f):= return flt(exp(dbl(f)));
+proc log(flt f):= return flt(log(dbl(f)));
+proc log10(flt f):= return flt(log10(dbl(f)));
 
 sql_func( "sub", "date_sub_sec_interval", "DATE", "SEC_INTERVAL", "", "DATE");
 sql_func( "sub", "date_sub_month_interval", "DATE", "MONTH_INTERVAL", "", "DATE");

@@ -42,6 +42,7 @@ extern sql_subtype *sql_dup_subtype( sql_subtype *t );
 extern int subtype_cmp( sql_subtype *t1, sql_subtype *t2);
 
 extern sql_type *sql_bind_type(char *name);
+
 extern sql_type *sql_create_type(char *sqlname, char *name );
 
 extern sql_aggr *sql_bind_aggr(char *name, sql_subtype *type);

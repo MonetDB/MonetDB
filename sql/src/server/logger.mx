@@ -35,10 +35,6 @@ This module is designed to support efficient logging of [SQL?] database.
 Once loaded, the SQL compiler will insert the proper calls at
 transaction commit to include the changes in the log file.
 
-The log format is choosen to simplify reloading it. This means
-that the internal (byte) representation is stored in the log file,
-prepended with a byte length.
-
 [Niels, it does not necessarily work upon recovery, because the ADT
 may require an update of the local access structure, e.g. the
 hash table in the string heap.]
@@ -60,7 +56,6 @@ the storage, i.e.
 *yourbat 16824
 -[3,3]
 
-Alternative, use dbfarm/log/bat-date-version subdirectory
 ]
 
 The key decision to be made by the user is the location of the log file.
@@ -71,8 +66,6 @@ The current setup assumes that the log directory is a mounted file system. (?)
 This file system may reside on the hardware as the database server
 and therefor the writes are done to the same disk, but could also 
 reside on an other system and then the changes are flushed through the network.  
-The default location to store the database log is ....
-
 The logger works under the assumption that it is called to safeguard
 updates on the database when it has an exclusive lock on
 the latest version. This lock should be guaranteed by calling
@@ -96,24 +89,21 @@ Actually, the logger should issue commit statements after each block.
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-#include <gdk.h>
+#include "bm.h"
 
-extern struct logger *logger_create(int debug, char *dirname );
+extern struct logger *logger_create(int debug, char *dirname, struct bm *bm );
 extern void logger_destroy(struct logger *logger);
-/* temporary add statement to make current bats persistent */
-extern void logger_persists(struct logger *logger);
+extern void logger_exit(struct logger *logger);
+extern void logger_restart(struct logger *logger );
 
-extern bat log_find_bat(struct logger* logger, char *name);
-
-extern void log_bat(struct logger* logger, BAT *b);
-extern void log_bat_persists(struct logger* logger, BAT *b, char *name );
-extern void log_bat_transient(struct logger* logger, BAT *b );
+extern void log_bat(struct logger* logger, oid lbid, BAT *b);
+extern oid log_bat_persists(struct logger* logger, BAT *b, char *n );
+extern void log_bat_transient(struct logger* logger, oid lbid );
 
 /* for now only one level of transactions is supported */
 /* later log_tstart/tend could be replaced by log_begin/log_commit/log_abort */
 extern void log_tstart(struct logger *logger);
 extern void log_tend(struct logger *logger);
-
 
 #endif /*_LOGGER_H_*/
 @c
@@ -162,65 +152,10 @@ typedef struct logger {
 	int 	debug;
 	int	id;
 	int	tid;
-	int	bid;
 	char*	dir;
 	stream*	log;
-	BAT*	bat_version;	/*	[ void, int ] 	*/
-	BAT*	bat_name; 	/*	[ void, str ] 	*/
-	BAT*	bat_bid;	/*	[ void, oid ] 	*/
-	/* Store oids to circumvent trouble with reference counting */
+	struct bm *bm;
 } logger;
-
-static oid logger_name2lbid(logger *logger, char *name)
-{
-	BAT *r_bat_name = BATmirror(logger->bat_name);
-	oid res = 0;
-	ptr p = BUNfnd(r_bat_name, name);
-	if (p)
-		res = *(oid*)BUNtail(r_bat_name, p);
-	return res;
-}
-
-static char *logger_lbid2name(logger *logger, oid lbid)
-{
-	return BUNtail(logger->bat_name, BUNfnd(logger->bat_name, &lbid));
-}
-
-static oid logger_bat2lbid(logger *logger, bat bid)
-{
-	BAT *r_bat_bid = BATmirror(logger->bat_bid);
-	oid res = 0;
-	ptr p = BUNfnd(r_bat_bid, &bid);
-	if (p)
-		res = *(oid*)BUNtail(r_bat_bid, p);
-	return res;
-}
-
-static bat logger_lbid2bat(logger *logger, oid lbid)
-{
-	return *(bat*)BUNtail(logger->bat_bid, BUNfnd(logger->bat_bid, &lbid));
-}
-
-static void logger_new_version(logger *logger, oid lbid )
-{
-	BUNreplace(logger->bat_version, (ptr)&lbid, (ptr)&logger->tid);
-}
-
-static void logger_add_bat(logger *logger, BAT *b, char *name)
-{
-	oid bid = b->batCacheid;
-	BUNins(logger->bat_version, &logger->bid, &logger->tid );
-	BUNins(logger->bat_name, &logger->bid, name );
-	BUNins(logger->bat_bid, &logger->bid, &bid);
-	logger->bid++;
-}
-
-static void logger_del_bat(logger *logger, oid lbid)
-{
-	BUNdelHead(logger->bat_version, &lbid);
-	BUNdelHead(logger->bat_name, &lbid);
-	BUNdelHead(logger->bat_bid, &lbid);
-}
 
 static int log_read_format( logger *l, logformat *data )
 {
@@ -255,9 +190,9 @@ static void log_write_string(logger *l, char *n)
 	l->log->write( l->log, n, 1, len);
 }
 
-void log_read_updates(logger *logger, logformat *l, char *name ){
-	oid lbid = logger_name2lbid(logger,name);
-	BAT *b = BATdescriptor(logger_lbid2bat(logger,lbid));
+static void log_read_updates(logger *logger, logformat *l, char *name ){
+	oid lbid = bm_find_bat(logger->bm,name);
+	BAT *b = bm_lbid2bat(logger->bm,lbid);
 
         if (logger->debug&1)
 		fprintf(stderr, "found log_read_updates %s %s %d\n", name, 
@@ -266,8 +201,8 @@ void log_read_updates(logger *logger, logformat *l, char *name ){
 
         if (b){
 		int cnt = BATcount(b);
-		void *(*rh)( void *a, stream *s) = BATatoms[b->htype].atomRead;
-		void *(*rt)( void *a, stream *s) = BATatoms[b->ttype].atomRead;
+		void *(*rh)(ptr, stream*, size_t) = BATatoms[b->htype].atomRead;
+		void *(*rt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomRead;
 		void *hv = ATOMnil(b->htype);
 		void *tv = ATOMnil(b->ttype);
 
@@ -277,35 +212,30 @@ void log_read_updates(logger *logger, logformat *l, char *name ){
 			cnt += b->tseqbase;
 
                 for(; l->nr>0; l->nr--){
-			void *h = rh( hv, logger->log);
-			void *t = rt( tv, logger->log);
-                        if (l->flag == LOG_INSERT)
-                                BUNins( b, h, t );
-                        else if (l->flag == LOG_DELETE)
-                                BUNdel( b, h, t );
+			void *h = rh( hv, logger->log, 1);
+			void *t = rt( tv, logger->log, 1);
+                       	if (l->flag == LOG_INSERT)
+                               	BUNins( b, h, t );
+                       	else if (l->flag == LOG_DELETE)
+                               	BUNdel( b, h, t );
 			cnt++;
 			if (h != hv) _DELETE(h);
 			if (t != tv) _DELETE(t);
                 }
 		_DELETE(hv);
 		_DELETE(tv);
-		logger_new_version(logger, lbid);
-		BATfakeCommit(b);
+		bm_new_version(logger->bm, lbid, logger->tid);
 	}
+	if (b) BBPunfix(b->batCacheid);
 }
 
-void log_read_destroy(logger *logger, logformat *l, char *name )
+static void log_read_destroy(logger *logger, logformat *l, char *name )
 {
-	oid lbid = logger_name2lbid(logger, name);
-	if (lbid){
-		bat bid = logger_lbid2bat(logger, lbid);
-		BBPtransient(bid, FALSE);
-		BBPunfix(bid);
-		logger_del_bat(logger, lbid);
-	}
+	oid lbid = bm_find_bat(logger->bm, name);
+	if (lbid) bm_del_bat(logger->bm, lbid);
 }
 
-void log_read_create(logger *logger, logformat *l, char *name )
+static void log_read_create(logger *logger, logformat *l, char *name )
 {
 	int len;
 	char *buf = log_read_string(logger);
@@ -344,18 +274,48 @@ void log_read_create(logger *logger, logformat *l, char *name )
 			BATseqbase(BATreverse(b),0);
 
 		if (!b){
-			fprintf(stderr, "could not create bat (%s,%s,%s,%d,%d)\n"
+			fprintf(stderr, 
+				"could not create bat (%s,%s,%s,%d,%d)\n"
 				,name,ha,ta,ht,tt);
 			return;
 		}
-		BBPpersistent(b->batCacheid, FALSE);
-		logger_add_bat(logger, b, name);
-		BATfakeCommit(b);
+		bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
+		BBPunfix(b->batCacheid);
 	}
 	if (buf) _DELETE(buf);
 }
 
-int readlog( logger *logger, char *filename ){
+static void logger_commit( logger *logger ) {
+	int *kills;
+
+	bm_commit(logger->bm, logger->tid);
+ 	kills = TMfakeCommit();
+	TMkill(kills);
+}
+
+static void logger_abort( logger *logger ) {
+	int *kills;
+
+	bm_abort(logger->bm, logger->tid);
+ 	kills = TMfakeCommit();
+	TMkill(kills);
+}
+
+static void logger_open(logger *logger){
+	char filename[BUFSIZ];
+
+	snprintf(filename, BUFSIZ, "%s%s.%d", logger->dir, LOGFILE, logger->id);
+	logger->log = open_wstream(filename);
+}
+
+static void logger_close(logger *logger){
+	stream *log = logger->log;
+
+	log->close(log);
+	log->destroy(log);
+}
+
+static int logger_readlog( logger *logger, char *filename ){
 	logformat l;
 
 	logger->log = open_rstream(filename);
@@ -380,10 +340,17 @@ int readlog( logger *logger, char *filename ){
 		}
 		switch(l.flag){
 		case LOG_START:
-			/* TODO if START not after end, do a rollback of
-			 * the just done bats (ie all bats with version == tid)
-			 */
+			if (logger->tid != 0)
+				logger_abort(logger);
+			logger->tid = l.nr;
+			break;
 		case LOG_END:
+			if (logger->tid == l.nr){
+				logger_commit(logger); 
+			} else {
+				logger_abort(logger);
+			}
+			logger->tid = 0;
 			break;
 		case LOG_INSERT:
 			log_read_updates(logger, &l, name);
@@ -403,8 +370,7 @@ int readlog( logger *logger, char *filename ){
 		}
 		if (name) _DELETE(name);
 	}
-	logger->log->close(logger->log);
-	logger->log->destroy(logger->log);
+	logger_close(logger);
 	return 0;
 }
 
@@ -412,12 +378,12 @@ int readlog( logger *logger, char *filename ){
 The log files are incrementally numbered. They are processed in the
 same sequence.
 @c
-int readlogs( logger *logger, FILE *fp, char *filename ){
+static int logger_readlogs( logger *logger, FILE *fp, char *filename ){
 	int res = 0;
 	char id[BUFSIZ];
 
         if (logger->debug&1)
-		fprintf(stderr, "readlogs %s\n", filename);
+		fprintf(stderr, "logger_readlogs %s\n", filename);
 
 	while(fgets(id, BUFSIZ, fp) != NULL){
 		char buf[BUFSIZ];
@@ -425,35 +391,45 @@ int readlogs( logger *logger, FILE *fp, char *filename ){
 		logger->id = strtol(id,NULL,10);
 		snprintf(buf, BUFSIZ, "%s.%d", filename, logger->id );
 
-		if ((res = readlog(logger, buf)) != 0){
+		if ((res = logger_readlog(logger, buf)) != 0){
 			break;
 		}
 	}
 	return res;
 }
 
-logger *logger_create(int debug, char *dirname){
+static void logger_save( logger *logger, FILE *fp ){
+        if (logger->debug&1)
+		fprintf(stderr, "logger_save\n" );
+
+	bm_save(logger->bm, fp);
+}
+
+static void logger_load( logger *logger, FILE *fp ){
+        if (logger->debug&1)
+		fprintf(stderr, "logger_load\n" );
+
+	bm_load(logger->bm, fp);
+}
+
+logger *logger_new(int debug, char *dirname, struct bm *bm){
 	logger *logger = NEW(struct logger);
 	FILE *fp;
 	char filename[BUFSIZ];
 
 	logger->debug = debug;
 	logger->id = 1;
-	logger->tid = 1;
-	logger->bid = 1;
-	logger->dir = _strdup(dirname);
+	logger->tid = 0;
+	snprintf(filename, BUFSIZ, "%s%c", dirname, DIR_SEP );
+	logger->dir = _strdup(filename);
 	logger->log = NULL;
-	logger->bat_version = BATnew(TYPE_oid,TYPE_int,BUFSIZ); 
-		BBPfix(logger->bat_version->batCacheid);
-	logger->bat_name = BATnew(TYPE_oid,TYPE_str,BUFSIZ); 
-		BBPfix(logger->bat_name->batCacheid);
-	logger->bat_bid = BATnew(TYPE_oid,TYPE_oid,BUFSIZ); 
-		BBPfix(logger->bat_bid->batCacheid);
+	logger->bm = bm;
 
-	snprintf(filename, BUFSIZ, "%s%c%s", logger->dir, DIR_SEP, LOGFILE);
+	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
 
 	if ( (fp = fopen(filename, "r+")) != NULL){
-		readlogs(logger, fp, filename);
+		logger_load(logger, fp);
+		logger_readlogs(logger, fp, filename);
 	} else if ( (fp = fopen(filename, "w")) == NULL){
 		fprintf(stderr, "could not create file %s\n", filename);
 		exit(1);
@@ -461,70 +437,51 @@ logger *logger_create(int debug, char *dirname){
 	logger->id++;
 	fprintf(fp, "%d\n", logger->id);
 	fclose(fp);
+	logger->tid = bm_version(logger->bm);
+	return logger;
+}
 
-	snprintf(filename, BUFSIZ, "%s%c%s.%d", logger->dir, DIR_SEP, LOGFILE, logger->id);
-	logger->log = open_wstream(filename);
+logger *logger_create(int debug, char *dirname, struct bm *bm ){
+	logger *logger =  logger_new(debug, dirname, bm);
+	logger_open(logger);
 	return logger;
 }
 
 void logger_destroy(logger *logger)
 {
-	stream *log = logger->log;
 	_DELETE(logger->dir);
-	log->close(log);
-	log->destroy(log);
-
-	BBPunfix(logger->bat_version->batCacheid);
-	BBPunfix(logger->bat_name->batCacheid);
-	BBPunfix(logger->bat_bid->batCacheid);
+	logger_close(logger);
+	_DELETE(logger);
 }
 
-void logger_persists(logger *logger)
-{
-	int i, cnt = BATcount(logger->bat_version);
-
-	for(i = 1; i<=cnt; i++){
-		str name = BUNtail(logger->bat_name,BUNfnd(logger->bat_name,&i));
-		bat bid = *(oid*)BUNtail(logger->bat_bid,BUNfnd(logger->bat_bid,&i));
-		BATrename(BATdescriptor(bid), name);
-		BBPpersistent(bid,TRUE);
-	}
-}
-
-void logger_restart(logger *logger)
-{
-	stream *log = logger->log;
+void logger_exit(logger *logger) {
 	FILE *fp;
 	char filename[BUFSIZ];
 
-	log->close(log);
-	log->destroy(log);
-
-	snprintf(filename, BUFSIZ, "%s%c%s", logger->dir, DIR_SEP, LOGFILE);
-
-	if ( (fp = fopen(filename, "r+")) != NULL){
+	GDKmove( logger->dir, LOGFILE, NULL, logger->dir, LOGFILE, "bak" ); 
+	
+	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
+	if ( (fp = fopen(filename, "w")) != NULL){
+		logger_save(logger, fp);
+		fprintf(fp, "\n" );
 		logger->id++;
 		fprintf(fp, "%d\n", logger->id);
 		fclose(fp);
-	}
-	logger->log = open_wstream(filename);
+		TMcommit();
 
+		GDKunlink( logger->dir, LOGFILE, "bak" );
+
+		bm_cleanup(logger->bm);
+		TMcommit();
+	} else {
+		fprintf(stderr, "could not open %s\n", filename );
+	}
 }
 
-void logger_remove_files( int start, int end )
-{
-	int i;
-	/* open LOGFILE.NEW (writing)
-	 * open LOGFILE	(reading)
-	 * output all lines with nr >= end.
-	 * close LOGFILE.NEW
-	 * move LOGFILE LOGFILE.BAK
-	 * move LOGFILE.NEW LOGFILE
-	 * remove LOGFILE.BAK
-	 */
-	for (i = start; i<end; i++){
-		/* remove log i; */
-	}
+void logger_restart(logger *logger) {
+	logger_close(logger);
+	logger_exit(logger);
+	logger_open(logger);
 }
 
 @-
@@ -532,14 +489,15 @@ Changes made to the BAT descriptor should be stored in the log files.
 Actually, we need to save the descriptor file, perhaps we should simply
 introduce a versioning scheme. 
 @c
-void log_bat_persists(logger *logger, BAT *b, char *name ){
+oid log_bat_persists(logger *logger, BAT *b, char *name )
+{
 	char *ha, *ta;
 	int len;
 	char buf[BUFSIZ];
 	logformat l;
 	int havevoid = 0;
 
-	logger_add_bat(logger, b, name);
+	oid lbid = bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
 	l.flag = LOG_CREATE;
 	l.nr = 0;
 	log_write_format( logger, &l );
@@ -561,15 +519,13 @@ void log_bat_persists(logger *logger, BAT *b, char *name ){
         if (logger->debug&1)
 		fprintf(stderr, "new bat %s htype %d ttype %d\n", name,
 			b->htype, b->ttype );
-	log_bat(logger, b);
+	log_bat(logger, lbid, b);
+	return lbid;
 }
 
-void log_bat_transient(logger *logger, BAT *b ){
-	oid lbid = logger_bat2lbid(logger, b->batCacheid);
-	char *name = logger_lbid2name(logger, lbid);
-	int len;
-	char buf[BUFSIZ];
+void log_bat_transient(logger *logger, oid lbid ){
 	logformat l;
+	char *name = bm_lbid2name(logger->bm, lbid);
 
 	l.flag = LOG_DESTROY;
 	l.nr = 0;
@@ -577,23 +533,20 @@ void log_bat_transient(logger *logger, BAT *b ){
 	log_write_string(logger, name);
 	
         if (logger->debug&1)
-		fprintf(stderr, "destroyed bat %s htype %d ttype %d\n", name,
-			b->htype, b->ttype );
-	BATfakeCommit(b);
-	logger_del_bat(logger, lbid);
+		fprintf(stderr, "destroyed bat %s\n", name);
+	bm_del_bat(logger->bm, lbid);
 }
 
-void log_bat(logger *logger, BAT *b ){
-	oid lbid = logger_bat2lbid(logger, b->batCacheid);
-	char *name = logger_lbid2name(logger, lbid);
+void log_bat(logger *logger, oid lbid, BAT *b ){
+	char *name = bm_lbid2name(logger->bm, lbid);
 	logformat l;
 	int 	status;
 	BUN	p; 
 
 	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
 	if (l.nr){
-		void (*wh)( ptr a, stream *s) = BATatoms[b->htype].atomWrite;
-		void (*wt)( ptr a, stream *s) = BATatoms[b->ttype].atomWrite;
+		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
+		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
 	    	l.flag = LOG_INSERT;
 		log_write_format( logger, &l );
 		log_write_string(logger, name);
@@ -601,8 +554,8 @@ void log_bat(logger *logger, BAT *b ){
 			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
-			wh( h, logger->log);
-			wt( t, logger->log);
+			wh( h, logger->log,1);
+			wt( t, logger->log,1);
 	    	}
 
 		if (logger->debug)
@@ -610,8 +563,8 @@ void log_bat(logger *logger, BAT *b ){
 	}
 	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
 	if (l.nr){
-		void (*wh)( ptr a, stream *s) = BATatoms[b->htype].atomWrite;
-		void (*wt)( ptr a, stream *s) = BATatoms[b->ttype].atomWrite;
+		void (*wh)(ptr, stream*, size_t) = BATatoms[b->htype].atomWrite;
+		void (*wt)(ptr, stream*, size_t) = BATatoms[b->ttype].atomWrite;
 	    	l.flag = LOG_DELETE;
 		log_write_format( logger, &l);
 		log_write_string(logger, name);
@@ -619,33 +572,26 @@ void log_bat(logger *logger, BAT *b ){
 			int s1,s2;
 			ptr h = BUNhead(b,p);
 			ptr t = BUNtail(b,p);
-			wh( h, logger->log);
-			wt( t, logger->log);
+			wh( h, logger->log,1);
+			wt( t, logger->log,1);
 	    	}
 
 	    	if (logger->debug)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr );
 	}
-	BATfakeCommit(b);
-	logger_new_version(logger, lbid);
-}
-
-static void logger_commit(){
-	int *kills = TMfakeCommit();
-	TMkill(kills);
+	bm_new_version(logger->bm, lbid, logger->tid);
 }
 
 void log_tstart( logger *logger )
 {
 	logformat l;
-	/* need to change to writing/reading blocks as it may not use
-	 * su much memory that the commit fails */
+
+	l.flag = LOG_START;
+	l.nr = ++logger->tid;
 
 	if (logger->debug)
 		fprintf(stderr, "log_tstart %d\n", logger->tid );
 
-	l.flag = LOG_START;
-	l.nr = ++logger->tid;
 	log_write_format( logger, &l );
 }
 
@@ -653,23 +599,14 @@ void log_tend(logger *logger )
 {
 	logformat l;
 
-	logger_commit();
+	logger_commit(logger);
 
 	if (logger->debug)
-		fprintf(stderr, "log_tend\n" );
+		fprintf(stderr, "log_tend %d\n", logger->tid );
 
 	l.flag = LOG_END;
 	l.nr = logger->tid;
 	log_write_format( logger, &l );
 
 	logger->log->flush( logger->log );
-}
-
-bat log_find_bat(logger* logger, char *name)
-{
-	oid lbid = logger_name2lbid(logger, name);
-	if (lbid){
-		return logger_lbid2bat(logger, lbid); 
-	}
-	return 0;
 }

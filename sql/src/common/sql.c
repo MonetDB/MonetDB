@@ -783,8 +783,9 @@ static stmt *sql_unop(context * sql, scope * scp, symbol * se, group * grp, stmt
 	if (f) {
 		return stmt_unop(rs, f);
 	} else {
+		char *type = tail_type(rs)->type->sqlname;
 		stmt_destroy(rs);
-		return sql_error(sql, 02, "Unary operator: %s(%s) unknown", l->data.sval, tail_type(rs)->type->sqlname);
+		return sql_error(sql, 02, "Unary operator: %s(%s) unknown", l->data.sval, type);
 	}
 	return NULL;
 }

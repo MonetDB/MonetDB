@@ -112,7 +112,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_order_by_clause
 	default
 	default_value
-	function_ref
+	aggr_ref
+	func_ref
 	datetime_funcs
 	string_funcs
 	scalar_exp
@@ -234,7 +235,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 -*/
 
 %token <sval> 
-	IDENT TYPE STRING /*-AMMSC-*/ INT INTNUM APPROXNUM USER USING
+	IDENT TYPE STRING AGGR INT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CAST
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR PARTIAL SIMPLE ACTION CASCADE RESTRICT
@@ -286,7 +287,7 @@ SQLCODE SQLERROR
 UNDER WHENEVER 
 */
 %token TEMPORARY 
-%token<sval> AMMSC AS ASC DESC AUTHORIZATION 
+%token<sval> AS ASC DESC AUTHORIZATION 
 %token CHECK CONSTRAINT CREATE 
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
@@ -1429,13 +1430,34 @@ scalar_exp:
 value_exp:
     atom
  |  column_ref 			{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
- |  function_ref 
+ |  aggr_ref 
+ |  func_ref 
  |  datetime_funcs
  |  string_funcs
  |  case_exp	
  |  cast_exp
  ;
 
+func_ref:
+    IDENT '(' scalar_exp ')'
+	{ dlist *l = dlist_create();
+  	  dlist_append_string(l, _strdup($1));
+  	  dlist_append_symbol(l, $3);
+	  $$ = _symbol_create_list( SQL_UNOP, l ); }
+|   IDENT '(' scalar_exp ',' scalar_exp ')'
+	{ dlist *l = dlist_create();
+  	  dlist_append_string(l, _strdup($1));
+  	  dlist_append_symbol(l, $3);
+  	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_BINOP, l ); }
+|   IDENT '(' scalar_exp ',' scalar_exp ',' scalar_exp ')'
+	{ dlist *l = dlist_create();
+  	  dlist_append_string(l, _strdup($1));
+  	  dlist_append_symbol(l, $3);
+  	  dlist_append_symbol(l, $5);
+  	  dlist_append_symbol(l, $7);
+	  $$ = _symbol_create_list( SQL_TRIOP, l ); }
+ ;
 
 datetime_funcs:
     EXTRACT '(' datetime_field FROM scalar_exp ')' 
@@ -1498,27 +1520,28 @@ atom:
 		   $$ = _newAtomNode( atom_string(&t, $1)); }
  ;
 
+
 /* change to set function */
-function_ref:
-    AMMSC '(' '*' ')' 	
+aggr_ref:
+    AGGR '(' '*' ')' 	
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AMMSC '(' DISTINCT column_ref ')' 
+ |  AGGR '(' DISTINCT column_ref ')' 
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, TRUE);
   		  dlist_append_symbol(l, _symbol_create_list(SQL_COLUMN, $4));
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AMMSC '(' ALL scalar_exp ')'
+ |  AGGR '(' ALL scalar_exp ')'
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  AMMSC '(' scalar_exp ')' 
+ |  AGGR '(' scalar_exp ')' 
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
   		  dlist_append_int(l, FALSE);

@@ -7,6 +7,7 @@
 #include "sqlexecute.h"
 #include "sqlscan.h"
 #include "symbol.h"
+#include "optimize.h"
 #include <string.h>
 #include <stream.h>
 #include <statement.h>
@@ -69,6 +70,8 @@ stmt *sqlnext(context * lc, stream * in, int *err)
 
 	if (lc->cur != EOF && !(*err = sqlparse(lc))) {
 		res = semantic(lc, lc->sym);
+		if (res)
+			res = optimize(lc, res);
 		if (!res && lc->status){
 			*err = 1;
 		}
@@ -92,6 +95,8 @@ stmt *sqlexecute(context * lc, char *buf)
 
 	if (!sqlparse(lc)) {
 		res = semantic(lc, lc->sym);
+		if (res)
+			res = optimize(lc, res);
 	} else {
 		fprintf(stderr, "%s\n", lc->errstr);
 	}

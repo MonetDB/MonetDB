@@ -27,22 +27,24 @@
 #include "statement.h"
 
 
-static void atom_dump( atom *a, stream *s){
+static void atom_dump( atom *a, context *sql){
+	stream *s = sql->out;
 	int i = 0;
 	char buf[BUFSIZ];
 
 	switch (a->type){
-	case int_value: i=snprintf(buf, BUFSIZ, "%d", a->data.ival); 
-			s->write(s, buf, 1, i);
+	case int_value: 
+			i=snprintf(buf, BUFSIZ, "%d", a->data.ival); 
 			break;
 	case string_value: 
-			s->write(s, "\"", 1, 1);
-			s->write(s, a->data.sval, 1, strlen(a->data.sval));
-			s->write(s, "\"", 1, 1);
+			buf[0] = '"';
+			i=snprintf(buf+1, BUFSIZ-2, "%s", a->data.sval); 
+			i++;
+			buf[i] = '"';
+			i++;
 			break;
 	case float_value: 
 			i=snprintf(buf, BUFSIZ, "%f", a->data.dval); 
-			s->write(s, buf, 1, i);
 			break;
 	case general_value:
 			if (a->data.sval)
@@ -51,11 +53,14 @@ static void atom_dump( atom *a, stream *s){
 			else 
 			  i=snprintf(buf, BUFSIZ, "%s(nil)", 
 				a->tpe.type->name );
-			s->write(s, buf, 1, i);
 			break;
 	default:
 			break;
 	}
+	s->write(s, buf, 1, i);
+
+	if (sql->debug&8)
+		fwrite( buf, 1, i, stderr);
 }
 
 static void write_head( context *sql, int nr )
@@ -686,7 +691,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		while(n){
 			len = snprintf( buf, BUFSIZ, "s%dv := ", -s->nr);
 			write_part(sql,buf,len);
-			atom_dump(n->data, sql->out);
+			atom_dump(n->data, sql);
 			len = snprintf( buf, BUFSIZ, 
 				";\ns%db.insert(s%dv, oid(%d));\n", 
 					-s->nr, -s->nr, r++);
@@ -702,7 +707,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		write_head(sql,-s->nr);
 		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
 		write_part(sql,buf,len);
-		atom_dump(s->op1.aval, sql->out);
+		atom_dump(s->op1.aval, sql);
 		len = snprintf( buf, BUFSIZ, ";\n");
 		write_part(sql,buf,len);
 		write_tail(sql,-s->nr);

@@ -80,11 +80,11 @@ void init_keywords()
 	keywords_insert("ALTER", ALTER);
 	keywords_insert("ADD", ADD);
 	keywords_insert("AND", AND);
-	keywords_insert("AVG", AMMSC);
-	keywords_insert("MIN", AMMSC);
-	keywords_insert("MAX", AMMSC);
-	keywords_insert("SUM", AMMSC);
-	keywords_insert("COUNT", AMMSC);
+	keywords_insert("AVG", AGGR);
+	keywords_insert("MIN", AGGR);
+	keywords_insert("MAX", AGGR);
+	keywords_insert("SUM", AGGR);
+	keywords_insert("COUNT", AGGR);
 	keywords_insert("ANY", ANY);
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);
@@ -711,8 +711,8 @@ int sqllex(YYSTYPE * yylval, void *parm)
 			}
 		} else {
 			if (token == IDENT || token == COMPARISON ||
-			    token == STRING || token == AMMSC
-			    || token == TYPE)
+			    token == STRING || token == AGGR || 
+			    token == TYPE)
 				yylval->sval = _strdup(lc->yytext);
 
 			if (token == STRING)
