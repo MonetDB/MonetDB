@@ -76,7 +76,7 @@ variable	& : & identifier propQualifier \\
 expr    	&: & fcncall | [factor  operator] factor \\
 factor  	&: & constant | var \\
 
-constant	& : & {\sc literal_constant} | {\sc nil}\\
+constant	& : & {\sc literal\_constant} | {\sc nil}\\
 \end{tabular}
 
 @-

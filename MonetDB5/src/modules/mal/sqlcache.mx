@@ -29,7 +29,7 @@ function qry001(A1:int):int
 comment "select * from t where a> ?";
    ... mal ...
 end qry001;
-\end{ verbatim}
+\end{verbatim}
 
 Unlike the other modules, it is permissible to
 remove elements from this cache at runtime.
