@@ -176,8 +176,10 @@ if [ "${LINK}" = "d"   ] ; then
 	conf_opts="${conf_opts} --disable-shared --enable-static"
 fi
 # "standard" local paths
-binpath="/usr/local/bin:${binpath}"
-libpath="/usr/local/lib:${libpath}"
+if [ -d /usr/local ] ; then
+	binpath="/usr/local/bin:${binpath}"
+	libpath="/usr/local/lib:${libpath}"
+fi
 # "our" /soft[64] path
 soft32=/soft/local
 soft64=/soft64/local
@@ -191,7 +193,7 @@ fi
 
 if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv" ] ; then
-		if [ "${what}" = "MONET" ] ; then
+		if [ -d "${softpath}"  -a  "${what}" = "MONET" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 			conf_opts="${conf_opts} --with-pcl=${softpath}"
 		fi
@@ -214,11 +216,14 @@ fi
 
 if [ "${os}" = "Darwin" ] ; then
 	# "our" autoconf on sap & monet
-	for d in "/sw/bin" "/usr/bin" "/usr/local/bin" "/Users/monet/soft/local/bin" "/Users/manegold/soft/local/bin" ; do
+	mypath=""
+	for d in "/Users/manegold/soft/local/bin" "/Users/monet/soft/local/bin" "/usr/local/bin" "/usr/bin" "/sw/bin" ; do
 		if [ -d ${d} ] ; then
-			binpath="${d}:${binpath}"
+			mypath="${mypath}${d}:"
 		fi
 	done
+	binpath="${mypath}:${binpath}"
+	unset mypath
 fi
 
 if [ "${os}" = "SunOS" ] ; then
@@ -235,11 +240,13 @@ if [ "${os}" = "SunOS" ] ; then
 		# GNU ar in /usr/local/bin doesn't support 64bit
 		AR='/usr/ccs/bin/ar' ; export AR
 		AR_FLAGS='-r -cu' ; export AR_FLAGS
-		# libraries compiled with gcc may need the gcc libs, so
-		# at them to the LD_LIBRARY_PATH 
-		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
-		# some tools are not in ${soft64} on apps
-		binpath="${soft32}/bin:${binpath}"
+		if [ -d "${soft32}" ] ; then
+			# libraries compiled with gcc may need the gcc libs, so
+			# at them to the LD_LIBRARY_PATH 
+			libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
+			# some tools are not in ${soft64} on apps
+			binpath="${soft32}/bin:${binpath}"
+		fi
 	fi
 	if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
 		# propper/extended LD_LIBRARY_PATH for native 32bit shared libs on SunOS
@@ -254,23 +261,31 @@ fi
 if [ "${os}" = "IRIX64" ] ; then
 	# propper/extended paths on medusa
 	binpath="/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/java/bin:${binpath}"
-	if [ "${BITS}" = "64" ] ; then
+	if [ -d "${soft32}"  -a  "${BITS}" = "64" ] ; then
 		# some tools are not in ${soft64} on medusa
 		binpath="${soft32}/bin:${binpath}"
 	fi
-	if [ "${COMP}${BITS}" = "GNU64" ] ; then
+	if [ -d "${soft32}"  -a  "${COMP}${BITS}" = "GNU64" ] ; then
 		# our gcc/g++ on medusa is in ${soft32} (also for 64 bit)
 		libpath="${soft32}/lib/mabi=64:${libpath}"
 	fi
 fi
 
+if [ "${os}" = "AIX" ] ; then
+	# paths on beluga
+	mypath=""
+	for d in "/usr/local/bin" "/usr/local/tgcc-2.95.3/bin" "/usr/vac/bin" "/usr/vacpp/bin" "/opt/freeware/bin" "/usr/java131/jre/bin" "/usr/java131/bin" "/usr/ccs/bin" "/usr/ucb" "/usr/bin" "/usr/dt/bin" "/usr/bin/X11" "/usr/lpp/X11/bin" ; do
+		if [ -d ${d} ] ; then
+			mypath="${mypath}${d}:"
+		fi
+	done
+	binpath="${mypath}:${binpath}"
+	unset mypath
+	# required to make mmap() work on AIX !
+	export XPG_SUS_ENV=ON
+fi
+
 ## gathered from old scripts, but not used anymore/yet
-#if [ "${os}" = "AIX" ] ; then
-#	# rs6000.ddi.nl
-#	# gcc/g++ only?
-#	cc="${cc} -mthreads"
-#	cxx="${cxx} -mthreads"
-#fi
 #if [ "${os}" = "CYGWIN32_NT" ] ; then
 #	# yalite.ddi.nl
 #	# gcc/g++ only!
@@ -288,26 +303,28 @@ fi
 
 if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; then
 	# on Linux, CYGWIN, & Darwin, /soft/local is identical with /usr/local
-	# prepend ${softpath} to ${binpath} & ${libpath}
-	binpath="${softpath}/bin:${binpath}"
-	libpath="${softpath}/lib:${libpath}"
-	# "our" libs/tools in ${softpath}
-	conf_opts="${conf_opts} --with-readline=${softpath}"
-	conf_opts="${conf_opts} --with-z=${softpath}"
-	conf_opts="${conf_opts} --with-bz2=${softpath}"
-	case ${what} in
-	ACOI)
-		conf_opts="${conf_opts} --with-getopt=${softpath}"
-		conf_opts="${conf_opts} --with-tcl=${softpath}"
-		;;
-	SQL)
-		conf_opts="${conf_opts} --with-odbc=${softpath}"
-		;;
-	XML)
-		conf_opts="${conf_opts} --with-expat=${softpath}"
-		conf_opts="${conf_opts} --with-pcre=${softpath}"
-		;;
-	esac
+	if [ -d "${softpath}" ] ; then
+		# prepend ${softpath} to ${binpath} & ${libpath}
+		binpath="${softpath}/bin:${binpath}"
+		libpath="${softpath}/lib:${libpath}"
+		# "our" libs/tools in ${softpath}
+		conf_opts="${conf_opts} --with-readline=${softpath}"
+		conf_opts="${conf_opts} --with-z=${softpath}"
+		conf_opts="${conf_opts} --with-bz2=${softpath}"
+		case ${what} in
+		ACOI)
+			conf_opts="${conf_opts} --with-getopt=${softpath}"
+			conf_opts="${conf_opts} --with-tcl=${softpath}"
+			;;
+		SQL)
+			conf_opts="${conf_opts} --with-odbc=${softpath}"
+			;;
+		XML)
+			conf_opts="${conf_opts} --with-expat=${softpath}"
+			conf_opts="${conf_opts} --with-pcre=${softpath}"
+			;;
+		esac
+	fi
 fi
 
 # CWI specific additional package settings
