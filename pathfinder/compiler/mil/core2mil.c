@@ -1609,7 +1609,7 @@ mty2ty (PFmty_simpl_t mty_ty)
     PFoops (OOPS_FATAL, "enum value %i not handled in switch", mty_ty);
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
-    return 0;
+    return PFty_none ();
 }
 
 /**
