@@ -134,7 +134,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_like: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.like(s%d);\n", *nr, l, r ); 
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.likeselect(s%d);\n", *nr, l, r ); 
 		s->nr = (*nr)++;
 	} break;
 	case st_semijoin: {
