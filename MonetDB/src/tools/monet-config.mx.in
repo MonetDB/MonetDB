@@ -2,12 +2,25 @@
 @sh
 #!@BASH@
 
+pkg=@PACKAGE@
 source=@MONET_SOURCE@
 build=@MONET_BUILD@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-includedir=@includedir@
+
+bindir=@bindir@
+libexecdir=@libexecdir@
+datadir=@datadir@
+sysconfdir=@sysconfdir@
+localstatedir=@localstatedir@
 libdir=@libdir@
+infodir=@infodir@
+mandir=@mandir@
+includedir=@includedir@
+
+pkglibdir=${libdir}/${pkg}
+pkgdatadir=${datadir}/${pkg}
+pkgincludedir=${includedir}/${pkg}
 
 usage()
 {
@@ -24,6 +37,11 @@ Known values for OPTION are:
   --modpath             print default Monet module directory
   --help		display this help and exit
   --version		output version information
+
+Install directories ${pkg} was configured to
+  --prefix  --exec-prefix  --bindir  --libexecdir  --datadir
+  --sysconfdir  --localstatedir  --libdir  --infodir
+  --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
 
 EOF
 
@@ -64,6 +82,14 @@ while test $# -gt 0; do
 	echo @VERSION@
 	exit 0
 	;;
+
+    --*dir)
+        dirname=\$`echo $1 | sed -e 's,^--,,'`
+        dirname=`eval echo $dirname`
+        test -z "$dirname" && exit 1
+        echo $dirname
+        exit 0
+        ;;
 
     --help)
 	usage 0

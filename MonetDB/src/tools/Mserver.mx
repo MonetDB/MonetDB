@@ -207,7 +207,7 @@ static Client Monet_init( opt *set, int setlen )
 }
 
 @C
-int main(int ac, char **av)
+int main(int argc, char **av)
 {
 	Client c;
 	char buf[BUFSIZ], *prog = *av, *config = NULL;
@@ -269,7 +269,7 @@ A grain size of 128 bytes is used to keep overhead low.
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "c:d?s:", 
+		int c = getopt_long( argc, av, "c:d?s:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -332,9 +332,9 @@ A grain size of 128 bytes is used to keep overhead low.
 	}
 
 	i = 0;
-	monet_script = (str*)GDKmalloc( sizeof(str) * (ac-optind+1) );
+	monet_script = (str*)GDKmalloc( sizeof(str) * (argc-optind+1) );
 	monet_script[i] = NULL;
-	while(optind < ac){
+	while(optind < argc){
 		monet_listing = 1;
 		monet_script[i] = absolute_path(av[optind]);
 		monet_script[i+1] = NULL;
