@@ -29,7 +29,7 @@
 @T
 This module contains all commands that are of use when managing Binary 
 Association Tables (BATs). The relational operations you can execute
-on BATs have the form of a @[<a href="../algebra/index.html">neat algebra</a>@. 
+on BATs have the form of a @[<a href="algebra.html">neat algebra</a>@. 
 
 But a database system needs more that just this algebra, since often it
 is crucial to do table-updates (this would not be permitted in a strict 
@@ -163,7 +163,7 @@ have the first character of their named replaced by 't' ({\tt sorted}, {\tt tden
 [ "hindex",          "absent"     ] # name of built-in accelerator: hash or index (T-tree) 
 \end{verbatim}
 
-As described in the @[<a href="../../Services/gdk/index.html#mod_1_3_0">GDK Technical Reference</a>@,
+As described in the @[<a href="../gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
 BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
 is present always. For each column type that is {\em variable-sized} - like {\tt str} - another 
 heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search 
@@ -210,11 +210,11 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
  It contains all properties of the BAT record. See the BAT documentation in
  GDK for more information."
  
-.COMMAND head ( int bid ) : str = CMDhead;
-"Returns the type of the head column of a BAT, as a string."
+.COMMAND htype ( int bid ) : int = CMDhtype;
+"Returns the type of the head column of a BAT, as an integer type number."
  
-.COMMAND tail ( int bid ) : str = CMDtail;
-"Returns the type of the tail column of a BAT, as a string."
+.COMMAND ttype ( int bid ) : int = CMDttype;
+"Returns the type of the tail column of a BAT, as an integer type number."
 
 .COMMAND key( BAT[any::1,any::2] b, bit mode) 
 				: BAT[any::1,any::2] = CMDsetkey;
@@ -381,7 +381,7 @@ A final file present for each t in the BAT directory is:
 \end{description}
 @
 For more technical information on BATs, we refer to the 
-@[<a href="../../Services/gdk/index.html">GDK</a>@
+@[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
 documentation.
 @m
 .COMMAND mmap(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode, 
@@ -425,7 +425,7 @@ a list of all currently known accelarator types.
 \end{verbatim}
 @
 More info on how to write new search accelerators can be found in the
-@[<a href="../../Services/mel/index.html">MEL documentation</a>@.
+@[<a href="../../mel.html">MEL documentation</a>@.
 @m
 .COMMAND accbuild(BAT[any,any] b, int acctype) = CMDaccbuild_std;
 "Build an accelerator on the head column of b. The builtin accelerator
@@ -521,19 +521,11 @@ these 'sync' OIDs with their own propagation rules.
     PROC hot(bat[any::1,any::2] b) : void
 	hot(b.bbpname);
 
-    PROC head(bat[any,any] b) : str
-	return head(int(b));
+    PROC htype(bat[any,any] b) : int 
+	return htype(int(b));
 
-    PROC tail(bat[any,any] b) : str 
-	return tail(int(b));
-
-    PROC ttype(any b) : int := 
-         return monet_atomtbl.find(b.tail);
-#    ADDHELP("ttype","boncz","Apr 07 2004","Get tail-type as an integer","bat");
-
-    PROC htype(any b) : int := 
-         return monet_atomtbl.find(b.head);
-#    ADDHELP("htype","boncz","Apr 07 2004","Get head-type as an integer","bat");
+    PROC ttype(bat[any,any] b) : int 
+	return ttype(int(b));
 
     PROC new(int ht, int tt) : bat[any,any]
 	return bat(ht,tt);
@@ -591,91 +583,79 @@ int CMDmirror(BAT **ret, BAT *b){
 }
 
 int CMDconvert(BAT **ret, BAT *b){
-	if (BATconvert(*ret = b,CONV_HTON) == NULL)
+	BATconvert(*ret = b,CONV_HTON);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDrevert(BAT **ret, BAT *b){
-	if (BATrevert(*ret = b) == NULL)
-		return GDK_FAIL;
+	BATrevert(*ret = b);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDorder(BAT **ret, BAT *b){
-	if (BATorder(*ret = b) == NULL)
-		return GDK_FAIL;
+	BATorder(*ret = b);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDorder_rev(BAT **ret, BAT *b){
-	if (BATorder_rev(*ret = b) == NULL)
-		return GDK_FAIL;
+	BATorder_rev(*ret = b);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	if (BUNins(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
-		return GDK_FAIL;
+	BUNins(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDinsert_bat(BAT **r, BAT *b, BAT *s){
-	if (BATins(*r=b,s) == NULL)
-		return GDK_FAIL;
+	BATins(*r=b,s);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	if (BUNreplace(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
-		return GDK_FAIL;
+	BUNreplace(*r=b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDreplace_bat(BAT **r, BAT *b, BAT *s){
-	if (BATreplace(*r=b,s) == NULL)
-		return GDK_FAIL;
+	BATreplace(*r=b,s);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t) {
-	if (BUNdel(*r=b,h,t) == NULL)
-		return GDK_FAIL;
+	BUNdel(*r=b,h,t);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_head(BAT **r, BAT *b, ptr h) {
-	if (BUNdelHead(*r=b, @:batconvert(b,h)@) == NULL)
-		return GDK_FAIL;
+	BUNdelHead(*r=b, @:batconvert(b,h)@);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_all(BAT **r, BAT *b) {
-	if (BATclear(*r=b) == NULL) 
-		return GDK_FAIL;
+	BATclear(*r=b);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s){
-	if (BATdel(*r=b,s) == NULL)
-		return GDK_FAIL;
+	BATdel(*r=b,s);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
 
 int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
-	if (BATdelHead(*r=b,s) == NULL)
-		return GDK_FAIL;
+	BATdelHead(*r=b,s);
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
@@ -720,32 +700,28 @@ int CMDcapacity(lng *res, int *bid) {
 	return GDK_SUCCEED;
 }
 
-int CMDhead(str *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDhead")) {
-		str ret = str_nil;
+int CMDhtype(int *res, int *bid) {
+	if (BBPcheck((bat) *bid, "CMDhtype")) {
 		BAT *b = lock_desc((bat) *bid);
-		if (b) {
-			ret = *bid > 0 ? b->hatom : b->tatom;
+		if (b == NULL) {
+			*res = TYPE_void;
+		} else {
+			*res = *bid > 0 ? BAThtype(b) : BATttype(b);
 		}
-		*res = GDKstrdup(ret);
 		unlock_desc(*bid);
-	} else {
-		*res = GDKstrdup(str_nil);
 	}
 	return GDK_SUCCEED;
 }
 
-int CMDtail(str *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDtail")) {
-		str ret = str_nil;
+int CMDttype(int *res, int *bid) {
+	if (BBPcheck((bat) *bid, "CMDttype")) {
 		BAT *b = lock_desc((bat) *bid);
-		if (b) {
-			ret = *bid > 0 ? b->tatom : b->hatom;
+		if (b == NULL) {
+			*res = TYPE_void;
+		} else {
+			*res = *bid > 0 ? BATttype(b) : BAThtype(b);
 		}
-		*res = GDKstrdup(ret);
 		unlock_desc(*bid);
-	} else {
-		*res = GDKstrdup(str_nil);
 	}
 	return GDK_SUCCEED;
 }
@@ -1215,9 +1191,7 @@ int CMDhashloop(BAT* b, ptr *handle, ptr v){
 	hash_t idx;
 	int i;
 
-	if (BATprepareHash(b)) 
-		return GDK_FAIL; 
-
+	if (!BATprepareHash(b)) 
 	switch(ATOMstorage(BAThtype(b))) {
 	case TYPE_chr:	@:hashiter(_chr)@
 	case TYPE_sht:	@:hashiter(_sht)@

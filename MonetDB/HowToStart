@@ -2,9 +2,6 @@ This document helps you to install the MonetDB source and compile it.
 Once succeeded, refer to doc/monet.html for the user documentation 
 generated as part of the process.
 
-In case you prefer to install a pre-compiled binary distribution, please
-check-out http://sourceforge.net/project/showfiles.php?group_id=56967 .
-
 This document assumes that you are planning to compile and install
 MonetDB on a Unix system (e.g., Linux, IRIX, Solaris, AIX, MacOS
 X/Darwin, or CYGWIN).
@@ -59,29 +56,16 @@ disk space
 Getting the Software:
 =====================
 
-There are two ways to get the source code:
-(1) checking it out from the CVS repository on SourceForge;
-(2) downloading the pre-packaged source distribution form
-    http://sourceforge.net/project/showfiles.php?group_id=56967 .
-
-The following instruction first describe how to check out the source code
-from the CVS repository on SourceForge; in case you downloaded the
-pre-packaged source distribution, you can skip this and proceed with to
-"Bootstrap, Configure and Make".
-
-CVS checkout
-------------
-
 This command should be done once.  It records a password on the local
 machine to be used for all subsequent CVS accesses with this server.
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
+ cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb login
 
 Just type RETURN when asked for the password.
 
 Then get the software by using the command:
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
+ cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb checkout MonetDB
 
 This will create a directory MonetDB in your current working directory.
 
@@ -89,8 +73,8 @@ Also see http://sourceforge.net/cvs/?group_id=56967 for more
 information.
 
 
-Bootstrap, Configure and Make:
-==============================
+Configure and Make:
+===================
 
 Before executing the following steps, make sure that your
 shell-environment (especially variables like "PATH" and
@@ -102,9 +86,6 @@ found.
  "configure_MonetDB" & "Mtest_MonetDB" for convenience.
  See conf/conf.bash itself for more details.)
 
-In case you did checkout the CVS version, you have to run "bootstrap", first;
-in case you did download the pre-packaged source distribution, you must skip
-"bootstrap" and start with "configure" (see next step).
 In the top-level directory of MonetDB type the command:
 
  ./bootstrap
@@ -240,7 +221,7 @@ For some technical reasons, it's hard to completely avoid them. However,
 it is usually save to ignore them and simply proceed with the usual 
 compilation procedure. Only in case the subsequent configure or make
 do fail, these warning might have to be take more serious; in any case, 
-you should include the bootstrap output in whenever you report (see below)
+you should include the e bootstrap output in whenever you report (se below)
 compilation problems.
 
 Configure will fail if certain essential programs can't be found or
@@ -256,41 +237,11 @@ MonetDB.  In the latter case, you need to tell configure via
 configure then looks for the respective header files in <DIR>/include,
 and for the respective libraries in <DIR>/lib.
 
-In case either of "bootstrap", "configure", or "make" fails --- especially
-after a "cvs update", or after you changed some code yourself --- please try
-the following step (in that order; if you are using the pre-packages source
-distribution, you have to skip steps 2 & 3):
-
-0) In case only "make" fails, you can try to run
-	make clean
-   in your build-directory and proceed with step 5; 
-   however, if "make" then still fails, you have to re-start with step 1.
-1) Clean-up your whole build-directory (i.e., the one where you run
-   "configure" and "make") by going there and running
-	make maintainer-clean
-   In case your build-directory is different from your source directory,
-   your are even advised to remove the whole build-directory.
-2) Go to the top-level source directory and run
-	./de-bootstrap
-   This will remove all the files that were created during "bootstrap".
-3) In the top-level source directory, re-run
-	./bootstrap
-4) In the build-directory, re-run
-	configure
-   as described above.
-5) In the build-directory, re-run
-	make
-	make install
-   as described above.
-
-If this still does not help, please contact us:
-
 Bugs and other problems with compiling or running MonetDB should be
 reported using the respective bug-tracking system at SourceFORGE (preferred;
 cf. https://sourceforge.net/tracker/?group_id=56967&atid=482468) or emailed
 to monet@cwi.nl; see also 
 http://monetdb.cwi.nl/Development/Bugtracker/index.html .
-Please make sure that you give a *detailed* description of your problem!
 
 
 Running MonetDB with valgrind on Linux

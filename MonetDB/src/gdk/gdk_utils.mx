@@ -620,9 +620,7 @@ GDKmtrace(bit *enable) {
 	if(*enable) {
 		if(memBat == NULL) {
 			memBat   = BATnew(TYPE_ptr,TYPE_int,16384);
-			if( memBat == NULL) return GDK_FAIL;
 			stackBat = BATnew(TYPE_ptr,TYPE_ptr,16384);
-			if( stackBat == NULL) return GDK_FAIL;
 			BBPrename(memBat->batCacheid,"mem_trace");
 			BBPrename(stackBat->batCacheid,"mem_stack");
 			memBat->hsorted = memBat->tsorted = 0;
@@ -662,7 +660,7 @@ add_dag(BAT *b, BUN p, mem_t current, mem_t parent)
 
 	if (b->batBuns->free + bunsize > b->batBuns->size) {
 		int tmp = mtrace; mtrace = 0;
-		if (BATextend(b, BATgrows(b)) == NULL) return BUNlast(b);
+		BATextend(b, BATgrows(b));
 		mtrace = tmp;
 		last = BUNlast(b);
 	}
@@ -749,7 +747,7 @@ add_mem(BAT *b, mem_t mem, int idx)
 	const static int bunsize = sizeof(mem_t) + sizeof(int);
 	if (b->batBuns->free + bunsize > b->batBuns->size) {
 		int tmp = mtrace; mtrace = 0;
-		if (BATextend(b, BATgrows(b))) return;
+		BATextend(b, BATgrows(b));
 		mtrace = tmp;
 	}
 	last = BUNlast(b);
@@ -897,7 +895,7 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 
 
 INLINE
-void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
+void* GDKmallocmax(size_t size, size_t *maxsize) {
 	ssize_t *s;
 
         if (size == 0) {
@@ -911,8 +909,7 @@ void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
 	if (size > GDK_mem_bigsize) {
 		size_t newsize = size + sizeof(size_t)+sizeof(size_t);
 		size_t newmax = MAX(*maxsize, newsize);
-		s = (ssize_t*) GDKvmalloc(newsize, &newmax, emergency);
-		if( s==0 && emergency == 0) return s;
+		s = (ssize_t*) GDKvmalloc(newsize, &newmax);
 		MT_alloc_register(s, *maxsize, 'S');
 		s += 2;
 		s[-2] = (ssize_t) newmax;
@@ -926,7 +923,6 @@ void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
 		GDKmemfail("GDKmalloc", size, BBPTRIM_ALL, 0);
 		GDKmalloc_prefixsize(s, size);
 		if (s == NULL) { 
-			if (emergency) return NULL;
 			MT_alloc_print();
                		GDKfatal("GDKmalloc failed for %u bytes",size);
 		} else {
@@ -939,7 +935,7 @@ void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
 }
 
 void* GDKmalloc(size_t size) {
-	return GDKmallocmax(size, &size, 1);
+	return GDKmallocmax(size, &size);
 }
 	
  
@@ -969,11 +965,11 @@ void GDKfree (void *blk) {
 }
 
 INLINE
-ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize, int emergency) {
+ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize) {
 	ssize_t oldsize, *s = (ssize_t*) blk;
 
         if (s == NULL) {
-		return GDKmallocmax(size, maxsize, emergency);
+		return GDKmallocmax(size, maxsize);
 	}
 #ifdef GDK_MEM_NULLALLOWED
         if (size == 0) {
@@ -996,8 +992,7 @@ ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize, int emergency) {
 		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
 		size_t oldmax = (size_t) s[-2];
 		size_t newmax = MAX(*maxsize,newsize);
-		s = (ssize_t*) GDKvmrealloc((ptr) (s-2), (size_t) -oldsize, newsize, oldmax, &newmax, emergency);
-		if (s == NULL && !emergency) return NULL;
+		s = (ssize_t*) GDKvmrealloc((ptr) (s-2), (size_t) -oldsize, newsize, oldmax, &newmax);
 		s[0] = newmax;
 		s[1] = -((ssize_t) size);
 		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
@@ -1028,16 +1023,14 @@ ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize, int emergency) {
 	else
 #endif
 	oldsize = MIN(size, (size_t) (oldsize - 8));
-        blk = (void* ) GDKmallocmax(size, maxsize, emergency);
-	if (blk) {
-        	memcpy(blk, s, oldsize);
-        	GDKfree(s);
-	}
+        blk = (void* ) GDKmallocmax(size, maxsize);
+        memcpy(blk, s, oldsize);
+        GDKfree(s);
         return (void*) blk;
 }
 
 ptr GDKrealloc(void* blk, size_t size) {
-	return GDKreallocmax(blk, size, &size, 1);
+	return GDKreallocmax(blk, size, &size);
 }
 
 void* GDKcalloc(size_t nmemb, size_t size) {
@@ -1093,16 +1086,13 @@ int GDKmunmap(void* addr, size_t size) {
  
 @- VM alloc
 this affects both physical and logical memory resources.
-The emergency flag can be set to force a fatal error if needed.
-Otherwise, the caller is able to deal with the lack of memory.
 @c
-void* GDKvmalloc(size_t size, size_t *maxsize, int emergency) {
+void* GDKvmalloc(size_t size, size_t *maxsize) {
 	void *ret = MT_vmalloc(size, maxsize);
         if (ret == NULL) {
-		GDKmemfail("GDKvmalloc", size, BBPTRIM_ALL, BBPTRIM_ALL);
+                GDKmemfail("GDKvmalloc", size, BBPTRIM_ALL, BBPTRIM_ALL);
                 ret = MT_vmalloc(size, maxsize);
                 if (ret == NULL) {
-			if( emergency == 0) return NULL;
                         MT_alloc_print();
                         GDKfatal("GDKvmalloc failed for %u bytes",size);
                 } else {
@@ -1116,13 +1106,12 @@ void* GDKvmalloc(size_t size, size_t *maxsize, int emergency) {
 	return ret;
 }
 
-void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *newmax, int emergency) {
+void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *newmax) {
 	void *ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
         if (ret == NULL) {
                 GDKmemfail("GDKvrealloc", newsize, BBPTRIM_ALL, BBPTRIM_ALL);
                 ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
                 if (ret == NULL) {
-			if( emergency == 0) return NULL;
                         MT_alloc_print();
                         GDKfatal("GDKvrealloc failed for %u bytes (from %u)", newsize, oldsize);
                 } else  {
@@ -1217,7 +1206,6 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 	GDKremovedir(DELDIR);  
 	BBPinit(); 
 	GDKenv = BATnew(TYPE_str,TYPE_str,100);
-	if(GDKenv==NULL) GDKfatal("Could not create BAT");
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
 
@@ -1375,22 +1363,14 @@ A non-fatal error returns a message to the user
 and aborts the current transaction.
 Fatal errors are also recorded on the system log for post-mortem
 analysis.
-In non-silent mode the errors are immediately sent to output,
-which makes it hard for upper layers to detect if an error
-was produced in the process. To facilitate such testing,
-a global error count is maintained on a thread basis,
-which can be read out by the function GDKerrorCount();
-
 @c
 int GDKsilent = 0;
-static int    THRerrorcount[THREADDATA];
 
 /* do the real work for GDKaddbuf below. */
 static void doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const char *suffix)
 {
 	char *buf = GDKerrbuf;
 
-	THRerrorcount[THRgettid()]++;
 	if (buf) {
 		char *dst = buf + strlen(buf);
 		size_t maxlen = GDKMAXERRLEN - (dst - buf) - 1;
@@ -1595,10 +1575,6 @@ Real errors should be saved in the lock file for post-crash inspection.
 #endif
 	return -1;
 }
-int GDKerrorCount(){
-	return THRerrorcount[THRgettid()];
-}
-
 
 @- Timers
 The following relative timers are available for inspection.

@@ -1,3 +1,0 @@
-
-SUBDIRS = server backends odbc HAVE_JAVA_1_4?jdbc LINK_STATIC?tools
-

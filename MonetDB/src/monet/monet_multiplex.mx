@@ -564,10 +564,6 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
     } 
     @:insert_@3(@2)@
     return 0;
-bunins_failed:
-    BBPreclaim(desc->b);
-    desc->b = NULL;
-    return -1;
 }
 
 @= multiplex_exec_bat
@@ -603,10 +599,6 @@ static int multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv){
     } 
     @:insert_@3(@2)@
     return 0;
-bunins_failed:
-    BBPreclaim(desc->b);
-    desc->b = NULL;
-    return -1;
 }
 
 @= call_proc
@@ -768,7 +760,7 @@ static int interpret_@1_array(
 	str  a1, a2 = NULL, a3 = NULL, ah = NULL; /* heap bases */
 	int  s1, s2 = 0,    s3 = 0,    sh = 0;    /* bun sizes */
 	str  p1, p2 = NULL, p3 = NULL, ph = NULL, hend = NULL; /* bun pointers */
-	int  hky=0, hsrt=0, htpe=-1, ok = 0;
+	int  hky=0, hsrt=0, htpe=-1;
 	size_t hdff;
 	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
 	int ret_sze = ATOMsize(ret_tpe);
@@ -865,15 +857,9 @@ static int interpret_@1_array(
 		}
 	    }
 	}
-	ok = TRUE;
-bunins_failed:
 	bulkerror_finish(&bulkerror, name);
 	if (tptr != tnil)
 		GDKfree(tptr);
-	if (!ok) {
-		BBPreclaim(retb);
-		return -1;
-	}
 
 	if (!assignop) {
 		if (BATcount(retb) == BATcount(bh)) {
@@ -1011,7 +997,7 @@ static int interpret_@1_merge(
 	int  s1, s2, s3 = 0;      /* bun sizes */
 	BUN  p1, p2, p3 = NULL;   /* bun pointers */
 	BUN  e1, e2, e3 = NULL;   /* bun pointers */
-	int ret_sze = ATOMsize(ret_tpe), ok = 0;
+	int ret_sze = ATOMsize(ret_tpe);
 	ptr  tptr = GDKmalloc(MAX(1,ret_sze));
         ptr  tnil = ATOMnilptr(ret_tpe);
 	int replace=0, htpe = TYPE_void;
@@ -1082,14 +1068,9 @@ static int interpret_@1_merge(
 	@:mergealign(2)@
 	@:mergealign(3)@
 xit:	
-	ok = TRUE;
-bunins_failed:
 	bulkerror_finish(&bulkerror, name);
 	GDKfree(tptr);
-	if (!ok) {
-		BBPreclaim(retb);
-		return -1;
-	}
+
 	if (!assignop) {
 		if (BATcount(retb) == BATcount(b1)) {
 			ALIGNsetH(retb, b1);
@@ -1288,10 +1269,10 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 		/* terrible+true; we must check for views (on nested) */
 		BAT *b = BBP_cache(argv->val.bval);
 		if (VIEWparent(b)) VIEWreset(b);
-		if (BUNfastins(ret, @1, _p = VALptr(argv)) == 0) ret_val = -1;
+		BUNfastins(ret, @1, _p = VALptr(argv));
 		BBPdecref(*(bat*) _p, !packed_call); /* TOK_COMMAND=hard unfix, proc=logical */
 	} else {
-		if (BUNfastins(ret, @1, _p = VALptr(argv)) == 0) ret_val = -1;
+		BUNfastins(ret, @1, _p = VALptr(argv));
 		ATOMunfix(argv->vtype, _p);
 		if (ATOMextern(argv->vtype)) {
 			GDKfree(_p);
@@ -1318,7 +1299,7 @@ int interpret_setaggr(
 	monet_sig_t *sig = (monet_sig_t*) tt->yyval.val.pval;
 	BAT	*b, *nested, *nested_rev, *histo=0, *extent=0, *ret=0;
 	size_t	minpos;
-	int	ret_val = -1, varsize, head_type, hidden_vartype=0;
+	int	ret_val, varsize, head_type, hidden_vartype=0;
 	int	prop_key, prop_sorted = 0;
 	GDKfcn	direct_call = NULL, packed_call = NULL;
         BATstore *nested_bak=NULL;
@@ -1423,7 +1404,6 @@ there are the {strings, polygons, images, etc}!
         nested_rev->H = nested->T = nested->H;
         nested_rev->htype = nested->ttype = nested->htype;
         nested_rev->hvarsized = nested->tvarsized = nested->hvarsized;
-        nested_rev->hseqbase = nested->tseqbase = nested->hseqbase;
 
 @- non-tricky? initializations
 @c
@@ -1455,8 +1435,6 @@ range in 'b' (possibly empty). We then call the execution function on 'nested'.
 	    int (*cmp)(ptr, ptr) = BATatoms[b->htype].atomCmp;
 	    oid minoid = b->hseqbase;
 	    oid maxoid = minoid + BATcount(b);
-	    oid sqb = 0;
-	    BUN pp = NULL;
 
 	    if (!(BAThordered(extent)&1)) {
 		BAT *n = BATsort(extent);
@@ -1476,15 +1454,7 @@ here we do not have an efficient execution function, so other optimizations
 are quite useless. Maybe we shouldn't even distinuish this case and do
 it with the generic hashimpl anyway.
 @c
-		if (b->ttype == TYPE_void) {
-			pp = p;
-			sqb = nested->hseqbase;
-			@:non_opt_sort((void),nested->hseqbase = nested->tseqbase = sqb + ((p-pp)/xx))@
-		} else {
-			@:non_opt_sort(,)@
-		}
-@= non_opt_sort
-		if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: non-optimized sort @1\n");
+		if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: non-optimized sort\n");
 		for(; r<s; r+=yy) { /* loop on extent */
 		    ptr last = BUNhead(extent,r);
 		    if (p<q && (*cmp)(BUNhead(b,p),last) < 0) { 
@@ -1493,7 +1463,6 @@ it with the generic hashimpl anyway.
 		    nested->batBuns->base = nested->batDeleted = 
 				nested->batHole = p - xx;
 	    	    nested->batInserted = p;
-	    	    @2;
 	    	    p = SORTfndlast(m, last); 
 	    	    nested->batBuns->size = nested->batBuns->free = 
 				p - nested->batBuns->base;
@@ -1517,8 +1486,6 @@ optimized cases that use exec_opt and hence optimize_call
 			if (last >= minoid && last < maxoid) {
 			    zz = minpos + (last-minoid);
 			    q = BUNptr(b, zz); p = q + xx;
-			    /* needed in case b->ttype == TYPE_void; shouldn't harm in other cases */
-	    		    nested->hseqbase = nested->tseqbase = last;
 			} else {
 			    q = p;
 			}
@@ -1532,15 +1499,7 @@ optimized cases that use exec_opt and hence optimize_call
 		}
 	    }
 @= getset_int
-if (b->ttype == TYPE_void) {
-	pp = p;
-	sqb = nested->hseqbase;
-	@:getset_int_(@1,-void,nested->hseqbase = nested->tseqbase = sqb + ((p-pp)/xx))@
-} else {
-	@:getset_int_(@1,,)@
-}
-@= getset_int_
-if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: @1@2-optimized sort\n");
+if (GDKdebug&131072) THRprintf(GDKout, "setaggr impl: @1-optimized sort\n");
 for(; r<s; r+=yy) { 
 	@1 last = *(@1*) BUNhead(extent,r);
 	if (*(@1*) BUNhloc(b,p) < last) {
@@ -1548,7 +1507,6 @@ for(; r<s; r+=yy) {
 	}
 	nested->batBuns->base = nested->batDeleted = nested->batHole = p - xx;
 	nested->batInserted = p;
-	@3;
 	p = SORTfndlast_@1(m, &last); 
     	nested->batBuns->size = nested->batBuns->free = p-nested->batBuns->base;
 	@:exec_opt(&last)@
@@ -1579,7 +1537,7 @@ a temporary BAT 'nested'; in which we insert all tail values.
 		    batbuns->free = bunsize;
 		    nested->batInserted = batbuns->base + bunsize;
 
-	    	    if (BATprepareHash(b)) goto bunins_failed;
+	    	    (void) BATprepareHash(b);
 		    HASHloop(b, b->hhash, hh, last) { 
 			r = BUNptr(b, hh);
 			@:bunins_unary(r,hh)@
@@ -1604,7 +1562,7 @@ we know that the head is oid (or a small version) here..
 		    idxlast = b->hidx.last;
 		    @:getset_ins(idx)@
 		} else if (BATcount(extent) > 6) {
-		    if (BATprepareHash(b)) goto bunins_failed;
+		    (void) BATprepareHash(b);
 		    @:getset_ins(hash)@
 		} else {
 		    @:getset_ins(loop)@
@@ -1663,7 +1621,6 @@ set result bat properties
 	ret_val = 0;	
 	BATkey(ret, TRUE);
 	ret->tsorted = 0;
-		
 	if (histo) {
 		if (b->halign == 0) { 
 			b->halign = OIDnew(1);
@@ -1685,7 +1642,6 @@ set return value
 @-
 clean up and exit
 @c
-bunins_failed:
 	bulkerror_finish(&bulkerror, "interpret_setaggr");
 	nested->ttype = nested_rev->htype = TYPE_void;
         if (hheap_bak) nested->hheap = *hheap_bak;
@@ -1704,9 +1660,6 @@ bunins_failed:
 	if (!varsize) GDKfree(buf);
 	argv[1] = argv_bak;
 	BBPreclaim(nested);
-	if (ret_val < 0) {
-		BBPreclaim(ret);
-	}
 	return ret_val;
 }
 
@@ -1720,11 +1673,9 @@ call and we have the additional knowledge (through the atom heap trick) that:
 
 @= bunins_unary
         if (batbuns->free >= batbuns->size) {
-	    int ret;
 	    DELTAsave(nested);
-	    ret = HEAPextend(batbuns, batbuns->size*2);
+	    HEAPextend(batbuns, batbuns->size*2);
 	    DELTAload(nested);
-	    if (ret < 0) goto bunins_failed;
 	    nested->batDeleted = nested->batHole = batbuns->base;
 	    nested->batInserted = batbuns->base + bunsize;
         } 
