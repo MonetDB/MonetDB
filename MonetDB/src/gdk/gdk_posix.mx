@@ -106,6 +106,12 @@ extern int dlclose   (void *__handle);
 extern void *dlsym   (void * __handle, const char * __name);
 extern char *dlerror (void);
 
+extern int win_ftruncate (int  fd, unsigned int size);
+extern DIR* win_opendir (const char *dirname);
+extern struct direct* win_readdir (DIR *dir);
+extern void win_rewinddir (DIR *dir);
+extern int win_closedir (DIR *dir);
+
 #include <winsock.h>
 extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
 #define gettimeofday(x,y)	MT_gettimeofday(x,y)
@@ -410,8 +416,7 @@ MT_mallinfo() {
 #  endif /* _MSC_VER */
 #endif /* NATIVE_WIN32 */
 
-int
-win_ftruncate (int  fd, unsigned int size)
+int win_ftruncate (int  fd, unsigned int size)
 {
   HANDLE hfile;
   unsigned int curpos;
@@ -442,8 +447,7 @@ win_ftruncate (int  fd, unsigned int size)
   return 0;
 }
 
-DIR*
-win_opendir (const char *dirname)
+DIR* win_opendir (const char *dirname)
 {
   DIR *result;
   char *mask;
@@ -506,8 +510,7 @@ basename (const char    *file_name)
 }
 
 
-struct direct*
-win_readdir (DIR *dir)
+struct direct* win_readdir (DIR *dir)
 {
   static struct direct result;
 
@@ -538,8 +541,7 @@ win_readdir (DIR *dir)
   return &result;
 }
 
-void
-win_rewinddir (DIR *dir)
+void win_rewinddir (DIR *dir)
 {
   char *mask;
 
@@ -568,8 +570,7 @@ win_rewinddir (DIR *dir)
   dir->just_opened = TRUE;
 }  
 
-int
-win_closedir (DIR *dir)
+int win_closedir (DIR *dir)
 {
   if (dir != NULL) return -1;
 
@@ -609,5 +610,4 @@ void *dlsym(void * __handle, const char * __name){
 char *dlerror(void){
    return GetLastError();
 }
-
 #endif

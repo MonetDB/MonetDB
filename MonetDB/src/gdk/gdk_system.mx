@@ -66,126 +66,113 @@ The routines that are available for use for thread and process management.
 @-
 Init the package. Must be called once before any of the other operations.
 @h
-void 	MT_init ();
+extern void 	MT_init ();
 
 @-
 Create a new thread executing 'function' with single parameter 'arg'. 
 May return an error, in which case no thread is created.
 @h
-int 	MT_create_thread(MT_Id *t, void (*function)(void *), void *arg);
+extern int 	MT_create_thread(MT_Id *t, void (*function)(void *), void *arg);
 
 @-
 Exit the current thread. The status will be ignored, unless some thread
 wait()-s for you to finish.
 a wait()
 @h
-void 	MT_exit_thread(int status);
+extern void 	MT_exit_thread(int status);
 
 @-
 Exit the process. All threads are terminated.
 @h
-void 	MT_global_exit(int status);
+extern void 	MT_global_exit(int status);
 
 @-
 Ask your thread id.
 @h
-MT_Id 	MT_getpid();
+extern MT_Id 	MT_getpid();
 
 
 @-
 Kill a thread.
 @h
-int 	MT_kill_thread(MT_Id t);
-
-@-
-Create a new inter-process lock. Initial status: unset.
-@h
-MT_Lock	MT_create_lock();
+extern int 	MT_kill_thread(MT_Id t);
 
 @-
 Destroy an inter-process lock;
 @h
-void	MT_destroy_lock(MT_Lock l);     
+extern void	MT_destroy_lock(MT_Lock l);     
 
 @-
 Create a new thread-lock. Initial status: unset.
 @h
-MT_Lock	MT_create_lock();
-
-
-@-
-Destroy a thread-lock;
-@h
-void	MT_destroy_lock(MT_Lock l);     
+extern MT_Lock	MT_create_lock();
 
 @-
 Set a lock. The calling thread in this process blocks till the lock is set.
 @h
-void 	MT_set_lock(MT_Lock l, char *name);
+extern void 	MT_set_lock(MT_Lock l, char *name);
  
 @-
 Unset a lock.
 @h
-void 	MT_unset_lock(MT_Lock l, char *name);
+extern void 	MT_unset_lock(MT_Lock l, char *name);
  
 @-
 Try a lock. Returns error (EBUSY) if the lock was already 
 set. Else, the lock is set.
 @h
-int	MT_try_lock(MT_Lock l);
+extern int	MT_try_lock(MT_Lock l);
 
 @-
 Dump info about the lock named 'name' on stream 'fp'.
 @h
-void 	MT_dump_lock(MT_Lock l, FILE *fp, char *name);
+extern void 	MT_dump_lock(MT_Lock l, FILE *fp, char *name);
 
 @- Mthreads Macro Implementations
 
 @-
 Create a counting thread semaphore, set the number of resources.
 @h
-MT_Sema	MT_create_sema(int nresources);     
+extern MT_Sema	MT_create_sema(int nresources);     
 
 
 @-
 Destroy a counting thread semaphore;
 @h
-void	MT_destroy_sema(MT_Sema s);     
+extern void	MT_destroy_sema(MT_Sema s);     
 
 @-
 Increment a semaphore.
 @h
-void	MT_up_sema(MT_Sema s, char *name);
+extern void	MT_up_sema(MT_Sema s, char *name);
  
 @-
 Decrement a semaphore. If it already has value 0, the thread is
 blocked until a decrement is possible again.
 @h
-void	MT_down_sema(MT_Sema s, char *name);
+extern void	MT_down_sema(MT_Sema s, char *name);
 
 @-
 Try to decrement a semaphore. If it already has value 0, an error
 (EBUSY) is returned. Else, the semaphore is decremented.
 @h
-int 	MT_try_sema(MT_Sema s);
+extern int 	MT_try_sema(MT_Sema s);
 
 @-
 Dump info about the semaphore named 'name' on stream 'fp'.
 @h
-void 	MT_dump_sema(MT_Sema s, FILE *fp, char *name);
+extern void 	MT_dump_sema(MT_Sema s, FILE *fp, char *name);
 
 @-
 Check if some process is still alive.
 @h
-int 	MT_alive(int pid);
+extern int 	MT_alive(int pid);
 
 @-
 Allocate anonymous virtual memory.
 @h
 #define MT_geterrno()		errno
 #define MT_seterrno(x)		errno=x
-
-extern MT_Id MT_getpid();
 
 extern int _MT_npages;
 extern int _MT_pagesize;

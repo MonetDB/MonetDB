@@ -1192,22 +1192,22 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 	    bunfastins_nocheck(b, _p, h, t, _bunsize);\
 	}
 
-BAT*		BUNfastins (BAT *b, ptr left, ptr right); 
-BAT*		BUNins     (BAT *b, ptr left, ptr right); 
-BAT*		BATins     (BAT *b, BAT *c); 
-BAT*		BUNdel     (BAT *b, ptr left, ptr right); 
-BAT*		BUNdelHead (BAT *b, ptr left); 
-BUN		BUNdelete  (BAT *b, BUN p); 
-BAT*		BATdel     (BAT *b, BAT *c); 
-BAT*		BATdelHead (BAT *b, BAT *c); 
-BAT*		BATdelall  (BAT *b);
+extern BAT*		BUNfastins (BAT *b, ptr left, ptr right); 
+extern BAT*		BUNins     (BAT *b, ptr left, ptr right); 
+extern BAT*		BATins     (BAT *b, BAT *c); 
+extern BAT*		BUNdel     (BAT *b, ptr left, ptr right); 
+extern BAT*		BUNdelHead (BAT *b, ptr left); 
+extern BUN		BUNdelete  (BAT *b, BUN p); 
+extern BAT*		BATdel     (BAT *b, BAT *c); 
+extern BAT*		BATdelHead (BAT *b, BAT *c); 
+extern BAT*		BATdelall  (BAT *b);
 
-BAT*		BUNreplace (BAT *b, ptr left, ptr right); 
-BAT*		BUNinplace (BAT *b, BUN p, ptr left, ptr right); 
-BAT*		BATreplace (BAT *b, BAT *n);
+extern BAT*		BUNreplace (BAT *b, ptr left, ptr right); 
+extern BAT*		BUNinplace (BAT *b, BUN p, ptr left, ptr right); 
+extern BAT*		BATreplace (BAT *b, BAT *n);
 
-BUN 		BUNlocate  (BAT *b, ptr left, ptr right); 
-BUN 		BUNfnd     (BAT *b, ptr left); 
+extern BUN 		BUNlocate  (BAT *b, ptr left, ptr right); 
+extern BUN 		BUNfnd     (BAT *b, ptr left); 
 
 #define BUNfndVOID(p,b,v) {\
 	REGISTER int _i = BUNindex((b),BUNfirst((b))) + (*(oid*) (v) - (b)->hseqbase);\
@@ -1327,19 +1327,19 @@ at the end of the BAT, but not to modify anything that already
 was in there.
 @{ 
 @h
-str		BATrename    (BAT *b, str nme); 
-int		BATcount     (BAT *b); 
-int		BATbuncount  (BAT *b); 
-int		BATguess     (BAT *b); 
-int		BATgrows     (BAT *b); 
-BAT*		BATkey       (BAT *b, int onoff); 
-BAT*		BATset       (BAT *b, int onoff); 
-BAT*		BATmode      (BAT *b, int onoff); 
-BAT*		BATroles     (BAT *b, str hnme,str tnme);
-int		BATname	     (BAT *b, str nme);
-BAT*		BATseqbase   (BAT *b, oid o); 
-BAT*		BATsetaccess (BAT *b, int mode); 
-int		BATgetaccess (BAT *b); 
+extern str		BATrename    (BAT *b, str nme); 
+extern int		BATcount     (BAT *b); 
+extern int		BATbuncount  (BAT *b); 
+extern int		BATguess     (BAT *b); 
+extern int		BATgrows     (BAT *b); 
+extern BAT*		BATkey       (BAT *b, int onoff); 
+extern BAT*		BATset       (BAT *b, int onoff); 
+extern BAT*		BATmode      (BAT *b, int onoff); 
+extern BAT*		BATroles     (BAT *b, str hnme,str tnme);
+extern int		BATname	     (BAT *b, str nme);
+extern BAT*		BATseqbase   (BAT *b, oid o); 
+extern BAT*		BATsetaccess (BAT *b, int mode); 
+extern int		BATgetaccess (BAT *b); 
 
 
 #define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty ||\
