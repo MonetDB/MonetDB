@@ -398,7 +398,7 @@ def read_depsfile(incdirs, cwd, topdir):
             for d in cache.keys():
                 inc = []
                 for dep in cache[d]:
-                    if not os.path.isabs(dep):
+                    if not os.path.isabs(dep) and dep[0:2] != '$(':
                         dep = os.path.join(i,dep)
                     inc.append(dep)
                 includes[os.path.join(i,d)] = inc
