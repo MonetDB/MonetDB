@@ -576,7 +576,11 @@ BAT *BATsave(BAT *bd) {
 }
 
 
-BAT *BATload_intern(bat bid, int lock) {
+@-
+TODO: move to gdk_bbp.mx
+@c
+BAT *BATload_intern(bat i) {
+	bat bid = ABS(i);
 	str nme = BBP_physical(bid);
 	BAT *b = DESCload(bid);
 	int ret;
@@ -637,6 +641,8 @@ BAT *BATload_intern(bat bid, int lock) {
 	} else {
 		b->batMapdirty |= ret; /* heap mode changed during load? */
 		b->haccCopiedtodisk = TRUE; /* correct if not set yet */
+		/*HEAP_checkformat(&b->haccelerator);
+*/
 	}
 
 	/* LOAD tail accelerator heap */
@@ -655,10 +661,12 @@ BAT *BATload_intern(bat bid, int lock) {
 	} else {
 		b->batMapdirty |= ret; /* heap mode changed during load? */
 		b->taccCopiedtodisk = TRUE; /* correct if not set yet */
+		/*HEAP_checkformat(&b->taccelerator);
+*/
 	}
 
 	/* load succeeded; register it in BBP */
-	BBPcacheit(b, lock);
+	BBPcacheit(b, FALSE);
 
 	if (b->batConvert) {
 		BATconvert(b,CONV_HTON);
@@ -668,7 +676,10 @@ BAT *BATload_intern(bat bid, int lock) {
 	}
 	b->batDirtydesc |= b->batMapdirty; /* if some heap mode changed, make desc dirty */
 
-	return b;
+	if ((b->batRestricted == BAT_WRITE && (GDKdebug&2)) || (GDKdebug&8)) {
+		BATpropcheck_(b,TRUE); 
+	}
+	return (i<0)?BATmirror(b):b; 	
 }
 
 BAT *BATload(str nme) {
@@ -679,15 +690,7 @@ BAT *BATload(str nme) {
 	if (i==0 || b != NULL) {
 		return b; /* inexistent bat or already loaded */
 	}
-	b = BATload_intern(ABS(i), TRUE); 
-	if (b == NULL) {
-		return NULL;
-	}
-	if ((b->batRestricted == BAT_WRITE && (GDKdebug&2)) || (GDKdebug&8)) {
-		/* BATrepair(b); causes more trouble than good */ 
-		BATpropcheck_(b,TRUE); 
-	}
-	return (i<0)?BATmirror(b):b; 	
+	return BATload_intern(i); 
 }
 
 

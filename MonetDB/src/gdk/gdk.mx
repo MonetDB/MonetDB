@@ -1476,7 +1476,7 @@ expected usage pattern of the memory in a heap.
 #define GDK_BIGMEM	(GDKmem_maxsize()/2)
 
 gdk_export BAT*	BATload       (str nme);
-gdk_export BAT*	BATload_intern(bat bid, int lock);
+gdk_export BAT*	BATload_intern(bat bid);
 gdk_export BAT*	BATsave       (BAT *b);
 gdk_export int      BATmmap       (BAT *b, int bn, int hh, int th, int ha, int ta);
 gdk_export int      BATmadvise    (BAT *b, int bn, int hh, int th, int ha, int ta);

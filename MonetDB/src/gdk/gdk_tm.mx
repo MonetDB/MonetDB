@@ -129,7 +129,7 @@ int TMabort() {
 		if (BBP_status(i) & BBPNEW) {
 			BAT *b = BBPcache(i);
 			if (b == NULL) {
-				b = BATload_intern(i, FALSE);
+				b = BATload_intern(i);
 			}
 			if (b) {
 				BATdelete(b); 
@@ -143,7 +143,7 @@ int TMabort() {
 		if (BBP_status(i) & (BBPPERSISTENT|BBPDELETED|BBPSWAPPED)) {
 			BAT *b = BBPcache(i);
 			if (b == NULL) {
-				b = BATload_intern(i, FALSE);
+				b = BATload_intern(i);
 			}
 			ALIGNundo(b);
 			BATundo(b); 

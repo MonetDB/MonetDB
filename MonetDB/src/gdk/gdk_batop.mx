@@ -1095,47 +1095,19 @@ int BATordered(BAT *b) {
 }
 
 @- return a sorted copy
-Sorting a BAT is done by reordering the BAT according to the
-an IDX index.
 @c
-@{
-BAT *BATsort_insert(BAT *c, BAT *b) {
-        BUN     *p;
-        BUN     *q;
-	BATcheck(c, "BATsort: BAT c"); 
-	BATcheck(b, "BATsort: BAT b"); 
-        if (!BATidx(b, NULL)) {
-		GDKfatal("BATsort_insert: failed to make index.\n");
-		return c;
-	}
-        p = IDXfirst(b);
-        q = IDXlast(b);
-        if (b->hvarsized){
-                if (b->tvarsized){
-                        @:idxloop(var,var)@
-                } else {
-                        @:idxloop(var,loc)@
-                }
-        } else {
-                if (b->tvarsized){
-                        @:idxloop(loc,var)@
-                } else {
-                        @:idxloop(loc,loc)@
-                }
-        }
-        return c;
-}
-@}
 BAT *BATsort(BAT *b) {
-	BAT *c;
+	int tt = b->ttype;
+
 	BATcheck(b, "BATsort: BAT"); 
 	if (BATordered(b)) {
 		return BATrcopy(b);
-        }
-	c = BATtmp(b, TRUE);
-        c->hsorted = GDK_SORTED; 
-	c->tsorted = FALSE;
-	return BATsort_insert(c, b);
+        } 
+	/* a void tail column 0,1,2,3,... must be materialized to oid before sorting */
+	if (tt == TYPE_void && b->tseqbase != oid_nil) {
+		tt = TYPE_oid;
+	}
+	return BATorder(batcopy(b, b->htype, tt, TRUE));
 }
 
 

@@ -1046,7 +1046,6 @@ BAT *BBPdescriptor(int i) {
 		BAT *b = BBP_cache(i);
 
 		if (b == NULL) {
-			long_str buf;
 			int j = ABS(i);
 			MT_set_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 			if (BBP_status(i) & BBPLOADING) { /* wait for bat to be loaded by other thread */
@@ -1057,7 +1056,7 @@ BAT *BBPdescriptor(int i) {
 				BBP_status(j) |= BBPLOADING;
 				MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
 
-				b = BATload(BBPlogical(i,buf)); 
+				b = BATload_intern(i); 
 				BBP_status(j) &= ~BBPLOADING;
 			}
 		}
@@ -1607,7 +1606,7 @@ BAT *BBPquickdesc(bat bid, int delaccess) {
         if (b == NULL || b->hacctype || complexatom(b->hatom, delaccess) 
                       || b->tacctype || complexatom(b->tatom, delaccess))
 	{
-                b = BATload_intern(bid, FALSE);
+                b = BATload_intern(bid);
         }
         return b;
 }
