@@ -59,6 +59,7 @@ function_entry monetdb_functions[] = {
     PHP_FE(monetdb_query,                   NULL)
     PHP_FE(monetdb_num_rows,	           	NULL)
     PHP_FE(monetdb_num_fields,				NULL)
+	PHP_FE(monetdb_next_result,             NULL)
     PHP_FE(monetdb_field_name,				NULL)
     PHP_FE(monetdb_field_type,				NULL)
     PHP_FE(monetdb_errno,         			NULL)
@@ -385,7 +386,7 @@ PHP_FUNCTION(monetdb_close)
 /* }}} */
 
 
-/* {{{ proto bool monetdb_query(string query[, resource db])
+/* {{{ proto resource monetdb_query(string query[, resource db])
    run a query on the MonetDB server */
 PHP_FUNCTION(monetdb_query)
 {
@@ -438,7 +439,7 @@ PHP_FUNCTION(monetdb_query)
 /* }}} */
 
 
-/* {{{ proto bool monetdb_num_rows([resource handle])
+/* {{{ proto long monetdb_num_rows([resource handle])
    return number of rows (tuples) in a query result */
 PHP_FUNCTION(monetdb_num_rows)
 {
@@ -470,7 +471,7 @@ PHP_FUNCTION(monetdb_num_rows)
 }
 /* }}} */
 
-/* {{{ proto bool monetdb_num_fields([resource handle])
+/* {{{ proto long monetdb_num_fields([resource handle])
    return number of fields (columns) in a query result */
 PHP_FUNCTION(monetdb_num_fields)
 {
@@ -498,6 +499,37 @@ PHP_FUNCTION(monetdb_num_fields)
 	/*~ printf("MON: num fields handle=%p\n", handle); */
 	
 	Z_LVAL_P(return_value) = (long) mapi_get_field_count(handle);
+	Z_TYPE_P(return_value) = IS_LONG;
+}
+/* }}} */
+
+/* {{{ proto bool monetdb_num_fields([resource handle])
+   move the result set pointer to the next result set. Returns TRUE if
+   there is a next result set, otherwise FALSE. */
+PHP_FUNCTION(monetdb_next_result)
+{
+	zval **z_handle=NULL ;
+	int id ;
+	MapiHdl handle;
+	
+	switch( ZEND_NUM_ARGS() ) {
+		case 0:
+			id = MONET_G(default_handle);
+			break ;
+		case 1:
+			if (zend_get_parameters_ex(1, &z_handle)==FAILURE) {
+				RETURN_FALSE;
+			}
+			id = -1 ;
+			break ;
+		default:
+			WRONG_PARAM_COUNT; 
+			break;
+	}
+	
+	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, id, "MonetDB result handle", le_handle);
+	
+	Z_LVAL_P(return_value) = (int) mapi_next_result(handle);
 	Z_TYPE_P(return_value) = IS_LONG;
 }
 /* }}} */

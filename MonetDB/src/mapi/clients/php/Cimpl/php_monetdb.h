@@ -48,6 +48,7 @@ PHP_FUNCTION(monetdb_close);
 PHP_FUNCTION(monetdb_query);
 PHP_FUNCTION(monetdb_num_rows);
 PHP_FUNCTION(monetdb_num_fields);
+PHP_FUNCTION(monetdb_next_result);
 PHP_FUNCTION(monetdb_field_name);
 PHP_FUNCTION(monetdb_field_type);
 PHP_FUNCTION(monetdb_errno);
