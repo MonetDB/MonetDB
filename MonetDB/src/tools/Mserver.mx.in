@@ -195,21 +195,25 @@ char *options_find( opt *set, int setlen, char *name )
 
 int substitute_prefix( char *val, opt *set, int setlen )
 {
-	if ( strncmp(val,"${exec_prefix}",strlen("${exec_prefix}")) == 0){
-		char val2[BUFSIZ];
-		char *p = options_find(set, setlen, "exec_prefix");
-		char *t = strchr(val,'}');
-		if (!t || !p) return -1;
-		snprintf(val2,BUFSIZ,"%s%s", p, t+1 );
-		strncpy(val,val2,BUFSIZ);
-	}
-	if ( strncmp(val,"${prefix}",strlen("${prefix}")) == 0){
-		char val2[BUFSIZ];
-		char *p = options_find(set, setlen, "prefix");
-		char *t = strchr(val,'}');
-		if (!t || !p) return -1;
-		snprintf(val2,BUFSIZ,"%s%s", p, t+1 );
-		strncpy(val,val2,BUFSIZ);
+	char *q = NULL;
+	while( (q = strchr(val, '$')) != NULL ){
+		if ( strncmp(q,"${exec_prefix}",strlen("${exec_prefix}")) == 0){
+			char val2[BUFSIZ];
+			char *p = options_find(set, setlen, "exec_prefix");
+			char *t = strchr(q,'}');
+			if (!t || !p) return -1;
+			*q = '\0';
+			snprintf(val2,BUFSIZ,"%s%s%s", val, p, t+1 );
+			strncpy(val,val2,BUFSIZ);
+		} else if ( strncmp(q,"${prefix}",strlen("${prefix}")) == 0){
+			char val2[BUFSIZ];
+			char *p = options_find(set, setlen, "prefix");
+			char *t = strchr(q,'}');
+			if (!t || !p) return -1;
+			*q = '\0';
+			snprintf(val2,BUFSIZ,"%s%s%s", val, p, t+1 );
+			strncpy(val,val2,BUFSIZ);
+		}
 	}
 	return 0;
 }
