@@ -316,6 +316,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 </FRAMESET>
 </HTML>
 """ % (HTMLTITLE, rows, frames))
+            f.close()
 
     f = open(".%s%s.html" % (TST, WHAT),"w")
     f.write("""\
@@ -490,6 +491,7 @@ def SkipTest(env, TST, EXT, REASON) :
 <TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='.%(tst)s.src.index.html' TARGET='%(osver)s_%(tstdir)s_body'><FONT COLOR=#000000>
 %(tst)s</FONT></A><BR><A HREF='.%(tst)s.SKIPPED' TARGET='%(osver)s_%(tstdir)s_body'>(skipped)</A></FONT></TD>
 """ % {'tst':TST, 'osver':OSVER, 'tstdir':TSTDIR})
+    f.close()
     if not env.has_key('_'+TSTDIR+'_BODY_')  or  \
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
        not env['_'+TSTDIR+'_BODY_'][1]:
@@ -1278,6 +1280,7 @@ def ReadMultiple(inpipes, outpipes = None):
                 outbuffers[i] = inpipes[i].read()
             else:
                 outpipes[i].write(inpipes[i].read())
+            inpipes[i].close()
     else:
         readlist = inpipes[:]
         while readlist:
