@@ -1725,6 +1725,7 @@ mapi_bind_numeric(MapiHdl hdl, int fnr, int scale, int prec, void *ptr)
 MapiMsg
 mapi_clear_bindings(MapiHdl hdl)
 {
+	mapi_hdl_check(hdl, "mapi_clear_params");
 	if (hdl->fields)
 		memset(hdl->fields, 0, hdl->maxfields * sizeof(*hdl->fields));
 	return MOK;
@@ -1779,6 +1780,7 @@ mapi_param_numeric(MapiHdl hdl, int fnr, int scale, int prec, void *ptr)
 MapiMsg
 mapi_clear_params(MapiHdl hdl)
 {
+	mapi_hdl_check(hdl, "mapi_clear_params");
 	if (hdl->params)
 		memset(hdl->params, 0, hdl->maxparams * sizeof(*hdl->params));
 	return MOK;
@@ -2248,6 +2250,7 @@ mapi_query(Mapi mid, const char *cmd)
 	int ret;
 	MapiHdl hdl;
 
+	mapi_check0(mid, "mapi_query");
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
 	ret = mid->error;
 	if (ret == MOK)
@@ -2267,6 +2270,7 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 {
 	int ret;
 
+	mapi_hdl_check(hdl, "mapi_query_handle");
 	if (hdl->tableid >= 0) {
 		hdl->mid->active = 1;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
@@ -2298,6 +2302,7 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 	int ret;
 	MapiHdl hdl;
 
+	mapi_check0(mid, "mapi_query_array");
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
 	ret = hdl->mid->error;
 	if (ret == MOK)
@@ -2668,6 +2673,7 @@ mapi_cache_freeup(MapiHdl hdl, int percentage)
 {
 	int k;			/* # of cache lines to be deleted from front */
 
+	mapi_hdl_check(hdl, "mapi_cache_freeup");
 	if (hdl->cache.writer == 0 && hdl->cache.reader == -1)
 		return MOK;
 	if (percentage < 0 || percentage > 100)
@@ -2686,7 +2692,7 @@ mapi_fetch_row.
 The content received is analysed further by mapi_getRow()
 
 @c
-char *
+static char *
 mapi_fetch_line_internal(MapiHdl hdl, int *wantmore)
 {
 	char *reply, *s;
@@ -2885,8 +2891,8 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 	ssize_t k;
 	Mapi mid;
 
+	mapi_hdl_check(hdl, "mapi_quick_response");
 	mid = hdl->mid;
-	mapi_check(mid, "mapi_quick_response");
 	if (fd == 0)
 		return mapi_setError(mid, "Destination file missing",
 				     "mapi.response", MERROR);
