@@ -17,7 +17,7 @@
 
 @f gdk_scanselect
 @a S. Manegold, M. L. Kersten, P. Boncz
-@* Non- Hash-/Index- supported Select using Sequential Scan
+@* Fast sequential scan
 @-
 This module provides BAT_scanselect, used by gdk_batop.mx's BAT_select to do
 selections that cannot be done any better than doing a sequential scan. The
@@ -42,26 +42,32 @@ type being store in the result, both head & tail. Thinking about it, we
 thought why not completely eliminate all branches (except the actual
 predicate, of course) from the inner loop (BATloopFast) --- we do have Mx,
 so let's (ab?)use it!
-@T
 This means
-\begin{itemize}
-\item	Expanding on whether we created the result BAT (at least) as big as
-	the input BAT, or not (see BAT\_select in gdk\_batop.mx). In the first
+
+@itemize
+@item	
+Expanding on whether we created the result BAT (at least) as big as
+	the input BAT, or not (see BAT_select in gdk_batop.mx). In the first
 	case ("nocheck"), we do not have to check for a "BAT overflow" in
 	the inner loop.  Further, we need to set bn->batBuns->free only once
 	we're done.
-\item	Expanding on the output-tail-type which is either identical to
-	input-tail-type or TYPE\_void (uselect).
-\item	Expand on output-head-type; usually inherited from input-head-type.
-\item	Expanding on input-head-type for data read.  Taking special care of
+@item	
+Expanding on the output-tail-type which is either identical to
+	input-tail-type or TYPE_void (uselect).
+@item	
+Expand on output-head-type; usually inherited from input-head-type.
+@item	
+Expanding on input-head-type for data read.  Taking special care of
 	void/oid.
-\item	Expanding on the type of predicate: either equi, or range.  The
+@item	
+Expanding on the type of predicate: either equi, or range.  The
 	latter with both, one, or none of upper bound and lower bound.  In
 	case of a range select we skip all nil.
-\item	Expanding on input-tail-type for data read and comparison.  Most is
+@item	
+Expanding on input-tail-type for data read and comparison.  Most is
 	straight forward.  Taking special care of equi selects on str when
 	there are no doubles in the heap.
-\end{itemize}
+@end itemize
 For more details, see the comment next to the code below.
 @-
 Well, to get this feasible (i.e., both the Mx code still readable tomorrow
@@ -88,7 +94,7 @@ inlining for this file (it doesn't make sense here, anyway).
 And finally, what do we achieve by all this effort?
 Well, the on medusa, CPU costs are reduced by (up to) factor 8(!), resulting
 in an overall improvement of about factor 4.5.
-
+@{
 @+ Implementation
 @h
 #ifndef _GDK_SCANSELECT_H
@@ -722,3 +728,5 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 	/* return is called in the leave of the decision tree to shortcut
 	 * the exit from this dispatcher function. */
 }
+@}
+@-

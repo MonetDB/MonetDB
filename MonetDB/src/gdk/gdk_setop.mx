@@ -19,42 +19,43 @@
 @a Peter Boncz
 
 @* Set Operations
-@T
 Set operations are provided in two series:
-\begin{itemize}
-\item k-{\tt operand}, which look only at the head column.
-\item s-{\tt operand} series, that look at the whole BUN.
-\end{itemize}
+@itemize
+@item 
+k-@emph{operand}, which look only at the head column.
+@item 
+s-@emph{operand} series, that look at the whole BUN.
+@end itemize
+
 Operands provided are:
-\begin{itemize}
-\item {\tt\{s,k\}unique}(bat[any::1,any::2]) : bat[any::1,any::2]\\
+@itemize
+@item [s,k]unique
 produces a copy of the bat, with double elimination
-\item {\tt\{s,k\}union(bat[any::1,any::2],bat[any::1,any::2]) : bat[any::1,any::2]\\
-bat union.
-\item {\tt\{s,k\}diff}}(bat[any::1,any::2],bat[any::1,any::2]) : bat[any::1,any::2]\\
-bat difference.
-\item {\tt\{s,k\}intersection}(bat[any::1,any::2],bat[any::1,any::2]) : bat[any::1,any::2]\\
-bat intersection.
-\end{itemize}
+@item [s,k]union
+produces a bat union.
+@item [s,k]diff
+produces bat difference.
+@item [s,k]intersection
+produce bat intersection.
+@end itemize
 Implementations typically take two forms: if the input relation(s) is/are
 ordered, a merge-algorithm is used. Otherwise, hash-indices are produced 
 on demand for the hash-based versions.
-\\
-The {\tt \{k,s\}intersect(l,r)} operations result in all BUNs of {\tt l} that 
-are also in {\tt r}. They do not do double-elimination over the {\tt l} BUNs.
-\\
-The {\tt \{k,s\}diff(l,r)} operations result in all BUNs of {\tt l} that are 
-not in {\tt r}. They do not do double-elimination over the {\tt l} BUNs.
-\\
-The {\tt \{k,s\}union(l,r)} operations result in all BUNs of {\tt l} that are 
-not in {\tt r}, plus all BUNs of {\tt r}. They do not do double-elimination 
-over the {\tt l} nor {\tt r} BUNs.
-\\
-Operations with double-elimination can be formed by performing 
-{\tt \{k,s\}unique(l)} on their operands.
-\\
-The {\tt kintersect(l,r)} is used also as implementation for the 
-{\tt semijoin()}.
+
+The @emph{[k,s]intersect(l,r)} operations result in all BUNs of @emph{l} that 
+are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+
+The @emph{[k,s]diff(l,r)} operations result in all BUNs of @emph{l} that are 
+not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+
+The @emph{[k,s]union(l,r)} operations result in all BUNs of @emph{l} that are 
+not in @emph{r}, plus all BUNs of @emph{r}. They do not do double-elimination 
+over the @emph{l} nor @emph{r} BUNs.
+
+Operations with double-elimination can be formed by performing @emph{[k,s]unique(l)} on their operands.
+
+The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin()}.
+@{
 @h
 #ifndef _GDK_SETOP_H
 #define _GDK_SETOP_H
@@ -306,7 +307,7 @@ BAT *BATsunique (BAT *b) {
 	}
 	return bn; 
 }
-
+@}
 @+ Difference and Intersect
 Difference and Intersection are handled together. For each routine
 there are two versions: @`BATkdiff@5(l,r) and @`BATkintersect@5(l,r) (which 
@@ -692,3 +693,4 @@ bunins_failed:
 	return NULL;
 }
 @}
+@-

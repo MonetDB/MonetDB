@@ -24,6 +24,8 @@ This section describes the preliminaries for handling
 both built-in and user-defined atomic types. 
 New types, such as point and polygons, can be readily added to this
 collection.
+@-
+@{
 @h
 #ifndef _GDK_ATOMS_H_
 #define _GDK_ATOMS_H_
@@ -62,13 +64,11 @@ we use the following #defines for comparing atoms:
 #define lngStrlen	48
 #define fltStrlen	48
 #define dblStrlen	96
-
 @- 
 The system comes with the traditional atomic types: int (4 bytes), bool(1 
 byte) and str (variable). In addition, we support the notion of an OID 
 type, which ensures uniqueness of its members.
 This leads to the following type descriptor table.
-@{
 @h
 
 #ifdef __cplusplus
@@ -367,6 +367,7 @@ structures. The @%null@ returns a reference to a null value representation.
 @- 
 The incremental atom construction uses hardwired properties.
 This should be improved later on.
+@{
 @c
 void ATOMdelete(int id) {
 	memset(BATatoms+id, 0, sizeof(atomDesc));
@@ -554,7 +555,7 @@ int ATOMdump(void) {
 	}
 	return 0;
 }
-
+@}
 
 @- nil values
 All types have a single value designated as a NIL value. It designates
@@ -634,40 +635,39 @@ ptr ATOMnil(int t) {
 	memcpy(dst, src, len);
 	return dst;
 }
-
-@- derived types
-@T
+@}
+@- Derived types
 In all algorithms across GDK, you will switches on the types
-\{ chr, sht, int, flt, dbl, lng, str\}. They respectively represent 
+( chr, sht, int, flt, dbl, lng, str). They respectively represent 
 an octet, a 16-bit int, a 32-bit int, a 32-bit float, a 64-bit double,
 a 64-bit int, and a pointer-sized location of a char-buffer (ended by 
 a zero char).
-\\
-In contrast, the types \{ bit, ptr, bat, oid\} are derived types. They 
+
+In contrast, the types (bit, ptr, bat, oid) are derived types. They 
 do not occur in the switches. The @%ATOMstorage@ macro maps them respectively
-onto a {\tt chr}, {\tt int} (pointers are 32-bit), {\tt int}, and
-{\tt int} {OIDs are 32-bit}.
-\\
+onto a @code{ chr}, @code{ int} (pointers are 32-bit), @code{ int}, and
+@code{ int}. OIDs are 32-bit.
+
 This approach makes it tractable to switch to 64-bits OIDs,
-or to a fully 64-bits OS easily. One only has to map the {\tt oid}
-and {\tt ptr} types to {\tt lng} instead of {\tt int}. 
-\\
-Derived types mimic their fathers in many ways. They inherit the {\tt size},
-{\tt varsized}, {\tt linear}, {\tt null} and {\tt align} properties of their 
+or to a fully 64-bits OS easily. One only has to map the @code{ oid}
+and @code{ ptr} types to @code{ lng} instead of @code{ int}. 
+
+Derived types mimic their fathers in many ways. They inherit the @code{ size},
+@code{ varsized}, @code{ linear}, @code{ null} and @code{ align} properties of their 
 father.  The same goes for the ADT functions HASH, CMP, PUT, NULL,
 DEL, LEN, and HEAP. So, a derived type differs in only two ways
 from its father:
-\begin{description}
-\item [string representation]
+@table @code
+@item [string representation]
 the only two ADT operations specific for a derived type are FROMSTR
 and TOSTR.
-\item [identity]
-(a {\tt bit} is really of a different type than {\tt chr}). The set of
+@item [identity]
+(a @code{ bit} is really of a different type than @code{ chr}). The set of
 operations on derived type values or BATs of such types may differ
 from the sets of operations on the father type. 
-\end{description}
-@h
+@end table
 @{
+@h
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
 #define ATOMsize(t)		BATatoms[t].size
 #define ATOMalign(t)		BATatoms[t].align
@@ -828,7 +828,6 @@ int ATOMcmp(int t, ptr l, ptr r) {
 		return (l == r) ? 0 : atom_CMP(l,r,t);
 	}
 }
-@}
 
 @
 Atom print avoids coercion to strings for built-in types.
@@ -1338,19 +1337,17 @@ To do this, a GDK_STRHASHTABLE(=1024) bucket hashtable is hidden in the first
 string hashing to that bucket in the heap. Furthermore, the first 4(8) bytes 
 before each string in the heap is an integer offset to the next string hashing 
 to the same number.
-@
-@
+
 However, in many other situations the cardinality of string columns is large,
 or the string values might even be unique. In those cases, our fixed-size hash 
 table will start to overflow quickly. Therefore, after the hash table is full
 (this is measured very simplistically by looking whether the string heap exceeds a 
-heap size = GDK\_ELIMLIMIT -- done this way to keep compatibility with old bat images) 
+heap size = GDK_ELIMLIMIT -- done this way to keep compatibility with old bat images) 
 we flush the hash table. If one views the string heaps as consecutive chunks
-of size GDK\_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
-There is a macro GDK\_ELIMBASE(offset) that computes the base of the chunk in which
+of size GDK_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
+There is a macro GDK_ELIMBASE(offset) that computes the base of the chunk in which
 a certain byte-offset falls.
-@
-@  
+@-
 This is a departure from our previous policy of not looking at the hash tables at 
 all after overflow occurred. The advantage of the new approach is that if we have 
 a value distribution that is skewed (ie some values are very frequent), these 
@@ -1361,41 +1358,38 @@ consequently have to keep all string chunks and offsets aligned to 4(8)). All th
 translates into some wasted space. However, if there are that many different strings 
 that the hash table overflows, the strings must be relatively long and the relative 
 storage overhead should be low.
-@
-@
+@-
 Notice that this mechanism enables to keep a certain linear storage property
 in the string heaps. This is important if we want to take a BATslice on a BAT
 by simply loading or mmap()ping slices of the BAT files on disk into memory.
 This is relevant in order to process a very large BAT iteratively by taking slices
 in order to reduce memory consumption. Notice that if there are few different string 
 values, the hash table has not overflowed, and the string heap size will be small 
-(i.e. $<$ GDK\_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
+(i.e. < GDK_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
 If the hash table *has* overflowed, we want to be able to only map a slice of the 
 string heap as well. Now, given that the first string in the BAT-slice is called F1 
 and its heap offset is O1 and the last string in the slice is F2 and its 
 offset is O2, then the slice we should take from the string heap is: 
-@
-@
-\begin{verbatim}
+@example
 GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2))
-\end{verbatim}
-@
-@
-The below routine strElimDoubles() can be used to check whether all 
+@end example
+The routine strElimDoubles() can be used to check whether all 
 strings are still being double-eliminated in the original hash-table.
 Only then we know that unequal offset-integers in the BUN array means
 guaranteed different strings in the heap. This optimization is made at some 
-points in the GDK. Make sure you check GDK\_ELIMDOUBLES before assuming this!
+points in the GDK. Make sure you check GDK_ELIMDOUBLES before assuming this!
+@{
 @c
 int strElimDoubles(Heap *h) {
 	return GDK_ELIMDOUBLES(h);
 } 
-
+@}
 @- String Comparison, NILs and UTF-8
 
-Using the char* type for strings is handy as this is the type of any constant strings in a
-C/C++ program. Therefore, Monet uses this definition for 'str'. However, different compilers
-and platforms use either signed or unsigned characters for the 'char' type :-( ..
+Using the char* type for strings is handy as this is the type of any constant strings 
+in a C/C++ program. Therefore, Monet uses this definition for 'str'. 
+However, different compilers and platforms use either signed or unsigned characters 
+for the 'char' type :-( ..
 
 It is required that string ordering in Monet is consistent over platforms though.
 
@@ -1827,6 +1821,10 @@ int strWrite(str a, stream *s, size_t cnt)
 @+ Unique OIDs
 The basic type OID represents unique values. Refinements should be
 considered to link oids in time order.
+
+Values start from the "seqbase" (usually 0@@0). A nil seqbase makes the 
+entire column nil.  Monet's BUN accessmethods BUNhead(b,p)/BUNtail(b,p) 
+instantiate a value on-the-fly by looking at the position p in BAT b.
 @c
 @{
 oid	GDKoid, GDKflushed;

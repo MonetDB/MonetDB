@@ -17,54 +17,53 @@
 
 @f gdk_heap
 @a Peter Boncz, Wilko Quak
-@* Atom Heaps
-@T
+@+ Atom Heaps
 Heaps are the basic mass storage structure of Monet. A heap is a handle
 to a large, possibly huge, contiguous area of main memory, that can
 be allocated in various ways (discriminated by the heap->storage field):
 
-\begin{description}
-
-\item[STORE\_MEM: malloc-ed memory]
+@table @code
+@item[STORE_MEM: malloc-ed memory]
 small (or rather: not huge) heaps are allocated with GDKmalloc.
 Notice that GDKmalloc may redirect big requests to anonymous
-virtual memory to prevent {\em memory fragmentation} in the 
-malloc library (see gdk\_utils.mx). 
+virtual memory to prevent @emph{memory fragmentation} in the 
+malloc library (see gdk_utils.mx). 
 
-\item[STORE\_MMAP: read-only mapped region]
+@item[STORE_MMAP: read-only mapped region]
 this is a file on disk that is mapped into virtual memory.   
-This is normally done MAP\_SHARED, so we can use msync() to commit dirty 
+This is normally done MAP_SHARED, so we can use msync() to commit dirty 
 data using the OS virtual memory management.
 
-\item[STORE\_PRIV: read-write mapped region]
+@item[STORE_PRIV: read-write mapped region]
 in order to preserve ACID properties, we use a different memory mapping
 on virtual memory that is writable, This is because in case of a crash
-on a dirty STORE\_MMAP heap, the OS may have written some of the dirty pages
+on a dirty STORE_MMAP heap, the OS may have written some of the dirty pages
 to disk and other not (but it is impossible to determine which).  The OS 
-MAP\_PRIVATE mode does not modify the file on which is being mapped, rather 
+MAP_PRIVATE mode does not modify the file on which is being mapped, rather 
 creates substitute pages dynamically taken from the swap file when modifications 
 occur. This is the only way to make writing to mmap()-ed regions safe.
 
-\end{description}
+@end table
 
-On huge requests, we now open a X.priv file and memory map it (STORE\_MMAP).
+On huge requests, we now open a X.priv file and memory map it (STORE_MMAP).
 This is done for heaps of new BATs: these are writable (non-readonly), but 
 are non-persistent (yet). Such BATs may be made persistent later on, of course.
-Thus, the commit protocol BBPsync/heap\_move (gdk\_bbp.mx) actually does
-not check anymore for hp->storage == STORE\_PRIV, but rather for a .priv suffix 
-in hp->filename. Thus, persistent STORE\_MMAP/.priv heaps are saved with
+Thus, the commit protocol BBPsync/heap_move (gdk_bbp.mx) actually does
+not check anymore for hp->storage == STORE_PRIV, but rather for a .priv suffix 
+in hp->filename. Thus, persistent STORE_MMAP/.priv heaps are saved with
 by explicitly writing a separate full file X to disk (this is expensive, though!).
 
 Related to this is saving BAT descriptors. These contain hp->storage fields that 
 reflect how the heap should be loaded the *next* time the BAT is re-loaded (may differ
-from the *current* mode). In the case of persistent, writable STORE\_MMAP
-bats (with a X.priv file), we set the `future-storage' to STORE\_PRIV. Thus, after
+from the *current* mode). In the case of persistent, writable STORE_MMAP
+bats (with a X.priv file), we set the `future-storage' to STORE_PRIV. Thus, after
 surviving their first commit, any re-load of the BAT will put it in its safe
-storage mapping (STORE\_PRIV). This is in DESCsetmodes/HEAPcheckmode (gdk\_storage.mx).
+storage mapping (STORE_PRIV). This is in DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
 
 Another hairy heap issue is changing the BAT readonly/writable state. This 
 sometimes implies flushing heaps to disk and even re-loading them with a new 
-storage mode.  This is discussed in detail in BATsetaccess (gdk\_bat.mx).
+storage mode.  This is discussed in detail in BATsetaccess (gdk_bat.mx).
+@{
 @c
 #include "gdk.h"
 
@@ -78,7 +77,7 @@ static char* decompose_filename(str nme) {
 	}
 	return ext;
 }
-
+@}
 @- HEAPalloc
 
 Normally, we use GDKmalloc for creating a new heap.  Huge heaps, though, come 
@@ -90,6 +89,7 @@ It would have been better to pass this name as a parameter, but this would
 also require changing the atom extension ADT interface plus modifying all
 extension modules that introduce variable-size atoms (e.g. polygon), as these
 provide overloaded versions of HEAPalloc (without heap name, currently).
+@{
 @c
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
         char nme[PATHLENGTH], *ext = NULL;
@@ -130,7 +130,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 	}
 	return (h->base == NULL)?-1:0;
 }
-
+@}
 @- HEAPextend
 
 Normally (last case in the below code), we use GDKrealloc, except for the case that the 
@@ -144,6 +144,7 @@ or no swap space (we map the new segment STORE_PRIV). Also, some OS-es might
 not support this at all (NOEXTEND_PRIVMAP).
 
 The other way is to just save the mmap-ed heap, free it and reload it.
+@{
 @c
 int HEAPextend(Heap *h, size_t size) {
         char nme[PATHLENGTH], *ext = NULL;
@@ -202,10 +203,11 @@ int HEAPextend(Heap *h, size_t size) {
 	}
 	return -1;
 }
-
+@}
 @- HEAPcopy
 simple: alloc and copy. Notice that we suppose a preallocated dst->filename (or NULL),
 which might be used in HEAPalloc().
+@{
 @c
 int HEAPcopy(Heap* dst, Heap* src){
 	if (HEAPalloc(dst, src->size, 1) == 0) {
@@ -215,10 +217,11 @@ int HEAPcopy(Heap* dst, Heap* src){
 	}
 	return -1;
 }
-
+@}
 @- HEAPfree
 Is now called even on heaps without memory, just to free the pre-allocated filename.
 simple: alloc and copy.
+@{
 @c
 int HEAPfree(Heap* h) {
 	if  (h->base) {
@@ -240,7 +243,7 @@ int HEAPfree(Heap* h) {
 	h->filename = NULL;
         return 0;
 }
-
+@}
 @- HEAPload
 
 If we don't find file X, we try to move X.priv to it. 
@@ -252,6 +255,7 @@ For the other modes, we access X as-is.
 
 This routine initializes the h->filename without deallocating
 its previous contents.
+@{
 @c
 int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	FILE *fp = (FILE*) GDKfilelocate(nme, "mrb", ext);
@@ -324,7 +328,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 
 	return desc_status; /* ok */
 }
-
+@}
 @- HEAPsave
 
 Saving STORE_MEM will do a write(fd, buf, size) in GDKsave (explicit IO).
@@ -336,6 +340,7 @@ Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit IO).
 
 After GDKsave returns successfully (>=0), we assume the heaps are safe on stable storage.
 @c
+@{
 int HEAPsave(Heap* h, str nme, str ext) {
 	int store = h->storage;
 	char *p = h->filename;
@@ -356,9 +361,10 @@ int HEAPsave(Heap* h, str nme, str ext) {
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
 }
-
+@}
 @- HEAPload
 Delete any saved heap file. For memory mapped files, also try to remove any remaining X.priv
+@{
 @c
 int HEAPdelete(Heap* h, str o, str ext) {
 	int ret;	
@@ -391,33 +397,34 @@ int HEAPdelete(Heap* h, str o, str ext) {
 	}
 	return ret;
 }
-
+@}
 @- HEAPvmsize
 count all memory that takes up address space.
+@{
 @c
 size_t HEAPvmsize(Heap *h) {
         if (h && h->base && h->free)
                 return h->maxsize;
         return 0;
 }
-
+@}
 @- HEAPmemsize
 count all memory that takes up swap space. We conservatively count STORE_PRIV heaps as 
 fully backed by swap space.
+@{
 @c
 size_t HEAPmemsize(Heap *h) {
         if (h && h->base && h->free && h->storage != STORE_MMAP)
                 return h->size;
         return 0;
 }
+@}
 
-
-@* Standard Heap Library
-@T
-This library contains some routines which implement a {\em malloc} and {\em
-free} function on the Monet {\bf Heap} structure. They are useful when
-implementing a new {\em variable-size} atomic data type, or for implementing
-new search accelerators.  All functions start with the prefix {\tt HEAP\_}. T
+@+ Standard Heap Library
+This library contains some routines which implement a @emph{ malloc} and @emph{
+free} function on the Monet @emph{Heap} structure. They are useful when
+implementing a new @emph{ variable-size} atomic data type, or for implementing
+new search accelerators.  All functions start with the prefix @emph{HEAP_}. T
 
 Due to non-careful design, the HEADER field was found to be 32/64-bit dependent. 
 As we do not (yet) want to change the BAT image on disk, This is now fixed by 
@@ -429,6 +436,7 @@ Recognition of the header mode is done by looking at the first two ints:
 alignment must be 4 or 8, and head can never be 4 or eight. 
 
 TODO: user HEADER64 for both 32 and 64 bits (requires BAT format change)
+@{
 @c
 /* #define DEBUG */
 /* #define TRACE */
@@ -902,7 +910,7 @@ void HEAP_checkformat(Heap *heap) {
 	(void) heap;
 #endif
 }
-
+@}
 @-
 If the elements in the heap tend to be small, it is a waste to allocate extra space
 for a size field. especially so if we know that we are going to store only one kind
@@ -910,6 +918,7 @@ of atoms in the heap. from the content of the atom we can then derive its length
 Such a heap can now be created with the HEAP_initialize_compact() function.
 The HEAP_init() function is called in the BAT load sequence, if Monet sees that a 
 standard heap is being loaded (it looks for a directly registered HEAP_check ADT function). 
+@{
 @c
 /* save space in the heap by registering a size function */
 void HEAP_initialize_compact(Heap* heap, size_t nbytes, size_t nprivate, int alignment, int (*sizefcn)(ptr val)) {

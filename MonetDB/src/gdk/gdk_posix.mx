@@ -22,9 +22,10 @@
 GDK is built on Posix. Exceptions are made for memory mapped files and 
 anonymous virtual memory, for which somewhat higher-level functions are 
 defined here.
-
 Most of this file concerns itself with emulation of Posix functionality on 
 the WIN32 native platform.
+@-
+@{
 @h
 #ifndef GDK_POSIX_H
 #define GDK_POSIX_H
@@ -180,26 +181,22 @@ gdk_export void *MT_vmalloc(size_t size, size_t *maxsize);
 gdk_export void  MT_vmfree(void *p, size_t size);
 gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 gdk_export int   MT_path_absolute(char *path);
+@}
 
-@- Posix under WIN32 
-@T
+@+ Posix under WIN32 
 WIN32 actually supports many Posix functions directly.  Some it does not, though. 
-
-For some functionality we move in Monet from Posix calls to MT\_\*() calls, which translate easier 
-to WIN32.  Examples are MT\_mmap() , MT\_sleep\_ms() and MT\_path\_absolute(). Why? In the case
+For some functionality we move in Monet from Posix calls to MT_*() calls, which translate easier 
+to WIN32.  Examples are MT_mmap() , MT_sleep_ms() and MT_path_absolute(). Why? In the case
 of mmap() it is much easier for WIN32 to get a filename parameter rather than a file-descriptor. 
-That is the reason in the case of mmap() to go for a MT\_mmap() solution.
+That is the reason in the case of mmap() to go for a MT_mmap() solution.
 
-For some other functionality, we do not need to abandon the Posix interface, though. Two cases can
-be distinguished:
-\begin{itemize}
-\item missing functions in WIN32, which are directly implemented (e.g. dlopen()/dlsym()/dlclose()).
-\item Posix functions in WIN32 whose functionality should be changed a bit. Examples are 
-      stat()/rename()/mkdir()/rmdir() who under WIN32 do not work if the path ends with a directory 
-      separator, but should work according to Posix. We remap such functions using a define
-      to an equivalent win\_\*() function (which in its implementation calls through to the WIN32
-      function).
-\end{itemize}
+For some other functionality, we do not need to abandon the Posix interface, though. Two cases can be distinguished.
+Missing functions in WIN32 are directly implemented (e.g. dlopen()/dlsym()/dlclose()).
+Posix functions in WIN32 whose functionality should be changed a bit. Examples are 
+stat()/rename()/mkdir()/rmdir() who under WIN32 do not work if the path ends with a directory 
+separator, but should work according to Posix. We remap such functions using a define
+to an equivalent win_*() function (which in its implementation calls through to the WIN32 function).
+@{
 @h
 #ifdef NATIVE_WIN32
 
@@ -1480,38 +1477,50 @@ int sem_post (sem_t * sem) {
 }
 #endif
 #endif
+@}
 
-@- memory fragmentation monitoring
-@T
+@+ Memory fragmentation monitoring
 On 32-bits systems, Monet's aggressive use of virtual memory may bring it into
 trouble as the limits of what is addressable in a 32-bits system are reached 
 (an 32-bits OS only allows 2 to 4GB of memory to be used). In order to aid debugging
 situations where VM allocs fail (due to memory fragmentation), a monitoring
 system was established. To this purpose, a map is made for the VM addresses
-between 0 and 3GB, in tiles of MT\_VMUNITSIZE (64KB). These tiles have a byte
+between 0 and 3GB, in tiles of MT_VMUNITSIZE (64KB). These tiles have a byte
 value from the following domain:
 
-\begin{verbatim}
-0-9 - thread stack space of thread <num>
-B - in use for a large BAT heap.
-b - free (last usage was B)
-S - in use for a malloc block
-s - free (last usage was S)
-P - in use for the BBP array
-p - free (last usage was P)
-M - in use as memory mapped region
-m - free (last usage was M)
-C - in use as MIL context buffer
-c - free (last usage was C)
-\end{verbatim}
+@table @samp
+@item 0-9 
+thread stack space of thread <num>
+@item B 
+in use for a large BAT heap.
+@item b 
+free (last usage was B)
+@item S 
+in use for a malloc block
+@item s 
+free (last usage was S)
+@item P 
+in use for the BBP array
+@item p 
+free (last usage was P)
+@item M 
+in use as memory mapped region
+@item m 
+free (last usage was M)
+@item C 
+in use as MIL context buffer
+@item c 
+free (last usage was C)
+@end table
 
-The MT\_alloc\_printmap condenses the map by printing a char for each MB,
+The MT_alloc_printmap condenses the map by printing a char for each MB,
 hence combining info from 16 tiles. On NT, we can check in real-time which 
 tiles are actually in use (in case our own tile administration is out-of-sync 
 with reality, eg due to a memory leak). This real-life usage is printed in a 
 second line with encoding .=free, *=inuse, X=unusable. On Unix systems,
 *=inuse is not testable (unless with complicated signal stuff). On 64-bits
 systems, this administration is dysfunctional. 
+@{
 @c
 #if SIZEOF_VOID_P == 4
 unsigned char MT_alloc_map[65536]= { 0 };
@@ -1682,3 +1691,4 @@ static void MT_alloc_init(void) {
 #endif
 }
 
+@}

@@ -482,14 +482,13 @@ int BATfree(BAT *b) {
 @+ BAT copying
 @T
 The @%BATcopy@ command takes a BAT and produces a writable copy of it.
-
-The @%BATrcopy@ command takes a BAT and produces a read-only copy of it.
-This allows it to make important space optimizations.
+Likewise, @%BATrcopy@ command produces a read-only copy, which
+allows it to make important space optimizations.
 
 The new BAT is always in memory allocated by @%BATcopy@, the user does 
 not have to do any memory allocation. 
 This routine could benefit from efficient OS memory management support.
-
+@{
 The routine assumes that the atom heaps can simply be copied as well.
 @c
 BAT *batcopy(BAT *b, int ht, int tt, int writeable) {
@@ -570,7 +569,7 @@ BAT *BATrcopy(BAT *b) {
 	BATcheck(bn, "BATcopy");
 	return bn;
 }
-
+@}
 @+ BAT Unit Manipulation
 Binary units (tuples) are the elements stored in BATs. We
 discuss here BUN insert, replace and delete.
@@ -1145,7 +1144,7 @@ BUN BUNlocate(BAT *b, ptr x, ptr y) {
 	}
 	return NULL; 
 }
-
+@}
 
 
 @+ BAT Property Management
@@ -1279,7 +1278,7 @@ BAT *BATseqbase(BAT *b, oid o) {
 	}
 	return b;
 }
-
+@}
 @- 
 BATs have a logical name that is independent of their 
 location in the file system (this depends on batCacheid).
@@ -1288,6 +1287,7 @@ It helps front-ends in identifying the column of interest.
 The new name should be recognizable as an identifier.
 Otherwise interaction through the front-ends becomes
 complicated.
+@{
 @c
 int BATname(BAT *b, str nme) {
 	BATcheck(b, "BATname"); 
@@ -1329,20 +1329,22 @@ BAT *BATroles(BAT *b, str hnme,str tnme) {
 	memcpy(b->tident,tnme,i+1);
 	return b;
 }
-
+@}
 
 @+ BAT permissions, persistency and memory mapped heaps
-@T
 The way large heaps are memory mapped is dependent both on the BAT persistency status (persistent or not)
 as well as their update permissions (readonly,append-only,writable).
 
 Let us recall the two main memory mapped file modes used to store heaps:
-\begin{itemize}
-\item STORE\_MMAP files must be readonly, because you never know the exact saved status. 
+@multitable @columnfractions .12 .8
+@item STORE_MMAP 
+@tab 
+files must be readonly, because you never know the exact saved status. 
       HEAPsave consists of the rather efficient msync(X).
-\item STORE\_PRIV files modify pages in swap area, and can be writable. 
+@item STORE_PRIV 
+@tab files modify pages in swap area, and can be writable. 
       HEAPsave actually does a full write(X), while the mapped file stays in X.priv
-\end{itemize}
+@end multitable
 Notice that PRIV storage is only required for persistent BATs that are already committed 
 on disk. The crash-consistent state of transient BATs is irrelevant as they disappear
 after a crash. Even the crash-consistency of persistent BATs that did not make their first
@@ -1353,12 +1355,13 @@ code is bug-free (:-) and we know we won't modify the already committed parts of
 file pages. For string-heaps append-bats may mmap the heap if doubles are not  being eliminated
 anymore (i.e. when the contents of the builtin hash table at the start of the string heap
 are not crucial anymore).
+@{
 @c
 #define ATOMappendpriv(t,h) ((BATatoms[t].atomHeapCheck != HEAP_check || !HEAP_mmappable(h)) && \
 			     (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h)))
 
+@}
 @- BATmmap
-@T
 Changing the storage status of heaps in a BAT is done in @:BATmmap@. 
 The new semantics is to do nothing: the new mapping only takes effect the next time the bat is loaded. 
 
@@ -1372,6 +1375,7 @@ It also makes the mmap faster as when through caching you
 are finished with the BAT before it is ever swapped to disk
 it will never have been written, whereas the old mmap obliged you to 
 save a BAT directly.
+@{
 @c
 int BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc){
         BATcheck(b, "BATmmap");
@@ -1439,12 +1443,13 @@ int BATmmap_unpin(BAT *b) {
 	@:pin(unpin,&b->taccelerator)@
 	return 0;
 }
-
+@}
 @- BATcheckmodes
 
 Checks legal heap modes. This is done at BATsave time on a temporary copy of the BAT descriptor
 (DESCsetmodes). It now is also used from TMcommit, as one of the criteria for whether a heap
-needs priv storage is whether the BAT has been committed ever (see also dirty\_bat() in gdk\_bbp.mx).
+needs priv storage is whether the BAT has been committed ever (see also dirty_bat() in gdk_bbp.mx).
+@{
 @c
 static int HEAPcheckmode(Heap *h, int persistent, int unloadable, int writeable) {
 	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
@@ -1487,55 +1492,77 @@ int BATcheckmodes(BAT *b, int persistent, int unloadable) {
 	b->batDirtydesc |= dirty;
 	return dirty;
 }
-
+@}
 
 @- Change the BAT access permissions (read, append,write)
-@T
 BATsetaccess() may seem simple, but this has become very tricky when memory-mapped files 
 are involved.
 @-
-@T
 In case of a change from writable->readonly (PRIV->MMAP), nothing needs to be done immediately.
 The mapped BAT is saved in the old mode (in X, not X.priv), and made un-modifiable.
 As there are no updates, we need not worry about saving either.
 @-
-@T
 A change from readonly->writable (MMAP->PRIV) is more traumatic. We must unload, and re-load 
 immediately, before the BAT can become modifiable.
 @-
-@T
 This picture is complicated further by the new MMAP heaps for temporary BATs.
 While such BATs are non-persistent, it is legal to have them as MMAP, because
 they won't need to survive a system crash (ie global abort), so we don't care
 about consistent files.
 @-
-@T
 Now, for such non-persistent MMAP bats we want to keep the change writable->readonly 
 (i.e. MMAP->MMAP) efficient, that is a simple msync(X) should be sufficient (no writing 
 to X.priv). To change a temporary writable MMAP heap into a readonly permanent
 MMAP heap, we must *modify* the filename.
 @-
-@T
 To summarize, there are three heap attributes of interest;
-\begin{description}
-\item[H = (priv,map)] heap mode as registered in h->storage 
-\item[M = (priv,map)] heap mode as has been requested from the OS 
-\item[F = (X,X.priv)] h->filename 
-\end{description}
+@itemize
+@item[H = (priv,map)] heap mode as registered in h->storage 
+@item[M = (priv,map)] heap mode as has been requested from the OS 
+@item[F = (X,X.priv)] h->filename 
+@end itemize
 
 We show now all 4 legal heap states, and transitions between them:
 
-\begin{verbatim}
-writable:                      initially created by:     when made readonly:
-
-(1) [ H=priv,M=priv,F=X.priv ] load a writable mmap bat  goto (4) 
-(2) [ H=map, M=map, F=X.priv ] new temporary heap bat    goto (3)
+@multitable @columnfractions 0.25 0.25 0.25
+item 
+tab
+writable:                      
+tab 
+initially created by:
+tab 
+when made readonly:
+item (1)
+tab
+[ H=priv,M=priv,F=X.priv ] 
+tab
+load a writable mmap bat  
+tab
+goto (4) 
+item (2)
+tab
+[ H=map, M=map, F=X.priv ] 
+tab
+new temporary heap bat    
+tab
+goto (3)
 
 readonly:                                                when made writable:
 
-(3) [ H=map, M=map, F=X]       load a readonly mmap bat  if (persistent) goto (1) else goto (2)
-(4) [ H=map, M=priv,F=X.priv ] n.a.                      goto (1)
-\end{verbatim}
+item (3) 
+tab
+[ H=map, M=map, F=X]       
+tab
+load a readonly mmap bat  
+tab
+if (persistent) goto (1) else goto (2)
+@item (4) 
+[ H=map, M=priv,F=X.priv ] 
+tab
+n.a.                      
+tab
+goto (1)
+@end multitable
 
 Now we see that for BBPsync (heap\_move) it is sufficient to check for the .priv
 suffix to determine the appropriate backup\_bat behavior (i.e. register a X .killfile
@@ -1553,6 +1580,7 @@ readonly mmap heaps, we see that due to H=map in all cases, HEAPsave will use
 the (efficient) msync. This is not dangerous when saving an accelerator heap the
 first time, as its file will be ignored if [ht]accCopiedtodisc in the .desc
 is not set (only happens after fully successful heap write).
+@{
 @c
 /* transition heap from readonly to writable (or appendable) */
 static int HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload) {
@@ -1711,9 +1739,8 @@ int BATgetaccess(BAT *b) {
 	BATcheck(b, "BATgetaccess"); 
 	return b->batRestricted;
 }
-
+@}
 @- change BAT persistency (persistent,session,transient)
-@T
 In the past, we prevented BATS with certain types from being saved at all:
 - BATs of BATs, as having recursive bats creates cascading complexities in commits/aborts. 
 - any atom with refcounts, as the BBP has no overview of such user-defined refcounts.
@@ -1729,7 +1756,7 @@ Although the persistent state does influence the allowed mmap modes, this only
 goes for the *real* committed persistent state. Making the bat persistent with BATmode 
 does not matter for the heap modes until the commit point is reached. So we do not
 need to do anything with heap modes yet at this point.
-
+@{
 @= check_type
         if (ATOMisdescendant(@1, TYPE_ptr) || ATOMisdescendant(@1, TYPE_bat) ||	
 	    BATatoms[@1].atomUnfix || BATatoms[@1].atomFix) 
@@ -1791,9 +1818,7 @@ BAT *BATmode(BAT *b, int mode) {
         }
         return b;
 }
-
-
-
+@}
 @+ BATpropcheck
 
 This is a low-cost routine that smartly tries to deduce as 
@@ -1816,6 +1841,7 @@ This routine now guarantees that any property that could be set
 on the BAT head column, is set after execution. Hence it can be
 used for determining with certainty whether the head column of a 
 BAT is sorted, key or dense. 
+@{
 @c
 BAT* BATpropcheck(BAT* b, int mode) {
 	int disprove_dense, disprove_sorted, disprove_key = TRUE;
@@ -2041,8 +2067,9 @@ Merge scan check to see if head values are sorted (&key)
 		p += xx; last = v;
 	} break;
 @-
-check to see if head values are key.
-We create a view on the bat as the hash table created is 
+@}
+To see if head values are key
+we create a view on the bat as the hash table created is 
 partial; hence inconsistent (it should also not molest
 existing consistent hash tables). On this VIEW we can do a HASHfnd
 
@@ -2056,6 +2083,7 @@ We also insert a debug statement triggered with BATDEBUG (mask 32)
 that displays the size of the hash table used.  We chose BATDEBUG because 
 that also gives the best overview of MIL execution - necessary
 for determining which algebra commands set properties sub-optimally.
+@{
 @c
         if (disprove_key) {
           if(p < q) {

@@ -41,31 +41,33 @@ each suited to particular types of usage.
 
 For query-dominant environments it pays to build a search accelerator.
 The main problems to be solved are:
-@T
-\begin{itemize}
-\item avoidance of excessive storage requirements, and
-\item limited maintenance overhead.
-\end{itemize}
+@itemize
+@item 
+avoidance of excessive storage requirements, and
+@item 
+limited maintenance overhead.
+@end itemize
 @-
 The BAT library automatically decides when an index becomes cost
 effective.
 
 In situations where an index is expected, a call is
-made to @%BAThash@ or @%BATidx@.
+made to @emph{BAThash} or @emph{BATidx}.
 Both operations check for indexing on the header.
-
+@{
 @+ Interface Declarations
 @h
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
 #include "gdk.h"
-
-@- Hash indexing
+@}
+@+ Hash indexing
 This is a highly efficient implementation of simple bucket-chained hashing.
 
 In the past, we used integer modulo for hashing, with bucket chains of mean size 4.
 This was shown to be inferior to direct hashing with integer anding. The new implementation
 reflects this.
+@{
 @h
 gdk_export Heap*	HASHnew      (Hash *h, Heap *hp, int tpe, size_t size, hash_t mask);
 gdk_export hash_t	HASHmask     (size_t cnt);
@@ -197,10 +199,9 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 		}\
 	} h.link[j] = h.link[i];\
 }
-
+@}
 @- Hash Table Creation
-@T
-The @`hash@9 indexing scheme for BATs reserves a block of memory to maintain
+The @emph{hash} indexing scheme for BATs reserves a block of memory to maintain
 the hash table and a collision list. A one-to-one mapping exists between
 the BAT and the collision list using the BUN index. NOTE: we alloc the
 link list as a parallel array to the BUN array; hence the hash link array has
@@ -218,6 +219,7 @@ on the first 25% of the BAT. As we aim for max-collisions list length of 4,
 the list on 25% should not exceed length 1. So, if a small number of collisssions
 occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 times 
 larger. This converges after three cycles to direct hashing.
+@{
 @c
 #include "gdk.h"
 
@@ -446,12 +448,9 @@ void HASHdestroy(BAT *b) {
 	HASHremove(b);
 	HASHremove(BATmirror(b));
 }
-
-
-
-
+@}
 @+  Binary Index Trees
-In this @`index@9 implementation we have chosen for attachment of a sorted list
+In this @emph{index} implementation we have chosen for attachment of a sorted list
 of BUNs to a column whenever a primitive warrants its construction to
 speed-up (future) processing. This sorted list is discarded as soon as it 
 becomes invalid by an update on the underlying structure.
@@ -476,7 +475,7 @@ sorting with the monet-internal qsort is much much quicker. Therefore
 there is no justification anymore for index trees. Let's make Monet
 less complicated and kill them all/go for qsort and direct binary search 
 instead for accelerating range predicates. (TODO)
-
+@{
 @- Binary Index Trees
 @h
 /* type specific binary search implementations */
@@ -766,13 +765,13 @@ construction in one pass from a sorted histogram
     gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
     return b; 
 }
-
-
-@- binary search
+@-
+@}
 Binary searching is used to locate elements in the sorted list. 
 The routine @%IDXfnd@ locates the first element in the list equal to
 the value. A NULL is returned when the value cannot be found.
 
+@{
 Type-optimized versions are available as well. 
 This macro expands to @`IDXfnd_chr@5,  @`IDXfnd_sht@5, @`IDXfnd_int@5,
 @`IDXfnd_flt@5, @`IDXfnd_lng@5, @`IDXfnd_dbl@5, @`IDXfnd_loc@5 and
@@ -982,7 +981,7 @@ void IDXrng_(BAT *b, ptr v, ptr w, bit li, bit hi, BUN **p, BUN **q){
 void IDXrng(BAT *b, ptr v, ptr w, BUN **p, BUN **q){
 	IDXrng_(b, v, w, TRUE, TRUE, p, q);
 }
-
+@}
 @+ Binary Search on a Sorted BAT
 We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that 
 search for a TAIL value 'v' in a sorted BAT. If the value is present, it 
@@ -1012,7 +1011,7 @@ expansions. It finds the first BUN smaller or equal than a certain
 value and expands to @`SORTfndlast_chr@5, @`SORTfndlast_sht@5,
 @`SORTfndlast_int@5, @`SORTfndlast_flt@5, @`SORTfndlast_lng@5,
 @`SORTfndlast_dbl@5, @`SORTfndlast_loc@5 and @`SORTfndlast_var@5.
-
+@{
 @h
 /* type specific binary search implementations */
 gdk_export BUN	SORTfnd_chr      (BAT *b, ptr v);
@@ -1042,13 +1041,14 @@ gdk_export BUN	SORTfndlast_var  (BAT *b, ptr v);
 
 
 @-
+@}
 By Peter sept-99. This is a simple implementation that avoids all multiply
 and divs on most bats by using integer BUNindex numbers rather than absolute
 pointers (the BUNptr employed to obtain a pointer uses shift where possible).
 Also, the gradient-based approach has been dropped again, which allows all
 atoms to be treated in one macro. Main motivation: distrust of gradient
 performance on odmg data and its high mult/div overhead.
-
+@{
 @= SORTfnd
 BUN SORTfndfirst_@2(BAT *b, ptr v) {
 	BUN end = BUNfirst(b), cur = end;
@@ -1414,3 +1414,4 @@ char *ACCname(int t) {
 	return  (t>0 && t<GDKacc_cnt && BATaccelerators[t].name)?
                                BATaccelerators[t].name:"null";
 }
+@}

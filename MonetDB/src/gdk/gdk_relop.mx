@@ -22,18 +22,18 @@ The basic relational operators are implemented for BATs.
 Particular attention has been paid to speed-up processing
 joins, such that navigational access and object re-assembly
 are not being harmed too much.
+@{
 @c
 #include "gdk.h"
 
 #define SAMPLE_TRESHOLD_LOG 17
 #define SAMPLE_SLICE_SIZE 1000
-@{
+@}
 @+ Join Algorithms
-@{
 All join related operations have the same prelude to check
 domain compatibility and to creates the BAT to hold the result.
 
-New: we do some dynamic effort to estimate the result size. Good 
+We do some dynamic effort to estimate the result size. Good 
 estimates enhance performance and reduce the memory hunger of the join.
 Method: we sample on l, and join on the whole r. This macro is called by 
 the physical join algorithms, hence we already decided on the algorithm 
@@ -46,7 +46,7 @@ and checked for outliers. If outliers are present, a real sample is taken
 and executed with the generic join algorithm to obtain an better estimate.
 
 On small joins we just assume 1-N joins with a limited (=3) hit rate. 
-
+@{
 @= joincheck
 	ERRORcheck(l == NULL, "@1: invalid left operand"); 
 	ERRORcheck(r == NULL, "@1: invalid right operand"); 
@@ -124,14 +124,14 @@ if (@3 == (size_t) oid_nil) {
 		return bn; 
 	}
 }
-
-@- merge join
+@}
+@- Merge join
 In the case that both join columns are ordered, we can do a merging
 (@%BATmergejoin@). The merge is opportunistic in that it tries to do
 merge between l and r, but if for a long time no matching tuples are
 found in r, it uses binary search. It also allows joining of an 
 unsorted l with a sorted r; in that case it always uses binary search.
-
+@{
 @= mergejoin
 if (((!BATtvoid(l)) || l->tseqbase != oid_nil) && 
     ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) 
@@ -393,9 +393,9 @@ bunins_failed:
 	return NULL;
 	
 }
+@}
 
-@- fetch-join 
-@T
+@- Fetch-join 
 The @`BATfetchjoin@5(l,r) does a join on the basis of positional lookup. 
 It looks up index numbers from the second parameter in first parameter BAT.
 The right parameter may contain OIDs, in which case their base is
@@ -411,7 +411,7 @@ producing a void column. In that case, we have to switch back
 on-the-fly to the non-dense implementation.
 
 The aftermath -- property setting -- is relatively straightforward here.
-
+@{
 @c
 #define HLATOMput(bn, dst) ATOMput(bn->htype, &bn->hheap, dst, BUNhloc(l,l_cur))
 #define HVATOMput(bn, dst) ATOMput(bn->htype, &bn->hheap, dst, BUNhvar(l,l_cur))
@@ -1333,14 +1333,14 @@ instead of l, and semijoin using binary search in r.
 	BATkey(BATmirror(bn), BATtkey(@1));
 	bn->hsorted = @2;
 	bn->tsorted = @3;
-
-@- sort semijoin
+@}
+@- 
 In the sorted cases with a low semijoin hit-rate, we do lookup using 
 probe-based binary search, instead of a full merge scan.
 Normal merge-semijoin with a full scan on both is handled by kintersect
 (default exit) if both relations are large or if their sizes do not 
 differ significantly.
-
+@{
 @= binsemijoin
 {	BUN lp, lq;
 	int xx;
@@ -1531,13 +1531,13 @@ BAT *BATidxsemijoin(BAT *l, BAT *r, BAT *cpy) {
   	ESTIDEBUG THRprintf(GDKout, "BATidxsemijoin: actual resultsize: " SZFMT "\n",BATcount(bn));
 	return bn;
 } 
-
-@- reverse semijoin
-The semijoin done from the other side. Is only better if the other side (r) is much
+@}
+@- 
+The reverse semijoin is only better if the other side (r) is much
 smaller than l, and iff you already have the hash table on l. It uses hash tables on
 both relations: on r to check that no item is processed twice (not necessary to check 
 iff BAThkey(r) and one on l to find the matching tuples.
-
+@{
 @= revsemijoin
 {	int xx;
 	hash_t yy;
@@ -1618,11 +1618,12 @@ bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
-
-@- positional semijoin 
-the below routine performs a semijoin using positional lookup.
+@}
+@- 
+The positional semijoin performs a semijoin using positional lookup.
 This implementation is dirty as it also allows fetches with 
 hard integer positions, rather than oid matching on a dense-oid column.
+@{
 @c
 static BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup) {
 	int xx;
@@ -1782,14 +1783,13 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 	}
 	return bn;
 }
+@}
 
-
-@* Cross Product
-@T
+@+ Cross Product
 This operation computes the cross product of two BATs, returning only the
 head-value from the 'left' operand and then tail-value from the 'right'
 operand.
-
+@{
 @= cross2
 BAT* cross_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	BUN l_cur, l_end, r_cur, r_end, dst;
@@ -1923,24 +1923,22 @@ BAT *BATcross(BAT *l, BAT *r) {
 	return bn;
 }
 
+@}
+@+ Cartesian product
+The matching algorithms tries to construct non-empty matches on all head 
+columns. Each time this succeeds, it calls the Cartesian routine to
+construct a join result that consists of the Cartesian product of these
+matches.
 
-@* MultiColumn Join 
-@T
-Computes the n-ary equijoin over the head columns of multiple BATs.
-This function is complex, and uses nested functions calls, 
-for the specific stuff, it uses the stack for generating the 
-Cartesian product on each hit tuple. Most of all, it emits tuples one 
-at a time, in a pipeline rather than bulk fashion. For all these reasons, 
-it is not main-memory efficient. It does things that Monet actually 
-specifically was designed to avoid.
-
-USE THIS FUNCTION ONLY WHEN YOU REALLY REALLY HAVE TO:
-\begin{itemize}
-\item
-printing a multicolumn table to a watching end-user is one such example
-\item
-the unoptimized [X](bat,bat,..) MIL multiplex construct is another example
-\end{itemize}
+The matching tuples can be encoded in two ways: 
+@table @samp
+@item clustered
+ here we have two BUN pointers 'hi' and 'lo' that point
+to a consecutive range of BUNs in a BAT that match.
+@item nonclustered here we have a hit pointer that points to an array 
+of BUN  pointers that match.
+@end table
+@{
 The below structures are used for keeping track of the matching process.
 @c
 typedef struct _column_t {
@@ -1973,21 +1971,6 @@ typedef struct {
         int       argc;        /* size of c */
 } table_t;
 
-@+ Cartesian product
-@T
-The matching algorithms tries to construct non-empty matches on all head 
-columns. Each time this succeeds, it calls the Cartesian routine to
-construct a join result that consists of the Cartesian product of these
-matches.
-
-The matching tuples can be encoded in two ways: 
-\begin{description}
-\item[clustered] here we have two BUN pointers 'hi' and 'lo' that point
-to a consecutive range of BUNs in a BAT that match.
-\item[nonclustered] here we have a hit pointer that points to an array 
-of BUN {\bf pointers} that match.
-\end{description}
-@c
 static void column_result(table_t* t, int i) {
     if (++i > t->argc) {
 	/* end of recursion: invoke tuple-match routine */
@@ -2011,23 +1994,43 @@ static void column_result(table_t* t, int i) {
         }
      }
 }
+@}
+@* MultiColumn Joins 
+Computes the n-ary equijoin over the head columns of multiple BATs.
+This function is complex, and uses nested functions calls, 
+for the specific stuff, it uses the stack for generating the 
+Cartesian product on each hit tuple. Most of all, it emits tuples one 
+at a time, in a pipeline rather than bulk fashion. For all these reasons, 
+it is not main-memory efficient. It does things that MonetDB actually 
+specifically was designed to avoid.
 
+USE THIS FUNCTION ONLY WHEN YOU REALLY REALLY HAVE TO:
+@table @code
+@item  -
+printing a multicolumn table to a watching end-user is one such example
+@item -
+the unoptimized [X](bat,bat,..) MIL multiplex construct is another example
+@end table
 @+ multijoin entry routine
-@T
-The multijoin will cause a cascade of value\_fcn() calls putting 
-values in to place, rounded off each time by a tuple\_fcn() that is
+The multijoin will cause a cascade of value_fcn() calls putting 
+values in to place, rounded off each time by a tuple_fcn() that is
 executed on each produced tuple. If this corresponds 1-1 with 
 the elements of one of the parameter BAT, the 'result' of the
 operation would be aligned with it.
 
 The return value of this operation contains this status information.
 It is an integer, of which all 4 bytes are used:
-\begin{itemize}
-\item ret[0] == 1, if a mergejoin was used, 0 otherwise
-\item ret[1] == 1, if all bats had the key property set, 0 otherwise
-\item ret[2] == 1 if there was a 1-1 join, 0 otherwise
-\item ret[3] == the parameter number of the BAT which was used as leader
-\end{itemize}
+@table @code
+@item ret[0] == 1,
+if a mergejoin was used, 0 otherwise
+@item ret[1] == 1,
+if all bats had the key property set, 0 otherwise
+@item ret[2] == 1
+if there was a 1-1 join, 0 otherwise
+@item ret[3] == 
+the parameter number of the BAT which was used as leader
+@end table
+@{
 @c
 #define COLSIZE(c)\
 	(((c)->b->htype!=TYPE_void || (c)->b->hseqbase!=oid_nil)?(c)->size:0)
@@ -2095,9 +2098,8 @@ order columns by their size (smallest first)
 		}
 		reorder[j] = c+i;
         }
-
+@}
 @- handle explicit ordering requests
-@T
 An 'orderby' specification tells that the multijoin should match in the
 order of one specific BAT parameter. 
 
@@ -2107,6 +2109,7 @@ This allows for both for join results ordered on some tail column as results
 ordered on head column, or even 'reverse' or other specific orderings.
 One such specific ordering is the SQL ORDER BY multi-column ordering that
 can be obtained with the CTorderby command from the xtables module.
+@{
 @c
 	if (orderby) { /* order on tail of some column */
 		int lead = orderby - 1;
@@ -2118,21 +2121,21 @@ can be obtained with the CTorderby command from the xtables module.
 		reorder[0] = c + lead;
 	}
 	lead_col = reorder[0];
-
+@}
 @- lead column traversal mode
-@T
-The default action is to do LEAD\_TRAVERSE\_SEQ: 1-by-1 traversal of the lead\_col,
+The default action is to do LEAD_TRAVERSE_SEQ: 1-by-1 traversal of the lead_col,
 and for each head value use the best possible matching algorithm. 
 A local optimization is to signal a sorted head column in the lead column, 
-so we can switch to LEAD\_TRAVERSE\_SRT; if double lead values occur we do them
+so we can switch to LEAD_TRAVERSE_SRT; if double lead values occur we do them
 in one match iteration. 
 Finally, if we are not obliged to follow the current order (lead == 0) and
-there is a binary tree present, then we do LEAD\_TRAVERSE\_IDX matching. 
+there is a binary tree present, then we do LEAD_TRAVERSE_IDX matching. 
 
-We record in MULTIJOIN\_SORTED(status) whether the chosen traversal method
+We record in MULTIJOIN_SORTED(status) whether the chosen traversal method
 visits the head values in the lead column in order. This is important 
 for the matching algorithms of the other columns (only if the head
 values are visited in order, merge algorithms may be employed).
+@{
 @c
 	if (BAThordered(lead_col->b)&1) {
                 if (!BAThkey(lead_col->b)) {
@@ -2157,17 +2160,18 @@ values are visited in order, merge algorithms may be employed).
 		algo = (BAThordered(lead_col->b)&1)?
 			LEAD_TRAVERSE_SSK:LEAD_TRAVERSE_SNK;
 	}
+@}
 
 @- matching algorithms for the other columns
-@T
 Finally, the issue of choosing matching-algorithms for the other columns
 is treated. There are a number of possibilities. If a column is
 synced with a previous column, this is registered, so it can copy the 
 matching results of that previous column. If not, we use the fact that a
 column is ordered and if not, has an binary index on it. Both cases
 fall into two sub cases: merge-lookup or binary-search; depending on
-whether we visit the head elements in order (MULTIJOIN\_SORTED(status)).
+whether we visit the head elements in order (MULTIJOIN_SORTED(status)).
 If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
+@{
 @c
         for(k=1; k < argc; k++) {
 		column_t *n = reorder[k];
@@ -2226,21 +2230,25 @@ Cleanup & exit.
         }
         return status;
 }
-
+@}
 @+ The Matching Algorithm
-@T
 In multi-column join, all Monet accelerators are put to use when 
 equi-lookup is done on a number of head columns.  In order of 
 preference, it:
 
-\begin{itemize}
-\item does positional lookup on {\em virtual oid} columns (void).
-\item reuses lookup info on {\em synced columns}.
-\item uses merge scan on {\em ordered columns}.
-\item uses binary tree leaf scan on {\em indexed columns}.
-\item uses hash lookup in other cases. If a hash-table does not
+@itemize
+@item 
+    does positional lookup on @emph{ virtual oid} columns (void).
+@item 
+    reuses lookup info on @emph{ synced columns}.
+@item 
+    uses merge scan on @emph{ ordered columns}.
+@item 
+    uses binary tree leaf scan on @emph{ indexed columns}.
+@item 
+    uses hash lookup in other cases. If a hash-table does not
 exist; it is created on the fly.
-\end{itemize}
+@end itemize
 
 The algorithm goes one by one, for unique head values in the smallest-sized 
 BAT. The strategy is for each column to find a range of BUNs that match it. 
@@ -2271,7 +2279,7 @@ calling whenever a value is 'changed' in the result-tuple-under-construction,
 a value specific function, provided by the user. Since each column can have 
 a different value function, this also allows for factoring out type-checking 
 overhead.
-
+@{
 @= multijoin
 while(algo) {
     ptr h; /* points to current ID */

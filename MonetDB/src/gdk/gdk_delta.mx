@@ -18,8 +18,11 @@
 @f gdk_delta
 @a M. L. Kersten, P. Boncz
 @* Delta management
-Delta management requires enhancements to many places of the code.
-The BAT descriptor is extended with three delta markers. Inserted denotes
+The basis for transaction management is to keep track of
+elements inserted, deleted, and replaced.
+This information is stored within the BAT structure using three
+delta markers.
+Inserted denotes
 the first added BUN since the last commit. Deleted points to the BUNs removed.
 The deletion list is terminated at @%hole@, where space is reserved for swapping
 BUNs upon deletion. Initialization of the BAT is extended as follows:
@@ -54,12 +57,10 @@ This optimizes processing on such BATs (DDBENCH).
 	memset((P1)->batHole, 0, BUNsize(P1));		      \
 }
 @
-@}
 
-Upon saving a BAT, we should convert the BUN pointers into indexes
+Upon saving a BAT, we should convert the delta marker BUN pointers into indexes
 and convert them back into pointers upon reload.
 
-@{
 @h
 #define DELTAsave(P1)	{						      \
 	if ((P1)->batBuns->base) {					      \
@@ -94,20 +95,17 @@ and convert them back into pointers upon reload.
 }
 @	
 @}
-
+@-
 The b->batDirty field tells you whether a BATs main memory representation
 differs from its saved image on stable storage. But *not* whether it has
 changed since last transaction commit (it can be storage-clean, but 
 transaction-dirty). For this we have @%DELTAdirty(b)@.
-
+@-
 @{
 @h
 #define DELTAdirty(b)	(((b)->batDeleted != (b)->batHole) ||\
 	((b)->batInserted < (b)->batBuns->base+(b)->batBuns->free)) 
-@}
 
-@{
-@h
 #define DELTAnexthole(b)						\
 	DELTAprintf( "#DELTAnexthole %s \n", (b)->batId );		\
 	(b)->batHole = (b)->batHole + BUNsize(b);			\
@@ -129,13 +127,11 @@ transaction-dirty). For this we have @%DELTAdirty(b)@.
 
 #endif /* _GDK_DELTA_H_ */
 @
-@}
 
 @- 
 Impact on hashing and indexing.
 The hash structure is maintained for all elements to be deleted ?.
 
-@{
 @c
 #include "gdk.h"
 
@@ -216,12 +212,12 @@ BAT *BATfakeCommit(BAT *b) {
 }
 @
 @}
-
 @- 
 The routine @%BATundo@ restores the BAT to the previous commit point.
 The inserted elements are removed from the accelerators, deleted from the
 heap. The guarded elements from uncommitted deletes are
 inserted into the accelerators.
+@-
 @{
 @c
 BAT *BATundo(BAT *b) {
@@ -371,7 +367,6 @@ BAT *BATdelta(BAT *b) {
 	return bn; 
 }
 @
-@}
 @- 
 The event status associated with a BAT can be inspected by simple routines.
 @c

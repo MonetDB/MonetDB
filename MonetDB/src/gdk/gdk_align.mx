@@ -27,46 +27,48 @@ or when you can not afford the large hash structures to speed-up processing.
 For orthogonality, we support alignment between arbitrary columns (head or tail).
 @-
 All standard GDK set-calls update the alignment info in their respective 
-ways. For example, the routine @%BUNclustercopy@ shuffles the first argument, 
+ways. For example, the routine @emph{BUNclustercopy} shuffles the first argument, 
 such that the BUNs are in the same order as those in the second argument. 
-This operation will mark both columns of the first @%BAT@ as synced with
-the second (likewise, @%BATcopy()@, which makes a copy, instead of in-place 
-shuffling, has the same alignment effect, @%BATmark()@ marks the tail column 
-as synced with the head of the original @%BAT@, and for instance 
-@%BATsemijoin()@ marks both return columns as aligned with its left parameter).
+This operation will mark both columns of the first @emph{BAT} as synced with
+the second (likewise, @emph{BATcopy()}, which makes a copy, instead of in-place 
+shuffling, has the same alignment effect, @emph{BATmark()} marks the tail column 
+as synced with the head of the original @emph{BAT}, and for instance 
+@emph{BATsemijoin()} marks both return columns as aligned with its left parameter).
 @
 Each alignment sequence is given a unique identifier, so as to easily
-detect this situation. It is retained in the @%BAT descriptor@.
+detect this situation. It is retained in the @emph{BAT descriptor}.
 @+ Alignment Design Considerations
-@T
 Alignment primitives require the right hooks to be inserted in 
 several places in the GDK, apart form this file:
-\begin{itemize}
-\item {\em BUN update operations}. The updated BATs have to be marked as 
+@itemize
+@item @emph{ BUN update operations}. 
+The updated BATs have to be marked as 
 un-aligned.
-\item {\em set operations}. For most relational operations some
+@item @emph{ set operations}. 
+For most relational operations some
 statements can be made about the size and order of the BATs 
 they produce. This information can be formalized by indicating alignment
 information automatically.
-\item {\em transaction operations}. Alignment statuses must be 
+@item @emph{ transaction operations}. 
+Alignment statuses must be 
 kept consistent under database commits and aborts.
-\end{itemize}
+@end itemize
 @
 As for performance, the most important observation to make is that 
 operations that do not need alignment, will suffer most from
 overheads introduced in the BUN update mechanism. For this reason,
 the alignment-delete operation has to be very cheap. It is
-captured by the @%ALIGNdel@ macro, and just zaps one character
-field in the @%BAT@ record.. 
+captured by the @emph{ALIGNdel} macro, and just zaps one character
+field in the @emph{BAT} record.
 @
-
+@{
 @+ Alignment Implementation
-The @%BAT@ record is equipped with an @%batAlign@ field that keeps
+The @emph{BAT} record is equipped with an @emph{batAlign} field that keeps
 both information about the head and tail column. The leftmost
 4 bits are for the head, the rightmost 4 for the tail. This
 has been done to make the zap ultra-cheap.
 
-Both head and tail column contain an OID in the @%halign@ and @%talign@
+Both head and tail column contain an OID in the @emph{halign} and @emph{talign}
 fields respectively to mark their alignment group. All BATs with the
 same OID in this field (and the ALIGN_SYNCED bit on) are guaranteed
 by the system to have equal head columns. As an exception, they
@@ -74,7 +76,6 @@ might also have TYPE_void head columns (a virtual column).
 In such a case, the tail values correspond to the head values
 that would have been there in a non-virtual column, continuing
 the same head-sequence as the other BATs in the sync group.
-@{
 @c
 #include "gdk.h"
 
@@ -119,7 +120,7 @@ int ALIGNsetH(BAT *b1, BAT *b2) {
 }
 
 @-
-The routines @%ALIGN_synced@ and @%ALIGN_ordered@
+The routines @emph{ALIGN_synced} and @emph{ALIGN_ordered}
 allow to simply query the alignment status of the two head columns
 of two BATs.
 @c
@@ -165,9 +166,9 @@ int ALIGNrelated(BAT* b1, BAT* b2) {
 
 @+ View BATS
 The general routine for getting a 'view' BAT upon another 
-BAT is @%VIEWcreate@. On this @#read-only@ BAT (there is kernel
+BAT is @emph{VIEWcreate}. On this @emph{#read-only} BAT (there is kernel
 support for this), you can then make vertical slices. 
-Use @%VIEWhead@ for this. 
+Use @emph{VIEWhead} for this. 
 @
 It is possible to create a view on a writable BAT. Updates
 in the parent are then automatically reflected in the VIEW.

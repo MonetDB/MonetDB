@@ -16,20 +16,19 @@
 @' All Rights Reserved.
 
 @f gdk_value
-@t Monet Values
 @a Martin L. Kersten & Peter Boncz
 @v 2.0 
-@* Introduction
+@+ Value representation
 
  
-When manipulating values, Monet puts them into value records.
+When manipulating values, MonetDB puts them into value records.
 The built-in types have a direct entry in the union. Others should 
 be represented as a pointer of memory in pval or as a string, which
 is basically the same. In such cases the @%len@ field indicates
 the size of this piece of memory.
 
-Monet Extenders will use value records for passing parameters to
-their new operators. Monet algebraic commands receive an 
+MonetDB extenders will use value records for passing parameters to
+their new operators. MonetDB algebraic commands receive an 
 (argc, argv) combination, where
 argc is an integer indicating the size of the the argv array of value 
 records. On call, the first record, argv[0], is always empty. The

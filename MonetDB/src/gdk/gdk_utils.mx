@@ -21,7 +21,8 @@
 @* Utilities
 The utility section contains functions to initialize the Monet database
 system, memory allocation details, and a basic system logging scheme.
-
+@-
+@{
 @h
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
@@ -85,8 +86,8 @@ BAT 	*GDKenv = NULL;
 #ifdef HAVE_PWD_H
 # include <pwd.h>
 #endif
-
-@- Monet configuration file
+@}
+@+ Monet configuration file
 Parse a possible MonetDB.conf file (either in the default location
 <prefix>/etc/MonetDB.conf, or as specified by either an environment variable
 $MONETDB_CONFIG, or by command line option -c/--config) 
@@ -100,6 +101,7 @@ Syntax errors are immediately flagged, though.
 Since the GDK kernel moves into the database directory, we need
 to keep the absolute path to the MonetDB.conf file for top-levels
 to access its information.
+@{
 @c
 
 void GDKusage(){
@@ -162,7 +164,7 @@ void GDKsetenv(str name, str value){
 	BUNins(GDKenv,name,value);
         BATfakeCommit(GDKenv);
 }
-
+@}
 
 @+ System logging
 Per database a log file can be maintained for collection
@@ -177,6 +179,7 @@ dealt with on a per client basis.
 A system log can be maintained in the database to keep track
 of session and crash information. It should regularly be
 refreshed to avoid disk overflow.
+@{
 @c
 #define GDKLOCK	".gdk_lock"
 
@@ -218,11 +221,12 @@ void GDKlog(const char *format, ...) {
 
 	if (mustopen) GDKunlockHome();
 }
-
+@}
 @+ Interrupt handling
 The current version simply catches signals and prints a warning.
 It should be extended to cope with the specifics of the interrupt
 received.
+@{
 @c
 #include <signal.h>
 RETSIGTYPE BATSIGignore(int nr) {
@@ -294,16 +298,16 @@ int BATSIGinit(void) {
 #endif
 	return 0;
 }
-
+@}
 @+ Memory management
 Memory management in GDK mostly relies on the facilities offered by the 
 underlying OS.  The below routines monitor the available memory resources
 which consist of physical swap space and logical vm space.
-@T
 There are three kinds of memory, that affect these two resources in different ways: 
-\begin{description}
+@table @samp
 
-\item[memory mapping] which ask for a logical region of virtual memory space.
+@item memory mapping
+ which ask for a logical region of virtual memory space.
 In principal, no physical memory is needed to keep the system afloat here,
 as the memory mapped file is swapped onto a disk object that already exists.
 
@@ -312,13 +316,13 @@ read-only direct mapped and writable copy-on write. For the dirty
 pages, the latter actually also consumes physical memory resources, 
 but that is ignored here for simplicity.
 
-\item[anonymous virtual memory]
+@item anonymous virtual memory
 This is virtual memory that is mapped on the swap file. Hence, this consumes
 both logical VM space resources and physical memory space.
 
-\item[malloced memory] 
+@item malloced memory 
 comes from the heap and directly consumes physical memory resources.
-\end{description}
+@end table
 
 We check the resource consumption with preset target values, and if these 
 are exceeded, the routine BBPtrim is called that will unload the
@@ -328,6 +332,7 @@ The malloc routine checks the memory consumption every 1000 calls,
 or for calls larger that 50000 bytes. Consequently, at least every
 50MB increase, alloc memory is checked. The VM calls always check
 the memory consumption.
+@{
 @h
 /* default setting to administer everything */
 #define GDK_MEM_NULLALLOWED
@@ -584,19 +589,18 @@ void GDKmemchk(int memchk, int vmchk) {
                 if (vmchk) GDK_vm_allocs = 0;
         }
 }
+@}
 
-
-@- stack tracing
+@+ Stack tracing
 
 Very simple malloc tracing implementation that allows to retain on which stack frame
-a malloc was done. This is code originally developed by DD, and is used only  by them.
-@T
-Two bats are used:
-\begin{itemize}
-\item stackBat: Contains a DAG of all methods used for memory allocation.
-\item memBat: contains a mapping from allocated memory addresses to an index
+a malloc was done. This is code originally developed by DD, and 
+is used only  by them.
+Two bats are used: stackBat and memBat.
+StackBat contains a DAG of all methods used for memory allocation.
+MemBat contains a mapping from allocated memory addresses to an index
 in the stackBat which indicates the place the memory is allocated.
-\end{itemize}
+@{
 @c
 #ifdef GDK_MEM_TRACE
 
@@ -794,10 +798,9 @@ del_mem(BAT *b, mem_t mem)
 int GDKmtrace(bit *enable){ (void)enable; return GDK_SUCCEED; }
 int GDKmprint(int *pidx)  { (void)pidx;   return GDK_SUCCEED; }
 #endif
-
+@}
 	
-@- Malloc 
-@T
+@+ Malloc 
 Malloc normally maps through directly to the OS provided malloc/free/realloc
 calls. Where possible, we want to use the -lmalloc library on Unix systems, 
 because it allows to influence the memory allocation strategy. This can prevent
@@ -810,38 +813,39 @@ memory. Finally, additional information on block sizes is kept (helping efficien
 reallocations) as well as some debugging that guards against duplicate frees.
 
 A number of different strategies are available using different switches, however:
-\begin{description}
+@table @samp
 
-\item[zero sized blocks]
+@item zero sized blocks
 Normally, GDK gives fatal errors on illegal block sizes.
-This can be overridden with  GDK\_MEM\_NULLALLOWED.
+This can be overridden with  GDK_MEM_NULLALLOWED.
 
-\item[resource tracking]
+@item resource tracking
 Many malloc interfaces lack a routine that tells the size of a block
 by the pointer. We need this information for correct malloc statistics.
 
-\item[outstanding block histograms]
+@item outstanding block histograms
 In order to solve the problem, we allocate extra memory in front of the 
 returned block. With the resource tracking in place, we keep a total of 
-allocated bytes.  Also, if GDK\_MEM\_KEEPHISTO is defined, we keep a histogram 
+allocated bytes.  Also, if GDK_MEM_KEEPHISTO is defined, we keep a histogram 
 of the outstanding blocks on the log2 of the block size (similarly for virtual.
-memory blocks; define GDK\_VM\_KEEPHISTO).
+memory blocks; define GDK_VM_KEEPHISTO).
 
-\item[ensuring 8-byte alignment]
+@item ensuring 8-byte alignment
 While doing the resource tracking, we can in one go solve the problem
 of 32-bit systems that return non-8 bytes aligned pointers. This is
 encoded by storing a size + 1 (we always normalize sizes to multiples of 
 8, so this is easily recognized). This check only done if 
-GDK\_MEM\_MISALIGN is {\bf not} enabled.
+GDK_MEM_MISALIGN is @strong{not} enabled.
 
-\item[redirection to anonymous VM]
+@item redirection to anonymous VM
 Sometimes, fragmentation problems arise on mallocs that are not tunable.
 In that case, it makes sense to redirect large block requests (taken to be
-larger than GDK\_mem\_bigsize) to anonymous virtual memory. The seamless
-implementation of this stores the {\bf negative} block size in front of the
+larger than GDK_mem_bigsize) to anonymous virtual memory. The seamless
+implementation of this stores the @strong{negative} block size in front of the
 pointer (as well as the VM maxsize), so the malloc primitives can recognize
-these redirected blocks.This behavior is enabled by defining GDK\_MEM\_VMREDIRECT.
-\end{description}
+these redirected blocks.This behavior is enabled by defining GDK_MEM_VMREDIRECT.
+@end table
+@{
 @c
 void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 	int bak = GDKdebug;
@@ -1147,11 +1151,12 @@ void GDKvmfree(void* blk, size_t size, size_t maxsize){
 	MT_vmfree(blk, maxsize);
 	@:memdec(size, maxsize)@
 }
+@}
 
 @+ Session Initialization
-The parameter @%db@ is followed by the database name relative to
+The parameter @emph{db} is followed by the database name relative to
 the environment variable dbfarm.
-The parameter @%monetrc@ tells that the system variables setting
+The parameter @emph{monetrc} tells that the system variables setting
 should be overruled by the specification given in the file argument.
 This format is only necessary to temporarily experiment with variable settings,
 without disturbing a system/site default setting.
@@ -1165,6 +1170,7 @@ They are thread specific and should be obtained by a function.
 
 The arguments relevant for the kernel are extracted from the list. 
 Their value is turned into a blanc space.
+@{
 @h
 gdk_export int GDKrecovery;
 @c
@@ -1315,6 +1321,7 @@ MT_Lock		GDKcacheLock, GDKtrimLock;
 MT_Lock		GDKunloadLock;
 MT_Lock		GDKtmLock; 
 MT_Cond		GDKunloadCond; 
+@}
 
 @+ Concurrency control
 Concurrency control requires actions at several levels of the system.
@@ -1326,6 +1333,7 @@ for improved speed.
 @-
 Before the locks and threads are initiated, we cannot use the 
 normal routines yet. So we have a local fatal here instead of GDKfatal. 
+@{
 @c
 void GDKlockHome(void) {
 	char *p=0, buf[1024], host[PATHLENGTH];
@@ -1403,6 +1411,7 @@ int GDKgetHome(void) {
 	}
 	return 1;
 }
+@}
 
 @+ Error handling
 Errors come in three flavors: warnings, non-fatal and fatal errors.
@@ -1417,7 +1426,7 @@ which makes it hard for upper layers to detect if an error
 was produced in the process. To facilitate such testing,
 a global error count is maintained on a thread basis,
 which can be read out by the function GDKerrorCount();
-
+@{
 @c
 int GDKsilent = 0;
 static int    THRerrorcount[THREADDATA];
@@ -1682,7 +1691,7 @@ void GDKsetstamp(int newstamp)
 {
 	stamp = newstamp;
 }
-
+@}
 
 @+ Logical Thread management
 
@@ -1697,6 +1706,7 @@ Note that the users should have gained exclusive access already.
 A new entry is initialized automatically when not found.
 Its file descriptors are the same as for the server and should be
 subsequently reset.
+@{
 @c
 int		GDKnrofthreads; 
 ThreadRec 	GDKthreads[THREADS]; 
@@ -1815,7 +1825,6 @@ int THRhighwater(void) {
 	return 0;
 }
 
-@{
 @- 
 I/O is organized per thread, because users may gain access through
 the network.
@@ -1903,6 +1912,6 @@ int THRprintf(stream *s, const char *format, ...) {
         return n;
 }
 
-@}
 @h
 #endif /* _GDK_UTILS_H_ */
+@}

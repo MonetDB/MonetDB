@@ -18,25 +18,29 @@
 @f gdk_batop
 @a M. L. Kersten, P. Boncz, S. Manegold
 @* Common BAT Operations
-@T
 This module contains the following BAT algebra operations:
-\begin{description}
-\item[bulk updates] multi-insert, multi-delete, multi-replace
-\item[common aggregates] min, max and histogram
-\item[oid column manipulations] mark, number and split.
-\item[bat selections] select, slice, sample, fragment and restrict.
-	Note: non hash-/index-supported scanselects have been "outsourced"
-	to gdk\_scanselect.mx as the fully expanded code grows too large to be
-	(conveniently) compiled in a single file.
-\item[bat partitioning] hash partition, range partitioning
-\end{description}
-@T
-As you probably noticed :-), we try to factor out all possible 
-overhead by inlining code. This includes the macros BUNhead and BUNtail, 
+@itemize
+@item[bulk updates] 
+multi-insert, multi-delete, multi-replace
+@item[common aggregates] 
+min, max and histogram
+@item[oid column manipulations] 
+mark, number and split.
+@item[bat selections] 
+select, slice, sample, fragment and restrict.
+Note: non hash-/index-supported scanselects have been "outsourced"
+to gdk_scanselect.mx as the fully expanded code grows too large to be
+(conveniently) compiled in a single file.
+@item[bat partitioning] 
+hash partition, range partitioning
+@end itemize
+We factor out all possible overhead by inlining code. 
+This includes the macros BUNhead and BUNtail, 
 which do a test to see whether the atom resides in the buns or in a 
 variable storage heap. The updateloop(dstbat, srcbat, operation) macro 
 invokes operation(dstbat, BUNhead(srcbat), BUNtail(srcbat)) on all buns
 of the srcbat, but testing only once where they reside.
+@{
 @c
 #include "gdk.h"
 #include "gdk_scanselect.h"
@@ -48,10 +52,12 @@ of the srcbat, but testing only once where they reside.
 		@3(@1, BUNhead(@2, p), BUNtail(@2, p)); 
 	}
 }
+@}
 
 @+ BAT insert/delete/replace
 The content of a BAT can be appended to (removed from) another using
 @%BATins@ (@%BATdel@).
+@{
 @c
 #define bunins(b,h,t) if (BUNins(b,h,t) == NULL) return NULL;
 BAT *BATins(BAT *b, BAT *n) 
@@ -245,386 +251,6 @@ BAT *BATreplace(BAT *b, BAT *n)
 }
 @}
 
-@+ Introducing OID Columns
-The @%BATmark@ operation is normally used to prepare a class of query
-results. Likewise, @%BATnumber@ is heavily used in the SQL front-end.
-@c
-BAT *BATmark(BAT *b, oid oid_base)
-{
-        BAT     *bn;
- 
-        BATcheck(b, "BATmark");
-	bn = VIEWhead(b);
-	if (bn) {
-		BATseqbase(BATmirror(bn), oid_base);
-		if (BATrestricted(b) != BAT_READ) {
-			BAT *v = bn;
-			bn = BATcopy(v);
-			BBPreclaim(v);
-		}
-	}
-        return bn;
-}
-
-#define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, yy); r += yy; i++;
-BAT *BATnumber(BAT *b)
-{
-        int     i = 0, yy;
-        BAT     *bn;
-	BUN	r;
- 
-        BATcheck(b, "BATnumber");
-	/* assert(BATcount(b) <= MAXINT); */
-        bn = BATnew(b->htype, TYPE_int, BATcount(b));
-        if (bn == NULL) return NULL;
-	r = BUNfirst(bn);
-	yy = BUNsize(bn);
-        @:updateloop(bn,b,BUNnumber)@
-	ALIGNsetH(bn,b);
-	BATsetaggr(bn, GDK_AGGR_CARD, i);
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = GDK_SORTED;
-        return bn;
-bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-BAT *BATgroup(BAT *b, int start, int incr, int grpsize)
-{
-        BUN p, q, r;
-        int ngroups = 1, i = 0, xx, yy;
-        BAT *bn;
-
-        BATcheck(b, "BATgroup");
-        bn = BATnew(b->htype, TYPE_int, BATcount(b));
-        if (bn == NULL) return NULL;
-	r = BUNfirst(bn);
-	yy = BUNsize(bn);
-
-        ALIGNsetH(bn,b);
-   
-        BATloopFast(b, p, q, xx) {
-            bunfastins_nocheck(bn, r, BUNhead(b, p), (ptr)&start, yy); r += yy;
-            if(i == grpsize-1) { start += incr; i = 0; ngroups++; } else { i++; }
-        }
-	if (i == 0) ngroups--;
-	BATsetaggr(bn, GDK_AGGR_CARD, ngroups);
-        bn->hsorted = BAThordered(b);
-        bn->tsorted = GDK_SORTED;
-        return bn;
-bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-BAT* BATconst(BAT *b, int tailtype, ptr v)
-{
-        BAT *bn;
-        BUN p, q, r;
-        int xx, yy;
-
-        BATcheck(b, "BATconst");
-	if (BATrestricted(b) == BAT_READ &&
-           (tailtype == TYPE_void || (tailtype == TYPE_oid && *(oid*) v == oid_nil)))
-	{
-		oid seqbase = (tailtype==TYPE_void)?oid_nil:*(oid*) v;
-		bn = VIEWhead(b);
-		BATseqbase(BATmirror(bn), seqbase);
-		return bn;
-	}
-	if (tailtype == TYPE_bat) {
-		v = &((BAT*) v)->batCacheid;
-	} else if (tailtype == TYPE_void && b->htype == TYPE_void) {
-		tailtype = TYPE_oid;
-		v = ATOMnilptr(TYPE_oid);
-	}
-        bn = BATnew(b->htype, tailtype, BATcount(b));
-	if (bn == NULL) {
-		return bn; 
-	}
-	r = BUNfirst(bn);
-	yy = BUNsize(bn);
-        BATloopFast(b, p, q, xx) {
-		bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
-	}
-	ALIGNsetH(bn,b);
-	bn->tsorted = GDK_SORTED;
-	BATsetaggr(bn, GDK_AGGR_CARD, BATcount(b) > 0);
-	if (tailtype == TYPE_bit) {
-		BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit*) v == TRUE)?BATcount(b):0);
-	}
-        return bn;
-bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-
-@+ BAT Aggregates
-
-We retain the size() and card() aggregate results in the column descriptor.
-We would like to have such functionality in an extensible way for many aggregates, 
-for DD (1) we do not want to change the binary BAT format on disk and (2) aggr
-and size are the most relevant aggregates. 
-
-It is all hacked into the aggr[3] records; three adjacent integers that 
-were left over in the column record. We refer to these as if it where an int aggr[3] array.
-The below routines set and retrieve the aggregate values from the tail of the BAT, as many 
-aggregate-manipulating BAT functions work on tail.
-
-The rules are as follows: aggr[0] contains the alignment ID of the column (if set i.e. nonzero).
-Hence, if this value is nonzero and equal to b->talign, the precomputed aggregate values in 
-aggr[GDK_AGGR_SIZE] and aggr[GDK_AGGR_CARD] hold. However, only one of them may be set
-at the time. This is encoded by the value int_nil, which cannot occur in these two aggregates.
-
-This was now extended to record the property whether we know there is a nil value present
-by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
-@c
-#define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
-
-/* later to evolve into a more sophisticated aggregate retention system */
-int BATgetaggr(BAT *b, int idx)
-{
-        int *aggr;
-
-        BATcheck(b, "BATgetaggr");
-        aggr = b->T->aggr;
-        if (aggr[0] && aggr[0] == (int) b->talign) {
-		if (idx == GDK_AGGR_HASNIL) {
-			if (aggr[1] & GDK_NIL_BIT) {
-                		return (aggr[2] & GDK_NIL_BIT)?TRUE:FALSE;
-			}
-		} else {
-			int val = aggr[idx] & ~GDK_NIL_BIT;
-			if (val != ~GDK_NIL_BIT) {
-				return val;
-			}
-		}
-        }
-        return (idx == GDK_AGGR_HASNIL)?((int) bit_nil):int_nil;
-}
-
-int BATsetaggr(BAT *b, int idx, int val)
-{
-        int *aggr;
-
-        BATcheck(b, "BATsetaggr");
-        aggr = b->T->aggr;
-        if (aggr[0] == 0 || aggr[0] != (int) b->talign || BATgetaggr(b, idx) != val) {
-                if (b->talign == 0) {
-			b->talign = OIDnew(1);
-		}
-		if (aggr[0] != (int) b->talign) {
-                	aggr[0] = (int) b->talign;
-			aggr[GDK_AGGR_SIZE] = aggr[GDK_AGGR_CARD] = ~GDK_NIL_BIT;
-		} 
-		if (idx != GDK_AGGR_HASNIL) {
-                	aggr[idx] &= GDK_NIL_BIT;
-                	aggr[idx] |= (val == int_nil)?~GDK_NIL_BIT:(val & ~GDK_NIL_BIT);
-		} else if (val != (int) bit_nil) {
-                	aggr[1] |= GDK_NIL_BIT;
-                	aggr[2] = (val & ~GDK_NIL_BIT) | (val?GDK_NIL_BIT:0);
-		} else {
-                	aggr[1] &= ~GDK_NIL_BIT;
-		}
-                b->batDirtydesc = TRUE;
-        }
-        return val;
-}
-@-
-The @%BAThistogram@ function calculates the frequency distribution of the
-tail values in its operand bat. Notice, that updates on the result do
-not affect the delta administration.
-Construction of a histogram over a string (or complex object)
-can be sped up using the reference information in the BUN
-and bulk copying the heap.
-@
-@
-There are now separate versions for each type, and for each a 
-hash- and a merge-algorithms. 
-
-@= histoloop_inner
-	if (b->tkey) {
-		yy=1;
-		BATloopFast(b, p, q, xx) 
-			bunfastins(bn, BUNt@1(b,p), &yy);
-	} else if (!(BATtordered(b)&1)) {
-		BATloopFast(b, p, q, xx) {
-			ptr v =  (ptr) BUNt@1(b,p);
-			if (BATprepareHash(bn))
-				goto bunins_failed;
-			HASHloop@2(bn, bn->hhash, tt, v, r)
-				goto found@3@2; 
-			if (BUNins(bn, v, &yy) == NULL)
-				goto bunins_failed;
-			r = BUNlast(bn) - BUNsize(bn);
-found@3@2:		(*(int*) BUNtloc(bn,r))++;
-		}
-		HASHdestroy(bn); 
-	} else if (BATcount(b)) {
-		ptr prev = (ptr) BUNt@1(b, BUNfirst(b));
-		BATloopFast(b, p, q, xx) {
-			ptr v = (ptr) BUNt@1(b,p);
-			if (@3_CMP(v, prev, @4) == 0) {
-				yy++;
-			} else {
-				bunfastins(bn, prev, &yy);
-				yy = 1;
-			} prev = v;
-		} 
-		bunfastins(bn, prev, &yy);
-	}
-@= histoloop
-{	hash_t tt;
-	int xx, yy=0;
-	BUN p, q, r;
-
-	switch(ATOMstorage(tt=bn->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:histoloop_inner(loc,_chr,simple,chr)@
-		break;
-#endif
-#ifndef NOEXPAND_SHT
-	case TYPE_sht:
-		@:histoloop_inner(loc,_sht,simple,sht)@
-		break;
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
-	case TYPE_int:
-	case TYPE_flt:
-		@:histoloop_inner(loc,_int,simple,int)@
-		break;
-#endif
-#if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
-	case TYPE_lng: 
-	case TYPE_dbl:
-		@:histoloop_inner(loc,_lng,simple,lng)@
-		break;
-#endif
-	default:
-		if (bn->hvarsized) {
-			@:histoloop_inner(var,var,atom,tt)@
-		} else {
-			@:histoloop_inner(loc,loc,atom,tt)@
-        	}
-		break;
-}	}
-@c
-BAT *BAThistogram(BAT *b)
-{
-	BAT *bn; 
-	int 	tricky = 0;
-	
-	BATcheck(b, "BAThistogram"); 
-
-	tricky = (b->ttype==TYPE_str && strElimDoubles(&b->theap));
-	if (b->talign==0) {
-		b->talign = OIDnew(1);
-	}
-	bn = BATnew(tricky?TYPE_var:b->ttype, TYPE_int, 200); 
-	if (bn == NULL) {
-		return bn;
-	}
-
-	@:histoloop()@
-@- 
-And now correct the interpretation of the values encountered
-by bulk copying the heap as well
-@c
-	if (tricky) {
-		BAT *bm;
-		if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
-bunins_failed:
-			BBPreclaim(bn);
-			return NULL;
-		}
-		bm = BATmirror(bn);
-		bm->ttype = bn->htype = b->ttype;
-		bm->tvarsized = bn->hvarsized = 1;
-		strcpy(bn->hatom, ATOMname(b->ttype));
-	}
-	BATkey(bn,TRUE);
-	bn->hsorted = BATtordered(b);
-	bn->tsorted = FALSE;
-        bn->halign = NOID_AGGR(b->talign); 
-        if (BATcount(bn) == BATcount(b)) {
-		BAT *bm = BATmirror(b);
-                ALIGNsetH(bn,bm);
-        }
-	if (b->ttype == TYPE_bit) {
-		bit trueval = TRUE;
-		BUN p = BUNfnd(bn, &trueval);
-		BATsetaggr(b,GDK_AGGR_SIZE,p?*(int*)BUNtloc(bn,p):0);
-	}
-	BATsetaggr(b,GDK_AGGR_CARD,BATcount(bn));
-	return bn; 
-}
-
-@- 
-The @%BATcount_no_nil@ function counts all BUN in a BAT that have a non-nil tail value.
-@= cntloop
-	BATloopFast(b, p, q, xx) {
-		if (!@1_EQ(nil,BUNt@2(b, p),@3)) {
-			cnt++;
-		}
-	}
-@c
-size_t BATcount_no_nil(BAT *b)
-{
-	size_t cnt = (size_t)0;
-	BUN p,q;
-	int xx;
-	hash_t tt;
-	ptr nil;
-
-	BATcheck(b,"BATcnt");
-	tt = b->ttype;
-	nil = ATOMnilptr(tt);
-	switch(ATOMstorage(tt)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:cntloop(simple,loc,chr)@
-		break;
-#endif
-#ifndef NOEXPAND_SHT
-	case TYPE_sht:
-		@:cntloop(simple,loc,sht)@
-		break;
-#endif
-#ifndef NOEXPAND_INT
-	case TYPE_int:
-		@:cntloop(simple,loc,int)@
-		break;
-#endif
-#ifndef NOEXPAND_FLT
-	case TYPE_flt:
-		@:cntloop(simple,loc,flt)@
-		break;
-#endif
-#ifndef NOEXPAND_LNG
-	case TYPE_lng:
-		@:cntloop(simple,loc,lng)@
-		break;
-#endif
-#ifndef NOEXPAND_DBL
-	case TYPE_dbl:
-		@:cntloop(simple,loc,dbl)@
-		break;
-#endif
-	default:
-		if (b->hvarsized) {
-			@:cntloop(atom,var,tt)@
-        	} else {
-			@:cntloop(atom,loc,tt)@
-        	}
-		break;
-	}
-	return cnt;
-}
-
-@}
 @+ BAT Selections
 The BAT selectors are among the most heavily used operators. 
 Their efficient implementation is therefore mandatory.
@@ -633,7 +259,6 @@ The interface supports seven operations: @%BATslice@, @%BATselect@,
 @%BATfragment@, @%BATsample@, @%BATproject@, @%BATrestrict@.
 
 @- BAT slice
-@T
 This function returns a horizontal slice from a BAT. It optimizes
 execution by avoiding to copy when the BAT is memory mapped (in this 
 case, an independent submap is created) or else when it is read-only, 
@@ -648,6 +273,7 @@ case for BATselect (range selection on sorted column), BATrangesplit
 are semijoined).
 
 NOTE new semantics, the selected range is excluding the high value.
+@{
 @c
 BAT *BATslice(BAT *b, size_t l, size_t h)
 {
@@ -706,7 +332,6 @@ bunins_failed:
 }
 
 @-  Value Selections
-@{
 The string search is optimized for the degenerated case
 that th = tl, and double elimination in the string heap. 
 
@@ -814,11 +439,10 @@ bunins_failed:
 	}
 	return bn;
 }
-
-
+@}
 @- Range Selections
 The routine @%BATselect@ locates the BAT subset whose tail component
-satisfies the range condition @T$l <[=] tail <[=] h$. Either boundary
+satisfies the range condition T l <[=] tail <[=] h. Either boundary
 is included in the result iff the respective bit parameter "li"/"hi"
 is TRUE. A nil value in either dimension defines infinity.  The value 
 is set accordingly.
@@ -826,8 +450,8 @@ is set accordingly.
 Range selections without lower or upper bound use the nil atom
 to indicate this (this is somewhat confusing). Note, however, that
 through the definition of MIL we do not want the nils to appear in
-the result (as (nil {<,=,>} ANY) = bit(nil) != true).
-
+the result (as (nil @{<,=,>@} ANY) = bit(nil) != true).
+@{
 @= indexselect
 	IDXrng_(m, tl, th, li, hi, &x, &y);
 	if (equi == 0) {
@@ -938,11 +562,12 @@ Examine type, and values for lower- and higher-bound.
  	    ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): empty range;\n",b->batId);
 	    return BATnew(ht, tt, 10);
 	}
-
+@}
 @- Slice Implementations
 When the result is a dense slice of the BAT, we can optimize.
 A slice does not need to copy the BAT selected on, it can just
 give back a 'view' on the memory of the existing BAT. See BATslice(). 
+@{
 @c
 	if (BATtordered(b)&1) {
 	    BAT *v = tail?b:VIEWhead_(b,b->batRestricted); 
@@ -1116,7 +741,7 @@ BAT* BATuselect(BAT *b, ptr h, ptr t)
 {
 	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE);
 }
-
+@}
 @- Top-N selection
 
 The top-N elements can be easily obtained by trimming the
@@ -1124,6 +749,7 @@ space. The auxiliary index structures are removed.
 For non-variable size BATs it merely requires
 adjustment of the free space labels. Other BATs require
 a loop through the tuples to be deleted. [todo]
+@{
 @c
 size_t BATtopN(BAT *b, size_t topN)
 {
@@ -1471,11 +1097,10 @@ bunins_failed:
 	return NULL;
 }
 
-
+@}
 @+ BAT Sorting
-@{
-@- sorting 
 @%BATsort@ returns a sorted copy. @%BATorder@ sorts the BAT itself. 
+@{
 @c
 #ifdef HAVE_RESTRICT
 #define __r     restrict
@@ -1689,9 +1314,10 @@ BAT *BATorder@3(BAT *b)
 
 	return b;
 }
-
-@- reverse in place
+@}
+@+ Reverse a BAT
 @%BATrevert@ rearranges a BAT in reverse order on head.
+@{
 @c
 BAT* BATrevert(BAT *b) {
         int xx;
@@ -1799,11 +1425,12 @@ bunins_failed:
 	BBPreclaim(metabat);
 	return NULL;
 }
-
-@- range partitioning
+@}
+@- 
 Range partitioning ensures that identical values appear in one
 partition only. The routine also tries to deliver partitions of
 uniform size.
+@{
 @c
 BAT *BATrangesplit(BAT *b, size_t n, int unary) {
 	BAT	*metabat, *slice, *histo, *bf = NULL, *bn, *m;
@@ -1834,9 +1461,11 @@ BAT *BATrangesplit(BAT *b, size_t n, int unary) {
 	nilval = ATOMnilptr(BATttype(b));
 
 @- 
+@}
 We use sampling to determine bucket sizes. 
 Uniform bucket sizes are the ideal to be achieved. 
 If necessary though, we deliver less than n buckets.
+@{
 @c
         slice  = BATsample(b, MIN(MAX(30*n*thorough,100*thorough),BATcount(b)));
         histo  = BAThistogram(slice);
@@ -1945,7 +1574,7 @@ This is heavy stuff so we optimize execution according to datatype.
 @
 DELETED: simple walk-through list approach
 		for(yy=0; yy<n-1; yy++) {
-			if (@1_LE(val, seps[yy], @3)) break;
+			if (@@1_LE(val, seps[yy], @@3)) break;
 		}
 		bunfastins(bats[yy], BUNhead(b,r), val);
 @
@@ -2044,5 +1673,385 @@ bunins_failed:
 	BBPreclaim(metabat);
 	return NULL;
 }
-@
+@}
+@+ Introducing OID Columns
+The @%BATmark@ operation is normally used to prepare a class of query
+results. Likewise, @%BATnumber@ is heavily used in the SQL front-end.
+@{
+@c
+BAT *BATmark(BAT *b, oid oid_base)
+{
+        BAT     *bn;
+ 
+        BATcheck(b, "BATmark");
+	bn = VIEWhead(b);
+	if (bn) {
+		BATseqbase(BATmirror(bn), oid_base);
+		if (BATrestricted(b) != BAT_READ) {
+			BAT *v = bn;
+			bn = BATcopy(v);
+			BBPreclaim(v);
+		}
+	}
+        return bn;
+}
+
+#define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, yy); r += yy; i++;
+BAT *BATnumber(BAT *b)
+{
+        int     i = 0, yy;
+        BAT     *bn;
+	BUN	r;
+ 
+        BATcheck(b, "BATnumber");
+	/* assert(BATcount(b) <= MAXINT); */
+        bn = BATnew(b->htype, TYPE_int, BATcount(b));
+        if (bn == NULL) return NULL;
+	r = BUNfirst(bn);
+	yy = BUNsize(bn);
+        @:updateloop(bn,b,BUNnumber)@
+	ALIGNsetH(bn,b);
+	BATsetaggr(bn, GDK_AGGR_CARD, i);
+	bn->hsorted = BAThordered(b);
+	bn->tsorted = GDK_SORTED;
+        return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *BATgroup(BAT *b, int start, int incr, int grpsize)
+{
+        BUN p, q, r;
+        int ngroups = 1, i = 0, xx, yy;
+        BAT *bn;
+
+        BATcheck(b, "BATgroup");
+        bn = BATnew(b->htype, TYPE_int, BATcount(b));
+        if (bn == NULL) return NULL;
+	r = BUNfirst(bn);
+	yy = BUNsize(bn);
+
+        ALIGNsetH(bn,b);
+   
+        BATloopFast(b, p, q, xx) {
+            bunfastins_nocheck(bn, r, BUNhead(b, p), (ptr)&start, yy); r += yy;
+            if(i == grpsize-1) { start += incr; i = 0; ngroups++; } else { i++; }
+        }
+	if (i == 0) ngroups--;
+	BATsetaggr(bn, GDK_AGGR_CARD, ngroups);
+        bn->hsorted = BAThordered(b);
+        bn->tsorted = GDK_SORTED;
+        return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT* BATconst(BAT *b, int tailtype, ptr v)
+{
+        BAT *bn;
+        BUN p, q, r;
+        int xx, yy;
+
+        BATcheck(b, "BATconst");
+	if (BATrestricted(b) == BAT_READ &&
+           (tailtype == TYPE_void || (tailtype == TYPE_oid && *(oid*) v == oid_nil)))
+	{
+		oid seqbase = (tailtype==TYPE_void)?oid_nil:*(oid*) v;
+		bn = VIEWhead(b);
+		BATseqbase(BATmirror(bn), seqbase);
+		return bn;
+	}
+	if (tailtype == TYPE_bat) {
+		v = &((BAT*) v)->batCacheid;
+	} else if (tailtype == TYPE_void && b->htype == TYPE_void) {
+		tailtype = TYPE_oid;
+		v = ATOMnilptr(TYPE_oid);
+	}
+        bn = BATnew(b->htype, tailtype, BATcount(b));
+	if (bn == NULL) {
+		return bn; 
+	}
+	r = BUNfirst(bn);
+	yy = BUNsize(bn);
+        BATloopFast(b, p, q, xx) {
+		bunfastins_nocheck(bn, r, BUNhead(b,p), v, yy); r += yy;
+	}
+	ALIGNsetH(bn,b);
+	bn->tsorted = GDK_SORTED;
+	BATsetaggr(bn, GDK_AGGR_CARD, BATcount(b) > 0);
+	if (tailtype == TYPE_bit) {
+		BATsetaggr(bn, GDK_AGGR_SIZE, (*(bit*) v == TRUE)?BATcount(b):0);
+	}
+        return bn;
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+@}
+@+ BAT Aggregates
+
+We retain the size() and card() aggregate results in the column descriptor.
+We would like to have such functionality in an extensible way for many aggregates, 
+for DD (1) we do not want to change the binary BAT format on disk and (2) aggr
+and size are the most relevant aggregates. 
+
+It is all hacked into the aggr[3] records; three adjacent integers that 
+were left over in the column record. We refer to these as if it where an int aggr[3] array.
+The below routines set and retrieve the aggregate values from the tail of the BAT, as many 
+aggregate-manipulating BAT functions work on tail.
+
+The rules are as follows: aggr[0] contains the alignment ID of the column (if set i.e. nonzero).
+Hence, if this value is nonzero and equal to b->talign, the precomputed aggregate values in 
+aggr[GDK_AGGR_SIZE] and aggr[GDK_AGGR_CARD] hold. However, only one of them may be set
+at the time. This is encoded by the value int_nil, which cannot occur in these two aggregates.
+
+This was now extended to record the property whether we know there is a nil value present
+by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
+@{
+@c
+#define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
+
+/* later to evolve into a more sophisticated aggregate retention system */
+int BATgetaggr(BAT *b, int idx)
+{
+        int *aggr;
+
+        BATcheck(b, "BATgetaggr");
+        aggr = b->T->aggr;
+        if (aggr[0] && aggr[0] == (int) b->talign) {
+		if (idx == GDK_AGGR_HASNIL) {
+			if (aggr[1] & GDK_NIL_BIT) {
+                		return (aggr[2] & GDK_NIL_BIT)?TRUE:FALSE;
+			}
+		} else {
+			int val = aggr[idx] & ~GDK_NIL_BIT;
+			if (val != ~GDK_NIL_BIT) {
+				return val;
+			}
+		}
+        }
+        return (idx == GDK_AGGR_HASNIL)?((int) bit_nil):int_nil;
+}
+
+int BATsetaggr(BAT *b, int idx, int val)
+{
+        int *aggr;
+
+        BATcheck(b, "BATsetaggr");
+        aggr = b->T->aggr;
+        if (aggr[0] == 0 || aggr[0] != (int) b->talign || BATgetaggr(b, idx) != val) {
+                if (b->talign == 0) {
+			b->talign = OIDnew(1);
+		}
+		if (aggr[0] != (int) b->talign) {
+                	aggr[0] = (int) b->talign;
+			aggr[GDK_AGGR_SIZE] = aggr[GDK_AGGR_CARD] = ~GDK_NIL_BIT;
+		} 
+		if (idx != GDK_AGGR_HASNIL) {
+                	aggr[idx] &= GDK_NIL_BIT;
+                	aggr[idx] |= (val == int_nil)?~GDK_NIL_BIT:(val & ~GDK_NIL_BIT);
+		} else if (val != (int) bit_nil) {
+                	aggr[1] |= GDK_NIL_BIT;
+                	aggr[2] = (val & ~GDK_NIL_BIT) | (val?GDK_NIL_BIT:0);
+		} else {
+                	aggr[1] &= ~GDK_NIL_BIT;
+		}
+                b->batDirtydesc = TRUE;
+        }
+        return val;
+}
+@}
+@-
+The @%BAThistogram@ function calculates the frequency distribution of the
+tail values in its operand bat. Notice, that updates on the result do
+not affect the delta administration.
+Construction of a histogram over a string (or complex object)
+can be sped up using the reference information in the BUN
+and bulk copying the heap.
+
+There are separate versions for each type, and for each a 
+hash- and a merge-algorithms. 
+@{
+@= histoloop_inner
+	if (b->tkey) {
+		yy=1;
+		BATloopFast(b, p, q, xx) 
+			bunfastins(bn, BUNt@1(b,p), &yy);
+	} else if (!(BATtordered(b)&1)) {
+		BATloopFast(b, p, q, xx) {
+			ptr v =  (ptr) BUNt@1(b,p);
+			if (BATprepareHash(bn))
+				goto bunins_failed;
+			HASHloop@2(bn, bn->hhash, tt, v, r)
+				goto found@3@2; 
+			if (BUNins(bn, v, &yy) == NULL)
+				goto bunins_failed;
+			r = BUNlast(bn) - BUNsize(bn);
+found@3@2:		(*(int*) BUNtloc(bn,r))++;
+		}
+		HASHdestroy(bn); 
+	} else if (BATcount(b)) {
+		ptr prev = (ptr) BUNt@1(b, BUNfirst(b));
+		BATloopFast(b, p, q, xx) {
+			ptr v = (ptr) BUNt@1(b,p);
+			if (@3_CMP(v, prev, @4) == 0) {
+				yy++;
+			} else {
+				bunfastins(bn, prev, &yy);
+				yy = 1;
+			} prev = v;
+		} 
+		bunfastins(bn, prev, &yy);
+	}
+@= histoloop
+{	hash_t tt;
+	int xx, yy=0;
+	BUN p, q, r;
+
+	switch(ATOMstorage(tt=bn->htype)) {
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:histoloop_inner(loc,_chr,simple,chr)@
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:histoloop_inner(loc,_sht,simple,sht)@
+		break;
+#endif
+#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
+	case TYPE_int:
+	case TYPE_flt:
+		@:histoloop_inner(loc,_int,simple,int)@
+		break;
+#endif
+#if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
+	case TYPE_lng: 
+	case TYPE_dbl:
+		@:histoloop_inner(loc,_lng,simple,lng)@
+		break;
+#endif
+	default:
+		if (bn->hvarsized) {
+			@:histoloop_inner(var,var,atom,tt)@
+		} else {
+			@:histoloop_inner(loc,loc,atom,tt)@
+        	}
+		break;
+}	}
+@c
+BAT *BAThistogram(BAT *b)
+{
+	BAT *bn; 
+	int 	tricky = 0;
+	
+	BATcheck(b, "BAThistogram"); 
+
+	tricky = (b->ttype==TYPE_str && strElimDoubles(&b->theap));
+	if (b->talign==0) {
+		b->talign = OIDnew(1);
+	}
+	bn = BATnew(tricky?TYPE_var:b->ttype, TYPE_int, 200); 
+	if (bn == NULL) {
+		return bn;
+	}
+
+	@:histoloop()@
+@- 
+And now correct the interpretation of the values encountered
+by bulk copying the heap as well
+@c
+	if (tricky) {
+		BAT *bm;
+		if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+bunins_failed:
+			BBPreclaim(bn);
+			return NULL;
+		}
+		bm = BATmirror(bn);
+		bm->ttype = bn->htype = b->ttype;
+		bm->tvarsized = bn->hvarsized = 1;
+		strcpy(bn->hatom, ATOMname(b->ttype));
+	}
+	BATkey(bn,TRUE);
+	bn->hsorted = BATtordered(b);
+	bn->tsorted = FALSE;
+        bn->halign = NOID_AGGR(b->talign); 
+        if (BATcount(bn) == BATcount(b)) {
+		BAT *bm = BATmirror(b);
+                ALIGNsetH(bn,bm);
+        }
+	if (b->ttype == TYPE_bit) {
+		bit trueval = TRUE;
+		BUN p = BUNfnd(bn, &trueval);
+		BATsetaggr(b,GDK_AGGR_SIZE,p?*(int*)BUNtloc(bn,p):0);
+	}
+	BATsetaggr(b,GDK_AGGR_CARD,BATcount(bn));
+	return bn; 
+}
+
+@- 
+The @%BATcount_no_nil@ function counts all BUN in a BAT that have a non-nil tail value.
+@= cntloop
+	BATloopFast(b, p, q, xx) {
+		if (!@1_EQ(nil,BUNt@2(b, p),@3)) {
+			cnt++;
+		}
+	}
+@c
+size_t BATcount_no_nil(BAT *b)
+{
+	size_t cnt = (size_t)0;
+	BUN p,q;
+	int xx;
+	hash_t tt;
+	ptr nil;
+
+	BATcheck(b,"BATcnt");
+	tt = b->ttype;
+	nil = ATOMnilptr(tt);
+	switch(ATOMstorage(tt)) {
+#ifndef NOEXPAND_CHR
+	case TYPE_chr:
+		@:cntloop(simple,loc,chr)@
+		break;
+#endif
+#ifndef NOEXPAND_SHT
+	case TYPE_sht:
+		@:cntloop(simple,loc,sht)@
+		break;
+#endif
+#ifndef NOEXPAND_INT
+	case TYPE_int:
+		@:cntloop(simple,loc,int)@
+		break;
+#endif
+#ifndef NOEXPAND_FLT
+	case TYPE_flt:
+		@:cntloop(simple,loc,flt)@
+		break;
+#endif
+#ifndef NOEXPAND_LNG
+	case TYPE_lng:
+		@:cntloop(simple,loc,lng)@
+		break;
+#endif
+#ifndef NOEXPAND_DBL
+	case TYPE_dbl:
+		@:cntloop(simple,loc,dbl)@
+		break;
+#endif
+	default:
+		if (b->hvarsized) {
+			@:cntloop(atom,var,tt)@
+        	} else {
+			@:cntloop(atom,loc,tt)@
+        	}
+		break;
+	}
+	return cnt;
+}
+
 @}

@@ -18,25 +18,28 @@
 @f gdk_qsort
 @a Peter Boncz et al
 @* Qsort
-@T
 There were two problems with the OS provided qsort() library routine:
-\begin{description}
-\item[unreliable] on certain OSs (e.g. SunOS), the qsort somehow degenerates
-if there are a very small number of different values (on 132K elements with 7 
-values, I never saw it return). This is a serious bug.
-\item[atom format] when comparing GDK atoms (e.g. in BATs) it was not
-possible to use qsort on varsized atoms (as monet stores them as
-integer offsets from a global base pointer that qsort does not know about),
-nor if the values were not placed at the start of the record (e.g.
-if the column is the tail column of a BAT).
-\end{description}
+@table @samp
+@item unreliable
+on certain OSs (e.g. SunOS), the qsort somehow degenerates
+if there are a very small number of different values (on 
+132K elements with 7 values, I never saw it return). 
+This is a serious bug.
+@item atom format
+ when comparing GDK atoms (e.g. in BATs) it was not
+possible to use qsort on varsized atoms (as monet stores them 
+as integer offsets from a global base pointer that qsort does 
+not know about), nor if the values were not placed at the start 
+of the record (e.g.  if the column is the tail column of a BAT).
+@end table
 
-Both these problems are fixed in the new @7GDKqsort@ function, that
+Both these problems are fixed in the new GDKqsort function, that
 is based on the standard Berkeley qsort (see copyright notice below).
 
 The routine was "monet"-ified with macro code expansions for the specific
 data types to obtain extra speed (we know more about our data than the stdlib 
 qsort() ever can).
+@{
 @c
 #include "gdk.h"
 
@@ -122,32 +125,33 @@ typedef struct {
 
 #define multi_SWAP(TYPE, a, b, n)			\
 	if ((n) > 0) tpe_SWAP(TYPE, a, b, n)
-
-@T
+@}
+@-
 qsort is macro expanded in four dimensions:
-\begin{description}
-\item[direction:2] 
+@table @samp
+@item direction:2
 	L: from lesser to greater is standard.
-	G: from greater to lesser is the \_rev version of quicksort.
-\item[type:7] 
+	G: from greater to lesser is the _rev version of quicksort.
+@item type:7
 	in order to factor out a type-specific check, or a function call for each 
 	value comparison, we separate different qsort implementations by the comparison 
 	type, of which each has the comparison hard-coded. We factor out the types 
-	\{chr,sht,int,flt,lng,dbl,any\} (the latter uses an adt function call).
-\item[storage:2]
-	denoted \{direct,offset\}, means whether the array to be sorted contains the 
+	@{chr,sht,int,flt,lng,dbl,any@} (the latter uses an adt function call).
+@item storage:2
+	denoted @{direct,offset@}, means whether the array to be sorted contains the 
 	(fixed-width) values itself, or whether it contains integer byte-offsets, that point 
 	into some heap. Note that we support byte-offset qsort also on fixed-size types, 
 	as this is handy in many cases.
-\item[swapmethod:2]
+@item swapmethod:2
 	qsort sorts an array by continually swapping entries. To do this, two
-	implementations of the swap action are supported: \{iterate,register\}. 
+	implementations of the swap action are supported: @{iterate,register@}. 
 	The default implementation takes the comparison type and does the swapping by 
 	iterating a number of times per entry, copying one comparison value per iteration. 
 	One often-occurring special case is when the entry width is 8 (two integers). These 
 	can be copied by one long integer load and store; without the loop overhead.
-\end{description}
+@end table
 Thus, there are 2 * 7 * 2 * 2 = 56 GDKqsort implementation routines.
+@{
 @c
 #ifndef HAVE_PTRDIFF_T
 #if SIZEOF_SIZE_T == SIZEOF_INT
@@ -388,3 +392,4 @@ main(int argc, char** argv)
 		printf("% 9i [% 9d,% 9d]\n", i, (int) buf[i+i], (int) buf[i+i+1]);
 	}
 }
+@}

@@ -16,10 +16,9 @@
 @' All Rights Reserved.
 
 @f gdk_desc
-@t BAT Descriptor Versions
 @a Peter Boncz
 @v 1.0
-@* Introduction
+@+ BAT Descriptor Versions
 Changes to the BAT descriptors cause problems, as persistent
 BATs with older descriptor versions may still be around. BAT versions
 are marked in the first field of a BAT. Apart from the current BAT
@@ -42,7 +41,6 @@ introduced to the atom ADT (atomConvert and atomHeapConvert).
 @h
 #ifndef _GDK_DESC_H_
 #define _GDK_DESC_H_
-
 @+ BAT versions
 Three BAT formats are currently supported:
 @h
@@ -57,6 +55,7 @@ by the below function:
 @
 We also use these numbers, which are always the first 32-int the 
 BAT image, to check whether the image is in big endian or little endian format.
+@{
 @c
 #include "gdk.h"
 
@@ -108,7 +107,6 @@ typedef unsigned int normal_int;
 #endif /* _GDK_DESC_H_ */
 @}
 
-
 @- 64 vs 32 BIT conversion
 The current BAT descriptor structures now work with full 64-bit
 pointers, directly in the format. We still support loading and saving
@@ -116,6 +114,7 @@ of old BATs that use the 32-bit format(s). The old definitions
 are below (in a shortened format). We have macros that copy all
 relevant fields from a (new) 64-bit BAT structure to an (old) 32-bit
 BAT, and vice versa.
+@{
 @c
 @= Hash_ALL
                 (@2)->type = normal_int_@5(((@4))->type);
@@ -271,10 +270,11 @@ BAT* BATloaddesc(str nme) {
 
         return b;
 }
-
+@}
 @- big endian vs little endian
 This function uses the byte order conversion ADT functions
 to convert a little endian BAT to big endian (or vice versa).
+@{
 @= swap
 { @2 *_p = (@2*) @3, _i=*_p; *_p = @1_SWAP(_i); }
 @c
@@ -325,3 +325,4 @@ BAT* BATconvert(BAT* b, int direction){
 	b->batDirty = 1;
 	return b;
 }
+@}

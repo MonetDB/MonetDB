@@ -18,11 +18,10 @@
 @f gdk_system
 @a Niels Nes, Peter Boncz
 @+ Threads
-@T
 This file contains the threads implementation based on the Posix 
 thread library interface, consisting of Posix standard thread 
 functions. 
-
+@{
 @- Pthread Definitions
 @h
 #ifndef _GDK_SYSTEM_H_
@@ -614,3 +613,5 @@ int MT_alive(int pid) {
 #endif
 }
 
+@}
+@-

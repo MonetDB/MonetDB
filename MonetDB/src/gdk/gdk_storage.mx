@@ -29,7 +29,6 @@ The current version assumes that all BATs are stored on a single disk
 partition. This simplistic assumption should be replaced in the near
 future by a multi-volume version. The intension is to use several
 BAT home locations.
-
 The files should be owned by the database server. Otherwise, IO operations are
 likely to fail. This is accomplished by setting the GID and UID upon 
 system start.
@@ -50,10 +49,8 @@ extern void DESCclean(BAT*);
 #include "gdk.h"
 #include <stdlib.h>
 #include "gdk_storage.h"
-@}
 
 @
-@{
 @c
 void GDKfilepath(str path, str dir, str name, str ext) {
 	*path = 0;
@@ -211,7 +208,7 @@ int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	IODEBUG THRprintf(GDKerr, "move %s %s = %d (%dms)\n", path1, path2, ret, GDKms()-t0); 
 	return ret;
 }
-
+@}
 @+ Save and load.
 The BAT is saved on disk in several files. The extension DESC
 denotes the descriptor, BUNs the bun heap, and HHEAP and THEAP
@@ -220,6 +217,7 @@ the other heaps. The storage mechanism off a file can be memory mapped
 
 These modes indicates the disk-layout and the intended mapping.
 The primary concern here is to handle STORE_MMAP and STORE_MEM.
+@{
 @c
 int GDKsave(str nme, str ext, void *buf, size_t size, int mode) { 
 	int fd = -1, err = 0;
@@ -228,14 +226,16 @@ int GDKsave(str nme, str ext, void *buf, size_t size, int mode) {
 	IODEBUG THRprintf(GDKerr, "GDKsave: name=%s, ext=%s, mode %d\n", nme,ext?ext:"", mode);
 	if (mode == STORE_MMAP) {
 @-
+@}
 Only dirty pages must be written to disk. Unchanged block will still be mapped
 on the file, reading those will be cheap.  Only the changed blocks are now 
 mapped to swap space. PUSHED OUT: due to rather horrendous performance 
 caused by updating the image on disk.
-@
+
 Maybe it is better to make use of @%MT_msync()@. But then, we would need to
 bring in a backup mechanism, in which stable images of the BATs are created
 at commit-time.
+@{
 @c
 		err = MT_msync(buf, size, MMAP_SYNC);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
@@ -277,7 +277,7 @@ at commit-time.
 	return err;
 }
 
-@
+@-
 Space for the load is directly allocated and the heaps are mapped.
 Further initialization of the atom heaps require a separate action
 defined in their implementation.
@@ -342,7 +342,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 	if (fp != NULL) fclose(fp); 
 	return buf;
 }
-
+@}
 @+ BAT disk storage
 
 Between sessions the BATs comprising the database are saved on disk.
@@ -358,6 +358,7 @@ Saving and restoring BATs is left to the upper layers. The library merely
 copies the data into place. 
 Failure to read or write the BAT results in a NULL, otherwise
 it returns the BAT pointer. 
+@{
 @c
 static int DESCatom(str nme) {
 	int tpe = ATOMindex(nme);
@@ -671,10 +672,10 @@ BAT *BATload(str nme) {
 	}
 	return BATload_intern(i); 
 }
-
+@}
 
 @- BATdelete
-new behavior is to let the routine produce warnings but always succeed.
+The new behavior is to let the routine produce warnings but always succeed.
 rationale: on a delete, we must get rid of *all* the files. We do not have to care
 about preserving them or be too much concerned if a file that had to be deleted was
 not found (end result is still that it does not exist). The past behavior to delete 
@@ -684,6 +685,7 @@ incorrect disk status, causing havoc later on.
 NT forces us to close all files before deleting them; in case of memory mapped
 files this means that we have to unload the BATs before deleting. This is
 enforced now.
+@{
 @c
 int BATdelete(BAT* b) {
         bat bid = ABS(b->batCacheid);
@@ -742,7 +744,6 @@ int BATdelete(BAT* b) {
 @}
 
 @+ Printing and debugging
-@T
 Printing BATs is based on the multi-join on heads. The multijoin
 exploits all possible Monet properties and accelerators. Due
 to this property, the n-ary table printing is quite fast and
@@ -751,35 +752,35 @@ can be used for producing ASCII dumps of large tables.
 It all works with hooks.  The multijoin routine finds matching ranges 
 of rows. For each found match in a column it first calls a value-routine
 hook. This routine we use to format a substring. 
-
 For each found match-tuple (the Cartesian product of all matches
 across columns) a match routine hook is called. We use this routine
 to print a line.
-
 Due to this setup, we only format each value once, though it
 might participate in many lines (due to the Cartesian product).
 
 The multijoin is quite complex, and we use a @%col_format_t@
 struct to keep track of column specific data.
-
-The multiprint can now indicate arbitrary orderings. This is done 
+The multiprint can indicate arbitrary orderings. This is done 
 by passing a pattern-string that matches the following regexp: 
 
+@verbatim
 	"[X:] Y0 {,Yi}"
+@end verbatim
 
 where X and Yi are column numbers, {\bf starting at 1} for the first 
 BAT parameter.
 
 The table ordering has two aspects:
-
-\begin{enumerate}
-\item 	the order in which the matches appear (a.k.a. the major ordering). 
+@enumerate
+@item (1)
+ 	the order in which the matches appear (a.k.a. the major ordering). 
 	This is equivalent to the order of the head values of the BATs 
 	(as we match=multijoin on head value).
-\item	within each match, the order in which the Cartesian 
+@item (2)
+	within each match, the order in which the Cartesian 
    	product is produced. This is used to sub-order on 
 	the tail values of the BATs = the columns in the table. 
-\end{enumerate}
+@end enumerate
 
 Concerning (1), the multijoin limits itself to *respecting*
 the order one one elected BAT, that can be identified with X.
