@@ -102,6 +102,8 @@ Look at the related ANSI-C/POSIX manual pages to get the needed information.
 	"See: man fwrite"
     .COMMAND fseek( stream filep, int pos, int offset ) : int = io_fseek; 
 	"See: man fseek"
+    .COMMAND ftell( stream filep ) : int = io_ftell; 
+	"See: man ftell"
 
     .COMMAND fprint( stream filep, ... ) = io_fprint; 
 	"Print a (comma seperated) list of arguments"
@@ -312,6 +314,17 @@ int io_fseek(int *res, stream *filepp, int *pos, int *nbytes ){
    *res = fseek(fp, (long)*pos, *nbytes);
    if (*res < 0) {
       GDKsyserror("io_fseek:");
+      return(GDK_FAIL);
+   }
+   return(GDK_SUCCEED);
+}
+
+int io_ftell(int *res, stream *filepp ){
+   FILE *fp = *(FILE**) filepp; 
+   FILEP_CHECK(fp);
+   *res = ftell(fp);
+   if (*res < 0) {
+      GDKsyserror("io_ftell:");
       return(GDK_FAIL);
    }
    return(GDK_SUCCEED);
