@@ -53,6 +53,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_cache.h"
+#include "sql_env.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
 
@@ -252,6 +253,11 @@ A future version may analyze the parameter settings in more detail.
 void SQLsetDebugger(Client c)
 {
 	InstrPtr q;
+        mvc *m;
+        m = ((backend*)c->state[PARSER])->mvc;
+
+        printf("SQL debugger %d\n",m->debug);
+        if( m->debug == 0) return;
 	q= newInstruction(ASSIGNsymbol);
 	functionId(q)= GDKstrdup("showFunction");
 	pushInstruction(c->curprg->def,q);
@@ -271,14 +277,6 @@ void SQLsetExplain(Client c){
 	c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
 }
 @-
-Analyze the flags and prepare the execution context
-@c
-int SQLsetEnvironment(Client c){
-        (void) c;
-        /* test flags and react accordingly */
-        return 0;
-}
-@-
 The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
@@ -295,7 +293,7 @@ str SQLparser(Client c) {
 #ifdef _SQL_PARSER_DEBUG
 	stream_printf(GDKout,"SQL compilation %s\n",c->nxt);
 #endif
-	debug= SQLsetEnvironment(c);
+	SQLsetDebugger(c);
 	be = ((backend*)c->state[PARSER]);
         if( be == 0) {
             GDKerror("SQL state descriptor missing\n");
@@ -310,7 +308,7 @@ str SQLparser(Client c) {
         if (!m->trans)
                 mvc_trans(m);
 
-        if (explainSQL())
+        if (explainPerformance())
 		T0 = GDKusec();
 
         if ((err = sqlparse(m)) ||
@@ -390,7 +388,7 @@ query block.
 		if( c->curprg->def->errors){
 			showErrors(c);
 			/* restore the state */
-			if( c->listing || explainMAL())
+			if( c->listing || explainPlan())
 				printFunction(c->fdout,c->curprg->def, c->listing);
 			resetInstructions(c->curprg->def,oldstate.stop);
 			resetVariables(c->curprg->def, c->glb, oldstate.vtop);
@@ -401,7 +399,7 @@ query block.
 		}
 	}
 finalize:
-	if( explainMAL()){
+	if( explainPlan()){
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	} 
 #ifdef _SQL_PARSER_DEBUG
@@ -415,7 +413,7 @@ finalize:
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
 @c
-        if (explainSQL()){
+        if (explainPerformance()){
 		char safe = *c->nxt;
 
 		*c->nxt=0;
@@ -454,7 +452,7 @@ unless auto_commit has been set.
 		sql_error(m,1,"Execution produced errors");
 	}
 	c->glb= oldglb;
-	if( explainSQL()){
+	if( explainPerformance()){
 		int ret;
 		lng tot= be->Tparse;
 		char buf[BUFSIZ], *qs, *stmt = buf;

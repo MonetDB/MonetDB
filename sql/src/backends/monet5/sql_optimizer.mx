@@ -75,6 +75,8 @@ This versions simply runs through the MAL script and re-orders the instructions
 into catalog operations, query graph, and result preparation.
 This distinction is used to turn the function into a factory, which would
 enable re-entry when used as a cache-optimized query.
+The second optimization is move access mode changes on the base tables
+to the front of the plan.
 
 We also apply the Alias Removal optimizer to trim the instruction list
 by removing simple assignments.
@@ -96,7 +98,7 @@ void optimizeQueryInCache(Client c) {
         MalBlkPtr mb;
         InstrPtr *ns,p;
         int t,v;
-        int i,k;
+        int i,j,k,klim;
         MALfcn setWriteMode=0;
         Symbol s;
 
@@ -124,11 +126,19 @@ Reduce the program before other optimizations take place
                 strncmp(functionName(p),"bind",4)==0 &&
                 strcmp(moduleName(p),"sql") ==0 )
                 ns[k++]= p;
-/*
-            if( setWriteMode && p->fcn == setWriteMode)
-                ns[k++]= p;
-*/
+            if( setWriteMode && p->fcn == setWriteMode) {
+                for(j=0;j<k;j++)
+                if( ns[j]->fcn == setWriteMode && 
+                    ns[j]->argv[1]== p->argv[1])
+                    break;
+                else
+                if( ns[j]->argv[0] == p->argv[1]){
+                    ns[k++]= p;
+                    break;
+                }
+            }
         }
+        klim =k;    /* remember the head */
 @-
 Inject the factory loop
 @c
@@ -141,13 +151,16 @@ Inject the factory loop
         ns[k++]= p;
         
         for(i= 1; i< mb->stop-1; i++){
+            int doit = 0;
             p= getInstrPtr(mb,i);
             if( !(functionName(p) && moduleName(p) &&
                 strncmp(functionName(p),"bind",4)==0 &&
                 strcmp(moduleName(p),"sql") ==0 ) )
-/*
-            if( !(setWriteMode && p->fcn == setWriteMode) )
-*/
+                doit = 1;
+            if( setWriteMode)
+            for( j=0; j<klim; j++)
+            if( ns[j] == p) doit= 0;
+            if( doit )
                 ns[k++]= p;
         }
 @-

@@ -183,9 +183,9 @@ comment "round off the value v to nearests multiple of r";
 #include "sql_qc.h"
 #include "sql_env.h"
 
-#define explainMAL() (be->mvc->explain && \
+#define explainPlan() (be->mvc->explain && \
         strcmp(be->mvc->explain, "plan") == 0)
-#define explainSQL() (be->mvc->explain && \
+#define explainPerformance() (be->mvc->explain && \
         strcmp(be->mvc->explain, "performance") == 0)
 
 @-
