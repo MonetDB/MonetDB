@@ -602,7 +602,7 @@ independent view on the virtual memory.
 Alternatively, if the source BAT is readonly, then we can obtain a VIEW
 that just reuses the memory of the source. 
 @c
-	if (BATrestricted(b) == BAT_READ) {
+	if (BATrestricted(b) == BAT_READ || BATrestricted(b) == BAT_APPEND) {
 		bn = VIEWcreate(b); 
 		bn->batBuns->base = BUNptr(b, l-1);  
                 bn->batInserted = BUNptr(b, l);  
