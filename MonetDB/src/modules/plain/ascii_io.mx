@@ -484,6 +484,10 @@ int ASCIIcreate_bats( ascii *as ){
 
 	for (i=0; i<as->nr_attrs; i++){
 		fmt[i].c = void_bat_create(fmt[i].adt,as->nr);
+		if (!fmt[i].c) {
+			GDKerror("Failed to create bat of size %d\n", as->nr);
+			return -1;
+		}
 	}
 	return 0;
 }
