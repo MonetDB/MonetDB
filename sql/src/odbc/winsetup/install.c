@@ -19,7 +19,7 @@
 
 /*--------------------------------------------------------------------*/
 /*
-/* ODBCSetupCons - ODBC Setup Console style program that 
+/* ODBCSetupCons - ODBC Setup Console style program that
 /* version checks, copies and installs ODBC32.DLL and a custom
 /* ODBC 32bit driver
 /*
@@ -442,28 +442,45 @@ Uninstall()
 int
 main(int argc, char **argv)
 {
+	char *buf = malloc(strlen(argv[0]) + 30);
+	char *p;
+
+	strcpy(buf, argv[0]);
+	if ((p = strrchr(buf, '\\')) != 0 || (p = strrchr(buf, '/')) != 0)
+		*p = 0;
+	else
+		strcpy(buf, ".");
+	strcat(buf, "\\lib");
+
 	if (argc != 2) {
 		MessageBox(NULL, "/Install or /Uninstall argument expected", argv[0],
 			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		exit(1);
 	}
 	if (strcmp("/Install", argv[1]) == 0) {
-		char *buf = malloc(strlen(argv[0]) + 6);
-		char *p;
-		strcpy(buf, argv[0]);
-		if ((p = strrchr(buf, '\\')) != 0 ||
-		    (p = strrchr(buf, '/')) != 0)
-			*p = 0;
-		else
-			strcpy(buf, ".");
-		strcat(buf, "\\lib");
 		if (!Install(buf)) {
 			MessageBox(NULL, "ODBC Install Failed", argv[0],
 				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 			exit(1);
 		}
-		free(buf);
+		/* create a file to indicate that we've installed the driver */
+		strcat(buf, "\\ODBCDriverInstalled.txt");
+		CloseHandle(CreateFile(buf, READ_CONTROL, 0, NULL,
+				       CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN,
+				       NULL));
 	} else if (strcmp("/Uninstall", argv[1]) == 0) {
+		/* only uninstall the driver if the file exists */
+		strcat(buf, "\\ODBCDriverInstalled.txt");
+		if (!DeleteFile(buf)) {
+			if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+				/* not installed, so don't uninstall */
+				return 0;
+			}
+			MessageBox(NULL, "Cannot delete file for wrong reason",
+				   argv[0],
+				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
+		}
+
 		if (!Uninstall()) {
 			MessageBox(NULL, "ODBC Uninstall Failed", argv[0],
 				   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
@@ -474,5 +491,6 @@ main(int argc, char **argv)
 			   MB_ICONSTOP|MB_OK|MB_TASKMODAL|MB_SETFOREGROUND);
 		exit(1);
 	}
+	free(buf);
 	return 0;
 }
