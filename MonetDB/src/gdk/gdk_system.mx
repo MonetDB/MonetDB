@@ -303,7 +303,7 @@ void MT_exit_thread(int s) {
 
 
 int MT_kill_thread (MT_Id t) {
-	long id = (long)(t-1);
+	long id = (long)t-1;
 	return pthread_kill((pthread_t)id, SIGHUP);
 }
 
