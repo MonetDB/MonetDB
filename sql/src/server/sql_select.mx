@@ -269,16 +269,13 @@ static tvar *
 table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 {
 	node *m;
-	char *tmpname = NULL;
 	char *tname = NULL;
 	dlist *columnrefs = NULL;
 	tvar *tv;
 
 	if (optname && optname->token == SQL_NAME) {
-		tmpname = tname = optname->data.lval->h->data.sval;
+		tname = optname->data.lval->h->data.sval;
 		columnrefs = optname->data.lval->h->next->data.lval;
-	} else {
-		tmpname = tmp_table_name();
 	}
 	tv = scope_add_table(scp, sq, tname, NULL);
 	if (columnrefs) {
