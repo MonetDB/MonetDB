@@ -16,12 +16,6 @@
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
-#
-# Contributor(s):
-#		Martin Kersten <Martin.Kersten@cwi.nl>
-#		Peter Boncz <Peter.Boncz@cwi.nl>
-#		Niels Nes <Niels.Nes@cwi.nl>
-#		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 # portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
 # err...  reserved and offered to the public under the terms of the

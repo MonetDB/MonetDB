@@ -16,12 +16,6 @@
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
-#
-# Contributor(s):
-#		Martin Kersten <Martin.Kersten@cwi.nl>
-#		Peter Boncz <Peter.Boncz@cwi.nl>
-#		Niels Nes <Niels.Nes@cwi.nl>
-#		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 # This script requires Python 2.2 or later.
 
@@ -31,7 +25,7 @@ try:
 except NameError:
     False, True = 0, 1
 
-import os, sys, getopt
+import os, sys, getopt, stat
 
 usage = '''\
 %(prog)s [-ar] [-l licensefile] [file...]
@@ -66,12 +60,6 @@ license = [
     'The Initial Developer of the Original Code is CWI.',
     'Portions created by CWI are Copyright (C) 1997-2004 CWI.',
     'All Rights Reserved.',
-    '',
-    'Contributor(s):',
-    '\t\tMartin Kersten <Martin.Kersten@cwi.nl>',
-    '\t\tPeter Boncz <Peter.Boncz@cwi.nl>',
-    '\t\tNiels Nes <Niels.Nes@cwi.nl>',
-    '\t\tStefan Manegold  <Stefan.Manegold@cwi.nl>',
     ]
 
 def main():
@@ -216,6 +204,11 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
     g.write(f.read())
     f.close()
     g.close()
+    try:
+        st = os.stat(file)
+        os.chmod(file + '.new', stat.s_IMODE(st.st_mode))
+    except OSError:
+        pass
     try:
         os.rename(file, file + '~')     # make backup
     except OSError:

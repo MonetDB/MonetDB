@@ -3,23 +3,17 @@ dnl License Version 1.0 (the "License"); you may not use this file
 dnl except in compliance with the License. You may obtain a copy of
 dnl the License at
 dnl http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-dnl 
+dnl
 dnl Software distributed under the License is distributed on an "AS
 dnl IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 dnl implied. See the License for the specific language governing
 dnl rights and limitations under the License.
-dnl 
+dnl
 dnl The Original Code is the Monet Database System.
-dnl 
+dnl
 dnl The Initial Developer of the Original Code is CWI.
 dnl Portions created by CWI are Copyright (C) 1997-2004 CWI.
 dnl All Rights Reserved.
-dnl 
-dnl Contributor(s):
-dnl 		Martin Kersten <Martin.Kersten@cwi.nl>
-dnl 		Peter Boncz <Peter.Boncz@cwi.nl>
-dnl 		Niels Nes <Niels.Nes@cwi.nl>
-dnl 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
 AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
