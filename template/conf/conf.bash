@@ -282,14 +282,11 @@ if [ "${os}" = "SunOS" ] ; then
 	soft64="/var/tmp${soft64}"
 	softpath="/var/tmp${softpath}"
 	# "standard" SunOS paths
-	binpath="/opt/SUNWspro/bin:/cwi/bin:/usr/java/bin:${binpath}"
+	binpath="/opt/SUNWspro/bin:/cwi/bin:/usr/java/bin:/usr/ccs/bin:${binpath}"
 	libpath="/cwi/lib:${libpath}"
 	if [ "${BITS}" = "64" ] ; then
 		# propper/extended LD_LIBRARY_PATH for 64bit on SunOS
 		libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
-		# GNU ar in /usr/local/bin doesn't support 64bit
-		AR='/usr/ccs/bin/ar' ; export AR
-		AR_FLAGS='-r -cus' ; export AR_FLAGS
 		if [ -d "${soft32}" ] ; then
 			# libraries compiled with gcc may need the gcc libs, so
 			# at them to the LD_LIBRARY_PATH 
@@ -301,10 +298,6 @@ if [ "${os}" = "SunOS" ] ; then
 	if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
 		# propper/extended LD_LIBRARY_PATH for native 32bit shared libs on SunOS
 		libpath="/usr/ucblib:${libpath}"
-	fi
-	if [ "${what}" = "SQL"  -a  "${COMP}" = "ntv" ] ; then
-		# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
-		cc="cc -I/usr/local/include"
 	fi
 fi
 
