@@ -2,7 +2,7 @@ dnl The contents of this file are subject to the MonetDB Public
 dnl License Version 1.0 (the "License"); you may not use this file
 dnl except in compliance with the License. You may obtain a copy of
 dnl the License at 
-dnl http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+dnl http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 dnl 
 dnl Software distributed under the License is distributed on an "AS
 dnl IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
