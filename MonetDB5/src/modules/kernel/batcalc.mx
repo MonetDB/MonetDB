@@ -1070,14 +1070,18 @@ str CMDconvertvoid_oid_oid(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 str CMDconvertvoid_int_oid(int *ret, int *bid){
+#if SIZEOF_OID == SIZEOF_INT
+	/* simply recast the BAT  without doing anything */
+	BBPincref( *ret= *bid,TRUE);
+	return MAL_SUCCEED;
+#else
 	BAT *b,*bn;
 	int xx;
 	BUN p,q;
 	oid x;
 
 	@:getBATdescriptor(ret,bid,b,CMDconvertvoid_int_oid)@
-
-	bn= BATnew(TYPE_void,b->ttype, BATcount(b));
+	bn= BATnew(TYPE_void,TYPE_oid, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	@:tstBat(CMDconvertstr_int)@
 	x= b->hseqbase;
@@ -1091,6 +1095,8 @@ bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
+#endif
+
 }
 @- Implementations of scientific functions
 @c
