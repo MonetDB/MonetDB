@@ -50,7 +50,7 @@ the MAL interpreter, which is the default action when no scheduler directive
 is found. 
 
 In most cases, however, you would like a scheduler to take a specific action.
-It typically rewrites, extends, or reshuffles the query plan as it being
+It typically rewrites, extends, or reshuffles the query plan as it is being
 prepared for execution or even during its execution.
 In this process it can use the optimizer infrastructure, provided the 
 changes are isolated to a private instance. This should be prepared
@@ -115,9 +115,12 @@ Goal: to capture expensive BAT operations and to keep them around for
 re-use. 
 
 @emph{JIT compilation}
-Use the optimizer scheme to prepare for a different execution engine.
+Use the Mcc just in time compilation feature to derive and link
+a small C-program.
 
-What the scheduler should do more?
+What the scheduler could do more?
+A separete thread of control can be used to administer the
+information needed by concurrent scheduler calls.
 
 One of the areas to be decided upon is whether the scheduler is
 also the place to manage the stack spaces. It certainly could
@@ -132,16 +135,29 @@ micro scheduling decisions.
 #include "mal.h"
 #include "mal_macro.h"
 
-/* #define DEBUG_MAL_SCHEDULER     show partial result */
+#define DEBUG_MAL_SCHEDULER 
+
+#ifdef HAVE_SYS_TIMES_H
+# include <sys/times.h>
+#endif
+
+#if OSVER < 560 && defined(SOLARIS)
+#include "/usr/ucbinclude/sys/rusage.h"
+#include "/usr/ucbinclude/sys/resource.h"
+#endif
+
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+
+struct {
+	/*mallinfo memory;*/
+	/* rusage memused; */
+	int cpuload;	/* hard to get */
+} runtime;
 
 mal_export str MALscheduler(Client c);
 mal_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-struct {
-	int maxmemory;
-	int freespace;
-	int cpuload;
-} runtime;
 
 @+ Scheduler implementation
 @= schedulerCleanup
@@ -176,7 +192,6 @@ str schedulerMALBlock(MalBlkPtr mb)
     int oldstop= mb->stop;
 #endif
 	/* update the runtime status */
-	runtime.freespace= 512* 1024 *1024;
 
     do{
         cnt=0;
@@ -290,12 +305,13 @@ RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 }
 
 @-
-The SQL scheduler is presented merely as an example. It is
-moved to the SQL libraries at a later stage.
+The SQL scheduler is presented merely as an example. The real one
+is located in  the SQL libraries for it needs specific information.
 @c
 str
 RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int i;
+	str msg=MAL_SUCCEED;
 	Client cntxt= getClient();
 	Symbol sqlbind= findMALSymbol("sql","bind");
 	MALfcn f= getSignature(sqlbind)->fcn;
@@ -304,11 +320,16 @@ RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	{	p= getInstrPtr(mb,i);
 		if( p->fcn == f)
 		{
-			reenterMAL(cntxt,mb,i,i+1,stk,0,0);
-			/* fetch the properties */
+			if( (msg = reenterMAL(cntxt,mb,i,i+1,stk,0,0)))
+				break;
+			/* fetch the BAT properties and turn off this instruction */
 			p->token = NOOPsymbol;
 		}
 	}
-	return MAL_SUCCEED;
+#ifdef DEBUG_MAL_SCHEDULER
+	stream_printf(GDKout,"scheduler.sqlbind results\n");
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
+	return msg;
 }
 @}
