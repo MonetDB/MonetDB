@@ -152,6 +152,8 @@ stream_export int bs_read_next( stream *s, char *buf, int *last );
 	#include <bzlib.h>
 #endif
 
+#include <gdk.h>
+
 #define convertInt(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
                        ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
 
