@@ -189,7 +189,7 @@ int URLtoString(str *s, int *len, str src){
 str URLgetAnchor( str *retval, str *Str1 ){
 	char *s,*d;
 
-	if( *Str1 == 0) return throwMessage("URLgetAnchor:no string");
+	if( *Str1 == 0) return throwMessage("url.getAnchor", "no string");
 	s= strchr(*Str1,'#');
 	if( s ==0 ){
 		d= GDKmalloc(strlen(str_nil)+1);
@@ -203,7 +203,7 @@ str URLgetAnchor( str *retval, str *Str1 ){
 }
 str URLgetBasename(str *retval, str *t){
         char *d =0, *s;
-	if( *t == 0) return throwMessage("URLgetBasename:no string");
+	if( *t == 0) return throwMessage("url.getBasename", "no string");
 	s= strrchr(*t,'/');
 	if( s) s++; else s= str_nil;
 	d= GDKmalloc(strlen(s)+1);
@@ -216,13 +216,13 @@ str URLgetBasename(str *retval, str *t){
 
 str URLgetContent( str *retval, str *Str1){
 	*retval = 0;
-	return throwMessage("URLgetContent:not yet implemented");
+	return throwMessage("url.getContent", "not yet implemented");
 }
 
 str URLgetContext(str *retval, str *Str1){
 	char *s,*d;
 
-	if( *Str1 == 0) return throwMessage("URLgetContext:no string");
+	if( *Str1 == 0) return throwMessage("url.getContext", "no string");
 	s= strchr(*Str1,'/');
 	if( s ==0 ){
 		d= GDKmalloc(strlen(str_nil)+1);
@@ -242,7 +242,7 @@ str URLgetDirectory(int *ret, str *tv){
 	BAT *b;
 	str t= *tv;
 
-	if( t == 0) return throwMessage("URLgetDirectory:no string");
+	if( t == 0) return throwMessage("url.getDirectory", "no string");
 
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getDir_done;
@@ -250,7 +250,7 @@ str URLgetDirectory(int *ret, str *tv){
         t++;  
         while( *t && *t != '/') t++;
 	b= BATnew(TYPE_int,TYPE_str,40);
-	if( b == 0) return throwMessage("URLgetDirectory:GDKerror");
+	if( b == 0) return throwMessage("url.getDirectory", "GDKerror");
 
         s= buf; 
         for(t++  ; *t  ; t++){
@@ -282,7 +282,7 @@ str URLgetDomain( str *retval, str *tv){
 
 	*retval = 0;
 	s = str_nil;
-	if( t == 0) return throwMessage("URLgetDomain:no string");
+	if( t == 0) return throwMessage("url.getDomain", "no string");
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getDomain_done;
         t++; if( *t != '/') goto getDomain_done;
@@ -309,7 +309,7 @@ getDomain_done:
 str URLgetExtension( str *retval, str *tv){
         char *d =0, *s;
 	str t= *tv;
-	if( t == 0) return throwMessage("URLgetExtension:no string");
+	if( t == 0) return throwMessage("url.getExtension", "no string");
 	s= strrchr(t,'/');
 	if( s) {
 		s++; 
@@ -325,7 +325,7 @@ str URLgetExtension( str *retval, str *tv){
 str URLgetFile(str *retval, str *tv){
         char *d =0, *s;
 	str t= *tv;
-	if( t == 0) return throwMessage("URLgetFile:no string");
+	if( t == 0) return throwMessage("url.getFile", "no string");
 	s= strrchr(t,'/');
 	if( s) s++; else s= str_nil;
 	d= GDKmalloc(strlen(s)+1);
@@ -344,7 +344,7 @@ str URLgetHost(str *retval, str *tv){
 	int i=0;
 	str t= *tv;
 	s= str_nil;
-	if( t == 0) return throwMessage("URLgetHost:no string");
+	if( t == 0) return throwMessage("url.getHost", "no string");
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getHost_done;
         t++; if( *t != '/') goto getHost_done;
@@ -373,7 +373,7 @@ str URLgetPort(str *retval, str *tv){
         char *b,*d =0, *s=buf;
 	int i=0;
 	str t= *tv;
-	if( t == 0) return throwMessage("URLgetPort:no string");
+	if( t == 0) return throwMessage("url.getPort", "no string");
         s= str_nil;
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getPort_done;
@@ -403,7 +403,7 @@ str URLgetProtocol(str *retval, str *tv){
 	int i=0;
 	str t= *tv;
 
-	if( t == 0) return throwMessage("URLgetProtocol:no string");
+	if( t == 0) return throwMessage("url.getProtocol", "no string");
 	b= buf;
         for( ; *t && *t !=':'; t++){
                 *b++ = *t;
@@ -423,7 +423,7 @@ str URLgetQuery(str *retval,  str *tv){
 	char *s,*d;
 	str Str1= *tv;
 
-	if( Str1 == 0) return throwMessage("URLgetQuery:no string");
+	if( Str1 == 0) return throwMessage("url.getQuery", "no string");
 	s= strchr(Str1,'?');
 	if( s ==0 ){
 		d= GDKmalloc(strlen(str_nil)+1);
@@ -443,15 +443,15 @@ str URLgetQueryArg(int *ret, str *tv){
 	BAT *b;
 	str t= *tv;
 
-	if( t == 0) return throwMessage("URLgetQueryArg:no string");
+	if( t == 0) return throwMessage("url.getQueryArg", "no string");
 	t= strchr(t,'?');
-	if( t == 0) return throwMessage("URLgetQueryArg:no query arguments");
+	if( t == 0) return throwMessage("url.getQueryArg", "no query arguments");
 	t++;
 
 	b= BATnew(TYPE_str,TYPE_str,40);
-	if( b == 0) return throwMessage("URLgetQueryArg:GDKerror");
+	if( b == 0) return throwMessage("url.getQueryArg", "GDKerror");
 	if(strlen(t) >1023) 
-		return throwMessage("URLgetQueryArg:string too long");
+		return throwMessage("url.getQueryArg", "string too long");
 	strcpy(query,t);
 
 	for(; query[0] != '\0';) {
@@ -471,7 +471,7 @@ str URLgetRobotURL(str *retval, str *tv){
         char *b, *d,*s = buf;
 	int i=0;
 	str t = *tv;
-	if( t == 0) return throwMessage("URLgetRobotURL:no string");
+	if( t == 0) return throwMessage("url.getRobotURL", "no string");
         b= buf; 
         while( *t && *t != ':') *b++ = *t++;
         *b++ = *t++; if( *t != '/') goto getRobot_done;
@@ -499,7 +499,7 @@ str URLgetUser(str *retval, str *tv){
 	int i=0;
 	str t= *tv;
 
-	if( t == 0) return throwMessage("URLgetUser:no string");
+	if( t == 0) return throwMessage("url.getUser", "no string");
 	s= str_nil;
         while( *t && *t != ':') t++;
         t++; if( *t != '/') goto getUser_done;
@@ -528,8 +528,8 @@ getUser_done:
 }
 str URLisaURL( bit *retval, str *tv){
 	str Str1= *tv;
-	if( tv == 0) return throwMessage("URLisaURL:no string");
-	return throwMessage("URLisaURL:not yet implemented");
+	if( tv == 0) return throwMessage("url.isaURL", "no string");
+	return throwMessage("url.isaURL", "not yet implemented");
 }
 
 str URLnew( str *url, str *Str1 ){

@@ -199,33 +199,6 @@ command decimal_prelude():void= decimal_prelude;
 command decimal_epilogue():void = decimal_epilogue;
 
 decimal_prelude();
-@-
-
-.LOAD
-
-    proc "[divide]"(bat[any::1,decimal] b, decimal div, int prec) : bat[any::1,decimal] {
-        if ((div = DECIMAL_ZERO) or isnil(div) or isnil(prec)) {
-                return project(b, DECIMAL_NIL);
-        } else if (istenfold(div)) {
-                var dec := 1 - (getprecision(div) + getscale(div));
-                return [setprecision]([addscale](b,dec),prec);
-        } 
-        return bulkdivide(b, div, prec);
-    }
-
-    proc "[/]"(bat[any::1,decimal] b, decimal div) : bat[any::1,decimal] {
-        if ((div = DECIMAL_ZERO) or isnil(div)) {
-                return project(b, DECIMAL_NIL);
-        } else if (istenfold(div)) {
-                var dec := 1 - (getprecision(div) + getscale(div));
-		return [setscale]([addscale](b,dec),0);
-        } 
-        return bulkdivide(b, div);
-    }
-.END;
-
-.END decimal;
-
 @+ Test
 The below MIL script stress-tests all operations on decimals, as well as the performance 
 of grouping, sort and join on decimal columns. 
@@ -966,7 +939,8 @@ str decimal_format(str *ret, decimal **dinput, str *formatinput) {
 
 	/* check && alloc if ok */
 	if (n1 < 0 || n2 < 0 || (n1+n2) == 0 || (n1+n2) > PRECISION_MAX || n3 <= 0 || n3 > 9) {
-		return throwException("decimal_format: illegal format '%s'.\n", format);
+		return throwException(MALEXCEPTION,"decimal.print",
+		  	"illegal format '%s'.\n", format);
 	}
 	s = (*ret) = (str) GDKmalloc(1+n1+1+n2+2+n3+1);
 
@@ -1214,7 +1188,7 @@ str decimal_prelude() {
 
 	box= openBox("decimal");
 	if( box== 0)
-                return throwMessage("decimal_prelude:failed to open box");
+                return throwMessage("decimal.prelude","failed to open box");
         if( box->sym->vtop == 0){
 	decimal **d;
 	ValRecord vr;
@@ -1967,10 +1941,10 @@ str decimal_divide_default(decimal **ret, decimal **num, decimal **div) {
 @-
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("@4:cannot access bat @2 in bbp");
+                return throwMessage("decimal.@4","cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0;
-                return throwMessage("@4:cannot access descriptor @2");
+                return throwMessage("decimal.@4","cannot access descriptor @2");
         }
         if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
 @-
@@ -1988,7 +1962,7 @@ str decimal_bulkdivide(int* ret, int* bid, decimal **divinput, int *prec) {
 	BUN p, q;
 	Heap hp;
 	
-	@:getBATdescriptor(ret,bid,b,decimal_bulkdivide)@
+	@:getBATdescriptor(ret,bid,b,bulkdivide)@
 	xx = BATcount(b);
 	bn = BATnew(b->htype, TYPE_int, xx);
 	*ret = bn->batCacheid;
