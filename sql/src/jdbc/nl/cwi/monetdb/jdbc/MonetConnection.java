@@ -1014,6 +1014,7 @@ public class MonetConnection extends Thread implements Connection {
 						);
 						rawr = null;
 					} else if (monet.getLineType() == MonetSocket.HEADER) {
+						if (hdr == null) throw new SQLException("Protocol violation: header sent before start of header was issued!");
 						hdr.addHeader(tmpLine);
 					} else if (monet.getLineType() == MonetSocket.RESULT) {
 						// complete the header info and add to list
