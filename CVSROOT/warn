@@ -10,19 +10,24 @@ do
 MonetDB/bootstrap
 MonetDB/rules.mk
 MonetDB/conf/conf.bash
-sql/bootstrap
-sql/rules.mk
-sql/conf/conf.bash
 template/bootstrap
 template/rules.mk
 template/conf/conf.bash
+sql/bootstrap
+sql/rules.mk
+sql/conf/conf.bash
+pathfinder/bootstrap
+pathfinder/rules.mk
+pathfinder/conf/conf.bash
 EOF
     then
 	cat <<EOF
 WARNING:
 
 The file "$dir/$f" should be kept identical in
-MonetDB, monet5, sql, xml, acoi, gis, template, playpen, misq, times100, pruning!
+MonetDB, template, sql, pathfinder,  xml, pruning, playpen, times100, misq, gis, acoi, monet5!
+
+(If necessary, please contact Stefan.Manegold@cwi.nl for details.)
 EOF
     fi
 done
