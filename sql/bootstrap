@@ -34,7 +34,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 	CONFDIR="-I `$MONET_PREFIX/bin/monet-config --pkgdatadir`/conf"
 fi
 
-find . -name .cache\* \-exec rm {} \;
+find . -name .incs.\* \-exec rm {} \;
 
 REQ_AM_VERSION="1.4"
 AM_VERSION=`automake --version | grep '^automake' | sed -e 's|.*)||g' -e 's| ||g' -e 's|-.*||g'`
