@@ -1024,8 +1024,7 @@ optimizers to make decisions. (See the section on properties).
             pname= idCopy(cntxt,l);
             if( curBlk->var[@1]->props== NULL)
                 curBlk->var[@1]->props= newPropertySet();
-            setProperty(curBlk->var[@1]->props,0,pname,
-                    TYPE_str,GDKstrdup(""));
+            setVarProperty(curBlk,@1,0,pname, TYPE_str,GDKstrdup(""));
             GDKfree(pname); 
         } while( keyphrase1(cntxt,","));
         if( !keyphrase1(cntxt,"}") )

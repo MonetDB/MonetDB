@@ -549,6 +549,7 @@ mal_export void     setVarType(MalBlkPtr mb, int i, int tpe);
 mal_export void     setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void     setReturnArgument(InstrPtr p, int varid);
 mal_export malType  destinationType(MalBlkPtr mb, InstrPtr p);
+mal_export void setVarProperty(MalBlkPtr mb, int i, int idx, str name, int tpe, ptr val);
 mal_export str      fcnClass(InstrPtr p);
 mal_export str      fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg );
 mal_export void     printInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
@@ -1587,6 +1588,14 @@ void pushEndInstruction(MalBlkPtr mb){
     p->argc =0;
     p->retc = 0;
     pushInstruction(mb,p);
+}
+@-
+Property value setting.
+@c
+void setVarProperty(MalBlkPtr mb, int i, int idx, str name, int tpe, ptr val){
+	if( mb->var[i]->props == NULL)
+		mb->var[i]->props = newPropertySet();
+	setProperty(mb->var[i]->props,idx,name,tpe,val);
 }
 @}
 @-
