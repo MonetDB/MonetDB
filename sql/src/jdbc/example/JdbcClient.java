@@ -438,7 +438,7 @@ public class JdbcClient {
 		while (cols.next()) {
 			out.print(",");
 			if (comment != null) {
-				out.print(" -- "); out.println(comment);
+				out.print(" -- "); out.print(comment);
 			}
 			out.println();
 			out.print("\tFOREIGN KEY (");
