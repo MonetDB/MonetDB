@@ -431,10 +431,11 @@ int simpleTypeId(Client cntxt){
 	return tpe;
 }
 
-int typeId(Client cntxt)
+int parseTypeId(Client cntxt, int defaultType)
 {	int i= TYPE_any, ht,tt,kh=0,kt=0;
 
-	if( *cntxt->nxt!=':') return -1; /* no type qualifier */
+	if( *cntxt->nxt!=':') 
+		return defaultType; /* no type qualifier */
 	if( strncmp(cntxt->nxt,":bat[",5)==0){
 		/* parse :bat[:type,:type] */
 		advance(cntxt,5);
@@ -464,11 +465,11 @@ int typeId(Client cntxt)
 	ht= simpleTypeId(cntxt);
 	if(ht >=0 ) return ht;
 	parseError(cntxt,"<type identifier> expected\n");
-	return -1;
+	return defaultType;
 }
 
 int typeElm(Client cntxt){
-	int type= typeId(cntxt);
+	int type= parseTypeId(cntxt,-1);
 	int k;
 	if( type == TYPE_any && (k= typeAlias(cntxt)) >=0)
 			setAnyTailIndex(type,k);
@@ -519,50 +520,61 @@ to a specific named area. The effect is that all definitions may become
 globally known (?) and symbol table should be temporarilly locked
 for updates by concurrent users.
 @T
-moduleStmt : [ATOM] MODULE moduleId [':' type]| [ATOM] id [':' type]\\
-moduleId    : identifier | string \\
+\begin{tabular}{l l l}
+moduleStmt      & : & {\sc atom} ident [':'ident]\\
+                & $|$ & {\sc module} ident \\
+\end{tabular}
 @-
 An atom statement does not introduce a new module.
-@= parsePath
-	if( (x = idLength(cntxt))) modnme= idCopy(cntxt,x); else
-	if( (y = stringLength(cntxt))) modnme= strCopy(cntxt,y);
-	if( modnme==0)
-		return parseError(cntxt,"<module path> expected\n");
 @c
-str parseModule(Client cntxt, int atomary)
+str parseAtom(Client cntxt)
 {	str modnme=0;
-	int l,x,y,tpe;
+	int l,tpe;
 
-	if( ! keyword(cntxt,"module",6) ){
-		if(atomary &&  idLength(cntxt) >0){
-			/* parse: ATOM id:type */
-			modnme= idCopy(cntxt,idLength(cntxt));
-			tpe= typeId(cntxt);
-			tpe= tpe<0 ?TYPE_int:tpe;
-			malAtomDefinition(modnme,tpe);
-			GDKfree(modnme);
-			@:helpInfo(cntxt->nspace->help)@
-			return "";
-		} else 	
-		if(atomary) return parseError(cntxt,"'module' expected\n");
-		return 0;
-	}
-	@:parsePath@
-@-
-Atom storage may be defined in terms of an existing type.
-@c
-	if( atomary ) { 
-		tpe= typeId(cntxt);
-		tpe= tpe<0 ?TYPE_int:tpe;
-		malAtomDefinition(modnme,tpe);
-	}
+	if(idLength(cntxt) <= 0)
+		return parseError(cntxt,"atom name expected\n");
+
+	/* parse: ATOM id:type */
+	modnme= idCopy(cntxt,idLength(cntxt));
+	tpe= parseTypeId(cntxt,TYPE_int);
+	malAtomDefinition(modnme,tpe);
 	if( findScope(cntxt->nspace,modnme) != NULL)
 		cntxt->curprg->def->errors  = FATALINPUT;
 	else
 		cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
-	if( atomary) cntxt->nspace->isAtomModule = TRUE;
+	cntxt->nspace->isAtomModule = TRUE;
 	GDKfree(modnme);
-	@:typeInfo@
+	@:helpInfo(cntxt->nspace->help)@
+	return "";
+}
+str parseModule(Client cntxt)
+{	str modnme=0;
+	int l,x;
+
+	if( (x = idLength(cntxt))) modnme= idCopy(cntxt,x); else
+	if( (x = stringLength(cntxt))) modnme= strCopy(cntxt,x);
+	if( modnme==0)
+		return parseError(cntxt,"<module path> expected\n");
+	if( findScope(cntxt->nspace,modnme) != NULL)
+		cntxt->curprg->def->errors  = FATALINPUT;
+	else
+		cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
+	GDKfree(modnme);
+@-
+Module components may include a function reference overruling
+the built-in type resolver. The user-defined type resolver is called
+instead.
+@c
+	skipSpace(cntxt);
+	if( keyphrase(cntxt,"check",5)){
+		int l;
+		skipSpace(cntxt);
+		if( (l= idLength(cntxt))){
+			str nme = idCopy(cntxt,l);
+			cntxt->nspace->typeChecker = getAddress(nme);
+			GDKfree(nme);
+		} else parseError(cntxt,"<identifier> expected\n");
+	} 
 	@:helpInfo(cntxt->nspace->help)@
 	return "";
 }
@@ -581,11 +593,14 @@ includeStmt     & : & {\sc include} identifier \\
 str parseInclude(Client cntxt)
 {
 	str modnme=0;
-	int x,y;
+	int x;
 
 	if( ! keyword(cntxt,"include",7)) return 0;
 
-	@:parsePath@
+	if( (x = idLength(cntxt))) modnme= idCopy(cntxt,x); else
+	if( (x = stringLength(cntxt))) modnme= strCopy(cntxt,x);
+	if( modnme==0)
+		return parseError(cntxt,"<module path> expected\n");
 
 	malImport(cntxt,modnme,modnme, 0);
 	GDKfree(modnme);
@@ -615,16 +630,11 @@ of the return statement.
 
 Note, the function name could be mod.fcn, which calls for storing
 the function definition in a particular module instead of the current one.
-@= closingBracket
-	if( nextChar(cntxt) != ')') {
-		freeInstruction(curInstr);
-		return (MalBlkPtr) parseError(cntxt,"')' expected\n");
-	}
 @= fcnHeader
 	l = operatorLength(cntxt);
 	if( l == 0) l = idLength(cntxt);
 	if( l == 0) return (MalBlkPtr) parseError(cntxt,
-				"<identifier> |<operator> expected\n");
+				"<identifier> | <operator> expected\n");
 
 	fnme = idCopy(cntxt,l);
 
@@ -634,7 +644,7 @@ the function definition in a particular module instead of the current one.
 		l= operatorLength(cntxt);
 		if( l == 0) l = idLength(cntxt);
 		if( l == 0) return (MalBlkPtr) parseError(cntxt,
-					"<identifier> |<operator> expected\n");
+					"<identifier> | <operator> expected\n");
 		fnme = idCopy(cntxt,l);
 	}
 	if( nextChar(cntxt) != '(') {
@@ -677,7 +687,10 @@ the function definition in a particular module instead of the current one.
 		skipSpace(cntxt);
 		ch = currChar(cntxt);
 	}
-	@:closingBracket@
+	if( nextChar(cntxt) != ')') {
+		freeInstruction(curInstr);
+		return (MalBlkPtr) parseError(cntxt,"')' expected\n");
+	}
 /*
 The return type is either a single type or multiple return type structure.
 We simply keep track of the number of arguments added and
@@ -724,7 +737,10 @@ during the final phase reshuffle the return values to the beginning (?)
 		for(i1=0; i1<maxarg; i1++) 
 			curInstr->argv[i1] = newarg[i1];
 		GDKfree(newarg);
-		@:closingBracket@
+		if( nextChar(cntxt) != ')') {
+			freeInstruction(curInstr);
+			return (MalBlkPtr) parseError(cntxt,"')' expected\n");
+		}
 	} else	/* default */
 		setVarType(curBlk,0,TYPE_void);
 @-
@@ -792,29 +808,6 @@ optimizers to make decisions. (See the section on properties).
 		skipSpace(cntxt);
 	}
 @-
-Most functions are (dynamically) linked with the kernel.
-Once we encounter an external function, the block mode
-for reading unfinished definitions is also terminated.
-@= externalFcn
-	if( keyphrase(cntxt,"address",7)){
-		str nme;
-		int i;
-		skipSpace(cntxt);
-		i = idLength(cntxt);
-		if( i==0){
-			parseError(cntxt,"<identifier> expected\n");
-			return 0;
-		}
-		cntxt->blkmode=0;
-		nme = idCopy(cntxt,i);
-		if( moduleId(curInstr)) freeModuleName(curInstr);
-		setModuleScope(curInstr, cntxt->nspace);
-		curInstr->fcn = getAddress(nme);
-		curBlk->binding = nme;
-		if( cntxt->nspace->isAtomModule) 
-			malAtomProperty(curBlk, curInstr);
-	} else return (MalBlkPtr) parseError(cntxt,"'address' expected\n");
-@-
 Each procedure definition opens a structure in which the
 information is gathered. The enclosing module is statically
 determined.
@@ -836,21 +829,6 @@ help information.
 		} else parseError(cntxt,"<string> expected\n");
 	} 
 	skipToEnd(cntxt);
-@-
-Module components may include a function reference overruling
-the built-in type resolver. The user-defined type resolver is called
-instead.
-@= typeInfo
-	skipSpace(cntxt);
-	if( keyphrase(cntxt,"check",5)){
-		int l;
-		skipSpace(cntxt);
-		if( (l= idLength(cntxt))){
-			str nme = idCopy(cntxt,l);
-			cntxt->nspace->typeChecker = getAddress(nme);
-			GDKfree(nme);
-		} else parseError(cntxt,"<identifier> expected\n");
-	} 
 @c
 MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	MalBlkPtr curBlk = 0;
@@ -875,7 +853,29 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 		cntxt->backup = 0;
 	}
 	skipSpace(cntxt);
-	@:externalFcn@
+@-
+Most functions are (dynamically) linked with the kernel.
+Once we encounter an external function, the block mode
+for reading unfinished definitions is also terminated.
+@c
+	if( keyphrase(cntxt,"address",7)){
+		str nme;
+		int i;
+		skipSpace(cntxt);
+		i = idLength(cntxt);
+		if( i==0){
+			parseError(cntxt,"<identifier> expected\n");
+			return 0;
+		}
+		cntxt->blkmode=0;
+		nme = idCopy(cntxt,i);
+		if( moduleId(curInstr)) freeModuleName(curInstr);
+		setModuleScope(curInstr, cntxt->nspace);
+		curInstr->fcn = getAddress(nme);
+		curBlk->binding = nme;
+		if( cntxt->nspace->isAtomModule) 
+			malAtomProperty(curBlk, curInstr);
+	} else return (MalBlkPtr) parseError(cntxt,"'address' expected\n");
 	@:helpInfo(curBlk->help)@
 	showErrors();
 	if(curBlk && cntxt->listing) 
@@ -946,13 +946,6 @@ int parseEnd(Client cntxt)
 	return 0;
 }
 @-
-@= endparse
-	pushInstruction(curBlk, curInstr);
-	if( *cntxt->nxt != ';')
-		parseError(cntxt,"';' expected\n");
-	skipToEnd(cntxt);
-	return 1;
-@-
 Most instructions are simple assignments, possibly
 modified with a barrier/catch tag.
 @T
@@ -979,7 +972,6 @@ if( (varid=findVariableLength(curBlk,cntxt->nxt,l)) == -1){
 }
 @-
 @c
-void debugParse(){}
 void parseAssign(Client cntxt, int cntrl)
 {	InstrPtr curInstr;
 	MalBlkPtr curBlk;
@@ -1005,7 +997,7 @@ void parseAssign(Client cntxt, int cntrl)
 				return;
 			}
 			@:GETvariable@
-			type= typeId(cntxt);
+			type= parseTypeId(cntxt,-1);
 			if( type>0) setVarType(curBlk,varid,type);
 			/* check for any properties */
 			@:propList(varid)@
@@ -1047,7 +1039,7 @@ void parseAssign(Client cntxt, int cntrl)
 				cntxt->nxt=v;
 				@:GETvariable@
 				curInstr->argv[0]= varid;
-				type= typeId(cntxt);
+				type= parseTypeId(cntxt,-1);
 				if( type>0) setVarType(curBlk,varid,type);
 				/* check for any properties */
 				@:propList(varid)@
@@ -1107,7 +1099,7 @@ This code is used in both positions of the expression
 	if( (i= cstLength(cntxt,&lt))){
 		str bak= cntxt->nxt;
 		v= cstCopy(cntxt,i);
-		i= typeId(cntxt);
+		i= parseTypeId(cntxt,-1);
 		if(i>=0) {
 			int newlength = cntxt->nxt - bak;
 			lt = i;
@@ -1121,18 +1113,14 @@ This code is used in both positions of the expression
 		@1;
 	} else 
 	if( (v= charCst(cntxt)) ){
-		i= typeId(cntxt);
-		if(i>=0){ 
-			lt = i; 
-		} else lt= TYPE_chr;
+		lt = parseTypeId(cntxt,TYPE_chr);
 		i= newConstant(curBlk,lt,v,TRUE);
 		curInstr= pushArgument(curBlk,curInstr,i);
 		@1;
 	} else 
 	if( (i = stringLength(cntxt)) ){
 		v= strCopy(cntxt,i);
-		lt= typeId(cntxt);
-		if(lt<0)lt= TYPE_str;
+		lt= parseTypeId(cntxt,TYPE_str);
 		i= newConstant(curBlk,lt,v,FALSE);
 		curInstr= pushArgument(curBlk,curInstr,i);
 		@1;
@@ -1146,14 +1134,13 @@ The parameter of parseArguments is the return value of the enclosing function.
 		if( (i= idLength(cntxt))){
 			if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 				v= idCopy(cntxt,i);
-				i= typeId(cntxt);
-				i= i>=0?i: TYPE_any;
+				i= parseTypeId(cntxt,TYPE_any);
 				idx = newVariable(curBlk, v, i);
 				setVarInitialized(curBlk,idx);
 				@:propList(idx)@
 			} else {
 				advance(cntxt,i);
-				i = typeId(cntxt);
+				i = parseTypeId(cntxt,-1);
 				if(i>=0 && getVarType(curBlk,idx)!= i){
 					parseError(cntxt,"incompatible type\n");
 					return @1;
@@ -1163,8 +1150,7 @@ The parameter of parseArguments is the return value of the enclosing function.
 			curInstr= pushArgument(curBlk,curInstr,idx);
 		} else 
 		if( *cntxt->nxt==':' ){
-			i = typeId(cntxt);
-			i = i >=0? i :TYPE_any;
+			i = parseTypeId(cntxt,TYPE_any);
 			idx= newTypeVariable(curBlk, i );
 			@:propList(idx)@
 			curInstr= pushArgument(curBlk,curInstr,idx);
@@ -1306,7 +1292,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  continue;
 		case 'A': case 'a':
 			  if( keyword(cntxt,"atom",4) &&
-			      parseModule(cntxt,TRUE)!=0) break;
+			      parseAtom(cntxt)!=0) break;
 			  goto allLeft;
 		case 'b': case 'B':
 			  if( keyword(cntxt,"barrier",7)) {
@@ -1335,6 +1321,11 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  if( keyword(cntxt,"function",8) ){
 				cntxt->blkmode++;
 				if( parseFunction(cntxt, FUNCTIONsymbol)) break;
+			  } else
+			  if( keyword(cntxt,"factory",7) ){
+				cntxt->blkmode++;
+				parseFunction(cntxt, FACTORYsymbol);
+				break;
 			  }
 			  goto allLeft;
 		case 'H': case 'h':
@@ -1349,7 +1340,8 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				cntrl= LEAVEsymbol;
 			  goto allLeft;
 		case 'M': case 'm': 
-			  if( parseModule(cntxt, FALSE)!= 0) break;
+			  if( keyword(cntxt,"module",6) &&
+			  	parseModule(cntxt)!= 0) break;
 			  goto allLeft;
 		case 'P': case 'p': 
 			  if( keyword(cntxt,"pattern",7) ) {
@@ -1368,13 +1360,6 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  }
 			  if( keyword(cntxt,"return",6)){
 				cntrl= RETURNsymbol;
-			  }
-			  goto allLeft;
-		case 'S': case 's': 
-			  if( keyword(cntxt,"stream",6) ){
-				cntxt->blkmode++;
-				parseFunction(cntxt, FACTORYsymbol);
-				break;
 			  }
 			  goto allLeft;
 		case 'T': case 't':

@@ -968,18 +968,22 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 			GDKerror("'%s' type mismatch %d vs %d\n",
 				name, getVarType(mb,n),type);
 		}
-		if( isTmpName(name)){
-			int i= atol(name+1);
-			/* test validity*/
-			if( i != n) 
-				GDKerror("newVariable:temporary variable" 
-					" mis-alignment\n");
-			else return n;
-			
-	} 
-		GDKfree(name);  /*possible error not correct, check use!!!*/
+		GDKfree(name);  /*possible not correct, check use!*/
 		return n;
 	}
+	if( isTmpName(name)){
+		int i= atol(name+1);
+		/* test validity*/
+		if( i > mb->vtop) {
+			GDKerror("newVariable:variable %s mis-aligned\n",name);
+			mb->errors++;
+		} else
+		if(i < mb->vtop && !isTmpVar(mb,i) ) {
+			GDKerror("'%s' overwrites %s\n",
+				name, getVarName(mb,i));
+			mb->errors++;
+		} 
+	} 
 	if( isReserved(name)){
 		GDKerror("'%s' is a reserved identifier\n",name);
 		mb->errors++;

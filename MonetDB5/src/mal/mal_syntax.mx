@@ -32,7 +32,7 @@ definition	& : & moduleStmt $|$ includeStmt \\
 		& $|$ & functionStmt $|$ factoryStmt\\
 		& $|$ & includeStmt\\
 
-moduleStmt	& : & {\sc atom} {\sc module} ident [':'ident]\\
+moduleStmt	& : & {\sc atom} ident [':'ident]\\
 		& $|$ & {\sc module} ident \\
 
 commandStmt	& : & {\sc command } header \\

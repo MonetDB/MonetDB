@@ -66,7 +66,7 @@ int malBootstrap(){
 	bf= GDKgetenv("mal_bootstrap");
 	if( bf) bootfile= bf;
 	malImport(c,bootfile,0,0);
-	mal_scope = c->nspace->outer;
+	mal_scope = c->nspace;
 	showErrors();
 	return 1;
 }

@@ -19,8 +19,8 @@
 @* The MAL debugger
 To enable ease of debugging and performance monitoring, the MAL interpreter
 comes with a gdb-like text-based debugger.
-The debugger can be entered at any time using the call mdb().
-Also if there is no apparent console from which the debugger can be controlled.
+The debugger can be entered at any time using the call mdb() against
+a MAL console.
 
 @+ The debugger instruction set
 @T
@@ -28,9 +28,10 @@ Also if there is no apparent console from which the debugger can be controlled.
 \begin{tabular} {l l}
 next		& Advance to next statement\\
 continue 	& Continue program being debugged\\
-bbp 		& BBP memory layout\\
 break 		& set breakpoint on current instruction\\
 break {\em var} 	& break on assignment to {\em var}\\
+call 		& execute MAL instruction [todo]\\
+continue	& to next breakpoint\\
 delete {\em var} 	& remove break point {\em var}\\
 step 		& advance to next MAL instruction\\
 module 	& display the module [scopes] \\
@@ -55,10 +56,9 @@ A powerful mechanism for debugging a program is to set breakpoints.
 In MAL the breakpoints are designated by the <module>.<variable> name.
 As soon as the variable recieves a new valued the breakpoint effectuated.
 @-
-The breakpoints are maintained in a system-wide
- global table. Although a little space
-consumptive, it is the easiest to maintain and much less expensive
-as reserving debugger space in each instruction.
+The breakpoints are maintained in a system-wide global table. 
+Although a little space consumptive, it is the easiest to maintain 
+and much less expensive as reserving debugger space in each instruction.
 @{
 @- Compilation control
 Being able to debug comes at a price.
@@ -209,6 +209,7 @@ void mdbClrBreakpointName(Client cntxt, str name)
 #define skipWord(X)	skipNonBlanc(X); skipBlanc(X);
 
 @-
+The instruction call stack is the most common command.
 Prepare a string for an instruction call. The flag indicates
 a need for position information as well.
 @c

@@ -107,7 +107,7 @@ mal_export int	getTypeIndex(str nme, int len);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
 mal_export int	idcmp(str n, str m);
-mal_export str	newTmpName(int i);
+mal_export str	newTmpName(char tag,int i);
 mal_export int	isTmpName(str n);
 mal_export int	isTypeName(str n);
 mal_export int	isIdentifier(str s);
@@ -289,9 +289,9 @@ int getGDKtype(int type){
 	if( type == TYPE_any) return TYPE_int;
 	return ATOMtype(type);
 }
-str newTmpName(int i){
+str newTmpName(char tag, int i){
 	char buf[PATHLENGTH];
-	snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,i);
+	snprintf(buf,PATHLENGTH,"%c%d",tag,i);
 	return GDKstrdup(buf);
 }
 int isTmpName(str n){ return n && *n == TMPMARKER;}
