@@ -41,7 +41,7 @@ function Admin.dir(b:bat[int,str]):void; #0  (dir:void)<-(b:bat[int,str])
     atm := inspect.getAtoms(); #1 INSPECTatom_names (atm:bat[int,str])
     brev := bat.reverse(b); #2 CMDreverse (brev:bat[str,int])<-(b:bat[int,str])
     bm := bat.mirror(brev); #3 CMDmirror (bm:bat[str,str])<-(brev:bat[str,int])
-    h := bbp.getHeadType(); #4 CMDbbpTailType (h:bat[int,str])
+    h := bbp.getHeadType(); #4 CMDbbpHeadType (h:bat[int,str])
     bHead := algebra.join(brev,h); #5 CMDjoin (bHead:bat[str,str])<-(brev:bat[str,int])(h:bat[int,str])
     bat.setColumn(bHead,"htype"); #6 CMDsetColumn ($7:bat[str,str])<-(bHead:bat[str,str])($8:str)
     h := bbp.getTailType(); #7 CMDbbpTailType (h:bat[int,str])
@@ -101,13 +101,13 @@ function Admin.main():int; #0  (main:int)
     Admin.dir("simple"); #6  ($9:void)<-($10:str)
 end main; #7  
 [ "start test" ]
-#-----------------------------------------------------------------------------------------------------------------------------------------#
-# bbp	| tmp_8			| htype		| ttype		| count	| heat	| dirty		| status	| kind		| refcnt  #
-#-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",	  "str",	  30,	  105,	  "dirty",	  "dirty",	  "transient",	  4	  ]
-[ 2,	  "monet_unicode_case",	  "int",	  "int",	  685,	  105,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 3,	  "timezones",		  "tzone",	  "tzone",	  24,	  105,	  "dirty",	  "dirty",	  "transient",	  3	  ]
-[ 4,	  "simplemind",		  "int",	  "int",	  0,	  105,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# bbp	| tmp_8			| htype	| ttype		| count	| heat	| dirty		| status	| kind		| refcnt  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ 1,	  "monet_environment",	  "str",  "str",	  30,	  52,	  "dirty",	  "dirty",	  "transient",	  4	  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  52,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 3,	  "timezones",		  "str",  "tzone",	  24,	  52,	  "dirty",	  "dirty",	  "transient",	  3	  ]
+[ 4,	  "simplemind",		  "int",  "int",	  0,	  52,	  "dirty",	  "dirty",	  "transient",	  3	  ]
 [ "Search directory by name" ]
 #-------------------------#
 # BAT:	  tmp_22	  #
@@ -117,5 +117,5 @@ end main; #7
 #-----------------------------------------------------------------------------------------------------------------#
 # tmp_22| tmp_19	| htype	| ttype	| count	| heat	| dirty		| status	| kind		| refcnt  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  106,	  "dirty",	  "dirty",	  "transient",	  5	  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  53,	  "dirty",	  "dirty",	  "transient",	  5	  ]
 >

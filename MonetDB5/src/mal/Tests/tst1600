@@ -508,7 +508,7 @@ function arith_perftest(b:bat[any::1,decimal], div:decimal, s:str):void;
 #proc arith_perftest(bat[any::1,decimal] b, decimal div, str s) {
 print("DECIMAL variant");
 	t:= alarm.time();
-	reduce:= decimal.bulkdivide(b,div);
+	reduce:= decimal.divide(b,div);
 #  var t := time, reduce := [/](b,div); 
 	qg_a := printf("[/](%s)",s);
 #        printf("[/](%s)",s);
