@@ -1716,7 +1716,20 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 %}
 %exception SQLAllocHandle {
 	$action
-	CheckResult(result, arg1, arg2)
+	if (result == SQL_INVALID_HANDLE) {
+		PyErr_SetString(ErrorObject, "Invalid handle");
+		return NULL;
+	}
+	if (result == SQL_ERROR) {
+		char msg[256], state[6];
+		SQLSMALLINT len;
+		PyObject *errobj;
+		SQLGetDiagRec(arg1==SQL_HANDLE_DBC?SQL_HANDLE_ENV:SQL_HANDLE_DBC, arg2, 1, state, NULL, msg, 256, &len);
+		errobj = Py_BuildValue("ss", msg, state);
+		PyErr_SetObject(ErrorObject, errobj);
+		Py_XDECREF(errobj);
+		return NULL;
+	}
 }
 %exception SQLAllocEnv {
 	$action
