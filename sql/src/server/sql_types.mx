@@ -1266,8 +1266,8 @@ void sqltypeinit()
 	  sql_create_func( "editdistance", "editdistance", *t, *t, INT, SCALE_FIX);
 	  sql_create_func( "editdistance2", "editdistance2", *t, *t, INT, SCALE_FIX);
 
-	  /* fstrcmp is licensed under GPL :-/  */
-	  /* sql_create_func( "fstrcmp", "fstrcmp", *t, *t, DBL, SCALE_FIX); */
+	  sql_create_func( "similarity", "similarity", *t, *t, DBL, SCALE_FIX);
+	  sql_create_func( "qgramnormalize", "qgramnormalize", *t, NULL, *t, SCALE_NONE);
 
 	  sql_create_func( "levenshtein", "levenshtein", *t, *t, INT, SCALE_FIX);
 	  sql_create_func_( "levenshtein", "levenshtein",
