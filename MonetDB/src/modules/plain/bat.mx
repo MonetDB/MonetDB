@@ -121,6 +121,25 @@ can be found in this module.
 "Delete from the first BAT all BUNs with a corresponding BUN in the second.
  Returns the modified BAT." 
 
+@+ void bats
+To prevent void bats to convert to oid bats we need overloaded insert and
+replace commands. These operations should at a later stage be moved to the
+kernel libraries, e.g. bat.mx
+@m
+ 	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
+
+ 	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
+
+ 	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
+
+ 	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
+
+ 	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
+
+ 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
+
+	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
+
 @- BAT properties 
 @T
 Monet maintains a number of {\em properties} on each BAT that is used to steer tactical 
@@ -552,9 +571,23 @@ these 'sync' OIDs with their own propagation rules.
 	(BAT@2type(@1) == TYPE_bat)?(BUN)&((BAT*)@2)->batCacheid:(BUN)@2
 
 @+ Information Functions
-@c
+
+@h
+#ifndef BAT_H
+#define BAT_H
+
+#include "gdk.h"
 #include "monet.h"
 #include "bat.proto.h"
+
+bat_export size_t void_append_bat( BAT *b, BAT *u);
+bat_export size_t void_insert_bat( BAT *b, BAT *u);
+bat_export size_t void_replace_bat( BAT *b, BAT *u);
+bat_export void void_inplace(BAT *b, oid id, ptr val );
+
+#endif /*BAT_H*/
+@c
+#include "bat.h"
 
 int CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap){
 	if (*cap < 0)
@@ -679,6 +712,156 @@ int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 } 
+
+
+@-
+The next collection of operators fill a hole in the Monet kernel libraries.
+It provide handy operations on void-BATs. The sole reason not to move it to
+the bat.mx module is that overall the kernel does not support bat[void,void]
+@c
+size_t void_append_bat( BAT *b, BAT *u){
+        size_t sz = BUNsize(u);
+	size_t sbase = b->hseqbase + BATcount(b);
+	BATseqbase(u, sbase);
+	BATins(b, u);
+	return sz;
+}
+
+size_t void_insert_bat( BAT *b, BAT *u){
+	size_t nr = 0;
+	BUN r,s;
+	oid nil = oid_nil;
+
+	BATloop(u, r, s){
+		BUNins(b,  (ptr)&nil, BUNtail(u,r));
+		nr++;
+	}
+	return nr;
+}
+
+void void_inplace(BAT *b, oid id, ptr val )
+{
+        BUN p = NULL;
+        BUN oldInserted = b->batInserted;
+
+        assert(b->htype == TYPE_void);
+        assert(b->hseqbase != oid_nil);
+        assert(BATcount(b) > (id-b->hseqbase));
+
+        b->batInserted = NULL;
+        BUNfndVOID(p, b, (ptr)&id);
+        assert(p >= b->batInserted); /* we don't want delete/ins */
+        (void) BUNinplace(b, p, (ptr)&id, val);
+        b->batInserted = oldInserted;
+}
+
+size_t void_replace_bat( BAT *b, BAT *u){
+	size_t nr = 0;
+	BUN r,s;
+
+	BATloop(u, r, s){
+		oid updid = *(oid*)BUNhead(u,r);
+		ptr val = BUNtail(u,r);
+		void_inplace(b,  updid, val);
+		nr++;
+	}
+	return nr;
+}
+
+int bat_append_void_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	*res = i;
+	void_append_bat( i, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	*res = i;
+	void_insert_bat( i, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int bat_append_oidvoid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	/*(void)u; fake usage to fool compilers in case assertions are disabled 
+	assert (!BATcount(i));
+*/
+	*res = i;
+	void_insert_bat( i, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+static oid oid_max( BAT *i ) 
+{
+	oid o = 0;
+
+	if (BATcount(i))
+		o = *(oid*)BUNhead(i, BUNlast(i)-BUNsize(i));
+	if (!BAThordered(i)) {
+		BUN r,s;
+		int d;
+
+		BATloopFast(i, r, s, d) {
+			oid v = *(oid*)BUNhead(i, r);
+			if (v > o) o = v;
+		}
+	}
+	return o;
+}
+
+int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	BUN r,s;
+        oid o;
+	
+	assert(i->htype == TYPE_oid && 
+		(BATcount(u) == 0 || u->htype == TYPE_oid));
+
+	o = oid_max(i);
+	o++;
+	BATloop(u, r, s){
+		oid h = *(oid*)BUNhead(u,r) + o;
+		BUNins(i, &h,  BUNtail(u,r));
+        }
+	*res = i;
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int oid_bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+{
+        oid o;
+
+	assert(i->htype == TYPE_oid);
+	o = oid_max(i);
+	o++;
+	*res = i;
+	BUNins( i, (ptr) & o, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+
+int bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+{
+	oid h = i->hseqbase + BATcount(i);
+	*res = i;
+	BUNins( i, (ptr) & h, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
+{
+	*res = o;
+	void_replace_bat( o, d );
+	BBPfix(o->batCacheid);
+	return GDK_SUCCEED;
+}
 
 
 /* descriptors may be unloaded by BBPtrim, so secure them with a hotfix while in use */

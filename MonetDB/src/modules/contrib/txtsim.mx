@@ -262,6 +262,8 @@ soundex_code (char *Name, char *Key)
     if (!isupper((int)(Key[0]))) Key[0] = toupper(Key[0]);
 
     LastLetter = *Name;
+    if (!*Name)
+	return;
     Name++;
 
     /* scan rest of string */
@@ -295,4 +297,12 @@ soundex_impl (str *res, str Name)
     soundex_code(Name, *res);
 
     return GDK_SUCCEED;
+}
+
+@mil
+
+proc stringdiff( str s1, str s1 ) {
+	var sd1 := soundex(s1);
+	var sd2 := soundex(s2);
+	return editdistance(sd1,sd2);
 }
