@@ -1386,6 +1386,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
+    elif (EXT == ".milM" or EXT == ".milS") and env['VERSION'] >= 49900:
+        elem = SkipTest(env, TST, EXT, "as M5/mil is missing modules.")
     elif EXT == ".x100" and  not env['exe']['X100_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['X100CLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".xq" and  not env['exe']['XQuery_Client'][0]:
@@ -1933,6 +1935,7 @@ def mapi_ping(port) :
     	try:
             	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             	sock.connect((host, port))
+		r = sock.makefile('r').readline();
 		sock.makefile('w').write("ping\n");
 		return True
         except socket.error, (Serrno,Serrstr):
