@@ -1,4 +1,4 @@
-stdout of test 'triangulate` in directory 'modules/geometry` itself:
+stdout of test 'triangulate` in directory 'src/modules/geometry` itself:
 
 #> Mtest:	other triangulate
 #> Mtest:	Mtimeout -timeout 1200 ./triangulate triangulate

@@ -1,4 +1,4 @@
-stdout of test 'gis` in directory 'modules/geometry` itself:
+stdout of test 'gis` in directory 'src/modules/geometry` itself:
 
 #> Mtest:	other gis
 #> Mtest:	Mtimeout -timeout 1200 ./gis gis

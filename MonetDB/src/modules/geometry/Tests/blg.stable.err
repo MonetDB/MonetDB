@@ -1,4 +1,4 @@
-stderr of test 'blg` in directory 'modules/geometry` itself:
+stderr of test 'blg` in directory 'src/modules/geometry` itself:
 
 #> Mtest:	other blg
 #> Mtest:	Mtimeout -timeout 1200 ./blg blg

@@ -1,4 +1,4 @@
-stderr of test 'gisbulk` in directory 'modules/geometry` itself:
+stderr of test 'gisbulk` in directory 'src/modules/geometry` itself:
 
 #> Mtest:	other gisbulk
 #> Mtest:	Mtimeout -timeout 1200 ./gisbulk gisbulk
