@@ -1179,7 +1179,7 @@ int dblFromStr(char* src, int* len, dbl **dst)
 	}
 	return (int) (p-src);
 }
-@:atomtostr(dbl,%g,double)@
+@:atomtostr(dbl,%.17g,double)@
 @:atom_io(dbl,Lng,lng)@
 
 #if HAVE_STRTOF && !HAVE_DECL_STRTOF
@@ -1225,7 +1225,7 @@ int fltFromStr(char* src, int* len, flt **dst)
 	}
 	return (int) (p-src);
 }
-@:atomtostr(flt,%g,float)@
+@:atomtostr(flt,%.9g,float)@
 @:atom_io(flt,Int,int)@
 @}
 
