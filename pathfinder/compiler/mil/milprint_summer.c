@@ -4255,6 +4255,82 @@ evaluate_join (opt_t *f, int act_level, int counter, PFcnode_t *args)
             "} # end of evaluate_join\n");
 }
 
+
+/**
+ * translateFunction translates the builtin functions
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param act_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param fun the function information
+ * @args the head of the argument list
+ */
+static void
+translateUDF (opt_t *f, int act_level, int counter, 
+              PFfun_t *fun, PFcnode_t *args)
+{
+    int i;
+
+    counter++;
+    milprintf(f,
+	    "{ # UDF - function call\n"
+	    "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
+	    "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
+	    "var fun_pos%03u := bat(void,oid).seqbase(nil);\n"
+	    "var fun_item%03u := bat(void,oid).seqbase(nil);\n"
+	    "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
+	    counter, counter, counter, counter, counter);
+
+    i = 0;
+    while ((args->kind != c_nil) && (fun->params[i]))
+    {
+        translate2MIL (f, act_level, counter, L(args));
+        milprintf(f,
+		"# add arg in UDF function call\n"
+                "fun_vid%03u := fun_vid%03u.insert(iter.project(%i@0));\n"
+                "fun_iter%03u := fun_iter%03u.insert(iter.reverse().mark(nil).reverse());\n"
+                "fun_pos%03u := fun_pos%03u.insert(pos.reverse().mark(nil).reverse());\n"
+                "fun_item%03u := fun_item%03u.insert(item.reverse().mark(nil).reverse());\n"
+                "fun_kind%03u := fun_kind%03u.insert(kind.reverse().mark(nil).reverse());\n"
+		"# end of add arg in UDF function call\n",
+                counter, counter, fun->params[i]->vid, 
+                counter, counter, 
+                counter, counter,
+                counter, counter, 
+                counter, counter);
+	args = R(args);
+	i++;
+    }
+
+    milprintf(f,
+	    "fun_vid%03u := fun_vid%03u.reverse().mark(0@0).reverse();\n"
+	    "fun_iter%03u := fun_iter%03u.reverse().mark(0@0).reverse();\n"
+	    "fun_pos%03u := fun_pos%03u.reverse().mark(0@0).reverse();\n"
+	    "fun_item%03u := fun_item%03u.reverse().mark(0@0).reverse();\n"
+	    "fun_kind%03u := fun_kind%03u.reverse().mark(0@0).reverse();\n",
+	    counter, counter, counter, counter, counter,
+	    counter, counter, counter, counter, counter);
+    milprintf(f,
+	    "var proc_res := %s%i%x (loop%03u, outer%03u, inner%03u, "
+	    "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u);\n",
+	    fun->qname.loc, fun->arity, fun,
+	    act_level, act_level, act_level,
+	    counter, counter, counter, counter, counter);
+    milprintf(f,
+	    "iter := proc_res.fetch(0);\n"
+	    "pos := proc_res.fetch(1);\n"
+	    "item := proc_res.fetch(2);\n"
+	    "kind := proc_res.fetch(3);\n"
+	    "proc_res := nil_oid_bat;\n"
+            "fun_vid%03u := nil_oid_oid;\n"
+            "fun_iter%03u := nil_oid_oid;\n"
+            "fun_pos%03u := nil_oid_oid;\n"
+            "fun_item%03u := nil_oid_oid;\n"
+            "fun_kind%03u := nil_oid_oid;\n"
+	    "} # end of UDF - function call\n",
+	    counter, counter, counter, counter, counter);
+}
+
 /**
  * translateFunction translates the builtin functions
  *
@@ -4849,11 +4925,11 @@ translateFunction (opt_t *f, int act_level, int counter,
  * c_if,
  * (constructors: c_elem, ...)
  * c_typesw, c_cases, c_case, c_seqtype, c_seqcast
- *
- * the following list is not supported so far:
  * c_nil
  * c_apply, c_arg,
- * c_error, c_root
+ *
+ * the following list is not supported so far:
+ * c_error
  *
  * @param f the Stream the MIL code is printed to
  * @param act_level the level of the for-scope
@@ -4869,6 +4945,10 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
     assert(c);
     switch (c->kind)
     {
+        case c_main:
+            translate2MIL (f, act_level, counter, L(c));
+            translate2MIL (f, act_level, counter, R(c));
+            break;
         case c_var:
             translateVar(f, act_level, c);
             break;
@@ -5134,8 +5214,16 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             translateCast (f, act_level, c);
             break;
         case c_apply:
-            translateFunction (f, act_level, counter, 
-                               c->sem.fun->qname, D(c));
+	    if (c->sem.fun->builtin)
+	    {
+                translateFunction (f, act_level, counter, 
+                                   c->sem.fun->qname, D(c));
+	    }
+	    else
+	    {
+		translateUDF (f, act_level, counter,
+			      c->sem.fun, D(c));
+	    }
             break;
 	case c_orderby:
 	    counter++;
@@ -5230,17 +5318,35 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
                     counter, counter, descending);
 
 	    /* evaluate rest of orderspecs until end of list is reached */
-	    if (R(c)->kind != c_nil)
-	    {
-	        translate2MIL (f, act_level, counter, R(c));
-	    }
+	    translate2MIL (f, act_level, counter, R(c));
+	    break;
+	case c_fun_decls:
+            translate2MIL (f, act_level, counter, L(c));
+	    /* evaluate rest of orderspecs until end of list is reached */
+	    translate2MIL (f, act_level, counter, R(c));
+	    break;
+	case c_fun_decl:
+	    milprintf(f,
+		    "PROC %s%i%x (bat[void,oid] loop000, "
+			       "bat[void,oid] outer000, "
+			       "bat[void,oid] inner000, "
+			       "bat[void,oid] v_vid000, "
+			       "bat[void,oid] v_iter000, "
+			       "bat[void,oid] v_pos000, "
+			       "bat[void,oid] v_item000, "
+			       "bat[void,int] v_kind000) : bat[void,bat] {\n",
+                    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+	    translate2MIL (f, 0, counter, R(c));
+	    milprintf(f,
+		    "return bat(void,bat).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind);\n"
+		    "} # end of PROC %s%i%x\n",
+		    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+	    break;
+        case c_nil:
+	    /* don't do anything */
 	    break;
         case c_typesw:
             PFlog("typeswitch occured");
-        case c_nil:
-            PFlog("nil occured");
-        case c_main:
-            PFlog("main occured");
         case c_letbind:
             PFlog("letbind occured");
         case c_forbind:
@@ -6543,6 +6649,9 @@ static void recognize_join(PFcnode_t *c,
                 PFarray_del (active_vlist);
             }
             break;
+	case c_fun_decls:
+	    PFlog ("no join recognition in function declaration");
+	    break;
         case c_if:
             /* TODO: add recognition for SELECT
             if (test_select (c, active_vlist, active_vdefs, act_level))
@@ -6618,6 +6727,13 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
     if (c->kind == c_var) 
     {
+        if (!c->sem.var->vid)
+        {
+	    PFoops (OOPS_FATAL,
+		    "Global variables are not yet supported "
+		    "in user defined functions");
+	}
+
        /* inserts fid|vid combinations into var_usage bat */
        update_expansion (f, c, way);
        /* the field used is for pruning the MIL code and
@@ -6740,7 +6856,25 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         *(int *) PFarray_at (counter, ACT_FID) = *(int *) PFarray_top (way);
         PFarray_del (way);
     }
+    else if (c->kind == c_fun_decl)
+    {
+	args = L(c);
+	while (args->kind != c_nil)
+	{
+            assert (L(args) && L(args)->kind == c_param);
+            assert (LR(args) && LR(args)->kind == c_var);
 
+            act_fid = *(int *) PFarray_at (counter, ACT_FID);
+            vid = *(int *) PFarray_at (counter, VID);
+            LR(args)->sem.var->base = act_fid;
+            LR(args)->sem.var->vid = vid;
+            LR(args)->sem.var->used = 0;
+            (*(int *) PFarray_at (counter, VID))++;
+
+	    args = R(args);
+	}
+	counter = append_lev (f, R(c), PFarray (sizeof (int)), counter);
+    }
     else 
     {
        for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
@@ -6769,12 +6903,9 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
+    *(int *) PFarray_add (counter) = 0;  
     *(int *) PFarray_add (counter) = 0; 
-    *(int *) PFarray_add (counter) = 0; 
-    *(int *) PFarray_add (counter) = 0; 
-
-    /* FIXME: include main */
-    c = R(c);
+    *(int *) PFarray_add (counter) = 1; /* set first vid to 1 */
 
     /* resolves nodes, which are not supported and prunes
        code which is not needed (e.g. casts, let-bindings) */
