@@ -470,7 +470,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_mark:{
-			dump_2(sql, mb, s, "algebra", "martkT");
+			dump_2(sql, mb, s, "algebra", "markT");
 		}
 			break;
 		case st_reverse:{
