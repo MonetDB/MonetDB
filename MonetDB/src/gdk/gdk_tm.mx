@@ -68,31 +68,8 @@ Dirty bats on disc are only loaded if needed; in most cases
 it is enough to handle the (cached) BAT descriptor. 
 @{
 @c
-int TMcommit() {
-	int i, ret = 0;
-
-	/* Acquire BBP locks */
-	BBPlock("TMcommit");
-
-        /* commit the delta status of each BAT */
-        for (i = 1; i < BBPsize; i++)  
-	if (BBP_status(i) & BBPPERSISTENT) {
-		BAT *b = BBPcache(i);
-		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
-			b = BBPquickdesc(i, TRUE);
-			if (b == NULL) { ret = 1; break; }
-		}
-		if (b) {
-			BATcommit(b);
-		}
-	}
-
-        /* atomic write of all dirty BATs and BBP.dir */
-	if (ret == 0)
-	ret = BBPsync(TRUE);
-
-        /* succeeded: adapt BBPstatus of all bats while we're still locked */
-	if (ret == 0) 
+void TMfakeCommit(void) {
+	int i;
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
 			BBP_status_on(i, BBPEXISTING, "TMcommit");
@@ -109,7 +86,39 @@ int TMcommit() {
 		}
 		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMcommit");
         }
-	BBPunlock("TMcommit");
+}
+
+int TMcommit(void) {
+	int i, ret = 0;
+
+	/* Acquire BBP locks */
+	BBPlock("TMcommit");
+
+        /* commit the delta status of each BAT */
+        for (i = 1; i < BBPsize; i++)  
+	if (BBP_status(i) & BBPPERSISTENT) {
+		BAT *b = BBPcache(i);
+		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
+			b = BBPquickdesc(i, TRUE);
+			if (b == NULL) {
+				ret = 1;
+				break;
+
+			}
+		}
+		if (b) {
+			BATcommit(b);
+		}
+	}
+
+        /* atomic write of all dirty BATs and BBP.dir */
+	if (ret == 0)
+		TMfakeCommit();
+	ret = BBPsync(TRUE);
+
+        /* succeeded: adapt BBPstatus of all bats while we're still locked */
+	if (ret == 0) 
+		BBPunlock("TMcommit");
 	return ret; 
 }
 @- 

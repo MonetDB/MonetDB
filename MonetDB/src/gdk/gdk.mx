@@ -1041,7 +1041,6 @@ gdk_export void HEAP_free        (Heap *heap, var_t block);
 gdk_export size_t HEAP_private   (Heap* h);   
 gdk_export void HEAP_checkformat (Heap* h);
 gdk_export int  HEAP_check       (Heap* h, HeapRepair *hr);
-gdk_export void HEAP_convert     (Heap* h);                
 gdk_export void HEAP_init        (Heap *heap, int tpe);  
 gdk_export int  HEAP_mmappable   (Heap *heap);  
 
@@ -1186,7 +1185,6 @@ gdk_export BAT*		BUNdelHead (BAT *b, ptr left);
 gdk_export BUN		BUNdelete  (BAT *b, BUN p); 
 gdk_export BAT*		BATdel     (BAT *b, BAT *c); 
 gdk_export BAT*		BATdelHead (BAT *b, BAT *c); 
-gdk_export BAT*		BATdelall  (BAT *b);
 
 gdk_export BAT*		BUNreplace (BAT *b, ptr left, ptr right); 
 gdk_export BAT*		BUNinplace (BAT *b, BUN p, ptr left, ptr right); 
@@ -2368,8 +2366,7 @@ gdk_export int	TMcommit    (void);
 gdk_export int	TMabort     (void); 
 gdk_export int	TMresume    (str cntxt); 
 gdk_export str	TMcntxt     (void); 
-gdk_export int*	TMfakeCommit(void); 
-gdk_export void	TMkill      (int *kills); 
+gdk_export void	TMfakeCommit(void); 
 @
 @}
 
