@@ -13,6 +13,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 usage: Mserver
 [--dbname database_name ]
 [--dbfarm database_directory ]
+[--dbinit stmt ]
 [-d or --debug [debug_level] ]
 [-? or --help ]
 [-c or --config config_file ]
