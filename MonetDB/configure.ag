@@ -21,7 +21,7 @@ AC_SUBST(MONET_BUILD)
 MONET_SOURCE=[`(cd $srcdir && pwd)`]
 AC_SUBST(MONET_SOURCE)
 
-AM_MONET_COMPILER
+AM_MONET_COMPILER()
 
 DIRSEP="/"
 case "$host_os" in
@@ -35,15 +35,12 @@ dnl systems checks
 AC_AIX
 
 dnl Checks for programs.
-AC_PROG_INSTALL
-AM_PROG_LEX
-AC_PROG_YACC
-AC_DISABLE_STATIC
-AC_ENABLE_SHARED
-AM_PROG_LIBTOOL
+AC_PROG_INSTALL()
+AM_PROG_LEX()
+AC_PROG_YACC()
 dnl AC_PROG_CC_STDC
 
-AC_PROG_LN_S
+AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
@@ -60,34 +57,34 @@ dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
-AM_MONET_OPTIONS
+AM_MONET_OPTIONS()
 
 dnl Checks for header files.
-AC_HEADER_STDC
-AC_HEADER_DIRENT
-AC_HEADER_SYS_WAIT
+AC_HEADER_STDC()
+AC_HEADER_DIRENT()
+AC_HEADER_SYS_WAIT()
 AC_CHECK_HEADERS(fcntl.h limits.h unistd.h getopt.h malloc.h pwd.h dlfcn.h)
 AC_CHECK_HEADERS(time.h sys/time.h sys/utime.h)
 AC_CHECK_HEADERS(sys/file.h sys/param.h sys/times.h sys/mman.h sys/signal.h)
 AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h)
 
-AM_MONET_LIBS
+AM_MONET_LIBS()
 
 dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-AC_TYPE_PID_T
-AC_TYPE_OFF_T
-AC_TYPE_SIZE_T
-AC_HEADER_STAT
-AC_HEADER_TIME
-AC_STRUCT_TM
-AC_STRUCT_TIMEZONE
-AC_LANG_CPLUSPLUS
+AC_C_CONST()
+AC_C_INLINE()
+AC_TYPE_PID_T()
+AC_TYPE_OFF_T()
+AC_TYPE_SIZE_T()
+AC_HEADER_STAT()
+AC_HEADER_TIME()
+AC_STRUCT_TM()
+AC_STRUCT_TIMEZONE()
+AC_LANG_CPLUSPLUS()
 AC_TRY_COMPILE( [], [ bool x = true; ], [ AC_DEFINE(HAVE_BOOL) ] )
-AC_LANG_C
-AC_C_BIGENDIAN
+AC_LANG_C()
+AC_C_BIGENDIAN()
 AC_TRY_COMPILE( [], [ long long x; ], [ AC_DEFINE(HAVE_LONGLONG)]  )
 AC_CHECK_SIZEOF(char,1)
 AC_CHECK_SIZEOF(short,2)
@@ -98,13 +95,13 @@ AC_CHECK_SIZEOF(long long,8)
 dnl only win32 AC_TRY_COMPILE( [], [ __int64 x; ], [ AC_DEFINE(HAVE__INT64)] )
 
 dnl Checks for library functions.
-AC_FUNC_ALLOCA 
-AC_FUNC_MMAP
-AC_FUNC_SETPGRP
-AC_TYPE_SIGNAL
-AC_FUNC_UTIME_NULL
-AC_FUNC_VPRINTF
-AC_FUNC_MEMCMP 
+AC_FUNC_ALLOCA()
+AC_FUNC_MMAP()
+AC_FUNC_SETPGRP()
+AC_TYPE_SIGNAL()
+AC_FUNC_UTIME_NULL()
+AC_FUNC_VPRINTF()
+AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit vsnprintf snprintf)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtol strerror strcasecmp)
 AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select getpgid)
@@ -145,5 +142,3 @@ MEL="$MONET_BUILD/src/mel/mel"
 AC_SUBST(MEL)
 MX="$MONET_BUILD/src/utils/Mx/Mx"
 AC_SUBST(MX)
-
-
