@@ -15,7 +15,7 @@ sub new {
 	bless($self);
     $self->{BUF} = "";
     $self->{PROMPT} = "";
-    print $self->cmd_intern("$user\n");
+    $self->cmd_intern("$user\n");
     $self->result();
     return $self;
 }
