@@ -193,6 +193,7 @@ stream_export buffer *stream_get_buffer( stream *s );
  */
 stream_export stream *block_stream( stream *s );
 stream_export size_t bs_read_next( stream *s, char *buf, int *last );
+stream_export int isa_block_stream(stream *s);
 
 @+ buffered streams
 
@@ -1083,6 +1084,9 @@ stream *block_stream( stream *s ){
 	}
 	ns->errnr = OPEN_ERROR;
 	return ns;
+}
+int isa_block_stream(stream *s){
+	return s->read == &bs_read || s->write == &bs_write;
 }
 
 int stream_readSht( stream *s, short *val ){
