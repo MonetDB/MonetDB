@@ -889,7 +889,7 @@ static ssize_t socket_read( stream *s, void *buf, size_t elmsize, size_t cnt )
 	assert(!s->errnr);
 	while( res < size && (
 #ifdef NATIVE_WIN32
-		(nr = recv( s->stream_data.i, (void *) ((char *) buf + res), size-res, 0 ))
+		(nr = recv( s->stream_data.i, (void *) ((char *) buf + res), size-res, 0 )) > 0
 #else
 		(nr = read( s->stream_data.i, (void *) ((char *) buf + res), size-res )) > 0
 #endif
