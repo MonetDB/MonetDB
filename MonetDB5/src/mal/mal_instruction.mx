@@ -1858,8 +1858,8 @@ void strFinalCall(ValPtr v){
 void batBeforeCall(ValPtr v, ValPtr bak){
 	if( v->vtype== TYPE_bat)
 		bak->val.bval= v->val.bval;
-	else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
-	   /* it was garbage for sure */
+	/*else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
+	   it was garbage for sure */
 }
 @-
 After the expression has been evaluated we can release any
@@ -1870,8 +1870,8 @@ otherwise dangling pointers could be created.
 @c
 void batAfterCall(ValPtr v, ValPtr bak){
 	if(v->vtype!= TYPE_bat) {
-		/* not ready yet  */
-		stream_printf(GDKout,"batAfterCall:unexpected BAT value\n");
+		/* not ready yet  
+		stream_printf(GDKout,"batAfterCall:unexpected BAT value\n"); */
 		return;
 	}
 	if( v->val.bval == bak->val.bval) return;

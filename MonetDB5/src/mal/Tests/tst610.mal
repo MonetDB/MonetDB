@@ -7,6 +7,7 @@ function refs():void;
     print(g,gr,gl);
 end refs;
 
+mdb();
 b:= new(:int,:int);
 #refs();
 insert(b,23,32);
@@ -21,26 +22,28 @@ bbp.open();
 refs();
 t:= bbp.bind("tasks");
 print(t);
-bbp.destroy(t,true);
+bbp.release(t);
 refs();
+print(t);
+catch MALexception;
+print("BAT was released");
+exit MALexception;
 # the bat is still visible, because the destroy only
 # marks it for deletion at the end of session or
 # when the reference counters drop to zero
 t:= bind("tasks");
 refs();
-print(t);
 # to really remove, we get rid of the current
 # references as well
-bbp.release(t);
+bbp.destroy(t,true);
 refs();
 print(t);
-# but it is still there and should
-print("get released bat");
-t:=bind("tasks");
-refs();
-print(t);
-#its reference count should be dropped to 1
-c:= getRefCount(t);
-print(c);
-#however, in the next session it has disappeared
-refs();
+catch MALexception;
+print("BAT was destroyed");
+exit MALexception;
+z:=bind("tasks");
+print(z);
+#it is not in the box anymore either
+catch MALexception;
+print("BAT was removed from the box");
+exit MALexception;

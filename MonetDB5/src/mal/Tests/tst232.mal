@@ -3,12 +3,18 @@
 	b:= new(:int,:str);
 	i:= getRefCount(b);
 	printf("refcount =%d\n",i);
+	j:= getLRefCount(b);
+	printf("lrefcount =%d\n",j);
 
 	insert(b,1,"bat B");
 	print(b);
 	i:= getRefCount(b);
 	printf("refcount =%d\n",i);
+	j:= getLRefCount(b);
+	printf("lrefcount =%d\n",j);
 
 	bbp.destroy(b);
 	i:= getRefCount(b);
-	printf("after destroy refcount =%d\n",i);
+catch MALexception;
+	print("bat was destroyed");
+exit MALexception;

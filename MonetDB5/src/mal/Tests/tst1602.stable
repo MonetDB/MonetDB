@@ -215,7 +215,7 @@ end main;	# 94
 [ "tail",			  "lng"		  ]
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "1"		  ]
+[ "batRefcnt",			  "0"		  ]
 [ "batLRefcnt",			  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
@@ -244,7 +244,7 @@ end main;	# 94
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
 [ "batStamp",			  "4"		  ]
-[ "lastUsed",			  "6"		  ]
+[ "lastUsed",			  "7"		  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "5"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
@@ -290,9 +290,9 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 284 ms
-count 1000000 = 214 ms
-count 1000000 = 214 ms
+count 1000000 = 315 ms
+count 1000000 = 213 ms
+count 1000000 = 212 ms
 count 1000000 = 212 ms
 #-------------------------------------------------#
 # h				tmp_6		  # name
@@ -307,7 +307,7 @@ count 1000000 = 212 ms
 [ "tail",			  "oid"		  ]
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "1"		  ]
+[ "batRefcnt",			  "0"		  ]
 [ "batLRefcnt",			  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
@@ -336,7 +336,7 @@ count 1000000 = 212 ms
 [ "batHole",			  "0"		  ]
 [ "top",			  "1000001"	  ]
 [ "batStamp",			  "33"		  ]
-[ "lastUsed",			  "1000087"	  ]
+[ "lastUsed",			  "1000090"	  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "34"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
@@ -383,9 +383,9 @@ count 1000000 = 212 ms
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
 count 1000000 = 290 ms
-count 1000000 = 209 ms
+count 1000000 = 206 ms
 count 1000000 = 207 ms
-count 1000000 = 209 ms
+count 1000000 = 207 ms
 #-------------------------------------------------#
 # h				tmp_8		  # name
 # str				str		  # type
@@ -399,7 +399,7 @@ count 1000000 = 209 ms
 [ "tail",			  "lng"		  ]
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "1"		  ]
+[ "batRefcnt",			  "0"		  ]
 [ "batLRefcnt",			  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
@@ -428,7 +428,7 @@ count 1000000 = 209 ms
 [ "batHole",			  "0"		  ]
 [ "top",			  "1000001"	  ]
 [ "batStamp",			  "66"		  ]
-[ "lastUsed",			  "2000179"	  ]
+[ "lastUsed",			  "2000184"	  ]
 [ "keepAround",			  "0"		  ]
 [ "curStamp",			  "68"		  ]
 [ "batCopiedtodisk",		  "0"		  ]

@@ -52,6 +52,6 @@ end main;	# 16
 [ 1,	  "monet_environment",	  1,	  0		  ]
 [ 2,	  "monet_unicode_case",	  1,	  0		  ]
 [ 3,	  "timezones",		  1,	  0		  ]
-[ 4,	  "b",			  1,	  1		  ]
-[ 5,	  "tmp_5",		  1,	  1		  ]
+[ 4,	  "b",			  0,	  1		  ]
+[ 5,	  "tmp_5",		  0,	  1		  ]
 >
