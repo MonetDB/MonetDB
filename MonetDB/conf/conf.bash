@@ -499,18 +499,20 @@ eval "alias Mapprove_${wh_t}"
 
 mkdir -p ${WHAT_BUILD}
 
-echo ""
-echo "To compile ${what}, just execute:"
-echo -e "\t./bootstrap"
-echo -e "\tcd ${WHAT_BUILD}"
-echo -e "\tconfigure_${wh_t}"
-echo -e "\tmake"
-echo -e "\tmake install"
-echo ""
-echo "Then, to test ${what}, just execute:"
-echo -e "\tcd ${base}"
-echo -e "\tMtest_${wh_t} -r"
-echo ""
+cat <<EOF
+
+To compile ${what}, just execute:
+	./bootstrap
+	cd ${WHAT_BUILD}
+	configure_${wh_t}
+	make
+	make install
+
+Then, to test ${what}, just execute:
+	cd ${base}
+	Mtest_${wh_t} -r
+
+EOF
 
 # set specific variables
 eval "${what}_BUILD=\"$WHAT_BUILD\" ; export ${what}_BUILD"
