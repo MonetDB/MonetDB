@@ -1021,7 +1021,7 @@ CXXEXT = \\\"cc\\\"
 
     fd.write('''
 include $(top_srcdir)/*.mk
-
+include $(top_builddir)/*.mk
 ''')
     fd.close()
 
