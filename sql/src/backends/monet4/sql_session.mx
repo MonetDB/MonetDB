@@ -629,7 +629,7 @@ int handle_error(mvc *m, stream *out, int pstatus)
 	int go = 1;
 	char *buf = GDKerrbuf;
 
-	/* transaction allready broken */
+	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) { 
 		if (stream_write( out, TRANS_ABORTED, sizeof(TRANS_ABORTED)-1, 1 ) != 1 ){
 			go = !go;
@@ -1559,15 +1559,15 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 		} else if (strcmp(c->type->type->sqlname, "smallint") == 0) {
 			count = 1;
 			count += c->type->digits ? c->type->digits : 5;
-			ok = (stream_printf(s, SZFMT, count) == 1);
+			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "int") == 0) {
 			count = 1;
 			count += c->type->digits ? c->type->digits : 10;
-			ok = (stream_printf(s, SZFMT, count) == 1);
+			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "bigint") == 0) {
 			count = 1;
 			count += c->type->digits ? c->type->digits : 19;
-			ok = (stream_printf(s, SZFMT, count) == 1);
+			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "decimal") == 0) {
 			count = 1 + c->type->digits;
 			if (c->type->scale > 0) count += 1;
