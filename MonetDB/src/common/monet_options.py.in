@@ -73,8 +73,8 @@ def usage():
     '''usage()
 
     Print usage information.'''
-    print 'Usage: %s [ options ]' % sys.argv[0]
-    print 'Options are:'
+    sys.stderr.write('Usage: %s [ options ]\n' % os.path.basename(sys.argv[0]))
+    sys.stderr.write('Options are:\n')
     for long, short, gdk_opt, argument in cmd_options:
         arg = []
         if short:
@@ -84,7 +84,7 @@ def usage():
         arg = string.join(arg, ' or ')
         if argument:
             arg = arg + ' ' + argument
-        print arg
+        sys.stderr.write(arg+'\n')
 
 def parse_config(file, options = ConfigOptions):
     '''parse_config(file)
