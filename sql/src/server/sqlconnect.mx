@@ -46,7 +46,7 @@ int connect_error(stream *in, stream *out, int sock)
 
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	buffer *bbuf;
-	int debug = 0, err = 0, l = 0, i, sock, *Sock;
+	int debug = 0, l = 0, i, sock, *Sock;
 	stmt *s = NULL;
 	char *cmd = NULL, buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema, *dbname;
@@ -133,8 +133,21 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
  	errbuf = GDKmalloc(GDKMAXERRLEN);
 	GDKsetbuf(errbuf);
 
-	while(lc->cur != EOF ){
-		s = sqlnext(lc, in, &err);
+	while(TRUE){
+		int size = BUFSIZ + 1, err = 0;
+		char *inbuf = NEW_ARRAY(char, size );
+		int inlen = 0;
+		while ((inlen = in->read(in, inbuf, 1, BUFSIZ)) == BUFSIZ){
+			err = 1;
+		}
+		inbuf[inlen] = '\0';
+
+		if (!inlen || inbuf[0] == EOT)
+			break;
+		if (!err)
+			s = sqlexecute(lc, inbuf, &err);
+		_DELETE(inbuf);
+
 		if (err){ /* output error */
 			stream_writeInt( out, 0 );
 			stream_writeInt( out, 0 );

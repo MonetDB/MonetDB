@@ -65,7 +65,8 @@ static void getschemas( mvc *myc, context *lc, catalog *c, char *schema, char *u
 				}
 			}
 		} else {
-	      		stmt *s = sqlexecute( lc, nt->query );
+			int err = 0;
+	      		stmt *s = sqlexecute( lc, nt->query, &err );
 			stmt_destroy(s);
 		}
 	    }

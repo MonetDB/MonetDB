@@ -2527,6 +2527,27 @@ static stmt *create_view(context * sql, schema * schema, stmt * ss,
 	return NULL;
 }
 
+static stmt *drop_view(context * sql, dlist * qname )
+{
+	stmt *res = NULL;
+	char *tname = qname_table(qname);
+	table *t = cat_bind_table(sql->cat, cur_schema(sql), tname);
+
+	if (!t) {
+		return sql_error(sql, 02, 
+			 "Drop View, view %s unknown", tname);
+	} else if (t->type == tt_view){
+		stmt *ss = stmt_bind_schema( cur_schema(sql) );
+		res = stmt_drop_table(ss, t->name, 0);
+		cat_drop_table(sql->cat, cur_schema(sql), tname);
+	} else {
+		return sql_error(sql, 02, 
+			 "Drop View, cannot drop table %s", tname);
+	}
+	return res;
+}
+
+
 static stmt *create_role(context * sql, schema * s, dlist * qname, int grantor)
 {
 	char *role_name = qname->t->data.sval;
@@ -2869,10 +2890,13 @@ static stmt *drop_table(context * sql, dlist * qname, int drop_action)
 	if (!t) {
 		return sql_error(sql, 02, 
 			 "Drop Table, table %s unknown", tname);
-	} else {
+	} else if (t->type != tt_view){
 		stmt *ss = stmt_bind_schema( cur_schema(sql) );
 		res = stmt_drop_table(ss, t->name, drop_action);
 		cat_drop_table(sql->cat, cur_schema(sql), tname);
+	} else {
+		return sql_error(sql, 02, 
+			 "Drop Table, cannot drop view %s ", tname);
 	}
 	return res;
 }
@@ -3264,6 +3288,9 @@ static stmt *sql_update(context * sql, dlist * qname,
 				scope_close(scp);
 			       	return NULL;
 			}
+		} else { /* update all */
+			cvar *c = tv->columns->h->data;
+			s = stmt2pivot(sql,scp,stmt_dup(c->s));
 		}
 	       	l = create_stmt_list();
 
@@ -3333,9 +3360,11 @@ static stmt *sql_delete(context * sql, dlist * qname, symbol * opt_where)
 				scope_close(scp);
 			       	return NULL;
 			}
+		} else { /* delete all */
+			cvar *c = tv->columns->h->data;
+			s = stmt2pivot(sql,scp,stmt_dup(c->s));
 		}
 
-		/* should s be getting a default some where */
 		v = stmt_const( stmt_reverse(first_subset(s)), 
 					stmt_atom(atom_general(to, NULL)));
 		assert (isbasetable(tv->s));
@@ -3412,7 +3441,7 @@ static stmt *sql_stmt(context * sql, symbol * s)
 	case SQL_DROP_VIEW:
 		{
 			dlist *l = s->data.lval;
-			ret = drop_table(sql, l, 0);
+			ret = drop_view(sql, l);
 		}
 		break;
 	case SQL_CREATE_TABLE:

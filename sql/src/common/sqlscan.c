@@ -387,7 +387,6 @@ static int utf8_intlen(int ch)
         }
 }
 
-/* TODO change to block reads !*/
 static int lex_getc(context * lc)
 {
 	int len = 0;
@@ -471,12 +470,12 @@ int handle_error(context * lc)
 {
 	switch (lc->cur) {
 	case EOF:
-		(void)sql_error( lc, 1, "Unexpected end of file");
-		break;
+		(void)sql_error( lc, 1, "Unexpected end of input");
+		return -1; /* EOF needs -1 result */
 	default:
 		(void)sql_error( lc, 1, "Unexpected control character");
 	}
-	return -1;
+	return LEX_ERROR;
 }
 
 int skip_c_comment(context * lc)
@@ -542,6 +541,10 @@ int lex_string(context * lc, int quote)
 		else
 			escape = 0;
 		lex_append(lc, cur);
+	}
+	if (cur == EOF){
+		(void)sql_error( lc, 2, "Unexpected end of input" );
+		return LEX_ERROR;
 	}
 	lc->yyval = STRING;
 	lc->cur = lex_getc(lc);
@@ -629,7 +632,7 @@ int number(context * lc, int len)
 		}
 	} else {
 		(void)sql_error( lc, 2, "Unexpected symbol %c", lc->cur);
-		return -1;
+		return LEX_ERROR;
 	}
 	lc->yytext = yytext;
 	lc->yylen = yylen;
@@ -711,7 +714,8 @@ int lex_symbol(context * lc)
 		}
 	}
 	(void)sql_error( lc, 3, "Unexpected symbol %c", lc->cur);
-	return -1;
+	lc->cur = ' ';
+	return LEX_ERROR;
 }
 
 int tokenize(context * lc)
@@ -781,7 +785,8 @@ int sqllex(YYSTYPE * yylval, void *parm)
 int parse_error(context * lc, char *err)
 {
 	(void)sql_error( lc, 4, 
-		 "%s(%d) %s at token (%d): %s\n in statement: %s",
+		 "%s(%d) %s at token (%d): %s in statement: %s",
 		 lc->filename, lc->lineno, err, lc->yyval, lc->yytext, lc->sql);
+	lc->cur = ' ';
 	return 1;
 }

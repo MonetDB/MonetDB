@@ -245,6 +245,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
 	CURRENT_USER CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
+	LEX_ERROR
 
 /*
 OPEN CLOSE FETCH 
@@ -327,6 +328,8 @@ sqlstmt:
  | /*empty*/		{ context *lc = (context*)parm; 
 			  lc->sym = $$ = NULL; YYACCEPT; }
  | error ';'		{ context *lc = (context*)parm;
+			  lc->sym = $$ = NULL; YYACCEPT; }
+ | LEX_ERROR ';'	{ context *lc = (context*)parm;
 			  lc->sym = $$ = NULL; YYACCEPT; }
  ;
 

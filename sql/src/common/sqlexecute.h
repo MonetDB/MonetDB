@@ -8,7 +8,7 @@
 #include "sql.h"
 
 sql_export stmt *sqlnext(context * lc, stream * in, int *err);
-sql_export stmt *sqlexecute(context * lc, char *stmt);
+sql_export stmt *sqlexecute(context * lc, char *inbuf, int *err);
 
 sql_export void sql_init_context(context * lc, stream * out, int debug,
 			     catalog * cat);

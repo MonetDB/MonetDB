@@ -84,25 +84,26 @@ stmt *sqlnext(context * lc, stream * in, int *err)
 	return res;
 }
 
-stmt *sqlexecute(context * lc, char *buf)
+stmt *sqlexecute(context * lc, char *buf, int *err)
 {
 	stmt *res = NULL;
 
-	lc->filename = "<stdin>";
+	lc->filename = "";
 	lc->buf = buf;
 	lc->cur = ' ';
 
 	sql_statement_init(lc);
 
-	if (!sqlparse(lc)) {
+	if (!(*err = sqlparse(lc))) {
 		res = semantic(lc, lc->sym);
-		if (res)
-			res = optimize(lc, res);
-	} else {
-		/* errors should be handled in upper layer
-		 * not directly printed
-		fprintf(stderr, "%s\n", lc->errstr);
-		*/
+		if (res){
+			stmt *opt = optimize(lc, res);
+			stmt_destroy(res);
+			res = opt;
+		}
+		if (!res && lc->status){
+			*err = 1;
+		}
 	}
 	if (lc->sym) {
 		symbol_destroy(lc->sym);
