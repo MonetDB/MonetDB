@@ -703,9 +703,8 @@ int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, size_t n
 	size_t i;
 	for( i = 0; i<nr_attrs; i++){
 		ascii_io *f = fmt+i;
-		char *p;
 		if( f->c){
-			p = BUNtail(f->c, f->p);
+			char *p = BUNtail(f->c, f->p);
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
 			(void)stream_write( fd, *buf, 1, l );
 			f->p = BUNnext( f->c, f->p );
