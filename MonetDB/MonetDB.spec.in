@@ -163,7 +163,6 @@ rm -fr $RPM_BUILD_ROOT
 %files perl
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{perl_libdir}/*
-%{prefix}/%{perl_libdir}/MapiLib/*
 %{prefix}/%{perl_libdir}/DBD/*
 
 %files server

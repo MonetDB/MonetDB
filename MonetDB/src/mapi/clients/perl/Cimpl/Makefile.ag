@@ -31,12 +31,12 @@ lib_MapiLib = {
 	NAME = MapiLib
 	SOURCES = MapiLib.pm.i
 	LIBS = ../../C/libMapi
-	DIR = $(prefix)/$(PERL_LIBDIR)/MapiLib
+	DIR = $(prefix)/$(PERL_LIBDIR)
 }
 
 headers_pm = {
 	HEADERS = pm
 	SOURCES = MapiLib.pm.i
 	TARGETS = MapiLib.pm
-	DIR = $(prefix)/$(PERL_LIBDIR)/MapiLib
+	DIR = $(prefix)/$(PERL_LIBDIR)
 }
