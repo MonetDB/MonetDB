@@ -67,7 +67,6 @@ include mapi;
 include clients;
 include tablet;
 include io;
-include enum;
 include factory;
 include multiplex;
 include const; 
