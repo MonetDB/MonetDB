@@ -9,7 +9,7 @@ CD = cd
 !INCLUDE $(TOPDIR)\rules.msc
 
 all: $(SRCDIR)\Makefile.msc all-msc unistd.h
-	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc all
+	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc all
 
 check: $(SRCDIR)\Makefile.msc RunMtest.bat
 	$(MAKE) /nologo /k /i /f $(SRCDIR)\Makefile.msc check
