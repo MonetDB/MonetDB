@@ -74,7 +74,9 @@ def msc_translate_dir(path,msc):
         dir = "$(TOPDIR)"
     elif (dir == "srcdir" or dir == "builddir"):
         dir = "."
-    elif (dir == "pkgdatadir" or dir == "datadir"):
+    elif (dir == "pkglibdir" or dir == "libdir" or \
+	  dir == "pkgbindir" or dir == "bindir" or \
+	  dir == "pkgdatadir" or dir == "datadir"):
         dir = "$("+dir+")"
     if (len(rest) > 0):
         dir = dir+ "\\" + rest
