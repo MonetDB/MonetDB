@@ -1563,8 +1563,8 @@ the below routine performs a semijoin using positional lookup.
 This implementation is dirty as it also allows fetches with 
 hard integer positions, rather than oid matching on a dense-oid column.
 @c
-BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
-	int denselookup, xx;
+static BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup) {
+	int xx;
 	size_t base, end, yy;
 	ssize_t offset;
 	BUN l_cur, l_end, r_cur;
@@ -1573,7 +1573,6 @@ BAT* BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy) {
 	BATcheck(l, "BATfetchsemijoin: l");
 	BATcheck(r, "BATfetchsemijoin: r");
 
-	denselookup = (ATOMtype(l->htype) == TYPE_oid);
 	if (denselookup && !BAThdense(r)) {
                 GDKerror("BATfetchsemijoin: left column must be dense.\n");
                 return NULL;
@@ -1644,7 +1643,7 @@ bunins_failed:
 }
 
 BAT* BATfetch(BAT *l, BAT *r) {
-	return BATfetchsemijoin(r, l, l);
+	return BATfetchsemijoin(r, l, l, TRUE);
 }
 
 @-
@@ -1682,13 +1681,13 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 		bn = BATmirror(BATselect(BATmirror(l), &lo, &hi)); 
 	} else if (BAThdense(r)) {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATfetchsemijoin(l, r, l);\n");
-		bn = BATfetchsemijoin(l, r, l);
+		bn = BATfetchsemijoin(l, r, l, FALSE);
 	} else if (BAThdense(l) && reverse1) {
 		if (!BAThkey(r)) {
 			BAT *v = VIEWhead_(r,BAT_WRITE); tmp = r = BATkunique(v); BBPreclaim(v);
 		}
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATfetchsemijoin(r, l, l);\n");
-		bn = BATfetchsemijoin(r, l, l);
+		bn = BATfetchsemijoin(r, l, l, FALSE);
 	} else if (l->hhash_heap && reverse1) {
 		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATrevsemijoin(l,r);\n");
 		bn = BATrevsemijoin(l,r); 
