@@ -1204,30 +1204,6 @@ str CMDconvertOIDclass(int *ret, int *bid){
 }
 /* You don;t have to materialize the oids.
 This is taken care upon access */
-str CMDconvertvoid_oid(int *ret, int *bid){
-	BAT *b,*bn;
-	int xx;
-	BUN p,q;
-	oid x;
-
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.convert", "Cannot access descriptor");
-    }
-
-	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
-	@:tstBat(CMDconvertstr_int)@
-	x= b->hseqbase;
-
-	BATloopFast(b, p, q, xx) {
-		ptr t = BUNtail(b,p);
-		bunfastins(bn, &x,t);
-		x++;
-	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
-	return MAL_SUCCEED;
-}
 str CMDconvertvoid_oid_oid(int *ret, int *bid){
 	BAT *b;
 
