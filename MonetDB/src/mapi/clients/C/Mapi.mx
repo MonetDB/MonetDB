@@ -331,8 +331,9 @@ Returns an error if the field identified does not exist.
 
 \item[MapiMsg mapi_bind_var(Mapi mid, int fldnr, int type, void *val)]:
 Describe the type and location of the next parameter in a query template.
-The types recognized are {SQL_INT, SQL_LONG, SQL_CHAR, SQL_VARCHAR, SQL_FLOAT,
-SQL_DOUBLE, SQL_TIME, SQL_DATE}.
+The types recognized are {SQL_TINY, SQL_UTINY, SQL_SHORT, SQL_USHORT, SQL_INT,
+SQL_UINT, SQL_LONG, SQL_ULONG, SQL_LONGLONG, SQL_ULONGLONG, SQL_CHAR,
+SQL_VARCHAR, SQL_FLOAT, SQL_DOUBLE, SQL_TIME, SQL_DATE}.
 The binding operations should be performed after the mapi_execute command.
 Subsequently all rows being fetched also involve delivery of the field
 values in the C-variables using proper conversion. For variable length
@@ -350,7 +351,7 @@ No conversion takes place.
 \item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int type, void *val)]:
 Similar to mapi_bind_var(), but now binds a parameter.
 
-\item[MapiMsg mapi_paramnumeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
+\item[MapiMsg mapi_param_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
 Bind to a numeric variable, internally represented by SQL_INT
 
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
@@ -501,15 +502,23 @@ MERROR  & Mapi internal error.\\
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
 #define SQL_AUTO	0	/* automatic type detection */
-#define SQL_INT		1
-#define SQL_LONG	2
-#define SQL_CHAR	3
-#define SQL_VARCHAR	4
-#define SQL_FLOAT	5
-#define SQL_DOUBLE	6
-#define SQL_TIME	7
-#define SQL_DATE	8
-#define SQL_NUMERIC	9
+#define SQL_TINY	1
+#define SQL_UTINY	2
+#define SQL_SHORT	3
+#define SQL_USHORT	4
+#define SQL_INT		5
+#define SQL_UINT	6
+#define SQL_LONG	7
+#define SQL_ULONG	8
+#define SQL_LONGLONG	9
+#define SQL_ULONGLONG	10
+#define SQL_CHAR	11
+#define SQL_VARCHAR	12
+#define SQL_FLOAT	13
+#define SQL_DOUBLE	14
+#define SQL_TIME	15
+#define SQL_DATE	16
+#define SQL_NUMERIC	17
 
 #define PLACEHOLDER	'?'
 
@@ -597,6 +606,7 @@ typedef struct MapiStruct {
 
 	int everything;		/* keep all lines received */
 	int trace;		/* Trace Mapi interaction */
+	int blocked;		/* blocked mode */
 	int error;		/* Error occurred */
 	char *errorstr;	/* pointer to constant string */
 	char *action;	/* pointer to constant string */
@@ -650,6 +660,9 @@ extern "C" {
 mapi_export MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) ;
 mapi_export MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) ;
 mapi_export MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int precision, void *ptr) ;
+mapi_export MapiMsg mapi_param(Mapi mid, int fnr, char **ptr);
+mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int type, void *ptr);
+mapi_export MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale, int precision, void *ptr);
 mapi_export Mapi mapi_connect(char *host, int port, char *username,
 	 char *password, char *lang);
 mapi_export Mapi mapi_connect_ssl(char *host, int port, char *username,
@@ -726,6 +739,35 @@ static void mapi_lost_connection();
 
 #ifndef HAVE_GETLOGIN
 #define getlogin() "win32"
+#endif
+
+/* code adapted from gdk.mx */
+#ifdef HAVE_LONG_LONG
+typedef unsigned long long uint64;
+typedef long long int64;
+#define LLFMT "%lld"		/* format to print a long long */
+#define ULLFMT "%llu"		/* format to print a unsigned long long */
+#else
+#ifdef HAVE___INT64
+typedef unsigned __int64 uint64;
+typedef __int64 int64;
+#define LLFMT "%I64d"		/* format to print a __int64 */
+#define ULLFMT "%I64u"		/* format to print a unsigned __int64 */
+#endif
+#endif
+/* define printf formats for printing size_t and ssize_t variables */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#define SZFMT "%zu"
+#elif SIZEOF_SIZE_T == SIZEOF_INT
+#define SZFMT "%u"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
+#define SZFMT "%lu"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#define SZFMT LLFMT
+#elif SIZEOF_SIZE_T == SIZEOF___INT64
+#define SZFMT LLFMT
+#else
+#error no definition for SZFMT
 #endif
 
 @+ Blocking
@@ -809,11 +851,14 @@ static Mapi mapi_new(void)
 {
 	Mapi m;
 	m = (Mapi) malloc(sizeof(MapiStruct));
+	if (m == NULL)
+		return NULL;
 	assert(m);
 	m->template=0;
 	m->query= 0;
 
 	m->trace = 0;
+	m->blocked = blocked;
 	m->everything = 0;
 	m->error= MOK;
 	m->errorstr= 0;
@@ -834,9 +879,9 @@ static Mapi mapi_new(void)
 
 	m->maxfields = 64;
 	m->fieldcnt = 0;
-	m->fields = (MapiField *) malloc( 64 * sizeof(MapiField));
-	memset(m->fields,0, 64 * sizeof(MapiField));
+	m->fields = (MapiField *) malloc( m->maxfields * sizeof(MapiField));
 	assert(m->fields);
+	memset(m->fields,0, m->maxfields * sizeof(MapiField));
 	m->cache.rowlimit= 100;
 	m->cache.shuffle= 0;	/* derive from rowlimit */
 	m->cache.limit= 0;
@@ -861,6 +906,32 @@ MapiMsg mapi_destroy(Mapi mid)
 {
 	if (mid->connected > 0)
 		(void) mapi_disconnect(mid);
+	if (mid->fields)
+		free(mid->fields);
+	if (mid->blk.buf)
+		free(mid->blk.buf);
+	if (mid->errorstr)
+		free(mid->errorstr);
+	if (mid->query)
+		free(mid->query);
+	if (mid->template)
+		free(mid->template);
+	if (mid->cache.rows) {
+		int i;
+		for (i = 0; i < mid->cache.writer; i++)
+			if (mid->cache.rows[i])
+				free(mid->cache.rows[i]);
+		free(mid->cache.rows);
+	}
+	if (mid->cache.anchors) {
+		int i;
+		for (i = 0; i < mid->cache.writer; i++)
+			if (mid->cache.anchors[i])
+				free(mid->cache.anchors[i]);
+		free(mid->cache.anchors);
+	}
+	if (mid->cache.fldcnt)
+		free(mid->cache.fldcnt);
 	free(mid);
 	return MOK;
 }
@@ -871,6 +942,8 @@ Mapi mapi_dup(Mapi mid)
 	mapi_check0(mid,"mapi_dup");
 	mid->connected++;	/* connection is shared */
 	m= mapi_new();
+	if (m == NULL)
+		return NULL;
 	m->to= mid->to;
 	m->from= mid->from;
 	m->tracelog= mid->tracelog;
@@ -899,6 +972,8 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 	char buf[BLOCK];
 
 	mid= mapi_new();
+	if (mid == NULL)
+		return NULL;
 
 
 	/* avoid writing into constant strings ! */
@@ -961,7 +1036,7 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 
 	{
 	memset(buf,0,BLOCK);
-	if( blocked){
+	if( mid->blocked){
 		snprintf(buf, BLOCK,"%s:%s:blocked\n", mid->username, mid->password);
 	} else {
 		snprintf(buf, BLOCK,"%s:%s\n", mid->username, mid->password);
@@ -979,7 +1054,7 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 			"mapi_connect");
 		return(mid);
 	}
-	if( blocked){
+	if( mid->blocked){
 		mid->to = block_stream(socket_wstream(s,"Mapi client write"));
 	}
 	if( stream_errnr(mid->to)){
@@ -987,7 +1062,7 @@ Mapi mapi_connect(char *host, int port, char *username, char *password, char *la
 		return(mid);
 	}
 
-	if( blocked){
+	if( mid->blocked){
 		mid->from = block_stream(socket_rstream(s,"Mapi client read"));
 	} else {
 		mid->from = socket_rastream(s,"Mapi client read");
@@ -1093,10 +1168,13 @@ MapiMsg mapi_disconnect(Mapi mid)
 	}
 	if(mid->cache.fldcnt)
 		(void) free(mid->cache.fldcnt);
+	mid->cache.fldcnt = NULL;
 	if(mid->cache.anchors)
 		(void) free(mid->cache.anchors);
+	mid->cache.anchors = NULL;
 	if(mid->cache.rows)
 		(void) free(mid->cache.rows);
+	mid->cache.rows = NULL;
 	if( mid->connected >1){
 		mid->connected=0;
 		return mapi_setError(mid,"Warning: multiple connections open",
@@ -1148,6 +1226,30 @@ MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) {
 }
 MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
 	if( mapi_bind_var(mid,fnr, SQL_NUMERIC,ptr) )
+		return mid->error;
+	mid->fields[fnr].scale= scale;
+	mid->fields[fnr].precision= prec;
+	return MOK;
+}
+MapiMsg mapi_param(Mapi mid, int fnr, char **ptr) {
+	@:testField(mid->error,"mapi_param")@
+	mid->fields[fnr].inparam= ptr;
+	mid->fields[fnr].intype= SQL_AUTO;
+	return MOK;
+}
+
+MapiMsg mapi_param_type(Mapi mid, int fnr, int type, void *ptr) {
+	@:testField(mid->error,"mapi_param_type")@
+	mid->fields[fnr].inparam= ptr;
+	if( type>=0 && type < SQL_NUMERIC)
+		mid->fields[fnr].intype= type;
+	else
+		return mapi_setError(mid,"Illegal SQL type identifier",
+					"mapi_param_type");
+	return MOK;
+}
+MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,int prec, void *ptr) {
+	if( mapi_param_type(mid,fnr, SQL_NUMERIC,ptr) )
 		return mid->error;
 	mid->fields[fnr].scale= scale;
 	mid->fields[fnr].precision= prec;
@@ -1280,9 +1382,10 @@ MapiMsg mapi_prepare_array_internal(Mapi mid, char *cmd, char **val)
 		mid->fields[i].intype= SQL_AUTO;
 	}
 	for(i=0; val[i];i++){
+		if( i >= mid->maxfields)
+			mapi_extend_fields(mid, i+1);
 		mid->fields[i].inparam= val[i];
 		mid->fields[i].intype= SQL_AUTO;
-		if( i+1 >= mid->maxfields) mapi_extend_fields(mid,i);
 	}
 	return ret;
 }
@@ -1296,14 +1399,12 @@ Building the query string using replacement of values require
 some care not overfloating the space allocated.
 @= checkSpace
 	if( (size=strlen(mid->query))+@1 >= lim){
-		char *n= (char*) malloc(lim=size+@1+MAPIBLKSIZE);
-		assert(n);
-		strcpy(n,mid->query);
-		free(mid->query);
-		mid->query= n;
+		lim = size + @1 + MAPIBLKSIZE;
+		mid->query= realloc(mid->query, lim);
+		assert(mid->query);
 	}
 @c
-char *mapi_param_store(Mapi mid)
+static void mapi_param_store(Mapi mid)
 {
 	char *val, buf[MAPIBLKSIZE];
 	char *p=mid->template, *q;
@@ -1312,7 +1413,7 @@ char *mapi_param_store(Mapi mid)
 	size_t size = 0, lim;
 
 	if( mid->template==0)
-		return NULL;
+		return;
 	if( mid->query)
 		free(mid->query);
 
@@ -1320,47 +1421,84 @@ char *mapi_param_store(Mapi mid)
 	mid->query= (char*) malloc(lim);
 	assert(mid->query);
 	mid->query[0]=0;
+	k = 0;
 
 	q= strchr(mid->template,PLACEHOLDER);
 	i=0;
-	while(q){
+	/* loop invariant: k == strlen(mid->query) */
+	while(q && i < mid->maxfields){
 		if( q>p && *(q-1)=='\\'){
 			q= strchr(q+1,PLACEHOLDER);
 			continue;
 		}
 
-		k= strlen(mid->query);
-		strncpy(mid->query+k,
-			mid->template + (p - mid->template),
-			q-p);
-		mid->query[k + (q - p)]=0;
+		strncpy(mid->query+k, p, q-p);
+		k += q - p;
+		mid->query[k]=0;
 
-		for(;i<mid->maxfields;i++)
-			if( mid->fields[i].inparam)
-				break;
-
-		if( i==mid->maxfields || mid->fields[i].inparam==0) {
-			mid->query[strlen(mid->query)]=PLACEHOLDER;
-		} else
+		if( mid->fields[i].inparam==0) {
+			mid->query[k++]=PLACEHOLDER;
+			mid->query[k]=0;
+		} else {
 			switch(mid->fields[i].intype) {
+			case SQL_TINY:
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					"%d",*(signed char *)mid->fields[i].inparam);
+				break;
+			case SQL_UTINY:
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					"%u",*(unsigned char *)mid->fields[i].inparam);
+				break;
+			case SQL_SHORT:
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					"%d",*(short *)mid->fields[i].inparam);
+				break;
+			case SQL_USHORT:
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					"%u",*(unsigned short *)mid->fields[i].inparam);
+				break;
 			case SQL_INT:
 				@:checkSpace(30)@
-				sprintf(mid->query+strlen(mid->query),
+				sprintf(mid->query+k,
 					"%d",*(int *)mid->fields[i].inparam);
+				break;
+			case SQL_UINT:
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					"%u",*(unsigned int *)mid->fields[i].inparam);
 				break;
 			case SQL_LONG: 
 				@:checkSpace(30)@
-				sprintf(mid->query+strlen(mid->query),
+				sprintf(mid->query+k,
 					"%ld",*(long *)mid->fields[i].inparam);
+				break;
+			case SQL_ULONG:
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					"%lu",*(unsigned long *)mid->fields[i].inparam);
+				break;
+			case SQL_LONGLONG: 
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					LLFMT,*(int64 *)mid->fields[i].inparam);
+				break;
+			case SQL_ULONGLONG: 
+				@:checkSpace(30)@
+				sprintf(mid->query+k,
+					ULLFMT,*(uint64 *)mid->fields[i].inparam);
 				break;
 			case SQL_FLOAT:
 				@:checkSpace(30)@
-				sprintf(mid->query+strlen(mid->query),
+				sprintf(mid->query+k,
 					"%.9g",*(float *)mid->fields[i].inparam);
 				break;
 			case SQL_DOUBLE:
 				@:checkSpace(30)@
-				sprintf(mid->query+strlen(mid->query),
+				sprintf(mid->query+k,
 					"%.17g",*(double *)mid->fields[i].inparam);
 				break;
 			case SQL_CHAR:
@@ -1368,43 +1506,32 @@ char *mapi_param_store(Mapi mid)
 				buf[1]=0;
 				val= mapi_quote(buf);
 				@:checkSpace(strlen(val))@
-				sprintf(mid->query+strlen(mid->query), "'%s'",val);
+				sprintf(mid->query+k, "'%s'",val);
+				free(val);
 				break;
 			case SQL_VARCHAR:
 				val= mapi_quote((char*)mid->fields[i].inparam);
 				@:checkSpace(strlen(val))@
-				sprintf(mid->query+strlen(mid->query), "'%s'",val);
+				sprintf(mid->query+k, "'%s'",val);
+				free(val);
 				break;
 			default:
-				strcpy(mid->query+strlen(mid->query),mid->fields[i].inparam);
+				strcpy(mid->query+k,mid->fields[i].inparam);
+				break;
 			}
+			k += strlen(mid->query+k);
+		}
 
 		i++;
 		p= q+1;
 		q= strchr(p,PLACEHOLDER);
 	}
 	@:checkSpace(strlen(p))@
-	strcpy(mid->query+strlen(mid->query),p);
+	strcpy(mid->query+k,p);
 	if( mid->trace)
 		printf("param_store: result=%s\n",mid->query);
-	return mid->query;
+	return;
 }
-
-/* code adapted from gdk.mx */
-/* define printf formats for printing size_t and ssize_t variables */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#define SZFMT "%zu"
-#elif SIZEOF_SIZE_T == SIZEOF_INT
-#define SZFMT "%u"
-#elif SIZEOF_SIZE_T == SIZEOF_LONG
-#define SZFMT "%lu"
-#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
-#define SZFMT "%llu"
-#elif SIZEOF_SIZE_T == SIZEOF___INT64
-#define SZFMT "%I64u"
-#else
-#error no definition for SZFMT
-#endif
 
 MapiMsg mapi_execute_internal(Mapi mid)
 {
@@ -1765,7 +1892,7 @@ char * mapi_fetch_line_internal(Mapi mid)
 			mapi_setError(mid, "Connection terminated","mapi_fetch_line");
 			return 0;
 		}
-	if( blocked){
+	if( mid->blocked){
 		/* fetch one more block */
 		if( mid->trace)
 			printf("fetch next block: start at:%d\n",n);
@@ -1894,7 +2021,7 @@ MapiMsg mapi_quick_response(Mapi mid, FILE *fd)
 
 	mid->blk.eos=0;
 	mid->blk.nxt=0;
-	if( blocked){
+	if( mid->blocked){
 	while( (k= stream_read(mid->from,mid->blk.buf,1,BLOCK))== BLOCK){
 		if(k<0) {
 			mapi_setError(mid, "Connection terminated","mapi_quick_response");
@@ -2141,18 +2268,13 @@ static
 int mapi_extend_fields(Mapi mid, int minfields)
 {
 	/* extend the field table */
-	MapiField *nf;
-	int nm= mid->maxfields +32;
-	if( nm <=minfields)
-		 nm= minfields+32;
-	nf= (MapiField *) malloc(nm * sizeof(MapiField));
-	assert(nf);
-	memset(nf,0,  nm* sizeof(MapiField));
-	memcpy(nf, mid->fields, mid->maxfields * sizeof(MapiField));
-	if( mid->fields)
-		free(mid->fields);
-	mid->fields= nf;
-	mid->maxfields= nm;
+	int nm = mid->maxfields + 32;
+	if (nm <= minfields)
+		 nm = minfields + 32;
+	mid->fields = realloc(mid->fields, nm * sizeof(MapiField));
+	/* clear new entries */
+	memset(mid->fields + mid->maxfields, 0,
+	       (nm - mid->maxfields) * sizeof(MapiField));
 	return MOK;
 }
 
@@ -2166,11 +2288,11 @@ void mapi_extend_anchor(Mapi mid)
 		assert(acnew);
 		memset(acnew, 0, sizeof(char*) * mid->maxfields);
 		mid->cache.anchors[cr]= acnew;
-		if(ac)
+		if(ac) {
 			memcpy(acnew,ac, sizeof(char*)*mid->cache.fldcnt[cr]);
+			free(ac);
+		}
 	}
-	if(ac)
-		free(ac);
 }
 @-
 The values of a row are delivered to any bounded variable before
@@ -2194,20 +2316,54 @@ void mapi_store_bind(Mapi mid)
 			}
 			/* auto convert to C-type */
 			switch(mid->fields[i].outtype){
+			case SQL_TINY:
+				*(signed char *)dst = (signed char) strtol(val,NULL,0);
+				break;
+			case SQL_UTINY:
+				*(unsigned char *)dst = (unsigned char) strtoul(val,NULL,0);
+				break;
+			case SQL_SHORT:
+				*(short *)dst = (short) strtol(val,NULL,0);
+				break;
+			case SQL_USHORT:
+				*(unsigned short *)dst = (unsigned short) strtoul(val,NULL,0);
+				break;
 			case SQL_NUMERIC:
 			case SQL_INT:
 				*(int *)dst = (int) strtol(val,NULL,0);
 				break;
-			case SQL_LONG:
-				*(long *)dst = (long) strtol(val,NULL,0);
+			case SQL_UINT:
+				*(unsigned int *)dst = (unsigned int) strtoul(val,NULL,0);
 				break;
+			case SQL_LONG:
+				*(long *)dst = strtol(val,NULL,0);
+				break;
+			case SQL_ULONG:
+				*(unsigned long *)dst = strtoul(val,NULL,0);
+				break;
+#ifdef HAVE_STRTOLL
+			case SQL_LONGLONG:
+				*(int64 *)dst = strtoll(val,NULL,0);
+				break;
+#endif
+#ifdef HAVE_STRTOULL
+			case SQL_ULONGLONG:
+				*(uint64 *)dst = strtoull(val,NULL,0);
+				break;
+#endif
 			case SQL_CHAR:
 				*(char *)dst = *val;
 				break;
+#ifdef HAVE_STRTOF
 			case SQL_FLOAT:
-			case SQL_DOUBLE:
-				*(double *)dst = (double) strtod(val,NULL);
+				*(float *)dst = strtof(val,NULL);
 				break;
+#endif
+#ifdef HAVE_STRTOD
+			case SQL_DOUBLE:
+				*(double *)dst = strtod(val,NULL);
+				break;
+#endif
 			case SQL_TIME:
 			case SQL_DATE:
 			case SQL_AUTO:
