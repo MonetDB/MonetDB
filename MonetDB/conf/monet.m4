@@ -1549,8 +1549,7 @@ if test "x$have_pcre" != xno; then
   if test "x$have_pcre" = xyes; then
   	save_LDFLAGS="$LDFLAGS"
   	LDFLAGS="$LDFLAGS $PCRE_LIBS"
-  	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre"
-        	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library]) have_pcre=yes, have_pcre=no)
+  	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre" have_pcre=yes, have_pcre=no)
   	LDFLAGS="$save_LDFLAGS"
   fi
 
@@ -1559,6 +1558,7 @@ if test "x$have_pcre" != xno; then
 		pcre_ver="`$PCRE_CONFIG --version 2>/dev/null`"
     	if test MONETDB_VERSION_TO_NUMBER(echo $pcre_ver) -ge MONETDB_VERSION_TO_NUMBER(echo "4.0"); then
       		have_pcre=yes
+        	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library]) 
     	else
       		have_pcre=no
       		need_pcre=no
