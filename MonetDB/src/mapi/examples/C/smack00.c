@@ -16,8 +16,7 @@ int main(int argc, char **argv){
 		exit(-1);
 	}
 	port = atol(argv[1]);
-	snprintf(buf,40,"localhost:%d",port);
-	dbh= mapi_connect(buf,"guest",0,0);
+	dbh= mapi_connect("localhost",port,"guest",0,0);
 	if(mapi_error(dbh)) die(dbh);
 
 	for(i=0; i< 20000; i++){

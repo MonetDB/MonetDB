@@ -32,7 +32,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("MonetDB", 4.3.15)
+AM_INIT_AUTOMAKE("MonetDB", 4.3.14c)
 AM_CONFIG_HEADER(config.h:conf/config.h.in)
 
 HOST=[$target]
@@ -236,6 +236,7 @@ AC_FUNC_MEMCMP()
 AC_CHECK_FUNCS(strsignal)
 AC_CHECK_FUNCS(mkdir rmdir getcwd getopt getrlimit vsnprintf snprintf kill)
 AC_CHECK_FUNCS(strcspn strdup strstr strtod strtof strtol strerror strcasecmp)
+AC_CHECK_FUNCS(strtoll strtoull)
 AC_CHECK_FUNCS(gethostname gettimeofday setenv putenv select)
 AC_CHECK_FUNCS(fstat getpwuid getuid ftime sysconf)
 AC_CHECK_FUNCS(mrand48 drand48)

@@ -14,16 +14,16 @@ int main(int argc, char **argv)
 	char *parm[]={"peter","25",0};
 	Mapi	dbh;
 
-	if( argc != 3){
-		printf("usage:%s <host>:<port> <language>\n",argv[0]);
+	if( argc != 4){
+		printf("usage:%s <host> <port> <language>\n",argv[0]);
 			exit(-1);
 	}
 
-	dbh= mapi_connect(argv[1],"guest",0,argv[2]);
+	dbh= mapi_connect(argv[1],atoi(argv[2]),"guest",0,argv[3]);
 	if(mapi_error(dbh)) die(dbh);
 
 	/* mapi_trace(dbh,1);*/
-	if( strcmp(argv[2],"sql")==0){
+	if( strcmp(argv[3],"sql")==0){
 		if( mapi_query(dbh,"create table emp(name varchar,age int)")) 
 			die(dbh);
 		if( mapi_query_array(dbh,"insert into emp values(\"?\", ?)",parm) )

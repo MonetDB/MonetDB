@@ -433,6 +433,10 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
         o = 2
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
+        ff = open(TST+WHAT+".out.diff.html","a")
+        ff.write("\n<!--MajorDiffs-->\n")
+        ff.close()
+        o = 2
     for l in fileinput.input(TST+".err.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
@@ -443,6 +447,10 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
         e = 2
     else:
         Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
+        ff = open(TST+WHAT+".err.diff.html","a")
+        ff.write("\n<!--MajorDiffs-->\n")
+        ff.close()
+        e = 2
     if   o==2 or e==2:
         f.write("<FONT COLOR=#ff0000><B><I>"+TST+"</I></B></FONT>")
     elif o==1 or e==1:
@@ -842,7 +850,10 @@ def CheckBATs(env, TST, TSTDB) :
         }
         quit;
     ''')
-    pIn.close()
+    try:
+        pIn.close()
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Closing input pipe in CheckBATs failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     qOut, qErr = ReadMultiple([pOut, pErr])
     TST_BATS = []
     if qOut:
@@ -981,11 +992,11 @@ def RunTest(env, TST, BusyPorts) :
 
     os.chdir(TSTTRGDIR)
 
-    NotOnNT = []
+    NotOnNT = ["src/modules/contrib/salgebra"]
     #\
     #       ["src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
     #\
-    #       "src/modules/plain/salgebra", "tests/by_Peter/tst_priv", \
+    #       "src/modules/contrib/salgebra", "tests/by_Peter/tst_priv", \
     #       "scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2", \
     #       "tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
     NotOnCYG = [ "tests/BugReports/no.147", "tests/by_Peter/recursion" ]
@@ -1183,6 +1194,11 @@ def RunTest(env, TST, BusyPorts) :
                     killed = 1
                 p.close()
 
+        if SERVER in ["MAPI", "SQL"]:
+            CheckSocket3(env, SERVER, TestErrFile)
+            if SERVER == "SQL":
+                CheckSocket3(env, "MAPI", TestErrFile)
+
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
         ##LEFTOVERTMPBATS="`find $MONETFARM/dbfarm/*/bat/ -name tmp_\* -print 2> /dev/null`"
@@ -1343,6 +1359,50 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
         STDERR.flush()
 ### CheckSocket(env,SERVER,SrvrErr,LogLine) #
 
+def CheckSocket2(env,SERVER,SrvrErr) :
+    host = ''
+    port = int(env[SERVER+'PORT'])
+    busy, Serrno, Serrstr = CheckPort(host,port)
+    if busy:
+        env[SERVER+'PORT'] = eval(dft[SERVER+'PORT'])
+        os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
+        op = 'port=%d' % port
+        np = 'port=%s' % env[SERVER+'PORT']
+        env['exe']['Mserver']     = env['exe']['Mserver'][0]    , string.replace(env['exe']['Mserver'][1]    , op, np)
+        env['exe']['Mshutdown']   = env['exe']['Mshutdown'][0]  , string.replace(env['exe']['Mshutdown'][1]  , op, np)
+        env['exe']['Mapi_Client'] = env['exe']['Mapi_Client'][0], string.replace(env['exe']['Mapi_Client'][1], op, np)
+        env['exe']['SQL_client']  = env['exe']['SQL_client'][0] , string.replace(env['exe']['SQL_client'][1] , op, np)
+        os.environ['MSERVER']     = string.replace(os.environ['MSERVER']    , op, np)
+        os.environ['MSHUTDOWN']   = string.replace(os.environ['MSHUTDOWN']  , op, np)
+        os.environ['MAPI_CLIENT'] = string.replace(os.environ['MAPI_CLIENT'], op, np)
+        os.environ['SQL_CLIENT']  = string.replace(os.environ['SQL_CLIENT'] , op, np)
+        Smsg = """
+! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
+! Using new %sPORT=%s !
+""" % (SERVER, host, port, Serrno, Serrstr, SERVER, env[SERVER+'PORT'])
+        STDERR.write(Smsg)
+        STDERR.flush()
+        SrvrErr.write(Smsg)
+        SrvrErr.flush()
+### CheckSocket2(env,SERVER,SrvrErr) #
+
+def CheckSocket3(env,SERVER,ErrFileName) :
+    host = ''
+    port = int(env[SERVER+'PORT'])
+    busy, Serrno, Serrstr = CheckPort(host,port)
+    if busy:
+        Smsg = """
+! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
+! %sPORT was not properly released by Mserver !
+""" % (SERVER, host, port, Serrno, Serrstr, SERVER)
+        STDERR.write(Smsg)
+        STDERR.flush()
+        ErrFile = open(ErrFileName, 'a')
+        ErrFile.write(Smsg)
+        ErrFile.flush()
+        ErrFile.close()
+### CheckSocket3(env,SERVER,ErrFileName) #
+
 def prompt() :
     return time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### prompt() #
@@ -1461,6 +1521,19 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     ServerReady = True
     if SERVER in ["MAPI", "SQL"]:
+        SrvrOutFile = TST+".server.out"
+        SrvrErrFile = TST+".server.err"
+        SrvrOut = open(SrvrOutFile,"w")
+        SrvrErr = open(SrvrErrFile,"w")
+        ClntOutFile = TST+".client.out"
+        ClntErrFile = TST+".client.err"
+        open(ClntOutFile,"w").close()
+        open(ClntErrFile,"w").close()
+
+        CheckSocket2(env, SERVER, SrvrErr)
+        if SERVER == "SQL":
+            CheckSocket2(env, "MAPI", SrvrErr)
+
         PROLOGUE = ""
         if os.path.isfile(TST+".prologue"):
             PROLOGUE = " "+TST+".prologue"
@@ -1477,19 +1550,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         else:
             Srvr = Srvr+' ; echo ; '
         Srvr = Srvr+'echo Over..'
-
-        SrvrOutFile = TST+".server.out"
-        SrvrErrFile = TST+".server.err"
-        SrvrOut = open(SrvrOutFile,"w")
-        SrvrErr = open(SrvrErrFile,"w")
-        ClntOutFile = TST+".client.out"
-        ClntErrFile = TST+".client.err"
-        open(ClntOutFile,"w").close()
-        open(ClntErrFile,"w").close()
-
-        CheckSocket(env, SERVER, SrvrErr, LogLine)
-        if SERVER == "SQL":
-            CheckSocket(env, "MAPI", SrvrErr, LogLine)
 
         pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
         ln=""
@@ -1629,7 +1689,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 n = q.name
                 q.close()
             q = open(n,'r')
-            TestOut.write(q.read())
+            try:
+                TestOut.write(q.read())
+            except IOError, (IOerrNo, IOerrStr):
+                Warn("Reading from input '%s' or writing to output '%s' failed with #%d: '%s'." % (q.name, TestOut.name, IOerrNo, IOerrStr))
+            except MemoryError:
+                Warn("Reading from input '%s' or writing to output '%s' failed with 'MemoryError'." % (q.name, TestOut.name))
             TestOut.flush()
             q.close()
         TestErr = open(TestErrFile, 'a')
@@ -1757,6 +1822,7 @@ elif os.environ.has_key('COMPUTERNAME'):
 else:
     HOST = "BATMAN"
 HOST = string.split(HOST,'.')[0]
+os.environ['HOST'] = HOST
 
 if os.name == "nt":
     OS    = "WindowsNT"
@@ -1837,7 +1903,7 @@ def main(argv) :
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX'                                   ]
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars = vars + [ 'MAPIPORT', 'SQLPORT', 'SQLCLIENT', 'MAPICLIENT' ]    #, 'MONET_MOD_PATH' ]
+        vars = vars + [ 'SQLCLIENT', 'MAPICLIENT' ]    #, 'MONET_MOD_PATH' ]
     if THISFILE == "Mprofile.py":
         vars = vars + ['CMDLST']
 
@@ -1855,7 +1921,7 @@ def main(argv) :
         dft['setMONET_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONET_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
-        dft['MAPIPORT']       = "str(randomPort(50000,59999))"
+        dft['MAPIPORT']       = "str(randomPort(40000,49999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'Msql'" # --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
@@ -1912,12 +1978,8 @@ def main(argv) :
              "override default location of database directory"),
             ('sql_logdir', None, 'sql_logdir', '<directory>',
              "override default location of transaction-log directory"),
-            ('MAPIPORT', None, 'mapiport', '<port-no.>',
-             'default: %s' % dft['MAPIPORT']),
             ('MAPICLIENT', None, 'mapiclient', '<mapi-client program>',
              'default: %s' % dft['MAPICLIENT']),
-            ('SQLPORT', None, 'sqlport', '<port-no.>',
-             'default: %s' % dft['SQLPORT']),
             ('SQLCLIENT', None, 'sqlclient', '<sql-client program>',
              'default: %s' % dft['SQLCLIENT']),
             ]
@@ -2026,7 +2088,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars + ['GDK_DEBUG', 'MONET_MOD_PATH']
+        vars_ = vars + ['MAPIPORT', 'SQLPORT', 'GDK_DEBUG', 'MONET_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -2138,17 +2200,17 @@ def main(argv) :
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
+        mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
         if not os.path.isfile(mapi_mil):
-            mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
+            mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
-        sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sql_server.mil")
+        sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/sql_server.mil")
         if not os.path.isfile(sql_server_mil):
             sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet4/sql_server.mil")
             if not os.path.isfile(sql_server_mil):
-                sql_server_mil = env['TSTBLDBASE']+path("/src/backends/monet5/sql_server.mil")
+                sql_server_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sql_server.mil")
                 if not os.path.isfile(sql_server_mil):
                     sql_server_mil = ''
         env['SQLSERVER_MIL'] = sql_server_mil

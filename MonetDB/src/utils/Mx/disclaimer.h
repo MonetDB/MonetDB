@@ -31,7 +31,7 @@
 
 #define DISC_WIDTH  79
 
-extern char disclaimerfile[256];
+extern char *disclaimerfile;
 
 extern int disclaimer;
 void insertDisclaimer(FILE *,char *);

@@ -1,8 +1,10 @@
 // A sample java program to interact with MonetDB
 // Make sure you have the Mapi.java package in your path
+import mapi.*;
+
 class sample0
 {
-public static void main(String args[]){
+    public static void main(String args[]){
 	final boolean sqltest=false;
 
 	Mapi mapi= new Mapi();
@@ -11,7 +13,7 @@ public static void main(String args[]){
 		System.exit(-1);
 	}
 	int port = (new Integer(args[0])).intValue();
-	System.out.println("Start test on localhost:"+args[0]);
+	System.out.println("# Start test on localhost:"+args[0]);
 	try{
 		mapi.connect("localhost",port,"guest","anonymous","mil");
 	} catch(MapiException e){
@@ -43,10 +45,10 @@ public static void main(String args[]){
 		System.out.println(nme+" is "+age);
 	}
 	mapi.disconnect();
-}
+  }
 
-public static void die(Mapi m){
+  public static void die(Mapi m){
 	m.explain();
 	System.exit(0);
-}
+  }
 }

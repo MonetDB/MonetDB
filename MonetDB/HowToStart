@@ -6,7 +6,7 @@ This document assumes that you are planning to compile and install
 MonetDB on a Unix system (e.g., Linux, IRIX, Solaris, AIX, MacOS
 X/Darwin, or CYGWIN).  For compilation and installation on a native
 Windows system (NT, 2000, XP) see the instructions in the file
-'HowToStart-Win32'.
+'HowToStart-Win32.txt'.
 
 
 Prerequisites:
@@ -23,7 +23,7 @@ Python
 	more information.
 
 autoconf/automake/libtool 
-	MonetDB uses GNU autoconf (>= 2.53), automake (>= 1.4), and
+	MonetDB uses GNU autoconf (>= 2.53), automake (>= 1.5), and
 	libtool (>= 1.4) during configuration of the software.  See
 	http://www.gnu.org/software/autoconf/,
 	http://www.gnu.org/software/automake/, and

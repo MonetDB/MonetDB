@@ -393,7 +393,7 @@ extern "C" {
 #endif
 #define DBLOGFILE	"MonetLog"
 
-#define PATHLENGTH	128		/* maximum file pathnamde length */ 
+#define PATHLENGTH	256		/* maximum file pathname length */ 
 
 @
 @}
@@ -496,67 +496,45 @@ typedef __int64 gdk_int64;
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define SZFMT "%zu"
 #define SSZFMT "%zd"
-#else
-#if SIZEOF_SIZE_T == SIZEOF_INT
+#elif SIZEOF_SIZE_T == SIZEOF_INT
 #define SZFMT "%u"
 #define SSZFMT "%d"
-#else
-#if SIZEOF_SIZE_T == SIZEOF_LONG
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
 #define SZFMT "%lu"
 #define SSZFMT "%ld"
-#else
-#if SIZEOF_SIZE_T == 8
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG || SIZEOF_SIZE_T == SIZEOF___INT64
 #define SZFMT ULLFMT
 #define SSZFMT LLFMT
 #else
 #error no definition for SZFMT/SSZFMT
 #endif
-#endif
-#endif
-#endif
 
 /* define printf formats for printing ptrdiff_t variables */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define PDFMT "%td"
-#else
-#if SIZEOF_PTRDIFF_T == SIZEOF_INT
+#elif SIZEOF_PTRDIFF_T == SIZEOF_INT
 #define PDFMT "%d"
-#else
-#if SIZEOF_PTRDIFF_T == SIZEOF_LONG
+#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG
 #define PDFMT "%ld"
-#else
-#if SIZEOF_PTRDIFF_T == 8
+#elif SIZEOF_PTRDIFF_T == SIZEOF_LONG_LONG || SIZEOF_PTRDIFF_T == SIZEOF___INT64
 #define PDFMT LLFMT
 #else
 #error no definition for PDFMT
-#endif
-#endif
-#endif
 #endif
 
 /* define printf format for printing pointer values */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define PTRFMT "%p"
-#else
-#if SIZEOF_VOID_P == SIZEOF_INT
+#elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT "%x"
-#else
-#if SIZEOF_VOID_P == SIZEOF_LONG
+#elif SIZEOF_VOID_P == SIZEOF_LONG
 #define PTRFMT "%lx"
-#else
-#if SIZEOF_VOID_P == 8
-#ifdef HAVE_LONG_LONG
+#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
 #define PTRFMT "%llx"
-#else
-#ifdef HAVE___INT64
+#elif SIZEOF_VOID_P == SIZEOF___INT64
 #define PTRFMT "%I64x"
 #else
 #error no definition for PTRFMT
-#endif
-#endif
-#endif
-#endif
-#endif
 #endif
 
 typedef char 		*BUN; 		/* pointer in some heap. */

@@ -69,7 +69,7 @@ def removedir(dir):
     os.rmdir(dir)
 
 removedir(os.path.join(dstdir, 'doc', 'www'))
-os.makedirs(os.path.join(dstdir, 'doc', 'www'))
+os.makedirs(os.path.join(dstdir, 'doc', 'www', 'modules'))
 
 for f in ['monet.gif', 'mel.gif']:
     copyfile(os.path.join(srcdir, 'doc', f),
@@ -80,6 +80,9 @@ for f in ['bat.gif', 'bat1.gif', 'bat2.gif']:
 
 for f in ['monet', 'mil', 'mel']:
     runMx(os.path.join(srcdir, 'doc'), f, os.path.join(dstdir, 'doc'))
+
+runMx(os.path.join(srcdir, 'src', 'mel'), 'mel',
+      os.path.join(dstdir, 'doc', 'www'))
 
 for f in ['gdk', 'gdk_atoms']:
     runMx(os.path.join(srcdir, 'src', 'gdk'), f,
@@ -96,27 +99,27 @@ runMx(os.path.join(srcdir, 'src', 'tools'), 'Mserver',
       os.path.join(dstdir, 'doc', 'www'))
 
 runMx(os.path.join(srcdir, 'src', 'mapi'), 'mapi',
-      os.path.join(dstdir, 'doc', 'www'))
+      os.path.join(dstdir, 'doc', 'www', 'modules'))
 
 runMx(os.path.join(srcdir, 'src', 'modules', 'calibrator'), 'calib',
-      os.path.join(dstdir, 'doc', 'www'))
+      os.path.join(dstdir, 'doc', 'www', 'modules'))
 
 for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
           'blob', 'counters', 'decimal', 'enum', 'kernel',
           'lock', 'mmath', 'monettime', 'pcl', 'radix', 'streams', 'str', 'sys',
           'tcpip', 'trans', 'unix', 'url', 'xtables']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'plain'), f,
-          os.path.join(dstdir, 'doc', 'www'))
+          os.path.join(dstdir, 'doc', 'www', 'modules'))
 
 for f in ['bitset', 'bitvector', 'ddbench', 'mel', 'mprof', 'oo7', 'qt', 'tpcd',
           'wisc']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'contrib'), f,
-          os.path.join(dstdir, 'doc', 'www'))
+          os.path.join(dstdir, 'doc', 'www', 'modules'))
 
 for f in ['README', 'load.mil', 'init.mil']:
     copyfile(os.path.join(srcdir, 'scripts', 'gold', f),
              os.path.join(dstdir, 'doc', 'www', f))
-for f in ['HowToStart', 'HowToStart-Win32']:
+for f in ['HowToStart', 'HowToStart-Win32.txt']:
     copyfile(os.path.join(srcdir, f),
              os.path.join(dstdir, 'doc', 'www', f))
 

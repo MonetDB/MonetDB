@@ -73,7 +73,7 @@ data files.
 .COMMAND stream_read( Stream s ) : str = stream_read_string;
 	"read data from the stream"
 
-.COMMAND stream_flush( Stream s ) = stream_flush;
+.COMMAND stream_flush( Stream s ) = stream_flush_stream;
 	"flush the stream"
 
 .COMMAND stream_close( Stream s ) = stream_close_stream; 
@@ -172,8 +172,8 @@ int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
 int stream_open_@1( Stream *S, str filename ){
 	stream *s;
 
-	if ((s = open_@1( filename )) == NULL || s->errnr){
-		if (s) s->destroy(s);
+	if ((s = open_@1( filename )) == NULL || stream_errnr(s)){
+		if (s) stream_destroy(s);
 		GDKerror("Could not open file %s\n", filename );
 		return GDK_FAIL; 
 	} else {
@@ -191,8 +191,8 @@ int stream_open_@1( Stream *S, str filename ){
 int stream_socket_@1( Stream *S, int *socket, str name ){
 	stream *s;
 
-	if ((s = socket_@1( *socket, name )) == NULL || s->errnr){
-		if (s) s->destroy(s);
+	if ((s = socket_@1( *socket, name )) == NULL || stream_errnr(s)){
+		if (s) stream_destroy(s);
 		GDKerror("Could not open socket %s\n", name );
 		return GDK_FAIL; 
 	} else {
@@ -209,7 +209,7 @@ int stream_socket_@1( Stream *S, int *socket, str name ){
 @c
 int stream_write_string( Stream *S, str data ){
 	stream *s = *(stream**)S;
-	s->write( s, data, 1, strlen(data));
+	stream_write( s, data, 1, strlen(data));
 	return GDK_SUCCEED;
 }
 
@@ -232,7 +232,7 @@ int stream_read_string( str *res, Stream *S ){
 	size_t size = CHUNK + 1;
 	char *buf = GDKmalloc(size), *start = buf;
 
-	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+	while ((len = stream_read(s, start, 1, CHUNK)) == CHUNK){
 		size += CHUNK;
 		buf = GDKrealloc(buf, size); 
 		start = buf + size - CHUNK - 1;
@@ -244,9 +244,9 @@ int stream_read_string( str *res, Stream *S ){
 	return GDK_SUCCEED;
 }
 
-int stream_flush( Stream *S ){
+int stream_flush_stream( Stream *S ){
 	stream *s = *(stream**)S;
-	s->flush( s );
+	stream_flush( s );
 	return GDK_SUCCEED;
 }
 
@@ -319,7 +319,7 @@ int io_fprintf(Stream *filepp, str format,  ...){
         if (ret == GDK_FAIL) {
                 return GDK_FAIL;
         }
-        if (fp->write(fp, s, ret, strlen(s)) == 0) {
+        if (stream_write(fp, s, ret, strlen(s)) == 0) {
                 GDKsyserror("io_fprintf():");
                 GDKfree(s);
                 return GDK_FAIL;
@@ -394,7 +394,7 @@ int io_ftable_default(Stream *filepp, ...) {
 int io_fgetc(int *res, Stream *S){
 	stream *s = *(stream**)S;
 	char c;
-	if (s->read(s, &c, 1, 1) == 1) {
+	if (stream_read(s, &c, 1, 1) == 1) {
 		*res = c;
 	} else {
 		*res = -1; /* EOF */
@@ -407,7 +407,7 @@ int io_fgets(str *res, Stream *S){
 	size_t size, len = 123;
 	char *buf = (char*) GDKmalloc(1+len);
 
-	for(size=0; s->read(s, buf + size, 1, 1) > 0; size++){
+	for(size=0; stream_read(s, buf + size, 1, 1) > 0; size++){
 		if (buf[size] == 0 || buf[size] == '\n') break;
 		if (size+1 == len) {
 			buf = (char*) GDKrealloc(buf, 1+(len*=2)); 
@@ -423,13 +423,13 @@ int io_fputc(int *c, stream *S){
 	char data[2];
 	data[0] = (char) *c; 
 	data[1] = 0;
-	s->write( s, data, 1, 1);
+	stream_write( s, data, 1, 1);
 	return GDK_SUCCEED;
 }
 
 int io_fwrite(Stream *S, str buf, int *nbytes ){
 	stream *s = *(stream**)S;
-	s->write( s, buf, 1, *nbytes);
+	stream_write( s, buf, 1, *nbytes);
 	return(GDK_SUCCEED);
 }
 @mil

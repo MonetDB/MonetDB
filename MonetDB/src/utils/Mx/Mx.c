@@ -26,10 +26,23 @@
 #include        <config.h>
 #include	<stdio.h>
 #include	<ctype.h>
+#ifdef HAVE_UNISTD_H
+#include	<unistd.h>
+#endif
 
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 #include	"disclaimer.h"
+
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#else
+#ifndef HAVE_GETOPT
+# include "getopt.c"
+#else
+# include "mygetopt.h"
+#endif
+#endif
 
 #ifndef UNIX
 extern	int	_trace;
@@ -68,7 +81,6 @@ int	argc;
 char **	argv;
 {
 	int i,k;
-	char s[256];
 #ifndef UNIX	
 	_trace= 1;
 #endif
@@ -77,88 +89,102 @@ char **	argv;
 		Message("Usage: Mx <flags> <file>.mx");
 		Message("\t-t\t\tProduce LaTeX document (default)");
 		Message("\t-c\t\tExtract code");
-		Message("\t-R<dir>\t\tSet target directory to <dir>)");
-		Message("\t-S<style>\tSet LaTeX documentstyle to 'style'");
+		Message("\t-R <dir>\tSet target directory to <dir>)");
+		Message("\t-S <style>\tSet LaTeX documentstyle to 'style'");
 		Message("\t-s\t\tProduce nroff -ms document");
 		Message("\t-1\t\tSingle column (default) ");
 		Message("\t-2\t\tDouble column");
-		Message("\t-H<n>\t\tSet hide level to 'n' (-H0 default)");
+		Message("\t-H <n>\t\tSet hide level to 'n' (-H0 default)");
 		Message("\t-d\t\tProduce a draft document");
-		Message("\t-x <extension>\t\tExtract <extension> labelled code");
+		Message("\t-x <extension>\tExtract <extension> labelled code");
 		Message("\t-w\t\tExtract HTML code");
-		Message("\t-D<id>\t\tDefine macro 'id'");
-		Message("\t-T<string>\tDefine default hide text <string>");
-		Message("\t-l\tNo #line and alike statements");
-		Message("\t-notouch\tNon changed files won't be touched\n");
+		Message("\t-D <id>\t\tDefine macro 'id'");
+		Message("\t-T <string>\tDefine default hide text <string>");
+		Message("\t-l\t\tNo #line and alike statements");
+		Message("\t-n\t\tNon changed files won't be touched");
+		Message("\t-+\t\tTreat @c (C code) as @C (C++ code)");
 	    	exit(1);
-	    }
+	}
 	InitDef();
 	OutputDir(".");
 	InitIndex();
 
 /* Preprocess the arguments.
  */
-	i = 1;
-	for(;( (i < argc) && (argv[i][0] == '-')) ; i++ ){
-	    switch( argv[i][1] ){
-	    case 's':	textmode= M_MS; break;
-	    case 't':	textmode= M_TEX; break;
-	    case 'c':	mode = M_CODE; break;
-	    case 'C':	disclaimer=1; 
-		sscanf(argv[i], "-C%s",disclaimerfile);
-                break;
-	    case 'x':	/* code can be extracted selectively */
-			mode = M_CODE;
-			if(i+1 < argc  )
-				addextension(argv[++i]);
+	while ((i = getopt(argc, argv, "stcC:x:wdg:D:R:S:H:12T:ln+")) != EOF) {
+		switch (i) {
+		case 's':
+			textmode = M_MS;
 			break;
-	    case 'w':	textmode= M_WWW; 
-		break;
-	    case 'd':	mode= M_DRAFT; break;
-	    case 'g':	sscanf(argv[i], "-g%x", &db_flag); break;
-	    case 'D': {
-		Def *d;
-		sscanf(argv[i], "-D%s", s);
-		d = NwDef(Mxmacro, 0, 0, 0);
-		d->d_cmd = StrDup(s);
-		d->d_blk = NULL;
-	    }
-		break;
-	    case 'R':	
-		sscanf(argv[i], "-R%s",s);
-		OutputDir(s);
-		break;
-	    case 'S':
-		sscanf(argv[i], "-S%s",s);
-		texDocStyle=StrDup(s);
-		break;
-	    case 'H':	sscanf(argv[i], "-H%d", &opt_hide); break;
-	    case '1':	opt_column= 1; break;
-	    case '2':	opt_column= 2; break;
-	    case 'T':	defHideText=(argv[i]+2); 
-		break;
-	    case 'l':   noline = 1;
-		break;
-	    case 'n':  notouch = 1;
-	    	break;
-	    case '+':   
-                k=0;
-                do
-                    {
-                        if (str2dir[k].code==Csrc)
-                            strcpy(str2dir[k].ext,MX_CXX_SUFFIX);
-                    }
-                while(str2dir[k++].code!=Nop);
-		break;
-	    default:
-		Error("Unknown flag:%s", argv[i]);
-	    }
+		case 't':
+			textmode = M_TEX;
+			break;
+		case 'c':
+			mode = M_CODE;
+			break;
+		case 'C':
+			disclaimer = 1;
+			disclaimerfile = optarg;
+			break;
+		case 'x':	/* code can be extracted selectively */
+			mode = M_CODE;
+			addextension(optarg);
+			break;
+		case 'w':
+			textmode = M_WWW; 
+			break;
+		case 'd':
+			mode = M_DRAFT;
+			break;
+		case 'g':
+			sscanf(optarg, "%x", &db_flag);
+			break;
+		case 'D': {
+			Def *d;
+			d = NwDef(Mxmacro, 0, 0, 0);
+			d->d_cmd = StrDup(optarg);
+			d->d_blk = NULL;
+			break;
+		}
+		case 'R':	
+			OutputDir(optarg);
+			break;
+		case 'S':
+			texDocStyle=StrDup(optarg);
+			break;
+		case 'H':
+			sscanf(optarg, "%d", &opt_hide);
+			break;
+		case '1':
+			opt_column = 1;
+			break;
+		case '2':
+			opt_column = 2;
+			break;
+		case 'T':
+			defHideText = optarg; 
+			break;
+		case 'l':
+			noline = 1;
+			break;
+		case 'n':
+			notouch = 1;
+			break;
+		case '+':   
+			k = 0;
+			do {
+				if (str2dir[k].code == Csrc)
+					strcpy(str2dir[k].ext, MX_CXX_SUFFIX);
+			} while (str2dir[k++].code != Nop);
+			break;
+		default:
+			Error("Unknown flag:%c", i);
+		}
 	}
 
 
-	for(; i < argc && argv[i]; i++ ) {
+	for (i = optind; i < argc; i++)
 		MakeDefs(argv[i]);
-	}
 
 	if( mode & M_CODE )
 		GenCode();

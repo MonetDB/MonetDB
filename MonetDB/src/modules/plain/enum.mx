@@ -660,8 +660,8 @@ int enum_print1(Stream *fp, BAT* b2, BAT* b1) {
 	} else {
 		i = enum_print_short(dst, dst+i, b1, e1, b2);
 	}
-	s->write(s, dst, i, 1); 
-	s->flush(s);
+	stream_write(s, dst, i, 1); 
+	stream_flush(s);
 	return GDK_SUCCEED;
 }
 
@@ -732,8 +732,8 @@ int enum_print2(Stream *fp, BAT* b3, BAT* b2, BAT* b1) {
 			i = enum_print_short_short(dst, dst+i, b1, e1, b2, e2, b3);
 		} 
 	}
-	s->write(s, dst, i, 1); 
-	s->flush(s);
+	stream_write(s, dst, i, 1); 
+	stream_flush(s);
 	return GDK_SUCCEED;
 }
 

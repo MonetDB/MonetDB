@@ -678,6 +678,7 @@ void conn_waiter(void * vi)
     int i=*(int*)vi;
     Thread thr = THRnew(MT_getpid(), "conn_waiter");
 
+    free(vi);			/* see comment in conn_insert */
     if (thr) {
       int fd = connections[i].sock;
       Client monetClient = forkClient(0, 1);
@@ -940,7 +941,8 @@ also involves forking a waiter thread
 int conn_insert(str host, int port, int me, int sock)
 {
 	int i = 0;
-	for(i=0; connections[i].me; i++);
+	for(i=0; connections[i].me; i++)
+		;
 	if (i == MAX_CONN) {
 	    GDKerror("conn_insert: too many connections\n");
             i = -1;
@@ -956,11 +958,26 @@ int conn_insert(str host, int port, int me, int sock)
 	    connections[i].sock = sock;
             connections[i].waiter = (Thread)0;
 	    strcpy(connections[i].hostname, host);
-	    if (me != -1 && MT_create_thread(&t, conn_waiter, (void*)(&i)) != 0) {
-                connections[i].me = 0;
-	    	connections[i].valid = 0;
-                i = -1;
-            }
+	    if (me != -1) {
+		    /* We want to pass the value of i to conn_waiter.
+		       This has to be done using a pointer to i,
+		       except that i is a local variable which may not
+		       exist anymore by the time conn_waiter starts in
+		       the new thread.  Therefore we allocate a buffer
+		       in which we put the value, and then conn_waiter
+		       can deallocate the buffer after it has read the
+		       value.
+		    */
+		    int *p = malloc(sizeof(int));
+		    *p = i;
+		    if (MT_create_thread(&t, conn_waiter, (void*) p) != 0) {
+			    /* failed to start thread */
+			    free(p);
+			    connections[i].me = 0;
+			    connections[i].valid = 0;
+			    i = -1;
+		    }
+	    }
 	}
 	return i;
 }

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+export CLASSPATH=$MONET_SOURCE/src/mapi/examples/java:$MONET_BUILD/src/mapi/examples/java:$MONET_PREFIX/lib/MonetDB/Tests:$CLASSPATH
+
+if [ -f $MONET_BUILD/src/mapi/examples/java/sample0.class ] ; then
+	export CLASSPATH=$MONET_BUILD/src/mapi/clients/java:$MONET_BUILD/src/mapi/examples/java:$CLASSPATH
+  else
+	export CLASSPATH=$MONET_PREFIX/lib/MonetDB/Tests:$MONET_PREFIX/lib/MonetDB/Tests:$CLASSPATH
+fi
+
+Mlog -x java sample0 $MAPIPORT

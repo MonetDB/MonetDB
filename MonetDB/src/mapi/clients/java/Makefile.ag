@@ -25,6 +25,6 @@ MTSAFE
 
 jar_mapi = {
 	DIR = pkglibdir/java
-	SOURCES = MapiException.java Mapi.java MapiClient.java
+	SOURCES = mapi/MapiException.java mapi/Mapi.java MapiClient.java
 }
 

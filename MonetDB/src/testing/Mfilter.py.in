@@ -45,9 +45,9 @@ Usage:  %s [-I<exp>] <files>
 """ % THISFILE
 ### Usage(THISFILE) #
 
-def Warn(THISFILE,TEXT) :
+def warn(THISFILE,TEXT) :
     sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
-### Warn(THISFILE,TEXT) #
+### warn(THISFILE,TEXT) #
 
 def wlen(str) :
     return len(string.join(string.split(str)))
@@ -92,7 +92,7 @@ test = (
                 "|" r'^\[ "bat(Cacheid|Parentid)",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$'
                 "|" r'^\[ "bat(Share|Ref)cnt",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]",\t* +"[0-3]"\t* +\]$'
                 "|" r'^\[ "batDirtydesc",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"(dirty|clean)",\t* +"dirty",\t* +"dirty",\t* +"dirty",\t* +"dirty"\t* +\]$'
-                "|" r'^\[ "batBuns\.(free|(max)?size)",\t* +"(20|212|40|424)",\t* +"(20|212)",\t* +"(8|56)",\t* +"(4|16|212)",\t* +"(8|56)",\t* +"(16|212|32|424)",\t* +"(3|24|424)",\t* +"(3|24|424)",\t* +"(12|212|24|424)",\t* +"(3|24|424)",\t* +"(12|212)"\t* +\]$'
+                "|" r'^\[ "batBuns\.(free|(max)?size)",\t* +"(20|212|40|424)",\t* +"(20|212)",\t* +"(8|56)",\t* +"(4|16|32|212|424)",\t* +"(8|56)",\t* +"(16|212|32|424)",\t* +"(3|24|48|424|848)",\t* +"(3|24|48|424|848)",\t* +"(12|212|24|424)",\t* +"(3|24|48|424|848)",\t* +"(12|212)"\t* +\]$'
                 "|" r'^\[ "head",\t* +"void",\t* +"void",\t* +"void",\t* +"v?oid",\t* +"void",\t* +"oid",\t* +"v?oid",\t* +"v?oid",\t* +"oid",\t* +"void",\t* +"void"\t* +\]$'
                 "|" r'^\[ "hdense",\t* +"1",\t* +"1",\t* +"1",\t* +"[01]",\t* +"1",\t* +"[01]",\t* +"[01]",\t* +"[01]",\t* +"[01]",\t* +"1",\t* +"1"\t* +\]$'
                 "|" r'^\[ "hvarsized",\t* +"1",\t* +"1",\t* +"1",\t* +"[01]",\t* +"1",\t* +"0",\t* +"[01]",\t* +"[01]",\t* +"0",\t* +"1",\t* +"1"\t* +\]$'
@@ -150,7 +150,8 @@ test = (
                 "|" r'^\[ .*(,\t* ? "?7\.6543209876543(2([13]2?|21)|195)"?)+\t* ? \]$'
                 "|" r'^\[ .*(,\t* ? "?6\.6666666666666(572|67)"?)+\t* ? \]$'
                 "|" r'^\[ .*(,\t* ? "?6\.6666666666666(288|67)"?)+\t* ? \]$'
-                "|" r'^\[ .*(,\t* ? "?158\.765432098765(22|36?|44|59)"?)+\t* ? \]$'
+                "|" r'^\[ .*(,\t* ? "?6\.6666666666666(128|67)"?)+\t* ? \]$'
+                "|" r'^\[ .*(,\t* ? "?158\.765432098765(22|36?|44|59|64)"?)+\t* ? \]$'
 		# src/modules/plain/decimal:
 		"|" r'^\[ "[dn]ec_tiny",\t* +1122E\-30\t* +\]$'
 		"|" r'^\[ "[dn]ec_small",\t* +2244\t* +\]$'
@@ -161,12 +162,22 @@ test = (
                 "|" r'^\[ "(mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$'
                 # src/gdk/cast:
                 "|" r'^\[ (\-|)0 \]$'
+                # Tokens depend on flex/bison
+                "|" r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]'
+                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
+                "|" r'^IPO: using IR for .*$'
+                "|" r'^IPO: performing single-file optimizations$'
+                # src/tools/{client,multiClientSeq}
+                "|" r'^ERROR = (Connection terminated|Lost connection with server)$'
+                "|" r'^ERROR = (communication line broken|Connection lost)$'
                 # Mtest warnings:
                 "|" r'^Over\.\.$'
                 "|" r'^(quit)?;$'
                 "|" r'^(printf\("\\n)?! Mserver still running after Mshutdown\. Quitting now\. !(\\n"\);)?$'
                 "|" r"^! Socket-Check failed for (SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$"
                 "|" r'^! Waiting [0-9]+ seconds \([0-9]/[0-9]\) \.\.\. (Done\.)?$'
+                "|" r'^! Using new (SQL|MAPI)PORT=[0-9]+ !$'
+                "|" r'^! (SQL|MAPI)PORT was not properly released by Mserver !$'
                  ,  re.MULTILINE)
         )
 
@@ -254,7 +265,24 @@ def mFilter (FILE, IGNORE) :
         fout.write("# %9d lines, %9d words, %9d chars   in all lines\n"                     % (al,aw,ac))
         fout.write("\n")
         for ln in ftmp:
-            fout.write(ln)
+            try:
+                fout.write(ln)
+            except IOError, (IOerrNo, IOerrStr):
+                warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
+                if IOerrNo == 28:
+                    # No space left on device
+                    warn(THISFILE, "Removing input file '%s'." % FILE)
+                    try:
+                        os.remove(FILE)
+                        fin = open(FILE,"w")
+                        fin.write("%s: Removed '%s' to create space for '%s'.\n" % (THISFILE, FILE, fout.name))
+                        fin.close()
+                    except:
+                        pass
+                    try:
+                        fout.write(ln)
+                    except IOError, (IOerrNo, IOerrStr):
+                        warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
     fout.close()
     if os.name == "nt":
@@ -284,7 +312,7 @@ def main(argv) :
         if os.path.isfile(f):
             mFilter(f, IGNORE)
         else:
-            Warn(THISFILE, "file missing: " + f)
+            warn(THISFILE, "file missing: " + f)
 ### main(argv) #
 
 if __name__ == "__main__":

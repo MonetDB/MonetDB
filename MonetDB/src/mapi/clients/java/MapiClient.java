@@ -24,8 +24,7 @@
  */
 
 import java.io.*;
-//import mapi.*;
-
+import mapi.*;
 
 public class MapiClient 
 {
@@ -40,9 +39,7 @@ public class MapiClient
 	String user = "quest";
 	String password = "anonymous";
 	String lang = "mil";
-	if (argv.length > 4 ){
-	   	usage();
-	}
+
 	if (argv.length == 1){
       		user = argv[0];
 	} else if (argv.length == 2){
@@ -63,6 +60,8 @@ public class MapiClient
       		user = argv[2];
       		password = argv[3];
       		lang = argv[4];
+	} else {
+		usage();
 	}
 
 	try {

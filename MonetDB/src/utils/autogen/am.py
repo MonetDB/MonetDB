@@ -304,7 +304,7 @@ def am_headers(fd, var, headers, am):
             fd.write("install-exec-local-%s: %s\n" % (header, header))
             fd.write("\t-mkdir -p $(DESTDIR)%s\n" % sd)
             fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd, header))
-            fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
+            fd.write("\t$(INSTALL_DATA) $< $(DESTDIR)%s/%s\n\n" % (sd, header))
             fd.write("uninstall-exec-local-%s: \n" % header)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
@@ -383,8 +383,10 @@ def am_binary(fd, var, binmap, am):
 
     if binmap.has_key("DIR"):
         bd = binmap["DIR"][0] # use first name given
-	fd.write("%sdir = %s\n" % (binname, am_translate_dir(bd)) ); 
-	fd.write("%s_PROGRAMS =%s\n" % (binname,  binname));
+        bd = am_translate_dir(bd)
+	fd.write("%sdir = %s\n" % (binname, bd))
+	fd.write("%s_PROGRAMS =%s\n" % (binname,  binname))
+        am['InstallList'].append("\t%s/%s\n" % (bd, binname))
     else:
     	am['BINS'].append(binname)
 
@@ -468,8 +470,11 @@ def am_bins(fd, var, binsmap, am):
 
     if (len(lbins) > 0):
           bd = binsmap["DIR"][0] # use first name given
-	  fd.write("%sdir = %s\n" % (bin, am_translate_dir(bd, am)) ); 
-	  fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ));
+          bd = am_translate_dir(bd, am)
+	  fd.write("%sdir = %s\n" % (bin, bd)) 
+	  fd.write("%s_PROGRAMS =%s\n" % (bin,  am_list2string(lbins, " ", "") ))
+          for bn in lbins:
+              am['InstallList'].append("\t%s/%s\n" % (bd, bn))
 
     if binsmap.has_key('HEADERS'):
         HDRS = []
@@ -651,7 +656,7 @@ def am_jar(fd, var, jar, am):
     fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
 
     fd.write("\n%s.jar: $(%s_class_files) $(%s_extra_files)\n" % (name, name, name))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf $@ $(%s_class_files) $(shell ls $(%s_inner_class_files) 2>/dev/null | sed -e 's|\\$$|\\\\$$|g') $(%s_extra_files)\n" % (name, name, name))
+    fd.write("\t$(JAR) $(JARFLAGS) -cf $@ $(%s_extra_files) $(%s_class_files) $(shell ls $(%s_inner_class_files) 2>/dev/null | sed -e 's|\\$$|\\\\$$|g')\n" % (name, name, name))
 
     fd.write("\ninstall-exec-local-%s_jar: %s.jar\n" % (name, name))
     fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
@@ -676,6 +681,54 @@ def am_jar(fd, var, jar, am):
 
     am_find_ins(am, jar)
 
+def am_java(fd, var, java, am):
+
+    name = var[5:]
+
+    jd = "JAVADIR"
+    if java.has_key("DIR"):
+        jd = java["DIR"][0] # use first name given
+    jd = am_translate_dir(jd, am)
+
+    for src in java['SOURCES']:
+        am['EXTRA_DIST'].append(src)
+
+    fd.write("\nif HAVE_JAVA\n")
+
+    if java.has_key("EXTRA"):
+        fd.write("\n%s_extra_files= %s\n" % (name, am_list2string(java['EXTRA'], " ", "")))
+    else:
+        fd.write("\n%s_extra_files= \n" % name)
+
+    fd.write("\n%s_java_files= %s\n" % (name, am_list2string(java['TARGETS'], " ", "")))
+    fd.write("%s_class_files= $(patsubst %%.java,%%.class,$(%s_java_files))\n" % (name, name))
+
+    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
+    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
+
+    fd.write("\ninstall-exec-local-%s_class: %s.class\n" % (name, name))
+    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
+    fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.class\n" % (jd, name))
+
+    fd.write("\nuninstall-exec-local-%s_class:\n" % name)
+    fd.write("\t$(RM) $(DESTDIR)%s/%s.class\n" % (jd, name))
+
+    fd.write("\nall-local-%s_class: %s.class\n" % (name, name))
+    am['ALL'].append(name+"_class")
+
+    fd.write("\nelse\n")
+
+    fd.write("\ninstall-exec-local-%s_class:\n" % name)
+    fd.write("\nuninstall-exec-local-%s_class:\n" % name)
+    fd.write("\nall-local-%s_class:\n" % name)
+
+    fd.write("\nendif #HAVE_JAVA\n")
+
+    am['INSTALL'].append(name+"_class")
+    am['InstallList'].append("\t"+jd+"/"+name+".class\n")
+
+    am_find_ins(am, java)
+
 def am_add_srcdir(path, am, prefix =""):
     dir = path
     if dir[0] == '$':
@@ -694,10 +747,12 @@ def am_translate_dir(path, am):
         dir, rest = string.split(path, os.sep, 1)
         rest = os.sep + rest
 
-    if dir in ("top_srcdir", "top_builddir", "srcdir", "builddir",
-               "pkglibdir", "libdir", "pkgbindir", "bindir",
-               "pkgdatadir", "datadir", "pkglocalstatedir", "localstatedir",
-               "pkgsysconfdir", "sysconfdir"):
+    if dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
+               'libdir', 'libexecdir', 'localstatedir', 'mandir',
+               'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
+               'pkglibdir', 'pkglocalstatedir', 'pkgsysconfdir', 'sbindir',
+               'sharedstatedir', 'srcdir', 'sysconfdir', 'top_builddir',
+               'top_srcdir'):
         dir = "$("+dir+")"
     dir = dir + rest
     return string.replace(dir, os.sep, '/')
@@ -732,6 +787,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
                 'JAR': am_jar,
+                'JAVA': am_java,
                 }
 
 def output(tree, cwd, topdir, automake):
@@ -762,12 +818,7 @@ CXXEXT = \\\"cc\\\"
         am['NAME'] = tree['NAME']
     else:
         if cwd != topdir:
-            path = cwd
-            if string.find(path, os.sep) >= 0:
-                l = string.split(path, os.sep)
-                am['NAME'] = l[len(l)-1]
-            else:
-                am['NAME'] = path
+            am['NAME'] = os.path.basename(cwd)
         else:
             am['NAME'] = ''
 

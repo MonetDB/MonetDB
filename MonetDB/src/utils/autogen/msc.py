@@ -55,13 +55,17 @@ def msc_subdirs(fd, var, values, msc):
     # to cope with conditional subdirs:
     Vals = []
     for v in values:
-	cond = string.split(v, '?', 1)
-	if (len(cond) == 1):
-		Vals.append(cond[0])
-	else:
-		thn = string.split(cond[1], ':', 1)
-		if (len(thn) > 1):
-			Vals.append(thn[1])
+        cond = string.split(v, '?', 1)
+        if len(cond) == 1:
+                # non-conditional => use as is
+                Vals.append(cond[0])
+        else:
+        	# conditional => use "then" or "else"
+                thn = string.split(cond[1], ':', 1)
+                if cond[0] == 'CROSS_COMPILING'  and  len(thn) > 1:
+                        Vals.append(thn[1])
+                elif cond[0] == 'MONET4':
+                        Vals.append(thn[0])
     values = Vals
     # HACK to keep uncompilable stuff out of Windows makefiles.
     if 'calibrator' in values:
@@ -151,10 +155,12 @@ def msc_translate_dir(path, msc):
         dir = "."
     elif dir == "srcdir":
         dir = "$(SRCDIR)"
-    elif dir in ['bindir', 'sbindir', 'libexecdir', 'datadir', 'sysconfdir',
-                 'sharedstatedir', 'localstatedir', 'libdir', 'infodir',
-                 'mandir', 'includedir', 'oldincludedir', 'pkgdatadir',
-                 'pkglibdir', 'pkgincludedir']:
+    elif dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
+                 'libdir', 'libexecdir', 'localstatedir', 'mandir',
+                 'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
+                 'pkglibdir', 'pkglocalstatedir', 'pkgsysconfdir', 'sbindir',
+                 'sharedstatedir', 'srcdir', 'sysconfdir', 'top_builddir',
+                 'top_srcdir'):
         dir = "$("+dir+")"
     if len(rest) > 0:
         dir = dir+ "\\" + rest
@@ -212,11 +218,21 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
             add = add + " $(LIBOBJS)"
         elif l[:2] == "-l":
             add = add + " lib"+l[2:]+".lib"
-        elif l[0] in ("-", "$"):
-            add = add + " " + l
-        elif l[0] not in  ("@"):
-            add = add + " " + msc_translate_dir(l, msc) + ".lib"
-            deps = deps + " " + msc_translate_dir(l, msc) + ".lib"
+        elif l[0] == "-":
+            add = add + ' "%s"' % l
+        elif l[0] == '$':
+            add = add + ' %s' % l
+        elif l[0] != "@":
+            lib = msc_translate_dir(l, msc) + '.lib'
+            # add quotes if space in name
+            # we can't always add quotes since for some weird reason
+            # in src\modules\plain you will then have a problem with
+            # lib_algebra.lib.
+            if ' ' in lib:
+                lib = '"%s"' % lib
+            add = add + ' %s' % lib
+            deps = deps + ' %s' % lib
+    # this can probably be removed...
     for l in dlibs:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
@@ -757,15 +773,20 @@ def msc_libs(fd, var, libsmap, msc):
 def msc_includes(fd, var, values, msc):
     incs = "-I$(SRCDIR)"
     for i in values:
-        if i[0] == "-" or i[0] == "$":
-            incs = incs + " " + string.replace(i, '/', '\\')
+        if i[0] == "-":
+            incs = incs + ' "%s"' % i.replace('/', '\\')
+        elif i[0] == "$":
+            incs = incs + ' %s' % i.replace('/', '\\')
         else:
-            incs = incs + " -I" + msc_translate_dir(i, msc) \
+            incs = incs + ' "-I%s"' % msc_translate_dir(i, msc) \
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
 def msc_jar(fd, var, values, msc):
     print "msc doesn't support jars (yet)!"
+
+def msc_java(fd, var, values, msc):
+    print "msc doesn't support java (yet)!"
 
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
@@ -786,6 +807,7 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
                 'JAR': msc_jar,
+                'JAVA': msc_java,
                 }
 
 def output(tree, cwd, topdir):

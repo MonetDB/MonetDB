@@ -864,7 +864,9 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 @-
 Use sampling to determine a good result size, when the bat is large.
 @c
-	if (batcnt > 10000) {
+	if (BATtkey(b)){
+	    estimate = 1;
+	} else if (batcnt > 100000) {
             size_t _lo = batcnt/2, _hi = _lo + 105;
 	    BAT *tmp1;
 	    ALGODEBUG THRprintf(GDKout, "BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" SZFMT ", _hi=" SZFMT ");\n",
@@ -882,8 +884,9 @@ Use sampling to determine a good result size, when the bat is large.
                 }
                 BBPreclaim(tmp1);
 	    }
-	} 
-	estimate = MAX(estimate, BATguess(b));
+	} else {
+	    estimate = MAX(estimate, BATguess(b));
+	}
 @-
 Create the result BAT and execute the select algorithm.
 @c

@@ -1,9 +1,0 @@
-# testing void to oid coercion
- z1:= new(:void,:int);
-setSequenceBase(z1,0@0);
- insert(z1,nil,0);
- insert(z1,nil,1);
- insert(z1,nil,2);
-print(z1);
-o:= oid(z1);
-print(o);

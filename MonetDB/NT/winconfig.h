@@ -77,6 +77,14 @@
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 /* #undef HAVE_CTIME_R3 */
 
+/* Define to 1 if you have the declaration of `strtof', and to 0 if you don't.
+   */
+#define HAVE_DECL_STRDUP 1
+
+/* Define to 1 if you have the declaration of `strtof', and to 0 if you don't.
+   */
+#define HAVE_DECL_STRTOF 0
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 /* #undef HAVE_DIRENT_H */
@@ -339,6 +347,12 @@
 /* Define to 1 if you have the `strtol' function. */
 #define HAVE_STRTOL 1
 
+/* Define to 1 if you have the `strtoll' function. */
+/* #undef HAVE_STRTOLL */
+
+/* Define to 1 if you have the `strtoull' function. */
+/* #undef HAVE_STRTOULL */
+
 /* Define if you have struct mallinfo */
 /* #undef HAVE_STRUCT_MALLINFO */
 
@@ -491,7 +505,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.3.15"
+#define VERSION "4.3.14c"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32
