@@ -234,6 +234,10 @@ int doRequest(Mapi mid, char *buf )
 		mapi_explain(mid,stdout);
 		return 0;
 	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stdout);
+		return 0;
+	}
 	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
 		fprintf(toConsole, "%s\n",rtrn);
 	}
