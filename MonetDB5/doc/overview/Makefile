@@ -20,7 +20,6 @@ web:
 	cp overview.shtml ../../Linux/share/MonetDB5/web
 	(cd ../../Linux/share/MonetDB5/; \
 	mkdir web/mal; cp docs/mal/*html web/mal; \
-	mkdir web/gdk; cp docs/gdk/*html web/gdk; \
 	)
 	echo "Web created"
 

@@ -16,10 +16,11 @@ Note that not all identifiers can be mapped automatically.
 In particuler the following list indicates those requireing
 interventions of the users.
 
+@{
 Version 4.3		Version 5.		Comments
 ---------------- Alignment with C -----------------------
 			bbpBATrefcnt(bat)
-and( bit,bit)		&&(bit,bit)	
+and( bit,bit)		\&\&(bit,bit)	
 or(bit,bit)		||(bit,bit)	
 not(bit)		!(bit)
 =(x,y)			==(x,y)
@@ -100,3 +101,4 @@ void showmappings(){
 	fprintf(stdout,"#Identifer '%s' mapped to '%s'\n", 
 		idmap[i].v4name, idmap[i].v5name);
 }
+@}

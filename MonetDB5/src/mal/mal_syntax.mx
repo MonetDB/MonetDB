@@ -15,7 +15,7 @@
 @v 1.0
 @+ MAL syntax summary
 The MAL syntax is summarized below in extended BNF.
-Alternative constructs are seperated by '|' and grouped
+Alternative constructs are seperated by '$|$' and grouped
 by parenthesis.
 Optional parts are marked with square brackets.
 A repetition is marked with either '+' or '*' to
@@ -24,15 +24,16 @@ Lexical tokens are illustrated in small capitals.
 @T
 
 \begin{tabular}{l l l}
-program		& : & ( definition [helpinfo] ';' | statement ';' ) *\\
+program		& : & ( definition [helpinfo] ';' \\
+		& $|$ & statement ';' ) *\\
 
-definition	& : & moduleStmt | includeStmt \\
-		& | & commandStmt | patternStmt \\
-		& | & functionStmt | factoryStmt\\
-		& | & includeStmt\\
+definition	& : & moduleStmt $|$ includeStmt \\
+		& $|$ & commandStmt $|$ patternStmt \\
+		& $|$ & functionStmt $|$ factoryStmt\\
+		& $|$ & includeStmt\\
 
 moduleStmt	& : & {\sc atom} {\sc module} ident [':'ident]\\
-		& | & {\sc module} ident \\
+		& $|$ & {\sc module} ident \\
 
 commandStmt	& : & {\sc command } header \\
 		& & {\sc address } identifier\\
@@ -40,43 +41,43 @@ patternStmt	& : & {\sc pattern } header \\
 		& & {\sc address } identifier\\
 
 functionStmt	& : & {\sc function } header \\
-		& & statement * \\
+		& & statement* \\
 		& & {\sc end } identifier\\
 factoryStmt	& : & {\sc factory } header \\
-		& & statement * \\
+		& & statement* \\
 		& & {\sc end } identifier\\
 
 includeStmt	& : & {\sc include} identifier \\
-		& | & {\sc include} string\_literal\\
+		& $|$ & {\sc include} string\_literal\\
 
 helpinfo	& : & {\sc comment} string\_literal \\
 
 header		& : & hdrName '(' params ')' result \\
 hdrName		& : & [ moduleId '.'] identifier \\
-result		& : & paramType | '(' params ')'\\
+result		& : & paramType $|$ '(' params ')'\\
 params		& : & binding [',' binding]* \\
-binding		& : & identifier typeName [ propQualifier ]\\
+binding		& : & identifier typeName [ props ]\\
 
-typeName	& : & scalarType | collectionType | anyType\\
+typeName	& : & scalarType $|$ collectionType \\
+		& $|$ & ':' {\sc any} [digit] \\
 scalarType	& : & ':' {\sc identifier} \\
 collectionType	& : & ':' {\sc bat} ['[' colType ',' colType ']'] \\
-anyType		& : & ':' {\sc any} [typeAlias] \\
-colType		& : & scalarType | anyType \\
+colType		& : & scalarType $|$ anyType \\
 
-propQualifier	& : & ['\{' property [ ',' property]* '\}']\\
+props	& : & ['\{' property [ ',' property]* '\}']\\
 property	& : & identifier \\
 
-statement	& : & tag varlist [':=' expr ] propQualifier\\
-tag     	& : & {\sc return} | {\sc barrier} | {\sc catch}\\
-		& | & {\sc leave} | {\sc redo} | \\
+statement	& : & tag varlist [':=' expr ] props\\
+tag     	& $|$ & {\sc return} $|$ {\sc barrier} $|$ {\sc catch}\\
+		& $|$ & {\sc leave} $|$ {\sc redo} $|$ \\
 varlist		& : & variable \\
-		& | & '(' variable {',' variable}* ')' \\
+		& $|$ & '(' variable {',' variable}* ')' \\
 variable	& : & identifier propQualifier \\
 
-expr    	&: & fcncall | [factor  operator] factor \\
-factor  	&: & constant | var \\
+expr    	&: & fcncall $|$ [factor  operator] factor \\
+factor  	&: & constant $|$ var \\
 
-constant	& : & {\sc literal\_constant} | {\sc nil}\\
+constant	& : & {\sc literal\_constant} $|$ {\sc nil}\\
 \end{tabular}
 
 @-
