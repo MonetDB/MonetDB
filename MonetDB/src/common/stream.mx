@@ -135,6 +135,8 @@ stream_export void stream_flush(stream *s);
 stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
 stream_export int stream_byteorder(stream *s);
+stream_export stream *stream_rstream(stream *s);
+stream_export stream *stream_wstream(stream *s);
 
 stream_export stream *open_rstream( const char *filename );
 stream_export stream *open_wstream( const char *filename );
@@ -351,6 +353,20 @@ int stream_init(void)
 #else
 #error no definition for SZFMT
 #endif
+/* define printf format for printing pointer values */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#define PTRFMT "%p"
+#elif SIZEOF_VOID_P == SIZEOF_INT
+#define PTRFMT "%x"
+#elif SIZEOF_VOID_P == SIZEOF_LONG
+#define PTRFMT "%lx"
+#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
+#define PTRFMT "%llx"
+#elif SIZEOF_VOID_P == SIZEOF___INT64
+#define PTRFMT "%I64x"
+#else
+#error no definition for PTRFMT
+#endif
 #endif	/* STREAM_DEBUG */
 
 ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
@@ -414,6 +430,30 @@ int stream_byteorder(stream *s)
 	return s->byteorder;
 }
 
+stream *stream_rstream(stream *s)
+{
+#ifdef STREAM_DEBUG
+	printf("stream_rstream %s\n", s->name ? s->name : "<unnamed>");
+#endif
+	assert(s->access == ST_READ);
+	s->type = ST_BIN;
+	if (s->errnr == NO__ERROR)
+		s->read(s, (void *) &s->byteorder, sizeof(short), 1);
+	return s;
+}
+
+stream *stream_wstream(stream *s)
+{
+#ifdef STREAM_DEBUG
+	printf("stream_wstream %s\n", s->name ? s->name : "<unnamed>");
+#endif
+	assert(s->access == ST_WRITE);
+	s->type = ST_BIN;
+	if (s->errnr == NO__ERROR)
+		s->write(s, (void *) &s->byteorder, sizeof(short), 1);
+	return s;
+}
+
 #define EXT_LEN 4
 static void get_extention( const char *file, char *ext)
 {
@@ -428,12 +468,14 @@ static void get_extention( const char *file, char *ext)
         ext[j] = '\0';
 }
 
-static void destroy( stream *s){
+static void destroy( stream *s)
+{
 	free(s->name);
 	free(s);
 }
 
-static stream *create_stream( const char *name ){
+static stream *create_stream( const char *name )
+{
 	stream *s = (stream*)malloc(sizeof(stream));
 	/*assert(s);*/
 	s->byteorder = 1234;
@@ -443,10 +485,14 @@ static stream *create_stream( const char *name ){
 	s->stream_data.p = NULL;
 	s->errnr = NO__ERROR;
 	s->destroy = destroy;
+#ifdef STREAM_DEBUG
+	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", s);
+#endif
 	return s;
 }
 
-static char *error( stream *s ){
+static char *error( stream *s )
+{
 	char buf [BUFSIZ];
 	switch(s->errnr){
 	case OPEN_ERROR:
@@ -463,19 +509,22 @@ static char *error( stream *s ){
 	return strdup("Unkonwn error");
 }
 
-static ssize_t file_read( stream *s, void *buf, size_t elmsize, size_t cnt ){
+static ssize_t file_read( stream *s, void *buf, size_t elmsize, size_t cnt )
+{
 	FILE *fp = (FILE*)s->stream_data.p;
 	if (!feof(fp))
 		return fread( buf, elmsize, cnt, fp);
 	return 0;
 }
 
-static ssize_t file_write( stream *s, void *buf, size_t elmsize, size_t cnt ){
+static ssize_t file_write( stream *s, void *buf, size_t elmsize, size_t cnt )
+{
 	size_t res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data.p);
 	return res;
 }
 
-static void file_close( stream *s ){
+static void file_close( stream *s )
+{
 	FILE *fp = (FILE*)s->stream_data.p;
 	if (!fp) return;
 	if (fp != stdin && fp != stdout && fp != stderr)
@@ -484,12 +533,14 @@ static void file_close( stream *s ){
 		fflush( fp );
 }
 
-static void file_flush( stream *s ){
+static void file_flush( stream *s )
+{
 	if (s->access == ST_WRITE)
 		fflush( (FILE*)s->stream_data.p);
 }
 
-static stream *open_stream( const char *filename, const char *flags ){
+static stream *open_stream( const char *filename, const char *flags )
+{
 	stream *s = create_stream(filename);
 	FILE *fp = fopen( filename, flags );
 
@@ -506,10 +557,14 @@ static stream *open_stream( const char *filename, const char *flags ){
 	return s;
 }
 
-stream *open_rstream( const char *filename ){
+stream *open_rstream( const char *filename )
+{
 	stream *s;
   	char    ext[EXT_LEN];
 
+#ifdef STREAM_DEBUG
+	printf("open_rstream %s\n", filename);
+#endif
   	get_extention(filename, ext);
 
 #ifdef HAVE_LIBZ
@@ -543,10 +598,14 @@ stream *open_rstream( const char *filename ){
 		return s;
 	}
 }
-stream *open_wstream( const char *filename ){
+stream *open_wstream( const char *filename )
+{
 	stream *s;
   	char    ext[EXT_LEN];
 
+#ifdef STREAM_DEBUG
+	printf("open_wstream %s\n", filename);
+#endif
   	get_extention(filename, ext);
 
 #ifdef HAVE_LIBZ
@@ -581,10 +640,14 @@ stream *open_wstream( const char *filename ){
 		return s;
 	}
 }
-stream *open_rastream( const char *filename ){
+stream *open_rastream( const char *filename )
+{
 	stream *s;
   	char    ext[EXT_LEN];
 
+#ifdef STREAM_DEBUG
+	printf("open_rastream %s\n", filename);
+#endif
   	get_extention(filename, ext);
 
 #ifdef HAVE_LIBZ
@@ -615,10 +678,14 @@ stream *open_rastream( const char *filename ){
 		return s;
 	}
 }
-stream *open_wastream( const char *filename ){
+stream *open_wastream( const char *filename )
+{
 	stream *s;
   	char    ext[EXT_LEN];
 
+#ifdef STREAM_DEBUG
+	printf("open_wastream %s\n", filename);
+#endif
   	get_extention(filename, ext);
 
 #ifdef HAVE_LIBZ
@@ -667,14 +734,17 @@ static ssize_t stream_gzwrite( stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (size) return size/elmsize;
 	return 0;
 }
-static void stream_gzclose( stream *s ){
+static void stream_gzclose( stream *s )
+{
 	gzclose( (gzFile*)s->stream_data.p);
 }
-static void stream_gzflush( stream *s ){
+static void stream_gzflush( stream *s )
+{
 	if (s->access == ST_WRITE)
 		gzflush( (gzFile*)s->stream_data.p, Z_SYNC_FLUSH);
 }
-stream *open_gzstream( const char *filename, const char *flags ){
+stream *open_gzstream( const char *filename, const char *flags )
+{
 	stream *s = create_stream(filename);
 	gzFile *fp = gzopen( filename, flags );
 	s->read  = stream_gzread;
@@ -690,14 +760,16 @@ stream *open_gzstream( const char *filename, const char *flags ){
 	s->errnr = OPEN_ERROR;
 	return s;
 }
-stream *open_gzrstream( const char *filename ){
+stream *open_gzrstream( const char *filename )
+{
 	stream *s = open_gzstream( filename, "rb");
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR)
 	   gzread( (gzFile*)s->stream_data.p, (void*)&s->byteorder, sizeof(short));
 	return s;
 }
-stream *open_gzwstream( const char *filename ){
+stream *open_gzwstream( const char *filename )
+{
 	stream *s = open_gzstream( filename, "wb");
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
@@ -705,12 +777,14 @@ stream *open_gzwstream( const char *filename ){
 	   gzwrite( (gzFile*)s->stream_data.p, (void*)&s->byteorder, sizeof(short));
 	return s;
 }
-stream *open_gzrastream( const char *filename ){
+stream *open_gzrastream( const char *filename )
+{
 	stream *s = open_gzstream( filename, "rb");
 	s->type = ST_ASCII;
 	return s;
 }
-stream *open_gzwastream( const char *filename ){
+stream *open_gzwastream( const char *filename )
+{
 	stream *s = open_gzstream( filename, "wb");
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
@@ -733,14 +807,17 @@ static ssize_t stream_bzwrite( stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (size) return size/elmsize;
 	return 0;
 }
-static void stream_bzclose( stream *s ){
+static void stream_bzclose( stream *s )
+{
 	BZ2_bzclose( (BZFILE*)s->stream_data.p);
 }
-static void stream_bzflush( stream *s ){
+static void stream_bzflush( stream *s )
+{
 	if (s->access == ST_WRITE)
 		BZ2_bzflush( (BZFILE*)s->stream_data.p);
 }
-stream *open_bzstream( const char *filename, const char *flags ){
+stream *open_bzstream( const char *filename, const char *flags )
+{
 	stream *s = create_stream(filename);
 	BZFILE *fp = BZ2_bzopen( filename, flags );
 	s->read  = stream_bzread;
@@ -756,14 +833,16 @@ stream *open_bzstream( const char *filename, const char *flags ){
 	s->errnr = OPEN_ERROR;
 	return s;
 }
-stream *open_bzrstream( const char *filename ){
+stream *open_bzrstream( const char *filename )
+{
 	stream *s = open_bzstream( filename, "rb");
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR) BZ2_bzread( 
 		(BZFILE*)s->stream_data.p, (void*)&s->byteorder, sizeof(short) );
 	return s;
 }
-stream *open_bzwstream( const char *filename ){
+stream *open_bzwstream( const char *filename )
+{
 	stream *s = open_bzstream( filename, "wb");
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
@@ -771,12 +850,14 @@ stream *open_bzwstream( const char *filename ){
 		(BZFILE*)s->stream_data.p, (void*)&s->byteorder, sizeof(short) );
 	return s;
 }
-stream *open_bzrastream( const char *filename ){
+stream *open_bzrastream( const char *filename )
+{
 	stream *s = open_bzstream( filename, "rb");
 	s->type = ST_ASCII;
 	return s;
 }
-stream *open_bzwastream( const char *filename ){
+stream *open_bzwastream( const char *filename )
+{
 	stream *s = open_bzstream( filename, "wb");
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
@@ -824,7 +905,8 @@ static ssize_t socket_read( stream *s, void *buf, size_t elmsize, size_t cnt )
 	return 0;
 }
 
-static void socket_close( stream *s ){
+static void socket_close( stream *s )
+{
 	int fd = s->stream_data.i;
 	if (s->access == ST_READ)
 		shutdown(fd,0);
@@ -833,7 +915,8 @@ static void socket_close( stream *s ){
 }
 
 static
-stream *socket_open( int socket, const char *name ){
+stream *socket_open( int socket, const char *name )
+{
 	stream *s = create_stream(name);
 	s->read  = socket_read;
 	s->write = socket_write;
@@ -864,8 +947,13 @@ stream *socket_open( int socket, const char *name ){
 
 	return s;
 }
-stream *socket_rstream( int socket, const char *name ){
-	stream *s = socket_open( socket, name );
+stream *socket_rstream( int socket, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("socket_rstream %d %s\n", socket, name);
+#endif
+	s = socket_open( socket, name );
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR){
 		int sz = sizeof(short);
@@ -875,8 +963,13 @@ stream *socket_rstream( int socket, const char *name ){
 	return s;
 }
 
-stream *socket_wstream( int socket, const char *name ){
-	stream *s = socket_open( socket, name );
+stream *socket_wstream( int socket, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("socket_wstream %d %s\n", socket, name);
+#endif
+	s = socket_open( socket, name );
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR){
@@ -887,14 +980,24 @@ stream *socket_wstream( int socket, const char *name ){
 	return s;
 }
 
-stream *socket_rastream( int socket, const char *name ){
-	stream *s = socket_open( socket, name );
+stream *socket_rastream( int socket, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("socket_rastream %d %s\n", socket, name);
+#endif
+	s = socket_open( socket, name );
 	s->type = ST_ASCII;
 	return s;
 }
 
-stream *socket_wastream( int socket, const char *name ){
-	stream *s = socket_open( socket, name );
+stream *socket_wastream( int socket, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("socket_wastream %d %s\n", socket, name);
+#endif
+	s = socket_open( socket, name );
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	return s;
@@ -1080,22 +1183,30 @@ stream *ssl_open(SSL *ssl, const char *name)
 
 stream *ssl_rstream(SSL *ssl, const char *name)
 {
-	stream *s = ssl_open(ssl, name);
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("ssl_rstream " PTRFMT " %s\n", ssl, name);
+#endif
+	s = ssl_open(ssl, name);
 	s->access = ST_READ;
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR) {
-		stream_read(s, (void*)&s->byteorder, sizeof(short), 1);
+		ssl_read(s, (void*)&s->byteorder, sizeof(short), 1);
 	}
 	return s;
 }
 
 stream *ssl_wstream(SSL *ssl, const char *name)
 {
-	stream *s = ssl_open(ssl, name);
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("ssl_wstream " PTRFMT " %s\n", ssl, name);
+#endif
+	s = ssl_open(ssl, name);
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR) {
-		stream_write(s, (void*)&s->byteorder, sizeof(short), 1);
+		ssl_write(s, (void*)&s->byteorder, sizeof(short), 1);
 	}
 	return s;
 }
@@ -1104,6 +1215,9 @@ stream *ssl_rastream(SSL *ssl, const char *name)
 {
 	stream *s;
 
+#ifdef STREAM_DEBUG
+	printf("ssl_rastream " PTRFMT " %s\n", ssl, name);
+#endif
 	s = ssl_open(ssl, name);
 	s->access = ST_READ;
 	s->type = ST_ASCII;
@@ -1112,15 +1226,21 @@ stream *ssl_rastream(SSL *ssl, const char *name)
 
 stream *ssl_wastream(SSL *ssl, const char *name)
 {
-	stream *s = ssl_open(ssl, name);
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("ssl_wastream " PTRFMT " %s\n", ssl, name);
+#endif
+	s = ssl_open(ssl, name);
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	return s;
 }
 #endif	/* HAVE_OPENSSL */
 
-stream *file_stream( const char *name ){
-	stream *s = create_stream(name);
+stream *file_stream( const char *name )
+{
+	stream *s;
+	s = create_stream(name);
 	s->read  = file_read;
 	s->write = file_write;
 	s->close = file_close;
@@ -1128,8 +1248,13 @@ stream *file_stream( const char *name ){
 	s->flush = file_flush;
 	return s;
 }
-stream *file_rstream( FILE *fp, const char *name ){
-	stream *s = file_stream(name);
+stream *file_rstream( FILE *fp, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("file_rstream %s\n", name);
+#endif
+	s = file_stream(name);
 	s->type = ST_BIN;
 	if (fp != NULL){ 
 		s->stream_data.p = (void*)fp;
@@ -1143,8 +1268,13 @@ stream *file_rstream( FILE *fp, const char *name ){
 	return s;
 }
 
-stream *file_wstream( FILE *fp, const char *name ){
-	stream *s = file_stream(name);
+stream *file_wstream( FILE *fp, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("file_wstream %s\n", name);
+#endif
+	s = file_stream(name);
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
 	if (fp != NULL){ 
@@ -1160,8 +1290,13 @@ stream *file_wstream( FILE *fp, const char *name ){
 	return s;
 }
 
-stream *file_rastream( FILE *fp, const char *name ){
-	stream *s = file_stream(name);
+stream *file_rastream( FILE *fp, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("file_rastream %s\n", name);
+#endif
+	s = file_stream(name);
 	s->type = ST_ASCII;
 	if (fp != NULL){ 
 		s->stream_data.p = (void*)fp;
@@ -1171,8 +1306,13 @@ stream *file_rastream( FILE *fp, const char *name ){
 	return s;
 }
 
-stream *file_wastream( FILE *fp, const char *name ){
-	stream *s = file_stream(name);
+stream *file_wastream( FILE *fp, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("file_wastream %s\n", name);
+#endif
+	s = file_stream(name);
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	if (fp != NULL){ 
@@ -1183,7 +1323,8 @@ stream *file_wastream( FILE *fp, const char *name ){
 	return s;
 } 
 
-buffer *buffer_create( size_t size ){
+buffer *buffer_create( size_t size )
+{
 	buffer *b = (buffer*)malloc(sizeof(buffer));
 	(void) size;
 	b->pos = 0;
@@ -1192,7 +1333,8 @@ buffer *buffer_create( size_t size ){
 	return b;
 }
 
-char *buffer_get_buf( buffer *b ){
+char *buffer_get_buf( buffer *b )
+{
 	char *r = b->buf;
 
 	r[b->pos] = '\0';
@@ -1202,12 +1344,14 @@ char *buffer_get_buf( buffer *b ){
 	return r;
 }
 
-void buffer_destroy( buffer *b ){
+void buffer_destroy( buffer *b )
+{
 	free(b->buf);
 	free(b);
 }
 
-buffer *stream_get_buffer( stream *s ){
+buffer *stream_get_buffer( stream *s )
+{
 	return (buffer*)s->stream_data.p;
 }
 
@@ -1239,14 +1383,23 @@ static ssize_t buffer_write( stream *s, void *buf, size_t elmsize, size_t cnt )
 	return size;
 }
 
-static void buffer_close( stream *s ){ (void) s; }
-static void buffer_flush( stream *s ){ 
+static void buffer_close( stream *s )
+{
+	(void) s;
+}
+static void buffer_flush( stream *s )
+{ 
 	buffer *b = (buffer*)s->stream_data.p;
 	b->pos = 0;
 }
 
-stream *buffer_rastream( buffer *b, const char *name ){
-	stream *s = create_stream(name);
+stream *buffer_rastream( buffer *b, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("buffer_rastream %s\n", name);
+#endif
+	s = create_stream(name);
 	s->type = ST_ASCII;
 	s->read  = buffer_read;
 	s->write = buffer_write;
@@ -1257,8 +1410,13 @@ stream *buffer_rastream( buffer *b, const char *name ){
 	return s;
 }
 
-stream *buffer_wastream( buffer *b, const char *name ){
-	stream *s = create_stream(name);
+stream *buffer_wastream( buffer *b, const char *name )
+{
+	stream *s;
+#ifdef STREAM_DEBUG
+	printf("buffer_wastream %s\n", name);
+#endif
+	s = create_stream(name);
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	s->read  = buffer_read;
@@ -1281,7 +1439,8 @@ typedef struct bs {
 } bs;
 
 static
-bs *bs_create( stream *s ){
+bs *bs_create( stream *s )
+{
 	/* should be a binary stream */
 	bs *ns = (bs*)malloc(sizeof(bs));
 	ns->s = s;
@@ -1326,7 +1485,8 @@ bs_write( stream *ss, void *buf, size_t elmsize, size_t cnt )
 }
 
 static ssize_t 
-bs_read( stream *ss, void *buf, size_t elmsize, size_t cnt ){
+bs_read( stream *ss, void *buf, size_t elmsize, size_t cnt )
+{
 	bs *s = (bs*)ss->stream_data.p;
 	unsigned nr = 0;
 
@@ -1395,8 +1555,8 @@ bs_read( stream *ss, void *buf, size_t elmsize, size_t cnt ){
 	}
 }
 
-extern 
-ssize_t bs_read_next( stream *ss, void *buf, int *last ){
+ssize_t bs_read_next( stream *ss, void *buf, int *last )
+{
 	bs *s = (bs*)ss->stream_data.p;
 	int nr = 0;
 
@@ -1425,7 +1585,8 @@ ssize_t bs_read_next( stream *ss, void *buf, int *last ){
 }
 
 static
-void bs_flush(stream *ss){
+void bs_flush(stream *ss)
+{
 	bs *s = (bs*)ss->stream_data.p;
 	if (s->onr){
 		if (!stream_writeInt( s->s, s->onr) ||
@@ -1437,21 +1598,29 @@ void bs_flush(stream *ss){
 }
 
 static
-void bs_close( stream *ss ){
+void bs_close( stream *ss )
+{
 	bs *s = (bs*)ss->stream_data.p;
 	s->s->close( s->s );
 }
 static
-void bs_destroy( stream *ss ){
+void bs_destroy( stream *ss )
+{
 	bs *s = (bs*)ss->stream_data.p;
 	s->s->destroy( s->s );
 	free(s);
 	destroy(ss);
 }
 
-stream *block_stream( stream *s ){
-	stream *ns = create_stream(s->name);
-	bs *bs = bs_create(s);
+stream *block_stream( stream *s )
+{
+	stream *ns;
+	bs *bs;
+#ifdef STREAM_DEBUG
+	printf("block_stream %s\n", s->name ? s->name : "<unnamed>");
+#endif
+	ns = create_stream(s->name);
+	bs = bs_create(s);
 	ns->type = s->type;
 	ns->read  = bs_read;
 	ns->write = bs_write;
@@ -1466,11 +1635,13 @@ stream *block_stream( stream *s ){
 	ns->errnr = OPEN_ERROR;
 	return ns;
 }
-int isa_block_stream(stream *s){
+int isa_block_stream(stream *s)
+{
 	return s->read == bs_read || s->write == bs_write;
 }
 
-int stream_readSht( stream *s, short *val ){
+int stream_readSht( stream *s, short *val )
+{
 	int ok = s->read(s, (void*)val, sizeof(short), 1) == 1;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234)
@@ -1478,26 +1649,30 @@ int stream_readSht( stream *s, short *val ){
 	return ok;
 }
 
-int stream_writeSht( stream *s, const short val ){
+int stream_writeSht( stream *s, const short val )
+{
 	int ok = s->write(s, (void*)&val, sizeof(short), 1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
 
-extern int stream_readInt( stream *s, int *val ){
+int stream_readInt( stream *s, int *val )
+{
 	int ok = s->read(s, (void*)val, sizeof(int), 1) == 1;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234)
 		*val = normal_int_SWAP(*val);	
 	return ok;
 }
-extern int stream_writeInt( stream *s, const int val ){
+int stream_writeInt( stream *s, const int val )
+{
 	int ok = s->write(s, (void*)&val, sizeof(int), (size_t)1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
 
-int stream_readLng( stream *s, lng *val ){
+int stream_readLng( stream *s, lng *val )
+{
 	int ok = s->read(s, (void*)val, sizeof(lng), (size_t)1) == 1;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234)
@@ -1505,13 +1680,15 @@ int stream_readLng( stream *s, lng *val ){
 	return ok;
 }
 
-int stream_writeLng( stream *s, const lng val ){
+int stream_writeLng( stream *s, const lng val )
+{
 	int ok = s->write(s, (void*)&val, sizeof(lng), (size_t)1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
 
-int stream_readShtArray( stream *s, short *val, size_t cnt ){
+int stream_readShtArray( stream *s, short *val, size_t cnt )
+{
 	int ok = s->read(s, (void*)val, sizeof(short), cnt) == cnt;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234){
@@ -1522,13 +1699,15 @@ int stream_readShtArray( stream *s, short *val, size_t cnt ){
 	return ok;
 }
 
-int stream_writeShtArray( stream *s, const short *val, size_t cnt ){
+int stream_writeShtArray( stream *s, const short *val, size_t cnt )
+{
 	int ok = s->write(s, (void*)val, sizeof(short), cnt)==cnt;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
 
-extern int stream_readIntArray( stream *s, int *val, size_t cnt ){
+int stream_readIntArray( stream *s, int *val, size_t cnt )
+{
 	int ok = s->read(s, (void*)val, sizeof(int), cnt) == cnt;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234){
@@ -1538,13 +1717,15 @@ extern int stream_readIntArray( stream *s, int *val, size_t cnt ){
 	}
 	return ok;
 }
-extern int stream_writeIntArray( stream *s, const int *val, size_t cnt ){
+int stream_writeIntArray( stream *s, const int *val, size_t cnt )
+{
 	int ok = s->write(s, (void*)val, sizeof(int), cnt)==cnt;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
 
-int stream_readLngArray( stream *s, lng *val, size_t cnt ){
+int stream_readLngArray( stream *s, lng *val, size_t cnt )
+{
 	int ok = s->read(s, (void*)val, sizeof(lng), cnt) == cnt;
 	if (!ok) s->errnr = READ_ERROR;
 	if (s->byteorder != 1234){
@@ -1555,13 +1736,14 @@ int stream_readLngArray( stream *s, lng *val, size_t cnt ){
 	return ok;
 }
 
-int stream_writeLngArray( stream *s, const lng *val, size_t cnt ){
+int stream_writeLngArray( stream *s, const lng *val, size_t cnt )
+{
 	int ok = s->write(s, (void*)val, sizeof(lng), cnt)==cnt;
 	if (!ok) s->errnr = WRITE_ERROR;
 	return ok;
 }
 
-extern int stream_printf( stream *s, const char *format, ...)
+int stream_printf( stream *s, const char *format, ...)
 {
 	char buf[BUFSIZ], *bf = buf;
 	int i = 0;
