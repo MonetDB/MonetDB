@@ -89,7 +89,7 @@ m_export int 	VARpurge     (int nbats, int* bats, int natoms, int* atoms);
 
 #define VARclearBAT(B)	if(B) VARpurge(1, &(B)->batCacheid, 0, NULL)
 #define VARfreeze(X)	if(X){X->frozen=TRUE;}
-#define VARfixate(X)	if(X){X->constant=TRUE;}
+#define VARfixate(X)	if(X){X->constant=X->frozen=TRUE;}
 
 m_export int monet_cntxtmax;
 m_export int monet_cntxtlim;

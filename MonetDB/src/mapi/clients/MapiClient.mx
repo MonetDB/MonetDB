@@ -42,7 +42,7 @@ Several textual changes made.
 
 @+ Manual Page
 @T
-The {\tt Mclient} program, provides just as the Mserver console, a
+The {\tt Mapiclient} program, provides just as the Mserver console, a
 MIL interface to the Monet server. Unlike the concolse, the {\tt Mclient} 
 program is intended not only or the database administrator, but to all other 
 users. It is more comfortable than the console, since it provides
@@ -60,7 +60,7 @@ Mclient
 The following options are supported:
 \begin{itemize}
 \item {\em -c|--config}. Config file to read options from.
-\item {\em -d|--debug}. Illustrate internalworking.
+\item {\em -d|--debug}. Show debug output.
 \item {\em -h|--host.} The machine to connect to. 
 \item {\em -p|--port.} The port to use . 
 \item {\em    --noheaders}. Print also comment lines received in the result; default is to ignore them.

@@ -59,6 +59,25 @@ that you might well find very useful.
 
 .COMMAND mem_printmap() : void = print_mem_map;
         "print a map of all memory that is in use"
+@T
+For each 64KB block in the first 3GB of the virtual memory {\tt mem_printmap()} prints a character:
+\begin{verbatim}
+0-9 - thread stack space of thread <num>
+B - in use for a large BAT heap (i.e. anonymous virtual memory).
+b - free (last usage was B)
+S - in use for a malloc block
+s - free (last usage was S)
+P - in use for the BBP array (i.e. anonymous virtual memory)
+p - free (last usage was P)
+M - in use as memory mapped region
+m - free (last usage was M)
+C - in use as MIL context buffer (i.e. anonymous virtual memory)
+c - free (last usage was M)
+\end{verbatim}
+On Linux, the malloc library appears to be using anonymous virtual memory, which goes unetected.
+If you want to see all your memory in the map, lower the gdk\_mmap threshold in monet.conf to a 
+low value (say 64KB).
+@m
 .COMMAND mem_cursize() : lng = get_mem_cursize;
  	"the amount of physical swapspace in KB that is currently in use"
 .COMMAND mem_maxsize() : lng = get_mem_maxsize;
@@ -75,6 +94,42 @@ that you might well find very useful.
 	"get a split-up of how much memory blocks are in use."
 .COMMAND vm_usage(lng minsize) : BAT[str,lng] = get_vm_usage;
 	"get a split-up of how much virtual memory blocks are in use."
+@T
+Some explanation of what mem_usage() and vm_usage() display:
+\begin{verbatim}
+> mem_usage.print;
+#------------------------------#
+# BAT:                 tmp_42  #
+# (str)                (lng)   #
+#------------------------------#
+[ "buns/car_category",  400012 ] 100.000 string offsets
+[ "buns/car_town",      400012 ] idem
+[ "buns/car_class",     400012 ] idem
+[ "tail/car_category",  266244 ] string tail heap
+[ "tail/car_town",      266244 ] idem
+[ "tail/car_class",     266244 ] idem
+[ "_tot/buns",         1322996 ] the three bun heaps
+[ "_tot/tail",          967762 ] the three tail heaps
+[ "_tot/head",           70984 ] negligable
+[ "_tot/bbp",            98866 ] BBP metadata structure
+[ "_tot/mil",           102400 ] MIL interpreter stack space
+[ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
+[ "_tot/malloc_heap",  2956048 ] in malloc heap 
+[ "_tot/malloc",       2956048 ] total consumed via malloc
+[ "_tot/valloc",        201266 ] total consumed via virtualalloc 
+[ "_tot/mem",          3157314 ] total RAM+swap-file consumption  
+>
+> vm_usage.print;
+#------------------------------#
+# BAT:               tmp_42    #
+# (str)              (lng)     #
+#------------------------------#
+[ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed) 
+[ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
+[ "_tot/found",      67108864  ] bbp+mil
+[ "_tot/vm",         71244560  ] total address space consumption 
+>
+\end{verbatim}
 
 @- BAT Buffer Pool
 @m
@@ -331,7 +386,7 @@ that you might well find very useful.
     PROC clients() : void :=  { 
 	var tree := view_client_tree.access(BAT_WRITE);
 	tree.replace(clientid, "clients()");
-	table(view_client_name,view_client_login,tree.col_name("mil"));
+	print(view_client_name,view_client_login,tree.col_name("mil"));
     } 
     ADDHELP("clients", "boncz", "Feb  6 1996", 
 	"list all active clients by their number.", "sys"); 
@@ -596,7 +651,8 @@ view_bbp_kind(
 	if (BBP_logical(i)) {
 	    char *mode = NULL;
 	    if ((BBP_status(i)&BBPDELETED) || !(BBP_status(i)&BBPPERSISTENT)) {
-		mode = "tran";
+		BAT *b = BBPquickdesc(i,FALSE);
+		mode = (b && b->batPersistence == SESSION)?"sess":"tran";
 	    } else {
 		mode = "pers";
 	    }
@@ -1150,17 +1206,13 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	tot += sz;
 	if (tot) BUNins(bn, "_tot/found", &tot);
 	sz = GDKmem_heapsize();
-	if (sz) BUNins(bn, "_tot/sbrk", &sz);
-/*	compilation errors !
-	if (GDK_mem_cursize) BUNins(bn, "_tot/valloc", &GDK_mem_cursize);
-
-*/
+	if (sz) BUNins(bn, "_tot/malloc_heap", &sz);
 	sz = GDKmem_heapinuse();
 	if (sz) BUNins(bn, "_tot/malloc", &sz);
-	sz = sz + GDK_mem_cursize - tot;
-	if (sz) BUNins(bn, "_tot/malloc_unknown", &sz);
+	sz = GDK_mem_cursize;
+	if (sz) BUNins(bn, "_tot/valloc", &tot);
 	sz = GDKmem_cursize();
-	if (sz) BUNins(bn, "_tot/all", &sz);
+	if (tot) BUNins(bn, "_tot/mem", &tot);
 	BBPunlock("get_mem_usage");
 
 	*ret = bn;
@@ -1211,13 +1263,8 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 	if (sz) BUNins(bn, "_tot/mil", &sz);
 	tot += sz;
 	if (tot) BUNins(bn, "_tot/found", &tot);
-
-	/* look at sbkr() to determine how much we missed */
 	sz = GDKvm_cursize();
-	if (sz) BUNins(bn, "_tot/all", &sz);
-	sz -= tot;
-	tot = GDKvm_heapsize();
-	if (sz) BUNins(bn, "_tot/sbrk", &tot);
+	if (sz) BUNins(bn, "_tot/vm", &sz);
 	BBPunlock("get_vm_usage");
 
 	*ret = bn;

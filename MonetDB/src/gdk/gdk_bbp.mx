@@ -147,8 +147,9 @@ gdk_export int BBPpersistent(bat b, int pers);
 gdk_export int BBPtransient (bat b, int trans);
 gdk_export void BATpersistent(void *dummy, int *d2, bat *b);
 gdk_export void BATtransient (void *dummy, bat *b);
-gdk_export void BBPshare       (bat b);
-gdk_export void BBPunshare     (bat b);
+gdk_export void BBPshare     (bat b);
+gdk_export void BBPunshare   (bat b);
+gdk_export BAT* BBPresurrect (bat bid, int stamp);
 
 #endif /* _GDK_BBP_H_ */
 @
@@ -835,8 +836,12 @@ int BBPtransient(bat i, int trans) {
 	        	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
 	    	if (!(BBP_status(i)&BBPPERSISTENT) && BBP_lrefs(i) == 0 
 		  		&& BBP_refs(i) == 0){
-			BAT *b = BBP_cache(i);
-			if (b) BBPfree(b);
+			BAT *b = (BAT*) BBPquickdesc(i, TRUE);
+			if (BBP_cache(i)) {
+				if (b->batPersistence != SESSION) BBPfree(b);
+			} else if (b) {
+				BATdelete(b); /* was swapped out to disk; remove files */
+			}
 		} 
 	}
 	return lrefs;
@@ -1118,10 +1123,10 @@ int BBPunfix(bat i) {
 		if (sec > b->batLastused) {
 			b->batLastused = sec;
 		} 
-		/* unload directly iff bat not in use */ 
-		if (BBPswappable(b) && !(BBP_lrefs(i))) {
+		/* unload directly iff bat not in use (but not session bats; they only go in BBPtrim) */
+		if (BBPswappable(b) && !(BBP_lrefs(i)) && b->batPersistence != SESSION) {
 			BBP_status_on(i, BBPUNLOADING, "BBPunfix");
-			swap = 1;
+			swap = i;
 		}
 	}
 	/* unlock before re-locking in unload; as saving a dirty persistent 
@@ -1189,6 +1194,7 @@ If it has already been unloaded, NULL is returned. Otherwise
 the BAT handle. This routine can be used for implementing a
 dynamic caching scheme for transient BATs on top of the BBP 
 caching mechanism.
+@c
 BAT* BBPresurrect(bat i, int stamp){
 	MT_Id pid = MT_getpid_();
 	BAT *b = NULL;

@@ -102,6 +102,31 @@ data files.
 
     .COMMAND ftable( Stream filep, int orderspec, ...BAT[any::1,any]... ) = io_ftable; 
 	"Print an n-ary table to a file, using order of BAT [1..argc]."
+
+    .COMMAND fwrite( Stream filep, str buf, int nbytes ) = io_fwrite;
+	"See: man fwrite"
+
+    .COMMAND fgets( Stream filep ): str = io_fgets; 
+	"See: man fgets"
+
+    .COMMAND fgetc( Stream filep ): int = io_fgetc; 
+	"See: man fgetc"
+
+.LOAD
+	# backward compatibility with old io module (alas: seek has gone..)
+	const EOF := -1;
+	proc fputs(str buf, Stream s):void		stream_write(s, buf);
+	proc fclose(Stream s):void 			stream_close(s);
+	proc fflush(Stream s):void 			stream_flush(s);
+	proc fopen(str filename, str mode) : Stream {
+		if (mode.startsWith("r")) {
+			return open_rstream(filename);
+		} else if (mode.startsWith("w")) {
+			return open_wstream(filename);
+		} 
+		return Stream(ptr(0));
+	}
+.END;
 .END streams;
 @h
 #ifndef _STREAMS_H_
@@ -347,6 +372,48 @@ int io_ftable_default(Stream *filepp, ...) {
         va_end (ap);
         BATmultiprintf(fp, argc, piv, FALSE, 0);
         return GDK_SUCCEED;
+}
+
+int io_fgetc(int *res, Stream *S){
+	stream *s = *(stream**)S;
+	char c;
+	if (s->read(s, &c, 1, 1) == 1) {
+		*res = c;
+	} else {
+		*res = -1; /* EOF */
+	}
+	return GDK_SUCCEED;
+}
+
+int io_fgets(str *res, Stream *S){
+	stream *s = *(stream**)S;
+	int size, len = 123;
+	char *buf = (char*) GDKmalloc(1+len);
+
+	for(size=0; s->read(s, buf + size, 1, 1) > 0; size++){
+		if (buf[size] == 0 || buf[size] == '\n') break;
+		if (size+1 == len) {
+			buf = (char*) GDKrealloc(buf, 1+(len*=2)); 
+		}
+	}
+	buf[size] = 0;
+	*res = buf;
+	return GDK_SUCCEED;
+}
+
+int io_fputc(int *c, stream *S){
+	stream *s = *(stream**)S;
+	char data[2];
+	data[0] = (char) *(int*) c; 
+	data[1] = 0;
+	s->write( s, data, 1, 1);
+	return GDK_SUCCEED;
+}
+
+int io_fwrite(Stream *S, str buf, int *nbytes ){
+	stream *s = *(stream**)S;
+	s->write( s, buf, 1, *nbytes);
+	return(GDK_SUCCEED);
 }
 @mil
 

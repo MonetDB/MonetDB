@@ -22,7 +22,7 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 
-SUBDIRS = src conf doc scripts tests 
+SUBDIRS = src conf scripts tests 
 
 EXTRA_DIST = rules.mk bootstrap lady.gif configure.ag RunMtest.in RunMtest.bat.in sysdefs.h.in
 EXTRA_DIST_DIR = NT

@@ -234,6 +234,7 @@ BAT *BATmode(BAT *b, int mode) {
 
 	MT_set_lock(GDKtmLock, "BATmode"); 
 	if ((b->batPersistence&mode) == 0){
+		int oldmode = b->batPersistence;
 		b->batPersistence = mode;
 		BBPdirty(1);
 		if (mode&PERSISTENT) {
@@ -241,7 +242,7 @@ BAT *BATmode(BAT *b, int mode) {
 				VIEWreset(b);
 			}
 			BBPpersistent(b->batCacheid, TRUE);
-		} else {
+		} else if (oldmode&PERSISTENT) {
 			BBPtransient(b->batCacheid, TRUE);
 		}
 	}

@@ -24,7 +24,8 @@
 @f mil
 @t MIL: Monet Interpreter Language 
 @a Peter Boncz
-@d 18/11/1997
+@d 1/10/2002
+@v 1.1
 @T 
 @* Introduction
 @T
@@ -64,7 +65,7 @@ values that are no values. Occupies 0 space.
 You will normally never found individual {\tt void} values,
 but they can occur inside tables as a zero-width column. 
 Their meaning in that context is explained in the section on 
-@[<a target="\_self" href="\#mod\_4\_0\_0"><bf>Virtual OIDs<bf></a>.@
+@[<a target="_self" href="#void"><bf>Virtual OIDs<bf></a>.@
 \item {\tt bit}\\
 boolean values being either {\tt true} or {\tt false}.
 \item {\tt chr}\\
@@ -79,16 +80,20 @@ normal integer values. Use 32-bit representation.
 unique numerical identifiers. The next section discusses them in detail.
 
 \item {\tt ptr}\\
-integer-sized pointers.
+pointers. Seldomly used. Some volatile representations (like stream pointers
+in the @[<a href=www/streams.html">io</a>@ module) use it as data representation.  
+This datatype may not be used in persistent BATs.  Its size is that of 
+{\tt int} on 32-bits platforms and that of {\tt lng} on 64-bits platforms.
 \item {\tt flt}\\
-standard floating point numbers. Use 32-bit representation.
+standard floating point numbers. Uses a 32-bit representation.
 \item {\tt dbl}\\
-double floats. Like SHT, DBL values have to be cast always 
+double floats. Like {\tt sht}, {\tt dbl} values have to be cast always 
 ({\small\tt dbl(12.5)}), since the MIL parser uses floating point
 notation already for FLT .
 \item {\tt lng}\\
 long integers, normally represented on machines as
-64-bit integers.  Again, you have to do casts ({\small\tt lng(1200089)}.
+64-bit integers.  In this case the special {\tt LL} syntax can be used 
+after integers to denote longs ({\small\tt 1200089LL}.
 \item {\tt str}\\
 strings, using standard string notation:
 e.g. {\small\tt "hello world"}.
@@ -120,8 +125,8 @@ It has OIDs in the heads, and strings in the tail. It contains five BUNs:
 [ 7540@0,     "Sunil"      ]
 \end{verbatim}}
 
-More information about BATs is available in the 
-@[<a href="WWWROOT/gdk/gdk/5/HEAP\_index\_index.html">technical documentation of GDK</a>@.
+More information about the internal layout of BATs is available in the 
+@[<a href="www/gdk.html#mod_1_3_0">technical documentation of GDK</a>@.
 
 @- Type Identifiers 
 In MIL, type identifiers {@#void,bit,sht,int,bat,oid,ptr,flt,dbl,lng,str@}
@@ -179,6 +184,8 @@ Each type has one special value called the NIL value. NIL values of
 any type can be described by TYPE(nil) (e.g. {\small\tt flt(nil)}).  The
 'nil' keyword itself denotes an VOID-typed NIL. Most commands will give
 error messages if such a nil-value is passed to them, as a parameter.
+@-
+In sorting, it is convention that the NILs appear first.
 
 @- Unique OIDs
 @T
@@ -193,7 +200,7 @@ using Monet servers with different database-IDs, cross-system OID
 unicity can be ensured.
 
 Although OIDs should be generated with the command 
-{\tt @[<a href="WWWROOT/modules/kernel/8/newoid\_index.html">newoid(INT range):OID</a>@} to ensure their uniqueness, you 
+{\tt @[<a href="www/kernel.html#mod_2_2_0">newoid(INT range):OID</a>@} to ensure their uniqueness, you 
 can also enter OIDs by hand for debugging purposes.
 
 You just type a number closed with an 'at' sign, e.g.  {\small\tt 12345\@},
@@ -221,8 +228,7 @@ of {\em accelerator-identifiers}.
 @-
 These accelerator identifiers serve to identify a specific 
 search accelarator, and are used by the @%search accelerator management@
-commands, that can be found in the 
-@[<a href="stdlib/bat/index.html">BAT standard module</a>@.
+commands, that can be found in the @[<a href="www/bat.html">BAT module</a>@.
 
 @-
 Just like the set of type-identifiers, these identifiers are just synonyms for
@@ -290,8 +296,9 @@ Concatenated de-scope sequences like {\small\tt ..$\backslash$..$\backslash$..$\
 
 \item {\tt command}\\
 MIL accepts a set of {\bf algebraic commands} (for instance: {\small\tt dir}). This 
-set of commands may be changed over time (see  'Loading and Dropping Extension Modules'). Simple algebraic commands do not have
-parameters, just do something, and return a value (maybe a VOID).
+set of commands may be changed over time (see 'Loading and Dropping Extension Modules'). 
+Simple algebraic commands do not have parameters, just do something, and return a value 
+(maybe a VOID).
 
 You may also have defined a procedure (see below in the 'Procedures'
 section) as a piece of MIL script. There is no syntactical difference 
@@ -311,7 +318,7 @@ MIL uses command-overloading: it can select different command
 implementations, depending on the number of parameters and their actual
 types. A command can be either a Builtin Command (discussed at the
 end of this document), a command introduced by loading a module 
-(see the Standard Modules), or a user-defined PROC (procedure, 
+(see the Extension Modules), or a user-defined PROC (procedure, 
 expressed in MIL). Syntactically, there is no difference.\\
 
 {\small{\bf Command resolution:} both commands and procs are 
@@ -355,7 +362,7 @@ and the
 
 @+ Statements
 @T
-Interaction with an {\small\tt\bf Mserver} takes the form of a client
+Interaction with an @[<a href="www/Mserver.html">Mserver</a>@ takes the form of a client
 session, that is defined as a sequence of {\em statements}:
 \begin{itemize}
 
@@ -403,7 +410,8 @@ Iterate over the elements of a BAT. For each element, the statement
 is executed. The symbols \$h and \$t (or: \$head and \$tail) can occur 
 as variables in the statement, and denote resp. the head- and tail-value 
 of the current BUN. \\
-We give an example with {\small\tt batloop()} iterator that sequentially loops through all BUNs in 
+We give an example with {\small\tt batloop()} iterator that sequentially 
+loops through all BUNs in 
 a BAT[int,int] named 'ints', and prints the sum of all heads and tails: 
 {\small\tt ints@batloop() print( \$h + \$t);}.
 
@@ -422,9 +430,50 @@ will join them in parallel, with a maximum number of 16 jobs in parallel at the 
 
 During program execution, the status of variables can dynamically be 
 changed  using the built-in commands 
-{\tt @[<a href="WWWROOT/modules/kernel/8/constant\_index.html">constant(..IDENT..)</a>@} 
-and
-{\tt @[<a href="WWWROOT/modules/kernel/8/freeze\_index.html">freeze(..IDENT..)</a>@}. 
+{\tt @[<a href="www/kernel.html#mod_2_2_1">constant(..IDENT..)</a>@} 
+(which fixes value and type) and
+{\tt @[<a href="www/kernel.html#mod_2_2_1">freeze(..IDENT..)</a>@}
+(which fixes only the type). 
+
+Also, the {\tt vars()} command produces a table of all active variables
+in the current context:
+\begin{verbatim}
+> vars;
+#-----------------------------------------------------------------------------------------#
+# type                  | type  | type_status   | value_status  | value_value             #
+#-----------------------------------------------------------------------------------------#
+[ "b",                    "BAT",  "liquid",       "variable",     "<tmp_23>"              ]
+[ "monet_atomtbl",        "BAT",  "frozen",       "variable",     "<monet_atomtbl>"       ]
+[ "BAT_WRITE",            "int",  "frozen",       "constant",     "0"                     ]
+[ "BAT_APPEND",           "int",  "frozen",       "constant",     "2"                     ]
+[ "BAT_READ",             "int",  "frozen",       "constant",     "1"                     ]
+[ "BUF_DONTNEED",         "int",  "frozen",       "constant",     "4"                     ]
+[ "BUF_WILLNEED",         "int",  "frozen",       "constant",     "3"                     ]
+[ "BUF_SEQUENTIAL",       "int",  "frozen",       "constant",     "2"                     ]
+[ "BUF_RANDOM",           "int",  "frozen",       "constant",     "1"                     ]
+[ "BUF_NORMAL",           "int",  "frozen",       "constant",     "0"                     ]
+[ "STORE_COMPR",          "int",  "frozen",       "constant",     "2"                     ]
+[ "STORE_MMAP",           "int",  "frozen",       "constant",     "1"                     ]
+[ "STORE_MEM",            "int",  "frozen",       "constant",     "0"                     ]
+[ "LNG_MIN",              "lng",  "frozen",       "constant",     "-9223372036854775807"  ]
+[ "LNG_MAX",              "lng",  "frozen",       "constant",     "9223372036854775807"   ]
+[ "INT_MIN",              "int",  "frozen",       "constant",     "-2147483647"           ]
+[ "INT_MAX",              "int",  "frozen",       "constant",     "2147483647"            ]
+[ "SHT_MIN",              "sht",  "frozen",       "constant",     "-32767"                ]
+[ "SHT_MAX",              "sht",  "frozen",       "constant",     "32767"                 ]
+[ "CHR_MIN",              "chr",  "frozen",       "constant",     "'\201'"                ]
+[ "CHR_MAX",              "chr",  "frozen",       "constant",     "'\177'"                ]
+[ "RAND_MAX",             "int",  "frozen",       "constant",     "2147483647"            ]
+[ ...                                                                                     ]
+>
+\end{verbatim}
+The standard collection of variables consists of a number of constants that are needed
+by various operators ({\tt @[<a href="www/bat.html#mod_2_0_3">access</a>@(BAT[any,any], int {\bf BAT\_XX})}, 
+({\tt @[<a href="www/bat.html#mod_2_0_6">madvise</a>@(BAT[any,any], int {\bf BUF\_XX})} and
+({\tt @[<a href="www/bat.html#mod_2_0_6">mmap</a>@(BAT[any,any], int {\bf STORE\_XX})}). The 
+{\tt values\_status} tells whether it is a variable or a constant. For variables, the {\tt type\_status} 
+may either be {\tt liquid} or {\tt frozen}, which indicates whether the variable may be assigned a value 
+of another type.
 
 @- Exceptions
 @T
@@ -435,12 +484,6 @@ exceptions cannot be caught by the user. The MIL interpreter will
 stop the interpretation on the active session; and start to wait for
 new input.
 
-\item {\tt ERROR(STR format, ANY...);}\\
-On demand, we wan also synthetically raise an error exception.
-This call produces an error message, much like in C-printf() format, like:
-{\small\tt ERROR("you entered \%d foos too many$\backslash$n", foo);}
-{\footnotesize (see: CMDERROR())}
-
 \item BREAK;\\
 This statement makes MIL quit the nearest enclosing WHILE loop, 
 or ITERATOR immediately ({\small\tt while(bool) \{ .. BREAK; .. \}} resp.
@@ -449,6 +492,18 @@ If a command used in {\em Multiplex Operator} form (see below) stops with a
 BREAK, this will cause that the result BAT will have *no* result tuple 
 for that execution. Multiplex Operator execution will continue with the next
 BUN, however. 
+
+\item {\tt ERROR(STR format, ANY...);}\\
+On demand, we wan also synthetically raise an error exception.
+This call produces an error message, much like in C-printf() format, like:
+{\small\tt ERROR("you entered \%d foos too many$\backslash$n", foo);}
+{\footnotesize (see: CMDERROR())}
+
+\item {\tt CATCH(expr) : STR}\\
+Executes the MIL expression passed as parameter and catches any errors
+that may this expression cause to stop e3xecution. In that case, the
+error text is returned by {\tt CATCH}. If execution occurred without any
+errors, {\tt CATCH) returns {\tt str(nil)}.
 \end{itemize}
 
 @+ Procedures
@@ -457,7 +512,7 @@ mechanism. They follow the same signature overloading mechanism as MIL
 applies for its built-in algebraic operators and commands.
 @T
 \begin{itemize}
-\item {\tt PROC ident ( type ident, ..type ident..) := statement}\\
+\item {\tt PROC ident ( type ident, ..type ident..) : type statement}\\
 Declare a MIL-procedure. Its definition is a simple MIL statement, in
 which the parameter identifiers may appear as variables. The types
 from the signature follow the same rules as found in MEL signature
@@ -490,9 +545,10 @@ Undefine a MIL-procedure.
 PROCs cannot be viewed once they have been parsed. You should store them
 yourself in some text-file. Maybe your \$DBDIR/users/\$USER is a good place 
 for that, since MIL scripts placed there can easily be read in (see 'source()').
-PROCs cannot be made persistent either. You can, however,
-put them in your {\small\tt\bf monet.prelude} file, in order to define them
-automatically at the start of your Monet sessions.\\
+PROCs cannot be made persistent either.  You can, however,
+put them in a MIL initialization file passed as startup parameter to 
+@[<a href="www/Mserver.html">Mserver</a>@.
+
 Monet procedures are not typed. You can use them just as another MIL command.
 The signature of a procedure hence is that of a command with a variable
 number of ANY parameters, returning an ANY value. \\
@@ -545,18 +601,19 @@ BATs ordered on the OID column. Cheap merge-algorithms, and binary-search
 lookup, can then be used, even if the one BAT is a subset of the others.\\
 \item {\em synced BATs}. For BAT-sets that contain exactly the same sets 
 of OIDs, those OID-columns can be marked {\small\tt synced()}. This information 
-is then used to use positional lookup (the i-th  element in BAT1 corresponds with the i-th in BAT2) and to turn semijoin- into very cheap copy-operations, etc.
+is then used to use positional lookup (the i-th  element in BAT1 corresponds 
+with the i-th in BAT2) and to turn semijoin- into very cheap copy-operations, etc.
 \end{itemize}
 This special information (sorted, synced) about BATs is automatically
 kept up-to-date by Monet across updates, and propagated to derived BATs, 
 where appropriate (a select on a sorted BAT produces a sorted subset BAT).
 The special operators in this section (as well as much of the algebraic 
-commands in the standard modules) use this information to accelerate
+commands in the Extension Modules) use this information to accelerate
 processing.\\
 
 @- Command Signature Notation 
 @T
-{\em In {\tt command} signature definitions throughout this document, 
+In {\tt command} signature definitions throughout this document, 
 we will use @[<a href="mel.html">MEL (Monet Extension Language)</a>@ syntax:
 \begin{itemize}
 \item {\bf\tiny COMMAND} {\tt command-name}({\small TYPE name, ...VARARGTYPE...}) : {\small RETURNTYPE}
@@ -600,9 +657,6 @@ print( #----------#  ,  #---------------#  );  ==>  #--------------------#
 \end{verbatim}
 {\center\em BAT Printing Example, and its result on Standard Output}}
 
-The BAT ordering and syncing interfaces can be found in the 
-@[<a href="stdlib/bat.">BAT standard module</a>@. 
-
 
 @+ Multiplex Operators
 @T
@@ -633,7 +687,8 @@ the {\bf natural join} on equal head values of all its BAT parameters.
 [ 4,   2   ]         [ 4,   2   ]       [ 4,   4   ]
 [ 5,   2   ]         [ 5,   2   ]       [ 5,   4   ] 
 \end{verbatim}
-{\center\em Multiplex Operator Example: using the numerical '+' operator (arith module)}}
+{\center\em Multiplex Operator Example: using the numerical '+' operator 
+(@[<a href="www/arith.html">arith module</a>@)}}
 
 \begin{itemize}
 \item All parameter head types should be equal or void
@@ -653,103 +708,21 @@ It is possible to use a string dereferencing of a command, operator,
 or proc as the function in a multiplex operator:  
 {\small\tt [*fcn-expr](..params..)}.
 
-@+ Set Aggregates
-@T
-Set aggregates are the MIL language construct
-        {\small\tt \{Y\}(bat-expr)}
-that allow you to to interpret a
-        {\small\tt bat[ht,tt]}
-as      $S$
-a set of collections of {\small\tt tt} values, defined as
-        $S = \{ set_{h} | [h,t] \in bat\}$
-in which
-        $set_{h} = \{ t | [h,t] \in bat\}$
-are bags/sets of tail values.
-\\
-The {\small\tt Y()} is a {\bf read-only} unary BAT command
-        {\small\tt Y(bat[tt,any]) : rt}
-or
-        {\small\tt Y(bat[any,tt]) : rt}
-that ignores the contents of the {\em any} column.
-\\
-The {\bf set-aggregate} version of {\small\tt Y}, denoted in MIL\\
-        {\center\small\tt \{Y\}(bat[ht,tt]) : bat[ht,rt]} \\
-is defined as\\
-        {\center$\{ [h,r] | [h,t] \in bat \wedge r = \mbox{\small\tt Y}(set_{h})\}$ }
-@T
-The {Y}() language constructor is orthogonal, and works with all
-commands, builtins, procs, dereferenced address variables. 
-Dereferenced variables (as obtained with {\small\tt fcn = \&sum}) are
-called using the syntax {\small\tt \{*fcn\}($bat-expr$)}. 
-\\
-To clarify it all, we give an example of the use of the
-{\small\tt sum()} operator, that normally sums the tails of one BAT,
-as a set aggregate {\small\tt \{sum\}()}.
-@T
-{\begin{verbatim}
-{sum} ( #-----------#   )   =   #-----------# 
-        # h   | t   #           # h   | t   #
-        #-----------#           #-----------# 
-        [ 1,   20.0 ]           [ 1,   70.0 ]
-        [ 1,   10.0 ]           [ 2,   40.0 ]
-        [ 1,   40.0 ]         
-        [ 2,   20.0 ]         
-        [ 2,   20.0 ]
-\end{verbatim}
-
-@- implementation issues
-The set-aggregate implementation will not be very efficient in
-its generic form, because it implies translating one command into
-N calls to some operator that needs a unary BAT. When N is very large,
-and the assembled BATs are small, the assembling and call-overhead
-will be substantial.
-@-
-Power users are therefore requested to overload their much-used set-
-aggregates Y by {Y}() user-defined commands that have the same semantics.
-@-
-Optimization is attempted when the BAT is sorted on head. The assembling
-ob sub-BATs can then be saved out. Further savings in this branch are made
-when we can reach the unpacked implementation of the Y operator. Only in
-this case, the set-aggregates will perform to Monet's potential.
-
-
-
-@+ BAT Casts [A,B]
+@+ BAT Casts: project(A,B)
 The BAT cast operator allows you to enter constant values into
 columns:
 @T
 {\begin{verbatim}
-[  #---------------#  ,  "Monet User"  ]  =   #-------------------#
-   # h   | t       #                          # h  | t            #
-   #---------------#                          #-------------------#
-   [ 1,   "Martin" ]                          [ 1,  "Monet User"  ]
-   [ 2,   "Fred"   ]                          [ 2,  "Monet User"  ]
-   [ 3,   "Niels"  ]                          [ 3,  "Monet User"  ]
-   [ 4,   "Arjan"  ]                          [ 4,  "Monet User"  ]
-   [ 5,   "Sunil"  ]                          [ 5,  "Monet User"  ]
+project(  #---------------#  ,  "Monet User"  ]  =   #-------------------#
+          # h   | t       #                          # h  | t            #
+          #---------------#                          #-------------------#
+          [ 1,   "Martin" ]                          [ 1,  "Monet User"  ]
+          [ 2,   "Fred"   ]                          [ 2,  "Monet User"  ]
+          [ 3,   "Niels"  ]                          [ 3,  "Monet User"  ]
+          [ 4,   "Arjan"  ]                          [ 4,  "Monet User"  ]
+          [ 5,   "Sunil"  ]                          [ 5,  "Monet User"  ]
 \end{verbatim}
 {\center\em BAT Cast Example: Inserting a constant value in a column}}
-
-\begin{itemize}
-\item {\tt [BAT[type0,type1]\ ,\ CONST type2] : BAT[type0,type2]}\\
-produces a BAT that is synced with its two parameters, with the same head 
-column as the first param, and the same constant value (second parameter) in
-the tail.
-
-Similarly, you can put the constant left of the '\ ,\ ', and the BAT to 
-its right.
-
-\item {\tt [ \ ,\ BAT[type0,type2] ] : BAT[VOID,type2]}\\
-is equal to {\tt [nil \ ,\ BAT[type0,type2] ]}.
-\item {\tt [BAT[type0,type1] \ ,\ ] : BAT[type0,VOID]}\\
-is equal to {\tt [BAT[type0,type2]\ ,\ nil]}.
-\item {\tt [BAT[type0,type1]\ ,\  BAT[type2,type3]] : BAT[type0,type2]}\\
-The two parameters must be synced. The result consists of the head column of
-the first BAT, and the head column of the second BAT. This is of course
-especially useful for reconstructing BATs with a void column to a full 
-binary BAT.
-
-\end{itemize}
 
 @+ BAT conditional [A?B:C]
 @T
@@ -771,8 +744,9 @@ Here we have a BAT A with BITs in the tail. The C and B BATs must be
 synced with A, or may be constants with the const keyword. The head-types 
 of all BATs must be equal or void. B and C must have the same tail-types.
 \item 
-The result is a BAT with the head-type of all BATs, and the tail-type of A a
-nd B. It contains for each BUN in A, where the tail-value is TRUE, the corresponding A value for each BUN in A where the tail-value is FALSE, the tail 
+The result is a BAT with the head-type of all BATs, and the tail-type of A and B. 
+It contains for each BUN in A, where the tail-value is TRUE, the corresponding A value 
+for each BUN in A where the tail-value is FALSE, the tail 
 value of B.
 \item
 A or B may be omitted, in which case no result BUNs are produced for either
@@ -785,7 +759,8 @@ will produce B tuples where the A tail is TRUE, and tuples with
 In the case of non-BAT values, the const keyword may be omitted for shortness.
 \end{itemize}
 
-@* Virtual OIDs
+@[<a name="void">@
+@+ Virtual OIDs
 @T
 The {\small\tt VOID} in MIL is like a {\small\tt V-OID}, or {\bf virtual oid}. 
 A virtual oid column in a BAT is an OID column, which has the restriction
@@ -802,12 +777,13 @@ VOID columns can be created using the {\tt\small{\bf [,B].copy}}
 {\em bat projection}. It creates a view on top of B, in which the left 
 column seems to be missing; when you print it, all head values are {\tt nil}.
 Another way of creating a BAT with a VOID column is to use  
-@[<a href="WWWROOT/modules/bat/8/new\_index.html"><tt>new(VOID,T)</tt></a>@.
-This willl yield an empty BAT with a VOID head column.
+@[<a href="www/bat.html#mod_2_0_1"><tt>new(VOID,T)</tt></a>@
+(you can also use the constructor <tt>bat(VOID,T)</tt>).
+This will yield an empty BAT with a VOID head column.
 @-
 You need to activate the VOID column in a BAT created by hand by specifying a 
 base OID of your choice.  This can be done with the command 
-@[<a href="WWWROOT/modules/bat/8/seqbase\_index.html"><tt>bat[VOID,T].<bf>seqbase</bf>(oid)</tt></a>@.
+@[<a href="www/bat.html#mod_2_0_3"><tt>bat[VOID,T].<bf>seqbase</bf>(oid)</tt></a>@.
 
 @+ Operations on BATs with a VOID column
 @T
@@ -836,79 +812,518 @@ of the specific features of a VOID: lookup on OID number can be very
 efficient, since you need to do nothing more
 than subtract the base number in order to know the position of
 a BUN. For instance, the 
-{\small\tt\bf @[<a href="WWWROOT/modules/algebra/8/find\_index.html">bat[VOID,T].find(oid) : T</a>@}
+{\small\tt\bf @[<a href="www/algebra.html#mod_2_1_0">bat[VOID,T].find(oid):T</a>@}
 will use positional lookup. 
 
 Similar optimizations have been made in the 
-{\small\tt\bf @[<a href="WWWROOT/modules/algebra/8/semijoin\_index.html">semijoin</a>@}
+{\small\tt\bf @[<a href="www/algebra.html#mod_2_5_1">semijoin</a>@}
 and 
-{\small\tt\bf @[<a href="WWWROOT/modules/algebra/8/join\_index.html">join</a>@}
+{\small\tt\bf @[<a href="www/algebra.html#mod_2_5_4">join</a>@}
 when one of the join columns is virtual
 oid. The same goes for the 
-{\small\tt\bf @[<a href="WWWROOT/modules/algebra/8/select\_index.html">select</a>@}
+{\small\tt\bf @[<a href="www/algebra.html#mod_2_2_2">select</a>@}
 operation when the selection column is a virtual oid.
-
-@- The Update Problem
-@T
-The only real troubles arise when a BAT with a VOID column is updated: 
-\begin{itemize}
-\item Insertions do not cause real troubles; they just add a new value at 
-the end of a BAT. Note that the  
-{\small\tt\bf @[<a href="WWWROOT/modules/bat/8/insert\_index.html">bat[VOID,T].insert(VOID,T)</a>@}
-ignores the VOID parameter. It will append the bun {\tt [base+N, T]} to
-the BAT no matter which head value you passed. It is ignored.
-\item Updates and deletes a BAT with VOID column are forbidden. 
-Monet keeps the BATs in memory as a {\em contiguous array} of values.
-This means that when e.g. an element in the middle is deleted, its place
-must be taken by another one. In the VOID column, this would cause a 
-{\em remapping} of OID values (where remapping is actually a synonym for 
-'corruption'). 
 \end{itemize}
 
-@+ Related Extension Modules 
-Two @[<a href="mel.html">MEL</a>@ extension modules are related
-to handling BATs with VOID columns:
-
-@- Multi-Attribute Module
+@+ Pump
 @T
-The append-only semantics of BATs with void columns would restrict their
-use to a very limited number of applications.  
-The 
-{\bf @[<a href="extlib/multi/index.html">Multi-Attribute Module</a>@} 
-introduces special techniques that make updateable void BATs possible in
-a context of supporting multi-attribute object storage with vertical 
-fragmentation over void BATs. 
-
-This module provides the best of all worlds: query execution
-with positional oid-access using void BATs, clustered value-access
-using inversion lists, and efficient transactions to manage updates.
-
-The way it works is like this: deletes on void BATs are delayed and only 
-sporadically executed (only once in many transactions), so remapping of 
-OIDs is tractable. Updates are done by simply overwriting the old value in
-the void BAT. This would obstruct transaction management, but by overloading 
-the update interface it still is provided, by storing old values out-of-line.
-The trick is that inversion-lists that are handy for speeding up 
-selections are re-used in the transaction management scheme. 
-Inversion-lists are sporadically resorted, and hence retain old
-values, that are needed for implementing transaction abort.
-
-The module introduces full update operations, transaction support,
-and overloaded versions of select and uselect that use the inversion-list
-when beneficial (on high selectivities). 
-
-
-@- Automatic Enumeration Types
+Set aggregates are the MIL language {\bf pump} construct\\
+        {\center \small\tt \{Y\}(bat-expr, bat-expr)}\\
+that allow you to interpret both bats as a
+a set of collections of {\small\tt tt} values, defined as\\
+        {\center $S = \{ set_{h} | [h,any] \in right\}$}\\
+in which\\
+        {\center $set_{h} = \{ [t,t] | [h,t] \in left\}$}\\
+are bags/sets of tail values.
+@-
 @T
-In the past, we refrained from compressing sparse usage of e.g. 4-byte types 
-like INT or STR, because alignment restrictions on the OID stored in the
-head column would spoil the gains anyway. Now with VOID BATs, the case 
-is different.
+The {\small\tt Y()} is a {\bf read-only} unary BAT command
+        {\small\tt Y(bat[tt,any]) : rt}
+or
+        {\small\tt Y(bat[any,tt]) : rt}
+that ignores the contents of the {\em any} column.
+\\
+The {\bf pump} version of {\small\tt Y}, denoted in MIL\\
+        {\center\small\tt \{Y\}(bat[ht,tt], bat[ht,any]) : bat[ht,rt]} \\
+is defined as\\
+        {\center$\{ [h,r] | [h,t] \in bat \wedge r = \mbox{\small\tt Y}(set_{h})\}$ }
+@-
+@T
+The {Y}() language constructor is orthogonal, and works with all
+commands, builtins, procs, dereferenced address variables. 
+Dereferenced variables (as obtained with {\small\tt fcn = \&sum}) are
+called using the syntax {\small\tt \{*fcn\}($bat-expr$)}. 
+\\
+To clarify it all, we give an example of the use of the
+{\small\tt sum()} operator, that normally sums the tails of one BAT,
+as a set aggregate {\small\tt \{sum\}()}.
+@T
+{\begin{verbatim}
+{sum} ( #-----------# , #-----------# ) = #-----------# 
+        # h   | t   #   # h   |  t  #     # h   | t   #
+        #-----------#   #-----------#     #-----------# 
+        [ 1,   20.0 ]   [ 1,    nil ]     [ 1,   70.0 ]
+        [ 1,   10.0 ]   [ 2,    nil ]     [ 2,   40.0 ]
+        [ 1,   40.0 ]   [ 3,    nil ]     [ 3,    0.0 ]        
+        [ 2,   20.0 ]         
+        [ 2,   20.0 ]
+\end{verbatim}
+In the above we see why the second (left) parameter is necessary: it 
+makes it possible to work with empty sets/bags as well!
 
-If you store domains in the tail of void BATs that have less that 65535
-or 255 different values, you can reduce storage to 2 or 1 byte per element
-by remapping your domain in a specific enumeration type.  
-This functionalityis providen by the
-{\bf @[<a href="extlib/enum.html">Enumeration Type Module</a>@} 
-that can create new data types on the fly, and reduce the storage of your 
-columns to CHR- or SHT-sized fields. 
+In the new @[<a href="aggr3x.html">aggrX3 module</a>@ you find pumps with {\bf three}
+parameters. At this moment this, tertiary aggregate is defined only for the most
+common aggregate functions, while the binary pump works for all aggregates (including
+your own MIL-procs). In the tertiary pump, the first (left) parameter of the binary pump
+is split by column into two BATs with a synced void head columns, where the tail of the 
+first contains the original head column, and the tail of the second the original tail 
+column. The rationale for this new kind of aggregate is that many applications first 
+compute these separate void-bats before joining them together, while the fact that both 
+are synced and void makes this unnecessary (as lookup accross both BATs is easy).
+
+@+ GroupBy and OrderBy
+@T
+As the aggregates expect a single grouping column (be it the head of the left parameter
+in the binary pump or the tail in the first parameter of the tertiary pump), we have
+to explain how aggregates are computed when the grouping criterion spans multiple columns. 
+
+The Monet strategy is to reduce a the multiple grouping BATs to a single {\tt oid} column 
+first. This is done by  the {\tt CTgroup()} operator:
+
+{\begin{verbatim}
+CTgroup( #----------# ) = #----------# . CTgroup( #----------# ) =  #----------# 
+         # h   | t  #     # h  |  t  #            # h   | t  #      # h   | t  #
+         #----------#     #----------#            #----------#      #----------#
+         [ 1@0,  2  ]     [ 1@0, 1@0 ]            [ 1@0,  1  ]      [ 1@0, 1@0 ] 
+         [ 2@0,  1  ]     [ 2@0, 2@0 ]            [ 2@0,  1  ]      [ 2@0, 2@0 ]
+         [ 3@0,  4  ]     [ 3@0, 3@0 ]            [ 3@0,  1  ]      [ 3@0, 3@0 ] 
+         [ 4@0,  2  ]     [ 4@0, 1@0 ]            [ 4@0,  2  ]      [ 4@0, 4@0 ]
+         [ 5@0,  2  ]     [ 5@0, 1@0 ]            [ 5@0,  2  ]      [ 5@0, 4@0 ] 
+\end{verbatim}
+
+The unary {\tt CTgroup(bat[void,any]):bat[void,oid]} replaces each 
+unique tail value for the first head {\tt oid} where it occurs. The binary 
+{\tt CTgroup(bat[void,oid], bat[void,any]):bat[void,oid]} 
+expects in the first parameter the output of the unary {\tt CTgroup()} 
+and adds a new column to the grouping, while matching tuples from both parameters like a binary multiplex.
+
+Order-by is handled in a similar fashion by the unary {\tt sort} and the binary 
+{\tt CTrefine()} which much resembles the binary {\tt CTgroup()}. 
+
+{\begin{verbatim}
+#----------#.reverse.sort.reverse = #----------#.CTrefine( #----------# ) =  #----------# 
+# h   | t  #                        # h  |  t  #           # h   | t  #      # h   | t  #
+#----------#                        #----------#           #----------#      #----------#
+[ 1@0,  2  ]                        [ 2@0,  1  ]           [ 1@0,  1  ]      [ 2@0, 0@0 ] 
+[ 2@0,  1  ]                        [ 4@0,  2  ]           [ 2@0,  1  ]      [ 1@0, 1@0 ]
+[ 3@0,  4  ]                        [ 1@0,  2  ]           [ 3@0,  1  ]      [ 4@0, 2@0 ] 
+[ 4@0,  2  ]                        [ 5@0,  2  ]           [ 4@0,  2  ]      [ 5@0, 2@0 ]
+[ 5@0,  2  ]                        [ 3@0,  4  ]           [ 5@0,  2  ]      [ 3@0, 3@0 ] 
+\end{verbatim}
+
+The {\tt CTrefine(bat[oid,any], bat[void,any]):bat[oid,int]@} 
+refines the order of the first parameter by looking at tail values from the second that match on head.  It 
+outputs the re-ordered head column (which no longer will be VOID) and renumbers the tail column with a newly 
+sorted order of integers.
+
+For reasons similar to the pump, a tertiary {\tt CTrefine} will soon be introduced that expects 
+two void-headed parameters where the tail columns make up the head and tail of the first parameter 
+in the binary version.
+
+More information on grouping and ordering can be found in the @[<a href="www/xtables.html">xtables module</a>@. 
+
+@+ Updates and Transactions 
+@T
+By default, Monet only has support for global database-wide transactions. A succesful 
+{\tt @[<a href="www/trans.html#mod_2_0_1">commit():bit</a>@}
+ensures that all {\em persistent} BATs have savely been written to disk. This is an all or nothing
+operation, as the {\tt @[<a href="www/trans.html#mod_2_0_1">abort()</a>@} allows one to regress 
+to the status at the last succeeded commit.
+
+BATs can be appended into with {\tt @[<a href="www/bat.html#mod_2_0_2">insert()</a>@} and deleted from 
+with {\tt @[<a href="www/bat.html#mod_2_0_2">delete</a>@}.
+
+The default BAT access mode is {\tt BAT\_READ} (an exception are newly created empty BATs,
+which have access mode {\tt BAT\_WRITE}). There is also an access mode {\tt BAT\_APPEND} that 
+only allows inserts. 
+
+
+@* Extension Modules 
+@T
+All MIL primitives are in fact defined by extension modules, which have 
+a specification in the @[<a href="mel.html">Monet Extension Language</a>@ (MEL).  
+
+@+ Inspecting Modules
+@T
+So we now query for all available modules using the {\tt modules()} operator:
+
+\begin{verbatim}
+> modules;
+#---------------------------------#
+# name          | database        #
+#---------------------------------#
+[ "algebra",      "any"           ]
+[ "arith",        "any"           ]
+[ "ascii_io",     "any"           ]
+[ "bat",          "any"           ]
+[ "kernel",       "any"           ]
+[ "str",          "any"           ]
+[ "sys",          "any"           ]
+[ "trans",        "any"           ]
+[ ..                              ]
+[ "monettime",    "any",          ]
+[ ..                              ]
+[ "xtables",      "any"           ]
+>
+\end{verbatim}
+
+This tells us that Monet has the @[<a href="www/monettime.html">monettime</a>@ 
+module, but it is not loaded yet. This module defines a number of temporal data 
+types and operations.
+
+The @[<a href="mel.html">MEL</a>@ specification of this module
+contains code like this:
+
+\begin{verbatim}
+.MODULE monettime;
+
+    .. omitted ...
+
+.ATOM timestamp = lng;
+    .FROMSTR = timestamp_fromstr;
+    .TOSTR   = timestamp_tostr;
+.END
+
+    .. omitted ...
+
+.END monettime;
+\end{verbatim}
+
+It contains a new atomic type called 'timestamp' that captures times
+in a "Day-Month-Year hour:minute" format.
+
+{\small\begin{verbatim}
+>d := timestamp("14-aug-2002 16:14");
+!ERROR: interpret: no matching MIL operator to 'timestamp(str)'.
+\end{verbatim}}
+
+When you try to use a 'timestamp' without loading
+the @[<a href="www/monettime.html">monettime</a>@ 
+module, a syntax error occurs!
+
+\begin{verbatim}
+> module(monettime);
+> loaded;
+#---------------------------------#
+# module        | usage_count     #
+#---------------------------------#
+[ "algebra",      1               ]
+[ "arith",        1               ]
+[ "bat",          1               ]
+[ "kernel",       1               ]
+[ "str",          1               ]
+[ "sys",          1               ]
+[ "trans",        1               ]
+[ "mapi",         1               ]
+[ "xtables",      1               ]
+>
+\end{verbatim}
+
+After loading the module, we can ask for all commands contained 
+in it with {\tt sigs(str modulename)}: 
+
+\begin{verbatim}
+> sigs("monettime");
+[ ...                                             ]
+[ "add(timestamp, lng) : timestamp"               ]
+[ "date(timestamp) : date"                        ]
+[ "date(timestamp, tzone) : date"                 ]
+[ "daytime(timestamp) : daytime"                  ]
+[ "daytime(timestamp, tzone) : daytime"           ]
+[ "diff(timestamp, timestamp) : lng"              ]
+[ "dst(timestamp, tzone) : bit"                   ]
+[ "timestamp(date, daytime) : timestamp"          ]
+[ "timestamp(date, daytime, tzone) : timestamp"   ]
+[ ...                                             ]
+>
+\end{verbatim}
+
+On-line help can be asked for each individual operator:
+
+\begin{verbatim}
+> help("diff");
+COMMAND:   diff(timestamp, timestamp) : lng
+MODULE:    monettime
+COMPILED:  by adm on Mon Oct  7 11:22:50 2002
+returns the number of milliseconds between 'val1' and 'val2' (!DS2.2).
+
+>
+\end{verbatim}
+
+We can now create temporal values, manipulate them, and store them in BATs.
+
+{\small\begin{verbatim}
+> d := timestamp("14-aug-2002 16:14");
+> d.print;
+[ 14-au-1997 16:14 ]
+>
+> b := bat(oid,timestamp);
+> b.insert(0@0, timestamp("13-may-1997 09:10"));
+> b.insert(1@0, timestamp("16-aug-1997 10:20"));
+> b.insert(2@0, timestamp("15-sep-1997 11:30"));
+> b.insert(3@0, timestamp("01-jan-1997 12:40"));
+> b.insert(4@0, timestamp("26-feb-1997 13:50"));
+> b.insert(5@0, timestamp("15-aug-1997 14:00"));
+>
+> b.print;
+#----------------------------------#
+# oid    | timestamp               #
+#----------------------------------#
+[ 0@0,     13-may-1997 09:10       ]
+[ 1@0,     16-aug-1997 10:20       ]
+[ 2@0,     15-sep-1997 11:30       ]
+[ 3@0,     01-jan-1997 12:40       ]
+[ 4@0,     26-feb-1997 13:50       ]
+[ 5@0,     15-aug-1997 14:00       ]
+>
+> drop(monettime);
+>
+> b.insert(31165626@0, timestamp("15-aug-1997 15:10"));
+!ERROR: interpret: no matching MIL operator to 'timestamp(str)'.
+!ERROR: insert(param 3): evaluation error.
+\end{verbatim}}
+
+After the module is dropped, using temporal primitives
+will again produce syntax errors.
+
+MIL has a parser that is based on {\em dynamic lookup tables}.
+When a module is loaded, its commands, operators, atoms 
+and accelerators become accepted keywords for that user. 
+
+@* Module Reference
+@T
+Extension modules are written with the @[<a href="http://www.cwi.nl/htbin/ins1/publications?request=pdf&key=KeScBeBo:UNPUBLISHED:96">Mx</a>@ 
+literate programming tool to integrate code both with the technical and user documentation. Concerning the latter,
+the topmost 'hide level' of each module contains a manual page (while the second hide-level 
+contains the technical documentation).  Below, the manual pages of all modules are grouped 
+according to their functionality.
+
+@+ Kernel Modules
+@T
+As of version 4.1 MIL has 7 standard modules, that are always loaded.
+\begin{description}
+\item[ @[<a href="www/kernel.html">kernel</a>@ ] 
+	these are the builtin system primitives.  They cannot be overloaded.
+\item[ @[<a href="www/bat.html">bat</a>@ ] 
+	basic commands to create and manipulate BATs.
+\item[ @[<a href="www/algebra.html">algebra</a>@ ] 
+	relational core of BAT commands (select, join, etc).
+\item[ @[<a href="www/arith.html">arith</a>@ ] 
+	simple arithmetic operators on the standard types.
+\item[ @[<a href="www/sys.html">sys</a>@ ] 
+	system information. This module contains helpful procedures for navigating through the system (ls, help).
+\item[ @[<a href="www/str.html">str</a>@ ] 
+	string handling.
+\item[ @[<a href="www/trans.html">str</a>@ ] 
+	support for global transactions (minmal database consistency).
+\end{description}
+
+@+ Query Processing 
+@T
+\begin{description}
+\item[@[<a href="www/algebra.html">algebra</a>@]
+	Relational core of BAT commands (select, join, etc).
+\item[@[<a href="www/aggr.html">aggr</a>@]
+	Binary aggregation operations.
+\item[@[<a href="www/aggrX3.html">aggrX3</a>@]
+	Fast teriary aggregation operations.
+\item[@[<a href="www/xtables.html">xtables</a>@]
+	Cross-table operations for data mining.
+\item[@[<a href="www/radix.html">radix</a>@]
+	Cache-conscious query processing.
+\item[@[<a href="www/enum.html">enum</a>@]
+	Automatic creation of enumeration types. Used for space compression.
+\item[@[<a href="www/mmath.html">mmath</a>@]
+	Mathematic operations a la  {\tt math.h}.
+\item[@[<a href="www/ascii_io.html">ascii_io</a>@]
+	Bulk loading.
+\end{description}
+
+@+ Transactions
+@T
+\begin{description}
+\item[@[<a href="www/lock.html">lock</a>@]
+	Locks and semaphores.
+\item[@[<a href="www/logger.html">logger</a>@]
+	write-ahead logger.
+\end{description}
+
+@+ OS APIs
+@T
+\begin{description}
+\item[@[<a href="www/unix.html">unix</a>@]
+	Provides access to some of the C stdlib.h functions.
+\item[@[<a href="www/alarm.html">alarm</a>@]
+	OS timers and interrupts.
+	Standard IO module a la  {\tt stdio.h}.
+\item[@[<a href="www/streams.html">streams</a>@]
+	Stream IO a la {\tt stdio.h}.
+\item[@[<a href="www/tcpip.html">tcpip</a>@]
+	TCP/IP asynchronous communication.
+\end{description}
+
+@+ Extension Atoms
+@T
+\begin{description}
+\item[@[<a href="www/bitset.html">bitset</a>@]
+	Compact bit-set manipulation. 
+\item[@[<a href="www/bitvector.html">bitvector</a>@]
+	Compact bit-set manipulation. 
+\item[@[<a href="www/blob.html">blob</a>@]
+	The generic variable-size atom. 
+\item[@[<a href="www/decimal.html">decimal</a>@]
+	Arbitrary precision arithmetic. 
+\item[@[<a href="www/monettime.html">monettime</a>@]
+	 data types and operations on them.
+\item[@[<a href="www/qt.html">qt</a>@]
+	Quadtree implementation
+\item[@[<a href="www/str.html">str</a>@]
+	String manipulation module supporting UTF-8.
+\item[@[<a href="www/url.html">url</a>@]
+	URL operations
+\end{description}
+
+@+ Performance Monitoring
+@T
+\begin{description}
+\item[@[<a href="www/calib.html">calib</a>@]
+	Calibrator that automatically extracts relevant hardware parameters from any system.
+\item[@[<a href="www/counters.html">counters</a>@]
+	System-independent hardware counters.
+\item[@[<a href="www/mprof.html">mprof</a>@]
+	Monet performance profiling.
+\end{description}
+
+@+ Benchmark Generators
+@T
+\begin{description}
+\item[@[<a href="www/ddbench.html">ddbench</a>@]
+	Drill-down benchmark for data mining.
+\item[@[<a href="www/oo7.html">oo7</a>@]
+	OO7 benchmark generation and specific operations.
+\item[@[<a href="www/tpcd.html">tpcd</a>@]
+	Efficient aggregation operations included.
+\item[@[<a href="www/wisc.html">wisc</a>@]
+	Wisconsin benchmark code.
+\end{description}
+
+@* Managing The MIL Interpreter
+
+While we now have explained the basic structure of MIL and given pointers
+to the reference manuals of all modules, we pay some attention to some
+useful internals of the MIL interpreter of Monet.
+
+@+ Threads
+@T
+Monet is a multi-threaded server. One ore more MIL interpreter threads 
+are active handling user requests that are placed in a queue. Parallel
+MIL blocks or parallel iterators put many jobs in this queue, that are
+then comsumed by these multiple MIL interpreter threads, thus creating
+paralellism.  
+
+At startup of the {\tt @[<a href="www/Mserver.html">Mserver</a>@}, one such interpreter 
+thread is created.  For each incoming {\tt @[<a href="www/MapiClient.html">MapiClient</a>@} 
+session, a new thread is created as well.
+
+\begin{verbatim}
+> threads;
+#-------------------------#
+# BAT:    thread          #
+# (int)   (str)           #
+#-------------------------#
+[ 1,      "Interpreter"   ]
+>
+> threadcnt(2);
+#-------------------------#
+# BAT:    thread          #
+# (int)   (str)           #
+#-------------------------#
+[ 1,      "Interpreter"   ]
+[ 2,      "Interpreter"   ]
+[ 3,      "Interpreter"   ]
+>
+> threadcnt(-1);
+#-------------------------#
+# BAT:    thread          #
+# (int)   (str)           #
+#-------------------------#
+[ 1,      "Interpreter"   ]
+[ 2,      "Interpreter"   ]
+>
+\end{verbatim}
+You can get a listing of all Monet threads with the {\tt @[<a href="www/kernel.html#mod_2_3_2">threads()</a>@} command.
+The {\tt @[<a href="www/kernel.html#mod_2_3_2">threadcnt(int delta)</a>@} command allows to increase or decrease the number of
+MIL interpreter threads.
+
+@+ Client Sessions
+@T
+Monet maintains a number of data structures for each client logged in.
+By using parallel MIL blocks or parallel iterators, one client can keep
+multiple threads busy (threads are thus a lower-level concept than clients).
+
+Clients can:
+\begin{itemize}
+\item fork other clients with {\tt @[<a href="www/kernel.html#mod_2_3_1">fork(expr):int</a>@}, 
+which returns a client-id.  \item killed with {\tt @[<a href="www/kernel.html#mod_2_3_1">kill(int id)</a>@}.
+\item listed with {\tt @[<a href="www/sys.html#mod_2_1_0">clients()</a>@}.
+\end{itemize}
+
+A common application of {\tt @[<a href="www/kernel.html#mod_2_3_1">fork()</a>@} is to start a Mapi listener in the background:
+\begin{verbatim}
+> module(mapi);
+> listen(45678).fork;
+> clients;
+#-------------------------------------------------------------------------#
+# BAT:    name  | login                         | mil                     #
+# (int)   (str) | (str)                         | (str)                   #
+#-------------------------------------------------------------------------#
+[ 0,      "adm",  "Mon Oct  7 15:59:18 2002",     "clients()"             ]
+[ 1,      "adm",  "Mon Oct  7 15:59:18 2002",     "listen(45678)"         ]
+>
+> kill(1);
+>
+> clients;
+#-------------------------------------------------------------------------#
+# BAT:    name  | login                         | mil                     #
+# (int)   (str) | (str)                         | (str)                   #
+#-------------------------------------------------------------------------#
+[ 0,      "adm",  "Mon Oct  7 15:59:18 2002",     "clients()"             ]
+>
+\end{verbatim}
+
+The session is ended with a {\tt @[<a href="www/kernel.html#mod_2_3_1">quit()</a>@}. Note that typing this in the 
+{\tt @[<a href="www/Mserver.html">Mserver</a>@} console with stop the Monet server 
+immediately, whereas in the {\tt @[<a href="www/MapiClient.html">MapiClient</a>@} it
+will only end the current user session. The server can be shutdown from the
+{\tt @[<a href="www/MapiClient.html">MapiClient</a>@} (and also from the 
+{\tt @[<a href="www/Mserver.html">Mserver</a>@} console) with {\tt @[<a href="www/kernel.html#mod_2_3_1">shutdown()</a>@}.
+
+@* Further Reference 
+@T
+We recommend you to study the commands in the following modules:
+\begin{itemize}
+\item[system] @[<a href="www/kernel.html">kernel</a>@ (special keywords),
+@[<a href="www/sys.html">sys</a>@ (especially look at the @[<a href="www/sys.html#mod_2_1_0">PROCs</a>@).
+
+\item[bats] @[<a href="www/bat.html">bat</a>@ (basic bat management) and
+@[<a href="www/algebra.html">algebra</a>@ (the core algebra).
+
+\item[advanced query processing] @[<a href="www/aggr.html">aggr</a>@ and @[<a href="aggrX3">aggrX3</a>@ (aggregates),
+@[<a href="www/xtables.html">xtables</a>@ (groupings) and
+@[<a href="www/radix.html">radix</a>@ (cache-conscious join).
+\end{itemize}
+
+The @[<a href="http://www.cwi.nl/htbin/ins1/publications?request=abstract&key=Bo:DISS:02">Ph.D. thesis</a>@
+of Peter Boncz is a full reference of Monet and MIL. Among other topics, it discusses in detail 
+how relational queries (SQL) can be translated into cache and CPU-efficient MIL.
+

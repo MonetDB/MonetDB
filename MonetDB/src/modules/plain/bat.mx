@@ -119,6 +119,82 @@ can be found in this module.
  Returns the modified BAT." 
 
 @- BAT properties 
+@T
+Monet maintains a number of {\em properties} on each BAT that is used to steer tactical 
+query optimization (i.e. choosing a good algorithms for a particular algebra command).
+
+These properties can be inspected with the {\tt info(BAT[any,any]) : BAT[str,str] } command:
+\begin{verbatim}
+> car_age.info.print;
+#---------------------------------#
+# BAT:               tmp_31       #
+# (str)              (str)        #
+#---------------------------------#
+[ "batId",           "car_age"    ] # logical bat name
+[ "batCacheid",      "26"         ] # BBP index
+[ "batParentid",     "0"          ] # set if a BAT is a view
+[ "head",            "void"       ] # physical head-type
+[ "tail",            "int"        ] # physical tail-type
+[ "batPersistence",  "persistent" ] # transient/session/persistent
+[ "batRestricted",   "updatable"  ] # read-only/append-only/updatable
+[ "batDirty",        "clean"      ] # clean/dirty
+[ "batRefcnt",       "1"          ] # physical refcount
+[ "batLRefcnt",      "1"          ] # logical refcount (total)
+[ "batPlevel",       "1"          ] # logical refcount (persistent part) 
+[ "batSet",          "0"          ] # [head,tail] combinations are unique
+[ "batCopiedtodisk", "1"          ] # has been saved or not
+\end{verbatim}
+
+The above are global BAT properties. The properties {\tt batPersistence},
+{\tt batRestricted} and {\tt batDirty} will be explained in the next section,
+and the various reference counts in the section that follows it.
+
+Per column, a number of properties are kept. We only show the head-properties; the tail properties 
+have the first character of their named replaced by 't' ({\tt sorted}, {\tt tdense}, etc.):
+
+\begin{verbatim}
+[ "hsorted",         "1"          ] # column is known to be sorted
+[ "hdense",          "1"          ] # column is known to be densely ascended 
+[ "hseqbase",        "0@0"        ] # if densely ascending (i.e. 0@0, 1@0, @,0, ...): first value
+[ "hacctype",        "null"       ] # name of user-defined accelerator
+[ "hindex",          "absent"     ] # name of built-in accelerator: hash or index (T-tree) 
+\end{verbatim}
+
+As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
+BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
+is present always. For each column type that is {\em variable-sized} - like {\tt str} - another 
+heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search 
+accelerator, more heaps may be present (({\tt haccelerator} and {\tt taccelerator}). 
+
+\begin{verbatim}
+[ "batBuns.free",    "400004"     ] # occupied size in bytes
+[ "batBuns.size",    "400012"     ] # allocated size in bytes
+[ "batBuns.maxsize", "400012"     ] # reserver virtual memory in bytes
+[ "batBuns.storage", "malloced"   ] # malloced/mmap/priv
+\end{verbatim}
+
+Properties steer the algorithms that Monet uses to execute algebra command. For instance,
+the {\tt find(BAT[any::1,any::2] b, any:;1) : any::2) that looks up a tail value by head,
+uses binary search if and only if the head column is sorted (in other cases, hash-lookup
+and scan are execution options). 
+
+Sometimes new (extension) code contains bugs in the property management, leaving false
+properties on produced BATs. You can imagine that later on, this leads to additional
+bugs, as e,g, the binary search algorithms will yield erroneous results on a non-sorted
+sequence.
+
+To make problem detection easier, the MIL interpreter contains property checking code,
+that is set with via the  {\tt debugmask(int)} command:
+\begin{description}
+\item[2] {\tt debugmask(debugmask() and 2)} causes that all properties on
+newly created BATs to be checked. You must realize that finding out that a column is sorted 
+({\tt hsorted/tsorted}) costs a full scan, and finding out that it contains unique values
+({\tt hkeyed/tkeyed}) costs a full scan plus the creation of a full hash index.  
+\item[8] {\tt debugmask(debugmask() and 8)} causes that all properties on
+{\bf all} BATs handled by the MIL interpreter to be checked. This will catch all property errors. 
+\end{description}
+
+By default, both bits in the {\tt debugmask} are off, which gives fastest performance.
 @m
 .COMMAND count ( int bid ) : lng = CMDsize;
 "Returns the current size (in number of elements) of a BAT."
@@ -211,7 +287,7 @@ can be found in this module.
 @T
 The BAT Buffer Pool (BBP) manages all known BATs. It administers
 thier logical and physical names and a reference count. BATs can
-either be {\em persistent} or {\em transient}. The BBP also manages
+be {\em persistent}, {\em transient} or {\em session}. The BBP also manages
 swapping on a BAT level: a BAT is either loaded entirely or not.
 MIL variables of type {\tt bat} can either be loaded or not. When 
 the Monet server is started, all BATs are swapped out. If an unloaded
@@ -233,10 +309,16 @@ allocated arena gets to be large, BATs may be swapped out.
 "Give a logical name to the columns of a BAT.
  Returns the BAT itself."
 
-.COMMAND persists( BAT[any::1,any::2], bit mode) 
-				: BAT[any::1,any::2] = CMDpersists;
-"Make the BAT persistent (mode = TRUE) or transient (mode = FALSE).
- Returns the BAT itself." 
+.COMMAND persists( BAT[any::1,any::2], bit mode) : BAT[any::1,any::2] = CMDpersists;
+"Make the BAT persistent (mode = TRUE), transient (mode = FALSE).
+ or session (mode = bit(nil)). Returns the BAT itself." 
+
+.COMMAND release( BAT[any,any] ) : lng = CMDrelease;
+"Change the BAT mode to session and return a unique numerical ID for the BAT"
+
+.COMMAND resurrect( lng id ) : BAT[any,any] = CMDresurrect;
+"Try to get back a session BAT from its ID. Gives an ERROR if it was removed from the BAT cache. 
+ USAGE: if (isnil(CATCH(b := resurrect(id))) { #found } else { #not found }." 
 
 .COMMAND save(str nme) : bit = CMDsave;
 "Save a BAT to storage, if it was loaded and dirty. Returns whether IO was necessary.
@@ -665,15 +747,23 @@ int CMDgetkey(bit *ret, BAT *b) {
 }
 
 int CMDpersists(BAT **r, BAT *input, bit *param) {
-/*
-	if (*param) {
-		BATpropcheck(input);
-        	BATpropcheck(BATmirror(input));
-	}
-*/
-	BATmode(*r=input, *param?PERSISTENT:TRANSIENT);
+	BATmode(*r=input, (*param == TRUE)?PERSISTENT:(*param == FALSE)?TRANSIENT:SESSION);
 	BBPfix(input->batCacheid);
         return GDK_SUCCEED;
+}
+
+int CMDrelease(lng *id, BAT *b) {
+	int *p = (int*) id;
+	BATmode(b, SESSION);
+	p[0] = b->batCacheid;
+	p[1] = b->batStamp; 
+	return GDK_SUCCEED;
+}
+
+int CMDresurrect(BAT **res, lng *id) {
+	int *p = (int*) id;
+	*res = BBPresurrect(p[0], p[1]);
+	return *res?GDK_SUCCEED:GDK_FAIL;
 }
 
 int CMDsetaccess(BAT **r, BAT *input, int *param) {

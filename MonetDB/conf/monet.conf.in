@@ -86,7 +86,7 @@ monet_deamon=no			# default yes
 #mapi_noheaders=no			#show all the mil output
 #mapi_debug=0				#The mapi debug level		
 
-# SQL Inteface Section
+# SQL Interface Section
 #====================================
 #sql_port=45123				#default place to sent the SQL query
 #sql_debug=0				#default place to sent the SQL query

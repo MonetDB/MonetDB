@@ -99,9 +99,6 @@ AC_SUBST(DIRSEP)
 QDIRSEP="$DIRSEP"
 AC_SUBST(QDIRSEP)
 
-dnl systems checks
-AC_AIX()
-
 dnl AC_CHECK_PROG(CP,cp,cp -f)
 dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)

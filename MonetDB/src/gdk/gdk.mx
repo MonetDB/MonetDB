@@ -2069,11 +2069,7 @@ gdk_export volatile	lng 	GDK_vm_cursize;		/* reserved vm in bytes */
 #define GDKmem_cursize()	(GDK_mem_cursize + GDKmem_heapsize())
 #define GDKvm_cursize()		(GDK_vm_cursize + GDKvm_heapsize())
 
-#ifdef _CYGNUS_H_
-#define GDKvm_heapsize()	((lng) (96<<20))
-#else
-#define GDKvm_heapsize()	GDKmem_heapsize()
-#endif
+gdk_export lng GDKvm_heapsize();
 gdk_export lng GDKmem_heapsize();
 gdk_export lng GDKmem_heapinuse();
 

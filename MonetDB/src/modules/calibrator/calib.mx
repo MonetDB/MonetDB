@@ -26,12 +26,39 @@
 @a mzu
 @v 0.1
 @* Calibrator for Monet
-Calibrator as a Monet module
+@T
+The Calibrator is microbenchmark that is supposed to analyze a computers (cache-) 
+memory system and extract the following parameters:
+\begin{itemize}
+\item number of cache levels
+\item for each cache level:
+	\begin{itemize}
+        \item its size
+        \item its linesize
+        \item its access/miss latency
+	\end{itemize}
+\item main memory access latency
+\item number of TLB levels
+\item for each TLB level:
+	\begin{itemize}
+         \item its capacity (i.e. number of entries)
+         \item the pagesize used
+         \item the TLB miss latency
+	\end{itemize}
+\end{itemize}
 
+A short description of the Calibrator is available as a
+@[<a href="http://www.cwi.nl/~manegold/Calibrator/doc/calibrator.pdf">PDF</a>@ or
+@[<a href="http://www.cwi.nl/~manegold/Calibrator/doc/calibrator.ps">Postscript</a>@ or
+document.
+
+See also the @[<a href="http://www.cwi.nl/~manegold/Calibrator/calibrator.shtml">Calibrator Homepage</a>@.
+with a @[<a href="http://www.cwi.nl/~manegold/Calibrator/DB/DB.shtml">database</a>@ of calibrated systems.
 @m
 .MODULE calib;
 
-@- Section
+@T
+Run {\tt calib_init()} once, then extract the results with {\tt calib_info()} into a BAT.
 @m
 .COMMAND calib_info() : BAT[str,dbl] = CMDcalib_info;
   "Gives results of calibrator tests as BAT. 

@@ -355,6 +355,17 @@ volatile int	GDK_nmallocbuf[MAX_BIT<<2] = { 0 };
 volatile int*	GDK_nmallocs = GDK_nmallocbuf;
 #endif
 
+lng GDKvm_heapsize() {
+#ifdef _CYGNUS_H_
+	return ((lng) (96<<20));
+#else
+	/* on Linux, malloc apparently steals space from mmap(anon) */
+	lng heapsize = GDKmem_heapsize();
+	lng heapinuse = GDKmem_heapinuse();
+	return MAX(heapsize, heapinuse);
+#endif
+}
+
 lng GDKmem_heapsize() {
 	lng heapsize = (MT_heapcur() - MT_heapbase);
 	return (lng) SEG_SIZE(heapsize,MT_VMUNITLOG);
