@@ -11,12 +11,13 @@ the commited changes, to a transaction log. The log may reside on the
 same system and therefor the writes are done to disk but could also
 reside on an other system and then the changes are flushed through
 the network.  
+
 The main interface to this logging system is the commit call which
 writes all the delta to the log file. Each bat in Monet keeps track 
 of the changes using the delta management. On commit these changes are
-writen to the log file. The delta management set for new changes.
-Since each commit is writen to the same log file, the beginning and
-end are marked by a log identifier. A server restart should only (re)process
+writen to the log file and the delta management is reset. Since each 
+commit is writen to the same log file, the beginning and end are 
+marked by a log identifier. A server restart should only (re)process
 blocks which are completely writen to disk. The start marker consists of
 a LOG_BEGINBLOCK,logid,length-of-block-between-markers. The end marker
 is just LOG_ENDBLOCK,logid.
@@ -58,6 +59,9 @@ TODO
 #define LOG_BLOCKEND    1
 #define LOG_INSERT 	2
 #define LOG_DELETE	3
+#define LOG_CREATE 	4
+#define LOG_DESTROY	5
+#define LOG_RENAME	6
 
 int   logger_debug = 0;
 
@@ -112,43 +116,57 @@ typedef struct logf {
 } logf;
 
 void logger_bat(BAT *b){
+	int 	status;
+	logf 	l;
+	BUN	p; 
+
 	if (logger_debug&2 && 
 	    (b->batInserted < BUNlast(b) || b->batDeleted < b->batHole))
 		fprintf(stderr, "logger_bat %s\n", b->batId);
 
-	if (logger_fp){
-		logf 	l;
-		BUN	p; 
-
-		l.flag = LOG_INSERT;
-		l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
-		if (l.nr){
-		    l.id = b->batCacheid;
-		    fwrite(&l, sizeof(logf), 1, logger_fp);
-		    for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
-			int s1,s2;
-			ptr h = BUNhead(b,p);
-			ptr t = BUNtail(b,p);
-			fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
-			fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
-			sz += (s1+s2);
-		    }
-		}
-		l.flag = LOG_DELETE;
-		l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
-		if (l.nr){
-		    l.id = b->batCacheid;
-		    printf("%d del %d\n", l.id, l.nr );
-		    fwrite(&l, sizeof(logf), 1, logger_fp);
-		    for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
-			int s1,s2;
-			ptr h = BUNhead(b,p);
-			ptr t = BUNtail(b,p);
-			fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
-			fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
-			sz += (s1+s2);
-		    }
-		}
+	l.id = b->batCacheid;
+	status = BBPstatus(l.id);
+	if (status&BBPNEW && !status&BBPDELETED){
+	    l.flag = LOG_CREATE;
+	    l.nr = ((b->htype)<<16) + b->ttype;
+	    fwrite(&l, sizeof(logf), 1, logger_fp);
+	} 
+	if (status&BBPDELETED){
+	    l.flag = LOG_DESTROY;
+	    fwrite(&l, sizeof(logf), 1, logger_fp);
+	} 
+	if (status&BBPRENAMED){
+	    l.flag = LOG_RENAME;
+	    fwrite(&l, sizeof(logf), 1, logger_fp);
+	    fwrite(BBP_logical(l.id), strlen(BBP_logical(l.id)), 1, logger_fp);
+	    fwrite(BBP_logical(-l.id), strlen(BBP_logical(-l.id)),1, logger_fp);
+	} 
+	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
+	if (l.nr){
+	    l.flag = LOG_INSERT;
+	    fwrite(&l, sizeof(logf), 1, logger_fp);
+	    for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
+		int s1,s2;
+		ptr h = BUNhead(b,p);
+		ptr t = BUNtail(b,p);
+		fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
+		fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
+		sz += (s1+s2);
+	    }
+	}
+	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
+	if (l.nr){
+	    l.flag = LOG_DELETE;
+	    printf("%d del %d\n", l.id, l.nr );
+	    fwrite(&l, sizeof(logf), 1, logger_fp);
+	    for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
+		int s1,s2;
+		ptr h = BUNhead(b,p);
+		ptr t = BUNtail(b,p);
+		fwrite(h, s1=ATOMlen(b->htype,h),1,logger_fp);
+		fwrite(t, s2=ATOMlen(b->ttype,t),1,logger_fp);
+		sz += (s1+s2);
+	    }
 	}
 }
 
@@ -209,7 +227,7 @@ int logger_commit(){
 int logger_update() { 
 	/* first try the file */
 	/* else get it from the backup server. */
-	int i;
+	int i,s1,s2;
 	int curlogid = 0; 
 	struct stat st;
 	char *buf, *p, *end;
@@ -231,25 +249,45 @@ int logger_update() {
 		BAT *b;
 
 		memcpy(&l, p, sizeof(logf)); p += sizeof(logf);
-		if (l.flag == LOG_BLOCKBEGIN){
-			curlogid = l.id;
-		} else if (l.flag == LOG_BLOCKEND ){
+		switch(l.flag){
+		case LOG_BLOCKBEGIN:
+			curlogid = l.id; 
+			break;
+		case LOG_BLOCKEND:
 			if (l.id != curlogid){
 		    		fprintf(stderr, 
 				  "BLOCKEND does not match begin, %d != %d\n",
 				  l.id, curlogid);
 				break;
 			}
-		} else { 
+			break;
+		case LOG_CREATE:
+			printf("create bat %d %d %ld\n",
+				(l.nr>>16)&((1<<16)-1), l.nr&((1<<16)-1), l.id);
+			b = BATnew((l.nr>>16)&((1<<16)-1),l.nr&((1<<16)-1),l.id);
+			BATpersists(b);
+			break;
+		case LOG_DESTROY:
+			printf("destroy bat %ld\n", l.id);
+			b = BATdescriptor(l.id); 
+			BATtransient(b);
+			break;
+		case LOG_RENAME:
+			s1 = strlen(p);
+			s2 = strlen(p);
+			BBPrename(l.id,p);
+			BBPrename(-l.id,p+s1);
+			printf("rename bat %ld %s %s\n", l.id, p, p+s1);
+			break;
+		default:	
 			b = BATdescriptor(l.id); 
 			if (b){
 				for(; l.nr>0 && p<end; l.nr--){
-					int s1 = ATOMlen(b->htype, p);
-					int s2 = ATOMlen(b->ttype, p+s1);
+					s1 = ATOMlen(b->htype, p);
+					s2 = ATOMlen(b->ttype, p+s1);
 					if (l.flag == LOG_INSERT)
 						BUNins( b, p, p+s1 );
-					else
-					if (l.flag == LOG_DELETE)
+					else if (l.flag == LOG_DELETE)
 						BUNdel( b, p, p+s1 );
 					p += s1;
 					p += s2;
@@ -291,6 +329,13 @@ proc pbat(name, acc) := {
         return b;
 }
 
+proc logging() := {
+	module("logger");
+
+	logger_debug(64);
+	backupfile("/tmp/logger.log");
+}
+
 proc logger_create() := {
 	b0 := pbat("b0",-1);
 	b1 := pbat("b1",hash);
@@ -302,13 +347,7 @@ proc logger_create() := {
 	commit;
 }
 
-proc logger_insert(bit useLogger) := {
-	if (useLogger){
-		module("logger");
-
-		logger_debug(64);
-		backupfile("/tmp/logger.log");
-	}
+proc logger_insert() := {
 
 	t0 := time();
 	var i := 0;
@@ -371,10 +410,8 @@ proc logger_insert(bit useLogger) := {
 }
 
 proc logger_update() := {
-	module("logger");
 
 	logger_debug(1);
-	backupfile("/tmp/logger.log");
 	
 	t0 := time();
 	update();
@@ -392,23 +429,26 @@ rm /tmp/logger.log
 Mdestroydb -db logger
 Mcreatedb -db logger -user $USER
 
+#Mserver -db logger -prelude logger.mil << EOF
+#logger_create;
+#quit;
+#EOF
+
 Mserver -db logger -prelude logger.mil << EOF
-logger_create;
+logging();
+logger_create();
+logger_insert();
 quit;
 EOF
 
 Mserver -db logger -prelude logger.mil << EOF
-logger_insert(true);
-quit;
-EOF
-
-Mserver -db logger -prelude logger.mil << EOF
+logging();
 logger_update;
 quit;
 EOF
 
 # now with out logger
 Mserver -db logger -prelude logger.mil << EOF
-logger_insert(false);
+logger_insert();
 quit;
 EOF
