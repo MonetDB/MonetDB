@@ -1237,7 +1237,24 @@ ostream &install_fcntbl::gen_var_arg( ostream &o, const VarArg &d ){
 }
 
 ostream &install::gen_load( ostream &o, const Load &d ){
-	 o << "      TBL_Install_LoadMIL( mid, \"" << d.Name() << "\");\n";
+	char buf[1024+1];
+	int nr,i,len = strlen(d.Name());
+	
+	
+//	 o << "      TBL_Install_LoadMIL( mid, \"" << d.Name() << "\");\n";
+	 o << "      { char *s = alloca(" << (len+1) << ");\n";
+	 nr = 1024;
+	 for(i=0;i < len; i+=nr){
+		if ((i+nr) > len)
+			nr = len - i;
+		if (*(d.Name()+i+nr-1) == '\\'){
+			nr--;
+		}
+	 	memcpy(buf,d.Name()+i,nr);
+		buf[nr] = '\0';
+	 	o << "        strncpy((s+strlen(s)),\"" << buf  << "\"," << nr << ");\n";
+	 }
+	 o << "      TBL_Install_LoadMIL( mid, s); }\n";
 	 return o; 
 }
 
