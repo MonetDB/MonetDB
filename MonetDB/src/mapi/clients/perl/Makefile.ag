@@ -23,7 +23,7 @@
 
 MTSAFE
 
-SUBDIRS = DBD Cimpl
+SUBDIRS = DBD HAVE_SWIG?Cimpl
 
 scripts_perl = {
 	EXT = pl pm
