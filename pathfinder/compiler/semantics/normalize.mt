@@ -294,7 +294,7 @@ ExprSequence:           exprseq (empty_seq, Expr)
                           return $2$;
                         };
 ExprSequence:           exprseq (Expr, ExprSequence);
-ExprSequence:           exprseq (ExprSequence, Expr)
+ExprSequence:           exprseq (ExprSequence, ExprSequence)
                         {
                           REWRITE;
                         } = 
@@ -304,6 +304,12 @@ ExprSequence:           exprseq (ExprSequence, Expr)
                            */
 			  return concat (p_exprseq, $1$, $2$);
 			};
+ExprSequence:           exprseq (ExprSequence, empty_seq)
+                        {
+                            cost = 1;
+                            REWRITE;
+                        } =
+                        { return $1$; };
 
 Expr:                   OrExpr;
 
