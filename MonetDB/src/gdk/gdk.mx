@@ -1447,6 +1447,7 @@ gdk_export int      BATdelete     (BAT* b);
 gdk_export size_t	BATvmsize     (BAT *b, int dirty);
 gdk_export size_t	BATmemsize    (BAT *b, int dirty);
 
+gdk_export int      GDKfdlocate   (str nme, str mode, str ext);
 gdk_export FILE*    GDKfilelocate (str nme, str mode, str ext);
 gdk_export void     GDKfilepath   (str path, str nme, str mode, str ext);
 gdk_export int      GDKcreatedir  (str nme);
