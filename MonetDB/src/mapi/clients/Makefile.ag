@@ -29,7 +29,7 @@ BINS = {
 
 scripts_mapi = {
 	DIR = bindir
-	SOURCES = Mshutdown.py.in MapiClient.py.in
+	SOURCES = Mshutdown.py.in MapiClient.py.in Mshutdown.py.bat MapiClient.py.bat
 }
 
 #bin_SCRIPTS = Mshutdown.py MapiClient.py
