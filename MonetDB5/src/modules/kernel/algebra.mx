@@ -917,35 +917,7 @@ int CMDmax_@1(@1* result, BAT *b) {
     v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNlast(b)-BUNsize(b));
     @:@5aggr(@1,@2,@3,@4,GT)@
 
-@= BATaggr
-ptr BAT@1(BAT *b, ptr aggr) {
-	int t;
-	size_t s; 
-	ptr v, x;
-
-	BATcheck(b, "BAT@1"); 
-	s = BATcount(b);	
-	t = b->ttype;
-	if (BATtvoid(b)) {
-	    @:aggr@1(chr,loc,simple,chr,void)@ 
-	} else {
-	    switch(ATOMstorage(t)) {
-	    case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
-	    case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
-	    case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
-	    case TYPE_dbl: @:aggr@1(dbl,loc,simple,dbl,atom)@ break;
-	    case TYPE_lng: @:aggr@1(lng,loc,simple,lng,atom)@ break;
-	    default: if (b->tvarsized) {
-			   @:aggr@1(chr,var,atom,t,atom)@ break;
-		     } else {
-			   @:aggr@1(chr,loc,atom,t,atom)@ break;
-	    }        }
-	}
-	return x;
-}
 @c
-@:BATaggr(min)@
-@:BATaggr(max)@
 
 @:sum_implementation(sht,sht,0)@
 @:sum_implementation(sht,int,0)@
@@ -1901,7 +1873,8 @@ str ALGfind(ptr ret, int *bid, ptr val){
 
 	@:getBATdescriptor(&result,bid,b,find);
 	@:derefStr(b,h,val)@
-	CMDfind(ret,b,val);
+	if( CMDfind(ret,b,val) == GDK_FAIL)
+		return throwMessage("algebra.find", "can not find element");
         return MAL_SUCCEED;
 }
 str ALGfetchjoin(int *result, int *lid, int *rid) {
