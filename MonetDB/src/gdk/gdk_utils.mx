@@ -1116,6 +1116,8 @@ int GDKinit(char *dbname, char *dbfarm) {
 		GDKhashLock[i] = MT_create_lock(); 
 	}
 	GDKcacheLock = MT_create_lock(); 
+	GDKunloadLock = MT_create_lock(); 
+	GDKunloadBarrier = MT_create_lock(); 
 	GDKtrimLock = MT_create_lock(); 
 	GDKtmLock = MT_create_lock(); 
 
@@ -1215,6 +1217,7 @@ MT_Lock		GDKswapLock[BBPLOCKMASK+1];
 MT_Lock		GDKidxLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKcacheLock, GDKtrimLock; 
+MT_Lock		GDKunloadLock, GDKunloadBarrier; 
 MT_Lock		GDKtmLock; 
 
 @+ Concurrency control
