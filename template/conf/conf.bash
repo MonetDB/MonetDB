@@ -64,10 +64,16 @@ if [ ! -f configure.ag  -a  ! -x configure ] ; then
 	return 1
 fi
 
-# use the current directory's (base)name to guess, 
-# which of monet, sql, xml, acoi, template, ... we are.
 base="`pwd`"
-wh_t="`basename $base`"
+# first, try the CVS repository name to guess the value for $what
+if [ -f CVS/Repository ]; then
+	wh_t="`cat CVS/Repository`"
+	wh_t="`basename $wh_t`"
+else
+	# otherwise, use the current directory's (base)name to guess, 
+	# which of monet, sql, xml, acoi, template, ... we are.
+	wh_t="`basename $base`"
+fi
 what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]'`"
 if [ "${what}" = "MONET5" ] ; then
 	pkgdir="MonetDB5"
