@@ -91,6 +91,9 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	   SMALLINT	deferrability
 	 */
 
+/* XXX this query is bogus: it should contain s2,t2,c2 in addition to
+ * s1,t1,c1 in the select part, k should perhaps be kc, and all of the
+ * above should be used in the from and where clauses.  */
 	strcpy(query_end,
 	       "select "
 	       "cast('' as varchar) as pktable_cat, "
@@ -150,9 +153,11 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	/* add the ordering */
 	/* if szPKTableName != NULL, selection on primary key, order
 	   on FK output columns, else order on PK output columns */
-	sprintf(query_end, " order by %s.name, %s.name, kc.ordinal_position",
-		szPKTableName != NULL ? "s2" : "s1",
-		szPKTableName != NULL ? "t2" : "t1");
+	sprintf(query_end,
+		" order by %stable_cat, %stable_schem, %stable_name, key_seq",
+		szPKTableName != NULL ? "fk" : "pk",
+		szPKTableName != NULL ? "fk" : "pk",
+		szPKTableName != NULL ? "fk" : "pk");
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */

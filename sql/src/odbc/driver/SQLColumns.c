@@ -152,7 +152,9 @@ SQLColumns_(ODBCStmt *stmt,
 	}
 
 	/* add the ordering */
-	strcpy(query_end, " order by s.name, t.name, c.number");
+	strcpy(query_end,
+	       " order by table_cat, table_schem, "
+	       "table_name, ordinal_position");
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */

@@ -104,7 +104,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	}
 
 	/* add the ordering */
-	strcpy(query_end, " order by s.name, t.name, k.key_seq");
+	strcpy(query_end, " order by table_cat, table_schem, table_name, key_seq");
 	query_end += strlen(query_end);
 
 	/* query the MonetDb data dictionary tables */

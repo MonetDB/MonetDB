@@ -84,7 +84,8 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar) as table_name, "
 			       "cast('' as varchar) as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.schemas order by table_schem");
+			       "from sys.schemas order by table_type, "
+			       "table_cat, table_schem, table_name");
 	} else if (nCatalogNameLength == 0 && nSchemaNameLength == 0 &&
 		   nTableNameLength == 0 && szTableType && 
 		   strcmp((char*)szTableType, SQL_ALL_TABLE_TYPES) == 0) {
@@ -98,7 +99,8 @@ SQLTables_(ODBCStmt *stmt,
 			       "when 3 then cast('LOCAL TEMPORARY TABLE' as varchar) "
 			       "else cast('INTERNAL TYPE' as varchar) end as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.tables order by table_type");
+			       "from sys.tables order by table_type, "
+			       "table_cat, table_schem, table_name");
 		/* TODO: UNION it with all supported table types */
 	} else {
 		/* no special case argument values */
@@ -181,7 +183,9 @@ SQLTables_(ODBCStmt *stmt,
 		}
 
 		/* add the ordering */
-		strcpy(query_end, " order by table_schem, table_name, table_type");
+		strcpy(query_end,
+		       " order by table_type, table_cat, "
+		       "table_schem, table_name");
 	}
 
 	/* query the MonetDb data dictionary tables */
