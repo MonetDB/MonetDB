@@ -995,7 +995,22 @@ public class MonetResultSet implements ResultSet {
 				return(header.getTableNames()[column - 1]);
 			}
 
-			public String getCatalogName(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+			/**
+			 * Gets the designated column's table's catalog name.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the name of the catalog for the table in which the given
+			 *         column appears or "" if not applicable
+			 */
+			public String getCatalogName(int column) throws SQLException {
+				if (getTableName(column) != "") {
+					// because MonetDB handles only one catalog (dbfarm) at
+					// a time, the current one is the one we deal with here
+					return(getStatement().getConnection().getCatalog());
+				} else {
+					return("");
+				}
+			}
 
 			/**
 			 * Indicates whether the designated column is definitely not

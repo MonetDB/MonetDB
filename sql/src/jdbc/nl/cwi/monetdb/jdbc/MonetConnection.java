@@ -378,7 +378,25 @@ public class MonetConnection extends Thread implements Connection {
 		}
 	}
 
-	public String getCatalog() {return(null);}
+	/**
+	 * Retrieves this Connection object's current catalog name.
+	 *
+	 * @return the current catalog name or null if there is none
+	 * @throws SQLException if a database access error occurs
+	 */
+	public String getCatalog() throws SQLException {
+		// this is a dirty hack, but it works as long as MonetDB
+		// only handles one catalog (dbfarm) at a time
+		ResultSet rs = getMetaData().getCatalogs();
+		if (rs.next()) {
+			String ret = rs.getString(1);
+			rs.close();
+			return(ret);
+		} else {
+			return(null);
+		}
+	}
+	
 	public int getHoldability() {return(-1);}
 
 	/**

@@ -45,7 +45,7 @@ public class Test_Rmetadata {
 
 			System.out.println("0. 4 columns:\t" + rsmd.getColumnCount());
 			for (int col = 1; col <= rsmd.getColumnCount(); col++) {
-				System.out.println("" + col); // + ".\t" + rsmd.getCatalogName(col));	: not yet impl.
+				System.out.println("" + col + ".\t" + rsmd.getCatalogName(col));
 				System.out.println("\t" + rsmd.getColumnClassName(col));
 				System.out.println("\t" + rsmd.getColumnDisplaySize(col));
 				System.out.println("\t" + rsmd.getColumnLabel(col));
