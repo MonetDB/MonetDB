@@ -54,31 +54,40 @@ def wlen(str) :
 ### wlen(str) #
 
 test = (
-        re.compile( r"^module\(mprof\);$"                                            "|"
-                    r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'   "|"
-                    r'^printf\("#~BeginProfilingOutput~#\\n"\);$'                    "|"
-                    r"^Mdestroydb: processing database ..*. in "                     "|"
-                    r"^Mcreatedb: processing database ..*. in "                      "|"
-                    r"^Mcreatedb: using default dbdir "                              "|"
-                    r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"   "|"
-                    r"^Mcreatedb: database .* has been initialized succesfully!$"    "|"
-                    r"^usage: (lt-)?M(server|apiClient)$"                            "|"
-                    r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$" "|"
-                    r"^!WARNING: BBPdir: initializing BBP.$"                         "|"
-                    r"^connection= .*:[0-9]*$"                                       "|"
-                    r"^Connecting to server: localhost:[0-9]*$"                      "|"
-                    r"^server listening on port [0-9]*$",
-                    re.MULTILINE),
-        re.compile( r"^!ERROR: DL_open: Unknown error.$"                             "|"
-                    r"^!ERROR: DL_open: library not found \(STATIC\).$",
-                    re.MULTILINE),
-        re.compile( r"^!ERROR: TBL_loadmod: module load .* cancelled.$",
-                    re.MULTILINE),
-        re.compile( r"^!ERROR: module\(.*\): load error.$",
-##                    r"^!WARNING: TCPlisten\([0-9]*\): stopped.$"                     "|"
-##                    r"^!WARNING: TCPepilogue: terminate [01] listeners$"             "|"
-                    re.MULTILINE)
-
+        # potential differences, which we what to ignore
+        re.compile( r"^module\(mprof\);$"
+                "|" r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'
+                "|" r'^printf\("#~BeginProfilingOutput~#\\n"\);$'
+                "|" r"^Mdestroydb: processing database ..*. in "
+                "|" r"^Mcreatedb: processing database ..*. in "
+                "|" r"^Mcreatedb: using default dbdir "
+                "|" r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"
+                "|" r"^Mcreatedb: database .* has been initialized succesfully!$"
+                "|" r"^usage: (lt-)?M(server|apiClient)$"
+                "|" r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$"
+                "|" r"^!WARNING: BBPdir: initializing BBP.$"
+                "|" r"^connection= .*:[0-9]*$"
+                "|" r"^Connecting to server: localhost:[0-9]*$"
+                "|" r"^server listening on port [0-9]*$"
+                 ,  re.MULTILINE),
+        # differing error messages when loading non-existing modules in dynamic and static Mserver
+        re.compile( r"^!ERROR: DL_open: Unknown error.$"
+                "|" r"^!ERROR: DL_open: library not found \(STATIC\).$"
+                 ,  re.MULTILINE),
+        re.compile( r"^!ERROR: TBL_loadmod: module load .* cancelled.$"
+                 ,  re.MULTILINE),
+        re.compile( r"^!ERROR: module\(.*\): load error.$"
+                 ,  re.MULTILINE),
+        # differences due to property-checking, which we what to treat as "minor differences"
+        re.compile( r'^synced\(x,[yz]\) := (true|false)$'
+                #dir(): # name                 htype         ttype         count       heat        dirty                      status             kind               refcnt      lrefcnt     plevel      #
+                "|" r'^\[ "[A-Za-z0-9_]+",\t* +"[a-z]+",\t* +"[a-z]+",\t* +[0-9]+,\t* +[0-9]+,\t* +"(dirty|clean|diffs)",\t* +"(load|disk)",\t* +"(tran|pers)",\t* +[0-9]+,\t* +[0-9]+,\t* +[0-9]+\t* +\]$'
+                # tests/from_Twente/Bugs/Arjen_01:
+                "|" r'^\[ "((bat|cur)Stamp|[ht]align(|flushed))",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$'
+                # tests/from_Twente/Bugs/Arjen_02:
+                "|" r'^\[ "((bat|cur)Stamp|[ht]align(|flushed))",\t* +"[0-9\-]+",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$'
+                "|" r'^\[ "[ht]sorted",\t* +"(1|65)",\t* +"[0-9\-]+",\t* +"[0-9\-]+"\t* +\]$'
+                 ,  re.MULTILINE)
         )
 
 def mFilter (FILE, IGNORE) :
@@ -95,21 +104,27 @@ def mFilter (FILE, IGNORE) :
 
     ftmp = []
     ig = n = 0
-    il = iw = ic = al = aw = ac = 0
+    il = iw = ic = el = ew = ec = al = aw = ac = 0
     for iline in fileinput.input(FILE):
         oline = xline = ""
         if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
             ig = 1
             n = 0
         if ig  and  ( len(iline) == 0  or  iline[0] != "!" ):
+            # ignore differences in "VariableOutput" or "ProfilingOutput"
             oline = "#~ " + iline
             n = n + 1
         elif test[0].match(iline):
+            # potential differences, which we what to ignore; see above
             oline = "#~ " + iline
+        elif test[4].match(iline):
+            # differences due to property-checking, which we what to treat as "minor differences"; see above
+            oline = "%" + iline
         elif len(ftmp) > 2              and \
              test[3].match(iline)       and \
              test[2].match(ftmp[-1])    and \
              test[1].match(ftmp[-2]):
+            # differing error messages when loading non-existing modules in dynamic and static Mserver; see above
             oline = iline
             for i in -1, -2:
                 w = len(string.split(ftmp[i]))
@@ -134,21 +149,26 @@ def mFilter (FILE, IGNORE) :
             if len(ln):
                 w = len(string.split(ln))
                 c = wlen(ln)
-                if ln != os.linesep  and  \
-                   not re.match(IGNORE,ln, re.MULTILINE):
-                    il = il + 1
-                    iw = iw + w
-                    ic = ic + c
                 al = al + 1
                 aw = aw + w
                 ac = ac + c
+                if ln != os.linesep  and  \
+                   not re.match(IGNORE,ln, re.MULTILINE):
+                    el = el + 1
+                    ew = ew + w
+                    ec = ec + c
+                    if not re.match('^%',ln, re.MULTILINE):
+                        il = il + 1
+                        iw = iw + w
+                        ic = ic + c
                 ftmp.append(ln)
 
     fout = open(FILE + ".FILTERED", "w")
     if (al > 0) or (aw > 0) or (ac >0):
         fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
-        fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '%s|^$`\n" % (il,iw,ic,IGNORE))
-        fout.write("# %9d lines, %9d words, %9d chars   in all lines\n" % (al,aw,ac))
+        fout.write( "  %9d lines, %9d words, %9d chars   in lines not matching '^$|%s|^%%`\n" % (il,iw,ic,IGNORE))
+        fout.write("%% %9d lines, %9d words, %9d chars   in lines not matching '^$|%s`\n"     % (el,ew,ec,IGNORE))
+        fout.write( "# %9d lines, %9d words, %9d chars   in all lines\n"                      % (al,aw,ac))
         fout.write("\n")
         for ln in ftmp:
             fout.write(ln)

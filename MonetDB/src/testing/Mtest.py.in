@@ -274,11 +274,16 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
             mS = testS.match(l)
             if mS:
                 REVs=mS.group(1)
-    test = re.compile("^<TR.*><TH.*>No differences.</TH></TR>$", re.MULTILINE)
-    DIFF = "<B>Differences</B>"
     for l in fileinput.input(TST+WHAT+".diff.html"):
-        if test.match(l):
-            DIFF = "No differences"
+        pass
+    if   l[:14] == '<!--NoDiffs-->':
+        DIFF = "No differences"
+    elif l[:17] == '<!--MinorDiffs-->':
+        DIFF = "<B>Minor differences</B>"
+    elif l[:17] == '<!--MajorDiffs-->':
+        DIFF = "<B><I>Major differences</I></B>"
+    else:
+    	ErrXit("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
     SYSTEM = OSVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -399,7 +404,9 @@ def CreateSrcIndex (env, TST, EXT) :
 
 def AddHref (TSTDIR, TST, WHAT, diff) :
     STRING = "<A HREF='."+TST+WHAT+".html' TARGET='"+OSVER+"_"+TSTDIR+"_body'>"+WHAT[1:]+"</A>"
-    if diff:
+    if   diff==2:
+        return "<B><I>"+STRING+"</I></B>"
+    elif diff==1:
         return "<B>"+STRING+"</B>"
     else:
         return "("+STRING+")"
@@ -413,15 +420,29 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 
     f = open(".index.head.html","a")
     f.write("<TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='."+TST+".src.index.html' TARGET='"+OSVER+"_"+TSTDIR+"_body'><FONT COLOR=#000000>")
-    test = re.compile("^<TR.*><TH.*>No differences.</TH></TR>$", re.MULTILINE)
-    o = e = 1
     for l in fileinput.input(TST+".out.diff.html"):
-        if test.match(l):
-            o = 0
+        pass
+    if   l[:14] == '<!--NoDiffs-->':
+        o = 0
+    elif l[:17] == '<!--MinorDiffs-->':
+        o = 1
+    elif l[:17] == '<!--MajorDiffs-->':
+        o = 2
+    else:
+    	ErrXit("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
     for l in fileinput.input(TST+".err.diff.html"):
-        if test.match(l):
-            e = 0
-    if o or e:
+        pass
+    if   l[:14] == '<!--NoDiffs-->':
+        e = 0
+    elif l[:17] == '<!--MinorDiffs-->':
+        e = 1
+    elif l[:17] == '<!--MajorDiffs-->':
+        e = 2
+    else:
+    	ErrXit("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
+    if   o==2 or e==2:
+        f.write("<B><I>"+TST+"</I></B>")
+    elif o==1 or e==1:
         f.write("<B>"+TST+"</B>")
     else:
         f.write(TST)
@@ -452,12 +473,17 @@ def AddSubToHtmlIndex (env, TSTDIR) :
         f = open("index.head.html","a")
         f.write("<TD><FONT FACE='helvetica, arial'>")
         STRING = "<A HREF='"+url(TSTDIR)+"/.index.html' TARGET='"+OSVER+"__body'>"+TSTDIR+"</A>"
-        test = re.compile("^.*><B>.*</B><.*$", re.MULTILINE)
+        test = ( re.compile("^.*><B><I>.*</I></B><.*$", re.MULTILINE)
+               , re.compile("^.*><B>.*</B><.*$", re.MULTILINE) )
         diff = 0
         for l in fileinput.input(os.path.join(TSTDIR,".index.head.html")):
-            if test.match(l):
+            if   diff<2 and test[0].match(l):
+                diff = 2
+            elif diff<1 and test[1].match(l):
                 diff = 1
-        if diff:
+        if   diff==2:
+            f.write("<B><I>"+STRING+"</I></B>")
+        elif diff==1:
             f.write("<B>"+STRING+"</B>")
         else:
             f.write("("+STRING+")")
@@ -2187,16 +2213,22 @@ def main(argv) :
         env['TSTTRGDIR'] = os.path.join(env['TSTTRGBASE'],TSTPREF)
         CreateHtmlIndex(env)
 
-        test = re.compile("^.*<B>.*$", re.MULTILINE)
+        test = ( re.compile("^.*<B><I>.*$", re.MULTILINE)
+               , re.compile("^.*<B>.*$", re.MULTILINE) )
         failed = 0
+        how = ""
         for l in fileinput.input(os.path.join(env['TSTTRGBASE'],TSTPREF,"index.head.html")):
-            if test.match(l):
+            if   failed<2 and test[0].match(l):
+                failed = 2
+                how = "SIGNIFICANTLY"
+            elif failed<1 and test[1].match(l):
                 failed = 1
+                how = "slightly"
         STDERR.flush()
         if failed:
             print """\
 
- !ERROR:  Testing FAILED ! 
+ !ERROR:  Testing FAILED %s ! 
 
  First, check the testing results in  %s  ! 
 
@@ -2206,7 +2238,7 @@ def main(argv) :
   - approving test output by Mapprove.py (cf. Mapprove.py -?) 
 
  After that, re-run Mtest. 
-""" % os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html")
+""" % (how, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
             sys.exit(1)
         else:
             print """\

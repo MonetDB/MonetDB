@@ -69,18 +69,18 @@
 #define ERRHNDL(r,s,t,u) return r
 #endif
 
-#define SETBLACK(f) if(clr[f]!=0) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#000000>"); clr[f]=0; }
-#define SETBLUE(f) if(clr[f]!=1) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#0000ff>"); clr[f]=1; }
-#define SETRED(f) if(clr[f]!=2) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff0000>"); clr[f]=2; }
-#define SETPINK(f) if(clr[f]!=3) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff00ff>"); clr[f]=3; }
+#define SETBLACK(f)  if(clr[f]!=0  ) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#000000>"              ); clr[f]=0;   }
+#define SETBLUE(f,m) if(clr[f]!=3-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#00%sff>",(m?"aa":"00")); clr[f]=3-m; }
+#define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff%s00>",(m?"aa":"00")); clr[f]=5-m; }
+#define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff%sff>",(m?"aa":"00")); clr[f]=7-m; }
 
 #define BUFLEN 4096
 
 char* HTMLsave(char* s)
 {
   char *p,t[BUFLEN];
-  while((p=strchr(s,'<'))) { *p='\0'; sprintf(t,"%s&lt;%s",s,p+1); strcpy(s,t); }
-  while((p=strchr(s,'>'))) { *p='\0'; sprintf(t,"%s&gt;%s",s,p+1); strcpy(s,t); }
+  while((p=strchr(s,'<'))) { *p='\0'; sprintf(t,"%s&lt;%s"  ,s,p+1); strcpy(s,t); }
+  while((p=strchr(s,'>'))) { *p='\0'; sprintf(t,"%s&gt;%s"  ,s,p+1); strcpy(s,t); }
   while((p=strchr(s,'"'))) { *p='\0'; sprintf(t,"%s&quot;%s",s,p+1); strcpy(s,t); }
   return s;
 }
@@ -114,7 +114,7 @@ int oldnew2u_diff (int context, char *ignore, char *old_fn, char *new_fn, char *
 
       sprintf(command,"%s %s -a -d -u%i %s.cp %s.cp > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
     #else
-      sprintf(command,"%s %s -a -d -u%i %s %s > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
+      sprintf(command,"%s %s -a -d -u%i %s    %s    > %s",DIFF,ignore,context,old_fn,new_fn,u_diff_fn);
     #endif
 
       SYSTEM(command);
@@ -234,9 +234,9 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
                   space=isspace(line[1]); alpha_=isalpha_(line[1]); digit=isdigit(line[1]);
                   for(i=1;i<strlen(line)-1;i++)
                     {
-                      if(((space)&&(!isspace(line[i])))||((!space)&&(isspace(line[i])))||
+                      if(((space )&&(!isspace( line[i])))||((!space )&&(isspace( line[i])))||
                          ((alpha_)&&(!isalpha_(line[i])))||((!alpha_)&&(isalpha_(line[i])))||
-                         ((digit)&&(!isdigit(line[i])))||((!digit)&&(isdigit(line[i])))||
+                         ((digit )&&(!isdigit( line[i])))||((!digit )&&(isdigit( line[i])))||
                          ((!isspace(line[i]))&&(!isalpha_(line[i]))&&(!isdigit(line[i]))))
                         { fprintf(fp[j],"\n"); space=isspace(line[i]); alpha_=isalpha_(line[i]); digit=isdigit(line[i]); l[j]++; }
                       fprintf(fp[j],"%c",line[i]);
@@ -477,7 +477,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   FILE *html_fp,*lwc_diff_fp,*clmn_fp[5];
   char line[BUFLEN],ln[BUFLEN],fn_clmn[BUFLEN],*clmn_fn[5],c[3],*ok;
   char *old,*new,*old_time,*new_time,olns[24],nlns[24];
-  int oln,nln,orn,nrn,i,clr[5],newline;
+  int oln,nln,orn,nrn,i,clr[5],newline,newline_,minor=0,major=0;
 
   TRACE(fprintf(STDERR,"lwc_diff2html(%s,%s,%s,%s)\n",lwc_diff_fn,html_fn,caption,revision));
 
@@ -507,6 +507,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
       fprintf(html_fp,"</TABLE></CENTER>\n");
       fprintf(html_fp,"<HR>\n");
       fprintf(html_fp,"</BODY>\n</HTML>\n");
+      fprintf(html_fp,"<!--NoDiffs-->\n");
       fflush(html_fp); fclose(html_fp);
       return 0;      
     }
@@ -561,18 +562,20 @@ int lwc_diff2html (char *old_fn, char *new_fn,
         }
       for(i=0;i<5;i++) clr[i]=0;
       orn=nrn=0;
+      newline_=1;
       newline=1;
       sprintf(c,"  ");
       while((ok=fgets(line,BUFLEN,lwc_diff_fp))&&strchr(" -+",line[0]))
        if(line[1]!='\3')
         {
+          if(newline_||newline) minor=(strchr("#%\n",line[1])?1:0);
           line[strlen(line)-1]='\0';
           if(line[1]=='\2') sprintf(line+1," ");
           if(line[0]==' ')
             {
               if(newline&&(nrn<orn))
                 {
-                  SETBLUE(1); SETBLUE(2);
+                  SETBLUE(1,minor); SETBLUE(2,minor);
                   while(nrn<orn)
                     {
                       fprintf(clmn_fp[1],"%i\n",oln++);
@@ -583,12 +586,12 @@ int lwc_diff2html (char *old_fn, char *new_fn,
                 }
               SETBLACK(0); SETBLACK(4);
             }
-          if(line[0]=='-') { c[0]='-'; SETBLUE(0); }
-          if(line[0]=='+') { c[1]='+'; SETRED(4); }
+          if(line[0]=='-') { c[0]='-'; SETBLUE(0,minor); }
+          if(line[0]=='+') { c[1]='+'; SETRED(4,minor); }
           if(line[1]!='\1')
             {
-              if(strchr(" -",line[0])) fprintf(clmn_fp[0],"%s",HTMLsave(line+1));
-              if(strchr(" +",line[0])) fprintf(clmn_fp[4],"%s",HTMLsave(line+1));
+              if(strchr(" -",line[0])) { fprintf(clmn_fp[0],"%s",HTMLsave(line+1)); major|=(clr[0]&1); }
+              if(strchr(" +",line[0])) { fprintf(clmn_fp[4],"%s",HTMLsave(line+1)); major|=(clr[4]&1); }
             }
           else
             {
@@ -597,13 +600,13 @@ int lwc_diff2html (char *old_fn, char *new_fn,
                 {
                   if(orn>nrn)
                     {
-                      SETPINK(1); fprintf(clmn_fp[1],"%i\n",oln++);
-                      SETPINK(2); fprintf(clmn_fp[2],"!\n");
-                      SETPINK(3); fprintf(clmn_fp[3],"%i\n",nln++);
+                      SETPINK(1,minor); fprintf(clmn_fp[1],"%i\n",oln++);
+                      SETPINK(2,minor); fprintf(clmn_fp[2], "!\n"      );
+                      SETPINK(3,minor); fprintf(clmn_fp[3],"%i\n",nln++);
                     }
                   else
                     {
-                      SETRED(2); SETRED(3);
+                      SETRED(2,minor); SETRED(3,minor);
                       fprintf(clmn_fp[0],"&nbsp;\n"); orn++;
                       fprintf(clmn_fp[1],"&nbsp;\n");
                       fprintf(clmn_fp[2],"+\n");
@@ -614,10 +617,10 @@ int lwc_diff2html (char *old_fn, char *new_fn,
               if(line[0]==' ')
                 {
                   if(!strncmp(c,"  ",2)) { SETBLACK(1); SETBLACK(3); fprintf(clmn_fp[2],"&nbsp;\n"); }
-                  else                   { SETPINK(1); SETPINK(3); }
-                  if(!strncmp(c,"-+",2)) { SETPINK(2); fprintf(clmn_fp[2],"!\n"); }
-                  if(!strncmp(c,"- ",2)) { SETBLUE(2); fprintf(clmn_fp[2],"-\n"); }
-                  if(!strncmp(c," +",2)) { SETRED(2); fprintf(clmn_fp[2],"+\n"); }
+                  else                   { SETPINK(1,minor); SETPINK(3,minor); }
+                  if(!strncmp(c,"-+",2)) { SETPINK(2,minor); fprintf(clmn_fp[2],"!\n"); }
+                  if(!strncmp(c,"- ",2)) { SETBLUE(2,minor); fprintf(clmn_fp[2],"-\n"); }
+                  if(!strncmp(c," +",2)) { SETRED( 2,minor); fprintf(clmn_fp[2],"+\n"); }
                   fprintf(clmn_fp[1],"%i\n",oln++);
                   fprintf(clmn_fp[3],"%i\n",nln++);
                   fprintf(clmn_fp[0],"\n");
@@ -625,29 +628,30 @@ int lwc_diff2html (char *old_fn, char *new_fn,
                 }
               sprintf(c,"  ");
             }
+          newline_=newline;
           newline=(line[1]=='\1');
         }
 
       if(nrn<orn)
         {
-          SETBLUE(1); SETBLUE(2);
+          SETBLUE(1,minor); SETBLUE(2,minor);
           while(nrn<orn)
             {
-              fprintf(clmn_fp[1],"%i\n",oln++);
-              fprintf(clmn_fp[2],"-\n");
-              fprintf(clmn_fp[3],"&nbsp;\n");
-              fprintf(clmn_fp[4],"&nbsp;\n"); nrn++;
+              fprintf(clmn_fp[1],    "%i\n",oln++);
+              fprintf(clmn_fp[2],     "-\n"      );
+              fprintf(clmn_fp[3],"&nbsp;\n"      );
+              fprintf(clmn_fp[4],"&nbsp;\n"      ); nrn++;
             }
         }
       if(orn<nrn)
         {
-          SETRED(2); SETRED(3);
+          SETRED(2,minor); SETRED(3,minor);
           while(orn<nrn)
             {
-              fprintf(clmn_fp[0],"&nbsp;\n"); orn++;
-              fprintf(clmn_fp[1],"&nbsp;\n");
-              fprintf(clmn_fp[2],"+\n");
-              fprintf(clmn_fp[3],"%i\n",nln++);
+              fprintf(clmn_fp[0],"&nbsp;\n"      ); orn++;
+              fprintf(clmn_fp[1],"&nbsp;\n"      );
+              fprintf(clmn_fp[2],     "+\n"      );
+              fprintf(clmn_fp[3],    "%i\n",nln++);
             }
         }
 
@@ -704,11 +708,12 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   fprintf(html_fp,"</TABLE></CENTER>\n");
   fprintf(html_fp,"<HR>\n");
   fprintf(html_fp,"</BODY>\n</HTML>\n");
+  fprintf(html_fp,"<!--%sDiffs-->\n",major?"Major":"Minor");
   fflush(html_fp); fclose(html_fp);
 
   for(i=0;i<5;i++) { UNLINK(clmn_fn[i]); free(clmn_fn[i]); }
 
-  fclose(lwc_diff_fp); return 1;
+  fclose(lwc_diff_fp); return (major?2:1);
 }
 /* lwc_diff2html */
 

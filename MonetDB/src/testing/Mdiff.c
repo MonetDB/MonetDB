@@ -97,10 +97,12 @@ int main(int argc, char** argv)
   TRACE(fprintf(STDERR,"%s -A %i -C %i %s -t %s -r %s  %s %s %s\n",
                  argv[0],LWC,context,ignore,caption,revision,old_fn,new_fn,html_fn));
 
-  if ( oldnew2html (LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision) )
-      fprintf(STDERR,"%s and %s do differ!\n",old_fn,new_fn);
-    else
-      fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn);
+  switch ( oldnew2html (LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision) )
+    {
+      case 0: fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn); break;
+      case 1: fprintf(STDERR,"%s and %s differ slightly.\n",old_fn,new_fn); break;
+      case 2: fprintf(STDERR,"%s and %s differ significantly!\n",old_fn,new_fn); break;
+    }
 
   TRACE(fprintf(STDERR,"done.\n"));
   return 0;
