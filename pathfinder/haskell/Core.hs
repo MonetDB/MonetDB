@@ -2167,8 +2167,7 @@ xqo = XFOR "x" (XSEQ (XDBL 20) (XDBL 10))
                        [XVAR "x"]
                )
 
-q = XFORAT "x" "p" (XSEQ (XINT 10) (XDBL 20))
-           (XVAR "p")
+q = XDBL 20
     
 
 main = do
@@ -2178,9 +2177,9 @@ main = do
           -- (comment all other lines if you want to use `make ps')
           --putStr (dot (compile xmark_Q2))
           -- print algebra expression (tree)
-          --print (compile xmark_Q2)
+          print (compile q)
           -- print result of algebraic evaluation 
-          print (evaluate (compile xmark_Q2))
+          --print (evaluate (compile xmark_Q2))
           -- compile and evaluate query, then serialize the result as XML
           --putStr (serialize xmark_Q2) 
 

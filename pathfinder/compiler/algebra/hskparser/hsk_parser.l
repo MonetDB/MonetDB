@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pathfinder.h"
+#include "mem.h"
 #include "oops.h"
 #include "algebra.h"
 #include "hsk_parser.tab.h"
@@ -138,13 +139,13 @@ TEXT                   {return TEXT;}
                         strcpy(s, hsktext);
                         hsklval.ival=atoi(s);
                         return INT;}
-%("\."{digits})|({digits}"\."[0-9]*) {/* representation of decimals */
+"%"{digits}"."{digits} {/* representation of decimals */
                         s = malloc(hskleng + 1);
-                        /* Delete # character. */
+                        /* Delete % character. */
                         strncpy(s, hsktext + 1, hskleng - 1);
                         hsklval.fval=(float)atof(s);
                         return DEC;}
-#(("\."{digits})|({digits}("."[0-9]*)?))[eE][+-]?{digits} {
+"#"(({digits}"."{digits}([eE][+-]?{digits})?)|({digits}[eE][+-]?{digits})) {
                         /* representation of doubles */
                         s = malloc(hskleng + 1);
                         /* Delete # character. */
