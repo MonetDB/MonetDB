@@ -5,9 +5,10 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # 18:28:10 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/var/MonetDB/log" --set mapi_port=53708 --set sql_port=52024 --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_plain.milS
 # 18:28:10 >  
 
-# Monet Database Server V4.3.13
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Compiled for i686-pc-win32/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 setoid(oid(20000000));
 
 var MODULES:=bat("MODULES");
@@ -24,7 +25,8 @@ var Fnts:=new(oid,str);
 var Plain_mods:=MODULES.select("plain").sort().copy();
 table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 #-----------------#
-# 24 modules	  #
+# 24 modules	  # name
+# str		  # type
 #-----------------#
 [ "aggr"	  ]
 [ "aggrX3"	  ]
@@ -109,7 +111,8 @@ Module: "aggr"
 [ 52 ]
 [ 52 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature							| help								  #
+# function			type		signature							help								  # name
+# str			str		str								str								  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "aggrtst",		  "PROC:      ",  "aggrtst(int, int, str, ..str..) : void",			  "not available"						  ]
 [ "card",		  "COMMAND:   ",  "card(BAT[any,any]) : int",					  "return the number of different values in a tail column"	  ]
@@ -169,7 +172,8 @@ Module: "aggrX3"
 [ 84 ]
 [ 84 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature									| help								  #
+# function			type		signature									help								  # name
+# str			str		str										str								  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "aggrtst",		  "PROC:      ",  "aggrtst(int, int, str, ..str..) : void",					  "not available"						  ]
 [ "card",		  "PROC:      ",  "card(BAT[any,any]) : int",							  "not available"						  ]
@@ -261,7 +265,8 @@ Module: "alarm"
 [ 8 ]
 [ 8 ]
 #---------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help					  #
+# function		type		signature			help					  # name
+# str		str		str				str					  # type
 #---------------------------------------------------------------------------------------------------------#
 [ "alarm",	  "COMMAND:   ",  "alarm(int, str) : void",	  "execute action in X secs"		  ]
 [ "ctime",	  "COMMAND:   ",  "ctime() : str",		  "current time as a string"		  ]
@@ -277,7 +282,8 @@ Module: "ascii_io"
 [ 22 ]
 [ 22 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature										| help			  #
+# function			type		signature										help			  # name
+# str			str		str											str			  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "ascii_io_debug",	  "COMMAND:   ",  "ascii_io_debug(int) : void",								  ""			  ]
 [ "bat_ttype",		  "PROC:      ",  "bat_ttype(BAT[any,any]) : str",							  "not available"	  ]
@@ -307,7 +313,8 @@ Module: "bat_arith"
 [ 138 ]
 [ 138 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature						| help														  #
+# function		type		signature						help														  # name
+# str		str		str							str														  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,int], BAT[void,int]) : BAT[void,int]",	  "optimized multiplexed mod ('%') on head-aligned [void,int] BATs"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar mod ('%') on [void,int] BAT"						  ]
@@ -453,7 +460,8 @@ Module: "blob"
 [ 5 ]
 [ 5 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help																  #
+# function		type		signature			help																  # name
+# str		str		str				str																  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "nitems",	  "COMMAND:   ",  "nitems(blob) : int",		  "get the number of bytes stored in this blob."										  ]
 [ "test_blob",	  "PROC:      ",  "test_blob() : void",		  "not available"														  ]
@@ -466,7 +474,8 @@ Module: "counters"
 [ 15 ]
 [ 15 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature				| help											  #
+# function			type		signature				help											  # name
+# str			str		str					str											  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "counter2bat",	  "COMMAND:   ",  "counter2bat(counter) : BAT[str,lng]",  "store the retrieved results in a BAT"						  ]
 [ "counter2str",	  "PROC:      ",  "counter2str(counter) : str",		  "cast counter to string."								  ]
@@ -489,7 +498,8 @@ Module: "decimal"
 [ 36 ]
 [ 36 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature								| help																																																																																									  #
+# function			type		signature								help																																																																																									  # name
+# str			str		str									str																																																																																									  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "!=",			  "OPERATOR:  ",  "!=(decimal, decimal) : bit",						  "decimal non-equality test (!DS2.2)"																																																																																					  ]
 [ "*",			  "OPERATOR:  ",  "*(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 * val2)."																																																																																		  ]
@@ -533,7 +543,8 @@ Module: "enum"
 [ 24 ]
 [ 24 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature								| help										  #
+# function			type		signature								help										  # name
+# str			str		str									str										  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "[decode]",		  "COMMAND:   ",  "[decode](int, BAT[any::1,any]) : BAT[any::1,any]",			  "decode a BAT of tail values, into a new BAT of decoded values"		  ]
 [ "[encode]",		  "COMMAND:   ",  "[encode](int, BAT[any::1,any]) : BAT[any::1,any]",			  "encode a BAT of tail values, into a new BAT of encoded values"		  ]
@@ -562,21 +573,21 @@ Module: "enum"
 
 Module: "lock"
 
-[ 10 ]
-[ 10 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help										  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "lock_create",  "COMMAND:   ",  "lock_create() : lock",	  "create an unset lock"							  ]
-[ "lock_destroy", "COMMAND:   ",  "lock_destroy(lock) : void",	  "destroy a lock"								  ]
-[ "lock_set",	  "COMMAND:   ",  "lock_set(lock) : void",	  "try to set a lock; if set, block till it is freed"				  ]
-[ "lock_try",	  "COMMAND:   ",  "lock_try(lock) : int",	  "try a lock, if free set it and return 0, \n\t\tif not return EBUSY"		  ]
-[ "lock_unset",	  "COMMAND:   ",  "lock_unset(lock) : void",	  "unset a lock"								  ]
-[ "sema_create",  "COMMAND:   ",  "sema_create(int) : sema",	  "create an unset sema, with an initial value"					  ]
-[ "sema_destroy", "COMMAND:   ",  "sema_destroy(sema) : void",	  "destroy a sema"								  ]
-[ "sema_down",	  "COMMAND:   ",  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"					  ]
-[ "sema_try",	  "COMMAND:   ",  "sema_try(sema) : int",	  "try the semaphpore, if >0 decrease and return 0, \n\t\tif not return EBUSY"	  ]
-[ "sema_up",	  "COMMAND:   ",  "sema_up(sema) : void",	  "increase the semaphore"							  ]
+[ 9 ]
+[ 9 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature			help									  # name
+# str		str		str				str									  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------#
+[ "lock_create",  "COMMAND:   ",  "lock_create() : lock",	  "create an unset lock"						  ]
+[ "lock_destroy", "COMMAND:   ",  "lock_destroy(lock) : void",	  "destroy a lock"							  ]
+[ "lock_set",	  "COMMAND:   ",  "lock_set(lock) : void",	  "try to set a lock; if set, block till it is freed"			  ]
+[ "lock_try",	  "COMMAND:   ",  "lock_try(lock) : int",	  "try a lock, if free set it and return 0, \n\t\tif not return EBUSY"	  ]
+[ "lock_unset",	  "COMMAND:   ",  "lock_unset(lock) : void",	  "unset a lock"							  ]
+[ "sema_create",  "COMMAND:   ",  "sema_create(int) : sema",	  "create an unset sema, with an initial value"				  ]
+[ "sema_destroy", "COMMAND:   ",  "sema_destroy(sema) : void",	  "destroy a sema"							  ]
+[ "sema_down",	  "COMMAND:   ",  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"				  ]
+[ "sema_up",	  "COMMAND:   ",  "sema_up(sema) : void",	  "increase the semaphore"						  ]
 
 Module: "mapi"
 
@@ -586,10 +597,10 @@ Module: "mapi"
 # function			type		signature									help																																								  # name
 # str			str		str										str																																								  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",				  "not available"																					  ]
-[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",				  "not available"																					  ]
-[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",				  "not available"																					  ]
-[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",				  "not available"																					  ]
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",							  "not available"																																						  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",							  "not available"																																						  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",							  "not available"																																						  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",							  "not available"																																						  ]
 [ "get_mapi_port",	  "PROC:      ",  "get_mapi_port() : int",							  "not available"																																						  ]
 [ "listen",		  "PROC:      ",  "listen() : void",								  "Start the Mapi listener on 50000."																																				  ]
 [ "listen",		  "PROC:      ",  "listen(int) : void",								  "Start the Mapi listener on <port>."																																				  ]
@@ -602,11 +613,11 @@ Module: "mapi"
 [ "mapi_listen2",	  "BUILTIN:   ",  "mapi_listen2(int port, str sockfile, int maxusers, str cmd) ",		  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked. <sockfile> is the name of a Unix socket."								  ]
 [ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) ", "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : void",						  "not available"																																						  ]
-[ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",			  "Read a string from <S> until a '1' character."																	  ]
-[ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",				  "Read a string from <S> until a newline."																		  ]
-[ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",			  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."											  ]
-[ "stream_until",	  "COMMAND:   ",  "stream_until(Stream, str) : str",			  "read a string from <S> until the <stop> word"																	  ]
-[ "test_streams",	  "PROC:      ",  "test_streams() : void",				  "not available"																					  ]
+[ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",						  "Read a string from <S> until a '1' character."																																		  ]
+[ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",							  "Read a string from <S> until a newline."																																			  ]
+[ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",						  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."																												  ]
+[ "stream_until",	  "COMMAND:   ",  "stream_until(Stream, str) : str",						  "read a string from <S> until the <stop> word"																																		  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",							  "not available"																																						  ]
 
 Module: "mkey"
 
@@ -616,71 +627,72 @@ Module: "mkey"
 # function			type		signature										help													  # name
 # str			str		str											str													  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "[:rotate_xor_hash=]",  "PROC:      ",  "[:rotate_xor_hash=](BAT[any::1,int], int, BAT[any::1,any]) : BAT[any::1,int]", "not available"											  ]
-[ "bulk_rotate_xor_hash", "COMMAND:   ",  "bulk_rotate_xor_hash(BAT[oid,int], int, BAT[oid,any]) : BAT[oid,int]",	  "pre:  h and b should be synced on head\n         post: [:xor=]([:rotate=](h, nbits), [hash](b))"	  ]
+[ "[:rotate_xor_hash=]",  "PROC:      ",  "[:rotate_xor_hash=](BAT[any::1,int], int, BAT[any::1,any]) : BAT[any::1,int]",	  "not available"											  ]
+[ "bulk_rotate_xor_hash", "COMMAND:   ",  "bulk_rotate_xor_hash(BAT[oid,int], int, BAT[oid,any]) : BAT[oid,int]",		  "pre:  h and b should be synced on head\n         post: [:xor=]([:rotate=](h, nbits), [hash](b))"	  ]
 [ "ds_eq",		  "PROC:      ",  "ds_eq(BAT[void,oid], BAT[any,any], BAT[void,oid], BAT[any,any]) : BAT[void,bit]",	  "not available"											  ]
 [ "ds_hash",		  "PROC:      ",  "ds_hash(BAT[BAT,any]) : BAT[oid,int]",						  "not available"											  ]
-[ "ds_link",		  "PROC:      ",  "ds_link(BAT[BAT,BAT]) : BAT[oid,oid]",					  "not available"											  ]
-[ "ds_link",		  "PROC:      ",  "ds_link(BAT[oid,any::1], BAT[oid,any::1], ..BAT[oid,any]..) : BAT[oid,oid]",	  "not available"											  ]
-[ "ds_sort",		  "PROC:      ",  "ds_sort(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",			  "not available"											  ]
-[ "hash",		  "COMMAND:   ",  "hash(any) : int",								  "compute a hash int number from any value"								  ]
-[ "hash",		  "COMMAND:   ",  "hash(bit) : int",								  ""													  ]
-[ "hash",		  "COMMAND:   ",  "hash(chr) : int",								  ""													  ]
-[ "hash",		  "COMMAND:   ",  "hash(dbl) : int",								  ""													  ]
-[ "hash",		  "COMMAND:   ",  "hash(flt) : int",								  ""													  ]
-[ "hash",		  "COMMAND:   ",  "hash(int) : int",								  ""													  ]
-[ "hash",		  "COMMAND:   ",  "hash(lng) : int",								  ""													  ]
-[ "hash",		  "COMMAND:   ",  "hash(sht) : int",								  ""													  ]
-[ "hash",		  "COMMAND:   ",  "hash(str) : int",								  ""													  ]
-[ "rotate",		  "COMMAND:   ",  "rotate(int, int) : int",							  "left-rotate an int by nbits"										  ]
-[ "rotate_xor_hash",	  "PROC:      ",  "rotate_xor_hash(int, int, any) : int",					  "not available"											  ]
+[ "ds_link",		  "PROC:      ",  "ds_link(BAT[BAT,BAT]) : BAT[oid,oid]",						  "not available"											  ]
+[ "ds_link",		  "PROC:      ",  "ds_link(BAT[oid,any::1], BAT[oid,any::1], ..BAT[oid,any]..) : BAT[oid,oid]",		  "not available"											  ]
+[ "ds_sort",		  "PROC:      ",  "ds_sort(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "not available"											  ]
+[ "hash",		  "COMMAND:   ",  "hash(any) : int",									  "compute a hash int number from any value"								  ]
+[ "hash",		  "COMMAND:   ",  "hash(bit) : int",									  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(chr) : int",									  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(dbl) : int",									  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(flt) : int",									  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(int) : int",									  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(lng) : int",									  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(sht) : int",									  ""													  ]
+[ "hash",		  "COMMAND:   ",  "hash(str) : int",									  ""													  ]
+[ "rotate",		  "COMMAND:   ",  "rotate(int, int) : int",								  "left-rotate an int by nbits"										  ]
+[ "rotate_xor_hash",	  "PROC:      ",  "rotate_xor_hash(int, int, any) : int",						  "not available"											  ]
 
 Module: "mmath"
 
 [ 40 ]
 [ 40 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help																																											  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "acos",	  "COMMAND:   ",  "acos(dbl) : dbl",		  "The acos(x) function calculates the arc cosine of x;\nthat is the value whose cosine is x. The value is returned in radians\nand is mathematically defined to be between 0 and PI (inclusive)."																			  ]
-[ "acos",	  "PROC:      ",  "acos(flt) : flt",		  "not available"																																									  ]
-[ "asin",	  "COMMAND:   ",  "asin(dbl) : dbl",		  "The asin(x) function calculates the arc sine of x;\nthat is the value whose sine is x. The value is returned in radians\nand is mathematically defined to be between -PI/20 and -PI/2 (inclusive)."																			  ]
-[ "asin",	  "PROC:      ",  "asin(flt) : flt",		  "not available"																																									  ]
-[ "atan",	  "COMMAND:   ",  "atan(dbl) : dbl",		  "The atan(x) function calculates the arc tangent of x;\nthat is the value whose tangent is x. The value is returned in radians\nand is mathematically defined to be between -PI/2 and PI/2 (inclusive)."																		  ]
-[ "atan",	  "PROC:      ",  "atan(flt) : flt",		  "not available"																																									  ]
-[ "atan2",	  "COMMAND:   ",  "atan2(dbl, dbl) : dbl",	  "The atan2(x,y) function calculates the arc tangent of the two\nvariables x and y. It is similar to calculating the arc\ntangent of y / x, except that the signs of both arguments\nare used to determine the quadrant of the result.\nThe value is returned in radians and is mathematically defined\nto be between -PI/2 and PI/2 (inclusive)."	  ]
-[ "ceil",	  "COMMAND:   ",  "ceil(dbl) : dbl",		  "The ceil(x) function rounds x upwards to the nearest integer."																																			  ]
-[ "ceil",	  "PROC:      ",  "ceil(flt) : flt",		  "not available"																																									  ]
-[ "cos",	  "COMMAND:   ",  "cos(dbl) : dbl",		  "The cos(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
-[ "cos",	  "PROC:      ",  "cos(flt) : flt",		  "not available"																																									  ]
-[ "cosh",	  "COMMAND:   ",  "cosh(dbl) : dbl",		  "The cosh() function  returns the hyperbolic cosine of x,\nwhich is defined mathematically as (exp(x) + exp(-x)) / 2."																												  ]
-[ "cosh",	  "PROC:      ",  "cosh(flt) : flt",		  "not available"																																									  ]
-[ "exp",	  "COMMAND:   ",  "exp(dbl) : dbl",		  "The exp(x) function returns the value of e\n(the base of natural logarithms) raised to the power of x."																														  ]
-[ "exp",	  "PROC:      ",  "exp(flt) : flt",		  "not available"																																									  ]
-[ "fabs",	  "COMMAND:   ",  "fabs(dbl) : dbl",		  "The fabs(x) function  returns  the  absolute value of the \nfloating-point number x."																																  ]
-[ "finite",	  "COMMAND:   ",  "finite(dbl) : bit",		  "The finite(x) function returns true if x is neither infinite nor a 'not-a-number' (NaN) value, and false otherwise."																													  ]
-[ "floor",	  "COMMAND:   ",  "floor(dbl) : dbl",		  "The floor(x) function rounds x downwards to the nearest integer."																																			  ]
-[ "floor",	  "PROC:      ",  "floor(flt) : flt",		  "not available"																																									  ]
-[ "fmod",	  "COMMAND:   ",  "fmod(dbl, dbl) : dbl",	  "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer."																						  ]
-[ "isinf",	  "COMMAND:   ",  "isinf(dbl) : int",		  "The isinf(x) function returns -1 if x represents negative infinity, 1 if x represents positive infinity, and 0 otherwise."																												  ]
-[ "isnan",	  "COMMAND:   ",  "isnan(dbl) : bit",		  "The isnan(x) function returns true if x is 'not-a-number' (NaN), and false otherwise."																																  ]
-[ "log",	  "COMMAND:   ",  "log(dbl) : dbl",		  "The log(x) function returns the natural logarithm of x."																																				  ]
-[ "log",	  "PROC:      ",  "log(flt) : flt",		  "not available"																																									  ]
-[ "log10",	  "COMMAND:   ",  "log10(dbl) : dbl",		  "The log10(x) function returns the base-10 logarithm of x."																																				  ]
-[ "log10",	  "PROC:      ",  "log10(flt) : flt",		  "not available"																																									  ]
-[ "pow",	  "COMMAND:   ",  "pow(dbl, dbl) : dbl",	  "The pow(x,y) function  returns the value of x raised to the power of y."																																		  ]
-[ "round",	  "COMMAND:   ",  "round(dbl, int) : dbl",	  "The round(n, m) returns n rounded to m places to the right of the\ndecimal point; if m is omitted, to 0 places. m can be negative to\nround off digits left of the decimal point. m must be an integer."																		  ]
-[ "sin",	  "COMMAND:   ",  "sin(dbl) : dbl",		  "The sin(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
-[ "sin",	  "PROC:      ",  "sin(flt) : flt",		  "not available"																																									  ]
-[ "sinh",	  "COMMAND:   ",  "sinh(dbl) : dbl",		  "The sinh() function  returns  the  hyperbolic sine of x,\nwhich is defined mathematically as (exp(x) - exp(-x)) / 2."																												  ]
-[ "sinh",	  "PROC:      ",  "sinh(flt) : flt",		  "not available"																																									  ]
-[ "sqrt",	  "COMMAND:   ",  "sqrt(dbl) : dbl",		  "The sqrt(x) function returns the non-negative square root of x."																																			  ]
-[ "sqrt",	  "PROC:      ",  "sqrt(flt) : flt",		  "not available"																																									  ]
-[ "tan",	  "COMMAND:   ",  "tan(dbl) : dbl",		  "The tan(x) function returns the tangent of x,\nwhere x is given in radians"																																		  ]
-[ "tan",	  "PROC:      ",  "tan(flt) : flt",		  "not available"																																									  ]
-[ "tanh",	  "COMMAND:   ",  "tanh(dbl) : dbl",		  "The tanh() function returns the hyperbolic tangent of x,\nwhich is defined mathematically as sinh(x) / cosh(x)."																													  ]
-[ "tanh",	  "PROC:      ",  "tanh(flt) : flt",		  "not available"																																									  ]
-[ "test_mmath",	  "PROC:      ",  "test_mmath() : void",	  "not available"																																									  ]
+# function			type		signature			help																																											  # name
+# str			str		str				str																																											  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "acos",		  "COMMAND:   ",  "acos(dbl) : dbl",		  "The acos(x) function calculates the arc cosine of x;\nthat is the value whose cosine is x. The value is returned in radians\nand is mathematically defined to be between 0 and PI (inclusive)."																			  ]
+[ "acos",		  "PROC:      ",  "acos(flt) : flt",		  "not available"																																									  ]
+[ "asin",		  "COMMAND:   ",  "asin(dbl) : dbl",		  "The asin(x) function calculates the arc sine of x;\nthat is the value whose sine is x. The value is returned in radians\nand is mathematically defined to be between -PI/20 and -PI/2 (inclusive)."																			  ]
+[ "asin",		  "PROC:      ",  "asin(flt) : flt",		  "not available"																																									  ]
+[ "atan",		  "COMMAND:   ",  "atan(dbl) : dbl",		  "The atan(x) function calculates the arc tangent of x;\nthat is the value whose tangent is x. The value is returned in radians\nand is mathematically defined to be between -PI/2 and PI/2 (inclusive)."																		  ]
+[ "atan",		  "PROC:      ",  "atan(flt) : flt",		  "not available"																																									  ]
+[ "atan2",		  "COMMAND:   ",  "atan2(dbl, dbl) : dbl",	  "The atan2(x,y) function calculates the arc tangent of the two\nvariables x and y. It is similar to calculating the arc\ntangent of y / x, except that the signs of both arguments\nare used to determine the quadrant of the result.\nThe value is returned in radians and is mathematically defined\nto be between -PI/2 and PI/2 (inclusive)."	  ]
+[ "ceil",		  "COMMAND:   ",  "ceil(dbl) : dbl",		  "The ceil(x) function rounds x upwards to the nearest integer."																																			  ]
+[ "ceil",		  "PROC:      ",  "ceil(flt) : flt",		  "not available"																																									  ]
+[ "cos",		  "COMMAND:   ",  "cos(dbl) : dbl",		  "The cos(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
+[ "cos",		  "PROC:      ",  "cos(flt) : flt",		  "not available"																																									  ]
+[ "cosh",		  "COMMAND:   ",  "cosh(dbl) : dbl",		  "The cosh() function  returns the hyperbolic cosine of x,\nwhich is defined mathematically as (exp(x) + exp(-x)) / 2."																												  ]
+[ "cosh",		  "PROC:      ",  "cosh(flt) : flt",		  "not available"																																									  ]
+[ "exp",		  "COMMAND:   ",  "exp(dbl) : dbl",		  "The exp(x) function returns the value of e\n(the base of natural logarithms) raised to the power of x."																														  ]
+[ "exp",		  "PROC:      ",  "exp(flt) : flt",		  "not available"																																									  ]
+[ "fabs",		  "COMMAND:   ",  "fabs(dbl) : dbl",		  "The fabs(x) function  returns  the  absolute value of the \nfloating-point number x."																																  ]
+[ "finite",		  "COMMAND:   ",  "finite(dbl) : bit",		  "The finite(x) function returns true if x is neither infinite nor a 'not-a-number' (NaN) value, and false otherwise."																													  ]
+[ "floor",		  "COMMAND:   ",  "floor(dbl) : dbl",		  "The floor(x) function rounds x downwards to the nearest integer."																																			  ]
+[ "floor",		  "PROC:      ",  "floor(flt) : flt",		  "not available"																																									  ]
+[ "fmod",		  "COMMAND:   ",  "fmod(dbl, dbl) : dbl",	  "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer."																						  ]
+[ "isinf",		  "COMMAND:   ",  "isinf(dbl) : int",		  "The isinf(x) function returns -1 if x represents negative infinity, 1 if x represents positive infinity, and 0 otherwise."																												  ]
+[ "isnan",		  "COMMAND:   ",  "isnan(dbl) : bit",		  "The isnan(x) function returns true if x is 'not-a-number' (NaN), and false otherwise."																																  ]
+[ "log",		  "COMMAND:   ",  "log(dbl) : dbl",		  "The log(x) function returns the natural logarithm of x."																																				  ]
+[ "log",		  "PROC:      ",  "log(flt) : flt",		  "not available"																																									  ]
+[ "log10",		  "COMMAND:   ",  "log10(dbl) : dbl",		  "The log10(x) function returns the base-10 logarithm of x."																																				  ]
+[ "log10",		  "PROC:      ",  "log10(flt) : flt",		  "not available"																																									  ]
+[ "pow",		  "COMMAND:   ",  "pow(dbl, dbl) : dbl",	  "The pow(x,y) function  returns the value of x raised to the power of y."																																		  ]
+[ "round",		  "COMMAND:   ",  "round(dbl, int) : dbl",	  "The round(n, m) returns n rounded to m places to the right of the\ndecimal point; if m is omitted, to 0 places. m can be negative to\nround off digits left of the decimal point. m must be an integer."																		  ]
+[ "sin",		  "COMMAND:   ",  "sin(dbl) : dbl",		  "The sin(x) function returns the cosine of x,\nwhere x is given in radians. The return value is between -1 and 1."																													  ]
+[ "sin",		  "PROC:      ",  "sin(flt) : flt",		  "not available"																																									  ]
+[ "sinh",		  "COMMAND:   ",  "sinh(dbl) : dbl",		  "The sinh() function  returns  the  hyperbolic sine of x,\nwhich is defined mathematically as (exp(x) - exp(-x)) / 2."																												  ]
+[ "sinh",		  "PROC:      ",  "sinh(flt) : flt",		  "not available"																																									  ]
+[ "sqrt",		  "COMMAND:   ",  "sqrt(dbl) : dbl",		  "The sqrt(x) function returns the non-negative square root of x."																																			  ]
+[ "sqrt",		  "PROC:      ",  "sqrt(flt) : flt",		  "not available"																																									  ]
+[ "tan",		  "COMMAND:   ",  "tan(dbl) : dbl",		  "The tan(x) function returns the tangent of x,\nwhere x is given in radians"																																		  ]
+[ "tan",		  "PROC:      ",  "tan(flt) : flt",		  "not available"																																									  ]
+[ "tanh",		  "COMMAND:   ",  "tanh(dbl) : dbl",		  "The tanh() function returns the hyperbolic tangent of x,\nwhich is defined mathematically as sinh(x) / cosh(x)."																													  ]
+[ "tanh",		  "PROC:      ",  "tanh(flt) : flt",		  "not available"																																									  ]
+[ "test_mmath",		  "PROC:      ",  "test_mmath() : void",	  "not available"																																									  ]
 [ "test_mmath_nan",	  "PROC:      ",  "test_mmath_nan() : void",	  "not available"																																									  ]
 
 Module: "monettime"
@@ -688,7 +700,8 @@ Module: "monettime"
 [ 105 ]
 [ 105 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function			| type		| signature														| help													  #
+# function				type		signature														help													  # name
+# str				str		str															str													  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "!=",				  "OPERATOR:  ",  "!=(date, date) : bit",												  "date non-equality test (!DS2.2)"									  ]
 [ "!=",				  "OPERATOR:  ",  "!=(daytime, daytime) : bit",												  "daytime non-equality test (!DS2.2)"									  ]
@@ -801,7 +814,8 @@ Module: "pcl"
 [ 9 ]
 [ 9 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature					| help								  #
+# function			type		signature					help								  # name
+# str			str		str						str								  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "pcl_eventname",	  "COMMAND:   ",  "pcl_eventname(int) : str",			  "return name of given event number"				  ]
 [ "pcl_info",		  "COMMAND:   ",  "pcl_info() : BAT[str,str]",			  "get information about the processor in use"			  ]
@@ -815,27 +829,34 @@ Module: "pcl"
 
 Module: "profiler"
 
-[ 9 ]
-[ 9 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# function			type		signature			help					  # name
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",	  "not available"							  ]
-[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",	  "not available"							  ]
-[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",	  "not available"							  ]
-[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",	  "not available"							  ]
-[ "setFilter",		  "COMMAND:   ",  "setFilter(str, str) : int",	  "Set the profile filter strings"	  ]
-[ "startProfiler",	  "COMMAND:   ",  "startProfiler(Stream) : int",  "Start the event profiling stream; output is sent to Stream output"	  ]
-[ "startProfiler",	  "PROC:      ",  "startProfiler() : int",	  "Start the event profiling stream; output is sent to stdout"		  ]
-[ "stopProfiler",	  "COMMAND:   ",  "stopProfiler() : int",	  "Stop the event profiling stream"	  ]
-[ "test_streams",	  "PROC:      ",  "test_streams() : void",	  "not available"							  ]
+[ 14 ]
+[ 14 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature				help									  # name
+# str			str		str					str									  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",		  "not available"							  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",		  "not available"							  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",		  "not available"							  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",		  "not available"							  ]
+[ "getProfilerCount",	  "COMMAND:   ",  "getProfilerCount() : BAT[str,int]",	  "Get a copy of the profiler count summary table"			  ]
+[ "getProfilerTicks",	  "COMMAND:   ",  "getProfilerTicks() : BAT[str,lng]",	  "Get a copy of the profiler ticks summary table"			  ]
+[ "profile",		  "PROC:      ",  "profile() : int",			  "not available"							  ]
+[ "resetProfiler",	  "COMMAND:   ",  "resetProfiler() : void",		  "Set all counters to zero again"					  ]
+[ "setFilter",		  "COMMAND:   ",  "setFilter(str, str) : int",		  "Set the profile filter strings"					  ]
+[ "startProfiler",	  "COMMAND:   ",  "startProfiler() : void",		  "Collect command and proc counts"					  ]
+[ "startProfiler",	  "COMMAND:   ",  "startProfiler(Stream) : int",	  "Start the event profiling stream; output is sent to Stream output"	  ]
+[ "startProfiler",	  "COMMAND:   ",  "startProfiler(str) : int",		  "Start the event profiling stream; output is sent to fname"		  ]
+[ "stopProfiler",	  "COMMAND:   ",  "stopProfiler() : int",		  "Stop the event profiling stream"					  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",		  "not available"							  ]
 
 Module: "radix"
 
 [ 143 ]
 [ 143 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature													| help																																																																																																									  #
+# function			type		signature													help																																																																																																									  # name
+# str			str		str														str																																																																																																									  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "CACHE_LINES",	  "PROC:      ",  "CACHE_LINES() : int",											  "not available"																																																																																																							  ]
 [ "[IntX]",		  "COMMAND:   ",  "[IntX](BAT[any::1,integer128]) : BAT[any::1,Int128]",							  "convert an integer128 to Int128"																																																																																																					  ]
@@ -986,7 +1007,8 @@ Module: "salgebra"
 [ 11 ]
 [ 11 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature							| help									  #
+# function			type		signature							help									  # name
+# str			str		str								str									  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "CHbat",		  "COMMAND:   ",  "CHbat(clusterhash) : BAT[void,any]",				  "Provides access to the original bat."				  ]
 [ "CHdir",		  "PROC:      ",  "CHdir() : void",						  "List the clusterhash dictionary."					  ]
@@ -1005,7 +1027,8 @@ Module: "stats"
 [ 5 ]
 [ 5 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
-# function			| type		| signature						| help					  #
+# function				type		signature						help					  # name
+# str				str		str							str					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "[stats_add]",		  "COMMAND:   ",  "[stats_add](ptr, lng) : void",			  "Add a value to a statistics object."	  ]
 [ "[stats_del]",		  "COMMAND:   ",  "[stats_del](ptr) : void",				  "Delete a statistics object."		  ]
@@ -1018,7 +1041,8 @@ Module: "streams"
 [ 34 ]
 [ 34 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature						| help									  #
+# function			type		signature						help									  # name
+# str			str		str							str									  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "block_stream",	  "COMMAND:   ",  "block_stream(Stream) : Stream",			  "open a block based stream"						  ]
 [ "bstream_create",	  "COMMAND:   ",  "bstream_create(Stream, int) : Bstream",		  "create a buffered stream"						  ]
@@ -1061,7 +1085,8 @@ Module: "tcpip"
 [ 21 ]
 [ 21 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature				| help																							  #
+# function		type		signature				help																							  # name
+# str		str		str					str																							  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "TCPIP_listen", "COMMAND:   ",  "TCPIP_listen() : void",		  "start a TCP/IP server with the default port number."																	  ]
 [ "TCPIP_listen", "COMMAND:   ",  "TCPIP_listen(int) : void",		  "start a TCP/IP server"																				  ]
@@ -1090,7 +1115,8 @@ Module: "unix"
 [ 2 ]
 [ 2 ]
 #---------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help					  #
+# function		type		signature			help					  # name
+# str		str		str				str					  # type
 #---------------------------------------------------------------------------------------------------------#
 [ "getenv",	  "COMMAND:   ",  "getenv(str) : str",		  "Get the environment variable string."  ]
 [ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",	  "Set the environment variable string."  ]
@@ -1100,7 +1126,8 @@ Module: "url"
 [ 19 ]
 [ 19 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature				| help							  #
+# function		type		signature				help							  # name
+# str		str		str					str							  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
 [ "getAnchor",	  "COMMAND:   ",  "getAnchor(url) : str",		  "Extract the anchor (reference) from the URL"		  ]
 [ "getBasename",  "COMMAND:   ",  "getBasename(url) : str",		  "Extract the base file name of the URL"		  ]
@@ -1127,7 +1154,8 @@ Module: "xtables"
 [ 25 ]
 [ 25 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature									| help																																						  #
+# function			type		signature									help																																						  # name
+# str			str		str										str																																						  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "CTderive",		  "COMMAND:   ",  "CTderive(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "Cross tabulation group extension step.\n         Returned head values are identical as in 'ct'. Tail values are from\n         the same domain and indicate further refinement of the groups in 'ct',\n         taking into account also the tail-values in 'attr'."						  ]
 [ "CTgroup",		  "COMMAND:   ",  "CTgroup(BAT[oid,any]) : BAT[oid,oid]",					  "Cross tabulation group initialization.\n         Returned head values are identical as in 'attr'. Tail values are from\n         the same domain and indicate unique groups in 'attr' tail column."														  ]

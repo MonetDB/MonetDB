@@ -11,7 +11,7 @@ stdout of test 'milTokens` in directory 'src/monet` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 vars("TOK_");
 #---------------------------------------------------------------------------------#
-# tmp_32		type	type_status	value_status	value_value		  # name
+# tmp_28		type	type_status	value_status	value_value		  # name
 # str		str	str		str		str			  # type
 #---------------------------------------------------------------------------------#
 [ "TOK_OBJECT",	  "int",  "frozen",	  "constant",	  "294"			  ]
