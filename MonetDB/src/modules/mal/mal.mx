@@ -78,7 +78,7 @@ pattern batloop(i:lng,b:bat[any::1,any::2],h:any::1,t:any::2):bit
 comment "Iterate over the elements of a BAT using a cursor.";
 
 pattern bunStream(b:bat[any::1,any::2],h:any::1,t:any::2):lng
-	 = CMDbunstream
+	 = CMDbunStream
 comment "Produce a stream of buns for subsequent processing.";
 
 pattern batStream(b:bat[any,any],size:lng,v:bat[any::1,any::2]):lng
@@ -331,12 +331,12 @@ it fetches a bun and returns the increment to the control
 variable. If it returns zero the control variable has been reset
 to zero and end of stream has been reached.
 @c
-str CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
 	bit *ret;
 	int *bid;
-	int limit;
+	int limit,tp;
 	BUN p;
 	ValPtr head, tail;
 
@@ -359,7 +359,11 @@ str CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	p = BUNptr(b,*cursor);
 	garbageElement(head);
 	garbageElement(tail); 
-	VALinit( head, getArgType(mb,pci,2),BUNhead(b,p));
+	tp = getArgType(mb,pci,2);
+	if( tp == TYPE_void  && b->hseqbase!= oid_nil){
+		VALinit( head, TYPE_oid, BUNhead(b,p));
+		head->vtype= TYPE_void;
+	} else 	VALinit( head, tp, BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
 	*cursor = *cursor+1;
 	return MAL_SUCCEED;

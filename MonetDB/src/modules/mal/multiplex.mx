@@ -89,7 +89,8 @@ comment "Generic processor for mutiplexed instructions.";
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-/*#define DEBUG_MULTIPLEX */
+/* #define DEBUG_MULTIPLEX 
+#define TRACE_MULTIPLEX   */
 
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
@@ -329,6 +330,7 @@ code construction.
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i,k,l,x,mloop,cursor,refBat=0,resB,refType,bt=0,cr;
+	int nilVar=0, mvar,zz;
 	str ret= MAL_SUCCEED;
 	int hvar,rIndex=0;
 	int assignop = FALSE;
@@ -397,6 +399,20 @@ find the actule arguments at the proper place of the callee.
 	q->argv[2]= newVariable(m, malTypeName(getTailType(refType)),TYPE_any);
 	q->argc= 3;
 	pushInstruction(m,q);
+	
+	/* create nil constant for void-columns */
+	if( getHeadType(refType) == TYPE_void){
+		q= newInstruction(ASSIGNsymbol);
+		q->modname= GDKstrdup("bat");
+		q->fcnname= GDKstrdup("setSequenceBase");
+		q->argv[0]= newTmpVariable(m,TYPE_any);
+		q->argv[1]= resB;
+		q->argv[2]= newConstant(m,TYPE_oid,GDKstrdup("nil"),TRUE);
+		nilVar=newConstant(m,TYPE_void,GDKstrdup("nil"),TRUE);
+		q->argc= 3;
+		pushInstruction(m,q);
+	}
+	
 
 /* x:= getRole(rb) 
 	q= newInstruction(ASSIGNsymbol);
@@ -415,7 +431,7 @@ find the actule arguments at the proper place of the callee.
 	q->argv[0]= newTmpVariable(m,TYPE_any);
 	q->argv[1]= resB;
 	q->argv[2]= x;
-	q->argv[3]= newConstant(m,TYPE_str,GDKstrdup(p->fcnname));
+	q->argv[3]= newConstant(m,TYPE_str,GDKstrdup(p->fcnname),FALSE);
 	q->argc=4;
 	pushInstruction(m,q);
 */
@@ -428,26 +444,47 @@ find the actule arguments at the proper place of the callee.
 	q->argv[1] = refBat;
 	hvar= q->argv[2] = newVariable(m,GDKstrdup("h"),getHeadType(refType));
 	sprintf(name,"B%d",rIndex);
-	q->argv[3] = newVariable(m,GDKstrdup(name),
+	zz= q->argv[3] = newVariable(m,GDKstrdup(name),
 		getTailType(getArgType(mb,pci,refBat)));
 	q->argc= 4;
 	pushInstruction(m,q);
+#ifdef TRACE_MULTIPLEX
+	q= newInstruction(ASSIGNsymbol);
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->fcnname= GDKstrdup("print");
+	q->argv[1] = zz;
+	q->argc=2;
+	pushInstruction(m,q);
+#endif
 	
 
 	/* $1:= bat.find(Ai,h) or constant */
 	for(i=2;i<pci->argc;i++)
 	if( isaBatType(l= getArgType(mb,pci,i)) && i!= rIndex){
-		int z;
+		int z,zv;
 		q= newInstruction(ASSIGNsymbol);
 		sprintf(name,"B%d",i);
 		z= q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
 		q->modname= GDKstrdup("algebra");
-		q->fcnname= GDKstrdup("find");
 		sprintf(name,"A%d",i);
-		q->argv[1]= newVariable(m,GDKstrdup(name),l);
-		q->argv[2]= hvar;
+		zv= q->argv[1]= newVariable(m,GDKstrdup(name),l);
+/*
+		if( nilVar){
+			q->fcnname= GDKstrdup("fetch");
+			q->argv[2]= mvar;
+		} else */ { q->fcnname= GDKstrdup("find");
+			q->argv[2]= hvar;
+		}
 		q->argc=3;
 		pushInstruction(m,q);
+#ifdef TRACE_MULTIPLEX
+	q= newInstruction(ASSIGNsymbol);
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->fcnname= GDKstrdup("print");
+	q->argv[1] = zv;
+	q->argc=2;
+	pushInstruction(m,q);
+#endif
 	}
 
         /* cr:= mod.CMD($1,...,$n); */
@@ -466,6 +503,22 @@ find the actule arguments at the proper place of the callee.
 	}
 	pushInstruction(m,q);
 
+#ifdef TRACE_MULTIPLEX
+	q= newInstruction(ASSIGNsymbol);
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->fcnname= GDKstrdup("print");
+	q->argv[1] = hvar;
+	q->argc=2;
+	pushInstruction(m,q);
+	q= newInstruction(ASSIGNsymbol);
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->fcnname= GDKstrdup("print");
+	q->argv[1] = cr;
+	q->argc=2;
+	pushInstruction(m,q);
+#endif
+
+
         /* insert(resB,h,cr); */
 	q= newInstruction(ASSIGNsymbol);
 	q->modname= GDKstrdup("bat");
@@ -477,22 +530,29 @@ find the actule arguments at the proper place of the callee.
 	q->argc=4;
 	pushInstruction(m,q);
 
+	/* redo mloop; */
+	q= newInstruction(REDOsymbol);
+	q->argv[0]= mloop;
+	pushInstruction(m,q);
+
 	/* catch   MALexception; */
 	q= newInstruction(CATCHsymbol);
 	q->barrier = CATCHsymbol;
 	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
 	pushInstruction(m,q);
 
-	/* #ignore errors; */
+	/* #ignore errors unless you are debugging; */
+/* debugging: print(MALexception) */
+	q= newInstruction(ASSIGNsymbol);
+	q->argv[0]= newTmpVariable(m,TYPE_any);
+	q->fcnname= GDKstrdup("raise");
+	q->argv[1] = k;
+	q->argc=2;
+	pushInstruction(m,q);
 
 	/* end     MALexception; */
 	q= newInstruction(ENDsymbol);
 	q->argv[0]= k;
-	pushInstruction(m,q);
-
-	/* redo mloop; */
-	q= newInstruction(REDOsymbol);
-	q->argv[0]= mloop;
 	pushInstruction(m,q);
 
 	/* end mloop; */
