@@ -101,13 +101,13 @@ runMx(os.path.join(srcdir, 'src', 'modules', 'calibrator'), 'calib',
       os.path.join(dstdir, 'doc', 'www'))
 
 for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
-          'blob', 'counters', 'ddbench', 'decimal', 'enum', 'kernel',
+          'blob', 'counters', 'decimal', 'enum', 'kernel',
           'lock', 'mmath', 'monettime', 'pcl', 'radix', 'streams', 'str', 'sys',
           'tcpip', 'trans', 'unix', 'url', 'xtables']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'plain'), f,
           os.path.join(dstdir, 'doc', 'www'))
 
-for f in ['bitset', 'bitvector', 'mel', 'mprof', 'oo7', 'qt', 'tpcd',
+for f in ['bitset', 'bitvector', 'ddbench', 'mel', 'mprof', 'oo7', 'qt', 'tpcd',
           'wisc']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'contrib'), f,
           os.path.join(dstdir, 'doc', 'www'))

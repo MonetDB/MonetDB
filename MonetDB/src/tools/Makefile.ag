@@ -46,7 +46,6 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_ascii_io	\
 	../modules/plain/lib_bat_arith	\
 	../modules/plain/lib_blob	\
-	../modules/plain/lib_ddbench	\
 	../modules/plain/lib_decimal	\
 	../modules/plain/lib_enum	\
 	../modules/plain/lib_lock	\
@@ -63,6 +62,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/contrib/lib_bitset	\
 	../modules/contrib/lib_bitvector	\
 	../modules/contrib/lib_cluster	\
+	../modules/contrib/lib_ddbench	\
 	../modules/contrib/lib_malalgebra	\
 	../modules/contrib/lib_mel	\
 	../modules/contrib/lib_mprof	\

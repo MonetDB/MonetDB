@@ -70,7 +70,7 @@ LIBS = {
 		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
 		\
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
-		ddbench.mx decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
+		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
 		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
@@ -113,7 +113,7 @@ scripts_mil = {
          	algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
                 \
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
-		blob.mx ddbench.mx decimal.mx enum.mx lock.mx mmath.mx \
+		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
 		monettime.mx radix.mx stats.mx tcpip.mx uchr.mx \
 		unix.mx url.mx counters.mx pcl.mx
 }

@@ -48,7 +48,6 @@
 @:install_module(blob)@
 @:install_module(enum)@
 @:install_module(xtables)@
-@:install_module(ddbench)@
 @:install_module(decimal)@
 @:install_module(lock)@
 @:install_module(mmath)@
@@ -64,6 +63,7 @@
 @:install_module(bitset)@
 @:install_module(bitvector)@
 @:install_module(cluster)@
+@:install_module(ddbench)@
 @:install_module(malalgebra)@
 @:install_module(mprof)@
 @:install_module(oo7)@

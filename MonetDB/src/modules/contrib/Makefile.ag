@@ -31,7 +31,7 @@ LIBS = {
 	SOURCES = \
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
-		wisc.mx
+		wisc.mx ddbench.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
@@ -46,7 +46,7 @@ scripts_mil = {
 	SOURCES = \
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
-		wisc.mx
+		wisc.mx ddbench.mx
 }
 
 EXTRA_DIST_DIR = Tests

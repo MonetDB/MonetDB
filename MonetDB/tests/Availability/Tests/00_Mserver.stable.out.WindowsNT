@@ -25,7 +25,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "blob",	  "plain"	  ]
 [ "cluster",	  "contrib"	  ]
 [ "counters",	  "plain"	  ]
-[ "ddbench",	  "plain"	  ]
+[ "ddbench",	  "contrib"	  ]
 [ "decimal",	  "plain"	  ]
 [ "enum",	  "plain"	  ]
 [ "iterator",	  "contrib"	  ]
