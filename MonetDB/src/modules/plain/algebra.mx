@@ -1133,9 +1133,11 @@ ptr BAT@1(BAT *b, ptr aggr) {
 	t = b->ttype;
 	if (BATtvoid(b)) {
 	    @:aggr@1(chr,loc,simple,chr,void)@ 
+	} else if (t == TYPE_uchr) {
+	    @:aggr@1(uchr,loc,simple,uchr,atom)@ 
 	} else {
 	    switch(ATOMstorage(t)) {
-	    case TYPE_chr: @:aggr@1(uchr,loc,simple,uchr,atom)@ break;
+	    case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
 	    case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
 	    case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
 	    case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
