@@ -1,5 +1,5 @@
 
-INCLUDES = top_builddir/src/gdk
+INCLUDES = -I$(MONET_BUILD)/src/gdk
 
 YFLAGS = -d
 
