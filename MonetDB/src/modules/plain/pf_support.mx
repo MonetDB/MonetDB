@@ -650,7 +650,9 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = FALSE;
-	if (BATcount(bn) == 1) {
+	if (BATcount(bn) == 0) {
+		BATseqbase(bn, (oid)0);
+	} else if (BATcount(bn) == 1) {
 		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
 	}
 	*res = bn;
@@ -968,7 +970,10 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = triv_prop;
-	if (BATcount(bn) == 1) {
+	if (BATcount(bn) == 0) {
+		BATseqbase(bn, (oid)0);
+		BATseqbase(BATmirror(bn), (oid)0);
+	} else if (BATcount(bn) == 1) {
 		BATseqbase(bn, *(oid*)BUNhloc(bn,BUNfirst(bn)));
 		BATseqbase(BATmirror(bn), *(oid*)BUNtloc(bn,BUNfirst(bn)));
 	}
