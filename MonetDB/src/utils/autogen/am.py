@@ -261,7 +261,7 @@ def am_scripts(fd, var, scripts, am):
 
     for script in scripts['TARGETS']:
 	try:
-		s,ext2 = string.split(script, '.');
+		s,ext2 = rsplit_filename(script)
 		if not ext2 in ext:
 			continue
 	except:
