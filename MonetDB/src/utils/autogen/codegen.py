@@ -247,6 +247,7 @@ def do_recursive_combine(deplist,includes,cache,depfiles):
             for f in includes[d]:
                 if f not in depfiles:
                     depfiles.append(f)
+            	    do_recursive_combine([f],includes,cache,depfiles)
             # need to add include d too
             if d not in depfiles:
                 depfiles.append(d)
@@ -374,19 +375,24 @@ def do_libs(deps):
                 break
     return libs
 
-def expand_includes(i,topdir):
-    if i[0:2] == "-I":
-      i = i[2:]
-    if i[0:2] == "$(":
-      var, rest = string.split(i[2:], ')')
+def expand_env(i):
+    if i[0] == '$' and i[1] in ('(','{'):
+      sep = '}'
+      if i[1] == '(':
+        sep = ')'
+      var, rest = string.split(i[2:], sep)
+
       if os.environ.has_key( var ):
         value = os.environ[var]
-        incdir = value + rest
-        incs = string.split(incdir)
-        if (len(incs) > 1):
-	  return expand_incdirs(incs,topdir)
-        else:
-	  return (incdir,i)
+	return value + rest
+    return None
+
+def expand_incdir(i):
+    if i[0:2] == "-I":
+      i = i[2:]
+    incdir = expand_env(i)
+    if (incdir != None):
+	return incdir
     dir = i
     if string.find(i,os.sep) >= 0:
       d,rest = string.split(i,os.sep, 1)
@@ -394,8 +400,21 @@ def expand_includes(i,topdir):
         dir = os.path.join(topdir, rest)
       elif d == "srcdir" or d == "builddir":
         dir = rest
+    return dir
+
+def expand_includes(i,topdir):
+    if i[0:2] == "-I":
+      i = i[2:]
     if os.path.isabs(i):
       print("!WARNING: it's not portable to use absolute paths: " + i)
+    incdir = expand_env(i)
+    if (incdir != None):
+        incs = string.split(incdir)
+        if (len(incs) > 1):
+	  return expand_incdirs(incs,topdir)
+        else:
+	  return [(expand_incdir(incdir),i)]
+    dir = expand_incdir(i)
     return [(dir,i)]
 
 def expand_incdirs(incdirs,topdir):
@@ -426,17 +445,17 @@ def collect_includes(incdirs, cwd, topdir):
                 for file in cache.keys():
                     incfiles = []
                     for inc in cache[file]:
-                        if not os.path.isabs(inc) and inc[0:2] != '$(':
-                            inc = os.path.join(dir,inc)
+                        if not os.path.isabs(inc) and inc[0] != '$':
+                            inc = os.path.join(org,inc)
                         incfiles.append(inc)
-                    includes[os.path.join(dir,file)] = incfiles
-                    incmap[file] = dir
+                    includes[os.path.join(org,file)] = incfiles
+                    incmap[file] = org
                 cache.close()
             else:
                 if os.path.exists(dir):
                     for inc in os.listdir(dir):
-                        includes[os.path.join(dir,inc)] = [ os.path.join(dir,inc) ]
-                        incmap[inc] = dir
+                        includes[os.path.join(org,inc)] = [ os.path.join(org,inc) ]
+                        incmap[inc] = org
 
     return includes,incmap
 
