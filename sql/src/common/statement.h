@@ -58,6 +58,12 @@ typedef enum comp_type {
 	cmp_gte,
 } comp_type;
 
+typedef void (*fdestroy)(void*);
+typedef struct value {
+	void *data;
+	fdestroy destroy;
+} value;
+
 typedef struct statement {
 	st_type type;
 	symdata op1;
@@ -70,6 +76,7 @@ typedef struct statement {
 	table *h;
 	table *t;
 	int refcnt;
+	value v;
 } statement;
 
 extern statement *statement_create_schema( schema *s );

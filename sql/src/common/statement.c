@@ -16,6 +16,8 @@ statement *statement_create(){
 	s->t = NULL;
 	s->rtype = 0;
 	s->refcnt = 0;
+	s->v.data = NULL;
+	s->v.destroy = NULL;
 	return s;
 }
 

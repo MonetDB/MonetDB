@@ -332,11 +332,10 @@ static
 statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *groupby, statement *subset ){
 
 	switch(column_e->token){
-	case SQL_TABLE: {
+	case SQL_TABLE: { /* table.* */
 
-		symbol *tsym = column_e->data.lval->h->data.sym;
-		table *t = sql->cat->bind_table(sql->cat,  
-				sql->cat->cur_schema, tsym->data.sval );
+		char *tname = column_e->data.lval->h->data.sval;
+		table *t = bind_table( tables, tname ); 
 
 		/* needs more work ???*/
 		if (t){
@@ -368,6 +367,9 @@ statement *column_exp( context *sql, list *tables, symbol *column_e, symbol *gro
 		  (int)column_e->token, token2string(column_e->token));
 		return NULL;
 	}
+	snprintf(sql->errstr, ERRSIZE, 
+	  _("Column expression Symbol(%d)->token = %s no output"),
+	  (int)column_e->token, token2string(column_e->token));
 	return NULL;
 }
 
@@ -1054,27 +1056,11 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
 
   if (s){
   	if (selection){
-		/* todo fix: remove need for substitute, ie. allready
-		   do the join during  the column_exp */
 	  dnode *n = selection->h;
 	  while (n){
 		statement *cs = column_exp(sql, ftables, n->data.sym, groupby, s);
 		list_append_statement(rl, cs);
 				/* todo add ordering /groupby */
-		/*
-		node *m = s->op1.lval->h;
-		while(m){
-			statement *ss = m->data.stval;
-			if (cs->h == ss->t){
-				statement *j, *co = cs;
-				while(cs->type != st_column) cs = cs->op1.stval;
-				j = statement_join(ss, cs, cmp_equal );
-				cs = substitute(co,j);
-				list_append_statement(rl, cs);
-			}
-			m = m->next;
-		}
-		*/
 		n = n->next;
 	  }
   	} else {
@@ -1497,6 +1483,7 @@ statement *update_set( context *sql, dlist *qname,
                                 statement *sc =
                                     scalar_exp( a, sql, tables, NULL, NULL);
 
+				/* TODO remove substitute look at query*/
 				sc = check_types( sql, cl, sc );
 				if (!sc) return NULL;
                                 if (sc->nrcols > 0){
