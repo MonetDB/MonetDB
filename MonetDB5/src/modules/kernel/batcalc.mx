@@ -45,6 +45,16 @@ semantics.
 In addition to arithmetic and comparison operators, casting and
 mathematical functions are directly supported.
 
+@+ NULL semantics
+The batcalc arithmetic is already constraint to BATs of equal size.
+Another improvement can be obtained when we do not have to check
+for NULLs in each and every basic operation +,-,/,* and comparisons.
+This variant can be obtained using a compile time flag (NULLTST) for the time
+being. If it turns out to be effective, we will derive a new
+version of batcalc.
+
+Preliminary experiments show that ignoring the NULLS saves about 15\%
+for larger instructions.
 @mal
 module batcalc;
 
@@ -336,6 +346,7 @@ comment "POSIX pattern matching against a string BAT";
 #include "mal_exception.h"
 #include <regex.h>
 
+#define NULLTST
 @-
 The accumulator operators are relatively straight forward,
 when the target BAT is known and we only have to deal with
@@ -347,9 +358,12 @@ fixed-sized types.
 @= accum
 	while( p1 < hend ){
 		/* this code is better as x?nil:y  */
+#ifdef NULLTST
 		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(@1*)p1= @1_nil;
-		else *(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
+		else 
+#endif
+			*(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
 		p1= (ptr)( ((char*)p1) + s1);
 		p2= (ptr)( ((char*)p2) + s2);
 		p3= (ptr)( ((char*)p3) + s3);
@@ -360,9 +374,12 @@ out occurrences of the nil-tst on the constant provided.
 This has been left out.
 @= accumCst
 	while( p1 < hend ){
+#ifdef NULLTST
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
 			*(@1*)p1= @1_nil;
-		else *(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
+		else 
+#endif
+			*(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
@@ -632,9 +649,12 @@ str CMDcstMODbat(int *ret,void *cst, int *l)
 @= accumUnary
 	while( p1 < hend ){
 		/* this code is better as x?nil:y  */
+#ifdef NULLTST
 		if(*(@1 *)p2 == @1_nil )
 			*(@1*)p1= @1_nil;
-		else *(@1*)p1= @2 *(@1 *) p2;
+		else 
+#endif
+			*(@1*)p1= @2 *(@1 *) p2;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
@@ -684,9 +704,11 @@ The structure of this code is copied from the arithmetic scheme.
 @= cmpLoop
 	while( p2 < hend ){
 		/* this code is better as x?nil:y */
+#ifdef NULLTST
 		if (*(@1*)p2 == @1_nil || *(@1*)p3 == @1_nil)
 			*(bit*)p1= bit_nil;
 		else 
+#endif
 			*(bit*)p1 = ((*(@1*)p2) @2 (*(@1*)p3));
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
@@ -695,9 +717,12 @@ The structure of this code is copied from the arithmetic scheme.
 @-
 @= cmpLoopCst
 	while( p1 < hend ){
+#ifdef NULLTST
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
 			*(bit*)p1= bit_nil;
-		else *(bit*)p1 = *(@1*) p2 @2 *(@1 *) cst;
+		else 
+#endif
+			*(bit*)p1 = *(@1*) p2 @2 *(@1 *) cst;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
