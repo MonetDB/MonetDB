@@ -178,7 +178,7 @@ test = (
                 # Tokens & messages depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                     r'^(?:ERROR = !|)(?:syntax|parse) error, ',
-                    r': at \([0-9]+,[0-9]+\-[0-9]+,[0-9]+\): ',
+                    r'^.*: at \([0-9]+,[0-9]+\-[0-9]+,[0-9]+\): ',
 ##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
 ##                    r'^IPO: using IR for .*$',
 ##                    r'^IPO: performing single-file optimizations$',
@@ -186,7 +186,7 @@ test = (
 ##                    r'^ERROR = (?:Connection terminated|Lost connection with server)$',
 ##                    r'^ERROR = (?:communication line broken|Connection lost)$',
                 # sql/src/benchmarks/arno_flt/Tests/init:
-                    r'\t2.7445021260064(?:099|1)e\-06\t',
+                    r'^.*\t2.7445021260064(?:099|1)e\-06\t',
                 # Broken sql error messages:
                     r'^QUERY = (?:\-\-|select|insert|INSERT) ',
 ##                # pathfinder: loader/usage (without BerkeleyDB):
