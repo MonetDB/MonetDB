@@ -1,4 +1,8 @@
 ls;
 a.print;
 b.print;
+# tidy up
+a.persists(false); 
+b.persists(false); 
+commit;
 quit;   
