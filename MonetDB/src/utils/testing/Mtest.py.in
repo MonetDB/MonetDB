@@ -775,8 +775,8 @@ def RunTest(env, TST) :
 		#TODO:
 		#elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
 		#SkipTest(env, TST, EXT, "as java is not in $PATH.")
-	elif EXT == ".sql" and  not env['exe']['sql_aclient'][0]:
-		SkipTest(env, TST, EXT, "as sql_aclient is not available.")
+	elif EXT == ".sql" and  not env['exe']['sql_client'][0]:
+		SkipTest(env, TST, EXT, "as sql_client is not available.")
 	elif EXT == ".sql" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/parser/catalog.mil")):
 		SkipTest(env, TST, EXT, "as "+env['TSTSRCBASE']+path("/src/parser/catalog.mil")+" is not available.")
 	elif EXT == ".sql" and  not os.path.isfile(env['TSTSRCBASE']+path("/src/parser/aserver.mil")):
@@ -1155,7 +1155,7 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 		Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/parser/aserver.mil")
 		Srvr = Srvr+PROLOGUE
 		#-background"
-		Clnt = MTO+str(TOT)+" "+exe['sql_aclient'][1]+" "+PRELUDE+" < "
+		Clnt = MTO+str(TOT)+" "+exe['sql_client'][1]+" "+PRELUDE+" < "
 
 		SrvrOut = open(TST+".server.out","w")
 		SrvrErr = open(TST+".server.err","w")
@@ -1545,7 +1545,7 @@ def main(argv) :
 		exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown'
 		exe['Mdiff']       = CheckExec('Mdiff')      , 'Mdiff'
 		exe['python']      = CheckExec('python')     , 'python'
-		exe['sql_aclient'] = CheckExec('sql_aclient'), 'sql_aclient --port '+env['SQLPORT']
+		exe['sql_client']  = CheckExec('sql_client') , 'sql_client --port '+env['SQLPORT']
 		if not exe['Mtimeout'][0]:
 			exe['Mtimeout'] = '', ''
 		if os.name == "nt":
