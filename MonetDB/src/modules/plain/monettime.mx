@@ -375,6 +375,12 @@ and daytime.
 .COMMAND minutes(tzone) : int = tzone_extract_minutes;
 	"extract number of minutes that tzone is offset wrt GMT (!DS2.2)."
 
+.COMMAND date_sub_sec_interval( date, int):int = date_sub_sec_interval_wrap;
+	"subtract seconds interval"
+.COMMAND date_add_sec_interval( date, int):int = date_add_sec_interval_wrap;
+	"add  seconds interval"
+.COMMAND date_sub_month_interval( date, int):int = date_sub_month_interval_wrap;
+	"subtract months interval"
 # rule
 .COMMAND month(rule) : int = rule_extract_month;
 	"extract month from rule (!DS2.2)."
@@ -2090,6 +2096,27 @@ int tzone_extract_end(rule *ret, tzone* t) {
 /* extract number of minutes that tzone is offset wrt GMT. */
 int tzone_extract_minutes(int *ret, tzone* t) {
 	*ret = (tz_isnil(*t))?int_nil:get_offset(t);
+	return GDK_SUCCEED;
+}
+
+int date_sub_sec_interval_wrap(int *ret, date* t, int *sec) {
+        if (*sec > 0){
+		int delta= -1 * *sec *86400;
+                return date_adddays(ret, t, &delta);
+        }
+
+	return GDK_SUCCEED;
+}
+int date_add_sec_interval_wrap(int *ret, date* t, int *sec) {
+        if (*sec > 0){
+		int delta= *sec *86400;
+                return date_adddays(ret, t, &delta);
+        }
+
+	return GDK_SUCCEED;
+}
+int date_sub_month_interval_wrap(int *ret, date* t, int *months) {
+                return date_addmonths(ret, t, months);
 	return GDK_SUCCEED;
 }
 
