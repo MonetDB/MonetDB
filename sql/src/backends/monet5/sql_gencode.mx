@@ -1103,6 +1103,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
         backend_dumpstmt( be, curBlk, s);
 
 	pushEndInstruction(curBlk);
+        chkProgram(c->nspace,curBlk);
         addQueryToCache(c);
         if( c->backup){
         	c->curprg = c->backup;
@@ -1120,6 +1121,7 @@ backend_call( backend *be, Client c, int id, list *args )
 
 	(void)snprintf( name, BUFSIZ, "sql%d", id);
 	q= newStmt(mb, "sql_cache", name);
+        setVarType(mb,getArg(q,0), TYPE_void);
 	if (args){
 		node *n;
   		for (n=args->h; n; n = n->next){
