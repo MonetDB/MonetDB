@@ -2,9 +2,18 @@
 #ifndef DIFFLIB_H
 #define DIFFLIB_H
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#ifdef NATIVE_WIN32
+#define STDERR stdout
+#else
+#define STDERR stderr
+#endif
 
 #ifdef DEBUG
-#define TRACE(x) x
+#define TRACE(x) {fflush(stdout); x; fflush(STDERR);}
 #else
 #define TRACE(x)
 #endif
