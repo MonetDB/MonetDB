@@ -383,7 +383,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 
 
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
-	int debug = 0, trace = 0, reply_size = 100, l = 0, i, sock, *Sock, go = TRUE;
+	int debug = 0, trace = 0, reply_size = 100, l = 0, sock, *Sock, go = TRUE;
+	ssize_t i = 0;
 	char buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema, *dbname;
 	Variable v;
@@ -402,7 +403,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	out = block_stream( socket_wstream( sock, "SQLSERVER" ));
 	in  = block_stream( socket_rstream( sock, "SQLSERVER" ));
 
-	if ((i = stream_read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+	if ((i = stream_read(in, buf, 1, BUFSIZ)) < 0)
 		return connect_error(in, out, sock);
 	buf[i] = 0;
 	/* expect api(sql,debug); */
@@ -421,10 +422,11 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 
 	i=snprintf(buf, BUFSIZ, "login\n" );
-	stream_write(out, buf, 1, i);
+	if (stream_write(out, buf, 1, i) != i)
+		return connect_error(in, out, sock);
 	stream_flush(out);
 
-	if ((i = stream_read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+	if ((i = stream_read(in, buf, 1, BUFSIZ)) < 0)
 		return connect_error(in, out, sock);
 	buf[i] = 0;
 	/* expect login(user,passwd); */
