@@ -239,7 +239,7 @@ gdk_export size_t _MT_pagesize;
 #include "gdk_system.h"
 #include "gdk_posix.h"
 
-#if defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
+#if !(defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)) && defined(HAVE_GETRLIMIT) && defined(HAVE_SYS_RESOURCE_H)
 # include <sys/resource.h>
 #endif
 
@@ -264,7 +264,7 @@ void MT_init() {
 #endif
 		_MT_pagesize = 4096;   /* default */ 
 
-#if defined(HAVE_SYSCONFIG) && defined(_SC_PHYS_PAGES)
+#if defined(HAVE_SYSCONF) && defined(_SC_PHYS_PAGES)
 	_MT_npages = sysconf(_SC_PHYS_PAGES);
 #else
 #ifdef HAVE_GETRLIMIT
