@@ -1,1 +1,0 @@
-../configure --prefix=`pwd` --with-monet=`monet-config --prefix`
