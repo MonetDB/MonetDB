@@ -117,7 +117,7 @@ void ll_flushbuffer(void) {
 #define TBLSEARCH(r,s,token,cur_is_ident,guess_if_notfound,no_command) {\
         int spaces = 0, offend;\
         do  { offend = input(); } while(GDKisspace(offend));\
-	if (offend) unput(offend);\
+	if (offend && offend != EOF) unput(offend);\
 	while(spaces-- > 0) unput(' ');\
         r = TBL_search(s, token, guess_if_notfound, cur_is_ident, no_command&&ll_nocommand[offend],\
                          (offend >= 'a' && offend <= 'z') | (offend >= 'A' && offend <= 'Z')); }
@@ -300,7 +300,7 @@ ll_skipcomment(void)
 {
 	char c;
 
-	while ((c=input()) && (c != '\n'))
+	while ((c=input()) != 0 && c != EOF && c != '\n')
 		;
 	return yylex();
 }
@@ -318,9 +318,9 @@ ll_getstr(int quote, int *len)
 	i = 0;
 	buf[i++] = quote;
 
-	while ((c = input()) != 0 && c != quote) {
+	while ((c = input()) != 0 && c != EOF && c != quote) {
 		if (c == '\\') {
-			if ((c = input()) == 0)
+			if ((c = input()) == 0 || c == EOF)
 				break;
 			if (c == '\n')
 				continue;
