@@ -186,7 +186,14 @@ Constants passed into the multiplex operator are a special case.
 		printInstruction(stdout,m,p);
 	}
 #endif
-	if( p->typechk == TYPE_UNKNOWN) return -1;
+	if( p->typechk == TYPE_UNKNOWN) {
+		/* all tactic choices are turned into their script variant */
+		if(idcmp("tactics",p->fcnname)==0){
+			GDKfree(p->fcnname);
+			p->fcnname= GDKstrdup("script");
+		}
+		return -1;
+	}
 
 	tt= getArgType(m,p,0);
 	tpe= newBatType(tpe,tt);

@@ -26,6 +26,7 @@ use "mal/multiplex";
 use "mal/const"; 
 use "mal/bbp";
 use "mal/box"; 
+use "mal/catalog";
 @-
 In practice, we have to introduce different startup for each
 client group or database.

@@ -376,8 +376,7 @@ str io_fsize(int* res, str *filename){
 
 
 str io_fprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	GDKwarning("io_fprintf: not yet defined in version-5\n");
-        return MAL_SUCCEED;
+	return throwMessage("io_fprintf: not yet defined in version-5\n");
 }
 /*
 int io_fprintf(fstream *filepp, str format,  ...){

@@ -11,7 +11,7 @@ LIBS = {
 	SEP = _
 	SOURCES = squeezer.mx mal.mx startup.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
-		enum.mx  streams.mx tcpip.mx
+		enum.mx  streams.mx tcpip.mx catalog.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
