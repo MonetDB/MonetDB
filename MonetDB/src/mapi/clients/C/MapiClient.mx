@@ -593,18 +593,51 @@ dump_table(Mapi mid, char *tname)
 		}
 	}
 	while (mapi_fetch_row(hdl)) {
-		char *format;
+		char *s;
 
-		for(i = 0; i < cnt - 1; i++) {
-			format = "%s\t";
-			if (string[i])
-				format = "\"%s\"\t";
-			fprintf(toConsole, format, mapi_fetch_field(hdl, i));
+		for(i = 0; i < cnt; i++) {
+			s = mapi_fetch_field(hdl, i);
+			if (string[i]) {
+				/* write double-quoted string with
+				   certain characters escaped */
+				putc('"', toConsole);
+				while (*s) {
+					switch (*s) {
+					case '\\':
+					case '"':
+						putc('\\', toConsole);
+						putc(*s, toConsole);
+						break;
+					case '\n':
+						putc('\\', toConsole);
+						putc('n', toConsole);
+						break;
+					case '\r':
+						putc('\\', toConsole);
+						putc('r', toConsole);
+						break;
+					case '\f':
+						putc('\\', toConsole);
+						putc('f', toConsole);
+						break;
+					case '\t':
+						putc('\\', toConsole);
+						putc('t', toConsole);
+						break;
+					default:
+						putc(*s, toConsole);
+						break;
+					}
+					s++;
+				}
+				putc('"', toConsole);
+			} else
+				fputs(s, toConsole);
+			if (i < cnt - 1)
+				putc('\t', toConsole);
+			else
+				putc('\n', toConsole);
 		}
-		format = "%s\n";
-		if (string[i])
-			format = "\"%s\"\n";
-		fprintf(toConsole, format, mapi_fetch_field(hdl, i));
 	}
 	free(string);
 	if (mapi_error(mid)) {
