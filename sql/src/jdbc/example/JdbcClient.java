@@ -154,17 +154,37 @@ public class JdbcClient {
 
 		if (hasDump) {
 			System.out.println("START TRANSACTION;");
-			if (dump != null) {
-				describe(dbmd, stmt, dump, true);
-			} else {
-				// dump all
-				String[] types = {"TABLE", "VIEW"};
-				ResultSet tbl = dbmd.getTables(null, null, null, types);
-				// dump all tables that are returned
-				while (tbl.next()) {
-					describe(con.getMetaData(), stmt, tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME"), true);
+			String[] types = {"TABLE", "VIEW"};
+			if (dump != null) types = null;
+			ResultSet tbl = dbmd.getTables(null, null, null, types);
+
+			// use new metadata object (with another statement)
+			DatabaseMetaData wdbmd = con.getMetaData();
+			while (tbl.next()) {
+				if (dump != null && !(tbl.getString("TABLE_NAME").equalsIgnoreCase(dump) ||
+					(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(dump)))
+					continue;
+
+				if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
+					System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
+				} else {
+					// dump the table
+					createTable(
+						System.out,
+						wdbmd,
+						tbl.getString("TABLE_CAT"),
+						tbl.getString("TABLE_SCHEM"),
+						tbl.getString("TABLE_NAME"),
+						tbl.getString("TABLE_TYPE")
+					);
+					dumpTable(
+						System.out,
+						stmt,
+						tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")
+					);
 				}
 			}
+			tbl.close();
 			System.out.println("COMMIT;");
 			System.exit(0);
 		}
@@ -213,7 +233,31 @@ public class JdbcClient {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
 						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
 						if (!object.equals("")) {
-							describe(dbmd, stmt, object, false);
+							ResultSet tbl = dbmd.getTables(null, null, null, null);
+							// we have an object, see is we can find it
+							boolean found = false;
+							while (tbl.next()) {
+								if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
+									(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
+									// we found it, describe it
+									if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
+										System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
+									} else {
+										createTable(
+											System.out,
+											dbmd,
+											tbl.getString("TABLE_CAT"),
+											tbl.getString("TABLE_SCHEM"),
+											tbl.getString("TABLE_NAME"),
+											tbl.getString("TABLE_TYPE")
+										);
+									}
+									found = true;
+									break;
+								}
+							}
+							if (!found) System.err.println("Unknown table or view: " + object);
+							tbl.close();
 						} else {
 							String[] types = {"TABLE", "VIEW"};
 							ResultSet tbl = dbmd.getTables(null, null, null, types);
@@ -309,53 +353,25 @@ public class JdbcClient {
 		fr.close();
 	}
 
-	private static void describe(
-		DatabaseMetaData dbmd,
-		Statement stmt,
-		String object,
-		boolean dump
-	) throws SQLException {
-		ResultSet tbl = dbmd.getTables(null, null, null, null);
-		// we have an object, see is we can find it
-		boolean found = false;
-		while (tbl.next()) {
-			if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
-				(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
-				// we found it, describe it
-				if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
-					System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
-				} else {
-					System.out.print(createTable(dbmd, tbl.getString("TABLE_CAT"),
-						tbl.getString("TABLE_SCHEM"), tbl.getString("TABLE_NAME"),
-						tbl.getString("TABLE_TYPE")));
-					if (dump) dumpTable(System.out, stmt, tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME"));
-				}
-				found = true;
-				break;
-			}
-		}
-		if (!found) System.out.println("Unknown table or view: " + object);
-	}
-
-	private static String createTable(
+	private static void createTable(
+		PrintStream out,
 		DatabaseMetaData dbmd,
 		String cat,
 		String schem,
 		String table,
 		String tableType
 	) throws SQLException {
-		StringBuffer ret = new StringBuffer();
 		String comment = null;
 		int i;
-		ret.append("CREATE ").append(tableType).append(" ").append(schem);
-		ret.append(".").append(table).append(" (\n");
+		out.print("CREATE "); out.print(tableType); out.print(" ");
+		out.print(schem); out.print("."); out.print(table); out.println(" (");
 		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(cat, schem, table, null);
 		for (i = 0; cols.next(); i++) {
 			int type = cols.getInt("DATA_TYPE");
-			if (i > 0) ret.append(",\n");
-			ret.append("\t").append(cols.getString("COLUMN_NAME"));
-		 	ret.append("\t").append(cols.getString("TYPE_NAME"));
+			if (i > 0) out.println(",");
+			out.print("\t"); out.print(cols.getString("COLUMN_NAME"));
+		 	out.print("\t"); out.print(cols.getString("TYPE_NAME"));
 		 	if (type != Types.REAL &&
 				type != Types.DOUBLE &&
 				type != Types.FLOAT &&
@@ -363,25 +379,28 @@ public class JdbcClient {
 				type != Types.DATE &&
 				type != Types.TIME)
 			{
-		 		ret.append("(").append(cols.getString("COLUMN_SIZE"));
+		 		out.print("("); out.print(cols.getString("COLUMN_SIZE"));
 		 		if (cols.getInt("DATA_TYPE") == Types.DECIMAL)
-					ret.append(",").append(cols.getString("DECIMAL_DIGITS"));
-				ret.append(")");
+					out.print(","); out.print(cols.getString("DECIMAL_DIGITS"));
+				out.print(")");
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
-				ret.append("\tNOT NULL");
+				out.print("\tNOT NULL");
 		}
 		cols.close();
 
 		// the primary key constraint
 		cols = dbmd.getPrimaryKeys(cat, schem, table);
 		for (i = 0; cols.next(); i++) {
-			if (i == 0) ret.append(",\n\n\tPRIMARY KEY (");
-			if (i > 0) ret.append(", ");
-			ret.append(cols.getString("COLUMN_NAME"));
+			if (i == 0) {
+				out.println(","); out.println();
+				out.print("\tPRIMARY KEY (");
+			}
+			if (i > 0) out.print(", ");
+			out.print(cols.getString("COLUMN_NAME"));
 		}
 		if (i != 0) {
-			ret.append(")");
+			out.print(")");
 			comment = cols.getString("PK_NAME");
 		}
 		cols.close();
@@ -389,44 +408,51 @@ public class JdbcClient {
 		// unique constraints
 		cols = dbmd.getIndexInfo(cat, schem, table, true, true);
 		while (cols.next()) {
-			ret.append(",");
-			if (comment != null) ret.append(" -- ").append(comment);
-			ret.append("\n");
-			ret.append("\tUNIQUE (").append(cols.getString("COLUMN_NAME"));
+			out.print(",");
+			if (comment != null) {
+				out.print(" -- "); out.print(comment);
+			}
+			out.println();
+			out.print("\tUNIQUE ("); out.print(cols.getString("COLUMN_NAME"));
 			comment = cols.getString("INDEX_NAME");
 
-			while (cols.next() && comment != null &&
+			boolean next;
+			while ((next = cols.next()) && comment != null &&
 				comment.equals(cols.getString("INDEX_NAME")))
 			{
-				ret.append(", ").append(cols.getString("COLUMN_NAME"));
+				out.print(", "); out.print(cols.getString("COLUMN_NAME"));
 			}
 			// go back one
-			cols.previous();
+			if (next) cols.previous();
 
-			ret.append(")");
+			out.print(")");
 		}
 		cols.close();
 
 		// foreign keys
 		cols = dbmd.getImportedKeys(cat, schem, table);
 		while (cols.next()) {
-			ret.append(",");
-			if (comment != null) ret.append(" -- ").append(comment);
-			ret.append("\n");
-			ret.append("\tFOREIGN KEY (");
-			ret.append(cols.getString("FKCOLUMN_NAME")).append(") ");
-			ret.append("REFERENCES ").append(cols.getString("PKTABLE_SCHEM"));
-		 	ret.append(".").append(cols.getString("PKTABLE_NAME"));
-			ret.append("(").append(cols.getString("PKCOLUMN_NAME"));
-		 	ret.append(")");
+			out.print(",");
+			if (comment != null) {
+				out.print(" -- "); out.println(comment);
+			}
+			out.println();
+			out.print("\tFOREIGN KEY (");
+			out.print(cols.getString("FKCOLUMN_NAME")); out.print(") ");
+			out.print("REFERENCES "); out.print(cols.getString("PKTABLE_SCHEM"));
+		 	out.print("."); out.print(cols.getString("PKTABLE_NAME"));
+			out.print("("); out.print(cols.getString("PKCOLUMN_NAME"));
+		 	out.print(")");
 			comment = cols.getString("FK_NAME");
 		}
 		cols.close();
 		// if a comment needs to be added, do it now
-		if (comment != null) ret.append(" -- ").append(comment);
-		ret.append("\n");
+		if (comment != null) {
+			out.print(" -- "); out.print(comment);
+		}
+		out.println();
 		// end the create statement
-		ret.append(");\n");;
+		out.println(");");
 
 		// create indexes
 		cols = dbmd.getIndexInfo(cat, schem, table, false, true);
@@ -436,26 +462,27 @@ public class JdbcClient {
 				// we already covered this one as UNIQUE
 				continue;
 			} else {
-				ret.append(",\n");
-				ret.append("CREATE INDEX ");
-				ret.append(cols.getString("INDEX_NAME"));
-				ret.append(" ON ").append(cols.getString("TABLE_NAME"));
-				ret.append(" (").append(cols.getString("COLUMN_NAME"));
+				out.println(",");
+				out.print("CREATE INDEX ");
+				out.print(cols.getString("INDEX_NAME"));
+				out.print(" ON "); out.print(cols.getString("TABLE_NAME"));
+				out.print(" ("); out.print(cols.getString("COLUMN_NAME"));
 				comment = cols.getString("INDEX_NAME");
 
-				while (cols.next() && comment != null &&
+				boolean next;
+				while ((next = cols.next()) && comment != null &&
 					comment.equals(cols.getString("INDEX_NAME")))
 				{
-					ret.append(", ").append(cols.getString("COLUMN_NAME"));
+					out.print(", "); out.print(cols.getString("COLUMN_NAME"));
 				}
 				// go back one
-				cols.previous();
+				if (next) cols.previous();
 
-				ret.append(");");
+				out.print(");");
 			}
 		}
 		cols.close();
-		return(ret.toString());
+		out.println();
 	}
 
 	private final static int AS_IS = 0;

@@ -2940,6 +2940,18 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		// For the moment, I don't think so
 		return(false);
 	}
+
+	//== end methods interface DatabaseMetaData
+
+	/**
+	 * make sure our related statement is closed upon garbage collect
+	 */
+	protected void finalize() throws Throwable {
+		try {
+			if (stmt != null) stmt.close();
+		} catch (SQLException e) { /* ignore */ }
+		super.finalize();
+	}
 }
 
 /**
@@ -3005,6 +3017,7 @@ class MonetVirtualResultSet extends MonetResultSet {
 		if (!closed) {
 			closed = true;
 			results = null;
+			// types and columns are MonetResultSets private parts
 		}
 	}
 }
