@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f clients
 @a Martin Kersten
@@ -60,6 +54,11 @@ comment "Pseudo bat of client login time";
 command info( ):bat[:int,:str] 
 address CLTInfo
 comment "Pseudo bat with client attributes";
+
+command getClientId():int
+address CLTgetClientId
+comment "return a number that unique represents
+  	the current client";
 
 command getScenario():str 
 address CLTgetScenario
@@ -117,6 +116,11 @@ str CLTsetListing(int *ret, int *flag) {
         c= getClient();
 	*ret = c->listing;
         c->listing = *flag;
+        return MAL_SUCCEED;
+}
+str CLTgetClientId(int *ret){
+        Client c = getClient();
+        *ret= c- mal_clients;
         return MAL_SUCCEED;
 }
 

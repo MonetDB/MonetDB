@@ -1182,7 +1182,6 @@ int strSplit(BAT **Res, str s, str sep)
 	return GDK_SUCCEED;
 }
 @
-@}
 @* Implementation Code
 @- Wrappers
 Here you find the wrappers around the version 4 library code

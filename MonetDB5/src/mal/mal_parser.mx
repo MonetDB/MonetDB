@@ -372,13 +372,13 @@ The syntax structure is
 
 @T
 \begin{tabular}{l l l}
-typeQualifier   & : & typeName propQualifier \\
-typeName        & : & scalarType | collectionType | anyType\\
-scalarType      & : & ':' {\sc identifier} \\
-collectionType  & : & ':' {\sc bat} ['[' colType ',' colType ']'] \\
-anyType         & : & ':' {\sc any} [typeAlias] \\
-colType         & : & scalarType | anyType \\
-propQualifier   & : & ['\{' property '\}']\\
+typeQualifier  & : & typeName propQualifier \\
+typeName       & : & scalarType $|$ collectionType $|$ anyType\\
+scalarType     & : & ':' {\sc identifier} \\
+collectionType & : & ':' {\sc bat} ['[' col ',' col ']'] \\
+anyType        & : & ':' {\sc any} [typeAlias] \\
+col            & : & scalarType $|$ anyType \\
+propQualifier  & : & ['\{' property '\}']\\
 \end{tabular}
 
 The type ANY matches any type specifier.

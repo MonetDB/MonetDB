@@ -38,7 +38,7 @@ module sqlcache;
 
 command remove(nme:str):void
 address SQLCacheRemove
-comment "Locate the cached function and remove it";
+comment "Remove the cached function";
 
 command exists(nme:str):bit
 address SQLCacheExists

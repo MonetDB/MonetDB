@@ -292,7 +292,6 @@ int CMDtime(int *retval){
 	*retval = GDKms();
 	return GDK_SUCCEED;
 }
-@}
 
 @mil
 PROC test_alarm() : void {

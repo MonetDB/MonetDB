@@ -410,7 +410,7 @@ Out-of range result values are represented by the nil.
 @mal
 command date(s:str):date 
 address MTIMEdate_fromstr
-comment "convert the string to a value of type date";
+comment "convert the string to a type date value";
 
 command date(yr:int, mo:int, day:int):date 
 address MTIMEdate_create 
@@ -420,17 +420,19 @@ command daytime(s:str):daytime
 address MTIMEdaytime_fromstr
 cmment "convert the string to a daytime value.";
 
-command daytime(h:int,m:int,s:int,mi:int):daytime 
+command daytime(h:int,m:int,s:int,mi:int)
+		:daytime 
 address MTIMEdaytime_create 
 comment "creates a time from (hours,minutes,
 	seconds,milliseconds) parameters.";
-command timestamp(d:date,dt:daytime,t:tzone):timestamp 
+command timestamp(d:date,dt:daytime,t:tzone)
+		:timestamp 
 address MTIMEtimestamp_create 
 comment "creates a timestamp from (date,
 	 daytime,tzone) parameters.";
 command timestamp(d:date,dt:daytime) :timestamp 
 address MTIMEtimestamp_create_default 
-comment "creates a timestamp from (d:date,dt:daytime) 
+comment "creates a timestamp from (d,dt) 
 	parameters (in the local timezone).";
 
 command rule(s:str):rule
@@ -639,13 +641,13 @@ comment "convert date components to milliseconds";
 
 command daytime(h:int):daytime 
 address MTIMEdaytime1
-comment "default time creation with zeroed components";
+comment "default time with zeroed components";
 command daytime(h:int,m:int):daytime 
 address MTIMEdaytime2
-comment "default time creation with zeroed components";
+comment "default time with zeroed components";
 command daytime(h:int,m:int,s:int):daytime 
 address MTIMEdaytime3
-comment "default time creation with zeroed components";
+comment "default time with zeroed components";
 
 #SQL utility functions
 command current_timestamp():timestamp

@@ -249,11 +249,10 @@ The corresponding libraries may be statically linked or dynamically loaded.
 Failure to find the startup-files terminates to session, because
 there is no way to activate a linked procedure.
 
-After the initialization phase, the system prohibits dynamic loading of
-C- modules by casual users. For the time being we even forbid it,
-it should be part of the system startup.
-The rational behind this design decision is that the free load/drop
-feature of Monet V4 was hardly used and severely complicates the code.
+Unlike Version 4 we do not allow for dropping of modules with
+linked code.
+The rational behind this design decision is that the feature
+was hardly used and severely complicates the code base.
 In particular, upon each access to the global symbol table we have to be
 prepaired that concurrent threads my be actively changing its structure.
 Especially, dropping modules may cause sever problems by not being

@@ -36,8 +36,7 @@ as a representation of a data-flow graph that should be resolved.
 The language uses a slightly different keyword connotation 
 from programming language arena to make this distinction more evident.
 In particular, flow of control keywords identify a point to chance
-the interpretation order or denote a synchronization point
-in data-flow behavior.
+the interpretation order or denote a synchronization point.
 
 The first statement of a MAL block is always taken up by a signature
 description. (See functions)
@@ -46,10 +45,10 @@ description. (See functions)
 MAL instructions have a simple format. 
 Each instruction denotes a data-flow statement.
 It is syntactically represented by an assignment, where
-an expression (function call) delivers results to target variables. 
+an expression (function call) delivers results to multiple target variables. 
 Input variables changed in the process preferably also appear in
-the target list. This greatly simplifies future optimization
-decisions.
+the target list, i.e. the instruction models the input/output flow.
+This greatly simplifies future optimization decisions.
 
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
@@ -78,7 +77,7 @@ t1 := constant;
 \end{verbatim}
 
 Each operator is defined in a (user-defined) module.
-Knowing its name simplifies the implementation of the binding, but its use is optional.
+Using the module name speeds-up the binding, but its use is optional.
 Omission of the module name initiates a search for a possible
 matching definition in a hierarchical ordered scope
 structure. (See modules inheritance)
@@ -91,7 +90,7 @@ error. [TODO]
 Query languages like SQL are commonly mapped to an algebraic 
 operator model. In our case, even simple SQL queries generate
 a long sequence of MAL instructions.
-They form a condense representation of 
+They form a compact representation of 
 both the administrative actions to ensure binding and transaction
 control, the flow dependencies to produce the query result,
 and the steps needed to prepare the result set for delivery to
@@ -106,10 +105,9 @@ bulk assignment instructions.
 
 @- Flow of control
 @T
-A assignment statement is turned into a flow of control statement
+An assignment statement is turned into a flow of control statement
 by tagging it with a control modifier.
-The primary control flow modifiers are {\tt return}, {\tt yield},
-and {\tt end}.
+The primary control flow modifiers are {\tt return} and {\tt yield}.
 They mark the end of a function call and return one or more results
 to the calling environment. 
 The {\tt return} and {\tt yield} are followed by a target list
@@ -259,24 +257,18 @@ exit    hdl;
 @}
 @+ The MAL instruction records
 The data structure to represent a MAL block is kept simple.
-Each descriptor carries a sequence of MAL statements 
-and a local symbol table.
-
-The constants are all stored in the symbol table.
-Each tuple contains a reference to the argument name,
-a reference to a lexical value when it denotes a constant
-and its optional Mal type identifier.
-Upon procedure return, the variable block is inspected to find
-objects eligible for garbage collection (e.g. strings).
+It carries a sequence of MAL statements and a variable table.
+Each instruction contains references to elements in the 
+symbol table.
 
 The MAL instruction is a code byte string overlaid with the
 instruction pattern. This method leads to a large
 allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
-Each argument list starts with a reference to a destination variable. 
 
 Variable- and stmt- block together describe the
-static part of a MAL procedure. It carries carry enough information to produce
+static part of a MAL procedure. It carries carry enough 
+information to produce
 a listing and to aid symbolic debugging. Ideally, the listing
 of a MAL program is identical to the non-commented source.
 This costs some space, but will improve readability and permits
@@ -338,7 +330,7 @@ typedef struct SYMDEF {
         struct MALBLK   *def;    /* the details of the MAL fcn */
 } *Symbol, SymRecord;
 
-typedef struct{
+typedef struct VARRECORD{
 	str     name;	/* argname or lexical value repr */
 	malType	type;	/* internal type signature */
         bit	isaconstant;	/* value cannot change */
@@ -848,7 +840,6 @@ location of a temporary variable should be flagged as an error.
 		/* test validity*/
 		if( i< mb->vtop-1 && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
 			return i;
-		/* GDKerror("findVariable:temporary variable mis-alignment\n");*/
 		return -1;
 	} 
 @c
@@ -977,6 +968,15 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 			GDKerror("'%s' type mismatch %d vs %d\n",
 				name, getVarType(mb,n),type);
 		}
+		if( isTmpName(name)){
+			int i= atol(name+1);
+			/* test validity*/
+			if( i != n) 
+				GDKerror("newVariable:temporary variable" 
+					" mis-alignment\n");
+			else return n;
+			
+	} 
 		GDKfree(name);  /*possible error not correct, check use!!!*/
 		return n;
 	}
@@ -1000,9 +1000,15 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 } 
 @}
 @- Temporary variables
-Temporary target variable acts as sinks in the data flow graph.
-In this case, we can group them by underlying type and this way
+Temporary target variable act as sinks in the data flow graph.
+In this case, an optimizer can group them by underlying type and this way
 reduce the symbol table size significantly.
+
+Temporary variables are internally represented by their index into
+the variable stack. Their default textual representation is '$'<digits>.
+Temporary names  are recognized by the parser and an error is
+produced if it does not satisfy this condition.
+
 @{
 Sharing of the temporary is only permitted if the type
 is a priory known and not TYPE_any.
@@ -1127,6 +1133,9 @@ of code.
 The final step is to prepare a GDK value record, from which
 the internal representation can be obtained during
 MAL interpretation.
+
+The constant values are linked together to improve searching them.
+This start of the constant list is kept in the MalBlk.
 @{
 @c
 #define MAL_VAR_WINDOW	2*MAXARG

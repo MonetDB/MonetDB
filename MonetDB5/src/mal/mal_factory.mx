@@ -17,7 +17,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ Factories 
+@* Factories 
 @T
 A convenient programming construct is the co-routine, which
 is specified as an ordinary function, but maintains its
@@ -30,7 +30,7 @@ But, in a database context there are multiple clients
 active. This means we have to be more precise on the relationship
 between a co-routine and the client for which it works.
 
-The concept researched in Monet 5 is the notion of a 'factory'.
+The co-routine concept researched in Monet 5 is the notion of a 'factory'.
 The random generator example is used to illustrate its definition and use.
 {\footnotesize
 \begin{verbatim}
@@ -53,7 +53,7 @@ The second call received by the factory wakes it up at the
 point where it went to sleep. In this case it will
 find a REDO statement and produces the next random number.
 Note that also in this case a seed and limit value are
-expected, but ignored in the body.
+expected, but they are ignored in the body.
 This factory can be called upon to generate at most 'limit'
 random numbers using the 'seed' to initialize the generator.
 Thereafter it is being removed, i.e. reset to the original state.
@@ -79,20 +79,19 @@ EXIT lim;
 END random;
 
 FACTORY random():int;
-barrier forever:=true;
+BARRIER forever:=true;
 	YIELD random(0,0);
-	redo forever;
-exit forever;
-EXIT lim;
+	REDO forever;
+EXIT forever;
 END random;
 \end{verbatim}
 }
 
 @+ Factory clients
 @T
-The factory can produce elements for multiple clients.
-The default policy is to not distinguish between clients,
-they share the same factory.
+A factory can produce elements for multiple clients.
+In most cases it is sufficient to use explicit parameters
+to distinguish clients. 
 
 A private random number generator calls for a factory
 that can distinguish between clients. They should have a 
@@ -105,6 +104,10 @@ FACTORY random(seed:int,clientid:int):int;
 	insert(clt,clientid,seed);
 BARRIER always:=true;
 	rnd:= find(clt,clientid);
+CATCH	rnd; #failed to find client
+	insert(clt,clientid,seed);
+	rnd:= find(clt,clientid);
+EXIT	rnd;
 	rnd:= rnd * 125;
 	rnd:= rnd % 32676;
 	replace(clt,clientid,rnd);
@@ -115,8 +118,30 @@ END random;
 
 \end{verbatim}
 }
-A read factory would be more involved, because aside
-from the first client, we may not have a seed value stored.
+Alternatively, the factory has access to a limited 
+set of properties to determine the identity of the caller.
+These can be used to silently administer the requests
+on a per caller basis.
+
+The operators to built client aware factories are,
+factory.getCaller(), which returns a client index,
+factory.getModule() and factory.getFunction(), 
+which returns the identity of the enclosed scope.
+
+To illustrate, the client specific random generator
+can be shielded using the factory:
+{\footnotesize
+\begin{verbatim}
+FACTORY random(seed:int):int;
+BARRIER always:=true;
+	clientid:= factory.getCaller();
+	YIELD random(seed, clientid);
+	REDO always;
+EXIT always;
+END random;
+
+\end{verbatim}
+}
 
 @+ Factory control
 @T
@@ -126,7 +151,7 @@ the factory on the actions to be taken. However, exceptional
 cases may occur which the factory should be told about.
 
 An exception raised in any client is also
-forwarded any factory which it would have called otherwise.
+forwarded to any factory which it would have called otherwise.
 I.e. any factory call skipped while catching the exception
 gets a copy too.
 It effectively leads to a YIELD statement raising an exception.

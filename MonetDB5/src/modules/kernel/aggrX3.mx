@@ -1914,8 +1914,6 @@ int CMDaggrX3_count3(BAT **ret, BAT *b, BAT* g, BAT *e, bit *ignore_nils){
 	return GDK_SUCCEED;
 }
 
-@}
-@}
 @- Wrapper
 The remainder is a wrapper around the V4 code base.
 

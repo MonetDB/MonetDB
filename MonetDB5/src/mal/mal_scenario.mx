@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f mal_scenario
 @a M. Kersten
@@ -30,7 +24,7 @@ In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
 Such an assemblage of components is called a {\em scenario}
 and consists of a {\em reader}, {\em parser}, {\em optimizer},
-{\em scheduler} and {\em engine}. These hooks allow
+{\em tactic scheduler} and {\em engine}. These hooks allow
 for both linked-in and external components.
 
 The languages "currently" supported are SQL, MIL ( a large 
@@ -45,14 +39,13 @@ for the duration of its execution.
 Possible functional enhancements are a query cache,
 history scheme, replication to remote Mservers,....
 
-The prime task of the language specific parser is to prepare a
+The prime task of the parser is to prepare a
 MAL block for subsequent processing. It could be as simple
-as parsing the front-end directly into MAL (and rely on
-its internal optimizers) or a complete separate compilation and
-optimization system, which uses the Monet 5 as its execution
-back-end. 
+as generating a MAL program string followed by separate 
+compilation of the back-end,
+or parsing the front-end directly into MAL data structures.
 
-The MAL code block read are sent through an
+The MAL code block are sent through an
 optimizer, which normally deploys language specific optimizations,
 e.g. foreign-key optimizations in joins and volume reduction over
 intermediates. All information is statically derived from the
@@ -407,7 +400,7 @@ void exitScenario(Client c){
 		(*scen->exitScenarioCmd)(c);
 }
 @}
-@- Scenario hooks
+@+ Scenario hooks
 The building blocks of scenarios are routines obeying a strict
 signature. They all require sole access to the client
 record. Any specific information should be accessible from

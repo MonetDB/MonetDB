@@ -1225,7 +1225,6 @@ int CTrefine(BAT **res, BAT *b, BAT *a) {
 int CTrefine_rev(BAT **res, BAT *b, BAT *a) {
 	return refine(res, b, a, TRUE);
 }
-@}
 @- Wrapping
 Wrapping the version 4 xtables code base
 @c

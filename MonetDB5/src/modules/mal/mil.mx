@@ -33,11 +33,16 @@ The box contains all constants defined in the original
 MIL modules.
 @mal
 module mil
-comment "The mil module provides a box abstraction to store for global MIL constants.
-Between sessions the value of the constants is saved on disk in the form of a
-simple mal program, which is scanned and made available by opening the box.
-A future implementation should provide transaction support over the box, which
-would permit multiple clients to exchange (scalar) information easily.";
+comment "The mil module provides a box abstraction
+	to store for global MIL constants.
+	Between sessions the value of the constants 
+	is saved on disk in the form of a simple 
+	MAL program, which is scanned and made 
+	available by opening the box. A future 
+	implementation should provide transaction 
+	support over the box, which would permit 
+	multiple clients to exchange (scalar) 
+	information easily.";
 
 pattern open():void
 address MILopen
@@ -102,9 +107,9 @@ BUF_WILLNEED :=3;
 BUF_DONTNEED :=4;
 EBUSY :=16;
 
-BAT_READ   := 1;      # allow only read access.
-BAT_APPEND := 2;      # allow reads and insertions of new elements.
-BAT_WRITE  := 0;      # allow reads, insertions, and updates.
+BAT_READ   := 1; # allow only read access.
+BAT_APPEND := 2; # allow reads and insertions.
+BAT_WRITE  := 0; # allow reads, insertions, and updates.
 
 M_E :=2.7182818284590452354LL;
 M_LOG2E :=1.4426950408889634074LL;

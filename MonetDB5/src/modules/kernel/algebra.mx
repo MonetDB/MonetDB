@@ -314,11 +314,12 @@ command semijoin( left:bat[:any$1,:any$2],
 		right:bat[:any$1,:any] ) 
 		:bat[:any$1,:any$2] 
 address ALGsemijoin
-comment "Returns the intersection taken over only 
-	the *head* columns of two BATs. Results in 
-	all BUNs of 'left' that are also in 'right'. 
-	Does *not* do double-elimination over the 
-	'left' BUNs, If you want this, use:
+comment "Returns the intersection taken over 
+	only the *head* columns of two BATs. 
+	Results in all BUNs of 'left' that are 
+	also in 'right'. Does *not* do double-
+	elimination over the 'left' BUNs. 
+	If you want this, use:
 	 'kintersect(left.kunique,right.kunique)' 
 	or: 'kintersect(left,right).kunique'.";
 
@@ -326,17 +327,19 @@ command semijoin( left:bat[:void,:any$2],
 		  right:bat[:oid,:any] ) 
 		:bat[:oid,:any$2] 
 address ALGsemijoin
-comment "Patch to enable semijoin over void/oid columns";
+comment "Patch to enable semijoin over 
+	void/oid columns";
 
 command kintersect( left:bat[:any$1,:any$2], 
 		     right:bat[:any$1,:any] ) 
 		:bat[:any$1,:any$2] 
 address ALGsemijoin
-comment "Returns the intersection taken over only 
-	the *head* columns of two BATs. Results in 
-	all BUNs of 'left' that are also in 'right'.
-	Does *not* do double-elimination over the 
-	'left' BUNs, If you want this, use:
+comment "Returns the intersection taken over 
+	only the *head* columns of two BATs. 
+	Results in all BUNs of 'left' that are 
+	also in 'right'. Does *not* do double-
+	elimination over the 'left' BUNs.
+	If you want this, use:
 	 'kintersect(left.kunique,right.kunique)' 
 	or: 'kintersect(left,right).kunique'.";
 @- bun-differing elements
@@ -523,11 +526,14 @@ command theta ( inner_result:bat[:any$2,:any$2],
 		right:bat[:any$2,:any$3], opname:str )
 				
 address ALGtheta
-comment "Theta join, just as simple thetajoin(l,r), the difference
-is that it returns two values, which are added to the first params
-'inner_result' and 'outer_result', 'inner_result' gets all matching
-inner tuples, 'outer_result' the other two (what would have the
-result of thetajoin(l,r)).";
+comment "Theta join, just as simple thetajoin(l,r),
+	the difference is that it returns two 
+	values, which are added to the first params
+	'inner_result' and 'outer_result', 
+	'inner_result' gets all matching
+	inner tuples, 'outer_result' the other two 
+	(what would have the result of 
+		thetajoin(l,r)).";
 @- Band Join (approximate match)
 @mal
 command bandjoin( outer:bat[:any$1,:any$2],
@@ -678,8 +684,8 @@ override these any implementations.
 @mal
 command min(b:bat[:any$1,:any$2]):any$2 
 address ALGminany
-comment "Give the lowest tail value. Error 
-	on empty BATs.";
+comment "Give the lowest tail value. 
+	Error on empty BATs.";
 
 command max(b:bat[:any$1,:any$2]):any$2 
 address ALGmaxany
@@ -725,28 +731,32 @@ address ALG@1_@2 comment @3;
 @:aggregate_definition(@1,lng,@2)@
 
 @mal
-@:aggregate(max,"Give the highest tail value. Error on empty BATs.")@
-@:aggregate(min,"Give the lowest tail value. Error on empty BATs.")@
+@:aggregate(max,"Give the highest tail value.")@
+@:aggregate(min,"Give the lowest tail value. ")@
 
 @+ Exented selection predicates
 For SQL convenience we provide a serie of interval selectors.
 @mal
 # Extend select to the cases where we 
 # can ignore nils altogether
-function between(b:bat[:any$1,:any$2], l:any$2, h:any$2) :bat[:any$1,:any$2];
+function between(b:bat[:any$1,:any$2], l:any$2, h:any$2) 
+		:bat[:any$1,:any$2];
 	k:= select(b,l,h);
 	return k;
 end between;
 # between Close Open interval
-function betweenCO(b:bat[:any$1,:any$2], l:any$2, h:any$2):bat[:any$1,:any$2];
+function betweenCO(b:bat[:any$1,:any$2], l:any$2, h:any$2)
+		:bat[:any$1,:any$2];
 	t:= select(b,l,h, true,false);
 	return t;
 end betweenCO;
-function betweenOC(b:bat[:any$1,:any$2], l:any$2, h:any$2):bat[:any$1,:any$2];
+function betweenOC(b:bat[:any$1,:any$2], l:any$2, h:any$2)
+		:bat[:any$1,:any$2];
 	t:= select(b,l,h,false,true);
 	return t;
 end betweenOC;
-function betweenOO(b:bat[:any$1,:any$2], l:any$2, h:any$2):bat[:any$1,:any$2];
+function betweenOO(b:bat[:any$1,:any$2], l:any$2, h:any$2)
+	:bat[:any$1,:any$2];
 	t:= select(b,l,h,false,false);
 	return t;
 end betweenOO;
@@ -1454,7 +1464,6 @@ bunins_failed:
 	BBPreclaim(bn);
 	return GDK_FAIL;
 }
-@}
 
 @- Wrapper
 The remainder of this file contains the wrapper around the V4 code base

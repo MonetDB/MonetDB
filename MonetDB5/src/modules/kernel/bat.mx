@@ -387,7 +387,8 @@ address BKCoid_bat_append_oid_bat_wrap
 comment "append the content of u to i 
 	(renumbers u-oids' to unique numbers)";
 
-command append(i:bat[:oid,:any$1], u:any$1):bat[:oid,:any$1]
+command append(i:bat[:oid,:any$1], 
+		u:any$1):bat[:oid,:any$1]
 address BKCoid_bat_append_val_wrap
 comment "append the value u to i";
 
@@ -431,7 +432,7 @@ Therefore it is moved to the bbp module
 @mal
 #command destroy(b:bat[:any,:any]):void
 #address BKCdestroy;
-#command destroy(b:bat[:any,:any],immediately:bit):void
+#command destroy(b:bat[:any,:any],now:bit):void
 #address BKCdestroyImmediate;
 #command destroy(s:str,immediately:bit):void 
 #address BKCdestroy_bat
@@ -1534,8 +1535,6 @@ int CMDset_seqbase(BAT **r, BAT *b, oid* o){
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
-@}
-@}
 @- Wrapping
 The remainder contains the wrapper code over the version 4
 @+ Information Functions
@@ -2417,5 +2416,4 @@ str BKCgetSequenceBase(oid *r, int *bid){
 	return MAL_SUCCEED;
 }
 
-@}
 @}
