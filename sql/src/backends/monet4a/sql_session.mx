@@ -603,9 +603,12 @@ These lines should be eaten away into the prompt is encountered.
 					fprintf(stderr,"mapisqlclient:error 2\n");
 					break;
 				}
-				if (buf && (stream_write( out, "\n", 1, 1 ) != 1 ||
-					stream_write( out, buf, strlen(buf), 1 ) !=1)){
+				if (buf && buf[0] &&
+					(stream_write( out, "\n", 1, 1 ) != 1 ||
+					 stream_write( out, buf, strlen(buf), 1 ) !=1)){
+					fprintf(stderr,"error length:%d\n", strlen(buf));
 					fprintf(stderr,"mapisqlclient:error 3\n");
+					fprintf(stderr,"buf:%s\n",buf);
 					go= FALSE;
 					break;
 				}
