@@ -3187,8 +3187,7 @@ mapi_fetch_line_internal(MapiHdl hdl, int *wantmore)
 	struct MapiResultSet *result;
 	char *reply;
 
-	if (wantmore)
-		*wantmore = 0;
+	*wantmore = 0;
 
 	/* try to read a line from the cache */
 	if ((result = hdl->result) == NULL || result->cache.writer <= 0 ||
@@ -3225,9 +3224,15 @@ mapi_fetch_line(MapiHdl hdl)
 {
 	char *reply;
 	struct MapiResultSet *result;
+	int wantmore;
 
 	mapi_hdl_check0(hdl, "mapi_fetch_line");
-	reply = mapi_fetch_line_internal(hdl, NULL);
+	reply = mapi_fetch_line_internal(hdl, &wantmore);
+	if (reply == NULL && wantmore) {
+		/* we want more input */
+		hdl->mid->error = MMORE;
+		return NULL;
+	}
 	if (reply == NULL && (result = hdl->result) != NULL &&
 	    hdl->mid->languageId == LANG_SQL &&
 	    hdl->mid->active == NULL && result->rows_affected > 0 &&
@@ -3237,7 +3242,7 @@ mapi_fetch_line(MapiHdl hdl)
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
-		reply = mapi_fetch_line_internal(hdl, NULL);
+		reply = mapi_fetch_line_internal(hdl, &wantmore);
 	}
 	return reply;
 }
@@ -3303,6 +3308,10 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 			mapi_explain_result(hdl, fd);
 		while ((line = mapi_fetch_line(hdl)) != NULL)
 			fprintf(fd, "%s\n", line);
+		if (hdl->mid->error == MMORE) {
+			hdl->mid->error = MOK;
+			return MMORE;
+		}
 	} while (mapi_next_result(hdl) == 1);
 	return hdl->mid->error;
 }
