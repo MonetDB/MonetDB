@@ -48,8 +48,8 @@ is still lacking the necessary functionality.
 The client can use between blocked and unblocked interaction.
 The former is preferred, since it will give the best performance.
 This property is indicated in the start-up sequence by passing
-the authentiaction string  "<username>:<password>:blocked".
-An unblocked stream is obtained using "<username>:<password>",
+the authentiaction string  "<username>:<password>:lang:blocked".
+An unblocked stream is obtained using "<username>:<password>:lang",
 which is also backward compatible for older applications.
 @mal
 module mapi;
@@ -250,21 +250,21 @@ is the default in V5.
 			}
 			*user=0;
 #ifdef DEBUG_MAPI
-            printf("mapi:Client accepted %s\n", cmd);fflush(stdout);
+			printf("mapi:Client accepted %s\n", cmd);fflush(stdout);
 #endif
-            s= strrchr(cmd,':');
-            blocked= s && strncmp(s,":blocked",8)==0;
-            if( blocked){
+			s= strrchr(cmd,':');
+			blocked= s && strncmp(s,":blocked",8)==0;
+			if( blocked){
 #ifdef DEBUG_MAPI
-            	printf("mapi:use blocked mode\n");fflush(stdout);
+				printf("mapi:use blocked mode\n");fflush(stdout);
 #endif
-                *s=0;
-                fdin= block_stream(stream_rstream(fdin));
-                fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
-            } else {
-                fdout= socket_wastream(msgsock,"Mserver mapi write");
+				*s=0;
+				fdin= block_stream(stream_rstream(fdin));
+				fdout= block_stream(socket_wstream(msgsock, "Mserver mapi write"));
+			} else {
+				fdout= socket_wastream(msgsock,"Mserver mapi write");
 			}
-
+	
 			if (fdout == 0){
 				GDKsyserror("MAPIlisten:fdout problems\n");
 				continue;
