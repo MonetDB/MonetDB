@@ -521,7 +521,8 @@ int sqlexecute(backend * be, stream *out )
 			err = backend_parse( c->stk, cmd );
 			if (c->cache) {
 				q = qc_insert(c->qc, c->sym, c->args,
-						c->scanner.key, c->type );
+						c->scanner.key, c->type, 
+						GDKstrdup(cmd) );
 				c->sym = NULL;
 			}
 		}

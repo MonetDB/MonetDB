@@ -60,6 +60,7 @@ typedef struct cq {
 	backend_code 	code;	/* V4 state information */
 	int 	id;		/* cache identity */
 	int 	key;		/* the hash key for the query text */
+	char 	*codestring;	/* keep code in string form to aid debugging */
 } cq;
 
 typedef struct qc {
@@ -71,7 +72,7 @@ sql_export qc *qc_create();
 sql_export void qc_destroy( qc *cache );
 sql_export cq *qc_find( qc *cache, int id );
 sql_export cq *qc_match( qc *cache, symbol *s, list *params, int key );
-sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type );
+sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type, char *codedstr);
 sql_export int qc_size( qc *cache );
 
 #endif /*_SQL_QC_H_*/
@@ -107,6 +108,7 @@ void qc_destroy( qc *cache )
 
 		if (q->stk)
 			backend_freestack( q->stk );
+		_DELETE(q->codestring);
 		_DELETE(q);
 	}
 	_DELETE(cache);
@@ -175,7 +177,7 @@ cq *qc_match( qc *cache, symbol *s, list *params, int key )
 	return NULL;
 }
 
-cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type )
+cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type, char *cmd)
 {
 	node *m;
 	cq *n = NEW(cq);
@@ -192,6 +194,7 @@ cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type )
 	n->code = NULL;
 	n->type = type;
 	n->key = key;
+	n->codestring = cmd;
 	cache -> q = n;
 	return n;
 }

@@ -58,13 +58,13 @@ stderr of test 'bug-sf-985242` in directory 'src/test/bugs` itself:
 
 MAPI  = monetdb@titan03:54423
 QUERY = create table "\t" (id int);
-ERROR = !ERROR parse error at token (257) in statement: create table "\t"
+ERROR = !ERROR syntax error at token (258) in statement: create table "\t"
 MAPI  = monetdb@titan03:54423
 QUERY = create table " " (id int);
-ERROR = !ERROR parse error at token (257) in statement: create table " "
+ERROR = !ERROR syntax error at token (258) in statement: create table " "
 MAPI  = monetdb@titan03:54423
 QUERY = create table x ("\t" int);
-ERROR = !ERROR parse error at token (257) in statement: create table x ("\t"
+ERROR = !ERROR syntax error at token (258) in statement: create table x ("\t"
 MAPI  = monetdb@titan03:54423
 QUERY = select * from x;
 ERROR = !current transaction is aborted (please ROLLBACK)
