@@ -1151,29 +1151,32 @@ Module: "url"
 
 Module: "xtables"
 
-[ 19 ]
-[ 19 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 22 ]
+[ 22 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																																						  # name
 # str			str		str										str																																						  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "CTderive",		  "COMMAND:   ",  "CTderive(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "Cross tabulation group extension step.\nReturned head values are identical as in 'ct'. Tail values are from\nthe same domain and indicate further refinement of the groups in 'ct',\ntaking into account also the tail-values in 'attr'."						  ]
-[ "CTgroup",		  "COMMAND:   ",  "CTgroup(BAT[oid,any]) : BAT[oid,oid]",					  "Cross tabulation group initialization.\nReturned head values are identical as in 'attr'. Tail values are from\nthe same domain and indicate unique groups in 'attr' tail column."														  ]
-[ "CTgroup",		  "COMMAND:   ",  "CTgroup(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",				  "binary grouping; a synonym for CTderive(ct,attr)"																																  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "CTderive",		  "COMMAND:   ",  "CTderive(BAT[oid,any], BAT[oid,any]) : grp",					  "Cross tabulation group extension step.\nReturned head values are identical as in 'ct'. Tail values are from\nthe same domain and indicate further refinement of the groups in 'ct',\ntaking into account also the tail-values in 'attr'."						  ]
+[ "CTextend",		  "COMMAND:   ",  "CTextend(grp) : BAT[oid,any]",						  "Return the group extend."																																  ]
+[ "CTgroup",		  "COMMAND:   ",  "CTgroup(BAT[oid,any]) : grp",						  "Cross tabulation group initialization.\nReturned head values are identical as in 'attr'. Tail values are from\nthe same domain and indicate unique groups in 'attr' tail column."													  ]
+[ "CTgroup",		  "COMMAND:   ",  "CTgroup(BAT[oid,any], BAT[oid,any]) : grp",					  "binary grouping; a synonym for CTderive(ct,attr)"																													  ]
+[ "CThistogram",	  "COMMAND:   ",  "CThistogram(grp) : BAT[any,int]",						  "Return the groups histogram."																															  ]
 [ "CThistosum",		  "COMMAND:   ",  "CThistosum(BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "Produce sum over old histogram table"																																	  ]
+[ "CTmap",		  "COMMAND:   ",  "CTmap(grp) : BAT[oid,oid]",							  "Return the group map."																																  ]
 [ "CTorderby",		  "PROC:      ",  "CTorderby(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "not available"																																				  ]
 [ "CTorderby_rev",	  "PROC:      ",  "CTorderby_rev(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "not available"																																				  ]
 [ "CTrefine",		  "COMMAND:   ",  "CTrefine(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "refine the ordering of a tail-ordered BAT by sub-ordering on the\nvalues of a second bat 'a' (where the heads of a and b match 1-1).\nThe effect of this is similar to (hash-based) CTderive, with the\ndistinction that the group ids respect the ordering of the group values."	  ]
 [ "CTrefine_rev",	  "COMMAND:   ",  "CTrefine_rev(BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",			  "reverse sorting version of CTrefine"																																		  ]
-[ "CTregroup",		  "COMMAND:   ",  "CTregroup(BAT[oid,oid], BAT[oid,any]) : BAT[oid,oid]",			  "modifies ct and returns it doing a group"																																	  ]
 [ "CTsubgroup",		  "PROC:      ",  "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]",	  "not available"																																				  ]
 [ "CTsubhisto",		  "COMMAND:   ",  "CTsubhisto(BAT[void,bit], BAT[void,oid], BAT[oid,any]) : BAT[oid,int]",	  "optimized sub-histogram for synced grp[void,oid] and sel[void,bit]\nbats on a previously known domain "																								  ]
-[ "_CTgroup",		  "COMMAND:   ",  "_CTgroup(BAT[oid,any], int, int) : BAT[oid,oid]",				  "Cross tabulation group initialization like CTgroup, but with user\nprovided #bits in hashmask and #distinct values in range."																					  ]
-[ "histogram",		  "COMMAND:   ",  "histogram(BAT[oid,any::1]) : BAT[any::1,int]",				  "compute a histogram on the tail. Optimized for retrieving the\nalready present histogram on a cross-table computed by CTgroup."																					  ]
+[ "_CTgroup",		  "COMMAND:   ",  "_CTgroup(BAT[oid,any], int, int) : grp",					  "Cross tabulation group initialization like CTgroup, but with user\nprovided #bits in hashmask and #distinct values in range."																			  ]
+[ "extend",		  "PROC:      ",  "extend(grp) : BAT[any,int]",							  "not available"																																	  ]
+[ "histogram",		  "PROC:      ",  "histogram(grp) : BAT[any,int]",						  "not available"																																	  ]
+[ "map",		  "PROC:      ",  "map(grp) : BAT[oid,oid]",							  "not available"																																	  ]
 [ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : void",			  "not available"																																				  ]
 [ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",			  "not available"																																				  ]
 [ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",			  "not available"																																				  ]
-[ "tunique",		  "COMMAND:   ",  "tunique(BAT[oid,any::1]) : BAT[any::1,void]",				  "get all unique tail values. Optimized for getting all unique\noids from a cross-table computed by CTgroup."																								  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 

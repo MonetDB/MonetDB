@@ -37,7 +37,6 @@ All_mods@batloop() {
      uchr: loading... done.
    txtsim: loading... done.
     trans: loaded.
-     tpcd: loading... done.
     tcpip: loading... done.
       sys: loaded.
   streams: loading... done.
@@ -126,7 +125,6 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "streams"	  ]
 [ "sys"		  ]
 [ "tcpip"	  ]
-[ "tpcd"	  ]
 [ "trans"	  ]
 [ "txtsim"	  ]
 [ "uchr"	  ]
