@@ -1161,7 +1161,7 @@ Open the file. Memory map it to minimize buffering problems.
 		if (st.st_size <= 0)
 			GDKwarning("CMDimport: fstat('%s') returns size=%d; file empty or fstat broken?\n",
 			           fnme,st.st_size);
-            	base = cur = (char*)MT_mmap(fnme, 0, 0, st.st_size, NULL);
+            	base = cur = (char*)MT_mmap(fnme, MMAP_SEQUENTIAL, 0, st.st_size, NULL);
 		end = cur + st.st_size;
 		if (cur == (char*) -1) {
 			GDKsyserror("CMDimport: MT_mmap('%s', 0, 0, %d, NULL) failed\n",
@@ -1219,11 +1219,13 @@ Parse the line, and insert a BUN.
 @-
 Unmap already parsed memory, to keep the memory usage low. 
 @c
+#ifndef WIN32
 #define MAXBUF (40*MT_pagesize())
 		if ((size_t) (cur - base) > MAXBUF) {
 			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
-		} 
+		}
+#endif
 	}
 @-
 Cleanup and exit. Return the filled BAT.
