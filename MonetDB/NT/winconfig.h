@@ -406,6 +406,9 @@
 /* Define to 1 if you have the <time.h> header file. */
 #define HAVE_TIME_H 1
 
+/* Define to 1 if you have the `times' function. */
+/* #undef HAVE_TIMES */
+
 /* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
    `HAVE_STRUCT_TM_TM_ZONE' instead. */
 /* #undef HAVE_TM_ZONE */

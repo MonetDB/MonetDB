@@ -139,9 +139,9 @@ m_export int interpret_file      (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_cast      (str atom, int argc, ValPtr val, ValPtr res);
 m_export int interpret_batcast   (str atom, int argc, ValPtr val, ValPtr res);
 m_export void closeProfiler(void* o);
-m_export int startProfiler();
-m_export int stopProfiler();
-m_export void setProfilerFilter(str left, str right);
+m_export int startProfiler(void);
+m_export int stopProfiler(void);
+m_export int setProfilerFilter(str left, str right);
 #endif /* _MONET_INTERPRETER_H_ */
 
 @c
@@ -438,6 +438,7 @@ for debugging and optimizing the mil programs.
 To avoid problems, each time client disappears we close the profiling option.
 It should be explicitly set afterwards. 
 @c
+#ifdef HAVE_TIMES
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif
@@ -460,7 +461,8 @@ static int showheader=0;
 
 static MT_Lock profilerLock;
 
-void closeProfiler(void *o){
+void closeProfiler(void *o)
+{
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
 	MT_set_lock(profilerLock, "startProfiler");
@@ -469,7 +471,8 @@ void closeProfiler(void *o){
 	}
 	MT_unset_lock(profilerLock, "startProfiler");
 }
-int startProfiler(){
+int startProfiler(void)
+{
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
 	MT_set_lock(profilerLock, "startProfiler");
@@ -479,33 +482,55 @@ int startProfiler(){
 	MT_unset_lock(profilerLock, "startProfiler");
 	return 0;
 }
-int stopProfiler(){
+int stopProfiler(void)
+{
 	MT_set_lock(profilerLock, "stopProfiler");
 	eventstream= NULL;
 	MT_unset_lock(profilerLock, "stopProfiler");
 	return 0;
 }
+#else
+void closeProfiler(void *o)
+{
+	(void) o;
+}
+int startProfiler(void)
+{
+	return 0;
+}
+int stopProfiler(void)
+{
+	return 0;
+}
+#endif /* HAVE_TIMES */
 @-
 The information gathered is currently limited to some basic OS properties;
 It is dumped on the eventstream whenever we leave the interpreter();
 @= profileEvent
+#ifdef HAVE_TIMES
 if( eventstream){
     long nc= GDKusec();
     onlineProfilerEvent("@1",nc, nc-clk, &timer, lt);
 }
+#endif
 @= profileCapture
+#ifdef HAVE_TIMES
     if( eventstream) {
 	 clk=GDKusec();
 	 times(&timer);
     }
+#endif
 @c
 
 /* the guts of MIL interpretation */
-int interpret(Cntxt stk, YYSTREE lt, ValPtr res) {
-    int	stamp, i = res->len = 0,r=0;
+int interpret(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+    int	stamp, i = res->len = 0, r = 0;
+#ifdef HAVE_TIMES
     long clk = 0;
     struct tms timer;
     @:profileCapture@
+#endif
 @-
 We do not want recursive programs crashing the server, so once in 
 a while we check whether we are running dangerously low on available 
@@ -659,7 +684,8 @@ primitives CATCH* look after garbage collecting these results.
 		}
 		CATCHERR(stk,lt,res,i,((YYSTREE) imp)); 
 		@:profileEvent(builtin)@
-	break; }
+		break;
+	}
 #ifdef MKMODS
         case TOK_TRG:
 		i = interpret_trg(stk, lt, res);
@@ -981,7 +1007,8 @@ exec:	stamp = BBPcurstamp();
 @c
 #define RETURN(x) { i = x; goto xit; }
 
-int interpret_while(int	stk, YYSTREE lt, ValPtr res){
+int interpret_while(int	stk, YYSTREE lt, ValPtr res)
+{
 	int i, reuse = monet_cntxt[stk].reuse;
 
 	if (reuse < 0) {
@@ -1022,7 +1049,8 @@ a constant expression, they are substituted by constants. If they
 denote a variable value, it is replaced by a pointer (TOK_TEMPLATE)
 to the @%ValRecord@ of that variable in the context stack.
 @c
-int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
+int interpret_ident(int	stk, YYSTREE lt, ValPtr res)
+{
 	Variable v;
 	BAT *b = NULL;
 	int i=0, j;
@@ -1082,7 +1110,8 @@ Only executed the first time. We keep the variable stacks, so
 the second time only the initialization statements are executed as 
 a sequential block.
 @c
-int interpret_var(int	stk, YYSTREE lt, ValPtr res){
+int interpret_var(int	stk, YYSTREE lt, ValPtr res)
+{
         int i=0;
  
         lt->token = TOK_SEQ; /* we only create once */ 
@@ -1124,7 +1153,8 @@ Instantiation of a trigger is more-or-less equivalent to procedure call.
 A copy of the trigger definition is used and scheduled for execution.
 @c
 #ifdef MKMODS
-int interpret_trigger(int stk, YYSTREE lt, ValPtr res){
+int interpret_trigger(int stk, YYSTREE lt, ValPtr res)
+{
 	ValPtr argv = (ValPtr) GDKmalloc((1+MAXPARAMS)*sizeof(ValRecord));
 	YYSTREE definition = (YYSTREE) lt->yyval.val.pval;
 	YYSTREE	t,expr;
@@ -1154,7 +1184,8 @@ and conversion to and from string is always possible.
 	  ((dst) != TYPE_str || BATatoms[src].atomToStr == BATatoms[TYPE_str].atomToStr) && \
 	  ((src) != TYPE_str || BATatoms[dst].atomFromStr == BATatoms[TYPE_str].atomFromStr)))
 
-int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
+int interpret_cast(str atom, int argc, ValPtr val, ValPtr res)
+{
 	int tpe = ATOMindex(atom);
 
 	if (argc == 1) {
@@ -1201,7 +1232,8 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 	return 0;
 }
 
-int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
+int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
+{
 	BAT *bn, *b = BBP_cache(val->val.bval);
 	int tpe = ATOMindex(atom);
 	(void) argc;
@@ -1336,7 +1368,8 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 
 @- Variable Assignment Interpretation
 @c
-int interpret_assignment(int stk, YYSTREE lt, ValPtr res){
+int interpret_assignment(int stk, YYSTREE lt, ValPtr res)
+{
 	int	i, s = stk;
 	ValRecord oldvalue, *value;
 	Variable act = 0;
@@ -1411,7 +1444,8 @@ Cleanup the old value.
 @- Sequential Block Interpretation
 Sequential blocks can be handled directly -- no need to go to the queue.
 @c
-int interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope){
+int interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope)
+{
 	int	i, r = 0;
 
 	if (scope) {
@@ -1448,7 +1482,8 @@ The sole action is to delete the context for the parallel block.
 The parallel statements are immediately taken into execution.
 @{
 @c
-int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope){
+int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope)
+{
 	int	reuse = monet_cntxt[stk].reuse;
 	int	tid = THRgettid();
 	Thread	t = THRget(tid);
@@ -1591,8 +1626,8 @@ void iterator_maketrees(
 	YYSTREE	body,
 	int	parallel,
 	int	ht,
-	int	tt
-){
+	int	tt)
+{
 	ValPtr p;
 	int i;
 	(void) ht;
@@ -1617,7 +1652,8 @@ void iterator_maketrees(
 	}
 }
 
-ptr interpret_fcn(int ht, int tt, int parallel) {
+ptr interpret_fcn(int ht, int tt, int parallel)
+{
 	ptr addr;
 	switch(ATOMstorage(ht)) {
 	case TYPE_chr:	@:switch_ht(fchval)@	break;
@@ -1658,7 +1694,8 @@ ptr interpret_fcn(int ht, int tt, int parallel) {
 	return addr;
 }
 
-int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
+int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel)
+{
 	int reuse = monet_cntxt[stk].reuse;
         ValRecord argv[MAXPARAMS+2];
 	ITrecord *handle;
@@ -1794,8 +1831,8 @@ Directly execute the body with head and tail substituted in.
 int tuple_interpret_@1@2_@3@4(
 	ptr head, 
 	ptr tail, 
-	Iteration handle
-){
+	Iteration handle)
+{
 	assign_@2(handle->params[0].val, head);
 	assign_@4(handle->params[1].val, tail);
  	len_@1@3(handle->params,handle);
@@ -1819,8 +1856,8 @@ The M is user-defined as in: <bat-expr>@[M]<iterator><stmt>
 int par_collect_@1@2_@3@4(
 	ptr	head,
 	ptr	tail,
-	Iteration handle
-){
+	Iteration handle)
+{
 	ValPtr params = handle->params+handle->parcnt+handle->parcnt;
 	assign_@2(params[0].val, head);
 	assign_@4(params[1].val, tail);
@@ -1858,17 +1895,20 @@ It also removes any previously defined filter patterns.
 Pattern matching is limited to finding the string in the prefix
 of the call.
 @c
+#ifdef HAVE_TIMES
+
 #define MAXFILTER 16
 static str filter[MAXFILTER][2];
 static int filterlength[MAXFILTER][2];
 static int filtertop=0;
 
-void setProfilerFilter(str left, str right){
+int setProfilerFilter(str left, str right)
+{
 	int i;
 	/*fprintf(stderr,"prepare filter %s %s\n",left,right);*/
 	if( filtertop==MAXFILTER){
 		GDKerror("Out of profile filter space");
-		return;
+		return GDK_FAIL;
 	}
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
@@ -1884,7 +1924,7 @@ void setProfilerFilter(str left, str right){
 		}
 		filtertop=0;
 		MT_unset_lock(profilerLock, "startProfiler");
-		return;
+		return GDK_SUCCEED;
 	}
 	filter[filtertop][0]= GDKstrdup(left);
 	if(strcmp(left,"*")==0)
@@ -1896,15 +1936,17 @@ void setProfilerFilter(str left, str right){
 	else 	filterlength[filtertop][1]= strlen(right);
 	filtertop++;
 	MT_unset_lock(profilerLock, "startProfiler");
+	return GDK_SUCCEED;
 }
-static int tstpattern(str pattern, int len, str callee){
+static int tstpattern(str pattern, int len, str callee)
+{
 	char *s;
-	s= index(callee, *pattern);
+	s= strchr(callee, *pattern);
 	if(s==0) return 0;
-	if( strncmp(pattern,s,len)==0) return 1;
-	return 0;
+	return strncmp(pattern,s,len) == 0;
 }
-static int tstFilter(str caller, str callee){
+static int tstFilter(str caller, str callee)
+{
 	int i, cnt=0;
 	if( strncmp(callee,"unknown",7)==0) return 0;
 	if(filtertop==0) return 1;
@@ -1945,7 +1987,8 @@ any performance profiling.
 	if(eventstream && stream_errnr(eventstream)){eventstream=0;\
 	MT_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
 
-void onlineProfilerHeader(){
+void onlineProfilerHeader(void)
+{
 	log0("# ");
 	log0("caller,\t");
 	log0("callee,\t");
@@ -1974,7 +2017,8 @@ void onlineProfilerHeader(){
 	log0("event\t# name\n");
 	flushLog();
 }
-static void quote(char *buf, int lim){
+static void quote(char *buf, int lim)
+{
 	char *tmp= GDKstrdup(buf);
 	char *s=buf,*t=tmp, *sl=buf+lim-1;
 	while(*t && s<sl){
@@ -1987,7 +2031,8 @@ static void quote(char *buf, int lim){
 	GDKfree(tmp);
 }
 
-void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTREE lt){
+void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTREE lt)
+{
 	static struct mallinfo prevMalloc;
 	static struct rusage   prevUsage;
 	static int eventcounter;
@@ -2073,3 +2118,15 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
 	if(eventstream) stream_flush(eventstream); 
 	MT_unset_lock(profilerLock, "onlineProfilerEvent");
 }
+
+#else
+
+int setProfilerFilter(str left, str right)
+{
+	(void) left;
+	(void) right;
+	GDKerror("No profiler support");
+	return GDK_FAIL;
+}
+
+#endif /* HAVE_TIMES */

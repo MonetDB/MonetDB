@@ -112,8 +112,7 @@ int stopProfilerCMD(int *res){
 }
 int setFilterCmd(int *res, str left, str right){
 	*res=0;
-	setProfilerFilter(left,right);
-	return GDK_SUCCEED;
+	return setProfilerFilter(left,right);
 }
 @-
  
