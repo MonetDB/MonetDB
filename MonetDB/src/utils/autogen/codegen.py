@@ -301,8 +301,8 @@ class java_parser:
         if self.status == 'new(' and token == ')':
             self.status = 'new()'
             self.ncount = 0             # reset
-        elif self.status == 'new()' and token == '{': 
-	    #and self.ncount == 0:
+        elif self.status == 'new()' and token == '{':
+            #and self.ncount == 0:
             self.classes.append(self.pclass[len(self.pclass)-1] + "$$%d" % self.anonnr)
             self.anonnr = self.anonnr + 1
             self.status = None

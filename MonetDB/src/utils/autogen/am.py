@@ -288,9 +288,9 @@ def am_scripts(fd, var, scripts, am):
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         am['INSTALL'].append(script)
         am['UNINSTALL'].append(script)
-	cond = ''
-	if scripts.has_key('COND'):
-        	cond = '#' + string.join(scripts['COND'], '+')
+        cond = ''
+        if scripts.has_key('COND'):
+            cond = '#' + string.join(scripts['COND'], '+')
         am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
 
     am_find_ins(am, scripts)
@@ -316,9 +316,9 @@ def am_headers(fd, var, headers, am):
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
             am['UNINSTALL'].append(header)
-	    cond = ''
-	    if headers.has_key('COND'):
-       	       cond = '#' + string.join(headers['COND'], '+')
+            cond = ''
+            if headers.has_key('COND'):
+                cond = '#' + string.join(headers['COND'], '+')
             am['InstallList'].append("\t"+sd+"/"+header+cond+"\n")
 
     am_find_ins(am, headers)
@@ -401,7 +401,7 @@ def am_binary(fd, var, binmap, am):
 
     cond = ''
     if binmap.has_key('COND'):
-       	cond = '#' + string.join(binmap['COND'], '+')
+        cond = '#' + string.join(binmap['COND'], '+')
 
     SCRIPTS = []
     scripts_ext = []
@@ -583,9 +583,9 @@ def am_library(fd, var, libmap, am):
         am['NLIBS'].append((pref, libname, sep))
     else:
         am['LIBS'].append((pref, libname, sep))
-	cond = ''
-	if libmap.has_key('COND'):
-        	cond = '#' + string.join(libmap['COND'], '+')
+        cond = ''
+        if libmap.has_key('COND'):
+            cond = '#' + string.join(libmap['COND'], '+')
         am['InstallList'].append("\t%s/%s%s%s.so%s\n" % (ld, pref, sep, libname, cond))
 
     if libmap.has_key('MTSAFE'):
