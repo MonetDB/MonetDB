@@ -47,10 +47,10 @@
 
 #include "oops.h"
 
-#if HAVE_SOCKLEN_T
+#ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
-#define SOCKLEN size_t
+#define SOCKLEN int
 #endif
 
 /**
@@ -196,8 +196,7 @@ new_instance (int port, int *client)
 
     while (true) {
         *client = accept (incoming, 
-                          (struct sockaddr *) &client_addr,
-                          (socklen_t *) &client_addrlen);
+                          (struct sockaddr *) &client_addr, &client_addrlen);
 
         if (*client < 0) {
             /*
