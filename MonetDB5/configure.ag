@@ -24,6 +24,7 @@ dnl -*- mode: autoconf -*-
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 dnl Process this file with autoconf to produce a configure script.
+AC_PREREQ(2.53)
 AC_INIT(src/utils/Mx/Mx.h)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
