@@ -236,6 +236,7 @@ changed setbuf to setbuffer to avoid unintentional buffer overflow.
 @c
 	                       	setbuffer(c->fdout, c->output, 4096);
 				c->mode = BLOCKMODE;
+				CNTXTcopy(c->stk, stk);
 				TBL_initclient(c);
 				scheduleClient(c);
 				PARDEBUG THRprintf(GDKerr, "CLIENTlisten:client accepted %d %d\n", 

@@ -708,6 +708,7 @@ void BBPtransient(bat i) {
 			BBP_status_off(i, BBPPERSISTENT, "BBPtransient");
 			if (BBP_refs(i) == 0){
 				BAT *b = BBP_cache(i);
+				printf("BBPfree %d\n", i );
 				if (b) BBPfree(b);
 			}
 		}
