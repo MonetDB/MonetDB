@@ -14,9 +14,9 @@ stdout of test 'test_40` in directory 'tests/suite_02` itself:
 setoid(oid(2000000));
 # Checking out the effect of hash clustering
 module("cluster");
-t:= k10_unique1.select(0,20);
+var t:= k10_unique1.select(0,20);
 t.accbuild(find(monet_acctbl,"hash"));
-t.print;
+t.print();
 #-----------------#
 # BAT:	  tmp_60  #
 # (int)	  (int)	  #
@@ -44,7 +44,7 @@ t.print;
 [ 9930,	  16	  ]
 t.acccluster(find(monet_acctbl,"hash"));
 !ERROR: CMDacccluster: operation failed.
-t.print;
+t.print();
 #-----------------#
 # BAT:	  tmp_60  #
 # (int)	  (int)	  #
@@ -71,7 +71,7 @@ t.print;
 [ 9486,	  6	  ]
 [ 9930,	  16	  ]
 
-quit;
+quit();
 
 # 17:09:07 >  
 # 17:09:07 >  Done.

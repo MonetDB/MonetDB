@@ -2,9 +2,9 @@ setoid(oid(2000000));
 # Checking out the effect of hash clustering
 module("cluster");
 var t:= k10_unique1.select(0,20);
-t.accbuild(find(bat("monet_acctbl"),"hash"));
+t.accbuild(find(monet_acctbl,"hash"));
 t.print();
-t.acccluster(find(bat("monet_acctbl"),"hash"));
+t.acccluster(find(monet_acctbl,"hash"));
 t.print();
 
 quit();
