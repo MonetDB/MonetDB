@@ -49,7 +49,7 @@ gdk_debug=0			# debug
 # Monet Section
 #==============
 monet_admin=adm			#administrator user name 
-monet_prompt=monet>		#prompt 
+monet_prompt=MonetDB>		#prompt 
 monet_welcome=yes		#Version and copyright information
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 monet_daemon=no			# default yes
