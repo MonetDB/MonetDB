@@ -1,6 +1,6 @@
 #
 # ! this file should be kept identical in !
-# ! monet, sql, xml, acoi                 !
+# ! monet, sql, xml, acoi, template       !
 #
 # In the following. ${what} is one of monet, sql, xml, acoi. 
 # It is automatically derived from the current directory name.
@@ -173,6 +173,9 @@ if [ "${os}" = "SunOS" ] ; then
 		# GNU ar in /usr/local/bin doesn't support 64bit
 		AR='/usr/ccs/bin/ar' ; export AR
 		AR_FLAGS='-r -cu' ; export AR_FLAGS
+		# libraries compiled with gcc may need the gcc libs, so
+		# at them to the LD_LIBRARY_PATH 
+		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
 	fi
 	if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
 		# propper/extended LD_LIBRARY_PATH for native 32bit shared libs on SunOS
@@ -181,7 +184,6 @@ if [ "${os}" = "SunOS" ] ; then
 	if [ "${COMP}${BITS}" = "GNU64" ] ; then
 		# our gcc/g++ on apps is in ${soft32} (also for 64 bit)
 		binpath="${soft32}/bin:${binpath}"
-		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
 	fi
 	if [ "${what}" = "SQL"  -a  "${COMP}" = "ntv" ] ; then
 		# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
@@ -250,58 +252,8 @@ if [ "${os}" != "Linux" ] ; then
 fi
 
 # CWI specific additional package settings
-if [ "${what}" = "ACOI"  -a  "`domainname`" = "cwi.nl" ]; then
-	xml=""
-	if [ "${os}" = "Linux" ] ; then
-		xml="/net/ara.ins/export/scratch1/windhouw/local/${os}/${BITS}"
-	fi
-	if [ "${os}" = "IRIX64" ] ; then
-		xml="/ufs/windhouw/local/${os}/${BITS}"
-	fi
-	if [ "${os}" = "SunOS" ] ; then
-		xml="/ufs/windhouw/local/${os}/${BITS}"
-	fi
-	if [ "${xml}" ] ; then
-		conf_opts="${conf_opts} --with-xml=${xml}"
-		binpath="${xml}/bin:${binpath}"
-		libpath="${xml}/lib:${libpath}"
-	fi
-
-	xslt=""
-	if [ "${os}" = "Linux" ] ; then
-		xslt="/net/ara.ins/export/scratch1/windhouw/local/${os}/${BITS}"
-	fi
-	if [ "${os}" = "IRIX64" ] ; then
-		xslt="/ufs/windhouw/local/${os}/${BITS}"
-	fi
-	if [ "${os}" = "SunOS" ] ; then
-		xslt="/ufs/windhouw/local/${os}/${BITS}"
-	fi
-	if [ "${xslt}" ] ; then
-		conf_opts="${conf_opts} --with-xslt=${xslt}"
-		binpath="${xslt}/bin:${binpath}"
-		libpath="${xslt}/lib:${libpath}"
-	fi
-
-	java=""
-	if [ "${os}" = "Linux" ] ; then
-		java="/soft/IBMJava2-13"
-	fi
-	if [ "${os}" = "IRIX64" ] ; then
-		java="/usr/java"
-	fi
-	if [ "${os}" = "SunOS" ] ; then
-		java="/"
-	fi
-	if [ "${java}" ] ; then
-		conf_opts="${conf_opts} --with-java=${java}"
-		binpath="${java}/bin:${binpath}"
-		libpath="${java}/lib:${libpath}"
-	fi
-
-	conf_opts="${conf_opts} --with-mapi=/ufs/windhouw/java"
-	conf_opts="${conf_opts} --with-xpt=/ufs/windhouw/java"
-	conf_opts="${conf_opts} --with-tomcat=/ufs/windhouw/java/jakarta-tomcat"
+if [ -f conf/local.bash ]; then
+	source conf/local.bash
 fi
 
 # tell configure about chosen compiler and bits
