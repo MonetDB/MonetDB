@@ -8,7 +8,7 @@ else:
     sys.path.append('@prefix@'+os.sep+'share'+os.sep+'@PACKAGE@'+os.sep+'python')
 
 import monet_options
-from Mapi import *
+import Mapi
 
 cmd_options = [
     ('host',None,'host','hostname','host to connect to (default: localhost)'),
@@ -21,7 +21,7 @@ except monet_options.Error:
     # error parsing options
     sys.exit(1)
 
-s = server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), "adm" )
+s = Mapi.server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), "adm" )
 
 res = s.cmd_intern( "shutdown;\n" )
 s.disconnect()
