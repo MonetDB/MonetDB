@@ -583,9 +583,9 @@ One day we should introduce the concept of locale, and hook here.
                                     (lng(60) * (lng(h) + (lng(24) * lng(d))))))));
 
 	# some utilities for the SQL front-end
-proc current_timestamp() { return timestamp(epoch()); }
-proc current_date() { return date(current_timestamp()); }
-proc current_time() { return daytime(current_timestamp()); }
+proc current_timestamp() : timestamp { return timestamp(epoch()); }
+proc current_date() : date { return date(current_timestamp()); }
+proc current_time() : daytime { return daytime(current_timestamp()); }
 
 # utility functions (for SQL) for direct extraction of fields from timestamps
 proc year(timestamp t) : int { return year(date(t)); }
