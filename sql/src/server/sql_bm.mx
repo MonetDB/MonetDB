@@ -319,7 +319,7 @@ void bm_save( bm *bm, FILE *fp )
 	    	fprintf(fp, "%s,%d,%d\n", name, version, pbid); 
 		assert( BBP_status(pbid)&BBPPERSISTENT);
 	}
-	assert(bm->bat_opbid);
+	assert(!bm->bat_opbid);
 
 	if (bm->bat_pbid)
 		bm->bat_opbid = bm->bat_pbid;
