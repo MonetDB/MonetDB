@@ -186,8 +186,8 @@ def am_scripts(fd, var, scripts, am):
         am['EXTRA_DIST'].append(src)
 
     for script in scripts['TARGETS']:
-	if script not in am['BIN_SCRIPTS']:
-		am['BIN_SCRIPTS'].append("script_" + script)
+        if script not in am['BIN_SCRIPTS']:
+            am['BIN_SCRIPTS'].append("script_" + script)
         fd.write("script_%s: %s\n" % (script,script))
         fd.write("\tchmod a+x $<\n")
         if (sd == "$(sysconfdir)"):
@@ -196,7 +196,6 @@ def am_scripts(fd, var, scripts, am):
                 fd.write("\t$(INSTALL) $(INSTALL_BACKUP) $< $(DESTDIR)%s/%s\n\n" % (sd,script))
                 fd.write("uninstall-exec-local-%s: \n" % (script))
                 fd.write("\t$(ECHO) $(DESTDIR)%s/%s\n\n" % (sd,script))
-		
         else:
                 fd.write("install-exec-local-%s: %s\n" % (script,script))
                 fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
@@ -262,9 +261,9 @@ def am_binary(fd, var, binmap, am ):
     if (type(binmap) == type([])):
         name = var[4:]
         if (name == 'SCRIPTS'):
-	    for script in binmap:
-	    	if script not in am['BIN_SCRIPTS']:
-			am['BIN_SCRIPTS'].append(script)
+            for script in binmap:
+                if script not in am['BIN_SCRIPTS']:
+                    am['BIN_SCRIPTS'].append(script)
             am['INSTALL'].append(name)
             am['ALL'].append(name)
             for i in binmap:
@@ -636,10 +635,10 @@ CXXEXT = \\\"cc\\\"
             am['InstallList'].append("\t$(bindir)/"+i+"\n")
 
     if (len(am['BIN_SCRIPTS']) > 0):
-	    scripts = am['BIN_SCRIPTS']
-            fd.write("bin_SCRIPTS = %s\n" % am_list2string(scripts," ",""))
-            fd.write("install-exec-local-SCRIPTS: \n" )
-            fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n" )
+        scripts = am['BIN_SCRIPTS']
+        fd.write("bin_SCRIPTS = %s\n" % am_list2string(scripts," ",""))
+        fd.write("install-exec-local-SCRIPTS: \n" )
+        fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n" )
 
     if (len(am['INSTALL']) > 0):
         fd.write("install-exec-local:%s\n" % \

@@ -247,7 +247,7 @@ def do_recursive_combine(deplist,includes,cache,depfiles):
             for f in includes[d]:
                 if f not in depfiles:
                     depfiles.append(f)
-            	    do_recursive_combine([f],includes,cache,depfiles)
+                    do_recursive_combine([f],includes,cache,depfiles)
             # need to add include d too
             if d not in depfiles:
                 depfiles.append(d)
@@ -384,7 +384,7 @@ def expand_env(i):
 
       if os.environ.has_key( var ):
         value = os.environ[var]
-	return value + rest
+        return value + rest
     return None
 
 def expand_incdir(i,topdir):
@@ -392,7 +392,7 @@ def expand_incdir(i,topdir):
       i = i[2:]
     incdir = expand_env(i)
     if (incdir != None):
-	return incdir
+        return incdir
     dir = i
     if string.find(i,os.sep) >= 0:
       d,rest = string.split(i,os.sep, 1)
@@ -411,20 +411,20 @@ def expand_includes(i,topdir):
     if (incdir != None):
         incs = string.split(incdir)
         if (len(incs) > 1):
-	  return expand_incdirs(incs,topdir)
+            return expand_incdirs(incs,topdir)
         else:
-	  return [(expand_incdir(incdir,topdir),i)]
+            return [(expand_incdir(incdir,topdir),i)]
     dir = expand_incdir(i,topdir)
     return [(dir,i)]
 
 def expand_incdirs(incdirs,topdir):
     dirs = []
     for incdir in incdirs:
-      incs = string.split(incdir)
-      if (len(incs) > 1):
-	dirs.extend(expand_incdirs(incs,topdir))
-      else:
-	dirs.extend(expand_includes(incs[0],topdir))
+        incs = string.split(incdir)
+        if (len(incs) > 1):
+            dirs.extend(expand_incdirs(incs,topdir))
+        else:
+            dirs.extend(expand_includes(incs[0],topdir))
     return dirs
 
 
@@ -500,7 +500,7 @@ def codegen(tree, cwd, topdir):
                 if libs.has_key(lib):
                     d = libs[lib]
                     if not v.has_key('LIBS'):
-			v['LIBS'] = []
+                        v['LIBS'] = []
                     v['LIBS'].extend(d)
             elif i == "LIBS":
                 for l,d in libs.items():
