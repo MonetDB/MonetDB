@@ -247,8 +247,6 @@ void	PrChr(char c)
 		    ofile_puts("&#38;");
 		    break;
 		}
-		ofile_printf("%c",c);
-		break;
 	    case '#':
 	    case '{':
 	    case '}':
