@@ -1106,7 +1106,8 @@ int BBPdecref(bat i, int logical) {
 
 	/* now carry out the automatic swapping policy */
 	b = BBP_cache(i);
-	if (BBP_lrefs(i) > 0 || BBP_refs(i) > 0 || (b && b->batPersistence == PERSISTENT)) {
+	assert(b && b->batPersistence == PERSISTENT ? BBP_lrefs(i) > 0 : TRUE);
+	if (BBP_lrefs(i) > 0 || BBP_refs(i) > 0) {
 		/* bat cannot be swapped out. renew its last usage stamp for the BBP LRU policy */
 		int sec = BBPLASTUSED(GDKcsec());
 		if (sec > BBPLASTUSED(BBP_lastused(i))) BBP_lastused(i) = sec;
