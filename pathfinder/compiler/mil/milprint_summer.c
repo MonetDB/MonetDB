@@ -43,9 +43,6 @@
 #include "subtyping.h"
 #include "mil_opt.h"
 
-/* FIXME: throw this out asap */
-#include "coreprint.h"
-
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
 #define RIGHT_CHILD(p) ((p)->child[1])
@@ -9863,31 +9860,12 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* resolves nodes, which are not supported and prunes
        code which is not needed (e.g. casts, let-bindings) */
-    fprintf(stdout, "# Core tree before simplification:\n");
-    PFcore_pretty (stdout, c);
-
-    simplifyCoreTree (c);
-
-    fprintf(stdout, "\n# Core tree after simplification:\n");
-    PFcore_pretty (stdout, c);
-    fprintf(stdout, "\n");
-
-    recognize_join (c,
-                    PFarray (sizeof (var_info *)),
-                    PFarray (sizeof (var_info *)),
-                    0);
-    fprintf(stdout, "\n# Core tree after join recognition:\n");
-    PFcore_pretty (stdout, c);
-    fprintf(stdout, "\n");
-
-/*
     simplifyCoreTree (c);
 
     recognize_join (c,
                     PFarray (sizeof (var_info *)),
                     PFarray (sizeof (var_info *)),
                     0);
-*/
 
     milprintf(f,
             "# MODULE DECLARATIONS\n"
