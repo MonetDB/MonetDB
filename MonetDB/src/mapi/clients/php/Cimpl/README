@@ -1,8 +1,26 @@
 MonetDB extension module for PHP4.
 
-At this moment, this module has to be compiled within PHP build structure.
-That means, you need to either copy it from within MonetDB directory into 
-PHP source tree or e.g.:
+To build this module, you have two options.
+
+1) Compile this module as a standalone module, which will build a shared object (.so)
+2) Compile this module within the PHP source tree.
+
+
+1) Standalone compilation
+
+Use the provided 'Makefile.standalone' file. The PHP development files
+have to be installed (php-dev), and the php-config script needs to be
+in your path.
+
+    make -f Makefile.standalone
+    make -f Makefile.standalone install
+
+2) Compilation within the source tree
+
+This module can be compiled within PHP build structure. you need to
+either copy it from within MonetDB directory into PHP source tree or
+make a symlink into it, e.g.:
+
     ln -s $MONETDB_ROOT/src/mapi/clients/php/Cimpl $PHP_SRC/ext/monetdb
 
 Then, regenerate PHP's configure script for the module to show up:
