@@ -13,7 +13,7 @@ SELECT * FROM "sys"."keys" AS "keys", "sys"."keycolumns" AS
 "keycolumns"."id" AND "keys"."table_id" = "tables"."id"
 AND "tables"."schema_id" = "schemas"."id" AND
 "keys"."type" = 0 AND "schemas"."name" LIKE 'sys' AND
-"tables"."name" LIKE 'x' ORDER BY "COLUMN_NAME";
+"tables"."name" LIKE 'x' ORDER BY "keycolumns"."column";
 
 SELECT cast(null AS varchar) AS "TABLE_CAT",
 "schemas"."name" AS "TABLE_SCHEM", "tables"."name" AS
