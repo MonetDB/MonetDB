@@ -537,10 +537,13 @@ file_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 static ssize_t
 file_write(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	size_t rc = fwrite(buf, elmsize, cnt, (FILE*)s->stream_data.p);
-	if (rc < cnt)
-		s->errnr = WRITE_ERROR;
-	return (ssize_t) rc;
+	if (elmsize && cnt) {
+		size_t rc = fwrite(buf, elmsize, cnt, (FILE*)s->stream_data.p);
+		if (rc < cnt)
+			s->errnr = WRITE_ERROR;
+		return (ssize_t) rc;
+	}
+	return 0;
 }
 
 static void
