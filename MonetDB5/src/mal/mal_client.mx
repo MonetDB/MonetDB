@@ -286,7 +286,8 @@ Client initClient(str nme, str passwd, stream *fin, stream *fout){
 	c->nxt = c->input;
 
 	c->fdout = fout?fout: GDKout;
-	c->sysmon = c->journal = NULL;
+	c->sysmon = mal_clients[0].fdout;
+	c->journal = NULL;
 @-
 The output buffer is currently not used. Beware to garbage
 collect the buffer when in use.
@@ -687,7 +688,7 @@ submission. This avoids a significant number of network interactions.
 			snprintf(s,MAPIBLKSIZE,"quit();");
 			return 0;
 		} 
-		for(s=c->input; *s ;s++) {
+		for(s=c->input; *s && s < c->input+MAPIBLKSIZE ;s++) {
 			if( *s== 13) *s=' ';
 			if( *s ==' ' || *s=='\t'){
 				if(lspace == 0) lspace= s; 

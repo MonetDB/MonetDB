@@ -925,7 +925,6 @@ retryConstant:
 				vr->val.ival = int_nil;
 			} else
 			if( l>= (1<<15) || l <= (-1<<15)){
-			GDKwarning("newConstant:int coerced to lng\n");
 				if(type==TYPE_int){
 					vr->vtype= TYPE_lng;
 					setVarType(mb,idx, TYPE_lng);
