@@ -4,10 +4,19 @@
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
 
+REQ_AM_VERSION="1.4"
+AM_VERSION=`automake --version | grep '^automake' | sed -e 's|.*)||g' -e 's| ||g' -e 's|-.*||g'`
+_REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+
+if [ $_AM_VERSION -gt $_REQ_AM_VERSION ]; then
+	echo "automake $AM_VERSION is newer then $REQ_AM_VERSION"
+elif [ $_AM_VERSION -lt $_REQ_AM_VERSION ]; then
+	echo "automake $AM_VERSION is older then $REQ_AM_VERSION"
+fi
+
 find . -name .cache\* \-exec rm {} \;
-
-src/utils/autogen/autogen.py `pwd`
-
+src/utils/autogen/autogen.py `pwd` $_AM_VERSION
 cat configure.ag > configure.in
 echo "AC_OUTPUT(" >> configure.in
 cat acout.in  >> configure.in
