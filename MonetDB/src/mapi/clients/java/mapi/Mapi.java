@@ -1652,10 +1652,24 @@ public void sortColumn(int col){
 	if( col <0 || col > maxfields) return;
 	int direction = columns[col].direction;
 	columns[col].direction = -direction;
+	if( columns[col].columntype.equals("int") ||
+	    columns[col].columntype.equals("lng") ||
+	    columns[col].columntype.equals("ptr") ||
+	    columns[col].columntype.equals("short") 
+	){
+		sortIntColumn(col);
+		return;
+	}
+	if( columns[col].columntype.equals("flt") ||
+	    columns[col].columntype.equals("dbl") 
+	){
+		sortDblColumn(col);
+		return;
+	}
 	int lim= cache.tupleCount;
 	for(int i=0;i<lim; i++){
-		String x= fields[tuples[i]][col];
 		for(int j=i+1;j<lim; j++){
+			String x= fields[tuples[i]][col];
 			String y= fields[tuples[j]][col];
 			if( direction>0){
 				if(y!=null && x!=null && y.compareTo(x) >0 ){
@@ -1675,6 +1689,76 @@ public void sortColumn(int col){
 	}
 }
 
+private void sortIntColumn(int col){
+	int direction = columns[col].direction;
+	int lim= cache.tupleCount;
+	long val[]= new long[lim];
+	for(int i=0; i<lim; i++){
+		try{
+			val[i]= Integer.parseInt(fields[tuples[i]][col]);
+		} catch(NumberFormatException e){
+			val[i]= Integer.MIN_VALUE;}
+	}
+	for(int i=0;i<lim; i++){
+		for(int j=i+1;j<lim; j++){
+			long x= val[i];
+			long y= val[j];
+			if( direction>0){
+				if(y>x){
+					int z= tuples[i];
+					tuples[i]= tuples[j];
+					tuples[j]= z;
+					val[i]= y;
+					val[j]= x;
+				}
+			} else 
+			if( direction<0){
+				if(y<x){
+					int z= tuples[i];
+					tuples[i]= tuples[j];
+					tuples[j]= z;
+					val[i]= y;
+					val[j]= x;
+				}
+			}
+		}
+	}
+}
+private void sortDblColumn(int col){
+	int direction = columns[col].direction;
+	int lim= cache.tupleCount;
+	double val[]= new double[lim];
+	for(int i=0; i<lim; i++){
+		try{
+			val[i]= Integer.parseInt(fields[tuples[i]][col]);
+		} catch(NumberFormatException e){
+			val[i]= Integer.MIN_VALUE;}
+	}
+	for(int i=0;i<lim; i++){
+		for(int j=i+1;j<lim; j++){
+			double x= val[i];
+			double y= val[j];
+			if( direction>0){
+				if(y>x){
+					int z= tuples[i];
+					tuples[i]= tuples[j];
+					tuples[j]= z;
+					val[i]= y;
+					val[j]= x;
+				}
+			} else 
+			if( direction<0){
+				if(y<x){
+					int z= tuples[i];
+					tuples[i]= tuples[j];
+					tuples[j]= z;
+					val[i]= y;
+					val[j]= x;
+				}
+			}
+		}
+	}
+}
 }
 
 class Column{
