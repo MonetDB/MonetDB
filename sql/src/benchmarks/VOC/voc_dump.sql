@@ -1,13 +1,13 @@
 START TRANSACTION;
 
 CREATE TABLE "voyages" (
-	"number"            int(9)	NOT NULL,
+	"number"            integer	NOT NULL,
 	"number_sup"        char(1)	NOT NULL,
-	"trip"              int(9),
+	"trip"              integer,
 	"trip_sup"          char(1),
 	"boatname"          varchar(50),
 	"master"            varchar(50),
-	"tonnage"           int(9),
+	"tonnage"           integer,
 	"type_of_boat"      varchar(30),
 	"built"             varchar(15),
 	"bought"            varchar(15),
@@ -21,7 +21,7 @@ CREATE TABLE "voyages" (
 	"cape_call"         boolean,
 	"arrival_date"      date,
 	"arrival_harbour"   varchar(30),
-	"next_voyage"       int(9),
+	"next_voyage"       integer,
 	"particulars"       varchar(530)
 );
 
@@ -4597,7 +4597,7 @@ INSERT INTO "voyages" VALUES (4543, '', 1, '', 'ADMIRAAL DE SUFFREN', 'Gottlieb 
 INSERT INTO "voyages" VALUES (4544, '', 2, '', 'BARBESTEIN', 'Kornelis van Vlaanderen', 1150, NULL, '1783', NULL, NULL, 'A', 'Z', '1786-11-25', 'Rammekens', '1787-04-21', '1787-05-19', true, '1787-08-08', 'Batavia', 8217, 'According to K.A. 4304 the departing crew consisted of 262 men. The BARBESTEIN called at Duins, 28-11-1786 till 07-01-1787 where a mutiny was discovered. The BARBESTEIN went on to China. See the TRITON (4517).');
 INSERT INTO "voyages" VALUES (4545, '', 2, '', 'MENTOR', 'Jochem Hendrik Milfaart', 560, NULL, NULL, NULL, NULL, NULL, 'Z', '1786-12-19', 'Rammekens', '1787-03-20', '1787-04-19', true, '1787-06-20', 'Batavia', 8203, NULL);
 INSERT INTO "voyages" VALUES (4546, '', 2, '', 'POLLUX', 'Johan van Stralen', 490, NULL, NULL, '1784', NULL, 'Z', 'A', '1786-12-25', 'Texel', '1787-04-29', '1787-05-19', true, '1787-07-11', 'Ceylon', 8281, NULL);
-INSERT INTO "voyages" VALUES (4547, '', 2, '', 'VOORSCHOTEN', 'Willem van Groningen', 1150, NULL, '1783', NULL, NULL, 'A', 'A', '1786-12-25', 'Texel', '1787-04-27', '19-05-01', true, '1787-07-27', 'Batavia', 8219, 'According to K.A. 4304 the departing crew consisted of 319 men. The VOORSCHOTEN called at Duins, 05 till 07-01-1787. After having arrived at Batavia the ship sailed on to China.');
+INSERT INTO "voyages" VALUES (4547, '', 2, '', 'VOORSCHOTEN', 'Willem van Groningen', 1150, NULL, '1783', NULL, NULL, 'A', 'A', '1786-12-25', 'Texel', '1787-04-27', '1787-05-01', true, '1787-07-27', 'Batavia', 8219, 'According to K.A. 4304 the departing crew consisted of 319 men. The VOORSCHOTEN called at Duins, 05 till 07-01-1787. After having arrived at Batavia the ship sailed on to China.');
 INSERT INTO "voyages" VALUES (4548, '', 1, '', 'LEVIATHAN', 'Harme Karel Visser', 1150, NULL, '1785', NULL, NULL, 'A', 'A', '1787-01-09', 'Texel', '1787-04-26', '1787-05-19', true, '1787-07-11', 'Ceylon', 8039, NULL);
 INSERT INTO "voyages" VALUES (4549, '', 2, '', 'HOORN', 'Hendrik Holder', 850, NULL, '1774', NULL, NULL, 'H', 'H', '1787-01-10', 'Texel', '1787-04-20', '1787-05-19', true, '1787-07-20', 'Batavia', NULL, 'According to K.A. 4198 the departing crew consisted of 273 men. See the BERKHOUT (4531).');
 INSERT INTO "voyages" VALUES (4550, '', 1, '', 'VLISSINGEN', 'Willem Fredenks', 380, NULL, NULL, NULL, NULL, NULL, 'Z', '1787-01-11', 'Rammekens', '1787-04-28', '1787-05-21', true, '1787-08-08', 'Batavia', 8206, NULL);
@@ -6615,10 +6615,10 @@ INSERT INTO "voyages" VALUES (6790, '', 2, '', 'SCHUITWIJK', 'Dirk de Vet', 650,
 INSERT INTO "voyages" VALUES (6791, '', 3, '', 'HERSTELLING', 'Jan van der Quade', 600, NULL, '1721', NULL, NULL, 'D', 'R', '1730-03-23', 'Batavia', '1730-06-01', '1730-07-04', true, '1730-10-31', 'Texel', 2749, NULL);
 INSERT INTO "voyages" VALUES (6792, '', 5, '', 'AMSTERDAM', 'Frans van der Hoop', 800, NULL, '1716', NULL, NULL, 'A', 'A', '1730-10-17', 'Batavia', '1731-01-19', '1731-02-21', true, '1731-07-13', 'Texel', 2700, 'Commandeur of the return fleet was W illem ter Smitten (6801).');
 INSERT INTO "voyages" VALUES (6793, '', 1, '', 'ANNA CATHARINA', 'Adriaan Krijnsen', 600, NULL, '1728', NULL, NULL, 'Z', 'Z', '1730-10-17', 'Batavia', '1731-01-18', '1731-02-21', true, '1731-07-13', 'Rammekens', 2778, NULL);
-INSERT INTO "voyages" VALUES (6794, '', 5, '', 'BARBESTEIN', 'Anthonie Klink', 1100, NULL, '1717', NULL, NULL, 'Z', 'Z', '1730-10-17', 'Batavia', '1731-01-18', '1731-02-21', true, '13-07-17', 'Rammekens', 2772, NULL);
+INSERT INTO "voyages" VALUES (6794, '', 5, '', 'BARBESTEIN', 'Anthonie Klink', 1100, NULL, '1717', NULL, NULL, 'Z', 'Z', '1730-10-17', 'Batavia', '1731-01-18', '1731-02-21', true, '1731-07-13', 'Rammekens', 2772, NULL);
 INSERT INTO "voyages" VALUES (6795, '', 2, '', 'CASTOR EN POLLUX', 'Pieter Sluis', 400, 'jacht', '1722', NULL, NULL, 'Z', 'A', '1730-10-17', 'Batavia', '1731-01-19', '1731-02-21', true, '1731-07-13', 'Texel', 2720, NULL);
 INSERT INTO "voyages" VALUES (6796, '', 4, '', 'CORNELIA', 'Jan Pereboom', 800, NULL, '1721', NULL, NULL, 'H', 'H', '1730-10-17', 'Batavia', '1731-01-14', '1731-02-21', true, '1731-07-13', 'Texel', 2789, NULL);
-INSERT INTO "voyages" VALUES (6797, '', 7, '', 'ELISABETH', 'Mijndert Schut', 1140, NULL, '1714', NULL, NULL, 'A', 'A', '1730-10-17', 'Batavia', '1731-01-19', '1731-02-21', true, '13-07-17', 'Texel', 2794, NULL);
+INSERT INTO "voyages" VALUES (6797, '', 7, '', 'ELISABETH', 'Mijndert Schut', 1140, NULL, '1714', NULL, NULL, 'A', 'A', '1730-10-17', 'Batavia', '1731-01-19', '1731-02-21', true, '1731-07-13', 'Texel', 2794, NULL);
 INSERT INTO "voyages" VALUES (6798, '', 4, '', 'GOUDRIAAN', 'Adriaan van Dorp', 630, 'fluit', '1719', NULL, NULL, 'D', 'D', '1730-10-17', 'Batavia', '1731-01-18', '1731-02-21', true, '1731-07-13', 'Goeree', 2768, NULL);
 INSERT INTO "voyages" VALUES (6799, '', 3, '', 'KETEL', 'Jan Hokkeling', 810, NULL, '1721', NULL, NULL, 'R', 'R', '1730-10-17', 'Batavia', '1731-01-18', '1731-02-21', true, '1731-07-13', 'Goeree', 2781, NULL);
 INSERT INTO "voyages" VALUES (6800, '', 2, '', 'PETRONELLA ALIDA', 'Kornelis Klaasz.', 550, NULL, '1722', NULL, NULL, 'E', 'E', '1730-10-17', 'Batavia', '1731-01-19', '1731-02-21', true, '1731-07-13', 'Texel', 2677, NULL);
@@ -8203,16 +8203,16 @@ INSERT INTO "voyages" VALUES (8400, '', 1, '', 'LOUISA ANTHONY', 'Kersje Hillebr
 INSERT INTO "voyages" VALUES (8401, '', 1, '', 'VERTROUWEN', 'Hillebrand van Uijen', 890, 'fluit', NULL, NULL, NULL, 'A', 'A', '1795-01-01', NULL, '1795-08-14', NULL, true, NULL, NULL, 4778, 'the English at the Cape.');
 
 CREATE TABLE "craftsmen" (
-	"number"               int(9)	NOT NULL,
+	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
-	"trip"                 int(9),
+	"trip"                 integer,
 	"trip_sup"             char(1),
-	"onboard_at_departure" int(9),
-	"death_at_cape"        int(9),
-	"left_at_cape"         int(9),
-	"onboard_at_cape"      int(9),
-	"death_during_voyage"  int(9),
-	"onboard_at_arrival"   int(9)
+	"onboard_at_departure" integer,
+	"death_at_cape"        integer,
+	"left_at_cape"         integer,
+	"onboard_at_cape"      integer,
+	"death_during_voyage"  integer,
+	"onboard_at_arrival"   integer
 );
 
 INSERT INTO "craftsmen" VALUES (1376, '', 3, '', 19, NULL, NULL, NULL, NULL, 19);
@@ -10566,16 +10566,16 @@ INSERT INTO "craftsmen" VALUES (8329, '', 2, '', 5, NULL, NULL, NULL, NULL, NULL
 INSERT INTO "craftsmen" VALUES (8341, '', 2, '', 1, NULL, NULL, NULL, NULL, NULL);
 
 CREATE TABLE "impotenten" (
-	"number"               int(9)	NOT NULL,
+	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
-	"trip"                 int(9),
+	"trip"                 integer,
 	"trip_sup"             char(1),
-	"onboard_at_departure" int(9),
-	"death_at_cape"        int(9),
-	"left_at_cape"         int(9),
-	"onboard_at_cape"      int(9),
-	"death_during_voyage"  int(9),
-	"onboard_at_arrival"   int(9)
+	"onboard_at_departure" integer,
+	"death_at_cape"        integer,
+	"left_at_cape"         integer,
+	"onboard_at_cape"      integer,
+	"death_during_voyage"  integer,
+	"onboard_at_arrival"   integer
 );
 
 INSERT INTO "impotenten" VALUES (5733, '', 3, '', 18, NULL, NULL, NULL, NULL, NULL);
@@ -11518,11 +11518,11 @@ INSERT INTO "impotenten" VALUES (8371, '', 3, '', 1, NULL, NULL, NULL, NULL, NUL
 INSERT INTO "impotenten" VALUES (8396, '', 3, '', 11, NULL, NULL, NULL, NULL, NULL);
 
 CREATE TABLE "invoices" (
-	"number"     int(9),
+	"number"     integer,
 	"number_sup" char(1),
-	"trip"       int(9),
+	"trip"       integer,
 	"trip_sup"   char(1),
-	"invoice"    int(9),
+	"invoice"    integer,
 	"chamber"    char(1)
 );
 
@@ -15310,16 +15310,16 @@ INSERT INTO "invoices" VALUES (8400, '', 1, '', 85711, 'A');
 INSERT INTO "invoices" VALUES (8401, '', 1, '', 106435, 'A');
 
 CREATE TABLE "passengers" (
-	"number"               int(9)	NOT NULL,
+	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
-	"trip"                 int(9),
+	"trip"                 integer,
 	"trip_sup"             char(1),
-	"onboard_at_departure" int(9),
-	"death_at_cape"        int(9),
-	"left_at_cape"         int(9),
-	"onboard_at_cape"      int(9),
-	"death_during_voyage"  int(9),
-	"onboard_at_arrival"   int(9)
+	"onboard_at_departure" integer,
+	"death_at_cape"        integer,
+	"left_at_cape"         integer,
+	"onboard_at_cape"      integer,
+	"death_during_voyage"  integer,
+	"onboard_at_arrival"   integer
 );
 
 INSERT INTO "passengers" VALUES (310, '', 2, '', 66, NULL, NULL, NULL, 2, 64);
@@ -18137,16 +18137,16 @@ INSERT INTO "passengers" VALUES (8390, '', 3, '', 1, 1, 7, NULL, NULL, NULL);
 INSERT INTO "passengers" VALUES (8396, '', 3, '', 5, NULL, NULL, NULL, NULL, NULL);
 
 CREATE TABLE "seafarers" (
-	"number"               int(9)	NOT NULL,
+	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
-	"trip"                 int(9),
+	"trip"                 integer,
 	"trip_sup"             char(1),
-	"onboard_at_departure" int(9),
-	"death_at_cape"        int(9),
-	"left_at_cape"         int(9),
-	"onboard_at_cape"      int(9),
-	"death_during_voyage"  int(9),
-	"onboard_at_arrival"   int(9)
+	"onboard_at_departure" integer,
+	"death_at_cape"        integer,
+	"left_at_cape"         integer,
+	"onboard_at_cape"      integer,
+	"death_during_voyage"  integer,
+	"onboard_at_arrival"   integer
 );
 
 INSERT INTO "seafarers" VALUES (196, '', 1, '', 65, NULL, NULL, NULL, NULL, NULL);
@@ -22619,16 +22619,16 @@ INSERT INTO "seafarers" VALUES (8384, '', 1, '', 118, NULL, NULL, NULL, NULL, NU
 INSERT INTO "seafarers" VALUES (8396, '', 3, '', 105, 1, 11, NULL, NULL, NULL);
 
 CREATE TABLE "soldiers" (
-	"number"               int(9)	NOT NULL,
+	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
-	"trip"                 int(9),
+	"trip"                 integer,
 	"trip_sup"             char(1),
-	"onboard_at_departure" int(9),
-	"death_at_cape"        int(9),
-	"left_at_cape"         int(9),
-	"onboard_at_cape"      int(9),
-	"death_during_voyage"  int(9),
-	"onboard_at_arrival"   int(9)
+	"onboard_at_departure" integer,
+	"death_at_cape"        integer,
+	"left_at_cape"         integer,
+	"onboard_at_cape"      integer,
+	"death_during_voyage"  integer,
+	"onboard_at_arrival"   integer
 );
 
 INSERT INTO "soldiers" VALUES (296, '', 1, '', 90, NULL, NULL, NULL, NULL, NULL);
@@ -26810,16 +26810,16 @@ INSERT INTO "soldiers" VALUES (8354, '', 2, '', 4, NULL, NULL, NULL, NULL, NULL)
 INSERT INTO "soldiers" VALUES (8396, '', 3, '', 44, NULL, NULL, NULL, NULL, NULL);
 
 CREATE TABLE "total" (
-	"number"               int(9)	NOT NULL,
+	"number"               integer	NOT NULL,
 	"number_sup"           char(1)	NOT NULL,
-	"trip"                 int(9),
+	"trip"                 integer,
 	"trip_sup"             char(1),
-	"onboard_at_departure" int(9),
-	"death_at_cape"        int(9),
-	"left_at_cape"         int(9),
-	"onboard_at_cape"      int(9),
-	"death_during_voyage"  int(9),
-	"onboard_at_arrival"   int(9)
+	"onboard_at_departure" integer,
+	"death_at_cape"        integer,
+	"left_at_cape"         integer,
+	"onboard_at_cape"      integer,
+	"death_during_voyage"  integer,
+	"onboard_at_arrival"   integer
 );
 
 INSERT INTO "total" VALUES (1, '', 1, '', 59, NULL, NULL, NULL, NULL, NULL);
@@ -29277,20 +29277,27 @@ INSERT INTO "total" VALUES (8394, '', 1, '', 100, 2, 3, NULL, NULL, NULL);
 INSERT INTO "total" VALUES (8395, '', 2, '', 107, NULL, 3, NULL, NULL, NULL);
 INSERT INTO "total" VALUES (8398, '', 2, '', 40, NULL, NULL, NULL, NULL, NULL);
 
-ALTER TABLE "voc"."voyages" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "voc"."craftsmen" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "voc"."impotenten" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "voc"."passengers" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "voc"."seafarers" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "voc"."soldiers" ADD PRIMARY KEY ("number", "number_sup");
-ALTER TABLE "voc"."total" ADD PRIMARY KEY ("number", "number_sup");
+ALTER TABLE "voyages" ADD PRIMARY KEY ("number", "number_sup");
+ALTER TABLE "craftsmen" ADD PRIMARY KEY ("number", "number_sup");
+ALTER TABLE "impotenten" ADD PRIMARY KEY ("number", "number_sup");
+ALTER TABLE "passengers" ADD PRIMARY KEY ("number", "number_sup");
+ALTER TABLE "seafarers" ADD PRIMARY KEY ("number", "number_sup");
+ALTER TABLE "soldiers" ADD PRIMARY KEY ("number", "number_sup");
+ALTER TABLE "total" ADD PRIMARY KEY ("number", "number_sup");
 
-ALTER TABLE "voc"."craftsmen" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."impotenten" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."invoices" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."passengers" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."seafarers" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."soldiers" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
-ALTER TABLE "voc"."total" ADD FOREIGN KEY ("number", "number_sup") REFERENCES "voc"."voyages" ("number", "number_sup");
+ALTER TABLE "craftsmen" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup");
+ALTER TABLE "impotenten" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup");
+ALTER TABLE "invoices" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup");
+ALTER TABLE "passengers" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup");
+ALTER TABLE "seafarers" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup");
+ALTER TABLE "soldiers" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup");
+ALTER TABLE "total" ADD FOREIGN KEY ("number", "number_sup")
+	REFERENCES "voyages" ("number", "number_sup");
 
 COMMIT;
