@@ -291,12 +291,14 @@ def am_scripts(fd, var, scripts, am):
 	s = script
 	if scripts.has_key('COND'):
             condname = string.join(scripts['COND'], '+')
-            fd.write("C_%s = \n" % (script))
+	    fd.write("uninstall-local-:\n");
+	    fd.write("install-exec-local-:\n");
+    	    name = string.replace(script, '.', '_')
             fd.write("if %s\n" % (condname))
-            fd.write("	C_%s = %s\n" % (script,script))
+            fd.write(" C_%s = %s\n" % (name,script))
             fd.write("endif\n")
             cond = '#' + condname
-	    s = "$(C_" + s + ")"
+	    s = "$(C_" + name + ")"
 		
         am['INSTALL'].append(s)
         am['UNINSTALL'].append(s)
@@ -592,11 +594,10 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key('COND'):
         condname = string.join(libmap['COND'], '+')
         cond = '#' + condname
-        fd.write("C_%s = \n" % (libname))
         fd.write("if %s\n" % (condname))
-        fd.write("	C_%s = %s\n" % (libname,libname))
+        fd.write(" C_%s = %s\n" % (libname,libname))
         fd.write("endif\n")
-	cname = "$(C_" + cname + ")"
+	cname = "$(C_" + libname + ")"
 
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
