@@ -551,7 +551,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.4.1"
+#define VERSION "4.5.0"
 
 /* Define on MS Windows (also under Cygwin) */
 #ifndef WIN32
