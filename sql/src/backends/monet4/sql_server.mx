@@ -251,6 +251,9 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 		S("GRANT ALL on auths to PUBLIC with grant option;" );
 		S("GRANT ALL on privileges to PUBLIC with grant option;" );
 		S("GRANT ALL on users to PUBLIC with grant option;" );
+		S("GRANT ALL on sessions to PUBLIC with grant option;" );
+		S("GRANT ALL on history to PUBLIC with grant option;" );
+		S("GRANT ALL on env to PUBLIC with grant option;" );
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}
