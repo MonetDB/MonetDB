@@ -59,7 +59,6 @@ smallTOC_SHARED_MODS =	\
 	../modules/contrib/lib_bat_mmath	\
 	../modules/contrib/lib_bitset	\
 	../modules/contrib/lib_bitvector	\
-	../modules/contrib/lib_cluster	\
 	../modules/contrib/lib_color	\
 	../modules/contrib/lib_ddbench	\
 	../modules/contrib/lib_image	\
@@ -70,7 +69,6 @@ smallTOC_SHARED_MODS =	\
 	../modules/contrib/lib_uchr	\
 	../modules/contrib/lib_qt	\
 	../modules/contrib/lib_salgebra	\
-	../modules/contrib/lib_tpcd	\
 	../modules/contrib/lib_txtsim	\
 	../modules/contrib/lib_wisc
 
