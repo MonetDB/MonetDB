@@ -167,6 +167,7 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 @-
 Checking the control flow structure is done by a single pass over the
 MAL program after the program has been type-checked.
+It should inspect all BARRIER and CATCH blocks for proper structure.
 @c
 #define DEPTH 128
 
@@ -266,9 +267,11 @@ void chkFlow(MalBlkPtr mb)
                         mb->errors++;
 		}
 	}
-	for(btop--; btop>=0;btop--)
-	GDKerror("begin '%s' without exit in %s[%d]\n",
-		getVarName(mb,var[btop]),getFcnName(mb),i);
+	for(btop--; btop>=0;btop--){
+		GDKerror("begin '%s' without exit in %s[%d]\n",
+			getVarName(mb,var[btop]),getFcnName(mb),i);
+		mb->errors++;
+	}
 	p= getInstrPtr(mb,0);
 	if( !isaSignature(p))
 		GDKerror("SYNTAX ERROR: signature missing\n");

@@ -52,7 +52,7 @@ are located in mal_startup.
 #define _MAL_CLIENT_H_
 #define bitset int
 
-#define MAL_CLIENT_DEBUG_2
+/* #define MAL_CLIENT_DEBUG_2*/
 
 #include "mal_resolve.h"
 #include "mal.h"
@@ -68,7 +68,6 @@ are located in mal_startup.
 
 #define TIMEOUT		(5*60)	/* seconds */
 #define PROCESSTIMEOUT	2	/* seconds */
-#define MAPIBLKSIZE	256
 
 @-
 The prompt structure is designed to simplify recognition
@@ -129,7 +128,16 @@ the interaction on the system console (sysmon).
 	str	nxt;			/* next unparsed input */
 	str	prompt;			/* acknowledge prompt */
 	int	promptlength;
-	int	blkmode;		/* control block reading */
+@-
+In interactive mode, reading one line at a time, we should be
+aware of parsing compound structures, such as functions and
+barrier blocks. The level of nesting is maintained in blkmode,
+which is reset to zero upon encountering an end instruction,
+or the closing bracket has been detected. Once the complete
+structure has been parsed the program can be checked and executed.
+Nesting is indicated using a '+' before the prompt.
+@h
+	int	blkmode;		/* control block parsing */
 @-
 The listing bit set controls the level of detail to be generated during
 program execution tracing. The lowest level (1) simply dumps the input,
@@ -273,6 +281,7 @@ Client initClient(str nme, str passwd, stream *fin, stream *fout){
 	c->scenario= NULL;
 	c->oldscenario = NULL;
 	c->sessionkey = 0;
+	c->blkmode = 0;
 
 	c->socket= 0;
 	c->fdin = fin? fin: GDKin;
@@ -292,8 +301,6 @@ The output buffer is currently not used. Beware to garbage
 collect the buffer when in use.
 @c
 	c->output = 0;
-	c->blkmode= c->fdin==GDKin?0: MAPIBLKSIZE;
-	
 	if(c->nspace==0)
 		c->nspace = newScope(NULL, GDKstrdup("guest"));
 	c->curprg = c->backup = 0;
@@ -634,119 +641,10 @@ prompts structures. [think, can we avoid acks]
 		s = c->nxt; *s = 0;
 	}
 
-@h
-#define MAPIBLOCKCNT	"#blockcnt:%6d"
 @c
 int readClient(Client c,str prompt){
-	int i,bytes,free,blocks,len;
-	str  s, last;
-	char *first, *lspace=0;
- 
 	if( isAdministrator(c)) return streamClient(c);
 	return bstreamClient(c);
-@-
-The next statement block is to be read. Sent a prompt to warn
-the front-end to issue the request.
-@c
-	first= last= s = c->nxt; *s = 0;
-	@:makespace@
-
-#ifdef MAL_CLIENT_DEBUG
-	printf("# readClient %s\n",c->user);
-#endif
-readAgain:
-	bytes = c->limit - c->input;
-	free= c->limit - s-1;	/* reserve null byte */
-	free= free>BLOCK?BLOCK:free;
-
-@-
-Prompting for additional input depends on the source.
-All except the console should mark the prompt with the
-\001 and \002 brackets.
-@c
-	if(c->promptlength) { 
-		if(isAdministrator(c))
-			stream_printf(c->fdout,"%s",prompt);
-		else	stream_printf(c->fdout,"\001%s\002\n",prompt);
-		c->fdout->flush(c->fdout);
-	}
-@-
-Beware, that in terminal mode you loose backspaceing options.
-Therefore, most interaction should be regulated through the Mclient
-front-end. This will also take care of buffering a request before
-submission. This avoids a significant number of network interactions.
-@c
-	if(c->blkmode){
-		if( (i=c->fdin->read(c->fdin,s,1,MAPIBLKSIZE)) != MAPIBLKSIZE){
-			char buf[256];
-			snprintf(buf,256,"Block read failed (%dbytes)\n",i);
-			@:sysTrace(buf)@
-			GDKerror(buf);
-			/* mimick end of session */
-			snprintf(s,MAPIBLKSIZE,"quit();");
-			return 0;
-		} 
-		for(s=c->input; *s && s < c->input+MAPIBLKSIZE ;s++) {
-			if( *s ==' ' || *s=='\t'){
-				if(lspace == 0) lspace= s; 
-			} else lspace =0;
-		}
-		if( lspace ) *lspace=0;
-#ifdef MAL_CLIENT_DEBUG
-	printf("# received %s\n",c->input);
-#endif
-		@:sysTrace(c->input)@
-		return 1;
-	}
-@-
-The common approach is to read just one line from the user
-@c
-	if( c->blkmode==0 ){
-		while( (i= c->fdin->read(c->fdin,s,1,1)) == 1){
-			if(*s== 13) continue; /* WIN32 */
-			if(*s== 0 || *s== '\n') { *s=0; break;}
-			s++;
-			if( s==c->limit-1) { @:makespace@ }
-		}
-		if( i<=0) {
-			/* end of stream reached */
-			return 0;
-		}
-	}
-@-
-Check to see if this involves a blocked increment message. If so, read
-the complete block in one blow. The alternative is to read the next line;
-@c
-	if( *last != '#') goto readCompleted;
-	@:sysTrace(c->input)@
-	if(sscanf(last,"#blocksize:%6d",&blocks)==1){
-		c->blkmode = blocks;
-		goto readAgain;
-	}
-	if(sscanf(last,MAPIBLOCKCNT,&blocks)==1){
-		bytes= blocks * MAPIBLKSIZE;
-		while( bytes >= c->limit-c->input)
-			enlargebuffer(c, MAPIBLKSIZE);
-		if( c->fdin->read(c->fdin,last, 1,bytes) != bytes){
-			@:sysTrace("unable to read all bytes\n")@
-			GDKerror("readClient:unable to read all bytes\n");
-			return 0;
-		}
-		last=s;
-	}
-readCompleted:
-	/* trim the spaces at the end of the string */
-	for(s=first; *s; s++) {
-		if( *s ==' ' || *s=='\t'){
-			if(lspace == 0) lspace= s;
-		} else lspace =0;
-	}
-	if( lspace ) *lspace=0;
-#ifdef MAL_CLIENT_DEBUG
-	printf("# received %s\n",c->input);
-#endif
-	@:sysTrace(c->input)@
-	return 1;
 }
 @-
 The default action is to read information from an ascii-stream
@@ -771,7 +669,9 @@ the front-end to issue the request.
 	free= free>BLOCK?BLOCK:free;
 
 	if(c->promptlength) { 
-		stream_printf(c->fdout,"%s",c->prompt);
+		if( c->blkmode) 
+			stream_printf(c->fdout,"+%s",c->prompt);
+		else stream_printf(c->fdout,"%s",c->prompt);
 		c->fdout->flush(c->fdout);
 	}
 	while( (i= c->fdin->read(c->fdin,s,1,1)) == 1){
@@ -803,7 +703,9 @@ int bstreamClient(Client c){
 		@:makespace@
 	}
 	if(c->promptlength) { 
-		stream_printf(c->fdout,"\001%s\002\n",c->prompt);
+		if( c->blkmode) 
+			stream_printf(c->fdout,"\001+%s\002\n",c->prompt);
+		else stream_printf(c->fdout,"\001%s\002\n",c->prompt);
 		c->fdout->flush(c->fdout);
 	}
 #ifdef MAL_CLIENT_DEBUG_2

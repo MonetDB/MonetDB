@@ -130,6 +130,13 @@ void processString(Client c)
 	runScenario(c);
 */
 	if( MALparser(c) == 0){
+		if( c->blkmode) {
+			/*unfinished input */
+			chkProgram(c->nspace, c->curprg->def);
+			showErrors(c); 
+			if( c->listing)
+				printFunction(c->fdout, c->curprg->def,c->listing);
+		} else
 		if(MALoptimizer(c)==0) 
 			MALengine(c);
 	} else showErrors(c); 
@@ -138,12 +145,16 @@ void processString(Client c)
 Beware that we have to isolate the execution of the source file
 in its own environment. E.g. we have to removed the execution
 state until we are finished.
+The script being read my contain errors, such as non-balanced
+brackets as indicated by blkmode.
+It should be reset before continuing.
 @c
 void malImport(Client c, str modname, str libname, int listing){
 	str	s,msg;
 
 	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
 	int oldlisting = c->listing;
+	int oldblkmode = c->blkmode;
 	Scope oldscope = c->nspace;
 	Symbol oldprg = c->curprg;
 	MalStkPtr oldstk = c->glb;
@@ -177,6 +188,7 @@ resolving addresses.
 	c->nxt = oldnxt;
 	c->nspace= oldscope;
 	c->curprg = oldprg;
+	c->blkmode = oldblkmode;
 }
 @+ File and input processing
 A recurring situation is to execute a stream of simple MAL instructions
@@ -204,7 +216,7 @@ void runScript(Client c, str fname, int listing, MalStkPtr glb)
 {	
 	stream *fd, *oldinput;
 	int oldlisting= c->listing;
-	int oldmode = c->blkmode;
+	int oldblkmode = c->blkmode;
 	str oldprompt = c->prompt;
 	MalStkPtr oldglb = c->glb;
 
@@ -219,7 +231,7 @@ void runScript(Client c, str fname, int listing, MalStkPtr glb)
 	GDKerror("runScript is not yet defined\n");
 	c->fdin = oldinput;
 	c->listing = oldlisting;
-	c->blkmode = oldmode;
+	c->blkmode = oldblkmode;
 	c->prompt = oldprompt;
 	c->glb = oldglb;
 	(void) fd->close(fd);

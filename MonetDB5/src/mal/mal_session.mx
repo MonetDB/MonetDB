@@ -305,6 +305,8 @@ str MALparser(Client c){
 		@:restoreState@
 		return throwMessage("MALparser","syntax errors\n");
 	}
+	/* check for unfinished blocks */
+	if( c->blkmode) return 0;
 	/* empty files should be skipped as well */
 	if( c->curprg->def->stop == 1) 
 		return 0;
@@ -329,6 +331,8 @@ str MALengine(Client c){
 	str msg = 0;
 	MalBlkRecord oldstate;
 
+	/* check for unfinished blocks */
+	if( c->blkmode) return 0;
 	prg= c->curprg;
 	if( prg== NULL) 
 		return throwMessage("MALengine","main function missing\n");

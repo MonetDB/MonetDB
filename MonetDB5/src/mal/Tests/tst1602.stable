@@ -286,17 +286,17 @@ end main; #94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 416 ms
-count 1000000 = 322 ms
-count 1000000 = 322 ms
-count 1000000 = 323 ms
+count 1000000 = 399 ms
+count 1000000 = 305 ms
+count 1000000 = 305 ms
+count 1000000 = 306 ms
 #-------------------------------------------------#
-# BAT:				  tmp_6		  #
+# BAT:				  tmp_10	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_7"	  ]
-[ "batCacheid",			  "7"		  ]
+[ "batId",			  "tmp_9"	  ]
+[ "batCacheid",			  "9"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "oid"		  ]
@@ -375,17 +375,17 @@ count 1000000 = 323 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 445 ms
-count 1000000 = 332 ms
-count 1000000 = 336 ms
-count 1000000 = 334 ms
+count 1000000 = 414 ms
+count 1000000 = 320 ms
+count 1000000 = 317 ms
+count 1000000 = 320 ms
 #-------------------------------------------------#
-# BAT:				  tmp_8		  #
+# BAT:				  tmp_16	  #
 # (str)				  (str)		  #
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_9"	  ]
-[ "batCacheid",			  "9"		  ]
+[ "batId",			  "tmp_15"	  ]
+[ "batCacheid",			  "15"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "lng"		  ]

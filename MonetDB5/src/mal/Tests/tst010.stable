@@ -48,7 +48,7 @@
 !ERROR: exit-label 'B' doesnot match 'A' in main[20]
 !ERROR: exit-label 'F' without begin-label in main[21]
 !ERROR: exit-label 'A' without begin-label in main[28]
-!ERROR: begin 'unfinished' without exit in main[32]
+!ERROR: begin 'unfinished' without exit in main[31]
 function Admin.main():int; #0  (main:int)
 barrier L := 1; #1  (L:int)<-($2:int) jump 4
     leave Z; #2  (Z:any)
@@ -80,5 +80,4 @@ exit D; #27  (D:int)
 exit A; #28  (A:int)
 barrier unfinished := 1; #29  (unfinished:int)<-($2:int)
     f := 1; #30  (f:int)<-($2:int)
-end main; #31  
 >

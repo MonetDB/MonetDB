@@ -818,7 +818,8 @@ int melType(Client cntxt,MalBlkPtr curBlk, InstrPtr curInstr, int varid){
 }
 @-
 Most functions are (dynamically) linked with the kernel.
-
+Once we encounter an external function, the block mode
+for reading unfinished definitions is also terminated.
 @= externalFcn
 	if( keyphrase1(cntxt,"=")){
 		str nme;
@@ -829,6 +830,7 @@ Most functions are (dynamically) linked with the kernel.
 			parseError(cntxt,"<identifier> expected\n");
 			return 0;
 		}
+		cntxt->blkmode=0;
 		nme = idCopy(cntxt,i);
 		if( moduleId(curInstr)) GDKfree(curInstr->modname);
 		setModuleId(curInstr, GDKstrdup(cntxt->nspace->name));
@@ -953,6 +955,7 @@ int parseEnd(Client cntxt)
 		pushEndInstruction(curBlk);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
 		trimMalBlk(cntxt->curprg->def);
+		cntxt->blkmode =0;
 		chkProgram(cntxt->nspace, cntxt->curprg->def);
 		if( cntxt->backup){
 			cntxt->curprg = cntxt->backup;
@@ -1408,29 +1411,38 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			      parseModule(cntxt,TRUE)) break;
 			  goto allLeft;
 		case 'b': case 'B':
-			  if( keyword(cntxt,"barrier",7)) 
+			  if( keyword(cntxt,"barrier",7)) {
+				cntxt->blkmode++;
 				kind = BARRIERsymbol; 
+			  }
 			  goto allLeft;
 		case 'C': case 'c': 
 			  if( keyword(cntxt,"command",7) ) {
 				parseCommandPattern(cntxt, COMMANDsymbol);
 				continue;
 			  }
-			  if( parseCATCH(cntxt)) break;
+			  if( parseCATCH(cntxt)) {
+				 break;
+			  }
 			  goto allLeft;
 		case 'E': case 'e': 
-			  if( keyword(cntxt,"exit",4))
+			  if( keyword(cntxt,"exit",4)){
+				if(cntxt->blkmode>0) cntxt->blkmode--;
 				kind= EXITsymbol;
-			  else
+			  } else
 			  if( parseEnd(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
-			  if( keyword(cntxt,"function",8) &&
-				parseFunction(cntxt, FUNCTIONsymbol)) break;
+			  if( keyword(cntxt,"function",8) ){
+				cntxt->blkmode++;
+				if( parseFunction(cntxt, FUNCTIONsymbol)) break;
+			  }
 			  goto allLeft;
 		case 'H': case 'h':
 			  if( keyword(cntxt,"handler",5)) 
-			  { skipToEnd(cntxt); break; }
+			  { skipToEnd(cntxt); 
+			    cntxt->blkmode++;
+			    break; }
 		case 'L':
 		case 'l': /* if( parseLEAVE(cntxt)) break;*/
 			  if( keyword(cntxt,"leave",5))
@@ -1457,8 +1469,11 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  }
 			  goto allLeft;
 		case 'S': case 's': 
-			  if( keyword(cntxt,"stream",6) &&
-				parseFunction(cntxt, STREAMsymbol)) break;
+			  if( keyword(cntxt,"stream",6) ){
+				cntxt->blkmode++;
+				parseFunction(cntxt, STREAMsymbol);
+				break;
+			  }
 			  goto allLeft;
 		case 't':
 			  if( parseTHREAD(cntxt)) break;
