@@ -217,7 +217,8 @@ Constants passed into the multiplex operator are a special case.
 @-
 Beware, the BAT header types in this case could be a mix of oid and void.
 They are conformable in the current implementation with respect to
-join compatability
+join compatability.
+A polymorphic type is not allowed anymore at this stage,
 @c
 			int t2 = getHeadType(t);
 			if( !( (tpe == TYPE_void && t2 == TYPE_oid) ||
@@ -228,6 +229,10 @@ join compatability
 					t2,tpe,
 					 functionName(pci), getPC(mb,pci));
 			}
+                        if( t2== TYPE_any || tpe== TYPE_any)
+                                GDKerror("multiplexType:%s[%d]: "
+                                "explicit BAT type required\n",
+				 functionName(pci), getPC(mb,pci));
 		}
 	    } else {
 		tt= getArgType(mb,pci,i);
@@ -446,9 +451,6 @@ barrier (mloop,h,t):= newIterator(Ai);
 	...
 	cr:= mod.CMD($1,...,$n);
 	insert(resB,h,cr);
-catch 	MALexception;
-	#ignore errors
-end	MALexception;
 	redo (mloop,h,t):= hasMoreElements(Ai);
 end mloop;
 	return resB;
@@ -674,7 +676,7 @@ find the actule arguments at the proper place of the callee.
 	pushInstruction(m,q);
 
 
-	/* catch   MALexception; */
+/* catch   MALexception and ignore them */
 	q= newInstruction(ASSIGNsymbol);
 	q->barrier = CATCHsymbol;
 	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
@@ -714,7 +716,7 @@ find the actule arguments at the proper place of the callee.
 	q->argc=2;
 	pushInstruction(m,q);
 #endif
-	@:malInstr(EXIT,k)@	/* end  MALexception; */
+	@:malInstr(EXIT,k)@	
 	/* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("chopper"));

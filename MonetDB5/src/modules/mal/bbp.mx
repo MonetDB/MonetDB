@@ -529,6 +529,8 @@ str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
                 cap= *(int *) getArgReference(s,p,3);
         res= (int *) getArgReference(s,p,0);
 
+        if( ht == TYPE_any || tt == TYPE_any)
+            return throwMessage("bbp.new","Explicit type required\n");
         return (str) BKCnewBATint(res,&ht,&tt,&cap);
 }
 str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
