@@ -26,9 +26,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  430	  ]
+[ "user",	  370	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  660	  ]
+[ "system",	  690	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
@@ -37,16 +37,16 @@ printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutp
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  2883584	  ]
-[ "arena",	  2889968	  ]
-[ "ordblks",	  360		  ]
+[ "memincr",	  2945024	  ]
+[ "arena",	  2951616	  ]
+[ "ordblks",	  366		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  802816	  ]
 [ "hblks",	  1		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2738112	  ]
-[ "fordblks",	  151856	  ]
+[ "uordblks",	  2778304	  ]
+[ "fordblks",	  173312	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -55,8 +55,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2373	  ]
-[ "majflt",	  659	  ]
+[ "minflt",	  2384	  ]
+[ "majflt",	  660	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -71,8 +71,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2374	  ]
-[ "majflt",	  659	  ]
+[ "minflt",	  2385	  ]
+[ "majflt",	  660	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -86,9 +86,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  430	  ]
+[ "user",	  370	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  670	  ]
+[ "system",	  700	  ]
 [ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 wisc("W100k",100000);
@@ -100,10 +100,10 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  1	  ]
-[ "user",	  1040	  ]
+[ "user",	  980	  ]
 [ "elapuser",	  610	  ]
-[ "system",	  670	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  710	  ]
+[ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -112,15 +112,15 @@ printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutp
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  2889968	  ]
-[ "ordblks",	  326		  ]
+[ "arena",	  2951616	  ]
+[ "ordblks",	  336		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  8036352	  ]
 [ "hblks",	  20		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  2754488	  ]
-[ "fordblks",	  135480	  ]
+[ "uordblks",	  2794592	  ]
+[ "fordblks",	  157024	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -129,8 +129,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  4315	  ]
-[ "majflt",	  659	  ]
+[ "minflt",	  4326	  ]
+[ "majflt",	  660	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -145,8 +145,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  4316	  ]
-[ "majflt",	  659	  ]
+[ "minflt",	  4327	  ]
+[ "majflt",	  660	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -160,9 +160,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  1	  ]
-[ "user",	  1050	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  720	  ]
+[ "user",	  980	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  760	  ]
 [ "elapsystem",	  50	  ]
 #~EndVariableOutput~#
 quit();

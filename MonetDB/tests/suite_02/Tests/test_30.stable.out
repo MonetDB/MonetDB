@@ -13,6 +13,8 @@ stdout of test 'test_30` in directory 'tests/suite_02` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(2000000));
 # load a few wisconsin tables and produce histograms
+var W10k_evenOnePercent := bat("W10k_evenOnePercent");
+var W10k_tenPercent := bat("W10k_tenPercent");
 var h1:= W10k_evenOnePercent.histogram();
 h1.sort().print();
 #-----------------#
@@ -76,9 +78,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  160	  ]
+[ "user",	  120	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  600	  ]
+[ "system",	  510	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -86,16 +88,16 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1622016	  ]
-[ "arena",	  1628400	  ]
-[ "ordblks",	  432		  ]
+[ "memincr",	  1658880	  ]
+[ "arena",	  1665472	  ]
+[ "ordblks",	  424		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1466488	  ]
-[ "fordblks",	  161912	  ]
+[ "uordblks",	  1508744	  ]
+[ "fordblks",	  156728	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -103,15 +105,15 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  493	  ]
-[ "majflt",	  627	  ]
+[ "minflt",	  501	  ]
+[ "majflt",	  629	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
 #~EndVariableOutput~#
-h2:= W10k_tenPercent.histogram();
+var h2:= W10k_tenPercent.histogram();
 h2.sort().print();
 #-----------------#
 # BAT:	  tmp_62  #
@@ -134,9 +136,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  160	  ]
+[ "user",	  120	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  600	  ]
+[ "system",	  510	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -144,16 +146,16 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  36864		  ]
-[ "arena",	  1665264	  ]
-[ "ordblks",	  424		  ]
+[ "memincr",	  40960		  ]
+[ "arena",	  1706432	  ]
+[ "ordblks",	  415		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1510112	  ]
-[ "fordblks",	  155152	  ]
+[ "uordblks",	  1551592	  ]
+[ "fordblks",	  154840	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -161,8 +163,8 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  502	  ]
-[ "majflt",	  627	  ]
+[ "minflt",	  511	  ]
+[ "majflt",	  629	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]

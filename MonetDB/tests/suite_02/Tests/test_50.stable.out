@@ -23,9 +23,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  90	  ]
+[ "user",	  160	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  700	  ]
+[ "system",	  530	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -33,16 +33,16 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1658880	  ]
-[ "arena",	  1665264	  ]
-[ "ordblks",	  431		  ]
+[ "memincr",	  1699840	  ]
+[ "arena",	  1706432	  ]
+[ "ordblks",	  426		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1505344	  ]
-[ "fordblks",	  159920	  ]
+[ "uordblks",	  1546712	  ]
+[ "fordblks",	  159720	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -50,8 +50,8 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  501	  ]
-[ "majflt",	  627	  ]
+[ "minflt",	  510	  ]
+[ "majflt",	  629	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -76,10 +76,10 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  90	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  710	  ]
-[ "elapsystem",	  10	  ]
+[ "user",	  170	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  530	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #---------------------------------#
@@ -87,15 +87,15 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  73728		  ]
-[ "arena",	  1738992	  ]
-[ "ordblks",	  429		  ]
+[ "arena",	  1780160	  ]
+[ "ordblks",	  424		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1578208	  ]
-[ "fordblks",	  160784	  ]
+[ "uordblks",	  1619576	  ]
+[ "fordblks",	  160584	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -103,8 +103,8 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  529	  ]
-[ "majflt",	  632	  ]
+[ "minflt",	  538	  ]
+[ "majflt",	  634	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -131,10 +131,10 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  90	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  720	  ]
-[ "elapsystem",	  10	  ]
+[ "user",	  180	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  530	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #---------------------------------#
@@ -142,15 +142,15 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  73728		  ]
-[ "arena",	  1812720	  ]
-[ "ordblks",	  427		  ]
+[ "arena",	  1853888	  ]
+[ "ordblks",	  422		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1651072	  ]
-[ "fordblks",	  161648	  ]
+[ "uordblks",	  1692440	  ]
+[ "fordblks",	  161448	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -158,8 +158,8 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  557	  ]
-[ "majflt",	  634	  ]
+[ "minflt",	  566	  ]
+[ "majflt",	  636	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]

@@ -14,8 +14,9 @@ stdout of test 'test_40` in directory 'tests/suite_02` itself:
 setoid(oid(2000000));
 # Checking out the effect of hash clustering
 module("cluster");
+var k10_unique1 := bat("k10_unique1");
 var t:= k10_unique1.select(0,20);
-t.accbuild(find(monet_acctbl,"hash"));
+t.accbuild("hash");
 t.print();
 #-----------------#
 # BAT:	  tmp_60  #

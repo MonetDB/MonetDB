@@ -1,6 +1,6 @@
 setoid(oid(2000000));
 #test correct decisions in the join operation.
-var k10_unique1:= bat("k10_unique1");
+var k100_unique1 := bat("k100_unique1");
 var t:= k100_unique1.select(10,10);
 t.count().print(); k100_unique1.count().print();
 var u:= t.copy();

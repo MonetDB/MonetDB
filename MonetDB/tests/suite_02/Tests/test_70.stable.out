@@ -13,7 +13,7 @@ stdout of test 'test_70` in directory 'tests/suite_02` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(2000000));
 #test correct decisions in the join operation.
-var k10_unique1:= bat("k10_unique1");
+var k100_unique1 := bat("k100_unique1");
 var t:= k100_unique1.select(10,10);
 t.count().print(); k100_unique1.count().print();
 [ 1 ]
@@ -26,9 +26,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  120	  ]
+[ "user",	  150	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  640	  ]
+[ "system",	  570	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 
@@ -45,10 +45,10 @@ printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  130	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  640	  ]
+[ "elapsed",	  0	  ]
+[ "user",	  150	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  570	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 z:= k100_unique1.reverse().join(u);
@@ -58,11 +58,11 @@ printf("#~BeginVariableOutput~#\n"); cpu.print(); printf("#~EndVariableOutput~#\
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  130	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  650	  ]
-[ "elapsystem",	  10	  ]
+[ "elapsed",	  0	  ]
+[ "user",	  160	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  570	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 z.print();
 #-----------------#

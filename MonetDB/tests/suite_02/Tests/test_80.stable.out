@@ -24,9 +24,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  130	  ]
+[ "user",	  140	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  630	  ]
+[ "system",	  510	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
@@ -37,8 +37,8 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 #-------------------------#
 [ "elapsed",	  0	  ]
 [ "user",	  140	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  630	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  510	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 var d:=join(b.reverse(),k10_unique1);
@@ -51,7 +51,7 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 [ "elapsed",	  0	  ]
 [ "user",	  140	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  630	  ]
+[ "system",	  510	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 commit();
@@ -62,9 +62,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  140	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  630	  ]
+[ "user",	  150	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  510	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
@@ -73,16 +73,16 @@ printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutp
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1974272	  ]
-[ "arena",	  1980656	  ]
-[ "ordblks",	  437		  ]
+[ "memincr",	  2007040	  ]
+[ "arena",	  2013632	  ]
+[ "ordblks",	  432		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1743832	  ]
-[ "fordblks",	  236824	  ]
+[ "uordblks",	  1785192	  ]
+[ "fordblks",	  228440	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -91,8 +91,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  581	  ]
-[ "majflt",	  629	  ]
+[ "minflt",	  588	  ]
+[ "majflt",	  631	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]

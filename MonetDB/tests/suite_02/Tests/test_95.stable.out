@@ -11,17 +11,19 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 setoid(oid(2000000));
 # This sequence is conflict free
 #load(k10_unique1); load(k10_unique2);
+var k10_unique1 := bat("k10_unique1");
+var k10_unique2 := bat("k10_unique2");
 qtrace(1);
-t1:= k10_unique1.copy;
-t2:= k10_unique1.copy;
-t3:= k10_unique1.copy;
-t4:= k10_unique1.copy;
-t5:= k10_unique1.copy;
-s1:= k10_unique2.copy;
-s2:= k10_unique2.copy;
-s3:= k10_unique2.copy;
-s4:= k10_unique2.copy;
-s5:= k10_unique2.copy;
+var t1:= k10_unique1.copy;
+var t2:= k10_unique1.copy;
+var t3:= k10_unique1.copy;
+var t4:= k10_unique1.copy;
+var t5:= k10_unique1.copy;
+var s1:= k10_unique2.copy;
+var s2:= k10_unique2.copy;
+var s3:= k10_unique2.copy;
+var s4:= k10_unique2.copy;
+var s5:= k10_unique2.copy;
 printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
@@ -29,9 +31,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  100	  ]
+[ "user",	  150	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  120	  ]
+[ "system",	  590	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 join(t1,s1.reverse).count.print;
@@ -51,9 +53,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  130	  ]
-[ "elapuser",	  30	  ]
-[ "system",	  120	  ]
+[ "user",	  170	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  590	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 var i1,i2,i3,i4,i5;
@@ -109,9 +111,9 @@ threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariab
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  130	  ]
+[ "user",	  170	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  120	  ]
+[ "system",	  590	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 {|	
@@ -168,17 +170,18 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariabl
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------#
-# BAT:			  monet_environment					  #
-# (str)			  (str)							  #
-#---------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------#
+# h			monet_environment							  # name
+# str			str									  # type
+#-------------------------------------------------------------------------------------------------#
+[ "config",		  "/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d__/etc/MonetDB.conf"		  ]
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"				  ]
-[ "gdk_version",	  "4.3.13"																																											  ]
-[ "monet_pid",		  "18685"																																											  ]
-[ "prefix",		  "/var/tmp/monet.GNU_32-d.13635/monet/.GNU_32-d/Linux2.4.20-20.9perfctrsmp"																																			  ]
-[ "exec_prefix",	  "/var/tmp/monet.GNU_32-d.13635/monet/.GNU_32-d/Linux2.4.20-20.9perfctrsmp"																																			  ]
+[ "gdk_version",	  "4.3.19"								  ]
+[ "monet_pid",		  "10190"								  ]
+[ "prefix",		  "/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d__"				  ]
+[ "exec_prefix",	  "/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d__"				  ]
 [ "gdk_dbname",		  "mTests_tests_suite_02"																																									  ]
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/dbfarm"																																			  ]
+[ "gdk_dbfarm",		  "/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/dbfarm"		  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -186,20 +189,19 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOu
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/modules/plain/.libs:/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/modules/contrib/.libs:/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/modules/calibrator/.libs:/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/mapi/.libs"	  ]
+[ "monet_mod_path",	  "/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d__/lib/MonetDB"			  ]
 [ "monet_daemon",	  "no"																																												  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "56710"																																											  ]
+[ "mapi_port",		  "42780"								  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "57336"																																											  ]
+[ "sql_port",		  "52500"								  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_api",		  "sql(default-schema)"					  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "default-schema"					  ]
-[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/log"																																				  ]
-[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/conf/monet.conf"																																		  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/mTests/tests/suite_02"																																	  ]
+[ "sql_logdir",		  "/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/log"		  ]
+[ "monet_cwd",		  "/var/tmp/_4.4_PREFIX_MONETDB_GNU_32_d__/mTests/tests/suite_02"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -208,10 +210,10 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  0	  ]
-[ "elapuser",	  -130	  ]
-[ "system",	  10	  ]
-[ "elapsystem",	  -110	  ]
+[ "user",	  190	  ]
+[ "elapuser",	  20	  ]
+[ "system",	  590	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 quit;
 

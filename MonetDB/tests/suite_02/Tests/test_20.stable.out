@@ -13,6 +13,7 @@ stdout of test 'test_20` in directory 'tests/suite_02` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(2000000));
 # analyse selection using indexing
+var k10_unique1 := bat("k10_unique1");
 print(count(k10_unique1));
 [ 10000 ]
 printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
@@ -22,9 +23,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  160	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  620	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 var t:=fragment(k10_unique1,0,10,int(nil),int(nil));
@@ -40,9 +41,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  160	  ]
+[ "user",	  90	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  620	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
@@ -51,16 +52,16 @@ printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutp
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1699840	  ]
-[ "arena",	  1706224	  ]
-[ "ordblks",	  451		  ]
+[ "memincr",	  1736704	  ]
+[ "arena",	  1743296	  ]
+[ "ordblks",	  446		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1502392	  ]
-[ "fordblks",	  203832	  ]
+[ "uordblks",	  1543808	  ]
+[ "fordblks",	  199488	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -69,8 +70,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  503	  ]
-[ "majflt",	  628	  ]
+[ "minflt",	  513	  ]
+[ "majflt",	  630	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -79,7 +80,7 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 #~EndVariableOutput~#
 
 #Index first to speed-up selection
-accbuild(k10_unique1,find(monet_acctbl,"index"));
+accbuild(k10_unique1,"index");
 printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
@@ -87,9 +88,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  620	  ]
+[ "user",	  90	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 t:=fragment(k10_unique1,0,10,int(nil),int(nil));
@@ -105,9 +106,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  170	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  620	  ]
+[ "user",	  100	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
@@ -117,15 +118,15 @@ printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutp
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  118784	  ]
-[ "arena",	  1825008	  ]
-[ "ordblks",	  449		  ]
+[ "arena",	  1862080	  ]
+[ "ordblks",	  444		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1542480	  ]
-[ "fordblks",	  282528	  ]
+[ "uordblks",	  1583896	  ]
+[ "fordblks",	  278184	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -134,8 +135,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  541	  ]
-[ "majflt",	  631	  ]
+[ "minflt",	  550	  ]
+[ "majflt",	  633	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -155,9 +156,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  620	  ]
+[ "user",	  100	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
@@ -167,15 +168,15 @@ printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutp
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  1825008	  ]
-[ "ordblks",	  449		  ]
+[ "arena",	  1862080	  ]
+[ "ordblks",	  444		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1542480	  ]
-[ "fordblks",	  282528	  ]
+[ "uordblks",	  1583896	  ]
+[ "fordblks",	  278184	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -184,8 +185,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  541	  ]
-[ "majflt",	  631	  ]
+[ "minflt",	  550	  ]
+[ "majflt",	  633	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
@@ -194,7 +195,7 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 #~EndVariableOutput~#
 
 #index the tail
-accbuild(reverse(k10_unique1),find(monet_acctbl,"index"));
+accbuild(reverse(k10_unique1),"index");
 printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
@@ -202,9 +203,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  620	  ]
+[ "user",	  110	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 t:=fragment(k10_unique1,int(nil),int(nil),0,10);
@@ -220,9 +221,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
-[ "elapuser",	  10	  ]
-[ "system",	  620	  ]
+[ "user",	  110	  ]
+[ "elapuser",	  0	  ]
+[ "system",	  600	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
@@ -232,15 +233,15 @@ printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutp
 # (str)		  (int)		  #
 #---------------------------------#
 [ "memincr",	  40960		  ]
-[ "arena",	  1865968	  ]
-[ "ordblks",	  447		  ]
+[ "arena",	  1903040	  ]
+[ "ordblks",	  442		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1582568	  ]
-[ "fordblks",	  283400	  ]
+[ "uordblks",	  1623984	  ]
+[ "fordblks",	  279056	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -249,8 +250,8 @@ printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  551	  ]
-[ "majflt",	  632	  ]
+[ "minflt",	  560	  ]
+[ "majflt",	  634	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]

@@ -1,6 +1,7 @@
 setoid(oid(2000000));
 #determine cost components of a join
 # load("k100_unique1");
+var k100_unique1 := bat("k100_unique1");
 
 var b:=k100_unique1.copy;
 printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~#\n");var c:=join(b.reverse(),k100_unique1);
