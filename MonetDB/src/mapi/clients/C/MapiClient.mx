@@ -302,42 +302,45 @@ replaced by space.
 @c
 char *trimComment(char *line){
 	int i,lim;
-	int instring=0, incomment=0;
-	lim= strlen(line);
-	for(i=0; i<lim;i++)
-	switch(line[i]){
-	case '\\':
-		if(incomment) {line[i]=' '; break;}
-		i++;
-		break;
-	case '\'':
-	case '"':
-		if(incomment){
-			line[i]=' ';
-			break;
+	char instring=0, incomment=0;
+	lim = strlen(line);
+	for (i=0; i<lim; i++) {
+		if (incomment) {
+			if (line[i] == '\n') {
+				incomment = 0;
+			} else {
+				line[i] = ' ';
+			}
+		} else {
+			switch (line[i]) {
+			case '\\':
+				i++;
+				break;
+			case '\'':
+			case '"':
+				if (!instring) {
+					instring = line[i];
+				} else if (instring == line[i]) {
+					instring = 0;
+				}
+				break;
+			case '#':
+				if (mil_session && !instring) {
+					incomment = (char)1;
+					line[i] = ' ';
+				}
+				break;
+			case '-':
+				if (sql_session && !instring &&
+				      (i+1)<lim && line[i+1]=='-' &&
+				    !((i+4)<lim && line[i+2]=='m' && line[i+3]=='i' && line[i+4]=='l')) {
+					incomment = (char)1;
+					line[i] = line[i+1] = ' ';
+					i++;
+				}
+				break;
+			}
 		}
-		instring= !instring;
-		break;
-	case '#':
-		if( instring) break;
-		if( !mil_session) break;
-		incomment=1;
-		line[i]=' ';
-		break;
-	case '-':
-		if(instring) break;
-		if(!sql_session) break;
-		if( line[i+1]=='-' &&
-		   !(line[i+2]=='m' && line[i+3]=='i' && line[i+4]=='l')){
-			incomment= 1;
-			line[i]=' ';
-			line[i+1]= ' ';
-		}
-		break;
-	case '\n':
-		incomment= 0;
-	default:
-		if(incomment) line[i]=' ';
 	}
 	return line;
 }
