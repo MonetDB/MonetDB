@@ -155,7 +155,7 @@ typedef struct sql_schema {
 
 	changeset tables;
 	list *keys; 	/* the names for keys and idxs are global, but */	
-	list *idxs;	/* these objects are only usefull within a table */
+	list *idxs;	/* these objects are only useful within a table */
 } sql_schema;
 
 typedef struct sql_module {
@@ -272,7 +272,7 @@ sql_export int mvc_type( mvc *c );
 
 /* since Savepoints and transactions are related the 
  * commit function includes the savepoint creation.
- * Rollbacks can be eigther full or until a given savepoint. 
+ * Rollbacks can be either full or until a given savepoint. 
  * The special mvc_release can be used to release savepoints. 
  */
 sql_export int mvc_trans( mvc *c );

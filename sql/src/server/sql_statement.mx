@@ -134,7 +134,7 @@ typedef struct stmt {
 
 	int flag;
 
-	int nr; 		/* variable assignement */
+	int nr; 		/* variable assignment */
 	int nr2;		/* usage count */
 
 	struct stmt *h;
