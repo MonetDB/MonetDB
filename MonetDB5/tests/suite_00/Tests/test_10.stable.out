@@ -78,53 +78,53 @@ stdout of test 'test_10` in directory 'tests/suite_00` itself:
 #	db_a := quit();
 #
 function Admin.main():int;	# 0  (main:int)
-    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
-    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($31:void)<-($32:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($34:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("# Sorting activities\n");	# 4 MILline ($6:void)<-($7:str)
-    mil.line("# left->right shift + left boundary;\n");	# 5 MILline ($8:void)<-($9:str)
-    s := bbp.new(nil:int,nil:int);	# 6 CMDBATnew (s:bat[:int,:int])<-($11:int)($11:int)
-    mil.line("insert(s,5,5);insert(s,3,3);insert(s,4,2);insert(s,2,1);");	# 7 MILline ($12:void)<-($13:str)
-    ca_a := bat.insert(s,5,5);	# 8 BKCinsert_bun (ca_a:void)<-(s:bat[:int,:int])($15:int)($15:int)
-    da_a := bat.insert(s,3,3);	# 9 BKCinsert_bun (da_a:void)<-(s:bat[:int,:int])($17:int)($17:int)
-    ea_a := bat.insert(s,4,2);	# 10 BKCinsert_bun (ea_a:void)<-(s:bat[:int,:int])($19:int)($20:int)
-    fa_a := bat.insert(s,2,1);	# 11 BKCinsert_bun (fa_a:void)<-(s:bat[:int,:int])($20:int)($22:int)
-    mil.line("insert(s,1,1);insert(s,4,2); insert(s,4,3);");	# 12 MILline ($23:void)<-($24:str)
-    ga_a := bat.insert(s,1,1);	# 13 BKCinsert_bun (ga_a:void)<-(s:bat[:int,:int])($22:int)($22:int)
-    ha_a := bat.insert(s,4,2);	# 14 BKCinsert_bun (ha_a:void)<-(s:bat[:int,:int])($19:int)($20:int)
-    ia_a := bat.insert(s,4,3);	# 15 BKCinsert_bun (ia_a:void)<-(s:bat[:int,:int])($19:int)($17:int)
-    mil.line("printf(\"#~BeginVariableOutput~#\\n\");");	# 16 MILline ($28:void)<-($29:str)
-    ja_a := io.printf("#~BeginVariableOutput~#\n");	# 17 IOprint_str (ja_a:int)<-($31:str)
-    mil.line("sort(s).print();");	# 18 MILline ($32:void)<-($33:str)
+    mil.line("# Sorting activities\n");	# 4 MILline ($36:void)<-($37:str)
+    mil.line("# left->right shift + left boundary;\n");	# 5 MILline ($38:void)<-($39:str)
+    s := bbp.new(nil:int,nil:int);	# 6 CMDBATnew (s:bat[:int,:int])<-($41:int)($41:int)
+    mil.line("insert(s,5,5);insert(s,3,3);insert(s,4,2);insert(s,2,1);");	# 7 MILline ($42:void)<-($43:str)
+    ca_a := mil_insert.insert(s,5,5);	# 8 MILinsert_bun (ca_a:bat[:int,:int])<-(s:bat[:int,:int])($45:int)($45:int)
+    da_a := mil_insert.insert(s,3,3);	# 9 MILinsert_bun (da_a:bat[:int,:int])<-(s:bat[:int,:int])($47:int)($47:int)
+    ea_a := mil_insert.insert(s,4,2);	# 10 MILinsert_bun (ea_a:bat[:int,:int])<-(s:bat[:int,:int])($49:int)($50:int)
+    fa_a := mil_insert.insert(s,2,1);	# 11 MILinsert_bun (fa_a:bat[:int,:int])<-(s:bat[:int,:int])($50:int)($52:int)
+    mil.line("insert(s,1,1);insert(s,4,2); insert(s,4,3);");	# 12 MILline ($53:void)<-($54:str)
+    ga_a := mil_insert.insert(s,1,1);	# 13 MILinsert_bun (ga_a:bat[:int,:int])<-(s:bat[:int,:int])($52:int)($52:int)
+    ha_a := mil_insert.insert(s,4,2);	# 14 MILinsert_bun (ha_a:bat[:int,:int])<-(s:bat[:int,:int])($49:int)($50:int)
+    ia_a := mil_insert.insert(s,4,3);	# 15 MILinsert_bun (ia_a:bat[:int,:int])<-(s:bat[:int,:int])($49:int)($47:int)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\");");	# 16 MILline ($58:void)<-($59:str)
+    ja_a := io.printf("#~BeginVariableOutput~#\n");	# 17 IOprint_str (ja_a:int)<-($61:str)
+    mil.line("sort(s).print();");	# 18 MILline ($62:void)<-($63:str)
     ka_a := algebra.sort(s);	# 19 ALGsort (ka_a:bat[:int,:int])<-(s:bat[:int,:int])
     la_a := io.print(ka_a);	# 20 IOprint_val (la_a:int)<-(ka_a:bat[:int,:int])
-    mil.line("printf(\"#~EndVariableOutput~#\\n\");");	# 21 MILline ($36:void)<-($37:str)
-    ma_a := io.printf("#~EndVariableOutput~#\n");	# 22 IOprint_str (ma_a:int)<-($39:str)
-    mil.line("sort_ht(s).print();");	# 23 MILline ($40:void)<-($41:str)
-    na_a := mil_algebra_procs.sort_ht(s);	# 24  (na_a:bat[:int,:int])<-(s:bat[:int,:int])
+    mil.line("printf(\"#~EndVariableOutput~#\\n\");");	# 21 MILline ($66:void)<-($67:str)
+    ma_a := io.printf("#~EndVariableOutput~#\n");	# 22 IOprint_str (ma_a:int)<-($69:str)
+    mil.line("htsort(s).print();");	# 23 MILline ($70:void)<-($71:str)
+    na_a := algebra.htsort(s);	# 24 ALGhtsort (na_a:bat[:int,:int])<-(s:bat[:int,:int])
     oa_a := io.print(na_a);	# 25 IOprint_val (oa_a:int)<-(na_a:bat[:int,:int])
-    mil.line("# right->left shift + right boundary;\n");	# 26 MILline ($44:void)<-($45:str)
-    s := bbp.new(nil:int,nil:int);	# 27 CMDBATnew (s:bat[:int,:int])<-($46:int)($46:int)
-    mil.line("insert(s,2,1);insert(s,4,1); insert(s,3,1); insert(s,5,1);");	# 28 MILline ($47:void)<-($48:str)
-    pa_a := bat.insert(s,2,1);	# 29 BKCinsert_bun (pa_a:void)<-(s:bat[:int,:int])($20:int)($22:int)
-    qa_a := bat.insert(s,4,1);	# 30 BKCinsert_bun (qa_a:void)<-(s:bat[:int,:int])($19:int)($22:int)
-    ra_a := bat.insert(s,3,1);	# 31 BKCinsert_bun (ra_a:void)<-(s:bat[:int,:int])($52:int)($22:int)
-    sa_a := bat.insert(s,5,1);	# 32 BKCinsert_bun (sa_a:void)<-(s:bat[:int,:int])($54:int)($55:int)
-    mil.line("insert(s,6,1);insert(s,4,2);insert(s,1,1);");	# 33 MILline ($56:void)<-($57:str)
-    ta_a := bat.insert(s,6,1);	# 34 BKCinsert_bun (ta_a:void)<-(s:bat[:int,:int])($59:int)($55:int)
-    ua_a := bat.insert(s,4,2);	# 35 BKCinsert_bun (ua_a:void)<-(s:bat[:int,:int])($61:int)($62:int)
-    va_a := bat.insert(s,1,1);	# 36 BKCinsert_bun (va_a:void)<-(s:bat[:int,:int])($55:int)($55:int)
-    mil.line("printf(\"#~BeginVariableOutput~#\\n\");");	# 37 MILline ($64:void)<-($65:str)
-    wa_a := io.printf("#~BeginVariableOutput~#\n");	# 38 IOprint_str (wa_a:int)<-($67:str)
-    mil.line("sort(s).print();");	# 39 MILline ($68:void)<-($69:str)
+    mil.line("# right->left shift + right boundary;\n");	# 26 MILline ($74:void)<-($75:str)
+    s := bbp.new(nil:int,nil:int);	# 27 CMDBATnew (s:bat[:int,:int])<-($76:int)($76:int)
+    mil.line("insert(s,2,1);insert(s,4,1); insert(s,3,1); insert(s,5,1);");	# 28 MILline ($77:void)<-($78:str)
+    pa_a := mil_insert.insert(s,2,1);	# 29 MILinsert_bun (pa_a:bat[:int,:int])<-(s:bat[:int,:int])($50:int)($52:int)
+    qa_a := mil_insert.insert(s,4,1);	# 30 MILinsert_bun (qa_a:bat[:int,:int])<-(s:bat[:int,:int])($49:int)($52:int)
+    ra_a := mil_insert.insert(s,3,1);	# 31 MILinsert_bun (ra_a:bat[:int,:int])<-(s:bat[:int,:int])($82:int)($52:int)
+    sa_a := mil_insert.insert(s,5,1);	# 32 MILinsert_bun (sa_a:bat[:int,:int])<-(s:bat[:int,:int])($84:int)($85:int)
+    mil.line("insert(s,6,1);insert(s,4,2);insert(s,1,1);");	# 33 MILline ($86:void)<-($87:str)
+    ta_a := mil_insert.insert(s,6,1);	# 34 MILinsert_bun (ta_a:bat[:int,:int])<-(s:bat[:int,:int])($89:int)($85:int)
+    ua_a := mil_insert.insert(s,4,2);	# 35 MILinsert_bun (ua_a:bat[:int,:int])<-(s:bat[:int,:int])($91:int)($92:int)
+    va_a := mil_insert.insert(s,1,1);	# 36 MILinsert_bun (va_a:bat[:int,:int])<-(s:bat[:int,:int])($85:int)($85:int)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\");");	# 37 MILline ($94:void)<-($95:str)
+    wa_a := io.printf("#~BeginVariableOutput~#\n");	# 38 IOprint_str (wa_a:int)<-($97:str)
+    mil.line("sort(s).print();");	# 39 MILline ($98:void)<-($99:str)
     xa_a := algebra.sort(s);	# 40 ALGsort (xa_a:bat[:int,:int])<-(s:bat[:int,:int])
     ya_a := io.print(xa_a);	# 41 IOprint_val (ya_a:int)<-(xa_a:bat[:int,:int])
-    mil.line("printf(\"#~EndVariableOutput~#\\n\");");	# 42 MILline ($72:void)<-($73:str)
-    ab_a := io.printf("#~EndVariableOutput~#\n");	# 43 IOprint_str (ab_a:int)<-($75:str)
-    mil.line("sort_ht(s).print();");	# 44 MILline ($76:void)<-($77:str)
-    bb_a := mil_algebra_procs.sort_ht(s);	# 45  (bb_a:bat[:int,:int])<-(s:bat[:int,:int])
+    mil.line("printf(\"#~EndVariableOutput~#\\n\");");	# 42 MILline ($102:void)<-($103:str)
+    ab_a := io.printf("#~EndVariableOutput~#\n");	# 43 IOprint_str (ab_a:int)<-($105:str)
+    mil.line("htsort(s).print();");	# 44 MILline ($106:void)<-($107:str)
+    bb_a := algebra.htsort(s);	# 45 ALGhtsort (bb_a:bat[:int,:int])<-(s:bat[:int,:int])
     cb_a := io.print(bb_a);	# 46 IOprint_val (cb_a:int)<-(bb_a:bat[:int,:int])
-    mil.line("quit();");	# 47 MILline ($80:void)<-($81:str)
+    mil.line("quit();");	# 47 MILline ($110:void)<-($111:str)
     db_a := clients.quit();	# 48 CLTquit (db_a:void)
 end main;	# 49  
 #setoid(oid(20000000));
@@ -157,9 +157,9 @@ end main;	# 49
 #-----------------#
 [ 1,	  1	  ]
 [ 2,	  1	  ]
+[ 4,	  2	  ]
+[ 4,	  2	  ]
 [ 3,	  3	  ]
-[ 4,	  2	  ]
-[ 4,	  2	  ]
 [ 4,	  3	  ]
 [ 5,	  5	  ]
 ## right->left shift + right boundary;
@@ -191,9 +191,9 @@ end main;	# 49
 [ 2,	  1	  ]
 [ 3,	  1	  ]
 [ 4,	  1	  ]
-[ 4,	  2	  ]
 [ 5,	  1	  ]
 [ 6,	  1	  ]
+[ 4,	  2	  ]
 #quit();
 
 # 17:08:45 >  
