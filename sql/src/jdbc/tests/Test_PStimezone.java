@@ -68,6 +68,7 @@ public class Test_PStimezone {
 
 			while (rs.next()) {
 				System.out.println(rs.getString("ts") + "\t" + rs.getString("tz"));
+				c.setTimeZone(TimeZone.getDefault());
 				System.out.println(rs.getTimestamp("ts") + "\t" + rs.getTimestamp("tz"));
 				c.setTimeZone(TimeZone.getTimeZone("PST"));
 				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tz", c));
