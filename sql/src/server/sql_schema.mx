@@ -744,11 +744,34 @@ create_user(mvc * sql, char * user, char * passwd, char *fullname, char *schema)
 static stmt *
 drop_user(mvc * sql, char * user )
 {
-	/* TODO check if user exists */
+	if (sql_find_auth( sql, user) < 0) 
+		return sql_error(sql, 02, "User %s doesn't exist", user);
 
 	sql_drop_user(sql, user);
 	return stmt_none();
 }
+
+static stmt *
+alter_user(mvc * sql, char * user, char *passwd, char *schema )
+{
+	int schema_id = 0;
+
+	if (sql_find_auth( sql, user) < 0) 
+		return sql_error(sql, 02, "User %s doesn't exist", user);
+
+	if (sql->user_id != USER_MONETDB && 
+	    sql->role_id != ROLE_SYSADMIN &&
+	    strcmp(user, sql->user) != 0)
+		return sql_error(sql, 02, 
+		"Current user/role is not allowed to change password for user %s", 
+		user);
+	if (schema && (schema_id = sql_find_schema( sql, schema)) < 0) {
+		return sql_error(sql, 02, "Schema %s doesn't exist", schema);
+	}
+	sql_alter_user(sql, user, passwd, schema_id);
+	return stmt_none();
+}
+
 
 static stmt *
 create_role(mvc * sql, dlist * qname, int grantor)
@@ -1407,6 +1430,17 @@ schemas(mvc * sql, symbol * s)
 	case SQL_DROP_USER:
 			ret = drop_user(sql, s->data.sval); /* user name */
 			sql->type = Q_SCHEMA;
+		break;
+	case SQL_ALTER_USER:
+		{
+			dlist *l = s->data.lval;
+			ret = alter_user(sql, 
+					l->h->data.sval,	    /* user */
+					l->h->next->data.sval, 	    /* passwd */
+					l->h->next->next->data.sval /* schema */
+			);	
+			sql->type = Q_SCHEMA;
+		}
 		break;
 	case SQL_CREATE_ROLE:
 		{

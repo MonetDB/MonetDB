@@ -247,6 +247,11 @@ typedef struct mvc {
 
 
 sql_export sql_schema *find_schema(sql_trans *t, char *sname);
+sql_export sql_table * find_table(sql_schema * s, char *tname);
+sql_export sql_column * find_column(sql_table * t, char *cname);
+
+sql_export BAT *bind_bat(sql_trans * tr, sql_column * c, int access );
+sql_export BAT *bind_ubat( sql_trans *tr, sql_column *c, int access );
 
 sql_export int mvc_init(int debug, backend_stack stk );
 sql_export void mvc_exit();
@@ -528,7 +533,7 @@ static BAT *sys_bat( struct bm *bm, char *name ) {
 		if (mvc_debug)
 			fprintf(stderr, "sys_bat %s\n", name );
 		b = bat_lcopy(b, "sys_bat");
-		bm_new_bat(bm, lbid, b->batCacheid);
+		bm_new_bat(bm, lbid, b);
 	}
 	assert(b);
 	return b;
@@ -550,13 +555,13 @@ static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 			b = bat_lcopy(b, "col_bind");
 			c->base.wtime = c->t->base.wtime = 
 				c->t->s->base.wtime = tr->wtime = tr->stime;
-			bm_new_bat(tr->bm, lbid, b->batCacheid);
+			bm_new_bat(tr->bm, lbid, b);
 		}
 	}
 	return b;
 }
 
-static BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
+BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 {
 	if (c->bat.ibid) {
 		BAT *i = temp_descriptor(c->bat.ibid);
@@ -591,7 +596,7 @@ static BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
 	return col_bind(tr, c->bat.bid, c, access);
 }
 
-static BAT *bind_ubat( sql_trans *tr, sql_column *c, int access )
+BAT *bind_ubat( sql_trans *tr, sql_column *c, int access )
 {
 	return col_bind(tr, c->bat.ubid, c, access);
 }
@@ -613,7 +618,7 @@ static BAT *tab_bind( sql_trans * tr, oid lbid, sql_table *t, int access )
 			b = bat_lcopy(b, "tab_bind");
 			t->base.wtime = t->s->base.wtime = 
 				tr->wtime = tr->stime;
-			bm_new_bat(tr->bm, lbid, b->batCacheid);
+			bm_new_bat(tr->bm, lbid, b);
 		}
 	}
 	return b;
@@ -755,7 +760,8 @@ find_column_node(sql_table * t, char *cname)
 	return cs_find_name( &t->columns, cname );
 }
 
-static sql_column *find_column(sql_table * t, char *cname)
+sql_column *
+find_column(sql_table * t, char *cname)
 {
 	node *n = find_column_node(t, cname );
 	if (n) return n->data;
@@ -775,7 +781,7 @@ find_table_node(sql_schema * s, char *tname)
 	return cs_find_name( &s->tables, tname );
 }
 
-static sql_table *
+sql_table *
 find_table(sql_schema * s, char *tname)
 {
 	node *n = find_table_node( s, tname );
@@ -1624,7 +1630,7 @@ static BAT *mvc_bat( struct bm *bm, char *name, int type)
 		b = bm_lbid2bat(bm, id);
 		if (!bm_lbid2mode(bm, id)){
 			b = bat_lcopy(b, "mvc_bat");
-			bm_new_bat(bm, id, b->batCacheid);
+			bm_new_bat(bm, id, b);
 		}
 	}
 	return b;
@@ -2478,7 +2484,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
                 tt->base.wtime = ft->base.wtime;
 
 		if (BUNlast(db) > db->batInserted)
-			bm_new_bat( ttr->bm, tt->dbid, db->batCacheid );
+			bm_new_bat( ttr->bm, tt->dbid, db);
 		if (ttr == gtrans)
 			log_bat(logger, tt->dbid, db);
 		bat_destroy(db);
@@ -2513,8 +2519,9 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				} 
 				bat_destroy(cur);
 			}
-			if (replace && (BUNlast(ins) > ins->batInserted))
-				bm_new_bat( ttr->bm, oc->bat.bid, ins->batCacheid );
+			if (replace && (BUNlast(ins) > ins->batInserted)) {
+				bm_new_bat( ttr->bm, oc->bat.bid, ins);
+			}
 			if (ttr == gtrans)
 				log_bat(logger, oc->bat.bid, ins);
 			bat_destroy(ins);
@@ -2522,7 +2529,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				BAT *cur = bm_lbid2bat( 
 					ttr->bm, oc->bat.bid);
 
-				bm_new_bat( ttr->bm, oc->bat.ubid, ups->batCacheid );
+				bm_new_bat( ttr->bm, oc->bat.ubid, ups);
 				void_replace_bat(cur, ups);
 				bat_destroy(cur);
 			}
@@ -2551,14 +2558,12 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
                 		oi->base.wtime = ci->base.wtime;
 			
 				if (BUNlast(ins) > ins->batInserted)
-					bm_new_bat( ttr->bm, oi->bat.bid, 	
-					    ins->batCacheid );
+					bm_new_bat( ttr->bm, oi->bat.bid, ins);
 				if (ttr == gtrans)
 					log_bat(logger, oi->bat.bid, ins);
 				bat_destroy(ins);
 				if (BUNlast(ups) > ups->batInserted)
-					bm_new_bat( ttr->bm, oi->bat.ubid, 
-					    ups->batCacheid );
+					bm_new_bat( ttr->bm, oi->bat.ubid, ups);
 				if (ttr == gtrans)
 					log_bat(logger, oi->bat.ubid, ups);
 				bat_destroy(ups);

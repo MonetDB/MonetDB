@@ -60,11 +60,12 @@ sql_export int sql_drop_role( mvc *m, str auth );
 sql_export int sql_grant_role( mvc *m, str grantee, str auth );
 sql_export int sql_revoke_role( mvc *m, str grantee, str auth );
 sql_export int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,int grantor );
+sql_export int sql_alter_user( mvc *m, str user, str passwd, oid schema_id );
 sql_export int sql_drop_user(mvc *m,  str user);
 
 #endif /*_SQL_PRIV_H_ */
 @c
-#include <gdk.h>
+#include <bat.h>
 /*#include <monet_context.h>*/
 #include "sql_privileges.h"
 #include "sql_bm.h"
@@ -244,8 +245,8 @@ int sql_create_user( mvc *m, str user, str passwd, str fullname, str schema_name
 	user_fullname = mvc_bind( m, "sys", "db_users", "fullname", UPD);
 	user_dschema = mvc_bind( m, "sys", "db_users", "default_schema", UPD);
 
-	schema_ids = mvc_bind( m, "sys", "schemas", "id", 0);
-	schema_names = mvc_bind( m, "sys", "schemas", "name", 0);
+	schema_ids = mvc_bind( m, "sys", "schemas", "id", RDONLY);
+	schema_names = mvc_bind( m, "sys", "schemas", "name", RDONLY);
 
 	schema_id = bun_find(schema_ids, bun_find(BATmirror(schema_names),schema_name));
 
@@ -260,6 +261,39 @@ int sql_create_user( mvc *m, str user, str passwd, str fullname, str schema_name
 	bat_destroy(user_dschema);
 	bat_destroy(schema_ids);
 	bat_destroy(schema_names);
+	return TRUE;
+} 
+
+int sql_alter_user( mvc *m, str user, str passwd, oid schema_id )
+{ 
+	sql_trans *tr = m->trans;
+	BAT *b, *r;
+	oid rid;
+	sql_table *db_users = find_table(find_schema(tr, "sys"), "db_users");
+
+	b = bind_bat(tr, find_column(db_users, "name"), RDONLY);
+	r = BATmirror(b);
+	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) user ));
+	bat_destroy(b);
+
+	if (passwd) {
+		b = bind_bat(tr, find_column(db_users, "passwd"), UPD);
+		void_inplace(b, rid, (ptr) passwd); 
+		bat_destroy(b);
+
+		b = bind_ubat(tr, find_column(db_users, "passwd"), UPD);
+		BUNins(b, (ptr) & rid, (ptr) passwd); 
+		bat_destroy(b);
+	}
+	if (schema_id) {
+		b = bind_bat(tr, find_column(db_users, "default_schema"), UPD);
+		void_inplace(b, rid, (ptr) & schema_id); 
+		bat_destroy(b);
+
+		b = bind_ubat(tr, find_column(db_users, "default_schema"), UPD);
+		BUNins(b, (ptr) & rid, (ptr) & schema_id); 
+		bat_destroy(b);
+	}
 	return TRUE;
 } 
 
@@ -390,14 +424,14 @@ int mvc_set_user( mvc *m, char *user )
 {
 	BUN p;
 	int res = 0;
-	BAT *auth_name = BATmirror(mvc_bind(m, "sys", "auths", "name", 0 ));
+	BAT *auth_name = BATmirror(mvc_bind(m, "sys", "auths", "name", RDONLY ));
 
 	if (m->debug)
 		fprintf(stderr, "mvc_set_user %s\n", user);
 
 	if ((p=BUNfnd(auth_name, user)) != NULL){
 		ptr lid = BUNtail(auth_name,p);
-		BAT *auth_id = mvc_bind(m, "sys", "auths", "id", 0 );
+		BAT *auth_id = mvc_bind(m, "sys", "auths", "id", RDONLY );
 		int id = *(int*)BUNtail(auth_id, BUNfnd(auth_id, lid));
 		m->user_id = m->role_id = id;
 		m->user = _strdup(user);
@@ -413,14 +447,14 @@ int mvc_set_role( mvc *m, char *role )
 {
 	BUN p;
 	int res = 0;
-	BAT *auth_name = BATmirror(mvc_bind(m, "sys", "auths", "name", 0 ));
+	BAT *auth_name = BATmirror(mvc_bind(m, "sys", "auths", "name", RDONLY ));
 
 	if (m->debug)
 		fprintf(stderr, "mvc_set_role %s\n", role);
 
 	if ((p=BUNfnd(auth_name, role)) != NULL){
 		ptr lid = BUNtail(auth_name,p);
-		BAT *auth_id = mvc_bind(m, "sys", "auths", "id", 0 );
+		BAT *auth_id = mvc_bind(m, "sys", "auths", "id", RDONLY );
 		int id = *(int*)BUNtail(auth_id, BUNfnd(auth_id, lid));
 		/* todo check if user is part of this role */
 		m->role_id = id;
@@ -460,16 +494,16 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 		fprintf(stderr, "mvc_login %s\n", user);
 
 	mvc_trans(m);
- 	name_user = BATmirror(mvc_bind(m, "sys", "db_users", "name", 0 ));
+ 	name_user = BATmirror(mvc_bind(m, "sys", "db_users", "name", RDONLY ));
 	if ((p=BUNfnd(name_user, user)) != NULL){
 		ptr userid = BUNtail(name_user, p);
-		BAT *user_pwd = mvc_bind(m, "sys", "db_users", "passwd", 0 );
+		BAT *user_pwd = mvc_bind(m, "sys", "db_users", "passwd", RDONLY );
 		char *pwd = BUNtail(user_pwd, BUNfnd(user_pwd, userid));
 		
 		if (strcmp(passwd, pwd) == 0){
-			BAT *user_ds = mvc_bind(m, "sys", "db_users", "default_schema", 0 );
-			BAT *id_schema = BATmirror(mvc_bind(m, "sys", "schemas", "id", 0 ));
-			BAT *schema_name = mvc_bind(m, "sys", "schemas", "name", 0 );
+			BAT *user_ds = mvc_bind(m, "sys", "db_users", "default_schema", RDONLY );
+			BAT *id_schema = BATmirror(mvc_bind(m, "sys", "schemas", "id", RDONLY ));
+			BAT *schema_name = mvc_bind(m, "sys", "schemas", "name", RDONLY );
 			ptr schema_id = BUNtail(user_ds, BUNfnd(user_ds, userid)); 
 			ptr lid = BUNtail(id_schema,BUNfnd(id_schema, schema_id));
 			schema = BUNtail(schema_name,BUNfnd(schema_name, lid));

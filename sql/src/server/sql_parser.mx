@@ -46,6 +46,7 @@ typedef enum tokens {
 	SQL_DROP_TYPE,
 	SQL_DROP_FUNC,
 	SQL_ALTER_TABLE,
+	SQL_ALTER_USER,
 	SQL_DROP_COLUMN,
 	SQL_DROP_CONSTRAINT,
 	SQL_DROP_DEFAULT,
@@ -322,6 +323,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_using
 	string
 	type_alias
+	opt_schema
+	opt_passwd
 
 %type <l>
 	object_privileges
@@ -789,6 +792,22 @@ alter:
 	  dlist_append_list(l, $3);
 	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER USER ident opt_passwd opt_schema
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $3);
+	  dlist_append_string(l, $4);
+	  dlist_append_string(l, $5);
+	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+  ;
+
+opt_passwd:
+	/* empty */		{ $$ = NULL; }
+  |	WITH PASSWORD string 	{ $$ = $3; }
+  ;
+
+opt_schema:
+	/* empty */		{ $$ = NULL; }
+  |	SCHEMA ident 		{ $$ = $2; }
   ;
 
 alter_table_element:
