@@ -44,8 +44,8 @@ The options have the following meaning:
 @h
 #ifndef _MSERVER_H_
 #define _MSERVER_H_
-#include "gdk.h"
 #include "monet_options.h"
+#include "gdk.h"
 #include "mal.h"
 #include "mal_session.h"
 #include "mal_import.h"

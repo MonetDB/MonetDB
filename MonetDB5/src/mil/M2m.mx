@@ -13,8 +13,8 @@ The underlying parser is to be included in a Mapi-mil front-end or
 the applications at a later stage.
 
 @c
-#include <gdk.h>
 #include "monet_options.h"
+#include <gdk.h>
 #include "mal_type.h"	/* for idcmp() */
 #include "mil_parser.h"	/* for mil_push() */
 

@@ -610,7 +610,7 @@ str CMDcmp@1(int *ret, int *l, int *r)
 	BATloopFast(left,p,q,xx){
 		ptr h= BUNhead(left,p);
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
-		p1+= s1;
+		p1= (ptr)( ((int*)p1) + s1);
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
@@ -675,7 +675,7 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 	BATloopFast(left,p,q,xx){
 		ptr h= BUNhead(left,p);
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
-		p1+= s1;
+		p1= (ptr)( ((int*)p1) + s1);
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
@@ -724,7 +724,8 @@ str CMDbitbataccumNOT(int *ret, int *d, int *l)
 		if(*(bit *)p1 == bit_nil )
 			*(bit*)p2 = bit_nil;
 		else *(bit*) p2 =  ! * (bit*) p1;
-		p1+= s1; p2+= s2; 
+		p2= (ptr)( ((int*)p2) + s2);
+		p1= (ptr)( ((int*)p1) + s1);
 	}
 
 	BBPfix(*ret = dst->batCacheid);
@@ -747,7 +748,7 @@ str CMDbitbatNOT(int *ret, int *l)
 	BATloopFast(left,p,q,xx){
 		ptr h= BUNhead(left,p);
 		bunfastins_nocheck(dst,p1,h,&bn,s1);
-		p1+= s1;
+		p1= (ptr)( ((int*)p1) + s1);
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
