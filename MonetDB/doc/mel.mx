@@ -984,11 +984,11 @@ an integer offset into that heap.
 Fixed- and variable-size atoms are essentially treated in
 the same way. Monet just requires them to consist of contiguous
 range of memory. You can use the 
-@[<a href="../../../monet-compiled/share/MonetDB/docs/gdk_atoms.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
+@[<a href="../../../monet-compiled/share/MonetDB/docs/gdk/gdk_atoms.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
 macro to inquire for the length of the region. For fixed-size
 atoms, this will always yield the same value, that can be
 statically looked up with the 
-@[<a href="../../../monet-compiled/share/MonetDB/docs/gdk_atoms.html#mod_1_2_2">ATOMsize(tpe): int</a>@
+@[<a href="../../../monet-compiled/share/MonetDB/docs/gdk/gdk_atoms.html#mod_1_2_2">ATOMsize(tpe): int</a>@
 macro as well.
 
 The following example MEL definition:

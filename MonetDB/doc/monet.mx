@@ -285,7 +285,7 @@ regardless of data type, thus providing a more flexible and powerful form of C++
 \item {\em Supported APIs:}\\
 
 The @[<a href="../Modules/mapi/index.html">Monet-API</a>@ is the generic textual API for database
-applications that use MIL to access Monet directly. It consists of a basic @[<a href="../../APIs/MapiC/index.html">C-library</a>@ that can 
+applications that use MIL to access Monet directly. It consists of a basic @[<a href="../../APIs/Mapi/C/index.html">C-library</a>@ that can 
 be linked with C/C++ programs and comes with wrappers for use in Java, Python, Perl, PHP and 
 Haskell programs.
 
