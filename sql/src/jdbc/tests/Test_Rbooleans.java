@@ -32,7 +32,7 @@ public class Test_Rbooleans {
 		System.out.println("0. false\t" + con.getAutoCommit());
 
 		try {
-			stmt.executeUpdate("CREATE TABLE table_Test_Rbooleans ( id int, tiny_int tinyint, small_int smallint, medium_int mediumint, integer int, big_int bigint, a_real real, a_float float, a_double double, a_decimal decimal(8,2), a_numeric numeric(8), bool boolean, a_char char(4), b_char char(5), a_varchar varchar(20), PRIMARY KEY (id) )");
+			stmt.executeUpdate("CREATE TABLE table_Test_Rbooleans ( id int, tiny_int tinyint, small_int smallint, medium_int mediumint, \"integer\" int, big_int bigint, a_real real, a_float float, a_double double, a_decimal decimal(8,2), a_numeric numeric(8), bool boolean, a_char char(4), b_char char(5), a_varchar varchar(20), PRIMARY KEY (id) )");
 
 			// all falses
 			stmt.executeUpdate("INSERT INTO table_Test_Rbooleans VALUES (1,                0,                  0,                    0,           0,              0,         0.0,           0.0,             0.0,                    0.0,                    0,        false,         'fals',        'false',               'false')");
