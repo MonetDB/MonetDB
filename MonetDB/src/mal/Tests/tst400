@@ -1,13 +1,13 @@
 # testing the simple iterators on builtin types
 
 	i:= -1;
-barrier v1:= iterator.foreach(i,0,2);
+barrier v1:= iterator.nextElement(i,0,2);
 	v:= "do something";
 	redo v1;
 end	v1;
-	v:= "next iterator";
+	v:= "next iteration";
 	i:= -1;
-barrier v2:= iterator.foreach(i,0,5,2);
+barrier v2:= iterator.nextElement(i,0,5,2);
 	v:= "do something else";
 	redo v2;
 end	v2;

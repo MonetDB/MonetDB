@@ -1,0 +1,36 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## squeezer integration in MAL code block.
+## this code fragment should evolve to a baseline test
+## for constant propagation and constant expression optimization
+#
+#s0:= squeezer.prepare();
+#c1:= 0;
+#c2:= 1;
+#c3:= -1;	
+#
+#i1:=  c3;	# replace i1 as c0, unless reassigned
+#i2:= c1+c3;	# evalutate constant
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	s0 := squeezer.prepare();	#1:(s0:int->1)
+	c1 := 0;	#2:(c1:int->3)($2:int->2)
+	c2 := 1;	#3:(c2:int->5)($4:int->4)
+	c3 := -1;	#4:(c3:int->7)($6:int->6)
+	i1 := c3;	#5:(i1:int->8)(c3:int->7)
+	i2 := arith.+(c1,c3);	#6:(i2:int->9)(c1:int->3)(c3:int->7)
+END FUNCTION;	#7:
+Modified stmt sequence
+FUNCTION Service.main():int;	#0:(main:int->0)
+	c1 := 0;	#2:(c1:int->3)($2:int->2)
+	c2 := 1;	#3:(c2:int->5)($4:int->4)
+	c3 := -1;	#4:(c3:int->7)($6:int->6)
+	i1 := c3;	#5:(i1:int->8)(c3:int->7)
+	i2 := arith.+(c1,c3);	#6:(i2:int->9)(c1:int->3)(c3:int->7)
+END FUNCTION;	#7:

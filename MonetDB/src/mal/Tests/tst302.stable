@@ -1,0 +1,29 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## exception conceptual error, you can not recursively raise an exception
+## (you should be able to pass it upwards though)
+#
+#raise	IllegalAccess:="new exception";
+#	c4:= "should not come here";
+##exception block;
+#catch	IllegalAccess;
+#	n0:=0;
+#raise	IllegalAccess :="an illegal exception raise";
+#end	IllegalAccess;
+#
+ERROR: recursive exception 'IllegalAccess' not allowed
+FUNCTION Service.main():int;	#0:(main:int->0)
+RAISE	IllegalAccess := "new exception";	#1:(IllegalAccess:str->2)($1:str->1)
+	c4 := "should not come here";	#2:(c4:str->4)($3:str->3)
+CATCH	IllegalAccess;	#3:(IllegalAccess:str->2)
+	n0 := 0;	#4:(n0:int->6)($5:int->5)
+RAISE	IllegalAccess := "an illegal exception raise";	#5:(IllegalAccess:str->2)($7:str->7)
+END	IllegalAccess;	#6:(IllegalAccess:str->2)
+END FUNCTION;	#7:
+SyntaxError::'Service.main' contains errors

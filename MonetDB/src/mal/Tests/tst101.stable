@@ -1,0 +1,23 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+##define the generic addition operator
+## this should be sufficient to determine outcome
+#
+#function + (L:any::1, R:any::1):any::1 ; end function;
+FUNCTION +(L:any::1,R:any::1):any::1;	#0 polymorphic:(+:any::1->0)(L:any::1->1)(R:any::1->2)
+END FUNCTION;	#1:
+#a:=3+1;
+#b:=3.5+2.7;
+#c:= 7+8;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	a := Service.+(3,1);	#1:(a:int->3)($1:int->1)($2:int->2)
+	b := Service.+(3.5,2.7);	#2:(b:flt->6)($4:flt->4)($5:flt->5)
+	c := Service.+(7,8);	#3:(c:int->9)($7:int->7)($8:int->8)
+END FUNCTION;	#4:

@@ -1,0 +1,63 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## squeezer integration in MAL code blocks.
+## the squeezer.access(V) implements a simple pruning of the
+## code to disallow access to a particular function
+## it is also the first function passing a parameter
+##
+## the access() authorization function raises an exception if the
+## current value of V is <= 0 . 
+#
+#	p1:= -1;
+#	s0:= squeezer.access("p1");
+#	c1:= 2;
+#	c2:= arith.+(p1,p1);	# forbidden function
+#	c4:= "should not come here";
+##exception 
+#catch WrongBlock;
+#	err:=true;
+#end WrongBlock;
+#
+#catch	IllegalAccess;
+#	n0:=0;
+#end	IllegalAccess;
+#	x:= "end of program";
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	p1 := -1;	#1:(p1:int->2)($1:int->1)
+	s0 := squeezer.access("p1");	#2:(s0:int->4)($3:str->3)
+	c1 := 2;	#3:(c1:int->6)($5:int->5)
+	c2 := arith.+(p1,p1);	#4:(c2:int->7)(p1:int->2)(p1:int->2)
+	c4 := "should not come here";	#5:(c4:str->9)($8:str->8)
+CATCH	WrongBlock;	#6:(WrongBlock:str->10)
+	err := true;	#7:(err:bit->12)($11:bit->11)
+END	WrongBlock;	#8:(WrongBlock:str->10)
+CATCH	IllegalAccess;	#9:(IllegalAccess:str->13)
+	n0 := 0;	#10:(n0:int->15)($14:int->14)
+END	IllegalAccess;	#11:(IllegalAccess:str->13)
+	x := "end of program";	#12:(x:str->17)($16:str->16)
+END FUNCTION;	#13:
+entering sqzAccess blocking 2 p1
+Modified stmt sequence
+FUNCTION Service.main():int;	#0:(main:int->0)
+	p1 := -1;	#1:(p1:int->2)($1:int->1)
+	c1 := 2;	#3:(c1:int->6)($5:int->5)
+	$18 := squeezer.AccessTst(p1);	#14:($18:int->18)(p1:int->2)
+	$19 := squeezer.AccessTst(p1);	#15:($19:int->19)(p1:int->2)
+	c2 := arith.+(p1,p1);	#4:(c2:int->7)(p1:int->2)(p1:int->2)
+	c4 := "should not come here";	#5:(c4:str->9)($8:str->8)
+CATCH	WrongBlock;	#6:(WrongBlock:str->10)
+	err := true;	#7:(err:bit->12)($11:bit->11)
+END	WrongBlock;	#8:(WrongBlock:str->10)
+CATCH	IllegalAccess;	#9:(IllegalAccess:str->13)
+	n0 := 0;	#10:(n0:int->15)($14:int->14)
+END	IllegalAccess;	#11:(IllegalAccess:str->13)
+	x := "end of program";	#12:(x:str->17)($16:str->16)
+END FUNCTION;	#13:
+Entering AccessTst with argument -1

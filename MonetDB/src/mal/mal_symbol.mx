@@ -106,6 +106,7 @@ mal_export int		getSubScope(MalBlkPtr mb, InstrPtr sig);
 mal_export Symbol	fixateScope(Symbol cntxt, str nme);
 mal_export Symbol 	findSymbol(str mod, str fcn);
 mal_export int	 	displaySymbol(FILE *f, str mod, str fcn);
+mal_export void 	debugScope();
 
 mal_export Symbol 	newSymbolDefinition(str nme, int kind);
 mal_export Symbol	newSymbol(str nme, int kind, Symbol outer);
@@ -157,9 +158,10 @@ Symbol	initScope()
 }
 @-
 After filling in a structure it is added to the multi-level
-symbol table. Beware that malType values are in the range -2 .. 256.
+symbol table. Beware that malType values are in the range -2 .. 254.
 The polymorphic types are stored at entry 257 and the parameterless
-functions at 256.
+functions at 256. Elements of malAnyType (255) are internal to MAL and should
+be recast to any of the real types.
 @c
 int getSubScope(MalBlkPtr mb, InstrPtr sig){
 	int t;
@@ -167,8 +169,8 @@ int getSubScope(MalBlkPtr mb, InstrPtr sig){
 	if( sig->argc==1) return 256;
 	if( !isPolymorphicArgument(mb,sig,1) ){ 
 		t = getTailType(getArgType(mb,sig,1));
-		if( t<0 || t>257) GDKerror("illegal type in getSubScope");
-		return (int) t;
+		if( t<0 || t>255) GDKerror("illegal type in getSubScope");
+		if( t!= malAnyType) return (int) t;
 	}
 	return 257;
 }
@@ -197,7 +199,7 @@ Symbol findScope(Symbol cntxt, str name){
 	if( cntxt->name==NULL) return NULL;
 	if( name==NULL) return cntxt;
         while(cntxt != NULL){
-                if( strcmp(name,cntxt->name)== 0 )
+                if( idcmp(name,cntxt->name)== 0 )
                         break;
                 cntxt= cntxt->outer;
         }
@@ -262,20 +264,21 @@ void  printScope(Symbol cntxt, int tab)
 	Symbol s=cntxt,t;
 
 	while(s!= NULL){
-		for(i=0;i<tab;i++) printf("    ");
-		printf("%s",s->name);
+		printf("SCOPE %s",s->name);
 		if( s->subscope)
 		for(j=0;j<MAXSCOPE;j++)
 		if(s->subscope[j]){
 			printf("[%d]",j);
 			for(t= s->subscope[j];t!=NULL;t=t->peer)
 			printf(" %s",t->name);
+			printf("\n");
 		}
-		printf("\n");
+			printf("\n");
 		s= s->peer;
 	}
 	if( cntxt->outer) printScope(cntxt->outer,tab+1);
 }
+void debugScope(){ printScope(MAL_scope,0);}
 @-
 The freeSymbol operation throws away a symbol without
 concerns on it whereabouts in the scope structure.
@@ -319,7 +322,7 @@ Symbol findSymbol(str mod, str fcn){
 	for(i=0;i<MAXSCOPE;i++){
 		s= v->subscope[i];
 		while(s!=NULL){
-			if( strcmp(s->name,fcn)==0 ) return s;
+			if( idcmp(s->name,fcn)==0 ) return s;
 			s= s->peer;
 		}
 	}
@@ -334,7 +337,7 @@ int displaySymbol(FILE *f, str mod, str fcn){
 	for(i=0;i<MAXSCOPE;i++){
 		s= v->subscope[i];
 		while(s!=NULL){
-			if( strcmp(s->name,fcn)==0 ) {
+			if( idcmp(s->name,fcn)==0 ) {
 				printFunction(f,s->def);
 				k++;
 			}

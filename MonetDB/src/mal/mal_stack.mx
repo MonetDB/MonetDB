@@ -46,6 +46,7 @@ typedef struct MALSTK {
 	int	pc;		/* current instruction */
 	int 	stksize;
 	int	stktop;
+	int	exception;	/* last exception encountered */
 	char	cmd;		/* debugger communication */
 	struct MALSTK *up;	/* stack trace list */
 	struct MALSTK *down;	/* stack trace list */

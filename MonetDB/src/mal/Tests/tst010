@@ -21,6 +21,7 @@ barrier A:=1;
 	end 	C;
 
 	end	B;	# out of order
+	end	F;	# unknown
 
 	barrier D:=1;
 		leave D;

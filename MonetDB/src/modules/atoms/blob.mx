@@ -28,9 +28,9 @@ ATOM MODULE blob;
       COMMAND nequal(l:blob,r:blob):bit  = blob_nequal;
       COMMAND hash(b:blob):int	= blob_hash;
       COMMAND null():blob	= blob_null;
-      COMMAND convert(b:blob,direction:int) = blob_convert;
-      COMMAND put(heap:ptr,bun:int,val:blob)     = blob_put;
-      COMMAND del(heap:ptr,index:int)= blob_del;
+      COMMAND convert(b:blob,direction:int):int = blob_convert;
+      COMMAND put(heap:ptr,bun:int,val:blob):int= blob_put;
+      COMMAND del(heap:ptr,index:int):int = blob_del;
       COMMAND length(b:blob):lng = blob_length;
       COMMAND heap(heap:ptr, capacity:int):int = blob_heap;
 
@@ -51,15 +51,15 @@ The registration of the atom functions relies on the atom module rules.
 @mal
 FUNCTION init();
 	nme:= "blob";
-	err:= atoms.tostr(nme);
-	err:= atoms.fromstr(nme);
-	err:= atoms.nequal(nme);
-	err:= atoms.hash(nme);
-	err:= atoms.null(nme);
-	err:= atoms.convert(nme);
-	err:= atoms.put(nme);
-	err:= atoms.del(nme);
-	err:= atoms.length(nme);
+	Zstr:= atoms.tostr(nme);
+	Zblob:= atoms.fromstr(nme);
+	Zbit:= atoms.nequal(nme);
+	Z:= atoms.hash(nme);
+	Zblob:= atoms.null(nme);
+	Z:= atoms.convert(nme);
+	Z:= atoms.put(nme);
+	Z:= atoms.del(nme);
+	Zlng:= atoms.length(nme);
 
 CATCH GDKerror;
 	RAISE GDKfatal := "Can not load 'blob' data type\n";

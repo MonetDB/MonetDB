@@ -2,10 +2,10 @@
 @a M.L. Kersten
 @* Introduction
 To enable ease of debugging and performance monitoring, the MAL interpreter
-comes with a gdb-like debugger.
-The debugger assumes a direct IO channel to a user.
-
-
+comes with a gdb-like text-based debugger.
+A global table of breakpoints is maintained. Although a little space
+consumptive, it is the easiest to maintain and much less expensive
+as reserving debugger space in each instruction.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -31,17 +31,29 @@ html
 #define _MAL_DEBUGGER_H
 
 #include "mal.h"
-#include "mal_instruction.h"
 #include "mal_stack.h"
 #include "mal_function.h"
+#include "mal_client.h"
 
-mal_export char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd);
-mal_export char gdbStep(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd);
+#define MAXBREAKS 32
+
+typedef struct {
+	MalBlkPtr 	brkBlock[MAXBREAKS];
+	int		brkVar[MAXBREAKS];
+	char		brkCmd[MAXBREAKS];
+	str		brkVarName[MAXBREAKS];
+	int		brkTop;
+} gdbStateRecord, *gdbState;
+
+mal_export void gdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, char cmd);
+mal_export void gdbShowBreakpoints(Client cntxt);
+mal_export char gdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
+mal_export char gdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd);
 mal_export void gdbHelp(FILE *f);
 mal_export void printStackElm(FILE *f, VarPtr n, ValPtr v);
 mal_export void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
 
-#define gdbPrompt() fprintf(out,"mdb> ")
+#define gdbPrompt() fprintf(cntxt->fdout,"mdb> ")
 
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
@@ -50,51 +62,97 @@ to the user to alter the trace/debugger options.
 @c
 #include "mal_debugger.h"
 
-void gdbSetBreakpoints(MalBlkPtr mb, str name, char cmd, FILE *out){
+gdbStateRecord gdbTable[MAL_MAXCLIENTS];
+
+char isBreakpoint(Client cntxt, InstrPtr p){
+	int i;
+
+	/* printf("test breakpoint %d\n", p->argv[0]);*/
+	for(i=0;i<gdbTable[cntxt->idx].brkTop;i++)
+	if( p->argv[0]== gdbTable[cntxt->idx].brkVar[i])
+		return gdbTable[cntxt->idx].brkCmd[i];
+	return 0;
+}
+void gdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
 	int i;
 	char *c=name;
 	InstrPtr p;
+	gdbState gdb= gdbTable + cntxt->idx;
 
 	while(*c && (isalnum(*c) || *c=='$' || *c=='_')) c++;
 	*c = 0;
-	fprintf(out,"breakpoints for %s\n",name);
 	for(i=0;i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if(p->argc && p->token!=ENDDEFsymbol &&
-		   strcmp(getDestName(mb,p),name)==0){
-			p->gdbinfo = cmd;
-			fprintf(out,"breakpoint %s #%d\n",
-				(cmd?"set at":"deleted from"),i);
+		if( p->argc>0 &&  strcmp(getDestName(mb,p),name)==0){
+			gdbSetBreakpoint(cntxt,mb,p,cmd);
+			return;
 		}
 	}
 }
-#define skip(X)	while(!isspace(*X)) X++; while(isspace(*X)) X++;
 
-void printCall(MalBlkPtr mb, MalStkPtr stk, FILE *out){
+void gdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, char cmd)
+{	gdbState gdb= gdbTable + cntxt->idx;
+	gdb->brkBlock[gdb->brkTop] = mb;
+	gdb->brkVar[gdb->brkTop] = p->argv[0];
+	gdb->brkVarName[gdb->brkTop] = mb->var[p->argv[0]].name;
+			gdb->brkCmd[gdb->brkTop] =cmd;
+	if( gdb->brkTop+1< MAXBREAKS) 
+		gdb->brkTop++;
+}
+void gdbShowBreakpoints(Client cntxt)
+{	int i;
+	gdbState gdb= gdbTable + cntxt->idx;
+
+	for(i=0;i<gdb->brkTop;i++)
+	printf("breakpoint %s [%d]\n",gdb->brkVarName[i], gdb->brkVar[i]);
+}
+
+void gdbClrBreakpoint(Client cntxt, InstrPtr p)
+{	int i,j=0;
+	gdbState gdb= gdbTable + cntxt->idx;
+
+	for(i=0;i<gdb->brkTop;i++){
+		gdb->brkVar[j]= gdb->brkVar[i];
+		gdb->brkVarName[j]= gdb->brkVarName[i];
+		gdb->brkCmd[j]= gdb->brkCmd[i];
+		gdb->brkBlock[j]= gdb->brkBlock[i];
+		if( gdb->brkVar[i] != p->argv[0]) j++;
+	}
+	gdb->brkTop = j;
+}
+
+#define skipBlanc(X)	while(isspace(*X)) X++;
+#define skipNonBlanc(X)	while(!isspace(*X)) X++;
+#define skipWord(X)	skipNonBlanc(X); skipBlanc(X);
+
+void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk){
 	InstrPtr p;
 	int k;
 
 	p= getInstrPtr(mb, stk->pc);
 	if( p != NULL){
 		gdbPrompt();
-		promptInstruction(out,mb,p);
+		promptInstruction(cntxt->fdout,mb,p);
 		p= getInstrPtr(mb, 0);
-		fprintf(out," at #%d in %s(",
-			stk->pc,getInstrPtr(mb,0)->fcnname);
+		fprintf(cntxt->fdout," at #%d in %s(", stk->pc, getFcnName(mb));
 		for(k=1; k<p->argc; k++){
-			VALprint(out, &stk->stk[p->argv[k]]);
-			if( k < p->argc-1 ) fprintf(out,",");
+			VALprint(cntxt->fdout, &stk->stk[p->argv[k]]);
+			if( k < p->argc-1 ) fprintf(cntxt->fdout,",");
 		}
-		fprintf(out,")\n");
+		fprintf(cntxt->fdout,")\n");
 	}
 }
 
 @-
 The debugger structure is inherited from GDB.
+The routine gdbCommand is called with p=0 after finishing a mal- function call
+and before continuing at the next level of invocation.
 The commands are self-explanatory.
 @c
-char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd){
+char gdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 	char buf[1024],*b;
+	FILE *out = cntxt->fdout;
+	FILE *in  = cntxt->fdin;
 
 	if( p!= NULL){
 		fprintf(out,"mdb> ");
@@ -107,24 +165,30 @@ char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,cha
 		return 'q';
 	}
 	b= buf;
-	while(isspace(*b)) b++;
+	skipBlanc(b);
 	switch(*b){
 	case 0: return cmd;
-	case 'c': return 'c';
+	case 'c': if( strcmp("call",b)==0){
+			GDKerror("call instruction not yet implemented\n");
+		 }
+		 return 'c';
 	case 'h': gdbHelp(out); break;
 	case 'q': return 'q';/* return from this procedure */
 	case 'n': /* next */
 	case 's': /* next */
 		return buf[0];
+	case 'S': /* display symbol table */
+		debugScope();
+		break;
+	case 't': /* trace breakpoint */
 	case 'b':
-		skip(b);
+		skipWord(b);
+		if(*b==0) { gdbShowBreakpoints(cntxt); continue;}
 		if( !isspace(*b) && *b != 0){
 			/* set breakpoints by name */
-			gdbSetBreakpoints(mb,b,'b',out);
+			gdbSetBreakpointName(cntxt,mb,b,*b);
 		} else {
-			p->gdbinfo = 'b'; 
-			gdbPrompt();
-			fprintf(out,"breakpoint set\n");
+			gdbSetBreakpoint(cntxt,mb,p,*b);
 		}
 		continue;
 	case 'd':
@@ -135,22 +199,19 @@ char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,cha
 			mb = stk->blk;
 			break;
 		}
-		skip(b);
-		if( !isspace(*b)){
-			/* set breakpoints by name */
-			gdbSetBreakpoints(mb,b,0,out);
+		skipWord(b);
+		if(*b && !isspace(*b)){
+			fprintf(out,"breakpoint (not yet) deleted\n");
 		} else {
-			p->gdbinfo = 0; 
-			gdbPrompt();
-			fprintf(out,"breakpoint deleted\n");
+			gdbClrBreakpoint(cntxt,p);
 		}
 		continue;
 	case 'p':
 	{	 int i;
 		char *t;
-		skip(b);
+		skipWord(b);
 		t=b;
-		while(!isspace(*t)) t++;
+		skipNonBlanc(t);
 		*t = 0;
 		/* search the symbol */
 		i = findVariable(mb,b);
@@ -166,7 +227,7 @@ char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,cha
 		printf("go up the stack\n");
 		stk= stk->up;
 		mb = stk->blk;
-		printCall(mb,stk,out);
+		printCall(cntxt,mb,stk);
 		continue;
 	case 'v': /* variable bindings */
 		gdbPrompt();
@@ -182,23 +243,23 @@ char gdbCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,cha
 		MalBlkPtr mw=mb;
 		for(w=stk;w!= NULL; w=w->up){
 			mw = w->blk;
-			printCall(mw,w,out);
+			printCall(cntxt,mw,w);
 		}
 		continue;
 	}
 @-
 While debugging it should be possible to inspect the symbol 
-table using the 'module.function' name. The default is to list the
-current function.
-[to do, list module signatures only]
+table using the 'module.function' name. The default is to list all
+signatures satisfying the pattern.
 @c
-	case 'L': mal_xlisting= !mal_xlisting;
+	case 'L': 
 	case 'l': /* list the current code block */
 	{	str modname, fcnname;
 		Symbol fsym,fs;
 		int i;
 
-		skip(b);
+		mal_xlisting= *b=='L';
+		skipWord(b);
 		if( *b!= 0){
 			b[strlen(b)-1] =0;
 			modname=b;
@@ -225,6 +286,7 @@ current function.
 			if( displaySymbol(out,modname,fcnname)==0){
 				fprintf(out,"Symbol '%s.%s' not found\n",
 					modname,fcnname);
+				continue;
 			} else continue; 
 			printFunction(out,fsym->def);
 			continue;
@@ -233,9 +295,8 @@ current function.
 		continue;
 	}
 	case 'r': /* reset program counter */
+		fprintf(cntxt->fdout,"restart with current stack\n");
 		return 'r';
-	case 't': /* trace stream */
-		continue;
 	default:
 		gdbPrompt();
 		fprintf(out,"debugger command expected\n");
@@ -244,18 +305,20 @@ current function.
 	} while(1);
 	return 0;
 }
-char gdbStep(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, FILE *in, FILE *out,char cmd){
+char gdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,char cmd){
+	char newcmd;
 	switch(cmd){
 	case 'c':
-		if( p->gdbinfo== 'b')
-			cmd= gdbCommand(mb,stk,p, in,out, cmd);
+		if( newcmd= isBreakpoint(cntxt,p) ){
+			/* printf("stop at line %d\n",stk->pc);*/
+			if( newcmd == 't') printf("show value nyi \n");
+			cmd= gdbCommand(cntxt,mb,stk,p,newcmd);
+		} /* else printf("skip line %d\n", stk->pc);*/
 		break;
-	case 's':
-	case 'n':
-		cmd= gdbCommand(mb,stk,p,in,out,cmd);
+	case 's': case 'n':
+		cmd= gdbCommand(cntxt,mb,stk,p,cmd);
 		break;
-	case 'r': stk->pc = 0;
-		  fprintf(out,"restart with current stack\n");
+	case 'r': cmd = 'n';
 	}
 	return cmd;
 
@@ -282,13 +345,13 @@ void printStackElm(FILE *f, VarPtr n, ValPtr v){
 	fprintf(f,"[%d] %s\t= ",n->offset,n->name);
 	if( n->isaconstant) {
 		VALprint(f,&n->cstvalue);
-		nme= malTypeName(n->cstvalue.vtype);
 	} else {
 	 	VALprint(f, v);
-		nme= malTypeName(v->vtype);
 	}
+	nme= malTypeName(n->type);
 	fprintf(f,":%s%s%s", nme, (n->accessmode?" protected":""),
 			(n->isaconstant?" constant":""));
+	/*fprintf(f,"type %d <-%d",getGDKtype(n->type),v->vtype);*/
 	printf("\n");
 	GDKfree(nme);
 }
@@ -301,6 +364,7 @@ void gdbHelp(FILE *f){
 	fprintf(f,"break -- set breakpoint on current instruction\n");
 	fprintf(f,"break <var> -- break on assignment to <var>\n");
 	fprintf(f,"step -- advance to next MAL instruction\n");
+	fprintf(f,"Symbols -- display the symbol table \n");
 	fprintf(f,"quit -- leaver debugger\n");
 	fprintf(f,"list -- list current program block\n");
 	fprintf(f,"variables -- print variable bindings\n");

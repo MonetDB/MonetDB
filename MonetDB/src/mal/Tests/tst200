@@ -1,13 +1,7 @@
-# exception handling
-import exception;
-	c0:=0;
-	e0:= exception.raise("error");
-	c1:=1;	# statement is skipped due to exception
-	c2:=2;
-catch	"error"
-	c3:=3;
-	l1:= exceptionline;	# on which line did it take place
-	c4:= c3/0;
-	c5:=1;
-catch	arithm."division by zero"
-	c6:= 1;
+# Variables names may be identical to type names, but
+# then they also have to bear the same value 
+
+str := "hello";
+int := 1:sht;
+flt := "wrong";
+i   := true;

@@ -107,7 +107,10 @@ ValPtr VALcopy(ValPtr d, ValPtr s){
 	}
 	return d;
 }
-
+@-
+VALprint shows the contents of a value record, but without
+expanding the BAT contents.
+@c
 int VALprint(FILE *fd, ValPtr res){
 	int t = res->vtype;
 	return ATOMprint(t, VALptr(res), fd);

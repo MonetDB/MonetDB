@@ -100,12 +100,18 @@ typedef struct{
 	ValRecord cstvalue;
 } *VarPtr, VarRecord;
 
+/* type check status is kept around to improve type checking efficiency */
+#define TYPE_ERROR		-1
+#define TYPE_UNKNOWN            0
+#define TYPE_DYNAMIC            1
+#define TYPE_POLYMORPHIC        2
+#define TYPE_FIXED              4
+
 typedef struct {
 	short	token;		/* instruction type */
 	short	barrier;	/* Begin-end of block */
 	short	pc;		/* instruction index in current proc */
-	short	gdbinfo;	/* debugger control field */
-	int	polymorphic; /* set when arguments are still open */
+	int	typechk;	/* type check status */
 @-
 For performance analysis we keep track of the number of calls
 and the total time spent while executing the instruction.
@@ -145,6 +151,7 @@ Allocation of space assumes a rather exotic number of arguments.
 #define getInstrPtr(M,I)	((InstrPtr)((M)->code + (M)->stmt[I]))
 #define getSignature(S)		getInstrPtr((S)->def,0)
 #define getFcnName(M)	getInstrPtr(M,0)->fcnname
+#define getFcnArgCount(M)	getInstrPtr(M,0)->argc
 #define getModName(M)	getInstrPtr(M,0)->modname 
 #define getDestName(M,P)  (M)->var[(P)->argv[0]].name
 #define getDestType(M,P)  (M)->var[(P)->argv[0]].type
@@ -173,12 +180,7 @@ mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export int newVariable(MalBlkPtr mb, str name,malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export str newConstant(MalBlkPtr mb, malType type, str val);
-mal_export int isPolymorphicArgument(MalBlkPtr mb, InstrPtr p, int i);
 mal_export int isVARG(MalBlkPtr mb, InstrPtr p, int i);
-mal_export int chkPolyType(malType p1, malType a1);
-mal_export int chkPolyTypePair(malType p1, malType a1, malType p2, malType a2);
-mal_export malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, 
-			     MalBlkPtr mb, InstrPtr p);
 mal_export str newTmpName(int i);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr old);
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
@@ -187,7 +189,9 @@ mal_export void setReturnArgument(InstrPtr p, int varid);
 mal_export void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void freeMalBlk(MalBlkPtr mb);
-mal_export str raiseException(str name, str msg);
+mal_export str raiseException(MalBlkPtr mb, int pc, str name, str msg);
+mal_export str raiseException2(str name, str msg);
+mal_export void showException(MalBlkPtr mb, int pc, str name, str msg);
 
 #endif /*  _MAL_INSTR_H*/
 @c
@@ -304,7 +308,7 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 	p->argc= 1;
 	p->argv[0] = -1;
 	p->pc=0;
-	p->polymorphic = FALSE;
+	p->typechk = TYPE_UNKNOWN;
 	return p;
 }
 
@@ -315,12 +319,27 @@ void freeInstruction(InstrPtr p){
 	p->fcnname= NULL;
 }
 
-str raiseException(str name, str msg){
-        char buf[1024];
+str raiseException(MalBlkPtr mb, int pc, str name, str msg){
+        char buf[2048];
         if( strlen(name)+strlen(msg)+2 <1024)
-                sprintf(buf,"%s:%s",name,msg);
-        else    sprintf(buf,"%s:...",name);
+                sprintf(buf,"%s:%s.%s[%d]:%s", name, getModName(mb),
+			getFcnName(mb),pc,msg);
+        else    sprintf(buf,"%s:%s.%s[%d]",name, getModName(mb),
+			getFcnName(mb),pc);
         return GDKstrdup(buf);
+}
+str raiseException2(str name, str msg){
+        char buf[2048];
+        if( strlen(name)+strlen(msg)+2 <1024)
+                sprintf(buf,"%s::%s", name, msg);
+        else    sprintf(buf,"%s::...",name);
+        return GDKstrdup(buf);
+}
+void showException(MalBlkPtr mb, int pc, str name, str msg){
+	str n;
+	n= raiseException(mb,pc,name,msg);
+	GDKerror(n);
+	GDKfree(n);
 }
 
 @-
@@ -335,10 +354,16 @@ str newTmpName(int i){
 	sprintf(buf,"$%d",i);
 	return GDKstrdup(buf);
 }
+@-
+Use the information that a variable is at least one character
+wide and terminated by a null-byte.
+This means that we can speed up search when the variables
+differ in the first two characters
+@c
 int findVariable(MalBlkPtr mb, str name){
-	int i;
-	for(i= mb->vtop-1;i>=0;i--)
-	if( strcmp(name, getVarName(mb,i))==0)
+	register int i;
+	for(i= mb->vtop-1; i>=0; i--)
+	if(idcmp(name, getVarName(mb,i) )==0)
 		return i;
 	return -1;
 }
@@ -351,14 +376,23 @@ malType getType(MalBlkPtr mb, str nme){
 }
 @-
 All variables are implicitly declared upon their first
-assignment. Their type is then derived from the function return value.
+assignment. A variable may be identical to a type name,
+which implies a value of similar type as well. This way
+we can easily pass type parameters to PATTERNs.
+COMMANDS can FUNCTIONS should pass the types as strings and
+convert them later on to the internal representation.
+
 Lexical constants require some care. They typically appear as arguments
 in operator/function calls. To simplify program analysis later on,
 we stick to the situation that function/operator arguments are always
-references to variables. 
+references to by variables. 
+
+Beware, the symbol table structure assumes that it is relatively
+cheap to perform a linear search to a variable or constant.
+
 @c
 int newVariable(MalBlkPtr mb, str name, malType type){
-        int n;
+        int n,l;
         
 	if( mb->vtop+1 >= mb->vsize){
 		VarRecord *new;
@@ -376,11 +410,24 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		mb->var= new;
 	}
 	n= findVariable(mb,name);
+	/* check for type names */
+	l= ATOMindex(name);
+	/* printf("type name %s?%d type %d\n",name,l,type);*/
+	if(l != -GDKatomcnt){
+		if( type== malAnyType) type= l; else
+		if( type != l) {
+			char buf[1024];
+			sprintf(buf,"ERROR:'%s' type variable mismatch %d\n",
+				name, type);
+			GDKerror(buf);
+		}
+	}
 	if( n>=0){
 		if( getVarType(mb,n) != malAnyType &&
 		    getVarType(mb,n) != type){
 			char buf[1024];
-			sprintf(buf,"ERROR:'%s' variable type mismatch\n",name);
+			sprintf(buf,"ERROR:'%s' type mismatch %d vs %d\n",
+				name, getVarType(mb,n),type);
 			GDKerror(buf);
 		}
 		return n;
@@ -405,11 +452,26 @@ void freeVariable(MalBlkPtr mb, int varid){
 	if( v.name) GDKfree(v.name); v.name = 0;
 	if( v.value) GDKfree(v.value); v.value= 0;
 }
-@-
-A first optimization is applied by looking around for
-a similar (constant) definition. Then the name is simply re-used.
-This method helps in reading back the output produced by
-mal_instruction.printInstruction
+@- Constants
+Constants are stored in the symbol table and referenced
+by a variable identifier in the MAL sequence.
+This means that per MAL instruction, we may end up with
+MAXARG entries in the symbol table. This may lead to long
+searches for variables.
+
+A possible optimization strategy: look around for
+a similar (constant) definition and reuse the name.
+
+But then the question becomes how far to search?
+Searching through all variables is only useful when the list remains short
+or when the constant-variable-name is easily derivable from its literal
+value and a hash-based index leads you quickly to it.
+
+For the time being, we use a MAL system parameter, MAL_VAR_WINDOW,
+to indicate the number of symbol table entries to consider.
+Setting it to >= MAXARG will at least capture repeated use of a constant
+within a single function call or repeated use within a small block
+of code.
 
 Beware that the string representation does not elicit the precise
 basic type. In particular, integer constants appear in  several
@@ -420,18 +482,23 @@ The final step is to prepare a GDK value record, from which
 the internal representation can be obtained during
 MAL interpretation.
 @c
+#define MAL_VAR_WINDOW	2*MAXARG
+
 str newConstant(MalBlkPtr mb, malType type, str val){
 	int i,k;
 	str s;
 	ValPtr vr;
 	char buf[1024];
 
-	for(i= mb->vtop-1; i>=0;i--){
+	k= mb->vtop - MAL_VAR_WINDOW;
+	if( k<0) k=0;
+	for(i= mb->vtop-1; i>=k;i--){
 		VarPtr v= mb->var+i;
 		if( v->value &&
-		    v->type == type &&
-		    strcmp(v->value,val)==0 
+		    /* v->type == type &&*/
+		    idcmp(v->value,val)==0 
 		  ) {
+/* printf("reused a constant variable %s\n",v->name);*/
 			GDKfree(val);
 			return GDKstrdup(v->name);
 		 }
@@ -529,104 +596,20 @@ to make the user aware of this situation.
 	}
 	return GDKstrdup(s);
 }
-@- Type analysis
-MAL provides for type variables of the form any::N. This feature
-supports polymorphic types, but also complicates the subsequent
-analysis.
-@c
-int isPolymorphicArgument(MalBlkPtr mb, InstrPtr p, int i){
-	malType t= getArgType(mb,p,i);
-	if( isAnyExpression(t)) return 1;
-	if( t== malAnyType) return 1;
-	return 0;
-}
-@- 
-The polymorphic type p1 should be compatible with the
-acutal type a1. Errors are flagged as non-zero values;
-@c
-int chkPolyType(malType p1, malType a1){
-	if( getTailType(p1)!= malAnyType && 
-	    getTailType(p1)!= getTailType(a1))
-		return -1;
-
-	if( isBatType(p1)){
-		if( !isBatType(a1) ) return -1;
-		if( getHeadType(p1)!= malAnyType && 
-		    getHeadType(p1)!= getHeadType(a1))
-			return -1;
-	} 
-	return 0;
-}
-@- 
-The polymorphic type p1 and its actual realization a1 should not
-contradict the information of p2 with a2;
-@c
-int chkPolyTypePair(malType p1, malType a1, malType p2, malType a2){
-	int h1,t1, h2, t2;
-	malType htype1, ttype1, htype2, ttype2;
-
-	if( chkPolyType(p1,a1) || chkPolyType(p2,a2)) return -1;
-	if( p1==p2 && a1==a2) return 0;
-	t1= getTailIndex(p1);
-	ttype1= getTailType(a1);
-	h1= getHeadIndex(p1);
-	htype1= getHeadType(a1);
-
-	t2= getTailIndex(p2);
-	ttype2= getTailType(a2);
-	if( t1 == t2 && ttype1 != ttype2) return -1;
-	if( isBatType(p1) && h1==t2 && htype1!=ttype2) return -1;
-
-	if( isBatType(p2)){
-		h2= getHeadIndex(p2);
-		htype2= getHeadType(p2);
-		if(h2 == h1 && htype2 != htype1) return -1;
-		if(h2 == t1 && htype2 != ttype1) return -1;
-	}
-	return 0;
-}
-@-
-For a polymorphic commands we do not generate a cloned version.
-It suffices to determine the actual return value taking into
-account the type variable constraints.
-@c
-malType getPolyReturn(MalBlkPtr cmd, InstrPtr pp, MalBlkPtr mb, InstrPtr p){
-	int hi,ti,i;
-	int head= malAnyType, tail = malAnyType;
-	malType t= getArgType(cmd,pp,0), t2;
-
-	if( !isPolymorphicArgument(cmd,pp,0)) return t;
-	hi = getHeadIndex(t);
-	ti = getTailIndex(t);
-	for(i=1;i<pp->argc;i++){
-		t2= getArgType(cmd,pp,i);
-		if( t2 == t) return getArgType(mb,p,i);
-		if( isBatType(t2) ){
-			if( ti == getHeadIndex(t2)) 
-				tail = getArgType(mb,p,i); 
-			if( hi == getHeadIndex(t2)) 
-				head = getArgType(mb,p,i);
-		} 
-		if( ti == getTailIndex(t2)) 
-			tail = getArgType(mb,p,i); 
-		if( hi == getTailIndex(t2)) 
-			head = getArgType(mb,p,i);
-	}
-	if( isBatType(t))
-		return newBatType(head,tail);
-	return malAnyType;
-}
 @+ Variable argument list
 Functions and rules may contain a single variable argument list
 They are recognized with the function below and can be used to control
 the iterator over argument lists.
 @c
 int isVARG(MalBlkPtr mb, InstrPtr p, int i){
-	if( strcmp(getArgName(mb,p,i),malVARG)==0) return 1;
+	if( idcmp(getArgName(mb,p,i),malVARG)==0) return 1;
 	return 0;
 }
 @- Argument handling
-The number of arguments for procedures is currently limited
+The number of arguments for procedures is currently limited.
+Furthermore, we should assure that no variable is referenced
+before being assigned. Failure to obey should mark the instruction
+as type-error.
 @c
 void pushArgument(InstrPtr p, int varid){
 	MalBlkPtr m= p->sym->def;
@@ -668,7 +651,7 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
 	p->pc= i;
 	mb->stmt[i]= ((char *) p)-((char*)mb->code);
 	mb->stop++;
-	(void) resolveTypes(p);
+	(void) staticTypeCheck(p);
 }
 @-
 The internal representation should be such that it becomes
@@ -680,10 +663,20 @@ to leave information on the signature behind.
 @c
 #define advance(X)  while(*(X))(X)++;
 
+str typechkName(int i){
+	switch(i){
+	default:
+	case TYPE_ERROR:	return " error";
+	case TYPE_UNKNOWN: 	return " unknown";
+	case TYPE_DYNAMIC:	return " dynamic";
+	case TYPE_POLYMORPHIC:	return " polymorphic";
+	case TYPE_FIXED:	return "";
+	}
+}
 str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	int i;
 	
-	sprintf(s,"\t#%c%d:",p->pc, (p->polymorphic?' ':'?'));
+	sprintf(s,"\t#%d%s:",p->pc, typechkName(p->typechk));
 	advance(s);
 	for(i=0;i<p->argc;i++)
 	if( p->argv[i] >=0){
@@ -697,6 +690,9 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 	advance(s);
 	return s;
 }
+@-
+It receives the space to store the definition
+@c
 str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	int i;
 	str t,tpe;
@@ -706,6 +702,8 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 		sprintf(t,"FUNCTION "); 
 	else if( p->token == COMMANDsymbol)
 	 	sprintf(t,"COMMAND ");
+	else if( p->token == PATTERNsymbol)
+		sprintf(t,"PATTERN ");
 	else sprintf(t,"RULER ");
 
 	advance(t);
@@ -736,7 +734,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 #endif
 	advance(t);
 	sprintf(t,"\n");
-	return GDKstrdup(s);
+	return s;
 }
 
 str instruction2str(MalBlkPtr mb,InstrPtr p){
@@ -746,7 +744,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	len = (p->modname?strlen(p->modname):0) +
 	      (p->fcnname?strlen(p->fcnname):0) +
 	      2*8196;
-	s= alloca(len);
+	s= GDKmalloc(len);
 	s[0]=0;
 	t=s;
 	if( getDestName(mb,p) ) nme= getDestName(mb,p); else nme="";
@@ -786,7 +784,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		case RULERsymbol:
 		case COMMANDsymbol:
 		case FUNCTIONsymbol:
-			return fcnDefinition(mb,p,s); break;
+		case PATTERNsymbol:
+			return fcnDefinition(mb,p,s); 
 		case BARRIERsymbol:
 		case RAISEsymbol:
 			sprintf(t,"\t%s",nme);
@@ -807,7 +806,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 			else	sprintf(t,"%s", getArgDefault(mb,p,i));
 		} else sprintf(t,"%s", getArgName(mb,p,i));
 		advance(t);
-		if( strcmp("bat",getArgName(mb,p,i))==0 ){
+		if( idcmp("bat",getArgName(mb,p,i))==0 ){
 			str d1=malTypeName(getHeadType( getArgType(mb,p,i))),
 			    d2 =malTypeName(getTailType(getArgType(mb,p,i)));
 			sprintf(t,"[%s,%s]",d1,d2);
@@ -830,7 +829,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	sprintf(t,"\n");
 	if(t-s >len)
 		GDKfatal("instruction2str:");
-	return GDKstrdup(s);
+	return s;
 }
 void promptInstruction(FILE *fd, MalBlkPtr mb, InstrPtr p){
 	str ps;
@@ -846,9 +845,10 @@ void printInstruction(FILE *fd, MalBlkPtr mb, InstrPtr p){
 }
 
 void printSignature(FILE *fd, Symbol s){
-	char txt[1024];
 	InstrPtr p;
+	str txt= GDKmalloc(8192);
 	p= getSignature(s);
 	(void) fcnDefinition(s->def, p,txt);
 	fprintf(fd,"%s",txt);
+	GDKfree(txt);
 }

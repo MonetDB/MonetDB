@@ -3,7 +3,7 @@
 @v 0.1
 
 @* The squeezer
-The squeezeraThis module contains the framework for inclusion of squeezer code, i.e.
+This module contains the framework for inclusion of squeezer code, i.e.
 C-programs geared at optimizing a piece of MAL.
 The squeezer appears at the language level as an ordinary module.
 Each squeezer function has access to the runtime scope of the
@@ -23,7 +23,7 @@ MODULE squeezer;
 EXCEPTION IllegalAccess;
 PATTERN prepare():int = sqzPrepare;
 PATTERN access(nme:str):int = sqzAccess;
-COMMAND AccessTst(i:int):void = sqzAccessTst;
+COMMAND AccessTst(i:int):int = sqzAccessTst;
 PATTERN propagateConstants():int = sqzPropagateConstants;
 
 @+ Dummy code 

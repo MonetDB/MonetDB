@@ -1,0 +1,25 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## check propagation of type variables over bats
+## can be checked after bat module has been added
+#
+#command f(a:any::1, b:bat[any::2,any::1],c:any::2):any = dummy;
+#
+#b:= bat.new(str,int);
+COMMAND Service.f(a:any::1,b:bat[any::2,any::1],c:any::2):any = dummy;	#0 unknown:(dummy:any->4)(a:any::1->1)(b:bat[any::2,any::1]->2)(c:any::2->3)
+#a:= f(1,b,"hello");
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	b := bat.new(str,int);	#1:(b:bat[str,int]->3)(str:str->1)(int:int->2)
+	a := f(1,b,"hello");	#2 unknown:(a:any->6)($4:int->4)(b:bat[str,int]->3)($5:str->5)
+END FUNCTION;	#3:
+!ERROR: BATnew: ht and tt cannot be void
+CATCH ERROR MALexception:Service.main[2]:Instruction type not fixed
+
+MALexception:Service.main[2]:Instruction type not fixed

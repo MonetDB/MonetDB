@@ -1,8 +1,8 @@
 #define 2 modules and check location of routines
 
-import tst120a;
-import tst120b;
-import tst120a;	# does not do anything
+use tst120a;
+use tst120b;
+use tst120a;	# does not do anything
 
 a:= second("hh");
 b:= first(1);

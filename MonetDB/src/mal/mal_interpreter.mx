@@ -41,25 +41,24 @@ html
 #ifndef _MAL_INTERPRET_H
 #define _MAL_INTERPRET_H
 
-#include "mal_instruction.h"
 #include "mal_stack.h"
 #include "mal_function.h"
 #include "mal_debugger.h"
+#include "mal_client.h"
 
 /*#define DEBUG_MAL_INTERPRETER */
-mal_export str runMAL(MalBlkPtr mbcaller, MalStkPtr env, 
-			FILE *in, FILE *out, int trace);
+mal_export str runMAL(Client c,MalBlkPtr mbcaller, MalStkPtr env);
+mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
 
-str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace){
+str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env){
 	MalBlkPtr mb=mbcaller;
 	MalStkPtr stk= NULL;
 	int space = 0;
 	ValPtr retval;
 	InstrPtr pci=0;
-	int exception = -1;
 	str ret=0;
 	char 	cmd='n';	/* debugger command */
 	ptr argv[MAXARG];
@@ -69,8 +68,7 @@ str runMAL(MalBlkPtr mbcaller, MalStkPtr env, FILE *in, FILE *out, int trace){
 		char buf[1024];
 		sprintf(buf,"'%s.%s' contains errors\n",
 			getModName(mb),getFcnName(mb));
-		GDKerror(buf);
-		return raiseException("SyntaxError",buf);
+		return raiseException2("SyntaxError",buf);
 	}
 	/* allocate space for value stack */
 allocStackLabel:
@@ -112,39 +110,23 @@ a MAL function is called recursively.
 	/* run the program */
 MALrestart:
 	stk->pc =0;
+	stk->exception = -1;
 	while(stk->pc < mb->stop ){
 		pci = getInstrPtr(mb,stk->pc);
 		@:exceptionTest@
 
-		if( trace) {
+		if( cntxt->trace) {
+			cmd = gdbStep(cntxt,mb,stk,pci,cmd);
 			if( cmd == 'q') goto MALevalExit;
-			cmd = gdbStep(mb,stk,pci,in,out,cmd);
-			if( cmd == 'r'){
-				cmd = 'n';
-				exception = -1;
-				continue;
-			}
+			if( cmd == 'r') goto MALrestart;
 		}
 		@:performance@
 		@:MALinterpret@
 	}
 MALevalExit:
-	if( trace && cmd!='q'){
-		gdbPrompt(); printf("End of function reached\n");
-		do{
-			cmd= gdbCommand(mb,stk,0,in,out,cmd);
-			switch(cmd){
-			case 'r':
-				cmd = 'n';
-				fprintf(out,"restart with current stack\n");
-				goto MALrestart;
-			case 'l': case 'L':
-			case 'p': case 'v':
-			case 'h': case 'b':
-			case 'd': 
-				continue;
-			}
-		} while( cmd!='q');
+	while( cntxt->trace && cmd != 'q' ){
+		cmd = gdbCommand(cntxt,mb,stk,pci,cmd);
+		if( cmd == 'r') goto MALrestart;
 	}
 	/* garbage collect and return */
 	@:cleanupStack@
@@ -204,7 +186,7 @@ elements in the value stack.
 	case ENDsymbol:
 		stk->pc++; break;
 	case CATCHsymbol:
-		exception = pci->argv[0]; /* skip it */
+		stk->exception = pci->argv[0]; /* skip it */
 		stk->pc++; break;
 	case RETURNsymbol:
 		if( env != NULL){
@@ -239,7 +221,7 @@ symbol table and moves it to the stackframe location.
 	ret = 0;
 }
 if( pci->barrier == RAISEsymbol){
-	exception= pci->argv[0];
+	stk->exception= pci->argv[0];
 } else {
 	@:barrierControl@
 }
@@ -281,11 +263,11 @@ a function can not be resolved, this is the latest moment to check
 @= preparecall
 	if( pci->fcn == NULL){
 		char buf[1024];
-		sprintf(buf,"ERROR:mal_interpreter address %s.%s unknown\n",
+		sprintf(buf,"mal_interpreter address %s.%s unknown\n",
 			pci->modname,pci->fcnname);
 		GDKerror(buf);
-		ret= raiseException("GDKerror",buf);
-		goto MALevalExit;
+		ret= raiseException(mb,stk->pc,"MALexception",buf);
+		goto exceptionHdlr;
 	} 
 
 @= commandcall
@@ -304,13 +286,16 @@ a function can not be resolved, this is the latest moment to check
 	case 7 : ret = (str) (*pci->fcn)(argv[0],argv[1],argv[2],argv[3],
 				argv[4], argv[5],argv[6]); break;
 	default:
-		GDKerror("too many arguments in function call\n");
-		ret = 0;
+		ret= raiseException(mb,stk->pc,"MALexception",
+				"too many arguments\n");
+		goto exceptionHdlr;
 	}
 	@:resultParameter@
 
 @= patterncall
 	@:preparecall@
+	retval=  &stk->stk[pci->argv[0]];
+	retval->vtype = getGDKtype(mb->var[pci->argv[0]].type);
 	ret = (str) (*pci->fcn)(mb,stk,pci);
 
 @-
@@ -319,7 +304,7 @@ a new stack frame and do housekeeping, such as garbagecollection of all
 non-returned values.
 
 @= functioncall
-	ret= runMAL(mb,stk,in,out,trace);
+	ret= runMAL(cntxt,mb,stk);
 @-
 All dynamically linked routines are called with references to their
 parameter values. They are assembled below by inspecting the argument list.
@@ -340,15 +325,15 @@ the bind(namespace,batname,mode) operation.[todo]
 @= evalParameters
 {	int k;
 	retval=  &stk->stk[pci->argv[0]];
-	retval->vtype = mb->var[pci->argv[0]].type;
+	retval->vtype = getGDKtype(mb->var[pci->argv[0]].type);
 	for(k=0;k<pci->argc; k++){
-		argv[k] =(ptr) getValuePtr(mb,stk,pci,k);
+		argv[k] =(ptr) getArgValue(mb,stk,pci,k);
 	} 
 	@:clearResult(retval)@
 }
 @-
-The type dispatching table can be removed if we determine at compile
-time the address offset within a ValRecord. 
+The type dispatching table in getArgValue can be removed if we 
+determine at compile time the address offset within a ValRecord. 
 We leave this optimization for the future, it leads to about 10%
 improvement (100ms for 1M calls).
 @-
@@ -362,8 +347,8 @@ and we have to do some housekeeping, such as string length adjustment.
 			char buf[1024];
 			sprintf(buf,"%s.%s returns NULL string.\n",
 				pci->modname,pci->fcnname);
-			ret= raiseException("GDKerror",buf);
-			@:exceptionHndlr@
+			ret= raiseException(mb,stk->pc,"MALexception",buf);
+			goto MALevalExit;
 		} else {
 			retval->len= ATOMlen(TYPE_str,retval->val.pval);
 		}
@@ -392,7 +377,7 @@ You can leave a barrier block by searching for the corresponding 'lab'
 by faking an exception.
 
 @= leaveControl
-	exception= pci->argv[0];
+	stk->exception= pci->argv[0];
 @-
 Each time we enter a barrier block, we could keep its position in the
 interpreter stack frame. It forms the starting point to issue a redo.
@@ -429,15 +414,24 @@ MAL interpretation then continues until it reaches the end of the block.
 If no exception variable was defined, we should abandon the function
 alltogether searching for a catch block at a higher layer.
 
+For the time being we have ignored cascaded/stacked exceptions.
+The policy is to pass the first recognized exception to a context
+in which it can be handled.
+
 @= exceptionTest
-	if( exception >=0){
-		if( pci->barrier== CATCHsymbol && pci->argv[0]==exception)
-			exception = -1; 
-		if( pci->token  == ENDsymbol && pci->argv[0]==exception)
-			exception = -1; 
-		stk->pc++;
-		continue;
-	}
+if( pci->typechk== TYPE_UNKNOWN){
+	ret= raiseException(mb,stk->pc,"MALexception",
+			    "Instruction type not fixed\n");
+	goto exceptionHdlr;
+}
+if( stk->exception >=0){
+	if( pci->barrier== CATCHsymbol && pci->argv[0]==stk->exception)
+		stk->exception = -1; 
+	if( pci->token  == ENDsymbol && pci->argv[0]==stk->exception)
+		stk->exception = -1; 
+	stk->pc++;
+	continue;
+}
 @-
 Exceptions raised within a linked-in function requires some care.
 First, the called procedure does not know anything about the MAL
@@ -459,50 +453,69 @@ encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
 
 @= exceptionHndlr
-	if( ret != NULL && ret != (str) GDK_SUCCEED){
-		str msg;
-		ValPtr v;
-		int symid;
-		msg= strchr(ret,':');
-		if( msg== NULL){
-			GDKerror("syntax error in exception message");
-			stk->pc++;
-			continue;
-		}
-		*msg= 0;
-		symid = findVariable(mb,ret);
-		if( symid == -1){
-			printf("No catch block for this exception here\n");
-			/* terminate this block */
-			*msg=':';
-			goto MALevalExit;
-		}
-		msg++;
+exceptionHdlr:
+if( ret != (str) GDK_SUCCEED && ret != NULL){
+	str msg, nxt;
+	ValPtr v;
+	int symid;
+	msg= strchr(ret,':');
+	if( msg== NULL){
+		GDKerror("syntax error in exception message");
+		stk->pc++;
+		continue;
+	}
+	*msg= 0;
+	symid = findVariable(mb,ret);
+	if( symid == -1){
+		*msg=':';
+		if( env == NULL) 
+		fprintf(cntxt->fdout,"CATCH ERROR %s\n",ret);
+		/* terminate this block and pass error */
+		goto MALevalExit;
+	}
+	msg++;
+	/* assure correct variable type */
+	if( (nxt= (str) setDynamicType(mb,stk,mb->var+symid,TYPE_str)) == 0 ){
 		v=  &stk->stk[symid];
 		v->vtype = TYPE_str;
 		v->val.pval= GDKstrdup(msg);
 		v->len= strlen(msg);
-		exception = symid;
+		stk->exception = symid;
 		GDKfree(ret);
 		ret = 0;
-	}
+	} else GDKfree(nxt);
+}
 @-
+@+ Dynamic type
+During instruction interpretation we may have to be
+assured that the type associated with a destination variable
+is in line with the result of an operation or exceoption.
+@c
+str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe){
+	char buf[1024];
+	if( v->type ==tpe) return 0;
+	sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
+		v->name, malTypeName(v->type), malTypeName(tpe));
+	return raiseException(mb,stk->pc, "setDynamicType",buf);
+}
+
 @+ Garbage collection
 Garbage collection is relatively straightforward, because most values are
 retained on the stackframe of an interpreter call. However, two storage
-type requires and possible user-defined garbage collector definitions
+types and possibly user-defined type garbage collector definitions
 require attention.
 
 All string values are private to the VALrecord, which means they
 have to freed explicitly before a MAL function returns. 
-The solution choosen is to always clear the destination variable
+The first step is to always clear the destination variable
 before a function call is made.
 
 @= clearResult
-{
-	if( ATOMstorage(@1->vtype)== TYPE_bat)
-		printf("unfix a bat, to do\n");
-	else VALclear(@1);
+{	
+	if( ATOMstorage(@1->vtype) == TYPE_str){
+		if( @1->val.pval) GDKfree(@1->val.pval);
+		@1->val.pval= NULL;
+	}
 }
 @-
 The second major area to be careful, is management of the BAT reference counts.

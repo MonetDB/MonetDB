@@ -1,0 +1,51 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## squeezer integration in MAL code blocks.
+## the squeezer.access(V) implements a simple pruning of the
+## code to disallow access to a particular function
+## it is also the first function passing a parameter
+##
+## the access() authorization function raises an exception if the
+## current value of V is <= 0 . 
+#
+#	p1:= 1;
+#	s0:= squeezer.access("p1");
+#	p2:= p1;
+##exception block;
+#catch	IllegalAccess;
+#	c4:= "should not come here";
+#	p3:= p1;
+#end	IllegalAccess;
+#	p4:= p1;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	p1 := 1;	#1:(p1:int->2)($1:int->1)
+	s0 := squeezer.access("p1");	#2:(s0:int->4)($3:str->3)
+	p2 := p1;	#3:(p2:int->5)(p1:int->2)
+CATCH	IllegalAccess;	#4:(IllegalAccess:str->6)
+	c4 := "should not come here";	#5:(c4:str->8)($7:str->7)
+	p3 := p1;	#6:(p3:int->9)(p1:int->2)
+END	IllegalAccess;	#7:(IllegalAccess:str->6)
+	p4 := p1;	#8:(p4:int->10)(p1:int->2)
+END FUNCTION;	#9:
+entering sqzAccess blocking 2 p1
+Modified stmt sequence
+FUNCTION Service.main():int;	#0:(main:int->0)
+	p1 := 1;	#1:(p1:int->2)($1:int->1)
+	$11 := squeezer.AccessTst(p1);	#10:($11:int->11)(p1:int->2)
+	p2 := p1;	#3:(p2:int->5)(p1:int->2)
+CATCH	IllegalAccess;	#4:(IllegalAccess:str->6)
+	c4 := "should not come here";	#5:(c4:str->8)($7:str->7)
+	$12 := squeezer.AccessTst(p1);	#11:($12:int->12)(p1:int->2)
+	p3 := p1;	#6:(p3:int->9)(p1:int->2)
+END	IllegalAccess;	#7:(IllegalAccess:str->6)
+	$13 := squeezer.AccessTst(p1);	#12:($13:int->13)(p1:int->2)
+	p4 := p1;	#8:(p4:int->10)(p1:int->2)
+END FUNCTION;	#9:
+Entering AccessTst with argument 1

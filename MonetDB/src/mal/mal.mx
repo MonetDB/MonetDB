@@ -8,6 +8,7 @@ Discuss the role of Mal and collect all central definitions here.
 #ifndef _MAL_H
 #define _MAL_H
 
+#include "gdk.h"
 
 #ifdef _MSC_VER
 #ifndef LIBMONET
@@ -23,6 +24,7 @@ mal_export int             mal_listing;
 mal_export int             mal_xlisting;
 mal_export int             mal_debug;
 mal_export int             mal_trace;
+mal_export MT_Lock	mal_contextLock;
 #endif /*  _MAL_H*/
 @c
 #include "mal.h"
@@ -31,3 +33,10 @@ int             mal_listing= 0;
 int             mal_xlisting= 0;
 int             mal_debug= 0;
 int             mal_trace= 0;
+MT_Lock		mal_contextLock=0;
+@-
+Initialization of the MAL context
+@c
+void mal_init(){
+	mal_contextLock= MT_create_lock();
+}

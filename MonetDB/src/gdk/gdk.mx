@@ -2293,8 +2293,11 @@ extern "C" {
 static INLINE int BBPcheck(REGISTER int x, REGISTER str y) {
 	if (x && x != int_nil) {
 	    REGISTER int z = ABS(x);
-	    if (z > BBPsize || BBP[z].nme[0] == NULL) {
-		GDKwarning("%s: range error %d\n", y, x);
+	    if (z > BBPsize ){
+		GDKwarning("%s: bat range error %d\n", y, x);
+	    } else 
+	    if (BBP[z].nme[0] == NULL) {
+		GDKwarning("%s: bat name missing %d\n", y,x);
 	    } else  {
 		return z;
 	    }

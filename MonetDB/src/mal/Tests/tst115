@@ -1,13 +1,13 @@
 # the next step is to trace the call of a mal function call
 
-command + (any::1 L, any::1 R):any::1 = addIntInt; 
+command + (L:any::1,R:any::1):any::1 = addIntInt; 
 
 function doitOnce():int;
 	z:= 12;
 	return z;
 end function;
 
-function doitTwice(int i):int;
+function doitTwice(i:int):int;
 	j:= 2;
 	k:= 11111;
 	i:= j+k;

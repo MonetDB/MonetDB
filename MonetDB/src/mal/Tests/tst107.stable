@@ -1,0 +1,34 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## analyse the basic interpreter loop
+## illegal destination type of a barrier
+#
+#	i:=0;
+#barrier	v:= true;
+#	leave v;
+#	i:= 1;
+#end	v;
+#barrier t:= i<3;
+#	i:=i+1;
+#	redo t;
+#end	t;
+#	i:= 0;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	i := 0;	#1:(i:int->2)($1:int->1)
+BARRIER	v := true;	#2:(v:bit->4)($3:bit->3)
+	LEAVE v;	#3:(v:bit->4)
+	i := 1;	#4:(i:int->2)($5:int->5)
+END	v;	#5:(v:bit->4)
+BARRIER	t := arith.<(i,3);	#6:(t:bit->7)(i:int->2)($6:int->6)
+	i := arith.+(i,1);	#7:(i:int->2)(i:int->2)($5:int->5)
+	REDO t ;	#8:(t:bit->7)
+END	t;	#9:(t:bit->7)
+	i := 0;	#10:(i:int->2)($1:int->1)
+END FUNCTION;	#11:

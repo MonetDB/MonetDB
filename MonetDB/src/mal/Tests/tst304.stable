@@ -1,0 +1,24 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## Exception identifiers can be introduced at any place
+#
+#raise	myNewException :="new exception";
+#	c4:= "should not come here";
+##exception block;
+#catch	myNewException;
+#	n0:=0;
+#end	myNewException;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+RAISE	myNewException := "new exception";	#1:(myNewException:str->2)($1:str->1)
+	c4 := "should not come here";	#2:(c4:str->4)($3:str->3)
+CATCH	myNewException;	#3:(myNewException:str->2)
+	n0 := 0;	#4:(n0:int->6)($5:int->5)
+END	myNewException;	#5:(myNewException:str->2)
+END FUNCTION;	#6:

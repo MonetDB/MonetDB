@@ -14,7 +14,7 @@ The underlying parser is to be included in a Mapi-mil front-end or
 the applications at a later stage.
 
 @c
-#include <monet.h>
+#include <gdk.h>
 #define MAXSCRIPT 64
 
 extern int yyparse();

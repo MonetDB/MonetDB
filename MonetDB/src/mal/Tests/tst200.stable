@@ -1,0 +1,25 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## Variables names may be identical to type names, but
+## then they also have to bear the same value 
+#
+#str := "hello";
+#int := 1:sht;
+MALresolve:Service.main[2]:ERROR: type mismatch int := sht
+#flt := "wrong";
+MALresolve:Service.main[3]:ERROR: type mismatch flt := str
+#i   := true;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	str := "hello";	#1:(str:str->2)($1:str->1)
+	int := 1:sht;	#2 unknown:(int:int->4)($3:sht->3)
+	flt := "wrong";	#3 unknown:(flt:flt->6)($5:str->5)
+	i := true;	#4:(i:bit->8)($7:bit->7)
+END FUNCTION;	#5:
+SyntaxError::'Service.main' contains errors

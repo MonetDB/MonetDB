@@ -121,7 +121,7 @@ needed for tracing the parser.
 ("else"|"ELSE")       { Symbol(TOK_ELSE);                                     }
 ("false"|"FALSE")     { Vector(TOK_CONSTANT, TYPE_bit, "0", 1);        }
 ("var"|"VAR")         { Symbol(TOK_VAR);                                      }
-("const"|"CONST")     { Symbol(TOK_CONST);                                    }
+("const"|"CONST")     { Symbol(TOK_OPERATOR);                                    }
 ("true"|"TRUE")       { Vector(TOK_CONSTANT, TYPE_bit, "1", 1);        }
 ("module"|"MODULE")   { Symbol(TOK_MODULE);				     }
 ("any"|"ANY")         { Vector(TOK_ANY, TYPE_int,  "-1", 2);               }
@@ -387,9 +387,7 @@ statement:
     |   varidents ';'
     |   constidents ';'
 
-stmt:
-
-	';'
+stmt: ';'
     |   expression ';'
     |   expression TOK_ITERATION '[' expression ']' iterator
 	{ $2.val= newName();
@@ -491,7 +489,9 @@ parallel_block:
 proc_definition:
         TOK_PROCDEF proc_name proc_header stmt
 	{ printf("end function;\n"); }
-    |   TOK_PROCDEF proc_name TOK_ASSIGNMENT stmt
+    |   TOK_PROCDEF proc_name {printf(");\n");} stmt
+	{ printf("end function;\n"); }
+    |   TOK_PROCDEF proc_name {printf(");\n");} TOK_ASSIGNMENT stmt
 	{ printf("end function;\n"); }
     |   TOK_PROCDEF proc_name proc_header TOK_ASSIGNMENT stmt
 	{ printf("end function;\n"); }
@@ -623,39 +623,11 @@ factor:
         TOK_CONSTANT
     |   TOK_STRING
     |   TOK_BAT
-    |  	path_expr
-    | '[' multiplex_expression ']'
-    | '[' multiplex_expression ']' '.' path_expr
+    |  	variable_reference
+    | 	fcn_call
+    |   '[' multiplex_expression ']'
     |   '(' expression ')'
 	{ $$= $2;}
-    |	path_expr_list
-
-path_expr_list: '(' expression ')' '.' path_elm
-	{ char *nme= newName();
-	  printf("\t%s := %s(%s);\n",
-	  	nme,$5.val,$2.val);
-	  $$.val= nme;
-	}
-    | path_expr_list '.' path_elm
-	{ char *nme= newName();
-	  printf("\t%s := %s(%s);\n",
-	  	nme,$3.val,$1.val);
-	  $$.val= nme;
-	}
-
-
-path_expr :
-      	path_elm 
-    | 	path_expr '.' path_elm
-	{ char *nme=newName();	
-	  printf("\t%s := %s(%s);\n", nme, $3.val,$1.val);
-	  $$.val = nme;
-	}
-
-path_elm : 
-	fcn_call
-    | 	variable_reference
-
 @-
 The separator should be limited to ',' and '~' should be
 added back as an operator symbol.
@@ -679,9 +651,51 @@ fcn_call:
      	fcn_hdr '(' expr_list ')'
 	{ char *nme=newName();
 	printf("\t%s:= %s(%s);\n",nme,$1.val,$3.val); $$.val = nme;}
+    |	TOK_OPERATOR '(' expr_list ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$1.val,$3.val); $$.val = nme;}
     |	fcn_hdr '(' ')'
 	{ char *nme=newName();
 	printf("\t%s:= %s();\n",nme,$1.val); $$.val = nme;}
+    | variable_reference '.' fcn_hdr '(' ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
+    | variable_reference '.' fcn_hdr '(' expr_list ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s,%s);\n",nme,$3.val,$1.val,$5.val); $$.val = nme;}
+    | variable_reference '.' variable_reference
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
+    | TOK_CONSTANT '.' fcn_hdr '(' ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
+    | TOK_CONSTANT '.' fcn_hdr '(' expr_list ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s,%s);\n",nme,$3.val,$1.val,$5.val); $$.val = nme;}
+    | TOK_CONSTANT '.' variable_reference
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
+    | '[' multiplex_expression ']' '.' fcn_hdr '(' ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$5.val,$2.val); $$.val = nme;}
+    | '[' multiplex_expression ']' '.' fcn_hdr '(' expr_list ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s,%s);\n",nme,$5.val,$2.val,$7.val); $$.val = nme;}
+    | '(' expression ')' '.' fcn_hdr '(' ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$5.val,$2.val); $$.val = nme;}
+    | '(' expression ')' '.' fcn_hdr '(' expr_list ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s,%s);\n",nme,$5.val,$2.val,$7.val); $$.val = nme;}
+    | fcn_call '.' fcn_hdr '(' ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
+    | fcn_call '.' fcn_hdr '(' expr_list ')'
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s,%s);\n",nme,$3.val,$1.val,$5.val); $$.val = nme;}
+    | fcn_call '.' variable_reference
+	{ char *nme=newName();
+	printf("\t%s:= %s(%s);\n",nme,$3.val,$1.val); $$.val = nme;}
 
 fcn_hdr: 
        TOK_DEREF factor ')'  

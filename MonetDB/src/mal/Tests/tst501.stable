@@ -1,0 +1,27 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## simple test of a function call 
+## performance variation, how expensive are 10K calls?
+#
+#function simple(i:int):int;
+#	i:= i+1;
+#	return i;
+#end function;
+FUNCTION simple(i:int):int;	#0:(simple:int->0)(i:int->1)
+	i := arith.+(i,1);	#1:(i:int->1)(i:int->1)($2:int->2)
+	RETURN i;	#2:(i:int->1)
+END FUNCTION;	#3:
+#
+#k:= 0;
+#r:= simple(k);
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	k := 0;	#1:(k:int->2)($1:int->1)
+	r := Service.simple(k);	#2:(r:int->3)(k:int->2)
+END FUNCTION;	#3:

@@ -29,16 +29,16 @@ A concrete example is the 'blob' datatype (see blob.mx)
 @mal
 MODULE atoms;
 
-PATTERN tostr(nme:str)   = atoms_tostr;
-PATTERN fromstr(nme:str) = atoms_fromstr;
-PATTERN nequal(nme:str)  = atoms_nequal;
-PATTERN hash(nme:str)    = atoms_hash;
-PATTERN null(nme:str)    = atoms_null;
-PATTERN convert(nme:str) = atoms_convert;
-PATTERN put(nme:str)     = atoms_put;
-PATTERN del(nme:str)     = atoms_del;
-PATTERN length(nme:str)  = atoms_length;
-PATTERN heap(nme:str)    = atoms_heap;
+PATTERN tostr(nme:str):int   = atoms_tostr;
+PATTERN fromstr(nme:str):int = atoms_fromstr;
+PATTERN nequal(nme:str):int  = atoms_nequal;
+PATTERN hash(nme:str):int    = atoms_hash;
+PATTERN null(nme:str):int    = atoms_null;
+PATTERN convert(nme:str):int = atoms_convert;
+PATTERN put(nme:str):int     = atoms_put;
+PATTERN del(nme:str):int     = atoms_del;
+PATTERN length(nme:str):int  = atoms_length;
+PATTERN heap(nme:str):int    = atoms_heap;
 
 @-
 The Monet kernel contains a few built-in atomic types together
@@ -47,7 +47,7 @@ Those accessible at the MAL command level are introduced below.
 
 @= convertCmd
 COMMAND @1(v:str):@1 = @1FromStrImpl;
-COMMAND @1(v:@1):str = @1ToStrImpl;
+COMMAND str(v:@1):str = @1ToStrImpl;
 
 @mal
 @:convertCmd(oid)@
@@ -80,6 +80,15 @@ COMMAND oid(v:lng):oid = oidFromlngImpl;
 COMMAND oid(v:int):oid = oidFromintImpl;
 COMMAND sht(v:int):sht = shtFromintImpl;
 COMMAND sht(v:lng):sht = shtFromlngImpl;
+
+COMMAND bit(v:bit):bit = bitFrombitImpl;
+COMMAND sht(v:sht):sht = shtFromshtImpl;
+COMMAND int(v:int):int = intFromintImpl;
+COMMAND lng(v:lng):lng = lngFromlngImpl;
+COMMAND flt(v:flt):flt = fltFromfltImpl;
+COMMAND dbl(v:dbl):dbl = dblFromdblImpl;
+COMMAND ptr(v:ptr):ptr = ptrFromptrImpl;
+COMMAND oid(v:oid):oid = oidFromoidImpl;
 @-
 We should also deal with superflous operations, such as int(v:int).
 This is a noop operation that should ideally be filtered out with
@@ -141,13 +150,17 @@ The pattern for conversion routines is relatively easy to define.
 @= convertImpl
 
 int @1FromStrImpl(@1 *ret, str *val){
-	int l = strlen(*val);
+	int l = sizeof(@1);
 	(void) @1FromStr(*val, &l, &ret);
 	return GDK_SUCCEED;
 }
 int @1ToStrImpl(str *ret, @1 *val){
-	int l;
-	(void) @1ToStr(ret,&l,val);
+	int l=strlen(*ret);
+	(void) @1ToStr(&ret,&l,val);
+	return GDK_SUCCEED;
+}
+int @1From@1Impl(@1 *ret, @1 *val){
+	*ret= *val;
 	return GDK_SUCCEED;
 }
 @-
@@ -158,11 +171,10 @@ int oidFromStrImpl(oid *ret, str *val){
 	return GDK_SUCCEED;
 }
 int oidToStrImpl(str *ret, oid *val){
-	int l;
-	(void) OIDtoStr(ret,&l,val);
+	int l= sizeof(oid);
+	(void) OIDtoStr(ret,&l, val);
 	return GDK_SUCCEED;
 }
-@:convertImpl(void)@
 @:convertImpl(sht)@
 @:convertImpl(int)@
 @:convertImpl(lng)@

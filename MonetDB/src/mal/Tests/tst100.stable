@@ -1,0 +1,21 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## complex first test, can we gain access to the calculator function
+#a:=3+1;
+#c:= 7+8;
+#b:=3.5+2.7;
+#s:= "hello world";
+#
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	a := arith.+(3,1);	#1:(a:int->3)($1:int->1)($2:int->2)
+	c := arith.+(7,8);	#2:(c:int->6)($4:int->4)($5:int->5)
+	b := arith.+(3.5,2.7);	#3:(b:flt->9)($7:flt->7)($8:flt->8)
+	s := "hello world";	#4:(s:str->11)($10:str->10)
+END FUNCTION;	#5:

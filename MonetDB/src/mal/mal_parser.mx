@@ -163,7 +163,8 @@ The Bison parser generator can be traced by calling debugparser(1)
 
 %%
 "#"                   { return mal_skipcomment();                      }
-("atom"|"ATOM")		{ Symbol(TOK_ATOM);}
+"quit"			{ return 1; }
+("atom"|"ATOM")		{ Symbol(TOK_ATOM);                              }
 ("nil"|"NIL")         { Vector(TOK_CONSTANT, TYPE_void, "nil", 3);   }
 ("end"|"END")       { Symbol(TOK_END);                                  }
 ("function"|"FUNCTION")	{ Symbol(TOK_FCN);                              }
@@ -187,11 +188,11 @@ The Bison parser generator can be traced by calling debugparser(1)
 ("module"|"MODULE")   { Symbol(TOK_MODULE);			     }
 ("use"|"USE")   { Symbol(TOK_USE);			     }
 ":="                  { Symbol(TOK_ASSIGN);                         }
-"any"{S}"::"{S}[1-9]{D}*	{ Vector(TOK_ANY_VAR,TYPE_str,yytext,yyleng);}
-"ANY"{S}"::"{S}[1-9]{D}*	{ Vector(TOK_ANY_VAR,TYPE_str,yytext,yyleng);}
+"any"{S}"::"{S}[1-9]	{ Vector(TOK_ANY_VAR,TYPE_str,yytext,yyleng);}
+"ANY"{S}"::"{S}[1-9]	{ Vector(TOK_ANY_VAR,TYPE_str,yytext,yyleng);}
 "`"                   { Symbol(TOK_REVERSE);                         }
 "."                   { Symbol(TOK_DOT);                         }
-"..."		      { Symbol(TOK_VA_LIST);			}
+"[]"		      { Symbol(TOK_ARRAY);			}
 {IDENT}		      { Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
 (":"{OPER}"=")	|
 ({OPER}"="?) 	      { Vector(TOK_OPERATOR, TYPE_str, yytext,yyleng);	      }
@@ -396,9 +397,9 @@ int atomModule = FALSE;
 
 %token TOK_FCN TOK_RULER TOK_PATTERN TOK_AGENT TOK_END TOK_ANY_VAR  TOK_RETURN
 %token TOK_BARRIER TOK_REDO TOK_LEAVE TOK_RAISE TOK_CATCH TOK_EXCEPTION
-%token TOK_CONSTANT TOK_IDENT TOK_VA_LIST
+%token TOK_ATOM TOK_CONSTANT TOK_IDENT TOK_ARRAY
 %token TOK_DOT TOK_REVERSE TOK_OPERATOR TOK_PRECEEDS TOK_ASSIGN 
-%token TOK_MODULE TOK_ATOM TOK_USE TOK_COMMAND
+%token TOK_MODULE TOK_USE TOK_COMMAND
 %token TOK_END_FCN TOK_END_RULER TOK_END_PATTERN TOK_END_AGENT
 
 %left TOK_BARRIER TOK_ASSIGN TOK_OPERATOR TOK_PRECEEDS
@@ -411,6 +412,8 @@ MAL_program:
 	  curBlk = curPrg->def;
 	  curInstr = getSignature(curPrg);
 	  curInstr->modname= GDKstrdup(curScope->name);
+	  getVarType(curBlk,findVariable(curBlk,"main"))= TYPE_int;
+	  staticTypeCheck(curInstr);
 	  insertSymbol(curScope,curPrg);
 	}
 	stmtList
@@ -424,6 +427,8 @@ MAL_program:
 	  curBlk = curPrg->def;
 	  curInstr = getSignature(curPrg);
 	  curInstr->modname= GDKstrdup(curScope->name);
+	  getVarType(curBlk,findVariable(curBlk,"main"))= TYPE_int;
+	  staticTypeCheck(curInstr);
 	  insertSymbol(curScope,curPrg);
 	}
 	stmtList
@@ -513,19 +518,21 @@ commandDefinition:
 	TOK_COMMAND fcnHeader ';' helpInfo 
 	{ getInstrPtr(curBlk,0)->token= COMMANDsymbol;
 	  curPrg->kind = COMMANDsymbol;
-	  resolveFunction(curPrg);
+	  chkFlowOfControl(curPrg);
 	  insertSymbol(curScope,curPrg);
 	}
    |    TOK_PATTERN fcnHeader ';' helpInfo 
 	{ getInstrPtr(curBlk,0)->token= PATTERNsymbol;
 	  curPrg->kind = PATTERNsymbol;
-	  resolveFunction(curPrg);
+	  chkFlowOfControl(curPrg);
 	  insertSymbol(curScope,curPrg);
 	}
 
 functionDef :
 	TOK_FCN fcnHeader ';' helpInfo 
-	{ insertSymbol(curScope,curPrg); }
+	{ insertSymbol(curScope,curPrg); 
+	  staticTypeCheck(curInstr);
+	}
 	stmtList TOK_END_FCN ';' 
 	{ curInstr= newInstruction(curBlk,ENDDEFsymbol);
 	  pushInstruction(curBlk,curInstr);
@@ -539,7 +546,7 @@ helpInfo: TOK_CONSTANT
 
 stmtList :
 	statements
-	{ resolveFunction(curPrg); }
+	{ chkFlowOfControl(curPrg); }
     |	/* none */
 
 statements:
@@ -649,8 +656,8 @@ fcnHeader:
 
 fcnParamList:
 	'(' fcnParams ')' 
-    |   '(' fcnParams TOK_VA_LIST ')'
-	{ pushArgument(curInstr, newVariable(curBlk,GDKstrdup(malVARG), TYPE_any)); }
+    |   '(' fcnParams TOK_ARRAY ')'
+	{ pushArgument(curInstr, newVariable(curBlk,GDKstrdup(malVARG), malAnyType)); }
     |	'(' ')' 
 
 fcnType:
@@ -683,7 +690,7 @@ fcnParams:
 fcnDefinition :
 	TOK_OPERATOR TOK_IDENT
 	{int i;
-	  if( strcmp($1.val,"=") )
+	  if( idcmp($1.val,"=") )
 		mal_parserror("'=' operator expected\n");
 	  i= newVariable(curBlk,$2.val,curBlk->var[0].type);
 	  curInstr->argv[0]=i;
@@ -760,7 +767,7 @@ malType:
 	}
     |   TOK_IDENT '[' melElement ',' melElement ']'
 	{ 
-	  if( strcmp($1.val,"bat")!= 0 && strcmp($1.val,"BAT")!= 0 )
+	  if( idcmp($1.val,"bat")!= 0 && idcmp($1.val,"BAT")!= 0 )
 		  mal_parserror("Bat expected\n");
 	  $$.tpe = malAnyBatType($3.tpe,$5.tpe);
 	  GDKfree($1.val);
@@ -775,7 +782,7 @@ melElement:
 	}
     |   TOK_ANY_VAR
 	{ int i= atoi(rindex($1.val,':')+1);
-	  $$.tpe= malAnyType;
+	  $$.tpe= TYPE_any;
 	  setAnyTailIndex($$.tpe,i);
 	  GDKfree($1.val);
 	  $$.val = 0; 
@@ -859,7 +866,7 @@ varList:
     |	varList ',' factor
 	{ pushArgumentId(curInstr, $3.val); }
     |   TOK_IDENT '[' TOK_IDENT ',' TOK_IDENT ']'
-	{ if( strcmp($1.val,"bat") != 0 && strcmp($1.val,"BAT")!=0 ){
+	{ if( idcmp($1.val,"bat") != 0 && idcmp($1.val,"BAT")!=0 ){
 		mal_parserror("bat[X,Y] expected\n");
 	  }
 	  pushArgument(curInstr, newVariable(curBlk,$1.val,

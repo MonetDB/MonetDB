@@ -1,0 +1,48 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## A few system calls
+#err:= print("hello world");
+#err:= print(0);
+#err:= print(1:lng);
+#err:= print('c');
+#err:= print(true);
+#pi := 3.147;
+#err:= print(pi);
+#err:= printf("hello\n");
+#err:= printf(0);
+#err:= printf(1:lng);
+#err:= printf('c');
+#err:= printf(true);
+#err:= printf(pi);
+#err:= printf("single line %s \n","hello");
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	err := system.print("hello world");	#1:(err:int->2)($1:str->1)
+	err := system.print(0);	#2:(err:int->2)($3:int->3)
+	err := system.print(1:lng);	#3:(err:int->2)($4:lng->4)
+	err := system.print('c');	#4:(err:int->2)($5:chr->5)
+	err := system.print(true);	#5:(err:int->2)($6:bit->6)
+	pi := 3.147;	#6:(pi:flt->8)($7:flt->7)
+	err := system.print(pi);	#7:(err:int->2)(pi:flt->8)
+	err := system.printf("hello\n");	#8:(err:int->2)($9:str->9)
+	err := system.printf(0);	#9:(err:int->2)($3:int->3)
+	err := system.printf(1:lng);	#10:(err:int->2)($4:lng->4)
+	err := system.printf('c');	#11:(err:int->2)($5:chr->5)
+	err := system.printf(true);	#12:(err:int->2)($6:bit->6)
+	err := system.printf(pi);	#13:(err:int->2)(pi:flt->8)
+	err := system.printf("single line %s \n","hello");	#14:(err:int->2)($10:str->10)($11:str->11)
+END FUNCTION;	#15:
+[ "hello world" ]
+[ 0 ]
+[ 1 ]
+[ 'c' ]
+[ true ]
+[ 3.147 ]
+hello
+01ctrue3.147000single line hello 

@@ -105,9 +105,10 @@ if test "x$enable_optim" = xyes; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host" in
-      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
-      *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions";;
-      *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
+      dnl i*86-*-*)       CFLAGS="$CFLAGS -O6 -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      i*86-*-*)       CFLAGS="$CFLAGS -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      *-sun-solaris*) CFLAGS="$CFLAGS -O2 -finline-functions";;
+      *)              CFLAGS="$CFLAGS -O6 -finline-functions";;
       esac     
     else
       case "$host" in

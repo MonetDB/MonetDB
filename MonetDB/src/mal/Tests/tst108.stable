@@ -1,0 +1,36 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## This simple loop can be used in debugging mode to 
+## analyse the basic interpreter loop
+#
+#	i:=0;
+#barrier	v:=1;
+#	leave v;
+#	i:= 1;
+#barrier t:= i<3;
+#end	v;
+#	i:=i+1;
+#	redo t;
+#end	t;
+#	i:= 0;
+#
+ERROR:5: non-hierarchical block structure t
+FUNCTION Service.main():int;	#0:(main:int->0)
+	i := 0;	#1:(i:int->2)($1:int->1)
+BARRIER	v := 1;	#2:(v:int->4)($3:int->3)
+	LEAVE v;	#3:(v:int->4)
+	i := 1;	#4:(i:int->2)($3:int->3)
+BARRIER	t := arith.<(i,3);	#5:(t:bit->6)(i:int->2)($5:int->5)
+END	v;	#6:(v:int->4)
+	i := arith.+(i,1);	#7:(i:int->2)(i:int->2)($3:int->3)
+	REDO t ;	#8:(t:bit->6)
+END	t;	#9:(t:bit->6)
+	i := 0;	#10:(i:int->2)($1:int->1)
+END FUNCTION;	#11:
+SyntaxError::'Service.main' contains errors

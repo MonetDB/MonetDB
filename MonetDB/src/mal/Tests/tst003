@@ -1,0 +1,4 @@
+# test illegal variable use
+
+a:=b;	#b not yet defined
+b:=c;	#c undefined

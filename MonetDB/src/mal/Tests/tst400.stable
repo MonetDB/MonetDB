@@ -1,0 +1,35 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## testing the simple iterators on builtin types
+#
+#	i:= -1;
+#barrier v1:= iterator.nextElement(i,0,2);
+#	v:= "do something";
+#	redo v1;
+#end	v1;
+#	v:= "next iteration";
+#	i:= -1;
+#barrier v2:= iterator.nextElement(i,0,5,2);
+#	v:= "do something else";
+#	redo v2;
+#end	v2;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	i := -1;	#1:(i:int->2)($1:int->1)
+BARRIER	v1 := iterator.nextElement(i,0,2);	#2:(v1:bit->5)(i:int->2)($3:int->3)($4:int->4)
+	v := "do something";	#3:(v:str->7)($6:str->6)
+	REDO v1 ;	#4:(v1:bit->5)
+END	v1;	#5:(v1:bit->5)
+	v := "next iteration";	#6:(v:str->7)($8:str->8)
+	i := -1;	#7:(i:int->2)($1:int->1)
+BARRIER	v2 := iterator.nextElement(i,0,5,2);	#8:(v2:bit->10)(i:int->2)($3:int->3)($9:int->9)($4:int->4)
+	v := "do something else";	#9:(v:str->7)($11:str->11)
+	REDO v2 ;	#10:(v2:bit->10)
+END	v2;	#11:(v2:bit->10)
+END FUNCTION;	#12:

@@ -1,5 +1,5 @@
 @f system
-@t System Information BATs
+@t System Information BATs and basic IO
 @a M.L. Kersten, P. Boncz, N.Nes
 @v 1.0
 @* Introduction
@@ -12,11 +12,9 @@ The main performance drain would be to use a pseudo BAT directly to
 successively access it components. This can be avoided by first assigning
 the pseudo BAT to a variable.
 
-@- useful procedures
-
-The commands here return BATs that can be easily reused in scripts. 
-For @%interactive use@ there is a collection of predefined procedures
-that you might well find very useful.
+In addition, this module contains the primitives for printing on the
+client stdout channel. Additional file-directed IO is maintained in
+the io module.
 
 @* Module Definition 
 @mal
@@ -113,56 +111,48 @@ COMMAND module_name(nme:str) : str = get_mod_name;
 	"extract module name from module string" 
 COMMAND module_db(nme:str) : str = get_mod_db;
 	"extract database name from module string" 
-COMMAND format_fcn_sig(nme:oid) : str = format_fcn_sig;
+COMMAND format_fcn_sig(nme:str) : str = format_fcn_sig;
 	"print a function signature"
 
 
 @- Printing 
 The polymorphic print commands are collected here.
-Watch out, the order of definitions is crucial
+Watch out, the order of definitions is crucial, because the most
+specific should be introduced last.
 @mal
 
-PATTERN print(b1:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY]...):void = CMDprint_table;
+PATTERN print(b1:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY][]):int = CMDprint_table;
  "BATs are printed with '#' for legend lines, and the BUNs on seperate
  lines between brackets, containing each to comma separated values
  (head and tail).
  If multiple BATs are passed for printing, print() performs an implicit
  natural join, producing a multiattribute table."
 
-PATTERN print(order:int,b:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY]...):void
+PATTERN print(order:int,b:BAT[ANY::1,ANY], b2:BAT[ANY::1,ANY][]):int
                                                 = CMDprint_otable;
  "The same as normal table print, but enforces to use the order of
   BAT number [1..argc] to do the printing."
 
-PATTERN table(b1:BAT[any::1,any], b2:BAT[any::1,any]...):void = CMDprint_table_default;
+PATTERN table(b1:BAT[any::1,any], b2:BAT[any::1,any][]):int = CMDprint_table_default;
 	"Print an n-ary table. Like print(n-ary) but does not print oid column"
 
-PATTERN table(order:int, b1:BAT[any::1,any], b2:BAT[any::1,any]...):void = CMDprint_table;
+PATTERN table(order:int, b1:BAT[any::1,any], b2:BAT[any::1,any][]):int = CMDprint_table;
 	"Print an n-ary table. Use the ordering of param [1..argc]"
 
-PATTERN printf(format:str, argv:ANY...):void = print_format;
-	"Print a formatted string on the standard client output." 
+COMMAND printf(val:bit):int = CMDprint_bit;
+COMMAND printf(val:chr):int = CMDprint_chr;
+COMMAND printf(val:int):int = CMDprint_int;
+COMMAND printf(val:sht):int = CMDprint_sht;
+COMMAND printf(val:oid):int = CMDprint_oid;
+COMMAND printf(val:lng):int = CMDprint_lng;
+COMMAND printf(val:flt):int = CMDprint_flt;
+COMMAND printf(val:dbl):int = CMDprint_dbl;
+COMMAND printf(val:str):int = CMDprint_str;
+COMMAND printf(format:str,val:str):int = CMDprint_formatted_str;
 
-PATTERN sprintf(format:str, argv:ANY...) : str = print_str;
-	"Print a formatted string on the standard client output." 
-
-PATTERN print(val:any):void = CMDprint_val;
+PATTERN print(val:any):int = CMDprint_val;
 "Print a MIL value between square brackets."
-@+ MIL Procedure definitions
-The MIL script to obtain information about the scope and functions
-available in the MAL interpreter should be redesigned. The old MIL
-specific stuff has being removed.
 
-A series of V4.3 bats do not exist anymore and have been turned
-into views.
-@mal
-COMMAND help(fcn:str) : void = tobedefined;
-COMMAND monet_fcn_nme(): BAT[void,str]= tobedefined;
-	"list of all visible functions"
-COMMAND monet_mod_nme(): BAT[void,str]= tobedefined;
-	"list of all visible functions"
-COMMAND adm_atomtbl(): BAT[void,str]= tobedefined;
-	"list the atoms known to the administrator"
 @mil
 LOAD
 
@@ -383,6 +373,8 @@ END;
 #include "gdk.h"
 #include "mal_stack.h"
 #include "mal_resolve.h"
+#include "mal_squeezer.h"
+#include "mal_client.h"
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
@@ -1017,14 +1009,17 @@ Check string printing first !!
 int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
-	ptr val = getArgVal(mb,stk,pci,1);
+	ptr val = getArgValue(mb,stk,pci,1);
+	/* check for BAT value! */
         FILE *fp = GDKout;
 	if( val==NULL) {
 		tpe = TYPE_str;
 		val = (ptr) "<null>";
 	}
         fputs("[ ", fp);
-        ATOMprint(tpe, val, fp);
+	if( tpe== TYPE_str)
+		ATOMprint(tpe, *(str*)val, fp);
+        else 	ATOMprint(tpe, val, fp);
         fputs(" ]\n", fp);
         return GDK_SUCCEED;
 }
@@ -1067,43 +1062,91 @@ int CMDprint_table( MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	return GDK_SUCCEED;
 }
 
-int print_format( MalBlkPtr m, MalStkPtr s, InstrPtr p){
-/*(str format, ...) {
-	va_list ap;
-	int ret; 
-	str s; 
-
-	va_start(ap,format);
-	ret = VALsprintf(&s, format, ap);
-	va_end(ap);
-	if (ret == GDK_FAIL) {
-		return GDK_FAIL;
+@-
+The format string is scrutinized using VALsprintf in the GDK library
+to avoid that passing a wrong argument (e.g. NULL pointer) kills the server.
+The generic printf function is rather expensive. Ideally it should be
+replaced by a squeezer into a type-specific function calls.
+@-
+Formatted print statements are to be broken down into its constituents.
+This avoids repeated type checking in most cases.
+@c
+int CMDprint_formatted_str(int *ret, str *format, str *s){
+	FILE *fd = getClient()->fdout;
+	str c;
+	if( strNil(*s)) *ret = fputs("nil",fd);
+	else {
+		for(c= *format;*c; c++){
+			if( *c=='\\'){
+				c++;
+				switch(*c){
+				case 'n': *ret =  fputc('\n',fd);break;
+				case 't': *ret =  fputc('\t',fd);break;
+				case 'r': *ret =  fputc('\r',fd);break;
+				case '\\': *ret =  fputc('\\',fd);break;
+				default : *ret = fputc('\\',fd);fputc(*c,fd);
+				}
+			} else 
+			if( *c== '%'){
+				c++;
+				if(*c!= 's') 
+				GDKerror("ERROR: printf format limitation\n");
+				else  fputs(*s,fd);
+			} else *ret = fputc(*c,fd);
+		}
 	}
-	ret = fputs(s, GDKout);
-	GDKfree(s);
- 	if (ret < 0) {
-		GDKsyserror("printf():");
-		return GDK_FAIL;
-	}
-*/
-	printf("calling print_format");
 	return GDK_SUCCEED;
 }
-
-int print_str( MalBlkPtr m, MalStkPtr s, InstrPtr p){
-/*(str *s, str format, ...) {
-	va_list ap;
-	int ret; 
-
-	va_start(ap,format);
-	ret = VALsprintf(s, format, ap);
-	va_end(ap);
-	return ret;
-*/	printf("calling print_str");
+int CMDprint_str(int *ret, str *s){
+	FILE *fd = getClient()->fdout;
+	str c;
+	if( strNil(*s)) *ret = fputs("nil",fd);
+	else {
+		for(c= *s;*c; c++){
+			if( *c=='\\'){
+				c++;
+				switch(*c){
+				case 'n': *ret =  fputc('\n',fd);break;
+				case 't': *ret =  fputc('\t',fd);break;
+				case 'r': *ret =  fputc('\r',fd);break;
+				case '\\': *ret =  fputc('\\',fd);break;
+				default : *ret = fputc('\\',fd);fputc(*c,fd);
+				}
+			} else *ret = fputc(*c,fd);
+		}
+	}
 	return GDK_SUCCEED;
 }
+int CMDprint_oid(int *ret, oid *s){
+	FILE *fd = getClient()->fdout;
+	if( *s == oid_nil) *ret = fputs("nil",fd);
+	else *ret= ATOMprint(TYPE_oid,s,fd);
+	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
+}
+int CMDprint_bit(int *ret, bit *s){
+	FILE *fd = getClient()->fdout;
+	if( *s == bit_nil) *ret = fputs("nil",fd);
+	else *ret= ATOMprint(TYPE_bit,s,getClient()->fdout);
+	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
+}
 
+@-
+@= printType
+int CMDprint_@1(int *ret, @1 *v){
+	FILE *fd = getClient()->fdout;
+	if( *v == @1_nil) *ret = fputs("nil",fd);
+	else
+	*ret= fprintf(fd,@2,*v);
+	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
+}
 
+@c
+ 	@:printType(chr,"%c")@
+ 	@:printType(sht,"%d")@
+ 	@:printType(int,"%d")@
+ 	@:printType(lng,"%d")@
+ 	@:printType(flt,"%f")@
+ 	@:printType(dbl,"%f")@
 /*
 int print_table(int *order, ...) {
 	BAT *piv[MAXPARAMS];

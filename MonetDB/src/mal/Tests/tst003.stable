@@ -1,0 +1,17 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## test illegal variable use
+#
+#a:=b;	#b not yet defined
+#b:=c;	#c undefined
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	a := b;	#1 dynamic:(a:any->2)(b:any->1)
+	b := c;	#2 dynamic:(b:any->1)(c:any->3)
+END FUNCTION;	#3:

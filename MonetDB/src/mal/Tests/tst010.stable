@@ -1,0 +1,86 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## syntax analysis test for guarded blocks, redo's and leave's
+#barrier	L:= 1;
+#	#do it
+#	leave Z;	# not known in block
+#	redo L;
+#end 	L;
+#	redo L;		# outside block
+#	leave X;	# outside block
+#	redo A;		# outside block
+#barrier X:=1;
+#	leave L;	# outside block
+#	leave X;
+#	redo L;		# outside block
+#end	X;
+#barrier A:=1;
+#	barrier B:= 1;
+#		redo A;
+#	end	B;
+#	barrier C:=1;
+#		leave A;
+#	end 	C;
+#
+#	end	B;	# out of order
+#	end	F;	# unknown
+#
+#	barrier D:=1;
+#		leave D;
+#		redo  D;  # dead code
+#	end	D;
+#	barrier D:=2;		# duplicate block
+#	end	D;
+#end	A;
+#barrier  unfinished:= 1;
+#	f:=1;
+#
+ERROR:2:label 'Z' not in guarded block
+ERROR:5:label 'L' not in guarded block
+ERROR:6:label 'X' not in guarded block
+ERROR:7:label 'A' not in guarded block
+ERROR:9:label 'L' not in guarded block
+ERROR:11:label 'L' not in guarded block
+ERROR:13: non-hierarchical block structure A
+ERROR:20: end-label 'B' without begin-label
+ERROR:21: end-label 'F' without begin-label
+ERROR: 29: begin-label 'unfinished' without end-label
+FUNCTION Service.main():int;	#0:(main:int->0)
+BARRIER	L := 1;	#1:(L:int->2)($1:int->1)
+	LEAVE Z;	#2:(Z:any->3)
+	REDO L ;	#3:(L:int->2)
+END	L;	#4:(L:int->2)
+	REDO L ;	#5:(L:int->2)
+	LEAVE X;	#6:(X:int->4)
+	REDO A ;	#7:(A:int->5)
+BARRIER	X := 1;	#8:(X:int->4)($1:int->1)
+	LEAVE L;	#9:(L:int->2)
+	LEAVE X;	#10:(X:int->4)
+	REDO L ;	#11:(L:int->2)
+END	X;	#12:(X:int->4)
+BARRIER	A := 1;	#13:(A:int->5)($1:int->1)
+BARRIER	B := 1;	#14:(B:int->6)($1:int->1)
+	REDO A ;	#15:(A:int->5)
+END	B;	#16:(B:int->6)
+BARRIER	C := 1;	#17:(C:int->7)($1:int->1)
+	LEAVE A;	#18:(A:int->5)
+END	C;	#19:(C:int->7)
+END	B;	#20:(B:int->6)
+END	F;	#21:(F:any->8)
+BARRIER	D := 1;	#22:(D:int->9)($1:int->1)
+	LEAVE D;	#23:(D:int->9)
+	REDO D ;	#24:(D:int->9)
+END	D;	#25:(D:int->9)
+BARRIER	D := 2;	#26:(D:int->9)($10:int->10)
+END	D;	#27:(D:int->9)
+END	A;	#28:(A:int->5)
+BARRIER	unfinished := 1;	#29:(unfinished:int->11)($1:int->1)
+	f := 1;	#30:(f:int->12)($1:int->1)
+END FUNCTION;	#31:
+SyntaxError::'Service.main' contains errors

@@ -1,0 +1,31 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## garbage collection strins
+#
+#	s0:= "hello";
+#	s0:= "world";
+#	b1:= s0 = "world";
+#	s1:= s0;
+#barrier b1;
+#	s2:= s1;
+#	s1:= "bye";
+#end 	b1;
+#	s1:= nil:str;
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+	s0 := "hello";	#1:(s0:str->2)($1:str->1)
+	s0 := "world";	#2:(s0:str->2)($3:str->3)
+	b1 := arith.=(s0,"world");	#3:(b1:bit->4)(s0:str->2)($3:str->3)
+	s1 := s0;	#4:(s1:str->5)(s0:str->2)
+BARRIER	b1;	#5:(b1:bit->4)
+	s2 := s1;	#6:(s2:str->6)(s1:str->5)
+	s1 := "bye";	#7:(s1:str->5)($7:str->7)
+END	b1;	#8:(b1:bit->4)
+	s1 := "nil";	#9:(s1:str->5)($8:str->8)
+END FUNCTION;	#10:

@@ -1,7 +1,15 @@
 # A few system calls
 err:= print("hello world");
 err:= print(0);
-err:= print(1);
+err:= print(1:lng);
+err:= print('c');
+err:= print(true);
 pi := 3.147;
 err:= print(pi);
-err:= printf("%s","hello");
+err:= printf("hello\n");
+err:= printf(0);
+err:= printf(1:lng);
+err:= printf('c');
+err:= printf(true);
+err:= printf(pi);
+err:= printf("single line %s \n","hello");

@@ -979,6 +979,7 @@ int BBPfix(bat i) {
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPfix")) {
 		while(TRUE) {
+printf("setting bbp locks\n");
 			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
 			if (BBP_status(i) & BBPUNLOADING) { /* must wait for unload, then reload */
 				MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix spin wait"); 
@@ -989,6 +990,7 @@ int BBPfix(bat i) {
 		}
 		refs = ++BBP_refs(i);
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
+printf("releasing bbp locks\n");
 	}
 	return refs;
 }

@@ -11,8 +11,18 @@
 \newpage
  
 @* Monet
-The Goblin Database Kernel library is complemented by a textual interface, 
-called @%Monet@.  This interface is easy to interpret, versatile and 
+The Monet kernel library finds its roots in developing the runtime
+system for an object-oriented database language Goblin in the early nineties. 
+This language never reached maturity, but the code base reflects the
+assumptions and chooses made many years ago.
+The Monet kernel library is complemented by a textual interface, 
+called the Monet Interface Language until version 5.
+This language was a poor-mans programming/scripting language to
+directly interact with the kernel code.
+
+As of Version 5.0 we use an abstract machine model and an associated
+Monet Assembler Language.
+This interface is easy to interpret, versatile and 
 flexible to accommodate system debugging and application tool development.
 Although a textual interface potentially leads to a performance degradation, 
 our experience with earlier systems, e.g. Troll and PRISMA,
@@ -32,7 +42,7 @@ is used in the Monet layer:
 @T
 \begin{tabular}{|l | l | l |}\hline
 Name & Used in & Protects\\
-monet_contextLock       & monet.mx      & {\em created  }\\
+mal_contextLock       & mal_client.mx      & {\em created  }\\
 \end{tabular}
  
 @+ Monet Basic Definitions 
@@ -97,7 +107,6 @@ m_export str absolute_path(str s);
 #endif /* _MONET_H_ */
 @c 
 #include "monet.h"
-#include "mal.h"
 
 char            monet_cwd[PATHLENGTH]={0};
 char            *monet_prompt="\1>\1";
@@ -105,8 +114,6 @@ int             monet_welcome=1, monet_deamon=2;
 int             monet_singlethreaded=0, monet_maxclients=1;
 str             monet_script[MAXSCRIPT]={0};
 str		monet_rc =0;
-
-MT_Lock		monet_contextLock;
 
 @-
 A welcoming message is displayed to inform the user about recent
@@ -263,6 +270,7 @@ Startup the monet server by preparing the argument list for the GDK kernel.
 void monet_init(int argc, char **argv ){
 	int i;
 	Symbol prg=NULL, scope=NULL;
+	Client c;
 
         if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");
@@ -275,18 +283,22 @@ void monet_init(int argc, char **argv ){
 #ifdef IRIX
         setbuffer(stdout, GDKmalloc(4096), 4096);
 #endif
-        monet_contextLock= MT_create_lock();
         monet_hello();
+	mal_init();
         scope= malStartupGlobal(GDKdbnameStr,mal_listing);
         if( scope == NULL) return;
+	c=initClient(GDKstrdup("adm"),NULL,0);
 
         for(i=0; monet_script[i]; i++)
                 prg = malImport(scope,scope->name,monet_script[i],mal_listing);
         /* printScope(scope,0);*/
         /* and execute the last routine loaded */
         if( prg ) {
-                runMAL(prg->def,0,stdin,stdout,mal_trace);
+                str msg= runMAL(c,prg->def,0);
+		if( msg && msg != (str) GDK_SUCCEED) printf(msg);
         }
+	/* start administrator loop */
+	/* runClient(c);*/
         freeAllSymbols();
         freeStringStack();
 }

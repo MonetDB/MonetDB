@@ -1,0 +1,28 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## check propagation of type variables over bats
+## can be checked after bat module has been added
+#
+#module bat2;
+#command new(h:any::1,t:any::2):bat[any::1,any::2]= GDKbatnew;
+#
+#a:= bat2.new(str,int);
+COMMAND bat2.new(h:any::1,t:any::2):bat[any::1,any::2] = GDKbatnew;	#0 unknown:(GDKbatnew:bat[any::1,any::2]->3)(h:any::1->1)(t:any::2->2)
+#b:= bat2.new(str,int);
+#c:= new(str,int);
+#
+FUNCTION bat2.main():int;	#0:(main:int->0)
+	a := bat2.new(str,int);	#1:(a:bat[str,int]->3)(str:str->1)(int:int->2)
+	b := bat2.new(str,int);	#2:(b:bat[str,int]->4)(str:str->1)(int:int->2)
+	c := bat2.new(str,int);	#3:(c:bat[str,int]->5)(str:str->1)(int:int->2)
+END FUNCTION;	#4:
+mal_interpreter address bat2.new unknown
+CATCH ERROR MALexception:bat2.main[1]:mal_interpreter address bat2.new unknown
+
+MALexception:bat2.main[1]:mal_interpreter address bat2.new unknown

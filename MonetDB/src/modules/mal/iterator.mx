@@ -14,19 +14,17 @@ collection.
 
 MODULE iterator;
 
-COMMAND foreach(i:lng, first:lng, last:lng):bit = lngForloop;
-COMMAND foreach(i:int, first:int, last:int):bit = intForloop;
-COMMAND foreach(i:sht, first:sht, last:sht):bit = shtForloop;
-COMMAND foreach(i:chr, first:chr, last:chr):bit = chrForloop;
+COMMAND nextElement(i:lng, first:lng, last:lng):bit = lngForloop;
+COMMAND nextElement(i:int, first:int, last:int):bit = intForloop;
+COMMAND nextElement(i:sht, first:sht, last:sht):bit = shtForloop;
+COMMAND nextElement(i:chr, first:chr, last:chr):bit = chrForloop;
 
-COMMAND foreach(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep;
-COMMAND foreach(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep;
-COMMAND foreach(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep;
-COMMAND foreach(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep;
-COMMAND foreach(i:int, first:int, last:int, step:int):bit = intForloopStep;
-COMMAND foreach(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep;
-
-PATTERN argument(i:int, arg:any):bit = tobedefinedIterator;
+COMMAND nextElement(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep;
+COMMAND nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep;
+COMMAND nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep;
+COMMAND nextElement(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep;
+COMMAND nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep;
+COMMAND nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep;
 
 @-
 A BATloop construct uses an integer cursor to keep track of its

@@ -6,6 +6,7 @@ Upon starting the Mal server we need to initialize the symbol table.
 This encompasses loading the signatures of several key modules.
 They are listed below.
 @mal
+use kernel/bat;
 use kernel/arith;
 use kernel/atoms;
 use kernel/algebra;

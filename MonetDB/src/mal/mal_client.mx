@@ -1,0 +1,502 @@
+@a M. L. Kersten, P. Boncz
+@v 5.0
+@* Monet Client Interface
+Clients gain access to the Monet server through a internet connection
+or through its server console.
+Access through the internet requires a Monet client program at the
+source, but ordinary telnet connections can be applied when the internet
+port number of the database server is publicised.
+
+At the server, each client is represented by a session record about the
+current status, such as name, file descriptors, namespace, and local stack.
+Furthermore, each client session has a dedicated thread of control.
+@-
+The number of clients permitted concurrent access is a compile time option.
+They are referenced internally by number. The console is the first and 
+should always be present. It reads from standard input and writes to 
+standard output.
+The number of clients depends on the permissible open file descriptors. 
+
+Client records are linked into a hierarchy, where the top record
+describes system-wide resources, owned by the dba. The next layer
+contains a language specific context, followed by a database schema
+specific context and ending by the user session context.
+Inspection of upper layers is limited as much as possible.
+
+@{
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ */
+
+#ifndef _MAL_CLIENT_H_
+#define _MAL_CLIENT_H_
+#include "mal_instruction.h"
+#include "mal.h"
+
+#define MAL_MAXCLIENTS	32
+#define CONSOLE		0
+#define isAdministrator(X) (X==mal_clients)
+
+#define FREECLIENT	0
+#define FINISHING	1	
+#define CLAIMED		2
+#define AWAITING	4
+
+#define TIMEOUT		(5*60)	/* seconds */
+#define PROCESSTIMEOUT	20	/* seconds */
+#define BLOCKSIZE	4096
+@-
+The user can request server-side compilation as part of the initialization 
+string. 
+The languages foreseen are SQL, MIL (Monet version 4) and MAL (Monet
+Assembler Language)
+@h
+#define MALPARSER	1
+#define MILPARSER	2
+#define SQLPARSER	4
+
+typedef struct CLIENT{
+	int	idx;		/* entry in mal_clients */
+	str 	user;		/* user name. */
+	str	password;	/* of user */
+	int	permission;	/* access mode */
+	int	language;	/* language indicator */
+	int	trace;		/* trace execution */
+@-
+The time interval between requests are maintained. At some point
+we will kill clients when their time-out value is exceeded.
+A client can manipulate the timeout with a system call.
+@h
+	time_t		login;	
+	time_t		logout;
+	time_t		delay;
+@-
+Communication channels for the interconnect are stored here.
+It is perfectly legal to have a client without input stream.
+It will simple terminate after consuming the input buffer.
+@h
+	FILE	*fdin, *fdout;		/* streams from and to user. */
+	int 	socket;			/* socket with tcp conn. */
+	str	input, output, limit;	/* IO buffers + input limit */
+	str	prompt;			/* acknowledge prompt */
+	int	promptlength;
+	int	mode;			/* FREECLIENT..BLOCKED */
+@-
+Client records are organized into a two-level dependency
+tree, where children may be created to deal with parallel processing
+activities. Each client runs in its own process thread. Its identity
+is retained here for access by others (=father).
+@h
+	Thread		mythread;
+	struct CLIENT	*father;	
+@-
+Each client has a private entry point into the namespace. 
+(See mal_symbols.mx)
+@h
+	Symbol		np;
+} *Client, ClientRec;
+
+mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
+
+mal_export Client	initClient(str nme, str passwd, int socket);
+mal_export Client	forkClient     (Client c);
+mal_export Client	getClient	();
+mal_export int		closeClient    (Client c);
+mal_export void		killClient     (Client c);
+mal_export void 	freeClient	(Client c);
+mal_export void 	runClient	(Client c);
+mal_export int 	readClient	(Client c);
+
+#endif /* _MAL_CLIENT_H_ */
+@-
+Upon acceptance of a connection a client record is initialized.
+After initializion the client record is activated in its own
+thread of control until it finds a
+soft-termination request mode (FINISHING) or its IO file
+descriptors are closed. This will generate an IO error, which
+should lead to a safe termination.
+
+The system administrator client runs in the primary thread of
+control to simplify debugging with external debuggers.
+
+A new Client structure can only be requested if the 'adm'
+user is available, because it guarantees a way to deliver
+any error message.
+Searching a free client record should be encapsulated in
+a critical section to hand them out one-at-a-time.
+Marking them as being claimed avoids any interference from parallel
+actions to obtain client records.
+@c
+#include "mal_client.h"
+
+ClientRec	mal_clients[MAL_MAXCLIENTS+1];
+
+Client newClient(){
+	Client 	c;
+	MT_set_lock(mal_contextLock, "newClient");
+	if( mal_clients[CONSOLE].user &&
+	    mal_clients[CONSOLE].mode == FINISHING){
+		GDKerror("newClient:system shutdown in progress \n");
+		MT_unset_lock(mal_contextLock, "newClient");
+		return NULL;
+	}
+	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
+		if (c->mode == FREECLIENT) {
+			c->mode= CLAIMED;
+			break;
+		}
+	}
+	MT_unset_lock(mal_contextLock, "newClient");
+
+	if (c == mal_clients+MAL_MAXCLIENTS) {
+		GDKfatal("Out of client slots\n");
+		return NULL;
+	}
+	c->idx= c - mal_clients;
+	return c;
+}
+@-
+You can always retrieve a client record using the thread identifier,
+because we maintain a 1-1 mapping between client and thread of control.
+Therefore, we don;t need locks either.
+If the number of clients becomes too large, we have to change the 
+allocation and lookup scheme.
+@c
+Client getClient()
+{
+	Client c;
+	Thread tid= THRget(THRgettid());
+	
+	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
+	if( c->mythread == tid) return c;
+
+	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
+	if( c->mythread) printf("client %d\n",c->mythread);
+	GDKerror("unexpected call to getClient %d\n" , tid);
+	return NULL;
+}
+
+@-
+The arguments are private copies, which should be garbage collected
+upon return;
+@c
+Client initClient(str nme, str passwd, int msgsock){
+	Client 	c;
+	Thread t;
+
+	if( ( c= newClient()) == NULL) {
+		if( nme != 0) GDKfree(nme);
+		if( passwd != 0) GDKfree(passwd);
+		return NULL;
+	}
+
+       	c->user = nme; c->language= MALPARSER;
+
+	c->fdin = msgsock? fdopen(msgsock, "r"):stdin;
+	c->input = (str) GDKmalloc(BLOCKSIZE);
+	c->limit = c->input + BLOCKSIZE;
+	*c->input = 0;
+
+	c->fdout = msgsock? fdopen(msgsock, "w"):stdout;
+	c->output = (str) GDKmalloc(BLOCKSIZE);
+ 	c->socket = msgsock;
+
+	c->father = NULL;
+	c->login = time(0); c->delay= TIMEOUT;
+	c->logout= c->login+c->delay;
+	c->mode = AWAITING;
+	c->trace = mal_trace;
+
+	if( isAdministrator(c)) c->prompt= GDKstrdup("adm>");
+	else c->prompt= GDKstrdup("mal>");
+	c->promptlength= strlen(c->prompt);
+@-
+All but the first client receive a private thread of control.
+@c
+	if( ! isAdministrator(c)  && (int)fork() < 0) return c;
+
+@-
+The GDK thread administration should be set to reflect use of
+the proper IO descriptors.
+@c
+	t= THRget(THRgettid());
+        if ( t==0) {
+                GDKerror("setChannel: unknown thread\n");
+		return 0;
+        }
+        t->data[1] = c->fdin;
+        t->data[0] = c->fdout;
+	c->mythread = t;
+	
+	/*printf("client accepted %d %d\n", fileno(c->fdin), fileno(c->fdout));*/
+	return c;
+}
+
+void runClient(Client c){
+	while(c->mode > FINISHING && readClient(c)){
+		fprintf(c->fdout,"accepted buffer:\n#%s", c->input);
+		fflush(c->fdout);
+	}
+}
+
+
+@- Client decendants
+Forking is a relatively cheap way to create a new client.
+The new client record shares the IO descriptors.
+To avoid interference, we limit children to only produce 
+output by closing the input-side.
+
+If the father itself is a temporary client, let 
+the new child depend on the grandfather.
+@c
+Client forkClient(Client father){
+        Client son = NULL;
+	if( father == NULL) return NULL;
+	if (father->father != NULL) father = father->father;
+	if ((son = initClient( GDKstrdup(father->user),
+		GDKstrdup(father->password), father->socket))){
+		son->fdin= NULL;
+		GDKfree(son->input);
+		son->input = son->limit = NULL;
+		son->father = father;
+	}
+        return son;
+}
+
+@-
+When a client needs to be terminated then the file descriptors for
+its input/output are simply closed. 
+This leads to a graceful degradation, but may take some time
+when the client is busy.
+A more forcefull method is to kill the client thread, but this
+may leave locks and semaphores in an undesirable state.
+
+The routine freeClient ends a single client session,
+but through side effects of sharing IO descriptors,
+also its children. Conversely, a child can not close a parent.
+@c
+void freeClient(Client c) {
+	c->mode = FINISHING;
+
+	/* epilogue actions have been done already */
+	if (c->father == NULL) { /* normal client */
+		(void) fclose(c->fdin);
+		GDKlog("Mserver: %s session ends", c->user);	
+		(void) fflush(c->fdout); 
+        	(void) fclose(c->fdout);
+		(void) shutdown(c->socket, 2);
+	} 
+	/* forked client also */
+
+	GDKfree(c->user);
+	c->user = NULL;
+	c->fdin= c->fdout = NULL;
+	if( c->input ) GDKfree(c->input);
+	c->input = c->limit= NULL;
+	if( c->output ) GDKfree(c->output);
+	c->output= NULL;
+	c->socket = 0;
+	c->mythread= 0;
+	c->father = 0;
+	c->login = c->delay = c->logout = 0;
+	c->mode = FREECLIENT;
+}
+
+@-
+If a client disappears from the scene (eof on stream or quit), we should
+terminate all its children. This is in principle a forcefull action,
+because the children may be ignoring the primary IO streams.
+(Instead they may be blocked in an infinite loop)
+
+Special care should be taken by closing the 'adm' thread.
+It is permitted to leave only when it is the sole user of the system.
+@c
+int closeClient(Client c) {
+	Client k;
+
+	/* kill living background clients */
+	for (k = mal_clients; k < mal_clients+MAL_MAXCLIENTS; k++) {
+		if ((k->mode > FINISHING) && (k->father == c)) 
+			killClient(k);
+	}
+
+	/* free resources */
+	if( !isAdministrator(c)) {
+		freeClient(c);
+		return 0;
+	} 
+
+	/* adm is set to disallow new clients entering */
+	mal_clients[CONSOLE].mode= FINISHING;
+
+	for (k = mal_clients+1; k < mal_clients+MAL_MAXCLIENTS; k++) 
+	if ((k->mode > FINISHING) ){
+		GDKerror("closeClient:client '%s' was still active\n", k->user);
+		killClient(k);
+	}
+	freeClient(c);
+	return 0;
+}
+
+@-
+Killing a (child) client is a delicate action, because the state of
+the client is unknown. The current solution is to issue
+a soft-termination request by setting its mode flag. 
+The client main interpreter loop should look at it upon each
+cycle and terminate.
+
+After the PROCESSTIMEOUT delay the thread is forcefully killed,
+assuming it was either waiting for a lock, or external
+event in any way.
+
+@c 
+
+void killClient(Client c){
+    if (c && c->user) {
+        Thread  victim = c->mythread;
+
+	if( victim == THRgettid()){
+		GDKerror("killClient: attempt to perform process suicide.\n");
+		return;
+	}
+	c->mode= FINISHING;
+	sleep(PROCESSTIMEOUT);
+	THRdel(victim);
+	MT_kill_thread(victim->tid);
+	freeClient(c);
+    }
+}
+@- Client input
+The input is read from a stream and stored in the client record
+input buffer. The storage area grows automatically upon need.
+Where the stream is comming from depends on the connectivity mode.
+@c
+
+static 
+void enlargebuffer(Client c, int newsize){
+	str s;
+	int i;
+	int l;
+
+	l = strlen(c->input);
+	i = c->limit- c->input +BLOCKSIZE;
+	s = (char *) GDKmalloc((unsigned)newsize);
+	memcpy(s, c->input, l+1);
+	GDKfree(c->input);
+	c->input = s;
+	c->limit = c->input+i;
+}
+
+@-
+Each operation received from a front-end consists of at least one line.
+If it contains the text #bytes:%6d then it is assumed that a block
+of data can be read in bulk mode containing the request to be processed.
+
+Otherwise the command is build incrementally until the command
+directive "#run:" or eof() is recognized.
+The front-end is warned about the state of the server-side client
+thread by sending a '#ack:' request. This command may later be
+extended with performance related data, such as the time
+it took to process the last request, etc..
+@h
+#define BYTEMSG	"#bytes:%6d"
+#define RUNCMD	"#go"
+@c
+int readClient(Client c){
+	int i,bytes,len;
+	str  s, last;
+ 
+@-
+The next statement block is to be read. Sent a prompt to warn
+the front-end to issue the request.
+@c
+ 	last= s = c->input; *s = 0;
+	/* printf("accept client %d input %d eof %d buffer:\n#%s\n", 
+		c-mal_clients, fileno(c->fdin), feof(c->fdin), c->input);*/
+again:
+	if (fprintf(c->fdout, c->prompt) == EOF) return 0;
+	if (fflush(c->fdout) || feof(c->fdout)) return 0;
+@-
+Start reading the first line one character at a time.
+The system should use the low level read primitives to ensure that
+the client reader does not hang too long on terminal I/O.
+Beware, that in terminal mode you loose backspaceing options.
+Therefore, most interaction should be regulated through the Mclient
+front-end. This will also take care of buffering a request before
+submission. This avoids a significant number of network interactions.
+@c
+	while ((i = fread(s, 1, 1, c->fdin)) > 0) {
+#ifdef WIN32
+		if (*s == 13) continue; /* filter out ^M */
+#endif
+		if( *s == '\n') break;
+		s++;
+		*s = 0;
+		if (s >= c->limit-1) {
+			int len = c->limit-c->input;
+			enlargebuffer(c, len+BLOCKSIZE);
+			s= c->input+len;
+		}
+	}
+	if (i <= 0) {
+		if (feof(c->fdin)
+#ifndef WIN32
+		    || (i < 0 && MT_geterrno() != EAGAIN) 
+#endif
+		) return 0;
+		MT_seterrno(0);
+		goto again;
+	  }
+	*s= '\n'; s++; *s=0;
+	if( strncmp(last,RUNCMD,strlen(RUNCMD))==0) {
+		*last= 0;
+		return 1;
+	}
+@-
+Check to see if this involves a blocked message. If so, read
+the complete block in one blow. Turn the ^M into a space afterwards.
+The alternative is to read the next line;
+@c
+	if( sscanf(last,BYTEMSG,&bytes)==0){
+		last=s;
+		goto again;
+	}
+	len = c->limit - c->input;
+	if( bytes < 0){
+		GDKerror("readClient:illegal message length\n");
+		return 0;
+	}
+	if( bytes >= len)
+		enlargebuffer(c,len-bytes+1);
+
+	i = fread(last, 1, bytes, c->fdin);
+	if( i<0){
+		GDKerror("readClient:unable to read all bytes\n");
+		return 0;
+	}
+#ifdef WIN32
+	for(s=last;*s;s++) if( *s == 13) *s = ' ';
+#endif
+	return 1;
+}
+@
+@}

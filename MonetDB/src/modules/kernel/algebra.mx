@@ -388,7 +388,6 @@ COMMAND @1 ( b:BAT[any,@2] ) : @2 = CMD@1_@2; @3
 @:aggregate_definition(@1,lng,@2)@
 
 @* MIL definitions
-@f algebraload
 @mil
 @- constants for theta() and thetajoin()
 @mil
@@ -1106,7 +1105,7 @@ int CMDfetchbat(BAT** ret, BAT *b, BAT *s){
 	return (*ret = BATfetch(b, s))?GDK_SUCCEED:GDK_FAIL;
 }
 
-int CMDfetch(ptr *ret, BAT *b, int *pos){
+int CMDfetch(ptr ret, BAT *b, int *pos){
 	int i = *pos;
         if ((i < 0) || (i >= BATcount(b))) {
                 GDKerror("CMDfetch: idx out of range\n");
@@ -1120,25 +1119,25 @@ int CMDfetch(ptr *ret, BAT *b, int *pos){
 	    int _len = ATOMlen(b->ttype, _src);
 	    ptr _dst = GDKmalloc(_len);
 	    memcpy(_dst, _src, _len);
-	    **(ptr*) ret = _dst;
+	    *(ptr*) ret = _dst;
 	} else {
 	    int _s = ATOMsize(ATOMtype(b->ttype));
 	    if (ATOMvarsized(b->ttype)) {
-		memcpy(**(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
+		memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
 	    } else if (b->ttype == TYPE_bat) {
 		bat bid = *(int*) BUNtloc(b, @1);
-		**(BAT**) ret = BATdescriptor(bid);
+		*(BAT**) ret = BATdescriptor(bid);
 		BBPfix(bid);
 	    } else if (_s == 4) {
-		**(int*) ret = *(int*) BUNtail(b, @1);
+		*(int*) ret = *(int*) BUNtail(b, @1);
 	    } else if (_s == 1) {
-		**(chr*) ret = *(chr*) BUNtail(b, @1);
+		*(chr*) ret = *(chr*) BUNtail(b, @1);
 	    } else if (_s == 2) {
-		**(sht*) ret = *(sht*) BUNtail(b, @1);
+		*(sht*) ret = *(sht*) BUNtail(b, @1);
 	    } else if (_s == 8) {
-		**(lng*) ret = *(lng*) BUNtail(b, @1);
+		*(lng*) ret = *(lng*) BUNtail(b, @1);
 	    } else {
-		memcpy(*ret, BUNtloc(b, @1), _s);
+		memcpy(ret, BUNtloc(b, @1), _s);
 	    }
 	}
 @c
@@ -1168,7 +1167,7 @@ int CMDexistBUN(bit *ret, BAT* b, ptr *val, ptr *tval){
         return GDK_SUCCEED;
 }
 
-int CMDfind(ptr *ret, BAT* b, ptr *val){ 
+int CMDfind(ptr ret, BAT* b, ptr *val){ 
 	ptr p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:*val;
 	BUN q = BUNfnd(b, p);
 	if (q == NULL) {

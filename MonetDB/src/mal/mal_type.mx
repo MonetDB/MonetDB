@@ -98,6 +98,7 @@ mal_export malType coercion(malType t1, malType t2);
 mal_export int getTypeIndex(str nme);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
+mal_export int idcmp(str n, str m);
 #endif /* MAL_TYPE_H*/
 @-
 At any point we should be able to construct an ascii representation of
@@ -223,16 +224,37 @@ malType coercion(malType t1, malType t2){
 @+ Some utilities 
 In many places we need a confirmed type identifier.
 GDK returns the next available index when it can not find the type.
-This is not sufficient hier, an error message may have to be generated.
+This is not sufficient here, an error message may have to be generated.
 It is assumed that the type table does not change in the mean time.
 @c
 int getTypeIndex(str nme){
 	int i;
 	i= ATOMindex(nme);
 	/* printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
-	if( strcmp("any",nme)==0) return malAnyType;
+	if( idcmp("any",nme)==0 || idcmp("ANY",nme)==0) return malAnyType;
+	if( idcmp("BAT",nme)==0 || idcmp("bat",nme)==0){
+/* printf("found a bat[any,any]\n");*/
+		i = newBatType(TYPE_any,TYPE_any);
+/* printf("isAnyexpression? %d\n", isAnyExpression(i));*/
+		return i;
+	}
 	if( i== -GDKatomcnt){
 		i = malAnyType;
 	}
 	return i;
+}
+int getGDKtype(int type){
+	if( isBatType(type)) return TYPE_bat;
+	if( type == malAnyType) return TYPE_void;
+	return ATOMtype(type);
+}
+@- 
+Use the information that identifiers are at least one character
+and are terminated by a null to speedup comparison
+@c
+INLINE
+int idcmp(str n, str m)
+{
+	if( *(short *) n == *(short *) m) return strcmp(n,m);
+	return -1;
 }

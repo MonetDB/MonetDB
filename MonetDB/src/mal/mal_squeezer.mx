@@ -70,8 +70,7 @@ All examples are meant to help identifying the API for squeezer construction.
 #include "mal_resolve.h"
 
 #define DEBUG_MAL_SQUEEZER 1
-mal_export ptr getValuePtr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k);
-mal_export ptr getArgVal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k);
+mal_export ptr getArgValue(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k);
 #endif /*  _MAL_SQUEEZE_H*/
 @+ Pattern analysis
 Patterns analysis routines need handy functions to obtain the
@@ -82,7 +81,7 @@ arguments should be handled by the pattern implementation.
 @c
 #include "mal_squeezer.h"
 
-ptr getValuePtr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
+ptr getArgValue(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
 	int j;
 	ptr val = NULL;
 	ValPtr v;
@@ -98,7 +97,7 @@ ptr getValuePtr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
 	case TYPE_bit: val= (ptr) & v->val.bval; break;
 	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
 	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: val= (ptr) BATdescriptor(v->val.br.id); break;
+	case TYPE_bat: val= (ptr) & v->val.br.id; break;
 	case TYPE_int: val= (ptr) & v->val.ival; break;
 	case TYPE_oid: val= (ptr) & v->val.oval; break;
 	case TYPE_ptr: val= (ptr) & v->val.pval; break;
@@ -106,40 +105,6 @@ ptr getValuePtr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
 	case TYPE_dbl: val= (ptr) & v->val.dval; break;
 	case TYPE_lng: val= (ptr) & v->val.lval; break;
 	case TYPE_str: val= (ptr) & v->val.sval; break;
-	default:
-		GDKerror("evalParameters:unknown value type\n");
-	}
-	return val;
-} 
-@-
-The variation on this theme is to obtain the value pointer
-directly. This is needed if you are preparing a call to one
-of the GDK functions directly.
-@c
-ptr getArgVal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
-	int j;
-	ptr val = NULL;
-	ValPtr v;
-
-	j = pci->argv[k];
-	if( isVarConstant(mb,j) )
-		v= &getVarConstant(mb,j);
-	else {
-		v= &stk->stk[j];
-	}
-	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: val= (ptr) & v->val.ival; break;
-	case TYPE_bit: val= (ptr) & v->val.bval; break;
-	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: val= (ptr) BATdescriptor(v->val.br.id); break;
-	case TYPE_int: val= (ptr) & v->val.ival; break;
-	case TYPE_oid: val= (ptr) & v->val.oval; break;
-	case TYPE_ptr: val= (ptr) v->val.pval; break;
-	case TYPE_flt: val= (ptr) & v->val.fval; break;
-	case TYPE_dbl: val= (ptr) & v->val.dval; break;
-	case TYPE_lng: val= (ptr) & v->val.lval; break;
-	case TYPE_str: val= (ptr) v->val.sval; break;
 	default:
 		GDKerror("evalParameters:unknown value type\n");
 	}
@@ -224,7 +189,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int j,symid;
 	InstrPtr pp, newstmt;
 
-	nme = * (str *) getValuePtr(m,s,p,1);
+	nme = * (str *) getArgValue(m,s,p,1);
 	symid= findVariable(m,nme);
 	printf("entering sqzAccess blocking %d %s\n",symid,nme);
 	@:prepareSqueeze(10)@
@@ -252,7 +217,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 str sqzAccessTst(void *res, int *v0){
 	printf("Entering AccessTst with argument %d\n",*v0);
 	if( *v0 <0) 
-		return raiseException("IllegalAccess","something is wrong");
+		return raiseException2("IllegalAccess","something is wrong");
 	return NULL; /* No exception */
 }
 

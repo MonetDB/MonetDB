@@ -2,9 +2,8 @@
 @a M. Kersten
 @v 0.0
 @+ MAL functions
-Mal instructions are represented by MAL instruction lists.
-The first instruction contains the signature in the form of
-the function call information.
+MAL function are represented by MAL instruction lists.
+The first instruction contains the signature.
 
 The representation of the MAL functions is rather traditional,
 using C-structure to collect the necessary information.
@@ -15,7 +14,7 @@ linear scans as it comes to locating information of interest.
 The information maintained for each MAL function should both
 be geared towards fast execution and to ease symbolic debugging.
 
-All other variables are initialized upon first assignment.
+All variables are initialized upon first assignment.
 Ignoring flow of control instructions, each variable should be
 initialized before its use.
 Beware that the function signatures contain variable declarations
@@ -54,9 +53,12 @@ mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname);
 mal_export void 	pushArgumentId(InstrPtr p,str name);
+
+mal_export void chkFlowOfControl(Symbol prg);
 mal_export void	chkBarrier(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkRaise(MalBlkPtr mb, InstrPtr pp);
 mal_export void	chkCatch(MalBlkPtr mb, InstrPtr pp);
+mal_export void	chkEnd(MalBlkPtr mb, InstrPtr pp);
 mal_export void 	chkLabel(MalBlkPtr mb, InstrPtr p);
 mal_export Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
 mal_export void	safeFunction(Symbol proc);
@@ -68,7 +70,7 @@ mal_export void 	printFunction(FILE *fd, MalBlkPtr mb);
 
 #endif /*  _MAL_FCN_H*/
 @-
-The MAL functions are constructed while parsing the source.
+The MAL functions are constructed incrementally while parsing the source.
 @c
 #include "mal_function.h"
 #define MAXINSTR 200
@@ -107,6 +109,37 @@ InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname){
 InstrPtr newPatternCall(MalBlkPtr m, str modname, str fcnname){
 	return newCall(m,modname,fcnname, PATcall);
 }
+@+ Flow of control
+The nesting of BARRIER and CATCH statements with their associated
+flow of control primitives LEAVE and RETRY should form a valid
+hierarchy. Failure to comply is considered a structural error
+and leads to flagging the function as erroneous.
+@c
+void chkFlowOfControl(Symbol prg){
+	MalBlkPtr mb= prg->def;
+	InstrPtr p;
+	int i;
+
+	for(i=0;i<mb->stop;i++) {
+		p= getInstrPtr(mb,i);
+		if(p== NULL) continue;
+		switch(p->token){
+		case ENDsymbol:
+			chkEnd(mb,p);
+			break;
+		case CATCHsymbol:
+			chkCatch(mb,p);
+			break;
+		case LEAVEsymbol:
+		case REDOsymbol:
+			chkLabel(mb,p);
+		}
+		if( p->barrier == BARRIERsymbol)
+			chkBarrier(mb,p);
+		if( p->barrier == RAISEsymbol)
+			chkRaise(mb,p);
+	}
+}
 @-
 Check barrier should ensure that both end-points of a block for the
 variable referenced in 'pp' exists. In addition, we should ensure
@@ -114,73 +147,86 @@ proper weaveing of the begin-end pairs. This can simply be checked by
 counting the begin/end pairs. It should balance for every block.
 Finally, the destination variable type should be of type 'bit'
 @c
-void chkBarrier(MalBlkPtr mb, InstrPtr pp)
-{	int i, v, begBlk = -1, endBlk = -1, cnt;
-	char buf[1024],*lab;
+int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
+{	int i, v, endBlk= -1,cnt=0;
+	char buf[1024];
 
 	v = pp->argv[0];
-	lab = getVarName(mb,v);
+	if( v>=0)
+	for(i= begBlk+1; i<mb->stop; i++){
+		InstrPtr p= getInstrPtr(mb,i);
+		if( (p->barrier == BARRIERsymbol || 
+		     p->barrier == CATCHsymbol)  &&
+		     p->argv[0] == v){
+			i= chkBrackets(mb,pp,i);
+			continue;
+		} else
+		if( p->token == ENDsymbol && p->argv[0] == v){
+			if(cnt) break;
+			return i;
+		} else
+		if( p->token==ENDsymbol) cnt++;
+		else
+		if( p->token==BARRIERsymbol || p->token==CATCHsymbol) cnt--;
+	}
+	if( cnt!= 0)
+		sprintf(buf,"ERROR:%d: non-hierarchical block structure %s\n",
+			pp->pc,getVarName(mb,v));
+	else sprintf(buf,"ERROR: %d: begin-label '%s' without end-label\n", 
+		begBlk,getVarName(mb,v));
+	GDKerror(buf);
+	mb->errors++;
+	return i;
+}
+void chkBarrier(MalBlkPtr mb, InstrPtr pp)
+{	int i, v, begBlk = -1, endBlk = -1;
+	char buf[1024];
+
+	v = pp->argv[0];
 	if( v>=0)
 	for(i=0; i<mb->stop;i++){
 	InstrPtr p= getInstrPtr(mb,i);
-	if( (p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol) &&
+	if( (p->barrier == BARRIERsymbol ||
+	     p->barrier == CATCHsymbol) &&
 	     p->argv[0] == v){
-		if( begBlk != -1){
+		i = chkBrackets(mb,pp,i);
+	} else
+	if( p->token== ENDsymbol && p->argv[0]==v){
 		mb->errors++;
-		sprintf(buf,"ERROR:%d: duplicate labeled block '%s'\n",
-			i, lab);
+		sprintf(buf,"ERROR:%d: end-label '%s' without begin-label\n", 
+			p->pc,getVarName(mb,v));
 		GDKerror(buf);
-		p->argv[0]= newTmpVariable(mb, malAnyType);
-		} 
-		begBlk = i;
+	} 		
 	}
-	if( p->token == ENDsymbol && p->argv[0] == v){
-		if( endBlk != -1){
-		mb->errors++;
-		sprintf(buf,"ERROR:%d: duplicate labeled block '%s'\n",
-			i, lab);
-		GDKerror(buf);
-		p->argv[0]= newTmpVariable(mb, malAnyType);
-		}
-		endBlk = i;
-	}
-	}
+
 	if( getArgType(mb,pp,0) != TYPE_bit && pp->token==BARRIERsymbol){
 		mb->errors++;
-		sprintf(buf,"ERROR: barrier '%s' should be of type bit\n",
-			getVarName(mb,v));
+		sprintf(buf,"ERROR:%d: barrier '%s' should be of type bit\n",
+			pp->pc,getVarName(mb,v));
 		GDKerror(buf);
 	}
-	if( endBlk<0 && begBlk>=0){
-		mb->errors++;
-		sprintf(buf,"ERROR: begin-label '%s' without end-label\n", 
-			getVarName(mb,v));
-		GDKerror(buf);
-		return;
-	}
-	if( endBlk>=0 && endBlk<begBlk){
-		mb->errors++;
-		sprintf(buf,"ERROR: end-label '%s' before begin-label\n", 
-			getVarName(mb,v));
-		GDKerror(buf);
-		return;
-	}
-	if( pp->token != ENDsymbol) return;
-	/* balance check */
-	cnt =0;
-/* printf("balance check %d %d",begBlk,endBlk);*/
-	for(i= begBlk; i<=endBlk;i++){
+}
+@-
+Loose END-statements should also be catched.
+@c
+void chkEnd(MalBlkPtr mb, InstrPtr pp)
+{	int i, v;
+	char buf[1024];
+
+	v = pp->argv[0];
+	if( v>=0)
+	for(i=0; i<mb->stop;i++){
 	InstrPtr p= getInstrPtr(mb,i);
-	if( p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol ) cnt++;
-	if( p->token == ENDsymbol ) cnt--;
+	if( (p->barrier == BARRIERsymbol ||
+	     p->barrier == CATCHsymbol) &&
+	     p->argv[0] == v){
+		return;
+	} 
 	}
-	if(cnt){
-		mb->errors++;
-		sprintf(buf,"ERROR: BARRIER/CATCH '%s' is not balanced\n",
-			getVarName(mb,v));
-		GDKerror(buf);
-	}
-/* printf(" result %d\n",cnt);*/
+	mb->errors++;
+	sprintf(buf,"ERROR:%d: end-label '%s' without begin-label\n", 
+		pp->pc,getVarName(mb,v));
+	GDKerror(buf);
 }
 @-
 Exception blocks start with a CATCH statement and end with the
@@ -190,10 +236,9 @@ and introduced in any of the visible modules.
 @c
 void chkCatch(MalBlkPtr mb, InstrPtr pp)
 {	int i, v, begBlk = -1, endBlk = -1;
-	char buf[1024],*lab;
+	char buf[1024];
 
 	v = pp->argv[0];
-	lab = getVarName(mb,v);
 	if( v>=0)
 	for(i=0; i<mb->stop;i++){
 	InstrPtr p= getInstrPtr(mb,i);
@@ -204,7 +249,7 @@ void chkCatch(MalBlkPtr mb, InstrPtr pp)
 		if( begBlk == -1){
 		mb->errors++;
 		sprintf(buf,"ERROR:%d: missing start of exception block '%s'\n",
-			i, lab);
+			i, getVarName(mb,v));
 		GDKerror(buf);
 		return;
 		}
@@ -224,10 +269,9 @@ block in which it is being handled.
 @c
 void chkRaise(MalBlkPtr mb, InstrPtr pp)
 {	int i, v, begBlk = -1;
-	char buf[1024],*lab;
+	char buf[1024];
 
 	v = pp->argv[0];
-	lab = getVarName(mb,v);
 	if( v>=0)
 	for(i=0; i<mb->stop;i++){
 		InstrPtr p= getInstrPtr(mb,i);
@@ -247,33 +291,28 @@ void chkRaise(MalBlkPtr mb, InstrPtr pp)
 }
 @-
 
-The chkLabel routine assures that redo, leaves and ends are
+The chkLabel routine assures that REDO, LEAVEs and ENDs are
 properly contained within a single guarded- or iterator- block.
 Thus, upon encountering an error we simply introduce a new variable.
 @c
 void chkLabel(MalBlkPtr mb, InstrPtr pp)
-{	int i,k, begBlk = -1, endBlk = -1;
+{	int i,k, begBlk = -1;
 	char buf[1024];
-	str lab;
 
 	k= pp->argv[0];
-	lab = getVarName(mb,k);
 	for(i=0; i<mb->stop;i++){
 		InstrPtr p= getInstrPtr(mb,i);
 		if( p->barrier == BARRIERsymbol && p->argv[0]==k){
 			begBlk = i;
 		}
-		if( p->token == ENDsymbol && p->argv[0]==k) endBlk = i; 
-	}
-#ifdef DEBUG_MAL_FCN
-	printf("check %s [%d-%d]\n",lab,begBlk,endBlk);
-#endif
-	if( begBlk>= 0 && endBlk>=0  ){
-		if(pp->pc >=begBlk && pp->pc<=endBlk) return;
+		if( p->token == ENDsymbol && p->argv[0]==k) {
+			if( begBlk>=0 && pp->pc >=begBlk && pp->pc<=i) return;
+			begBlk= -1;
+		}
 	}
 	mb->errors++;
 	sprintf(buf,"ERROR:%d:label '%s' not in guarded block\n",
-		pp->pc,lab);
+		pp->pc,getVarName(mb,k));
 	GDKerror(buf);
 }
 @-
@@ -324,7 +363,7 @@ Each time such a MAL routine is called, a complete copy of
 the polymorphic routine is generated, whereafter the type
 variables are replaced with concrete types.
 
-Commands should not be cloned, because the alternative interpretations
+Patterns should not be cloned, because the alternative interpretations
 are handled by the underlying code fragments.
 
 The function body should be immediately type checked and if
@@ -338,8 +377,15 @@ Replace a particular variable, indexed by v
 @c
 void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
 	int i,x;
-	for(i=0;i<p->argc; i++){
+#ifdef DEBUG_MAL_FCN
+	printf("replace type variable %d by type %d\n",v,t);
+#endif
+	for(i=0;i<p->argc; i++)
+	if( isPolymorphicArgument(mb,p,i)) {
 		x = getArgType(mb,p,i);
+#ifdef DEBUG_MAL_FCN
+		printf(" %d x= %d\n",i,x);
+#endif 
 		if( isBatType(x)){
 			int head,tail;
 			int hx,tx;
@@ -373,7 +419,6 @@ Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 
 	/* printf("clone the function %s\n",proc->name);*/
 	new= newFunction(scope,proc->name);
-	insertSymbol(scope,new);
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 	pp = getSignature(new);
@@ -390,13 +435,11 @@ Symbol 	cloneFunction(Symbol scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 			replaceTypeVar(new->def, pp, getTailIndex(v), tail);
 		} else
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
-	}
+	} /* else printf("%d is %d\n",i,getArgType(mb,pp,i));*/
 	/* check for errors after fixation , TODO*/
 	/* include the function at the proper place in the scope */
 
-	i= getSubScope(mb,p);
-	new->peer = scope->subscope[i];
-	scope->subscope[i] = new;
+	insertSymbol(scope,new);
 #ifdef DEBUG_MAL_FCN
 	printf("newly cloned function added to %s %d \n",scope->name,i);
 	printFunction(stdout,new->def);
@@ -414,12 +457,10 @@ The routines below ensure safeguarding  and restoring the state.
 @c
 void	safeFunction(Symbol proc){
 #ifdef DEBUG_MAL_FCN
-	printf("safeFunction %s\n", proc->name);
 #endif
 }
 void	restoreFunction(Symbol proc){
 #ifdef DEBUG_MAL_FCN
-	printf("restoreFunction %s\n", proc->name);
 #endif
 }
 @-
@@ -437,4 +478,3 @@ void printFunction(FILE *fd, MalBlkPtr mb){
 	for(i=0;i<mb->stop;i++)
 	printInstruction(fd,mb, getInstrPtr(mb,i));
 }
-

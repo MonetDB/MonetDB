@@ -1,0 +1,87 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## A collection of forloops, which should not execute
+#barrier	H := batoperatie;
+#	Tail:= bat.fetch(b,H);
+#	#body
+#redo 	H;
+#end	H;
+#
+#
+## de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot
+## 'randen' van het blok. (redo L, leave L)
+## een while loop
+#barrier L := bat.hasMoreElements(b);
+#	H:= bat.head(b);
+#	v:= bat.nextElement(b);
+#redo	L;
+#end	L;
+#	
+##een do-while loop
+#	entry:= true;
+#barrier M:= entry_or_exittest;
+#	entry:= false;
+#	# rest
+#redo	M;
+#end	M;
+#
+##een for-loop 
+#	i:= 1;
+#barrier N:= i<10;
+#	#body
+#	i:=i+1;
+#redo	N;
+#end	N;
+#
+#
+## de if-then en if-then-else constructies
+#
+#barrier	FT:= booleanexpr;
+#	# thenpart
+#end	FT;
+#
+#barrier	FTE:= booleanexpr;
+#	# thenpart
+#end	FTE;
+#barrier FS:= ~ FTE;
+#	#elsepart
+#end	FS;
+#
+#
+#
+FUNCTION Service.main():int;	#0:(main:int->0)
+BARRIER	H := batoperatie;	#1 dynamic:(H:any->2)(batoperatie:any->1)
+	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any->4)(b:any->3)(H:any->2)
+	REDO H ;	#3:(H:any->2)
+END	H;	#4:(H:any->2)
+BARRIER	L := bat.hasMoreElements(b);	#5 unknown:(L:any->5)(b:any->3)
+	H := bat.head(b);	#6 unknown:(H:any->2)(b:any->3)
+	v := bat.nextElement(b);	#7 unknown:(v:any->6)(b:any->3)
+	REDO L ;	#8:(L:any->5)
+END	L;	#9:(L:any->5)
+	entry := true;	#10:(entry:bit->8)($7:bit->7)
+BARRIER	M := entry_or_exittest;	#11 dynamic:(M:any->10)(entry_or_exittest:any->9)
+	entry := false;	#12:(entry:bit->8)($11:bit->11)
+	REDO M ;	#13:(M:any->10)
+END	M;	#14:(M:any->10)
+	i := 1;	#15:(i:int->13)($12:int->12)
+BARRIER	N := arith.<(i,10);	#16:(N:bit->15)(i:int->13)($14:int->14)
+	i := arith.+(i,1);	#17:(i:int->13)(i:int->13)($12:int->12)
+	REDO N ;	#18:(N:bit->15)
+END	N;	#19:(N:bit->15)
+BARRIER	FT := booleanexpr;	#20 dynamic:(FT:any->17)(booleanexpr:any->16)
+END	FT;	#21:(FT:any->17)
+BARRIER	FTE := booleanexpr;	#22 dynamic:(FTE:any->18)(booleanexpr:any->16)
+END	FTE;	#23:(FTE:any->18)
+BARRIER	FS := ~(FTE);	#24 unknown:(FS:any->19)(FTE:any->18)
+END	FS;	#25:(FS:any->19)
+END FUNCTION;	#26:
+CATCH ERROR MALexception:Service.main[2]:Instruction type not fixed
+
+MALexception:Service.main[2]:Instruction type not fixed

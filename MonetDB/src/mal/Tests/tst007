@@ -1,6 +1,6 @@
 # A collection of forloops, which should not execute
-foreach	H := batoperatie;
-	Tail:= b.fetch(H);
+barrier	H := batoperatie;
+	Tail:= bat.fetch(b,H);
 	#body
 redo 	H;
 end	H;
@@ -9,16 +9,15 @@ end	H;
 # de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot
 # 'randen' van het blok. (redo L, leave L)
 # een while loop
-barrier L := b.hasMoreElements();
-	H:= b.head();
-
-	v:= b.nextElement();
+barrier L := bat.hasMoreElements(b);
+	H:= bat.head(b);
+	v:= bat.nextElement(b);
 redo	L;
 end	L;
 	
 #een do-while loop
 	entry:= true;
-barrier M:= entry or exittest;
+barrier M:= entry_or_exittest;
 	entry:= false;
 	# rest
 redo	M;
