@@ -9,147 +9,147 @@ import string
 import time
 
 #############################################################################
-#	FUNCTIONS
+#       FUNCTIONS
 
 def Usage(THISFILE) :
-	print('''
+    print('''
 
 Usage:  %s [-I<exp>] <files>
 
- -I<exp> : ignore lines matching <exp> during first count (optional, default: -I'^#`)
- <files> : list of files to be processed
+-I<exp> : ignore lines matching <exp> during first count (optional, default: -I'^#`)
+<files> : list of files to be processed
 
 ''' % THISFILE)
 ### Usage(THISFILE) #
 
 def Warn(THISFILE,TEXT) :
-	sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
+    sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
 ### Warn(THISFILE,TEXT) #
 
 def mFilter (FILE, IGNORE) :
-	fin = open(FILE, "r")
-	LINE = fin.readline()
-	while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
-		LINE = fin.readline()
-	fin.close()
-	if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
-		WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE).groups()
-	else:
-		WHAT, TST, TSTDIR = "", "", ""
+    fin = open(FILE, "r")
+    LINE = fin.readline()
+    while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
+        LINE = fin.readline()
+    fin.close()
+    if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
+        WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE).groups()
+    else:
+        WHAT, TST, TSTDIR = "", "", ""
 
-	test = 	re.compile(IGNORE) , \
-		re.compile( "^Mdestroydb: processing database ..*. in "			+ "|"	\
-			  + "^Mcreatedb: processing database ..*. in "			+ "|"	\
-			  + "^Mcreatedb: using default dbdir "				+ "|"	\
-			  + "^Mcreatedb: calling .Mserver .*-db .* for the first time..$"	+ "|"	\
-			  + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"	\
-			  + "^module\(mprof\);$"					+ "|"	\
-			  + "^pm([BE]\(\"(global_.+|[a-zA-Z0-9_]+[0-9])\"\)|Summary\(\));$"		+ "|"	\
-			  + "^printf\(\"#~BeginProfilingOutput~#\\\\n\"\);$"		+ "|"	\
-			  + "^connection= .*:[0-9]*$"					+ "|"	\
-			  + "^Connecting to server: localhost:[0-9]*$"			+ "|"	\
-			  + "^server listening on port [0-9]*$"				) ,	\
-		re.compile( "^!ERROR: DL_open: Unknown error.$"			+ "|"	\
-			  + "^!ERROR: DL_open: library not found \(STATIC\).$"		) , 	\
-		re.compile( "^!ERROR: TBL_loadmod: module load .* cancelled.$"	) ,	\
-		re.compile( "^!ERROR: module\(.*\): load error.$"		)
+    test =  re.compile(IGNORE) , \
+            re.compile( "^Mdestroydb: processing database ..*. in "                 + "|"   \
+                      + "^Mcreatedb: processing database ..*. in "                  + "|"   \
+                      + "^Mcreatedb: using default dbdir "                          + "|"   \
+                      + "^Mcreatedb: calling .Mserver .*-db .* for the first time..$"       + "|"   \
+                      + "^Mcreatedb: database .* has been initialized succesfully!$"+ "|"   \
+                      + "^module\(mprof\);$"                                        + "|"   \
+                      + "^pm([BE]\(\"(global_.+|[a-zA-Z0-9_]+[0-9])\"\)|Summary\(\));$"             + "|"   \
+                      + "^printf\(\"#~BeginProfilingOutput~#\\\\n\"\);$"            + "|"   \
+                      + "^connection= .*:[0-9]*$"                                   + "|"   \
+                      + "^Connecting to server: localhost:[0-9]*$"                  + "|"   \
+                      + "^server listening on port [0-9]*$"                         ) ,     \
+            re.compile( "^!ERROR: DL_open: Unknown error.$"                 + "|"   \
+                      + "^!ERROR: DL_open: library not found \(STATIC\).$"          ) ,     \
+            re.compile( "^!ERROR: TBL_loadmod: module load .* cancelled.$"  ) ,     \
+            re.compile( "^!ERROR: module\(.*\): load error.$"               )
 
-	#		  + "^!WARNING: TCPlisten\([0-9]*\): stopped.$"			+ "|"	\
-	#		  + "^!WARNING: TCPepilogue: terminate [01] listeners$" 	+ "|"	\
+    #                 + "^!WARNING: TCPlisten\([0-9]*\): stopped.$"                 + "|"   \
+    #                 + "^!WARNING: TCPepilogue: terminate [01] listeners$"         + "|"   \
 
-	ftmp = []
-	ig = n = 0
-	il = iw = ic = al = aw = ac = 0
-	for iline in fileinput.input(FILE):
-		oline = xline = ""
-		if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
-			ig = 1
-			n = 0
-		if ig  and  ( len(iline) == 0  or  iline[0] != "!" ):
-			oline = "#~ " + iline
-			n = n + 1
-		elif test[1].match(iline):
-			oline = "#~ " + iline
-		elif len(ftmp) > 2  		and \
-		     test[4].match(iline)	and \
-		     test[3].match(ftmp[-1])	and \
-		     test[2].match(ftmp[-2]):
-			oline = iline
-			for i in -1, -2:
-				w = len(string.split(ftmp[i]))
-				c = len(ftmp[i])
-				il = il - 1
-				iw = iw - w
-				ic = ic - c
-				ftmp[i] = "#~ " + ftmp[i]
-		#TODO
-		# properly solve this "hack" to make diff on NT ignore so-called
-		# empty lines which actually contain a '\r' (i.e., '^M'=='')
-		elif iline == os.linesep  or  iline == "\n":
-			oline = "#" + iline
-		else:
-			oline = iline
-		if iline == "#~EndVariableOutput~#\n":
-			ig = 0
-			xline = "~ " + str(n) + " ~\n"
-		if iline == "#~EndProfilingOutput~#\n":
-			ig = 0
-		for ln in oline, xline:
-			if len(ln):
-				w = len(string.split(ln))
-				c = len(ln)
-				if ln != os.linesep  and  \
-				   not test[0].match(ln):
-					il = il + 1
-					iw = iw + w
-					ic = ic + c
-				al = al + 1
-				aw = aw + w
-				ac = ac + c
-				ftmp.append(ln)
+    ftmp = []
+    ig = n = 0
+    il = iw = ic = al = aw = ac = 0
+    for iline in fileinput.input(FILE):
+        oline = xline = ""
+        if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
+            ig = 1
+            n = 0
+        if ig  and  ( len(iline) == 0  or  iline[0] != "!" ):
+            oline = "#~ " + iline
+            n = n + 1
+        elif test[1].match(iline):
+            oline = "#~ " + iline
+        elif len(ftmp) > 2              and \
+             test[4].match(iline)       and \
+             test[3].match(ftmp[-1])    and \
+             test[2].match(ftmp[-2]):
+            oline = iline
+            for i in -1, -2:
+                w = len(string.split(ftmp[i]))
+                c = len(ftmp[i])
+                il = il - 1
+                iw = iw - w
+                ic = ic - c
+                ftmp[i] = "#~ " + ftmp[i]
+        #TODO
+        # properly solve this "hack" to make diff on NT ignore so-called
+        # empty lines which actually contain a '\r' (i.e., '^M'=='')
+        elif iline == os.linesep  or  iline == "\n":
+            oline = "#" + iline
+        else:
+            oline = iline
+        if iline == "#~EndVariableOutput~#\n":
+            ig = 0
+            xline = "~ " + str(n) + " ~\n"
+        if iline == "#~EndProfilingOutput~#\n":
+            ig = 0
+        for ln in oline, xline:
+            if len(ln):
+                w = len(string.split(ln))
+                c = len(ln)
+                if ln != os.linesep  and  \
+                   not test[0].match(ln):
+                    il = il + 1
+                    iw = iw + w
+                    ic = ic + c
+                al = al + 1
+                aw = aw + w
+                ac = ac + c
+                ftmp.append(ln)
 
-	fout = open(FILE + ".FILTERED", "w")
-	if (al > 0) or (aw > 0) or (ac >0):
-		fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
-		fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '%s|^$`\n" % (il,iw,ic,IGNORE))
-		fout.write("# %9d lines, %9d words, %9d chars   in all lines\n" % (al,aw,ac))
-		fout.write("\n")
-		for ln in ftmp:
-			fout.write(ln)
-		fout.flush()
-	fout.close()
-	if os.name == "nt":
-		time.sleep(1)
+    fout = open(FILE + ".FILTERED", "w")
+    if (al > 0) or (aw > 0) or (ac >0):
+        fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
+        fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '%s|^$`\n" % (il,iw,ic,IGNORE))
+        fout.write("# %9d lines, %9d words, %9d chars   in all lines\n" % (al,aw,ac))
+        fout.write("\n")
+        for ln in ftmp:
+            fout.write(ln)
+        fout.flush()
+    fout.close()
+    if os.name == "nt":
+        time.sleep(1)
 ### mFilter (FILE, IGNORE) #
 
 #############################################################################
-#	MAIN
+#       MAIN
 
 def main(argv) :
-	THISFILE = os.path.basename(argv[0])
-	try:
-		opts, args = getopt.getopt(argv[1:], "?hI:", ["help"])
-	except getopt.GetoptError:
-		Usage(THISFILE)
-		sys.exit(1)
+    THISFILE = os.path.basename(argv[0])
+    try:
+        opts, args = getopt.getopt(argv[1:], "?hI:", ["help"])
+    except getopt.GetoptError:
+        Usage(THISFILE)
+        sys.exit(1)
 
-	IGNORE = "^#"
-	for o, a in opts:
-		if o in ("-?", "-h", "--help"):
-			Usage(THISFILE)
-			sys.exit(0)
-		if o == "-I":
-			IGNORE = a
+    IGNORE = "^#"
+    for o, a in opts:
+        if o in ("-?", "-h", "--help"):
+            Usage(THISFILE)
+            sys.exit(0)
+        if o == "-I":
+            IGNORE = a
 
-	for f in args:
-		if os.path.isfile(f):
-			mFilter(f, IGNORE)
-	 	else:	
-	 		Warn(THISFILE, "file missing: " + f)
+    for f in args:
+        if os.path.isfile(f):
+            mFilter(f, IGNORE)
+        else:
+            Warn(THISFILE, "file missing: " + f)
 ### main(argv) #
 
 if __name__ == "__main__":
-	main(sys.argv)
+    main(sys.argv)
 
-#	END
+#       END
 #############################################################################
