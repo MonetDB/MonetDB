@@ -45,10 +45,7 @@ def msc_list2string(l,pre,post):
     return res
 
 def msc_subdirs(fd, var, values, msc ):
-    o = ""
-    for v in values:
-        o = o + " " + v
-    fd.write("%s = %s\n" % (var,o) )
+    fd.write("%s = %s\n" % (var,string.join(values)))
     fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
     for v in values:
         fd.write("%s-all: %s %s\\Makefile\n" % (v,v,v))
@@ -216,7 +213,7 @@ def msc_deps(fd,deps,objext, msc):
             t = msc_translate_ext(tar)
             b,ext = split_filename(t)
             tf = msc_translate_file(t,msc)
-            fd.write( tf + ":" )
+            sep = tf + ": "
             _in = []
             for d in deplist:
                 if not os.path.isabs(d):
@@ -225,11 +222,15 @@ def msc_deps(fd,deps,objext, msc):
                         if dep not in msc['_IN']:
                             _in.append((d[:-3],dep))
                         dep = d[:-3]
-                    if (dep != t):
-                        fd.write( " " + dep)
+                    if dep != t:
+                        fd.write(sep + dep)
+                        sep = " "
                 else:
                     print("!WARNING: dropped absolute dependency " + d ) 
-            fd.write("\n")
+            if sep == " ":
+                fd.write("\n")
+                if tf+'.mx.in' in deplist:
+                    fd.write('\t$(MX) $(MXFLAGS) -x sh %s.mx\n' % tf)
             for x,y in _in:
                 # TODO
                 # replace this hack by something like configure ...
@@ -267,8 +268,8 @@ def msc_deps(fd,deps,objext, msc):
                 fd.write( "\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t,b) )
             if (ext == "obj" or ext == "glue.obj" or ext == "tab.obj" or ext == "yy.obj"):
                 target,name = msc_find_target(tar,msc)
-		if (name[0] == '_'):
-			name = name[1:] 
+                if (name[0] == '_'):
+                    name = name[1:] 
                 if (target == "LIB"):
                     d,dext = split_filename(deplist[0])
                     if (dext == "c" or dext == "glue.c"):
@@ -289,11 +290,14 @@ def msc_scripts(fd, var, scripts, msc):
 
     for script in scripts['TARGETS']:
         if os.path.isfile(os.path.join(msc['cwd'],script+'.in')):
-            # TODO
-            # replace this hack by something like configure ...
-            fd.write("%s: $(SRCDIR)\\%s.in\n" % (script,script))
-            fd.write("\tif exist $(SRCDIR)\\%s.in $(CONFIGURE) $(SRCDIR)\\%s.in > %s\n" % (script,script,script) )
-        else:
+            inf = '$(SRCDIR)\\%s.in' % script
+            if inf not in msc['_IN']:
+                # TODO
+                # replace this hack by something like configure ...
+                fd.write("%s: %s\n" % (script,inf))
+                fd.write("\tif exist %s $(CONFIGURE) %s > %s\n" % (inf,inf,script) )
+                msc['_IN'].append(inf)
+        elif os.path.isfile(os.path.join(msc['cwd'],script)):
             fd.write("%s: $(SRCDIR)\\%s\n" % (script,script))
             fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script,script,script) )
         msc['INSTALL'].append((script,script,'',sd))
@@ -635,7 +639,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
                  'smallTOC_SHARED_MODS' : msc_mods_to_libs,
                  'largeTOC_SHARED_MODS' : msc_mods_to_libs,
                  'HEADERS' : msc_headers,
-		 'JAR' : msc_jar,
+                 'JAR' : msc_jar,
                 }
 
 def output(tree, cwd, topdir):
@@ -665,7 +669,8 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H $(INCLUDES)
+CXXFLAGS = $(CFLAGS)
 
 CXXEXT = \\\"cxx\\\"
 
@@ -687,9 +692,6 @@ CXXEXT = \\\"cxx\\\"
     msc['cwd'] = cwd
     msc['DEPS'] = []
     msc['_IN'] = []
-
-    fd.write("CFLAGS = $(CFLAGS) $(INCLUDES)\n" )
-    fd.write("CXXFLAGS = $(CFLAGS)\n" )
 
     prefix = os.path.commonprefix([cwd,topdir])
     d = cwd[len(prefix):]
@@ -799,11 +801,11 @@ CXXEXT = \\\"cxx\\\"
                 fd.write("\tif not exist %s $(MKDIR) %s\n" % (dir,dir) )
                 td.append(dir)
 
-    #fd.write("install-data:")
+    fd.write("install-data:")
     #if (len(msc['HDRS']) > 0):
         #if (len(name) > 0):
             #fd.write(" install-%s" % (v) )
             #for v in msc['HDRS']:
             #fd.write("%sincludedir = $(includedir)/%s\n" % (name,name))
         #fd.write("%sinclude_HEADERS = %s\n" % (name,am_list2string(am['HDRS']," ","")))
-    #fd.write("\n")
+    fd.write("\n")
