@@ -312,6 +312,8 @@ def am_headers(fd, var, headers, am):
 
     am_find_ins(am, headers)
     am_deps(fd, headers['DEPS'], "\.o", am)
+    for src in headers['SOURCES']:
+            am['EXTRA_DIST'].append(src)
 
 def am_doc(fd, var, docmap, am):
 
