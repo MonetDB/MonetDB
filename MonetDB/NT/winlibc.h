@@ -69,7 +69,7 @@ struct passwd {
 #define S_ISCHR(mode)		1
 
 #define link rename
-
+#define setenv SetEnvironmentVariableA
 #define RUSAGE_SELF = 1
 
 /* Structure which says how much of each resource has been used.  */
@@ -148,8 +148,8 @@ struct tms
 #define rand_r( _seed ) \
         rand()
 
-#define mrand48  (long)rand()
-#define drand48  (double)rand()
+#define mrand48()  (long)rand()
+#define drand48()  (double)rand()
 
 /* not for cplusplus else problems with open and close of streams */
 #ifndef  __cplusplus
