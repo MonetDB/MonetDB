@@ -71,9 +71,9 @@ EOT
  function newLOGFILE2 () { export LOGFILE=$1 ; echo -n "" | tee $LOGFILE.{out,err} > /dev/null ; }
  function newLOGFILE1 () { export LOGFILE=$1 ; echo -n "" | tee $LOGFILE.OutErr    > /dev/null ; }
 
-function Warn () { echo "$THISFILE WARNING: $*" | tee -a $LOGFILE.{out,err} >&2 ; }
+function Warn () { echo -e "$THISFILE (`date +%H:%M:%S`) WARNING: $*" | tee -a $LOGFILE.{out,err} >&2 ; }
 
-function ErrMsg () { echo "$THISFILE ERROR: $*" | tee -a $LOGFILE.* >&2 ; }
+function ErrMsg () { echo -e "! $THISFILE ERROR: $*" | tee -a $LOGFILE.* >&2 ; }
 
 function ErrXit () { if [ "$*" ] ; then  ErrMsg "$*" ; fi ; rm -f $TMPDIR/.$THISFILE.* ; exit 1 ; }
 
@@ -1015,7 +1015,7 @@ function M_Master () {
 	if [ $THISFILE = Mtest ] ; then
 		CHECK $MCREATEDB -db Tests
 		MERROR=`echo 'quit;' | ( $MSERVER -db Tests || echo '!Exit 1' ) | grep '^!'`
-		if [ "$MERROR" ] ; then  ErrXit "'$MSERVER -db Tests\` fails with: $MERROR" ; fi
+		if [ "$MERROR" ] ; then  ErrXit "'$MSERVER -db Tests\` fails with:\n$MERROR" ; fi
 		export TSTMODS="`GetModules`" ; LOG1 $TSTMODS
 	fi
 	CALLDIR=$PWD
