@@ -34,7 +34,7 @@ lib_monetdb = {
 	NAME = monetdb
 	SOURCES = php_monetdb.h php_monetdb.c
 	LIBS = ../../C/libMapi $(MAPI_LIBS)
-	DIR = @PHP_EXTENSIONDIR@
+        DIR = pkgdatadir/php
 }
 
 # scripts_php = {
