@@ -317,7 +317,8 @@ grant_func( mvc *sql, sql_schema *cur, dlist *privs, char *fname,
 	(void)grantees;
 	(void)grant;
 	(void)grantor;
-	return NULL;
+	return sql_error(sql, 02, 
+		 "GRANT Table/Function name %s doesn't exist", fname);
 }
 
 
@@ -345,7 +346,7 @@ static stmt *grant_privs(mvc *sql, sql_schema *cur,
 	default: 
 		return sql_error(sql, 02, "Grant: unknown token %d", token );
 	}
-	return NULL;
+	return sql_error(sql, 02, "Grant: unknown token %d", token );
 }
 	
 static stmt *
