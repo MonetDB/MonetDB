@@ -27,9 +27,8 @@ But a database system needs more that just this algebra, since often it
 is crucial to do table-updates (this would not be permitted in a strict
 algebra).
 
-All commands needed for BAT updates, property management,
-search accelerator management, basic I/O, persistence, and storage options
-can be found in this module.
+All commands needed for BAT updates, property management, basic I/O, 
+persistence, and storage options can be found in this module.
 
 All parameters to the modules are passed by reference.
 In particular, this means that string values are passed to the module
@@ -121,15 +120,12 @@ have the first character of their named replaced by 't' (@emph{sorted}, @emph{td
 [ "hsorted",         "1"          ] # column is known to be sorted
 [ "hdense",          "1"          ] # column is known to be densely ascended
 [ "hseqbase",        "0@0"        ] # if densely ascending first value
-[ "hacctype",        "null"       ] # name of user-defined accelerator
-[ "hindex",          "absent"     ] # built-in accelerator:hash or index 
 @end verbatim
 
 As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
 BATs store their data in one to five heaps, of which at least one called @emph{batBuns}
 is present always. For each column type that is @emph{variable-sized} - like @emph{str} - another
-heap might be present (@emph{hheap} and @emph{theap}). If a column has a user-defined search
-accelerator, more heaps may be present ((@emph{haccelerator} and @emph{taccelerator}).
+heap might be present (@emph{hheap} and @emph{theap}). 
 
 @verbatim
 [ "batBuns.free",    "400004"     ] # occupied size in bytes
@@ -499,15 +495,6 @@ then the fixed-size part of a BUN contains an integer byte-offset into
 the heap. String values themself are stored in this the X.hheap.
 @item[X.theap] 
     similar to X.hheap, but for the tail column.
-@item[X.hacc]. 
-    On each column, you might create @emph{persistent accelerator
-structures}. Monet has two built-in accelerators (index and hash), but they
-are normally constructed on the fly. They are transient. Only hash-tables
-you can be made persistent. User-defined accelerators are always persistent.
-Only one persistent accelerator can exist per head column. It is stored in
-the X.hacc heap.
-@item[X.tacc] 
-    similar to X.hacc, but for the tail column.
 @item[X.desc] 
 the BAT descriptor. Stores most of the properties of a BAT.
 @end table
@@ -553,51 +540,6 @@ command madvise(b:bat[:any,:any], mode:int):bit
 address BKCmadvise2
 comment "alias for madvise(b,mode,mode,mode, mode,mode)";
 
-@- BAT Accelerators
-[WILL BECOME OBSOLETE]
-Search accelerators are datastructures that are used to speed up
-access to data in BATs. Monet comes with the builtin accelerators
-@emph{index}, meaning binary tree index, and @emph{hash} meaning
-bucket-chained hash table. The extension facilities of Monet allow
-more accelerators to be defined by users. Exanples are the @emph{rtree}
-and @emph{datavector}.
-
-@verbatim
->monet_acctbl.print;
-#-------------------------#
-# h             | t       #
-#-------------------------#
-[ "hash",         1       ]
-[ "index",        2       ]
-@end verbatim
-@
-More info on how to write new search accelerators can be found in the
-@[<a href="../mel.html">MEL documentation</a>@.
-@mal
-command accbuild(b:bat[:any,:any], acctype:str):bit 
-address BKCaccbuild_std
-comment "Build an accelerator on the head column of b. The builtin accelerator
- types index and hash will be created as transient accelerators. They
- will not be saved on disk. User-defined accelerators must always be
- persistent." ;
-
-command accbuild(b:bat[:any,:any], acctype:int, param:ptr):int 
-address BKCaccbuild
-comment "like accbuild(bat[:any,:any] b, int acctype), but with a parameter that
- is provide to the specific accelerator build routine.";
-
-command accdestroy(b:bat[:any,:any], acctype:int) 
-address BKCaccdestroy
-comment "Destroy the accelerator of type 'acctype'  that is present on
-	the head-type of b.";
-
-command accpresent(b:bat[:any,:any] ) :int 
-address BKCaccpresent
-comment "Returns the accelerator type of the *persistent* accelerator 
-        present on the head column of b. Note that index and hash 
-        accelerators are generally *not* persistent, and will not be 
-	returned by this function!";
- 
 command setHash(b:bat[:any,:any],prop:bit):bit 
 address BKCsetHash;
 

@@ -304,9 +304,9 @@ if (sz > *minsize) {
 @c
 
 str SYSmem_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0, hind=0;
-	lng tind=0, head=0, tail=0, hacc=0;
-	lng tacc=0, tot=0, n=0, sz;
+	lng buns=0, hhsh=0, thsh=0;
+	lng head=0, tail=0;
+	lng tot=0, n=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
 	bat i;
@@ -338,8 +338,6 @@ str SYSmem_usage(int *ret, lng *minsize) {
 		@:heap(mem,b->thash_heap,thsh)@
 		@:heap(mem,&b->hheap,head)@
 		@:heap(mem,&b->theap,tail)@
-		@:heap(mem,&b->haccelerator,hacc)@
-		@:heap(mem,&b->taccelerator,tacc)@
 	} 
 	/* totals per category */
 	if (buns) BUNins(bn, "_tot/buns", &buns);
@@ -347,10 +345,6 @@ str SYSmem_usage(int *ret, lng *minsize) {
 	if (tail) BUNins(bn, "_tot/tail", &tail);
 	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
 	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
-	if (hind) BUNins(bn, "_tot/hind", &hind);
-	if (tind) BUNins(bn, "_tot/tind", &tind);
-	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
-	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
 
 	/* special area 1: BBP rec */
 	sz = BBPlimit*sizeof(BBPrec) + n;
@@ -389,8 +383,8 @@ str SYSmemMap() {
 
 
 str SYSvm_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0, hind=0;
-	lng tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
+	lng buns=0, hhsh=0, thsh=0;
+	lng head=0, tail=0, tot=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
 	bat i;
@@ -407,8 +401,6 @@ str SYSvm_usage(int *ret, lng *minsize) {
 		@:heap(vm,b->thash_heap,thsh)@
 		@:heap(vm,&b->hheap,head)@
 		@:heap(vm,&b->theap,tail)@
-		@:heap(vm,&b->haccelerator,hacc)@
-		@:heap(vm,&b->taccelerator,tacc)@
 	} 
 	/* totals per category */
 	if (buns) BUNins(bn, "_tot/buns", &buns);
@@ -416,10 +408,6 @@ str SYSvm_usage(int *ret, lng *minsize) {
 	if (tail) BUNins(bn, "_tot/tail", &tail);
 	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
 	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
-	if (hind) BUNins(bn, "_tot/hind", &hind);
-	if (tind) BUNins(bn, "_tot/tind", &tind);
-	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
-	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
 
 	/* special area 1: BBP rec */
 	sz = BBPmaxsize*sizeof(BBPrec);
