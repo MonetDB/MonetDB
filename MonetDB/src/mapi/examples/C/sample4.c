@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv){
 	Mapi	dbh;
-	int    rows, l;
+	int    rows;
 
 	if( argc != 3){
 		printf("usage:%s <host>:<port> <language>\n",argv[0]);
@@ -34,8 +34,8 @@ int main(int argc, char **argv){
 		if( mapi_query(dbh,"print(emp);") != MOK) die(dbh);
 	}
 
-	l= mapi_fetch_all_rows(dbh);
-	printf("rows received %d\n",l);
+	rows= mapi_fetch_all_rows(dbh);
+	printf("rows received %d\n",rows);
 	while( mapi_fetch_row(dbh)){
 		char *nme = mapi_fetch_field(dbh,0);
 		char *age = mapi_fetch_field(dbh,1);
