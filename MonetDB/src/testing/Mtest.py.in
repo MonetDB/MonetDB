@@ -1899,6 +1899,7 @@ def mapi_ping(port) :
     	try:
             	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             	sock.connect((host, port))
+		sock.makefile('w').write("ping\n");
 		return True
         except socket.error, (Serrno,Serrstr):
             pass

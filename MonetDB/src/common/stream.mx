@@ -1045,51 +1045,63 @@ append_wastream(const char *filename)
 static ssize_t
 socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	size_t size = elmsize*cnt;
-	ssize_t sz;
+	ssize_t nr = 0, res = 0, size = elmsize*cnt;
 
 	if (s->errnr)
 		return -1;
 	
 	if (size == 0 || elmsize == 0)
 		return cnt;
+
+	while (res < size && (
 #ifdef NATIVE_WIN32
-	sz = send(s->stream_data.i, buf, size, 0);
+		((nr = send(s->stream_data.i, (void *) ((char *) buf + res), size-res, 0)) > 0)
 #else
-	sz = write(s->stream_data.i, buf, size);
+		((nr = write(s->stream_data.i, (void *) ((char *) buf + res), size-res)) > 0)
 #endif
-	if (sz > 0)
-		return sz / elmsize;
-	if (sz < 0)
+		|| errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+	) {
+		errno = 0;
+		if (nr > 0)
+			res += nr;
+	}
+	if (nr < 0) { 
 		s->errnr = WRITE_ERROR;
-	return sz;
+		return nr;
+	}
+	if (res > 0)
+		return res / elmsize;
+	s->errnr = WRITE_ERROR;
+	return -1;
 }
 
 static ssize_t
 socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	ssize_t nr = 0;
-	size_t res = 0, size = elmsize*cnt;
+	ssize_t nr = 0, res = 0, size = elmsize*cnt;
 
 	if (s->errnr)
 		return -1;
 	
 	while (res < size && (
 #ifdef NATIVE_WIN32
-		(nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size-res, 0)) > 0
+		((nr = recv(s->stream_data.i, (void *) ((char *) buf + res), size-res, 0)) > 0)
 #else
-		(nr = read(s->stream_data.i, (void *) ((char *) buf + res), size-res)) > 0
+		((nr = read(s->stream_data.i, (void *) ((char *) buf + res), size-res)) > 0)
 #endif
-		|| errno == EAGAIN)
+		|| errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
 	) {
-		res += nr;
+		errno = 0;
+		if (nr > 0)
+			res += nr;
 	}
 	if (nr < 0) {
 		s->errnr = READ_ERROR;
 		return nr;
 	}
-	if (res)
+	if (res > 0)
 		return res / elmsize;
+	s->errnr = READ_ERROR;
 	return 0;
 }
 
@@ -1109,10 +1121,8 @@ socket_close(stream *s)
 		 * created.
 		 */
 		if (s->access == ST_READ) {
-			shutdown(fd, SHUT_RD);
+			shutdown(fd, SHUT_RDWR);
 			close(fd);
-		} else {
-			shutdown(fd, SHUT_WR);
 		}
 	}
 	s->stream_data.i = -1;
@@ -1134,29 +1144,40 @@ socket_open(int socket, const char *name)
 #ifdef SO_KEEPALIVE
 	{
 		int opt = 0;
-		setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt,
-			   sizeof(opt));
+		if (setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt,
+			   sizeof(opt)) < 0) {
+			s->errnr = OPEN_ERROR;
+			return s;
+		}
 	}
 #endif
 #ifdef IPTOS_THROUGHPUT
 	{
 		int tos = IPTOS_THROUGHPUT;
-		setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos,
-			   sizeof(tos));
+		if (setsockopt(socket, IPPROTO_IP, IP_TOS, (void *) &tos,
+			   sizeof(tos)) < 0) {
+			s->errnr = OPEN_ERROR;
+			return s;
+		}
 	}
 #endif
 #ifdef TCP_NODELAY
 	{
 		int nodelay = 1;
-		setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
-			   sizeof(nodelay));
+		if (setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay)) < 0) {
+			s->errnr = OPEN_ERROR;
+			return s;
+		}
 	}
 #endif
 #ifndef NATIVE_WIN32
 	{
 		int fl = fcntl(socket, F_GETFL);
-		fl &= ~O_NONBLOCK;
-		fcntl(socket, F_SETFL, fl);
+		fl |= O_NONBLOCK;
+		if (fcntl(socket, F_SETFL, fl) < 0) {
+			s->errnr = OPEN_ERROR;
+			return s;
+		}
 	}
 #endif
 
@@ -1857,7 +1878,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	if (s->itotal == 0) {
 		/* There is nothing more to read in the current block,
 		   so read the count for the next block */
-		int nr;
+		int nr = 0;
 
 		if (s->nr) {
 			/* We read the 0 count of the closing block

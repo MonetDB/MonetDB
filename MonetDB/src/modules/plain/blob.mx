@@ -410,8 +410,11 @@ int sqlblob_fromstr(char *instr, int *l, blob **val)
     * required for it is the length of the string divided by two
 	*/
    i = strlen(instr);
-   if (i % 2 == 1)
-      GDKerror("sqlblob_fromstr: Illegal blob length '%d' (should be even)\n", i);
+   if (i % 2 == 1) {
+      GDKerror(
+	"sqlblob_fromstr: Illegal blob length '%d' (should be even)\n", i);
+      return -1;
+   }
    nitems = strlen(instr) / 2;
    nbytes = blobsize(nitems);
    
