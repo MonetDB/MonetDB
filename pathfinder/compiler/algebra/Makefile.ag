@@ -26,6 +26,9 @@
 
 SUBDIRS = hskparser
 
+YFLAGS = -d -p pf
+LFLAGS = -Ppf -olex.yy.c
+
 INCLUDES = ../include $(MONETDB_INCS)
 
 # locally disable "-Werror"

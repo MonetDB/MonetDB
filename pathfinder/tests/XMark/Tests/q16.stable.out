@@ -9,15 +9,12 @@ stdout of test 'q16` in directory 'tests/XMark` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+<?xml version="1.0" encoding="utf-8"?>
+<XqueryResult>
+<person id="person68"></person>
+</XqueryResult>
 
-<person id="person68"/>
-
-### time for run 1: 98 msec
-### time for run 2: 42 msec
-### time for run 3: 42 msec
-### time for serialization: 3 msec
-
-# 14:30:34 >  
-# 14:30:34 >  Done.
-# 14:30:34 >  
+# 14:40:09 >  
+# 14:40:09 >  Done.
+# 14:40:09 >  
 

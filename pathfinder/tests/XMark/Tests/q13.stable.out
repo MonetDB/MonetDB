@@ -9,18 +9,17 @@ stdout of test 'q13` in directory 'tests/XMark` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-
+<?xml version="1.0" encoding="utf-8"?>
+<XqueryResult>
 <item name="cropp drew battle cow "><description>
 <text>
 fam rough forbid rank misadventur push past forbade deprive great fled tempests offence coffers counters thief tar villainous tyb walk appeach varro lov breathes throws joints misery fare pow 
 </text>
-</description></item>,
-<item name="villain tune disgrac "><description>
+</description></item><item name="villain tune disgrac "><description>
 <text>
 <bold> scruple ease request <emph> dost lost toward corners worcester </emph> commonweal carlisle glove nay athens greatness preventions blind scald industry loyalty bounce people deanery bray hid honey </bold> myself scarce inclin forwardness policy ability inveigled honest miracle minds return throats water gift parson sure heavy whereof duly britaine naked wiser northumberland hollow integrity err mak rock assistant hush ask order discover mere accuse enmity dandle eye commended hadst part cordelia four klll trot kind many cheer fran moral dream fled brabantio broke <bold> brabantio </bold> twain ladyship state cinna daughter note bell given conjured fails dust verity town whipt been vanity wronged redoubted third wag sad thrives accused torment feeding arn open living damnable dissolve discord edmund shows baby 
 </text>
-</description></item>,
-<item name="stronger "><description>
+</description></item><item name="stronger "><description>
 <parlist>
 <listitem>
 <text>
@@ -71,18 +70,15 @@ few awake snake beadle gall fare <emph> sprite stale <bold> accus </bold> stir w
 </text>
 </listitem>
 </parlist>
-</description></item>,
-<item name="provoked francis "><description>
+</description></item><item name="provoked francis "><description>
 <text>
 even hangs hound took rout <emph> wanton pregnant relent parting beguile privilege reckoning sport </emph> dew flatter lunacy <bold> growth stiff pull </bold> fits alack troilus harp paintings huddling french write gossamer whips color keeper husbands bite lieutenant learnt entreaty attempt <keyword> man </keyword> bianca loud receiv infinite <emph> began counterfeit likeness fairies preventions flats caesar check looks regard negligence </emph> storm already laur moe greece fevers catesby feels from dagger logs coward part pauca delay seas fight youthful leads bitterness horses meet smells tabor jest avoid sequent when given 
 </text>
-</description></item>,
-<item name="stocks "><description>
+</description></item><item name="stocks "><description>
 <text>
 shallow lik gainsay stall walking practice dwells magnanimous homily plodded privily kingdoms intemperate circumscription coz comedy debts whored canker assure pray busy witchcraft chestnut strange sever living <keyword> weigh sequel bread encounters city proverb </keyword> 
 </text>
-</description></item>,
-<item name="abate mills flesh "><description>
+</description></item><item name="abate mills flesh "><description>
 <parlist>
 <listitem>
 <text>
@@ -95,32 +91,28 @@ desert ambitious parties weakly blow liege france hollow festinately lists dean 
 </text>
 </listitem>
 </parlist>
-</description></item>,
-<item name="brown "><description>
+</description></item><item name="brown "><description>
 <text>
 <keyword> singular blinded live grassy farther preparations rocks sea evidence lay back pardon </keyword> deliver harper nature promis sucks 
 </text>
-</description></item>,
-<item name="chastely "><description>
+</description></item><item name="chastely "><description>
 <text>
 suits dispute word blushes close bones 
 </text>
-</description></item>,
-<item name="born opposed "><description>
+</description></item><item name="born opposed "><description>
 <text>
 scholar feeling testament juliet sallets perfect contempt latter spring journeymen charms pounds romeo 
 </text>
-</description></item>,
-<item name="madness fro "><description>
+</description></item><item name="madness fro "><description>
 <text>
 morn false bohemia bade balance utmost prithee emperor causeless rivals control nobly green blame far heavy see counted join dole called breath 
 </text>
-</description></item>,
-<item name="small petition decrees "><description>
+</description></item><item name="small petition decrees "><description>
 <text>
 serpent breeds curbs <keyword> nor bushy gait doctrine might doth who reigns conqueror meantime enemies wives audaciously </keyword> beat evermore sons desdemona apollo gall into nephews gown prepare raven reserv wife eye poor despite smoke defame idleness rage return summit lips 
 </text>
 </description></item>
+</XqueryResult>
 
 ### time for run 1: 98 msec
 ### time for run 2: 42 msec

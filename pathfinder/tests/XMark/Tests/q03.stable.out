@@ -9,26 +9,12 @@ stdout of test 'q03` in directory 'tests/XMark` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+<?xml version="1.0" encoding="utf-8"?>
+<XqueryResult>
+<increase first="9.00" last="27.00"></increase><increase first="1.50" last="4.50"></increase><increase first="1.50" last="6.00"></increase><increase first="10.50" last="21.00"></increase><increase first="4.50" last="19.50"></increase><increase first="1.50" last="15.00"></increase><increase first="3.00" last="7.50"></increase><increase first="1.50" last="45.00"></increase><increase first="1.50" last="6.00"></increase><increase first="1.50" last="3.00"></increase><increase first="16.50" last="33.00"></increase><increase first="3.00" last="12.00"></increase>
+</XqueryResult>
 
-<increase first="9.00" last="27.00"/>,
-<increase first="1.50" last="4.50"/>,
-<increase first="1.50" last="6.00"/>,
-<increase first="10.50" last="21.00"/>,
-<increase first="4.50" last="19.50"/>,
-<increase first="1.50" last="15.00"/>,
-<increase first="3.00" last="7.50"/>,
-<increase first="1.50" last="45.00"/>,
-<increase first="1.50" last="6.00"/>,
-<increase first="1.50" last="3.00"/>,
-<increase first="16.50" last="33.00"/>,
-<increase first="3.00" last="12.00"/>
-
-### time for run 1: 98 msec
-### time for run 2: 42 msec
-### time for run 3: 42 msec
-### time for serialization: 3 msec
-
-# 14:30:34 >  
-# 14:30:34 >  Done.
-# 14:30:34 >  
+# 14:39:55 >  
+# 14:39:55 >  Done.
+# 14:39:55 >  
 

@@ -9,7 +9,10 @@ stdout of test '1_2` in directory 'tests/XQuery` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+<?xml version="1.0" encoding="utf-8"?>
+<XqueryResult>
 3
+</XqueryResult>
 
 # 23:00:45 >  
 # 23:00:45 >  Done.

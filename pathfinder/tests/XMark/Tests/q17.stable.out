@@ -9,80 +9,12 @@ stdout of test 'q17` in directory 'tests/XMark` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+<?xml version="1.0" encoding="utf-8"?>
+<XqueryResult>
+<person name="Vidar Reinsch"></person><person name="Rens Rifaut"></person><person name="Hyongmuk Lauwereins"></person><person name="Moheb Mersereau"></person><person name="Yuanyuan Sydow"></person><person name="Mauno Eaglestone"></person><person name="Rimli Treble"></person><person name="Orazio Mikki"></person><person name="Shai Koponen"></person><person name="Yevgeniy Pettit"></person><person name="Haodong Usui"></person><person name="Ashwani Michaels"></person><person name="Gina Marjeta"></person><person name="Koushi Acil'diev"></person><person name="Muzhong Betz"></person><person name="Eleanna Szymczak"></person><person name="Ismailcem Zaremba"></person><person name="Pier Cyne"></person><person name="Sven Lammel"></person><person name="Barb Staudhammer"></person><person name="Leaf Schneeberger"></person><person name="Nobutaka Luks"></person><person name="Aggis Noble"></person><person name="Jinxi Devesa"></person><person name="Subhasish Thoreson"></person><person name="Haldun Schmitt"></person><person name="Olof Karedla"></person><person name="Marek Stamm"></person><person name="Lihao Merle"></person><person name="Jiafu Takano"></person><person name="Yiwen Biederman"></person><person name="Pozung Lambe"></person><person name="Clyde Remy"></person><person name="Ramayya Eiter"></person><person name="Marias Kornyak"></person><person name="Jermy Montemayor"></person><person name="Eyeun Pelc"></person><person name="Patiwat Gurret"></person><person name="Lionel Grospietsch"></person><person name="Ramsey Nozaka"></person><person name="Dung Schulman"></person><person name="Morton Reggia"></person><person name="Pradeep Faulstich"></person><person name="Mitsugu Hoppenstand"></person><person name="IEEE Copas"></person><person name="Kenton Suros"></person><person name="Glauco Sitaraman"></person><person name="Chenxi Roccetti"></person><person name="Feiyu Uselton"></person><person name="Jerre Rathonyi"></person><person name="Christfried Takano"></person><person name="Mingzeng Falck"></person><person name="Ramesh Alippi"></person><person name="Lesley Mondadori"></person><person name="Hitomi Landherr"></person><person name="Tzonelih Vesel"></person><person name="Mor Huuskonen"></person><person name="Czeslaw Takano"></person><person name="Uday Birnbaum"></person><person name="Ishwar Eugenio"></person><person name="Takahito Boguraev"></person><person name="Wagar Bougaut"></person><person name="Waheed Rando"></person><person name="Ra'ed Ecklund"></person><person name="Charalampos Njiwoua"></person><person name="Pae Murdoch"></person>
+</XqueryResult>
 
-<person name="Vidar Reinsch"/>,
-<person name="Rens Rifaut"/>,
-<person name="Hyongmuk Lauwereins"/>,
-<person name="Moheb Mersereau"/>,
-<person name="Yuanyuan Sydow"/>,
-<person name="Mauno Eaglestone"/>,
-<person name="Rimli Treble"/>,
-<person name="Orazio Mikki"/>,
-<person name="Shai Koponen"/>,
-<person name="Yevgeniy Pettit"/>,
-<person name="Haodong Usui"/>,
-<person name="Ashwani Michaels"/>,
-<person name="Gina Marjeta"/>,
-<person name="Koushi Acil'diev"/>,
-<person name="Muzhong Betz"/>,
-<person name="Eleanna Szymczak"/>,
-<person name="Ismailcem Zaremba"/>,
-<person name="Pier Cyne"/>,
-<person name="Sven Lammel"/>,
-<person name="Barb Staudhammer"/>,
-<person name="Leaf Schneeberger"/>,
-<person name="Nobutaka Luks"/>,
-<person name="Aggis Noble"/>,
-<person name="Jinxi Devesa"/>,
-<person name="Subhasish Thoreson"/>,
-<person name="Haldun Schmitt"/>,
-<person name="Olof Karedla"/>,
-<person name="Marek Stamm"/>,
-<person name="Lihao Merle"/>,
-<person name="Jiafu Takano"/>,
-<person name="Yiwen Biederman"/>,
-<person name="Pozung Lambe"/>,
-<person name="Clyde Remy"/>,
-<person name="Ramayya Eiter"/>,
-<person name="Marias Kornyak"/>,
-<person name="Jermy Montemayor"/>,
-<person name="Eyeun Pelc"/>,
-<person name="Patiwat Gurret"/>,
-<person name="Lionel Grospietsch"/>,
-<person name="Ramsey Nozaka"/>,
-<person name="Dung Schulman"/>,
-<person name="Morton Reggia"/>,
-<person name="Pradeep Faulstich"/>,
-<person name="Mitsugu Hoppenstand"/>,
-<person name="IEEE Copas"/>,
-<person name="Kenton Suros"/>,
-<person name="Glauco Sitaraman"/>,
-<person name="Chenxi Roccetti"/>,
-<person name="Feiyu Uselton"/>,
-<person name="Jerre Rathonyi"/>,
-<person name="Christfried Takano"/>,
-<person name="Mingzeng Falck"/>,
-<person name="Ramesh Alippi"/>,
-<person name="Lesley Mondadori"/>,
-<person name="Hitomi Landherr"/>,
-<person name="Tzonelih Vesel"/>,
-<person name="Mor Huuskonen"/>,
-<person name="Czeslaw Takano"/>,
-<person name="Uday Birnbaum"/>,
-<person name="Ishwar Eugenio"/>,
-<person name="Takahito Boguraev"/>,
-<person name="Wagar Bougaut"/>,
-<person name="Waheed Rando"/>,
-<person name="Ra'ed Ecklund"/>,
-<person name="Charalampos Njiwoua"/>,
-<person name="Pae Murdoch"/>
-
-### time for run 1: 98 msec
-### time for run 2: 42 msec
-### time for run 3: 42 msec
-### time for serialization: 3 msec
-
-# 14:30:34 >  
-# 14:30:34 >  Done.
-# 14:30:34 >  
+# 14:40:10 >  
+# 14:40:10 >  Done.
+# 14:40:10 >  
 
