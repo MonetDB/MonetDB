@@ -1,2 +1,2 @@
 
-SUBDIRS = include setup driver
+SUBDIRS = include setup driver samples
