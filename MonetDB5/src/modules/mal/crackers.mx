@@ -205,8 +205,9 @@ int findCrackMap(int bid){
 	}
 
 	if( i== maxCrackMap){
+		CrackMap *x;
 		if(maxCrackMap >0) units *= 1.2;
-		CrackMap *x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * units);
+		x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * units);
 		bzero(x,sizeof(CrackMap) * units);
 		if(crackMap){
 			fprintf(stderr,"reallocate Crackmap\n");
@@ -321,8 +322,8 @@ according to the tail value;
 	memcpy(@1, @2, BUNsize(b));
 	memcpy(@2, buf, BUNsize(b));
 */
-	(void) buf;
 	int hdummy,tdummy;
+	(void) buf;
 	hdummy= *(int*) BUNhead(b,@1);
 	tdummy= *(int*) BUNtail(b,@1);
 	*(int*) BUNhead(b,@1) = *(int*) BUNhead(b,@2);
@@ -414,7 +415,7 @@ Inspect the value range table to only further crack qualifying fragments.
 		vmin= (ptr)((char*)BUNptr(b,piece->idx_first)-xx);
 		vmax= (ptr)((char*)BUNptr(b,piece->idx_last)+xx);
 
-		vm= BUNtail(b,vmin+xx);
+		vm= BUNtail(b,(ptr)((char*)vmin+xx));
 		for(p = (ptr)((char*) vmin+xx); p < vmax; 
 			p = (ptr)((char*)p+ xx), 
 			vm= (ptr)((char*)vm+xx)) {
@@ -780,6 +781,7 @@ str CRKdropPiece(int *newpid, int *bid){
 	BAT *b;
 	int result=0,m;
 	(void) newpid;
+	(void) result;
         @:getBATdescriptor(&result,bid,b,dropPiece)@
 	m= findCrackMap(*bid);
 	freeCrackMap(m);
@@ -789,6 +791,7 @@ str CRKdropView(int *newpid, int *bid){
 	BAT *b;
 	int result=0;
 	(void) newpid;
+	(void) result;
         @:getBATdescriptor(&result,bid,b,dropPiece)@
 	/* VIEWdestroy(b);*/
 	return MAL_SUCCEED;

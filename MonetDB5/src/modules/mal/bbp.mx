@@ -499,9 +499,10 @@ The code to enhance thekernel
 @c
 str CMDBATClone(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	BAT *b;
-	int bid=0,cap, ht,tt, result;
+	int bid=0,cap, ht,tt, result=0;
         int *res;
 	(void) m;
+	(void) result;
 
 	bid= *(int *) getArgReference(s,p,3);
         @:getBATdescriptor(&result,&bid,b,clone)@

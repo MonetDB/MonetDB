@@ -1601,7 +1601,7 @@ str ALGthetajoin(int *result, int *lid, int *rid, str *opname) {
 str ALGtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
 	BAT *ib, *ob, *lb, *rb;
 	int opc= operatorCode(*opname);
-	int result;
+	int result=0;
 	(void) result;
 	@:getBATdescriptor(&result,iid,ib,theta)@
 	@:getBATdescriptor(&result,oi,ob,theta)@

@@ -2119,7 +2119,7 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 @= AX3extreme3
 str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e, *bn;
-	int result;
+	int result=0;
 	(void) result; /* foolcompiler */
 
 	@:getBATdescriptor(&result,bid,b,sum)@
