@@ -125,6 +125,7 @@ void buffer_write(buf_p buf, char *data, size_t len){
 		memcpy(b->buf+b->used, data, rest);
 		b->used += rest;
 		len -= rest;
+		data += rest;
 		buf->cur = new_buffer_node(b);
 		b = buf->cur;
 	}
