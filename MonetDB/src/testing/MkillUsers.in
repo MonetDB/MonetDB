@@ -66,8 +66,9 @@ done
 case `uname` in
   Linux)
 	pids1="`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g'`"
+	pids1="`echo "$pids1" | perl -pe 's| *'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
-		pids1="`echo "$pids1" | perl -pe 's| *'$PARENT'||g'`"
+		pids1="`echo "$pids1" | perl -pe 's| *'"$PARENT"'||g'`"
 	fi
 	pids1="$cpids$pids1"
 	PS="ps -f $pids1"
@@ -75,21 +76,23 @@ case `uname` in
 	;;
   IRIX|IRIX64)
   	pids0="`fuser -q $files`"
+	pids0="`echo "$pids0" | perl -pe 's|,*'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
-		pids0="`echo "$pids0" | perl -pe 's|,*'$PARENT'||g'`"
+		pids0="`echo "$pids0" | perl -pe 's|,*'"$PARENT"'||g'`"
 	fi
-	pids0="`echo $cpids | perl -pe 's| |,|g'`$pids0"
+	pids0="`echo $cpids | perl -pe 's| +|,|g'`${pids0#,}"
   	pids1="`echo $pids0 | perl -pe 's|,| |g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
 	;;
   SunOS)
 	pids1="`fuser $files 2>/dev/null`"
+	pids1="`echo "$pids1" | perl -pe 's| *'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
-		pids1="`echo "$pids1" | perl -pe 's| *'$PARENT'||g'`"
+		pids1="`echo "$pids1" | perl -pe 's| *'"$PARENT"'||g'`"
 	fi
 	pids1="$cpids$pids1"
-	pids0="`echo $pids1 | perl -pe 's| |,|g'`"
+	pids0="`echo $pids1 | perl -pe 's| +|,|g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
 	;;
@@ -98,7 +101,8 @@ case `uname` in
 esac
 
 if [ "$pids1" ] ; then
-	pids2="(`echo $pids1 | perl -pe 's/ /|/g'`)"
+	LOG2 "BEGIN"
+	pids2="(`echo $pids1 | perl -pe 's/ +/|/g'`)"
 	echo PARENT=$PARENT
 	echo CHILD=$CHILD
 	echo files=$files
@@ -117,6 +121,7 @@ if [ "$pids1" ] ; then
 	if [ "`( ps -ef | egrep -w "$pids2" | egrep -v egrep ) 2>/dev/null`" ] ; then
 		LOG2x	kill -9 $pids1
 	fi
+	LOG2 "END"
 fi
 
 rm -f $LOCKFILE
