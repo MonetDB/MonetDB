@@ -117,26 +117,26 @@ ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DAT
 		case SQL_C_LONG:
 		case SQL_C_SLONG:
 			if (pTarget != NULL)
-				*(SQLINTEGER *) pTarget = strtol(pSourceData, NULL, 10);
+				*(SQLINTEGER *) pTarget = (SQLINTEGER) strtol(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLINTEGER);
 			break;
 		case SQL_C_ULONG:
 			if (pTarget != NULL)
-				*(SQLUINTEGER *) pTarget = strtoul(pSourceData, NULL, 10);
+				*(SQLUINTEGER *) pTarget = (SQLUINTEGER) strtoul(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLUINTEGER);
 			break;
 		case SQL_C_SHORT:
 		case SQL_C_SSHORT:
 			if (pTarget != NULL)
-				*(SQLSMALLINT *) pTarget = strtol(pSourceData, NULL, 10);
+				*(SQLSMALLINT *) pTarget = (SQLSMALLINT) strtol(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLSMALLINT);
 			break;
 		case SQL_C_USHORT:
 			if (pTarget != NULL)
-				*(SQLUSMALLINT *) pTarget = strtoul(pSourceData, NULL, 10);
+				*(SQLUSMALLINT *) pTarget = (SQLUSMALLINT) strtoul(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLUSMALLINT);
 			break;
@@ -144,28 +144,32 @@ ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DAT
 		case SQL_C_TINYINT:
 		case SQL_C_STINYINT:
 			if (pTarget != NULL)
-				*(SQLSCHAR *) pTarget = strtol(pSourceData, NULL, 10);
+				*(SQLSCHAR *) pTarget = (SQLSCHAR) strtol(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLSCHAR);
 			break;
 		case SQL_C_UTINYINT:
 			if (pTarget != NULL)
-				*(SQLCHAR *) pTarget = strtoul(pSourceData, NULL, 10);
+				*(SQLCHAR *) pTarget = (SQLCHAR) strtoul(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLCHAR);
 			break;
+#ifdef HAVE_STRTOLL
 		case SQL_C_SBIGINT:
 			if (pTarget != NULL)
-				*(SQLBIGINT *) pTarget = strtoll(pSourceData, NULL, 10);
+				*(SQLBIGINT *) pTarget = (SQLBIGINT) strtoll(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLBIGINT);
 			break;
+#endif
+#ifdef HAVE_STRTOULL
 		case SQL_C_UBIGINT:
 			if (pTarget != NULL)
-				*(SQLUBIGINT *) pTarget = strtoull(pSourceData, NULL, 10);
+				*(SQLUBIGINT *) pTarget = (SQLUBIGINT) strtoull(pSourceData, NULL, 10);
 			if (pnLengthOrIndicator != NULL)
 				*pnLengthOrIndicator = sizeof(SQLUBIGINT);
 			break;
+#endif
 		case SQL_C_FLOAT:
 			if (pTarget != NULL)
 				sscanf(pSourceData, "%g", (SQLREAL *) pTarget);

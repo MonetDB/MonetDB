@@ -377,6 +377,10 @@ typedef struct tagSQL_INTERVAL_STRUCT
 #  define ODBCINT64	    long long
 #  define UODBCINT64	unsigned long long
 # else
+#  ifdef HAVE___INT64
+#   define ODBCINT64	    __int64
+#   define UODBCINT64	unsigned __int64
+#  else
 /*
  * may fail in some cases, but what else can we do ?
  */
@@ -390,8 +394,9 @@ struct __bigint_struct_u
     unsigned int    hiword;
     unsigned int    loword;
 };
-#  define ODBCINT64	    struct __bigint_struct
-#  define UODBCINT64	struct __bigint_struct_u
+#   define ODBCINT64	    struct __bigint_struct
+#   define UODBCINT64	struct __bigint_struct_u
+#  endif
 # endif
 #endif
 #ifdef ODBCINT64

@@ -47,7 +47,7 @@ int parse_interval(context * sql, int sign, char *str, struct dlist *pers,
  *         1 for sec intervals and value in val, 
  *         <0 for errors */
 
-const char *datetime_field(itype field);
+char *datetime_field(itype field);
 
 #endif /*_SQL_DATETIME_H_*/
 
@@ -139,7 +139,7 @@ parse_interval(context * sql,
 }
 
 
-const char *datetime_field(itype f)
+char *datetime_field(itype f)
 {
 	switch (f) {
 	case iyear:
