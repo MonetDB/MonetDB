@@ -21,6 +21,16 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
+# In some cases, there is a (possibly) uninitialized variable in
+# bison.simple ... |-(
+# However, gcc-2.9-aix51-020209 on SARA's solo seems to ignore
+# "-Wno-uninitialized"; hence, we switch-off "-Werror" by disabling X_CFLAGS
+# locally in src/monet/Makefile.ag:
+# @NO_X_CFLAGS@ with NO_X_CFLAGS='X_CFLAGS' generates "X_CFLAGS =" in the
+# generated Makefile.
+
+@NO_X_CFLAGS@
+
 INCLUDES = -I../common -I../gdk
 
 YFLAGS = -d

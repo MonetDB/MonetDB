@@ -156,6 +156,7 @@ dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
 dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 X_CFLAGS=''
 X_CXXFLAGS=''
+NO_X_CFLAGS='_NO_X_CFLAGS_'
 case $GCC-$host_os in
 yes-*)
 	dnl  GNU (gcc/g++)
@@ -207,6 +208,17 @@ yes-*)
 		;;
 	esac
 	case $gcc_ver-$host_os in
+	2.9*-aix*)
+		dnl  In some cases, there is a (possibly) uninitialized
+		dnl  variable in bison.simple ... |-(
+		dnl  However, gcc-2.9-aix51-020209 on SARA's solo
+		dnl  seems to ignore "-Wno-uninitialized";
+		dnl  hence, we switch-off "-Werror" by disabling
+		dnl  X_CFLAGS locally in src/monet/Makefile.ag:
+		dnl  @NO_X_CFLAGS@ with NO_X_CFLAGS='X_CFLAGS'
+		dnl  generates "X_CFLAGS =" in the generated Makefile.
+		NO_X_CFLAGS='X_CFLAGS'
+		;;
 	*-solaris*|*-darwin*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
@@ -272,6 +284,7 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(X_CFLAGS)
 AC_SUBST(X_CXXFLAGS)
+AC_SUBST(NO_X_CFLAGS)
 
 bits=32
 AC_ARG_WITH(bits,
@@ -344,6 +357,7 @@ dnl and -lfl usually only in the 32bit version
 THREAD_SAVE_FLAGS="\$(thread_safe_flag_spec) -D_REENTRANT"
 # only needed in monet
 MEL_LIBS=""
+NO_OPTIMIZE_FILES=""
 case "$host_os" in
 solaris*)
     case "$GCC" in
