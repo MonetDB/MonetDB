@@ -75,7 +75,7 @@ typedef struct tColumnHeader {
 typedef enum {
 	INITED,
 	PREPARED,
-	EXECUTED,
+	EXECUTED
 } StatementState;
 
 
