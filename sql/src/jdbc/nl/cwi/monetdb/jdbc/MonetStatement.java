@@ -557,6 +557,7 @@ public class MonetStatement implements Statement {
 		if (header.getQueryType() == Q_UPDATE) {
 			String tmpLine = header.getLine(0);
 			try {
+				if (tmpLine == null) throw new NumberFormatException("");
 				ret = Integer.parseInt(tmpLine.substring(1, tmpLine.length() - 1).trim());
 			} catch (NumberFormatException e) {
 				throw new SQLException("Server sent unparsable update count: " + tmpLine);

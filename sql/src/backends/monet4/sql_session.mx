@@ -1528,6 +1528,8 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	if (ok) ok = (stream_printf(s, "# " SZFMT, t->query_type) >= 0);
 	if (ok) ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
 
+	if (ok && t->query_type == Q_UPDATE) return 0;
+	
 	if (!ok)
 		return -1;
 	m->type = Q_RESULT;

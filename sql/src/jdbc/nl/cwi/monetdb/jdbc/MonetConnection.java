@@ -1240,7 +1240,7 @@ public class MonetConnection extends Thread implements Connection {
 	 * </pre>
 	 * .
 	 * This class does not check all arguments for null, size, etc. for
-	 * performance sake!
+	 * performance's sake!
 	 */
 	class Header {
 		/** The names of the columns in this result */
@@ -1474,17 +1474,19 @@ public class MonetConnection extends Thread implements Connection {
 		 *                      sufficient to be consistant
 		 */
 		void complete() throws SQLException {
-			boolean hasSome = isSet[0] || isSet[1] || isSet[2] || isSet[3];
-			if (hasSome) {
+			if (isSet[0] || isSet[1] || isSet[2] || isSet[3] ||
+				isSet[4] || isSet[5] || isSet[6]
+			) {
 				String error = "";
 				if (!isSet[4]) error += "querytype header missing\n";
-				if (queryType == MonetStatement.Q_TABLE ||
-					queryType == MonetStatement.Q_UPDATE)
-				{
+				if (queryType == MonetStatement.Q_TABLE) {
 					if (!isSet[0]) error += "name header missing\n";
 					if (!isSet[1]) error += "type header missing\n";
 					if (!isSet[2]) error += "tuplecount header missing\n";
 					if (!isSet[3]) error += "id header missing\n";
+				} else if (queryType == MonetStatement.Q_UPDATE) {
+					// update count has one result: the count
+					tuplecount = 1;
 				}
 				if (error != "") throw new SQLException(error);
 
@@ -1493,7 +1495,11 @@ public class MonetConnection extends Thread implements Connection {
 
 				// make sure the cache size is minimal to
 				// reduce overhead and memory usage
-				cacheSize = Math.min(tuplecount, cacheSize);
+				if (cacheSize == 0) {
+					cacheSize = tuplecount;
+				} else {
+					cacheSize = Math.min(tuplecount, cacheSize);
+				}
 			} else {
 				// a no header query (sigh, yes that can happen)
 				// make sure there is NO RawResults
