@@ -35,6 +35,7 @@ sql_export char *strconcat(const char *s1, const char *s2);
 sql_export char *strip_extra_zeros(char *v);
 sql_export char *sql2str( char *s );
 sql_export char *sql_strdup( char *s );
+sql_export char *sql_escape( char *s );
 
 #endif /*_SQL_STRING_H_*/
 
@@ -137,3 +138,18 @@ sql_strdup( char *s )
 	return r;
 }
 
+char *
+sql_escape( char *s )
+{
+	int l = strlen(s);
+	char *res, *r = NEW_ARRAY(char,l*2);
+	
+	res = r;
+	while(*s){
+		if (*s == '\'' || *s == '\\') {
+			*r++ = '\\';
+		}
+		*r++ = *s++; 
+	}
+	return res;
+}
