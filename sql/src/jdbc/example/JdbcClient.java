@@ -814,7 +814,7 @@ public class JdbcClient {
 				}
 				out.print(")");
 			} else if (
-				type == Types.TIMESTAMP &&
+				(type == Types.TIMESTAMP || type == Types.TIME) &&
 				size == 0 &&
 				cols.getBoolean("DECIMAL_DIGITS")
 			) {
