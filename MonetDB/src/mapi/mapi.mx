@@ -190,7 +190,7 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	maxusers = *Maxusers;
 	@:builtin_operand(2,TYPE_str,Cmd)@
 	cmd = GDKstrdup(Cmd);
-	res->val.vtype = TYPE_void;
+	res->vtype = TYPE_void;
 
 	port = (port?port:MAPIPORT);
 	maxusers = (maxusers?maxusers:MAPIMAXUSERS);
