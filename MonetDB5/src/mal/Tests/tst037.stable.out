@@ -24,13 +24,13 @@ stdout of test 'tst037` in directory 'src/mal` itself:
 #print(b);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := str.match("Hello world","Hello");	# 1 STRMatch (b:bit)<-($2:str)($3:str)
+    b := pcre.match("Hello world","Hello");	# 1 PCREmatch (b:bit)<-($2:str)($3:str)
     io.print(b);	# 2 IOprint_val ($4:int)<-(b:bit)
-    b := str.match("Hello world",".*lo.*");	# 3 STRMatch (b:bit)<-($2:str)($5:str)
+    b := pcre.match("Hello world",".*lo.*");	# 3 PCREmatch (b:bit)<-($2:str)($5:str)
     io.print(b);	# 4 IOprint_val ($6:int)<-(b:bit)
-    b := str.match("Hello world","^lo.*or");	# 5 STRMatch (b:bit)<-($2:str)($7:str)
+    b := pcre.match("Hello world","^lo.*or");	# 5 PCREmatch (b:bit)<-($2:str)($7:str)
     io.print(b);	# 6 IOprint_val ($8:int)<-(b:bit)
-    b := str.match("Hello world","[ABHW]");	# 7 STRMatch (b:bit)<-($2:str)($9:str)
+    b := pcre.match("Hello world","[ABHW]");	# 7 PCREmatch (b:bit)<-($2:str)($9:str)
     io.print(b);	# 8 IOprint_val ($10:int)<-(b:bit)
 end main;	# 9  
 [ true ]

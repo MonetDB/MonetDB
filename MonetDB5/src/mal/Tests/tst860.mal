@@ -1,0 +1,15 @@
+#test the statistics module
+statistics.dump();
+statistics.deposit("timezones");
+statistics.dump();
+b:= getHotset();
+print(b);
+l:= statistics.getCount("timezones");
+print(l);
+m:= statistics.getSize("timezones");
+print(m);
+m:= statistics.getMin("timezones");
+print(m);
+h:= statistics.getHistogram("timezones");
+hc:= count(h);
+print(hc);
