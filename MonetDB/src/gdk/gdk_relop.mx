@@ -628,10 +628,6 @@ loop binary search (both implemented by BATmergejoin).
 		   ((BAThordered(r)&1) && ((lng)BATcount(r) > logr*(lng)BATcount(l))))))
 	{ 
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r);\n");
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BATtordered(l) = %d\n", BATtordered(l));
-		ALGODEBUG THRprintf(GDKout, "BATjoin: BAThordered(r) = %d\n", BAThordered(r));
-		ALGODEBUG THRprintf(GDKout, "BATjoin: logl: %lld , BATcount(r): %d\n", logl, BATcount(r));
-		ALGODEBUG THRprintf(GDKout, "BATjoin: logr: %lld , BATcount(l): %d\n", logr, BATcount(l));
 		return BATmergejoin(l,r);
 	}
 @-
