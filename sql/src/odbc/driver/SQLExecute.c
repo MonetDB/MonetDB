@@ -86,11 +86,11 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 		hStmt->hStmtExtras->nCols = nCols;
 	}
 
-	if (rs->readInt(rs, &flag) && flag == COMM_DONE){
+	if (stream_readInt(rs, &flag) && flag == COMM_DONE){
 		return SQL_ERROR;
 	}
-	rs->readInt(rs, &type);
-	rs->readInt(rs, &status);
+	stream_readInt(rs, &type);
+	stream_readInt(rs, &status);
 
 	if (status < 0){ /* output error */
 		char buf[BLOCK];

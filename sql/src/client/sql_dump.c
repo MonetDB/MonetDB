@@ -46,15 +46,15 @@ void receive( stream *rs, table *t ){
 	const char *copystring =
 	    "COPY %d RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n";
 	int flag = 0;
-	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
+	if (stream_readInt(rs, &flag) && flag != COMM_DONE){
 		char buf[BLOCK+1], *n = buf;
 		int last = 0;
 		int type;
 		int status;
 		int nRows;
 
-		rs->readInt(rs, &type);
-		rs->readInt(rs, &status);
+		stream_readInt(rs, &type);
+		stream_readInt(rs, &status);
 		if (status < 0){ /* output error */
 			int nr = bs_read_next(rs,buf,&last);
 			fprintf( stdout, "SQL ERROR %d: ", status );

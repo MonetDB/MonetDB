@@ -252,7 +252,7 @@ static stream *log 	= NULL;
 static void log_write_string(stream *s, char *n)
 {
 	int len = strlen(n);
-	s->writeInt( s, len);
+	stream_writeInt( s, len);
 	s->write( s, n, len, 1);
 }
 
@@ -260,7 +260,7 @@ static char *log_read_string(stream *s)
 {
 	int len; 
 	char *n;
-	if (!s->readInt(s, &len)){
+	if (!stream_readInt(s, &len)){
 		fprintf(stderr, "log_read_string: can't read int\n");
 		exit(1);
 		return NULL;
@@ -280,7 +280,7 @@ void log_read_updates(stream *s, logformat *l, char *name ){
 				(l->flag==LOG_INSERT)?"insert":"delete",
 				l->nr);
 
-	s->readInt(s,&nr);
+	stream_readInt(s,&nr);
 	nr -= sizeof(int);
 	buf = NEW_ARRAY(char,nr);
 
@@ -504,7 +504,7 @@ void log_bat_persists(BAT *b ){
 		ta = "vid";
 	}
 	len = snprintf(buf, BUFSIZ,"%s,%s", ha, ta );
-	log->writeInt( log, len );
+	stream_writeInt( log, len );
 	log->write( log, buf, len, 1 );
 	
         if (logger_debug&1)

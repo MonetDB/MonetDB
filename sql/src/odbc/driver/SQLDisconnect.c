@@ -52,11 +52,11 @@ SQLRETURN SQLDisconnect( SQLHDBC    hDrvDbc )
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
 
-	if (rs->readInt(rs, &flag)){
+	if (stream_readInt(rs, &flag)){
 		int type, status;
 		/* todo check if flag == COMM_DONE */
-		rs->readInt(rs, &type);
-		rs->readInt(rs, &status);
+		stream_readInt(rs, &type);
+		stream_readInt(rs, &status);
 		if (status < 0){
 			return SQL_ERROR;
 		}

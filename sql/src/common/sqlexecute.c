@@ -59,7 +59,7 @@ stmt *sqlnext(context * lc, stream * in, int *err)
 {
 	stmt *res = NULL;
 
-	lc->filename = in->filename;
+	lc->filename = in->name;
 	lc->in = in;
 
 	sql_statement_init(lc);
