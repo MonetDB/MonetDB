@@ -688,6 +688,18 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .COMMAND [intX](BAT[any::1,integer@1] b) : BAT[any::1,int@1] = BATintX;
 "convert an integer@1 to int@1"
 
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,integer@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,int@1] = jivejoin1; 
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+
+.COMMAND jivejoin1(BAT[void,oid] preallocated, BAT[oid,oid] proj, BAT[void,pax@1] attr, BAT[int,int] cnt, int shift, int radix) : BAT[void,int@1] = jivejoin1; 
+"positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head"
+
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,integer@1] attr) : BAT[void,int@1] = jivejoin2; 
+"positional join that creates a void head by inserting the join result positionally"
+
+.COMMAND jivejoin2(BAT[oid,oid] proj, BAT[void,pax@1] attr) : BAT[void,int@1] = jivejoin2; 
+"positional join that creates a void head by inserting the join result positionally"
+
 .COMMAND posjoin(BAT[void,oid] proj, BAT[void,integer@1] attr) : BAT[void,int@1] = posjoin_tuple;
 "positional join with built-in NSM projection" 
 
@@ -2473,8 +2485,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
 int posjoin_tuple(BAT **res, BAT *proj, BAT *attr) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
-	int tt = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
-	BAT *bn = *res = BATnew(TYPE_void, tt, BATcount(proj));
+	BAT *bn = *res = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	BAT *bm = BATmirror(attr);
         int width = ATOMsize(attr->ttype) >> 2;
         int distance = 1 << ((parent->ttype - attr->ttype) >> 1);
@@ -2522,7 +2533,7 @@ if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
 
 int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
-	int any = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
+	int any = attr->ttype;
 	BAT *bn = *res = BATnew(TYPE_void, any, BATcount(proj));
 	int xx, yy = 1 << *nbits, zz = *shift;
 	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
@@ -2554,29 +2565,14 @@ int jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int
 	}
 	yy = (yy-1) << zz; /* yy is mask, zz is shift */
 
-/* PETER start experimentation hack; must emulate relational projection cost  */
-	if (any >= TYPE_integer1 && any <= TYPE_pax256) {
-		BAT *bm = BATmirror(attr);
-        	int width = ATOMsize(attr->ttype) >> 2;
-        	int distance = 1 << (parent->ttype - attr->ttype);
-
-		BATloopFast(proj, p, q, xx) {
-			oid curoid = *(oid*) BUNhead(proj,p);
-			int clusterid = (curoid&yy) >> zz;
-			BUNfndVOID(r, attr, BUNtail(proj,p));
-			integerCopy((int*) BUNptr(bn,cluster[clusterid]), bm, r, width, distance);
-			cluster[clusterid]++;
-		}
-	} else 
-/* PETER end experimentation hack */
-		switch(any = ATOMstorage(any)) {
-		case TYPE_chr:	@:jivejoin0(chr,SIMPLE,hloc,tloc,r,0)@  
-		case TYPE_sht:	@:jivejoin0(sht,SIMPLE,hloc,tloc,r,0)@ 
-		case TYPE_int:	
-		case TYPE_flt:	@:jivejoin0(int,SIMPLE,hloc,tloc,r,0)@ 
-		case TYPE_dbl:	
-		case TYPE_lng:	@:jivejoin0(lng,SIMPLE,hloc,tloc,r,0)@ 
-		default:	@:jivejoin0(any,ATOM,head,tail,BUNtail(attr,r),1)
+	switch(any = ATOMstorage(any)) {
+	case TYPE_chr:	@:jivejoin0(chr,SIMPLE,hloc,tloc,r,0)@  
+	case TYPE_sht:	@:jivejoin0(sht,SIMPLE,hloc,tloc,r,0)@ 
+	case TYPE_int:	
+	case TYPE_flt:	@:jivejoin0(int,SIMPLE,hloc,tloc,r,0)@ 
+	case TYPE_dbl:	
+	case TYPE_lng:	@:jivejoin0(lng,SIMPLE,hloc,tloc,r,0)@ 
+	default:	@:jivejoin0(any,ATOM,head,tail,BUNtail(attr,r),1)
 	}
 
 	/* restore normality in destination bats */
@@ -2602,8 +2598,8 @@ if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
 @c
 int jivejoin1(BAT **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
-	int any = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
-	BAT *bn = *res = BATnew(TYPE_void, any, BATcount(proj));
+	int any = attr->ttype;
+	BAT *bn = *res = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	int xx = bo->batBuns->free, yy = 1 << *nbits, zz = *shift;
 	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
 	BUN p, q, r, bobak;
@@ -2695,8 +2691,8 @@ if (@6 || proj->ttype != TYPE_void) {
 @c
 int jivejoin2(BAT **res, BAT *proj, BAT *attr) {
 	BAT *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
-	int any = ((attr->tatom[0] == 'p' && attr->tatom[1] == 'a' && attr->tatom[2] == 'x') ? attr->ttype - 1 : attr->ttype);
-	BAT *bn = *res = BATnew(TYPE_void, any, BATcount(proj));
+	int any = attr->ttype;
+	BAT *bn = *res = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	BUN p, q, r, bnbak;
 	int xx;
 
