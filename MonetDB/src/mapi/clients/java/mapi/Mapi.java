@@ -1488,15 +1488,6 @@ private int getRow(){
         }
         return MERROR;
 }
-//---------------------- Special features ------------------------
-/**
- * Retrieving the tuples in a particular value order is a recurring
- * situation, which can be accomodated easily through the tuple index.
- * Calling sorted on an incomplete cache doesn;t produce the required
- * information.
- */
-public void sortColumn(int row, int direction){
-}
 // ------------------------------- Utilities
 /** The java context provides a table abstraction 
  * the methods below provide access to the relevant Mapi components
@@ -1617,6 +1608,10 @@ public int explain(){
 	return MOK;
 }
 
+public void sortColumn(int col){
+	cache.sortColumn(col);
+}
+
 class IoCache
 {   String  buf="";
     boolean eos;
@@ -1653,16 +1648,28 @@ class RowCache{
  * The sorting function is rather expensive and not type specific.
  * This should be improved in the near future
  */
-public void sortColumn(int col, int direction){
+public void sortColumn(int col){
 	if( col <0 || col > maxfields) return;
-	for(int i=0;i<writer; i++){
-		String x= fields[i][col];
-		for(int j=i+1;j<writer; j++){
-			String y= fields[j][col];
-			if( y.compareTo(x) >0 && direction<0){
-				int z= tuples[i];
-				tuples[i]= tuples[j];
-				tuples[j]= z;
+	int direction = columns[col].direction;
+	columns[col].direction = -direction;
+	int lim= cache.tupleCount;
+	for(int i=0;i<lim; i++){
+		String x= fields[tuples[i]][col];
+		for(int j=i+1;j<lim; j++){
+			String y= fields[tuples[j]][col];
+			if( direction>0){
+				if(y!=null && x!=null && y.compareTo(x) >0 ){
+					int z= tuples[i];
+					tuples[i]= tuples[j];
+					tuples[j]= z;
+				}
+			} else 
+			if( direction<0){
+				if(y!=null && x!=null && y.compareTo(x) <0){
+					int z= tuples[i];
+					tuples[i]= tuples[j];
+					tuples[j]= z;
+				}
 			}
 		}
 	}
@@ -1679,6 +1686,7 @@ class Column{
     int  precision;
     int  scale;
     int  isnull;
+    int  direction= -1;
 
     //Object inparam;	// to application variable 
     //Object outparam;	// both are converted to strings
