@@ -188,6 +188,38 @@ proc dump_data( BAT[str,BAT] fmt, BAT[str,BAT] bats, str data, int cnt) := {
 	dump( names, seps, names.join(bats).reverse().mark().reverse(), data, cnt );
 }
 
+proc import( BAT[any,any] b, str filename ) {
+
+	var names := new(void,str).seqbase(0@0);
+	names.insert(oid(nil),"head");
+	names.insert(oid(nil),"tail");
+	var seps := new(void,str).seqbase(0@0);
+	seps.insert(oid(nil),",");
+	seps.insert(oid(nil),"\n");
+	var types := new(void,str).seqbase(0@0);
+	types.insert(oid(nil),b.reverse.bat_ttype);
+	types.insert(oid(nil),b.bat_ttype);
+
+	var bats := load( names, seps, types, filename, -1);
+	b.insert (bats.find("head").reverse.join(bats.find("tail")));
+}
+
+proc export( BAT[any,any] b, str filename ) {
+	var hb := b.mark(0@0).reverse;
+	var tb := b.reverse.mark(0@0).reverse;
+
+	var names := new(void,str).seqbase(0@0);
+	names.insert(oid(nil),"head");
+	names.insert(oid(nil),"tail");
+	var seps := new(void,str).seqbase(0@0);
+	seps.insert(oid(nil),",");
+	seps.insert(oid(nil),"\n");
+	var bats := new(void,bat).seqbase(0@0);
+	bats.insert(oid(nil), hb);
+	bats.insert(oid(nil), tb);
+
+	dump( names, seps, bats, filename, b.count());
+}
 
 # todo add function to create a key (oid sequence) colom
 
@@ -950,5 +982,15 @@ PROC test_ascii_io() : void := {
     s := fgets( fp ); 
     s.print();
     fclose( fp );
+
+    b:=new(int,str);
+    b.insert(1,"import expor");
+    b.insert(5,"are replaced by");
+    b.insert(3,"scripts in ascii_io");
+    b.print;
+    b.export("/tmp/test");
+    c:=new(int,str);
+    c.import("/tmp/test");
+    c.print;
 }
 
