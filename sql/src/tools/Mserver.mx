@@ -275,7 +275,7 @@ A grain size of 128 bytes is used to keep overhead low.
 	if (!(setlen = mo_builtin_settings(&set)) )
 		usage(prog);
 
-	while(1){
+	for (;;){
 		int option_index = 0;
 
 		int c = getopt_long( argc, av, "c:d::?s:", 

@@ -23,6 +23,7 @@
 @:install_module(enum)@
 @:install_module(xtables)@
 @:install_module(ddbench)@
+@:install_module(decimal)@
 @:install_module(mmath)@
 @:install_module(monettime)@
 @:install_module(uchr)@
