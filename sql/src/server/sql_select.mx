@@ -2214,7 +2214,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	stmt *s = NULL;
 
 	stmt *order = NULL, *subset = NULL;
-	group *ogrp = NULL, *grp = NULL;
+	group *grp = NULL;
 
 	if (!sn->from)
 		return sql_simple_select(sql, scp, sn->where, sn->selection);
@@ -2304,7 +2304,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 
 		if (s && list_length(scp->outers) > 0) {
 			assert(!grp);
-			grp = ogrp = query_groupby_outers(sql, scp, s);
+			grp = query_groupby_outers(sql, scp, s);
 			if (!grp) {
 				assert(0);
 				sql_select_cleanup(sql, s, subset, grp);
@@ -2461,19 +2461,14 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 		for (; n; n = n->next) {
 			stmt *oref = n->data;
 			stmt *foundsubset = find_pivot(subset, oref);
-			stmt *t;
 
 			if (!foundsubset){
 				list_destroy(rl);
 				sql_select_cleanup(sql, s, subset, grp);
 				return sql_error( sql, 02, "Subquery result missing");
 			}
-			list_append(rl,
-				t=stmt_join( stmt_dup(grp->ext), 
+			list_append(rl, stmt_join( stmt_dup(grp->ext), 
 					   foundsubset, cmp_equal));
-			/* CHECK !! needed for subquery johan (select * from select *) 
-			t->nrcols = 1;
-			*/
 		}
 	}
 	stmt_destroy(s);
