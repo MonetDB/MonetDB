@@ -739,6 +739,93 @@ PFcore_namet (PFqname_t qn)
 }
 
 /**
+ * Create a new core tree node representing element constructor.
+ *
+ * @param e1 the tag oder expression containing the name of the element.
+ * @param e2 the content of the element.
+ * @return the core representation of the element constructor
+ */
+PFcnode_t *
+PFcore_constr_elem (PFcnode_t *e1, PFcnode_t *e2)
+{
+    assert (e1 && e2);
+
+    return PFcore_wire2 (c_elem, e1, e2);
+}
+;
+
+/**
+ * Create a new core tree node representing attribute constructor.
+ *
+ * @param e1 the tag oder expression containing the name of the attribute.
+ * @param e2 the content of the element.
+ * @return the core representation of the attribute constructor
+ */
+PFcnode_t *
+PFcore_constr_attr (PFcnode_t *e1, PFcnode_t *e2)
+{
+    assert (e1 && e2);
+
+    return PFcore_wire2 (c_attr, e1, e2);
+}
+;
+
+/**
+ * Create a new core tree node representing a text, doc, comment or
+ * processing-instruction constructor.
+ *
+ * @param pkind the type of the constructor
+ * @param e the content of the constructor.
+ * @return the core representation of the constructor
+ */
+PFcnode_t *
+PFcore_constr (PFptype_t pkind, PFcnode_t *e)
+{
+    PFctype_t kind = 0;
+
+    assert (e);
+
+    switch (pkind) {
+    case p_text:    
+        kind = c_text;    
+        break;
+    case p_comment: 
+        kind = c_comment; 
+        break;
+    case p_pi:    
+        kind = c_pi;    
+        break;
+    case p_doc:      
+        kind = c_doc;      
+        break;
+    default: 
+        PFoops (OOPS_FATAL, "illegal constructor node (%d)", pkind);
+    }
+
+    return PFcore_wire1 (kind, e);
+}
+;
+
+/**
+ * Create a new core tree node representing the tagname of an element 
+ * or attribute constructor.
+ * 
+ * @param qname the tagname of an element or attribute constructor
+ * @return the core representation of an element or attribute tagname
+ */
+PFcnode_t *
+PFcore_tag (PFqname_t qn)
+{
+    PFcnode_t *core;
+  
+    core = PFcore_leaf (c_tag);
+    core->sem.qname = qn;
+
+    return core;
+}
+;
+
+/**
  * Resolve a reference to a function name using Pathfinder's function
  * environment.  If the functions is undefined, raise a fatal error.
  *
@@ -849,6 +936,135 @@ PFcore_apply_ (PFfun_t *fn, ...)
     }
 
     return core;
+}
+
+/**
+ * Helper function that expands the formal semantics function fs:convert-operand
+ * as a core expression
+ * @param n The core expression on which the typeswitch is called
+ * @param cast_type The type to which n is casted if it is untyped
+ * @return A core expression with the expanded function
+ */
+PFcnode_t *
+PFcore_fs_convert_op (PFcnode_t *n, PFty_t cast_type)
+{
+    PFvar_t *v = PFcore_new_var (0);
+    assert (n && cast_type);
+    
+    return PFcore_let 
+              (PFcore_var (v), n,
+               PFcore_typeswitch 
+                   (PFcore_var (v),
+                    PFcore_cases 
+                        (PFcore_case 
+                             (PFcore_seqtype 
+                                  (PFty_xdt_untypedAtomic ()),
+                   /*return*/ PFcore_seqcast 
+                                  (PFcore_seqtype 
+                                       (cast_type),
+                                   PFcore_var (v))
+                              ),
+                         PFcore_nil ()
+                         ),
+                    PFcore_var (v))
+               );                        
+}
+
+/**
+ * Helper function that expands the function fn:data into
+ * a core expression
+ * @param n The core expression on which fn:data is called
+ * @return A core expression with the expanded fn:data function
+ */
+PFcnode_t *
+PFcore_fn_data (PFcnode_t *n)
+{
+    PFvar_t *v1 = PFcore_new_var (0);
+    PFvar_t *v2 = PFcore_new_var (0);
+    PFvar_t *v3 = PFcore_new_var (0);
+    PFvar_t *v4 = PFcore_new_var (0);
+    PFvar_t *v5 = PFcore_new_var (0);
+
+    PFfun_t *op_tv = PFcore_function (PFqname (PFns_pf, "typed-value"));
+
+    assert (n);
+
+    return PFcore_let
+               (PFcore_var (v1), n,
+                PFcore_for 
+                    (PFcore_var (v2), PFcore_nil (), PFcore_var (v1),
+                     PFcore_let 
+                         (PFcore_var (v3), PFcore_var (v2), 
+                          PFcore_typeswitch 
+                              (PFcore_var (v3),
+                               PFcore_cases 
+                                   (PFcore_case 
+                                        (PFcore_seqtype (PFty_atomic ()),
+                  /*return */            PFcore_var (v3)),
+                                    PFcore_nil ()),
+                  /*default*/  PFcore_let 
+                                   (PFcore_var (v4), PFcore_var (v3),
+                                    PFcore_typeswitch
+                                        (PFcore_var (v4),
+                                         PFcore_cases
+                                             (PFcore_case 
+                                                  (PFcore_seqtype (PFty_node ()),
+                  /*return */                      PFcore_let (PFcore_var (v5),
+                                                               PFcore_var (v4),
+                                                               APPLY (op_tv, PFcore_var (v5))
+                                                              )
+                                                  ),
+                                                  PFcore_nil ()
+                                             ),
+                  /*default*/            PFcore_empty ()
+                                        )
+                                   )
+                              )
+                         )
+                    )
+               );
+
+}
+
+/**
+ * Helper function that expands the quantified `some' expression into
+ * a core expression. 
+ * @param v The variable the existential qualifier is bound to
+ * @param qExpr The quantified expression
+ * @param expr The expression which is tested in the qualified expression
+ * @return A core expression with the expanded quantified `some' expression
+ */
+PFcnode_t *
+PFcore_some (PFcnode_t *v, PFcnode_t *expr, PFcnode_t *qExpr)
+{
+    PFvar_t *v1 = PFcore_new_var (0);
+    PFvar_t *v2 = PFcore_new_var (0);
+    PFvar_t *v3 = PFcore_new_var (0);
+    PFvar_t *v4 = PFcore_new_var (0);
+    PFvar_t *v5 = PFcore_new_var (0);
+    PFfun_t *fn_not   = PFcore_function (PFqname (PFns_fn, "not"));
+    PFfun_t *fn_empty = PFcore_function (PFqname (PFns_fn, "empty"));
+                                                                                                                                                          
+    return PFcore_let 
+              (PFcore_var (v1), expr,
+               PFcore_let 
+                  (PFcore_var (v2),
+                   PFcore_for (v,
+                               PFcore_nil (),
+                               PFcore_var (v1),
+                               PFcore_let (PFcore_var (v3),
+                                           PFcore_ebv (qExpr),
+                                           PFcore_ifthenelse 
+                                              (PFcore_var (v3),
+                                               PFcore_num (1),
+                                               PFcore_empty ()))),
+                   PFcore_let 
+                      (PFcore_var (v4),
+                       APPLY (fn_empty, PFcore_var (v2)),
+                       PFcore_let 
+                          (PFcore_var (v5),
+                           APPLY (fn_not, PFcore_var (v4)),
+                           PFcore_var (v5)))));
 }
 
 /**
