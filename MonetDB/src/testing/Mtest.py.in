@@ -688,7 +688,7 @@ def CheckMods(env, TST, SERVER) :
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "MAPI":
-        for m in "unix", "str", "mapi":
+        for m in "str", "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
@@ -932,10 +932,8 @@ def RunTest(env, TST, BusyPorts) :
             open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
 
-        if os.path.isfile(TST+".prelude"):
+        if os.path.isfile(TST+".prelude")  and  EXT not in  ['.milC','.sql']:
             PRELUDE = TST+".prelude"
-            if EXT == ".milC":
-                PRELUDE = "-prelude "+PRELUDE
         else:
             PRELUDE = ""
 
@@ -1316,7 +1314,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             if test.match(f):
                 TSTs.append(f)
 
-        Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" "+PRELUDE+" < "
+        Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" < "
         for f in TSTs:
             RunIt(Clnt+f, "", ClntOut, ClntErr)
 
@@ -1335,7 +1333,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             if test.match(f):
                 TSTs.append(f)
 
-        Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" "+PRELUDE+" < "
+        Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" < "
         for f in TSTs:
             RunIt(Clnt+f, "", ClntOut, ClntErr)
 
@@ -1826,7 +1824,7 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')   , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
         exe['Mserver']     = CheckExec('Mserver')    , 'Mserver --config='+env['MONET_CONF']+' --debug='+env['GDK_DEBUG']+' --set monet_prompt='
-        exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown'
+        exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown -port :'+env['MAPIPORT']
         exe['Mdiff']       = CheckExec('Mdiff')      , 'Mdiff'
         exe['python']      = CheckExec('python')     , 'python'
         exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), env['MAPICLIENT']
