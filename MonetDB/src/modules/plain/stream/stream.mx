@@ -29,6 +29,7 @@ data files.
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
+#include <errno.h>
 
 #ifdef _MSC_VER
 #ifndef LIBSTREAM
@@ -177,16 +178,16 @@ static void get_extention( char *file, char *ext)
 }
 
 static void stream_destroy( stream *s){
-	free(s->filename);
-	free(s);
+	GDKfree(s->filename);
+	GDKfree(s);
 }
 
 static stream *create_stream( char *filename ){
-	stream *s = (stream*)malloc(sizeof(stream));
+	stream *s = (stream*)GDKmalloc(sizeof(stream));
 	/*assert(s);*/
 	s->byteorder = 1234;
 	s->access = ST_READ;
-	s->filename = strdup(filename); 
+	s->filename = GDKstrdup(filename); 
 	s->stream_data = NULL;
 	s->errnr = NO__ERROR;
 	s->destroy = &stream_destroy;
@@ -198,15 +199,15 @@ static char *stream_error( stream *s ){
 	switch(s->errnr){
 	case OPEN_ERROR:
 		sprintf(buf, "Error could not open file %s\n", s->filename );
-		return strdup(buf);
+		return GDKstrdup(buf);
 	case READ_ERROR:
 		sprintf(buf, "Error reading file %s\n", s->filename );
-		return strdup(buf);
+		return GDKstrdup(buf);
 	case WRITE_ERROR:
 		sprintf(buf, "Error writing file %s\n", s->filename );
-		return strdup(buf);
+		return GDKstrdup(buf);
 	}
-	return strdup("Unkonwn error");
+	return GDKstrdup("Unkonwn error");
 }
 
 static int stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
@@ -559,14 +560,18 @@ static int socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	return 0;
 }
 static int socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
-	int res = 0, size = elmsize*cnt;
-	while( (res += 
+	int res = 0, size = elmsize*cnt, nr = 0;
+	while( res < size && (
 #ifdef WIN32
-			recv( (int)s->stream_data, buf+res, size-res, 0 )
+		(nr = recv( (int)s->stream_data, buf+res, size-res, 0 ))
 #else
-			read( (int)s->stream_data, buf+res, size-res )
+		(nr = read( (int)s->stream_data, buf+res, size-res )) >= 0
 #endif
-			) > 0 && res < size );
+		|| errno == EAGAIN)
+	){
+		 res += (nr>0)?nr:0;
+	}
+	if (nr < 0) return 0;
 	if (size) return size/elmsize;
 	return 0;
 }
@@ -705,23 +710,23 @@ stream *file_wastream( FILE *fp, char *name ){
 } 
 
 buffer *buffer_create( int size ){
-	buffer *b = (buffer*)malloc(sizeof(buffer));
+	buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
 	b->pos = 0;
-	b->buf = malloc(BUFSIZ);
+	b->buf = GDKmalloc(BUFSIZ);
 	b->len = BUFSIZ;
 	return b;
 }
 
 char *buffer_get_buf( buffer *b ){
-	char *r = malloc(b->pos+1);
+	char *r = GDKmalloc(b->pos+1);
 	memcpy(r,b->buf,b->pos);
 	r[b->pos] = '\0';
 	return r;
 }
 
 void buffer_destroy( buffer *b ){
-	free(b->buf);
-	free(b);
+	GDKfree(b->buf);
+	GDKfree(b);
 }
 
 buffer *stream_get_buffer( stream *s ){
@@ -746,7 +751,7 @@ static int buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	if (b->pos+size > b->len){
 		int ns = b->len;
 		while(b->pos+size > ns) ns *= 2;
-		b->buf = realloc(b->buf, ns);
+		b->buf = GDKrealloc(b->buf, ns);
 		b->len = ns;
 	}
 	memcpy(b->buf+b->pos, buf, size );
@@ -799,7 +804,7 @@ typedef struct bs {
 static
 bs *bs_create( stream *s ){
 	/* should be a binary stream */
-	bs *ns = (bs*)malloc(sizeof(bs));
+	bs *ns = (bs*)GDKmalloc(sizeof(bs));
 	ns->s = s;
 	ns->inr = 0;
 	ns->itotal = 0;
@@ -872,7 +877,7 @@ int bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		else
 			memcpy( buf, s->in, todo );
 		s->itotal = nr;
-                if (nr < todo){
+                if (nr <= todo){
                         s->inr = nr;
 			todo -= nr;
                 } else {
@@ -898,9 +903,9 @@ int bs_read_next( stream *ss, char *buf, int *last ){
 		int rest = s->itotal - s->inr;
 		memcpy( buf, s->in + s->inr, rest );
 
+		*last = (s->itotal != BLOCK);
 		s->inr = 0;
 		s->itotal = 0;
-		*last = (s->itotal != BLOCK);
 		return rest;
 	} else {
 		s->s->readInt( s->s, &nr);
@@ -932,7 +937,7 @@ static
 void bs_destroy( stream *ss ){
 	bs *s = (bs*)ss->stream_data;
 	s->s->destroy( s->s );
-	free(s);
+	GDKfree(s);
 	stream_destroy(ss);
 }
 
