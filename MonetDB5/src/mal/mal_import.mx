@@ -126,10 +126,10 @@ It should be reset before continuing.
 	@:restoreClient2()@
 @= runPhase
     if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
-        /* error occurred  and ignored */
+		/* error occurred  and ignored */
 		/* stream_printf(GDKout,"%s",msg);*/
-        GDKfree(msg); msg=0;
-        @:@1()@
+		GDKfree(msg); msg=0;
+		@:@2()@
 		return;
     }
 
