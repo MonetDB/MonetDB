@@ -975,7 +975,8 @@ CThistosum(
 		oh = *(oid *) BUNhloc(b,p);
 		i  = *(int *) BUNtloc(b,p);
 
-		BUNfndOID(qb, b, &oh);
+		ohp = &oh;
+		BUNfndOID(qb, b, ohp);
 		if( qb == NULL ) {
 			GDKerror("CThistosum:Matching count entry not found\n");
 			continue;
@@ -1109,7 +1110,7 @@ int refine(BAT **res, BAT *b, BAT *a, int rv) {
 	struct refine *buf, *cur, *end;
 	int xx;
 	size_t size = DEFAULT_SIZE;
-	oid *dst, o, id = 0;
+	oid *dst, o, id = 0, *ohp;
 
 	/* create tmp BAT that holds one cluster; estimate required size using sampling */
 	if (BATcount(b) > DEFAULT_SIZE) { 
