@@ -22,13 +22,18 @@
                     | expression '.seqbase (' expression ')'   <m_seqbase>
                     | expression '.project (' expression ')'   <m_project>
                     | expression '.mark (' expression ')'      <m_mark>
+                    | expression '.mark_grp (' expression ')'  <m_mark_grp>
                     | expression '.join (' expression ')'      <m_join>
+                    | expression '.kunique'                    <m_kunique>
                     | expression '.reverse'                    <m_reverse>
+                    | expression '.mirror'                     <m_mirror>
                     | expression '.copy'                       <m_copy>
+                    | expression '.sort'                       <m_sort>
+                    | expression '.CTrefine (' expression ')'  <m_ctrefine>
                     | expression '.max'                        <m_max>
                     | Type '(' expression ')'                  <m_cast>
                     | '[' Type '](' expression ')'             <m_mcast>
-                    | expression '+' expression                <m_plus>
+                    | '+(' expression ',' expression ')'       <m_plus>
                     | '[+](' expression ',' expression ')'     <m_mplus>
 
    literal          : IntegerLiteral                           <m_lit_int>
@@ -77,6 +82,33 @@
 
 #include "oops.h"
 #include "pfstrings.h"
+
+static char *ID[] = {
+
+      [m_new]        "new"
+    , [m_seqbase]    "seqbase"
+    , [m_order]      "order"
+    , [m_insert]     "insert"
+    , [m_binsert]    "insert"
+    , [m_project]    "project"
+    , [m_mark]       "mark"
+    , [m_mark_grp]   "mark_grp"
+    , [m_access]     "access"
+    , [m_join]       "join"
+    , [m_reverse]    "reverse"
+    , [m_mirror]     "mirror"
+    , [m_copy]       "copy"
+    , [m_kunique]    "kunique"
+
+    , [m_sort]       "sort"
+    , [m_ctrefine]   "CTrefine"
+
+    , [m_plus]       "+"
+    , [m_mplus]      "[+]"
+
+    , [m_max]        "max"
+
+};
 
 /** The string we print to */
 static PFarray_t *out = NULL;
@@ -152,7 +184,7 @@ print_statement (PFmil_t * n)
 
         case m_insert:
             print_expression (n->child[0]);
-            milprintf (".insert (");
+            milprintf (".%s (", ID[n->kind]);
             print_expression (n->child[1]);
             milprintf (", ");
             print_expression (n->child[2]);
@@ -161,7 +193,7 @@ print_statement (PFmil_t * n)
 
         case m_binsert:
             print_expression (n->child[0]);
-            milprintf (".insert (");
+            milprintf (".%s (", ID[n->kind]);
             print_expression (n->child[1]);
             milprintf (")");
             break;
@@ -173,6 +205,11 @@ print_statement (PFmil_t * n)
                 case BAT_APPEND: milprintf (".access (BAT_APPEND)"); break;
                 case BAT_WRITE:  milprintf (".access (BAT_WRITE)"); break;
             }
+            break;
+
+        case m_order:
+            print_expression (n->child[0]);
+            milprintf (".%s", ID[n->kind]);
             break;
 
         /* `nop' nodes (`no operation') may be produced during compilation */
@@ -211,52 +248,36 @@ print_expression (PFmil_t * n)
 
         /* expression : expression '.seqbase (' expression ')' */
         case m_seqbase:
-            print_expression (n->child[0]);
-            milprintf (".seqbase (");
-            print_expression (n->child[1]);
-            milprintf (")");
-            break;
-
         /* expression : expression '.project (' expression ')' */
         case m_project:
-            print_expression (n->child[0]);
-            milprintf (".project (");
-            print_expression (n->child[1]);
-            milprintf (")");
-            break;
-
         /* expression : expression '.mark (' expression ')' */
         case m_mark:
-            print_expression (n->child[0]);
-            milprintf (".mark (");
-            print_expression (n->child[1]);
-            milprintf (")");
-            break;
-
+        /* expression : expression '.mark_grp (' expression ')' */
+        case m_mark_grp:
         /* expression : expression '.join (' expression ')' */
         case m_join:
+        /* expression : expression '.CTrefine (' expression ')' */
+        case m_ctrefine:
             print_expression (n->child[0]);
-            milprintf (".join (");
+            milprintf (".%s (", ID[n->kind]);
             print_expression (n->child[1]);
             milprintf (")");
             break;
 
         /* expression : expression '.reverse' */
         case m_reverse:
-            print_expression (n->child[0]);
-            milprintf (".reverse");
-            break;
-
+        /* expression : expression '.mirror' */
+        case m_mirror:
+        /* expression : expression '.kunique' */
+        case m_kunique:
         /* expression : expression '.copy' */
         case m_copy:
-            print_expression (n->child[0]);
-            milprintf (".copy");
-            break;
-
+        /* expression : expression '.sort' */
+        case m_sort:
         /* expression : expression '.max' */
         case m_max:
             print_expression (n->child[0]);
-            milprintf (".max");
+            milprintf (".%s", ID[n->kind]);
             break;
 
         /* expression : Type '(' expression ')' */
@@ -276,18 +297,11 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
-        /* expression : expression '+' expression */
+        /* expression : '+(' expression ',' expression ')' */
         case m_plus:
-            milprintf ("(");
-            print_expression (n->child[0]);
-            milprintf ("+");
-            print_expression (n->child[1]);
-            milprintf (")");
-            break;
-
         /* expression : '[+](' expression ',' expression ')' */
         case m_mplus:
-            milprintf ("[+](");
+            milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
             print_expression (n->child[1]);

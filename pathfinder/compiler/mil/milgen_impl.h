@@ -3,6 +3,29 @@
  *
  * Compile Algebra expression tree into MIL tree.
  *
+ * Copyright Notice:
+ * -----------------
+ *
+ *  The contents of this file are subject to the MonetDB Public
+ *  License Version 1.0 (the "License"); you may not use this file
+ *  except in compliance with the License. You may obtain a copy of
+ *  the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ *
+ *  Software distributed under the License is distributed on an "AS
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  implied. See the License for the specific language governing
+ *  rights and limitations under the License.
+ *
+ *  The Original Code is the ``Pathfinder'' system. The Initial
+ *  Developer of the Original Code is the Database & Information
+ *  Systems Group at the University of Konstanz, Germany. Portions
+ *  created by U Konstanz are Copyright (C) 2000-2004 University
+ *  of Konstanz. All Rights Reserved.
+ *
+ *  Contributors:
+ *          Torsten Grust <torsten.grust@uni-konstanz.de>
+ *          Jens Teubner <jens.teubner@uni-konstanz.de>
+ *
  * $Id$
  */
 
@@ -230,6 +253,11 @@ bat (PFmil_ident_t prefix, PFalg_att_t attribute, PFalg_simple_type_t type)
         , [m_int]    "int"
         , [m_str]    "str" };
 
+    /*
+    assert (prefix);
+    assert (type_ident[impl_types[type]]);
+    */
+
     /* allocate for prefix + attribute + max type + underscores + '\0' */
     ret = PFmalloc (strlen (prefix) + strlen (attribute) + sizeof ("int") + 3);
 
@@ -246,6 +274,7 @@ literal (PFalg_atom_t atom)
         case aat_int:  return lit_int (atom.val.int_);
         case aat_str:  return lit_str (atom.val.str);
         case aat_node: return lit_oid (atom.val.node);
+        case aat_nat:  return lit_oid (atom.val.nat);
 
         default:
                        PFoops (OOPS_FATAL,
@@ -276,7 +305,7 @@ deallocate (PFalg_op_t *n, int count)
 
     /* free BAT if the usage counter has reached the reference counter
      * (but only if BAT is actually instantiated and bat_prefix != NULL) */
-    if (n->bat_prefix && n->usectr >= n->refctr)
+    if (n->bat_prefix && n->usectr >= n->refctr) {
         for (i = 0; i < n->schema.count; i++)
             for (t = 1; t; t <<= 1)
                 if (t & n->schema.items[i].type)
@@ -285,8 +314,10 @@ deallocate (PFalg_op_t *n, int count)
                                               t)),
                              unused ()));
 
-    /* clear the bat_prefix field, so we won't accidentally re-use this BAT */
-    n->bat_prefix = NULL;
+        /* clear the bat_prefix field, so we won't
+         * accidentally re-use this BAT */
+        n->bat_prefix = NULL;
+    }
 }
 
 /**
@@ -306,6 +337,24 @@ mono_col (PFalg_op_t *n)
 
     return -1;
 }
+
+/**
+ * Lookup type of attribute @a attname in algebra expression @a n.
+ */
+static PFalg_type_t
+attr_type (PFalg_op_t *n, PFalg_att_t attname)
+{
+    int i;
+
+    for (i = 0; i < n->schema.count; i++)
+        if (!strcmp (n->schema.items[i].name, attname))
+            return n->schema.items[i].type;
+
+    PFoops (OOPS_FATAL,
+            "Unable to determine type of attribute `%s': attribute not found.",
+            attname);
+}
+
 
 /**
  * Compile Algebra expression tree into MIL tree

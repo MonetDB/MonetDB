@@ -1,10 +1,7 @@
-/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
-
 /**
  * @file
  *
- * Declarations for miltype.c (tag core tree with MIL implementation types)
- *
+ * Rewrite/optimize algebra expression tree.
  *
  * Copyright Notice:
  * -----------------
@@ -27,24 +24,16 @@
  *
  *  Contributors:
  *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
  */
 
-#ifndef MILTYPE_H
-#define MILTYPE_H
+#ifndef ALGOPT_H
+#define ALGOPT_H
 
-#include "milty.h"
-#include "core.h"
+#include "algebra.h"
 
-/** Find MIL implementation type corresponding to XQuery type */
-PFmty_t PFty2mty (PFty_t);
+PFalg_op_t * PFalgopt (PFalg_op_t *root);
 
-/** tag core tree with Monet implementation types */
-void PFmiltype (PFcnode_t *);
-
-#endif   /* MILTYPE_H */
-
-/* vim:set shiftwidth=4 expandtab: */
+#endif  /* ALGOPT_H */

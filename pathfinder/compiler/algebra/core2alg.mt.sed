@@ -924,7 +924,15 @@ LiteralValue:    empty_
          *  env, loop, delta: empty => -----+------
          * 
          */
-        [[ $$ ]] = lit_tbl( attlist ("iter", "pos", "item"));
+
+        /*
+         * Some compilers (e.g., icc) don't like empty __VA_ARGS__
+         * arguments, so we do not use the (more readable) lit_tbl()
+         * macro here.
+         *
+         * [[ $$ ]] = lit_tbl (attlist ("iter", "pos", "item"));
+         */
+        [[ $$ ]] = PFalg_lit_tbl_ (attlist ("iter", "pos", "item"), 0, NULL);
     }
     ;
 

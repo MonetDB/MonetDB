@@ -45,9 +45,6 @@ typedef struct PFvar_t PFvar_t;
 /** PFty_t */
 #include "types.h"
 
-/** PFmty_t */
-#include "milty.h"
-
 /**
  * Variable information block.
  *
@@ -59,7 +56,6 @@ struct PFvar_t {
                                to an NCName, see issue 207 of the April 30
                                draft. */
     PFty_t       type;    /**< type of value bound to this variable */
-    PFmty_t      impl_ty; /**< implementation type in MIL */
 };
 
 /* Allocate a new PFvar_t struct to hold a new variable. */

@@ -70,11 +70,17 @@
 /** seqbase() operator */
 #define seqbase(a,b) PFmil_seqbase((a), (b))
 
+/** order() operator (destructively re-orders a BAT by its head) */
+#define order(a) PFmil_order((a))
+
 /** project() operator */
 #define project(a,b) PFmil_project((a), (b))
 
 /** mark() operator */
 #define mark(a,b) PFmil_mark((a), (b))
+
+/** mark_grp() operator */
+#define mark_grp(a,b) PFmil_mark_grp((a), (b))
 
 /** insert() function to insert a single BUN (3 arguments) */
 #define insert(a,b,c) PFmil_insert((a), (b), (c))
@@ -91,8 +97,20 @@
 /** reverse() operator */
 #define reverse(a) PFmil_reverse(a)
 
+/** mirror() operator */
+#define mirror(a) PFmil_mirror(a)
+
+/** kunique() operator */
+#define kunique(a) PFmil_kunique(a)
+
 /** copy() operator */
 #define copy(a) PFmil_copy(a)
+
+/** sort() function */
+#define sort(a) PFmil_sort(a)
+
+/** ctrefine() function */
+#define ctrefine(a,b) PFmil_ctrefine(a,b)
 
 /** max() operator */
 #define max(a) PFmil_max(a)

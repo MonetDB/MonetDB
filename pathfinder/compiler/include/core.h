@@ -58,9 +58,6 @@
 /* PFfun_t */
 #include "functions.h"
 
-/* PFmty_t */
-#include "milty.h"
-
 /** Maximum number of children of a core tree node */
 #define PFCNODE_MAXCHILD 4
 
@@ -175,11 +172,6 @@ struct PFcnode_t {
   PFcnode_t  *child[PFCNODE_MAXCHILD]; /**< child nodes */
   PFty_t      type;                    /**< static type */
   struct PFalg_op_t *alg;              /**< Relational Algebra equivalent */
-
-  PFmty_t     impl_ty;                 /**< @deprecated Monet implementation
-                                            type. This should no longer be used,
-                                            as we now use the ``algebra
-                                            approach'' to compile into MIL. */
 };
 
 

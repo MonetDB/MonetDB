@@ -232,7 +232,15 @@ PFcore2alg (PFcnode_t *c)
     /* loop is initially a table with just one tuple */
     loop = lit_tbl (attlist ("iter"), tuple (lit_nat (1)));
 
-    delta = lit_tbl (attlist ("pre", "size", "level", "kind", "prop", "frag"));
+    /*
+     * We don't use our construction macro here, as some compilers
+     * (e.g., icc) don't like empty __VA_ARGS__ macros.
+     *
+     delta = lit_tbl (attlist ("pre", "size", "level", "kind", "prop", "frag"));
+     */
+    delta = PFalg_lit_tbl_ (
+            attlist ("pre", "size", "level", "kind", "prop", "frag"),
+            0, (PFalg_tuple_t *) NULL);
 
     ret = rewrite (c, 0)->alg;
 

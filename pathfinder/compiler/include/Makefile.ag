@@ -30,4 +30,4 @@ EXTRA_DIST = \
 	core_mnemonic.h  mem.h        nsres.h      simplify.h    xquery_fo.h \
 	coreprint.h      core2alg.h   oops.h       subtyping.h   algebra.h \
 	daemon.h         mil.h        parser.h     timer.h       builtins.h \
-	algebra_mnemonic.h mil_mnemonic.h milgen.h
+	algebra_mnemonic.h mil_mnemonic.h milgen.h algopt.h

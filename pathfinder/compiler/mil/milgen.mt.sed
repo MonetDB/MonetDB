@@ -164,6 +164,60 @@ AlgExpr:  lit_tbl
 AlgExpr:  disjunion (AlgExpr, AlgExpr)
     =
     {
+        /*
+         * Computing the disjoint union  R U S:
+         *
+         * First consider R:
+         *
+         * - For attribute/type combinations that are in R, but not in S:
+         *   ``Rename'' the BAT to the new prefix. (We won't be destructive
+         *   with this BAT, so it doesn't hurt to have just a reference.)
+         *
+         *   <prefix>_<att>_<t> := <R>_<att>_<t>;
+         *   
+         * - For attribute/type combinations in R that also appear in S,
+         *   we need to make a physical copy, as the following insert
+         *   would have side effects otherwise:
+         *
+         *   <prefix>_<att>_<t> := <R>_<att>_<t>.copy;
+         *   <prefix>_<att>_<t>.access (BAT_APPEND);
+         *
+         *   (We know we will insert in the sequel and thus make the
+         *   BAT appendable right away.)
+         *
+         * Now we think about S:
+         *
+         * - First we need to shift all tuple ids by a constant value
+         *   (the number of tuples in R). To get this value, we pick
+         *   a monomorphic attribute from R and its maximum head value.
+         *   (This is just a BAT descriptor lookup and thus for free.)
+         *
+         *   o For each monomorphic attribute in S, we can now simply
+         *     shift the heads by re-marking them, which is expressed
+         *     by the following MIL expression:
+         *
+         *     <S>_<att>_<t>.reverse.mark (oid(int(R.reverse.max)+1)).reverse
+         *
+         *     (Where R is the monomorphic attribute BAT from R.)
+         *
+         *   o For polymorphic attributes in S, we really have to do
+         *     shifting with arithmetics:
+         *
+         *     ([oid]([+]([int](<S>_<att>_<t>.reverse),
+         *                int(R.reverse.max) + 1))).reverse
+         *
+         * - The resulting expression (named `shiftedS' in the code)
+         *   now either must be inserted into already what we have from R:
+         *
+         *   <prefix>_<att>_<t>.insert (<shiftedS>);
+         *   <prefix>_<att>_<t>.access (BAT_READ);
+         *
+         *   or the shifted expression already forms the result for this
+         *   attribute/type combination, if there was no contribution from R:
+         *
+         *   <prefix>_<att>_<t> := <shiftedS>;
+         */
+
         int                  monoR;       /* monomorphic column in R */
         int                  i;
         PFalg_simple_type_t  t;           /* to iterate over types */
@@ -172,6 +226,8 @@ AlgExpr:  disjunion (AlgExpr, AlgExpr)
                                              void head and delivers us key oids
                                              we need. */
         PFmil_t             *shiftedS = NULL;
+
+        assert ($1$->bat_prefix); assert ($2$->bat_prefix);
 
         /* no need to do anything if we already translated that expression */
         if ($$->bat_prefix)
@@ -276,8 +332,7 @@ AlgExpr:  disjunion (AlgExpr, AlgExpr)
                                                 var (bat ($2$->bat_prefix,
                                                           $2$->schema.items[i]
                                                               .name,
-                                                          $2$->schema.items[i]
-                                                              .type)))),
+                                                          t)))),
                                         plus (
                                             cast (
                                                 type (m_int),
@@ -337,6 +392,8 @@ AlgExpr:  cross (AlgExpr, AlgExpr) { cost = 2; }
         int                  monoR, monoS;  /* columns with monomorphic attr. */
         PFalg_simple_type_t  t;             /* used for iteration over types */
         int                  i;
+
+        assert ($1$->bat_prefix); assert ($2$->bat_prefix);
 
         /* only need to translate this expression if not already done so. */
         if ($$->bat_prefix)
@@ -406,7 +463,7 @@ AlgExpr:  cross (AlgExpr, AlgExpr) { cost = 2; }
     }
     ;
 
-AlgExpr:  cross (Query, AlgExpr)
+AlgExpr:  cross (lit_tbl, AlgExpr)
     {
         /*
          * The cross product becomes particularly easy, if one
@@ -442,18 +499,24 @@ AlgExpr:  cross (Query, AlgExpr)
          */
 
         int                 col;
-        PFmil_ident_t       prefix = new_var ();   /* BAT name prefix */
+        /* PFmil_ident_t       prefix = new_var (); */   /* BAT name prefix */
         PFalg_simple_type_t t;
         int                 mono;
 
         assert ($2$->bat_prefix);
+
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        $$->bat_prefix = new_var ();
 
         /* Copy BAT for each attribute in S.
          */
         for (col = 0; col < $2$->schema.count; col++)
             for (t = 1; t; t <<= 1)
                 if (t & $2$->schema.items[col].type)
-                    execute (assgn (var (bat (prefix,
+                    execute (assgn (var (bat ($$->bat_prefix,
                                               $2$->schema.items[col].name,
                                               t)),
                                     var (bat ($2$->bat_prefix,
@@ -472,7 +535,7 @@ AlgExpr:  cross (Query, AlgExpr)
             for (t = 1; t; t <<= 1)
                 if (t & $1$->schema.items[col].type)
                     execute (
-                        assgn (var (bat (prefix,
+                        assgn (var (bat ($$->bat_prefix,
                                          $1$->schema.items[col].name,
                                          t)),
                                     project (
@@ -503,6 +566,10 @@ AlgExpr:  project (AlgExpr)
 
         assert ($1$->bat_prefix);
 
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
         $$->bat_prefix = new_var ();   /* BAT name prefix */
 
         for (i = 0; i < $$->sem.proj.count; i++)
@@ -519,7 +586,158 @@ AlgExpr:  project (AlgExpr)
         deallocate ($1$, $$->refctr);
     }
     ;
-AlgExpr:  rownum (AlgExpr);
+AlgExpr:  rownum (AlgExpr)
+    =
+    {
+        int i;
+        PFalg_type_t t;
+
+        /*
+         * We make a few assumptions here:
+         *  - The operand expression has already been translated.
+         *  - There is at least one sort specifier.
+         *  - The attribute that we group over must be of type oid.
+         */
+        assert ($1$->bat_prefix);
+        assert ($$->sem.rownum.sortby.count >= 1);
+        assert (attr_type ($1$, $$->sem.rownum.part) == aat_nat);
+
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        $$->bat_prefix = new_var ();   /* BAT name prefix */
+
+        /*
+         * Sort BAT according to sort specification, first by the
+         * primary specification.
+         *
+         * tmp := <R>_<sort1>_<t>.reverse.sort.reverse;
+         */
+        execute (
+            assgn (var ("tmp"),
+                   reverse (
+                       sort (
+                           reverse (var (bat ($1$->bat_prefix,
+                                              $$->sem.rownum.sortby.atts[0],
+                                              attr_type ($1$,
+                                                         $$->sem.rownum
+                                                            .sortby.atts[0])
+                                             )))))));
+
+        /* then refine sorting for each additional attribute given
+         *
+         * foreach sorti
+         *   tmp := tmp.CTrefine (<R>_<sorti>_<t>);
+         */
+        for (i = 1; i < $$->sem.rownum.sortby.count; i++)
+            execute (
+                assgn (var ("tmp"),
+                       ctrefine (var ("tmp"),
+                                 var (bat ($1$->bat_prefix,
+                                           $$->sem.rownum.sortby.atts[i],
+                                           attr_type ($1$,
+                                                      $$->sem.rownum
+                                                          .sortby.atts[i]))))));
+
+        /*
+         * `tmp' now gives us the order we'd like to have (in its head,
+         * we don't need the tail at all).
+         *
+         * If a partitioning attribute has been given, we fetch that
+         * into the tail value and use mark_grp() to get the numbering.
+         * Otherwise we just use the simple mark().
+         *
+         * tmp  := tmp.mirror.join (<R>_<part>_<t>);
+         * tmp2 := <R>_<part>_<t>.reverse.kunique.project (0@0);
+         *         (This defines the groups for the mark_grp operator.)
+         * <prefix>_<att>_<t> := tmp.mark_grp (tmp2);
+         * tmp := unused; tmp2 := unused;
+         *
+         */
+        if ($$->sem.rownum.part)
+            execute (
+                assgn (var ("tmp"),
+                       join (mirror (var ("tmp")),
+                             var (bat ($1$->bat_prefix,
+                                       $$->sem.rownum.part,
+                                       attr_type ($1$,
+                                                  $$->sem.rownum.part))))),
+                assgn (var ("tmp2"),
+                       project (
+                           kunique (
+                               reverse (
+                                   var (
+                                       bat ($1$->bat_prefix,
+                                            $$->sem.rownum.part,
+                                            attr_type ($1$,
+                                                       $$->sem.rownum.part))))),
+                           lit_oid (0))),
+                assgn (var (bat ($$->bat_prefix,
+                                 $$->sem.rownum.attname,
+                                 aat_nat)),
+                       mark_grp (var ("tmp"), var ("tmp2"))),
+                assgn (var ("tmp"), unused ()),
+                assgn (var ("tmp2"), unused ()));
+        else
+            PFoops (OOPS_FATAL, "not implemented yet");
+
+
+        /*
+         * Essentially the newly constructed BAT now contains exactly the
+         * BUNs we like to have. Their order, however, does not match the
+         * order of all the attribute BATs now. As we depend in other
+         * translations on the fact that all relations are represented by
+         * a set of BATs that are ordered by their tuple id (their head),
+         * preferably by a void head, we need to bring all the attribute
+         * BATs into the same order.
+         *
+         * This means there are two options:
+         *
+         *  - Either we pick the order of the new row numbers and re-sort
+         *    all the other attributes.
+         *  - Or we re-sort the new attribute BAT, which means that the
+         *    result is not sorted by the constructed row numbers.
+         *
+         * As the latter seems less work, we decided on the second option.
+         * However, if it turned out later that it is benefitial to order
+         * BATs on the generated row numbers, we might better re-think that
+         * decision.
+         *
+         * For now, we do a
+         *   <prefix>_<att>_<t>.order;      # This destructively re-orders
+         *   <prefix>_<att>_<t>.reverse.mark (0@0).reverse; # Make head void
+         */
+        execute (
+            order (var (bat ($$->bat_prefix,
+                             $$->sem.rownum.attname,
+                             aat_nat))),
+            assgn (var (bat ($$->bat_prefix,
+                             $$->sem.rownum.attname,
+                             aat_nat)),
+                   reverse (
+                       mark (
+                           reverse (
+                               var (bat ($$->bat_prefix,
+                                         $$->sem.rownum.attname,
+                                         aat_nat))),
+                           lit_oid (0))))
+            );
+
+        /* copy all the remaining attributes */
+        for (i = 0; i < $1$->schema.count; i++)
+            for (t = 1; t; t <<= 1)
+                if (t & $1$->schema.items[i].type)
+                    execute (assgn (var (bat ($$->bat_prefix,
+                                              $1$->schema.items[i].name,
+                                              t)),
+                                    var (bat ($1$->bat_prefix,
+                                              $1$->schema.items[i].name,
+                                              t))));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
 
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

@@ -34,6 +34,7 @@
 #define ALGEBRA_H
 
 #include "variable.h"
+#include "stdbool.h"
 
 /* ............... atomic values ............... */
 

@@ -44,10 +44,10 @@ leaf (PFmil_kind_t k)
  *         set to @a n, and all remaining children set to @c NULL.
  */
 static PFmil_t *
-wire1 (PFmil_kind_t k, PFmil_t *n)
+wire1 (PFmil_kind_t k, const PFmil_t *n)
 {
     PFmil_t *ret = leaf (k);
-    ret->child[0] = n;
+    ret->child[0] = (PFmil_t *) n;
     return ret;
 }
 
@@ -61,10 +61,10 @@ wire1 (PFmil_kind_t k, PFmil_t *n)
  *         set to @a n1 and @a n2, and all remaining children set to @c NULL.
  */
 static PFmil_t *
-wire2 (PFmil_kind_t k, PFmil_t *n1, PFmil_t *n2)
+wire2 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2)
 {
     PFmil_t *ret = wire1 (k, n1);
-    ret->child[1] = n2;
+    ret->child[1] = (PFmil_t *) n2;
     return ret;
 }
 
@@ -80,10 +80,10 @@ wire2 (PFmil_kind_t k, PFmil_t *n1, PFmil_t *n2)
  *         to @c NULL.
  */
 static PFmil_t *
-wire3 (PFmil_kind_t k, PFmil_t *n1, PFmil_t *n2, PFmil_t *n3)
+wire3 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3)
 {
     PFmil_t *ret = wire2 (k, n1, n2);
-    ret->child[2] = n3;
+    ret->child[2] = (PFmil_t *) n3;
     return ret;
 }
 
@@ -110,10 +110,10 @@ PFmil_lit_int (int i)
  * @param s The string value to represent in MIL
  */
 PFmil_t *
-PFmil_lit_str (char *s)
+PFmil_lit_str (const char *s)
 {
     PFmil_t *ret = leaf (m_lit_str);
-    ret->sem.s = s;
+    ret->sem.s = (char *) s;
     return ret;
 }
 
@@ -140,7 +140,7 @@ PFmil_lit_oid (oid o)
  * @param name Name of the variable.
  */
 PFmil_t *
-PFmil_var (PFmil_ident_t name)
+PFmil_var (const PFmil_ident_t name)
 {
     PFmil_t *ret = leaf (m_var);
     ret->sem.ident = name;
@@ -187,7 +187,7 @@ PFmil_type (PFmil_type_t t)
  * @param e Expression to assign to @a v.
  */
 PFmil_t *
-PFmil_assgn (PFmil_t *v, PFmil_t *e)
+PFmil_assgn (const PFmil_t *v, const PFmil_t *e)
 {
     /* left hand side of an assignment must be a variable */
     assert (v->kind == m_var);
@@ -197,7 +197,7 @@ PFmil_assgn (PFmil_t *v, PFmil_t *e)
 
 /** MIL new() statement */
 PFmil_t *
-PFmil_new (PFmil_t *head, PFmil_t *tail)
+PFmil_new (const PFmil_t *head, const PFmil_t *tail)
 {
     /* arguments must be types */
     assert (head->kind == m_type);
@@ -222,12 +222,12 @@ PFmil_new (PFmil_t *head, PFmil_t *tail)
  *         sequence of all statements passed.
  */
 PFmil_t *
-PFmil_seq_ (int count, PFmil_t **stmts)
+PFmil_seq_ (int count, const PFmil_t **stmts)
 {
     assert (count > 0);
 
     if (count == 1)
-        return stmts[0];
+        return (PFmil_t *) stmts[0];
     else
         return wire2 (m_seq, stmts[0], PFmil_seq_ (count - 1, stmts + 1));
 }
@@ -236,16 +236,25 @@ PFmil_seq_ (int count, PFmil_t **stmts)
  * Monet seqbase() function.
  */
 PFmil_t *
-PFmil_seqbase (PFmil_t *bat, PFmil_t *base)
+PFmil_seqbase (const PFmil_t *bat, const PFmil_t *base)
 {
     return wire2 (m_seqbase, bat, base);
+}
+
+/**
+ * Monet order() function.
+ */
+PFmil_t *
+PFmil_order (const PFmil_t *bat)
+{
+    return wire1 (m_order, bat);
 }
 
 /**
  * Monet insert() function to insert a single BUN (3 arguments).
  */
 PFmil_t *
-PFmil_insert (PFmil_t *bat, PFmil_t *head, PFmil_t *tail)
+PFmil_insert (const PFmil_t *bat, const PFmil_t *head, const PFmil_t *tail)
 {
     return wire3 (m_insert, bat, head, tail);
 }
@@ -254,16 +263,16 @@ PFmil_insert (PFmil_t *bat, PFmil_t *head, PFmil_t *tail)
  * Monet insert() function to insert a whole BAT at once (2 arguments).
  */
 PFmil_t *
-PFmil_binsert (PFmil_t *dest, PFmil_t *src)
+PFmil_binsert (const PFmil_t *dest, const PFmil_t *src)
 {
-    return wire2 (m_insert, dest, src);
+    return wire2 (m_binsert, dest, src);
 }
 
 /**
  * Monet project() function.
  */
 PFmil_t *
-PFmil_project (PFmil_t *bat, PFmil_t *value)
+PFmil_project (const PFmil_t *bat, const PFmil_t *value)
 {
     return wire2 (m_project, bat, value);
 }
@@ -272,16 +281,25 @@ PFmil_project (PFmil_t *bat, PFmil_t *value)
  * Monet mark() function.
  */
 PFmil_t *
-PFmil_mark (PFmil_t *bat, PFmil_t *value)
+PFmil_mark (const PFmil_t *bat, const PFmil_t *value)
 {
     return wire2 (m_mark, bat, value);
+}
+
+/**
+ * Monet mark_grp() function.
+ */
+PFmil_t *
+PFmil_mark_grp (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mark_grp, a, b);
 }
 
 /**
  * Set access restrictions on a BAT
  */
 PFmil_t *
-PFmil_access (PFmil_t *bat, PFmil_access_t restriction)
+PFmil_access (const PFmil_t *bat, PFmil_access_t restriction)
 {
     PFmil_t *ret = wire1 (m_access, bat);
 
@@ -294,7 +312,7 @@ PFmil_access (PFmil_t *bat, PFmil_access_t restriction)
  * Monet join operator
  */
 PFmil_t *
-PFmil_join (PFmil_t *a, PFmil_t *b)
+PFmil_join (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_join, a, b);
 }
@@ -303,25 +321,61 @@ PFmil_join (PFmil_t *a, PFmil_t *b)
  * Monet reverse operator, swap head/tail
  */
 PFmil_t *
-PFmil_reverse (PFmil_t *a)
+PFmil_reverse (const PFmil_t *a)
 {
     return wire1 (m_reverse, a);
+}
+
+/**
+ * Monet mirror operator, mirror head into tail
+ */
+PFmil_t *
+PFmil_mirror (const PFmil_t *a)
+{
+    return wire1 (m_mirror, a);
+}
+
+/**
+ * Monet kunique operator
+ */
+PFmil_t *
+PFmil_kunique (const PFmil_t *a)
+{
+    return wire1 (m_kunique, a);
 }
 
 /**
  * Monet copy operator, returns physical copy of a BAT.
  */
 PFmil_t *
-PFmil_copy (PFmil_t *a)
+PFmil_copy (const PFmil_t *a)
 {
     return wire1 (m_copy, a);
+}
+
+/**
+ * Monet sort function, sorts a BAT by its head value.
+ */
+PFmil_t *
+PFmil_sort (const PFmil_t *a)
+{
+    return wire1 (m_sort, a);
+}
+
+/**
+ * Monet ctrefine function.
+ */
+PFmil_t *
+PFmil_ctrefine (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ctrefine, a, b);
 }
 
 /**
  * Monet max operator, return maximum tail value
  */
 PFmil_t *
-PFmil_max (PFmil_t *a)
+PFmil_max (const PFmil_t *a)
 {
     return wire1 (m_max, a);
 }
@@ -330,7 +384,7 @@ PFmil_max (PFmil_t *a)
  * Type cast.
  */
 PFmil_t *
-PFmil_cast (PFmil_t *type, PFmil_t *e)
+PFmil_cast (const PFmil_t *type, const PFmil_t *e)
 {
     assert (type); assert (e); assert (type->kind == m_type);
 
@@ -341,7 +395,7 @@ PFmil_cast (PFmil_t *type, PFmil_t *e)
  * Multiplexed type cast.
  */
 PFmil_t *
-PFmil_mcast (PFmil_t *type, PFmil_t *e)
+PFmil_mcast (const PFmil_t *type, const PFmil_t *e)
 {
     assert (type); assert (e); assert (type->kind == m_type);
 
@@ -352,7 +406,7 @@ PFmil_mcast (PFmil_t *type, PFmil_t *e)
  * Arithmetic plus operator
  */
 PFmil_t *
-PFmil_plus (PFmil_t *a, PFmil_t *b)
+PFmil_plus (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_plus, a, b);
 }
@@ -361,7 +415,7 @@ PFmil_plus (PFmil_t *a, PFmil_t *b)
  * Multiplexed arithmetic plus operator
  */
 PFmil_t *
-PFmil_mplus (PFmil_t *a, PFmil_t *b)
+PFmil_mplus (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_mplus, a, b);
 }

@@ -34,7 +34,8 @@ lib_algebra = {
 	SOURCES = \
 		algebra.c \
 		builtins.c \
-		core2alg.mt.sed
+		core2alg.mt.sed \
+		algopt.mt
 }
 
-EXTRA_DIST = core2alg_impl.c 
+EXTRA_DIST = core2alg_impl.c algopt_impl.h

@@ -423,6 +423,7 @@ static struct option long_options[] = {
     { "stop-after-normalizing",        0, NULL, 'n' },
     { "stop-after-parsing",            0, NULL, 'p' },
     { "quiet",                         0, NULL, 'q' },
+    { "stop-after-algebra-rewrite",    0, NULL, 'r' },
     { "stop-after-semantics",          0, NULL, 's' },
     { "typing",                        0, NULL, 't' },
     { NULL,                            0, NULL, 0 }
@@ -491,6 +492,7 @@ static const char
 #include "typecheck.h"    /* type inference and check */
 #include "algebra.h"      /* algebra tree */
 #include "core2alg.h"     /* Compile Core to Relational Algebra */
+#include "algopt.h"
 #include "milgen.h"       /* MIL tree generation */
 #include "milprint.h"     /* create string representation of MIL tree */
 #include "oops.h"
@@ -508,7 +510,6 @@ PFstate_t PFstate = {
     print_pretty        : false,
     stop_after          : phas_all,
     print_types         : false,
-    output_type         : output_monet,
     optimize            : false
 };
 
@@ -630,10 +631,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DOPTacd:hl:mnpqst", 
+        c = getopt_long (argc, argv, "DOPTacd:hl:mnpqrst", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DOPTacd:hl:mnpqst");
+        c = getopt (argc, argv, "DOPTacd:hl:mnpqrst");
 #endif
 
         if (c == -1)
@@ -673,6 +674,8 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'c'));
             printf ("  -a%s: stop after algebra tree generation\n",
                     long_option (opt_buf, ", --%s", 'a'));
+            printf ("  -r%s: stop after algebra tree rewrite/optimization\n",
+                    long_option (opt_buf, ", --%s", 'r'));
             printf ("  -m%s: stop after MIL code generation\n",
                     long_option (opt_buf, ", --%s", 'm'));
             printf ("\n");
@@ -717,6 +720,11 @@ main (int argc, char *argv[])
         case 'a':
             if (PFstate.stop_after > phas_alg)
                 PFstate.stop_after = phas_alg;
+            break;
+
+        case 'r':
+            if (PFstate.stop_after > phas_algopt)
+                PFstate.stop_after = phas_algopt;
             break;
 
         case 'm':
@@ -954,6 +962,23 @@ main (int argc, char *argv[])
         PFlog ("Algebra tree generation:\t %s", PFtimer_str (tm));
 
     if (PFstate.stop_after == phas_alg) {
+        print_algebra (aroot);
+        goto bailout;
+    }
+
+    /*
+     * Rewrite/optimize algebra tree
+     */
+    tm = PFtimer_start ();
+
+    aroot = PFalgopt (aroot);
+
+    tm = PFtimer_stop (tm);
+
+    if (PFstate.timing)
+        PFlog ("Algebra tree rewrite/optimization:\t %s", PFtimer_str (tm));
+
+    if (PFstate.stop_after == phas_algopt) {
         print_algebra (aroot);
         goto bailout;
     }

@@ -80,7 +80,21 @@ arithm_expr(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
 /**
  * Create (and remember) the schema (attribute names and data types)
  * of the document table.
+ *
+ * @note The icc compiler crashes with an internal compiler error
+ *       if the struct fields are explicitly stated as commented out
+ *       below. So we have to fall back to the (less readable)
+ *       alternative without the explicit field names.
  */
+static PFalg_schema_t doc_schm = {
+    .count = 6,
+    .items = (struct PFalg_schm_item_t []) { { "pre",   aat_node },
+                                             { "size",  aat_int },
+                                             { "level", aat_int },
+                                             { "kind",  aat_int },
+                                             { "prop",  aat_str },
+                                             { "frag",  aat_nat } } };
+/*
 static PFalg_schema_t doc_schm = { 
     .count = 6,
     .items = (struct PFalg_schm_item_t[]) {{.name = "pre", .type = aat_node},
@@ -89,6 +103,7 @@ static PFalg_schema_t doc_schm = {
 					   {.name = "kind", .type = aat_int},
 					   {.name = "prop", .type = aat_str},
 					   {.name = "frag", .type = aat_nat}}};
+*/
 
 /** construct literal integer (atom) */
 PFalg_atom_t
