@@ -606,7 +606,7 @@ melType	: melElm [propList] | bat '[' melElm ',' melElm ']' [propList]\\
 melElm  : identifier | any ['::'digit]\\
 propList : '\{' identifier [ ',' identifier] '\}'\\
 @-
-Variables will later be extended with a (boolean?) property list to enable
+Variables will later be extended with a property list to enable
 squeezers to make decisions. An example is :(int, key, notnull) for
 a column of a BAT.
 
@@ -636,6 +636,7 @@ a column of a BAT.
 		curInstr->polymorphic = TRUE;
 	} else {
 		char x;
+		skipBlanc2(cntxt);
 		l = idLength(cntxt);
 		x = cntxt->nxt[l];
 		cntxt->nxt[l]= 0;

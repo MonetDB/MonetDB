@@ -68,24 +68,6 @@ function Admin.main():int;	#0:void (main:int)
 	mal.print(b,b,b);	#23:int ($38:int)(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
 	profiler.stop();	#24:void ($39:any)
 end function;	#25:void 
-set insert[10]
-set insert[11]
-set insert[13]
-set insert[14]
-set insert[15]
-set insert[16]
-set insert[17]
-set insert[18]
-set insert[19]
-set insert[20]
-set insert[21]
-set insert[0]
-set insert[0]
-set print[22]
-set print[23]
-set print[0]
-set print[0]
-set print[0]
 # Send the Monet performance events to a file
 #~BeginVariableOutput~#
 #~EndVariableOutput~#

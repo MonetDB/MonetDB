@@ -10,54 +10,30 @@
 #
 #b:= new(lng,lng);
 #i:= -1:lng;
-#barrier v:= nextElement(i,0:lng,10:lng);
+#barrier v:= nextElement(i,0:lng,1000000:lng);
 #	insert(b,i,i);
 #	redo v;
 #end v;
 #c:= copy(b);
-#x:= multiplex("+",b,c);
-#print(x);
+#t0:= system.usec();
+#x:= multiplex.script("+",b,c);
+#t1:= system.usec();
+#d0:= t1-t0;
+#printf("multiplex.+ %d\n",d0);
 #
 function Admin.main():int;	#0:void (main:int)
 	b := mal.new(lng,lng);	#1:BAT (b:bat[lng,lng])(lng:lng)(lng:lng)
 	i := -1;	#2:lng (i:lng)($4:lng)
-barrier	v := mal.nextElement(i,0,10);	#3:bit (v:bit)(i:lng)($6:lng)($7:lng)
+barrier	v := mal.nextElement(i,0,1000000);	#3:bit (v:bit)(i:lng)($6:lng)($7:lng)
 	bat.insert(b,i,i);	#4:BAT ($8:bat[lng,lng])(b:bat[lng,lng])(i:lng)(i:lng)
 	redo v ;	#5:bit (v:bit)
 end	v;	#6:bit (v:bit)
 	c := algebra.copy(b);	#7:BAT (c:bat[lng,lng])(b:bat[lng,lng])
-	x := multiplex.multiplex("+",b,c);	#8:BAT (x:bat[lng,lng])($11:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	mal.print(x);	#9:int ($12:int)(x:bat[lng,lng])
-end function;	#10:void 
-calling a multiplex routine
-multiplex against operator + (original multiplex)
-	calc.+($2,$3);	#0:lng ($0:lng)($2:lng)($3:lng)
-multiplex against operator + (0)
-retrieved a BAT argument 5 (isnull?n
-retrieved a BAT argument 4 (isnull?n
-multiplex properties minsize 10 
-max_size = 10 one_unique =1 all_unique=1
-all_sorted = 1 all_synced= 135312184
-	calc.+($2,$3);	#0:lng ($0:lng)($2:lng)($3:lng)
-	x := multiplex.multiplex("+",b,c);	#8:BAT (x:bat[lng,lng])($11:str)(b:bat[lng,lng])(c:bat[lng,lng])
-	calc.+($2,$3);	#0:lng ($0:lng)($2:lng)($3:lng)
-get argument 2
-initialize bat arg 5
-get argument 3
-initialize bat arg 4
-argc 3 a1 1 a2 1 a3 1
-#-----------------#
-# BAT:	  tmp_3	  #
-# (lng)	  (lng)	  #
-#-----------------#
-[ 0,	  0	  ]
-[ 1,	  2	  ]
-[ 2,	  4	  ]
-[ 3,	  6	  ]
-[ 4,	  8	  ]
-[ 5,	  10	  ]
-[ 6,	  12	  ]
-[ 7,	  14	  ]
-[ 8,	  16	  ]
-[ 9,	  18	  ]
+	t0 := system.usec();	#8:lng (t0:lng)
+	x := multiplex.script("+",b,c);	#9:BAT (x:bat[lng,lng])($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
+	t1 := system.usec();	#10:lng (t1:lng)
+	d0 := calc.-(t1,t0);	#11:lng (d0:lng)(t1:lng)(t0:lng)
+	system.printf("multiplex.+ %d\n",d0);	#12:int ($15:int)($16:str)(d0:lng)
+end function;	#13:void 
+multiplex.+ 11931656
 >

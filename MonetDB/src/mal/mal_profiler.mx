@@ -153,22 +153,24 @@ definition.
 int activateCounter(str name){ @:setCounter(1)@ }
 int deactivateCounter(str name){ @:setCounter(0)@ }
 
+#define getEventStream()	\
+	if( profileLock==0) profileLock= MT_create_lock(); \
+	MT_set_lock(profileLock,"profileLock"); \
+	if( eventstream == NULL) { \
+		MT_unset_lock(profileLock,"profileLock"); \
+		return; \
+	}
 void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
 	struct tms newTms;
         struct mallinfo infoMalloc;
         struct rusage   infoUsage;
-	int oldcount,oldflag;
-	extern int mal_xlisting;
+        static struct mallinfo prevMalloc;
+        static struct rusage   prevUsage;
+	str stmt,c;
 
 	times(&newTms);
-	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
-	if( eventstream == NULL) {
-		MT_unset_lock(profileLock,"profileLock");
-		return;
-	}
-
+	getEventStream();
 	infoMalloc = MT_mallinfo();
 	getrusage(RUSAGE_SELF,&infoUsage);
 
@@ -183,11 +185,31 @@ void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			newTms.tms_stime - pci->timer.tms_stime);
 	fprintf(eventstream,"cstime=\"%d\" ",
 			newTms.tms_cstime - pci->timer.tms_cstime);
+	fprintf(eventstream,"ticks=\"%d\" ",
+			GDKusec() - pci->clk);
 	fprintf(eventstream,"/>\n");
 	}
 
 	if( profileCounter[1].status ){
 	fprintf(eventstream,"\t<mal");
+	stmt= instruction2str(mb,pci,0);
+	c= strchr(stmt,']');
+	if(c) c++;
+	while(isspace(*c) && *c) c++;
+
+	fprintf(eventstream," stmt=\"");
+	for(;*c;c++){
+		if( *c=='#') break;
+		if( *c=='\n') break;
+		if(*c=='"') fprintf(eventstream,"&quot;");
+		else
+		if(*c=='&') fprintf(eventstream,"&amp;");
+		else
+		if(*c=='\'') fprintf(eventstream,"&apos;");
+		else fputc(*c,eventstream);
+	}
+	fprintf(eventstream,"\"");
+	
 	fprintf(eventstream," module=\"%s\"", 
 		(pci->modname?pci->modname:"unknown"));
 	fprintf(eventstream," function=\"%s\"", 
@@ -195,14 +217,9 @@ void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	fprintf(eventstream," calls=\"%d\"", pci->counter);
 	if( pci->counter){
                 double avg= pci->ticks/(pci->counter+0.0);
-		fprintf(eventstream," average=\"%5.2f\">\n", avg);
+		fprintf(eventstream," average=\"%5.2f\"", avg);
         } 
-	oldcount = pci->counter; pci->counter =0;
-	oldflag= mal_xlisting; mal_xlisting = 0;
-	printInstruction(eventstream,mb,pci);
-	pci->counter= oldcount;
-	mal_xlisting = oldflag;
-	fprintf(eventstream,"\t</mal>\n");
+	fprintf(eventstream,"/>\n");
 	}
 
 @-
@@ -222,25 +239,41 @@ inspect the properties of BATs and their propagation.
 	if( profileCounter[3].status ){
 	fprintf(eventstream,"\t<memory ");
 	fprintf(eventstream,"maxrss=\"%d\" ",infoUsage.ru_maxrss);
-	fprintf(eventstream,"arena=\"%d\" ",infoMalloc.arena);
-	fprintf(eventstream,"ordblks=\"%d\" ",infoMalloc.ordblks);
-	fprintf(eventstream,"smblks=\"%d\" ",infoMalloc.smblks);
-	fprintf(eventstream,"\n\thblkhd=\"%d\" ",infoMalloc.hblkhd);
-	fprintf(eventstream,"hblks=\"%d\" ",infoMalloc.hblks);
-	fprintf(eventstream,"fsmblks=\"%d\" ",infoMalloc.fsmblks);
-	fprintf(eventstream,"uordblks=\"%d\" ",infoMalloc.uordblks);
+	fprintf(eventstream,"arena=\"%d\" ",
+			infoMalloc.arena-prevMalloc.arena);
+	fprintf(eventstream,"ordblks=\"%d\" ",
+			infoMalloc.ordblks-prevMalloc.ordblks);
+	fprintf(eventstream,"smblks=\"%d\" ",
+			infoMalloc.smblks-prevMalloc.smblks);
+	fprintf(eventstream,"\n\thblkhd=\"%d\" ",
+			infoMalloc.hblkhd-prevMalloc.hblkhd);
+	fprintf(eventstream,"hblks=\"%d\" ",
+			infoMalloc.hblks-prevMalloc.hblks);
+	fprintf(eventstream,"fsmblks=\"%d\" ",
+			infoMalloc.fsmblks-prevMalloc.fsmblks);
+	fprintf(eventstream,"uordblks=\"%d\" ",
+			infoMalloc.uordblks-prevMalloc.uordblks);
+	prevMalloc = infoMalloc;
 	fprintf(eventstream,"/>\n");
 	}
 
 	if( profileCounter[4].status ){
 	fprintf(eventstream,"\t<io ");
-	fprintf(eventstream,"minflt=\"%d\" ",infoUsage.ru_minflt);
-	fprintf(eventstream,"majflt=\"%d\" ",infoUsage.ru_majflt);
-	fprintf(eventstream,"nswap=\"%d\" ",infoUsage.ru_nswap);
-	fprintf(eventstream,"\n\tinblock=\"%d\" ",infoUsage.ru_inblock);
-	fprintf(eventstream,"oublock=\"%d\" ",infoUsage.ru_oublock);
-	fprintf(eventstream,"nvcsw=\"%d\" ",infoUsage.ru_nvcsw);
-	fprintf(eventstream,"nivcsw=\"%d\" ",infoUsage.ru_nivcsw);
+	fprintf(eventstream,"minflt=\"%d\" ",
+			infoUsage.ru_minflt- prevUsage.ru_minflt);
+	fprintf(eventstream,"majflt=\"%d\" ",
+			infoUsage.ru_majflt- prevUsage.ru_majflt);
+	fprintf(eventstream,"nswap=\"%d\" ",
+			infoUsage.ru_nswap- prevUsage.ru_nswap);
+	fprintf(eventstream,"\n\tinblock=\"%d\" ",
+			infoUsage.ru_inblock- prevUsage.ru_inblock);
+	fprintf(eventstream,"oublock=\"%d\" ",
+			infoUsage.ru_oublock- prevUsage.ru_oublock);
+	fprintf(eventstream,"nvcsw=\"%d\" ",
+			infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
+	fprintf(eventstream,"nivcsw=\"%d\" ",
+			infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
+	prevUsage = infoUsage;
 	fprintf(eventstream,"/>\n");
 	}
 
@@ -265,8 +298,7 @@ int setLogFile(Scope cntxt, str fname){
 }
 int setStartPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
-	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
+	getEventStream();
 	printf("# start point not set\n");
 	MT_unset_lock(profileLock,"profileLock");
 #endif
@@ -274,8 +306,7 @@ int setStartPoint(Scope cntxt, str mod, str fcn){
 }
 int setEndPoint(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
-	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
+	getEventStream();
 	printf("# end point not set\n");
 	MT_unset_lock(profileLock,"profileLock");
 #endif
@@ -284,9 +315,7 @@ int setEndPoint(Scope cntxt, str mod, str fcn){
 
 int stopEventLogger(){
 #ifdef MALprofiler
-	if( profileLock==0) profileLock= MT_create_lock();
-	MT_set_lock(profileLock,"profileLock");
-	if( eventstream == NULL) return -1;
+	getEventStream();
 	fprintf(eventstream,"</MonetProfile>\n");
 	fclose(eventstream);
 	eventstream = NULL;
@@ -319,11 +348,13 @@ int instrFilter(InstrPtr pci, str mod, str fcn){
 
 int eventFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
-        int i,j,k,all=0;
+        int i,j,k,moduleOnly=0;
         Scope s=cntxt;
 	Symbol t;
 	InstrPtr p;
+	int all;
 
+	all= strcmp(mod,"*")==0 && strcmp(fcn,"*")==0;
 	if( profileLock==0) profileLock= MT_create_lock();
 	MT_set_lock(profileLock,"profileLock");
         while(s!= NULL){
@@ -332,12 +363,13 @@ int eventFilter(Scope cntxt, str mod, str fcn){
                 if(s->subscope[j]){
                         for(t= s->subscope[j];t!=NULL;t=t->peer) {
 				p= getInstrPtr(t->def,0);
-				all = (p->modname && strcmp(p->modname,mod)==0);
+				moduleOnly = (  p->modname && 
+						strcmp(p->modname,mod)==0);
 				for(k=0;k<t->def->stop;k++){
 					p= getInstrPtr(t->def,k);
-					if( all || instrFilter(p,mod,fcn)){
+					if( moduleOnly || all 
+					 || instrFilter(p,mod,fcn)){
 						p->trace = TRUE;
-					printf("set %s[%d]\n",p->fcnname,k);
 					}
 				}
                         }

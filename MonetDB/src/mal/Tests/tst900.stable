@@ -12,7 +12,6 @@
 #x:= multiplex.+(b,b);
 #d:= [+](b,c);
 #a:= b [+] b;
-	x := multiplex.+(b,b);	#2 unknown:void (x:any)(b:bat[lng,lng])(b:bat[lng,lng])
 !ERROR: d:= [+](b,c);
 !           ^<identifier> or <unary operator> expected
 !ERROR: a:= b [+] b;

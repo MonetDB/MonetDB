@@ -210,7 +210,7 @@ mal_export malType	destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export str		getDestName(MalBlkPtr mb, InstrPtr p);
 mal_export void 	printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void		promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
-mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p);
+mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 
 #endif /*  _MAL_INSTR_H*/
 @c
@@ -894,7 +894,7 @@ beginning of each line.
 #ifdef MALprofiler
 	if( p->counter){
 		double avg= p->ticks/(p->counter+0.0);
-		sprintf(t,"[%7d,%5.2f]\t",p->counter,avg);
+		sprintf(t,"[%7d, %5.2f]\t",p->counter,avg);
 	} else
 	if( p->trace)
 		sprintf(t,"[%7c,%7c]\t",'?','?');
@@ -948,7 +948,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	return s;
 }
 
-str instruction2str(MalBlkPtr mb,InstrPtr p){
+str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 	int i,len=0;
 	str s,t,nme;
 
@@ -1045,12 +1045,10 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	if(p->fcnname) sprintf(t,")");
 	advance(t);
 	sprintf(t,";");
-#ifdef DEBUG_MAL_INSTR
-	if( mal_xlisting){
+	if( hidden){
 		advance(t);
 		t= hiddenInstructionArgs(mb,p,t);
 	}
-#endif
 	advance(t);
 	sprintf(t,"\n");
 	if(t-s >len)
@@ -1060,7 +1058,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 void promptInstruction(FILE *fd, MalBlkPtr mb, InstrPtr p){
 	str ps;
 	if( fd == 0) GDKfatal("printInstruction:no file\n");
-	ps= instruction2str(mb,p);
+	ps= instruction2str(mb,p,mal_xlisting);
 	ps[strlen(ps)-1] = 0; /* remove '\n' */
 	fprintf(fd,"%s",ps);
 	GDKfree(ps);

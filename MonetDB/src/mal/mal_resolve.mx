@@ -473,7 +473,7 @@ void chkProgram(Scope s, MalBlkPtr mb)
 		case FUNCTIONsymbol: case COMMANDsymbol:
 		case PATTERNsymbol: case HANDLERsymbol:
 			if( i) {
-			str msg=instruction2str(mb,p);
+			str msg=instruction2str(mb,p,TRUE);
 			GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
 			GDKfree(msg);
 			} else signature = TRUE;
@@ -492,7 +492,7 @@ void chkProgram(Scope s, MalBlkPtr mb)
 			chkBarrier(mb,p);
 	}
 	if( signature == FALSE){
-		str msg=instruction2str(mb,p);
+		str msg=instruction2str(mb,p,TRUE);
 		GDKerror("SYNTAX ERROR: signature missing\n!%s\n",msg);
 		/* printFunction(stdout,mb);*/
 		GDKfree(msg);

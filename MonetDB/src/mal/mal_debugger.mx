@@ -91,6 +91,10 @@ void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
 	}
 }
 
+@-
+Break points can be set on assignment to a specific variable
+or they can be set to a specific module.function call.[todo]
+@c
 void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, char cmd)
 {	mdbState mdb= mdbTable + cntxt->idx;
 	mdb->brkBlock[mdb->brkTop] = mb;
@@ -389,8 +393,7 @@ void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index){
 	 	VALprint(f, v);
 	}
 	nme= malTypeName(n->type);
-	fprintf(f,":%s%s%s", nme, (n->isused?" used":""),
-			(n->isaconstant?" constant":""));
+	fprintf(f,":%s%s", nme, (n->isaconstant?" constant":""));
 	fprintf(f,"\n");
 	GDKfree(nme);
 }

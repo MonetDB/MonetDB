@@ -18,8 +18,6 @@
 #x:= multiplex.multiplex("+",b,c);
 #print(x);
 #
-multiplex against operator + (original multiplex)
-	calc.+($2,$3);	#0:lng ($0:lng)($2:lng)($3:int)
 function Admin.main():int;	#0:void (main:int)
 	b := mal.new(lng,lng);	#1:BAT (b:bat[lng,lng])(lng:lng)(lng:lng)
 	i := -1;	#2:lng (i:lng)($4:lng)
@@ -28,7 +26,7 @@ barrier	v := mal.nextElement(i,0,10);	#3:bit (v:bit)(i:lng)($6:lng)($7:lng)
 	redo v ;	#5:bit (v:bit)
 end	v;	#6:bit (v:bit)
 	c := 1;	#7:int (c:int)($10:int)
-	x := multiplex.multiplex("+",b,c);	#8:void (x:bat[lng,int])($12:str)(b:bat[lng,lng])(c:int)
-	mal.print(x);	#9:int ($13:int)(x:bat[lng,int])
+	x := multiplex.multiplex("+",b,c);	#8:void (x:bat[lng,lng])($12:str)(b:bat[lng,lng])(c:int)
+	mal.print(x);	#9:int ($13:int)(x:bat[lng,lng])
 end function;	#10:void 
 >

@@ -2,7 +2,7 @@
 
 	s0:= "hello";
 	s0:= "world";
-	b1:= s0 = "world";
+	b1:= s0 == "world";
 	s1:= s0;
 barrier b1;
 	s2:= s1;

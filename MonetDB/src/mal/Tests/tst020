@@ -1,7 +1,7 @@
 function pl(i:str):int;
 	L:= "something";
 	r:=0;
-barrier l:= r= 0;
+barrier l:= r == 0;
 	y:= r;
 	r:= r+1;
 	leave l;

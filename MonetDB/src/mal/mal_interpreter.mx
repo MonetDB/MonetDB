@@ -49,7 +49,7 @@ html
 
 /*#define DEBUG_MAL_INTERPRETER */
 mal_export void showErrors(Client cntxt);
-mal_export str runMAL(Client c,MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb);
+mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);
 mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
@@ -65,10 +65,9 @@ void showErrors(Client cntxt){
 	}
 }
 
-str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
-	MalBlkPtr mb=mbcaller;
+str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env){
 	MalStkPtr stk= NULL;
-	int space = 0,i;
+	int i;
 	ValPtr retval, lhs,rhs,v;
 	InstrPtr pci=0; 
 	int stop=0;
@@ -80,17 +79,12 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 	long timer;
 	@:performanceVariables@
 
-	if( mbcaller->errors){
+	if( mb->errors){
 		char buf[1024];
 		showErrors(cntxt);
 		sprintf(buf,"'%s.%s' contains errors\n",
 			getModName(mb),getFcnName(mb));
 		return raiseException(mb,0,"SyntaxError",buf);
-	}
-	if( env){
-		/* locate instructions for called function */
-		pci= getInstrPtr(mbcaller,env->pc);
-		mb= pci->blk;
 	}
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
@@ -98,38 +92,36 @@ the minimum amount of stack space needed, some slack resources
 are included to permit code squeezers to add a few variables at run time,
 (2) copying the arguments into the new stack frame.
 Notice that arguments are always the first entries on the stack.
-They are followed by predefined constants.
 
-The env stackframe is only set when a MAL function is called recursively.
-The glb stackframe contains a saved stackframe with global variables. We
-assume here that it aligns with the variable table of the routine.
+The env stackframe is set when a MAL function is called recursively.
+Alternatively, there is no caller but a stk to be re-used for interpretation.
+We assume here that it aligns with the variable table of the routine
+being called.
 @c
 	/* allocate space for value stack */
-	if( glb== 0){
-		space= mb->vtop;
-		newStack(stk,space);
+	if( mbcaller== NULL && env != NULL){
+		stk = env;
+		cmd = env->cmd;
+		if( mb != stk->blk) GDKerror("runMAL:misalignment of symbols\n");
+	} else {
+		newStack(stk,mb->vtop);
 		stk->stktop= mb->vtop; 
 		stk->blk= mb;
 		@:safeguardStack@
-	} else {
-		stk = glb;
-		if( mb != stk->blk) GDKerror("runMAL:misalignment of symbols\n");
-	}
+	} 
 
-	if( env){
+	if( env && mbcaller){
 		int k;
 @-
-Beware, the prelude of the stack frame contains type constants
-and a variable to keep the return value.
+Beware, the prelude of the stack frame contains 
+a variable to keep the return value.
 @c
-	 
+		pci= getInstrPtr(mbcaller,env->pc);
 		/* printf("recursive MAL function call %s[%d]\n",
 			pci->fcnname,env->pc); */
 		for(k=1; k<pci->argc; k++){
 			lhs = &stk->stk[k];
-			/*if( isVarConstant(mbcaller,pci->argv[k]))
-				rhs = &getVarConstant(mbcaller,pci->argv[k]);
-			else */	rhs = &env->stk[pci->argv[k]];
+			rhs = &env->stk[pci->argv[k]];
 			VALcopy(lhs,rhs);
 			@:BATfix(rhs)@
 		}
@@ -140,9 +132,9 @@ and a variable to keep the return value.
 @-
 An optimization is to copy all constant variables used in functions immediately
 onto the value stack. Then we do not have to check for the location
-later on any more. The effect is optimal, if at least ca. 20 constants
-are referenced in a function (a gain on tst400a of 20% has been observed).
-Otherwise, it is cheaper to lookup them up. 
+later on any more. At some point, the effect is optimal, if at least several
+constants are referenced in a function (a gain on tst400a of 20% has been 
+observed due the small size of the function).
 
 Moreover, we have to copy the result types to the stack for later
 use. In particular, to enable proper dynamic type analysis.
@@ -178,9 +170,8 @@ MALrestart:
 		@:MALinterpret@
 	}
 MALevalExit:
-	@:endProfile@
 	/* garbage collect and return */
-	if( glb == 0) garbageCollector(mb,stk);
+	if( env != stk ) garbageCollector(mb,stk);
 	if( stk->exception >= 0) 
 		ret=appendException(mb,stop-1,"MALexception", "propagated",ret);
 	return ret;
@@ -227,7 +218,9 @@ elements in the value stack.
 		@:barrierControl@ break;
 	case RLRcall:
 	case PATcall:
+		stk->cmd= cmd;
 		@:patterncall@ 
+		cmd = stk->cmd;
 		stk->pc++; break;
 	case CMDcall:
 		@:commandcall@ 
@@ -242,18 +235,15 @@ elements in the value stack.
 	case FUNCTIONsymbol:
 	case ENDsymbol:
 		if( pci->argv[0] == stk->exception) stk->exception = -1; 
-		@:endProfile@
 		stk->pc++; 
 		break;
 	case RAISEsymbol:
 		@:raiseControl@
-		@:endProfile@
 		break;
 	case CATCHsymbol:
 		/* catch blocks are skipped unless searched for explicitly*/
 		if(stk->exception < 0) @:leaveControl@
 		stk->exception = -1;
-		@:endProfile@
 		stk->pc++; break;
 	case RETURNsymbol:
 		if( env != NULL){
@@ -263,16 +253,18 @@ elements in the value stack.
 			lhs = &env->stk[pci->argv[0]];
 			VALcopy(lhs,rhs);
 			@:BATfix(lhs)@
-			/* if(glb == 0) garbageCollector(mb,stk);*/
 			if(env) env->cmd = cmd; /* save debugger command */
 			goto MALevalExit;
 		}
 	case ENDDEFsymbol: 
+		@:endProfile@
 		goto MALevalExit;
 	default:
 		GDKerror("ERROR:MALeval:unkown operation type\n");
+		@:endProfile@
 		goto MALevalExit;
 	}
+	@:endProfile@
 
 @+ Assignment command
 The assignment statement copies values around on the stack frame.
@@ -282,9 +274,7 @@ symbol table and moves it to the stackframe location.
 @= assignStmt
 {	
 	lhs = &stk->stk[pci->argv[0]];
-	/* if( isVarConstant(mb,pci->argv[1]))
-		rhs = &getVarConstant(mb,pci->argv[1]);
-	else */	rhs = &stk->stk[pci->argv[1]];
+	rhs = &stk->stk[pci->argv[1]];
 	garbageElement(lhs);
 	@:BATfix(rhs)@
 	VALcopy(lhs,rhs);
@@ -293,7 +283,6 @@ symbol table and moves it to the stackframe location.
 		fflush(stdout);*/
 		stk->exception = pci->argv[0];
 	} 
-	@:endProfile@
 	ret = 0;
 }
 if( pci->barrier == BARRIERsymbol){
@@ -354,7 +343,6 @@ are determined at compile time.
 				"too many arguments\n");
 	}
 	@:resultParameter@
-	@:endProfile@
 
 @= patterncall
 	if( pci->fcn== NULL)
@@ -366,7 +354,6 @@ are determined at compile time.
 		ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:resultParameter@
 	}
-	@:endProfile@
 
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -376,9 +363,11 @@ non-returned values.
 @= functioncall
 	retval=  &stk->stk[pci->argv[0]];
 	garbageElement(retval);
-	ret= runMAL(cntxt,mb,stk,0);
+	if( pci->blk== NULL)
+		ret= raiseException(mb,stk->pc,"MALexception",
+			"reference to MAL function missing\n");
+	else ret= runMAL(cntxt,pci->blk,mb,stk);
 	@:resultParameter@
-	@:endProfile@
 @-
 All dynamically linked routines are called with references to their
 parameter values. They are assembled below by inspecting the argument list.
@@ -479,7 +468,7 @@ reaching end of function block.
 	if( l->token == CATCHsymbol && l->argv[0]== @1){
 		break;
 	} }
-	if( stk->pc== stop) goto MALevalExit;
+	if( stk->pc== stop) { @:endProfile@ goto MALevalExit;}
 
 @= raiseControl
 	stk->exception = pci->argv[0];
@@ -573,12 +562,14 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 		} else {
 			stk->exception = pci->argv[0];
 			stk->pc++;
+			@:endProfile@
 			continue;
 		}
 	}
 	stk->exception = symid; 
 	if( symid == -1){
 		*msg=':';
+		@:endProfile@
 		goto MALevalExit;
 	}
 	msg++;
