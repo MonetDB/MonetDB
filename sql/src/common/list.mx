@@ -280,7 +280,6 @@ void *list_reduce(list * l, freduce red, fdup dup )
 list *list_map(list * l, void *data, fmap map)
 {
 	list *res = list_create(l->destroy);
-	int seqnr = 0;
 
 	node *n = l->h;
 	while (n) {
