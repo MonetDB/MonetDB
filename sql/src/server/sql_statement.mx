@@ -1218,11 +1218,11 @@ stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr )
 
 stmt *stmt_list(list * l)
 {
+	int nrcols = 0;
+	int key = 1;
 	node *n;
 	stmt *s = stmt_create(st_list);
 	s->op1.lval = l;
-	int nrcols = 0;
-	int key = 1;
 	
 	for (n = l->h; n; n = n->next){
 		stmt *f = n->data;
