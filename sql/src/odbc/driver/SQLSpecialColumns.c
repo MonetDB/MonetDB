@@ -174,14 +174,14 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		strcpy(query_end,
 		       "select "
 		       "cast(null as smallint) as scope, "
-		       "'' as column_name, "
+		       "cast('' as varchar) as column_name, "
 		       "cast(1 as smallint) as data_type, "
-		       "'char' as type_name, "
-		       "1 as column_size, "
-		       "1 as buffer_length, "
+		       "cast('char' as varchar) as type_name, "
+		       "cast(1 as integer) as column_size, "
+		       "cast(1 as integer) as buffer_length, "
 		       "cast(0 as smallint) as decimal_digits, "
 		       "cast(0 as smallint) as pseudo_column "
-		       "from sys.\"schemas\" s where 0 = 1");
+		       "where 0 = 1");
 		query_end += strlen(query_end);
 	}
 	assert(query_end - query < 1000 + nTableNameLength + nSchemaNameLength);

@@ -68,7 +68,7 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar) as table_name, "
 			       "cast('' as varchar) as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from sys.\"schemas\" where 0 = 1");
+			       "where 0 = 1");
 	} else if (nCatalogNameLength == 0 && nTableNameLength == 0 &&
 		   szSchemaName && 
 		   strcmp((char*)szSchemaName, SQL_ALL_SCHEMAS) == 0) {
