@@ -2327,7 +2327,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	mapi_hdl_check(hdl, "mapi_query_part");
 	mid = hdl->mid;
 	if (mid->trace) {
-		printf("mapi_query_part:" SZFMT ":%s\n", size, query);
+		printf("mapi_query_part:" SZFMT ":%.*s\n", size, size, query);
 	}
 	stream_write(mid->to, (char*)query, 1, size);
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_part",
