@@ -735,6 +735,7 @@ Mapi mapi_new() {
 	m->cache.anchors= 0;
 	m->cache.fldcnt= 0;
 	m->tracelog= 0;
+	m->active= 0;
 	m->blk.buf=0;
 	m->blk.lim=0;
 	m->blk.nxt=0;
@@ -835,8 +836,7 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 		printf("sending first request [%d]:%s",BLOCK,buf);
 		fflush(stdout);
 	}
-#ifdef MONET5
-	len= strlen(buf)+1;
+	len= strlen(buf);
 	ret= mid->to->write(mid->to,buf,1,len);
 	mid->to->flush(mid->to);
 	mid->active++;
@@ -845,11 +845,6 @@ Mapi mapi_connect(char *host, char *username, char *password, char *lang) {
 			"mapi_connect");
 		return(mid);
 	}
-#else
-	mid->to->write(mid->to,buf,1,strlen(buf));
-	mid->to->flush(mid->to);
-	mid->active++;
-#endif
 
 #ifdef BLOCKED
 	mid->from = block_stream(socket_rstream(s,"Mapi client read"));
@@ -905,7 +900,7 @@ void promptMonet(Mapi mid) {
 	*s = 0;
 	i= s-(mid->blk.buf+mid->blk.nxt);
 	if( i < NAMELEN-1) strncpy(mid->prompt,mid->blk.buf+mid->blk.nxt,i+1);
-	mid->blk.nxt= i+1;
+	mid->blk.nxt += i+1;
 	mid->active = 0;
 	if( mid->trace) printf("%s\n",mid->prompt);
 #else
@@ -1071,12 +1066,14 @@ MapiMsg mapi_explain(Mapi mid, FILE *fd) {
 	fprintf(fd,"QUERY = %s\n", mid->query);
 	if( mid->error) 
 	fprintf(fd,"ERROR = %s\n",mid->errorstr);
-	for(i= mid->cache.reader+1; i<mid->cache.writer;i++){
+/*
+	for(i= mid->cache.reader+1; i<mid->cache.writer-1; i++){
 		fprintf(fd,"CACHE %d:%c",i, mid->cache.rows[i][0]);
 		for(j=0;j<mid->cache.fldcnt[i]; j++)
 			fprintf(fd,"%s",mid->cache.anchors[i][j]);
 		fprintf(fd,"\n");
 	}
+*/
 }
 @-
 The routine mapi_query is one of the most heavily used ones.
@@ -1220,7 +1217,7 @@ MapiMsg mapi_execute(Mapi mid) {
 	mapi_check(mid,mid->error,"mapi_execute");
 	mapi_param_store(mid);
 	cmd= mid->query;
-	size =strlen(cmd)+1 /* null byte */;
+	size =strlen(cmd) /* null byte */;
 
 	mapi_cache_reset(mid);
         if (mid->trace) {
@@ -1253,8 +1250,9 @@ MapiMsg mapi_query(Mapi mid, char* cmd) {
 	if(ret==MOK) {
 		/* look ahead to detect errors */
 		int oldrd= mid->cache.reader;
+		int rd=0;
 		/* mapi_fetch_line(mid);*/
-		while(mid->error==MOK && mid->active ){
+		while(mid->error==MOK && mid->active && rd++ <mid->cache.limit){
 			mapi_get_row(mid);
 		}
 		mid->cache.reader= oldrd;
@@ -1368,6 +1366,22 @@ void  mapi_extend_cache(Mapi mid){
 
 	mid->cache.limit= newsize;
 }
+static
+int  mapi_clear_cache(Mapi mid){
+        int i;
+        if( mid->cache.reader+2< mid->cache.writer)
+                return mapi_setError(mid,"Cache reset with non-read lines","mapi_clear");
+        for(i=0; i<mid->cache.writer;i++){
+                if( mid->cache.anchors[i]) free(mid->cache.anchors[i]);
+                mid->cache.anchors[i]=0;
+                if( mid->cache.rows[i]) free(mid->cache.rows[i]);
+                mid->cache.rows[i]=0;
+        }
+        mid->cache.reader= -1;
+        mid->cache.writer= 0;
+        memset(mid->cache.fldcnt,0, mid->cache.limit * sizeof(int));
+        return MOK;
+}
 
 char * mapi_fetch_line(Mapi mid){
 	char *l,*reply,*newbuf, *s;
@@ -1380,10 +1394,9 @@ char * mapi_fetch_line(Mapi mid){
 	if( mid->active == 0) return 0;
 	mid->error = MOK;
 	/* get rid of old buffer space */
-	if(mid->cache.rows && mid->cache.rows[mid->cache.writer]) {
-		free(mid->cache.rows[mid->cache.writer]);
-		mid->cache.rows[mid->cache.writer]= 0;
-	}
+        if( mid->cache.writer== mid->cache.limit &&
+                mapi_clear_cache(mid)) return 0;
+
 	/* check if you need to read more blocks to catch a new line */
 	n= mid->blk.nxt;
 	mid->blk.eos=0;
@@ -1392,7 +1405,8 @@ char * mapi_fetch_line(Mapi mid){
 		int len;
 		if( mid->blk.eos)  return 0;
 
-		len= n? mid->blk.lim - n + BLOCK: BLOCK;
+		len= n? mid->blk.lim - n : 0;
+		if( len < BLOCK) len+= BLOCK+1; /* scratch null byte */
 		newbuf= (char *)malloc(len * sizeof(char));
 		if(n) memcpy(newbuf,  mid->blk.buf + n, mid->blk.lim - n);
 		if( mid->blk.buf) free(mid->blk.buf);
