@@ -357,14 +357,56 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
-			if (mapi_error(mid))
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
 				break;
+			case MERROR:
+				/* some error, but try to continue */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				return 1;
+			}
 		}
 		if (length > 0) {
 			assert(hdl != NULL);
 			mapi_query_part(hdl, line, length);
-			if (mapi_error(mid))
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
 				break;
+			case MERROR:
+				/* some error, but try to continue */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				} else
+					mapi_explain(mid, stderr);
+				return 1;
+			}
 		}
 		if ((length == 0 || line[length - 1] == '\n') && linemode) {
 			char *rtrn;
@@ -373,15 +415,46 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			if (mapi_query_done(hdl) == MMORE)
 				continue; /* get more data */
 
-			if (mapi_error(mid))
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
 				break;
+			case MERROR:
+				/* some error, but try to continue */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				return 1;
+			}
 
 			while ((rtrn = mapi_fetch_line(hdl)) != 0)
 				fprintf(toConsole, "%s\n", rtrn);
 			timerEnd();
 
-			if (mapi_error(mid))
+			switch (mapi_error(mid)) {
+			case MOK:
+				/* everything A OK */
 				break;
+			case MERROR:
+				/* some error, but try to continue */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				continue;
+			case MTIMEOUT:
+				/* lost contact with the server */
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				return 1;
+			}
+
 			mapi_close_handle(hdl);
 			hdl = NULL;
 		}

@@ -488,6 +488,7 @@ The Mapi interface calls return one of the following codes.\\
 \begin{tabular}{l l}
 MOK  & No error \\
 MERROR  & Mapi internal error.\\
+MTIMEOUT  & Error communicating with the server.\\
 \end{tabular}
 @
 @{
@@ -657,7 +658,7 @@ typedef struct MapiStruct {
 	int autocommit;		/* auto-commit every query (SQL) */
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
-	int error;		/* Error occurred */
+	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* pointer to constant string */
 	const char *action;	/* pointer to constant string */
 
@@ -700,7 +701,7 @@ the error status of the Mapi structure.
 	do {								\
 		assert(X);						\
 		if ((X)->connected == 0) {				\
-			mapi_setError((X), "Connection lost", (C));	\
+			mapi_setError((X), "Connection lost", (C), MERROR); \
 			return (X)->error;				\
 		}							\
 		mapi_clrError(X);					\
@@ -709,7 +710,7 @@ the error status of the Mapi structure.
 	do {								\
 		assert(X);						\
 		if ((X)->connected == 0) {				\
-			mapi_setError((X), "Connection lost", (C));	\
+			mapi_setError((X), "Connection lost", (C), MERROR); \
 			return 0;					\
 		}							\
 		mapi_clrError(X);					\
@@ -719,7 +720,7 @@ the error status of the Mapi structure.
 		assert(X);						\
 		assert((X)->mid);					\
 		if ((X)->mid->connected == 0) {				\
-			mapi_setError((X)->mid, "Connection lost", (C));\
+			mapi_setError((X)->mid, "Connection lost", (C), MERROR); \
 			return (X)->mid->error;				\
 		}							\
 		mapi_clrError((X)->mid);				\
@@ -729,7 +730,7 @@ the error status of the Mapi structure.
 		assert(X);						\
 		assert((X)->mid);					\
 		if ((X)->mid->connected == 0) {				\
-			mapi_setError((X)->mid, "Connection lost", (C));\
+			mapi_setError((X)->mid, "Connection lost", (C), MERROR); \
 			return 0;					\
 		}							\
 		mapi_clrError((X)->mid);				\
@@ -873,7 +874,7 @@ static MapiMsg mapi_get_row(MapiHdl hdl);
 static int mapi_extend_fields(MapiHdl hdl, int minfields);
 static int mapi_extend_params(MapiHdl hdl, int minparams);
 static int mapi_slice_row(MapiHdl hdl);
-static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action);
+static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error);
 static char *mapi_fetch_line_internal(MapiHdl hdl, int *wantmore);
 static MapiMsg mapi_finish_internal(MapiHdl hdl);
 static void mapi_lost_connection(Mapi mid);
@@ -924,13 +925,13 @@ typedef __int64 mapi_int64;
 #error no definition for SZFMT
 #endif
 
-#define check_stream(mid,s,msg,f,e)				\
-	do {							\
-		if ((s) == NULL || stream_errnr(s)) {		\
-			mapi_lost_connection(mid);		\
-			mapi_setError((mid), (msg), (f));	\
-			return (e);				\
-		}						\
+#define check_stream(mid,s,msg,f,e)					\
+	do {								\
+		if ((s) == NULL || stream_errnr(s)) {			\
+			mapi_lost_connection(mid);			\
+			mapi_setError((mid), (msg), (f), MTIMEOUT);	\
+			return (e);					\
+		}							\
 	} while (0)
 #define REALLOC(p,c)	((p) = ((p) ? realloc((p),(c)*sizeof(*(p))) : malloc((c)*sizeof(*(p)))))
 
@@ -988,7 +989,7 @@ mapi_trace_log(Mapi mid, const char *nme)
 			stream_destroy(mid->tracelog);
 		mid->tracelog = NULL;
 		return mapi_setError(mid, "Could not create log file",
-				     "mapi_trace_log");
+				     "mapi_trace_log", MERROR);
 	}
 	return MOK;
 }
@@ -1018,12 +1019,12 @@ mapi_setAutocommit(Mapi mid, int autocommit)
 }
 
 static MapiMsg
-mapi_setError(Mapi mid, const char *msg, const char *action)
+mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 {
 	assert(msg);
 	REALLOC(mid->errorstr, strlen(msg) + 1);
 	strcpy(mid->errorstr, msg);
-	mid->error = MERROR;
+	mid->error = error;
 	mid->action = action;
 	return mid->error;
 }
@@ -1040,7 +1041,7 @@ mapi_new_handle(Mapi mid)
 	assert(hdl);
 	if (hdl == NULL) {
 		mapi_setError(mid, "Memory allocation failure",
-			      "mapi_new_handle");
+			      "mapi_new_handle", MERROR);
 		return NULL;
 	}
 	hdl->mid = mid;
@@ -1081,10 +1082,12 @@ mapi_close_handle(MapiHdl hdl)
 		return MERROR;
 	if (hdl->tableid >= 0) {
 		hdl->mid->active = 1;
-		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
+		if (stream_printf(hdl->mid->to, "X" "close %d\n",
+				  hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to)) {
 			mapi_lost_connection(hdl->mid);
-			mapi_setError(hdl->mid, stream_error(hdl->mid->to), "mapi_close_handle");
+			mapi_setError(hdl->mid, stream_error(hdl->mid->to),
+				      "mapi_close_handle", MTIMEOUT);
 		} else
 			mapi_finish_internal(hdl);
 		hdl->tableid = -1;
@@ -1315,7 +1318,7 @@ mapi_connect_ssl(const char *host, int port, const char *username,
 		mapi_reconnect(mid);	/* actually, initial connect */
 #else
 	mapi_setError(mid, "SSL connections not supported",
-		      "mapi_connect_ssl");
+		      "mapi_connect_ssl", MERROR);
 #endif
 	return mid;
 }
@@ -1481,7 +1484,7 @@ mapi_reconnect(Mapi mid)
 	hp = gethostbyname(mid->hostname);
 	if (!hp) {
 		return mapi_setError(mid, "gethostbyname failed",
-				     "mapi_reconnect");
+				     "mapi_reconnect", MERROR);
 	}
 	memset(&server, 0, sizeof(server));
 	memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
@@ -1495,7 +1498,7 @@ mapi_reconnect(Mapi mid)
 		if (mapi_ssl_ctx == 0) {
 			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
 
-			mapi_setError(mid, errstr, "mapi_reconnect");
+			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
 			free(errstr);
 			return mid->error;
 		}
@@ -1505,20 +1508,20 @@ mapi_reconnect(Mapi mid)
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0) {
 		return mapi_setError(mid, "Open socket failed",
-				     "mapi_reconnect");
+				     "mapi_reconnect", MERROR);
 	}
 
 	if (connect(s, (struct sockaddr *) &server, sizeof(server)) < 0) {
 		perror("!ERROR mapi_reconnect: ");
 		return mapi_setError(mid, "Setup connection failed",
-				     "mapi_reconnect");
+				     "mapi_reconnect", MERROR);
 	}
 #ifdef HAVE_OPENSSL
 	if (mid->secure) {
 		if ((ssl = SSL_new(mapi_ssl_ctx)) == 0) {
 			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
 
-			mapi_setError(mid, errstr, "mapi_reconnect");
+			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
 			free(errstr);
 			close(s);
 			return mid->error;
@@ -1526,7 +1529,7 @@ mapi_reconnect(Mapi mid)
 		if (!SSL_set_fd(ssl, s)) {
 			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
 
-			mapi_setError(mid, errstr, "mapi_reconnect");
+			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
 			free(errstr);
 			SSL_free(ssl);
 			close(s);
@@ -1556,7 +1559,8 @@ mapi_reconnect(Mapi mid)
 				SSL_free(ssl);
 				close(s);
 				errstr = ssl_error(err, ret);
-				mapi_setError(mid, errstr, "mapi_reconnect");
+				mapi_setError(mid, errstr, "mapi_reconnect",
+					      MERROR);
 				free(errstr);
 				return mid->error;
 			}
@@ -1664,7 +1668,7 @@ for bulk interacting with a server.
 		if (fnr < 0) {						\
 			return mapi_setError(hdl->mid,			\
 					     "Illegal field number",	\
-					     funcname);			\
+					     funcname, MERROR);		\
 		}							\
 		/* make sure there is enough space */			\
 		if (fnr >= hdl->maxfields)				\
@@ -1680,7 +1684,7 @@ for bulk interacting with a server.
 		if (fnr < 0) {						\
 			return mapi_setError(hdl->mid,			\
 					     "Illegal param number",	\
-					     funcname);			\
+					     funcname, MERROR);		\
 		}							\
 		if (fnr >= hdl->maxparams)				\
 			mapi_extend_params(hdl, fnr);			\
@@ -1704,7 +1708,7 @@ mapi_bind_var(MapiHdl hdl, int fnr, int type, void *ptr)
 		hdl->fields[fnr].outtype = type;
 	else
 		return mapi_setError(hdl->mid, "Illegal SQL type identifier",
-				     "mapi_bind_var");
+				     "mapi_bind_var", MERROR);
 	return MOK;
 }
 
@@ -1735,7 +1739,7 @@ mapi_param_type(MapiHdl hdl, int fnr, int ctype, int sqltype, void *ptr)
 		hdl->params[fnr].intype = ctype;
 	else
 		return mapi_setError(hdl->mid, "Illegal SQL type identifier",
-				     "mapi_param_type");
+				     "mapi_param_type", MERROR);
 	hdl->params[fnr].sizeptr = NULL;
 	hdl->params[fnr].outtype = sqltype;
 	hdl->params[fnr].scale = 0;
@@ -1810,7 +1814,7 @@ mapi_check_query(MapiHdl hdl)
 		if (*c == '\n' && !hdl->mid->blocked) {
 			mapi_setError(hdl->mid,
 				      "Newline in query string not allowed",
-				      "mapi_check_query");
+				      "mapi_check_query", MERROR);
 			*c = ' ';
 		}
 	}
@@ -1829,7 +1833,7 @@ mapi_timeout(Mapi mid, int time)
 	if (mid->trace)
 		printf("Set timeout to %d\n", time);
 	return mapi_setError(mid, "Operation not yet implemented",
-			     "mapi_timeout");
+			     "mapi_timeout", MERROR);
 }
 
 @-
@@ -1938,7 +1942,7 @@ mapi_prepare_handle(MapiHdl hdl, const char *cmd)
 		hdl->mid->active = 1;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to))
-			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_prepare_handle", MERROR);
+			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_prepare_handle", hdl->mid->error);
 		hdl->tableid = -1;
 		mapi_finish_internal(hdl);
 	}
@@ -2233,7 +2237,7 @@ mapi_execute_array(MapiHdl hdl, char **val)
 MapiHdl
 mapi_query(Mapi mid, const char *cmd)
 {
-	int ret = MERROR;
+	int ret;
 	MapiHdl hdl;
 
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
@@ -2253,13 +2257,13 @@ mapi_query(Mapi mid, const char *cmd)
 MapiMsg
 mapi_query_handle(MapiHdl hdl, const char *cmd)
 {
-	int ret = MERROR;
+	int ret;
 
 	if (hdl->tableid >= 0) {
 		hdl->mid->active = 1;
 		if (stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid) < 0 ||
 		    stream_flush(hdl->mid->to))
-			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_query_handle", MERROR);
+			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_query_handle", hdl->mid->error);
 		hdl->tableid = -1;
 		mapi_finish_internal(hdl);
 	}
@@ -2275,7 +2279,7 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 MapiHdl
 mapi_query_array(Mapi mid, const char *cmd, char **val)
 {
-	int ret = MERROR;
+	int ret;
 	MapiHdl hdl;
 
 	hdl = prepareQuery(mapi_new_handle(mid), cmd);
@@ -2354,7 +2358,7 @@ received from the server to the stream indicated.
 MapiHdl
 mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 {
-	int ret = MERROR;
+	int ret;
 	MapiHdl hdl;
 
 	mapi_check0(mid, "mapi_quick_query");
@@ -2372,7 +2376,7 @@ mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 MapiHdl
 mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 {
-	int ret = MERROR;
+	int ret;
 	MapiHdl hdl;
 
 	mapi_check0(mid, "mapi_quick_query_array");
@@ -2460,7 +2464,7 @@ mapi_cache_limit(Mapi mid, int limit)
 		MapiHdl hdl = mapi_new_handle(mid);
 		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
 		    stream_flush(mid->to))
-			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", MERROR);
+			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", mid->error);
 		mid->active = 1;
 		mapi_finish_internal(hdl);
 		mapi_close_handle(hdl);
@@ -2475,7 +2479,7 @@ mapi_cache_shuffle(MapiHdl hdl, int percentage)
 	mapi_hdl_check(hdl, "mapi_cache_shuffle");
 	if (percentage < 0 || percentage > 100) {
 		return mapi_setError(hdl->mid, "Illegal percentage",
-				     "mapi_cache_shuffle");
+				     "mapi_cache_shuffle", MERROR);
 	}
 	hdl->cache.shuffle = percentage;
 	return MOK;
@@ -2504,11 +2508,11 @@ mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 		break;
 	default:
 		return mapi_setError(hdl->mid, "Illegal whence value",
-				     "mapi_seek_row");
+				     "mapi_seek_row", MERROR);
 	}
 	if (rownr < 0 || rownr > hdl->rows_affected)
 		return mapi_setError(hdl->mid, "Illegal row number",
-				     "mapi_seek_row");
+				     "mapi_seek_row", MERROR);
 	if (hdl->cache.first <= rownr &&
 	    rownr < hdl->cache.first + hdl->cache.tuplecount) {
 		/* we've got the requested tuple in the cache */
@@ -2792,7 +2796,7 @@ mapi_fetch_line(MapiHdl hdl)
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid, hdl->cache.first + hdl->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
-		if (answer_lookahead(hdl) == MERROR)
+		if (answer_lookahead(hdl) != MOK)
 			return NULL;
 		reply = mapi_fetch_line_internal(hdl, NULL);
 	}
@@ -2846,7 +2850,7 @@ empy the row cache.
 		}							\
 		if (ferror(fd))						\
 			return mapi_setError(mid, "Error writing file",	\
-					     "mapi.response");		\
+					     "mapi.response", MERROR);	\
 	} while (0)
 
 MapiMsg
@@ -2861,7 +2865,7 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 	mapi_check(mid, "mapi_quick_response");
 	if (fd == 0)
 		return mapi_setError(mid, "Destination file missing",
-				     "mapi.response");
+				     "mapi.response", MERROR);
 
 	/* any left over rows in the cache? */
 	for (i = hdl->cache.reader + 1; i < hdl->cache.writer; i++)
@@ -3019,7 +3023,7 @@ mapi_get_row(MapiHdl hdl)
 	while (mid->active || hdl->cache.reader + 1 < hdl->cache.writer) {
 		reply = mapi_fetch_line_internal(hdl, &wantmore);
 		if (reply == 0)
-			return wantmore ? MMORE : MERROR;
+			return wantmore ? MMORE : (mid->error ? mid->error : MERROR);
 
 		switch (reply[0]) {
 		case '#':
@@ -3263,7 +3267,7 @@ mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *dst)
 
 	if (fnr < 0 || fnr >= hdl->fieldcnt) {
 		return mapi_setError(hdl->mid, "Illegal field number",
-				     "mapi_store_field");
+				     "mapi_store_field", MERROR);
 	}
 
 	cr = hdl->cache.reader;
@@ -3271,12 +3275,12 @@ mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *dst)
 
 	if (val == 0) {
 		return mapi_setError(hdl->mid, "Field value undefined",
-				     "mapi_store_field");
+				     "mapi_store_field", MERROR);
 	}
 
 	if (strcmp(val, "nil") == 0)
 		return mapi_setError(hdl->mid, "Field value is nil",
-				     "mapi_store_field");
+				     "mapi_store_field", MERROR);
 
 	/* auto convert to C-type */
 	switch (outtype) {
@@ -3393,7 +3397,7 @@ mapi_slice_row(MapiHdl hdl)
 	p = hdl->cache.rows[cr];
 	if (p == NULL)
 		return mapi_setError(hdl->mid, "Current row missing",
-				     "mapi_slice_row");
+				     "mapi_slice_row", MERROR);
 	if (hdl->cache.fldcnt[cr]) {
 		mapi_store_bind(hdl);
 		return hdl->cache.fldcnt[cr];	/* already sliced */
@@ -3454,8 +3458,8 @@ mapi_fetch_row(MapiHdl hdl)
 		hdl->mid->active = 1;
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid, hdl->cache.first + hdl->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
-			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_row", MERROR);
-		if (answer_lookahead(hdl) == MERROR)
+			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_row", hdl->mid->error);
+		if (answer_lookahead(hdl) != MOK)
 			return 0;
 		if (mapi_get_row(hdl) == MOK)
 			return mapi_slice_row(hdl);
@@ -3488,7 +3492,7 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 	if (cr < 0) {
 		mapi_setError(hdl->mid,
 			      "Must do a successful mapi_fetch_row first",
-			      "mapi_fetch_field");
+			      "mapi_fetch_field", MERROR);
 		return 0;
 	}
 	assert(hdl->cache.fldcnt != NULL);
@@ -3499,7 +3503,8 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 		if (fnr < hdl->cache.fldcnt[cr])
 			return hdl->cache.anchors[cr][fnr];
 	}
-	mapi_setError(hdl->mid, "Illegal field number", "mapi_fetch_field");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_fetch_field",
+		      MERROR);
 	return 0;
 }
 
@@ -3511,7 +3516,7 @@ mapi_fetch_field_array(MapiHdl hdl)
 	mapi_hdl_check0(hdl, "mapi_fetch_field_array");
 	if (hdl->cache.fldcnt == 0) {
 		mapi_setError(hdl->mid, "Assertion error",
-			      "mapi_fetch_field_array");
+			      "mapi_fetch_field_array", MERROR);
 		return 0;
 	}
 	cr = hdl->cache.reader;
@@ -3545,7 +3550,8 @@ mapi_get_name(MapiHdl hdl, int fnr)
 				 "column_%d", fnr);
 		return hdl->fields[fnr].columnname;
 	}
-	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_name");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_name",
+		      MERROR);
 	return 0;
 }
 
@@ -3558,7 +3564,8 @@ mapi_get_type(MapiHdl hdl, int fnr)
 			return "unknown";
 		return hdl->fields[fnr].columntype;
 	}
-	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_type");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_type",
+		      MERROR);
 	return 0;
 }
 
@@ -3573,7 +3580,8 @@ mapi_get_table(MapiHdl hdl, int fnr)
 				 "table_%d", fnr);
 		return hdl->fields[fnr].tablename;
 	}
-	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_table");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_table",
+		      MERROR);
 	return 0;
 }
 
