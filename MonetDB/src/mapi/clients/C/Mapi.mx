@@ -201,6 +201,7 @@ mapi\_table()	&	Get current table name\\
 mapi\_timeout()	&	Set timeout for long-running queries[TODO]\\
 mapi\_trace()	&	Set trace flag\\
 mapi\_trace\_log()	& Keep log of interaction\\
+mapi\_virtual\_result()	& Submit a virtual result set\\
 mapi\_unquote()	&	remove escaped characters\\
 \end{tabular}
 @+ Mapi Library
@@ -355,6 +356,21 @@ consumption of the tuple stream produced should be prematurely
 terminated. It is automatically called when a new query using the same
 query handle is shipped to the database and when the query handle is
 closed with mapi\_close\_handle().
+
+\item[MapiMsg mapi\_virtual\_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples)]:
+Submit a table of results to the library that can then subsequently be
+accessed as if it came from the server.
+columns is the number of columns of the result set and must be greater
+than zero.
+columnnames is a list of pointers to strings giving the names of the
+individual columns.  Each pointer may be NULL and columnnames may be
+NULL if there are no names.
+tuplecount is the length (number of rows) of the result set.  If
+tuplecount is less than zero, the number of rows is determined by a NULL
+pointer in the list of tuples pointers.
+tuples is a list of pointers to row values.  Each row value is a list of
+pointers to strings giving the individual results.  If one of these
+pointers is NULL it indicates a NULL/nil value.
 \end{description}
 @- Getting Results
 @T
@@ -905,6 +921,12 @@ mapi_export MapiMsg mapi_param_numeric(MapiHdl hdl, int fnr, int scale,
 mapi_export MapiMsg mapi_clear_params(MapiHdl hdl);
 mapi_export MapiHdl mapi_prepare(Mapi mid, const char *cmd);
 mapi_export MapiMsg mapi_prepare_handle(MapiHdl hdl, const char *cmd);
+mapi_export MapiMsg mapi_virtual_result(MapiHdl hdl, int columns,
+					const char **columnnames,
+					const char **columntypes,
+					const int *columnlengths,
+					int tuplecount,
+					const char ***tuples);
 mapi_export MapiMsg mapi_execute(MapiHdl hdl);
 mapi_export MapiMsg mapi_execute_array(MapiHdl hdl, char **val);
 mapi_export MapiMsg mapi_fetch_reset(MapiHdl hdl);
@@ -2946,6 +2968,58 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			break;
 		}
 	}
+}
+
+MapiMsg
+mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames,
+		    const char **columntypes, const int *columnlengths,
+		    int tuplecount, const char ***tuples)
+{
+	Mapi mid;
+	struct MapiResultSet *result;
+	int i, n;
+	const char **tuple;
+	char **anchors;
+
+	if (columns <= 0)
+		return MERROR;
+	mid = hdl->mid;
+	if (mid->active && read_into_cache(mid->active, 0) != MOK)
+		return MERROR;
+	assert(mid->active == NULL);
+	finish_handle(hdl);
+	assert(hdl->result == NULL);
+	assert(hdl->active == NULL);
+	hdl->active = result = new_result(hdl);
+	result->fieldcnt = columns;
+	REALLOC(result->fields, columns);
+	memset(result->fields, 0, columns * sizeof(*result->fields));
+	result->querytype = 3;	/* result set */
+	for (i = 0; i < columns; i++) {
+		if (columnnames && columnnames[i])
+			result->fields[i].columnname = strdup(columnnames[i]);
+		if (columntypes && columntypes[i])
+			result->fields[i].columntype = strdup(columntypes[i]);
+		if (columnlengths)
+			result->fields[i].columnlength = columnlengths[i];
+	}
+	if (tuplecount > 0) {
+		result->rows_affected = tuplecount;
+		result->cache.rowlimit = tuplecount;
+	}
+
+	for (tuple = *tuples++, n = 0;
+	     tuplecount < 0 ? tuple != NULL : n < tuplecount;
+	     tuple = *tuples++, n++) {
+		add_cache(result, strdup("[ ]"));
+		result->cache.fldcnt[n] = columns;
+		anchors = malloc(columns * sizeof(*anchors));
+		result->cache.anchors[n] = anchors;
+		for (i = 0; i < columns; i++)
+			anchors[i] = tuple[i] ? strdup(tuple[i]) : NULL;
+	}
+	hdl->active = NULL;
+	return mid->error;
 }
 
 static MapiMsg
