@@ -144,6 +144,9 @@ can be found in this module.
 .COMMAND access( BAT[any::1,any::2] b) : int = CMDgetaccess; 
 "Return the update access privilige of a BAT."
 
+.COMMAND seqbase( BAT[oid,any::1] b ) : oid = CMDget_seqbase;
+"Get the sequence base for the void vcolumn of a BAT."
+
 .COMMAND seqbase( BAT[void,any::1] b ) : oid = CMDget_seqbase;
 "Get the sequence base for the void vcolumn of a BAT."
 

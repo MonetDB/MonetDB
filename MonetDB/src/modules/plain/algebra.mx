@@ -540,7 +540,7 @@ that for the moment are defined as procs.
                     return b.select(nilval, val);
                 } else if (fcn = "<") {
                     var bn := b.select(nilval, val).access(BAT_WRITE);
-		    if ( (b.htype() = void) and (b.seqbase() != oid(nil)) ){
+		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
 			bn := [oid](bn.reverse).reverse();
 		    }
                     bn.reverse.delete(val);
@@ -549,6 +549,9 @@ that for the moment are defined as procs.
                     return b.select(val, nilval);
                 } else if (fcn = ">") {
                     var bn := b.select(val, nilval).access(BAT_WRITE);
+		    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+			bn := [oid](bn.reverse).reverse();
+		    }
                     bn.reverse.delete(val);
                     return bn;
                 } else if (fcn = "like") {
@@ -567,14 +570,23 @@ that for the moment are defined as procs.
             return b.select(lo,hi);
         } else if (fcn = "<in]") {
             var bn := b.select(lo,hi).access(BAT_WRITE);
+	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+		bn := [oid](bn.reverse).reverse();
+	    }
             bn.reverse.delete(lo);
             return bn;
         } else if (fcn = "[in>") {
             var bn := b.select(lo,hi).access(BAT_WRITE);
+	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+		bn := [oid](bn.reverse).reverse();
+	    }
             bn.reverse.delete(hi);
             return bn;
         } else if (fcn = "<in>") {
             var bn := b.select(lo,hi).access(BAT_WRITE);
+	    if ( (bn.htype() = oid) and(not(isnil(bn.seqbase()))) ){
+		bn := [oid](bn.reverse).reverse();
+	    }
             bn.reverse.delete(lo);
             bn.reverse.delete(hi);
             return bn;
