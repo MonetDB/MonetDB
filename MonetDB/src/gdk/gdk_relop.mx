@@ -1091,14 +1091,14 @@ static int battheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op, bit swap) {
 	if (leftinner) {
 		if (inner) BATflipflop(inner);
 		if (outer) BATflipflop(outer);
-		if (BATidx(l,0) == 0) return 0;
+		if (BATidx(l,0) == 0) return -2;
 		if (IDXthetajoin(inner, outer, r, l, -op) < 0) return -1;
 		if (inner) BATflipflop(inner);
 		if (outer) BATflipflop(outer);
 		BATflipflop(l);
 		BATflipflop(r);
 	} else {
-		if (BATidx(r,0) == 0) return 0;
+		if (BATidx(r,0) == 0) return -2;
 		if (IDXthetajoin(inner, outer, l, r, op) < 0) return -1;
 	}
 	return 0;
@@ -1122,10 +1122,10 @@ static BAT *batthetajoin(BAT *l, BAT *r, int op, size_t estimate, bit swap) {
 
 BAT *BATthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 	@:joincheck(BATthetajoin, l->ttype, r->htype)@
-	if ((op == JOIN_EQ) && (r->hhash_heap || !r->hidx_heap)) { 
-		/* go for the hash solution */
-		ALGODEBUG THRprintf(GDKout, "BATthetajoin: BAThashjoin(l, r);\n");
-		return BAThashjoin(l, r, estimate);
+	if (op == JOIN_EQ) { 
+		/* exploit all equi-join optimizations */
+		ALGODEBUG THRprintf(GDKout, "BATthetajoin(l,r,JOIN_EQ): BATjoin(l, r);\n");
+		return BATjoin(l, r, estimate);
 	}
 	return batthetajoin(l, r, op, estimate, TRUE);
 }

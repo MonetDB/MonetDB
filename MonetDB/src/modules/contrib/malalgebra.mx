@@ -131,11 +131,11 @@ BATmalfetchjoin(BAT *l, BAT *r) {
   int lfetch = (BATtdense(l) && ATOMstorage(r->htype) <= ATOMstorage(TYPE_oid));
 
   if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
-    return BATfetchjoin(l, r, oid_nil);
-  } else if (rfetch) {
     return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), oid_nil));
+  } else if (rfetch) {
+    return BATfetchjoin(l, r, oid_nil);
   }
-  GDKerror( "Cannot perform fetchjoin.\n");
+  GDKerror( "Cannot perform fetchjoin: neither left tail nor right head are dense OID columns.\n");
   return NULL;
 }
 
@@ -146,7 +146,7 @@ BATmalleftfetchjoin(BAT *l, BAT *r) {
   if (rfetch) {
     return BATleftfetchjoin(l, r, oid_nil);
   }
-  GDKerror( "Cannot perform leftfetchjoin.\n");
+  GDKerror( "Cannot perform leftfetchjoin: right head is no dense OID column.\n");
   return NULL;
 }
 
@@ -171,7 +171,7 @@ BATmallefthashjoin(BAT *l, BAT *r) {
 BAT*
 BATmalmergejoin(BAT *l, BAT *r) {
   if ( !((BATtordered(l)&1)||(BAThordered(r)&1)) ) {
-    GDKerror( "Cannot perform mergejoin: neither left nor right bat is ordered.\n" );
+    GDKerror( "Cannot perform mergejoin: neither left tail nor right head is ordered.\n" );
     return NULL;
   }
 /*
@@ -188,8 +188,8 @@ BATmalmergejoin(BAT *l, BAT *r) {
 /* don't reorder! */
 BAT*
 BATmalleftmergejoin(BAT *l, BAT *r) {
-  if ( !((BATtordered(l)&1)||(BAThordered(r)&1)) ) {
-    GDKerror( "Cannot perform leftmergejoin: neither left nor right bat is ordered.\n" );
+  if ( !(BAThordered(r)&1) ) {
+    GDKerror( "Cannot perform leftmergejoin: right head is ordered.\n" );
     return NULL;
   }
   return BATleftmergejoin(l,r,oid_nil);
@@ -197,12 +197,20 @@ BATmalleftmergejoin(BAT *l, BAT *r) {
 
 BAT*
 BATmalindexjoin(BAT *l, BAT *r) {
+  if (l->ttype == TYPE_void && r->htype == TYPE_void) {
+    GDKerror( "Cannot perform indexjoin on void columns.\n" );
+    return NULL;
+  }
   return BATindexjoin(l,r,oid_nil);
 }
 
 /* don't reorder! */
 BAT*
 BATmalleftindexjoin(BAT *l, BAT *r) {
+  if (r->htype == TYPE_void) {
+    GDKerror( "Cannot perform leftindexjoin: right head must not be void.\n" );
+    return NULL;
+  }
   return BATleftindexjoin(l,r,oid_nil);
 }
 
@@ -299,7 +307,13 @@ VAR @1result_oid := @1join( [oid](l), [oid](r.reverse).reverse );
 IF( not( isnil(@1result_@2) ) ) {
   Ndiff := diff( result_@2, @1result_@2 ).count;
   printf( "Algorithm @1 leads to %d different answers.\n", Ndiff );
-  IF (Ndiff>0) Ntestfailed :+= 1;
+  IF (Ndiff>0) {
+	Ntestfailed :+= 1;
+	print(result_@2);
+	print(@1result_@2);
+	print(diff(result_@2,@1result_@2));
+	print(diff(@1result_@2,result_@2));
+  }
 }
 @
 @mil
@@ -336,12 +350,12 @@ PROC test_malalgebra() : void := {
 	@:compresults(lefthash,oid)@
 	@:compresults(leftfetch,oid)@
 	@:compresults(leftmerge,oid)@
+	@:compresults(leftindex,oid)@
 
 	@:jointest_void()@
 	@:compresults(hash,void)@
 	@:compresults(fetch,void)@
 	@:compresults(merge,void)@
-	@:compresults(index,void)@
 	@:compresults(left,void)@
 	@:compresults(lefthash,void)@
 	@:compresults(leftfetch,void)@
