@@ -138,8 +138,8 @@ m_export int interpret_str       (Cntxt stk, str buf, ValPtr res);
 m_export int interpret_file      (Cntxt stk, YYSTREE lt, ValPtr res);
 m_export int interpret_cast      (str atom, int argc, ValPtr val, ValPtr res);
 m_export int interpret_batcast   (str atom, int argc, ValPtr val, ValPtr res);
-m_export void closeProfiler(void* o);
-m_export int startProfiler(void);
+m_export void closeProfiler(struct stream* o);
+m_export int startProfiler(struct stream* o);
 m_export int stopProfiler(void);
 m_export int setProfilerFilter(str left, str right);
 #endif /* _MONET_INTERPRETER_H_ */
@@ -461,22 +461,22 @@ static int showheader=0;
 
 static MT_Lock profilerLock;
 
-void closeProfiler(void *o)
+void closeProfiler(struct stream *o)
 {
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
 	MT_set_lock(profilerLock, "startProfiler");
-	if( o == (void*)eventstream){ 
+	if( o == eventstream){ 
 		eventstream= NULL;
 	}
 	MT_unset_lock(profilerLock, "startProfiler");
 }
-int startProfiler(void)
+int startProfiler(struct stream *o)
 {
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
 	MT_set_lock(profilerLock, "startProfiler");
-	eventstream= GDKout;
+	eventstream= o;
 	delayswitch=1;
 	showheader=1;
 	MT_unset_lock(profilerLock, "startProfiler");

@@ -336,7 +336,7 @@ void freeClient(Client c)
 		stream *bkin, *bkout;
 
 		/* remove possible profiler channel */
-		closeProfiler((void*)c->fdout);
+		closeProfiler(c->fdout);
 
 		/* normal client  */
 		t = THRget(THRgettid()); 

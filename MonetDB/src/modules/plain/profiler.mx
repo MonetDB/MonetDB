@@ -37,14 +37,23 @@ be incurred when the event records should be produced as well.
 @m
 .MODULE profiler;
 
-.COMMAND startProfiler() : int = startProfilerCMD;
-	"Start the event profiling stream"
+.USE streams;
+
+.COMMAND startProfiler(Stream output) : int = startProfilerCMD;
+	"Start the event profiling stream; output is sent to Stream output"
 .COMMAND stopProfiler() : int = stopProfilerCMD;
 	"Stop the event profiling stream"
 .COMMAND setFilter(str left, str right) : int = setFilterCmd;
 	"Set the profile filter strings"
 
 .END profiler;
+
+@mil
+PROC startProfiler() : int := {
+	return startProfiler(stdout());
+}
+ADDHELP("startProfiler", "manegold", "Feb 05 2004",
+"Start the event profiling stream; output is sent to stdout", "_profiler");
 
 @{
 @* Implementation Code
@@ -67,6 +76,7 @@ be incurred when the event records should be produced as well.
 #include "monet_deparse.h"
 #include "monet_queue.h"
 #include "monet_interpreter.h"
+#include "streams.h"
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
@@ -100,8 +110,8 @@ nouse(
 @+ Modules
 @c
 
-int startProfilerCMD(int *res){
-	startProfiler();
+int startProfilerCMD(int *res, Stream *output){
+	startProfiler(*(stream**)output);
 	*res=0;
 	return GDK_SUCCEED;
 }
