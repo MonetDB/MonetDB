@@ -578,7 +578,7 @@ if (x->dealloc) {\
 					 _b->batCacheid, _b->batStamp);\
 			}\
 		}\
-		BBPpersistent(res->val.bval, FALSE); \
+		BBPincref(res->val.bval, TRUE); \
 		BBPunfix(res->val.bval); \
 	}
 #define CATCHRET(stk,lt,res,x)\

@@ -129,6 +129,9 @@ gdk_export int  BBPreclaim   (BAT *b);
 gdk_export int  BBPsave      (BAT *b);
 gdk_export int  BBPrename    (bat bid, str nme);
 
+gdk_export void BBP_insert(bat i);
+gdk_export void BBP_delete(bat i);
+
 /* query interface */ 
 gdk_export bat  BBPindex     (str nme);
 gdk_export BAT* BBPdescriptor(bat b);
@@ -143,7 +146,7 @@ gdk_export int  BBPincref    (bat b, int logical);
 gdk_export int  BBPdecref    (bat b, int logical);
 gdk_export void BBPshare     (bat b);
 gdk_export void BBPunshare   (bat b);
-gdk_export BAT* BBPresurrect (str name);
+gdk_export int BBPresurrect (str name);
 
 #endif /* _GDK_BBP_H_ */
 @
@@ -170,9 +173,6 @@ the hash index uses a bucket index (int array) of size mask that is
 tuned for perfect hashing (1 lookup). The bucket chain uses the 'next'
 field in the BBPrec records.
 @h
-extern void     BBP_insert(int i);
-extern void     BBP_delete(int i);
-
 #define BBPnamecheck(s) (((s)[0]=='t' && (s)[1]=='m' && (s)[2]=='p' &&\
 			  (s)[3]=='_')?atoi(s+4):0)
 
@@ -189,14 +189,12 @@ bat		BBP_mask = 0;		/* number of buckets = & mask */
 static void BBPspin(bat bid, str debug, int event);
 
 
-static INLINE 
 void BBP_insert(bat i) {
 	bat idx = (bat) (strHash(BBP_logical(i)) & BBP_mask);
 	BBP_next(i) = BBP_hash[idx]; 
 	BBP_hash[idx] = i;
 } 
 
-static INLINE 
 void BBP_delete(bat i) {
 	bat *h = BBP_hash;
 	str s = BBP_logical(i);
@@ -509,7 +507,6 @@ void BBPinit(void) {
 		BBP_physical(i) = GDKstrdup(BBPparse(&c)); 
 		BBP_lastused(i) = BBPLASTUSED(atoi(BBPparse(&c)));
 		if (BBP_lastused(i) > max_stamp) max_stamp = BBP_lastused(i);
-		max_stamp 
 		BBP_lrefs(i) = 0;
 		BBP_refs(i) = 0;
 		c = strchr(batname, '~');
@@ -532,7 +529,7 @@ void BBPinit(void) {
 	/* normalize saved LRU stamp to the current time */ 
 	max_stamp -= (lng) BBPLASTUSED(GDKcsec());
 	for(i=1; i<BBPsize; i++) if (BBP_logical(i)) {
-		BBP_lastused(i) = (unsigned int) (((lng) BBP_lastused(i)) + delta); 
+		BBP_lastused(i) = (unsigned int) (((lng) BBP_lastused(i)) - max_stamp); 
 	}
 
 	/* init hash table */
@@ -974,9 +971,7 @@ void BBPspin(bat i, str s, int event) {
 			MT_sleep_ms(1);
 			spin++;
 		}
-		BATDEBUG 
-		THRprintf(GDKout, "BBPspin(%d,%s,%d): " LLFMT " loops\n", 
-				i, s, event, spin);
+		BATDEBUG THRprintf(GDKout, "BBPspin(%d,%s,%d): " LLFMT " loops\n", i, s, event, spin);
 	}
 }
 
@@ -1084,8 +1079,9 @@ int BBPincref(bat i, int logical) {
 				if (pid != locked_by) 
 					MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix spin wait"); 
 				BBPspin(i, "BBPfix", BBPWAITING);
-		} else { 
-			break;
+			} else { 
+				break;
+			}
 		}
 		/* got the lock; but BBPresurrect must be prepared that the bat was destroyed in the meantime */
                 if (BBP_logical(i)) { 
@@ -1138,10 +1134,6 @@ int BBPdecref(bat i, int logical) {
 		/* bat cannot be swapped out. renew its last usage stamp for the BBP LRU policy */
 		int sec = BBPLASTUSED(GDKcsec());
 		if (sec > BBPLASTUSED(BBP_lastused(i))) BBP_lastused(i) = sec;
-	} else if (b && b->batKeeparound == TRUE) {
-		/* bat could have been swapped out but user requested not to do so. Also renew its last usage stamp. */
-		MEMDEBUG THRprintf(GDKerr, "BBPunfix: keeping %s for resurrection (mode=%d).\n", BBPname(b->batCacheid), b->batPersistence);
-		BBP_lastused(i) = BBPLASTUSED(GDKcsec());
 	} else if (b || (BBP_status(i)&BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
 		BBP_status_on(i, BBPUNLOADING, "BBPunfix");
@@ -1488,6 +1480,7 @@ int BBPfree(BAT *b) {
 			int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
 			int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
 			BUN p, q;
+			int xx;
 
 			if (hunfix) {
 				DELloop(b, p, q, xx) {
@@ -1783,7 +1776,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
  	while(ndescs > 0  || memtarget > 0 || vmtarget > 0) {
 		/* acquire the BBP locks */
 		MT_set_lock(GDKcacheLock, "BBPtrim");
-                BBP_swaplock("BBPtrim");
+                BBPlock("BBPtrim");
 
 		/* gather a list of unload candidate BATs, but try to avoid scanning by reusing previous leftovers first */
 		if (scan) {
@@ -1802,7 +1795,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 		}
 
 		/* release the BBP locks */
-                BBP_swapunlock("BBPtrim");
+                BBPunlock("BBPtrim");
 		MT_unset_lock(GDKcacheLock, "BBPtrim");
 
 		/* do the unload work unlocked */
@@ -1827,7 +1820,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 			    (unsigned long) GDKmem_inuse(), (unsigned long) GDKvm_cursize());
 	PERFDEBUG THRprintf(GDKerr, "BBPtrim(did_scan=%d, bats_unloaded=%d, bats_written=%d) %d ms\n", 
 			    did_scan, bats_unloaded, bats_written, GDKms() - msec); 
-	BBP_notrim = NULL;
+	BBP_notrim = 0;
 	MT_unset_lock(GDKtrimLock, "BBPtrim"); 
 }
 

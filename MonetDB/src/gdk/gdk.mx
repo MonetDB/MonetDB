@@ -1288,6 +1288,7 @@ The system support four modes:
 \begin{itemize}
 \item {\small PERSISTENT}, 
 \item {\small TRANSIENT}, and 
+\item {\small SESSION}
 \end{itemize}
 @
 The PERSISTENT BATs are automatically saved upon session boundary or 
@@ -1339,6 +1340,7 @@ gdk_export int		BATgetaccess (BAT *b);
 			(b)->haccdirty || (b)->taccdirty)
 
 #define PERSISTENT	4096
+#define SESSION		2048
 #define TRANSIENT	1024
 
 #define BAT_WRITE		0	/* all kinds of access allowed */	
@@ -1638,7 +1640,6 @@ gdk_export BBPrec*       	BBP;
 
 /* macros that nicely check parameters */
 #define BBPdirty(x)	 (BBP_dirty=(x))
-#define BBPheat(i)	 (BBPcache(i)?BBP_cache(i)->batLastused:0)
 #define BBPcacheid(b)	 ((b)->batCacheid)
 #define BBPstatus(i)	 (BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
 #define BBPcurstamp()	 BBP_curstamp
@@ -2034,7 +2035,7 @@ gdk_export int	HASHsize      (Hash *h);
 gdk_export int	BATidx        (BAT *b, BAT *h);
 gdk_export BAT*	BAThashsplit  (BAT *b, size_t n, int unary); 
 gdk_export BAT*	BATrangesplit (BAT *b, size_t n, int unary); 
-gdk_export BAT* BAThashjoin(BAT* l, BAT* r);
+gdk_export BAT* BAThashjoin   (BAT* l, BAT* r, size_t estimate);
 
 /* low level functions */
 gdk_export BUN	SORTfnd      (BAT *b, ptr v);
@@ -2415,7 +2416,7 @@ int  & ALIGNsync    & (BAT *b1, BAT *b2)\\
 int  & ALIGNrelated & (BAT *b1, BAT *b2)\\
 int  & ALIGNsetH    & ((BAT *dst, BAT *src)\\
 \hline
-BAT * & BATpropcheck & (BAT *b)\\
+BAT * & BATpropcheck & (BAT *b, int mode)\\
 \hline
 BAT* & VIEWcreate   & (BAT *b)\\
 bat  & VIEWparent   & (BAT *b)\\
@@ -2463,8 +2464,7 @@ gdk_export int      ALIGNsynced     (BAT *b1, BAT *b2);
 gdk_export int      ALIGNrelated    (BAT *b1, BAT *b2);
 gdk_export int      ALIGNsetH	(BAT *dst, BAT *src);
 
-gdk_export BAT*	BATpropcheck	(BAT *b); 
-gdk_export BAT*	BATpropcheck_	(BAT *b, int mode); 
+gdk_export BAT*	BATpropcheck	(BAT *b, int mode); 
 #define BATPROPS_QUICK  0 /* only derive easy (non-resource consuming) properties */
 #define BATPROPS_ALL    1 /* derive all possible properties; no matter what cost (key=hash) */
 #define BATPROPS_CHECK  3 /* BATPROPS_ALL, but start from scratch and report illegally set properties */
@@ -2833,15 +2833,13 @@ use.
 @- BAT relational operators
 @T
 {\tt \begin{tabular}{|lll|}\hline
+BAT * & BATjoin & (BAT *l, BAT *r, size_t estimate)\\
+BAT * & BATouterjoin & (BAT *l, BAT *r, size_t estimate)\\
+BAT * & BATbandjoin & (BAT *l, BAT *r, ptr c1, ptr c2)\\
+BAT * & BATthetajoin & (BAT *l, BAT *r, int mode, size_t estimate)\\
+BAT * & BATsemijoin & (BAT *l, BAT *r)\\
 BAT * & BATselect & (BAT *b, ptr tl, ptr th)\\
 BAT * & BATfragment & (BAT *b, ptr l, ptr h, ptr L, ptr H)\\
-BAT * & BATcombine & (BAT *l, BAT *r) \\
-BAT * & BATjoin & (BAT *l, BAT *r)\\
-BAT * & BATouterjoin & (BAT *l, BAT *r)\\
-BAT * & BATbandjoin & (BAT *l, BAT *r, ptr c1, ptr c2)\\
-BAT * & BATthetajoin & (BAT *l, BAT *r, int mode)\\
-BAT * & BATsemijoin & (BAT *l, BAT *r)\\
-BAT * & BATproduct & (BAT *b, BAT *c)\\
 \hline
 BAT * & BATsunique & (BAT *b)\\
 BAT * & BATkunique & (BAT *b)\\
@@ -2872,6 +2870,14 @@ R.b <= S.C + c2.  The special case c1 = 0 and c2 = infinite leads to a
 thetajoin.  The @%BATsemijoin@ over R[A, B] and S[C, D] produces the
 subset of R[A, B] that satisfies the semijoin over A and C.
 @
+The full-materialization policy intermediate results in Monet means that a 
+join can produce an arbitrarily large result and choke the system. The Data 
+Distilleries tool therefore first computes the join result size before the 
+actual join (better waste time than crash the server). To exploit that perfect 
+result size knowledge, an result-size estimate parameter was added to all 
+equi-join implementations.  
+TODO: add this for semijoin/select/unique/diff/intersect
+@
 The routine @%BATsunique@ considers both dimensions in the double
 eleminiation it performs; it produces a set.
 The routine @%BATtunique@ considers ony the head column,
@@ -2898,22 +2904,18 @@ gdk_export BAT*	BAT_select   (BAT *b, ptr tl, ptr th, int mode);
 gdk_export BAT*	BATuselect   (BAT *b, ptr tl, ptr th); 
 gdk_export BAT*	BATrestrict  (BAT *b, ptr hl, ptr hh, ptr tl, ptr th); 
 
-/*
-gdk_export BAT*	BATcombine   (BAT *l, BAT *r);
-*/
 gdk_export BAT*	BATconst     (BAT *l, int tt, ptr val);
-gdk_export BAT*	BATthetajoin (BAT *l, BAT *r, int mode); 
+gdk_export BAT*	BATthetajoin (BAT *l, BAT *r, int mode, size_t estimate); 
 gdk_export int	BATtheta     (BAT* in, BAT* out, BAT *l, BAT *r, int mode);
-gdk_export BAT*	BATbandjoin  (BAT *l, BAT *r, ptr c1, ptr c2); 
+gdk_export BAT*	BATbandjoin  (BAT *l, BAT *r, ptr c1, ptr c2);  /* should bandjoin remain in the kernel? */
 gdk_export BAT*	BATsemijoin  (BAT *l, BAT *r); 
-gdk_export BAT*	BATsemijoin  (BAT *l, BAT *r); 
-gdk_export BAT*	BATmergejoin (BAT *l, BAT *r); 
-gdk_export BAT*	BATjoin      (BAT *l, BAT *r); 
-gdk_export BAT*	BATouterjoin (BAT *l, BAT *r); 
+gdk_export BAT*	BATmergejoin (BAT *l, BAT *r, size_t estimate); 
+gdk_export BAT*	BATjoin      (BAT *l, BAT *r, size_t estimate); 
+gdk_export BAT*	BATouterjoin (BAT *l, BAT *r, size_t estimate); 
 
 gdk_export BAT* 	BATslice     (BAT* b, size_t low, size_t high);
 gdk_export BAT* 	BATfetch     (BAT* b, BAT *s);
-gdk_export BAT* 	BATfetchjoin (BAT* b, BAT *s);
+gdk_export BAT* 	BATfetchjoin (BAT* b, BAT *s, size_t estimate);
 
 gdk_export BAT*	BATsunique   (BAT *b); 
 gdk_export BAT*	BATkunique   (BAT *b); 

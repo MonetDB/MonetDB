@@ -259,7 +259,7 @@ BAT *BATnumber(BAT *b) {
         }
 	ALIGNsetH(bn,b);
         @:updateloop(bn,b,BUNnumber)@
-	BATsetaggr(bn, GDK_AGGR_CARD, &cnt);
+	BATsetaggr(bn, GDK_AGGR_CARD, cnt);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
         return bn;
@@ -283,7 +283,7 @@ BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
             if(i == grpsize-1) { start += incr; i = 0; ngroups++; } else { i++; }
         }
 	if (i == 0) ngroups--;
-	BATsetaggr(bn, GDK_AGGR_CARD, &ngroups);
+	BATsetaggr(bn, GDK_AGGR_CARD, ngroups);
         bn->hsorted = BAThordered(b);
         bn->tsorted = GDK_SORTED;
 
@@ -815,10 +815,8 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 	}
 @-
 Use sampling to determine a good result size, when the bat is large.
-We do not sample in an equi-select on a BAT with a hash table, as the
-BAT_hashselect code already ensures a good allocation estimate. 
 @c
-	if (batcnt > 10000 && (equi == 0 || b->thash_heap == NULL)) {
+	if (batcnt > 10000) {
             size_t _lo = batcnt/2, _hi = _lo + 105;
 	    BAT *tmp1;
 	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%u, _hi=%u);\n",

@@ -264,7 +264,7 @@ Signature Changed: Output tail type incorrect because of soid to coid switch.
 				BAT[any::1,any::2] = CMDsemijoin; 
 @- join (projected out join columns)
 @m
-.COMMAND join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right) :
+.COMMAND join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, lng estimate) :
                                BAT[any::1,any::3] = CMDjoin; 
 "Returns all BUNs, consisting of a head-value from 'left' and
 a tail-value from 'right' for which there are BUNs in 'left'
@@ -272,7 +272,7 @@ and 'right' with equal tail- resp. head-value (i.e. the join
 columns are projected out)."
 @- Outer Join
 @m
-.COMMAND outerjoin ( BAT[any::1,any::2] outer, BAT[any::2,any::3] inner) :
+.COMMAND outerjoin ( BAT[any::1,any::2] outer, BAT[any::2,any::3] inner, lng estimate) :
                                 BAT[any::1,any::3] = CMDouterjoin; 
 "Returns all the result of a join, plus the BUNS formed NIL in
 the tail and the head-values of 'outer' whose tail-value does
@@ -280,7 +280,7 @@ not match an head-value in 'inner'."
 @- { <,<=,=,>=,> } Join
 @m
 .COMMAND thetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, 
-		int mode) : BAT[any::1,any::3] = CMDthetajoin; 
+		int mode, lng estimate) : BAT[any::1,any::3] = CMDthetajoin; 
 "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.\n
 JOIN_EQ is just the same as join(). All other options do merge
 algorithms; either using the fact that they are ordered()
@@ -498,19 +498,28 @@ that for the moment are defined as procs.
     PROC project(bat[any::1,any] b) : bat[any::1,void] 
 		return b.project(nil);
 
+    PROC join (BAT[any::1,any::2] left, BAT[any::2,any::3] right) : BAT[any::1,any::3] 
+		return join(left, right, lng(nil));
+
+    PROC outerjoin (BAT[any::1,any::2] left, BAT[any::2,any::3] right) : BAT[any::1,any::3] 
+		return outerjoin(left, right, lng(nil));
+
     PROC join(bat[any::1,any::2] l, bat[any::2,any::3] r, str fcn, ..any..) : bat[any::1,any::3] 
+  		return join(l, r, lng(nil), fcn, $(4..));
+
+    PROC join(bat[any::1,any::2] l, bat[any::2,any::3] r, lng estimate, str fcn, ..any..) : bat[any::1,any::3] 
     {
         if ($0 = 3) {
             if (fcn = "=") {
-                return join(l,r);
+                return join(l,r,estimate);
             } else if (fcn = "<=") {
-                return thetajoin(l,r,LE);
+                return thetajoin(l,r,LE,estimate);
             } else if (fcn = "<") {
-                return thetajoin(l,r,LT);
+                return thetajoin(l,r,LT,estimate);
             } else if (fcn = ">=") {
-                return thetajoin(l,r,GE);
+                return thetajoin(l,r,GE,estimate);
             } else if (fcn = ">") {
-                return thetajoin(l,r,GT);
+                return thetajoin(l,r,GT,estimate);
             } else if (fcn = "true") {
                 var bn := new(l.htype,r.ttype, l.count*r.count);
                 l@batloop() {
@@ -526,7 +535,8 @@ that for the moment are defined as procs.
             l := r.reverse; r := swap.reverse;
             swapped := true;
         }
-        var bn := new(l.htype, r.ttype, l.count);
+	if (isnil(estimate)) estimate := l.count;
+        var bn := new(l.htype, r.ttype, estimate);
         l@batloop() {
             var h := $h;
             var t := $t;
@@ -1128,8 +1138,8 @@ int CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	return (*result = (BAT*) BATrestrict(b, hlow, hhigh, tlow, thigh))?
 		GDK_SUCCEED:GDK_FAIL;
 }
-int CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode) {
-	return (*result = (BAT*) BATthetajoin(left, right, *mode))?
+int CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate) {
+	return (*result = (BAT*) BATthetajoin(left, right, *mode, (*estimate == lng_nil)?oid_nil:*estimate))?
 		GDK_SUCCEED:GDK_FAIL;
 }
 int CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode) {
@@ -1156,6 +1166,10 @@ int CMD@1(int *result, BAT *b) {
 int CMD@1(BAT **result, BAT *left, BAT* right) {
 	return (*result = (BAT*) @2(left, right))?GDK_SUCCEED:GDK_FAIL;
 }
+@= binaryestimate
+int CMD@1(BAT **result, BAT *left, BAT* right, lng *estimate) {
+	return (*result = (BAT*) @2(left, right, (*estimate==lng_nil)?oid_nil:*estimate))?GDK_SUCCEED:GDK_FAIL;
+}
 @= binaryint
 int CMD@1(BAT **result, BAT* b, int *param) {
 	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
@@ -1168,9 +1182,9 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:unary(copy, BATcopy)@
 @:unary(kunique, BATkunique)@
 @:unary(sunique, BATsunique)@
-@:binary(join, BATjoin)@
 @:binary(semijoin, BATsemijoin)@
-@:binary(outerjoin, BATouterjoin)@
+@:binaryestimate(join, BATjoin)@
+@:binaryestimate(outerjoin, BATouterjoin)@
 @:binary(sunion, BATsunion)@
 @:binary(kunion, BATkunion)@
 @:binary(sintersect, BATsintersect)@

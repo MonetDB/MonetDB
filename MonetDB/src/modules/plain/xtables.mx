@@ -458,7 +458,7 @@ CTbuild_hl(
                 h = BATdescriptor(histo);
         }
         if (h == NULL) {
-                h = BAThistogram(BATmirror(b));
+                h = BATorder(BAThistogram(BATmirror(b))); /* DD requires ordered histograms */
                 histo = h->batCacheid;
         } else {
 		if (b->halign == 0) {
@@ -466,11 +466,12 @@ CTbuild_hl(
 		}
 		h->halign = NOID_AGGR(b->halign);
 	        BATkey(h, TRUE);
-        	h->hsorted = BAThordered(b);
         	h->tsorted = 0;
-        	if (BATcount(h) == BATcount(b)) {
-                	ALIGNsetH(h,b);
-        	}
+        	if ((h->hsorted = BAThordered(b)) == TRUE) {
+        		if (BATcount(h) == BATcount(b)) {
+                		ALIGNsetH(h,b);
+        		}
+		} else BATorder(h);
 	}
 	if (strncmp(BBPname(histo), "tmp_", 4) == 0) {
         	char buf[256], *p=buf+4;
@@ -562,7 +563,7 @@ CTtunique(
 	if (b->tacctype && b->tacctype != ACC_histolink) {
 		/* another accelerator already exists; leave it */
 		BAT *v = VIEWhead(BATmirror(b));
-		*h = BATkunique(v);
+		*h = BATorder(BATkunique(v));
 		BBPreclaim(v);
 		return GDK_SUCCEED;
 	} 

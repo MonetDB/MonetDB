@@ -981,7 +981,7 @@ BAT *TBL_lookup( Client client, str nme ){
 	if (v){ /* dirty replacement of the client bats */
 		BAT *o = BATdescriptor(v->binding.val.bval);
 		b = BATcopy(o);
-		BBPtransient(o->batCacheid, FALSE);
+		BBPdecref(o->batCacheid, FALSE);
    		v->binding.val.bval = b->batCacheid;
 	} else {
 		GDKerror("variable %s not found\n",  buf );

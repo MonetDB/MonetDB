@@ -67,11 +67,11 @@ if (@3 == (size_t) oid_nil) {
 		if (l->tkey) @3 = r->hkey?MIN(_rcount,_lcount):_rcount;
 		else if (r->hkey) @3 = _lcount;
 	}
-	if (@3 == int_nil) {
+	if (@3 == oid_nil) {
 		size_t _heuristic = 3*MIN(_lcount, _rcount);
 		if (_heuristic <= (1 << SAMPLE_TRESHOLD_LOG)) @3 = _heuristic;
 	} 
-	if (@3 == int_nil) {
+	if (@3 == oid_nil) {
                  /* use cheapo sampling by taking a number of slices and joining those with the algo */
 		size_t _tot=0, _slices = -SAMPLE_TRESHOLD_LOG, _step, _lo, _idx, _avg, _sample, *_cnt;
 		BAT *_tmp1 = l, *_tmp2, *_tmp3; 
@@ -80,10 +80,10 @@ if (@3 == (size_t) oid_nil) {
 		_sample = _slices * SAMPLE_SLICE_SIZE;
 		_cnt = (int*) alloca(_slices*sizeof(int));
 		for(_lo=0; _idx < _slices; _lo += _step) {
-		  	int _hi = _lo + SAMPLE_SLICE_SIZE; 
-			l = BATslice(_tmp1, &_lo, &_hi); /* slice keeps all parent properties */ 
+		  	size_t _hi = _lo + SAMPLE_SLICE_SIZE; 
+			l = BATslice(_tmp1, _lo, _hi); /* slice keeps all parent properties */ 
 			if (l) {
-				int _size = 0;
+				size_t _size = 0;
 				_tmp2 = @2; /* @2 = e.g. BATXjoin(l,r) */
 				if (_tmp2) {
 					_size = BATcount(_tmp2); 
@@ -95,15 +95,16 @@ if (@3 == (size_t) oid_nil) {
 		}
 		/* do outlier detection on sampling results; this guards against skew */
 		if (@1 == JOIN_EQ) {
-			for(_avg=_tot/_slices, _idx=0; _idx < _slices; _idx++)
+			for(_avg=_tot/_slices, _idx=0; _idx < _slices; _idx++) {
 				size_t _diff = _cnt[_idx] - _avg;
 				if (_avg > _cnt[_idx]) _diff = _avg - _cnt[_idx];
-				if (_diff) > MAX(SAMPLE_SLICE_SIZE, _avg)) break; 
+				if (_diff > MAX(SAMPLE_SLICE_SIZE, _avg)) break; 
+			}
 			if (_idx < _slices) {
 				/* outliers detected, compute a real sample on at most 1% of the data */
 				_sample = MIN(_lcount/100, (1 << SAMPLE_TRESHOLD_LOG)/3);
 				_tmp2 = BATsample(_tmp1, _sample); 
-				_tmp3 = BATjoin(_tmp2, r); /* might be expensive */
+				_tmp3 = BATjoin(_tmp2, r, oid_nil); /* might be expensive */
 				_tot = BATcount(_tmp3);
 				BBPreclaim(_tmp2);
 				BBPreclaim(_tmp3);
@@ -187,9 +188,6 @@ unsorted l with a sorted r; in that case it always uses binary search.
 		l_start = l_end; /* no match found in equi-join */
 	    }
 	}
-
-
-
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
 static BAT* mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate) {
@@ -602,7 +600,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
         if (!BAThdense(r)) {
                 ERRORcheck(!BATtdense(l), "BATfetchjoin: one join column must be dense");
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));\n");
-                return BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));
+                return BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l), estimate));
         }
         if (BATtordered(l)&1) {
                 /* optimization to be able to carry over more void head columns */
@@ -739,7 +737,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
 @-
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
-BAT *BATjoin_estimate(BAT *l, BAT *r, size_t estimate) {
+static BAT *batjoin(BAT *l, BAT *r, size_t estimate) {
 	size_t i, lsize, rsize;
         int lfetch, rfetch, must_hash; 
         lng logr, logl;
@@ -807,8 +805,8 @@ hash join: the bread&butter join of monet
 	return BAThashjoin(l, r, estimate);
 }
 
-BAT *BATjoin(BAT *l, BAT *r) {
-        BAT *b = BATjoin_estimate(l, r, int_nil);
+BAT *BATjoin(BAT *l, BAT *r, size_t estimate) {
+        BAT *b = batjoin(l, r, oid_nil);
         BATpropcheck(b, BATPROPS_ALL);
         return b;
 }
@@ -843,7 +841,7 @@ if no match can be found.
 The baseline join algorithm creates a hash on the smallest element and
 probes it using the larger one. [TODO]
 @c
-BAT *BATouterjoin_estimate(BAT *l, BAT *r, size_t estimate) {
+BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate) {
 	int	any; 
 	BAT	*bn; 
 	
@@ -860,7 +858,7 @@ BAT *BATouterjoin_estimate(BAT *l, BAT *r, size_t estimate) {
   		ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
 		return bn; 
 	} else if (bn == NULL) {
-		@:joinbat(JOIN_EQ, BATouterjoin_estimate(l,r,oid_nil), estimate)@
+		@:joinbat(JOIN_EQ, BATouterjoin(l,r,oid_nil), estimate)@
 	} 
 	if (BAThdense(r)) {
 		/* positional algorithm: hash on void column would give error and is stupid */
@@ -904,10 +902,6 @@ BAT *BATouterjoin_estimate(BAT *l, BAT *r, size_t estimate) {
 	}
   	ESTIDEBUG THRprintf(GDKout, "BATouterjoin: actual resultsize: %d\n",BATcount(bn));
 	return bn; 
-}
-
-BAT *BATouterjoin(BAT *l, BAT *r) {
-	return BATouterjoin_estimate(l, r, oid_nil);
 }
 @
 @}
@@ -1011,16 +1005,16 @@ int BATtheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op) {
 	return 1;
 }
 
-BAT *BATthetajoin(BAT *l, BAT *r, int op) {
+BAT *BATthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 	BAT	*bn; 
 	
 	@:joincheck(BATthetajoin, l->ttype, r->htype)@
 	if ((op == JOIN_EQ) && (r->hhash_heap || !r->hidx_heap)) { 
 		/* go for the hash solution */
 		ALGODEBUG THRprintf(GDKout, "BATthetajoin: BAThashjoin(l, r);\n");
-		return BAThashjoin(l, r);
+		return BAThashjoin(l, r, estimate);
 	}
-	@:joinbat(op, BATthetajoin(l,r,op), "BATthetajoin")@
+	@:joinbat(op, BATthetajoin(l,r,op,estimate), estimate)@
 	BATtheta(NULL, bn, l, r, op);
         ESTIDEBUG THRprintf(GDKout, "BATthetajoin: actual resultsize: %d\n",BATcount(bn));
 	return bn;
@@ -1852,7 +1846,7 @@ while(algo) {
 	/* one-by-one traversal of the lead column? => no matching done.
 	 */
 	if (n == lead_col) {
-		if (ATOMcmp(h, ATOMnilptr(b->htype)) == 0) {
+		if (ATOMcmp(b->htype, h, ATOMnilptr(b->htype)) == 0) {
 			n->lo = n->hi = p;
 			continue;
 		} else if (algo <= LEAD_TRAVERSE_SEQ) { 

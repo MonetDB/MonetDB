@@ -192,8 +192,8 @@ hash_t lngHash(lng *v) { return (hash_t) mix_int(((unsigned int*) v)[0]^((unsign
 INLINE void shtConvert(sht* s) { *s = short_int_SWAP(*s); }
 INLINE void intConvert(int* s) { *s = normal_int_SWAP(*s); }
 INLINE void lngConvert(lng* s) { *s = long_long_SWAP(*s); }
-INLINE int  batFix(bat* b)     { return BBPpersistent(*b,FALSE); }
-INLINE int  batUnfix(bat* b)   { return BBPtransient(*b,FALSE); }
+INLINE int  batFix(bat* b)     { return BBPincref(*b,TRUE); }
+INLINE int  batUnfix(bat* b)   { return BBPdecref(*b,TRUE); }
 
 atomDesc BATatoms[MAXATOMS] = {
   { "void",
@@ -247,7 +247,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(int (*)(ptr, ptr)) intCmp, 		
  		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,
 		(int (*)(ptr)) batFix,		(int (*)(ptr)) batUnfix,
- 		(void (*)(Heap*, var_t*, ptr)) BATpersistent,	(void (*)(Heap*, var_t*)) BATtransient,
+ 		0,			0,
  		0,			0,
  		0,			0},
   { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
@@ -665,17 +665,14 @@ the commit tremendously complicated.
 { int t_ = (P1);                                 	\
   if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
         t_ = ATOMstorage(t_);                           \
-  if (t_ <= TYPE_bat) {					\
+  if (t_ < TYPE_bat) {					\
 	if (t_ <= TYPE_chr) {				\
 		if (t_ != TYPE_void)			\
 		*(chr *) (P3) = * (chr *) (P4);		\
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
-	} else if (t_ == TYPE_bat) {			\
-		BBPpersistent(*(bat*) (P4),TRUE);	\
-		*(bat *) (P3) = * (bat *) (P4); 	\
 	}						\
-} else {						\
+  } else {						\
 	if (t_ <= TYPE_flt) {				\
 		*(int *) (P3) = *(int *) (P4); 		\
 	} else if (t_ <= TYPE_lng) {			\
@@ -695,16 +692,12 @@ the commit tremendously complicated.
 { int t_ = (P1);                                 	\
   if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
         t_ = ATOMstorage(t_);                           \
-  if (t_ <= TYPE_bat) {					\
+  if (t_ < TYPE_bat) {					\
 	if (t_ <= TYPE_chr) {				\
 		if (t_ != TYPE_void)			\
 		*(chr *) (P3) = * (chr *) (P4);		\
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
-	} else if (t_ == TYPE_bat) {			\
-		BBPtransient(*(bat*) (P3), TRUE);	\
-		BBPpersistent(*(bat*) (P4), TRUE);	\
-		*(bat *) (P3) = *(bat *) (P4); 		\
 	}						\
   } else {						\
 	if (t_ <= TYPE_flt) {				\

@@ -46,7 +46,7 @@ Access to the transaction table is regulated by a semaphore.
 char			TMname[MAXTM][IDLENGTH] = { SYSTRANSACTION }; 
 
 int TMnew(str s) {
-	fprintf(GDKout, "begin transaction %s\n", s); 
+	THRprintf(GDKout, "begin transaction %s\n", s); 
 	strcpy(TMname[0], s); 
 
 	return 0; 
@@ -80,7 +80,7 @@ int TMcommit() {
 	if (BBP_status(i) & BBPPERSISTENT) {
 		BAT *b = BBPcache(i);
 		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
-			b = BBPquickdesc(i, TRUE, FALSE);
+			b = BBPquickdesc(i, TRUE);
 			if (b == NULL) { ret = 1; break; }
 		}
 		if (b) {
@@ -134,7 +134,7 @@ int TMcommit() {
 	/* outside the lock: now kill all ex-persistent bats */
 	if (ret == 0)
 	for(i=0; i<nkills; i++) {
-                BAT *b = BBPquickdesc(kills[i], TRUE, TRUE);
+                BAT *b = BBPquickdesc(kills[i], TRUE);
 
                 if (BBP_cache(kills[i])) {
 			/* those that quickdesc decides to load => proper unfix */
@@ -142,7 +142,7 @@ int TMcommit() {
                 } else {
                         /* the unloaded ones are deleted without loading */
                         BATdelete(b); /* delete disk images */
-                        BBPclear(kills[i], TRUE); /* clear with locking */
+                        BBPclear(kills[i]); /* clear with locking */
                 }
         }
 	if (kills != killbuf) {

@@ -82,11 +82,11 @@ m_export void	CNTXTclear   (Cntxt i);
 m_export void	CNTXTfree    (Cntxt stk, Client c);
 m_export void	CNTXTdelete  (Cntxt i);
 m_export int	CNTXTclient  (Cntxt i, Client *c);
-m_export Cntxt 	CNTXTcopy    (Cntxt src);
+m_export void 	CNTXTcopy    (Cntxt src, Client c);
 
 /* inline for speed */
 #define CNTXTuse(stk)		monet_cntxt[stk].used = 1;
-#define CNTXTfree2(stk,c)	((c) && (c)->maxstk != stk && CNTXTfree(stk,c))
+#define CNTXTfree2(stk,c)	if ((c) && (c)->maxstk != stk) CNTXTfree(stk,c)
 #define CNTXTfree1(stk)		{ Client c; CNTXTclient(stk, &c); CNTXTfree2(stk,c); }
 
 m_export Variable	VARfind      (Cntxt *stk, str scope);
@@ -173,27 +173,29 @@ context records are linked through the outer field. This way
 we can get a new context in 'constant' time.
 @c
 Cntxt CNTXTnew(Cntxt outer){
-	Cntxt i;
+	Client c;
+        Cntxt i;
 
-	MT_set_lock(monet_contextLock, "CNTXTnew");
-	if (monet_cntxtcur >= MAXCLIENTS) {
-		i = monet_cntxtcur; /* get from freelist */
-		monet_cntxtcur = monet_cntxt[monet_cntxtcur].next;
-	} else if (monet_cntxtfree >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
-		MT_unset_lock(monet_contextLock, "CNTXTnew");
-		return 0;
-	} else {
-		i = monet_cntxtfree++; /* alloc new at end succeeded */
-	}
-	monet_cntxt[i].outer = outer;
-	monet_cntxt[i].next = c->maxstk;
-	monet_cntxt[i].reuse = monet_cntxt[outer].reuse; /* inherit reuse spec from parent */
+        CNTXTclient(outer, &c);
+
+        MT_set_lock(monet_contextLock, "CNTXTnew");
+        if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
+                MT_unset_lock(monet_contextLock, "CNTXTnew");
+                return 0;
+        }
+        i = monet_cntxtcur;
+        monet_cntxtcur = monet_cntxt[i].next;
+        if (!monet_cntxtcur) monet_cntxtcur = i+1;
         monet_cntxt[i].shadow = 0;
         monet_cntxt[i].used = 1;
-	c->maxstk = i; 
-	MT_unset_lock(monet_contextLock, "CNTXTnew");
-	return i;
+        monet_cntxt[i].reuse = monet_cntxt[outer].reuse;
+        monet_cntxt[i].next = c->maxstk;
+        monet_cntxt[i].outer = outer;
+        c->maxstk = i;
+        MT_unset_lock(monet_contextLock, "CNTXTnew");
+        return i;
 }
+
 @- 
 Deleting a context basically means deleting all its variables
 @c
@@ -264,34 +266,20 @@ void CNTXTclear(Cntxt stk){
 }
 
 @-
-Copy the stack with all its variables.
+Create a new stack with copies of all variables in all scopes until root.
 @c
-Cntxt CNTXTcopy(Cntxt srcstk){
-	Cntxt res, tmp = CNTXTnew(-1); 
-
-	res = tmp;
-	while(srcstk>=0){
+void CNTXTcopy(Cntxt stk, Client c){
+	while(stk > 0) {
         	Variable v;
-
-		monet_cntxt[tmp].shadow = 0;
-		monet_cntxt[tmp].used = monet_cntxt[srcstk].used;
-		monet_cntxt[tmp].reuse = monet_cntxt[srcstk].reuse;
-
-		for(v = monet_cntxt[srcstk].var; v != NULL; v= v->next) {
-			Variable n = VARnew( tmp, v->name );
-			
+		for(v = monet_cntxt[stk].var; v != NULL; v= v->next) {
+			Variable n = VARnew(c->stk, v->name );
 			n->constant = v->constant;
 			n->frozen = v->frozen;
 			VALcopy(&n->binding, &v->binding);
 			ATOMfix(n->binding.vtype, VALptr(&n->binding));
 		}
-		if (monet_cntxt[srcstk].outer >= 0){ 
-			monet_cntxt[tmp].outer = CNTXTnew(-1); 
-			tmp = monet_cntxt[tmp].outer;
-		}
-		srcstk = monet_cntxt[srcstk].outer;
+		stk = monet_cntxt[stk].outer;
 	}
-	return res;
 }
 
 @-

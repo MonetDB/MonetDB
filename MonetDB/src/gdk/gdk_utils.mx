@@ -55,10 +55,12 @@ gdk_export RETSIGTYPE BATSIGcrash(int);
 #undef GDKmalloc
 #undef GDKrealloc
 #undef GDKfree
+#undef GDKcalloc
 
 #define GDKmalloc(size)	malloc(size)
 #define GDKrealloc(buf,size)	realloc(buf,size)
 #define GDKfree(buf)	free(buf)
+#define GDKcalloc(nmemb,size) calloc(nmemb,size);
 #endif
 
 char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
@@ -460,6 +462,210 @@ void GDKmemdec(size_t memdelta, size_t vmdelta) {
         GDK_vm_cursize -= segsize;
 }
 
+@- tracing
+
+Very simple malloc tracing implementation. Two bats are used:
+stackBat: Contains a DAG of all methods used for memory allocation.
+memBat: contains a mapping from allocated memory adresses to an index
+in the stackBat which indicates the place the memory is allocated.
+
+@c
+#ifdef GDK_MEM_TRACE
+
+static BAT *stackBat = NULL;
+static BAT *memBat   = NULL;
+
+static int mtrace    = 0;
+typedef ptr mem_t;
+
+char *
+stack_test(int i, int j) {
+	if(--i == 0)
+		return (char *)GDKmalloc(j);
+
+	return stack_test(i,j);
+}
+
+
+void
+mtrace_test()
+{
+	char *t = stack_test(1,1);
+	GDKfree(t);
+	GDKfree(t);                /* double delete */
+	t = stack_test(2,2);       
+	t = GDKrealloc(t,20);         /* leaked */
+}
+
+
+int
+GDKmtrace(bit *enable) {
+	if(*enable) {
+		if(memBat == NULL) {
+			memBat   = BATnew(TYPE_ptr,TYPE_int,16384);
+			stackBat = BATnew(TYPE_ptr,TYPE_ptr,16384);
+			BBPrename(memBat->batCacheid,"mem_trace");
+			BBPrename(stackBat->batCacheid,"mem_stack");
+			memBat->hsorted = memBat->tsorted = 0;
+			BATkey(memBat,TRUE);
+			stackBat->hsorted = stackBat->tsorted = 0;
+			BATset(stackBat,TRUE);
+		}
+		mtrace++;
+	} else if(mtrace > 0)
+		mtrace--;
+
+	memBat->batDirty = TRUE;
+	stackBat->batDirty = TRUE;
+
+	if(*enable == bit_nil) {
+		printf("testing mtrace:\n");
+		mtrace_test();
+		--mtrace;
+	}
+
+	return GDK_SUCCEED;
+}
+
+
+BUN
+add_dag(BAT *b, BUN p, mem_t current, mem_t parent)
+{
+	const static int bunsize = sizeof(mem_t) + sizeof(mem_t);
+	BUN last = BUNlast(b);
+
+	while(p != last) {
+		if((*(mem_t*)BUNhloc(b,p)) == current &&
+		   (*(mem_t*)BUNtloc(b,p)) == parent)
+			return p;
+		p += bunsize;
+	}
+
+	if (b->batBuns->free + bunsize > b->batBuns->size) {
+		int tmp = mtrace; mtrace = 0;
+		BATextend(b, BATgrows(b));
+		mtrace = tmp;
+		last = BUNlast(b);
+	}
+	bunfastins_nocheck(b, last, &current, &parent, bunsize);
+	return last;
+}
+
+
+#define MAX_STACK_ADDR 16
+#define STACK_LIST(STACK_ENTRY) \
+        STACK_ENTRY(1) STACK_ENTRY(2) STACK_ENTRY(3) \
+        STACK_ENTRY(4) STACK_ENTRY(5) STACK_ENTRY(6) STACK_ENTRY(7) \
+        STACK_ENTRY(8) STACK_ENTRY(9) STACK_ENTRY(10) STACK_ENTRY(11) \
+        STACK_ENTRY(12) STACK_ENTRY(13) STACK_ENTRY(14) STACK_ENTRY(15)
+
+#define STACK_READ(X) \
+if (continue_stack_trace && \
+    ((mem_t)__builtin_frame_address((X)) != 0L) && \
+    ((X) < MAX_STACK_ADDR)) { \
+	parent = current; \
+	current = (mem_t)__builtin_return_address((X)); \
+	if(parent) \
+		p = add_dag(b, p, current, parent); \
+} else if (continue_stack_trace) { \
+	continue_stack_trace = FALSE; \
+}
+
+int
+add_stack(BAT *b)
+{
+	mem_t current = 0, parent = 0;
+	bit continue_stack_trace = TRUE;
+	BUN p = BUNfirst(b);
+	STACK_LIST(STACK_READ);
+	return BUNindex(b,p);
+}
+
+#define __USE_GNU 1
+#include <dlfcn.h>
+void
+print_address(ptr address)
+{
+  Dl_info dlip;
+  char *filename;
+
+  dladdr(address,&dlip);
+
+  filename = 0; /* strrchr(dlip.dli_fname,'/'); */
+  printf("%p\t%s\t%s\n",address,dlip.dli_sname,
+	 filename?filename+1:dlip.dli_fname);
+}
+
+int
+GDKmprint(int *pidx)
+{
+        int idx = *pidx;
+	BUN p = BUNptr(stackBat,idx), first = BUNfirst(stackBat);
+	const static int bunsize = sizeof(mem_t) + sizeof(mem_t);
+	mem_t *a;
+
+	if(p == NULL) printf("No stack for index %d\n",idx);
+
+	a = (mem_t *)BUNhloc(stackBat,p);
+        print_address(*a);
+	a = (mem_t *)BUNtloc(stackBat,p);
+	print_address(*a);
+
+        while(p > first) {
+	  p -= bunsize;
+	  if(*(mem_t *)BUNhloc(stackBat,p) == *a) {
+	    a = (mem_t *)BUNtloc(stackBat,p);
+	    print_address(*a);
+	  }
+	}
+
+	return GDK_SUCCEED;
+}
+
+
+void
+add_mem(BAT *b, mem_t mem, int idx)
+{
+	REGISTER BUN last;
+	const static int bunsize = sizeof(mem_t) + sizeof(int);
+	if (b->batBuns->free + bunsize > b->batBuns->size) {
+		int tmp = mtrace; mtrace = 0;
+		BATextend(b, BATgrows(b));
+		mtrace = tmp;
+	}
+	last = BUNlast(b);
+	bunfastins_nocheck(b, last, &mem, &idx, bunsize);
+}
+
+
+void
+del_mem(BAT *b, mem_t mem)
+{
+	REGISTER BUN first = BUNfirst(b), p = BUNlast(b);
+	const static int bunsize = sizeof(mem_t) + sizeof(int);
+	for(p -= bunsize; p >= first; p -= bunsize) {
+		if(*(mem_t*)BUNhloc(b,p) == mem) {
+			int idx = -*(int *)BUNtloc(b,p);
+			if(idx > 0) {
+				printf("Double deletion of memory 0x%x, "
+				       "size: %ld, stack:%d\n",
+				       (unsigned int)mem,((long *)mem)[-1],idx);
+				if(mtrace > 1) GDKmprint(&idx);
+			} else {
+				BUNdelete(b,p);
+				// BUNinplace(b,p,&mem,&idx);
+			}
+			return;
+		}
+	}
+	printf("Free of unknown memory 0x%x, size: %ld\n",
+		(unsigned int)mem,((long *)mem)[-1]);
+}
+#else
+int GDKmtrace(bit *enable){ (void)enable; return GDK_SUCCEED; }
+int GDKmprint(int *pidx)  { (void)pidx;   return GDK_SUCCEED; }
+#endif
+
 @- Malloc 
 @T
 Malloc normally maps through directly to the OS provided malloc/free/realloc
@@ -650,6 +856,12 @@ void* GDKmalloc(size_t size) {
 		GDK_nmallocs[idx].yyy++; 
 #endif
 		GDK_heap_inuse += realsize;
+#ifdef GDK_MEM_TRACE
+		if(mtrace) {
+			int idx = add_stack(stackBat);
+			add_mem(memBat,s,idx);
+		}
+#endif
 	}}
 #endif
         return (void*) s;
@@ -660,6 +872,11 @@ void GDKfree (void *blk) {
 
         if (s == NULL) return;
 	size = GDK_MEM_BLKSIZE(s);
+#ifndef GDK_MEM_PREFIXSIZE
+	/* wdk: add check for double deletes */
+        assert((size&2) == 0);
+        s[-1] |= 2;
+#endif
 	if (size > 0) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
@@ -670,6 +887,10 @@ void GDKfree (void *blk) {
 		} else */
 #endif
 		GDK_heap_inuse -= size; 
+#ifdef GDK_MEM_TRACE
+		if(mtrace)
+			del_mem(memBat,blk);
+#endif
 	}
 #ifdef GDK_MEM_VMREDIRECT
 	if (size < 0) {
@@ -733,6 +954,18 @@ ptr GDKrealloc(void* blk, size_t size) {
 #endif
         return blk;
 }
+
+void* GDKcalloc(size_t nmemb, size_t size) {
+	if (nmemb && size) {
+		size_t n = nmemb * size; /* wdk XXX: overflow? */
+		void *res = GDKmalloc(n);
+		if (res) {
+			return memset(res, 0, n);
+		}
+	}
+	return 0;
+}
+
 
 char *GDKstrdup(char *s) {
         int l = strLen(s);

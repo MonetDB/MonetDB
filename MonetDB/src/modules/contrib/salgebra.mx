@@ -727,7 +727,7 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
 
   if ( !( ch->isPerfect = isPerfect ) ) {
     /* set tv := join( hv.reverse, b ).reverse.seqbase(0@0); */
-    tv = BATjoin( BATmirror( hv ), b );
+    tv = BATjoin( BATmirror( hv ), b, oid_nil );
     tv = BATmirror( tv );
     ch->tv = BBPcacheid( tv );
   }

@@ -82,6 +82,7 @@ typedef struct CLIENT{
 	BAT		*triggers;		/* BAT(str, type-id) */
 	BAT		*events;		/* BAT(str, type-id) */
 	modstack	*m_stack;		/* module stack */
+        void            (*cleanup)(struct CLIENT* c);   /* cleanup handler */
 } *Client, ClientRec;
 
 m_export ClientRec monet_clients[MAXCLIENTS+1];
@@ -243,7 +244,6 @@ can be freed immediately, independent from the MIL execution context
 of the father.
 @c
 Client forkClient(Cntxt stk, int thread){
-	Cntxt nstk = 0;
         Client father = NULL, son = NULL;
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) { 
@@ -265,16 +265,18 @@ Client forkClient(Cntxt stk, int thread){
         	son->triggers = father->triggers;
         	son->events = father->events;
         	son->login = father->login;
+		son->cleanup = NULL;
 
-		/* also reuse father's stack */
 		if (thread) {
-			son->father = -1;
-			nstk = CNTXTcopy( stk );
-			monet_cntxt[son->stk].outer = nstk;
+			/* independent thread must be fully decoupled from father */
+			CNTXTcopy(stk, son); /* copy all variables available in father into private context */
+			monet_cntxt[son->stk].outer = 0; 
+			son->father = -1; 
 			TBL_initclient(son, father);
 			son->fdin = file_rastream(stdin, "stdin");
 			son->fdout = file_wastream(stdout, "stdout");
 		} else {
+			/* temporary (synchronous) forks reuse father's stack */
         		son->father = father->stk;
         		monet_cntxt[son->stk].outer = stk;
         		monet_cntxt[son->stk].shadow = 1;
@@ -312,6 +314,10 @@ void freeClient(Client c) {
 		Thread t = THRget(THRgettid()); 
 		stream *bkin = t->data[1], *bkout = t->data[0];
 
+		if (c->cleanup) {
+			(*c->cleanup)(c);
+			c->cleanup = NULL;
+		}
 		monetSetChannel(t, bkin, bkout);
        		TBL_exitclient(c);
 		GDKlog("Mserver: %s session ends", c->user);	
@@ -330,13 +336,10 @@ void freeClient(Client c) {
 	}
 
 	/* destroy all bindings */
-
 	if (c->tree) {
 		yyfree(c->tree);
 		c->tree = NULL;
-		CNTXTfree2(c->stk, c);
 	}
-
 	CNTXTclear(c->stk);
 	CNTXTfree2(c->stk, c); 
 	CNTXTdelete(c->stk);

@@ -137,8 +137,6 @@ Some explanation of what mem_usage() and vm_usage() display:
 	"Pseudo bat to map a BAT id into its name"
 .COMMAND view_bbp_refcnt(): BAT[int,int] = view_bbp_refcnt; 
 	"Pseudo bat to map a BAT id into its reference count"
-.COMMAND view_bbp_persistlevel(): BAT[int,int] = view_bbp_persistlevel; 
-	"Pseudo bat to map a BAT id into its persistency level"
 .COMMAND view_bbp_lrefcnt(): BAT[int,int] = view_bbp_lrefcnt; 
 	"Pseudo bat to map a BAT id into its logical reference count"
 .COMMAND view_bbp_location(): BAT[int,str] = view_bbp_location; 
@@ -308,8 +306,7 @@ Some explanation of what mem_usage() and vm_usage() display:
 		view_bbp_status.col_name("status"),
 		view_bbp_kind.col_name("kind"), 
 		view_bbp_refcnt.col_name("refcnt"),
-		view_bbp_lrefcnt.col_name("lrefcnt"),
-		view_bbp_persistlevel.col_name("plevel"));
+		view_bbp_lrefcnt.col_name("lrefcnt"));
     }
 
     PROC dir() : void := {
@@ -552,7 +549,7 @@ view_bbp_heat(
 	BBPlock("view_bbp_heat");
         for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
             if (BBP_cache(i) && !monet_modulesilent) {
-		int heat = BBPheat(i);
+		int heat = BBP_lastused(i);
                 BUNins(b, &i, &heat);
 	    } else if (BBP_logical(i)) { 
 		int zero = 0;
@@ -668,27 +665,6 @@ view_bbp_refcnt(
         return GDK_SUCCEED;
 }
 
-
-int
-view_bbp_persistlevel(
-   BAT**        retval  /* put pointer to BAT[int,str] record here. */
-){       
-	BAT	 *b;
-        int     i;
-
-        b= BATnew(TYPE_int,TYPE_int,BBPsize);
-        if (b == 0) return GDK_FAIL;
-
-	BBPlock("view_bbp_persistlevel");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-	if (BBP_logical(i)) {
-		int plevel = BBP_plevel(i);
-		BUNins(b, &i, &plevel);
-	}}
-	BBPunlock("view_bbp_persistlevel");
-	@:Pseudo(bbp,plevel)@
-        return GDK_SUCCEED;
-}
 
 int
 view_bbp_lrefcnt(
@@ -1346,7 +1322,7 @@ int view_gdk_bbp(BAT **retval) {
 		if (BBP_logical(i)) {
 			pbat++; 
 			if (BBP_cache(i)) {
-				pheat += BBPheat(i); 
+				pheat += BBP_lastused(i); 
 				if (BBP_cache(i)->batPersistence == PERSISTENT)
 					per++;
 				else tmp++;

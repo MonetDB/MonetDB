@@ -547,12 +547,9 @@ around and adapt search accellerator structures.
 @h
 #define hashins(h,i,v,n) HASHins(h,i,v)
 #define hashdel(h,i,v,n) HASHdel(h,i,v,n)
-
-#define taccmov(b) (b->tacctype?BATaccelerators[b->tacctype].accMove:NULL)
-#define haccdel(b) (b->hacctype?BATaccelerators[b->hacctype].accDelete:NULL)
-#define taccdel(b) (b->tacctype?BATaccelerators[b->tacctype].accDelete:NULL)
-#define haccins(b) (b->hacctype?BATaccelerators[b->hacctype].accInsert:NULL)
-#define taccins(b) (b->tacctype?BATaccelerators[b->tacctype].accInsert:NULL)
+#define accmov(acc) (acc?BATaccelerators[acc].accMove:NULL)
+#define accdel(acc) (acc?BATaccelerators[acc].accDelete:NULL)
+#define accins(acc) (acc?BATaccelerators[acc].accInsert:NULL)
 
 @= bun_move
         if (bs == 8) {
@@ -564,7 +561,7 @@ around and adapt search accellerator structures.
                 while(_src<_end) *(_dst++) = *(_src++);
         } 
 @= hacc_update
-{	void (*update)(Heap*, int, BAT*, ptr) = hacc@1(b);
+{	void (*update)(Heap*, size_t, BAT*, ptr) = acc@1(b->hacctype);
 	if (update) {
 		(*update)(&b->haccelerator, @4, b, BUN@2(b,@3));
 	}
@@ -573,7 +570,7 @@ around and adapt search accellerator structures.
 	}
 } 
 @= tacc_update
-{	void (*update)(Heap*, int, BAT*, ptr) = tacc@1(b);
+{	void (*update)(Heap*, size_t, BAT*, ptr) = acc@1(b->tacctype);
 	if (update) {
 		(*update)(&b->taccelerator, @4, bm, BUN@2(b,@3));
 	}
@@ -582,9 +579,9 @@ around and adapt search accellerator structures.
 	}
 }
 @= acc_move
-{	void (*update)(Heap*, int, BAT*, ptr) = haccdel(b);
-	void (*hmove)(Heap*, int, int, BAT*, ptr) = haccmov(b);
-	void (*tmove)(Heap*, int, int, BAT*, ptr) = NULL;
+{	void (*update)(Heap*, size_t, BAT*, ptr) = accdel(b->hacctype);
+	void (*hmove)(Heap*, size_t, size_t, BAT*, ptr) = accmov(b->hacctype);
+	void (*tmove)(Heap*, size_t, size_t, BAT*, ptr) = NULL;
 
 	if (hmove) { 
 		(*hmove)(&b->haccelerator, @3, @4, b, BUNhead(b,@1));
@@ -594,9 +591,9 @@ around and adapt search accellerator structures.
 	if (b->hhash_heap) {
 		HASHmove(b->hhash, (hash_t)@3, (hash_t)@4, BUNhead(b, @1), @1 < last); 
 	}
-	if ((tmove = taccmov(b)) != NULL) {
+	if ((tmove = accmov(b->tacctype)) != NULL) {
 		(*tmove)(&b->taccelerator, @3, @4, bm, BUNtail(b,@1));
-	} else if ((update = taccdel(b)) != NULL) {
+	} else if ((update = accdel(b->tacctype)) != NULL) {
 		(*update)(&b->taccelerator, @3, bm, BUNtail(b,@1));
 	}
 	if (b->thash_heap) {
@@ -605,10 +602,10 @@ around and adapt search accellerator structures.
 
 	@:bun_move(@1,@2)@
 
-	if (hmove == NULL && (update = haccins(b)) != NULL) {
+	if (hmove == NULL && (update = accins(b->hacctype)) != NULL) {
 		(*update)(&b->haccelerator, @4, b, BUNhead(b,@2));
 	}
-	if (tmove == NULL && (update = taccins(b)) != NULL) {
+	if (tmove == NULL && (update = accins(b->tacctype)) != NULL) {
 		(*update)(&b->taccelerator, @4, bm, BUNtail(b,@2));
 	}
 }

@@ -201,6 +201,14 @@ in a string.
 	.TOSTR = date_tostr;
 .END;
 
+.COMMAND isnil(date) : bit = int_isnil;            "date nil test (!DS2.2)"
+.OPERATOR (date) "="  (date) : bit = int_comp_EQ;  "date equality test (!DS2.2)"
+.OPERATOR (date) "!=" (date) : bit = int_comp_NEQ; "date non-equality test (!DS2.2)"
+.OPERATOR (date) "<"  (date) : bit = int_comp_LT;  "date smaller-than test (!DS2.2)"
+.OPERATOR (date) ">"  (date) : bit = int_comp_GT;  "date greater-than test (!DS2.2)"
+.OPERATOR (date) "<=" (date) : bit = int_comp_LE;  "date smaller-or-equal test (!DS2.2)"
+.OPERATOR (date) ">=" (date) : bit = int_comp_GE;  "date greater-or-equal test (!DS2.2)"
+
 @- daytime atom
 @T
 A valid time of day to the detail of milliseconds, like 23:59:59:000
@@ -221,6 +229,15 @@ with: HOUR = integer between 0 and 23
 	.FROMSTR = daytime_fromstr;
 	.TOSTR = daytime_tostr;
 .END;
+
+.COMMAND isnil(daytime) : bit = int_isnil;               "daytime nil test (!DS2.2)"
+.OPERATOR (daytime) "="  (daytime) : bit = int_comp_EQ;  "daytime equality test (!DS2.2)"
+.OPERATOR (daytime) "!=" (daytime) : bit = int_comp_NEQ; "daytime non-equality test (!DS2.2)"
+.OPERATOR (daytime) "<"  (daytime) : bit = int_comp_LT;  "daytime smaller-than test (!DS2.2)"
+.OPERATOR (daytime) ">"  (daytime) : bit = int_comp_GT;  "daytime greater-than test (!DS2.2)"
+.OPERATOR (daytime) "<=" (daytime) : bit = int_comp_LE;  "daytime smaller-or-equal test (!DS2.2)"
+.OPERATOR (daytime) ">=" (daytime) : bit = int_comp_GE;  "daytime greater-or-equal test (!DS2.2)"
+
 
 @- timestamp
 @T
@@ -247,8 +264,15 @@ arbitrarily.
 .ATOM timestamp = lng;
 	.FROMSTR = timestamp_fromstr;
 	.TOSTR = timestamp_tostr;
-	.NULL	 = timestamp_null;
 .END;
+
+.COMMAND isnil(timestamp) : bit = lng_isnil;                 "timestamp nil test (!DS2.2)"
+.OPERATOR (timestamp) "="  (timestamp) : bit = lng_comp_EQ;  "timestamp equality test (!DS2.2)"
+.OPERATOR (timestamp) "!=" (timestamp) : bit = lng_comp_NEQ; "timestamp non-equality test (!DS2.2)"
+.OPERATOR (timestamp) "<"  (timestamp) : bit = lng_comp_LT;  "timestamp smaller-than test (!DS2.2)"
+.OPERATOR (timestamp) ">"  (timestamp) : bit = lng_comp_GT;  "timestamp greater-than test (!DS2.2)"
+.OPERATOR (timestamp) "<=" (timestamp) : bit = lng_comp_LE;  "timestamp smaller-or-equal test (!DS2.2)"
+.OPERATOR (timestamp) ">=" (timestamp) : bit = lng_comp_GE;  "timestamp greater-or-equal test (!DS2.2)"
 
 @T
 When creating a timestamp from a date and daytime, a timezone should be specified
@@ -300,7 +324,6 @@ nil-timezone.
 .ATOM tzone = lng;
 	.FROMSTR = tzone_fromstr;
 	.TOSTR   = tzone_tostr;
-	.NULL	 = tzone_null;
 .END;
 
 .ATOM rule = int;
@@ -448,9 +471,6 @@ One day we should introduce the concept of locale, and hook here.
 	"create a date from the old instant format."
 .COMMAND oldduration(str format) : int = oldduration;
         "parse the old duration format and return an (estimated) number of days."
-
-.PRELUDE = monettime_prelude;
-.EPILOGUE = monettime_epilogue;
 
 .END monettime;
 
@@ -833,6 +853,22 @@ typedef struct {
 #endif
 	} timestamp;
 
+extern int lng_isnil(bit*, timestamp *);
+extern int lng_comp_EQ(bit*, timestamp*, timestamp*);
+extern int lng_comp_NEQ(bit*, timestamp*, timestamp*);
+extern int lng_comp_LT(bit*, timestamp*, timestamp*);
+extern int lng_comp_LE(bit*, timestamp*, timestamp*);
+extern int lng_comp_GT(bit*, timestamp*, timestamp*);
+extern int lng_comp_GE(bit*, timestamp*, timestamp*);
+
+extern int int_isnil(bit*, int*);
+extern int int_comp_EQ(bit*, int*, int*);
+extern int int_comp_NEQ(bit*, int*, int*);
+extern int int_comp_LT(bit*, int*, int*);
+extern int int_comp_LE(bit*, int*, int*);
+extern int int_comp_GT(bit*, int*, int*);
+extern int int_comp_GE(bit*, int*, int*);
+
 @- rule
 rules are used to define the start and end of DST. It uses the 25 lower bits of an int.
 @h
@@ -906,35 +942,6 @@ date DATE_MAX, DATE_MIN; /* often used dates; computed once */
 
 @+ auxiliary functions
 @c
-
-static timestamp ts_nil = {-1,-1};
-static tzone tz_nil = {0,12,0,0,0};
-static timestamp *ts_nilptr = NULL;
-static tzone *tz_nilptr = NULL;
-
-static void date_prelude(void);
-
-void monettime_prelude(void){
-	ts_nilptr = (timestamp*)GDKmalloc(sizeof(timestamp));
-	*ts_nilptr = ts_nil;
-	tz_nilptr = (tzone*)GDKmalloc(sizeof(tzone));
-	*tz_nilptr = tz_nil;
-	date_prelude();
-}
-void monettime_epilogue(void){
-	GDKfree(ts_nilptr);
-	GDKfree(tz_nilptr);
-}
-
-timestamp*
-timestamp_null(void) {
-	return (ts_nilptr);
-}
-tzone*
-tzone_null(void) {
-	return (tz_nilptr);
-}
-
 static int synonyms = TRUE;
 
 int monettime_synonyms(bit* allow) {
@@ -1102,9 +1109,8 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2)) 
 
-#define ts_isnil(t) ((t).days == -1 && (t).msecs == -1)
-#define tz_isnil(z) ((z).dst == (z).off2 == (z).dst_start == (z).dst_end == 1 \
-			&& (z).off1 == 12 )
+#define ts_isnil(t) ((*(lng*) (t)) == lng_nil)
+#define tz_isnil(z) ((*(lng*) (z)) == lng_nil)
 
 static INLINE
 int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {
@@ -1115,7 +1121,7 @@ int timestamp_inside(timestamp *ret, timestamp *t, tzone* z, lng offset) {
 
 	timestamp_add(ret, t, &add);
 
-	if (ts_isnil(*ret) || z->dst == 0) {
+	if (ts_isnil(ret) || z->dst == 0) {
 		return 0;
 	}
 	set_rule(start, z->dst_start);
@@ -1302,7 +1308,7 @@ int timestamp_fromstr(str buf, int *len, timestamp **ret) {
 		(*ret)->msecs = daytime_nil;
 	}
 	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
-		**ret = ts_nil;
+		**(lng**) ret = lng_nil;
 	} else {
 	    lng offset;
 
@@ -1346,7 +1352,7 @@ int timestamp_tostr(str* buf, int* len, timestamp *val) {
 		if (*buf) GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = len1+len2+2);
 	} s = *buf;
-	if (ts_isnil(tmp)) {
+	if (ts_isnil(&tmp)) {
 		strcpy(s, "nil");
 		return 3;
 	}
@@ -1499,7 +1505,7 @@ int tzone_fromstr(str buf, int *len, tzone **d) {
 		if (*d) GDKfree(*d);
 		*d = (tzone*) GDKmalloc(*len = sizeof(tzone));
 	}
-	**d = tz_nil;
+	**(lng**) d = lng_nil;
 
 	/* syntax checks */
 	if (fleximatch(cur, "gmt", 0) == 0) {
@@ -1558,7 +1564,7 @@ int tzone_tostr(str* buf, int* len, tzone *z) {
 		*buf = (str) GDKmalloc(*len = 160);
 	} 
         s = *buf;
-	if (tz_isnil(*z)) {
+	if (tz_isnil(z)) {
 		strcpy(s, "nil"); s += 3;
 	} else {
 		rule dst_start, dst_end;
@@ -1703,8 +1709,8 @@ int daytime_create(daytime* ret, int *hour, int *min, int* sec, int* msec) {
 
 /* creates a timestamp from (date,daytime) parameters */
 int timestamp_create(timestamp* ret, date *d, daytime* t, tzone *z) {
-	if (*d == date_nil || *t == daytime_nil || tz_isnil(*z)) {
-		*ret = ts_nil;
+	if (*d == date_nil || *t == daytime_nil || tz_isnil(z)) {
+		*(lng*)ret = lng_nil;
 	} else {
 		lng add = get_offset(z) * (lng)-60000;
 		ret->days = *d;
@@ -1843,7 +1849,7 @@ int daytime_extract_milliseconds(int *ret, daytime* v) {
 
 /* extracts daytime from timestamp */
 int timestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
-	if (ts_isnil(*t) || tz_isnil(*z)) {
+	if (ts_isnil(t) || tz_isnil(z)) {
 		*ret = int_nil;
 	} else {
 		timestamp tmp;
@@ -1851,7 +1857,7 @@ int timestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
 			lng add = (lng)3600000;
 			timestamp_add(&tmp, &tmp, &add);
 		} 
-		if (ts_isnil(tmp)) {
+		if (ts_isnil(&tmp)) {
 			*ret = int_nil;
 		} else {
 			*ret = tmp.msecs;
@@ -1866,7 +1872,7 @@ int timestamp_extract_daytime_default(daytime* ret, timestamp* t) {
 
 /* extracts date from timestamp */
 int timestamp_extract_date(date* ret, timestamp *t, tzone *z) {
-	if (ts_isnil(*t) || tz_isnil(*z)) {
+	if (ts_isnil(t) || tz_isnil(z)) {
 		*ret = int_nil;
 	} else { 
 		timestamp tmp;
@@ -1874,7 +1880,7 @@ int timestamp_extract_date(date* ret, timestamp *t, tzone *z) {
 			lng add = (lng)3600000;
 			timestamp_add(&tmp, &tmp, &add);
 		} 
-		if (ts_isnil(tmp)) {
+		if (ts_isnil(&tmp)) {
 			*ret = int_nil;
 		} else {
 			*ret = tmp.days;
@@ -1966,7 +1972,7 @@ int date_diff(int *ret, date* v1, date *v2) {
 
 /* returns the timestamp that comes 'milliseconds' after 'value'. */
 int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
-	if (!ts_isnil(*v) && *msecs != lng_nil) {
+	if (!ts_isnil(v) && *msecs != lng_nil) {
 		int days = (int) (*msecs / (24*60*60*1000));
 		ret->msecs = (int) (v->msecs + (*msecs - ((lng) days) * (24*60*60*1000)));
 		ret->days = v->days;
@@ -1978,11 +1984,11 @@ int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
 		if (days) {
 			date_adddays(&ret->days, &ret->days, &days);
 			if (ret->days == int_nil) {
-				*ret = ts_nil;
+				*(lng*) ret = lng_nil;
 			} 
 		}
 	} else {
-		*ret = ts_nil;
+		*(lng*)ret = lng_nil;
 	}
 	return GDK_SUCCEED;
 }
@@ -1990,7 +1996,7 @@ int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
 
 /* returns the number of milliseconds between 'val1' and 'val2'. */
 int timestamp_diff(lng * ret, timestamp *v1, timestamp *v2) {
-	if (ts_isnil(*v1) || ts_isnil(*v2)) {
+	if (ts_isnil(v1) || ts_isnil(v2)) {
 		*ret = lng_nil;
 	} else {
 		*ret = ((lng) (v1->days - v2->days))*((lng) 24*60*60*1000) +
@@ -2004,7 +2010,7 @@ int timestamp_diff(lng * ret, timestamp *v1, timestamp *v2) {
 int timestamp_inside_dst(bit *ret, timestamp *p, tzone* z) {
 	*ret = FALSE;
 
-	if (tz_isnil(*z)) {
+	if (tz_isnil(z)) {
 		*ret = int_nil;
 	} else if (z->dst) {
 		timestamp tmp;
@@ -2031,7 +2037,7 @@ int rule_create(rule *ret, int *month, int* day, int* weekday, int *minutes) {
 
 /* create a tzone as a simple hour difference from GMT. */
 int tzone_create_dst(tzone *ret, int* minutes, rule* start, rule* end) {
-	*ret = tz_nil;
+	*(lng*)ret = lng_nil;
 	if (*minutes != int_nil && ABS(*minutes) < 24*60 &&
             start->asint != int_nil && end->asint != int_nil) 
 	{
@@ -2045,7 +2051,7 @@ int tzone_create_dst(tzone *ret, int* minutes, rule* start, rule* end) {
 
 /* create a tzone as an hour difference from GMT and a DST. */
 int tzone_create(tzone *ret, int* minutes) {
-	*ret = tz_nil;
+	*(lng*)ret = lng_nil;
 	if (*minutes != int_nil && ABS(*minutes) < 24*60) {
 		set_offset(ret, *minutes);
 		ret->dst = FALSE;
@@ -2079,7 +2085,7 @@ int rule_extract_minutes(int *ret, rule* r) {
 
 /* extract rule that determines start of DST from tzone. */
 int tzone_extract_start(rule *ret, tzone* t) {
-	if (tz_isnil(*t) || !t->dst){
+	if (tz_isnil(t) || !t->dst){
 		ret->asint = int_nil;
 	} else {
 		set_rule(*ret, t->dst_start);
@@ -2089,7 +2095,7 @@ int tzone_extract_start(rule *ret, tzone* t) {
 
 /* extract rule that determines end of DST from tzone. */
 int tzone_extract_end(rule *ret, tzone* t) {
-	if (tz_isnil(*t) || !t->dst){
+	if (tz_isnil(t) || !t->dst){
 		ret->asint = int_nil;
 	} else {
 		set_rule(*ret, t->dst_end);
@@ -2099,7 +2105,7 @@ int tzone_extract_end(rule *ret, tzone* t) {
 
 /* extract number of minutes that tzone is offset wrt GMT. */
 int tzone_extract_minutes(int *ret, tzone* t) {
-	*ret = (tz_isnil(*t))?int_nil:get_offset(t);
+	*ret = (tz_isnil(t))?int_nil:get_offset(t);
 	return GDK_SUCCEED;
 }
 
