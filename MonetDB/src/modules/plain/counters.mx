@@ -1248,6 +1248,10 @@ int NumEvents = 0, NoEvent = 0;
    #include <perfmon.h>
   #elif defined(HAVE_LIBCPC)     /* Solaris >= 8 */
    int CPUver = -1;
+   #if ( !defined(uint64_t) && !( defined(_LP64) || (__STDC__ - 0 == 0 && !defined(_NO_LONGLONG)) ) )
+    /* apparently not defined with "-std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500" */
+    typedef  unsigned long long   uint64_t;
+   #endif
    #include <libcpc.h>
   #endif
 
