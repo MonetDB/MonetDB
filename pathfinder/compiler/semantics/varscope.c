@@ -100,7 +100,8 @@ static bool scoping_failed = false;
 
 /**
  * Push a new variable onto the variable environment stack.
- * @param varname Name of the variable to push onto the stack. 
+ *
+ * @param n variable to push onto the stack. 
  * @return Status code as described in pathfinder/oops.c
  */
 static void

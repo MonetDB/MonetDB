@@ -403,9 +403,8 @@ PFcore_proof (PFcnode_t *e1, PFcnode_t *t, PFcnode_t *e2)
  * type is known, the node will be replaced by an equivalent
  * @c seqtype node.
  *
- * @param t SequenceType
  * @param e expression to cast
- * @return a core tree node representing the cast
+ * @return a core tree node representing the type
  */
 PFcnode_t *
 PFcore_stattype (PFcnode_t *e)
@@ -629,10 +628,10 @@ PFcore_locsteps (PFcnode_t *l, PFcnode_t *ls)
 /**
  * Map an XPath step to its corresponding core tree node.
  * 
- * @param pkind a value from the #PFpaxis_t enum in the abstract syntax tree
- * @param n     a node to wire as a child below the new core node.
- *              XPath axes can either have a kind test or a name test
- *              as a child.
+ * @param paxis    a value from the #PFpaxis_t enum in the abstract syntax tree
+ * @param nodetest a node to wire as a child below the new core node.
+ *                 XPath axes can either have a kind test or a name test
+ *                 as a child.
  *
  * @note In the abstract syntax tree, all axes are represented by
  *   the same abstract syntax tree node type. In core, however, we use
@@ -741,7 +740,7 @@ PFcore_kindt (PFpkind_t pkind, PFcnode_t *n)
 /**
  * Create a new core tree node representing a name test.
  *
- * @param q the QName to test
+ * @param qn the QName to test
  * @return new core tree node
  */
 PFcnode_t *
@@ -824,7 +823,7 @@ PFcore_constr (PFptype_t pkind, PFcnode_t *e)
  * Create a new core tree node representing the tagname of an element 
  * or attribute constructor.
  * 
- * @param qname the tagname of an element or attribute constructor
+ * @param qn the tagname of an element or attribute constructor
  * @return the core representation of an element or attribute tagname
  */
 PFcnode_t *
@@ -867,7 +866,7 @@ PFcore_function (PFqname_t qn)
  * Count the number of actual arguments for the function call in core
  * tree node @a c.
  *
- * @param n The current @c c_arg node; when called from outside,
+ * @param c The current @c c_arg node; when called from outside,
  *   this is the topmost @c c_arg node below the function
  *   call. (Can also be a @c c_nil node if no parameters are
  *   specified or the bottom is reached during recursion.)

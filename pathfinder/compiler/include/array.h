@@ -15,14 +15,18 @@
  * More complex operations may be constructed using 
  * the basic interface, e.g.,
  *  - append one element e to array a (available as #PFarray_add):
+ *    @code
  *    *(PFarray_at (a, PFarray_last (a)++) = e
- *    .
+ *    @endcode
+ *    
  *  - append n elements e1, ..., en, to array a (available as #PFarray_nadd):
+ *    @code
  *    i = PFarray_last (a);
  *    (void) PFarray_at (a, i);
  *    (void) PFarray_at (a, i + (n - 1));
  *    PFarray_last(a) += n;
  *    *(PFarray_at (a, i)) = e1; ...; *(PFarray_at (a, i + (n - 1))) = en;
+ *    @endcode
  *
  *
  * Copyright Notice:
@@ -86,7 +90,7 @@ void *PFarray_at (PFarray_t *, unsigned int);
  * Test: is array @c a empty?
  *
  * @param a array
- * @retur n true, if no elements inserted into array, false otherwise
+ * @return true, if no elements inserted into array, false otherwise
  */
 #define PFarray_empty(a) ((a)->appi == 0)
 

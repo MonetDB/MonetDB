@@ -286,6 +286,10 @@ overload (PFqname_t qn, PFcnode_t *args)
  * Apply specific typing rules for standard XQuery F&O functions
  * (see W3C XQuery, 7.2)
  *
+ * @bug
+ *   This function has two arguments, both of which are even
+ *   documented. But only one of them is actually used.
+ *
  * @param fn function reference
  * @param args right-deep core tree of function arguments 
  * @return return type of @a fn when applied to arguments @a args

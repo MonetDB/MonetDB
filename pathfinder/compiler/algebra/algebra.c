@@ -67,7 +67,7 @@
 #include "algebra_mnemonic.h"
 
 
-/**
+/*
  * Encapsulates initialization stuff common to our four
  * arithmetic operators.
  */
@@ -238,7 +238,7 @@ PFalg_proj (PFalg_att_t new, PFalg_att_t old)
  * @param atts  Array of attribute names.
  *              Must be exactly @a count elements long.
  *
- * @node
+ * @note
  *   You typically won't need to call this function directly. Use
  *   the wrapper macro #PFalg_attlist() (or its abbreviation #attlist(),
  *   if you have included algebra_mnemonic.h). It will determine
@@ -537,8 +537,8 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
 /**
  * Equi-join between two operator nodes.
  *
- * Assert that @ a1 is an attribute of @ n1 and @ a2 is an attribute
- * of @ n2. @ n1 and @ n2 must not have duplicate attribute names.
+ * Assert that @a a1 is an attribute of @a n1 and @a a2 is an attribute
+ * of @a n2. @a n1 and @a n2 must not have duplicate attribute names.
  * The schema of the result is (schema(@ n1) + schema(@ n2)).
  */
 PFalg_op_t *
@@ -608,10 +608,10 @@ PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2, PFalg_att_t a1, PFalg_att_t a2)
  * Staircase join between two operator nodes.
  *
  * Each such join corresponds to the evaluation of an XPath location
- * step. @ scj is not a "real" algebra node, but just serves as a
+ * step. @a scj is not a "real" algebra node, but just serves as a
  * container for semantic information on the kind test and location
  * step represented by this join. We extract this information, store
- * it in the newly created join operator and discard the @ scj node. 
+ * it in the newly created join operator and discard the @a scj node. 
  */
 PFalg_op_t *
 PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni, PFalg_op_t *scj)
@@ -843,10 +843,10 @@ PFalg_rownum (PFalg_op_t *n, PFalg_att_t a,
 
 
 /**
- * Selection of all rows where the value of column @ att is not 0.
+ * Selection of all rows where the value of column @a att is not 0.
  *
  * The result schema corresponds to the schema of the input
- * relation @ n.
+ * relation @a n.
  */
 PFalg_op_t*
 PFalg_select (PFalg_op_t *n, PFalg_att_t att)
@@ -886,11 +886,11 @@ PFalg_select (PFalg_op_t *n, PFalg_att_t att)
 }
 
 /**
- * Negates the value in column @ att and stores it in the newly
- * created column @ res.
+ * Negates the value in column @a att and stores it in the newly
+ * created column @a res.
  *
  * The result schema corresponds to the schema of the input relation
- * @ n plus @ res.
+ * @a n plus @a res.
  */
 PFalg_op_t *
 PFalg_negate (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res)
@@ -944,7 +944,7 @@ PFalg_negate (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res)
 
 /**
  * Constructor for type test on column values. The result is
- * stored in newly created column @ res.
+ * stored in newly created column @a res.
  */
 PFalg_op_t *
 PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
@@ -997,8 +997,8 @@ PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
 
 
 /**
- * Constructor for a type cast of column @ att. The type of @ att
- * must be casted to type @ ty.
+ * Constructor for a type cast of column @a att. The type of @a att
+ * must be casted to type @a ty.
  */
 PFalg_op_t *
 PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFty_t ty)
@@ -1078,12 +1078,14 @@ PFalg_divide (PFalg_op_t *n, PFalg_att_t att1,
 
 
 /**
- * Depending on the @ kind parameter, we add, subtract, multiply, or
- * divide the two values of columns @ att1 and @ att2 and stores the
- * result in newly created attribute @ res. @ res gets the same data
- * type as @ att1 and @ att2. The result schema corresponds to the
- * schema of the input relation @ n plus @ res. TODO: common
- * subexpression elimination; remember to compare 'kind'
+ * Encapsulates initialization stuff common to our four
+ * arithmetic operators.
+ *
+ * Depending on the @a kind parameter, we add, subtract, multiply, or
+ * divide the two values of columns @a att1 and @a att2 and stores the
+ * result in newly created attribute @a res. @a res gets the same data
+ * type as @a att1 and @a att2. The result schema corresponds to the
+ * schema of the input relation @a n plus @a res.
  */
 static PFalg_op_t *
 arithm_expr(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,

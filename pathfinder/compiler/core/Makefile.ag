@@ -35,7 +35,9 @@ lib_core = {
 		fs.mt.sed \
 		core.c \
 		simplify.mt \
-		fs_impl.h.sed
+		fs_impl.h.sed \
+		coreopt.mt \
+		coreopt_impl.h
 }
 
 EXTRA_DIST = simpl_impl.c 

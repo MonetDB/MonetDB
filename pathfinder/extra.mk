@@ -61,3 +61,18 @@
 	  sed 's/\*!sed *'\''\(.*\)'\''/\-e \1/g'` $< > $@
 	chmod =r $@
 
+.PHONY: doc html
+
+#
+# We have a little shell script that generates documentation with
+# help of the doxygen source code documentation tool.
+#
+doc:
+	cd $(top_srcdir) ; doc/gen_doc.sh
+
+#
+# We do not only produce HTML documentation, so `html' is actually
+# the wrong make target name. Stefan's automated test system, however
+# uses `html', so we provide it here.
+#
+html: doc

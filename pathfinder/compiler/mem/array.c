@@ -179,7 +179,6 @@ PFarray_nadd (PFarray_t *a, unsigned int n)
  *
  * @param a   array
  * @param fmt printf-style format string
- * @param mat variable number of printing arguments
  * @return number of characters actually appended (or -1 in case of errors)
  */
 int

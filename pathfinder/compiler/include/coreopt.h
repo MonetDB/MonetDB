@@ -3,10 +3,6 @@
 /**
  * @file
  *
- * Declarations for mil/core2mil.c that maps the core tree into
- * a MIL program.
- *
- *
  * Copyright Notice:
  * -----------------
  *
@@ -28,21 +24,20 @@
  *
  *  Contributors:
  *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
  */
 
-#ifndef CORE2MIL_H
-#define CORE2MIL_H
+#ifndef COREOPT_H
+#define COREOPT_H
 
 #include "core.h"
-#include "mil.h"
 
-/** Map core expression @a c to a MIL program @a m. */
-void PFcore2mil (PFcnode_t *, PFmnode_t **);
 
-#endif   /* CORE2MIL_H */
+/** Invoke core tree optimization */
+PFcnode_t *PFcoreopt (PFcnode_t *);
+
+#endif   /* COREOPT_H */
 
 /* vim:set shiftwidth=4 expandtab: */

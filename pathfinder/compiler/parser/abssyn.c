@@ -45,6 +45,7 @@
  * its type.
  *
  * @param  kind kind of new leaf
+ * @param  loc  source location of new node
  * @return new parse tree lead
  */
 PFpnode_t * 

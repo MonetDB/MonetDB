@@ -94,7 +94,7 @@ PFrealloc_ (size_t n, void *mem,
  * Allocates enough memory to hold a copy of @a str
  * and return a pointer to this copy 
  * If you specify @a n != 0, the copy will hold @a n characters (+ the
- * trailing '\0') only.
+ * trailing '\\0') only.
  * @param str string to copy
  * @param len copy @a len characters only
  * @return pointer to newly allocated (partial) copy of @a str

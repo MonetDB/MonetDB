@@ -181,8 +181,11 @@ oops (PFrc_t rc, bool halt,
  *
  * NB. DOES NOT RETURN.
  *
- * @param rc error code
- * @param msg error message string
+ * @param rc   error code
+ * @param file C file in which the error has occured
+ * @param func C function where the error has occured
+ * @param line line number the error has occured
+ * @param msg  error message string
  * @return Returns rc
  */
 void
@@ -228,7 +231,7 @@ PFoops_loc_ (PFrc_t rc, PFloc_t loc,
  * Log an informational message, but only if '-q' command line switch
  * not given.  Then return.
  *
- * @parm rc error code
+ * @param rc  error code
  * @param msg printf style format string for message to log
  */
 void

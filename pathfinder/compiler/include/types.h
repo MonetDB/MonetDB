@@ -120,7 +120,7 @@
 @endverbatim
  *    
  *  - unsupported (SchemaContext):
- *    .
+ *
  *      - element qn context qn'/qn''/...  
  *      - attribute qn context qn'/qn''/... 
  */

@@ -158,7 +158,7 @@ static PFns_t fns;
  */
 
 /**
- * Does QName @q qn actually have a NS prefix?
+ * Does QName @a qn actually have a NS prefix?
  */
 #define NS_QUAL(qn) ((qn).ns.ns)
 

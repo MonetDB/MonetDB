@@ -97,7 +97,7 @@ static char    *child;
 
 /**
  * Print algebra tree in AT&T dot notation.
- * @param f File pointer for the output (usually @c stdout)
+ * @param dot Array into which we print
  * @param n The current node to print (function is recursive)
  * @param node Name of the parent node.
  */
@@ -386,7 +386,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
  * (pipe the output through `dot -Tps' to produce a Postscript file).
  *
  * @param f file to dump into
- * @param t root of abstract syntax tree
+ * @param root root of abstract syntax tree
  */
 void
 PFalg_dot (FILE *f, PFalg_op_t *root)

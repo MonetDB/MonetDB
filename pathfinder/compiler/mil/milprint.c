@@ -114,7 +114,7 @@ static char *ID[] = {
 /** The string we print to */
 static PFarray_t *out = NULL;
 
-/** Wrapper to print stuff */
+/* Wrapper to print stuff */
 static void milprintf (char *, ...)
     __attribute__ ((format (printf, 1, 2)));
 

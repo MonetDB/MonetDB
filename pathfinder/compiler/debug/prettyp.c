@@ -203,7 +203,7 @@ push (stack *s, int n)
 
 /**
  * Break the current line and indent the next line 
- * by @ind characters.
+ * by @a ind characters.
  *
  * @param f file to print to
  * @param ind indentation level
@@ -395,7 +395,9 @@ scan (FILE *f)
  *      to break long lines at white space positions)
  * (2) it contains 
  *
- *       START_BLOCK b1 <blank> b2 <blank> ... <blank> bk END_BLOCK
+ * @verbatim
+         START_BLOCK b1 <blank> b2 <blank> ... <blank> bk END_BLOCK
+@endverbatim
  *
  *     (with the the bi being well-formed buffers).
  *

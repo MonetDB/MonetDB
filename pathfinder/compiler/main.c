@@ -119,7 +119,7 @@
  * it is mandatory that the NS prefix @c ns is in scope, according to
  * the W3C XQuery and W3C XML Namespace rules.
  *
- * For each such successful NS test, if the NS prefix @ns has been
+ * For each such successful NS test, if the NS prefix @c ns has been
  * mapped to the URI @c uri, this phase attaches @c uri to the QName
  * in question.  After this phase has completed, a QName either uses
  * no NS at all or carries the complete @c ns @c |-> @c uri mapping
@@ -180,6 +180,10 @@
  *
  * @subsection core_simplification Core Simplification and Normalization
  *
+ * The Formal Semantics compilation sometimes produces unnecessarily
+ * complex Core code. The simplification phase in @c simplify.mt
+ * simplifies some of these cases and normalizes the Core language tree.
+ *
  * @subsection type_inference Type Inference and Check
  *
  * Type inference walks the core expression, inferring a type for each
@@ -187,21 +191,87 @@
  * checking.
  * 
  * PFty_check() decorates the core tree with type annotations but
- * lets the tree alone otherwise.
+ * lets the tree alone otherwise (almost).
+ *
+ * @subsection coreopt Core Language Optimization
+ *
+ * The Core language tree is now labeled with static type information,
+ * allowing for various optimizations and rewrites of the tree. This
+ * is done in @c coreopt.mt.
+ *
+ * <b>Example:</b>
+ *
+ * @verbatim
+     typeswitch $v
+       case node return e1
+       default   return e2
+@endverbatim
+ *
+ * If we can statically decide that the type of <code>$v</code> is
+ * @em always a subtype of @c node (e.g. if it is the result of an
+ * XPath expression), we may replace the whole expression by expression
+ * @c e1. Conversely, we can replace the expression by @c e2, if we
+ * know that the type of <code>$v</code> can @em never be a subtype
+ * of @c node (the static type of <code>$v</code> and the type @c node
+ * are @em disjoint).
+ *
+ * @subsection core2alg Compiling Core to a Relational Algebra
+ *
+ * Pathfinder compiles XQuery expressions for execution on a relational
+ * backend (MonetDB). The heart of the compiler is thus the compilation
+ * from XQuery Core to a language over relational data, i.e., a purely
+ * relational algebra. This compilation is done in @c core2alg.mt.sed.
+ *
+ * The compilation follows the ideas described in the paper presented
+ * at the TDM'04 workshop (``Relational Algebra: Mother Tongue---XQuery:
+ * Fluent'', <a href='http://www.inf.uni-konstanz.de/~teubner/publications/algebra-mapping.pdf'>http://www.inf.uni-konstanz.de/~teubner/publications/algebra-mapping.pdf</a>).
+ * The result of this compilation phase is an algebra expression (in
+ * an internal tree representation, as described by @c algebra.c). The
+ * algebra is an almost standard relational algebra, with some operations
+ * made very explicit (e.g., no higher order functions). Few extensions,
+ * such as the staircase join operation, are added for tree-specific
+ * operations.
+ *
+ * @subsection algebra_cse Algebra Common Subexpression Elimination (CSE)
  * 
- * @subsection core2mil Mapping Core to MIL (Monet Interface Language)
+ * The algebra code generated in the previous step contains @em many
+ * redundancies. To avoid re-computation of the same expression, the
+ * code in algebra_cse.c rewrites the algebra expression @em tree into
+ * an equivalent @em graph (DAG), with identical subexpressions only
+ * appearing once.
  *
- * The final output of our compiler will be a MIL program, MIL being the
- * interface language understood by the Monet database system. Our
- * MIL program will depend on a Monet module "pathfinder" that provides
- * additional types and functionality (e.g. staircase join) to execute
- * the query.
+ * @subsection algopt Algebra Optimization
  *
- * PFcore2mil() maps the core tree into a tree structure describing the
- * MIL program (with #PFmnode_t nodes). This program can than be converted
- * to a string representation with PFmilprint() and sent to the Monet
- * database system. A description of this mapping scheme is given in
- * a separate section of this documentation.
+ * The generated algebra code is another, maybe the most important,
+ * hook for optimizations. The (twig based) code in @c algopt.mt does
+ * some of them (e.g., removal of statically empty expressions).
+ *
+ * @subsection milgen MIL Code Generation
+ *
+ * The (optimized) algebra expression tree is compiled to our target
+ * language, MIL, in @c milgen.mt.sed. The compilation produces another
+ * in-memory data structure that will be serialized afterwards (see below).
+ *
+ * The MIL code is produced bottom-up, with a twig based compiler. The
+ * resulting MIL code computes the result of each sub-expression
+ * (i.e., each node in the algebra DAG) and stores it in a set of MIL
+ * variables (MonetDB only knows 2-column tables, we need a set of BATs
+ * to store a whole relation). The name of these variables is determined
+ * with help of a @em prefix that is generated for each sub-expression,
+ * followed by suffixes for attribute name and type. The generated code
+ * will keep each sub-expression result as long in the corresponding
+ * variable, as it may still be used by other operations (i.e., if there
+ * still are ingoing edges in the DAG that have not yet been used). As
+ * soon as a variable is no longer needed, we set it to @c nil, which
+ * allows MonetDB to dispose the variable's old content.
+ *
+ * @subsection milprint Printing the MIL Code as the Compiler Output
+ *
+ * The in-memory representation of the generated MIL code is serialized
+ * to a string in milprint.c. The serialization follows a simple grammar
+ * on the in-memory MIL tree that at the same time checks the tree for
+ * correctness (will hopefully help to detect bugs in the generation
+ * early).
  *
  * @section commandline Command Line Switches
  *
@@ -215,10 +285,10 @@
  * package. The tree structure is printed in a syntax understandable by
  * dot. By piping Pathfinder's output to dot, the tree can be represented
  * as PostScript or whatever. ``dot'' output is selected by the command
- * line option <code>-D</code>. (In the example, `<code>-p</code>' makes
- * Pathfinder stop after parsing and print out the parse tree.)
+ * line option <code>-D</code>. (In the example, `<code>-p</code>'
+ * requests to print the <code>p</code>arse tree in dot notation.)
  @verbatim
- $ echo '/foo/bar' | bin/Pathfinder -Dp | dot -Tps -o foo.ps
+ $ echo '/foo/bar' | ./pf -Dps6 | dot -Tps -o foo.ps
  @endverbatim
  * See the dot manpage for more information about dot.
  *
@@ -226,42 +296,32 @@
  *
  * Output in human readable form is done with the help of a prettyprinting
  * algorithm. The output should be suitable to be viewed on a 80 character
- * wide ASCII terminal. For some data structures a colored output might
- * be available. Escape sequences are generated that allow for colored
- * output on xterm windows. Note that this might become ugly on other
- * terminal types. Prettyprinted output can be selected with the command
- * line option <code>-P</code>:
+ * wide ASCII terminal. Prettyprinted output can be selected with the
+ * command line option <code>-P</code>:
  @verbatim
- $ echo '/foo/bar' | bin/Pathfinder -Pp
+ $ echo '/foo/bar' | ./pf -Pps6
  @endverbatim
  *
- * @subsection timing Timing Output
+ * @subsection what_to_print Data Structures that may be Printed
  *
- * If you're interested in performance of the compiler, the command line
- * option <code>-T</code> might be your choice. For several compilation
- * phases, timing statistics are printed to stdout.
+ * The command line switches <code>-p</code>, <code>-c</code>, and
+ * <code>-a</code> request printing of parse tree (aka. abstract
+ * syntax tree), Core language tree, or algebra expression tree,
+ * respectively.
  *
- * @subsection abstract_syntax Abstract Syntax
+ * @subsection stopping Stopping Processing at a Certain Point
  *
- * The abstract syntax tree (parse tree, generated by the @ref parsing "Parser")
- * can be printed out in either dot notation (use command line switch @c -D)
- * or in human readable form (use command line switch @c -P). You make
- * Pathfinder stop immediately after parsing with the command line option
- * <code>-p</code>.
+ * For debugging it may be interesting to stop the compiler at a
+ * certain point of processing. The compiler will stop at that point
+ * and will print out tree structures as requested by other switches.
  *
- * @subsection normalization Normalization
- *
- * After parsing, the abstract syntax tree is normalized (see above).
- * To stop Pathfinder immediately after doing this, use the command line
- * option <code>-n</code>.
- *
- * @subsection semantic_analysis Semantic Analysis
- *
- * The normalization phase is followed by a semantic analysis of the
- * abstract syntax tree. This includes variable scoping, function ``scoping'',
- * and namespace resolution. To stop Pathfinder immediately after doing
- * this, use the command line option <code>-s</code>.
- *
+ * You find all the stop points listed by issuing the command line
+ * help (option <code>-h</code>). The following example stops processing
+ * after mapping the abstract syntax tree to Core and prints the
+ * resulting Core tree:
+ * @verbatim
+ $ echo '/foo/bar' | ./pf -Pcs9
+@endverbatim
  *
  * @subsection types Static typing for the core language
  *
@@ -270,100 +330,13 @@
  * compiler print type annotations (in braces <code>{ }</code>) along
  * with core program output.
  *
- * @section testing A Word on Testing
- *
- * @subsection simple_tests Simple Tests for Single Queries
- *
- * By either printing out tree structures with the @ref prettyprinting
- * "Prettyprinting" option of the Pathfinder binary or generating dot
- * output and piping it to the dot utility (see @ref treeprinting),
- * single queries can be tested on the command line.
- *
- * @subsection postscript_batch Generating Trees as PostScript Files in Batch
- *
- * If you want to run many queries to test your changes to the code,
- * you can specify them in a file and use the @c query-batch script
- * to generate the PostScript file. Put your queries into an ascii
- * file and seperate your queries with a '--' on a single line.
- * @c query-batch will generate a PostScript file, that contains
- * all queries and the generated tree structures. Use a PostScript
- * viewer or your printer to check the result.
- *
- * To generate PostScript output of the Abstract Syntax Tree this way
- * call @c query-batch like this:
- @verbatim
- $ test/query-batch -a -p -b bin/Pathfinder your_input_file.xq
- $ gv your_input_file.xq.ps &
- @endverbatim
- *
- * If the query file you generated might be useful for the future, use
- * .xq as a file extension and drop the file into the @c test subdirectory.
- * Also see the next chapters for automated testing.
- *
- * @subsection diff_batch Automated Checking Using Reference Files
- *
- * The @c query-batch script can also compare the output of the binary
- * against a given reference. This reference file should have the file
- * name of the input file plus the extension '.abssyn' for abstract
- * syntax tree. It contains the @b human @b readable (prettyprinted)
- * representation of the abstract syntax tree, where the output of
- * different queries is separated by '--' again.
- *
- * To start this 'diff' test, invoke @c query-batch like this:
- @verbatim
- $ test/query-batch -a -d -b bin/Pathfinder your_input_file.xq
- @endverbatim
- *
- * You don't have to write your reference files by hand. Use the '-r'
- * option of @c query-batch to let it create a reference file for you.
- @verbatim
- $ test/query-batch -a -r -b bin/Pathfinder your_input_file.xq
- $ ls your_input_file.xq*
- your_input_file.xq
- your_input_file.xq.ref
- @endverbatim
- *
- * @note @c query-batch does not generate a '.abssyn' file to not overwrite
- *   an existing file. To use your new reference file, rename it
- *   accordingly.
- *
- * @warning Check the reference file or the PostScript output of your
- *   queries thoroughly before creating your reference file. Simply
- *   generating the '.ref' file and copying it to '.abssyn' makes the
- *   whole test system useless!
- *
- * @subsection fast_test The Fast Test Method
- *
- * If you run @c make with the @c test target
- @verbatim
- $ make test
- @endverbatim
- * all @c *.xq files in the @c test subdirectory will automatically be
- * tested against the reference files in the same directory. The output
- * is printed to @c stdout.
- *
- * <b>
- * Always run this test before checking in any changes! Never check in
- * anything that does not pass @c make @c test !
- * </b>
- *
- * If tests fail, there can be two reasons:
- *  - The code is buggy. @b Solution: fix it.
- *  - Your modifications might have changed the data structures in our
- *    compiler and/or its output. @b Solution: thoroughly check
- *    if everything is ok and modify the @e reference files.
- *
- * If no test queries exist that address the problem you have just been
- * working on, create new queries. Group them in a sensible way in one
- * or more files and drop them into the @c test directory. Don't forget
- * to also create the reference file(s) and add both to the CVS repository.
  *
  * @section credits Credits
  *
- * This is a project of the
+ * This project has been initiated by the
  * <a href="http://www.inf.uni-konstanz.de/dbis/">Database and Information
  * Systems Group</a> at <a href="http://www.uni-konstanz.de/">University
- * of Konstanz, Germany</a>. The project is lead by Torsten Grust
+ * of Konstanz, Germany</a>. It is lead by Torsten Grust
  * (torsten.grust@uni-konstanz.de) and Jens Teubner
  * (jens.teubner@uni-konstanz.de). Several students from U Konstanz have
  * been involved in this project, namely
@@ -385,7 +358,10 @@
  * For our work on XML and XQuery we had great support from Maurice van
  * Keulen (keulen@cs.utwente.nl) from the
  * <a href="http://www.cs.utwente.nl/eng/">University of Twente, The
- * Netherlands</a>.
+ * Netherlands</a>. Since 2003, Pathfinder is a joint effort also with
+ * the <a href='monetdb.cwi.nl'>MonetDB</a> project, the main-memory
+ * database system developed by the database group at
+ * <a href='http://www.cwi.nl'>CWI Amsterdam</a>.
  */
 
 #include "pathfinder.h"
@@ -497,6 +473,7 @@ static const char
 #include "oops.h"
 #include "mem.h"
 #include "algebra_cse.h"
+#include "coreopt.h"
 
 /* GC_max_retries, GC_gc_no */
 #include "gc.h"
@@ -513,11 +490,12 @@ static char *phases[] = {
     [ 9]    "after the abstract syntax tree has been mapped to Core",
     [10]    "after the Core tree has been simplified/normalized",
     [11]    "after type inference and checking",
-    [12]    "after the Core tree has been translated to the internal algebra",
-    [13]    "after the common subexpression elimination on the algebra tree",
-    [14]    "after the algebra tree has been rewritten/optimized",
-    [15]    "after the algebra has been translated to MIL",
-    [16]    "after the MIL program has been serialized"
+    [12]    "after XQuery Core optimization",
+    [13]    "after the Core tree has been translated to the internal algebra",
+    [14]    "after the common subexpression elimination on the algebra tree",
+    [15]    "after the algebra tree has been rewritten/optimized",
+    [16]    "after the algebra has been translated to MIL",
+    [17]    "after the MIL program has been serialized"
 };
 
 #define STOP_POINT(a) \
@@ -927,6 +905,18 @@ main (int argc, char *argv[])
     STOP_POINT(11);
 
 
+    /* Core tree optimization */
+    tm = PFtimer_start ();
+  
+    croot = PFcoreopt (croot);
+
+    tm = PFtimer_stop (tm);
+    if (PFstate.timing)
+        PFlog ("core tree optimization:\t %s", PFtimer_str (tm));
+
+    STOP_POINT(12);
+
+
     /*
      * FIXME:
      * This is the place where we should do some optimization stuff
@@ -979,7 +969,7 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("Algebra tree generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(12);
+    STOP_POINT(13);
 
     /* 
      * common subexpression elimination in the algebra tree
@@ -993,7 +983,7 @@ main (int argc, char *argv[])
         PFlog ("Common subexpression elimination in algebra tree:\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(13);
+    STOP_POINT(14);
 
     /* Rewrite/optimize algebra tree */
     tm = PFtimer_start ();
@@ -1005,7 +995,7 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("Algebra tree rewrite/optimization:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(14);
+    STOP_POINT(15);
 
     tm = PFtimer_start ();
 
@@ -1016,14 +1006,14 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(15);
+    STOP_POINT(16);
 
     /* Render MIL program in Monet MIL syntax 
      */
     if (!(mil_program = PFmil_serialize (mroot)))
         goto failure;
 
-    STOP_POINT(16);
+    STOP_POINT(17);
 
     /* Print MIL program to stdout */
     if (mil_program)

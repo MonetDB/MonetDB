@@ -109,7 +109,7 @@ extern int yylineno;
  */
 static bool xmlspace_preserve = false;
 
-/**
+/*
  * Check if the input string consists of whitespace only.
  * If this is the case and xmlspace_preserve is set to false, the 
  * abstract syntax tree must be altered, i.e., we do not
@@ -1962,9 +1962,11 @@ is_whitespace (char *s)
 
 /**                            
  * Recursively flatten a location path @a p
- * (call this function with @a r initially 0).
+ * (call this function with @a r initially @c NULL).
  *
  * @param p (possibly nested) location path
+ * @param r ``Hole'' that will be filled during recursive calls.
+ *          Call with @a r = @c NULL from outside.
  * @return flat location path
  */
 static PFpnode_t *

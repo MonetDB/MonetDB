@@ -220,7 +220,7 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
  * (pipe the output through `dot -Tps' to produce a Postscript file).
  *
  * @param f file to dump into
- * @param t root of abstract syntax tree
+ * @param root root of abstract syntax tree
  */
 void
 PFcore_dot (FILE *f, PFcnode_t *root)

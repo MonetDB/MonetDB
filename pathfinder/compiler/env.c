@@ -14,12 +14,14 @@
  * actually maintains an array of values for each key.  The actual
  * environment layout thus is, e.g.,
  *
- *                           key1 |--> value11
- *                           key2 |--> value21, value22, value23
- *                           key3 |--> value31, value32
- *                                  .
- *                                  .
- *                                  .
+ * @verbatim
+                             key1 |--> value11
+                             key2 |--> value21, value22, value23
+                             key3 |--> value31, value32
+                                    .
+                                    .
+                                    .
+@endverbatim
  *
  * This environment thus supports, e.g., polymorphic functions (functions
  * sharing a common name but having differing types).

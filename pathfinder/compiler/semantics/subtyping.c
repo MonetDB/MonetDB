@@ -117,7 +117,7 @@
  * - to decide <:, @a trivial encodes the subtyping @a hierarchy
  * - to decide ||, @a trivial tells if two types trivially @a intersect
  * - to decide `can be promoted to', 
- *             @a trivial tells if two types are @promotable
+ *             @a trivial tells if two types are promotable
  */
 static char (*trivial)[ty_types][ty_types];
 
@@ -177,7 +177,7 @@ typedef PFarray_t *pd_ineq_set_t;
 #define pd_ineq_set_ins(s, p)  ((*(pd_ineq_t **) PFarray_add (s)) = (p))
 
 
-/**
+/*
  * Utility routines working on types, arrays.
  *
  * - perms:    enumerate all permutations of a set of types
@@ -310,7 +310,7 @@ perms (ty_set_t s, void (*f) (ty_set_t))
 
 
 
-/**
+/*
  * Auxiliary routines to implement Antimirov's algorithm.
  *
  * - nullable:     epsilon inclusion test
@@ -611,8 +611,8 @@ _ln (PFty_t *t, PFarray_t *lns)
  * - leadingnames (t*)      = leadingnames (t)
  * - leadingnames (t+)      = leadingnames (t)
  * - leadingnames (t1, t2)  
- *      = /leadingnames (t1) U leadingnames (t2) , if nullable (t1)
- *        \leadingnames (t1)                     , otherwise
+ *      = / leadingnames (t1) U leadingnames (t2) , if nullable (t1)
+ *        \ leadingnames (t1)                     , otherwise
  * - leadingnames (t1 | t2) = leadingnames (t1) U leadingnames (t2)
  * - leadingnames (t)       = { t }
  *
@@ -1020,7 +1020,9 @@ pd_ineq (PFty_t *w, PFty_t a, PFty_t b)
  *
  * Build the inequality
  *
- *                    @a t <: @a t0 | @a t1 |... | @a tn
+ * @verbatim
+                     @a t <: @a t0 | @a t1 |... | @a tn
+@endverbatim
  *
  * where the ti are taken from @a pds (@a subset and @a left indicate
  * which ti to take).
@@ -1029,7 +1031,7 @@ pd_ineq (PFty_t *w, PFty_t a, PFty_t b)
  * @param pds set of pairs of types to pick for right-hand side
  * @param left pick left-hand or right-hand side of type pair?
  * @param s number of elements encoded in @a subset
- * @param bit-encoding of subset of types to pick from @a pds
+ * @param subset bit-encoding of subset of types to pick from @a pds
  */
 static ty_pair_t *
 subset_ineq (PFty_t t, ty_pair_set_t pds, bool left, 
@@ -1287,7 +1289,7 @@ char intersect[ty_types][ty_types] = {
  * Is the inequality @a t1 <: @a t2 in the set of assumptions @a a?
  *
  * @param t1 first type
- * @param t1 second type
+ * @param t2 second type
  * @param a assumption set
  * @return true, if @a t1 <: @a t2 is element of @a, false otherwise
  */
@@ -1306,7 +1308,7 @@ assumption (PFty_t t1, PFty_t t2, ty_pair_set_t a)
 
 /**
  * Worker for #PFty_subtype () and #PFty_promotable.  
- * Test, whether @a t1 <: @a t2 (or @t1 can be promoted to @a t2).
+ * Test, whether @a t1 <: @a t2 (or @a t1 can be promoted to @a t2).
  *
  * @param t1 first type
  * @param t2 second type

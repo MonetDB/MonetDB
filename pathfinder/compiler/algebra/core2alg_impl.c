@@ -171,7 +171,7 @@ static int TWIG_ID[] = {
 #include "algebra_mnemonic.h"
 
 
-/** Constructor for environment entry */
+/* Constructor for environment entry */
 static PFalg_env_t enventry (PFvar_t *var, PFalg_op_t *op);
 
 
@@ -204,7 +204,7 @@ static PFalg_op_t *prec (PFalg_op_t *n);
 static PFalg_op_t *prec_sibl (PFalg_op_t *n);
 static PFalg_op_t *self (PFalg_op_t *n);
 
-/** Concatenate the parameters of built-in functions. */
+/* Concatenate the parameters of built-in functions. */
 static PFalg_op_t * args (PFalg_op_t *arg, PFalg_op_t *args);
 
 /** Create the tail of an argument list. */
@@ -513,8 +513,8 @@ static PFalg_op_t *self (PFalg_op_t *n)
 
 
 /**
- * Concatenate the parameters of built-in functions. 'args'
- * contains the arguments seen so far, 'arg' is the new
+ * Concatenate the parameters of built-in functions. @a args
+ * contains the arguments seen so far, @a arg is the new
  * argument to be concatenated to the beginning of the list
  * (in order to maintain correct order of the incoming arguments,
  * because they arrive at this function from last to first).

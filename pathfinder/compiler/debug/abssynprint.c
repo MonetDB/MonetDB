@@ -363,7 +363,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
  * (pipe the output through `dot -Tps' to produce a Postscript file).
  *
  * @param f file to dump into
- * @param t root of abstract syntax tree
+ * @param root root of abstract syntax tree
  */
 void
 PFabssyn_dot (FILE *f, PFpnode_t *root)
