@@ -4845,7 +4845,7 @@ translateFunction (opt_t *f, int act_level, int counter,
 static void
 translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
 {
-    char *ns, *loc;
+    char *ns, *loc, *descending, *container;
     int bool_res;
 
     assert(c);
@@ -5119,6 +5119,84 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             translateFunction (f, act_level, counter, 
                                c->sem.fun->qname, D(c));
             break;
+	case c_orderby:
+	    counter++;
+	    milprintf(f,
+		    "{ # order_by\n"
+		    "var refined%03u := loop%03u.reverse().project(nil);\n",
+		    counter, act_level);
+	    /* evaluate orderspecs */
+            translate2MIL (f, act_level, counter, L(c));
+
+	    /* return expression */
+            translate2MIL (f, act_level, counter, R(c));
+
+	    milprintf(f,
+		    /* needed in case of 'stable' property */
+		    /* FIXME: copy() needed until bug [ 1101798 ] is fixed */
+		    "refined%03u := refined%03u.CTrefine(loop%03u.reverse().copy());\n"
+		    "var sorting := refined%03u.mirror();\n"
+		    "refined%03u := nil_oid_oid;\n"
+		    /* we need a real order preserving join here
+		       otherwise the sorting inside an iteration 
+		       could be mixed */
+		    "sorting := sorting.leftjoin(iter.reverse()).reverse();\n"
+		    /* as long as we have no complete stable sort we need
+		       to refine with pos */
+		    "sorting := sorting.CTrefine(pos);\n"
+		    "sorting := sorting.mark(0@0).reverse();\n"
+		    "iter := sorting.leftfetchjoin(iter);\n"
+		    "pos := sorting.leftfetchjoin(pos);\n"
+		    "item := sorting.leftfetchjoin(item);\n"
+		    "kind := sorting.leftfetchjoin(kind);\n"
+		    "sorting := nil_oid_oid;\n"
+		    "} # end of order_by\n",
+		    counter, counter, act_level,
+		    counter, counter);
+	    break;
+	case c_orderspecs:
+	    /* we have to find the correct type container */
+	    if (PFty_subtype (L(c)->type, PFty_star (PFty_integer ())))
+		container = ".leftfetchjoin(int_values)";
+	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_double ())))
+		container = ".leftfetchjoin(dbl_values)";
+	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_decimal ())))
+		container = ".leftfetchjoin(dec_values)";
+	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_string ())))
+		container = ".leftfetchjoin(str_values)";
+	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_untypedAtomic ())))
+		container = ".leftfetchjoin(str_values)";
+	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_boolean ())))
+		container = "";
+	    else
+		PFoops (OOPS_FATAL, "typing in orderspec doesn't work");
+
+	    descending = (c->sem.mode.dir == p_asc)?"":"_rev";
+
+	    translate2MIL (f, act_level, counter, L(c));
+
+	    milprintf(f,
+                    "if (iter.tunique().count() != iter.count()) {"
+		    "ERROR (\"more than one value per iteration in order by expression\"); }\n"
+		    /* can't be sure wether CTrefine
+		       works the expected way with missing rows */
+                    "if (iter.count() != loop%03u.count()) {"
+		    "print (\"no guarantee for correct order in order by expression "
+				"(empty greatest and empty least ignored)\"); }\n"
+		    "{ # orderspec\n"
+		    "var order := iter.reverse().leftfetchjoin(item%s);\n"
+		    "refined%03u := refined%03u.CTrefine%s(order);\n"
+		    "} # end of orderspec\n",
+		    act_level,
+		    container,
+                    counter, counter, descending);
+
+	    /* evaluate rest of orderspecs until end of list is reached */
+	    if (R(c)->kind != c_nil)
+	    {
+	        translate2MIL (f, act_level, counter, R(c));
+	    }
+	    break;
         case c_typesw:
             PFlog("typeswitch occured");
         case c_nil:
@@ -5310,6 +5388,9 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *(L(c));
             break;
         case c_let:
+	    /* we need to simplify R(c) here because otherwise 
+	       var_is_used can contain more occurrences than necessary */
+            simplifyCoreTree (R(c));
             if ((i = var_is_used (LL(c)->sem.var, R(c))))
             {
                 simplifyCoreTree (LR(c));
@@ -5653,6 +5734,29 @@ simplifyCoreTree (PFcnode_t *c)
             if (L(c)->kind == c_empty)
                 *c = *(PFcore_empty ());
             break;
+	case c_orderspecs:
+            simplifyCoreTree (L(c));
+            simplifyCoreTree (R(c));
+
+	    input_type = PFty_prime(L(c)->type);
+            if (input_type.type == ty_star ||
+	        input_type.type == ty_plus ||
+		input_type.type == ty_opt)
+	    {
+		input_type = PFty_child(input_type);
+	    }
+
+	    /* we want to avoid comparison between different types */
+	    if (input_type.type == ty_choice)
+	    {
+                L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
+                /* type new code, to avoid multiple casts */
+                c->type     =
+                L(c)->type  =
+                LL(c)->type = PFty_string ();
+                simplifyCoreTree (L(c));
+	    }
+	    break;
         default: 
             for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
                 simplifyCoreTree (c->child[i]);
