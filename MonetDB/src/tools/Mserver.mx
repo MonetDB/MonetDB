@@ -162,6 +162,7 @@ void* malloc(size_t size) {
 @C
 int main(int argc, char** argv) {
 	char buf[256];
+	int status = 1;
 	int base_nr_threads;
 	Client c;
 @-
@@ -210,6 +211,7 @@ Execute scripts.
 @- 
 thread management.
 @C
+/*
 	if (monet_singlethreaded) {
 		if (monet_background > 1) {
 			scheduleClient(c);
@@ -218,14 +220,18 @@ thread management.
 	} else {
 		if (monet_internet) {
 			monetInternet(); /* accept other clients */
+/*
 			MT_down_sema(monet_started, "Mserver monet_started");
 		} else {
 			base_nr_threads--;
 		}
 		if (monet_background > 1) {
-			scheduleClient(c);
 		}
 	}
+*/
+
+	scheduleClient(c);
+	monetInterpreter((void*)&status);
 	
 @-
 First wait until all threads are started
@@ -242,9 +248,9 @@ First wait until all threads are started
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
 @C
+/*
 	if (monet_singlethreaded == 0) {
 		MT_down_sema(monet_main, "Mserver monet_main");
-/*
 	    do {
 		sleep(1);
 		PARDEBUG {
@@ -253,8 +259,8 @@ for all processes to terminate properly.
 				GDKnrofthreads,  monet_background);
 		}
 	    } while (GDKnrofthreads > base_nr_threads);
-*/
 	}
+*/
 @-
 Peter: for the time being avoid difficult things like dropping everything 
 	monet_exit();
