@@ -340,17 +340,96 @@ tst400e		 1.02/1.01/0.01	1M incr fcn
 tst901a		 0.85/0.80/0.05	[+] call	 
 tst901b		 4.12/4.07/0.05	[+] call	
 ======================== 7 Oct 2004 ===================
+Setup on Orion with Fedora 2
+The compilation mode for both V5 and V4.4 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		orion(2x1.4Mh load 0)		orion (V4.4)	
+base		 0.19/0.10/0.08			 1.76/0.30/1.45
+tst400a		 0.30/0.20/0.10	1M loop	 	 3.95/2.45/1.48
+tst400a2	 0.42/0.33/0.09	1M loop inc	
+tst400bHuge 	 0.90/0.74/0.15	100k count (io)	13.01/11.06/1.95
+tst400cHuge	 1.16/0.93/0.22	100k insert(io)	 6.40/ 4.31/2.07
+tst400d		 0.75/0.64/0.11	1M insert tuple  10.32/ 8.76/1.55
+tst400e		 1.30/1.29/0.10	1M incr fcn      5.78/ 4.27/1.49
+
+tst901a		 1.04/0.80/0.23	[+] call	 10.24/ 8.61/1.59
+tst901b		 4.05/3.83/0.21	[+] call	26.04/24.72/1.72
+======================== 7 Oct 2004 ===================
 Setup on Orion with Fedora 2, and on P3 350Mhz with Fedora 1
 The compilation mode for both V5 and V4.4 is CFLAGS=-O2 
 command: time Mserver -c perf.conf TST </dev/null >/dev/null
-		orion(2x1.4Mh load 0)		orion (V4.4)			P3 350
-base		 0.19/0.10/0.08			 1.76/0.30/1.45		2.99/0.50/1.33
-tst400a		 0.30/0.20/0.10	1M loop	 	 3.95/2.45/1.48		9.71/8.19/1.45
+		orion(2x1.4Mh load 0)		P3 350 V4.4
+base		 0.19/0.10/0.08			 2.99/0.50/1.33	
+tst400a		 0.30/0.20/0.10	1M loop	 	 9.71/8.19/1.45
 tst400a2	 0.42/0.33/0.09	1M loop inc	
-tst400bHuge 	 0.90/0.74/0.15	100k count (io)	13.01/11.06/1.95	55.38/37.87/2.71
-tst400cHuge	 1.16/0.93/0.22	100k insert(io)	 6.40/ 4.31/2.07	55.48/18.01/4.91
-tst400d		 0.75/0.64/0.11	1M insert tuple  10.32/ 8.76/1.55	40.58/38.16/1.50
-tst400e		 1.30/1.68/0.10	1M incr fcn      5.78/ 4.27/1.49	17.99/16.56/1.36
+tst400bHuge 	 0.90/0.74/0.15	100k count (io)	55.38/37.87/2.71
+tst400cHuge	 1.16/0.93/0.22	100k insert(io)	55.48/18.01/4.91
+tst400d		 0.75/0.64/0.11	1M insert tuple 40.58/38.16/1.50
+tst400e		 1.30/1.29/0.10	1M incr fcn     17.99/16.56/1.36
 
-tst901a		 1.04/0.80/0.23	[+] call	 10.24/ 8.61/1.59	40.36/38.59/1.47
-tst901b		 4.05/3.83/0.21	[+] call	26.04/24.72/1.72	112.45/110.42/1.73
+tst901a		 1.04/0.80/0.23	[+] call	 40.36/38.59/1.47
+tst901b		 4.05/3.83/0.21	[+] call	112.45/110.42/1.73
+======================== 15 Oct 2004 ===================
+Setup on Shuttle with Fedora 2, and on AMD 
+The compilation mode for both V5 and V4.4 is CFLAGS=-O2
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+                Version 4.99			Version 4.4
+base             0.06/0.03/0.02                  0.06/0.03/0.01
+tst400a          0.10/0.07/0.03 1M loop          0.70/0.69/0.01
+tst400a2         		1M loop inc
+tst400bHuge      0.30/0.25/0.05 100k count (io)  4.52/4.33/0.18
+tst400cHuge      0.41/0.34/0.07 100k insert(io)  1.71/1.51/0.21 
+tst400d          0.26/0.22/0.03 1M insert tuple  2.80/2.78/0.02
+tst400e          0.43/0.41/0.02 1M incr fcn      1.45/1.44/0.01
+
+tst901a          0.32/0.25/0.06 [+] call         2.76/2.72/0.03
+tst901b          1.29/1.22/0.07 [+] call         7.44/7.39/0.05
+
+======================== 16 Oct 2004 ===================
+The situation on Ara with a new kernel
+The compilation mode for both V5 and V4.4 is CFLAGS=-O2
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+                 V4.99 				V4.4
+base             0.30/0.10/0.05                  1.44/0.18/1.21
+tst400a          0.37/0.19/0.06 1M loop          3.60/2.19/1.35
+tst400a2         0.53/0.37/0.04	1M loop inc	 0.93/0.17/0.71
+tst400bHuge      0.97/0.72/0.10 100k count (io) 12.21/10.60/1.40
+tst400cHuge      1.12/0.94/0.14 100k insert(io)  5.71/4.01/1.45 
+tst400d          0.80/0.60/0.08 1M insert tuple  9.24/8.39/0.75
+tst400e          1.37/1.2/0.04 1M incr fcn       4.91/4.06/0.78
+
+tst901a          1.04/0.76/0.17 [+] call         9.31/8.37/0.84
+tst901b          3.92/3.59/0.18 [+] call        24.45/23.02/0.83
+
+======================== 16 Oct 2004 ===================
+The situation on Stem with a new kernel
+The compilation mode for both V5 and V4.4 is CFLAGS=-O2
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+                 V4.99 				V4.4
+base             0.26/0.09/0.04                  0.81/0.14/0.61
+tst400a          0.36/0.20/0.04 1M loop          2.73/2.07/0.61
+tst400a2         0.53/0.35/0.04	1M loop inc	 0.81/0.15/0.61
+tst400bHuge      0.97/0.70/0.09 100k count (io) 11.38/10.18/0.94
+tst400cHuge      1.12/0.94/0.15 100k insert(io)  5.00/3.80/1.12 
+tst400d          0.75/0.57/0.05 1M insert tuple  8.71/7.88/0.70
+tst400e          1.32/1.15/0.04 1M incr fcn       4.91/4.06/0.78
+
+tst901a          1.03/0.77/0.15 [+] call         8.87/8.02/0.68
+tst901b          3.61/3.33/0.16 [+] call        22.77/21.96/0.70
+
+======================== 17 Oct 2004 ===================
+Running V4.4 using embedded features
+Mserver --set monet_embedded=yes --dbinit="module(mapi);listen();"
+and running tests via MapiClient
+                 V4.4
+base             0.16
+tst400a          2.2 	1M loop         
+tst400a2         	1M loop inc
+tst400bHuge      13.6	100k count (io) 
+tst400cHuge      4.8	100k insert(io)
+tst400d          7.5	1M insert tuple
+tst400e          4.2	1M incr fcn    
+
+tst901a          7.5	[+] call      
+tst901b          21.2	[+] call     
+
