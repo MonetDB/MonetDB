@@ -45,32 +45,10 @@ Dirty bats on disc are only loaded if needed; in most cases
 it is enough to handle the (cached) BAT descriptor. 
 @{
 @c
-int TMcommit() {
+void TMfakeCommit(){
 	int nkills=0, maxkills=1024, killbuf[1024], *kills = killbuf;
-	int i, ret = 0;
-
-	/* Acquire BBP locks */
-	BBPlock("TMcommit");
-
-        /* commit the delta status of each BAT */
-        for (i = 1; i < BBPsize; i++)  
-	if (BBP_status(i) & BBPPERSISTENT) {
-		BAT *b = BBPcache(i);
-		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
-			b = BBPquickdesc(i, TRUE);
-			if (b == NULL) { ret = 1; break; }
-		}
-		if (b) {
-			BATcommit(b);
-		}
-	}
-
-        /* atomic write of all dirty BATs and BBP.dir */
-	if (ret == 0)
-	ret = BBPsync(TRUE);
-
+	int i;
         /* succeeded: adapt BBPstatus of all bats while we're still locked */
-	if (ret == 0) 
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
 			BBP_status(i) |= BBPEXISTING;
@@ -96,7 +74,6 @@ int TMcommit() {
 	BBPunlock("TMcommit");
 
 	/* outside the lock: now kill all ex-persistent bats */
-	if (ret == 0)
 	for(i=0; i<nkills; i++) {
                 BAT *b = BBPquickdesc(kills[i], FALSE);
 
@@ -112,8 +89,34 @@ int TMcommit() {
 	if (kills != killbuf) {
 		GDKfree(kills);
 	}
-	return ret; 
 }
+
+int TMcommit() {
+	int i, ret = 0;
+
+	/* Acquire BBP locks */
+	BBPlock("TMcommit");
+
+        /* commit the delta status of each BAT */
+        for (i = 1; i < BBPsize; i++)  
+	if (BBP_status(i) & BBPPERSISTENT) {
+		BAT *b = BBPcache(i);
+		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
+			b = BBPquickdesc(i, TRUE);
+			if (b == NULL) { ret = 1; break; }
+		}
+		if (b) {
+			BATcommit(b);
+		}
+	}
+
+        /* atomic write of all dirty BATs and BBP.dir */
+	if (ret == 0)
+	ret = BBPsync(TRUE);
+	if (ret == 0) TMfakeCommit();
+	return ret;
+}
+
 @- 
 Transaction abort is cheap. We use the delta statuses
 to go back to the previous version of each BAT. Also
