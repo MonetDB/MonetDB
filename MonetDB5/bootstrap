@@ -98,7 +98,7 @@ fi
 
 
 REQ_PY_VERSION="2.0.0"
-PY_VERSION=`/usr/local/bin/python -V 2>&1 | sed -n -e '/^[Pp]ython/{s/.* //g;s/-.*//g;p;q;}'`
+PY_VERSION=`python -V 2>&1 | sed -n -e '/^[Pp]ython/{s/.* //g;s/-.*//g;p;q;}'`
 _PY_VERSION=`echo $PY_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_PY_VERSION=`echo $REQ_PY_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
