@@ -133,7 +133,7 @@ MALfcn getAddress(str fcnname){
                 GDKfatal("getAddress:can;t get dl-handle\n");
                 exit(0);
         }
-        adr= dlsym(dl,fcnname);
+        adr= (MALfcn) dlsym(dl,fcnname);
 	if(noDlopen && adr == NULL)
 		GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
