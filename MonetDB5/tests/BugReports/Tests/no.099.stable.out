@@ -28,69 +28,382 @@ stdout of test 'no.099` in directory 'tests/BugReports` itself:
 # >Release:        971007
 # >Environment:
 # 
-# >Description:
-# #You are system administrator (adm)!
-# >PROC comp(left,right) := {
-# >  IF (left = right) {
-# >    printf("left equals right\n");
-# >  } ELSE {
-# >    printf("left is not equal to right\n");
-# >  }
-# >  IF (left != right) {
-# >    printf("left is not equal to right\n");
-# >  } ELSE {
-# >    printf("left equals right\n");
-# >  }
-# >}
-# >comp(oid(nil),oid(nil));
-# left equals right
-# left is not equal to right
-# >comp(oid(1),oid(nil));
-# left is not equal to right
-# left is not equal to right
-# >comp(oid(1),oid(1));
-# left equals right
-# left equals right
-# >comp(str(nil),str(nil));
-# left equals right
-# left is not equal to right
-# >comp(str("a"),str(nil));
-# left equals right
-# left is not equal to right
-# >comp(str("a"),str("a"));
-# left equals right
-# left equals right
-
-setoid(oid(20000000));
-PROC comp(any left, any right) : any {
-  IF (left = right) {
-    printf("left equals right\n");
-  } ELSE {
-    printf("left is not equal to right\n");
-  }
-  IF (left != right) {
-    printf("left is not equal to right\n");
-  } ELSE {
-    printf("left equals right\n");
-  }
-}
-comp(oid(nil),oid(nil));
-!ERROR: interpret: if bit(nil): don't know what to do!
-comp(oid(1),oid(nil));
-!ERROR: interpret: if bit(nil): don't know what to do!
-comp(oid(1),oid(1));
-left equals right
-left equals right
-comp(str(nil),str(nil));
-!ERROR: interpret: if bit(nil): don't know what to do!
-comp(str("a"),str(nil));
-!ERROR: interpret: if bit(nil): don't know what to do!
-comp(str("a"),str("a"));
-left equals right
-left equals right
-quit();
-
-# 17:06:54 >  
-# 17:06:54 >  Done.
-# 17:06:54 >  
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##include "mil_prelude";
+#	mil.line("# >Number:         99\n");
+#	mil.line("# >Category:       Mserver");
+#	mil.line("# >Category:       Mserver\n");
+#	mil.line("# >Synopsis:       comparison of nil values is not reliable");
+#	mil.line("# >Synopsis:       comparison of nil values is not reliable\n");
+#	mil.line("# >Confidential:   no");
+#	mil.line("# >Confidential:   no\n");
+#	mil.line("# >Severity:       critical");
+#	mil.line("# >Severity:       critical\n");
+#	mil.line("# >Priority:       high");
+#	mil.line("# >Priority:       high\n");
+#	mil.line("# >Responsible:    boncz");
+#	mil.line("# >Responsible:    boncz\n");
+#	mil.line("# >State:          open");
+#	mil.line("# >State:          open\n");
+#	mil.line("# >Class:          sw-bug");
+#	mil.line("# >Class:          sw-bug\n");
+#	mil.line("# >Submitter-Id:   unknown");
+#	mil.line("# >Submitter-Id:   unknown\n");
+#	mil.line("# >Arrival-Date:   Mon Dec 15 11:22:32 1997");
+#	mil.line("# >Arrival-Date:   Mon Dec 15 11:22:32 1997\n");
+#	mil.line("# >Originator:     windhouw");
+#	mil.line("# >Originator:     windhouw\n");
+#	mil.line("# >Organization:");
+#	mil.line("# >Organization:\n");
+#	mil.line("# UvA");
+#	mil.line("# UvA\n");
+#	mil.line("# >Release:        971007");
+#	mil.line("# >Release:        971007\n");
+#	mil.line("# >Environment:");
+#	mil.line("# >Environment:\n");
+#	mil.line("# ");
+#	mil.line("# \n");
+#	mil.line("# >Description:");
+#	mil.line("# >Description:\n");
+#	mil.line("# #You are system administrator (adm)!");
+#	mil.line("# #You are system administrator (adm)!\n");
+#	mil.line("# >PROC comp( any left, any right) : any {");
+#	mil.line("# >PROC comp( any left, any right) : any {\n");
+#	mil.line("# >  IF (left = right) {");
+#	mil.line("# >  IF (left = right) {\n");
+#	mil.line("# >    printf(\"left equals right\\n\");");
+#	mil.line("# >    printf(\"left equals right\\n\");\n");
+#	mil.line("# >  } ELSE {");
+#	mil.line("# >  } ELSE {\n");
+#	mil.line("# >    printf(\"left is not equal to right\\n\");");
+#	mil.line("# >    printf(\"left is not equal to right\\n\");\n");
+#	mil.line("# >  }");
+#	mil.line("# >  }\n");
+#	mil.line("# >  IF (left != right) {");
+#	mil.line("# >  IF (left != right) {\n");
+#	mil.line("# >    printf(\"left is not equal to right\\n\");");
+#	mil.line("# >    printf(\"left is not equal to right\\n\");\n");
+#	mil.line("# >  } ELSE {");
+#	mil.line("# >  } ELSE {\n");
+#	mil.line("# >    printf(\"left equals right\\n\");");
+#	mil.line("# >    printf(\"left equals right\\n\");\n");
+#	mil.line("# >  }");
+#	mil.line("# >  }\n");
+#	mil.line("# >}");
+#	mil.line("# >}\n");
+#	mil.line("# >comp(oid(nil),oid(nil));");
+#	mil.line("# >comp(oid(nil),oid(nil));\n");
+#	mil.line("# left equals right");
+#	mil.line("# left equals right\n");
+#	mil.line("# left is not equal to right");
+#	mil.line("# left is not equal to right\n");
+#	mil.line("# >comp(oid(1),oid(nil));");
+#	mil.line("# >comp(oid(1),oid(nil));\n");
+#	mil.line("# left is not equal to right");
+#	mil.line("# left is not equal to right\n");
+#	mil.line("# left is not equal to right");
+#	mil.line("# left is not equal to right\n");
+#	mil.line("# >comp(oid(1),oid(1));");
+#	mil.line("# >comp(oid(1),oid(1));\n");
+#	mil.line("# left equals right");
+#	mil.line("# left equals right\n");
+#	mil.line("# left equals right");
+#	mil.line("# left equals right\n");
+#	mil.line("# >comp(str(nil),str(nil));");
+#	mil.line("# >comp(str(nil),str(nil));\n");
+#	mil.line("# left equals right");
+#	mil.line("# left equals right\n");
+#	mil.line("# left is not equal to right");
+#	mil.line("# left is not equal to right\n");
+#	mil.line("# >comp(str(\"a\"),str(nil));");
+#	mil.line("# >comp(str(\"a\"),str(nil));\n");
+#	mil.line("# left equals right");
+#	mil.line("# left equals right\n");
+#	mil.line("# left is not equal to right");
+#	mil.line("# left is not equal to right\n");
+#	mil.line("# >comp(str(\"a\"),str(\"a\"));");
+#	mil.line("# >comp(str(\"a\"),str(\"a\"));\n");
+#	mil.line("# left equals right");
+#	mil.line("# left equals right\n");
+#	mil.line("# left equals right");
+#	mil.line("# left equals right\n");
+#	mil.line("");
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("PROC comp(any left, any right) : any {");
+#function comp(left:any, right:any):any;
+#	mil.line("  IF (left = right) {");
+#barrier	ca_a := ==(left,right);
+#	mil.line("    printf(\"left equals right\\n\");");
+#	da_a := printf("left equals right\n");
+#	mil.line("  } ELSE {");
+#exit	ca_a;
+#barrier	ea_a := not(ca_a);
+#	mil.line("    printf(\"left is not equal to right\\n\");");
+#	fa_a := printf("left is not equal to right\n");
+#exit	ea_a;
+#	mil.line("  IF (left != right) {");
+#barrier	ga_a := !=(left,right);
+#	mil.line("    printf(\"left is not equal to right\\n\");");
+#	ha_a := printf("left is not equal to right\n");
+#	mil.line("  } ELSE {");
+#exit	ga_a;
+#barrier	ia_a := not(ga_a);
+#	mil.line("    printf(\"left equals right\\n\");");
+#	ja_a := printf("left equals right\n");
+#exit	ia_a;
+#end comp;
+function Admin.comp(left:any,right:any):any;	# 0  dynamic (comp:any)<-(left:any)(right:any)
+    mil.line("  IF (left = right) {");	# 1 MILline ($3:void)<-($4:str)
+barrier ca_a := batcalc.==(left,right);	# 2 CMDcmpEQcst (ca_a:bat[:any,:bit])<-(left:any)(right:any) jump 6
+    mil.line("    printf(\"left equals right\\n\");");	# 3 MILline ($6:void)<-($7:str)
+    da_a := io.printf("left equals right\n");	# 4 IOprint_str (da_a:int)<-($9:str)
+    mil.line("  } ELSE {");	# 5 MILline ($10:void)<-($11:str)
+exit ca_a;	# 6  (ca_a:bat[:any,:bit])
+barrier ea_a := batcalc.not(ca_a);	# 7 CMDbitbatNOT (ea_a:bat[:any,:bit])<-(ca_a:bat[:any,:bit]) jump 10
+    mil.line("    printf(\"left is not equal to right\\n\");");	# 8 MILline ($13:void)<-($14:str)
+    fa_a := io.printf("left is not equal to right\n");	# 9 IOprint_str (fa_a:int)<-($16:str)
+exit ea_a;	# 10  (ea_a:bat[:any,:bit])
+    mil.line("  IF (left != right) {");	# 11 MILline ($17:void)<-($18:str)
+barrier ga_a := batcalc.!=(left,right);	# 12 CMDcmpNEQcst (ga_a:bat[:any,:bit])<-(left:any)(right:any) jump 16
+    mil.line("    printf(\"left is not equal to right\\n\");");	# 13 MILline ($20:void)<-($14:str)
+    ha_a := io.printf("left is not equal to right\n");	# 14 IOprint_str (ha_a:int)<-($16:str)
+    mil.line("  } ELSE {");	# 15 MILline ($22:void)<-($11:str)
+exit ga_a;	# 16  (ga_a:bat[:any,:bit])
+barrier ia_a := batcalc.not(ga_a);	# 17 CMDbitbatNOT (ia_a:bat[:any,:bit])<-(ga_a:bat[:any,:bit]) jump 20
+    mil.line("    printf(\"left equals right\\n\");");	# 18 MILline ($24:void)<-($7:str)
+    ja_a := io.printf("left equals right\n");	# 19 IOprint_str (ja_a:int)<-($9:str)
+exit ia_a;	# 20  (ia_a:bat[:any,:bit])
+end comp;	# 21  
+!ERROR: barrier 'ca_a' should be of type bit or number in comp[2]
+!ERROR: barrier 'ea_a' should be of type bit or number in comp[7]
+!ERROR: barrier 'ga_a' should be of type bit or number in comp[12]
+!ERROR: barrier 'ia_a' should be of type bit or number in comp[17]
+#	mil.line("comp(oid(nil),oid(nil));");
+#	ka_a := oid(nil);
+#	la_a := oid(nil);
+#	ma_a := comp(ka_a,la_a);
+#	mil.line("comp(oid(1),oid(nil));");
+#	na_a := oid(1);
+#	oa_a := oid(nil);
+#	pa_a := comp(na_a,oa_a);
+#	mil.line("comp(oid(1),oid(1));");
+#	qa_a := oid(1);
+#	ra_a := oid(1);
+#	sa_a := comp(qa_a,ra_a);
+#	mil.line("comp(str(nil),str(nil));");
+#	ta_a := str(nil);
+#	ua_a := str(nil);
+#	va_a := comp(ta_a,ua_a);
+#	mil.line("comp(str(\"a\"),str(nil));");
+#	wa_a := str("a");
+#	xa_a := str(nil);
+#	ya_a := comp(wa_a,xa_a);
+#	mil.line("comp(str(\"a\"),str(\"a\"));");
+#	ab_a := str("a");
+#	bb_a := str("a");
+#	cb_a := comp(ab_a,bb_a);
+#	mil.line("quit();");
+#	db_a := quit();
+#
+!ERROR: 'batcalc.==' undefined in Admin.comp[2]
+!ERROR: 'batcalc.!=' undefined in Admin.comp[12]
+!ERROR: barrier 'ca_a' should be of type bit or number in comp[2]
+!ERROR: barrier 'ea_a' should be of type bit or number in comp[7]
+!ERROR: barrier 'ga_a' should be of type bit or number in comp[12]
+!ERROR: barrier 'ia_a' should be of type bit or number in comp[17]
+!ERROR: Error in cloned function
+!ERROR: function Admin.comp(left:oid,right:oid):oid;	# 0  (right:oid)<-(left:oid)(right:oid)
+!ERROR:     mil.line("  IF (left = right) {");	# 1 MILline ($3:void)<-($4:str)
+!ERROR: barrier ca_a := batcalc.==(left,right);	# 2 CMDcmpEQcst (ca_a:bat[:any,:bit])<-(left:oid)(right:oid) jump 6
+!ERROR:     mil.line("    printf(\"left equals right\\n\");");	# 3 MILline ($6:void)<-($7:str)
+!ERROR:     da_a := io.printf("left equals right\n");	# 4 IOprint_str (da_a:int)<-($9:str)
+!ERROR:     mil.line("  } ELSE {");	# 5 MILline ($10:void)<-($11:str)
+!ERROR: exit ca_a;	# 6  (ca_a:bat[:any,:bit])
+!ERROR: barrier ea_a := batcalc.not(ca_a);	# 7 CMDbitbatNOT (ea_a:bat[:any,:bit])<-(ca_a:bat[:any,:bit]) jump 10
+!ERROR:     mil.line("    printf(\"left is not equal to right\\n\");");	# 8 MILline ($13:void)<-($14:str)
+!ERROR:     fa_a := io.printf("left is not equal to right\n");	# 9 IOprint_str (fa_a:int)<-($16:str)
+!ERROR: exit ea_a;	# 10  (ea_a:bat[:any,:bit])
+!ERROR:     mil.line("  IF (left != right) {");	# 11 MILline ($17:void)<-($18:str)
+!ERROR: barrier ga_a := batcalc.!=(left,right);	# 12 CMDcmpNEQcst (ga_a:bat[:any,:bit])<-(left:oid)(right:oid) jump 16
+!ERROR:     mil.line("    printf(\"left is not equal to right\\n\");");	# 13 MILline ($20:void)<-($14:str)
+!ERROR:     ha_a := io.printf("left is not equal to right\n");	# 14 IOprint_str (ha_a:int)<-($16:str)
+!ERROR:     mil.line("  } ELSE {");	# 15 MILline ($22:void)<-($11:str)
+!ERROR: exit ga_a;	# 16  (ga_a:bat[:any,:bit])
+!ERROR: barrier ia_a := batcalc.not(ga_a);	# 17 CMDbitbatNOT (ia_a:bat[:any,:bit])<-(ga_a:bat[:any,:bit]) jump 20
+!ERROR:     mil.line("    printf(\"left equals right\\n\");");	# 18 MILline ($24:void)<-($7:str)
+!ERROR:     ja_a := io.printf("left equals right\n");	# 19 IOprint_str (ja_a:int)<-($9:str)
+!ERROR: exit ia_a;	# 20  (ia_a:bat[:any,:bit])
+!ERROR: end comp;	# 21  
+!ERROR: 'Admin.comp' undefined in Admin.main[106]
+!ERROR: 'batcalc.==' undefined in Admin.comp[2]
+!ERROR: 'batcalc.!=' undefined in Admin.comp[12]
+!ERROR: barrier 'ca_a' should be of type bit or number in comp[2]
+!ERROR: barrier 'ea_a' should be of type bit or number in comp[7]
+!ERROR: barrier 'ga_a' should be of type bit or number in comp[12]
+!ERROR: barrier 'ia_a' should be of type bit or number in comp[17]
+!ERROR: Error in cloned function
+!ERROR: function Admin.comp(left:str,right:str):str;	# 0  (right:str)<-(left:str)(right:str)
+!ERROR:     mil.line("  IF (left = right) {");	# 1 MILline ($3:void)<-($4:str)
+!ERROR: barrier ca_a := batcalc.==(left,right);	# 2 CMDcmpEQcst (ca_a:bat[:any,:bit])<-(left:str)(right:str) jump 6
+!ERROR:     mil.line("    printf(\"left equals right\\n\");");	# 3 MILline ($6:void)<-($7:str)
+!ERROR:     da_a := io.printf("left equals right\n");	# 4 IOprint_str (da_a:int)<-($9:str)
+!ERROR:     mil.line("  } ELSE {");	# 5 MILline ($10:void)<-($11:str)
+!ERROR: exit ca_a;	# 6  (ca_a:bat[:any,:bit])
+!ERROR: barrier ea_a := batcalc.not(ca_a);	# 7 CMDbitbatNOT (ea_a:bat[:any,:bit])<-(ca_a:bat[:any,:bit]) jump 10
+!ERROR:     mil.line("    printf(\"left is not equal to right\\n\");");	# 8 MILline ($13:void)<-($14:str)
+!ERROR:     fa_a := io.printf("left is not equal to right\n");	# 9 IOprint_str (fa_a:int)<-($16:str)
+!ERROR: exit ea_a;	# 10  (ea_a:bat[:any,:bit])
+!ERROR:     mil.line("  IF (left != right) {");	# 11 MILline ($17:void)<-($18:str)
+!ERROR: barrier ga_a := batcalc.!=(left,right);	# 12 CMDcmpNEQcst (ga_a:bat[:any,:bit])<-(left:str)(right:str) jump 16
+!ERROR:     mil.line("    printf(\"left is not equal to right\\n\");");	# 13 MILline ($20:void)<-($14:str)
+!ERROR:     ha_a := io.printf("left is not equal to right\n");	# 14 IOprint_str (ha_a:int)<-($16:str)
+!ERROR:     mil.line("  } ELSE {");	# 15 MILline ($22:void)<-($11:str)
+!ERROR: exit ga_a;	# 16  (ga_a:bat[:any,:bit])
+!ERROR: barrier ia_a := batcalc.not(ga_a);	# 17 CMDbitbatNOT (ia_a:bat[:any,:bit])<-(ga_a:bat[:any,:bit]) jump 20
+!ERROR:     mil.line("    printf(\"left equals right\\n\");");	# 18 MILline ($24:void)<-($7:str)
+!ERROR:     ja_a := io.printf("left equals right\n");	# 19 IOprint_str (ja_a:int)<-($9:str)
+!ERROR: exit ia_a;	# 20  (ia_a:bat[:any,:bit])
+!ERROR: end comp;	# 21  
+!ERROR: 'Admin.comp' undefined in Admin.main[118]
+function Admin.main():int;	# 0  (main:int)
+    mil.line("# >Number:         99\n");	# 1 MILline ($1:void)<-($2:str)
+    mil.line("# >Category:       Mserver");	# 2 MILline ($3:void)<-($4:str)
+    mil.line("# >Category:       Mserver\n");	# 3 MILline ($5:void)<-($6:str)
+    mil.line("# >Synopsis:       comparison of nil values is not reliable");	# 4 MILline ($7:void)<-($8:str)
+    mil.line("# >Synopsis:       comparison of nil values is not reliable\n");	# 5 MILline ($9:void)<-($10:str)
+    mil.line("# >Confidential:   no");	# 6 MILline ($11:void)<-($12:str)
+    mil.line("# >Confidential:   no\n");	# 7 MILline ($13:void)<-($14:str)
+    mil.line("# >Severity:       critical");	# 8 MILline ($15:void)<-($16:str)
+    mil.line("# >Severity:       critical\n");	# 9 MILline ($17:void)<-($18:str)
+    mil.line("# >Priority:       high");	# 10 MILline ($19:void)<-($20:str)
+    mil.line("# >Priority:       high\n");	# 11 MILline ($21:void)<-($22:str)
+    mil.line("# >Responsible:    boncz");	# 12 MILline ($23:void)<-($24:str)
+    mil.line("# >Responsible:    boncz\n");	# 13 MILline ($25:void)<-($26:str)
+    mil.line("# >State:          open");	# 14 MILline ($27:void)<-($28:str)
+    mil.line("# >State:          open\n");	# 15 MILline ($29:void)<-($30:str)
+    mil.line("# >Class:          sw-bug");	# 16 MILline ($31:void)<-($32:str)
+    mil.line("# >Class:          sw-bug\n");	# 17 MILline ($33:void)<-($34:str)
+    mil.line("# >Submitter-Id:   unknown");	# 18 MILline ($35:void)<-($36:str)
+    mil.line("# >Submitter-Id:   unknown\n");	# 19 MILline ($37:void)<-($38:str)
+    mil.line("# >Arrival-Date:   Mon Dec 15 11:22:32 1997");	# 20 MILline ($39:void)<-($40:str)
+    mil.line("# >Arrival-Date:   Mon Dec 15 11:22:32 1997\n");	# 21 MILline ($41:void)<-($42:str)
+    mil.line("# >Originator:     windhouw");	# 22 MILline ($43:void)<-($44:str)
+    mil.line("# >Originator:     windhouw\n");	# 23 MILline ($45:void)<-($46:str)
+    mil.line("# >Organization:");	# 24 MILline ($47:void)<-($48:str)
+    mil.line("# >Organization:\n");	# 25 MILline ($49:void)<-($50:str)
+    mil.line("# UvA");	# 26 MILline ($51:void)<-($52:str)
+    mil.line("# UvA\n");	# 27 MILline ($53:void)<-($54:str)
+    mil.line("# >Release:        971007");	# 28 MILline ($55:void)<-($56:str)
+    mil.line("# >Release:        971007\n");	# 29 MILline ($57:void)<-($58:str)
+    mil.line("# >Environment:");	# 30 MILline ($59:void)<-($60:str)
+    mil.line("# >Environment:\n");	# 31 MILline ($61:void)<-($62:str)
+    mil.line("# ");	# 32 MILline ($63:void)<-($64:str)
+    mil.line("# \n");	# 33 MILline ($65:void)<-($66:str)
+    mil.line("# >Description:");	# 34 MILline ($67:void)<-($68:str)
+    mil.line("# >Description:\n");	# 35 MILline ($69:void)<-($70:str)
+    mil.line("# #You are system administrator (adm)!");	# 36 MILline ($71:void)<-($72:str)
+    mil.line("# #You are system administrator (adm)!\n");	# 37 MILline ($73:void)<-($74:str)
+    mil.line("# >PROC comp( any left, any right) : any {");	# 38 MILline ($75:void)<-($76:str)
+    mil.line("# >PROC comp( any left, any right) : any {\n");	# 39 MILline ($77:void)<-($78:str)
+    mil.line("# >  IF (left = right) {");	# 40 MILline ($79:void)<-($80:str)
+    mil.line("# >  IF (left = right) {\n");	# 41 MILline ($81:void)<-($82:str)
+    mil.line("# >    printf(\"left equals right\\n\");");	# 42 MILline ($83:void)<-($84:str)
+    mil.line("# >    printf(\"left equals right\\n\");\n");	# 43 MILline ($85:void)<-($86:str)
+    mil.line("# >  } ELSE {");	# 44 MILline ($87:void)<-($88:str)
+    mil.line("# >  } ELSE {\n");	# 45 MILline ($89:void)<-($90:str)
+    mil.line("# >    printf(\"left is not equal to right\\n\");");	# 46 MILline ($91:void)<-($92:str)
+    mil.line("# >    printf(\"left is not equal to right\\n\");\n");	# 47 MILline ($93:void)<-($94:str)
+    mil.line("# >  }");	# 48 MILline ($95:void)<-($96:str)
+    mil.line("# >  }\n");	# 49 MILline ($97:void)<-($98:str)
+    mil.line("# >  IF (left != right) {");	# 50 MILline ($99:void)<-($100:str)
+    mil.line("# >  IF (left != right) {\n");	# 51 MILline ($101:void)<-($102:str)
+    mil.line("# >    printf(\"left is not equal to right\\n\");");	# 52 MILline ($103:void)<-($92:str)
+    mil.line("# >    printf(\"left is not equal to right\\n\");\n");	# 53 MILline ($104:void)<-($94:str)
+    mil.line("# >  } ELSE {");	# 54 MILline ($105:void)<-($88:str)
+    mil.line("# >  } ELSE {\n");	# 55 MILline ($106:void)<-($90:str)
+    mil.line("# >    printf(\"left equals right\\n\");");	# 56 MILline ($107:void)<-($84:str)
+    mil.line("# >    printf(\"left equals right\\n\");\n");	# 57 MILline ($108:void)<-($86:str)
+    mil.line("# >  }");	# 58 MILline ($109:void)<-($96:str)
+    mil.line("# >  }\n");	# 59 MILline ($110:void)<-($98:str)
+    mil.line("# >}");	# 60 MILline ($111:void)<-($112:str)
+    mil.line("# >}\n");	# 61 MILline ($113:void)<-($114:str)
+    mil.line("# >comp(oid(nil),oid(nil));");	# 62 MILline ($115:void)<-($116:str)
+    mil.line("# >comp(oid(nil),oid(nil));\n");	# 63 MILline ($117:void)<-($118:str)
+    mil.line("# left equals right");	# 64 MILline ($119:void)<-($120:str)
+    mil.line("# left equals right\n");	# 65 MILline ($121:void)<-($122:str)
+    mil.line("# left is not equal to right");	# 66 MILline ($123:void)<-($124:str)
+    mil.line("# left is not equal to right\n");	# 67 MILline ($125:void)<-($126:str)
+    mil.line("# >comp(oid(1),oid(nil));");	# 68 MILline ($127:void)<-($128:str)
+    mil.line("# >comp(oid(1),oid(nil));\n");	# 69 MILline ($129:void)<-($130:str)
+    mil.line("# left is not equal to right");	# 70 MILline ($131:void)<-($124:str)
+    mil.line("# left is not equal to right\n");	# 71 MILline ($132:void)<-($126:str)
+    mil.line("# left is not equal to right");	# 72 MILline ($133:void)<-($124:str)
+    mil.line("# left is not equal to right\n");	# 73 MILline ($134:void)<-($126:str)
+    mil.line("# >comp(oid(1),oid(1));");	# 74 MILline ($135:void)<-($136:str)
+    mil.line("# >comp(oid(1),oid(1));\n");	# 75 MILline ($137:void)<-($138:str)
+    mil.line("# left equals right");	# 76 MILline ($139:void)<-($120:str)
+    mil.line("# left equals right\n");	# 77 MILline ($140:void)<-($122:str)
+    mil.line("# left equals right");	# 78 MILline ($141:void)<-($120:str)
+    mil.line("# left equals right\n");	# 79 MILline ($142:void)<-($122:str)
+    mil.line("# >comp(str(nil),str(nil));");	# 80 MILline ($143:void)<-($144:str)
+    mil.line("# >comp(str(nil),str(nil));\n");	# 81 MILline ($145:void)<-($146:str)
+    mil.line("# left equals right");	# 82 MILline ($147:void)<-($120:str)
+    mil.line("# left equals right\n");	# 83 MILline ($148:void)<-($122:str)
+    mil.line("# left is not equal to right");	# 84 MILline ($149:void)<-($124:str)
+    mil.line("# left is not equal to right\n");	# 85 MILline ($150:void)<-($126:str)
+    mil.line("# >comp(str(\"a\"),str(nil));");	# 86 MILline ($151:void)<-($152:str)
+    mil.line("# >comp(str(\"a\"),str(nil));\n");	# 87 MILline ($153:void)<-($154:str)
+    mil.line("# left equals right");	# 88 MILline ($155:void)<-($156:str)
+    mil.line("# left equals right\n");	# 89 MILline ($157:void)<-($158:str)
+    mil.line("# left is not equal to right");	# 90 MILline ($159:void)<-($160:str)
+    mil.line("# left is not equal to right\n");	# 91 MILline ($161:void)<-($162:str)
+    mil.line("# >comp(str(\"a\"),str(\"a\"));");	# 92 MILline ($163:void)<-($164:str)
+    mil.line("# >comp(str(\"a\"),str(\"a\"));\n");	# 93 MILline ($165:void)<-($166:str)
+    mil.line("# left equals right");	# 94 MILline ($167:void)<-($156:str)
+    mil.line("# left equals right\n");	# 95 MILline ($168:void)<-($158:str)
+    mil.line("# left equals right");	# 96 MILline ($169:void)<-($156:str)
+    mil.line("# left equals right\n");	# 97 MILline ($170:void)<-($158:str)
+    mil.line("");	# 98 MILline ($171:void)<-($172:str)
+    mil.line("setoid(oid(20000000));");	# 99 MILline ($173:void)<-($174:str)
+    aa_a := calc.oid(20000000);	# 100 CALCint2oid (aa_a:oid)<-($176:int)
+    ba_a := calc.setoid(aa_a);	# 101 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("PROC comp(any left, any right) : any {");	# 102 MILline ($178:void)<-($179:str)
+    mil.line("comp(oid(nil),oid(nil));");	# 103 MILline ($180:void)<-($181:str)
+    ka_a := calc.oid(nil);	# 104 CALCnil2oid (ka_a:oid)<-($183:void)
+    la_a := calc.oid(nil);	# 105 CALCnil2oid (la_a:oid)<-($183:void)
+    ma_a := Admin.comp(ka_a,la_a);	# 106  (ma_a:any)<-(ka_a:oid)(la_a:oid)
+    mil.line("comp(oid(1),oid(nil));");	# 107 MILline ($186:void)<-($187:str)
+    na_a := calc.oid(1);	# 108 CALCint2oid (na_a:oid)<-($189:int)
+    oa_a := calc.oid(nil);	# 109 CALCnil2oid (oa_a:oid)<-($183:void)
+    pa_a := Admin.comp(na_a,oa_a);	# 110  (pa_a:oid)<-(na_a:oid)(oa_a:oid)
+    mil.line("comp(oid(1),oid(1));");	# 111 MILline ($192:void)<-($193:str)
+    qa_a := calc.oid(1);	# 112 CALCint2oid (qa_a:oid)<-($189:int)
+    ra_a := calc.oid(1);	# 113 CALCint2oid (ra_a:oid)<-($189:int)
+    sa_a := Admin.comp(qa_a,ra_a);	# 114  (sa_a:oid)<-(qa_a:oid)(ra_a:oid)
+    mil.line("comp(str(nil),str(nil));");	# 115 MILline ($197:void)<-($198:str)
+    ta_a := calc.str(nil);	# 116 CALCnil2str (ta_a:str)<-($183:void)
+    ua_a := calc.str(nil);	# 117 CALCnil2str (ua_a:str)<-($183:void)
+    va_a := Admin.comp(ta_a,ua_a);	# 118  (va_a:any)<-(ta_a:str)(ua_a:str)
+    mil.line("comp(str(\"a\"),str(nil));");	# 119 MILline ($202:void)<-($203:str)
+    wa_a := str.str("a");	# 120 STRtostr (wa_a:str)<-($205:str)
+    xa_a := calc.str(nil);	# 121 CALCnil2str (xa_a:str)<-($183:void)
+    ya_a := Admin.comp(wa_a,xa_a);	# 122  (ya_a:str)<-(wa_a:str)(xa_a:str)
+    mil.line("comp(str(\"a\"),str(\"a\"));");	# 123 MILline ($208:void)<-($209:str)
+    ab_a := str.str("a");	# 124 STRtostr (ab_a:str)<-($205:str)
+    bb_a := str.str("a");	# 125 STRtostr (bb_a:str)<-($205:str)
+    cb_a := Admin.comp(ab_a,bb_a);	# 126  (cb_a:str)<-(ab_a:str)(bb_a:str)
+    mil.line("quit();");	# 127 MILline ($213:void)<-($214:str)
+    db_a := clients.quit();	# 128 CLTquit (db_a:void)
+end main;	# 129  
+>
+# 23:01:52 >  
+# 23:01:52 >  Done.
+# 23:01:52 >  
 

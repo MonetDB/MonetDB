@@ -55,7 +55,9 @@
 	mil.line("printf(\"#~EndVariableOutput~#\\n\");");
 	ab_a := printf("#~EndVariableOutput~#\n");
 	mil.line("sort_ht(s).print();");
-	bb_a := sort_ht(s);
+	#bb_a := sort_ht(s);
 	cb_a := print(bb_a);
 	mil.line("quit();");
+	print(1);
+
 	db_a := quit();
