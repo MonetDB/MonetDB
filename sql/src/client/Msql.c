@@ -995,12 +995,13 @@ main(int ac, char **av)
 		exit(1);
 	}
 	/*
-	 * New start client sequence
+	 * client connect sequence
 	 *
 	 * 1) socket connect
-	 * 2) send 'api(sql,debug,reply_size)' api(sql,0,-1);
+	 * 2) send 'api(sql,debug,trace,reply_size)' api(sql,0,0,-1);
 	 * 3) receive request for login 
-	 * 4) send user/passwd
+	 * 4) send user,passwd
+	 * 5) receive database,schema
 	 */
 	if (!user)
 		user = simple_prompt("User: ", BUFSIZ, 1 );

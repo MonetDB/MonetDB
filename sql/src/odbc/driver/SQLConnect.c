@@ -120,6 +120,15 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		assert(!stream_errnr(rs));
 		assert(!stream_errnr(ws));
 
+		/*
+	 	 * client connect sequence
+	 	 *
+	 	 * 1) socket connect
+	 	 * 2) send 'api(sql,debug,trace,reply_size)' api(sql,0,0,-1);
+	 	 * 3) receive request for login 
+	 	 * 4) send user,passwd
+	   	 * 5) receive database,schema
+	 	 */
 		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n",
 					 debug, trace);
 		stream_write(ws, buf, chars_printed, 1);
