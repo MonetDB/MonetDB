@@ -290,15 +290,6 @@ A grain size of 128 bytes is used to keep overhead low.
 	malloc_init=0;
 @c
 
-#ifdef NATIVE_WIN32
-        set_terminate( Mserver_abort );
-#endif
-
-#ifndef NOMALLOPT
-	(void) malloc_init; /* still unused */
-	/*@:mallopt@*/
-#endif
-
 	static struct option long_options[7] =
              {
                {"config", 1, 0, 'c'},
@@ -309,6 +300,15 @@ A grain size of 128 bytes is used to keep overhead low.
                {"set", 1, 0, 's'},
                {0, 0, 0, 0}
              };
+
+#ifdef NATIVE_WIN32
+        set_terminate( Mserver_abort );
+#endif
+
+#ifndef NOMALLOPT
+	(void) malloc_init; /* still unused */
+	/*@:mallopt@*/
+#endif
 
         if (getcwd(monet_cwd, PATHLENGTH-1)  == NULL ){
                 perror("pwd");

@@ -1,6 +1,6 @@
 
 INCLUDES = -I../../common -I../../gdk \
-	../../../include/atoms \
+	-I../../../include/atoms \
 	-I../../mal $(HWCOUNTERS_INCS) $(PCL_FLAGS)
 
 MTSAFE

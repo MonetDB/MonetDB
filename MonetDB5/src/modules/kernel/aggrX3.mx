@@ -2296,9 +2296,10 @@ if (BATtordered(b)&1) {
 str CMDcard(size_t *result, int *bid, unsigned int* maxelements) {
 	unsigned int maxsize = *maxelements; 
 	BAT *b;
+	size_t cursize;
 
 	@:getBATdescriptor(result,bid,b,count)@
-	size_t cursize = BATcount(b); 
+	cursize = BATcount(b); 
 
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		cursize = 1; 
