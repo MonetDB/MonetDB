@@ -39,11 +39,12 @@ Usage: pf [OPTION] [FILE]
          9  after the abstract syntax tree has been mapped to Core
         10  after the Core tree has been simplified/normalized
         11  after type inference and checking
-        12  after the Core tree has been translated to the internal algebra
-        13  after the common subexpression elimination on the algebra tree
-        14  after the algebra tree has been rewritten/optimized
-        15  after the algebra has been translated to MIL
-        16  after the MIL program has been serialized
+        12  after XQuery Core optimization
+        13  after the Core tree has been translated to the internal algebra
+        14  after the common subexpression elimination on the algebra tree
+        15  after the algebra tree has been rewritten/optimized
+        16  after the algebra has been translated to MIL
+        17  after the MIL program has been serialized
 = -p, --print-parse-tree: print internal parse tree
 = -c, --print-core-tree: print internal Core language
 = -a, --print-algebra: stop after algebra tree generation
