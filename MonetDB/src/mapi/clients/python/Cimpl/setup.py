@@ -27,13 +27,14 @@
 from distutils.core import setup, Extension
 import os
  
-setup(name="_MapiLib",
-      version="0.1",
+setup(name="Mapi",
+      version="0.2",
       description="Interface to MonetDB Mapi",
       author="Sjoerd Mullender",
       author_email="Sjoerd.Mullender@cwi.nl",
       maintainer="Sjoerd Mullender",
       maintainer_email="Sjoerd.Mullender@cwi.nl",
+      url="http://monetdb.cwi.nl/",
       license="\"MonetDB license\"",
       platforms=["Unix", "Linux"],
       py_modules=['Mapi', 'MapiLib'],
@@ -41,4 +42,5 @@ setup(name="_MapiLib",
                              define_macros = [('SWIG_COBJECT_TYPES', None)],
                              include_dirs = ['../../C'],
                              libraries = ['Mapi'],
-                             library_dirs = ['../../C/.libs'])])
+                             library_dirs = ['../../C/.libs'])],
+      packages=['MonetSQLdb'])

@@ -26,7 +26,7 @@ SWIG = @SWIG@
 PYTHON = @PYTHON@
 
 all: all-am
-all-am: Mapi_wrap.c Mapi.py $(srcdir)/setup.py
+all-am: Mapi_wrap.c Mapi.py MonetSQLdb $(srcdir)/setup.py
 	$(PYTHON) $(srcdir)/setup.py build
 
 Mapi_wrap.c: $(srcdir)/Mapi.i ../../C/Mapi.h
@@ -34,6 +34,9 @@ Mapi_wrap.c: $(srcdir)/Mapi.i ../../C/Mapi.h
 
 Mapi.py: $(srcdir)/Mapi.py
 	cp $(srcdir)/Mapi.py .
+
+MonetSQLdb: $(srcdir)/MonetSQLdb
+	tar cf - -C $(srcdir) MonetSQLdb | tar xf -
 
 install: install-am
 install-am: all-am $(srcdir)/setup.py
