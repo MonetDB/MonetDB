@@ -1175,8 +1175,8 @@ public class MonetConnection extends Thread implements Connection {
 		}
 
 		/**
-		 * Retrieves the required row. If the row is not present, this method will
-		 * block until the row is available. <br />
+		 * Retrieves the required row. If the row is not present, this method
+		 * blocks until the row is available. <br />
 		 * <b>Do *NOT* use multiple threads synchronously on this method</b>
 		 *
 		 * @param line the row to retrieve
@@ -1191,13 +1191,13 @@ public class MonetConnection extends Thread implements Connection {
 				throw new IllegalArgumentException("Cannot get row outside data range (" + line + ")");
 
 			while (setWatch(line)) {
-				// re-check for errors
-				if (error != "") throw new SQLException(error);
 				try {
 					this.wait();
 				} catch (InterruptedException e) {
 					// re-check if we got the desired row
 				}
+				// re-check for errors
+				if (error != "") throw new SQLException(error);
 			}
 			return(data[line]);
 		}
