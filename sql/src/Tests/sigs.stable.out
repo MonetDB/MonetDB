@@ -52,7 +52,7 @@ module 'sql_server'
 [ "mvc_create_table(mvc, sql_schema, str, int, int) : sql_table"	  ]
 [ "mvc_create_user(mvc, str, str, str, str, int) : void"			  ]
 [ "mvc_create_view(mvc, sql_schema, str, str) : sql_table"			  ]
-[ "mvc_default(mvc, sql_column, str) : sql_column"				  ]
+[ "mvc_default(mvc, sql_column, any) : sql_column"			  ]
 [ "mvc_destroy(mvc) : void"							  ]
 [ "mvc_drop_column(mvc, sql_table, str) : void"					  ]
 [ "mvc_drop_idx(mvc, sql_schema, str) : void"				  ]
