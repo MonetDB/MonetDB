@@ -37,9 +37,9 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQLGetStmtOption(
-	SQLHSTMT	hStmt,
-	UWORD		fOption,
-	PTR		pvParam )
+	SQLHSTMT		hStmt,
+	SQLUSMALLINT		fOption,
+	SQLPOINTER		pvParam )
 {
 	switch (fOption) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */

@@ -1,5 +1,5 @@
 
-#include <monet_utils.h>
+#include <sql_config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -140,6 +140,7 @@ static char *find_key_by_dsn(const char *dsn, const char *key,
 
 	char *ret = NULL;
 
+#ifdef HAVE_PWD_H
 	if (file[0] == '~') {
 		struct passwd *pwd;
 		pwd = getpwuid(getuid());
@@ -149,6 +150,7 @@ static char *find_key_by_dsn(const char *dsn, const char *key,
 		snprintf(buf, PATH_MAX, "%s%s", pwd->pw_dir, file + 1);
 		file = buf;
 	}
+#endif 
 	fp = fopen(file, "r");
 
 	if (fp && find_section(fp, dsn)) {

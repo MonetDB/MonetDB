@@ -34,9 +34,9 @@
 
 
 SQLRETURN SQLGetConnectOption(
-	SQLHDBC	hDbc,
-	UWORD	nOption,
-	PTR	pvParam )
+	SQLHDBC		hDbc,
+	SQLUSMALLINT	nOption,
+	SQLPOINTER	pvParam )
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption)

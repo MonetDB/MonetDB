@@ -24,8 +24,7 @@
 INCLUDES = \
 	../include \
 	../../client \
-	$(MONET_INCS) \
-	-I$(top_builddir)/ 
+	$(MONET_INCS) 
 
 DEFS = @DEFS@
 
@@ -121,6 +120,6 @@ lib_MonetODBC = {
 	SQLTransact.c \
 	comm.c comm.h \
 	ini.c
-	LIBS = \
-	$(MONET_LIBS) -lstream  -lm
+	WINLIBS = $(SOCKET_LIBS)
+	LIBS = $(MONET_LIBS) -lstream -lmutils $(ICONV_LIBS)
 }

@@ -43,12 +43,18 @@
 #include "ODBCStmt.h"
 #include "ODBCError.h"
 
+static int odbc_init = 0; 
 
 SQLRETURN  AllocHandle(
 	SQLSMALLINT	nHandleType,	/* type to be allocated */
 	SQLHANDLE	nInputHandle,	/* type to be allocated */
 	SQLHANDLE *	pnOutputHandle )/* ptr for allocated handle struct */
 {
+	if (!odbc_init){
+		odbc_init = 1;
+		stream_init();
+	}
+
 	/* Check parameters nHandleType and nInputHandle */
 	if (nInputHandle == NULL && nHandleType != SQL_HANDLE_ENV)
 	{

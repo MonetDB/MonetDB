@@ -2,37 +2,52 @@
  * The contents of this file are subject to the MonetDB Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * The Original Code is the Monet Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.
  * All Rights Reserved.
- * 
+ *
  * Contributor(s):
- * 		Martin Kersten <Martin.Kersten@cwi.nl>
- * 		Peter Boncz <Peter.Boncz@cwi.nl>
- * 		Niels Nes <Niels.Nes@cwi.nl>
+ * 		Martin Kersten  <Martin.Kersten@cwi.nl>
+ * 		Peter Boncz  <Peter.Boncz@cwi.nl>
+ * 		Niels Nes  <Niels.Nes@cwi.nl>
  * 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
+#include "comm.h"
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#ifdef HAVE_NETDB_H
 #include <netinet/in.h>
 #include <netdb.h>
+#endif
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
-#include <sys/time.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 #include <unistd.h>
+#include <string.h>
 #include <stream.h>
 
 #include <mem.h>
@@ -46,12 +61,12 @@ int client(char *host, int port ){
     int sock;
 
     if ((sock = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
-      fprintf (stderr, "client: could not open socket");
+      fprintf (stderr, "client: could not open socket\n");
       return -2;
     }
 
     if (!(host_info = gethostbyname (host))) {
-      fprintf (stderr, "client: unknown host %s", host);
+      fprintf (stderr, "client: unknown host %s\n", host);
       return -3;
     }
 
@@ -62,7 +77,7 @@ int client(char *host, int port ){
     server.sin_port = htons (port);
 
     if (connect (sock, (struct sockaddr *) &server, sizeof server) < 0) {
-      fprintf (stderr, "client: could not connect to server");
+      fprintf (stderr, "client: could not connect to server\n");
       return -4;
     }
 
