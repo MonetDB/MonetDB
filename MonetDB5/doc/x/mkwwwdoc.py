@@ -185,8 +185,8 @@ runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'MapiClient',
 #    copyfile(os.path.join(srcdir, f),
 #             os.path.join(dstdir, 'doc', 'www', f))
 
-copyfile('design.shtml',
-	os.path.join(dstdir, 'doc/www', 'design.shtml'))
+copyfile('overview.shtml',
+	os.path.join(dstdir, 'doc/www', 'overview.shtml'))
 
 f = open(os.path.join(dstdir, 'doc', 'www', 'sql.html'), 'w')
 f.write('''\

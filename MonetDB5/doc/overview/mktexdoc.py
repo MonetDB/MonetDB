@@ -142,6 +142,13 @@ for f in ['mal_atom',
     runMx(os.path.join(srcdir, 'src', 'mal'), f,
           os.path.join(dstdir, 'doc', 'MAL'))
 
+#these GDK files should be linked
+for f in ['gdk',
+    'gdk_align',
+	]:
+    runMx(os.path.join(srcdir, 'src', 'gdk'), f,
+          os.path.join(dstdir, 'doc', 'GDK'))
+
 runMx(os.path.join(srcdir, 'src', 'tools'), 'Mserver',
       os.path.join(dstdir, 'doc', 'tools'))
 
