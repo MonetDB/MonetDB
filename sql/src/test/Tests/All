@@ -52,3 +52,5 @@ null
 joins
 default
 keys
+
+like_tests
