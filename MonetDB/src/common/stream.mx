@@ -111,7 +111,7 @@ stream_export int stream_readLngArray(stream *s, lng *val, size_t cnt);
 stream_export int stream_writeLngArray(stream *s, const lng *val, size_t cnt);
 stream_export int stream_printf(stream *s, const char *format, ...);
 stream_export ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt);
-stream_export ssize_t stream_write(stream *s, void *buf, size_t elmsize, size_t cnt);
+stream_export ssize_t stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
 stream_export void stream_close(stream *s);
 stream_export void stream_destroy(stream *s);
 stream_export char *stream_error(stream *s);
@@ -292,7 +292,7 @@ struct stream {
 	} stream_data;
 	int errnr;
 	ssize_t (*read)(stream *s, void *buf, size_t elmsize, size_t cnt);
-	ssize_t (*write)(stream *s, void *buf, size_t elmsize, size_t cnt);
+	ssize_t (*write)(stream *s, const void *buf, size_t elmsize, size_t cnt);
 	void (*close)(stream *s);
 	char *(*error)(stream *s);
 	void (*destroy)(stream *s);
@@ -380,7 +380,7 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 ssize_t
-stream_write(stream *s, void *buf, size_t elmsize, size_t cnt)
+stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 #ifdef STREAM_DEBUG
 	printf("write %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
@@ -545,7 +545,7 @@ file_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 static ssize_t
-file_write(stream *s, void *buf, size_t elmsize, size_t cnt)
+file_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	if (elmsize && cnt) {
 		size_t rc = fwrite(buf, elmsize, cnt, (FILE*)s->stream_data.p);
@@ -613,10 +613,10 @@ stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 static ssize_t
-stream_gzwrite(stream *s, void *buf, size_t elmsize, size_t cnt)
+stream_gzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	int size = (int) (elmsize * cnt);
-	size = gzwrite((gzFile *) s->stream_data.p, buf, size);
+	size = gzwrite((gzFile *) s->stream_data.p, (void *) buf, size);
 	if (size)
 		return size / elmsize;
 	return 0;
@@ -732,10 +732,10 @@ stream_bzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 static ssize_t
-stream_bzwrite(stream *s, void *buf, size_t elmsize, size_t cnt)
+stream_bzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	int size = (int) (elmsize * cnt);
-	size = BZ2_bzwrite((BZFILE *) s->stream_data.p, buf, size);
+	size = BZ2_bzwrite((BZFILE *) s->stream_data.p, (void *) buf, size);
 	if (size)
 		return size / elmsize;
 	return 0;
@@ -1017,7 +1017,7 @@ append_wastream(const char *filename)
 
 
 static ssize_t
-socket_write(stream *s, void *buf, size_t elmsize, size_t cnt)
+socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	size_t size = elmsize*cnt;
 	ssize_t sz;
@@ -1244,7 +1244,7 @@ ssl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 static ssize_t
-ssl_write(stream *s, void *buf, size_t elmsize, size_t cnt)
+ssl_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	SSL *ssl;
 	int size = (int) (elmsize * cnt);
@@ -1618,7 +1618,7 @@ buffer_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 static ssize_t
-buffer_write(stream *s, void *buf, size_t elmsize, size_t cnt)
+buffer_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	size_t size = elmsize*cnt;
 	buffer *b = (buffer*)s->stream_data.p;
@@ -1730,7 +1730,7 @@ bs_create(stream *s)
    itotal - unused.
  */
 static ssize_t
-bs_write(stream *ss, void *buf, size_t elmsize, size_t cnt)
+bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 {
 	bs *s = (bs*)ss->stream_data.p;
 	size_t todo = cnt * elmsize;
