@@ -676,7 +676,6 @@ typedef struct MapiStruct {
 	int versionId;		/* Monet 4 or 5 */
 	char *motd;		/* welcome message from server */
 
-	int autocommit;		/* auto-commit every query (SQL) */
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
 	MapiMsg error;		/* Error occurred */
@@ -900,6 +899,7 @@ static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, Mapi
 static char *mapi_fetch_line_internal(MapiHdl hdl, int *wantmore);
 static MapiMsg mapi_finish_internal(MapiHdl hdl);
 static void mapi_lost_connection(Mapi mid);
+static MapiMsg read_until_prompt(MapiHdl hdl);
 
 #ifndef HAVE_GETLOGIN
 #define getlogin() "win32"
@@ -1035,9 +1035,21 @@ mapi_ping(Mapi mid)
 MapiMsg
 mapi_setAutocommit(Mapi mid, int autocommit)
 {
+	MapiHdl hdl;
+
 	mapi_check(mid, "mapi_setAutocommit");
-	mid->autocommit = autocommit;
-	return MOK;
+	if (mid->languageId != LANG_SQL) {
+		mapi_setError(mid, "autocommit only supported in SQL",
+			      "mapi_setAutocommit", MERROR);
+		return MERROR;
+	}
+	if (autocommit)
+		hdl = mapi_query(mid, "set autocommit = true");
+	else
+		hdl = mapi_query(mid, "set autocommit = false");
+	if (hdl == NULL || mapi_error(mid))
+		return MERROR;
+	return mapi_close_handle(hdl);
 }
 
 static MapiMsg
@@ -1180,7 +1192,6 @@ mapi_new(void)
 	m->next = m;		/* the shortest circular list possible */
 	m->blocked = blocked;
 	m->error = MOK;
-	m->autocommit = 0;
 	strcpy(m->hostname, "localhost");
 #ifdef MONET5
 	strcpy(m->language, "mal");
@@ -1241,7 +1252,6 @@ mapi_dup(Mapi mid)
 	strcpy(m->username, mid->username);
 	strcpy(m->password, mid->password);
 	m->port = mid->port;
-	m->autocommit = mid->autocommit;
 #ifdef HAVE_OPENSSL
 	m->secure = mid->secure;
 #endif
@@ -2268,11 +2278,6 @@ mapi_execute_internal(MapiHdl hdl)
 	/* for the other languages it is assumed that the statements are correct */
 	if (mid->languageId == LANG_SQL) {
 		stream_write(mid->to, ";", 1, 1);
-		check_stream(mid, mid->to, "write error on stream",
-			     "mapi_execute", mid->error);
-	}
-	if (mid->languageId == LANG_SQL && mid->autocommit) {
-		stream_write(mid->to, "commit;", 7, 1);
 		check_stream(mid, mid->to, "write error on stream",
 			     "mapi_execute", mid->error);
 	}
