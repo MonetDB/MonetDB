@@ -201,8 +201,7 @@ gdk_export void	MT_down_sema(MT_Sema s, char *name);
 @-
 Try to decrement a semaphore. If it already has value 0, an error
 (EBUSY) is returned. Else, the semaphore is decremented.
-@h
-gdk_export int 	MT_try_sema(MT_Sema s);
+[obsolete] gdk_export int 	MT_try_sema(MT_Sema s);
 
 @-
 Dump info about the semaphore named 'name' on stream 'fp'.

@@ -602,13 +602,18 @@ void BBPexit(void)
 	for(i=0; i<BBPsize; i++) {
 		if (BBP_logical(i)) {
 			BAT *b = BBP_cache(i);
-			if (b) BATfree(b);
+			if (b) {
+				if( b->batParentid)
+					VIEWdestroy(b);
+				else 	BATfree(b);
+			}
 			BBPuncacheit(i,TRUE);
 			GDKfree(BBP_logical(i));
+			BBP_logical(i)= NULL;
 		}
 		if( BBP_physical(i)){
 			GDKfree(BBP_physical(i));
-			BBP_physical(i)=0;
+			BBP_physical(i)= NULL;
 		}
 	}
 	GDKfree(BBP_hash);
