@@ -1,13 +1,13 @@
 stderr of test 'none` in directory 'tests/sigs` itself:
 
 
-# 16:52:27 >  
-# 16:52:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
-# 16:52:27 >  
+# 16:56:22 >  
+# 16:56:22 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
+# 16:56:22 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.7
-# builtin opt 	monet_pid = 11960
+# builtin opt 	monet_pid = 19333
 # builtin opt 	prefix = /export/scratch1/sjoerd/Monet
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -45,7 +45,7 @@ stderr of test 'none` in directory 'tests/sigs` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_sigs
 
-# 16:52:29 >  
-# 16:52:29 >  Done.
-# 16:52:29 >  
+# 16:56:24 >  
+# 16:56:24 >  Done.
+# 16:56:24 >  
 

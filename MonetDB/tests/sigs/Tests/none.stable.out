@@ -1,9 +1,9 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
 
-# 16:52:27 >  
-# 16:52:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
-# 16:52:27 >  
+# 16:56:22 >  
+# 16:56:22 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
+# 16:56:22 >  
 
 # Monet Database Server V4.3.7
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -453,6 +453,7 @@ others@batloop{
 
 	dropping tcpip
 
+!WARNING: TCPepilogue: terminate 0 listeners
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1497,7 +1498,7 @@ others@batloop{
 [ "trans",	  1		  ]
 quit;
 
-# 16:52:29 >  
-# 16:52:29 >  Done.
-# 16:52:29 >  
+# 16:56:24 >  
+# 16:56:24 >  Done.
+# 16:56:24 >  
 
