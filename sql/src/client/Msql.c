@@ -150,6 +150,7 @@ void usage( char *prog ){
 
 static char *sql_readline( char *prompt ){
 	char *line = NULL;
+
 #ifdef HAVE_LIBREADLINE
 	if (is_chrsp){
         	if ((line = (char *) readline(prompt)) != NULL) {
@@ -170,9 +171,6 @@ static char *sql_readline( char *prompt ){
 		   	free(buf);
 			return NULL;
 		}
-		/* seems some fgets implementations don't replace the newline
-		 * with a EOS marker
-		 */
 		len = strlen(line);
 		if (len && line[len-1] == '\n') 
 			line[len-1] = '\0';
@@ -309,7 +307,8 @@ int receive( stream *rs, stream *out, int trace ){
 		int last = 0;
 		int nRows;
 
-		stream_readInt(rs, &status);
+		if (!stream_readInt(rs, &status))
+			return -1;
 		if (type < 0 || status < 0){ /* output error */
 			int nr = bs_read_next(rs,buf,&last);
 			char *s;
@@ -335,7 +334,7 @@ int receive( stream *rs, stream *out, int trace ){
 			&& nRows > 0){
 			int nr = bs_read_next(rs,buf,&last);
 			char *s;
-	
+
 			buf[nr] = 0;
 			s = conv(buf, from_utf);
 			fwrite( s, strlen(s), 1, stdout );
@@ -352,7 +351,8 @@ int receive( stream *rs, stream *out, int trace ){
 		}
 		if (type == Q_RESULT) {
 			int id;
-			stream_readInt(rs, &id);
+			if (!stream_readInt(rs, &id))
+				return -1;
 			header_data(rs, out, nRows, trace);
 			nRows = receive(rs, out, trace);
 		} else if (type == Q_DATA) {
@@ -436,9 +436,9 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 		if (!line) break;
 		lineno++;
 		cmdcnt = parse_line((unsigned char*)line);
-		cmdsum += cmdcnt;
 		if (cmdcnt < 0)
 			break;
+		cmdsum += cmdcnt;
 		/*
 		if (trace)
 			printf("# %5d: %d %s\n", lineno, cmdcnt, line);
