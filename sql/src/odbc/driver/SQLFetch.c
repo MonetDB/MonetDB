@@ -459,9 +459,16 @@ SQLRETURN
 ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT type,
 	  SQLPOINTER ptr, SQLINTEGER buflen, SQLINTEGER *lenp,
 	  SQLINTEGER *nullp, SQLSMALLINT precision, SQLSMALLINT scale,
-	  SQLINTEGER datetime_interval_precision)
+	  SQLINTEGER datetime_interval_precision, SQLINTEGER offset)
 {
 	char *data;
+
+	if (ptr && offset)
+		ptr = (SQLPOINTER) ((char *) ptr + offset);
+	if (lenp && offset)
+		lenp = (SQLINTEGER *) ((char *) lenp + offset);
+	if (nullp && offset)
+		nullp = (SQLINTEGER *) ((char *) nullp + offset);
 
 	if (precision == UNAFFECTED || scale == UNAFFECTED ||
 	    datetime_interval_precision == UNAFFECTED) {
@@ -486,19 +493,22 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT type,
 		}
 	}
 
-	(void) datetime_interval_precision;
-
 	data = mapi_fetch_field(stmt->hdl, nCol - 1);
 	if (mapi_error(stmt->Dbc->mid)) {
 		addStmtError(stmt, "HY000", NULL, 0);
 		return SQL_ERROR;
 	}
+
+	if (nullp)
+		*nullp = SQL_NULL_DATA;
+	if (lenp)
+		*lenp = SQL_NULL_DATA;
+
 	if (strcmp(data, "nil") == 0) {
 		if (nullp == NULL) {
 			addStmtError(stmt, "22002", NULL, 0);
 			return SQL_ERROR;
 		}
-		*nullp = SQL_NULL_DATA;
 		return SQL_SUCCESS;
 	}
 
@@ -595,6 +605,7 @@ SQLFetch_(ODBCStmt *stmt)
 	ODBCDesc *desc;
 	ODBCDescRec *rec;
 	int i;
+	SQLINTEGER offset;
 	SQLRETURN retval = SQL_SUCCESS;
 
 	if (!isValidStmt(stmt))
@@ -615,10 +626,26 @@ SQLFetch_(ODBCStmt *stmt)
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
 
-	if (mapi_fetch_row(stmt->hdl) == 0)
-		return SQL_NO_DATA;
+	if (mapi_fetch_row(stmt->hdl) == 0) {
+		switch (mapi_error(stmt->Dbc->mid)) {
+		case MOK:
+			return SQL_NO_DATA;
+		case MTIMEOUT:
+			/* 08S01 Communication link failure */
+			addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+			return SQL_ERROR;
+		default:
+			/* General error */
+			addStmtError(stmt, "HY001", mapi_error_str(stmt->Dbc->mid), 0);
+			return SQL_ERROR;
+		}
+	}
 
 	desc = stmt->ApplRowDescr;
+	if (desc->sql_desc_bind_offset_ptr)
+		offset = *desc->sql_desc_bind_offset_ptr;
+	else
+		offset = 0;
 	for (i = 1; i <= desc->sql_desc_count; i++) {
 		SQLRETURN rc;
 
@@ -634,7 +661,8 @@ SQLFetch_(ODBCStmt *stmt)
 			       rec->sql_desc_indicator_ptr,
 			       rec->sql_desc_precision,
 			       rec->sql_desc_scale,
-			       rec->sql_desc_datetime_interval_precision);
+			       rec->sql_desc_datetime_interval_precision,
+			       offset);
 		switch (rc) {
 		case SQL_ERROR:
 			retval = rc;

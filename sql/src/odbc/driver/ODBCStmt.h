@@ -154,7 +154,7 @@ SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		    SQLPOINTER pTarget, SQLINTEGER nTargetLength,
 		    SQLINTEGER *pnLength, SQLINTEGER *pnIndicator,
 		    SQLSMALLINT precision, SQLSMALLINT scale,
-		    SQLINTEGER datetime_interval_precision);
+		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset);
 
 SQLRETURN SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 			    SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,

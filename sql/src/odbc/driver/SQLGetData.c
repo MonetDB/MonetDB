@@ -76,5 +76,5 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	}
 	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength,
 			 pnLengthOrIndicator, pnLengthOrIndicator,
-			 UNAFFECTED, UNAFFECTED, UNAFFECTED);
+			 UNAFFECTED, UNAFFECTED, UNAFFECTED, 0);
 }
