@@ -2511,11 +2511,14 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
                 tt->base.rtime = ft->base.rtime;
                 tt->base.wtime = ft->base.wtime;
 
-		if (BUNlast(db) > db->batInserted)
+		if (BUNlast(db) > db->batInserted) {
 			bm_new_bat( ttr->bm, tt->dbid, db);
-		if (ttr == gtrans)
-			log_bat(logger, tt->dbid, db);
-		bat_destroy(db);
+			if (ttr == gtrans)
+				log_bat(logger, tt->dbid, db);
+		} else {
+			bat_destroy(db);
+			db = NULL;
+		}
 
 		do { 
 			int replace = 1;
@@ -2549,6 +2552,12 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 			if (replace && (BUNlast(ins) > ins->batInserted)) {
 				bm_new_bat( ttr->bm, oc->bat.bid, ins);
+			} else if (db) {
+				BAT *cur = bm_lbid2bat( 
+					ttr->bm, oc->bat.bid);
+
+				void_delete_bat(cur, db, 1);
+				bat_destroy(cur);
 			}
 			if (ttr == gtrans)
 				log_bat(logger, oc->bat.bid, ins);
@@ -2560,15 +2569,14 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				bm_new_bat( ttr->bm, oc->bat.ubid, ups);
 				void_replace_bat(cur, ups);
 				bat_destroy(cur);
+				if (ttr == gtrans) 
+					log_bat(logger, oc->bat.ubid, ups);
 			}
-			if (ttr == gtrans) 
-				log_bat(logger, oc->bat.ubid, ups);
 			bat_destroy(ups);
 
 			n = n->next;
 			m = m->next;
 		} while (n && m);
-
 		if (tt->idxs.set){
 			for(n = tt->idxs.set->h, m = tt->idxs.set->h; n && m; 
 				n = n->next, m = m->next){
@@ -2585,20 +2593,30 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
                 		oi->base.rtime = ci->base.rtime;
                 		oi->base.wtime = ci->base.wtime;
 			
-				if (BUNlast(ins) > ins->batInserted)
+				if (BUNlast(ins) > ins->batInserted) {
 					bm_new_bat( ttr->bm, oi->bat.bid, ins);
-				if (ttr == gtrans)
-					log_bat(logger, oi->bat.bid, ins);
-				bat_destroy(ins);
-				if (BUNlast(ups) > ups->batInserted)
-					bm_new_bat( ttr->bm, oi->bat.ubid, ups);
-				if (ttr == gtrans)
-					log_bat(logger, oi->bat.ubid, ups);
-				bat_destroy(ups);
+					if (ttr == gtrans)
+					     log_bat(logger, oi->bat.bid, ins);
+				} else if (db) {
+					BAT *cur = bm_lbid2bat( 
+						ttr->bm, oi->bat.bid);
 
+					void_delete_bat(cur, db, 1);
+					bat_destroy(cur);
+				}
+				bat_destroy(ins);
+				if (BUNlast(ups) > ups->batInserted) {
+					bm_new_bat( ttr->bm, oi->bat.ubid, ups);
+					if (ttr == gtrans)
+					    log_bat(logger, oi->bat.ubid, ups);
+				}
+				bat_destroy(ups);
 			    }
 			}
 		}
+		if (db)
+			bat_destroy(db);
+
 	}
 }
 
