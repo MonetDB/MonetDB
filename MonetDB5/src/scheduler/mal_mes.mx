@@ -205,8 +205,9 @@ The test suite contains a simple test (tst950) that measures
 the gross impact of this process. It aims at a cross-product
 of 16Kx16K bats. In M4 this could not be accomodated due to memory
 consumption.
-@+ Optimizer focus
-The first implementation of this optimizer is geared at a SQL front-end.
+@+ Implementation focus
+The first implementation of this optimizer is geared at instructions
+produced by the SQL front-end.
 See for SQL specific optimization rules the corresponding source code,
 called sql_optimizer.
 @{
