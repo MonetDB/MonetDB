@@ -50,8 +50,8 @@ a MAL console.
 @tab list current program block
 @item List      
 @tab list with type information
-@item variables     
-@tab print variable bindings
+@item var
+@tab print symbol table [with bindings]
 @item print @emph{ var}     
 @tab display value of a variable
 @item print @emph{ var} @emph{ c}[@emph{ f}] 
@@ -435,9 +435,50 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
     	case 'T': /* trace instruction calls */
         	printTraceCall(cntxt,mb,stk,p);
         	break;
-    	case 'v':
-        	printStack(out,mb,stk);
-        	break;
+    	case 'v': {	/* show the symbol table and bindings */
+				str modnme, fcnname;
+        		Scope fsym;
+        		Symbol fs;
+        		int i;
+				skipWord(cntxt,b);
+				if( *b!= 0){
+					modnme=b;
+					fcnname= strchr(b,'.');
+					if( fcnname == NULL){
+						fsym= findModule(cntxt->nspace,modnme);
+						if( fsym==0) {
+							stream_printf(out,"%s module not found\n", modnme);
+							continue;
+						}
+						for(i=0;i<MAXSCOPE;i++){
+							fs= fsym->subscope[i];
+							while(fs != NULL){
+								printStack(out,fs->def,0);
+								fs= fs->peer;
+							}
+						}
+						continue;
+					} 
+            		*fcnname = 0;
+            		fcnname ++;
+            		fsym= findModule(cntxt->nspace,modnme);
+            		if( fsym==0) {
+               		 	stream_printf(out,"%s module not found\n",modnme);
+						continue;
+            		}
+            		/* display the overloaded symbol definition */
+					for(i=0;i<MAXSCOPE;i++){
+						fs= fsym->subscope[i];
+						while(fs != NULL){
+							if( strcmp(fs->name,fcnname)==0)
+								printStack(out,fs->def,0);
+							fs= fs->peer;
+						}
+					}
+        		} else 
+        			printStack(out,mb,stk);
+        		break;
+			}
     	case 'b':
         	if( strncmp(b,"bbp",3)==0){
             	printBBPinfo(out);
@@ -636,20 +677,26 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
     stream_flush(cntxt->fdout);
 }
 @+ Utilities
-DUmping a stack on a file is primarilly used for debugging.
+Dumping a stack on a file is primarilly used for debugging.
 Printing the stack requires access to both the symbol table and
-the stackframes.
+the stackframes in most cases.
 Beware that a stack frame need not be initialized with null values.
-Instead, it has been zeroed upon creation.
+It has been zeroed upon creation.
+
+The routine  can also be used to inspect the symbol table of
+arbitrary functions.
 @c
 void printStack(stream *f, MalBlkPtr mb, MalStkPtr s){
         int i = 0;
 
-    stream_printf(f,"#mdb ");
-        stream_printf(f,"Stack size=%d top=%d\n",s->stksize,s->stktop);
-        for( ; i<mb->vtop ; i++){
-        printStackElm(f, mb, getVar(mb,i), s->stk+i,i,0,0);
-        }
+    stream_printf(f,"#mdb  %s\n", getInstrPtr(mb,0)->fcnname);
+	if( s) {
+		stream_printf(f,"Stack size=%d top=%d\n",s->stksize,s->stktop);
+        for( ; i<mb->vtop ; i++)
+			printStackElm(f, mb, getVar(mb,i), s->stk+i,i,0,0);
+	} else
+        for( ; i<mb->vtop ; i++)
+			printStackElm(f, mb, getVar(mb,i), 0,i,0,0);
 }
 
 void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt,int first){
@@ -663,18 +710,12 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
     stream_printf(f,"[%d] %s\t= ",index,nme);
     if( n->type == TYPE_void)
         stream_printf(f,"nil");
-    else
-/*
-    if( n->isaconstant) {
-        ATOMprint(v->vtype,VALptr(&n->value),f);
-    } else {
-        if( !(v->vtype== TYPE_str && v->len==0) )
-            ATOMprint(v->vtype,VALptr(v),f);
-    }
-*/
-    ATOMprint(v->vtype,VALptr(v),f);
+    else if(v)
+    	ATOMprint(v->vtype,VALptr(v),f);
+	else if( n->literal)
+		stream_printf(f,"%s", n->literal);
     nme= getTypeName(n->type);
-    nmeOnStk= getTypeName(v->vtype);
+    nmeOnStk= v? getTypeName(v->vtype):GDKstrdup(nme);
     stream_printf(f,":%s", nme);
     if( strcmp(nmeOnStk,nme) && 
         !(isaBatType(n->type) && strcmp(nmeOnStk,"BAT")==0)){
@@ -683,7 +724,7 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
     stream_printf(f," %s", (n->isaconstant?" constant":""));
     stream_printf(f," %s", (n->isatypevar?" type variable":""));
     GDKfree(nme); GDKfree(nmeOnStk);
-    if(cnt && isaBatType(n->type) && v->val.ival){
+    if(cnt && isaBatType(n->type) && v && v->val.ival){
         BAT *b,*bs;
         b= BATdescriptor(v->val.ival);
         if( b== NULL){
@@ -695,14 +736,13 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
             stream_printf(f,"Sample %d out of %d\n",cnt, BATcount(b));
         }
         /* cut out a portion of the BAT for display */
-        printf("should cut out %d-%d\n",first, first+cnt);
         bs= BATslice(b,first,first+cnt);
         if(bs== NULL)
             stream_printf(f,"Failed to take chunk\n");
         else BATmultiprintf(f,2,&bs,TRUE,0);
         BBPunfix(b->batCacheid);
     } else 
-    if( isaBatType(n->type)){
+    if( isaBatType(n->type) && v){
         BAT *b;
         b= BATdescriptor(v->val.ival);
         if(b){
@@ -838,9 +878,9 @@ void mdbHelp(stream *f){
     stream_printf(f,"module     -- display the module [scopes] \n");
     stream_printf(f,"finish     -- finish current call\n");
     stream_printf(f,"quit       -- leave debugger\n");
-    stream_printf(f,"list       -- list current program block\n");
-    stream_printf(f,"List       -- list with type information\n");
-    stream_printf(f,"variables  -- print variable bindings\n");
+    stream_printf(f,"list <fcn> -- list current program block\n");
+    stream_printf(f,"List <fcn> -- list with type information\n");
+    stream_printf(f,"var  <fcn>  -- print symbol table for module\n");
     stream_printf(f,"print <var>    -- display value of a variable\n");
     stream_printf(f,"print <var> <cnt>[<first>] -- display BAT chunk\n");
     stream_printf(f,"info <var>     -- display bat variable properties\n");
