@@ -520,7 +520,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         PFstate.genType = PF_GEN_NONE;
 
         if (strncmp(mode,"timing",6) == 0 ) {
-                PFstate.timing = 1 + (PFtimer_start()/1000);
+                PFstate.timing = 1;
                 mode += 7;
         } else {
                 PFstate.timing = 0;
