@@ -53,6 +53,9 @@ or to derived a fast C-based implementation.
 @mal
 module multiplex check = CMDmultiplexTypeCheck;
 
+pattern tactics(CMD:str, a:any...):any = CMDmultiplexScript
+comment "Tactical optimizer for mutiplexed instructions.";
+
 pattern script(CMD:str, a:any...):any = CMDmultiplexScript
 comment "Generic processor for mutiplexed instructions.";
 
@@ -86,7 +89,7 @@ comment "Generic processor for mutiplexed instructions.";
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-/* #define DEBUG_MULTIPLEX  */
+/*#define DEBUG_MULTIPLEX */
 
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
@@ -119,8 +122,9 @@ int operatorModifier(str name, str fcnname){
 	} else strcpy(name,fcnname);
 	return inplace;
 }
+
 int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
-	MalBlkPtr m, InstrPtr p, int polytype[2*MAXARG])
+	MalBlkPtr m, InstrPtr p)
 {
 	int i, k, t, tpe, tt;
 	int first = TRUE, inplace= FALSE;
@@ -199,8 +203,9 @@ Constants passed into the multiplex operator are a special case.
 	pci->modname= 0;
 	/* initialize the instruction further?*/
 	findFunctionType(scope,mb,pci);
-	pci->fcn = (GDKfcn)CMDmultiplexScript;
+	pci->fcn = (GDKfcn) CMDmultiplexScript;
 	pci->modname= fcnname;
+	pci->typechk= p->typechk;
 #ifdef DEBUG_MULTIPLEX
 	printf("--> multiplex instruction\n");
 	printInstruction(stdout,m,p);
@@ -211,6 +216,73 @@ Constants passed into the multiplex operator are a special case.
 #endif
 	return i;
 }
+@- Tactical optimization
+A tactical operator multiplex() looks around in the symbol table
+to detect any fast implementation. If it does not work,
+then it falls back on the script() approach.
+
+Care should be taken not to fall into a too generic
+definition in the kernel. For example, the batcalc routines
+accept any type, but can handle only the base types.
+This type enforcement is encoded here.
+
+Furthermore, any overloaded function should reside in the
+corresponding atom module
+
+Note that this scheme is particular important for polymorphic
+routines, because you do not a priori know whether there exists
+a fast variant. This way the MIL parser can simply produce
+calls to the script case as well
+@c
+int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
+	InstrPtr p;
+	int i,j,olderr;
+	str operator;
+	Client cntxt= getClient();
+
+	if( idcmp(pci->fcnname,"tactics")) return -1;
+	if( !isVarConstant(mb,pci->argv[pci->retc])) {
+		GDKfree(pci->fcnname);
+		pci->fcnname= GDKstrdup("script");
+		return -1;
+	}
+	operator = getVarConstant(mb,pci->argv[pci->retc]).val.sval;
+
+	p= copyInstruction(pci);
+	if(p->fcnname) GDKfree(p->fcnname);
+	if(p->modname) GDKfree(p->modname);
+	p->modname= 0;
+	p->fcnname= GDKstrdup(operator);
+	delArgument(p,p->retc);
+	olderr= mb->errors;
+	if( cntxt->errbuf) i= strlen(cntxt->errbuf); else i=0;
+	typeChecker(cntxt->nspace,mb,p,TYPE_FIXED);
+	if( cntxt->errbuf ) cntxt->errbuf[i] =0;
+	mb->errors= olderr;
+	if(p->typechk == TYPE_UNKNOWN) {
+		pci->fcnname= GDKstrdup("script");
+		freeInstruction(p);
+		return -1;
+	}
+@-
+Check out type of the operands for use with batcalc
+@c
+	if( p->modname && idcmp("batcalc",p->modname)==0 && 
+	   batcalcTypeCheck(operator, getArgType(mb,p,0)) < 0){
+		pci->fcnname= GDKstrdup("script");
+		freeInstruction(p);
+		return -1;
+	}
+	clrInstruction(pci);
+	moveInstruction(pci,p);
+#ifdef DEBUG_MULTIPLEX
+	printf("--> modified trial instruction\n");
+	printInstruction(stdout,mb,p);
+	printf("return code %d\n",getArgType(mb,pci,0));
+#endif
+	freeInstruction(p);
+	return getArgType(mb,pci,0);
+}
 
 int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
 {
@@ -218,7 +290,8 @@ int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
 	MalBlkPtr m= newMalBlk();
 	InstrPtr p = newInstruction(ASSIGNsymbol);
 
-	i= multiplexType(scope,mb,pci,m,p,0);
+	i= multiplexTactics(scope,mb,pci);
+	if(i< 0) i= multiplexType(scope,mb,pci,m,p);
 	freeMalBlk(m);
 	return i;
 }
@@ -270,7 +343,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	m1 = newMalBlk();
 	p = newInstruction(ASSIGNsymbol);
 	/* perform type analysis  and function resolution */
-	i= multiplexType(getClient()->nspace,mb,pci,m1,p,0);
+	i= multiplexType(getClient()->nspace,mb,pci,m1,p);
 	if( i<0)
 		return throwMessage("CMDmultiplexScript:type error");
 	/* get result type of multiplexed operation */
@@ -465,4 +538,23 @@ Therefore, we simple remove the temporary function.
 	freeMalBlk(m1);
 	return ret;
 }
-
+@- Type check
+The batcalc operator signatures are quite permissive
+with respect to the types they accept. However, only a few
+are actually supported and the other leads to a runtime
+error. For code squeezing this is not acceptable and we
+need a routine to test validity. Actually, this test
+should be part of the batcalc module itself.
+@c
+int batcalcTypeCheck(str operator, int type){
+	int tt= getTailType(type);
+	switch(tt){
+	case TYPE_flt: 
+	case TYPE_dbl: if(idcmp("%",operator)==0) return -1;
+	case TYPE_oid:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng: return type;
+	}
+	return -1;
+}

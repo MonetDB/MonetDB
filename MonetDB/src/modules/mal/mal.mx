@@ -119,14 +119,18 @@ pattern mdb(b:bit):void = mdbToggle
 	comment "Start interactive debugger";
 pattern mdb():void = mdbToggle
 	comment "Start interactive debugger";
-@-
+
+command debugmask(i:int):int= CMDdebug
+"Return the debug mask. If a MASK is nonzero, set it to that value.";
+
+@+ Session control
 Redirected script evaluations.
 @mal
-command cwd(s:str):nil= CMDsetCwd
-	comment "Set the working directory for reading files";
+command cwd(s:str):str= CMDsetCwd
+	comment "Return the current working directory. Set it to a new one.";
 pattern eval(s:str):nil= CMDevalString
 	comment "Evaluate a string representing a MAL program";
-pattern run(f:str):nil= CMDevalFile
+pattern source(f:str):nil= CMDevalFile
 	comment "Load and executed a (local) file";
 @-
 The prime scheme to inspect the MAL interpreter status is to use
@@ -152,20 +156,14 @@ pattern view_stk_where():bat[int,str] = CMDviewStkWhere
 
 	
 
-@+ Basic Value Manipulation
+@+ MAL inspection
 The command below inspect the MAL administration and, therefore,
 can not be included in the kernel library.
 @mal
 pattern type(v:any) : int = CMDtype
-comment "Return the type of a value (expression). Returns an type number.
- TIP: use the monet_atomtbl BAT to translate type numbers to strings.";
+comment "Return the type of a value (expression). Returns an type number.";
 
-pattern cast(v:any, tpe:int ) : any = CMDcast
-comment "Cast values explicitly, using an integer-expression as type specifier.";
-
-pattern cast(v:bat[any::1,any], tpe:int):bat[any::1,any]= CMDbatcast
-comment "Cast values explicitly, using an integer-expression as type
-specifier.";
+command typename(v:int): str = CMDtypename;
 
 @+ Dummy code 
 @h
@@ -530,17 +528,16 @@ str CMDviewStkWhere(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 @+ Basic value operations
+Version 4 contained primitives for self-reflection.
 @c
-str CMDbatcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	printf("cast(v:bat) not yet implemented\n");
-	return MAL_SUCCEED;
-}
-str CMDcast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	printf("cast(v:any) not yet implemented\n");
+str CMDtypename(str *ret, int *tpe){
+	*ret = malTypeName(*tpe);
 	return MAL_SUCCEED;
 }
 str CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	printf("type(v:any) not yet implemented\n");
+	int *ret;
+	ret= (int*) getArgReference(stk,pci,0);
+	*ret= getArgType(mb,pci,1);
 	return MAL_SUCCEED;
 }
 @+ Printing
@@ -686,14 +683,14 @@ str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	malImport(getClient(),buffer,FALSE);
 	return MAL_SUCCEED;
 }
-str CMDsetCwd(int *ret, str *fnme){
-	Client c= getClient();
-	char buffer[1024];
-
-printf("change cwd %s\n",c->cwd);
-	if( c->cwd) GDKfree(c->cwd);
-	c->cwd= GDKstrdup(*fnme);
-printf("to  cwd %s\n",c->cwd);
+str CMDdebug(int *ret, int *flg){
+	*ret = GDKdebug;
+	if( *flg) GDKdebug = *flg;
 	return MAL_SUCCEED;
 }
-
+str CMDsetCwd(str *ret, str *fnme){
+	Client c= getClient();
+	*ret = c->cwd;
+	c->cwd= GDKstrdup(*fnme);
+	return MAL_SUCCEED;
+}
