@@ -40,14 +40,15 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
                 /* key property gives a bound for equality join; only use this knowledge if
                  * the other column is smaller (i.e. optimization is useful)
                  */
-		if (BATtkey(l) && BAThkey(r)) {
-    			@3 = MIN(_lcount, _rcount);
-		} else if (_lcount < _rcount && BAThkey(r)) {
-                        @3 = _lcount;
-                } else if (_rcount < _lcount && BATtkey(l)) {
-                        @3 = _rcount;
-                }
+	        if (BATtkey(l) && BAThkey(r)) {
+			/* BATs both keyed, use minimum as result size estimator */
+                        @3 = MIN(_lcount, _rcount);
+                } else if (BATtkey(l) || BAThkey(r)) {
+			/* One keyed, one non-keyed, use maximum as result size estimator */
+                        @3 = MAX(_lcount, _rcount);
+		}
         }
+
         if (@3 == 0 && _lcount <= (1 << LOG_SAMPLESIZE)) {
                 /* for small relations, we use a stupid default */
                 @3 = 3*MIN(_rcount, _lcount);  
