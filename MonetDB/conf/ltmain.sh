@@ -714,7 +714,6 @@ compiler."
 
   # libtool link mode
   link | relink)
-    CC=$arg
     modename="$modename: link"
     case "$host" in
     *-*-cygwin* | *-*-mingw* | *-*-os2*)
