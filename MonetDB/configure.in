@@ -12,6 +12,13 @@ AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 PREFIX=[$prefix]
 AC_DEFINE_UNQUOTED(MONET_PREFIX, "$PREFIX", [directory prefix])
 
+MONET_PREFIX=`(mkdir -p $PREFIX && cd $PREFIX && pwd)`
+AC_SUBST(MONET_PREFIX)
+MONET_BUILD=`pwd`
+AC_SUBST(MONET_BUILD)
+MONET_SOURCE=`(cd $srcdir && pwd)`
+AC_SUBST(MONET_SOURCE)
+
 dnl we use LEXLIB=-ll because this is usually correctly installed 
 dnl and -lfl usually only in the 32bit version
 dnl some dirty hacks
@@ -314,7 +321,7 @@ tests/Makefile
 Makefile
 src/utils/Mx/epstogif
 src/utils/testing/Mlog
-src/utils/testing/Mfilter
-src/utils/testing/Mtest
+src/utils/testing/Mtest.py
+src/utils/testing/Mfilter.py
 src/utils/testing/MkillUsers
 )
