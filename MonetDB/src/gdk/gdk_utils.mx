@@ -891,7 +891,6 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 #endif
 
 
-INLINE
 void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
 	ssize_t *s;
 
@@ -963,7 +962,6 @@ void GDKfree (void *blk) {
 	}
 }
 
-INLINE
 ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize, int emergency) {
 	ssize_t oldsize, *s = (ssize_t*) blk;
 
