@@ -623,15 +623,21 @@ int strWChrAt( int *res, str val, int *at ){
 }
 
 int codeset( str *res ){
+#ifdef HAVE_NL_LANGINFO
 	char *codeset = nl_langinfo(CODESET);
 	if (!codeset)
 		return GDK_FAIL;
 	*res = GDKstrdup(codeset);
 	return GDK_SUCCEED;
+#else
+	GDKerror("MIL-`codeset()' not available as C-`nl_langinfo()' wasn't found during compilation.\n");
+	return GDK_FAIL;
+#endif
 }
 
 int strIconv( str *res, str org, str f, str t)
 {
+#ifdef HAVE_ICONV
 	int len = strlen(org);
 	iconv_t cd = iconv_open( t, f);
 	int size = 4*len; 		/* make sure enough memory is claimed */
@@ -651,6 +657,10 @@ int strIconv( str *res, str org, str f, str t)
 	*r = 0;
 	iconv_close(cd);
 	return GDK_SUCCEED;
+#else
+	GDKerror("MIL-`iconv()' not available as C-`iconv()' wasn't found during compilation.\n");
+	return GDK_FAIL;
+#endif
 }
 
 int strChrAt( chr *res, str val, int *at ){
