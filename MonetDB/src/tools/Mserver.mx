@@ -169,9 +169,10 @@ static Client Monet_init( opt *set, int setlen )
 	for(i=0; i<setlen; i++){
 		int done = 0;
 		for(j=0; j<nlen; j++){
-			if (strcmp(n[j].name, set[i].name) == 0 &&
-			    n[j].kind < set[i].kind){
-				n[j] = set[i];
+			if (strcmp(n[j].name, set[i].name) == 0){ 
+			    	if (n[j].kind < set[i].kind){
+					n[j] = set[i];
+				}
 				done = 1;
 				break;
 			}
@@ -326,7 +327,7 @@ A grain size of 128 bytes is used to keep overhead low.
 	}
 
 	if (config){
-		setlen = mo_config_file(&set, setlen, config, opt_config);
+		setlen = mo_config_file(&set, setlen, config );
 		free(config);
 	} else {
 		if (!(setlen = mo_system_config(&set, setlen)) )
