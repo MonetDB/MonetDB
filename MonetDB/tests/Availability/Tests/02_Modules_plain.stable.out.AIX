@@ -93,8 +93,8 @@ Module: "aggr"
 
 Module: "aggrX3"
 
-[ 31 ]
-[ 31 ]
+[ 42 ]
+[ 42 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature									| help				  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -111,9 +111,15 @@ Module: "aggrX3"
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,lng], BAT[void,oid], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail average on lng"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",				  "grouped tail average on sht"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,sht], BAT[void,oid], BAT[oid,any]) : BAT[oid,sht]",		  "grouped tail average on sht"	  ]
+[ "{avg}",	  "PROC:      ",  "{avg}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",		  "not available"		  ]
+[ "{avg}",	  "PROC:      ",  "{avg}(BAT[oid,flt], BAT[oid,oid], BAT[oid,any]) : BAT[oid,flt]",		  "not available"		  ]
+[ "{avg}",	  "PROC:      ",  "{avg}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
+[ "{avg}",	  "PROC:      ",  "{avg}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",		  "not available"		  ]
+[ "{avg}",	  "PROC:      ",  "{avg}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",		  "not available"		  ]
 [ "{card}",	  "PROC:      ",  "{card}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",				  "not available"		  ]
 [ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[oid,any]) : BAT[oid,int]",				  "grouped count"		  ]
 [ "{count}",	  "COMMAND:   ",  "{count}(BAT[oid,any], BAT[void,oid], BAT[oid,any]) : BAT[oid,int]",		  "grouped count"		  ]
+[ "{count}",	  "PROC:      ",  "{count}(BAT[oid,any], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",			  "grouped tail maximum"	  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,any::1], BAT[void,oid], BAT[oid,any]) : BAT[oid,any::1]",	  "grouped tail maximum"	  ]
 [ "{min}",	  "COMMAND:   ",  "{min}(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",			  "grouped tail minimum"	  ]
@@ -129,6 +135,11 @@ Module: "aggrX3"
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,lng], BAT[void,oid], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail sum on lng"	  ]
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,sht], BAT[oid,any]) : BAT[oid,sht]",				  "grouped tail sum on sht"	  ]
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,sht], BAT[void,oid], BAT[oid,any]) : BAT[oid,sht]",		  "grouped tail sum on sht"	  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,flt], BAT[oid,oid], BAT[oid,any]) : BAT[oid,flt]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,int], BAT[oid,oid], BAT[oid,any]) : BAT[oid,int]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,lng], BAT[oid,oid], BAT[oid,any]) : BAT[oid,lng]",		  "not available"		  ]
+[ "{sum}",	  "PROC:      ",  "{sum}(BAT[oid,sht], BAT[oid,oid], BAT[oid,any]) : BAT[oid,sht]",		  "not available"		  ]
 
 Module: "alarm"
 
