@@ -150,12 +150,7 @@ only one will be created.
 # include <winsock.h>
 #endif
 #include <sys/types.h>
-/*
-#if !(defined(LINUX) || defined(WIN32))
-#include <sys/conf.h>
-#include <stropts.h>
-#endif
-*/
+
 #ifdef HAVE_NETDB_H
 #include <netinet/in.h>
 #endif
