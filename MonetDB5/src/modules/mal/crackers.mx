@@ -301,7 +301,9 @@ str CRKnew(int *cret, int *bid){
 	(void) cret;
 	m= findCrackMap(*bid);
 	initCrackMap(crackMap+m, bid);
+#ifdef DEBUG_CRACKERS
 	stream_printf(GDKout,"crackMap created\n");
+#endif
 	return MAL_SUCCEED;
 }
 str CRKinfo(int *k, int *bid)
@@ -574,7 +576,7 @@ int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
                 BATseqbase(BATmirror(view), b->tseqbase+low);
         }
 
-	if( pid== BATcount(b)) return 0;
+	if (pid > 0 && (size_t)pid == BATcount(b)) return 0;
 	return pid+1;
 }
 str CRKfirstPiece(int *newpid, int *vid, int *bid) 
@@ -769,7 +771,6 @@ str CRKselectPieces(int *result, int *bid, int *low, int *hgh)
 	BBPfix(*result = b->batCacheid);
 	return MAL_SUCCEED;
 }
-
 @-
 The GDK kernel contains an error wrt garbage collection
 of BATview objects. They have to be freed explicitly
