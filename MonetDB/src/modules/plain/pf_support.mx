@@ -537,7 +537,7 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	BUN qi, pi, pk, ps;
 	int bsi, bsk, bss;
 	size_t cnt, len, strsize = 1024;
-	oid base, i0, k0;
+	oid base0, base, i0, k0;
 	str actual_str = NULL;
 	bit triv_prop;
 	
@@ -589,6 +589,7 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	actual_str[0] = '\0';
 	k0 = oid_nil;
 	i0 = *(oid*)BUNtloc(iter,pi);
+	base0 = oid_nil;
 
 	for (qi = BUNlast(iter) ; pi < qi ; pi += bsi, pk += bsk, ps += bss) {
 		oid i = *(oid*)BUNtloc(iter,pi);
@@ -597,9 +598,9 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 		size_t l = strlen(s) + 1;
 		if ( i0 < i || k == KIND_NODE ) {
 			/* new iter or new node */
-			if (actual_str[0] != '\0') {
+			if (len > 0) {
 				/* actual_str of (previous) iter is not empty => insert it into result */
-				bunfastins(bn, &base, actual_str);
+				bunfastins(bn, &base0, actual_str);
 				len = 0;
 				actual_str[0] = '\0';
 			}
@@ -624,11 +625,11 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 		len += snprintf(actual_str+len, strsize-len, s);
 		i0 = i;
 		k0 = k;
-		base++;
+		base0 = base++;
 	}
 
 	if (len > 0) {
-		bunfastins(bn, &base, actual_str);
+		bunfastins(bn, &base0, actual_str);
 	}
 
 	GDKfree(actual_str);
