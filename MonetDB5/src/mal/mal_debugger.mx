@@ -338,7 +338,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 	b= cntxt->input;
 	skipBlanc(b);
 	switch(*b){
-	case 0: return;
+	case 0: break;
 	case 'a': if( strncmp("atoms",b,5)==0) showAtoms(out);
 		break;
 	case 'c': if( strncmp("call",b,4)==0){
@@ -346,13 +346,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 			break;
 		 }
 		 stk->cmd= 'c';
-		 return;
+		 break;
 	case 'h': mdbHelp(out); break;
 	case 'q': 
 		stk->cmd= 'q';/* return from this debugger */
 		cntxt->itrace= 0;
 		MDBstatus(0);
-		return;
+		break;
 	case 'f': /* finish */
 	case 'n': /* next */
 	case 's': /* step */
@@ -364,10 +364,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		} else 
 		if( strncmp("scope",b,3)==0){
 			showScopeStatistics(out,cntxt->nspace);
-			return;
+			break;
 		} 
 		stk->cmd= *b;
-		return;
+		break;
 	case 'm': /* display a module */
 		{
 		str modnme, fcnname;
@@ -561,11 +561,12 @@ signatures satisfying the pattern.
 	case 'r': /* reset program counter */
 		stream_printf(out,"%srestart with current stack\n","#mdb ");
 		stk->cmd= 'r';
-		return;
+		break;
 	default:
 		stream_printf(out,"%sdebugger command expected\n","#mdb ");
 		mdbHelp(out);
 	}
+	cntxt->nxt= cntxt->input; *cntxt->nxt=0;
 	} while(1);
 }
 void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
