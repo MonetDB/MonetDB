@@ -34,8 +34,8 @@
 # While sourced, this script sets your (architecture dependent) environment
 # as required to compile ${what}.
 #
-# For everything else but Monet, this script requires MONET_PREFIX to be
-# set, or 'monet-config` to be in your PATH, in order to find your Monet
+# For everything else but Monet, this script requires MONETDB_PREFIX to be
+# set, or 'monetdb-config` to be in your PATH, in order to find your Monet
 # installation.
 #
 # By default, compilation will take place in ${what}_BUILD=BASE/`uname` and ${what}
@@ -79,16 +79,11 @@ base="`pwd`"
 wh_t="`basename $base | perl -pe 's|^([a-zA-Z]+)([^a-zA-Z].*)?$|$1|'`"
 what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]'`"
 
-# Ugly hack: (Arjen)
-if [ "${what}" = "MONETDB" ] ; then
-  what="MONET"
-fi
-
-if [ "${what}" != "MONET" ] ; then
-	if [ ! "${MONET_PREFIX}" ] ; then
-		MONET_PREFIX=`monet-config --prefix`
+if [ "${what}" != "MONETDB" ] ; then
+	if [ ! "${MONETDB_PREFIX}" ] ; then
+		MONETDB_PREFIX=`monetdb-config --prefix`
 	fi
-	if [ ! -x ${MONET_PREFIX}/bin/monet-config ] ; then
+	if [ ! -x ${MONETDB_PREFIX}/bin/monetdb-config ] ; then
 		echo ''
 		echo 'Could not find Monet installation.'
 		echo ''
@@ -199,7 +194,7 @@ if [ "${os}" = "Linux" ] ; then
 	if [ "${COMP}" = "ntv"  -a  -d "${softpath}" ] ; then
 		# the Intel compiler doesn't find headers/libs in /usr/local without help
 		case ${what} in
-		MONET)
+		MONETDB)
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 			conf_opts="${conf_opts} --with-pcl=${softpath}"
 			;;
@@ -421,9 +416,9 @@ if [ "${INSTRUMENT}" ] ; then
 	conf_opts="${conf_opts} --enable-instrument"
 fi
 
-if [ "${what}" != "MONET" ] ; then
+if [ "${what}" != "MONETDB" ] ; then
 	# tell configure where to find MonetDB
-	conf_opts="${conf_opts} --with-monet=${MONET_PREFIX}"
+	conf_opts="${conf_opts} --with-monet=${MONETDB_PREFIX}"
 fi
 
 # prepend target bin-dir to PATH
@@ -431,26 +426,26 @@ binpath="${WHAT_PREFIX}/bin:${binpath}"
 
 # the following is nolonger needed for Monet,
 # but still needed for the rest:
-if [ "${what}" != "MONET"  -a  "${WHAT_PREFIX}" != "${MONET_PREFIX}" ] ; then
-	# set MONET_MOD_PATH and prepend it to LD_LIBRARY_PATH
+if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
+	# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
 	modpath="${WHAT_PREFIX}/lib/MonetDB"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
-	mtest_modpath="--monet_mod_path=${modpath}:`${MONET_PREFIX}/bin/monet-config --modpath`"
+	mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
 fi
 if [ "${os}" = "IRIX64" ] ; then
 	# IRIX64 requires this to find dependend modules
-	if [ "${what}" = "MONET" ] ; then
+	if [ "${what}" = "MONETDB" ] ; then
 		libpath="${WHAT_PREFIX}/lib/MonetDB:${libpath}"
 	  else
-		libpath="${MONET_PREFIX}/lib/MonetDB:${libpath}"
+		libpath="${MONETDB_PREFIX}/lib/MonetDB:${libpath}"
 	fi
 fi
 if [ "${os}${COMP}${BITS}" = "SunOSntv64" ] ; then
 	# native 64-bit version on SunOS needs this to find libmonet
-	if [ "${what}" = "MONET" ] ; then
+	if [ "${what}" = "MONETDB" ] ; then
 		libpath="${WHAT_PREFIX}/lib:${libpath}"
 	  else
-		libpath="${MONET_PREFIX}/lib:${libpath}"
+		libpath="${MONETDB_PREFIX}/lib:${libpath}"
 	fi
 fi
 
@@ -528,20 +523,20 @@ if [ "${libpath}" ] ; then
 	fi
 fi
 if [ "${modpath}" ] ; then
-	if [ "${MONET_MOD_PATH}" ] ; then
-		# prepend new modpath to existing MONET_MOD_PATH, if MONET_MOD_PATH doesn't contain modpath, yet
-		case ":${MONET_MOD_PATH}:" in
+	if [ "${MONETDB_MOD_PATH}" ] ; then
+		# prepend new modpath to existing MONETDB_MOD_PATH, if MONETDB_MOD_PATH doesn't contain modpath, yet
+		case ":${MONETDB_MOD_PATH}:" in
 		*:${modpath}:*)
 			;;
 		*)
-			MONET_MOD_PATH="${modpath}:${MONET_MOD_PATH}" ; export MONET_MOD_PATH
+			MONETDB_MOD_PATH="${modpath}:${MONETDB_MOD_PATH}" ; export MONETDB_MOD_PATH
 			;;
 		esac
 	  else
-		# set MONET_MOD_PATH as modpath
-		MONET_MOD_PATH="${modpath}" ; export MONET_MOD_PATH
+		# set MONETDB_MOD_PATH as modpath
+		MONETDB_MOD_PATH="${modpath}" ; export MONETDB_MOD_PATH
 	fi
-	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
+	echo " MONETDB_MOD_PATH=${MONETDB_MOD_PATH}"
 fi
 
 # for convenience: store the complete configure-call in ${what}_CONFIGURE
