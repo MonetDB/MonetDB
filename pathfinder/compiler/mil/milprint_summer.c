@@ -249,6 +249,11 @@ static void print_output (FILE *f) __attribute__((unused));
 static void
 print_output (FILE *f)
 {
+    /*
+     * Note: This output is split up into separate fprintf's due
+     * to the C99 specifications that allows strings to be of
+     * maximum length 4K.
+     */
     fprintf(f, 
             "{ # print_output ()\n"
             /* the values of the different kinds are combined
@@ -325,8 +330,9 @@ print_output (FILE *f)
             "temp1_frag := nil_oid_oid;\n"
             "output_item.insert(backup_oids.leftfetchjoin(node_kind_oid_str));\n"
             "backup_oids := nil_oid_oid;\n"
-            "node_kind_oid_str := nil_oid_str;\n"
-  
+            "node_kind_oid_str := nil_oid_str;\n");
+
+    fprintf (f,
             /* gets the attribute information for attribute kind */
             "temp_kind_oid_oid := kind.get_type(ATTR).mark(0@0).reverse();\n"
             "backup_oids := temp_kind_oid_oid.reverse();\n"
@@ -403,8 +409,9 @@ print_output (FILE *f)
             "var int_kind_oid_str := [str](temp1_int);\n"
             "temp1_int := nil_oid_int;\n"
             "output_item.insert(int_kind_oid_str);\n"
-            "int_kind_oid_str := nil_oid_str;\n"
-  
+            "int_kind_oid_str := nil_oid_str;\n");
+
+    fprintf (f,
             /* gets the information for double kind */
             "temp_kind_oid_oid := kind.get_type(DBL);\n"
             "temp_kind_oid_oid := temp_kind_oid_oid.mirror().leftfetchjoin(item);\n"
