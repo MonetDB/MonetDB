@@ -881,6 +881,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 		freeClient(c);
 		monet_exit(*statusp);
 		*/
+		stream_flush(GDKout);
 		stream_destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
@@ -908,6 +909,7 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	if (strcmp(c->user, GDKgetenv("monet_admin"))  )
 	{
 		stream_printf(GDKout,"No permission for shutdown; quit.\n");
+		stream_flush(GDKout);
 		stream_destroy(GDKout);
 	} else if (monet_daemon == 1) {
 		stream_printf(GDKout,"Shutdown of server in progress\n");
@@ -922,6 +924,7 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
         	if (lt->cnt > 0) { 
             	    @:builtin_operand(0, TYPE_int, statusp)@
         	}
+		stream_flush(GDKout);
 		stream_destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
