@@ -337,9 +337,10 @@ void freeClient(Client c) {
         		(void) fclose(c->fdin);
         		(void) fclose(c->fdout);
 			if (c->stk) shutdown(c->socket, 2);
+*/
+		if (c->socket){
 			(void) close(c->socket);
 		}
-*/
 		GDKfree(c->user); 
 		GDKfree(c->prompt); 
 	} else { 			/* fork() client */
