@@ -698,8 +698,8 @@ def RunTest(env, TST) :
 		SkipTest(env, TST, EXT, "as Mshutdown is not available.")
 	elif EXT == ".milC" and  not env['exe']['MapiClient'][0]:
 		SkipTest(env, TST, EXT, "as MapiClient is not available.")
-	elif EXT == ".milC" and  not os.path.isfile(env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")):
-		SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" is not available.")
+	elif EXT == ".milC" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/Monet/mapi.mil")):
+		SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")+" is not available.")
 	elif EXT == ".py"   and  not env['exe']['python'][0]:
 		SkipTest(env, TST, EXT, "as python is not available.")
 		#TODO:
@@ -723,7 +723,7 @@ def RunTest(env, TST) :
 				shutil.copy(TSTSRCDIR+os.sep+f,TSTTRGDIR)
 		if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
 			f = open(TST+EXT+".src","r")
-			TSTSRC = os.path.expandvars(regsub.gsub("/",os.sep,string.strip(f.readline())))
+			TSTSRC = os.path.expandvars(path(string.strip(f.readline())))
 			f.close()
 			if os.path.isfile(TSTSRC):
 				shutil.copy(TSTSRC,TST+EXT)
@@ -796,11 +796,6 @@ def RunTest(env, TST) :
 			pErr.close()
 			#TODO:
 			#LOG1x at -l >&2
-		elif EXT == ".milC":
-			f = open(TST+".timeout","w")
-			#f.write('module("alarm");\n{var t;t:=time;sleep('+str(XTIMEOUT+60)+');t:=time-t;printf("\\n! Timeout after %d ('+str(XTIMEOUT+60)+') secs !\\n",t/1000);}\nquit;\n')
-			f.write('module("alarm");\n{var t,i,j;j:='+str(XTIMEOUT+60)+'*160000;i:=0;t:=time;while(i<j)i:+=1;t:=time-t;printf("\\n! Timeout after %d ('+str(XTIMEOUT+60)+') secs !\\n",t/1000);}\nquit;\n')
-			f.close();
 
 		TestOut = open(TST+".test.out","w")
 		TestErr = open(TST+".test.err","w")
@@ -916,6 +911,7 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
 	TestErr.write(Prompt(cmd)) ; TestErr.flush()
 	pOut,pIn,pErr = popen2.popen3(cmd)
 	pIn.write(TestIn)
+	pIn.flush()
 	return pIn, pOut, pErr
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
@@ -980,10 +976,10 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 		PROLOGUE = ""
 		if os.path.isfile(TST+".prologue"):
 			PROLOGUE = " "+TST+".prologue"
-		if os.path.isfile(TST+".timeout"):
-			PROLOGUE = PROLOGUE+" "+TST+".timeout"
 
-		Srvr = MTO+str(XTO)+" "+exe['Mserver'][1]+" -db "+TSTDB+" "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+PROLOGUE
+		Srvr = MTO+str(XTO)+" "+exe['Mserver'][1]+" -db "+TSTDB
+		Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/Monet/mapi.mil")
+		Srvr = Srvr+PROLOGUE
 		#-background"
 		Clnt = MTO+str(TOT)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
 		Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
@@ -996,7 +992,6 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 		ShwnErr = open(TST+".shutdown.err","w")
 
 		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
-		#pSrvrIn.close()
 		time.sleep(9)
 
 		for f in TSTs:
@@ -1008,7 +1003,14 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 
 		RunIt(Shwn, "", ShwnOut, ShwnErr)
 
-		pSrvrIn.close()
+		if not pSrvrIn.closed:
+			try:
+				pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
+				pSrvrIn.write('quit;\n')
+				pSrvrIn.close()
+			except IOError:
+				nop = ''
+
 		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
 
 		for q in [SrvrOut, ClntOut, ShwnOut]:
