@@ -80,8 +80,6 @@ static oid temp_copy( oid b, int clear )
 		c = bat_copy(o, "temp_copy");
 	} else {
 		c = bat_new( o->htype, o->ttype, BUFSIZ, "temp_copy"); 
-		if (o->htype == TYPE_void)
-			BATseqbase(c,0);
 	}
 	r = temp_create(c);
 	bat_destroy(c);
@@ -156,13 +154,12 @@ BAT *bind_bat(sql_trans * tr, sql_column * c, int access )
  			int type = ATOMindex(c->type->type->base.name);
 			BAT *b = bat_new(TYPE_void, type, c->t->sz, "bind_bat");
 			 
-			BATseqbase(b,0);
 			c->bat.ibid = temp_create(b);
 			c->base.wtime = c->t->base.wtime = 
 				c->t->s->base.wtime = tr->wtime = tr->stime;
 			return b;
 		}
-	}
+	} 
 	return col_bind(tr, c->bat.bid, c, access);
 }
 
@@ -584,7 +581,6 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 		BAT *b = bat_new( TYPE_void, type, t->sz, "load_column" );
  		BAT *u = bat_new( TYPE_oid, type, t->sz, "load_column" );
 
-		BATseqbase(b,0);
 		c->bat.bid = temp_create(b);
 		c->bat.ubid = temp_create(u);
 		bat_destroy(b);
@@ -666,7 +662,6 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	    } else {
  		BAT *b = bat_new( TYPE_void, TYPE_oid, t->sz, "load_table");
 
-		BATseqbase(b, 0);
 		t->dbid = temp_create(b);
 		bat_destroy(b);
 	    }
@@ -871,7 +866,6 @@ static BAT *mvc_bat( struct bm *bm, char *name, int type)
 		if (bs_debug)
 			fprintf(stderr, "mvc_bat created %s bid %d\n", name,id);
 		b = bat_new( TYPE_void, type, BUFSIZ, "mvc_bat" );
-		BATseqbase(b,0);
 		bm_add_bat(bm, b->batCacheid, name, 0 /* do not use a transaction id */);
 	} else {
 		if (bs_debug)
@@ -2634,7 +2628,6 @@ sql_table *sql_trans_create_table(sql_trans * tr, sql_schema *s,
 
  	b = bat_new( TYPE_void, TYPE_oid, t->sz, "sql_trans_create_table");
 
-	BATseqbase(b, 0);
 	snprintf(bname, BUFSIZ, "D_%s", t->base.name );
 	if (t->persists && !t->clear)
 		t->dbid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
@@ -2719,21 +2712,24 @@ size_t sql_trans_clear_table(sql_trans * tr, sql_table *t )
 		}
 		b = bm_lbid2bat(tr->bm, c->bat.bid);
 		sz += BATcount(b);
-		nb = BATnew(TYPE_void, b->ttype, t->sz); 
+		nb = bat_new(TYPE_void, b->ttype, t->sz, "clear_table"); 
 		bat_destroy(b);
 		bm_new_bat( tr->bm, c->bat.bid, nb);
+		bat_destroy(nb);
 		if (c->bat.ubid) {
 			b = bm_lbid2bat(tr->bm, c->bat.ubid);
-			nb = BATnew(TYPE_oid, b->ttype, t->sz); 
+			nb = bat_new(TYPE_oid, b->ttype, t->sz, "clear_table"); 
 			bat_destroy(b);
 			bm_new_bat( tr->bm, c->bat.ubid, nb);
+			bat_destroy(nb);
 		}
 		if (t->dbid) {
 			b = bm_lbid2bat(tr->bm, t->dbid);
 			sz -= BATcount(b);
-			nb = BATnew(TYPE_oid, TYPE_void, t->sz); 
+			nb = bat_new(TYPE_void, TYPE_oid, t->sz, "clear_table"); 
 			bat_destroy(b);
 			bm_new_bat( tr->bm, t->dbid, nb);
+			bat_destroy(nb);
 		}
 		
 		for ( n = n->next; n; n = n->next) {
@@ -2745,14 +2741,16 @@ size_t sql_trans_clear_table(sql_trans * tr, sql_table *t )
 				c->bat.ibid = 0;
 			}
 			b = bm_lbid2bat(tr->bm, c->bat.bid);
-			nb = BATnew(TYPE_void, b->ttype, t->sz); 
+			nb = bat_new(TYPE_void, b->ttype, t->sz, "clear_table"); 
 			bat_destroy(b);
 			bm_new_bat( tr->bm, c->bat.bid, nb);
+			bat_destroy(nb);
 			if (c->bat.ubid) {
 				b = bm_lbid2bat(tr->bm, c->bat.ubid);
-				nb = BATnew(TYPE_oid, b->ttype, t->sz); 
+				nb = bat_new(TYPE_oid, b->ttype, t->sz, "clear_table"); 
 				bat_destroy(b);
 				bm_new_bat( tr->bm, c->bat.ubid, nb);
+				bat_destroy(nb);
 			}
 		}
 		if (t->idxs.set){
@@ -2766,16 +2764,18 @@ size_t sql_trans_clear_table(sql_trans * tr, sql_table *t )
 						ci->bat.ibid = 0;
 					}
 					b = bm_lbid2bat(tr->bm, ci->bat.bid);
-					nb = BATnew(TYPE_void, b->ttype, t->sz); 
+					nb = bat_new(TYPE_void, b->ttype, t->sz, "clear_table"); 
 					bat_destroy(b);
 					bm_new_bat( tr->bm, ci->bat.bid, nb);
+					bat_destroy(nb);
 					if (ci->bat.ubid) {
 						b = bm_lbid2bat(tr->bm, ci->bat.ubid);
-						nb = BATnew(TYPE_oid, b->ttype, t->sz); 
+						nb = bat_new(TYPE_oid, b->ttype, t->sz, "clear_table"); 
 						bat_destroy(b);
 						bm_new_bat( tr->bm, ci->bat.ubid, nb);
+						bat_destroy(nb);
 					}
-			    	}
+			    }
 			}
 		}
 	}
@@ -2856,7 +2856,6 @@ sql_trans_create_column(sql_trans * tr, sql_table *t, char *name, sql_subtype *t
 			return NULL;
 		}
 
-		BATseqbase(b,0);
 		res = create_column_bat(tr, t, name, tpe, b, u);
 		bat_destroy(b);
 		bat_destroy(u);
@@ -3028,7 +3027,6 @@ sql_trans_create_idx( sql_trans * tr, sql_table *t, char *name, idx_type it )
 		char bname[BUFSIZ];
 
 		b = bat_new( TYPE_void, TYPE_oid, t->sz, "sql_trans_create_idx" );
-		BATseqbase(b,0);
 		snprintf(bname, BUFSIZ, "%s_%s", ni->t->base.name, ni->base.name );
 		ni->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
 		bat_destroy(b);
@@ -3062,7 +3060,6 @@ sql_idx *sql_trans_create_ic( sql_trans *tr, sql_idx *i, sql_column *c /*, extra
 		char bname[BUFSIZ];
 
 		b = bat_new( TYPE_void, TYPE_int, i->t->sz, "sql_trans_create_ic" );
-		BATseqbase(b,0);
 		snprintf(bname, BUFSIZ, "%s_%s", i->t->base.name, i->base.name );
 		i->bat.bid = bm_add_bat(tr->bm, b->batCacheid, bname, 0);
 		bat_destroy(b);

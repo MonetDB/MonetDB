@@ -376,7 +376,7 @@ sql_delete_priv( mvc *sql, int auth_id, int obj_id,
 		stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat),
  			stmt_atom_int(obj_id), cmp_equal));
 	
-	s = sql_delete(sql, ptv, pt, s, 0, 0);
+	s = sql_delete(sql, ptv, pt, s, 0);
 	scope_close(scp);
 	return s;
 }
