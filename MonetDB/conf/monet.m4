@@ -141,10 +141,17 @@ X_CFLAGS=''
 X_CXXFLAGS=''
 case $CC-$CXX in
 *gcc-*g++)
-	dnl  Some systems (SunOS) require these to find the right prototypes, e.g. for *time_r();
-	dnl  however, other systems (IRIX,CYGWIN,Darwin,arm-linux) don't "like" these at all...
+	dnl  We need more features than the C89 standard offers, but not all
+	dnl  (if any at all) C/C++ compilers implements the complete C99
+	dnl  standard.  Moreover, there seems to be no standard for the
+	dnl  defines that enable the features beyond C89 in the various
+	dnl  platforms.  Here's what we found working so far...
 	case "$CC-$host_os" in
-	gcc-irix*|gcc-cygwin*|gcc-darwin*)
+	gcc-irix*|gcc-cygwin*|gcc-darwin*|arm-linux-gcc*)
+		;;
+	gcc-solaris*)
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
+		CXXFLAGS="$CXXFLAGS -D__EXTENSIONS__"
 		;;
 	gcc-*)	
 		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
@@ -470,8 +477,8 @@ if test "x$enable_warning" = xyes; then
   dnl  All warnings should be on by default (see above).
   case $CC-$CXX in
   *gcc-*g++)
-	X_CFLAGS="-pedantic"
-	X_CXXFLAGS="-pedantic"
+	X_CFLAGS="-pedantic -Wno-long-long"
+	X_CXXFLAGS="-pedantic -Wno-long-long"
 	;;
   icc-icpc|ecc-ecpc)
 	X_CFLAGS=""

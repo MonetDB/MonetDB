@@ -24,9 +24,6 @@
  */
 
 #define _GNU_SOURCE	/* to get declaration of strsignal on Linux */
-#ifndef __EXTENSIONS__
-#define __EXTENSIONS__	/* to get declaration of strsignal on SunOS */
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
