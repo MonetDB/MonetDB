@@ -84,25 +84,6 @@ data files.
 .COMMAND stream_close( Stream s ) = stream_close_stream; 
 	"close and destroy the stream s"
 
-    .ATOM Buffer = ptr;
-    .END;
-
-@+ deprecated!
-The buffer streams are deprecated (removed in 5.0). They are only used within 
-the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump). 
-@m
-.COMMAND buffer_create( int size ) : Buffer = buffer_create_wrap;
-	"create a buffer of the given size"
-
-.COMMAND buffer_destroy( Buffer b ) = buffer_destroy_wrap;
-	"destroy buffer"
-
-.COMMAND buffer_rastream( Buffer b, str name ) : Stream = buffer_rastream_wrap;
-	"create a buffer read stream"
-
-.COMMAND buffer_wastream( Buffer b, str name ) : Stream = buffer_wastream_wrap; 
-	"create a buffer write stream"
-
     .ATOM Bstream = ptr;
     .END;
 
@@ -162,7 +143,6 @@ The implementation follows andshould be self-documenting
 #include <blob.h>
 
 typedef ptr Stream;
-typedef ptr Buffer;
 typedef ptr Bstream;
 
 #include "streams.proto.h"
@@ -276,32 +256,6 @@ int stream_close_stream( Stream *S ){
 
 int open_block_stream( Stream *S, Stream *is ){
 	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-
-int buffer_create_wrap( Buffer *b, int *size){
-	if ((*(buffer**)b = buffer_create( (size_t) *size )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int buffer_destroy_wrap( Buffer *b ){
-	buffer_destroy( *(buffer**)b );
-	return GDK_SUCCEED;
-}
-int buffer_rastream_wrap( Stream *S, Buffer *b, str name ){
-	if ((*(stream**)S = buffer_rastream( *(buffer**)b, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int buffer_wastream_wrap( Stream *S, Buffer *b, str name ){
-	if ((*(stream**)S = buffer_wastream( *(buffer**)b, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
