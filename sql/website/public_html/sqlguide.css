@@ -1,0 +1,15 @@
+body {
+	background-color: Silver;
+	color: Black;
+	font-family: Verdana, Arial, sans-serif;
+}
+
+.section {
+	font-size: Large;
+	font-weight: bold;
+}
+
+.authors {
+	font-size: smaller;
+	font-style: italic;
+}
