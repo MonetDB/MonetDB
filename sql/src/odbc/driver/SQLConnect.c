@@ -12,6 +12,23 @@
 
 #include "driver.h"
 
+
+extern long oidrange(int nr, catalog *cat);
+
+typedef struct info {
+	stream *in;
+	stream *out;
+} info;
+
+static void getcatalog( catalog *cat ){
+	char buf[BUFSIZ];
+	info *i = (info*)cat->data;
+
+	sprintf(buf, "ascii_export_catalog(Output);\n\001" ); 
+	i->out->write(i->out, buf, strlen(buf), 1);
+	i->out->flush(i->out);
+}
+
 SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 						SQLCHAR        *szDataSource,
 						SQLSMALLINT    nDataSourceLength,
@@ -29,6 +46,7 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
     char    	szPORT[INI_MAX_PROPERTY_VALUE+1];
     char    	szFLAG[INI_MAX_PROPERTY_VALUE+1];
     context *lc;
+    info i;
 
     /* SANITY CHECKS */
     if( SQL_NULL_HDBC == hDbc )
@@ -96,7 +114,11 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 	hDbc->hDbcExtras->rs = socket_rastream( fd, "sql client read");
 	out = socket_wastream( fd, "sql client write"); 
 	lc = &hDbc->hDbcExtras->lc;
-	sql_init_context( lc, out, debug, default_catalog_create());
+	i.in = hDbc->hDbcExtras->rs;
+	i.out = out;
+	sql_init_context( lc, out, debug, 
+			default_catalog_create( &oidrange, (char*)&i) );
+	getcatalog(lc->cat);
 	catalog_create_stream( hDbc->hDbcExtras->rs, lc );
 
 	printf("catalog created\n");
@@ -106,6 +128,8 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 	}
 
     hDbc->bConnected = TRUE;
+
+    printf("connected \n");
 
     logPushMsg( hDbc->hLog, __FILE__, __FILE__, __LINE__, LOG_INFO, LOG_INFO, "SQL_SUCCESS" );
 

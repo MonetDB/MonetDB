@@ -97,11 +97,11 @@ lib_MonetODBC = {
 	_NativeTypeDesc.c \
 	_NativeTypeLength.c \
 	_NativeTypePrecision.c \
-	catalog-aclient.c \
+	catalog-client.c \
 	statement_dump.c \
 	comm.c comm.h \
 	gdk.c 
 	LIBS = \
 	${top_builddir}/src/parser/libsql.la \
-	-L$(MONETDIST)/lib -lstream  -lm
+	-L$(MONETDIST)/lib/Monet -lstream  -lm
 }
