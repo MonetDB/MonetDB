@@ -7,7 +7,6 @@ lib__example = {
 	SOURCES = example.mx
 	HEADERS = h
 	LIBS = $(MONET_LIBS) 
-	LDFLAGS = -module
 }
 
 scripts_mil = {

@@ -478,19 +478,20 @@ if [ "${libpath}" ] ; then
 		LD_LIBRARY_PATH="${libpath}" ; export LD_LIBRARY_PATH
 	fi
 	echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+	dylibpath="`echo "${libpath}" | perl -pe 's|:?/usr/local/lib$||'`"
 	if [ "${os}" = "Darwin" ] ; then
 		if [ "${DYLD_LIBRARY_PATH}" ] ; then
-			# prepend new libpath to existing DYLD_LIBRARY_PATH, if DYLD_LIBRARY_PATH doesn't contain libpath, yet
+			# prepend new dylibpath to existing DYLD_LIBRARY_PATH, if DYLD_LIBRARY_PATH doesn't contain dylibpath, yet
 			case ":${DYLD_LIBRARY_PATH}:" in
-			*:${libpath}:*)
+			*:${dylibpath}:*)
 				;;
 			*)
-				DYLD_LIBRARY_PATH="${libpath}:${DYLD_LIBRARY_PATH}" ; export DYLD_LIBRARY_PATH
+				DYLD_LIBRARY_PATH="${dylibpath}:${DYLD_LIBRARY_PATH}" ; export DYLD_LIBRARY_PATH
 				;;
 			esac
 		  else
-			# set DYLD_LIBRARY_PATH as libpath
-			DYLD_LIBRARY_PATH="${libpath}" ; export DYLD_LIBRARY_PATH
+			# set DYLD_LIBRARY_PATH as dylibpath
+			DYLD_LIBRARY_PATH="${dylibpath}" ; export DYLD_LIBRARY_PATH
 		fi
 		echo " DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}"
 	fi

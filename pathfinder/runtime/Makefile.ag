@@ -34,7 +34,6 @@ lib__pathfinder = {
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
 	LIBS = $(MONET_LIBS)
-	LDFLAGS = -module
 }
 
 scripts_mil = {

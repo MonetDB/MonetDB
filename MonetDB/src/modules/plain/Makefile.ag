@@ -33,7 +33,6 @@ lib__streams = {
 	WINLIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LDFLAGS = -module
 }
 
 lib__str = {
@@ -47,7 +46,6 @@ lib__str = {
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 	LIBS	= $(ICONV_LIBS)
-	LDFLAGS = -module
 }
 
 lib__xtables = {
@@ -60,7 +58,6 @@ lib__xtables = {
 		../../monet/libmonet ./lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-	LDFLAGS = -module
 }
 
 LIBS = {
@@ -78,7 +75,7 @@ LIBS = {
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
-	LDFLAGS = -module -lm
+	LDFLAGS = -lm
 }
 
 lib__counters = {
@@ -91,7 +88,6 @@ lib__counters = {
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 	LIBS = $(HWCOUNTERS_LIBS)
-	LDFLAGS = -module
 }
 
 lib__pcl = {
@@ -104,7 +100,6 @@ lib__pcl = {
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 	LIBS = $(PCL_LIBS)
-	LDFLAGS = -module
 }
 
 scripts_mil = {

@@ -27,8 +27,10 @@
 #define DIR_SEP_STR "@QDIRSEP@"
 #define PATH_SEP ':'
 #define PATH_SEP_STR ":"
-#ifdef _AIX
+#if defined(_AIX)
 #define SO_EXT ".a"
+#elif defined(__MACH__)
+#define SO_EXT ".dylib"
 #else
 #define SO_EXT ".so"
 #endif

@@ -91,7 +91,6 @@ case "$host" in
 powerpc-apple-darwin*)
 	CPPFLAGS="$CPPFLAGS -I/sw/include"
 	LDFLAGS="$LDFLAGS -L/sw/lib"
-	CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
 	;;
 esac
 
