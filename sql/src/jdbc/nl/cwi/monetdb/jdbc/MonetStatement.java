@@ -106,6 +106,8 @@ public class MonetStatement implements Statement {
 		cache = new CacheThread();
 		// make the thread a little more important
 		cache.setPriority(cache.getPriority() + 1);
+		// quit the VM if it's waiting for this thread to end
+		cache.setDaemon(true);
 		cache.start();
 
 		closed = false;
@@ -473,7 +475,7 @@ public class MonetStatement implements Statement {
 		private boolean[] fetch = new boolean[1];
 		/** lock object used when some other thread waits for a line */
 		int[] fill = {-1};
-		/** the last error message */
+		/** the last error messages */
 		private String error;
 		/** a regular expressions that we often use (compile them once) to split
 		 *  the headers into an array */
@@ -647,13 +649,12 @@ public class MonetStatement implements Statement {
 				}
 
 				// go for new results
-				String tmpLine;
+				String tmpLine, errMsg = "";
 				do {
 					tmpLine = monet.readLine();
 					if (monet.getLineType() == MonetSocket.ERROR) {
-						// read till prompt and throw it
-						monet.waitForPrompt();
-						throw new SQLException(tmpLine.substring(1));
+						// concatenate error message
+						errMsg = errMsg + tmpLine.substring(1) + "\n";
 					} else if (monet.getLineType() == MonetSocket.HEADER) {
 						if (!expectHeader) {
 							throw new SQLException("Unexpected header found");
@@ -685,14 +686,17 @@ public class MonetStatement implements Statement {
 						}
 					} else if (monet.getLineType() == MonetSocket.EMPTY) {
 						// empty, will mean Monet stopped somehow (crash?)
-						throw new IOException("Unexpected end of stream");
+						throw new IOException("Unexpected end of stream, Mserver still alive?");
 					}
 				} while (monet.getLineType() != MonetSocket.PROMPT1);
-				// check for consistency
+				// if there were errors, send them
+				if (errMsg != "") throw new SQLException(errMsg.trim());
+
 				if (expectHeader) {
 					expectHeader = false;
 					completeHeaders();
 				}
+				// check for consistency
 				if (maxLine[0] != Math.min(cacheSize, tupleCount - (curBlock * cacheSize)))
 					throw new SQLException("Aiieeee!!! Inconsistant data! Monet said there were " + tupleCount + " tuples, but it only returned " + maxLine[0]);
 			}
