@@ -50,16 +50,16 @@ comment "Alias removal optimizer";
 pattern DCoptimizer():str = QOTDCoptimizer;
 pattern DCoptimizer(mod:any, fcn:any):str = QOTDCoptimizerCALL
 comment "Dead code optimizer";
-pattern SPoptimizer():str = QOTSPoptimizer;
 pattern SPoptimizer(mod:any, fcn:any):str = QOTSPoptimizerCALL
 coment "Selection push-down optimizer";
+pattern SPoptimizer():str = QOTSPoptimizer;
 pattern RRoptimizer():str = QOTRRoptimizer;
 pattern RRoptimizer(mod:any, fcn:any):str = QOTRRoptimizerCALL
 comment "Reversal idempotency removal";
 
 pattern debugOptimizers():void = QOTdebugOptimizers;
 
-pattern showFlow(M:any,F:any,s:str):void = CMDshowFlow
+pattern showFlowGraph(M:any,F:any,s:str):void = CMDshowFlowGraph
 comment "Dump the data flow of the function M.F in a format
 recognizable by the command 'dot' on the file s";
 
@@ -115,7 +115,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr s, InstrPtr p){
 	@:QOTC(RR)@
 
 
-str CMDshowFlow(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str CMDshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         str fname= (str) getArgValue(stk,p,3);
 	str     modnme= getArgName(mb,p,1);
 	str     fcnnme= getArgName(mb,p,2);
@@ -130,7 +130,7 @@ str CMDshowFlow(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
         else {
-                showFlow(s->def,stk,fname);
+                showFlowGraph(s->def,stk,fname);
         }
         return NULL;
 }

@@ -37,8 +37,10 @@ command setPrompt(s:str):void= CLTsetPrompt
         comment "Change the prompt for the current user.";
 command setListing(flg:int):void= CLTsetListing
         comment "Turn on/off echoing of MAL instructions";
-command names( ): bat[int,str] = CLTNames
-	comment "Pseudo bat to map client identifiers to its name";
+command setDebug(flg:int):void= CLTsetDebug
+	comment "Set the flag in the debugging bitset";
+command clearDebug(flg:int):void= CLTclearDebug
+	comment "Clear the flag in the debugging bitset";
 command login( ): bat[int,str] = CLTLogin
 	comment "Pseudo bat to map client identifiers to their login time";
 command info( ): bat[int,str] = CLTInfo
@@ -113,20 +115,7 @@ str CLTInfo(int *ret){
 	BUNins(b,"timer", local_itoa(c->timer));
 	BUNins(b,"trace", local_itoa(c->itrace));
 	@:Pseudo(client,info)@
-	return GDK_FAIL;
-}
-str CLTNames(int *ret){       
-	int i;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
-        if (b == 0) return throwMessage("catalog.clientNames", "failed to create BAT");
-
-        for(i=0; i < MAL_MAXCLIENTS; i++)
-        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user) {
-                BUNins(b, &i, mal_clients[i].user);
-        }
-
-	@:Pseudo(client,name)@
-	return GDK_FAIL;
+	return MAL_SUCCEED;
 }
 str CLTLogin(int *ret){       
 	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
@@ -159,5 +148,14 @@ str CLTLogin(int *ret){
         }
 
 	@:Pseudo(client,login)@
-	return GDK_FAIL;
+	return MAL_SUCCEED;
+}
+
+str CLTsetDebug(int *ret, int *flg){
+	fprintf(GDKout,"Not yet implemented");
+	return MAL_SUCCEED;
+}
+str CLTclearDebug(int *ret, int *flg){
+	fprintf(GDKout,"Not yet implemented");
+	return MAL_SUCCEED;
 }

@@ -469,7 +469,9 @@ str CMDmanual(int *ret, str *fname, str *mod,int *recursive){
 	stream *fs;
 	fs= open_wastream(*fname);
 	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
+	dumpManualHeader(fs);
 	dumpManual(fs, findScope(getClient()->nspace,*mod),*recursive);
+	dumpManualFooter(fs);
 	return MAL_SUCCEED;
 }
 str CMDmanual2(int *ret, str *fname, str *mod,int *recursive){
@@ -477,11 +479,15 @@ str CMDmanual2(int *ret, str *fname, str *mod,int *recursive){
 	return CMDmanual(ret,fname,mod,&r);
 }
 str CMDmanual1(int *ret, str *mod){
+	dumpManualHeader(GDKout);
 	dumpManual(GDKout, findScope(getClient()->nspace,*mod),0);
+	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
 str CMDmanual0(int *ret){
+	dumpManualHeader(GDKout);
 	dumpManual(GDKout, getClient()->nspace,1);
+	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
 str CMDsetCwd(str *ret, str *fnme){

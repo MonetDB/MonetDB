@@ -91,6 +91,8 @@ command getTypeName(v:int): str = INSPECTtypename;
 command getAtoms():bat[int,str] = INSPECTatom_names
 comment "Collect a BAT with the atom names";
 
+command getClients( ): bat[int,str] = INSPECTclients
+        comment "Pseudo bat to map client identifiers to its name";
 @- Display code
 A key tool for analysis of the MAL code is being able to dump
 any routine, module. For queries, it is also illustrative to display
@@ -117,9 +119,6 @@ pattern mdb(b:bit):void = mdbToggle
         comment "Start interactive debugger";
 pattern mdb():void = mdbToggle
         comment "Start interactive debugger";
-
-command debugmask(i:int):int= CMDdebug
-"Return the debug mask. If a MASK is nonzero, set it to that value.";
 
 @+ Implementation
 @h
@@ -231,6 +230,19 @@ str INSPECTsymbolFind(int *ret,int kind)
 str INSPECTfunctionNames(int *ret){ return INSPECTsymbolFind(ret,FUNCTIONsymbol); }
 str INSPECTpatternNames(int *ret){ return INSPECTsymbolFind(ret,PATTERNsymbol); }
 str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); }
+str INSPECTclients(int *ret){
+        int i;
+        BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+        if (b == 0) return throwMessage("catalog.clientNames", "failed to create BAT");
+
+        for(i=0; i < MAL_MAXCLIENTS; i++)
+        if(mal_clients[i].mode== CLAIMED && mal_clients[i].user) {
+                BUNins(b, &i, mal_clients[i].user);
+        }
+
+        @:Pseudo(client,name)@
+        return GDK_FAIL;
+}
 
 str INSPECTsymbolDef(int *ret, str *nme, str *fcn)
 {	Symbol s;
