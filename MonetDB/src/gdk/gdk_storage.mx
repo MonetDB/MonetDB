@@ -738,7 +738,7 @@ incorporated in the normal bat loading and saving mechanism.
 
 It also makes the mmap faster as when through caching you
 are finished with the BAT before it is ever swapped to disk
-it will never heva been written, whereas the old mmap obliged you to 
+it will never have been written, whereas the old mmap obliged you to 
 save a BAT directly.
 @c
 int BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc){
@@ -791,7 +791,7 @@ not found (end result is still that it does not exist). The past behavior to del
 some files and then fail was erroneous. The BAT would continue to exist with an 
 incorrect disk status, causing havoc later on.
 
-NT forces us to close all files before deleteing them; in case of memory mapped
+NT forces us to close all files before deleting them; in case of memory mapped
 files this means that we have to unload the BATs before deleting. This is
 enforced now.
 @c
@@ -845,12 +845,12 @@ It all works with hooks.  The multijoin routine finds matching ranges
 of rows. For each found match in a column it first calls a value-routine
 hook. This routine we use to format a substring. 
 
-For each found match-tuple (the carthesian product of all matches
-accross columns) a match routine hook is called. We use this routine
+For each found match-tuple (the Cartesian product of all matches
+across columns) a match routine hook is called. We use this routine
 to print a line.
 
 Due to this setup, we only format each value once, though it
-might participate in may lines (due to the carthesian product).
+might participate in many lines (due to the Cartesian product).
 
 The multijoin is quite complex, and we use a @%col_format_t@
 struct to keep track of column specific data.
@@ -869,7 +869,7 @@ The table ordering has two aspects:
 \item 	the order in which the matches appear (a.k.a. the major ordering). 
 	This is equivalent to the order of the head values of the BATs 
 	(as we match=multijoin on head value).
-\item	within each match, the order in which the carthesian 
+\item	within each match, the order in which the Cartesian 
    	product is produced. This is used to sub-order on 
 	the tail values of the BATs = the columns in the table. 
 \end{enumerate}
@@ -882,7 +882,7 @@ As the multijoin will respect the order of X, its tail values
 will be printed in sorted order.
 
 Concerning sub-ordering on other columns (2), the multijoin
-itself employs qsort() to order the carthesian product on
+itself employs qsort() to order the Cartesian product on
 the matched tail values.
 @{
 @c
