@@ -440,17 +440,10 @@ str @1ForloopStep(bit *res, @1 *i, @1 *first, @1 *last, @1 *step){
 		}
 		if( v >= *last){
 			*i = *first;
-			*res= 1;
+			*res= 0;
 			return MAL_SUCCEED;
 		} 
 		*res= 0;
-
-/*
-		if( v >= *last){
-			*i = *first;
-		} else *i = v + *step;
-		*res= *i< *last;
-*/
 	} else {
 		*i = *first;
 		*res= 1;
