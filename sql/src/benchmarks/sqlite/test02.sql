@@ -1,4 +1,3 @@
-BEGIN;
 CREATE TABLE t2(a INTEGER, b INTEGER, c VARCHAR(100));
 INSERT INTO t2 VALUES(1,298361,'two hundred ninety eight thousand three hundred sixty one');
 INSERT INTO t2 VALUES(2,63016,'sixty three thousand sixteen');

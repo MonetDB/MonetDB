@@ -1,4 +1,3 @@
-BEGIN;
 DELETE FROM t1;
 INSERT INTO t1 VALUES(1,29676,'twenty nine thousand six hundred seventy six');
 INSERT INTO t1 VALUES(2,73300,'seventy three thousand three hundred');

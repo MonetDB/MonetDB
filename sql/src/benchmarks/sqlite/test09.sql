@@ -1,4 +1,3 @@
-BEGIN;
 UPDATE t2 SET c='four hundred sixty eight thousand twenty six' WHERE a=1;
 UPDATE t2 SET c='one hundred twenty one thousand nine hundred twenty eight' WHERE a=2;
 UPDATE t2 SET c='two hundred fifty three thousand one hundred fifty seven' WHERE a=3;
