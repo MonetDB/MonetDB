@@ -1672,7 +1672,7 @@ int CMDfind_@2(oid *ret, BAT *b, ptr v) {
 	return GDK_SUCCEED;
 }
 @c
-@:find_bounds(min,higher,<,last,-,idx)@
+@:find_bounds(min,higher,<,last,-)@
 @:find_bounds(max,lower,>,first,+,if (idx && (p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b,p)))) idx--)@
 
 int CMDmerge(BAT** ret, BAT *b) {
