@@ -15,8 +15,7 @@ stderr of test 'usage` in directory 'src/tools` itself:
 # 13:33:19 >  MapiClient -help
 # 13:33:19 >  
 
-Usage: MapiClient [-port host:port] [-session key] [-prelude  pfile ]
-[-c command] [-help ] 
+Usage: MapiClient [-port host:port] [-session key] [-prelude  pfile ] [-c command] [-everything] [-debug] [-help ] 
 
 # 13:33:19 >  
 # 13:33:19 >  Mcreatedb -?

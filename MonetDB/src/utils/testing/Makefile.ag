@@ -1,5 +1,5 @@
 
-EXTRA_DIST =  Mtest.py.in Mlog.in Mlog.bat Mfilter.py.in MkillUsers.in Mlimit.c
+EXTRA_DIST =  Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in MkillUsers.in Mlimit.c
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
@@ -13,5 +13,5 @@ bin_SCRIPTS = Mtest.py Mlog Mfilter.py MkillUsers
 
 scripts_bat = {
 	DIR = bindir
-	SOURCES = Mlog.bat
+	SOURCES = Mlog.bat Mtest.py.bat
 }

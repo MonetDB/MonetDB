@@ -4,7 +4,6 @@
 #=====
 # - check all TODO's below
 # - add Mapprove.py
-# - timeout tests
 # - tidy -up HTML-generation by "keeping in mind" during testing, 
 #   which OUT/ERR differ or not and which tests were skipped.
 #   dump HTML-stuff only at end
@@ -15,7 +14,6 @@
 #   contains(<file>,<string>)
 # - replace pure boldface (<B>) by red-boldface
 #   (also in Mdiff)
-# - propagate Prompt to Mlog & Mlog.bat
 # - do multi-level prompting?
 # - solve chdir - link - getcwd problem
 #   (e.g., implement own directory stack)
@@ -1060,7 +1058,7 @@ def main(argv) :
 	exe = {}
 	exe['Mtimeout']   = CheckExec('Mtimeout')  , 'Mtimeout -timeout '+str(par['TIMEOUT'])
 	exe['Mserver']    = CheckExec('Mserver')   , 'Mserver -p'' -modulesilent -yaccsilent '+par['DBGMASK']
-	exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient'
+	exe['MapiClient'] = CheckExec('MapiClient'), 'MapiClient -everything'
 	exe['Mcreatedb']  = CheckExec('Mcreatedb') , 'Mcreatedb '+MUSER
 	exe['Mdestroydb'] = CheckExec('Mdestroydb'), 'Mdestroydb'
 	exe['Mload']      = CheckExec('Mload')     , 'Mload'

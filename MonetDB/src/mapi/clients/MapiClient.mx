@@ -29,7 +29,7 @@ users. It is more comfortable than the console, since it provides
 a command history and automatic file name completion.
 
 \begin{verbatim}
-Mclient [-port HOST:PORT] [-session KEY] [-debug] [-prelude FILE] [-c single-command]  
+Mclient [-port HOST:PORT] [-session KEY] [-debug] [-everything] [-prelude FILE] [-c single-command]  
 \end{verbatim}
 
 The following options are supported:
@@ -38,6 +38,7 @@ The following options are supported:
 If your MAPIPORT environment variable points to "HOST:PORT" already, you
 can omit this option.
 \item {\em -debug}. Illustrate internalworking.
+\item {\em -everything}. Print also comment lines received in the result; default is to ignore them.
 \item {\em -prelude.} At the start of the client session, execute --
 before going into command-line mode-- a local file containing MIL statements.
 \item {\em -c.} just execute a one-line MIL command (non-interactive mode).
@@ -289,8 +290,10 @@ using its help operator '?'.
 void usage() {
 	fprintf(stderr, "Usage: %s [-port host:port] ", program);
 	fprintf(stderr, "[-session key] ");
- 	fprintf(stderr, "[-prelude  pfile ]\n");
+ 	fprintf(stderr, "[-prelude  pfile ] ");
  	fprintf(stderr, "[-c command] ");
+ 	fprintf(stderr, "[-everything] ");
+ 	fprintf(stderr, "[-debug] ");
  	fprintf(stderr, "[-help ] \n");
  	EXIT(1);
 }
@@ -301,6 +304,7 @@ int main(int argc, char **argv) {
  	char	*prelude  = 0;  
 	char	*s = NULL, *port = (char *) getenv("MAPIPORT");
 	int	debug = 0;
+	int	everything = 0;
 	int	i;
 	struct stat st;
 	char 	user[80];
@@ -329,6 +333,11 @@ int main(int argc, char **argv) {
 			switch(argv[i][1]) {
 			case 'd':
 				debug++;
+				break;
+			case 'e':
+				if (strcmp(argv[i], "-everything") == 0) {
+					everything=1;
+				}
 				break;
 			case 'p':
 				if (strcmp(argv[i], "-port") == 0) {
@@ -373,6 +382,7 @@ int main(int argc, char **argv) {
 
 	mid = Mconnect(address,i,user,NULL);
 	mid->trace = debug;
+	mid->everything = everything;
 	if( sessionkey) {
 		sprintf(user,"%s:%d\n",user,sessionkey);
 	}

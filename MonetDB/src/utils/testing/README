@@ -82,8 +82,11 @@ have changed since my proposal.
    Additionally, MkillUsers is scheduled as at-job to kill orphaned
    processes that Mtimeout cannot reach any more.)
 
-  (Mserver is called with "-p", "-modulesilent", & "-yaccsilent".
+  (Mserver is called with "-p""", "-modulesilent", & "-yaccsilent".
    See "Mserver -?" for details.)
+
+  (MapiClient is called with "-everything".
+   See "MapiClient -help" for details.)
 
 - Mtest.py uses three directory trees based at TSTSRCBASE, TSTBLDBASE, and
   TSTTRGBASE, respectively. These trees have similar purpose as the SOURCE,
@@ -144,8 +147,8 @@ have changed since my proposal.
 	OSVER		`uname``uname -r`
   	TSTDB		name of default test database, unique for each directory
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
-	MSERVER		"$MTIMEOUT Mserver -modulesilent -yaccsilent -d8"
-	MAPICLIENT	"$MTIMEOUT MapiClient"
+	MSERVER		"$MTIMEOUT Mserver -p"" -modulesilent -yaccsilent -d8"
+	MAPICLIENT	"$MTIMEOUT MapiClient -everything"
 	MCREATEDB	"$MTIMEOUT Mcreatedb -user $USER"
 	MDESTROYDB	"$MTIMEOUT Mdestroydb"
 	MLOAD		"$MTIMEOUT Mload"
