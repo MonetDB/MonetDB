@@ -68,10 +68,10 @@
 #define ERRHNDL(r,s,t,u) return r
 #endif
 
-#define SETBLACK(f)  if(clr[f]!=0  ) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#000000>"              ); clr[f]=0;   }
-#define SETBLUE(f,m) if(clr[f]!=3-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#00%sff>",(m?"aa":"00")); clr[f]=3-m; }
-#define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff%s00>",(m?"aa":"00")); clr[f]=5-m; }
-#define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff%sff>",(m?"aa":"00")); clr[f]=7-m; }
+#define SETBLACK(f)  if(clr[f]!=0  ) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#000000>"              ); clr[f]=0;   }
+#define SETBLUE(f,m) if(clr[f]!=3-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#00%sff>",(m?"aa":"00")); clr[f]=3-m; }
+#define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%s00>",(m?"aa":"00")); clr[f]=5-m; }
+#define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%sff>",(m?"aa":"00")); clr[f]=7-m; }
 
 #define BUFLEN 16384
 
@@ -495,11 +495,11 @@ int lwc_diff2html (char *old_fn, char *new_fn,
       fprintf(html_fp,"<TR>");
       if(!new_fn)
         fprintf(html_fp,"<TH>&nbsp;</TH>");
-      fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A></TH>"
+      fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A></FONT></TH>"
                      ,filename(old_fn),filename(old_fn),revision);
       fprintf(html_fp,"<TH>&nbsp;</TH>");
       if(new_fn)
-        fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A></TH>"
+        fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A></FONT></TH>"
                        ,new_fn,new_fn);
       fprintf(html_fp,"</TR>\n");
       fprintf(html_fp,"<TR><TH COLSPAN=3 ALIGN=CENTER>No differences.</TH></TR>\n");
@@ -528,7 +528,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
     {
       if(!strncmp(line,"--- ",4)) old=strdup(line+4);
       else if(!strncmp(line,"+++ ",4)) new=strdup(line+4);
-      else fprintf(html_fp,"<TR><TD COLSPAN=7><FONT SIZE=1 COLOR=#000000><CODE>%s</TD></TR>\n",HTMLsave(line));
+      else fprintf(html_fp,"<TR><TD COLSPAN=7><FONT SIZE=1 COLOR=#000000><CODE>%s</FONT></TD></TR>\n",HTMLsave(line));
       ok=fgets(line,BUFLEN,lwc_diff_fp); line[strlen(line)-1]='\0';
     }
   old_time=strchr(old,'\t')+1; *strchr(old,'\t')='\0';
@@ -537,10 +537,10 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   if (!strcmp(strrchr(old,'.'),".cp"))	*strrchr(old,'.')='\0';
   if (!strcmp(strrchr(new,'.'),".cp"))	*strrchr(new,'.')='\0';
 #endif
-  fprintf(html_fp,"<TR><TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A>\t%s</TH>"
+  fprintf(html_fp,"<TR><TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A>\t%s</FONT></TH>"
                  ,filename(old),filename(old_fn),revision,old_time);
   fprintf(html_fp,"<TH>&nbsp;</TH>");
-  fprintf(html_fp,"<TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A>\t%s</TH></TR>\n"
+  fprintf(html_fp,"<TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A>\t%s</FONT></TH></TR>\n"
                  ,new,new_fn,new_time);
   free(old); free(new);
   while(ok)
@@ -551,13 +551,13 @@ int lwc_diff2html (char *old_fn, char *new_fn,
       oln=atoi(olns); nln=atoi(nlns);
       if((oln>1)&&(nln>1))
         {
-          fprintf(html_fp,"<TR><TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</TD>");
+          fprintf(html_fp,"<TR><TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
           fprintf(html_fp,"<TD>&nbsp;</TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</TD></TR>\n");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD></TR>\n");
         }
       for(i=0;i<5;i++) clr[i]=0;
       orn=nrn=0;
@@ -662,43 +662,43 @@ int lwc_diff2html (char *old_fn, char *new_fn,
       clmn_fp[i]=Rfopen(clmn_fn[i]);
       while(fgets(ln,BUFLEN,clmn_fp[i])) fprintf(html_fp,"%s",ln);
       fclose(clmn_fp[i]);
-      fprintf(html_fp,"</TD>");
+      fprintf(html_fp,"</FONT></PRE></TD>");
       i=0;
       fprintf(html_fp,"<TD VALIGN=TOP><PRE><FONT SIZE=1 COLOR=#000000>");
       clmn_fp[i]=Rfopen(clmn_fn[i]);
       while(fgets(ln,BUFLEN,clmn_fp[i])) fprintf(html_fp,"%s",ln);
       fclose(clmn_fp[i]);
-      fprintf(html_fp,"</TD>");
+      fprintf(html_fp,"</FONT></PRE></TD>");
       i=1;
       fprintf(html_fp,"<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
       clmn_fp[i]=Rfopen(clmn_fn[i]);
       while(fgets(ln,BUFLEN,clmn_fp[i])) fprintf(html_fp,"%s",ln);
       fclose(clmn_fp[i]);
-      fprintf(html_fp,"</TD>");
+      fprintf(html_fp,"</FONT></PRE></TD>");
       i=2;
       fprintf(html_fp,"<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
       clmn_fp[i]=Rfopen(clmn_fn[i]);
       while(fgets(ln,BUFLEN,clmn_fp[i])) fprintf(html_fp,"%s",ln);
       fclose(clmn_fp[i]);
-      fprintf(html_fp,"</TD>");
+      fprintf(html_fp,"</FONT></PRE></TD>");
       i=3;
       fprintf(html_fp,"<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
       clmn_fp[i]=Rfopen(clmn_fn[i]);
       while(fgets(ln,BUFLEN,clmn_fp[i])) fprintf(html_fp,"%s",ln);
       fclose(clmn_fp[i]);
-      fprintf(html_fp,"</TD>");
+      fprintf(html_fp,"</FONT></PRE></TD>");
       i=4;
       fprintf(html_fp,"<TD VALIGN=TOP><PRE><FONT SIZE=1 COLOR=#000000>");
       clmn_fp[i]=Rfopen(clmn_fn[i]);
       while(fgets(ln,BUFLEN,clmn_fp[i])) fprintf(html_fp,"%s",ln);
       fclose(clmn_fp[i]);
-      fprintf(html_fp,"</TD>");
+      fprintf(html_fp,"</FONT></PRE></TD>");
       i=3;
       fprintf(html_fp,"<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
       clmn_fp[i]=Rfopen(clmn_fn[i]);
       while(fgets(ln,BUFLEN,clmn_fp[i])) fprintf(html_fp,"%s",ln);
       fclose(clmn_fp[i]);
-      fprintf(html_fp,"</TD>");
+      fprintf(html_fp,"</FONT></PRE></TD>");
       fprintf(html_fp,"</TR>\n");
 
       TRACE(for(i=0;i<5;i++) clmn_fn[i][strlen(clmn_fn[i])-1]++);
