@@ -39,7 +39,7 @@ void usage( char *prog ){
 	exit(-1);
 }
 
-void receive( stream *rs ){
+void receive( stream *rs, int output ){
 	int flag = 0;
 	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
 		char buf[BLOCK+1], *n = buf;
@@ -53,12 +53,14 @@ void receive( stream *rs ){
 			int nr = bs_read_next(rs,buf,&last);
 			fwrite( buf, nr, 1, stdout );
 		}
-		if (nRows > 1)
-			printf("%d Rows affected\n", nRows );
-		else if (nRows == 1)
-			printf("1 Row affected\n" );
-		else 
-			printf("no Rows affected\n" );
+		if (output){
+			if (nRows > 1)
+				printf("%d Rows affected\n", nRows );
+			else if (nRows == 1)
+				printf("1 Row affected\n" );
+			else 
+				printf("no Rows affected\n" );
+		}
 	} else if (flag != COMM_DONE){
 		printf("flag %d\n", flag);
 	}
@@ -66,10 +68,10 @@ void receive( stream *rs ){
 
 
 void clientAccept( context *lc, stream *rs ){
-	int err = 0;
+	int i, err = 0;
 	stream *in = file_rastream( stdin, "<stdin>" );
 	stmt *s = NULL;
-	char eot[1];
+	char buf[BUFSIZ];
 
 	while(lc->cur != EOF ){
 		s = sqlnext(lc, in, &err);
@@ -86,16 +88,22 @@ void clientAccept( context *lc, stream *rs ){
 	    		lc->out->flush( lc->out );
 		}
 		if (!(lc->debug&64) && s && s->type == st_output){
-			receive(rs);
+			receive(rs, 1);
 		}
 		if (s) stmt_destroy(s);
 	}
 	in->destroy(in);
 
-	eot[0] = EOT;
-	ws->write( ws, eot, 1, 1 );
+	i = snprintf(buf, BUFSIZ, "s0 := mvc_commit(myc, 0, \"\");\n" );
+	i += snprintf(buf+i, BUFSIZ-i, "result(Output, s0);\n" );
+	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
-	receive(rs);
+	receive(rs, 0);
+
+	/* client waves goodbye */
+	buf[0] = EOT; 
+	ws->write( ws, buf, 1, 1 );
+	ws->flush( ws );
 }
 
 /*
@@ -217,11 +225,11 @@ main(int ac, char **av)
 	 * Then the mvc is created on the server side, and the client sends
 	 * a mvc_database command (selecting the apropriete db)
 	 *
-	 * */
 	i = snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
 	if (debug&64) fprintf(stdout, buf );
+	 * */
 
 	i = snprintf(buf, BUFSIZ, "mvc_login(myc, \"%s\",\"%s\",\"%s\");\n", 
 				schema, user, passwd );
