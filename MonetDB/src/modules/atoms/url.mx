@@ -164,19 +164,17 @@ int url_fromString(str src, int *len, str *url){
 	/* actually parse the message for valid url */
 	if( *url != 0) GDKfree(url);
 	*len= strlen(src);
-	*url= GDKmalloc(*len + 1);
-	strcpy(*url,src);
+	*url= GDKstrdup(src);
 	return *len;
 }
-int url_toString(str *s, int *len, str *sinput){
-	str src = *sinput;
+int url_toString(str *s, int *len, str src){
 	int l;
-	if( GDK_STRNIL(sinput) ){
+	if( GDK_STRNIL(src) ){
 		**s = 0;
 		return GDK_SUCCEED;
 	}
 	l= src==0? 3: strlen(src)+3;
-	if( !*s) *s= (str)GDKmalloc(*len = l); 
+	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
 
 	if( l>= *len){
 		GDKfree(*s);
@@ -535,9 +533,7 @@ int url_isaURL( bit *retval, str *tv){
 }
 
 int url_new( str *url, str *Str1 ){
-	int len= strlen(*Str1);
-	*url = GDKmalloc(len+1);
-	strcpy(*url,*Str1);
+	*url= GDKstrdup(*Str1);
 	return GDK_SUCCEED;
 }
 int url_new3(str *url, str *protocol, str *server, str *file){

@@ -49,6 +49,8 @@ this facilitates the use of the string module in bulk operations.
 @mal
 module str;
 
+command str(s:str):str = CMDstr
+	comment "Noop routine.";
 command string( s:str, offset:int ) : str = strTail
 	comment "Return the tail s[offset..n] of a string s[0..n].";
 command string( s:str, offset:int, count:int) : str = strSubString
@@ -220,6 +222,10 @@ quit;
 #endif
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
+int CMDstr(str *res, str *src){
+	*res = GDKstrdup(*src);
+	return GDK_SUCCEED;
+}
 int strConcat(str *res, str *val1, str *val2){
 	str s,t;
 	ptr val;
