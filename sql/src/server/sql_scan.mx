@@ -49,9 +49,9 @@ struct scanner {
 
 #define QUERY(scanner) (scanner.rs)?scanner.rs->buf+scanner.rs->pos:scanner.buf
 
-extern void scanner_init( struct scanner *s, bstream *rs, stream *ws );
-extern void scanner_reset( struct scanner *s, char *buf );
-extern void scanner_query_processed( struct scanner *s );
+sql_export void scanner_init( struct scanner *s, bstream *rs, stream *ws );
+sql_export void scanner_reset( struct scanner *s, char *buf );
+sql_export void scanner_query_processed( struct scanner *s );
 
 extern void init_keywords();
 extern void exit_keywords();

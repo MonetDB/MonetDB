@@ -33,7 +33,7 @@
 #include "sql_statement.h"
 #include "sql_types.h"
 
-extern stmt *rel2bin( mvc *c, stmt *s );
+sql_export stmt *rel2bin( mvc *c, stmt *s );
 
 #endif /* _SQL_REL2BIN_H */
 

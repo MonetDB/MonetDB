@@ -33,7 +33,7 @@
 #include "sql_mvc.h"
 #include "sql_statement.h"
 
-extern stmt *optimize( mvc *c, stmt *s );
+sql_export stmt *optimize( mvc *c, stmt *s );
 	
 #endif /* _SQL_OPTIMIZE_H */
 
