@@ -653,7 +653,7 @@ proc SQLclient( Stream s_in, Stream s_out ) : void {
 }
 
 if (isnil(err)){
-	fork(sqllogmanager);
+	fork(sqllogmanager());
 
 	mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
 	# start a default mapi client for debugging, this should go once
