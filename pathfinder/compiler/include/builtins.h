@@ -47,16 +47,22 @@
  * the argument list of the function. It may be of variable
  * length.
  */
-PFalg_op_t * PFbui_op_add (PFalg_op_t *loop, PFalg_op_t **delta,
-			   PFalg_op_t **args);
+PFalg_op_t * PFbui_op_numeric_add (PFalg_op_t *loop, PFalg_op_t **delta,
+                                   PFalg_op_t **args);
 
-PFalg_op_t *PFbui_op_subtract (PFalg_op_t *loop, PFalg_op_t **delta,
-                               PFalg_op_t **args);
+PFalg_op_t *PFbui_op_numeric_subtract (PFalg_op_t *loop, PFalg_op_t **delta,
+                                       PFalg_op_t **args);
+
+PFalg_op_t *PFbui_op_numeric_multiply (PFalg_op_t *loop, PFalg_op_t **delta,
+                                       PFalg_op_t **args);
+
+PFalg_op_t *PFbui_op_numeric_divide (PFalg_op_t *loop, PFalg_op_t **delta,
+                                     PFalg_op_t **args);
 
 
-PFalg_op_t * PFbui_op_tyval (PFalg_op_t *loop __attribute__((unused)),
-                             PFalg_op_t **delta __attribute__((unused)),
-                             PFalg_op_t **args);
+PFalg_op_t * PFbui_op_typed_value (PFalg_op_t *loop __attribute__((unused)),
+                                   PFalg_op_t **delta __attribute__((unused)),
+                                   PFalg_op_t **args);
 
 #endif   /* BUITLINS_H */
 

@@ -51,6 +51,7 @@
 #include <stdarg.h>
 /** strcpy, strlen, ... */
 #include <string.h>
+#include <stdio.h>
 /** assert() */
 #include <assert.h>
 
@@ -64,8 +65,6 @@
 
 /** include mnemonic names for constructor functions */
 #include "algebra_mnemonic.h"
-
-#include "subtyping.h"
 
 
 /**
@@ -126,11 +125,11 @@ PFalg_lit_str (char *value)
     return (PFalg_atom_t) { .type = aat_str, .val = { .str = value } };
 }
 
-/** construct literal float (atom) */
+/** construct literal decimal (atom) */
 PFalg_atom_t
-PFalg_lit_flt (float value)
+PFalg_lit_dec (float value)
 {
-    return (PFalg_atom_t) { .type = aat_flt, .val = { .flt = value } };
+    return (PFalg_atom_t) { .type = aat_dec, .val = { .dec = value } };
 }
 
 /** construct literal double (atom) */
@@ -213,73 +212,6 @@ schema_eq (PFalg_schema_t a, PFalg_schema_t b)
 
 
 /**
- * Test the equality of two literal table tuples.
- *
- * @param a Tuple to test against tuple @a b.
- * @param b Tuple to test against tuple @a a.
- * @return Boolean value @c true, if the two tuples are equal.
- */
-static bool
-tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
-{
-    int i;
-    bool mismatch = false;
-
-    /* schemata are not equal if they have a different number of attributes */
-    if (a.count != b.count)
-        return false;
-
-    for (i = 0; i < a.count; i++) {
-        if (a.atoms[i].type != b.atoms[i].type)
-	    break;
-
-	switch (a.atoms[i].type) {
-	    /* if type is nat, compare nat member of union */
-	    case aat_nat:
-		if (a.atoms[i].val.nat != b.atoms[i].val.nat)
-		    mismatch = true;
-		break;
-	    /* if type is int, compare int member of union */
-	    case aat_int:
-		if (a.atoms[i].val.int_ != b.atoms[i].val.int_)
-		    mismatch = true;
-		break;
-	    /* if type is str, compare str member of union */
-	    case aat_str:
-		if (strcmp(a.atoms[i].val.str, b.atoms[i].val.str))
-		    mismatch = true;
-		break;
-	    /* if type is node, compare node member of union */
-	    case aat_node:
-		if (a.atoms[i].val.node != b.atoms[i].val.node)
-		    mismatch = true;
-		break;
-	    /* if type is float, compare float member of union */
-	    case aat_flt:
-		if (a.atoms[i].val.flt != b.atoms[i].val.flt)
-		    mismatch = true;
-		break;
-	    /* if type is double, compare double member of union */
-	    case aat_dbl:
-		if (a.atoms[i].val.dbl != b.atoms[i].val.dbl)
-		    mismatch = true;
-		break;
-	    /* if type is double, compare double member of union */
-	    case aat_bln:
-		if ((a.atoms[i].val.bln && !b.atoms[i].val.bln) ||
-		    (!a.atoms[i].val.bln && b.atoms[i].val.bln))
-		    mismatch = true;
-		break;
-	}
-	if (mismatch)
-	    break;
-    }
-
-    return (i == a.count);
-}
-
-
-/**
  * Constructor for an item in an algebra projection list;
  * a pair consisting of the new and old attribute name.
  * Particularly useful in combination with the constructor
@@ -296,6 +228,7 @@ PFalg_proj (PFalg_att_t new, PFalg_att_t old)
     return (PFalg_proj_t) { .new = strcpy (PFmalloc (strlen (new) + 1), new),
                             .old = strcpy (PFmalloc (strlen (old) + 1), old) };
 }
+
 
 /**
  * Constructor for attribute lists (e.g., for literal table
@@ -438,52 +371,6 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
     int             i;
     int             j;
 
-    /*
-     * Remember all tables we built in here. If the same table is requested
-     * twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
-    /* initialize variable on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* Search table in the array of existing tables */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if we have the same number of arguments */
-        if (attlist.count != o->schema.count)
-            continue;
-
-        /* see if attribute names match old schema */
-        for (j = 0; j < attlist.count; j++)
-            if (strcmp(attlist.atts[j], o->schema.items[j].name))
-                break;
-        if (j != attlist.count)
-            continue;
-
-        /* test if number of tuples matches */
-        if (count != o->sem.lit_tbl.count)
-            continue;
-
-        /* test if tuples match */
-        for (j = 0; j < count; j++)
-            if (!tuple_eq (tuples[j], o->sem.lit_tbl.tuples[j]))
-                break;
-
-        if (j != count)
-            continue;
-
-        /*
-         * If we came until here, old and new table must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
-
     /* instantiate the new algebra operator node */
     ret = alg_op_leaf (aop_lit_tbl);
 
@@ -525,9 +412,6 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
     }
 #endif
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -561,48 +445,7 @@ PFalg_project_ (PFalg_op_t *n, int count, PFalg_proj_t *proj)
     int         i;
     int         j;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (n);
-
-    /* initialize variable on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* Search table in the array of existing project operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-        int         j;
-
-        /* see if the old node has the same argument */
-        if (o->child[0] != n)
-            continue;
-
-        /* Does the old node has the same number of attributes? */
-        if (o->sem.proj.count != count)
-            continue;
-
-        /* See if the projection lists match */
-        for (j = 0; j < count; j++)
-            if (strcmp (proj[j].new, o->sem.proj.items[j].new)
-                || strcmp (proj[j].old, o->sem.proj.items[j].old))
-                break;
-
-        if (j != count)
-            continue;
-
-        /*
-         * If we came until here, old and new table must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
 
     /* allocate space for projection list */
     ret->sem.proj.count = count;
@@ -647,9 +490,6 @@ PFalg_project_ (PFalg_op_t *n, int count, PFalg_proj_t *proj)
                         ret->sem.proj.items[i].new, i+1, j+1);
     }
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -665,36 +505,7 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
     int         i;
     int         j;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (n1); assert (n2);
-
-    /* initialize variable on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* search product in the array of existing cross product operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if the old node has the same argument */
-        if (!((o->child[0] == n1 && o->child[1] == n2)
-              || (o->child[1] == n1 && o->child[0] == n2)))
-            continue;
-
-        /*
-         * If we come up to here, old and new table must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
-
 
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count + n2->schema.count;
@@ -719,9 +530,6 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
 #endif
     }
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -740,35 +548,7 @@ PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2, PFalg_att_t a1, PFalg_att_t a2)
     int         i;
     int         j;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (n1); assert (n2);
-
-    /* initialize variable on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* search join in the array of existing equi-join operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if the old node has the same argument */
-        if ((o->child[0] != n1) || (o->child[1] != n2)
-         || (o->sem.eqjoin.att1 != a1 || o->sem.eqjoin.att2 != a2))
-            continue;
-
-        /*
-         * If we come up to here, old and new join must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
 
     /* verify that a1 is attribute of n1 ... */
     for (i = 0; i < n1->schema.count; i++)
@@ -820,9 +600,6 @@ PFalg_eqjoin (PFalg_op_t *n1, PFalg_op_t *n2, PFalg_att_t a1, PFalg_att_t a2)
 #endif
     }
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -842,13 +619,6 @@ PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni, PFalg_op_t *scj)
     PFalg_op_t *ret;
     int         i;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (proj); assert (uni);
 
     /* verify node types because the schema of the projection node
@@ -856,34 +626,6 @@ PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni, PFalg_op_t *scj)
      */
     assert (proj->kind == aop_project);
     assert (uni->kind == aop_disjunion);
-
-    /* initialize join on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* search join in the array of existing staircase join operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if the old node has the same arguments */
-        if ((o->child[0] != proj || o->child[1] != uni)
-         || (o->sem.scjoin.test != scj->sem.scjoin.test)
-	 || (o->sem.scjoin.axis != scj->sem.scjoin.axis)
-	 || (o->sem.scjoin.test == aop_name
-	     &&  PFqname_eq(o->sem.scjoin.str.qname,
-			    scj->sem.scjoin.str.qname))
-	 || (o->sem.scjoin.test == aop_pi_tar
-	     &&  strcmp(o->sem.scjoin.str.target,
-			scj->sem.scjoin.str.target)))
-            continue;
-
-        /*
-         * If we come up to here, old and new join must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
 
     /* create new join node */
     ret = alg_op_wire2 (aop_scjoin, proj, uni);
@@ -927,9 +669,6 @@ PFalg_scjoin (PFalg_op_t *proj, PFalg_op_t *uni, PFalg_op_t *scj)
     for (i = 0; i < proj->schema.count; i++)
         ret->schema.items[i] = proj->schema.items[i];
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -942,21 +681,11 @@ PFalg_op_t * PFalg_doc_tbl (void)
 {
     PFalg_op_t         *ret;
 
-    static PFalg_op_t *old = NULL;
-    
-    /* doc table was already initialized */
-    if (old)
-	return old;
-
     /* instantiate a new document table representation */
     ret = alg_op_leaf (aop_doc_tbl);
 
     /* set doc table schema */
     ret->schema = doc_schm;
-
-    /* doc table was newly initialized, so remember it for future calls */
-    old = PFmalloc (sizeof (PFalg_op_t *));
-    old = ret;
 
     return ret;
 }
@@ -1000,6 +729,46 @@ PFalg_disjunion (PFalg_op_t *n1, PFalg_op_t *n2)
             (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
                                          .type = n1->schema.items[i].type
                                                  | n2->schema.items[i].type };
+
+    return ret;
+}
+
+
+/**
+ * Difference of two relations.
+ * Both argument must have the same schema.
+ */
+PFalg_op_t * PFalg_difference (PFalg_op_t *n1, PFalg_op_t *n2)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_difference, n1, n2);
+    int         i, j;
+
+    /* see if both operands have same number of attributes */
+    if (n1->schema.count != n2->schema.count)
+        PFoops (OOPS_FATAL,
+                "Schema of two arguments of DIFFERENCE do not match");
+
+    /* see if we find each attribute of n1 also in n2 */
+    for (i = 0; i < n1->schema.count; i++) {
+        for (j = 0; j < n2->schema.count; j++)
+            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name))
+                break;
+        if (j == n2->schema.count)
+            PFoops (OOPS_FATAL,
+                    "Schema of two arguments of DIFFERENCE do not match");
+    }
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n1->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* set schema */
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] =
+            (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
+                                         .type = n1->schema.items[i].type
+                                               | n2->schema.items[i].type };
 
     return ret;
 }
@@ -1085,34 +854,7 @@ PFalg_select (PFalg_op_t *n, PFalg_att_t att)
     PFalg_op_t *ret;
     int         i;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (n);
-
-    /* initialize array on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* search selection in the array of existing selection operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if the old node has the same argument */
-        if (o->child[0] != n || strcmp (att, o->sem.select.att))
-            continue;
-
-        /*
-         * If we come up to here, old and new selection must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
 
     /* verify that att is an attribute of n ... */
     for (i = 0; i < n->schema.count; i++)
@@ -1140,9 +882,6 @@ PFalg_select (PFalg_op_t *n, PFalg_att_t att)
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -1160,35 +899,7 @@ PFalg_negate (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res)
     int         i;
     int         ix = 0;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (n);
-
-    /* initialize array on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* search negation in the array of existing negation operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if the old node has the same argument */
-        if (o->child[0] != n || strcmp (att, o->sem.negate.att)
-	 || strcmp (res, o->sem.negate.res))
-            continue;
-
-        /*
-         * If we come up to here, old and new negation must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
 
     /* verify that att is an attribute of n ... */
     for (i = 0; i < n->schema.count; i++)
@@ -1227,9 +938,6 @@ PFalg_negate (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res)
     ret->schema.items[ret->schema.count - 1] = n->schema.items[ix];
     ret->schema.items[ret->schema.count - 1].name = res;
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -1244,13 +952,6 @@ PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
     PFalg_op_t  *ret;
     int          i;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (n);
 
     /* verify that att is an attribute of n ... */
@@ -1262,29 +963,6 @@ PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
     if (i >= n->schema.count)
 	PFoops (OOPS_FATAL,
 		"attribute `%s' referenced in type test not found", att);
-
-    /* initialize array on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* search type test in the array of existing type test operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if the old node has the same argument */
-        if (o->child[0] != n
-	|| strcmp (att, o->sem.type.att)
-	|| strcmp (res, o->sem.type.res)
-	|| !PFty_eq (o->sem.type.ty, ty))
-            continue;
-
-        /*
-         * If we come up to here, old and new type test must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
 
     /* create new type test node */
     ret = alg_op_wire1 (aop_type, n);
@@ -1314,9 +992,6 @@ PFalg_type (PFalg_op_t *n, PFalg_att_t att, PFalg_att_t res, PFty_t ty)
     ret->schema.items[ret->schema.count - 1].type = aat_bln;
     ret->schema.items[ret->schema.count - 1].name = res;
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -1331,13 +1006,6 @@ PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFty_t ty)
     PFalg_op_t  *ret;
     int          i;
 
-    /*
-     * Remember all nodes we built in here. If the same expression is
-     * requested twice, we just return a reference to the old one.
-     */
-    static PFarray_t *old = NULL;
-    unsigned int old_idx;
-    
     assert (n);
 
     /* verify that att is an attribute of n ... */
@@ -1349,27 +1017,6 @@ PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFty_t ty)
     if (i >= n->schema.count)
 	PFoops (OOPS_FATAL,
 		"attribute `%s' referenced in type cast not found", att);
-
-    /* initialize array on first call */
-    if (!old)
-        old = PFarray (sizeof (PFalg_op_t *));
-
-    /* search type cast in the array of existing type cast operators */
-    for (old_idx = 0; old_idx < PFarray_last (old); old_idx++) {
-
-        PFalg_op_t *o = *((PFalg_op_t **) PFarray_at (old, old_idx));
-
-        /* see if the old node has the same argument */
-        if (o->child[0] != n || strcmp (att, o->sem.cast.att)
-	|| !PFty_eq (o->sem.cast.ty, ty))
-            continue;
-
-        /*
-         * If we come up to here, old and new type cast must be equal.
-         * So we don't create a new one, but return the existing one.
-         */
-        return o;
-    }
 
     /* create new type cast node */
     ret = alg_op_wire1 (aop_cast, n);
@@ -1390,9 +1037,6 @@ PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFty_t ty)
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
 
-    /* remember this node for future calls */
-    *((PFalg_op_t **) PFarray_add (old)) = ret;
-
     return ret;
 }
 
@@ -1402,7 +1046,7 @@ PFalg_op_t *
 PFalg_add (PFalg_op_t *n, PFalg_att_t att1,
 	   PFalg_att_t att2, PFalg_att_t res)
 {
-    return arithm_expr(aop_add, n, att1, att2, res);
+    return arithm_expr(aop_num_add, n, att1, att2, res);
 }
 
 
@@ -1411,7 +1055,7 @@ PFalg_op_t *
 PFalg_subtract (PFalg_op_t *n, PFalg_att_t att1,
 		PFalg_att_t att2, PFalg_att_t res)
 {
-    return arithm_expr(aop_subtract, n, att1, att2, res);
+    return arithm_expr(aop_num_subtract, n, att1, att2, res);
 }
 
 
@@ -1420,7 +1064,7 @@ PFalg_op_t *
 PFalg_multiply (PFalg_op_t *n, PFalg_att_t att1,
 		PFalg_att_t att2, PFalg_att_t res)
 {
-    return arithm_expr(aop_multiply, n, att1, att2, res);
+    return arithm_expr(aop_num_multiply, n, att1, att2, res);
 }
 
 
@@ -1429,7 +1073,7 @@ PFalg_op_t *
 PFalg_divide (PFalg_op_t *n, PFalg_att_t att1,
 	      PFalg_att_t att2, PFalg_att_t res)
 {
-    return arithm_expr(aop_divide, n, att1, att2, res);
+    return arithm_expr(aop_num_divide, n, att1, att2, res);
 }
 
 

@@ -1,6 +1,9 @@
 /**
  * @file
  *
+ * Creation of algebra translations for XQuery built-in functions.
+ * The representation of such functions was extended by a function
+ * pointer that references the functions defined in this file.
  *
  * Copyright Notice:
  * -----------------
@@ -31,20 +34,21 @@
 
 #include "builtins.h"
 
+
 /**
- * Build up operator tree for an arithmetic addition.
+ * Build up operator tree for built-in function 'op:numeric-add'.
  *
  * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
  * ------------------------------------------------------------------
  *                 env,loop,delta: (e1 + e2) =>
- * (proj_iter,pos,item:res(PLUS_res<item,item1>
+ * (proj_iter,pos,item:res(num-add_res<item,item1>
  *             (q1 |X| (iter,iter1) (proj_iter1:iter,item1:item q2))),
  *              delta2)
  */
 PFalg_op_t *
-PFbui_op_add (PFalg_op_t *loop __attribute__((unused)),
-	      PFalg_op_t **delta __attribute__((unused)),
-	      PFalg_op_t **args)
+PFbui_op_numeric_add (PFalg_op_t *loop __attribute__((unused)),
+		      PFalg_op_t **delta __attribute__((unused)),
+		      PFalg_op_t **args)
 {
     /* TODO: check if this node was already built */
 
@@ -62,19 +66,19 @@ PFbui_op_add (PFalg_op_t *loop __attribute__((unused)),
 
 
 /**
- * Build up operator tree for an arithmetic subtraction.
+ * Build up operator tree for built-in function 'op:numeric-subtract'.
  *
  * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
  * ------------------------------------------------------------------
  *                 env,loop,delta: (e1 - e2) =>
- * (proj_iter,pos,item:res(MINUS_res<item,item1>
+ * (proj_iter,pos,item:res(num-subtract_res<item,item1>
  *             (q1 |X| (iter,iter1) (proj_iter1:iter,item1:item q2))),
  *              delta2)
  */
 PFalg_op_t *
-PFbui_op_subtract (PFalg_op_t *loop __attribute__((unused)),
-		   PFalg_op_t **delta __attribute__((unused)),
-		   PFalg_op_t **args)
+PFbui_op_numeric_subtract (PFalg_op_t *loop __attribute__((unused)),
+			   PFalg_op_t **delta __attribute__((unused)),
+			   PFalg_op_t **args)
 {
     /* TODO: check if this node was already built */
 
@@ -91,10 +95,73 @@ PFbui_op_subtract (PFalg_op_t *loop __attribute__((unused)),
 }
 
 
+/**
+ * Build up operator tree for built-in function 'op:numeric-multiply'.
+ *
+ * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
+ * ------------------------------------------------------------------
+ *                 env,loop,delta: (e1 * e2) =>
+ * (proj_iter,pos,item:res(num-multiply_res<item,item1>
+ *             (q1 |X| (iter,iter1) (proj_iter1:iter,item1:item q2))),
+ *              delta2)
+ */
 PFalg_op_t *
-PFbui_op_tyval (PFalg_op_t *loop __attribute__((unused)),
-		PFalg_op_t **delta __attribute__((unused)),
-		PFalg_op_t **args)
+PFbui_op_numeric_multiply (PFalg_op_t *loop __attribute__((unused)),
+			   PFalg_op_t **delta __attribute__((unused)),
+			   PFalg_op_t **args)
+{
+    /* TODO: check if this node was already built */
+
+    return project (multiply (eqjoin (args[0],
+				      project (args[1],
+					       proj ("iter1", "iter"),
+					       proj ("item1", "item")),
+				      "iter",
+				      "iter1"),
+			      "item", "item1", "res"),
+		    proj ("iter", "iter"),
+		    proj ("pos", "pos"),
+		    proj ("item", "res"));
+}
+
+
+/**
+ * Build up operator tree for built-in function 'op:numeric-divide'.
+ *
+ * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
+ * ------------------------------------------------------------------
+ *                 env,loop,delta: (e1 / e2) =>
+ * (proj_iter,pos,item:res(num-divide_res<item,item1>
+ *             (q1 |X| (iter,iter1) (proj_iter1:iter,item1:item q2))),
+ *              delta2)
+ */
+PFalg_op_t *
+PFbui_op_numeric_divide (PFalg_op_t *loop __attribute__((unused)),
+			 PFalg_op_t **delta __attribute__((unused)),
+			 PFalg_op_t **args)
+{
+    /* TODO: check if this node was already built */
+
+    return project (divide (eqjoin (args[0],
+				    project (args[1],
+					     proj ("iter1", "iter"),
+					     proj ("item1", "item")),
+				    "iter",
+				    "iter1"),
+			    "item", "item1", "res"),
+		    proj ("iter", "iter"),
+		    proj ("pos", "pos"),
+		    proj ("item", "res"));
+}
+
+
+/**
+ * Build up operator tree for built-in function 'fn:typed-value'.
+ */
+PFalg_op_t *
+PFbui_op_typed_value (PFalg_op_t *loop __attribute__((unused)),
+		      PFalg_op_t **delta __attribute__((unused)),
+		      PFalg_op_t **args)
 {
     return args[0];
 }

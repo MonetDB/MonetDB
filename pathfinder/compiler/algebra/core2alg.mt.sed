@@ -390,6 +390,7 @@ TypeswitchExpr:  typesw (CoreExpr,
          * ------------------------------------------------------------------
          * env,loop,delta (q2 U q3, delta3)
          */
+        PFalg_op_t *stm;
         PFalg_op_t *old_loop;
         PFarray_t  *old_env;
         unsigned int i;
@@ -399,14 +400,22 @@ TypeswitchExpr:  typesw (CoreExpr,
         /* initiate translation of e1 */
         tDO($%1$);
 
+        stm = disjunion (project (type ([[ $1$ ]], "item",
+                                        "type", $2.1.1$->sem.type),
+                                  proj ("iter", "iter"),
+                                  proj ("type", "type")),
+                         cross (difference (loop,
+                                            project ([[ $1$ ]],
+                                                     proj ("iter",
+                                                           "iter"))),
+                                lit_tbl (attlist ("type"),
+                                         tuple (lit_int (0)))));
+
         /* save old loop operator */
         old_loop = loop;
 
         /* create loop2 operator */
-        loop = project (select (type ([[ $1$ ]], "item",
-                                      "type", $2.1.1$->sem.type),
-                                "type"),
-                        proj ("iter", "iter"));
+        loop = project (select (stm, "type"), proj ("iter", "iter"));
 
         /* save old environment */
         old_env = env;
@@ -432,11 +441,7 @@ TypeswitchExpr:  typesw (CoreExpr,
         tDO($%2$);
 
         /* create loop3 operator */
-        loop = project (select (negate ( type ([[ $1$ ]], "item",
-                                               "type", $2.1.1$->sem.type),
-                                        "type",
-                                        "res"),
-                                "res"),
+        loop = project (select (negate ( stm, "type", "res"), "res"),
                         proj ("iter", "iter"));
 
         /* update the environment for translation of e3 */
@@ -473,6 +478,7 @@ SequenceTypeCast: seqcast (seqtype, CoreExpr)
         [[ $$ ]] = cast ([[ $2$ ]], "item", $1$->sem.type);
     }
     ;
+
 SubtypingProof:  proof (CoreExpr, seqtype, CoreExpr);
 
 ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
@@ -867,7 +873,7 @@ LiteralValue:    lit_dec
         [[ $$ ]] = cross (loop,
                           lit_tbl( attlist ("pos", "item"),
                                    tuple (lit_nat (1),
-                                          lit_flt ($$->sem.dec))));
+                                          lit_dec ($$->sem.dec))));
     }
     ;
 LiteralValue:    lit_dbl

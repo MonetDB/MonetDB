@@ -8,7 +8,7 @@
 #define lit_str(s)      PFalg_lit_str (s)
 
 /** atomic float construction */
-#define lit_flt(f)      PFalg_lit_flt (f)
+#define lit_dec(f)      PFalg_lit_dec (f)
 
 /** atomic double construction */
 #define lit_dbl(d)      PFalg_lit_dbl (d)
@@ -45,6 +45,9 @@
 
 /** disjoint union */
 #define disjunion(a,b)  PFalg_disjunion ((a),(b))
+
+/** difference */
+#define difference(a,b) PFalg_difference ((a),(b))
 
 /** projection operator */
 #define project(...)    PFalg_project (__VA_ARGS__)

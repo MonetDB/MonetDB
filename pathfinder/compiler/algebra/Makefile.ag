@@ -34,6 +34,7 @@ lib_algebra = {
 	SOURCES = \
 		algebra.c \
 		builtins.c \
+		algebra_cse.c \
 		core2alg.mt.sed \
 		algopt.mt
 }

@@ -50,7 +50,7 @@ enum PFalg_simple_type_t {
     , aat_int   = 0x02  /**< algebra simple atomic type integer */
     , aat_str   = 0x04  /**< algebra simple atomic type string  */
     , aat_node  = 0x08  /**< algebra simple atomic type node */
-    , aat_flt   = 0x10  /**< algebra simple atomic type float  */
+    , aat_dec   = 0x10  /**< algebra simple atomic type decimal */
     , aat_dbl   = 0x20  /**< algebra simple atomic type double  */
     , aat_bln   = 0x40  /**< algebra simple atomic type boolean  */
 };
@@ -73,7 +73,7 @@ union PFalg_atom_val_t {
     int   int_;    /**< value for integer atoms (#aat_int) */
     char *str;     /**< value for string atoms (#aat_str)  */
     int   node;    /**< value for node atoms (#aat_node) */
-    float  flt;    /**< value for float atoms (#aat_flt) */
+    float  dec;    /**< value for decimal atoms (#aat_dec) */
     double dbl;    /**< value for double atoms (#aat_dbl) */
     bool bln;      /**< value for boolean atoms (#aat_bln) */
 };
@@ -181,6 +181,7 @@ typedef enum PFalg_test_t PFalg_test_t;
 enum PFalg_op_kind_t {
       aop_lit_tbl       /**< literal table */
     , aop_disjunion     /**< union two relations with same schema */
+    , aop_difference    /**< difference of two relations with same schema */
     , aop_cross         /**< cross product (Cartesian product) */
     , aop_eqjoin        /**< equi-join */
     , aop_scjoin        /**< staircase join */
@@ -194,10 +195,10 @@ enum PFalg_op_kind_t {
     , aop_rownum        /**< consecutive number generation */
     , aop_serialize     /**< serialize algebra expression
                              (Placed on the very top of the tree.) */
-    , aop_add           /**< arithmetic plus operator */
-    , aop_subtract      /**< arithmetic minus operator */
-    , aop_multiply      /**< arithmetic times operator */
-    , aop_divide        /**< arithmetic divide operator */
+    , aop_num_add       /**< arithmetic plus operator */
+    , aop_num_subtract  /**< arithmetic minus operator */
+    , aop_num_multiply  /**< arithmetic times operator */
+    , aop_num_divide    /**< arithmetic divide operator */
 };
 /** algebra operator kinds */
 typedef enum PFalg_op_kind_t PFalg_op_kind_t;
@@ -321,7 +322,7 @@ PFalg_atom_t PFalg_lit_int (int value);
 PFalg_atom_t PFalg_lit_str (char *value);
 
 /** construct literal float (atom) */
-PFalg_atom_t PFalg_lit_flt (float value);
+PFalg_atom_t PFalg_lit_dec (float value);
 
 /** construct literal double (atom) */
 PFalg_atom_t PFalg_lit_dbl (double value);
@@ -412,6 +413,12 @@ PFalg_op_t * PFalg_doc_tbl (void);
  * Both argument must have the same schema.
  */
 PFalg_op_t * PFalg_disjunion (PFalg_op_t *, PFalg_op_t *);
+
+/**
+ * Difference of two relations.
+ * Both argument must have the same schema.
+ */
+PFalg_op_t * PFalg_difference (PFalg_op_t *, PFalg_op_t *);
 
 /** Constructor for projection list item */
 PFalg_proj_t PFalg_proj (PFalg_att_t new, PFalg_att_t old);

@@ -142,47 +142,73 @@
     .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
                             PFty_opt (PFty_integer ()) },                \
     .ret_ty = PFty_opt (PFty_integer ()),                                \
-    .alg = PFbui_op_add }                                                \
+    .alg = PFbui_op_numeric_add }                                        \
 , /* op:plus (decimal?, decimal?) as decimal? */                         \
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
                             PFty_opt (PFty_decimal ()) },                \
     .ret_ty = PFty_opt (PFty_decimal ()),                                \
-    .alg = PFbui_op_add }                                                \
+    .alg = PFbui_op_numeric_add }                                        \
 , /* op:plus (double?, double?) as double? */                            \
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
                             PFty_opt (PFty_double ()) },                 \
     .ret_ty = PFty_opt (PFty_double ()),                                 \
-    .alg = PFbui_op_add }                                                \
+    .alg = PFbui_op_numeric_add }                                        \
 , /* op:minus (integer?, integer?) as integer? */                        \
   { .ns = PFns_op, .loc = "minus",                                       \
     .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
                             PFty_opt (PFty_integer ()) },                \
     .ret_ty = PFty_opt (PFty_integer ()),                                \
-    .alg = PFbui_op_subtract }                                           \
+    .alg = PFbui_op_numeric_subtract }                                   \
 , /* op:minus (decimal?, decimal?) as decimal? */                        \
   { .ns = PFns_op, .loc = "minus",                                       \
     .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
                             PFty_opt (PFty_decimal ()) },                \
     .ret_ty = PFty_opt (PFty_decimal ()),                                \
-    .alg = PFbui_op_subtract }                                           \
+    .alg = PFbui_op_numeric_subtract }                                   \
 , /* op:minus (double?, double?) as double? */                           \
   { .ns = PFns_op, .loc = "minus",                                       \
     .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
                             PFty_opt (PFty_double ()) },                 \
     .ret_ty = PFty_opt (PFty_double ()),                                 \
-    .alg = PFbui_op_subtract }                                           \
-, /* op:times (atomic?, atomic?) as atomic? */                           \
+    .alg = PFbui_op_numeric_subtract }                                   \
+, /* op:times (integer?, integer?) as integer? */                        \
   { .ns = PFns_op, .loc = "times",                                       \
-    .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
-                            PFty_opt (PFty_atomic ()) },                 \
-    .ret_ty = PFty_opt (PFty_atomic ()) }                                \
-, /* op:div (atomic?, atomic?) as atomic? */                             \
+    .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
+                            PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()),                                \
+    .alg = PFbui_op_numeric_multiply }                                   \
+, /* op:times (decimal?, decimal?) as decimal? */                        \
+  { .ns = PFns_op, .loc = "times",                                       \
+    .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
+                            PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()),                                \
+    .alg = PFbui_op_numeric_multiply }                                   \
+, /* op:times (double?, double?) as double? */                           \
+  { .ns = PFns_op, .loc = "times",                                       \
+    .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
+                            PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()),                                 \
+    .alg = PFbui_op_numeric_multiply }                                   \
+, /* op:div (integer?, integer?) as integer? */                          \
   { .ns = PFns_op, .loc = "div",                                         \
-    .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
-                            PFty_opt (PFty_atomic ()) },                 \
-    .ret_ty = PFty_opt (PFty_atomic ()) }                                \
+    .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
+                            PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()),                                \
+    .alg = PFbui_op_numeric_divide }                                     \
+, /* op:div (decimal?, decimal?) as decimal? */                          \
+  { .ns = PFns_op, .loc = "div",                                         \
+    .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
+                            PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()),                                \
+    .alg = PFbui_op_numeric_divide }                                     \
+, /* op:div (double?, double?) as double? */                             \
+  { .ns = PFns_op, .loc = "div",                                         \
+    .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
+                            PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()),                                 \
+    .alg = PFbui_op_numeric_divide }                                     \
 , /* op:idiv (atomic?, atomic?) as atomic? */                            \
   { .ns = PFns_op, .loc = "idiv",                                        \
     .arity = 2, .par_ty = { PFty_opt (PFty_atomic ()),                   \
@@ -231,7 +257,7 @@
   { .ns = PFns_pf, .loc = "typed-value",                                 \
     .arity = 1, .par_ty = { PFty_node () },                              \
     .ret_ty = PFty_untypedAtomic (),                                     \
-    .alg = PFbui_op_tyval }                                              \
+    .alg = PFbui_op_typed_value }                                        \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \

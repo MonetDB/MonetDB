@@ -497,6 +497,7 @@ static const char
 #include "milprint.h"     /* create string representation of MIL tree */
 #include "oops.h"
 #include "mem.h"
+#include "algebra_cse.h"
 
 /* GC_max_retries, GC_gc_no */
 #include "gc.h"
@@ -960,6 +961,18 @@ main (int argc, char *argv[])
     tm = PFtimer_stop (tm);
     if (PFstate.timing)
         PFlog ("Algebra tree generation:\t %s", PFtimer_str (tm));
+
+    /* 
+     * common subexpression elimination in the algebra tree
+     */
+    tm = PFtimer_start ();
+
+    aroot = PFcse_eliminate (aroot);
+
+    tm = PFtimer_stop (tm);
+    if (PFstate.timing)
+        PFlog ("Common subexpression elimination in algebra tree:\t %s",
+               PFtimer_str (tm));
 
     if (PFstate.stop_after == phas_alg) {
         print_algebra (aroot);

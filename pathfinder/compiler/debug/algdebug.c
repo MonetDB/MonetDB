@@ -46,23 +46,24 @@
 
 /** Node names to print out for all the Algebra tree nodes. */
 char *a_id[]  = {
-      [aop_lit_tbl]    "TBL"
-    , [aop_disjunion]  "U"
-    , [aop_cross]      "×"                /* yellow */
-    , [aop_eqjoin]     "|X|"              /* green */
-    , [aop_scjoin]     "/|"               /* light blue */
-    , [aop_doc_tbl]    "DOC"
-    , [aop_select]     "SEL"
-    , [aop_negate]     "NOT"
-    , [aop_type]       "TYPE"
-    , [aop_cast]       "CAST"
-    , [aop_add]        "PLUS"
-    , [aop_subtract]   "MINUS"
-    , [aop_multiply]   "TIMES"
-    , [aop_divide]     "DIV"
-    , [aop_project]    "¶"
-    , [aop_rownum]     "ROW#"
-    , [aop_serialize]  "SERIALIZE"
+      [aop_lit_tbl]      "TBL"
+    , [aop_disjunion]    "U"
+    , [aop_difference]   "DIFF"
+    , [aop_cross]        "×"                /* yellow */
+    , [aop_eqjoin]       "|X|"              /* green */
+    , [aop_scjoin]       "/|"               /* light blue */
+    , [aop_doc_tbl]      "DOC"
+    , [aop_select]       "SEL"
+    , [aop_negate]       "NOT"
+    , [aop_type]         "TYPE"
+    , [aop_cast]         "CAST"
+    , [aop_num_add]      "num-add"
+    , [aop_num_subtract] "num_subtr"
+    , [aop_num_multiply] "num-mult"
+    , [aop_num_divide]   "num-div"
+    , [aop_project]      "¶"
+    , [aop_rownum]       "ROW#"
+    , [aop_serialize]    "SERIALIZE"
 };
 
 /** string representation of algebra atomic types */
@@ -70,7 +71,7 @@ static char *atomtype[] = {
       [aat_int]   "int"
     , [aat_str]   "str"
     , [aat_node]  "node"
-    , [aat_flt]   "flt"
+    , [aat_dec]   "dec"
     , [aat_dbl]   "dbl"
     , [aat_bln]   "bool"
 };
@@ -140,9 +141,9 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
                     else if (n->sem.lit_tbl.tuples[0].atoms[c].type == aat_node)
                         PFarray_printf (dot, "%i",
                                 n->sem.lit_tbl.tuples[0].atoms[c].val.node);
-                    else if (n->sem.lit_tbl.tuples[0].atoms[c].type == aat_flt)
+                    else if (n->sem.lit_tbl.tuples[0].atoms[c].type == aat_dec)
                         PFarray_printf (dot, "%g",
-                                n->sem.lit_tbl.tuples[0].atoms[c].val.flt);
+                                n->sem.lit_tbl.tuples[0].atoms[c].val.dec);
                     else if (n->sem.lit_tbl.tuples[0].atoms[c].type == aat_dbl)
                         PFarray_printf (dot, "%g",
                                 n->sem.lit_tbl.tuples[0].atoms[c].val.dbl);
@@ -269,19 +270,20 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             break;
 
         case aop_type:
-            PFarray_printf (dot, "%s (%s:%s)\"", a_id[n->kind],
-                            n->sem.type.res, n->sem.type.att);
+            PFarray_printf (dot, "%s (%s:%s,%s)\"", a_id[n->kind],
+                            n->sem.type.res, n->sem.type.att,
+                            PFty_str (n->sem.type.ty));
             break;
 
         case aop_cast:
-            PFarray_printf (dot, "%s (%s)\"", a_id[n->kind],
-                            n->sem.cast.att);
+            PFarray_printf (dot, "%s (%s,%s)\"", a_id[n->kind],
+                            n->sem.cast.att, PFty_str (n->sem.cast.ty));
             break;
 
-        case aop_add:
-        case aop_subtract:
-        case aop_multiply:
-        case aop_divide:
+        case aop_num_add:
+        case aop_num_subtract:
+        case aop_num_multiply:
+        case aop_num_divide:
             PFarray_printf (dot, "%s (%s:%s, %s)\"", a_id[n->kind],
                             n->sem.arithm.res, n->sem.arithm.att1,
                             n->sem.arithm.att2);
@@ -401,7 +403,7 @@ print_tuple (PFalg_tuple_t t)
                             break;
             case aat_node:  PFprettyprintf ("@%i", t.atoms[i].val.node);
                             break;
-            case aat_flt:   PFprettyprintf ("%g", t.atoms[i].val.flt);
+            case aat_dec:   PFprettyprintf ("%g", t.atoms[i].val.dec);
                             break;
             case aat_dbl:   PFprettyprintf ("%g", t.atoms[i].val.dbl);
                             break;
@@ -478,6 +480,9 @@ alg_pretty (PFalg_op_t *n)
         case aop_disjunion:
             break;
 
+        case aop_difference:
+            break;
+
         case aop_eqjoin:
             break;
 
@@ -496,16 +501,16 @@ alg_pretty (PFalg_op_t *n)
         case aop_cast:
             break;
 
-        case aop_add:
+        case aop_num_add:
             break;
 
-        case aop_subtract:
+        case aop_num_subtract:
             break;
 
-        case aop_multiply:
+        case aop_num_multiply:
             break;
 
-        case aop_divide:
+        case aop_num_divide:
             break;
 
         case aop_project:
