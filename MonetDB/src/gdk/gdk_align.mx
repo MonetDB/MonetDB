@@ -337,8 +337,8 @@ BAT *BATmaterialize(BAT *b, size_t size){
 	/* cleanup possible ACC's */
 	ACCunloadall(b);
 
-	b->batBuns->filename = NULL;
 	/* guess new bunwidth before setting the new dimensions, +3 to allow chr-on-int alignment */
+	b->batBuns->filename = NULL;
 	if (HEAPalloc(b->batBuns, cnt+3, 2*MAX(sizeof(oid),b->dims.bunwidth)) < 0)  {
 		*b->batBuns = buns;	
 		return NULL;	

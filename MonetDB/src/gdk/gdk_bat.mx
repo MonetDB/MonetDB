@@ -425,8 +425,9 @@ BAT *BATclear(BAT *b) {
 		if (b->hheap.free > 0){
 			if (ATOMheap(b->htype, &hh, cap) < 0) return NULL;
 		}
-		if (b->theap.free > 0){
-			if (ATOMheap(b->ttype, &th, cap) < 0) return NULL;
+		if (b->theap.free > 0 && ATOMheap(b->ttype, &th, cap) < 0) {
+			if (b->hheap.free > 0) HEAPfree(&hh);
+			return NULL;
 		}
 		if (b->hheap.free > 0){
 			HEAPfree(&b->hheap);
