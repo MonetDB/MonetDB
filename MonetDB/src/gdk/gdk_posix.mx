@@ -863,10 +863,11 @@ MT_mmap_unpin(void *base, size_t len)
 }
 
 int
-MT_mmap_trim(size_t lim, stream *err)
+MT_mmap_trim(size_t lim, void *err)
 {
 	(void) lim;
 	(void) err;
+	return 0;
 }
 
 struct mallinfo
@@ -984,8 +985,7 @@ opendir(const char *dirname)
 	return result;
 }
 
-static
-char *
+static char *
 basename(const char *file_name)
 {
 	register char *base;

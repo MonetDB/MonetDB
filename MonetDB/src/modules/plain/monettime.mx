@@ -1932,7 +1932,7 @@ daytime_add(daytime *ret, daytime *v, lng *msec)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		*ret = *v + *msec / 1000;
+		*ret = *v + (daytime) (*msec / 1000);
 	}
 	return GDK_SUCCEED;
 }
