@@ -65,7 +65,7 @@ class parser:
             else:
                 self.curvar.append(token)
         elif (self.state == "var" and token != "="):
-            print("Missing = " + token, srow );
+            print("Missing = " + token, srow )
         else:
             print("error", token, self.state)
 
@@ -121,7 +121,7 @@ def main(cwd,topdir):
 
 InstallListFd = open("install.lst", "w")
 (InstallList,OutList) = main(topdir,topdir)
-InstallListFd.writelines( InstallList );
+InstallListFd.writelines( InstallList )
 InstallListFd.close()
 
 skip = [ "conf/stamp-h", "conf/config.h" ]
@@ -131,7 +131,7 @@ def filter( st ):
         return st + '\n'
     return ''
 
-OutList = map( filter, OutList );
+OutList = map( filter, OutList )
 OutListFd = open("acout.in", "w")
-OutListFd.writelines( OutList );
+OutListFd.writelines( OutList )
 OutListFd.close()
