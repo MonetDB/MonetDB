@@ -1303,6 +1303,7 @@ int interpret_setaggr(
 	int	prop_key, prop_sorted = 0;
 	GDKfcn	direct_call = NULL, packed_call = NULL;
         BATstore *nested_bak=NULL;
+	Heap    *hheap_bak = NULL;
 	ValRecord argv_bak;
 	BUN	p, q, r, s;
 	int	xx, yy;
@@ -1376,6 +1377,8 @@ there are the {strings, polygons, images, etc}!
             nested_rev->ttype = nested->htype = hidden_vartype;
             nested_rev->tvarsized = nested->hvarsized = TRUE;
             strcpy(nested->hatom, ATOMname(hidden_vartype));
+            hheap_bak = (Heap*) alloca(sizeof(Heap));
+	    *hheap_bak = nested->hheap;
             nested->hheap = b->theap;
         }
 
@@ -1640,6 +1643,8 @@ set return value
 clean up and exit
 @c
 	bulkerror_finish(&bulkerror, "interpret_setaggr");
+	nested->ttype = nested_rev->htype = TYPE_void;
+        if (hheap_bak) nested->hheap = *hheap_bak;
         if (nested_bak) *(BATstore*) nested = *nested_bak;
 	if (hidden_vartype) {
 		nested->htype = nested_rev->ttype = TYPE_var;
