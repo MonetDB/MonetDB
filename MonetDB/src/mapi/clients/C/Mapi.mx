@@ -617,8 +617,6 @@ by inspecting the field descriptor returned by mapi\_fetch\_field.
 #include <stdio.h>		/* for FILE * */
 #include <stream.h>		/* for stream */
 
-/*#define MONET5*/
-
 #define MAPI_AUTO	0	/* automatic type detection */
 #define MAPI_TINY	1
 #define MAPI_UTINY	2
@@ -1613,15 +1611,9 @@ mapi_new(void)
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
 	mid->server = NULL;
-#ifdef MONET5
-	mid->language = strdup("mal");
-	mid->languageId = LANG_MAL;
-	mid->versionId = 5;
-#else
 	mid->language = strdup("mil");
 	mid->languageId = LANG_MIL;
 	mid->versionId = 4;
-#endif
 	mid->motd = NULL;
 	mid->mapiversion = strdup("mapi 1.0");
 	mid->username = strdup("anonymous");
@@ -1669,11 +1661,7 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 			port = atoi(def);
 	}
 	if (port == 0) {
-#ifdef MONET5
-		port = 50001;	/* hardwired default */
-#else
 		port = 50000;	/* hardwired default */
-#endif
 	}
 	if (username) {
 		free(mid->username);
@@ -1691,13 +1679,8 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 	mid->secure = 0;
 #endif
 
-	if (lang == NULL) {
-#ifdef MONET5
-		lang = "mal";
-#else
+	if (lang == NULL) 
 		lang = "mil";
-#endif
-	}
 	free(mid->language);
 	mid->language = strdup(lang);
 
@@ -2016,15 +1999,6 @@ mapi_start_talking(Mapi mid)
 	if (mid->languageId == LANG_MAL)
 		return mid->error;
 
-#ifdef MONET5
-	/* start the scenario handler */
-	snprintf(buf, BLOCK, "%s();", mid->language);
-	if (mapi_error(mid))
-		return mid->error;
-	if (mid->trace)
-		printf("send scenario initializer %s\n", buf);
-	mapi_query(mid, buf);
-#endif
 	/* tell server about cachelimit */
 	mapi_cache_limit(mid, mid->cachelimit);
 	return mid->error;
