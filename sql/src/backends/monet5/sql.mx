@@ -137,7 +137,7 @@ comment "Export a table (in order) to stream s
 	with the given tuple and record 
 	seperators (sep/rsep)";
 
-command importTable( s:bstream, tname:str, 
+command importTable( s:stream, tname:str, 
 	sep:str, rsep:str, nr:int) :bat[:str,:bat] 
 address mvc_import_table_wrap
 comment "Import a table from stream s with the 
@@ -429,7 +429,7 @@ access the BAT descriptor.
 @= chkIdentifier
     /* generate exception if string is not an identifier */
     if( isIdentifier(@1))
-                return throwMessage( "@4","identifier expected");
+		return throwMessage( "@4","identifier expected");
 @= Pseudo
     if (BBPindex("@1_@2_@3") <= 0)
             BATname(b, "@1_@2_@3");
@@ -443,17 +443,18 @@ access the BAT descriptor.
 str mvc_bind_single_wrap(int *ret, int *bid, str *name){
 	mvc *m;
 	BAT *b,*bn;
-        int r,res;
+	int r,res;
+	ptr p;
 
 	@:getContext(m)@
 
-        @:getBATdescriptor(&res,bid,bn,sql.bind)@
+	@:getBATdescriptor(&res,bid,bn,sql.bind)@
 
-        r= *(int *) BUNfnd(bn,name);
-printf("#bind_single:%d %s -> %d\n",*bid,*name,r);
-        @:getBATdescriptor(&res,&r,b,sql.bind)@
-        *ret = b->batCacheid;
-        return MAL_SUCCEED;
+	BATprint(bn);
+	p=  BUNfnd(bn,*name);
+	@:getBATdescriptor(&res,&r,b,sql.bind)@
+	*ret = b->batCacheid;
+	return MAL_SUCCEED;
 }
 
 str mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access ){
@@ -666,7 +667,7 @@ BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
 	return bats;
 }
 
-str mvc_import_table_wrap( int *res, bstream *s, str *tname, 
+str mvc_import_table_wrap( int *res, stream **s, str *tname, 
 		str *sep, str *rsep, int *sz)
 {
 	mvc *m;
@@ -674,7 +675,7 @@ str mvc_import_table_wrap( int *res, bstream *s, str *tname,
 
 	@:getContext(m)@
 	
-	b= mvc_import_table(m, s, *tname,*sep,*rsep,*sz);
+	b= mvc_import_table(m, bstream_create(*s,1024*1024), *tname,*sep,*rsep,*sz);
 	if( b== 0)
 		return throwMessage("sql.importTable","failed");
 	*res= b->batCacheid;

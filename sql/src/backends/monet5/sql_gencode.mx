@@ -1012,7 +1012,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,codeset);
 
 			/* TODO use a bstream */
-			q= newStmt(mb,"bstream","openRead");
+			q= newStmt(mb,"stream","openRead");
 			q= pushArgument(mb,q,file);
 			file= getDestVar(q);
 
@@ -1024,7 +1024,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
                         q= pushInt(mb,q,s->flag);
                         s->nr= getDestVar(q);
 
-			q= newStmt(mb,"bstream","close");
+			q= newStmt(mb,"stream","close");
 			q= pushArgument(mb,q,file);
                 } else {
 			q= newStmt(mb,"sql","importTable");
