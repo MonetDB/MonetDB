@@ -738,9 +738,9 @@ create_user(mvc * sql, char * user, char * passwd, char *fullname, char *schema)
 			 "Schema %s doesn't exist", schema);
 	}
 	l = create_stmt_list();
-	snprintf(buf, BUFSIZ, "insert into users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id );
+	snprintf(buf, BUFSIZ, "insert into sys.users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id );
 	list_append(l, stmt_sql(buf));
-	snprintf(buf, BUFSIZ, "insert into auths values(" SZFMT ", '%s', %d);", OIDnew(1), user, sql->user_id);
+	snprintf(buf, BUFSIZ, "insert into sys.auths values(" SZFMT ", '%s', %d);", OIDnew(1), user, sql->user_id);
 	list_append(l, stmt_sql(buf));
 	return stmt_list(l);
 }

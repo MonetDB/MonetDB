@@ -413,6 +413,9 @@ int sqlexecute(backend * be, stream *out )
 	if (explain == ex_performance)
 		Tparse = GDKusec();
 
+	if (explain == ex_plan && c->sym->token == SQL_SET)
+		explain = ex_none;
+
 	if (c->mode == m_execute) {
 		node *a, *p;
 		int id = c->sym->data.lval->h->data.ival;

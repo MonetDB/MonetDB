@@ -100,7 +100,7 @@ static void write_command( backend *sql, char *buf )
 		c = s;
 		while ((c = strchr(c,'\n')))	*c = '\t';
 		l += snprintf( v+l, ll-l, "printf(\"< %s >\\n\");\nfflush(stdout());\n", s );
-		l += snprintf( v+l, ll-l, "t0 := time();\n" );
+		l += snprintf( v+l, ll-l, "var t0 := time();\n" );
 		_DELETE(s);
 		stream_write( sql->out, v, 1, l );
 		_DELETE(v);
@@ -113,7 +113,7 @@ static void write_result( backend *sql, char *buf )
 		size_t l = 0;
 		size_t buflen = BUFSIZ;
 		char *v = NEW_ARRAY(char, buflen), *a = buf, *b, *y, z;
-		l += snprintf( v+l, buflen-l, "t1 := time();\n" );
+		l += snprintf( v+l, buflen-l, "var t1 := time();\n" );
 		l += snprintf( v+l, buflen-l, "print(t1 - t0);\n" );
 		while (a && (y = strstr(a," := "))) {
 			z = *y;

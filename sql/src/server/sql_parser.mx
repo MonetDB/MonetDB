@@ -862,7 +862,7 @@ role_def:
 	  dlist_append_list(l, $3);
 	  dlist_append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  CREATE USER ident WITH PASSWORD ident sqlNAME string SCHEMA ident
+ |  CREATE USER ident WITH PASSWORD string sqlNAME string SCHEMA ident
 	{ dlist *l = dlist_create();
 	  dlist_append_string(l, $3);
 	  dlist_append_string(l, $6);
