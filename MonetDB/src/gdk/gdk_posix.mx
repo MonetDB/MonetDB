@@ -1097,7 +1097,9 @@ int MT_alloc_register(void *addr, unsigned int size, char mode) {
 
 int MT_alloc_print() {
 #if SIZEOF_LONG==4
+#ifdef WIN32
         char *p = NULL;
+#endif
         int i, j, k;
 
         for(i=0; i<31; i++) {

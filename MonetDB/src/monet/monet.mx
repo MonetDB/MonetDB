@@ -656,7 +656,9 @@ int monet_sprintf(str *res, str format, va_list ap){
 				}
 				@:sprintf(ival)@
 			} else if (strchr("diouxX", *cur)) {
+#ifdef NATIVE_WIN32
 				int i;
+#endif
 				lng lval;
 				if (dotseen) { 
 					return_error(format_error);
@@ -675,7 +677,7 @@ int monet_sprintf(str *res, str format, va_list ap){
 				} else {
 					return_error(type_error);
 				}
-#ifdef NATIVE_WIN32 
+#ifdef NATIVE_WIN32
 				for(i=len; i>=(extra+2); i--){
 					meta[i+1] = meta[i];
 				}
