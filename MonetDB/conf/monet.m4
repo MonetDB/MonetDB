@@ -1568,8 +1568,7 @@ if test "x$have_pcre" != xno; then
   if test "x$have_pcre" != xyes; then
     PCRE_CFLAGS=""
     PCRE_LIBS=""
-  fi
-  if test "x$need_pcre" == xyes; then
+  elif test "x$need_pcre" == xyes; then
     if test -z $PCRE_CFLAGS; then
     	PCRE_CFLAGS="-I/usr/include"
     fi
