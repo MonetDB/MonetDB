@@ -175,7 +175,7 @@ str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     (void) mb; /* still unused */
     b= *(chr *) getArgReference(stk,p,1);
     MDBstatus(b);
-    stk->cmd= b;
+    stk->cmd= b?'T':0;
     cntxt->itrace= b? 'T':0;
     return MAL_SUCCEED;
 }
@@ -193,7 +193,7 @@ str MDBsetTrace2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     if( s == 0)
 	return throwMessage("mdb.setTrace", "can not find operation");
     MDBstatus(b);
-    stk->cmd= b;
+    stk->cmd= b?'T':0;
     cntxt->itrace= b? 'T':0;
     return MAL_SUCCEED;
 }
@@ -203,7 +203,6 @@ str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     (void) mb; /* still unused */
     b= *(chr *) getArgReference(stk,p,1);
     cntxt->timer= b? GDKusec():0;
-    MDBstatus(b);
     return MAL_SUCCEED;
 }
 str MDBsetBreakpoint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
