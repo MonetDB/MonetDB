@@ -37,9 +37,9 @@ printf("#~BeginVariableOutput~#\n"); c(); printf("#~EndVariableOutput~#\n");
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  240	  ]
+[ "user",	  140	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1160	  ]
+[ "system",	  690	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 
