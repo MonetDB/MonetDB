@@ -29,7 +29,7 @@
 #ifndef SQL_SYM_H
 #define SQL_SYM_H
 
-#include <mem.h>
+#include <sql_mem.h>
 
 typedef enum symtype {
 	type_int,

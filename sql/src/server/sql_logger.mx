@@ -111,7 +111,7 @@ extern void log_tend(struct logger *logger);
 @c
 #include "sql_logger.h"
 #include "stream.h"
-#include "mem.h"
+#include "sql_mem.h"
 
 @-
 The log record encoding is geared at reduced storage space, but

@@ -31,7 +31,7 @@
 #ifndef _SQL_CONTEXT_H_
 #define _SQL_CONTEXT_H_
 
-#include <mem.h>
+#include <sql_mem.h>
 #include <stream.h>
 #include "sql_statement.h"
 #include "sql_mvc.h"

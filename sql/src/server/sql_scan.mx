@@ -30,7 +30,7 @@
 #ifndef _SQL_SCAN_H_
 #define _SQL_SCAN_H_
 
-#include "list.h"
+#include "sql_list.h"
 #include "sql_context.h"
 #include <stdio.h>
 
@@ -43,7 +43,7 @@ extern int  keyword_exists(char *yytext);
 
 @c
 
-#include <mem.h>
+#include <sql_mem.h>
 #include "sql_scan.h"
 #include "sql_types.h"
 #include "sql_symbol.h"

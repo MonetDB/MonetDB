@@ -117,7 +117,7 @@ extern symbol *newAtomNode( atom *a );
 #endif	/* SQL_SYMBOL_H */
 
 @c
-#include <mem.h>
+#include <sql_mem.h>
 #include "sql_symbol.h"
 #include "sql_parser.h"
 

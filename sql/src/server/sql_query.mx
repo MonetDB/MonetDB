@@ -21,41 +21,25 @@
 @' 		Stefan Manegold <Stefan.Manegold@cwi.nl>
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
 
-@f sql_decimal
+@f sql_query
 @a N.J. Nes
 @* 
 
 @h
-#ifndef _SQL_DECIMAL_H
-#define _SQL_DECIMAL_H
+#ifndef QUERY_H
+#define QUERY_H
 
-#include "sql_mem.h"
-#include <gdk.h>
+typedef enum sql_query_t {
+	Q_END = 0,
+	Q_PARSE = 1, 
+	Q_RESULT = 2,
+	Q_TABLE = 3,
+	Q_UPDATE = 4,
+	Q_DATA = 5, 
+	Q_SCHEMA = 6,
+	Q_TRANS = 7,
+	Q_DEBUG = 8,
+	Q_DEBUGP = 9
+} sql_query_t;
 
-extern lng decimal_from_str( char *dec );
-
-#endif /* _SQL_DECIMAL_H */
-
-@c
-
-#include "sql_decimal.h"
-
-lng decimal_from_str( char *dec ){
-	lng res = 0;
-	int neg = 0;
-	if (*dec == '-'){
-		neg = 1;
-		dec ++;
-	}
-	for(;*dec; dec++){
-		if (*dec != '.'){
-			res *= 10;
-			res += *dec -'0';
-		}
-	}
-	if (neg)
-		return -res;
-	else
-		return res;
-}
-
+#endif /* QUERY_H */

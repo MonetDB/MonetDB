@@ -29,9 +29,9 @@
 #ifndef _SQL_SCOPE_H_
 #define _SQL_SCOPE_H_
 
-#include "mem.h"
+#include "sql_mem.h"
 #include "sql_statement.h"
-#include "list.h"
+#include "sql_list.h"
 
 typedef struct tvar {
 	sql_ref ref;

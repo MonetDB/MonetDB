@@ -330,7 +330,7 @@ extern group *grp_dup(group * g);
 #endif	/* _SQL_STATEMENT_H_ */
 
 @c
-#include "mem.h"
+#include "sql_mem.h"
 #include "sql_statement.h"
 #include <string.h>
 

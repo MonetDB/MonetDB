@@ -45,7 +45,7 @@ extern char *sql2str( char *s );
 
 @c
 
-#include <mem.h>
+#include <sql_mem.h>
 #include <gdk.h>
 #include "sql_string.h"
 

@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <list.h>
+#include <sql_list.h>
 #include "sql_symbol.h"
 #include "sql_context.h"
 #include "sql_parser.h"
@@ -231,6 +231,10 @@ static tvar *table_ref(context * sql, scope * scp, symbol * tableref)
 		sql_schema *s = qname_schema(sql, tableref->data.lval->h->data.lval);
 		tname = qname_table(tableref->data.lval->h->data.lval);
 				
+		if (!s){
+			(void) sql_error( sql, 02, "Unknown schema");
+			return NULL;
+		}
 		t = mvc_bind_table(sql->mvc, s, tname);
 		if (!t) {
 			(void) sql_error( sql, 02, "Unknown table %s", tname);
@@ -2381,9 +2385,18 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 					list_append(rl, s);
 				}
 			} else if (cs->nrcols == 0 && nrcols > 0){
-				stmt *ss = first_subset(subset);
-				cs = stmt_const(ss,stmt_dup(cs));
-				list_append(rl, cs);
+				/* temp hack to fix  select name,count(*) bug */
+				if (cs->type == st_atom){
+					stmt *ss = first_subset(subset);
+					cs = stmt_const(ss,stmt_dup(cs));
+					list_append(rl, cs);
+				} else {
+					printf("cleanup return error\n");
+					list_destroy(sl);
+					list_destroy(rl);
+					sql_select_cleanup(sql, s, subset, grp);
+					return sql_error( sql, 02, "single value in column expression");
+				}
 			} else {
 				cs = stmt_dup(cs);
 				list_append(rl, cs);

@@ -30,11 +30,11 @@
 #ifndef _SQL_MVC_H
 #define _SQL_MVC_H
 
-#include <mem.h>
+#include <sql_mem.h>
 #include <gdk.h>
 #include <stdarg.h>
-#include <query.h>
-#include <list.h>
+#include <sql_query.h>
+#include <sql_list.h>
 #include <sql_types.h>
 
 #define ISO_READ_UNCOMMITED 1
@@ -2094,7 +2094,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		m->trans = trans_dup(m->trans, name);
 		m->trans->schema = find_schema(m->trans, schema);
 		_DELETE(schema);
-		m->type = Q_PARSE;
+		m->type = Q_TRANS;
 		return 0;
 	}
 
@@ -2118,7 +2118,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		log_tend(logger);
 		if (m->debug)
 			fprintf(stderr, "done forwarding changes\n");
-		res = Q_PARSE;
+		res = Q_TRANS;
 	}
 
 	MT_unset_lock(mvc_lock, "mvc_commit");
@@ -2140,6 +2140,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 
 int mvc_rollback(mvc * m, int chain, char *name)
 {
+	char *schema = NULL;
 	int res = 0;
 	int level = (chain)?m->trans->level:ISO_SERIALIZABLE;
 	sql_trans *tr = m->trans;
@@ -2147,6 +2148,8 @@ int mvc_rollback(mvc * m, int chain, char *name)
 	if (m->debug)
 		fprintf(stderr, "mvc_rollback\n");
 
+	schema = _strdup(tr->schema->name);
+	assert(schema);
 	if (name && name[0] != '\0'){
 		while(tr->name && strcmp(tr->name,name) != 0)
 	       		tr = trans_destroy(tr);
@@ -2157,7 +2160,9 @@ int mvc_rollback(mvc * m, int chain, char *name)
 		m->trans = trans_dup(tr,NULL);
 	}
 	m->trans->level = level;
-	m->type = Q_PARSE;
+	m->type = Q_TRANS;
+	m->trans->schema = find_schema(m->trans, schema);
+	_DELETE(schema);
 	return res;
 }
 
@@ -2166,7 +2171,7 @@ int mvc_rollback(mvc * m, int chain, char *name)
  * */
 int mvc_release(mvc * m, char *name)
 {
-	int res = Q_PARSE;
+	int res = Q_TRANS;
 	sql_trans *tr = m->trans;
 	sql_trans *p = tr->parent;
 
@@ -3161,6 +3166,13 @@ sql_column *mvc_create_column(mvc * m, sql_table *t, char *name,
 	if (t->type != tt_view){ 
 		b = BATnew( TYPE_void, type, cnt );
  		u = BATnew( TYPE_oid, type, cnt );
+
+		if (!b || !u){
+			if (b) BBPreclaim(b);
+			if (u) BBPreclaim(u);
+			sql_subtype_destroy(tpe);
+			return NULL;
+		}
 
 		BATseqbase(b,0);
 		res = mvc_create_column_bat(m, t, name, sqltype, type_digits, type_scale, b, u);
