@@ -63,6 +63,16 @@ Provides basic similarity metrics for strings.
 #include <stdlib.h>
 #include <limits.h>
 
+#define RETURN_NIL_IF(b,t) \
+	if (b) {\
+	   if (ATOMextern(t)) {\
+	      *(ptr*) res = (ptr) ATOMnil(t);\
+	   } else {\
+	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
+ 	   }\
+	   return GDK_SUCCEED; \
+	}
+
 /* =========================================================================
  * LEVENSH?TEIN FUNCTION
  * Source:
@@ -253,6 +263,8 @@ soundex_code (char *Name, char *Key)
 
   /* keep first letter */
   Key[0] = *Name;
+  if (!isupper(Key[0])) Key[0] = toupper(Key[0]);
+
   LastLetter = *Name;
   Name++;
 
@@ -288,24 +300,14 @@ FUNCTION: Soundex calculates the soundex code for the string Name.
 ****************************************************************************/
 
 int
-soundex_impl (str *Key, str Name)
+soundex_impl (str *res, str Name)
 {
-    /* use new variable NewName to remain Name unchanged */
-    char *NewName;
-    unsigned int  i;
-    int sz = strlen(Name) * sizeof(char) + 1;
+    RETURN_NIL_IF(strNil(Name), TYPE_str);
 
-    NewName = (char *)GDKmalloc(sz);
-    strcpy(NewName, Name);
-    
-    /* uppercase NewName */
-    for (i=0; i < strlen(NewName); i++)
-        if (islower(NewName[i])) 
-            NewName[i] = toupper(NewName[i]);
+    *res = GDKmalloc(sizeof(char)*(SoundexLen+1));
     
     /* calculate Key for Name */
-    soundex_code(NewName, *Key);
+    soundex_code(Name, *res);
 
-    GDKfree(NewName);
     return GDK_SUCCEED;
 }
