@@ -60,23 +60,6 @@ Options are:
 	port to connect to (default: 50000)
 
 # 16:36:12 >  
-# 16:36:12 >  Mtimeout -timeout 60 Mshutdown.py -?
-# 16:36:12 >  
-
-Usage: Mshutdown.py [ options ]
-Options are:
--c or --config config_file
-	read options from the given file
--? or --help
-	print usage message
--s or --set option=value
-	set a named option
---host hostname
-	host to connect to (default: localhost)
---port port
-	port to connect to (default: 50000)
-
-# 16:36:12 >  
 # 16:36:12 >  Done.
 # 16:36:12 >  
 

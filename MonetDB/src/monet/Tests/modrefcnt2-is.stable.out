@@ -103,6 +103,7 @@ sigs("lock");
 printf("\nDone..\n");
 
 Done..
+quit();
 
 Over..
 

@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 671 ]
+[ 670 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 671 ]
+[ 670 ]
 
 var All:=0;
 
@@ -638,8 +638,8 @@ Module: "bat"
 
 Module: "kernel"
 
-[ 43 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 42 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature												help																																																																												  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "CATCH",	  "BUILTIN:   ",  "CATCH(STATEMENT) : str ",									  "Turns on buffering of error messages while executing STATEMENT.\n Error messages that occur during this execution are returned as a string.\n If no error occurrs, catch returns str(nil)."																	  ]
@@ -674,7 +674,6 @@ Module: "kernel"
 [ "quit",	  "BUILTIN:   ",  "quit() or CTRL-D ",										  "Terminates a session. Terminating the console\n (Mserver) still makes the system wait for all active clients to finish,\n before causing a database shutdown."																				  ]
 [ "runon",	  "BUILTIN:   ",  "runon(STATEMENT, int threadno) ",								  "A statement can be designated to a particular thread \n using the runon command."																														  ]
 [ "setoid",	  "BUILTIN:   ",  "setoid(oid base) : oid ",									  "Sets the oid range of consecutive unique OIDs; returns the lowest in range."																															  ]
-[ "shutdown",	  "BUILTIN:   ",  "shutdown(int status) ",									  "Immediate database shutdown. Only to be issued by the adm or database owner."																														  ]
 [ "source",	  "BUILTIN:   ",  "source(str mil_file) : any ",								  "Read and evaluate a MIL-script from a file. Relative paths start from\n the database directory"																												  ]
 [ "sprintf",	  "COMMAND:   ",  "sprintf(str, ..any..) : str",								  "Print a formatted string on the standard client output."																																	  ]
 [ "table",	  "COMMAND:   ",  "table(BAT[any::1,any], ..BAT[any::1,any]..) : void",						  "Print an n-ary table. Like print(n-ary) but does not print oid column"																															  ]
@@ -806,7 +805,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 671 ]
+[ 670 ]
 
 quit();
 

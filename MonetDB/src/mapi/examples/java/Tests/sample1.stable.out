@@ -11,6 +11,7 @@ stdout of test 'sample1` in directory 'src/mapi/examples/java` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

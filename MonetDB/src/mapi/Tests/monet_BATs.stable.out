@@ -1540,6 +1540,7 @@ Mserver prologue: This is what Mserver says before MapiClient connects.
 printf("\nReady.\n");
 
 Ready.
+quit();
 var Z := new(str,int);
 Z.insert("adm_acctbl",bat("adm_acctbl").count());
 Z.insert("adm_atomtbl",bat("adm_atomtbl").count());

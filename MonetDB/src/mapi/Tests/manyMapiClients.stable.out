@@ -11,6 +11,7 @@ stdout of test 'manyMapiClients` in directory 'src/mapi` itself:
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
