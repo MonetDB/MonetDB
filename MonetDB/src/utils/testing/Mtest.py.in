@@ -1207,7 +1207,8 @@ def Check(command, input) :
 	if not rOutErr:
 		for l in qOut+qErr:
 			if l[0] == "!":
-				rOutErr = 1
+				if len(l) < 24  or  l[:24] != "!WARNING: BATpropcheck: ":
+					rOutErr = 1
 	if rOutErr:
 		ErrMsg("'"+command+"` failed:")
 		if qOut  and  len(qOut[-1]) >= 8  and  qOut[-1][:8] == "! Exit 1":

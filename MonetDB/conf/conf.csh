@@ -201,6 +201,10 @@ if ( ! -x bootstrap ) then
 	echo " CC=${CC}"
 	setenv CXX "${cxx}"
 	echo " CXX=${CXX}"
+	setenv CFLAGS ""
+	echo " CFLAGS=${CFLAGS}"
+	setenv CXXFLAGS ""
+	echo " CXXFLAGS=${CXXFLAGS}"
 	if ( ${%binpath} ) then
 		if ( ${?PATH} ) then
 			# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet

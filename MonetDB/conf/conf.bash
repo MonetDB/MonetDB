@@ -175,6 +175,10 @@ if [ ! -x bootstrap ] ; then
 	echo " CC=${CC}"
 	export CXX="${cxx}"
 	echo " CXX=${CXX}"
+	export CFLAGS=""
+	echo " CFLAGS=${CFLAGS}"
+	export CXXFLAGS=""
+	echo " CXXFLAGS=${CXXFLAGS}"
 	if [ "${binpath}" ] ; then
 		if [ "${PATH}" ] ; then
 			# prepend new binpath to existing PATH, if PATH doesn't contain binpath, yet
