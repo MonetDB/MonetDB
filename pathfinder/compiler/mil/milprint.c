@@ -419,7 +419,7 @@
         printf("        kind := kind%03u;\n", i);
         printf("} else if (iter%03u.count != 0)\n",i);
         printf("{ # translateSeq (counter)\n");
-        printf("var merged_result := merged_union (iter%03u, iter, item%03u, item, kind%03u, kind);\n", i, i, i, i);
+        printf("var merged_result := merged_union (iter%03u, iter, item%03u, item, kind%03u, kind);\n", i, i, i);
         printf("iter := merged_result.fetch(0);\n");
         printf("item := merged_result.fetch(1);\n");
         printf("kind := merged_result.fetch(2);\n");
@@ -1795,14 +1795,18 @@
              at an if-then-else node 
            - if-then-else is executed more or less like a for loop */
         printf("var expOid := v_iter%03u.mirror;\n", act_level);
-        //getExpanded (c->sem.num);
-        //printf("if (expOid.count != 0) {\n");
+        /* 
+        getExpanded (c->sem.num); 
+        printf("if (expOid.count != 0) {\n");
+        */
                 printf("var oidNew_expOid;\n");
                 expand ();
                 join ();
-        //printf("} else {\n");
-        //        createNewVarTable ();
-        //printf("} # end if\n");
+        /*
+        printf("} else {\n");
+                createNewVarTable ();
+        printf("} # end if\n");
+        */
         printf("expOid := nil;\n");
 
         printf("}\n");
