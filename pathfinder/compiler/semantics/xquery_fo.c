@@ -697,21 +697,21 @@
   { .ns = PFns_fn, .loc = "distinct-values",                             \
     .arity = 1, .par_ty = { PFty_star (PFty_string ())},                 \
     .ret_ty = PFty_star (PFty_untypedAtomic ()) }                        \
-, /* op:is-same-node (node?, node?) as boolean? */                       \
+, /* op:is-same-node (node, node) as boolean */                          \
   { .ns = PFns_op, .loc = "is-same-node",                                \
-    .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
-                            PFty_opt (PFty_node ())},                    \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
-, /* op:node-before (node?, node?) as boolean? */                        \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_node ()},                               \
+    .ret_ty = PFty_boolean () }                                          \
+, /* op:node-before (node, node) as boolean */                           \
   { .ns = PFns_op, .loc = "node-before",                                 \
-    .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
-                            PFty_opt (PFty_node ())},                    \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
-, /* op:node-after (node?, node?) as boolean? */                         \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_node ()},                               \
+    .ret_ty = PFty_boolean () }                                          \
+, /* op:node-after (node, node) as boolean */                            \
   { .ns = PFns_op, .loc = "node-after",                                  \
-    .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
-                            PFty_opt (PFty_node())},                     \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_node ()},                               \
+    .ret_ty = PFty_boolean () }                                          \
 , /* op:union (node*, node*) as node* */                                 \
   { .ns = PFns_op, .loc = "union",                                       \
     .arity = 2, .par_ty = { PFty_star (PFty_node ()),                    \
@@ -769,7 +769,7 @@
 , /* fn:zero-or-one (node *) as node */                                  \
   { .ns = PFns_fn, .loc = "zero-or-one",                                 \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_node () }                                             \
+    .ret_ty = PFty_opt (PFty_node ()) }                                  \
                                                                          \
 , /* pf:root () as document { xs:anyType } *  */                         \
   { .ns = PFns_pf, .loc = "root",                                        \

@@ -269,7 +269,6 @@ print_output (FILE *f)
             /* distinguishes between TEXT and ELEMENT nodes */
             "{\n"
             "var oid_kind := mposjoin(oid_pre, temp1_frag, ws.fetch(PRE_KIND));\n"
-/* FIXME: line should stay as long as BUG 1032273 is not solved */ "oid_kind.access(BAT_READ);\n"
             "var oid_elems := oid_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
             "var oid_texts := oid_kind.ord_uselect(TEXT).mark(0@0).reverse();\n"
             "oid_kind := nil_oid_chr;\n"
@@ -927,7 +926,7 @@ insertVar (FILE *f, int act_level, int vid)
             "print (v_vid%03u, v_iter%03u, v_pos%03u, v_kind%03u);\n",
             act_level, act_level, act_level, act_level);
     */
-    fprintf(f, "} # insertVar (vid)\n");
+    fprintf(f, "} # end of insertVar (vid)\n");
 }
 
 /**
@@ -1040,40 +1039,38 @@ loop_liftedSCJ (FILE *f, char *axis, char *kind, char *ns, char *loc)
     }
     else
     {
-        /* FIXME: in case iter is not sorted pf:distinct-doc-order 
-                  should be called */
         if (kind)
         {
             fprintf(f,
-                    "res_scj := loop_lifted_%s_step_with_kind_test_joined"
+                    "res_scj := loop_lifted_%s_step_with_kind_test"
                     "(iter, item, kind.get_fragment(), ws, %s);\n",
                     axis, kind);
         }
         else if (ns && loc)
         {
             fprintf(f,
-                    "res_scj := loop_lifted_%s_step_with_nsloc_test_joined"
+                    "res_scj := loop_lifted_%s_step_with_nsloc_test"
                     "(iter, item, kind.get_fragment(), ws, \"%s\", \"%s\");\n",
                     axis, ns, loc);
         }
         else if (loc)
         {
             fprintf(f,
-                    "res_scj := loop_lifted_%s_step_with_loc_test_joined"
+                    "res_scj := loop_lifted_%s_step_with_loc_test"
                     "(iter, item, kind.get_fragment(), ws, \"%s\");\n",
                     axis, loc);
         }
         else if (ns)
         {
             fprintf(f,
-                    "res_scj := loop_lifted_%s_step_with_ns_test_joined"
+                    "res_scj := loop_lifted_%s_step_with_ns_test"
                     "(iter, item, kind.get_fragment(), ws, \"%s\");\n", 
                     axis, ns);
         }
         else
         {
             fprintf(f,
-                    "res_scj := loop_lifted_%s_step_joined"
+                    "res_scj := loop_lifted_%s_step"
                     "(iter, item, kind.get_fragment(), ws);\n", 
                     axis);
         }
@@ -1403,7 +1400,7 @@ loop_liftedElemConstr (FILE *f, int i)
             "var iter_input := oid_oid.mirror();\n"
 
             /* get all subtree copies */
-            "var res_scj := loop_lifted_descendant_or_self_step_unjoined"
+            "var res_scj := loop_lifted_descendant_or_self_step"
             "(iter_input, node_items, node_frags, ws);\n"
 
             "iter_input := nil_oid_oid;\n"
@@ -1637,7 +1634,7 @@ loop_liftedElemConstr (FILE *f, int i)
             "root_prop := root_prop.reverse().mark(0@0).reverse();\n"
             "root_frag := root_frag.reverse().mark(0@0).reverse();\n"
 
-            "} # end of else in 'if (nodes.count() != 0)'\n"
+            "}  # end of else in 'if (nodes.count() != 0)'\n"
 
             /* set the offset for the new created trees */
             "{\n"
@@ -1679,7 +1676,7 @@ loop_liftedElemConstr (FILE *f, int i)
             /* adding the new constructed roots to the WS_FRAG bat of the
                working set, that a following (preceding) step can check
                the fragment boundaries */
-            "{ # adding new fragments to the WS_FRAG bat\n"
+            "{  # adding new fragments to the WS_FRAG bat\n"
             "var seqb := oid(count(ws.fetch(WS_FRAG)));\n"
             "var new_pres := roots.reverse().mark(seqb).reverse();\n"
             "seqb := nil_oid;\n"
@@ -1925,7 +1922,7 @@ loop_liftedTextConstr (FILE *f)
             "item := item.mark(seqb);\n"
             "seqb := nil_oid;\n"
             "kind := kind.project(ELEM);\n"
-            "}\n"
+            "} # end of adding new strings to text node content and create new nodes\n"
 
             /* adding the new constructed roots to the WS_FRAG bat of the
                working set, that a following (preceding) step can check
@@ -1940,8 +1937,7 @@ loop_liftedTextConstr (FILE *f)
             /* get the maximum level of the new constructed nodes
                and set the maximum of the working set */
             "ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), 1));\n"
-            "}\n"
-           );
+            "} # end of adding new fragments to the WS_FRAG bat\n");
 }
 
 /*
@@ -2606,7 +2602,7 @@ translateCast (FILE *f, int act_level, PFcnode_t *c)
     }
 
     if (!cast_optional)
-        testCastComplete (f, act_level, c->child[0]->sem.type);
+        testCastComplete (f, act_level, cast_type);
 
     fprintf(f,
             "} # end of cast from %s to %s\n", 
@@ -2712,7 +2708,7 @@ static void
 translateOperation (FILE *f, int act_level, int counter, 
                     char *operator, PFcnode_t *args, bool div)
 {
-    PFty_t expected = args->type;
+    PFty_t expected = args->child[0]->type;
 
     /* translate the subtrees */
     translate2MIL (f, act_level, counter, args->child[0]);
@@ -2865,7 +2861,7 @@ static void
 translateComparison (FILE *f, int act_level, int counter, 
                     char *comp, PFcnode_t *args)
 {
-    PFty_t expected = args->type;
+    PFty_t expected = args->child[0]->type;
 
     /* translate the subtrees */
     translate2MIL (f, act_level, counter, args->child[0]);
@@ -2937,7 +2933,8 @@ combine_strings (FILE *f)
             "var iter_item := iter.reverse().leftfetchjoin(item);\n"
             "var iter_str := iter_item.leftfetchjoin(str_values);\n"
             "iter_item := nil_oid_oid;\n"
-            "iter_str := iter_str.string_join(iter.project(\" \"));\n"
+            "iter_str.chk_order(false);\n"
+            "iter_str := iter_str.string_join(iter.tunique().project(\" \"));\n"
             "iter := iter_str.mark(0@0).reverse();\n"
             "pos := iter.mark(1@0);\n"
             "kind := iter.project(STR);\n");
@@ -2981,7 +2978,7 @@ typed_value (FILE *f, bool tv)
                 "var frag := kind.get_fragment();\n"
                 /* to get all text nodes a scj is performed */
                 "var res_scj := "
-                "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
+                "loop_lifted_descendant_or_self_step_with_kind_test"
                 "(iter, item, frag, ws, TEXT);\n"
                 "iter := nil_oid_oid;\n"
                 "item := nil_oid_oid;\n"
@@ -3052,7 +3049,7 @@ typed_value (FILE *f, bool tv)
                     "kind_elem := nil_oid_oid;\n"
                     /* to get all text nodes a scj is performed */
                     "var res_scj := "
-                    "loop_lifted_descendant_or_self_step_with_kind_test_unjoined"
+                    "loop_lifted_descendant_or_self_step_with_kind_test"
                     "(iter, item, frag, ws, TEXT);\n"
                     "iter := nil_oid_oid;\n"
                     "item := nil_oid_oid;\n"
@@ -3201,7 +3198,6 @@ is2ns (FILE *f, int counter, PFty_t input_type)
             "kind_elem := nil_oid_int;\n"
             "var item_elem := elem.leftfetchjoin(item);\n"
             "var kind_node := mposjoin (item_elem, frag_elem, ws.fetch(PRE_KIND));\n"
-/* FIXME: line should stay as long as BUG 1032273 is not solved */ "kind_node.access(BAT_READ);\n"
             "var text := kind_node.ord_uselect(TEXT).mark(0@0).reverse();\n"
             "var item_text := text.leftfetchjoin(item_elem);\n"
             "var frag_text := text.leftfetchjoin(frag_elem);\n"
@@ -3335,7 +3331,7 @@ translateFunction (FILE *f, int act_level, int counter,
     if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        /* FIXME: expects strings otherwise something stupid happens */
+        /* expects strings otherwise something stupid happens */
         fprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
                 "var docs := item.tunique().mark(0@0).reverse();\n"
@@ -3362,11 +3358,11 @@ translateFunction (FILE *f, int act_level, int counter,
         translate2MIL (f, act_level, counter, args->child[0]);
         fprintf(f,
                 "{ # translate pf:distinct-doc-order (node*) as node*\n"
-                /* FIXME: is this right? */
+                /* FIXME: are attribute nodes automatically filtered? */
                 "if (kind.count() != kind.get_type(ELEM).count()) "
                 "{ ERROR (\"function pf:distinct-doc-order expects only nodes\"); }\n"
                 /* delete duplicates */
-                "var temp_ddo := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
+                "var temp_ddo := CTgroup(iter).CTgroup(kind).CTgroup(item);\n"
                 "temp_ddo := temp_ddo.tunique().mark(0@0).reverse();\n"
                 "iter := temp_ddo.leftfetchjoin(iter);\n"
                 "item := temp_ddo.leftfetchjoin(item);\n"
@@ -3450,7 +3446,7 @@ translateFunction (FILE *f, int act_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        fn_boolean (f, act_level, args->type);
+        fn_boolean (f, act_level, args->child[0]->type);
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"contains")))
     {
@@ -3577,7 +3573,7 @@ translateFunction (FILE *f, int act_level, int counter,
     {
         translate2MIL (f, act_level, counter, args->child[0]);
         typed_value (f, false);
-        translateCast2STR (f, args->type);
+        translateCast2STR (f, args->child[0]->type);
         fprintf(f,
                 "if (iter.count() != loop%03u.count())\n"
                 "{\n"
@@ -3677,7 +3673,7 @@ translateFunction (FILE *f, int act_level, int counter,
         /* the semantics of idiv are a normal div operation
            followed by a cast to integer */
         translateOperation (f, act_level, counter, "/", args, true);
-        translateCast2INT (f, args->type);
+        translateCast2INT (f, args->child[0]->type);
         testCastComplete(f, act_level, PFty_integer ());
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"eq")))
@@ -3704,25 +3700,98 @@ translateFunction (FILE *f, int act_level, int counter,
     {
         translateComparison (f, act_level, counter, "<", args);
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"node-before")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+        fprintf(f,
+                "{ # translate op:node-before (node, node) as boolean\n"
+                /* FIXME: in theory this should work (in practise it also
+                          does with some examples), but it is assumed,
+                          that the iter columns are dense and aligned */
+                "var frag_before := kind%03u.[<](kind);\n"
+                "var frag_equal := kind%03u.[=](kind);\n"
+                "var pre_before := item%03u.[<](item);\n"
+                "var node_before := frag_before[or](frag_equal[and](pre_before));\n"
+                "frag_before := nil_oid_bit;\n"
+                "frag_equal := nil_oid_bit;\n"
+                "pre_before := nil_oid_bit;\n"
+                "item := node_before.[oid]().reverse().mark(0@0).reverse();\n"
+                "node_before := nil_oid_bit;\n"
+                "kind := item.project(BOOL);\n"
+                "} # end of translate op:node-before (node, node) as boolean\n",
+                counter, counter, counter);
+        deleteResult (f, counter);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"node-after")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+        fprintf(f,
+                "{ # translate op:node-after (node, node) as boolean\n"
+                /* FIXME: in theory this should work (in practise it also
+                          does with some examples), but it is assumed,
+                          that the iter columns are dense and aligned */
+                "var frag_after := kind%03u.[>](kind);\n"
+                "var frag_equal := kind%03u.[=](kind);\n"
+                "var pre_after := item%03u.[>](item);\n"
+                "var node_after := frag_after[or](frag_equal[and](pre_after));\n"
+                "frag_after := nil_oid_bit;\n"
+                "frag_equal := nil_oid_bit;\n"
+                "pre_after := nil_oid_bit;\n"
+                "item := node_after.[oid]().reverse().mark(0@0).reverse();\n"
+                "node_after := nil_oid_bit;\n"
+                "kind := item.project(BOOL);\n"
+                "} # end of translate op:node-after (node, node) as boolean\n",
+                counter, counter, counter);
+        deleteResult (f, counter);
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"is-same-node")))
+    {
+        translate2MIL (f, act_level, counter, args->child[0]);
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, act_level, counter, args->child[1]->child[0]);
+        fprintf(f,
+                "{ # translate op:is-same-node (node, node) as boolean\n"
+                /* FIXME: in theory this should work (in practise it also
+                          does with some examples), but it is assumed,
+                          that the iter columns are dense and aligned */
+                "var frag_equal := kind%03u.[=](kind);\n"
+                "var pre_equal := item%03u.[=](item);\n"
+                "var node_equal := frag_equal[and](pre_equal);\n"
+                "frag_equal := nil_oid_bit;\n"
+                "pre_equal := nil_oid_bit;\n"
+                "item := node_equal.[oid]().reverse().mark(0@0).reverse();\n"
+                "node_equal := nil_oid_bit;\n"
+                "kind := item.project(BOOL);\n"
+                "} # end of translate op:is-same-node (node, node) as boolean\n",
+                counter, counter);
+        deleteResult (f, counter);
+    }
     else if (!PFqname_eq(fnQname,
                          PFqname (PFns_pf,"item-sequence-to-node-sequence")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        is2ns (f, counter, args->type);
+        is2ns (f, counter, args->child[0]->type);
     }
     else if (!PFqname_eq(fnQname,
                          PFqname (PFns_pf,"item-sequence-to-untypedAtomic")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
         fn_data (f);
-        translateCast2STR (f, args->type);
+        translateCast2STR (f, args->child[0]->type);
         combine_strings (f);
     }
     else if (!PFqname_eq(fnQname,
                          PFqname (PFns_pf,"merge-adjacent-text-nodes")))
     {
         translate2MIL (f, act_level, counter, args->child[0]);
-        is2ns (f, counter, args->type);
+        is2ns (f, counter, args->child[0]->type);
     }
     else if (!PFqname_eq(fnQname,
                          PFqname (PFns_fn,"distinct-values")))
@@ -3807,9 +3876,9 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
         case c_for:
             translate2MIL (f, act_level, counter, c->child[2]);
             /* not allowed to overwrite iter,pos,item */
-
             act_level++;
-            fprintf(f, "{ # for-translation\n");
+            fprintf(f, "if (iter.count() != 0)\n");
+            fprintf(f, "{  # for-translation\n");
             project (f, act_level);
 
             fprintf(f, "var expOid;\n");
@@ -3822,7 +3891,7 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             fprintf(f, "} else {\n");
                     createNewVarTable (f, act_level);
             fprintf(f, 
-                    "} # end if\n"
+                    "}  # end if\n"
                     "expOid := nil_oid_oid;\n");
 
             if (c->child[0]->sem.var->used)
@@ -3841,7 +3910,7 @@ translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c)
             
             mapBack (f, act_level);
             cleanUpLevel (f, act_level);
-            fprintf(f, "} # end of for-translation\n");
+            fprintf(f, "}  # end of for-translation\n");
             break;
         case c_ifthenelse:
             translate2MIL (f, act_level, counter, c->child[0]);
@@ -4110,6 +4179,34 @@ noConstructor (PFcnode_t *c)
     return 1;
 }
 
+static int
+noForBetween (PFvar_t *v, PFcnode_t *c)
+{
+    int i, j;
+    if (c->kind == c_for)
+    {
+        if (noForBetween (v, c->child[2]) == 1)
+                return 1;
+        else if (noForBetween (v, c->child[3]) == 1)
+                return 0;
+        else return 2;
+    }
+    else if (c->kind == c_var && c->sem.var == v)
+        return 1;
+    else 
+        for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+            if ((j = noForBetween (v, c->child[i])) < 2)
+                return j;
+    return 2;
+}
+
+static int
+expandable (PFcnode_t *c)
+{
+    return ((noConstructor(c->child[1]))?1:noForBetween(c->child[0]->sem.var,
+                                                        c->child[2]));
+}
+
 /**
  * Walk core tree @a e and replace occurrences of variable @a v
  * by core tree @a a (i.e., compute e[a/v]).
@@ -4212,7 +4309,7 @@ simplifyCoreTree (PFcnode_t *c)
                 /* removes let statements, which are used only once and contain
                    no constructor */
                 if (i == 1 &&
-                    noConstructor (c->child[1]))
+                    expandable (c))
                 {
                     replace_var (c->child[0]->sem.var, c->child[1], c->child[2]);
                     *c = *(c->child[2]);
@@ -4258,10 +4355,17 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 *c = *(c->child[2]);
             }
+            else if (PFty_eq (input_type, PFty_empty ()))
+            {
+                new_node = PFcore_empty ();
+                new_node->type = PFty_empty ();
+                *c = *new_node;
+            }
             /* removes for expressions, which loop only over one literal */
             /* FIXME: doesn't work if the following type is possible here:
                       '(integer, decimal)?' */
-            else if (PFty_subtype (input_type, PFty_opt (PFty_item ())) &&
+            else if (PFty_subtype (input_type, PFty_item ()) &&
+                     input_type.type != ty_opt &&
                      input_type.type != ty_plus &&
                      input_type.type != ty_star &&
                      input_type.type != ty_choice &&
@@ -4277,12 +4381,6 @@ simplifyCoreTree (PFcnode_t *c)
                     replace_var (c->child[1]->sem.var, new_node, c->child[3]);
                 }
 
-                if (PFty_eq (input_type, PFty_empty ()))
-                {
-                    new_node = PFcore_empty ();
-                    new_node->type = PFty_empty ();
-                    *c = *new_node;
-                }
                 else if (PFty_subtype (input_type, PFty_opt (PFty_atomic ())))
                 {
                     replace_var (c->child[0]->sem.var, c->child[2], c->child[3]);
@@ -4385,24 +4483,44 @@ simplifyCoreTree (PFcnode_t *c)
             if (fun->arity == 1)
                 simplifyCoreTree (c->child[0]->child[0]);
 
-            if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) || 
+            /* throw away merge-adjacent-text-nodes if only one element content was 
+               created -> there is nothing to merge */
+            /* FIXME: to find simple version this relies on other optimizations */
+            if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"merge-adjacent-text-nodes")) &&
+                (c->child[0]->child[0]->kind == c_empty ||
+                (PFty_subtype(c->child[0]->child[0]->type, PFty_node ()) &&
+                c->child[0]->child[0]->kind != c_var &&
+                c->child[0]->child[0]->kind != c_seq)))
+            {
+                /* don't use function - omit apply and arg node */
+                *c = *(c->child[0]->child[0]);
+                simplifyCoreTree (c);
+            }
+            else if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) || 
                  !PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-node-sequence"))) &&
-                PFty_subtype(c->child[0]->type, fun->ret_ty))
+                PFty_subtype(c->child[0]->child[0]->type, fun->ret_ty))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(c->child[0]->child[0]);
                 simplifyCoreTree (c);
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
-                     (PFty_subtype (c->child[0]->type, fun->ret_ty) ||
-                      PFty_subtype (c->child[0]->type, PFty_string ())))
+                     (PFty_subtype (c->child[0]->child[0]->type, fun->ret_ty) ||
+                      PFty_subtype (c->child[0]->child[0]->type, PFty_string ())))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(c->child[0]->child[0]);
                 simplifyCoreTree (c);
             }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
+                     PFty_subtype (c->child[0]->child[0]->type, PFty_empty()))
+            {
+                    new_node = PFcore_str ("");
+                    new_node->type = PFty_string ();
+                    *c = *new_node;
+            }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
-                     PFty_subtype (c->child[0]->type, PFty_opt(PFty_node ())))
+                     PFty_subtype (c->child[0]->child[0]->type, PFty_opt(PFty_node ())))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(c->child[0]->child[0]);
@@ -4633,7 +4751,7 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
     *(int *) PFarray_add (counter) = 0; 
 
     /* resolves nodes, which are not supported and prunes 
-       code which is node needed (e.g. casts, let-bindings) */
+       code which is not needed (e.g. casts, let-bindings) */
     simplifyCoreTree (c);
 
 #define TIMINGS 1
@@ -4642,6 +4760,7 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
             "module(alarm);\n"
             "var tries := 3;\n"
             "var rep := 0;\n"
+            "var timings := \"\\n\";\n"
             "while (rep < tries) {\n"
             "var timer := time();\n"
             "rep := rep+1;\n");
@@ -4679,27 +4798,25 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
 
 #if TIMINGS
     fprintf(f,
-            "fprintf(stderr(),\"### time for run %%i: %%i msec\\n\", rep, time() - timer);\n"
+            "timer := time() - timer;\n"
+            "timings :+= \"### time for run \" + str(int(rep)) + \": \" + str(timer) + \" msec\\n\";\n"
             "timer := nil_int;\n"
             "if (rep = tries)\n"
-            "{\n");
-
-/* fprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"); */
-
-    print_output (f);
-
-    fprintf(f,
+            "{\n"
+/*          "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"); */
+            "timer := time();\n"
+            "xml_print(ws, item, kind, int_values, dbl_values, dec_values, str_values);\n"
+            "timer := time() - timer;\n"
+            "timings :+= \"### time for serialization: \" + str(timer) + \" msec\\n\";\n"
             "}\n"
             "}\n"
+            "fprintf(stderr, \"%%s\", timings);\n"
             "rep := nil; # nil_int is not declared here\n"
             "tries := nil; # nil_int is not declared here\n");
 #else
     /* print result in iter|pos|item representation */
     print_output (f);
-#endif
-
-
     fprintf(f, "print(\"mil-programm without crash finished :)\");\n");
-
+#endif
 }
 /* vim:set shiftwidth=4 expandtab: */
