@@ -254,7 +254,7 @@ class MonetSocket {
 	 * tries to disconnect the MonetDB connection if it has not been disconnected
 	 * already
 	 */
-	protected void finalize() throw Throwable {
+	protected void finalize() throws Throwable {
 		disconnect();
 		super.finalize();
 	}
