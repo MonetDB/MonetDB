@@ -1780,7 +1780,11 @@ table_ref:
  ;
 
 table_name:	
-    AS ident '(' name_commalist ')'
+	/* empty */
+				{ $$ = NULL;
+				  yyerror("name required, use ... AS xxx");
+				  YYABORT; }
+ |   AS ident '(' name_commalist ')'
 				{ dlist *l = dlist_create();
 		  		  dlist_append_string(l, $2);  
 		  	  	  dlist_append_list(l, $4);  
