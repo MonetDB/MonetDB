@@ -790,15 +790,15 @@ number@1(mvc * c, int cur)
 
 		while ((cur = scanner_getc@1(lc)) != EOF && isdigit(cur)) 
 			;
-		if (cur == 'e' || cur == 'E') {
+	}
+	if (cur == 'e' || cur == 'E') {
+		token = APPROXNUM;
+		cur = scanner_getc@1(lc);
+		if (cur == '-' || cur == '+') 
+			token = 0;
+		while ((cur = scanner_getc@1(lc)) != EOF && 
+		       isdigit(cur)) 
 			token = APPROXNUM;
-			cur = scanner_getc@1(lc);
-			if (cur == '-' || cur == '+') 
-				token = 0;
-			while ((cur = scanner_getc@1(lc)) != EOF && 
-			       isdigit(cur)) 
-				token = APPROXNUM;
-		}
 	}
 	if (token) {
 		if (cur != EOF)
