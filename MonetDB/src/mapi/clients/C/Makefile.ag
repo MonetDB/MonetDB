@@ -27,7 +27,7 @@ INCLUDES = ../../../common $(READLINE_INCS)
 MAPI_LIBS = $(SOCKET_LIBS) 
 
 lib_Mapi = {
-	SOURCES = Mapi.mx 
+	SOURCES = Mapi.mx
 	LIBS = $(MAPI_LIBS) ../../../common/libmutils ../../../common/libstream
 	HEADERS = h
 }
@@ -37,9 +37,9 @@ doc_Mapi = {
 	SOURCES = Mapi.mx 
 }
 
-BINS = {
-	SOURCES = MapiClient.mx
-	MapiClient_LIBS = libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
+bin_MapiClient = {
+	SOURCES = MapiClient.mx ReadlineTools.mx
+	LIBS = libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
 		../../../common/libmutils ../../../common/libstream \
 		$(ICONV_LIBS)
 }
