@@ -421,6 +421,7 @@ BAT *BATclear(BAT *b) {
 		   free > 0
 		*/
 		size_t cap = 0;
+		hh.filename = th.filename = NULL;
 		if (b->hheap.free > 0){
 			if (ATOMheap(b->htype, &hh, cap) < 0) return NULL;
 		}
@@ -428,12 +429,12 @@ BAT *BATclear(BAT *b) {
 			if (ATOMheap(b->ttype, &th, cap) < 0) return NULL;
 		}
 		if (b->hheap.free > 0){
-			HEAPfree(&b->theap);
+			HEAPfree(&b->hheap);
 			b->hheap = hh;
 		}
 		if (b->theap.free > 0){
-			HEAPfree(&b->hheap);
-			b->hheap = th;
+			HEAPfree(&b->theap);
+			b->theap = th;
 		}
 	} else {
 		/* do heap-delete of all inserted atoms */
