@@ -99,22 +99,15 @@ if test "x$have_pthread" != xno; then
 
   save_LIBS="$LIBS"
   LIBS="$LIBS $PTHREAD_LIBS"
-  AC_CHECK_LIB(pthread, pthread_create, 
+  AC_CHECK_LIB(pthread, sem_init, 
 	[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread" 
           AC_DEFINE(HAVE_LIBPTHREAD) 
 	  have_pthread=yes ] , 
 	dnl new sun
-	[ AC_CHECK_LIB(pthread, pthread_create, 
+	[ AC_CHECK_LIB(pthread, sem_init, 
 		[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4" 
           	AC_DEFINE(HAVE_LIBPTHREAD) 
-	  	have_pthread=yes ] , 
-	dnl old sun
-		[ AC_CHECK_LIB(pthread, pthread_create, 
-			[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lthread" 
-          		AC_DEFINE(HAVE_LIBPTHREAD) 
-	  		have_pthread=yes ] , 
-	  		[ have_pthread=no ], "-lthread" ) 
-		] , "-lposix4" ) 
+	  	have_pthread=yes ] , "-lposix4" )
 	] )
   LIBS="$save_LIBS"
 
