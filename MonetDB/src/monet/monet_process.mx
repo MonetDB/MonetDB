@@ -68,7 +68,7 @@ m_export void	monetSingle  	(int status);
 /* interpreter thread handling */
 m_export MT_Id	monetFork ();
 m_export int	monetAdjustThreads (int i);
-m_export int	monetSetChannel (Thread t, FILE* in, FILE* out);
+m_export int	monetSetChannel (Thread t, stream* in, stream* out);
 
 
 #endif /* _MONET_PROCESS_H_ */
@@ -122,14 +122,14 @@ void monetInterpreter(void* dummy){
 	MT_exit_thread(0);
 }
 
-int monetSetChannel(Thread t, FILE* in, FILE* out){
+int monetSetChannel(Thread t, stream* in, stream* out){
         if ( t==0) {
                 GDKerror("monetSetChannel: unknown thread\n");
         }
         if (t->data[0] == 0 || t->data[1] == 0) {
                 return EOF;
         }
-        PARDEBUG THRprintf(GDKerr, "setchannel %d %d\n",fileno(in), fileno(out));
+        PARDEBUG THRprintf(GDKerr, "setchannel %s %s\n",in->name, out->name);
         t->data[1] = in;
         t->data[0] = out;
  

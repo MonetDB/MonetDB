@@ -35,40 +35,40 @@ This module is seperated from the database kernel since some
 servers are not allowed to do file accesses.
 
 {\tt fopen()} opens the file named by filename  and  associates  a
-fstream  with  it. {\tt fopen()}  returns  a  pointer to the FILE
-structure associated with the fstream. The resulting pointer is needed
+stream  with  it. {\tt fopen()}  returns  a  pointer to the FILE
+structure associated with the stream. The resulting pointer is needed
 by all other io function. So fopen should be called before any other 
 function. 
 
-The {\tt fclose()} command closes the associated fstream. The FILE pointer 
+The {\tt fclose()} command closes the associated stream. The Stream pointer 
 given can not be used after calling this function. 
 
 Pipes can be created with {\tt popen()}. This function returns the
 identifier to a bidirectional pipe. You can then for instance {\tt fork()}
 a new Monet session, passing this identifier.
 
-Both sessions can then use the pipe to open a fstream with {\tt fdpipe()}.
+Both sessions can then use the pipe to open a stream with {\tt fdpipe()}.
 The one end should pass {\tt true} as the {\tt up} parameter, the other
-{\tt down}. This function returns a fstream, and can be used in combination
+{\tt down}. This function returns a stream, and can be used in combination
 with any of the functions of this module.
 
-The {\tt fflush()} command flushes the buffer of the associated fstream.
+The {\tt fflush()} command flushes the buffer of the associated stream.
 
 {\tt feof()} returns non-zero when EOF has previously been
-detected reading the named input fstream, otherwise zero.
+detected reading the named input stream, otherwise zero.
 
 {\tt freopen()} substitutes the named file in place  of  the  open
-fstream. A flush is first attempted, and then the original
-fstream is closed, regardless of whether the open ultimately
-succeeds. Failure to flush or close fstream successfully is
+stream. A flush is first attempted, and then the original
+stream is closed, regardless of whether the open ultimately
+succeeds. Failure to flush or close stream successfully is
 ignored. It returns the new FILE pointer.
 
 The {\tt fread()} and {\tt fwrite()} commands read/write a number of bytes 
-to or from a associated fstream. The read function returns a string 
+to or from a associated stream. The read function returns a string 
 containing the result. The write function returns the number of written bytes. 
 
 The {\tt fseek()} function seeks an offset number of bytes form the start, the 
-current position, or the end of the fstream.
+current position, or the end of the stream.
 \footnote{See the mil script file for the correct constants.}
 This function returns the number of bytes moved. 
 
@@ -76,81 +76,80 @@ The {\tt fprintf()} function print a variable number of
 arguments using the format string. They return the number of arguments 
 printed. 
 
-The {\tt fputs()} places a string on the given output fstream. 
+The {\tt fputs()} places a string on the given output stream. 
 {\tt fgets()} reads a string until an end of line is found form the 
-given input fstream. 
+given input stream. 
 
 Look at the related ANSI-C/POSIX manual pages to get the needed information.
 
 @* Module Definition
 @m
 .MODULE io;
+    .USE streams;
     .USE blob; # fread() and fwrite() need blobs
 
-    .ATOM fstream = ptr;
-    .END;
     .ATOM bipipe = lng;
     .END;
 
-    .COMMAND stdin() : fstream = io_stdin; 
-	"return the input fstream to the database client"
-    .COMMAND stderr() : fstream = io_stderr;
-	"return the error fstream for the database console"
-    .COMMAND stdout() : fstream = io_stdout;
-	"return the output fstream for the database client"
+    .COMMAND stdin() : Stream = io_stdin; 
+	"return the input stream to the database client"
+    .COMMAND stderr() : Stream = io_stderr;
+	"return the error stream for the database console"
+    .COMMAND stdout() : Stream = io_stdout;
+	"return the output stream for the database client"
 
-    .COMMAND fopen ( str filename, str mode ) : fstream = io_fopen; 
-	"See: man fopen. Returns fstream, or fstream(nil) on failure."
-    .COMMAND freopen ( str filename, str mode, fstream ) : fstream = io_freopen;
-	"See: man freopen. Returns fstream, or fstream(nil) on failure."
+    .COMMAND fopen ( str filename, str mode ) : Stream = io_fopen; 
+	"See: man fopen. Returns stream, or stream(nil) on failure."
+    .COMMAND freopen ( str filename, str mode, Stream ) : Stream = io_freopen;
+	"See: man freopen. Returns stream, or stream(nil) on failure."
     .COMMAND popen( ) : bipipe = io_popen;
 	"Open a bidirectional pipe. See: man pipe" 
-    .COMMAND fdpipe(bipipe, bit up, str mode) : fstream = io_fdpipe;
-        "Open a fstream in one direction through a pipe." 
+    .COMMAND fdpipe(bipipe, bit up, str mode) : Stream = io_fdpipe;
+        "Open a stream in one direction through a pipe." 
     .COMMAND ferror() : str = io_ferror;
    	"returns last error message. str(nil) if none. "
 
-    .COMMAND fclose( fstream ) = io_fclose; 
+    .COMMAND fclose( Stream ) = io_fclose; 
 	"See: man fclose"
-    .COMMAND fflush( fstream ) = io_fflush; 
+    .COMMAND fflush( Stream ) = io_fflush; 
 	"See: man fflush"
-    .COMMAND feof( fstream ) : bit = io_feof; 
+    .COMMAND feof( Stream ) : bit = io_feof; 
 	"See: man feof"
 
-    .COMMAND fread( fstream filep, int nbytes ) : blob = io_fread; 
+    .COMMAND fread( Stream filep, int nbytes ) : blob = io_fread; 
 	"See: man fread"
-    .COMMAND fwrite( fstream filep, str buf, int nbytes ) = io_fwrite_str;
+    .COMMAND fwrite( Stream filep, str buf, int nbytes ) = io_fwrite_str;
 	"See: man fwrite"
-    .COMMAND fwrite( fstream filep, blob buf, int nbytes ) = io_fwrite;
+    .COMMAND fwrite( Stream filep, blob buf, int nbytes ) = io_fwrite;
 	"See: man fwrite"
-    .COMMAND fseek( fstream filep, int pos, int offset ) : int = io_fseek; 
+    .COMMAND fseek( Stream filep, int pos, int offset ) : int = io_fseek; 
 	"See: man fseek"
-    .COMMAND ftell( fstream filep ) : int = io_ftell; 
+    .COMMAND ftell( Stream filep ) : int = io_ftell; 
 	"See: man ftell"
 
     .COMMAND fsize( str filename ) : int = io_fsize;
 	"Return the filesize, or -1 when there was some error"
 
-    .COMMAND fprint( fstream filep, ... ) = io_fprint; 
+    .COMMAND fprint( Stream filep, ... ) = io_fprint; 
 	"Print a (comma seperated) list of arguments"
 
-    .COMMAND fprintf( fstream filep, str format, ... ) = io_fprintf; 
+    .COMMAND fprintf( Stream filep, str format, ... ) = io_fprintf; 
 	"See: man fprintf"
 
-    .COMMAND fputs( str s, fstream filep ) = io_fputs; 
+    .COMMAND fputs( str s, Stream filep ) = io_fputs; 
 	"See: man fputs"
-    .COMMAND fgets( fstream filep ): str = io_fgets; 
+    .COMMAND fgets( Stream filep ): str = io_fgets; 
 	"See: man fgets"
 
-    .COMMAND fputc( int c, fstream filep ) = io_fputc; 
+    .COMMAND fputc( int c, Stream filep ) = io_fputc; 
 	"See: man fputs"
-    .COMMAND fgetc( fstream filep ): chr = io_fgetc; 
+    .COMMAND fgetc( Stream filep ): chr = io_fgetc; 
 	"See: man fgetc"
 
-    .COMMAND ftable( fstream filep, ...BAT[any::1,any]... ) = io_ftable_default; 
+    .COMMAND ftable( Stream filep, ...BAT[any::1,any]... ) = io_ftable_default; 
 	"Print an n-ary table to a file."
 
-    .COMMAND ftable( fstream filep, int orderspec, ...BAT[any::1,any]... ) = io_ftable; 
+    .COMMAND ftable( Stream filep, int orderspec, ...BAT[any::1,any]... ) = io_ftable; 
 	"Print an n-ary table to a file, using order of BAT [1..argc]."
 
 @- MIL initializations 
@@ -205,9 +204,8 @@ typedef struct {
 	int up, down;
 } bipipe;
 
-typedef FILE* fstream;
 
-#define FILEP_CHECK(fp) \
+#define STREAM_CHECK(fp) \
 	if (!fp){ \
 		GDKerror( "Incorrect file pointer\n"); \
 		return(GDK_FAIL); \
@@ -222,24 +220,21 @@ typedef FILE* fstream;
 #include "io.h"
 #include "monet.h"
 
-int io_stdin (fstream *ret) { *ret = GDKin;  return GDK_SUCCEED; }
-int io_stdout(fstream *ret) { *ret = GDKout; return GDK_SUCCEED; }
-int io_stderr(fstream *ret) { *ret = stderr; return GDK_SUCCEED; }
+int io_stdin (Stream *ret) { *(stream**)ret = GDKin;  return GDK_SUCCEED; }
+int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
+int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
 
-int io_fclose( fstream* filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
-   if (fclose(fp) < 0) {
-	GDKsyserror("io_fclose:");
-	return GDK_FAIL;
-   }
+int io_fclose( Stream* filepp ){
+   stream *fp = *(stream**) filepp; 
+   STREAM_CHECK(fp);
+   fp->destroy(fp);
    return(GDK_SUCCEED);
 }
 
-int io_fflush( fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
-   (void)fflush(fp);
+int io_fflush( Stream *filepp ){
+   stream *fp = *(stream**) filepp; 
+   STREAM_CHECK(fp);
+   (void)fp->flush(fp);
    return(GDK_SUCCEED);
 }
 
@@ -250,19 +245,26 @@ int io_popen(bipipe *retval){
    }
    return GDK_SUCCEED;
 }
-int io_fdpipe(fstream *retval, bipipe* p, bit *up, str mode){
-   *retval = (fstream) fdopen(up?p->up:p->down, mode);
-   if (*retval == 0) return GDK_SUCCEED;
+int io_fdpipe(Stream *retval, bipipe* p, bit *up, str mode){
+   if (mode && *mode){
+	*mode = 'r'
+   	*(stream**)retval = file_rastream(fdopen(up?p->up:p->down, mode), "pipe");
+   } else {
+   	*(stream**)retval = file_wastream(fdopen(up?p->up:p->down, mode), "pipe");
+   }
+   if (*retval != NULL) return GDK_SUCCEED;
    GDKsyserror("io_fdpipe:");
    return GDK_FAIL;
 }
 
-int io_feof( bit *res, fstream *filepp ){
-   FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+/*
+int io_feof( bit *res, Stream *filepp ){
+   stream *fp = *(stream**) filepp; 
+   STREAM_CHECK(fp);
    *res = feof(fp)?TRUE:FALSE;
    return(GDK_SUCCEED);
 }
+*?
 
 int io_fopen( fstream *res, str name, str mode ){
    *res = fopen(name,mode);
@@ -272,7 +274,7 @@ int io_fopen( fstream *res, str name, str mode ){
 
 int io_freopen( fstream *res, str name, str mode, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    *res = freopen(name,mode,fp);
    if (!*res) *res = *(fstream*) ATOMnilptr(TYPE_fstream);
    return GDK_SUCCEED;
@@ -292,7 +294,7 @@ int io_fread( blob **res, fstream *filepp, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int err = -1;
    str buf;
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    buf = (str) GDKmalloc( sizeof(int) + *nbytes );
    if ((*res = (blob*) buf) != NULL){
    	err = fread(buf+sizeof(int),1,*nbytes,fp);
@@ -309,7 +311,7 @@ int io_fread( blob **res, fstream *filepp, int *nbytes ){
 int io_fwrite_str(fstream *filepp, str buf, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = strlen(buf); 
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    if (*nbytes < n) n = *nbytes;
    if (fwrite(buf,1,n,fp) < (size_t) n) {
       GDKsyserror("io_fwrite_str:");
@@ -322,7 +324,7 @@ int io_fwrite(fstream *filepp, blob *b, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
    int n = *nbytes;
    str buf = (str) b;
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    if (n> *(int*) buf) {
 	n = MAX(0,*(int*) buf);
 	GDKerror("io_fwrite: blob contains only %d bytes.\n", *(int*) buf);
@@ -336,7 +338,7 @@ int io_fwrite(fstream *filepp, blob *b, int *nbytes ){
 
 int io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    *res = fseek(fp, (long)*pos, *nbytes);
    if (*res < 0) {
       GDKsyserror("io_fseek:");
@@ -347,7 +349,7 @@ int io_fseek(int *res, fstream *filepp, int *pos, int *nbytes ){
 
 int io_ftell(int *res, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    *res = ftell(fp);
    if (*res < 0) {
       GDKsyserror("io_ftell:");
@@ -375,7 +377,7 @@ int io_fprintf(fstream *filepp, str format,  ...){
         int ret;
         str s;
  
-	FILEP_CHECK(*filepp);
+	STREAM_CHECK(*filepp);
         va_start(ap,format);
         ret = monet_sprintf(&s, format, ap);
         va_end(ap);
@@ -396,7 +398,7 @@ int io_fprint(fstream *filepp, ...){
         ptr val; 
 	int type;
  
-	FILEP_CHECK(*filepp);
+	STREAM_CHECK(*filepp);
         va_start(ap,filepp);
 
 	val = va_arg (ap,ptr);
@@ -427,7 +429,7 @@ int io_fprint(fstream *filepp, ...){
 
 
 int io_fputs(str s, fstream *filepp ){
-   FILEP_CHECK(*filepp);
+   STREAM_CHECK(*filepp);
    if (fputs(s,*(FILE**)filepp) < 0) {
       GDKsyserror("io_fputs: ");
       return GDK_FAIL;
@@ -437,7 +439,7 @@ int io_fputs(str s, fstream *filepp ){
 
 int io_fputc(int *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    if (fputc(*c, fp) < 0) {
       GDKsyserror("io_fputs: ");
       return GDK_FAIL;
@@ -447,7 +449,7 @@ int io_fputc(int *c, fstream *filepp ){
 
 int io_fgets( str *s, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    *s = GDKmalloc( BUFSIZ );
    **s = 0;
    if (fgets(*s, BUFSIZ, fp) <= (char *) 0) {
@@ -464,7 +466,7 @@ int io_fgets( str *s, fstream *filepp ){
 int io_fgetc( chr *c, fstream *filepp ){
    FILE *fp = *(FILE**) filepp; 
    int ret;
-   FILEP_CHECK(fp);
+   STREAM_CHECK(fp);
    ret = (int)fgetc(fp);
    if (ret <= 0) {
       GDKsyserror("io_fgetc: ");
@@ -476,33 +478,33 @@ int io_fgetc( chr *c, fstream *filepp ){
 
 typedef BAT* batptr;
 
-int io_ftable( fstream* filepp, int *orderspec, ...){
+int io_ftable( Stream* filepp, int *orderspec, ...){
         BAT *piv[MAXPARAMS];
         int argc = 0;
         va_list ap;
 
-   	FILEP_CHECK(*filepp);
+   	STREAM_CHECK(*filepp);
         va_start (ap, orderspec);
         do {
                 piv[argc] = va_arg (ap,BAT*) ;
         } while(piv[argc++]);
         va_end (ap);
-        BATmultiprintf(*filepp, argc, piv, FALSE, *orderspec);
+        BATmultiprintf(s, argc, piv, FALSE, *orderspec);
         return GDK_SUCCEED;
 }
 
-int io_ftable_default(fstream *filepp, ...) {
+int io_ftable_default(Stream *filepp, ...) {
         BAT *piv[MAXPARAMS];
         int argc = 0;
         va_list ap;
 
-   	FILEP_CHECK(*filepp);
+   	STREAM_CHECK(*filepp);
         va_start (ap,filepp);
         do {
                 piv[argc] = va_arg (ap,BAT*) ;
         } while(piv[argc++]);
         va_end (ap);
-        BATmultiprintf(*filepp, argc, piv, FALSE, 0);
+        BATmultiprintf(s, argc, piv, FALSE, 0);
         return GDK_SUCCEED;
 }
 @}

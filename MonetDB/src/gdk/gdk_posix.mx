@@ -163,11 +163,13 @@ gdk_export char*	dlerror (void);
 gdk_export int 		gettimeofday(struct timeval *tv, int *ignore_zone);
 
 #define _errno		win_errno
+
 #define ftruncate	win_ftruncate
 #define opendir		win_opendir
 #define readdir		win_readdir
 #define rewinddir	win_rewinddir
 #define closedir	win_closedir
+
 #define stat		win_stat
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir

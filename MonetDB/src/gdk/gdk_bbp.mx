@@ -558,20 +558,21 @@ The location in the buffer pool is saved for later use as well.
 This is merely done for ease of debugging and of no importance to front-ends.
 The tail of non-used entries is reclaimed as well. 
 @c
-static int new_bbpentry(FILE *fp, int i) {
-	int r = fprintf(fp, "[  %d, %d, %s", 
+static int new_bbpentry(stream *s, int i) {
+	int r = stream_printf(s, "[  %d, %d, %s", 
 			i, BBP_status(i)&BBPSTATUS, BBP_logical(i));
 	if (r < 0) return r;
 	if (BBP_logical(-i)) {
-		r = fprintf(fp,"~%s", BBP_logical(-i));
+		r = stream_printf(s,"~%s", BBP_logical(-i));
 		if (r < 0) return r;
 	}
-	return fprintf(fp, ", %s, %d ]\n", 
+	return stream_printf(s, ", %s, %d ]\n", 
 		BBP_physical(i), BBP_plevel(i));
 }
 
 int BBPdir() {	
-	FILE *fp;
+	FILE *fp = NULL;
+	stream *s = NULL;
 	int i;
 
 	if (GDKdebug&17)
@@ -582,16 +583,18 @@ int BBPdir() {
 		THRprintf(GDKerr, "\n");
 	}
 	fp = (FILE*) GDKfilelocate("BBP", "wb", "dir"); 
-	if (fp == NULL || OIDwrite(fp) || 
-	    fprintf(fp, " BBPsize=%d\n", BBPsize) < 0) goto error;
+	if (fp)
+		s = file_wastream(fp, "BBP.dir");
+	if (s == NULL || OIDwrite(s) || 
+	    stream_printf(s, " BBPsize=%d\n", BBPsize) < 0) goto error;
 
 	for (i = 1; i < BBPsize; i++)
 	  if (BBP_status(i) & BBPPERSISTENT) {
-	    if (new_bbpentry(fp, i) < 0) goto error;
+	    if (new_bbpentry(s, i) < 0) goto error;
 	    IODEBUG new_bbpentry(GDKerr, i);
 	  }
 
-	if (fclose(fp)) goto error;
+	s->close(s);
 	IODEBUG THRprintf(GDKerr, "BBPdir end\n");
 	return 0;
 error:	GDKsyserror("BBPdir failed:\n"); 

@@ -58,7 +58,7 @@ will even be the case for long 64-bit integers.
 @m
 .MODULE enum;
 
-.USE io;
+.USE streams;
 
 .COMMAND enum_create(str name, BAT[any,any] data) : int = enum_new;
  "create a new enumeration type."
@@ -99,11 +99,11 @@ will even be the case for long 64-bit integers.
 .COMMAND enum_ishisto(int tpe, BAT[any,any] b) : bit = enum_ishisto;
  "returns whether enum_table(tpe) is a histogram on b's head column"
 
-.COMMAND enum_print(fstream fp, BAT[any,int] b1, BAT[any,any] b2, 
+.COMMAND enum_print(Stream fp, BAT[any,int] b1, BAT[any,any] b2, 
                                BAT[any,any] b3) = enum_print2;
  "quick file print of 3 synced bats, and int tail and two enumerated strings"
 
-.COMMAND enum_print(fstream fp, BAT[any,int] b1, 
+.COMMAND enum_print(Stream fp, BAT[any,int] b1, 
                                BAT[any,any] b2) = enum_print1;
  "quick file print of 2 synced bats, an int and enumerated string tail"
 
@@ -144,7 +144,7 @@ will even be the case for long 64-bit integers.
 @* Implementation
 @c
 #include "gdk.h"
-#include "io.h"
+#include "streams.h"
 #include "enum.proto.h"
 
 typedef int (*fcn)();
@@ -610,10 +610,11 @@ whole table is built in memory and flushed in one go to disk.
 @:enum_print1(char)@
 @:enum_print1(short)@
 
-int enum_print1(FILE **fp, BAT* b2, BAT* b1) {
+int enum_print1(Stream *fp, BAT* b2, BAT* b1) {
 	BAT *e1;
 	int tpe1 = b1->ttype;
 	str dst; int i = 1000 + 20*BATcount(b2);
+	stream *s = *(stream**)fp;
 
 	if (ALIGNsynced(b1,b2)==0) {
 		GDKerror("enum_print: all params must be synced\n");
@@ -633,8 +634,8 @@ int enum_print1(FILE **fp, BAT* b2, BAT* b1) {
 	} else {
 		i = enum_print_short(dst, dst+i, b1, e1, b2);
 	}
-	fwrite(dst, i, 1, *fp); 
-	fflush(*fp);
+	s->write(s, dst, i, 1); 
+	s->flush(s);
 	return GDK_SUCCEED;
 }
 
@@ -671,11 +672,12 @@ static int enum_print_@1(str p, str q, BAT* b1, BAT* e1, BAT* b2) {
 @:enum_print2(short,char)@
 @:enum_print2(short,short)@
 
-int enum_print2(FILE **fp, BAT* b3, BAT* b2, BAT* b1) {
+int enum_print2(Stream *fp, BAT* b3, BAT* b2, BAT* b1) {
 	BAT *e1, *e2;
 	int tpe1 = b1->ttype;
 	int tpe2 = b2->ttype;
 	str dst; int i = 1000 + 28*BATcount(b3);
+	stream *s = *(stream**)fp;
 
 	if (ALIGNsynced(b1,b3)==0 || ALIGNsynced(b2,b3)==0) {
 		GDKerror("enum_print: all params must be synced\n");
@@ -703,8 +705,8 @@ int enum_print2(FILE **fp, BAT* b3, BAT* b2, BAT* b1) {
 			i = enum_print_short_short(dst, dst+i, b1, e1, b2, e2, b3);
 		} 
 	}
-	fwrite(dst, i, 1, *fp); 
-	fflush(*fp);
+	s->write(s, dst, i, 1); 
+	s->flush(s);
 	return GDK_SUCCEED;
 }
 

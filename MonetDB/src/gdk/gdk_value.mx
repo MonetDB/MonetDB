@@ -132,9 +132,9 @@ ValPtr VALcopy(ValPtr d, ValPtr s){
 	return d;
 }
 
-int VALprint(FILE *fd, ValPtr res){
+int VALprint(stream *s, ValPtr res){
 	int t = res->vtype;
-	return ATOMprint(t, VALptr(res), fd);
+	return ATOMprint(t, VALptr(res), s);
 }	
 
 

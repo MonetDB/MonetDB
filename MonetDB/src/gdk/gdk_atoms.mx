@@ -439,38 +439,38 @@ char *ATOMname(int t) {
 int ATOMdump() {
 	int t; 
 	for (t = 0; t < GDKatomcnt; t++) {
-		fprintf(GDKout, "%2d '%9s' (%3d) ", t, BATatoms[t].name, BATatoms[t].size); 
+		stream_printf(GDKout, "%2d '%9s' (%3d) ", t, BATatoms[t].name, BATatoms[t].size); 
 		if (BATatoms[t].atomFromStr) {
-			fprintf(GDKout, "\"FromStr\" "); 
+			stream_printf(GDKout, "\"FromStr\" "); 
 		}
 		if (BATatoms[t].atomToStr) {
-			fprintf(GDKout, "\"ToStr\" "); 
+			stream_printf(GDKout, "\"ToStr\" "); 
 		}
 		if (BATatoms[t].atomCmp) {
-			fprintf(GDKout, "\"Cmp\" "); 
+			stream_printf(GDKout, "\"Cmp\" "); 
 		}
 		if (BATatoms[t].atomNull) {
-			fprintf(GDKout, "\"Null\" "); 
+			stream_printf(GDKout, "\"Null\" "); 
 		}
 		if (BATatoms[t].atomHash) {
-			fprintf(GDKout, "\"Hash\" "); 
+			stream_printf(GDKout, "\"Hash\" "); 
 		}
 		if (BATatoms[t].atomPut) {
-			fprintf(GDKout, "\"Put\" "); 
+			stream_printf(GDKout, "\"Put\" "); 
 		}
 		if (BATatoms[t].atomDel) {
-			fprintf(GDKout, "\"Del\" "); 
+			stream_printf(GDKout, "\"Del\" "); 
 		}
 		if (BATatoms[t].atomLen) {
-			fprintf(GDKout, "\"Len\" "); 
+			stream_printf(GDKout, "\"Len\" "); 
 		}
 		if (BATatoms[t].atomConvert) {
-			fprintf(GDKout, "\"Convert\" "); 
+			stream_printf(GDKout, "\"Convert\" "); 
 		}
 		if (BATatoms[t].atomHeap) {
-			fprintf(GDKout, "\"NewHeap\" "); 
+			stream_printf(GDKout, "\"NewHeap\" "); 
 		}
-		fprintf(GDKout, "\n"); 
+		stream_printf(GDKout, "\n"); 
 	}
 	return 0;
 }
@@ -676,24 +676,24 @@ The comparison against the NULL value is hard coded for speed.
 @c
 #define LINE_LEN	60
 
-int ATOMprint(int t, ptr p, FILE* fp) {
+int ATOMprint(int t, ptr p, stream* s) {
 	int (*tostr)();
 	
 	if (p && (t>=0) && (t<GDKatomcnt) && (tostr=BATatoms[t].atomToStr)) {
 	    if (t != TYPE_bat && t < TYPE_str) {
 		char buf[dblStrlen], *addr=buf; /* use memory from stack */
 		int sz = dblStrlen, l = (*tostr)(&addr, &sz, p);
-		fputs(buf, fp);
+		s->write(s, buf, l, 1);
 		return l;
 	    } else {
 		char *buf = 0;
 		int sz = 0, l = (*tostr)(&buf, &sz, p);
-		fputs(buf, fp);
+		s->write(s, buf, l, 1);
 		GDKfree(buf);
 		return l;
 	    }
 	} 
-	fputs("nil", fp);
+	s->write(s, "nil", 3, 1);
 	return 3;
 }
 
@@ -1436,14 +1436,14 @@ Write the current sequence of OID seeds to a file in string format.
 @c
 int OIDflushdelta = 100000;
 
-int OIDwrite(FILE *fp) {
+int OIDwrite(stream *s) {
 	int i, ret = 0;
 	MT_set_lock(MT_system_lock, "OIDwrite");
 	for(i=0; i < GDKMAXDB; i++) { 
 		if (GDKoid[i]) {
 			GDKflushed[i] = GDKoid[i] + OIDflushdelta;
-			ATOMprint(TYPE_oid, GDKflushed+i, fp);
-			if (fputc(' ', fp) < 0) ret = -1;
+			ATOMprint(TYPE_oid, GDKflushed+i, s);
+			if (s->write(s, " ", 1, 1) < 0) ret = -1;
 		}
 	}
 	MT_unset_lock(MT_system_lock, "OIDwrite");

@@ -329,11 +329,9 @@ int ll_getch() {
         if (ch == '\n') {
                 if (ll_client->listing) {
                     if (GDKdebug&16384 || !ll_stack) {
-                        *ll_client->cptr = 0;
-                        fputs(ll_client->cline, ll_client->fdout);
-                        fputc('\n', ll_client->fdout);
-                        fflush(ll_client->fdout);
-                        *ll_client->cptr = '\n';
+			stream *s = ll_client->fdout;
+                        s->write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1 , 1  );
+                        s->flush(s);
 		    }
                 }
                 ll_client->cline = ll_client->cptr + 1;
@@ -356,11 +354,9 @@ int ll_getstring(char *buf, int max_size) {
         	if (ch == '\n') {
                     if (ll_client->listing) {
                     	if (GDKdebug&16384 || !ll_stack) {
-                       		*ll_client->cptr = 0;
-                       		fputs(ll_client->cline, ll_client->fdout);
-                       		fputc('\n', ll_client->fdout);
-                       		fflush(ll_client->fdout);
-                       		*ll_client->cptr = '\n';
+				stream *s = ll_client->fdout;
+                        	s->write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1, 1  );
+                        	s->flush(s);
 		    	}
                     }
                     ll_client->cline = ll_client->cptr + 1;

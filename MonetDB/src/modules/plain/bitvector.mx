@@ -36,8 +36,6 @@ support the operations AND and OR.
 @m
 .MODULE bitvector;
 
-.USE io;
-
 .COMMAND [allocate](int nbits, bit initial): 
    BAT[void,lng] = bitvector_allocate;
  "Allocate a new and empty bitvector"
@@ -107,7 +105,6 @@ c.print;
 @{
 @* Implementation
 @c
-#include "io.h"
 #include "bitvector.proto.h"
 
 #define numentries(a, b)	(((a) + (b) - 1) / (b))

@@ -33,6 +33,15 @@ lib_mutils = {
 	HEADERS = h
 }
 
+INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) 
+MTSAFE
+
+lib_stream  =  {
+	SOURCES = stream.mx dummy_gdk_utils.mx
+	HEADERS = h
+	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) 
+}
+
 scripts_py = {
         DIR = pkgdatadir/python
         SOURCES = monet_options.py.in

@@ -21,8 +21,7 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-INCLUDES = -I../../common -I../../gdk -I../../monet -I../plain/stream \
-	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
+INCLUDES = -I../../common -I../../gdk -I../../monet $(HWCOUNTERS_INCS)
 MTSAFE
 
 LIBDIR = pkglib

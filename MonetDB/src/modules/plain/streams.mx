@@ -29,79 +29,83 @@ data files.
 
 @m
 .MODULE streams;
-.USE io;
 
-    .ATOM stream = ptr;
+    .ATOM Stream = ptr;
     .END;
 
-.COMMAND open_rstream( str filename ) : stream = stream_open_rstream;
+.COMMAND open_rstream( str filename ) : Stream = stream_open_rstream;
 	"open a file stream for reading"
-.COMMAND open_wstream( str filename ) : stream = stream_open_wstream;
+.COMMAND open_wstream( str filename ) : Stream = stream_open_wstream;
 	"open a file stream for writing"
-.COMMAND open_rastream( str filename ) : stream = stream_open_rastream; 
+.COMMAND open_rastream( str filename ) : Stream = stream_open_rastream; 
 	"open ascii file stream for reading"
-.COMMAND open_wastream( str filename ) : stream = stream_open_wastream; 
+.COMMAND open_wastream( str filename ) : Stream = stream_open_wastream; 
 	"open ascii file stream for writing"
 
-.COMMAND socket_rstream( int socket, str name ) : stream = 
+.COMMAND socket_rstream( int socket, str name ) : Stream = 
 	stream_socket_rstream; "open a socket stream for reading"
-.COMMAND socket_wstream( int socket, str name ) : stream = 
+.COMMAND socket_wstream( int socket, str name ) : Stream = 
 	stream_socket_wstream; "open a socket stream for writing"
-.COMMAND socket_rastream( int socket, str name ) : stream = 
+.COMMAND socket_rastream( int socket, str name ) : Stream = 
 	stream_socket_rastream; "open ascii socket stream for reading"
-.COMMAND socket_wastream( int socket, str name ) : stream = 
+.COMMAND socket_wastream( int socket, str name ) : Stream = 
 	stream_socket_wastream; "open ascii socket stream for writing"
 
-.COMMAND file_rstream( fstream file, str name ) : stream = 
-	stream_file_rstream; "open a file stream for reading"
-.COMMAND file_wstream( fstream file, str name ) : stream = 
-	stream_file_wstream; "open a file stream for writing"
-.COMMAND file_rastream( fstream file, str name ) : stream = 
-	stream_file_rastream; "open ascii file stream for reading"
-.COMMAND file_wastream( fstream file, str name ) : stream = 
-	stream_file_wastream; "open ascii file stream for writing"
-
-.COMMAND block_stream( stream s ) : stream = 
+.COMMAND block_stream( Stream s ) : Stream = 
 	open_block_stream; "open a block based stream"
 
-.COMMAND stream_write( stream s, str data ) = stream_write_string;
+.COMMAND stream_write( Stream s, str data ) = stream_write_string;
 	"write data on the stream"
 
-.COMMAND stream_writeInt( stream s, int data ) = stream_writeInt_wrap;
+.COMMAND stream_writeInt( Stream s, int data ) = stream_writeInt_wrap;
 	"write an integer on the stream"
 
-.COMMAND stream_read( stream s ) : str = stream_read_string;
+.COMMAND stream_readInt( Stream s ) : int = stream_readInt_wrap;
+	"write an integer on the stream"
+
+.COMMAND stream_read( Stream s ) : str = stream_read_string;
 	"read data from the stream"
 
-.COMMAND stream_flush( stream s ) = stream_flush;
+.COMMAND stream_flush( Stream s ) = stream_flush;
 	"flush the stream"
 
-.COMMAND stream_close( stream s ) = stream_close_stream; 
+.COMMAND stream_close( Stream s ) = stream_close_stream; 
 	"close and destroy the stream s"
 
-    .ATOM buffer = ptr;
+    .ATOM Buffer = ptr;
     .END;
 
-.COMMAND buffer_create( int size ) : buffer = buffer_create_wrap;
+.COMMAND buffer_create( int size ) : Buffer = buffer_create_wrap;
 	"create a buffer of the given size"
 
-.COMMAND buffer_destroy( buffer b ) = buffer_destroy_wrap;
+.COMMAND buffer_destroy( Buffer b ) = buffer_destroy_wrap;
 	"destroy buffer"
 
-.COMMAND buffer_rastream( buffer b, str name ) : stream = buffer_rastream_wrap;
+.COMMAND buffer_rastream( Buffer b, str name ) : Stream = buffer_rastream_wrap;
 	"create a buffer read stream"
 
-.COMMAND buffer_wastream( buffer b, str name ) : stream = buffer_wastream_wrap; 
+.COMMAND buffer_wastream( Buffer b, str name ) : Stream = buffer_wastream_wrap; 
 	"create a buffer write stream"
 
+    .COMMAND fprintf( Stream filep, str format, ... ) = io_fprintf; 
+	"See: man fprintf"
+
+    .COMMAND ftable( Stream filep, ...BAT[any::1,any]... ) = io_ftable_default; 
+	"Print an n-ary table to a file."
+
+    .COMMAND ftable( Stream filep, int orderspec, ...BAT[any::1,any]... ) = io_ftable; 
+	"Print an n-ary table to a file, using order of BAT [1..argc]."
 .END streams;
 @h
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
-#include "stream.h"
+#include <gdk.h>
 #include <blob.h>
-#include <io.h>
+
+typedef ptr Stream;
+typedef ptr Buffer;
+
 #include "streams.proto.h"
 
 #endif /*_STREAMS_H_*/
@@ -110,105 +114,82 @@ data files.
 #include "streams.h"
 #include <stdio.h>
 
-int stream_open_rstream( stream *S, str filename ){
+int stream_open_rstream( Stream *S, str filename ){
 	if ((*(stream**)S = open_rstream( filename )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_open_wstream( stream *S, str filename ){
+int stream_open_wstream( Stream *S, str filename ){
 	if ((*(stream**)S = open_wstream( filename )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_open_rastream( stream *S, str filename ){
+int stream_open_rastream( Stream *S, str filename ){
 	if ((*(stream**)S = open_rastream( filename )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_open_wastream( stream *S, str filename ){
+int stream_open_wastream( Stream *S, str filename ){
 	if ((*(stream**)S = open_wastream( filename )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_socket_rstream( stream *S, int *socket, str name ){
+int stream_socket_rstream( Stream *S, int *socket, str name ){
 	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_socket_wstream( stream *S, int *socket, str name ){
+int stream_socket_wstream( Stream *S, int *socket, str name ){
 	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_socket_rastream( stream *S, int *socket, str name ){
+int stream_socket_rastream( Stream *S, int *socket, str name ){
 	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_socket_wastream( stream *S, int *socket, str name ){
+int stream_socket_wastream( Stream *S, int *socket, str name ){
 	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int stream_file_rstream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_rstream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_file_wstream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_wstream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_file_rastream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_rastream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-int stream_file_wastream( stream *S, fstream *file, str name ){
-	if ((*(stream**)S = file_wastream( *file, name )) == NULL){
-		return GDK_FAIL; 
-	} else {
-		return GDK_SUCCEED;
-	}
-}
-
-int stream_write_string( stream *S, str data ){
+int stream_write_string( Stream *S, str data ){
 	stream *s = *(stream**)S;
 	s->write( s, data, 1, strlen(data));
 	return GDK_SUCCEED;
 }
 
-int stream_writeInt_wrap( stream *S, int *data ){
+int stream_writeInt_wrap( Stream *S, int *data ){
 	stream *s = *(stream**)S;
-	s->writeInt( s, *data);
+	stream_writeInt( s, *data);
+	return GDK_SUCCEED;
+}
+
+int stream_readInt_wrap( int *data, Stream *S ){
+	stream *s = *(stream**)S;
+	stream_readInt( s, data);
 	return GDK_SUCCEED;
 }
 
 #define CHUNK (64*1024)
-int stream_read_string( str *res, stream *S ){
+int stream_read_string( str *res, Stream *S ){
 	stream *s = *(stream**)S;
 	int len = 0;
 	int size = CHUNK + 1;
@@ -226,20 +207,20 @@ int stream_read_string( str *res, stream *S ){
 	return GDK_SUCCEED;
 }
 
-int stream_flush( stream *S ){
+int stream_flush( Stream *S ){
 	stream *s = *(stream**)S;
 	s->flush( s );
 	return GDK_SUCCEED;
 }
 
-int stream_close_stream( stream *S ){
+int stream_close_stream( Stream *S ){
 	stream *s = *(stream**)S;
 	s->close( s );
 	s->destroy( s );
 	return GDK_SUCCEED;
 }
 
-int open_block_stream( stream *S, stream *is ){
+int open_block_stream( Stream *S, Stream *is ){
 	if ((*(stream**)S = block_stream( *(stream**)is )) == NULL){
 		return GDK_FAIL; 
 	} else {
@@ -247,30 +228,114 @@ int open_block_stream( stream *S, stream *is ){
 	}
 }
 
-int buffer_create_wrap( buffer *b, int *size){
+int buffer_create_wrap( Buffer *b, int *size){
 	if ((*(buffer**)b = buffer_create( *size )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int buffer_destroy_wrap( buffer *b ){
+int buffer_destroy_wrap( Buffer *b ){
 	buffer_destroy( *(buffer**)b );
 	return GDK_SUCCEED;
 }
-int buffer_rastream_wrap( stream *S, buffer *b, str name ){
+int buffer_rastream_wrap( Stream *S, Buffer *b, str name ){
 	if ((*(stream**)S = buffer_rastream( *(buffer**)b, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
 }
-int buffer_wastream_wrap( stream *S, buffer *b, str name ){
+int buffer_wastream_wrap( Stream *S, Buffer *b, str name ){
 	if ((*(stream**)S = buffer_wastream( *(buffer**)b, name )) == NULL){
 		return GDK_FAIL; 
 	} else {
 		return GDK_SUCCEED;
 	}
+}
+
+int io_fprintf(Stream *filepp, str format,  ...){
+	stream *fp = *(stream**)filepp;
+        va_list ap;
+        int ret;
+        str s;
+ 
+        va_start(ap,format);
+        ret = monet_sprintf(&s, format, ap);
+        va_end(ap);
+        if (ret == GDK_FAIL) {
+                return GDK_FAIL;
+        }
+        if (fp->write(fp, s, ret, strlen(s)) < 0) {
+                GDKsyserror("io_fprintf():");
+                GDKfree(s);
+                return GDK_FAIL;
+        }
+	GDKfree(s);
+        return GDK_SUCCEED;
+}
+
+int io_fprint(Stream *filepp, ...){
+	stream *fp = *(stream**)filepp;
+        va_list ap;
+        ptr val; 
+	int type;
+ 
+        va_start(ap,filepp);
+
+	val = va_arg (ap,ptr);
+        if(val){
+		type = va_arg(ap,int);
+		if (ATOMstorage(type) != TYPE_str)
+			stream_printf( fp, "%s(\"", ATOMname(type) );
+		ATOMprint(type, val, fp);
+		if (ATOMstorage(type) != TYPE_str)
+			stream_printf( fp, "\")" );
+		val = va_arg (ap,ptr);
+        	while(val){
+			type = va_arg(ap,int);
+			if (ATOMstorage(type) != TYPE_str)
+				stream_printf( fp, ", %s(\"", ATOMname(type) );
+			else
+				stream_printf( fp, ", ");
+			ATOMprint(type, val, fp);
+			if (ATOMstorage(type) != TYPE_str)
+				stream_printf( fp, "\")" );
+			val = va_arg (ap,ptr);
+		}
+	}
+        va_end(ap);
+        return GDK_SUCCEED;
+}
+
+int io_ftable( Stream* filepp, int *orderspec, ...){
+	stream *fp = *(stream**)filepp;
+        BAT *piv[MAXPARAMS];
+        int argc = 0;
+        va_list ap;
+
+        va_start (ap, orderspec);
+        do {
+                piv[argc] = va_arg (ap,BAT*) ;
+        } while(piv[argc++]);
+        va_end (ap);
+        BATmultiprintf(fp, argc, piv, FALSE, *orderspec);
+        return GDK_SUCCEED;
+}
+
+int io_ftable_default(Stream *filepp, ...) {
+	stream *fp = *(stream**)filepp;
+        BAT *piv[MAXPARAMS];
+        int argc = 0;
+        va_list ap;
+
+        va_start (ap,filepp);
+        do {
+                piv[argc] = va_arg (ap,BAT*) ;
+        } while(piv[argc++]);
+        va_end (ap);
+        BATmultiprintf(fp, argc, piv, FALSE, 0);
+        return GDK_SUCCEED;
 }
 @mil
 

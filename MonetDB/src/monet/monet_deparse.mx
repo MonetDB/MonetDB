@@ -114,12 +114,13 @@ static int lex_name(Client c, char* buf, char *end, YYSTREE t, ValPtr v){
 }
 
 int yytoProlog(YYSTREE t,int cnt){
+	stream *out = GDKout;
 	yylim = yybuffer + cnt;
 	yybuffer[0] = 0;
 	yylim = yybuffer + 4000;
 	yydeparse(monet_clients,t,yybuffer, yylim);
 	if( cnt<4000) yybuffer[cnt] = 0;
-	return fputs(yybuffer,GDKout);
+	return out->write(out, yybuffer, cnt, 1);
 }
 
 char* yydeparse(Client c, YYSTREE t, char* buf, char* end){

@@ -883,9 +883,10 @@ itself employs qsort() to order the carthesian product on
 the matched tail values.
 @{
 @c
-#define LINE(fp,	X)     { int n=X-1; fputc('#',fp); while(n-->0)\
-                                fputc('-',fp); fputs("#\n",fp); }
-#define TABS(fp,	X)     { int n=X; while(n-->0) fputc('\t',fp);  }
+#define LINE(s,	X)     { int n=X-1; s->write(s, "#", 1, 1); while(n-->0)\
+                                s->write(s, "-", 1, 1); \
+				stream_printf(s, "#\n"); }
+#define TABS(s,	X)     { int n=X; while(n-->0) stream_printf(s, "\t");  }
 
 typedef int (*strFcn)(str* s, int* len, ptr val); 
 
@@ -941,26 +942,26 @@ int print_tabwidth(BAT *b, str title, col_format_t *c) {
 }
 
 static 
-void print_line(FILE* fp, col_format_t** l) {
+void print_line(stream* s, col_format_t** l) {
 	col_format_t *c = *(l++);
-        fputs("[ ", fp);
+        s->write(s, "[ ", 2, 1);
         if (c->format) {
-                fputs(c->buf, fp);
-                fputc(',', fp);
-                TABS(fp, c->tabs-((c->len+3)/8));
-                if (c->tabs*8 >= c->len+3) fputc(' ', fp);
-                fputc(' ', fp);
+                s->write(s, c->buf, c->len, 1);
+                s->write(s, ",", 1, 1);
+                TABS(s, c->tabs-((c->len+3)/8));
+                if (c->tabs*8 >= c->len+3) s->write(s, " ", 1, 1);
+                s->write(s , " ", 1, 1);
         }
         for (c=*l; *(++l); c=*l) {
-                fputs(c->buf, fp);
-                fputc(',', fp);
-                TABS(fp, c->tabs-((c->len+3)/8));
-                if (c->tabs*8 >= c->len+3) fputc(' ', fp);
-                fputc(' ', fp);
+                s->write(s, c->buf, c->len, 1);
+                s->write(s, ",", 1, 1);
+                TABS(s, c->tabs-((c->len+3)/8));
+                if (c->tabs*8 >= c->len+3) s->write(s, " ", 1, 1);
+                s->write(s, " ", 1, 1);
         }
-        fputs(c->buf, fp);
-        TABS(fp, c->tabs-((c->len+2)/8));
-        fputs("  ]\n", fp);
+        s->write(s, c->buf, c->len, 1);
+        TABS(s, c->tabs-((c->len+2)/8));
+        stream_printf( s, "  ]\n");
 }
 
 static 
@@ -970,27 +971,28 @@ void print_format(col_format_t *c, ptr v) {
 }
 
 @= print_head
-	str s = @1?argv[@2].tpe:argv[@2].buf; /* contains column title */
-	if (@1) fputc('(', fp);
-	fputs(s, fp);
-	if (@1) fputc(')', fp);
-	TABS(fp, argv[@2].tabs-((2+@1+strlen(s))/8));
+	str buf = @1?argv[@2].tpe:argv[@2].buf; /* contains column title */
+	int len = strlen(buf);
+	if (@1) s->write(s, "(", 1, 1);
+	s->write(s, buf, len, 1);
+	if (@1) s->write(s, ")", 1, 1);
+	TABS(s, argv[@2].tabs-((2+@1+len)/8));
 @= print_header
 	int k = 1; 
-	fputs("# ", fp);
+	s->write(s, "# ", 2, 1);
 	if (argv[0].format) {
 		@:print_head(@1,0)@
-		fputs("  ",fp);
+		s->write(s, "  ", 2, 1);
 	}
 	while(TRUE) {
 		@:print_head(@1,k)@
-		if (k++ < argc) fputs("| ", fp);
+		if (k++ < argc) s->write(s, "| ", 2, 1);
 		else break;
         } 
-	fputs("  #\n", fp);
+	stream_printf(s, "  #\n");
 @c
 static 
-int print_header(int argc, col_format_t* argv, FILE* fp) {
+int print_header(int argc, col_format_t* argv, stream* s) {
 	@:print_header(0)@
 	if (argv[0].format) {
 		@:print_header(2)@
@@ -1003,12 +1005,12 @@ The simple BAT printing routines make use of the complex case.
 @c
 int BATprint(BAT* b) {
 	ERRORcheck(b == NULL, "BATprint: BAT expected"); 
-	return BATmultiprintf(stdout, 2, &b, TRUE, 0);
+	return BATmultiprintf(GDKstdout, 2, &b, TRUE, 0);
 }
 
-int BATprintf(FILE* fp, BAT*b) {
+int BATprintf(stream* s, BAT*b) {
 	ERRORcheck(b == NULL, "BATprintf: BAT expected"); 
-	return BATmultiprintf(fp, 2, &b, TRUE, 0);
+	return BATmultiprintf(s, 2, &b, TRUE, 0);
 }
 
 @+ Multi-Bat Printing
@@ -1033,7 +1035,7 @@ str batname(BAT *b) {
 }
 
 int BATmultiprintf(
-	FILE    *fp,		/* output fd */
+	stream    *s,		/* output stream */
 	int     argc, 		/* #ncolumns = #nbats +  */
 	BAT     *argv[],	/* the bats 2b printed */
 	int     printhead,	/* boolean: print the head column? */
@@ -1068,29 +1070,29 @@ Init the column descriptors of the tail columns.
 @-
 Print the table header and then the multijoin.
 @c
-        LINE(fp, total);
-	print_header(argc, c, fp);
-        LINE(fp, total);
+        LINE(s, total);
+	print_header(argc, c, s);
+        LINE(s, total);
 	if (argc == 1) {
 		BAT *b = argv[0];
 		BUN p,q;
 		BATloop(b,p,q) {
 			print_format(cp[0], BUNhead(b,p));
 			print_format(cp[1], BUNtail(b,p));
-			print_line(fp, cp);
+			print_line(s, cp);
 		}
 		MULTIJOIN_LEAD(ret) = 1;
 		MULTIJOIN_SORTED(ret) = (BAThordered(b)&1);
 		MULTIJOIN_KEY(ret) = b->hkey;
 		MULTIJOIN_SYNCED(ret) = 1;
 	} else {
-		ret = BATmultijoin(argc, argv, (RowFcn) print_line, (void*)fp, 
+		ret = BATmultijoin(argc, argv, (RowFcn) print_line, (void*)s, 
 					value_fcn, (void**)cp, order);
 	}
 @-
 Cleanup.
 @c
-	(void) fflush(fp);
+	(void) s->flush(s);
         for(j=0; j <= argc; j++) {
 		if (c[j].buf) GDKfree(c[j].buf);
 	}

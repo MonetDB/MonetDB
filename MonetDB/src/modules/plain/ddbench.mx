@@ -378,7 +378,7 @@ by the increased cube sizes (probably not; {\em limit=1000} performs best).
 .MODULE ddbench;
 
 .USE xtables;
-.USE io;
+.USE streams;
 .USE enum;
 
 .ATOM bit32 = int;
@@ -669,7 +669,7 @@ ors@batloop() print($t);
 
 @c
 #include "ddbench.h"
-#include "io.h"
+#include "streams.h"
 #include "enum.proto.h"
 
 extern int enum_chktpe(int);
@@ -2371,14 +2371,14 @@ done
 
 @f scripts/head
 @mil
-module(unix,alarm,io,str,xtables);
+module(unix,alarm,stream,str,xtables);
 
 #output for the Xfig overview is dumped in a separate file
 var DB := environment.find("dbname");
 var PAR := int(getenv("PAR"));
 var TMP := getenv("TMP");
-var fpNice:= fopen(sprintf("%s/%s_par%d.sed", TMP, DB, PAR), "w+");
-var fps := new(int,stream);
+var fpNice:= open_wstream(sprintf("%s/%s_par%d.sed", TMP, DB, PAR));
+var fps := new(int,Stream);
 var VF := int(getenv("VF"));
 var HF := XX; # value gets substituted in during script generation
 var SCR := "YY"; # value gets substituted in during script generation
@@ -2401,7 +2401,7 @@ var CT_reliable := nil;
 
 @f scripts/print
 @mil
-module(io,alarm);
+module(stream,alarm);
 
 proc revprint(fp,b1,b2) := fp.[fprintf]("%d\t%s\n", b2, [str](b1));
 proc revprint(fp,b1,b2,b3) := fp.[fprintf]("%d\t%s\t%s\n", b3, [str](b2), [str](b1));

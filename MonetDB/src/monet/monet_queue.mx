@@ -97,7 +97,7 @@ m_export void  	   clrRequest  (Request q);
 m_export void         rmRequest  (Request r);
 m_export int	handleRequest  (Thread t, Request q, ValPtr res);
 m_export void	    doRequest  (Thread t, Request preference);
-m_export void	    prRequest  (FILE *fp, Request p);
+m_export void	    prRequest  (stream *fp, Request p);
 m_export Request	  thisRequest  ();
 m_export Request	   topRequest  (Client c);
 
@@ -140,7 +140,7 @@ int		QMclock;
 int		QMrequests;
 Request		qm_first, qm_last;
 
-void prRequest(FILE *fp, Request p) {
+void prRequest(stream *fp, Request p) {
 	char buf[256], *s;
 	int l = 0;
 
@@ -262,7 +262,7 @@ are eligable for execution. Their state is set accordingly.
 	PARDEBUG {
 		THRprintf(GDKerr, "Mput = ");
 		yytoProlog(op->ev_data, 30);
-		fprintf(GDKerr, "\n");
+		stream_printf(GDKerr, "\n");
 		QMprint();
 	}
        	MT_unset_lock(monet_critical, "putRequest");
@@ -301,7 +301,7 @@ void nxtRequest(Request p){
 	PARDEBUG {
 		THRprintf(GDKerr, "Mnxt = ");
 		yytoProlog(p->ev_data, 30);
-		fprintf(GDKerr, "\n");
+		stream_printf(GDKerr, "\n");
 		QMprint();
 	}
        	MT_unset_lock(monet_critical, "nxtRequest");
@@ -481,7 +481,7 @@ int handleRequest(Thread t, Request q, ValPtr res){
  
         PARDEBUG THRprintf(GDKerr, "MIget = ");
         PARDEBUG yytoProlog(lt, 30);
-        PARDEBUG fprintf(GDKerr, "\n");
+        PARDEBUG stream_printf(GDKerr, "\n");
  
         if (q->ev_client &&
             monetSetChannel(t, q->ev_client->fdin, q->ev_client->fdout))
@@ -643,7 +643,7 @@ int QMopen(){
 }
 
 void QMprint() {
-	FILE	*fp = GDKerr;
+	stream	*fp = GDKerr;
 	Request	q;
 
 	THRprintf(fp, "#------------------------------------------------------------------#\n"); 
@@ -716,7 +716,7 @@ void QMdequeueStat(Request q){
 }
 
 void QMprintStat() {
-	FILE	*fd = GDKerr;
+	stream	*fd = GDKerr;
 	Request	q;
 
 	THRprintf(fd, "#------------------------------------------------------------------------#\n"); 

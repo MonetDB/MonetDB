@@ -1308,27 +1308,6 @@ BAT *BATroles(BAT *b, str hnme,str tnme) {
 	return b;
 }
 
-BAT *BATmode(BAT *b, int mode) {
-	BATcheck(b, "BATmode"); 
-
-	MT_set_lock(GDKtmLock, "BATmode"); 
-	if ((b->batPersistence&mode) == 0){
-		b->batPersistence = mode;
-		BBPdirty(1);
-		if (mode&PERSISTENT) {
-			if (VIEWparent(b)) {
-				VIEWreset(b);
-			}
-			BBPpersistent(b->batCacheid, TRUE);
-		} else {
-			BBPtransient(b->batCacheid, TRUE);
-		}
-	}
-	MT_unset_lock(GDKtmLock, "BATmode"); 
-	return b; 
-}
-
-
 int BATkeytst(BAT *b, ptr h, ptr t) {
 	BUN p = NULL; 
 

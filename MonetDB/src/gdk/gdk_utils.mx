@@ -1230,8 +1230,8 @@ Thread THRnew(MT_Id pid, str name) {
 	memset((char*) s, 0, sizeof(*s)); 
 	s->pid = pid; 
 	s->tid = tid;
-	s->data[1] = stdin; 
-	s->data[0] = stdout; 
+	s->data[1] = THRdata[1]; 
+	s->data[0] = THRdata[0]; 
 	s->name = name; 
 	s->cleanup = NULL;
 	s->sp = THRsp();
@@ -1312,8 +1312,8 @@ The code below should be improved to gain speed.
 
 int THRinit() {
 	int i = 0;
-	THRdata[0] = (void*) stdout;
-	THRdata[1] = (void*) stdin;
+	THRdata[0] = (void*) file_wastream(stdout, "stdout");
+	THRdata[1] = (void*) file_rastream(stdin, "stdin");
 	for ( i = 0; i<THREADS; i++ ){
 		GDKthreads[i].tid = (MT_Id)(i+1);
 	}
@@ -1335,10 +1335,10 @@ MT_Id THRgettid(){
 	return (s?s->tid:(MT_Id)1);
 }
 
-static char THRprintbuf[1024];
+static char THRprintbuf[BUFSIZ];
 
 /*VARARGS*/
-int THRprintf(FILE *fp, char *format, ...) {
+int THRprintf(stream *s, char *format, ...) {
 	str p = THRprintbuf; 
         va_list ap;
 	*p = 0;
@@ -1355,10 +1355,10 @@ int THRprintf(FILE *fp, char *format, ...) {
 		while(*p) p++;
 	}
         va_start (ap,format);
-               vsprintf (p, format, ap);
+               p += vsnprintf (p, BUFSIZ-(p-THRprintbuf), format, ap);
         va_end (ap);
-	fputs(THRprintbuf, fp);
-	fflush(fp);
+	s->write(s, THRprintbuf, p-THRprintbuf, 1 );
+	s->flush(s);
 	if (MT_system_lock) {
 		MT_unset_lock(MT_system_lock, "THRprintf");
 	}

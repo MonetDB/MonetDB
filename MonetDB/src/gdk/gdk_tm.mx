@@ -46,7 +46,7 @@ Access to the transaction table is regulated by a semaphore.
 char			TMname[MAXTM][IDLENGTH] = { SYSTRANSACTION }; 
 
 int TMnew(str s) {
-	fprintf(GDKout, "begin transaction %s\n", s); 
+	stream_printf(GDKout, "begin transaction %s\n", s); 
 	strcpy(TMname[0], s); 
 
 	return 0; 
@@ -227,4 +227,26 @@ int TMabort() {
 	MT_unset_lock(GDKtmLock, "TMabort"); 
 	return 0; 
 }
+
+BAT *BATmode(BAT *b, int mode) {
+	BATcheck(b, "BATmode"); 
+
+	MT_set_lock(GDKtmLock, "BATmode"); 
+	if ((b->batPersistence&mode) == 0){
+		b->batPersistence = mode;
+		BBPdirty(1);
+		if (mode&PERSISTENT) {
+			if (VIEWparent(b)) {
+				VIEWreset(b);
+			}
+			BBPpersistent(b->batCacheid, TRUE);
+		} else {
+			BBPtransient(b->batCacheid, TRUE);
+		}
+	}
+	MT_unset_lock(GDKtmLock, "BATmode"); 
+	return b; 
+}
+
+
 @}

@@ -72,7 +72,7 @@ to be dumped bats. These bats can be dumped with dump_data.
 
 .COMMAND load( BAT[void,str] names, BAT[void,str] seps, BAT[void,str] types, str datafile, int nr ) : BAT[str,bat] = ascii_io_load; ""
 .COMMAND dump( BAT[void,str] names, BAT[void,str] seps, BAT[void,bat] bats, str datafile, int nr ) = ascii_io_dump; ""
-.COMMAND output( BAT[any,any] order, BAT[void,str] seps, BAT[void,bat] bats, stream s ) = ascii_io_output; ""
+.COMMAND output( BAT[any,any] order, BAT[void,str] seps, BAT[void,bat] bats, Stream s ) = ascii_io_output; ""
 
 .LOAD
 
@@ -609,7 +609,7 @@ int load_file( ascii *as, stream *fd ){
         int i = 0, seplen = as->format[as->nr_attrs-1].seplen;
 
 	if (ascii_io_debug)
-		fprintf( GDKerr, "load_file\n");
+		stream_printf( GDKerr, "load_file\n");
 
 	while(!eof && (as->nr < 0|| i < as->nr)){
 		int l, size = bufsz-p;
@@ -644,7 +644,7 @@ int load_file( ascii *as, stream *fd ){
 			}
 			i++;
 			if (ascii_io_debug && (i%100000) == 0)
-				fprintf(GDKerr, "inserted %d\n", i);
+				stream_printf(GDKerr, "inserted %d\n", i);
 			if (as->nr > 0 && i >= as->nr)
 				break;
 		}
@@ -666,7 +666,7 @@ int dump_file( ascii *as, stream *fd ){
 			return -1;
 		}
 		if (ascii_io_debug && (i%1000000) == 0)
-			fprintf(GDKerr, "dumped %d lines\n", i);
+			stream_printf(GDKerr, "dumped %d lines\n", i);
         } 
 	GDKfree(buf);
 	return 0;
@@ -772,7 +772,7 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats,
 	    assign_BATs( &as, bats ) >=  0){
 		stream *s = open_wastream( datafile );
 		if (!s->errnr && dump_file( &as, s ) >= 0){
-			fprintf(GDKerr, "saved in %s\n", datafile );
+			stream_printf(GDKerr, "saved in %s\n", datafile );
 		}
 		if (s->errnr){
 		 	GDKerror("could not open file %s\n", datafile );
@@ -821,7 +821,7 @@ int ascii_io_dump( BAT *names, BAT* seps, BAT* bats, str datafile, int *nr){
 	ASCIIdump( names, seps, bats, datafile, *nr );
 	return GDK_SUCCEED;
 }
-int ascii_io_output( BAT *order, BAT* seps, BAT* bats, stream *s ){
+int ascii_io_output( BAT *order, BAT* seps, BAT* bats, Stream *s ){
 	ASCIIoutput( order, seps, bats, *(stream**)s );
 	return GDK_SUCCEED;
 }

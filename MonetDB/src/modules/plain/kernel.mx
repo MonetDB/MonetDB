@@ -765,7 +765,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 		freeClient(c);
 		monet_exit();
 		*/
-		fflush(GDKout);
+		GDKout->destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
 	q = topRequest(c);
@@ -791,11 +791,11 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
    
 	if (strcmp(c->user, GDKgetenv("monet_admin"))  )
 	{
-		fprintf(GDKout,"No permission for shutdown; quit.\n");
-		fflush(GDKout);
+		stream_printf(GDKout,"No permission for shutdown; quit.\n");
+		GDKout->destroy(GDKout);
 	} else if (monet_deamon == 1) {
-		fprintf(GDKout,"Shutdown of server in progress\n");
-		fflush(GDKout);
+		stream_printf(GDKout,"Shutdown of server in progress\n");
+		GDKout->flush(GDKout);
 		monet_running = 0;
 		CMDquit(stk, lt, res);
 		closeClient(monet_clients, TRUE);
@@ -806,8 +806,7 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
         	if (lt->cnt > 0) { 
             	    @:builtin_operand(0, TYPE_int, statusp)@
         	}
-		fflush(GDKout);
-		fclose(GDKout);
+		GDKout->destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
 	return CMDquit(stk, lt, res);
@@ -827,7 +826,7 @@ int CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res){
 		for( ; monet_cntxt[stk].outer >0; stk=monet_cntxt[stk].outer);
 		c= monet_clients+stk;
 		c->prompt= (char*) GDKstrdup( x);
-		fprintf(GDKout,"# new prompt for %s (%d):%s\n",c->user,stk,c->prompt);
+		stream_printf(GDKout,"# new prompt for %s (%d):%s\n",c->user,stk,c->prompt);
 	} else{
 		GDKwarning("prompt: argument missing\n");
 	}

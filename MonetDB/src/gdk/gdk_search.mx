@@ -368,7 +368,7 @@ int HASHlist(Hash* h, int i) {
                 c++;
                 i = j;
                 if ((i < -1) || (i > (int) h->lim)) {
-                        fprintf(GDKout, "hash inconsistency link %d\n", i);
+                        stream_printf(GDKout, "hash inconsistency link %d\n",i);
                         break;
                 }
         }

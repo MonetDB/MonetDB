@@ -22,20 +22,22 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 
-INCLUDES = -I../../common -I../../gdk -I../../monet -Istream \
+INCLUDES = -I../../common -I../../gdk -I../../monet \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
 MTSAFE
 
 # install these libs in the pkglib
 LIBDIR = pkglib
-SUBDIRS = stream
+#SUBDIRS = stream
+
+# io.mx depricated 
 
 LIBS = {
 	SEP = _
 	SOURCES = \
 		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
 		bitvector.mx blob.mx cluster.mx  ddbench.mx \
-		decimal.mx enum.mx io.mx iterator.mx kernel.mx lock.mx \
+		decimal.mx enum.mx iterator.mx kernel.mx lock.mx \
 		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
 		perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx \
 		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
@@ -53,7 +55,7 @@ lib__streams = {
 	SOURCES = streams.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet ./stream/libstream \
+	LIBS = ../../gdk/libbat ../../monet/libmonet ../../common/libstream \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
@@ -61,7 +63,7 @@ lib__ascii_io = {
 	SOURCES = ascii_io.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet ./stream/libstream ./lib_streams
+	LIBS = ../../gdk/libbat ../../monet/libmonet ../../common/libstream ./lib_streams
 }
 
 lib__counters = {

@@ -773,7 +773,7 @@ Mark the value as totally ready in the cache.
 	    cache_fill(c, tpe, dst, i);
 	}
 	GDKsetbuf(errbuf_bak);
-	fprintf(GDKout, "conn_waiter: lost connection, exiting.\n");
+	stream_printf(GDKout, "conn_waiter: lost connection, exiting.\n");
 	MT_set_lock(TCPlock, "conn_waiter");
 	conn_delete(i);
 	MT_unset_lock(TCPlock, "conn_waiter");

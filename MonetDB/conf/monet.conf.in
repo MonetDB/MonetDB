@@ -90,6 +90,6 @@ monet_deamon=no			# default yes
 #====================================
 #sql_port=45123				#default place to sent the SQL query
 #sql_debug=0				#default place to sent the SQL query
-#sql_api=sql				#default place to sent the SQL query
-#sql_user=sqladmin				#default place to sent the SQL query
-#sql_schema=default-schema				#default place to sent the SQL query
+#sql_api=sql(default-schema)		#default place to sent the SQL query
+#sql_user=monetdb			#default place to sent the SQL query
+#sql_schema=default-schema		#default place to sent the SQL query
