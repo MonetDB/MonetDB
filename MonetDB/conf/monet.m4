@@ -141,7 +141,7 @@ X_CFLAGS=''
 X_CXXFLAGS=''
 case $CC-$CXX in
 *gcc-*g++*)
-	gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
+	gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
 	dnl  We need more features than the C89 standard offers, but not all
 	dnl  (if any at all) C/C++ compilers implements the complete C99
 	dnl  standard.  Moreover, there seems to be no standard for the
@@ -361,7 +361,7 @@ if test "x$have_java" != xno; then
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
     AC_MSG_CHECKING(for Java >= 1.4)
-    JAVA_VERSION=[`$JAVA -version 2>&1 | head -1 | sed -e 's|.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*|\1|'`]
+    JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*|\1|'`]
     if test MONET_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONET_VERSION_TO_NUMBER(echo "1.4"); then
       have_java_1_4=yes
     else
@@ -512,7 +512,7 @@ if test "x$enable_optim" = xyes; then
     dnl  Optimization flags
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
-      gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
+      gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
       case "$host-$gcc_ver" in
       i*86-*-*-3.[[2-9]]*)
                       CFLAGS="$CFLAGS -O6"
