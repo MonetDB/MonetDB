@@ -251,7 +251,6 @@ int receive( stream *rs, stream *out, int trace ){
 			fprintf( stdout, "SQL ERROR %d %d: ", type, status );
 
 			buf[nr] = 0;
-			fwrite(buf, strlen(buf), 1, stdout);
 			s = conv(buf, from_utf);
 			fwrite( s, strlen(s), 1, stdout );
 			free(s);
