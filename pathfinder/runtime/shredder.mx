@@ -84,8 +84,10 @@ nat nnode_attr;/* number of attributes counter */
 
 #include "pathfinder.h"
 
+/* define the number of BATs in the requuired result set */
 #define SHRED_BATS (PROP_VAL + 1)
 
+/* description of the static properties of a result BAT */
 typedef struct shredBATdef {
         int     id;       /* the index in the BAT, for assert usage */
         char*   name;     /* the name for the bat */
@@ -95,6 +97,7 @@ typedef struct shredBATdef {
         char    compress; /* In case of str BAT to flag compression */
 } shredBATdef;
 
+/* values of the static properties of a result BAT */
 static shredBATdef shredbatdef[SHRED_BATS] = {
         { PRE_SIZE, "PRE_SIZE", TYPE_void, TYPE_int, 1.0, 0},
         { PRE_LEVEL,"PRE_LEVEL",TYPE_void, TYPE_chr, 1.0, 0},
@@ -114,32 +117,37 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
         { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str, 0.0, 1}
 };
 
+/* description of the dynamic properties of a result BAT */
 typedef struct shredBAT {
-        shredBATdef     *def;
-        nat             cnt;
-        nat             dupl;
-        nat             size;
-        BAT             *bat;
+        shredBATdef     *def; /* pointer to static properties */
+        nat             cnt;  /* current #of elements in the BAT */
+        nat             dupl; /* the number of duplicate BUNins so far */
+        nat             size; /* current maximum size of the BAT */
+        BAT             *bat; /* the physical BAT */
         /* */
-        union {
+        union { /* cast to perform direct indexex insert in [void,any] BATs */
             void* voidCAST; /* the basecast */
-            nat*  intCAST;
-            chr*  chrCAST;
-            oid*  oidCAST;
+            nat*  intCAST;  /* cast for [void,int] BAT */
+            chr*  chrCAST;  /* cast for [void,chr] BAT */
+            oid*  oidCAST;  /* cast for [void,oid] BAT */
         } cast;
 } shredBAT;
 
+/* the computing context environmentf the shredding process */
 typedef struct shredCtx {
-        char*           name;
-        int             fileSize;
-        int             estSize;
-        shredBAT        dstBAT[SHRED_BATS];
-        int             nslocDUPL;
-        BAT*            nslocBAT;
+        char*           name;           /* xml document name */
+        int             fileSize;       /* size of the input file */
+        int             estSize;        /* extimated number of pre nodes */
+        shredBAT        dstBAT[SHRED_BATS]; /* all the result BATs */
+        BAT*            nslocBAT;       /* the BAT to compress NS and LOC */
+        int             nslocDUPL;      /* the number of duplicates nslocs */
 } shredCtx;
 
+/* the minimal incremental size of a BAT during estimation process */
 #define MINCHUNK        1024
 
+/* the global the describing the computing enviroment of the current shredding
+ * process. This is note reentrant. But is it very convenient at the moment */
 static shredCtx* glb_ctx;
 
 static shredCtx *createShredCtx(char* name, int fileSize) {
@@ -168,6 +176,10 @@ static shredCtx *createShredCtx(char* name, int fileSize) {
                 if ( sb->def->compress ) {
                         /* create an accelerator on the str tail of the BAT */
                         sb->bat = BATmirror(BAThash(BATmirror(sb->bat),0));
+                        if ( !sb->bat ) {
+                                stream_printf(GDKerr,"shredder.mx:Hash[%d]:create fails\n",i);
+                                return NULL;
+                        }
                 }
 #endif
                 BATseqbase(sb->bat,0);
@@ -177,12 +189,19 @@ static shredCtx *createShredCtx(char* name, int fileSize) {
 #ifdef USE_COMPRESSION
         /* incomplete, what does second arg of BAThash do ?? */
         res->nslocBAT = BAThash(BATnew(TYPE_str,TYPE_oid,res->estSize/50),0);
+        if ( !res->nslocBAT ) {
+            stream_printf(GDKerr,"shredder.mx:nslocBAT:create fails\n");
+            return NULL;
+        }
         res->nslocDUPL= 0;
 #endif
         glb_ctx = res;
         return res;
 }
 
+/* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
+ * corerct the batsize will always shrink!
+ */
 static void setBATcapacity(shredCtx* ctx, int idx, int n) {
         BAT* b = ctx->dstBAT[idx].bat;
 
@@ -242,8 +261,12 @@ static void printStat(shredCtx* ctx) {
 static BAT* finalizeShredCtx(shredCtx* ctx) {
         int i;
 
-        BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* the result BAT */
+        BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
 
+        if ( !res ) {
+                stream_printf(GDKerr,"finalizeShredCtx:resultBAT:create failed.\n");
+                return NULL;
+        }
         setBATcapacity(ctx,PRE_SIZE, nnode_pre);
         setBATcapacity(ctx,PRE_LEVEL,nnode_pre);
         setBATcapacity(ctx,PRE_PROP, nnode_pre);
@@ -266,7 +289,10 @@ static BAT* finalizeShredCtx(shredCtx* ctx) {
                 if ( !BAThdense(sb->bat) )
                         stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
                 bat bbb = BBPcacheid( sb->bat );
-                BUNins(res, &i, &bbb);
+                if ( ! BUNins(res, &i, &bbb) ) {
+                     stream_printf(GDKerr,"finalizeShredCtx:copy2result fails\n");
+                     return NULL;
+                }
                 BBPunfix( bbb );
         }
         if ( PRINT_STAT )
@@ -330,11 +356,10 @@ CMDshred2bats(BAT **res2mil, str docname)
                         timer_str (abs (stop - start)),
                         timer_str (abs (stop - start) / nnode_pre));
     }
-
     return GDK_SUCCEED;
 }
 
-#define CHECK_BAT_SIZE(SB,I)    if ( ((I)>=(SB)->size) && incrBATsize(SB,I)<0) return -1; 
+#define CHECK_BAT_SIZE(SB,I)    if ( ((I)>=(SB)->size) && incrBATsize(SB,I)<0) return NIL; 
 
 static int incrBATsize(shredBAT* sb, nat i) {
     size_t newsize;
@@ -402,7 +427,10 @@ static INLINE nat append_str2bat(shredCtx* ctx, int idx, str v) {
 #ifdef VERBOSE
         stream_printf(GDKout,"APPEND-STR[%s](%s)\n",sb->def->name,v);
 #endif
-        BUNins(sb->bat,(ptr)&my_oid_nil,(ptr)v);
+        if ( !BUNins(sb->bat,(ptr)&my_oid_nil,(ptr)v) ) {
+            stream_printf(GDKerr,"APPEND-STR[%s](%s), BUNins fails\n",sb->def->name,v);
+            return NIL;
+        }
         return sb->cnt++;
 }
 
@@ -541,13 +569,18 @@ char
 /**
  * enter new XML node into pre|size|level|prop|kind relation
  */
-static void
+static int
 emitnode (node_t node)
 {
-    direct_int2bat(glb_ctx,PRE_SIZE, node.pre,node.size);
-    direct_chr2bat(glb_ctx,PRE_LEVEL,node.pre,node.level);
-    direct_oid2bat(glb_ctx,PRE_PROP, node.pre,node.prop);
-    direct_chr2bat(glb_ctx,PRE_KIND, node.pre,node.kind);
+    if (
+       direct_int2bat(glb_ctx,PRE_SIZE, node.pre,node.size)  == NIL ||
+       direct_chr2bat(glb_ctx,PRE_LEVEL,node.pre,node.level) == NIL ||
+       direct_oid2bat(glb_ctx,PRE_PROP, node.pre,node.prop)  == NIL ||
+       direct_chr2bat(glb_ctx,PRE_KIND, node.pre,node.kind)  == NIL 
+    )
+        return -1;
+    else
+        return 1;
 }
 
 void 
@@ -578,13 +611,14 @@ shred_end_document (void *ctx)
     (void) ctx;
 
     /* pop document node and enter into pre|size|level|prop|kind relation */
-    emitnode (POP ());
+    if ( emitnode (POP ()) < 0 )
+        xmlStopParser(ctx);
 }
 
 /**
  * write buffered text content (if any) to prop|text relation
  */
-void 
+int 
 text2rel ()
 {
     node_t node;
@@ -598,15 +632,18 @@ text2rel ()
         node.size  = 0;
         node.level = level;
         node.kind  = TEXT;
-        node.prop = append_str2bat(glb_ctx,PROP_TEXT,content_buf);
+        if ( (node.prop=append_str2bat(glb_ctx,PROP_TEXT,content_buf)) == NIL)
+                return -1;
 
         /* this text node contributes to the size of its parent */
         TOP ().size++;
 
         /* enter text node into pre|size|level|prop|kind relation */
-        emitnode (node);
+        if ( emitnode (node) < 0 )
+            return -1;
     }
     content = 0;
+    return 1;
 }
 
 
@@ -620,11 +657,17 @@ static nat store_NsLoc(char* nsloc) {
         }
 #endif
         nat res;
-        res = append_str2bat(glb_ctx,QN_NS,only_ns(nsloc));
-        if ( res != append_str2bat(glb_ctx,QN_LOC,only_loc(nsloc)) )
-                stream_printf(GDKout,"store_NsLoc:NS-LOC sync error");
+        if ( (res=append_str2bat(glb_ctx,QN_NS,only_ns(nsloc)))==NIL)
+                return NIL;
+        if ( res != append_str2bat(glb_ctx,QN_LOC,only_loc(nsloc)) ) {
+                stream_printf(GDKerr,"store_NsLoc:NS-LOC sync error");
+                return NIL;
+        }
 #ifdef USE_COMPRESSION
-        BUNins(glb_ctx->nslocBAT,nsloc,&res);
+        if ( !BUNins(glb_ctx->nslocBAT,nsloc,&res) ) {
+                stream_printf(GDKerr,"Error:store_NsLoc:compression table insert fails\n");
+                return NIL;
+        }
 #endif
         return res;
 }
@@ -640,8 +683,10 @@ shred_start_element (void *ctx,
     node_t node;
     nat qn_id, val_id;
 
-    text2rel ();
-
+    if ( text2rel () < 0 ) {
+        xmlStopParser(ctx);
+        return;
+    }
     /* (1) assign preorder rank (document order), size, level, and kind */
     node.pre   = nnode_pre++;
     node.size  = 0;
@@ -655,7 +700,10 @@ shred_start_element (void *ctx,
     if (level > depth)
         depth = level;
 
-    node.prop = store_NsLoc( (char*) t);
+    if ( (node.prop = store_NsLoc( (char*) t)) == NIL ) {
+        xmlStopParser(ctx);
+        return;
+    }
 
     /* push node onto node stack: size to be determined later */
     PUSH (node);
@@ -663,12 +711,19 @@ shred_start_element (void *ctx,
     /* (2) process the element's attribute(s), if any */
     if (atts)
         while (*atts) {            
-            qn_id = store_NsLoc( (char*) *atts);
+            qn_id  = store_NsLoc( (char*) *atts);
             val_id = append_str2bat(glb_ctx,PROP_VAL,(char*)*(atts + 1));
             /* */
-            direct_oid2bat(glb_ctx,ATTR_OWN ,nnode_attr, node.pre);
-            direct_oid2bat(glb_ctx,ATTR_QN  ,nnode_attr, qn_id);
-            direct_oid2bat(glb_ctx,ATTR_PROP,nnode_attr, val_id);
+            if ( 
+               qn_id  == NIL ||
+               val_id == NIL ||
+               direct_oid2bat(glb_ctx,ATTR_OWN ,nnode_attr, node.pre) == NIL ||
+               direct_oid2bat(glb_ctx,ATTR_QN  ,nnode_attr, qn_id)    == NIL ||
+               direct_oid2bat(glb_ctx,ATTR_PROP,nnode_attr, val_id)   == NIL
+            ) {
+                xmlStopParser(ctx);
+                return;
+            }
             nnode_attr++;
 
             /* process next attribute */
@@ -687,7 +742,10 @@ shred_end_element (void *ctx, const xmlChar *tag)
     (void) ctx;
     (void) tag;
 
-    text2rel ();
+    if ( text2rel () < 0 ) {
+        xmlStopParser(ctx);
+        return;
+    }
 
     node = POP ();
 
@@ -700,7 +758,8 @@ shred_end_element (void *ctx, const xmlChar *tag)
     TOP ().size += node.size + 1;
 
     /* enter element node into pre|size|level|prop|kind relation */
-    emitnode (node);
+    if ( emitnode (node) < 0 )
+        xmlStopParser(ctx);
 }
 
 /**
@@ -747,7 +806,10 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
 
     (void) ctx;
 
-    text2rel ();
+    if ( text2rel () < 0 ) {
+        xmlStopParser(ctx);
+        return;
+    }
 
     node.pre   = nnode_pre++;
     node.size  = 0;
@@ -762,7 +824,8 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
         stream_printf(GDKerr,"shredder.mx:shred_pi: tgt-ins sync error\n");
     
     /* enter p-i node into pre|size|level|prop|kind relation */
-    emitnode (node);
+    if ( emitnode (node) < 0 )
+        xmlStopParser(ctx);
 }
 
 void 
@@ -772,7 +835,10 @@ shred_comment (void *ctx, const xmlChar *c)
 
     (void) ctx;
 
-    text2rel ();
+    if ( text2rel () < 0 ) {
+        xmlStopParser(ctx);
+        return;
+    }
 
     node.pre   = nnode_pre++;
     node.size  = 0;
@@ -785,9 +851,9 @@ shred_comment (void *ctx, const xmlChar *c)
     node.prop = append_str2bat(glb_ctx,PROP_COM,(char*)c);
 
     /* enter comment node into pre|size|level|prop|kind relation */
-    emitnode (node);
+    if ( emitnode (node) < 0 )
+        xmlStopParser(ctx);
 }
-
 
 void 
 error (void *ctx, const char *msg, ...)
@@ -839,7 +905,7 @@ xmlSAXHandler shredder = {
 };
 
 
-void 
+int 
 shred (const char *in, const char *out)
 {
     xmlParserCtxtPtr ctx;
@@ -847,19 +913,24 @@ shred (const char *in, const char *out)
     (void) out;
 
     /* parse XML input (receive SAX events) */
-    ctx = xmlCreateFileParserCtxt (in);
+    if ( !(ctx = xmlCreateFileParserCtxt (in)) ) {
+        stream_printf(GDKerr,"shred:xmlCreateFileParserCtxt failed\n"); 
+        return -1;
+    }
     ctx->sax = &shredder;
     xmlSwitchEncoding (ctx, XML_CHAR_ENCODING_UTF8);
     
     (void) xmlParseDocument (ctx);
 
+    /* incomplete, check if something has gone wrong durin shred */
     if (! ctx->wellFormed) {
         stream_printf(GDKerr, 
                  "!ERROR: XML input not well-formed "
                  "(relation files probably contain garbage)\n");
 
-        exit (EXIT_FAILURE);
+        return -1;
     }
+    return 1;
 }
 
 int 
@@ -899,12 +970,12 @@ mainSHREDDER(char* xmlFile)
     }
 
     /* shredding... */
-    shred (xmlFile, out);
+    int res = shred (xmlFile, out);
 
     /* free the buffers */
     free(content_buf);
 
-    return 0;
+    return res;
 }
 
 @c
