@@ -17,8 +17,6 @@
  * All Rights Reserved.
  */
 
-#include <sql_config.h>
-
 #if !defined(HAVE_CONFIG_H) && defined(_MSC_VER)
 #include <windows.h>
 #endif

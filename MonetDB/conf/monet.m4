@@ -236,7 +236,7 @@ yes-*-*)
 	CFLAGS="$CFLAGS -std=c99"
 	case "$gcc_ver-$host_os" in
 	*-solaris*)
-		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flags])
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
 	*-cygwin*)
 		dnl  Otherwise, snprintf prototype is not declared in stdio.h ...
