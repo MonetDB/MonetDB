@@ -19,16 +19,12 @@ Known values for OPTION are:
   --prefix[=DIR]	print/change monet prefix [default $prefix]
   --build		print monet build directory
   --source		print monet source directory
-  --libs		print Mapi library linking information
-  --cflags		print Mapi pre-processor and compiler flags
-  --gdklibs		print gdk linking information
-  --gdkcflags		print gdk pre-processor and compiler flags
+  --libs		print Monet module linking information
+  --cflags		print Monet module pre-processor and compiler flags
+  --modpath             print default Monet module directory
   --help		display this help and exit
   --version		output version information
-  --streamlibs		print libraries needed by the stream module
 
-NOTE: --gdklibs and --gdkcflags are not to link the gdk library into
-      your application, but are internally used
 EOF
 
     exit $1
@@ -74,24 +70,16 @@ while test $# -gt 0; do
 	;;
 
     --cflags)
-       	echo -I @includedir@/gdk @includedir@/tools
+       	echo -I $prefix -I $prefix/include -I $prefix/include/common -I $prefix/include/gdk -I $prefix/include/monet -I $prefix/include/plain
        	;;
 
     --libs)
-       	echo -L @libdir@ -lMapi
+       	echo -L $prefix/lib/MonetDB
        	;;
 
-    --gdkcflags)
-       	echo @PTHREAD_INCS@
-       	;;
-
-    --gdklibs)
-       	echo @SOCKET_LIBS@ @MALLOC_LIBS@ @PTHREAD_LIBS@
-       	;;
-
-    --streamlibs)
-       	echo @SOCKET_LIBS@ @BZ_LIBS@ @Z_LIBS@ 
-       	;;
+    --modpath)
+	echo $prefix/lib/MonetDB
+	;;
 
     *)
 	usage
