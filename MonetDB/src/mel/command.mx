@@ -56,8 +56,8 @@ class Command : public Symbol {
 
 extern int id_rand();
 extern "C" {
-     extern long random();
-     extern void srandom( unsigned seed);
+     extern long rand();
+     extern void srand( unsigned seed);
 }
 
 Command::Command( int t, char *n, char *fcn, int type, Symbol *result, 
@@ -186,15 +186,15 @@ random numbers with history (to avoid doubles)
 
 #define MAX_ID_HIST 10240
 
-//static int id_base = srandom(time(NULL));
+//static int id_base = srand(time(NULL));
 static int id_hist[MAX_ID_HIST];
 static int id_size = 0;
 
 int id_rand(){
-	int i, r = random();
+	int i, r = rand();
 	for(i = 0; i < id_size; i++) 
 		if (id_hist[i] == r) {
-			srandom(time(NULL));
+			srand(time(NULL));
 			return id_rand();
 		} 
 	id_hist[id_size++] = r;

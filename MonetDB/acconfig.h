@@ -12,3 +12,7 @@
 
 /* Defines HOST */
 #undef HOST
+
+/* LONGLONG */
+#undef HAVE_LONGLONG
+#undef HAVE__INT64

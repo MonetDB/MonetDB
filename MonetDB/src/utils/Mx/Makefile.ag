@@ -1,5 +1,5 @@
 
-CFLAGS = -DUNIX -DMX_CXX_SUFFIX=\"cc\"
+CFLAGS = -DUNIX -DMX_CXX_SUFFIX=$(CXXEXT)
 
 EXTRA_DIST = warning.gif epstogif
 

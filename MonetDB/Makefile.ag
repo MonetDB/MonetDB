@@ -1,6 +1,6 @@
 
 SUBDIRS = src conf doc scripts tests
 
-EXTRA_DIST = rules.mk rules.msc bootstrap deps lady.gif
+EXTRA_DIST = rules.mk rules.msc winconfig.h bootstrap deps lady.gif
 
 EXTRA_HEADERS = config.h

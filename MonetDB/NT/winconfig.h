@@ -54,7 +54,7 @@
 /* #undef off_t */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-#undef pid_t int
+#define pid_t int
 
 /* Define as the return type of signal handlers (int or void).  */
 #define RETSIGTYPE void
@@ -240,3 +240,5 @@
 /* Host identifier */
 #define HOST "i686-pc-win32"
 
+#undef HAVE_LONGLONG
+#define HAVE__INT64

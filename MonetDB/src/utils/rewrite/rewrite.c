@@ -7,9 +7,9 @@
 /* ==================================================================== */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 /* ==================================================================== */
 /* == what does it do?                                               == */
@@ -855,8 +855,7 @@ xit1:		fclose(fp_in);
 
 		if (ok) {
 			unlink(argv[1]);
-			link(TMPFILE,argv[1]);
-			unlink(TMPFILE);
+			rename(TMPFILE,argv[1]);
 		}
 	}
 	return 0;

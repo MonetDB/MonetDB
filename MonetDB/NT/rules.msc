@@ -1,4 +1,9 @@
 
+# This is the location of pthreads for Win32, 
+# see http://sourceware.cygnus.com/pthreads-win32/
+PTHREAD = \tmp\pthread
+PTHREAD_LIB = $(PTHREAD)\pthread.lib
+
 MEL=$(TOPDIR)\src\mel\mel
 MX=$(TOPDIR)\src\utils\Mx\Mx
 
@@ -8,7 +13,7 @@ MX=$(TOPDIR)\src\utils\Mx\Mx
 .mx.c:
 	$(MX) $(MXFLAGS) -x c $<
 
-.mx.cc:
+.mx.cxx:
 	$(MX) $(MXFLAGS) -x C $<
 
 .mx.m:
@@ -17,11 +22,15 @@ MX=$(TOPDIR)\src\utils\Mx\Mx
 .mx.mil:
 	$(MX) $(MXFLAGS) -x mil $<
 
-.m.proto.h:
+.m.proto_h:
 	$(MEL) $(INCLUDES) -o $@ -proto $<
 
-.m.glue.c:
+.m.glue_c:
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
-.SUFFIXES: .m .mx .proto.h .mil .glue.c
+# needed for yacc/lex output generated under unix used 
+.cc.cxx:
+	rename $< $@
+
+.SUFFIXES: .m .mx .proto_h .mil .glue_c .cxx .cc
 .PRECIOUS: .m 

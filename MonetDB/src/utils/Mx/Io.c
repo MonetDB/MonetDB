@@ -268,6 +268,7 @@ void UpdateFiles()
             break;
         case 1: /* different file */
             printf("%s: %s - modified \n",mx_file,f->f_name);
+	    unlink(f->f_name);
             if (rename(f->f_tmp, f->f_name)) perror("rename");
             break;
         default: /* new file, move file */

@@ -5,7 +5,6 @@ import os
 automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll' ]
 script_ext = [ 'mil' ]
 
-
 def msc_subdirs(fd, var, values, msc ):
   o = ""
   for v in values:
@@ -40,6 +39,17 @@ def msc_libdir(fd, var, values, msc ):
 def msc_mtsafe(fd, var, values, msc ):
   fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
+def msc_translate_dir(path,msc):
+    dir = path
+    if (string.find(path,os.sep) >= 0):
+      d,rest = string.split(path,os.sep, 1) 
+      if (d == "top_srcdir" or d == "top_builddir"):
+	  d = "TOPDIR"
+      elif (d == "srcdir" or d == "builddir"):
+          d = "."
+      dir = "$("+d+")"+ "\\" + rest
+    return regsub.gsub(os.sep, "\\", dir );
+
 def msc_space_sep_list(l):
   res = ""
   for i in l:
@@ -73,6 +83,10 @@ def msc_find_hdrs(target,deps,hdrs):
     if (ext in automake_ext):
       pf = f 
   return pf
+
+def msc_translate_ext( f ):
+	n = regsub.gsub("\.o", ".obj", f );
+	return regsub.gsub("\.cc", ".cxx", n );
 
 def msc_binary(fd, var, binmap, msc ):
 
@@ -132,9 +146,9 @@ def msc_binary(fd, var, binmap, msc ):
     fd.write(binname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in binmap["DEPS"].items():
-    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
+    fd.write( msc_translate_ext(t) + ":" )
     for f in d:
-      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
+      fd.write(" " + msc_translate_ext(f) )
     fd.write("\n")
 
   if (binmap.has_key('HEADERS')):
@@ -177,7 +191,7 @@ def msc_bins(fd, var, binsmap, msc ):
 	  binadd = binadd + " " + l + ".lib"
       fd.write(binadd + "\n")
 
-    srcs = bin+"_SOURCES ="
+    srcs = bin+"_OBJS ="
     for target in binsmap['TARGETS']:
       l = len(bin)
       if (target[0:l] == bin):
@@ -197,9 +211,9 @@ def msc_bins(fd, var, binsmap, msc ):
     fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in binsmap["DEPS"].items():
-    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
+    fd.write( msc_translate_ext(t) + ":" )
     for f in d:
-      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
+      fd.write(" " + msc_translate_ext(f) )
     fd.write("\n")
 
   if (binsmap.has_key('HEADERS')):
@@ -269,9 +283,9 @@ def msc_library(fd, var, libmap, msc ):
     fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in libmap["DEPS"].items():
-    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
+    fd.write( msc_translate_ext(t) + ":" )
     for f in d:
-      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
+      fd.write(" " + msc_translate_ext(f) )
     fd.write("\n")
 
   if (libmap.has_key('HEADERS')):
@@ -338,9 +352,9 @@ def msc_libs(fd, var, libsmap, msc ):
     fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
     msc['BUILT_SOURCES'].append("$(" + name + "_SCRIPTS)")
   for t,d in libsmap["DEPS"].items():
-    fd.write( regsub.gsub("\.o", ".obj", t) + ":" )
+    fd.write( msc_translate_ext(t) + ":" )
     for f in d:
-      fd.write(" " + regsub.gsub("\.o", ".obj", f) )
+      fd.write(" " + msc_translate_ext(f) )
     fd.write("\n")
 
   if (libsmap.has_key('HEADERS')):
@@ -351,10 +365,10 @@ def msc_libs(fd, var, libsmap, msc ):
   	fd.write("\t$(INSTALL) $(%sinclude_HEADERS) $(%sincludedir)\n" % (name,name))
 	fd.write("\n")
 
-def msc_includes(fd, var, values, tree):
+def msc_includes(fd, var, values, msc):
   incs = ""
   for i in values:
-    incs = incs + " -I" + i
+    incs = incs + " -I" + msc_translate_dir(i,msc)
   fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': msc_subdirs, 
@@ -380,13 +394,6 @@ def output(tree, cwd, topdir):
 # should be in your PATH.
 BIN = C:\\bin
 
-# This is the location of pthreads for Win32, 
-# see http://sourceware.cygnus.com/pthreads-win32/
-# We want the 1999-04-07 snapshot.
-PTHREADS = ..\\pthreads-snap-1999-04-07
-PTHREAD_LIB = $(PTHREADS)\pthread.lib
-PTHREAD_INC = -I$(PTHREADS)
-
 ################################################################
 
 # Nothing much configurable below
@@ -400,7 +407,9 @@ INSTALL = copy
 MKDIR = mkdir
 CD = cd
 
-CFLAGS = -I. -I$(TOPDIR) -DHAVE_CONFIG_H
+CFLAGS = -I. -I$(TOPDIR) -I$(PTHREAD) -DHAVE_CONFIG_H
+
+CXXEXT = \\\"cxx\\\"
 
 ''')
 
@@ -415,11 +424,9 @@ CFLAGS = -I. -I$(TOPDIR) -DHAVE_CONFIG_H
   
   prefix = os.path.commonprefix([cwd,topdir])
   d = cwd[len(prefix):]
-  reldir = "" 
+  reldir = "." 
   if (len(d) > 1 and d[0] == os.sep):
     d = d[1:]
-    d,t = os.path.split(d)  
-    reldir = ".."
     while(len(d) > 0):
 	reldir = reldir + os.sep + ".."
 	d,t = os.path.split(d)  
@@ -441,6 +448,9 @@ CFLAGS = -I. -I$(TOPDIR) -DHAVE_CONFIG_H
 	output_funcs[j](fd,i,tree.value(i),msc)
     elif (i != 'TARGETS'):
 	msc_assignment(fd,i,tree.value(i),msc)
+
+  fd.write("CFLAGS = $(INCLUDES) $(CFLAGS)\n" )
+  fd.write("CXXFLAGS = $(CFLAGS)\n" )
 
   if (len(msc['BUILT_SOURCES']) > 0):
     fd.write("BUILT_SOURCES = ")
