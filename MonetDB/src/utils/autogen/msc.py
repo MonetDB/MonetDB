@@ -70,19 +70,37 @@ def msc_subdirs(fd, var, values, msc):
     fd.write("%s = %s\n" % (var, string.join(values)))
     fd.write("all-recursive: %s\n" % msc_list2string(values, "", "-all "))
     for v in values:
-        fd.write("%s-all: %s %s\\Makefile\n" % (v, v, v))
-        fd.write("\t$(CD) %s && $(MAKE) /nologo all \n" % v)
-        fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (v, v, v))
+        # Stupid Windows/nmake cannot cope with single-letter directory names;
+        # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
+        if len(v) == 1:
+            vv = '.\\%s' % v
+        else:
+            vv = v
+        fd.write("%s-all: %s %s\\Makefile\n" % (v, vv, v))
+        fd.write("\t$(CD) %s && $(MAKE) /nologo all \n" % vv)
+        fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (vv, vv, vv))
         fd.write("%s\\Makefile: $(SRCDIR)\\%s\\Makefile.msc\n" % (v, v))
         fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\\Makefile\n" % (v, v))
     fd.write("check-recursive: %s\n" % msc_list2string(values, "", "-check "))
     for v in values:
-        fd.write("%s-check: %s\n" % (v, v))
-        fd.write("\t$(CD) %s && $(MAKE) /nologo check\n" % v)
+        # Stupid Windows/nmake cannot cope with single-letter directory names;
+        # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
+        if len(v) == 1:
+            vv = '.\\%s' % v
+        else:
+            vv = v
+        fd.write("%s-check: %s\n" % (v, vv))
+        fd.write("\t$(CD) %s && $(MAKE) /nologo check\n" % vv)
     fd.write("install-recursive: %s\n" % msc_list2string(values, "", "-install "))
     for v in values:
+        # Stupid Windows/nmake cannot cope with single-letter directory names;
+        # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
+        if len(v) == 1:
+            vv = '.\\%s' % v
+        else:
+            vv = v
         fd.write("%s-install: $(bindir) $(libdir)\n" % v)
-        fd.write("\t$(CD) %s && $(MAKE) /nologo install\n" % v)
+        fd.write("\t$(CD) %s && $(MAKE) /nologo install\n" % vv)
 
 def msc_assignment(fd, var, values, msc):
     o = ""
