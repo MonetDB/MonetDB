@@ -73,6 +73,8 @@ numerical@batloop(){ sql_func( "sub", "-", $h, $h, "", $h ); }
 numerical@batloop(){ sql_func( "add", "+", $h, $h, "", $h ); }
 numerical@batloop(){ sql_func( "mul", "*", $h, $h, "", $h ); }
 numerical@batloop(){ sql_func( "div", "/", $h, $h, "", $h ); }
+numerical@batloop(){ sql_func( "max", "max", $h, $h, "", $h ); }
+numerical@batloop(){ sql_func( "min", "min", $h, $h, "", $h ); }
 
 numerical@batloop(){ sql_func( "neg", "-", $h, "", "", $h ); }
 numerical@batloop(){ sql_func( "pos", "+", $h, "", "", $h ); }
@@ -126,4 +128,3 @@ sql_func( "strconcat", "+", "VARCHAR", "VARCHAR", "", "VARCHAR");
 var dbname := monet_environment.find("gdk_dbname");
 var dbfarm := monet_environment.find("gdk_dbfarm");
 mvc_init(0,dbfarm + "/" + dbname);
-

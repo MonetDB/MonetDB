@@ -165,6 +165,17 @@
 	.COMMAND mvc_export_schema( mvc c, stream s ) = mvc_export_schema_wrap; 
 		"Export the schema info of the current transaction"
 
+	.LOAD
+		# dirty hack for comments ask menzo
+		PROC renameFUNC(str OLD,str NEW) : void := {
+ 			VAR funcs := monet_fcn_nme.select(OLD);
+ 			funcs := [funcs~NEW];
+ 			monet_fcn_nme.replace(funcs);
+ 			monet_fcntbl.reverse.replace(funcs);
+		}
+		renameFUNC("quit", "old_quit");
+	.END;
+
 .END sqlserver;
 
 @h
@@ -786,6 +797,11 @@ proc SQLclient( int sock ) := {
 	dsock := socket_dup(sock);
 	printf("# [ %d %d ]\n",sock, dsock);
 	fork(SQLclient_thread(dsock));
+}
+
+proc quit() := {
+	mvc_exit();
+	old_quit;
 }
 
 proc get_sql_port() := {
