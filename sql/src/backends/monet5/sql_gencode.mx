@@ -72,6 +72,7 @@ macros
 	moduleId(q)= (@1)? GDKstrdup(@1): 0;
 	functionId(q)= (@2)? GDKstrdup(@2): 0;
 	getDestVar(q)= newTmpVariable(mb,TYPE_any);
+	setVarInitialized(mb,getDestVar(q));
 	pushInstruction(mb,q);
 	s->nr= getDestVar(q);	/* might be dropped altogether */
 @= newAssignment
@@ -82,6 +83,7 @@ macros
 	moduleId(q)= (@2)? GDKstrdup(@2): 0;
 	functionId(q)= (@3)? GDKstrdup(@3): 0;
 	getDestVar(q)= newVariable(mb,@1,TYPE_any);
+	setVarInitialized(mb,getDestVar(q));
 	pushInstruction(mb,q);
 @= pushInt
 	{int _t; char bufi[BUFSIZ];
@@ -819,8 +821,8 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 
 		@:SQLprelude@
 		if (s->op3.gval){
-			int g = backend_dumpstmt(sql,mb, s->op3.gval->grp);
-			int e = backend_dumpstmt(sql,mb, s->op3.gval->ext);
+			int g = backend_dumpstmt(sql,mb, s->op2.stval);
+			int e = backend_dumpstmt(sql,mb, s->op3.stval);
 			@:newStmt("multiplex","group")@
 			@:pushStr(s->op4.aggrval->aggr->imp)@
 			@:pushArg(l)@
@@ -880,18 +882,11 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	case st_exception:{
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
 		int r = backend_dumpstmt(sql,mb, s->op2.stval);
-		int k;
 		@:SQLprelude@
-		/* if(bit(l)) { error(r);} */
-		@:newStmt(0,"bit")@
-		@:pushArg(l)@
-		@:newBarrier@
-		@:getReturn(k)@
+		/* if(bit(l)) { error(r);}  ==raising an exception*/
 		@:newStmt("sql","error")@
+		@:pushArg(l)@
 		@:pushArg(r)@
-		@:SQLpostlude@
-		@:newExit@
-		@:pushArg(k)@
 		@:SQLpostlude@
 		break;
 	}
