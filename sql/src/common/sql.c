@@ -1926,14 +1926,9 @@ static stmt *sql_logical_exp(context * sql, scope * scp, symbol * sc, group * gr
 				node *o = ls->op1.lval->h->next;	/* skip first */
 				stmt *sd, *j, *jr;
 
-				/* broken as tail_column doesn't return the
-				 * requested top most tail (stops at first
-				 * pivot).
 				j = stmt_diff(
 					stmt_dup(tail_column(o->data)),
 					stmt_reverse(stmt_dup(o->data)));
-				 */
-				j = stmt_reverse(stmt_dup(o->data));
 
 				o = o->next;
 				if (!o) {
