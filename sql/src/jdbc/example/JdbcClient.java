@@ -506,6 +506,8 @@ public class JdbcClient {
 		SQLStack stack = new SQLStack();
 		// a query part is a line of an SQL query
 		QueryPart qp;
+		// warnings generated during querying
+		SQLWarning warn;
 
 		String query = "", curLine;
 		boolean wasComplete = true, doProcess;
@@ -666,6 +668,20 @@ public class JdbcClient {
 									out.println();
 
 									out.println(count + " row" + (count != 1 ? "s" : ""));
+
+									// if there were warnings for this result,
+									// show them!
+									warn = rs.getWarnings();
+									if (warn != null) {
+										// force stdout to be written so the
+										// warning appears below it
+										out.flush();
+										do {
+											System.err.println("ResultSet warning: " +
+												warn.getMessage());
+											warn = warn.getNextWarning();
+										} while (warn != null);
+									}
 									rs.close();
 								} else if (aff != -1) {
 									if (aff == Statement.SUCCESS_NO_INFO) {
@@ -680,6 +696,21 @@ public class JdbcClient {
 								out.flush();
 							} while ((nextRslt = stmt.getMoreResults()) ||
 									 (aff = stmt.getUpdateCount()) != -1);
+
+							// if there were warnings for this statement,
+							// and/or connection show them!
+							warn = stmt.getWarnings();
+							while (warn != null) {
+								System.err.println("Statement warning: " +
+									warn.getMessage());
+								warn = warn.getNextWarning();
+							}
+							warn = con.getWarnings();
+							while (warn != null) {
+								System.err.println("Connection warning: " +
+									warn.getMessage());
+								warn = warn.getNextWarning();
+							}
 						} catch (SQLException e) {
 							if (hasFile) {
 								System.err.println("Error on line " + i + ": " + e.getMessage());

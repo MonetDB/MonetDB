@@ -44,7 +44,7 @@ import java.net.*;
  * line query, and should be less intensive for the server.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.1
+ * @version 2.2
  */
 class MonetSocketBlockMode extends MonetSocket {
 	/** Stream from the Socket for reading */
@@ -112,9 +112,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			// it's a bit nasty if an exception is thrown from the log,
 			// but ignoring it can be nasty as well, so it is decided to
 			// let it go so there is feedback about something going wrong
-			if (debug) {
-				log.write("<< " + new String(data, "UTF-8") + "\n");
-			}
+			if (debug) logTx(new String(data, "UTF-8"));
 
 			// reset the lineType variable, since we've sent data now and
 			// the last line isn't valid anymore
@@ -188,8 +186,8 @@ class MonetSocketBlockMode extends MonetSocket {
 				toMonetRaw.write(block);
 				
 				if (debug) {
-					log.write("<< write block: " + blocksize + " bytes\n");
-					log.write(new String(block, "UTF-8") + "\n");
+					logTx("write block: " + blocksize + " bytes");
+					logTx(new String(block, "UTF-8"));
 				}
 
 				todo -= blocksize;
@@ -200,7 +198,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			flush();
 
 			if (debug) {
-				log.write("<< zero block (flush)\n");
+				logTx("zero block (flush)");
 				log.flush();
 			}
 
@@ -227,10 +225,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			// it's a bit nasty if an exception is thrown from the log,
 			// but ignoring it can be nasty as well, so it is decided to
 			// let it go so there is feedback about something going wrong
-			if (debug) {
-				log.write(">> " + (new String(data, "UTF-8")).substring(0, size) + "\n");
-				log.flush();
-			}
+			if (debug) logRx((new String(data, "UTF-8")).substring(0, size));
 
 			return(size);
 		}
@@ -286,19 +281,13 @@ class MonetSocketBlockMode extends MonetSocket {
 					readState = inputBuffer.getInt();
 
 					if (readState == 0) {	// user flush
-						if (debug) {
-							log.write(">> zero block (flush)\n");
-							log.flush();
-						}
+						if (debug) logRx("zero block (flush)");
 						// skip the rest, it makes no sense to process
 						// zero bytes of data
 						continue;
 					}
 					
-					if (debug) {
-						log.write(">> new block: " + readState + " bytes\n");
-						log.flush();
-					}
+					if (debug) logRx("new block: " + readState + " bytes");
 				}
 				// 'continue' fetching current block
 				byte[] data = new byte[capacity < readState ? capacity : readState];
@@ -322,9 +311,9 @@ class MonetSocketBlockMode extends MonetSocket {
 				readBuffer.append(new String(data, "UTF-8"));
 
 				if (debug) {
-					log.write(">> read chunk: " + size + " bytes, left: " + readState + " bytes\n");
-					log.write(new String(data, "UTF-8") + "\n");
-					log.flush();
+					logRx("read chunk: " + size +
+						" bytes, left: " + readState + " bytes");
+					logRx(new String(data, "UTF-8"));
 				}
 			}
 			// fill line, excluding newline
