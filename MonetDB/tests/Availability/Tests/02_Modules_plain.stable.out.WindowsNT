@@ -1033,8 +1033,8 @@ Module: "stats"
 
 Module: "streams"
 
-[ 38 ]
-[ 38 ]
+[ 34 ]
+[ 34 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help									  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -1042,10 +1042,6 @@ Module: "streams"
 [ "bstream_create",	  "COMMAND:   ",  "bstream_create(Stream, int) : Bstream",		  "create a buffered stream"						  ]
 [ "bstream_destroy",	  "COMMAND:   ",  "bstream_destroy(Bstream) : void",			  "destroy bstream"							  ]
 [ "bstream_read",	  "COMMAND:   ",  "bstream_read(Bstream, int) : int",			  "read atleast size bytes into the buffer of s"			  ]
-[ "buffer_create",	  "COMMAND:   ",  "buffer_create(int) : Buffer",			  "create a buffer of the given size"					  ]
-[ "buffer_destroy",	  "COMMAND:   ",  "buffer_destroy(Buffer) : void",			  "destroy buffer"							  ]
-[ "buffer_rastream",	  "COMMAND:   ",  "buffer_rastream(Buffer, str) : Stream",		  "create a buffer read stream"						  ]
-[ "buffer_wastream",	  "COMMAND:   ",  "buffer_wastream(Buffer, str) : Stream",		  "create a buffer write stream"					  ]
 [ "fclose",		  "PROC:      ",  "fclose(Stream) : void",				  "not available"							  ]
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",				  "not available"							  ]
 [ "fgetc",		  "COMMAND:   ",  "fgetc(Stream) : int",				  "See: man fgetc"							  ]
