@@ -595,7 +595,9 @@ dump_table(Mapi mid, char *tname)
 
 		for(i = 0; i < cnt; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (string[i]) {
+			if (s == NULL)
+				fputs("NULL", toConsole);
+			else if (string[i]) {
 				/* write double-quoted string with
 				   certain characters escaped */
 				putc('"', toConsole);
