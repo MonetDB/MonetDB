@@ -2,7 +2,7 @@
 #it uses the dynamic type analysis scheme
 
 function dir(b:bat[int,str]):void;
-	atm:= catalog.atomNames();
+	atm:= inspect.getAtoms();
 	brev:= reverse(b);
 	bm := mirror(brev);
 	h := bbp.getHeadType();

@@ -15,7 +15,7 @@
 #print(o);
 #
 function Admin.main():int; #0  (main:int)
-    z1 := mal.new(void,int); #1 CMDBATnew (z1:bat[void,int])<-(void:void)(int:int)
+    z1 := bbp.new(void,int); #1 CMDBATnew (z1:bat[void,int])<-(void:void)(int:int)
     bat.setSequenceBase(z1,0@0); #2 CMDsetSequenceBase ($4:int)<-(z1:bat[void,int])($5:oid)
     bat.insert(z1,nil,0); #3 CMDinsert_bun ($6:bat[void,int])<-(z1:bat[void,int])($7:void)($8:int)
     bat.insert(z1,nil,1); #4 CMDinsert_bun ($9:bat[void,int])<-(z1:bat[void,int])($7:void)($10:int)

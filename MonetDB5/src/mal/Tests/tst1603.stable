@@ -20,7 +20,7 @@
 ##zint:= multiplex.script("/",dint,d2);
 #zint:= new(void,decimal);
 #setSequenceBase(zint,0@0);
-#barrier mloop := mal.bunStream(dint,h, B2:decimal);
+#barrier mloop := bbp.bunStream(dint,h, B2:decimal);
 #	print(B2);
 #	cr := decimal./(B2,d2);
 #	print(cr);
@@ -33,7 +33,7 @@
 #print(cg);
 #
 function Admin.main():int; #0  (main:int)
-    bint := mal.new(void,int); #1 CMDBATnew (bint:bat[void,int])<-(void:void)(int:int)
+    bint := bbp.new(void,int); #1 CMDBATnew (bint:bat[void,int])<-(void:void)(int:int)
     bat.setSequenceBase(bint,0@0); #2 CMDsetSequenceBase ($4:int)<-(bint:bat[void,int])($5:oid)
     i := -1; #3  (i:int)<-($7:int)
 barrier m := mal.nextElement(i,1,10); #4 intForloop (m:bit)<-(i:int)($9:int)($10:int) jump 7
@@ -46,9 +46,9 @@ exit m; #7  (m:bit)
     io.print("start division"); #11 CMDprint_val ($17:int)<-($18:str)
     d2 := decimal.decimal(2); #12 decimal_from_int (d2:decimal)<-($20:int)
     io.print(d2); #13 CMDprint_val ($21:int)<-(d2:decimal)
-    zint := mal.new(void,decimal); #14 CMDBATnew (zint:bat[void,decimal])<-(void:void)(decimal:decimal)
+    zint := bbp.new(void,decimal); #14 CMDBATnew (zint:bat[void,decimal])<-(void:void)(decimal:decimal)
     bat.setSequenceBase(zint,0@0); #15 CMDsetSequenceBase ($24:int)<-(zint:bat[void,decimal])($5:oid)
-barrier mloop := mal.bunStream(dint,h,B2); #16 CMDbunStream (mloop:lng)<-(dint:bat[void,decimal])(h:void)(B2:decimal) jump 22
+barrier mloop := bbp.bunStream(dint,h,B2); #16 CMDbunStream (mloop:lng)<-(dint:bat[void,decimal])(h:void)(B2:decimal) jump 22
     io.print(B2); #17 CMDprint_val ($28:int)<-(B2:decimal)
     cr := decimal./(B2,d2); #18 decimal_divide_default (cr:decimal)<-(B2:decimal)(d2:decimal)
     io.print(cr); #19 CMDprint_val ($30:int)<-(cr:decimal)

@@ -24,7 +24,7 @@
 print(t);
 	rb:= new(int,url);
 print("start loop");
-barrier mloop := mal.bunStream(t,h:int,B2:url);        
+barrier mloop := bbp.bunStream(t,h:int,B2:url);        
 	print(h);
 	print(B2);
 	insert(rb,h,B2);

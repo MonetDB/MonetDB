@@ -26,7 +26,7 @@ end test; #3
 end test; #3  
 !ERROR: 'Admin.test' undefined in Admin.main[2]
 function Admin.main():int; #0  (main:int)
-    c := mal.new(int,str); #1 CMDBATnew (c:bat[int,str])<-(int:int)(str:str)
+    c := bbp.new(int,str); #1 CMDBATnew (c:bat[int,str])<-(int:int)(str:str)
     Admin.test(c,"hello"); #2  ($4:int)<-(c:bat[int,str])($5:str)
 end main; #3  
 >

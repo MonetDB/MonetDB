@@ -40,7 +40,7 @@
 #print(b);
 #
 function Admin.main():int; #0  (main:int)
-    a := mal.new(int,str); #1 CMDBATnew (a:bat[int,str])<-(int:int)(str:str)
+    a := bbp.new(int,str); #1 CMDBATnew (a:bat[int,str])<-(int:int)(str:str)
     bat.insert(a,0,"apples"); #2 CMDinsert_bun ($4:bat[int,str])<-(a:bat[int,str])($5:int)($6:str)
     bat.insert(a,1,"oranges"); #3 CMDinsert_bun ($7:bat[int,str])<-(a:bat[int,str])($8:int)($9:str)
     bat.insert(a,2,"grapes"); #4 CMDinsert_bun ($10:bat[int,str])<-(a:bat[int,str])($11:int)($12:str)

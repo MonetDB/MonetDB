@@ -267,7 +267,7 @@ barrier ba_a := algebra.exist(aa_a,"tpe"); #3 CMDexist (ba_a:bit)<-(aa_a:bat[str
     tpe := destroy(tpe); #5  unknown (tpe:bat[any,any])<-(tpe:bat[any,any])
     commit := bbp.bind("commit"); #6 CMDbbpbind (commit:bat[any,any])<-($7:str)
 exit ba_a; #7  (ba_a:bit)
-    a := mal.new(oid,oid); #8 CMDBATnew (a:bat[oid,oid])<-(oid:oid)(oid:oid)
+    a := bbp.new(oid,oid); #8 CMDBATnew (a:bat[oid,oid])<-(oid:oid)(oid:oid)
     ca_a := bat.insert(a,2@0,nil); #9 CMDinsert_bun (ca_a:bat[oid,oid])<-(a:bat[oid,oid])($11:oid)($12:oid)
     da_a := bat.insert(a,2@0,nil); #10 CMDinsert_bun (da_a:bat[oid,oid])<-(a:bat[oid,oid])($11:oid)($12:oid)
     ea_a := bat.insert(a,2@0,nil); #11 CMDinsert_bun (ea_a:bat[oid,oid])<-(a:bat[oid,oid])($11:oid)($12:oid)
@@ -331,7 +331,7 @@ exit ba_a; #7  (ba_a:bit)
     ec_a := enum.encode(tpe,1@0); #69 ENUMencode (ec_a:any)<-(tpe:bat[any,any])($62:oid)
     fc_a := enum.encode(tpe,3@0); #70 ENUMencode (fc_a:any)<-(tpe:bat[any,any])($81:oid)
     bvs := vals_bitselect(aaa,ec_a,fc_a); #71  unknown (bvs:bat[any,any])<-(aaa:any)(ec_a:any)(fc_a:any)
-barrier gc_a := mal.bunStream(bvs,gc_aH,gc_aT); #72 CMDbunStream (gc_a:lng)<-(bvs:bat[any,any])(gc_aH:any)(gc_aT:any) jump 75
+barrier gc_a := bbp.bunStream(bvs,gc_aH,gc_aT); #72 CMDbunStream (gc_a:lng)<-(bvs:bat[any,any])(gc_aH:any)(gc_aT:any) jump 75
     hc_a := io.print(gc_aT); #73 CMDprint_val (hc_a:int)<-(gc_aT:any)
     redo gc_a; #74  (gc_a:lng) jump 72
 exit gc_a; #75  (gc_a:lng)
@@ -340,12 +340,12 @@ exit gc_a; #75  (gc_a:lng)
     kc_a := enum.encode(tpe,2@0); #78 ENUMencode (kc_a:any)<-(tpe:bat[any,any])($89:oid)
     lc_a := enum.encode(tpe,3@0); #79 ENUMencode (lc_a:any)<-(tpe:bat[any,any])($81:oid)
     brs := rngs_bitselect(aaa,ic_a,jc_a,kc_a,lc_a); #80  unknown (brs:bat[any,any])<-(aaa:any)(ic_a:any)(jc_a:any)(kc_a:any)(lc_a:any)
-barrier mc_a := mal.bunStream(brs,mc_aH,mc_aT); #81 CMDbunStream (mc_a:lng)<-(brs:bat[any,any])(mc_aH:any)(mc_aT:any) jump 84
+barrier mc_a := bbp.bunStream(brs,mc_aH,mc_aT); #81 CMDbunStream (mc_a:lng)<-(brs:bat[any,any])(mc_aH:any)(mc_aT:any) jump 84
     nc_a := io.print(mc_aT); #82 CMDprint_val (nc_a:int)<-(mc_aT:any)
     redo mc_a; #83  (mc_a:lng) jump 81
 exit mc_a; #84  (mc_a:lng)
     bhs := bits_subhisto(aaa,bvvsel,brsel); #85  unknown (bhs:bat[any,any])<-(aaa:any)(bvvsel:any)(brsel:any)
-barrier oc_a := mal.bunStream(bhs,oc_aH,oc_aT); #86 CMDbunStream (oc_a:lng)<-(bhs:bat[any,any])(oc_aH:any)(oc_aT:any) jump 89
+barrier oc_a := bbp.bunStream(bhs,oc_aH,oc_aT); #86 CMDbunStream (oc_a:lng)<-(bhs:bat[any,any])(oc_aH:any)(oc_aT:any) jump 89
     pc_a := io.print(oc_aT); #87 CMDprint_val (pc_a:int)<-(oc_aT:any)
     redo oc_a; #88  (oc_a:lng) jump 86
 exit oc_a; #89  (oc_a:lng)
@@ -380,7 +380,7 @@ exit oc_a; #89  (oc_a:lng)
     pd_a := enum.encode(tpe,1@0); #118 ENUMencode (pd_a:any)<-(tpe:bat[any,any])($103:oid)
     qd_a := enum.encode(tpe,3@0); #119 ENUMencode (qd_a:any)<-(tpe:bat[any,any])($134:oid)
     ovs := vals_oidselect(aaa,pd_a,qd_a); #120  unknown (ovs:bat[any,any])<-(aaa:any)(pd_a:any)(qd_a:any)
-barrier rd_a := mal.bunStream(ovs,rd_aH,rd_aT); #121 CMDbunStream (rd_a:lng)<-(ovs:bat[any,any])(rd_aH:any)(rd_aT:any) jump 124
+barrier rd_a := bbp.bunStream(ovs,rd_aH,rd_aT); #121 CMDbunStream (rd_a:lng)<-(ovs:bat[any,any])(rd_aH:any)(rd_aT:any) jump 124
     sd_a := io.print(rd_aT); #122 CMDprint_val (sd_a:int)<-(rd_aT:any)
     redo rd_a; #123  (rd_a:lng) jump 121
 exit rd_a; #124  (rd_a:lng)
@@ -389,7 +389,7 @@ exit rd_a; #124  (rd_a:lng)
     vd_a := enum.encode(tpe,2@0); #127 ENUMencode (vd_a:any)<-(tpe:bat[any,any])($124:oid)
     wd_a := enum.encode(tpe,3@0); #128 ENUMencode (wd_a:any)<-(tpe:bat[any,any])($134:oid)
     ors := rngs_oidselect(aaa,td_a,ud_a,vd_a,wd_a); #129  unknown (ors:bat[any,any])<-(aaa:any)(td_a:any)(ud_a:any)(vd_a:any)(wd_a:any)
-barrier xd_a := mal.bunStream(ors,xd_aH,xd_aT); #130 CMDbunStream (xd_a:lng)<-(ors:bat[any,any])(xd_aH:any)(xd_aT:any) jump 133
+barrier xd_a := bbp.bunStream(ors,xd_aH,xd_aT); #130 CMDbunStream (xd_a:lng)<-(ors:bat[any,any])(xd_aH:any)(xd_aT:any) jump 133
     yd_a := io.print(xd_aT); #131 CMDprint_val (yd_a:int)<-(xd_aT:any)
     redo xd_a; #132  (xd_a:lng) jump 130
 exit xd_a; #133  (xd_a:lng)

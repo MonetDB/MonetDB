@@ -65,7 +65,7 @@ end steal; #7
 #	printf("return from function refcount =%d\n",i);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,str); #1 CMDBATnew (b:bat[int,str])<-(int:int)(str:str)
+    b := bbp.new(int,str); #1 CMDBATnew (b:bat[int,str])<-(int:int)(str:str)
     i := bat.getBATrefcnt(b); #2 getBATrefcnt (i:int)<-(b:bat[int,str])
     system.printf("refcount =%d\n",i); #3 SYSprint_formatted_int ($5:int)<-($6:str)(i:int)
     bat.insert(b,1,"bat B"); #4 CMDinsert_bun ($7:bat[int,str])<-(b:bat[int,str])($8:int)($9:str)
@@ -78,7 +78,7 @@ function Admin.main():int; #0  (main:int)
     b3 := b; #11  (b3:bat[int,str])<-(b:bat[int,str])
     i := bat.getBATrefcnt(b); #12 getBATrefcnt (i:int)<-(b:bat[int,str])
     system.printf("after 2nd assignment refcount =%d\n",i); #13 SYSprint_formatted_int ($16:int)<-($17:str)(i:int)
-    b3 := mal.new(int,str); #14 CMDBATnew (b3:bat[int,str])<-(int:int)(str:str)
+    b3 := bbp.new(int,str); #14 CMDBATnew (b3:bat[int,str])<-(int:int)(str:str)
     i := bat.getBATrefcnt(b); #15 getBATrefcnt (i:int)<-(b:bat[int,str])
     system.printf("after 3rd assignment refcount =%d\n",i); #16 SYSprint_formatted_int ($18:int)<-($19:str)(i:int)
     b4 := algebra.select(b,"bat B","bat B"); #17 CMDselect (b4:bat[int,str])<-(b:bat[int,str])($9:str)($9:str)

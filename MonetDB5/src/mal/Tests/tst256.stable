@@ -25,7 +25,7 @@
 #print(cr);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     err := bat.insert(b,1,15); #2 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
     err := bat.insert(b,2,4); #3 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($6:int)($7:int)
     err := bat.insert(b,4,16); #4 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($7:int)($8:int)

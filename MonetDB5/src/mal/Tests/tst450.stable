@@ -4,28 +4,28 @@
 # config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
 # dbname:demo
-##testing the catalog module for help information
+##testing the inspect module for help information
 #
-#a:= catalog.atomNames();	print(a);
-#m:= catalog.scopeNames();	print(m);
-#stmt:= catalog.symbolDefinition("algebra","select");
-#sig:= catalog.symbolSignature("algebra","select");
-#tpe:= catalog.symbolType("algebra","select");
+#a:= inspect.getAtoms();	print(a);
+#m:= inspect.getModules();	print(m);
+#stmt:= inspect.getDefinition("algebra","select");
+#sig:= inspect.getSignature("algebra","select");
+#tpe:= inspect.getType("algebra","select");
 #
 #n:= mal.helpComment("algebra","insert"); print(n);
-#d:= catalog.symbolDefinition("catalog","dir"); print(d);
+#d:= inspect.getDefinition("inspect","dir"); print(d);
 #
 function Admin.main():int; #0  (main:int)
-    a := catalog.atomNames(); #1 CATALOGatom_names (a:bat[int,str])
+    a := inspect.getAtoms(); #1 INSPECTatom_names (a:bat[int,str])
     io.print(a); #2 CMDprint_val ($2:int)<-(a:bat[int,str])
-    m := catalog.scopeNames(); #3 CATALOGscopeNames (m:bat[void,str])
+    m := inspect.getModules(); #3 INSPECTmoduleNames (m:bat[void,str])
     io.print(m); #4 CMDprint_val ($4:int)<-(m:bat[void,str])
-    stmt := catalog.symbolDefinition("algebra","select"); #5 CATALOGsymbolDef (stmt:bat[int,str])<-($6:str)($7:str)
-    sig := catalog.symbolSignature("algebra","select"); #6 CATALOGsymbolSignature (sig:bat[str,str])<-($6:str)($7:str)
-    tpe := catalog.symbolType("algebra","select"); #7 CATALOGsymbolType (tpe:bat[str,str])<-($6:str)($7:str)
+    stmt := inspect.getDefinition("algebra","select"); #5 INSPECTsymbolDef (stmt:bat[int,str])<-($6:str)($7:str)
+    sig := inspect.getSignature("algebra","select"); #6 INSPECTsymbolSignature (sig:bat[str,str])<-($6:str)($7:str)
+    tpe := inspect.getType("algebra","select"); #7 INSPECTsymbolType (tpe:bat[str,str])<-($6:str)($7:str)
     n := mal.helpComment("algebra","insert"); #8 CMDhelpComment2 (n:bat[int,str])<-($6:str)($11:str)
     io.print(n); #9 CMDprint_val ($12:int)<-(n:bat[int,str])
-    d := catalog.symbolDefinition("catalog","dir"); #10 CATALOGsymbolDef (d:bat[int,str])<-($14:str)($15:str)
+    d := inspect.getDefinition("inspect","dir"); #10 INSPECTsymbolDef (d:bat[int,str])<-($14:str)($15:str)
     io.print(d); #11 CMDprint_val ($16:int)<-(d:bat[int,str])
 end main; #12  
 #-------------------------#
@@ -69,7 +69,7 @@ end main; #12
 [ nil,	  "sql"		  ]
 [ nil,	  "sql_server"	  ]
 [ nil,	  "optimizer"	  ]
-[ nil,	  "catalog"	  ]
+[ nil,	  "inspect"	  ]
 [ nil,	  "box"		  ]
 [ nil,	  "bbp"		  ]
 [ nil,	  "const"	  ]

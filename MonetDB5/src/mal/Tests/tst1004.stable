@@ -36,7 +36,7 @@
 function Admin.main():int; #0  (main:int)
     io.print("Start test"); #1 CMDprint_val ($1:int)<-($2:str)
     bbp.open(); #2 CMDbbpopen ($3:void)
-    b := mal.new(int,int); #3 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #3 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     bat.insert(b,1,2); #4 CMDinsert_bun ($6:bat[int,int])<-(b:bat[int,int])($7:int)($8:int)
     bbp.deposit("myfirstbat",b); #5 CMDbbpdeposit ($9:void)<-($10:str)(b:bat[int,int])
     c := bbp.take("myfirstbat"); #6 CMDbbptake (c:bat[any,any])<-($10:str)

@@ -15,8 +15,8 @@ end test; #2
 #test("hello",b,c);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    c := mal.new(int,int); #2 CMDBATnew (c:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    c := bbp.new(int,int); #2 CMDBATnew (c:bat[int,int])<-(int:int)(int:int)
     Admin.test("hello",b,c); #3  ($4:any)<-($5:str)(b:bat[int,int])(c:bat[int,int])
 end main; #4  
 [ "hello" ]

@@ -21,7 +21,7 @@
 #
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,str); #1 CMDBATnew (b:bat[int,str])<-(int:int)(str:str)
+    b := bbp.new(int,str); #1 CMDBATnew (b:bat[int,str])<-(int:int)(str:str)
     i := bat.getBATrefcnt(b); #2 getBATrefcnt (i:int)<-(b:bat[int,str])
     system.printf("refcount =%d\n",i); #3 SYSprint_formatted_int ($5:int)<-($6:str)(i:int)
     bat.insert(b,1,"bat B"); #4 CMDinsert_bun ($7:bat[int,str])<-(b:bat[int,str])($8:int)($9:str)

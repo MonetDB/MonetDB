@@ -1,14 +1,14 @@
 #test debugging of a recursive function
 
 function test(age:int,nme:str):int;
-	d:= catalog.getStackDepth();
+	d:= inspect.getStackDepth();
 	printf("stack depth %d\n",d);
 	printf("simulated error\n");
-	f:= catalog.symbolDump();
+	f:= inspect.getCode();
 	io.print(f);
-	t:= catalog.getStackFrame();
+	t:= inspect.getStackFrame();
 	print(t);
-	t:= catalog.getStackFrame(d);
+	t:= inspect.getStackFrame(d);
 	print(t);
 end test;
 test(12,"jj");

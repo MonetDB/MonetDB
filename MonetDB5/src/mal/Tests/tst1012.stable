@@ -12,16 +12,14 @@
 #bbp.deposit("mysecondbat",b);
 #c:= bbp.take("mysecondbat");
 #print(c);
-#bbp.setPersistent(b);
-#x:= bbp.isPersistent(b);
-#y:= bbp.isSession(b);
-#z:= bbp.isTransient(b);
-#print(x); print(y); print(z); print("");
-#bbp.setTransient(b);
-#x:= bbp.isPersistent(b);
-#y:= bbp.isSession(b);
-#z:= bbp.isTransient(b);
-#print(x); print(y); print(z); print("");
+#bat.setPersistent(b);
+#x:= bat.isPersistent(b);
+#z:= bat.isTransient(b);
+#print(x); print(z); print("");
+#bat.setTransient(b);
+#x:= bat.isPersistent(b);
+#z:= bat.isTransient(b);
+#print(x); print(z); print("");
 #bbp.close();
 ## at the end of the session, the BBP should have discarded
 ## the temporary bats of the user
@@ -29,38 +27,34 @@
 ## not properly closed. This means that a temporary bat
 ##remains in store.
 #bbp.open();
-##v:= bbp.take("mysecondbat");
+##v:= bat.take("mysecondbat");
 #print(v);
 #bbp.close();
 #
 function Admin.main():int; #0  (main:int)
     bbp.open(); #1 CMDbbpopen ($1:void)
-    b := mal.new(int,int); #2 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #2 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     bat.insert(b,1,2); #3 CMDinsert_bun ($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
     bbp.deposit("mysecondbat",b); #4 CMDbbpdeposit ($7:void)<-($8:str)(b:bat[int,int])
     c := bbp.take("mysecondbat"); #5 CMDbbptake (c:bat[any,any])<-($8:str)
     io.print(c); #6 CMDprint_val ($10:int)<-(c:bat[any,any])
-    bbp.setPersistent(b); #7 CMDbbpsetPersistent ($11:bit)<-(b:bat[int,int])
-    x := bbp.isPersistent(b); #8 CMDbbpisPersistent (x:bit)<-(b:bat[int,int])
-    y := bbp.isSession(b); #9 CMDbbpisSession (y:bit)<-(b:bat[int,int])
-    z := bbp.isTransient(b); #10 CMDbbpisTransient (z:bit)<-(b:bat[int,int])
-    io.print(x); #11 CMDprint_val ($15:int)<-(x:bit)
-    io.print(y); #12 CMDprint_val ($16:int)<-(y:bit)
-    io.print(z); #13 CMDprint_val ($17:int)<-(z:bit)
-    io.print(""); #14 CMDprint_val ($18:int)<-($19:str)
-    bbp.setTransient(b); #15 CMDbbpsetTransient ($20:bit)<-(b:bat[int,int])
-    x := bbp.isPersistent(b); #16 CMDbbpisPersistent (x:bit)<-(b:bat[int,int])
-    y := bbp.isSession(b); #17 CMDbbpisSession (y:bit)<-(b:bat[int,int])
-    z := bbp.isTransient(b); #18 CMDbbpisTransient (z:bit)<-(b:bat[int,int])
-    io.print(x); #19 CMDprint_val ($21:int)<-(x:bit)
-    io.print(y); #20 CMDprint_val ($22:int)<-(y:bit)
-    io.print(z); #21 CMDprint_val ($23:int)<-(z:bit)
-    io.print(""); #22 CMDprint_val ($24:int)<-($19:str)
-    bbp.close(); #23 CMDbbpclose ($25:void)
-    bbp.open(); #24 CMDbbpopen ($26:void)
-    io.print(v); #25 CMDprint_val ($27:int)<-(v:any)
-    bbp.close(); #26 CMDbbpclose ($29:void)
-end main; #27  
+    bat.setPersistent(b); #7 CMDsetPersistent ($11:bit)<-(b:bat[int,int])
+    x := bat.isPersistent(b); #8 CMDisPersistent (x:bit)<-(b:bat[int,int])
+    z := bat.isTransient(b); #9 CMDisTransient (z:bit)<-(b:bat[int,int])
+    io.print(x); #10 CMDprint_val ($14:int)<-(x:bit)
+    io.print(z); #11 CMDprint_val ($15:int)<-(z:bit)
+    io.print(""); #12 CMDprint_val ($16:int)<-($17:str)
+    bat.setTransient(b); #13 CMDsetTransient ($18:bit)<-(b:bat[int,int])
+    x := bat.isPersistent(b); #14 CMDisPersistent (x:bit)<-(b:bat[int,int])
+    z := bat.isTransient(b); #15 CMDisTransient (z:bit)<-(b:bat[int,int])
+    io.print(x); #16 CMDprint_val ($19:int)<-(x:bit)
+    io.print(z); #17 CMDprint_val ($20:int)<-(z:bit)
+    io.print(""); #18 CMDprint_val ($21:int)<-($22:str)
+    bbp.close(); #19 CMDbbpclose ($23:void)
+    bbp.open(); #20 CMDbbpopen ($24:void)
+    io.print(v); #21 CMDprint_val ($25:int)<-(v:any)
+    bbp.close(); #22 CMDbbpclose ($27:void)
+end main; #23  
 #-----------------#
 # BAT:	  tmp_4	  #
 # (int)	  (int)	  #
@@ -68,11 +62,9 @@ end main; #27
 [ 1,	  2	  ]
 [ false ]
 [ false ]
-[ true ]
 [ "" ]
 [ false ]
 [ false ]
-[ true ]
 [ "" ]
 [ nil ]
 >

@@ -4,7 +4,7 @@
 bbp.open();
 b:= new(int,int);
 insert(b,1,2);
-bbp.setName(b,"myfirstbat");
+setName(b,"myfirstbat");
 c:= bbp.bind("myfirstbat");
 print(c);
 bbp.close();

@@ -6,16 +6,14 @@ insert(b,1,2);
 bbp.deposit("mysecondbat",b);
 c:= bbp.take("mysecondbat");
 print(c);
-bbp.setPersistent(b);
-x:= bbp.isPersistent(b);
-y:= bbp.isSession(b);
-z:= bbp.isTransient(b);
-print(x); print(y); print(z); print("");
-bbp.setTransient(b);
-x:= bbp.isPersistent(b);
-y:= bbp.isSession(b);
-z:= bbp.isTransient(b);
-print(x); print(y); print(z); print("");
+bat.setPersistent(b);
+x:= bat.isPersistent(b);
+z:= bat.isTransient(b);
+print(x); print(z); print("");
+bat.setTransient(b);
+x:= bat.isPersistent(b);
+z:= bat.isTransient(b);
+print(x); print(z); print("");
 bbp.close();
 # at the end of the session, the BBP should have discarded
 # the temporary bats of the user
@@ -23,6 +21,6 @@ bbp.close();
 # not properly closed. This means that a temporary bat
 #remains in store.
 bbp.open();
-#v:= bbp.take("mysecondbat");
+#v:= bat.take("mysecondbat");
 print(v);
 bbp.close();

@@ -14,11 +14,11 @@
 #print(b);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     bat.insert(b,1,1); #2 CMDinsert_bun ($3:bat[int,int])<-(b:bat[int,int])($4:int)($4:int)
     io.print(b); #3 CMDprint_val ($5:int)<-(b:bat[int,int])
-    bbp.setName(b,"myhome"); #4 CMDbbprename ($6:bat[int,int])<-(b:bat[int,int])($7:str)
-    bbp.setColumn(b,"first","last"); #5 CMDbbpsetColumns ($8:bat[int,int])<-(b:bat[int,int])($9:str)($10:str)
+    bat.setName(b,"myhome"); #4 CMDsetName ($6:bat[int,int])<-(b:bat[int,int])($7:str)
+    bat.setColumn(b,"first","last"); #5 CMDsetColumns ($8:bat[int,int])<-(b:bat[int,int])($9:str)($10:str)
     io.print(b); #6 CMDprint_val ($11:int)<-(b:bat[int,int])
 end main; #7  
 #-----------------#

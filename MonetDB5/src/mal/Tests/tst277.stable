@@ -8,7 +8,7 @@
 #r:= reverse(b);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(void,int); #1 CMDBATnew (b:bat[void,int])<-(void:void)(int:int)
+    b := bbp.new(void,int); #1 CMDBATnew (b:bat[void,int])<-(void:void)(int:int)
     r := bat.reverse(b); #2 CMDreverse (r:bat[int,void])<-(b:bat[void,int])
 end main; #3  
 >

@@ -4,20 +4,20 @@
 # config:/ufs/mk/monet_5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet_5/Linux/var/MonetDB
 # dbname:demo
-##Access BATs through the bbp box.
+##Access BATs 
 #
 #b:= new(int,int);
 #insert(b,1,2);
-#bbp.setName(b,"mybat");
+#bat.setName(b,"mybat");
 #c:= bbp.bind("mybat");
 #print(c);
 #x:= bbp.getNames();
 #print(x);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     bat.insert(b,1,2); #2 CMDinsert_bun ($3:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
-    bbp.setName(b,"mybat"); #3 CMDbbprename ($6:bat[int,int])<-(b:bat[int,int])($7:str)
+    bat.setName(b,"mybat"); #3 CMDsetName ($6:bat[int,int])<-(b:bat[int,int])($7:str)
     c := bbp.bind("mybat"); #4 CMDbbpbind (c:bat[any,any])<-($7:str)
     io.print(c); #5 CMDprint_val ($9:int)<-(c:bat[any,any])
     x := bbp.getNames(); #6 CMDbbpNames (x:bat[int,str])

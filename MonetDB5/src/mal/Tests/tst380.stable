@@ -18,7 +18,7 @@
 function Admin.get(br:bat[any::1,any::2],nme:str,title:str):bat[any::3,any::4]; #0  dynamic (get:bat[any::3,any::4])<-(br:bat[any::1,any::2])(nme:str)(title:str)
     b := bbp.nme(); #1  unknown (b:any)
     z := algebra.join(br,b); #2 CMDjoin (z:bat[any,any])<-(br:bat[any::1,any::2])(b:any)
-    bbp.setColumn(z,title); #3 CMDbbpsetColumn ($6:bat[any,any])<-(z:bat[any,any])(title:str)
+    bat.setColumn(z,title); #3 CMDsetColumn ($6:bat[any,any])<-(z:bat[any,any])(title:str)
     return z; #4  (get:bat[any::3,any::4])<-(z:bat[any,any])
 end get; #5  
 ## Note the type of the variables will be fixed during the first call
@@ -34,7 +34,7 @@ end get; #5
 function Admin.getInt(br:bat[any::1,any::2],nme:str,title:str):bat[any::3,any::4]; #0  dynamic (getInt:bat[any::3,any::4])<-(br:bat[any::1,any::2])(nme:str)(title:str)
     b := bbp.nme(); #1  unknown (b:any)
     z := algebra.join(br,b); #2 CMDjoin (z:bat[any,any])<-(br:bat[any::1,any::2])(b:any)
-    bbp.setColumn(z,title); #3 CMDbbpsetColumn ($6:bat[any,any])<-(z:bat[any,any])(title:str)
+    bat.setColumn(z,title); #3 CMDsetColumn ($6:bat[any,any])<-(z:bat[any,any])(title:str)
     return z; #4  (getInt:bat[any::3,any::4])<-(z:bat[any,any])
 end getInt; #5  
 #function getLng(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
@@ -46,11 +46,11 @@ end getInt; #5
 function Admin.getLng(br:bat[any::1,any::2],nme:str,title:str):bat[any::3,any::4]; #0  dynamic (getLng:bat[any::3,any::4])<-(br:bat[any::1,any::2])(nme:str)(title:str)
     b := bbp.nme(); #1  unknown (b:any)
     z := algebra.join(br,b); #2 CMDjoin (z:bat[any,any])<-(br:bat[any::1,any::2])(b:any)
-    bbp.setColumn(z,title); #3 CMDbbpsetColumn ($6:bat[any,any])<-(z:bat[any,any])(title:str)
+    bat.setColumn(z,title); #3 CMDsetColumn ($6:bat[any,any])<-(z:bat[any,any])(title:str)
     return z; #4  (getLng:bat[any::3,any::4])<-(z:bat[any,any])
 end getLng; #5  
 #function dir(b:bat[int,str]):void;
-#	atm:= catalog.atomNames();
+#	atm:= inspect.getAtoms();
 #	brev:= reverse(b);
 #	bm := mirror(brev);
 #	bHead:= get(brev,"getHeadType","htype");
@@ -64,7 +64,7 @@ end getLng; #5
 #	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 #end dir;
 function Admin.dir(b:bat[int,str]):void; #0  (dir:void)<-(b:bat[int,str])
-    atm := catalog.atomNames(); #1 CATALOGatom_names (atm:bat[int,str])
+    atm := inspect.getAtoms(); #1 INSPECTatom_names (atm:bat[int,str])
     brev := bat.reverse(b); #2 CMDreverse (brev:bat[str,int])<-(b:bat[int,str])
     bm := bat.mirror(brev); #3 CMDmirror (bm:bat[str,str])<-(brev:bat[str,int])
     bHead := Admin.get(brev,"getHeadType","htype"); #4  (bHead:bat[any,any])<-(brev:bat[str,int])($6:str)($7:str)
@@ -102,8 +102,8 @@ end dir; #5
 #
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bbp.setName(b,"simplemind"); #2 CMDbbprename ($3:bat[int,int])<-(b:bat[int,int])($4:str)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    bat.setName(b,"simplemind"); #2 CMDsetName ($3:bat[int,int])<-(b:bat[int,int])($4:str)
     z := bbp.getNames(); #3 CMDbbpNames (z:bat[int,str])
     io.print("Get first directory"); #4 CMDprint_val ($6:int)<-($7:str)
     Admin.dir(z); #5  ($8:void)<-(z:bat[int,str])
@@ -111,21 +111,21 @@ function Admin.main():int; #0  (main:int)
     Admin.dir("simple"); #7  ($11:void)<-($12:str)
 end main; #8  
 [ "Get first directory" ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# bbp	| tmp_8			| htype	| ttype		| count	| heat	| dirty		| status| kind		| refcnt  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  30,	  18,	  "dirty",	  "load", "transient",	  2	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  18,	  "dirty",	  "load", "transient",	  1	  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  18,	  "dirty",	  "load", "transient",	  1	  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  18,	  "dirty",	  "load", "transient",	  1	  ]
+#---------------------------------------------------------------------------------------------------------------------------------#
+# bbp	| tmp_8			| htype		| ttype		| count	| heat	| dirty		| status| kind		| refcnt  #
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ 1,	  "monet_environment",	  "str",	  "str",	  30,	  76,	  "dirty",	  "load", "transient",	  4	  ]
+[ 2,	  "monet_unicode_case",	  "int",	  "int",	  685,	  76,	  "dirty",	  "load", "transient",	  3	  ]
+[ 3,	  "timezones",		  "tzone",	  "tzone",	  24,	  76,	  "dirty",	  "load", "transient",	  3	  ]
+[ 4,	  "simplemind",		  "int",	  "int",	  0,	  76,	  "dirty",	  "load", "transient",	  3	  ]
 [ "Get second directory" ]
 #-------------------------#
-# BAT:	  tmp_6		  #
+# BAT:	  tmp_25	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 4,	  "simplemind"	  ]
 #---------------------------------------------------------------------------------------------------------#
-# tmp_6	| tmp_26	| htype	| ttype	| count	| heat	| dirty		| status| kind		| refcnt  #
+# tmp_25| tmp_28	| htype	| ttype	| count	| heat	| dirty		| status| kind		| refcnt  #
 #---------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  19,	  "dirty",	  "load", "transient",	  1	  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  77,	  "dirty",	  "load", "transient",	  5	  ]
 >

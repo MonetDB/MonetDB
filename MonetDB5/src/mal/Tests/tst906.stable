@@ -30,7 +30,7 @@
 #
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(lng,lng); #1 CMDBATnew (b:bat[lng,lng])<-(lng:lng)(lng:lng)
+    b := bbp.new(lng,lng); #1 CMDBATnew (b:bat[lng,lng])<-(lng:lng)(lng:lng)
     i := -1; #2  (i:lng)<-($4:lng)
 barrier v := mal.nextElement(i,0,10); #3 lngForloop (v:bit)<-(i:lng)($6:lng)($7:lng) jump 6
     bat.insert(b,i,i); #4 CMDinsert_bun ($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)

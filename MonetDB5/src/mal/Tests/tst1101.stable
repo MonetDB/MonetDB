@@ -25,7 +25,7 @@
 #        rb:= new(int,url);
 #	print("start loop");
 ## Drop this line and you get a segmentation fault
-#barrier mloop:lng := mal.bunStream(t,h:int,B2:url);
+#barrier mloop:lng := bbp.bunStream(t,h:int,B2:url);
 #	print(B2);
 #	redo mloop;
 #exit mloop;
@@ -34,7 +34,7 @@
 #
 #
 function Admin.main():int; #0  (main:int)
-    t := mal.new(int,url); #1 CMDBATnew (t:bat[int,url])<-(int:int)(url:url)
+    t := bbp.new(int,url); #1 CMDBATnew (t:bat[int,url])<-(int:int)(url:url)
     cb_a := url.url("http://www.cwi.nl"); #2 URLnew (cb_a:url)<-($5:str)
     db_a := bat.insert(t,1,cb_a); #3 CMDinsert_bun (db_a:bat[int,url])<-(t:bat[int,url])($7:int)(cb_a:url)
     eb_a := url.url("http://www.cwi.nl/~monet"); #4 URLnew (eb_a:url)<-($9:str)
@@ -51,9 +51,9 @@ function Admin.main():int; #0  (main:int)
     pb_a := bat.insert(t,7,ob_a); #15 CMDinsert_bun (pb_a:bat[int,url])<-(t:bat[int,url])($31:int)(ob_a:url)
     qb_a := io.print("build a table finished"); #16 CMDprint_val (qb_a:int)<-($33:str)
     io.print(t); #17 CMDprint_val ($34:int)<-(t:bat[int,url])
-    rb := mal.new(int,url); #18 CMDBATnew (rb:bat[int,url])<-(int:int)(url:url)
+    rb := bbp.new(int,url); #18 CMDBATnew (rb:bat[int,url])<-(int:int)(url:url)
     io.print("start loop"); #19 CMDprint_val ($36:int)<-($37:str)
-barrier mloop := mal.bunStream(t,h,B2); #20 CMDbunStream (mloop:lng)<-(t:bat[int,url])(h:int)(B2:url) jump 23
+barrier mloop := bbp.bunStream(t,h,B2); #20 CMDbunStream (mloop:lng)<-(t:bat[int,url])(h:int)(B2:url) jump 23
     io.print(B2); #21 CMDprint_val ($41:int)<-(B2:url)
     redo mloop; #22  (mloop:lng) jump 20
 exit mloop; #23  (mloop:lng)

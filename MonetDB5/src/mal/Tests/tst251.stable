@@ -59,7 +59,7 @@
 #
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     bat.insert(b,1,15); #2 CMDinsert_bun ($3:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
     bat.insert(b,2,4); #3 CMDinsert_bun ($6:bat[int,int])<-(b:bat[int,int])($7:int)($8:int)
     n0 := calc.int(nil); #4 CALCnil_2_int (n0:int)<-($10:void)
@@ -73,12 +73,12 @@ function Admin.main():int; #0  (main:int)
     bat.insert(b,n0,n0); #12 CMDinsert_bun ($29:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
     bat.insert(b,n0,81); #13 CMDinsert_bun ($30:bat[int,int])<-(b:bat[int,int])(n0:int)($31:int)
     io.print(b); #14 CMDprint_val ($32:int)<-(b:bat[int,int])
-barrier v := mal.bunStream(b,h,t); #15 CMDbunStream (v:lng)<-(b:bat[int,int])(h:int)(t:int) jump 19
+barrier v := bbp.bunStream(b,h,t); #15 CMDbunStream (v:lng)<-(b:bat[int,int])(h:int)(t:int) jump 19
     system.printf("[ %d,",h); #16 SYSprint_formatted_int ($36:int)<-($37:str)(h:int)
     system.printf("%d]\n",t); #17 SYSprint_formatted_int ($38:int)<-($39:str)(t:int)
     redo v; #18  (v:lng) jump 15
 exit v; #19  (v:lng)
-    c := mal.new(int,str); #20 CMDBATnew (c:bat[int,str])<-(int:int)(str:str)
+    c := bbp.new(int,str); #20 CMDBATnew (c:bat[int,str])<-(int:int)(str:str)
     bat.insert(c,1,"hello"); #21 CMDinsert_bun ($42:bat[int,str])<-(c:bat[int,str])($43:int)($44:str)
     bat.insert(c,2,"brave"); #22 CMDinsert_bun ($45:bat[int,str])<-(c:bat[int,str])($46:int)($47:str)
     bat.insert(c,3,"world"); #23 CMDinsert_bun ($48:bat[int,str])<-(c:bat[int,str])($49:int)($50:str)
@@ -87,16 +87,16 @@ exit v; #19  (v:lng)
     bat.insert(c,5,x); #26 CMDinsert_bun ($56:bat[int,str])<-(c:bat[int,str])($57:int)(x:str)
     bat.insert(c,6,"!"); #27 CMDinsert_bun ($58:bat[int,str])<-(c:bat[int,str])($59:int)($60:str)
     io.print(c); #28 CMDprint_val ($61:int)<-(c:bat[int,str])
-barrier v := mal.bunStream(c,h,ts); #29 CMDbunStream (v:lng)<-(c:bat[int,str])(h:int)(ts:str) jump 33
+barrier v := bbp.bunStream(c,h,ts); #29 CMDbunStream (v:lng)<-(c:bat[int,str])(h:int)(ts:str) jump 33
     system.printf("[%d,",h); #30 SYSprint_formatted_int ($63:int)<-($64:str)(h:int)
     system.printf("%s]\n",ts); #31 SYSprint_formatted_str ($65:int)<-($66:str)(ts:str)
     redo v; #32  (v:lng) jump 29
 exit v; #33  (v:lng)
-    d := mal.new(str,str); #34 CMDBATnew (d:bat[str,str])<-(str:str)(str:str)
+    d := bbp.new(str,str); #34 CMDBATnew (d:bat[str,str])<-(str:str)(str:str)
     bat.insert(d,"one","red"); #35 CMDinsert_bun ($68:bat[str,str])<-(d:bat[str,str])($69:str)($70:str)
     bat.insert(d,"two","green"); #36 CMDinsert_bun ($71:bat[str,str])<-(d:bat[str,str])($72:str)($73:str)
     io.print(d); #37 CMDprint_val ($74:int)<-(d:bat[str,str])
-barrier w := mal.bunStream(d,hs,ts); #38 CMDbunStream (w:lng)<-(d:bat[str,str])(hs:str)(ts:str) jump 42
+barrier w := bbp.bunStream(d,hs,ts); #38 CMDbunStream (w:lng)<-(d:bat[str,str])(hs:str)(ts:str) jump 42
     system.printf("[ %s,",hs); #39 SYSprint_formatted_str ($77:int)<-($78:str)(hs:str)
     system.printf("%s]\n",ts); #40 SYSprint_formatted_str ($79:int)<-($66:str)(ts:str)
     redo w; #41  (w:lng) jump 38

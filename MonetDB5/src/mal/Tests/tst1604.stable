@@ -7,14 +7,14 @@
 ## handling of correct header printing
 #
 #t:= new(int,str);
-#bbp.setColumn(t,"first");
+#setColumn(t,"first");
 #u:= new(int,str);
 #print(t,u);
 #
 function Admin.main():int; #0  (main:int)
-    t := mal.new(int,str); #1 CMDBATnew (t:bat[int,str])<-(int:int)(str:str)
-    bbp.setColumn(t,"first"); #2 CMDbbpsetColumn ($4:bat[int,str])<-(t:bat[int,str])($5:str)
-    u := mal.new(int,str); #3 CMDBATnew (u:bat[int,str])<-(int:int)(str:str)
+    t := bbp.new(int,str); #1 CMDBATnew (t:bat[int,str])<-(int:int)(str:str)
+    bat.setColumn(t,"first"); #2 CMDsetColumn ($4:bat[int,str])<-(t:bat[int,str])($5:str)
+    u := bbp.new(int,str); #3 CMDBATnew (u:bat[int,str])<-(int:int)(str:str)
     io.print(t,u); #4 CMDtable ($7:int)<-(t:bat[int,str])(u:bat[int,str])
 end main; #5  
 #-------------------------#

@@ -1,6 +1,6 @@
 # handling of correct header printing
 
 t:= new(int,str);
-bbp.setColumn(t,"first");
+setColumn(t,"first");
 u:= new(int,str);
 print(t,u);

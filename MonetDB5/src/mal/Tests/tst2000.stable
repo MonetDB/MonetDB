@@ -28,7 +28,7 @@ end clkticks; #7
 #clkticks(2);
 #
 function Admin.main():int; #0  (main:int)
-    mal.mdb('T'); #1 mdbSetCmd ($1:void)<-($2:chr)
+    inspect.mdb('T'); #1 mdbSetCmd ($1:void)<-($2:chr)
     Admin.clkticks(2); #2  ($3:void)<-($4:int)
 end main; #3  
 #Monet Debugger on

@@ -14,7 +14,7 @@
 #exit MALexception;
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     z := algebra.find(b,0); #2 CMDfind (z:int)<-(b:bat[int,int])($4:int)
     io.print("should not come here anymore"); #3 CMDprint_val ($5:int)<-($6:str)
 catch MALexception; #4  (MALexception:str) jump 6

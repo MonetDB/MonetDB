@@ -27,12 +27,12 @@
 #	#destroy(c);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
-    bbp.setName(b,"mybat"); #2 CMDbbprename ($3:bat[int,int])<-(b:bat[int,int])($4:str)
-    bbp.setColumn(b,"first","second"); #3 CMDbbpsetColumns ($5:bat[int,int])<-(b:bat[int,int])($6:str)($7:str)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    bat.setName(b,"mybat"); #2 CMDsetName ($3:bat[int,int])<-(b:bat[int,int])($4:str)
+    bat.setColumn(b,"first","second"); #3 CMDsetColumns ($5:bat[int,int])<-(b:bat[int,int])($6:str)($7:str)
     io.print(b); #4 CMDprint_val ($8:int)<-(b:bat[int,int])
-    c := mal.new(int,str); #5 CMDBATnew (c:bat[int,str])<-(int:int)(str:str)
-    bbp.setName(c,"mybat"); #6 CMDbbprename ($11:bat[int,str])<-(c:bat[int,str])($4:str)
+    c := bbp.new(int,str); #5 CMDBATnew (c:bat[int,str])<-(int:int)(str:str)
+    bat.setName(c,"mybat"); #6 CMDsetName ($11:bat[int,str])<-(c:bat[int,str])($4:str)
     io.print(c); #7 CMDprint_val ($12:int)<-(c:bat[int,str])
     io.print(c); #8 CMDprint_val ($13:int)<-(c:bat[int,str])
     system.printf("catched anything?\n"); #9 SYSprint_str ($14:int)<-($15:str)

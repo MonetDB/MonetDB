@@ -13,7 +13,7 @@
 #end z;
 function Admin.z(mod:str,nme:str,title:str):bat[any,any]; #0  (z:bat[any,any])<-(mod:str)(nme:str)(title:str)
     b := mod.nme(); #1  unknown (b:any)
-    bbp.setName(b,title); #2 CMDbbprename ($5:bat[any,any])<-(b:any)(title:str)
+    bat.setName(b,title); #2 CMDsetName ($5:bat[any,any])<-(b:any)(title:str)
     return b; #3  (z:bat[any,any])<-(b:any)
 end z; #4  
 #

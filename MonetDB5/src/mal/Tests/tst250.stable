@@ -28,7 +28,7 @@
 #exit v;
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
+    b := bbp.new(int,int); #1 CMDBATnew (b:bat[int,int])<-(int:int)(int:int)
     err := bat.insert(b,1,15); #2 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($4:int)($5:int)
     err := bat.insert(b,2,4); #3 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])($6:int)($7:int)
     n0 := calc.int(nil); #4 CALCnil_2_int (n0:int)<-($9:void)
@@ -42,7 +42,7 @@ function Admin.main():int; #0  (main:int)
     err := bat.insert(b,n0,n0); #12 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])(n0:int)(n0:int)
     err := bat.insert(b,n0,81); #13 CMDinsert_bun (err:bat[int,int])<-(b:bat[int,int])(n0:int)($21:int)
     io.print(b); #14 CMDprint_val ($22:int)<-(b:bat[int,int])
-barrier v := mal.bunStream(b,h,t); #15 CMDbunStream (v:lng)<-(b:bat[int,int])(h:int)(t:int) jump 19
+barrier v := bbp.bunStream(b,h,t); #15 CMDbunStream (v:lng)<-(b:bat[int,int])(h:int)(t:int) jump 19
     system.printf("%d,",h); #16 SYSprint_formatted_int ($26:int)<-($27:str)(h:int)
     system.printf("%d\n",t); #17 SYSprint_formatted_int ($28:int)<-($29:str)(t:int)
     redo v; #18  (v:lng) jump 15

@@ -121,7 +121,7 @@
 #printf("multiplex.tactics(+) %d\n",d0);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(void,lng); #1 CMDBATnew (b:bat[void,lng])<-(void:void)(lng:lng)
+    b := bbp.new(void,lng); #1 CMDBATnew (b:bat[void,lng])<-(void:void)(lng:lng)
     i := -1; #2  (i:lng)<-($5:lng)
 barrier v := mal.nextElement(i,0,1000000); #3 lngForloop (v:bit)<-(i:lng)($7:lng)($8:lng) jump 8
     k := calc.rand(); #4 CALCrandint (k:int)
@@ -232,17 +232,17 @@ exit v; #8  (v:bit)
     d0 := calc.-(t1,t0); #109 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     system.printf("multiplex.tactics(+) %d\n",d0); #110 SYSprint_formatted_lng ($77:int)<-($78:str)(d0:lng)
 end main; #111  
-copy 36819 count 1000000
-select none 21544 count 0
-select all 54053 count 1000000
-select 0.05 41212 count 50004
-select 0.1 46463 count 100016
-select 0.2 45549 count 199929
-select 0.4 57028 count 399791
-select 0.6 65968 count 600237
-select 0.8 72440 count 799837
-select 1.0 55729 count 999999
-tail sort 921193 count 1000000
-multiplex.script(+) 2736329
-multiplex.tactics(+) 73751
+copy 38426 count 1000000
+select none 21895 count 0
+select all 55276 count 1000000
+select 0.05 42452 count 50004
+select 0.1 46716 count 100016
+select 0.2 47052 count 199929
+select 0.4 57608 count 399791
+select 0.6 68105 count 600237
+select 0.8 74774 count 799837
+select 1.0 54860 count 999999
+tail sort 841295 count 1000000
+multiplex.script(+) 2904577
+multiplex.tactics(+) 73298
 >

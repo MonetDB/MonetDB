@@ -30,7 +30,7 @@
 #print(t);
 #	rb:= new(int,url);
 #print("start loop");
-#barrier mloop := mal.bunStream(t,h:int,B2:url);        
+#barrier mloop := bbp.bunStream(t,h:int,B2:url);        
 #	print(h);
 #	print(B2);
 #	insert(rb,h,B2);
@@ -39,7 +39,7 @@
 #	print(rb);
 #
 function Admin.main():int; #0  (main:int)
-    t := mal.new(int,url); #1 CMDBATnew (t:bat[int,url])<-(int:int)(url:url)
+    t := bbp.new(int,url); #1 CMDBATnew (t:bat[int,url])<-(int:int)(url:url)
     cb_a := url.url("http://www.cwi.nl"); #2 URLnew (cb_a:url)<-($5:str)
     db_a := bat.insert(t,1,cb_a); #3 CMDinsert_bun (db_a:bat[int,url])<-(t:bat[int,url])($7:int)(cb_a:url)
     eb_a := url.url("http://www.cwi.nl/~monet"); #4 URLnew (eb_a:url)<-($9:str)
@@ -54,9 +54,9 @@ function Admin.main():int; #0  (main:int)
     nb_a := bat.insert(t,6,mb_a); #13 CMDinsert_bun (nb_a:bat[int,url])<-(t:bat[int,url])($27:int)(mb_a:url)
     qb_a := io.print("build a table finished"); #14 CMDprint_val (qb_a:int)<-($29:str)
     io.print(t); #15 CMDprint_val ($30:int)<-(t:bat[int,url])
-    rb := mal.new(int,url); #16 CMDBATnew (rb:bat[int,url])<-(int:int)(url:url)
+    rb := bbp.new(int,url); #16 CMDBATnew (rb:bat[int,url])<-(int:int)(url:url)
     io.print("start loop"); #17 CMDprint_val ($32:int)<-($33:str)
-barrier mloop := mal.bunStream(t,h,B2); #18 CMDbunStream (mloop:lng)<-(t:bat[int,url])(h:int)(B2:url) jump 23
+barrier mloop := bbp.bunStream(t,h,B2); #18 CMDbunStream (mloop:lng)<-(t:bat[int,url])(h:int)(B2:url) jump 23
     io.print(h); #19 CMDprint_val ($37:int)<-(h:int)
     io.print(B2); #20 CMDprint_val ($38:int)<-(B2:url)
     bat.insert(rb,h,B2); #21 CMDinsert_bun ($39:bat[int,url])<-(rb:bat[int,url])(h:int)(B2:url)

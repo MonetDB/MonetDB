@@ -94,91 +94,91 @@
 #	dec_dbl:= multiplex.script("dbl",dec_bat);
 ##var dec_dbl := [dbl](dec_bat);
 ##
-#	na_a := bbp.setColumn(dec_bat,"value");
+#	na_a := setColumn(dec_bat,"value");
 ##print(dec_bat.col_name("value"), 
-#	oa_a := bbp.setColumn(dec_prc,"precision");
+#	oa_a := setColumn(dec_prc,"precision");
 ##      dec_prc.col_name("precision"), 
-#	pa_a := bbp.setColumn(dec_scl,"scale");
+#	pa_a := setColumn(dec_scl,"scale");
 #	qa_a := print(na_a,oa_a,pa_a);
 ##      dec_scl.col_name("scale"));
 ##
-#	ra_a := bbp.setColumn(dec_bat,"value");
+#	ra_a := setColumn(dec_bat,"value");
 ##print(dec_bat.col_name("value"), 
-#	sa_a := bbp.setColumn(dec_int,"int");
+#	sa_a := setColumn(dec_int,"int");
 ##      dec_int.col_name("int"), 
-#	ta_a := bbp.setColumn(dec_lng,"lng");
+#	ta_a := setColumn(dec_lng,"lng");
 #	ua_a := print(ra_a,sa_a,ta_a);
 ##      dec_lng.col_name("lng"));
 ##
-#	va_a := bbp.setColumn(dec_bat,"value");
+#	va_a := setColumn(dec_bat,"value");
 ##print(dec_bat.col_name("value"), 
-#	wa_a := bbp.setColumn(dec_flt,"flt");
+#	wa_a := setColumn(dec_flt,"flt");
 ##      dec_flt.col_name("flt"), 
-#	xa_a := bbp.setColumn(dec_dbl,"dbl");
+#	xa_a := setColumn(dec_dbl,"dbl");
 #	ya_a := print(va_a,wa_a,xa_a);
 ##      dec_dbl.col_name("dbl"));
 ##
 ### test reverse conversion
-#	ab_a := bbp.setColumn(dec_bat,"decimal");
+#	ab_a := setColumn(dec_bat,"decimal");
 ##print(dec_bat.col_name("decimal"), 
 #	bb_a := multiplex.script("decimal",dec_int);
-#	cb_a := bbp.setColumn(bb_a,"from_int");
+#	cb_a := setColumn(bb_a,"from_int");
 ##      [decimal](dec_int).col_name("from_int"), 
 #	db_a := multiplex.script("decimal",dec_lng);
-#	eb_a := bbp.setColumn(db_a,"from_lng");
+#	eb_a := setColumn(db_a,"from_lng");
 #	fb_a := print(ab_a,cb_a,eb_a);
 ##      [decimal](dec_lng).col_name("from_lng"));
 ##
-#	gb_a := bbp.setColumn(dec_bat,"decimal");
+#	gb_a := setColumn(dec_bat,"decimal");
 ##print(dec_bat.col_name("decimal"), 
 #	hb_a := multiplex.script("decimal",dec_flt);
-#	ib_a := bbp.setColumn(hb_a,"from_flt");
+#	ib_a := setColumn(hb_a,"from_flt");
 #	jb_a := print(gb_a,ib_a);
 ##      [decimal](dec_flt).col_name("from_flt"));
 ##
-#	kb_a := bbp.setColumn(dec_bat,"decimal");
+#	kb_a := setColumn(dec_bat,"decimal");
 ##print(dec_bat.col_name("decimal"), 
 #	lb_a := multiplex.script("decimal",dec_dbl);
-#	mb_a := bbp.setColumn(lb_a,"from_dbl");
+#	mb_a := setColumn(lb_a,"from_dbl");
 #	nb_a := print(kb_a,mb_a);
 ##      [decimal](dec_dbl).col_name("from_dbl"));
 ##
 ### test set_scale and set_precision
-#	ob_a := bbp.setColumn(dec_bat,"decimal");
+#	ob_a := setColumn(dec_bat,"decimal");
 ##print(dec_bat.col_name("decimal"), 
 #	pb_a := multiplex.script("setscale",dec_bat,0);
-#	qb_a := bbp.setColumn(pb_a,"setscale(0)");
+#	qb_a := setColumn(pb_a,"setscale(0)");
 ##      [setscale](dec_bat,0).col_name("setscale(0)"),
 #	rb_a := multiplex.script("setscale",dec_bat,10);
-#	sb_a := bbp.setColumn(rb_a,"setscale(10)");
+#	sb_a := setColumn(rb_a,"setscale(10)");
 ##      [setscale](dec_bat,10).col_name("setscale(10)"),
 #	tb_a := -(dec_scl,5);
 #	ub_a := multiplex.script("setscale",dec_bat,tb_a);
-#	vb_a := bbp.setColumn(ub_a,"setscale(-5)");
+#	vb_a := setColumn(ub_a,"setscale(-5)");
 #	wb_a := print(ob_a,qb_a,sb_a,vb_a);
 ##      [setscale](dec_bat, ([-](dec_scl,5))).col_name("setscale(-5)"));
 ##
-#	xb_a := bbp.setColumn(dec_bat,"decimal");
+#	xb_a := setColumn(dec_bat,"decimal");
 ##print(dec_bat.col_name("decimal"), 
 #	yb_a := multiplex.script("setprecision",dec_bat,0);
-#	ac_a := bbp.setColumn(yb_a,"setprecision(0)");
+#	ac_a := setColumn(yb_a,"setprecision(0)");
 ##      [setprecision](dec_bat,0).col_name("setprecision(0)"),
 #	bc_a := multiplex.script("setprecision",dec_bat,10);
-#	cc_a := bbp.setColumn(bc_a,"setprecision(10)");
+#	cc_a := setColumn(bc_a,"setprecision(10)");
 ##      [setprecision](dec_bat,10).col_name("setprecision(10)"),
 #	dc_a := -(dec_prc,5);
 #	ec_a := multiplex.script("setprecision",dec_bat,dc_a);
-#	fc_a := bbp.setColumn(ec_a,"setprecision(-5)");
+#	fc_a := setColumn(ec_a,"setprecision(-5)");
 #	gc_a := print(xb_a,ac_a,cc_a,fc_a);
 ##      [setprecision](dec_bat, [-](dec_prc,5)).col_name("setprecision(-5)"));
 ##
-#	hc_a := bbp.setColumn(dec_bat,"decimal");
+#	hc_a := setColumn(dec_bat,"decimal");
 ##print(dec_bat.col_name("decimal"), 
 #	ic_a := multiplex.script("addscale",dec_bat,-5);
-#	jc_a := bbp.setColumn(ic_a,"addscale(-5)");
+#	jc_a := setColumn(ic_a,"addscale(-5)");
 ##      [addscale](dec_bat,-5).col_name("addscale(-5)"),
 #	kc_a := multiplex.script("addscale",dec_bat,5);
-#	lc_a := bbp.setColumn(kc_a,"addscale(5)");
+#	lc_a := setColumn(kc_a,"addscale(5)");
 #	mc_a := print(hc_a,jc_a,lc_a);
 ##      [addscale](dec_bat,5).col_name("addscale(5)"));
 ##
@@ -204,133 +204,133 @@
 #	dec_prec:= -(uc_a,1);
 ##var dec_prec := [-]([getprecision](dec_bat1),1);
 ##
-#	vc_a := bbp.setColumn(dec_bat1,"decimal1");
+#	vc_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	wc_a := bbp.setColumn(dec_raise,"raise");
+#	wc_a := setColumn(dec_raise,"raise");
 ##      dec_raise.col_name("raise"),
 #	xc_a := multiplex.script("pow",dec_bat1,dec_raise);
-#	yc_a := bbp.setColumn(xc_a,"pow");
+#	yc_a := setColumn(xc_a,"pow");
 #	ad_a := print(vc_a,wc_a,yc_a);
 ##      [pow](dec_bat1,dec_raise).col_name("pow"));
 ##
-#	bd_a := bbp.setColumn(dec_bat1,"decimal1");
+#	bd_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	cd_a := bbp.setColumn(dec_raise,"raise");
+#	cd_a := setColumn(dec_raise,"raise");
 ##      dec_raise.col_name("raise"),
-#	dd_a := bbp.setColumn(dec_prec,"precision");
+#	dd_a := setColumn(dec_prec,"precision");
 ##      dec_prec.col_name("precision"),
 #	ed_a := multiplex.script("pow",dec_bat1,dec_raise,dec_prec);
-#	fd_a := bbp.setColumn(ed_a,"pow");
+#	fd_a := setColumn(ed_a,"pow");
 #	gd_a := print(bd_a,cd_a,dd_a,fd_a);
 ##      [pow](dec_bat1,dec_raise,dec_prec).col_name("pow"));
 ##
-#	hd_a := bbp.setColumn(dec_bat1,"decimal1");
+#	hd_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	id_a := bbp.setColumn(dec_bat2,"decimal2");
+#	id_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	jd_a := multiplex.tactics("*",dec_bat1,dec_bat2);
-#	kd_a := bbp.setColumn(jd_a,"*");
+#	kd_a := setColumn(jd_a,"*");
 #	ld_a := print(hd_a,id_a,kd_a);
 ##      [*](dec_bat1,dec_bat2).col_name("*"));
 ##
-#	md_a := bbp.setColumn(dec_bat1,"decimal1");
+#	md_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	nd_a := bbp.setColumn(dec_bat2,"decimal2");
+#	nd_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	od_a := multiplex.tactics("/",dec_bat1,dec_bat2);
-#	pd_a := bbp.setColumn(od_a,"/");
+#	pd_a := setColumn(od_a,"/");
 #	qd_a := print(md_a,nd_a,pd_a);
 ##      [/](dec_bat1,dec_bat2).col_name("/"));
 ##
-#	rd_a := bbp.setColumn(dec_bat1,"decimal1");
+#	rd_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	sd_a := bbp.setColumn(dec_bat2,"decimal2");
+#	sd_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	td_a := multiplex.script("divide",dec_bat1,dec_bat2,10);
-#	ud_a := bbp.setColumn(td_a,"divide");
+#	ud_a := setColumn(td_a,"divide");
 #	vd_a := print(rd_a,sd_a,ud_a);
 ##      [divide](dec_bat1,dec_bat2,10).col_name("divide"));
 ##
-#	wd_a := bbp.setColumn(dec_bat1,"decimal1");
+#	wd_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	xd_a := bbp.setColumn(dec_bat2,"decimal2");
+#	xd_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
-#	yd_a := bbp.setColumn(dec_prec,"precision");
+#	yd_a := setColumn(dec_prec,"precision");
 ##      dec_prec.col_name("precision"),
 #	ae_a := multiplex.script("divide",dec_bat1,dec_bat2,dec_prec);
-#	be_a := bbp.setColumn(ae_a,"divide");
+#	be_a := setColumn(ae_a,"divide");
 #	ce_a := print(wd_a,xd_a,yd_a,be_a);
 ##      [divide](dec_bat1,dec_bat2,dec_prec).col_name("divide"));
 ##
-#	de_a := bbp.setColumn(dec_bat1,"decimal1");
+#	de_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	ee_a := bbp.setColumn(dec_bat2,"decimal2");
+#	ee_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	fe_a := multiplex.tactics("+",dec_bat1,dec_bat2);
-#	ge_a := bbp.setColumn(fe_a,"+");
+#	ge_a := setColumn(fe_a,"+");
 #	he_a := print(de_a,ee_a,ge_a);
 ##      [+](dec_bat1,dec_bat2).col_name("+"));
 ##
-#	ie_a := bbp.setColumn(dec_bat1,"decimal1");
+#	ie_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	je_a := bbp.setColumn(dec_bat2,"decimal2");
+#	je_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	ke_a := multiplex.tactics("-",dec_bat1,dec_bat2);
-#	le_a := bbp.setColumn(ke_a,"-");
+#	le_a := setColumn(ke_a,"-");
 #	me_a := print(ie_a,je_a,le_a);
 ##      [-](dec_bat1,dec_bat2).col_name("-"));
 ##
-#	ne_a := bbp.setColumn(dec_bat1,"decimal1");
+#	ne_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	oe_a := bbp.setColumn(dec_bat2,"decimal2");
+#	oe_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	pe_a := multiplex.script("=",dec_bat1,dec_bat2);
-#	qe_a := bbp.setColumn(pe_a,"=");
+#	qe_a := setColumn(pe_a,"=");
 #	re_a := print(ne_a,oe_a,qe_a);
 ##      [=](dec_bat1,dec_bat2).col_name("="));
 ##
-#	se_a := bbp.setColumn(dec_bat1,"decimal1");
+#	se_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	te_a := bbp.setColumn(dec_bat2,"decimal2");
+#	te_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	ue_a := multiplex.script("!=",dec_bat1,dec_bat2);
-#	ve_a := bbp.setColumn(ue_a,"!=");
+#	ve_a := setColumn(ue_a,"!=");
 #	we_a := print(se_a,te_a,ve_a);
 ##      [!=](dec_bat1,dec_bat2).col_name("!="));
 ##
-#	xe_a := bbp.setColumn(dec_bat1,"decimal1");
+#	xe_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	ye_a := bbp.setColumn(dec_bat2,"decimal2");
+#	ye_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	af_a := multiplex.script("<",dec_bat1,dec_bat2);
-#	bf_a := bbp.setColumn(af_a,"<");
+#	bf_a := setColumn(af_a,"<");
 #	cf_a := print(xe_a,ye_a,bf_a);
 ##      [<](dec_bat1,dec_bat2).col_name("<"));
 ##
-#	df_a := bbp.setColumn(dec_bat1,"decimal1");
+#	df_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	ef_a := bbp.setColumn(dec_bat2,"decimal2");
+#	ef_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	ff_a := multiplex.script("<=",dec_bat1,dec_bat2);
-#	gf_a := bbp.setColumn(ff_a,"<=");
+#	gf_a := setColumn(ff_a,"<=");
 #	hf_a := print(df_a,ef_a,gf_a);
 ##      [<=](dec_bat1,dec_bat2).col_name("<="));
 ##
-#	if_a := bbp.setColumn(dec_bat1,"decimal1");
+#	if_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	jf_a := bbp.setColumn(dec_bat2,"decimal2");
+#	jf_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	kf_a := multiplex.script(">",dec_bat1,dec_bat2);
-#	lf_a := bbp.setColumn(kf_a,">");
+#	lf_a := setColumn(kf_a,">");
 #	mf_a := print(if_a,jf_a,lf_a);
 ##      [>](dec_bat1,dec_bat2).col_name(">"));
 ##
-#	nf_a := bbp.setColumn(dec_bat1,"decimal1");
+#	nf_a := setColumn(dec_bat1,"decimal1");
 ##print(dec_bat1.col_name("decimal1"),
-#	of_a := bbp.setColumn(dec_bat2,"decimal2");
+#	of_a := setColumn(dec_bat2,"decimal2");
 ##      dec_bat2.col_name("decimal2"),
 #	pf_a := multiplex.script(">=",dec_bat1,dec_bat2);
-#	qf_a := bbp.setColumn(pf_a,">=");
+#	qf_a := setColumn(pf_a,">=");
 #	rf_a := print(nf_a,of_a,qf_a);
 ##      [>=](dec_bat1,dec_bat2).col_name(">="));
 ##
@@ -340,14 +340,14 @@
 #	dec_neg:= multiplex.script("-",dec_bat);
 ##var dec_neg := [-](dec_bat);
 ##
-#	sf_a := bbp.setColumn(dec_bat,"decimal");
+#	sf_a := setColumn(dec_bat,"decimal");
 ##print(dec_bat.col_name("decimal"),
 #	tf_a := multiplex.script("isnil",dec_bat);
-#	uf_a := bbp.setColumn(tf_a,"isnil");
+#	uf_a := setColumn(tf_a,"isnil");
 ##      [isnil](dec_bat).col_name("isnil"),
-#	vf_a := bbp.setColumn(dec_abs,"[abs]");
+#	vf_a := setColumn(dec_abs,"[abs]");
 ##      dec_abs.col_name("[abs]"),
-#	wf_a := bbp.setColumn(dec_neg,"[-]");
+#	wf_a := setColumn(dec_neg,"[-]");
 #	xf_a := print(sf_a,uf_a,vf_a,wf_a);
 ##      dec_neg.col_name("[-]"));
 ##
@@ -355,13 +355,13 @@
 #	yf_a := reverse(dec_bat);
 #	ag_a := sort(yf_a);
 #	bg_a := reverse(ag_a);
-#	cg_a := bbp.setColumn(bg_a,"sorted dec");
+#	cg_a := setColumn(bg_a,"sorted dec");
 #	dg_a := print(cg_a);
 ##dec_bat.reverse.sort.reverse.col_name("sorted dec").print;
 #	eg_a := reverse(dec_abs);
 #	fg_a := sort(eg_a);
 #	gg_a := reverse(fg_a);
-#	hg_a := bbp.setColumn(gg_a,"sorted abs(dec)");
+#	hg_a := setColumn(gg_a,"sorted abs(dec)");
 #	ig_a := print(hg_a);
 ##dec_abs.reverse.sort.reverse.col_name("sorted abs(dec)").print;
 ##
@@ -887,7 +887,7 @@ end arith_perftest; #69
 ###
 ####line 445 "/ufs/mk/monet_5-0/src/modules/atoms/decimal.mx"
 ###
-###Identifer 'col_name' mapped to 'bbp.setColumn'
+###Identifer 'col_name' mapped to 'setColumn'
 ###Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 ###Identifer 'CTgroup' mapped to 'group'
 #
@@ -905,7 +905,7 @@ function Admin.main():int; #0  (main:int)
     nec_big := decimal.decimal("-11220000000000E30"); #11 decimal_from_str (nec_big:decimal)<-($22:str)
     dec_huge := decimal.decimal("+22440000000000E9000"); #12 decimal_from_str (dec_huge:decimal)<-($24:str)
     nec_huge := decimal.decimal("-2244E9010"); #13 decimal_from_str (nec_huge:decimal)<-($26:str)
-    dec_bat := mal.new(str,decimal,10); #14 CMDBATnew (dec_bat:bat[str,decimal])<-(str:str)(decimal:decimal)($30:int)
+    dec_bat := bbp.new(str,decimal,10); #14 CMDBATnew (dec_bat:bat[str,decimal])<-(str:str)(decimal:decimal)($30:int)
     ba_a := bat.insert(dec_bat,"dec_nil",dec_nil); #15 CMDinsert_bun (ba_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($32:str)(dec_nil:decimal)
     ca_a := bat.insert(dec_bat,"dec_zero",dec_zero); #16 CMDinsert_bun (ca_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($34:str)(dec_zero:decimal)
     da_a := bat.insert(dec_bat,"dec_tiny",dec_tiny); #17 CMDinsert_bun (da_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($36:str)(dec_tiny:decimal)
@@ -924,58 +924,58 @@ function Admin.main():int; #0  (main:int)
     dec_int := multiplex.script("int",dec_bat); #30 CMDmultiplexScript (dec_int:bat[str,int])<-($62:str)(dec_bat:bat[str,decimal])
     dec_lng := multiplex.script("lng",dec_bat); #31 CMDmultiplexScript (dec_lng:bat[str,lng])<-($64:str)(dec_bat:bat[str,decimal])
     dec_dbl := multiplex.script("dbl",dec_bat); #32 CMDmultiplexScript (dec_dbl:bat[str,dbl])<-($66:str)(dec_bat:bat[str,decimal])
-    na_a := bbp.setColumn(dec_bat,"value"); #33 CMDbbpsetColumn (na_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($68:str)
-    oa_a := bbp.setColumn(dec_prc,"precision"); #34 CMDbbpsetColumn (oa_a:bat[str,int])<-(dec_prc:bat[str,int])($70:str)
-    pa_a := bbp.setColumn(dec_scl,"scale"); #35 CMDbbpsetColumn (pa_a:bat[str,int])<-(dec_scl:bat[str,int])($72:str)
+    na_a := bat.setColumn(dec_bat,"value"); #33 CMDsetColumn (na_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($68:str)
+    oa_a := bat.setColumn(dec_prc,"precision"); #34 CMDsetColumn (oa_a:bat[str,int])<-(dec_prc:bat[str,int])($70:str)
+    pa_a := bat.setColumn(dec_scl,"scale"); #35 CMDsetColumn (pa_a:bat[str,int])<-(dec_scl:bat[str,int])($72:str)
     qa_a := io.print(na_a,oa_a,pa_a); #36 CMDtable (qa_a:int)<-(na_a:bat[str,decimal])(oa_a:bat[str,int])(pa_a:bat[str,int])
-    ra_a := bbp.setColumn(dec_bat,"value"); #37 CMDbbpsetColumn (ra_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($68:str)
-    sa_a := bbp.setColumn(dec_int,"int"); #38 CMDbbpsetColumn (sa_a:bat[str,int])<-(dec_int:bat[str,int])($62:str)
-    ta_a := bbp.setColumn(dec_lng,"lng"); #39 CMDbbpsetColumn (ta_a:bat[str,lng])<-(dec_lng:bat[str,lng])($64:str)
+    ra_a := bat.setColumn(dec_bat,"value"); #37 CMDsetColumn (ra_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($68:str)
+    sa_a := bat.setColumn(dec_int,"int"); #38 CMDsetColumn (sa_a:bat[str,int])<-(dec_int:bat[str,int])($62:str)
+    ta_a := bat.setColumn(dec_lng,"lng"); #39 CMDsetColumn (ta_a:bat[str,lng])<-(dec_lng:bat[str,lng])($64:str)
     ua_a := io.print(ra_a,sa_a,ta_a); #40 CMDtable (ua_a:int)<-(ra_a:bat[str,decimal])(sa_a:bat[str,int])(ta_a:bat[str,lng])
-    va_a := bbp.setColumn(dec_bat,"value"); #41 CMDbbpsetColumn (va_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($68:str)
-    wa_a := bbp.setColumn(dec_flt,"flt"); #42 CMDbbpsetColumn (wa_a:bat[str,flt])<-(dec_flt:bat[str,flt])($60:str)
-    xa_a := bbp.setColumn(dec_dbl,"dbl"); #43 CMDbbpsetColumn (xa_a:bat[str,dbl])<-(dec_dbl:bat[str,dbl])($66:str)
+    va_a := bat.setColumn(dec_bat,"value"); #41 CMDsetColumn (va_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($68:str)
+    wa_a := bat.setColumn(dec_flt,"flt"); #42 CMDsetColumn (wa_a:bat[str,flt])<-(dec_flt:bat[str,flt])($60:str)
+    xa_a := bat.setColumn(dec_dbl,"dbl"); #43 CMDsetColumn (xa_a:bat[str,dbl])<-(dec_dbl:bat[str,dbl])($66:str)
     ya_a := io.print(va_a,wa_a,xa_a); #44 CMDtable (ya_a:int)<-(va_a:bat[str,decimal])(wa_a:bat[str,flt])(xa_a:bat[str,dbl])
-    ab_a := bbp.setColumn(dec_bat,"decimal"); #45 CMDbbpsetColumn (ab_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
+    ab_a := bat.setColumn(dec_bat,"decimal"); #45 CMDsetColumn (ab_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
     bb_a := multiplex.script("decimal",dec_int); #46 CMDmultiplexScript (bb_a:bat[str,decimal])<-($83:str)(dec_int:bat[str,int])
-    cb_a := bbp.setColumn(bb_a,"from_int"); #47 CMDbbpsetColumn (cb_a:bat[str,decimal])<-(bb_a:bat[str,decimal])($86:str)
+    cb_a := bat.setColumn(bb_a,"from_int"); #47 CMDsetColumn (cb_a:bat[str,decimal])<-(bb_a:bat[str,decimal])($86:str)
     db_a := multiplex.script("decimal",dec_lng); #48 CMDmultiplexScript (db_a:bat[str,decimal])<-($83:str)(dec_lng:bat[str,lng])
-    eb_a := bbp.setColumn(db_a,"from_lng"); #49 CMDbbpsetColumn (eb_a:bat[str,decimal])<-(db_a:bat[str,decimal])($89:str)
+    eb_a := bat.setColumn(db_a,"from_lng"); #49 CMDsetColumn (eb_a:bat[str,decimal])<-(db_a:bat[str,decimal])($89:str)
     fb_a := io.print(ab_a,cb_a,eb_a); #50 CMDtable (fb_a:int)<-(ab_a:bat[str,decimal])(cb_a:bat[str,decimal])(eb_a:bat[str,decimal])
-    gb_a := bbp.setColumn(dec_bat,"decimal"); #51 CMDbbpsetColumn (gb_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
+    gb_a := bat.setColumn(dec_bat,"decimal"); #51 CMDsetColumn (gb_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
     hb_a := multiplex.script("decimal",dec_flt); #52 CMDmultiplexScript (hb_a:bat[str,decimal])<-($83:str)(dec_flt:bat[str,flt])
-    ib_a := bbp.setColumn(hb_a,"from_flt"); #53 CMDbbpsetColumn (ib_a:bat[str,decimal])<-(hb_a:bat[str,decimal])($94:str)
+    ib_a := bat.setColumn(hb_a,"from_flt"); #53 CMDsetColumn (ib_a:bat[str,decimal])<-(hb_a:bat[str,decimal])($94:str)
     jb_a := io.print(gb_a,ib_a); #54 CMDtable (jb_a:int)<-(gb_a:bat[str,decimal])(ib_a:bat[str,decimal])
-    kb_a := bbp.setColumn(dec_bat,"decimal"); #55 CMDbbpsetColumn (kb_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
+    kb_a := bat.setColumn(dec_bat,"decimal"); #55 CMDsetColumn (kb_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
     lb_a := multiplex.script("decimal",dec_dbl); #56 CMDmultiplexScript (lb_a:bat[str,decimal])<-($83:str)(dec_dbl:bat[str,dbl])
-    mb_a := bbp.setColumn(lb_a,"from_dbl"); #57 CMDbbpsetColumn (mb_a:bat[str,decimal])<-(lb_a:bat[str,decimal])($99:str)
+    mb_a := bat.setColumn(lb_a,"from_dbl"); #57 CMDsetColumn (mb_a:bat[str,decimal])<-(lb_a:bat[str,decimal])($99:str)
     nb_a := io.print(kb_a,mb_a); #58 CMDtable (nb_a:int)<-(kb_a:bat[str,decimal])(mb_a:bat[str,decimal])
-    ob_a := bbp.setColumn(dec_bat,"decimal"); #59 CMDbbpsetColumn (ob_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
+    ob_a := bat.setColumn(dec_bat,"decimal"); #59 CMDsetColumn (ob_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($83:str)
     pb_a := multiplex.script("setscale",dec_bat,0); #60 CMDmultiplexScript (pb_a:bat[str,decimal])<-($103:str)(dec_bat:bat[str,decimal])($104:int)
-    qb_a := bbp.setColumn(pb_a,"setscale(0)"); #61 CMDbbpsetColumn (qb_a:bat[str,decimal])<-(pb_a:bat[str,decimal])($106:str)
+    qb_a := bat.setColumn(pb_a,"setscale(0)"); #61 CMDsetColumn (qb_a:bat[str,decimal])<-(pb_a:bat[str,decimal])($106:str)
     rb_a := multiplex.script("setscale",dec_bat,10); #62 CMDmultiplexScript (rb_a:bat[str,decimal])<-($103:str)(dec_bat:bat[str,decimal])($108:int)
-    sb_a := bbp.setColumn(rb_a,"setscale(10)"); #63 CMDbbpsetColumn (sb_a:bat[str,decimal])<-(rb_a:bat[str,decimal])($110:str)
+    sb_a := bat.setColumn(rb_a,"setscale(10)"); #63 CMDsetColumn (sb_a:bat[str,decimal])<-(rb_a:bat[str,decimal])($110:str)
     tb_a := batcalc.-(dec_scl,5); #64 CMDbatMINcst (tb_a:bat[str,int])<-(dec_scl:bat[str,int])($112:int)
     ub_a := multiplex.script("setscale",dec_bat,tb_a); #65 CMDmultiplexScript (ub_a:bat[str,decimal])<-($103:str)(dec_bat:bat[str,decimal])(tb_a:bat[str,int])
-    vb_a := bbp.setColumn(ub_a,"setscale(-5)"); #66 CMDbbpsetColumn (vb_a:bat[str,decimal])<-(ub_a:bat[str,decimal])($115:str)
+    vb_a := bat.setColumn(ub_a,"setscale(-5)"); #66 CMDsetColumn (vb_a:bat[str,decimal])<-(ub_a:bat[str,decimal])($115:str)
     wb_a := io.print(ob_a,qb_a,sb_a,vb_a); #67 CMDtable (wb_a:int)<-(ob_a:bat[str,decimal])(qb_a:bat[str,decimal])(sb_a:bat[str,decimal])(vb_a:bat[str,decimal])
-    xb_a := bbp.setColumn(dec_bat,"decimal"); #68 CMDbbpsetColumn (xb_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($118:str)
+    xb_a := bat.setColumn(dec_bat,"decimal"); #68 CMDsetColumn (xb_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($118:str)
     yb_a := multiplex.script("setprecision",dec_bat,0); #69 CMDmultiplexScript (yb_a:bat[str,decimal])<-($120:str)(dec_bat:bat[str,decimal])($104:int)
-    ac_a := bbp.setColumn(yb_a,"setprecision(0)"); #70 CMDbbpsetColumn (ac_a:bat[str,decimal])<-(yb_a:bat[str,decimal])($122:str)
+    ac_a := bat.setColumn(yb_a,"setprecision(0)"); #70 CMDsetColumn (ac_a:bat[str,decimal])<-(yb_a:bat[str,decimal])($122:str)
     bc_a := multiplex.script("setprecision",dec_bat,10); #71 CMDmultiplexScript (bc_a:bat[str,decimal])<-($120:str)(dec_bat:bat[str,decimal])($108:int)
-    cc_a := bbp.setColumn(bc_a,"setprecision(10)"); #72 CMDbbpsetColumn (cc_a:bat[str,decimal])<-(bc_a:bat[str,decimal])($125:str)
+    cc_a := bat.setColumn(bc_a,"setprecision(10)"); #72 CMDsetColumn (cc_a:bat[str,decimal])<-(bc_a:bat[str,decimal])($125:str)
     dc_a := batcalc.-(dec_prc,5); #73 CMDbatMINcst (dc_a:bat[str,int])<-(dec_prc:bat[str,int])($112:int)
     ec_a := multiplex.script("setprecision",dec_bat,dc_a); #74 CMDmultiplexScript (ec_a:bat[str,decimal])<-($120:str)(dec_bat:bat[str,decimal])(dc_a:bat[str,int])
-    fc_a := bbp.setColumn(ec_a,"setprecision(-5)"); #75 CMDbbpsetColumn (fc_a:bat[str,decimal])<-(ec_a:bat[str,decimal])($129:str)
+    fc_a := bat.setColumn(ec_a,"setprecision(-5)"); #75 CMDsetColumn (fc_a:bat[str,decimal])<-(ec_a:bat[str,decimal])($129:str)
     gc_a := io.print(xb_a,ac_a,cc_a,fc_a); #76 CMDtable (gc_a:int)<-(xb_a:bat[str,decimal])(ac_a:bat[str,decimal])(cc_a:bat[str,decimal])(fc_a:bat[str,decimal])
-    hc_a := bbp.setColumn(dec_bat,"decimal"); #77 CMDbbpsetColumn (hc_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($118:str)
+    hc_a := bat.setColumn(dec_bat,"decimal"); #77 CMDsetColumn (hc_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($118:str)
     ic_a := multiplex.script("addscale",dec_bat,-5); #78 CMDmultiplexScript (ic_a:bat[str,decimal])<-($133:str)(dec_bat:bat[str,decimal])($134:int)
-    jc_a := bbp.setColumn(ic_a,"addscale(-5)"); #79 CMDbbpsetColumn (jc_a:bat[str,decimal])<-(ic_a:bat[str,decimal])($136:str)
+    jc_a := bat.setColumn(ic_a,"addscale(-5)"); #79 CMDsetColumn (jc_a:bat[str,decimal])<-(ic_a:bat[str,decimal])($136:str)
     kc_a := multiplex.script("addscale",dec_bat,5); #80 CMDmultiplexScript (kc_a:bat[str,decimal])<-($133:str)(dec_bat:bat[str,decimal])($112:int)
-    lc_a := bbp.setColumn(kc_a,"addscale(5)"); #81 CMDbbpsetColumn (lc_a:bat[str,decimal])<-(kc_a:bat[str,decimal])($139:str)
+    lc_a := bat.setColumn(kc_a,"addscale(5)"); #81 CMDsetColumn (lc_a:bat[str,decimal])<-(kc_a:bat[str,decimal])($139:str)
     mc_a := io.print(hc_a,jc_a,lc_a); #82 CMDtable (mc_a:int)<-(hc_a:bat[str,decimal])(jc_a:bat[str,decimal])(lc_a:bat[str,decimal])
     nc_a := bat.reverse(dec_bat); #83 CMDreverse (nc_a:bat[decimal,str])<-(dec_bat:bat[str,decimal])
-    oc_a := mal.project(nc_a,0@0); #84 CMDproject (oc_a:bat[decimal,oid])<-(nc_a:bat[decimal,str])($143:oid)
+    oc_a := bbp.project(nc_a,0@0); #84 CMDproject (oc_a:bat[decimal,oid])<-(nc_a:bat[decimal,str])($143:oid)
     dec_zero_bat := bat.reverse(oc_a); #85 CMDreverse (dec_zero_bat:bat[oid,decimal])<-(oc_a:bat[decimal,oid])
     pc_a := bat.reverse(dec_zero_bat); #86 CMDreverse (pc_a:bat[decimal,oid])<-(dec_zero_bat:bat[oid,decimal])
     dec_cart := algebra.join(pc_a,dec_zero_bat); #87 CMDjoin (dec_cart:bat[decimal,decimal])<-(pc_a:bat[decimal,oid])(dec_zero_bat:bat[oid,decimal])
@@ -988,101 +988,101 @@ function Admin.main():int; #0  (main:int)
     dec_raise := batcalc.-(tc_a,10); #94 CMDbatMINcst (dec_raise:bat[oid,int])<-(tc_a:bat[oid,int])($155:int)
     uc_a := multiplex.script("getprecision",dec_bat1); #95 CMDmultiplexScript (uc_a:bat[oid,int])<-($153:str)(dec_bat1:bat[oid,decimal])
     dec_prec := batcalc.-(uc_a,1); #96 CMDbatMINcst (dec_prec:bat[oid,int])<-(uc_a:bat[oid,int])($158:int)
-    vc_a := bbp.setColumn(dec_bat1,"decimal1"); #97 CMDbbpsetColumn (vc_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
-    wc_a := bbp.setColumn(dec_raise,"raise"); #98 CMDbbpsetColumn (wc_a:bat[oid,int])<-(dec_raise:bat[oid,int])($162:str)
+    vc_a := bat.setColumn(dec_bat1,"decimal1"); #97 CMDsetColumn (vc_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
+    wc_a := bat.setColumn(dec_raise,"raise"); #98 CMDsetColumn (wc_a:bat[oid,int])<-(dec_raise:bat[oid,int])($162:str)
     xc_a := multiplex.script("pow",dec_bat1,dec_raise); #99 CMDmultiplexScript (xc_a:bat[oid,decimal])<-($164:str)(dec_bat1:bat[oid,decimal])(dec_raise:bat[oid,int])
-    yc_a := bbp.setColumn(xc_a,"pow"); #100 CMDbbpsetColumn (yc_a:bat[oid,decimal])<-(xc_a:bat[oid,decimal])($164:str)
+    yc_a := bat.setColumn(xc_a,"pow"); #100 CMDsetColumn (yc_a:bat[oid,decimal])<-(xc_a:bat[oid,decimal])($164:str)
     ad_a := io.print(vc_a,wc_a,yc_a); #101 CMDtable (ad_a:int)<-(vc_a:bat[oid,decimal])(wc_a:bat[oid,int])(yc_a:bat[oid,decimal])
-    bd_a := bbp.setColumn(dec_bat1,"decimal1"); #102 CMDbbpsetColumn (bd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
-    cd_a := bbp.setColumn(dec_raise,"raise"); #103 CMDbbpsetColumn (cd_a:bat[oid,int])<-(dec_raise:bat[oid,int])($162:str)
-    dd_a := bbp.setColumn(dec_prec,"precision"); #104 CMDbbpsetColumn (dd_a:bat[oid,int])<-(dec_prec:bat[oid,int])($170:str)
+    bd_a := bat.setColumn(dec_bat1,"decimal1"); #102 CMDsetColumn (bd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
+    cd_a := bat.setColumn(dec_raise,"raise"); #103 CMDsetColumn (cd_a:bat[oid,int])<-(dec_raise:bat[oid,int])($162:str)
+    dd_a := bat.setColumn(dec_prec,"precision"); #104 CMDsetColumn (dd_a:bat[oid,int])<-(dec_prec:bat[oid,int])($170:str)
     ed_a := multiplex.script("pow",dec_bat1,dec_raise,dec_prec); #105 CMDmultiplexScript (ed_a:bat[oid,decimal])<-($164:str)(dec_bat1:bat[oid,decimal])(dec_raise:bat[oid,int])(dec_prec:bat[oid,int])
-    fd_a := bbp.setColumn(ed_a,"pow"); #106 CMDbbpsetColumn (fd_a:bat[oid,decimal])<-(ed_a:bat[oid,decimal])($164:str)
+    fd_a := bat.setColumn(ed_a,"pow"); #106 CMDsetColumn (fd_a:bat[oid,decimal])<-(ed_a:bat[oid,decimal])($164:str)
     gd_a := io.print(bd_a,cd_a,dd_a,fd_a); #107 CMDtable (gd_a:int)<-(bd_a:bat[oid,decimal])(cd_a:bat[oid,int])(dd_a:bat[oid,int])(fd_a:bat[oid,decimal])
-    hd_a := bbp.setColumn(dec_bat1,"decimal1"); #108 CMDbbpsetColumn (hd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
-    id_a := bbp.setColumn(dec_bat2,"decimal2"); #109 CMDbbpsetColumn (id_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
+    hd_a := bat.setColumn(dec_bat1,"decimal1"); #108 CMDsetColumn (hd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
+    id_a := bat.setColumn(dec_bat2,"decimal2"); #109 CMDsetColumn (id_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
     jd_a := multiplex.script("*",dec_bat1,dec_bat2); #110 CMDmultiplexScript (jd_a:bat[oid,decimal])<-($178:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    kd_a := bbp.setColumn(jd_a,"*"); #111 CMDbbpsetColumn (kd_a:bat[oid,decimal])<-(jd_a:bat[oid,decimal])($178:str)
+    kd_a := bat.setColumn(jd_a,"*"); #111 CMDsetColumn (kd_a:bat[oid,decimal])<-(jd_a:bat[oid,decimal])($178:str)
     ld_a := io.print(hd_a,id_a,kd_a); #112 CMDtable (ld_a:int)<-(hd_a:bat[oid,decimal])(id_a:bat[oid,decimal])(kd_a:bat[oid,decimal])
-    md_a := bbp.setColumn(dec_bat1,"decimal1"); #113 CMDbbpsetColumn (md_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
-    nd_a := bbp.setColumn(dec_bat2,"decimal2"); #114 CMDbbpsetColumn (nd_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
+    md_a := bat.setColumn(dec_bat1,"decimal1"); #113 CMDsetColumn (md_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
+    nd_a := bat.setColumn(dec_bat2,"decimal2"); #114 CMDsetColumn (nd_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
     od_a := multiplex.script("/",dec_bat1,dec_bat2); #115 CMDmultiplexScript (od_a:bat[oid,decimal])<-($184:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    pd_a := bbp.setColumn(od_a,"/"); #116 CMDbbpsetColumn (pd_a:bat[oid,decimal])<-(od_a:bat[oid,decimal])($184:str)
+    pd_a := bat.setColumn(od_a,"/"); #116 CMDsetColumn (pd_a:bat[oid,decimal])<-(od_a:bat[oid,decimal])($184:str)
     qd_a := io.print(md_a,nd_a,pd_a); #117 CMDtable (qd_a:int)<-(md_a:bat[oid,decimal])(nd_a:bat[oid,decimal])(pd_a:bat[oid,decimal])
-    rd_a := bbp.setColumn(dec_bat1,"decimal1"); #118 CMDbbpsetColumn (rd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
-    sd_a := bbp.setColumn(dec_bat2,"decimal2"); #119 CMDbbpsetColumn (sd_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
+    rd_a := bat.setColumn(dec_bat1,"decimal1"); #118 CMDsetColumn (rd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($160:str)
+    sd_a := bat.setColumn(dec_bat2,"decimal2"); #119 CMDsetColumn (sd_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
     td_a := multiplex.script("divide",dec_bat1,dec_bat2,10); #120 CMDmultiplexScript (td_a:bat[oid,decimal])<-($190:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])($191:int)
-    ud_a := bbp.setColumn(td_a,"divide"); #121 CMDbbpsetColumn (ud_a:bat[oid,decimal])<-(td_a:bat[oid,decimal])($190:str)
+    ud_a := bat.setColumn(td_a,"divide"); #121 CMDsetColumn (ud_a:bat[oid,decimal])<-(td_a:bat[oid,decimal])($190:str)
     vd_a := io.print(rd_a,sd_a,ud_a); #122 CMDtable (vd_a:int)<-(rd_a:bat[oid,decimal])(sd_a:bat[oid,decimal])(ud_a:bat[oid,decimal])
-    wd_a := bbp.setColumn(dec_bat1,"decimal1"); #123 CMDbbpsetColumn (wd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
-    xd_a := bbp.setColumn(dec_bat2,"decimal2"); #124 CMDbbpsetColumn (xd_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
-    yd_a := bbp.setColumn(dec_prec,"precision"); #125 CMDbbpsetColumn (yd_a:bat[oid,int])<-(dec_prec:bat[oid,int])($170:str)
+    wd_a := bat.setColumn(dec_bat1,"decimal1"); #123 CMDsetColumn (wd_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
+    xd_a := bat.setColumn(dec_bat2,"decimal2"); #124 CMDsetColumn (xd_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
+    yd_a := bat.setColumn(dec_prec,"precision"); #125 CMDsetColumn (yd_a:bat[oid,int])<-(dec_prec:bat[oid,int])($170:str)
     ae_a := multiplex.script("divide",dec_bat1,dec_bat2,dec_prec); #126 CMDmultiplexScript (ae_a:bat[oid,decimal])<-($190:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])(dec_prec:bat[oid,int])
-    be_a := bbp.setColumn(ae_a,"divide"); #127 CMDbbpsetColumn (be_a:bat[oid,decimal])<-(ae_a:bat[oid,decimal])($190:str)
+    be_a := bat.setColumn(ae_a,"divide"); #127 CMDsetColumn (be_a:bat[oid,decimal])<-(ae_a:bat[oid,decimal])($190:str)
     ce_a := io.print(wd_a,xd_a,yd_a,be_a); #128 CMDtable (ce_a:int)<-(wd_a:bat[oid,decimal])(xd_a:bat[oid,decimal])(yd_a:bat[oid,int])(be_a:bat[oid,decimal])
-    de_a := bbp.setColumn(dec_bat1,"decimal1"); #129 CMDbbpsetColumn (de_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
-    ee_a := bbp.setColumn(dec_bat2,"decimal2"); #130 CMDbbpsetColumn (ee_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
+    de_a := bat.setColumn(dec_bat1,"decimal1"); #129 CMDsetColumn (de_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
+    ee_a := bat.setColumn(dec_bat2,"decimal2"); #130 CMDsetColumn (ee_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($176:str)
     fe_a := multiplex.script("+",dec_bat1,dec_bat2); #131 CMDmultiplexScript (fe_a:bat[oid,decimal])<-($204:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    ge_a := bbp.setColumn(fe_a,"+"); #132 CMDbbpsetColumn (ge_a:bat[oid,decimal])<-(fe_a:bat[oid,decimal])($204:str)
+    ge_a := bat.setColumn(fe_a,"+"); #132 CMDsetColumn (ge_a:bat[oid,decimal])<-(fe_a:bat[oid,decimal])($204:str)
     he_a := io.print(de_a,ee_a,ge_a); #133 CMDtable (he_a:int)<-(de_a:bat[oid,decimal])(ee_a:bat[oid,decimal])(ge_a:bat[oid,decimal])
-    ie_a := bbp.setColumn(dec_bat1,"decimal1"); #134 CMDbbpsetColumn (ie_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
-    je_a := bbp.setColumn(dec_bat2,"decimal2"); #135 CMDbbpsetColumn (je_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
+    ie_a := bat.setColumn(dec_bat1,"decimal1"); #134 CMDsetColumn (ie_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
+    je_a := bat.setColumn(dec_bat2,"decimal2"); #135 CMDsetColumn (je_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
     ke_a := multiplex.script("-",dec_bat1,dec_bat2); #136 CMDmultiplexScript (ke_a:bat[oid,decimal])<-($211:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    le_a := bbp.setColumn(ke_a,"-"); #137 CMDbbpsetColumn (le_a:bat[oid,decimal])<-(ke_a:bat[oid,decimal])($211:str)
+    le_a := bat.setColumn(ke_a,"-"); #137 CMDsetColumn (le_a:bat[oid,decimal])<-(ke_a:bat[oid,decimal])($211:str)
     me_a := io.print(ie_a,je_a,le_a); #138 CMDtable (me_a:int)<-(ie_a:bat[oid,decimal])(je_a:bat[oid,decimal])(le_a:bat[oid,decimal])
-    ne_a := bbp.setColumn(dec_bat1,"decimal1"); #139 CMDbbpsetColumn (ne_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
-    oe_a := bbp.setColumn(dec_bat2,"decimal2"); #140 CMDbbpsetColumn (oe_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
+    ne_a := bat.setColumn(dec_bat1,"decimal1"); #139 CMDsetColumn (ne_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
+    oe_a := bat.setColumn(dec_bat2,"decimal2"); #140 CMDsetColumn (oe_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
     pe_a := multiplex.script("=",dec_bat1,dec_bat2); #141 CMDmultiplexScript (pe_a:bat[oid,bit])<-($217:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    qe_a := bbp.setColumn(pe_a,"="); #142 CMDbbpsetColumn (qe_a:bat[oid,bit])<-(pe_a:bat[oid,bit])($217:str)
+    qe_a := bat.setColumn(pe_a,"="); #142 CMDsetColumn (qe_a:bat[oid,bit])<-(pe_a:bat[oid,bit])($217:str)
     re_a := io.print(ne_a,oe_a,qe_a); #143 CMDtable (re_a:int)<-(ne_a:bat[oid,decimal])(oe_a:bat[oid,decimal])(qe_a:bat[oid,bit])
-    se_a := bbp.setColumn(dec_bat1,"decimal1"); #144 CMDbbpsetColumn (se_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
-    te_a := bbp.setColumn(dec_bat2,"decimal2"); #145 CMDbbpsetColumn (te_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
+    se_a := bat.setColumn(dec_bat1,"decimal1"); #144 CMDsetColumn (se_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
+    te_a := bat.setColumn(dec_bat2,"decimal2"); #145 CMDsetColumn (te_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
     ue_a := multiplex.script("!=",dec_bat1,dec_bat2); #146 CMDmultiplexScript (ue_a:bat[oid,bit])<-($223:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    ve_a := bbp.setColumn(ue_a,"!="); #147 CMDbbpsetColumn (ve_a:bat[oid,bit])<-(ue_a:bat[oid,bit])($223:str)
+    ve_a := bat.setColumn(ue_a,"!="); #147 CMDsetColumn (ve_a:bat[oid,bit])<-(ue_a:bat[oid,bit])($223:str)
     we_a := io.print(se_a,te_a,ve_a); #148 CMDtable (we_a:int)<-(se_a:bat[oid,decimal])(te_a:bat[oid,decimal])(ve_a:bat[oid,bit])
-    xe_a := bbp.setColumn(dec_bat1,"decimal1"); #149 CMDbbpsetColumn (xe_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
-    ye_a := bbp.setColumn(dec_bat2,"decimal2"); #150 CMDbbpsetColumn (ye_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
+    xe_a := bat.setColumn(dec_bat1,"decimal1"); #149 CMDsetColumn (xe_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($195:str)
+    ye_a := bat.setColumn(dec_bat2,"decimal2"); #150 CMDsetColumn (ye_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
     af_a := multiplex.script("<",dec_bat1,dec_bat2); #151 CMDmultiplexScript (af_a:bat[oid,bit])<-($229:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    bf_a := bbp.setColumn(af_a,"<"); #152 CMDbbpsetColumn (bf_a:bat[oid,bit])<-(af_a:bat[oid,bit])($229:str)
+    bf_a := bat.setColumn(af_a,"<"); #152 CMDsetColumn (bf_a:bat[oid,bit])<-(af_a:bat[oid,bit])($229:str)
     cf_a := io.print(xe_a,ye_a,bf_a); #153 CMDtable (cf_a:int)<-(xe_a:bat[oid,decimal])(ye_a:bat[oid,decimal])(bf_a:bat[oid,bit])
-    df_a := bbp.setColumn(dec_bat1,"decimal1"); #154 CMDbbpsetColumn (df_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($233:str)
-    ef_a := bbp.setColumn(dec_bat2,"decimal2"); #155 CMDbbpsetColumn (ef_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
+    df_a := bat.setColumn(dec_bat1,"decimal1"); #154 CMDsetColumn (df_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($233:str)
+    ef_a := bat.setColumn(dec_bat2,"decimal2"); #155 CMDsetColumn (ef_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
     ff_a := multiplex.script("<=",dec_bat1,dec_bat2); #156 CMDmultiplexScript (ff_a:bat[oid,bit])<-($236:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    gf_a := bbp.setColumn(ff_a,"<="); #157 CMDbbpsetColumn (gf_a:bat[oid,bit])<-(ff_a:bat[oid,bit])($236:str)
+    gf_a := bat.setColumn(ff_a,"<="); #157 CMDsetColumn (gf_a:bat[oid,bit])<-(ff_a:bat[oid,bit])($236:str)
     hf_a := io.print(df_a,ef_a,gf_a); #158 CMDtable (hf_a:int)<-(df_a:bat[oid,decimal])(ef_a:bat[oid,decimal])(gf_a:bat[oid,bit])
-    if_a := bbp.setColumn(dec_bat1,"decimal1"); #159 CMDbbpsetColumn (if_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($233:str)
-    jf_a := bbp.setColumn(dec_bat2,"decimal2"); #160 CMDbbpsetColumn (jf_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
+    if_a := bat.setColumn(dec_bat1,"decimal1"); #159 CMDsetColumn (if_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($233:str)
+    jf_a := bat.setColumn(dec_bat2,"decimal2"); #160 CMDsetColumn (jf_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($209:str)
     kf_a := multiplex.script(">",dec_bat1,dec_bat2); #161 CMDmultiplexScript (kf_a:bat[oid,bit])<-($242:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    lf_a := bbp.setColumn(kf_a,">"); #162 CMDbbpsetColumn (lf_a:bat[oid,bit])<-(kf_a:bat[oid,bit])($242:str)
+    lf_a := bat.setColumn(kf_a,">"); #162 CMDsetColumn (lf_a:bat[oid,bit])<-(kf_a:bat[oid,bit])($242:str)
     mf_a := io.print(if_a,jf_a,lf_a); #163 CMDtable (mf_a:int)<-(if_a:bat[oid,decimal])(jf_a:bat[oid,decimal])(lf_a:bat[oid,bit])
-    nf_a := bbp.setColumn(dec_bat1,"decimal1"); #164 CMDbbpsetColumn (nf_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($233:str)
-    of_a := bbp.setColumn(dec_bat2,"decimal2"); #165 CMDbbpsetColumn (of_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($247:str)
+    nf_a := bat.setColumn(dec_bat1,"decimal1"); #164 CMDsetColumn (nf_a:bat[oid,decimal])<-(dec_bat1:bat[oid,decimal])($233:str)
+    of_a := bat.setColumn(dec_bat2,"decimal2"); #165 CMDsetColumn (of_a:bat[oid,decimal])<-(dec_bat2:bat[oid,decimal])($247:str)
     pf_a := multiplex.script(">=",dec_bat1,dec_bat2); #166 CMDmultiplexScript (pf_a:bat[oid,bit])<-($249:str)(dec_bat1:bat[oid,decimal])(dec_bat2:bat[oid,decimal])
-    qf_a := bbp.setColumn(pf_a,">="); #167 CMDbbpsetColumn (qf_a:bat[oid,bit])<-(pf_a:bat[oid,bit])($249:str)
+    qf_a := bat.setColumn(pf_a,">="); #167 CMDsetColumn (qf_a:bat[oid,bit])<-(pf_a:bat[oid,bit])($249:str)
     rf_a := io.print(nf_a,of_a,qf_a); #168 CMDtable (rf_a:int)<-(nf_a:bat[oid,decimal])(of_a:bat[oid,decimal])(qf_a:bat[oid,bit])
     dec_abs := multiplex.script("abs",dec_bat); #169 CMDmultiplexScript (dec_abs:bat[str,decimal])<-($253:str)(dec_bat:bat[str,decimal])
     dec_neg := multiplex.script("-",dec_bat); #170 CMDmultiplexScript (dec_neg:bat[str,decimal])<-($255:str)(dec_bat:bat[str,decimal])
-    sf_a := bbp.setColumn(dec_bat,"decimal"); #171 CMDbbpsetColumn (sf_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($257:str)
+    sf_a := bat.setColumn(dec_bat,"decimal"); #171 CMDsetColumn (sf_a:bat[str,decimal])<-(dec_bat:bat[str,decimal])($257:str)
     tf_a := multiplex.script("isnil",dec_bat); #172 CMDmultiplexScript (tf_a:bat[str,bit])<-($259:str)(dec_bat:bat[str,decimal])
-    uf_a := bbp.setColumn(tf_a,"isnil"); #173 CMDbbpsetColumn (uf_a:bat[str,bit])<-(tf_a:bat[str,bit])($259:str)
-    vf_a := bbp.setColumn(dec_abs,"[abs]"); #174 CMDbbpsetColumn (vf_a:bat[str,decimal])<-(dec_abs:bat[str,decimal])($262:str)
-    wf_a := bbp.setColumn(dec_neg,"[-]"); #175 CMDbbpsetColumn (wf_a:bat[str,decimal])<-(dec_neg:bat[str,decimal])($264:str)
+    uf_a := bat.setColumn(tf_a,"isnil"); #173 CMDsetColumn (uf_a:bat[str,bit])<-(tf_a:bat[str,bit])($259:str)
+    vf_a := bat.setColumn(dec_abs,"[abs]"); #174 CMDsetColumn (vf_a:bat[str,decimal])<-(dec_abs:bat[str,decimal])($262:str)
+    wf_a := bat.setColumn(dec_neg,"[-]"); #175 CMDsetColumn (wf_a:bat[str,decimal])<-(dec_neg:bat[str,decimal])($264:str)
     xf_a := io.print(sf_a,uf_a,vf_a,wf_a); #176 CMDtable (xf_a:int)<-(sf_a:bat[str,decimal])(uf_a:bat[str,bit])(vf_a:bat[str,decimal])(wf_a:bat[str,decimal])
     yf_a := bat.reverse(dec_bat); #177 CMDreverse (yf_a:bat[decimal,str])<-(dec_bat:bat[str,decimal])
     ag_a := algebra.sort(yf_a); #178 CMDsort (ag_a:bat[decimal,str])<-(yf_a:bat[decimal,str])
     bg_a := bat.reverse(ag_a); #179 CMDreverse (bg_a:bat[str,decimal])<-(ag_a:bat[decimal,str])
-    cg_a := bbp.setColumn(bg_a,"sorted dec"); #180 CMDbbpsetColumn (cg_a:bat[str,decimal])<-(bg_a:bat[str,decimal])($270:str)
+    cg_a := bat.setColumn(bg_a,"sorted dec"); #180 CMDsetColumn (cg_a:bat[str,decimal])<-(bg_a:bat[str,decimal])($270:str)
     dg_a := io.print(cg_a); #181 CMDprint_val (dg_a:int)<-(cg_a:bat[str,decimal])
     eg_a := bat.reverse(dec_abs); #182 CMDreverse (eg_a:bat[decimal,str])<-(dec_abs:bat[str,decimal])
     fg_a := algebra.sort(eg_a); #183 CMDsort (fg_a:bat[decimal,str])<-(eg_a:bat[decimal,str])
     gg_a := bat.reverse(fg_a); #184 CMDreverse (gg_a:bat[str,decimal])<-(fg_a:bat[decimal,str])
-    hg_a := bbp.setColumn(gg_a,"sorted abs(dec)"); #185 CMDbbpsetColumn (hg_a:bat[str,decimal])<-(gg_a:bat[str,decimal])($276:str)
+    hg_a := bat.setColumn(gg_a,"sorted abs(dec)"); #185 CMDsetColumn (hg_a:bat[str,decimal])<-(gg_a:bat[str,decimal])($276:str)
     ig_a := io.print(hg_a); #186 CMDprint_val (ig_a:int)<-(hg_a:bat[str,decimal])
     jg_a := bat.reverse(dec_abs); #187 CMDreverse (jg_a:bat[decimal,str])<-(dec_abs:bat[str,decimal])
     kg_a := algebra.join(dec_abs,jg_a); #188 CMDjoin (kg_a:bat[str,str])<-(dec_abs:bat[str,decimal])(jg_a:bat[decimal,str])
     lg_a := io.print(kg_a); #189 CMDprint_val (lg_a:int)<-(kg_a:bat[str,str])
     i := 10000; #190  (i:int)<-($282:int)
-    int_10K := mal.new(void,int,10000); #191 CMDBATnew (int_10K:bat[void,int])<-(void:void)(int:int)($282:int)
+    int_10K := bbp.new(void,int,10000); #191 CMDBATnew (int_10K:bat[void,int])<-(void:void)(int:int)($282:int)
 barrier pi_a := true; #192  (pi_a:bit)<-($287:bit) jump 201
     i := calc.-(i,1); #193 CALCbinarySUBintint (i:int)<-(i:int)($288:int)
     ri_a := i; #194  (ri_a:int)<-(i:int)
@@ -1097,7 +1097,7 @@ exit pi_a; #201  (pi_a:bit)
     vi_a := system.printf("#~BeginVariableOutput~#\n"); #203 SYSprint_str (vi_a:int)<-($299:str)
     wi_a := Admin.arith_perftest(int_10K,101,"int_10K"); #204  (wi_a:void)<-(int_10K:bat[void,int])($301:int)($302:str)
     xi_a := system.printf("#~EndVariableOutput~#\n"); #205 SYSprint_str (xi_a:int)<-($304:str)
-    int_100K := mal.new(void,int,100000); #206 CMDBATnew (int_100K:bat[void,int])<-(void:void)(int:int)($306:int)
+    int_100K := bbp.new(void,int,100000); #206 CMDBATnew (int_100K:bat[void,int])<-(void:void)(int:int)($306:int)
 barrier dj_a := true; #207  (dj_a:bit)<-($287:bit) jump 218
     i := calc.+(i,1); #208 CALCbinaryADDintint (i:int)<-(i:int)($288:int)
     fj_a := i; #209  (fj_a:int)<-(i:int)
@@ -1330,7 +1330,7 @@ end main; #233
 [ 54@0,	  4488E15,		  -6,	  1224E-115	  ]
 [ 55@0,	  -44880000000000E5,	  4,	  405705964E66	  ]
 [ 56@0,	  1122E40,		  -6,	  5025E-262	  ]
-[ 57@0,	  -11220000000000E30,	  4,	  158478892E164	  ]
+[ 57@0,	  -11220000000000E30,	  4,	  158478912E164	  ]
 [ 58@0,	  22440000000000E9000,	  4,	  nil		  ]
 [ 59@0,	  -2244E9010,		  -6,	  nil		  ]
 [ 60@0,	  nil,			  nil,	  nil		  ]
@@ -1386,11 +1386,11 @@ end main; #233
 [ 110@0,  1122E-30,		  -6,	  5025E158	  ]
 [ 111@0,  -11220000000000E-40,	  4,	  158478892E-116  ]
 [ 112@0,  2244,			  -6,	  7836E-24	  ]
-[ 113@0,  -22440000000000E-10,	  4,	  253566233E5	  ]
+[ 113@0,  -22440000000000E-10,	  4,	  253566228E5	  ]
 [ 114@0,  4488E15,		  -6,	  1224E-115	  ]
-[ 115@0,  -44880000000000E5,	  4,	  405705981E66	  ]
+[ 115@0,  -44880000000000E5,	  4,	  405705964E66	  ]
 [ 116@0,  1122E40,		  -6,	  5025E-262	  ]
-[ 117@0,  -11220000000000E30,	  4,	  158478902E164	  ]
+[ 117@0,  -11220000000000E30,	  4,	  158478912E164	  ]
 [ 118@0,  22440000000000E9000,	  4,	  nil		  ]
 [ 119@0,  -2244E9010,		  -6,	  nil		  ]
 [ 120@0,  nil,			  nil,	  nil		  ]
@@ -3417,43 +3417,43 @@ end main; #233
 #~BeginVariableOutput~#
 [/](int_10K) = 20ms
 join(int_10K=10000) = 4 ms
-group(int_10K=100) = 2 ms
-[*](int_10K==10000) = 21 ms
-[-](int_10K=10000) = 25 ms
+group(int_10K=100) = 3 ms
+[*](int_10K==10000) = 20 ms
+[-](int_10K=10000) = 24 ms
 [+](int_10K=10000) =  24 ms
-[pow](int_10K=10000) = 52 ms
-sort(int_10K) =  2 ms
+[pow](int_10K=10000) = 48 ms
+sort(int_10K) =  4 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-[/](int_100K) = 213ms
-join(int_100K=100000) = 30 ms
-group(int_100K=100) = 16 ms
-[*](int_100K==100000) = 210 ms
-[-](int_100K=100000) = 268 ms
-[+](int_100K=100000) =  261 ms
-[pow](int_100K=100000) = 561 ms
-sort(int_100K) =  19 ms
+[/](int_100K) = 209ms
+join(int_100K=100000) = 32 ms
+group(int_100K=100) = 17 ms
+[*](int_100K==100000) = 204 ms
+[-](int_100K=100000) = 261 ms
+[+](int_100K=100000) =  255 ms
+[pow](int_100K=100000) = 567 ms
+sort(int_100K) =  40 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 [ "DECIMAL variant" ]
-[/](dec_10K) = 19ms
-join(dec_10K=10000) = 8 ms
+[/](dec_10K) = 20ms
+join(dec_10K=10000) = 9 ms
 group(dec_10K=100) = 4 ms
-[*](dec_10K==10000) = 58 ms
-[-](dec_10K=10000) = 53 ms
-[+](dec_10K=10000) =  50 ms
-[pow](dec_10K=10000) = 346 ms
-sort(dec_10K) =  7 ms
+[*](dec_10K==10000) = 63 ms
+[-](dec_10K=10000) = 57 ms
+[+](dec_10K=10000) =  57 ms
+[pow](dec_10K=10000) = 354 ms
+sort(dec_10K) =  18 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 [ "DECIMAL variant" ]
-[/](dec_100K) = 205ms
-join(dec_100K=100000) = 204 ms
+[/](dec_100K) = 211ms
+join(dec_100K=100000) = 206 ms
 group(dec_100K=100) = 35 ms
-[*](dec_100K==100000) = 672 ms
-[-](dec_100K=100000) = 561 ms
-[+](dec_100K=100000) =  542 ms
-[pow](dec_100K=10) = 1193 ms
-sort(dec_100K) =  76 ms
+[*](dec_100K==100000) = 702 ms
+[-](dec_100K=100000) = 593 ms
+[+](dec_100K=100000) =  602 ms
+[pow](dec_100K=10) = 1162 ms
+sort(dec_100K) =  288 ms
 #~EndVariableOutput~#
 >

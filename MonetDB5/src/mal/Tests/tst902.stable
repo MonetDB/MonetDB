@@ -27,15 +27,15 @@
 #print(d);
 #
 function Admin.main():int; #0  (main:int)
-    b := mal.new(lng,lng); #1 CMDBATnew (b:bat[lng,lng])<-(lng:lng)(lng:lng)
+    b := bbp.new(lng,lng); #1 CMDBATnew (b:bat[lng,lng])<-(lng:lng)(lng:lng)
     i := -1; #2  (i:lng)<-($4:lng)
 barrier v := mal.nextElement(i,0,10); #3 lngForloop (v:bit)<-(i:lng)($6:lng)($7:lng) jump 6
     bat.insert(b,i,i); #4 CMDinsert_bun ($8:bat[lng,lng])<-(b:bat[lng,lng])(i:lng)(i:lng)
     redo v; #5  (v:bit) jump 3
 exit v; #6  (v:bit)
     c := algebra.copy(b); #7 CMDcopy (c:bat[lng,lng])<-(b:bat[lng,lng])
-    d := mal.new(lng,lng); #8 CMDBATnew (d:bat[lng,lng])<-(lng:lng)(lng:lng)
-barrier w := mal.bunStream(b,h,t); #9 CMDbunStream (w:lng)<-(b:bat[lng,lng])(h:lng)(t:lng) jump 17
+    d := bbp.new(lng,lng); #8 CMDBATnew (d:bat[lng,lng])<-(lng:lng)(lng:lng)
+barrier w := bbp.bunStream(b,h,t); #9 CMDbunStream (w:lng)<-(b:bat[lng,lng])(h:lng)(t:lng) jump 17
     B1 := algebra.find(b,h); #10 CMDfind (B1:lng)<-(b:bat[lng,lng])(h:lng)
     B2 := algebra.find(c,h); #11 CMDfind (B2:lng)<-(c:bat[lng,lng])(h:lng)
     t := calc.+(B1,B2); #12 CALCbinaryADDlnglng (t:lng)<-(B1:lng)(B2:lng)

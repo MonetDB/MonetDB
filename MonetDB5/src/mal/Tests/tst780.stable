@@ -7,25 +7,25 @@
 ##test debugging of a recursive function
 #
 #function test(age:int,nme:str):int;
-#	d:= catalog.getStackDepth();
+#	d:= inspect.getStackDepth();
 #	printf("stack depth %d\n",d);
 #	printf("simulated error\n");
-#	f:= catalog.symbolDump();
+#	f:= inspect.getCode();
 #	io.print(f);
-#	t:= catalog.getStackFrame();
+#	t:= inspect.getStackFrame();
 #	print(t);
-#	t:= catalog.getStackFrame(d);
+#	t:= inspect.getStackFrame(d);
 #	print(t);
 #end test;
 function Admin.test(age:int,nme:str):int; #0  (test:int)<-(age:int)(nme:str)
-    d := catalog.getStackDepth(); #1 CATALOGStkDepth (d:int)
+    d := inspect.getStackDepth(); #1 INSPECTStkDepth (d:int)
     system.printf("stack depth %d\n",d); #2 SYSprint_formatted_int ($4:int)<-($5:str)(d:int)
     system.printf("simulated error\n"); #3 SYSprint_str ($6:int)<-($7:str)
-    f := catalog.symbolDump(); #4 CATALOGsymbolDump (f:bat[void,str])
+    f := inspect.getCode(); #4 INSPECTcodeDump (f:bat[void,str])
     io.print(f); #5 CMDprint_val ($9:int)<-(f:bat[void,str])
-    t := catalog.getStackFrame(); #6 CATALOGStkFrame (t:bat[str,str])
+    t := inspect.getStackFrame(); #6 INSPECTStkFrame (t:bat[str,str])
     io.print(t); #7 CMDprint_val ($11:int)<-(t:bat[str,str])
-    t := catalog.getStackFrame(d); #8 CATALOGStkFrameN (t:bat[str,str])<-(d:int)
+    t := inspect.getStackFrame(d); #8 INSPECTStkFrameN (t:bat[str,str])<-(d:int)
     io.print(t); #9 CMDprint_val ($12:int)<-(t:bat[str,str])
 end test; #10  
 #test(12,"jj");
@@ -40,14 +40,14 @@ simulated error
 # (void)  (str)						  #
 #---------------------------------------------------------#
 [ nil,	  "function Admin.test(age:int,nme:str):int;"	  ]
-[ nil,	  "    d := catalog.getStackDepth();"		  ]
+[ nil,	  "    d := inspect.getStackDepth();"		  ]
 [ nil,	  "    system.printf(\"stack depth %d\\n\",d);"	  ]
 [ nil,	  "    system.printf(\"simulated error\\n\");"	  ]
-[ nil,	  "    f := catalog.symbolDump();"		  ]
+[ nil,	  "    f := inspect.getCode();"			  ]
 [ nil,	  "    io.print(f);"				  ]
-[ nil,	  "    t := catalog.getStackFrame();"		  ]
+[ nil,	  "    t := inspect.getStackFrame();"		  ]
 [ nil,	  "    io.print(t);"				  ]
-[ nil,	  "    t := catalog.getStackFrame(d);"		  ]
+[ nil,	  "    t := inspect.getStackFrame(d);"		  ]
 [ nil,	  "    io.print(t);"				  ]
 [ nil,	  "end test;"					  ]
 #-----------------------------------------#
