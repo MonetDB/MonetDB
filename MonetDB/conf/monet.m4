@@ -34,17 +34,20 @@ if test "x$have_monet" != xno; then
 
   if test "x$have_monet" != xyes; then
     MONET_CFLAGS=""
+    MONET_INCS=""
     MONET_LIBS=""
     MONET_MOD_PATH=""
     MONET_PREFIX=""
   else
     MONET_CFLAGS=`$MONET_CONFIG --cflags`
+    MONET_INCS=`$MONET_CONFIG --includes`
     MONET_LIBS=`$MONET_CONFIG --libs`
     MONET_MOD_PATH=`$MONET_CONFIG --modpath`
     MONET_PREFIX=`$MONET_CONFIG --prefix`
   fi
 fi
 AC_SUBST(MONET_CFLAGS)
+AC_SUBST(MONET_INCS)
 AC_SUBST(MONET_LIBS)
 AC_SUBST(MONET_MOD_PATH)
 AC_SUBST(MONET_PREFIX)
