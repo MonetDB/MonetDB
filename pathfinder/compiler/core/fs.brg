@@ -2808,7 +2808,8 @@ reduce (PFpnode_t * p, int goalnt)
         case 177:
             /* TOPDOWN */
 
-            assert (PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "position")));
+            assert (PFqname_eq (p->sem.fun->qname,
+                                PFqname (PFns_fn, "position")));
 
             *(PFfun_t **) PFarray_add (funs) = p->sem.fun;
             *(PFcnode_t **) PFarray_add (args) = nil ();
@@ -2826,10 +2827,29 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* FuncArgList:            nil */
         case 178:
-            /* assert (false); */
-            C(p) = apply (*(PFfun_t **) PFarray_top (funs),
-                          *(PFcnode_t **) PFarray_top (args));
-            break;
+        {
+            PFfun_t *fun = *(PFfun_t **) PFarray_top (funs);
+
+            /*
+             * Special implicit semantics for some built-in functions.
+             */
+            /* apply fn:boolean() before fn:not() */
+            if (!PFqname_eq (fun->qname, PFqname (PFns_fn, "not"))) {
+
+                PFvar_t *v = new_var (NULL);
+                PFfun_t *fn_bool = function (PFqname (PFns_fn, "boolean"));
+
+                C(p) = let (
+                        letbind (
+                            var (v),
+                            apply (fn_bool, *(PFcnode_t **) PFarray_top(args))),
+                        APPLY (fun, var (v)));
+                break;
+            }
+
+            C(p) = apply (fun, *(PFcnode_t **) PFarray_top (args));
+
+        } break;
 
         /* FuncArgList:            args (Expr, FuncArgList) */
         case 179:

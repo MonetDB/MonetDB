@@ -599,6 +599,20 @@ reduce (PFcnode_t * p, int goalnt)
 
                 break;
             }
+
+            /*
+             * fn:boolean() applied to something that is already of
+             * type xs:boolean returns the argument itself.
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "boolean"))) {
+                if (PFty_subtype (TY(LL(p)), PFty_boolean ())) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+            }
+
             break;
 
         default:
