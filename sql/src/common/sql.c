@@ -737,7 +737,7 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 	return NULL;
 }
 
-static statement *sql_join
+static statement *sql_join_
 ( 
 	context *sql, 
 	scope *scp, 
@@ -887,7 +887,8 @@ static statement *sql_join
 }
 
 static
-statement *query_exp( context *sql, scope *scp, symbol *q ){
+statement *sql_join( context *sql, scope *scp, symbol *q ){
+
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym; 
 	int natural = n->next->data.ival;
@@ -895,24 +896,76 @@ statement *query_exp( context *sql, scope *scp, symbol *q ){
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 	symbol *joinspec = n->next->next->next->next->data.sym;
 
-	return sql_join( sql, scp,
+	return sql_join_( sql, scp,
 	    tab_ref1, natural, jointype, tab_ref2, joinspec);
 }
 
 static 
+list *join_on_column_name( context *sql, scope *scp, table *l, table *r){
+	list *res = list_create();
+	node *n,*m;
+	for(n=l->columns->h; n; n = n->next){
+		column *lc = n->data.cval;
+		int found = 0;
+		for(m=r->columns->h; m; m = m->next){
+			column *rc = m->data.cval;
+			if (strcmp(lc->name,rc->name) == 0 ){
+				list_append_statement(res,lc->s);
+				list_append_statement(res,rc->s);
+				found = 1;
+				break;
+			}
+		}
+		if (!found){
+			list_destroy(res);
+			return NULL;
+		}
+	}
+	return res;
+}
+
+static 
 var *query_exp_optname( context *sql, scope *scp, symbol *q ){
-	/* 
-	 * todo handle SQL_UNION (opt_all) (left/right should
-	 * be added to parser 
-	 */
+
 	switch(q->token){
 	case SQL_JOIN: { 
-		statement *tq = query_exp( sql, scp, q );
+		statement *tq = sql_join( sql, scp, q );
 		return table_optname( sql, scp, 
 				tq, q->sql, q->data.lval->t->data.sym);
 	}
 	case SQL_CROSS:
 		printf("implement crosstables %d %s\n", q->token, token2string(q->token));
+	case SQL_UNION: {
+		scope *nscp = scope_open(scp);
+		node *m;
+		dnode *n = q->data.lval->h;
+		var *lv = table_ref( sql, nscp, n->data.sym );
+		table *lt = lv->data.tval;
+		int all = n->next->data.ival;
+		var *rv = table_ref( sql, nscp, n->next->next->data.sym );
+		table *rt = rv->data.tval;
+		list *unions;
+
+		/* find the matching columns (all should match?)
+		 * union these 
+		 * if !all do a distinct operation at the end 
+		 */
+		/* join all result columns ie join(lh,rh) on column_name */
+		list *matching_columns = join_on_column_name(sql, nscp, lt,rt);
+		if (!matching_columns)
+			return NULL;
+
+
+	       	unions = list_create();
+		for(m = matching_columns->h; m; m = m->next->next){
+			statement *l = m->data.stval;
+			statement *r = m->next->data.stval;
+			list_append_statement(unions, statement_union(l,r));
+		}
+		scp = scope_close(nscp);
+		return table_optname( sql, scp, statement_list(unions), 
+				q->sql, q->data.lval->t->data.sym);
+	}
 	default:
 		printf("case %d %s\n", q->token, token2string(q->token));
 	}
@@ -2515,7 +2568,7 @@ statement *sql_statement( context *sql, symbol *s ){
 			break;
 		case SQL_JOIN: 
 		case SQL_CROSS: 
-			ret = query_exp( sql, NULL, s);
+			ret = sql_join( sql, NULL, s);
 			/* add output statement */
 			if (ret) ret = statement_output( ret );
 			break;
