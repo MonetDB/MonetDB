@@ -425,7 +425,7 @@ clusterhashName( int batId ) {
 int
 clusterhashToStr( char** dst, int* len, clusterhash* ch ){
   int nchar = 4, isnil = clusterhashIsNil( ch );
-  str name;
+  str name = NULL;
   if ( !isnil ) {
     name = clusterhashName( ABS(ch->b) );
     if ( !(isnil = (name==NULL)) ) nchar = strLen( name );

@@ -185,7 +185,7 @@ only be in one state.
 @c
 int GDKunlink(str dir, str nme, str ext) {
 	char path[MAXPATHLEN];
-	int err, t0;
+	int err, t0=0;
 
 	IODEBUG t0 = GDKms();
 
@@ -211,7 +211,7 @@ A move routine is overloaded to deal with extensions.
 int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	char	path1[PATHLENGTH]; 
 	char	path2[PATHLENGTH]; 
-	int	ret, t0;
+	int	ret, t0=0;
 
 	IODEBUG t0 = GDKms();
 

@@ -805,9 +805,9 @@ The errormessage is stored in the 'errbuf' field of the cache item.
 First stop to examine its type, and heap sizes.
 @c
 	    if (strcmp(tp, "bat") == 0) {
-	 	int hsize, tsize, htpe=-1, ttpe=-1, hoff=0, toff;
-		int size=-1, width, hordered=0, tordered=0, h_key=0, t_key=0;
-		char *ht, *tt, *hs, *ts;
+	 	int hsize=0, tsize=0, htpe=-1, ttpe=-1, hoff=0, toff=0;
+		int size=-1, width=0, hordered=0, tordered=0, h_key=0, t_key=0;
+		char *ht, *tt=NULL, *hs, *ts=NULL;
 		oid batSeqbase;
 		BAT *b;
 

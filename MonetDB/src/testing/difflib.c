@@ -483,7 +483,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
 {
   FILE *html_fp,*lwc_diff_fp,*clmn_fp[5];
   char line[BUFLEN],ln[BUFLEN],fn_clmn[BUFLEN],*clmn_fn[5],c[3],*ok;
-  char *old,*new,*old_time,*new_time,olns[24],nlns[24];
+  char *old=NULL,*new=NULL,*old_time,*new_time,olns[24],nlns[24];
   int oln,nln,orn,nrn,i,clr[5],newline,newline_,minor=0,Minor=0,Major=0;
 
   TRACE(fprintf(STDERR,"lwc_diff2html(%s,%s,%s,%s)\n",lwc_diff_fn,html_fn,caption,revision));

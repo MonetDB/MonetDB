@@ -317,6 +317,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 {	REGISTER BUN _p = BUNlast(bn);
 	REGISTER int _bunsize = BUNsize(bn);
 	bn->tsorted = bn->hsorted = 0;
+	min = max = (oid) 0;
 	ALIGNsetH(bn, e);
 	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
 	/* where necessary, calculate min/max oid with minimal effort */

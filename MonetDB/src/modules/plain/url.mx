@@ -244,7 +244,7 @@ url_getDirectory(
         static char buf[1024];
         char *s;
 	int i=0, k=0;
-	BAT *b;
+	BAT *b=NULL;
 
 	if( t == 0) return GDK_FAIL;
 

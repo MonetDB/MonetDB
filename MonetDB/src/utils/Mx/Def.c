@@ -104,7 +104,7 @@ void	MakeDefs(char *name)
     CmdCode	dir;
     char 	*line, *cmd, *blk;
     extern int	pr_hide;
-    int		mod= 0, sec= 0, lino;
+    int		mod= 0, sec= 0, lino= 0;
     CmdCode 	lastdir = Continue;
 
     IoReadFile(name);
@@ -471,7 +471,7 @@ DefBlk(void)
 {
 	char *	f;
 	size_t size = 0;
-	char *dir;
+	char *dir = NULL;
 	char sep;
 
 	f= blk; 

@@ -403,7 +403,7 @@ int pcl_query(BAT **result, BAT *event, int *mode){
 }
 
 int pcl_try(bit *result, BAT *event, int *mode){
-	int i, res;
+	int i = 0, res;
 	int clist[PCL_MAX_EVENT_PER_CALL];
 	BUN p,q;
 

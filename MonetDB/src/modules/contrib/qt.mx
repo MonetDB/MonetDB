@@ -385,7 +385,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
   BUN hp, hq, sp, sq, vp, vq, p, q, last;
   int spot_lo_x, spot_lo_y, spot_hi_x, spot_hi_y, spot_w, spot_h;
   int xx, level, lo_level, x, y, wh, lcolor, color, n;
-  int hlength, vlength, hcenter, vcenter, *spotids, centerid;
+  int hlength, vlength, hcenter=0, vcenter=0, *spotids, centerid;
   zid_t id;
   gdk_uint32 *spot;
   int *hstring, *vstring;

@@ -191,7 +191,7 @@ int interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res,
 			YYSTREE t, Cntxt stk) 
 {
  	monet_sig_t *sig = (monet_sig_t*) t->yyval.val.pval;
-	int i, tpe,nbats = 0;
+	int i, tpe = 0, nbats = 0;
 	BAT *all_synced=NULL;
 	int one_unique = FALSE;
 	int all_unique = TRUE;
@@ -757,9 +757,9 @@ static int interpret_@1_array(
 	int 	assignop,
 	int 	special
 ){
-	str  a1, a2, a3, ah;    /* heap bases */
-	int  s1, s2, s3, sh;    /* bun sizes */
-	str  p1, p2, p3, ph, hend; /* bun pointers */
+	str  a1, a2 = NULL, a3 = NULL, ah = NULL; /* heap bases */
+	int  s1, s2 = 0,    s3 = 0,    sh = 0;    /* bun sizes */
+	str  p1, p2 = NULL, p3 = NULL, ph = NULL, hend = NULL; /* bun pointers */
 	int  hky=0, hsrt=0, htpe=-1;
 	size_t hdff;
 	BAT  *b1, *b2, *b3=0, *retb, *bh=0;
@@ -993,10 +993,10 @@ static int interpret_@1_merge(
 	int 	assignop,
 	int 	special
 ){
-	BAT *b1, *b2, *b3; /* BATs */
-	int  s1, s2, s3; /* bun sizes */
-	BUN  p1, p2, p3; /* bun pointers */
-	BUN  e1, e2, e3; /* bun pointers */
+	BAT *b1, *b2, *b3 = NULL; /* BATs */
+	int  s1, s2, s3 = 0;      /* bun sizes */
+	BUN  p1, p2, p3 = NULL;   /* bun pointers */
+	BUN  e1, e2, e3 = NULL;   /* bun pointers */
 	int ret_sze = ATOMsize(ret_tpe);
 	ptr  tptr = GDKmalloc(MAX(1,ret_sze));
         ptr  tnil = ATOMnilptr(ret_tpe);
@@ -1308,7 +1308,7 @@ int interpret_setaggr(
 	int	xx, yy;
 	size_t	zz;
 	hash_t	hh;
-	str	buf;
+	str	buf = NULL;
 	bulkerror_t bulkerror;
 	(void) name;
 

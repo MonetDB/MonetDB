@@ -741,7 +741,7 @@ int TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl) 
 
 		if (argv[i].vtype == TYPE_bat) { 
                         bat bid = argv[i].val.bval;
-			int htpe, ttpe;
+			int htpe = 0, ttpe = 0;
 			BAT *b;
 			BBPfix(bid);
 		     	b = BBPquickdesc(ABS(bid),FALSE); 

@@ -32,8 +32,8 @@
 void	GenCode(void)
 {
     Def *	d;
-    char *	fname;
-    CmdCode	bak;
+    char *	fname = NULL;
+    CmdCode	bak = Nop;
 
     for( d= defs; d < defs + ndef; d++ ){
 	mx_file= d->d_file;

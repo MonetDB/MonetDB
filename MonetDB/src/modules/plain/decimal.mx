@@ -567,7 +567,7 @@ The below ADT function implementations are required when adding a new atom type 
 @c
 int decimal_fromstr(str buf, int *len, decimal **ret) {
 	int comma = 0, scale = 0, sign = 0, precision = 0, started = 0, scale_neg = 0; 
-	int c, x = (int) sizeof(int), pos, repeat = 0, *rp = &repeat;
+	int c = 0, x = (int) sizeof(int), pos, repeat = 0, *rp = &repeat;
 	char *base=buf, *cur=buf, *dst, cpy[PRECISION_MAX];
 #if 0
 	char *last=NULL;
@@ -1025,7 +1025,7 @@ int decimal_from_lng(decimal **ret, lng* val) {
 	} else if (*val == (lng)0) {
 		*ret = decimal_create(0,0,0);
 	} else {
-		int x = 0, y = 0, rest, precision = 0, sign = 0;
+		int x = 0, y = 0, rest = 0, precision = 0, sign = 0;
 		sht num[PRECISION_MAX/4];
 		lng l = *val;
 		decimal *d;

@@ -1832,9 +1832,9 @@ if ((GDKdebug&786432)==262144) {
  * do a bitselect on the subset indicated by the first BAT param
  */
 int val_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr v){
-	oid *dst, *last;
+	oid *dst = NULL, *last;
 	int val;
-	BAT *bn;
+	BAT *bn = NULL;
 
 	@:check_oidsel(val_oidrefine,sel)@
 	@:oidrefine(val,TRUE)@
@@ -1848,8 +1848,8 @@ int val_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr v){
  */
 int rng_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 	int low, high;
-	oid *dst, *last;
-	BAT *bn;
+	oid *dst = NULL, *last;
+	BAT *bn = NULL;
 
 	@:check_oidsel(rng_oidrefine,sel)@
 	@:oidrefine(rng,TRUE)@
@@ -1862,9 +1862,9 @@ int rng_oidsubsel( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
  * do a bitselect on the subset indicated by the first BAT param
  */
 int val_oidrefine( BAT** res, BAT* sel, BAT* b, ptr v){
-	oid *dst, *last = 0;
+	oid *dst = NULL, *last = 0;
 	int val;
-	BAT *bn;
+	BAT *bn = NULL;
 
 	(void) last;
 	ALIGNdel(sel, "val_oidrefine");
@@ -1880,8 +1880,8 @@ int val_oidrefine( BAT** res, BAT* sel, BAT* b, ptr v){
  */
 int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 	int low, high;
-	oid *dst, *last = 0;
-	BAT *bn;
+	oid *dst = NULL, *last = 0;
+	BAT *bn = NULL;
 
 	(void) last;
 	ALIGNdel(sel, "val_oidrefine");
@@ -1944,7 +1944,7 @@ int rng_oidrefine( BAT** res, BAT* sel, BAT* b, ptr lo, ptr hi){
 int oid_subhisto( BAT** res, BAT* b, BAT* sel){
 	oid *cur = (oid*) BUNhloc(sel,BUNfirst(sel));
 	int *cnt;
-	BAT *bn;
+	BAT *bn = NULL;
 
 	@:subhisto(oid)@	
 	*res = bn;
@@ -1958,7 +1958,7 @@ int oid_subhisto( BAT** res, BAT* b, BAT* sel){
 int bit_subhisto( BAT** res, BAT* b, BAT* sel){
 	int *cur = (int*) BUNhloc(sel,BUNfirst(sel));
 	int *cnt;
-	BAT *bn;
+	BAT *bn = NULL;
 
 	@:subhisto(bit)@	
 	*res = bn;

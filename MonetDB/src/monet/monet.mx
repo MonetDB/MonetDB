@@ -608,8 +608,8 @@ int monet_sprintf(str *res, str format, va_list ap){
 	int n;
 #endif /* HAVE_SNPRINTF */
 
-	int prec, dotseen, escaped = 0, type, size, argc = 1;
-	size_t adds = 100, width;
+	int prec = 0, dotseen = 0, escaped = 0, type, size, argc = 1;
+	size_t adds = 100, width = 0;
 	char addbuf[100], *add = addbuf, *dst, *buf, *cur, *paramseen = NULL;
 
         if (format == NULL) {
@@ -896,7 +896,7 @@ algebra programs.
 @c
 static int _t3 = 0;
 void monet_checkbat(BAT* b, int protect){
-        int _t2, _t1;
+        int _t2, _t1=0;
         BATDEBUG _t1 = GDKms();
 @-
 If we look at the copied column of a VIEWcombine (MIL mirror) BAT,

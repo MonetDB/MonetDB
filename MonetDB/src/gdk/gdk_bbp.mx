@@ -1098,7 +1098,7 @@ int BBPincref(bat i, int logical) {
 
 int BBPdecref(bat i, int logical) {
 	MT_Id pid = BBP_getpid();
-	int refs, swap = 0;
+	int refs = 0, swap = 0;
 	BAT *b;
 
 	if (BBPcheck(i, "BBPdecref") == 0) {
@@ -1744,7 +1744,7 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int *ndescs, int dirty)
 
 void BBPtrim(size_t memtarget, size_t vmtarget) {
 	int i, limit, scan, did_scan = FALSE, ndescs = 0;
-	int msec, bats_written=0, bats_unloaded = 0; /* performance info */
+	int msec=0, bats_written=0, bats_unloaded = 0; /* performance info */
 	MT_Id t = BBP_getpid();
 
 	PERFDEBUG msec = GDKms();
@@ -1942,7 +1942,7 @@ The BBP.dir is also moved into the BAKDIR.
 int BBPsync(int commit) {
 	bat i;
 	int ret=0, bbpdirty = 0; 
-	int t0, t1;
+	int t0=0, t1=0;
 
 	PERFDEBUG t0 = t1 = GDKms();
 

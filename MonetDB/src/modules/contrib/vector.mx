@@ -357,7 +357,7 @@ typedef struct {
     }
 
     int atom_@1s_fromstr(str instr,int* l,@1s** val) {
-        long    dim;
+        long    dim = 0;
         char    *s;
         int     i;
         @1s     *result;
