@@ -2515,6 +2515,15 @@ gdk_export int      ALIGNsetH       (BAT *b1, BAT *b2);
  */
 #define VIEWparent(x)	(((x)->H == (x)->T || (x)->batCacheid >= 0)?\
 				(x)->batParentid:-(x)->batParentid)
+
+/* VIEWparentcol(b) tells whether the head column was inherited from the parent
+ * "as is". We must check whether the type was not overridden in the view.
+ */
+#define VIEWparentcol(b) ((VIEWparent(b) && (b)->htype\
+                          && (b)->htype == BBP_cache(VIEWparent(b))->htype\
+                          && (b)->hloc == BBP_cache(VIEWparent(b))->hloc)\
+                                        ?VIEWparent(b):0)
+
 #define ALIGNchk(x,y)	VIEWchk(x,y,BAT_APPEND|BAT_READ)
 @
 @}

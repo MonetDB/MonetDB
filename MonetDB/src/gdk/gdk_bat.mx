@@ -1106,20 +1106,22 @@ association head.
 @{
 @c
 BAT *BATkey(BAT *b, int flag) {
-        BAT *parent;
-        if (b->htype == TYPE_void && flag == BOUND2BTRUE) {
-                if(b->hseqbase == oid_nil) {
+	bat parent = VIEWparentcol(b);
+
+	if (b->htype == TYPE_void) {
+		if (b->hseqbase == oid_nil && flag == BOUND2BTRUE) {
                         GDKerror("BATkey: nil-column cannot be kept unique.\n");
+		}
+		if (b->hseqbase == oid_nil || flag == FALSE) {
                         return b;
                 }
-                flag = TRUE; /* we do not need bound2true checking here */
+		flag = TRUE; /* we only allow TRUE on dense void bats */
         }
-        parent = BBP_cache(VIEWparent(b));
         if (flag) flag |= (1|b->hkey);
         if (b->hkey != flag) b->batDirtydesc = TRUE;
         BATmirror(b)->tkey = b->hkey = flag;
-        if (flag && parent && ALIGNsynced(b,parent))
-                BATkey(parent,TRUE);
+	if (flag && parent && ALIGNsynced(b,BBP_cache(parent)))
+		BATkey(BBP_cache(parent),TRUE);
         return b;
 }
 
@@ -1305,6 +1307,8 @@ BAT *BATseqbase(BAT *b, oid o) {
 		BAT* m = BATmirror(b);
         	if (b->hseqbase != o) {
         		b->batDirtydesc = TRUE;
+			/* zap alignment if column is changed by new seqbase */
+			if (b->htype == TYPE_void) b->halign = m->talign = 0; 
 		}
         	m->tseqbase = b->hseqbase = o;
 
@@ -1417,7 +1421,7 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 @-
 first propagate already known properties. that will save some effort.
 @c
-	if (VIEWparent(b) && tpe != TYPE_void) {
+	if (VIEWparentcol(b)) {
 		/* quickly propagate properties from parent to child */
 		BAT *parent = BBP_cache(VIEWparent(b));
 

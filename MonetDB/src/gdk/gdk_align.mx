@@ -122,23 +122,27 @@ int ALIGNsynced(BAT* b1, BAT* b2) {
 	BATcheck(b1,"ALIGNsynced: bat 1 required");
 	BATcheck(b2,"ALIGNsynced: bat 2 required");
 
+	/* first try to prove head columns are not in sync */
 	if (BATcount(b1) != BATcount(b2)) 
 		return 0;
-	if (BATcount(b1)==0 && BAThtype(b1) == BATttype(b2))
-		return 1;
+	if (ATOMtype(BAThtype(b1)) != ATOMtype(BAThtype(b2)))
+                return 0; 
+	if (BAThvoid(b1) && BAThvoid(b2))
+		return (b1->hseqbase == b2->hseqbase); 
+
+	/* then try that they are */
 	if (b1->batCacheid == b2->batCacheid)
 		return 1; /* same bat. trivial case */
+        if (BATcount(b1) == 0)
+                return 1; /* empty bats of same type. trivial case */
 	if (b1->halign && b1->halign == b2->halign)
 		return 1; /* columns marked as equal by algorithmics */ 
-	if (BAThvoid(b1) && BAThvoid(b2) && b1->hseqbase == b2->hseqbase)
-		return 1; /* equal void columns */
-	if (VIEWparent(b1) && ALIGNsynced(BBPcache(VIEWparent(b1)), b2))
+	if (VIEWparentcol(b1) && ALIGNsynced(BBPcache(VIEWparent(b1)), b2))
 		return 1; /* view on same bat --- left recursive def.. */
-	if (VIEWparent(b2) && ALIGNsynced(b1, BBPcache(VIEWparent(b2))))
+	if (VIEWparentcol(b2) && ALIGNsynced(b1, BBPcache(VIEWparent(b2))))
 		return 1; /* view on same bat --- right recursive def.. */
 
-	/* head columns are really not in sync */
-	return 0;
+	return 0; /* we simply don't know */
 }
 @-
 BATs are related if one pair of columns match. This means that
