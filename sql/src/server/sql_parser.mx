@@ -2016,7 +2016,7 @@ literal:
 		   $$ = _newAtomNode( atom_string(t, $1)); }
  |  USER     
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
-		   $$ = _newAtomNode( atom_string(t, $1)); }
+		   $$ = _newAtomNode( atom_string(t, _strdup($1))); }
  |  SESSION_USER     
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
 		   $$ = _newAtomNode( atom_string(t, $1)); }
