@@ -58,7 +58,7 @@ SQLColumns_(ODBCStmt *stmt,
 #endif
 
 	/* construct the query now */
-	query = (char *) malloc(1000 + nSchemaNameLength + nTableNameLength +
+	query = (char *) malloc(1200 + nSchemaNameLength + nTableNameLength +
 				nColumnNameLength);
 	assert(query);
 	query_end = query;
@@ -84,28 +84,34 @@ SQLColumns_(ODBCStmt *stmt,
 	   VARCHAR	is_nullable
 	 */
 
-	strcpy(query_end,
-	       "select "
-	       "cast('' as varchar) as table_cat, "
-	       "cast(s.name as varchar) as table_schem, "
-	       "cast(t.name as varchar) as table_name, "
-	       "cast(c.name as varchar) as column_name, "
-	       "cast(c.type as smallint) as data_type, "
-	       "cast(c.type as varchar) as type_name, "
-	       "cast(c.type_digits as integer) as column_size, "
-	       "cast(c.type_digits as integer) as buffer_length, "
-	       "cast(c.type_scale as smallint) as decimal_digits, "
-	       "cast(0 as smallint) as num_prec_radix, "
-	       "cast(c.\"null\" as smallint) as nullable, "
-	       "cast('' as varchar) as remarks, "
-	       "cast('' as varchar) as column_def, "
-	       "cast(c.type as smallint) as sql_data_type, "
-	       "cast('' as varchar) as sql_datetime_sub, "
-	       "cast('' as varchar) as char_octet_length, "
-	       "cast(c.number as integer) as ordinal_position, "
-	       "cast(c.\"null\" as varchar) as is_nullable "
-	       "from sys.schemas s, sys.tables t, columns c "
-	       "where s.id = t.schema_id and t.id = c.table_id");
+	sprintf(query_end,
+		"select "
+		"cast('' as varchar) as table_cat, "
+		"cast(s.name as varchar) as table_schem, "
+		"cast(t.name as varchar) as table_name, "
+		"cast(c.name as varchar) as column_name, "
+		"cast(c.type as smallint) as data_type, "
+		"cast(c.type as varchar) as type_name, "
+		"cast(c.type_digits as integer) as column_size, "
+		"cast(c.type_digits as integer) as buffer_length, "
+		"cast(c.type_scale as smallint) as decimal_digits, "
+		"cast(0 as smallint) as num_prec_radix, "
+		"case c.\"null\" when true then cast(%d as smallint) "
+		/* XXX should this be SQL_NULLABLE_UNKNOWN instead of
+		 * SQL_NO_NULLS? */
+		"when false then cast(%d as smallint) end as nullable, "
+		"cast('' as varchar) as remarks, "
+		"cast('' as varchar) as column_def, "
+		"cast(c.type as smallint) as sql_data_type, "
+		"cast('' as varchar) as sql_datetime_sub, "
+		"cast('' as varchar) as char_octet_length, "
+		"cast(c.number as integer) as ordinal_position, "
+		"case c.\"null\" when true then cast('yes' as varchar) "
+		/* should this be '' instead of 'no'? */
+		"when false then cast('no' as varchar) end as is_nullable "
+		"from sys.schemas s, sys.tables t, sys.columns c "
+		"where s.id = t.schema_id and t.id = c.table_id",
+		SQL_NULLABLE, SQL_NO_NULLS);
 	query_end += strlen(query_end);
 
 	/* dependent on the input parameter values we must add a
