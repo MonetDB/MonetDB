@@ -106,9 +106,10 @@ public class JdbcClient {
 		// from the command line by then.
 		String pass = null;
 
-		// look for a file called .monetdb in the users homedir
-		// and read it's preferences
-		File pref = new File(System.getProperty("user.home"), ".monetdb");
+		// look for a file called .monetdb in the current dir or in the
+		// user's homedir and read its preferences
+		File pref = new File(".monetdb");
+		if (!pref.exists()) pref = new File(System.getProperty("user.home"), ".monetdb");
 		if (pref.exists()) {
 			// the file is there, parse it and set the default settings
 			Properties prop = new Properties();
