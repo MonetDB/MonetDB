@@ -173,7 +173,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     PFarray_t  *mil_program = NULL;
 
     /* elapsed time for compiler phase */
-    long tm;
+    long tm, tm_first;
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -195,7 +195,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     /* compiler chain below 
      */
-    tm = PFtimer_start ();
+    tm_first = tm = PFtimer_start ();
   
     /* Invoke parser on stdin (or whatever stdin has been dup'ed to)
      */
@@ -315,7 +315,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        PFprintMILtemp (croot, status, tm, &prologue, &query, &epilogue);
+        PFprintMILtemp (croot, status, tm_first, &prologue, &query, &epilogue);
         if (prologue && query && epilogue) {
                 fputs(prologue, pfout);
                 fputs(query, pfout);
