@@ -121,7 +121,7 @@ void CNTXTinit(void) {
         size_t size = (monet_cntxtmax+1)*sizeof(CntxtRec);
         size_t maxsize = monet_cntxtlim*sizeof(CntxtRec);
 
-        monet_cntxtbuf = (CntxtRec*) GDKvmalloc(size, &maxsize);
+        monet_cntxtbuf = (CntxtRec*) GDKvmalloc(size, &maxsize, 1);
 	MT_alloc_register(monet_cntxtbuf, maxsize, 'C');
         if (monet_cntxtbuf && maxsize >= monet_cntxtlim*sizeof(CntxtRec)) {
 		monet_cntxtlim = (Cntxt) (maxsize / sizeof(CntxtRec));
@@ -144,7 +144,7 @@ int CNTXTrealloc(flt factor) {
     Cntxt newsize = (Cntxt) ((double)oldsize*factor);
     size_t maxsize = MAX(newsize,monet_cntxtlim)*sizeof(CntxtRec);
     CntxtRec* p = (CntxtRec*) GDKvmrealloc(monet_cntxtbuf, oldsize*sizeof(CntxtRec), 
-					newsize*sizeof(CntxtRec), maxsize, &maxsize);
+					newsize*sizeof(CntxtRec), maxsize, &maxsize, 1);
     if (p == NULL || p != monet_cntxtbuf) {
 	if (p) GDKvmfree(p, oldsize*sizeof(CntxtRec), maxsize);
 	GDKerror("CNTXTrealloc(): out of context space\n");

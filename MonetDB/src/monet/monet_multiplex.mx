@@ -564,6 +564,8 @@ static int multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv){
     } 
     @:insert_@3(@2)@
     return 0;
+bunins_failed:
+    return -1;
 }
 
 @= multiplex_exec_bat
@@ -599,6 +601,8 @@ static int multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv){
     } 
     @:insert_@3(@2)@
     return 0;
+bunins_failed:
+    return -1;
 }
 
 @= call_proc
