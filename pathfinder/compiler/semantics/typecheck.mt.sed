@@ -81,14 +81,14 @@ node  var_
       apply
       arg
 
-      ifthenelse
-
       typeswitch
       cases
       case_
       seqtype
       seqcast
       proof
+
+      ifthenelse
 
       locsteps
 
@@ -105,7 +105,6 @@ node  var_
       preceding_sibling
       self
 
-      namet
       kind_node
       kind_comment
       kind_text
@@ -114,10 +113,19 @@ node  var_
       kind_elem
       kind_attr
 
-      root_
+      namet
+
+      elem
+      attr 
+      text
+      doc 
+      comment
+      pi  
+      tag
 
       true_
       false_
+      root_
       empty_;
 
 label Query
@@ -137,6 +145,8 @@ label Query
       LocationSteps
       NodeTest
       KindTest
+
+      ConstructorExpr
 
       BuiltIns
 
@@ -161,6 +171,7 @@ CoreExpr:        SubtypingProof;
 CoreExpr:        SequenceTypeCast;
 CoreExpr:        FunctionAppl;
 CoreExpr:        PathExpr;
+CoreExpr:        ConstructorExpr;
 CoreExpr:        BuiltIns;
 
 BindingExpr:     for_ (Var, nil, Atom, CoreExpr)
@@ -511,6 +522,80 @@ FunctionArg:     Atom
     ;
 FunctionArg:     SequenceTypeCast;
     
+ConstructorExpr: elem (tag, CoreExpr)
+    =
+    {   
+        PFty_t t1;
+        PFqname_t n1;
+
+        assert (($1$)->sem.qname);
+
+        n1 = ($1$)->sem.qname;
+        t1 = [[ $2$ ]];
+
+        [[ $$ ]] = *PFty_simplify (PFty_elem (n1, t1));
+    }
+    ;
+ConstructorExpr: elem (CoreExpr, CoreExpr)
+    =
+    {   
+        PFty_t t1 = [[ $2$ ]];
+        PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
+        [[ $$ ]] = *PFty_simplify (PFty_elem (wild, t1));
+    }
+    ;
+ConstructorExpr: attr (tag, CoreExpr)
+    =
+    {   
+        PFty_t t1;
+        PFqname_t n1;
+
+        assert (($1$)->sem.qname);
+
+        n1 = ($1$)->sem.qname;
+        t1 = [[ $1$ ]];
+
+        [[ $$ ]] = *PFty_simplify (PFty_attr (n1, t1));
+    }
+    ;
+ConstructorExpr: attr (CoreExpr, CoreExpr)
+    =
+    {   
+        PFty_t t1 = [[ $2$ ]];
+        PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
+
+        [[ $$ ]] = *PFty_simplify (PFty_attr (wild, t1));
+    }
+    ;
+ConstructorExpr: text (CoreExpr)
+    =
+    {   
+        [[ $$ ]] = PFty_text ();
+    }
+    ;
+ConstructorExpr: doc (CoreExpr)
+    =
+    {   
+        PFty_t t1;
+
+        t1 = [[ $1$ ]];
+        [[ $$ ]] = *PFty_simplify (PFty_doc (t1));
+    }
+    ;
+ConstructorExpr: comment (lit_str)
+    =
+    {   
+        [[ $$ ]] = PFty_comm ();
+    }
+    ;
+ConstructorExpr: pi (lit_str)
+    =
+    {   
+        [[ $$ ]] = PFty_pi ();
+    }
+    ;
+
 Atom:            Var;
 Atom:            LiteralValue;
 Atom:            BuiltIns;
