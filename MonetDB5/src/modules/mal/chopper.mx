@@ -25,57 +25,59 @@
 @v 2.0
 @a M.L.Kersten
 @* BAT chopper
-Processing a complex query involving access to many resources
-and with a wide disparity of processing requirements is often
-organized as a dataflow problem. 
-That is, the operators consume chunks of information to proceed
-with a small step in query evaluation.
+In many low level algorithms an iterator is foten used to break a
+collection into smaller pieces. Each piece is subsequently processed
+by a block.
 
-The routines provided by the chopper module break up 
-ordinary BATsa to produce a chunk of information for
-further processing.
-
-The smallest granularity is a single BUN, which can be used
-to realize an iterator over the BAT elements.
-For larger sized chunks, we use a BATview. It provides
-read-only access to an underlying BAT. Adjusting the bounds
+For very large BATs it may make sense to break it into chunks
+and process them separately to solve a query. An iterator pair is
+provided to chop a BAT into fixed size elements.
+Each chunk is made available as a BATview.
+It provides read-only access to an underlying BAT. Adjusting the bounds
 is cheap, once the BATview descriptor has been constructed.
 
-[todo, they could be used in dataflow interpreter]
+The smallest granularity is a single BUN, which can be used
+to realize an iterator over the individual BAT elements.
+For larger sized chunks, the operators return a BATview. 
 
+All iterators require storage space to administer the
+location of the next element. The chopper module uses a simple
+lng variable, which also acts as a cursor for barrier statements.
+
+The larger chunks produced are currently static, i.e.
+their size is a parameter of the call. Dynamic chunk sizes
+are interesting for time-series query processing. (See another module)
 @+ BAT iterator
 
 @mal
 module chopper;
 
-command batIterator(i:lng,b:bat[:any,:any]):bit 			
-address CHPnextElement_lng
-comment "A BATloop iterator uses an integer cursor 
-	to keep track of its position in the 
-	underlying table. The head and tail 
-	elements can be obtained using the getHead 
-	and getTail functions, which are to be 
-	defined for all atomary types.";
-pattern batIterator(i:lng,b:bat[:any$1,:any$2],
-		h:any$1,t:any$2):bit	
-address CHPnextElement
-comment "Iterate over the elements of a BAT.";
-pattern bunStream(b:bat[:any$1,:any$2],
-		h:any$1,t:any$2):lng	
-address CHPbunStream
-comment "Produce a bun stream for processing.";
+command newIterator(b:bat[:any$1,:any$2], size:lng)
+	(:lng,:bat[:any$1,:any$2])
+address CHPnewIterator
+comment " Create an iterator with fixed granule size.
+	  The result is a view.";
 
-command hashloop(i:int,p:ptr,b:bat[:any,:any]):bit			
-address CHPhashloop
-comment "Iterate over the elements of a BAT 
-	using its hash index.Each call we set 
-	'i' to denote the next element";
+command hasMoreElements(b:bat[:any$1,:any$2], size:lng)
+	(:lng, :bat[:any$1,:any$2])
+address CHPhasMoreElements
+comment "Produce the next chunk for processing.";
+
+pattern newIterator(b:bat[:any$1,:any$2])
+	(:lng, h:any$1, t:any$2)
+address CHPbunIterator
+comment "Process the buns one by one.";
+
+pattern hasMoreElements(b:bat[:any$1,:any$2])
+	(:lng, h:any$1, t:any$2)
+address CHPbunHasMoreElements
+comment "Produce the next bun for processing.";
+
 @-
-The head and tail values can be extracted using the cursor,
-but is often more effective due to overhead involved in
-location of the underlying BAT.
-The generic solutions are also provided as patterns, because this
-trims the number of function signatures in the symbol table.
+The head and tail values can also be extracted using the cursor.
+It point to the first bun in the chunk under consideration.
+It is often more effective due to use the iterator with automatic
+extraction of head and tail value; the overhead involved is much less.
 @mal
 pattern getHead(b:bat[:any$1,:any],i:lng):any$1 
 address CHPgetHead
@@ -87,52 +89,27 @@ address CHPgetTail
 comment "return the BUN tail value using the 
 	cursor.";
 @-
-The larger chunks produced are currently static, i.e.
-their size is a parameter of the call. Dynamic chunk sizes
-are interesting for time-series query processing. (See ...)
-[TODO]
-command batChunk(b:bat[:any$1,:any$2],size:int)
-	(:bit,:bat[:any$1,:any$2]) 			
-address CHPnextChunk
-comment "TODO";
+@{
 
 @+ BAT Iterator Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
-        if( BBPcheck(*@2,"@4")==0)
-                return throwMessage("mal.@4","cannot access bat @2 in bbp");
-        if( *@2 < 0) {
-                /* reverse descriptor should be explicitly loaded */
-                @3=BATdescriptor(*@2); BBPunfix(*@2);
-        } else @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) { *@1 = 0;
-                return throwMessage("bat.@4",
-                        "cannot access descriptor @2");
-        }
+if( *@2 < 0) {
+	/* reverse descriptor should be explicitly loaded */
+	@3=BATdescriptor(*@2); BBPunfix(*@2);
+} else @3= (BAT*) BBPgetdesc(*@2);
+if( @3 == NULL) { *@1 = 0;
+	return throwMessage("chopper.@4", 
+		"cannot access descriptor @2");
+}
 @-
-@= hashiter
-        if (b->tvarsized) {
-                HASHloop@1(b, b->hhash, idx, v, p)
-                        if ((i = ITERATE(v, BUNtvar(b,p), h)) < 0) return i;
-        } else {
-                HASHloop@1(b, b->hhash, idx, v, p)
-                        if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
-        } break;
+The routine VALinit is an utility routine to move
+a value from a BUN into a value record, making proper copies
+on the way.
 @c
 #include "mal.h"
 #include "mal_interpreter.h"
 
-str CHPhashloop(int *ret, lng *cursor, int *bid)
-{
-        BAT *b;
-	(void) cursor; /* fool compiler */
-        @:getBATdescriptor(ret,bid,b,nextElement)@
-        return throwMessage("mal.hashloop","not yet implemented");
-}
-@-
-Moving a value from a BUN into a value record, making proper copies
-on the way.
-@c
 ValPtr VALinit(ValPtr d, int tpe, ptr s){
         if (ATOMextern(tpe) == 0) {
                 d->vtype= tpe;
@@ -154,56 +131,49 @@ ValPtr VALinit(ValPtr d, int tpe, ptr s){
         return d;
 }
 @-
-In principle, we could add iterators with other range bounds.
-@= nextLoop
-str CHPnextElement_@1(bit *ret, @1 *cursor, int *bid)
-{
-	BAT *b;
-	int limit;
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
-	if( *cursor <0)
-		*cursor = BUNindex(b,BUNfirst(b));
-	else	*cursor = *cursor+1;
-	*ret = *cursor < limit;
+We start with the large chunk iterator.
+The definition of the control statements require the same
+control variables, which means that the BATview is accessible
+to determine how far to advance when the next chunk is retrieved.
+The number of elements in the chunk is limited by the granule
+size.
+@c
+str CHPnewIterator(int *res, int *vid, int *bid, int *granule){
+	BAT *b, *view;
+	int ret=0;
+	size_t cnt;
+	@:getBATdescriptor(&ret,bid,b,newIterator)@
+	if( *vid ){
+		@:getBATdescriptor(&ret,vid,view,newIterator)@
+		/* it has the correct type, but does it also
+		   refer to the same BAT */
+	}
+	cnt = BATcount(b);
+	view= VIEWcreate_(b,TRUE);
+	BBPfix(*vid=  view->batCacheid);
+	printf("set bat chunk bound to %d - %d \n",
+		0, MIN(cnt,(size_t) granule));
+	VIEWbounds(view,(size_t) 0, MIN(cnt,(size_t) granule));
+	*res = 0 ;
 	return MAL_SUCCEED;
 }
 @-
+The hasMoreElements version advances the chunk reader,
+which also means that the view descriptor is alread available.
+The granule size may differ in each call.
 @c
-	@:nextLoop(lng)@
-
-str CHPnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *b;
-	lng *cursor;
-	bit *ret;
-	int *bid;
-	int limit;
-	BUN p;
-	ValPtr head, tail;
-
-	if( pci->argc != 5) stream_printf(GDKout,"CHPnextElement:exception\n");
-	ret = (bit *) getArgReference(stk,pci,0);
-	cursor = (lng *) getArgReference(stk,pci,1);
-	bid = (int *) getArgReference(stk,pci,2);
-	head = &stk->stk[pci->argv[3]];
-	tail = &stk->stk[pci->argv[4]];
-
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
-
-	if( *cursor <0)
-		*cursor = BUNindex(b,BUNfirst(b));
-	else	*cursor = *cursor+1;
-	*ret = *cursor < limit;
-
-	if( *ret== FALSE) return MAL_SUCCEED;
-	/* get head = ... tail = ... */
-	p = BUNptr(b,*cursor);
-	garbageElement(head);
-	garbageElement(tail); 
-	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
-	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
-stream_printf(GDKout,"%s",BUNtail(b,p));
+str CHPhasMoreElements(int *res, int *vid, int *bid, int *granule){
+	BAT *b, *view;
+	int ret=0;
+	size_t cnt, i;
+	@:getBATdescriptor(&ret,bid,b,hasMoreElements)@
+	@:getBATdescriptor(&ret,vid,view,hasMoreElements)@
+	cnt = BATcount(b);
+	i = *res + BATcount(view);
+	printf("set bat chunk bound to %d - %d \n",
+		i, i+MIN(cnt-i,(size_t) granule));
+	VIEWbounds(view, i, i+MIN(cnt-i,(size_t) granule));
+	*res = i;
 	return MAL_SUCCEED;
 }
 @-
@@ -213,52 +183,68 @@ zero as part of runtime stack initialization. Subsequently,
 it fetches a bun and returns the increment to the control
 variable. If it returns zero the control variable has been reset
 to zero and end of stream has been reached.
-
-The head and tail variables may have to be set to the type
-extracted from the BAT descriptor. If there occurs a type
-error.
 @c
-str CHPbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
-	bit *ret = NULL;
+	bit ret;
 	int *bid;
-	int limit,tp;
 	BUN p;
 	ValPtr head, tail;
 
-	if( pci->argc != 4) stream_printf(GDKout,"exception in nextElement\n");
 	cursor = (lng *) getArgReference(stk,pci,0);
-	bid = (int *) getArgReference(stk,pci,1);
-	head = &stk->stk[pci->argv[2]];
-	tail = &stk->stk[pci->argv[3]];
-	@:getBATdescriptor(ret,bid,b,nextElement)@
-	limit=  BUNindex(b,BUNlast(b));
+	head = &stk->stk[pci->argv[1]];
+	tail = &stk->stk[pci->argv[2]];
+	bid = (int *) getArgReference(stk,pci,3);
 
-	if( *cursor >=limit){
-		*cursor = 0;
+	@:getBATdescriptor(&ret,bid,b,bunIterator)@
+
+	if( BATcount(b) == 0) {
+		*cursor = -1;
 		return MAL_SUCCEED;
-	} 
-	if( *cursor == 0)
-		*cursor = BUNindex(b,BUNfirst(b));
+	}
+	*cursor = BUNindex(b,BUNfirst(b));
 
-/*
-stream_printf(GDKout,"head type %s\n", getTypeName(getArgType(mb,pci,2)));
-stream_printf(GDKout,"tail type %s\n", getTypeName(getArgType(mb,pci,3)));
-*/
 	/* get head = ... tail = ... */
 	p = BUNptr(b,*cursor);
 	garbageElement(head);
 	garbageElement(tail); 
-	tp = getArgType(mb,pci,2);
-	if( tp == TYPE_void  && b->hseqbase!= oid_nil){
-		VALinit( head, TYPE_oid, BUNhead(b,p));
-		head->vtype= TYPE_void;
-	} else 	VALinit( head, tp, BUNhead(b,p));
-	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
-	*cursor = *cursor+1;
+	VALinit( head, getArgType(mb,pci,1),BUNhead(b,p));
+	VALinit( tail, getArgType(mb,pci,2),BUNtail(b,p));
 	return MAL_SUCCEED;
 }
+str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	BAT *b;
+	lng *cursor;
+	bit ret;
+	int *bid;
+	int limit;
+	BUN p;
+	ValPtr head, tail;
+
+	cursor = (lng *) getArgReference(stk,pci,0);
+	head = &stk->stk[pci->argv[1]];
+	tail = &stk->stk[pci->argv[2]];
+	bid = (int *) getArgReference(stk,pci,3);
+
+	@:getBATdescriptor(&ret,bid,b,bunHasMoreElements)@
+	limit=  BUNindex(b,BUNlast(b));
+
+	*cursor = *cursor+1;
+
+	/* get head = ... tail = ... */
+	p = BUNptr(b,*cursor);
+	if( p >= BUNlast(b)){
+		*cursor = -1;
+		return MAL_SUCCEED;
+	}
+	garbageElement(head);
+	garbageElement(tail); 
+	VALinit( head, getArgType(mb,pci,1),BUNhead(b,p));
+	VALinit( tail, getArgType(mb,pci,2),BUNtail(b,p));
+	return MAL_SUCCEED;
+}
+@-
 
 @-
 The fetch operations are all pretty straight forward, provided
@@ -279,7 +265,7 @@ str CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,nextElement)@
+	@:getBATdescriptor(ret,bid,b,getHead)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
 		return throwMessage("mal.getHead","range error");
@@ -304,7 +290,7 @@ str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	tail = &stk->stk[pci->argv[0]];
 
-	@:getBATdescriptor(ret,bid,b,nextElement)@
+	@:getBATdescriptor(ret,bid,b,getTail)@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
 		return throwMessage("mal.getTail","range error");
@@ -316,3 +302,5 @@ str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
 	return MAL_SUCCEED;
 }
+@-
+@}
