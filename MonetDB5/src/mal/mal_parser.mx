@@ -361,15 +361,15 @@ int cstLength(Client cntxt, int *type)
 	}
 	return i;
 parseTFN:
-	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum(*(s+5)) ){
+	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) ){
 		*type = TYPE_bit;
 		return 5;
 	}
-	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum(*(s+4)) ){
+	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) ){
 		*type = TYPE_bit;
 		return 4;
 	}
-	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum(*(s+3)) ){
+	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum((int)*(s+3)) ){
 		*type = TYPE_void;
 		return 3;
 	}
@@ -668,6 +668,8 @@ during the final phase reshuffle the return values to the beginning (?)
 	} else { nextChar(cntxt); skipSpace(cntxt);
 		if( *(cntxt->nxt) =='('){
 			int retc= curInstr->argc, i1,i2=0;
+			int maxarg;
+			int *newarg;
 			/* parse multi-target result */
 			nextChar(cntxt);skipSpace(cntxt);
 			ch= currChar(cntxt);
@@ -684,8 +686,8 @@ during the final phase reshuffle the return values to the beginning (?)
 				ch = currChar(cntxt);
 			}
 			/* re-arrange the parameters, results first*/
-			int maxarg= curInstr->maxarg;
-			int *newarg= (int*)GDKmalloc(maxarg*sizeof(int));
+			maxarg= curInstr->maxarg;
+			newarg= (int*)GDKmalloc(maxarg*sizeof(int));
 			for(i1= retc; i1<curInstr->argc; i1++)
 				newarg[i2++]= curInstr->argv[i1];
 			curInstr->retc= curInstr->argc-retc;

@@ -58,14 +58,14 @@ int main(int argc,char ** av)
 	int k,len,totlen;
 	char *dbname, *dbfarmval, dbfarm[BUFSIZ];
 
-	static struct option long_options[] =
+	static struct option long_options[7] =
              {
-               {"config", 1, 0, 'c'},
+               {"config", 1, 0, (int) 'c'},
                {"dbname", 1, 0, 0},
                {"dbfarm", 1, 0, 0},
-               {"debug", 2, 0, 'd'},
-               {"help", 0, 0, '?'},
-               {"set", 1, 0, 's'},
+               {"debug", 2, 0, (int) 'd'},
+               {"help", 0, 0, (int) '?'},
+               {"set", 1, 0, (int) 's'},
                {0, 0, 0, 0}
              };
 

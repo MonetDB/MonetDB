@@ -657,7 +657,8 @@ str STRcodeset( str *res ){
 
 str STRIconv( str *res, str *o, str *fp, str *tp)
 {
-	str org= *o,f= *fp,t= *tp;
+	ICONV_CONST char *org = *o;
+	str f= *fp,t= *tp;
 #ifdef HAVE_ICONV
 	size_t len = strlen(org);
 	iconv_t cd = iconv_open( t, f);

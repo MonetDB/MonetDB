@@ -1079,8 +1079,9 @@ str CMDoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 str CMDbat_append_val_wrap( int *r, int *bid, ptr u)
 {
 	BAT *i;
+	oid h;
 	@:getBATdescriptor2(r,bid,i,append)@
-	oid h = i->hseqbase + BATcount(i);
+	h = i->hseqbase + BATcount(i);
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & h, u );
 	BBPfix(i->batCacheid);
@@ -1663,8 +1664,8 @@ str CMDheat(int *res, str *input) {
  	return throwMessage("bat","heat not yet implemented\n");
  }
 str CMDhotBAT(int *res, int *bid) {
-	(void)res; /* fool compiler */
 	BAT *b;
+	(void)res; /* fool compiler */
 	@:getBATdescriptor(res,bid,b,isCached)@
 	BBPhot(b->batCacheid);
 	return MAL_SUCCEED;

@@ -196,8 +196,8 @@ command printf(format:str,val:str):int = SYSprint_formatted_str;
 #endif
  
 str SYSquit(int *ret) {
-	(void) ret; /* fool compiler */
 	Client c= getClient();
+	(void) ret; /* fool compiler */
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
 }
@@ -336,7 +336,7 @@ str SYSprint_formatted_nil(stream *fd, str format, int *ret){
 				stream_printf(fd,"%c",*c);
 				c++; continue;
 			}
-			while( !isalpha(*c) && *c && i<1024)
+			while( !isalpha((int)*c) && *c && i<1024)
 				 newformat[i++]= *c++;
 			newformat[i++]='s';
 			newformat[i]=0;

@@ -594,7 +594,7 @@ Furthermore, temporary variables are already assigned to a specific
 position in the variable table.
 @c
 int findVariable(MalBlkPtr mb, str name){
-	register int i;
+	int i;
 	if( isTmpName(name)){
 		i= atol(name+1);
 		return i>=mb->vtop? -1:i;
@@ -611,8 +611,8 @@ usefull during parsing, because most variables are already
 defined. This way we safe GDKmalloc/GDKfree.
 @c
 int findVariableLength(MalBlkPtr mb, str name, int len){
-	register int i;
-	register int j;
+	int i;
+	int j;
 	if(isTmpName(name)){
 		i= atol(name+1);
 		return i>=mb->vtop? -1:i;
@@ -1083,11 +1083,12 @@ InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
         n = p->argc;
         if( n == MAXARG-1){
 		InstrPtr pn;
+		int pc = 0;
 		int space= (p->maxarg-1)*sizeof(int)+ sizeof(InstrRecord);
 		pn = GDKmalloc(space+MAXARG*sizeof(int));
 		memcpy((char *)pn,(char *)p,space);
 		pn->maxarg= p->maxarg+MAXARG;
-		int pc= getPC(mb,p);
+		pc= getPC(mb,p);
 		if( pc>=0) mb->stmt[pc]= pn;
 		GDKfree(p);
 		p=pn;
@@ -1385,7 +1386,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	str s,t,nme;
 	int low,high;
 	char nmebuf[PATHLENGTH];
-	PropertySet ps=0;;
+	PropertySet ps=0;
 	str pstring=0;
 
 	len = 8196;

@@ -64,6 +64,7 @@ The underlying string value need not be garbage collected.
 #ifndef _MAL_STACK_H_
 #define _MAL_STACK_H_
 #include "mal.h"
+#include "gdk_system.h"
 
 #define STACKINCR	128
 #define MAXGLOBALS	4 * STACKINCR

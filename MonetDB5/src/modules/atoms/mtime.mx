@@ -1695,7 +1695,7 @@ str oldduration(int *ndays, str *sin) {
                         v = v*10+(*snew)-'0';
                         snew++;
                 }
-        } else if( isupper(*snew) || islower(*snew) ){
+        } else if( isupper((int)*snew) || islower((int)*snew) ){
                 switch( *snew++ ){
                 case 'y': case 'Y': year = v;   v = 0;          break;
                 case 'm': case 'M':
@@ -2360,10 +2360,10 @@ str CMDcurrent_time(daytime *t)
 str CMDepoch(timestamp *ret){
 	date d0= todate(1,1,1970);
 	int zero=0;
-	daytime d1;
-	daytime_create(&d1,&zero,&zero,&zero,&zero);
-	tzone d2;
 	str s= "GMT";
+	daytime d1;
+	tzone d2;
+	daytime_create(&d1,&zero,&zero,&zero,&zero);
 	tzone_create_fromstr(&d2, &s);
 	timestamp_create(ret,&d0,&d1,&d2);
 	return MAL_SUCCEED;
@@ -2378,8 +2378,8 @@ str CMDepoch2(lng *ret, timestamp *t){
 }
 str CMDtimestamp(timestamp *ret, int *sec){
 	timestamp e;
-	CMDepoch(&e);
 	lng l = *sec * 1000;
+	CMDepoch(&e);
 	timestamp_add(ret,&e, &l);
 	return MAL_SUCCEED;
 }
@@ -2391,9 +2391,9 @@ str CMDruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint){
 }
 str CMDruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint){
 	int d;
-	day_from_str(&d, dnme);
 	int d0 = 60* *h;
 	int d1 = d0+ *mint;
+	day_from_str(&d, dnme);
 	rule_create(ret, m, &d, w, &d1);
 	return MAL_SUCCEED;
 }

@@ -1023,8 +1023,8 @@ str CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e){
 	/* insert the extreme values into the result */
 	BATloopFast(bn, r, q, xx) {
 		oid *h = (oid*)BUNh@4(bn,r);
-		(void) h; /* fool compiler */
 		ptr val = extremes[@8];
+		(void) h; /* fool compiler */
 		/* trick: using a void head-type, only the tail are (over)written */
 		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), val?val:nil);
 	} 
@@ -2293,7 +2293,7 @@ if (BATtordered(b)&1) {
 }
 @c
 
-str CMDcard(int *result, int *bid, unsigned int* maxelements) {
+str CMDcard(size_t *result, int *bid, unsigned int* maxelements) {
 	unsigned int maxsize = *maxelements; 
 	BAT *b;
 
@@ -2339,10 +2339,12 @@ str CMDcard(int *result, int *bid, unsigned int* maxelements) {
 }
 
 str CMDcard_unlimited(int *result, int *bid){
+	size_t res;
 	BAT *b;
 	@:getBATdescriptor(result,bid,b,card_unlimited)@
 	size_t limit = BATcount(b);
-	CMDcard(result, bid, &limit);
+	CMDcard(&res, bid, &limit);
+	*result = res;
 	return MAL_SUCCEED;
 }
 

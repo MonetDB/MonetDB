@@ -1048,21 +1048,10 @@ static void mil_print(FILE *f, /*int tpe,*//*Stefan: unused!*/ YYSTYPE v)
 {
 	if( v.len >0) fprintf(f," %s ", v.val);
 }
-/* yytname should be known
-char *lexname[] = {
- "TOK_ITERTEMP", "TOK_TEMPLATE", "TOK_VARTEMP", "TOK_RANGETEMP",
- "TOK_CONSTANT", "TOK_ASSIGNMENT", "TOK_PARBLOCK",
- "TOK_PAREND", "TOK_IDENT", "TOK_IF", "TOK_WHILE", 
- "TOK_BREAK", "TOK_RETURN", "TOK_VAR", 
- "TOK_CONST", "TOK_BATCAST", 
- "TOK_OPERATOR", "TOK_SETAGGR", "TOK_PROCDEF",
- "TOK_STRING", "TOK_ITERATION", "TOK_ELSE", 
- "TOK_MODULE", 
- "TOK_ANY", "TOK_UNDEF", "TOK_DEREF", "TOK_ANYNUM", 0, };
-*/
-
 const char *yylexname(int Y)           
-{ 	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
+{ 	
+	(void) yytoknum; /* fool  compiler Darwin*/
+	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
 		return yytname[Y-TOK_ITERTEMP];
 	} 
 	return "char";

@@ -343,7 +343,7 @@ void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* generate actual call statement */
 		stmt= call2str(mb,stk,getPC(mb,pci),FALSE);
 		c= stmt;
-		while(c && *c && isspace(*c) ) c++;
+		while(c && *c && isspace((int)*c) ) c++;
 		log(" \"%s\",\t",c);
 	}
 	if( profileCounter[PROFcpu].status ){
@@ -461,7 +461,7 @@ void offlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	stmt= instruction2str(mb,pci,FALSE);
 	c= strchr(stmt,']');
 	if(c) c++; else c= stmt;
-	while(c && *c && isspace(*c) ) c++;
+	while(c && *c && isspace((int)*c) ) c++;
 
 	log0(" stmt=\"");
 	for(;c && *c;c++){

@@ -276,7 +276,7 @@ A grain size of 128 bytes is used to keep overhead low.
 	/*@:mallopt@*/
 #endif
 
-	static struct option long_options[] =
+	static struct option long_options[7] =
              {
                {"config", 1, 0, 'c'},
                {"dbname", 1, 0, 0},
