@@ -46,9 +46,13 @@
 #define OPT_REFS 64 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
 #define OPT_CONDS 32  /* maximum if-nesting */
 
+#define OPT_SEC_PROLOGUE 0
+#define OPT_SEC_MAIN 1
+#define OPT_SEC_EPILOGUE 2
+
 typedef struct {
         char *mil; /* buffered line of MIL */
-        unsigned int stmt_nr; /* absolute statement number in MIL input */
+        unsigned int stmt_nr:30,sec:2; /* absolute statement number in MIL input */
         unsigned int used:16,inactive:1,delchar:7,nilassign:1,refs:7; 
         /* used:      becomes true if this variable was used */ 
         /* inactive:  set if we have tried to eliminate this statement already */
@@ -106,9 +110,14 @@ typedef struct {
 
         opt_stmt_t stmts[OPT_STMTS]; /* line buffer */
         opt_var_t vars[OPT_VARS]; /* variable stack */
+	char *buf[3];
+	size_t off[3], len[3];
+	int sec;
         FILE *fp; 
 } opt_t; /* should take ~1.5MB of RAM resources */
 
-void opt_open(opt_t *o, FILE *fp, int optimize);
-void opt_close(opt_t *o);
+#define opt_output(o,x) ((o)->sec = x)
+
+void opt_open(opt_t *o, int optimize);
+char* opt_close(opt_t *o);
 void opt_mil(opt_t *o, char* milbuf);

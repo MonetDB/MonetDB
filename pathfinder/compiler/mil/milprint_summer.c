@@ -390,6 +390,7 @@ kind_container (int i)
                "kind_container: no valid reference (%i)", i);
 }
 
+
 /**
  * init introduces the initial MIL variables
  * 
@@ -398,27 +399,7 @@ kind_container (int i)
 static void
 init (opt_t *f)
 {
-    milprintf(f,
-            "# init ()\n"
-            /* pathfinder functions (scj, doc handling) are made visible
-               in the server */
-            "module(\"pathfinder\");\n"
-            "module(\"pf_support\");\n"
-            "module(\"aggrX3\");\n"
-            "module(\"xtables\");\n"
-            "module(\"malalgebra\");\n"
-            "module(\"mmath\");\n"
-
-	/*  The tunique_ function is replaced by tuniqueALT in pf_support.mx JF */
-        /*  "# the tunique() function needs a little bit help :)\n" */
-        /*  "PROC tunique_ (bat[any::1,any::2] input) : bat[any::2,void] {\n" */
-        /*  "input := input.reverse().mark(nil).reverse();\n" */
-        /*  "if (input.tail() = \"string\") {\n" */
-        /*  "    return bat(str,void).key(true)" */
-        /*                          ".insert(input.reverse())" */
-        /*                          ".reverse().access(BAT_READ);\n" */
-        /*  "} else { return tunique(input); }\n" */
-        /*  "}\n" */
+    milprintf(f, 
             /* a new working set is created */
             "var ws := create_ws();\n"
             /* the first loop is initialized */
@@ -7503,6 +7484,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = NORMAL; /* dummy */
             break;
         case c_fun_decl:
+  	    opt_output(f, OPT_SEC_PROLOGUE);
             milprintf(f,
                     "PROC %s%i%x (bat[void,oid] loop000, "
                                "bat[void,oid] outer000, "
@@ -7524,6 +7506,11 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "return bat(void,bat,4).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
                     "} # end of PROC %s%i%x\n",
                     c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+  	    opt_output(f, OPT_SEC_EPILOGUE);
+            milprintf(f,
+                    "UNDEF %s%i%x;\n",
+                    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+  	    opt_output(f, OPT_SEC_MAIN);
             rc = NORMAL; /* dummy */
             break;
         case c_nil:
@@ -9317,6 +9304,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     return counter;
 }
 
+
 /**
  * first MIL generation from Pathfinder Core
  *
@@ -9327,12 +9315,12 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
  * @param f the Stream the MIL code is printed to
  * @param c the root of the core tree
  */
-void
-PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
+char*
+PFprintMILtemp (PFcnode_t *c, PFstate_t *status)
 {
     PFarray_t *way, *counter;
     opt_t *f = (opt_t*) PFmalloc(sizeof(opt_t));
-    opt_open(f, fp, status->optimize);
+    opt_open(f, status->optimize);
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
@@ -9348,15 +9336,62 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
                     PFarray (sizeof (var_info *)),
                     PFarray (sizeof (var_info *)),
                     0);
+
+    milprintf(f,
+            "# MODULE DECLARATIONS\n"
+#if TIMINGS
+            "module(\"alarm\");\n"
+#endif
+            "module(\"pathfinder\");\n"
+            "module(\"aggrX3\");\n"
+            "module(\"xtables\");\n"
+            "module(\"malalgebra\");\n"
+            "module(\"mmath\");\n");
+
+    milprintf(f, "\n\n# MIL-PROCS GENERATED FROM XQUERY FUNCTIONS\n");
+
+    opt_output(f, OPT_SEC_EPILOGUE);
+    milprintf(f,
+#if TIMINGS
+            "drop(\"alarm\");\n"
+#endif
+            "drop(\"pathfinder\");\n"
+            "drop(\"aggrX3\");\n"
+            "drop(\"xtables\");\n"
+            "drop(\"malalgebra\");\n"
+            "drop(\"mmath\");\n");
+
+    /* define working set and all other MIL context (global vars for the query) */
+    opt_output(f, OPT_SEC_MAIN);
+    milprintf(f, "\n\n# MAIN MIL QUERY\n{");
+    init (f);
+
+    /* get_var_usage appends information to the core nodes and creates a 
+     * var_usage table, which is later split in vu_fid and vu_vid */
+    milprintf(f,
+            "{"
+            "  var var_usage := bat(oid,oid);\n"); /* [vid, fid] */
+    get_var_usage (f, c, way, counter);
+    milprintf(f,
+            "  var_usage := var_usage.unique().reverse();\n"
+            "  var_usage.access(BAT_READ);\n"
+            "  vu_fid := var_usage.mark(1000@0).reverse();\n"
+            "  vu_vid := var_usage.reverse().mark(1000@0).reverse();\n"
+            "  var_usage := nil_oid_oid;\n"
+            "  var sorting := vu_fid.reverse().sort().reverse();\n"
+            "  sorting := sorting.CTrefine(vu_vid);\n"
+            "  sorting := sorting.mark(1000@0).reverse();\n"
+            "  vu_vid := sorting.leftfetchjoin(vu_vid);\n"
+            "  vu_fid := sorting.leftfetchjoin(vu_fid);\n"
+            "  sorting := nil_oid_oid;\n"
+            "}\n");
+
 #if TIMINGS
 #if WITH_SCRIPT
 #else
     milprintf(f, "var tries := 3;\n");
 #endif
-
-    if (status) {}
     milprintf(f,
-            "module(alarm);\n"
             "var times := bat(int,int);\n"
             "var rep := 0;\n"
             "var timings := \"\\n\";\n"
@@ -9364,33 +9399,6 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
             "var timer := time();\n"
             "rep := rep+1;\n");
 #endif
-
-    /* some bats and module get initialized, variables get bound */
-    init (f);
-
-    /* get_var_usage appends information to the core nodes and
-       creates a var_usage table, which is later split in vu_fid
-       and vu_vid */
-    milprintf(f,
-            "{\n"
-            "var var_usage := bat(oid,oid);\n"); /* [vid, fid] */
-    get_var_usage (f, c, way, counter);
-    /* the contents of var_usage will be sorted by fid and
-       then refined (sorted) by vid */
-    milprintf(f,
-            "var_usage := var_usage.unique().reverse();\n"
-            "var_usage.access(BAT_READ);\n"
-            "vu_fid := var_usage.mark(1000@0).reverse();\n"
-            "vu_vid := var_usage.reverse().mark(1000@0).reverse();\n"
-            "var_usage := nil_oid_oid;\n"
-            "var sorting := vu_fid.reverse().sort().reverse();\n"
-            "sorting := sorting.CTrefine(vu_vid);\n"
-            "sorting := sorting.mark(1000@0).reverse();\n"
-            "vu_vid := sorting.leftfetchjoin(vu_vid);\n"
-            "vu_fid := sorting.leftfetchjoin(vu_fid);\n"
-            "sorting := nil_oid_oid;\n"
-            "}\n");
-
 
     /* recursive translation of the core tree */
     translate2MIL (f, 0, 0, 0, c);
@@ -9403,9 +9411,8 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
             "timer := nil_int;\n"
             "if (rep = tries)\n"
             "{\n"
-/*          "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"); */
             "timer := time();\n"
-            "xml_print(ws, item, kind, int_values, dbl_values, dec_values, str_values);\n"
+            "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n"); 
             "timer := time() - timer;\n"
             "timings :+= \"### time for serialization: \" + str(timer) + \" msec\\n\";\n"
             "}\n"
@@ -9436,11 +9443,14 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
      case PF_GEN_SAX:
       milprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
+     case PF_GEN_NONE:
+      break;
      default:
       milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
     }
 #endif
-    opt_close(f);
+    milprintf(f, "}\n\n# MIL EPILOGUE\n");
+    return opt_close(f);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

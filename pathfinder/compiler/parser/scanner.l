@@ -71,6 +71,9 @@
 /* bison 1.33 does not include this line in XQuery.tab.h. So we do it here. */
 extern YYLTYPE pflloc;
 
+/* input buffer */
+extern char *pfinput;
+
 /** increment row and column numbers (required in YY_USER_ACTION) */
 static int i;
 
@@ -104,6 +107,11 @@ static int i;
    }                                                        \
  } while(0);
 
+#define YY_INPUT(buf,result,max_size)                       \
+ { int c = *pfinput;                                        \
+   pfinput += (c != 0);                                     \
+   result = (c != 0) ? (buf[0] = c, 1) : YY_NULL;           \
+ }
 
 /**
  * define DEBUG_SCANNER to activate debugging output in parser

@@ -30,6 +30,7 @@
 #include "pathfinder.h"
 
 #include "mil_opt.h"
+#include "mem.h"
 #include <string.h>
 
 /* ----------------------------------------------------------------------------
@@ -45,6 +46,18 @@
  * ----------------------------------------------------------------------------
  */
 opt_name_t name_if, name_else;
+
+/* opt_append(): append stmt either to preamble (proc,module) or normal (MIL query) buf 
+ */
+static void opt_append(opt_t* o, char* stmt, int sec) {
+	int len = strlen(stmt);
+	if (o->off[sec] + len >= o->len[sec]) {
+		o->len[sec] += o->len[sec] + len+1;
+		o->buf[sec] = PFrealloc(o->len[sec], o->buf[sec]);
+	}
+	memcpy(o->buf[sec] + o->off[sec], stmt, len+1);
+	o->off[sec] += len;
+}
 
 /* opt_findvar(): find a variable on the stack 
  */ 
@@ -136,8 +149,15 @@ static void opt_purgestmt(opt_t* o, unsigned int stmt) {
 	if (o->stmts[stmt].mil) { 
 		char *p = o->stmts[stmt].mil;
 		if (p) {
-			if (*p && *p != ':' && *p != ';') fputs(p, o->fp);
-			if (o->stmts[stmt].delchar) fputc(o->stmts[stmt].delchar, o->fp);
+			if (*p && *p != ':' && *p != ';') {
+				opt_append(o, p, o->stmts[stmt].sec);
+			}
+			if (o->stmts[stmt].delchar) {
+				char buf[2]; 
+				buf[0] = o->stmts[stmt].delchar; 
+				buf[1] = 0;
+				opt_append(o, buf, o->stmts[stmt].sec);
+			}
 		}
 		o->stmts[stmt].mil = NULL;
 	}
@@ -255,17 +275,19 @@ static void opt_end_else(opt_t *o) {
 
 /* opt_open(): set up our administration.
  */
-void opt_open(opt_t* o, FILE *fp, int optimize) {
+void opt_open(opt_t* o, int optimize) {
 	memset(o, 0, sizeof(opt_t));
-	o->fp = fp;
 	o->optimize = optimize;
 	opt_setname("if", &name_if);
 	opt_setname("else", &name_else);
+	o->buf[0] = (char*) PFmalloc(o->len[0] = 1024*1024);
+	o->buf[1] = (char*) PFmalloc(o->len[1] = 1024*1024);
+	o->buf[2] = (char*) PFmalloc(o->len[2] = 1024);
 }
 
 /* opt_close(): flush all output stmts; and clean up
  */
-void opt_close(opt_t *o) {
+char* opt_close(opt_t *o) {
 	int i; 
 	opt_endscope(o, 0); /* destroy all variables (and elim dead code) */
 
@@ -273,7 +295,10 @@ void opt_close(opt_t *o) {
 	for(i=0; i<OPT_STMTS; i++) {
 		opt_purgestmt(o, (i + o->curstmt) % OPT_STMTS);
 	}
-	fflush(o->fp);
+	/* append the query section to the preamble into the result */ 
+	opt_append(o, o->buf[OPT_SEC_MAIN], OPT_SEC_PROLOGUE);
+	opt_append(o, o->buf[OPT_SEC_EPILOGUE], OPT_SEC_PROLOGUE);
+	return o->buf[OPT_SEC_PROLOGUE];
 }
 
 /* opt_mil(): accept a chunk of unoptimized MIL.
@@ -283,7 +308,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 	char *p = milbuf;
 
 	if (o->optimize == 0) {
-		fputs(milbuf, o->fp);
+		opt_append(o, milbuf, o->sec);
 		return;
 	} 
 	name.prefix[0] = 0;
@@ -299,6 +324,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 		o->stmts[curstmt].refs = 0;
 		o->stmts[curstmt].delchar = 0;
 		o->stmts[curstmt].stmt_nr = o->curstmt;
+		o->stmts[curstmt].sec = o->sec;
 		o->curstmt++;
 
 		/* extract the next statement from the MIL block, 

@@ -25,9 +25,9 @@
 #
 # $Id$
 
-@f xquery
+@f serialize
 @a Jan Flokstra
-@t xquery
+@t serialize
 
 @c
 
@@ -49,8 +49,6 @@
 
 #include "pathfinder.h"
 
-#include "compile_interface.h"
- 
 static bit is_fake_project (BAT* b)
 {
 	BATcheck(b, "is_fake_project");
@@ -1105,95 +1103,4 @@ int xquery_print_result_main(
         return GDK_SUCCEED;
 }
 
-static FILE *string2FILE(char* s) {
-        /* hoped fmemopen() would work, but it did not! */
-        FILE    *res;
-        char    fileName[L_tmpnam];
-
-        if ( !(tmpnam(fileName) && (res = fopen(fileName,"w+"))) )
-                return NULL;
-        fputs(s, res);
-        rewind( res );
-        if ( unlink(fileName) < 0 ) 
-                return NULL;
-        return res;
-}
-
-/**
- * This function compiles the XQUERY query in stream 'in' and writes the
- * MIL translation to stream 'out'. The 'mode' parameter indicates the kind
- * of output needed eg. "sax" or "xml".
- */
-static int xquery_compile2MIL(FILE* in, FILE* out, char* mode) {
-	/* if mode == "org" Jan Rittingers code is called */
-        return pf_compile_interface(in, out, mode);
-}
-
-/**
- * This function executes the MIL script stored in the argument filename
- */
-static int xquery_executeMIL(char* milFileName) {
-        str milBuffer;
-        if ( !(milBuffer = monet_load_script(milFileName, NULL)) )
-                return -1;
-        int res = monet_exec(milBuffer);
-        GDKfree(milBuffer);
-        return res;
-}
-
-/* #define XQMILDEBUG "/tmp/xqmildebug" */
-
-/**
- * Main XQUERY/Pathfinder excution function. The function compiles the 
- * argument query 'q' and generates depending on the 'mode' parameter
- * a result in the form of a Sax-O-Phone stream or and xml string.
- * mode: "xml" or "sax"
- * q   : the xquery query
- */
-int xquery_xquery(str  mode, str q) {
-        FILE    *milStream;
-        FILE    *queryStream;
-
-        /* first open a temporary file to store the comp */
-#ifdef XQMILDEBUG
-        char* milFile = XQMILDEBUG;
-#else
-        char    milFileBuff[L_tmpnam];
-        char*   milFile=tmpnam(milFileBuff);
-#endif
-        if ( !(milFile && (milStream = fopen(milFile,"w"))) ) {
-                stream_printf(GDKerr,"Unable to open tmpFile \"%s\"\n",milFile);
-                return GDK_FAIL;
-        }
-        /* create a FILE* stream of the input query string 'q' */
-        if ( !(queryStream = string2FILE(q)) ) {
-                stream_printf(GDKerr,"Unable to create tmp inputstream\n");
-                return GDK_FAIL;
-        }
-        fputs("# enclosing block to garbage collect variables after execution\n{\n", milStream);
-        /* now compile from the queryStream to the MIL stream */
-        if ( !xquery_compile2MIL(queryStream, milStream, mode) ) {
-                stream_printf(GDKerr,"xquery: Compilation failed!\n");
-                return GDK_FAIL;
-        }
-        fputs("\n}\n", milStream);
-        fclose(milStream);
-        fclose(queryStream);
-
-        /* execute the MIL code in the compiled milFile */
-        if ( xquery_executeMIL(milFile) < 0 ) {
-                stream_printf(GDKerr,"xquery: Execution failed!\n");
-                return GDK_FAIL;
-        }
-#ifndef XQMILDEBUG
-        /* when not debugging throw the temporary MIL file away */
-        if ( unlink(milFile) < 0 ) {
-                stream_printf(GDKerr,"Unable to unlink tmpFile \"%s\"\n",milFile);
-                return GDK_FAIL;
-        }
-#endif
-        return GDK_SUCCEED;
-}
-
-@c
 /* vim:set shiftwidth=4 expandtab: */

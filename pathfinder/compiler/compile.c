@@ -141,12 +141,19 @@ unsigned int last_stage = 0;
 void segfault_handler (int sig);
 
 /**
- * Linking test funn, remove if succeed
+ * helper function: read input file into a buffer 
  */
-int
-pf_ping() {
-        return 42;
+static char* 
+pf_read(FILE *pfin) {
+    size_t off = 0, len = 65536;
+    char* buf = (char*) PFmalloc(len);
+    while(fread(buf+off, len-off, 1, pfin) == len-off) {
+	off = len; len *= 2;
+	buf = (char*) PFrealloc(len, buf);
+    }
+    return buf;
 }
+   
 
 /**
  * Compiler driver of the Pathfinder compiler,
@@ -188,9 +195,9 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
      */
     tm = PFtimer_start ();
   
-    /* Invoke parser on stdin (or whatever stdin has been dup'ed to) 
+    /* Invoke parser on stdin (or whatever stdin has been dup'ed to)
      */
-    PFparse (pfin, &proot);
+    PFparse (pf_read(pfin), &proot);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -305,7 +312,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     if (status->summer_branch) {
         tm = PFtimer_start ();
-        PFprintMILtemp (pfout, croot, status);
+        fputs(PFprintMILtemp (croot, status), pfout);
         tm = PFtimer_stop (tm);
 
         if (status->timing)
@@ -483,32 +490,52 @@ subexelim:
 
 /**
  * Compiler driver of the Pathfinder compiler interface for usage
- * by the Monet Runtime environment. In and out are the same. But the 
- * mode is different and is used to indicate "sax" or "xml" output.
+ * by the Monet Runtime environment. 
+ * 
+ * mode is used to indicate "sax", "xml" or "none" output.
+ *
+ * MonetDB actually would like pathfinder to 
+ * - be thread-safe (now there are global vars all over the place) 
+ * - use string input/output rather than files.
+ *
+ * This interface fixes the second issue. For the moment, the MonetDB
+ * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
-int
-pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
+char*
+pf_compile_MonetDB (char *xquery, char* mode)
 {
-        PFstate_t* status = &PFstate; /* incomplete */
+	PFpnode_t  *proot  = NULL;
+	PFcnode_t  *croot  = NULL;
 
         PFstate.invocation = invoke_monetdb;
+        PFstate.summer_branch = true;
+        PFstate.genType = PF_GEN_XML;
 
-        status->summer_branch = true;
-        if ( strcmp(mode,"xml") == 0 ) {
-                status->genType = PF_GEN_XML;
-        } else if ( strcmp(mode,"dm") == 0 ) {
-                status->genType = PF_GEN_DM;
+        if ( strcmp(mode,"dm") == 0 ) {
+                PFstate.genType = PF_GEN_DM;
         } else if ( strcmp(mode,"sax") == 0 ) {
-                status->genType = PF_GEN_SAX;
+                PFstate.genType = PF_GEN_SAX;
+        } else if ( strcmp(mode,"none") == 0 ) {
+                PFstate.genType = PF_GEN_NONE;
         } else if ( strcmp(mode,"org") == 0 ) {
-                status->genType = PF_GEN_ORG;
-        } else {
-                /* incomplete */
+                PFstate.genType = PF_GEN_ORG;
+        } else if ( strcmp(mode,"xml") ) {
                 fprintf(stderr,"pf_compile_interface: unkown output mode \"%s\", using \"xml\".\n",mode);
-                status->genType = PF_GEN_XML;
         }
-        int res = pf_compile(pfin,pfout,status);
-        return res;
+	/* repeat pf_compile, which we can't reuse as we don't want to deal with files here */
+        PFparse (xquery, &proot);
+        proot = PFnormalize_abssyn (proot);
+        PFns_resolve (proot);
+        PFvarscope (proot);
+        PFfun_xquery_fo ();
+        PFfun_check (proot);
+        PFty_predefined ();
+        PFschema_import (proot);
+        croot = PFfs (proot);
+        croot = PFsimplify (croot);
+        croot = PFty_check (croot);
+    	croot = PFcoreopt (croot);
+        return PFprintMILtemp (croot, &PFstate);
 }
 
 #if HAVE_SIGNAL_H

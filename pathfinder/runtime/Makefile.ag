@@ -34,7 +34,7 @@ lib__pathfinder = {
 		prec_foll.mx \
 		levelsteps.mx \ 
 		shredder.mx \
-		xquery.mx
+		serialize.mx
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
 	LIBS = ../compiler/libcompiler1 \

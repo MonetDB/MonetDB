@@ -2214,7 +2214,7 @@ void pferror (const char *s)
                 s, pflineno);
 }
 
-extern FILE* pfin; /* standard input of scanner, defined by flex */
+char* pfinput; /* standard input of scanner, used by flex */
 YYLTYPE pflloc; /* why ? */
 
 /**
@@ -2222,9 +2222,9 @@ YYLTYPE pflloc; /* why ? */
  * been dup'ed to)
  */
 void
-PFparse (FILE* input, PFpnode_t **r)
+PFparse (char* input, PFpnode_t **r)
 {
-    pfin = input;
+    pfinput = input;
 #if YYDEBUG
     pfdebug = 1;
 #endif

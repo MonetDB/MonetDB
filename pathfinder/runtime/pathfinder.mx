@@ -149,12 +149,15 @@ tuple will be in the result for this group."
  "C implementation to convert file (or stdin) to a string"
 .COMMAND shred2bats(str docname,str opt) : BAT[oid, bat] = CMDshred2bats;
  "C implementation of the document shredder"
-.COMMAND xquery(str, str) : void = xquery_xquery;
- "Main XQUERY function for Pathfinder"
+.COMMAND xquery(str, str) : void = CMDxquery;
+ "xquery-to-mil compilation. usage: xquery(\"xml\", str)"
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
 .COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
  "C interface to Workset result print routine"
+
+.PRELUDE = pathfinder_prelude;
+.EPILOGUE = pathfinder_epilogue;
 
 .END pathfinder;
 
@@ -2114,7 +2117,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #endif
 
 @c
+#include <monet.h>
 #include "pathfinder.h"
+#include "compile_interface.h"
 
 /*
  * Worker for the ebv() function.
@@ -2231,3 +2236,28 @@ CMDebv (BAT **result, BAT *b)
     return (*result = BATebv (b)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
+MT_Lock pathfinder_lock;
+
+bat* pathfinder_prelude() {
+    pathfinder_lock = MT_create_lock();
+    return NULL;
+}
+
+void pathfinder_epilogue() {
+    MT_destroy_lock(pathfinder_lock);
+}
+
+/*
+ * translate xquery to MIL and execute
+ */
+int
+CMDxquery(char *mode, char* xquery) {
+    char *milbuf;
+    MT_set_lock(pathfinder_lock, "CMDxquery");
+    milbuf = pf_compile_MonetDB(xquery, mode);
+    MT_unset_lock(pathfinder_lock, "CMDxquery");
+    if (milbuf == NULL) {
+         return GDK_FAIL;
+    }
+    return (monet_exec(milbuf) >= 0)?GDK_SUCCEED:GDK_FAIL;
+}

@@ -42,7 +42,7 @@
  * Parse an XQuery coming in on stdin (or whatever stdin might have
  * been dup'ed to)
  */
-void PFparse (FILE* pfin, PFpnode_t **);
+void PFparse (char* pfin, PFpnode_t **);
 
 #endif   /* PARSER_H */
 
