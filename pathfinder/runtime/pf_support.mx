@@ -208,10 +208,10 @@ PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 @:fake_fetch(int)@
 @:fake_fetch(oid)@
 
-PROC fake_leftfetchjoin (bat[any::1,any::2] l, bat[any::2,any::3] r) : bat[any::1,any::3]
+PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 {
 	if (is_fake_project(r)) {
-		return project(l,fetch(r,0));
+		return r;
 	} else {
 		return leftfetchjoin(l,r);
 	}
