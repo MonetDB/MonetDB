@@ -832,10 +832,23 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						cleanup_stmts(inserts, len);
 						return NULL;
 					}
-					if (!inserts[c->colnr])
+					if (!inserts[c->colnr]) {
 						inserts[c->colnr] = stmt_append(stmt_cbat(c, stmt_dup(tv->s), cs_size(&c->t->keys) ? UPD : INS, st_bat), ins);
-					else
-						inserts[c->colnr] = stmt_append(inserts[c->colnr], ins);
+					} else {
+						stmt *t = NULL;
+						if (inserts[c->colnr]->op2.stval->type != st_temp) {
+							t = stmt_temp(sql_dup_subtype(tail_type(ins)));
+							t = stmt_append(t,stmt_dup(inserts[c->colnr]->op2.stval));
+							t = stmt_append( stmt_dup(inserts[c->colnr]->op1.stval), t);
+							stmt_destroy(inserts[c->colnr]);
+							inserts[c->colnr] = t;
+							
+						}
+						/* append to temp */
+					
+						t = stmt_append(inserts[c->colnr]->op2.stval, ins);
+						inserts[c->colnr]->op2.stval = t;
+					}
 					inscol = c->colnr;
 				}
 
