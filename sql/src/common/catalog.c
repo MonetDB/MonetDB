@@ -6,6 +6,8 @@
 
 #define OIDRANGE 100
 
+static int cat_debug = 0;
+
 static void key_destroy(key *k)
 {
 	if (k->columns)
@@ -46,6 +48,8 @@ schema *cat_create_schema(catalog * cat, long id, char *name, char *auth)
 	s->name = _strdup(name);
 	s->auth = _strdup(auth);
 	s->tables = list_create((fdestroy)&table_destroy);
+	if (cat_debug)
+		printf("cat_create_schema, %ld %s %s\n", id, name, auth);
 	return s;
 }
 
@@ -65,6 +69,8 @@ table *cat_create_table(catalog * cat, long id, schema * s, char *name,
 		t->sql = _strdup(sql);
 
 	list_append(s->tables, t);
+	if (cat_debug)
+		printf("cat_create_table, %ld %s %d %s\n", id, name, temp, sql);
 	return t;
 }
 
@@ -174,6 +180,9 @@ column *cat_create_column(catalog * cat, long id, table * t, char *colname,
 	c->colnr = list_length(t->columns);
 	c->s = NULL;
 	list_append(t->columns, c );
+	if (cat_debug)
+		printf("cat_create_column, %ld %s %s %s %d\n", 
+				id, colname, sqltype, def, null_check);
 	return c;
 }
 

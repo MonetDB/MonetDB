@@ -3474,6 +3474,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 			return NULL;
 		list_append(l, inserts[i]);
 	}
+	_DELETE(inserts);
 	return stmt_list(l);
 }
 
