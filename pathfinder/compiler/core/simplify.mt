@@ -165,13 +165,13 @@ NonAtom:         ComparExpr;
 NonAtom:         FunctionAppl;
 NonAtom:         BuiltIns;
 
-BindingExpr:     for_ (var_, nil, Atom, CoreExpr)
+BindingExpr:     for_ (var_, nil, LiteralValue, CoreExpr)
     =
     {
         return PFcore_let($1$, $3$, $4$);
     }
     ;
-BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr)
+BindingExpr:     for_ (var_, OptVar, LiteralValue, CoreExpr)
     =
     {
         return PFcore_let($1$, 
@@ -181,6 +181,8 @@ BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr)
                                      $4$));
     }
     ;
+BindingExpr:     for_ (var_, OptVar, Atom, CoreExpr);
+
 BindingExpr:     let (var_, Atom, CoreExpr)
     { PHASE (unfold_atoms); }  
     =
