@@ -285,6 +285,7 @@ Get the new information for the server socket and start listening.
                                 /* printf("mapi:use blocked mode\n");*/
                                 fflush(stdout);
                                 *s=0;
+				fdin->destroy(fdin); /* don't close */
                                 fdin= block_stream(socket_rstream(msgsock,"Mserver mapi read"));
                                 fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
                         }else
@@ -311,8 +312,8 @@ Get the new information for the server socket and start listening.
 
 				fdout->close(fdout);
 				fdout->destroy(fdout);
-				fdout->close(fdin);
-				fdout->destroy(fdin);
+				fdin->close(fdin);
+				fdin->destroy(fdin);
 				s_close(msgsock);
 				continue;
 			}
