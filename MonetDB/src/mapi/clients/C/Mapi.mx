@@ -147,6 +147,8 @@ mapi_bind_numeric()	& Bind numeric C-variable to field\\
 mapi_cache_limit()	& Set the tuple cache limit\\
 mapi_cache_shuffle()	& Set shuffle fraction for cache refreshment\\
 mapi_cache_freeup()	& Forcefully shuffle fraction for cache refreshment\\
+mapi_clear_bindings()	& Clear all field bindings\\
+mapi_clear_params()	& Clear all parameter bindings\\
 mapi_connect()	&	Connect to a Mserver \\
 mapi_connect_ssl()	& Connect to a Mserver using SSL [TODO]\\
 mapi_destroy()	&	Free resources\\
@@ -295,8 +297,11 @@ is returned.
 Read the answer to a query and pass the results verbatim
 to a stream. The result is not analyzed, nor cached.
 
-\item[MapiMsg mapi_seek_row(Mapi mid, int rownr)]:
+\item[MapiMsg mapi_seek_row(Mapi mid, int rownr, int whence)]:
 Reset the row pointer to the requested row number.
+If whence is MAPI_SEEK_SET (0), rownr is the absolute row number (0 being the first row);
+if whence is MAPI_SEEK_CUR (1), rownr is relative to the current row;
+if whence is MAPI_SEEK_END (2), rownr is relative to the last row.
 Comments lines are ignored.
 
 \item[MapiMsg mapi_fetch_reset(Mapi mid)]:
@@ -345,6 +350,9 @@ strings a pointer is set into the cache.
 Bind to a numeric variable, internally represented by MAPI_INT
 Describe the location of a numeric parameter in a query template.
 
+\item[MapiMsg mapi_clear_bindings(Mapi mid)]:
+Clear all field bindings.
+
 \item[MapiMsg mapi_param(Mapi mid, int fldnr, char **val)]:
 Bind a string variable with the n-th placeholder in the query
 template.
@@ -360,6 +368,9 @@ Bind to a numeric variable, internally represented by MAPI_INT.
 Bind to a string variable, internally represented by MAPI_VARCHAR.  The 
 sizeptr parameter points to the length of the string pointed to by val.
 If sizeptr == NULL or *sizeptr == -1, the string is NULL-terminated.
+
+\item[MapiMsg mapi_clear_params(Mapi mid)]:
+Clear all parameter bindings.
 
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
 A limited number of tuples are pre-fetched after each execute().
@@ -530,6 +541,10 @@ MERROR  & Mapi internal error.\\
 
 #define PLACEHOLDER	'?'
 
+#define MAPI_SEEK_SET	0
+#define MAPI_SEEK_CUR	1
+#define MAPI_SEEK_END	2
+
 typedef int MapiMsg;
 
 #define MOK		0
@@ -599,6 +614,7 @@ typedef struct {
 	char **rows;		/* string representation of rows received */
 	int tuplecount;		/* number of tuples in the cache */
 	int *tupleindex;	/* index of tuple rows */
+	int *tuplerev;		/* reverse map of tupleindex */
 	char ***anchors;	/* corresponding field pointers */
 } MapiRowBuf;
 
@@ -721,11 +737,13 @@ mapi_export MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) ;
 mapi_export MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) ;
 mapi_export MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,
 	int precision, void *ptr) ;
+mapi_export MapiMsg mapi_clear_bindings(Mapi mid);
 mapi_export MapiMsg mapi_param(Mapi mid, int fnr, char **ptr);
 mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr);
 mapi_export MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,
 	int precision, void *ptr);
 mapi_export MapiMsg mapi_param_string(Mapi mid, int fnr, int sqltype, char *ptr, int *sizeptr);
+mapi_export MapiMsg mapi_clear_params(Mapi mid);
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username,
 	const char *password, const char *lang);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username,
@@ -755,7 +773,7 @@ mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
 mapi_export MapiMsg mapi_cache_shuffle(Mapi mid,int percentage);
 mapi_export MapiMsg mapi_cache_freeup(Mapi mid,int percentage);
 mapi_export MapiMsg mapi_quick_response(Mapi mid, FILE *fd);
-mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne);
+mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne, int whence);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 
@@ -1004,6 +1022,7 @@ mapi_new(void)
 	m->cache.rows = NULL;
 	m->cache.tuplecount = 0;
 	m->cache.tupleindex = NULL;
+	m->cache.tuplerev = NULL;
 	m->cache.anchors = NULL;
 	m->cache.fldcnt = NULL;
 	m->tracelog = NULL;
@@ -1041,6 +1060,9 @@ mapi_destroy(Mapi mid)
 		if (mid->cache.tupleindex)
 			free(mid->cache.tupleindex);
 		mid->cache.tupleindex = NULL;
+		if (mid->cache.tuplerev)
+			free(mid->cache.tuplerev);
+		mid->cache.tuplerev = NULL;
 	}
 	if (mid->cache.anchors) {
 		int i;
@@ -1273,6 +1295,9 @@ mapi_disconnect(Mapi mid)
 	if (mid->cache.tupleindex)
 		free(mid->cache.tupleindex);
 	mid->cache.tupleindex = NULL;
+	if (mid->cache.tuplerev)
+		free(mid->cache.tuplerev);
+	mid->cache.tuplerev = NULL;
 	mid->cache.tuplecount = 0;
 	/* only close streams if we're not in a linked list of Mapi's
 	   sharing the streams */
@@ -1602,6 +1627,13 @@ mapi_bind_numeric(Mapi mid, int fnr, int scale, int prec, void *ptr)
 }
 
 MapiMsg
+mapi_clear_bindings(Mapi mid)
+{
+	memset(mid->fields, 0, mid->maxfields * sizeof(MapiField));
+	return MOK;
+}
+
+MapiMsg
 mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr)
 {
 	testBinding(mid->error, "mapi_param_type");
@@ -1647,6 +1679,13 @@ mapi_param_numeric(Mapi mid, int fnr, int scale, int prec, void *ptr)
 	return MOK;
 }
 
+MapiMsg
+mapi_clear_params(Mapi mid)
+{
+	memset(mid->bindings, 0, mid->maxbindings * sizeof(MapiBinding));
+	return MOK;
+}
+
 @-
 The routine mapi_check ensures that no 'false' newlines are sent to the server,
 because this may lead to a synchronization error easily.
@@ -1674,7 +1713,7 @@ mapi_check_query(Mapi mid)
 			while (*c && *c != '\n')
 				c++;
 		}
-		if (*c == '\n') {
+		if (*c == '\n' && !mid->blocked) {
 			mapi_setError(mid,
 				      "Newline in query string not allowed",
 				      "mapi_check_query");
@@ -1757,6 +1796,11 @@ prepareQuery(Mapi mid, const char *cmd)
 	if (cmd) {
 		size_t len = strlen(cmd);
 
+		/* first get rid of previous bindings */
+		memset(mid->fields, 0, mid->maxfields * sizeof(MapiField));
+		memset(mid->bindings, 0,
+		       mid->maxbindings * sizeof(MapiBinding));
+
 		if (mid->template) {
 			free(mid->template);
 			mid->template = 0;
@@ -1789,8 +1833,6 @@ mapi_prepare_array_internal(Mapi mid, const char *cmd, char **val)
 	int i, ret;
 
 	ret = prepareQuery(mid, cmd);
-	/* first get rid of previous bindings */
-	memset(mid->bindings, 0, mid->maxbindings * sizeof(MapiBinding));
 	for (i = 0; val[i]; i++) {
 		if (i >= mid->maxbindings)
 			mapi_extend_bindings(mid, i + 1);
@@ -2161,6 +2203,9 @@ mapi_cache_reset(Mapi mid)
 	if (mid->cache.tupleindex)
 		for (i = 0; i < mid->cache.writer; i++)
 			mid->cache.tupleindex[i] = -1;
+	if (mid->cache.tuplerev)
+		for (i = 0; i < mid->cache.writer; i++)
+			mid->cache.tuplerev[i] = -1;
 	mid->cache.tuplecount = 0;
 	mid->cache.reader = -1;
 	mid->cache.tuples = 0;
@@ -2202,29 +2247,44 @@ mapi_fetch_reset(Mapi mid)
 }
 
 MapiMsg
-mapi_seek_row(Mapi mid, int rownr)
+mapi_seek_row(Mapi mid, int rownr, int whence)
 {
 	int i;
 
 	mapi_check(mid, "mapi_seek_row");
-	mid->cache.reader = -1;
-	if (rownr < 0)
+	switch (whence) {
+	case MAPI_SEEK_SET:
+		break;
+	case MAPI_SEEK_CUR:
+		rownr += mid->cache.tuplerev[mid->cache.reader + 1];
+		break;
+	case MAPI_SEEK_END:
+		if (mid->cache.writer > 0)
+			rownr += mid->cache.tuplerev[mid->cache.writer - 1] + 1;
+		break;
+	default:
+		return mapi_setError(mid, "Illegal whence value",
+				     "mapi_seek_row");
+	}
+	if (rownr < 0 || rownr > mid->cache.tuplecount)
 		return mapi_setError(mid, "Illegal row number",
 				     "mapi_seek_row");
-	i = mid->cache.tupleindex[rownr];
-	if (i >= 0) {
-		mid->cache.reader = i;
-		return MOK;
-	}
-	return mapi_setError(mid, "Row not found", "mapi_seek_row");
+	if (rownr == mid->cache.tuplecount)
+		i = mid->cache.writer;
+	else
+		i = mid->cache.tupleindex[rownr];
+	if (i < 0)
+		return mapi_setError(mid, "Row not found", "mapi_seek_row");
+	mid->cache.reader = i - 1;
+	return MOK;
 }
+
+#define REALLOC(p,s)	((p) ? realloc((p),(s)) : malloc((s)))
 
 static void
 mapi_extend_cache(Mapi mid)
 {
-	int incr, newsize, oldsize = mid->cache.writer, i;
-	char **newrows, ***anchors;
-	int *fldcnt, *newtupleindex;
+	int incr, newsize, oldsize = mid->cache.limit, i;
 
 	/* extend row cache */
 	if (oldsize == mid->cache.rowlimit) {
@@ -2232,48 +2292,39 @@ mapi_extend_cache(Mapi mid)
 			      "mapi_extend_cache");
 	}
 	if (oldsize == 0)
-		oldsize = 10000;
-	incr = oldsize * 2;
+		incr = 10000;
+	else
+		incr = oldsize * 2;
 	if (incr > 200000)
 		incr = 20000;
 	newsize = oldsize + incr;
 	if (newsize > mid->cache.rowlimit && mid->cache.rowlimit > 0)
 		newsize = mid->cache.rowlimit;
 
-	newrows = malloc(newsize * sizeof(char **));
-	assert(newrows);
-	memset(newrows, 0, newsize * sizeof(char **));
-	newtupleindex = malloc(newsize * sizeof(int));
-	assert(newtupleindex);
-	for (i = 0; i < newsize; i++)
-		newtupleindex[i] = -1;
-	if (mid->cache.rows) {
-		memcpy(newrows, mid->cache.rows, oldsize * sizeof(char **));
-		free(mid->cache.rows);
-		memcpy(newtupleindex, mid->cache.tupleindex,
-		       oldsize * sizeof(int));
-		free(mid->cache.tupleindex);
-	}
-	mid->cache.rows = newrows;
-	mid->cache.tupleindex = newtupleindex;
+	mid->cache.rows = REALLOC(mid->cache.rows, newsize * sizeof(char **));
+	assert(mid->cache.rows);
+	memset(mid->cache.rows + oldsize, 0, incr * sizeof(char **));
 
-	anchors = malloc(newsize * sizeof(char **));
-	assert(anchors);
-	memset(anchors, 0, newsize * sizeof(char **));
-	if (mid->cache.anchors) {
-		memcpy(anchors, mid->cache.anchors, oldsize * sizeof(char *));
-		if (mid->cache.anchors)
-			free(mid->cache.anchors);
-	}
-	mid->cache.anchors = anchors;
-	fldcnt = malloc(newsize * sizeof(int));
-	assert(fldcnt);
-	memset(fldcnt, 0, newsize * sizeof(int));
-	if (mid->cache.fldcnt) {
-		memcpy(fldcnt, mid->cache.fldcnt, oldsize * sizeof(int));
-		free(mid->cache.fldcnt);
-	}
-	mid->cache.fldcnt = fldcnt;
+	mid->cache.tupleindex = REALLOC(mid->cache.tupleindex,
+					newsize * sizeof(int));
+	assert(mid->cache.tupleindex);
+	for (i = oldsize; i < newsize; i++)
+		mid->cache.tupleindex[i] = -1;
+
+	mid->cache.tuplerev = REALLOC(mid->cache.tuplerev,
+				      newsize * sizeof(int));
+	assert(mid->cache.tuplerev);
+	for (i = oldsize; i < newsize; i++)
+		mid->cache.tuplerev[i] = -1;
+
+	mid->cache.anchors = REALLOC(mid->cache.anchors,
+				     newsize * sizeof(char **));
+	assert(mid->cache.anchors);
+	memset(mid->cache.anchors + oldsize, 0, incr * sizeof(char **));
+
+	mid->cache.fldcnt = REALLOC(mid->cache.fldcnt, newsize * sizeof(int));
+	assert(mid->cache.fldcnt);
+	memset(mid->cache.fldcnt + oldsize, 0, incr * sizeof(int));
 
 	mid->cache.limit = newsize;
 }
@@ -2325,6 +2376,7 @@ mapi_clear_freeup(Mapi mid, int percentage)
 			continue;
 		if (mid->cache.rows[i][0] == '!')
 			continue;
+		mid->cache.tuplerev[i] = mid->cache.tuplecount;
 		mid->cache.tupleindex[mid->cache.tuplecount++] = i;
 	}
 
@@ -2349,8 +2401,10 @@ mapi_clear_cache(Mapi mid)
 			free(mid->cache.rows[i]);
 		mid->cache.rows[i] = 0;
 	}
-	for (i = 0; i < mid->cache.writer; i++)
+	for (i = 0; i < mid->cache.writer; i++) {
 		mid->cache.tupleindex[i] = -1;
+		mid->cache.tuplerev[i] = -1;
+	}
 	mid->cache.reader = -1;
 	mid->cache.writer = 0;
 	memset(mid->cache.fldcnt, 0, mid->cache.limit * sizeof(int));
@@ -2474,11 +2528,13 @@ mapi_fetch_line_internal(Mapi mid)
 
 
 	mid->cache.rows[mid->cache.writer] = reply;
-	mid->cache.writer++;
+	mid->cache.tuplerev[mid->cache.writer] = mid->cache.tuplecount;
+	mid->cache.tuplerev[mid->cache.writer + 1] = mid->cache.tuplecount + 1;
 	if (*reply == '[') {
 		mid->cache.tuples++;
-		mid->cache.tupleindex[mid->cache.tuplecount++] = mid->cache.reader + 1;
+		mid->cache.tupleindex[mid->cache.tuplecount++] = mid->cache.writer;
 	}
+	mid->cache.writer++;
 	if (mid->trace)
 		printf("mapi_fetch_line:%s\n", reply);
 	return mid->cache.rows[++mid->cache.reader];
@@ -2684,12 +2740,9 @@ mapi_get_row(Mapi mid)
 	char *reply = 0;
 
 	while (mid->active || mid->cache.reader + 1 < mid->cache.writer) {
-		if (mid->active) {
-			reply = mapi_fetch_line_internal(mid);
-			if (reply == 0)
-				return MERROR;
-		} else
-			reply = mid->cache.rows[++mid->cache.reader];
+		reply = mapi_fetch_line_internal(mid);
+		if (reply == 0)
+			return MERROR;
 
 		switch (reply[0]) {
 		case '#':

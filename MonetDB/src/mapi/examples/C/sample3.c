@@ -40,7 +40,7 @@ int main(int argc, char **argv){
 
 	/* Interpret the cache as a two-dimensional array */
 	for(i=0;i<rows;i++){
-		if( mapi_seek_row(dbh,i)) break;
+		if( mapi_seek_row(dbh,i,MAPI_SEEK_SET)) break;
 		for(j=0;j<mapi_get_field_count(dbh);j++){
 			printf("%s=%s ", 
 				mapi_get_name(dbh,j),
