@@ -1,6 +1,6 @@
 @echo off
 
-NAME=%1
+set NAME=%1
 
 call Mlog.bat   "%MSERVER% --dbname=%TSTDB% %NAME%.mil"
 call             %MSERVER% --dbname=%TSTDB% %NAME%.mil
