@@ -83,10 +83,10 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 #define hash_var(H,V)         hash_any(H,V)
 #define hash_any(H,V)         (ATOMhash((H).type, (V)) & (H).mask)
 #define hash_chr(H,V)         ((hash_t) (*(unsigned char*) (V)) & (H).mask)
-#define hash_sht(H,V)         ((hash_t) mix_sht(((unsigned short*) (V))[0]) & (H).mask)
-#define hash_int(H,V)         ((hash_t) mix_int(((unsigned int*) (V))[0]) & (H).mask)
+#define hash_sht(H,V)         ((hash_t) mix_sht(*((unsigned short*) (V))) & (H).mask)
+#define hash_int(H,V)         ((hash_t) mix_int(*((unsigned int*) (V))) & (H).mask)
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)         ((hash_t) mix_int(((unsigned int*) (V))[0] ^ ((unsigned int*) (V))[1]) & (H).mask)
+#define hash_lng(H,V)         ((hash_t) mix_int((unsigned int) (*(lng *)(V) ^ (*(lng *)(V) >> 32))) & (H).mask)
 
 
 @= hashfnd
