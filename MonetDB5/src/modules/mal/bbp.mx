@@ -583,8 +583,8 @@ str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		*cursor = BUNindex(b,BUNfirst(b));
 
 /*
-stream_printf(GDKout,"head type %s\n", malTypeName(getArgType(mb,pci,2)));
-stream_printf(GDKout,"tail type %s\n", malTypeName(getArgType(mb,pci,3)));
+stream_printf(GDKout,"head type %s\n", getTypeName(getArgType(mb,pci,2)));
+stream_printf(GDKout,"tail type %s\n", getTypeName(getArgType(mb,pci,3)));
 */
 	/* get head = ... tail = ... */
 	p = BUNptr(b,*cursor);

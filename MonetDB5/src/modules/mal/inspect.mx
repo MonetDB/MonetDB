@@ -333,7 +333,7 @@ str INSPECTsymbolType(int *ret, str *mod, str *fcn)
 	s= findSymbol(*mod,*fcn);
 	while(s!= NULL){
 		if( idcmp(s->name,*fcn)==0) {
-			str t=malTypeName(getDestType(s->def,getSignature(s)));
+			str t=getTypeName(getDestType(s->def,getSignature(s)));
 			BUNins(b,s->name,t);
 			GDKfree(t);
 		}
@@ -381,7 +381,7 @@ str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 }
 
 str INSPECTtypename(str *ret, int *tpe){
-        *ret = malTypeName(*tpe);
+        *ret = getTypeName(*tpe);
         return MAL_SUCCEED;
 }
 str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

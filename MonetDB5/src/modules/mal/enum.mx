@@ -307,7 +307,7 @@ str ENUMcreate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	retval = (int*) getArgReference(stk,pci,0);
 	tpe= getArgType(mb,pci,1);
 	bid= *(int*) getArgReference(stk,pci,2);
-	name= malTypeName(tpe);
+	name= getTypeName(tpe);
 	@:getBATdescriptor(retval,&bid,b,create)@
 	h = BAThistogram(b);
 	nil = ATOMnilptr(b->htype);
@@ -331,7 +331,7 @@ str ENUMload(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 
 	tpe= getArgType(mb,pci,1);
-	name= malTypeName(tpe);
+	name= getTypeName(tpe);
 	retval= (int*) getArgReference(stk,pci,0);
 	*retval= BBPindex(name);
 	if( *retval ==0)

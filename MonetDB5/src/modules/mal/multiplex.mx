@@ -91,7 +91,7 @@ comment "Generic processor for mutiplexed instructions.";
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-#define DEBUG_MULTIPLEX 
+/*#define DEBUG_MULTIPLEX  */
 /*#define TRACE_MULTIPLEX   */
 
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
@@ -158,10 +158,11 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	str fcnname;
 	char name[1024];
 
-	if( !isVarConstant(mb,pci->argv[1]) || getArgType(mb,pci,1)!=TYPE_str){
 #ifdef DEBUG_MULTIPLEX
+	printf("multiplexType on the instruction:\n");
 	if( multiplexDebug) printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 #endif
+	if( !isConstant(mb,pci->argv[1]) || getArgType(mb,pci,1)!=TYPE_str){
 		GDKerror("multiplexType:string constant expected in %s[%d]\n",
 			getFcnName(mb), getPC(mb,pci));
 		return -1;
@@ -206,10 +207,16 @@ Constants passed into the multiplex operator are a special case.
 		return -1;
 	} 
 
+#ifdef DEBUG_MULTIPLEX
+	if(multiplexDebug ){
+		printf("Before typeChecker instruction type\n");
+		printInstruction(GDKout,m,p,LIST_MAL_ALL);
+	}
+#endif
 	typeChecker(getClient()->nspace,m,p);
 #ifdef DEBUG_MULTIPLEX
-	if(multiplexDebug && p->typechk== TYPE_UNKNOWN){
-		printf("Can not resolve instruction type\n");
+	if(multiplexDebug ){
+		printf("After typeChecker instruction type\n");
 		printInstruction(GDKout,m,p,LIST_MAL_ALL);
 	}
 #endif
@@ -228,6 +235,8 @@ Constants passed into the multiplex operator are a special case.
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug && i<0){
 		printf("Type conformance on %d failed\n",tpe);
+		printf("type tt =%d bat[%d,%d]\n",tt, getHeadType(tpe),getTailType(tpe));
+		printInstruction(GDKout,m,p,LIST_MAL_ALL);
 		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
 	}
 #endif
@@ -237,7 +246,14 @@ Constants passed into the multiplex operator are a special case.
 	fcnname= moduleName(pci);
 	setModuleId(pci, NULL);
 	/* initialize the instruction further?*/
-	findFunctionType(scope,mb,pci);
+#ifdef DEBUG_MULTIPLEX
+	if(multiplexDebug){
+		printf("--> initialize instruction further\n");
+		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+	}
+#endif
+	/* findFunctionType(scope,mb,pci); Why ? pci has not been changed*/
+	pci->token= PATcall;
 	pci->fcn = (GDKfcn) CMDmultiplexScript;
 	setModuleId(pci, fcnname);
 	pci->typechk= p->typechk;
@@ -278,7 +294,7 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 
 	if( idcmp(functionName(pci),"tactics")) return -1;
 	/* look for constant first argument */
-	if( !isVarConstant(mb,pci->argv[pci->retc])) {
+	if( !isConstant(mb,pci->argv[pci->retc])) {
 		GDKfree(pci->fcnname);
 		setFunctionId(pci, GDKstrdup("script"));
 		return -1;
@@ -294,6 +310,12 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	olderr= mb->errors;
 	if( cntxt->errbuf) i= strlen(cntxt->errbuf); else i=0;
 	typeChecker(cntxt->nspace,mb,p);
+#ifdef DEBUG_MULTIPLEX
+	if(multiplexDebug ){
+		printf("Tactics typeChecker instruction type\n");
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	}
+#endif
 	if( cntxt->errbuf ) cntxt->errbuf[i] =0;
 	mb->errors= olderr;
 	if(p->typechk == TYPE_UNKNOWN) {
@@ -318,7 +340,7 @@ Check out type of the operands for use with batcalc
 	if( multiplexDebug){
 	printf("--> modified trial instruction\n");
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	printf("return code %s\n",malTypeName(getArgType(mb,pci,0)));
+	printf("return code %s\n",getTypeName(getArgType(mb,pci,0)));
 	}
 #endif
 	freeInstruction(p);
@@ -409,7 +431,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if(multiplexDebug){
 	printf("calling the multiplex script routine\n");
 	printf("multiplex against operator %s (%d):%s\n",
-		functionName(p),assignop, malTypeName(refType));
+		functionName(p),assignop, getTypeName(refType));
 	}
 #endif
 @-
@@ -448,8 +470,8 @@ find the actule arguments at the proper place of the callee.
 	q->argv[0]= resB = newVariable(m,GDKstrdup("resB"),refType);
 	setModuleId(q, GDKstrdup("bbp"));
 	setFunctionId(q, GDKstrdup("new"));
-	q->argv[1]= newVariable(m, malTypeName(getHeadType(refType)),TYPE_any);
-	q->argv[2]= newVariable(m, malTypeName(getTailType(refType)),TYPE_any);
+	q->argv[1]= newTmpVariable(m, getHeadType(refType));
+	q->argv[2]= newTmpVariable(m, getTailType(refType));
 	q->argc= 3;
 	pushInstruction(m,q);
 	
@@ -594,14 +616,8 @@ find the actule arguments at the proper place of the callee.
 	pushInstruction(m,q);
 
 #ifdef TRACE_MULTIPLEX
-	/* z:= catalog.symbolDefinition(); print(z); */
+	/* z:= inspect.symbolDefinition(); print(z); */
 	{ int zz;
-	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("catalog"));
-	setFunctionId(q, GDKstrdup("symbolDump"));
-	q->argv[0]= zz= newTmpVariable(m,newBatType(TYPE_void,TYPE_str));
-	q->argc=1;
-	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("io"));
 	setFunctionId(q, GDKstrdup("print"));
@@ -609,10 +625,10 @@ find the actule arguments at the proper place of the callee.
 	q->argv[1]= zz;
 	q->argc=2;
 	pushInstruction(m,q);
-	/* z:= catalog.stkFrame(); print(z) */
+	/* z:= inspect.stkFrame(); print(z) */
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q, GDKstrdup("catalog"));
-	setFunctionId(q, GDKstrdup("stkFrame"));
+	setModuleId(q, GDKstrdup("inspect"));
+	setFunctionId(q, GDKstrdup("getStackFrame"));
 	q->argv[0]= zz= newTmpVariable(m,newBatType(TYPE_str,TYPE_str));
 	q->argc=1;
 	pushInstruction(m,q);
