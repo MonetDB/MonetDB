@@ -1602,9 +1602,28 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= mapping_code
-		result_part_iter := tmp_res.leftfetchjoin(result_part_iter);
-		result_part_item := tmp_res.leftfetchjoin(result_part_item);
-		tmp_res := nil;
+	result_part_iter := tmp_res.leftfetchjoin(result_part_iter);
+	result_part_item := tmp_res.leftfetchjoin(result_part_item);
+	tmp_res := nil;
+@
+@= shrink_code
+ {
+	if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
+		var min_cand := min(cands);
+		var min_item := min(result_part_item);
+		if ( min_cand < min_item ) {
+			cands := cands.ord_select(min_item,oid(nil));
+		}
+	}
+	if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
+		var max_cand := max(cands);
+		var max_item := max(result_part_item);
+		if ( max_cand < max_item ) {
+			tmp_res := result_part_item.ord_uselect(oid(nil),max_cand).mark(0@0).reverse();
+			@:mapping_code@
+		}
+	}
+ }
 @
 @= no_pre
 	cands := ws.fetch(PRE_SIZE).fetch(theFrag).mark(nil).reverse();
@@ -1613,6 +1632,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= kind_pre
 	cands := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag);
 	cands := cands.chk_order();
+	@:shrink_code@
 @
 @= nsloc_pre
  {
@@ -1660,6 +1680,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		cands := _X.leftfetchjoin(X_pre);
 	}
 	cands := cands.chk_order();
+	@:shrink_code@
  }
 @
 @= loc_pre
@@ -1700,23 +1721,24 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		cands := _X.leftfetchjoin(X_pre);
 	}
 	cands := cands.chk_order();
+	@:shrink_code@
  }
 @
 
 # expanding the scj for the different tests
 @= loop_lifted_scj_wrap1
-@:loop_lifted_scj_step2(@1,,,,,@:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_kind_test,@:kind_args@,@:kind_params@,,@:params2@,@:kind_pre(kind)@)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,@:ns_args@,@:ns_params@,,@:params2@,@:ns_pre@)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,@:loc_args@,@:loc_params@,,@:params2@,@:loc_pre@)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@)@
+@:loop_lifted_scj_step2(@1,,,,,                                            @:params2@,@:no_pre@        )@
+@:loop_lifted_scj_step2(@1,_with_kind_test, @:kind_args@, @:kind_params@,, @:params2@,@:kind_pre(kind)@)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,   @:ns_args@,   @:ns_params@,,   @:params2@,@:ns_pre@        )@
+@:loop_lifted_scj_step2(@1,_with_loc_test,  @:loc_args@,  @:loc_params@,,  @:params2@,@:loc_pre@       )@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@     )@
 @
 @= loop_lifted_scj_step1
-@:loop_lifted_scj_step2(@1,,,,,,)@
-@:loop_lifted_scj_step2(@1,_with_kind_test,@:kind_args@,@:kind_params@,@:kind_post(kind)@,,)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,@:ns_args@,@:ns_params@,@:ns_post@,,)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,@:loc_args@,@:loc_params@,@:loc_post@,,)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:nsloc_args@,@:nsloc_params@,@:nsloc_post@,,)@
+@:loop_lifted_scj_step2(@1,,,,,,                                                              )@
+@:loop_lifted_scj_step2(@1,_with_kind_test, @:kind_args@, @:kind_params@, @:kind_post(kind)@,,)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,   @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,  @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
 @
 #==================================================================
 # actual definition of the scj proc
