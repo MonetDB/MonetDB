@@ -31,11 +31,18 @@ SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 	ODBCLOG("\"%.*s\"\n", nCursorLength, szCursor);
 #endif
 
+	if (stmt->State >= EXECUTED0) {
+		/* Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
+		return SQL_ERROR;
+	}
+
 	/* TODO: implement the requested behavior */
 	/* Note: when cursor names are to be implemented the SQL parser &
 	   executor must also be able to use it. */
 
-	/* for now always return error: Driver does not support this function */
+	/* for now always return error */
+	/* Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 
 	return SQL_ERROR;

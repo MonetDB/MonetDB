@@ -19,6 +19,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCStmt.h"
 
 SQLRETURN SQL_API
 SQLDisconnect(SQLHDBC hDbc)
@@ -34,22 +35,16 @@ SQLDisconnect(SQLHDBC hDbc)
 
 	clearDbcErrors(dbc);
 
-	/* check connection state, should not be connected */
+	/* check connection state, should be connected */
 	if (!dbc->Connected) {
-		/* 08003 = Connection does not exist */
+		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(dbc->Connected);
 
-#if 0
-	if (dbc->FirstStmt != NULL) {
-		/* there are still active statements for this connection */
-		/* 25000 = Invalid transaction state */
-		addDbcError(dbc, "25000", NULL, 0);
-		return SQL_ERROR;
-	}
-#endif
+	while (dbc->FirstStmt != NULL)
+		if (ODBCFreeStmt_(dbc->FirstStmt) == SQL_ERROR)
+			return SQL_ERROR;
 
 	/* client waves goodbye */
 	mapi_disconnect(dbc->mid);

@@ -36,13 +36,6 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
@@ -50,7 +43,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 
 	/* check if a valid (non null, not empty) table name is supplied */
 	if (szTableName == NULL) {
-		/* HY009 = Invalid use of null pointer */
+		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}

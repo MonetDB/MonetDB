@@ -48,12 +48,18 @@ SQLCopyDesc(SQLHDESC hSourceDescHandle, SQLHDESC hTargetDescHandle)
 
 	clearDescErrors(src);
 
-	if (isIRD(src) &&
-	    src->Stmt->State != PREPARED &&
-	    src->Stmt->State != EXECUTED) {
-		/* Associated statement is not prepared */
-		addDescError(src, "HY007", NULL, 0);
-		return SQL_ERROR;
+	if (isIRD(src)) {
+		if (src->Stmt->State == INITED) {
+			/* Associated statement is not prepared */
+			addDescError(src, "HY007", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (src->Stmt->State == PREPARED0 ||
+		    src->Stmt->State == EXECUTED0) {
+			/* Invalid cursor state */
+			addDescError(src, "24000", NULL, 0);
+			return SQL_ERROR;
+		}
 	}
 
 	/* copy sql_desc_count and allocate space for descr. records */

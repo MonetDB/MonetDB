@@ -32,7 +32,8 @@ SQLGetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor,
 
 	/* TODO: implement the requested behavior when SQLSetCursorName() is implemented */
 
-	/* for now always return error: No cursor name available */
+	/* for now always return error */
+	/* No cursor name available */
 	addStmtError(stmt, "HY015", NULL, 0);
 
 	return SQL_ERROR;

@@ -24,16 +24,19 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 {
 	ODBCDescRec *rec;
 
-/*
-	if (isIRD(desc) &&
-	    (desc->Stmt->State == PREPARED || desc->Stmt->State == EXECUTED) && no open cursor)
-		return SQL_NO_DATA;
-*/
-	if (isIRD(desc) && desc->Stmt->State != PREPARED &&
-	    desc->Stmt->State != EXECUTED) {
-		/* Associated statement is not prepared */
-		addDescError(desc, "HY007", NULL, 0);
-		return SQL_ERROR;
+	if (isIRD(desc)) {
+		if (desc->Stmt->State == INITED) {
+			/* Function sequence error */
+			addDescError(desc, "HY010", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (desc->Stmt->State == EXECUTED0) {
+			/* Invalid cursor state */
+			addDescError(desc, "24000", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (desc->Stmt->State == PREPARED0)
+			return SQL_NO_DATA;
 	}
 
 	/* header fields ignore RecordNumber */
@@ -66,6 +69,7 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 	}
 
 	if (RecordNumber <= 0) {
+		/* Invalid descriptor index */
 		addDescError(desc, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -226,7 +230,7 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		return SQL_SUCCESS;
 	}
 
-	/* HY091: Invalid descriptor field identifier */
+	/* Invalid descriptor field identifier */
 	addDescError(desc, "HY091", NULL, 0);
 	return SQL_ERROR;
 }

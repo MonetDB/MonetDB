@@ -41,13 +41,6 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 		nColumnNameLength, szColumnName);
 #endif
 
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* SQLColumnPrivileges returns a table with the following columns:
 	   VARCHAR	table_cat
 	   VARCHAR	table_schem

@@ -71,7 +71,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 			env->sql_attr_odbc_version = (SQLINTEGER) (ssize_t) Value;
 			break;
 		default:
-			/* HY024: Invalid attribute value */
+			/* Invalid attribute value */
 			addEnvError(env, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}

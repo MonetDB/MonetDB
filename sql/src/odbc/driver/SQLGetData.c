@@ -43,17 +43,20 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	clearStmtErrors(stmt);
 
 	/* check statement cursor state, query should be executed */
-	if (stmt->State != EXECUTED) {
-		/* caller should have called SQLExecute or
-		   SQLExecDirect first */
+	if (stmt->State < EXECUTED0) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (stmt->State <= EXECUTED1) {
+		/* Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
+		return SQL_ERROR;
+	}
 	if (stmt->rowSetSize == 0) {
-		/* caller should have called SQLFetch first */
-		/* Function sequence error */
-		addStmtError(stmt, "HY010", NULL, 0);
+		/* SQLFetch failed */
+		/* General error */
+		addStmtError(stmt, "HY000", NULL, 0);
 		return SQL_ERROR;
 	}
 	if (stmt->rowSetSize > 1 &&
@@ -63,7 +66,7 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		return SQL_ERROR;
 	}
 	if (nCol <= 0 || nCol > stmt->ImplRowDescr->sql_desc_count) {
-		/* 07009 = Invalid descriptor index */
+		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -76,7 +79,7 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		ODBCDesc *desc = stmt->ApplRowDescr;
 
 		if (nCol > desc->sql_desc_count) {
-			/* 07009: Invalid descriptor index */
+			/* Invalid descriptor index */
 			addStmtError(stmt, "07009", NULL, 0);
 			return SQL_ERROR;
 		}

@@ -48,7 +48,7 @@ SQLSetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLULEN vParam)
 
 	default:
 		/* other options (e.g. ODBC 3) are NOT valid */
-		/* set error: Invalid attribute/option */
+		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}

@@ -38,7 +38,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 				mapi_setAutocommit(dbc->mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 			break;
 		default:
-			/* HY024 Invalid attribute value */
+			/* Invalid attribute value */
 			addDbcError(dbc, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -59,13 +59,13 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 	case SQL_ATTR_TRANSLATE_LIB:
 	case SQL_ATTR_TRANSLATE_OPTION:
 	case SQL_ATTR_TXN_ISOLATION:
-		/* set error: Optional feature not implemented */
+		/* Optional feature not implemented */
 		addDbcError(dbc, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	case SQL_ATTR_AUTO_IPD:	/* read-only attribute */
 	case SQL_ATTR_CONNECTION_DEAD:
 	default:
-		/* set error: Invalid attribute/option */
+		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}

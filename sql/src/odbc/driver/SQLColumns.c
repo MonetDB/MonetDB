@@ -37,13 +37,6 @@ SQLColumns_(ODBCStmt *stmt,
 	char *query = NULL;
 	char *query_end = NULL;
 
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);

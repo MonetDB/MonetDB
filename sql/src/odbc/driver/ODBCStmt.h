@@ -32,11 +32,16 @@
 #define MONETDB_MAX_BIND_COLS	8192
 
 
-typedef enum {
+enum StatementState {
+	/* order is important */
 	INITED,
-	PREPARED,
-	EXECUTED
-} StatementState;
+	PREPARED0,
+	PREPARED1,
+	EXECUTED0,
+	EXECUTED1,
+	FETCHED,
+	EXTENDEDFETCHED,
+};
 
 typedef struct tODBCDRIVERSTMT {
 	/* Stmt properties */
@@ -45,7 +50,7 @@ typedef struct tODBCDRIVERSTMT {
 	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 	ODBCDbc *Dbc;		/* Connection context */
 	struct tODBCDRIVERSTMT *next;	/* the linked list of stmt's in this Dbc */
-	StatementState State;	/* needed to detect invalid cursor state */
+	enum StatementState State; /* needed to detect invalid cursor state */
 	MapiHdl hdl;
 
 	unsigned int rowcount;	/* # affected rows */
@@ -138,9 +143,8 @@ ODBCError *getStmtError(ODBCStmt *stmt);
 /*
  * Destroys the ODBCStmt object including its own managed data.
  *
- * Precondition: stmt must be valid and inactive (No prepared query or
- * result sets active, internal State == INITED).
- * Postcondition: stmt is completely destroyed, stmt handle is become invalid.
+ * Precondition: stmt must be valid.
+ * Postcondition: stmt is completely destroyed, stmt handle is invalid.
  */
 void destroyODBCStmt(ODBCStmt *stmt);
 

@@ -44,7 +44,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		if (isAD(desc)) {
 			/* limit size to protect against bugs */
 			if ((SQLUINTEGER) (size_t) Value > 10000) {
-				/* driver does not support this feature */
+				/* Driver does not support this function */
 				addDescError(desc, "IM001", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -61,7 +61,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 	case SQL_DESC_BIND_TYPE:
 		if (isAD(desc)) {
 			if ((SQLUINTEGER) (size_t) Value != SQL_BIND_BY_COLUMN) {
-				/* driver does not support this feature */
+				/* Driver does not support this function */
 				addDescError(desc, "IM001", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -70,6 +70,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		return SQL_SUCCESS;
 	case SQL_DESC_COUNT:
 		if (isIRD(desc)) {
+			/* Invalid descriptor field identifier */
 			addDescError(desc, "HY091", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -82,6 +83,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 	}
 
 	if (RecordNumber <= 0) {
+		/* Invalid descriptor index */
 		addDescError(desc, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -90,7 +92,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 
 	if (isIRD(desc)) {
 		/* the Implementation Row Descriptor is read-only */
-		/* HY091: Invalid descriptor field identifier */
+		/* Invalid descriptor field identifier */
 		addDescError(desc, "HY091", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -168,6 +170,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 			}
 			tp++;
 		}
+		/* Inconsistent descriptor information */
 		addDescError(desc, "HY021", NULL, 0);
 		return SQL_ERROR;
 	case SQL_DESC_DATETIME_INTERVAL_PRECISION:
@@ -250,6 +253,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		return SQL_ERROR;
 	case SQL_DESC_UNNAMED:
 		if ((SQLSMALLINT) (ssize_t) Value == SQL_NAMED) {
+			/* Invalid descriptor field identifier */
 			addDescError(desc, "HY091", NULL, 0);
 			return SQL_ERROR;
 		} else if ((SQLSMALLINT) (ssize_t) Value == SQL_UNNAMED &&
@@ -265,7 +269,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		return SQL_ERROR;
 	}
 
-	/* HY091: Invalid descriptor field identifier */
+	/* Invalid descriptor field identifier */
 	addDescError(desc, "HY091", NULL, 0);
 	return SQL_ERROR;
 }

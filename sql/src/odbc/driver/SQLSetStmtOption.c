@@ -55,7 +55,7 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLULEN vParam)
 		return SQLSetStmtAttr_(stmt, fOption,
 				       (SQLPOINTER) (size_t) vParam, SQL_NTS);
 	default:
-		/* return error: Invalid option/attribute identifier */
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 
 		return SQL_ERROR;

@@ -39,13 +39,6 @@ SQLForeignKeys_(ODBCStmt *stmt,
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, addStmtError, stmt);

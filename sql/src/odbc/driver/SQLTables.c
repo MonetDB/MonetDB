@@ -34,13 +34,6 @@ SQLTables_(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);

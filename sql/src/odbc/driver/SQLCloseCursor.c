@@ -34,10 +34,10 @@ SQLCloseCursor(SQLHSTMT hStmt)
 
 	clearStmtErrors(stmt);
 
-	/* Check if the statement has a cursor (State = EXECUTED)
+	/* Check if the statement has a cursor (State = EXECUTED1)
 	   else this function should not have been called */
-	if (stmt->State != EXECUTED) {
-		/* 24000 = Invalid cursor state */
+	if (stmt->State < EXECUTED1) {
+		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}

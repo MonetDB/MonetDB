@@ -36,7 +36,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	     nInfoType == SQL_DATABASE_NAME ||
 	     nInfoType == SQL_USER_NAME) &&
 	    !dbc->Connected) {
-		/* 08003 = Connection does not exist */
+		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -265,8 +265,8 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 	case SQL_CURSOR_COMMIT_BEHAVIOR:
 	case SQL_CURSOR_ROLLBACK_BEHAVIOR:
-		nValue = SQL_CB_PRESERVE;
-		/* SQL_CB_CLOSE, SQL_CB_DELETE */
+		nValue = SQL_CB_DELETE;
+		/* SQL_CB_CLOSE, SQL_CB_PRESERVE */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_CURSOR_SENSITIVITY:
@@ -646,7 +646,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		break;
 
 	default:
-		/* HY096 = Information type out of range */
+		/* Invalid information type */
 		addDbcError(dbc, "HY096", NULL, 0);
 		return SQL_ERROR;
 	}

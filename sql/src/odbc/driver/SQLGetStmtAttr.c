@@ -101,6 +101,11 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 					SQL_DESC_BIND_TYPE,
 					Value, BufferLength, StringLength);
 	case SQL_ATTR_ROW_NUMBER:
+		if (stmt->State <= EXECUTED1) {
+			/* Invalid cursor state */
+			addStmtError(stmt, "24000", NULL, 0);
+			return SQL_ERROR;
+		}
 		* (SQLUINTEGER *) Value = stmt->currentRow;
 		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:
@@ -125,11 +130,11 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	case SQL_ATTR_QUERY_TIMEOUT:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
-		/* return error: Optional feature not supported */
+		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	default:
-		/* return error: Invalid option/attribute identifier */
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}

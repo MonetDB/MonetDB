@@ -36,16 +36,15 @@ SQLRowCount(SQLHSTMT hStmt, SQLINTEGER *pnRowCount)
 	clearStmtErrors(stmt);
 
 	/* check statement cursor state, query should be executed */
-	if (stmt->State != EXECUTED) {
-		/* caller should have called SQLExecute or SQLExecDirect first */
-		/* HY010 = Function sequence error */
+	if (stmt->State < EXECUTED0) {
+		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* check output parameter */
 	if (pnRowCount == NULL) {
-		/* HY009 = Invalid use of null pointer */
+		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}

@@ -31,24 +31,28 @@ SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	ODBCDescRec *rec = NULL;
 
 	/* check statement cursor state, query should be executed */
-	if (stmt->State != EXECUTED) {
-		/* HY010 = Function sequence error */
+	if (stmt->State == INITED) {
+		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
-	/* and it should return a result set */
-	if (stmt->ImplRowDescr->sql_desc_count == 0) {
-		/* 07005 = Prepared statement not a cursor specification */
+	if (stmt->State == PREPARED0) {
+		/* Prepared statement not a cursor-specification */
 		addStmtError(stmt, "07005", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
-		/* 07009 = Invalid descriptor index */
-		addStmtError(stmt, "07005", NULL, 0);
+	if (stmt->State == EXECUTED0) {
+		/* Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	/* OK */
+	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
+		/* Invalid descriptor index */
+		addStmtError(stmt, "07009", NULL, 0);
+		return SQL_ERROR;
+	}
+
 	rec = stmt->ImplRowDescr->descRec + nCol;
 
 	/* now copy the data */

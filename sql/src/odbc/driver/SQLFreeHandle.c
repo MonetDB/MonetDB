@@ -29,13 +29,14 @@ SQLRETURN
 ODBCFreeEnv_(ODBCEnv *env)
 {
 	if (env->sql_attr_odbc_version == 0) {
+		/* Function sequence error */
 		addEnvError(env, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* check if no associated connections are still active */
 	if (env->FirstDbc != NULL) {
-		/* There are allocated connections */
+		/* Function sequence error */
 		addEnvError(env, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -50,15 +51,16 @@ ODBCFreeDbc_(ODBCDbc *dbc)
 {
 	/* check if connection is not active */
 	if (dbc->Connected) {
-		/* should be disconnected first */
+		/* Function sequence error */
 		addDbcError(dbc, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* check if no associated statements are still active */
 	if (dbc->FirstStmt != NULL) {
-		/* There are allocated statements */
-		/* should be closed and freed first */
+		/* There are allocated statements should be closed and
+		   freed first */
+		/* Function sequence error */
 		addDbcError(dbc, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -72,12 +74,10 @@ SQLRETURN
 ODBCFreeStmt_(ODBCStmt *stmt)
 {
 	/* check if statement is not active */
-	if (stmt->State == EXECUTED) {
+	if (stmt->State >= EXECUTED0) {
 		/* should be closed first */
-		SQLRETURN res = SQLFreeStmt_(stmt, SQL_CLOSE);
-
-		if (res != SQL_SUCCESS)
-			return res;
+		if (SQLFreeStmt_(stmt, SQL_CLOSE) == SQL_ERROR)
+			return SQL_ERROR;
 	}
 
 	/* Ready to destroy the stmt handle */

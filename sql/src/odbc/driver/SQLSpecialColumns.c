@@ -49,21 +49,13 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 		nScope, nNullable);
 #endif
 
-	/* check statement cursor state, no query should be prepared
-	   or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* check for valid IdentifierType argument */
 	switch (nIdentifierType) {
 	case SQL_BEST_ROWID:
 	case SQL_ROWVER:
 		break;
 	default:
-		/* HY097 = Invalid identifier type */
+		/* Column type out of range */
 		addStmtError(stmt, "HY097", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -75,7 +67,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	case SQL_SCOPE_SESSION:
 		break;
 	default:
-		/* HY098 = Invalid scope type */
+		/* Scope type out of range */
 		addStmtError(stmt, "HY098", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -86,19 +78,19 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	case SQL_NULLABLE:
 		break;
 	default:
-		/* HY099 = Invalid nullable type */
+		/* Nullable type out of range */
 		addStmtError(stmt, "HY099", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* check if a valid (non null, not empty) table name is supplied */
 	if (szTableName == NULL) {
-		/* HY009 = Invalid use of null pointer */
+		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 	if (nTableNameLength == 0) {
-		/* HY090 = Invalid string */
+		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}

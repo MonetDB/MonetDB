@@ -18,7 +18,7 @@
  ********************************************************************/
 
 #include "ODBCGlobal.h"
-#include "ODBCStmt.h"		/* for isValidStmt() & addStmtError() */
+#include "ODBCStmt.h"
 
 SQLRETURN SQL_API
 SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
@@ -37,9 +37,14 @@ SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
 
 	/* check the parameter values */
 
-	if (stmt->State != EXECUTED) {
+	if (stmt->State < EXECUTED0) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+	if (stmt->State <= EXECUTED1) {
+		/* Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
@@ -65,7 +70,7 @@ SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	default:
-		/* Invalid attribute identifier */
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -77,12 +82,13 @@ SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
 			addStmtError(stmt, "HY109", NULL, 0);
 			return SQL_ERROR;
 		}
-		stmt->currentRow = stmt->startRow + nRow - 1;
-		if (mapi_seek_row(stmt->hdl, stmt->currentRow, MAPI_SEEK_SET) != MOK) {
+		if (mapi_seek_row(stmt->hdl, stmt->startRow + nRow - 1,
+				  MAPI_SEEK_SET) != MOK) {
 			/* Invalid cursor position */
 			addStmtError(stmt, "HY109", NULL, 0);
 			return SQL_ERROR;
 		}
+		stmt->currentRow = stmt->startRow + nRow - 1;
 		switch (mapi_fetch_row(stmt->hdl)) {
 		case MOK:
 			break;
@@ -104,7 +110,7 @@ SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	default:
-		/* Invalid attribute identifier */
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}

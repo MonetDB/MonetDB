@@ -41,8 +41,8 @@ SQLParamData(SQLHSTMT hStmt, SQLPOINTER *pValue)
 
 	/* TODO: implement this function and corresponding behavior */
 
-	/* for now return error IM001: driver not capable */
-	addStmtError(stmt, "IM001", NULL, 0);
+	/* Function sequence error */
+	addStmtError(stmt, "HY010", NULL, 0);
 
 	return SQL_ERROR;
 }

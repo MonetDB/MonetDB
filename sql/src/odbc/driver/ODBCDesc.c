@@ -18,7 +18,7 @@ newODBCDesc(ODBCDbc *dbc)
 
 	desc = (ODBCDesc *) malloc(sizeof(ODBCDesc));
 	if (desc == NULL) {
-		/* HY001: Memory allocation error */
+		/* Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
 		return NULL;
 	}

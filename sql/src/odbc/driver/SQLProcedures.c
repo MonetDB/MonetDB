@@ -31,13 +31,6 @@ SQLProcedures_(ODBCStmt *stmt,
 	      SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
 	      SQLCHAR *szProcName, SQLSMALLINT nProcNameLength)
 {
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);

@@ -50,7 +50,7 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	}
 	/* For safety: limit the maximum number of columns to bind */
 	if (ParameterNumber > MONETDB_MAX_BIND_COLS) {
-		/* HY000 = General Error */
+		/* General error */
 		addStmtError(stmt, "HY000",
 			     "Maximum number of bind columns (8192) exceeded",
 			     0);
@@ -290,11 +290,11 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	case SQL_C_WCHAR:
 	case SQL_C_NUMERIC:
 	case SQL_C_GUID:
-		/* these are NOT supported */
+		/* Driver does not support this function */
 		addStmtError(stmt, "IM001", NULL, 0);
 		return SQL_ERROR;
 	default:
-		/* HY003 = Invalid application buffer type */
+		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -302,6 +302,7 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	if (ret == MOK)
 		return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 
+	/* General error */
 	addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 	return SQL_ERROR;
 }

@@ -15,6 +15,8 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
+#include "ODBCDbc.h"
+#include "ODBCEnv.h"
 
 SQLRETURN SQL_API
 SQLCancel(SQLHSTMT hStmt)
@@ -30,5 +32,7 @@ SQLCancel(SQLHSTMT hStmt)
 
 	clearStmtErrors(stmt);
 
-	return SQLFreeStmt_(stmt, SQL_CLOSE);
+	if (stmt->Dbc->Env->sql_attr_odbc_version == SQL_OV_ODBC2)
+		return SQLFreeStmt_(stmt, SQL_CLOSE);
+	return SQL_SUCCESS;
 }

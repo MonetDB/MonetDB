@@ -37,13 +37,14 @@ SQLDataSources_(ODBCEnv *env, SQLUSMALLINT Direction,
 	(void) NameLength2;	/* Stefan: unused!? */
 
 	if (env->sql_attr_odbc_version == 0) {
+		/* Function sequence error */
 		addEnvError(env, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* TODO: implement the requested behavior */
 
-	/* for now always return error: Driver does not support this function */
+	/* Driver does not support this function */
 	addEnvError(env, "IM001", NULL, 0);
 	return SQL_ERROR;
 }

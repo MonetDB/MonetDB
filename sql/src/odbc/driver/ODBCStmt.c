@@ -42,7 +42,7 @@ newODBCStmt(ODBCDbc *dbc)
 	assert(dbc->mid);
 
 	if (stmt == NULL) {
-		/* HY001: Memory allocation error */
+		/* Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
 		return NULL;
 	}
@@ -166,9 +166,8 @@ getStmtError(ODBCStmt *stmt)
 /*
  * Destroys the ODBCStmt object including its own managed data.
  *
- * Precondition: stmt must be valid and inactive (internal State == INITED or
- * State == PREPARED, so NO active result set).
- * Postcondition: stmt is completely destroyed, stmt handle is become invalid.
+ * Precondition: stmt must be valid.
+ * Postcondition: stmt is completely destroyed, stmt handle is invalid.
  */
 void
 destroyODBCStmt(ODBCStmt *stmt)
@@ -176,7 +175,6 @@ destroyODBCStmt(ODBCStmt *stmt)
 	ODBCStmt **stmtp;
 
 	assert(isValidStmt(stmt));
-	assert(stmt->State == INITED || stmt->State == PREPARED);
 
 	/* first set this object to invalid */
 	stmt->Type = 0;

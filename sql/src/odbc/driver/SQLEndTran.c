@@ -44,7 +44,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 			return SQL_INVALID_HANDLE;
 		clearDbcErrors(dbc);
 		if (!dbc->Connected) {
-			/* Connection not open */
+			/* Connection does not exist */
 			addDbcError(dbc, "08003", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -56,6 +56,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		clearEnvErrors(env);
 
 		if (env->sql_attr_odbc_version == 0) {
+			/* Function sequence error */
 			addEnvError(env, "HY010", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -63,6 +64,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	case SQL_HANDLE_STMT:
 		if (isValidStmt((ODBCStmt *) nHandle)) {
 			clearStmtErrors((ODBCStmt *) nHandle);
+			/* Invalid attribute/option identifier */
 			addStmtError((ODBCStmt *) nHandle, "HY092", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -70,6 +72,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	case SQL_HANDLE_DESC:
 		if (isValidDesc((ODBCDesc *) nHandle)) {
 			clearDescErrors((ODBCDesc *) nHandle);
+			/* Invalid attribute/option identifier */
 			addDescError((ODBCDesc *) nHandle, "HY092", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -80,7 +83,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 
 	/* check parameter nCompletionType */
 	if (nCompletionType != SQL_COMMIT && nCompletionType != SQL_ROLLBACK) {
-		/* HY012 = invalid transaction operation code */
+		/* Invalid transaction operation code */
 		if (nHandleType == SQL_HANDLE_DBC)
 			addDbcError(dbc, "HY012", NULL, 0);
 		else
@@ -138,8 +141,18 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		/* clean up the statement handle */
 		SQLFreeStmt_(stmt, SQL_CLOSE);
 		ODBCFreeStmt_(stmt);
+
+		for (stmt = dbc->FirstStmt; stmt; stmt = stmt->next) {
+			SQLFreeStmt_(stmt, SQL_CLOSE);
+			setODBCDescRecCount(stmt->ImplParamDescr, 0);
+			if (stmt->query)
+				free(stmt->query);
+			stmt->query = NULL;
+			stmt->State = INITED;
+		}
 	} else {
 		/* could not allocate a statement object */
+		/* Memory management error */
 		addDbcError(dbc, "HY013", NULL, 0);
 		return SQL_ERROR;
 	}

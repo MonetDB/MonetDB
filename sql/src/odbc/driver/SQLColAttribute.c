@@ -32,24 +32,23 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 
 	/* check statement cursor state, query should be prepared or executed */
 	if (stmt->State == INITED) {
-		/* caller should have called SQLPrepare or SQLExecDirect first */
-		/* HY010 = Function sequence error */
+		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
-
-	/* When the query is only prepared (via SQLPrepare) we do not have
-	 * the Columns info yet (this is a limitation of the current
-	 * MonetDB SQL frontend implementation). */
-	/* we only have a correct data when the query is executed and a Result is created */
-	if (stmt->State != EXECUTED) {
-		/* HY000 = General Error */
-		addStmtError(stmt, "HY000",
-			     "Cannot return the column info. Query must be executed first",
-			     0);
+	if (stmt->State == EXECUTED0) {
+		/* Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (stmt->State == PREPARED0 && nFieldIdentifier != SQL_DESC_COUNT) {
+		/* Prepared statement not a cursor-specification */
+		addStmtError(stmt, "07005", NULL, 0);
+		return SQL_ERROR;
+	}
+
 	if (stmt->ImplRowDescr->descRec == NULL) {
+		/* General error */
 		addStmtError(stmt, "HY000",
 			     "Cannot return the column info. No result set is available",
 			     0);
@@ -58,7 +57,7 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 
 	/* check input parameter */
 	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
-		/* 07009 = Invalid descriptor index */
+		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -196,7 +195,7 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol,
 			* (int *) pnValue = rec->sql_desc_updatable;
 		break;
 	default:
-		/* HY091 = Invalid descriptor field identifier */
+		/* Invalid descriptor field identifier */
 		addStmtError(stmt, "HY091", NULL, 0);
 		return SQL_ERROR;
 	}

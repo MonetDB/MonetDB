@@ -38,14 +38,6 @@ SQLStatistics_(ODBCStmt *stmt,
 	char *query = NULL;
 	char *query_end = NULL;
 
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-
-		return SQL_ERROR;
-	}
-
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
@@ -64,7 +56,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	case SQL_INDEX_UNIQUE:
 		break;
 	default:
-		/* HY100 = Invalid Unique value */
+		/* Uniqueness option type out of range */
 		addStmtError(stmt, "HY100", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -75,7 +67,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	case SQL_QUICK:
 		break;
 	default:
-		/* HY101 = Invalid Reserved value */
+		/* Accuracy option type out of range */
 		addStmtError(stmt, "HY101", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -83,12 +75,12 @@ SQLStatistics_(ODBCStmt *stmt,
 
 	/* check if a valid (non null, not empty) table name is supplied */
 	if (szTableName == NULL) {
-		/* HY009 = Invalid use of null pointer */
+		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 	if (nTableNameLength == 0) {
-		/* HY090 = Invalid string */
+		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}

@@ -24,17 +24,44 @@
 SQLRETURN
 SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
-	RETCODE rc;
+	MapiMsg ret;
+	char *query;
 
-	/* prepare SQL command */
-	rc = SQLPrepare_(stmt, szSqlStr, nSqlStr);
-	if (SQL_SUCCEEDED(rc)) {
-		/* execute prepared statement */
-		rc = SQLExecute_(stmt);
-		if (rc == SQL_SUCCESS && stmt->Error)
-			rc = SQL_SUCCESS_WITH_INFO;
+	if (stmt->State >= EXECUTED1 ||
+	    (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+		/* Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
+		return SQL_ERROR;
 	}
-	return rc;
+
+	/* check input parameter */
+	if (szSqlStr == NULL) {
+		/* Invalid use of null pointer */
+		addStmtError(stmt, "HY009", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	fixODBCstring(szSqlStr, nSqlStr, addStmtError, stmt);
+	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStr);
+
+	SQLFreeStmt_(stmt, SQL_CLOSE);
+	setODBCDescRecCount(stmt->ImplParamDescr, 0);
+	if (stmt->query)
+		free(stmt->query);
+	stmt->query = NULL;
+	stmt->State = INITED;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLExecDirect: \"%s\"\n", query);
+#endif
+	ret = mapi_query_handle(stmt->hdl, query);
+	free(query);
+	if (ret != MOK) {
+		/* General error */
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	}
+	return ODBCInitResult(stmt);
 }
 
 SQLRETURN SQL_API

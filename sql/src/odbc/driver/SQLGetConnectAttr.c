@@ -28,7 +28,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 {
 	/* check input parameters */
 	if (ValuePtr == NULL) {
-		/* HY009 = Invalid use of null pointer */
+		/* Invalid use of null pointer */
 		addDbcError(dbc, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -82,11 +82,11 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	case SQL_ATTR_TRANSLATE_LIB:
 	case SQL_ATTR_TRANSLATE_OPTION:
 	case SQL_ATTR_TXN_ISOLATION:
-		/* set error: Optional feature not implemented */
+		/* Optional feature not implemented */
 		addDbcError(dbc, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	default:
-		/* set error: Invalid attribute/option */
+		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}

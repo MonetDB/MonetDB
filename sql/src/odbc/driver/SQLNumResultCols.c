@@ -37,10 +37,15 @@ SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 
 	/* check statement cursor state, query should be prepared or executed */
 	if (stmt->State == INITED) {
-		/* caller should have called SQLPrepare or SQLExecDirect first */
-		/* HY010 = Function sequence error */
+		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
 
+	/* check output parameter */
+	if (pnColumnCount == NULL) {
+		/* Invalid use of null pointer */
+		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 
@@ -48,18 +53,11 @@ SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 	 * the correct nrCols value yet (this is a limitation of the current
 	 * MonetDB SQL frontend implementation). */
 	/* we only have a correct nrCols value when the query is executed */
-	if (stmt->State != EXECUTED) {
-		/* HY000 = General Error */
+	if (stmt->State < EXECUTED0) {
+		/* General error */
 		addStmtError(stmt, "HY000",
 			     "Cannot return the number of output columns. Query must be executed first",
 			     0);
-		return SQL_ERROR;
-	}
-
-	/* check output parameter */
-	if (pnColumnCount == NULL) {
-		/* HY009 = Invalid use of null pointer */
-		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 

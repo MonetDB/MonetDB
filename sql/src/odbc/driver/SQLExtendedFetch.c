@@ -39,8 +39,13 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset,
 	clearStmtErrors(stmt);
 
 	/* check statement cursor state, query should be executed */
-	if (stmt->State != EXECUTED) {
-		/* 24000 = Invalid cursor state */
+	if (stmt->State < EXECUTED0 || stmt->State == FETCHED) {
+		/* Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+	if (stmt->State == EXECUTED0) {
+		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -51,7 +56,11 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset,
 	rc = SQLFetchScroll_(stmt, nOrientation, nOffset);
 
 	stmt->ApplRowDescr->sql_desc_array_status_ptr = array_status_ptr;
-	if (pnRowCount && SQL_SUCCEEDED(rc))
+
+	if (SQL_SUCCEEDED(rc) || rc == SQL_NO_DATA)
+		stmt->State = EXTENDEDFETCHED;
+
+	if (SQL_SUCCEEDED(rc) && pnRowCount)
 		*pnRowCount = stmt->rowSetSize;
 
 	return rc;

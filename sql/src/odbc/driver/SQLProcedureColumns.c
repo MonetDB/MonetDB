@@ -32,13 +32,6 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 		     SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
 		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szProcName, nProcNameLength, addStmtError, stmt);
@@ -74,7 +67,7 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 	   VARCHAR	is_nullable
 	*/
 
-	/* IM001 = Driver does not support this function */
+	/* Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 
 	return SQL_ERROR;

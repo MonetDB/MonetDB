@@ -36,6 +36,17 @@ SQLBulkOperations(SQLHSTMT hStmt, SQLSMALLINT nOperation)
 
 	clearStmtErrors(stmt);
 
+	if (stmt->State < EXECUTED0 || stmt->State == EXTENDEDFETCHED) {
+		/* Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+	if (stmt->State == EXECUTED0) {
+		/* Invalid cursor state */
+		addStmtError(stmt, "24000", NULL, 0);
+		return SQL_ERROR;
+	}
+
 	/* check nOperation code */
 	switch (nOperation) {
 	case SQL_ADD:
@@ -44,14 +55,14 @@ SQLBulkOperations(SQLHSTMT hStmt, SQLSMALLINT nOperation)
 	case SQL_FETCH_BY_BOOKMARK:
 		break;
 	default:
-		/* HY092 = Invalid attribute identifier */
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* TODO: finish implementation */
 
-	/* IM001 = Driver does not support this function */
+	/* Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 	return SQL_ERROR;
 }

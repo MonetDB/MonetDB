@@ -73,6 +73,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		/* result set generating query */
 		assert(nrCols > 0);
 		stmt->rowcount = (unsigned int) nrCols;
+		stmt->State = EXECUTED1;
 		break;
 	case 4:			/* Q_UPDATE */
 		/* result count generating query */
@@ -82,22 +83,26 @@ ODBCInitResult(ODBCStmt *stmt)
 		assert(nrCols >= 0);
 		stmt->rowcount = (unsigned int) nrCols;
 		nrCols = 0;
+		stmt->State = EXECUTED0;
 		break;
 	default:
 		/* resultless query */
 		if (mapi_next_result(hdl) == 1)
 			goto repeat;
-		stmt->State = PREPARED;
-		return SQL_SUCCESS;
+		stmt->State = EXECUTED0;
+		stmt->rowcount = 0;
+		nrCols = 0;
+		break;
 	}
-
-	stmt->State = EXECUTED;
 
 	setODBCDescRecCount(stmt->ImplRowDescr, nrCols);
 	if (nrCols == 0)
 		return SQL_SUCCESS;
 	if (stmt->ImplRowDescr->descRec == NULL) {
-		stmt->State = PREPARED;
+		stmt->State = stmt->query ?
+			(stmt->State == EXECUTED0 ? PREPARED0 : PREPARED1) :
+			INITED;
+		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -196,8 +201,15 @@ SQLExecute_(ODBCStmt *stmt)
 	MapiMsg msg;
 
 	/* check statement cursor state, query should be prepared */
-	if (stmt->State != PREPARED) {
-		/* 24000 = Invalid cursor state */
+	if (stmt->State == INITED ||
+	    (stmt->State >= EXECUTED0 && stmt->query == NULL)) {
+		/* Function sequence error */
+		addStmtError(stmt, "HY010", NULL, 0);
+		return SQL_ERROR;
+	}
+	if (stmt->State >= EXECUTED1 ||
+	    (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -216,7 +228,7 @@ SQLExecute_(ODBCStmt *stmt)
 	case MOK:
 		break;
 	case MTIMEOUT:
-		/* 08S01 Communication link failure */
+		/* Communication link failure */
 		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:

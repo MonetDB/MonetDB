@@ -97,7 +97,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
-		/* 08002 = Connection already in use */
+		/* Connection name in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -117,7 +117,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	case SQL_DRIVER_NOPROMPT:
 		break;
 	default:
-		/* HY092 = Invalid attribute/option identifier */
+		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -135,7 +135,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	}
 
 	if (dsn && strlen(dsn) > SQL_MAX_DSN_LENGTH) {
-		/* IM010 = Data source name too long */
+		/* Data source name too long */
 		addDbcError(dbc, "IM010", NULL, 0);
 		rc = SQL_ERROR;
 	} else {
@@ -197,6 +197,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 
 		/* if it didn't fit, say so */
 		if (cbConnStrOutMax < 0) {
+			/* String data, right-truncated */
 			addDbcError(dbc, "01004", NULL, 0);
 			rc = SQL_SUCCESS_WITH_INFO;
 		}

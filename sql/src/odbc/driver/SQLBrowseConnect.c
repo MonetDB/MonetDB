@@ -39,7 +39,7 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
-		/* 08002 = Connection already in use */
+		/* Connection name in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -51,7 +51,7 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 
 
 	/* For now just report "not supported" and return error */
-	/* IM001 = Driver does not support this function */
+	/* Driver does not support this function */
 	addDbcError(dbc, "IM001", NULL, 0);
 	return SQL_ERROR;
 }

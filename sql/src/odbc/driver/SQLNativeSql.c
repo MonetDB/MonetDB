@@ -31,6 +31,7 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	fixODBCstring(szSqlStrIn, cbSqlStrIn, addStmtError, stmt);
 
 	if (szSqlStrIn == NULL) {
+		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}

@@ -27,6 +27,23 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 {
 	/* TODO: check parameters: Value and StringLength */
 
+	if (Attribute == SQL_ATTR_CONCURRENCY ||
+	    Attribute == SQL_ATTR_CURSOR_SCROLLABLE ||
+	    Attribute == SQL_ATTR_CURSOR_SENSITIVITY ||
+	    Attribute == SQL_ATTR_CURSOR_TYPE ||
+	    Attribute == SQL_ATTR_USE_BOOKMARKS) {
+		if (stmt->State >= EXECUTED0) {
+			/* Invalid cursor state */
+			addStmtError(stmt, "24000", NULL, 0);
+			return SQL_ERROR;
+		}
+		if (stmt->State > INITED) {
+			/* Attribute cannot be set now */
+			addStmtError(stmt, "HY011", NULL, 0);
+			return SQL_ERROR;
+		}
+	}
+
 	switch (Attribute) {
 #define desc ((ODBCDesc *) Value) /* abbrev. */
 	case SQL_ATTR_APP_PARAM_DESC:
@@ -36,10 +53,13 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 			return SQL_SUCCESS;
 		}
 		if (!isValidDesc(desc)) {
+			/* Invalid attribute value */
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
 		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
+			/* Invalid use of an automatically allocated
+			   descriptor handle */
 			addStmtError(stmt, "HY017", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -52,10 +72,13 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 			return SQL_SUCCESS;
 		}
 		if (!isValidDesc(desc)) {
+			/* Invalid attribute value */
 			addStmtError(stmt, "HY024", NULL, 0);
 			return SQL_ERROR;
 		}
 		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
+			/* Invalid use of an automatically allocated
+			   descriptor handle */
 			addStmtError(stmt, "HY017", NULL, 0);
 			return SQL_ERROR;
 		}
@@ -78,11 +101,6 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		stmt->cursorScrollable = (SQLUINTEGER) (size_t) Value;
 		break;
 	case SQL_ATTR_CURSOR_TYPE:
-		if (stmt->State != INITED) {
-			/* Attribute cannot be set now */
-			addStmtError(stmt, "HY011", NULL, 0);
-			return SQL_ERROR;
-		}
 		switch ((SQLUINTEGER) (size_t) Value) {
 		case SQL_CURSOR_KEYSET_DRIVEN:
 		case SQL_CURSOR_DYNAMIC:
@@ -105,6 +123,8 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 		break;
 	case SQL_ATTR_IMP_PARAM_DESC:
 	case SQL_ATTR_IMP_ROW_DESC:
+		/* Invalid use of an automatically allocated
+		   descriptor handle */
 		addStmtError(stmt, "HY017", NULL, 0);
 		return SQL_ERROR;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
@@ -183,11 +203,11 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	case SQL_ATTR_ROW_NUMBER:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
-		/* return error: Optional feature not supported */
+		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
 		return SQL_ERROR;
 	default:
-		/* return error: Invalid option/attribute identifier */
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}

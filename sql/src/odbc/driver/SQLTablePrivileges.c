@@ -42,13 +42,6 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 		nTableNameLength, szTableName);
 #endif
 
-	/* check statement cursor state, no query should be prepared or executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
-		addStmtError(stmt, "24000", NULL, 0);
-		return SQL_ERROR;
-	}
-
 	/* SQLTablePrivileges returns a table with the following columns:
 	   VARCHAR	table_cat
 	   VARCHAR	table_schem
@@ -59,7 +52,7 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 	   VARCHAR	is_grantable
 	 */
 
-	/* IM001 = Driver does not support this function */
+	/* Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 
 	return SQL_ERROR;

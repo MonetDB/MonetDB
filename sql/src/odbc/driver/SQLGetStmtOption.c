@@ -55,7 +55,7 @@ SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
 		/* use mapping as described in ODBC 3.0 SDK Help */
 		return SQLGetStmtAttr_(stmt, fOption, pvParam, 0, NULL);
 	default:
-		/* return error: Invalid option/attribute identifier */
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 
 		return SQL_ERROR;

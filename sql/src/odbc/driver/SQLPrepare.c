@@ -28,46 +28,53 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	char *query;
 	MapiMsg ret;
 
-	/* check statement cursor state, query should NOT be executed */
-	if (stmt->State == EXECUTED) {
-		/* 24000 = Invalid cursor state */
+	if (stmt->State >= EXECUTED1 ||
+	    (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* check input parameter */
 	if (szSqlStr == NULL) {
-		/* HY009 = Invalid use of null pointer */
+		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	fixODBCstring(szSqlStr, nSqlStrLength, addStmtError, stmt);
-
-	/* TODO: check (parse) the Query on correctness */
 	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
 	   {ts 'value'} or {escape 'e-char'} or {oj outer-join} or
 	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
+	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStrLength);
+
+	SQLFreeStmt_(stmt, SQL_CLOSE);
+	setODBCDescRecCount(stmt->ImplParamDescr, 0);
+	if (stmt->query)
+		free(stmt->query);
+	stmt->query = NULL;
+	stmt->State = INITED;
+
+	/* TODO: check (parse) the Query on correctness */
 	/* count the number of parameter markers (question mark: ?) */
 
 	/* TODO: count the number of output columns and their description */
 
-	/* we need a null-terminated string, so allocate a copy */
-	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStrLength);
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
-	if (stmt->query)
-		free(stmt->query);
-	stmt->query = query;
+
 	ret = mapi_prepare_handle(stmt->hdl, query);
 	if (ret != MOK) {
+		/* General error */
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
 
 	/* update the internal state */
-	stmt->State = PREPARED;
+	stmt->query = query;
+	stmt->State = PREPARED1; /* XXX or PREPARED0, depending on query */
+
 	return SQL_SUCCESS;
 }
 

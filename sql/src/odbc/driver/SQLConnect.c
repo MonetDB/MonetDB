@@ -41,7 +41,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 
 	/* check connection state, should not be connected */
 	if (dbc->Connected) {
-		/* 08002 = Connection already in use */
+		/* Connection name in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -56,6 +56,8 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* for now we only allow the MonetDB data source */
 	if (strcasecmp(dsn, "monetdb") != 0) {
 		free(dsn);
+		/* Data source name not found and no default driver
+		   specified */
 		addDbcError(dbc, "IM002", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -100,7 +102,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* connect to a server on host via port */
 	mid = mapi_connect(s, port, uid, pwd, "sql");
 	if (mid == NULL || mapi_error(mid)) {
-		/* 08001 = Client unable to establish connection */
+		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
 		rc = SQL_ERROR;
 		/* clean up */

@@ -52,7 +52,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 			str = NULL;					\
 			len = 0;					\
 		} else if (len < 0) {					\
-			/* HY090: Invalid string or buffer length */	\
+			/* Invalid string or buffer length */		\
 			errfunc(hdl, "HY090", NULL, 0);			\
 			return SQL_ERROR;				\
 		}							\
@@ -70,20 +70,22 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the
    actual string length is to be stored. */
-#define copyString(str, buf, len, lenp, errfunc, hdl)		\
-	do {							\
-		size_t _l;					\
-		if ((len) < 0) {				\
-			errfunc((hdl), "HY090", NULL, 0);	\
-			return SQL_ERROR;			\
-		}						\
-		_l = (str) ? strlen((char *) (str)) : 0;	\
-		if (buf)					\
+#define copyString(str, buf, len, lenp, errfunc, hdl)			\
+	do {								\
+		size_t _l;						\
+		if ((len) < 0) {					\
+			/* Invalid string or buffer length */		\
+			errfunc((hdl), "HY090", NULL, 0);		\
+			return SQL_ERROR;				\
+		}							\
+		_l = (str) ? strlen((char *) (str)) : 0;		\
+		if (buf)						\
 			strncpy((char *) (buf), (str) ? (char *) (str) : "", (len)); \
-		if (lenp)					\
-			*(lenp) = _l;				\
-		if ((buf) == NULL || _l >= (size_t) (len))	\
-			errfunc((hdl), "01004", NULL, 0);	\
+		if (lenp)						\
+			*(lenp) = _l;					\
+		if ((buf) == NULL || _l >= (size_t) (len))		\
+			/* String data, right-truncated */		\
+			errfunc((hdl), "01004", NULL, 0);		\
 	} while (0)
 
 #ifdef WITH_WCHAR
@@ -93,24 +95,27 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
 			    SQLWCHAR *buf, SQLINTEGER buflen,
 			    SQLSMALLINT *buflenout);
 
-#define fixWcharIn(ws, wsl, s, errfunc, hdl, exit)		\
-	do {							\
-		char *e;					\
+#define fixWcharIn(ws, wsl, s, errfunc, hdl, exit)	\
+	do {						\
+		char *e;				\
 		(s) = ODBCwchar2utf8((ws), (wsl), &e);	\
-		if (e) {					\
+		if (e) {				\
+			/* General error */		\
 			errfunc((hdl), "HY000", e, 0);	\
-			exit;					\
-		}						\
+			exit;				\
+		}					\
 	} while (0)
 #define prepWcharOut(s, wsl)	 (s) = malloc((wsl) * 4)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, errfunc, hdl)		\
 	do {								\
-		if (SQL_SUCCEEDED(r)) { \
+		if (SQL_SUCCEEDED(r)) {					\
 			char *e = ODBCutf82wchar((s), (sl), (ws), (wsl), &(sl)); \
 			if (e) {					\
-				errfunc((hdl), "HY000", e, 0);	\
+				/* General error */			\
+				errfunc((hdl), "HY000", e, 0);		\
 				(r) = SQL_ERROR;			\
 			} else if ((sl) >= (wsl)) {			\
+				/* String data, right-truncated */	\
 				errfunc((hdl), "01004", NULL, 0);	\
 				(r) = SQL_SUCCESS_WITH_INFO;		\
 			}						\

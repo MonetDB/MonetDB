@@ -36,8 +36,10 @@ SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 		stmt->startRow = 0;
 		stmt->rowSetSize = 0;
 
-		if (stmt->State == EXECUTED)
-			stmt->State = PREPARED;
+		if (stmt->State == EXECUTED0)
+			stmt->State = stmt->query ? PREPARED0 : INITED;
+		else if (stmt->State >= EXECUTED1)
+			stmt->State = stmt->query ? PREPARED1 : INITED;
 
 		/* Important: do not destroy the bind parameters and columns! */
 		return SQL_SUCCESS;
@@ -52,6 +54,7 @@ SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 		mapi_clear_params(stmt->hdl);
 		return SQL_SUCCESS;
 	default:
+		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}

@@ -98,7 +98,8 @@ SQLGetDiagField_(SQLSMALLINT HandleType, SQLHANDLE Handle,
 		* (SQLRETURN *) DiagInfo = SQL_SUCCESS;
 		return SQL_SUCCESS;
 	case SQL_DIAG_ROW_COUNT:
-		if (HandleType != SQL_HANDLE_STMT)
+		if (HandleType != SQL_HANDLE_STMT ||
+		    ((ODBCStmt *) Handle)->State < EXECUTED0)
 			return SQL_ERROR;
 		* (SQLINTEGER *) DiagInfo = (SQLINTEGER) ((ODBCStmt *) Handle)->rowcount;
 		return SQL_SUCCESS;

@@ -41,16 +41,16 @@ SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 
 	/* check statement cursor state, query should be prepared or executed */
 	if (stmt->State == INITED) {
-		/* HY010 = Function sequence error */
+		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
 
 	/* TODO: retrieve the parameter information */
 
-	/* for now return error IM001: driver not capable */
+	/* for now return error */
+	/* Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 	return SQL_ERROR;
 }

@@ -45,10 +45,12 @@ SQLRETURN
 SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *pnOutputHandle)
 {
 	if (env->sql_attr_odbc_version == 0) {
+		/* Function sequence error */
 		addEnvError(env, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
 	if (pnOutputHandle == NULL) {
+		/* Invalid use of null pointer */
 		addEnvError(env, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -63,10 +65,12 @@ SQLRETURN
 SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 {
 	if (!dbc->Connected) {
+		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
 	if (pnOutputHandle == NULL) {
+		/* Invalid use of null pointer */
 		addDbcError(dbc, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
@@ -81,10 +85,12 @@ SQLRETURN
 SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 {
 	if (!dbc->Connected) {
+		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
 	}
 	if (pnOutputHandle == NULL) {
+		/* Invalid use of null pointer */
 		addDbcError(dbc, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}

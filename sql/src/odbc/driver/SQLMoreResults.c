@@ -35,8 +35,14 @@ SQLMoreResults(SQLHSTMT hStmt)
 
 	clearStmtErrors(stmt);
 
+	if (stmt->State < EXECUTED0)
+		return SQL_NO_DATA;
+
 	switch (mapi_next_result(stmt->hdl)) {
 	case MOK:
+		stmt->State = stmt->query ?
+			(stmt->State == EXECUTED0 ? PREPARED0 : PREPARED1) :
+			INITED;
 		return SQL_NO_DATA;
 	case MERROR:
 		/* General error */

@@ -193,7 +193,7 @@ SQLGetFunctions(SQLHDBC hDbc, SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported)
 		return SQL_SUCCESS;
 	}
 
-	/* HY095: Function type out of range */
+	/* Function type out of range */
 	addDbcError(dbc, "HY095", NULL, 0);
 	return SQL_ERROR;
 }
