@@ -1,0 +1,401 @@
+stdout of test 'big-example` in directory 'src/test` itself:
+
+
+# 16:09:40 >  
+# 16:09:40 >  Mtimeout -timeout 5310 Mserver -monetrc /export/data1/monet/tmp/manegold.ntv_32-d.3051/monet/.ntv_32-d/Linux2.4.17-0.1smp/share/Monet/monet.Mtest.conf -db Tests_src_test /export/data1/monet/tmp/manegold.ntv_32-d.3051/sql/.ntv_32-d/Linux2.4.17-0.1smp/share/sql/catalog.mil /export/data1/monet/tmp/manegold.ntv_32-d.3051/sql/.ntv_32-d/Linux2.4.17-0.1smp/share/sql/sqlserver.mil ; echo  ; echo Over..
+# 16:09:40 >  
+
+# Monet Database Server V4.3.4
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/data1/monet/tmp/manegold.ntv_32-d.3051/monet/.ntv_32-d/Linux2.4.17-0.1smp/dbfarm
+# dbname:Tests_src_test
+# dbdir:/export/data1/monet/tmp/manegold.ntv_32-d.3051/monet/.ntv_32-d/Linux2.4.17-0.1smp/dbfarm/Tests_src_test
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+# [ 8 ]
+quit;
+
+Over..
+
+# 16:09:41 >  
+# 16:09:41 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s00.sql	//example.sql
+# 16:09:41 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:41 >  
+# 16:09:41 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s01.sql	//example-queries.sql
+# 16:09:41 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+10 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+10 Rows affected
+
+# 16:09:41 >  
+# 16:09:41 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s02.sql	//example-rangeselect.sql
+# 16:09:41 >  
+
+5	"xtest"	0.9
+9	"testx"	9.1
+8	"texxst"	1e-04
+5	"xtest"	0.9
+9	"testx"	9.1
+8	"texxst"	1e-04
+6 Rows affected
+9	"testx"	9.1
+9	"testx"	9.1
+8	"texxst"	1e-04
+8	"texxst"	1e-04
+4 Rows affected
+
+# 16:09:41 >  
+# 16:09:41 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s03.sql	//example-drop.sql
+# 16:09:41 >  
+
+
+# 16:09:41 >  
+# 16:09:41 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s04.sql	//example.sql
+# 16:09:41 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:41 >  
+# 16:09:41 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s05.sql	//example-delete1.sql
+# 16:09:41 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+0	"texst"	99999.1
+2 Rows affected
+
+# 16:09:41 >  
+# 16:09:41 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s06.sql	//example-drop.sql
+# 16:09:41 >  
+
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s07.sql	//example.sql
+# 16:09:42 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s08.sql	//example-delete2.sql
+# 16:09:42 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+4 Rows affected
+1	"test"	0.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+3 Rows affected
+1	"test"	0.1
+0	"texst"	99999.1
+2 Rows affected
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s09.sql	//example-drop.sql
+# 16:09:42 >  
+
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s10.sql	//example.sql
+# 16:09:42 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s11.sql	//example-delete3.sql
+# 16:09:42 >  
+
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+0	"texst"	99999.1
+3 Rows affected
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s12.sql	//example-drop.sql
+# 16:09:42 >  
+
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s13.sql	//example.sql
+# 16:09:42 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:42 >  
+# 16:09:42 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s14.sql	//example-update1.sql
+# 16:09:42 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	-1
+9	"testx"	-1
+0	"texst"	99999.1
+8	"texxst"	-1
+5 Rows affected
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s15.sql	//example-drop.sql
+# 16:09:43 >  
+
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s16.sql	//example.sql
+# 16:09:43 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s17.sql	//example-update2.sql
+# 16:09:43 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+-5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+-5	"xtest"	0.9
+-5	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+-5	"xtest"	0.9
+-5	"testx"	9.1
+0	"texst"	99999.1
+-5	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s18.sql	//example-drop.sql
+# 16:09:43 >  
+
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s19.sql	//example.sql
+# 16:09:43 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s20.sql	//example-update3.sql
+# 16:09:43 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"updated"	9.1
+0	"texst"	99999.1
+8	"updated"	0.0001
+5 Rows affected
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s21.sql	//example-drop.sql
+# 16:09:43 >  
+
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s22.sql	//example-transaction.sql
+# 16:09:43 >  
+
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+1	"test"	0.1
+5	"xtest"	0.9
+9	"testx"	9.1
+0	"texst"	99999.1
+8	"texxst"	0.0001
+5 Rows affected
+
+# 16:09:43 >  
+# 16:09:43 >  Mtimeout -timeout 210 sql_client --port=50366  < big-example_s23.sql	//example-drop.sql
+# 16:09:43 >  
+
+
+# 16:09:44 >  
+# 16:09:44 >  Done.
+# 16:09:44 >  
+
