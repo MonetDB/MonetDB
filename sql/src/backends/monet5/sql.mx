@@ -40,7 +40,7 @@ command sql():void
 address SQLlanguage
 comment "Switch to processing SQL statements";
 
-command sql(cmd:str):void 
+command eval(cmd:str):void 
 address SQLstatement
 comment "Execute a single sql statement";
 
@@ -94,14 +94,14 @@ comment "Return the status of the last
 #comment "Return the type of the last 
 #	catalogue operation";
 
-command bindUbat(sname:str, tname:str, 
+command bind_ubat(sname:str, tname:str, 
 		cname:str, access:int ) 
 	:bat[:any$1,:any$2] 
 address mvc_bind_ubat_wrapREAD
 comment "Bind bat with the updates to tname.cname 
 	with specific access mode";
 
-command bindDbat(sname:str, tname:str, access:int)
+command bind_dbat(sname:str, tname:str, access:int)
 		:bat[:any$1,:any$2] 
 address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
@@ -289,6 +289,7 @@ typedef struct backend{
 } backend;
 
 #define _SQL_SCENARIO_DEBUG 
+/* #define _SQL_PARSER_DEBUG  */
 sql_export str SQLexitClient(Client c);
 sql_export str SQLinitClient(Client c);
 sql_export str SQLexit(Client c);
@@ -307,11 +308,11 @@ First introduce the routines to be called by the front-end.
 
 static backend *backend_create( int trace, mvc *c )
 {
-#ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"create backend\n");
-#endif
 	backend *b = NEW(backend);
 
+	b->debug=0;
+	b->outbuf= NULL;
+	b->out= NULL;
 	b->trace = trace;
 	b->mvc= c;
 	b->currSchema = NULL;
@@ -319,6 +320,7 @@ static backend *backend_create( int trace, mvc *c )
 	b->currColumn = NULL;
 	b->currKey = NULL;
 	b->currIndex = NULL;
+	b->code= NULL;
 	return b;
 }
 
@@ -355,7 +357,7 @@ static int SQLinitialized;
 
 str SQLinit(Client c){
 #ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"SQLinit\n");
+	stream_printf(GDKout,"SQLinit Monet 5\n");
 #endif
 	if( SQLinitialized ){
 		return throwMessage("SQLinit",
@@ -454,7 +456,7 @@ str SQLstatement(int *ret, str *cmd){
 }
 str SQLreader(Client c){
 	int cnt, oldcnt,eof=0;
-#ifdef _SQL_SCENARIO_DEBUG
+#ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"SQLparser: start reading SQL block\n");
 #endif
 	if( c->mode <= FINISHING)
@@ -477,7 +479,7 @@ str SQLreader(Client c){
 	c->input[cnt+1]= 0;
 	c->nxt=c->input;
 
-#ifdef _SQL_SCENARIO_DEBUG
+#ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout,"SQL blk:%s\n",c->input);
 #endif
 	if(eof==0) {
@@ -534,9 +536,6 @@ Analyse the flags and prepare the execution context
 @c
 int SQLsetEnvironment(Client c){
 	(void) c;
-#ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout,"SQLsetEnvironment\n");
-#endif
 	/* test flags and react accordingly */
 	return 0;
 }
@@ -886,8 +885,8 @@ int sqlstatement(char *cmd)
 The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
-#define explainMIL() (be->mvc->explain && \
-	strcmp(be->mvc->explain, "mil") == 0)
+#define explainMAL() (be->mvc->explain && \
+	strcmp(be->mvc->explain, "mal") == 0)
 #define explainSQL() (be->mvc->explain && \
 	strcmp(be->mvc->explain, "sql") == 0)
 
@@ -899,7 +898,7 @@ str SQLparser(Client c) {
 	lng T0 =0, Tparse=0;
 
 	oldstate= *c->curprg->def;
-#ifdef _SQL_SCENARIO_DEBUG
+#ifdef _SQL_PARSER_DEBUG
 	stream_printf(GDKout,"SQL compilation %s\n",c->nxt);
 #endif
 	debug= SQLsetEnvironment(c);
@@ -952,7 +951,7 @@ also perform the semantic analysis, optimize and produce code.
 					  be->mvc->qc->id, s );
 		}
 	} 
-#ifdef _SQL_SCENARIO_DEBUG
+#ifdef _SQL_PARSER_DEBUG
 	else stream_printf(GDKout,"parse result %d\n",err);
 #endif
 @-
@@ -973,17 +972,24 @@ In the final phase we add any debugging control
 	if( c->curprg->def->errors){
 		showErrors(c);
 		/* restore the state */
-		if( c->listing)
+		if( c->listing || explainMAL())
 			printFunction(c->fdout,c->curprg->def, c->listing);
 		resetInstructions(c->curprg->def,oldstate.stop);
 		resetVariables(c->curprg->def, c->glb, oldstate.vtop);
 		c->curprg->def->errors=0;
 		msg= throwMessage("SQLparser","Semantic errors\n");
+		stream_flush(c->fdout);
+		return msg;
 	}
 finalize:
-#ifdef _SQL_SCENARIO_DEBUG
+	if( explainMAL()){
+		printFunction(c->fdout,c->curprg->def, c->listing);
+	} 
+#ifdef _SQL_PARSER_DEBUG
+	else {
 	printf("SQL finished:%s\n",msg);
 	printFunction(c->fdout,c->curprg->def, c->listing);
+	}
 #endif
 	stream_flush(c->fdout);
 		
