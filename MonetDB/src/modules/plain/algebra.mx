@@ -304,6 +304,10 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 "Produces a new BAT with identical head column, and consecutively
 increasing integers (starting with 0) in the tail column."
 
+.COMMAND group(BAT[any::1, any] b, int start, int incr, int grpsize) : BAT[any::1, int] = CMDgroup;
+"Produces a new BAT with identical head column, and in the tail column groups of equally valued 
+integers within each group. Parameters: a start group value, group number increment, group size."
+
 @+ BAT fragmentation commands
 Various operations for splitting BATs into useful fragments.
 
@@ -943,6 +947,10 @@ Let cut this text down with some Mx macro's
 int CMD@1(BAT **result, BAT *b) {
 	return (*result = (BAT*) @2(b))?GDK_SUCCEED:GDK_FAIL;
 }
+@= unarygroup
+int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
+        return (*result = (BAT *)@2(b, *start, *incr, *grpsize)) ? GDK_SUCCEED : GDK_FAIL;
+}
 @= unaryint
 int CMD@1(int *result, BAT *b) {
 	*result = (int) @2(b);
@@ -961,6 +969,7 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:unary(histogram, BAThistogram)@
 @:unary(sort, BATsort)@
 @:unary(number, BATnumber)@
+@:unarygroup(group,BATgroup)@
 @:unary(copy, BATcopy)@
 @:unary(kunique, BATkunique)@
 @:unary(sunique, BATsunique)@

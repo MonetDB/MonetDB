@@ -227,6 +227,29 @@ BAT *BATnumber(BAT *b) {
         return bn;
 }
 
+BAT *BATgroup(BAT *b, int start, int incr, int grpsize) {
+        BUN p, q;
+        int i = 0, xx;
+        BAT *bn;
+
+        BATcheck(b, "BATgroup");
+        bn = BATnew(b->htype, TYPE_int, BATcount(b));
+        if (bn == NULL) {
+                return NULL;
+        }
+
+        ALIGNsetH(bn,b);
+   
+        BATloopFast(b, p, q, xx) {
+            BUNfastins(bn, BUNhead(b, p), (ptr)&start);
+            if(i == grpsize-1) { start += incr; i = 0; } else { i++; }
+        }
+
+        bn->hsorted = BAThordered(b);
+        bn->tsorted = GDK_SORTED;
+        return bn;
+}
+
 BAT* BATconst(BAT *b, int tailtype, ptr v) {
         BAT *bn;
         BUN p,q;
