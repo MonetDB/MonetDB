@@ -290,7 +290,7 @@ void* MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed){
 	        fileno(fp), off);
 	    fclose(fp);
 	    if (ret != (void*) -1L && (mode&MMAP_ADVISE)) {
-		(void)madvise(fixed+off, len, mode&MMAP_ADVISE);
+		(void) madvise(ret, len, mode&MMAP_ADVISE);
 	    }
         }
 	return ret;
