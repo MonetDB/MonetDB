@@ -29,3 +29,6 @@ gcc -DHAVE_CONFIG_H -c $1 -I. \
     #-Wno-unused-function -Wno-unused-label -Wno-strict-aliasing \
 
 echo "Program is ready to be linked"
+    ld -r -E -o $base.so $base.o 
+
+

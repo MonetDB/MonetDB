@@ -125,7 +125,6 @@ static char *mccPrelude[]={
     "*/\n",
     "#include \"mal.h\"\n",
     "#include \"mal_function.h\"\n",
-    "#define nil 0\n",
     0
 };
 void mccVar(stream *f,MalBlkPtr mb,int i){

@@ -66,6 +66,10 @@ name.
 Note, however, that the libraries are reference counted. Although we
 do;t close them until end of session it seems prudent to maintain
 the consistency of this counter.
+
+In the case an attempt to link to an address fails, 
+a final attempt is made to locate the *.o file in
+the current directory.
 @{
 @c
 #include "mal_linker.h"
@@ -75,6 +79,19 @@ the consistency of this counter.
 static void clear_moddir();
 
 static int noDlopen;
+MALfcn getLocalObjectFile(str fcnname){
+    int mode = RTLD_NOW|RTLD_GLOBAL;
+    void *handle = NULL;
+    char nme[MAXPATHLEN];
+
+    snprintf(nme,MAXPATHLEN,"./%s.so",fcnname);
+    printf("attempt to load function %s\n",nme);
+    handle = dlopen(nme, mode);
+    printf("loaded ? %s\n",(handle!=0?"yes":"no"));
+    if( handle)
+        return (MALfcn) dlsym(handle,fcnname);
+    return 0;
+}
 
 MALfcn getAddress(str fcnname){
     void *dl;
@@ -83,12 +100,13 @@ MALfcn getAddress(str fcnname){
 #ifdef DEBUG_MAL_LINKER2
         stream_printf(GDKout,"addres of %s ?\n", fcnname);
 #endif
-        dl= dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-        if(dl==NULL){
-                GDKfatal("getAddress:can;t get dl-handle\n");
-                exit(0);
-        }
-        adr= (MALfcn) dlsym(dl,fcnname);
+    dl= dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+    if(dl==NULL){
+        GDKfatal("getAddress:can;t get dl-handle\n");
+        exit(0);
+    }
+    adr= (MALfcn) dlsym(dl,fcnname);
+    if( adr == NULL) adr = getLocalObjectFile(fcnname);
     if(noDlopen && adr == NULL)
         GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
