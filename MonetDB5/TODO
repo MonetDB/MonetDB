@@ -18,12 +18,16 @@ MAL language issues
 - Design a macro expansion facility (with property checks)
 
 - printing result tables should be improved.
+- rethink position of enum types
+- use a process buffer pool to avoid expensive client starts.
 
 API issues
 - The Japi variant should in be re-vived
 - The java front-end terminal and profiler should be re-vived
 - Multi-client (concurrent) access has not been tested yet
 - roll-forward Mapi packages .php, .py, .tcl
+
+- What to do with Mcreatedb and friends
 
 V4 issues
 - overlay V4 database with V5 session

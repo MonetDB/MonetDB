@@ -2,10 +2,10 @@ The Monet Binary Distribution.
 =============================
 
 Monet is a high-performance database kernel developed and
-copyrighted 1993-1997 by the database research group of
+copyrighted 1993-2003 by the database research group of
 prof. dr. Martin Kersten at CWI and SION.
 
-You can also visit the Monet website @ http://www.cwi.nl/~monet
+You can also visit the Monet website @ http://monetdb.cwi.nl/
 
 Documentation is in HTML format and starts in the file 'index.html'.
 Choose 'Documentation' to obtain a short overview of Monet and 
@@ -18,7 +18,6 @@ Directories in the binary distribution:
 	<arch>/include/		header files (for extension programmers).
 	scripts/		standard MIL scripts.
 	www/			HTML documentation
-	dbfarm/			database directory (empty)
 
 The source distribution lacks any <arch> directories with compiled files,
 but brings the following extra files: 
