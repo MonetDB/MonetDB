@@ -24,16 +24,17 @@
  */
 
 /* 
-The Monet Application Programming Interface
-Author M.L. Kersten
-
+<h4>The Monet Application Programming Interface</h4>
+<h4><i>Author M.L. Kersten</i><h4>
+<p>
 The easiest way to extend the functionality of Monet is to construct
 an independent Monet application, which communicates with a
 running server on a textual basis. 
 The prime advantage is a secure and debugable interface. 
 The overhead in command preparation and response decoding is mainly 
 localized in the workstation of the application.
-
+</p>
+<p>
 The Java code base presented here is a 'copy' of the similar C-Mapi interface.
 The main differences are that this version does not provide variable
 binding to ease interaction.
@@ -41,62 +42,63 @@ It is not possible to bind source/destination variables.
 Instead, column values should be explicitly extracted from the row cache
 and arguments are passed upon query construction.
 Furthermore, it uses a simple line-based protocol with the server.
-
 See the corresponding documentation. A synopsis is given only.
-
-bind()     	&       Bind string C-variable to field	 [NON_JAVA]
-bind_var() 	&       Bind typed C-variable to field [NON_JAVA]
-bind_numeric()	& 	Bind numeric C-variable to field [NON_JAVA]
-cacheLimit()	& 	Set the tuple cache limit 
-cacheShuffle()	& 	Set the cache shuffle percentage 
-cacheFreeup()	&	Empty a fraction of the cache
-connect()  	&       Connect to a Mserver 
-connectSSL()	& 	Connect to a Mserver using SSL [TODO]
-disconnect()	& 	Disconnect from server
-dup()      	&       Duplicate the connection structure
-explain()  	&       Display error message and context on stream
-execute()  	&       Execute a query
-executeArray()	&	Execute a query using string arguments
-fetchField()	&	Fetch a field from the current row
-fetchFieldArray()        & Fetch all fields from the current row
-fetchLine()	&       Retrieve the next line
-fetchReset()	&       Set the cache reader to the begining
-fetchRow()	&       Fetch row of values
-fetchAllRows()	&       Fetch all answers from server into cache
-finish()	&       Terminate the current query
-getHost() 	&       Host name of server
-getLanguage()	& 	Query language name
-getMapiVersion()	& 	Mapi version identifier
-getMonetVersion()	& 	Monet version identifier
-getMonetId()	& 	Monet version generation number
-getUser() 	&       Get current user name
-getDBname() 	&       Get current database name
-getTable()    	&       Get current table name
-getColumnCount()& 	Number of columns in current row
-getColumnName()	& 	Get columns name
-getColumnType()	& 	Get columns type
-getRowCount() 	&       Number of lines in cache or -1
-getTupleCount()	&       Number of tuples in cache or -1
-gotError()    	&       Test for error occurrence
-getPort()	&	Connection IP number
-ping()     	&       Test server for accessibility
-prepareQuery() 	&       Prepare a query for execution
-prepareQueryArray()&       Prepare a query for execution using arguments
-query()    	&       Send a query for execution
-queryArray()	& 	Send a query for execution with arguments
-quickQuery()	&       Send a query for execution
-quickQueryArray()        & Send a query for execution with arguments
-quote()    	& 	Escape characters
-reconnect()	&	Restart with a clean session
-rows_affected() & 	Obtain number of rows changed
-quickResponse()	&       Quick pass response to stream
-initStream()	&	Prepare for reading a stream of answers
-seekRow() 	&       Move row reader to specific row location in cache
-sortColumn()	&	Sort column by string
-timeout()  	&       Set timeout for long-running queries[TODO]
-trace()    	&       Set trace flag
-traceLog()	& 	Keep log of interaction
-unquote()  	&       remove escaped characters
+</p>
+<table>
+<tr><td>bind()	     	</td><td>       Bind string C-variable to field	 [NON_JAVA]</td></tr>
+<tr><td>bind_var()	</td><td>       Bind typed C-variable to field [NON_JAVA]</td></tr>
+<tr><td>bind_numeric()	</td><td> 	Bind numeric C-variable to field [NON_JAVA]</td></tr>
+<tr><td>cacheLimit()	</td><td> 	Set the tuple cache limit </td></tr>
+<tr><td>cacheShuffle()	</td><td> 	Set the cache shuffle percentage </td></tr>
+<tr><td>cacheFreeup()	</td><td>	Empty a fraction of the cache</td></tr>
+<tr><td>connect()	</td><td>       Connect to a Mserver </td></tr>
+<tr><td>connectSSL()	</td><td> 	Connect to a Mserver using SSL [TODO]</td></tr>
+<tr><td>disconnect()	</td><td> 	Disconnect from server</td></tr>
+<tr><td>dup()	      	</td><td>       Duplicate the connection structure</td></tr>
+<tr><td>explain()	</td><td>       Display error message and context on stream</td></tr>
+<tr><td>execute()	</td><td>       Execute a query</td></tr>
+<tr><td>executeArray()	</td><td>	Execute a query using string arguments</td></tr>
+<tr><td>fetchField()	</td><td>	Fetch a field from the current row</td></tr>
+<tr><td>fetchFieldArray() </td><td> Fetch all fields from the current row</td></tr>
+<tr><td>fetchLine()	</td><td>       Retrieve the next line</td></tr>
+<tr><td>fetchReset()	</td><td>       Set the cache reader to the begining</td></tr>
+<tr><td>fetchRow()	</td><td>       Fetch row of values</td></tr>
+<tr><td>fetchAllRows()	</td><td>       Fetch all answers from server into cache</td></tr>
+<tr><td>finish()	</td><td>       Terminate the current query</td></tr>
+<tr><td>getHost()	</td><td>       Host name of server</td></tr>
+<tr><td>getLanguage()	</td><td> 	Query language name</td></tr>
+<tr><td>getMapiVersion()</td><td> 	Mapi version identifier</td></tr>
+<tr><td>getMonetVersion()</td><td> 	Monet version identifier</td></tr>
+<tr><td>getMonetId()	</td><td> 	Monet version generation number</td></tr>
+<tr><td>getUser()	</td><td>       Get current user name</td></tr>
+<tr><td>getDBname()	</td><td>       Get current database name</td></tr>
+<tr><td>getTable()	</td><td>       Get current table name</td></tr>
+<tr><td>getColumnCount()</td><td> Number of columns in current row</td></tr>
+<tr><td>getColumnName()	</td><td> 	Get columns name</td></tr>
+<tr><td>getColumnType()	</td><td> 	Get columns type</td></tr>
+<tr><td>getRowCount()	</td><td>       Number of lines in cache or -1</td></tr>
+<tr><td>getTupleCount()	</td><td>       Number of tuples in cache or -1</td></tr>
+<tr><td>gotError()	</td><td>       Test for error occurrence</td></tr>
+<tr><td>getPort()	</td><td>	Connection IP number</td></tr>
+<tr><td>ping()	     	</td><td>       Test server for accessibility</td></tr>
+<tr><td>prepareQuery()	</td><td>       Prepare a query for execution</td></tr>
+<tr><td>prepareQueryArray()</td><td>  Prepare a query for execution using arguments</td></tr>
+<tr><td>query()	    	</td><td>       Send a query for execution</td></tr>
+<tr><td>queryArray()	</td><td> 	Send a query for execution with arguments</td></tr>
+<tr><td>quickQuery()	</td><td>       Send a query for execution</td></tr>
+<tr><td>quickQueryArray() </td><td>  Send a query for execution with arguments</td></tr>
+<tr><td>quote()	    	</td><td> 	Escape characters</td></tr>
+<tr><td>reconnect()	</td><td>	Restart with a clean session</td></tr>
+<tr><td>rows_affected()	</td><td> Obtain number of rows changed</td></tr>
+<tr><td>quickResponse()	</td><td>       Quick pass response to stream</td></tr>
+<tr><td>initStream()	</td><td>	Prepare for reading a stream of answers</td></tr>
+<tr><td>seekRow()	</td><td>       Move row reader to specific row location in cache</td></tr>
+<tr><td>sortColumn()	</td><td>	Sort column by string</td></tr>
+<tr><td>timeout()	</td><td>       Set timeout for long-running queries[TODO]</td></tr>
+<tr><td>trace()	    	</td><td>       Set trace flag</td></tr>
+<tr><td>traceLog()	</td><td> 	Keep log of interaction</td></tr>
+<tr><td>unquote()	</td><td>       remove escaped characters</td></tr>
+</table>
 
 */
 
@@ -1754,27 +1756,33 @@ private void dumpCacheStatus(){
  */
 public void sortColumn(int col){
 	if( col <0 || col > maxfields) return;
+	if( columns[col]==null) return;
 	// make sure you have all tuples in the cache
 	// and that they are properly sliced
 	fetchAllRows();
+	if(trace) 
+		System.out.println("Sort column:"+col+
+			" type:"+ columns[col].columntype);
 
 	int direction = columns[col].direction;
 	columns[col].direction = -direction;
-	if( columns[col].columntype.equals("int") ||
-	    columns[col].columntype.equals("lng") ||
-	    columns[col].columntype.equals("ptr") ||
-	    columns[col].columntype.equals("oid") ||
-	    columns[col].columntype.equals("void") ||
-	    columns[col].columntype.equals("sht") 
-	){
-		sortIntColumn(col);
-		return;
-	}
-	if( columns[col].columntype.equals("flt") ||
-	    columns[col].columntype.equals("dbl") 
-	){
-		sortDblColumn(col);
-		return;
+	if(columns[col].columntype!=null){
+		if( columns[col].columntype.equals("int") ||
+		    columns[col].columntype.equals("lng") ||
+		    columns[col].columntype.equals("ptr") ||
+		    columns[col].columntype.equals("oid") ||
+		    columns[col].columntype.equals("void") ||
+		    columns[col].columntype.equals("sht") 
+		){
+			sortIntColumn(col);
+			return;
+		}
+		if( columns[col].columntype.equals("flt") ||
+		    columns[col].columntype.equals("dbl") 
+		){
+			sortDblColumn(col);
+			return;
+		}
 	}
 	int lim= cache.tupleCount;
 	for(int i=0;i<lim; i++){
