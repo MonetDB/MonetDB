@@ -5,6 +5,11 @@
 #include <sql_list.h>
 #include <stream.h>
 
+#define ISO_READ_UNCOMMITED 1
+#define ISO_READ_COMMITED   2
+#define ISO_READ_REPEAT	    3
+#define ISO_SERIALIZABLE    4
+
 #define SCALE_NONE	0
 #define SCALE_FIX	1
 #define SCALE_NOFIX	2
@@ -12,6 +17,12 @@
 #define SCALE_SUB	4
 #define DIGITS_ADD	5
 #define INOUT		6 	/* output type equals input type */
+
+#define TR_OLD 0
+#define TR_NEW 1
+
+#define cur_user 1
+#define cur_role 2
 
 #define sql_max(i1,i2) ((i1)<(i2))?(i2):(i1)
 
@@ -110,22 +121,6 @@ typedef struct sql_subfunc {
 	sql_subtype *res;
 } sql_subfunc;
 
-#define TR_OLD 0
-#define TR_NEW 1
-
-/*
- * name bats using schema_table_column etc.
- * 
- * support multiple db's using multiple servers, requires a shallow connection setup
- * server, which communicates using shmem or pipes. 
- */
-
-#define cur_user 1
-#define cur_role 2
-
-/* TODO keep a single list of sql_bats with each table 
- * also change D_* to use the sql_bat
- */
 typedef struct sql_bat {
 	oid bid;
 	oid ibid;	/* insert bat ! */
@@ -249,6 +244,28 @@ typedef struct res_table {
 	bat order;
 	struct res_table *next;
 } res_table;
+
+typedef void *backend_code;
+typedef int backend_stack;
+
+typedef struct sql_trans {
+	char *name;
+	int stime; /* transaction time stamp (aka start time) */
+	int rtime;
+	int wtime;
+	int level; 
+
+	sql_schema *schema;
+	changeset schemas;
+	changeset modules;
+	/* also need a current module, normaly main but during create module
+	 * different */
+	sql_module *module; 
+	struct bm *bm;
+	backend_stack stk;
+
+	struct sql_trans *parent; /* multilevel transaction support */
+} sql_trans;
 
 
 #endif /* SQL_CATALOG_H */
