@@ -413,8 +413,11 @@ int mapisqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	backend *sql;
 	char *prompt= "\001sql>\002\n";
 	int promptlength= strlen(prompt);
-	str w = NULL;
-	/*int firstrequest=1;*/
+
+	int size, err;
+	char *inbuf, *start;
+	int inlen;
+	ssize_t len;
 
   	if (lt->cnt != 1) {
         	return handle_argerror(res, lt->cnt, 1);
@@ -444,7 +447,7 @@ Use default setting for trace and reply_size.
 			return connect_error(in, out, sock);
 	}
 	*user=0;
-	fprintf(stdout,"mapisqlclient: connection:%s!\n",buf);
+	fprintf(stdout,"mapisqlclient: connection:%s\n",buf);
 	fflush(stdout);
 	user= buf;
 	passwd= strrchr(user,':');
@@ -490,8 +493,8 @@ These lines should be eaten away into the prompt is encountered.
 
 	m = mvc_create(debug);
 	schema = mvc_login( m, user, passwd );
-	GDKfree(user);
-	GDKfree(passwd);
+	/* GDKfree(user);  possible leakage*/
+	/* GDKfree(passwd);*/
 
 	if (!schema){ 
 		char *msg= "!ERROR:Schema authorization error\n";
@@ -503,13 +506,14 @@ These lines should be eaten away into the prompt is encountered.
 		mvc_destroy(m);
 		return connect_error(in, out, sock);
 	}
-/* Send the profile for the client for inspection*/
-	w= "[ \"version\",	\"4.3\"	]\n";
-	if( stream_write(out, w, 1, strlen(w))<0)
+/* Sent the profile for the client for inspection*/
+@-
+@= sendProperty
+	if( stream_write(out, @1, 1, strlen(@1))<0)
 		return connect_error(in,out,sock);
-	w= "[ \"language\",	\"sql\"	]\n";
-	if( stream_write(out, w, 1, strlen(w))<0)
-		return connect_error(in,out,sock);
+@c
+	@:sendProperty("[ \"version\",	\"4.3\"	]\n")@
+	@:sendProperty("[ \"language\",	\"sql\"	]\n")@
 	stream_flush(out);
 
 	sqlc = sql_create_context(debug,1,m);
@@ -534,17 +538,16 @@ These lines should be eaten away into the prompt is encountered.
 
 	/*fprintf(stderr,"mapisqlclient:accept queries\n");*/
 	while(go){
-		int size = BUFSIZ + 1, err = 0;
-		char *inbuf = NEW_ARRAY(char, size ), *start = inbuf;
-		int inlen = 0;
-		ssize_t len;
-
+		size = BUFSIZ + 1; err = 0;
+		inbuf = NEW_ARRAY(char, size ); start = inbuf;
+		inlen = 0;
 		if( stream_write(out,prompt,promptlength,1) != 1 ){
 			go= FALSE; break;
 		}
 		stream_flush(out);
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
 		if( blocked ){
+			fprintf(stdout,"blocked mode\n");
 			while ((len = stream_read(in, start, 1, BUFSIZ)) == BUFSIZ){
 				inlen += BUFSIZ;
 				size += BUFSIZ;
@@ -552,43 +555,36 @@ These lines should be eaten away into the prompt is encountered.
 				start = inbuf + size - BUFSIZ - 1;
 				*start = '\0';
 			}
+			if( len < 0){
+				fprintf(stdout,"mapisqlclient:error 1b\n");
+				break;
+			}
+			inlen += len;
+			inbuf[inlen] = '\0';
 		} else { /* line mode */
-			char *s= start;
-			char *lim= start+BUFSIZ;
+			char *s= inbuf;
+			char *lim= inbuf + size;
 			while( (len= stream_read(in,s,1,1))==1 ){
 				if(len<0) {
 					char *msg= "!ERROR:Connection terminated";
 					stream_write(out,msg,strlen(msg),1);
+					inlen=0;
 					break;
 				}
-				if( *s== '\n'){
-					*(s+1)=0;
-					break;
-				}
+				if( *s== '\n'){ s++; break; }
 				s++;
-				if( s==lim){
-				/* adjust buffer */
+				if( s+1 ==lim){
+					/* adjust buffer */
+					len= s-inbuf;
+					size += BUFSIZ;
+					inbuf = RENEW_ARRAY(char, inbuf, size); 
+					lim= inbuf+size;
+					s= inbuf+len;
 				}
 			}
-			if( len>0) len= s-start;
+			*s= 0;
+			inlen= s-inbuf;
 		}
-		if( len < 0){
-			fprintf(stdout,"mapisqlclient:error 1\n");
-			go = !go;
-			break;
-		}
-		inlen += len;
-		inbuf[inlen] = '\0';
-@-
-The clients will first send a server initialization string.
-In this case we expect something like sql(....
-To make our live easy now, we simple eat away these or the first request
-		if( firstrequest){
-			firstrequest= 0;
-			continue;
-		}
-@c
-
 		if (!inlen || inbuf[0] == EOT)
 			break;
 
@@ -597,28 +593,25 @@ To make our live easy now, we simple eat away these or the first request
 		/* fprintf(stdout,"mapisqlclient:query:%s\n",sqlc->buf);*/
 
 		while( sqlc->buf && *sqlc->buf && *sqlc->buf != EOT ){
-			char *ibuf = sqlc->buf;
+			/*char *ibuf = sqlc->buf;*/
 
 			err = sqlexecute(sql, out, stk);
 			if (err){ /* output error */
 				char *buf = GDKerrbuf;
-				char msg[BUFSIZ];
-				snprintf(msg,BUFSIZ,"!ERROR:%d:",err);
-				if (stream_write( out, msg, strlen(msg), 1 )!= 1 ||
-				    stream_write( out, sqlc->errstr, 
+				if ( stream_write( out, sqlc->errstr, 
 					strlen(sqlc->errstr), 1 ) != 1){
-					fprintf(stdout,"mapisqlclient:error 2\n");
+					fprintf(stderr,"mapisqlclient:error 2\n");
 					break;
 				}
 				if (buf && (stream_write( out, "\n", 1, 1 ) != 1 ||
 					stream_write( out, buf, strlen(buf), 1 ) !=1)){
-					fprintf(stdout,"mapisqlclient:error 3\n");
+					fprintf(stderr,"mapisqlclient:error 3\n");
 					go= FALSE;
 					break;
 				}
 				buf[0] = 0; /* reset error buf */
 	
-				/* show the buggy query */
+/* ignore echoding of the errorneous query
 				if (stream_write( out, " in:\n", 5, 1) != 1){
 					fprintf(stdout,"mapisqlclient:error 4\n");
 					go= FALSE;
@@ -632,6 +625,7 @@ To make our live easy now, we simple eat away these or the first request
 					go= FALSE;
 					break;
 				}
+End of echo */
 				stream_flush( out );
 			}
 		}
