@@ -567,16 +567,16 @@ if test "x$have_hwcounters" != xno; then
     HWCOUNTERS_INCS="-I$withval/include"
   fi
 
-  case "$host_os" in
-    linux*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
+  case "$host_os-$host" in
+    linux*-i?86*) HWCOUNTERS_INCS="$HWCOUNTERS_INCS -I/usr/src/linux-`uname -r | sed 's|smp$||'`/include"
   esac
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $HWCOUNTERS_INCS"
   save_LIBS="$LIBS"
   LIBS="$LIBS $HWCOUNTERS_LIBS"
   have_hwcounters=no
-  case "$host_os" in
-   linux*)
+  case "$host_os-$host" in
+   linux*-i?86*)
 	AC_CHECK_HEADERS( libperfctr.h ,
 	 AC_CHECK_LIB( perfctr, vperfctr_open , 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
@@ -595,6 +595,16 @@ if test "x$have_hwcounters" != xno; then
 		 )
 		)
 	fi
+	;;
+   linux*-ia64*)
+	AC_CHECK_HEADERS( perfmon/pfmlib.h ,
+	 AC_CHECK_LIB( pfm, pfm_initialize , 
+	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpfm" 
+	    AC_DEFINE(HAVE_LIBPFM, 1, [Define if you have the pfm library])
+	    have_hwcounters=yes
+	  ]
+         )
+	)
 	;;
    solaris*)
 	AC_CHECK_HEADERS( libcpc.h ,

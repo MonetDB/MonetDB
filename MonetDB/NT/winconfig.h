@@ -154,6 +154,7 @@
 /* Define these if you have the respective hardware-counters library */
 /* #undef HAVE_LIBPPERF	*/ /* Linux <= 2.2 */
 /* #undef HAVE_LIBPERFCTR */ /* Linux >= 2.4 */
+/* #undef HAVE_LIBPFM */ /* Linux-ia64 (Itanium[2]) */
 /* #undef HAVE_LIBPERFMON */ /* Solaris <= 7 */
 /* #undef HAVE_LIBCPC */ /* Solaris >= 8 */
 
