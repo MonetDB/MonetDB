@@ -310,7 +310,6 @@ stmt *
 sql_declare_var( mvc *sql, symbol *s ) 
 {
 	if (s->token == SQL_DECLARE) {
-		BUN p;
 		dlist *l = s->data.lval;
 		char *name = l->h->data.sval;
 		sql_subtype *ctype = l->h->next->data.typeval;
@@ -319,7 +318,7 @@ sql_declare_var( mvc *sql, symbol *s )
 		BAT *v = mvc_bind( sql, "sys", "sessions", "value", 0); 
 		oid h;
 
-		if ((p=BUNfnd(BATmirror(n), name))) {
+		if (BUNfnd(BATmirror(n), name)) {
 			bat_destroy(n);
 			bat_destroy(t);
 @-
