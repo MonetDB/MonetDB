@@ -1688,12 +1688,11 @@ void ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
 str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,j,a,b,depth;
     InstrPtr p;
-    (void) pci; (void) stk;  /* to fool compilers */
 	Client cntxt= getClient();
 	Scope scope= cntxt->nspace;
 	char *olderr;
 	int errlen;
-
+    (void) pci; (void) stk;  /* to fool compilers */
 @-
 Safe the errors encountered sofar. They have to be reset
 at the end of the optimization attempt.
