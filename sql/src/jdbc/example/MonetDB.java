@@ -89,7 +89,8 @@ public class MonetDB {
 		} else {
 			// use stdin
 			fr = in;
-			System.out.println("Welcome to the MonetDB interactive terminal!\n\nUse \\q to quit.");
+			System.out.println("Welcome to the MonetDB interactive terminal!\n\nUse \\q to quit");
+			System.out.println("auto commit mode: on");
 		}
 
 		// get a statement to execute on
@@ -107,11 +108,22 @@ public class MonetDB {
 				continue;
 			}
  			if (qp.getQuery().equals("\\q")) break;	// quit
+			if (qp.getQuery().equalsIgnoreCase("start transaction;") ||
+				qp.getQuery().equalsIgnoreCase("begin transaction;")) {
+				// disable JDBC auto commit
+				con.setAutoCommit(false);
+				if (!hasFile) System.out.println("auto commit mode: off");
+			}
+			if (qp.getQuery().equalsIgnoreCase("commit;") ||
+				qp.getQuery().equalsIgnoreCase("rollback;")) {
+				// enable JDBC auto commit
+				con.setAutoCommit(true);
+				if (!hasFile) System.out.println("auto commit mode: on");
+			}
 			query += qp.getQuery() + (qp.hasOpenQuote() ? "\\n" : " ");
 			if (qp.isComplete()) {
 				try {
 					// execute the query, let the driver decide what type it is
-				//	System.out.println(query);
 					if (stmt.execute(query)) {
 						// we have a ResultSet, print it
 						ResultSet rs = stmt.getResultSet();
