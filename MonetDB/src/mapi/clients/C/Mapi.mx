@@ -1776,7 +1776,7 @@ static void mapi_cache_reset(Mapi mid)
 	mid->cache.tuples= 0;
 	mid->cache.writer= 0;
 	mid->fieldcnt=0;
-	memset(mid->cache.fldcnt,0, sizeof(int)* mid->cache.limit);
+	memset(mid->cache.fldcnt, 0, sizeof(int) * mid->cache.limit);
 }
 
 MapiMsg mapi_cache_limit(Mapi mid, int limit)
@@ -2190,14 +2190,23 @@ void mapi_header(Mapi mid, char *line)
 After a header analysis, we should have restored the original line,
 because the client may wish to perform a mapi_fetch_line();
 @= keepProp
-if(strncmp(@1,tag,4)==0){
-	for(i=0; i< mid->cache.fldcnt[mid->cache.reader]; i++){
-		size_t len= strlen(mapi_fetch_field(mid,i));
-		len= len< sizeof(mid->fields[i].@2)? len: sizeof(mid->fields[i].@2)-1;
-		strncpy(mid->fields[i].@2, mapi_fetch_field(mid,i),len);
-		printf("got name %s\n", mapi_fetch_field(mid,i));
+	if (strncmp(@1, tag, 4) == 0) {
+		char *fld;
+
+		i = 0;
+		while ((fld = mapi_fetch_field(mid, i)) != NULL) {
+			strncpy(mid->fields[i].@2, fld,
+				sizeof(mid->fields[i].@2) - 1);
+			mid->fields[i].@2[sizeof(mid->fields[i].@2) - 1] = 0;
+			printf("got name %s\n", fld);
+			i++;
+		}
+		mapi_clrError(mid);
+		if (mid->cache.fldcnt[mid->cache.reader] < i)
+			mid->cache.fldcnt[mid->cache.reader] = i;
+		if (mid->fieldcnt < i)
+			mid->fieldcnt = i;
 	}
-}
 @c
 	buf= strdup(mid->cache.rows[cr]);
 	mapi_slice_row(mid);
@@ -2206,8 +2215,10 @@ if(strncmp(@1,tag,4)==0){
 	*line = '['; 	/* fake a value row */
 	*c = ']';
 	c++;
-	while(*c && (*c == ' '|| *c=='\t')) c++;
-	if(*c) tag= c;
+	while (*c && isspace((int) *c))
+		c++;
+	if (*c)
+		tag = c;
 
 	@:keepProp("name",columnname)@
 	@:keepProp("type",columntype)@
@@ -2267,23 +2278,30 @@ int mapi_get_row(Mapi mid)
 Unquoting of a string is done in place. It returns the start
 of the unquoted part section.
 @c
+/* msg is a string consisting comma-separated values.  The list of
+   values is terminated by ] or by the end-of-string NULL byte.
+   Values can be quoted strings or unquoted values.  Upon return,
+   *start points to the start of the first value which is stripped of
+   leading and trailing white space, and if it was a quoted string,
+   also of the quotes.  Also, backslash-escaped characters in the
+   quoted string are replaced by the values the escapes represent.
+   *next points to either the start of the next value (i.e. after the
+   separating comma, possibly to the leading white space of the next
+   value), or to the trailing ] or NULL byte if this was the last
+   value.
+   msg is *not* a const string: it is altered by this function.
+*/
 static
 void unquote(char *msg, char **start, char **next)
 {
-	/* A full line consists of comma-separated values, and the
-	   whole value is surrounded by [ and ].  Around the commas
-	   there may be arbitrary horizontal white space.  Strings and
-	   character values are surrounded by single or double quotes
-	   which may be escaped by backslashes.  Also, commas and
-	   white space may occur within strings. */
 	char *p= msg, *s;
 	char quote;
 
 	/* first skip over leading white space */
-	while(*p && isspace((int) *p))
+	while (*p && isspace((int) *p))
 		p++;
-	quote= *p;
-	if( quote=='\'' || quote=='"'){
+	quote = *p;
+	if (quote == '\'' || quote == '"') {
 		/* get quoted string and remove trailing bracket first */
 		p++;
 		*start=p;
@@ -2319,7 +2337,10 @@ void unquote(char *msg, char **start, char **next)
 			s++;
 		}
 		*p++ = 0;	/* end-of-string quote */
+		/* skip over trailing junk (presumably white space) */
 		while (*p && *p != ',' && *p != ']')
+			p++;
+		if (*p == ',')
 			p++;
 	} else {
 		/* p points at first non-white space character */
@@ -2330,17 +2351,20 @@ void unquote(char *msg, char **start, char **next)
 		/* search back over trailing white space */
 		for (s = p - 1; s > *start && isspace((int) *s); s--)
 			;
-		if (!isspace((int) *s)) /* gone one too far */
+		if (s < *start || !isspace((int) *s)) /* gone one too far */
 			s++;
-		if (s >= *start && s < p)
-			*s=0;
-		if( *p==0) {
-			*next = p;
-			return;
+		if (*p == ',') {
+			/* there is more to come; skip over separator */
+			p++;
 		}
-		*p = 0;
+		/* make sure value is NULL terminated */
+		/* If the value is the last one before ] and there is
+		   no trailing white space, s points to the ']' which
+		   now gets squashed.  However in this case p==s, so
+		   *p will be 0 as well, and thus **next will be 0,
+		   terminating the loop in our caller. */
+		*s = 0;
 	}
-	p++;
 	*next = p;
 }
 @-
@@ -2575,9 +2599,9 @@ int mapi_slice_row(Mapi mid)
 		}
 		unquote(p, &start, &p);
 		mid->cache.anchors[cr][i++] = start;
-		while (*p == '\t')
+		while (*p && isspace((int) *p))
 			p++;
-	} while(*p && *p != ']');
+	} while (*p && *p != ']');
 	if (mid->fieldcnt <i)
 		mid->fieldcnt=i;
 	mid->cache.fldcnt[cr]= i;
