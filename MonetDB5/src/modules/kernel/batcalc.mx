@@ -271,13 +271,16 @@ address CMDconvert@1_@2
 comment "Materialize the @1 into an @2";
 
 command @2(b:bat[:void,:@1]):bat[:void,:@2] 
-address CMDconvert@1_@2
+address CMDconvertvoid_@1_@2
 comment "Materialize the @1 into an @2";
 
 @mal
-	@:coerce(oid,int)@
 	@:coerce(int,oid)@
-	@:coerce(oid,lng)@
+
+command oid(b:bat[:void,:oid]):bat[:void,:oid] 
+address CMDconvertvoid_oid_oid
+comment "Materialize the oid into an oid";
+
 @-
 @}
 @+ Scientific routines
@@ -910,7 +913,7 @@ str CMDconvert@1_@1(int *ret, int *bid){
 	BAT *b, *bn;
 	@:getBATdescriptor(ret,bid,b,CMDconvert@1)@
 
-        bn= BATcopy(b);
+	bn= BATcopy(b);
 	@:tstBat(CMDconvert@1_@1)@
 	BBPincref(*ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
@@ -1006,9 +1009,6 @@ The lengthly list of coercions options could have been generated.
 	@:General(dbl,flt)@ @:Enlarge(dbl,flt)@
 
 	@:General(int,oid)@
-	@:General(oid,int)@
-	@:General(lng,oid)@
-	@:General(oid,lng)@
 str CMDconvertstr_int(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
@@ -1046,9 +1046,39 @@ str CMDconvertvoid_oid(int *ret, int *bid){
 	BUN p,q;
 	oid x;
 
-	@:getBATdescriptor(ret,bid,b,CMDconvertstr_int)@
+	@:getBATdescriptor(ret,bid,b,CMDconvertvoid_oid)@
 
 	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
+	@:tstBat(CMDconvertstr_int)@
+	x= b->hseqbase;
+
+	BATloopFast(b, p, q, xx) {
+		ptr t = BUNtail(b,p);
+		bunfastins(bn, &x,t);
+		x++;
+	}
+bunins_failed:
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+str CMDconvertvoid_oid_oid(int *ret, int *bid){
+	BAT *b;
+
+	@:getBATdescriptor(ret,bid,b,CMDconvertvoid_oid_oid)@
+	BBPincref( *ret= b->batCacheid,TRUE);
+	return MAL_SUCCEED;
+}
+str CMDconvertvoid_int_oid(int *ret, int *bid){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+	oid x;
+
+	@:getBATdescriptor(ret,bid,b,CMDconvertvoid_int_oid)@
+
+	bn= BATnew(TYPE_void,b->ttype, BATcount(b));
+	BATseqbase(bn,b->hseqbase);
 	@:tstBat(CMDconvertstr_int)@
 	x= b->hseqbase;
 
