@@ -617,15 +617,24 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_order: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		len = snprintf( buf, BUFSIZ, 
-			"s%d := s%d.reverse().sort().reverse();\n", -s->nr, l );
+			"s%d := s%d.reverse().sort()", -s->nr, l );
+		if (!s->flag)
+			len += snprintf( buf+len, BUFSIZ-len,
+				".access(BAT_WRITE).revert().access(BAT_READ)" );
+		len += snprintf( buf+len, BUFSIZ-len, ".reverse();\n" );
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_reorder: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
 		len = snprintf( buf, BUFSIZ, 
-			"s%d := s%d.CTrefine(s%d);\n", -s->nr, l, r); 
-		/* s->flag?"desc":"asc"); */
+			"s%d := s%d.CTrefine(s%d)", -s->nr, l, r); 
+/*
+		if (!s->flag)
+			len += snprintf( buf+len, BUFSIZ-len,
+				".access(BAT_WRITE).revert.access(BAT_READ)" );
+*/
+		len += snprintf( buf+len, BUFSIZ-len, ";\n" );
 		dump(sql,buf,len,-s->nr);
 	} 	break;
 	case st_op: {
