@@ -213,7 +213,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
 
     chunk_size = BATcount(iter_bat);
 
-@- ll_resultallocation
+@= ll_resultallocation
     /* --- result bat allocation. for result size use res_size parameter --- */
     res = BATnew(TYPE_oid, TYPE_oid, res_size);
     if (res == NULL) 
