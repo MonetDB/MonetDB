@@ -37,6 +37,7 @@ This code strongly depends on the front-end/back-end setup.
 #include "sql_server.h"
 #include <sql_backend.h>
 #include <sql_context.h>
+#include <sql_semantic.h>
 #include <monet_context.h>
 #include <kernel.h>
 
@@ -214,7 +215,6 @@ int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
 		int i;
 
 		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
-
 	  	for (i=1, n=args->h; n; i++, n = n->next){
 			atom *a = n->data;
 			argv[i] = a->data;
@@ -365,6 +365,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
+	sql_destroy_args(c);
+	sql_destroy_params(c);
 
 	if (!err && !(c->debug&64)){
 		ssize_t status, type;

@@ -64,6 +64,7 @@ extern void monet4_freecode( backend_code code, backend_stack stk, int nr );
 #include "sql_server2.h"
 #include "sql_gencode.h"	/* for backend_dumpproc() */
 #include <sql_context.h>
+#include <sql_semantic.h>
 #include <sql_scope.h>
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
@@ -115,6 +116,7 @@ static YYSTREE milnode2(int tok, ValPtr valp)
 {
         YYSTREE res = yynode(tok, valp->vtype);
 	res->yyval = *valp;
+	res->dealloc = 0;
         return res;
 }
 
@@ -152,12 +154,12 @@ void monet4_freestack( backend_stack stk )
 	CNTXTfree1(procstk);
 }
 
-void monet4_freecode( backend_code code, backend_stack stk, int nr )
+void monet4_freecode( backend_code code, backend_stack stk, int nr)
 {
 	YYSTREE procnode = (YYSTREE)code;
 	if (code){
-		char cmd[BUFSIZ]; 
-		ValRecord v;
+		Client client;
+		char name[BUFSIZ]; 
 		int i;
 		int l = procnode->yysons[1]->cnt;
 		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
@@ -169,9 +171,11 @@ void monet4_freecode( backend_code code, backend_stack stk, int nr )
 		}
 
 		/* cleanup proc */
-		snprintf(cmd, BUFSIZ, "undef sql%d\n", nr);
-		v.vtype = TYPE_void;
-		(void)interpret_str( (Cntxt)(ptrdiff_t)stk, cmd, &v);
+		snprintf(name, BUFSIZ, "sql%d", nr);
+		CNTXTclient( (Cntxt)(ptrdiff_t)stk, &client);
+		TBL_delproc(client, name);
+
+		_DELETE(procnode);
 	}
 }
 
@@ -368,6 +372,8 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
+	sql_destroy_args(c);
+	sql_destroy_params(c);
 
 	if (!err && !(c->debug&64)){
 		/* ssize_t status; */
