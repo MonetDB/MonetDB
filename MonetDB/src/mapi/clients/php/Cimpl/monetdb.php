@@ -1,8 +1,5 @@
 <?
 
-dl('monetdb.' . PHP_SHLIB_SUFFIX);
-dl('mysql.' . PHP_SHLIB_SUFFIX);
-
 $GET_ROW=0;
 $GET_ASSOC=1;
 $GET_ARRAY=2;
