@@ -100,7 +100,7 @@ SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 				   (SQLCHAR *) (nCompletionType == SQL_COMMIT ?
 						"COMMIT" : "ROLLBACK"),
 				   SQL_NTS);
-		if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
+		if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO) {
 			/* get the error/warning and post in on the dbc handle */
 			SQLCHAR sqlState[SQL_SQLSTATE_SIZE + 1];
 			SQLINTEGER nativeErrCode;
