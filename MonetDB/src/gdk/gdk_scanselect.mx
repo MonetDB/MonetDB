@@ -224,6 +224,20 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 #include "gdk.h"
 #include "gdk_scanselect.h"
 
+@-
+With all the expansions enabled, (our) GNU compiler (gcc 3.2.1)
+on medusa (IRIX64) fails to produce (correctly) working 64-bit code.
+Apparently, the jumps from the return statements in the leaves of the 
+decision tree to the end of the dispatcher function (BAT_scanselect())
+get too long --- at least the Mserver segfaults on these returns.
+An attempt to use labels and goto's to provide "stepping stones" did not
+help.
+Hence, we skip some type-expansions in this very case.
+@c
+#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
+#define SKIP_TYPE_EXPANSIONS
+#endif
+
 @- The actual BAT_scanselect
 
 @= seqscanPrologue
@@ -360,13 +374,16 @@ Expand on output-head-type; usually inhereted from input-head-type.
 	    otherwise it's empty
 */
 @= DEFseqscanHTput
+#ifndef SKIP_TYPE_EXPANSIONS
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(b,p),)@
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(b,p),)@
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(b,p),)@
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(b,p),)@
+#endif
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,fix,any,BUNhloc(b,p),)@
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,var,any,BUNhvar(b,p),)@
 @= seqscanHTput
+#ifndef SKIP_TYPE_EXPANSIONS
 	if (AsHt == TYPE_chr) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(b,p),)@
 	} else if (AsHt == TYPE_sht) {
@@ -376,7 +393,9 @@ Expand on output-head-type; usually inhereted from input-head-type.
 		@:seqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(b,p),)@
 	} else if (AsHt == TYPE_dbl || AsHt == TYPE_lng) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(b,p),)@
-	} else if (b->hvarsized) {
+	} else
+#endif
+	if (b->hvarsized) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,var,any,BUNhvar(b,p),)@
 	} else {
 		@:seqscanTTput(@1,@2,@3,@4,@5,fix,any,BUNhloc(b,p),)@
@@ -495,16 +514,19 @@ heap.
 Adding test for v != nil for types where nil != MIN.
 
 @= DEFseqscanTTget
+#ifndef SKIP_TYPE_EXPANSIONS
 	@:DEFseqscanIF(chr,chr,tloc,simple,chr,)@
 	@:DEFseqscanIF(sht,sht,tloc,simple,sht,)@
 	@:DEFseqscanIF(int,int,tloc,simple,int,)@
 	@:DEFseqscanIF(flt,int,tloc,simple,flt,)@
 	@:DEFseqscanIF(dbl,lng,tloc,simple,dbl,)@
 	@:DEFseqscanIF(lng,lng,tloc,simple,lng,)@
+#endif
 	@:DEFseqscanHTget(eq_str,any,tloc,if (*(var_t*)v == str_idx),tl)@
 	@:DEFseqscanIF(fix,any,tloc,atom,t,&& !atom_EQ(nil,v,t))@
 	@:DEFseqscanIF(var,any,tvar,atom,t,&& !atom_EQ(nil,v,t))@
 @= seqscanTTget
+#ifndef SKIP_TYPE_EXPANSIONS
 	if (AsTt == TYPE_chr) {
 			@:seqscanIF(chr,chr,tloc,simple,chr,)@
 	} else if (AsTt == TYPE_sht) {
@@ -518,7 +540,9 @@ Adding test for v != nil for types where nil != MIN.
 			@:seqscanIF(dbl,lng,tloc,simple,dbl,)@
 	} else if (AsTt == TYPE_lng) {
 			@:seqscanIF(lng,lng,tloc,simple,lng,)@
-	} else if (b->tvarsized) {
+	} else
+#endif
+        if (b->tvarsized) {
 		if (equi && t == TYPE_str && strElimDoubles(&b->theap)) {
 			/* Single-valued sequential scans for strings are
 			 * optimized when double elemination is in effect,
@@ -545,7 +569,10 @@ The dispatcher, called from BAT_select (gdk_batop.mx).
 
 @c
 BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck) {
-        int AsHt = ATOMstorage(bn->htype), t = b->ttype, AsTt = ATOMstorage(t);
+	int t = b->ttype;
+#ifndef SKIP_TYPE_EXPANSIONS
+        int AsHt = ATOMstorage(bn->htype), AsTt = ATOMstorage(t);
+#endif
 	var_t str_idx = 0;
 	oid oid_ctr = (oid)0;
 

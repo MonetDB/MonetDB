@@ -350,8 +350,10 @@ void MT_global_exit(int s) {
 #ifdef HAVE_PTHREAD_KILL_OTHER_THREADS_NP
 	/*(void) kill(0, SIGHUP);*/
 	pthread_kill_other_threads_np();
+#endif
+#ifndef NATIVE_WIN32
 	/* HACK ALERT
-	   The execl is to get around a problem on RedHat Linux.
+	   The execl is to get around a problem on several Unix systems.
 	   When you run Mserver mapi.mil and attempt to shutdown the
 	   server from another process (e.g. Mshutdown.py), the server
 	   doesn't actually exit right away because not all threads
@@ -360,7 +362,10 @@ void MT_global_exit(int s) {
 	   program.  If this new program does nothing, other than
 	   exit, we effectively exit the server.
 	 */
-	execl(s ? "/bin/false" : "/bin/true", s ? "false" : "true", (char *) 0);
+	if (s)
+		execl("/bin/false", "false", (char *) 0);
+	else
+		execl("/bin/true", "true", (char *) 0);
 #endif
 	exit(s);
 }
