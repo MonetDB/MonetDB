@@ -1033,10 +1033,12 @@ public class MonetConnection extends Thread implements Connection {
 						hdrl.addHeader(hdr);
 						hdr = null;
 					}
+					if (rawr == null) throw
+						new SQLException("Protocol violation: result sent before header!");
 					rawr.addRow(tmpLine);
 				} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
 					// unknown, will mean a protocol violation
-					hdrl.addError("Protocol violation: unknown linetype for line: " + tmpLine);
+					addWarning("Protocol violation: unknown linetype.  Ignoring line: " + tmpLine);
 				}
 			} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
 			// Tell the RawResults object there is nothing going to be
@@ -1098,7 +1100,7 @@ public class MonetConnection extends Thread implements Connection {
 					} else if (monet.getLineType() == MonetSocket.HEADER) {
 						rawr.addError("Unexpected header found");
 					} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
-						rawr.addError("Protocol violation, unknown line type for line: " + tmpLine);
+						addWarning("Protocol violation, unknown line type for line: " + tmpLine);
 					}
 				} while (monet.getLineType() != MonetSocket.PROMPT1);
 				// Tell the RawResults object there is nothing going to be
