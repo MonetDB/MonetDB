@@ -75,7 +75,8 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
                   (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'), ],
+                  (mx2html, '.html'), 
+                  (mx2tex, '.bdy.html'), ],
                 'mx.in': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
@@ -96,7 +97,8 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
                   (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'), ]
+                  (mx2html, '.html'), 
+                  (mx2tex, '.bdy.html'), ]
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
