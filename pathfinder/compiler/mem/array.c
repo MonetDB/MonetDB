@@ -123,7 +123,7 @@ PFarray_at (PFarray_t *a, unsigned int i)
     /* out-of-bounds index access, 
      * grow array such that index position i becomes valid 
      */
-    nbytes = (i * a->esize + ACHUNK) & (~ACHUNK + 1);
+    nbytes = ((i + 1) * a->esize + ACHUNK) & (~ACHUNK + 1);
 
     a->base = PFrealloc (nbytes, a->base);
 
