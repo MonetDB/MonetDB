@@ -728,6 +728,9 @@ For variable sized atoms, there may be a head and/or tail heap.
 		} else if (b->htype == TYPE_void) {
 			BATseqbase(b, batSeqbase);
 		}
+#ifndef WORDS_BIGENDIAN
+	    	BATconvert(b,CONV_NTOH);
+#endif
 		BATpropcheck(b);
 		BATpropcheck(BATmirror(b));
 
