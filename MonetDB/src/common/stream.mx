@@ -276,11 +276,6 @@ typedef enum stream_errors {
 #include <io.h>
 #endif
 
-#ifndef SHUT_RD
-#define SHUT_RD		0
-#define SHUT_WR		1
-#endif
-
 struct stream {
 	short byteorder;
 	short access;/* read/write */
@@ -1072,16 +1067,13 @@ socket_close(stream *s)
 		 * share a single socket which is not dup'ed (anymore)
 		 * as Windows' dup doesn't work on sockets;
 		 * hence, only one of the streams must/may close that
-		 * socket; we choose to let the read socket do the
-		 * job, since in mapi.mx it may happen that the read
-		 * stream is closed before the write stream was even
-		 * created.
+		 * socket; we choose to let the write socket do the job.
 		 */
-		if (s->access == ST_READ) {
-			shutdown(fd, SHUT_RD);
+		if (s->access == ST_READ)
+			shutdown(fd, 0);
+		else {
+			shutdown(fd, 1);
 			close(fd);
-		} else {
-			shutdown(fd, SHUT_WR);
 		}
 	}
 	s->stream_data.i = -1;
@@ -1310,11 +1302,11 @@ ssl_close(stream *s)
 		 * hence, only one of the streams must/may close that
 		 * socket; we choose to let the write socket do the job.
 		 */
-		if (s->access == ST_READ) {
-			shutdown(sock, SHUT_RD);
+		if (s->access == ST_READ)
+			shutdown(sock, 0);
+		else {
+			shutdown(sock, 1);
 			close(sock);
-		} else {
-			shutdown(sock, SHUT_WR);
 		}
 		if (ssl_data->ssl)
 			SSL_free(ssl_data->ssl);

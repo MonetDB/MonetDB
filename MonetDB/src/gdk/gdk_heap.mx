@@ -159,10 +159,8 @@ int HEAPextend(Heap *h, size_t size) {
 	if (size <= h->size) 
 		return 0;
 
-	if (h->storage&STORE_MMAP) { 
-#if 0
-BUG: something below makes tests/by_Peter/Tests/tst_mmap.milM crash
-ifndef NOEXTEND_PRIVMAP
+#ifndef NOEXTEND_PRIVMAP
+	if ((h->storage&STORE_MMAP)) { 
 		/* try to get memory pages allocated just after the mapped region */
 		long_str path;
 		FILE *fp = (FILE*) GDKfilelocate(h->filename, "rb+", NULL);
@@ -180,18 +178,19 @@ ifndef NOEXTEND_PRIVMAP
 			totsize -=  h->offset + h->size;
 			fclose(fp);
 	        	GDKfilepath(path,BATDIR,h->filename,NULL);
-			b = GDKmmap(path, MMAP_COPY|MMAP_SEQUENTIAL, (off_t) (h->offset+h->size), totsize, h->base+h->offset+h->size);
+			b = GDKmmap(path, MMAP_COPY, (off_t) (h->offset+h->size), totsize, h->base+h->offset+h->size);
 			if ((b != (char*) -1L)) {
 				h->maxsize = h->size = size;
 				return 0;
 			}
 			IODEBUG GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n", h->filename); 
 		}
+	} 
 #endif
+	if (h->storage & STORE_MMAP) {
 		/* memory mapped files extend: save and remap */
 		if (HEAPsave(h, nme, ext) < 0) return -1;
 		HEAPfree(h);
-        	h->maxsize = h->size = size;
                 if (HEAPload(h, nme, ext, FALSE) < 0) return -1;
 	} else {
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
@@ -287,26 +286,17 @@ its previous contents.
 int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	FILE *fp = (FILE*) GDKfilelocate(nme, "mrb", ext);
 	int ret = 0, desc_status = 0;
-	size_t truncsize = (1+((((size_t)(h->free*1.05))-1)>>16))<<16;
-	size_t minsize = (1+((h->size-1)>>16))<<16;
 	char priv[80];
 
 	h->maxsize = h->size;
 	h->offset = 0;
 	h->filename = NULL;
 
-        if (h->storage&STORE_MMAP) {
-		if (h->size < GDKvm_minsize()) {
-			/* legacy 1: some old repositories have wrong mmap modes => correct during load */
-                	h->storage = STORE_MEM; /* don't scatter memory in too small mmap-files */
-			desc_status = 1; /* modified descriptor */
-		} else if (minsize != h->size) {
-			/* round up mmap heap sizes to 64K segments */
-			h->size = minsize;
-			h->maxsize = MAX(minsize, h->maxsize);
-			desc_status = 1; /* modified descriptor */
-		}
-	}
+	/* legacy 1: some old repositories have wrong mmap modes => correct during load */
+        if ((h->storage&STORE_MMAP) && h->size < GDKvm_minsize()) {
+                h->storage = STORE_MEM; /* don't scatter memory in too small mmap-files */
+		desc_status = 1; /* modified descriptor */
+        }
 	IODEBUG {
 		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ") = %d\n", 
 			nme, ext, h->storage, h->offset, h->free, h->size);
@@ -336,15 +326,15 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 		return -1; /* file could not be located */
 	}
 	/* legacy 2: some old repositories have wasted space => truncate during load */
-	if (trunc && truncsize < h->size) {
+	if (trunc && (double)h->free*1.05 < (double)h->size) {
 		fp = (FILE*) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
-			ret = ftruncate(fileno(fp), (off_t) truncsize);
+			ret = ftruncate(fileno(fp), (off_t) ((double)h->free*1.05));
 			IODEBUG THRprintf(GDKerr, "ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", 
-                                                nme, ext, truncsize, ret);
+                                                nme, ext, h->maxsize, ret);
 			fclose(fp);
 			if (ret == 0) {
-				h->size = h->maxsize = truncsize;
+				h->size = h->maxsize = (size_t) ((double)h->free*1.05);
 				desc_status = 1;
 			}
                 }
