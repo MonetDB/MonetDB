@@ -24,6 +24,7 @@ stream *ws = NULL, *rs = NULL;
  * 	16	output parsed SQL
  * 	32	execute but no output write to the client
  * 	64 	output code only, no excution on the server.
+ *     128 	export code in xml.
  */ 
 extern catalog *catalog_create_stream( stream *s, context *lc );
 
@@ -66,7 +67,7 @@ void execute( context *lc, stream *rs, char *cmd ){
 
 	    lc->out->flush( lc->out );
 	}
-	if (res && res->type == st_output){
+	if (res && (res->type == st_output) ){
 		int nRows = 0;
 		char *buf = readblock( rs ), *n = buf;
 		
@@ -80,6 +81,12 @@ void execute( context *lc, stream *rs, char *cmd ){
 			printf("1 Row affected\n" );
 		else 
 			printf("no Rows affected\n" );
+		_DELETE(buf);
+	}
+	if (res && res->type == st_commit){
+		char *buf = readblock( rs ), *n = buf;
+		int res = strtol(n,&n,10);
+		if (!res) printf("commit failed\n");
 		_DELETE(buf);
 	}
 	if (res) statement_destroy(res);
@@ -122,6 +129,21 @@ void clientAccept( context *lc, stream *rs ){
 	}
 }
 
+void client_commit( context *lc, stream *rs ){
+	char *n, *res, buf[BUFSIZ];
+	int cmmt;
+	
+	snprintf(buf, BUFSIZ, "client_commit(myc, Output);\n" );
+	ws->write( ws, buf, strlen(buf), 1 );
+	ws->flush( ws );
+
+	res = readblock( rs );
+       	n = res;
+	cmmt = strtol(n,&n,10);
+	if (!cmmt) printf("commit failed\n");
+	_DELETE(res);
+}
+
 void clientAccept_new( context *lc, stream *rs ){
 	int err = 0;
 	stream *in = file_rastream( stdin, "<stdin>" );
@@ -132,6 +154,11 @@ void clientAccept_new( context *lc, stream *rs ){
 		if (err) break;
 		if (s){
 	    		int nr = 1;
+			if (lc->debug&128){
+	    			statement2xml( s, &nr, lc );
+				statement_reset( s );
+				nr= 1;
+			} 
 	    		statement_dump( s, &nr, lc );
 
 	    		lc->out->flush( lc->out );
@@ -150,6 +177,12 @@ void clientAccept_new( context *lc, stream *rs ){
 				printf("1 Row affected\n" );
 			else 
 				printf("no Rows affected\n" );
+			_DELETE(buf);
+		}
+		if (!(lc->debug&64) && s && s->type == st_commit){
+			char *buf = readblock( rs ), *n = buf;
+			int res = strtol(n,&n,10);
+			if (!res) printf("commit failed\n");
 			_DELETE(buf);
 		}
 		if (s) statement_destroy(s);
@@ -176,6 +209,7 @@ main()s just before the final return.
 int
 main(int ac, char **av)
 {
+	char buf[BUFSIZ];
 	char *schema = NULL;
 	char *user = NULL;
 	char *prog = *av, *host = "localhost";
@@ -255,6 +289,11 @@ main(int ac, char **av)
 	}
 	sql_init_context( &lc, ws, debug, default_catalog_create() );
 	lc.optimize = opt;
+
+	snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug );
+	ws->write( ws, buf, strlen(buf), 1 );
+	ws->flush( ws );
+
 	catalog_create_stream( rs, &lc );
 	if (!schema) schema = _strdup("default-schema");
 	if (!user) user = _strdup("default-user");
@@ -265,6 +304,8 @@ main(int ac, char **av)
 		lc.out = file_wastream(stdout, "<stdout>" );
 	}
 	clientAccept_new( &lc, rs );
+	client_commit( &lc, rs );
+
 	if (rs){
 	       	rs->close(rs);
 	       	rs->destroy(rs);
