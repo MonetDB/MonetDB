@@ -11,7 +11,7 @@
  **************************************************/
 #include <sql_config.h>
 #include <mem.h>
-#include <odbcinstext.h>
+#include <drvcfg.h>
 
 static const char *aHost[] =
 {

@@ -2,11 +2,10 @@
 INCLUDES = \
 	../include \
 	../../client \
-	$(MONET_INCS) \
-	-I$(top_builddir)
+	$(MONET_INCS) 
 
 DEFS = @DEFS@
 
 lib_MonetODBCs = {
-	SOURCES = drvcfg.c
+	SOURCES = drvcfg.c drvcfg.h
 }

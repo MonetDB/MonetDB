@@ -1,5 +1,5 @@
 /**************************************************
- * odbcinstext.h
+ * drvcfg.h
  *
  **************************************************
  * This code was created by Peter Harvey @ CodeByDesign.
@@ -13,6 +13,7 @@
 #define _ODBCINST_H
 
 #include <sql_config.h>
+
 #include <unistd.h>
 #ifdef HAVE_PWD_H
 #include <pwd.h>
@@ -32,7 +33,7 @@
 #define odbc_export extern 
 #endif
 
-#include <odbc_inst.h>
+#include <odbcinst.h>
 
 /********************************************************
  * CONSTANTS WHICH DO NOT EXIST ELSEWHERE
