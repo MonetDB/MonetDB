@@ -1,14 +1,14 @@
-stderr of test 'fun3` in directory 'tests/XQuery` itself:
+stderr of test 'fun6` in directory 'tests/XQuery` itself:
 
 
-# 10:29:59 >  
-# 10:29:59 >  ( pf -M -O3 fun3.xq | Mtimeout -timeout 60 Mserver "--config=/opt/MonetDB-cvs/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/teubner/tmp/work/pathfinder/Linux/lib/MonetDB:/opt/MonetDB-cvs/lib/MonetDB" --set "gdk_dbfarm=/opt/MonetDB-cvs/var/MonetDB/dbfarm" --set "sql_logdir=/opt/MonetDB-cvs/var/MonetDB/log" --set mapi_port=46778 --set sql_port=57401 --set monet_prompt= --dbname=mTests_tests_XQuery   --dbinit='module(pathfinder,pf_support,ascii_io);' )
-# 10:29:59 >  
+# 10:42:34 >  
+# 10:42:34 >  ( pf -M -O3 fun6.xq | Mtimeout -timeout 60 Mserver "--config=/opt/MonetDB-cvs/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/teubner/tmp/work/pathfinder/Linux/lib/MonetDB:/opt/MonetDB-cvs/lib/MonetDB" --set "gdk_dbfarm=/opt/MonetDB-cvs/var/MonetDB/dbfarm" --set "sql_logdir=/opt/MonetDB-cvs/var/MonetDB/log" --set mapi_port=41174 --set sql_port=54936 --set monet_prompt= --dbname=mTests_tests_XQuery   --dbinit='module(pathfinder,pf_support,ascii_io);' )
+# 10:42:34 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.6.0_rc3
-# builtin opt 	monet_pid = 4411
+# builtin opt 	monet_pid = 14085
 # builtin opt 	prefix = /opt/MonetDB-cvs
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -54,12 +54,12 @@ stderr of test 'fun3` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_mod_path = /home/teubner/tmp/work/pathfinder/Linux/lib/MonetDB:/opt/MonetDB-cvs/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /opt/MonetDB-cvs/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /opt/MonetDB-cvs/var/MonetDB/log
-# cmdline opt 	mapi_port = 46778
-# cmdline opt 	sql_port = 57401
+# cmdline opt 	mapi_port = 41174
+# cmdline opt 	sql_port = 54936
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-# 10:29:59 >  
-# 10:29:59 >  Done.
-# 10:29:59 >  
+# 10:42:35 >  
+# 10:42:35 >  Done.
+# 10:42:35 >  
 

@@ -1066,6 +1066,9 @@ reduce (PFpnode_t * p, int goalnt)
              */
             c = let (letbind (C(LL(p)), C(R(p))), nil ());
 
+	    /* set global information */
+	    LL(c)->sem.var->global = true;
+
             if (var_decls.root)
                 var_decls.hole = var_decls.hole->child[1] = c;
             else
@@ -1102,6 +1105,9 @@ reduce (PFpnode_t * p, int goalnt)
                                    proof (subty (var (v1), C(LR(p))),
                                           seqcast (C(LR(p)), var (v1)))),
                           NULL));
+
+	    /* set global information */
+	    LL(R(c))->sem.var->global = true;
 
             if (var_decls.root)
                 var_decls.hole->child[1] = c;

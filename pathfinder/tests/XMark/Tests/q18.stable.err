@@ -55,7 +55,6 @@ stderr of test 'q18` in directory 'tests/XMark` itself:
 # cmdline opt 	sql_port = 59802
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XMark
-no join recognition in function declaration
 
 # 14:25:21 >  
 # 14:25:21 >  Done.

@@ -1047,6 +1047,10 @@ specific (PFfun_t *fn, PFcnode_t *args)
                 (PFty_quantifier (TY(L(args))) (PFty_data_on (PFty_defn (TY(L(args)))))));
     }
 
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "exactly-one"))) {
+        return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
+    }
+
     if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "zero-or-one"))) {
         return *PFty_simplify (PFty_opt (PFty_prime (PFty_defn (TY(L(args))))));
     }

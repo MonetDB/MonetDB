@@ -11,7 +11,7 @@ stdout of test 'if7` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-2 1 1 "foo" 0 2 1 1 "foo" 0 2 1 1 "foo" 0 2 1 1 "foo" 0 2 1 1 "foo" 0 2 1 1 "foo" 0 
+1 2 1 "foo" 0 1 2 1 "foo" 0 1 2 1 "foo" 0 1 2 1 "foo" 0 1 2 1 "foo" 0 1 2 1 "foo" 0 
 </XQueryResult>
 
 # 23:34:59 >  

@@ -66,8 +66,10 @@ PFnew_var (PFqname_t varname)
 
     n = (PFvar_t *) PFmalloc (sizeof (PFvar_t));
 
-    n->qname = varname;
-    n->type  = PFty_none ();
+    n->qname  = varname;
+    n->type   = PFty_none ();
+    n->vid    = 0;
+    n->global = false;
 
     return n;
 }

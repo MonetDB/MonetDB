@@ -58,6 +58,7 @@ struct PFvar_t {
     PFty_t       type;    /**< type of value bound to this variable */
 
     /* code below is for temporary MIL code generation (summer version) */
+    bool	 global;  /**< boolean indicating if var is global or local */
     char         used;    /**< information if variables (in for loops)
                                are used */
     char         base;    /**< the level (based on for-expression) in which

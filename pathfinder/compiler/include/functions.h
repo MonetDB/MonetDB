@@ -77,6 +77,7 @@ struct PFfun_t {
     struct PFalg_pair_t (*alg) (struct PFalg_op_t *, struct PFalg_pair_t *);
     PFvar_t      **params;     /**< list of parameter variables */
     PFcnode_t     *core;
+    int            fid;        /**< id for variable environment mapping (summer_branch) */
 };
 
 /**

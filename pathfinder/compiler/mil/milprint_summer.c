@@ -49,6 +49,8 @@
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
 #define RIGHT_CHILD(p) ((p)->child[1])
+/* accessor to the type of the node */
+#define TY(p) ((p)->type)
 
 /*
  * Easily access subtree-parts.
@@ -72,6 +74,7 @@
 /* ... and so on ... */
 #define DRL(p) L(R(L(p)))
 #define RLL(p) L(L(R(p)))
+#define RLR(p) R(L(R(p)))
 #define LLR(p) R(L(L(p)))
 #define RRR(p) R(R(R(p)))
 #define LLL(p) L(L(L(p)))
@@ -99,6 +102,9 @@ static void
 translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c);
 static int
 var_is_used (PFvar_t *v, PFcnode_t *e);
+
+/* tests type equality (not only structural like PFTY_EQ) */
+#define TY_EQ(t1,t2) (PFty_subtype (t1,t2) && PFty_subtype (t2,t1))
 
 /**
  * Test if two types are castable into each other
@@ -785,12 +791,36 @@ expand (opt_t *f, int act_level)
             "var expOid_iter := expOid.leftfetchjoin(v_iter%03u);\n",
             /* the iters from the nesting before are looked up */
             act_level - 1); 
+
     milprintf(f,
             "expOid := nil_oid_oid;\n"
             "var iter_expOid := expOid_iter.reverse();\n"
             "expOid_iter := nil_oid_oid;\n"
             "var oidMap_expOid := outer%03u.leftjoin(iter_expOid);\n",
             act_level);
+
+    /* if we don't have a stable sort, we should be sure, that the
+       mapping relation is refined on the tail */
+    milprintf(f,
+            "# refine needed to make "
+            "'outer%03u.leftjoin(iter_expOid)' a stable join\n"
+            "var temp_sort := oidMap_expOid.mark(0@0)"
+                                          ".reverse()"
+                                          ".CTrefine(oidMap_expOid.reverse()"
+                                                                 ".mark(0@0)"
+                                                                 ".reverse())"
+                                          ".mirror();\n"
+            "oidMap_expOid := temp_sort.leftfetchjoin("
+                                        "oidMap_expOid.mark(0@0)"
+                                                     ".reverse())"
+                                      ".reverse()"
+                                              ".leftfetchjoin("
+                                                "oidMap_expOid.reverse()"
+                                                             ".mark(0@0)"
+                                                             ".reverse())\n;"
+            "temp_sort := nil_oid_oid;\n",
+            act_level);
+   
     milprintf(f,
             "iter_expOid := nil_oid_oid;\n"
             "var expOid_oidMap := oidMap_expOid.reverse();\n"
@@ -1021,7 +1051,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
             "sorting := sorting.CTrefine(item);\n"
             "var unq := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
             "sorting := nil_oid_oid;\n"
-	    */
+            */
 
             /* the above code should do the same without a hash table               
             "var unq := CTgroup(iter).CTgroup(item)"
@@ -1035,7 +1065,7 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
             "var oid_item := unq.leftfetchjoin(item);\n"
             "var oid_frag := unq.leftfetchjoin(kind.get_fragment());\n"
             "unq := nil_oid_oid;\n"
-	    */
+            */
             /* get the attribute ids from the pre values */
             "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_item := nil_oid_oid;\n"
@@ -1343,18 +1373,18 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
     }
     else
     {
-        in_ty = PFty_defn(L(c)->sem.type);
+        in_ty = L(c)->sem.type;
     }
 
-    if (PFty_eq (in_ty, PFty_xs_anyNode ()))
+    if (TY_EQ (in_ty, PFty_xs_anyNode ()))
     {
         loop_liftedSCJ (f, axis, 0, 0, 0);
     }
-    else if (PFty_eq (in_ty, PFty_comm ()))
+    else if (TY_EQ (in_ty, PFty_comm ()))
     {
         loop_liftedSCJ (f, axis, "COMMENT", 0, 0);
     }
-    else if (PFty_eq (in_ty, PFty_text ()))
+    else if (TY_EQ (in_ty, PFty_text ()))
     {
         loop_liftedSCJ (f, axis, "TEXT", 0, 0);
     }
@@ -1393,7 +1423,7 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
         }
 
         /* test pattern we don't support */
-        if (!PFty_eq (PFty_child(in_ty), PFty_xs_anyType ()))
+        if (!TY_EQ (PFty_child(in_ty), PFty_xs_anyType ()))
         {
             PFlog ("element body %s in %s step ignored", 
                    PFty_str(in_ty),
@@ -1431,7 +1461,7 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
         loop_liftedSCJ (f, axis, 0, ns, loc); 
 
         /* test pattern we don't support */
-        if (!PFty_eq (PFty_child(in_ty), PFty_star (PFty_atomic ())))
+        if (!TY_EQ (PFty_child(in_ty), PFty_star (PFty_atomic ())))
         {
             PFlog ("attribute body %s in %s step ignored", 
                    PFty_str(in_ty),
@@ -2567,15 +2597,15 @@ evaluateCast (opt_t *f,
 static void
 translateCast2INT (opt_t *f, PFty_t input_type)
 {
-    if (PFty_eq (input_type, PFty_integer ()));
-    else if (PFty_eq (input_type, PFty_decimal ()))
+    if (TY_EQ (input_type, PFty_integer ()));
+    else if (TY_EQ (input_type, PFty_decimal ()))
         evaluateCast (f, dec_container(), int_container(), "[int]()");
-    else if (PFty_eq (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_double ()))
         evaluateCast (f, dbl_container(), int_container(), "[int]()");
-    else if (PFty_eq (input_type, PFty_string ()) ||
-             PFty_eq (input_type, PFty_untypedAtomic ()))
+    else if (TY_EQ (input_type, PFty_string ()) ||
+             TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, str_container(), int_container(), "[int]()");
-    else if (PFty_eq (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, bool_container(), int_container(), "[int]()");
     else /* handles the choice type */
     {
@@ -2613,15 +2643,15 @@ translateCast2INT (opt_t *f, PFty_t input_type)
 static void
 translateCast2DEC (opt_t *f, PFty_t input_type)
 {
-    if (PFty_eq (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, int_container(), dec_container(), "[dbl]()");
-    else if (PFty_eq (input_type, PFty_decimal ()));
-    else if (PFty_eq (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_decimal ()));
+    else if (TY_EQ (input_type, PFty_double ()))
         evaluateCast (f, dbl_container(), dec_container(), "[dbl]()");
-    else if (PFty_eq (input_type, PFty_string ()) ||
-             PFty_eq (input_type, PFty_untypedAtomic ()))
+    else if (TY_EQ (input_type, PFty_string ()) ||
+             TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, str_container(), dec_container(), "[dbl]()");
-    else if (PFty_eq (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, bool_container(), dec_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
@@ -2659,15 +2689,15 @@ translateCast2DEC (opt_t *f, PFty_t input_type)
 static void
 translateCast2DBL (opt_t *f, PFty_t input_type)
 {
-    if (PFty_eq (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, int_container(), dbl_container(), "[dbl]()");
-    else if (PFty_eq (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_decimal ()))
         evaluateCast (f, dec_container(), dbl_container(), "[dbl]()");
-    else if (PFty_eq (input_type, PFty_double ()));
-    else if (PFty_eq (input_type, PFty_string ()) || 
-             PFty_eq (input_type, PFty_untypedAtomic ()))
+    else if (TY_EQ (input_type, PFty_double ()));
+    else if (TY_EQ (input_type, PFty_string ()) || 
+             TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, str_container(), dbl_container(), "[dbl]()");
-    else if (PFty_eq (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, bool_container(), dbl_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
@@ -2705,15 +2735,15 @@ translateCast2DBL (opt_t *f, PFty_t input_type)
 static void
 translateCast2STR (opt_t *f, PFty_t input_type)
 {
-    if (PFty_eq (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, int_container(), str_container(), "[str]()");
-    else if (PFty_eq (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_decimal ()))
         evaluateCast (f, dec_container(), str_container(), "[str]()");
-    else if (PFty_eq (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_double ()))
         evaluateCast (f, dbl_container(), str_container(), "[str]()");
-    else if (PFty_eq (input_type, PFty_string ()) ||
-             PFty_eq (input_type, PFty_untypedAtomic ()));
-    else if (PFty_eq (input_type, PFty_boolean ()))
+    else if (TY_EQ (input_type, PFty_string ()) ||
+             TY_EQ (input_type, PFty_untypedAtomic ()));
+    else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, bool_container(), str_container(), "[str]()");
     else /* handles the choice type */ 
     {
@@ -2751,16 +2781,16 @@ translateCast2STR (opt_t *f, PFty_t input_type)
 static void
 translateCast2BOOL (opt_t *f, PFty_t input_type)
 {
-    if (PFty_eq (input_type, PFty_integer ()))
+    if (TY_EQ (input_type, PFty_integer ()))
         evaluateCast (f, int_container(), bool_container(), "[bit]()");
-    else if (PFty_eq (input_type, PFty_decimal ()))
+    else if (TY_EQ (input_type, PFty_decimal ()))
         evaluateCast (f, dec_container(), bool_container(), "[bit]()");
-    else if (PFty_eq (input_type, PFty_double ()))
+    else if (TY_EQ (input_type, PFty_double ()))
         evaluateCast (f, dbl_container(), bool_container(), "[bit]()");
-    else if (PFty_eq (input_type, PFty_string ()) ||
-             PFty_eq (input_type, PFty_untypedAtomic ()))
+    else if (TY_EQ (input_type, PFty_string ()) ||
+             TY_EQ (input_type, PFty_untypedAtomic ()))
         evaluateCast (f, str_container(), bool_container(), "[!=](\"\")");
-    else if (PFty_eq (input_type, PFty_boolean ()));
+    else if (TY_EQ (input_type, PFty_boolean ()));
     else /* handles the choice type */ 
     {
         milprintf(f,
@@ -2773,7 +2803,7 @@ translateCast2BOOL (opt_t *f, PFty_t input_type)
         evaluateCastBlock (f, int_container(), "[bit]()", "bit");
         evaluateCastBlock (f, dec_container(), "[bit]()", "bit");
         evaluateCastBlock (f, dbl_container(), "[bit]()", "bit");
-        evaluateCastBlock (f, bool_container(), "[!=](\"\")", "bit");
+        evaluateCastBlock (f, str_container(), "[!=](\"\")", "bit");
  
         milprintf(f,
                 "if (_val.ord_uselect(bit(nil)).count() != 0)\n"
@@ -2955,32 +2985,32 @@ translateOperation (opt_t *f, int act_level, int counter,
     translate2MIL (f, act_level, counter, RL(args));
 
     /* evaluate the operation */
-    if (PFty_eq(expected, PFty_integer()))
+    if (TY_EQ(expected, PFty_integer()))
     {
         evaluateOp (f, counter, operator,
                     int_container(), div?"0":0);
     }
-    else if (PFty_eq(expected, PFty_double()))
+    else if (TY_EQ(expected, PFty_double()))
     {
         evaluateOp (f, counter, operator,                                                                                                                    
                     dbl_container(), div?"dbl(0)":0);
     }
-    else if (PFty_eq(expected, PFty_decimal()))
+    else if (TY_EQ(expected, PFty_decimal()))
     {
         evaluateOp (f, counter, operator,                                                                                                                    
                     dec_container(), div?"dbl(0)":0);
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_integer())))
+    else if (TY_EQ(expected, PFty_opt(PFty_integer())))
     {
         evaluateOpOpt (f, counter, operator,
                        int_container(), "INT", div?"0":0);
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_double())))
+    else if (TY_EQ(expected, PFty_opt(PFty_double())))
     {
         evaluateOpOpt (f, counter, operator,                                                                                                                 
                        dbl_container(), "DBL", div?"dbl(0)":0);
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_decimal())))
+    else if (TY_EQ(expected, PFty_opt(PFty_decimal())))
     {
         evaluateOpOpt (f, counter, operator,                                                                                                                 
                        dec_container(), "DEC", div?"dbl(0)":0);
@@ -2999,7 +3029,7 @@ translateOperation (opt_t *f, int act_level, int counter,
  * It doesn't test, if the intermediate results are aligned
  * and therefore doesn't work, if either the order of iter
  * is not given or some rows (like in the optional case)
- * are missing.
+ * are missing. 
  *
  * @param f the Stream the MIL code is printed to
  * @param counter the actual offset of saved variables
@@ -3108,43 +3138,43 @@ translateComparison (opt_t *f, int act_level, int counter,
     translate2MIL (f, act_level, counter, RL(args));
 
     /* evaluate the comparison */
-    if (PFty_eq(expected, PFty_integer()))
+    if (TY_EQ(expected, PFty_integer()))
     {
         evaluateComp (f, counter, comp, int_container());
     }
-    else if (PFty_eq(expected, PFty_double()))
+    else if (TY_EQ(expected, PFty_double()))
     {
         evaluateComp (f, counter, comp, dbl_container());
     }
-    else if (PFty_eq(expected, PFty_decimal()))
+    else if (TY_EQ(expected, PFty_decimal()))
     {
         evaluateComp (f, counter, comp, dec_container());
     }
-    else if (PFty_eq(expected, PFty_boolean()))
+    else if (TY_EQ(expected, PFty_boolean()))
     {
         evaluateComp (f, counter, comp, bool_container());
     }
-    else if (PFty_eq(expected, PFty_string()))
+    else if (TY_EQ(expected, PFty_string()))
     {
         evaluateComp (f, counter, comp, str_container());
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_integer())))
+    else if (TY_EQ(expected, PFty_opt(PFty_integer())))
     {
         evaluateCompOpt (f, counter, comp, int_container());
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_double())))
+    else if (TY_EQ(expected, PFty_opt(PFty_double())))
     {
         evaluateCompOpt (f, counter, comp, dbl_container());
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_decimal())))
+    else if (TY_EQ(expected, PFty_opt(PFty_decimal())))
     {
         evaluateCompOpt (f, counter, comp, dec_container());
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_boolean())))
+    else if (TY_EQ(expected, PFty_opt(PFty_boolean())))
     {
         evaluateCompOpt (f, counter, comp, bool_container());
     }
-    else if (PFty_eq(expected, PFty_opt(PFty_string())))
+    else if (TY_EQ(expected, PFty_opt(PFty_string())))
     {
         evaluateCompOpt (f, counter, comp, str_container());
     }
@@ -4274,62 +4304,92 @@ translateUDF (opt_t *f, int act_level, int counter,
 
     counter++;
     milprintf(f,
-	    "{ # UDF - function call\n"
-	    "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
-	    "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
-	    "var fun_pos%03u := bat(void,oid).seqbase(nil);\n"
-	    "var fun_item%03u := bat(void,oid).seqbase(nil);\n"
-	    "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
-	    counter, counter, counter, counter, counter);
+            "{ # UDF - function call\n"
+            "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
+            "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
+            "var fun_pos%03u := bat(void,oid).seqbase(nil);\n"
+            "var fun_item%03u := bat(void,oid).seqbase(nil);\n"
+            "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
+            counter, counter, counter, counter, counter);
 
     i = 0;
     while ((args->kind != c_nil) && (fun->params[i]))
     {
         translate2MIL (f, act_level, counter, L(args));
         milprintf(f,
-		"# add arg in UDF function call\n"
+                "# add arg in UDF function call\n"
                 "fun_vid%03u := fun_vid%03u.insert(iter.project(%i@0));\n"
                 "fun_iter%03u := fun_iter%03u.insert(iter.reverse().mark(nil).reverse());\n"
                 "fun_pos%03u := fun_pos%03u.insert(pos.reverse().mark(nil).reverse());\n"
                 "fun_item%03u := fun_item%03u.insert(item.reverse().mark(nil).reverse());\n"
                 "fun_kind%03u := fun_kind%03u.insert(kind.reverse().mark(nil).reverse());\n"
-		"# end of add arg in UDF function call\n",
+                "# end of add arg in UDF function call\n",
                 counter, counter, fun->params[i]->vid, 
                 counter, counter, 
                 counter, counter,
                 counter, counter, 
                 counter, counter);
-	args = R(args);
-	i++;
+        args = R(args);
+        i++;
     }
 
+    /* map needed global variables into the function */
+    milprintf(f, "var expOid;\n");
+    getExpanded (f,
+                 /* we don't want to get the variables from
+                    the surrounding scope like for
+                    but from the current */
+                 act_level+1, 
+                 fun->fid);
     milprintf(f,
-	    "fun_vid%03u := fun_vid%03u.reverse().mark(0@0).reverse();\n"
-	    "fun_iter%03u := fun_iter%03u.reverse().mark(0@0).reverse();\n"
-	    "fun_pos%03u := fun_pos%03u.reverse().mark(0@0).reverse();\n"
-	    "fun_item%03u := fun_item%03u.reverse().mark(0@0).reverse();\n"
-	    "fun_kind%03u := fun_kind%03u.reverse().mark(0@0).reverse();\n",
-	    counter, counter, counter, counter, counter,
-	    counter, counter, counter, counter, counter);
+            "var vid := expOid.leftfetchjoin(v_vid%03u);\n"
+            "iter    := expOid.leftfetchjoin(v_iter%03u);\n"
+            "pos     := expOid.leftfetchjoin(v_pos%03u);\n"
+            "item    := expOid.leftfetchjoin(v_item%03u);\n"
+            "kind    := expOid.leftfetchjoin(v_kind%03u);\n"
+            "fun_vid%03u := fun_vid%03u.insert(vid.reverse().mark(nil).reverse());\n"
+            "fun_iter%03u := fun_iter%03u.insert(iter.reverse().mark(nil).reverse());\n"
+            "fun_pos%03u := fun_pos%03u.insert(pos.reverse().mark(nil).reverse());\n"
+            "fun_item%03u := fun_item%03u.insert(item.reverse().mark(nil).reverse());\n"
+            "fun_kind%03u := fun_kind%03u.insert(kind.reverse().mark(nil).reverse());\n"
+            "expOid := nil_oid_oid;\n"
+            "vid := nil_oid_oid;\n"
+            "iter := nil_oid_oid;\n"
+            "pos := nil_oid_oid;\n"
+            "item := nil_oid_oid;\n"
+            "kind := nil_oid_int;\n",
+            act_level, act_level, act_level, act_level, act_level,
+            counter, counter, counter, counter, counter,
+            counter, counter, counter, counter, counter);
+
     milprintf(f,
-	    "var proc_res := %s%i%x (loop%03u, outer%03u, inner%03u, "
-	    "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u);\n",
-	    fun->qname.loc, fun->arity, fun,
-	    act_level, act_level, act_level,
-	    counter, counter, counter, counter, counter);
+            "fun_vid%03u := fun_vid%03u.reverse().mark(0@0).reverse();\n"
+            "fun_iter%03u := fun_iter%03u.reverse().mark(0@0).reverse();\n"
+            "fun_pos%03u := fun_pos%03u.reverse().mark(0@0).reverse();\n"
+            "fun_item%03u := fun_item%03u.reverse().mark(0@0).reverse();\n"
+            "fun_kind%03u := fun_kind%03u.reverse().mark(0@0).reverse();\n",
+            counter, counter, counter, counter, counter,
+            counter, counter, counter, counter, counter);
+    /* call the proc */
     milprintf(f,
-	    "iter := proc_res.fetch(0);\n"
-	    "pos := proc_res.fetch(1);\n"
-	    "item := proc_res.fetch(2);\n"
-	    "kind := proc_res.fetch(3);\n"
-	    "proc_res := nil_oid_bat;\n"
+            "var proc_res := %s%i%x (loop%03u, outer%03u, inner%03u, "
+            "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u);\n",
+            fun->qname.loc, fun->arity, fun,
+            act_level, act_level, act_level,
+            counter, counter, counter, counter, counter);
+    milprintf(f,
+            "iter := proc_res.fetch(0);\n"
+            "pos := proc_res.fetch(1);\n"
+            "item := proc_res.fetch(2);\n"
+            "kind := proc_res.fetch(3);\n"
+            "proc_res := nil_oid_bat;\n"
             "fun_vid%03u := nil_oid_oid;\n"
             "fun_iter%03u := nil_oid_oid;\n"
             "fun_pos%03u := nil_oid_oid;\n"
             "fun_item%03u := nil_oid_oid;\n"
             "fun_kind%03u := nil_oid_oid;\n"
-	    "} # end of UDF - function call\n",
-	    counter, counter, counter, counter, counter);
+            "} # end of UDF - function call\n",
+            counter, counter, counter, counter, counter);
 }
 
 /**
@@ -5215,137 +5275,142 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
             translateCast (f, act_level, c);
             break;
         case c_apply:
-	    if (c->sem.fun->builtin)
-	    {
+            if (c->sem.fun->builtin)
+            {
                 translateFunction (f, act_level, counter, 
                                    c->sem.fun->qname, D(c));
-	    }
-	    else
-	    {
-		translateUDF (f, act_level, counter,
-			      c->sem.fun, D(c));
-	    }
+            }
+            else
+            {
+                translateUDF (f, act_level, counter,
+                              c->sem.fun, D(c));
+            }
             break;
-	case c_orderby:
-	    counter++;
-	    milprintf(f,
-		    "{ # order_by\n"
-		    "var refined%03u := loop%03u.reverse().project(nil);\n",
-		    counter, act_level);
-	    /* evaluate orderspecs */
+        case c_orderby:
+            counter++;
+            milprintf(f,
+                    "{ # order_by\n"
+                    "var refined%03u := loop%03u.reverse().project(nil);\n",
+                    counter, act_level);
+            /* evaluate orderspecs */
             translate2MIL (f, act_level, counter, L(c));
 
-	    /* return expression */
+            /* return expression */
             translate2MIL (f, act_level, counter, R(c));
 
-	    milprintf(f,
-		    /* needed in case of 'stable' property */
-		    /* FIXME: copy() needed until bug [ 1101798 ] is fixed */
-		    "refined%03u := refined%03u.CTrefine(loop%03u.reverse().copy());\n"
-		    "var sorting := refined%03u.mirror();\n"
-		    "refined%03u := nil_oid_oid;\n"
-		    /* we need a real order preserving join here
-		       otherwise the sorting inside an iteration 
-		       could be mixed */
-		    "sorting := sorting.leftjoin(iter.reverse()).reverse();\n"
-		    /* as long as we have no complete stable sort we need
-		       to refine with pos */
-		    "sorting := sorting.CTrefine(pos);\n"
-		    "sorting := sorting.mark(0@0).reverse();\n"
-		    "iter := sorting.leftfetchjoin(iter);\n"
-		    "pos := sorting.leftfetchjoin(pos);\n"
-		    "item := sorting.leftfetchjoin(item);\n"
-		    "kind := sorting.leftfetchjoin(kind);\n"
-		    "sorting := nil_oid_oid;\n"
-		    "} # end of order_by\n",
-		    counter, counter, act_level,
-		    counter, counter);
-	    break;
-	case c_orderspecs:
-	    /* we have to find the correct type container */
-	    if (PFty_subtype (L(c)->type, PFty_star (PFty_integer ())))
-		container = ".leftfetchjoin(int_values)";
-	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_double ())))
-		container = ".leftfetchjoin(dbl_values)";
-	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_decimal ())))
-		container = ".leftfetchjoin(dec_values)";
-	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_string ())))
-		container = ".leftfetchjoin(str_values)";
-	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_untypedAtomic ())))
-		container = ".leftfetchjoin(str_values)";
-	    else if (PFty_subtype (L(c)->type, PFty_star (PFty_boolean ())))
-		container = "";
-	    else
-		PFoops (OOPS_FATAL, "typing in orderspec doesn't work");
+            milprintf(f,
+                    /* needed in case of 'stable' property */
+                    /* FIXME: copy() needed until bug [ 1101798 ] is fixed */
+                    "refined%03u := refined%03u.CTrefine(loop%03u.reverse().copy());\n"
+                    "var sorting := refined%03u.mirror();\n"
+                    "refined%03u := nil_oid_oid;\n"
+                    /* we need a real order preserving join here
+                       otherwise the sorting inside an iteration 
+                       could be mixed */
+                    "sorting := sorting.leftjoin(iter.reverse()).reverse();\n"
+                    /* as long as we have no complete stable sort we need
+                       to refine with pos */
+                    "sorting := sorting.CTrefine(pos);\n"
+                    "sorting := sorting.mark(0@0).reverse();\n"
+                    "iter := sorting.leftfetchjoin(iter);\n"
+                    "pos := sorting.leftfetchjoin(pos);\n"
+                    "item := sorting.leftfetchjoin(item);\n"
+                    "kind := sorting.leftfetchjoin(kind);\n"
+                    "sorting := nil_oid_oid;\n"
+                    "} # end of order_by\n",
+                    counter, counter, act_level,
+                    counter, counter);
+            break;
+        case c_orderspecs:
+            /* we have to find the correct type container */
+            if (PFty_subtype (L(c)->type, PFty_star (PFty_integer ())))
+                container = ".leftfetchjoin(int_values)";
+            else if (PFty_subtype (L(c)->type, PFty_star (PFty_double ())))
+                container = ".leftfetchjoin(dbl_values)";
+            else if (PFty_subtype (L(c)->type, PFty_star (PFty_decimal ())))
+                container = ".leftfetchjoin(dec_values)";
+            else if (PFty_subtype (L(c)->type, PFty_star (PFty_string ())))
+                container = ".leftfetchjoin(str_values)";
+            else if (PFty_subtype (L(c)->type, PFty_star (PFty_untypedAtomic ())))
+                container = ".leftfetchjoin(str_values)";
+            else if (PFty_subtype (L(c)->type, PFty_star (PFty_boolean ())))
+                container = "";
+            else
+                PFoops (OOPS_FATAL, "typing in orderspec doesn't work");
 
-	    descending = (c->sem.mode.dir == p_asc)?"":"_rev";
+            descending = (c->sem.mode.dir == p_asc)?"":"_rev";
 
-	    translate2MIL (f, act_level, counter, L(c));
+            translate2MIL (f, act_level, counter, L(c));
 
-	    milprintf(f,
+            milprintf(f,
                     "if (iter.tunique().count() != iter.count()) {"
-		    "ERROR (\"more than one value per iteration in order by expression\"); }\n"
-		    "{ # orderspec\n"
-		    "var order := iter.reverse().leftfetchjoin(item%s);\n"
+                    "ERROR (\"more than one value per iteration in order by expression\"); }\n"
+                    "{ # orderspec\n"
+                    "var order := iter.reverse().leftfetchjoin(item%s);\n"
                     "if (iter.count() != loop%03u.count()) {",
-		    container,
-		    act_level);
-	    if (c->sem.mode.empty == p_greatest)
-	    {
-	        milprintf(f,
-			/* generate a max value */
-			"order.access(BAT_APPEND);\n"
-			"order := order.insert(loop%03u.reverse()"
-					      ".kdiff(iter.reverse())"
-					      ".project(max(order)+1));\n"
-			"order.access(BAT_READ);\n",
-			act_level);
-	    }
-	    else
-	    {
-	        milprintf(f,
-			/* generate a min value */
-			"order.access(BAT_APPEND);\n"
-			"order := order.insert(loop%03u.reverse()"
-					      ".kdiff(iter.reverse())"
-					      ".project(cast(nil,ttype(order))));\n"
-			"order.access(BAT_READ);\n",
-			act_level);
-	    }
-	    milprintf(f,
-		    "}\n"
-		    "refined%03u := refined%03u.CTrefine%s(order);\n"
-		    "} # end of orderspec\n",
+                    container,
+                    act_level);
+            if (c->sem.mode.empty == p_greatest)
+            {
+                milprintf(f,
+                        /* generate a max value */
+                        "order.access(BAT_APPEND);\n"
+                        "order := order.insert(loop%03u.reverse()"
+                                              ".kdiff(iter.reverse())"
+                                              ".project(max(order)+1));\n"
+                        "order.access(BAT_READ);\n",
+                        act_level);
+            }
+            else
+            {
+                milprintf(f,
+                        /* generate a min value */
+                        "order.access(BAT_APPEND);\n"
+                        "order := order.insert(loop%03u.reverse()"
+                                              ".kdiff(iter.reverse())"
+                                              ".project(cast(nil,ttype(order))));\n"
+                        "order.access(BAT_READ);\n",
+                        act_level);
+            }
+            milprintf(f,
+                    "}\n"
+                    "refined%03u := refined%03u.CTrefine%s(order);\n"
+                    "} # end of orderspec\n",
                     counter, counter, descending);
 
-	    /* evaluate rest of orderspecs until end of list is reached */
-	    translate2MIL (f, act_level, counter, R(c));
-	    break;
-	case c_fun_decls:
+            /* evaluate rest of orderspecs until end of list is reached */
+            translate2MIL (f, act_level, counter, R(c));
+            break;
+        case c_fun_decls:
             translate2MIL (f, act_level, counter, L(c));
-	    /* evaluate rest of orderspecs until end of list is reached */
-	    translate2MIL (f, act_level, counter, R(c));
-	    break;
-	case c_fun_decl:
-	    milprintf(f,
-		    "PROC %s%i%x (bat[void,oid] loop000, "
-			       "bat[void,oid] outer000, "
-			       "bat[void,oid] inner000, "
-			       "bat[void,oid] v_vid000, "
-			       "bat[void,oid] v_iter000, "
-			       "bat[void,oid] v_pos000, "
-			       "bat[void,oid] v_item000, "
-			       "bat[void,int] v_kind000) : bat[void,bat] {\n",
+            /* evaluate rest of orderspecs until end of list is reached */
+            translate2MIL (f, act_level, counter, R(c));
+            break;
+        case c_fun_decl:
+            milprintf(f,
+                    "PROC %s%i%x (bat[void,oid] loop000, "
+                               "bat[void,oid] outer000, "
+                               "bat[void,oid] inner000, "
+                               "bat[void,oid] v_vid000, "
+                               "bat[void,oid] v_iter000, "
+                               "bat[void,oid] v_pos000, "
+                               "bat[void,oid] v_item000, "
+                               "bat[void,int] v_kind000) : bat[void,bat] {\n"
+		    "v_vid000 := v_vid000.access(BAT_WRITE);\n"
+		    "v_iter000 := v_iter000.access(BAT_WRITE);\n"
+		    "v_pos000 := v_pos000.access(BAT_WRITE);\n"
+		    "v_item000 := v_item000.access(BAT_WRITE);\n"
+		    "v_kind000 := v_kind000.access(BAT_WRITE);\n",
                     c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
-	    translate2MIL (f, 0, counter, R(c));
-	    milprintf(f,
-		    "return bat(void,bat).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind);\n"
-		    "} # end of PROC %s%i%x\n",
-		    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
-	    break;
+            translate2MIL (f, 0, counter, R(c));
+            milprintf(f,
+                    "return bat(void,bat).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind);\n"
+                    "} # end of PROC %s%i%x\n",
+                    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+            break;
         case c_nil:
-	    /* don't do anything */
-	    break;
+            /* don't do anything */
+            break;
         case c_typesw:
             PFlog("typeswitch occured");
         case c_letbind:
@@ -5533,10 +5598,16 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *(L(c));
             break;
         case c_let:
-	    /* we need to simplify R(c) here because otherwise 
-	       var_is_used can contain more occurrences than necessary */
+            /* we need to simplify R(c) here because otherwise 
+               var_is_used can contain more occurrences than necessary */
             simplifyCoreTree (R(c));
-            if ((i = var_is_used (LL(c)->sem.var, R(c))))
+
+            /* don't do anything with global variables */
+            if (LL(c)->sem.var->global)
+            {
+                simplifyCoreTree (LR(c));
+            }
+            else if ((i = var_is_used (LL(c)->sem.var, R(c))))
             {
                 simplifyCoreTree (LR(c));
 
@@ -5586,6 +5657,29 @@ simplifyCoreTree (PFcnode_t *c)
         case c_for:
             simplifyCoreTree (LR(c));
             simplifyCoreTree (R(c));
+
+            /* 
+                for $x in for $y in e
+                          return e_y
+                return e_x
+              ==>
+                for $y in e
+                return for $x in e_y
+                       return e_x
+            */
+            if (LR(c)->kind == c_for)
+            {
+                PFcnode_t *c_old = PFmalloc (sizeof (PFcnode_t));
+                *c_old = *c;
+                *c = *LR(c_old);
+                LR(c_old) = R(c);
+                R(c) = c_old;
+                TY(R(c)) = *PFty_simplify ((PFty_quantifier (PFty_defn (TY(RLR(c))))) (TY(RR(c))));
+                TY(c) = *PFty_simplify ((PFty_quantifier (PFty_defn (TY(LR(c))))) (TY(R(c))));
+                simplifyCoreTree (c);
+            }
+
+
             input_type = PFty_defn(LR(c)->type);
 
             if (R(c)->kind == c_var && 
@@ -5593,7 +5687,7 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 *c = *(LR(c));
             }
-            else if (PFty_eq (input_type, PFty_empty ()))
+            else if (TY_EQ (input_type, PFty_empty ()))
             {
                 new_node = PFcore_empty ();
                 new_node->type = PFty_empty ();
@@ -5672,10 +5766,10 @@ simplifyCoreTree (PFcnode_t *c)
                - if the cast type has only a additional
                  occurence indicator compared to the
                  input type */
-            if (PFty_eq (input_type, cast_type) ||
-                PFty_eq (input_type, opt_cast_type) ||
+            if (TY_EQ (input_type, cast_type) ||
+                TY_EQ (input_type, opt_cast_type) ||
                 (cast_type.type == ty_opt &&
-                 PFty_eq (input_type, PFty_empty ())))
+                 TY_EQ (input_type, PFty_empty ())))
             {
                 *c = *(R(c));
             }
@@ -5808,7 +5902,7 @@ simplifyCoreTree (PFcnode_t *c)
                 c = D(c);
                 for (i = 0; i < fun->arity; i++, c = R(c))
                 {
-                    expected = (fun->par_ty)[i];
+                    expected = PFty_defn((fun->par_ty)[i]);
  
                     if (expected.type == ty_opt ||
                         expected.type == ty_star ||
@@ -5818,7 +5912,7 @@ simplifyCoreTree (PFcnode_t *c)
                         opt_expected = expected;
  
                     if (PFty_subtype (opt_expected, PFty_atomic ()) &&
-                        !PFty_eq (L(c)->type, expected))
+                        !TY_EQ (L(c)->type, expected))
                     {
                         L(c) = PFcore_seqcast (PFcore_seqtype (expected), L(c));
                         /* type new code, to avoid multiple casts */
@@ -5861,14 +5955,14 @@ simplifyCoreTree (PFcnode_t *c)
             if (L(c)->kind == c_child &&
                 R(c)->kind == c_locsteps &&
                 RL(c)->kind == c_descendant_or_self &&
-                PFty_eq(RLL(c)->type, PFty_xs_anyNode ()))
+                TY_EQ(RLL(c)->type, PFty_xs_anyNode ()))
             {
                 L(c)->kind = c_descendant;
                 R(c) = RR(c);
             }
             else if (R(c)->kind == c_locsteps &&
                 RL(c)->kind == c_self &&
-                PFty_eq(RLL(c)->type, PFty_xs_anyNode ()))
+                TY_EQ(RLL(c)->type, PFty_xs_anyNode ()))
             {
                 R(c) = RR(c);
             }
@@ -5879,29 +5973,29 @@ simplifyCoreTree (PFcnode_t *c)
             if (L(c)->kind == c_empty)
                 *c = *(PFcore_empty ());
             break;
-	case c_orderspecs:
+        case c_orderspecs:
             simplifyCoreTree (L(c));
             simplifyCoreTree (R(c));
 
-	    input_type = PFty_prime(L(c)->type);
+            input_type = PFty_prime(PFty_defn (L(c)->type));
             if (input_type.type == ty_star ||
-	        input_type.type == ty_plus ||
-		input_type.type == ty_opt)
-	    {
-		input_type = PFty_child(input_type);
-	    }
+                input_type.type == ty_plus ||
+                input_type.type == ty_opt)
+            {
+                input_type = PFty_child(input_type);
+            }
 
-	    /* we want to avoid comparison between different types */
-	    if (input_type.type == ty_choice)
-	    {
+            /* we want to avoid comparison between different types */
+            if (input_type.type == ty_choice)
+            {
                 L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
                 /* type new code, to avoid multiple casts */
                 c->type     =
                 L(c)->type  =
                 LL(c)->type = PFty_string ();
                 simplifyCoreTree (L(c));
-	    }
-	    break;
+            }
+            break;
         default: 
             for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
                 simplifyCoreTree (c->child[i]);
@@ -6285,11 +6379,11 @@ static int test_join(PFcnode_t *for_node,
             if (LR(fst_inner)->kind == c_for &&
                 LR(LR(fst_inner))->kind == c_locsteps &&
                 (L(LR(LR(fst_inner)))->kind == c_attribute ||
-                 PFty_eq(LL(LR(LR(fst_inner)))->type,
+                 TY_EQ(LL(LR(LR(fst_inner)))->type,
                          PFty_text ())) &&
                 R(LR(fst_inner))->kind == c_seqcast &&
                 RL(LR(fst_inner))->kind == c_seqtype &&
-                PFty_eq (RL(LR(fst_inner))->sem.type, PFty_untypedAtomic()) &&
+                TY_EQ (RL(LR(fst_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(fst_inner))->kind == c_apply &&
                 !PFqname_eq (RR(LR(fst_inner))->sem.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
@@ -6324,11 +6418,11 @@ static int test_join(PFcnode_t *for_node,
             if (LR(snd_inner)->kind == c_for &&
                 LR(LR(snd_inner))->kind == c_locsteps &&
                 (L(LR(LR(snd_inner)))->kind == c_attribute ||
-                 PFty_eq(LL(LR(LR(snd_inner)))->type,
+                 TY_EQ(LL(LR(LR(snd_inner)))->type,
                          PFty_text ())) &&
                 R(LR(snd_inner))->kind == c_seqcast &&
                 RL(LR(snd_inner))->kind == c_seqtype &&
-                PFty_eq (RL(LR(snd_inner))->sem.type, PFty_untypedAtomic()) &&
+                TY_EQ (RL(LR(snd_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(snd_inner))->kind == c_apply &&
                 !PFqname_eq (RR(LR(snd_inner))->sem.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
@@ -6572,13 +6666,31 @@ static void recognize_join(PFcnode_t *c,
     unsigned int i;
     assert(c);
     var_info *var_struct;
+    PFcnode_t *args;
 
     switch (c->kind)
     {
         case c_var:
             /* get var_info of current variable */
             var_struct = var_lookup (c->sem.var, active_vlist);
-            if (!var_struct) PFoops (OOPS_FATAL, "thinking error");
+
+            if (!var_struct)
+            {
+                /* avoid errors for global variables */
+                if (c->sem.var->global)
+                {
+                    /* start from nesting 1 because input arguments don't have
+                       to be completely independent and therefore shouldn't
+                       occur in scope 0 (which would be the default for function 
+                       declarations) */
+                    var_struct = create_var_info (c, c->sem.var, 1);
+                    *(var_info **) PFarray_add (active_vlist) = var_struct;
+                }
+                else
+                {
+                    PFoops (OOPS_FATAL, "thinking error");
+                }
+            }
 
             /* add reference to variable definitions */
             add_ref_to_vdef (var_struct, active_vdefs);
@@ -6650,9 +6762,36 @@ static void recognize_join(PFcnode_t *c,
                 PFarray_del (active_vlist);
             }
             break;
-	case c_fun_decls:
-	    PFlog ("no join recognition in function declaration");
-	    break;
+        case c_fun_decl:
+            /* start from nesting 1 because input arguments don't have
+               to be completely independent and therefore shouldn't
+               occur in scope 0 (which would be the default for function 
+               declarations) */
+
+            args = L(c);
+            while (args->kind != c_nil)
+            {
+                assert (L(args) && L(args)->kind == c_param);
+                assert (LR(args) && LR(args)->kind == c_var);
+ 
+                /* instead needed here (only variable binding of join patterns are later tested) */
+                *(var_info **) PFarray_add (active_vlist) 
+                    = create_var_info (c, LR(args)->sem.var, 1);
+ 
+                args = R(args);
+            }
+
+            /* call function body */
+            recognize_join (R(c), active_vlist, active_vdefs, 1);
+
+            args = L(c);
+            while (args->kind != c_nil)
+            {
+                /* delete variable from active list */
+                PFarray_del (active_vlist);
+                args = R(args);
+            }
+            break;
         case c_if:
             /* TODO: add recognition for SELECT
             if (test_select (c, active_vlist, active_vdefs, act_level))
@@ -6704,6 +6843,89 @@ update_expansion (opt_t *f, PFcnode_t *c,  PFarray_t *way)
     }
 }
 
+static PFarray_t *
+walk_through_UDF (opt_t *f, 
+                  PFcnode_t *c,
+                  PFarray_t *way,
+                  PFarray_t *counter,
+                  PFarray_t *active_funs)
+{
+    unsigned int i;
+    int vid;
+    bool found;
+        
+    if (c->kind == c_var && c->sem.var->global) 
+    {
+        if (!c->sem.var->vid  && c->sem.var->global)
+        {
+            /* give them a vid and print the whole way
+               (from scope 0 inside function declaration) */
+            (*(int *) PFarray_at (counter, VID))++;
+            vid = *(int *) PFarray_at (counter, VID);
+            c->sem.var->base = 0; /* global variables are defined in scope 0 */
+            c->sem.var->vid = vid;
+            c->sem.var->used = 0;
+        }
+        else if (!c->sem.var->vid)
+        {
+            PFoops (OOPS_FATAL,
+                    "fatal thinking error in variable id assignment");
+        }
+
+        /* inserts fid|vid combinations into var_usage bat */
+        update_expansion (f, c, way);
+        /* the field used is for pruning the MIL code and
+           avoid translation of variables which are later
+           not used */
+        c->sem.var->used += 1;
+    }
+    else if (c->kind == c_for)
+    {
+        counter = walk_through_UDF (f, LR(c), way, counter, active_funs);
+        
+        /* add all the fids, which have to be passed on the way */
+        *(int *) PFarray_add (way) = c->sem.num;
+        counter = walk_through_UDF (f, R(c), way, counter, active_funs);
+        PFarray_del (way);
+    }
+    else if (c->kind == c_apply && 
+             !c->sem.fun->builtin)
+    {
+        counter = walk_through_UDF (f, D(c), way, counter, active_funs);
+
+        /* look up wether function is already active and tested 
+           (to avoid infinite recursion */
+        for (i = 0, found = false; i < PFarray_last (active_funs); i++)
+        {
+            if (*(PFfun_t **) PFarray_at (active_funs, i) == c->sem.fun)
+            {
+                found = true;
+                break;
+            } 
+        }
+        /* add new active function to the stack and once again check
+           to map all global variables correctly */
+        if (!found)
+        {
+            *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
+            /* add new active function to an active function stack and once
+               again check UDFs to map all global variables correctly */
+            *(int *) PFarray_add (way) = c->sem.fun->fid;
+            counter = walk_through_UDF (f, c->sem.fun->core,
+                                        way, counter, active_funs);
+            PFarray_del (way);
+            PFarray_del (active_funs);
+        }
+        
+    } 
+    else 
+    {
+        for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+            counter = walk_through_UDF (f, c->child[i], way, counter, active_funs);
+    }
+    return counter;
+}
+
 /**
  * in append_lev for each variable a vid (variable id) and
  * for each for expression a fid (for id) is added;
@@ -6728,12 +6950,21 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
     if (c->kind == c_var) 
     {
-        if (!c->sem.var->vid)
+        if (!c->sem.var->vid  && c->sem.var->global)
         {
-	    PFoops (OOPS_FATAL,
-		    "Global variables are not yet supported "
-		    "in user defined functions");
-	}
+            /* give them a vid and print the whole way
+               (from scope 0 inside function declaration) */
+            (*(int *) PFarray_at (counter, VID))++;
+            vid = *(int *) PFarray_at (counter, VID);
+            c->sem.var->base = 0; /* global variables are defined in scope 0 */
+            c->sem.var->vid = vid;
+            c->sem.var->used = 0;
+        }
+        else if (!c->sem.var->vid)
+        {
+            PFoops (OOPS_FATAL,
+                    "fatal thinking error in variable id assignment");
+        }
 
        /* inserts fid|vid combinations into var_usage bat */
        update_expansion (f, c, way);
@@ -6756,19 +6987,19 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
        *(int *) PFarray_add (way) = fid;
        act_fid = fid;
 
+       (*(int *) PFarray_at (counter, VID))++;
        vid = *(int *) PFarray_at (counter, VID);
        LLL(c)->sem.var->base = act_fid;
        LLL(c)->sem.var->vid = vid;
        LLL(c)->sem.var->used = 0;
-       (*(int *) PFarray_at (counter, VID))++;
 
        if (LLR(c)->kind == c_var)
        {
+            (*(int *) PFarray_at (counter, VID))++;
             vid = *(int *) PFarray_at (counter, VID);
             LLR(c)->sem.var->base = act_fid;
             LLR(c)->sem.var->vid = vid;
             LLR(c)->sem.var->used = 0;
-            (*(int *) PFarray_at (counter, VID))++;
        }
 
        if (R(c))
@@ -6783,12 +7014,16 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
        if (LR(c))
            counter = append_lev (f, LR(c), way, counter);
 
-       act_fid = *(int *) PFarray_at (counter, ACT_FID);
-       vid = *(int *) PFarray_at (counter, VID);
-       LL(c)->sem.var->base = act_fid;
-       LL(c)->sem.var->vid = vid;
-       LL(c)->sem.var->used = 0;
-       (*(int *) PFarray_at (counter, VID))++;
+
+        if (!LL(c)->sem.var->vid) /* don't start global variables from the beginning */
+        {
+            act_fid = *(int *) PFarray_at (counter, ACT_FID);
+            (*(int *) PFarray_at (counter, VID))++;
+            vid = *(int *) PFarray_at (counter, VID);
+            LL(c)->sem.var->base = act_fid;
+            LL(c)->sem.var->vid = vid;
+            LL(c)->sem.var->used = 0;
+        }
 
        if (R(c))
            counter = append_lev (f, R(c), way, counter);
@@ -6859,23 +7094,50 @@ append_lev (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     }
     else if (c->kind == c_fun_decl)
     {
-	args = L(c);
-	while (args->kind != c_nil)
-	{
+        args = L(c);
+        while (args->kind != c_nil)
+        {
             assert (L(args) && L(args)->kind == c_param);
             assert (LR(args) && LR(args)->kind == c_var);
 
             act_fid = *(int *) PFarray_at (counter, ACT_FID);
+            (*(int *) PFarray_at (counter, VID))++;
             vid = *(int *) PFarray_at (counter, VID);
             LR(args)->sem.var->base = act_fid;
             LR(args)->sem.var->vid = vid;
             LR(args)->sem.var->used = 0;
-            (*(int *) PFarray_at (counter, VID))++;
 
-	    args = R(args);
-	}
-	counter = append_lev (f, R(c), PFarray (sizeof (int)), counter);
+            args = R(args);
+        }
+        counter = append_lev (f, R(c), PFarray (sizeof (int)), counter);
     }
+    /* apply mapping correctly for user defined functions */    
+    else if (c->kind == c_apply && 
+             !c->sem.fun->builtin)
+    {
+        /* get variable occurrences of the input arguments */
+        counter = append_lev (f, D(c), PFarray (sizeof (int)), counter);
+
+        if (!c->sem.fun->fid) /* create fid for UDF on demand */
+        {
+            /* give fun_decl a fid to map global variables */
+            (*(int *) PFarray_at (counter, FID))++;
+            c->sem.fun->fid = *(int *) PFarray_at (counter, FID);
+        }
+
+        /* add new active function to an active function stack and once
+           again check UDFs to map all global variables correctly */
+        *(int *) PFarray_add (way) = c->sem.fun->fid;
+        /* create a new stack with active UDFs to avoid endless recursion */
+        PFarray_t *active_funs = PFarray (sizeof (PFvar_t *));
+        *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
+
+        counter = walk_through_UDF (f, c->sem.fun->core, 
+                                    way, counter, active_funs);
+
+        PFarray_del (active_funs);
+        PFarray_del (way);
+    } 
     else 
     {
        for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
@@ -6906,7 +7168,7 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
     counter = PFarray (sizeof (int));
     *(int *) PFarray_add (counter) = 0;  
     *(int *) PFarray_add (counter) = 0; 
-    *(int *) PFarray_add (counter) = 1; /* set first vid to 1 */
+    *(int *) PFarray_add (counter) = 0;
 
     /* resolves nodes, which are not supported and prunes
        code which is not needed (e.g. casts, let-bindings) */

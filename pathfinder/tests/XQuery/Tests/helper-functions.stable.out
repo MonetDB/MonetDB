@@ -11,7 +11,7 @@ stdout of test 'helper-functions` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<foo>2<bar></bar>34</foo>
+<foo>2<bar/>34</foo>
 </XQueryResult>
 
 # 23:34:21 >  

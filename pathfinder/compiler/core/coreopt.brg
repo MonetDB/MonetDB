@@ -430,14 +430,14 @@ reduce (PFcnode_t * p, int goalnt)
             fun_decls_modified
                 |= replace_var (LL(p)->sem.var, LR(p), fun_decls);
 
-#if FIXME
             /*
              * If we replaced a global variable by another variable,
              * mark this new variable as global.
              */
-            if (fun_decls_modified && LR(p)->kind == c_var)
-                LR(p)->sem.var.global = true;
-#endif
+            if (fun_decls_modified && 
+                LR(p)->kind == c_var &&
+                LL(p)->sem.var->global)
+                LR(p)->sem.var->global = true;
 
             *p = *R(p);
             /* Variable replacement can have effects on patterns deep

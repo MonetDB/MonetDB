@@ -449,6 +449,7 @@ PFfun_new (PFqname_t      qn,
     n->alg     = alg;
     n->params  = params;
     n->core    = NULL;      /* initialize Core equivalent with NULL */
+    n->fid     = 0;         /* needed for summer branch */
 
     /* copy array of formal parameter types (if present) */
     if (arity > 0 && par_tys) {
