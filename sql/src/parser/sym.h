@@ -28,5 +28,4 @@ typedef union symdata {
 	struct type *typeval;
 } symdata;
 
-
 #endif

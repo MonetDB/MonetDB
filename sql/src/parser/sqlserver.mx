@@ -6,7 +6,7 @@
 .MODULE sqlserver;
 	.USE streams;
 
-	.COMMAND sqlserver_start( int port, str cmd ) = sqlserver_start; 
+	.BUILTIN sqlserver_start(int port, str cmd) = sqlserver_start;
 		"start the sql server, calls cmd on each accepted connection"
 
 	.COMMAND stream_read( stream ) : str = sqlserver_read;
@@ -18,6 +18,7 @@
 #define _SQLSERVER_H_
 
 #include <streams.h>
+#include "monet_context.h"
 #include "sqlserver.proto.h"
 
 #endif /*_SQLSERVER_H_*/
@@ -26,11 +27,33 @@
 #include "sqlserver.h"
 #include "mem.h"
 
-int sqlserver_start (int* Port, str cmd ) {
-  int port = *Port;
-  int sock, fd = 0;
+#include  <sys/types.h> 
+#include  <sys/socket.h> 
+
+@= builtin_operand
+{       int _k = interpret(stk, arg(lt, @1), res);
+        if (_k < 0) {
+                return _k;
+        }
+        @3 = VALconvert(@2, res, 0);
+        if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+                return handle_paramerror(res,@1,res->vtype,@2);
+        }
+}
+@c
+
+int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
+  int port, *Port, sock, fd = 0, i, server_run = 1;
+  char *cmd, *Cmd;
   struct sockaddr_in server, client;
-  int server_run = 1;
+
+  if (lt->cnt != 2) {
+        return handle_argerror(res,lt->cnt,2);
+  }
+  @:builtin_operand(0,TYPE_int,Port)@
+  port = *Port;
+  @:builtin_operand(1,TYPE_str,Cmd)@
+  cmd = _strdup(Cmd);
 
   sock = socket (AF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
@@ -72,11 +95,10 @@ int sqlserver_start (int* Port, str cmd ) {
       	perror ("accept () failed");
 	break;
     } else if(retval){
-	int res;
 	char buf[BUFSIZ];
 	
 	snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, fd );
-	monet_eval( buf, &res );
+	interpret_str( stk, buf, res);
 	/*
 	int res = 0;
 	if ((res = close(fd)) < 0){

@@ -1,11 +1,12 @@
 
+#include <mem.h>
+#include <ctype.h>
+#include <stdlib.h>
+
 #include "symbol.h"
 #include "sqlexecute.h"
 #include "sqlscan.h"
-#include <mem.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include <stream.h>
 #include <statement.h>
 

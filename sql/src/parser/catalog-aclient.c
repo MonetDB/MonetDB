@@ -35,16 +35,13 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	catalog *c = lc->cat;
 	int i, tcnt;
 
-	printf("types before\n" );
 	tcnt = readnr(s);
-	printf("types %d\n", tcnt );
 	c->types = list_create();
 	for(i=0;i<tcnt;i++){
 	    char buf[BUFSIZ+1];
 	    char *start = buf, *n = readline(s, buf);
 	    char *sqlname, *monetname, *cast;
 
-	    printf("%s\n", buf );
 	    n = strchr(start, '\t'); *n = '\0';
 	    sqlname = removeQuotes(start, '"');
 
@@ -59,7 +56,6 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	/* TODO load proper type cast table */
 
 	tcnt = readnr(s);
-	printf("aggr %d\n", tcnt);
 	c->aggrs = list_create();
 	for(i=0;i<tcnt;i++){
 	    char *tname;
@@ -72,7 +68,6 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	    c->create_aggr( c, tname, i );
 	}
 
-	printf("func \n");
 	tcnt = readnr(s);
 	c->funcs = list_create();
 	for(i=0;i<tcnt;i++){
@@ -86,7 +81,6 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	    c->create_func( c, tname, i );
 	}
 
-	printf("tables \n");
 	/* bats are void-aligned */
 	tcnt = readnr(s);
 	c->tables = list_create();
@@ -112,7 +106,6 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	    }
 	}
 
-	printf("columns \n");
 	tcnt = readnr(s);
 	for(i=0;i<tcnt;i++){
 	    char buf[BUFSIZ+1];
@@ -121,7 +114,6 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	    int nll, seqnr;
 	    table *t;
 
-	    printf("%s\n", buf );
 	    n = strchr(start, '\t'); *n = '\0';
 	    tname = removeQuotes(start, '"');
 
@@ -143,7 +135,6 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	    t = c->bind_table(c, tname);
 	    c->create_column( c, t, cname, ctype, def, nll, seqnr );
 	}
-	printf("done\n");
 	/* loop over all schema's call create_schema */
 	/* loop over all table's call create_table */
 	/* loop over all column's call create_column */

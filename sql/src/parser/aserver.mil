@@ -189,17 +189,15 @@ proc SQLclient_thread( int sock ):= {
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
-	#print(cmd);
 	eval(cmd);
-	#commit();
 }
 
 proc SQLclient( int sock ) := {
 	print(sock);
-	SQLclient_thread(sock);#.fork();
-	sleep(1);
+	SQLclient_thread(sock).fork();
 }
 
-sqlserver_start(45123, "SQLclient").fork();
+var port := 45123;
+sqlserver_start(port, "SQLclient").fork();
 
 
