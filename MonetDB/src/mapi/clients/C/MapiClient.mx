@@ -654,7 +654,7 @@ dump_table( Mapi mid, char *tname)
 	}
 
 	cnt = mapi_get_field_count(hdl);
-	string = alloca(sizeof(int)*cnt);
+	string = malloc(sizeof(int)*cnt);
 	for(i=0;i<cnt;i++){
 		string[i] = 0;
 		if (strcmp(mapi_get_type(hdl, i),"char") == 0) 
@@ -674,6 +674,7 @@ dump_table( Mapi mid, char *tname)
 			format = "'%s'\n";
 		fprintf(toConsole, format, mapi_fetch_field(hdl,i));
 	}
+	free(string);
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stdout);
 		mapi_close_handle(hdl);
