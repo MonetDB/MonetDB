@@ -197,7 +197,7 @@ a map) to replace disgarding by map lookup.
 Approach: piggyback selection and joins as database fragmentation instructions
 Impact: high
 
-@emph{Expression Compiler (ECoptimizer) (tactics)}
+@emph{MAL Compiler (MCcompiler) (tactics)}
 Goal: to avoid interpretation of functional expressions
 Rationale: interpretation of arithmetic expressions with an interpreter
 is always expensive. Replacing a complex arithmetic expressin with a
@@ -206,7 +206,7 @@ cached (MAL) queries
 Approach:
 Impact: high
 
-@emph{Dynamic Query Scheduler (DQSoptimizer) (tactics)}
+@emph{Dynamic Query Scheduler (DQscheduler) (tactics)}
 Goal: to organize the work in a way so as to optimize resource usage
 Rationale: straight interpretation of a query plan may not lead to the best
 use of the underlying resources. For example, the content of the runtime
@@ -333,9 +333,9 @@ them in a preferred order of deployment.
 @tab    Result Cacher (RCoptimizer)
 
 @item group E:
-@tab    Expression Compiler (ECoptimizer)
+@tab    MAL Compiler (MCcompiler)
 @item 
-@tab    Dynamic Query Scheduler (QSoptimizer)
+@tab    Dynamic Query Scheduler (DQscheduler)
 @item 
 @tab    Vector Execution (VEoptimizer)
 @item 
