@@ -44,7 +44,7 @@ This module contains a simple interface for internet connections.
 	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
 		"duplicate a socket"
 
-.LOAD
+@mil
 	VAR _params := nil;
 	IF (view_bbp_name.reverse.exist("mapi_params")){
 		_params := bat("mapi_params");
@@ -108,7 +108,7 @@ This module contains a simple interface for internet connections.
 	ADDHELP("stream_line", "windhouw", "June  22 2001",
 		"Read a string from <S> until a newline.",
 		"mapi");
-.END;
+@m
 
 .END mapi;
 
@@ -373,18 +373,20 @@ int socket_dup_wrap( int *res, int *s ){
 }
 
 @mil
-module(str,mapi);
+if (mod = "main"){
+	module(str,mapi);
 
-proc get_mapi_port() := {
-	if (monet_environment.exist("mapi_port")){
-		return int(monet_environment.find("mapi_port"));
+	proc get_mapi_port() := {
+		if (monet_environment.exist("mapi_port")){
+			return int(monet_environment.find("mapi_port"));
+		}
+		ERROR("mapi_port is set\n");
 	}
-	ERROR("mapi_port is set\n");
-}
 
-proc mapi_server(int port, int nr) := {
-        var l := listen(port, nr);
-        printf("!ERROR: listen(%d,%d) failed ... exiting\n", port, nr);
-	quit;
+	proc mapi_server(int port, int nr) := {
+	        var l := listen(port, nr);
+	        printf("!ERROR: listen(%d,%d) failed ... exiting\n", port, nr);
+		quit;
+	}
+	fork(mapi_server(get_mapi_port(),5));
 }
-fork(mapi_server(get_mapi_port(),5));
