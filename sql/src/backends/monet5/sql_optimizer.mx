@@ -125,7 +125,7 @@ Reduce the program before other optimizations take place
 	MCoptimizer(c->curprg->def, 0,0,"algebra","joinPath");
 	ARoptimizer(c->curprg->def, 0,0);
 	CXoptimizer(c->curprg->def, 0,0);
-	AMoptimizer(c->curprg->def, 0,0);
+	/* AMoptimizer(c->curprg->def, 0,0);*/
 	/*SQLsetAccessMode(c); done in libraries now */
 
 	mb= c->curprg->def;
@@ -163,7 +163,6 @@ We use knowledge on generation of bind() instructions.
 				    (strcmp(functionName(p),"bind")==0  ) ){
 					int l=0;
 					InstrPtr qc;
-					char bufi[BUFSIZ];
 					BAT *b= NULL;
 @-
 Watch out bind_dbat needs different binding. [costed me a day]
@@ -194,13 +193,23 @@ Empty BATs can be symbolically optimized. Disabled for a while.
 						continue;
 					}
 @-
-Play around with setting a property.
+Play around with setting a property. It should be extended
+with setting the historgram property for the tail.
+Such a histogram is nothing more then a BAT whose head is
+an inclusive boundary value and the tail the corresponding
+number of elements.
+The kernel should provide some supportive routines for this
+or the SQL catalogue manager could keep histograms
+around for each column.
 @c
-					snprintf(bufi,BUFSIZ,"%d",l);
-					setVarProperty(mb,p->argv[0],0,"count",
-						TYPE_str, GDKstrdup(bufi));
+					setVarProperty(mb,p->argv[0],"count", TYPE_int, &l);
+					/* setVarProperty(mb,p->argv[0],"histogram", 
+						TYPE_str, "r_c_histogram"); */
 				}
 			}
+@-
+Check if the relation is already made write-enabled.
+@c
 		if( setWriteMode && p->fcn == setWriteMode) {
 			for(j=0;j<k;j++)
 			if( ns[j]->fcn == setWriteMode && 
@@ -233,6 +242,9 @@ instructions, producing a syntactic correct MAL program again.
 			strncmp(functionName(p),"bind",4)==0 &&
 			strcmp(moduleName(p),"sql") ==0 ) )
 			doit = 1;
+@-
+Skip it if the writeMode relates to a base table
+@c
 		if( setWriteMode)
 		for( j=0; j<klim; j++)
 		if( ns[j] == p) doit= 0;
