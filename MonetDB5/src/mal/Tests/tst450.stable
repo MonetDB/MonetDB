@@ -89,6 +89,7 @@ end main; #12
 [ nil,	  "batcalc"	  ]
 [ nil,	  "calc"	  ]
 [ nil,	  "algebra"	  ]
+[ nil,	  "mkey"	  ]
 [ nil,	  "bat"		  ]
 [ nil,	  "decimal"	  ]
 [ nil,	  "date"	  ]

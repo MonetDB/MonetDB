@@ -568,7 +568,7 @@ function Admin.arith_perftest(b:bat[any::1,any::2],div:any::2,s:str):void; #0  (
     yh_a := calc.-(x,t); #47 CALCbinarySUBintint (yh_a:int)<-(x:int)(t:int)
     ai_a := system.printf(" %d ms\n",yh_a); #48 SYSprint_formatted_int (ai_a:int)<-($62:str)(yh_a:int)
     bi_a := algebra.count(b); #49 CMDcount (bi_a:int)<-(b:bat[any::1,any::2])
-barrier ci_a := calc.<(bi_a,1000000); #50 CALCcompLTintint (ci_a:bit)<-(bi_a:int)($65:int) jump 67
+barrier ci_a := calc.<(bi_a,1000000); #50 CALCcompLTintlng (ci_a:bit)<-(bi_a:int)($65:lng) jump 67
     t := alarm.time(); #51 CLKtime (t:int)
     di_a := system.printf("[pow](%s",s); #52 SYSprint_formatted_str (di_a:int)<-($67:str)(s:str)
     ei_a := batcalc.int(reduce); #53 CMDconvertstr_int (ei_a:bat[any,int])<-(reduce:bat[any,any])
@@ -587,7 +587,6 @@ barrier ci_a := calc.<(bi_a,1000000); #50 CALCcompLTintint (ci_a:bit)<-(bi_a:int
     oi_a := system.printf(" %d ms\n",ni_a); #66 SYSprint_formatted_int (oi_a:int)<-($62:str)(ni_a:int)
 exit ci_a; #67  (ci_a:bit)
 end arith_perftest; #68  
-!WARNING: newConstant:int coerced to lng
 !WARNING: garbage collection not guaranteed
 ##}
 ##
@@ -758,7 +757,7 @@ function Admin.arith_perftest(b:bat[any::1,decimal],div:decimal,s:str):void; #0 
     yh_a := calc.-(x,t); #48 CALCbinarySUBintint (yh_a:int)<-(x:int)(t:int)
     ai_a := system.printf(" %d ms\n",yh_a); #49 SYSprint_formatted_int (ai_a:int)<-($63:str)(yh_a:int)
     bi_a := algebra.count(b); #50 CMDcount (bi_a:int)<-(b:bat[any::1,decimal])
-barrier ci_a := calc.<(bi_a,1000000); #51 CALCcompLTintint (ci_a:bit)<-(bi_a:int)($66:int) jump 68
+barrier ci_a := calc.<(bi_a,1000000); #51 CALCcompLTintlng (ci_a:bit)<-(bi_a:int)($66:lng) jump 68
     t := alarm.time(); #52 CLKtime (t:int)
     di_a := system.printf("[pow](%s",s); #53 SYSprint_formatted_str (di_a:int)<-($68:str)(s:str)
     ei_a := multiplex.script("int",reduce); #54 CMDmultiplexScript (ei_a:bat[any,int])<-($70:str)(reduce:bat[any,decimal])
@@ -777,7 +776,6 @@ barrier ci_a := calc.<(bi_a,1000000); #51 CALCcompLTintint (ci_a:bit)<-(bi_a:int
     oi_a := system.printf(" %d ms\n",ni_a); #67 SYSprint_formatted_int (oi_a:int)<-($63:str)(ni_a:int)
 exit ci_a; #68  (ci_a:bit)
 end arith_perftest; #69  
-!WARNING: newConstant:int coerced to lng
 !WARNING: garbage collection not guaranteed
 ##}
 ##
@@ -1097,7 +1095,7 @@ exit pi_a; #201  (pi_a:bit)
     vi_a := system.printf("#~BeginVariableOutput~#\n"); #203 SYSprint_str (vi_a:int)<-($299:str)
     wi_a := Admin.arith_perftest(int_10K,101,"int_10K"); #204  (wi_a:void)<-(int_10K:bat[void,int])($301:int)($302:str)
     xi_a := system.printf("#~EndVariableOutput~#\n"); #205 SYSprint_str (xi_a:int)<-($304:str)
-    int_100K := bbp.new(void,int,100000); #206 CMDBATnew (int_100K:bat[void,int])<-(void:void)(int:int)($306:int)
+    int_100K := bbp.new(void,int,100000); #206 CMDBATnew (int_100K:bat[void,int])<-(void:void)(int:int)($306:lng)
 barrier dj_a := true; #207  (dj_a:bit)<-($287:bit) jump 218
     i := calc.+(i,1); #208 CALCbinaryADDintint (i:int)<-(i:int)($288:int)
     fj_a := i; #209  (fj_a:int)<-(i:int)
@@ -1318,7 +1316,7 @@ end main; #233
 [ 42@0,	  4488E15,		  -6,	  1224E-115	  ]
 [ 43@0,	  -44880000000000E5,	  4,	  405705964E66	  ]
 [ 44@0,	  1122E40,		  -6,	  5025E-262	  ]
-[ 45@0,	  -11220000000000E30,	  4,	  158478912E164	  ]
+[ 45@0,	  -11220000000000E30,	  4,	  158478892E164	  ]
 [ 46@0,	  22440000000000E9000,	  4,	  nil		  ]
 [ 47@0,	  -2244E9010,		  -6,	  nil		  ]
 [ 48@0,	  nil,			  nil,	  nil		  ]
@@ -1402,7 +1400,7 @@ end main; #233
 [ 126@0,  4488E15,		  -6,	  1224E-115	  ]
 [ 127@0,  -44880000000000E5,	  4,	  405705964E66	  ]
 [ 128@0,  1122E40,		  -6,	  5025E-262	  ]
-[ 129@0,  -11220000000000E30,	  4,	  158478912E164	  ]
+[ 129@0,  -11220000000000E30,	  4,	  158478892E164	  ]
 [ 130@0,  22440000000000E9000,	  4,	  nil		  ]
 [ 131@0,  -2244E9010,		  -6,	  nil		  ]
 [ 132@0,  nil,			  nil,	  nil		  ]
@@ -3415,23 +3413,23 @@ end main; #233
 [ "nec_huge",	  "dec_huge"	  ]
 [ "nec_huge",	  "nec_huge"	  ]
 #~BeginVariableOutput~#
-[/](int_10K) = 21ms
+[/](int_10K) = 20ms
 join(int_10K=10000) = 4 ms
 group(int_10K=100) = 2 ms
 [*](int_10K==10000) = 20 ms
-[-](int_10K=10000) = 24 ms
-[+](int_10K=10000) =  23 ms
-[pow](int_10K=10000) = 59 ms
+[-](int_10K=10000) = 25 ms
+[+](int_10K=10000) =  24 ms
+[pow](int_10K=10000) = 63 ms
 sort(int_10K) =  5 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-[/](int_100K) = 211ms
-join(int_100K=100000) = 30 ms
+[/](int_100K) = 206ms
+join(int_100K=100000) = 31 ms
 group(int_100K=100) = 17 ms
-[*](int_100K==100000) = 201 ms
-[-](int_100K=100000) = 265 ms
-[+](int_100K=100000) =  259 ms
-[pow](int_100K=100000) = 716 ms
+[*](int_100K==100000) = 202 ms
+[-](int_100K=100000) = 274 ms
+[+](int_100K=100000) =  268 ms
+[pow](int_100K=100000) = 709 ms
 sort(int_100K) =  40 ms
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -3439,9 +3437,9 @@ sort(int_100K) =  40 ms
 [/](dec_10K) = 19ms
 join(dec_10K=10000) = 9 ms
 group(dec_10K=100) = 4 ms
-[*](dec_10K==10000) = 67 ms
-[-](dec_10K=10000) = 61 ms
-[+](dec_10K=10000) =  62 ms
+[*](dec_10K==10000) = 64 ms
+[-](dec_10K=10000) = 59 ms
+[+](dec_10K=10000) =  59 ms
 [pow](dec_10K=10000) = 345 ms
 sort(dec_10K) =  17 ms
 #~EndVariableOutput~#
@@ -3450,10 +3448,10 @@ sort(dec_10K) =  17 ms
 [/](dec_100K) = 207ms
 join(dec_100K=100000) = 206 ms
 group(dec_100K=100) = 35 ms
-[*](dec_100K==100000) = 707 ms
-[-](dec_100K=100000) = 621 ms
-[+](dec_100K=100000) =  642 ms
-[pow](dec_100K=10) = 1220 ms
-sort(dec_100K) =  286 ms
+[*](dec_100K==100000) = 697 ms
+[-](dec_100K=100000) = 610 ms
+[+](dec_100K=100000) =  628 ms
+[pow](dec_100K=10) = 1210 ms
+sort(dec_100K) =  289 ms
 #~EndVariableOutput~#
 >

@@ -110,6 +110,5 @@ function Admin.main():int; #0  (main:int)
     quit := bbp.bind("quit"); #32 CMDbbpbind (quit:bat[any,any])<-($52:str)
 end main; #33  
 [ "Dit is een test\\n" ]
-!WARNING: newConstant:int coerced to lng
 !ERROR: MALexception:io.fprintf: not yet defined in version-5
 >

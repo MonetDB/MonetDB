@@ -294,3 +294,19 @@ tst400e		 1.32/1.12/0.2	1M incr fcn     3.7/3.6/0.19
 
 tst901a		 1.9/1.3/0.6	[+] call	7.4/6.7/0.7
 tst901b		 4.3/4.0/0.26	[+] call	20/18.5/1.64
+======================== 20 July 2003 ===================
+
+The compilation mode for both V5 and V4.3.7 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		orion(2x1.4Mh load 0)	
+base		 0.29/0.14/0.16			
+tst400a		 0.45/0.31/0.14	1M loop	 	
+tst400a2	 0.59/0.42/0.17	1M loop inc	
+tst400bHuge 	 1.87/1.51/0.35	100k count (io)	
+tst400cHuge	 5.11/3.94/1.18	100k insert(io)	
+tst400d		 1.35/1.06/0.29	1M insert tuple 
+tst400e		 1.33/0.97/0.16	1M incr fcn     
+
+tst901a		 1.8/1.4/0.4	[+] call	
+tst901b		 4.4/4.1/0.27	[+] call	
+The stream package introduced in this period is not properly used.
