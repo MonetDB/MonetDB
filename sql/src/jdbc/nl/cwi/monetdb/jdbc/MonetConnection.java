@@ -48,7 +48,7 @@ public class MonetConnection implements Connection {
 	// it does !!!NOW!!! (only when you deal with it of course)
 	private Map statements = new WeakHashMap();
 
-	private int curReplySize = 100;
+	private int curReplySize = -1;	// the server by default uses -1 (all)
 
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the current
@@ -116,6 +116,7 @@ public class MonetConnection implements Connection {
 			throw new SQLException("IO Exception: " + e.getMessage());
 		}
 
+		setAutoCommit(autoCommit);
 		closed = false;
 	}
 
@@ -264,7 +265,7 @@ public class MonetConnection implements Connection {
 	/**
 	 * Retrieves this Connection object's current transaction isolation level.
 	 *
-	 * @return the current transaction isolation level, which will be 
+	 * @return the current transaction isolation level, which will be
 	 *         Connection.TRANSACTION_SERIALIZABLE
 	 */
 	public int getTransactionIsolation() {
@@ -346,12 +347,14 @@ public class MonetConnection implements Connection {
 	 */
 	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
 		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (!(savepoint instanceof MonetSavepoint)) throw
+			new SQLException("This driver can only handle savepoints it created itself");
 
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 		if (!sp.isValid()) throw new SQLException("Savepoint invalidated");
 
 		// send the appropriate query string to the database
-		sendIndependantCommand("SRELEASE s" + sp.getId() + ";");
+		sendIndependantCommand("sRELEASE SAVEPOINT s" + sp.getId() + ";");
 	}
 
 	/**
@@ -381,10 +384,12 @@ public class MonetConnection implements Connection {
 	 */
 	public void rollback(Savepoint savepoint) throws SQLException {
 		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (!(savepoint instanceof MonetSavepoint)) throw
+			new SQLException("This driver can only handle savepoints it created itself");
 
 		// send the appropriate query string to the database
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
- 		sendIndependantCommand("SROLLBACK s" + sp.getId() + ";");
+ 		sendIndependantCommand("sROLLBACK TO SAVEPOINT s" + sp.getId() + ";");
 	}
 
 	/**
@@ -407,10 +412,13 @@ public class MonetConnection implements Connection {
 	 * committed.
 	 *
  	 * @param autoCommit true to enable auto-commit mode; false to disable it
+	 * @throws SQLException if a database access error occurs
 	 * @see getAutoCommit()
 	 */
-	public void setAutoCommit(boolean autoCommit) {
+	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		this.autoCommit = autoCommit;
+
+		sendIndependantCommand("SSET autocommit = " + autoCommit + ";");
 	}
 
 	public void setCatalog(String catalog) {}
@@ -505,15 +513,7 @@ public class MonetConnection implements Connection {
 			// don't do work if it's not needed
 			if (size == curReplySize) return;
 
-			try {
-				monet.writeln("Xreply_size " + size);
-				// and wait for the server to be ready again
-				String err;
-				if ((err = monet.waitForPrompt()) != null)
-					throw new SQLException(err);
-			} catch (IOException e) {
-				throw new SQLException(e.toString());
-			}
+			sendIndependantCommand("SSET reply_size = " + size + ";");
 			// store the reply size after a successful change
 			curReplySize = size;
 		}
@@ -527,7 +527,7 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	void sendCommit() throws SQLException {
-		// send commit to the server (note the S in front is a protocol issue)
+		// send commit to the server (note the s in front is a protocol issue)
 		sendIndependantCommand("SCOMMIT;");
 	}
 
@@ -539,7 +539,7 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	void sendRollback() throws SQLException {
-		// send commit to the server (note the S in front is a protocol issue)
+		// send commit to the server (note the s in front is a protocol issue)
 		sendIndependantCommand("SROLLBACK;");
 	}
 

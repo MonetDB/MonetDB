@@ -117,10 +117,6 @@ public class MonetResultSet implements ResultSet {
 		// check if there was an error
 		synchronized(cache) {
 			if (cache.hasError()) {
-				// commit the transaction if applicable
-				if (statement.getConnection().getAutoCommit())
-					((MonetConnection)statement.getConnection()).sendRollback();
-
 				throw new SQLException(cache.getError());
 			}
 		}
@@ -392,10 +388,6 @@ public class MonetResultSet implements ResultSet {
 			// make sure we own the lock on monet
 			synchronized (monet) {
 				try {
-					// commit the transaction if applicable
-					if (statement.getConnection().getAutoCommit())
-					  ((MonetConnection)statement.getConnection()).sendCommit();
-
 					// send command to server indicating we're done with this
 					// result only if we had an ID in the header... Currently
 					// on updates, inserts and deletes there is no header at all
@@ -407,8 +399,6 @@ public class MonetResultSet implements ResultSet {
 					}
 				} catch (IOException e) {
 					// too bad, we're probably closed already
-				} catch (SQLException e) {
-					// too bad again
 				}
 			}
 		}
