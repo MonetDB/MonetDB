@@ -546,7 +546,7 @@ read_more(struct scanner * lc, int n)
 	int more = 0;
 
 
-	while (b->pos+lc->yycur+n >= b->len) {
+	while (b->len < b->pos+lc->yycur+n) {
 
 		if (lc->mode == LINE_1) 
 			return EOF;
@@ -559,9 +559,9 @@ read_more(struct scanner * lc, int n)
 			more = 1;
 		}
 		/* we need more query text */
-		if (bstream_next( b ) < 0 || 
+		if (bstream_next( b ) <= 0 || 
 	    	   /* we asked for more data but didn't get any */
-	    	   (more && b->eof && b->pos+lc->yycur >= b->len))
+	    	   (more && b->eof && b->len < b->pos+lc->yycur+n))
 			return EOF;
 	}
 	return 1;
