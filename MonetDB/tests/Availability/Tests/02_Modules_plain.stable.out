@@ -1,9 +1,9 @@
 stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
 
-# 11:06:11 >  
-# 11:06:11 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
-# 11:06:11 >  
+# 15:18:03 >  
+# 15:18:03 >  Mtimeout -timeout 60 Mserver "--config=/export/scratch1/sjoerd/Monet/etc/monet.conf" --debug=10 --set "monet_mod_path=/export/scratch1/sjoerd/Monet/lib/MonetDB" --dbfarm "/export/scratch1/sjoerd/Monet/var/dbfarm" --set monet_prompt= "/export/scratch1/sjoerd/Monet/Tests/trace.mil" --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
+# 15:18:03 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -433,38 +433,38 @@ Module: "decimal"
 
 [ 29 ]
 [ 29 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature								| help																																																																																							  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "*",			  "OPERATOR:  ",  "*(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 * val2)."																																																																																  ]
-[ "+",			  "OPERATOR:  ",  "+(decimal, decimal) : decimal",					  "Returns a decimal whose value is extactly (val1 + val2)."																																																																																  ]
-[ "-",			  "OPERATOR:  ",  "-(decimal) : decimal",						  "Returns a decimal whose value is -1 * value, with equal scale and precision as 'value'."																																																																												  ]
-[ "-",			  "OPERATOR:  ",  "-(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 - val2)."																																																																																  ]
-[ "/",			  "OPERATOR:  ",  "/(decimal, decimal) : decimal",					  "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. \n      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). \n      Use the tertiary divide(dum,div,prec) command for dividing with arbitrary precision. \n      Division by zero returns decimal(nil)."																																																		  ]
-[ "[/]",		  "PROC:      ",  "[/](BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",		  "not available"																																																																																					  ]
-[ "[divide]",		  "PROC:      ",  "[divide](BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",	  "not available"																																																																																					  ]
-[ "abs",		  "COMMAND:   ",  "abs(decimal) : decimal",						  "Returns a decimal whose value is the absolute value of this number."																																																																															  ]
-[ "addscale",		  "COMMAND:   ",  "addscale(decimal, int) : decimal",					  "Return a  decimal with the same number as value, but with scale = value.scale + delta.\n      This can be seen as shifting the dot in the floating-point value of the decimal\n      to the left (delta < 0) or right (delta > 0) (!DS2.2)."																																																										  ]
-[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",	  "(!DS2.2)"																																																																																						  ]
-[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",  "(!DS2.2)"																																																																																						  ]
-[ "dbl",		  "COMMAND:   ",  "dbl(decimal) : dbl",							  "Return the value of a decimal as a double (return dbl(nil) on overflow)."																																																																														  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(dbl) : decimal",						  "Create a decimal from a double value."																																																																																		  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(flt) : decimal",						  "Create a decimal from a float value."																																																																																		  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(int) : decimal",						  "Translates an integer into a decimal."																																																																																		  ]
-[ "decimal",		  "COMMAND:   ",  "decimal(lng) : decimal",						  "Translates a long into a decimal."																																																																																			  ]
-[ "decimal_minrepeat",	  "COMMAND:   ",  "decimal_minrepeat(int) : void",					  "set number of repeating characters after which to condense decimals (!DS2.2)."																																																																													  ]
-[ "divide",		  "COMMAND:   ",  "divide(decimal, decimal, int) : decimal",				  "Returns a decimal whose value is (val1 / val2), truncated to a specified precision.\n      Division by zero returns decimal(nil)."																																																																							  ]
-[ "flt",		  "COMMAND:   ",  "flt(decimal) : flt",							  "Return the value of a decimal as a float (return flt(nil) on overflow)."																																																																														  ]
-[ "getprecision",	  "COMMAND:   ",  "getprecision(decimal) : int",					  "Returns the precision of this number (!DS2.2)."																																																																																	  ]
-[ "getscale",		  "COMMAND:   ",  "getscale(decimal) : int",						  "Returns the scale of this number (!DS2.2)"																																																																																		  ]
-[ "int",		  "COMMAND:   ",  "int(decimal) : int",							  "Return the truncated value of a decimal as an integer (return int(nil) on overflow)."																																																																												  ]
-[ "istenfold",		  "COMMAND:   ",  "istenfold(decimal) : bit",						  "returns whether decimal is an exact multiple of 10 (!DS2.2)."																																																																															  ]
-[ "lng",		  "COMMAND:   ",  "lng(decimal) : lng",							  "Return the truncated value of a decimal as a long (return lng(nil) on overflow)."																																																																													  ]
-[ "pow",		  "COMMAND:   ",  "pow(decimal, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision of the result is the precision of the decimal (!DS2.2)."																																																																								  ]
-[ "pow",		  "COMMAND:   ",  "pow(decimal, int, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision argument determines the maximum precision of the result (!DS2.2)."																																																																						  ]
-[ "setprecision",	  "COMMAND:   ",  "setprecision(decimal, int) : decimal",				  "Return the same number but with a different precision; i.e. truncated or zero-padded (!DS2.2)."																																																																											  ]
-[ "setscale",		  "COMMAND:   ",  "setscale(decimal, int) : decimal",					  "Normalize the number of a decimal by setting the scale to a fixed value.\n      This is compensated by making the number shorted (by truncation) or by enlarging\n      it with trailing zeros (!DS2.2)."																																																														  ]
-[ "str",		  "COMMAND:   ",  "str(decimal, str) : str",						  "Formats a decimal in a fixed-width string (truncated, if necessary).\n      format = [ '+' ] ( N1 | ( N1 '.' N2 ) | ( '.' N2 ) ) [ 'E' N3 ]\n       with: Nx = a number of the form [0-9]+ (possibly starting with 0)\n      where: N1 = is the number of digits before the comma (default = 0)\n             N2 = is the number of digits after the comma (default = 1)\n             N3 = the number of digits to use for the scale (default = 2)\n      A zero will be printed with only one zero digit (left space-padded), unless N1 has a \n      leading zero, in which case a zero-padded number of width N1 is produced. \n      If the plus at start is specified, positive numbers start with a plus. "	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		| type		| signature								| help																																																																																									  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "*",			  "OPERATOR:  ",  "*(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 * val2)."																																																																																		  ]
+[ "+",			  "OPERATOR:  ",  "+(decimal, decimal) : decimal",					  "Returns a decimal whose value is extactly (val1 + val2)."																																																																																		  ]
+[ "-",			  "OPERATOR:  ",  "-(decimal) : decimal",						  "Returns a decimal whose value is -1 * value, with equal scale and precision as 'value'."																																																																														  ]
+[ "-",			  "OPERATOR:  ",  "-(decimal, decimal) : decimal",					  "Returns a decimal whose value is exactly (val1 - val2)."																																																																																		  ]
+[ "/",			  "OPERATOR:  ",  "/(decimal, decimal) : decimal",					  "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. \n      This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). \n      Use the tertiary divide(num,div,prec) command for dividing with arbitrary precision. \n      Division by zero returns decimal(nil)."																																																				  ]
+[ "[/]",		  "PROC:      ",  "[/](BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",		  "not available"																																																																																							  ]
+[ "[divide]",		  "PROC:      ",  "[divide](BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",	  "not available"																																																																																							  ]
+[ "abs",		  "COMMAND:   ",  "abs(decimal) : decimal",						  "Returns a decimal whose value is the absolute value of this number."																																																																																	  ]
+[ "addscale",		  "COMMAND:   ",  "addscale(decimal, int) : decimal",					  "Return a  decimal with the same number as value, but with scale = value.scale + delta.\n      This can be seen as shifting the dot in the floating-point value of the decimal\n      to the left (delta < 0) or right (delta > 0) (!DS2.2)."																																																												  ]
+[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal) : BAT[any::1,decimal]",	  "(!DS2.2)"																																																																																								  ]
+[ "bulkdivide",		  "COMMAND:   ",  "bulkdivide(BAT[any::1,decimal], decimal, int) : BAT[any::1,decimal]",  "(!DS2.2)"																																																																																								  ]
+[ "dbl",		  "COMMAND:   ",  "dbl(decimal) : dbl",							  "Return the value of a decimal as a double (return dbl(nil) on overflow)."																																																																																  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(dbl) : decimal",						  "Create a decimal from a double value."																																																																																				  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(flt) : decimal",						  "Create a decimal from a float value."																																																																																				  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(int) : decimal",						  "Translates an integer into a decimal."																																																																																				  ]
+[ "decimal",		  "COMMAND:   ",  "decimal(lng) : decimal",						  "Translates a long into a decimal."																																																																																					  ]
+[ "decimal_minrepeat",	  "COMMAND:   ",  "decimal_minrepeat(int) : void",					  "set number of repeating characters after which to condense decimals (!DS2.2)."																																																																															  ]
+[ "divide",		  "COMMAND:   ",  "divide(decimal, decimal, int) : decimal",				  "Returns a decimal whose value is (val1 / val2), truncated to a specified precision.\n      Division by zero returns decimal(nil)."																																																																									  ]
+[ "flt",		  "COMMAND:   ",  "flt(decimal) : flt",							  "Return the value of a decimal as a float (return flt(nil) on overflow)."																																																																																  ]
+[ "getprecision",	  "COMMAND:   ",  "getprecision(decimal) : int",					  "Returns the precision of this number (!DS2.2)."																																																																																			  ]
+[ "getscale",		  "COMMAND:   ",  "getscale(decimal) : int",						  "Returns the scale of this number (!DS2.2)"																																																																																				  ]
+[ "int",		  "COMMAND:   ",  "int(decimal) : int",							  "Return the truncated value of a decimal as an integer (return int(nil) on overflow)."																																																																														  ]
+[ "istenfold",		  "COMMAND:   ",  "istenfold(decimal) : bit",						  "returns whether decimal is an exact multiple of 10 (!DS2.2)."																																																																																	  ]
+[ "lng",		  "COMMAND:   ",  "lng(decimal) : lng",							  "Return the truncated value of a decimal as a long (return lng(nil) on overflow)."																																																																															  ]
+[ "pow",		  "COMMAND:   ",  "pow(decimal, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision of the result is the precision of the decimal (!DS2.2)."																																																																										  ]
+[ "pow",		  "COMMAND:   ",  "pow(decimal, int, int) : decimal",					  "Raises a decimal to the power of some integer.\n      The precision argument determines the maximum precision of the result (!DS2.2)."																																																																								  ]
+[ "setprecision",	  "COMMAND:   ",  "setprecision(decimal, int) : decimal",				  "Return the same number but with a different precision; i.e. truncated or zero-padded (!DS2.2)."																																																																													  ]
+[ "setscale",		  "COMMAND:   ",  "setscale(decimal, int) : decimal",					  "Normalize the number of a decimal by setting the scale to a fixed value.\n      This is compensated by making the number shorter (by truncation) or by enlarging\n      it with trailing zeros (!DS2.2)."																																																																  ]
+[ "str",		  "COMMAND:   ",  "str(decimal, str) : str",						  "Formats a decimal in a fixed-width string (truncated, if necessary).\n      format = [ '+' ] ( N1 | ( N1 '.' N2 ) | ( '.' N2 ) ) [ 'E' N3 ]\n       with: Nx = a number of the form [0-9]+ (possibly starting with 0)\n      where: N1 = is the number of digits before the decimal point (default = 0)\n             N2 = is the number of digits after the decimal point (default = 1)\n             N3 = the number of digits to use for the scale (default = 2)\n      A zero will be printed with only one zero digit (left space-padded), unless N1 has a \n      leading zero, in which case a zero-padded number of width N1 is produced. \n      If the plus at start is specified, positive numbers start with a plus. "	  ]
 
 Module: "enum"
 
@@ -869,7 +869,6 @@ Module: "tcpip"
 [ "terminate",	  "COMMAND:   ",  "terminate() : void",			  "stop a TCP/IP server"																				  ]
 [ "terminate",	  "COMMAND:   ",  "terminate(int) : void",		  "stop a TCP/IP server"																				  ]
 [ "waits",	  "COMMAND:   ",  "waits() : BAT[int,int]",		  "a BAT with all current waiting threads."																		  ]
-!WARNING: TCPepilogue: terminate 0 listeners
 
 Module: "tpcd"
 
@@ -1170,7 +1169,7 @@ Module: "mprof"
 
 quit;
 
-# 17:06:41 >  
-# 17:06:41 >  Done.
-# 17:06:41 >  
+# 15:18:05 >  
+# 15:18:05 >  Done.
+# 15:18:05 >  
 

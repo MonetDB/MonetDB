@@ -1,15 +1,15 @@
 stderr of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
 
-# 11:06:11 >  
-# 11:06:11 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
-# 11:06:11 >  
+# 15:18:03 >  
+# 15:18:03 >  Mtimeout -timeout 60 Mserver "--config=/export/scratch1/sjoerd/Monet/etc/monet.conf" --debug=10 --set "monet_mod_path=/export/scratch1/sjoerd/Monet/lib/MonetDB" --dbfarm "/export/scratch1/sjoerd/Monet/var/dbfarm" --set monet_prompt= "/export/scratch1/sjoerd/Monet/Tests/trace.mil" --dbname=Tests_tests_Availability  < 02_Modules_plain.milS
+# 15:18:03 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 28848
-# builtin opt 	prefix = /ufs/niels/data/monet/Linux
-# builtin opt 	exec_prefix = NONE
+# builtin opt 	monet_pid = 17775
+# builtin opt 	prefix = /export/scratch1/sjoerd/Monet
+# builtin opt 	exec_prefix = /export/scratch1/sjoerd/Monet
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -28,7 +28,7 @@ stderr of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/monet/Linux
+# config opt 	prefix = /export/scratch1/sjoerd/Monet
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -40,10 +40,12 @@ stderr of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # config opt 	monet_deamon = no
 # cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /export/scratch1/sjoerd/Monet/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /export/scratch1/sjoerd/Monet/var/dbfarm
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_tests_Availability
 
-# 11:06:13 >  
-# 11:06:13 >  Done.
-# 11:06:13 >  
+# 15:18:05 >  
+# 15:18:05 >  Done.
+# 15:18:05 >  
 
