@@ -1,8 +1,13 @@
 MAL language issues
-- Check the cleaned up barrier control structure.
-- Co-routine (stream) function support in the kernel
-- replace module and function names with entries into a system/user id table
-  [expected gain 10-20% due to less mallocs of small structures]
+- check all routines for proper match return type and actual
+action.
+- Modules should make the expections being thrown explicit
+- Expand the property management infrastructure. tst3K serie
+- Check the cleaned up barrier and catch control structure.
+- Co-routine ('factory') support in the kernel. They 'yield'
+  a result on each call and finish upon 'return'
+  Factory cloning would then become an issue, they become first
+  class citizens or stick to a context.
 
 - derive multiplex implementations variants automatically?
 - C-code generator for mal blocks to speed up expensive functions
@@ -18,11 +23,20 @@ MAL language issues
 - Realize mal.include call as a preprocessor step
 - Design a macro expansion facility (with property checks)
 
+- check the validity of constants against their type qualifier.
+
 - printing result tables should be improved.
 - rethink position of enum types
 - use a process buffer pool to avoid expensive client starts.
 
 - keep the list of profile filters in server and update after each resolve call
+
+Implementation
+- BAT reference counting in the face of MAL function calls is not
+correct (tst220.mal and tst610.mal)
+- global resource management is not ok yet, for 10M tapestry it
+is about 5 times slower. It appears that it grows too slow,
+spending its time on copying bats all the time.
 
 API issues
 - The Japi variant should in be re-vived
@@ -44,7 +58,10 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
-200504 finalized cross-compilation issues on supported platforms
+20040529 replace module and function names with entries into a system/user id table
+  [expected gain 10-20% due to less mallocs of small structures]
+  [only seen in very lengthy programs
+200505 finalized cross-compilation issues on supported platforms
 200504 copied README and HowToStart from 4.3
 210803 (non)-blocked interaction from Mapi and Perl working
 170803 blocked io to clients finished for MAL
