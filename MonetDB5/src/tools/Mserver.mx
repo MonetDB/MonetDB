@@ -137,14 +137,14 @@ changes.
 void monet_hello(opt *set, int setlen) {
     char *msg = mo_find_option(set, setlen, "monet_welcome");
     if ( msg && strcmp(msg,"yes")==0){
-        printf("# Monet Database Server V%s\n", GDKgetenv("version"));
+        printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
         printf("# Copyright (c) 1993-2003, CWI. ");
         printf("All rights reserved.\n");
         printf("# compiled for %s/%dbit.\n", 
-		GDKgetenv("arch"), sizeof(ptr)*8 );
+		GDKgetenv("gdk_arch"), sizeof(ptr)*8 );
 	printf("# config:%s\n", GDKgetenv("config"));
-	printf("# dbfarm:%s\n", GDKgetenv("dbfarm"));
-	printf("# dbname:%s\n", GDKgetenv("dbname"));
+	printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
+	printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
     }
 }
 
@@ -169,8 +169,8 @@ void monet_init( opt *set, int setlen)
 	int listing=0;
 
 	char dbfarm[BUFSIZ];
-	char *dbname = mo_find_option(set, setlen, "dbname");
-	char *dbfarmval = mo_find_option(set, setlen, "dbfarm");
+	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
+	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 	char *modpath= mo_find_option(set, setlen, "monet_mod_path");
 	char *prefix= mo_find_option(set, setlen, "prefix");
 	if( modpath){ strcpy(dbfarm,modpath);
@@ -218,10 +218,10 @@ void monet_init( opt *set, int setlen)
 	}
 	GDKfree(n);
 
-	if ((p=GDKgetenv("debug")) )
+	if ((p=GDKgetenv("gdk_debug")) )
 		GDKdebug = strtol(p,NULL,10);
 
-	if ((p=GDKgetenv("mmap")) )
+	if ((p=GDKgetenv("gdk_mmap")) )
 		GDKmem_bigsize() = strtol(p,NULL,10);
 
 	monet_hello(set,setlen);
@@ -306,13 +306,13 @@ A grain size of 128 bytes is used to keep overhead low.
 			if (strcmp(long_options[option_index].name, 
 						"dbname") == 0){
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "dbname", optarg );
+					opt_cmdline, "gdk_dbname", optarg );
 				break;
 			}
 			if (strcmp(long_options[option_index].name, 
 						"dbfarm") == 0){
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "dbfarm", optarg );
+					opt_cmdline, "gdk_dbfarm", optarg );
 				break;
 			}
 			usage(prog);
@@ -324,7 +324,7 @@ A grain size of 128 bytes is used to keep overhead low.
 			debug=1;
 			if (optarg){ 
 				setlen = mo_add_option( &set, setlen, 
-					opt_cmdline, "debug", optarg );
+					opt_cmdline, "gdk_debug", optarg );
 			}
 			break;
 		case 's': {
@@ -350,11 +350,13 @@ A grain size of 128 bytes is used to keep overhead low.
 	}
 
 	if (config){
-		setlen = mo_config_file(&set, setlen, config );
-		/* update the configuration parameter itself */
 		int k;
+		setlen = mo_config_file(&set, setlen, config );
+		/* replace the monet_pid option with config */
+		/* update the configuration parameter itself */
 		for(k=0;k<setlen;k++)
-		if( idcmp(set[k].name,"config")==0){
+		if( idcmp(set[k].name,"monet_pid")==0){
+			strcpy(set[k].name,"config");
 			set[k].value= absolute_path(config);
 			break;
 		}
