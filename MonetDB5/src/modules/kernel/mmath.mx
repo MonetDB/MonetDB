@@ -156,7 +156,8 @@ address MATHunary_CEILdbl
 comment "The ceil(x) function rounds x upwards 
 	to the nearest integer.";
 
-command fabs(y:dbl)     :dbl = MATHunary_FABSdbl
+command fabs(y:dbl)     :dbl 
+address MATHunary_FABSdbl
 comment "The fabs(x) function  returns  the  
 	absolute value of the floating-point 
 	number x.";

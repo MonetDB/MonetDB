@@ -92,9 +92,11 @@ A heuristic is to organize the routines along the types
 (int,lng,sht,bit,oid,flt,...) to reduce number of checks
 at function resoluton.
 @= mal_isnil
-	command isnil(v:@1) :bit = CALCisnil_@1
+	command isnil(v:@1) :bit 
+	address CALCisnil_@1
 	comment "is a value nil?";
-	command isnotnil(v:@1) :bit = CALCisnotnil_@1
+	command isnotnil(v:@1) :bit 
+	address CALCisnotnil_@1
 	comment "is a value not equal to nil?";
 @-
 [Mx bug, space required here]
@@ -111,9 +113,11 @@ module calc;
 	@:mal_isnil(lng)@
 	@:mal_isnil(dbl)@
 	@:mal_isnil(str)@
-command isnil(v:void) :bit = CALCisnil_void
+command isnil(v:void) :bit 
+address CALCisnil_void
 comment "is a value nil?";
-command isnotnil(v:void) :bit = CALCisnotnil_void
+command isnotnil(v:void) :bit 
+address CALCisnotnil_void
 comment "is a value not equal to nil?";
 
 @- comparisons 

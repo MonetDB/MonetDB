@@ -106,7 +106,8 @@ comment "Cross tabulation group initialization.
 	 domain and indicate unique groups in 
 	 'attr' tail column.";
 command group(attr:bat[:any$2,:any$1] )
-	:bat[:any$2,:oid] = GRPgroup2
+	:bat[:any$2,:oid] 
+address GRPgroup2
 
 command group(attr:bat[:any$2,:any$1], N:int, rng:int)
 	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) 
@@ -125,7 +126,8 @@ comment "Cross tabulation group extension step.
 	 of the groups in 'ct', taking into account 
 	 also the tail-values in 'attr'.";
 command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
-	:bat[:any$2,:oid] = GRPderive2;
+	:bat[:any$2,:oid] 
+address GRPderive2;
 
 command regroup(ct:bat[:any$2,:oid],
 		attr:bat[:any$2,:any]) :bat[:any$2,:oid] 

@@ -237,7 +237,8 @@ comment "Sets the 'set' property on this BAT to
 	 eliminate duplicates. Use b := b.sunique;
 	 Returns the BAT itself.";
 
-command isaSet( b:bat[:any,:any]) :bit = BKCisaSet
+command isaSet( b:bat[:any,:any]) :bit 
+address BKCisaSet
 comment "return whether the BAT mode is set to unique.";
 
 command setAccess( b:bat[:any$1,:any$2], mode:str) 
@@ -767,7 +768,8 @@ By comparing two OIDs the Monet kernel can very quickly decide that
 two columns are exactly equal. All BAT algebra operations propagate
 these 'sync' OIDs with their own propagation rules.
 @mal
-command isSynced (b1:bat[:any,:any], b2:bat[:any,:any]) :bit = BKCisSynced
+command isSynced (b1:bat[:any,:any], b2:bat[:any,:any]) :bit 
+address BKCisSynced
 comment "Tests whether two BATs are synced or not. ";
 
 @- Constants
