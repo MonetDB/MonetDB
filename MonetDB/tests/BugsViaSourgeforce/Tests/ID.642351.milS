@@ -25,19 +25,19 @@
 module("unix","ascii_io");
 TTD := getenv("TSTTRGDIR");
 
-b:=new(oid,str);
+var b:=new(oid,str);
 b.import(TTD + "/ID.642351.b.txt");
-b.print;
+b.print();
 c:=new(oid,oid);
 c.import(TTD + "/ID.642351.c.txt");
-c.print;
+c.print();
 d:=c.kintersect(b);
-d.print;
-d@batloop { b.find($h).print; }
+d.print();
+d@batloop { b.find($h).print(); }
 
 DBGMSK := debugmask();
 debugmask(or(DBGMSK,2097152));
 e:=c.kintersect(b);
 debugmask(DBGMSK);
-e.print;
-e@batloop { b.find($h).print; }
+e.print();
+e@batloop { b.find($h).print(); }

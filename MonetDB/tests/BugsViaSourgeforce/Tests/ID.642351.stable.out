@@ -35,9 +35,9 @@ stdout of test 'ID.642351` in directory 'tests/BugsViaSourgeforce` itself:
 module("unix","ascii_io");
 TTD := getenv("TSTTRGDIR");
 
-b:=new(oid,str);
+var b:=new(oid,str);
 b.import(TTD + "/ID.642351.b.txt");
-b.print;
+b.print();
 #---------------------------------#
 # BAT:	  tmp_27		  #
 # (oid)	  (str)			  #
@@ -401,7 +401,7 @@ b.print;
 [ 5235@0, "person0"		  ]
 c:=new(oid,oid);
 c.import(TTD + "/ID.642351.c.txt");
-c.print;
+c.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (void)  #
@@ -412,24 +412,24 @@ c.print;
 [ 4109@0, nil	  ]
 [ 4114@0, nil	  ]
 d:=c.kintersect(b);
-d.print;
+d.print();
 #-----------------#
 # BAT:	  tmp_28  #
 # (oid)	  (void)  #
 #-----------------#
-d@batloop { b.find($h).print; }
+d@batloop { b.find($h).print(); }
 
 DBGMSK := debugmask();
 debugmask(or(DBGMSK,2097152));
 e:=c.kintersect(b);
 #BATsemijoin: BATbinsemijoin(l, r, l);
 debugmask(DBGMSK);
-e.print;
+e.print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (oid)	  (void)  #
 #-----------------#
-e@batloop { b.find($h).print; }
+e@batloop { b.find($h).print(); }
 quit();
 
 # 17:33:35 >  

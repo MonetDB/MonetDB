@@ -14,26 +14,26 @@ VAR N  := 10000;	#1000000;
 VAR Li := 100;		#1000;
 VAR Lj := 1000;		#1000;
 
-if (not(view_bbp_name.reverse.exist("a"))) {
-	commit;
+if (not(view_bbp_name.reverse().exist("a"))) {
+	commit();
 	var a := bat(void,dbl,N).rename("a");
 	var i := 0;
 	while(i < N) a.insert(nil,dbl(i :+= 1));
 	a.seqbase(0@0).access(BAT_READ).persists(true);
-	commit;
+	commit();
 }
 
-PROC g(): void := {
+PROC g(): void  {
 	VAR i := 0;
 	VAR b1, b2, b3, b4;
 	WHILE(i < Li) {
 		VAR j := 0;
 		WHILE(j < Lj) {
 			# All these lines create a view on 'a'
-			b1 := a.slice(0,100).reverse.mark(0@0).reverse;
-			b2 := a.slice(0,100).reverse.mark(0@0).reverse;
-			b3 := a.slice(0,100).reverse.mark(0@0).reverse;
-			b4 := a.slice(0,100).reverse.mark(0@0).reverse;
+			b1 := a.slice(0,100).reverse().mark(0@0).reverse();
+			b2 := a.slice(0,100).reverse().mark(0@0).reverse();
+			b3 := a.slice(0,100).reverse().mark(0@0).reverse();
+			b4 := a.slice(0,100).reverse().mark(0@0).reverse();
 			j :+= 1;
 		}
 		printf("%d %d\n", threadid(), i);
@@ -48,44 +48,44 @@ printf("\n#~BeginVariableOutput~#\n");
 {| g(); g(); |}
 1 0
 2 0
-1 1
 2 1
-1 2
+1 1
 2 2
-1 3
+1 2
 2 3
-1 4
+1 3
 2 4
-1 5
+1 4
 2 5
-1 6
+1 5
 2 6
-1 7
+1 6
 2 7
-1 8
+1 7
 2 8
-1 9
+1 8
 2 9
-1 10
+1 9
 2 10
-1 11
+1 10
 2 11
-1 12
+1 11
 2 12
-1 13
+1 12
 2 13
-1 14
+1 13
 2 14
-1 15
+1 14
 2 15
-1 16
+1 15
 2 16
-1 17
+1 16
 2 17
-1 18
+1 17
 2 18
-1 19
+1 18
 2 19
+1 19
 2 20
 1 20
 2 21
@@ -149,70 +149,70 @@ printf("\n#~BeginVariableOutput~#\n");
 2 50
 1 50
 2 51
-1 51
 2 52
-1 52
+1 51
 2 53
-1 53
+1 52
 2 54
-1 54
+1 53
 2 55
-1 55
+1 54
 2 56
-1 56
+1 55
 2 57
-1 57
+1 56
 2 58
-1 58
+1 57
 2 59
-1 59
+1 58
 2 60
-1 60
+1 59
 2 61
-1 61
+1 60
 2 62
-1 62
+1 61
 2 63
-1 63
+1 62
 2 64
-1 64
+1 63
 2 65
-1 65
+1 64
 2 66
-1 66
+1 65
 2 67
-1 67
+1 66
 2 68
-1 68
+1 67
 2 69
-1 69
+1 68
 2 70
-1 70
+1 69
 2 71
-1 71
+1 70
 2 72
-1 72
+1 71
 2 73
-1 73
+1 72
 2 74
-1 74
+1 73
 2 75
-1 75
+1 74
 2 76
-1 76
+1 75
 2 77
+1 76
 1 77
 2 78
 1 78
 2 79
 1 79
 2 80
-1 80
 2 81
-1 81
+1 80
 2 82
-1 82
+1 81
 2 83
+1 82
 1 83
 2 84
 1 84

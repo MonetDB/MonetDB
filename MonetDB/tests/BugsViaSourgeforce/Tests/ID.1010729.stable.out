@@ -9,11 +9,11 @@ stdout of test 'ID.1010729` in directory 'tests/BugsViaSourgeforce` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-b := new(void, int).seqbase(0@0);
+var b := new(void, int).seqbase(0@0);
 b.insert(nil,1).insert(nil, 2).insert(nil, 3);
 
 # 11 is the type_identifier of 'str'
-[cast](b, 11).print;
+[cast](b, 11).print();
 #-----------------#
 # h	tmp_30	  # name
 # void	str	  # type
@@ -22,7 +22,7 @@ b.insert(nil,1).insert(nil, 2).insert(nil, 3);
 [ 1@0,	  "2"	  ]
 [ 2@0,	  "3"	  ]
 
-[cast](b, str).print;
+[cast](b, str).print();
 #-----------------#
 # h	tmp_30	  # name
 # void	str	  # type
@@ -31,7 +31,7 @@ b.insert(nil,1).insert(nil, 2).insert(nil, 3);
 [ 1@0,	  "2"	  ]
 [ 2@0,	  "3"	  ]
 
-[cast](b, dbl).print;
+[cast](b, dbl).print();
 #-----------------#
 # h	tmp_30	  # name
 # void	dbl	  # type
@@ -40,7 +40,7 @@ b.insert(nil,1).insert(nil, 2).insert(nil, 3);
 [ 1@0,	  2	  ]
 [ 2@0,	  3	  ]
 
-[cast](b.[+](48), chr).print;
+[cast](b.[+](48), chr).print();
 #-----------------#
 # h	tmp_28	  # name
 # void	chr	  # type

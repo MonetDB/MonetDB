@@ -23,8 +23,8 @@ stdout of test 'ID.642344` in directory 'tests/BugsViaSourgeforce` itself:
 # The "varval"-function apparently contains a bug
 # regarding reference counting. See example below:
 
-bar:=new(int,int);
-varval("bar").print;
+var bar:=new(int,int);
+varval("bar").print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (int)	  (int)	  #

@@ -12,12 +12,12 @@
 # non-empty 
 # result while it should have been empty. 
 
-t1 := new(void,oid).seqbase(oid(0)).insert(oid(0),oid(10));
-t2 := new(void,int).seqbase(oid(0)).insert(oid(0),1);
+var t1 := new(void,oid).seqbase(oid(0)).insert(oid(0),oid(10));
+var t2 := new(void,int).seqbase(oid(0)).insert(oid(0),1);
 
 printf("LHS:\n");
-t1.reverse.mirror.print;
+t1.reverse().mirror().print();
 printf("RHS:\n");
-t2.print;
+t2.print();
 printf("Result (should be empty):\n");
-join(t1.reverse.mirror,t2).print;
+join(t1.reverse().mirror(),t2).print();
