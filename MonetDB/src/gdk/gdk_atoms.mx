@@ -1425,7 +1425,7 @@ old bats with these string heaps will still be compatible. TODO: replace by strH
 #define GDK_STRHASH(x,y) {                   \
     str _s = (str) (x);                      \
     for((y)=0; *_s; _s++) {                  \
-        (y) = GDK_ROTATE(y, 4, 28, 15) ^ *_s;\
+        (y) = GDK_ROTATE(y, 4, SIZEOF_VOID_P*8-4, 15) ^ *_s;\
     }}
 @c
 hash_t strHash(str s) {

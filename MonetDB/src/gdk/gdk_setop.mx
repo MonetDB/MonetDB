@@ -100,8 +100,7 @@ next@2@3@5:;
 @= hashelim
 	zz = BUNindex(bn, BUNfirst(bn));
 	if (!bn->hhash_heap){
-		int one=1; /* using direct hashing (coll. list length=1) */
-		if (BAThash(bn, &one) == NULL) {
+		if (BAThash(bn, 0) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}

@@ -64,9 +64,9 @@ created immediately.
 		BBPclear(i); /* just ignore old stuff */
 	}
 	TEMpool= BATnew(TYPE_int, TYPE_ptr, TEMSIZE);
-	BAThash(BATreverse(TEMpool));
+	BAThash(BATreverse(TEMpool), 0);
 	BATreset(TEMpool);
-	BAThash(TEMpool);
+	BAThash(TEMpool, 0);
 	BATroles(TEMpool, "tem", "pool");
 	BATfakeCommit(TEMpool);
 @-
@@ -89,9 +89,9 @@ when the event pool so requires.
 	}
 	TEMactive= BATnew(TYPE_int, TYPE_ptr, TEMSIZE);
 	BATroles(TEMpool, "tem", "active");
-	BAThash(BATreverse(TEMactive));
+	BAThash(BATreverse(TEMactive), 0);
 	BATreset(TEMactive);
-	BAThash(TEMactive);
+	BAThash(TEMactive, 0);
 	BATfakeCommit(TEMactive);
 @-
 Some data structures are used to speed-up processing
@@ -113,10 +113,10 @@ TEMadmInit() {
 		BBPclear(i); /* just ignore old stuff */
 	}
 	TEMevents= BATnew(TYPE_str, TYPE_int, 250);
-	BAThash(BATreverse(TEMevents));
+	BAThash(BATreverse(TEMevents), 0);
 	BATkey(BATreverse(TEMevents),TRUE);
 	BATreset(TEMevents);
-	BAThash(TEMevents);
+	BAThash(TEMevents, 0);
 	BATroles(TEMevents, "tem", "events");
 @-
 The events associated with linked functions is equated with their
@@ -147,7 +147,7 @@ it becomes difficult to analyse their status internally.
 	}
 	TEMtriggers= BATnew(TYPE_str, TYPE_ptr, TEMSIZE);
 	if( TEMtriggers == 0) return;
-	BAThash(TEMtriggers);
+	BAThash(TEMtriggers, 0);
 	BATfakeCommit(TEMtriggers);
 
 	v = VARnew(0, "monet_triggers");

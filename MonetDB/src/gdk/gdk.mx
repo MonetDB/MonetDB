@@ -2048,7 +2048,7 @@ gdk_export void 	ACCexit       (BAT *b);
 
 @T
 {\tt \begin{tabular}{|lll|}\hline
-BAT* & BAThash & (BAT *b, int coll)\\
+BAT* & BAThash & (BAT *b, size_t masksize)\\
 int & BATidx & (BAT *b, BAT *histo)\\
 BAT * & BAThashsplit & (BAT *b, size\_t n, int unary)\\
 BAT * & BATrangesplit & (BAT *b, int n)\\
@@ -2071,7 +2071,7 @@ supported.
 
 @{
 @h
-gdk_export BAT*       BAThash      (BAT *b, int *collision);
+gdk_export BAT*       BAThash      (BAT *b, size_t masksize);
 gdk_export BAT*	BATidx        (BAT *b, BAT *h);
 gdk_export BAT*	BAThashsplit  (BAT *b, size_t n, int unary); 
 gdk_export BAT*	BATrangesplit (BAT *b, size_t n, int unary); 
@@ -2089,7 +2089,7 @@ gdk_export void	IDXrng       (BAT *b, ptr v, ptr w, BUN **p, BUN **q);
 gdk_export void    IDXdestroy    (BAT *b);
 gdk_export void    IDXremove     (BAT *b);
 
-#define BATprepareHash(X) (((X)->hhash_heap == NULL) && !BAThash(X, NULL))
+#define BATprepareHash(X) (((X)->hhash_heap == NULL) && !BAThash(X, 0))
 @
 @}
 

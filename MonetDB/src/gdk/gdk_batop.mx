@@ -100,6 +100,19 @@ BAT *BATins(BAT *b, BAT *n) {
 	if (b->hidx_heap || b->tidx_heap) {
                 IDXdestroy(b);
 	}
+	
+	if (b->hhash_heap && 2*b->hhash.mask < BATcount(b) + BATcount(n)) {
+		HASHremove(b);
+	}
+	if (b->thash_heap && 2*b->thash.mask < BATcount(b) + BATcount(n)) {
+		HASHremove(BATmirror(b));
+	}
+	if (b->hhash_heap == NULL && b->hkey&BOUND2BTRUE) {
+		BAThash(b, BATcount(b) + BATcount(n));
+	}
+	if (b->thash_heap == NULL && b->tkey&BOUND2BTRUE) {
+		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
+	}
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b); 
  		int xx, yy = BUNsize(b);

@@ -89,7 +89,7 @@ gdk_export hash_t	HASHlist     (Hash* h, size_t i) ;
 
 @= hashfnd
 #define HASHfnd_@1(x,y,z)	{ hash_t _i; BUN _v; (x) = NULL;\
-        if ((y)->hhash_heap || BAThash((y), NULL) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BBP_logical((y)->batCacheid)))\
+        if ((y)->hhash_heap || BAThash((y), 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BBP_logical((y)->batCacheid)))\
         HASHloop_@1((y), (y)->hhash, _i, (z), _v) { (x) = _v; break; }\
 }
 @h
@@ -130,6 +130,13 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 	h.link[i] = h.hash[_c];\
 	h.hash[_c] = i; }
 @h
+#define HASHins_str(h,i,v) {\
+	hash_t _c;\
+	GDK_STRHASH(v,_c);\
+	_c &= (h).mask;\
+	h.link[i] = h.hash[_c];\
+	h.hash[_c] = i; }
+
 #define HASHins(h,i,v) {\
 	hash_t _c = HASHprobe(&h, v);\
 	h.link[i] = h.hash[_c];\
@@ -148,7 +155,6 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 #endif
 #define HASHins_flt(h,i,v)	HASHins_int(h,i,v)
 #define HASHins_dbl(h,i,v)	HASHins_lng(h,i,v)
-#define HASHins_str(h,i,v)	HASHins(h,i,v)
 #define HASHins_any(h,i,v)	HASHins(h,i,v)
 #define HASHinsvar(h,i,v)	HASHins(h,i,v)
 #define HASHinsloc(h,i,v)	HASHins(h,i,v)
@@ -218,7 +224,7 @@ larger. This converges after three cycles to direct hashing.
 hash_t HASHmask(size_t cnt) {
 	size_t m = 8; /* minumum size */
 	while(m+m < cnt) m += m;
-	if (m+m - cnt < cnt - m) m += m;
+	if (m+m - cnt < 2*(cnt - m)) m += m;
   	return m;
 }
 
@@ -263,7 +269,7 @@ The prime routine for the BAT layer is to create a new hash index.
 Its argument is the element type and the maximum number of BUNs
 be stored under the hash function. 
 @c
-BAT* BAThash(BAT *b, int *collision) {
+BAT* BAThash(BAT *b, size_t masksize) {
     gdk_set_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
     if (b->hhash_heap == NULL) {
 	unsigned int xx, tpe = ATOMstorage(b->htype);
@@ -283,8 +289,8 @@ BAT* BAThash(BAT *b, int *collision) {
 		tpe = TYPE_void;
 	}
 	/* determine hash mask size */
-	if (collision) {
-		mask = HASHmask(cnt / *collision); /* p = first; so no dynamic scheme */
+	if (masksize > 0) {
+		mask = HASHmask(masksize); /* p = first; so no dynamic scheme */
 	} else if (b->hkey) {
 		mask = HASHmask(cnt); /* p = first; so no dynamic scheme */
 	} else {
@@ -1117,7 +1123,8 @@ int ACC_index = 2;
 int ACCbuild(int id, BAT *b, Heap* acc, ptr extra) {
 	str nme = BBP_physical(b->batCacheid);
 	if (id == ACC_hash) {
-		return BAThash(b, extra)?0:-1;
+		size_t masksize = *(lng*) extra;
+		return BAThash(b, masksize)?0:-1;
 	} else if (id == ACC_index) {
 		BAT *h = extra?BBPdescriptor(*(int*) extra):NULL;
 		return BATidx(b, h)?0:-1;

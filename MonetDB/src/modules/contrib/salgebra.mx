@@ -631,7 +631,7 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
   ch->bttype = BATttype( b );
   /* build a hash if it does not yet exist */
   bt = BATmirror( b );
-  if ( !( bt->hhash_heap ) ) BAThash( bt, NULL );
+  if ( !( bt->hhash_heap ) ) BAThash( bt, 0 );
   h = &bt->hhash;
   ch->bhash = (Hash*) GDKmalloc( sizeof(Hash) );
   memcpy( ch->bhash, h, sizeof(Hash) );
