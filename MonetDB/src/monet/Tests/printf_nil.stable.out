@@ -1,8 +1,8 @@
-stdout of test 'printf` in directory 'src/monet` itself:
+stdout of test 'printf_nil` in directory 'src/monet` itself:
 
 
 # 01:07:05 >  
-# 01:07:05 >  Mtimeout -timeout 600 Mserver -monetrc /net/peddel/export/scratch1/arjen/monet/monet/Linux/share/Monet/monet.Mtest.conf -db Tests_src_monet  < printf.milM
+# 01:07:05 >  Mtimeout -timeout 600 Mserver -monetrc /net/peddel/export/scratch1/arjen/monet/monet/Linux/share/Monet/monet.Mtest.conf -db Tests_src_monet  < printf_nil.milM
 # 01:07:05 >  
 
 # Monet Database Server V4.3.3
@@ -28,22 +28,11 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-X AX
-XABX
-XABCX
-XABCX
-X  AX
-X ABX
-X ABX
-X ABX
-XA X
-XABX
-XABCX
-XABCX
-XA  X
-XAB X
-XAB X
-XAB X
+  nil
+nil
+nil
+nil
+  nil and nil
 
 # 01:07:07 >  
 # 01:07:07 >  Done.

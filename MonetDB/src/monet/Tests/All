@@ -2,6 +2,8 @@ setaggr_exist
 refcnt
 bat_nil
 printf
+printf_dbl
+printf_nil
 const
 modrefcnt1
 modrefcnt2
