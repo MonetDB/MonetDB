@@ -1861,9 +1861,17 @@ void batBeforeCall(ValPtr v, ValPtr bak){
 	/* else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
 	   it was garbage for sure */
 }
+@-
+After the expression has been evaluated we can release any
+pending BAT reference, but the logical reference should be
+retained.
+This code base assumes no concurrent actions on the same BAT,
+otherwise dangling pointers could be created.
+@c
 void batAfterCall(ValPtr v, ValPtr bak){
 	if(v->vtype!= TYPE_bat) return; /* not ready yet 
 		stream_printf(GDKout,"batAfterCall:unexpected BAT value\n"); */
+	if( v->val.bval == bak->val.bval) return;
 	if( v->val.bval){
 		BBPincref(v->val.bval,TRUE);
 		batFinalCall(bak);
@@ -1877,7 +1885,7 @@ void batFinalCall(ValPtr v){
 	if(v->val.bval && BBP_lrefs(v->val.bval))
 	{       
 		if( BBP_lrefs(v->val.bval) == 1 && BBP_refs(v->val.bval))
-			BBPunfix(v->val.bval);
+			BBPdecref(v->val.bval,FALSE);
 		BBPdecref(v->val.bval,TRUE);
 		v->val.bval =0;
 	}

@@ -1165,8 +1165,13 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 #ifdef STACKTRACE
 	stream_printf(GDKout,"released entry %d\n",k);
 #endif
-		batAfterCall(stk->stk+k,&backup);
+		BBPdecref(bid,TRUE);
 		stk->stk[k].val.ival= 0;
+	}
+	BBPdecref(bid,TRUE);	/* one more because batAfterCall is still in progress */
+	if( BBP_lrefs(bid) == 0){
+		printf("free the bat as well");
+		BBPunfix(bid);
 	}
 #ifdef STACKTRACE
 	stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
