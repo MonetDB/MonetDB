@@ -752,7 +752,7 @@ stmt *stmt_copyfrom(table * t, list * files, char * tsep, char * rsep, int nr )
 	stmt *s = stmt_create();
 	s->type = st_copyfrom;
 	s->op1.tval = t;
-	s->op2.lval = list_create(&free);
+	s->op2.lval = list_create(&GDKfree);
 	s->op3.lval = files;
 	list_append( s->op2.lval, _strdup(tsep));
 	list_append( s->op2.lval, _strdup(rsep));
