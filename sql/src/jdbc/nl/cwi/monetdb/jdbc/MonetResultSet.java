@@ -690,63 +690,7 @@ public class MonetResultSet implements ResultSet {
 			public int getColumnType(int column) throws SQLException {
 				String type = getColumnTypeName(column);
 
-				// match the column type on a java.sql.Types constant
-				if ("table".equals(type)) {
-					return(Types.ARRAY);
-				} else if ("boolean".equals(type) || "bool".equals(type)) {
-					return(Types.BOOLEAN);
-				} else if ("ubyte".equals(type)) {
-					return(Types.CHAR);
-				} else if ("char".equals(type) || "character".equals(type)) {
-					return(Types.CHAR);
-				} else if ("varchar".equals(type)) {
-					return(Types.VARCHAR);
-				} else if ("text".equals(type) || "tinytext".equals(type)) {
-					return(Types.LONGVARCHAR);
-				} else if ("string".equals(type)) {
-					return(Types.LONGVARCHAR);
-				} else if ("tinyint".equals(type) || "smallint".equals(type)) {
-					return(Types.INTEGER);
-				} else if ("mediumint".equals(type)) {
-					return(Types.INTEGER);
-				} else if ("oid".equals(type)) {
-					return(Types.OTHER);
-				} else if ("int".equals(type) || "integer".equals(type)) {
-					return(Types.INTEGER);
-				} else if ("bigint".equals(type)) {
-					return(Types.INTEGER);
-				} else if ("number".equals(type)) {
-					return(Types.NUMERIC);
-				} else if ("decimal".equals(type)) {
-					return(Types.DECIMAL);
-				} else if ("numeric".equals(type)) {
-					return(Types.NUMERIC);
-				} else if ("float".equals(type)) {
-					return(Types.FLOAT);
-				} else if ("double".equals(type)) {
-					return(Types.DOUBLE);
-				} else if ("real".equals(type)) {
-					return(Types.REAL);
-				} else if ("int".equals(type)) {
-					return(Types.INTEGER);
-				} else if ("month_interval".equals(type)) {
-					return(Types.OTHER);
-				} else if ("sec_interval".equals(type)) {
-					return(Types.OTHER);
-				} else if ("date".equals(type)) {
-					return(Types.DATE);
-				} else if ("time".equals(type)) {
-					return(Types.TIME);
-				} else if ("datetime".equals(type) || "timestamp".equals(type)) {
-					return(Types.TIMESTAMP);
-				} else if ("blob".equals(type)) {
-					return(Types.BLOB);
-				} else {
-					// this should not be able to happen
-					// do not assert, since maybe feature versions introduce
-					// new types
-					return(Types.OTHER);
-				}
+				return(MonetDriver.getJavaType(type));
 			}
 
 			/**

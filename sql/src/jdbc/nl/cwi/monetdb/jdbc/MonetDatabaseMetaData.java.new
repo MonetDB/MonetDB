@@ -1463,24 +1463,24 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database error occurs
 	 */
 	public ResultSet getTableTypes() throws SQLException {
-		String types[] = new String[tableTypeClauses.size()];
-		Enumeration e = tableTypeClauses.keys();
-		int i=0;
-		while (e.hasMoreElements()) {
-			types[i++] = (String)e.nextElement();}
-		sortStringArray(types);
+		String[] columns, types;
+		String[][] results;
 
-		Field f[] = new Field[1];
-		Vector v = new Vector();
-		f[0] = new Field(connection, new String("TABLE_TYPE"), iVarcharOid, getMaxNameLength());
-		for (i=0; i < types.length; i++)
-		{
-			byte[][] tuple = new byte[1][];
-			tuple[0] = encoding.encode(types[i]);
-			v.addElement(tuple);
+		columns = new String[1];
+		types = new String[1];
+		results = new String[3][1];
+
+		columns[0] = "table_type";	// Monet would return lowercase columns
+		types[0] = "varchar";
+		results[0][0] = "SYSTEM TABLE";
+		results[1][0] = "TABLE";
+		results[2][0] = "VIEW";
+
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error");
 		}
-
-		return (ResultSet) ((BaseStatement)connection.createStatement()).createDriverResultSet(f, v);
 	}
 
 	/*

@@ -32,10 +32,10 @@ public class MonetDriver implements Driver {
 	private static final int MONETMINOR = @MINORVERSION@;
 	// I don't dare to even think of calling it compliant yet ;)
 	private static final boolean MONETJDBCCOMPLIANT = false;
-	
+
 	// Monet default port to connect to
 	private static final int PORT = @DEF_MPORT@;
-	
+
 	// Monet prompts
 	final static Pattern prompt1 = Pattern.compile(@PROMPT1@);
 	final static Pattern prompt2 = Pattern.compile(@PROMPT2@);
@@ -51,7 +51,7 @@ public class MonetDriver implements Driver {
 	}
 
 	//== methods of interface Driver
-	
+
 	/**
 	 * Retrieves whether the driver thinks that it can open a connection to the
 	 * given URL. Typically drivers will return true if they understand the
@@ -63,16 +63,16 @@ public class MonetDriver implements Driver {
 	public boolean acceptsURL(String url) {
 		return(url != null && url.startsWith(MONETURL));
 	}
-	
+
 	/**
 	 * Attempts to make a database connection to the given URL. The driver
 	 * should return "null" if it realizes it is the wrong kind of driver to
 	 * connect to the given URL. This will be common, as when the JDBC driver
 	 * manager is asked to connect to a given URL it passes the URL to each
-	 * loaded driver in turn. 
+	 * loaded driver in turn.
 	 * <br /><br />
 	 * The driver should throw an SQLException if it is the right driver to
-	 * connect to the given URL but has trouble connecting to the database. 
+	 * connect to the given URL but has trouble connecting to the database.
 	 * <br /><br />
 	 * The java.util.Properties argument can be used to pass arbitrary string
 	 * tag/value pairs as connection arguments. Normally at least "user" and
@@ -112,14 +112,14 @@ public class MonetDriver implements Driver {
 			// convenience: temporarily store user and pass
 			String user = info.getProperty("user");
 			String pass = info.getProperty("password");
-		
+
 			// finally return the Connection as requested
 			return(new MonetConnection(host, port, db, user, pass));
 		} catch (Throwable t) {	// catch also errors! (like index out of bounds)
 			throw new SQLException("Could not parse URL: " + t.toString());
 		}
 	}
-	
+
 	/**
 	 * Retrieves the driver's major version number. Initially this should be 1.
 	 *
@@ -128,7 +128,7 @@ public class MonetDriver implements Driver {
 	public int getMajorVersion() {
 		return(MONETMAJOR);
 	}
-	
+
 	/**
 	 * Gets the driver's minor version number. Initially this should be 0.
 	 *
@@ -137,7 +137,7 @@ public class MonetDriver implements Driver {
 	public int getMinorVersion() {
 		return(MONETMINOR);
 	}
-	
+
 	/**
 	 * Gets information about the possible properties for this driver.
 	 * <br /><br />
@@ -159,11 +159,11 @@ public class MonetDriver implements Driver {
 		/** @todo can't be hard to set username/password here... */
 		return(null);
 	}
-	
+
 	/**
 	 * Reports whether this driver is a genuine JDBC Compliant&tm; driver. A
 	 * driver may only report true here if it passes the JDBC compliance tests;
-	 * otherwise it is required to return false. 
+	 * otherwise it is required to return false.
 	 * <br /><br />
 	 * JDBC compliance requires full support for the JDBC API and full support
 	 * for SQL 92 Entry Level. It is expected that JDBC compliant drivers will
@@ -181,6 +181,73 @@ public class MonetDriver implements Driver {
 	public boolean jdbcCompliant() {
 		return(MONETJDBCCOMPLIANT);
 	}
-	
+
 	//== end methods of interface driver
+
+	/**
+	 * Returns the java.sql.Types equivalent of the given Monet type.
+	 *
+	 * @param type the type as used by Monet
+	 * @return the mathing java.sql.Types constant or java.sql.Types.OTHER if
+	 *         nothing matched on the given string
+	 */
+	static int getJavaType(String type) {
+		// match the column type on a java.sql.Types constant
+		if ("table".equals(type)) {
+			return(Types.ARRAY);
+		} else if ("boolean".equals(type) || "bool".equals(type)) {
+			return(Types.BOOLEAN);
+		} else if ("ubyte".equals(type)) {
+			return(Types.CHAR);
+		} else if ("char".equals(type) || "character".equals(type)) {
+			return(Types.CHAR);
+		} else if ("varchar".equals(type)) {
+			return(Types.VARCHAR);
+		} else if ("text".equals(type) || "tinytext".equals(type)) {
+			return(Types.LONGVARCHAR);
+		} else if ("string".equals(type)) {
+			return(Types.LONGVARCHAR);
+		} else if ("tinyint".equals(type) || "smallint".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("mediumint".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("oid".equals(type)) {
+			return(Types.OTHER);
+		} else if ("int".equals(type) || "integer".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("bigint".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("number".equals(type)) {
+			return(Types.NUMERIC);
+		} else if ("decimal".equals(type)) {
+			return(Types.DECIMAL);
+		} else if ("numeric".equals(type)) {
+			return(Types.NUMERIC);
+		} else if ("float".equals(type)) {
+			return(Types.FLOAT);
+		} else if ("double".equals(type)) {
+			return(Types.DOUBLE);
+		} else if ("real".equals(type)) {
+			return(Types.REAL);
+		} else if ("int".equals(type)) {
+			return(Types.INTEGER);
+		} else if ("month_interval".equals(type)) {
+			return(Types.OTHER);
+		} else if ("sec_interval".equals(type)) {
+			return(Types.OTHER);
+		} else if ("date".equals(type)) {
+			return(Types.DATE);
+		} else if ("time".equals(type)) {
+			return(Types.TIME);
+		} else if ("datetime".equals(type) || "timestamp".equals(type)) {
+			return(Types.TIMESTAMP);
+		} else if ("blob".equals(type)) {
+			return(Types.BLOB);
+		} else {
+			// this should not be able to happen
+			// do not assert, since maybe feature versions introduce
+			// new types
+			return(Types.OTHER);
+		}
+	}
 }
