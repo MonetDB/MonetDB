@@ -39,6 +39,7 @@ strings.insert("VARCHAR", "str");
 strings.insert("STRING", "str");
 
 var numerical := new(str,str);
+numerical.insert("UBYTE", "uchr");
 numerical.insert("NUMERIC", "int");
 numerical.insert("DECIMAL", "int");
 numerical.insert("INTEGER", "int");
