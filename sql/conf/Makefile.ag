@@ -1,5 +1,0 @@
-EXTRA_DIST = \
-	config.guess config.sub \
-	install-sh missing \
-	ltmain.sh config.h.in \
-	conf.bash
