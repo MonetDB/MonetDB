@@ -53,7 +53,6 @@ Too many bugs.
 @:sum(flt)@
 @:sum(dbl)@
 
-.LOAD
 @= milsum
   PROC {csum}( BAT[oid,@1] b): BAT[oid,@1] := {
     IF ( b.ordered )
@@ -64,14 +63,14 @@ Too many bugs.
   ADDHELP("{csum}", "arjen", "Jul 18 2000",
           "Choose a different implementation if b is sorted on head.", 
           "malalgebra");
-@m
+@mil
 @:milsum(sht)@
 @:milsum(int)@
 @:milsum(lng)@
 @:milsum(flt)@
 @:milsum(dbl)@
-.END;
 
+@m
 .END malalgebra;
 
 @{
@@ -199,33 +198,6 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 @:sumcmd(flt)@
 @:sumcmd(dbl)@
 
-@mil
-
-#
-# Simple test of some algorithms against the baseline
-#
-
-module("malalgebra");
-
-VAR Ndiff, l, r;
-
-dj := new( void, oid ); tf := new( void, int );
-dj.insert( nil, 0@0 );  tf.insert( nil, 10 );
-dj.insert( nil, 0@0 );  tf.insert( nil, 20 );
-dj.insert( nil, 0@0 );  tf.insert( nil, 30 );
-dj.insert( nil, 1@0 );  tf.insert( nil, 30 );
-dj.insert( nil, 1@0 );  tf.insert( nil, 20 );
-dj.insert( nil, 1@0 );  tf.insert( nil, 10 );
-dj.insert( nil, 2@0 );  tf.insert( nil, 20 );
-dj.insert( nil, 2@0 );  tf.insert( nil, 30 );
-dj.insert( nil, 2@0 );  tf.insert( nil, 10 );
-dj.seqbase(0@0);        tf.seqbase(0@0);
-
-l := dj.reverse;
-r := tf;
-
-Ntestfailed := 0;
-
 @= jointest_void
 VAR @1result_void := @1join( l, r );
 @
@@ -242,18 +214,45 @@ IF( not( isnil(@1result_@2) ) ) {
 @
 @mil
 
-@:jointest_oid()@
-@:compresults(hash,oid)@
-@:compresults(fetch,oid)@
-@:compresults(merge,oid)@
-@:compresults(index,oid)@
+if (mod = "main"){
+	#
+	# Simple test of some algorithms against the baseline
+	#
 
-@:jointest_void()@
-@:compresults(hash,void)@
-@:compresults(fetch,void)@
-@:compresults(merge,void)@
-@:compresults(index,void)@
+	module("malalgebra");
 
-printf( "RESULT: %d tests failed.\n", Ntestfailed );
+	VAR Ndiff, l, r;
 
-quit;
+	dj := new( void, oid ); tf := new( void, int );
+	dj.insert( nil, 0@0 );  tf.insert( nil, 10 );
+	dj.insert( nil, 0@0 );  tf.insert( nil, 20 );
+	dj.insert( nil, 0@0 );  tf.insert( nil, 30 );
+	dj.insert( nil, 1@0 );  tf.insert( nil, 30 );
+	dj.insert( nil, 1@0 );  tf.insert( nil, 20 );
+	dj.insert( nil, 1@0 );  tf.insert( nil, 10 );
+	dj.insert( nil, 2@0 );  tf.insert( nil, 20 );
+	dj.insert( nil, 2@0 );  tf.insert( nil, 30 );
+	dj.insert( nil, 2@0 );  tf.insert( nil, 10 );
+	dj.seqbase(0@0);        tf.seqbase(0@0);
+
+	l := dj.reverse;
+	r := tf;
+
+	Ntestfailed := 0;
+
+	@:jointest_oid()@
+	@:compresults(hash,oid)@
+	@:compresults(fetch,oid)@
+	@:compresults(merge,oid)@
+	@:compresults(index,oid)@
+
+	@:jointest_void()@
+	@:compresults(hash,void)@
+	@:compresults(fetch,void)@
+	@:compresults(merge,void)@
+	@:compresults(index,void)@
+
+	printf( "RESULT: %d tests failed.\n", Ntestfailed );
+
+	quit;
+}

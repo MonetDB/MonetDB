@@ -54,6 +54,7 @@ Selections}.
 
 .USE cluster;
 
+
 @- Set-Aggregates
 @m
 .COMMAND {sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int] = sum_int; 
@@ -301,8 +302,7 @@ Memory advise is given for the respective cases.
 \item {\tt gusemijoin(A,B)}:
 the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
 \end{itemize}
-@m
-.LOAD 
+@mil
     const PI := 3.14;
     const E := 2.71;
 
@@ -471,7 +471,7 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
         }
         return b.select(lo,hi);
     }
-.END;
+@m
 .END tpcd;
 
 @{

@@ -66,11 +66,11 @@
 	.COMMAND bitset_toInt(bitset theBitSet) : int = bitset_toInt;
 		"Convert this BitSet to an integer."
 
-	.LOAD
+@mil
 		PROC bitset_toStr(theBitset) := {
 			return str(theBitset);
 		}
-	.END;
+@m
 
 .END bitset;
 
@@ -415,51 +415,53 @@ extern int bitset_toInt( int* res, bitset* theBitSet ) {
 @+ Test
 @mil
 
-module(bitset);
-sigs("bitset");
+if (mod = "main"){
+	module(bitset);
+	sigs("bitset");
 
-printf("constructor\n");
-b := newBitset();
-b.print;
+	printf("constructor\n");
+	b := newBitset();
+	b.print;
 
-printf("get(15)\n");
-b.bitset_getBit(15).print;
-printf("set(15)\n");
-b := b.bitset_setBit(15);
-b.print;
-printf("get(15)\n");
-b.bitset_getBit(15).print;
-printf("clear(15)\n");
-b := b.bitset_clearBit(15);
-b.print;
-printf("get(15)\n");
-b.bitset_getBit(15).print;
+	printf("get(15)\n");
+	b.bitset_getBit(15).print;
+	printf("set(15)\n");
+	b := b.bitset_setBit(15);
+	b.print;
+	printf("get(15)\n");
+	b.bitset_getBit(15).print;
+	printf("clear(15)\n");
+	b := b.bitset_clearBit(15);
+	b.print;
+	printf("get(15)\n");
+	b.bitset_getBit(15).print;
 
-printf("flip(7)\n");
-b := b.bitset_flipBit(7);
-b.print;
-printf("flip(7)\n");
-b := b.bitset_flipBit(7);
-b.print;
+	printf("flip(7)\n");
+	b := b.bitset_flipBit(7);
+	b.print;
+	printf("flip(7)\n");
+	b := b.bitset_flipBit(7);
+	b.print;
 
-printf("constructor(35)\n");
-a := newBitset(35);
-a.print;
+	printf("constructor(35)\n");
+	a := newBitset(35);
+	a.print;
 
-printf("constructor(0x22)\n");
-b := bitset("0x22");
-b.print;
+	printf("constructor(0x22)\n");
+	b := bitset("0x22");
+	b.print;
 
-printf("and\n");
-bitset_and(a,b).print;
-printf("or\n");
-bitset_or(a,b).print;
-printf("xor\n");
-bitset_xor(a,b).print;
-printf("not\n");
-bitset_not(a).print;
+	printf("and\n");
+	bitset_and(a,b).print;
+	printf("or\n");
+	bitset_or(a,b).print;
+	printf("xor\n");
+	bitset_xor(a,b).print;
+	printf("not\n");
+	bitset_not(a).print;
 
-printf("convert to integer\n");
-bitset_toInt(a).print;
- 
-quit;
+	printf("convert to integer\n");
+	bitset_toInt(a).print;
+	 
+	quit;
+}

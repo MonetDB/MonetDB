@@ -33,12 +33,20 @@ LIBS = {
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx
 	HEADERS = h proto.h m
-	SCRIPTS = mil ""
+	#SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
 	LDFLAGS = -module
+}
+
+scripts_mil = {
+	DIR = pkglibdir
+	SOURCES = \
+		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
+		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
+		wisc.mx
 }
 
 EXTRA_DIST_DIR = Tests

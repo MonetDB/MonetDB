@@ -264,7 +264,7 @@ number of physical IOs.
 .COMMAND pmStart() = pmStart_impl; "Initializes the mprof bats"
 .COMMAND pmExit() = pmExit_impl; "Removes the Mprof bats"
 
-.LOAD 
+@mil
     pmStart();
 
     # The code below collects the differences 
@@ -348,11 +348,13 @@ number of physical IOs.
     PROC emptyMallinfo := {
 	RETURN Mallinfo("(0,0,0,0,0,0,0,0)");
     }
-.END;
+@m
 
-.DROP
+@mil
+proc drop_mprof() := {
     pmExit();
-.END;
+}
+@m
 
 .END mprof;
 
@@ -1411,9 +1413,6 @@ of the implementation. Moreover, it demonstrates several printing
 facilities.
 
 The first example does not rely on general aggregate processing.
-@mil
-setoid(oid(20000000));
-module(mprof);
 
 @-
 @T
@@ -1439,22 +1438,27 @@ join(b,c).print;
 \end{verbatim}
 
 @mil
-# A test for the performance analysis
-pmB("abc");
-monet_atomtbl.count.print;
-pmE("abc");
-pmB("pmPrint");
-printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
-pmE("pmPrint");
-pmB("xyz");
-monet_fcn_fcn.count;
-pmE("xyz");
-pmB("pmPrint");
-printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
-pmE("pmPrint");
-printf("#~BeginVariableOutput~#\n"); pmSummary; printf("#~EndVariableOutput~#\n");
-drop("mprof");
-quit;
+if (mod = "main"){
+	setoid(oid(20000000));
+	module(mprof);
+
+	# A test for the performance analysis
+	pmB("abc");
+	monet_atomtbl.count.print;
+	pmE("abc");
+	pmB("pmPrint");
+	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
+	pmE("pmPrint");
+	pmB("xyz");
+	monet_fcn_fcn.count;
+	pmE("xyz");
+	pmB("pmPrint");
+	printf("#~BeginVariableOutput~#\n"); pmPrint; printf("#~EndVariableOutput~#\n");
+	pmE("pmPrint");
+	printf("#~BeginVariableOutput~#\n"); pmSummary; printf("#~EndVariableOutput~#\n");
+	drop("mprof");
+	quit;
+}
 @T
 
 A sample output of the pmSummary routine is shown below

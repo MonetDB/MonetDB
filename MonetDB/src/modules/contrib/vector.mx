@@ -1404,5 +1404,7 @@ dblv.print;
 @:fixedsize_operators_c(int,64)@
 
 @mil
-@:varsized_tests@
+if (mod = "main"){
+	@:varsized_tests@
+}
 

@@ -37,26 +37,28 @@ extension system.
 .UNFIX = ovstr_unfix;
 .END;
 
-.LOAD
+@mil
 	const teststring := "# test # functionality";
-.END;
+@m
 .END mel;
 
 @* Example Script
 @mil
-setoid(oid(20000000));
-module(mel);
-proc test ():= {
-	var m:= overloadedstr("tird string");
+if (mod = "main"){
+	setoid(oid(20000000));
+	module(mel);
+	proc test ():= {
+		var m:= overloadedstr("tird string");
+		m := 1;
+	}
+	var m:= overloadedstr("http://www.cwi.nl/~mk/Acoi/index.html");
+	# not checked bogus second var 
+	var m:= overloadedstr("second string");
+	test();
 	m := 1;
+	print(teststring);
+	quit;
 }
-var m:= overloadedstr("http://www.cwi.nl/~mk/Acoi/index.html");
-# not checked bogus second var 
-var m:= overloadedstr("second string");
-test();
-m := 1;
-print(teststring);
-quit;
 
 @c
 #include <gdk.h>
