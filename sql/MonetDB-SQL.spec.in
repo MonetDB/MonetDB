@@ -26,6 +26,10 @@ Group: System
 Summary: MonetDB SQL development package 
 Group: System 
 
+%package docu
+Summary: MonetDB SQL documentation package 
+Group: System 
+
 %description
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -45,6 +49,9 @@ Requires: MonetDB-server
 Add the MonetDB devel description here
 Requires: %{name}-server
 Requires: MonetDB-devel
+
+%description docu
+Add the MonetDB documentaion description here
 
 
 %prep
@@ -86,3 +93,13 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,monetdb,monetdb) 
 %{prefix}/include/sql/*.h
 %{prefix}/lib/sql/Tests/odbcsample1
+%{prefix}/lib/pkgconfig/MonetDB-SQL.pc
+
+%files docu
+%defattr(-,monetdb,monetdb) 
+%{prefix}/share/MonetDB/docs/SQL/*.html
+%{prefix}/share/MonetDB/docs/SQL/*.pdf
+%{prefix}/share/MonetDB/docs/SQL/*.ps
+%{prefix}/share/MonetDB/docs/SQL/*/*.html
+%{prefix}/share/MonetDB/docs/SQL/*/*.pdf
+%{prefix}/share/MonetDB/docs/SQL/*/*.ps

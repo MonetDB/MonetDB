@@ -23,7 +23,7 @@
 
 MTSAFE
 
-EXTRA_DIST = manifest
+EXTRA_DIST = manifest benchblockmode.tex jdbcmanual.tex
 
 jar_MonetJDBC = {
 	DIR = libdir/MonetDB/java
