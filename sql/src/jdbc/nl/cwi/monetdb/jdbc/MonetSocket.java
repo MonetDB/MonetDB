@@ -127,8 +127,7 @@ class MonetSocket {
 	 * it without the newline character. This operation can be blocking if there
 	 * is no information available (yet)
 	 *
-	 * @return a string representing the next line from the stream or null if
-	 *         the stream is closed and no data is available (end of stream)
+	 * @return a string representing the next line from the stream
 	 * @throws IOException if reading from the stream fails
 	 */
 	public synchronized String readLine() throws IOException {
@@ -161,7 +160,7 @@ class MonetSocket {
 				break;
 			}
 		} else {
-			lineType = EMPTY;
+			throw new IOException("End of stream reached");
 		}
 
 		return(line);

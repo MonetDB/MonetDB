@@ -728,7 +728,7 @@ public class MonetStatement implements Statement {
 							rawr.addRow(tmpLine);
 						} else if (monet.getLineType() == MonetSocket.EMPTY) {
 							// empty, will mean Monet stopped somehow (crash?)
-							hdrl.addError("Unexpected end of stream, Mserver still alive?");
+							hdrl.addError("Unknown linetype: " + tmpLine);
 						}
 					} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
 					// catch resultless headers
@@ -747,7 +747,7 @@ public class MonetStatement implements Statement {
 						hdrl.addError(e.toString());
 					}
 				} catch (IOException e) {
-					hdrl.addError(e.toString());
+					hdrl.addError(e.getMessage() + " (Mserver still alive?)");
 				}
 				// close the header list, no more headers will follow
 				hdrl.setComplete();
