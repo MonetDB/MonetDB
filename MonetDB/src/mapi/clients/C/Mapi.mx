@@ -2290,7 +2290,7 @@ mapi_check_query(MapiHdl hdl)
 	}
 	if (comm) {
 		/* remove comment and white space before comment start */
-		while (--comm >= hdl->query && isspace((int) *comm))
+		while (--comm >= hdl->query && isspace((int) (unsigned char) *comm))
 			;
 		*++comm = 0;
 	}
@@ -2627,7 +2627,7 @@ slice_row(char *reply, char *null, char ***anchorsp, int length)
 			start = NULL;
 		}
 		anchors[i++] = start ? strdup(start) : NULL;
-		while (*reply && isspace((int) *reply))
+		while (*reply && isspace((int) (unsigned char) *reply))
 			reply++;
 	} while (*reply && *reply != ']');
 	*anchorsp = anchors;
@@ -2664,7 +2664,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	n = slice_row(line, NULL, &anchors, 10);
 
 	tag = etag + 1;
-	while (*tag && isspace((int) *tag))
+	while (*tag && isspace((int) (unsigned char) *tag))
 		tag++;
 
 	if (n > result->fieldcnt) {
@@ -3510,7 +3510,7 @@ unquote(char *msg, char **start, char **next)
 	char quote;
 
 	/* first skip over leading white space */
-	while (*p && isspace((int) *p))
+	while (*p && isspace((int) (unsigned char) *p))
 		p++;
 	quote = *p;
 	if (quote == '\'' || quote == '"') {
@@ -3577,9 +3577,9 @@ unquote(char *msg, char **start, char **next)
 		while (*p && *p != ',' && *p != '\t' && *p != ']')
 			p++;
 		/* search back over trailing white space */
-		for (s = p - 1; s > *start && isspace((int) *s); s--)
+		for (s = p - 1; s > *start && isspace((int) (unsigned char) *s); s--)
 			;
-		if (s < *start || !isspace((int) *s))	/* gone one too far */
+		if (s < *start || !isspace((int) (unsigned char) *s))	/* gone one too far */
 			s++;
 		if (*p == ',' || *p == '\t') {
 			/* there is more to come; skip over separator */
