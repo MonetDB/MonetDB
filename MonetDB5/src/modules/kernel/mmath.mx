@@ -121,18 +121,17 @@ comment "The exp(x) function returns the value
 	of e (the base of natural logarithms) 
 	raised to the power of x.";
 
-#command log(x:dbl)   	  :dbl 
-#address MATHunary_LOGdbl
-#comment "The log(x) function returns 
-#the natural logarithm of x.";
+command log(x:dbl)   	  :dbl 
+address MATHunary_LOGdbl
+comment "The log(x) function returns 
+the natural logarithm of x.";
 
 #command log10(x:flt)    :flt 
 #address MATHunary_LOG10flt;
-#command 
-#addressog10(x:dbl)    :dbl 
-#address MATHunary_LOG10dbl
-#comment "The log10(x) function returns 
-#the base-10 logarithm of x.";
+command log10(x:dbl)    :dbl 
+address MATHunary_LOG10dbl
+comment "The log10(x) function returns 
+the base-10 logarithm of x.";
 
 
 command pow(x:flt,y:flt)  :flt 
@@ -516,8 +515,8 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
 @:unopM5(_TANH,tanh)@
 
 @:unopM5(_EXP,exp)@
-/*@:unopM5(_LOG,log)@*/
-/*@:unopM5(_LOG10,log10)@*/
+@:unopM5(_LOG,log)@
+@:unopM5(_LOG10,log10)@
 
 @:binopM5(_POW,pow)@
 @:unopM5(_SQRT,sqrt)@
