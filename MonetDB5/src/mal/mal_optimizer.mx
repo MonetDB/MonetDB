@@ -130,7 +130,7 @@ known upfront, which in turn depends on histogram of the value distribution.
 Approach: locate selections and push them back/forth through the flow graph.
 Impact: high
 
-@emph{Join Path Optimizer (JPOoptimizer)}
+@emph{Join Path Optimizer (JPoptimizer)}
 Goal: to reduce the volume produced by a join sequence
 Rationale: join paths are potentially expensive operations. Ideally the join
 path is evaluated starting at the smallest component, so as to reduce the
@@ -380,12 +380,16 @@ be evaluated before the program block is considered further.
 @- Pattern replacement
 A major task for an optimizer is to select instruction (sequences) which
 can and should be replaced with cheaper ones. The cost model underlying
-this decision depends on the processing stage and the overall object.
+this decision depends on the processing stage and the overall objective.
 For example, based on a symbolic analysis their may exist better 
 implementations within the interpreter to perform the job (e.g. hashjoin vs
 mergejoin). Alternative, expensive intermediates may be cached for later use.
 
 @- Plan enumeration
+Plan enumeration is often implemented as a Memo structure, which
+designates alternative sub-plans based on a cost metric.
+Perhaps we can combine these memo structures into a large table
+for all possible combinations encountered for a user.
 
 @+ Optimizer hooks
 The MAL language does not imply a specific optimizer to be used. Its programs
@@ -416,7 +420,7 @@ Some, e.g. Alias Removal, pushes the alias towards the end, while, e.g.
 Common Expression, looks backwards for instructions 'already executed'.
 The third category encompasses optimizer steps that are triggered by
 individual operators, looking both ways. Can we bring all this under
-one umbrella? or is it essential.
+one umbrella? or is it essential?
 
 @+ Optimizer properties
 Optimizers mostly analyse the structure of the MAL program, before it is
@@ -424,14 +428,14 @@ taken into execution. During this process, it will built and maintain
 a property list to pass information around between (independent) 
 optimizer components.
 
-Properties are stored kept with the variables, but for explanatory
+Properties are kept with the variables, but for explanatory
 and analysis purposes we also need to maintain the property transitions
 with the statements.
 
 @+ Optimizer focus
 The first implementation of this optimizer is geared at a SQL front-end.
-This involves ca 65 different operators, divided into the
-catalog management (23) and query processing (42)
+See for SQL specific optimization rules the corresponding source code,
+called sql_optimizer.
 @{
 @h
 #include "mal.h"
@@ -488,6 +492,7 @@ denotes the signature and can not be removed.
 
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 int hasSideEffects(InstrPtr p);
+int hasCommonResults(InstrPtr p, InstrPtr q);
 
 void debugOptimizers(Client c, MalBlkPtr mb, int pc){
     c->debugoptimizer= c->debugoptimizer?0:1;
@@ -500,19 +505,6 @@ str MALoptimizer(Client c)
     int pc,qot=0, oldstop;
     str msg= NULL;
 
-    if( c->state[OPTIMIZE]){
-        /* prepend query with client specific optimizer scheme */
-        /* unless overruled within the block itself */
-        qot=0;
-        for(pc=0, qot=0; pc< mb->stop; pc++){
-            p= getInstrPtr(mb,pc);
-            if( moduleId(p) && idcmp(moduleName(p),"optimizer")==0)
-                qot++;
-        }
-        if( qot==0){
-            /* preprend scheme */
-        }
-    } 
     setLifespan(mb);
     oldstop= mb->stop;
     do{
@@ -612,9 +604,7 @@ int flowStep(MalBlkPtr mb, int pca, int pcb){
     pa= getInstrPtr(mb,pca);
     for(i= pca+1; i<pcb;i++){
         pb= getInstrPtr(mb,i);
-        for(k=0;k<pa->retc;k++)
-        for(l=0;l<pb->retc;l++)
-        if( pa->argv[k] == pb->argv[l]) return FALSE;
+        if( hasCommonResults(pa,pb) ) return FALSE;
 
         /* also be aware of operators with side effects */
         for(k=0;k<pa->retc;k++)
@@ -807,7 +797,7 @@ int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
 {
     Symbol s=0;
     Client c;
-    (void) mb; /* fool the compiler */
+    (void) mb;
     if( q->fcn==0 || functionId(q)== 0) return FALSE;
     c= getClient();
     if( c ) s= getFunctionSymbol(c->nspace,q);
@@ -822,12 +812,10 @@ for the function call itself.
 @c
 int isUnsafeInstruction(MalBlkPtr mb, InstrPtr q)
 {   int j,k;
-    (void) mb; /* fool compiler */
-    if( isUnsafeFunction(mb, q)) return TRUE;
     for(j=0; j<q->retc; j++)
     for(k=q->retc; k<q->argc; k++)
     if( q->argv[k] == q->argv[j]) return TRUE;
-    return FALSE;
+    return isUnsafeFunction(mb, q);
 }
 @-
 The routine isInvariant determines if the variable V is not
@@ -1391,7 +1379,7 @@ int removeConstantExpression(MalBlkPtr mb, int pc, InstrPtr p){
 int reduceBarrierStrength(MalBlkPtr mb, int pcfirst, int pclast){
     return FALSE;
 }
-@* Optimizer utilities
+@+ Optimizer utilities
 Building optimizer variants require several utilities to ease the life
 of the developer. This includes primitives the walk through the
 data dependency graph for specific elements and routines to change

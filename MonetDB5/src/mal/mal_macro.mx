@@ -1,0 +1,166 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' 
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@' 
+@' The Original Code is the Monet Database System.
+@' 
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2004 CWI.
+@' All Rights Reserved.
+
+@f mal_macro
+@a M. L. Kersten
+@+ Macro processors
+The optimizers for MAL typically have to inspect instruction sequences
+for patterns of interest.
+The operation malMatch takes two MAL instructions and returns true
+if they are equivalent. This means they address the same function,
+but also that the parameters are isomorphic.
+
+The generalization of malMatch is malFcnMatch, which checks
+equivalence of a function body as an occurrence in another one.
+
+The primary test case is the following function
+@example
+orcam optimizer.joinPath( a:bat[:any$1,:any$2],
+                b:bat[:any$2,:any$3],
+                c:bat[:any$3,:any4]):bat[:any$1,:any$4];
+    z:= join(a,b);
+    zz:= join(z,c);
+end joinPath;
+@end example
+
+The optimizer attempts to localize the joinPath pattern, 
+when found it can be replaced by the address of the
+runtime optimizer for this pattern.
+@{
+@+ Implementation section
+@h
+#ifndef _MAL_MACRO_H_
+#define _MAL_MACRO_H_
+
+#define DEBUG_MAL_MACRO
+
+#include "mal.h"
+#include "mal_client.h"
+
+mal_export int malMatch(InstrPtr p1, InstrPtr p2);
+mal_export int malFcnMatch(MalBlkPtr m1, MalBlkPtr mb, int pc);
+mal_export str ORCAMprocessor(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MACROprocessor(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#endif /* _MAL_MACRO_H_ */
+@-
+@c
+#include "mal_macro.h"
+#include "mal_optimizer.h"
+
+int malMatch(InstrPtr p1, InstrPtr p2){
+int i,j;
+    if( moduleName(p1)!= moduleName(p2)) return 0;
+    if( functionId(p1)!= functionId(p2)) return 0;
+    if( p1->retc!= p2->retc) return 0;
+    if( p1->argc!= p2->argc) return 0;
+    for(i= 0; i<p1->argc; i++)
+    for(j= i+1; j<p1->argc; j++)
+    if( (getArg(p1,i) == getArg(p1,j) && getArg(p2,j)!= getArg(p2,j)) ||
+        (getArg(p1,i) != getArg(p1,j) && getArg(p2,j)== getArg(p2,j)) )
+            return 0;
+    return 1;
+}
+@-
+Matching a block calls for building two variable lists used.
+The isomorphism can be determined afterwards using a single scan.
+The candidate block is matched with mb starting at a given pc.
+The candidate block is expected to defined as a function, including
+a signature and end-statement. They are ignored in the comparison
+@c
+int malFcnMatch(MalBlkPtr candidate, MalBlkPtr mb, int pc){
+    int i,j,lim;
+    int *cvar, *mvar;
+    int ctop=0, mtop=0;
+    InstrPtr p,q;
+
+    if( mb->stop-pc < candidate->stop-2) return 0;
+
+    cvar = (int*) GDKmalloc(candidate->vtop);
+    mvar = (int*) GDKmalloc(mb->vtop);
+    lim = pc+candidate->stop-2;
+    for( i=pc; i< lim; i++){
+        p= getInstrPtr(mb,i);
+        q= getInstrPtr(candidate, i-pc+1);
+        if( malMatch(p,q) ==0 ){
+            GDKfree(cvar);
+            GDKfree(mvar);
+            return 0;
+        }
+        for(j=0;j<p->argc; j++)
+            cvar[ctop++] = getArg(p,j);
+        for(j=0;j<p->argc; j++)
+            mvar[mtop++] = getArg(q,j);
+    }
+    assert( mtop == ctop); /*shouldn;t happen */
+    for( i=0; i<ctop; i++)
+    for( j=i+1; j<ctop; j++)
+    if( (cvar[i] == cvar[j] && mvar[i]!= mvar[j])  ||
+        (mvar[i] == mvar[j] && cvar[i]!= cvar[j]) ){
+            GDKfree(cvar);
+            GDKfree(mvar);
+            return 0;
+        }
+    return 1;
+}
+@}
+@+ Macro expansions
+The macro expansion optimizer walks its way thru the modules in search
+for any macro being defined. If found, it is matched against
+the current instruction, which is replaced when a match can be
+found.
+The macro expansion process is restarted at the first new instruction.
+@{
+@c
+str MACROprocessor(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    InstrPtr q;
+    int i;
+    Symbol s;
+    (void) stk; (void) p;
+#ifdef DEBUG_MAL_MACRO
+    printf("calling the MACRO processor\n");
+#endif
+    removeInstruction(mb,getPC(mb,p));
+    for( i=0; i< mb->stop; i++){
+        q= getInstrPtr(mb,i);
+        if( moduleId(q) && functionId(q)){
+            s= findMALSymbol(moduleName(q), functionName(q));
+            if( s == 0 ) continue;
+            if( getSignature(s)->token == MACROsymbol)
+#ifdef DEBUG_MAL_MACRO
+            printf("Hit, replace macro call %s\n",s->name);
+#endif
+            ;
+        }
+    }
+    return MAL_SUCCEED;
+}
+@}
+@+ Macro inversions
+Macro inversions map a consequtive sequences of MAL instructions
+into a single call. Subsequence resolution will bind it with the proper
+function.
+@{
+@c
+str ORCAMprocessor(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    (void) mb; (void) stk; (void) p;
+#ifdef DEBUG_MAL_MACRO
+    printf("calling the ORCAM processor\n");
+#endif
+    removeInstruction(mb,getPC(mb,p));
+    return MAL_SUCCEED;
+}
+@}

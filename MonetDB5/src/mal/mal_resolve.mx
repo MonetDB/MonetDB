@@ -418,6 +418,9 @@ This piece of code may be shared by the separate binder
         case FUNCTIONsymbol: 
             p->token = FCNcall; 
             break;
+        case MACROsymbol:
+        case ORCAMsymbol:
+            break;
         default:
             showException(mb,getPC(mb,p),"MALresolve",
                     "unexpected token type\n");

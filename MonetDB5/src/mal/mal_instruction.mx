@@ -971,6 +971,9 @@ int isReserved(str nme){
     case 'I': case 'i': if( idcmp("include",nme)==0) return 1;
           break;
     case 'M': case 'm': if( idcmp("module",nme)==0) return 1;
+          if( idcmp("macro",nme)==0) return 1;
+          break;
+    case 'O': case 'o': if( idcmp("orcam",nme)==0) return 1;
           break;
     case 'P': case 'p': if( idcmp("pattern",nme)==0) return 1;
           break;
@@ -1722,6 +1725,8 @@ str operatorName(int i){
     case FACTORYsymbol: return "factory";
     case COMMANDsymbol: return "command";
     case PATTERNsymbol: return "pattern";
+    case MACROsymbol: return "macro";
+    case ORCAMsymbol: return "orcam";
     case THREADsymbol:  return "thread";
     }
     return "Undefined";
@@ -1811,6 +1816,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         case FUNCTIONsymbol:
         case FACTORYsymbol:
         case PATTERNsymbol:
+        case MACROsymbol:
+        case ORCAMsymbol:
             return fcnDefinition(mb,p,s,flg); 
         default:
             sprintf(t," ?%d? ",p->token); 

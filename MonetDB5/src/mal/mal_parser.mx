@@ -1386,7 +1386,18 @@ int parseMAL(Client cntxt, Symbol curPrg){
         case 'M': case 'm': 
               if( keyword(cntxt,"module",6) &&
                 parseModule(cntxt)!= 0) break;
+              if( keyword(cntxt,"macro",5) ){
+                cntxt->blkmode++;
+                parseFunction(cntxt,MACROsymbol);
+                break;
+              } 
               goto allLeft;
+        case 'O': case 'o':
+              if( keyword(cntxt,"orcam",5) ){
+                cntxt->blkmode++;
+                parseFunction(cntxt,ORCAMsymbol);
+                break;
+              } 
         case 'P': case 'p': 
               if( keyword(cntxt,"pattern",7) ) {
                 parseCommandPattern(cntxt, PATTERNsymbol);
