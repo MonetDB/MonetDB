@@ -1050,19 +1050,25 @@ AC_CHECK_HEADERS(iconv.h locale.h langinfo.h)
 AC_CHECK_FUNCS(nl_langinfo setlocale)
 
 dnl  If not present in libc, the iconv* functions might be in a separate libiconv;
-dnl  on CYGWIN, they are even called libiconv* (iconv.h takes care of mapping
-dnl  iconv* to libiconv*).
+dnl  on CYGWIN, they are even called libiconv*; hence, we define some wrappers to
+dnl  handle this.
 ICONV_LIBS=""
 have_iconv=no
+libiconv=no
 AC_CHECK_LIB(iconv, iconv, 
   [ ICONV_LIBS="-liconv" have_iconv=yes ],
-  [ AC_CHECK_LIB(iconv, libiconv, [ ICONV_LIBS="-liconv" have_iconv=yes ], 
+  [ AC_CHECK_LIB(iconv, libiconv, [ ICONV_LIBS="-liconv" have_iconv=yes libiconv=yes ], 
     [ AC_CHECK_FUNC(iconv, [ have_iconv=yes ], []) 
     ]) 
   ]
 )
 if test "x$have_iconv" = xyes; then
 	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv function])
+	if test "x$libiconv" = xyes; then
+		AC_DEFINE(iconv, libiconv, [Wrapper])
+		AC_DEFINE(iconv_open, libiconv_open, [Wrapper])
+		AC_DEFINE(iconv_close, libiconv_close, [Wrapper])
+	fi
 	AC_TRY_COMPILE([
 #include <stdlib.h>
 #include <iconv.h>
