@@ -17,6 +17,9 @@
 #include "monet.h"
 #endif
 
+#ifndef SO_EXT
+#define SO_EXT ".so"
+#endif
 /* 
  * prototypes 
  *
@@ -162,7 +165,7 @@ char *MSP_next_module() {
             while((dent=readdir(dirp))!=0)
                 {
                     char *suffix=0;
-                    if ((suffix=strstr(dent->d_name,".so"))==0 || 
+                    if ((suffix=strstr(dent->d_name,SO_EXT))==0 || 
 		       	 strncmp(dent->d_name,"lib_",4)!=0) continue; 
                     suffix[0]='\0';
                     next_module=(char *)GDKmalloc(strlen(current_entry->path)+
@@ -202,7 +205,7 @@ char *MSP_locate_module(char *mod_name) {
 		 !strcmp(&next_module[fulllen-len],name))
                 {
                     fullname=(char *)GDKmalloc(fulllen+4);
-                    sprintf(fullname,"%s.so",next_module);
+                    sprintf(fullname,"%s%s",next_module, SO_EXT);
                     GDKfree(next_module);
                     GDKfree(name);
                     return fullname;

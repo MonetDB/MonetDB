@@ -65,9 +65,11 @@ typedef struct mallinfo mallinfo_t;
 #ifndef WIN32
 #define DIR_SEP '/' 
 #define DIR_SEP_STR "/" 
+#define SO_EXT ".so"
 #else /* WIN32 native */
 #define DIR_SEP '\\' 
 #define DIR_SEP_STR "\\" 
+#define SO_EXT ".dll"
 #endif 
 
 /* the new mmap modes, mimick default MADV_* madvise POSIX constants */
@@ -275,14 +277,20 @@ MT_mallinfo(){
 #define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
 
 void MT_init_posix(){
-	WSDATA w;
+	WSADATA w;
+	int sockopt = SO_SYNCHRONOUS_NONALERT;
 
-	WSAStartup(0x0101, &w);
-	if (w.version != 0x0101){
+	if (WSAStartup(0x0101, &w) != 0){
 		GDKerror("MT_init: winsock initialisation failed %d\n", 
+			WSAGetLastError());
+	}
+	if ( setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, 
+		(char*)&sockopt, sizeof(sockopt)) < 0){
+		GDKerror("MT_init: winsock set sockopt failed %d\n", 
 			WSAGetLastError());
 		WSACleanup();
 	}
+			
 }
 
 void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
@@ -628,21 +636,47 @@ int win_closedir (DIR *dir)
 }
 
 void *dlopen(const char *__file, int __mode){
-  HINSTANCE handle = LoadLibrary (__file);
-  return (void*)handle;
+  if (__file != NULL){
+  	HINSTANCE handle = LoadLibrary (__file);
+  	return (void*)handle;
+  }
+  return NULL;
 }
 
 int dlclose(void *__handle){
-  HINSTANCE handle = (HINSTANCE)__handle;
-  return FreeLibrary (handle);
+  if (__handle != NULL){
+  	HINSTANCE handle = (HINSTANCE)__handle;
+  	return FreeLibrary (handle);
+  }
+  return -1;
 }
 
 void *dlsym(void * __handle, const char * __name){
-  HINSTANCE handle = (HINSTANCE)__handle;
-  return (void*)GetProcAddress (handle, __name);
+  if (__handle != NULL){
+  	HINSTANCE handle = (HINSTANCE)__handle;
+  	return (void*)GetProcAddress (handle, __name);
+  }
 }
 
 char *dlerror(void){
    return GetLastError();
+}
+
+FILE *MT_fdopen(int fd, char *flag){
+	int lfd;
+	if (*flag == 'r'){
+	    if ((lfd = _open_osfhandle( fd, _O_BINARY|_O_RDONLY)) == -1){
+		printf("fdopen could not open_osfhandle\n");
+		return NULL;
+            }
+	}
+	if (*flag == 'w'){
+	    if ((lfd = _open_osfhandle( fd, _O_BINARY|_O_WRONLY)) == -1){
+		printf("fdopen could not open_osfhandle\n");
+		return NULL;
+            }
+	}
+	printf("fdopen %d %d\n", fd, lfd );
+	return _fdopen(lfd, flag);
 }
 #endif

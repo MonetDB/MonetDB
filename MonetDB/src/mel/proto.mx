@@ -42,12 +42,14 @@ class proto: public language {
 #include "proto.h"
 #include "ListIterator.h"
 #include "mel_tab.h"
+#include <string.h>
 
 int proto::generate_code( ostream &o, Symbol *root ){
 	root->print( this, o );
 	return 0;
 }
 
+static char mod_export[1024];
 
 ostream &proto::gen_module( ostream &o, const Module &d ){ 
 
@@ -55,6 +57,19 @@ ostream &proto::gen_module( ostream &o, const Module &d ){
 	o << " * This module is generated using the mel -proto utility\n";
 	o << " */\n\n"; 
 	o << "#include <gdk.h>\n\n";
+
+	o << "#ifdef _MSC_VER\n";
+	o << "#ifndef LIB_" << d.Name() << "\n";
+	o << "#define " << d.Name() << "_export extern __declspec(dllimport)\n";
+	o << "#else\n";
+	o << "#define " << d.Name() << "_export extern __declspec(dllexport)\n";
+	o << "#endif\n";
+	o << "#else\n";
+	o << "#define " << d.Name() << "_export extern\n"; 
+	o << "#endif\n";
+
+	strcpy(mod_export,d.Name());
+	strcat(mod_export,"_export");
 
 	o << "#ifdef __cplusplus\n";
 	o << "extern \"C\" {\n";
@@ -71,11 +86,11 @@ ostream &proto::gen_module( ostream &o, const Module &d ){
 ostream &proto::gen_atom( ostream &o, const Atom &d ){
 	atom = &d;
 
-	o << "extern int\tTYPE_" << d.Name() << ";\n";
+	o << mod_export << " int\tTYPE_" << d.Name() << ";\n";
 
 	if (!d.type() && !d.parent() && d.size() == 0){
- 		o << "extern int " << d.Name() << "_size();\n";
- 		o << "extern int " << d.Name() << "_align();\n";
+ 		o << mod_export << " int " << d.Name() << "_size();\n";
+ 		o << mod_export << " int " << d.Name() << "_align();\n";
 	}
 	o << "\n\n";
 	
@@ -265,7 +280,7 @@ ostream &proto::gen_acc( ostream &o, const Acc &d ){
 		iter->next(acc_arg);
 	}
 	
-	o << "extern int\tACC_" << d.Name() << ";\n\n\n";
+	o << mod_export << " int\tACC_" << d.Name() << ";\n\n\n";
 	
 	if (d.cmds()){
 	   	Ops **cmds = d.cmds();
@@ -396,7 +411,7 @@ ostream &proto::gen_command( ostream &o, const Command &d ){
    	o << "/* COMMAND " << d.Name() <<  "\n";
 	o << " * " << d.hlp() << "\n";
 	o << " */\n";
-	o << "extern int " << d.fcn() <<"( ";
+	o << mod_export << " int " << d.fcn() <<"( ";
 	if (d.result()){
 	   	result = 1;
 	   	d.result()->Name( "res" );
@@ -424,7 +439,7 @@ ostream &proto::gen_operator( ostream &o, const Operator &d ){
    	o << "/* Operator " << d.Name() <<  "\n";
 	o << " * " << d.hlp() << "\n";
 	o << " */\n";
-	o << "extern int " << d.fcn() <<"( ";
+	o << mod_export << " int " << d.fcn() <<"( ";
 	if (d.result()){
 	   	result = 1;
 	   	d.result()->Name( "res" );
