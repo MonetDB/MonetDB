@@ -442,8 +442,7 @@ str SQLengine(Client c) {
 Any error encountered during execution should block further processing
 unless auto_commit has been set.
 @c
-	if( msg != MAL_SUCCEED) stream_printf(GDKout,"error received %s\n",msg);
-	if( c->curprg->def->errors){
+	if(c->curprg->def->errors){
 		stream_printf(GDKout,"Execution produced errors");
 		sql_error(m,1,"Execution produced errors");
 	}

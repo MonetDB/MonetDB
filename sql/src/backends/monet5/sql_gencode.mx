@@ -314,11 +314,14 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		char *type = (s->type==st_bat)?"":"_ubat";
 		char buf[256];
 		int k;
+                int tt;
 
 		@:SQLprelude@
 		snprintf(buf,256,"bind%s",type);
 		q= newStmt(mb,"sql",buf);
-                /* setVarType(mb,getArg(q,0),newBatType(TYPE_void,XXXX)); */
+                tt= getTypeIndex(tail_type(s)->type->base.name,
+                        strlen(tail_type(s)->type->base.name), TYPE_any);
+                setVarType(mb,getArg(q,0),newBatType(TYPE_void,tt)); 
 		q= pushStr(mb,q,s->op1.cval->t->s->base.name);
 		q= pushStr(mb,q,s->op1.cval->t->base.name);
 		q= pushStr(mb,q,s->op1.cval->base.name);
@@ -334,9 +337,14 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	} break;
 	case st_dbat: {
 		int k;
+                /* int tt;*/
 		@:SQLprelude@
 		q= newStmt(mb,"sql","bind_dbat");
-                /* setVarType(mb,getArg(q,0),newBatType(TYPE_void,XXXX));*/
+/*
+                tt= getTypeIndex(tail_type(s)->type->base.name,
+                        strlen(tail_type(s)->type->base.name), TYPE_any);
+                setVarType(mb,getArg(q,0),newBatType(TYPE_void,tt));
+*/
 		q= pushStr(mb,q,s->op1.tval->s->base.name);
 		q= pushStr(mb,q,s->op1.tval->base.name);
 		q= pushInt(mb,q,s->flag);
@@ -350,11 +358,13 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		@:SQLpostlude@
 	} break;
 	case st_idxbat:{
-		int k;
+		int k,tt;
 
 		@:SQLprelude@
 		q= newStmt(mb,"sql","bind_ibat");
-                /* setVarType(mb,getArg(q,0),newBatType(TYPE_void,XXXX));*/
+                tt= getTypeIndex(tail_type(s)->type->base.name,
+                        strlen(tail_type(s)->type->base.name), TYPE_any);
+                setVarType(mb,getArg(q,0),newBatType(TYPE_void,tt));
 		q= pushStr(mb,q,s->op1.idxval->t->s->base.name);
 		q= pushStr(mb,q,s->op1.idxval->t->base.name);
 		q= pushStr(mb,q,s->op1.idxval->base.name);
