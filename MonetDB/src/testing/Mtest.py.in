@@ -1812,6 +1812,10 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
         TestErr.write(Prompt(cmd))
         TestErr.flush()
         pOut,pIn,pErr = popen2.popen3(cmd)
+
+    if OS == "IRIX" or OS == "IRIX64":
+    	time.sleep(1)
+
     pIn.write(TestIn)
     pIn.flush()
     return pIn, pOut, pErr
