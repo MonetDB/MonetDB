@@ -574,7 +574,7 @@ finalize:
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	}
 #endif
-	//TOBE removed stream_flush(c->fdout);
+	/*TOBE removed stream_flush(c->fdout);*/
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
