@@ -45,9 +45,9 @@ Usage:  %s [-I<exp>] <files>
 """ % THISFILE
 ### Usage(THISFILE) #
 
-def Warn(THISFILE,TEXT) :
+def warn(THISFILE,TEXT) :
     sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
-### Warn(THISFILE,TEXT) #
+### warn(THISFILE,TEXT) #
 
 def wlen(str) :
     return len(string.join(string.split(str)))
@@ -261,7 +261,21 @@ def mFilter (FILE, IGNORE) :
             try:
                 fout.write(ln)
             except IOError, (IOerrNo, IOerrStr):
-                Warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
+                warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
+                if IOerrNo == 28:
+                    # No space left on device
+                    warn(THISFILE, "Removing input file '%s'." % FILE)
+                    try:
+                        os.remove(FILE)
+                        fin = open(FILE,"w")
+                        fin.write("%s: Removed '%s' to create space for '%s'.\n" % (THISFILE, FILE, fout.name))
+                        fin.close()
+                    execpt:
+                        pass
+                    try:
+                        fout.write(ln)
+                    except IOError, (IOerrNo, IOerrStr):
+                        warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
     fout.close()
     if os.name == "nt":
@@ -291,7 +305,7 @@ def main(argv) :
         if os.path.isfile(f):
             mFilter(f, IGNORE)
         else:
-            Warn(THISFILE, "file missing: " + f)
+            warn(THISFILE, "file missing: " + f)
 ### main(argv) #
 
 if __name__ == "__main__":
