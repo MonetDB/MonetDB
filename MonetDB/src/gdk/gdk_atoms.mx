@@ -665,12 +665,15 @@ the commit tremendously complicated.
 { int t_ = (P1);                                 	\
   if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
         t_ = ATOMstorage(t_);                           \
-  if (t_ < TYPE_bat) {					\
+  if (t_ <= TYPE_bat) {					\
 	if (t_ <= TYPE_chr) {				\
 		if (t_ != TYPE_void)			\
 		*(chr *) (P3) = * (chr *) (P4);		\
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
+	} else if (t_ == TYPE_bat) {			\
+		BBPincref(*(bat*) (P4), TRUE);		\
+		*(bat *) (P3) = * (bat *) (P4); 	\
 	}						\
   } else {						\
 	if (t_ <= TYPE_flt) {				\
@@ -692,12 +695,16 @@ the commit tremendously complicated.
 { int t_ = (P1);                                 	\
   if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
         t_ = ATOMstorage(t_);                           \
-  if (t_ < TYPE_bat) {					\
+  if (t_ <= TYPE_bat) {					\
 	if (t_ <= TYPE_chr) {				\
 		if (t_ != TYPE_void)			\
 		*(chr *) (P3) = * (chr *) (P4);		\
 	} else if (t_ == TYPE_sht) {			\
 		*(sht *) (P3) = * (sht *) (P4);		\
+	} else if (t_ == TYPE_bat) {			\
+		BBPdecref(*(bat*) (P3), TRUE);		\
+		BBPincref(*(bat*) (P4), TRUE);		\
+		*(bat *) (P3) = *(bat *) (P4); 		\
 	}						\
   } else {						\
 	if (t_ <= TYPE_flt) {				\
