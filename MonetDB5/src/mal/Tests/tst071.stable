@@ -6,12 +6,12 @@
 # dbname:demo
 # Visit http://monetdb.cwi.nl for further information.
 ## parsing operations with multi-assignments
-#function swap(x:int,y:int) (a:int,b:int);
+#function swap(x:int,y:int)(a:int,b:int);
 #	a:=y; b:=x;
 #	return(a,b);
 #
 #end swap;
-function Admin.swap(x:int,y:int) (:int,b:int);	# 0  (:int)(b:int)<-(x:int)(y:int)
+function Admin.swap(x:int,y:int) (a:int,b:int);	# 0  (a:int)(b:int)<-(x:int)(y:int)
     a := y;	# 1  (a:int)<-(y:int)
     b := x;	# 2  (b:int)<-(x:int)
     return (a,b);	# 3  (a:int)(b:int)

@@ -343,6 +343,7 @@ collect the buffer when in use.
 	if(c->nspace==0)
 		c->nspace = newScope(NULL, GDKstrdup("guest"));
 	c->curprg = c->backup = 0;
+	c->glb = 0;
 
 	c->father = NULL;
 	c->login = time(0); c->delay= TIMEOUT;

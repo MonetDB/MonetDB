@@ -28,7 +28,7 @@
 #redo i:= crackers.nextPiece(b,view,i);
 #exit;
 #
-#dropPiece(view);
+#crackers.drop(b);
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
@@ -50,7 +50,7 @@ barrier (i,view):= crackers.firstPiece(b);	# 16 CRKfirstPiece (i:int)(view:bat[:
     io.print(view);	# 17 IOprint_val ($39:int)<-(view:bat[:int,:int])
     redo i := crackers.nextPiece(b,view,i);	# 18 CRKnextPiece (i:int)<-(b:bat[:int,:int])(view:bat[:int,:int])(i:int) jump 17
 exit i;	# 19  (i:int)
-    crackers.dropPiece(view);	# 20 CRKdropPiece ($41:void)<-(view:bat[:int,:int])
+    crackers.drop(b);	# 20 CRKdropPiece ($41:void)<-(b:bat[:int,:int])
 end main;	# 21  
 crackMap created
 #-----------------#

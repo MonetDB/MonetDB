@@ -284,6 +284,8 @@ table may have grown in size.
 @c
 str MALexitClient(Client c){
         garbageCollector(c->curprg->def,c->glb,TRUE);
+	GDKfree(c->glb);
+	c->glb = 0;
 	return 0;
 }
 str MALreader(Client c){
@@ -352,10 +354,9 @@ str MALengine(Client c){
 		return throwMessage("MALengine","Program contains errors\n");
 	}
 	if( prg->def->stop ==1) return 0; /* empty block */
-	if(c->glb && prg->def && c->glb->stksize< prg->def->vsize){
-		c->glb= reallocStack(c->glb, prg->def->vsize);
-	}
 	if( c->glb){
+		if(prg->def && c->glb->stksize< prg->def->vsize)
+			c->glb= reallocGlobalStack(c->glb, prg->def->vsize);
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk =  prg->def;
 	}

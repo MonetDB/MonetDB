@@ -11,8 +11,8 @@
 #        return (a,x);
 #
 #end swap;
-function Admin.swap(x:bat[:any$1,:int],y:bat[:int,:int]) (:str,b:bat[:any$1,:int]);	# 0  (:str)(b:bat[:any$1,:int])<-(x:bat[:any$1,:int])(y:bat[:int,:int])
-    a := "done";	# 1  (a:str)<-($6:str)
+function Admin.swap(x:bat[:any$1,:int],y:bat[:int,:int]) (a:str,b:bat[:any$1,:int]);	# 0  (a:str)(b:bat[:any$1,:int])<-(x:bat[:any$1,:int])(y:bat[:int,:int])
+    a := "done";	# 1  (a:str)<-($5:str)
     return (a,x);	# 2  (a:str)(x:bat[:any$1,:int])
 end swap;	# 3  
 #

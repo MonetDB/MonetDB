@@ -40,7 +40,7 @@
 ##next one doesn;t exist anymore
 ##i:= crackers.nextPiece(b,cidx,view,i);
 ##print(view);
-#dropPiece(view);
+#crackers.drop(b);
 #
 function Admin.main():int;	# 0  (main:int)
     b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
@@ -68,7 +68,7 @@ function Admin.main():int;	# 0  (main:int)
     i := crackers.nextPiece(b,view,i);	# 23 CRKnextPiece (i:int)<-(b:bat[:int,:int])(view:bat[:int,:int])(i:int)
     io.print(view);	# 24 IOprint_val ($43:int)<-(view:bat[:int,:int])
     io.print(i);	# 25 IOprint_val ($44:int)<-(i:int)
-    crackers.dropPiece(view);	# 26 CRKdropPiece ($45:void)<-(view:bat[:int,:int])
+    crackers.drop(b);	# 26 CRKdropPiece ($45:void)<-(b:bat[:int,:int])
 end main;	# 27  
 crackMap created
 #-----------------#

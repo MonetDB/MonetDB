@@ -13,5 +13,5 @@ insert(b,9,81);
 print(b);
 
 crackers.new(b);
-cracker.info(b);
+crackers.info(b);
 print(b);

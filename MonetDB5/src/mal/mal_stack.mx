@@ -75,6 +75,7 @@ typedef struct MALSTK {
 
 mal_export MalStkPtr newGlobalStack(int size);
 mal_export MalStkPtr reallocStack(MalStkPtr s, int cnt);
+mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
 mal_export void chkStack(MalStkPtr stk, int i);	/* used in src/mal/mal_box.c */
 
@@ -107,6 +108,17 @@ MalStkPtr newGlobalStack(int size){
 	return s;
 }
 
+MalStkPtr reallocGlobalStack(MalStkPtr old, int cnt){
+	int k;
+	MalStkPtr s; 
+
+	if( old->stksize >cnt ) return old;
+	k = ((cnt/STACKINCR)+1) * STACKINCR;
+	s= newGlobalStack(k);
+	memcpy(s, old, stackSize(old->stksize)); 
+	GDKfree(old);
+	return s;
+}
 MalStkPtr reallocStack(MalStkPtr s, int cnt){
 	int k;
 	MalStkPtr old= s; 
