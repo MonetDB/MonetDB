@@ -2164,7 +2164,7 @@ answer_lookahead(MapiHdl hdl)
 	} while (hdl->mid->error == MOK && hdl->mid->active && rc == MOK);
 	if (hdl->mid->trace)
 		printf("mapi_query return:%d\n", hdl->mid->error);
-	return hdl->mid->error == MOK ? rc : hdl->mid->error;
+	return rc == MMORE ? MMORE : hdl->mid->error;
 }
 
 static MapiMsg
@@ -2221,6 +2221,14 @@ mapi_execute(MapiHdl hdl)
 	ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
+	if (ret == MMORE) {
+		Mapi mid = hdl->mid;
+		stream_flush(mid->to);
+		stream_flush(mid->to);
+		check_stream(mid, mid->to, "write error on stream",
+			     "mapi_execute", mid->error);
+		ret = answer_lookahead(hdl);
+	}
 	return ret;
 }
 
@@ -2273,6 +2281,14 @@ mapi_query_handle(MapiHdl hdl, const char *cmd)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
+	if (ret == MMORE) {
+		Mapi mid = hdl->mid;
+		stream_flush(mid->to);
+		stream_flush(mid->to);
+		check_stream(mid, mid->to, "write error on stream",
+			     "mapi_execute", mid->error);
+		ret = answer_lookahead(hdl);
+	}
 	return ret;
 }
 
@@ -2290,6 +2306,14 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
+	if (ret == MMORE) {
+		Mapi mid = hdl->mid;
+		stream_flush(mid->to);
+		stream_flush(mid->to);
+		check_stream(mid, mid->to, "write error on stream",
+			     "mapi_execute", mid->error);
+		ret = answer_lookahead(hdl);
+	}
 	return hdl;
 }
 
