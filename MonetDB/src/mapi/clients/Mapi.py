@@ -31,6 +31,7 @@ interactive=    0
 class server:
     def __init__(self, server, port, user):
         try:
+	    #print 'init ', port,' server', server
             self.socket = socket(AF_INET, SOCK_STREAM)
             self.socket.connect((server, port))
             self.prompt = u''
@@ -39,7 +40,10 @@ class server:
             print 'server refuses access'
 
         self.cmd_intern(user+'\n')
+	#print 'has sent first command\n'
         self.result()
+	#self.getprompt()
+	#print 'got first result\n'
         if trace > 0:
             print 'connected ', self.socket
 
@@ -56,8 +60,11 @@ class server:
 
     def result(self):
         result = self.getstring()
+	#print 'result:',result,'\n'
         if trace > 0:
             print result.encode('utf-8')
+        if self.prompt == result :
+		return ''
         self.getprompt()
         return result
 
@@ -72,10 +79,14 @@ class server:
                     print self.buffer
                 str = str + self.buffer
                 self.buffer = self.socket.recv(8096)
-                idx = string.find(self.buffer, "\1\n")
+                #print 'got:',self.buffer
+                idx = string.find(self.buffer, "\1")
 
+	    #print 'idx@end=',idx,'\n'
             str = str + self.buffer[0:idx]
             self.buffer = self.buffer[idx+1:]
+	    #print 'str=',str,'\n'
+	    #print 'self.buffer=',self.buffer,'\n'
             if trace > 1:
                 print str
             try:
@@ -92,6 +103,7 @@ class server:
 
     def getprompt(self):
         self.prompt = self.getstring()
+	#print 'prompt:',self.prompt,'\n'
         if interactive:
             print self.prompt.encode('utf-8')
 
@@ -125,7 +137,6 @@ if __name__ == '__main__':
     line = fi.readline()
     while line and line != "quit;\n":
         res = s.cmd(line)
-        print res
         sys.stdout.write(s.prompt)
         line = fi.readline()
     s.disconnect()
