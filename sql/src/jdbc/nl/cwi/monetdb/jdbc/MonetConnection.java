@@ -1744,10 +1744,8 @@ public class MonetConnection extends Thread implements Connection {
 		 * @return the next Header available or null
 		 */
 		synchronized Header getNextHeader() throws SQLException {
-			if (error != "") throw new SQLException(error);
 
 			curHeader++;
-
 			while(curHeader >= getSize() && !isCompleted()) {
 				try {
 					this.wait();
@@ -1755,6 +1753,8 @@ public class MonetConnection extends Thread implements Connection {
 					// hmmm... recheck to see why we were woken up
 				}
 			}
+
+			if (error != "") throw new SQLException(error);
 
 			if (curHeader >= getSize()) {
 				// header is obviously completed so, there are no more headers
