@@ -31,6 +31,6 @@ do
 			-e "s/^\+([-=]+\+)+$//g" \
 			-e "s/^\|(.+)\|$/\1/g" \
 			-e "/^$/d" \
-			-e "s/([0-9]+) rows/(\1 rows)\n/g" \
+			-e "s/([0-9]+) row(s?)/(\1 row\2)\n/g" \
 		| diff -ubBw expected/`basename $script .sql`.out -
 done
