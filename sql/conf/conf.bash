@@ -77,7 +77,7 @@ fi
 # i.e., cut-off from the first non-letter till the end)
 base="`pwd`"
 wh_t="`basename $base | perl -pe 's|^([a-zA-Z]+)([^a-zA-Z].*)?$|$1|'`"
-what="`echo ${wh_t} | tr [:lower:] [:upper:]`"
+what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]'`"
 
 # Ugly hack: (Arjen)
 if [ "${what}" = "MONETDB" ] ; then
