@@ -358,10 +358,12 @@ comment "Insert all BUNs of the second BAT
 	into the first.";
 
 command insert(b:bat[:any$1,:any$2], 
-		h:any$1, t:any$2)
-	:void 
+		h:any$1, t:any$2) :void 
 address BKCinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
+command insert(b:bat[:void,:any$2], 
+		h:oid, t:any$2) :void 
+address BKCinsert_bun;
 
 command insert(b:bat[:void,:any$1],
 		v:any$1):void 
@@ -376,11 +378,13 @@ comment "Perform replace for all BUNs of
 	the second BAT into the first.";
 
 command replace(b:bat[:any$1, :any$2], 
-		h:any$1, t:any$2)
-	:bat[:any$1,:any$2] 
+		h:any$1, t:any$2) :void
 address BKCreplace_bun
 comment "Replace the tail value of one BUN 
 	that has some head value.";
+command replace(b:bat[:void, :any$2], 
+		h:oid, t:any$2) :void
+address BKCreplace_bun;
 
 # The SQL append/replace commands
 
@@ -443,17 +447,22 @@ Therefore it is moved to the bbp module
 	#commit";
 
 command delete(b:bat[:any$1, :any$2], 
-		h:any$1, t:any$2)
-	:void 
+		h:any$1, t:any$2) :void 
 address BKCdelete_bun
 comment "Delete one specific BUN.";
 
+command delete(b:bat[:void, :any$2], 
+		h:oid, t:any$2) :void 
+address BKCdelete_bun;
+
 command delete(b:bat[:any$1, :any$2], 
-		h:any$1)
-	:void 
+		h:any$1) :void 
 address BKCdelete_head
 comment "Delete all BUNs with a certain head 
 	value.";
+command delete(b:bat[:void, :any$2], 
+		h:oid) :void 
+address BKCdelete_head;
 
 command clear(b:bat[:any$1, :any$2]) :void 
 address BKCdelete_all
