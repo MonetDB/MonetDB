@@ -74,10 +74,10 @@ comment "Commit updates for this client";
 pattern release(name:str,val:bat[:any,:any]) :void 			
 address CMDbbprelease
 comment "Commit updates and release this BAT.";
-pattern release(b:bat[:any,:any])
+pattern release(b:bat[:any,:any]):void
 address CMDbbpreleaseBAT
 comment "Remove the BAT from further consideration";
-pattern destroy(b:bat[:any,:any])
+pattern destroy(b:bat[:any,:any]):void
 address CMDbbpdestroyBAT1
 comment "BAT removal at session end";
 pattern destroy(b:bat[:any,:any],immediate:bit)

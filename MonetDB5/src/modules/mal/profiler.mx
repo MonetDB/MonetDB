@@ -71,11 +71,11 @@ emptied explicitly upon need.
 @mal
 module profiler;
 
-command activate(name:str)
+command activate(name:str):void
 address CMDactivateProfiler
 comment "Make the specified counter active.";
 
-command deactivate(name:str)
+command deactivate(name:str):void
 address CMDdeactivateProfiler
 comment "Deactivate the counter";
 
@@ -89,37 +89,37 @@ command closeStream():void
 address closeProfilerStream
 comment "Stop sending the event records";
 
-command setAll()
+command setAll():void
 address CMDsetAllProfiler
 comment "Short cut for setFilter(*,*).";
-command setNone()
+command setNone():void
 address CMDsetNoneProfiler
 comment "Short cut for clrFilter(*,*).";
 
-command setFilter(mod:str,fcn:str)
+command setFilter(mod:str,fcn:str):void
 address CMDsetFilterProfiler
 comment "Generate an event record for all 
 	function calls that satisfy the regular 
 	expression mod.fcn. A wildcard (*) can 
 	be used as name to identify all";
 
-command clrFilter(mod:str,fcn:str)
+command clrFilter(mod:str,fcn:str):void
 address CMDclrFilterProfiler
 comment "Clear the performance trace bit 
 	of the selected functions.";
 
-command setStartPoint(mod:str,fcn:str)
+command setStartPoint(mod:str,fcn:str):void
 address CMDstartPointProfiler
 comment "Start performance tracing at mod.fcn";
 command setEndPoint(mod:str,fcn:str)
 address CMDendPointProfiler
 comment "End performance tracing after mod.fcn";
 
-command start()
+command start():void
 address CMDstartProfiler
 comment "Start performance tracing";
 
-command stop()
+command stop():void
 address CMDstopProfiler
 comment "Stop performance tracing";
 

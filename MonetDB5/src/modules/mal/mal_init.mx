@@ -42,7 +42,7 @@ include alarm;
 include mmath;
 include streams;
 
-#atom extnsions
+#atom extensions
 include blob;
 include str;
 include url;

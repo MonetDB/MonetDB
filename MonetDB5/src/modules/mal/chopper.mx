@@ -75,13 +75,11 @@ extraction of head and tail value; the overhead involved is much less.
 @mal
 pattern getHead(b:bat[:any$1,:any],i:lng):any$1 
 address CHPgetHead
-comment "return the BUN head value using the 
-	cursor.";
+comment "return the BUN head value using the cursor.";
 
 pattern getTail(b:bat[:any,:any$1],i:lng):any$1 
 address CHPgetTail
-comment "return the BUN tail value using the 
-	cursor.";
+comment "return the BUN tail value using the cursor.";
 @-
 @{
 
