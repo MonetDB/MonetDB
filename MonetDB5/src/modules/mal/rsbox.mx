@@ -225,16 +225,14 @@ type analysis of the resultset box operations.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-typedef struct list_t {
-	BAT* bat;		/* BAT that backs this column */
-	BUN bun;		/* a walker variable */
-	str name;		/* name of the column */
-	str table;		/* name of the table this column belongs to */
-	str schema;		/* name of the schema this column belongs to */
-	str digits;		/* digits of this data type */
-	str scale;		/* scale of this data type */
-	struct list_t* next;	/* the next column in this list */
-	int width;		/* the maximum width of this column */
+#define RS_MAX_PROPERTIES	10
+
+typedef struct column_t {
+	BAT* bat;				/* BAT that backs this column */
+	BUN bun;				/* a walker variable */
+	str name;				/* the name/id of this column */
+	str properties[RS_MAX_PROPERTIES];	/* an array of properties */
+	struct column_t* next;	/* the next column in this list */
 } column;
 
 typedef struct resultset_t {
@@ -244,9 +242,16 @@ typedef struct resultset_t {
 	size_t pos;				/* the current row position */
 	str id;					/* external reference ID of this ResultSet */
 	char complete;			/* whether this ResultSet can be serialised */
+	char type;				/* type of result */
+	str propertynames[RS_MAX_PROPERTIES];	/* an array of property names */
 } resultset;
 
-str RSBgetResultSet(resultset** retval, int* handle);
+#define RS_EXTENDED		0	/* JDBC/ODBC format */
+#define RS_MONET4		1	/* former BATmultiprintf */
+#define RS_RAW			2	/* unstructured character data */
+#define	RS_BINARY		3	/* binary data, length known */
+#define RS_HTML			4	/* structured (X)(H)TML formatted character data */
+#define RS_SAX			5	/* SAX event stream */
 
 typedef struct rsbox_element {
 	resultset* rs;
@@ -365,13 +370,10 @@ str RSBcreate(int* retval, str* name) {
 		throw("rsbox.create", "No free slots available");
 
 	rs = GDKmalloc(sizeof(resultset));
-	/* initialise the values */
-	rs->complete = (char)0;
+	/* initialise the values to null */
+	memset(rs, 0, sizeof(resultset));
+	/* set the id */
 	rs->id = GDKstrdup(*name);
-	rs->pos = 0;
-	rs->length = 0;
-	rs->blocksize = 0;
-	rs->firstColumn = NULL;
 
 	/* store it in the backing array... */
 	elements[free]->rs = rs;
@@ -532,79 +534,138 @@ str RSBhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if ((tmp = RSBgetResultSet(X, Y)) != MAL_SUCCEED) return(tmp);
 
 /**
- * Helper function that sets a property for a column.  If the
- * property is not supported, an exception is thrown.  The return
- * value indicates whether a previous value was overwritten.
- *
- * @param col the column to set the property for
- * @param nme the name of the property
- * @param val the value of the property
- * @return true if there was a previous value, false otherwise
- */
-static str RSsetPropertyInternal(int* retval, column* col, str nme, str val) {
-	int ret = 0;
-	
-	/* the allowed properties are controlled hardcoded here,
-	 * because they are stored explicitly in the struct */
-	if (strcmp(nme, "name") == 0) {
-		if (col->name != NULL) {
-			ret = 1;
-			GDKfree(col->name);
-		}
-		col->name = val;
-	} else if (strcmp(nme, "table") == 0) {
-		if (col->table != NULL) {
-			ret = 1;
-			GDKfree(col->table);
-		}
-		col->table = val;
-	} else if (strcmp(nme, "schema") == 0) {
-		if (col->schema != NULL) {
-			ret = 1;
-			GDKfree(col->schema);
-		}
-		col->schema = val;
-	} else if (strcmp(nme, "digits") == 0) {
-		if (col->digits != NULL) {
-			ret = 1;
-			GDKfree(col->digits);
-		}
-		col->digits = val;
-	} else if (strcmp(nme, "scale") == 0) {
-		if (col->scale != NULL) {
-			ret = 1;
-			GDKfree(col->scale);
-		}
-		col->scale = val;
-	} else {
-		/* throw exception  */
-		throw("resultset.setProperty", "invalid property: not supported");
-	}
-
-	*retval = ret;
-	return(MAL_SUCCEED);
-}
-
-/**
  * Small helper function that calculates the max width of the
  * tail value of the given BAT.
  *
  * @param b the BAT to scan the tail from
  * @return the max width of the tail
  */
-static int tailWidth(BAT *b) {
+static str tailWidth(int* retval, BAT *b) {
 	BUN p, q;
 	int max = 0;
 
-	BATloop(b, p, q) {
-		char *s = BUNtail(b, p);
-		int l = strlen(s);
+	switch (b->ttype) {
+		case TYPE_bit:
+			max = 5;	/* false */
+		break;
+		case TYPE_chr:
+			max = 1;
+		break;
+		case TYPE_oid:
+			max = 11;	/* wild guess */
+		break;
+		case TYPE_sht: {
+			lng maxval = 0;
+			BATloop(b, p, q) {
+				sht *l = (sht*)BUNtail(b, p);
+				maxval += *l;
+			}
+			while (maxval /= 10) max++;
+		} break;
+		case TYPE_int: {
+			lng maxval = 0;
+			BATloop(b, p, q) {
+				int *l = (int*)BUNtail(b, p);
+				maxval += *l;
+			}
+			while (maxval /= 10) max++;
+		} break;
+		case TYPE_lng: {
+			lng maxval = 0;
+			BATloop(b, p, q) {
+				lng *l = (lng*)BUNtail(b, p);
+				maxval += *l;
+			}
+			while (maxval /= 10) max++;
+		} break;
+		case TYPE_flt:
+			max = 12;	/* SQL99 max stdout */
+		break;
+		case TYPE_dbl:
+			max = 24;	/* SQL99 max stdout */
+		break;
+		case TYPE_str:
+			BATloop(b, p, q) {
+				char *s = BUNtail(b, p);
+				int l = strlen(s);
 
-		if (l > max) max = l;
-	}
-	return(max);
+				if (l > max) max = l;
+			}
+		break;
+		case TYPE_ptr: /* C pointer! */
+		case TYPE_bat: /* BAT id: index in BBPcache */
+		default:
+			throw("resultset.tailWidth", "Invalid BAT tail type!");
+	}		
+
+	*retval = max;
+	return(MAL_SUCCEED);
 }
 
+
+/**
+ * Helper function that sets a property for a column.  If the
+ * maximum property count is reached, an exception is thrown.
+ * When setting the width property, with argument NULL, the
+ * width is automatically determined.  The return
+ * value indicates whether a previous value was overwritten.
+ * Typical properties are:
+ * 	name		name of the column
+ *	table		name of the table this column belongs to
+ *	schema		name of the schema this column belongs to
+ *	digits		digits of this data type
+ *	scale		scale of this data type
+ *	width		the maximum width of this column
+ *
+ * @param rs the resultset the column belongs to
+ * @param col the column to set the property for
+ * @param nme the name of the property
+ * @param val the value of the property
+ * @return true if there was a previous value, false otherwise
+ */
+static str RSsetPropertyInternal(
+	int* retval,
+	resultset* rs,
+	column* col,
+	str* nme,
+	str* val)
+{
+	int ret = 0, n;
+
+	if (*nme == NULL)
+		throw("resultset.setProperty", "Property name should not be NULL");
+
+	for (n = 0; n < RS_MAX_PROPERTIES; n++) {
+		if (rs->propertynames[n] == NULL) {
+			rs->propertynames[n] = GDKstrdup(*nme);
+			break;
+		} else if (strcmp(rs->propertynames[n], *nme)) break;
+	}
+	if (n == RS_MAX_PROPERTIES)
+		throwf("resultset.setProperty", "Maximum number of properties already set (%d)", RS_MAX_PROPERTIES);
+	
+	if (col->properties[n] != NULL) {
+		ret = 1;
+		GDKfree(col->properties[n]);
+	}
+	col->properties[n] = (*val == NULL ? NULL : GDKstrdup(*val));
+	
+	if (strcmp("width", *nme) == 0 && *val == NULL) {
+		int width;
+		str tmp;
+		char* buf = GDKmalloc(sizeof(char) * 10);
+		memset(buf, 0, 10);
+		if ((tmp = tailWidth(&width, col->bat)) != MAL_SUCCEED) {
+			GDKfree(buf);
+			return(tmp);
+		}
+		snprintf(buf, 9, "%d", width);
+		col->properties[n] = buf;
+	}
+
+	*retval = ret;
+	return(MAL_SUCCEED);
+}
 
 /**
  * Adds a column to the ResultSet and returns its position in
@@ -621,7 +682,7 @@ str RSaddColumn(int* retval, int* handle, int* bat, str* nme) {
 	BAT* b;
 	int pos = 0;
 	resultset* rs;
-	str tmp;
+	str tmp, name = "name";
 	
 	resolveHandle(&rs, handle);
     if ((b = BATdescriptor(*bat)) == NULL)
@@ -651,16 +712,11 @@ str RSaddColumn(int* retval, int* handle, int* bat, str* nme) {
 		rs->length = BATcount(b);
 		col = rs->firstColumn = GDKmalloc(sizeof(column));
 	}
-	col->bat = b;
-	col->bun = NULL;
+	/* initialise all the values to null */
+	memset(col, 0, sizeof(column));
+	/* set name */
 	col->name = GDKstrdup(*nme);
-	col->table = NULL;
-	col->schema = NULL;
-	col->digits = NULL;
-	col->scale = NULL;
-	col->next = NULL;
-	/* TODO: don't do this for all tail types! */
-	col->width = tailWidth(b);
+	if ((tmp = RSsetPropertyInternal(&pos, rs, col, &name, nme)) == MAL_SUCCEED) return(tmp);
 
 	*retval = *handle;
 	return(MAL_SUCCEED);
@@ -688,7 +744,7 @@ str RSsetPropertyLastCol(int* retval, int* handle, str* nme, str* val) {
 	/* find reference to last column */
 	while (col->next != NULL) col = col->next;
 
-	return(RSsetPropertyInternal(retval, col, *nme, *val));
+	return(RSsetPropertyInternal(retval, rs, col, nme, val));
 }
 
 /**
@@ -721,7 +777,7 @@ str RSsetPropertyColNme(int* retval, int* handle, str* col, str* nme, str* val) 
 	if (column == NULL)
 		throw("resultset.setProperty", "No such column");
 
-	return(RSsetPropertyInternal(retval, column, *nme, *val));
+	return(RSsetPropertyInternal(retval, rs, column, nme, val));
 }
 
 /**
@@ -733,7 +789,7 @@ str RSsetPropertyColNme(int* retval, int* handle, str* col, str* nme, str* val) 
  * @param val the value of the string
  * @returns whether a previous value was overwritten
  */
-str RSsetPropertyColNum(int* retval, int* handle, int col, str nme, str val) {
+str RSsetPropertyColNum(int* retval, int* handle, int* col, str* nme, str* val) {
 	column* column;
 	int i;
 	resultset* rs;
@@ -745,12 +801,12 @@ str RSsetPropertyColNum(int* retval, int* handle, int col, str nme, str val) {
 	if ((column = rs->firstColumn) == NULL)
 		throw("resultset.setProperty", "No column added yet");
 
-	for (i = 0; i < col; i++) {
+	for (i = 0; i < *col; i++) {
 		if ((column = column->next) == NULL)
 			throw("resultset.setProperty", "Column index out of bounds");
 	}
 
-	return(RSsetPropertyInternal(retval, column, nme, val));
+	return(RSsetPropertyInternal(retval, rs, column, nme, val));
 }
 
 /**
@@ -816,19 +872,61 @@ str RSsetComplete(int* handle) {
  * @param s a stream to write to
  * @returns the number of bytes written
  */
-str RSwriteHeader(int* retval, int* handle, stream* s) {
+str RSwriteHeader(int* retval, int* handle) {
 	int bytes = 0;
+	stream* s = GDKout;
 	resultset* rs;
+	column* col;
 	str tmp;
 	
 	resolveHandle(&rs, handle);
 	if (!rs->complete)
 		throw("resultset.writeHeader", "Unable to serialise a non-complete ResultSet");
 	
+	/* write start of header */
+	if (stream_write(s, "#-\n", 3, 1) != 1) {
+		*retval = 0;
+		throw("resultset.writeHeader", "Error while writing to the stream");
+	}
+	bytes += 3;
+
 	/* serialise the header to the stream */
-	/* TODO */
-	rs = NULL;
-	s = NULL;
+@= MX-writeHeaderLine
+	col = rs->firstColumn;	/* setComplete forces this one to be valid */
+	if (stream_write(s, "# ", 2, 1) == 1) {
+		bytes += 2;
+		while (col != NULL) {
+			/* write headers */
+			bytes += stream_printf(s, @1, @2);
+			
+			col = col->next;
+
+			/* write column or row separator */
+			if (col == NULL) {
+				if (stream_write(s, "\t# @3\n", 4 + strlen("@3"), 1) != 1) {
+					*retval = 0;
+					throw("resultset.writeHeader", "Error while writing to the stream");
+				}
+				bytes += 4 + strlen("@3");
+			} else {
+				if (stream_write(s, ",\t", 2, 1) != 1) {
+					*retval = 0;
+					throw("resultset.writeHeader", "Error while writing to the stream");
+				}
+				bytes += 2;
+			}
+		}
+	} else {
+		*retval = 0;
+		throw("resultset.writeHeader", "Error while writing to the stream");
+	}
+@c
+	/* yeah baby!  dirty as hell! */
+	/* note: the spaces after the ',' ARE also copied! */
+	/* TODO: loop through the properties and put them here */
+	@:MX-writeHeaderLine("%s", col->name == NULL ? "" : col->name,name)@
+	@:MX-writeHeaderLine("%d", rs->length,tuplecount)@
+	@:MX-writeHeaderLine("%s", rs->id == NULL ? "" : rs->id,id)@
 
 	*retval = bytes;
 	return(MAL_SUCCEED);
@@ -995,7 +1093,7 @@ str RShasNextPart(int* retval, int* handle) {
  * @param s a stream to write to
  * @return the number of bytes written
  */
-str RSwriteNextPart(int* retval, int* handle, stream* s) {
+str RSwriteNextPart(int* retval, int* handle) {
 	int hbytes = 0, bbytes = 0;
 	int upper, lower;
 	resultset* rs;
@@ -1006,7 +1104,7 @@ str RSwriteNextPart(int* retval, int* handle, stream* s) {
 		throw("resultset.writeNextPart", "Unable to serialise a non-complete ResultSet");
 
 	if (rs->pos < rs->length) {
-		if (rs->blocksize > 0) {
+		if (rs->blocksize == 0) {
 			/* serialise the whole result */
 			lower = rs->pos;
 			upper = rs->length;
@@ -1022,7 +1120,7 @@ str RSwriteNextPart(int* retval, int* handle, stream* s) {
 
 	if (rs->pos == 0) {
 		/* write header */
-		if ((tmp = RSwriteHeader(&hbytes, handle, s)) != MAL_SUCCEED) return(tmp);
+		if ((tmp = RSwriteHeader(&hbytes, handle)) != MAL_SUCCEED) return(tmp);
 	}
 
 	/* write block of results */
@@ -1046,10 +1144,6 @@ static str freeColumn(column* col) {
 	if (col->next != NULL) freeColumn(col->next);
 	BBPunfix(col->bat->batCacheid);
 	GDKfree(col->name);
-	GDKfree(col->table);
-	GDKfree(col->schema);
-	GDKfree(col->digits);
-	GDKfree(col->scale);
 	GDKfree(col);
 
 	return(MAL_SUCCEED);
