@@ -61,7 +61,7 @@ extern int bm_version( struct bm *bm);
 extern oid bm_add_bat(struct bm *bm, oid bid, char *name, int version);
 extern void bm_del_bat(struct bm *bm, oid lbid);
 extern void bm_new_version(struct bm *bm, oid lbid, int version );
-extern void bm_new_bat(struct bm *bm, oid lbid, bat bid );
+extern void bm_new_bat(struct bm *bm, oid lbid, oid bid );
 
 extern oid bm_find_bat(struct bm *bm, char *name);
 extern BAT *bm_lbid2bat(struct bm *bm, oid lbid);
@@ -76,7 +76,7 @@ extern int bm_lbid2version(struct bm *bm, oid lbid);
 
 typedef struct bm {
 	/* Store oids to circumvent trouble with reference counting */
-	int	vid;
+	oid	vid;
 	oid	lbid;
 	int 	version;
 	BAT*	bat_version;	/*	[ void, int ] 	*/
@@ -95,7 +95,7 @@ static BAT *bat_descriptor(bat bid)
 	return NULL;
 }
 
-static BAT *bm_create_bat( int ht, int tt, int size ){
+static BAT *bm_create_bat( int ht, int tt, size_t size ){
 	BAT *b = BATnew(ht, tt, size);
 	BBPfix(b->batCacheid);
 	/* Make persistent as only persistent bats keep delta information */
@@ -218,7 +218,6 @@ void bm_save( bm *bm, FILE *fp )
 void bm_cleanup( bm *bm )
 {
 	BUN p,q;
-	BAT *b;
 
 	if (bm->bat_oversion){
 		BAT *b = bm->bat_oversion;
@@ -251,7 +250,7 @@ void bm_load( bm *bm, FILE *fp )
 		char *s = strchr(line, ',');
 		if (s){
 			char nme[BUFSIZ];
-			bat bid = 0;
+			oid bid = 0;
 			int version = 0;
 
 			*s++ = 0;
@@ -367,10 +366,10 @@ void bm_new_version(bm *bm, oid lbid, int version )
 		bm->version = version;
 }
 
-void bm_new_bat(bm *bm, oid lbid, bat bid )
+void bm_new_bat(bm *bm, oid lbid, oid bid )
 {
 	oid vid = bm_lbid2vid(bm, lbid);
-	bat obid = *(bat*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid));
+	bat obid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid));
 	BBPtransient(obid, FALSE);
 	BBPpersistent(bid, FALSE);
 	BUNreplace(bm->bat_bid, (ptr)&vid, &bid);
@@ -411,11 +410,13 @@ oid bm_find_bat(bm* bm, char *name)
 BAT* bm_lbid2bat(bm *bm, oid lbid)
 {
 	BAT *b;
+	bat bid;
 	oid vid;
 
 	vid = bm_lbid2vid(bm, lbid);
-	b = bat_descriptor(
-		*(bat*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid))); 
+	
+	bid = *(oid*)BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid)); 
+	b = bat_descriptor(bid);
 	return b;
 }
 

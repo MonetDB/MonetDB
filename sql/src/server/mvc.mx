@@ -18,6 +18,8 @@
 #define ISO_READ_REPEAT	    3
 #define ISO_SERIALIZABLE    4
 
+typedef int sqlid;
+
 /* todo change the sql_schema/sql_table/sql_column such that it only contains
  * operational data (access rules and times and bids)
  *
@@ -34,7 +36,7 @@ typedef struct sql_kc {
 
 /* fkey consists of two of these */
 typedef struct sql_key { /* pkey, ukey, fkey */
-	oid id;
+	sqlid id;
 	char *name; 	/* constraint name */
 	key_type type; /* pkey, ukey, fkey */
 	struct list *columns; /* list of sql_kc */
@@ -57,7 +59,7 @@ typedef struct sql_fkey { /* fkey */
 } sql_fkey;
 
 typedef struct sql_column {
-	oid id;
+	sqlid id;
 	char *name;
 	sql_subtype *type;
 	int colnr;
@@ -76,7 +78,7 @@ typedef struct sql_column {
 } sql_column;
 
 typedef struct sql_table {
-	oid id;
+	sqlid id;
 	char *name;
 	int type;
 	char *query;
@@ -98,7 +100,7 @@ typedef struct sql_table {
 } sql_table;
 
 typedef struct sql_schema {
-	oid id;
+	sqlid id;
 	char *name;
 	char *auth;
 
@@ -257,7 +259,7 @@ static int timestamp()
 	return stamp++;
 }
 
-static int key_cmp(sql_key *k, oid *id)
+static int key_cmp(sql_key *k, sqlid*id)
 {
 	if (k && id && k->id == *id)
 		return 0;
@@ -313,7 +315,6 @@ size_t void_replace_bat( BAT *b, BAT *u){
 
 size_t void_insert_bat( BAT *b, BAT *u){
 	size_t nr = 0;
-        size_t sz = BUNsize(u);
 	BUN r,s;
 	oid nil = oid_nil;
 
@@ -595,7 +596,7 @@ static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 	char keychar = (ktype==fkey)?'F':'K';
 	BUN p,q;
 
-	nk->id = *(oid *) bun_find(key_id, lid);
+	nk->id = *(sqlid*) bun_find(key_id, lid);
 	nk->type = ktype;
 	nk->name = _strdup(name);
 	nk->columns = list_create((fdestroy)&kc_destroy);
@@ -633,7 +634,7 @@ static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 
 	if (ktype == fkey){
 		sql_fkey *fk = (sql_fkey*)nk;
-		oid rkey = *(oid *) bun_find(key_rkey, lid);
+		sqlid rkey = *(sqlid*) bun_find(key_rkey, lid);
 		node *n = list_find(tr->keys, &rkey, (fcmp)&key_cmp);
 
 		assert(n);
@@ -650,7 +651,7 @@ static sql_key *load_key(sql_trans *tr, BAT * keys, BUN j, sql_table *t)
 		BAT *keys = BATselect(key_rkey, (ptr) & nk->id, (ptr) & nk->id);
 
 		BATloop(keys,p,q){
-			oid fkey = *(oid *) BUNhead(keys, p);
+			sqlid fkey = *(sqlid*) BUNhead(keys, p);
 			node *n = list_find(tr->keys, &fkey, (fcmp)&key_cmp);
 			if (n){
 				sql_fkey *fk = n->data;
@@ -676,7 +677,6 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	char name[BUFSIZ], *tpe;
 	sql_column *c = NEW(sql_column);
 	ptr lid = BUNhead(columns, j);
-	BUN p,q;
 	int sz,d;
 	BAT *column_id = sys_bat(tr->bm, "columns_id");
 	BAT *column_name = sys_bat(tr->bm, "columns_name");
@@ -687,7 +687,7 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	BAT *column_null = sys_bat(tr->bm, "columns_null");
 	BAT *column_number = sys_bat(tr->bm, "columns_number");
 
-	c->id = *(oid *) bun_find(column_id, lid);
+	c->id = *(sqlid*) bun_find(column_id, lid);
 	c->name = _strdup((char *) bun_find(column_name, lid));
 	tpe = (char *) bun_find(column_type, lid);
 	sz = *(int*)bun_find(column_type_digits, lid);
@@ -745,7 +745,7 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	BAT *table_queries = sys_bat(tr->bm, "tables_query");
 	BAT *table_types = sys_bat(tr->bm, "tables_type");
 
-	t->id = *(oid *) bun_find(table_id, lid);
+	t->id = *(sqlid*) bun_find(table_id, lid);
 	t->name = _strdup(bun_find(table_names, lid));
 	t->query = _strdup(bun_find(table_queries, lid));
 	t->type = *(int*) bun_find(table_types, lid);
@@ -809,7 +809,7 @@ static sql_schema *load_schema(sql_trans *tr, BAT * schemas, BUN j)
 	BAT *schema_auths = sys_bat(tr->bm, "schemas_authorization");
 	BAT *table_schema = sys_bat(tr->bm, "tables_schema_id");
 
-	s->id = *(oid *) bun_find(schemas, lid);
+	s->id = *(sqlid*) bun_find(schemas, lid);
 	s->name = _strdup(bun_find(schema_names, lid));
 	s->auth = _strdup(bun_find(schema_auths, lid));
 	s->tables = list_create((fdestroy)&table_destroy);
@@ -1043,7 +1043,7 @@ static BAT *mvc_bat( struct bm *bm, char *name, int type)
 	bat id = bm_find_bat(bm, name);
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bat %s bid %ld\n", name, id);
+		fprintf(stderr, "mvc_bat %s bid %d\n", name, id);
 
 	if (id == 0) {
 		b = BATnew( TYPE_void, type, BUFSIZ );
@@ -1557,9 +1557,6 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 	n = ct->columns->h;
 	m = gt->columns->h;
 	if (n && m) {
-		sql_column *cc = n->data;
-		sql_column *oc = m->data;
-
 		BAT *cdb = bm_lbid2bat( ctr->bm, ct->dbid );
 		BAT *cob = bm_lbid2bat( ctr->bm, ct->obid );
 
@@ -2068,7 +2065,6 @@ BAT *mvc_bind_obat(mvc * m, char *sname, char *tname, int access )
 	BAT *b = NULL;
 	sql_schema *s = find_schema(tr, sname);
 	sql_table *t = find_table(s, tname);
-	sql_column *c;
 
 	if (m->debug)
 		fprintf(stderr, "mvc_bind_obat %s.oid\n", tname );
@@ -2089,7 +2085,6 @@ BAT *mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 	BAT *b = NULL;
 	sql_schema *s = find_schema(tr, sname);
 	sql_table *t = find_table(s, tname);
-	sql_column *c;
 
 	if (m->debug)
 		fprintf(stderr, "mvc_bind_dbat %s.deletes\n", tname );
@@ -2450,8 +2445,8 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 	node *n;
 
 	if (m->debug)
-		fprintf(stderr, "mvc_create_key %s %d %d\n",
-		 t->name, kt, (int)rkey);
+		fprintf(stderr, "mvc_create_key %s %d %ld\n",
+		 t->name, kt, (long)rkey);
 
 	if (t->type == tt_temp && t->type == tt_session)
 		return NULL;
@@ -2993,9 +2988,9 @@ void mvc_export(stream * s, BAT * order, BAT * bats, char *sep,
 ssize_t mvc_import_table( mvc *m, stream *s, char *tname, 
 		char *sep, char *rsep, int sz)
 {
-	BUN p,q;
+	BUN p;
 	oid nil = oid_nil;
-	size_t nr = 0, i, cnt = 0; 
+	size_t nr = 0, cnt = 0; 
 	oid newid;
 	sql_column *col;
 	sql_trans *tr = m->trans;

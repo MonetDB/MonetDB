@@ -214,7 +214,6 @@ extern catalog *mvc_catalog_create( mvc *m, context *lc );
 
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	buffer *bbuf = buffer_create( BUFSIZ );
-	char buf[BUFSIZ];
 	int err = 0;
 	stmt *s = NULL;
 	char *cmd = NULL;
@@ -277,10 +276,8 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 				int i;
 				ssize_t status;
 				ValRecord res;
-				ptr val = &res.val.ival;
         			res.vtype = TYPE_void; 
 				i = interpret_str( stk, cmd, &res);
-				/*TODO: we need to cleanup val */
 
 				if (i < 0){
 					char *errstr = "Mil error";

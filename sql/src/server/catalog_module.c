@@ -36,7 +36,7 @@ static void getschemas( mvc *myc, context *lc, catalog *c, char *schema, char *u
 					sql_dup_subtype(col->type), col->def, col->null );
 			}	
 			if (nt->keys) for (m = nt->keys->h; m; m = m->next ){
-				node *p, *o = NULL;
+				node *o = NULL;
 				key *nk = NULL;
 				sql_key *k = m->data;
 
