@@ -125,7 +125,7 @@ end main;	# 7
 # tmp_21	tmp_19		htype	ttype	count	heat	dirty		status		kind		refcnt	  # name
 # int	str		str	str	lng	int	str		str		str		int	  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  180,	  "dirty",	  "dirty",	  "transient",	  0	  ]
+[ 4,	  "simplemind",	  "int",  "int",  0,	  204,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 #
 
 # 11:28:52 >  
