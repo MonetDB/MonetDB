@@ -88,6 +88,10 @@ static void get_extention( char *file, char *ext)
         ext[j] = '\0';
 }
 
+static void stream_destroy( stream *s){
+	GDKfree(s->filename);
+	GDKfree(s);
+}
 
 static stream *create_stream( char *filename ){
 	stream *s = (stream*)GDKmalloc(sizeof(stream));
@@ -95,12 +99,8 @@ static stream *create_stream( char *filename ){
 	s->filename = GDKstrdup(filename); 
 	s->stream_data = NULL;
 	s->errnr = NO_ERROR;
+	s->destroy = &stream_destroy;
 	return s;
-}
-
-static void stream_destroy( stream *s){
-	GDKfree(s->filename);
-	GDKfree(s);
 }
 
 static char *stream_error( stream *s ){
@@ -136,7 +136,6 @@ static stream *open_stream( char *filename, char *flags ){
 	s->write = &stream_write;
 	s->close = &stream_close;
 	s->error = &stream_error;
-	s->destroy = &stream_destroy;
 	if (fp != NULL){ 
 		s->stream_data = (char*)fp;
 		return s;
@@ -155,6 +154,7 @@ stream *open_rstream( char *filename ){
 	} else 
 #else
   	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
@@ -165,6 +165,7 @@ stream *open_rstream( char *filename ){
 	} else 
 #else
 	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
@@ -188,6 +189,7 @@ stream *open_wstream( char *filename ){
 	} else
 #else
   	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
@@ -198,6 +200,7 @@ stream *open_wstream( char *filename ){
 	} else 
 #else
 	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
@@ -221,6 +224,7 @@ stream *open_rastream( char *filename ){
 	} else
 #else
   	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
@@ -231,6 +235,7 @@ stream *open_rastream( char *filename ){
 	} else 
 #else
 	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
@@ -251,6 +256,7 @@ stream *open_wastream( char *filename ){
 	} else
 #else
   	if (!strcmp(ext,"gz" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
@@ -261,6 +267,7 @@ stream *open_wastream( char *filename ){
 	} else 
 #else
 	if (!strcmp(ext,"bz2" )){
+		stream *s = create_stream(filename);
 		s->errnr = OPEN_ERROR;
 		return -1;
 	} 
