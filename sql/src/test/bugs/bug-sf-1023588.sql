@@ -22,7 +22,7 @@ CREATE TABLE trimtest (
         cape_departure  varchar(15),
         arrival_date    varchar(15),
         arrival_harbour varchar(30),
-        next_voyage     integer
+        next_voyage     integer,
         particulars     varchar(530)
 );
 
