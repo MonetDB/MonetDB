@@ -814,7 +814,7 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 						return NULL;
 					}
 					if (!inserts[c->colnr])						
-						inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins );
+						inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), cs_size(&c->t->keys)?UPD:INS, st_bat), ins );
 					else
 						inserts[c->colnr] = stmt_append( inserts[c->colnr], ins );
 					inscol = c->colnr;
@@ -849,7 +849,7 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 					cleanup_stmts(inserts, len);
 					return NULL;
 				}
-				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins);
+				inserts[c->colnr] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), cs_size(&c->t->keys)?UPD:INS, st_bat), ins);
 				inscol = c->colnr;
 			}
 		}
@@ -884,7 +884,7 @@ static stmt *insert_into(mvc * sql, dlist * qname,
 					s = stmt_atom(a);
 					if (!(ic->key && ic->nrcols == 0)) 
 						s = stmt_const(stmt_dup(ic),s);
-					inserts[i] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), s);
+					inserts[i] = stmt_append( stmt_cbat(c, stmt_dup(tv->s), cs_size(&c->t->keys)?UPD:INS, st_bat), s);
 				}
 			}
 			assert(inserts[i]);
@@ -916,7 +916,7 @@ static stmt *sql_bulkinsert(mvc * sql, sql_table *t, char *tsep, char *rsep, cha
 	for(n=t->columns.set->h, i = 0; n; n = n->next, i++){
 		sql_column *c = n->data;
 		inserts[i] = stmt_append( 
-		  stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), 
+		  stmt_cbat(c, stmt_dup(tv->s), cs_size(&c->t->keys)?UPD:INS, st_bat), 
 		    stmt_find(stmt_dup(bats), stmt_atom_string(
 				_strdup(c->base.name))));
 	}

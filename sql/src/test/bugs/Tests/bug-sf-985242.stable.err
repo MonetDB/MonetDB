@@ -56,16 +56,16 @@ stderr of test 'bug-sf-985242` in directory 'src/test/bugs` itself:
 # 14:52:48 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54903  < bug-sf-985242.sql
 # 14:52:48 >  
 
-MAPI  = monetdb@stem:52272
+MAPI  = monetdb@titan03:54423
 QUERY = create table "\t" (id int);
-ERROR = !ERROR syntax error at token (258) in statement: create table "\t"
-MAPI  = monetdb@stem:52272
+ERROR = !ERROR parse error at token (257) in statement: create table "\t"
+MAPI  = monetdb@titan03:54423
 QUERY = create table " " (id int);
-ERROR = !ERROR syntax error at token (258) in statement: create table " "
-MAPI  = monetdb@stem:52272
+ERROR = !ERROR parse error at token (257) in statement: create table " "
+MAPI  = monetdb@titan03:54423
 QUERY = create table x ("\t" int);
-ERROR = !ERROR syntax error at token (258) in statement: create table x ("\t"
-MAPI  = monetdb@stem:52272
+ERROR = !ERROR parse error at token (257) in statement: create table x ("\t"
+MAPI  = monetdb@titan03:54423
 QUERY = select * from x;
 ERROR = !current transaction is aborted (please ROLLBACK)
 
