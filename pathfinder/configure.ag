@@ -238,12 +238,18 @@ AC_SUBST(LIBGC_CFLAGS, $LIBGC_CFLAGS)
 AC_SUBST(LIBGC_LIBS, $LIBGC_LIBS)
 AC_SUBST(LIBGC_LDADD, $LIBGC_LDADD)
 
+dnl BerkeleyDB blindly assumes u_long to be defined
+AC_CHECK_TYPES(u_long)
+
 dnl The user may enter a location of the BerkeleyDB library on the
 dnl command line (with `--with-berkeleydb=DIR) or disable the
 dnl BerkeleyDB support.
 dnl
 dnl AC_ARG_WITH makes the --with-xxx available, then we do some checks and
 dnl see if we actually found BerkeleyDB.
+dnl
+dnl When searching for db.h we need to typedef u_long if the above test
+dnl has failed. Otherwise the compiler will report a syntax error.
 have_berkeleydb="auto"
 AC_ARG_WITH(berkeleydb,
     [  --with-berkeleydb=DIR   BerkeleyDB library is installed in DIR],
@@ -261,7 +267,12 @@ if test "x$have_berkeleydb" != xno; then
     AC_CHECK_HEADER([db.h],
                     [AC_CHECK_LIB(db, db_create,
                                   [have_berkeleydb="yes"],
-                                  [have_berkeleydb="no"])])
+                                  [have_berkeleydb="no"])],
+                    [],
+[#if !HAVE_U_LONG
+typedef unsigned long u_long;
+#endif
+])
 fi
 CPPFLAGS="$save_CPPFLAGS"
 
