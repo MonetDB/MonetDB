@@ -18,7 +18,7 @@
 MTSAFE
 # INCLUDES = ../../../../common ../../C $(PHP_INCS)
 
-INCLUDES = -I../../C @PHP_INCS@
+INCLUDES = -I../../C -I../../../../common @PHP_INCS@
 X_CFLAGS = -DCOMPILE_DL_MONETDB=1 -D_GNU_SOURCE
 
 monetdb_la_LDFLAGS = -module
