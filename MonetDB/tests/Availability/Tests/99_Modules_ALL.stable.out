@@ -1,10 +1,10 @@
 stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 
-#> Mtest:	milS 99_Modules_ALL milS
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 99_Modules_ALL.milS
-# Monet Database Server V4.1
+#> Mtest (20:53:34):	milS 99_Modules_ALL milS
+#> Mtest (20:53:34):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 99_Modules_ALL.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:99_Modules_ALL.milS
 
 loaded;
@@ -29,7 +29,7 @@ setoid(oid(20000000));
 
 #All_mods:=MODULES.sort.copy;
 module("cluster");
-
+# # module(Meta);
 All_mods:=MODULES.sort.copy.access(BAT_WRITE).revert;
 All_mods@batloop {
 	printf("%9s: ",$h);
@@ -62,6 +62,7 @@ All_mods@batloop {
     mprof: loading... done.
 monettime: loading... done.
     mmath: loaded.
+     mapi: loading... done.
 malalgebra: loading... done.
      lock: loading... done.
    kernel: loaded.
@@ -83,7 +84,7 @@ bitvector: loaded.
 
 table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod_nme.count)));
 #-----------------#
-# 44 modules	  #
+# 40 modules	  #
 #-----------------#
 [ "aggr"	  ]
 [ "alarm"	  ]
@@ -103,6 +104,7 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "kernel"	  ]
 [ "lock"	  ]
 [ "malalgebra"	  ]
+[ "mapi"	  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
 [ "mprof"	  ]

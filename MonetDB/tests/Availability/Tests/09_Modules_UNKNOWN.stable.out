@@ -1,10 +1,10 @@
 stdout of test '09_Modules_UNKNOWN` in directory 'tests/Availability` itself:
 
-#> Mtest:	milS 09_Modules_UNKNOWN milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 09_Modules_UNKNOWN.milS
-# Monet Database Server V4.1
+#> Mtest (20:53:32):	milS 09_Modules_UNKNOWN milS
+#> Mtest (20:53:32):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_Availability -single 09_Modules_UNKNOWN.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:09_Modules_UNKNOWN.milS
 
 loaded;
@@ -40,8 +40,9 @@ Fnts:=new(oid,str);
 Unknown_mods:=MODULES.select("UNKNOWN").sort.copy;
 table(Unknown_mods.reverse.col_name(sprintf("%i modules",Unknown_mods.count)));
 #-----------------#
-# 0 modules	  #
+# 1 modules	  #
 #-----------------#
+[ "mapi"	  ]
 Unknown_mods@batloop {
 	The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
@@ -91,5 +92,15 @@ Unknown_mods@batloop {
 	Fhelp.delete;
 	Fnts.delete;
 }
+
+Module: "mapi"
+
+[ 2 ]
+[ 2 ]
+#-------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature			| help							  #
+#-------------------------------------------------------------------------------------------------------------------------#
+[ "listen",	  "COMMAND: ",	  "listen() : void",		  "start a Mapi server with the default port number."	  ]
+[ "listen",	  "COMMAND: ",	  "listen(int, int) : void",	  "start a Mapi server."				  ]
 
 quit;
