@@ -273,7 +273,17 @@ typedef enum stream_errors {
 #ifndef SHUT_RD
 #define SHUT_RD		0
 #define SHUT_WR		1
+#define SHUT_RDWR	2
 #endif
+
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK EAGAIN
+#endif
+
+#ifndef EINTR
+#define EINTR 	EAGAIN
+#endif
+
 
 struct stream {
 	short byteorder;
@@ -304,23 +314,31 @@ extern char *strdup(const char *);
 int
 stream_init(void)
 {
+	static int inited = 0;
+
+	if (inited)
+		return 0;
+
 #ifdef NATIVE_WIN32
-	int sockopt = SO_SYNCHRONOUS_NONALERT;
-	WSADATA w;
+	{
+		int sockopt = SO_SYNCHRONOUS_NONALERT;
+		WSADATA w;
 
-	if (WSAStartup(0x0101, &w) != 0)
-		return -1;
+		if (WSAStartup(0x0101, &w) != 0)
+			return -1;
 
-	if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE,
+		if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE,
 			       (void *) &sockopt, sizeof(sockopt)) < 0) {
-		WSACleanup();
-		return -1;
+			WSACleanup();
+			return -1;
+		}
 	}
 #endif
 #ifdef HAVE_OPENSSL
 	SSL_load_error_strings();
 	(void) SSL_library_init();
 #endif
+	inited = 1;
 	return 0;
 }
 
@@ -1017,8 +1035,6 @@ append_wastream(const char *filename)
 	return open_wastream_(filename, "a");
 }
 
-
-
 static ssize_t
 socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
@@ -1152,7 +1168,7 @@ socket_open(int socket, const char *name)
 #ifndef NATIVE_WIN32
 	{
 		int fl = fcntl(socket, F_GETFL);
-		fl |= O_NONBLOCK;
+		fl &= ~O_NONBLOCK;
 		if (fcntl(socket, F_SETFL, fl) < 0) {
 			s->errnr = OPEN_ERROR;
 			return s;
