@@ -14,11 +14,13 @@
 @a M. L. Kersten
 @v 1.1
 
+@-
+@node The parser ,Reverse programming, Before-after calls , Top
 @+ The parser
 MAL is processed by a small thread-safe parser.
 The parser (and its target language) are designed for speed of analysis.
 For, parsing is a dominant cost-factor in applications interfering with
-Monet. For the language design it meant that look-ahead and ambiguity
+MonetDB. For the language design it meant that look-ahead and ambiguity
 is avoided where possible. At the same time the language 
 remains 'readable' to enable ease of debugging.
 
@@ -26,11 +28,25 @@ The syntax layout of a MAL program consists of a module name,
 a list of import commands, a list of function/ pattern/ command/ factory
 definitions and concludes with the statements to be executed as
 the main body of the program.  All components are optional.
-A commentary may appear anywhere a statement is expected.
+
+The program may be decorated with comments, which starts with a \# and
+runs till the end of the current line. Comments are not retained
+at runtime.
 
 This parser assumes availability of a complete MAL block upfront
 as a string to be parsed and executed on behalf of a client. 
 Module management operations are considered global commands.
+@menu
+* MAL constants::
+* MAL variables::
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Before-after calls::
+* The parser ::
+* Reverse programming::
+@end menu
+
 
 @{
 @+ The lexical analyzer
@@ -361,7 +377,6 @@ parseTFN:
 }
 INLINE
 str cstCopy(Client cntxt, int i){ return idCopy(cntxt,i);}
-@}
 @- Type qualifier
 Types are recognized as identifiers preceded by a colon.
 They may be extended with a property list
@@ -403,7 +418,6 @@ encoding tables, or type dependency should be modelled as properties.
 The type variable should be defined within the context of a function
 scope. Currently limited to 10 and known within the signature
 instruction only.
-@{
 @c
 int typeAlias(Client cntxt){
     int t;

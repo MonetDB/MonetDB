@@ -41,13 +41,38 @@ Last updated: @value{UPDATED}
 
 @include Assets/General_information
 @menu
+--- System overview ---
 * About this manual::
 * Introduction::
-* Scenarios::
+* Session scenarios::
 * MonetDB Assembler Language::
-* Parser::
-* Functions::
-* Factories::
+
+--- Introduction ---
+* Backward compatibility:: 
+* Design considerations:: 
+* Architecture overview:: 
+* MAL Synopsis:: 
+* MAL interpretation:: 
+
+--- Session management ---
+* Scenario Interpretation::
+* Scenario Administration::
+
+--- The SQL front-end ---
+
+--- The Application interfaces ---
+
+--- The MAL layer ---
+* MAL constants::
+* MAL variables::
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Before-after calls::
+* The parser::
+* Reverse programming::
+* Function definitions::
+* Factory definitions::
 * Bootstrap::
 * Modules::
 * MAL interpreter::
@@ -63,51 +88,31 @@ Last updated: @value{UPDATED}
 * The MAL profiler::
 * MAL syntax::
 
---- Introduction ---
-* Backward compatibility:: 
-* Design considerations:: 
-* Architecture overview:: 
-* MAL Synopsis:: 
-* MAL interpretation:: 
-
---- Scenarios ---
-* Scenario Interpretation::
-* Scenario Administration::
-
---- MAL ---
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Call encapsulation::
-* Temporary variables::
-* MAL constants::
-* Reverse programming::
-
+--- The BAT kernel ---
+--- Extension modules ---
 @end menu
 
 @end ifnottex
 
 @include Assets/About_this_manual
 
-@node Introduction, Scenarios, About this manual , Top
+@node Introduction, Session scenarios, About this manual , Top
 @include mal.bdy.texi
 
-@node Scenarios, MonetDB Assembler Language ,Introduction, Top
+@node Session scenarios, MonetDB Assembler Language ,Introduction, Top
 @include mal_scenario.bdy.texi
 
-@node MonetDB Assembler Language , Parser, Scenarios, Top
+@node MonetDB Assembler Language , Function definitions, Session scenarios, Top
 @include mal_instruction.bdy.texi
-
-@node Parser , Functions , MonetDB Assembler Language, Top
 @include mal_parser.bdy.texi
 
-@node Functions, Factories , Parser, Top
+@node Function definitions, Factory definitions , MonetDB Assembler Language, Top
 @include mal_function.bdy.texi
 
-@node Factories, Bootstrap , Functions, Top
+@node Factory definitions, Bootstrap , Function definitions, Top
 @include mal_factory.bdy.texi
 
-@node Bootstrap , Modules ,Factories, Top
+@node Bootstrap , Modules ,Factory definitions, Top
 @include mal_linker.bdy.texi
 
 @node Modules , MAL interpreter ,Bootstrap, Top
