@@ -57,51 +57,37 @@ if test "x$TWIG" = "x"; then
                  please make sure that it can be found in your search PATH.])
 fi
 
-dnl
-dnl We use the m4 macro processor and need an extension that is not
-dnl available prior to the (development) version 1.4o of GNU m4.
-dnl
-dnl We first check if we have m4 at all, then see if it understands
-dnl the 'changesyntax' extension.
-dnl
-AC_CHECK_PROGS(M4, m4)
+dnl Pathfinder needs bison (not yacc) and the `locations' feature
+dnl coming with bison versions >= 1.33.
 
-if test "x$M4" = "x"; then
-    AC_MSG_ERROR([Unable to find the m4 macro expander in your current PATH.
-                 Please install m4 version 1.4o or later, to be found on
-                 ftp://ftp.seindal.dk/pub/rene/gnu/])
+if test "x$YACC" != "x"; then    dnl Yacc found on the system?
+
+AC_MSG_CHECKING([for locations feature in bison/yacc])
+
+dnl A tiny input file for bison containing the `%locations' option
+cat <<EOF > conftest.y
+%locations
+%token A
+%%
+B : A;
+%%
+EOF
+
+if $YACC conftest.y >/dev/null 2>&1 ; then
+  AC_DEFINE(HAVE_LOCATIONS, 1, [Does bison have the `locations' feature?])
+  AC_MSG_RESULT(yes)
+else
+  AC_DEFINE(HAVE_LOCATIONS, 0, [Does bison have the `locations' feature?])
+  AC_MSG_RESULT(no)
+  YACC=''
+  AC_MSG_WARN([Your version of yacc/bison does not provide the `locations'
+               feature, coming with bison >= 1.33. You will not be able to
+               compile the Pathfinder compiler from the development
+               sources.])
 fi
 
-dnl AC_MSG_CHECKING([if m4 understands changesyntax])
+fi   dnl Yacc found on the system?
 
-dnl [cat >conftest.m4 <<_ACEOF
-dnl changesyntax(\`W<[',\`W]',\`D:')
-dnl define(\`[[',\`__(')
-dnl define(\`]]',\`)__')
-dnl [[ foo ]]
-dnl _ACEOF]
-dnl echo "$as_me:$LINENO: $M4 < conftest.m4 > conftest.m4.result" >&5
-dnl eval $M4 < conftest.m4 > conftest.m4.result
-dnl diff conftest.m4.result - <<_ACEOF
-
-
-
-dnl __( foo )__
-dnl _ACEOF
-dnl have_m4=$?
-dnl rm -f conftest.m4 conftest.m4.result
-
-dnl if test x$have_m4 = "x0"; then
-    dnl AC_MSG_RESULT([yes])
-dnl fi
-
-dnl if test x$have_m4 != "x0"; then
-dnl    AC_MSG_RESULT([no])
-dnl    AC_MSG_ERROR([Your m4 macro processor does not understand the
-dnl                 changesyntax extension. Please install a more current
-dnl                 version of m4, at least 1.4o.])
-dnl fi
-dnl (end of m4 checks)
 
 dnl
 dnl We support the GNU getopt library (and its features for long option
