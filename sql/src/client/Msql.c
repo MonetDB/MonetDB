@@ -155,7 +155,7 @@ static char *sql_readline( char *prompt ){
 	   	char *buf =(char *)malloc(BUFSIZ);
         	if ((line =(char *)fgets(buf,BUFSIZ,stdin))==NULL) {
 		   	free(buf);
-			return line;
+			return NULL;
 		}
 		/* seems some fgets implementations don't replace the newline
 		 * with a EOS marker
@@ -361,17 +361,17 @@ int receive( stream *rs, stream *out, int trace ){
 }
 
 static int ins = 0;
-int parse_line( const unsigned char *line )
+int parse_line( unsigned char *line )
 {
 	int len = 0;
 	int esc = 0;
 	int cnt = 0;
 
-	while (isspace(*line)) line++;
+	while (*line && isspace(*line)) line++;
 
 	for(;*line != 0; line++, len++){
 		if (esc){
-			while (isdigit(*line)) 
+			while (*line && isdigit(*line)) 
 				line++;
 			esc = 0;
 		} else if (ins &&  *line == '\''){
@@ -387,9 +387,11 @@ int parse_line( const unsigned char *line )
 			 ((len && *line == '-' && line[-1] == '-') 
 				|| *line =='#') ){
 			while(*line && *line != '\n') line++;
+			if (!*line) break;
 		} else if (!ins && len && *line == '*' && line[-1] == '/'){
 			line ++; /* skip first * */
 			while(*line && *line != '/' && line[-1] != '*') line++;
+			if (!*line) break;
 		/* count command's */
 		} else if (!ins && *line == ';'){
 			cnt++;
