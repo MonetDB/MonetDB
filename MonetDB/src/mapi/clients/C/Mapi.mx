@@ -2610,6 +2610,10 @@ read_line(Mapi mid)
 static int
 slice_row(char *reply, char *null, char ***anchorsp, int length)
 {
+	/* This function does the actual work for splicing a real,
+	   multi-column row into columns.  It should only be called
+	   when the string starts with '[' and there is a matching
+	   ']'. */
 	char *start;
 	char **anchors;
 	int i;
@@ -2742,7 +2746,8 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 	result->cache.tuplecount = 0;
 	for (i = 0; i < result->cache.writer - k; i++) {
 		if (result->cache.rows[i]) {
-			if (result->cache.rows[i][0] == '[')
+			if (result->cache.rows[i][0] == '[' ||
+			    result->cache.rows[i][0] == '=')
 				n++;
 			free(result->cache.rows[i]);
 		}
@@ -2753,7 +2758,9 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 		result->cache.anchors[i] = result->cache.anchors[i + k];
 		result->cache.anchors[i + k] = 0;
 		result->cache.fldcnt[i] = result->cache.fldcnt[i + k];
-		if (result->cache.rows[i] && result->cache.rows[i][0] == '[') {
+		if (result->cache.rows[i] &&
+		    (result->cache.rows[i][0] == '[' ||
+		     result->cache.rows[i][0] == '=')) {
 			result->cache.tuplerev[i] = result->cache.tuplecount;
 			result->cache.tupleindex[result->cache.tuplecount++] = i;
 		}
@@ -2764,7 +2771,8 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 	   here */
 	for ( /*i = result->cache.writer - k */ ; i < k /*result->cache.writer */ ; i++) {
 		if (result->cache.rows[i]) {
-			if (result->cache.rows[i][0] == '[')
+			if (result->cache.rows[i][0] == '[' ||
+			    result->cache.rows[i][0] == '=')
 				n++;
 			free(result->cache.rows[i]);
 		}
@@ -2851,7 +2859,7 @@ add_cache(struct MapiResultSet *result, char *line)
 	result->cache.rows[result->cache.writer] = line;
 	result->cache.tuplerev[result->cache.writer] = result->cache.tuplecount;
 	result->cache.tuplerev[result->cache.writer + 1] = result->cache.tuplecount + 1;
-	if (*line == '[') {
+	if (*line == '[' || *line == '=') {
 		result->cache.tupleindex[result->cache.tuplecount++] = result->cache.writer;
 		if (result->row_count < result->cache.first + result->cache.tuplecount)
 			result->row_count = result->cache.first + result->cache.tuplecount;
@@ -3414,7 +3422,7 @@ mapi_fetch_line_internal(MapiHdl hdl)
 			return NULL;
 	}
 	reply = result->cache.rows[++result->cache.reader];
-	if (hdl->bindings && *reply == '[') {
+	if (hdl->bindings && (*reply == '[' || *reply == '=')) {
 		mapi_slice_row(result, result->cache.reader);
 		mapi_store_bind(result, result->cache.reader);
 	}
@@ -3836,6 +3844,9 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 		/* nothing to slice */
 		i = 1;
 		REALLOC(result->cache.anchors[cr], 1);
+		/* skip initial '=' if present */
+		if (*p == '=')
+			p++;
 		result->cache.anchors[cr][0] = strdup(p);
 	} else {
 		/* work on a copy to preserve the original */
@@ -3870,7 +3881,7 @@ mapi_fetch_row(MapiHdl hdl)
 	do {
 		if ((reply = mapi_fetch_line(hdl)) == NULL)
 			return 0;
-	} while (*reply != '[');
+	} while (*reply != '[' && *reply != '=');
 	result = hdl->result;
 	assert(result != NULL);
 	if ((n = result->cache.fldcnt[result->cache.reader]) == 0) {
@@ -3916,7 +3927,10 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 
 	mapi_hdl_check0(hdl, "mapi_fetch_field");
 
-	if ((result = hdl->result) == NULL || (cr = result->cache.reader) < 0 || result->cache.rows[cr][0] != '[') {
+	if ((result = hdl->result) == NULL ||
+	    (cr = result->cache.reader) < 0 ||
+	    (result->cache.rows[cr][0] != '[' &&
+	     result->cache.rows[cr][0] != '=')) {
 		mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field", MERROR);
 		return 0;
 	}
@@ -3962,7 +3976,8 @@ mapi_get_field_count(MapiHdl hdl)
 		int i;
 
 		for (i = 0; i < hdl->result->cache.writer; i++)
-			if (hdl->result->cache.rows[i][0] == '[')
+			if (hdl->result->cache.rows[i][0] == '[' ||
+			    hdl->result->cache.rows[i][0] == '=')
 				mapi_slice_row(hdl->result, i);
 	}
 	return hdl->result ? hdl->result->fieldcnt : 0;
@@ -4049,7 +4064,7 @@ mapi_rows_affected(MapiHdl hdl)
 	if (result->querytype == 4) {	/* Q_UPDATE */
 		int i;
 
-		for (i = 0; result->cache.rows[i][0] != '['; i++)
+		for (i = 0; result->cache.rows[i][0] != '[' && result->cache.rows[i][0] != '='; i++)
 			;
 		if (result->cache.fldcnt[i] == 0)
 			mapi_slice_row(result, i);
