@@ -225,6 +225,7 @@ oid mvc_create_table( mvc *c, oid tid, oid sid, char *name, bit temp){
 	BUNins(c->table_schema, 	(ptr)&t, (ptr)&sid );
 	BUNins(c->table_name, 	(ptr)&t, (ptr)name );
 	BUNins(c->table_temp, 	(ptr)&t, (ptr)&temp );
+	mvc_create_column( c, OIDnew(1), tid, "id", "OID", -1); 
 	return t;
 }
 
@@ -333,35 +334,42 @@ char *next_comma( char *s ){
 
 
 void mvc_fast_insert( mvc *c, char *insert_string ){
-	char *next = insert_string+2;
-	int nr = strtol( next, &next, 10);
-	int cnt = 0;
+	char *next = insert_string + 2; /* skip 0, */
+	int tid = strtol( next, &next, 10);
+	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
+	BUN p,q;
+	oid nil = oid_nil;
 
-	if (nr){
-		oid id = strtol( next+1, &next, 10);
-		BAT *b = mvc_bind_intern(c, id, SQL_WRITE);
-		ptr *p;
-		char *e = next_comma(next+1); 
-		*e = '\0';
-		cnt = BATcount(b);
-	        p = ADTfromStr( b->dims.tailtype, next+1 );
-		BUNins( b, (ptr)&cnt, p );
-		GDKfree( p );
-		nr--;
-		next = e;
+	q = BUNlast(columns);
+	p = BUNfirst(columns);
+	if ( p < q ){ 
+		oid newid = OIDnew(1);
+		oid lcid = *(oid*)BUNhead(columns,p);
+		oid thiscid = *(oid*)BUNtail(c->column_id,
+			BUNfnd(c->column_id, (ptr)&lcid));
+		BAT *b = mvc_bind_intern( c, thiscid, SQL_WRITE );
+		BUNins(b,  (ptr)&nil, (ptr)&newid );
 
-	    	while(nr > 0){
-			oid id = strtol( next+1, &next, 10);
-			BAT  *b = mvc_bind_intern(c, id, SQL_WRITE);
-			char *e = next_comma(next+1); 
-			*e = '\0';
-	        	p = ADTfromStr( b->dims.tailtype, next+1 );
-			BUNins( b, (ptr)&cnt, p );
-			GDKfree( p );
-			nr--;
-			next = e;
-	    	}
+		p = BUNnext(columns, p);
 	}
+
+	next++; /* skip comma */
+	for(; p < q; p = BUNnext(columns, p) ){
+		oid lcid = *(oid*)BUNhead(columns,p);
+		oid thiscid = *(oid*)BUNtail(c->column_id,
+			BUNfnd(c->column_id, (ptr)&lcid));
+		BAT *b = mvc_bind_intern( c, thiscid, SQL_WRITE );
+
+		char *e = next_comma(next); 
+		ptr *a;
+		*e = '\0';
+
+        	a = ADTfromStr( b->dims.tailtype, next );
+		BUNins(b,  (ptr)&nil, a );
+		GDKfree( a );
+		next = e+1;
+	}
+	BBPunfix(columns->batCacheid);
 }
 
 void mvc_delete( mvc *c, oid tid, BAT *rids ){
@@ -409,6 +417,7 @@ void mvc_delete( mvc *c, oid tid, BAT *rids ){
 		}
 	}	
 	BBPunfix(rids->batCacheid);
+	BBPunfix(columns->batCacheid);
 }
 
 void mvc_update( mvc *c, oid tid, oid cid, BAT *v ){
@@ -461,4 +470,5 @@ void mvc_update( mvc *c, oid tid, oid cid, BAT *v ){
 		}
 	}	
 	BBPunfix(v->batCacheid);
+	BBPunfix(columns->batCacheid);
 }

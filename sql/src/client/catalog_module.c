@@ -148,7 +148,8 @@ static void getschema( catalog *c, char *schema, char *user ){
 		char *def = (char*)BUNfind(column_default, lid);
 		int nll = *(int*)BUNfind(column_null, lid);
 		int seqnr = *(int*)BUNfind(column_number, lid);
-		cat_create_column( c, cid, t, cname, ctype, def, nll, seqnr );
+		if (seqnr >=0 )
+		  cat_create_column( c, cid, t, cname, ctype, def, nll, seqnr );
 	      }
 	    }
 	    BBPreclaim(columns);

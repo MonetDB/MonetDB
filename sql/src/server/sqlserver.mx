@@ -290,7 +290,9 @@ proc ascii_export_schema(Output, schema):= {
 	var tableids := table_id.semijoin(tables);
 	server_output( Output, tableids, tableids, tables, table_temp.semijoin(tables) );
 
+	var columns := column_number.select(0, int(nil));
 	var table_ids := column_table.join(table_id.reverse().join(tables));
+	table_ids := table_ids.semijoin(columns);
 	output_count( table_ids, Output);
 	var columnids := column_id.semijoin(table_ids);
 	server_output( Output, columnids, columnids, table_ids, column_name, column_type, column_default, column_null, column_number );

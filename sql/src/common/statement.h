@@ -54,7 +54,6 @@ typedef enum statement_type {
 	st_rollback,
 	/* used internally only */
 	st_list, 
-	st_insert_list, 
 	st_output
 } st_type;
 
@@ -126,13 +125,11 @@ extern statement *statement_output( statement *l );
 extern statement *statement_set( statement *s1 );
 extern statement *statement_sets( list *s1 );
 
-extern statement *statement_insert_list( list *l );
-extern statement *statement_insert( column *c, statement *id, statement *v );
-
+extern statement *statement_insert( table *t, list *l );
 extern statement *statement_insert_column( statement *c, statement *a );
 extern statement *statement_update( column *c, statement *values );
 extern statement *statement_replace( statement *c, statement *values );
-extern statement *statement_delete( column *col, statement *where );
+extern statement *statement_delete( table *t, statement *where );
 
 extern statement *statement_count( statement *s );
 extern statement *statement_const( statement *s, statement *val );

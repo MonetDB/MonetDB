@@ -2463,25 +2463,30 @@ statement * create_schema( context *sql, dlist *auth_name,
 }
 
 
-statement *insert_value( context *sql, column *c, statement *id, symbol *s ){
+statement *insert_value( context *sql, column *c, symbol *s ){
 	if (s->token == SQL_ATOM){
 		statement *n = NULL;
 		statement *a = statement_atom( atom_dup(s->data.aval) );
 		if (!(n = check_types( sql, c->tpe, a ))) return NULL;
-		a = statement_insert( c, id, n );
-		return a;
+		return n;
 	} else if (s->token == SQL_NULL) {
-		return statement_insert( c, id, NULL);
+		return statement_atom( atom_general( c->tpe, NULL ));
 	}
 	return NULL;
 }
 
 statement *insert_into( context *sql, dlist *qname, dlist *columns, 
 			symbol *val_or_q){
+		/* todo cleanup (change to single mvc_insert (or mvc_fast_insert)
+		 * also make sure the inserts are done in the column_nr order 
+		 */
+
 	catalog *cat = sql->cat;
 	char *tname = table_name(qname);
 	table *t = cat_bind_table( cat,  sql->cat->cur_schema, tname );
-	list *collist = NULL;
+	list *l, *collist = NULL;
+	int i, len = 0;
+	statement **inserts; 
 
 	if (!t){
 		snprintf(sql->errstr, ERRSIZE, 
@@ -2492,6 +2497,8 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 		/* XXX: what to do for the columns which are not listed */
 		dnode *n = columns->h;
 		collist = list_create();
+		/* first add the id colunm */
+		list_append_column( collist, t->columns->h->data.cval ); 
 		while(n){
 			column *c = cat_bind_column(cat, t, n->data.sval );
 			if (c){
@@ -2507,30 +2514,30 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 	} else {
 		collist = t->columns;
 	}
+
+	l = list_create();
+	inserts = NEW_ARRAY(statement*,len);
+	len = list_length(collist);
+	for( i = 0; i< len; i++)
+		inserts[i] = NULL;
+
 	if (val_or_q->token == SQL_VALUES){
 	    dlist *values = val_or_q->data.lval;
 	    if (dlist_length(values) != list_length(collist)){
 		snprintf(sql->errstr, ERRSIZE, _("Inserting into table %s, number of values doesn't match number of columns"), tname );
 		return NULL;
 	    } else {
-		dnode *n = values->h;
-		node *m = collist->h;
-		statement *id = (m)?statement_count( 
-				statement_column(m->data.cval, NULL) ):NULL;
-		list *l = list_create();
-		while(n && m && id){
-		  statement *iv = 
-			  insert_value( sql, m->data.cval, id, n->data.sym);
+		dnode *n;
+		node *m;
 
-		  if (iv){
-			list_append_statement( l, iv );
-		  } else {
-			  return NULL;
-		  }
-		  n = n->next;
-		  m = m->next;
+		for( n = values->h, m = collist->h; 
+		     n && m; 
+		     n = n->next, m = m->next ){
+		 
+		     	inserts[m->data.cval->colnr] =
+				insert_value( sql, m->data.cval, n->data.sym);
 		}
-		return statement_insert_list(l);
+
 	    }
 	} else {
 	    statement *s = subquery(sql, NULL, val_or_q );
@@ -2540,20 +2547,21 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 		snprintf(sql->errstr, ERRSIZE, _("Inserting into table %s, query result doesn't match number of columns"), tname );
 		return NULL;
 	    } else {
-		list *l = list_create();
-		node *m = collist->h;
-		node *n = s->op1.lval->h;
-		while(n && m){
-			list_append_statement( l,
-			  statement_insert_column(
-		           statement_column(m->data.cval,NULL), n->data.stval));
-		  	n = n->next;
-		  	m = m->next;
+		node *m, *n;
+
+		for( n = s->op1.lval->h, m = collist->h;
+		     n && m;
+		     n = n->next, m = m->next ){
+			inserts[m->data.cval->colnr] = n->data.stval;
 		}
-		return statement_list(l);
 	    }
 	}
-	return NULL;
+	for( i = 0; i< len; i++){
+		if (!inserts[i])
+			return NULL;
+		list_append_statement( l, inserts[i] );
+	}
+	return statement_insert(t, l);
 }
 
 statement *update_set( context *sql, dlist *qname, 
@@ -2625,9 +2633,6 @@ statement *delete_searched( context *sql, dlist *qname, symbol *opt_where){
 	} else {
 		statement *s = NULL;
 		node *n;
-		/*
-		list *l = list_create();
-		*/
 		scope *scp;
 	        
 		scp = scope_open(NULL);
@@ -2636,21 +2641,9 @@ statement *delete_searched( context *sql, dlist *qname, symbol *opt_where){
 		if (opt_where) 
 			s = search_condition(sql, scp, opt_where, NULL, NULL);
 
-		n = t->columns->h;
-		/*
-		while (n){
-			column *cl = n->data.cval;
-			list_append_statement( l, statement_delete( cl, s ));  
-			n = n->next;
-		}
-		*/
-		s =statement_delete( n->data.cval, s); /* HACK: use column for
-						       now need to change to 
-						       table */
+		s = statement_delete( t, s); 
+
 		scp = scope_close(scp);
-		/*
-		return statement_list(l);
-		*/
 		return s;
 	}
 	return NULL;

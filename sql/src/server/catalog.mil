@@ -74,6 +74,8 @@ strings.insert("VARCHAR", "str");
 strings.insert("STRING", "str");
 
 if (type_sql.count() <= 0){
+	new_type( "OID", "oid", "", "" );
+
 	new_type( "BOOL", "bit", "", "" );
 
 	new_type( "VARCHAR(1)", "chr", "", "" );

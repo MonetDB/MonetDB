@@ -51,5 +51,6 @@ extern void mvc_drop_column( mvc *c, oid cid );
 extern oid mvc_not_null( mvc *c, oid cid );
 extern oid mvc_default( mvc *c, oid cid, char *val );
 extern void mvc_fast_insert( mvc *c, char *insert_string );
+extern void mvc_insert( mvc *c, oid tid, char *insert_string );
 
 

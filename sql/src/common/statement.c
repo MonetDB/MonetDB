@@ -83,7 +83,6 @@ const char *statement2string( statement *s ){
 		cr(st_commit,"commit");
 		cr(st_rollback,"rollback");
 		cr(st_list,"list");
-		cr(st_insert_list,"insert_list");
 		cr(st_output,"output");
 	}
 	return "unknown";
@@ -126,11 +125,6 @@ void statement_destroy( statement *s ){
 			st_detach( s->op1.stval, s );
 			st_detach( s->op2.stval, s );
 			break;
-		case st_insert: 
-			st_detach( s->op2.stval, s );
-			if (s->op3.stval)
-				st_detach( s->op3.stval, s );
-			break;
 		case st_update: 
 		case st_delete: 
 			if (s->op2.stval)
@@ -156,9 +150,11 @@ void statement_destroy( statement *s ){
 			break;
 		case st_set: 
 		case st_list: 
-		case st_insert_list: 
 		case st_triop: 
 			list_destroy( s->op1.lval );
+			break;
+		case st_insert: 
+			list_destroy( s->op2.lval );
 			break;
 		case st_sets: {
 			node *n = s->op1.lval->h;
@@ -259,7 +255,6 @@ statement *statement_default( statement *col, statement *def ){
 }
 
 statement *statement_column( column *op1, var *basetable ){
-	var *v = NEW(var);
 	statement *s = statement_create();
 	s->type = st_column;
 	s->op1.cval = op1;
@@ -481,10 +476,11 @@ statement *statement_union( statement *op1, statement *op2 ){
 	return s;
 }
 
-statement *statement_insert_list( list *l){
+statement *statement_insert( table *t, list *l){
 	statement *s = statement_create();
-	s->type = st_insert_list;
-	s->op1.lval = l;
+	s->type = st_insert;
+	s->op1.tval = t;
+	s->op2.lval = l;
 	return s;
 }
 statement *statement_list( list *l){
@@ -512,17 +508,6 @@ statement *statement_sets( list *l1){
 	statement *s = statement_create();
 	s->type = st_sets;
 	s->op1.lval = list_append_list(list_create(), l1);
-	return s;
-}
-
-statement *statement_insert( column *c, statement *id, statement *v){
-	statement *s = statement_create();
-	s->type = st_insert;
-	s->op1.cval = c;
-	s->op2.stval = id; st_attache(id,s);
-	if (v){
-		s->op3.stval = v; st_attache(v,s);
-	}
 	return s;
 }
 
@@ -557,10 +542,10 @@ statement *statement_replace( statement *c, statement *b ){
 }
 
 
-statement *statement_delete( column *c, statement *where ){
+statement *statement_delete( table *t, statement *where ){
 	statement *s = statement_create();
 	s->type = st_delete;
-	s->op1.cval = c;
+	s->op1.tval = t;
 	s->op2.stval = where; st_attache(where,s);
 	return s;
 }
@@ -650,8 +635,6 @@ type *tail_type( statement *st ){
 	case st_union:
 	case st_update: 
 	case st_replace: 
-	case st_delete: 
-	case st_insert: 
 	case st_mark: 
 	case st_name: return tail_type(st->op1.stval);
 
