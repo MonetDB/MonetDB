@@ -187,7 +187,7 @@ mal_export int 		readClient	(Client c, str prompt);
 mal_export void 	setClientTrace(Client c, int flag);
 mal_export str 		stopClient(Client c, str nme);
 mal_export str 		stopClientIndex(Client c, int id);
-mal_export str 		resumeClient(/*Client c, int sessionkey*//*Stefan: unused!*/);
+mal_export str 		resumeClient(Client c, int sessionkey);
 mal_export str 		suspendClient(Client c, int sessionkey, int timeout);
 mal_export void 	cleanupClients();
 
@@ -599,7 +599,8 @@ str suspendClient(Client c, int sessionkey, int timeout){
 	
 	return throwMessage("suspend","Not yet implemented");
 }
-str resumeClient(/*Client c,int sessionkey*//*Stefan: unused!*/){
+str resumeClient(Client c,int sessionkey){
+	c=0; sessionkey=0; /* fool the compiler */
 	return throwMessage("suspend","Not yet implemented");
 }
 @+ Spying on clients

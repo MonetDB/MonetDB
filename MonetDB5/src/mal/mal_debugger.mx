@@ -12,8 +12,7 @@ as reserving debugger space in each instruction.
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
-html
+ * the License at http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -49,13 +48,13 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(stream *f);
-mal_export void printStackElm(stream *f, /*MalBlkPtr mb,*//*Stefan: unused!*/ VarPtr n, ValPtr v,int index, int cnt,int first);
+mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v,int index, int cnt,int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
 
-mal_export int mdbToggle(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p);
-mal_export int mdbSetCmd(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p);
+mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void printBBPinfo(stream *out);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
@@ -219,15 +218,15 @@ to the context.
 @c
 #define MDBstatus(X) stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
 
-int mdbToggle(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p){
+int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();
 	int b=0;
+	(void) mb; /* still unused */
 	if( p->argc==1){
 		/* Toggle */
 		stk->cmd= stk->cmd? 0: 's';
 		cntxt->itrace = cntxt->itrace == 0;
-		if( stk->up) stk->up->cmd=  b?'s':0;
-		/* Stefan: b is always 0, here, so what's the sense of the prev. statement? */
+		if( stk->up) stk->up->cmd=  0;
 		return 0;
 	}
 	if( p->argc >1){
@@ -240,9 +239,10 @@ int mdbToggle(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p){
 	return 0;
 }
 
-int mdbSetCmd(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p){
+int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();
 	int b;
+	(void) mb; /* still unused */
 	b= *(chr *) getArgReference(stk,p,1);
 	stk->cmd= b;
 	cntxt->itrace= 'T';
@@ -294,13 +294,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 	case 'f': /* finish */
 	case 'n': /* next */
 	case 's': /* step */
-		if( strncmp("scenarios",b,9)==0){
+		if( strncmp("scenarios",b,3)==0){
 			showAllScenarios(out);
 		} else 
-		if( strncmp("scenario",b,8)==0){
+		if( strncmp("scenario",b,3)==0){
 			showScenarioByName(out, cntxt->scenario);
 		} else 
-		if( strncmp("scope",b,5)==0){
+		if( strncmp("scope",b,3)==0){
 			showScopeStatistics(out,cntxt->nspace);
 			return;
 		} 
@@ -358,6 +358,9 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 	case 'T': /* trace instruction calls */
 		printTraceCall(cntxt,mb,stk,p);
 		break;
+	case 'v':
+		printStack(out,mb,stk);
+		break;
 	case 'b':
 		if( strncmp(b,"bbp",3)==0){
 			printBBPinfo(out);
@@ -373,14 +376,14 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		}
 		continue;
 	case 'd':
-		/* get rid of break point */
-		if( strncmp(b,"do",2)==0 && stk->down!= NULL){
+		if( strncmp(b,"down",2)==0 && stk->down!= NULL){
 			stream_printf(out,"%sgo down the stack\n","#mdb ");
 			stk= stk->down;
 			mb = stk->blk;
 			break;
 		}
 		skipWord(b);
+		/* get rid of break point */
 		if(*b && !isspace(*b)){
 			mdbClrBreakpointName(cntxt,b);
 		} else {
@@ -426,7 +429,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 			stream_printf(out,"%sSymbol not found\n","#mdb ");
 			continue;
 		} 
-		printStackElm(out, /*mb,*//*Stefan: unused!*/ getVar(mb,i),stk->stk+i,i,size,first);
+		printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
 		continue;
 	}
 	case 'u':
@@ -435,9 +438,6 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		stk= stk->up;
 		mb = stk->blk;
 		printCall(cntxt,mb,stk,pc);
-		continue;
-	case 'v': /* variable bindings */
-		printStack(out,mb,stk);
 		continue;
 	case 'w':
 	{	MalStkPtr w;
@@ -559,13 +559,14 @@ void printStack(stream *f, MalBlkPtr mb, MalStkPtr s){
 	stream_printf(f,"#mdb ");
         stream_printf(f,"Stack size=%d top=%d\n",s->stksize,s->stktop);
         for( ; i<mb->vtop ; i++){
-		printStackElm(f, /*mb,*//*Stefan: unused!*/ getVar(mb,i), s->stk+i,i,0,0);
+		printStackElm(f, mb, getVar(mb,i), s->stk+i,i,0,0);
         }
 }
 
-void printStackElm(stream *f, /*MalBlkPtr mb,*//*Stefan: unused!*/ VarPtr n, ValPtr v, int index, int cnt,int first){
+void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt,int first){
 	str nme,nmeOnStk;
 	char nmebuf[PATHLENGTH];
+	mb=0; /* fool the compiler */
 	if( n->tmpindex){
 		snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER, n->tmpindex);
 		nme= nmebuf;
@@ -585,7 +586,7 @@ void printStackElm(stream *f, /*MalBlkPtr mb,*//*Stefan: unused!*/ VarPtr n, Val
 	stream_printf(f,":%s", nme);
 	if( strcmp(nmeOnStk,nme) && 
 	    !(isaBatType(n->type) && strcmp(nmeOnStk,"BAT")==0)){
-		stream_printf(f," != %s (%d)", nmeOnStk,v->vtype);
+		stream_printf(f," != %s", nmeOnStk);
 	}
 	stream_printf(f," %s", (n->isaconstant?" constant":""));
 	stream_printf(f," %s", (n->isatypevar?" type variable":""));
@@ -738,17 +739,21 @@ void mdbHelp(stream *f){
 	stream_printf(f,"bbp 		-- BBP memory layout\n");
 	stream_printf(f,"break 		-- set breakpoint on current instruction\n");
 	stream_printf(f,"break <var> 	-- break on assignment to <var>\n");
+	stream_printf(f,"delete <var> 	-- remove break point <var>\n");
 	stream_printf(f,"step 		-- advance to next MAL instruction\n");
 	stream_printf(f,"module 	-- display the module [scopes] \n");
 	stream_printf(f,"finish 	-- finish current call\n");
 	stream_printf(f,"quit 		-- leave debugger\n");
 	stream_printf(f,"list 		-- list current program block\n");
+	stream_printf(f,"List 		-- list with type information\n");
 	stream_printf(f,"variables 	-- print variable bindings\n");
-	stream_printf(f,"where 		-- print stack trace\n");
 	stream_printf(f,"print <var> 	-- display value of a variable\n");
 	stream_printf(f,"print <var> <cnt>[<first>] -- display BAT chunk\n");
 	stream_printf(f,"info <var> 	-- display bat variable properties\n");
 	stream_printf(f,"run 		-- restart current procedure\n");
+	stream_printf(f,"where 		-- print stack trace\n");
+	stream_printf(f,"down  		-- go down the stack\n");
+	stream_printf(f,"up  		-- go up the stack\n");
 	stream_printf(f,"timer 		-- produce micro-second response time\n");
 	stream_printf(f,"help 		-- this message\n");
 }

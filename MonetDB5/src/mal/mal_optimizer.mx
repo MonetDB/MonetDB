@@ -431,7 +431,7 @@ catalog management (23) and query processing (42)
 mal_export void debugOptimizers();
 mal_export str CXoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str ARoptimizer(Client cntxt,MalBlkPtr mb, int pc);
-mal_export str DCoptimizer(Client cntxt,MalBlkPtr mb /*, int pc*//*Stefan: unused!*/);
+mal_export str DCoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str SPoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str RRoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str MALoptimizer(Client c);
@@ -465,7 +465,7 @@ denotes the signature and can not be removed.
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
-int isInvariant(/*MalBlkPtr mb, int pcf, int pcl, int varid*//*Stefan: unused!*/);
+int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 int hasSideEffects(InstrPtr p);
 
 void debugOptimizers(Client c, MalBlkPtr mb, int pc){
@@ -629,7 +629,7 @@ int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
 			return i;
 		}
 		for(;k < q->argc; k++)
-		if( q->argv[k]== varid && ! isInvariant(/*mb,pc,i,varid*//*Stefan: unused!*/)) 
+		if( q->argv[k]== varid && ! isInvariant(mb,pc,i,varid)) 
 			return i;
 		if( blockStart(p)) blkcount++;
 		if( blockExit(p)) blkcount--;
@@ -742,10 +742,11 @@ For each function it should be relatively easy to determine its
 safety property. This calls for accessing the function MAL block
 and to inspect the arguments of the signature.
 @c
-int isUnsafeFunction(/*MalBlkPtr mb,*//*Stefan: unused!*/  InstrPtr q)
+int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
 {
 	Symbol s=0;
 	Client c;
+	mb =0; /* fool the compiler */
 	if( q->fcn==0 || functionId(q)== 0) return FALSE;
 	c= getClient();
 	if( c ) s= getSymbol(c->nspace,q);
@@ -757,9 +758,10 @@ Instructions are unsafe is one of the arguments is also mentioned
 in the result list. Alternatively, the 'unsafe' property is set
 for the function call itself.
 @c
-int isUnsafeInstruction(/*MalBlkPtr mb,*//*Stefan: unused!*/ InstrPtr q)
+int isUnsafeInstruction(MalBlkPtr mb, InstrPtr q)
 {	int j,k;
-	if( isUnsafeFunction(/*mb,*//*Stefan: unused!*/ q)) return TRUE;
+	mb=0; /* fool compiler */
+	if( isUnsafeFunction(mb, q)) return TRUE;
 	for(j=0; j<q->retc; j++)
 	for(k=q->retc; k<q->argc; k++)
 	if( q->argv[k] == q->argv[j]) return TRUE;
@@ -769,8 +771,9 @@ int isUnsafeInstruction(/*MalBlkPtr mb,*//*Stefan: unused!*/ InstrPtr q)
 The routine isInvariant determines if the variable V is not
 changed in the instruction sequence identified by the range [pcf,pcl].
 @c
-int isInvariant(/*MalBlkPtr mb, int pcf, int pcl, int varid*//*Stefan: unused!*/)
+int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
 {
+	mb=0; pcf=0;pcl=0;varid=0;
 	return TRUE;
 }
 @-
@@ -811,7 +814,7 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 		return TRUE;
 	}
 
-	if( isUnsafeFunction(/*mb,*//*Stefan: unused!*/ q)){
+	if( isUnsafeFunction(mb,q)){
 		for(i=p->retc; i<p->argc; i++)
 		for(j=q->retc; j<q->argc; j++)
 		if( p->argv[i]== q->argv[j]) {
@@ -829,7 +832,7 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 }
 int isUpdated(MalBlkPtr mb, int pc)
 {	InstrPtr p,q;
-	int j,k /*,pcf=pc*//*Stefan: unused!*/;
+	int j,k;
 
 	p= getInstrPtr(mb,pc);
 	for(pc++; pc< mb->stop; pc++){
@@ -846,7 +849,7 @@ int isUpdated(MalBlkPtr mb, int pc)
 			/* TO WEAK, test stability of its arguments */
 			for(j=0;j<p->argc;j++)
 			if( p->argv[j]==q->argv[k] && 
-			    isInvariant(/*mb,pcf,pc,q->argv[k]*//*Stefan: unused!*/)) c++;
+			    isInvariant(mb,0,pc,q->argv[k])) c++;
 			return c!= p->argc;
 		}
 
@@ -950,11 +953,12 @@ int hasSideEffects(InstrPtr p){
 	if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
 	return FALSE;
 }
-str DCoptimizer(Client cntxt, MalBlkPtr mb /*, int pc*//*Stefan: unused!*/)
+str DCoptimizer(Client cntxt, MalBlkPtr mb, int pc)
 {	int i,j,k,dc=0,se;
 	InstrPtr p;
 	int *varused;
 	int *pcused;
+	pc=0;	/* to fool compilers */
 
 	varused= GDKmalloc(mb->vtop * sizeof(int));
 	for(i=0;i<mb->vtop;i++) varused[i]=0;
@@ -1256,8 +1260,9 @@ int showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f){
 At a later stage we could extend the flow details with the status
 of crucial properties, e.g. processing time, cost, size
 @c
-void showFlowDetails(MalBlkPtr mb, /*MalStkPtr stk,*//*Stefan: unused!*/ InstrPtr p, int pc, stream *f){
+void showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
 	str s,msg;
+	stk=0; /* fool the compiler */
 	msg= instruction2str(mb,p,0);
 	stream_printf(f,"n%d [fontsize=8, shape=box, label=\"",pc);
 	for(s=msg; *s; s++)
@@ -1265,23 +1270,24 @@ void showFlowDetails(MalBlkPtr mb, /*MalStkPtr stk,*//*Stefan: unused!*/ InstrPt
 	stream_printf(f,"\"];\n");
 	GDKfree(msg);
 }
-void showFlowGraph(MalBlkPtr mb, /*MalStkPtr stk,*//*Stefan: unused!*/ str fname){
+void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
 	stream *f;
 	InstrPtr p;
 	int i,k;
+	stk=0; /* fool the compiler */
 
 	if(idcmp(fname,"stdout")==0) f= GDKout; else
 	f= open_wastream(fname);
 	p= getInstrPtr(mb,0);
 	stream_printf(f,"digraph %s{\n", functionName(p));
 	p= getInstrPtr(mb,0);
-	showFlowDetails(mb,/*stk,*//*Stefan: unused!*/p,0,f);
+	showFlowDetails(mb,stk,p,0,f);
 	for(k=p->retc;k<p->argc;k++){
 		showOutFlow(mb,0,p->argv[k],f);
 	}
 	for(i=1;i<mb->stop-1;i++){
 		p= getInstrPtr(mb,i);
-		showFlowDetails(mb,/*stk,*//*Stefan: unused!*/p,i,f);
+		showFlowDetails(mb,stk,p,i,f);
 		for(k=0;k<p->retc;k++){
 			showOutFlow(mb,i,p->argv[k],f);
 		}
@@ -1294,14 +1300,16 @@ Summarization of the data flow dependencies can be modelled as a dependency grap
 It can be made explicit or kept implicit using the operators needed.
 We start with the latter. The primary steps to deal with is dead code removal.
 @c
-int removeDeadSink(/*MalBlkPtr mb, int pc, InstrPtr p*//*Stefan: unused!*/){
+int removeDeadSink(MalBlkPtr mb, int pc, InstrPtr p){
 	/* detect if the destination variable is not used anymor*/
 	/* return if it worked out */
+	mb=0; pc=0; p=0; /* fool the compiler */
 	return FALSE;
 }
-int removeDeadSource(/*MalBlkPtr mb, int pc, InstrPtr p*//*Stefan: unused!*/){
+int removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p){
 	/* detect if the source variable is not used anymor*/
 	/* return if it worked out */
+	mb=0; pc=0; p=0; /* fool the compiler */
 	return FALSE;
 }
 @+ Barrier related optimizations
@@ -1336,7 +1344,8 @@ the new location identified by the target.
 The routines for this aspect are available from in mal_instruction.mx
 
 @c
-void moveConstantsFirst(/*MalBlkPtr mb*//*Stefan: unused!*/){
+void moveConstantsFirst(MalBlkPtr mb){
 	/* move all expression dealing with constants to the beginning */
 	/* could be used to shortcut stack initialization */
+	mb=0;
 }

@@ -42,8 +42,7 @@ this buffer contains the complete MIL structure to be parsed.
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
-html
+ * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -847,7 +846,7 @@ for reading unfinished definitions is also terminated.
 		curInstr->fcn = getAddress(nme);
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
-			malAtomProperty(/*curBlk,*//*Stefan: unused!*/ curInstr);
+			malAtomProperty(curBlk, curInstr);
 	} else return (MalBlkPtr) parseError(cntxt,"'=' expected\n");
 @-
 Each procedure definition opens a structure in which the
@@ -905,7 +904,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	getInstrPtr(curBlk,0)->token= kind;
 	curPrg->kind = kind;
 	insertSymbol(cntxt->nspace,curPrg);
-	trimMalBlk(/*curBlk*//*Stefan: unused!*/);
+	trimMalBlk(curBlk);
 	chkProgram(cntxt->nspace,curBlk);
 	if( cntxt->backup){
 		cntxt->curprg = cntxt->backup;
@@ -962,7 +961,7 @@ int parseEnd(Client cntxt)
 		advance(cntxt,l);
 		pushEndInstruction(curBlk);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
-		trimMalBlk(/*cntxt->curprg->def*//*Stefan: unused!*/);
+		trimMalBlk(cntxt->curprg->def);
 		cntxt->blkmode =0;
 		chkProgram(cntxt->nspace, cntxt->curprg->def);
 		if( cntxt->backup){

@@ -16,30 +16,44 @@ existing profilers, like valgrind, or even hardware counters
 as available in the module 'pcl'.
 
 The dynamic profiler is a hook into the MAL interpreter.
-It collects performance counters and send it as a Monet tuple or XML document
-over the stream 'sysmon'.
+The default strategy is to ship the event record immediately over a stream
+to a performance monitor, eg. Mcockpit.
+An alternative strategy is preparation of off-line performance analysis.
+For this case the event record is turned into a XML structure and
+sent over the stream (most likely linked with a file)
+To reduce the  interference of performance measurement with
+the experiments, the user can use an event cache, which is
+emptied explicitly upon need.
+ 
+The profiler event collects basic performance information, such
+as cpu, memory and location information. It is optionally extended
+with IO activity, which is needed for coarse grain profiling only.
 
 The profiler supports selective retrieval of such information by
 tagging the instructions of interest. This means that the profiler
-call has a global effect, i.e. it is of primary interest to single user
-sessions.
+call has a global effect,
+all concurrent users are affected by the performance overhead.
+Therefore, it is of primary interest to single user sessions.
+
+@-The profiler event cache.
+The events can be cached in a dynamic structure under exclusive control
+of the profiler. The alternative, storing everyting into BATs leads
+to a loophole in performance measuring using e.g. kcachegrind.
+The content of this event cache can
+be obtained for post-processing by front-end, such as Mcockpit,
+or transformed into BATs for analysis within the kernel itself.
+The profile cache is unlimited.
 
 The profiler is activated by defining MALprofiler in mal.mx.
 This leads to securing space for the counters and for code
 in the interpreter to collect the information.
 
-
-Upon exit of the session, the profiler information is saved
-in a file MALprofilerReport for offline inspection.
-This approach implies that all concurrent users are
-affected by the performance overhead.[estimate]
 @h
 /*
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://monetdb.cwi.nl/Legal/MonetPL-1.1.
-html
+ * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -80,17 +94,16 @@ mal_export str deactivateCounter(str name);
 mal_export str openProfilerStream();
 mal_export str closeProfilerStream();
 
-mal_export void eventRecord(/*Scope cntxt,*//*Stefan: unused!*/  MalBlkPtr mb,
-			   MalStkPtr stk, InstrPtr pci);
-mal_export str setLogFile(/*Scope cntxt,*//*Stefan: unused!*/  str fname);
-mal_export str setStartPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/);
-mal_export str setEndPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/);
+mal_export void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str setLogFile(Scope cntxt,  str fname);
+mal_export str setStartPoint(Scope cntxt, str mod, str fcn);
+mal_export str setEndPoint(Scope cntxt, str mod, str fcn);
 mal_export str startProfiling();
 mal_export str stopProfiling();
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export int eventFilter(Scope cntxt, str mod, str fcn);
-mal_export int resetFilter(Scope cntxt /*, str mod, str fcn*//*Stefan: unused!*/);
+mal_export int resetFilter(Scope cntxt, str mod, str fcn);
 
 mal_export void profileReport(Scope cntxt,int outer, stream *out);
 
@@ -111,7 +124,12 @@ spent.
 #ifdef MALprofiler
 MT_Lock profileLock = 0;
 stream *eventstream   = 0;
+
+int onlineProfiling = TRUE;
+int offlineProfiling = FALSE;
+int cachedProfiling = FALSE;
 #endif
+static void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 int malProfileMode;	/* global flag to indicate profiling mode */
 static int delayswitch; /* to wait before sending the profile info */
@@ -124,11 +142,8 @@ The interpreter comes with several variables to hold performance
 related data. In addition to the default performance data collection,
 the user can request performance events to be collected on a statement
 basis. Care should be taken, because it leads to a large trace file,
-unless the results are directly passed to the Monet Performance Monitor
+unless the results are directly passed to a Monet performance monitor
 front-end.
-
-The event log record contains a collection of default counters
-and trace information. Front-ends can filter out the relevant pieces.
 
 The performance monitor has exclusive access to the event file, which
 avoid concurrency conflicts amongst clients. It avoid cluthered
@@ -139,13 +154,12 @@ static struct{
 	str name;	/* which logical counter is needed */
 	int status;	/* trace it or not */
 } profileCounter[]={
-	/*  0 */ {"cpu",1},
-	/*  1 */ {"mal",1},
-	/*  2 */ {"properties",1},
-	/*  3 */ {"mallinfo",1},
-	/*  4 */ {"rusage",1},
-	/*  5 */ {"time",1},
-	/*  6 */ {"client",1},
+	/*  0 5 */ {"tick",1},
+	/*  1 0 */ {"cpu",1},
+	/*  2 4 */ {"memory",1},
+	/*  3 */ {"io",1},
+	/*  4 1 */ {"pc",1},
+	/*  5 2 */ {"statement",1},
 	/*  7 */ {0,0}
 };
 @-
@@ -167,7 +181,7 @@ str deactivateCounter(str name){ @:setCounter(0,deactivateCounter)@ }
 
 @-
 The parameter of getEventStream is the return value of the enclosing function:
-	eventRecord:	none/void
+	profilerEvent:	none/void
 	setStartPoint:	a str
 	setEndPoint:	a str
 @= getEventStream
@@ -177,10 +191,83 @@ The parameter of getEventStream is the return value of the enclosing function:
 		MT_unset_lock(profileLock,"profileLock");
 		return @1;
 	}
+@- Event dispatching
+The profiler strategy is encapsulated here
+Online- and offline-profiling are disjoint options, because they
+currently share the same file descriptor in the client record.
 @c
+void profilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+#ifdef MALprofiler
+	if( onlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
+	if( offlineProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
+	if( cachedProfiling) onlineProfilerEvent(cntxt,mb,stk,pci);
+#endif
+}
 
+@+ Online procecing
+The online processing structure is the easiest. We merely have to
+produce a correct tuple format for the front-end.
+@c
 #define log(X,Y) stream_printf(eventstream,X,Y)
 #define log0(X)	stream_printf(eventstream,X)
+
+#ifdef MALprofiler
+void onlineProfilerEvent(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	struct tms newTms;
+        struct mallinfo infoMalloc;
+        struct rusage   infoUsage;
+        /*static struct mallinfo prevMalloc;*//* still unused */
+        /*static struct rusage   prevUsage;*//* still unused */
+	str stmt,c;
+	(void) cntxt; (void) stk; /* still unused */
+
+	if( delayswitch >0){
+		delayswitch--;
+		return;
+	}
+	@:getEventStream()@	/* profilerEvent -> void */
+	if( delayswitch==0){
+		log0("<MonetProfile>\n");
+		delayswitch= -1;
+	} 
+	times(&newTms);
+	infoMalloc = MT_mallinfo();
+	getrusage(RUSAGE_SELF,&infoUsage);
+
+	/* make basic profile event tuple  */
+	log0("]\n");
+	if( profileCounter[0].status ){
+		log("%d,", GDKusec());
+	}
+	if( profileCounter[1].status ){
+		log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
+		log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
+		log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
+		log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
+		log("%d,\t", GDKusec() - pci->clk);
+	}
+
+	if( profileCounter[4].status ){
+		log("\"%s\"\t", (moduleId(pci)?moduleName(pci):"unknown"));
+		log("\"%s\"\t", (functionId(pci)?functionName(pci):"unknown"));
+		log("%d\t", getPC(mb,pci));
+	}
+	if( profileCounter[5].status ){
+		stmt= instruction2str(mb,pci,FALSE);
+		c= stmt;
+		while(c && *c && isspace(*c) ) c++;
+		log(" \"%s\",",c);
+	}
+	log0(" ]\n");
+}
+#endif
+@+ Cached processing
+@+ Postprocessing events
+The profilerEventXML below illustrates information that could be
+saved in XML format for post-processing. Compared to the
+profilerRecord above, it is more verbose and contains more
+information relevant for off-line analysis.
+@c
 
 
 void infoHeapProfile(Heap *hp, str nme){
@@ -214,7 +301,7 @@ void HASHinfoProfile(Hash *h, str s){
 	snprintf(buf+i,MAXPATHLEN-i,"%d\"", h->lim);
 	log0(buf);
 }
-void eventRecord(/*Scope cntxt,*//*Stefan: unused!*/  MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+void profilerEventXML(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
 	struct tms newTms;
         struct mallinfo infoMalloc;
@@ -222,13 +309,14 @@ void eventRecord(/*Scope cntxt,*//*Stefan: unused!*/  MalBlkPtr mb, MalStkPtr st
         static struct mallinfo prevMalloc;
         static struct rusage   prevUsage;
 	str stmt,c;
+	(void) cntxt; /* still unused */
 
 	if( getDestVar(pci) <=0 )return;
 	if( delayswitch >0){
 		delayswitch--;
 		return;
 	}
-	@:getEventStream()@	/* eventRecord() -> void */
+	@:getEventStream()@	/* profilerEvent -> void */
 	if( delayswitch==0){
 		log0("<MonetProfile>\n");
 		delayswitch= -1;
@@ -433,7 +521,8 @@ inspect the properties of BATs and their propagation.
 #endif
 }
 
-str setLogFile(/*Scope cntxt,*//*Stefan: unused!*/  str fname){
+str setLogFile(Scope cntxt,  str fname){
+        (void) cntxt; /* still unused */
 #ifdef MALprofiler
 	if( profileLock==0) profileLock= MT_create_lock();
 	MT_set_lock(profileLock,"profileLock");
@@ -464,7 +553,8 @@ str closeProfilerStream(){
 	eventstream = NULL;
 	return MAL_SUCCEED;
 }
-str setStartPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/){
+str setStartPoint(Scope cntxt, str mod, str fcn){
+	(void) cntxt; (void) mod; (void) fcn; /* still unused */
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# start point not set\n");
@@ -474,7 +564,8 @@ str setStartPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/){
 #endif
 	return MAL_SUCCEED;
 }
-str setEndPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/){
+str setEndPoint(Scope cntxt, str mod, str fcn){
+	(void) cntxt; (void) mod; (void) fcn; /* still unused */
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# end point not set\n");
@@ -561,12 +652,13 @@ int eventFilter(Scope cntxt, str mod, str fcn){
 #endif
 	return -1;
 }
-int resetFilter(Scope cntxt /*, str mod, str fcn*//*Stefan: unused!*/){
+int resetFilter(Scope cntxt, str mod, str fcn){
 #ifdef MALprofiler
         int j,k;
         Scope s=cntxt;
 	Symbol t;
 	InstrPtr p;
+	(void) mod; (void) fcn; /* still unused */
 
 	if( profileLock==0) profileLock= MT_create_lock();
 	MT_set_lock(profileLock,"profileLock");

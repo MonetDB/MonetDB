@@ -22,8 +22,7 @@ scope name "MAL_scope".
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
-html
+ * the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -317,7 +316,7 @@ str MALparser(Client c){
 		return throwMessage("MALparser","function signature missing\n");
 	}
 	pushEndInstruction(c->curprg->def);
-	trimMalBlk(/*c->curprg->def*//*Stefan: unused!*/);
+	trimMalBlk(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if( c->curprg->def->errors){
 		showErrors(c);

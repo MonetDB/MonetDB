@@ -145,7 +145,7 @@ i.e. the directory <dbfarm>/box
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -178,10 +178,10 @@ typedef struct BOX{
 mal_export Box newBox(str name);
 mal_export Box findBox(str name);
 mal_export Box openBox(str name);
-mal_export int closeBox(str name /*,int flag*//*Stefan: unused!*/);
+mal_export int closeBox(str name,int flag);
 mal_export void destroyBox(str name);
 mal_export str boxFileName(Box box, str extension);
-mal_export int saveBox(Box box /*,int flag*//*Stefan: unused!*/);
+mal_export int saveBox(Box box,int flag);
 mal_export void loadBox(str nme);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
@@ -191,7 +191,7 @@ mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
 mal_export str getBoxName(Box box, lng i);
-mal_export str toString(/*Box box, lng i*//*Stefan: unused!*/);
+mal_export str toString(Box box, lng i);
 mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
 mal_export void printSomeBox(stream *fd, int k);
@@ -287,10 +287,11 @@ Box openBox(str name){
 	loadBox(name);
 	return box;
 }
-int closeBox(str name /*,int flag*//*Stefan: unused!*/){
+int closeBox(str name ,int flag){
 	Box box;
+	flag= 0; /* fool the compiler */
 	if( (box=findBox(name))){
-		saveBox(box /*,flag*//*Stefan: unused!*/);
+		saveBox(box,flag);
 		return 0;
 	}
 	return -1;
@@ -452,7 +453,8 @@ str getBoxName(Box box, lng i){
 	s= getVarName(box->sym,i);
 	return GDKstrdup(s);
 }
-str toString(/*Box box, lng i*//*Stefan: unused!*/){
+str toString(Box box, lng i){
+	box=0; i=0; /* fool the compiler */
 	return GDKstrdup("");
 }
 @+ Persistency
@@ -489,12 +491,13 @@ str boxFileName(Box box, str backup){
 	snprintf(boxfile+i,PATHLENGTH-i,"/%s.box", box->name);
 	return GDKstrdup(boxfile);
 }
-int saveBox(Box box /*,int flag*//*Stefan: unused!*/){
+int saveBox(Box box,int flag){
 	int i, ret=0;
 	ValPtr v;
 	stream *f;
 	str boxfile, boxfilebak;
 
+	flag=0; /*fool the compiler */
 	boxfile = boxFileName(box,0);
 	boxfilebak = boxFileName(box,"backup");
 

@@ -22,8 +22,7 @@ at the exception handling block of the MAL procedure.
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
-html
+ * the License at http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -67,7 +66,7 @@ mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller,
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void waitForChildren(MalStkPtr stk);
-mal_export str setDynamicType(MalBlkPtr mb, /*MalStkPtr stk,*//*Stefan: unused!*/ VarPtr v, int tpe,int pc);
+mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe,int pc);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall);
 
@@ -886,7 +885,7 @@ if( ret != MAL_SUCCEED ){
 	}
 	msg++;
 	/* assure correct variable type */
-	if( (nxt= (str) setDynamicType(mb,/*stk,*//*Stefan: unused!*/getVar(mb,symid),TYPE_str,stkpc)) == 0){
+	if( (nxt= (str) setDynamicType(mb,getVar(mb,symid),TYPE_str,stkpc)) == 0){
 		v=  &stk->stk[symid];
 		v->vtype = TYPE_str;
 		v->val.pval= GDKstrdup(locateException(mb,stkpc,ret));
@@ -928,7 +927,7 @@ During instruction interpretation we may have to be
 assured that the type associated with a destination variable
 is in line with the result of an operation or exceoption.
 @c
-str setDynamicType(MalBlkPtr mb, /*MalStkPtr stk,*//*Stefan: unused!*/ VarPtr v, int tpe, int pc){
+str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
 	char buf[2*PATHLENGTH];
 	if( v->type ==tpe) return 0;
 	sprintf(buf,"variable '%s' has already type %s (!=%s)\n",
@@ -1044,6 +1043,6 @@ we have to keep track of essential system counter information.
 		newclk= GDKusec();
 		pci->counter++;
 		pci->ticks += newclk - pci->clk;
-		eventRecord(/*cntxt->nspace,*//*Stefan: unused!*/ mb,stk,pci);
+		profilerEvent(cntxt->nspace,mb,stk,pci);
 	}
 #endif

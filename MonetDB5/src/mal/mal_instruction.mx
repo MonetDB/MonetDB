@@ -84,8 +84,7 @@ exit Z;
  * The contents of this file are subject to the Monet Public
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.
-html
+ * the License at http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
  * 
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -256,8 +255,8 @@ mal_export void 	prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void		freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr	copyMalBlk(MalBlkPtr);
 mal_export void		expandMalBlk(MalBlkPtr mb, int lines);
-mal_export void		trimMalBlk(/*MalBlkPtr mb*//*Stefan: unused!*/);
-mal_export void 	moveInstruction(/*MalBlkPtr mb, int pc, int target*//*Stefan: unused!*/);
+mal_export void		trimMalBlk(MalBlkPtr mb);
+mal_export void 	moveInstruction(MalBlkPtr mb, int pc, int target);
 mal_export void		removeInstruction(MalBlkPtr mb, int pc);
 
 mal_export int		findVariable(MalBlkPtr mb, str name);
@@ -265,7 +264,7 @@ mal_export int		findVariableLength(MalBlkPtr mb, str name,int len);
 mal_export malType	getType(MalBlkPtr mb, str nme);
 mal_export str		getVarName(MalBlkPtr mb, int i);
 mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
-mal_export void		copyVariable(MalBlkPtr dst,/*MalBlkPtr src,*//*Stefan: unused!*/ VarPtr v);
+mal_export void		copyVariable(MalBlkPtr dst,MalBlkPtr src, VarPtr v);
 mal_export void 	removeVariable(MalBlkPtr mb, int varid);
 mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int		newTypeVariable(MalBlkPtr mb, malType type);
@@ -404,7 +403,7 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
 
 	mb->vtop = 0;
 	for(i=0;i<old->vtop;i++){
-		copyVariable(mb,/*old,*//*Stefan: unused!*/getVar(old,i));
+		copyVariable(mb,old,getVar(old,i));
 		mb->vtop++;
 	}
 
@@ -464,8 +463,9 @@ void expandMalBlk(MalBlkPtr mb, int lines){
 	if(newlines >mb->ssize || newlines>mb->vsize)
 		trimexpand(mb,newlines,newlines);
 }
-void trimMalBlk(/*MalBlkPtr mb*//*Stefan: unused!*/){
- /* printf("safe %d %d\n",mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
+void trimMalBlk(MalBlkPtr mb){
+	mb=0; /* fool the compiler */
+	 /* printf("safe %d %d\n",mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
 	trimexpand(mb,0); */
 }
 @-
@@ -572,7 +572,8 @@ void removeInstruction(MalBlkPtr mb, int pc){
 	mb->stmt[i]=0;
 	freeInstruction(p);	
 }
-void moveInstruction(/*MalBlkPtr mb, int pc, int target*//*Stefan: unused!*/){
+void moveInstruction(MalBlkPtr mb, int pc, int target){
+	mb=0; pc=0; target=0;/* fool the compiler */
 }
 @-
 Beware that the first argument of a signature is reserved for the function
@@ -794,9 +795,10 @@ void	delVariable(MalBlkPtr mb, int varid){
 		mb->vtop--;
 	}
 }
-void	copyVariable(MalBlkPtr dst, /*MalBlkPtr src,*//*Stefan: unused!*/ VarPtr v){
+void	copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	VarPtr w;
 
+	src=0; /* fool the compiler */
 	w = (VarPtr) GDKmalloc(sizeof(VarRecord));
 	bzero( (str) w , sizeof(VarRecord));
         w->name = v->name? GDKstrdup(v->name):0;
@@ -934,7 +936,8 @@ retryConstant:
 				vr->val.ival = sht_nil;
 			} else
 			if( l>255 || l<0) {
-				if( l< 2^31 && l> -2^31 ){	
+				if( l< (2^31) && l> (-2^31) ){	
+/*
 				 *
 				 * 2^31 = 29 in C as ^ is XOR !
 				 *
@@ -949,6 +952,7 @@ retryConstant:
 				 * This needs to be solved!
 				 * Stefan.
 				 *
+*/
 				if(type== TYPE_sht){
 					vr->vtype= TYPE_int;
 					setVarType(mb, idx, TYPE_int);
