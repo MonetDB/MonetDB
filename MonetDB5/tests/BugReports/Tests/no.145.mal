@@ -1,35 +1,41 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#setoid(oid(2000000));
+#include "mil_prelude";
+	mil.line("setoid(oid(2000000));");
 	aa_a := oid(2000000);
 	ba_a := setoid(aa_a);
-#var k100_unique1:=bat("k100_unique1");
+	mil.line("var k100_unique1:=bat(\"k100_unique1\");");
 	k100_unique1 := new("k100_unique1");
-#var t:= k100_unique1.select(10,10);
+	mil.line("#test correct decisions in the join operation.\n");
+	mil.line("var t:= k100_unique1.select(10,10);");
 	t := select(k100_unique1,10,10);
-#t.count().print(); k100_unique1.count().print();
-	ca_a := count(t,);
-	da_a := print(ca_a,);
-	ea_a := count(k100_unique1,);
-	fa_a := print(ea_a,);
-#var u:= t.copy();
-	u := copy(t,);
-#var z:= t.reverse().join(k100_unique1);
-	ga_a := reverse(t,);
+	mil.line("t.count().print(); k100_unique1.count().print();");
+	ca_a := count(t);
+	da_a := print(ca_a);
+	ea_a := count(k100_unique1);
+	fa_a := print(ea_a);
+	mil.line("var u:= t.copy();");
+	u := copy(t);
+	mil.line("#cpu.print();\n");
+	mil.line("");
+	mil.line("var z:= t.reverse().join(k100_unique1);");
+	ga_a := reverse(t);
 	z := join(ga_a,k100_unique1);
-#z.print();
-	ha_a := print(z,);
-#z:= k100_unique1.reverse().join(u);
-	ia_a := reverse(k100_unique1,);
+	mil.line("z.print();");
+	ha_a := print(z);
+	mil.line("#cpu.print();\n");
+	mil.line("z:= k100_unique1.reverse().join(u);");
+	ia_a := reverse(k100_unique1);
 	z := join(ia_a,u);
-#z.print();
-	ja_a := print(z,);
-#quit();
+	mil.line("#cpu.print();\n");
+	mil.line("z.print();");
+	ja_a := print(z);
+	mil.line("quit();");
 	ka_a := quit();

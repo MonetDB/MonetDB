@@ -1,20 +1,71 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#setoid(oid(20000000));
+#include "mil_prelude";
+	mil.line("# >Number:         151\n");
+	mil.line("# >Category:       MIL");
+	mil.line("# >Category:       MIL\n");
+	mil.line("# >Synopsis:       type check problem when inserting bats");
+	mil.line("# >Synopsis:       type check problem when inserting bats\n");
+	mil.line("# >Confidential:   no");
+	mil.line("# >Confidential:   no\n");
+	mil.line("# >Severity:       critical");
+	mil.line("# >Severity:       critical\n");
+	mil.line("# >Priority:       high");
+	mil.line("# >Priority:       high\n");
+	mil.line("# >Responsible:    boncz (Peter Boncz)");
+	mil.line("# >Responsible:    boncz (Peter Boncz)\n");
+	mil.line("# >State:          open");
+	mil.line("# >State:          open\n");
+	mil.line("# >Class:          sw-bug");
+	mil.line("# >Class:          sw-bug\n");
+	mil.line("# >Submitter-Id:   unknown");
+	mil.line("# >Submitter-Id:   unknown\n");
+	mil.line("# >Arrival-Date:   Wed Apr 15 13:00:01 1998");
+	mil.line("# >Arrival-Date:   Wed Apr 15 13:00:01 1998\n");
+	mil.line("# >Originator:     niels@cwi.nl");
+	mil.line("# >Originator:     niels@cwi.nl\n");
+	mil.line("# >Organization:");
+	mil.line("# >Organization:\n");
+	mil.line("# DDi");
+	mil.line("# DDi\n");
+	mil.line("# >Release:        980101");
+	mil.line("# >Release:        980101\n");
+	mil.line("# >Environment:");
+	mil.line("# >Environment:\n");
+	mil.line("# IRIX 5.3");
+	mil.line("# IRIX 5.3\n");
+	mil.line("# >Description:");
+	mil.line("# >Description:\n");
+	mil.line("# Following script gives an error");
+	mil.line("# Following script gives an error\n");
+	mil.line("# a:= new(int,bat);");
+	mil.line("# a:= new(int,bat);\n");
+	mil.line("# b:= new(int,bat);");
+	mil.line("# b:= new(int,bat);\n");
+	mil.line("# a.insert(1,b);");
+	mil.line("# a.insert(1,b);\n");
+	mil.line("# !ERROR: interpret: no matching MIL operator to 'insert(bat[int,bat], int, bat[int,bat])'.");
+	mil.line("# !ERROR: interpret: no matching MIL operator to 'insert(bat[int,bat], int, bat[int,bat])'.\n");
+	mil.line("# !MAYBE YOU MEAN:");
+	mil.line("# !MAYBE YOU MEAN:\n");
+	mil.line("# !       insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]");
+	mil.line("# !       insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]\n");
+	mil.line("");
+	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#var a:= new(int,bat);
-	a := new(:int,:bat[:any,:any]);
-#var b:= new(int,bat);
-	b := new(:int,:bat[:any,:any]);
-#a.insert(1,b);
+	mil.line("var a:= new(int,bat);");
+	a := new(nil:int,:bat[:any,:any]);
+	mil.line("var b:= new(int,bat);");
+	b := new(nil:int,:bat[:any,:any]);
+	mil.line("a.insert(1,b);");
 	ca_a := insert(a,1,b);
-#quit();
+	mil.line("quit();");
 	da_a := quit();

@@ -1,42 +1,47 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#setoid(oid(20000000));
+#include "mil_prelude";
+	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#var MODULES:=bat("MODULES");
+	mil.line("var MODULES:=bat(\"MODULES\");");
 	MODULES := new("MODULES");
+	mil.line("PROC mmn() : BAT[oid,str] {");
 function mmn():bat[:oid,:str];
-#	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+	mil.line("\t return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith](\"_\").uselect(true)));");
 	monet_mod_nme:= mil.take("monet_mod_nme");
-	ca_a := multiplex.tactics(monet_mod_nme,"startsWith","_");
+	ca_a := multiplex.tactics("startsWith",monet_mod_nme,"_");
 	da_a := uselect(ca_a,true);
 	ea_a := kdiff(monet_mod_nme,da_a);
 	return fa_a :=ea_a;
 end mmn;
-#var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();
+	mil.line("#All_mods:=MODULES.sort().copy();\n");
+	mil.line("module(\"cluster\");");
+	mil.line("# # module(Meta);\n");
+	mil.line("var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();");
 	MODULES:= mil.take("MODULES");
-	ga_a := sort(MODULES,);
+	ga_a := sort(MODULES);
 	BAT_WRITE:= mil.take("BAT_WRITE");
-	ha_a := copy(ga_a,);
+	ha_a := copy(ga_a);
 	ia_a := access(ha_a,BAT_WRITE);
-	All_mods := revert(ia_a,);
-#	printf("%9s: ",$h);
+	All_mods := revert(ia_a);
+	mil.line("\tprintf(\"%9s: \",$h);");
 barrier	ja_a := bunStream(All_mods,ja_aH,ja_aT);
 	ka_a := printf("%9s: ",ja_aH);
-#	if (not(monet_mod_nme.reverse().exist($h))) {
+	mil.line("\tif (not(monet_mod_nme.reverse().exist($h))) {");
 	monet_mod_nme:= mil.take("monet_mod_nme");
-	la_a := reverse(monet_mod_nme,);
+	la_a := reverse(monet_mod_nme);
 	ma_a := exist(la_a,ja_aH);
 barrier	na_a := not(ma_a);
-#		printf("loading... ");
+	mil.line("\t\tprintf(\"loading... \");");
 	oa_a := printf("loading... ");
-!ERROR: "		printf("done.\n");"
-!        ^
+!ERROR: "		module($h);"
+!        									^
 ! syntax error, unexpected TOK_MODULE.

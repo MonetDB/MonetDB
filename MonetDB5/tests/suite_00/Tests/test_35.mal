@@ -71,9 +71,9 @@
 	mil.line("b.insert(oid(3),\"..\");");
 	bb_a := oid(3);
 	cb_a := insert(b,bb_a,"..");
-	mil.line("z:= b.semijoin(b);");
-	z := semijoin(b,b);
-	mil.line("z.print();");
-	db_a := print(z);
+	mil.line("var z1:= b.semijoin(b);");
+	z1 := semijoin(b,b);
+	mil.line("z1.print();");
+	db_a := print(z1);
 	mil.line("quit();");
 	eb_a := quit();

@@ -1,20 +1,67 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#var b := new(int,int);
-	b := new(:int,:int);
-#b.insert(1,2);
+#include "mil_prelude";
+	mil.line("# >Number:         27\n");
+	mil.line("# >Category:       Mserver");
+	mil.line("# >Category:       Mserver\n");
+	mil.line("# >Synopsis:       Batloop.");
+	mil.line("# >Synopsis:       Batloop.\n");
+	mil.line("# >Confidential:   no");
+	mil.line("# >Confidential:   no\n");
+	mil.line("# >Severity:       serious");
+	mil.line("# >Severity:       serious\n");
+	mil.line("# >Priority:       medium");
+	mil.line("# >Priority:       medium\n");
+	mil.line("# >Responsible:    boncz");
+	mil.line("# >Responsible:    boncz\n");
+	mil.line("# >State:          closed");
+	mil.line("# >State:          closed\n");
+	mil.line("# >Class:          sw-bug");
+	mil.line("# >Class:          sw-bug\n");
+	mil.line("# >Submitter-Id:   unknown");
+	mil.line("# >Submitter-Id:   unknown\n");
+	mil.line("# >Arrival-Date:   Thu Sep 18 13:45:07 1997");
+	mil.line("# >Arrival-Date:   Thu Sep 18 13:45:07 1997\n");
+	mil.line("# >Originator:     quak");
+	mil.line("# >Originator:     quak\n");
+	mil.line("# >Organization:");
+	mil.line("# >Organization:\n");
+	mil.line("# >Release:        970101");
+	mil.line("# >Release:        970101\n");
+	mil.line("# >Environment:");
+	mil.line("# >Environment:\n");
+	mil.line("# All");
+	mil.line("# All\n");
+	mil.line("# >Description:");
+	mil.line("# >Description:\n");
+	mil.line("# The following program should work (I think).");
+	mil.line("# The following program should work (I think).\n");
+	mil.line("# ");
+	mil.line("# \n");
+	mil.line("# > b := new(int,int);");
+	mil.line("# > b := new(int,int);\n");
+	mil.line("# > b.insert(1,2);");
+	mil.line("# > b.insert(1,2);\n");
+	mil.line("# > b@batloop(){$h.print;}");
+	mil.line("# > b@batloop(){$h.print;}\n");
+	mil.line("#  It doesn't");
+	mil.line("#  It doesn't\n");
+	mil.line("");
+	mil.line("var b := new(int,int);");
+	b := new(nil:int,nil:int);
+	mil.line("b.insert(1,2);");
 	aa_a := insert(b,1,2);
-#b@batloop(){$h.print();}
+	mil.line("b@batloop(){$h.print();}");
 barrier	ba_a := bunStream(b,ba_aH,ba_aT);
-	ca_a := print(ba_aH,);
+	ca_a := print(ba_aH);
 redo	ba_a;
 exit	ba_a;
-#quit();
+	mil.line("quit();");
 	da_a := quit();

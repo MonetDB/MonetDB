@@ -28,7 +28,7 @@ var b:= new(oid,str);
 b.insert(oid(1),"hello");
 b.insert(oid(2),"world");
 b.insert(oid(3),"..");
-z:= b.semijoin(b);
-z.print();
+var z1:= b.semijoin(b);
+z1.print();
 
 quit();

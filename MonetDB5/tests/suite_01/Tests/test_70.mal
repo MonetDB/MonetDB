@@ -1,36 +1,38 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#setoid(oid(20000000));
+#include "mil_prelude";
+	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#var p:=  int("21");
+	mil.line("# The Monet interpreter supports type casts\n");
+	mil.line("var p:=  int(\"21\");");
 	p := int("21");
-#p.print();
-	ca_a := print(p,);
-#p:= flt("23");
+	mil.line("p.print();");
+	ca_a := print(p);
+	mil.line("p:= flt(\"23\");");
 	p := flt("23");
-#p.print();
-	da_a := print(p,);
-#p:= bit(1);
+	mil.line("p.print();");
+	da_a := print(p);
+	mil.line("p:= bit(1);");
 	p := bit(1);
-#p.print();
-	ea_a := print(p,);
-#var z:= int(p);
+	mil.line("p.print();");
+	ea_a := print(p);
+	mil.line("var z:= int(p);");
 	z := int(p);
-#z.print();
-	fa_a := print(z,);
-#p:= bit(0);
+	mil.line("z.print();");
+	fa_a := print(z);
+	mil.line("p:= bit(0);");
 	p := bit(0);
-#p.print();
-	ga_a := print(p,);
-#p:= str(1);
+	mil.line("p.print();");
+	ga_a := print(p);
+	mil.line("p:= str(1);");
 	p := str(1);
-#quit();
+	mil.line("quit();");
 	ha_a := quit();

@@ -1,44 +1,45 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#setoid(oid(20000000));
+#include "mil_prelude";
+	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#var docid := new( void, oid );
-	docid := new(:void,:oid);
-#var tid := new( void, str );
-	tid := new(:void,:str);
-#docid := w.mark(nil).reverse();
+	mil.line("#split w in twee tabellen\n");
+	mil.line("var docid := new( void, oid );");
+	docid := new(nil:void,nil:oid);
+	mil.line("var tid := new( void, str );");
+	tid := new(nil:void,nil:str);
+	mil.line("docid := w.mark(nil).reverse();");
 	w:= mil.take("w");
-	nil:= mil.take("nil");
 	ca_a := mark(w,nil);
-	docid := reverse(ca_a,);
-#docid.print();
-	da_a := print(docid,);
-#tid := w.reverse().mark(nil).reverse();
-	ea_a := reverse(w,);
+	docid := reverse(ca_a);
+	mil.line("docid.print();");
+	da_a := print(docid);
+	mil.line("tid := w.reverse().mark(nil).reverse();");
+	ea_a := reverse(w);
 	fa_a := mark(ea_a,nil);
-	tid := reverse(fa_a,);
-#tid.print();
-	ga_a := print(tid,);
-#docid.seqbase( 1000@0 );
+	tid := reverse(fa_a);
+	mil.line("tid.print();");
+	ga_a := print(tid);
+	mil.line("docid.seqbase( 1000@0 );");
 	ha_a := bat.setSequenceBase(docid,1000@0);
-#docid.print();
-	ia_a := print(docid,);
-#tid.seqbase( 1000@0 );
+	mil.line("docid.print();");
+	ia_a := print(docid);
+	mil.line("tid.seqbase( 1000@0 );");
 	ja_a := bat.setSequenceBase(tid,1000@0);
-#tid.print();
-	ka_a := print(tid,);
-#CTgroup( docid, tid ).print();
+	mil.line("tid.print();");
+	ka_a := print(tid);
+	mil.line("CTgroup( docid, tid ).print();");
 	la_a := group(docid,tid);
-	ma_a := print(la_a,);
-#quit();
+	ma_a := print(la_a);
+	mil.line("quit();");
 	na_a := quit();
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #Identifer 'CTgroup' mapped to 'group'

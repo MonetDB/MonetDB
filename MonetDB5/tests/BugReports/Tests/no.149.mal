@@ -1,48 +1,108 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#setoid(oid(20000000));
+#include "mil_prelude";
+	mil.line("# >Number:         149\n");
+	mil.line("# >Category:       Mserver");
+	mil.line("# >Category:       Mserver\n");
+	mil.line("# >Synopsis:       string manipulation in while loops has problems");
+	mil.line("# >Synopsis:       string manipulation in while loops has problems\n");
+	mil.line("# >Confidential:   no");
+	mil.line("# >Confidential:   no\n");
+	mil.line("# >Severity:       critical");
+	mil.line("# >Severity:       critical\n");
+	mil.line("# >Priority:       high");
+	mil.line("# >Priority:       high\n");
+	mil.line("# >Responsible:    boncz (Peter Boncz)");
+	mil.line("# >Responsible:    boncz (Peter Boncz)\n");
+	mil.line("# >State:          open");
+	mil.line("# >State:          open\n");
+	mil.line("# >Class:          sw-bug");
+	mil.line("# >Class:          sw-bug\n");
+	mil.line("# >Submitter-Id:   unknown");
+	mil.line("# >Submitter-Id:   unknown\n");
+	mil.line("# >Arrival-Date:   Tue Mar 24 10:59:26 1998");
+	mil.line("# >Arrival-Date:   Tue Mar 24 10:59:26 1998\n");
+	mil.line("# >Originator:     niels@cwi.nl");
+	mil.line("# >Originator:     niels@cwi.nl\n");
+	mil.line("# >Organization:");
+	mil.line("# >Organization:\n");
+	mil.line("# UvA");
+	mil.line("# UvA\n");
+	mil.line("# >Release:        980101");
+	mil.line("# >Release:        980101\n");
+	mil.line("# >Environment:");
+	mil.line("# >Environment:\n");
+	mil.line("# SunOS");
+	mil.line("# SunOS\n");
+	mil.line("# >Description:");
+	mil.line("# >Description:\n");
+	mil.line("# Following script");
+	mil.line("# Following script\n");
+	mil.line("# crashes and returns wrong output");
+	mil.line("# crashes and returns wrong output\n");
+	mil.line("# ");
+	mil.line("# \n");
+	mil.line("# var b := new (int, str );");
+	mil.line("# var b := new (int, str );\n");
+	mil.line("# ");
+	mil.line("# \n");
+	mil.line("# proc test1() : void {");
+	mil.line("# proc test1() : void {\n");
+	mil.line("#         var i := 1;");
+	mil.line("#         var i := 1;\n");
+	mil.line("#         \"   test1\".print;");
+	mil.line("#         \"   test1\".print;\n");
+	mil.line("#         s := sprintf(\"Hallo dit is een string %d\", i);");
+	mil.line("#         s := sprintf(\"Hallo dit is een string %d\", i);\n");
+	mil.line("#         s.print;");
+	mil.line("#         s.print;\n");
+	mil.line("#         b.insert(i,s);");
+	mil.line("#         b.insert(i,s);\n");
+	mil.line("# #       b.insert(i,sprintf(\"Hallo %d\", i));");
+	mil.line("# #       b.insert(i,sprintf(\"Hallo %d\", i));\n");
+	mil.line("#         \"   end test1\".print;");
+	mil.line("#         \"   end test1\".print;\n");
+	mil.line("# }");
+	mil.line("# }\n");
+	mil.line("# ");
+	mil.line("# \n");
+	mil.line("# var j := 0;");
+	mil.line("# var j := 0;\n");
+	mil.line("# while(j < 5 ){");
+	mil.line("# while(j < 5 ){\n");
+	mil.line("#         test1;");
+	mil.line("#         test1;\n");
+	mil.line("#         j := j + 1;");
+	mil.line("#         j := j + 1;\n");
+	mil.line("# }");
+	mil.line("# }\n");
+	mil.line("# ");
+	mil.line("# \n");
+	mil.line("# b.print;");
+	mil.line("# b.print;\n");
+	mil.line("# quit;");
+	mil.line("# quit;\n");
+	mil.line("#  ");
+	mil.line("#  \n");
+	mil.line("# ");
+	mil.line("# \n");
+	mil.line("");
+	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-#var b := new (int, str );
-	b := new(:int,:str);
+	mil.line("var b := new (int, str );");
+	b := new(nil:int,nil:str);
+	mil.line("proc test1() : void {");
 function test1():void;
-#        var i := 1;
+	mil.line("        var i := 1;");
 	i := 1;
-#        "   test1".print();
-	ca_a := print("   test1",);
-#        var s := sprintf("Hallo dit is een string %d", i);
-	s := sprintf("Hallo dit is een string %d",i);
-#        s.print();
-	da_a := print(s,);
-#        b.insert(i,s);
-	ea_a := insert(b,i,s);
-#        b.insert(i,sprintf("Hallo %d", i));
-	fa_a := sprintf("Hallo %d",i);
-	ga_a := insert(b,i,fa_a);
-#        "   end test1".print();
-	ha_a := print("   end test1",);
-end test1;
-#var j := 0;
-	j := 0;
-#while(j < 5 ){
-barrier	ia_a := true;
-barrier	ja_a := <(j,5);
-#        test1();
-	ka_a := test1();
-#        j := j + 1;
-	j := +(j,1);
-redo	ia_a;
-exit	ja_a;
-exit	ia_a;
-#b.print();
-	b:= mil.take("b");
-	la_a := print(b,);
-#quit();
-	ma_a := quit();
+!ERROR: "        "   test1".print();"
+!                            ^
+! syntax error, unexpected '.', expecting TOK_ITERATION or TOK_ITERATION_PAR or ';'.

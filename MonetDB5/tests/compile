@@ -2,7 +2,7 @@ for i in `ls *milS`
 do
 	base=`basename $i .milS`
 	echo "====>" $base
-	M2m --trace-code=1 $i >$base.mal
+	M2m --trace=1 $i >$base.mal
 	if test -e $base.patch
 	then
 		$base.patch
