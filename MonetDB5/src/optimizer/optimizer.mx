@@ -209,9 +209,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if( s == NULL)
 		GDKerror("@1optimizer:Could not find %s.%s\n",modnme,fcnnme);
-	else
-		printf("#@1optimizer %s.%s\n",modnme,fcnnme);
-	setLifespan(s->def);
+	optimizerCheck(s->def,"@1optimizer");
 	@1optimizer(s->def,0,0);
 	/* if(c->listing) printFunction(GDKout,s->def,c->listing);*/
 

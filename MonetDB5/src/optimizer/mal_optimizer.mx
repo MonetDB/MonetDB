@@ -644,7 +644,6 @@ void debugLifespan(MalBlkPtr mb){
 void setLifespan(MalBlkPtr mb){
     int pc,k;
     InstrPtr p;
-	int blks[MAXDEPTH], top= 0;
 
     for(k=0;k<mb->vtop;k++){
         VarPtr v= getVar(mb, k);
@@ -652,11 +651,6 @@ void setLifespan(MalBlkPtr mb){
     }
     for(pc=0;pc<mb->stop; pc++){
         p= getInstrPtr(mb,pc);
-		if( blockStart(p)){
-			if( top <MAXDEPTH-1)
-				blks[top++]= pc;
-			/* raise error */
-		} 
         for(k=0;k<p->argc; k++){
             VarPtr v= getVar(mb, p->argv[k]);
             if( v->beginLifespan==0)
@@ -667,8 +661,6 @@ void setLifespan(MalBlkPtr mb){
 				v->endLifespan = pc;
 			}
         }
-		if( blockExit(p))
-			top--;
     }
     /* debugLifespan(mb); */
 }
@@ -778,6 +770,7 @@ void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 				v->endLifespan =pc;
 		}
     }
+	setLifespan(mb);
 }
 int ARoptimizerStep(MalBlkPtr mb, int pc)
 {   int k,kn=0;
@@ -1661,31 +1654,34 @@ int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 }
 void ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
 {
-	int t;
-	t= getVarType(mb,getArg(p,1));
+	int t,a,b;
+
+	a= getArg(p,0);
+	b= getArg(p,1);
+	t= getVarType(mb,b);
 	if( strcmp(functionName(p),"int")==0 && t== TYPE_int){
-		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
 		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
 	}
 	if( strcmp(functionName(p),"lng")==0 && t== TYPE_lng){
-		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
 		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
 	}
 	if( strcmp(functionName(p),"sht")==0 && t== TYPE_sht){
-		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
 		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
 	}
 	if( strcmp(functionName(p),"dbl")==0 && t== TYPE_dbl){
-		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
 		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
 	}
 	if( strcmp(functionName(p),"flt")==0 && t== TYPE_flt){
-		ARreplaceAlias(mb,i+1,mb->stop, getArg(p,0), getArg(p,1));
 		removeInstruction(mb,p);
+		ARreplaceAlias(mb,i,mb->stop, a, b);
 		return;
 	}
 }
@@ -1709,7 +1705,7 @@ at the end of the optimization attempt.
 	
 	optimizerCheck(mb,"expressionAccumulation");
     for(i=1; i<mb->stop; i++){
-        VarPtr v;
+        VarPtr v,v0;
         p= getInstrPtr(mb,i);
 		if( moduleName(p)== 0) 
 			continue;
@@ -1723,23 +1719,30 @@ at the end of the optimization attempt.
 		if( p->argc == 3) {
 			/* binary/unary operation, check first argument */
 			v= getVar(mb, a =getArg(p,1));
-			b= getArg(p,0);
+			v0= getVar(mb, b =getArg(p,0));
 
-			if( isaBatType(v->type) && (v->endLifespan ==i || a==b) && v->depth<= depth ) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan) || a == b){
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"Found binary OR candidate left\n");
+					stream_printf(GDKout,"Found binary OR candidate \n");
+					stream_printf(GDKout,"pc=%d valid=%d \n",
+							i, ORvalidSource(mb,a,i,v->beginLifespan));
+					stream_printf(GDKout,"target %d %d-%d\n", b,v0->beginLifespan, v0->endLifespan);
+					stream_printf(GDKout,"arg 1 %d %d-%d\n", a,v->beginLifespan, v->endLifespan);
+					stream_printf(GDKout,"arg 2 %d %d-%d\n", getArg(p,2),
+						getVar(mb,getArg(p,2))->beginLifespan, 
+						getVar(mb,getArg(p,2))->endLifespan);
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
+			if( isaBatType(v->type) && (v->endLifespan ==i || a==b) && v->depth<= depth ) {
+				if( ORvalidSource(mb,a,i, v->beginLifespan) || a == b){
 					pushArgument(mb,p,a);
 					for(j= p->argc-1; j>p->retc; j--)
 						p->argv[j]= p->argv[j-1];
-					p->argv[p->retc]= a;
-					p->argv[0]= newTmpVariable(mb, TYPE_void);
+					p->argv[p->retc]= p->argv[0]= a;
 					typeChecker(scope,mb,p,TRUE);
 					if( a !=b)
 						ARreplaceAlias(mb,i+1,mb->stop, b, a);
 #ifdef DEBUG_MAL_OPTIMIZER
+					stream_printf(GDKout,"FIRST\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 					continue;
@@ -1749,19 +1752,15 @@ at the end of the optimization attempt.
 			v= getVar(mb, a =getArg(p,2));
 			if( isaBatType(v->type) && (v->endLifespan ==i || a==b)  && v->depth<= depth) {
 				if( ORvalidSource(mb,a,i, v->beginLifespan)  || a== b){
-#ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"Found binary OR candidate right\n");
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-#endif
 					pushArgument(mb,p,a);
 					for(j= p->argc-1; j>p->retc; j--)
 						p->argv[j]= p->argv[j-1];
-					p->argv[p->retc]= a;
-					p->argv[0]= newTmpVariable(mb, TYPE_void);
+					p->argv[0]= p->argv[p->retc]= a;
 					typeChecker(scope,mb,p,TRUE);
 					if( a !=b)
 						ARreplaceAlias(mb,i+1,mb->stop, b, a);
 #ifdef DEBUG_MAL_OPTIMIZER
+					stream_printf(GDKout,"SECOND\n");
 					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 					continue;
