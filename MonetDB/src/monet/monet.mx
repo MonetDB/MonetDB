@@ -334,7 +334,7 @@ char            monet_cwd[PATHLENGTH]={0}, *monet_ver=0;
 int             monet_listing=0, monet_daemon=0;
 int             monet_singlethreaded=0;
 str             *monet_script = NULL;
-str		monet_dbinit; 		
+str		monet_dbinit = NULL; 		
 str		monet_general =0;
 MT_Lock         monet_critical, monet_notifyLock, monet_voidLock;
 MT_Lock		monet_parserLock, monet_contextLock;
