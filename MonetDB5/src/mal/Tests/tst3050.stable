@@ -5,11 +5,11 @@
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB
 # dbname:demo
 ##Parsing properties and keeping them around
-#function dummy(a:int{+unsafe,sorted},b:int{sequence}):int{dense};
+#function dummy(a:int{unsafe,sorted},b:int{sequence}):int{dense};
 #	return dummy;
 #end dummy;
-function Admin.dummy(a:int{sorted,unsafe},b:int{sequence}):int;	# 0  (dummy:int)<-(a:int)(b:int)
-    return dummy{dense};	# 1  (dummy:int)<-(dummy:int)
+function Admin.dummy(a:int{sequence},b:int):int;	# 0  (dummy:int)<-(a:int)(b:int)
+    return dummy{dense,sorted,unsafe};	# 1  (dummy:int)<-(dummy:int)
 end dummy;	# 2  
 #
 #t:= dummy(a{sorted},b{sequence});

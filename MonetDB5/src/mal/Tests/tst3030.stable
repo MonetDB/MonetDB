@@ -6,31 +6,29 @@
 # dbname:demo
 ##Parsing properties and keeping them around
 ## note the use of the first parameter to obtain property set
-#function newsemijoin(A:bat[int{sorted,dense},any::1], B:bat[int{sorted},any::2])
-#end newsemijoin;
-function Admin.newsemijoin(A:bat[int,any::1]{unique,dense,sorted},B:bat[int,any::2]{sorted}):bat[int,any::1];	# 0  dynamic (A:bat[int,any::1])<-(A:bat[int,any::1])(B:bat[int,any::2])
-end newsemijoin;	# 1  
-#z:=new(:int{sorted},int);
+#function newsemijoin(A:bat[:int{sorted,dense},:any$1], 
 #w:=new(:{sequence},int);
-#w:bat[int,int]:=new(:int,:int);
-#y:=sort(w:bat[int,int]{sorted,dense});
 #print(1);
 #y:int{+sorted}:=sort(w);
 #
+!ERROR: function newsemijoin(A:bat[:int{sorted,dense},:any$1], 
+!                                       ^',' expected
+!ERROR: end newsemijoin;
+!       ^',' expected
 !ERROR: z:=new(:int{sorted},int);
-!                  ^',' expected
+!      ^<identifier> or <operator> expected
 !ERROR: w:=new(:{sequence},int);
-!               ^',' expected
+!               ^Type identifier expected
+!ERROR: w:bat[int,int]:=new(:int,:int);
+!      ^<type identifier> expected
 !ERROR: y:=sort(w:bat[int,int]{sorted,dense});
-!                ^',' expected
+!      ^',' expected
 !ERROR: y:int{+sorted}:=sort(w);
 !            ^'.' or '(' expected
-function Admin.main():int;	# 0  unknown (main:int)
-    z := new(:int);	# 1  unknown (z:any)<-($2:int)
-    w := new(:any);	# 2  unknown (w:bat[int,int])<-($4:any)
-    w := new(:int,:int);	# 3  unknown (w:bat[int,int])<-($5:int)($6:int)
-    y := sort(w);	# 4  unknown (y:int)<-(w:bat[int,int])
-    print(1);	# 5  unknown ($8:any)<-($9:int)
-    y;	# 6  unknown (y:int)
-end main;	# 7  unknown 
+function Admin.newsemijoin(A:any):any;	# 0  unknown (newsemijoin:any)<-(A:any)
+    $2;	# 1  unknown ($2:any)
+    w := new(any:);	# 2  unknown (w:any)<-($4:any)
+    print(1);	# 3  unknown ($5:any)<-($6:int)
+    y;	# 4  unknown (y:int)
+end newsemijoin;	# 5  unknown 
 >

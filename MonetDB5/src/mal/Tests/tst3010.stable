@@ -9,17 +9,17 @@
 #	j:= j+i;
 #	return j{freeze};
 #end add;
-function Admin.add(i:int{read},j:int{freeze,read}):int;	# 0  (add:int)<-(i:int)(j:int)
-    j{freeze,read} := calc.+(j{freeze,read},i{read});	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
-    return j{freeze,read};	# 2  (add:int)<-(j:int)
+function Admin.add(i:int{read},j:int{freeze}):int;	# 0  (add:int)<-(i:int)(j:int)
+    j{freeze} := calc.+(j{freeze},i{read});	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
+    return j{freeze};	# 2  (add:int)<-(j:int)
 end add;	# 3  
 #
 #function add2(i:int,j:int{read}):int{write,safe};
 #	k:= j+i;
 #	return k{freeze};
 #end ;
-function Admin.add2(i:int,j:int{read}):int;	# 0  (add2:int)<-(i:int)(j:int)
-    k{freeze} := calc.+(j{read},i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
+function Admin.add2(i:int{read},j:int):int;	# 0  (add2:int)<-(i:int)(j:int)
+    k{freeze} := calc.+(j,i{read});	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
     return k{freeze};	# 2  (add2:int)<-(k:int)
 end add2;	# 3  
 #
