@@ -52,6 +52,7 @@ static int TWIG_ID[] = {
     , [aop_cross]        = cross      /**< cross product (Cartesian product) */
     , [aop_eqjoin]       = eqjoin     /**< cross product (Cartesian product) */
     , [aop_project]      = project    /**< projection and renaming operator */
+    , [aop_select]       = select     /**< select by attribute = true */
     , [aop_rownum]       = rownum     /**< consecutive number generation */
 
     , [aop_serialize]    = serialize  /**< serialize algebra expression below
@@ -62,6 +63,12 @@ static int TWIG_ID[] = {
     , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
     , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
     , [aop_num_divide]   = num_divide   /**< arithmetic plus operator */
+
+    , [aop_num_gt]       = num_gt       /**< numeric greater than operator */
+    , [aop_num_eq]       = num_eq       /**< numeric greater than operator */
+
+    , [aop_bool_not]     = not          /**< boolean negation */
+
     , [aop_cast]         = cast         /**< algebra cast operator */
 };
 
@@ -76,12 +83,16 @@ static int TWIG_ID[] = {
 #undef cross
 #undef eqjoin
 #undef project
+#undef select
 #undef rownum
 #undef serialize
 #undef num_add
 #undef num_subtract
 #undef num_multiply
 #undef num_divide
+#undef num_gt
+#undef num_eq
+#undef not
 #undef cast
 
 /* ----------------------- End of twig setup -------------------- */

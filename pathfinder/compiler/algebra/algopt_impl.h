@@ -59,6 +59,11 @@ static int TWIG_ID[] = {
     , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
     , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
     , [aop_num_divide]   = num_divide   /**< arithmetic plus operator */
+
+    , [aop_num_gt]       = num_gt       /**< numeric equal operator */
+    , [aop_num_eq]       = num_eq       /**< numeric equal operator */
+
+    , [aop_bool_not]     = not          /**< boolean negation */
     
     , [aop_cast]         = cast         /**< algebra cast operator */
 };
@@ -80,6 +85,9 @@ static int TWIG_ID[] = {
 #undef num_subtract
 #undef num_multiply
 #undef num_divide
+#undef num_gt
+#undef num_eq
+#undef not
 #undef cast
 
 /* ----------------------- End of twig setup -------------------- */

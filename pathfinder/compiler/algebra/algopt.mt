@@ -48,10 +48,17 @@ node  lit_tbl      /* literal table */
       project      /* algebra projection and renaming operator */
       rownum       /* consecutive number generation */
       serialize    /* result serialization */
+
       num_add      /* arithmetic plus operator */
       num_subtract /* arithmetic minus operator */
       num_multiply /* arithmetic times operator */
       num_divide   /* arithmetic divide operator */
+
+      num_gt       /* numeric greater than */
+      num_eq       /* numeric equal */
+
+      not          /* logical negation (true <--> false) */
+
       cast         /* cast algebra data types */
       ;
 
@@ -94,6 +101,9 @@ AlgExpr:  num_subtract (AlgExpr);
 AlgExpr:  num_multiply (AlgExpr);
 AlgExpr:  num_divide (AlgExpr);
 AlgExpr:  cast (AlgExpr);
+AlgExpr:  not (AlgExpr);
+AlgExpr:  num_gt (AlgExpr);
+AlgExpr:  num_eq (AlgExpr);
 
 AlgExpr:  cross (AlgExpr, lit_tbl)
     {
@@ -184,6 +194,11 @@ EmptyExpr: num_add (EmptyExpr);
 EmptyExpr: num_subtract (EmptyExpr);
 EmptyExpr: num_multiply (EmptyExpr);
 EmptyExpr: num_divide (EmptyExpr);
+
+EmptyExpr: num_gt (EmptyExpr);
+EmptyExpr: num_eq (EmptyExpr);
+
+EmptyExpr: not (EmptyExpr);
 
 EmptyExpr: cast (EmptyExpr);
 

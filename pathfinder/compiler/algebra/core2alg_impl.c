@@ -318,6 +318,41 @@ PFcore2alg (PFcnode_t *c)
 
 }
 
+/**
+ * Implementation type that we use for a given XQuery type.
+ * Returns the algebra type that matches a given XQuery type
+ * best.
+ *
+ * Possible uses for this function:
+ *  - As a helper to compile the XQuery @c cast operator. We pick the
+ *    implementation type that best matches the requested type.
+ *  - Cast types before invoking a built-in operation (see the
+ *    `apply' translation in core2alg.mt.sed).
+ */
+static PFalg_simple_type_t
+implty (PFty_t ty)
+{
+    if (PFty_subtype (ty, PFty_star (PFty_xs_integer ())))
+        return aat_int;
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_decimal ())))
+        return aat_dec;
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_double ())))
+        return aat_dbl;
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_boolean ())))
+        return aat_bln;
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_string ())))
+        return aat_str;
+    else {
+        PFinfo (OOPS_WARNING,
+                "Don't know what the implementation type is of `%s'.",
+                PFty_str (ty));
+        PFinfo (OOPS_WARNING,
+                "I will simply try use the string type.");
+        PFinfo (OOPS_WARNING,
+                "If you know it, feel free to fix implty() in core2alg_impl.c");
+        return aat_str;
+    }
+}
 
 /**
  * Construct a new entry to be inserted into the variable environment.

@@ -264,14 +264,6 @@ BindingExpr:     for_ (var_, OptVar, CoreExpr, CoreExpr)
                                             proj ("iter", "inner"),
                                             proj ("item", "item")),
                                    "item", aat_int));
-            /*
-                             project (cast_item (rownum (map,
-                                                         "item",
-                                                         sortby ("inner"),
-                                                         "outer")),
-                              proj ("iter", "inner"),
-                              proj ("item", "item")));
-                              */
 
             /* insert $p into NEW environment */
             *((PFalg_env_t *) PFarray_add (env)) =
@@ -479,26 +471,11 @@ TypeswitchExpr:  typesw (CoreExpr,
 SequenceTypeCast: seqcast (seqtype, CoreExpr)
     =
     {
-        if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_integer ())))
-            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_int);
-        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_decimal ())))
-            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_dec);
-        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_double ())))
-            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_dbl);
-        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_boolean ())))
-            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_bln);
-        else if (PFty_subtype ($1$->sem.type, PFty_star (PFty_xs_string ())))
-            [[ $$ ]] = cast ([[ $2$ ]], "item", aat_str);
-        else {
-            PFinfo (OOPS_WARNING,
-                    "Don't know how to cast to `%s'.",
-                    PFty_str ($1$->sem.type));
-            PFinfo (OOPS_WARNING,
-                    "Please fix the seqcast rule in core2alg.mt.sed.");
-            PFinfo (OOPS_WARNING,
-                    "For now, I will just leave the operand unchanged.");
-            [[ $$ ]] = [[ $2$ ]];
-        }
+        /*
+         * `seqcast' nodes are only introduced for static typing.
+         * They are not meant to be executed.
+         */
+        [[ $$ ]] = [[ $2$ ]];
     }
     ;
 
@@ -799,17 +776,82 @@ TagName:         tag;
 TagName:         CoreExpr;
 
 FunctionAppl:    apply (FunctionArgs)
+    {
+        /* This rule only applies for built-in functions. */
+        if (! $$->sem.fun->builtin)
+            ABORT;
+    }
     =
     {
+        /*
+         * The XQuery semantics for arithmetics demands to cast both
+         * operands of, say, op:numeric-add() to the most specific type
+         * that both operands can be promoted to. This, however, means
+         * that we cannot always choose the correct implementation at
+         * compile time.
+         *
+         * (Consider
+         *
+         *     for $x in (1, 1.5) return
+         *       for $y in (2, 2.5) return
+         *         $x + $y  .
+         *
+         * This will produce four invocations of op:numeric-add(). The
+         * first one will be integer, integer. The last one is a
+         * decimal, decimal. In the middle two cases we need to cast one
+         * operand to decimal and pick the decimal, decimal
+         * implementation. Static typing does not give us sufficient
+         * information here, but will pick the decimal, decimal
+         * implementation for all cases.)
+         *
+         * Complying with the XQuery semantics would thus require to
+         * have a polymorphic (`+') operator that can deal with all
+         * the possible type combinations. This would not only make
+         * translation quite ugly, but would probably hurt performance.
+         *
+         * After some discussions we thus agreed on an implementation
+         * that hurts least but still stays reasonably close to the
+         * XQuery semantics. After we decided on either of the possible
+         * implementations of any built-in function, we cast all of its
+         * arguments to the corresponding parameter type. In the above
+         * example, this would cast all values to decimal, before
+         * using the decimal, decimal implementation for all the four
+         * cases.
+         */
+        unsigned int i;
+
         if (!$$->sem.fun->alg)
             PFoops (OOPS_FATAL,
                     "Algebra implementation for function `%s' unknown.",
                     PFqname_str ($$->sem.fun->qname));
 
+        /*
+         * Cast parameters accordingly.
+         *
+         * foreach parameter p
+         *   p := cast (p, "item", implementation type for this parameter)
+         *
+         */
+        for (i = 0; i < PFarray_last ([[ $1$ ]]->sem.builtin.args); i++)
+            *((PFalg_op_t **) PFarray_at ([[ $1$ ]]->sem.builtin.args, i))
+                = cast (*((PFalg_op_t **)
+                            PFarray_at ([[ $1$ ]]->sem.builtin.args, i)),
+                        "item",
+                        implty ($$->sem.fun->par_ty[i]));
+
         [[ $$ ]] = $$->sem.fun->alg (loop, &delta, 
                                      [[ $1$ ]]->sem.builtin.args->base);
     }
     ;
+
+FunctionAppl:    apply (FunctionArgs)
+    {
+        /* This rule only applies for user-defined functions. */
+        if ($$->sem.fun->builtin)
+            ABORT;
+    }
+    =
+    { PFoops (OOPS_FATAL, "User-defined functions not implemented yet."); };
 
 FunctionArgs:    arg (CoreExpr, FunctionArgs)
     =

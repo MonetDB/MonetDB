@@ -60,9 +60,21 @@ PFalg_op_t *PFbui_op_numeric_divide (PFalg_op_t *loop, PFalg_op_t **delta,
                                      PFalg_op_t **args);
 
 
-PFalg_op_t * PFbui_op_typed_value (PFalg_op_t *loop __attribute__((unused)),
-                                   PFalg_op_t **delta __attribute__((unused)),
-                                   PFalg_op_t **args);
+PFalg_op_t *PFbui_op_typed_value (PFalg_op_t *loop __attribute__((unused)),
+                                  PFalg_op_t **delta __attribute__((unused)),
+                                  PFalg_op_t **args);
+
+PFalg_op_t *PFbui_op_gt (PFalg_op_t *loop __attribute__((unused)),
+                         PFalg_op_t **delta __attribute__((unused)),
+                         PFalg_op_t **args);
+
+PFalg_op_t *PFbui_op_lt (PFalg_op_t *loop __attribute__((unused)),
+                         PFalg_op_t **delta __attribute__((unused)),
+                         PFalg_op_t **args);
+
+PFalg_op_t *PFbui_op_eq (PFalg_op_t *loop __attribute__((unused)),
+                         PFalg_op_t **delta __attribute__((unused)),
+                         PFalg_op_t **args);
 
 #endif   /* BUITLINS_H */
 

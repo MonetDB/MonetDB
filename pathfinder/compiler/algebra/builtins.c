@@ -47,21 +47,21 @@
  */
 PFalg_op_t *
 PFbui_op_numeric_add (PFalg_op_t *loop __attribute__((unused)),
-		      PFalg_op_t **delta __attribute__((unused)),
-		      PFalg_op_t **args)
+                      PFalg_op_t **delta __attribute__((unused)),
+                      PFalg_op_t **args)
 {
     /* TODO: check if this node was already built */
 
     return project (add (eqjoin (args[0],
-				 project (args[1],
-					  proj ("iter1", "iter"),
-					  proj ("item1", "item")),
-				 "iter",
-				 "iter1"),
-			 "item", "item1", "res"),
-		    proj ("iter", "iter"),
-		    proj ("pos", "pos"),
-		    proj ("item", "res"));
+                                 project (args[1],
+                                          proj ("iter1", "iter"),
+                                          proj ("item1", "item")),
+                                 "iter",
+                                 "iter1"),
+                         "res", "item", "item1"),
+                    proj ("iter", "iter"),
+                    proj ("pos", "pos"),
+                    proj ("item", "res"));
 }
 
 
@@ -77,21 +77,21 @@ PFbui_op_numeric_add (PFalg_op_t *loop __attribute__((unused)),
  */
 PFalg_op_t *
 PFbui_op_numeric_subtract (PFalg_op_t *loop __attribute__((unused)),
-			   PFalg_op_t **delta __attribute__((unused)),
-			   PFalg_op_t **args)
+                           PFalg_op_t **delta __attribute__((unused)),
+                           PFalg_op_t **args)
 {
     /* TODO: check if this node was already built */
 
     return project (subtract (eqjoin (args[0],
-				      project (args[1],
-					       proj ("iter1", "iter"),
-					       proj ("item1", "item")),
-				      "iter",
-				      "iter1"),
-			      "item", "item1", "res"),
-		    proj ("iter", "iter"),
-		    proj ("pos", "pos"),
-		    proj ("item", "res"));
+                                      project (args[1],
+                                               proj ("iter1", "iter"),
+                                               proj ("item1", "item")),
+                                      "iter",
+                                      "iter1"),
+                              "res", "item", "item1"),
+                    proj ("iter", "iter"),
+                    proj ("pos", "pos"),
+                    proj ("item", "res"));
 }
 
 
@@ -107,21 +107,21 @@ PFbui_op_numeric_subtract (PFalg_op_t *loop __attribute__((unused)),
  */
 PFalg_op_t *
 PFbui_op_numeric_multiply (PFalg_op_t *loop __attribute__((unused)),
-			   PFalg_op_t **delta __attribute__((unused)),
-			   PFalg_op_t **args)
+                           PFalg_op_t **delta __attribute__((unused)),
+                           PFalg_op_t **args)
 {
     /* TODO: check if this node was already built */
 
     return project (multiply (eqjoin (args[0],
-				      project (args[1],
-					       proj ("iter1", "iter"),
-					       proj ("item1", "item")),
-				      "iter",
-				      "iter1"),
-			      "item", "item1", "res"),
-		    proj ("iter", "iter"),
-		    proj ("pos", "pos"),
-		    proj ("item", "res"));
+                                      project (args[1],
+                                               proj ("iter1", "iter"),
+                                               proj ("item1", "item")),
+                                      "iter",
+                                      "iter1"),
+                              "res", "item", "item1"),
+                    proj ("iter", "iter"),
+                    proj ("pos", "pos"),
+                    proj ("item", "res"));
 }
 
 
@@ -130,28 +130,132 @@ PFbui_op_numeric_multiply (PFalg_op_t *loop __attribute__((unused)),
  *
  * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
  * ------------------------------------------------------------------
- *                 env,loop,delta: (e1 / e2) =>
+ *                env,loop,delta: (e1 div e2) =>
  * (proj_iter,pos,item:res(num-divide_res<item,item1>
  *             (q1 |X| (iter,iter1) (proj_iter1:iter,item1:item q2))),
  *              delta2)
  */
 PFalg_op_t *
 PFbui_op_numeric_divide (PFalg_op_t *loop __attribute__((unused)),
-			 PFalg_op_t **delta __attribute__((unused)),
-			 PFalg_op_t **args)
+                         PFalg_op_t **delta __attribute__((unused)),
+                         PFalg_op_t **args)
 {
     /* TODO: check if this node was already built */
 
     return project (divide (eqjoin (args[0],
-				    project (args[1],
-					     proj ("iter1", "iter"),
-					     proj ("item1", "item")),
-				    "iter",
-				    "iter1"),
-			    "item", "item1", "res"),
-		    proj ("iter", "iter"),
-		    proj ("pos", "pos"),
-		    proj ("item", "res"));
+                                    project (args[1],
+                                             proj ("iter1", "iter"),
+                                             proj ("item1", "item")),
+                                    "iter",
+                                    "iter1"),
+                            "res", "item", "item1"),
+                    proj ("iter", "iter"),
+                    proj ("pos", "pos"),
+                    proj ("item", "res"));
+}
+
+/**
+ * Build up operator tree for built-in function 'op:gt'
+ *
+ * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
+ * ------------------------------------------------------------------
+ *                 env,loop,delta: (e1 < e2) =>
+ * (
+ *  proj_iter,pos,item:res (
+ *    gt_res:item,item1 (
+ *       q1 |X| (iter,iter1) (proj_iter1:iter,item1:item q2)))
+ *  ,
+ *  delta2
+ * )
+ *
+ */
+PFalg_op_t *
+PFbui_op_gt (PFalg_op_t *loop __attribute__((unused)),
+             PFalg_op_t **delta __attribute__((unused)),
+             PFalg_op_t **args)
+{
+    return
+        project (
+            gt (
+                eqjoin (args[0],
+                        project (args[1],
+                                 proj ("iter1", "iter"),
+                                 proj ("item1", "item")),
+                        "iter", "iter1"),
+                "res", "iter", "iter1"),
+            proj ("iter", "iter"),
+            proj ("pos", "pos"),
+            proj ("item", "res"));
+}
+
+
+/**
+ * Build up operator tree for built-in function 'op:lt'
+ *
+ * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
+ * ------------------------------------------------------------------
+ *                 env,loop,delta: (e1 < e2) =>
+ * (
+ *  proj_iter,pos,item:res (
+ *    gt_res:item,item1 (
+ *       q2 |X| (iter,iter1) (proj_iter1:iter,item1:item q1)))
+ *  ,
+ *  delta2
+ * )
+ *
+ */
+PFalg_op_t *
+PFbui_op_lt (PFalg_op_t *loop __attribute__((unused)),
+             PFalg_op_t **delta __attribute__((unused)),
+             PFalg_op_t **args)
+{
+    return
+        project (
+            gt (
+                eqjoin (args[1],
+                        project (args[0],
+                                 proj ("iter1", "iter"),
+                                 proj ("item1", "item")),
+                        "iter", "iter1"),
+                "res", "iter", "iter1"),
+            proj ("iter", "iter"),
+            proj ("pos", "pos"),
+            proj ("item", "res"));
+}
+
+
+/**
+ * Build up operator tree for built-in function 'op:eq'
+ *
+ * env,loop,delta: e1 => q1,delta1   env,loop,delta1: e2 => q2,delta2
+ * ------------------------------------------------------------------
+ *                 env,loop,delta: (e1 < e2) =>
+ * (
+ *  proj_iter,pos,item:res (
+ *    eq_res:item,item1 (
+ *       q2 |X| (iter,iter1) (proj_iter1:iter,item1:item q1)))
+ *  ,
+ *  delta2
+ * )
+ *
+ */
+PFalg_op_t *
+PFbui_op_eq (PFalg_op_t *loop __attribute__((unused)),
+             PFalg_op_t **delta __attribute__((unused)),
+             PFalg_op_t **args)
+{
+    return
+        project (
+            eq (
+                eqjoin (args[1],
+                        project (args[0],
+                                 proj ("iter1", "iter"),
+                                 proj ("item1", "item")),
+                        "iter", "iter1"),
+                "res", "iter", "iter1"),
+            proj ("iter", "iter"),
+            proj ("pos", "pos"),
+            proj ("item", "res"));
 }
 
 
@@ -160,8 +264,8 @@ PFbui_op_numeric_divide (PFalg_op_t *loop __attribute__((unused)),
  */
 PFalg_op_t *
 PFbui_op_typed_value (PFalg_op_t *loop __attribute__((unused)),
-		      PFalg_op_t **delta __attribute__((unused)),
-		      PFalg_op_t **args)
+                      PFalg_op_t **delta __attribute__((unused)),
+                      PFalg_op_t **args)
 {
     return args[0];
 }

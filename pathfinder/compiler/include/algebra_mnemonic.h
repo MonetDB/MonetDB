@@ -80,13 +80,10 @@
 #define divide(a,b,c,d)   PFalg_divide ((a),(b),(c),(d))
 
 /* numeric equal operator */
-#define equal(a,b,c,d)    PFalg_equal ((a),(b),(c),(d))
-
-/* numeric less-than operator */
-#define less_than(a,b,c,d) PFalg_less_than ((a),(b),(c),(d))
+#define eq(a,b,c,d)    PFalg_eq ((a),(b),(c),(d))
 
 /* numeric greater-than operator */
-#define greater_than(a,b,c,d) PFalg_greater_than ((a),(b),(c),(d))
+#define gt(a,b,c,d) PFalg_gt ((a),(b),(c),(d))
 
 /* numeric negation operator */
 #define neg(a,b,c)        PFalg_neg ((a),(b),(c))

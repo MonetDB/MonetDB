@@ -19,6 +19,8 @@ Usage: pf [OPTION] [FILE]
 
 = -h, --help: print this help message
 = -q, --quiet: do not print informational messages to log file
+= -H, --print-mil_summer: read algebra code from Teggy's Haskell prototype
+        (will not read XQuery input then)
 = -M, --print-mil_summer: print MIL code (summer version) and stop
 = -P, --print-human-readable: print internal tree structure human-readable
 = -D, --print-att-dot: print internal tree structure in AT&T dot notation
@@ -39,8 +41,8 @@ Usage: pf [OPTION] [FILE]
         11  after type inference and checking
         12  after XQuery Core optimization
         13  after the Core tree has been translated to the internal algebra
-        14  after the common subexpression elimination on the algebra tree
-        15  after the algebra tree has been rewritten/optimized
+        14  after the algebra tree has been rewritten/optimized
+        15  after the common subexpression elimination on the algebra tree
         16  after the algebra has been translated to MIL
         17  after the MIL program has been serialized
 = -p, --print-parse-tree: print internal parse tree

@@ -82,6 +82,9 @@
 /** order() operator (destructively re-orders a BAT by its head) */
 #define order(a) PFmil_order((a))
 
+/** select() operator */
+#define select(a,b) PFmil_select((a), (b))
+
 /** project() operator */
 #define project(a,b) PFmil_project((a), (b))
 
@@ -153,6 +156,15 @@
 
 /** multiplexed arithmetic divide */
 #define mdiv(a,b) PFmil_mdiv ((a), (b))
+
+/** multiplexed comparison (greater than) */
+#define mgt(a,b) PFmil_mgt ((a), (b))
+
+/** multiplexed comparison (equality) */
+#define meq(a,b) PFmil_meq ((a), (b))
+
+/** multiplexed boolean negation */
+#define mnot(a) PFmil_mnot (a)
 
 /** serialization function */
 #define serialize(prefix, a, b, c, d, e, f, g) \

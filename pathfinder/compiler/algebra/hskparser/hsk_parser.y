@@ -270,43 +270,43 @@ binaryop :   LSQBR PLUS item COLON braclist operator RSQBR
              {
                /* [PLUS attr:(att1,att2) operator] */
 	       assert ($5.count == 2);
-	       $$=add ($6, $5.atts[0], $5.atts[1], $3);
+	       $$ = add ($6, $3, $5.atts[0], $5.atts[1]);
              }
          |   LSQBR MINUS item COLON braclist operator RSQBR
              {
                /* [MINUS attr:(att1,att2) operator] */
 	       assert ($5.count == 2);
-	       $$=subtract ($6, $5.atts[0], $5.atts[1], $3);
+	       $$ = subtract ($6, $3, $5.atts[0], $5.atts[1]);
              }
          |   LSQBR TIMES item COLON braclist operator RSQBR
              {
                /* [TIMES attr:(att1,att2) operator] */
 	       assert ($5.count == 2);
-	       $$=multiply ($6, $5.atts[0], $5.atts[1], $3);
+	       $$ = multiply ($6, $3, $5.atts[0], $5.atts[1]);
              }
          |   LSQBR DIVIDE item COLON braclist operator RSQBR
              {
                /* [DIVIDE attr:(att1,att2) operator] */
 	       assert ($5.count == 2);
-	       $$=divide ($6, $5.atts[0], $5.atts[1], $3);
+	       $$ = divide ($6, $3, $5.atts[0], $5.atts[1]);
              }
          |   LSQBR LT item COLON braclist operator RSQBR
              {
                /* [< attr:(att1,att2,...) operator] */
 	       assert ($5.count == 2);
-	       $$=less_than ($6, $5.atts[0], $5.atts[1], $3);
+	       $$ = gt ($6, $3, $5.atts[1], $5.atts[0]); /* gt(b,a) = lt(a,b) */
              }
          |   LSQBR GT item COLON braclist operator RSQBR
              {
                /* [> attr:(att1,att2,...) operator] */
 	       assert ($5.count == 2);
-	       $$=greater_than ($6, $5.atts[0], $5.atts[1], $3);
+	       $$ = gt ($6, $3, $5.atts[0], $5.atts[1]);
              }
          |   LSQBR EQUAL item COLON braclist operator RSQBR
              {
                /* [= attr:(att1,att2,...) operator] */
 	       assert ($5.count == 2);
-	       $$=equal ($6, $5.atts[0], $5.atts[1], $3);
+	       $$ = eq ($6, $3, $5.atts[0], $5.atts[1]);
              }
          |   LSQBR AND item COLON braclist operator RSQBR
              {

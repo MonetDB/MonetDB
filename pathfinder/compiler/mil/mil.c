@@ -297,6 +297,15 @@ PFmil_order (const PFmil_t *bat)
 }
 
 /**
+ * Monet select() function.
+ */
+PFmil_t *
+PFmil_select (const PFmil_t *bat, const PFmil_t *value)
+{
+    return wire2 (m_select, bat, value);
+}
+
+/**
  * Monet insert() function to insert a single BUN (3 arguments).
  */
 PFmil_t *
@@ -518,6 +527,33 @@ PFmil_t *
 PFmil_mdiv (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_mdiv, a, b);
+}
+
+/**
+ * Multiplexed comparison operator (greater than)
+ */
+PFmil_t *
+PFmil_mgt (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mgt, a, b);
+}
+
+/**
+ * Multiplexed comparison operator (equality)
+ */
+PFmil_t *
+PFmil_meq (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_meq, a, b);
+}
+
+/**
+ * Multiplexed boolean negation
+ */
+PFmil_t *
+PFmil_mnot (const PFmil_t *a)
+{
+    return wire1 (m_mnot, a);
 }
 
 PFmil_t *

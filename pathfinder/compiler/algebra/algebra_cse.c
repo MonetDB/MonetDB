@@ -766,9 +766,9 @@ find_binary (PFalg_op_t *new)
              * attributes, and result attribute
              */
             if (new->child[0] != old->child[0]
-             || strcmp (new->sem.arithm.att1, old->sem.arithm.att1)
-             || strcmp (new->sem.arithm.att2, old->sem.arithm.att2)
-             || strcmp (new->sem.arithm.res, old->sem.arithm.res))
+             || strcmp (new->sem.binary.att1, old->sem.binary.att1)
+             || strcmp (new->sem.binary.att2, old->sem.binary.att2)
+             || strcmp (new->sem.binary.res, old->sem.binary.res))
                 continue;
             
             /*
@@ -1042,9 +1042,8 @@ find_subexp (PFalg_op_t *new)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
-        case aop_num_equal:
-        case aop_num_less_than:
-        case aop_num_greater_than:
+        case aop_num_eq:
+        case aop_num_gt:
         case aop_bool_and:
         case aop_bool_or:
             return find_binary (new);

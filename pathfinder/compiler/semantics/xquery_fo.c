@@ -125,32 +125,38 @@
   { .ns = PFns_op, .loc = "eq",                                          \
     .arity = 2, .par_ty = { PFty_integer (),                             \
                             PFty_integer () },                           \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_eq }                                                 \
 , /* op:eq (integer?, integer?) as boolean? */                           \
   { .ns = PFns_op, .loc = "eq",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
                             PFty_opt (PFty_integer ()) },                \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_eq }                                                 \
 , /* op:eq (decimal, decimal) as boolean */                              \
   { .ns = PFns_op, .loc = "eq",                                          \
     .arity = 2, .par_ty = { PFty_decimal (),                             \
                             PFty_decimal () },                           \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_eq }                                                 \
 , /* op:eq (decimal?, decimal?) as boolean? */                           \
   { .ns = PFns_op, .loc = "eq",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
                             PFty_opt (PFty_decimal ()) },                \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_eq }                                                 \
 , /* op:eq (double, double) as boolean */                                \
   { .ns = PFns_op, .loc = "eq",                                          \
     .arity = 2, .par_ty = { PFty_double (),                              \
                             PFty_double () },                            \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_eq }                                                 \
 , /* op:eq (double?, double?) as boolean? */                             \
   { .ns = PFns_op, .loc = "eq",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
                             PFty_opt (PFty_double ()) },                 \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_eq }                                                 \
 , /* op:eq (boolean, boolean) as boolean */                              \
   { .ns = PFns_op, .loc = "eq",                                          \
     .arity = 2, .par_ty = { PFty_boolean (),                             \
@@ -227,32 +233,38 @@
   { .ns = PFns_op, .loc = "lt",                                          \
     .arity = 2, .par_ty = { PFty_integer (),                             \
                             PFty_integer () },                           \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_lt }                                                 \
 , /* op:lt (integer?, integer?) as boolean? */                           \
   { .ns = PFns_op, .loc = "lt",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
                             PFty_opt (PFty_integer ()) },                \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_lt }                                                 \
 , /* op:lt (decimal, decimal) as boolean */                              \
   { .ns = PFns_op, .loc = "lt",                                          \
     .arity = 2, .par_ty = { PFty_decimal (),                             \
                             PFty_decimal () },                           \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_lt }                                                 \
 , /* op:lt (decimal?, decimal?) as boolean? */                           \
   { .ns = PFns_op, .loc = "lt",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
                             PFty_opt (PFty_decimal ()) },                \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_lt }                                                 \
 , /* op:lt (double, double) as boolean */                                \
   { .ns = PFns_op, .loc = "lt",                                          \
     .arity = 2, .par_ty = { PFty_double (),                              \
                             PFty_double () },                            \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_lt }                                                 \
 , /* op:lt (double?, double?) as boolean? */                             \
   { .ns = PFns_op, .loc = "lt",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
                             PFty_opt (PFty_double ()) },                 \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_lt }                                                 \
 , /* op:lt (boolean, boolean) as boolean */                              \
   { .ns = PFns_op, .loc = "lt",                                          \
     .arity = 2, .par_ty = { PFty_boolean (),                             \
@@ -329,17 +341,20 @@
   { .ns = PFns_op, .loc = "gt",                                          \
     .arity = 2, .par_ty = { PFty_integer (),                             \
                             PFty_integer () },                           \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_gt }                                                 \
 , /* op:gt (integer?, integer?) as boolean? */                           \
   { .ns = PFns_op, .loc = "gt",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_integer ()),                  \
                             PFty_opt (PFty_integer ()) },                \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_gt }                                                 \
 , /* op:gt (decimal, decimal) as boolean */                              \
   { .ns = PFns_op, .loc = "gt",                                          \
     .arity = 2, .par_ty = { PFty_decimal (),                             \
                             PFty_decimal () },                           \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_gt }                                                 \
 , /* op:gt (decimal?, decimal?) as boolean? */                           \
   { .ns = PFns_op, .loc = "gt",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_decimal ()),                  \
@@ -349,12 +364,14 @@
   { .ns = PFns_op, .loc = "gt",                                          \
     .arity = 2, .par_ty = { PFty_double (),                              \
                             PFty_double () },                            \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_op_gt }                                                 \
 , /* op:gt (double?, double?) as boolean? */                             \
   { .ns = PFns_op, .loc = "gt",                                          \
     .arity = 2, .par_ty = { PFty_opt (PFty_double ()),                   \
                             PFty_opt (PFty_double ()) },                 \
-    .ret_ty = PFty_opt (PFty_boolean ()) }                               \
+    .ret_ty = PFty_opt (PFty_boolean ()),                                \
+    .alg = PFbui_op_gt }                                                 \
 , /* op:gt (boolean, boolean) as boolean */                              \
   { .ns = PFns_op, .loc = "gt",                                          \
     .arity = 2, .par_ty = { PFty_boolean (),                             \

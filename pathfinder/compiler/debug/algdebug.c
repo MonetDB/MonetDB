@@ -53,31 +53,30 @@ char *a_id[]  = {
        * around the cross symbol.
        */
     , [aop_cross]            = " × "              /* yellow */
-    , [aop_eqjoin]           "|X|"              /* green */
-    , [aop_scjoin]           "/|"               /* light blue */
-    , [aop_doc_tbl]          "DOC"
-    , [aop_select]           "SEL"
-    , [aop_type]             "TYPE"
-    , [aop_cast]             "CAST"
-    , [aop_num_add]          "num-add"
-    , [aop_num_subtract]     "num_subtr"
-    , [aop_num_multiply]     "num-mult"
-    , [aop_num_divide]       "num-div"
-    , [aop_project]          "¶"
-    , [aop_rownum]           "ROW#"              /* red */
-    , [aop_serialize]        "SERIALIZE"
-    , [aop_num_equal]        "="
-    , [aop_num_less_than]    "<"
-    , [aop_num_greater_than] ">"
-    , [aop_num_neg]          "-"
-    , [aop_bool_and ]        "AND"
-    , [aop_bool_or ]         "OR"
-    , [aop_bool_not]         "NOT"
-    , [aop_sum]              "SUM"
-    , [aop_count]            "COUNT"
-    , [aop_distinct]         "DISTINCT"         /* indian red */
-    , [aop_element]          "ELEM"             /* lawn green */
-    , [aop_textnode]         "TEXT"             /* lawn green */
+    , [aop_eqjoin]           = "|X|"              /* green */
+    , [aop_scjoin]           = "/|"               /* light blue */
+    , [aop_doc_tbl]          = "DOC"
+    , [aop_select]           = "SEL"
+    , [aop_type]             = "TYPE"
+    , [aop_cast]             = "CAST"
+    , [aop_num_add]          = "num-add"
+    , [aop_num_subtract]     = "num_subtr"
+    , [aop_num_multiply]     = "num-mult"
+    , [aop_num_divide]       = "num-div"
+    , [aop_project]          = "¶"
+    , [aop_rownum]           = "ROW#"              /* red */
+    , [aop_serialize]        = "SERIALIZE"
+    , [aop_num_eq]           = "="
+    , [aop_num_gt]           = ">"
+    , [aop_num_neg]          = "-"
+    , [aop_bool_and ]        = "AND"
+    , [aop_bool_or ]         = "OR"
+    , [aop_bool_not]         = "NOT"
+    , [aop_sum]              = "SUM"
+    , [aop_count]            = "COUNT"
+    , [aop_distinct]         = "DISTINCT"         /* indian red */
+    , [aop_element]          = "ELEM"             /* lawn green */
+    , [aop_textnode]         = "TEXT"             /* lawn green */
 };
 
 /** string representation of algebra atomic types */
@@ -119,35 +118,34 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
     static int node_id = 1;
 
     static char *color[] = {
-        [aop_lit_tbl]          "grey",
-        [aop_disjunion]        "grey",
-        [aop_difference]       "orange",
-        [aop_cross]            "yellow",
-        [aop_eqjoin]           "green",
-        [aop_scjoin]           "lightblue",
-        [aop_doc_tbl]          "grey",
-        [aop_select]           "grey",
-        [aop_type]             "grey",
-        [aop_cast]             "grey",
-        [aop_project]          "grey",
-        [aop_rownum]           "red",
-        [aop_serialize]        "grey",
-        [aop_num_add]          "grey",
-        [aop_num_subtract]     "grey",
-        [aop_num_multiply]     "grey",
-        [aop_num_divide]       "grey",
-        [aop_num_equal]        "grey",
-        [aop_num_less_than]    "grey",
-        [aop_num_greater_than] "grey",
-        [aop_num_neg]          "grey",
-        [aop_bool_and ]        "grey",
-        [aop_bool_or ]         "grey",
-        [aop_bool_not]         "grey",
-        [aop_sum]              "grey",
-        [aop_count]            "grey",
-        [aop_distinct]         "indianred",
-        [aop_element]          "lawngreen",
-        [aop_textnode]         "lawngreen"
+        [aop_lit_tbl]        = "grey",
+        [aop_disjunion]      = "grey",
+        [aop_difference]     = "orange",
+        [aop_cross]          = "yellow",
+        [aop_eqjoin]         = "green",
+        [aop_scjoin]         = "lightblue",
+        [aop_doc_tbl]        = "grey",
+        [aop_select]         = "grey",
+        [aop_type]           = "grey",
+        [aop_cast]           = "grey",
+        [aop_project]        = "grey",
+        [aop_rownum]         = "red",
+        [aop_serialize]      = "grey",
+        [aop_num_add]        = "grey",
+        [aop_num_subtract]   = "grey",
+        [aop_num_multiply]   = "grey",
+        [aop_num_divide]     = "grey",
+        [aop_num_eq]         = "grey",
+        [aop_num_gt]         = "grey",
+        [aop_num_neg]        = "grey",
+        [aop_bool_and ]      = "grey",
+        [aop_bool_or ]       = "grey",
+        [aop_bool_not]       = "grey",
+        [aop_sum]            = "grey",
+        [aop_count]          = "grey",
+        [aop_distinct]       = "indianred",
+        [aop_element]        = "lawngreen",
+        [aop_textnode]       = "lawngreen"
     };
 
     n->node_id = node_id;
@@ -323,14 +321,13 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
-        case aop_num_equal:
-        case aop_num_less_than:
-        case aop_num_greater_than:
+        case aop_num_eq:
+        case aop_num_gt:
         case aop_bool_and:
         case aop_bool_or:
             PFarray_printf (dot, "%s %s:(%s, %s)", a_id[n->kind],
-                            n->sem.arithm.res, n->sem.arithm.att1,
-                            n->sem.arithm.att2);
+                            n->sem.binary.res, n->sem.binary.att1,
+                            n->sem.binary.att2);
             break;
 
         case aop_num_neg:
@@ -594,9 +591,8 @@ alg_pretty (PFalg_op_t *n)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
-        case aop_num_equal:
-        case aop_num_less_than:
-        case aop_num_greater_than:
+        case aop_num_eq:
+        case aop_num_gt:
         case aop_num_neg:
         case aop_bool_and:
         case aop_bool_or:

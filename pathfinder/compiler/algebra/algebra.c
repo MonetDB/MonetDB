@@ -71,8 +71,8 @@
  * Encapsulates initialization stuff common to binary numeric operators.
  */
 static PFalg_op_t *
-numeric_op(PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
-	   PFalg_att_t att2, PFalg_att_t res);
+numeric_op(PFalg_op_kind_t kind, PFalg_op_t *n,
+           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Encapsulates initialization stuff common to binary boolean operators.
@@ -428,8 +428,6 @@ PFalg_lit_tbl_ (PFalg_attlist_t attlist, int count, PFalg_tuple_t *tuples)
         /* add type of this tuple to schema */
         for (j = 0; j < tuples[i].count; j++) {
             ret->schema.items[j].type |= tuples[i].atoms[j].type;
-	    fprintf (stderr, "lit_tbl: type: %i, column: %s\n",
-		     ret->schema.items[j].type, ret->schema.items[j].name);
 	}
     }
 
@@ -549,17 +547,13 @@ PFalg_cross (PFalg_op_t *n1, PFalg_op_t *n2)
     /* copy schema from argument 1 */
     for (i = 0; i < n1->schema.count; i++) {
         ret->schema.items[i] = n1->schema.items[i];
-	fprintf (stderr, "cross: type: %i, column: %s\n",
-		     ret->schema.items[i].type, ret->schema.items[i].name);
     }
 
     /* copy schema from argument 2, check for duplicate attribute names */
     for (j = 0; j < n2->schema.count; j++) {
 
         ret->schema.items[n1->schema.count + j] = n2->schema.items[j];
-	fprintf (stderr, "cross: type: %i, column: %s\n",
-		 ret->schema.items[n1->schema.count + j].type,
-		 ret->schema.items[n1->schema.count + j].name);
+
 #ifndef NDEBUG
         for (i = 0; i < n1->schema.count; i++)
             if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name))
@@ -763,21 +757,11 @@ PFalg_disjunion (PFalg_op_t *n1, PFalg_op_t *n2)
 
     /* set schema */
     for (i = 0; i < n1->schema.count; i++) {
-	fprintf (stderr, "disunion (n1): type: %i, column: %s\n",
-		 n1->schema.items[i].type,
-		 n1->schema.items[i].name);
-	fprintf (stderr, "disunion (n2): type: %i, column: %s\n",
-		 n2->schema.items[i].type,
-		 n2->schema.items[i].name);
 
         ret->schema.items[i] =
             (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
                                          .type = n1->schema.items[i].type
                                                  | n2->schema.items[i].type };
-
-	fprintf (stderr, "disunion (ret): type: %i, column: %s\n",
-		 ret->schema.items[i].type,
-		 ret->schema.items[i].name);
     }
 
     return ret;
@@ -1050,61 +1034,68 @@ PFalg_cast (PFalg_op_t *n, PFalg_att_t att, PFalg_simple_type_t ty)
 
 /** Constructs an operator for an arithmetic addition. */
 PFalg_op_t *
-PFalg_add (PFalg_op_t *n, PFalg_att_t att1,
-	   PFalg_att_t att2, PFalg_att_t res)
+PFalg_add (PFalg_op_t *n,
+           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_add, n, att1, att2, res);
+    return numeric_op (aop_num_add, n, res, att1, att2);
 }
 
 
 /** Constructs an operator for an arithmetic subtraction. */
 PFalg_op_t *
-PFalg_subtract (PFalg_op_t *n, PFalg_att_t att1,
-		PFalg_att_t att2, PFalg_att_t res)
+PFalg_subtract (PFalg_op_t *n,
+                PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_subtract, n, att1, att2, res);
+    return numeric_op (aop_num_subtract, n, res, att1, att2);
 }
 
 
 /** Constructs an operator for an arithmetic multiplication. */
 PFalg_op_t *
-PFalg_multiply (PFalg_op_t *n, PFalg_att_t att1,
-		PFalg_att_t att2, PFalg_att_t res)
+PFalg_multiply (PFalg_op_t *n,
+                PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_multiply, n, att1, att2, res);
+    return numeric_op (aop_num_multiply, n, res, att1, att2);
 }
 
 
 /** Constructs an operator for an arithmetic division. */
 PFalg_op_t *
-PFalg_divide (PFalg_op_t *n, PFalg_att_t att1,
-	      PFalg_att_t att2, PFalg_att_t res)
+PFalg_divide (PFalg_op_t *n,
+              PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_divide, n, att1, att2, res);
+    return numeric_op (aop_num_divide, n, res, att1, att2);
 }
 
 
 /** Constructor for numeric equal operators. */
-PFalg_op_t * PFalg_equal (PFalg_op_t *n, PFalg_att_t att1,
-			  PFalg_att_t att2, PFalg_att_t res)
+PFalg_op_t * PFalg_eq (PFalg_op_t *n,
+                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_equal, n, att1, att2, res);
+    return numeric_op (aop_num_eq, n, res, att1, att2);
 }
 
 
-/** Constructor for numeric less-than operators. */
-PFalg_op_t * PFalg_less_than (PFalg_op_t *n, PFalg_att_t att1,
-			      PFalg_att_t att2, PFalg_att_t res)
+/**
+ * Constructor for numeric greater-than operators.
+ *
+ * The algebra operator `gt' works as follows: For each tuple, the
+ * numeric value in attribute @a att1 is compared against @a att2.
+ * If @a att1 is greater than @a att2 then the comparison yields
+ * true, otherwise false. This value is returned as a boolean
+ * value in the new attribute named by the argument @a res.
+ *
+ * @param n    The operand for the algebra operator (``The newly
+ *             constructed node's child'')
+ * @param res  Attribute name for the comparison result (This
+ *             attribute will be appended to the schema.)
+ * @param att1 Left operand of the `gt' operator.
+ * @param att2 Right operand of the `gt' operator.
+ */
+PFalg_op_t * PFalg_gt (PFalg_op_t *n,
+                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
-    return numeric_op (aop_num_less_than, n, att1, att2, res);
-}
-
-
-/** Constructor for numeric greater-than operators. */
-PFalg_op_t * PFalg_greater_than (PFalg_op_t *n, PFalg_att_t att1,
-				 PFalg_att_t att2, PFalg_att_t res)
-{
-    return numeric_op (aop_num_greater_than, n, att1, att2, res);
+    return numeric_op (aop_num_gt, n, res, att1, att2);
 }
 
 
@@ -1144,15 +1135,15 @@ PFalg_op_t * PFalg_not (PFalg_op_t *n, PFalg_att_t att,
  * Encapsulates initialization stuff common to binary arithmetic
  * operators.
  *
- * Depending on the @a kind parameter, we connect the two values
- * of columns @a att1 and @a att2 and stores the result in newly
- * created attribute @a res. @a res gets the same data type as @a
- * att1 and @a att2. The result schema corresponds to the schema
- * of the input relation @a n plus @a res.
+ * Depending on the @a kind parameter, we add, subtract, multiply, or
+ * divide the two values of columns @a att1 and @a att2 and stores the
+ * result in newly created attribute @a res. @a res gets the same data
+ * type as @a att1 and @a att2. The result schema corresponds to the
+ * schema of the input relation @a n plus @a res.
  */
 static PFalg_op_t *
-numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
-	    PFalg_att_t att2, PFalg_att_t res)
+numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n,
+            PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
 {
     PFalg_op_t *ret;
     int         i;
@@ -1194,9 +1185,9 @@ numeric_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
     /* insert semantic value (operand attributes and result attribute)
      * into the result
      */
-    ret->sem.arithm.att1 = att1;
-    ret->sem.arithm.att2 = att2;
-    ret->sem.arithm.res = res;
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
 
     /* allocate memory for the result schema (schema(n) + 'res') */
     ret->schema.count = n->schema.count + 1;
@@ -1267,9 +1258,9 @@ boolean_op (PFalg_op_kind_t kind, PFalg_op_t *n, PFalg_att_t att1,
     /* insert semantic value (operand attributes and result attribute)
      * into the result
      */
-    ret->sem.arithm.att1 = att1;
-    ret->sem.arithm.att2 = att2;
-    ret->sem.arithm.res = res;
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
 
     /* allocate memory for the result schema (schema(n) + 'res') */
     ret->schema.count = n->schema.count + 1;
@@ -1558,6 +1549,8 @@ PFalg_op_t * PFalg_textnode (PFalg_op_t *doc, PFalg_op_t *cont)
  * we use rownum() to create the item values bound to the variable.
  * However, the item values of $p must be of type int (instead
  * of nat), so we cast it accordingly.
+ *
+ * @bug This is obsolete, I think.
  */
 PFalg_op_t *
 PFalg_cast_item (PFalg_op_t * o)

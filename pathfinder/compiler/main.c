@@ -387,7 +387,7 @@
  */
 static struct option long_options[] = {
     { "print-att-dot",                 0, NULL, 'D' },
-    { "haskell",                       0, NULL, 'H' },
+    { "read-haskell-output",           0, NULL, 'H' },
     { "print-mil_summer",              0, NULL, 'M' },
     { "optimize",                      0, NULL, 'O' },
     { "print-human-readable",          0, NULL, 'P' },
@@ -650,6 +650,9 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'h'));
             printf ("  -q%s: do not print informational messages to log file\n",
                     long_option (opt_buf, ", --%s", 'q'));
+            printf ("  -H%s: read algebra code from Teggy's Haskell prototype"
+                    "\n        (will not read XQuery input then)\n",
+                    long_option (opt_buf, ", --%s", 'M'));
             printf ("  -M%s: print MIL code (summer version) and stop\n",
                     long_option (opt_buf, ", --%s", 'M'));
             printf ("  -P%s: print internal tree structure human-readable\n",

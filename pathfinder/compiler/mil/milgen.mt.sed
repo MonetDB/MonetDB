@@ -94,12 +94,20 @@ node  lit_tbl      /* literal table */
       cross        /* cross product (Cartesian product) */
       eqjoin       /* equi-join */
       project      /* algebra projection and renaming operator */
+      select       /* select tuples with a certain attribute value = true */
       rownum       /* consecutive number generation */
       serialize    /* result serialization */
+
       num_add      /* arithmetic plus operator */
       num_subtract /* arithmetic minus operator */
       num_multiply /* arithmetic times operator */
       num_divide   /* arithmetic divide operator */
+
+      num_gt       /* numeric greater than */
+      num_eq       /* numeric equality */
+
+      not          /* boolean negation (true <--> false) */
+
       cast         /* algebra cast operator */
       ;
 
@@ -754,7 +762,7 @@ AlgExpr:  rownum (AlgExpr)
          * presence of a partitioning attribute, we either use mark()
          * oder mark_grp().
          *
-         * Without partitionin attribute:
+         * Without partitioning attribute:
          *   <prefix>_<att>_<t> := tmp.mark (1@0);
          *
          * With partitioning attribute:
@@ -926,17 +934,6 @@ AlgExpr:  rownum (AlgExpr)
 
         /* copy all the remaining attributes */
         copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
-        /*
-        for (i = 0; i < $1$->schema.count; i++)
-            for (t = 1; t; t <<= 1)
-                if (t & $1$->schema.items[i].type)
-                    execute (assgn (var (bat ($$->bat_prefix,
-                                              $1$->schema.items[i].name,
-                                              t)),
-                                    var (bat ($1$->bat_prefix,
-                                              $1$->schema.items[i].name,
-                                              t))));
-        */
 
         deallocate ($1$, $$->refctr);
     }
@@ -964,14 +961,14 @@ AlgExpr:  num_add (AlgExpr)
          * multiplex operator.
          */
         execute (assgn (var (bat ($$->bat_prefix,
-                                  $$->sem.arithm.res,
-                                  attr_type ($$, $$->sem.arithm.res))),
+                                  $$->sem.binary.res,
+                                  attr_type ($$, $$->sem.binary.res))),
                         madd (var (bat ($$->bat_prefix,
-                                        $$->sem.arithm.att1,
-                                        attr_type ($$, $$->sem.arithm.att1))),
+                                        $$->sem.binary.att1,
+                                        attr_type ($$, $$->sem.binary.att1))),
                               var (bat ($$->bat_prefix,
-                                        $$->sem.arithm.att2,
-                                        attr_type ($$, $$->sem.arithm.att2))))
+                                        $$->sem.binary.att2,
+                                        attr_type ($$, $$->sem.binary.att2))))
                        ));
 
         deallocate ($1$, $$->refctr);
@@ -1000,14 +997,14 @@ AlgExpr:  num_subtract (AlgExpr)
          * multiplex operator.
          */
         execute (assgn (var (bat ($$->bat_prefix,
-                                  $$->sem.arithm.res,
-                                  attr_type ($$, $$->sem.arithm.res))),
+                                  $$->sem.binary.res,
+                                  attr_type ($$, $$->sem.binary.res))),
                         msub (var (bat ($$->bat_prefix,
-                                        $$->sem.arithm.att1,
-                                        attr_type ($$, $$->sem.arithm.att1))),
+                                        $$->sem.binary.att1,
+                                        attr_type ($$, $$->sem.binary.att1))),
                               var (bat ($$->bat_prefix,
-                                        $$->sem.arithm.att2,
-                                        attr_type ($$, $$->sem.arithm.att2))))
+                                        $$->sem.binary.att2,
+                                        attr_type ($$, $$->sem.binary.att2))))
                        ));
 
         deallocate ($1$, $$->refctr);
@@ -1036,14 +1033,14 @@ AlgExpr:  num_multiply (AlgExpr)
          * multiplex operator.
          */
         execute (assgn (var (bat ($$->bat_prefix,
-                                  $$->sem.arithm.res,
-                                  attr_type ($$, $$->sem.arithm.res))),
+                                  $$->sem.binary.res,
+                                  attr_type ($$, $$->sem.binary.res))),
                         mmult (var (bat ($$->bat_prefix,
-                                         $$->sem.arithm.att1,
-                                         attr_type ($$, $$->sem.arithm.att1))),
+                                         $$->sem.binary.att1,
+                                         attr_type ($$, $$->sem.binary.att1))),
                                var (bat ($$->bat_prefix,
-                                         $$->sem.arithm.att2,
-                                         attr_type ($$, $$->sem.arithm.att2))))
+                                         $$->sem.binary.att2,
+                                         attr_type ($$, $$->sem.binary.att2))))
                        ));
 
         deallocate ($1$, $$->refctr);
@@ -1072,14 +1069,14 @@ AlgExpr:  num_divide (AlgExpr)
          * multiplex operator.
          */
         execute (assgn (var (bat ($$->bat_prefix,
-                                  $$->sem.arithm.res,
-                                  attr_type ($$, $$->sem.arithm.res))),
+                                  $$->sem.binary.res,
+                                  attr_type ($$, $$->sem.binary.res))),
                         mdiv (var (bat ($$->bat_prefix,
-                                        $$->sem.arithm.att1,
-                                        attr_type ($$, $$->sem.arithm.att1))),
+                                        $$->sem.binary.att1,
+                                        attr_type ($$, $$->sem.binary.att1))),
                               var (bat ($$->bat_prefix,
-                                        $$->sem.arithm.att2,
-                                        attr_type ($$, $$->sem.arithm.att2))))
+                                        $$->sem.binary.att2,
+                                        attr_type ($$, $$->sem.binary.att2))))
                        ));
 
         deallocate ($1$, $$->refctr);
@@ -1168,7 +1165,7 @@ AlgExpr:  cast (AlgExpr)
                          */
                         else
                             execute (
-                                assgn (
+                                reassgn (
                                     var (bat ($$->bat_prefix,
                                               $1$->schema.items[i].name,
                                               $$->sem.cast.ty)),
@@ -1184,22 +1181,187 @@ AlgExpr:  cast (AlgExpr)
                  * monomorphic after casting.
                  *
                  * <prefix>_<att>_<t>
-                 *     := <prefix>_<att>_<t>.reverse.mark (0@0).reverse;
+                 *     := <prefix>_<att>_<t>.sort.reverse.mark (0@0).reverse;
                  */
                 if (!is_monomorphic ($1$->schema.items[i].type))
                     execute (
-                        assgn (
+                        reassgn (
                             var (bat ($$->bat_prefix,
                                       $1$->schema.items[i].name,
                                       $$->sem.cast.ty)),
                             reverse (
                                 mark (
                                     reverse (
-                                        var (bat ($$->bat_prefix,
-                                                  $1$->schema.items[i].name,
-                                                  $$->sem.cast.ty))),
+                                        sort (
+                                            var (bat ($$->bat_prefix,
+                                                      $1$->schema.items[i].name,
+                                                      $$->sem.cast.ty)))),
                                     lit_oid (0)))));
             }
+    }
+    ;
+
+AlgExpr:  num_gt (AlgExpr);
+    =
+    {
+        /*
+         * The equality operator is readily available in Monet:
+         */
+
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        assert ($1$);
+        /* types of both operants must be the same and monomorphic */
+        assert (attr_type ($1$, $$->sem.binary.att1)
+                == attr_type ($1$, $$->sem.binary.att2));
+        assert (is_monomorphic (attr_type ($1$, $$->sem.binary.att1)));
+
+        $$->bat_prefix = new_var ();
+
+        /* copy all attributes from $1$ */
+        copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
+
+        /* <pref>_<res>_bln := [=](<R>_<att1>_<t>, <R>_<att2>_<t>); */
+        execute (
+            assgn (var (bat ($$->bat_prefix,
+                             $$->sem.binary.res,
+                             aat_bln)),
+                   mgt (var (bat ($1$->bat_prefix,
+                                  $$->sem.binary.att1,
+                                  attr_type ($1$, $$->sem.binary.att1))),
+                        var (bat ($1$->bat_prefix,
+                                  $$->sem.binary.att2,
+                                  attr_type ($1$, $$->sem.binary.att1))))));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  num_eq (AlgExpr)
+    =
+    {
+        /*
+         * The equality operator is readily available in Monet:
+         */
+
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        assert ($1$);
+        /* types of both operants must be the same and monomorphic */
+        assert (attr_type ($1$, $$->sem.binary.att1)
+                == attr_type ($1$, $$->sem.binary.att2));
+        assert (is_monomorphic (attr_type ($1$, $$->sem.binary.att1)));
+
+        $$->bat_prefix = new_var ();
+
+        /* copy all attributes from $1$ */
+        copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
+
+        /* <pref>_<res>_bln := [=](<R>_<att1>_<t>, <R>_<att2>_<t>); */
+        execute (
+            assgn (var (bat ($$->bat_prefix,
+                             $$->sem.binary.res,
+                             aat_bln)),
+                   meq (var (bat ($1$->bat_prefix,
+                                  $$->sem.binary.att1,
+                                  attr_type ($1$, $$->sem.binary.att1))),
+                        var (bat ($1$->bat_prefix,
+                                  $$->sem.binary.att2,
+                                  attr_type ($1$, $$->sem.binary.att1))))));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  not (AlgExpr)
+    =
+    {
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        assert ($1$->bat_prefix);
+        assert (attr_type ($1$, $$->sem.unary.att) == aat_bln);
+
+        $$->bat_prefix = new_var ();
+
+        copy_rel ($1$->bat_prefix, $$->bat_prefix, $1$->schema);
+
+        execute (
+            assgn (var (bat ($$->bat_prefix,
+                             $$->sem.unary.res,
+                             aat_bln)),
+                   mnot (var (bat ($1$->bat_prefix,
+                                   $$->sem.unary.att,
+                                   aat_bln)))));
+
+        deallocate ($1$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  select (AlgExpr)
+    =
+    {
+        /*
+         * Selection by attribute `a':
+         *
+         * tmp := <R>_a_bln.select (true);
+         * tmp1 := tmp.mark (0@0).reverse;
+         *
+         * for each attribute (except `a'):
+         *   <prefix>_<att>_<t> := tmp2.leftjoin (<R>_a_<t>);
+         *
+         * <prefix>_a_bln := tmp.reverse.mark (0@0).reverse;
+         * tmp := unused; tmp1 := unused;
+         */
+        int i;
+        PFalg_simple_type_t t;
+
+        /* no need to do anything if we already translated that expression */
+        if ($$->bat_prefix)
+            break;
+
+        assert ($1$->bat_prefix);
+        assert (attr_type ($1$, $$->sem.select.att) == aat_bln);
+
+        execute (
+            /* tmp := <R>_a_bln.select (true); */
+            reassgn (var ("tmp"),
+                     select (var (bat ($1$->bat_prefix,
+                                       $$->sem.select.att,
+                                       aat_bln)),
+                             lit_bit (true))),
+            /* tmp1 := tmp.mark (0@0).reverse; */
+            reassgn (var ("tmp2"),
+                     reverse (mark (var ("tmp"), lit_oid (0)))));
+
+        for (i = 0; i < $1$->schema.count; i++)
+            if (strcmp ($1$->schema.items[i].name, $$->sem.select.att))
+                for (t = 1; t; t <<= 1)
+                    if (t & $1$->schema.items[i].type)
+                        execute (
+                            assgn (var (bat ($$->bat_prefix,
+                                             $1$->schema.items[i].name,
+                                             t)),
+                                   leftjoin (
+                                       var ("tmp2"),
+                                       var (bat ($1$->bat_prefix,
+                                                 $1$->schema.items[i].name,
+                                                 t)))));
+        execute (
+            /* <prefix>_a_bln := tmp.reverse.mark (0@0).reverse; */
+            assgn (var (bat ($$->bat_prefix, $$->sem.select.att, aat_bln)),
+                   reverse (mark (reverse (var ("tmp")), lit_oid (0)))),
+            /* tmp := unused; */
+            reassgn (var ("tmp"), unused ()),
+            /* tmp1 := unused; */
+            reassgn (var ("tmp2"), unused ()));
+
+        deallocate ($1$, $$->refctr);
     }
     ;
 

@@ -199,9 +199,8 @@ enum PFalg_op_kind_t {
     , aop_num_subtract     /**< arithmetic minus operator */
     , aop_num_multiply     /**< arithmetic times operator */
     , aop_num_divide       /**< arithmetic divide operator */
-    , aop_num_equal        /**< numeric equal operator */
-    , aop_num_less_than    /**< numeric less-than operator */
-    , aop_num_greater_than /**< numeric greater-than operator */
+    , aop_num_eq           /**< numeric equal operator */
+    , aop_num_gt           /**< numeric greater-than operator */
     , aop_num_neg          /**< numeric negation operator */
     , aop_bool_and         /**< boolean AND operator */
     , aop_bool_or          /**< boolean OR operator */
@@ -283,7 +282,7 @@ union PFalg_op_sem_t {
 	PFalg_att_t     att1;     /**< first operand */
 	PFalg_att_t     att2;     /**< second operand */
 	PFalg_att_t     res;      /**< attribute to hold the result */
-    } arithm;
+    } binary;
 
     /* semantic content for unary operators */
     struct {
@@ -499,32 +498,28 @@ PFalg_op_t * PFalg_type (PFalg_op_t *n, PFalg_att_t att,
 PFalg_op_t * PFalg_cast (PFalg_op_t *, PFalg_att_t, PFalg_simple_type_t);
 
 /** Constructor for arithmetic addition operators. */
-PFalg_op_t * PFalg_add (PFalg_op_t *n, PFalg_att_t att1,
-			PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_add (PFalg_op_t *n,
+                        PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for arithmetic subtraction operators. */
-PFalg_op_t * PFalg_subtract (PFalg_op_t *n, PFalg_att_t att1,
-			     PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_subtract (PFalg_op_t *n, PFalg_att_t res,
+                             PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for arithmetic multiplication operators. */
-PFalg_op_t * PFalg_multiply (PFalg_op_t *n, PFalg_att_t att1,
-			     PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_multiply (PFalg_op_t *n, PFalg_att_t res,
+                             PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for arithmetic division operators. */
-PFalg_op_t * PFalg_divide (PFalg_op_t *n, PFalg_att_t att1,
-			   PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_divide (PFalg_op_t *n,
+                           PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for numeric equal operators. */
-PFalg_op_t * PFalg_equal (PFalg_op_t *n, PFalg_att_t att1,
-			  PFalg_att_t att2, PFalg_att_t res);
-
-/** Constructor for numeric less-than operators. */
-PFalg_op_t * PFalg_less_than (PFalg_op_t *n, PFalg_att_t att1,
-			      PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_eq (PFalg_op_t *n,
+                       PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2);
 
 /** Constructor for numeric greater-than operators. */
-PFalg_op_t * PFalg_greater_than (PFalg_op_t *n, PFalg_att_t att1,
-				 PFalg_att_t att2, PFalg_att_t res);
+PFalg_op_t * PFalg_gt (PFalg_op_t *n, PFalg_att_t att1,
+                       PFalg_att_t att2, PFalg_att_t res);
 
 /** Constructor for numeric negation operators. */
 PFalg_op_t * PFalg_neg (PFalg_op_t *n, PFalg_att_t att,

@@ -42,6 +42,8 @@ enum PFmil_kind_t {
     , m_binsert      /**< MIL insert() function to insert a BAT at once */
     , m_order        /**< MIL order() function (destructively orders a BAT) */
 
+    , m_select       /**< MIL select(a,b) function */
+
     , m_project      /**< MIL project() function */
     , m_mark         /**< MIL mark() function */
     , m_mark_grp     /**< MIL mark_grp() function */
@@ -68,6 +70,11 @@ enum PFmil_kind_t {
     , m_msub         /**< multiplexed arithmetic subtract */
     , m_mmult        /**< multiplexed arithmetic multiply */
     , m_mdiv         /**< multiplexed arithmetic divide */
+
+    , m_mgt          /**< multiplexed comparison (greater than) */
+    , m_meq          /**< multiplexed comparison (equality) */
+
+    , m_mnot         /**< multiplexed boolean negation `[not]' */
 
     , m_max          /**< MIL max() function */
 
@@ -186,6 +193,9 @@ PFmil_t * PFmil_seqbase (const PFmil_t *, const PFmil_t *);
 /** MIL order() function (destructively re-orders a BAT by its head) */
 PFmil_t * PFmil_order (const PFmil_t *);
 
+/** MIL select() function */
+PFmil_t * PFmil_select (const PFmil_t *, const PFmil_t *);
+
 /** MIL insert() function to insert a single BUN (3 arguments) */
 PFmil_t * PFmil_insert (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
@@ -257,6 +267,15 @@ PFmil_t * PFmil_mmult (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed divide operator */
 PFmil_t * PFmil_mdiv (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed comparison operator (greater than) */
+PFmil_t * PFmil_mgt (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed comparison operator (equality) */
+PFmil_t * PFmil_meq (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed boolean negation */
+PFmil_t * PFmil_mnot (const PFmil_t *);
 
 PFmil_t * PFmil_ser (const char *prefix,
                      const bool has_nat_part, const bool has_int_part,

@@ -22,6 +22,7 @@
                     | literal                                  <m_lit_*, m_nil>
                     | 'new (' Type ',' Type ')'                <m_new>
                     | expression '.seqbase (' expression ')'   <m_seqbase>
+                    | expression '.select (' expression ')'    <m_select>
                     | expression '.project (' expression ')'   <m_project>
                     | expression '.mark (' expression ')'      <m_mark>
                     | expression '.mark_grp (' expression ')'  <m_mark_grp>
@@ -43,6 +44,9 @@
                     | '[-](' expression ',' expression ')'     <m_msub>
                     | '[*](' expression ',' expression ')'     <m_mmult>
                     | '[/](' expression ',' expression ')'     <m_mdiv>
+                    | '[>](' expression ',' expression ')'     <m_mgt>
+                    | '[=](' expression ',' expression ')'     <m_meq>
+                    | '[not](' expression ')'                  <m_mnot>
 
    literal          : IntegerLiteral                           <m_lit_int>
                     | StringLiteral                            <m_lit_str>
@@ -96,6 +100,7 @@ static char *ID[] = {
       [m_new]      = "new"
     , [m_seqbase]  = "seqbase"
     , [m_order]    = "order"
+    , [m_select]   = "select"
     , [m_insert]   = "insert"
     , [m_binsert]  = "insert"
     , [m_project]  = "project"
@@ -119,6 +124,9 @@ static char *ID[] = {
     , [m_msub]     = "[-]"
     , [m_mmult]    = "[*]"
     , [m_mdiv]     = "[/]"
+    , [m_mgt]      = "[>]"
+    , [m_meq]      = "[=]"
+    , [m_mnot]     = "[not]"
 
     , [m_max]      = "max"
 
@@ -278,6 +286,8 @@ print_expression (PFmil_t * n)
 
         /* expression : expression '.seqbase (' expression ')' */
         case m_seqbase:
+        /* expression : expression '.select (' expression ')' */
+        case m_select:
         /* expression : expression '.project (' expression ')' */
         case m_project:
         /* expression : expression '.mark (' expression ')' */
@@ -343,10 +353,21 @@ print_expression (PFmil_t * n)
         case m_mmult:
         /* expression : '[/](' expression ',' expression ')' */
         case m_mdiv:
+        /* expression : '[>](' expression ',' expression ')' */
+        case m_mgt:
+        /* expression : '[=](' expression ',' expression ')' */
+        case m_meq:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
             print_expression (n->child[1]);
+            milprintf (")");
+            break;
+
+        /* expression : '[not](' expression ')' */
+        case m_mnot:
+            milprintf ("%s(", ID[n->kind]);
+            print_expression (n->child[0]);
             milprintf (")");
             break;
 
