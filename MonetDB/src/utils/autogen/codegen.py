@@ -309,7 +309,9 @@ class java_parser:
     		if self.status == None and token == 'class':
 			self.status = 'class'
 		# handle simple comments
-    		if self.status == None and token == '//':
+    		if self.status == 'None' and token == '//':
+			self.status = 'line comment'
+    		if self.status == 'start comment' and token == '/':
 			self.status = 'line comment'
     		if self.status == 'line comment' and type == NL:
 			self.status = None
