@@ -966,8 +966,12 @@ int CMDERROR(Cntxt stk, YYSTREE lt, ValPtr res){
 
         if (lt->cnt < 1) {
                 return -1;
-        } 
-	for(i=0; i<lt->cnt; i++) {
+        }
+	if (lt->cnt > MAXPARAMS) {
+		GDKerror("CMDERROR: too many arguments.\n");
+		return -1;
+	}
+	for (i = 0; i < lt->cnt; i++) {
 		interpret(stk, lt->yysons[i], argv+i);
 	}
         if (argv[0].vtype != TYPE_str) {
@@ -1150,6 +1154,11 @@ int CMDprint_otable(int *order, BAT *arg1, ...) {
         va_start(ap,arg1);
         piv[nbats++] = arg1;
         while((b = va_arg(ap, BAT*)) != NULL) {
+		if (nbats >= MAXPARAMS) {
+			va_end (ap);
+			GDKerror("print_table: too many arguments.\n");
+			return GDK_FAIL;
+		}
                 piv[nbats++] = b;
         }
         return CMDprint_bats(nbats, piv, *order);
@@ -1164,6 +1173,11 @@ int CMDprint_table(BAT* b, ...) {
 	if (!b)
 		return GDK_FAIL;
         do {
+		if (nbats >= MAXPARAMS) {
+			va_end (ap);
+			GDKerror("print_table: too many arguments.\n");
+			return GDK_FAIL;
+		}
                 piv[nbats++] = b;
         } while((b = va_arg(ap, BAT*)) != NULL);
         return CMDprint_bats(nbats, piv, 0);
@@ -1218,40 +1232,40 @@ int print_str(str *s, str format, ...) {
 
 
 int print_table(int *order, BAT *arg1, ...) {
-	BAT *piv[MAXPARAMS];
+	BAT *piv[MAXPARAMS+1];
 	int argc = 0;
 	va_list ap;
 
         va_start (ap, arg1);
 	piv[argc++] = arg1;
         do {
-		if(argc==MAXPARAMS){
+		if (argc > MAXPARAMS) {
 			va_end (ap);
-			   GDKerror("print_table: too many arguments.\n");
-			   return GDK_FAIL;
+			GDKerror("print_table: too many arguments.\n");
+			return GDK_FAIL;
 		}
 		piv[argc] = va_arg (ap,BAT*) ;
-	} while(piv[argc++]);
+	} while (piv[argc++]);
         va_end (ap);
 	BATmultiprintf(GDKout, argc, piv, FALSE, *order);
 	return GDK_SUCCEED;
 }
 
 int print_table_default(BAT *b, ...) {
-	BAT *piv[MAXPARAMS];
+	BAT *piv[MAXPARAMS+1];
 	int argc = 1;
 	va_list ap;
 
 	piv[0] = b;
         va_start (ap, b);
         do {
-		if(argc==MAXPARAMS){
-			   va_end (ap);
-			   GDKerror("print_table_default: too many arguments.\n");
-			   return GDK_FAIL;
+		if (argc > MAXPARAMS) {
+			va_end (ap);
+			GDKerror("print_table_default: too many arguments.\n");
+			return GDK_FAIL;
 		}
 		piv[argc] = va_arg (ap,BAT*) ;
-	} while(piv[argc++]);
+	} while (piv[argc++]);
         va_end (ap);
 	BATmultiprintf(GDKout, argc, piv, FALSE, 0);
 	return GDK_SUCCEED;
