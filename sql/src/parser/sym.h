@@ -23,6 +23,7 @@ typedef union symdata {
 	struct statement *stval;
 	struct column *cval;
 	struct table *tval;
+	struct schema *schema;
 	struct aggr *aggrval;
 	struct func *funcval;
 	struct type *typeval;

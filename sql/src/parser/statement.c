@@ -22,7 +22,6 @@ statement *statement_create(){
 void statement_destroy( statement *s ){
 	if (--s->refcnt <= 0){
 		switch(s->type){
-		case st_create_column: 
 		case st_update: 
 			statement_destroy( s->op2.stval );
 			break;
@@ -77,6 +76,7 @@ void statement_destroy( statement *s ){
 			break;
 		case st_diamond: 
 		case st_list: 
+		case st_insert_list: 
 			list_destroy( s->op1.lval );
 			break;
 		case st_pearl: {
@@ -87,36 +87,54 @@ void statement_destroy( statement *s ){
 			}
 		}	break;
 		case st_atom: 
+		case st_insert_atom: 
 			atom_destroy( s->op1.aval );
-			break;
-		case st_drop_table: 
-		case st_column:
-			break;
-		case st_create_table: 
-			_DELETE(s->op1.sval);
-			if (s->op2.sval)
-				_DELETE(s->op2.sval);
 			break;
 		case st_cast: 
 			_DELETE(s->op1.sval);
 			statement_destroy( s->op2.stval );
 			break;
-		case st_table:
+
+		case st_create_schema: 
+		case st_drop_schema: 
+
+		case st_create_table: 
+		case st_drop_table: 
+
+		case st_create_column: 
+		case st_column:
+
+		case st_dummy:
 			break;
 		}
 		_DELETE(s);
 	}
 }
 
-statement *statement_create_table( char *name, int temp, char *sql ){
+statement *statement_dummy( ){
+	statement *s = statement_create();
+	s->type = st_dummy;
+	return s;
+}
+
+statement *statement_create_schema( schema *schema ){
+	statement *s = statement_create();
+	s->type = st_create_schema;
+	s->op1.schema = schema;
+	return s;
+}
+
+statement *statement_drop_schema( schema *schema ){
+	statement *s = statement_create();
+	s->type = st_drop_schema;
+	s->op1.schema = schema;
+	return s;
+}
+
+statement *statement_create_table( table *t ){
 	statement *s = statement_create();
 	s->type = st_create_table;
-	s->op1.sval = _strdup(name);
-	if (sql)
-		s->op2.sval = _strdup(sql);
-	else 
-		s->op2.sval = NULL;
-	s->flag = temp;
+	s->op1.tval = t;
 	return s;
 }
 
@@ -128,11 +146,10 @@ statement *statement_drop_table( table *t, int drop_action ){
 	return s;
 }
 
-statement *statement_create_column( column *c, statement *tab ){
+statement *statement_create_column( column *c ){
 	statement *s = statement_create();
 	s->type = st_create_column;
 	s->op1.cval = c;
-	s->op2.stval = tab; tab->refcnt++;
 	return s;
 }
 
@@ -148,14 +165,6 @@ statement *statement_default( statement *col, statement *def ){
 	s->type = st_default;
 	s->op1.stval = col; col->refcnt++;
 	s->op2.stval = def; def->refcnt++;
-	return s;
-}
-
-statement *statement_table( table *op1 ){
-	statement *s = statement_create();
-	s->type = st_table;
-	s->op1.tval = op1; 
-	s->h = op1;
 	return s;
 }
 
@@ -267,6 +276,13 @@ statement *statement_reorder( statement *s, statement *t, int direction ){
 	return ns;
 }
 
+statement *statement_insert_atom( atom *op1 ){
+	statement *s = statement_create();
+	s->type = st_insert_atom;
+	s->op1.aval = op1;
+	return s;
+}
+
 statement *statement_atom( atom *op1 ){
 	statement *s = statement_create();
 	s->type = st_atom;
@@ -356,6 +372,12 @@ statement *statement_intersect( statement *op1, statement *op2 ){
 	return s;
 }
 
+statement *statement_insert_list( list *l){
+	statement *s = statement_create();
+	s->type = st_insert_list;
+	s->op1.lval = l;
+	return s;
+}
 statement *statement_list( list *l){
 	statement *s = statement_create();
 	s->type = st_list;
@@ -482,6 +504,7 @@ char *head_type( statement *st ){
 	case st_unop: return column_type(st->op1.stval);
 	case st_binop: return column_type(st->op1.stval);
 	case st_atom: return atomtype2string(st->op1.aval);
+	case st_insert_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
 	default:
 		fprintf( stderr, "missing head type %d\n", st->type);
@@ -499,6 +522,7 @@ char *column_type( statement *st ){
 	case st_unop: return column_type(st->op1.stval);
 	case st_binop: return column_type(st->op1.stval);
 	case st_atom: return atomtype2string(st->op1.aval);
+	case st_insert_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
 	default:
 		fprintf( stderr, "missing type %d\n", st->type);
@@ -516,6 +540,7 @@ column *_basecolumn( statement *st ){
 	case st_unop: return basecolumn(st->op1.stval);
 	case st_binop: return basecolumn(st->op1.stval);
 	case st_atom: 
+	case st_insert_atom: 
 	case st_cast: return NULL;
 	case st_name: return _basecolumn(st->op1.stval);
 	default:
@@ -534,6 +559,7 @@ column *basecolumn( statement *st ){
 	case st_unop: return basecolumn(st->op1.stval);
 	case st_binop: return basecolumn(st->op1.stval);
 	case st_atom: 
+	case st_insert_atom: 
 	case st_cast: return NULL;
 	case st_name: return basecolumn(st->op1.stval);
 	default:

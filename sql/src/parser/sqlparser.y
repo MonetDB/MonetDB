@@ -57,7 +57,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	sql
 	sqlstatement
 	schema
-	schema_name
 	opt_schema_default_char_set
 	opt_schema_path
 	schema_element
@@ -133,6 +132,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_name
 
 %type <l>
+	schema_name
 	sql_list 
 	assignment_commalist
 	opt_column_commalist
@@ -246,7 +246,7 @@ schema:
 	opt_schema_path	opt_schema_element_list	   
 
 	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $3);
+	  dlist_append_list(l, $3);
 	  dlist_append_symbol(l, $4);
 	  dlist_append_symbol(l, $5);
 	  dlist_append_list(l, $6);
@@ -261,16 +261,17 @@ schema:
 
 schema_name:
     name		    	
-	{ $$ = _symbol_create( SQL_NAME, $1);           }
+	{ $$ = dlist_create();
+	  dlist_append_string($$, $1 );
+	  dlist_append_string($$, NULL ); }
  |  AUTHORIZATION name  	
-	{ dlist *l = dlist_create();
-	  dlist_append_string(l, $2 );
-	  $$ = _symbol_create_list( SQL_AUTH, l);   }
+	{ $$ = dlist_create();
+	  dlist_append_string($$, NULL );
+	  dlist_append_string($$, $2 ); }
  |  name AUTHORIZATION name 
-	{ dlist *l = dlist_create();
-	  dlist_append_string(l, $1 );
-	  dlist_append_string(l, $3 );
-	  $$ = _symbol_create_list( SQL_AUTH, l);   }
+	{ $$ = dlist_create();
+	  dlist_append_string($$, $1 );
+	  dlist_append_string($$, $3 ); }
 
 opt_schema_default_char_set:
     /* empty */		   	{ $$ = NULL; }
@@ -1151,6 +1152,7 @@ data_type:
  |  INTEGER '(' INT ')'		{ $$ = "INTEGER"; }
  |  INTEGER			{ $$ = "INTEGER"; }
  |  SMALLINT			{ $$ = "SMALLINT"; }
+ |  SMALLINT '(' INT ')'	{ $$ = "SMALLINT"; }
  |  FLOAT			{ $$ = "FLOAT"; }
  |  FLOAT '(' INT ')'		{ $$ = "FLOAT"; }
  |  FLOAT '(' INT ',' INT ')'	{ $$ = "FLOAT"; }
