@@ -22,16 +22,14 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 MTSAFE
-INCLUDES = ../common ../gdk ../mal $(PTHREAD_INCS) 
-
-GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
-MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
-
+INCLUDES = $(MONET_INCS) -I../mal \
+		$(PTHREAD_INCS) 
 
 bin_Mserver = {
 	SOURCES = Mserver.mx
-	LIBS = ../mal/libmal @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) \
-		../common/libmutils ../common/libstream
+	LIBS = ../mal/libmal @SHARED_LIBS@ -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 scripts_sh = {

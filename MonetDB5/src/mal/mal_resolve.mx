@@ -104,7 +104,9 @@ import K,L,M. This can be recognized by inspecting the code produced
 #include "mal_exception.h"
 #include "mal_function.h"
 
-/*#define DEBUG_MAL_RESOLVE 1 */
+/*
+#define DEBUG_MAL_RESOLVE 1 
+*/
 #define MAXTYPEVAR	10
 
 mal_export void chkProgram(Scope s, MalBlkPtr mb);

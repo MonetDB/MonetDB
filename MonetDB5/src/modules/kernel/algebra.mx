@@ -205,9 +205,8 @@ comment "Returns a BAT copy sorted on
 #address ALGsort_ht
 #comment "Returns a lexicographically sorted copy.";
 @- vertical projection
-This operation has been moved to module mal, because it requires access
-the type identifier for the second argument.
-to the context.
+This operation has been moved to module bbp, because it requires access
+to the type identifier for the second argument.
 pattern project( b:bat[:any$1,:any], val:any$2) :bat[:any$1,:any$2] 
 address ALGproject
 comment "Fill the tail column with a constant value.";
@@ -1130,10 +1129,6 @@ int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
         return (*result = BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
 }
 
-int CMDproject(BAT** res, BAT *b, ptr p, int t) {
-	return (*res=BATconst(b, t, p))?GDK_SUCCEED:GDK_FAIL;
-}
-
 int CMDmark(BAT** res, BAT *b, oid *base){
 	return (*res=BATmark(b, *base))?GDK_SUCCEED:GDK_FAIL;
 }
@@ -1722,18 +1717,6 @@ str ALGcount_nil(int *result, int *bid, bit *ignore_nils) {
 str ALGcount_no_nil(int *result, int *bid) {
 	bit ignore_nils= 1;
 	return ALGcount_nil(result,bid,&ignore_nils);
-}
-
-str ALGproject(int *result, int *bid, ptr p,int *t) {
-	BAT *b, *bn= NULL;
-	@:getBATdescriptor(result,bid,b,project)@
-	CMDproject(&bn,b,p,*t);
-	if( bn ) {
-		*result = bn->batCacheid;
-		return MAL_SUCCEED;
-	}
-	return throwMessage("algebra.project", 
-		"can not perform a projection");
 }
 
 str ALGmark(int *result, int *bid, oid *base) {

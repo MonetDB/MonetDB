@@ -3,18 +3,18 @@
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-@'
+@' 
 @' Software distributed under the License is distributed on an "AS
 @' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
 @' implied. See the License for the specific language governing
 @' rights and limitations under the License.
-@'
+@' 
 @' The Original Code is the Monet Database System.
-@'
+@' 
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
+@' 
 @' Contributor(s):
 @' 		Martin Kersten <Martin.Kersten@cwi.nl>
 @' 		Peter Boncz <Peter.Boncz@cwi.nl>
@@ -1787,15 +1787,14 @@ str BKCdestroy(bit *r,int *bid) {
 }
 
 /* The SQL frontend uses void-head bats */
-void bun_inplace(BAT *b, oid id, ptr val )
+void void_inplace(BAT *b, oid id, ptr val )
 {
 	BUN p = NULL;
 	BUN oldInserted = b->batInserted;
 
         assert(b->htype == TYPE_void);
-        assert(b->hseqbase == 0);
-        assert(BATcount(b) > id);
-
+        assert(b->hseqbase != oid_nil);
+        assert(BATcount(b) > (id-b->hseqbase));
 
 	b->batInserted = NULL;
 	BUNfndVOID(p, b, (ptr)&id);
@@ -1812,13 +1811,13 @@ size_t void_delete_bat( BAT *b, BAT *d, int delta){
         if (delta) {
             for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
                 oid delid = *(oid*)BUNtail(d,r);
-                bun_inplace(b,  delid, nil);
+                void_inplace(b,  delid, nil);
                 nr++;
             }
         } else {
             BATloop(d, r, s){
                 oid delid = *(oid*)BUNtail(d,r);
-                bun_inplace(b,  delid, nil);
+                void_inplace(b,  delid, nil);
                 nr++;
             }
         }
@@ -1843,7 +1842,7 @@ size_t void_replace_delta( BAT *b, BAT *u){
         for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) {
                 oid updid = *(oid*)BUNhead(u,r);
                 ptr val = BUNtail(u,r);
-                bun_inplace(b,  updid, val);
+                void_inplace(b,  updid, val);
                 nr++;
         }
         return nr;
@@ -1856,7 +1855,7 @@ size_t void_replace_bat( BAT *b, BAT *u){
 	BATloop(u, r, s){
 		oid updid = *(oid*)BUNhead(u,r);
 		ptr val = BUNtail(u,r);
-		bun_inplace(b,  updid, val);
+		void_inplace(b,  updid, val);
 		nr++;
 	}
 	return nr;
@@ -1889,6 +1888,7 @@ str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
 	@:getBATdescriptor(r,uid,u,append)@
 	void_append_bat( i, u );
 	*r = i->batCacheid;
+	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1899,6 +1899,7 @@ str BKCbat_append_oid_bat_wrap( int *r, int *bid, int *uid )
 	@:getBATdescriptor(r,uid,u,append)@
 	void_insert_bat( i, u );
 	*r = i->batCacheid;
+	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1907,8 +1908,9 @@ str BKCbat_append_oidvoid_bat_wrap( int *r, int *bid, int *uid )
 	BAT *i, *u;
 	@:getBATdescriptor(r,bid,i,append)@
 	@:getBATdescriptor(r,uid,u,append)@
-	assert(BATcount(i)==0 && BATcount(u) == 0);
+	void_insert_bat( i, u );
 	*r = i->batCacheid;
+	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1928,6 +1930,7 @@ str BKCoid_bat_append_oid_bat_wrap( int *res, int *bid, int *uid )
 		BUNins(i, &h,  BUNtail(u,r));
         }
 	*res = i->batCacheid;
+	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1943,6 +1946,7 @@ str BKCoid_bat_append_val_wrap( int *r, int *bid, ptr u)
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & o, u );
 	*r = i->batCacheid;
+	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1956,6 +1960,7 @@ str BKCbat_append_val_wrap( int *r, int *bid, ptr u)
 	@:derefStr(i,t,u)@
 	BUNins( i, (ptr) & h, u );
 	*r = i->batCacheid;
+	BBPfix(i->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1966,6 +1971,7 @@ str BKCbat_replace_oid_bat_wrap( int *r, int *bod, int *did )
 	@:getBATdescriptor(r,did,d,replace)@
 	void_replace_bat( o, d );
 	*r = o->batCacheid;
+	BBPfix(o->batCacheid);
 	return MAL_SUCCEED;
 }
 /*end of SQL enhancement */

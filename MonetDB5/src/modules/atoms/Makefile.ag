@@ -1,5 +1,4 @@
-
-INCLUDES = -I../../common -I../../gdk -I../../mal \
+INCLUDES = $(MONET_INCS) -I../../mal \
 	 $(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
 MTSAFE
 
@@ -11,7 +10,7 @@ LIBS = {
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
-	LIBS = ../../common/libstream ../../gdk/libbat \
+	LIBS = $(MONET_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

@@ -71,6 +71,7 @@ The options have the following meaning:
 @h
 #ifndef _MSERVER_H_
 #define _MSERVER_H_
+#include "mal_config.h"
 #include "monet_options.h"
 #include "gdk.h"
 #include "mal.h"
@@ -146,8 +147,8 @@ void monet_hello(opt *set, int setlen) {
         printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
         printf("# Copyright (c) 1993-2004, CWI. ");
         printf("All rights reserved.\n");
-        printf("# Compiled for %s/%dbit; %s linked.\n", 
-		GDKgetenv("gdk_arch"), sizeof(ptr)*8, linkinfo );
+        printf("# Compiled for %s/" SZFMT "bit; %s linked.\n", 
+		HOST, (size_t) (sizeof(ptr)*8), linkinfo );
 	printf("# config:%s\n", GDKgetenv("config"));
 	printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
 	printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
@@ -323,6 +324,11 @@ faster system start.
 
 	if (!(setlen = mo_builtin_settings(&set)) )
 		usage(prog);
+
+	setlen = mo_add_option( &set, setlen, 
+				opt_config, "prefix", MONETDBPREFIX );
+	setlen = mo_add_option( &set, setlen, 
+				opt_config, "config", MONETDBCONFIG );
 
 	while(1){
 		int option_index = 0;

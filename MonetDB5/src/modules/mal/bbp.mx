@@ -160,13 +160,13 @@ command project(b:bat[:any$1,:any])
 		:bat[:any$1,:void]	
 address CMDprojectNil
 comment "Extract the head of a BAT.";
+
 pattern project( b:bat[:any$1,:any], val:any$2) 
 		:bat[:any$1,:any$2] 	
 address CMDproject
 comment "Fill the tail column with a constant.";
                                                                                 
 @+ BAT buffer pool
-
 The following list of operations permits inspection of the
 buffer pool
 @mal

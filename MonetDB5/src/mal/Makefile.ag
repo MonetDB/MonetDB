@@ -1,4 +1,4 @@
-INCLUDES = -I../common -I../gdk  
+INCLUDES = $(MONET_INCS)
 
 MTSAFE
 
@@ -14,7 +14,7 @@ lib_mal = {
 
 	HEADERS = h 
 	SCRIPTS = mal
-	LIBS = ../common/libmutils ../common/libstream ../gdk/libbat \
+	LIBS = $(MONET_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
