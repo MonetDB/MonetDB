@@ -10,7 +10,6 @@ lib__sql = {
 		sql_server.mx
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io 
 	LIBS = ../../server/libsqlserver $(MONET_LIBS)
-	LDFLAGS = -module
 }
 
 scripts_mal = {

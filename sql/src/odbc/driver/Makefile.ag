@@ -120,5 +120,4 @@ lib_MonetODBC = {
 	SQLTransact.c
 	WINLIBS = $(SOCKET_LIBS)
 	LIBS = $(MONET_LIBS) -lMapi -lstream -lmutils $(ICONV_LIBS)
-	LDFLAGS = -module
 }
