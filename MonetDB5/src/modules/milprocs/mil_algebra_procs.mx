@@ -306,7 +306,7 @@ exit	nf_a;
 	rf_a := dbl(cnt);
 	return sf_a :=/(qf_a,rf_a);
 end avg;
-function count_no_nil(b:bat[:any,:any]):int;
+function count_no_nil(b:bat[:any,:any]):lng;
 	return tf_a :=count(b,true);
 end count_no_nil;
 @- Original code
