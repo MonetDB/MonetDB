@@ -373,16 +373,16 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
         sa.lpSecurityDescriptor = 0;
 
         h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
-        if (h1 == NULL) {
+        if (h1 == INVALID_HANDLE_VALUE) {
 		GDKsyserror("MT_mmap: CreateFile('%s', %d, %d, &sa, %d, %d, NULL) failed\n",
 		                              path, mode0, mode1, OPEN_ALWAYS, mode2);
                 return (void*) -1;
         }
 
-        h2 = CreateFileMapping(h1, &sa, mode3, (off+len) >> 32, (unsigned int) (off+len), NULL);
+        h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((__int64)off+(__int64)len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off+len) & 0xFFFFFFFFi64), NULL);
         if (h2 == NULL) {
 		GDKsyserror("MT_mmap: CreateFileMapping(%x, &sa, %d, %d, %u, NULL) failed\n",
-		                        h1, mode3, (off+len) >> 32, (unsigned int) (off+len));
+		                        h1, mode3, (DWORD) ((((__int64)off+(__int64)len) >> 32) & 0xFFFFFFFFi64), (DWORD) ((off+len) & 0xFFFFFFFFi64));
                 CloseHandle(h1);
                 return (void*) -1;
         }
@@ -662,6 +662,7 @@ void *dlsym(void * __handle, const char * __name){
   	HINSTANCE handle = (HINSTANCE)__handle;
   	return (void*)GetProcAddress (handle, __name);
   }
+  return NULL;
 }
 
 char *dlerror(void){
