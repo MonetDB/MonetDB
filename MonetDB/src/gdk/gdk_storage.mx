@@ -641,8 +641,7 @@ BAT *BATload_intern(bat i) {
 	} else {
 		b->batMapdirty |= ret; /* heap mode changed during load? */
 		b->haccCopiedtodisk = TRUE; /* correct if not set yet */
-		/*HEAP_checkformat(&b->haccelerator);
-*/
+		HEAP_checkformat(&b->haccelerator);
 	}
 
 	/* LOAD tail accelerator heap */
@@ -661,8 +660,7 @@ BAT *BATload_intern(bat i) {
 	} else {
 		b->batMapdirty |= ret; /* heap mode changed during load? */
 		b->taccCopiedtodisk = TRUE; /* correct if not set yet */
-		/*HEAP_checkformat(&b->taccelerator);
-*/
+		HEAP_checkformat(&b->taccelerator);
 	}
 
 	/* load succeeded; register it in BBP */

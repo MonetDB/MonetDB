@@ -409,7 +409,7 @@ void BATSIGpipe() {
 int BATSIGcrash() {
 	static int crash = 0;
 	if (!crash++) {
-		GDKlog(GDKCRASH); 
+		GDKlog(GDKCRASH);
 		MT_global_exit(1);
 	}
 	return 0;
@@ -1185,11 +1185,12 @@ void GDKaddbuf(char *message) {
 /*VARARGS*/
 int GDKwarning(char *format, ...) {
 	char message[GDKMAXERRLEN];	
+	int len = strlen(GDKWARNING);
 	va_list ap; 
 
 	strcpy(message, GDKWARNING);
 	va_start(ap, format); 
-	vsprintf(message + strlen(GDKWARNING), format, ap); 
+	vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap); 
 	va_end (ap); 
 
 	GDKaddbuf(message);
@@ -1201,11 +1202,12 @@ int GDKwarning(char *format, ...) {
 /*VARARGS*/
 int GDKerror(char *format, ...) {
 	char message[GDKMAXERRLEN];	
+	int len = strlen(GDKERROR);
 	va_list ap; 
 
 	strcpy(message, GDKERROR);
 	va_start(ap, format); 
-	vsprintf(message + strlen(GDKERROR), format, ap); 
+	vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap); 
 	va_end(ap); 
 
 	GDKaddbuf(message);
@@ -1217,18 +1219,27 @@ int GDKerror(char *format, ...) {
 int GDKsyserror(char *format, ...)
 {
 	char message[GDKMAXERRLEN];	
+	int len = strlen(GDKERROR);
 
 	int	err = MT_geterrno(); 
 	va_list ap; 
 
 	strcpy(message, GDKERROR);
 	va_start(ap,format); 
-	vsprintf(message + strlen(GDKERROR), format, ap); 
+	vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap); 
 	va_end(ap); 
 	if (err > 0 && err < 1024) {
-		strcat(message, GDKMESSAGE);
-		strcat(message, strerror(err)); 
-		strcat(message, "\n"); 
+		char *osmsg = strerror(err);
+		int len1  = strlen(message);
+		int len2  = len1 + strlen(GDKMESSAGE);
+		int len3  = len2 + strlen(osmsg);
+
+		if (len3 + 2 < GDKMAXERRLEN) {
+			strcpy(message + len1, GDKMESSAGE);
+			strcpy(message + len2, osmsg);
+			message[len3] = '\n';
+			message[len3+1] = 0;
+		}
 	}
 	GDKaddbuf(message);
 
@@ -1239,6 +1250,7 @@ int GDKsyserror(char *format, ...)
 /*VARARGS*/
 int GDKfatal(char *format, ...) {
 	char message[GDKMAXERRLEN];	
+	int len = strlen(GDKFATAL);
 	va_list ap; 
 	FILE *fd=stderr;
 
@@ -1246,7 +1258,7 @@ int GDKfatal(char *format, ...) {
 	BATSIGinit();	
 	strcpy(message, GDKFATAL);
 	va_start(ap, format); 
-	vsprintf(message, format, ap); 
+	vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap); 
 	va_end(ap); 
 	if (GDKsilent == 0) {
             fputs(message, fd); 

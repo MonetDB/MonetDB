@@ -1,10 +1,10 @@
 stdout of test 'test_20` in directory 'tests/suite_01` itself:
 
-#> Mtest:	milS test_20 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_20.milS
-# Monet Database Server V4.1
+#> Mtest (15:23:13):	milS test_20 milS
+#> Mtest (15:23:13):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_01 -single test_20.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_20.milS
 
 loaded;
@@ -30,21 +30,17 @@ setoid(oid(20000000));
 # Note that complex procs should normally be prepared in block mode.
 
 unknown("hello");
-!ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 
 #simple procedure with withdrawal
 proc c:= clock.print;
 c;
-!WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 undef c;
 c;
-!WARNING: interpret: convert identifier 'c' to string.
 
 # redefinition of existing procedure
 proc c:= clock.print;
 c;
-!WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 proc c:= cpu.print;
 printf("#~BeginVariableOutput~#\n"); c; printf("#~EndVariableOutput~#\n");
@@ -54,9 +50,9 @@ printf("#~BeginVariableOutput~#\n"); c; printf("#~EndVariableOutput~#\n");
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  130	  ]
+[ "user",	  100	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  150	  ]
+[ "system",	  20	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 
@@ -68,14 +64,8 @@ echo("hello");
 echo(12,13);
 [ 12 ]
 echo;
-!ERROR: yysubstitute: illegal argument '$1'.
-!ERROR: interpret: unresolved reference 5.
-!ERROR: print(param 1): evaluation error.
 proc echo:= $3.print;
 echo(1);
-!ERROR: yysubstitute: illegal argument '$3'.
-!ERROR: interpret: unresolved reference 5.
-!ERROR: print(param 1): evaluation error.
 echo(1,2,3);
 [ 3 ]
 
@@ -84,6 +74,5 @@ proc forward;
 forward;
 undef forward;
 forward;
-!WARNING: interpret: convert identifier 'forward' to string.
 
 quit;

@@ -1475,7 +1475,7 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 @c
 	if (assignop) {
 		GDKfree(assignop);
-		if (*t != TOK_OPERATOR) {
+		if (*t != TOK_OPERATOR && *t != TOK_COMMAND) {
 		    ret = NULL;
 		} else {
 		    *t = TOK_ASSIGNOP;

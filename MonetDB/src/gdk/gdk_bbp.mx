@@ -1859,7 +1859,7 @@ static int transient_acc(str nme) {
          * fields might be FALSE while they should be TRUE, hence can't use them now (DS2.2.7)
          */
 	int acctype = ACCindex(nme);
-	if (acctype) {
+	if (acctype > 0) {
 		return (BATaccelerators[acctype].accSave == NULL);
 	}
 	return FALSE;

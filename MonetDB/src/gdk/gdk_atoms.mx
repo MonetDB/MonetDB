@@ -626,8 +626,10 @@ Recursive BATs are a special case. You should modify their reference count.
 
 #define STRHASHTABLE	(1<<10)
 #define STRHASHMASK	(STRHASHTABLE-1)
+#define STRHASHSIZE 	(STRHASHTABLE << 2)
+#define STRHEAPNIL 	2147430104 /* 4 bytes GDK_chr_min (str_nil pattern) */
 #define AVGSTRLEN	12
-#define MAXCHAIN	20
+#define MAXCHAIN	10
 #define AVGSTRSPACE	(sizeof(int) + AVGSTRLEN + 1)
 #define ELIMLIMIT	(STRHASHTABLE*(sizeof(int)+MAXCHAIN*AVGSTRSPACE))
 #define ELIMDOUBLES(h)	((h)->free < ELIMLIMIT)
@@ -896,9 +898,8 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 @:atomtostr(int,%d,int)@
 
 @:numfromstr(lng)@
-#ifndef __CYGWIN32__
 @:atomtostr(lng,%lld,lng)@
-#else
+@
 int lngToStr(char **dst, int *len, lng *src) {
 	char *p;
 	int l=0;
@@ -924,7 +925,6 @@ int lngToStr(char **dst, int *len, lng *src) {
 	} else if (ll) {
 		sprintf(p, "%ld", (ll<0)?-ll:ll);	
 	}
-@c
 	l += strlen(p+l);
 	ll = (long) ((*(lng*) src) % LL_CONSTANT(10000000));
 	if (l) {
@@ -934,8 +934,7 @@ int lngToStr(char **dst, int *len, lng *src) {
 	}
 	return strlen(*dst);
 }
-#endif
-
+@c
 int ptrFromStr(char* src, int * len, ptr **dst) {
 	int error = 0;
 	long base = 0;
@@ -963,98 +962,39 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 }
 @:atomtostr(ptr,%x,unsigned int)@
 
-static dbl pow10_dbl[8] = 
-  { 1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0 };
-static flt pow10_flt[8] = 
-  { 1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0 };
-
-@= fltfromstr
-int @1FromStr(char* src, int* len, @1 **dst) {
-	int scale = 0, digits=0, numseen=0, minus = 0;
-	char buf[@5], *q=buf, *p = src;
-	@4 num = 0;
+int dblFromStr(char* src, int* len, dbl **dst) {
+	char *p = src;
+	dbl d = strtod(src, &p); 	
 
 	/* alloc memory */
-	@:atommem(@1,sizeof(@1))@
-	**dst = @1_nil; /* default return value is nil */
+	@:atommem(dbl,sizeof(dbl))@
 
-	if (*p == '-' || *p == '+') {
-		minus = (*p++ == '-');
-	} 
-	if (GDKisdigit(p[0]) == 0 || (p[0] == '.' && GDKisdigit(p[1]) == 0)) {
-		return 0; /* syntax error */
-	}
-
-	/* parse number part */
-	while(GDKisdigit(*p)) {
-		if (*p != '0' || numseen) {
-		    	if (digits < @5) {
-				num = (*p - '0') + mult10(num);
-				*q++ = *p;
-				digits++;
-			} else {
-				scale++;
-			} numseen = TRUE;
-		} p++;
-	} 
-
-	/* parse part after comma */
-	if (*p == '.') {
-		int maxpos=0, pos=0;
-		p++;
-		while(GDKisdigit(*p)) {
-			pos++;
-		    	if (*p != '0' || numseen) {
-				if (digits < @5) {
-					num = (*p - '0') + mult10(num);
-					*q++ = *p;
-					digits++;
-					maxpos = pos;
-				} numseen = TRUE;
-			} p++; 
-		} 
-		scale -= maxpos;
-	} *q = 0;
-
-	/* parse scale (a simple integer) */
-	if (*p == 'e' || *p == 'E') {
-		int add=0, *sp = &add, l=8;
-		int pos = intFromStr(++p, &l, &sp); 
-		p += pos; 
-		if (add != int_nil) scale += add;
-	}
-
-	/* if the parsed value is within bounds, assign it to the return value */
-	digits = MAX(0,digits+scale);
-	if (digits < @2 || (digits == @2 && strcmp(buf,@3) < 0)) {
-                int itr = ABS(scale);
-		@1 val = (@1) (minus?-num:num);
-		@1 scl = pow10_@1[itr&7];
-
-		for(itr>>=3; itr > 0; itr--) {
-                        scl *= 100000000.0;
-                }
-                if (scale < 0) {
-                        val /= scl;
-                } else {
-                        val *= scl;
-                }
-                **dst = val;
-		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
-			p += 2;
-		}
+	if (p == src || d > GDK_dbl_max || d <= GDK_dbl_min) {
+		**dst = dbl_nil; /* default return value is nil */
+	} else {
+		**dst = d;
 	}
 	return p-src;
 }
-@c
-@:fltfromstr(flt, 39, "3402823466", int, 9)@
-@:atomtostr(flt,%g,float)@
-
-@:fltfromstr(dbl, 309, "17976931348623157", lng, 18)@
 @:atomtostr(dbl,%g,double)@
 
+int fltFromStr(char* src, int* len, flt **dst) {
+	char *p = src;
+	dbl d = strtod(src, &p); 	
 
+	/* alloc memory */
+	@:atommem(flt,sizeof(flt))@
+
+	if (p == src || d > GDK_flt_max || d <= GDK_flt_min) {
+		**dst = flt_nil; /* default return value is nil */
+	} else {
+		**dst = (flt) d;
+	}
+	return p-src;
+}
+@:atomtostr(flt,%g,float)@
 @}
+
 @+ String Atom Implementation
 The Built-in type string is funnelled partly through the atom extension
 library. The main reason is to limit the number of built-in types

@@ -619,10 +619,10 @@ typedef struct {
 @:DEF(*Index)@; 
 
 typedef struct {
-	size_t	      offset;		/* offset from start of file (bytes).*/
-       	size_t	      maxsize;		/* maximum realloc size (bytes) */
-	size_t	      free;		/* index where free area starts. */
-	size_t	      size; 		/* size of the heap (bytes)*/
+	@:PTR(size_t)@	offset;		/* offset from start of file (bytes).*/
+       	@:PTR(size_t)@	maxsize;	/* maximum realloc size (bytes) */
+	@:PTR(size_t)@	free;		/* index where free area starts. */
+	@:PTR(size_t)@	size; 		/* size of the heap (bytes)*/
 	@:PTR(str)@	base; 		/* base pointer in memory. */
 	sht		storage; 	/* storage status. */
 	bit		copied; 	/* a copy of an existing map. */
@@ -1061,6 +1061,7 @@ gdk_export int  HEAP_malloc      (Heap* heap, int nbytes);
 gdk_export void HEAP_free        (Heap *heap, int block);  
 gdk_export int  HEAP_private     (Heap* h);   
 gdk_export void HEAP_printstatus (Heap* h);
+gdk_export void HEAP_checkformat (Heap* h);
 gdk_export int  HEAP_check       (Heap* h, HeapRepair *hr);
 gdk_export void HEAP_convert     (Heap* h);                
 gdk_export void HEAP_init        (Heap *heap, int tpe);  

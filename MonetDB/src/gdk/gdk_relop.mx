@@ -432,8 +432,8 @@ BAT *BATouterjoin(BAT *l, BAT *r) {
 	BAT	*bn; 
 	
 	@:joincheck(BATouterjoin, l->ttype, r->htype)@
- 	if (BAThdense(l) && l->tkey && r->hkey) {
-		bn = BATnew(TYPE_void, BATttype(r), BATcount(l));
+ 	if (BAThdense(l) && r->hkey) {
+		bn = BATnew(TYPE_void, ATOMtype(r->ttype), BATcount(l));
 		BATseqbase(bn, l->hseqbase);
 	} else {
 		@:joinbat@
@@ -1249,7 +1249,7 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 				n->offset -= reorder[j]->offset;
                 	}
 		}
-		if (!c->b->hkey) {
+		if (!n->b->hkey) {
 			MULTIJOIN_KEY(status) = 0;
 			MULTIJOIN_SYNCED(status) = 0;
 		}

@@ -275,6 +275,9 @@ int HEAPfree(Heap* h) {
 				if (stat(path, &st)) 
                         	  	GDKmove(BATDIR, h->filename, NULL,
 					  	BATDIR, dst, NULL); 
+				GDKfilepath(path, BATDIR, h->filename, NULL);
+				/* may also fail, if bat is being deleted */
+				unlink(path);
 			}
                 }
                 GDKfree(h->filename);
@@ -374,17 +377,17 @@ int HEAPsave(Heap* h, str nme, str ext) {
 }
 
 int HEAPdelete(Heap* h, str o, str ext) {
-        long_str dst, src;
-        short_str priv;
         int ret = 0;
 
-        /* move a .priv to the .ext name; and delete the .priv */
-        strcpy(priv, ext);
-        strcat(priv, ".priv");
-        GDKmove(BATDIR, o, priv, BATDIR, o, ext); 
-
 	if (h->filename) {
+		int len = strlen(h->filename);
 		ret = GDKunlink(BATDIR, h->filename, NULL);
+		if (len > 5 && strcmp(h->filename+len-5, ".priv") == 0) {	
+        		/* for a X.ext.priv file, also remove any X.ext file */
+        		long_str buf;
+        		GDKfilepath(buf, BATDIR, o, ext);
+        		unlink(buf); /* may fail as file may not exist */
+		}
 	} else if (h->size) {
 		ret = GDKunlink(BATDIR, o, ext);
 	}
@@ -410,19 +413,46 @@ This library contains some routines which implement a {\em malloc} and {\em
 free} function on the Monet {\bf Heap} structure. They are useful when
 implementing a new {\em variable-size} atomic data type, or for implementing
 new search accelerators.  All functions start with the prefix {\tt HEAP\_}. T
+
+Due to non-careful design, the HEADER field was found to be 32/64-bit dependent. 
+As we do not (yet) want to change the BAT image on disk, This is now fixed by 
+switching on-the-fly between two representations. We ensure that the 64-bit memory 
+representation is just as long as the 32-bits version (20 bytes) so the rest of 
+the heap never needs to shift. The function HEAP_checkformat converts at load 
+time dynamically between the layout found on disk and the memory format.
+Recognition of the header mode is done by looking at the first two ints: 
+alignment must be 4 or 8, and head can never be 4 or eight. 
+
+TODO: user HEADER64 for both 32 and 64 bits (requires BAT format change)
 @c
 /* #define DEBUG */
 /* #define TRACE */
 
-typedef struct heapheader
-{
+typedef struct heapheader {
    int head;		/* index to first free block		*/
    int alignment;	/* alignment of objects on heap         */
    int firstblock;      /* first block in heap                  */
    int dummy;
    int (*sizefcn)(ptr); /* ADT function to ask length           */
-}  HEADER;
+}  HEADER32;
 
+typedef struct {
+   int alignment;	/* alignment of objects on heap         */
+   int head;		/* index to first free block		*/
+   int (*sizefcn)(ptr); /* ADT function to ask length           */
+#ifndef MONET64
+   int dummy;
+#endif
+   int firstblock;      /* first block in heap                  */
+}  HEADER64;
+
+#if SIZEOF_LONG==8
+typedef HEADER64 HEADER; 
+typedef HEADER32 HEADER_OTHER; 
+#else
+typedef HEADER32 HEADER; 
+typedef HEADER64 HEADER_OTHER; 
+#endif
 typedef struct hfblock
 {
    int size;		/* Size of this block in freelist	*/
@@ -431,7 +461,8 @@ typedef struct hfblock
 @c
 #define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
 #define roundup_4(x)	(((((x)-1)>>2)+1)<<2)
-#define blocksize(h,p)	((h)->sizefcn?(*(h)->sizefcn)(p):(p)->size)
+#define callfcn(h,p)    ((((unsigned int) (h)->sizefcn) < 65536)?BATSIGcrash():(*(h)->sizefcn)(p))
+#define blocksize(h,p)	((h)->sizefcn?callfcn(h,p):(p)->size) 
 
 static INLINE int roundup_num(int number, int alignment) {
    int rval = number + alignment -1;
@@ -469,6 +500,9 @@ void HEAP_empty(Heap* heap, int nprivate, int alignment) {
    hheader->sizefcn = NULL;
    hheader->alignment = alignment;
    hheader->firstblock = head;
+#if SIZEOF_LONG!=8
+   hheader->dummy = 0;
+#endif
 
    /*
    // Fill first free block.
@@ -648,7 +682,8 @@ void HEAP_free(Heap* heap, int block) {
    }
    if (hheader->sizefcn) {
        blockp = HEAP_index(heap,block,CHUNK);
-       blockp->size = (*hheader->sizefcn)(blockp); /* put back size, overwriting the atom */
+       /* blockp->size = (*hheader->sizefcn)(blockp);  put back size, overwriting the atom */
+       blockp->size = callfcn(hheader,blockp);
    } else {
        block -= hheader->alignment;
        blockp = HEAP_index(heap,block,CHUNK);
@@ -849,14 +884,40 @@ xit:
    return FALSE;
 }
 
+void HEAP_checkformat(Heap *heap) {
+   HEADER_OTHER image = *HEAP_index(heap,0,HEADER_OTHER);
+   if (image.alignment == 4 || image.alignment == 8) {
+	/* it is the other format => correct to the desired format */
+        HEADER *hheader = HEAP_index(heap,0,HEADER);
+#if SIZEOF_LONG==8
+	int hasfcn = *(int*) &image.sizefcn;
+#else 
+	int hasfcn = (int) (image.sizefcn || image.dummy);
+	hheader->dummy = 0;
+#endif
+	hheader->head = image.head;
+	hheader->firstblock = image.firstblock;
+	hheader->alignment = image.alignment;
+	hheader->sizefcn = (GDKfcn) hasfcn;
+   }
+}
+
+/* below routine is for converting between little-endian and big-endian disk images */
 void HEAP_convert(Heap* heap) {
    HEADER* hheader = HEAP_index(heap,0,HEADER);
-   int block;
+   int block, *buf = (int*) hheader;
    CHUNK* blockp;
 
-   hheader->alignment = normal_int_SWAP(hheader->alignment);
-   hheader->firstblock = normal_int_SWAP(hheader->firstblock);
-   hheader->head = normal_int_SWAP(hheader->head);
+   /*
+   // swap all fields as integers; this works both for the 32 and 64 bit HEADER
+   */
+   buf[0] = normal_int_SWAP(buf[0]);
+   buf[1] = normal_int_SWAP(buf[1]);
+   buf[2] = normal_int_SWAP(buf[2]);
+   buf[3] = normal_int_SWAP(buf[3]);
+   buf[4] = normal_int_SWAP(buf[4]);
+
+   HEAP_checkformat(heap);
 
    /*
    // Walk the blocklist; put the sizes right

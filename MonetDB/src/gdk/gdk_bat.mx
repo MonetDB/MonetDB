@@ -1563,8 +1563,6 @@ existing consistent hash tables). On this VIEW we can do a HASfnd
 		} while((p += xx) < q);
 		break;
 @c
-		HEAPfree(hp);
-		bv->hhash_heap = BATmirror(bv)->thash_heap = NULL;
 		BBPreclaim(bv);
 	}
 @-

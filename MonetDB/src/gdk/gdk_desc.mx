@@ -264,8 +264,8 @@ BAT* BATloaddesc(str nme) {
 #else
         BATstore *src = (BATstore *) 
 #endif
-		GDKload(nme, "desc", (int) sizeof(BATstore), 
-				(int) sizeof(BATstore), 256|STORE_MEM);
+		GDKload(nme, "desc", (int) sizeof(*src), 
+				(int) sizeof(*src), 256|STORE_MEM);
         BATstore *dst = (BATstore*) src;
 	int ver, conv=FALSE;
 	BAT *b;
