@@ -1,6 +1,0 @@
-# reference setting tables
-mdb();
-	b := new(nil:int,nil:int);
-	aa_a := insert(b,1,2);
-	ba_a := insert(b,2,3);
-	b := join(b,b);
