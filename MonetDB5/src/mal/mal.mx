@@ -397,6 +397,7 @@ void mal_exit(Client cntxt){
     profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
 #endif
     freeScopeList(cntxt->nspace);
+    cntxt->nspace = 0;
     freeBoxes();
     mal_scope = 0;
     unloadModuleLibraries();

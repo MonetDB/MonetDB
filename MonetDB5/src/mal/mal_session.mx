@@ -287,15 +287,16 @@ The scenarios are run until we finally close the last one.
 	} while(c->scenario);
 
 	if( c->mode > FINISHING){
-		if( isAdministrator(c)){
-			/* old OIDflushdelta =0;*/
-			if( c->scenario){
-				exitScenario(c);
-			}
-			TMcommit();
+	    if( isAdministrator(c)){
+		/* old OIDflushdelta =0;*/
+		if( c->scenario){
+			exitScenario(c);
 		}
+		TMcommit();
+	    }
 	}
-	closeClient(c);
+        if( !isAdministrator(c))
+	    closeClient(c);
 }
 @+ MAL scenario components
 The stages of processing user requests are controlled by a
@@ -416,4 +417,5 @@ str MALengine(Client c){
 	prg->def->errors = 0;
 	return msg;
 }
+/* vim:set shiftwidth=4 expandtab: */
 @}

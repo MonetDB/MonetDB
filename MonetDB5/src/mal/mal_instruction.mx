@@ -631,9 +631,7 @@ illegal re-use of a MAL blk.
 @c
 void freeMalBlk(MalBlkPtr mb){
     int i;
-    /* InstrPtr p;
 
-    p= getInstrPtr(mb,0); */
     for(i=0;i<mb->stop; i++){
         freeInstruction(getInstrPtr(mb, i));
         mb->stmt[i]= NULL;
@@ -1408,10 +1406,10 @@ end.
             goto retryConstant;
         }
         if( BATatoms[type].atomFromStr== 0) {
-        s= getTypeName(type);
-        GDKerror("newConstant:no string coercion for '%s'\n", s);
-        GDKfree(s);
-        break;
+            s= getTypeName(type);
+            GDKerror("newConstant:no string coercion for '%s'\n", s);
+            GDKfree(s);
+            break;
         }
 #ifdef STRUCT_ALIGNED
         vr->vtype= type;

@@ -69,16 +69,16 @@ derived from the parser to avoid a loop in the define-structure.
 #define CATCHsymbol     22
 #define RETURNsymbol    23
 #define BARRIERsymbol   24  
-#define REDOsymbol  25
-#define LEAVEsymbol 26
+#define REDOsymbol      25
+#define LEAVEsymbol     26
 #define YIELDsymbol     27
 #define THREADsymbol    28
-#define EXITsymbol  29
+#define EXITsymbol      29
 
 #define ASSIGNsymbol    40  /* interpreter entry points */
-#define ENDsymbol    41
+#define ENDsymbol       41
 #define COMMENTsymbol   42  /* propagation of comments */
-#define NOOPsymbol  43  /* no operation required */
+#define NOOPsymbol      43  /* no operation required */
 
 #define COMMANDsymbol   61  /* these tokens should be the last group !! */
 #define FUNCTIONsymbol  62  /* the designate the signature start */
@@ -251,7 +251,7 @@ The ATOMindex routine is pretty slow, because it performs a
 linear search through the type table. This code should actually
 be integrated with the kernel.  
 @c
-#define qt(x) (nme[1]==x[1] && nme[2]==x[2] && x[3]==0)
+#define qt(x) (nme[1]==x[1] && nme[2]==x[2] && x[3]==0 && len ==3)
 int getTypeIndex(str nme, int len, int deftype){
     int i;
     char buf[IDLENGTH+2];
@@ -265,6 +265,7 @@ int getTypeIndex(str nme, int len, int deftype){
     case 'f': if(qt("flt")) return TYPE_flt; break;
     case 'l': if(qt("lng")) return TYPE_lng; break;
     case 'o': if(qt("oid")) return TYPE_oid; break;
+    case 'p': if(qt("ptr")) return TYPE_ptr; break;
     case 's': if(qt("str")) return TYPE_str; break;
         if(qt("sht")) return TYPE_sht; break;
     }
@@ -298,5 +299,5 @@ int isIdentifier(str s)
     if( ! isalnum((int)*s) && *s !='_') return -1;
     return 0;
 }
-
+/* vim:set shiftwidth=4 expandtab: */
 @}

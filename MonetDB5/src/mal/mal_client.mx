@@ -392,12 +392,12 @@ the proper IO descriptors.
             (void) stream_close(c->fdin->s);
             (void) stream_destroy(c->fdin->s);
             (void) bstream_destroy(c->fdin);
-		}
+	}
         if( c->fdout) {
             (void) stream_flush(c->fdout); 
             (void) stream_close(c->fdout);
             (void) stream_destroy(c->fdout);
-		}
+	}
         /* if( c->socket) close(c->socket);*/
         return ;
     }
@@ -817,4 +817,5 @@ int readClient(Client c,str prompt){
     @:sysTrace(CURRENT(c))@
     return 1;
 }
+/* vim:set shiftwidth=4 expandtab: */
 @}

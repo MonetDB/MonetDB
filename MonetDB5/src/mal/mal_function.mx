@@ -263,9 +263,9 @@ void chkFlow(MalBlkPtr mb)
         default:
             if( isaSignature(p) && i ){
                 str msg=instruction2str(mb,p,TRUE);
-                        GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
-                        GDKfree(msg);
-                        mb->errors++;
+                GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
+                GDKfree(msg);
+                mb->errors++;
             } else
             if( functionExit(p) && i != mb->stop-1 ){
                 str msg;
@@ -469,4 +469,5 @@ void printFunction(stream *fd, MalBlkPtr mb, int flg){
     for(i=0;i<mb->stop;i++)
     printInstruction(fd,mb, getInstrPtr(mb,i),flg);
 }
+/* vim:set shiftwidth=4 expandtab: */
 @}

@@ -87,7 +87,7 @@ MALfcn getLocalObjectFile(str fcnname){
 
     fullname = MSP_locate_module(fcnname);
     if( fullname == NULL) {
-        stream_printf(GDKout,"Name not resolved %s\n",fullname);
+        /* stream_printf(GDKout,"Name not resolved %s\n",fullname);*/
         return 0;
     }
     /* printf("attempt to load function %s\n",fullname);*/
