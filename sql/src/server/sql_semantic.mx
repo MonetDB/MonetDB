@@ -2119,18 +2119,39 @@ static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, s
 						 	stmt_reverse(ls), 
 						 	stmt_reverse(temp)));
 					} else { /* boolean expression */
-						/* TODO handle selection case */
-						/* needs [exists](x,temp) */
-						return stmt_exist(
-							stmt_reverse(temp),ls);
+						sql_subtype *bt = 
+						    sql_bind_localtype( "bit" );
+						sql_subtype *tp = tail_type(ls);
+						sql_subfunc *exist;
+
+						/* [exist](temp,ls) */
+						exist = sql_bind_func_result(
+							"exist", tp, tp, bt);
+						temp = stmt_reverse(temp);
+						return stmt_binop(temp,ls,exist);
 					}
 				} else { /* SQL_NOT_IN */
 					/* TODO handle boolean expression */
-					return stmt_diff(
-						stmt_dup(ls), stmt_join(
-						 ls, 
-					         stmt_reverse(temp), 
-						 cmp_equal));
+					if (ls->nrcols) {
+						return stmt_diff(
+							stmt_dup(ls), 
+							stmt_join(ls, 
+					       	  	    stmt_reverse(temp), 
+							    cmp_equal));
+					} else {
+						sql_subtype *bt = 
+						    sql_bind_localtype( "bit" );
+						sql_subtype *tp = tail_type(ls);
+						sql_subfunc *nexist; 
+						
+						/* [not_exist](temp,ls) */
+						/* not_exit needed to handle
+						   null correctly */
+						nexist = sql_bind_func_result(
+						       "not_exist", tp, tp, bt);
+						temp = stmt_reverse(temp);
+						return stmt_binop(temp,ls,nexist);
+					}
 				}
 			} else if (l->h->next->type == type_symbol) {
 				symbol *ro = l->h->next->data.sym;
@@ -2181,19 +2202,33 @@ static stmt *sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, s
 
 			if (!ls)
 				return NULL;
+
 			if (ls->type != st_list) {
 				stmt_destroy(ls);
 				return sql_error(sql, 02, "Subquery result wrong");
 			}
 			if (list_length(ls->op1.lval) == 1) {
+				/* predicate case */
 				/* EXIST non empty result means AND TRUE */
 				/* NOT EXIST non empty result means AND FALSE */
-				/* EXISTS pivot.semijoin(pivot.outerjoin(result));
-				 * NOT EXISTS pivot.diff(pivot.outerjoin(result));
-				 */
 				stmt *res, *s = ls->op1.lval->h->data; 
-				printf("stupid exists not implemented\n");
-				res = stmt_reverse(stmt_dup(s));
+				sql_subaggr *cnt = sql_bind_aggr("count", NULL);
+				sql_subtype *bt = sql_bind_localtype( "bit" );
+				sql_subtype *it = sql_bind_localtype( "int" );
+
+				res = stmt_dup(s);
+				res = stmt_aggr(res, NULL, cnt);
+				if (sc->token == SQL_EXISTS){
+	    				sql_subfunc *ne = sql_bind_func_result(
+						"<>", it, it, bt);
+					res = stmt_binop(res, 
+						stmt_atom_int(0), ne);
+				} else { /* NOT EXISTS */
+	    				sql_subfunc *e = sql_bind_func_result(
+						"=", it, it, bt);
+					res = stmt_binop(res, 
+						stmt_atom_int(0), e);
+				}
 				stmt_destroy(ls);
 				return res;
 			} else {
@@ -2838,7 +2873,7 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 			}
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt),
-			stmt_atom(atom_int(sql_dup_subtype(it), 0)), ne);
+			stmt_atom_int(0), ne);
 
 		/* 2e stage: find out if inserted are unique */
 		if (idx_inserts->nrcols){ /* insert columns not atoms */
@@ -2954,13 +2989,11 @@ hash_insert( sql_idx *i, stmt **inserts )
 				sql_bind_func_result("xor", it, it, it);
 			h = stmt_binop(h, stmt_binop(
 				stmt_dup(inserts[c->c->colnr]->op2.stval), 
-				stmt_atom(atom_int(sql_dup_subtype(it), bits)), 
-				hf), xor);
+				stmt_atom_int(bits), hf), xor);
 		} else {
 			h = stmt_binop(
 				stmt_dup(inserts[c->c->colnr]->op2.stval), 
-				stmt_atom(atom_int(sql_dup_subtype(it), bits)), 
-				hf);
+				stmt_atom_int(bits), hf);
 		}
 	}
 	return h;
@@ -3164,7 +3197,7 @@ update_check_ukey( mvc * sql, stmt **updates, sql_key *k, stmt *idx_updates, int
 				upd);
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt),
-			stmt_atom(atom_int(sql_dup_subtype(it), 0)), ne);
+			stmt_atom_int(0), ne);
 
 		/* 2e stage: find out if updated are unique */
 		if (idx_updates->nrcols){ /* update columns not atoms */
@@ -3283,10 +3316,9 @@ hash_update( sql_idx *i, stmt **updates, int updcol )
 		if (h){
 			sql_subfunc *xor = sql_bind_func_result("xor", it, it, it);
 			h = stmt_binop(h, stmt_binop(upd, 
-				stmt_atom(atom_int(sql_dup_subtype(it), bits)), hf), xor);
+				stmt_atom_int(bits), hf), xor);
 		} else {
-			h = stmt_binop(upd, stmt_atom(
-				atom_int(sql_dup_subtype(it), bits)), hf);
+			h = stmt_binop(upd, stmt_atom_int(bits), hf);
 		}
 	}
 	stmt_destroy(ts);
