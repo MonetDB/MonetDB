@@ -49,7 +49,7 @@ gdk_version=@VERSION@
 # Monet Section
 #==============
 monet_admin=adm			#administrator user name 
-#monet_prompt=monet>
+#monet_prompt=M5>
 monet_welcome=yes		#Version and copyright information
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 monet_daemon=no			# default yes
