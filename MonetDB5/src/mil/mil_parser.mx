@@ -609,8 +609,9 @@ void parseMILstmtend(Client cntxt, MalBlkPtr currBlk){
 	} else advance(cntxt,1);
 }
 void parseMILstmt(Client cntxt, MalBlkPtr currBlk){
-	if( currChar(cntxt) == '{')
-		return parseMILblock(cntxt,currBlk);
+	if( currChar(cntxt) == '{'){
+		parseMILblock(cntxt,currBlk);
+	}
 	parseMILexpr(cntxt,currBlk);
 	parseMILstmtend(cntxt,currBlk);
 }
