@@ -646,7 +646,7 @@ static int query_attr_print(XqueryCtx* ctx, oid pre) {
                 oid id = *(oid*)BUNhead(b, p);
                 /* */
                 oid poid = *(oid*)idxTVinWS(ctx,ATTR_PROP,id);
-                int frag = *(oid*)idxTVinWS(ctx,ATTR_FRAG,id);
+                int frag = (int)*(oid*)idxTVinWS(ctx,ATTR_FRAG,id);
                 str val  = (str)idxTVinWSorFRGN(ctx,frag,PROP_VAL,poid);
                 /* */
                 oid qoid = *(oid*)idxTVinWS(ctx,ATTR_QN,id);
@@ -670,14 +670,14 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
 
         int valueFRAG = ctx->curFRAG;
         if ( pre_frag )
-                valueFRAG = *(int*)idxTVinWS(ctx,PRE_FRAG,pre);
+                valueFRAG = (int)*(oid*)idxTVinWS(ctx,PRE_FRAG,pre);
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
                         str name = (str)idxTVinWSorFRGN(ctx,valueFRAG,QN_LOC,prop);
                         str ns   = (str)idxTVinWSorFRGN(ctx,valueFRAG,QN_NS,prop);
                         handle_startElement(ctx,ns,name);
                         query_attr_print(ctx,pre);
-                        oid size = *(oid*)idxTVinWS(ctx,PRE_SIZE,pre);
+                        oid size = (oid)*(int*)idxTVinWS(ctx,PRE_SIZE,pre);
                         pushTag(ctx,pre+size,ns,name);
                         break;
                         }
@@ -697,7 +697,7 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
                         }
                 case (char)4: {/* DOCUMENT */
                         /* The node represents an entire document */
-                        oid offset = *(oid*)idxTVinWS(ctx,PRE_SIZE,pre);
+                        oid offset = (oid)*(int*)idxTVinWS(ctx,PRE_SIZE,pre);
                         pushTag(ctx,pre+offset,"","");
                         break;
                         }
