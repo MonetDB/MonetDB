@@ -20,21 +20,32 @@ Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 BuildRequires: php python perl
 
+%define buildphp 1
+%define buildpython 1
+%define buildperl 1
+%define builddoc 0
+
 %package client
 Summary: MonetDB clients
 Group: System
 
+%if %{buildphp}
 %package php
 Summary: MonetDB php interface
 Group: System
+%endif
 
+%if %{buildpython}
 %package python
 Summary: MonetDB python interface
 Group: System
+%endif
 
+%if %{buildperl}
 %package perl
 Summary: MonetDB perl interface
 Group: System
+%endif
 
 %package server
 Summary: MonetDB server 
@@ -44,7 +55,7 @@ Group: System
 Summary: MonetDB development package 
 Group: System 
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %package docu
 Summary: MonetDB documentation
 Group: System 
@@ -59,23 +70,29 @@ accellerators, SQL- and XML- frontends.
 %description client
 Add the MonetDB client description here
 
+%if %{buildphp}
 %description php
 Add the MonetDB php description here
 Requires: %{name}-client
 Requires: php
 %define php_extensiondir %(php-config --extension-dir)
+%endif
 
+%if %{buildpython}
 %description python
 Add the MonetDB python description here
 Requires: %{name}-client
 Requires: python
 %define python_libdir %(python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")')
+%endif
 
+%if %{buildperl}
 %description perl
 Add the MonetDB perl description here
 Requires: %{name}-client
 Requires: perl
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
+%endif
 
 %description server
 Add the MonetDB server description here
@@ -88,7 +105,7 @@ Requires: epsffit
 PreReq: /sbin/chkconfig, /sbin/service, sh-utils
 PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %description docu
 Add the MonetDB documentation description here
 %endif
@@ -153,17 +170,23 @@ rm -fr $RPM_BUILD_ROOT
 %{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
 %{_sbindir}/useradd -d %{localstatedir}/%{name} -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
 
+%if %{buildphp}
 %files php
 %defattr(-,monetdb,monetdb) 
 %{php_extensiondir}/*
+%endif
 
+%if %{buildpython}
 %files python
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{python_libdir}/*
+%endif
 
+%if %{buildperl}
 %files perl
 %defattr(-,monetdb,monetdb) 
 %{prefix}/%{perl_libdir}/*
+%endif
 
 %files server
 %defattr(-,monetdb,monetdb) 
@@ -209,7 +232,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/include/%{name}/*.h
 %{prefix}/include/%{name}/*/*.[hcm]
 
-%if %{DOCTOOLS}
+%if %{builddoc}
 %files docu
 %defattr(-,monetdb,monetdb)
 %{prefix}/share/%{name}/docs/*/*.html
