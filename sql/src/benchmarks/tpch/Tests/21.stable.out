@@ -11,8 +11,6 @@ stdout of test '21` in directory 'src/benchmarks/tpch` itself:
 printf("\nReady.\n");
 
 Ready.
-#TODO stmt_intersect (2)
-#TODO stmt_intersect (2)
 quit();
 
 Over..

@@ -60,11 +60,11 @@ stderr of test 'decimal` in directory 'src/test` itself:
 MAPI  = monetdb@spin:58772
 ACTION= read_into_cache
 QUERY = insert into test values (1234);
-ERROR = !Types int(4,0) (sht) and decimal(5,2) (int) are not equal
+ERROR = !Types decimal(4,0) (sht) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 ACTION= read_into_cache
 QUERY = insert into test values (-1234);
-ERROR = !Types int(4,0) (sht) and decimal(5,2) (int) are not equal
+ERROR = !Types decimal(4,0) (sht) and decimal(5,2) (int) are not equal
 MAPI  = monetdb@spin:58772
 ACTION= read_into_cache
 QUERY = insert into test values (1234.1);
