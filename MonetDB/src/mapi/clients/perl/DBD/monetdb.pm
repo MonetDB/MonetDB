@@ -25,14 +25,11 @@ use strict;
 
 use DBI;
 use Carp;
-use vars qw($VERSION $err $errstr $state $drh);
+use vars qw($VERSION $drh);
 use sigtrap;
 # use Data::Dump qw(dump);
 
 $VERSION = '0.02';
-$err = 0;
-$errstr = '';
-$state = undef;
 $drh = undef;
 
 sub driver {
@@ -45,9 +42,6 @@ sub driver {
     $drh = DBI::_new_drh($class, {
 				  Name        => 'monetdb',
 				  Version     => $VERSION,
-				  Err         => \$DBD::monetdb::err,
-				  Errstr      => \$DBD::monetdb::errstr,
-				  State       => \$DBD::monetdb::state,
 				  Attribution => 'DBD::monetdb derived from monetdb.pm by Arjan Scherpenisse',
 				 }, {});
 }
