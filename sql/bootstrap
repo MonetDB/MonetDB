@@ -11,7 +11,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 	AUTOGEN=src/utils/autogen/autogen.py 
 	CONFDIR=
  else
-	if [ ! "$MONET_PREFIX"  -a  "$MONETDIST" ] ; then
+	if [ -z "$MONET_PREFIX" -a -n "$MONETDIST" ] ; then
 		MONET_PREFIX=$MONETDIST
 	fi
 	if [ "$MONET_PREFIX" = "" ]; then
