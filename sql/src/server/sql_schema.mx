@@ -872,7 +872,7 @@ column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_t
  		rk = mvc_bind_ukey( rt, cols);
 		list_destroy(cols);
 		if (!rk) 
-			return sql_error(sql, 02, "Could not find referenced unique key in table %s.%s\n", rtname, rcname );
+			return sql_error(sql, 02, "Could not find referenced primary key in table %s.%s\n", rtname, rcname );
 		k = mvc_create_key(sql, t, name, fkey, rk);
 		mvc_create_kc(sql, k, cs );
 		res = stmt_none();
@@ -897,11 +897,57 @@ column_constraint_type(mvc * sql, char *name, symbol * s, sql_schema * ss, sql_t
 column_option: default | column_constraint ;
 */
 
-static char *table_constraint_name()
+static char *table_constraint_name(symbol* s, sql_table* t)
 {
-	oid id = OIDnew(1);
+	/* create a descriptive name like table_col_pkey */
+	char* suffix; /* stores the type of this constraint */
+	dnode *nms = NULL;
+
+	switch (s->token) {
+		case SQL_UNIQUE:
+			suffix = "_unique";
+			/* the condition below is needed for SQL shortcut
+			   id int UNIQUE because no column is given.
+			   in the normal case it is (id int, UNIQUE(id)
+			   I don't know how to figure out the column name
+			   here for the first case.
+			 */
+			if (s->data.lval)
+				nms = s->data.lval->h; /* list of columns */
+		break;
+		case SQL_PRIMARY_KEY:
+			suffix = "_pkey";
+			/* the condition below is needed for SQL shortcut
+			   id int PRIMARY KEY because no column is given.
+			   in the normal case it is (id int, PRIMARY KEY(id)
+			   I don't know how to figure out the column name
+			   here for the first case.
+			 */
+			if (s->data.lval)
+				nms = s->data.lval->h; /* list of columns */
+		break;
+		case SQL_FOREIGN_KEY:
+			suffix = "_fkey";
+			nms = s->data.lval->h->next->data.lval->h; /* list of colums */
+		break;
+		default:
+			suffix = "";
+			nms = NULL;
+	}
+
 	static char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "%cc%ld", INTERNAL_KEY_MARKER, id );
+	snprintf(buf, BUFSIZ, "%c%s",
+		INTERNAL_KEY_MARKER,
+		t->base.name
+	);
+	
+	for (; nms; nms = nms->next) {
+		strncat(buf, "_", BUFSIZ - strlen(buf));
+		strncat(buf, nms->data.sval, BUFSIZ - strlen(buf));
+	}
+
+	strncat(buf, suffix, BUFSIZ - strlen(buf));
+	
 	return buf;
 }
 
@@ -918,7 +964,7 @@ column_option(mvc * sql, symbol * s, sql_schema * ss, sql_table * t, sql_column 
 			char *opt_name = l->h->data.sval;  
 			symbol *sym = l->h->next->data.sym;
 			if (!opt_name) 
-				opt_name = table_constraint_name();
+				opt_name = table_constraint_name(sym, t);
 			res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
 		}
 		break;
@@ -1051,7 +1097,7 @@ table_foreign_key( mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table
 			rk = &ft->pkey->k;
 		}
 		if (!rk){
-			return sql_error(sql, 02, "Could not find referenced unique key in table %s\n", ft->base.name );
+			return sql_error(sql, 02, "Could not find referenced primary key in table %s\n", ft->base.name );
 		}
 		k = mvc_create_key(sql, t, name, fkey, rk);
 
@@ -1068,7 +1114,7 @@ table_foreign_key( mvc * sql, char *name, symbol * s, sql_schema * ss, sql_table
 		}
 		if (nms || fnms){
 			return sql_error(sql, 02, 
-			   "Not all colunms are handeled in the foreign key\n");
+			   "Not all columns are handled in the foreign key\n");
 		}
 		if (alter){
 			list *l = create_stmt_list();
@@ -1133,7 +1179,7 @@ table_constraint( mvc * sql, symbol * s, sql_schema *ss, sql_table * t, int alte
 		char *opt_name = l->h->data.sval; 
 		symbol *sym = l->h->next->data.sym;
 		if (!opt_name) 
-			opt_name = table_constraint_name();
+			opt_name = table_constraint_name(sym, t);
 		res = table_constraint_type(sql, opt_name, sym, ss, t, alter);
 	}
 
