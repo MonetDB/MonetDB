@@ -21,7 +21,7 @@
 #         Jens Teubner <jens.teubner@uni-konstanz.de>
 #
 
-SUBDIRS = daemon schema debug mem parser semantics core mil include
+SUBDIRS = daemon schema debug mem parser semantics core algebra mil include
 
 INCLUDES = include $(MONET_INCS) $(LIBGC_CFLAGS)
 
@@ -36,6 +36,7 @@ bin_pf = {
 		parser/libparser \
 		semantics/libsemantics \
 		core/libcore \
+		algebra/libalgebra \
 		mil/libmil \
 		$(LIBGC_LDADD) $(LIBXML2_LDADD) $(LEXLIB)
 		

@@ -262,15 +262,13 @@ PFpnode_t *
 p_wire4 (PFptype_t type, PFloc_t loc,
 	 PFpnode_t *n1, PFpnode_t *n2, PFpnode_t *n3, PFpnode_t *n4);
 
-/* PFcnode_t */
-#include "core.h"
 
 struct PFpnode_t {
   PFptype_t kind;                      /**< node kind */
   PFpsem_t  sem;                       /**< semantic node information */
   PFpnode_t *child[PFPNODE_MAXCHILD];  /**< child node list */
   PFloc_t   loc;                       /**< textual location of this node */
-  PFcnode_t *core;                     /**< pointer to core representation */
+  struct PFcnode_t *core;              /**< pointer to core representation */
 };
 
 #endif  /* ABSSYN_H */

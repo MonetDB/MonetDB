@@ -2,9 +2,9 @@
 
 /**
  * @file
- *
- * Convert the internal representation of a MIL programm into a
- * string. Declarations for mil/milprint.c
+ * 
+ * Declarations for algdebug.c; dump Algebra
+ * tree in AY&T dot format or human readable
  *
  *
  * Copyright Notice:
@@ -34,18 +34,17 @@
  * $Id$
  */
 
-#ifndef MILPRINT_H
-#define MILPRINT_H
+#ifndef ALGDEBUG_H
+#define ALGDEBUG_H
 
-#include "mil.h"
-#include "array.h"
+/* FILE, ... */
+#include <stdio.h>
 
-/** Indentation width for MIL output */
-#define INDENT_WIDTH 4
+#include "algebra.h"
 
-PFarray_t *PFmil_serialize (PFmil_t *);
-void PFmilprint (FILE *, PFarray_t *);
+extern char *a_id[];
 
-#endif    /* MILPRINT_H */
+void PFalg_dot (FILE *, PFalg_op_t *);
+void PFalg_pretty (FILE *, PFalg_op_t *);
 
-/* vim:set shiftwidth=4 expandtab: */
+#endif  /* ALGDEBUG_H */

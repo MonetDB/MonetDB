@@ -25,11 +25,16 @@
 
 INCLUDES = ../include $(MONET_INCS)
 
+# locally disable "-Werror"
+X_CFLAGS =
+
 lib_mil = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		core2mil.c \
-		milprint.c \
-		miltype.c 
+		mil.c \
+		milgen.mt.sed \
+		milprint.c
 }
+
+EXTRA_DIST = milgen_impl.h

@@ -31,7 +31,7 @@ lib_debug = {
 	SOURCES = \
 		abssynprint.c \
 		coreprint.c \
-		mildebug.c \
+		algdebug.c \
 		prettyp.c 
 }
 

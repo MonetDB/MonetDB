@@ -1,3 +1,5 @@
+## Process this file with automake to produce Makefile.in
+#
 # Copyright Notice:
 # -----------------
 # 
@@ -21,13 +23,17 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-EXTRA_DIST = \
-	abssyn.h         env.h        milprint.h   pathfinder.h  twig.h \
-	abssynprint.h    fs.h         milty.h      pfstrings.h   typecheck.h \
-	array.h          func_chk.h   miltype.h    prettyp.h     types.h \
-	core2mil.h       functions.h  normalize.h  qname.h       variable.h \
-	core.h           import.h     ns.h         scope.h       varscope.h \
-	core_mnemonic.h  mem.h        nsres.h      simplify.h    xquery_fo.h \
-	coreprint.h      core2alg.h   oops.h       subtyping.h   algebra.h \
-	daemon.h         mil.h        parser.h     timer.h \
-	algebra_mnemonic.h mil_mnemonic.h milgen.h
+INCLUDES = ../include $(MONET_INCS)
+
+# locally disable "-Werror"
+X_CFLAGS =
+
+lib_algebra = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		algebra.c \
+		core2alg.mt.sed
+}
+
+EXTRA_DIST = core2alg_impl.c 

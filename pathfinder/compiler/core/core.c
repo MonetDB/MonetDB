@@ -78,6 +78,7 @@ PFcore_leaf (PFctype_t kind)
 
     /* static type initialized to none */
     core->type = PFty_none ();
+    core->alg = NULL;
   
     return core;
 }

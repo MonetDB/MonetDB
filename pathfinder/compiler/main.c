@@ -410,29 +410,29 @@
  * order of one-character option names.
  */
 static struct option long_options[] = {
-    { "print-att-dot",               0, NULL, 'D' },
-    { "optimize",                    0, NULL, 'O' },
-    { "print-human-readable",        0, NULL, 'P' },
-    { "timing",                      0, NULL, 'T' },
-    { "stop-after-core-compilation", 0, NULL, 'c' },
-    { "daemon",                      0, NULL, 'd' },
-    { "help",                        0, NULL, 'h' },
-    { "log",                         0, NULL, 'l' },
-    { "stop-after-mil-generation",   0, NULL, 'm' },
-    { "stop-after-normalizing",      0, NULL, 'n' },
-    { "output-type",                 0, NULL, 'o' },
-    { "stop-after-parsing",          0, NULL, 'p' },
-    { "quiet",                       0, NULL, 'q' },
-    { "stop-after-semantics",        0, NULL, 's' },
-    { "typing",                      0, NULL, 't' },
-    { NULL,                          0, NULL, 0 }
+    { "print-att-dot",                 0, NULL, 'D' },
+    { "optimize",                      0, NULL, 'O' },
+    { "print-human-readable",          0, NULL, 'P' },
+    { "timing",                        0, NULL, 'T' },
+    { "stop-after-algebra-generation", 0, NULL, 'a' },
+    { "stop-after-core-compilation",   0, NULL, 'c' },
+    { "daemon",                        0, NULL, 'd' },
+    { "help",                          0, NULL, 'h' },
+    { "log",                           0, NULL, 'l' },
+    { "stop-after-mil-generation",     0, NULL, 'm' },
+    { "stop-after-normalizing",        0, NULL, 'n' },
+    { "stop-after-parsing",            0, NULL, 'p' },
+    { "quiet",                         0, NULL, 'q' },
+    { "stop-after-semantics",          0, NULL, 's' },
+    { "typing",                        0, NULL, 't' },
+    { NULL,                            0, NULL, 0 }
 };
 
 /**
  * character buffer large enough to hold longest
  * command line option plus some extra formatting space
  */
-static char opt_buf[sizeof ("stop-after-core-compilation") + 8];
+static char opt_buf[sizeof ("stop-after-algebra-generation") + 8];
 
 static int 
 cmp_opt (const void *o1, const void *o2) 
@@ -481,7 +481,7 @@ static const char
 #include "prettyp.h"
 #include "abssynprint.h"
 #include "coreprint.h"
-#include "mildebug.h"
+#include "algdebug.h"
 #include "daemon.h"
 #include "timer.h"
 #include "fs.h"           /* core mapping (formal semantics) */
@@ -489,7 +489,9 @@ static const char
 #include "import.h"       /* XML Schema import */
 #include "simplify.h"     /* core simplification */
 #include "typecheck.h"    /* type inference and check */
-#include "core2mil.h"     /* mapping core --> MIL */
+#include "algebra.h"      /* algebra tree */
+#include "core2alg.h"     /* Compile Core to Relational Algebra */
+#include "milgen.h"       /* MIL tree generation */
 #include "milprint.h"     /* create string representation of MIL tree */
 #include "oops.h"
 #include "mem.h"
@@ -554,6 +556,21 @@ print_core (PFcnode_t * croot)
 }
 
 /**
+ * Print algebra tree in dot notation or prettyprinted,
+ * depending on command line switches.
+ */
+static void
+print_algebra (PFalg_op_t * aroot)
+{
+    if (PFstate.print_dot)
+        PFalg_dot (stdout, aroot);
+
+    if (PFstate.print_pretty)
+        PFalg_pretty (stdout, aroot);
+}
+
+#if 0
+/**
  * Print MIL tree in dot notation or prettyprinted,
  * depending on command line switches.
  */
@@ -566,6 +583,7 @@ print_mil (PFmnode_t * mroot)
     if (PFstate.print_pretty)
         PFmil_pretty (stdout, mroot);
 }
+#endif
 
 
 static PFcnode_t * unfold_lets (PFcnode_t *c);
@@ -578,10 +596,11 @@ static PFcnode_t * unfold_lets (PFcnode_t *c);
 int
 main (int argc, char *argv[])
 {
-    PFpnode_t *proot  = 0;
-    PFcnode_t *croot  = 0;
-    PFmnode_t *mroot  = 0;
-    PFarray_t *mil_program = 0;
+    PFpnode_t  *proot  = 0;
+    PFcnode_t  *croot  = 0;
+    PFalg_op_t *aroot  = 0;
+    PFmil_t    *mroot  = 0;
+    PFarray_t  *mil_program = 0;
 
     /* fd of the log file (if present) */
     int logf = 0;
@@ -611,10 +630,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DOPTcd:hl:mno:pqst", 
+        c = getopt_long (argc, argv, "DOPTacd:hl:mnpqst", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DOPTcd:hl:mno:pqst");
+        c = getopt (argc, argv, "DOPTacd:hl:mnpqst");
 #endif
 
         if (c == -1)
@@ -634,9 +653,6 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s file", 'l'));
             printf ("  -d port%s: act as dæmon listening on specified TCP port\n",
                     long_option (opt_buf, ", --%s port", 'd'));
-            printf ("  -o monet|xterm|html%s: specify output markup\n"
-                    "     (default: monet)\n",
-                    long_option (opt_buf, ", --%s monet|xterm|html", 'o'));
             printf ("  -P%s: print internal tree structure human-readable\n",
                     long_option (opt_buf, ", --%s", 'P'));
             printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
@@ -655,6 +671,8 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'n'));
             printf ("  -c%s: stop after core language generation\n",
                     long_option (opt_buf, ", --%s", 'c'));
+            printf ("  -a%s: stop after algebra tree generation\n",
+                    long_option (opt_buf, ", --%s", 'a'));
             printf ("  -m%s: stop after MIL code generation\n",
                     long_option (opt_buf, ", --%s", 'm'));
             printf ("\n");
@@ -676,17 +694,6 @@ main (int argc, char *argv[])
             logfn = PFstrdup (strtok (optarg, " \t"));
             break;
 
-        case 'o': 
-            if (!strcmp (optarg, "monet"))
-                PFstate.output_type = output_monet;
-            else if (!strcmp (optarg, "xterm"))
-                PFstate.output_type = output_xterm;
-            else if (!strcmp (optarg, "html"))
-                PFstate.output_type = output_html;
-            else
-                PFoops (OOPS_CMDLINEARGS, "illegal output type `%s'", optarg);
-            break;
-
         case 'p':
             if (PFstate.stop_after > phas_parse)
                 PFstate.stop_after = phas_parse;
@@ -705,6 +712,11 @@ main (int argc, char *argv[])
         case 'c':
             if (PFstate.stop_after > phas_fs)
                 PFstate.stop_after = phas_fs;
+            break;
+
+        case 'a':
+            if (PFstate.stop_after > phas_alg)
+                PFstate.stop_after = phas_alg;
             break;
 
         case 'm':
@@ -929,25 +941,43 @@ main (int argc, char *argv[])
     /* ***** end of temporary unfolding code ***** */
 
 
+    /*
+     * map core to algebra tree
+     */
+    tm = PFtimer_start ();
+
+    aroot = PFcore2alg (croot);
+
+    tm = PFtimer_stop (tm);
+    if (PFstate.timing)
+        PFlog ("Algebra tree generation:\t %s", PFtimer_str (tm));
+
+    if (PFstate.stop_after == phas_alg) {
+        print_algebra (aroot);
+        goto bailout;
+    }
+
 
     tm = PFtimer_start ();
 
     /* Map core to MIL 
      */
-    PFcore2mil (croot, &mroot);
+    mroot = PFmilgen (aroot);
 
     tm = PFtimer_stop (tm);
     if (PFstate.timing)
         PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
 
+    /*
     if (PFstate.stop_after == phas_mil) {
         print_mil (mroot);
         goto bailout;
     }
+    */
 
     /* Render MIL program in Monet MIL syntax 
      */
-    if (!(mil_program = PFmil_gen (mroot)))
+    if (!(mil_program = PFmil_serialize (mroot)))
         goto failure;
 
     /* Print MIL program to stdout

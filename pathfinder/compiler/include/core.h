@@ -146,16 +146,20 @@ union PFcsem_t {
   PFfun_t   *fun;        /**< function reference */
 };
 
-/** core tree node */
 typedef struct PFcnode_t PFcnode_t;
 
 /** struct representing a core tree node */
 struct PFcnode_t {
-  PFctype_t  kind;                    /**< node kind indicator */
-  PFcsem_t   sem;                     /**< semantic node information */
-  PFcnode_t *child[PFCNODE_MAXCHILD]; /**< child nodes */
-  PFty_t     type;                    /**< static type */
-  PFmty_t    impl_ty;                 /**< Monet implementation type */
+  PFctype_t   kind;                    /**< node kind indicator */
+  PFcsem_t    sem;                     /**< semantic node information */
+  PFcnode_t  *child[PFCNODE_MAXCHILD]; /**< child nodes */
+  PFty_t      type;                    /**< static type */
+  struct PFalg_op_t *alg;              /**< Relational Algebra equivalent */
+
+  PFmty_t     impl_ty;                 /**< @deprecated Monet implementation
+                                            type. This should no longer be used,
+                                            as we now use the ``algebra
+                                            approach'' to compile into MIL. */
 };
 
 

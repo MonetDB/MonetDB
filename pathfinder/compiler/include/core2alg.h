@@ -3,10 +3,6 @@
 /**
  * @file
  *
- * Convert the internal representation of a MIL programm into a
- * string. Declarations for mil/milprint.c
- *
- *
  * Copyright Notice:
  * -----------------
  *
@@ -28,24 +24,21 @@
  *
  *  Contributors:
  *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
  *          Jens Teubner <jens.teubner@uni-konstanz.de>
  *
  * $Id$
  */
 
-#ifndef MILPRINT_H
-#define MILPRINT_H
+#ifndef CORE2ALG_H
+#define CORE2ALG_H
 
-#include "mil.h"
-#include "array.h"
+#include "core.h"
+#include "algebra.h"
 
-/** Indentation width for MIL output */
-#define INDENT_WIDTH 4
 
-PFarray_t *PFmil_serialize (PFmil_t *);
-void PFmilprint (FILE *, PFarray_t *);
+/** Compile XQuery Core into Relational Algebra */
+PFalg_op_t *PFcore2alg (PFcnode_t *);
 
-#endif    /* MILPRINT_H */
+#endif   /* CORE2ALG_H */
 
 /* vim:set shiftwidth=4 expandtab: */
