@@ -181,23 +181,19 @@ proc stringreplace( str s1, str s2, str s3 ) : str {
 }
 # string of c times s
 proc repeat(str s, int c) : str {
-	var i := 0;
 	var res := "";
-	while(i<c) {
-		res := res + s;
-		i :+= 1;
+	while (c > 0) {
+		if ((c and 1) != 0) {
+			res := res + s;
+		}
+		s := s + s;
+		c :>>= 1;
 	}
 	return res;
 }
 # string of c spaces
 proc space(int c) : str {
-	var i := 0;
-	var res := "";
-	while(i<c) {
-		res := res + " ";
-		i :+= 1;
-	}
-	return res;
+	return repeat(" ", c);
 }
 
 
