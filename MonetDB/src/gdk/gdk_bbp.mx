@@ -506,7 +506,7 @@ void BBPinit(void) {
 		BBP_lastused(i) = BBPLASTUSED(atoi(BBPparse(&c)));
 		if (BBP_lastused(i) > max_stamp) max_stamp = BBP_lastused(i);
 		BBP_lrefs(i) = 0;
-		BBP_refs(i) = 0;
+		BBP_lrefs(i) = 1; /* any BAT we encounter here is persistent, so has a logical reference */
 		c = strchr(batname, '~');
 		if (c && c == batname) {
 			sprintf(logical, "tmp_%d", i);

@@ -1380,7 +1380,13 @@ BAT *BATmode(BAT *b, int mode) {
 		} 
 		if (mode == PERSISTENT && VIEWparent(b)) {
                         VIEWreset(b);
-                }  
+                }
+		/* persistent BATs get a logical reference */
+		if (mode == PERSISTENT) {
+			BBPincref(bid, TRUE);
+		} else {
+			BBPdecref(bid, TRUE);
+		}
                 MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
                 if (mode == PERSISTENT) {
                         if (!(BBPstatus(bid)&BBPDELETED))
