@@ -964,6 +964,11 @@ str CXoptimizer(Client cntxt, MalBlkPtr mb, int pc)
         for(j= i-1; j>=1; j--) {
             if( safetyBarrier(cntxt,mb,p,q=getInstrPtr(mb,j)) )
                 goto nxtCommonSubExpression;
+#ifdef DEBUG_MAL_OPTIMIZER
+    printf("%d, %d  %d %d ",i,j, hasSameSignature(p,q), hasSameArguments(p,q) );
+    printf(" :%d %d %d \n", !isUpdated(mb,i), !hasCommonResults(p,q), !hasSideEffects(p));
+
+#endif
             if( hasSameSignature(p,q) && 
                 hasSameArguments(p,q) &&
                !isUpdated(mb,i) &&

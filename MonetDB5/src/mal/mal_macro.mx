@@ -76,18 +76,13 @@ checked on 'proper' behavior.
 The current implementation is extremely limited. 
 The MCoptimizer does not recognize use of intermediate results 
 outside the block being contracted. This should be checked and
-blocks the replacement, unless the intermediates are part of
+it should block the replacement, unless the intermediates are part of
 the return list.
 Likewise, we assume here that the block has a single return
 statement, which is also the last one to be executed.
 
 The MEoptimizer can not deal with calls controlled by a barrier.
-It would often require a rewrite of several other statements
-as well.
-Similar, the original target list should be properly merged
-with the new block. In particular, the return statement
-provides the handle to move the results into the variables
-expecting the outcome of the function call.
+It would often require a rewrite of several other statements as well.
 
 @{
 @+ Implementation section
@@ -124,7 +119,7 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     Scope s;
     Symbol t;
     int j;
-    str nme, fcn;
+    str nme, fcn,msg=MAL_SUCCEED;
 
     (void)stk;
     removeInstruction(mb,getPC(mb,p));
@@ -140,22 +135,24 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     for(; s; s=s->outer)
     if(strcmp(s->name,nme)== 0 && s->subscope){
         j = getSubScope(fcn); 
-        for(t= s->subscope[j];t!=NULL;t=t->peer) {
+        for(t= s->subscope[j];t!=NULL;t=t->peer) 
+        if( t->def->errors == 0) {
             if( getSignature(t)->token == FUNCTIONsymbol &&
                 idcmp(fcn, functionName(getSignature(t)) )==0
                 )
                 /* call macro expansion */
-                @2processor(mb,t);
+                msg= @2processor(mb,t);
+                if( msg) return msg;
         }
     }
     chkFlow(mb);
-    return MAL_SUCCEED;
+    return msg;
 }
 str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     Scope s;
     Symbol t;
     int j;
-    str fcn;
+    str fcn,msg=MAL_SUCCEED;
 
     (void) stk; 
     removeInstruction(mb,getPC(mb,p));
@@ -169,19 +166,22 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
             "module '%s' not found\n",fcn);
     if( s->subscope){
         j = getSubScope(fcn); 
-        for(t= s->subscope[j];t!=NULL;t=t->peer) {
+        for(t= s->subscope[j];t!=NULL;t=t->peer)
+        if( t->def->errors == 0) {
             if( getSignature(t)->token == FUNCTIONsymbol )
                 /* call macro expansion */
                 @2processor(mb,t); 
+                if( msg) break;
         }
     }
     chkFlow(mb);
-    return MAL_SUCCEED;
+    return msg;
 }
 str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     Scope s;
     Symbol t;
     int j;
+    str msg= MAL_SUCCEED;
 
     removeInstruction(mb,getPC(mb,p));
 #ifdef DEBUG_MAL_MACRO
@@ -191,16 +191,18 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     if( s->subscope){
         for(j=0;j<MAXSCOPE;j++)
         if(s->subscope[j]){
-            for(t= s->subscope[j];t!=NULL;t=t->peer) {
+            for(t= s->subscope[j];t!=NULL;t=t->peer) 
+            if( t->def->errors == 0) {
                 if( getSignature(t)->token == FUNCTIONsymbol )
                     /* call macro expansion */
                     @2processor(mb,t);
+                    if( msg) break;
             }
         }
     }
     (void) stk; 
     chkFlow(mb);
-    return MAL_SUCCEED;
+    return msg;
 }
 @c
 @:macroOptimizer(ME,MACRO)@
@@ -210,6 +212,7 @@ int malMatch(InstrPtr p1, InstrPtr p2){
 int i,j;
     if( functionId(p1) == 0 && functionId(p2)!=0) return 0;
     if( moduleId(p1) == 0 && moduleId(p2)!=0) return 0;
+    if( functionId(p2)==0) return 0;
     if( idcmp(moduleName(p1), moduleName(p2)) ) return 0;
     if( idcmp(functionName(p1),functionName(p2)) ) return 0;
     if( p1->retc!= p2->retc) return 0;
@@ -242,7 +245,8 @@ int malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc){
 
     cvar = (int*) alloca(mc->vtop * MAXARG);
     mvar = (int*) alloca(mb->vtop * MAXARG);
-    lim = pc+mc->stop-2;
+    /* also trim the return statement */
+    lim = pc+mc->stop-3;
     k = 1;
     for( i=pc; i< lim; i++,k++){
         p= getInstrPtr(mb,i);
@@ -307,9 +311,20 @@ int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc){
         /* copy the instruction and fix variable references */
         p= mc->stmt[i];
         ns[k]= copyInstruction(p);
+        if( p->barrier == RETURNsymbol || p->barrier==YIELDsymbol){
+            ns[k]->barrier = 0;
+            if( p->token == RETURNsymbol || p->token==YIELDsymbol)
+                ns[k]->token= ASSIGNsymbol;
+            if(p->retc==p->argc)
+                for(n=0;n<p->retc; n++)
+                    pushArgument(mb,ns[k],nv[getArg(p,n)]);
+            /* assign the result to variables */
+                for(n=0;n<p->retc; n++)
+                    getArg(ns[k],n)= getArg(mb->stmt[pc],n);
+            k++;
+            break;
+        }
         for(n=0; n< p->argc; n++){
-            if( p->barrier == RETURNsymbol || p->barrier==YIELDsymbol)
-                break;
                 /* fix the variable */
 #ifdef DEBUG_MAL_MACRO
                     printf("map %d  (%d) ",getArg(p,n),v);
@@ -352,9 +367,10 @@ str MACROvalidate(MalBlkPtr mb){
 
     for(i=1; retseen==0 && i<mb->stop; i++){
         p= getInstrPtr(mb,i);
-        retseen = p->token== RETURNsymbol || p->token== YIELDsymbol;
+        retseen = p->token== RETURNsymbol || p->token== YIELDsymbol ||
+                p->barrier== RETURNsymbol || p->barrier== YIELDsymbol;
     }
-    if( retseen && i != mb->stop-2)
+    if( retseen && i != mb->stop-1)
         return throwMessage("optimizer.MACROvalidate",
             "RETURN statement is not the last one\n");
     return MAL_SUCCEED;
@@ -362,7 +378,7 @@ str MACROvalidate(MalBlkPtr mb){
 str MACROprocessor(MalBlkPtr mb, Symbol t){
     InstrPtr q;
     int i, cnt=0,last = -1;
-    str msg= 0;
+    str msg= MAL_SUCCEED;
 #ifdef DEBUG_MAL_MACRO
     printf("calling the MACRO processor\n");
 #endif
@@ -380,7 +396,7 @@ str MACROprocessor(MalBlkPtr mb, Symbol t){
                     "duplicate macro expansion");
                 
             last= i;
-            msg= MACROvalidate(mb);
+            msg= MACROvalidate(t->def);
             if( msg == 0)
                     i= inlineMALblock(mb,i,t->def);
             cnt++;
@@ -390,7 +406,7 @@ str MACROprocessor(MalBlkPtr mb, Symbol t){
             }
         }
     }
-    return MAL_SUCCEED;
+    return msg;
 }
 @}
 @+ Macro inversions
@@ -439,32 +455,33 @@ int replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc){
             q->argv[i] = mvar[j];
             break;
         }
-    rq= getInstrPtr(mb,mb->stop-2);
-    if( rq->token != RETURNsymbol)
-        GDKerror("wrong token %d\n",rq->token);
+    rq= getInstrPtr(mc,mc->stop-2);
     for(i=0;i<rq->retc; i++)
         for(j=0; j<ctop; j++)
         if( rq->argv[i] == cvar[j]){
-            rq->argv[i] = mvar[j];
+            q->argv[i] = mvar[j];
             break;
         }
     freeInstruction(p);
 
     /* strip signature, return, and end statements */
     k= mc->stop-3;
+    j= pc+k;
     for(i=pc+1; i< pc+k; i++) 
         freeInstruction(mb->stmt[i]);
-    for(i=pc+k ; i<mb->stop; i++)
-        mb->stmt[i-k+1]= mb->stmt[i];
+    for(i=pc+1 ; i<mb->stop-k; i++)
+        mb->stmt[i]= mb->stmt[j++];
+    k= i;
     for(; i<mb->stop; i++)
         mb->stmt[i]=0;
-    mb->stop= i-k;
+    mb->stop= k;
     return pc;
 }
 
 str ORCAMprocessor(MalBlkPtr mb, Symbol t){
     MalBlkPtr mc= t->def;
     int i;
+    str msg= MAL_SUCCEED;
 #ifdef DEBUG_MAL_MACRO
     printf("calling the ORCAM processor\n");
 #endif
@@ -474,9 +491,12 @@ str ORCAMprocessor(MalBlkPtr mb, Symbol t){
 #ifdef DEBUG_MAL_MACRO
     printf("found match for %s at %d \n",t->name,i);
 #endif
-        replaceMALblock(mb,i,mc);
+        msg= MACROvalidate(mc);
+        if( msg == MAL_SUCCEED)
+                replaceMALblock(mb,i,mc);
+        else break;
     }
     chkProgram(getClient()->nspace,mb);
-    return MAL_SUCCEED;
+    return msg;
 }
 @}
