@@ -1,5 +1,5 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.0 (Dawn)
+MonetDB JDBC driver version 1.0 (Dawn+)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
 Release date: 2004-09-29
