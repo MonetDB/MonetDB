@@ -280,15 +280,6 @@ SQLExecute(SQLHSTMT hStmt)
 		}
 		bstream_destroy(bs);
 
-		{
-			char buf[1024];
-			int i;
-			i = snprintf(buf, BLOCK,
-				     "mvc_export_table( myc, Output, %d, 0, -1, \"\\t\", \"\\n\");\n",
-				     id);
-			stream_write(dbc->Mws, buf, i, 1);
-			stream_flush(dbc->Mws);
-		}
 		status = next_result(rs, hstmt, &type);
 		if (status == SQL_ERROR)
 			return status;
