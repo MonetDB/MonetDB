@@ -1,6 +1,6 @@
 
 MTSAFE
-INCLUDES = ../../gdk ../../monet $(PTHREAD_INCS) 
+INCLUDES = ../../gdk ../../monet $(PTHREAD_INCS)  $(Z_LIBS) $(BZ_LIBS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
@@ -15,6 +15,8 @@ lib_Mapi = {
 BINS = {
 #	SOURCES = Mshutdown.mx MapiClient.mx
 	SOURCES = MapiClient.mx
-	LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS)
-	MapiClient_LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS)
+	LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS) $(Z_LIBS) $(BZ_LIBS)
+	MapiClient_LIBS = libMapi ../../gdk/libbat $(MAPI_LIBS) \
+		$(READLINE_LIBS) $(Z_LIBS) $(BZ_LIBS)
+
 }
