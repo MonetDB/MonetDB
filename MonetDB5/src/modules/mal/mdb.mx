@@ -143,7 +143,11 @@ comment "Returns a string representation of the current function
 @-
 The primary debugger controls
 @c
-#define MDBstatus(X) if(cntxt->fdout) stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
+#define MDBstatus(X) \
+	if( stk->cmd && X==0 ) \
+		stream_printf(cntxt->fdout,"#Monet Debugger off\n"); \
+	else if(stk->cmd==0 && X) \
+		stream_printf(cntxt->fdout,"#Monet Debugger on\n"); 
 
 str MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     Client cntxt= getClient();
@@ -159,10 +163,10 @@ str MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     if( p->argc >1){
         b= *(int *) getArgReference(stk,p,1);
     } else b= stk->cmd;
+    MDBstatus(b);
     stk->cmd= b?'n':0;
     if( stk->up) stk->up->cmd=  b?'n':0;
     cntxt->itrace= b?'n':0;
-    MDBstatus(b);
     return MAL_SUCCEED;
 }
 str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -170,9 +174,9 @@ str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     int b;
     (void) mb; /* still unused */
     b= *(chr *) getArgReference(stk,p,1);
+    MDBstatus(b);
     stk->cmd= b;
     cntxt->itrace= b? 'T':0;
-    MDBstatus(b);
     return MAL_SUCCEED;
 }
 str MDBsetTrace2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -188,9 +192,9 @@ str MDBsetTrace2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     s= findMALSymbol(mod,fcn);
     if( s == 0)
 	return throwMessage("mdb.setTrace", "can not find operation");
+    MDBstatus(b);
     stk->cmd= b;
     cntxt->itrace= b? 'T':0;
-    MDBstatus(b);
     return MAL_SUCCEED;
 }
 str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
