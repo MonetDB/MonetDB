@@ -671,21 +671,38 @@ def ApproveOutput (env, TST) :
                 oc = 'overwriting old'
             else:
                 oc = 'creating new'
-            print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
-            f = open(stableOUTPUT, "w")
-            for l in fileinput.input(testOUTPUT):
-                if len(l) == 0  or  l[0] != '!':        # or  filter.match(ln):
-                    f.write(l)
+                if os.path.isfile(stableOUT):
+                    shutil.copy(stableOUT,stableOUTPUT)
                 else:
-                    if FORCE:
+                    open(stableOUTPUT,"w").close()
+
+            patch = os.path.join(os.sep,"tmp",os.path.split(stableOUTPUT)[1]+".patch-"+str(os.getpid()))
+            os.system("diff -Bb -I'^[#=]' -U0 %s %s > %s" % (stableOUTPUT,testOUTPUT,patch+".0"))
+            if os.path.getsize(patch+".0"):
+                print "Approving  %s  ->  stable.%s%s   (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
+
+                f = open(patch+".1", "w")
+                for l in fileinput.input(patch+".0"):
+                    if len(l) < 2  or  l[:2] not in ['+!','+=']:        # or  filter.match(ln):
                         f.write(l)
-                        as = 'Approving'
                     else:
-                        as = 'Skipping'
-                    Warn('%s error message: "%s"' % (as,string.replace(l, os.linesep, '')))
-                    sem = 1
-            f.flush()
-            f.close()
+                        if FORCE:
+                            f.write(l)
+                            as = 'Approving'
+                        else:
+                            as = 'Skipping'
+                        Warn('%s new (error) message: "%s"' % (as,string.replace(l, os.linesep, '')))
+                        sem = 1
+                f.flush()
+                f.close()
+                shutil.copy(stableOUTPUT,stableOUTPUT+".ORG")
+                os.system("patch %s %s" % (stableOUTPUT,patch+".1"))
+                os.system("diff -u %s %s > %s" % (stableOUTPUT+".ORG",stableOUTPUT,patch))
+                os.remove(stableOUTPUT+".ORG")
+                os.remove(patch+".1")
+            else:
+                print "No differences detected between  %s and  stable.%s%s  that are not ignored be Mtest.py." % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM)
+            os.remove(patch+".0")
             
             thefile = os.path.split(stableOUTPUT)[1]
             dir,file = os.path.split(stableOUT)
@@ -695,7 +712,11 @@ def ApproveOutput (env, TST) :
                 if f != thefile and test.match(f):
                     list.append(f)
             if len(list) > 1:
-                Warn('There are other (specific) stable outputs for test %s:\n %s' % (os.path.join(TSTDIR,TST), str(list)))
+                Warn('There are other (specific) stable outputs for test  %s:\n  %s' % (os.path.join(TSTDIR,'Tests',TST), str(list)))
+                STDERR.write('  To propagate the changes that were just made in  %s\n' % os.path.join(TSTDIR,'Tests',thefile))
+                STDERR.write('  to the other (specific) stable outputs,\n')
+                STDERR.write('  simply apply the patch in  %s  to them.\n' % patch)
+                STDERR.flush()
         else:
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
     return sem
@@ -1575,10 +1596,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         try:
             if SERVER == "MAPI":
-                pSrvrIn.write("# All but the first (#) and the last (\\n) character of this line seem to get swallowed on/by Windows ... #\n")
-                pSrvrIn.write("# In case the previous line contains just a '#', all but the first and the last character got swallowed by someone ... #\n")
-                pSrvrIn.write("# In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #\n")
-                pSrvrIn.write("# but the Mserver's stdin was still open and got closed only after the first MIL command-end, i.e., ';'+'\\n' is reached ... #\n")
+                pSrvrIn.write("= All but the first (=) and the last (\\n) character of this line seem to get swallowed on/by Windows ... #\n")
+                pSrvrIn.write("= In case the previous line contains just a '=', all but the first and the last character got swallowed by someone ... #\n")
+                pSrvrIn.write("= In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #\n")
+                pSrvrIn.write("= but the Mserver's stdin was still open and got closed only after the first MIL command-end, i.e., ';'+'\\n' is reached ... #\n")
                 pSrvrIn.write(';\n')
                 pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
             pSrvrIn.write('quit;\n')
@@ -1703,7 +1724,7 @@ def ReadMapproveRc(f) :
     v['BITS'] = ''
     v['STATIC'] = ''
     if os.path.isfile(f):
-        r = re.compile('^([A-Z]+) = (.*)$')
+        r = re.compile('^([A-Z]+) = "(.*)".*$')
         for l in fileinput.input(f):
             m = r.match(l)
             if m:
@@ -2073,7 +2094,7 @@ def main(argv) :
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
-        f = os.path.join(GetMonetConfig('--prefix'),TSTPREF,'.Mapprove.rc')
+        f = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
         OS = v['OS']
         RELEASE = v['RELEASE']
@@ -2330,7 +2351,7 @@ def main(argv) :
         f = open(n, 'w')
         for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_STATIC':
             w = string.replace(v,'TST_','')
-            f.write('%s = %s\n' % (w, env[v]))
+            f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
 
     STDERR.flush()
