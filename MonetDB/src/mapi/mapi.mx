@@ -41,12 +41,6 @@ This module contains a simple interface for internet connections.
 	.COMMAND stream_until(Stream S,str stop) : str = stream_read_until;
 		"read a string from <S> until the <stop> word"
 
-	.COMMAND socket_close( int s ) = socket_close_wrap;
-		"close a socket"
-
-	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
-		"duplicate a socket"
-
 	.PRELUDE = mapi_prelude;
 	.EPILOGUE = mapi_epilogue;
 
@@ -776,28 +770,6 @@ int stream_read_until(str *res, Stream *S , str stop)
 	} else {
 		*res = GDKstrdup("");
 	}
-	return GDK_SUCCEED;
-}
-
-int socket_close_wrap(int *s)
-{
-	s_close(*s);
-	return GDK_SUCCEED;
-}
-
-int socket_dup_wrap(int *res, int *s)
-{
-#ifdef NATIVE_WIN32
-  	HANDLE process = GetCurrentProcess();
-  	DuplicateHandle(process, 
-	       (HANDLE) *s, process,
-	       (HANDLE*) res,
-	       0, 
-	       TRUE, 
-	       DUPLICATE_SAME_ACCESS);
-#else
-	*res = dup(*s);
-#endif
 	return GDK_SUCCEED;
 }
 @}
