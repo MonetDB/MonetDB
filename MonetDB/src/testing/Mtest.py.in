@@ -2256,13 +2256,16 @@ elif os.name != "nt":
 elif os.environ.has_key('COMPUTERNAME'):
     HOST = os.environ['COMPUTERNAME']
 else:
-    HOST = "BATMAN"
+    HOST = "WIN2000"
 HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 
 if os.name == "nt":
     OS    = "WindowsNT"
-    RELEASE = "5.0"
+    if HOST == "WIN2000":
+        RELEASE = "5.0"
+    else:
+        RELEASE = "5.2"
 else:
     OS    = os.uname()[0].split("_NT-", 1)[0]
     if OS == "AIX":
@@ -2830,7 +2833,7 @@ def main(argv) :
             for x in "bat", "py":
                 f = n+x
                 if os.path.isfile(f):
-                    shutil.copy(f,"D:"+os.sep+"Tools")
+                    shutil.copy(f,"C:"+os.sep+"Tools")
 
         if os.path.exists(os.path.join(env['TSTTRGBASE'],TSTPREF)):
             try:
