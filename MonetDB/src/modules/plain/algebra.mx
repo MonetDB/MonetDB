@@ -645,7 +645,6 @@ that for the moment are defined as procs.
 		var idxund;
 		var isper;
 		var idx;
-		var didMatch;
 		
 		idxper := find_unescaped_occurrence(pat, '%');
 		idxund := find_unescaped_occurrence(pat, '_');
@@ -678,9 +677,6 @@ that for the moment are defined as procs.
 			} else {
 				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
 			}
-			didMatch := true;
-		} else {
-			didMatch := false;
 		}
 
 		while ((idx :+= 1) < pat.length()) {
@@ -688,16 +684,14 @@ that for the moment are defined as procs.
             pat := pat.string(idx, pat.length()-idx);
 
 			# find next match for the last matching char (% or _)
-			if (didMatch and isper) {
+			if (isper) {
 				idxper := find_unescaped_occurrence(pat, '%');
 				# correct value of other index
 				if (idxund > 0) idxund :-= idx;
-			} else if (didMatch) {
+			} else {
 				idxund := find_unescaped_occurrence(pat, '_');
 				# correct value of other index
 				if (idxper > 0) idxper :-= idx;
-			} else {
-				didMatch := true;
 			}
 				
 			if ((idxper = -1) and (idxund = -1)) {

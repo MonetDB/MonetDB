@@ -70,6 +70,8 @@ test = (
                 "|" r"^SQL  .* affected$"
                 "|" r"^.*: Symbol .(exit|_setjmp). causes overflow in R_X86_64_PC32 relocation$"
                 "|" r"^ERROR = !ERROR: foreign key constraint b.c[0-9]+ violated$"
+                "|" r"^\+\=+\+$"
+                "|" r"^\+\-+\+$"
                  ,  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile( r"^!ERROR: DL_open: Unknown error.$"
