@@ -63,8 +63,8 @@ tests.insert(b_sht.sort().col_name("s_sht"), e_sht);
 tests.insert(b_chr.sort().col_name("s_chr"), e_chr);
 tests.insert(b_str.sort().col_name("s_str"), e_str);
 
-proc idx(bat[any,any] b) {
-	b.accbuild(index);
+proc idx(bat[any,any] b) : bat {
+	b.accbuild("index");
 	return b;
 }
 
@@ -84,7 +84,7 @@ proc mstr(int i) : str {
 	return str(i);
 }
 
-proc mset_print(bat[any,bat] m) {
+proc mset_print(bat[any,bat] m) :void {
     m@batloop() {
         var h := $h;
         var t := $t;
@@ -94,7 +94,7 @@ proc mset_print(bat[any,bat] m) {
     }
 }
 
-proc set_print(bat[any,any] b) {
+proc set_print(bat[any,any] b) :void {
     b@batloop() {
         printf("\t%s\t%s\n", mstr(int($h)), mstr(int($t)));
     }

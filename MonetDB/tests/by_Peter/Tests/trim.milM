@@ -28,7 +28,7 @@ while(i < 10) {
         b.persists(true).commit();
 }
 
-proc countall {
+proc countall (..any..) : void {
   var i := 0;
   while(i < $0) {
      i :+= 1;
@@ -38,7 +38,7 @@ proc countall {
 
 dir("b_");
 
-countall(b_1,b_2,b_3,b_4);
+countall(bat("b_1"),bat("b_2"),bat("b_3"),bat("b_4"));
 
 dir("b_");
 

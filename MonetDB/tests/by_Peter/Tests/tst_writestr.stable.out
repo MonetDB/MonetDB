@@ -34,12 +34,12 @@ commit;
 
 i := 0;
 while(true) { 
- aa.info.reverse().select("theap.storage").reverse().print();
- e := [str]([+](d,b));
+ bat("aa").info.reverse().select("theap.storage").reverse().print();
+ var e := [str]([+](d,b));
  #e := [str]([/](d,10000));
  print(b :+= 500000); 
- aa.insert(e);
- aa.mmap(1,1,1,1,1);
+ bat("aa").insert(e);
+ bat("aa").mmap(1,1,1,1,1);
  i :+= 1;
  if (i = 4) { shutdown(); }
  unload("aa");

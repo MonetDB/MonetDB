@@ -4,36 +4,36 @@ var d := new(void,int,1000);
 var i := 0;
 while(i < 1000) d.insert(nil,i :+= 1);
 d := [str](d).seqbase(0@0);
-a.seqbase(0@0).insert(d);
+bat("a").seqbase(0@0).insert(d);
 
 i := 0;
 while(i < 100) {
-    a.insert(d.seqbase(oid(a.count())));
+    bat("a").insert(d.seqbase(oid(bat("a").count())));
     i :+= 1;
 }
 
-a.mmap(1,1,1,1,1);
+bat("a").mmap(1,1,1,1,1);
 unload("a");
-a.info.reverse().select("theap.storage").reverse().print();
+bat("a").info.reverse().select("theap.storage").reverse().print();
 
-[int](a.mirror());
-var e := [str]([int](a.mirror()));
+[int](bat("a").mirror());
+var e := [str]([int](bat("a").mirror()));
 debugmask(49);
-a.insert(e);
+bat("a").insert(e);
 debugmask(9);
 
-#a.mmap(1,1,1,1,1);
-a.info.reverse().select("theap.storage").reverse().print();
-e := [str]([int](a.mirror()));
+#bat("a").mmap(1,1,1,1,1);
+bat("a").info.reverse().select("theap.storage").reverse().print();
+e := [str]([int](bat("a").mirror()));
 debugmask(49);
-a.insert(e);
+bat("a").insert(e);
 debugmask(9);
 
-a.info.reverse().select("theap.storage").reverse().print();
-a.insert(nil,"make dirty..");
+bat("a").info.reverse().select("theap.storage").reverse().print();
+bat("a").insert(nil,"make dirty..");
 commit();
 
-a.destroy();
+bat("a").destroy();
 commit();
 
 quit();
