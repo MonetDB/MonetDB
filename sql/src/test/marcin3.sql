@@ -5,7 +5,10 @@ insert into nutki values(1,2);
 insert into nutki values(3,4);
 insert into nutki values(3,3);
 select id, sum(val) AS valsum from nutki group by id having val>1;
+# ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
 select id, sum(val) AS valsum from nutki group by id having val>2;
+# ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
 select id, sum(val) AS valsum from nutki group by id having valsum>3;
+# ERROR:  Attribute 'valsum' not found
 
 drop table nutki;
