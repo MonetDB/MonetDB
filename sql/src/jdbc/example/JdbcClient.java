@@ -583,13 +583,44 @@ public class JdbcClient {
 				out.print(" -- "); out.print(comment);
 			}
 			out.println();
-			out.print("\tFOREIGN KEY (\"");
-			out.print(cols.getString("FKCOLUMN_NAME")); out.print("\") ");
+			out.print("\tFOREIGN KEY (");
+			comment = cols.getString("FK_NAME");
+
+			boolean next;
+			Set fk = new LinkedHashSet();
+			fk.add(cols.getString("FKCOLUMN_NAME").intern());
+			Set pk = new LinkedHashSet();
+			pk.add(cols.getString("PKCOLUMN_NAME").intern());
+
+			while ((next = cols.next()) && comment != null &&
+				comment.equals(cols.getString("FK_NAME")))
+			{
+				fk.add(cols.getString("FKCOLUMN_NAME").intern());
+				pk.add(cols.getString("PKCOLUMN_NAME").intern());
+			}
+			// go back one
+			if (next) cols.previous();
+
+			Iterator it = fk.iterator();
+			for (i = 0; it.hasNext(); i++) {
+				if (i > 0) out.print(", ");
+				out.print("\"");
+				out.print(it.next());
+				out.print("\"");
+			}
+			out.print(") ");
+
 			out.print("REFERENCES \""); out.print(cols.getString("PKTABLE_SCHEM"));
 		 	out.print("\".\""); out.print(cols.getString("PKTABLE_NAME"));
-			out.print("\" (\""); out.print(cols.getString("PKCOLUMN_NAME"));
-		 	out.print("\")");
-			comment = cols.getString("FK_NAME");
+			out.print("\" (");
+			it = pk.iterator();
+			for (i = 0; it.hasNext(); i++) {
+				if (i > 0) out.print(", ");
+				out.print("\"");
+				out.print(it.next());
+				out.print("\"");
+			}
+		 	out.print(")");
 		}
 		cols.close();
 		// if a comment needs to be added, do it now

@@ -22,7 +22,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	}
 
 	private synchronized Statement getStmt() throws SQLException {
-		if (stmt == null) stmt = con.createStatement();
+		// use Statement which allows scrolling both directions through results
+		if (stmt == null)
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
 		return(stmt);
 	}

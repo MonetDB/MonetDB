@@ -64,9 +64,7 @@ public class MonetResultSet implements ResultSet {
 	 * Main constructor, sends query to Monet and reads header
 	 *
 	 * @param statement the statement which created this ResultSet
-	 * @param query a query String to execute
-	 * @param resultSetType the type of resultset: forward only, etc.
-	 * @param resultSetConcurrency the concurrency mode
+	 * @param header a header containing the query, resultset type, etc.
 	 * @throws IllegalArgumentException if the given arguments are incorrect
 	 * @throws SQLException is a protocol error occurs
 	 */
