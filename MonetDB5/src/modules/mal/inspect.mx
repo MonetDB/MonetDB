@@ -230,7 +230,7 @@ str INSPECTsymbolFind(int *ret,int kind)
 			for(t= s->subscope[i];t;t=t->peer){
 			InstrPtr sig= getSignature(t);
 			if( kind && kind != sig->token) continue;
-			BUNins(b,sig->modname,sig->fcnname);
+			BUNins(b,moduleName(sig),functionName(sig));
 			}
 		}
 		s= s->outer;

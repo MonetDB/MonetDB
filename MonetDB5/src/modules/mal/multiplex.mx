@@ -139,11 +139,11 @@ int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 		setDestType(mb,p,tpe);
 		return rt;
 	}
-	if(p->modname)
+	if(moduleId(p))
 		GDKerror("type conflict in statement %s.%s[%d]\n",
-			p->modname, p->fcnname, getPC(mb,p));
+			moduleName(p), functionName(p), getPC(mb,p));
 	else 	GDKerror("type conflict in statement %s[%d]\n",
-			p->fcnname, getPC(mb,p));
+			functionName(p), getPC(mb,p));
 	Client c= getClient();
 	if( c && c->listing &(LIST_MAL_INSTR))
 		printFunction(c->fdout,mb,c->listing);
@@ -168,13 +168,13 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	}
 	fcnname= getVarLiteral(mb,pci->argv[1]);
 	inplace = operatorModifier(name,fcnname);
-	p->fcnname= GDKstrdup(name);
+	setFunctionId(p, GDKstrdup(name));
 	k = newVariable(m, newTmpName(0),TYPE_any);
 	p->argv[0]= k;
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug) 
 	printf("multiplex against operator %s (original %s)\n",
-		name,pci->fcnname);
+		name,functionName(pci));
 #endif
 @- Analysis Of The BAT Parameters
 Do basic check on parameters. Look at the tail types in order to derive
@@ -215,9 +215,9 @@ Constants passed into the multiplex operator are a special case.
 #endif
 	if( p->typechk == TYPE_UNKNOWN) {
 		/* all tactic choices are turned into their script variant */
-		if(idcmp("tactics",p->fcnname)==0){
+		if(idcmp("tactics",functionName(p))==0){
 			GDKfree(p->fcnname);
-			p->fcnname= GDKstrdup("script");
+			setFunctionId(p, GDKstrdup("script"));
 		}
 		return -1;
 	}
@@ -234,12 +234,12 @@ Constants passed into the multiplex operator are a special case.
 	if(i<0) return -1;
 	
 	/* re-use old code to resolve the element of the multiplex module */
-	fcnname= pci->modname;
-	pci->modname= 0;
+	fcnname= moduleName(pci);
+	setModuleId(pci, NULL);
 	/* initialize the instruction further?*/
 	findFunctionType(scope,mb,pci);
 	pci->fcn = (GDKfcn) CMDmultiplexScript;
-	pci->modname= fcnname;
+	setModuleId(pci, fcnname);
 	pci->typechk= p->typechk;
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug){
@@ -276,20 +276,20 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	str operator;
 	Client cntxt= getClient();
 
-	if( idcmp(pci->fcnname,"tactics")) return -1;
+	if( idcmp(functionName(pci),"tactics")) return -1;
 	/* look for constant first argument */
 	if( !isVarConstant(mb,pci->argv[pci->retc])) {
 		GDKfree(pci->fcnname);
-		pci->fcnname= GDKstrdup("script");
+		setFunctionId(pci, GDKstrdup("script"));
 		return -1;
 	}
 	operator = getVarConstant(mb,pci->argv[pci->retc]).val.sval;
 
 	p= copyInstruction(pci);
-	if(p->fcnname) GDKfree(p->fcnname);
-	if(p->modname) GDKfree(p->modname);
-	p->modname= 0;
-	p->fcnname= GDKstrdup(operator);
+	if(functionId(p)) GDKfree(p->fcnname);
+	if(moduleId(p)) GDKfree(p->modname);
+	setModuleId(p, NULL);
+	setFunctionId(p, GDKstrdup(operator));
 	delArgument(p,p->retc);
 	olderr= mb->errors;
 	if( cntxt->errbuf) i= strlen(cntxt->errbuf); else i=0;
@@ -297,18 +297,18 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	if( cntxt->errbuf ) cntxt->errbuf[i] =0;
 	mb->errors= olderr;
 	if(p->typechk == TYPE_UNKNOWN) {
-		pci->fcnname= GDKstrdup("script");
+		setFunctionId(pci, GDKstrdup("script"));
 		freeInstruction(p);
 		return -1;
 	}
 @-
 Check out type of the operands for use with batcalc
 @c
-	if( p->modname && idcmp("batcalc",p->modname)==0 && 
+	if( moduleId(p) && idcmp("batcalc",moduleName(p))==0 && 
 	   (i=batcalcTypeCheck(operator, getArgType(mb,p,0))) < 0){
 		/* postpone fixation until datatype is fixed */
 		/* tobe done */
-		pci->fcnname= GDKstrdup("script");
+		setFunctionId(pci, GDKstrdup("script"));
 		freeInstruction(p);
 		return -1;
 	}
@@ -331,8 +331,8 @@ int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
 	MalBlkPtr m= newMalBlk(MAXVARS,MAXSTMTS);
 	InstrPtr p = newInstruction(ASSIGNsymbol);
 
-	if( idcmp("debug",pci->fcnname)==0){
-		if(pci->modname==0) pci->modname= GDKstrdup("multiplex");
+	if( idcmp("debug",functionName(pci))==0){
+		if(moduleId(pci)==0) setModuleId(pci, GDKstrdup("multiplex"));
 		pci->fcn= (GDKfcn) CMDmultiplexDebug;
 		pci->token = CMDcall;
 		i= 1;
@@ -402,14 +402,14 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* get result type of multiplexed operation */
 	refType = getArgType(m1,p,0);
 
-	if(strcmp(s,p->fcnname) ) assignop= TRUE;
+	if(strcmp(s,functionName(p)) ) assignop= TRUE;
 	m= newMalBlk(MAXVARS,MAXSTMTS);
 
 #ifdef DEBUG_MULTIPLEX
 	if(multiplexDebug){
 	printf("calling the multiplex script routine\n");
 	printf("multiplex against operator %s (%d):%s\n",
-		p->fcnname,assignop, malTypeName(refType));
+		functionName(p),assignop, malTypeName(refType));
 	}
 #endif
 @-
@@ -428,7 +428,7 @@ in the new mal block.
 	/* function multiplex(A1,....,An):bat[ht,tt] */
 	q= newInstruction(FUNCTIONsymbol);
 	sprintf(name,"multiplex%d",fcnnr++);
-	q->fcnname = GDKstrdup(name);
+	setFunctionId(q, GDKstrdup(name));
 	q->argv[0]= newVariable(m,GDKstrdup(name), refType);
 @-
 Beware, the operator constant (arg=1) is passed along as well,
@@ -446,8 +446,8 @@ find the actule arguments at the proper place of the callee.
 	/* resB := new(headtype,tailtype */
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= resB = newVariable(m,GDKstrdup("resB"),refType);
-	q->modname= GDKstrdup("bbp");
-	q->fcnname= GDKstrdup("new");
+	setModuleId(q, GDKstrdup("bbp"));
+	setFunctionId(q, GDKstrdup("new"));
 	q->argv[1]= newVariable(m, malTypeName(getHeadType(refType)),TYPE_any);
 	q->argv[2]= newVariable(m, malTypeName(getTailType(refType)),TYPE_any);
 	q->argc= 3;
@@ -456,8 +456,8 @@ find the actule arguments at the proper place of the callee.
 	/* create nil constant for void-columns */
 	if( getHeadType(refType) == TYPE_void){
 		q= newInstruction(ASSIGNsymbol);
-		q->modname= GDKstrdup("bat");
-		q->fcnname= GDKstrdup("setSequenceBase");
+		setModuleId(q, GDKstrdup("bat"));
+		setFunctionId(q, GDKstrdup("setSequenceBase"));
 		q->argv[0]= newTmpVariable(m,TYPE_any);
 		q->argv[1]= resB;
 		q->argv[2]= newConstant(m,TYPE_oid,GDKstrdup("nil"),TRUE);
@@ -469,8 +469,8 @@ find the actule arguments at the proper place of the callee.
 
 /* x:= getRole(rb) 
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= GDKstrdup("bat");
-	q->fcnname= GDKstrdup("getRole");
+	setModuleId(q, GDKstrdup("bat"));
+	setFunctionId(q, GDKstrdup("getRole"));
 	q->argv[0]= x= newVariable(m,GDKstrdup("x"),TYPE_str);
 	q->argv[1]= resB;
 	q->argc=2;
@@ -479,12 +479,12 @@ find the actule arguments at the proper place of the callee.
 
 /* setRoles(resB, ..., CMD 
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= GDKstrdup("bat");
-	q->fcnname= GDKstrdup("setRole");
+	setModuleId(q, GDKstrdup("bat"));
+	setFunctionId(q, GDKstrdup("setRole"));
 	q->argv[0]= newTmpVariable(m,TYPE_any);
 	q->argv[1]= resB;
 	q->argv[2]= x;
-	q->argv[3]= newConstant(m,TYPE_str,GDKstrdup(p->fcnname),FALSE);
+	q->argv[3]= newConstant(m,TYPE_str,GDKstrdup(functionName(p)),FALSE);
 	q->argc=4;
 	pushInstruction(m,q);
 */
@@ -493,8 +493,8 @@ find the actule arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	q->barrier = BARRIERsymbol;
 	q->argv[0]= mloop= newVariable(m,GDKstrdup("mloop"),TYPE_lng);
-	q->modname= GDKstrdup("bbp");
-	q->fcnname= GDKstrdup("bunStream");
+	setModuleId(q, GDKstrdup("bbp"));
+	setFunctionId(q, GDKstrdup("bunStream"));
 	q->argv[1] = refBat;
 	hvar= q->argv[2] = newVariable(m,GDKstrdup("h"),getHeadType(refType));
 	sprintf(name,"B%d",rIndex);
@@ -506,7 +506,7 @@ find the actule arguments at the proper place of the callee.
 	if(multiplexDebug){
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->fcnname= GDKstrdup("print");
+	setFunctionId(q, GDKstrdup("print"));
 	q->argv[1] = zz;
 	q->argc=2;
 	pushInstruction(m,q);
@@ -521,14 +521,14 @@ find the actule arguments at the proper place of the callee.
 		q= newInstruction(ASSIGNsymbol);
 		sprintf(name,"B%d",i);
 		z= q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
-		q->modname= GDKstrdup("algebra");
+		setModuleId(q, GDKstrdup("algebra"));
 		sprintf(name,"A%d",i);
 		zv= q->argv[1]= newVariable(m,GDKstrdup(name),l);
 /*
 		if( nilVar){
-			q->fcnname= GDKstrdup("fetch");
+			setFunctionId(q, GDKstrdup("fetch"));
 			q->argv[2]= mvar;
-		} else */ { q->fcnname= GDKstrdup("find");
+		} else */ { setFunctionId(q, GDKstrdup("find"));
 			q->argv[2]= hvar;
 		}
 		q->argc=3;
@@ -536,7 +536,7 @@ find the actule arguments at the proper place of the callee.
 #ifdef TRACE_MULTIPLEX
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->fcnname= GDKstrdup("print");
+	setFunctionId(q, GDKstrdup("print"));
 	q->argv[1] = zv;
 	q->argc=2;
 	pushInstruction(m,q);
@@ -547,8 +547,8 @@ find the actule arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	cr= q->argv[0]= newVariable(m,GDKstrdup("cr"),
 			getTailType(getArgType(m,p,0)) );
-	q->modname= GDKstrdup(p->modname);
-	q->fcnname= GDKstrdup(p->fcnname);
+	setModuleId(q, GDKstrdup(moduleName(p)));
+	setFunctionId(q, GDKstrdup(functionName(p)));
 	for(i=2;i<pci->argc;i++)
 	if( isaBatType(getArgType(mb,pci,i)) ){
 		sprintf(name,"B%d",i);
@@ -562,13 +562,13 @@ find the actule arguments at the proper place of the callee.
 #ifdef TRACE_MULTIPLEX
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->fcnname= GDKstrdup("print");
+	setFunctionId(q, GDKstrdup("print"));
 	q->argv[1] = hvar;
 	q->argc=2;
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->fcnname= GDKstrdup("print");
+	setFunctionId(q, GDKstrdup("print"));
 	q->argv[1] = cr;
 	q->argc=2;
 	pushInstruction(m,q);
@@ -577,8 +577,8 @@ find the actule arguments at the proper place of the callee.
 
         /* insert(resB,h,cr); */
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= GDKstrdup("bat");
-	q->fcnname= GDKstrdup("insert");
+	setModuleId(q, GDKstrdup("bat"));
+	setFunctionId(q, GDKstrdup("insert"));
 	q->argv[0]= newTmpVariable(m,refType);
 	q->argv[1]= resB;
 	q->argv[2]= hvar;
@@ -597,28 +597,28 @@ find the actule arguments at the proper place of the callee.
 	/* z:= catalog.symbolDefinition(); print(z); */
 	{ int zz;
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= GDKstrdup("catalog");
-	q->fcnname= GDKstrdup("symbolDump");
+	setModuleId(q, GDKstrdup("catalog"));
+	setFunctionId(q, GDKstrdup("symbolDump"));
 	q->argv[0]= zz= newTmpVariable(m,newBatType(TYPE_void,TYPE_str));
 	q->argc=1;
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= GDKstrdup("io");
-	q->fcnname= GDKstrdup("print");
+	setModuleId(q, GDKstrdup("io"));
+	setFunctionId(q, GDKstrdup("print"));
 	q->argv[0]= newTmpVariable(m,TYPE_any);
 	q->argv[1]= zz;
 	q->argc=2;
 	pushInstruction(m,q);
 	/* z:= catalog.stkFrame(); print(z) */
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= GDKstrdup("catalog");
-	q->fcnname= GDKstrdup("stkFrame");
+	setModuleId(q, GDKstrdup("catalog"));
+	setFunctionId(q, GDKstrdup("stkFrame"));
 	q->argv[0]= zz= newTmpVariable(m,newBatType(TYPE_str,TYPE_str));
 	q->argc=1;
 	pushInstruction(m,q);
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= GDKstrdup("io");
-	q->fcnname= GDKstrdup("print");
+	setModuleId(q, GDKstrdup("io"));
+	setFunctionId(q, GDKstrdup("print"));
 	q->argv[0]= newTmpVariable(m,TYPE_any);
 	q->argv[1]= zz;
 	q->argc=2;
@@ -628,7 +628,7 @@ find the actule arguments at the proper place of the callee.
 	/* #ignore errors unless you are debugging; */
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
-	q->fcnname= GDKstrdup("raise");
+	setFunctionId(q, GDKstrdup("raise"));
 	q->argv[1] = k;
 	q->argc=2;
 	pushInstruction(m,q);

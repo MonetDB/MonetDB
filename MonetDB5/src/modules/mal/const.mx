@@ -127,7 +127,7 @@ str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		insertToBox(box,"dbname",GDKgetenv("gdk_dbname"));
 		insertToBox(box,"dbfarm",GDKgetenv("gdk_dbfarm"));
 		insertToBox(box,"version",GDKgetenv("gdk_version"));
-		insertToBox(box,"config",GDKgetenv("config"));
+		insertToBox(box,"config",GDKgetenv("gdk_config"));
 	/* old bat.mx constants */
 		insertToBox(box,"STORE_MEM","0");
 		insertToBox(box,"STORE_MMAP","1");

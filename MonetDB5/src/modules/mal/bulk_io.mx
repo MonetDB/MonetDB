@@ -612,7 +612,8 @@ int load_file( bulk *as, bstream *b ){
 		}
 	}
 	as->nr = i;
-	return res;
+	if( res<0) return res;
+	return as->nr;
 }
 
 static
