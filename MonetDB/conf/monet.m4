@@ -112,7 +112,10 @@ bits=32
 AC_ARG_WITH(bits,
 [  --with-bits=<#bits>     specify number of bits (32 or 64)],[
 case $withval in
-32)	;;
+32)	case "$host" in
+	ia64*)	AC_ERROR([we do not support 32 bits on $host, yet]);;
+	esac
+	;;
 64)	case "$host" in
 	i?86*)	AC_ERROR([$host does not support 64 bits]);;
 	esac
@@ -285,6 +288,7 @@ if test "x$enable_optim" = xyes; then
                       dnl  hence, we omit -funroll-all-loops, here.
                       ;;
       i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      ia64-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions                                                     -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
                       if test "$CC" = "gcc -m64" ; then
                         NO_INLINE_CFLAGS="-O1"
@@ -298,6 +302,7 @@ if test "x$enable_optim" = xyes; then
     else
       case "$host" in
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp6 -axiMK -unroll -ipo -ipo_obj";;
+      ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp2 -mcpu=itanium2 -unroll -ipo -ipo_obj";;
 #      *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
       *irix6.5*)      CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
                       LDFLAGS="$LDFLAGS -IPA"

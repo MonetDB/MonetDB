@@ -111,7 +111,7 @@ aclocal -I . -I conf $CONFDIR
 perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
 
 # patch aclocal.m4: 
-# set some correct switches for Intel compiler on Linux (icc)
+# set some correct switches for Intel compiler on Linux (icc/ecc)
 #grep 'lt_cv_prog_cc_can_build_shared' aclocal.m4 >/dev/null && 
 cat << "EOF" | patch aclocal.m4
 --- aclocal.m4~	Wed Jan 16 20:34:17 2002
@@ -132,7 +132,7 @@ cat << "EOF" | patch aclocal.m4
 EOF
 
 # patch aclocal.m4: 
-# fix checks "if icc supports -c -o file.{o,lo}"
+# fix checks "if icc/ecc supports -c -o file.{o,lo}"
 # and "wehther -lc should be explicitly linked in"
 cat << "EOF" | patch aclocal.m4
 --- aclocal.m4.OK	Thu Jul  4 17:51:11 2002
@@ -151,7 +151,7 @@ cat << "EOF" | patch aclocal.m4
  AC_LIBTOOL_DLOPEN_SELF
  
 -if test "$enable_shared" = yes && test "$GCC" = yes; then
-+if test "$enable_shared" = yes && ( test "$GCC" = yes || test "$CC" = icc ) ; then
++if test "$enable_shared" = yes && ( test "$GCC" = yes || test "$CC" = icc || test "$CC" = ecc ) ; then
    case $archive_cmds in
    *'~'*)
      # FIXME: we may have to deal with multi-command sequences.
@@ -160,7 +160,7 @@ cat << "EOF" | patch aclocal.m4
        deplibs=
        wl=$lt_cv_prog_cc_wl
 -      compiler_flags=-v
-+      if test "$CC" = icc
++      if ( test "$CC" = icc || test "$CC" = ecc )
 +        then  compiler_flags=-dryrun
 +        else  compiler_flags=-v
 +      fi
@@ -179,7 +179,7 @@ automake -a -c
 #autoupdate
 autoconf
 
-# patch configure to cope with Intel's C/C++ compiler for Linux ("icc")
+# patch configure to cope with Intel's C/C++ compiler for Linux ("icc"/"ecc")
 if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
 echo "autoconf $AC_VERSION is older than $NEW_AC_VERSION"
 grep 'ac_cv_prog_cc_g=yes' configure >/dev/null && cat << "EOF" | patch configure
