@@ -46,12 +46,12 @@ monet_fcntbl.sort@batloop {
 }
 
 Fnts.count.print;
-[ 657 ]
+[ 658 ]
 Fnts.reverse.sort.reverse@batloop {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count.print;
-[ 657 ]
+[ 658 ]
 
 All:=0;
 
@@ -135,8 +135,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 108 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 109 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -153,6 +153,7 @@ Module: "algebra"
 [ "count",	  "COMMAND:   ",  "count(BAT[any,any]) : int",								  "Returns the number of elements currently in a BAT."																															  ]
 [ "count",	  "COMMAND:   ",  "count(BAT[any,any], bit) : int",							  "Returns the number of elements currently in a BAT;\n ignores BUNs with nil-tail iff ignore_nils==TRUE."																								  ]
 [ "count_no_nil", "PROC:      ",  "count_no_nil(BAT[any,any]) : int",							  "short-cut for count(b,TRUE)"																																		  ]
+[ "cross",	  "COMMAND:   ",  "cross(BAT[any::1,any::2], BAT[any::3,any::4]) : BAT[any::1,any::4]",					  "Returns head-value from 'left' and tail-value from 'right'\nfor all BUNs in the cross product of 'left' and 'right'."														  ]
 [ "diff",	  "PROC:      ",  "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "backward compatibility: use sdiff() explicitly."																															  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any::2], any::1, any::2) : bit",					  "Returns true when 'h,t' occurs as a bun in b."																															  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any], any::1) : bit",						  "Returns whether 'h' occurs as a head value in b."																															  ]
@@ -790,7 +791,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print;
-[ 657 ]
+[ 658 ]
 
 quit;
 
