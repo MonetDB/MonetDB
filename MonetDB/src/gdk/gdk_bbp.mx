@@ -383,7 +383,7 @@ void BBPinit() {
 		BBPoid = OIDread(c); 
 		if ((c = strstr(c, "BBPsize")) != NULL) {
 			sscanf(c, "BBPsize=%d", &i);
-			i *= BATMARGIN;
+			i = ((dbl)i)*BATMARGIN;
 			if (i > BBPlimit) BBPlimit=i;
 		} 
 	}

@@ -699,7 +699,7 @@ CXXEXT = \\\"cxx\\\"
             reldir = os.path.join(reldir, os.pardir)
             d,t = os.path.split(d)
 
-    fd.write("TOPDIR = %s\n" % reldir)
+    fd.write("TOPDIR = %s\n" % string.replace(reldir, '/', '\\'))
     fd.write("SRCDIR = $(TOPDIR)\\..%s\n" % string.replace(srcdir, '/', '\\'))
     fd.write("!INCLUDE $(TOPDIR)\\rules.msc\n")
     if tree.has_key("SUBDIRS"):

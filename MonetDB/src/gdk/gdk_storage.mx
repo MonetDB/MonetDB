@@ -427,7 +427,7 @@ static BAT *DESCload(int i) {
 	}
 	b->hhash_heap = b->thash_heap = NULL; 
 	b->hidx_heap = b->tidx_heap = NULL; 
-	b->batSharecnt = b->batStamp = b->void_cnt = 0;
+	b->batSharecnt = b->void_cnt = 0;
 	return b;
 }
 

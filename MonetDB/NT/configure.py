@@ -27,10 +27,15 @@ import re
 import sys
 import fileinput
 import os
+import string
 
-prefix=os.path.abspath(sys.argv[1])
+prefix=os.path.abspath(sys.argv[1]);
 build=prefix
 source=os.path.abspath(os.path.join(build,os.pardir))
+
+prefix = string.replace(prefix, '\\', '\\\\\\\\')
+build  = string.replace(build,  '\\', '\\\\\\\\')
+source = string.replace(source, '\\', '\\\\\\\\')
 
 subs = [
     ('@exec_prefix@',       "@prefix@"),
@@ -45,7 +50,7 @@ subs = [
     ('@libexecdir@',        "@prefix@@DIRSEP@libexec"),
     ('@PACKAGE@',           "MonetDB"),
     ('@VERSION@',           "4.3.5"),
-    ('@DIRSEP@',            "\\\\"),
+    ('@DIRSEP@',            "\\\\\\\\"),
     ('@prefix@',            prefix),
     ('@MONET_BUILD@',       build),
     ('@MONET_SOURCE@',      source),
