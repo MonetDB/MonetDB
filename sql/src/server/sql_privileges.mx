@@ -218,7 +218,7 @@ int sql_find_auth( mvc *m, str auth )
 	BUN p = BUNfnd(BATmirror(auth_name), auth);
 	
 	if (p){
-		int id = *(int*)BUNhead(auth_name, p);
+		oid id = *(oid*)BUNhead(auth_name, p);
 		res = *(int*)BUNtail(auth_id, BUNfnd(auth_id, &id));
 	}
 
@@ -236,7 +236,7 @@ int sql_find_schema( mvc *m, str schema )
 
 	p = BUNfnd(BATmirror(schema_names), schema);
 	if (p) {
-		int id = *(int*)BUNhead(schema_names, p);
+		oid id = *(oid*)BUNhead(schema_names, p);
 		schema_id = *(int*)BUNtail(schema_ids, BUNfnd(schema_ids, &id));
 	}
 	
@@ -328,7 +328,7 @@ int sql_privilege_( mvc *m, int auth_id, int obj_id, int priv, int sub )
 
 	if (BATcount(b2) == 1){
 		if (sub){
-			int id = *(int*)BUNhead(b2,BUNfirst(b2));
+			oid id = *(oid*)BUNhead(b2,BUNfirst(b2));
 			int hier = *(int*)BUNtail(priv_hier, 
 						BUNfnd(priv_hier, &id));
 			if (hier)
@@ -385,7 +385,7 @@ int sql_grantable_( mvc *m, int grantorid, int obj_id, int privs, int sub )
 	bat_destroy(b2);
 
 	BATloop(b1, p, q) {
-		int id = *(int*)BUNhead(b1,p);
+		oid id = *(oid*)BUNhead(b1,p);
 		int priv = *(int*)BUNtail(b1,p);
 		int allowed = *(int*)BUNtail(priv_allowed, 
 						BUNfnd(priv_allowed, &id));
