@@ -10,6 +10,11 @@ AC_CANONICAL_HOST
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
+dnl Check for Monet
+AM_MONET_COMPILER()
+AM_MONET_TOOLS()
+AM_MONET_OPTIONS()
+AM_MONET_LIBS()
 AM_MONET_CLIENT()
 
 dnl libodbc
