@@ -39,7 +39,6 @@ public class MonetConnection implements Connection {
 
 	private static boolean debug;
 	private boolean closed;
-	private boolean autoCommit = true;
 
 	private SQLWarning warnings = null;
 	private Map typeMap = new HashMap();
@@ -116,7 +115,7 @@ public class MonetConnection implements Connection {
 			throw new SQLException("IO Exception: " + e.getMessage());
 		}
 
-		setAutoCommit(autoCommit);
+		setAutoCommit(true);
 		closed = false;
 	}
 
@@ -174,7 +173,7 @@ public class MonetConnection implements Connection {
 	 * @see setAutoCommit(boolean), getAutoCommit()
 	 */
 	public void commit() throws SQLException {
-		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 
 		sendCommit();
 	}
@@ -242,8 +241,32 @@ public class MonetConnection implements Connection {
 	 * @return the current state of this Connection object's auto-commit mode
 	 * @see setAutoCommit(boolean)
 	 */
-	public boolean getAutoCommit() {
-		return(autoCommit);
+	public boolean getAutoCommit() throws SQLException {
+		// get it from the database
+		Statement stmt;
+		boolean closeIt;
+
+		// use an existing statement, if one exists
+		Iterator it = statements.keySet().iterator();
+		if (it.hasNext()) {
+			stmt = (Statement)(it.next());
+			closeIt = false;
+		} else {
+			stmt = createStatement();
+			closeIt = true;
+		}
+		ResultSet rs =
+			stmt.executeQuery("SELECT value FROM session WHERE name='auto_commit'");
+		if (rs.next()) {
+			boolean ret = rs.getBoolean(1);
+			rs.close();
+			if (closeIt) stmt.close();
+			return(ret);
+		} else {
+			rs.close();
+			if (closeIt) stmt.close();
+			throw new SQLException("Driver Panic!!! Monet doesn't want to tell us what we need! BAAAAAAAAAAAD MONET!");
+		}
 	}
 
 	public String getCatalog() {return(null);}
@@ -346,7 +369,7 @@ public class MonetConnection implements Connection {
 	 *         transaction
 	 */
 	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself");
 
@@ -368,7 +391,7 @@ public class MonetConnection implements Connection {
 	 * @see setAutoCommit(boolean), getAutoCommit()
 	 */
 	public void rollback() throws SQLException {
-		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 
 		sendRollback();
 	}
@@ -384,7 +407,7 @@ public class MonetConnection implements Connection {
 	 *         in auto-commit mode
 	 */
 	public void rollback(Savepoint savepoint) throws SQLException {
-		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself");
 
@@ -420,8 +443,6 @@ public class MonetConnection implements Connection {
 	 * @see getAutoCommit()
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		this.autoCommit = autoCommit;
-
 		String error =
 			sendIndependantCommand("SSET auto_commit = " + autoCommit + ";");
 		if (error != null) throw new SQLException(error);
@@ -440,7 +461,7 @@ public class MonetConnection implements Connection {
 	 *         object is currently in auto-commit mode
 	 */
 	public Savepoint setSavepoint() throws SQLException {
-		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
@@ -462,7 +483,7 @@ public class MonetConnection implements Connection {
 	 *         object is currently in auto-commit mode
 	 */
 	public Savepoint setSavepoint(String name) throws SQLException {
-		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+		if (getAutoCommit()) throw new SQLException("Currently in auto-commit mode");
 
 		// create a new Savepoint object
 		MonetSavepoint sp;

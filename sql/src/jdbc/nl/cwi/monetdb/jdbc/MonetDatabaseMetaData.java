@@ -8,12 +8,13 @@ import java.util.*;
  * <br /><br />
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.1 (beta release)
+ * @version 0.2 (beta release)
  */
 public class MonetDatabaseMetaData implements DatabaseMetaData {
 	private Connection con;
 	private Driver driver;
 	private Statement stmt;
+	private Map envs;
 
 	public MonetDatabaseMetaData(Connection parent) {
 		con = parent;
@@ -24,6 +25,20 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		if (stmt == null) stmt = con.createStatement();
 
 		return(stmt);
+	}
+
+	private synchronized Map getEnvMap() throws SQLException {
+		if (envs == null) {
+			// make the env map
+			envs = new HashMap();
+			ResultSet env = getStmt().executeQuery("SELECT * FROM env");
+			while (env.next()) {
+				envs.put(env.getString("name"), env.getString("value"));
+			}
+			env.close();
+		}
+
+		return(envs);
 	}
 
 	/**
@@ -58,10 +73,12 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	/**
 	 * What is our user name as known to the database?
 	 *
-	 * @return null because it doesn't matter a.t.m.
+	 * @return sql user
+	 * @throws SQLException if a database access error occurs
 	 */
-	public String getUserName() {
-		return(null);
+	public String getUserName() throws SQLException {
+		Map env = getEnvMap();
+		return((String)env.get("sql_user"));
 	}
 
 	/**
@@ -124,9 +141,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * What is the version of this database product.
 	 *
 	 * @return a fixed version number, yes it's quick and dirty
+	 * @throws SQLException if a database access error occurs
 	 */
-	public String getDatabaseProductVersion() {
-		return("Generation 4");
+	public String getDatabaseProductVersion() throws SQLException {
+		Map env = getEnvMap();
+		return((String)env.get("gdk_version"));
 	}
 
 	/**
@@ -364,7 +383,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * should return a column named as C_COUNT instead of count(C)
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
+	 * @throws SQLException if a database access error occurs
 	 */
 	public boolean supportsColumnAliasing() {
 		return(true);
@@ -375,7 +394,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * JDBC Compliant driver always returns true
 	 *
 	 * @return true if so
-	 * @exception SQLException if a database access error occurs
+	 * @throws SQLException if a database access error occurs
 	 */
 	public boolean nullPlusNonNullIsNull() {
 		return(true);
@@ -1451,8 +1470,9 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @throws SQLException if a database error occurs
 	 */
 	public ResultSet getCatalogs() throws SQLException {
+		Map env = getEnvMap();
 		String query =
-			"SELECT 'default' AS TABLE_CAT";
+			"SELECT '" + ((String)env.get("gdk_dbname")) + "' AS TABLE_CAT";
 			// some applications need a database or catalog...
 
 		return(getStmt().executeQuery(query));
@@ -2870,21 +2890,41 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Retrieves the major version number of the underlying database.
-	 * We should actually retrieve this from the DB!!!
 	 *
 	 * @return the underlying database's major version
+	 * @throws SQLException if a database access error occurs
 	 */
-	public int getDatabaseMajorVersion() {
-		return(4);
+	public int getDatabaseMajorVersion() throws SQLException {
+		Map env = getEnvMap();
+		String version = (String)env.get("gdk_version");
+		int major = 0;
+		try {
+			major = Integer.parseInt(version.substring(0, version.indexOf(".")));
+		} catch (NumberFormatException e) {
+			// baaaaaaaaaa
+		}
+
+ 		return(major);
 	}
 
 	/**
 	 * Retrieves the minor version number of the underlying database.
 	 *
 	 * @return underlying database's minor version
+	 * @throws SQLException if a database access error occurs
 	 */
-	public int getDatabaseMinorVersion() {
-		return(3);
+	public int getDatabaseMinorVersion() throws SQLException {
+		Map env = getEnvMap();
+		String version = (String)env.get("gdk_version");
+		int minor = 0;
+		try {
+			int start = version.indexOf(".");
+			minor = Integer.parseInt(version.substring(start + 1, version.indexOf(".", start + 1)));
+		} catch (NumberFormatException e) {
+			// baaaaaaaaaa
+		}
+
+ 		return(minor);
 	}
 
 	/**
