@@ -334,10 +334,6 @@ Let's call it as a synchronous action, without concern on parallelism.
     pl->env= stk; 
     pl->pci = pci;
     pl->inuse = 1;
-    mal_set_lock(stk->stklock,"callFactory");
-    /* the stack may not disappear */
-    stk->shares++; 
-    mal_unset_lock(stk->stklock,"callFactory");
     /* inherit debugging */
     pl->stk->cmd = stk->cmd;
 
@@ -414,11 +410,7 @@ str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc){
         pl->client = NULL;
         pl->caller = NULL;
         pl->pci = NULL;
-        
-        mal_set_lock(pl->env->stklock,"yieldFactory");
-        pl->env->shares--; 
         pl->env = NULL;
-        mal_unset_lock(pl->env->stklock,"yieldFactory");
         return MAL_SUCCEED;
     }
     return throwMessage("yieldFactory","No factory found\n");
@@ -438,6 +430,8 @@ str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc){
 @-
 A return from a factory body implies removal of
 all state information.
+This code should also prepare for handling factories
+that are still running threads in parallel.
 @c
 str shutdownFactory(MalBlkPtr mb){
     Plant pl, plim;
@@ -452,11 +446,7 @@ str shutdownFactory(MalBlkPtr mb){
         pl->client = NULL;
         pl->caller = NULL;
         pl->pci = NULL;
-                mal_set_lock(pl->env->stklock,"yieldFactory");
-                pl->env->shares--;
-                pl->env = NULL;
-                mal_unset_lock(pl->env->stklock,"yieldFactory");
-
+        pl->env = NULL;
     }
     return MAL_SUCCEED;
 }

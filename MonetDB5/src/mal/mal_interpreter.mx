@@ -769,7 +769,18 @@ call to the factory manager.
     if( pci->blk== NULL)
         ret= raiseException(mb,stkpc,MALexception,
             "reference to MAL function missing\n");
-    else ret= callFactory(cntxt,pci->blk,mb,stk,pci);
+    else{
+        mal_set_lock(stk->stklock,"callFactory");
+        /* the caller stack may not disappear */
+        stk->shares++;
+        mal_unset_lock(stk->stklock,"callFactory");
+        ret= callFactory(cntxt,pci->blk,mb,stk,pci);
+        /* release the stack */
+        mal_set_lock(stk->stklock,"callFactory");
+        /* the caller stack may not disappear */
+        stk->shares--;
+        mal_unset_lock(stk->stklock,"callFactory");
+    }
     @:resultParameter@
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -896,10 +907,19 @@ children does not work in general, because you don;t know
 what default will work. Instead, the list of children 
 threads should be accessible.
 
+Factories that encountered an exception should decrease
+the share count as well. This will terminate its
+existence.
 @{
 @-
 @= waitForChildren
-if(stk->shares) waitForChildren(stk);
+if(stk->shares) {
+    if( ret && getInstrPtr(mb,0)->token == FACTORYsymbol){
+        printf("release stack for factory\n");
+        shutdownFactory(mb);
+    } else
+    waitForChildren(stk);
+}
 @c
 void waitForChildren(MalStkPtr stk){
     int i= stk->shares;
@@ -1002,10 +1022,12 @@ Joining a process thread is controlled with a lock part of the stack frame
 @}
 @+ Exception handling
 Calling a built-in or user-defined routine may lead to an error, 
-which in Monet 4.x leads to a message on the user's console,
+which in Monet 4 leads to a message on the user's console,
 cached status message to be dealt with in MAL, or as an error status in Mapi.
+@{
 [there are about 55 GDKerror calls in gdk, 91 in monet, and 167 in 
 the modules/plain/*.  The number of fatal errors is 26,7, 2, respectively.]
+@}
 
 To improve error handling in MAL, we introduce an exception handling
 scheme based on CATCH-EXIT blocks. The CATCH statement identifies a
