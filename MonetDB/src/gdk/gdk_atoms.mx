@@ -1424,9 +1424,9 @@ int strPut(Heap *h, var_t *dst, str v) {
 		   -NaN iso 1.5 (BATMARGIN)). So replaced this code:
 		   size_t newsize = len + h->size * BATMARGIN;
 		*/
-		float batmargin = BATMARGIN;
+		float batmargin = (float) BATMARGIN;
 		float hnewsize  = h->size * batmargin;
-		size_t newsize  = len + hnewsize;
+		size_t newsize  = len + (size_t) hnewsize;
 		assert(newsize);
 
 		/* XXX: if the heap just becomes too big, insert a nil (last var_t bytes are free) */
