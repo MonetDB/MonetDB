@@ -32,7 +32,7 @@
 #include "sql_mem.h"
 #include <gdk.h>
 
-extern lng decimal_from_str( char *dec );
+sql_export lng decimal_from_str( char *dec );
 
 #endif /* _SQL_DECIMAL_H */
 

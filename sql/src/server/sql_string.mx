@@ -35,12 +35,12 @@
 #define _(String) (String)
 #define N_(String) (String)
 
-extern char *mkLower(char *v);
-extern char *toLower(const char *v);
-extern char *strconcat(const char *s1, const char *s2);
-extern char *strip_extra_zeros(char *v);
-extern char *sql2str( char *s );
-extern char *sql_strdup( char *s );
+sql_export char *mkLower(char *v);
+sql_export char *toLower(const char *v);
+sql_export char *strconcat(const char *s1, const char *s2);
+sql_export char *strip_extra_zeros(char *v);
+sql_export char *sql2str( char *s );
+sql_export char *sql_strdup( char *s );
 
 #endif /*_SQL_STRING_H_*/
 
