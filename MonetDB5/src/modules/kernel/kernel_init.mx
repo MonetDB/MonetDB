@@ -17,7 +17,7 @@ include "alarm";
 include "mmath";
 include "atoms_init";
 include "bat";
-include "mkey";
+#include "mkey";
 include "algebra";
 include "calc";
 include "batcalc";	

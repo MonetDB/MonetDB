@@ -62,9 +62,6 @@ comment "Create an unset sema, with an initial value";
 command down(s:sema) 
 address SEMAdown
 comment "Decrement the semaphpore if >0; else block";
-command try(s:sema) :int 
-address SEMAtry
-comment "try the semaphpore";
 command up(s:sema) 
 address SEMAup
 comment "Increment the semaphore";
@@ -115,10 +112,6 @@ int up_sema(monet_sema *s){
 	return GDK_SUCCEED;
 }
 
-int try_sema(int *res, monet_sema *s){
-	*res = MT_try_sema((MT_Sema) *s)?EBUSY:0;
-	return GDK_SUCCEED;
-}
 
 int down_sema(monet_sema *s){
 	MT_down_sema((MT_Sema) *s, "down_sema");
@@ -177,10 +170,6 @@ str SEMAcreate(monet_sema *res, int *init){
 str SEMAup(int *res, monet_sema *s){
 	up_sema(s);
 	*res=1;
-	return MAL_SUCCEED;
-}
-str SEMAtry(int *res, monet_sema *s){
-	try_sema(res, s);
 	return MAL_SUCCEED;
 }
 str SEMAdown(int *res, monet_sema *s){

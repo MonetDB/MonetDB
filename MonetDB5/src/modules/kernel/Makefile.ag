@@ -11,8 +11,8 @@ LIBS = {
 	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx mkey.mx aggrX3.mx 
-# pcl.mx
+		batcalc.mx group.mx aggrX3.mx 
+#mkey.mx  pcl.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -26,14 +26,14 @@ doc_kernel = {
 	SOURCES = kernel_init.mx \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx mkey.mx aggrX3.mx 
+		batcalc.mx group.mx aggrX3.mx 
 }
 
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx kernel_init.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx mkey.mx aggrX3.mx 
+		batcalc.mx group.mx aggrX3.mx 
 # pcl.mx
 }
 

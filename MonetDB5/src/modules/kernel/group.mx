@@ -81,7 +81,7 @@ comment "Produces a new BAT with identical head
 
 
 command group(attr:bat[:any$2,:any$1] )
-	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) 
+	(histo:bat[:any$1,:oid], grp:bat[:any$2,:oid]) 
 address GRPgroup
 comment "Cross tabulation group initialization.
          Returned head values are identical as 
@@ -92,7 +92,7 @@ command group(attr:bat[:any$2,:any$1] )
 	:bat[:any$2,:oid] = GRPgroup2
 
 command group(attr:bat[:any$2,:any$1], N:int, rng:int)
-	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) 
+	(histo:bat[:any$1,:oid],grp:bat[:any$2,:oid]) 
 address GRPgroup_custom
 comment "Cross tabulation group initialization like 
 	 GRPgroup, but with user provided #bits in 
