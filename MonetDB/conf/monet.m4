@@ -12,6 +12,7 @@ if test "x$enable_debug" = xyes; then
 fi
 
 dnl --enable-optimize
+NO_INLINE_CFLAGS=""
 AC_ARG_ENABLE(optimize,
 [  --enable-optimize       enable extra optimization [default=off]],
   enable_optim=$enableval, enable_optim=no)
@@ -23,6 +24,9 @@ if test "x$enable_optim" = xyes; then
       case "$host" in
       i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions";;
+      *irix6.5*)      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions"
+                      NO_INLINE_CFLAGS="-fno-inline"
+                      ;;
       *)              CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions";;
       esac
     else
@@ -31,13 +35,13 @@ if test "x$enable_optim" = xyes; then
       *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
                       LDFLAGS="$LDFLAGS -IPA"
                       ;;
-      *-sun-solaris*) CFLAGS="$CFLAGS -xO5"
-                      ;;
+      *-sun-solaris*) CFLAGS="$CFLAGS -xO5";;
       esac   
     fi
 
   fi
 fi
+AC_SUBST(NO_INLINE_CFLAGS)
 
 dnl --enable-warning (only gcc)
 AC_ARG_ENABLE(warning,

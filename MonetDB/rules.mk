@@ -81,4 +81,7 @@ MXFLAGS= -notouch
 %.eps: %.feps
 	$(CP) $< $@
 
+$(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
+
 SUFFIXES-local: $(BUILT_SOURCES)
