@@ -322,8 +322,8 @@ void BBPinithash() {
     }
 }
 
-void BBPextend(flt factor, int buildhash) {
-	int newsize = BBPlimit*factor;
+void BBPextend(dbl factor, int buildhash) {
+	int newsize = (int) (BBPlimit*factor);
 	size_t maxsize = MAX(newsize*2,BBPmaxsize)*sizeof(BBPrec);
 
 	BBP = (BBPrec*) GDKvmrealloc(BBP, BBPlimit*sizeof(BBPrec), (size_t) newsize*sizeof(BBPrec), 
@@ -433,7 +433,7 @@ void BBPinit() {
 		BBPoid = OIDread(c); 
 		if ((c = strstr(c, "BBPsize")) != NULL) {
 			sscanf(c, "BBPsize=%d", &i);
-			i = ((dbl)i)*BATMARGIN;
+			i = (int) (i*BATMARGIN);
 			if (i > BBPlimit) BBPlimit=i;
 		} 
 	}

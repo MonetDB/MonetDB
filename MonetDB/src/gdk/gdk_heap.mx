@@ -137,7 +137,7 @@ int HEAPextend(Heap *h, size_t size) {
 					h->filename); goto error;
 		}
 
-		if (totsize > st.st_size) {
+		if ((long) totsize > st.st_size) {
                 	fseek(fp, (long) totsize, SEEK_SET);
                 	fputc('\n',fp), fflush(fp);
 		}
@@ -366,7 +366,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
                                                 h->filename, h->maxsize, ret);
 			fclose(fp);
 			if (ret == 0) {
-				h->size = h->maxsize = h->free*1.05;
+				h->size = h->maxsize = (size_t) (h->free*1.05);
 				desc_status = 1;
 			}
                 }
@@ -444,7 +444,7 @@ TODO: user HEADER64 for both 32 and 64 bits (requires BAT format change)
 /* #define TRACE */
 
 typedef struct heapheader {
-   int head;		/* index to first free block		*/
+   unsigned int head;		/* index to first free block		*/
    int alignment;	/* alignment of objects on heap         */
    int firstblock;      /* first block in heap                  */
    int dummy;
@@ -453,7 +453,7 @@ typedef struct heapheader {
 
 typedef struct {
    int alignment;	/* alignment of objects on heap         */
-   int head;		/* index to first free block		*/
+   unsigned int head;		/* index to first free block		*/
    int (*sizefcn)(ptr); /* ADT function to ask length           */
 #ifndef MONET64
    int dummy;
@@ -470,8 +470,8 @@ typedef HEADER64 HEADER_OTHER;
 #endif
 typedef struct hfblock
 {
-   int size;		/* Size of this block in freelist	*/
-   int next;		/* index of next block 			*/
+   unsigned int size;		/* Size of this block in freelist	*/
+   unsigned int next;		/* index of next block 			*/
 } CHUNK;
 @c
 #define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
@@ -913,7 +913,7 @@ void HEAP_checkformat(Heap *heap) {
 	hheader->head = image.head;
 	hheader->firstblock = image.firstblock;
 	hheader->alignment = image.alignment;
-	hheader->sizefcn = (GDKfcn) hasfcn;
+	hheader->sizefcn = (int (*)(ptr)) hasfcn;
    }
 }
 

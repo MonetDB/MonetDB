@@ -77,7 +77,7 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
                 @3 = 3*MIN(_rcount, _lcount);  
         } else if (@3 == 0) {
                 /* use sampling (if sufficient tuples are there) */
-                int _tot = 0, _div = 0, _lo, _hi, _step = 0;
+                size_t _tot = 0, _div = 0, _lo, _hi, _step = 0;
                 BAT *_tmp1 = l;
                 for(_hi=_lcount; _hi > 0; _hi >>= 1) _step++;
                 _step = _lcount / (_step-LOG_SAMPLESIZE);
@@ -628,8 +628,8 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                 BAT *v = BATmirror(VIEWhead(BATmirror(r)));
                 oid lo_val = MAX(l->tseqbase,r->hseqbase);
                 oid hi_val = MIN(l->tseqbase+BATcount(l),r->hseqbase+BATcount(r));
-                int lo_pos = lo_val - r->hseqbase;
-                int hi_pos = hi_val - (r->hseqbase+1);
+                size_t lo_pos = lo_val - r->hseqbase;
+                size_t hi_pos = hi_val - (r->hseqbase+1);
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos, hi_pos);\n");
                 bn = BATslice(v, lo_pos, hi_pos);
                 if (seqbase != oid_nil) seqbase += lo_val - l->tseqbase;

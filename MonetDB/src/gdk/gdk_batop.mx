@@ -542,12 +542,12 @@ case for BATselect (range selection on sorted column), BATrangesplit
 (fragmentation on sorted column) and BATsemijoin (when two dense columns
 are semijoined).
 @c
-BAT *BATslice(BAT *b, int l, int h) {
+BAT *BATslice(BAT *b, size_t l, size_t h) {
 	int low = l;
         int xx;
 	BAT *bn;
 
-        if (l < 0) l = 0; 
+/*        if (l < 0) l = 0; */
 	if (h >= l && h >= BATcount(b)) h = BATcount(b)-1;
 	if (h < l) h = l-1;
         l += BUNindex(b, BUNfirst(b));
@@ -739,7 +739,7 @@ BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi) {
 
 BAT *BAT_select(BAT *b, ptr tl, ptr th, int tail) {
 	int	hval, lval, equi, offset, t, ht, tt;
-	int 	batcnt, estimate = 0;
+	size_t 	batcnt, estimate = 0;
 	ptr	nil;
 	BAT	*bn; 
 	BUN	 p,q;
@@ -780,18 +780,18 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 @c
 	if (BATtordered(b)) {
 	    BAT *v = tail?b:VIEWhead_(b,b->batRestricted); 
-	    int high = batcnt-1;
-	    int low = 0;
+	    size_t high = batcnt-1;
+	    size_t low = 0;
 
 	    if (BATtdense(b)) {
 	       /* Selections on voids are positional. */
 		if (hval) {
-		    int h = (*(oid*) th) - b->tseqbase;
+		    size_t h = (*(oid*) th) - b->tseqbase;
 		    if (h < high) high = h;
 		
 		} 
 		if (lval) {
-		    int l = (*(oid*) tl) - b->tseqbase;
+		    size_t l = (*(oid*) tl) - b->tseqbase;
 		    if (l > low) low = l;
 		}
 	    } else {
@@ -811,7 +811,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		    high = BUNindex(b,q) - (offset+1);
 		}
 	    }
-	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BATslice(v=%s, low=%d, high=%d);\n",
+	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): BATslice(v=%s, low=%u, high=%u);\n",
 	                                b->batId, v->batId, low, high);
 	    bn = BATslice(v, low, high);
 	    if (!tail) {
@@ -825,9 +825,9 @@ We do not sample in an equi-select on a BAT with a hash table, as the
 BAT_hashselect code already ensures a good allocation estimate. 
 @c
 	if (batcnt > 10000 && (equi == 0 || b->thash_heap == NULL)) {
-            int _lo = batcnt/2, _hi = _lo + 104;
+            size_t _lo = batcnt/2, _hi = _lo + 104;
 	    BAT *tmp1;
-	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%d, _hi=%d);\n",
+	    ALGODEBUG THRprintf(GDKout, "BAT_select(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=%u, _hi=%u);\n",
 	                                b->batId, b->batId, _lo, _hi);
             tmp1 = BATslice(b, _lo, _hi); /* slice keeps all parent properties */
             if (tmp1) {
@@ -837,7 +837,7 @@ BAT_hashselect code already ensures a good allocation estimate.
                 tmp2 = BAT_select(tmp1, tl, th, tail);
                 if (tmp2) {
 		    /* reserve 105% of what has been estimated */
-                    estimate = (((lng) BATcount(tmp2)) * (lng) batcnt)/LL_CONSTANT(100);
+                    estimate = (size_t) ((((lng) BATcount(tmp2)) * (lng) batcnt)/LL_CONSTANT(100));
                     BBPreclaim(tmp2);
                 }
                 BBPreclaim(tmp1);
@@ -907,9 +907,9 @@ BAT* BATuselect(BAT *b, ptr h, ptr t) {
 
 @- Random Selections 
 @c
-BAT* BATsample(BAT *b, int size) {
-	unsigned int cnt, i, r = 0;
-	int j, n, *choice, *dst;
+BAT* BATsample(BAT *b, size_t size) {
+	size_t cnt, i, r = 0, n, j;
+	int *choice, *dst;
 	BAT *bn; 
 
 	BATcheck(b, "BATsample: source BAT");
@@ -920,7 +920,8 @@ BAT* BATsample(BAT *b, int size) {
 	bn = BATnew(BAThtype(b), BATttype(b), n);
 	BATcheck(bn, "BATsample: dest BAT");
 
-	if (n <=0) return bn;
+	if (n == 0)
+		return bn;
   	dst = choice = (int*) GDKmalloc(n*sizeof(int));
  
 	if (n*2 < BATcount(b)) {  /* nondense sample */
@@ -1278,7 +1279,7 @@ BAT *BAThashsplit(BAT *b, int n, int unary) {
 	    for (i=2; i<n; i*=2);
             h.mask = i-1;
             h.type = BATttype(b);
-	    cnt = BATMARGIN*BATbuncount(b)/n; 
+	    cnt = (size_t) (BATMARGIN*BATbuncount(b)/n);
 	    for (i = 0; i < n; i++) {
 		bf = part_bat(bn, BAThtype(bn), BATttype(bn), cnt, TRUE);
 		if (bf == NULL) {
@@ -1305,7 +1306,7 @@ BAT *BATrangesplit(BAT *b, int n, int unary) {
 	ptr 	*seps, nilval;
 	BUN	r, s;
 	dbl	scale;
-	int 	thorough = (n<=1 || BATtvoid(b) || BATtordered(b))?1:10;
+	size_t 	thorough = (n<=1 || BATtvoid(b) || BATtordered(b))?1:10;
 
 	BATcheck(b, "BATrangesplit");
 
@@ -1325,7 +1326,7 @@ If necessary though, we deliver less than n buckets.
 	scale  = ((dbl) BATcount(b))/((dbl) BATcount(slice));
         BBPreclaim(slice);
 	BATmax(histo, &maxsize);
-	maxsize *= scale;
+	maxsize = (int) (maxsize * scale);
 	target = MAX(target, maxsize);
         sizes  = (int*) GDKmalloc(2*n*sizeof(int));
         seps   = (ptr*) GDKmalloc(2*n*sizeof(ptr));
@@ -1335,7 +1336,7 @@ Use the histogram to determine good split boundaries on b.
         BATorder(histo);
         BATloopFast(histo, r, s, xx) {
 		int cnt = *(int*) BUNtloc(histo,r);
-		int add = scale * cnt;
+		int add = (int) (scale * cnt);
 		if (zz + add > target) {
 			if ((zz + add - target) < (target-zz)) {
 				sizes[yy] = zz+add;
@@ -1378,7 +1379,7 @@ Virtual oids (void) is a special subcase with positional lookup instead
 of binary search.
 @c
 	} else if (BATtvoid(b) || BATtordered(b)) {
-	    int l, h = -1, o = BUNindex(b,BUNfirst(b));
+	    size_t l, h = -1, o = BUNindex(b,BUNfirst(b));
 
 	    for(yy=0; yy<n; yy++) {
 		l = h+1;

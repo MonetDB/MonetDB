@@ -196,12 +196,12 @@ BAT *BATkunique(BAT *b) {
         if (b->hkey) {
 	    bn = BATrcopy(b);
 	} else {
-	    int cnt = BATcount(b);
+	    size_t cnt = BATcount(b);
 	    if (cnt > 10000) {
 		BAT *tmp0 = VIEWhead_(b, BAT_WRITE);
 		BAT *tmp1 = BATsample(b, 1000);
 		BAT *tmp2 = BATkunique(tmp1);
-		cnt = (((lng) BATcount(tmp2)) * cnt)/900;
+		cnt = (size_t) ((((lng) BATcount(tmp2)) * cnt) / 900);
 		BBPreclaim(tmp0);
 		BBPreclaim(tmp1);
 		BBPreclaim(tmp2);
