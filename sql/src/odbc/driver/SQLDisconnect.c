@@ -51,10 +51,6 @@ SQLDisconnect(SQLHDBC hDbc)
 	}
 #endif
 
-	/* Ready to close the connection and clean up */
-	if (dbc->autocommit && dbc->Error == NULL)
-		mapi_query(dbc->mid, "COMMIT;");
-
 	/* client waves goodbye */
 	mapi_disconnect(dbc->mid);
 	mapi_destroy(dbc->mid);

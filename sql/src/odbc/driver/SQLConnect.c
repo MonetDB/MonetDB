@@ -93,6 +93,10 @@ SQLConnect_(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* temporarily hold hostname in s */
 	s = mo_find_option(NULL, 0, "host");
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s port=%d\n", dsn, uid, pwd, port);
+#endif
+
 	/* connect to a server on host via port */
 	mid = mapi_connect(s, port, uid, pwd, "sql");
 	if (mid == NULL || mapi_error(mid)) {
@@ -124,6 +128,7 @@ SQLConnect_(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		if (dbc->DBNAME != NULL)
 			free(dbc->DBNAME);
 		dbc->DBNAME = schema;
+		mapi_setAutocommit(mid, dbc->autocommit);
 	}
 
 	return rc;

@@ -53,7 +53,7 @@ newODBCDbc(ODBCEnv *env)
 	dbc->DBNAME = NULL;
 
 	dbc->Connected = 0;
-	dbc->autocommit = 0;
+	dbc->autocommit = 1;	/* default is autocommit */
 	dbc->mid = NULL;
 	dbc->Mdebug = 0;
 

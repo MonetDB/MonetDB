@@ -42,7 +42,14 @@ SQLSetConnectAttr_(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 
 	switch (Attribute) {
 	case SQL_ATTR_AUTOCOMMIT:
-		dbc->autocommit = 1;
+		dbc->autocommit = (SQLUINTEGER) ValuePtr == SQL_AUTOCOMMIT_ON;
+		if (dbc->mid) {
+			mapi_setAutocommit(dbc->mid, dbc->autocommit);
+			if (dbc->autocommit) {
+				/* trigger autocommit */
+				mapi_close_handle(mapi_query(dbc->mid, ""));
+			}
+		}
 		return SQL_SUCCESS;
 
 		/* TODO: implement connection attribute behavior */
