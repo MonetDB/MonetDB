@@ -580,19 +580,25 @@ parsing the format string as part of the initialization phase.
 The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
+Beware, the types of the objects to be printed should be
+obtained from the stack, because the symbol table may actually
+allow for any type to be assigned.
 @c
 str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,int indx,str hd, str tl)
 {
 	int tpe = getArgType(mb,pci,indx);
 	ptr val = (ptr) getArgReference(stk,pci,indx);
         stream *fp = GDKout;
+	if( tpe == TYPE_any)
+		tpe= stk->stk[pci->argv[indx]].vtype;
+	(void)mb;
 	if( val==NULL) {
 		if(hd) stream_printf(fp,"%s",hd);
 		ATOMprint(TYPE_str, "nil", GDKout);
 		if(tl) stream_printf(fp,"%s",tl);
 		return MAL_SUCCEED;
 	}
-	if( isaBatType(tpe)){
+	if( isaBatType(tpe) || tpe== TYPE_bat){
 		BAT *b;
 		if( *(int*)val ==0){
 			if(hd) stream_printf(fp,"%s",hd);

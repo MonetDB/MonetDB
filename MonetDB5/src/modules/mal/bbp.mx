@@ -370,12 +370,12 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	name = (str) getArgValue(stk,pci,1);
 	@:chkIdentifier(name,take)@
 	v = &stk->stk[pci->argv[0]];
-	if(takeBox(box,name,v)) 
+	if(takeBox(box,name,v, (int) getArgType(mb,pci,0))) 
 	return throwException(MALEXCEPTION,"bbp.take",
 			"failed to take '%s' from box",name);
 	/* make a private copy for this client session */
 	/* use the cheapest copy method */
-	printf("bbp.take not yet fully implemented\n");
+	/* printf("bbp.take not yet fully implemented\n");*/
 	return MAL_SUCCEED;
 }
 
@@ -388,7 +388,7 @@ str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         name = (str) getArgValue(stk,pci,1);
         releaseBox(box,name);
 	/* merge the updates of this BAT with the master copy */
-	printf("bbp.release not yet fully implemented\n");
+	/* printf("bbp.release not yet fully implemented\n");*/
 	return MAL_SUCCEED;
 }
 @-
@@ -442,7 +442,7 @@ str CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:OpenBox(releaseAll)@
 	releaseAllBox(box);
 	/* merge the updates with the master copies */
-	printf("bbp.releaseAll not yet fully implemented\n");
+	/* printf("bbp.releaseAll not yet fully implemented\n"); */
 	return MAL_SUCCEED;
 }
 
@@ -456,7 +456,7 @@ str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         if( discardBox(box,name) )
 	return throwException(MALEXCEPTION,"bbp.discard",
 				"failed to discard '%s' ", name);
-	printf("bbp.discard not yet fully implemented\n");
+	/*printf("bbp.discard not yet fully implemented\n");*/
 	return MAL_SUCCEED;
 }
 str CMbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
