@@ -76,9 +76,10 @@ stream *malOpenSource(str fname){
         slash_2_dir_sep(path);
 	fullname= MSP_locate_script(path);
 
-	if(fullname)
+	if(fullname) {
 		fd = open_rastream(fullname);
-	else 	fd = open_rastream(path);
+		GDKfree(fullname);
+	} else 	fd = open_rastream(path);
 	return fd;
 }
 @-

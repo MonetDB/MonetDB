@@ -624,9 +624,9 @@ void freeMalBlk(MalBlkPtr mb){
 	GDKfree(mb->var);  mb->var=0;
 	if( mb->binding) GDKfree(mb->binding);  mb->binding=0;
 	if( mb->help) GDKfree(mb->help); mb->help=0;
-	GDKfree(mb);
 	if(mb->props) GDKfree(mb->props);
 	mb->props= NULL;
+	GDKfree(mb);
 }
 @-
 The routine below should assure that all referenced structures

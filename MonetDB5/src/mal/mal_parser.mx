@@ -563,7 +563,8 @@ Atom storage may be defined in terms of an existing type.
 	}
 	if( findScope(cntxt->nspace,modnme) != NULL)
 		cntxt->curprg->def->errors  = FATALINPUT;
-	else	cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
+	else
+		cntxt->nspace = fixateScope(cntxt->nspace, modnme, strlen(modnme));
 	if( atomary) cntxt->nspace->isAtomModule = TRUE;
 	GDKfree(modnme);
 	@:typeInfo@

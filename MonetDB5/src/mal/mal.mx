@@ -330,7 +330,7 @@ void tstAligned()
 int mal_init(){
 	mal_contextLock= MT_create_lock();
 	tstAligned();
-	initNamespace("T%d");
+	initNamespace();
 	initParser();
         if( malStartupAdmin() == 0) return -1;
 	return 0;
@@ -350,6 +350,7 @@ void mal_exit(Client cntxt){
 	mal_scope = 0;
 	unloadModuleLibraries();
 	TMcommit();
+	finishNamespace();
 	GDKexit(1);
 }
 @}

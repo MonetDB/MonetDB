@@ -105,6 +105,8 @@ the consistency of this counter.
 #include "mal_function.h"	/* for throwException() */
 #include "mal_import.h"		/* for slash_2_dir_sep() */
 
+static void clear_moddir();
+
 static int noDlopen;
 
 MALfcn getAddress(str fcnname){
@@ -175,9 +177,14 @@ Use the search path provided in the configuration file
 		stream_printf(GDKout,"load:%s:%s\n",fullname,handle==NULL?
 			(handle==NULL?dlerror():"failed"):"succeeded");
 #endif
-		if(handle == NULL)
+		if(handle == NULL) {
+			char buf[1024];
+			strcpy(buf,fullname);
+			GDKfree(fullname);
 			return (str) throwException("loaderException",
-				"loadModuleLibrary", fullname);
+				"loadModuleLibrary", buf);
+		}
+		GDKfree(fullname);
 	}
 
         MT_set_lock(mal_contextLock, "loadModule");
@@ -198,7 +205,11 @@ we exit the server
 void unloadModuleLibraries(){
 	int i;
 	for(i=0;i<MAXMODULES;i++)
-	if( handles[i]) dlclose(handles[i]);
+	if( handles[i]) {
+		dlclose(handles[i]);
+		GDKfree(modulesLoaded[i]);
+	}
+	(void) clear_moddir();
 }
 @+ Static pre-loading
 To speedup restart and to simplify debugging, the Monet server can
@@ -294,6 +305,18 @@ static void print_moddir_list(void) {
         }
 }
 #endif
+
+static void clear_moddir()
+{
+	struct moddir *entry=moddir_list, *e;
+	while(entry)
+        {
+		e= entry->next;
+		GDKfree(entry->path);
+		GDKfree(entry);
+		entry=e;
+        }
+}
 
 static void
 insert_moddir_entry(const char *name)

@@ -685,11 +685,15 @@ static
 void enlargebuffer(Client c, int newsize){
 	int i;
 	int ln;
+	char *n;
 
 	assert(newsize>0);
 	ln = c->nxt-c->input;
 	i = c->limit - c->input + newsize;
-	c->input = (char *) GDKrealloc(c->input,i);
+	n = (char *) GDKmalloc(i);
+	strcpy(n,c->input);
+	GDKfree(c->input);
+	c->input = n;
 	c->limit = c->input+i;
 	c->nxt= c->input+ln;
 }

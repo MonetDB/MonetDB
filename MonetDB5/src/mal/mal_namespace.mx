@@ -48,6 +48,7 @@ should be protected against concurrent access.
 #define _MAL_NAMESPACE_H
 
 mal_export void initNamespace();
+mal_export void finishNamespace();
 mal_export str getName(int nid);
 mal_export int putName(str nme);
 mal_export int parseName(str *nme);
@@ -107,6 +108,11 @@ void initNamespace() {
 	namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
 	namespace.size = MAXIDENTIFIERS;
 	namespace.nmetop= 256; /* hash overflow */
+}
+void finishNamespace() {
+	GDKfree(namespace.nme);
+	GDKfree(namespace.link);
+	GDKfree(namespace.hit);
 }
 @-
 The function getName returns the pointer to the identifier representation.
