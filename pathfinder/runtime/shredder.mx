@@ -478,7 +478,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 #ifdef USE_COMPRESSION
                 if ( sb->def->compress ) {
                         /* remove all accelerators from the BAT */
-                        ACCremoveall(sb->bat);
+                        HASHdestroy(sb->bat);
                 }
 #endif
                 if ( sb->def->headType==TYPE_void && !BAThdense(sb->bat) )
