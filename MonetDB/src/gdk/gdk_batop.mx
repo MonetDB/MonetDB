@@ -1261,7 +1261,7 @@ BAT *BATorder@3(BAT *b) {
 	GDKqsort@3(BUNfirst(b), b->hheap.base, BATcount(b), BUNsize(b), b->htype, b->hloc); 
         ACCremoveall(b);
         ALIGNdel(b, "BATorder@3");
-	b->hsorted = GDK_SORTED@2;
+	b->hsorted = (bit)GDK_SORTED@2;
 	b->tsorted = FALSE;
 	b->hdense = FALSE;
 	b->batDirtydesc = b->batDirtybuns = TRUE;
