@@ -27,6 +27,7 @@
 #include <sql_types.h>
 
 typedef struct atom {
+	int destroy; /* needs destroy or not */
 	int isnull;
 	sql_subtype *tpe;
 	ValRecord data;
@@ -34,13 +35,14 @@ typedef struct atom {
 
 #define atom_null(a) a->isnull
 
-extern atom *atom_int(sql_subtype *tpe, lng val);
-extern atom *atom_string(sql_subtype *tpe, char *val);
-extern atom *atom_float(sql_subtype *tpe, double val);
-extern atom *atom_general(sql_subtype *tpe, char *val);
+extern atom *atom_bool( sql_subtype *tpe, bit t);
+extern atom *atom_int( sql_subtype *tpe, lng val);
+extern atom *atom_float( sql_subtype *tpe, double val);
+extern atom *atom_string( sql_subtype *tpe, char *val, int destroy);
+extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
 
 /* duplicate atom */
-extern atom *atom_dup(atom *a);
+extern atom *atom_dup( atom *a);
 
 extern char *atom2string(atom *a);
 extern sql_subtype *atom_type(atom *a);
@@ -60,9 +62,24 @@ static int atom_debug = 0;
 atom *
 atom_create()
 {
-	atom *a = NEW(atom);
+	atom *a;
+	a = NEW(atom);
 
+	a->destroy = 0;
 	memset(&a->data, 0, sizeof(a->data));
+	return a;
+}
+
+atom *
+atom_bool(sql_subtype *tpe, bit val)
+{
+	atom *a = atom_create();
+	
+	a->isnull = 0;
+	a->tpe = tpe;
+	a->data.vtype = tpe->type->localtype;
+	a->data.val.cval[0] = val;
+	a->data.len = 0;
 	return a;
 }
 
@@ -100,7 +117,7 @@ atom_int(sql_subtype *tpe, lng val)
 }
 
 atom *
-atom_string(sql_subtype *tpe, char *val)
+atom_string(sql_subtype *tpe, char *val, int destroy)
 {
 	atom *a = atom_create();
 
@@ -110,6 +127,7 @@ atom_string(sql_subtype *tpe, char *val)
 	a->data.vtype = TYPE_str;
 	a->data.len = 0;
 	if (val) {
+		a->destroy = destroy;
 		a->isnull = 0;
 		a->data.val.sval = val;
 		a->data.len = strlen(a->data.val.sval);
@@ -136,7 +154,7 @@ atom_float(sql_subtype *tpe, double val)
 }
 
 atom *
-atom_general(sql_subtype *tpe, char *val)
+atom_general(sql_subtype *tpe, char *val, int destroy)
 {
 	atom *a;
 	ptr p = NULL;
@@ -145,7 +163,7 @@ atom_general(sql_subtype *tpe, char *val)
 		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname, val);
 
 	if (tpe->type->localtype == TYPE_str)
-		return atom_string(tpe, val);
+		return atom_string(tpe, val, destroy);
 	a = atom_create();
 	a->isnull = 1;
 	a->tpe = tpe;
@@ -160,6 +178,7 @@ atom_general(sql_subtype *tpe, char *val)
 
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str) {
+			a->destroy = destroy;
 			a->isnull = 0;
 			a->data.val.sval = sql2str(val);
 			a->data.len = strlen(a->data.val.sval);
@@ -168,21 +187,23 @@ atom_general(sql_subtype *tpe, char *val)
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res <= 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				_DELETE(val);
+				//_DELETE(val);
 				_DELETE(a);
 				if (p)
 					GDKfree(p);
 				return NULL;
 			}
 			VALset(&a->data, a->data.vtype, p);
+			a->destroy = 1;
 
 			if (p && ATOMstorage(a->data.vtype) < TYPE_str)
 				GDKfree(p);
-			_DELETE(val);
+			//_DELETE(val);
 		}
 	} else if (ATOMstorage(a->data.vtype) < TYPE_str) {
 		p = ATOMnilptr(a->data.vtype);
 		VALset(&a->data, a->data.vtype, p);
+		a->destroy = 1;
 	}
 	return a;
 }
@@ -190,7 +211,8 @@ atom_general(sql_subtype *tpe, char *val)
 void
 atom_destroy(atom *a)
 {
-	VALclear(&a->data);
+	if (a->destroy) 
+		VALclear(&a->data);
 	if (a->tpe)
 		sql_subtype_destroy(a->tpe);
 	_DELETE(a);
@@ -243,8 +265,10 @@ atom_dup(atom *a)
 
 	*r = *a;
 	r->tpe = sql_dup_subtype(a->tpe);
-	if (!a->isnull)
+	if (!a->isnull) {
+		a->destroy = 1;
 		VALcopy(&r->data, &a->data);
+	}
 	return r;
 }
 

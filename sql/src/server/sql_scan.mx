@@ -32,7 +32,6 @@
 typedef enum { LINE_1, LINE_N, BLOCKED } prot;
 
 struct scanner {
-	char *buf;
 	bstream *rs;
 	stream *ws;
 
@@ -46,10 +45,9 @@ struct scanner {
 	prot mode;		/* which mode (line (1,N), blocked) */
 };
 
-#define QUERY(scanner) ((scanner.rs)?(scanner.rs->buf+scanner.rs->pos):scanner.buf)
+#define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)
 
 extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
-extern void scanner_reset(struct scanner *s, char *buf);
 extern void scanner_query_processed(struct scanner *s);
 
 extern void scanner_init_keywords();
@@ -302,12 +300,10 @@ scanner_init_keywords()
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
-#define find_keyword_s(lc, s) find_keyword(lc->buf+s)
 
 void
 scanner_init(struct scanner *s, bstream *rs, stream *ws)
 {
-	s->buf = NULL;
 	s->rs = rs;
 	s->ws = ws;
 
@@ -322,45 +318,24 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 }
 
 void
-scanner_reset(struct scanner *s, char *query)
-{
-	if (s->buf)
-		_DELETE(s->buf);
-	s->buf = query;
-	s->rs = NULL;
-
-	s->yynext = 0;
-	s->yyval = 0;
-	s->yybak = 0;		/* keep backup of char replaced by EOS */
-	s->yycur = 0;
-
-	s->key = 0;		/* keep a hash key of the query */
-}
-
-void
 scanner_query_processed(struct scanner *s)
 {
+	int cur;
+
 	if (s->yybak) {
-		if (s->rs) {
-			s->rs->buf[s->rs->pos + s->yycur] = s->yybak;
-		} else {
-			s->buf[s->yycur] = s->yybak;
-		}
+		s->rs->buf[s->rs->pos + s->yycur] = s->yybak;
 		s->yybak = 0;
 	}
-	if (s->rs) {
-		int cur;
 
-		s->rs->pos += s->yycur;
-		/* completely eat the query including white space after the ; */
+	s->rs->pos += s->yycur;
+	/* completely eat the query including white space after the ; */
+	cur = s->rs->buf[s->rs->pos];
+	while (isspace(cur)) {
+		s->rs->pos++;
 		cur = s->rs->buf[s->rs->pos];
-		while (isspace(cur)) {
-			s->rs->pos++;
-			cur = s->rs->buf[s->rs->pos];
-		}
-		assert(s->rs->pos <= s->rs->len);
-		s->yycur = 0;
 	}
+	assert(s->rs->pos <= s->rs->len);
+	s->yycur = 0;
 	s->key = 0;		/* keep a hash key of the query */
 }
 
@@ -416,45 +391,6 @@ utf8_putchar(struct scanner *lc, int ch)
 	}
 }
 
-static int
-scanner_getc_s(struct scanner *lc)
-{
-	unsigned char *s = (unsigned char *) lc->buf;
-	int c;
-	int n, m, mask;
-
-	if (((c = s[lc->yycur++]) & 0x80) == 0) {
-		/* 7-bit char */
-		return c;
-	}
-	for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-		;
-	/* n now is number of 10xxxxxx bytes that should follow */
-	if (n == 0 || n >= 6) {
-		/* incorrect UTF-8 sequence */
-		/* n==0: c == 10xxxxxx */
-		/* n>=6: c == 1111111x */
-		return EOF;
-	}
-
-	mask = utf8chkmsk[n];
-	c &= ~(0xFFC0 >> n);	/* remove non-x bits */
-	while (--n >= 0) {
-		c <<= 6;
-		if (((m = s[lc->yycur++]) & 0xC0) != 0x80) {
-			/* incorrect UTF-8 sequence: byte is not 10xxxxxx */
-			/* this includes end-of-string (m == 0) */
-			return EOF;
-		}
-		c |= m & 0x3F;
-	}
-	if ((c & mask) == 0) {
-		/* incorrect UTF-8 sequence: not shortest possible */
-		return EOF;
-	}
-	return c;
-}
-
 static INLINE int
 scanner_read_more(struct scanner *lc, int n)
 {
@@ -484,7 +420,7 @@ scanner_read_more(struct scanner *lc, int n)
 }
 
 static INLINE int
-scanner_getc_bs(struct scanner *lc)
+scanner_getc(struct scanner *lc)
 {
 	bstream *b = lc->rs;
 	unsigned char *s = NULL;
@@ -538,7 +474,7 @@ scanner_getc_bs(struct scanner *lc)
 }
 
 static int
-scanner_token_bs(struct scanner *lc, int token)
+scanner_token(struct scanner *lc, int token)
 {
 	lc->yybak = lc->rs->buf[lc->rs->pos + lc->yycur];
 	lc->rs->buf[lc->rs->pos + lc->yycur] = 0;
@@ -547,16 +483,7 @@ scanner_token_bs(struct scanner *lc, int token)
 }
 
 static int
-scanner_token_s(struct scanner *lc, int token)
-{
-	lc->yybak = lc->buf[lc->yycur];
-	lc->buf[lc->yycur] = 0;
-	lc->yyval = token;
-	return lc->yyval;
-}
-
-static int
-scanner_string_bs(mvc *c, int quote)
+scanner_string(mvc *c, int quote)
 {
 	struct scanner *lc = &c->scanner;
 	bstream *rs = lc->rs;
@@ -581,51 +508,22 @@ scanner_string_bs(mvc *c, int quote)
 		}
 		assert(pos <= rs->len + 1);
 		if (cur == quote && !escape) {
-			return scanner_token_bs(lc, STRING);
+			return scanner_token(lc, STRING);
 		}
 		lc->yycur--;	/* go back to current (possibly invalid) char */
 		/* long utf8, if correct isn't the quote */
 		if (!cur) {
 			cur = scanner_read_more(lc, 1);
 		} else {
-			cur = scanner_getc_bs(lc);
+			cur = scanner_getc(lc);
 		}
 	}
 	(void) sql_error(c, 2, "unexpected end of input");
 	return LEX_ERROR;
 }
 
-static int
-scanner_string_s(mvc *c, int quote)
-{
-	struct scanner *lc = &c->scanner;
-	int cur = quote;
-	int escape = 0;
-
-	while (cur != EOF) {
-		while ((cur = scanner_getc_s(lc)) != EOF && (cur != quote || escape)) {
-			if (cur == '\\' && !escape)
-				escape = 1;
-			else
-				escape = 0;
-		}
-		/* check for quote escaped quote: Obscure SQL Rule */
-		if (cur == quote && lc->buf[lc->yycur] == quote) {
-			lc->yycur++;
-			continue;
-		}
-		if (cur == quote)
-			return scanner_token_s(lc, STRING);
-	}
-	if (cur == EOF) {
-		(void) sql_error(c, 2, "unexpected end of input");
-	}
-	return LEX_ERROR;
-}
-
-@= scanner
 static int 
-keyword_or_ident@1(struct scanner * lc, int cur)
+keyword_or_ident(struct scanner * lc, int cur)
 {
 	keyword *k = NULL;
 	int s;
@@ -633,91 +531,91 @@ keyword_or_ident@1(struct scanner * lc, int cur)
 	utf8_putchar(lc, cur);
 	s = lc->yycur;
 	lc->yyval = IDENT;
-	while ((cur = scanner_getc@1(lc)) != EOF) {
+	while ((cur = scanner_getc(lc)) != EOF) {
 		if ((isascii(cur) && !isalnum(cur)) && cur != '_') {
 			utf8_putchar(lc, cur);
-			(void)scanner_token@1(lc, IDENT);
-			k = find_keyword@1(lc,s);
+			(void)scanner_token(lc, IDENT);
+			k = find_keyword_bs(lc,s);
 			if (k) 
 				lc->yyval = k->token;
 			return lc->yyval;
 		}
 	}
-	(void)scanner_token@1(lc, IDENT);
-	k = find_keyword@1(lc,s);
+	(void)scanner_token(lc, IDENT);
+	k = find_keyword_bs(lc,s);
 	if (k) 
 		lc->yyval = k->token;
 	return lc->yyval;
 }
 
 static int 
-skip_white_space@1(struct scanner * lc)
+skip_white_space(struct scanner * lc)
 {
 	int cur;
 
 	lc->yysval = lc->yycur;
-	while ((cur = scanner_getc@1(lc)) != EOF && isspace(cur))
+	while ((cur = scanner_getc(lc)) != EOF && isspace(cur))
 		lc->yysval = lc->yycur;
 	return cur;
 }
 
 static int 
-skip_c_comment@1(struct scanner * lc)
+skip_c_comment(struct scanner * lc)
 {
 	int cur;
 	int prev = 0;
 
-	while ((cur = scanner_getc@1(lc)) != EOF && 
+	while ((cur = scanner_getc(lc)) != EOF && 
 	       !(cur == '/' && prev == '*')) 
 		prev = cur;
 	lc->yysval = lc->yycur;
 	if (cur == '/')
-		cur = scanner_getc@1(lc);
+		cur = scanner_getc(lc);
 	return cur;
 }
 
 static int 
-skip_sql_comment@1(struct scanner * lc)
+skip_sql_comment(struct scanner * lc)
 {
 	int cur;
 
-	while ((cur = scanner_getc@1(lc)) != EOF && (cur != '\n'))
+	while ((cur = scanner_getc(lc)) != EOF && (cur != '\n'))
 		;
 	lc->yysval = lc->yycur;
 	if (cur == '\n')
-		cur = scanner_getc@1(lc);
+		cur = scanner_getc(lc);
 	return cur;
 }
 
-static int tokenize@1(mvc * lc, int cur);
+static int tokenize(mvc * lc, int cur);
 
 static int 
-number@1(mvc * c, int cur)
+number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
 	int token = sqlINT;
 
 	/* TODO start with . */
-	while ((cur = scanner_getc@1(lc)) != EOF && isdigit(cur)) 
+	while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 		;
 	if (cur == '.') {
 		token = INTNUM;
 
-		while ((cur = scanner_getc@1(lc)) != EOF && isdigit(cur)) 
+		while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 			;
 	}
 	if (cur == 'e' || cur == 'E') {
 		token = APPROXNUM;
-		cur = scanner_getc@1(lc);
+		cur = scanner_getc(lc);
 		if (cur == '-' || cur == '+') 
 			token = 0;
-		while ((cur = scanner_getc@1(lc)) != EOF && isdigit(cur)) 
+		while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 			token = APPROXNUM;
 	}
 	if (token) {
 		if (cur != EOF)
 			utf8_putchar(lc, cur);
-		return scanner_token@1(lc, token);
+		return scanner_token(lc, token);
 	} else {
 		(void)sql_error( c, 2, "Unexpected symbol %c", cur);
 		return LEX_ERROR;
@@ -725,39 +623,39 @@ number@1(mvc * c, int cur)
 }
 
 static
-int scanner_symbol@1(mvc * c, int cur)
+int scanner_symbol(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
 	int next = 0;
 
 	if (cur == '/') {
-		next = scanner_getc@1(lc);
+		next = scanner_getc(lc);
 		if (next == '*') {
-			cur = skip_c_comment@1(lc);
-			return tokenize@1(c, cur);
+			cur = skip_c_comment(lc);
+			return tokenize(c, cur);
 		} else {
 			utf8_putchar(lc, next); 
-			return scanner_token@1(lc, cur);
+			return scanner_token(lc, cur);
 		}
 	} else if (isdigit(cur)) {
-		return number@1(c, cur);
+		return number(c, cur);
 	} else if (cur == '#') {
-		if ((cur = skip_sql_comment@1(lc)) == EOF)
+		if ((cur = skip_sql_comment(lc)) == EOF)
 			return cur;
-		return tokenize@1(c, cur);
+		return tokenize(c, cur);
 	} else if (cur == '\'' || cur == '"') {
-		return scanner_string@1(c, cur);
+		return scanner_string(c, cur);
 	}
 	switch (cur) {
 	case '-':
-		next = scanner_getc@1(lc);
+		next = scanner_getc(lc);
 		if (next == '-') {
-			if ((cur = skip_sql_comment@1(lc)) == EOF)
+			if ((cur = skip_sql_comment(lc)) == EOF)
 				return cur;
-			return tokenize@1(c, cur);
+			return tokenize(c, cur);
 		}
 		utf8_putchar(lc, next); 
-		return scanner_token@1(lc, cur);
+		return scanner_token(lc, cur);
 	case '?':
 	case '%':
 	case '+':
@@ -769,29 +667,29 @@ int scanner_symbol@1(mvc * c, int cur)
 	case '.':
 	case ';':
 	case '=':
-		return scanner_token@1(lc, cur);
+		return scanner_token(lc, cur);
 	case '<':
-		cur = scanner_getc@1(lc);
+		cur = scanner_getc(lc);
 		if (cur == '=') {
-			return scanner_token@1( lc, COMPARISON);
+			return scanner_token( lc, COMPARISON);
 		} else if (cur == '>') {
-			return scanner_token@1( lc, COMPARISON);
+			return scanner_token( lc, COMPARISON);
 		} else {
 			utf8_putchar(lc, cur); 
-			return scanner_token@1( lc, COMPARISON);
+			return scanner_token( lc, COMPARISON);
 		}
 	case '>':
-		cur = scanner_getc@1(lc);
+		cur = scanner_getc(lc);
 		if (cur != '=') {
 			utf8_putchar(lc, cur); 
-			return scanner_token@1( lc, COMPARISON);
+			return scanner_token( lc, COMPARISON);
 		} else {
-			return scanner_token@1( lc, COMPARISON);
+			return scanner_token( lc, COMPARISON);
 		}
 	case '|':
-		cur = scanner_getc@1(lc);
+		cur = scanner_getc(lc);
 		if (cur == '|') {
-			return scanner_token@1(lc, CONCATSTRING);
+			return scanner_token(lc, CONCATSTRING);
 		}
 	}
 	(void)sql_error( c, 3, "Unexpected symbol (%c)", cur);
@@ -799,27 +697,24 @@ int scanner_symbol@1(mvc * c, int cur)
 }
 
 static int 
-tokenize@1(mvc * c, int cur)
+tokenize(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
 	while (1) {
 		if (isspace(cur)) {
-			if ((cur = skip_white_space@1(lc)) == EOF)
+			if ((cur = skip_white_space(lc)) == EOF)
 				return cur;
 		} else if (isdigit(cur)) {
-			return number@1(c, cur);
+			return number(c, cur);
 		} else if (isalpha(cur) || cur == '_') {
-			return keyword_or_ident@1(lc, cur);
+			return keyword_or_ident(lc, cur);
 		} else if (ispunct(cur)) {
-			return scanner_symbol@1(c, cur);
+			return scanner_symbol(c, cur);
 		}
 		if (cur == EOF || iscntrl(cur))
 			return scanner_error(c, cur);
 	}
 }
-@c
-@:scanner(_bs)@
-@:scanner(_s)@
 
 int
 valid_ident(const char *s)
@@ -850,24 +745,14 @@ sqllex(YYSTYPE * yylval, void *parm)
 	}
 
 	if (lc->yybak) {
-		if (lc->rs) {
-			lc->rs->buf[lc->rs->pos + lc->yycur] = lc->yybak;
-		} else {
-			lc->buf[lc->yycur] = lc->yybak;
-		}
+		lc->rs->buf[lc->rs->pos + lc->yycur] = lc->yybak;
 		lc->yybak = 0;
 	}
 
 	lc->yysval = lc->yycur;
-	if (lc->rs)
-		token = tokenize_bs(c, scanner_getc_bs(lc));
-	else
-		token = tokenize_s(c, scanner_getc_s(lc));
+	token = tokenize(c, scanner_getc(lc));
 
-	if (lc->rs)
-		yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
-	else
-		yylval->sval = (lc->buf + lc->yysval);
+	yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 
 	/* This is needed as ALIAS and aTYPE get defined to late, see
 	   sql_keyword.mx */
@@ -878,11 +763,16 @@ sqllex(YYSTYPE * yylval, void *parm)
 		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON || token == AGGR || token == aTYPE || token == ALIAS || token == aMODULE)
-		yylval->sval = _strdup(yylval->sval);
+		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	if (token == STRING) {
-		if (*yylval->sval == '"' && valid_ident(yylval->sval + 1))
+		char quote = *yylval->sval;
+		assert(quote == '"' || quote == '\'');
+		if (quote == '"' && valid_ident(yylval->sval + 1))
 			token = IDENT;
-		yylval->sval = sql_strdup(yylval->sval);
+		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0; 
+		yylval->sval = sa_strndup(c->sa, yylval->sval+1, lc->yycur-lc->yysval - 2);
+		/* reset original */
+		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote; 
 	}
 
 	if (token == UNION) {

@@ -48,6 +48,7 @@ typedef enum modes_t {
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
+	sql_allocator *sa;
 	struct qc *qc;
 	backend_stack stk;
 	struct scanner scanner;
@@ -501,6 +502,7 @@ mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->errstr[0] = '\0';
 
 	m->qc = qc_create();
+	m->sa = sa_create();
 
 	m->stk = stk;
 

@@ -1015,9 +1015,9 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				return sql_error(sql, 02, "Default value is NULL, but column has NOT NULL constraint\n");
 			}
 			if (cs->null && !cs->def) {
-				a = atom_general(sql_dup_subtype(cs->type), NULL);
+				a = atom_general(sql_dup_subtype(cs->type), NULL, 0);
 			} else {
-				a = atom_general(sql_dup_subtype(cs->type), _strdup(cs->def));
+				a = atom_general(sql_dup_subtype(cs->type), _strdup(cs->def), 1);
 			}
 			if (!a) {
 				return sql_error(sql, 02, "Failed to create default value for alter table add (%s)\n", cs->def ? cs->def : "NULL");

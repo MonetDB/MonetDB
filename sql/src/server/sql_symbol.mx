@@ -32,7 +32,6 @@ typedef union symbdata {
 	struct dlist *lval;
 	struct symbol *sym;
 	struct sql_subtype *typeval;
-	void *symv;		/* temp version of symbol which can be easily casted */
 } symbdata;
 
 typedef struct dnode {
@@ -48,28 +47,19 @@ typedef struct dlist {
 } dlist;
 
 extern dlist *dlist_create();
-extern void dlist_destroy(dlist *l);
-extern void dlist_destroy_keep_data(dlist *l);
-extern void dlist_remove_node(dlist *l, dnode *d);
 extern int dlist_length(dlist *l);
 
-extern dlist *dlist_append_string(dlist *l, char *data);
-extern dlist *dlist_append_list(dlist *l, dlist *data);
-extern dlist *dlist_append_int(dlist *l, int data);
-extern dlist *dlist_append_symbol(dlist *l, struct symbol *data);
-extern dlist *dlist_append_type(dlist *l, struct sql_subtype *data);
+extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, char *data);
+extern dlist *dlist_append_list(sql_allocator *sa, dlist *l, dlist *data);
+extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, int data);
+extern dlist *dlist_append_symbol(sql_allocator *sa, dlist *l, struct symbol *data);
+extern dlist *dlist_append_type(sql_allocator *sa, dlist *l, struct sql_subtype *data);
 
 typedef struct symbol {
 	int token;
 	symtype type;
 	symbdata data;
 } symbol;
-
-/*
-typedef struct Symbol {
-	int token;
-} Symbol;
-*/
 
 typedef struct SelectNode {
 	symbol s;
@@ -92,17 +82,16 @@ typedef struct AtomNode {
 	struct atom *a;
 } AtomNode;
 
-extern symbol *symbol_create(int token, char *data);
-extern symbol *symbol_create_list(int token, dlist *data);
-extern symbol *symbol_create_int(int token, int data);
-extern symbol *symbol_create_symbol(int token, symbol *data);
+extern symbol *symbol_create(sql_allocator *sa, int token, char *data);
+extern symbol *symbol_create_list(sql_allocator *sa, int token, dlist *data);
+extern symbol *symbol_create_int(sql_allocator *sa, int token, int data);
+extern symbol *symbol_create_symbol(sql_allocator *sa, int token, symbol *data);
 
-extern void symbol_destroy(symbol *sym);
 extern int symbol_cmp(symbol *s1, symbol *s2);
 
-extern symbol *newSelectNode(int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset);
+extern symbol *newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset);
 
-extern symbol *newAtomNode(atom *a);
+extern symbol *newAtomNode(sql_allocator *sa, atom *a);
 
 
 #endif /* SQL_SYMBOL_H */
@@ -111,9 +100,6 @@ extern symbol *newAtomNode(atom *a);
 #include <sql_mem.h>
 #include "sql_symbol.h"
 #include "sql_parser.h"
-
-static void SelectNode_destroy(SelectNode *s);
-static void AtomNode_destroy(AtomNode *a);
 
 int symbol_debug = 0;
 
@@ -127,9 +113,9 @@ symbol_init(symbol *s, int token)
 }
 
 symbol *
-symbol_create(int token, char *data)
+symbol_create(sql_allocator *sa, int token, char *data)
 {
-	symbol *s = NEW(symbol);
+	symbol *s = SA_NEW(sa, symbol);
 
 	symbol_init(s, token);
 	s->data.sval = data;
@@ -140,9 +126,9 @@ symbol_create(int token, char *data)
 }
 
 symbol *
-symbol_create_list(int token, dlist *data)
+symbol_create_list(sql_allocator *sa, int token, dlist *data)
 {
-	symbol *s = NEW(symbol);
+	symbol *s = SA_NEW(sa, symbol);
 
 	symbol_init(s, token);
 	s->data.lval = data;
@@ -153,9 +139,9 @@ symbol_create_list(int token, dlist *data)
 }
 
 symbol *
-symbol_create_int(int token, int data)
+symbol_create_int(sql_allocator *sa, int token, int data)
 {
-	symbol *s = NEW(symbol);
+	symbol *s = SA_NEW(sa, symbol);
 
 	symbol_init(s, token);
 	s->data.ival = data;
@@ -166,9 +152,9 @@ symbol_create_int(int token, int data)
 }
 
 symbol *
-symbol_create_symbol(int token, symbol *data)
+symbol_create_symbol(sql_allocator *sa, int token, symbol *data)
 {
-	symbol *s = NEW(symbol);
+	symbol *s = SA_NEW(sa, symbol);
 
 	symbol_init(s, token);
 	s->data.sym = data;
@@ -177,92 +163,10 @@ symbol_create_symbol(int token, symbol *data)
 	return s;
 }
 
-void
-symbol_destroy(symbol *s)
-{
-	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_destroy(%s)\n", (long) s, token2string(s->token));
-
-	if (s) {
-		switch (s->type) {
-		case type_symbol:
-			switch (s->token) {
-			case SQL_SELECT:
-				SelectNode_destroy((SelectNode *) s);
-				break;
-			case SQL_ATOM:
-				AtomNode_destroy((AtomNode *) s);
-				break;
-			default:
-				if (s->data.sym)
-					symbol_destroy(s->data.sym);
-			}
-			break;
-		case type_list:
-			if (s->data.lval)
-				dlist_destroy(s->data.lval);
-			break;
-		case type_type:
-			if (s->data.typeval)
-				sql_subtype_destroy(s->data.typeval);
-			break;
-		case type_string:
-			if (s->data.sval)
-				_DELETE(s->data.sval);
-			break;
-		case type_int:
-			/* not used types */
-			break;
-		case type_stmt:
-		case type_column:
-		case type_table:
-		case type_schema:
-		case type_aggr:
-		case type_func:
-		case type_atom:
-			assert(0);
-		}
-		_DELETE(s);
-	}
-}
-
-void
-dnode_destroy(dnode *s)
-{
-	if (s->data.sval) {
-		switch (s->type) {
-		case type_symbol:
-			symbol_destroy(s->data.sym);
-			break;
-		case type_list:
-			dlist_destroy(s->data.lval);
-			break;
-		case type_type:
-			sql_subtype_destroy(s->data.typeval);
-			break;
-		case type_string:
-			_DELETE(s->data.sval);
-			break;
-		case type_int:
-			/* not used types */
-			break;
-		case type_stmt:
-		case type_column:
-		case type_table:
-		case type_schema:
-		case type_aggr:
-		case type_func:
-		case type_atom:
-			assert(0);
-		}
-	}
-	_DELETE(s);
-}
-
 static dnode *
-dnode_create()
+dnode_create(sql_allocator *sa )
 {
-	dnode *n = NEW(dnode);
+	dnode *n = SA_NEW(sa, dnode);
 
 	n->next = NULL;
 	n->data.sval = NULL;
@@ -271,36 +175,36 @@ dnode_create()
 }
 
 static dnode *
-dnode_create_string(char *data)
+dnode_create_string(sql_allocator *sa, char *data)
 {
-	dnode *n = dnode_create();
+	dnode *n = dnode_create(sa);
 
 	n->data.sval = data;
 	n->type = type_string;
 	return n;
 }
 static dnode *
-dnode_create_list(dlist *data)
+dnode_create_list(sql_allocator *sa, dlist *data)
 {
-	dnode *n = dnode_create();
+	dnode *n = dnode_create(sa);
 
 	n->data.lval = data;
 	n->type = type_list;
 	return n;
 }
 static dnode *
-dnode_create_int(int data)
+dnode_create_int(sql_allocator *sa, int data)
 {
-	dnode *n = dnode_create();
+	dnode *n = dnode_create(sa);
 
 	n->data.ival = data;
 	n->type = type_int;
 	return n;
 }
 static dnode *
-dnode_create_symbol(symbol *data)
+dnode_create_symbol(sql_allocator *sa, symbol *data)
 {
-	dnode *n = dnode_create();
+	dnode *n = dnode_create(sa);
 
 	n->data.sym = data;
 	n->type = type_symbol;
@@ -308,9 +212,9 @@ dnode_create_symbol(symbol *data)
 }
 
 static dnode *
-dnode_create_type(sql_subtype *data)
+dnode_create_type(sql_allocator *sa, sql_subtype *data)
 {
-	dnode *n = dnode_create();
+	dnode *n = dnode_create(sa);
 
 	n->data.typeval = data;
 	n->type = type_type;
@@ -318,66 +222,13 @@ dnode_create_type(sql_subtype *data)
 }
 
 dlist *
-dlist_create()
+dlist_create(sql_allocator *sa)
 {
-	dlist *l = NEW(dlist);
+	dlist *l = SA_NEW(sa, dlist);
 
 	l->h = l->t = NULL;
 	l->cnt = 0;
 	return l;
-}
-
-void
-dlist_destroy(dlist *l)
-{
-	if (l) {
-		dnode *n = l->h;
-
-		while (n) {
-			dnode *t = n;
-
-			n = n->next;
-			dnode_destroy(t);
-		}
-		_DELETE(l);
-	}
-}
-
-void
-dlist_remove_node(dlist *l, dnode *n)
-{
-	dnode *p = l->h;
-
-	if (p != n)
-		while (p && p->next != n)
-			p = p->next;
-	if (p == n) {
-		l->h = n->next;
-		p = NULL;
-	} else {
-		p->next = n->next;
-	}
-	if (n == l->t)
-		l->t = p;
-	n->data.sval = NULL;	/* do not remove data */
-	dnode_destroy(n);
-	l->cnt--;
-}
-
-void
-dlist_destroy_keep_data(dlist *l)
-{
-	if (l) {
-		dnode *n = l->h;
-
-		while (n) {
-			dnode *t = n;
-
-			n = n->next;
-			_DELETE(t);
-		}
-		_DELETE(l);
-	}
 }
 
 int
@@ -400,49 +251,49 @@ dlist_append_default(dlist *l, dnode *n)
 }
 
 dlist *
-dlist_append_string(dlist *l, char *data)
+dlist_append_string(sql_allocator *sa, dlist *l, char *data)
 {
-	dnode *n = dnode_create_string(data);
+	dnode *n = dnode_create_string(sa, data);
 
 	return dlist_append_default(l, n);
 }
 
 dlist *
-dlist_append_list(dlist *l, dlist *data)
+dlist_append_list(sql_allocator *sa, dlist *l, dlist *data)
 {
-	dnode *n = dnode_create_list(data);
+	dnode *n = dnode_create_list(sa, data);
 
 	return dlist_append_default(l, n);
 }
 
 dlist *
-dlist_append_int(dlist *l, int data)
+dlist_append_int(sql_allocator *sa, dlist *l, int data)
 {
-	dnode *n = dnode_create_int(data);
+	dnode *n = dnode_create_int(sa, data);
 
 	return dlist_append_default(l, n);
 }
 
 dlist *
-dlist_append_symbol(dlist *l, symbol *data)
+dlist_append_symbol(sql_allocator *sa, dlist *l, symbol *data)
 {
-	dnode *n = dnode_create_symbol(data);
+	dnode *n = dnode_create_symbol(sa, data);
 
 	return dlist_append_default(l, n);
 }
 
 dlist *
-dlist_append_type(dlist *l, sql_subtype *data)
+dlist_append_type(sql_allocator *sa, dlist *l, sql_subtype *data)
 {
-	dnode *n = dnode_create_type(data);
+	dnode *n = dnode_create_type(sa, data);
 
 	return dlist_append_default(l, n);
 }
 
 symbol *
-newSelectNode(int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset)
+newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset)
 {
-	SelectNode *sn = NEW(SelectNode);
+	SelectNode *sn = SA_NEW(sa, SelectNode);
 	symbol *s = (symbol *) sn;
 
 	symbol_init(s, SQL_SELECT);
@@ -460,43 +311,15 @@ newSelectNode(int distinct, struct dlist *selection, struct dlist *into, symbol 
 	return s;
 }
 
-static void
-SelectNode_destroy(SelectNode *s)
-{
-	if (s->selection)
-		dlist_destroy(s->selection);
-	if (s->into)
-		dlist_destroy(s->into);
-	if (s->from)
-		symbol_destroy(s->from);
-	if (s->where)
-		symbol_destroy(s->where);
-	if (s->groupby)
-		symbol_destroy(s->groupby);
-	if (s->having)
-		symbol_destroy(s->having);
-	if (s->orderby)
-		symbol_destroy(s->orderby);
-	if (s->name)
-		_DELETE(s->name);
-}
-
 symbol *
-newAtomNode(atom *data)
+newAtomNode(sql_allocator *sa, atom *data)
 {
-	AtomNode *an = NEW(AtomNode);
+	AtomNode *an = SA_NEW(sa, AtomNode);
 	symbol *s = (symbol *) an;
 
 	symbol_init(s, SQL_ATOM);
 	an->a = data;
 	return s;
-}
-
-static void
-AtomNode_destroy(AtomNode *a)
-{
-	if (a->a)
-		atom_destroy(a->a);
 }
 
 static int dlist_cmp(dlist *l1, dlist *l2);

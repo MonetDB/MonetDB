@@ -731,31 +731,70 @@ eliminate_reverse(stmt *s)
 	return stmt_dup(ns);
 }
 
-
-int
-stmt_has_diff_with(stmt *s, sql_table *t) 
+static stmt *
+stmt_hash( list *l ) 
 {
-	switch(s->type) {
-	case st_diff: {
-		stmt *st = s->op2.stval;
-		if (st->type == st_reverse && 
-		    st->op1.stval->type == st_dbat && 
-		    st->op1.stval->op1.tval == t)
-			return 1;
+	node *m;
+	int bits = 0;
+	sql_subtype *it;
+	stmt *h = NULL;
+
+	it = sql_bind_localtype("int");
+	for (m = l->h; m; m = m->next, bits += 8) {
+		stmt *s = stmt_dup(m->data);
+		sql_subfunc *hf = sql_bind_func_result("hash", tail_type(s), it, it);
+
+		if (h) {
+			sql_subfunc *xor = sql_bind_func_result("xor", it, it, it);
+
+			h = stmt_binop(h, stmt_binop(s, stmt_atom_int(bits), hf), xor);
+		} else {
+			h = stmt_binop(s, stmt_atom_int(bits), hf);
+		}
 	}
-	case st_mark:
-	case st_reverse:
-	case st_semijoin:
-	case st_uselect2:
-	case st_select2:
-	case st_uselect:
-	case st_select:  
-		return stmt_has_diff_with(s->op1.stval, t);
-	default:
-		return 0;
-	}
-	return 0;
+	return h;
 }
+
+static stmt *
+stmt_reljoin_( list *l1, list *l2 )
+{
+	node *n1, *n2;
+	stmt *l, *r, *res;
+
+	if (list_length(l1) <= 1) {
+		l = stmt_dup(l1->h->data);
+		r = stmt_dup(l2->h->data);
+		return stmt_join(l, stmt_reverse(r), cmp_equal);
+	}
+	l = stmt_hash(l1);
+	r = stmt_hash(l2);
+	res = stmt_join(l, stmt_reverse(r), cmp_equal);
+	l = stmt_mark(stmt_reverse(res), 4);
+	r = stmt_mark(stmt_dup(res), 4);
+	for (n1 = l1->h, n2 = l2->h; n1 && n2; n1 = n1->next, n2 = n2->next) {
+		stmt *ld = stmt_dup(n1->data);
+		stmt *rd = stmt_dup(n2->data);
+		stmt *le = stmt_join(l, ld, cmp_equal);
+		stmt *re = stmt_join(r, rd, cmp_equal);
+		/* intentional both tail_type's of le (as re sometimes is a
+		   find for bulk loading */
+		sql_subfunc *f=sql_bind_func("=", tail_type(le), tail_type(le));
+
+		stmt * cmp;
+
+		assert(f);
+
+		cmp = stmt_binop(le, re, f);
+
+		cmp = stmt_uselect(cmp, stmt_bool(1), cmp_equal);
+
+		l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
+		r = stmt_semijoin(stmt_dup(r), cmp);
+	}
+	res = stmt_join(stmt_reverse(l), r, cmp_equal);
+	return res;
+}
+
 
 stmt *
 rel2bin(mvc *c, stmt *s)
@@ -800,7 +839,10 @@ rel2bin(mvc *c, stmt *s)
 			list_append(l1, rel2bin(c, n1->data));
 			list_append(l2, rel2bin(c, n2->data));
 		}
-		res = stmt_reljoin2(l1, l2);
+		/*res = stmt_reljoin2(l1, l2); */
+		res = stmt_reljoin_(l1, l2);
+		list_destroy(l1);
+		list_destroy(l2);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
 			s->rewritten = stmt_dup(res);
@@ -870,15 +912,13 @@ rel2bin(mvc *c, stmt *s)
 			s->op2.stval = ns;
 		}
 
-		/* remove expensive double kdiffs */
-		/* if join on oids and right has kdiff, check if left has
-		   same kdiff, then remove kdiff from right */
+		/* remove expensive double kdiffs 
+		 * if join on oids from the same table then 	
+		 * right kdiff is not needed 
+		 */
 		if (s->flag == cmp_equal && 
 		    s->op1.stval->t == s->op2.stval->h &&
-		    s->op2.stval->type == st_diff &&
-		    s->op2.stval->op2.stval->type == st_reverse &&
-		    s->op2.stval->op2.stval->op1.stval->type == st_dbat &&
-		    stmt_has_diff_with(s->op1.stval, s->op2.stval->op2.stval->op1.stval->op1.tval)){
+		    s->op2.stval->type == st_diff){
 			stmt *old = s->op2.stval;
 			s->op2.stval = stmt_dup(old->op1.stval);
 			stmt_destroy(old);
@@ -930,7 +970,6 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_alias:
 	case st_column:
-	case st_output:
 	case st_append:
 	case st_insert:
 	case st_replace:
@@ -969,6 +1008,55 @@ rel2bin(mvc *c, stmt *s)
 		s->optimized = 2;
 		return stmt_dup(s);
 
+	case st_output: {
+
+		if (s->op1.stval) {
+			stmt *os = s->op1.stval;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op1.stval = ns;
+		}
+
+		if (s->op2.stval) {
+			stmt *os = s->op2.stval;
+			stmt *ns = rel2bin(c, os);
+
+			assert(ns != s);
+			stmt_destroy(os);
+			s->op2.stval = ns;
+		}
+		/*
+		if all outputs depend on the same mark, just use
+			   the mark as order and simply use the bases.
+		stmt *lst = NULL;
+
+		lst = s->op1.stval;
+		if (lst->type != st_ordered) {
+			node *n = lst->op1.lval->h;
+			stmt *c = n->data;
+			stmt *h = c->op1.stval;
+			list *l = create_stmt_list();
+			int all = 1;
+			for( ; n; n = n->next) {
+				stmt *c = n->data;
+				if (c->type != st_join || h != c->op1.stval) {
+					all = 0;
+					break;
+				}
+				list_append(l, stmt_dup(c->op2.stval));
+			}
+			if (all) {
+				stmt *res = stmt_ordered(stmt_reverse(stmt_dup(h)), stmt_output(stmt_list(l)));
+				res->optimized = 2;
+				return res;
+			}
+		}
+		*/
+		s->optimized = 2;
+		return stmt_dup(s);
+	}
 	case st_list:{
 
 		stmt *res = NULL;

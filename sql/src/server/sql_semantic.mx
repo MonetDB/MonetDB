@@ -231,12 +231,27 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 {
 	mvc o = *m;
 	stmt *sq;
+	buffer *b;
+	char *n;
+	int len = strlen(query);
 
 	m->qc = NULL;
 
 	m->cache = 0;
 
-	scanner_reset(&m->scanner, query);
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, query, len);
+	query = n;
+	query[len] = '\n';
+	query[len+1] = 0;
+	len++;
+	buffer_init(b, query, len);
+	scanner_init( &m->scanner, 
+		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
+		NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
 	m->args = NULL;
@@ -247,7 +262,11 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	(void) sqlparse(m);	/* blindly ignore errors */
 	sq = sql_subquery(m, scp, m->sym, 1);
 
-	symbol_destroy(m->sym);
+	GDKfree(query);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
+
+	m->sym = NULL;
 	if (m->status || m->errstr[0]) {
 		int status = m->status;
 		char errstr[ERRSIZE];
@@ -267,12 +286,27 @@ sqlparse_intern(mvc *m, char *query)
 {
 	mvc o = *m;
 	stmt *sq;
+	buffer *b;
+	char *n;
+	int len = strlen(query);
 
 	m->qc = NULL;
 
 	m->cache = 0;
 
-	scanner_reset(&m->scanner, query);
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, query, len);
+	query = n;
+	query[len] = '\n';
+	query[len+1] = 0;
+	len++;
+	buffer_init(b, query, len);
+	scanner_init( &m->scanner, 
+		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
+		NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
 	m->args = NULL;
@@ -285,7 +319,11 @@ sqlparse_intern(mvc *m, char *query)
 	(void) sqlparse(m);	/* blindly ignore errors */
 	sq = scope_subquery(m, NULL, m->sym);
 
-	symbol_destroy(m->sym);
+	GDKfree(query);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
+
+	m->sym = NULL;
 	if (m->status || m->errstr[0]) {
 		int status = m->status;
 		char errstr[ERRSIZE];

@@ -1010,7 +1010,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
 			char *escape = ro->data.lval->h->next->data.sval;
-			ee = exp_atom(atom_string(sql_dup_subtype(st), _strdup(escape)));
+			ee = exp_atom(atom_string(sql_dup_subtype(st), _strdup(escape), 1));
 		}
 		ro = ro->data.lval->h->data.sym;
 		re = rel_value_exp(sql, rel, ro, f);
@@ -1082,7 +1082,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		re = exp_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL));
+		re = exp_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
 		if (sc->token == SQL_NULL) 
 			return rel_compare_exp(sql, rel, le, re, "=", NULL);
 		else
@@ -1409,13 +1409,13 @@ rel_value_exp(mvc *sql, sql_rel *rel, symbol *se, int f)
 		return stmt_dup(s);
 	}
 	case SQL_NULL:
-		return stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL));
+		return stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
 	*/
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 
 		if (!an || !an->a) {
-			return exp_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL));
+			return exp_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
 		} else {
 			return exp_atom(atom_dup(an->a));
 		}

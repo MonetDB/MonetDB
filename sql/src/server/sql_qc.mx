@@ -54,6 +54,7 @@ a cache entry.
 typedef struct cq {
 	struct cq *next;	/* link them into a queue */
 	int type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */
+	sql_allocator *sa;	/* the symbols are allocated from this sa */
 	symbol *s;		/* the SQL parse tree */
 	list *params;		/* list of parameter types */
 	backend_stack stk;	/* V4 state information */
@@ -72,7 +73,7 @@ extern qc *qc_create();
 extern void qc_destroy(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, symbol *s, list *params, int key);
-extern cq *qc_insert(qc *cache, symbol *s, list *params, int key, int type, char *codedstr);
+extern cq *qc_insert(qc *cache, sql_allocator *sa, symbol *s, list *params, int key, int type, char *codedstr);
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 
@@ -96,8 +97,8 @@ qc_create()
 static void
 cq_delete(cq *q)
 {
-	if (q->s)
-		symbol_destroy(q->s);
+	if (q->sa) 
+		sa_destroy(q->sa);
 
 	if (q->params)
 		list_destroy(q->params);
@@ -163,7 +164,7 @@ param_list_cmp(list *typelist, list *atomlist)
 {
 	node *n1, *n2;
 
-	if (typelist == atomlist)
+	if (typelist == atomlist || (list_length(typelist) == 0 && !atomlist))
 		return 0;
 	if (!typelist || !atomlist || list_length(typelist) != list_length(atomlist))
 		return -1;
@@ -206,12 +207,13 @@ qc_match(qc *cache, symbol *s, list *params, int key)
 }
 
 cq *
-qc_insert(qc *cache, symbol *s, list *params, int key, int type, char *cmd)
+qc_insert(qc *cache, sql_allocator *sa, symbol *s, list *params, int key, int type, char *cmd)
 {
 	node *m;
 	cq *n = NEW(cq);
 	n->id = cache->id ++;
 
+	n->sa = sa;
 	n->s = s;
 
 	n->params = list_create((fdestroy) &sql_subtype_destroy);

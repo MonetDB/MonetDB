@@ -360,7 +360,7 @@ stmt_atom_string(char *S)
 	char *s = sql2str(S);
 	sql_subtype *t = sql_bind_subtype("varchar", strlen(s), 0);
 
-	return stmt_atom(atom_string(t, s));
+	return stmt_atom(atom_string(t, s, 1));
 }
 
 stmt *
@@ -377,9 +377,9 @@ stmt_bool(int b)
 	sql_subtype *t = sql_bind_subtype("boolean", 0, 0);
 
 	if (b) {
-		return stmt_atom(atom_general(t, _strdup("true")));
+		return stmt_atom(atom_bool(t, TRUE));
 	} else {
-		return stmt_atom(atom_general(t, _strdup("false")));
+		return stmt_atom(atom_bool(t, FALSE));
 	}
 }
 
