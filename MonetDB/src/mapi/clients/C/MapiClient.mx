@@ -526,12 +526,13 @@ static const char *column_format = "select name,type,type_digits,type_scale,null
 static int 
 dump_table( Mapi mid, char *tname)
 {
-	int cnt = 0;
+	int cnt = 0, i;
 	MapiHdl hdl;
 	char query[BUFSIZ];
 
 	char *select_count = "select count(*) from %s";
 	char *select_format = "select * from %s";
+	int *string;
 
 	printf("CREATE TABLE %s (\n", tname );
 
@@ -572,14 +573,50 @@ dump_table( Mapi mid, char *tname)
 	}
 	if ((mapi_fetch_row(hdl)) != 0) {
 		const char *copystring =
-	    		"COPY %s RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n\n";
+	    		"COPY %s RECORDS INTO %s FROM stdin USING DELIMITERS '\\t';\n";
 		char *cnt = mapi_fetch_field(hdl, 0);
 		printf(copystring, cnt, tname);
 	}
 	mapi_close_handle(hdl);
 
 	snprintf(query, BUFSIZ, select_format, tname);
-	doRequest(mid, query);
+	if ((hdl = mapi_query(mid, query)) == NULL){
+		mapi_explain(mid, stdout);
+		return 0;
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stdout);
+		mapi_close_handle(hdl);
+		return 0;
+	}
+
+	cnt = mapi_get_field_count(hdl);
+	string = alloca(sizeof(int)*cnt);
+	for(i=0;i<cnt;i++){
+		string[i] = 0;
+		if (strcmp(mapi_get_type(hdl, i),"char") == 0) 
+			string[i] = 1;
+	}
+	while ((mapi_fetch_row(hdl)) != 0) {
+		char *format;
+
+		for(i=0;i<cnt-1; i++) {
+			format = "%s\t";
+			if (string[i])
+				format = "'%s'\t";
+			fprintf(toConsole, format, mapi_fetch_field(hdl,i));
+		}
+		format = "%s\n";
+		if (string[i])
+			format = "'%s'\n";
+		fprintf(toConsole, format, mapi_fetch_field(hdl,i));
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stdout);
+		mapi_close_handle(hdl);
+		return 0;
+	}
+	mapi_close_handle(hdl);
 	return 0;
 }
 
