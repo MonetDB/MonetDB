@@ -89,6 +89,7 @@ void init_keywords(){
 	keywords_insert("ASYMMETRIC", ASYMMETRIC );
 	keywords_insert("BY", BY );
 	keywords_insert("CASCADE", CASCADE );
+	keywords_insert("CAST", CAST );
 	keywords_insert("CHAR", CHARACTER );
 	keywords_insert("CHARACTER", CHARACTER );
 	keywords_insert("CHECK", CHECK );

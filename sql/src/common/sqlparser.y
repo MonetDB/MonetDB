@@ -73,7 +73,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	atom_exp
 	between_predicate
 	comparison_predicate
-	from_clause
+	opt_from_clause
 	existence_test
 	in_predicate
 	insert_statement
@@ -126,6 +126,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	table_ref 
 	opt_temp
 	case_exp
+	cast_exp
 	when_value
 	when_search
 	opt_else
@@ -205,7 +206,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 
 %token <sval> 
 	NAME TYPE STRING AMMSC PARAMETER INT INTNUM APPROXNUM USER USING
-	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CASCADE RESTRICT
+	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CASCADE CAST RESTRICT
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
 	DOUBLE PRECISION VARCHAR 
 
@@ -811,7 +812,7 @@ selection:
  ;
 
 table_exp:
-    from_clause opt_where_clause opt_group_by_clause opt_having_clause
+    opt_from_clause opt_where_clause opt_group_by_clause opt_having_clause
 
 	{ $$ = dlist_create();
 	  dlist_append_symbol($$, $1);
@@ -820,8 +821,9 @@ table_exp:
 	  dlist_append_symbol($$, $4); }
  ;
 
-from_clause: 
-    FROM table_ref_commalist 	 { $$ = _symbol_create_list( SQL_FROM, $2); }
+opt_from_clause: 
+    /* empty */			 { $$ = NULL; }
+ |  FROM table_ref_commalist 	 { $$ = _symbol_create_list( SQL_FROM, $2); }
  ;
 
 table_ref_commalist:
@@ -1111,6 +1113,8 @@ scalar_exp:
  |  string_funcs
  |  '(' scalar_exp ')' 		{ $$ = $2; }
  |  case_exp	
+ |  cast_exp
+ |  subquery
  ;
 
 
@@ -1360,6 +1364,13 @@ column_ref:
 				 dlist_append_string(
 				  dlist_create(), $1), $3), $5);}
  ;
+
+cast_exp:
+     CAST '(' scalar_exp AS data_type ')'
+ 	{ dlist *l = dlist_create();
+	  dlist_append_symbol(l, $3);
+	  dlist_append_string(l, _strdup($5));
+	  $$ = _symbol_create_list( SQL_CAST, l ); }
 
 case_exp: /* could rewrite NULLIF and COALESCE to normal CASE statements */
      NULLIF '(' scalar_exp ',' scalar_exp ')' 

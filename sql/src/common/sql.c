@@ -128,6 +128,7 @@ char *token2string(int token){
 	case SQL_INT_VALUE: return "Integer";
 	case SQL_ATOM: return "Atom";
 	case SQL_ESCAPE: return "Escape";
+	case SQL_CAST: return "Cast";
 	case SQL_CASE: return "Case";
 	case SQL_WHEN: return "When";
 	case SQL_COALESCE: return "Coalesce";
@@ -142,6 +143,8 @@ char *token2string(int token){
 static statement *sql_select( context *sql, scope *scp, int distinct, 
 		dlist *selection, dlist *into, dlist *table_exp, 
 		symbol *orderby );
+static statement *sql_simple_select( context *sql, scope *scp,  
+		dlist *selection );
 static statement *search_condition( context *sql, scope *scp, symbol *sc, 
 		statement *group, statement *subset );
 static statement *scalar_exp( context *sql, scope *scp, symbol *se, 
@@ -533,6 +536,33 @@ statement *sql_case( context *sql, scope *scp, symbol *se, statement *group,
 	return NULL;
 }
 
+statement *sql_cast( context *sql, scope *scp, symbol *se, statement *group,
+	      statement *subset	){
+
+	dlist *dl = se->data.lval;
+	symbol *s = dl->h->data.sym;
+	char *tpe = dl->h->next->data.sval;
+
+	statement *l = scalar_exp( sql, scp, s, group, subset );
+
+	if (l){
+		type *st = tail_type(l);
+		type *rt = cat_bind_type(sql->cat, tpe );
+		func *c = cat_bind_func_result(sql->cat, "convert",
+				st->sqlname, NULL, NULL, rt->sqlname );
+
+		if (!c){
+			snprintf(sql->errstr, ERRSIZE, 
+		  	_("CAST operator: cast(%s,%s) unknown"), 
+			st->sqlname, tpe );
+			statement_destroy(l);
+			return NULL;
+		}
+		return statement_unop( l, c );
+	}
+	return NULL;
+}
+
 static
 statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 	      statement *subset	){
@@ -577,10 +607,8 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 		} else {
 			func *c = NULL;
 			int w = 0;
-			type *t1 = cat_bind_type(sql->cat, 
-						tail_type(ls)->sqlname);
-			type *t2 = cat_bind_type(sql->cat, 
-						tail_type(rs)->sqlname);
+			type *t1 = tail_type(ls);
+			type *t2 = tail_type(rs);
 			if (t1->nr > t2->nr){
 				type *s = t1;
 				t1 = t2;
@@ -637,6 +665,22 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 		} 
 		return res;
 	} break;
+	case SQL_SELECT: {
+		statement *sq = subquery( sql, scp, se );
+		statement *res = NULL;
+
+		if (sq){
+			int l = list_length(sq->op1.lval);
+			if (l <= 0 || l > 1){
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Subqueries should return a single column") );
+			       	return NULL;
+			} else {
+				res = sq->op1.lval->h->data.stval;
+			}
+		}
+		return res;
+	} break;
 	case SQL_AGGR: {
 		dlist *l = se->data.lval;
 		aggr *a = NULL;
@@ -683,6 +727,8 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 			break;
 	case SQL_ATOM:
 			return statement_atom( atom_dup(se->data.aval) );
+	case SQL_CAST: 
+			return sql_cast( sql, scp, se, group, subset );
 	case SQL_CASE: 
 			return sql_case( sql, scp, se, group, subset );
 	case SQL_NULLIF:
@@ -892,6 +938,12 @@ statement *column_exp( context *sql, scope *scp, symbol *column_e, statement *gr
 		} 
 		return s;
 	} break;
+	/*
+	case SQL_SELECT: {
+		statement *sq = subquery(sql, scp, column_e );
+		return sq;
+	} break;
+	*/
 	default:
 		snprintf(sql->errstr, ERRSIZE, 
 		  _("Column expression Symbol(%d)->token = %s"),
@@ -1690,6 +1742,47 @@ statement *substitute( statement *s, statement *c ){
 }
 
 static
+statement *sql_simple_select
+( 
+	context *sql, 
+	scope *scp, 
+	dlist *selection
+){
+  int toplevel = (!scp)?1:0;
+  statement *s = NULL;
+  list *rl = list_create();
+
+  scp = scope_open( scp );
+  if (toplevel) { /* only on top level query */
+	  node *n = sql->cat->cur_schema->tables->h;
+
+	  for( ; (n); n = n->next ){
+		table *p = n->data.tval;
+	  	scope_add_table( scp, p, p->name );
+	  }
+  }
+
+  if (selection){
+	dnode *n = selection->h;
+	while (n){
+		statement *cs = column_exp( sql, scp, n->data.sym, NULL, NULL);
+		if (!cs){
+		       		return NULL;
+		}
+		list_append_statement(rl, cs);
+		n = n->next;
+	}
+  }
+  s = statement_list(rl);
+
+  if (scp) scp = scope_close( scp );
+ 
+  if (!s && sql->errstr[0] == '\0')
+	  snprintf(sql->errstr, ERRSIZE, _("Subquery result missing")); 
+  return s;
+}
+
+static
 statement *sql_select
 ( 
 	context *sql, 
@@ -1702,18 +1795,22 @@ statement *sql_select
 ){
   int toplevel = (!scp)?1:0;
   statement *s = NULL;
-  dlist *from = table_exp->h->data.sym->data.lval;
+
+  symbol *from = table_exp->h->data.sym;
 
   symbol *where = table_exp->h->next->data.sym;
   symbol *groupby = table_exp->h->next->next->data.sym;
   symbol *having = table_exp->h->next->next->next->data.sym;
   statement *order = NULL, *group = NULL, *subset = NULL;
 
+  if (!from && !where) return sql_simple_select( sql, scp, selection );
+		  
   scp = scope_open( scp );
   if (from){ /* keep variable list with tables and names */
+  	  dlist *fl = from->data.lval;
 	  dnode *n = NULL;
 
-	  for( n = from->h; (n); n = n->next )
+	  for( n = fl->h; (n); n = n->next )
 		table_ref( sql, scp, n->data.sym);
 
   } else if (toplevel) { /* only on top level query */
@@ -1727,7 +1824,7 @@ statement *sql_select
 
   if (where){
 	s = search_condition(sql, scp, where, NULL, NULL);
-  } else {
+  } else if (from) {
 	if (scope_count_tables(scp) > 1){
 		scope_dump(scp);
 		snprintf(sql->errstr, ERRSIZE, 
@@ -1740,7 +1837,7 @@ statement *sql_select
 		  	_("Subquery has no columns"));
 		return NULL;
 	}
-  }
+  } 
 
   if (s){
 	if (s->type != st_diamond && s->type != st_pearl){

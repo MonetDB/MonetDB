@@ -165,6 +165,12 @@ if (sql_func_name.count() <= 0){
 			}
 		}
 	}
+	strings@batloop(){ 
+		var hd := $h; 
+		numerical@batloop(){ 
+			new_func( "convert", $t, "", hd, "", "", $h );
+		}
+	}
 
 	var floats := numerical.select("dbl").union(numerical.select("flt"));
 	floats@batloop(){ 

@@ -121,7 +121,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			len += snprintf( buf+len, BUFSIZ,
 			  "s%d := s%d.select(s%d, s%d).access(BAT_READ);\n", *nr, l, r1, r2 ); 
 			len += snprintf( buf+len, BUFSIZ, 
-			  "s%d := s%d.diff(s%d);\n", *nr+1, l, *nr );
+			  "s%d := s%d.kdiff(s%d);\n", *nr+1, l, *nr );
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
 		}
@@ -141,7 +141,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_diff: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.diff(s%d).access(BAT_READ);\n", *nr, l, r ); 
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kdiff(s%d).access(BAT_READ);\n", *nr, l, r ); 
 		s->nr = (*nr)++;
 	} break;
 	case st_intersect: {
@@ -236,7 +236,15 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().mirror();\n", *nr, l);
+		if (s->op1.stval->type == st_group || 
+		    s->op1.stval->type == st_derive){
+			/* dirty optimization, use CThistolinks tunique */
+		  	len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.tunique();\n", *nr, l);
+		} else {
+		  	len += snprintf( buf+len, BUFSIZ, 
+			"s%d := s%d.reverse().kunique().reverse();\n", *nr, l);
+		}
 		s->nr = (*nr)++;
 	} 	break;
 	case st_order: {
