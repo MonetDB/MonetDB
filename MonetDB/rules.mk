@@ -2,40 +2,30 @@
 MEL=$(top_builddir)/src/mel/mel
 MX=$(top_builddir)/src/utils/Mx/Mx
 
-%_tab.y: %.y
-	$(MV) $^ $@
-
-%_tab.yy: %.yy
-	$(MV) $^ $@
-
-%_yy.l: %.l
-	$(MV) $^ $@
-
-%_yy.ll: %.ll
-	$(MV) $^ $@
-
-%.cc: %.mx
-	$(MX) $(MXFLAGS) -x C $<
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
 
 %.c: %.mx
 	$(MX) $(MXFLAGS) -x c $<
 
-%.h: %.mx
-	$(MX) $(MXFLAGS) -x h $<
-
-%.y: %.mx
-	$(MX) $(MXFLAGS) -x y $< 
-
-%.yy: %.mx
+%_tab.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
 	$(MV) $*.y $@
 
-%.l: %.mx
+%_yy.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 
-
-%.ll: %.mx
-	$(MX) $(MXFLAGS) -x l $<
 	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
