@@ -1335,12 +1335,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
         if os.path.isfile(TST+".prologue"):
             PROLOGUE = " "+TST+".prologue"
 
-        Srvr = MTO+str(STO)+" "+exe['Mserver'][1]+" --dbname="+TSTDB
-        Srvr = Srvr+" --set "+string.lower(SERVER)+"_port="+env[SERVER+'PORT']
+        Srvr = '%s%s %s "--dbname=%s" --set %s_port=%s' % (MTO, str(STO), exe['Mserver'][1], TSTDB, string.lower(SERVER), env[SERVER+'PORT'])
         if SERVER == "MAPI":
-            Srvr = Srvr+" "+env['MAPI_MIL']
+            Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
         else:
-            Srvr = Srvr+" "+env['SQLSERVER_MIL']
+            Srvr = '%s "%s"' % (Srvr, env['SQLSERVER_MIL'])
         Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
