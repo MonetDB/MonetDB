@@ -11,7 +11,7 @@ functions.
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
-#include <config.h>
+#include <monet_utils.h>
 
 #ifdef _MSC_VER
 #ifndef LIBGDK
@@ -29,8 +29,6 @@ functions.
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-
-#include <stdio.h>
 
 #ifndef HAVE_GETPGID
 #define getpgid __getpgid
@@ -211,9 +209,7 @@ gdk_export int _MT_pagesize;
 @- Mthreads Routine implemtations
 @c
 #include "gdk_system.h"
-
 #include "gdk_posix.h"
-#include <errno.h>
 
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 

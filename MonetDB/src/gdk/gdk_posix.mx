@@ -62,7 +62,7 @@ typedef struct mallinfo mallinfo_t;
 
 gdk_export struct mallinfo MT_mallinfo();
 
-@- locking, sleep, vsnprintf, snprintf, strcasecmp
+@- locking, sleep
 @h
 #define F_TLOCK 2 /* test and lock a region for exclusive use */
 #define F_ULOCK 0 /* unlock a previously locked region */
@@ -128,11 +128,6 @@ be distuinguished:
 \end{itemize}
 @h
 #ifdef NATIVE_WIN32
-#define DIR_SEP '\\' 
-#define DIR_SEP_STR "\\" 
-#define PATH_SEP ';'
-#define PATH_SEP_STR ";"
-#define SO_EXT ".dll"
 
 #define RTLD_LAZY	1
 #define RTLD_NOW	2
@@ -183,12 +178,6 @@ gdk_export int win_mkdir(const char*, const int mode);
 
 #else /* UNIX (or CYGWIN) */
 
-#define DIR_SEP '/' 
-#define DIR_SEP_STR "/" 
-#define PATH_SEP ':'
-#define PATH_SEP_STR ":"
-#define SO_EXT ".so"
-
 #ifdef WIN32 /* but not native, hence CYGWIN specific defines */
 
 #define GDK_MEM_QUERYSIZE(p)	((unsigned int*) (p))[-1]
@@ -200,9 +189,6 @@ gdk_export int win_mkdir(const char*, const int mode);
 
 #endif 
 #endif 
-
-#define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, (int)'/'    ); t; t=strchr(t+1, (int)'/'    )) *t=DIR_SEP;}
-#define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, (int)DIR_SEP); t; t=strchr(t+1, (int)DIR_SEP)) *t='/'    ;}
 
 #endif /* GDK_POSIX_H */
 @c
@@ -219,8 +205,6 @@ static void MT_alloc_init();
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
-
-#include <errno.h>
 
 #ifndef HAVE_MADVISE
 # define madvise(x,y,z)	0
