@@ -366,8 +366,8 @@ char *NextLine(void)
 	if (s && strncmp(s, MX_INCLUDE, strlen(MX_INCLUDE)) == 0) {
 		char path[1024];
 		s += strlen(MX_INCLUDE);
-	        while(isspace(*s)) s++;
-	        for(t=s; *t && !isspace(*t); t++);
+	        while(isspace((int)(*s))) s++;
+	        for(t=s; *t && !isspace((int)(*t)); t++);
 		*path = *t = 0;
 		if (*inputdir && *s != DIR_SEP) { /* absolute path */
 		    sprintf(path, "%s%c", inputdir, DIR_SEP);

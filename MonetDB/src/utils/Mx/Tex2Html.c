@@ -191,12 +191,12 @@ char *bib_entry(char *str, char *buf)
 	if (!p || !*p) return 0;
 	p = (char*) strchr(p, '=');
 	if (!p || !*p) return 0;
-	for(p++; p && *p && isspace(*p); p++); 
+	for(p++; p && *p && isspace((int)(*p)); p++); 
 	if (!p || !*p) return 0;
 	if (*p == '"') p++;
 	else endchar=',';
 	for(;*p && ((*p!=endchar) || p[-1]=='\\'); p++) {
-		if (isspace(*p)) {
+		if (isspace((int)(*p))) {
 			if (inword) *e++ = ' ';
 			inword = 0;
 		} else { 
@@ -205,7 +205,7 @@ char *bib_entry(char *str, char *buf)
 		}
 	}
 	/* cut off spaces and dots at the end, we do formatting ourselves */
-	while(e>entry && (isspace(e[-1]) || (e[-1] == '.'))) e--;
+	while(e>entry && (isspace((int)(e[-1])) || (e[-1] == '.'))) e--;
 	*e = 0;
 	return entry;
 }
@@ -219,7 +219,7 @@ int bib_look(char *str, char *buf, char **hit)
 	char *p1 = buf, *p2;
 
 	while ((p1 = strstr(p1+len,str)) && 
-	         !(isalnum(p1[-1]) || (p1[len]==',') || isspace(p1[len])));
+	         !(isalnum((int)(p1[-1])) || (p1[len]==',') || isspace((int)(p1[len]))));
 	if (!p1) return 0;
 	while(*++p1 && *p1 != '\n');
 	*hit = p1; 
@@ -316,7 +316,7 @@ char *PrintChar(char *s)
 			ofile_putc(*s); *s++ = 0;
 		}
   		*s = 0;
-		if (index && isdigit(s[1])) 
+		if (index && isdigit((int)(s[1]))) 
 			*++s = 0; 
 	        return s;
 	    }
@@ -348,7 +348,7 @@ char *table_format(char **s)
 		} else if (c== 'r') {
 		    format = table_right;
 		} else if (c == 'p') {
-		    while(isspace(*++p1));
+		    while(isspace((int)(*++p1)));
 		    if (*p1) continue;
 		    for(p1++;*p1;p1++) *p1= 0; /* nullify */
 		    format = table_left;
@@ -385,7 +385,7 @@ char *skip_opt(char **ptr)
 char *skip_param(char *s, int blockstart, int *readonly)
 {
 	char *t;
-	while (*s && isspace(*s)) 
+	while (*s && isspace((int)(*s))) 
 		s++;
 	if (*s != '{') 
 		return s;
@@ -549,14 +549,14 @@ mathon:				math=1; ofile_puts("<i>");
 		   if ((k = ltab[(int)*p1][5-k]) != 0)
 			   ofile_printf( "&%d;", k); 
 		   *p1 = 0; /* nullify */
-	default:   if (isprint(*p1)) break;
+	default:   if (isprint((int)(*p1))) break;
 		   /* ignore nonprintable chars */
 		   p1++; continue;
 	}
 
 	/* so, this must be a LaTeX '\XXX[YYY]{ZZZ}' keyword. */
 	for(len=1; p1+len<p2; len++) 
-		if ((!p1[len]) || isspace(p1[len]) || (p1[len]==',') || 
+		if ((!p1[len]) || isspace((int)(p1[len])) || (p1[len]==',') || 
 		    (p1[len]=='[') || (p1[len]=='*') || 
 		    (p1[len]=='$') || p1[len]=='\\') break;
 
@@ -571,7 +571,7 @@ mathon:				math=1; ofile_puts("<i>");
 	/* Now: switch for the type of keyword */
 	if (i < 0) {
 		/* unknown command. */
-		if ((len==1) || !isalnum(c))  {
+		if ((len==1) || !isalnum((int)(c)))  {
 			p1 = p+1; PrChr(*p); /* some escaped character */
 		} else if (math) {
 			size_t j;
@@ -581,7 +581,7 @@ mathon:				math=1; ofile_puts("<i>");
 			ofile_puts("</i></font> ");
 		} else {
 			/* scientific approach: ignore unexplicable phenomena */
-			while(p1 < p2 && isspace(*p1)) p1++;
+			while(p1 < p2 && isspace((int)(*p1))) p1++;
 		}
 	} else if (i < TYPE_FOOTNOTE) {
 		/* a simple code: 1-1 translation possible. */
@@ -613,7 +613,7 @@ mathon:				math=1; ofile_puts("<i>");
 		}
 	} else if (i < TYPE_CITE) {
 		/* sections and headers: parameter block is translated next. */
-		while(isspace(*p1)) p1++;
+		while(isspace((int)(*p1))) p1++;
 		if (!*p1) { 
 		    if (i >= TYPE_TITLE) ofile_puts("<center>");
 		    if (i == TYPE_WWW) {
@@ -677,7 +677,7 @@ mathon:				math=1; ofile_puts("<i>");
 		/* LaTeX reference */
 		ofile_putc('[');
 		for(p4 = p3, i=-1; p3<latexend && *p3; p3++) {
-			if ((*p3 == ',') || isspace(*p3)) {
+			if ((*p3 == ',') || isspace((int)(*p3))) {
 			    if (p3 > p4) {
 				*p3 = 0; if (i>=0) ofile_putc(',');
 				ofile_printf( "%d", i=bib_insert(p4));
@@ -715,7 +715,7 @@ mathon:				math=1; ofile_puts("<i>");
 		str[0]='<'; str[1]= '/'; STACK(str,stack);
 		if (i == TYPE_VERBATIM) {
 			/* enter verbatim mode: echo the entire block. */
-			while(isspace(*p1)) p1++;
+			while(isspace((int)(*p1))) p1++;
 			while(p1 < latexend && *p1) {
 				p1 = PrintChar(p1); p1++;
 			}
@@ -733,7 +733,7 @@ mathon:				math=1; ofile_puts("<i>");
 	} else {
 		/* ignore definitions */
 		char *s = p1;
-		while(s < latexend && isspace(*s)) *s++ = 0;
+		while(s < latexend && isspace((int)(*s))) *s++ = 0;
 		if (*s++ == '\\') {
 		    fprintf(stderr, "Mx: tex2html ignored def '%s'\n", s); 
 		    return 0;
@@ -763,7 +763,7 @@ void subst_blocks(int t, char *initstack)
 		if (!printing) { 
 	                /* keep ignoring blocks if only whtspce in between */ 
 			char *p3=p1;
-			while(p3<p2 && isspace(*p3++));
+			while(p3<p2 && isspace((int)(*p3++)));
 			if (p3<p2) printing=1;
 		}
 		printing &= translate_text(p1,p2,&stackptr,nextstack);
@@ -807,7 +807,7 @@ latex2html(char *s, int init, int flush)
 	}
 	while(*s) {
 		char *t = s;
-		while(*t && isspace(*t)) t++;
+		while(*t && isspace((int)(*t))) t++;
 		if (*t == '%') for(s=t; *s && *s != '\n'; s++);
 		else do {
 			*latexend++ = *s;

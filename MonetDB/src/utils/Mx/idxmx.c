@@ -70,9 +70,9 @@ int     do_header       _((FILE *fp, int init));
 /* ==================================================================== */
 
 #define isMacro(c)	((c == ':') || (c == '=') || (c == '`'))
-#define isCcode(c)	((isspace(c)) || (c == 'h') || (c == 'c') ||\
-			 (c == '}') || (c == '{') || (isdigit(c)))
-#define isidchar(c)	((c == '_') || (isalnum(c)))
+#define isCcode(c)	((isspace((int)(c))) || (c == 'h') || (c == 'c') ||\
+			 (c == '}') || (c == '{') || (isdigit((int)(c))))
+#define isidchar(c)	((c == '_') || (isalnum((int)(c))))
 #define HSIZE        	100    /* initial size of hits table. */
 
 typedef struct {
@@ -317,7 +317,7 @@ do_mx_macro(FILE *fp)
 	if (c == '@') {
 	    if (!FEOF(fp)) {
 		c = fgetc(fp); 
-		if (isspace(c)) {
+		if (isspace((int)(c))) {
 	    	    return 1;
 	        } else if (isMacro(c)) {
 		    do_mx_macro(fp);  /* recursive macros */
@@ -440,7 +440,7 @@ do_whitespace(FILE *fp)
 		return 0;
 	    }
 	    do_fgetc(fp, c);
-	} while (isspace(c));
+	} while (isspace((int)(c)));
 
 	if (c == '/') {
 	    char c;

@@ -202,7 +202,7 @@ int mo_config_file(opt **Set, int setlen, char *file )
 		char *s, *t, *val;
 		int quote;
 
-                for(s=buf; *s && isspace(*s); s++)
+                for(s=buf; *s && isspace((int)(*s)); s++)
 			;
                 if( *s == '#') continue;  /* commentary */
                 if( *s == 0) continue;   /* empty line */
@@ -216,12 +216,12 @@ int mo_config_file(opt **Set, int setlen, char *file )
                 }
                 *val=0;
 
-                for(t=s; *t && !isspace(*t); t++)
+                for(t=s; *t && !isspace((int)(*t)); t++)
 			;
                 *t =0;
 
                 /* skip any leading blancs in the value part */
-                for(val++; *val && isspace(*val) ;val++)
+                for(val++; *val && isspace((int)(*val)) ;val++)
 			;
 
                 /* search to unquoted # */
@@ -239,7 +239,7 @@ int mo_config_file(opt **Set, int setlen, char *file )
 			exit(1);
 		}
 		/* remove trailing white space */
-		while (isspace(t[-1]))
+		while (isspace((int)(t[-1])))
 			t--;
                 *t++ = 0;
 

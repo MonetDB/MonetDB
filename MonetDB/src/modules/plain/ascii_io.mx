@@ -576,7 +576,7 @@ int insert_line( ascii *as, char *line ){
 				if (!line) return -1;
 				first = 0;
 			} else {
-				if (first && !isspace(*line))
+				if (first && !isspace((int)(*line)))
 					first = 0;
 				line++;
 			}
@@ -616,7 +616,7 @@ int insert_line( ascii *as, char *line ){
 			if (!line) return -1;
 			first = 0;
 		} else {
-			if (first && !isspace(*line))
+			if (first && !isspace((int)(*line)))
 				first = 0;
 			line++;
 		}

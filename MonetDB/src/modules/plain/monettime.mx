@@ -1644,7 +1644,7 @@ int oldduration(int *ndays, str s) {
                         v = v*10+(*snew)-'0';
                         snew++;
                 }
-        } else if( isupper(*snew) || islower(*snew) ){
+        } else if( isupper((int)(*snew)) || islower((int)(*snew)) ){
                 switch( *snew++ ){
                 case 'y': case 'Y': year = v;   v = 0;          break;
                 case 'm': case 'M':

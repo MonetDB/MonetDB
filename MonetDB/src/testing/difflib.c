@@ -239,14 +239,14 @@ int lw_diff2wc_diff (int doChar, char *lw_diff_fn, char *wc_diff_fn)
                 { for(i=1;i<strlen(line)-1;i++) { fprintf(fp[j],"%c\n",line[i]); l[j]++; } }
               else
                 {
-                  space=isspace(line[1]); alpha_=isalpha_(line[1]); digit=isdigit(line[1]);
+                  space=isspace((int)(line[1])); alpha_=isalpha_((int)(line[1])); digit=isdigit((int)(line[1]));
                   for(i=1;i<strlen(line)-1;i++)
                     {
-                      if(((space )&&(!isspace( line[i])))||((!space )&&(isspace( line[i])))||
-                         ((alpha_)&&(!isalpha_(line[i])))||((!alpha_)&&(isalpha_(line[i])))||
-                         ((digit )&&(!isdigit( line[i])))||((!digit )&&(isdigit( line[i])))||
-                         ((!isspace(line[i]))&&(!isalpha_(line[i]))&&(!isdigit(line[i]))))
-                        { fprintf(fp[j],"\n"); space=isspace(line[i]); alpha_=isalpha_(line[i]); digit=isdigit(line[i]); l[j]++; }
+                      if(((space )&&(!isspace((int)( line[i]))))||((!space )&&(isspace((int)( line[i]))))||
+                         ((alpha_)&&(!isalpha_((int)(line[i]))))||((!alpha_)&&(isalpha_((int)(line[i]))))||
+                         ((digit )&&(!isdigit((int)( line[i]))))||((!digit )&&(isdigit((int)( line[i]))))||
+                         ((!isspace((int)(line[i])))&&(!isalpha_((int)(line[i])))&&(!isdigit((int)(line[i])))))
+                        { fprintf(fp[j],"\n"); space=isspace((int)(line[i])); alpha_=isalpha_((int)(line[i])); digit=isdigit((int)(line[i])); l[j]++; }
                       fprintf(fp[j],"%c",line[i]);
                     }
                   fprintf(fp[j],"\n"); l[j]++;

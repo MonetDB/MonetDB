@@ -1867,7 +1867,7 @@ void unquote(char *msg, char **start, char **next)
 	char *p= msg, *s;
 	char quote;
 
-	while(*p && isspace(*p))
+	while(*p && isspace((int)(*p)))
 		p++;
 	*start =p;
 	quote= *p;

@@ -318,12 +318,12 @@ void terminalInput( Mapi mid)
 		}
 		/* find start and end of the command */
 		for (start_cmd = line;
-		     *start_cmd && isspace(*start_cmd);
+		     *start_cmd && isspace((int)(*start_cmd));
 		     start_cmd++)
 			;
 		/* empty lines are meaningfull in some interpreters, like mdb*/
 		for(end_cmd = line + strlen(line) - 1;
-		    isspace(*end_cmd);
+		    isspace((int)(*end_cmd));
 		    end_cmd--)
 			;
 		n = 1 + end_cmd - start_cmd;
@@ -357,7 +357,7 @@ redirection of output to a separate file.
 			system(start_cmd+1);
 			continue;
 		case 'c':
-			if ((start_cmd[1] == 'd') && isspace(start_cmd[2])) {
+			if ((start_cmd[1] == 'd') && isspace((int)(start_cmd[2]))) {
 				if (chdir(start_cmd+3)) {
 					char err[200];
 					sprintf(err, "chdir: %s", start_cmd+3);
