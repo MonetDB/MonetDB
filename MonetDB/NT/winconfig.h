@@ -161,8 +161,8 @@
 /* #undef HAVE_CTIME_R3 */
 
 /* LONGLONG */
-/* #undef HAVE_LONGLONG */
-#define HAVE__INT64 1
+/* #undef HAVE_LONG_LONG */
+#define HAVE___INT64 1
 
 /* The number of bytes in a char.  */
 #define SIZEOF_CHAR 1
