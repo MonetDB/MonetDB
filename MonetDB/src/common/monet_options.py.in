@@ -185,6 +185,8 @@ def parse_options(argv, cmd_options = cmd_options):
             else:
                 usage(cmd_options)
         if gdk_opt:
+            if not argument:
+                a = True
             setattr(options, gdk_opt, a)
             if long == 'debug':
                 debug = 1
