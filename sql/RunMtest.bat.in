@@ -9,7 +9,7 @@ goto end
 set builddir=@MONET_BUILD@
 set srcdir=@MONET_SOURCE@
 
-set MOD_PATH=%builddir%\src\backends\@SQL_BACKEND@\.libs;@MONET_PREFIX@\lib\MonetDB
+set MOD_PATH=%builddir%\src\backends\@SQL_BACKEND@\.libs;%builddir%\src\backends\@SQL_BACKEND@a\.libs;@MONET_PREFIX@\lib\MonetDB
 
 set PATH=%builddir%\src\client;%builddir%\src\tools;@MONET_PREFIX@\bin;@MONET_PREFIX@\lib;%PATH%
 set PATH=%builddir%\src\server;%builddir%\src\odbc\driver;%builddir%\src\odbc\setup;%PATH%
