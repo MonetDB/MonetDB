@@ -673,7 +673,7 @@ ostream &unpack::gen_command( ostream &o, const Command &d ){
 	delete(l);
 
 	o << "      GDKerror(\"%s: operation failed.\\n\", \"";
-	o << d.Name() <<"\");\n";
+	o << d.fcn() <<"\");\n"; // d.Name() gives better error message
 	o << "      argv[0].vtype = TYPE_void;\n";
 	o << "      argv[0].val.oval = void_nil;\n";
 	o << "      return -1;\n";
@@ -935,8 +935,11 @@ ostream &unpack_call::gen_var_arg( ostream &o, const VarArg &d){
 		// variable number of any type, eg ...any...
 	   	gen_unpack_any_arg( o, arg_nr, varargs, 0);
 	    }
-	    if (i+1<=MAXPARAMS) o << ", \n";
+	    o << ",\n";
 	}
+	o << "\t(void *) NULL";
+	if (!d.arg())
+		o << ", 0";
 	return o;
 }
 
