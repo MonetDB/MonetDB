@@ -56,13 +56,13 @@ stderr of test 'object_name-bug-sf-985242` in directory 'src/test/bugs` itself:
 # 14:52:48 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54903  < object_name-bug-sf-985242.sql
 # 14:52:48 >  
 
-MAPI  = monetdb@stem:54055
+MAPI  = monetdb@stem:51091
 QUERY = create table "\t" (id int);
-ERROR = !ERROR syntax error at token (258) in statement: create table "\t"
-MAPI  = monetdb@stem:54055
+ERROR = !syntax error, unexpected STRING in: "create table "\t""
+MAPI  = monetdb@stem:51091
 QUERY = create table x ("\t" int);
-ERROR = !ERROR syntax error at token (258) in statement: create table x ("\t"
-MAPI  = monetdb@stem:54055
+ERROR = !syntax error, unexpected STRING, expecting CHECK or FOREIGN or PRIMARY or UNIQUE in: "create table x ("\t""
+MAPI  = monetdb@stem:51091
 QUERY = select * from x;
 ERROR = !current transaction is aborted (please ROLLBACK)
 
