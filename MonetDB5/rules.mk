@@ -51,7 +51,7 @@ MXFLAGS= -n
 	$(MV) $*.yy.c $*.yy.c.tmp
 	echo '#include <config.h>' > $*.yy.c
 	grep -v '^#include.*[<"]config.h[">]' $*.yy.c.tmp >> $*.yy.c
-	rm -f $*.yy.c.tmp
+	$(RM) -f $*.yy.c.tmp
 
 %.cc: %.mx
 	$(MX) $(MXFLAGS) -x C $<
@@ -61,27 +61,27 @@ MXFLAGS= -n
 
 %.tab.cc: %.yy
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $<
+	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.tab.h: %.yy
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $<
+	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; } 
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.tab.c: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $<
+	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.tab.h: %.y
 	$(LOCKFILE) waiting
-	$(YACC) $(YFLAGS) $<
+	$(YACC) $(YFLAGS) $< || { $(RM) -f waiting ; exit 1 ; }
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
-	rm -f waiting
+	$(RM) -f waiting
 
 %.ll: %.mx
 	$(MX) $(MXFLAGS) -x L $<
@@ -94,7 +94,7 @@ MXFLAGS= -n
 	$(MV) $*.yy.cc $*.yy.cc.tmp
 	echo '#include <config.h>' > $*.yy.cc
 	grep -v '^#include.*[<"]config.h[">]' $*.yy.cc.tmp >> $*.yy.cc
-	rm -f $*.yy.cc.tmp
+	$(RM) -f $*.yy.cc.tmp
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
@@ -168,5 +168,3 @@ $(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
 
 SUFFIXES-local: $(BUILT_SOURCES)
 
-html:
-	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(prefix)
