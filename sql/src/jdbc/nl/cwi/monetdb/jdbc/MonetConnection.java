@@ -36,13 +36,13 @@ public class MonetConnection implements Connection {
 	private final String username;
 	private final String password;
 	private final MonetSocket monet;
-	
+
 	private static boolean debug;
 	private boolean closed;
 	private boolean autoCommit = true;
-	
+
 	private SQLWarning warnings = null;
-	
+
 	// See javadoc for documentation about WeakHashMap if you don't know what
 	// it does !!!NOW!!! (only when you deal with it of course)
 	private Map statements = new WeakHashMap();
@@ -81,7 +81,7 @@ public class MonetConnection implements Connection {
 		if (!(password != null && !password.trim().equals("")))
 			throw new IllegalArgumentException("host should not be null or empty");
 		/** @todo check and use the database name here... */
-		
+
 		this.host = hostname;
 		this.port = port;
 		this.database = database;
@@ -97,11 +97,11 @@ public class MonetConnection implements Connection {
 			synchronized (monet) {
 				// we're debugging here... uhm, should be off in real life
 				if (debug)
-					monet.debug("monet_" + 
+					monet.debug("monet_" +
 						(new java.util.Date()).getTime()+".log");
 
 				// log in
-				monet.writeln(username + ":" + password);		
+				monet.writeln(username + ":" + password);
 				// read monet response till prompt
 				String err;
 				if ((err = monet.waitForPrompt()) != null) {
@@ -114,7 +114,7 @@ public class MonetConnection implements Connection {
 		} catch (IOException e) {
 			throw new SQLException("IO Exception: " + e.getMessage());
 		}
-		
+
 		closed = false;
 	}
 
@@ -127,9 +127,9 @@ public class MonetConnection implements Connection {
 	public static void setDebug(boolean dbug) {
 		debug = dbug;
 	}
-	
+
 	//== methods of interface Connection
-	
+
 	/**
 	 * Clears all warnings reported for this Connection object. After a call to
 	 * this method, the method getWarnings returns null until a new warning is
@@ -138,7 +138,7 @@ public class MonetConnection implements Connection {
 	public void clearWarnings() {
 		warnings = null;
 	}
-	
+
 	/**
 	 * Releases this Connection object's database and JDBC resources immediately
 	 * instead of waiting for them to be automatically released. All Statements
@@ -161,7 +161,7 @@ public class MonetConnection implements Connection {
 		// report ourselve as closed
 		closed = true;
 	}
-	
+
 	/**
 	 * Makes all changes made since the previous commit/rollback permanent and
 	 * releases any database locks currently held by this Connection object.
@@ -173,16 +173,16 @@ public class MonetConnection implements Connection {
 	 */
 	public void commit() throws SQLException {
 		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
-		
+
 		sendCommit();
 	}
-	
+
 	/**
 	 * Creates a Statement object for sending SQL statements to the database.
 	 * SQL statements without parameters are normally executed using Statement
 	 * objects. If the same SQL statement is executed many times, it may be more
 	 * efficient to use a PreparedStatement object.<br />
-	 * <b>A PreparedStatement is not (yet) implemented in this Connection</b> 
+	 * <b>A PreparedStatement is not (yet) implemented in this Connection</b>
 	 * <br /><br />
 	 * Result sets created using the returned Statement object will by default
 	 * be type TYPE_FORWARD_ONLY and have a concurrency level of
@@ -196,12 +196,12 @@ public class MonetConnection implements Connection {
 					ResultSet.TYPE_FORWARD_ONLY,
 					ResultSet.CONCUR_READ_ONLY));
 	}
-	
+
 	/**
 	 * Creates a Statement object that will generate ResultSet objects with
 	 * the given type and concurrency. This method is the same as the
 	 * createStatement method above, but it allows the default result set type
-	 * and concurrency to be overridden. 
+	 * and concurrency to be overridden.
 	 *
 	 * @param resultSetType a result set type; one of
 	 *        ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE,
@@ -213,12 +213,12 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Statement createStatement(
-		int resultSetType, 
-		int resultSetConcurrency) 
+		int resultSetType,
+		int resultSetConcurrency)
 		throws SQLException
 	{
 		try {
-			Statement ret = 
+			Statement ret =
 				new MonetStatement(
 					monet, this, resultSetType, resultSetConcurrency
 				);
@@ -231,9 +231,9 @@ public class MonetConnection implements Connection {
 		// we don't have to catch SQLException because that is declared to
 		// be thrown
 	}
-	
+
 	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
-	
+
 	/**
 	 * Retrieves the current auto-commit mode for this Connection object.
 	 *
@@ -243,13 +243,26 @@ public class MonetConnection implements Connection {
 	public boolean getAutoCommit() {
 		return(autoCommit);
 	}
-	
+
 	public String getCatalog() {return(null);}
 	public int getHoldability() {return(-1);}
-	public DatabaseMetaData getMetaData() {return(null);}
+
+	/**
+	 * Retrieves a DatabaseMetaData object that contains metadata about the
+	 * database to which this Connection object represents a connection. The
+	 * metadata includes information about the database's tables, its supported
+	 * SQL grammar, its stored procedures, the capabilities of this connection,
+	 * and so on.
+	 *
+	 * @return a DatabaseMetaData object for this Connection object
+	 */
+	public DatabaseMetaData getMetaData() {
+		return(new MonetDatabaseMetaData(this));
+	}
+
 	public int getTransactionIsolation() {return(-1);}
 	public Map getTypeMap() {return(null);}
-	
+
 	/**
 	 * Retrieves the first warning reported by calls on this Connection object.
 	 * If there is more than one warning, subsequent warnings will be chained to
@@ -267,12 +280,12 @@ public class MonetConnection implements Connection {
 	 */
 	public SQLWarning getWarnings() throws SQLException {
 		if (closed) throw new SQLException("Cannot call on closed Connection");
-		
+
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
 		return(warnings);
 	}
-	
+
 	/**
 	 * Retrieves whether this Connection object has been closed. A connection is
 	 * closed if the method close has been called on it or if certain fatal
@@ -290,7 +303,7 @@ public class MonetConnection implements Connection {
 	public boolean isClosed() {
 		return(closed);
 	}
-	
+
 	public boolean isReadOnly() {return(false);}
 	public String nativeSQL(String sql) {return(null);}
 	public CallableStatement prepareCall(String sql) {return(null);}
@@ -303,11 +316,11 @@ public class MonetConnection implements Connection {
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
 	public PreparedStatement prepareStatement(String sql, String[] columnNames) {return(null);}
 	public void releaseSavepoint(Savepoint savepoint) {}
-	
+
 	/**
 	 * Undoes all changes made in the current transaction and releases any
 	 * database locks currently held by this Connection object. This method
-	 * should be used only when auto-commit mode has been disabled. 
+	 * should be used only when auto-commit mode has been disabled.
 	 *
 	 * @throws SQLException if a database access error occurs or this
 	 *         Connection object is in auto-commit mode
@@ -315,19 +328,19 @@ public class MonetConnection implements Connection {
 	 */
 	public void rollback() throws SQLException {
 		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
-		
+
 		sendRollback();
 	}
-	
+
 	public void rollback(Savepoint savepoint) {}
-	
+
 	/**
 	 * Sets this connection's auto-commit mode to the given state. If a
 	 * connection is in auto-commit mode, then all its SQL statements will be
 	 * executed and committed as individual transactions. Otherwise, its SQL
 	 * statements are grouped into transactions that are terminated by a call
 	 * to either the method commit or the method rollback. By default, new
-	 * connections are in auto-commit mode. 
+	 * connections are in auto-commit mode.
 	 * <br /><br />
 	 * The commit occurs when the statement completes or the next execute
 	 * occurs, whichever comes first. In the case of statements returning a
@@ -335,7 +348,7 @@ public class MonetConnection implements Connection {
 	 * ResultSet object has been retrieved or the ResultSet object has been
 	 * closed. In advanced cases, a single statement may return multiple
 	 * results as well as output parameter values. In these cases, the commit
-	 * occurs when all results and output parameter values have been retrieved. 
+	 * occurs when all results and output parameter values have been retrieved.
 	 * <br /><br />
 	 * NOTE: If this method is called during a transaction, the transaction is
 	 * committed.
@@ -346,7 +359,7 @@ public class MonetConnection implements Connection {
 	public void setAutoCommit(boolean autoCommit) {
 		this.autoCommit = autoCommit;
 	}
-	
+
 	public void setCatalog(String catalog) {}
 	public void setHoldability(int holdability) {}
 	public void setReadOnly(boolean readOnly) {}
@@ -354,9 +367,9 @@ public class MonetConnection implements Connection {
 	public Savepoint setSavepoint(String name) {return(null);}
 	public void setTransactionIsolation(int level) {}
 	public void setTypeMap(Map map) {}
-	
+
 	//== end methods of interface Connection
-	
+
 	/**
 	 * Changes the reply size of the server to the given value. If the given
 	 * is the same as the current value, the call is ignored and this method
@@ -369,7 +382,7 @@ public class MonetConnection implements Connection {
 		synchronized(monet) {
 			// don't do work if it's not needed
 			if (size == curReplySize) return;
-			
+
 			try {
 				monet.writeln("Xreply_size " + size);
 				// and wait for the server to be ready again
@@ -391,7 +404,7 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs
 	 */
-	void sendCommit() throws SQLException {	
+	void sendCommit() throws SQLException {
 		// send commit to the server
 		synchronized(monet) {
 			try {
@@ -414,7 +427,7 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs
 	 */
-	void sendRollback() throws SQLException {	
+	void sendRollback() throws SQLException {
 		// send commit to the server
 		synchronized(monet) {
 			try {
@@ -429,7 +442,7 @@ public class MonetConnection implements Connection {
 			}
 		}
 	}
-	
+
 	/**
 	 * Adds a warning to the pile of warnings this Connection object has. If
 	 * there were no warnings (or clearWarnings was called) this warning will
