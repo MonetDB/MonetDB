@@ -16,18 +16,18 @@ exit (go,i);
 	printf("#loop %d\n",d0);
 	t0:= t1;
 
-#	z:= cross(R,S);
+#	z:= cartesianproduct(R,S);
 #	size:= count(z);
 #	t1:= alarm.usec();
 #	d0:= t1-t0;
-#	printf("#cross product size %d\n",size);
-#	printf("#perform cross product %d\n",d0);
+#	printf("#cartesianproduct size %d\n",size);
+#	printf("#perform cartesianproduct %d\n",d0);
 #	t0:= t1;
 
 	chksize:= size/10;
 barrier (b1,rf):= chopper.newChunkIterator(R,chksize);
 barrier (b2,sf):= chopper.newChunkIterator(S,chksize);
-    pi:= cross(rf,sf);
+    pi:= cartesianproduct(rf,sf);
 redo (b2,sf):= chopper.hasMoreChunks(S,chksize);
 redo (b1,rf):= chopper.hasMoreChunks(R,chksize);
 exit b2;

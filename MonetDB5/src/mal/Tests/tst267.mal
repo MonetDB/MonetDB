@@ -5,11 +5,12 @@ b:= new(:void,:int);
 setSequenceBase(b,0:oid);
 insert(a,1);
 insert(a,2);
-insert(b,3);
-insert(b,4);
 insert(b,5);
+insert(b,6);
+insert(b,7);
+insert(b,8);
 print(a);
 print(b);
 
-g:= array.*(a,b);
+g:= array.product(a,b);
 print(g);
