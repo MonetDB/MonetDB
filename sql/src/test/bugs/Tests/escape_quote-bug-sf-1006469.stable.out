@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-1006469` in directory 'src/test/bugs` itself:
+stdout of test 'escape_quote-bug-sf-1006469` in directory 'src/test/bugs` itself:
 
 
 # 13:21:38 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:21:39 >  
-# 13:21:39 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < bug-sf-1006469.sql
+# 13:21:39 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < escape_quote-bug-sf-1006469.sql
 # 13:21:39 >  
 
 # 3 # querytype
