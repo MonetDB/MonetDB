@@ -2336,6 +2336,13 @@ rollforward_create_idx( sql_trans *tr, sql_idx *i )
 	return i;
 }
 
+static sql_key *
+rollforward_create_key( sql_trans *tr, sql_key *k )
+{
+	(void)tr;
+	return k;
+}
+
 static sql_column *
 rollforward_create_column( sql_trans *tr, sql_column *c )
 {
@@ -2489,7 +2496,7 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 		(dupfunc)&idx_dup );
 	rollforward_changeset_updates( tr, &ft->keys, &tt->keys, &tt->base,
 		(rfufunc)NULL, 
-		(rfcfunc)NULL,
+		(rfcfunc)&rollforward_create_key,
 		(rfcfunc)&rollforward_drop_key,
 		(dupfunc)&key_dup );
 
@@ -3783,7 +3790,7 @@ mvc_create_key( mvc * m, sql_table *t, char *name, key_type kt, sql_key *rkey )
 		BUNins(b, (ptr) & rid, (ptr) & neg); 
 	bat_destroy(b);
 
-	syskey->base.wtime = tr->wtime = tr->stime;
+	syskey->base.wtime = t->base.wtime = tr->wtime = tr->stime;
 	m->type = Q_SCHEMA;
 	return nk;
 }
@@ -3893,7 +3900,7 @@ mvc_create_idx( mvc * m, sql_table *t, char *name, idx_type it )
 	b = bind_bat(tr, find_column(sysidx, "type"), UPD);
 	BUNins(b, (ptr) & rid, (ptr) & ni->type); bat_destroy(b);
 
-	sysidx->base.wtime = tr->wtime = tr->stime;
+	sysidx->base.wtime = t->base.wtime = tr->wtime = tr->stime;
 	m->type = Q_SCHEMA;
 	return ni;
 }
