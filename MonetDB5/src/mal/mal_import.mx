@@ -35,9 +35,8 @@ a known location.
 mal_export void slash_2_dir_sep(str fname);
 mal_export void malInclude(Client c, str name, str libname, int listing);
 mal_export stream *malOpenSource(str fname);
-mal_export str malLoadScript(Client c, str name);
+mal_export str malLoadScript(str name, bstream **fdin);
 mal_export void callString(Client c, str s, int listing);
-mal_export void runScript(Client c, str fname, int listing,MalStkPtr stk);
 #endif /*  _MAL_IMPORT_H*/
 @-
 The import context is located. If the module already exists, 
@@ -88,23 +87,17 @@ the input buffer of the client. It is typically used in situations
 where an intermediate file is used to pass commands around.
 @c
 str 
-malLoadScript(Client c, str name)
+malLoadScript(str name, bstream **fdin)
 {
     stream *fd;
 
-    if (c->fdin) {
-		return throwException(MALEXCEPTION,
-			"malInclude",
-            "Recursively loading scripts is currently not supported: %s\n", 
-			name);
-    }
     fd = malOpenSource(name);
     if (stream_errnr(fd) == OPEN_ERROR){
 		stream_destroy(fd);
 		return throwException(MALEXCEPTION,
 			"malInclude", "could not open file: %s\n", name);
     }
-    c->fdin = bstream_create( fd, 128*BLOCK );
+    *fdin = bstream_create( fd, 128*BLOCK );
     return NULL;
 }
 @-
@@ -126,17 +119,19 @@ malInclude(Client c, str name, str libname, int listing)
 	int oldmode = c->mode;
     int oldblkmode = c->blkmode;
     str oldprompt = c->prompt;
+	ClientInput *oldbak = c->bak;
 
 	Scope oldnspace = c->nspace;
     Symbol oldprg = c->curprg;
     MalStkPtr oldglb = c->glb;
 
-	c->fdin = NULL;
 	c->yycur = 0;
-    c->prompt = ""; /* do not produce visible prompts */
+    c->prompt = GDKstrdup(""); /* do not produce visible prompts */
     c->listing = listing;
+	c->bak = NULL;
 
-    if ((s = malLoadScript(c,name))) {
+	c->fdin = NULL;
+    if ((s = malLoadScript(name, &c->fdin))) {
         stream_printf(c->fdout,"%s\n",s);
 @-
 Load any associated module first, because this sets the context for
@@ -160,10 +155,13 @@ resolving addresses.
     c->listing = oldlisting;
     c->mode = oldmode;
     c->blkmode = oldblkmode;
+	if (c->prompt)
+		GDKfree(c->prompt);
     c->prompt = oldprompt;
     c->glb = oldglb;
     c->nspace = oldnspace;
     c->curprg = oldprg;
+	c->bak = oldbak;
 }
 @+ File and input processing
 A recurring situation is to execute a stream of simple MAL instructions
@@ -187,87 +185,23 @@ stack frame. Life becomes a little complicated when the script contains
 a definition.
 
 @c
-void runScript(Client c, str fname, int listing, MalStkPtr glb)
-{   
-    bstream *oldfdin = c->fdin;
-    int oldyycur = c->yycur;
-    int oldlisting= c->listing;
-	int oldmode = c->mode;
-    int oldblkmode = c->blkmode;
-    str oldprompt = c->prompt;
-
-	Scope oldnspace = c->nspace;
-    Symbol oldprg = c->curprg;
-    MalStkPtr oldglb = c->glb;
-
-    c->listing = listing;
-    c->blkmode = 0;
-    c->prompt = ""; /* do not produce visible prompts */
-    c->fdin = NULL;
-    malLoadScript(c, fname);
-
-    initClientPrg(c,"main");
-    
-    c->glb= glb;
-    runScenario(c);
-
-    if (c->fdin){
-            (void) stream_close(c->fdin->s);
-            (void) stream_destroy(c->fdin->s);
-            (void) bstream_destroy(c->fdin);
-    }
-
-    c->fdin = oldfdin; 
-    c->yycur = oldyycur; 
-    c->listing = oldlisting;
-    c->mode = oldmode;
-    c->blkmode = oldblkmode;
-    c->prompt = oldprompt;
-    c->glb = oldglb;
-    c->nspace = oldnspace;
-    c->curprg = oldprg;
-}
-
 void callString(Client c, str s, int listing)
 {
-	buffer b;
+	int len = strlen(s);
+	buffer *b;
 	
-	bstream *oldfdin = c->fdin;
-	int oldyycur = c->yycur;
-	int oldlisting= c->listing;
-	int oldmode = c->mode;
-	int oldblkmode = c->blkmode;
-	str oldprompt = c->prompt;
-
-	Scope oldnspace = c->nspace;
-	Symbol oldprg = c->curprg;
-	MalStkPtr oldglb = c->glb;
-
-	c->listing = listing;
-	c->blkmode = 0;
-	c->prompt = ""; /* do not produce visible prompts */
-	
-	buffer_init(&b, s, strlen(s) + 1); 
-	c->fdin = bstream_create( buffer_rastream(&b, "callString"), b.len );
-	c->yycur = 0;
-
-	initClientPrg(c,"main");
-	runScenario(c);
-
-	if (c->fdin){
-		(void) stream_close(c->fdin->s);
-		(void) stream_destroy(c->fdin->s);
-		(void) bstream_destroy(c->fdin);
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (s[len-1] != '\n') {
+		char *n = GDKmalloc(len + 1 + 1);
+		strncpy(n, s, len);
+		n[len] = '\n';
+		n[len+1] = 0;
+		s = n;
+		len++;
 	}
-
-	c->fdin = oldfdin;
-	c->yycur = oldyycur;
-	c->listing = oldlisting;
-	c->mode = oldmode;
-	c->blkmode = oldblkmode;
-	c->prompt = oldprompt;
-	c->glb = oldglb;
-	c->nspace = oldnspace;
-	c->curprg = oldprg;
+	buffer_init(b, s, len ); 
+	pushClientInput(c, 
+		bstream_create( buffer_rastream(b, "callString"), b->len ),
+		listing, "");
 }
 @}

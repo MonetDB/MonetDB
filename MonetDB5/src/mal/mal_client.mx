@@ -92,6 +92,14 @@ server(See mal_profiler.mx).
 The user can request server-side compilation as part of the 
 initialization string. See the documentation on Scenarios.
 @h
+typedef struct CLIENT_INPUT {
+    bstream             *fdin;
+    int                 yycur;		
+    int                 listing;
+    char                *prompt;
+    struct CLIENT_INPUT *next;    
+} ClientInput;
+
 typedef struct CLIENT{
     int idx;        /* entry in mal_clients */
     str user;       /* user name. */
@@ -137,6 +145,7 @@ the interaction on the system console (sysmon).
 @h
     bstream  *fdin;
     int      yycur;		/* the scanners current position */
+    ClientInput *bak;   /* used for recursive script and string execution */
     stream   *fdout;    /* streams from and to user. */
 
     str output; 	/* output buffer */
@@ -219,6 +228,9 @@ mal_export void     cleanupClients();
 mal_export void     traceAllClients(int flag);
 mal_export void     traceClient(str nme, int flag);
 
+mal_export void     pushClientInput(Client c, bstream *new_input, int listing, char *prompt);
+mal_export void     popClientInput(Client c);
+
 #endif /* _MAL_CLIENT_H_ */
 @-
 @}
@@ -258,6 +270,39 @@ int streamClient(Client c, str prompt);
 int bstreamClient(Client c, str prompt);
 
 ClientRec   mal_clients[MAL_MAXCLIENTS+1];
+
+void pushClientInput(Client c, bstream *new_input, int listing, char *prompt)
+{
+    ClientInput *x = (ClientInput*)GDKmalloc(sizeof(ClientInput));
+    x->fdin = c->fdin;
+    x->yycur = c->yycur;
+    x->listing = c->listing;
+    x->prompt = c->prompt;
+    x->next = c->bak;
+    c->bak = x;
+    c->fdin = new_input;
+    c->listing = listing;
+    c->prompt = GDKstrdup(prompt);
+    c->yycur = 0;
+}
+
+void popClientInput(Client c)
+{
+    ClientInput *x = c->bak;
+    if (c->fdin) {
+        /* missing protection against closing stdin stream */
+        (void) stream_close(c->fdin->s);
+        (void) stream_destroy(c->fdin->s);
+        (void) bstream_destroy(c->fdin);
+    }
+    GDKfree(c->prompt);
+    c->fdin = x->fdin;
+    c->yycur = x->yycur;
+    c->listing = x->listing;
+    c->prompt = x->prompt;
+    c->bak = x->next;
+    GDKfree(x);
+}
 
 Client newClient(){
     Client  c;
@@ -332,6 +377,7 @@ Client initClient(str nme, str passwd, bstream *fin, stream *fout){
 
     c->fdin = fin? fin : bstream_create(GDKin,0);
     c->yycur = 0;
+    c->bak = NULL;
 
     c->listing = 0;
     c->fdout = fout?fout: GDKout;
@@ -387,17 +433,18 @@ the proper IO descriptors.
         GDKerror("Failed to initialize client\n");
         resetProfiler(c->fdout);
         stream_flush(c->fdout);
+        assert(c->bak==NULL);
         if( c->fdin){
-	    	/* missing protection against closing stdin stream */
+            /* missing protection against closing stdin stream */
             (void) stream_close(c->fdin->s);
             (void) stream_destroy(c->fdin->s);
             (void) bstream_destroy(c->fdin);
-	}
-        if( c->fdout) {
+        }
+        if( c->fdout && c->fdout != GDKout) {
             (void) stream_flush(c->fdout); 
             (void) stream_close(c->fdout);
             (void) stream_destroy(c->fdout);
-	}
+	    }
         /* if( c->socket) close(c->socket);*/
         return ;
     }
@@ -422,6 +469,7 @@ Client forkClient(Client father){
     if ((son = initClient( GDKstrdup(father->user),
         		father->password, father->fdin, father->fdout))){
         son->fdin= NULL;
+        son->bak= NULL;
 		son->yycur=0;
         son->father = father;
         son->scenario = GDKstrdup(father->scenario);
@@ -454,12 +502,13 @@ void freeClient(Client c)
 
     /* epilogue actions have been done already */
     if (c->father == NULL) { /* normal client */
-        if( c->fdout){
+        if( c->fdout && c->fdout != GDKout){
             resetProfiler(c->fdout);
             (void) stream_flush(c->fdout); 
             (void) stream_close(c->fdout);
             (void) stream_destroy(c->fdout);
         }
+        assert(c->bak==NULL);
         if(c->fdin){
 	    	/* missing protection against closing stdin stream */
             (void) stream_close(c->fdin->s);
@@ -586,6 +635,7 @@ void killClient(Client c){
     	(void) stream_destroy(c->fdin->s); 
     	(void) bstream_destroy(c->fdin);
     	c->fdin= NULL;
+        assert(c->bak==NULL);
 
     	GDKwarning("killClient:about to kill process ...\n");
     	sleep(PROCESSTIMEOUT);
@@ -606,11 +656,11 @@ void cleanupClients(){
 	    GDKfree(c->cwd); 
 	    c->cwd=0;
 	}
-        if( c->prompt){ 
+    if( c->prompt){ 
 	    GDKfree(c->prompt); 
 	    c->prompt=0;
 	}
-        if( c->user){ 
+    if( c->user){ 
 	    GDKfree(c->user); 
 	    c->user=0;
 	}
@@ -618,17 +668,18 @@ void cleanupClients(){
 	    GDKfree(c->password); 
 	    c->password=0;
 	}
-        if( c->fdin){
-    	    (void) stream_close(c->fdin->s);
-    	    (void) stream_destroy(c->fdin->s); 
-    	    (void) bstream_destroy(c->fdin);
-    	    c->fdin= NULL;
-        }
-        if( c->fdout){
-            resetProfiler(c->fdout);
-            (void) stream_destroy(c->fdout); 
-	    	c->fdout= NULL;
-        }
+    assert(c->bak==NULL);
+    if( c->fdin){
+        (void) stream_close(c->fdin->s);
+        (void) stream_destroy(c->fdin->s); 
+        (void) bstream_destroy(c->fdin);
+        c->fdin= NULL;
+    }
+    if( c->fdout && c->fdout != GDKout){
+        resetProfiler(c->fdout);
+        (void) stream_destroy(c->fdout); 
+        c->fdout= NULL;
+    }
     }
 }
 @-
@@ -800,21 +851,30 @@ int readClient(Client c,str prompt){
 	}
 	if (in->pos >= in->len) {
         /* end of stream reached */
+        if (c->bak) {
+            popClientInput(c);
+            return readClient(c, prompt);
+        }
         return 0;
     }
-/*
-    if( *c->nxt == '<'){
-        str nme= GDKstrdup(c->nxt+1);
-        nme[strlen(c->nxt+1)]=0;
+    if( *CURRENT(c) == '<'){
+        bstream *fdin;
+        str nme= GDKstrdup(CURRENT(c)+1);
+
+        nme[strlen(CURRENT(c)+1)]=0;
         printf("# loading from file `%s`\n",nme);
-        malLoadScript(c,nme);
+        if (malLoadScript(nme,&fdin)) {
+            return 0;
+        }
         GDKfree(nme);
-    } else
-*/
+        pushClientInput(c, fdin, c->listing, prompt);
+		return readClient(c, prompt);
+    } else {
 #ifdef MAL_CLIENT_DEBUG
-    printf("#finished\n");
+        printf("#finished\n");
 #endif
-    @:sysTrace(CURRENT(c))@
+        @:sysTrace(CURRENT(c))@
+    }
     return 1;
 }
 /* vim:set shiftwidth=4 expandtab: */
