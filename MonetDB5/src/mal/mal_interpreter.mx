@@ -374,6 +374,7 @@ str runMALsequence( malTask *task)
     int stkexception;
     str ret=0;
     ptr argv[MAXARG];
+	long total=0;
     @:performanceVariables@
 
 MALrestart:
@@ -486,6 +487,8 @@ elements in the value stack.
     case ENDsymbol: 
         if( getInstrPtr(mb,0)->token == FACTORYsymbol)
             ret= shutdownFactory(mb);
+		if( total )
+			cntxt->timer= GDKusec()-total;
         @:endProfile@
         goto MALevalExit;
     default:
@@ -592,6 +595,9 @@ possible change in the control flow.
                 @:BATfix(lhs)@
             }
             @:garbageTypeCheck@
+			/* propagate fake response time */
+			if( total )
+				cntxt->timer= GDKusec()-total;
             goto MALevalExit;
         } 
         @:endProfile@
@@ -1108,6 +1114,7 @@ starts with the exception identifer, followed by contextual details.
 	if( cntxt->timer){
 		long n= GDKusec();
 		long l= n - cntxt->timer;
+		total += l;
 		stream_printf(cntxt->fdout,"#%6d usec",l);
 		printTraceCall(cntxt,mb,stk,pci);
 	}
