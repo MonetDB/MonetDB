@@ -4,7 +4,7 @@ import mapi.*;
 
 class sample0
 {
-public static void main(String args[]){
+    public static void main(String args[]){
 	final boolean sqltest=false;
 
 	Mapi mapi= new Mapi();
@@ -45,10 +45,10 @@ public static void main(String args[]){
 		System.out.println(nme+" is "+age);
 	}
 	mapi.disconnect();
-}
+  }
 
-public static void die(Mapi m){
+  public static void die(Mapi m){
 	m.explain();
 	System.exit(0);
-}
+  }
 }
