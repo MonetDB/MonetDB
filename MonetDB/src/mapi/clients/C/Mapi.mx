@@ -2562,8 +2562,20 @@ mapi_fetch_line_internal(Mapi mid)
 char *
 mapi_fetch_line(Mapi mid)
 {
+	char *reply;
+
 	mapi_check0(mid, "mapi_fetch_line");
-	return mapi_fetch_line_internal(mid);
+	reply = mapi_fetch_line_internal(mid);
+	if (reply == NULL && mid->languageId == LANG_SQL &&
+	    !mid->active && mid->rows_affected > 0 &&
+	    mid->cache.first + mid->cache.tuplecount < mid->rows_affected) {
+		mid->active = 1;
+		stream_printf(mid->to, "X" "export %d %d\n", mid->tableid,
+			      mid->cache.first + mid->cache.tuplecount);
+		stream_flush(mid->to);
+		reply = mapi_fetch_line_internal(mid);
+	}
+	return reply;
 }
 
 @-
@@ -3219,7 +3231,8 @@ mapi_fetch_row(Mapi mid)
 	mapi_check(mid, "mapi_fetch_row");
 	if (mapi_get_row(mid) == MOK)
 		return mapi_slice_row(mid);
-	if (!mid->active && mid->rows_affected > 0 &&
+	if (mid->languageId == LANG_SQL && !mid->active &&
+	    mid->rows_affected > 0 &&
 	    mid->cache.first + mid->cache.tuplecount < mid->rows_affected) {
 		mid->active = 1;
 		stream_printf(mid->to, "X" "export %d %d\n", mid->tableid,
