@@ -1120,7 +1120,7 @@ VAR minvars;
     VAR XX;
     nseq@batloop{ 
 	XX:= new(void,dbl,Nsamples);
-	XX.setSequenceBase(oid(0))); }
+	XX.setSequenceBase(oid(0)); 
 	samples.insert($t,XX);
     }
     samples.access(BAT_READ);
