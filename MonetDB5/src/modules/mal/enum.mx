@@ -43,8 +43,7 @@ and use a mapping table to translate between the two representations.
 
 Further space optimizations into values smaller than a byte are
 impossible in Monet, since all values need to have a unique memory address.
-
-Though this may by a problem may waste memory, one should realize that 
+Though it may by a problem to waste memory, one should also realize that 
 main-memory databases suffer increasingly when the data representation gets 
 more complex. This is obviously true for complex compression schemes, but 
 even loading a single byte value is considerably slower on custom CPUs
@@ -55,11 +54,19 @@ will even be the case for long 64-bit integers.
 This module implements encodings using 'chr' (1-byte encoding),
 and 'sht' (2-byte encoding).
 
-In order to use an enumerated type, it should first be introduced as
-an ordinary type name, e.g. 'atom fruit:enum'. By default its underlying
-type is then set to 'int'.
+The prototypical use of the enum facility runs as follows.
+The user starts with collecting the values of interest in a BAT, say B.
+Subsequently, the command enum.create(:NME,B) creates a new type NME,
+whose value is taken from the elements stored in B.
+By default its underlying indexing type is then set to 'int'.
 As soon as a bat of values is associated with the type, its
 underlying type changes based on the storage space needed.
+The create command will inspect the content of B and creates a 
+BAT in the database to represent the values. 
+
+To enable the type checker to analyse the programs upfront, 
+the MAL program should 'pre-define' existence of the type
+using the instruction 'atom NME:enum'.
 
 Furthermore, the enumerated types are considered ordinary BATs,
 whose scope is limited unless they are explicitly made persistent.
@@ -108,7 +115,7 @@ comment "Return the enumeration BAT of an enum type";
 command isEnum(tpe:bat) : bit = isEnum
 comment "Returns true iff the bat is used as an enumerated type";
 
-command setHistogram(tpe:any::1, b:BAT[any,any]):void = ENUMsethisto
+pattern setHistogram(tpe:any::1, b:BAT[any,any]):void = ENUMsethisto
 comment "registers the fact that ENUMtable(tpe) is a histogram on b's head column";
 
 pattern isHistogram(tpe:any,b:BAT[any,any]) : bit = ENUMishisto
@@ -130,12 +137,20 @@ Note that we have to build the table with pre-instantiated
 function references, because there is no easy way from the GDK layer
 to access the enum administration.
 @= enumCheck
+{	str tname= getTypeName(@1);
+	b= (BAT*) BBPgetdesc(BBPindex(tname));
+	if( b==0)
+	return throwException(MALEXCEPTION,"enum.@2","illegal enum type.");
+}
+@-
+old
      for(xx=0; xx<MAX_ENUM; xx++)
 	if (ENUMtpe[xx] == @1) break;
      if ((xx>MAX_ENUM) || ((b=BBPdescriptor(ENUMmap[xx])) == NULL)) {
 	return throwException(MALEXCEPTION,"enum.@2","illegal enum type.");
      }
      (void)b;	/* keep compilers happy */
+}
 @c
 #include "gdk.h"
 #include "mal_client.h"
@@ -614,11 +629,15 @@ str ENUMtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	int xx,*retval;
 	int tpe;
+	str tname;
 
 	tpe= *(int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
 
-	@:enumCheck(tpe, ENUMtable)@
+	tname= getTypeName(getArgType(mb,pci,1));
+        b= (BAT*) BBPgetdesc(BBPindex(tname));
+        if( b == NULL)
+		return throwMessage("enum.getTable","cannot access type table");
 	*retval = b->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -633,11 +652,21 @@ str isEnum(bit *ret, int *bid){
 	return MAL_SUCCEED;
 }
 
-str ENUMsethisto(int *retval, int* tpe, int *bid) {
+str ENUMsethisto( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*column;
-	int xx;
-	@:enumCheck(*tpe, ENUMsethisto)@
-	@:getBATdescriptor(retval,bid,column,sethisto)@
+	int xx, *retval;
+	int tpe,bid;
+	str tname;
+
+	tpe= *(int*) getArgReference(stk,pci,1);
+	bid= *(int*) getArgReference(stk,pci,2);
+	retval= (int*) getArgReference(stk,pci,0);
+
+	tname= getTypeName(getArgType(mb,pci,1));
+        b= (BAT*) BBPgetdesc(BBPindex(tname));
+        if( b == NULL)
+		return throwMessage("enum.setHisto","cannot access type table");
+	@:getBATdescriptor(retval,&bid,column,sethisto)@
 	if (column->halign == 0) {
 		column->halign = OIDnew(1);
 		column->batDirtydesc = TRUE;
@@ -651,11 +680,16 @@ str ENUMishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*column;
 	int xx,*retval;
 	int tpe,*bid;
+	str tname;
 
 	tpe= *(int*) getArgReference(stk,pci,1);
 	bid= (int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:enumCheck(tpe, ENUMishisto)@
+
+	tname= getTypeName(xx= getArgType(mb,pci,1));
+        b= (BAT*) BBPgetdesc(BBPindex(tname));
+        if( b == NULL)
+		return throwMessage("enum.setHisto","cannot access type table");
 	@:getBATdescriptor(retval,bid,column,ishisto)@
 	*retval = (ENUMhisto[xx] == column->halign);
 	BBPunfix(b->batCacheid);

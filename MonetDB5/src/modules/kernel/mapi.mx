@@ -119,6 +119,7 @@ void MAPIlistenThread(int sock)
 			stream *fdin= socket_rastream(msgsock,"Mserver mapi read");
 			stream *fdout= NULL;
 			char *command= (char*) GDKmalloc(BLOCK),*s;
+			memset(command,0,BLOCK);
 
 			if( fdin== NULL){
 				GDKsyserror("mapi.listen:fdin problems\n");
@@ -129,6 +130,7 @@ void MAPIlistenThread(int sock)
 				if( command[i]=='\n') break;
 				if( i==BLOCK-1) break;
 				i++;
+				command[i]=0;
 			}
 #ifdef DEBUG_MAPI
 			printf("mapi:Client accepted %s\n", command);
@@ -244,7 +246,7 @@ str MAPIsuspendClient(int *ret, int *skey, int *timeout) {
 	return suspendClient(getClient(), *skey, *timeout);
 }
 str MAPIresumeClient(int *ret, int *skey) {
-	return resumeClient(/*getClient(*//*Stefan: unused!*/), *skey);
+	return resumeClient(getClient(), *skey);
 }
 @-
 It is advisable to trace the interactions of clients on the server

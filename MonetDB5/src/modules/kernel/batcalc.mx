@@ -251,7 +251,10 @@ command @1(x:bat[any::1,dbl],y:@2)  :bat[any::1,dbl] = CMDscience_@1;
 	@:scienceFcn(ceil)@
 	@:scienceFcn(fabs)@
 	@:scienceFcn(floor)@
+@-
+	round is not binary...
 	@:scienceFcnBinary(round,int)@
+@mal
 	@:scienceFcnBinary(fmod,dbl)@
 	@:scienceFcnBinary(atan2,dbl)@
 	@:scienceFcnBinary(pow,dbl)@
@@ -861,7 +864,10 @@ str CMDconvertvoid_oid(int *ret, int *bid){
 	@:scienceFcnImpl(ceil)@
 	@:scienceFcnImpl(fabs)@
 	@:scienceFcnImpl(floor)@
+@-
+	round is not binary...
 	@:scienceBinaryImpl(round,int)@
+@c
 	@:scienceBinaryImpl(fmod,dbl)@
 	@:scienceBinaryImpl(atan2,dbl)@
 	@:scienceBinaryImpl(pow,dbl)@

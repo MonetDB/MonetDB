@@ -316,6 +316,7 @@ comment "inplace replace values on the given locations";
 
 #end SQL enhancement
 
+command destroy(b:bat):void= CMDdestroy;
 command destroy(s:str,immediately:bit):void = CMDdestroy_bat
 comment "Schedule bat for removal upon session commit";
 
@@ -854,6 +855,12 @@ str CMDdestroy_bat(int *r,str *input, int *immediately) {
 	*r = TRUE;
 	return MAL_SUCCEED;
 } 
+str CMDdestroy(int *r,int *bid) {
+	int immediately= TRUE;
+	BAT *b;
+	@:getBATdescriptor2(r,bid,b,replace)@
+	return CMDdestroy_bat(r,&b->batId,&immediately);
+}
 str CMDdelete_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
 	@:getBATdescriptor2(r,bid,b,delete)@

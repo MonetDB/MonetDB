@@ -89,7 +89,7 @@ str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str name;
 	name = (str) getArgValue(stk,pci,1);
-	if( closeBox(name /*,FALSE*//*Stefan: unused!*/) ==0) return MAL_SUCCEED;
+	if( closeBox(name ,FALSE) ==0) return MAL_SUCCEED;
 	return throwMessage("box.close","failed to close box");
 }
 str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

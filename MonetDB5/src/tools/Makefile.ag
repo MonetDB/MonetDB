@@ -24,8 +24,6 @@
 MTSAFE
 INCLUDES = ../common ../gdk ../mal $(PTHREAD_INCS) 
 
-CXXFLAGS = $(CFLAGS)
-
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
@@ -33,8 +31,8 @@ MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
 bin_Mserver = {
 	SOURCES = Mserver.mx
 	LIBS = ../mal/libmal ../common/libmutils ../gdk/libbat \
-		../sql/parser/libsql \
 		$(MONET_LIBS) $(Z_LIBS) $(BZ_LIBS)
+#		../sql/parser/libsql 
 }
 
 scripts_mcsh = {

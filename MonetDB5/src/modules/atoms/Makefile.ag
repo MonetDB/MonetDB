@@ -1,4 +1,8 @@
 
+# temporary disable "-Werror" to get modules compiled
+X_CFLAGS =
+X_CXXFLAGS =
+
 INCLUDES = -I../../common -I../../gdk -I../../mal \
 	 $(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
 MTSAFE

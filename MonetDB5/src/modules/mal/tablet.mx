@@ -458,7 +458,7 @@ static int tablet_debug = 0;
 static Table *tableReports[MAL_MAXCLIENTS];
 
 
-void TABheaderPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+void TABformatPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Client c= getClient();
 	int rnr= c-mal_clients;
 	Table *t;
@@ -483,13 +483,13 @@ void TABheaderPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	t->pivot=0;
 }
 str TABsetFormat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	TABheaderPrepare(mb,stk,pci);
+	TABformatPrepare(mb,stk,pci);
 	return MAL_SUCCEED;
 }
 str TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	TABheaderPrepare(mb,stk,pci);
+	TABformatPrepare(mb,stk,pci);
 	TABshowHeader(tableReports[rnr]);
 	return MAL_SUCCEED;
 }
@@ -530,7 +530,7 @@ str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int rnr= c-mal_clients;
 	Table *t;
 
-	TABheaderPrepare(mb,stk,pci);
+	TABformatPrepare(mb,stk,pci);
 	t= tableReports[rnr];
 	if( t->ttopbrk==0) { LINE(t->fd,t->rowwidth);}
 	else t->fd->write(t->fd, t->ttopbrk,1,strlen(t->ttopbrk)); 
@@ -548,7 +548,7 @@ str TABsetProperties(int *ret, str *prop){
 	Client c= getClient();
 	int rnr= c-mal_clients;
 	if( tableReports[rnr]==0)
-		return throwMessage("tablet.properties","Header definition missing");
+		return throwMessage("tablet.properties","Format definition missing");
 	CLEAR(tableReports[rnr]->properties);
 	tableReports[rnr]->properties = !strNil(*prop)? GDKstrdup(*prop):0;
 	return MAL_SUCCEED;
@@ -575,7 +575,7 @@ str TABsetStream(int *ret, stream **s){
 	if( tableReports[rnr] == 0)
 		return throwMessage("tablet.setStream","Header information missing");
 	tableReports[rnr]->fd = *s;
-	return throwMessage("tablet.setStream","not yet implemented");
+	return MAL_SUCCEED;
 }
 
 str TABsetPivot(int *ret, int *bid){
@@ -603,14 +603,14 @@ str TABsetColumn( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str TABsetColumnName(int *ret, int *idx, str *s){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	makeTableSpace(rnr,*idx);
+	makeTableSpace(rnr, (*idx>=MAXARG?*idx:MAXARG));
 	tableReports[rnr]->columns[*idx].name= !strNil(*s)?GDKstrdup(*s):0;
 	return MAL_SUCCEED;
 }
 str TABsetTableBracket(int *ret, str *lbrk, str *rbrk){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	makeTableSpace(rnr,1);
+	makeTableSpace(rnr,MAXARG);
 	tableReports[rnr]->ttopbrk= !strNil(*lbrk)? GDKstrdup(*lbrk):0;
 	tableReports[rnr]->tbotbrk= !strNil(*rbrk)? GDKstrdup(*rbrk):0;
 	return MAL_SUCCEED;
@@ -618,7 +618,7 @@ str TABsetTableBracket(int *ret, str *lbrk, str *rbrk){
 str TABsetRowBracket(int *ret, str *lbrk, str *rbrk){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	makeTableSpace(rnr,1);
+	makeTableSpace(rnr,MAXARG);
 	tableReports[rnr]->rlbrk= !strNil(*lbrk)? GDKstrdup(*lbrk):0;
 	tableReports[rnr]->rrbrk= !strNil(*rbrk)? GDKstrdup(*rbrk):0;
 	return MAL_SUCCEED;
@@ -626,7 +626,7 @@ str TABsetRowBracket(int *ret, str *lbrk, str *rbrk){
 str TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	makeTableSpace(rnr,*idx);
+	makeTableSpace(rnr,(*idx>=MAXARG?*idx:MAXARG));
 	tableReports[rnr]->columns[*idx].lbrk= !strNil(*lbrk)? GDKstrdup(*lbrk):0;
 	tableReports[rnr]->columns[*idx].rbrk= !strNil(*rbrk)? GDKstrdup(*rbrk):0;
 	return MAL_SUCCEED;
@@ -634,14 +634,14 @@ str TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk){
 str TABsetColumnNull(int *ret, int *idx, str *nullstr){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	makeTableSpace(rnr,*idx);
+	makeTableSpace(rnr,(*idx>=MAXARG?*idx:MAXARG));
 	tableReports[rnr]->columns[*idx].nullstr= !strNil(*nullstr)? GDKstrdup(*nullstr):0;
 	return MAL_SUCCEED;
 }
 str TABsetColumnWidth(int *ret, int *idx, int *width){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	makeTableSpace(rnr,*idx);
+	makeTableSpace(rnr,(*idx>=MAXARG?*idx:MAXARG));
 	tableReports[rnr]->columns[*idx].maxwidth= *width;
 	return MAL_SUCCEED;
 }
@@ -650,13 +650,13 @@ str TABsetColumnPosition(int *ret, int *idx, int *first, int *width){
 	int rnr= c-mal_clients;
 	tableReports[rnr]->columns[*idx].fieldwidth= *width;
 	tableReports[rnr]->columns[*idx].fieldstart= *width;
-	makeTableSpace(rnr,*idx);
+	makeTableSpace(rnr,(*idx>=MAXARG?*idx:MAXARG));
 	return MAL_SUCCEED;
 }
 str TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec){
 	Client c= getClient();
 	int rnr= c-mal_clients;
-	makeTableSpace(rnr,*idx);
+	makeTableSpace(rnr,(*idx>=MAXARG?*idx:MAXARG));
 	if( *prec> *scale)
 		return throwMessage("tablet.setColumnDecimal","illegal range");
 	tableReports[rnr]->columns[*idx].precision= *prec;

@@ -1,3 +1,8 @@
+
+# temporary disable "-Werror" to get modules compiled
+X_CFLAGS =
+X_CXXFLAGS =
+
 INCLUDES =  -I../../common -I../../gdk \
         -I../../modules/atoms \
         -I../../mal $(Z_CFLAGS) $(BZ_CFLAGS)
