@@ -1,0 +1,197 @@
+stdout of test 'table_orderby` in directory 'tests/by_Peter` itself:
+
+#> Mtest:	milM table_orderby milM
+#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter table_orderby.milM
+# Monet Database Server V4.1
+# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
+# compiled for CYGWIN32_NT4.0/32bit on Thu Feb 24 03:32:02  2000.
+#script:table_orderby.milM
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+
+#You are system administrator (adm)!
+#-------------------------#
+# BAT:	  tmp_25| tmp_27  #
+# (void)  (str)	| (str)	  #
+#-------------------------#
+[ 0@0,	  "the",  "the"	  ]
+[ 1@0,	  "cat",  "cat"	  ]
+[ 2@0,	  "sat",  "sat"	  ]
+[ 3@0,	  "on",	  "on"	  ]
+[ 4@0,	  "the",  "the"	  ]
+[ 5@0,	  "mat",  "mat"	  ]
+#---------------------------------#
+# BAT:	  tmp_32| tmp_28	  #
+# (oid)	  (str)	| (void)	  #
+#---------------------------------#
+[ 1@0,	  "cat",  10001@0	  ]
+[ 5@0,	  "mat",  10005@0	  ]
+[ 3@0,	  "on",	  10003@0	  ]
+[ 2@0,	  "sat",  10002@0	  ]
+[ 4@0,	  "the",  10004@0	  ]
+[ 0@0,	  "the",  10000@0	  ]
+#---------------------------------#
+# BAT:	  tmp_25| tmp_31	  #
+# (void)  (str)	| (oid)		  #
+#---------------------------------#
+[ 0@0,	  "the",  10000@0	  ]
+[ 1@0,	  "cat",  10001@0	  ]
+[ 2@0,	  "sat",  10002@0	  ]
+[ 3@0,	  "on",	  10003@0	  ]
+[ 4@0,	  "the",  10004@0	  ]
+[ 5@0,	  "mat",  10005@0	  ]
+#-----------------------------------------#
+# BAT:	  tmp_36	| tmp_32| tmp_34  #
+# (void)  (oid)		| (str)	| (bit)	  #
+#-----------------------------------------#
+[ 0@0,	  10000@0,	  "the",  false	  ]
+[ 1@0,	  10000@0,	  "cat",  false	  ]
+[ 2@0,	  10001@0,	  "sat",  false	  ]
+[ 3@0,	  10001@0,	  "on",	  false	  ]
+[ 4@0,	  10002@0,	  "the",  false	  ]
+[ 5@0,	  10002@0,	  "mat",  false	  ]
+[ 6@0,	  10003@0,	  "the",  false	  ]
+[ 7@0,	  10003@0,	  "cat",  false	  ]
+[ 8@0,	  10004@0,	  "sat",  false	  ]
+[ 9@0,	  10004@0,	  "on",	  false	  ]
+[ 10@0,	  10005@0,	  "the",  false	  ]
+[ 11@0,	  10005@0,	  "mat",  false	  ]
+[ 12@0,	  20000@0,	  "the",  false	  ]
+[ 13@0,	  20000@0,	  "cat",  true	  ]
+[ 14@0,	  20002@0,	  "sat",  true	  ]
+[ 15@0,	  20002@0,	  "on",	  true	  ]
+[ 16@0,	  20004@0,	  "the",  true	  ]
+[ 17@0,	  20004@0,	  "mat",  true	  ]
+[ 18@0,	  20006@0,	  "the",  true	  ]
+[ 19@0,	  20006@0,	  "cat",  true	  ]
+[ 20@0,	  20008@0,	  "sat",  true	  ]
+[ 21@0,	  20008@0,	  "on",	  true	  ]
+[ 22@0,	  20010@0,	  "the",  true	  ]
+[ 23@0,	  20010@0,	  "mat",  true	  ]
+#-----------------------------------------#
+# BAT:	  tmp_35	| tmp_32| tmp_34  #
+# (oid)	  (oid)		| (str)	| (bit)	  #
+#-----------------------------------------#
+[ 1@0,	  10000@0,	  "cat",  false	  ]
+[ 0@0,	  10000@0,	  "the",  false	  ]
+[ 3@0,	  10001@0,	  "on",	  false	  ]
+[ 2@0,	  10001@0,	  "sat",  false	  ]
+[ 5@0,	  10002@0,	  "mat",  false	  ]
+[ 4@0,	  10002@0,	  "the",  false	  ]
+[ 7@0,	  10003@0,	  "cat",  false	  ]
+[ 6@0,	  10003@0,	  "the",  false	  ]
+[ 9@0,	  10004@0,	  "on",	  false	  ]
+[ 8@0,	  10004@0,	  "sat",  false	  ]
+[ 11@0,	  10005@0,	  "mat",  false	  ]
+[ 10@0,	  10005@0,	  "the",  false	  ]
+[ 13@0,	  20000@0,	  "cat",  true	  ]
+[ 12@0,	  20000@0,	  "the",  false	  ]
+[ 15@0,	  20002@0,	  "on",	  true	  ]
+[ 14@0,	  20002@0,	  "sat",  true	  ]
+[ 17@0,	  20004@0,	  "mat",  true	  ]
+[ 16@0,	  20004@0,	  "the",  true	  ]
+[ 19@0,	  20006@0,	  "cat",  true	  ]
+[ 18@0,	  20006@0,	  "the",  true	  ]
+[ 21@0,	  20008@0,	  "on",	  true	  ]
+[ 20@0,	  20008@0,	  "sat",  true	  ]
+[ 23@0,	  20010@0,	  "mat",  true	  ]
+[ 22@0,	  20010@0,	  "the",  true	  ]
+#-----------------------------------------#
+# BAT:	  tmp_30	| tmp_33| tmp_34  #
+# (void)  (oid)		| (str)	| (bit)	  #
+#-----------------------------------------#
+[ 13@0,	  20000@0,	  "cat",  true	  ]
+[ 19@0,	  20006@0,	  "cat",  true	  ]
+[ 7@0,	  10003@0,	  "cat",  false	  ]
+[ 1@0,	  10000@0,	  "cat",  false	  ]
+[ 11@0,	  10005@0,	  "mat",  false	  ]
+[ 17@0,	  20004@0,	  "mat",  true	  ]
+[ 5@0,	  10002@0,	  "mat",  false	  ]
+[ 23@0,	  20010@0,	  "mat",  true	  ]
+[ 15@0,	  20002@0,	  "on",	  true	  ]
+[ 3@0,	  10001@0,	  "on",	  false	  ]
+[ 21@0,	  20008@0,	  "on",	  true	  ]
+[ 9@0,	  10004@0,	  "on",	  false	  ]
+[ 2@0,	  10001@0,	  "sat",  false	  ]
+[ 8@0,	  10004@0,	  "sat",  false	  ]
+[ 14@0,	  20002@0,	  "sat",  true	  ]
+[ 20@0,	  20008@0,	  "sat",  true	  ]
+[ 12@0,	  20000@0,	  "the",  false	  ]
+[ 18@0,	  20006@0,	  "the",  true	  ]
+[ 22@0,	  20010@0,	  "the",  true	  ]
+[ 0@0,	  10000@0,	  "the",  false	  ]
+[ 6@0,	  10003@0,	  "the",  false	  ]
+[ 16@0,	  20004@0,	  "the",  true	  ]
+[ 10@0,	  10005@0,	  "the",  false	  ]
+[ 4@0,	  10002@0,	  "the",  false	  ]
+#-----------------------------------------#
+# BAT:	  tmp_30	| tmp_35| tmp_34  #
+# (void)  (oid)		| (str)	| (bit)	  #
+#-----------------------------------------#
+[ 1@0,	  10000@0,	  "cat",  false	  ]
+[ 7@0,	  10003@0,	  "cat",  false	  ]
+[ 13@0,	  20000@0,	  "cat",  true	  ]
+[ 19@0,	  20006@0,	  "cat",  true	  ]
+[ 5@0,	  10002@0,	  "mat",  false	  ]
+[ 11@0,	  10005@0,	  "mat",  false	  ]
+[ 17@0,	  20004@0,	  "mat",  true	  ]
+[ 23@0,	  20010@0,	  "mat",  true	  ]
+[ 3@0,	  10001@0,	  "on",	  false	  ]
+[ 9@0,	  10004@0,	  "on",	  false	  ]
+[ 15@0,	  20002@0,	  "on",	  true	  ]
+[ 21@0,	  20008@0,	  "on",	  true	  ]
+[ 2@0,	  10001@0,	  "sat",  false	  ]
+[ 8@0,	  10004@0,	  "sat",  false	  ]
+[ 14@0,	  20002@0,	  "sat",  true	  ]
+[ 20@0,	  20008@0,	  "sat",  true	  ]
+[ 0@0,	  10000@0,	  "the",  false	  ]
+[ 4@0,	  10002@0,	  "the",  false	  ]
+[ 6@0,	  10003@0,	  "the",  false	  ]
+[ 10@0,	  10005@0,	  "the",  false	  ]
+[ 12@0,	  20000@0,	  "the",  false	  ]
+[ 16@0,	  20004@0,	  "the",  true	  ]
+[ 18@0,	  20006@0,	  "the",  true	  ]
+[ 22@0,	  20010@0,	  "the",  true	  ]
+#-----------------------------------------#
+# BAT:	  tmp_30	| tmp_32| tmp_36  #
+# (void)  (oid)		| (str)	| (bit)	  #
+#-----------------------------------------#
+[ 1@0,	  10000@0,	  "cat",  false	  ]
+[ 0@0,	  10000@0,	  "the",  false	  ]
+[ 3@0,	  10001@0,	  "on",	  false	  ]
+[ 2@0,	  10001@0,	  "sat",  false	  ]
+[ 5@0,	  10002@0,	  "mat",  false	  ]
+[ 4@0,	  10002@0,	  "the",  false	  ]
+[ 7@0,	  10003@0,	  "cat",  false	  ]
+[ 6@0,	  10003@0,	  "the",  false	  ]
+[ 9@0,	  10004@0,	  "on",	  false	  ]
+[ 8@0,	  10004@0,	  "sat",  false	  ]
+[ 11@0,	  10005@0,	  "mat",  false	  ]
+[ 10@0,	  10005@0,	  "the",  false	  ]
+[ 12@0,	  20000@0,	  "the",  false	  ]
+[ 13@0,	  20000@0,	  "cat",  true	  ]
+[ 15@0,	  20002@0,	  "on",	  true	  ]
+[ 14@0,	  20002@0,	  "sat",  true	  ]
+[ 17@0,	  20004@0,	  "mat",  true	  ]
+[ 16@0,	  20004@0,	  "the",  true	  ]
+[ 19@0,	  20006@0,	  "cat",  true	  ]
+[ 18@0,	  20006@0,	  "the",  true	  ]
+[ 21@0,	  20008@0,	  "on",	  true	  ]
+[ 20@0,	  20008@0,	  "sat",  true	  ]
+[ 23@0,	  20010@0,	  "mat",  true	  ]
+[ 22@0,	  20010@0,	  "the",  true	  ]
