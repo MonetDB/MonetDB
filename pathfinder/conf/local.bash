@@ -14,12 +14,12 @@ done
 
 if [ "${xml}" ] ; then
 	conf_opts="${conf_opts} --with-libxml2=${xml}"
-	if [ "${xml#/usr}" != "${xml}" ] ; then
-		binpath="${binpath}:${xml}/bin"
-		libpath="${libpath}:${xml}/lib"
-	  else
+	if [ "${xml#/usr}" = "${xml}" ] ; then
 		binpath="${xml}/bin:${binpath}"
 		libpath="${xml}/lib:${libpath}"
+	  elif [ "${xml}" != "/usr" ] ; then
+		binpath="${binpath}:${xml}/bin"
+		libpath="${libpath}:${xml}/lib"
 	fi
 fi
 
