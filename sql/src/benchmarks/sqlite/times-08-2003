@@ -4,6 +4,7 @@
 # Clients try to send as many queries as possible in one go
 # Server returns header/table in one send
 #
+# monet configured with --enable-debug
 
 01	1000 inserts
 

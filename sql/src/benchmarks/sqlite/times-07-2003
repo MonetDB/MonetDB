@@ -1,3 +1,6 @@
+
+# Monet/sql configured with --enable-debug
+
 test01.sql
 
 real	0m1.437s
