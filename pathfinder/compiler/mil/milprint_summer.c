@@ -3093,11 +3093,19 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
             "seqb := nil_oid;\n"
             "ws_prop_text.insert(unq_str);\n"
             "unq_str := nil_oid_str;\n"
-            /* get the property values of the strings */
-            "var strings := item%s;\n"
-            "var newPre_prop := strings.leftjoin(ws_prop_text.reverse());\n"
-            "strings := nil_oid_str;\n",
-            (rc)?item_ext:val_join(STR));
+            /* get the property values of the strings; */
+            /* we invest in sorting ws_prop_text &  X_strings/item%s on the TYPE_str join columns */
+            /* as the mergejoin proved to be faster and more robust with large BATs than a hashjoin */
+            "var ws_text_prop := ws_prop_text.reverse().sort();\n"
+            "var X_item := item%s.mark(0@0).reverse();\n"
+            "var X_strings := item%s.reverse().mark(0@0).sort().reverse();\n"
+            "var X_prop := X_strings.leftjoin(ws_text_prop);\n"
+            "X_strings := nil_oid_str;\n"
+            "ws_text_prop := nil;\n"
+            "var newPre_prop := X_item.reverse().leftjoin(X_prop);\n"
+            "X_item := nil;\n"
+            "X_prop := nil;\n",
+            (rc)?item_ext:val_join(STR), (rc)?item_ext:val_join(STR));
 
     if (rcode)
     {
