@@ -631,7 +631,7 @@ int isTouched(MalBlkPtr mb, int varid, int p1, int p2){
 @+ Flow analysis
 The flow graph plays a crucial role in many optimization steps.
 It is unclear as yet what primitives and what storage structure is
-most adequate. For the time being introduce the operations needed and
+most adequate. For the time being we introduce the operations needed and
 evaluate them directly against the program
 
 The routine flowStep(pca,pcb) checks whether the output of instruction
@@ -659,7 +659,14 @@ int flowStep(MalBlkPtr mb, int pca, int pcb){
     }
     return TRUE;
 }
-
+@+ Basic Algebraic Blocks
+Many code snippets produced by e.g. the SQL compiler is just 
+a linear representation of an algebra tree/graph. Its detection
+makes a number of optimization decisions more easy, because
+the operations are known to be side-effect free within the tree/graph.
+This can be used to re-order the plan without concern on impact of the outcome.
+It suffice to respect the flow graph.
+[unclear as what we need]
 @+ Alias Removal
 The alias removal walks through the program looking for simple
 assignment statements, e.g. V:=W. It will replace all subsequent
