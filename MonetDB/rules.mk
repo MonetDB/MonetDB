@@ -99,4 +99,10 @@ MXFLAGS= -notouch
 $(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
 	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
 
+$(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
+
+$(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
+	$(COMPILE) -O0 -c $<
+
 SUFFIXES-local: $(BUILT_SOURCES)
