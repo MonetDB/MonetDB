@@ -170,6 +170,7 @@ str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule){
 	size_t i;
 	@:getBATdescriptor(&ret,bid,b,hasChunkMoreElements)@
 	@:getBATdescriptor(&ret,vid,view,hasChunkMoreElements)@
+	(void)ret;
 	i = *res + BATcount(view);
 	if( i >= BUNindex(b,BUNlast(b)) ){
 		*res = -1;
