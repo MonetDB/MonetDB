@@ -74,6 +74,10 @@ static PyObject *ErrorObject;
 %}
 
 %{
+/*
+  helper code for SQLWCHAR parameters
+ */
+
 static PyObject *
 PyUnicode_FromSqlWChar(const SQLWCHAR *s, SQLSMALLINT l)
 {
@@ -116,9 +120,6 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 }
 %}
 
-/*
-  helper code for SQLWCHAR parameters
- */
 %typemap(in, numinputs=1) (SQLWCHAR *STRING, int LENGTH) (int len) {
 	if (($1 = SqlWChar_FromPyUnicode($input, &len)) == NULL) goto fail;
 	$2 = ($2_type) len;
@@ -293,6 +294,8 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	}
 	$result = t_output_helper($result, o);
 }
+
+%ignore SQLColAttributes;
 
 // SQLColumnPrivileges, SQLPrimaryKeys, SQLProcedureColumns, SQLProcedures,
 // SQLTablePrivileges
@@ -1110,6 +1113,7 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 		Py_XDECREF(o);
 		SWIG_fail;
 	}
+	$result = t_output_helper($result, o);
 }
 
 // SQLGetInfo
@@ -1403,6 +1407,10 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	case SQL_NULL_COLLATION:
 	case SQL_QUOTED_IDENTIFIER_CASE:
 	case SQL_TXN_CAPABLE:
+	case SQL_FETCH_DIRECTION:
+	case SQL_ODBC_API_CONFORMANCE:
+	case SQL_ODBC_SQL_CONFORMANCE:
+	case SQL_SCROLL_CONCURRENCY:
 		/* SQLUSMALLINT */
 		o = PyInt_FromLong((long) * (SQLUSMALLINT *) $2);
 		break;
@@ -1514,10 +1522,13 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	case SQL_TIMEDATE_FUNCTIONS:
 	case SQL_TXN_ISOLATION_OPTION:
 	case SQL_UNION:
+	case SQL_LOCK_TYPES:
+	case SQL_POS_OPERATIONS:
+	case SQL_POSITIONED_STATEMENTS:
 		/* SQLUINTEGER */
 		o = PyInt_FromLong((long) * (SQLUINTEGER *) $2);
 		break;
-	case SQL_POS_OPERATIONS:
+	case SQL_STATIC_SENSITIVITY:
 		/* SQLINTEGER */
 		o = PyInt_FromLong((long) * (SQLINTEGER *) $2);
 		break;
@@ -1722,6 +1733,14 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$action
 	CheckResult(result, SQL_HANDLE_DBC, arg1)
 }
+%exception SQLBrowseConnect {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLBulkOperations {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
 %exception SQLCancel {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
@@ -1734,19 +1753,59 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
+%exception SQLColumnPrivileges {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
 %exception SQLColumns {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
+%exception SQLConnect {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLCopyDesc {
+	$action
+	CheckResult(result, SQL_HANDLE_DESC, arg1)
+}
+%exception SQLDataSources {
+	$action
+	CheckResult(result, SQL_HANDLE_ENV, arg1)
+}
 %exception SQLDescribeCol {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLDescribeParam {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLDisconnect {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLDriverConnect {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLDrivers {
+	$action
+	CheckResult(result, SQL_HANDLE_ENV, arg1)
+}
+%exception SQLEndTran {
+	$action
+	CheckResult(result, arg1, arg2)
 }
 %exception SQLExecDirect {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
 %exception SQLExecute {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLExtendedFetch {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
@@ -1758,9 +1817,33 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
+%exception SQLForeignKeys {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLFreeConnect {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLFreeEnv {
+	$action
+	CheckResult(result, SQL_HANDLE_ENV, arg1)
+}
+%exception SQLFreeHandle {
+	$action
+	CheckResult(result, arg1, arg2)
+}
 %exception SQLFreeStmt {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLGetConnectAttr {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLGetConnectOption {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
 }
 %exception SQLGetCursorName {
 	$action
@@ -1774,6 +1857,26 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 		return Py_None;
 	}
 }
+%exception SQLGetDescField {
+	$action
+	CheckResult(result, SQL_HANDLE_DESC, arg1)
+}
+%exception SQLGetDescRec {
+	$action
+	CheckResult(result, SQL_HANDLE_DESC, arg1)
+}
+%exception SQLGetEnvAttr {
+	$action
+	CheckResult(result, SQL_HANDLE_ENV, arg1)
+}
+%exception SQLGetFunctions {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLGetInfo {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
 %exception SQLGetStmtAttr {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
@@ -1786,6 +1889,18 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
+%exception SQLMoreResults {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLNativeSql {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLNumParams {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
 %exception SQLNumResultCols {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
@@ -1794,7 +1909,23 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
+%exception SQLParamOptions {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
 %exception SQLPrepare {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLPrimaryKeys {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLProcedureColumns {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLProcedures {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
@@ -1806,7 +1937,35 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
+%exception SQLSetConnectAttr {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
+%exception SQLSetConnectOption {
+	$action
+	CheckResult(result, SQL_HANDLE_DBC, arg1)
+}
 %exception SQLSetCursorName {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLSetDescField {
+	$action
+	CheckResult(result, SQL_HANDLE_DESC, arg1)
+}
+%exception SQLSetDescRec {
+	$action
+	CheckResult(result, SQL_HANDLE_DESC, arg1)
+}
+%exception SQLSetEnvAttr {
+	$action
+	CheckResult(result, SQL_HANDLE_ENV, arg1)
+}
+%exception SQLSetPos {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLSetScrollOptions {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
@@ -1826,9 +1985,21 @@ SqlWChar_FromPyUnicode(PyObject *o, int *lp)
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
 }
+%exception SQLTablePrivileges {
+	$action
+	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
 %exception SQLTables {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
+}
+%exception SQLTransact {
+	$action
+	if (arg1 == Py_None) {
+		CheckResult(result, SQL_HANDLE_ENV, arg2)
+	} else {
+		CheckResult(result, SQL_HANDLE_DBC, arg1)
+	}
 }
 
 %ignore __SQL_H;
