@@ -611,17 +611,8 @@ static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
                 fatal_err(ctx,"NIL BAT[\"%s\"]\n",name);
         if (is_fake_project(b)) {
         	res = BUNtail(b,BUNfirst(b));
-        } else if ( BUNsize(b) == 1 ) {
-                /* There is a probably bug in monet. The else code should work */
-                /* for all situations but does not work for all BAT[void,chr] */
-                /* arguments. At the moment some do and some don't. */
-                /* I reported this bug once and then I could not reproduce */
-                /* the failure. But it still fails for the 'kind' BAT in */
-                /* the xquery_result_main() function */
-                BUN bun = BUNfirst(b);
-                res = &bun[oid_index];
         } else {
-                oid real_index = oid_index + 1; /*this one cost me 2 hrs */
+                oid real_index = oid_index + BUNindex(b,BUNfirst(b));
 
                 BUN bun = BUNptr(b,real_index);
                 res = BUNtail(b,bun);
