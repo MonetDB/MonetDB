@@ -42,6 +42,8 @@ blob (excluding the integer), and then just binary data.
       .NEQUAL  = blob_nequal;
       .HASH    = blob_hash;
       .NULL    = blob_null;
+      .WRITE   = blob_write;
+      .READ    = blob_read;
       .CONVERT = blob_convert;
       .PUT     = blob_put;
       .DEL     = blob_del;
@@ -166,6 +168,22 @@ blob* blob_null(void)
    static blob nullval;
    nullval.nitems = ~(size_t)0;
    return(&nullval);
+}
+
+blob *blob_read(blob *a, stream *s, size_t cnt) {
+	int len;
+	assert(cnt==1);
+	stream_readInt(s, &len);
+	a = GDKmalloc(len);
+	stream_read(s, (char*)a, len, 1);
+	return a;
+} 
+
+void blob_write(blob *a, stream *s, size_t cnt) {
+	int len = blobsize(a->nitems);
+	assert(cnt==1);
+	stream_writeInt(s, (int) len);
+	stream_write(s, (char*)a, len, 1 );
 }
 
 void blob_convert( blob *b, int direction){
