@@ -1059,6 +1059,7 @@ public class MonetConnection extends Thread implements Connection {
 				hdrl.addError(e.toString());
 			}
 		} catch (IOException e) {
+			closed = true;
 			hdrl.addError(e.getMessage() + " (Mserver still alive?)");
 		}
 		// close the header list, no more headers will follow
@@ -1104,6 +1105,7 @@ public class MonetConnection extends Thread implements Connection {
 				// it promises.
 				rawr.finish();
 			} catch (IOException e) {
+				closed = true;
 				rawr.addError("Unexpected end of stream, Mserver still alive? " + e.toString());
 			}
 		}
