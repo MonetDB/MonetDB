@@ -37,7 +37,8 @@ class MapiError(Exception):
     pass
 
 class server:
-    def __init__(self, server, port, user):
+    language = None
+    def __init__(self, server, port, user="monetdb", password="monetdb", language="mil"):
         self.prompt = 0
         self.prompt1 = u'\1\1\n'
         self.prompt2 = u'\1\2\n'
@@ -48,11 +49,13 @@ class server:
         except (IOError, error), e:
             raise MapiError, e.args
 
-        self.cmd_intern(user+'\n')
+        self.cmd_intern(user+':'+password+'\n')
         self.result()
 
         if trace:
             print 'connected ', self.socket
+
+        self.language = language
 
     def cmd_intern(self, cmd):
         # convert to UTF-8 encoding
@@ -114,6 +117,8 @@ class server:
         # add linefeed if missing
         if cmd[-1:] != '\n':
             cmd += '\n'
+        if (self.language == 'sql'):
+            cmd = 's' + cmd
         self.cmd_intern(cmd)
         return self.result()
 
