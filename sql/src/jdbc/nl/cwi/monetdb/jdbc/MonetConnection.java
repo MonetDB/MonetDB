@@ -771,31 +771,37 @@ public class MonetConnection extends Thread implements Connection {
 	private int state = WAIT;
 
 	public void run() {
-		while(state != DEAD) {
-			Object cur;
-			synchronized(queryQueue) {
-				cur = null;
-				if (queryQueue.size() == 0) {
-					try {
-						state = WAIT;
-						queryQueue.wait();
-					} catch (InterruptedException e) {
-						// possible shutdown of this thread?
-						// next condition check will act appropriately
+		try {
+			while(state != DEAD) {
+				Object cur;
+				synchronized(queryQueue) {
+					cur = null;
+					if (queryQueue.size() == 0) {
+						try {
+							state = WAIT;
+							queryQueue.wait();
+						} catch (InterruptedException e) {
+							// possible shutdown of this thread?
+							// next condition check will act appropriately
+						}
+						continue;
+					} else {
+						cur = queryQueue.remove(0);
 					}
-					continue;
-				} else {
-					cur = queryQueue.remove(0);
+				}
+
+				// at this point we have a valid cur, since the wait continues
+				// and skips this part
+				if (cur instanceof HeaderList) {
+					processQuery((HeaderList)cur);
+				} else if (cur instanceof RawResults) {
+					fetchBlock((RawResults)cur);
 				}
 			}
-
-			// at this point we have a valid cur, since the wait continues
-			// and skips this part
-			if (cur instanceof HeaderList) {
-				processQuery((HeaderList)cur);
-			} else if (cur instanceof RawResults) {
-				fetchBlock((RawResults)cur);
-			}
+		} catch (Throwable t) {	// we catch EVERYTHING!
+			// this thread will die, so before doing so,
+			// set it's state appropriately
+			state = DEAD;
 		}
 	}
 
@@ -1443,7 +1449,7 @@ public class MonetConnection extends Thread implements Connection {
 
 		/**
 		 * Marks this Header as being completed.  A complete Header needs
-		 * to be consistant with regards to its internal data.
+		 * to be consistent with regard to its internal data.
 		 *
 		 * @throws SQLException if the data currently in this Header is not
 		 *                      sufficient to be consistant
