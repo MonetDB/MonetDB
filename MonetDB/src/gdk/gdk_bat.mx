@@ -1346,9 +1346,9 @@ as well as their update permissions (readonly,append-only,writable).
 
 Let us recall the two main memory mapped file modes used to store heaps:
 \begin{itemize}
-\item STORE\_MMAP files must be readonly, because you never know the exact saved status. 
+\item STORE_MMAP files must be readonly, because you never know the exact saved status. 
       HEAPsave consists of the rather efficient msync(X).
-\item STORE\_PRIV files modify pages in swap area, and can be writable. 
+\item STORE_PRIV files modify pages in swap area, and can be writable. 
       HEAPsave actually does a full write(X), while the mapped file stays in X.priv
 \end{itemize}
 Notice that PRIV storage is only required for persistent BATs that are already committed 
@@ -1356,7 +1356,7 @@ on disk. The crash-consistent state of transient BATs is irrelevant as they disa
 after a crash. Even the crash-consistency of persistent BATs that did not make their first
 commit is not relevant as they also will disappear.
 
-Also, some heaps may be in use with STORE\_MMAP even if they are appendable, as we suppose our
+Also, some heaps may be in use with STORE_MMAP even if they are appendable, as we suppose our
 code is bug-free (:-) and we know we won't modify the already committed parts of the mapped
 file pages. For string-heaps append-bats may mmap the heap if doubles are not  being eliminated
 anymore (i.e. when the contents of the builtin hash table at the start of the string heap
@@ -1428,7 +1428,7 @@ int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
 
 Checks legal heap modes. This is done at BATsave time on a temporary copy of the BAT descriptor
 (DESCsetmodes). It now is also used from TMcommit, as one of the cirteria for whether a heap
-needs priv storage is whether the BAT has been committed ever (see also dirty\_bat() in gdk\_bbp.mx).
+needs priv storage is whether the BAT has been committed ever (see also dirty_bat() in gdk_bbp.mx).
 @c
 static int HEAPcheckmode(Heap *h, int persistent, int unloadable, int writeable) {
 	/* user may have requested illegal or system-wise unwanted mmap modes. correct this */
@@ -1521,8 +1521,8 @@ readonly:                                                when made writable:
 (4) [ H=map, M=priv,F=X.priv ] n.a.                      goto (1)
 \end{verbatim}
 
-Now we see that for BBPsync (heap\_move) it is sufficient to check for the .priv
-suffix to determine the appropriate backup\_bat behavior (i.e. register a X .killfile
+Now we see that for BBPsync (heap_move) it is sufficient to check for the .priv
+suffix to determine the appropriate backup_bat behavior (i.e. register a X .killfile
 anticipating the write(X) besides a X.priv).
 
 HEAPsave: we do not need to worry about saving readonly bats: as we save them in 
@@ -1629,28 +1629,28 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    } else {
 		if (mode == BAT_WRITE) {
 		    m1 = HEAPsetpriv(b->batBuns, committed, &remap, &reload);
-		} else if (b->batBuns->storage == BAT_WRITE) {
+		} else {
 		    m1 = HEAPsetmmap(b->batBuns, &remap);
 		}
 		if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, &b->hheap))) {
 		    m2 = HEAPsetpriv(&b->hheap, committed, &remap, &reload);
-		} else if (b->hheap.storage == BAT_WRITE) {
+		} else {
 		    m2 = HEAPsetmmap(&b->hheap, &remap);
 		}
 		if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, &b->theap))) {
 		    m3 = HEAPsetpriv(&b->theap, committed, &remap, &reload);
-		} else if (b->theap.storage == BAT_WRITE) {
+		} else {
 		    m3 = HEAPsetmmap(&b->theap, &remap);
 		}
-		if (mode != BAT_READ && b->haccelerator.storage == BAT_READ) {
+		if (mode != BAT_READ) {
 		    m4 = HEAPsetpriv(&b->haccelerator, committed, &remap, &reload);
-		} else if (mode == BAT_READ && b->haccelerator.storage != BAT_READ) {
+		} else {
 		    m4 = HEAPsetmmap(&b->haccelerator, &remap);
 		}
-		if (mode != BAT_READ && b->taccelerator.storage == BAT_READ) {
+		if (mode != BAT_READ) {
 		    m5 = HEAPsetpriv(&b->taccelerator, committed, &remap, &reload);
-	 	} else if (mode == BAT_READ && b->taccelerator.storage != BAT_READ) { 
-		    m5 = HEAPsetmmap(&b->taccelerator, &remap); 
+	 	} else { /* BAT_APPEND || BAT_WRITE */
+		    m5 = HEAPsetmmap(&b->taccelerator, &remap);
 		}
 	    }
 	    if (remap && b->batCopiedtodisk && dirty) {

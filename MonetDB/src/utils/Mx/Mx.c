@@ -59,7 +59,6 @@ int	mode= M_TEXT;
 int	opt_column= 1;
 int	opt_hide= NO_HIDE;
 int	textmode= M_TEX;
-int	bodymode= 0;	/* all should be shown */
 char	*opt_code;
 char    *defHideText=0;
 
@@ -99,7 +98,6 @@ char **	argv;
 		Message("\t-d\t\tProduce a draft document");
 		Message("\t-x <extension>\tExtract <extension> labelled code");
 		Message("\t-w\t\tExtract HTML code");
-		Message("\t-W\t\tExtract HTML code for inclusion");
 		Message("\t-D <id>\t\tDefine macro 'id'");
 		Message("\t-T <string>\tDefine default hide text <string>");
 		Message("\t-l\t\tNo #line and alike statements");
@@ -113,7 +111,7 @@ char **	argv;
 
 /* Preprocess the arguments.
  */
-	while ((i = getopt(argc, argv, "stcC:x:Bwdg:D:R:S:H:12T:ln+")) != EOF) {
+	while ((i = getopt(argc, argv, "stcC:x:wdg:D:R:S:H:12T:ln+")) != EOF) {
 		switch (i) {
 		case 's':
 			textmode = M_MS;
@@ -131,8 +129,6 @@ char **	argv;
 		case 'x':	/* code can be extracted selectively */
 			mode = M_CODE;
 			addextension(optarg);
-			break;
-		case 'B': bodymode = 1; /* use for inclusion */
 			break;
 		case 'w':
 			textmode = M_WWW; 

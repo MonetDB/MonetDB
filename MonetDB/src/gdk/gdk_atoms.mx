@@ -172,6 +172,7 @@ gdk_export int          strCmpNoNil    (unsigned char *l, unsigned char *r);
 Return 0 on l==r, < 0 iff l < r, >0 iff l > r  
 @c
 #include "gdk.h"
+
 #include <math.h>		/* for INFINITY and NAN */
 
 int chrCmp(chr* l, chr* r) { return simple_CMP(l,r,chr); }
@@ -699,10 +700,8 @@ with atomic types that have logical references (e.g. BATs of BATs but
 also BATs of ODMG odSet) can never be persistent, as this would make
 the commit tremendously complicated.
 @h
-#define ATOMput(P1, P2, p3, p4)				\
+#define ATOMput(P1, P2, P3, P4)				\
 { int t_ = (P1);                                 	\
-  ptr P3 = (ptr)(p3);					\
-  ptr P4 = (ptr)(p4);					\
   if (t_ == TYPE_oid || t_ == TYPE_ptr || t_ > TYPE_str)\
         t_ = ATOMstorage(t_);                           \
   if (t_ <= TYPE_bat) {					\
@@ -1479,7 +1478,7 @@ var_t strLocate(Heap *h, str v) {
 	var_t *l, *e = htab + (strOldHash(v) & GDK_STRHASHMASK); 
 
 	if (*e) {
-		for (l = e; *l && *l < h->free; l = (var_t*) ((char *) h->base + *l)) {
+		for (l = e; *l; l = (var_t*) ((char *) h->base + *l)) {
 			str x = (str) ((char *) h->base + *l + sizeof(var_t)); 
 			if (GDK_STRCMP(v, x) == 0) {
 				return *l + (var_t) sizeof(var_t);
@@ -1496,13 +1495,13 @@ void strHeapConvert(Heap *h,int dir) {
 
 	if (dir == CONV_HTON){
 	    for(i=0; i<GDK_STRHASHTABLE; i++) {
-		for (l= htab+i; (j=*l) != 0 && j < h->free; l=(var_t*) (h->base + j)) {
+		for (l= htab+i; (j=*l) != 0; l=(var_t*) (h->base + j)) {
 			*l = normal_vart_SWAP(j);
 		}
 	    }
 	} else {
 	    for(i=0; i<GDK_STRHASHTABLE; i++) {
-		for (l= htab+i; (j=*l) != 0 && j < h->free; l=(var_t*) (h->base + *l)) {
+		for (l= htab+i; (j=*l) != 0; l=(var_t*) (h->base + *l)) {
 			*l = normal_vart_SWAP(j);
 		}
 	    }
@@ -1519,7 +1518,7 @@ var_t strPut(Heap *h, var_t *dst, str v) {
 
 	/* search hash-table, if double-elimination is still in place */
 	off = strOldHash(v) & GDK_STRHASHMASK; 
-	for (l = ((var_t*) h->base) + off; *l && *l < h->free; l = (var_t*) (h->base + *l)) {
+	for (l = ((var_t*) h->base) + off; *l; l = (var_t*) (h->base + *l)) {
 		str x = (str) (h->base + *l + sizeof(var_t)); 
 		if (GDK_STRCMP(v, x) == 0) {
 			*dst = *l + (var_t) sizeof(var_t); /* already in heap; do not insert! */
