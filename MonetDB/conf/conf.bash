@@ -218,7 +218,8 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
 	fi
-	if [ "${hw}" = "x86_64"  -a  "${host%.ins.cwi.nl}" = "spin"  -a  "${COMP}" = "GNU" ] ; then
+	domain="`domainname`"
+	if [ "${hw}" = "x86_64"  -a  "${domain}" = "beo-cluster"  -a  "${COMP}" = "GNU" ] ; then
 		# currently we need to use "gcc-3.3" & "g++-3.3" on spin
 		cc="gcc-3.3"
 		cxx="g++-3.3"
