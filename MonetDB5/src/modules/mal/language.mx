@@ -93,9 +93,6 @@ address CMDcallBAT
 comment "Evaluate a program stored in a BAT";
 command source(f:str):void
 address CMDevalFile
-comment "Execute the program in a (local) file";
-pattern include(f:str):void
-address CMDincludeFile
 comment "Merge the instructions stored in the 
 	file with the current program";
 @-
