@@ -23,10 +23,10 @@ $(SRCDIR)\Makefile.msc: $(MONET_PREFIX)\lib\autogen\autogen.py \
 	$(MONET_PREFIX)\lib\autogen\msc.py
 	$(CD) $(SRCDIR) && $(PYTHON) $(MONET_PREFIX)\lib\autogen\autogen.py
 
-all-msc: config.h
+all-msc: sql_config.h
 
-config.h: winconfig.h
-	$(INSTALL) winconfig.h config.h
+sql_config.h: winconfig.h
+	$(INSTALL) winconfig.h sql_config.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h
