@@ -2309,7 +2309,44 @@ _MMoper_3 := {count}(indexB);
 _MMmergecast_4 := mergecast(_MMreverse_2,_MMoper_3,0);
 _MMoper_5 := [*](10,_MMmergecast_4);
 _MMreverse_6 := reverse(_MMoper_5);
+valuesA.print;
+#-----------------#
+# BAT:	  tmp_25  #
+# (void)  (int)	  #
+#-----------------#
+[ 0@0,	  10	  ]
+[ 1@0,	  20	  ]
+[ 2@0,	  30	  ]
+[ 3@0,	  40	  ]
+_MMreverse_6.print;
+#-----------------#
+# BAT:	  tmp_43  #
+# (int)	  (void)  #
+#-----------------#
+[ 10,	  0@0	  ]
+[ 10,	  1@0	  ]
+[ 30,	  2@0	  ]
+[ 40,	  3@0	  ]
 _MMjoin_7 := join(valuesA,_MMreverse_6);
+_MMjoin_7.print;
+#-----------------#
+# BAT:	  tmp_33  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 0@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
+_MMjoin_7s := join(valuesA,_MMreverse_6).reverse.sort.reverse;
+_MMjoin_7s.print;
+#-----------------#
+# BAT:	  tmp_56  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 0@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
 _MMreverse_8 := reverse(_MMjoin_7);
 _MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
 _MMjoin_10 := join(_MMnilcast_9,valuesA);
@@ -2317,10 +2354,61 @@ _MMreverse_11 := reverse(_MMjoin_10);
 _MMnilcast_12 := _MMreverse_11.reverse.mark(0@0).reverse;
 _MMjoin_13 := join(_MMnilcast_9,valuesD);
 _MMnilcast_14 := _MMjoin_7.reverse.mark(0@0).reverse;
+_MMnilcast_14.print;
+#-----------------#
+# BAT:	  tmp_56  #
+# (void)  (oid)	  #
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
 _MMjoin_15 := join(_MMnilcast_14,indexB);
+_MMjoin_15.print;
+#-----------------#
+# BAT:	  tmp_82  #
+# (oid)	  (oid)	  #
+#-----------------#
+[ 0@0,	  409@0	  ]
+[ 1@0,	  408@0	  ]
+[ 2@0,	  407@0	  ]
+[ 2@0,	  406@0	  ]
+[ 2@0,	  405@0	  ]
+[ 3@0,	  404@0	  ]
+[ 3@0,	  403@0	  ]
+[ 3@0,	  402@0	  ]
+[ 3@0,	  401@0	  ]
 _MMcastnil_16 := _MMjoin_15.mark(0@0);
 _MMnilcast_17 := _MMjoin_15.reverse.mark(0@0).reverse;
+_MMnilcast_17.print;
+#-----------------#
+# BAT:	  tmp_78  #
+# (void)  (oid)	  #
+#-----------------#
+[ 0@0,	  409@0	  ]
+[ 1@0,	  408@0	  ]
+[ 2@0,	  407@0	  ]
+[ 3@0,	  406@0	  ]
+[ 4@0,	  405@0	  ]
+[ 5@0,	  404@0	  ]
+[ 6@0,	  403@0	  ]
+[ 7@0,	  402@0	  ]
+[ 8@0,	  401@0	  ]
 _MMjoin_18 := join(_MMnilcast_17,valuesB);
+_MMjoin_18.print;
+#-----------------#
+# BAT:	  tmp_95  #
+# (oid)	  (int)	  #
+#-----------------#
+[ 0@0,	  9000	  ]
+[ 1@0,	  8000	  ]
+[ 2@0,	  7000	  ]
+[ 3@0,	  6000	  ]
+[ 4@0,	  5000	  ]
+[ 5@0,	  4000	  ]
+[ 6@0,	  3000	  ]
+[ 7@0,	  2000	  ]
+[ 8@0,	  1000	  ]
 _MMjoin_19 := join(_MMnilcast_14,_MMreverse_2);
 _MMnilcast_12.print;
 #-----------------#
