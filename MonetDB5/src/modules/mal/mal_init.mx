@@ -46,7 +46,7 @@ use "mal/tablet";
 use "mal/io";
 use "mal/enum";
 use "mal/multiplex";
-use "mal/mal";
+use "mal/language";
 use "mal/profiler";
 use "mal/const"; 
 use "mal/bbp";
