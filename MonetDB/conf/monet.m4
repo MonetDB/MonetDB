@@ -350,7 +350,7 @@ AC_ARG_ENABLE(warning,
   enable_warning=$enableval, enable_warning=no)
 if test "x$enable_warning" = xyes; then
   if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -Wall -ansi -std=c99 -pedantic -Wno-long-long Wno-unused-function -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
+    CFLAGS="$CFLAGS -Wall -ansi -std=c99 -pedantic -Wno-long-long -Wno-unused-function -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
     CXXFLAGS="$CXXFLAGS -Wall -ansi -pedantic -Wno-long-long -Wno-unused-function"
   else
     case "$host_os" in
