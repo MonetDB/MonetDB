@@ -166,7 +166,7 @@ command replace(b:bat[any::1, any::2], src:bat[any::1,any::2])
 				: bat[any::1,any::2] = CMDreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
 
-command destroy(b:bat):void = CMDdestroy_bat
+command destroy(b:bat):nil = CMDdestroy_bat
 comment "Schedule bat for removal upon session commit\n";
 
 command delete(b:bat[any::1, any::2], h:any::1, t:any::2) 
@@ -213,7 +213,7 @@ into a separate module.
 command setName ( b:bat[any::1,any::2] , s:str) : bat[any::1,any::2] = CMDsetName
 comment "Give a logical name to a BAT. ";
 
-command getName ( b:bat[any,any]) : STR = CMDbbpname
+command getName ( b:bat[any,any]) : str = CMDbbpname
 comment "Gives back the logical name of a BAT.";
 
 command setRole( b:bat[any::1,any::2] , h:str, t:str):bat[any::1,any::2]
@@ -252,11 +252,11 @@ comment "Swapout a BAT to disk. Transient BATs can also be swapped out.
 command isCached(b:bat[any,any]):bit = CMDisCached
 comment "Bat is stored in main memory.";
 
-command hot(name:str) : void = CMDhot
+command hot(name:str) :nil = CMDhot
 comment "Makes a BAT very hot for the BBP. The chance of being chosen 
 for swapout is small, afterwards.  Returns the BAT itself.";
 
-command cold(nme:str) : void = CMDcold
+command cold(nme:str) :nil = CMDcold
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
 for swapout is big, afterwards.  Returns the BAT itself.";
 

@@ -17,16 +17,16 @@ the cpu clock. They return an integer and string, respectively.
 @mal
 module alarm;
 
-command sleep(secs:int):void = CMDsleep comment "sleep X secs";
-command alarm(secs:int, action:str):void = CMDalarm 
+command sleep(secs:int):nil = CMDsleep comment "sleep X secs";
+command alarm(secs:int, action:str):nil = CMDalarm 
 comment "execute action in X secs";
 command timers() : bat[str,str] = CMDtimers
 comment "give a list of all active timers";
 command time() : int = CMDtime comment "time in millisecs";
 command epoch() : int = CMDepoch comment "current time as unix epoch";
 command ctime() : str = CMDctime comment "current time as a string";
-command prelude():void= CLKprelude comment "Initialize alarm module";
-command epilogue():void+ CLKepilogue comment "Finalize alarm module";
+command prelude():nil= CLKprelude comment "Initialize alarm module";
+command epilogue():nil= CLKepilogue comment "Finalize alarm module";
 
 
 @{

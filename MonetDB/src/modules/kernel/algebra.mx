@@ -314,13 +314,13 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 
 @- OID head column
 @mal
-command mark( b:bat[any::1,any] ) : bat[any::1,OID] = CMDmark_default
+command mark( b:bat[any::1,any] ) : bat[any::1,oid] = CMDmark_default
 comment "Produces a new BAT with fresh unique OIDs in the tail.";
 
-command mark( b:bat[any::1,any],base:void ): bat[any::1,OID] = CMDmark_default
+command mark( b:bat[any::1,any],base:void ): bat[any::1,oid] = CMDmark_default
 comment "Produces a new BAT with fresh unique OIDs in the tail.";
 
-command mark( b:bat[any::1,any], base:oid ) : bat[any::1,OID] = CMDmark
+command mark( b:bat[any::1,any], base:oid ) : bat[any::1,oid] = CMDmark
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in the tail
  that starts at base (i.e. [base,base+1,..base+b.count()-1] ).";
 @- number tail column

@@ -251,31 +251,38 @@ The unary operators include coercion routines for built-in types
 Coercion functions are typical used in multiplex calls.
 @= mal_coercion
    	command @1(x:@2): @1 = CALC@2_2_@1 comment "coercion @1 to @2";
+@= scalar_coercion
+	@:mal_coercion(@1,oid)@
+	@:mal_coercion(@1,bit)@
+	@:mal_coercion(@1,sht)@
+	@:mal_coercion(@1,int)@
+	@:mal_coercion(@1,lng)@
+	@:mal_coercion(@1,flt)@
+	@:mal_coercion(@1,dbl)@
 @mal
-	@:mal_coercion(lng,sht)@
-	@:mal_coercion(lng,int)@
-	@:mal_coercion(lng,flt)@
-	@:mal_coercion(lng,dbl)@
+	@:mal_coercion(bit,bit)@
+	@:mal_coercion(bit,sht)@
+	@:mal_coercion(bit,int)@
+	@:mal_coercion(bit,lng)@
+	@:mal_coercion(bit,flt)@
+	@:mal_coercion(bit,dbl)@
 
-	@:mal_coercion(int,sht)@
-	@:mal_coercion(int,lng)@
-	@:mal_coercion(int,flt)@
-	@:mal_coercion(int,dbl)@
+	@:scalar_coercion(lng)@
+	@:scalar_coercion(int)@
+	@:scalar_coercion(sht)@
 
-	@:mal_coercion(sht,int)@
-	@:mal_coercion(sht,lng)@
-	@:mal_coercion(sht,flt)@
-	@:mal_coercion(sht,dbl)@
-
+	@:mal_coercion(oid,oid)@
 	@:mal_coercion(oid,lng)@
 	@:mal_coercion(oid,sht)@
 	@:mal_coercion(oid,int)@
 
+	@:mal_coercion(flt,flt)@
 	@:mal_coercion(flt,dbl)@
 	@:mal_coercion(flt,sht)@
 	@:mal_coercion(flt,int)@
 	@:mal_coercion(flt,lng)@
 
+	@:mal_coercion(dbl,dbl)@
 	@:mal_coercion(dbl,flt)@
 	@:mal_coercion(dbl,sht)@
 	@:mal_coercion(dbl,int)@
@@ -286,9 +293,14 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(str,lng)@
 	@:mal_coercion(str,flt)@
 	@:mal_coercion(str,dbl)@
+
+	@:mal_coercion(chr,chr)@
 	@:mal_coercion(chr,sht)@
 	@:mal_coercion(chr,int)@
-	@:mal_coercion(chr,int)@
+	@:mal_coercion(chr,lng)@
+
+	@:mal_coercion(ptr,int)@
+	@:mal_coercion(ptr,lng)@
 
 @- boolean { or, xor, and, not }
 @mal
@@ -329,7 +341,7 @@ array. Specific operations work with this interpretation.
 @mal
 	command rand () : int = CALCrandint
 	comment "return a random number";
-	command srand(seed:int) : void = CALCsrandint
+	command srand(seed:int) : nil = CALCsrandint
 	comment "initialize the rand() function with a seed";
 @+ Type coercions
 The Monet kernel contains a few built-in atomic types together
@@ -337,9 +349,9 @@ with useful functions.
 Those accessible at the MAL command level are introduced below.
 
 @= convertCmd
-command @1(v:str):@1 = @1FromStrImpl;
-command str(v:@1):str = @1ToStrImpl;
-command @1(v:ni1) : @1 = CALCtonil_@1;
+command @1(v:str):@1 = CALCstr_2_@1;
+command str(v:@1):str = CALC@1_2_str;
+command @1(v:nil) : @1 = CALCnil_2_@1;
 
 @mal
 @:convertCmd(oid)@
@@ -353,45 +365,10 @@ command @1(v:ni1) : @1 = CALCtonil_@1;
 @:convertCmd(bat)@
 @:convertCmd(chr)@
 
-command str(v:ni1) :str = CALCtonil_str;
+command str(v:nil) :str = CALCvoid_2_str;
 command setoid(v:int)= intSetoidImpl;
 command setoid(v:lng)= lngSetoidImpl;
 command setoid(v:oid)= oidSetoidImpl;
-@-
-We might also support a number of common coercion routines.
-Note, we do not support automatic coercion at the MIL level.
-@mal
-command lng(v:oid):lng = lngFromoidImpl;
-command lng(v:int):lng = lngFromintImpl;
-command lng(v:sht):lng = lngFromshtImpl;
-command lng(v:bit):lng = lngFrombitImpl;
-command int(v:sht):int = intFromshtImpl;
-command int(v:bit):int = intFromintImpl;
-command dbl(v:flt):dbl = dblFromfltImpl;
-command oid(v:lng):oid = oidFromlngImpl;
-command oid(v:int):oid = oidFromintImpl;
-command sht(v:int):sht = shtFromintImpl;
-command sht(v:lng):sht = shtFromlngImpl;
-
-command bit(v:bit):bit = bitFrombitImpl;
-command sht(v:sht):sht = shtFromshtImpl;
-command int(v:int):int = intFromintImpl;
-command lng(v:lng):lng = lngFromlngImpl;
-command flt(v:flt):flt = fltFromfltImpl;
-command dbl(v:dbl):dbl = dblFromdblImpl;
-command ptr(v:ptr):ptr = ptrFromptrImpl;
-command oid(v:oid):oid = oidFromoidImpl;
-
-command void(v:void):void = voidFromvoidImpl;
-command bit(v:void):bit = bitFromvoidImpl;
-command sht(v:void):sht = shtFromvoidImpl;
-command int(v:void):int = intFromvoidImpl;
-command lng(v:void):lng = lngFromvoidImpl;
-command bat(v:void):bat = batFromvoidImpl;
-command flt(v:void):flt = fltFromvoidImpl;
-command dbl(v:void):dbl = dblFromvoidImpl;
-command oid(v:void):oid = oidFromvoidImpl;
-command ptr(v:void):ptr = ptrFromvoidImpl;
 @-
 We should also deal with superflous operations, such as int(v:int).
 This is a noop operation that should ideally be filtered out with
@@ -931,7 +908,7 @@ str CALCisnil_@1(bit *retval, @1 val) {
 	*retval = (val == @1_nil);
 	return MAL_SUCCEED;
 }
-str CALCtonil_@1(@1 *retval, ptr val){
+str CALCnil_2_@1(@1 *retval, ptr val){
 	memcpy(retval, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
 	return MAL_SUCCEED;
 }
@@ -951,8 +928,8 @@ str CALCisnil_str(bit *retval, str *val) {
 	*retval = (*val == str_nil);
 	return MAL_SUCCEED;
 }
-str CALCtonil_str(bit *retval, str *val) {
-	*retval = (*val == 0);
+str CALCstr_2_nil(str *retval, str *val) {
+	*retval = ATOMnilptr(TYPE_str);
 	return MAL_SUCCEED;
 }
 
@@ -1084,38 +1061,69 @@ str CALC@2_2_@1(@1 *res, @2 *a)
 }
 @-
 @c
+	@:mal_coercion_impl(bit,bit)@
+	@:mal_coercion_impl(bit,sht)@
+	@:mal_coercion_impl(bit,int)@
+	@:mal_coercion_impl(bit,lng)@
+	@:mal_coercion_impl(bit,flt)@
+	@:mal_coercion_impl(bit,dbl)@
+
+	@:mal_coercion_impl(lng,oid)@
+	@:mal_coercion_impl(lng,chr)@
+	@:mal_coercion_impl(lng,ptr)@
+	@:mal_coercion_impl(lng,bit)@
 	@:mal_coercion_impl(lng,sht)@
 	@:mal_coercion_impl(lng,int)@
+	@:mal_coercion_impl(lng,lng)@
 	@:mal_coercion_impl(lng,flt)@
 	@:mal_coercion_impl(lng,dbl)@
 
+	@:mal_coercion_impl(sht,oid)@
+	@:mal_coercion_impl(sht,bit)@
+	@:mal_coercion_impl(sht,chr)@
+	@:mal_coercion_impl(sht,sht)@
 	@:mal_coercion_impl(sht,int)@
 	@:mal_coercion_impl(sht,lng)@
 	@:mal_coercion_impl(sht,flt)@
 	@:mal_coercion_impl(sht,dbl)@
 
+	@:mal_coercion_impl(int,oid)@
+	@:mal_coercion_impl(int,bit)@
+	@:mal_coercion_impl(int,chr)@
+	@:mal_coercion_impl(int,ptr)@
 	@:mal_coercion_impl(int,sht)@
+	@:mal_coercion_impl(int,int)@
 	@:mal_coercion_impl(int,lng)@
 	@:mal_coercion_impl(int,flt)@
 	@:mal_coercion_impl(int,dbl)@
 
+	@:mal_coercion_impl(oid,oid)@
 	@:mal_coercion_impl(oid,lng)@
 	@:mal_coercion_impl(oid,sht)@
 	@:mal_coercion_impl(oid,int)@
 
+	@:mal_coercion_impl(flt,flt)@
 	@:mal_coercion_impl(flt,dbl)@
 	@:mal_coercion_impl(flt,sht)@
 	@:mal_coercion_impl(flt,int)@
 	@:mal_coercion_impl(flt,lng)@
 
+	@:mal_coercion_impl(dbl,dbl)@
 	@:mal_coercion_impl(dbl,flt)@
 	@:mal_coercion_impl(dbl,sht)@
 	@:mal_coercion_impl(dbl,int)@
 	@:mal_coercion_impl(dbl,lng)@
 
+	@:mal_coercion_impl(chr,chr)@
 	@:mal_coercion_impl(chr,sht)@
 	@:mal_coercion_impl(chr,int)@
+	@:mal_coercion_impl(chr,lng)@
 
+	@:mal_coercion_impl(ptr,int)@
+	@:mal_coercion_impl(ptr,lng)@
+
+@-
+Old stuff, probably wrong
 	@:mal_coercion_impl2(str,sht,d)@
 	@:mal_coercion_impl2(str,int,d)@
 	@:mal_coercion_impl2(str,lng,D)@
@@ -1125,20 +1133,16 @@ str CALC@2_2_@1(@1 *res, @2 *a)
 The conversion routines are relatively easy to define.
 @= convertImpl
 
-str @1FromStrImpl(@1 *ret, str *val){
+str CALCstr_2_@1(@1 *ret, str *val){
 	int l = sizeof(@1);
 	(void) @1FromStr(*val, &l, &ret);
 	return MAL_SUCCEED;
 }
-str @1ToStrImpl(str *ret, @1 *val){
+str CALC@1_2_str(str *ret, @1 *val){
 	int l=0;
 
 	if(*ret) l=strlen(*ret);
 	(void) @1ToStr(ret,&l,val);
-	return MAL_SUCCEED;
-}
-str @1From@1Impl(@1 *ret, @1 *val){
-	*ret= *val;
 	return MAL_SUCCEED;
 }
 str @1FromvoidImpl(@1 *ret, void *val){
@@ -1155,16 +1159,16 @@ str voidFromStrImpl(void *ret, str val){
 	memcpy(ret, ATOMnilptr(TYPE_void), ATOMsize(TYPE_void));
 	return MAL_SUCCEED;
 }
-str voidToStrImpl(str *ret, void *val){
+str CALCvoid_2_str(str *ret, void *val){
 	*ret = ATOMnilptr(TYPE_str);
 	return MAL_SUCCEED;
 }
-str oidFromStrImpl(oid *ret, str *val){
+str CALCstr_2_oid(oid *ret, str *val){
 	int l = strlen(*val);
 	(void) OIDfromStr(*val, &l, (ptr) ret);
 	return MAL_SUCCEED;
 }
-str oidToStrImpl(str *ret, oid *val){
+str CALCoid_2_str(str *ret, oid *val){
 	int l= sizeof(oid);
 	(void) OIDtoStr(ret,&l, val);
 	return MAL_SUCCEED;
