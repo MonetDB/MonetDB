@@ -340,13 +340,14 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
 		cmdcnt = parse_line((unsigned char*)line);
 		if (debug)
 			printf("%d %s\n", cmdcnt, line);
+#ifdef HAVE_ICONV
 		if (to_utf){
 			char *converted = conv(line, to_utf);
 			ws->write( ws, converted, strlen(converted), 1 );
 			free(converted);
-		} else {
+		} else 
+#endif
 			ws->write( ws, line, strlen(line), 1 );
-		}
 		ws->write( ws, "\n", 1, 1 );
 		if (cmdcnt)
 			ws->flush( ws );
