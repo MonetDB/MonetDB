@@ -604,7 +604,7 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key('NOINST'):
         am['NLIBS'].append((pref, libname, sep))
     else:
-        am['LIBS'].append((pref, libname, sep))
+        am['LIBS'].append((pref, libname, sep, condname))
         am['InstallList'].append("\t%s/%s%s%s.so%s\n" % (ld, pref, sep, libname, cond))
 
     if libmap.has_key('MTSAFE'):
@@ -715,7 +715,7 @@ def am_libs(fd, var, libsmap, am):
 
         ld = am_translate_dir(ld, am)
         fd.write("%sdir = %s\n" % (libname, ld))
-        am['LIBS'].append(('lib', libname, sep))
+        am['LIBS'].append(('lib', libname, sep, ''))
         am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libsmap.has_key('HEADERS'):
@@ -990,8 +990,13 @@ CXXEXT = \\\"cc\\\"
 
         libs = am_sort_libs(am['LIBS'], tree)
         s = ""
-        for (pref, lib, sep) in am['LIBS']:
-            fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+        for (pref, lib, sep, cond) in am['LIBS']:
+	    if cond != '':
+            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+	    else:
+        	fd.write("if %s\n" % (cond))
+            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+        	fd.write("endif\n")
 
     if am['NLIBS']:
         fd.write("noinst_LTLIBRARIES =")
