@@ -500,7 +500,8 @@ int lwc_diff2html (char *old_fn, char *new_fn,
 */
       fprintf(html_fp,"<HTML>\n<BODY BGCOLOR=#ffffff TEST=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>\n");
       fprintf(html_fp,"<CENTER>\n<TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=1>\n");
-      fprintf(html_fp,"<CAPTION><FONT FACE='helvetica, arial'><B>%s</B></FONT></CAPTION>\n",caption);
+      if (*caption)
+	fprintf(html_fp,"<CAPTION><FONT FACE='helvetica, arial'><B>%s</B></FONT></CAPTION>\n",caption);
       fprintf(html_fp,"<TR>");
       if(!new_fn)
         fprintf(html_fp,"<TH>&nbsp;</TH>");
@@ -530,7 +531,8 @@ int lwc_diff2html (char *old_fn, char *new_fn,
 */
   fprintf(html_fp,"<HTML>\n<BODY BGCOLOR=#ffffff TEST=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>\n");
   fprintf(html_fp,"<CENTER>\n<TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=1>\n");
-  fprintf(html_fp,"<CAPTION><FONT FACE='helvetica, arial'><B>%s</B></FONT></CAPTION>\n",caption);
+  if (*caption)
+    fprintf(html_fp,"<CAPTION><FONT FACE='helvetica, arial'><B>%s</B></FONT></CAPTION>\n",caption);
 
   line[strlen(line)-1]='\0';
   while(ok&&strncmp(line,"@@ -",4))
