@@ -79,7 +79,7 @@ public class Test_Csavepoints {
 			System.out.println(" passed :)");
 
 			System.out.print("7. release...");
-			con.releaseSavepoint(sp1);
+			con.releaseSavepoint(sp3);
 			System.out.println("passed :)");
 
 			rs = stmt.executeQuery("SELECT id FROM table_Test_Csavepoints");
