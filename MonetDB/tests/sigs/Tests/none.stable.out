@@ -561,7 +561,7 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
+[ "uchr",	  3		  ]
 #-------------------------#
 # BAT:		  tmp_33  #
 # (str)		  (void)  #
