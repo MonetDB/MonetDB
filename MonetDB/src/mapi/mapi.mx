@@ -133,16 +133,11 @@ This module contains a simple interface for internet connections.
 #endif
 #include "kernel.h"
 
-#ifdef __sgi
-#define SOCKPTR void *
-#define SOCKLEN int
-#else
 #define SOCKPTR struct sockaddr *
 #if HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
 #endif
 
 #ifdef NATIVE_WIN32
