@@ -9,7 +9,7 @@ stdout of test 'check1a` in directory 'src/benchmarks/arno` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-ls;
+ls();
 #---------------------------------------------------------------------------------------------------------------------------------#
 # name				htype	ttype		count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
 # str				str	str		lng	int	str		str	str	int	int		  # type
@@ -191,7 +191,7 @@ ls;
 [ "users_fullname_1",		  "void", "str",	  1,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "users_name_1",		  "void", "str",	  1,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
 [ "users_passwd_1",		  "void", "str",	  1,	  0,	  "clean",	  "disk", "pers", 0,	  2		  ]
-quit;
+quit();
 
 # 16:02:08 >  
 # 16:02:08 >  Done.
