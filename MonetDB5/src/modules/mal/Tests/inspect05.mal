@@ -1,19 +1,4 @@
 #Illustrate the modules loaded after start
-nme:= inspect.getModuleNames();
-print(nme);
-
-printf("Patterns\n");
-p:= inspect.getPatternNames();
-print(p);
-
-printf("Commands\n");
-p:= inspect.getCommandNames();
-print(p);
-
-printf("Functions\n");
-p:= inspect.getFunctionNames();
-print(p);
-
 k:= inspect.getKind();
 m:= inspect.getModule();
 f:= inspect.getFunction();
