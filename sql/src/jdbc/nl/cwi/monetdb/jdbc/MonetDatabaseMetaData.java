@@ -1530,7 +1530,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results[4][0] = "TEMPORARY TABLE";
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1675,7 +1675,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1730,7 +1730,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1785,7 +1785,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1890,7 +1890,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1947,7 +1947,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -2350,7 +2350,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		};
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -2496,7 +2496,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -3005,9 +3005,10 @@ class MonetVirtualResultSet extends MonetResultSet {
 	MonetVirtualResultSet(
 		String[] columns,
 		String[] types,
-		String[][] results
+		String[][] results,
+		Statement stmt
 	) throws IllegalArgumentException {
-		super(columns, types, results.length);
+		super(columns, types, results.length, stmt);
 
 		this.results = results;
 	}

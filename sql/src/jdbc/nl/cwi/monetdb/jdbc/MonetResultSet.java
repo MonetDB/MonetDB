@@ -149,13 +149,15 @@ public class MonetResultSet implements ResultSet {
 	 * @param columns the column names
 	 * @param types the column types
 	 * @param results the number of rows in the ResultSet
+	 * @param stmt the Statement object to associate this virtual result set with
 	 * @throws IOException if communicating with monet failed
 	 * @throws SQLException is a protocol error occurs
 	 */
 	MonetResultSet(
 		String[] columns,
 		String[] types,
-		int results
+		int results,
+		Statement stmt
 	) throws IllegalArgumentException
 	{
 		if (columns == null || types == null) {
@@ -167,10 +169,13 @@ public class MonetResultSet implements ResultSet {
 		if (results < 0) {
 			throw new IllegalArgumentException("Negative rowcount not allowed!");
 		}
+		if (stmt == null) {
+			throw new IllegalArgumentException("Cannot create a ResultSet which is not associated to a Statement!");
+		}
 
 		this.cache = null;
 		this.tableID = null;
-		this.statement = null;
+		this.statement = stmt;
 
 		this.columns = columns;
 		this.types = types;
