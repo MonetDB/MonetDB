@@ -1,5 +1,5 @@
 @echo off
 
-set PATH=%MONET_BUILD%\src\mapi\example\C;%MONET_PREFIX%\lib\MonetDB\Tests;%PATH%
+set PATH=%MONET_BUILD%\src\mapi\examples\C;%MONET_PREFIX%\lib\MonetDB\Tests;%PATH%
 
-call Mlog.bat smack00.exe %MAPIPORT%
+call Mlog.bat -x smack00.exe %MAPIPORT%
