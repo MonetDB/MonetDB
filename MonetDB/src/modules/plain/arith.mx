@@ -328,12 +328,12 @@ PROC test_arith() : void {
   oid2.print();
  
   # DD/Bug 6389: (i%0) should return nil instead of crashing the server
-  (chr(1)%int(0)).print();
-  (sht(1)%int(0)).print();
-  (int(1)%sht(0)).print();
-  (int(1)%chr(0)).print();
-  (int(1)%int(0)).print();
-  (lng(1)%int(0)).print();
+  CATCH((chr(1)%int(0))).print();
+  CATCH((sht(1)%int(0))).print();
+  CATCH((int(1)%sht(0))).print();
+  CATCH((int(1)%chr(0))).print();
+  CATCH((int(1)%int(0))).print();
+  CATCH((lng(1)%int(0))).print();
   
 @:mil_comp_ops('a','z')@
 @:mil_comp_ops(sht1,sht2)@
