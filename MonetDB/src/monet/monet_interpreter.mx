@@ -259,14 +259,6 @@ int interpret_file(Cntxt stk, YYSTREE lt, ValPtr res){
 Open the scriptfile.
 @c
         if ((fd = fopen(ptr, "r")) == 0) {
-            char path[PATHLENGTH];
- 
-            if (ptr[0] == DIR_SEP) {
-                strcpy(path, ptr);
-            }
-            fd = fopen(path, "r");
-        }
-        if (fd == 0) {
                 GDKerror("interpret_file: could not open file: %s\n", ptr);
                 return -1;
         }
