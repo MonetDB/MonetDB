@@ -56,6 +56,11 @@ BAT *BATcreatedesc(int ht, int tt) {
 Alloc space for the BAT and its dependent records.
 @c
 	BATstore *bs = (BATstore*) GDKmalloc(sizeof(BATstore)); 
+@-
+assert needed in the kernel to get symbol eprintf resolved.
+Else modules using assert fail to load.
+@c
+	assert(ht>=0 && tt>=0);
 	memset((str)bs, 0, sizeof(BATstore)); 
 	bn = &bs->B;
 	bn->H = &bs->H;
