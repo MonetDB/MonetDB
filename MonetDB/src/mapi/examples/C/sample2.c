@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 		if( mapi_query(dbh,"select * from emp") ) die(dbh);
 	} else {
 		if( mapi_query(dbh,"emp:=new(str,int);")) die(dbh);
-		if( mapi_query_array(dbh,"emp.insert(\"?\", ?)",parm) )
+		if( mapi_query_array(dbh,"emp.insert(\"?\", ?);",parm) )
 			die(dbh);
 		if( mapi_query(dbh,"print(emp);") ) die(dbh);
 	}

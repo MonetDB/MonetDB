@@ -49,8 +49,8 @@ getColumnName()	& 	Get columns name
 getRowCount() 	&       Number of rows in cache or -1
 gotError()    	&       Test for error occurrence
 ping()     	&       Test server for accessibility
-prepare()  	&       Prepare a query for execution
-prepareArray()	&       Prepare a query for execution using arguments
+prepareQuery() 	&       Prepare a query for execution
+prepareQueryArray()&       Prepare a query for execution using arguments
 query()    	&       Send a query for execution
 queryArray()	& 	Send a query for execution with arguments
 quickQuery()	&       Send a query for execution
@@ -139,7 +139,7 @@ public class Mapi
 	private String dbname= "unknown";
 	
 	private boolean everything = false;
-	private boolean trace = false;
+	private boolean trace = true;
 	private boolean connected= false;
 	private boolean active= false;
 	private boolean eos = false;
@@ -170,18 +170,22 @@ public class Mapi
 	private DataOutputStream traceLog;
 	
 
+private void check(String action){
+	if( !connected) setError("Connection lost",action);
+	clrError();
+}
 /* 
 The static method hostname gets the hostname from the monetport. The
 monetport is defined by 'hostname:portnr'. The static method
 portnr will return the port number in this string.
 */
-public String hostname( String monetport ){
+private String hostname( String monetport ){
 	int pos = monetport.indexOf(':');
 	if (pos <= 1) return host;
 	return host= monetport.substring( 0,pos);
 }
 
-public int portnr( String monetport ){
+private int portnr( String monetport ){
 	int pos = monetport.indexOf(':');
 	if (pos >= 0 && pos < monetport.length()){
 		return port=Integer.parseInt(monetport.substring( pos+1 ));
@@ -202,6 +206,7 @@ throws MapiException
  * @param flg the new value 
 */
 public void trace(boolean flg){
+	check("trace");
 	trace= flg;
 }
 
@@ -210,6 +215,7 @@ public void trace(boolean flg){
  * @param fnme the file name
 */
 public void traceLog(String fnme){
+	check("traceLog");
 	System.out.println("setTraceLog not yet implemented");
 }
 
@@ -220,6 +226,7 @@ public void traceLog(String fnme){
 */
 public boolean ping(){
 	//if( language.equals("mal")) query("print(1);");
+	check("ping");
 	return true;
 }
 
@@ -228,7 +235,7 @@ public boolean ping(){
  * has been detected.
  * @return the MAPI internal success/failure indicator
 */
-public int setError(String msg, String act){
+private int setError(String msg, String act){
 	errortext= msg;
 	error= MERROR;
 	action= act;
@@ -238,7 +245,7 @@ public int setError(String msg, String act){
 /**
  * This method can be used to clear the Mapi error descriptor properties.
 */
-public void clrError(){
+private void clrError(){
 	errortext="";
 	error= MOK;
 	action="";
@@ -321,7 +328,9 @@ public static Mapi connectSSL( String host, int port, String user, String pwd, S
  * @param src the Mapi connection to be duplicated
  * @return a duplicate connection
 */
-Mapi dup(Mapi j){
+public Mapi dup(Mapi j){
+	check("dup");
+	if( gotError()) return null;
 	Mapi m= new Mapi();
 	m.socket = j.socket;
 	m.fromMonet = j.fromMonet;
@@ -349,7 +358,9 @@ private void promptMonet() throws MapiException  {
  * The server will notice a broken pipe and terminate.
  * The intermediate structurs will be cleared.
 */
-public void disconnect() {
+public int disconnect() {
+	check("disconnect");
+	if( gotError()) return MERROR;
 	for(int i=0; i< cache.writer; i++){
 		cache.rows[i]= null;
 		cache.fields[i]= null;
@@ -359,25 +370,33 @@ public void disconnect() {
 	blk= new IoCache();
 	connected= active= false;
 	toMonet = null; fromMonet = null; traceLog = null;
+	return MOK;
 }
 /**
  * Reset the communication channel, thereby clearing the
  * global variable settings
  */
-public void reconnect(){
+public int reconnect(){
+	check("reconnect");
+	if( gotError()) return MERROR;
 	if( connected) disconnect();
 	try{
 	connect(host, port,username,password,language);
 	} catch( MapiException e) {}
+	return MOK;
 }
 /**
  * Eat away all the remaining lines
 */
-public int finish(){
+private int finish_internal(){
 	try{
-		while(active && fetchLine() != null);
+		while(active && fetchLineInternal() != null);
 	} catch( MapiException e) {}
 	return MOK;
+}
+public int finish(){
+	check("finish");
+	return finish_internal();
 }
 //======================= Binding parameters ================
 
@@ -396,6 +415,7 @@ private boolean checkColumns(int fnr, String action){
  * obj a reference to an arbitrary receiving object
 */
 public int bind(int fnr, Object o){
+	check("bind");
 	if( !checkColumns(fnr,"bind")) return MERROR;
 	System.out.println("bind() yet supported");
 	//columns[fnr].outparam = o;
@@ -408,6 +428,7 @@ public int bind(int fnr, Object o){
  * obj a reference to an arbitrary receiving object
 */
 public int bindVar(int fnr, int tpe, Object o){
+	check("bindVar");
 	if( !checkColumns(fnr,"bindVar")) return MERROR;
 	System.out.println("bindVar() not supported");
 	//columns[fnr].outparam = o;
@@ -423,6 +444,7 @@ public int bindVar(int fnr, int tpe, Object o){
  * obj a reference to an arbitrary receiving object
 */
 public int bindNumeric(int fnr, int scale, int prec, Object o){
+	check("bindNumeric");
 	if( !checkColumns(fnr,"bindVar")) return MERROR;
 	System.out.println("bindVar() not supported");
 	columns[fnr].scale = scale;
@@ -476,7 +498,7 @@ private void storeBind(){
  * The slice row constructs a list of string field values.
  * It trims the string quotes but nothing else.
 */
-public int sliceRow(){
+private int sliceRow(){
 	int cr= cache.reader;
 	String s= cache.rows[cr];
 	if( s== null){
@@ -497,6 +519,7 @@ public int sliceRow(){
 	do{
 		while(f<p.length )
 		if( p[f]=='\t' || p[f] ==' ') f++; else break; 
+		if( p[f]==']') break;
 		if( trace) System.out.println("slice:"+f);
 
 		if(i== maxfields){
@@ -526,10 +549,12 @@ public int sliceRow(){
  * The fetchRow() retrieves a tuple from the server
 */
 public int fetchRow(){
+	check("fetchRow");
 	if( getRow()==MOK ) return sliceRow();
 	return 0;
 }
 public int fetchAllRows(){
+	check("fetchAllRows");
 	cacheLimit(-1);
 	cache.tuples=0;
 	while( getRow()== MOK)
@@ -539,6 +564,7 @@ public int fetchAllRows(){
 }
 
 public String fetchField(int fnr){
+	check("fetchField");
 	int cr= cache.reader;
 	if( fnr>=0){
 		if( cache.fldcnt[cr]==0){
@@ -552,22 +578,29 @@ public String fetchField(int fnr){
 	return null;
 }
 public String[] fetchFieldArray(int fnr){
-	System.out.println("Not yet implemented");
-	return null;
+	check("fetchField");
+	int cr = cache.reader;
+	String f[]= new String[cache.fldcnt[cr]];
+	for(int i=0;i<cache.fldcnt[cr]; i++)
+		f[i]= cache.fields[cr][i];
+	return f;
 }
 public int getColumnCount(){
+	check("getColumnCount");
 	return fieldcnt;
 }
 public String getColumnName(int i){
+	check("getColumnName");
 	if(i<fieldcnt && columns[i]!= null && columns[i].columnname!= null)
 		return columns[i].columnname;
-	if( columns[i]==null) return "";
-	return "unknown";
+	return "";
 }
 public int getRowCount(){
+	check("getRowCount");
 	return rows_affected;
 }
 public String getName(int fnr){
+	check("getName");
 	int cr= cache.reader;
 	if( fnr >=0 && fnr < cache.fldcnt[cr]){
 		if(columns[fnr].columnname== null)
@@ -578,6 +611,7 @@ public String getName(int fnr){
 	return null;
 }
 public String getTable(int fnr){
+	check("getTable");
 	int cr= cache.reader;
 	if( fnr >=0 && fnr < cache.fldcnt[cr]){
 		if(columns[fnr].tablename== null)
@@ -588,24 +622,31 @@ public String getTable(int fnr){
 	return null;
 }
 public int rows_affected(){
+	check("rows_affected");
 	return rows_affected;
 }
 public String getHost(){
+	check("getHost");
 	return host;
 }
 public String getUser(){
+	check("getUser");
 	return username;
 }
 public String getLanguage(){
+	check("getLanguage");
 	return language;
 }
 public String getDBname(){
+	check("getDBname");
 	return language;
 }
 public String getVersion(){
+	check("getVersion");
 	return server;
 }
 public int getVersionId(){
+	check("getVersionId");
 	if( MONET5) return 5;
 	return 4;
 }
@@ -639,7 +680,7 @@ private void checkQuery(){
  * by the arguments presented
 */
 
-private int prepareQuery(String cmd){
+private int prepareQueryInternal(String cmd){
 	if( cmd == null || cmd.length()==0){
 		// use previous query
 	} else {
@@ -660,8 +701,9 @@ private int prepareQuery(String cmd){
  * @param cmd the command string to be executed
 */
 
-public int prepare(String cmd){
-	return prepareQuery(cmd);
+public int prepareQuery(String cmd){
+	check("prepareQuery");
+	return prepareQueryInternal(cmd);
 }
 
 /**
@@ -670,7 +712,7 @@ public int prepare(String cmd){
  * @param cmd the command string to be executed
  *   arg replacement strings for each of the placeholders
 */
-public int prepareQueryArray(String cmd, String arg[]){
+private int prepareQueryArrayInternal(String cmd, String arg[]){
 	int ret= prepareQuery(cmd);
 	if( ret != MOK) return ret;
 
@@ -685,6 +727,10 @@ public int prepareQueryArray(String cmd, String arg[]){
 		//columns[i].inparam= arg[i];
 	}
 	return error;
+}
+public int prepareQueryArray(String cmd, String arg[]){
+	check("prepareQueryArray");
+	return prepareQueryArrayInternal(cmd,arg);
 }
 
 /**
@@ -719,7 +765,7 @@ private void paramStore(){
  * The fake queries '#trace on' and '#trace off' provide an easy means
  * to toggle the trace flag.
 */
-public int execute(){
+private int executeInternal(){
 	paramStore();
 	cacheReset();
 	if(trace) System.out.print("execute:"+query);
@@ -738,6 +784,10 @@ public int execute(){
 	}	
 	return error;
 }
+public int execute(){
+	check("execute");
+	return executeInternal();
+}
 /**
  * The command is shipped to the backend for execution. A single answer
  * is pre-fetched to detect any runtime error. A NULL command is
@@ -745,8 +795,8 @@ public int execute(){
  * @param arg the list of place holder values
 */
 public int executeArray(String arg[]){
-	prepareQueryArray(query,arg);
-	return error==MOK ? execute(): error;
+	prepareQueryArrayInternal(query,arg);
+	return error==MOK ? executeInternal(): error;
 }
 
 /**
@@ -758,21 +808,22 @@ public int executeArray(String arg[]){
  * @param cmd - the actual command to be executed
 
 */
+private int answerLookAhead(){
+	// look ahead to detect errors
+	int oldrd= cache.reader;
+	do{
+		getRow();
+	} while(error==MOK && active &&
+		cache.writer+1< cache.limit);
+	cache.reader= oldrd;
+	if(trace ) System.out.println("query return:"+error);
+	return error;
+}
 public int query(String cmd){
-	int ret;
-	ret= prepareQuery(cmd);
-	if( ret== MOK) ret= execute();
-	if( ret== MOK){
-		// look ahead to detect errors
-		int oldrd= cache.reader;
-		int rd=0;
-		while(ret==MOK && active &&rd++< cache.limit)
-			getRow();
-		cache.reader= oldrd;
-		ret= error;
-	}
-	if(trace ) System.out.println("query return:"+ret);
-	return ret;
+	prepareQueryInternal(cmd);
+	if( error== MOK) executeInternal();
+	if( error== MOK) answerLookAhead();
+	return error;
 }
 
 /**
@@ -786,17 +837,9 @@ public int query(String cmd){
 
 */
 public int queryArray(String cmd, String arg[]){
-	prepareQueryArray(cmd,arg);
-	if( error== MOK) execute();
-	if( error== MOK){
-		// look ahead to detect errors
-		int oldrd= cache.reader;
-		int rd=0;
-		while(error==MOK && active &&rd++< cache.limit)
-			getRow();
-		cache.reader= oldrd;
-	}
-	if(trace && error !=MOK) System.out.println("query returns error");
+	prepareQueryArrayInternal(cmd,arg);
+	if( error== MOK) executeInternal();
+	if( error== MOK) answerLookAhead();
 	return error;
 }
 
@@ -808,18 +851,18 @@ public int queryArray(String cmd, String arg[]){
  * received from the server to the stream indicated.
 */
 public int quickQuery(String cmd, DataOutputStream fd){
-	prepareQuery(cmd);
-	if( error== MOK) execute();
-	if( error== MOK)
-		quickResponse(fd);
+	check("quickQuery");
+	prepareQueryInternal(cmd);
+	if( error== MOK) executeInternal();
+	if( error== MOK) quickResponse(fd);
 	if(trace && error !=MOK) System.out.println("query returns error");
 	return error;
 }
 public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
-	prepareQueryArray(cmd,arg);
-	if( error== MOK) execute();
-	if( error== MOK)
-		quickResponse(fd);
+	check("quickQueryArray");
+	prepareQueryArrayInternal(cmd,arg);
+	if( error== MOK) executeInternal();
+	if( error== MOK) quickResponse(fd);
 	if(trace && error !=MOK) System.out.println("query returns error");
 	return error;
 }
@@ -827,7 +870,7 @@ public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
 // -------------------- Cache Management ------------------
 private void cacheReset()
 {
-	finish();
+	finish_internal();
 	rows_affected= 0;
 	active= true;
 	if( cache.fldcnt==null)
@@ -840,9 +883,9 @@ private void cacheReset()
 				cache.fields[i][j]= null;
 		} else cache.fields[i]= new String[maxfields];
 	}
+	cache.reader= -1;
 	fieldcnt=0;
 	cache.writer=0;
-	cache.reader= -1;
 	cache.tuples= 0;
 }
 
@@ -861,6 +904,7 @@ public int cacheLimit(int limit){
  * This is mostly used in combination with fetching all tuples at once.
  */
 public int fetchReset(){
+	check("fetchReset");
 	cache.reader = -1;
 	return MOK;
 }
@@ -871,6 +915,7 @@ public int fetchReset(){
  * @param rownr - the row of interest
  */
 public int seekRow(int rownr){
+	check("seekRow");
 	int i;
 	cache.reader= -1;
 	if( rownr<0) return setError("Illegal row number","seekRow");
@@ -888,7 +933,7 @@ public int seekRow(int rownr){
  * server. If something goes wrong the application may try to skip input to 
  * the next synchronization point.
 */
-void extendCache(){
+private void extendCache(){
 	int oldsize= cache.writer;
 	if( oldsize == cache.rowlimit){
 		setError("Row cache limit reached","extendCache");
@@ -908,7 +953,7 @@ void extendCache(){
 	// field stuff
 }
 
-int clearCache(){
+private int clearCache(){
 	// remove all left-over fields
 	if( cache.reader+2<cache.writer)
 		return setError("Cache reset with non-read lines","clearCache");
@@ -923,6 +968,10 @@ int clearCache(){
  * a cache for further analysis. 
 */
 public String fetchLine() throws MapiException {
+	check("fetchLine");
+	return fetchLineInternal();
+}
+public String fetchLineInternal() throws MapiException {
 	    
 	if( cache.writer>0 && cache.reader+1<cache.writer){
 		if( trace) System.out.println("useCachedLine:"+cache.rows[cache.reader+1]);
@@ -987,7 +1036,7 @@ public int quickResponse(DataOutputStream fd){
 	if( fd== null)
 		return setError("File destination missing","response");
 	try{
-		while( active && (msg=fetchLine()) != null)
+		while( active && (msg=fetchLineInternal()) != null)
 		try{
 			fd.writeBytes(msg.toString());
 			fd.writeBytes("\n");
@@ -1020,16 +1069,15 @@ private void header(String line){
 }
 
 // Extract the next row from the cache.
-public int getRow(){
+private int getRow(){
         String reply= "";
-        error = MOK;
 
 	if( trace) System.out.println("getRow:active:"+active+
 		" reader:"+(cache.reader+1)+" writer:"+cache.writer);
         while( active ||cache.reader+1< cache.writer){
 		if( active){
 			try{  
-				reply= fetchLine();
+				reply= fetchLineInternal();
 			} catch(MapiException e){ 
 				if(trace)
 				 System.out.print("Got exception in getRow");
@@ -1042,16 +1090,16 @@ public int getRow(){
 		if( reply.length()>0)
 		switch(reply.charAt(0)){
 		    case '#': 
-			header(reply.toString());
-			if( languageId>= LANG_SQL){
-				if( reply.charAt(1) != '(') return getRow();
-			} else return MOK;
+			if( !(languageId>= LANG_SQL && reply.charAt(1)!='(')){
+				header(reply.toString());
+				return getRow();
+			} 
 		    case '!': 
 			// concatenate error messages
 			String olderr= errortext;
 			clrError();
 			setError(olderr+reply.toString(),"getRow");
-			break;
+			return getRow();
 		    case '[': 
 			cache.tuples++;
 		    default:
@@ -1155,6 +1203,7 @@ private void toMonet(String msg) throws MapiException {
  * @parem time the timeout in milliseconds
 */
 public int timeout(int time){
+	check("timeout");
 	System.out.println("timeout() not yet implemented");
 	return MOK;
 }
