@@ -30,8 +30,8 @@ end level;	# 4
 #end test;
 function Admin.test(age:int,nme:str):int;	# 0  (test:int)<-(age:int)(nme:str)
     d := inspect.getStackDepth();	# 1 INSPECTStkDepth (d:int)
-    system.printf("stack depth %d\n",d);	# 2 SYSprint_formatted_int ($4:int)<-($5:str)(d:int)
-    system.printf("simulated error\n");	# 3 SYSprint_str ($6:int)<-($7:str)
+    io.printf("stack depth %d\n",d);	# 2 SYSprint_formatted_int ($4:int)<-($5:str)(d:int)
+    io.printf("simulated error\n");	# 3 SYSprint_str ($6:int)<-($7:str)
     f := inspect.getCode();	# 4 INSPECTcodeDump (f:bat[:void,:str])
     io.print(f);	# 5 CMDprint_val ($9:int)<-(f:bat[:void,:str])
     t := inspect.getStackFrame();	# 6 INSPECTStkFrame (t:bat[:str,:str])
@@ -53,8 +53,8 @@ simulated error
 #---------------------------------------------------------#
 [ 0,	  "function Admin.test(age:int,nme:str):int;"	  ]
 [ 1,	  "    d := inspect.getStackDepth();"		  ]
-[ 2,	  "    system.printf(\"stack depth %d\\n\",d);"	  ]
-[ 3,	  "    system.printf(\"simulated error\\n\");"	  ]
+[ 2,	  "    io.printf(\"stack depth %d\\n\",d);"	  ]
+[ 3,	  "    io.printf(\"simulated error\\n\");"	  ]
 [ 4,	  "    f := inspect.getCode();"			  ]
 [ 5,	  "    io.print(f);"				  ]
 [ 6,	  "    t := inspect.getStackFrame();"		  ]

@@ -17,7 +17,7 @@
 #end clkticks;
 function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
 barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    system.printf("clock tick\n");	# 2 SYSprint_str ($4:int)<-($5:str)
+    io.printf("clock tick\n");	# 2 SYSprint_str ($4:int)<-($5:str)
     alarm.sleep(2);	# 3 ALARMsleep ($6:void)<-($7:int)
     n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
     redo b;	# 5  (b:bit) jump 1
@@ -34,13 +34,13 @@ end main;	# 3
 #Monet Debugger on
 #mdb     Admin.clkticks(2)
 #mdb barrier b := calc.>(2,0)
-#mdb     system.printf("clock tick\\n")
+#mdb     io.printf("clock tick\\n")
 clock tick
 #mdb     alarm.sleep(2)
 #mdb     n := calc.-(2,1)
 #mdb     redo b;
 #mdb barrier b := calc.>(1,0)
-#mdb     system.printf("clock tick\\n")
+#mdb     io.printf("clock tick\\n")
 clock tick
 #mdb     alarm.sleep(2)
 #mdb     n := calc.-(1,1)

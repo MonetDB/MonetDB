@@ -54,23 +54,23 @@ function Admin.main():int;	# 0  (main:int)
     o := calc.oid(20000000);	# 6 CALClng2oid (o:oid)<-($13:lng)
     calc.setoid(o);	# 7 CALCsetoidInc ($14:oid)<-(o:oid)
     b := bbp.new(int:,int:);	# 8 CMDBATnew (b:bat[:int,:int])<-($16:int)($17:int)
-    system.printf("#~BeginVariableOutput~#\n");	# 9 SYSprint_str ($18:int)<-($19:str)
-    binfo := bat.info(b);	# 10 CMDinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
+    io.printf("#~BeginVariableOutput~#\n");	# 9 SYSprint_str ($18:int)<-($19:str)
+    binfo := bat.info(b);	# 10 BKCinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
     io.print(binfo);	# 11 CMDprint_val ($21:int)<-(binfo:bat[:str,:str])
-    system.printf("#~EndVariableOutput~#\n");	# 12 SYSprint_str ($22:int)<-($23:str)
+    io.printf("#~EndVariableOutput~#\n");	# 12 SYSprint_str ($22:int)<-($23:str)
     profiler.start();	# 13 CMDstartProfiler ($24:void)
-    err := bat.insert(b,1,15);	# 14 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($26:int)($27:int)
-    err := bat.insert(b,2,4);	# 15 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($28:int)($29:int)
+    err := bat.insert(b,1,15);	# 14 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($26:int)($27:int)
+    err := bat.insert(b,2,4);	# 15 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($28:int)($29:int)
     n0 := calc.int(nil);	# 16 CALCnil2int (n0:int)<-($31:void)
-    err := bat.insert(b,3,n0);	# 17 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($32:int)(n0:int)
-    err := bat.insert(b,4,16);	# 18 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($29:int)($33:int)
-    err := bat.insert(b,5,25);	# 19 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($34:int)($35:int)
-    err := bat.insert(b,6,36);	# 20 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($36:int)($37:int)
-    err := bat.insert(b,7,49);	# 21 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($38:int)($39:int)
-    err := bat.insert(b,8,64);	# 22 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($40:int)($41:int)
-    err := bat.insert(b,9,n0);	# 23 CMDinsert_bun (err:void)<-(b:bat[:int,:int])($42:int)(n0:int)
-    err := bat.insert(b,n0,n0);	# 24 CMDinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
-    err := bat.insert(b,n0,81);	# 25 CMDinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)($43:int)
+    err := bat.insert(b,3,n0);	# 17 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($32:int)(n0:int)
+    err := bat.insert(b,4,16);	# 18 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($29:int)($33:int)
+    err := bat.insert(b,5,25);	# 19 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($34:int)($35:int)
+    err := bat.insert(b,6,36);	# 20 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($36:int)($37:int)
+    err := bat.insert(b,7,49);	# 21 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($38:int)($39:int)
+    err := bat.insert(b,8,64);	# 22 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($40:int)($41:int)
+    err := bat.insert(b,9,n0);	# 23 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($42:int)(n0:int)
+    err := bat.insert(b,n0,n0);	# 24 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81);	# 25 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)($43:int)
     io.print(b);	# 26 CMDprint_val ($44:int)<-(b:bat[:int,:int])
     io.print(b,b,b);	# 27 CMDtable ($45:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
     profiler.stop();	# 28 CMDstopProfiler ($46:void)
@@ -91,6 +91,7 @@ end main;	# 30
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
 [ "batRefcnt",			  "1"		  ]
+[ "batLRefcnt",			  "2"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
 [ "void_tid",			  "0"		  ]
@@ -118,6 +119,8 @@ end main;	# 30
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
 [ "batStamp",			  "4"		  ]
+[ "lastUsed",			  "5"		  ]
+[ "keepAround",			  "0"		  ]
 [ "curStamp",			  "5"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]

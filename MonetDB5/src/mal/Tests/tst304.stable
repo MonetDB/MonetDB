@@ -30,7 +30,7 @@ function Admin.main():int;	# 0  (main:int)
     Admin.myException();	# 1  ($1:void)
     io.print("should not come here");	# 2 CMDprint_val ($2:int)<-($3:str)
 catch IllegalAccess;	# 3  (IllegalAccess:str) jump 5
-    system.printf("catched IllegalAccess\n");	# 4 SYSprint_str ($5:int)<-($6:str)
+    io.printf("catched IllegalAccess\n");	# 4 SYSprint_str ($5:int)<-($6:str)
 exit IllegalAccess;	# 5  (IllegalAccess:str)
     io.print("done");	# 6 CMDprint_val ($7:int)<-($8:str)
 end main;	# 7  

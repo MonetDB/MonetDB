@@ -16,7 +16,7 @@
 #end clkticks;
 function Admin.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
 barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    system.printf("clock tick %d\n",n);	# 2 SYSprint_formatted_int ($4:int)<-($5:str)(n:int)
+    io.printf("clock tick %d\n",n);	# 2 SYSprint_formatted_int ($4:int)<-($5:str)(n:int)
     alarm.sleep(5);	# 3 ALARMsleep ($6:void)<-($7:int)
     n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
     redo b;	# 5  (b:bit) jump 1
