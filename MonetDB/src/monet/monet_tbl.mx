@@ -396,7 +396,9 @@ typedef struct {
 } dltable;
 
 int	 DL_errno = 0;
+#ifndef STATIC
 static char *DL_errmsg;
+#endif
 str	 DL_mod[DL_TABLE_MAXLIBS] = { 0 };
 dltable* DL_table[DL_TABLE_MAXLIBS] = { 0 };
 
@@ -451,6 +453,7 @@ void* DL_open(char* nme, int mode) {
 		} else
 			DL_errmsg = "library not found";
 #else 
+		(void) mode;
 		DL_errno = 1;
 #endif
 	}
@@ -493,6 +496,8 @@ int DL_close(void *handle) {
 		}
 		GDKfree(tbl);
 	}
+#else
+	(void) handle;
 #endif
 	return ret; 
 }

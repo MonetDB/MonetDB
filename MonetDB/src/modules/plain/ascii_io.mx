@@ -319,9 +319,9 @@ static char *sep_dup( char *sep ){
 }
 
 ptr *ASCIIadt_frStr( void *extra, int type, char *s){
-	(void) extra;
         int l = 0;
         ptr *res = NULL;
+	(void) extra;
         if (type == TYPE_str) {
         	if (s == NULL || strcmp(s,"nil") == 0)
         		res = (ptr*)ATOMnil(TYPE_str);
