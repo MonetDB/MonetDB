@@ -975,8 +975,10 @@ CXXEXT = \\\"cc\\\"
             fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
 
     if am['NLIBS']:
+        fd.write("noinst_LTLIBRARIES =")
         for (pref, lib, sep) in am['NLIBS']:
-            fd.write("noinst_LTLIBRARIES = %s%s%s.la\n" % (pref, sep, lib))
+            fd.write(" %s%s%s.la" % (pref, sep, lib))
+        fd.write("\n")
 
     if len(am['BINS']) > 0:
         fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS'], " ", ""))
