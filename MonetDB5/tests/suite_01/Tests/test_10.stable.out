@@ -8,17 +8,62 @@ stdout of test 'test_10` in directory 'tests/suite_01` itself:
 #script:test_10.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-# long string problems in the Monet parser
-var a:="asdfdsfasdfadfadfa";
-var b:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";
-var c:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";
-c.print();
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_01
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##include "mil_prelude";
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("# long string problems in the Monet parser\n");
+#	mil.line("var a:=\"asdfdsfasdfadfadfa\";");
+#	a := "asdfdsfasdfadfadfa";
+#	mil.line("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";");
+#	b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";
+#	mil.line("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";");
+#	c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";
+#	mil.line("c.print();");
+#	ca_a := print(c);
+#	mil.line("quit();");
+#	da_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("# long string problems in the Monet parser\n");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("var a:=\"asdfdsfasdfadfadfa\";");	# 5 MILline ($8:void)<-($9:str)
+    a := "asdfdsfasdfadfadfa";	# 6  (a:str)<-($11:str)
+    mil.line("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";");	# 7 MILline ($12:void)<-($13:str)
+    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";	# 8  (b:str)<-($15:str)
+    mil.line("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";");	# 9 MILline ($16:void)<-($17:str)
+    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";	# 10  (c:str)<-($19:str)
+    mil.line("c.print();");	# 11 MILline ($20:void)<-($21:str)
+    ca_a := io.print(c);	# 12 IOprint_val (ca_a:int)<-(c:str)
+    mil.line("quit();");	# 13 MILline ($23:void)<-($24:str)
+    da_a := clients.quit();	# 14 CLTquit (da_a:void)
+end main;	# 15  
+#setoid(oid(20000000));
+## long string problems in the Monet parser
+#var a:="asdfdsfasdfadfadfa";
+#var b:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";
+#var c:="01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";
+#c.print();
 [ "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789" ]
-quit();
+#quit();
 
 # 17:08:57 >  
 # 17:08:57 >  Done.
