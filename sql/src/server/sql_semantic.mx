@@ -616,8 +616,9 @@ stmt *semantic(mvc * sql, symbol * s)
 	case SQL_DELETE:
 		return updates(sql, s);
 
+	case SQL_DECLARE:
 	case SQL_SET:
-		return sql_set_var(sql, s);
+		return env(sql, s);
 
 	case SQL_SELECT:
 	case SQL_JOIN:

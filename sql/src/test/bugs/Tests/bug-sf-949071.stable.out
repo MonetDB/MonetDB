@@ -17,67 +17,93 @@ quit();
 
 Over..
 
-# 10:33:52 >  
-# 10:33:52 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=55390  < bug-sf-949071.sql
-# 10:33:52 >  
+# 01:20:33 >  
+# 01:20:33 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=54544  < bug-sf-949071.sql
+# 01:20:33 >  
 
-# id,	name,	schema_id,	query,	istable,	system,	clear,	count_id # name
-# mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean,	mediumint # type
-# 22,	,	,	,	,	,	,	 # tuplecount
-# 0,	,	,	,	,	,	,	 # id
-[ 1005638,	"modules",	1005628,	"",	true,	true,	false,	22	]
-[ 1005689,	"schemas",	1005628,	"",	true,	true,	false,	22	]
-[ 1005693,	"tables",	1005628,	"",	true,	true,	false,	22	]
-[ 1005701,	"columns",	1005628,	"",	true,	true,	false,	22	]
-[ 1005711,	"keys",	1005628,	"",	true,	true,	false,	22	]
-[ 1005717,	"idxs",	1005628,	"",	true,	true,	false,	22	]
-[ 1005722,	"keycolumns",	1005628,	"",	true,	true,	false,	22	]
-[ 1005727,	"types",	1005628,	"",	true,	true,	false,	22	]
-[ 1005735,	"tmp_tables",	1005628,	"",	true,	true,	true,	22	]
-[ 1005773,	"tmp_columns",	1005628,	"",	true,	true,	true,	22	]
-[ 1005821,	"users",	1005628,	"",	true,	true,	false,	22	]
-[ 1005844,	"user_role",	1005628,	"",	true,	true,	false,	22	]
-[ 1005867,	"auths",	1005628,	"",	true,	true,	false,	22	]
-[ 1005885,	"privileges",	1005628,	"",	true,	true,	false,	22	]
-[ 1005914,	"history",	1005628,	"",	true,	true,	false,	22	]
-[ 1005952,	"sessions",	1005628,	"",	true,	true,	true,	22	]
-[ 1005970,	"env",	1005628,	"",	true,	true,	false,	22	]
-[ 1008376,	"foo",	1005628,	"",	true,	false,	false,	22	]
-[ 1008563,	"ff",	1005628,	"",	true,	false,	false,	22	]
-[ 1008831,	"s4",	1005628,	"",	true,	false,	false,	22	]
-[ 1010552,	"r",	1005628,	"",	true,	false,	false,	22	]
-[ 1006003,	"test",	1005628,	"",	true,	false,	false,	22	]
 #-
 # 3 # querytype
-# t2,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
-# count_id,	id,	name,	schema_id,	query,	istable,	system,	clear # name
-# mediumint,	mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean # type
-# 22,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	 # id
-[ 22,	1005638,	"modules",	1005628,	"",	true,	true,	false	]
-[ 22,	1005689,	"schemas",	1005628,	"",	true,	true,	false	]
-[ 22,	1005693,	"tables",	1005628,	"",	true,	true,	false	]
-[ 22,	1005701,	"columns",	1005628,	"",	true,	true,	false	]
-[ 22,	1005711,	"keys",	1005628,	"",	true,	true,	false	]
-[ 22,	1005717,	"idxs",	1005628,	"",	true,	true,	false	]
-[ 22,	1005722,	"keycolumns",	1005628,	"",	true,	true,	false	]
-[ 22,	1005727,	"types",	1005628,	"",	true,	true,	false	]
-[ 22,	1005735,	"tmp_tables",	1005628,	"",	true,	true,	true	]
-[ 22,	1005773,	"tmp_columns",	1005628,	"",	true,	true,	true	]
-[ 22,	1005821,	"users",	1005628,	"",	true,	true,	false	]
-[ 22,	1005844,	"user_role",	1005628,	"",	true,	true,	false	]
-[ 22,	1005867,	"auths",	1005628,	"",	true,	true,	false	]
-[ 22,	1005885,	"privileges",	1005628,	"",	true,	true,	false	]
-[ 22,	1005914,	"history",	1005628,	"",	true,	true,	false	]
-[ 22,	1005952,	"sessions",	1005628,	"",	true,	true,	true	]
-[ 22,	1005970,	"env",	1005628,	"",	true,	true,	false	]
-[ 22,	1008376,	"foo",	1005628,	"",	true,	false,	false	]
-[ 22,	1008563,	"ff",	1005628,	"",	true,	false,	false	]
-[ 22,	1008831,	"s4",	1005628,	"",	true,	false,	false	]
-[ 22,	1010552,	"r",	1005628,	"",	true,	false,	false	]
-[ 22,	1006003,	"test",	1005628,	"",	true,	false,	false	]
+# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	t2 # table_name
+# id,	name,	schema_id,	query,	istable,	system,	clear,	temporary,	count_id # name
+# mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean,	decimal,	mediumint # type
+# 0,	10,	0,	0,	0,	0,	0,	0,	0 # length
+# 29,	,	,	,	,	,	,	,	 # tuplecount
+# 0,	,	,	,	,	,	,	,	 # id
+[ 1005796,	"modules",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005847,	"schemas",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005851,	"ptables",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005859,	"pcolumns",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005869,	"keys",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005875,	"idxs",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005880,	"keycolumns",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005885,	"types",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1005893,	"ttables",	1005786,	"",	true,	true,	true,	0,	29	]
+[ 1005931,	"tcolumns",	1005786,	"",	true,	true,	true,	0,	29	]
+[ 1005979,	"users",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1006002,	"user_role",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1006025,	"auths",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1006043,	"privileges",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1006072,	"history",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1006110,	"sessions",	1005786,	"",	true,	true,	true,	0,	29	]
+[ 1006128,	"env",	1005786,	"",	true,	true,	false,	0,	29	]
+[ 1008553,	"foo",	1005786,	"",	true,	false,	false,	0,	29	]
+[ 1008740,	"ff",	1005786,	"",	true,	false,	false,	0,	29	]
+[ 1009282,	"s4",	1005786,	"",	true,	false,	false,	0,	29	]
+[ 1011276,	"r",	1005786,	"",	true,	false,	false,	0,	29	]
+[ 1006181,	"test",	1005786,	"",	true,	false,	false,	0,	29	]
+[ 1006202,	"c1006201",	1005786,	"",	true,	false,	false,	1,	29	]
+[ 1006246,	"c1006245",	1005786,	"",	true,	false,	false,	1,	29	]
+[ 1006289,	"tables",	1005786,	"",	true,	false,	false,	1,	29	]
+[ 1006333,	"c1006332",	1005786,	"",	true,	false,	false,	1,	29	]
+[ 1006377,	"c1006376",	1005786,	"",	true,	false,	false,	1,	29	]
+[ 1006420,	"tables",	1005786,	"",	true,	false,	false,	1,	29	]
+[ 1006463,	"t2",	1005786,	"",	true,	false,	false,	1,	29	]
+#-
+# 3 # querytype
+# t2,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
+# count_id,	id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
+# mediumint,	mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean,	decimal # type
+# 0,	0,	10,	0,	0,	0,	0,	0,	0 # length
+# 36,	,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	,	 # id
+[ 36,	1005796,	"modules",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005847,	"schemas",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005851,	"ptables",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005859,	"pcolumns",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005869,	"keys",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005875,	"idxs",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005880,	"keycolumns",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005885,	"types",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1005893,	"ttables",	1005786,	"",	true,	true,	true,	0	]
+[ 36,	1005931,	"tcolumns",	1005786,	"",	true,	true,	true,	0	]
+[ 36,	1005979,	"users",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1006002,	"user_role",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1006025,	"auths",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1006043,	"privileges",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1006072,	"history",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1006110,	"sessions",	1005786,	"",	true,	true,	true,	0	]
+[ 36,	1006128,	"env",	1005786,	"",	true,	true,	false,	0	]
+[ 36,	1008553,	"foo",	1005786,	"",	true,	false,	false,	0	]
+[ 36,	1008740,	"ff",	1005786,	"",	true,	false,	false,	0	]
+[ 36,	1009282,	"s4",	1005786,	"",	true,	false,	false,	0	]
+[ 36,	1011276,	"r",	1005786,	"",	true,	false,	false,	0	]
+[ 36,	1006181,	"test",	1005786,	"",	true,	false,	false,	0	]
+[ 36,	1006202,	"c1006201",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006246,	"c1006245",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006289,	"tables",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006333,	"c1006332",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006377,	"c1006376",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006420,	"tables",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006463,	"t2",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006742,	"c1006741",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006786,	"c1006785",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006829,	"tables",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006872,	"t2",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006881,	"c1006880",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006925,	"c1006924",	1005786,	"",	true,	false,	false,	1	]
+[ 36,	1006968,	"tables",	1005786,	"",	true,	false,	false,	1	]
 
-# 18:29:05 >  
-# 18:29:05 >  Done.
-# 18:29:05 >  
+# 01:20:34 >  
+# 01:20:34 >  Done.
+# 01:20:34 >  
 

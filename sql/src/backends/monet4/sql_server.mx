@@ -120,25 +120,6 @@ stream.
 		BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
-@+ void bats
-To prevent void bats to convert to oid bats we need overloaded insert and
-replace commands. These operations should at a later stage be moved to the
-kernel libraries, e.g. bat.mx
-@m
- 	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
-
- 	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
-
- 	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
-
- 	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
-
- 	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
-
- 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
-
-	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
-
 	.COMMAND hash( any::1 v, int sh ) : int = hash_wrap; "calculate a hash value and shift left"
 
 	.COMMAND round( sht v, sht r ) : sht = sht_round_wrap; "round off the value v to nearests multiple of r"
@@ -376,85 +357,6 @@ int mvc_import_table_wrap( BAT **res, mvc *c, Bstream *s, str tname , str sep, s
 	return GDK_SUCCEED;
 }
 
-@-
-The next collection of operators fill a hole in the Monet kernel libraries.
-It provide handy operations on void-BATs. The sole reason not to move it to
-the bat.mx module is that overall the kernel does not support bat[void,void]
-@c
-int bat_append_void_bat_wrap( BAT **res, BAT *i, BAT *u )
-{
-	*res = i;
-	void_append_bat( i, u );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
-{
-	*res = i;
-	void_insert_bat( i, u );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int bat_append_oidvoid_bat_wrap( BAT **res, BAT *i, BAT *u )
-{
-	(void)u; /* fake usage to fool compilers in case assertions are disabled */
-	*res = i;
-	assert(BATcount(i)==0 && BATcount(u) == 0);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
-{
-	BUN r,s;
-        oid o;
-	
-	assert(i->htype == TYPE_oid && 
-		(BATcount(u) == 0 || u->htype == TYPE_oid));
-	BATmax(BATmirror(i),&o);
-	o++;
-	BATloop(u, r, s){
-		oid h = *(oid*)BUNhead(u,r) + o;
-		BUNins(i, &h,  BUNtail(u,r));
-        }
-	*res = i;
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int oid_bat_append_val_wrap( BAT **res, BAT *i, ptr u )
-{
-        oid o;
-
-	assert(i->htype == TYPE_oid);
-	BATmax(BATmirror(i),&o);
-	o++;
-	*res = i;
-	BUNins( i, (ptr) & o, u );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-
-int bat_append_val_wrap( BAT **res, BAT *i, ptr u )
-{
-	oid h = i->hseqbase + BATcount(i);
-	*res = i;
-	BUNins( i, (ptr) & h, u );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
-{
-	*res = o;
-	void_replace_bat( o, d );
-	BBPfix(o->batCacheid);
-	return GDK_SUCCEED;
-}
-
 int hash_wrap( int *res, ptr v, int tpe, int *sh )
 {
 	*res = (ATOMhash(tpe,v)<<(*sh))&0xEFFFFFFF;
@@ -617,17 +519,6 @@ module(mmath);
 module(mkey);
 module(bat_arith);
 module(mapi); # mapi_listen 
-
-# extra SQL string functions 
-
-proc substring( str s, int start, int l ) {
-	if (start < 1) start := 1;
-	return string(s, start - 1, l);
-}
-proc substring( str s, int start ) {
-	if (start < 1) start := 1;
-	return string(s, start - 1);
-}
 
 # low memory usage for testing unloading
 #mem_maxsize(0LL);

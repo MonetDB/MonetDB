@@ -317,10 +317,6 @@ sql_export sql_idx *mvc_create_idx( mvc *m, sql_table *t, char *iname, idx_type 
 sql_export sql_idx *mvc_create_ic( mvc *m, sql_idx *i, sql_column *c);
 sql_export void mvc_drop_idx( mvc *c, sql_schema *s, char *iname );
 
-sql_export size_t void_insert_bat( BAT *b, BAT *u);
-sql_export size_t void_append_bat( BAT *b, BAT *u);
-sql_export size_t void_replace_bat( BAT *b, BAT *u);
-
 sql_export int mvc_result_table( mvc *c, int nr_cols, BAT *order );
 sql_export int mvc_result_row( mvc *c, int nr_cols );
 sql_export int mvc_result_column( mvc *c, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
@@ -344,6 +340,7 @@ sql_export void mvc_clean_result( mvc *m, res_table *t);
  */
 
 #include <gdk.h>
+#include <bat.h>
 
 #include "sql_mvc.h"
 #include "sql_qc.h"
@@ -351,6 +348,7 @@ sql_export void mvc_clean_result( mvc *m, res_table *t);
 #include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_env.h"
+#include "sql_semantic.h"
 #include "sql_privileges.h"
 
 static int 		mvc_debug = 0;
@@ -428,89 +426,17 @@ static size_t void_delete_bat( BAT *b, BAT *d, int delta){
 	if (delta) {
 	    for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) { 
 		oid delid = *(oid*)BUNtail(d,r);
-		bun_inplace(b,  delid, nil);
+		void_inplace(b,  delid, nil);
 		nr++;
             } 
 	} else {
 	    BATloop(d, r, s){
 		oid delid = *(oid*)BUNtail(d,r);
-		bun_inplace(b,  delid, nil);
+		void_inplace(b,  delid, nil);
 		nr++;
 	    }
 	}
 	return nr;
-}
-
-static size_t void_insert_delta( BAT *b, BAT *u ){
-	size_t nr = 0;
-	BUN r;
-	oid nil = oid_nil;
-
-	assert( b->batCacheid != u->batCacheid);
-	for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) { 
-		BUNins(b,  (ptr)&nil, BUNtail(u,r));
-		nr++;
-	}
-	return nr;
-}
-
-static size_t insert_delta( BAT *b, BAT *u ){
-	size_t nr = 0;
-	BUN r;
-
-	for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) { 
-		BUNins(b,  BUNhead(u,r), BUNtail(u,r));
-		nr++;
-	}
-	return nr;
-}
-
-
-static size_t void_replace_delta( BAT *b, BAT *u){
-	size_t nr = 0;
-	BUN r;
-
-	for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) { 
-		oid updid = *(oid*)BUNhead(u,r);
-		ptr val = BUNtail(u,r);
-		bun_inplace(b,  updid, val);
-		nr++;
-	}
-	return nr;
-}
-
-size_t void_replace_bat( BAT *b, BAT *u){
-	size_t nr = 0;
-	BUN r,s;
-
-	BATloop(u, r, s){
-		oid updid = *(oid*)BUNhead(u,r);
-		ptr val = BUNtail(u,r);
-		bun_inplace(b,  updid, val);
-		nr++;
-	}
-	return nr;
-}
-
-
-size_t void_insert_bat( BAT *b, BAT *u){
-	size_t nr = 0;
-	BUN r,s;
-	oid nil = oid_nil;
-
-	BATloop(u, r, s){
-		BUNins(b,  (ptr)&nil, BUNtail(u,r));
-		nr++;
-	}
-	return nr;
-}
-
-size_t void_append_bat( BAT *b, BAT *u){
-        size_t sz = BUNsize(u);
-	size_t sbase = b->hseqbase + BATcount(b);
-	BATseqbase(u, sbase);
-	BATins(b, u);
-	return sz;
 }
 
 static BAT *bat_lcopy(BAT *b, char *func){
@@ -1086,14 +1012,14 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	sql_column *c = NEW(sql_column);
 	ptr lid = BUNhead(columns, j);
 	int sz,d;
-	BAT *column_id = sys_bat(tr->bm, "columns_id");
-	BAT *column_name = sys_bat(tr->bm, "columns_name");
-	BAT *column_type = sys_bat(tr->bm, "columns_type");
-	BAT *column_type_digits = sys_bat(tr->bm, "columns_type_digits");
-	BAT *column_type_scale = sys_bat(tr->bm, "columns_type_scale");
-	BAT *column_default = sys_bat(tr->bm, "columns_default");
-	BAT *column_null = sys_bat(tr->bm, "columns_null");
-	BAT *column_number = sys_bat(tr->bm, "columns_number");
+	BAT *column_id = sys_bat(tr->bm, "pcolumns_id");
+	BAT *column_name = sys_bat(tr->bm, "pcolumns_name");
+	BAT *column_type = sys_bat(tr->bm, "pcolumns_type");
+	BAT *column_type_digits = sys_bat(tr->bm, "pcolumns_type_digits");
+	BAT *column_type_scale = sys_bat(tr->bm, "pcolumns_type_scale");
+	BAT *column_default = sys_bat(tr->bm, "pcolumns_default");
+	BAT *column_null = sys_bat(tr->bm, "pcolumns_null");
+	BAT *column_number = sys_bat(tr->bm, "pcolumns_number");
 
 	base_init( &c->base, *(sqlid*) bun_find(column_id, lid),
 		    TR_OLD, (char *) bun_find(column_name, lid));
@@ -1167,16 +1093,16 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	BAT *cols, *rcols, *keys, *idxs;
 	BUN p,q;
 	int ccnt;
-	BAT *column_table = sys_bat(tr->bm, "columns_table_id");
-	BAT *column_number = sys_bat(tr->bm, "columns_number");
+	BAT *column_table = sys_bat(tr->bm, "pcolumns_table_id");
+	BAT *column_number = sys_bat(tr->bm, "pcolumns_number");
 	BAT *key_table = sys_bat(tr->bm, "keys_table_id");
 	BAT *idx_table = sys_bat(tr->bm, "idxs_table_id");
-	BAT *table_id = sys_bat(tr->bm, "tables_id");
-	BAT *table_names = sys_bat(tr->bm, "tables_name");
-	BAT *table_queries = sys_bat(tr->bm, "tables_query");
-	BAT *table_istable = sys_bat(tr->bm, "tables_istable");
-	BAT *table_system = sys_bat(tr->bm, "tables_system");
-	BAT *table_clear = sys_bat(tr->bm, "tables_clear");
+	BAT *table_id = sys_bat(tr->bm, "ptables_id");
+	BAT *table_names = sys_bat(tr->bm, "ptables_name");
+	BAT *table_queries = sys_bat(tr->bm, "ptables_query");
+	BAT *table_istable = sys_bat(tr->bm, "ptables_istable");
+	BAT *table_system = sys_bat(tr->bm, "ptables_system");
+	BAT *table_clear = sys_bat(tr->bm, "ptables_clear");
 
 	base_init( &t->base, *(sqlid*) bun_find(table_id, lid),
 		TR_OLD, bun_find(table_names, lid));
@@ -1293,7 +1219,7 @@ static sql_schema *load_schema(sql_trans *tr, BAT * schemas, BUN j)
 	BUN p,q;
 	BAT *schema_names = sys_bat(tr->bm, "schemas_name");
 	BAT *schema_auths = sys_bat(tr->bm, "schemas_authorization");
-	BAT *table_schema = sys_bat(tr->bm, "tables_schema_id");
+	BAT *table_schema = sys_bat(tr->bm, "ptables_schema_id");
 
 	base_init( &s->base, *(sqlid*) bun_find(schemas, lid),
 		TR_OLD, bun_find(schema_names, lid));
@@ -1714,21 +1640,21 @@ static void mvc_init_schema( struct bm *bm )
 
 static void mvc_init_table( struct bm *bm )
 {
-	BAT *sql_table_id = mvc_bat(bm, "tables_id", TYPE_int);
-	BAT *sql_table_name = mvc_bat(bm, "tables_name", TYPE_str);
-	BAT *sql_table_schema = mvc_bat(bm, "tables_schema_id", TYPE_int);
-	BAT *sql_table_query = mvc_bat(bm, "tables_query", TYPE_str);
-	BAT *sql_table_istable = mvc_bat(bm, "tables_istable", TYPE_bit);
-	BAT *sql_table_system = mvc_bat(bm, "tables_system", TYPE_bit);
-	BAT *sql_table_clear = mvc_bat(bm, "tables_clear", TYPE_bit);
-	BAT *U_table_id = mvc_bat(bm, "U_tables_id", TYPE_int);
-	BAT *U_table_name = mvc_bat(bm, "U_tables_name", TYPE_str);
-	BAT *U_table_schema = mvc_bat(bm, "U_tables_schema_id", TYPE_int);
-	BAT *U_table_query = mvc_bat(bm, "U_tables_query", TYPE_str);
-	BAT *U_table_istable = mvc_bat(bm, "U_tables_istable", TYPE_bit);
-	BAT *U_table_system = mvc_bat(bm, "U_tables_system", TYPE_bit);
-	BAT *U_table_clear = mvc_bat(bm, "U_tables_clear", TYPE_bit);
-	BAT *D_sql_table = mvc_bat(bm, "D_tables", TYPE_oid);
+	BAT *sql_table_id = mvc_bat(bm, "ptables_id", TYPE_int);
+	BAT *sql_table_name = mvc_bat(bm, "ptables_name", TYPE_str);
+	BAT *sql_table_schema = mvc_bat(bm, "ptables_schema_id", TYPE_int);
+	BAT *sql_table_query = mvc_bat(bm, "ptables_query", TYPE_str);
+	BAT *sql_table_istable = mvc_bat(bm, "ptables_istable", TYPE_bit);
+	BAT *sql_table_system = mvc_bat(bm, "ptables_system", TYPE_bit);
+	BAT *sql_table_clear = mvc_bat(bm, "ptables_clear", TYPE_bit);
+	BAT *U_table_id = mvc_bat(bm, "U_ptables_id", TYPE_int);
+	BAT *U_table_name = mvc_bat(bm, "U_ptables_name", TYPE_str);
+	BAT *U_table_schema = mvc_bat(bm, "U_ptables_schema_id", TYPE_int);
+	BAT *U_table_query = mvc_bat(bm, "U_ptables_query", TYPE_str);
+	BAT *U_table_istable = mvc_bat(bm, "U_ptables_istable", TYPE_bit);
+	BAT *U_table_system = mvc_bat(bm, "U_ptables_system", TYPE_bit);
+	BAT *U_table_clear = mvc_bat(bm, "U_ptables_clear", TYPE_bit);
+	BAT *D_sql_table = mvc_bat(bm, "D_ptables", TYPE_oid);
 
 	update_table_bat(sql_table_id, U_table_id, D_sql_table);
 	update_table_bat(sql_table_name, U_table_name, D_sql_table);
@@ -1755,25 +1681,25 @@ static void mvc_init_table( struct bm *bm )
 
 static void mvc_init_column( struct bm *bm )
 {
-	BAT *sql_column_id = mvc_bat(bm, "columns_id", TYPE_int);
-	BAT *sql_column_name = mvc_bat(bm, "columns_name", TYPE_str);
-	BAT *sql_column_type = mvc_bat(bm, "columns_type", TYPE_str);
-	BAT *sql_column_type_digits = mvc_bat(bm, "columns_type_digits", TYPE_int);
-	BAT *sql_column_type_scale = mvc_bat(bm, "columns_type_scale", TYPE_int);
-	BAT *sql_column_table = mvc_bat(bm, "columns_table_id", TYPE_int);
-	BAT *sql_column_default = mvc_bat(bm, "columns_default", TYPE_str);
-	BAT *sql_column_null = mvc_bat(bm, "columns_null", TYPE_bit);
-	BAT *sql_column_number = mvc_bat(bm, "columns_number", TYPE_int);
-	BAT *U_column_id = mvc_bat(bm, "U_columns_id", TYPE_int);
-	BAT *U_column_name = mvc_bat(bm, "U_columns_name", TYPE_str);
-	BAT *U_column_type = mvc_bat(bm, "U_columns_type", TYPE_str);
-	BAT *U_column_type_digits = mvc_bat(bm, "U_columns_type_digits", TYPE_int);
-	BAT *U_column_type_scale = mvc_bat(bm, "U_columns_type_scale", TYPE_int);
-	BAT *U_column_table = mvc_bat(bm, "U_columns_table_id", TYPE_int);
-	BAT *U_column_default = mvc_bat(bm, "U_columns_default", TYPE_str);
-	BAT *U_column_null = mvc_bat(bm, "U_columns_null", TYPE_bit);
-	BAT *U_column_number = mvc_bat(bm, "U_columns_number", TYPE_int);
-	BAT *D_sql_column = mvc_bat(bm, "D_columns", TYPE_oid);
+	BAT *sql_column_id = mvc_bat(bm, "pcolumns_id", TYPE_int);
+	BAT *sql_column_name = mvc_bat(bm, "pcolumns_name", TYPE_str);
+	BAT *sql_column_type = mvc_bat(bm, "pcolumns_type", TYPE_str);
+	BAT *sql_column_type_digits = mvc_bat(bm, "pcolumns_type_digits", TYPE_int);
+	BAT *sql_column_type_scale = mvc_bat(bm, "pcolumns_type_scale", TYPE_int);
+	BAT *sql_column_table = mvc_bat(bm, "pcolumns_table_id", TYPE_int);
+	BAT *sql_column_default = mvc_bat(bm, "pcolumns_default", TYPE_str);
+	BAT *sql_column_null = mvc_bat(bm, "pcolumns_null", TYPE_bit);
+	BAT *sql_column_number = mvc_bat(bm, "pcolumns_number", TYPE_int);
+	BAT *U_column_id = mvc_bat(bm, "U_pcolumns_id", TYPE_int);
+	BAT *U_column_name = mvc_bat(bm, "U_pcolumns_name", TYPE_str);
+	BAT *U_column_type = mvc_bat(bm, "U_pcolumns_type", TYPE_str);
+	BAT *U_column_type_digits = mvc_bat(bm, "U_pcolumns_type_digits", TYPE_int);
+	BAT *U_column_type_scale = mvc_bat(bm, "U_pcolumns_type_scale", TYPE_int);
+	BAT *U_column_table = mvc_bat(bm, "U_pcolumns_table_id", TYPE_int);
+	BAT *U_column_default = mvc_bat(bm, "U_pcolumns_default", TYPE_str);
+	BAT *U_column_null = mvc_bat(bm, "U_pcolumns_null", TYPE_bit);
+	BAT *U_column_number = mvc_bat(bm, "U_pcolumns_number", TYPE_int);
+	BAT *D_sql_column = mvc_bat(bm, "D_pcolumns", TYPE_oid);
 
 	update_table_bat(sql_column_id, U_column_id, D_sql_column);
 	update_table_bat(sql_column_name, U_column_name, D_sql_column);
@@ -2030,7 +1956,7 @@ int mvc_init(int debug, backend_stack stk)
 		bootstrap_create_column(m, t, "name", "VARCHAR");
 		bootstrap_create_column(m, t, "authorization", "VARCHAR");
 
-		t = bootstrap_create_table(m, s, "tables", 0);
+		t = bootstrap_create_table(m, s, "ptables", 0);
 		bootstrap_create_column(m, t, "id", "MEDIUMINT");
 		bootstrap_create_column(m, t, "name", "VARCHAR");
 		bootstrap_create_column(m, t, "schema_id", "MEDIUMINT");
@@ -2039,7 +1965,7 @@ int mvc_init(int debug, backend_stack stk)
 		bootstrap_create_column(m, t, "system", "BOOLEAN");
 		bootstrap_create_column(m, t, "clear", "BOOLEAN");
 
-		t = bootstrap_create_table(m, s, "columns", 0);
+		t = bootstrap_create_table(m, s, "pcolumns", 0);
 		bootstrap_create_column(m, t, "id", "MEDIUMINT");
 		bootstrap_create_column(m, t, "name", "VARCHAR");
 		bootstrap_create_column(m, t, "type", "VARCHAR");
@@ -2078,7 +2004,7 @@ int mvc_init(int debug, backend_stack stk)
 		bootstrap_create_column(m, t, "radix", "MEDIUMINT");
 		bootstrap_create_column(m, t, "module_id", "MEDIUMINT");
 
-		t = mvc_create_table(m, s, "tmp_tables", 1, 1, 1, -1);
+		t = mvc_create_table(m, s, "ttables", 1, 1, 1, -1);
 		mvc_create_column_(m, t, "id", "MEDIUMINT");
 		mvc_create_column_(m, t, "name", "VARCHAR");
 		mvc_create_column_(m, t, "schema_id", "MEDIUMINT");
@@ -2087,7 +2013,7 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "system", "BOOLEAN");
 		mvc_create_column_(m, t, "clear", "BOOLEAN");
 
-		t = mvc_create_table(m, s, "tmp_columns", 1, 1, 1, -1);
+		t = mvc_create_table(m, s, "tcolumns", 1, 1, 1, -1);
 		mvc_create_column_(m, t, "id", "MEDIUMINT" );
 		mvc_create_column_(m, t, "name", "VARCHAR" );
 		mvc_create_column_(m, t, "type", "VARCHAR" );
@@ -2132,11 +2058,33 @@ int mvc_init(int debug, backend_stack stk)
 		sql_create_history(m, s);
 		sql_create_env(m, s);
 
+		t = mvc_create_view(m, s, "tables", "select * from ( select p.*, 0 as \"temporary\" from ptables p union all select t.*, 1 as \"temporary\" from ttables t) as tables;", 1, 1);
+		mvc_create_column_(m, t, "id", "MEDIUMINT");
+		mvc_create_column_(m, t, "name", "VARCHAR");
+		mvc_create_column_(m, t, "schema_id", "MEDIUMINT");
+		mvc_create_column_(m, t, "query", "VARCHAR");
+		mvc_create_column_(m, t, "istable", "BOOLEAN");
+		mvc_create_column_(m, t, "system", "BOOLEAN");
+		mvc_create_column_(m, t, "clear", "BOOLEAN");
+		mvc_create_column_(m, t, "temporary", "SMALLINT" );
+
+		t = mvc_create_view(m, s, "columns", "select * from ( select p.* from pcolumns p union all select t.* from tcolumns t) as columns;", 1, 1);
+		mvc_create_column_(m, t, "id", "MEDIUMINT" );
+		mvc_create_column_(m, t, "name", "VARCHAR" );
+		mvc_create_column_(m, t, "type", "VARCHAR" );
+		mvc_create_column_(m, t, "type_digits", "MEDIUMINT" );
+		mvc_create_column_(m, t, "type_scale", "MEDIUMINT" );
+		mvc_create_column_(m, t, "table_id", "MEDIUMINT" );
+		mvc_create_column_(m, t, "default", "VARCHAR" );
+		mvc_create_column_(m, t, "null", "BOOLEAN" );
+		mvc_create_column_(m, t, "number", "MEDIUMINT" );
+
 		m->trans->schema = s;
 		if (mvc_commit(m, 0, NULL) <0){
 			fprintf(stderr, "mvc_init: unable to create system tables\n");
 			return -1;
 		}
+
 		mvc_destroy(m);
 	}
 	return res;
@@ -2395,19 +2343,21 @@ rollforward_create_column( sql_trans *tr, sql_column *c )
 	BAT *b, *u;
 
 	if (!c->t->clear){
-		u = bm_lbid2bat( tr->bm, c->bat.ubid);
-
 		/* only log on toplevel */
-
 		b = bm_lbid2bat( tr->bm, c->bat.bid);
-		snprintf(bname, BUFSIZ, "%s_%s", c->t->base.name, c->base.name );
-		c->bat.bid = bm_add_bat(tr->parent->bm, b->batCacheid, bname, 0);
+		snprintf(bname, BUFSIZ, "%s_%s", 
+			c->t->base.name, c->base.name );
+		c->bat.bid = 
+			bm_add_bat(tr->parent->bm, b->batCacheid, bname, 0);
 		if (tr->parent == gtrans)
 			log_bat_persists(logger, b, c->bat.bid, bname); 
 		bat_destroy(b);
 	
-		snprintf(bname, BUFSIZ, "U_%s_%s", c->t->base.name, c->base.name );
-		c->bat.ubid = bm_add_bat(tr->parent->bm, u->batCacheid, bname, 0);
+		u = bm_lbid2bat( tr->bm, c->bat.ubid);
+		snprintf(bname, BUFSIZ, "U_%s_%s", 
+			c->t->base.name, c->base.name );
+		c->bat.ubid = 
+			bm_add_bat(tr->parent->bm, u->batCacheid, bname, 0);
 		if (tr->parent == gtrans)
 			log_bat_persists(logger, u, c->bat.ubid, bname); 
 		bat_destroy(u);
@@ -2655,7 +2605,8 @@ static int validate_tables(sql_schema * s, sql_schema * os)
 		sql_table *t = n->data;
 		sql_table *ot = find_table(os, t->base.name);
 
-		if (ot || (t->base.wtime == 0 && t->base.rtime == 0)) {
+		if ((ot && ot->table) || 
+		    (t->table && t->base.wtime == 0 && t->base.rtime == 0)) {
 			for (o = t->columns.set->h, p = ot->columns.set->h;
 			     o && p; o = o->next, p = p->next) {
 				sql_column *c = o->data;
@@ -2710,7 +2661,7 @@ int mvc_trans(mvc * m)
 	int res = Q_TRANS;
 	assert(!m->trans); /* can only start a new transaction */
 				
-	MT_set_lock(mvc_lock, "mvc_commit");
+	MT_set_lock(mvc_lock, "mvc_trans");
 	m->trans = trans_dup(m->stk, gtrans, NULL);
 	m->trans->level = ISO_SERIALIZABLE;
 	m->type = res;
@@ -2718,7 +2669,7 @@ int mvc_trans(mvc * m)
 		m->trans->schema = find_schema(m->trans, m->schema);
 		sql_session(m); 
 	}
-	MT_unset_lock(mvc_lock, "mvc_commit");
+	MT_unset_lock(mvc_lock, "mvc_trans");
 	return res;
 }
 
@@ -2745,7 +2696,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 
 	assert(tr);
 	if (mvc_debug)
-		fprintf(stderr, "mvc_commit\n");
+		fprintf(stderr, "mvc_commit %s\n", (name)?name:"");
 
 	schema = _strdup(m->trans->schema->base.name);
 	if (m->status < 0) {
@@ -2762,6 +2713,8 @@ int mvc_commit(mvc * m, int chain, char *name)
 		m->trans->schema = find_schema(m->trans, schema);
 		m->type = Q_TRANS;
 		_DELETE(schema);
+		if (mvc_debug)
+			fprintf(stderr, "mvc_commit %s done\n", (name)?name:"");
 		return 0;
 	}
 
@@ -2783,6 +2736,8 @@ int mvc_commit(mvc * m, int chain, char *name)
 		}
 		m->type = Q_TRANS;
 		_DELETE(schema);
+		if (mvc_debug)
+			fprintf(stderr, "mvc_commit %s done\n", (name)?name:"");
 		return 0;
 	}
 
@@ -2822,6 +2777,8 @@ int mvc_commit(mvc * m, int chain, char *name)
 	}
 	_DELETE(schema);
 	m->type = res;
+	if (mvc_debug)
+		fprintf(stderr, "mvc_commit %s done\n", (name)?name:"");
 	return res;
 }
 
@@ -2834,7 +2791,7 @@ mvc_rollback(mvc * m, int chain, char *name)
 	sql_trans *tr = m->trans;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_rollback\n");
+		fprintf(stderr, "mvc_rollback %s\n", (name)?name:"");
 
 	schema = _strdup(tr->schema->base.name);
 	assert(schema);
@@ -2878,6 +2835,9 @@ mvc_release(mvc * m, char *name)
 {
 	int res = Q_TRANS;
 	sql_trans *tr = m->trans;
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_release %s\n", (name)?name:"");
 
 	while(tr && (!tr->name || strcmp(tr->name,name) != 0))
 		tr = tr -> parent;
@@ -3288,13 +3248,13 @@ static void sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc ){
 	b = bind_bat(tr, find_column(syskc, "id"), 1);
 	r = BATmirror(b);
 	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & k->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskc, "column"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskc, "trunc"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskc, "nr"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, syskc, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 
@@ -3312,13 +3272,13 @@ sys_drop_key(sql_trans *tr, sql_key *k ){
 	b = bind_bat(tr, find_column(syskey, "id"), 1);
 	r = BATmirror(b);
 	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & k->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskey, "table_id"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskey, "name"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskey, "rkey"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, syskey, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 
@@ -3346,13 +3306,13 @@ sys_drop_ic(sql_trans *tr, sql_idx *i, sql_kc *kc ){
 	b = bind_bat(tr, find_column(syskc, "id"), 1);
 	r = BATmirror(b);
 	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & i->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskc, "column"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskc, "trunc"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syskc, "nr"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, syskc, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 
@@ -3370,11 +3330,11 @@ sys_drop_idx(sql_trans *tr, sql_idx *i ){
 	b = bind_bat(tr, find_column(sysidx, "id"), 1);
 	r = BATmirror(b);
 	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & i->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(sysidx, "table_id"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(sysidx, "name"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, sysidx, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 
@@ -3393,7 +3353,7 @@ sys_drop_idx(sql_trans *tr, sql_idx *i ){
 
 static void 
 sys_drop_column(sql_trans *tr, sql_column *col ){
-	sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
+	sql_table *syscolumn = find_table(find_schema(tr, "sys"), "pcolumns");
 	BAT *b, *r;
 	oid rid = 0;
 
@@ -3401,23 +3361,23 @@ sys_drop_column(sql_trans *tr, sql_column *col ){
 	b = bind_bat(tr, find_column(syscolumn, "id"), 1);
 	r = BATmirror(b);
 	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & col->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "table_id"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "name"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "type"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "type_digits"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "type_scale"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "default"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "null"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(syscolumn, "number"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, syscolumn, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 
@@ -3463,8 +3423,8 @@ static void sys_drop_columns(sql_trans * tr, sql_table * t)
 static void sys_drop_table(sql_trans * tr, sql_table *t)
 {
 	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *systable = find_table(syss, t->persists?
-						"tables":"tmp_tables");
+	sql_table *systable = find_table(syss, 
+				t->persists?"ptables":"ttables");
 	BAT *b, *r;
 	oid rid = 0;
 
@@ -3472,15 +3432,15 @@ static void sys_drop_table(sql_trans * tr, sql_table *t)
 	b = bind_bat(tr, find_column(systable, "id"), 1);
 	r = BATmirror(b);
 	rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & t->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(systable, "schema_id"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(systable, "name"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(systable, "istable"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(systable, "query"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, systable, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 	
@@ -3585,9 +3545,9 @@ void mvc_drop_module(mvc * m, char *mname)
 	/* drop from sys module */
 	b = bind_bat(tr, find_column(sysmodule, "id"), 1);
 	rid = *(oid*)BUNhead(b, BUNfnd(BATmirror(b), (ptr) & s->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(sysmodule, "name"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, sysmodule, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 
@@ -3691,11 +3651,11 @@ void mvc_drop_schema(mvc * m, char *sname)
 	/* drop from sys schema */
 	b = bind_bat(tr, find_column(sysschema, "id"), 1);
 	rid = *(oid*)BUNhead(b, BUNfnd(BATmirror(b), (ptr) & s->base.id ));
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(sysschema, "name"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_bat(tr, find_column(sysschema, "authorization"), 1);
-	bun_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
+	void_inplace(b, rid, ATOMnilptr(b->ttype)); bat_destroy(b);
 	b = bind_dbat(tr, sysschema, 1);
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); bat_destroy(b);
 	sys_drop_tables(tr, s);
@@ -3981,20 +3941,20 @@ static sql_table *bootstrap_create_table(mvc * m, sql_schema *s, char *name, bit
 	t->dbid = bm_find_bat(tr->bm, bname);
 	assert(t->dbid);
 
-	b = sys_bat(m->trans->bm, "tables_id");
+	b = sys_bat(m->trans->bm, "ptables_id");
 	rid = BATcount(b);
 	BUNins(b, (ptr) & rid, (ptr) & t->base.id); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "tables_schema_id");
+	b = sys_bat(m->trans->bm, "ptables_schema_id");
 	BUNins(b, (ptr) & rid, (ptr) & s->base.id); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "tables_name");
+	b = sys_bat(m->trans->bm, "ptables_name");
 	BUNins(b, (ptr) & rid, (ptr) t->base.name); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "tables_istable");
+	b = sys_bat(m->trans->bm, "ptables_istable");
 	BUNins(b, (ptr) & rid, (ptr) & t->table); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "tables_system");
+	b = sys_bat(m->trans->bm, "ptables_system");
 	BUNins(b, (ptr) & rid, (ptr) & t->system); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "tables_clear");
+	b = sys_bat(m->trans->bm, "ptables_clear");
 	BUNins(b, (ptr) & rid, (ptr) & t->clear); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "tables_query");
+	b = sys_bat(m->trans->bm, "ptables_query");
 	BUNins(b, (ptr) & rid, (ptr) t->query); bat_destroy(b);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -4007,7 +3967,7 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, bit system, bit 
 	sql_trans *tr = m->trans;
 	sql_table *t = create_table_intern(m, name, 1, system, persists, clear);
 	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *systable = find_table(syss, persists?"tables":"tmp_tables");
+	sql_table *systable = find_table(syss, persists?"ptables":"ttables");
 	oid rid = 0;
 	BAT *b;
 
@@ -4062,7 +4022,7 @@ sql_table *mvc_create_view(mvc * m, sql_schema *s, char *name, char *sql, bit sy
 	sql_trans *tr = m->trans;
 	sql_table *t = create_table_intern(m, name, 0, system, persists, 0);
 	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *systable = find_table(syss, persists?"tables":"tmp_tables");
+	sql_table *systable = find_table(syss, persists?"ptables":"ttables");
 	BAT *b;
 	oid rid = 0;
 
@@ -4140,28 +4100,28 @@ bootstrap_create_column(mvc * m, sql_table *t, char *name, char *sqltype )
 	col->bat.ubid = bm_find_bat(tr->bm, bname);
 	assert(col->bat.bid && col->bat.ubid);
 
-	b = sys_bat(m->trans->bm, "columns_id");
+	b = sys_bat(m->trans->bm, "pcolumns_id");
 	rid = BATcount(b);
 	BUNins(b, (ptr) & rid, (ptr) & col->base.id); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_table_id");
+	b = sys_bat(m->trans->bm, "pcolumns_table_id");
 	BUNins(b, (ptr) & rid, (ptr) & t->base.id); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_name");
+	b = sys_bat(m->trans->bm, "pcolumns_name");
 	BUNins(b, (ptr) & rid, (ptr) col->base.name); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_type");
+	b = sys_bat(m->trans->bm, "pcolumns_type");
 	BUNins(b, (ptr) & rid, (ptr) col->type->type->sqlname); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_type_digits");
+	b = sys_bat(m->trans->bm, "pcolumns_type_digits");
 	BUNins(b, (ptr) & rid, (ptr) & col->type->digits); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_type_scale");
+	b = sys_bat(m->trans->bm, "pcolumns_type_scale");
 	BUNins(b, (ptr) & rid, (ptr) & col->type->scale); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_default");
+	b = sys_bat(m->trans->bm, "pcolumns_default");
 	if (col->def)
 		BUNins(b, (ptr) & rid, (ptr) col->def); 
 	else
 		BUNins(b, (ptr) & rid, (ptr) ATOMnilptr(TYPE_str)); 
 	bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_null");
+	b = sys_bat(m->trans->bm, "pcolumns_null");
 	BUNins(b, (ptr) & rid, (ptr) & col->null); bat_destroy(b);
-	b = sys_bat(m->trans->bm, "columns_number");
+	b = sys_bat(m->trans->bm, "pcolumns_number");
 	BUNins(b, (ptr) & rid, (ptr) & col->colnr); bat_destroy(b);
 
 	col->base.wtime = t->base.wtime = tr->wtime = tr->stime;
@@ -4177,7 +4137,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	sql_column *col = NEW(sql_column);
 	sql_schema *syss = find_schema(tr, "sys");
 	sql_table *syscolumn = find_table(syss, t->persists?
-						"columns":"tmp_columns");
+						"pcolumns":"tcolumns");
 	BAT *b;
 	oid rid = 0;
 
@@ -4311,7 +4271,8 @@ sql_column * mvc_null(mvc * m, sql_column * col, int isnull)
 		fprintf(stderr, "mvc_null %s %d\n", col->base.name, isnull);
 
 	if (col->null != isnull){
-		sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
+		sql_table *syscolumn = find_table(find_schema(tr, "sys"), 
+				col->t->persists?"pcolumns":"tcolumns");
 		BAT *b, *r;
 		oid rid = 0;
 	
@@ -4321,7 +4282,7 @@ sql_column * mvc_null(mvc * m, sql_column * col, int isnull)
 		rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & col->base.id ));
 		bat_destroy(b);
 		b = bind_bat(tr, find_column(syscolumn, "null"), 1);
-		bun_inplace(b, rid, &isnull); 
+		void_inplace(b, rid, &isnull); 
 		bat_destroy(b);
 
 		if (col->base.flag != TR_NEW) {
@@ -4347,7 +4308,8 @@ sql_column * mvc_default(mvc * m, sql_column * col, char *val)
 		return col; /* no change */
 	
 	if (!col->def || !val || strcmp(col->def, val) != 0){
-		sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
+		sql_table *syscolumn = find_table(find_schema(tr, "sys"), 
+				col->t->persists?"pcolumns":"tcolumns");
 		BAT *b, *r;
 		oid rid = 0;
 	
@@ -4358,9 +4320,9 @@ sql_column * mvc_default(mvc * m, sql_column * col, char *val)
 		bat_destroy(b);
 		b = bind_bat(tr, find_column(syscolumn, "default"), 1);
 		if (val)
-			bun_inplace(b, rid, val); 
+			void_inplace(b, rid, val); 
 		else
-			bun_inplace(b, rid, ATOMnilptr(TYPE_str));
+			void_inplace(b, rid, ATOMnilptr(TYPE_str));
 		bat_destroy(b);
 
 		if (col->base.flag != TR_NEW) {

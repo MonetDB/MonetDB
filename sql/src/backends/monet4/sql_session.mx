@@ -709,7 +709,7 @@ query string with "M".
 		/* indicate to client that a new SQL command starts here */
 		stream_write(out, "#-\n", 3, 1);
 
-		if (m->trans)
+		if (m->trans) 
 			pstatus = m->status;
 
 		/* no transaction, reset status */

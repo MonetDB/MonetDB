@@ -240,7 +240,7 @@ init_keywords()
 	keywords_insert("ALL", ALL);
 	keywords_insert("ANY", ANY);
 	keywords_insert("SOME", SOME);
-	keywords_insert("EVERY", EVERY);
+	keywords_insert("EVERY", ANY);
 	/*
 	   keywords_insert("SQLCODE", SQLCODE );
 	 */
@@ -276,6 +276,7 @@ init_keywords()
 	keywords_insert("MINUTE", MINUTE);
 	keywords_insert("SECOND", SECOND);
 
+	keywords_insert("POSITION", POSITION);
 	keywords_insert("SUBSTRING", SUBSTRING);
 
 	keywords_insert("CASE", CASE);

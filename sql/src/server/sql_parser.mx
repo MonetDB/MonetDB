@@ -162,6 +162,7 @@ sql_export int sqlparse(void *);
 #include "sql_datetime.h"
 #include "sql_decimal.h"	/* for decimal_from_str() */
 #include "sql_semantic.h"	/* for sql_add_param() & sql_add_arg() */
+#include "sql_env.h"
 
 #include <unistd.h>
 #include <string.h>
@@ -316,6 +317,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	any_all_some
 	non_reserved_word
 	ident
+	func_ident
 	column
 	authid
 	grantee
@@ -421,7 +423,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval> 
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
-	ALL DISTINCT ANY EVERY SOME CHECK GLOBAL CAST CONVERT
+	ALL DISTINCT ANY SOME CHECK GLOBAL CAST CONVERT
 	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
@@ -455,7 +457,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %left <operation> '='
 %left <operation> '+' '-'
 %left <operation> '*' '/' '%'
-%left <operation> SUBSTRING CONCATSTRING
+%left <operation> SUBSTRING CONCATSTRING POSITION
 %right UMINUS
 
 	/* literal keyword tokens */
@@ -1900,7 +1902,7 @@ scalar_exp:
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '%' scalar_exp
 				{ dlist *l = dlist_create();
-				  dlist_append_string(l, _strdup("sql_mod"));
+				  dlist_append_string(l, _strdup("mod"));
 	  			  dlist_append_symbol(l, $1);
 	  			  dlist_append_symbol(l, $3);
 	  			  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -1927,22 +1929,29 @@ value_exp:
  ;
 
 func_ref:
-    IDENT '(' scalar_exp ')'
+    func_ident '(' scalar_exp ')'
 	{ dlist *l = dlist_create();
   	  dlist_append_string(l, $1);
   	  dlist_append_symbol(l, $3);
 	  $$ = _symbol_create_list( SQL_UNOP, l ); }
-|   IDENT '(' scalar_exp ',' scalar_exp ')'
+|   func_ident '(' scalar_exp ',' scalar_exp ')'
 	{ dlist *l = dlist_create();
   	  dlist_append_string(l, $1);
   	  dlist_append_symbol(l, $3);
   	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_BINOP, l ); }
-|   IDENT '(' scalar_exp_list2 ')'
+|   func_ident '(' scalar_exp_list2 ')'
 	{ dlist *l = dlist_create();
   	  dlist_append_string(l, $1);
   	  dlist_append_list(l, $3);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
+ ;
+
+func_ident:
+	IDENT 	{ $$ = $1; }
+ |	LEFT	{ $$ = _strdup("left"); }
+ |	RIGHT	{ $$ = _strdup("right"); }
+ |	INSERT	{ $$ = _strdup("insert"); }
  ;
 
 datetime_funcs:
@@ -2002,7 +2011,13 @@ string_funcs:
   		  		  dlist_append_symbol(l, $3);
   		  		  dlist_append_symbol(l, $5);
 		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
- |  scalar_exp CONCATSTRING scalar_exp  
+  | POSITION '(' scalar_exp sqlIN scalar_exp ')' 
+				{ dlist *l = dlist_create();
+  		  		  dlist_append_string(l, _strdup("locate"));
+  		  		  dlist_append_symbol(l, $3);
+  		  		  dlist_append_symbol(l, $5);
+		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+  | scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("concat"));
   		  		  dlist_append_symbol(l, $1);
@@ -2349,10 +2364,10 @@ cast_exp:
 	  dlist_append_type(l, $5);
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
  |
-     CONVERT '(' data_type ',' cast_value ')'
+     CONVERT '(' cast_value ',' data_type ')'
  	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $5);
-	  dlist_append_type(l, $3);
+	  dlist_append_symbol(l, $3);
+	  dlist_append_type(l, $5);
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
  ;
 
@@ -2621,7 +2636,39 @@ name_commalist:
  ;
 
 intval:
-	sqlINT			{ $$ = strtol($1,&$1,10); }
+	sqlINT		{ $$ = strtol($1,&$1,10); }
+ |	IDENT		{ 
+	  			mvc *m = (mvc*)parm;
+				char *name = $1; 
+				char *v, *t; 
+				sql_subtype *tpe;
+
+				if (!(v = sql_get_var(m, name))) {
+					char buf[BUFSIZ]; 
+
+					snprintf(buf, BUFSIZ, "Constant (%s) unknown", $1);
+					yyerror(buf);
+					_DELETE($1); 
+					$$ = 0;
+					YYABORT;
+				}
+				t = sql_get_type(m, name);
+				tpe = sql_bind_subtype(t, 0, 0);
+				_DELETE($1); 
+				if (tpe->type->localtype == TYPE_lng ||
+				    tpe->type->localtype == TYPE_int ||
+				    tpe->type->localtype == TYPE_sht ) {
+					$$ = strtol(v,&v,10); 
+				} else {
+					char buf[BUFSIZ]; 
+
+					snprintf(buf, BUFSIZ, "Constant (%s) has wrong type (number expected)", $1);
+					yyerror(buf);
+					$$ = 0;
+					YYABORT;
+				}
+				sql_subtype_destroy(tpe);
+			}
  ;
 
 string:

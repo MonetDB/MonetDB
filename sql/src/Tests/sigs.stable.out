@@ -18,15 +18,10 @@ mods@batloop{
 	drop($t);
 }
 module 'sql_server'
-#---------------------------------------------------------------------------------#
-# signature									  #
-#---------------------------------------------------------------------------------#
-[ "append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]"			  ]
-[ "append(BAT[oid,any::1], any::1) : BAT[oid,any::1]"				  ]
-[ "append(BAT[oid,void], BAT[oid,void]) : BAT[oid,void]"			  ]
-[ "append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
-[ "append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]"		  ]
-[ "append(BAT[void,any::1], any::1) : BAT[void,any::1]"				  ]
+#-------------------------------------------------------------------------#
+# signature								  # name
+# str									  # type
+#-------------------------------------------------------------------------#
 [ "cast2dbl(str) : dbl"							  ]
 [ "cast2dbl(str, int, int) : dbl"					  ]
 [ "cast2flt(str) : flt"							  ]
@@ -55,7 +50,6 @@ module 'sql_server'
 [ "mvc_status(mvc) : int"							  ]
 [ "mvc_type(mvc) : int"								  ]
 [ "quit() "								  ]
-[ "replace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]"		  ]
 [ "round(dbl, dbl) : dbl"						  ]
 [ "round(flt, flt) : flt"						  ]
 [ "round(int, int) : int"						  ]

@@ -60,6 +60,7 @@ sql_export stmt *stmt2pivot(scope * scp, stmt * s);
 #include "sql_scope.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
+#include "sql_env.h"
 
 static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel );
 static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * selection);
@@ -189,9 +190,17 @@ static stmt *sql_column_ref(mvc * sql, scope * scp, symbol * column_r)
 		} else if (!(cs = scope_bind(scp, NULL, name))) {
 			/* maybe simple param */
 			cs = sql_bind_param(sql, name);
-			if (!cs)
-				return sql_error( sql, 02, 
+			if (!cs) {
+				char *v, *t; 
+				sql_subtype *tpe;
+
+				if (!(v = sql_get_var(sql, name)))
+					return sql_error( sql, 02, 
 					"Identifier: %s unknown or ambigious", name);
+				t = sql_get_type(sql, name);
+				tpe = sql_bind_subtype(t, 0, 0);
+				cs = stmt_atom(atom_general(tpe, _strdup(v)));
+			}
 		}
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
@@ -700,7 +709,17 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 			f->res->digits = digits_sum(ls, rs);
 		return stmt_binop(ls, rs, f);
 	} else {
-		if (convert_types( sql, &ls, &rs, 0) >= 0){
+
+		if ( (f = sql_bind_member(fname, t1, 2)) != NULL) {
+			/* try finding function based on first argument */
+			node *m = f->func->ops->h;
+			sql_arg *a = m->next->data;
+
+			rs = check_types(sql, a->type, rs);
+			if (rs) 
+				return stmt_binop(ls, rs, f);
+		} else if (convert_types( sql, &ls, &rs, 0) >= 0) {
+			/* try operators */
  			t1 = tail_type(ls);
 			t2 = tail_type(rs);
 			f = sql_bind_func(fname, t1, t2 );

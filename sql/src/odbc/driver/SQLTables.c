@@ -87,13 +87,13 @@ SQLTables_(ODBCStmt *stmt,
 			       "cast('' as varchar) as table_cat, "
 			       "cast('' as varchar) as table_schem, "
 			       "cast('' as varchar) as table_name, "
-			       "case when t.istable = true and t.system = false and t.persists = true then cast('TABLE' as varchar) "
-			       "when t.istable = true and t.system = true and t.persists = true then cast('SYSTEM_TABLE' as varchar) "
+			       "case when t.istable = true and t.system = false and t.temporary = 0 then cast('TABLE' as varchar) "
+			       "when t.istable = true and t.system = true and t.temporary = 0 then cast('SYSTEM_TABLE' as varchar) "
 			       "when t.istable = false then cast('VIEW' as varchar) "
-			       "when t.istable = true and t.system = false and t.persists = false then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			       "when t.istable = true and t.system = false and t.temporary = 1 then cast('LOCAL TEMPORARY TABLE' as varchar) "
 			       "else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			       "cast('' as varchar) as remarks "
-			       "from (select tables.*, true as persists from tables union select tmp_tables.*, false as persists from tmp_tables) as t order by table_type, "
+			       "from sys.tables t order by table_type, "
 			       "table_cat, table_schem, table_name");
 		/* TODO: UNION it with all supported table types */
 	} else {
@@ -112,13 +112,13 @@ SQLTables_(ODBCStmt *stmt,
 			"cast('%.*s' as varchar) as table_cat, "
 			"cast(s.name as varchar) as table_schem, "
 			"cast(t.name as varchar) as table_name, "
-			"case when t.istable = true and t.system = false and t.persists = true then cast('TABLE' as varchar) "
-			"when t.istable = true and t.system = true and t.persists = true then cast('SYSTEM_TABLE' as varchar) "
+			"case when t.istable = true and t.system = false and t.temporary = 0 then cast('TABLE' as varchar) "
+			"when t.istable = true and t.system = true and t.temporary = 0 then cast('SYSTEM_TABLE' as varchar) "
 			"when t.istable = false then cast('VIEW' as varchar) "
-			"when t.istable = true and t.system = false and t.persists = false then cast('LOCAL TEMPORARY TABLE' as varchar) "
+			"when t.istable = true and t.system = false and t.temporary = 1 then cast('LOCAL TEMPORARY TABLE' as varchar) "
 			"else cast('INTERNAL TABLE TYPE' as varchar) end as table_type, "
 			"cast('' as varchar) as remarks "
-			"from sys.schemas s, (select tables.*, true as persists from tables union select tmp_tables.*, false as persists from tmp_tables) as t "
+			"from sys.schemas s, sys.tables t "
 			"where s.id = t.schema_id",
 			nCatalogNameLength, szCatalogName);
 		query_end += strlen(query_end);

@@ -75,8 +75,11 @@ called 'sessions'.
 
 sql_export int mvc_debug_on( mvc *m, int flag);
 
-sql_export stmt *sql_set_var(mvc *sql, symbol *s );
+sql_export stmt *env(mvc * sql, symbol * s); 
+
 sql_export int sql_set_var_value(mvc *sql, char *name, char *value );
+sql_export char * sql_get_var( mvc *sql, char *name );
+sql_export char * sql_get_type( mvc *sql, char *name );
 
 sql_export int sql_create_env(mvc *sql, sql_schema *s);
 sql_export int sql_create_history(mvc *sql, sql_schema *s);
@@ -84,6 +87,7 @@ sql_export int sql_session(mvc *sql);
 
 #endif /* _SQL_ENV_H_ */
 @c
+#include <bat.h>
 #include "sql_env.h"
 #include "sql_bm.h"
 #include "sql_scope.h"
@@ -99,7 +103,7 @@ int mvc_debug_on( mvc *m, int flg)
 	return 0;
 }
 
-static char * 
+char * 
 sql_get_var( mvc *sql, char *name )
 {
 	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
@@ -113,6 +117,22 @@ sql_get_var( mvc *sql, char *name )
 	bat_destroy(n);
 	bat_destroy(v);
 	return val;
+}
+
+char * 
+sql_get_type( mvc *sql, char *name )
+{
+	BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
+	BAT *t = mvc_bind( sql, "sys", "sessions", "type", 0); 
+	char *type = NULL;
+	BUN p;
+
+	if ((p=BUNfnd(BATmirror(n), name))) {
+		type = BUNtail(t, BUNfnd(t, BUNhead(n, p)));
+	}
+	bat_destroy(n);
+	bat_destroy(t);
+	return type;
 }
 
 int 
@@ -201,7 +221,7 @@ atom *getatom( mvc *sql, stmt *s )
 	return a;
 }
 
-stmt *
+static stmt *
 sql_set_var( mvc *sql, symbol *s )
 {
 	if (s->token == SQL_SET) {
@@ -278,13 +298,52 @@ sql_set_var_value( mvc *sql, char *name, char *value )
 	
 	if ((p=BUNfnd(BATmirror(n), name))) {
 		oid id = *(oid*)BUNhead(n,p);
-		bun_inplace(v, id, value);
+		void_inplace(v, id, value);
 		res = 0;
 	}
 	bat_destroy(n);
 	bat_destroy(v);
 	return res;
 }
+
+stmt *
+sql_declare_var( mvc *sql, symbol *s ) 
+{
+	if (s->token == SQL_DECLARE) {
+		BUN p;
+		dlist *l = s->data.lval;
+		char *name = l->h->data.sval;
+		sql_subtype *ctype = l->h->next->data.typeval;
+		BAT *n = mvc_bind( sql, "sys", "sessions", "name", 0); 
+		BAT *t = mvc_bind( sql, "sys", "sessions", "type", 0); 
+		BAT *v = mvc_bind( sql, "sys", "sessions", "value", 0); 
+		oid h;
+
+		if ((p=BUNfnd(BATmirror(n), name))) {
+			bat_destroy(n);
+			bat_destroy(t);
+@-
+Any user defined variable should be added to the table.
+They don;t survive session boundaries [?]
+@c
+			return sql_error(sql, 02, 
+				"Allready used session variable, %s\n",
+				name);
+		}
+
+		h = BATcount(n);
+		BUNins(n, (ptr) &h, name );
+		BUNins(v, (ptr) &h, "NULL" );
+		BUNins(t, (ptr) &h, ctype->type->sqlname);
+
+		bat_destroy(n);
+		bat_destroy(v);
+		bat_destroy(t);
+		return stmt_none();
+	}
+	return NULL;
+}
+
 @-
 Handling of SQL variables is straigtforward.
 @c
@@ -303,13 +362,13 @@ sql_session( mvc *m )
 	BUNins(n, (ptr) &h, "debug" );
 	snprintf(buf, BUFSIZ, "%d", m->debug );
 	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "MEDIUMINT");
+	BUNins(T, (ptr) &h, "mediumint");
 	h++;
 
 	BUNins(n, (ptr) &h, "reply_size" );
 	snprintf(buf, BUFSIZ, "%d", m->reply_size );
 	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "MEDIUMINT");
+	BUNins(T, (ptr) &h, "mediumint");
 	h++;
 
 	BUNins(n, (ptr) &h, "explain" );
@@ -317,7 +376,7 @@ sql_session( mvc *m )
 	if (m->explain)
 		snprintf(buf, BUFSIZ, "%s", m->explain );
 	BUNins(v, (ptr) &h, buf);
-	BUNins(T, (ptr) &h, "VARCHAR");
+	BUNins(T, (ptr) &h, "varchar");
 	h++;
 
 	BUNins(n, (ptr) &h, "auto_commit" );
@@ -325,7 +384,7 @@ sql_session( mvc *m )
 		BUNins(v, (ptr) &h, "true");
 	else
 		BUNins(v, (ptr) &h, "false");
-	BUNins(T, (ptr) &h, "BOOLEAN");
+	BUNins(T, (ptr) &h, "boolean");
 	h++;
 
 	bat_destroy(n);
@@ -371,7 +430,7 @@ sql_create_env( mvc *m, sql_schema *s )
 @-
 The history table contains information on the parsing, optimization,
 and execution time. More detailed information should be obtained using
-the MonetDB kernel profier, e.g. using Mknife
+the MonetDB kernel profiler, e.g. using Mknife
 @c
 
 int
@@ -390,3 +449,21 @@ sql_create_history( mvc *m, sql_schema *s )
 	return 0;
 }
 @}
+
+stmt *
+env(mvc * sql, symbol * s) 
+{
+	stmt *ret = NULL;
+
+	switch (s->token) {
+	case SQL_SET:
+		return sql_set_var(sql, s);
+	case SQL_DECLARE:
+		return sql_declare_var(sql, s);
+	default:
+		return sql_error(sql, 01, 
+			 "Env statement unknown Symbol(%ld)->token = %s",
+			 (long) s, token2string(s->token));
+	}
+	return ret;
+}

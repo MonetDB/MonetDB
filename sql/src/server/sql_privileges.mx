@@ -90,7 +90,7 @@ int sql_create_role(mvc *m,  str auth, int grantor )
 		return FALSE;
 	}
 	if (BATcount(auth_id) > 0) {
-		int ma = 0;
+		int ma = BATcount(auth_id);
 		/*BATmax(auth_id,&ma);*/
 		ma++;
 		BUNins(auth_id, &onil, &ma);

@@ -1,1 +1,1 @@
-select name from tables union select name from tables;
+select name from ptables union select name from ptables;
