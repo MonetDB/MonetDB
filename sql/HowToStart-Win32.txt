@@ -116,7 +116,7 @@ Pthreads), and \usr\local\wbin are in the PATH of your command shell.
 Further, create an enviroment variable MONET_PREFIX that contains the
 absolute path of the directory where your installed MonetDB, e.g.,
 
- set MONET_PREFIX=...\MonetDB\NT
+ set MONET_PREFIX=<monet-source>\NT
 
 and make sure that %MONET_PREFIX%\bin, %MONET_PREFIX%\lib, and
 %MONET_PREFIX%\lib\MonetDB are in your PATH.
@@ -152,20 +152,20 @@ Give the command
 
  nmake install
 
-By default this will install MonetDB/SQL to <sourcedir>\NT\ where
-<sourcedir> is the top-level directory of MonetDB/SQL source tree.
+By default this will install MonetDB/SQL to <sql-source>\NT\ where
+<sql-source> is the top-level directory of MonetDB/SQL source tree.
 The current version does not provide any means to change this default.
 
 
 Testing the Installation:
 =========================
 
-Make sure that <sourcedir>\NT\bin, <sourcedir>\NT\lib, and
-<sourcedir>\NT\lib\MonetDB are in your PATH.
+Make sure that <sql-source>\NT\bin, <sql-source>\NT\lib, and
+<sql-source>\NT\lib\MonetDB are in your PATH.
 
 In the sql top-level directory issue the command
 
- Mtest.py --TSTSRCBASE=<sourcedir> --TSTBLDBASE=<sourcedir>\NT --TSTTRGBASE=<sourcedir>\NT -r
+ Mtest.py --monet_mod_path=<monet-source>\NT\lib\MonetDB;<sql-source>\NT\lib\MonetDB --SQL_PREFIX=<sql-source>\NT --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-source>\NT --TSTTRGBASE=<sql-source>\NT -r
 
 This should produce much the same output as nmake check above, but uses
 the installed version of MonetDB/SQL.
@@ -189,12 +189,12 @@ sure, that your environment is set as described in "Compiling" and
 In case the install (i.e., prefix) directories of MonetDB and
 MonetDB/SQL are identical, simply call
 
- Mserver <MONET_PREFIX>\lib\MonetDB\sql_server.mil
+ Mserver <sql-prefix>\lib\MonetDB\sql_server.mil
 
 In case you use different install (i.e., prefix) directories of MonetDB
 and MonetDB/SQL, call
 
- Mserver --set monet_mod_path=<MONET_PREFIX>\lib\MonetDB;<SQL_PREFIX>\lib\MonetDB <MONET_PREFIX>\lib\MonetDB\sql_server.mil
+ Mserver --set monet_mod_path=<monet-prefix>\lib\MonetDB;<sql-prefix>\lib\MonetDB <sql-prefix>\lib\MonetDB\sql_server.mil
 
 Then, in a second Windows command shell, set up the same environment
 and start the MonetDB SQL front end by calling

@@ -168,8 +168,8 @@ will install in /usr/local/.  Make sure you have appropriate privileges.
 Testing the Installation:
 =========================
 
-Make sure that /usr/local/bin (respectively <monetdbprefix>/bin and
-<sqlprefix>/bin, where <monetdbprefix> and <sqlprefix> are the
+Make sure that /usr/local/bin (respectively <monet-prefix>/bin and
+<sql-prefix>/bin, where <monet-prefix> and <sql-prefix> are the
 directories you specified with --prefix when calling configure for
 MonetDB and MonetDB/SQL, respectively) is in your PATH.
 
@@ -182,13 +182,13 @@ In the sql top-level directory issue the command
 It will run a large number of SQL tests to assure correct installation.
 
 In case you did not use "source conf/conf.bash", you need to type more.
-Let <srcdir>, <builddir>, and <prefixdir> denote the absolute or
+Let <sql-source>, <sql-build>, and <sql-prefix> denote the absolute or
 relative path to the sql top-level source directory, the directory
 where you called configure for sql, and the directory you specified as
 --prefix with sql's configure, respectively.
 Then, the test runs as follows from the sql top-level directory:
 
- Mtest.py --TSTSRCBASE=<srcdir> --TSTBLDBASE=<builddir> --TSTTRGBASE=<prefixdir> -r
+ Mtest.py --monet_mod_path=<monet-prefix>/lib/MonetDB:<sql-prefix>/lib/MonetDB --SQL_PREFIX=<sql-prefix> --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-build> --TSTTRGBASE=<sql-prefix> -r
 
 You need write permissions on part of the installation directory for
 this command: it will create subdirectories var/dbfarm and Tests.
@@ -235,12 +235,12 @@ and "Testing the Installation" above.
 In case the install (i.e., prefix) directories of MonetDB and
 MonetDB/SQL are identical, simply call
 
- Mserver <MONET_PREFIX>/lib/MonetDB/sql_server.mil
+ Mserver <sql-prefix>/lib/MonetDB/sql_server.mil
 
 In case you use different install (i.e., prefix) directories of MonetDB
 and MonetDB/SQL, call
 
- Mserver --set monet_mod_path=<MONET_PREFIX>/lib/MonetDB:<SQL_PREFIX>/lib/MonetDB <MONET_PREFIX>/lib/MonetDB/sql_server.mil
+ Mserver --set monet_mod_path=<monet-prefix>/lib/MonetDB:<sql-prefix>/lib/MonetDB <sql-prefix>/lib/MonetDB/sql_server.mil
 
 Then, in a second shell, set up the same environment and start the
 MonetDB SQL front end by calling
