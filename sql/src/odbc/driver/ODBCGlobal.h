@@ -116,8 +116,6 @@ SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
 
 #ifdef ODBCDEBUG
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-extern void ODBCLOG(const char *fmt, ...);
-#else
 #define ODBCLOG(...)	do {						\
 				char *s = getenv("ODBCDEBUG");		\
 				if (s && *s) {				\
@@ -129,6 +127,8 @@ extern void ODBCLOG(const char *fmt, ...);
 					}				\
 				}					\
 			} while (0)
+#else
+extern void ODBCLOG(const char *fmt, ...);
 #endif
 #endif
 
