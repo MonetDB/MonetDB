@@ -18,6 +18,7 @@ mem_maxsize(lng(10*1024*1024));
 #vm_maxsize(lng(100*1024*1024));
 while(i < 10) {
         #mem_usage(100000).print;
+	print("DIR");
 	dir;
         #vm_usage(100000).print;
         print("COPY");
