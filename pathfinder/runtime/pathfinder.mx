@@ -2138,7 +2138,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #define PATHFINDER_H
 
 #include <monet.h>
-#include <kernel.h>
+#include <monet_interpreter.h>
 #include <streams.h>
 
 @:define_ws_constants@
