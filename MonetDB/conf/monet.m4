@@ -292,7 +292,12 @@ bits=$withval
 ])
 if test "$bits" == "64"; then
 	dnl  Keep in mind how to call the 32-bit compiler.
-	CC32="$CC"
+	case "$GCC-$host_os-$host" in
+	yes-linux*-x86_64*)
+		dnl  On our x86_64 machine, "gcc" defaults to "gcc -m64" ...
+		CC32="$CC -m32";;
+	*)	CC32="$CC";;
+	esac
 fi
 case "$GCC-$host_os-$host-$bits" in
 yes-solaris*-64)
@@ -443,7 +448,7 @@ AM_PROG_LIBTOOL()
 
 dnl AC_PROG_CC_STDC()
 if test "$bits" == "64"; then
-	dnl  On 64-bit systems, the might be no 64-bit libfl or libl, which is not a major problem,
+	dnl  On 64-bit systems, there might be no 64-bit libfl or libl, which is not a major problem,
 	dnl  as we define our own yywrap function, and hence don't need these libraries.
 	dnl  However, the standard "AC_PROG_LEX" & "AM_PROG_LEX" tests fail to correctly determine,
 	dnl  whether [f]lex defines yytext as pointer or array, in case there is no proper lib[f]l.
@@ -588,7 +593,7 @@ if test "x$enable_optim" = xyes; then
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.0.
       x86_64-*-*-8.0) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-8.0)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      ia64-*-*-8.0)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp2 -mcpu=itanium2";;
+      ia64-*-*-8.0)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)       CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                       dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
