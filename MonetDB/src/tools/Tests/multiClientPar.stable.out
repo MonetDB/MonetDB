@@ -7,17 +7,6 @@ stdout of test 'multiClientPar` in directory 'src/tools` itself:
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for IRIX646.5/32bit on Sun Feb  6 18:46:25 MET 2000.
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
 #> Mtest:	Mtimeout -timeout 900 Mclient < multiClientPar_p00.milC &
 # start session on src_tools:25961
 Start of MIL script.
@@ -1448,7 +1437,3 @@ Reply=
 # shutdown finished
 #> Mtest:	sleep 9
 
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.

@@ -12,22 +12,6 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 # dbname:Tests_tests_Availability
 # dbdir:/var/tmp/monet.ntv_32-s.17473/monet/.ntv_32-s/Linux2.2.14-12smp/dbfarm/Tests_tests_Availability
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 #-----------------#
 # 34 modules	  #
 #-----------------#

@@ -12,22 +12,6 @@ stdout of test 'test_60` in directory 'tests/suite_01` itself:
 # dbname:Tests_tests_suite_01
 # dbdir:/data/manegold/tmp/manegold.GNU_32-s.6489/monet/.GNU_32-s/AIX4.3/dbfarm/Tests_tests_suite_01
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 !ERROR: interpret: no matching MIL operator to 'newid(str, str)'.
 #-----------------------------------------------------------------------------------------#
 # BAT:			  type	| type_status	| value_status	| value_value		  #

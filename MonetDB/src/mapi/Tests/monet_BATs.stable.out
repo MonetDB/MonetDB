@@ -12,22 +12,6 @@ stdout of test 'monet_BATs` in directory 'src/mapi` itself:
 # dbname:Tests_src_mapi
 # dbdir:/ufs/manegold/_/gaffel/Monet/4.3/monet/_Linux_GNU_32_d_/dbfarm/Tests_src_mapi
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 Mserver prologue: This is what Mserver says before MapiClient connects.
 #---------------------------------#

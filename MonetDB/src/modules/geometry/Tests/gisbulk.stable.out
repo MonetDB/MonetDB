@@ -8,22 +8,6 @@ stdout of test 'gisbulk` in directory 'src/modules/geometry` itself:
 # compiled for IRIX646.5/32bit on Tue Jan 18 14:49:14 MET 2000.
 #script:gisbulk.mil
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 

@@ -12,22 +12,6 @@ stdout of test 'monettime` in directory 'src/modules/plain` itself:
 # dbname:Tests_src_modules_plain
 # dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.11887/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_modules_plain
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 #---------------------------------------------------------------------------------------------------------#
 # BAT:	  rule						| month	| weekday	| day	| minutes	  #
 # (str)	  (rule)					| (int)	| (int)		| (int)	| (int)		  #

@@ -12,22 +12,6 @@ stdout of test 'refcnt` in directory 'src/gdk` itself:
 # dbname:Tests_src_gdk
 # dbdir:/var/tmp/monet.GNU_64-d.23118/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_src_gdk
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 #---------------------------------------------------------#
 # name			| heat	| status| kind	| group	  #
 #---------------------------------------------------------#

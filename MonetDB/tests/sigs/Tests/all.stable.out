@@ -7,22 +7,6 @@ stdout of test 'all` in directory 'tests/sigs` itself:
 # compiled for IRIX6.3/32bit on Fri Oct  2 00:21:04 MET DST 1998.
 #script:all.milS
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "kernel",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "algebra",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 setoid(20000000);

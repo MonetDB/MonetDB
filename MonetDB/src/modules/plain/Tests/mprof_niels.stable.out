@@ -8,22 +8,6 @@ stdout of test 'mprof_niels` in directory 'src/modules/plain` itself:
 # compiled for IRIX6.3/32bit on Thu Sep 17 19:13:21 MET DST 1998.
 #script:/ufs/manegold/Current/monet/IRIX6.3/modules/plain/niels.mil
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "kernel",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "algebra",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 

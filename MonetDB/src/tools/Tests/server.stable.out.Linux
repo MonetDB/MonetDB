@@ -12,22 +12,6 @@ stdout of test 'server` in directory 'src/tools` itself:
 # dbname:Tests_src_tools
 # dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_src_tools
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 Start of MIL prelude.
 [ 1 ]
 [ 10 ]

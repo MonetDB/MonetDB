@@ -7,22 +7,6 @@ stdout of test 'tst_priv` in directory 'tests/by_Peter` itself:
 # compiled for Linux2.2.12-20smp/32bit on Wed Apr 12 05:50:14 CEST 2000.
 #script:tst_priv.milM
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 #-----------------------------------------#

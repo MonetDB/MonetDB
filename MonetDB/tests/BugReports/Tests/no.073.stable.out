@@ -8,22 +8,6 @@ stdout of test 'no.073` in directory 'tests/BugReports` itself:
 # compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
 #script:no.073.1.mil
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 #-----------------#
@@ -44,22 +28,6 @@ Try: modules;                - for other modules.
 # compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
 #script:no.073.2.mil
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 #-----------------#

@@ -19,22 +19,6 @@ Mcreatedb: database 'Tests_scripts_gold_tst100' has been initialized succesfully
 # compiled for mips-sgi-irix6.5/32bit.
 #script:/var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/Tests/scripts/gold/load.mil
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 #> Mlog (12:07:47):	Mtimeout -timeout 210 Mserver -p -modulesilent -yaccsilent -d8 -db Tests_scripts_gold_tst100
@@ -43,22 +27,6 @@ Try: modules;                - for other modules.
 # compiled for mips-sgi-irix6.5/32bit.
 #script:/var/tmp/manegold.GNU_32.10790/monet/.GNU_32/IRIX646.5/Tests/scripts/gold/init.mil
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 [ 50000 ]
@@ -85,22 +53,6 @@ Try: modules;                - for other modules.
 # compiled for i686-pc-linux-gnu/32bit.
 #script:tst100.mil
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 #~BeginVariableOutput~#

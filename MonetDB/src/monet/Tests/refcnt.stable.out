@@ -17,22 +17,6 @@ stdout of test 'refcnt` in directory 'src/monet` itself:
 # dbname:Tests_src_monet
 # dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_monet
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
  restart gives correct refcnt b from 0 to 1 
  since b is part of a and persistent expected refcnt should be 2 
 
@@ -47,22 +31,6 @@ Try: modules;                - for other modules.
 # dbname:Tests_src_monet
 # dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.5370/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_src_monet
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 #-----------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
 #-----------------------------------------------------------------------------------------#

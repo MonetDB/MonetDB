@@ -7,22 +7,6 @@ stdout of test '04_Modules_odmg` in directory 'tests/Availability` itself:
 # compiled for IRIX646.5/32bit on Mon Mar 27 04:35:32 MET DST 2000.
 #script:04_Modules_odmg.milS
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 
 #You are system administrator (adm)!
 setoid(oid(20000000));

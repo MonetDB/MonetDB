@@ -12,22 +12,6 @@ stdout of test 'binsemijoin` in directory 'src/gdk` itself:
 # dbname:Tests_src_gdk
 # dbdir:/ufs/manegold/_/draco/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/dbfarm/Tests_src_gdk
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 #-----------------#
 # BAT:	  tmp_25  #
 # (void)  (int)	  #

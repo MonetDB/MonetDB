@@ -12,22 +12,6 @@ stdout of test 'test_20` in directory 'tests/suite_01` itself:
 # dbname:Tests_tests_suite_01
 # dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.21408/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_tests_suite_01
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 !ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 !WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]

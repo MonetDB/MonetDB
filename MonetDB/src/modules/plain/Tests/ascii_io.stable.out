@@ -12,22 +12,6 @@ stdout of test 'ascii_io` in directory 'src/modules/plain` itself:
 # dbname:Tests_src_modules_plain
 # dbdir:/home/niels/data/monet/Linux/dbfarm/Tests_src_modules_plain
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 VAR namebat := bat(void, str);
 namebat.seqbase(0@0);
 namebat.insert(nil, "tmpdocs");

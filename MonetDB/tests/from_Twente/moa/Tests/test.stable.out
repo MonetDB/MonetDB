@@ -12,22 +12,6 @@ stdout of test 'test` in directory 'tests/from_Twente/moa` itself:
 # dbname:Tests_tests_from_Twente_moa
 # dbdir:/var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/dbfarm/Tests_tests_from_Twente_moa
 
-loaded;
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-Try: modules;                - for other modules.
-     ls;                     - for persistent bat listing.
-     sigs("<module>")        - for available commands per module.
-     help("<command>")       - for help one-liner for a command.
 indexA  := new(void,oid);
 valuesA := new(void,int);
 valuesD := new(void,int);
