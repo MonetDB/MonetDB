@@ -1839,14 +1839,15 @@ void strFinalCall(ValPtr v){
 void batBeforeCall(ValPtr v, ValPtr bak){
 	if( v->vtype== TYPE_bat)
 		bak->val.bval= v->val.bval;
-	/* else it was garbage for sure */
+	/* else stream_printf(GDKout,"batBeforeCall:unexpected BAT value\n");
+	   it was garbage for sure */
 }
 void batAfterCall(ValPtr v, ValPtr bak){
-	if( bak->val.bval == v->val.bval)
-		return;
+	if(v->vtype!= TYPE_bat) return; /* not ready yet 
+		stream_printf(GDKout,"batAfterCall:unexpected BAT value\n"); */
 	if( v->val.bval){
-		batFinalCall(bak);
 		BBPincref(v->val.bval,TRUE);
+		batFinalCall(bak);
 	}
 }
 @- 

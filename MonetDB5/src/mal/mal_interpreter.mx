@@ -63,7 +63,7 @@ typedef struct{
 } malTask;
 
 /*#define DEBUG_MAL_INTERPRETER */
-#define DEBUG_MAL_PARALLEL 
+/* #define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
 mal_export void showErrors(Client cntxt);
 mal_export str runMAL(Client c, MalBlkPtr mb, 
@@ -235,7 +235,7 @@ of the return statement.
 
 			rhs = &env->stk[pci->argv[i]];
 			VALcopy(lhs,rhs);
-			@:BATfix(rhs,0)@
+			@:BATfix(rhs,1)@
 		}
 		stk->up = env;
 		env->down = stk;
@@ -261,7 +261,7 @@ we should first remove garbage.
 	} else {
 		lhs = &stk->stk[i];
 		lhs->vtype =getGDKtype(getVarType(mb,i));
-		/* lhs->val.ival =0; tst500 fails */
+		lhs->val.ival =0; 
 	}
 	/* run the program */
 #ifdef STACKTRACE
@@ -505,7 +505,7 @@ possible change in the control flow.
 				rhs = &stk->stk[pp->argv[i]];
 				lhs = &env->stk[pci->argv[i]];
 				VALcopy(lhs,rhs);
-				@:BATfix(lhs,stkpc)@
+				@:BATfix(lhs,0)@
 			}
 			@:garbageTypeCheck@
 			goto MALevalExit;
@@ -537,9 +537,9 @@ cause errors in multi-assignment statements.
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
-		(*pci->beforeCall)(&stk->stk[pci->argv[k]],&backup);
+		(*pci->beforeCall)(lhs,&backup);
 		VALcopy(lhs,rhs);
-		(*pci->afterCall)(&stk->stk[pci->argv[k]],&backup);
+		(*pci->afterCall)(lhs,&backup);
 	}
 	else
 	if( pci->beforeCall )
@@ -1074,13 +1074,8 @@ underlying BAT.
 Look further in mal_instruction.mx for the before/after calls.
 @{
 @= BATfix
-if(@1->vtype == TYPE_bat)
-{ 	BAT *b;
-	b= (BAT*) BBPgetdesc(@1->val.bval);
-	if( b ) {
-		BBPincref(b->batCacheid,TRUE);
-	} else raiseException(mb,@2,"interpreter",
-		"Can not find bat, internal error\n");
+if(@1->vtype == TYPE_bat && @1->val.bval){
+	BBPincref(@1->val.bval,TRUE);
 }
 @-
 @}

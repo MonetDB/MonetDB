@@ -417,7 +417,7 @@ on a user-supplied function [todo].
 @= chkMultiple
 	if( p->retc != 1)
 		GDKwarning("garbage collection not guaranteed\n");
-@c
+@= prepostProcess
 	if(isaBatType(s1)){
 		@:chkMultiple@
 		p->beforeCall= (MALfcn) batBeforeCall;
@@ -430,6 +430,8 @@ on a user-supplied function [todo].
 		p->afterCall= (MALfcn) strAfterCall;
 		p->finalCall= (MALfcn) strFinalCall;
 	} 
+@c
+	@:prepostProcess@
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
@@ -598,8 +600,7 @@ In those cases, the detailed analysis is performed upon an actual call.
 		return;
 	}
 @+ Assignment 
-When we arrive here the operator is an assignment or a 
-control flow statement.
+When we arrive here the operator is an assignment.
 The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
 variables.
@@ -622,6 +623,7 @@ requires a call to a type-specific setToNil() function call.
 			setVarType(mb,p->argv[k],rhs);
 			setFixed(mb,p->argv[k]);
 		}
+		@:prepostProcess@
 	}
 }
 @-
