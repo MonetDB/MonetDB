@@ -947,49 +947,475 @@ CastableExpr:           ComparisonExpr;
 CastableExpr:           castable (ComparisonExpr, SingleType);
 
 ComparisonExpr:         RangeExpr;
-ComparisonExpr:         eq (RangeExpr, RangeExpr);
-ComparisonExpr:         ne (RangeExpr, RangeExpr);
-ComparisonExpr:         lt (RangeExpr, RangeExpr);
-ComparisonExpr:         le (RangeExpr, RangeExpr);
-ComparisonExpr:         gt (RangeExpr, RangeExpr);
-ComparisonExpr:         ge (RangeExpr, RangeExpr);
-ComparisonExpr:         val_eq (RangeExpr, RangeExpr);
-ComparisonExpr:         val_ne (RangeExpr, RangeExpr);
-ComparisonExpr:         val_lt (RangeExpr, RangeExpr);
-ComparisonExpr:         val_le (RangeExpr, RangeExpr);
-ComparisonExpr:         val_gt (RangeExpr, RangeExpr);
-ComparisonExpr:         val_ge (RangeExpr, RangeExpr);
-ComparisonExpr:         is (RangeExpr, RangeExpr);
-ComparisonExpr:         nis (RangeExpr, RangeExpr);
-ComparisonExpr:         ltlt (RangeExpr, RangeExpr);
-ComparisonExpr:         gtgt (RangeExpr, RangeExpr);
+ComparisonExpr:         eq (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFvar_t *u1 = new_var (0);
+        PFvar_t *u2 = new_var (0);
+        PFfun_t *op_eq = function (PFqname (PFns_op, "eq"));
+
+        [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
+                         some (var (v2), fn_data ([[ $2$ ]]),
+                               let (var (u1), 
+                                    fs_convert_op (var (v1),
+                                                   PFty_xs_string ()),
+                                    let (var (u2), 
+                                         fs_convert_op (var (v2), 
+                                                        PFty_xs_string ()),
+                                         APPLY (op_eq, var (u1), var (u2))))
+                              )
+                        );
+    }
+    ;
+                           
+ComparisonExpr:         ne (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFvar_t *u1 = new_var (0);
+        PFvar_t *u2 = new_var (0);
+        PFfun_t *op_ne = function (PFqname (PFns_op, "ne"));
+
+        [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
+                         some (var (v2), fn_data ([[ $2$ ]]),
+                               let (var (u1), 
+                                    fs_convert_op (var (v1),
+                                                   PFty_xs_string ()),
+                                    let (var (u2), 
+                                         fs_convert_op (var (v2), 
+                                                        PFty_xs_string ()),
+                                         APPLY (op_ne, var (u1), var (u2))))
+                              )
+                        );
+    }
+    ;
+                           
+ComparisonExpr:         lt (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFvar_t *u1 = new_var (0);
+        PFvar_t *u2 = new_var (0);
+        PFfun_t *op_lt = function (PFqname (PFns_op, "lt"));
+
+        [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
+                         some (var (v2), fn_data ([[ $2$ ]]),
+                               let (var (u1), 
+                                    fs_convert_op (var (v1),
+                                                   PFty_xs_string ()),
+                                    let (var (u2), 
+                                         fs_convert_op (var (v2), 
+                                                        PFty_xs_string ()),
+                                         APPLY (op_lt, var (u1), var (u2))))
+                              )
+                        );
+    }
+    ;
+                           
+ComparisonExpr:         le (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFvar_t *u1 = new_var (0);
+        PFvar_t *u2 = new_var (0);
+        PFfun_t *op_le = function (PFqname (PFns_op, "le"));
+
+        [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
+                         some (var (v2), fn_data ([[ $2$ ]]),
+                               let (var (u1), 
+                                    fs_convert_op (var (v1),
+                                                   PFty_xs_string ()),
+                                    let (var (u2), 
+                                         fs_convert_op (var (v2), 
+                                                        PFty_xs_string ()),
+                                         APPLY (op_le, var (u1), var (u2))))
+                              )
+                        );
+    }
+    ;
+                           
+ComparisonExpr:         gt (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFvar_t *u1 = new_var (0);
+        PFvar_t *u2 = new_var (0);
+        PFfun_t *op_gt = function (PFqname (PFns_op, "gt"));
+
+        [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
+                         some (var (v2), fn_data ([[ $2$ ]]),
+                               let (var (u1), 
+                                    fs_convert_op (var (v1),
+                                                   PFty_xs_string ()),
+                                    let (var (u2), 
+                                         fs_convert_op (var (v2), 
+                                                        PFty_xs_string ()),
+                                         APPLY (op_gt, var (u1), var (u2))))
+                              )
+                        );
+    }
+    ;
+                           
+ComparisonExpr:         ge (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFvar_t *u1 = new_var (0);
+        PFvar_t *u2 = new_var (0);
+        PFfun_t *op_ge = function (PFqname (PFns_op, "ge"));
+
+        [[ $$ ]] = some (var (v1), fn_data ([[ $1$ ]]), 
+                         some (var (v2), fn_data ([[ $2$ ]]),
+                               let (var (u1), 
+                                    fs_convert_op (var (v1),
+                                                   PFty_xs_string ()),
+                                    let (var (u2), 
+                                         fs_convert_op (var (v2), 
+                                                        PFty_xs_string ()),
+                                         APPLY (op_ge, var (u1), var (u2))))
+                              )
+                        );
+    }
+    ;
+                           
+ComparisonExpr:         val_eq (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_eq = function (PFqname (PFns_op, "eq"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_string ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_string ()),
+                             APPLY (op_eq, var (v1), var (v2))));
+    }
+    ;
+                           
+ComparisonExpr:         val_ne (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_ne = function (PFqname (PFns_op, "ne"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_string ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_string ()),
+                             APPLY (op_ne, var (v1), var (v2))));
+    }
+    ;
+                           
+ComparisonExpr:         val_lt (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_lt = function (PFqname (PFns_op, "lt"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_string ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_string ()),
+                             APPLY (op_lt, var (v1), var (v2))));
+    }
+    ;
+                           
+ComparisonExpr:         val_le (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_le = function (PFqname (PFns_op, "le"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_string ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_string ()),
+                             APPLY (op_le, var (v1), var (v2))));
+    }
+    ;
+                           
+ComparisonExpr:         val_gt (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_gt = function (PFqname (PFns_op, "gt"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_string ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_string ()),
+                             APPLY (op_gt, var (v1), var (v2))));
+    }
+    ;
+                           
+ComparisonExpr:         val_ge (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_ge = function (PFqname (PFns_op, "ge"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_string ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_string ()),
+                             APPLY (op_ge, var (v1), var (v2))));
+    }
+    ;
+                           
+ComparisonExpr:         is (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_is = function (PFqname (PFns_op, "is-same-node"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             APPLY (op_is, var (v1), var (v2))));
+    }
+    ;
+
+ComparisonExpr:         nis (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFvar_t *v3 = new_var (0);
+        PFvar_t *v4 = new_var (0);
+        PFvar_t *v5 = new_var (0);
+        PFfun_t *op_is = function (PFqname (PFns_op, "is-same-node"));
+        PFfun_t *fn_not = function (PFqname (PFns_fn, "not"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             let (var (v3),
+                                  APPLY (op_is, var (v1), var (v2)),
+                                  let (var (v4),
+                                       APPLY (fn_not, PFcore_var (v3)),
+                                       PFcore_var (v5)))));
+    }
+    ;
+
+ComparisonExpr:         ltlt (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_ltlt = function (PFqname (PFns_op, "node-before"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             APPLY (op_ltlt, var (v1), var (v2))));
+    }
+    ;
+
+ComparisonExpr:         gtgt (RangeExpr, RangeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_gtgt = function (PFqname (PFns_op, "node-after"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             APPLY (op_gtgt, var (v1), var (v2))));
+    }
+    ;
+
 
 RangeExpr:              AdditiveExpr;
-RangeExpr:              range (AdditiveExpr, AdditiveExpr);
+RangeExpr:              range (AdditiveExpr, AdditiveExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_range = function (PFqname (PFns_pf, "range"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             APPLY (op_range, var (v1), var (v2))));
+    }
+    ;
+
 
 AdditiveExpr:           MultiplicativeExpr;
-AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr);
-AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr);
+AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_double ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_double ()),
+                             APPLY (op_plus, var (v1), var (v2))));
+    }
+    ;
+                           
+AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_minus = function (PFqname (PFns_op, "minus"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_double ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_double ()),
+                             APPLY (op_minus, var (v1), var (v2))));
+    }
+    ;                           
 
 MultiplicativeExpr:     UnaryExpr;
-MultiplicativeExpr:     mult (MultiplicativeExpr, UnaryExpr);
-MultiplicativeExpr:     div_ (MultiplicativeExpr, UnaryExpr);
-MultiplicativeExpr:     idiv (MultiplicativeExpr, UnaryExpr);
-MultiplicativeExpr:     mod (MultiplicativeExpr, UnaryExpr);
+MultiplicativeExpr:     mult (MultiplicativeExpr, UnaryExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_times = function (PFqname (PFns_op, "times"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_double ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_double ()),
+                             APPLY (op_times, var (v1), var (v2))));
+    }
+    ;                           
+
+MultiplicativeExpr:     div_ (MultiplicativeExpr, UnaryExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_div = function (PFqname (PFns_op, "div"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_double ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_double ()),
+                             APPLY (op_div, var (v1), var (v2))));
+    }
+    ;                           
+
+MultiplicativeExpr:     idiv (MultiplicativeExpr, UnaryExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_idiv = function (PFqname (PFns_op, "idiv"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_integer ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_integer ()),
+                             APPLY (op_idiv, var (v1), var (v2))));
+    }
+    ;                           
+
+MultiplicativeExpr:     mod (MultiplicativeExpr, UnaryExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_mod = function (PFqname (PFns_op, "mod"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_double ()),
+                        let (var (v2), fs_convert_op (fn_data ([[ $2$ ]]),
+                                                      PFty_xs_double ()),
+                             APPLY (op_mod, var (v1), var (v2))));
+    }
+    ;                           
+
 
 UnaryExpr:              UnionExpr;
-UnaryExpr:              uminus (UnionExpr);
-UnaryExpr:              uplus (UnionExpr);
+UnaryExpr:              uminus (UnionExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFfun_t *op_minus = function (PFqname (PFns_op, "minus"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_double ()),
+                        APPLY (op_minus, num (0), var (v1)));
+    }
+    ;                           
+
+UnaryExpr:              uplus (UnionExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
+
+        [[ $$ ]] = let (var (v1), fs_convert_op (fn_data ([[ $1$ ]]),
+                                                 PFty_xs_double ()),
+                        APPLY (op_plus, num (0), var (v1)));
+    }
+    ;                           
+
 
 UnionExpr:              IntersectExceptExpr;
-UnionExpr:              union_ (UnionExpr, IntersectExceptExpr);
+UnionExpr:              union_ (UnionExpr, IntersectExceptExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_union = function (PFqname (PFns_op, "union"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             APPLY (op_union, var (v1), var (v2))));
+    }
+    ;                           
+
 
 IntersectExceptExpr:    ValueExpr;
-IntersectExceptExpr:    intersect (IntersectExceptExpr, UnaryExpr);
-IntersectExceptExpr:    except (IntersectExceptExpr, UnaryExpr);
+IntersectExceptExpr:    intersect (IntersectExceptExpr, UnaryExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_intersect = function (PFqname (PFns_op, "intersect"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             APPLY (op_intersect, var (v1), var (v2))));
+    }
+    ;                           
+
+IntersectExceptExpr:    except (IntersectExceptExpr, UnaryExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFvar_t *v2 = new_var (0);
+        PFfun_t *op_except = function (PFqname (PFns_op, "except"));
+
+        [[ $$ ]] = let (var (v1), [[ $1$ ]],
+                        let (var (v2), [[ $2$ ]],
+                             APPLY (op_except, var (v1), var (v2))));
+    }
+    ;                           
+
 
 ValueExpr:              ValidateExpr;
 ValueExpr:              CastExpr;
+ValueExpr:              TreatExpr;
 ValueExpr:              Constructor;
 ValueExpr:              PathExpr;                       
 
@@ -1008,9 +1434,31 @@ SchemaGlobalContext:    glob_schm_ty;
 
 SchemaContextStep:      schm_step;
 
-CastExpr:               cast (SingleType, ParenthesizedExpr);
+CastExpr:               cast (SingleType, ParenthesizedExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
 
-TreatExpr:              treat (SingleType, ParenthesizedExpr);
+        [[ $$ ]] = let (var (v1), [[ $2$ ]], 
+                        seqcast ([[ $1$ ]], var (v1)));
+    }
+    ;
+
+TreatExpr:              treat (SingleType, ParenthesizedExpr)
+    =
+    {
+        PFvar_t *v1 = new_var (0);
+        PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
+
+        [[ $$ ]] = let (var (v1), [[ $2$ ]], 
+                        typeswitch (var (v1),
+                                    cases (case_ ([[ $1$ ]],
+                                                  var (v1)),
+                                           nil ()),
+                /* FIXME: fn_error works only with more then 1 argument */
+                                    APPLY (fn_error, var(v1)))); 
+    }
+    ;
 
 ParenthesizedExpr:      OptExprSequence_;
 
@@ -1021,19 +1469,55 @@ Constructor:            DocumentConstructor;
 Constructor:            AttributeConstructor;
 Constructor:            TextConstructor;
 
-ElementConstructor:     elem (TagName, ElementContent);
+ElementConstructor:     elem (TagName, ElementContent)
+    =
+    {
+        [[ $$ ]] = constr_elem ([[ $1$ ]], [[ $2$ ]]);
+    }
+    ;
 
-AttributeConstructor:   attr (TagName, AttributeValue);
+AttributeConstructor:   attr (TagName, AttributeValue)
+    =
+    {
+        [[ $$ ]] = constr_attr ([[ $1$ ]], [[ $2$ ]]);
+    }
+    ;
 
-TextConstructor:        text (OptExprSequence_);
+TextConstructor:        text (OptExprSequence_)
+    =
+    {
+        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+    }
+    ;
 
-DocumentConstructor:    doc (OptExprSequence_);
+DocumentConstructor:    doc (OptExprSequence_)
+    =
+    {
+        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+    }
+    ;
 
-XmlComment:             comment (StringLiteral);
+XmlComment:             comment (StringLiteral)
+    =
+    {
+        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+    }
+    ;
 
-XmlProcessingInstruction: pi (StringLiteral);
+XmlProcessingInstruction: pi (StringLiteral)
+    =
+    {
+        [[ $$ ]] = constr (($$)->kind, [[ $1$ ]]);
+    }
+    ;
                         
-TagName:                tag;
+TagName:                tag
+    =
+    {
+        [[ $$ ]] = constr_tag (($$)->sem.qname);
+    }
+    ;
+
 TagName:                Expr;
 
 ElementContent:         OptExprSequence_;
