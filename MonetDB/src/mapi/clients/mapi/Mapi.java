@@ -33,43 +33,45 @@ import java.io.*;
 import java.net.Socket;
 
 /*
-This module has been designed to open up a Monet server through is application 
-interface for developing Java applicatons. The method provided is mimicked 
-after the Monet-C application interface were appropriate.
- 
-Ofcourse, a much better approach is to support a more direct modelling 
-of the Monet datamodel and operations in java classes, but this is 
-considered too much work for the time being.
+This module was designed to open up a Monet server through the
+application interface for developing Java applications. The method
+provided is mimicked after the Monet-C application interface where
+appropriate.
 
-Much like the Mapi interface, Mapi assumes a cautious user, who understands 
-and has experience with MIL programming. In particular, syntax errors may 
-easily lead to synchronization errors with the server running in the back 
-ground.
+Of course, a much better approach is to support a more direct
+modeling of the Monet data model and operations in java classes, but
+this is considered too much work for the time being.
 
-The organization of the web application is as follows. The code base for 
-the Java class is the subdirectory '~monet/java'. Furthermore, the 
-directory '~monet/dbfarm' contains hard links to the public_html sub 
+Much like the Mapi interface, Mapi assumes a cautious user, who
+understands and has experience with MIL programming. In particular,
+syntax errors may easily lead to synchronization errors with the
+server running in the background.
+
+The organization of the web application is as follows. The code base
+for the Java class is the subdirectory '~monet/java'. Furthermore, the
+directory '~monet/dbfarm' contains hard links to the public_html sub
 directory associated with each database directory.
 
-A class Mapi  represents the objects that describe a single session with 
-the Monet server. It is often the target object to interact.
+A class Mapi represents the objects that describe a single session
+with the Monet server. It is often the target object to interact.
 
-Its constructor makes a socket connection with a Monet server. Note that 
-Java imposes some severe security rules. The most difficult one is that 
-java programs and its http server should reside on the same machine.
+Its constructor makes a socket connection with a Monet server. Note
+that Java imposes some severe security rules. The most difficult one
+is that java programs and its http server should reside on the same
+machine.
 
-The Mapi constructor prepares a connection with the Monet server using a 
-host name, port, username, and password(optional). They can be passed as 
-parameters from an applet.
+The Mapi constructor prepares a connection with the Monet server using
+a host name, port, username, and password (optional). They can be
+passed as parameters from an applet.
 */
 
 
-public class Mapi 
+public class Mapi
 {
 
 
 /*
-The status of a Mapi object is accessible from the status field. It should 
+The status of a Mapi object is accessible from the status field. It should
 be consulted before most commands.
 */
 	private final static int READY 		= 0;
@@ -80,11 +82,11 @@ be consulted before most commands.
 
 	private String commenttext [] = new String[3];
 	private String querytext = "";
-	
+
 	private Socket socket;
 	private DataOutputStream toMonet;
 	private BufferedReader fromMonet;
-	
+
 	public Mapi( String host, int port, String user ) throws MapiException
 	{
 		try{
@@ -97,7 +99,7 @@ be consulted before most commands.
 		}
 		toMonet(user+"\n");
 		promptMonet();
-		promptMonet(); 
+		promptMonet();
    	}
 
 
@@ -114,7 +116,7 @@ The user can create multiple Mapi objects to keep pre-canned queries around.
 
 
 /*
-Terminates the session with the Monet server either explictly or implicitly.
+Terminates the session with the Monet server either explicitly or implicitly.
 */
 	public void disconnect() throws MapiException {
 	   	if ( status != DISABLED ){
@@ -131,10 +133,10 @@ Terminates the session with the Monet server either explictly or implicitly.
 
 
 /*
-This is the lowest level of operation to send the Command to the server 
-for execution.  The command should be fully prepared by the application, 
-including necessary newlines to force the server to process the request.  
-The copy of the string is kept around in the Mapi structure for a while. 
+This is the lowest level of operation to send the Command to the server
+for execution.  The command should be fully prepared by the application,
+including necessary newlines to force the server to process the request.
+The copy of the string is kept around in the Mapi structure for a while.
 If the command is zero the last request is re-shipped.
 */
 	public void dorequest(String command) throws MapiException {
@@ -144,8 +146,8 @@ If the command is zero the last request is re-shipped.
 
 
 /*
-These are the lowest level operations to retrieve a single line from the 
-server. If something goes wrong the application may try to skip input to 
+These are the lowest level operations to retrieve a single line from the
+server. If something goes wrong the application may try to skip input to
 the next synchronization point.
 A reply of "bin:size" indicates the reply coming is a binary string
 of length size. The user should call the getbinreply to get the binary
@@ -207,7 +209,7 @@ reply.
 		if ( msg == null) return;
 		int i = 0;
 		for( i =0; i<3; i++)
-		   if ( commenttext[i] == null) 
+		   if ( commenttext[i] == null)
 			commenttext[i] = msg;
 	}
 
@@ -220,20 +222,20 @@ reply.
 
 
 
-/* 
-Unlike Mapi in Java we can assume better string contruction mechanisms.
-The method 'query' ships a single query and retrieves the first answer in 
-the reply buffer. It appends the necessary newline character to force 
-execution at the server.  Beware, a string with multiple newlines will 
-easily cause confusion in synchronization of the results. 
-[todo, count them and help in this process] The method 'get' sends a 
+/*
+Unlike Mapi in Java we can assume better string construction mechanisms.
+The method 'query' ships a single query and retrieves the first answer in
+the reply buffer. It appends the necessary newline character to force
+execution at the server.  Beware, a string with multiple newlines will
+easily cause confusion in synchronization of the results.
+[todo, count them and help in this process] The method 'get' sends a
 single query that is to produce a single answer row. It immediately
 eats away the prompt marker when no error has occurred.
 */
    public String query(String query) throws MapiException {
 		if (query.equals("quit;")){
 			disconnect();
-		} 
+		}
    		toMonet(query.trim()+"\n");
    		String s = getreply();
    		return s;
@@ -245,16 +247,16 @@ eats away the prompt marker when no error has occurred.
 
 
 /*
-Some Mapi primitives are not yet available .
+Some Mapi primitives are not yet available.
 */
 	public void timeout(int t) {
 		System.out.println("Timeout not yet implemented\n");
 	}
-	
 
 
-/* 
-The low-level operation toMonet attempts to sent a string to the server.
+
+/*
+The low-level operation toMonet attempts to send a string to the server.
 */
 	private void toMonet(String msg) throws MapiException {
 	   	switch (status){
@@ -278,12 +280,12 @@ The low-level operation toMonet attempts to sent a string to the server.
 
 /*
 The interaction protocol with the monet database server is very
-simple. Each command (query) is ended with '\n'. The results sent back
+simple. Each command (query) ends with '\n'. The results sent back
 will end with '\1' monet prompt '\1'.
 This private member function finds these '\1' markers.
 Note, unlike Mapi we do not yet support other prompt markers.
 */
-   private void promptMonet() throws MapiException  
+   private void promptMonet() throws MapiException
    {
       char c = '\0';
       try {
@@ -299,10 +301,10 @@ Note, unlike Mapi we do not yet support other prompt markers.
 
 
 /*
-This private member function reads a characher from the input stream
+This private member function reads a character from the input stream
 and returns it.
 */
-   private final char getChar( ) throws MapiException  
+   private final char getChar( ) throws MapiException
    {
       byte b = 0;
       try {
