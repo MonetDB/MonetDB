@@ -235,7 +235,7 @@ OptImportLoc_:          schm_ats (lit_str, OptImportLoc_)           =  34 (10);
 
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            SequenceType),
-                                  Expr)                             =  35 (10);
+                                  OptExpr)                          =  35 (10);
 FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
                                            SequenceType),
                                   external)                         =  36 (10);
@@ -253,7 +253,7 @@ OptSequenceType_:       SequenceType                                =  43 (10);
 
 VariableDeclaration:    var_decl (var_type (varref,
                                             OptSequenceType_),
-                                  ExprSingle)                       =  44 (10);
+                                  OptExpr)                          =  44 (10);
 VariableDeclaration:    var_decl (var_type (varref,
                                             OptSequenceType_),
                                   external)                         =  45 (10);
@@ -277,11 +277,11 @@ ExprSingle:             OrExpr                                      =  57 (10);
 FLWORExpr:              flwr (binds (VarBinding, nil),
                               where (OptWhereClause_,
                                      ord_ret (OptOrderByClause_,
-                                              ExprSingle)))         =  58 (10);
+                                              OptExpr)))            =  58 (10);
 FLWORExpr:              flwr (binds (VarBinding, VarBindings),
                               where (OptWhereClause_,
                                      ord_ret (OptOrderByClause_,
-                                              ExprSingle)))         =  59 (10);
+                                              OptExpr)))            =  59 (10);
 
 VarBindings:            binds (VarBinding, nil)                     =  60 (10);
 VarBindings:            binds (VarBinding, VarBindings)             =  61 (10);
@@ -294,10 +294,10 @@ LetClause:              LetBinding_                                 =  64 (10);
 VarPosBinding:          bind (vars (var_type (varref,
                                               OptTypeDeclaration_),
                                     OptPositionalVar_),
-                              ExprSingle)                           =  65 (10);
+                              OptExpr)                              =  65 (10);
 
 LetBinding_:            let (var_type (varref, OptTypeDeclaration_),
-                             ExprSingle)                            =  66 (10);
+                             OptExpr)                               =  66 (10);
 
 OptPositionalVar_:      nil                                         =  67 (10);
 OptPositionalVar_:      PositionalVar                               =  68 (10);
@@ -315,25 +315,25 @@ OptWhereClause_:        WhereClause                                 =  74 (10);
 OptOrderByClause_:      nil                                         =  75 (10);
 OptOrderByClause_:      OrderByClause                               =  76 (10);
 
-WhereClause:            ExprSingle                                  =  77 (10);
+WhereClause:            OptExpr                                     =  77 (10);
 
 OrderByClause:          orderby (OrderSpecList)                     =  78 (10);
 
-OrderSpecList:          orderspecs (ExprSingle, nil)                =  79 (10);
-OrderSpecList:          orderspecs (ExprSingle, OrderSpecList)      =  80 (10);
+OrderSpecList:          orderspecs (OptExpr, nil)                   =  79 (10);
+OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  80 (10);
 
-QuantifiedExpr:         some (VarBindings, ExprSingle)              =  81 (10);
+QuantifiedExpr:         some (VarBindings, OptExpr)                 =  81 (10);
 QuantifiedExpr:         some (binds (VarBinding, VarBindings),
-                              ExprSingle)                           =  82 (10);
-QuantifiedExpr:         every (VarBindings, ExprSingle)             =  83 (10);
+                              OptExpr)                              =  82 (10);
+QuantifiedExpr:         every (VarBindings, OptExpr)                =  83 (10);
 QuantifiedExpr:         every (binds (VarBinding, VarBindings),
-                               ExprSingle)                          =  84 (10);
+                               OptExpr)                             =  84 (10);
 
-TypeswitchExpr:         typeswitch (Expr,
+TypeswitchExpr:         typeswitch (OptExpr,
                                     cases (CaseClause,
                                            cases (DefaultClause_,
                                                   nil)))            =  85 (10);
-TypeswitchExpr:         typeswitch (Expr,
+TypeswitchExpr:         typeswitch (OptExpr,
                                     cases (CaseClause,
                                            CaseClauses_))           =  86 (10);
 
@@ -341,13 +341,13 @@ CaseClauses_:           cases (CaseClause,
                                cases (DefaultClause_, nil))         =  87 (10);
 CaseClauses_:           cases (CaseClause, CaseClauses_)            =  88 (10);
 
-DefaultClause_:         default_ (OptVarName_, ExprSingle)          =  89 (10);
+DefaultClause_:         default_ (OptVarName_, OptExpr)             =  89 (10);
 
 OptVarName_:            nil                                         =  90 (10);
 OptVarName_:            varref                                      =  91 (10);
 
 CaseClause:             case_ (var_type (OptVarName_, SequenceType),
-                               ExprSingle)                          =  92 (10);
+                               OptExpr)                             =  92 (10);
 
 SequenceType:           seq_ty (ItemType)                           =  93 (10);
 SequenceType:           seq_ty (empty_ty)                           =  94 (10);
@@ -372,8 +372,8 @@ ElemOrAttrType:         req_ty (nil, named_ty)                      = 107 (10);
 ElemOrAttrType:         req_ty (req_name, nil)                      = 108 (10);
 ElemOrAttrType:         req_ty (req_name, named_ty)                 = 109 (10);
 
-IfExpr:                 if_ (Expr,
-                             then_else (ExprSingle, ExprSingle))    = 110 (10);
+IfExpr:                 if_ (OptExpr,
+                             then_else (OptExpr, OptExpr))          = 110 (10);
 
 OrExpr:                 AndExpr                                     = 111 (10);
 OrExpr:                 or (AndExpr, OrExpr)                        = 112 (10);
@@ -440,7 +440,7 @@ UnaryExpr:              uplus (ValueExpr)                           = 157 (10);
 ValueExpr:              ValidateExpr                                = 158 (10);
 ValueExpr:              PathExpr                                    = 159 (10);
 
-ValidateExpr:           validate (Expr)                             = 160 (10);
+ValidateExpr:           validate (OptExpr)                          = 160 (10);
 
 PathExpr:               root_                                       = 161 (10);
 PathExpr:               RelativePathExpr                            = 162 (10);
@@ -453,7 +453,7 @@ StepExpr:               Step_                                       = 166 (10);
 StepExpr:               FilterExpr                                  = 167 (10);
 
 FilterExpr:             PrimaryExpr                                 = 168 (10);
-FilterExpr:             pred (RelativePathExpr, Expr)               = 169 (10);
+FilterExpr:             pred (RelativePathExpr, OptExpr)            = 169 (10);
 
 Step_:                  step (NodeTest)                             = 170 (10);
 
@@ -479,7 +479,7 @@ DoubleLiteral:          lit_dbl                                     = 186 (10);
 
 StringLiteral:          lit_str                                     = 187 (10);
 
-ParenthesizedExpr:      Expr                                        = 188 (10);
+ParenthesizedExpr:      OptExpr                                     = 188 (10);
 
 ContextItemExpr:        dot                                         = 189 (10);
 
@@ -488,11 +488,11 @@ FunctionCall:           fun_ref (OptFuncArgList_)                   = 190 (10);
 OptFuncArgList_:        nil                                         = 191 (10);
 OptFuncArgList_:        FuncArgList_                                = 192 (10);
 
-FuncArgList_:           args (Expr, nil)                            = 193 (10);
-FuncArgList_:           args (Expr, FuncArgList_)                   = 194 (10);
+FuncArgList_:           args (OptExpr, nil)                         = 193 (10);
+FuncArgList_:           args (OptExpr, FuncArgList_)                = 194 (10);
 
-OrderedExpr:            ordered (Expr)                              = 195 (10);
-UnorderedExpr:          unordered (Expr)                            = 196 (10);
+OrderedExpr:            ordered (OptExpr)                           = 195 (10);
+UnorderedExpr:          unordered (OptExpr)                         = 196 (10);
 
 Constructor:            ElementConstructor                          = 197 (10);
 Constructor:            AttributeConstructor                        = 198 (10);
@@ -514,7 +514,7 @@ PIConstructor:          pi (OptContentExpr)                         = 207 (10);
 DocumentConstructor:    doc (OptContentExpr)                        = 208 (10);
 
 TagName:                tag                                         = 209 (10);
-TagName:                Expr                                        = 210 (10);
+TagName:                OptExpr                                     = 210 (10);
 
 OptContentExpr:         OptExpr                                     = 211 (10);
 OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 212 (10);
@@ -654,7 +654,7 @@ reduce (PFpnode_t * p, int goalnt)
         /* FLWORExpr: flwr (binds (VarBinding, VarBindings),
                             where (OptWhereClause_,
                                    ord_ret (OptOrderByClause_,
-                                            ExprSingle))) */
+                                            OptExpr))) */
         case 59:
             /* Current parse tree situation: multi-bind FLWOR
              * (may bind any number n >= 2 variables):
@@ -720,12 +720,12 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* QuantifiedExpr: some (binds (VarBinding, VarBindings),
-                                 ExprSingle) */
+                                 OptExpr) */
         case 82:
             /* fall through (treat some and every equivalently) */
 
         /* QuantifiedExpr: every (binds (VarBinding, VarBindings),
-                                  ExprSingle) */
+                                  OptExpr) */
         case 84:
             /*
              * Current parse tree situation: multi-bind some/every
@@ -779,7 +779,7 @@ reduce (PFpnode_t * p, int goalnt)
             rewritten = true;
             break;
 
-        /* TypeswitchExpr: typeswitch (Expr,
+        /* TypeswitchExpr: typeswitch (OptExpr,
                                        cases (CaseClause,
                                               CaseClauses_)) */
         case 86:

@@ -263,10 +263,10 @@ OptSequenceType_:       SequenceType                                =  42 (10);
 
 VariableDeclaration:    var_decl (var_type (Var,
                                             nil),
-                                  ExprSingle)                       =  43 (10);
+                                  OptExpr)                          =  43 (10);
 VariableDeclaration:    var_decl (var_type (Var,
                                             SequenceType),
-                                  ExprSingle)                       =  44 (10);
+                                  OptExpr)                          =  44 (10);
 VariableDeclaration:    var_decl (var_type (Var,
                                             OptSequenceType_),
                                   external)                         =  45 (10);
@@ -287,14 +287,14 @@ ExprSingle:             OrExpr                                      =  55 (10);
 
 FLWORExpr:              flwr (binds (let (var_type (Var,
                                                     nil),
-                                          ExprSingle),
+                                          OptExpr),
                                      nil),
                               where (OptWhereClause_,
                                      OrderByReturn))                =  56 (10);
 
 FLWORExpr:              flwr (binds (let (var_type (Var,
                                                     TypeDeclaration),
-                                          ExprSingle),
+                                          OptExpr),
                                      nil),
                               where (OptWhereClause_,
                                      OrderByReturn))                =  57 (10);
@@ -302,7 +302,7 @@ FLWORExpr:              flwr (binds (let (var_type (Var,
 FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
                                                            nil),
                                                  OptPosVar),
-                                           ExprSingle),
+                                           OptExpr),
                                      nil),
                               where (OptWhereClause_,
                                      OrderByReturn))                =  58 (10);
@@ -310,13 +310,13 @@ FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
 FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
                                                            TypeDeclaration),
                                                  OptPosVar),
-                                           ExprSingle),
+                                           OptExpr),
                                      nil),
                               where (OptWhereClause_,
                                      OrderByReturn))                =  59 (10);
 
-OrderByReturn:          ord_ret (nil, ExprSingle)                   =  60 (10);
-OrderByReturn:          ord_ret (OrderByClause, ExprSingle)         =  61 (10);
+OrderByReturn:          ord_ret (nil, OptExpr)                      =  60 (10);
+OrderByReturn:          ord_ret (OrderByClause, OptExpr)            =  61 (10);
 
 OptPosVar:              nil                                         =  62 (10);
 OptPosVar:              Var                                         =  63 (10);
@@ -324,45 +324,45 @@ OptPosVar:              Var                                         =  63 (10);
 TypeDeclaration:        SequenceType                                =  64 (10);
 
 OptWhereClause_:        nil                                         =  65 (10);
-OptWhereClause_:        ExprSingle                                  =  66 (10);
+OptWhereClause_:        OptExpr                                     =  66 (10);
 
 OrderByClause:          orderby (OrderSpecList)                     =  67 (10);
 
 OrderSpecList:          nil                                         =  68 (10);
-OrderSpecList:          orderspecs (ExprSingle, OrderSpecList)      =  69 (10);
+OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  69 (10);
 
 QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                            nil),
                                                  nil),
-                                           ExprSingle),
+                                           OptExpr),
                                      nil),
-                              ExprSingle)                           =  70 (10);
+                              OptExpr)                              =  70 (10);
 QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                            TypeDeclaration),
                                                  nil),
-                                           ExprSingle),
+                                           OptExpr),
                                      nil),
-                              ExprSingle)                           =  71 (10);
+                              OptExpr)                              =  71 (10);
 QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                             nil),
                                                   nil),
-                                            ExprSingle),
+                                            OptExpr),
                                       nil),
-                               ExprSingle)                          =  72 (10);
+                               OptExpr)                             =  72 (10);
 QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                             TypeDeclaration),
                                                   nil),
-                                            ExprSingle),
+                                            OptExpr),
                                       nil),
-                               ExprSingle)                          =  73 (10);
+                               OptExpr)                             =  73 (10);
 
 TypeswitchExpr:         typeswitch (
-                            Expr,
+                            OptExpr,
                             cases (case_ (var_type (OptCaseVar,
                                                     SequenceType),
-                                          ExprSingle),
+                                          OptExpr),
                                    cases (default_ (OptCaseVar,
-                                                    ExprSingle),
+                                                    OptExpr),
                                           nil)))                    =  74 (10);
 
 OptCaseVar:             nil                                         =  75 (10);
@@ -393,8 +393,8 @@ ElemOrAttrType:         req_ty (req_name, SchemaType)               =  93 (10);
 
 SchemaType:             named_ty                                    =  94 (10);
 
-IfExpr:                 if_ (Expr,
-                             then_else (ExprSingle, ExprSingle))    =  95 (10);
+IfExpr:                 if_ (OptExpr,
+                             then_else (OptExpr, OptExpr))          =  95 (10);
 
 OrExpr:                 AndExpr                                     =  96 (10);
 OrExpr:                 or (AndExpr, OrExpr)                        =  97 (10);
@@ -461,7 +461,7 @@ UnaryExpr:              uplus (ValueExpr)                           = 142 (10);
 ValueExpr:              ValidateExpr                                = 143 (10);
 ValueExpr:              PathExpr                                    = 144 (10);
 
-ValidateExpr:           validate (Expr)                             = 145 (10);
+ValidateExpr:           validate (OptExpr)                          = 145 (10);
 
 PathExpr:               StepExpr                                    = 146 (10);
 PathExpr:               LocationPath                                = 147 (10);
@@ -484,7 +484,7 @@ StepExpr:               LocationStep                                = 151 (10);
 StepExpr:               FilterExpr                                  = 152 (10);
 
 FilterExpr:             PrimaryExpr                                 = 153 (10);
-FilterExpr:             pred (StepExpr, Expr)                       = 154 (10);
+FilterExpr:             pred (StepExpr, OptExpr)                    = 154 (10);
 
 LocationStep:           step (NodeTest)                             = 155 (10);
 
@@ -512,7 +512,7 @@ StringLiteral:          lit_str                                     = 172 (10);
 
 Var:                    var                                         = 173 (10);
 
-ParenthesizedExpr:      Expr                                        = 174 (10);
+ParenthesizedExpr:      OptExpr                                     = 174 (10);
 
 ContextItemExpr:        dot                                         = 175 (10);
 
@@ -520,10 +520,10 @@ FunctionCall:           apply (nil)                                 = 176 (10);
 FunctionCall:           apply (FuncArgList)                         = 177 (10);
 
 FuncArgList:            nil                                         = 178 (10);
-FuncArgList:            args (Expr, FuncArgList)                    = 179 (10);
+FuncArgList:            args (OptExpr, FuncArgList)                 = 179 (10);
 
-OrderedExpr:            ordered (Expr)                              = 180 (10);
-UnorderedExpr:          unordered (Expr)                            = 181 (10);
+OrderedExpr:            ordered (OptExpr)                           = 180 (10);
+UnorderedExpr:          unordered (OptExpr)                         = 181 (10);
 
 Constructor:            ElementConstructor                          = 182 (10);
 Constructor:            AttributeConstructor                        = 183 (10);
@@ -536,16 +536,16 @@ ElementConstructor:     elem (TagName, OptContentExpr)              = 188 (10);
 
 AttributeConstructor:   attr (TagName, AttributeValue)              = 189 (10);
 
-TextConstructor:        text (Expr)                                 = 190 (10);
+TextConstructor:        text (OptExpr)                              = 190 (10);
 
-CommentConstructor:     comment (Expr)                              = 191 (10);
+CommentConstructor:     comment (OptExpr)                           = 191 (10);
 
-PIConstructor:          pi (Expr)                                   = 192 (10);
+PIConstructor:          pi (OptExpr)                                = 192 (10);
 
-DocumentConstructor:    doc (Expr)                                  = 193 (10);
+DocumentConstructor:    doc (OptExpr)                               = 193 (10);
 
 TagName:                tag                                         = 194 (10);
-TagName:                Expr                                        = 195 (10);
+TagName:                OptExpr                                     = 195 (10);
 
 OptContentExpr:         Expr                                        = 196 (10);
 OptContentExpr:         empty_seq                                   = 197 (10);
@@ -976,7 +976,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* VariableDeclaration:    var_decl (var_type (Var,
                                                        nil),
-                                             ExprSingle) */
+                                             OptExpr) */
         case 43:
             /*
              * We translate
@@ -1006,7 +1006,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* VariableDeclaration:    var_decl (var_type (Var,
                                                        SequenceType),
-                                             ExprSingle) */
+                                             OptExpr) */
         case 44:
         {
             /*
@@ -1105,7 +1105,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* FLWORExpr:              flwr (binds (let (var_type (Var,
                                                                nil),
-                                                     ExprSingle),
+                                                     OptExpr),
                                                 nil),
                                          where (OptWhereClause_,
                                                 OrderByReturn)) */
@@ -1122,7 +1122,7 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* FLWORExpr:              flwr (binds (let (var_type (Var,
                                                                TypeDeclaration),
-                                                     ExprSingle),
+                                                     OptExpr),
                                                 nil),
                                          where (OptWhereClause_,
                                                 OrderByReturn)) */
@@ -1144,7 +1144,7 @@ reduce (PFpnode_t * p, int goalnt)
         /* FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
                                                                       nil),
                                                             OptPosVar),
-                                                      ExprSingle),
+                                                      OptExpr),
                                                 nil),
                                          where (OptWhereClause_,
                                                 OrderByReturn)) */
@@ -1164,7 +1164,7 @@ reduce (PFpnode_t * p, int goalnt)
         /* FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
                                                                       TypeDecl),
                                                             OptPosVar),
-                                                      ExprSingle),
+                                                      OptExpr),
                                                 nil),
                                          where (OptWhereClause_,
                                                 OrderByReturn)) */
@@ -1187,12 +1187,12 @@ reduce (PFpnode_t * p, int goalnt)
                                              then_else (C(RR(p)), empty()))))));
         } break;
 
-        /* OrderByReturn:          ord_ret (nil, ExprSingle) */
+        /* OrderByReturn:          ord_ret (nil, OptExpr) */
         case 60:
             C(p) = C(R(p));
             break;
 
-        /* OrderByReturn:          ord_ret (OrderByClause, ExprSingle) */
+        /* OrderByReturn:          ord_ret (OrderByClause, OptExpr) */
         case 61:
             C(p) = orderby (C(L(p)), C(R(p)));
             break;
@@ -1215,7 +1215,7 @@ reduce (PFpnode_t * p, int goalnt)
             C(p) = true_ ();
             break;
 
-        /* OptWhereClause_:        ExprSingle */
+        /* OptWhereClause_:        OptExpr */
         case 66:
             C(p) = ebv (C(p));
             break;
@@ -1230,7 +1230,7 @@ reduce (PFpnode_t * p, int goalnt)
             C(p) = nil ();
             break;
 
-        /* OrderSpecList:          orderspecs (ExprSingle, OrderSpecList) */
+        /* OrderSpecList:          orderspecs (OptExpr, OrderSpecList) */
         case 69:
             C(p) = orderspecs (C(L(p)), C(R(p)));
             break;
@@ -1238,9 +1238,9 @@ reduce (PFpnode_t * p, int goalnt)
         /* QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                                       nil),
                                                             nil),
-                                                      ExprSingle),
+                                                      OptExpr),
                                                 nil),
-                                         ExprSingle) */
+                                         OptExpr) */
         case 70:
             C(p) = some (C(LLLLL(p)), C(LLR(p)), C(R(p)));
             break;
@@ -1248,9 +1248,9 @@ reduce (PFpnode_t * p, int goalnt)
         /* QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                                       TypeDecl),
                                                             nil),
-                                                      ExprSingle),
+                                                      OptExpr),
                                                 nil),
-                                         ExprSingle) */
+                                         OptExpr) */
         case 71:
         {
             PFvar_t *v1 = new_var (NULL);
@@ -1269,9 +1269,9 @@ reduce (PFpnode_t * p, int goalnt)
         /* QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                                        nil),
                                                              nil),
-                                                       ExprSingle),
+                                                       OptExpr),
                                                  nil),
-                                          ExprSingle) */
+                                          OptExpr) */
         case 72:
         {
             /* every $a in e1 satisfies e2
@@ -1301,9 +1301,9 @@ reduce (PFpnode_t * p, int goalnt)
         /* QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                                        TypeDec),
                                                              nil),
-                                                       ExprSingle),
+                                                       OptExpr),
                                                  nil),
-                                          ExprSingle) */
+                                          OptExpr) */
         case 73:
         {
             /* every $a as t in e1 satisfies e2
@@ -1346,9 +1346,9 @@ reduce (PFpnode_t * p, int goalnt)
                                        Expr,
                                        cases (case_ (var_type (OptCaseVar,
                                                                SequenceType),
-                                                     ExprSingle),
+                                                     OptExpr),
                                               cases (default_ (OptCaseVar,
-                                                               ExprSingle),
+                                                               OptExpr),
                                                      nil))) */
         case 74:
         {
@@ -1581,7 +1581,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* IfExpr:                 if_ (Expr,
-                                        then_else (ExprSingle, ExprSingle)) */
+                                        then_else (OptExpr, OptExpr)) */
         case 95:
         {
             PFvar_t *v = new_var (NULL);
