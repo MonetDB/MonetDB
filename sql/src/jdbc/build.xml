@@ -105,6 +105,13 @@
        <include name="*.java" />
 	   <exclude name="JdbcClient.java" />
     </javac>
+
+    <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
+      <fileset dir="${builddir}">
+        <include name="*.class" />
+        <include name="${package}/**/*.class" />
+      </fileset>
+	</jar>
   </target>
 
   <target name="check_driver">
