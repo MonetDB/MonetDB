@@ -95,6 +95,7 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
                      or any of these plus suffix '.STATIC')
             (default: <sys> = '')
  -r      : proceed in subdirectories as well (implies 'All')
+ -f      : force approval of error messages (i.e., lines starting with '!')
 """ % (OS, OSVER, OSVER)
 
     print '''\
@@ -586,12 +587,13 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             return td
 
         for TST in testlist:
-            ApproveOutput(env, TST)
+            td = td + ApproveOutput(env, TST)
 
     return td
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
+    sem = 0
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -599,6 +601,7 @@ def ApproveOutput (env, TST) :
     os.chdir(TSTSRCDIR)
     EXTENSIONS = par['EXTENSION']
     SYSTEM = par['SYSTEM']
+    FORCE = par['FORCE']
 
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
@@ -613,10 +616,19 @@ def ApproveOutput (env, TST) :
             for l in fileinput.input(testOUTPUT):
                 if len(l) == 0  or  l[0] != '!':        # or  filter.match(ln):
                     f.write(l)
+                else:
+                    if FORCE:
+                        f.write(l)
+                        as = 'Approving'
+                    else:
+                        as = 'Skipping'
+                    Warn('%s error message: "%s"' % (as,string.replace(l, os.linesep, '')))
+                    sem = 1
             f.flush()
             f.close()
         else:
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
+    return sem
 ### ApproveOutput (env, TST) #
 
 def isexecutable(TST) :
@@ -1616,6 +1628,7 @@ def main(argv) :
     if THISFILE == "Mapprove.py":
         par['EXTENSION'] = ['out', 'err']
         par['SYSTEM']    = ''
+        par['FORCE']     = 0
     par['RECURSIVE'] = 0
 
     # get current environment
@@ -1638,7 +1651,7 @@ def main(argv) :
     if THISFILE == "Mprofile.py":
         longOpts  = longOpts  + ["CMDLST="]
     if THISFILE == "Mapprove.py":
-        shortOpts = shortOpts + "x:s:"
+        shortOpts = shortOpts + "x:s:f"
     try:
         opts, args = getopt.getopt(argv[1:], shortOpts, longOpts)
     except getopt.GetoptError:
@@ -1676,6 +1689,8 @@ def main(argv) :
                 Usage()
                 ErrXit("Extension (-x) must be one of: 'out', 'err' !")
             par['EXTENSION'] = [a]
+        elif o == "-f":
+            par['FORCE'] = 1
         elif o == "-s":
             XTS = []
             for xts in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
@@ -2036,6 +2051,17 @@ def main(argv) :
  First, run 'cvs -q diff` to check what you have changed.
 
  Then, re-run Mtest.py.
+"""
+        if t_:
+            if par['FORCE']:
+                print """\
+ In case (some of) the approved error messages are not correct/expected,
+ re-run Mapprove.py without -f to skip their approval.
+"""
+            else:
+                print """\
+ In case (some of) the skipped error messages are correct/expected,
+ re-run Mapprove.py with -f to force their approval.
 """
 ### main(argv) #
 
