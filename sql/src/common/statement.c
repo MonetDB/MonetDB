@@ -4,7 +4,7 @@
 #include "statement.h"
 
 void st_attache( statement *st, statement *user ){
-	if (user) list_append_statement(st->uses, user);
+	/*if (user) list_append_statement(st->uses, user);*/
 	st->refcnt++;
 }
 

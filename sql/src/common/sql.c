@@ -2515,9 +2515,10 @@ statement *insert_into( context *sql, dlist *qname, dlist *columns,
 		collist = t->columns;
 	}
 
+	len = list_length(collist);
+
 	l = list_create();
 	inserts = NEW_ARRAY(statement*,len);
-	len = list_length(collist);
 	for( i = 0; i< len; i++)
 		inserts[i] = NULL;
 
