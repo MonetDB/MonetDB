@@ -49,6 +49,7 @@ sql_export void SQLsetAccessMode(Client c);
 The queries are stored in a cache after they have been
 type checked and optimized.
 @c
+#include "mal_macro.h"
 #include "mal_optimizer.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -120,7 +121,9 @@ void optimizeQueryInCache(Client c) {
 @-
 Reduce the program before other optimizations take place
 @c
+        MCoptimizer(c, c->curprg->def, 0, "algebra","joinPath");
         ARoptimizer(c, c->curprg->def, 0);
+        CXoptimizer(c, c->curprg->def, 0);
         AMoptimizer(c, c->curprg->def, 0);
         /*SQLsetAccessMode(c); done in libraries now */
 
