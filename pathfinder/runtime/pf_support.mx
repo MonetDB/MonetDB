@@ -535,6 +535,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	BATseqbase(BN, (oid)0);
 	for (k=0; k<npairs; k++) {
 		voidany_bunfastins_nocheck_noinc(BN,DST,0,&bn[k]->batCacheid);
+		BBPunfix(bn[k]->batCacheid);
 		DST += BS;
 	}
 	BN->batBuns->free = DST - BN->batBuns->base;
