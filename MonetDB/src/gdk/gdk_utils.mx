@@ -263,8 +263,7 @@ BATSIGabort(int nr)
 RETSIGTYPE
 BATSIGinterrupt(int nr)
 {
-	(void) nr;		/* fool compiler */
-	GDKfatal("Interrupt received\n");
+	GDKexit(nr);
 }
 
 #ifdef SIGCHLD
@@ -327,6 +326,9 @@ BATSIGinit(void)
 #endif
 #ifdef SIGINT
 	(void) signal(SIGINT, BATSIGinterrupt);
+#endif
+#ifdef SIGTERM
+	(void) signal(SIGTERM, BATSIGinterrupt);
 #endif
 	return 0;
 }
