@@ -61,6 +61,15 @@ the WIN32 native platform.
 # define mkdir(path,mode) _mkdir(path)
 #endif
 
+/* Some systems (SGI, Sun) call malloc before we get a chance to call
+   mallopt, and mallopt should be called before the first call to
+   malloc.  Therefore we do as if we don't have mallopt, even though
+   in reality we do.
+ */
+#ifdef HAVE_MALLOPT
+#undef HAVE_MALLOPT
+#endif
+
 #ifndef HAVE_MALLINFO
 #ifndef M_MXFAST
 #define M_MXFAST	1  /* set size of blocks to be fast */
