@@ -229,7 +229,8 @@ typedef struct sql_table {
 	bit clear;		/* clear on transaction boundaries ? */
 	/* clear on a temp table == session table! */
 	char *query;
-	int sz;
+	int  sz;
+	lng  cnt;		/* number of tuples */
 
 	changeset columns;
 	changeset idxs;
