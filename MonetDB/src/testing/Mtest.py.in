@@ -1624,9 +1624,9 @@ def RunTest(env, TST, BusyPorts, COND) :
             REVe=" (r"+REVe+")"
 
             MDIFF0 = env['exe']['Mdiff'][1]
-            MDIFF1 = MDIFF0
+            MDIFF1 = MDIFF0+' -d'
             if env['exe']['Mtimeout'][0]:
-                MDIFF1 = env['exe']['Mtimeout'][1]+' '+MDIFF0
+                MDIFF1 = env['exe']['Mtimeout'][1]+' '+MDIFF1
 
             #TODO:
             #timedout = 1
@@ -1645,10 +1645,11 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.close()
             timedout = 1
             if timeout: # test run timed out, expect major differences!
-                ACCURACYout = 0
-            while timedout and ACCURACYout >= 0:
-                if ACCURACYout == 0:
+                ACCURACYout = -1
+            while timedout and MDIFF == MDIFF1:
+                if ACCURACYout == -1:
                     MDIFF = MDIFF0
+                    ACCURACYout = 0
                 timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.out.FILTERED %s.out.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
                 ACCURACYout = ACCURACYout - 1
 
@@ -1669,10 +1670,11 @@ def RunTest(env, TST, BusyPorts, COND) :
             diff_html.close()
             timedout = 1
             if timeout: # test run timed out, expect major differences!
-                ACCURACYerr = 0
-            while timedout and ACCURACYerr >= 0:
-                if ACCURACYerr == 0:
+                ACCURACYerr = -1
+            while timedout and MDIFF == MDIFF1:
+                if ACCURACYerr == -1:
                     MDIFF = MDIFF0
+                    ACCURACYerr = 0
                 timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
@@ -2061,7 +2063,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             SrvrOut.flush()
             EPILOGUE.close()
 
-        if SERVER == "MAPI" and os.name != "nt":
+        if SERVER == "MAPI":
             Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
             ShwnOutFile = TST+".shutdown.out"
             ShwnErrFile = TST+".shutdown.err"
@@ -2071,7 +2073,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             time.sleep(1)             # give it time to actually shut down
 
         try:
-            if SERVER == "MAPI" and os.name != "nt":
+            if SERVER == "MAPI":
                 pSrvrIn.write("# All but the first (#) and the last (\\n) character of this line seem to get swallowed on/by Windows ... #\n")
                 pSrvrIn.write("# In case the previous line contains just a '#', all but the first and the last character got swallowed by someone ... #\n")
                 pSrvrIn.write("# In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #\n")
@@ -2093,7 +2095,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.name != "nt" and sys.platform != 'cygwin':
             StopAt(ATJOB2,ME)
 
-        if SERVER == "MAPI" and os.name != "nt":
+        if SERVER == "MAPI":
             AllOut = [SrvrOut, ClntOutFile, ShwnOutFile]
             AllErr = [SrvrErr, ClntErrFile, ShwnErrFile]
         else:
