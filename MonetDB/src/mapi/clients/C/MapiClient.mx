@@ -706,7 +706,7 @@ dump_tables(Mapi mid)
 	}
 	mapi_close_handle(hdl);
 
-	// finally commit the whole transaction
+	/* finally commit the whole transaction */
 	fprintf(toConsole, "COMMIT;\n");
 
 	return rc;
