@@ -1,16 +1,16 @@
 stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 
 
-# 05:07:11 >  
-# 05:07:11 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_plain.milS
-# 05:07:11 >  
+# 05:52:33 >  
+# 05:52:33 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_plain.milS
+# 05:52:33 >  
 
-# Monet Database Server V4.3
+# Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-# dbfarm:/var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/dbfarm
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm
 # dbname:Tests_tests_Availability
-# dbdir:/var/tmp/monet.GNU_32.23829/monet/.GNU_32/Linux2.2.14-12/dbfarm/Tests_tests_Availability
+# dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_tests_Availability
 
 loaded;
 #---------------------------------#
@@ -700,14 +700,15 @@ Module: "uchr"
 
 Module: "unix"
 
-[ 3 ]
-[ 3 ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature			| help							  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "getenv",	  "COMMAND: ",	  "getenv(str) : str",		  "Get the environment variable string."		  ]
-[ "setenv",	  "COMMAND: ",	  "setenv(str, str) : bit",	  "Set the environment variable string."		  ]
-[ "system",	  "COMMAND: ",	  "system(str) : int",		  "execute a command and give back the return value"	  ]
+[ 4 ]
+[ 4 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function	| type		| signature				| help																									  #
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "getenv",	  "COMMAND: ",	  "getenv(str) : str",			  "Get the environment variable string."																				  ]
+[ "run",	  "COMMAND: ",	  "run(blob, str, ..str..) : blob",	  "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."  ]
+[ "setenv",	  "COMMAND: ",	  "setenv(str, str) : bit",		  "Set the environment variable string."																				  ]
+[ "system",	  "COMMAND: ",	  "system(str) : int",			  "Execute a command and give back the return value"																			  ]
 
 Module: "url"
 
@@ -812,7 +813,7 @@ Module: "mprof"
 [ "pmSummary",		  "PROC: ",	  "pmSummary(..any..) : any",			  "not available"					  ]
 [ "pmTag",		  "COMMAND: ",	  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
 
-# 11:55:18 >  
-# 11:55:18 >  Done.
-# 11:55:18 >  
+# 05:52:36 >  
+# 05:52:36 >  Done.
+# 05:52:36 >  
 

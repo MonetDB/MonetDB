@@ -1,14 +1,16 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
 
-# 15:59:11 >  
-# 15:59:11 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.18284/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
-# 15:59:11 >  
+# 06:02:26 >  
+# 06:02:26 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.ntv_32-s.17473/monet/.ntv_32-s/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
+# 06:02:26 >  
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:none.milS
+# compiled for i686-pc-linux-gnu/32bit; statically linked.
+# dbfarm:/var/tmp/monet.ntv_32-s.17473/monet/.ntv_32-s/Linux2.2.14-12smp/dbfarm
+# dbname:Tests_tests_sigs
+# dbdir:/var/tmp/monet.ntv_32-s.17473/monet/.ntv_32-s/Linux2.2.14-12smp/dbfarm/Tests_tests_sigs
 
 loaded;
 #---------------------------------#
@@ -128,7 +130,7 @@ Try: modules;                - for other modules.
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -180,7 +182,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -214,7 +216,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "wisc",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "wisc", nil	  ]
@@ -249,7 +251,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "vector",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
 [ "vector",	  nil	  ]
@@ -287,7 +289,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "url",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "url",  nil	  ]
@@ -314,6 +316,7 @@ Try: modules;                - for other modules.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
+[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
@@ -321,12 +324,16 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
+[ "blob", nil	  ]
 
 	dropping unix
+
+
+	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -355,7 +362,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (str)	  (void)  #
 #-----------------#
 [ "uchr", nil	  ]
@@ -389,7 +396,7 @@ Try: modules;                - for other modules.
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_28  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
@@ -423,7 +430,7 @@ Try: modules;                - for other modules.
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
@@ -459,7 +466,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_25  #
 # (str)		  (void)  #
 #-------------------------#
 [ "streams",	  nil	  ]
@@ -501,7 +508,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
 [ "stats",	  nil	  ]
@@ -535,7 +542,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "salgebra",	  nil	  ]
@@ -569,7 +576,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_32  #
 # (str)		  (void)  #
 #-------------------------#
 [ "radix",	  nil	  ]
@@ -608,7 +615,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "uchr",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "qt",		  nil	  ]
@@ -662,7 +669,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "oo7",  nil	  ]
@@ -696,7 +703,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
@@ -730,7 +737,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mmath",	  nil	  ]
@@ -764,7 +771,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_31  #
 # (str)	  (void)  #
 #-----------------#
 [ "mapi", nil	  ]
@@ -798,7 +805,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_30  #
 # (str)		  (void)  #
 #-------------------------#
 [ "malalgebra",	  nil	  ]
@@ -832,7 +839,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_32  #
 # (str)		  (void)  #
 #-------------------------#
 [ "logger",	  nil	  ]
@@ -866,7 +873,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_33  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
@@ -935,7 +942,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_32  #
 # (str)	  (void)  #
 #-----------------#
 [ "io",	  nil	  ]
@@ -975,7 +982,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_33  #
 # (str)	  (void)  #
 #-----------------#
 [ "enum", nil	  ]
@@ -1055,7 +1062,7 @@ Try: modules;                - for other modules.
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_32  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
@@ -1105,7 +1112,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_32  #
 # (str)		  (void)  #
 #-------------------------#
 [ "counters",	  nil	  ]
@@ -1175,7 +1182,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
@@ -1300,7 +1307,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_31  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1334,7 +1341,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1368,7 +1375,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_41  #
+# BAT:		  tmp_43  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mprof",	  nil	  ]
@@ -1387,7 +1394,7 @@ Try: modules;                - for other modules.
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-# 15:59:14 >  
-# 15:59:14 >  Done.
-# 15:59:14 >  
+# 06:02:27 >  
+# 06:02:27 >  Done.
+# 06:02:27 >  
 
