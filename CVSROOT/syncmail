@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-# Copyright (c) 2002, Barry Warsaw, Fred Drake, and contributors
+# Copyright (c) 2002, 2003, Barry Warsaw, Fred Drake, and contributors
 # All rights reserved.
 # See the accompanying LICENSE file for details.
 
@@ -129,9 +129,6 @@ DIFF_HEAD_LINES = 20
 DIFF_TAIL_LINES = 20
 DIFF_TRUNCATE_IF_LARGER = 1000
 
-EMPTYSTRING = ''
-SPACE = ' '
-DOT = '.'
 COMMASPACE = ', '
 
 PROGRAM = sys.argv[0]
@@ -140,8 +137,7 @@ BINARY_EXPLANATION_LINES = [
     "(This appears to be a binary file; contents omitted.)\n"
     ]
 
-REVCRE = re.compile("^(NONE|[0-9.]+)$")
-NOVERSION = "Couldn't generate diff; no version number found in filespec: %s"
+NOVERSION = "Couldn't generate diff; no version number found for file: %s"
 BACKSLASH = "Couldn't generate diff: backslash in filespec's filename: %s"
 
 
@@ -154,35 +150,20 @@ def usage(code, msg=''):
 
 
 
-def calculate_diff(filespec, contextlines):
-    spec = string.split(filespec, ',')
-    if len(spec) < 3:
-        # Too few parts; command line probable used a replacement
-        # other than "%{sVv}"; don't fail, but don't produce a diff
-        # since we can't be sure what diff to generate.
-        return ''
-    # This allows filenames that contain commas:
-    file = string.join(spec[:-2], ",")
-    oldrev = spec[-2]
-    newrev = spec[-1]
+def calculate_diff(entry, contextlines):
+    file = entry.name
+    oldrev = entry.revision
+    newrev = entry.new_revision
 
     # Make sure we can find a CVS version number
-    if not REVCRE.match(oldrev):
-        return NOVERSION % filespec
-    if not REVCRE.match(newrev):
-        return NOVERSION % filespec
-
-    if string.find(file, '\\') <> -1:
-        # I'm sorry, a file name that contains a backslash is just too much.
-        # XXX if someone wants to figure out how to escape the backslashes in
-        # a safe way to allow filenames containing backslashes, this is the
-        # place to do it.  --Zooko 2002-03-17
-        return BACKSLASH % filespec
+    if oldrev is None and newrev is None:
+        return NOVERSION % file
 
     if string.find(file, "'") <> -1:
         # Those crazy users put single-quotes in their file names!  Now we
         # have to escape everything that is meaningful inside double-quotes.
-        filestr = string.replace(file, '`', '\`')
+        filestr = string.replace(file, '\\', '\\\\')
+        filestr = string.replace(filestr, '`', '\`')
         filestr = string.replace(filestr, '"', '\"')
         filestr = string.replace(filestr, '$', '\$')
         # and quote it with double-quotes.
@@ -190,7 +171,7 @@ def calculate_diff(filespec, contextlines):
     else:
         # quote it with single-quotes.
         filestr = "'" + file + "'"
-    if oldrev == 'NONE':
+    if oldrev is None:
         # File is being added.
         try:
             if os.path.exists(file):
@@ -213,7 +194,7 @@ def calculate_diff(filespec, contextlines):
         except IOError, e:
             lines = ['***** Error reading new file: ',
                      str(e), '\n***** file: ', file, ' cwd: ', os.getcwd()]
-    elif newrev == 'NONE':
+    elif newrev is None:
         lines = ['--- %s DELETED ---\n' % file]
     else:
         # File has been changed.
@@ -227,10 +208,8 @@ def calculate_diff(filespec, contextlines):
                   % (difftype, oldrev, newrev, filestr)
         fp = os.popen(diffcmd)
         lines = fp.readlines()
-        sts = fp.close()
         # ignore the error code, it always seems to be 1 :(
-##        if sts:
-##            return 'Error code %d occurred during diff\n' % (sts >> 8)
+        fp.close()
     if len(lines) > DIFF_TRUNCATE_IF_LARGER:
         removedlines = len(lines) - DIFF_HEAD_LINES - DIFF_TAIL_LINES
         del lines[DIFF_HEAD_LINES:-DIFF_TAIL_LINES]
@@ -250,7 +229,7 @@ def quotename(name):
 
 
 
-def blast_mail(subject, people, filestodiff, contextlines, fromhost, replyto):
+def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
     # cannot wait for child process or that will cause parent to retain cvs
     # lock for too long.  Urg!
     if not os.fork():
@@ -266,12 +245,15 @@ def blast_mail(subject, people, filestodiff, contextlines, fromhost, replyto):
         address = '%s@%s' % (user, domain)
         s = StringIO()
         sys.stdout = s
+        datestamp = time.strftime('%a, %d %b %Y %H:%M:%S +0000',
+                                  time.gmtime(time.time()))
         try:
             vars = {'address' : address,
                     'name'    : quotename(name),
                     'people'  : string.join(people, COMMASPACE),
                     'subject' : subject,
                     'version' : __version__,
+                    'date'    : datestamp,
                     }
             print '''\
 From: %(name)s <%(address)s>
@@ -280,13 +262,14 @@ To: %(people)s''' % vars
                 print 'Reply-To: %s' % replyto
             print '''\
 Subject: %(subject)s
+Date: %(date)s
 X-Mailer: Python syncmail %(version)s <http://sf.net/projects/cvs-syncmail>
 ''' % vars
             s.write(sys.stdin.read())
             # append the diffs if available
             print
-            for file in filestodiff:
-                print calculate_diff(file, contextlines)
+            for entry in entries:
+                print calculate_diff(entry, contextlines)
         finally:
             sys.stdout = sys.__stdout__
         resp = conn.sendmail(address, people, s.getvalue())
@@ -295,6 +278,102 @@ X-Mailer: Python syncmail %(version)s <http://sf.net/projects/cvs-syncmail>
 
 
 
+class CVSEntry:
+    def __init__(self, name, revision, timestamp, conflict, options, tagdate):
+        self.name = name
+        self.revision = revision
+        self.timestamp = timestamp
+        self.conflict = conflict
+        self.options = options
+        self.tagdate = tagdate
+
+def get_entry(prefix, mapping, line, filename):
+    line = string.strip(line)
+    parts = string.split(line, "/")
+    _, name, revision, timestamp, options, tagdate = parts
+    key = namekey(prefix, name)
+    try:
+        entry = mapping[key]
+    except KeyError:
+        if revision == "0":
+            revision = None
+        if string.find(timestamp, "+") != -1:
+            timestamp, conflict = tuple(string.split(timestamp, "+"))
+        else:
+            conflict = None
+        entry = CVSEntry(key, revision, timestamp, conflict,
+                         options, tagdate)
+        mapping[key] = entry
+    return entry
+
+def namekey(prefix, name):
+    if prefix:
+        return os.path.join(prefix, name)
+    else:
+        return name
+
+def load_change_info(prefix=None):
+    if prefix is not None:
+        entries_fn = os.path.join(prefix, "CVS", "Entries")
+    else:
+        entries_fn = os.path.join("CVS", "Entries")
+    entries_log_fn = entries_fn + ".Log"
+    mapping = {}
+    f = open(entries_fn)
+    while 1:
+        line = f.readline()
+        if not line:
+            break
+##        if string.strip(line) == "D":
+##            continue
+        # we could recurse down subdirs, except the Entries.Log files
+        # we need haven't been written to the subdirs yet, so it
+        # doesn't do us any good
+##        if line[0] == "D":
+##            name = string.split(line, "/")[1]
+##            dirname = namekey(prefix, name)
+##            if os.path.isdir(dirname):
+##                m = load_change_info(dirname)
+##                mapping.update(m)
+        if line[0] == "/":
+            # normal file
+            get_entry(prefix, mapping, line, entries_fn)
+        # else: bogus Entries line
+    f.close()
+    if os.path.isfile(entries_log_fn):
+        f = open(entries_log_fn)
+        while 1:
+            line = f.readline()
+            if not line:
+                break
+            if line[1:2] != ' ':
+                # really old version of CVS
+                break
+            entry = get_entry(prefix, mapping, line[2:], entries_log_fn)
+            parts = string.split(line, "/")[1:]
+            if line[0] == "A":
+                # adding a file
+                entry.new_revision = parts[1]
+            elif line[0] == "R":
+                # removing a file
+                entry.new_revision = None
+        f.close()
+    for entry in mapping.values():
+        if not hasattr(entry, "new_revision"):
+            print 'confused about file', entry.name, '-- ignoring'
+            del mapping[entry.name]
+    return mapping
+
+def load_branch_name():
+    tag_fn = os.path.join("CVS", "Tag")
+    if os.path.isfile(tag_fn):
+        f = open(tag_fn)
+        line = string.strip(f.readline())
+        f.close()
+        if line[:1] == "T":
+            return line[1:]
+    return None
+
 # scan args for options
 def main():
     # XXX Should really move all the options to an object, just to
@@ -355,26 +434,18 @@ def main():
     # Now do the mail command
     people = args
 
+    if specs[-3:] == ['-', 'Imported', 'sources']:
+        print 'Not sending email for imported sources.'
+        return
+
+    branch = load_branch_name()
+    changes = load_change_info()
+
     if verbose:
         print 'Mailing %s...' % string.join(people, COMMASPACE)
-
-    if specs[-3:] == ['-', 'Imported', 'sources']:
-        return
-    if specs[-3:] == ['-', 'New', 'directory']:
-        del specs[-3:]
-    elif len(specs) > 2:
-        L = specs[:2]
-        for s in specs[2:]:
-            prev = L[-1]
-            if string.count(prev, ',') < 2:
-                L[-1] = "%s %s" % (prev, s)
-            else:
-                L.append(s)
-        specs = L
-
-    if verbose:
         print 'Generating notification message...'
-    blast_mail(subject, people, specs[1:], contextlines, fromhost, replyto)
+    blast_mail(subject, people, changes.values(),
+               contextlines, fromhost, replyto)
     if verbose:
         print 'Generating notification message... done.'
 
