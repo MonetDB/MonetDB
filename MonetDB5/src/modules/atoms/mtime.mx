@@ -415,7 +415,7 @@ comment "creates a date from (year,month,day).";
 
 command daytime(s:str):daytime
 address MTIMEdaytime_fromstr
-cmment "convert the string to a daytime value.";
+comment "convert the string to a daytime value.";
 
 command daytime(h:int,m:int,s:int,mi:int)
 		:daytime 
@@ -668,11 +668,11 @@ comment "default time with zeroed components";
 
 #SQL utility functions
 command current_timestamp():timestamp
-address MTIMEcurrent_timestamp();
+address MTIMEcurrent_timestamp;
 command current_date():date
-address MTIMEcurrent_date();
+address MTIMEcurrent_date;
 command current_time():daytime
-address MTIMEcurrent_time();
+address MTIMEcurrent_time;
 
 @{
 @+ Prelude section
