@@ -2293,7 +2293,7 @@ CMDxquery(char *mode, char* xquery) {
     /* only if MonetDB is also compiled with gc (HAVE_GC) we allow server-side xquery */
     err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
 #else
-    err = "xquery disabled. Please configure & compile MonetDB with --enable-gc=DIR\n";
+    err = "xquery disabled. Please configure & compile MonetDB with --with-gc=DIR\n";
 #endif
     if (err) {
       len = strlen(err);

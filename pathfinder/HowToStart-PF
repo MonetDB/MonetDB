@@ -49,7 +49,7 @@ gc (the Hans Boehm garbage collector)
 	from http://www.hpl.hp.com/personal/Hans_Boehm/gc/ .
 
 	Note that in order to enable server-size xquery compilation 
-        (recommended), you need to compile MonetDB as well with --enable-gc.
+        (recommended), you need to compile MonetDB as well with --with-gc.
 
 dlcompat (MacOS X/Darwin, only)
 	MacOS X/Darwin itself does not support dlopen, however, there's
