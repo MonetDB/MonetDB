@@ -1541,19 +1541,20 @@ AC_ARG_WITH(php-config, AC_HELP_STRING([--with-php-config=FILE], [Path to php-co
 	PHP_CONFIG="$withval",
 	PHP_CONFIG=php-config)
 
+if test "x$have_php" != xno; then
+	AC_CHECK_PROG(have_php, $PHP_CONFIG, $have_php, no)
+	if test $have_php = no; then
+		AC_MSG_ERROR(Cannot find php-config. Please use --with-php-config=PATH)
+	fi
+fi
 AC_MSG_CHECKING([for PHP])
 if test "x$have_php" != xno; then
-	php_prefix="`$PHP_CONFIG --prefix 2>/dev/null`"
-	PHP_INCS=" `$PHP_CONFIG --includes 2>/dev/null`"
-	PHP_PREFIX="`$PHP_CONFIG --prefix`"
-	PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$PHP_PREFIX++g 2>/dev/null`"
- 
+	php_prefix="`$PHP_CONFIG --prefix`"
 	if test -z "$php_prefix"; then
-		if test x"$have_php" = xyes -o x"$PHP_CONFIG" != xphp-config; then
-			AC_MSG_ERROR(Cannot find php-config. Please use --with-php-config=PATH)
-		else
-			have_php=no
-		fi
+		have_php=no
+	else
+		PHP_INCS=" `$PHP_CONFIG --includes`"
+		PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$php_prefix++g`"
 	fi
 fi
 if test x"$have_php" != xno; then
