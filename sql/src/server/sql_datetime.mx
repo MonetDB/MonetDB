@@ -62,7 +62,7 @@ parse_interval_intern(mvc * sql, int sign, char *str, int sk, int ek, int *i)
 	char *n = NULL;
 	int val = 0;
 	int mul = sign;
-	char sep;
+	char sep = ':';
 	int type;
 
 	switch (sk) {
@@ -75,12 +75,12 @@ parse_interval_intern(mvc * sql, int sign, char *str, int sk, int ek, int *i)
 
 	case iday:
 		mul *= 24;
+		sep = ' ';
 	case ihour:
 		mul *= 60;
 	case imin:
 		mul *= 60;
 	case isec:
-		sep = ':';
 		type = 1;
 		break;
 
@@ -101,7 +101,7 @@ parse_interval_intern(mvc * sql, int sign, char *str, int sk, int ek, int *i)
 				 sep);
 			return -1;
 		}
-		return parse_interval_intern(sql, sign, n + 1, sk - 1, ek, i);
+		return parse_interval_intern(sql, sign, n + 1, sk + 1, ek, i);
 	} else {
 		return type;
 	}
@@ -121,11 +121,11 @@ parse_interval(mvc * sql, int sign, char *str, struct dlist *pers, int *val)
 		if (dlist_length(pers) == 2) {
 			dlist *e = pers->h->next->data.lval;
 
-			sk = e->h->data.ival;
+			ek = e->h->data.ival;
 		}
 	}
 	*val = 0;
-	if (sk < ek) {
+	if (sk > ek) {
 		snprintf(sql->errstr, ERRSIZE,
 			 _
 			 ("End interval field is larger than the start field\n"));
