@@ -126,28 +126,28 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int r = statement_dump( s->op2.stval, nr, sql );
 		switch(s->flag){
 		case cmp_equal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d);\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_notequal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d);\n", *nr, l, r ); 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kdiff(s%d);\n", *nr+1, l, *nr );
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
 		case cmp_lt:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<\");\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \"<\");\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_lte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<=\");\n", *nr, l, r );
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \"<=\");\n", *nr, l, r );
 			s->nr = (*nr)++;
 			break;
 		case cmp_gt: 
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">\" );\n", *nr, l, r); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \">\" );\n", *nr, l, r); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_gte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">=\" );\n", *nr, l, r);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.hjoin(s%d, \">=\" );\n", *nr, l, r);
 			s->nr = (*nr)++;
 			break;
 		default:
@@ -245,6 +245,11 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		else 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.%s();\n", 
 					*nr, l, s->op2.aggrval->name );
+			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n"
+				, *nr+1, basecolumn(s->op1.stval)->tpe->name );
+			len += snprintf( buf+len, BUFSIZ, "s%d.insert(oid(0),s%d);\n"
+				, *nr+1, *nr );
+			(*nr)++;
 		s->nr = (*nr)++;
 	} 	break;
 	case st_exists: {
@@ -254,7 +259,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (n){
 			char *tpe = (char*)atomtype2string(n->data.aval );
 			type *t = sql->cat->bind_type( sql->cat, s->op1.sval );
-			len += snprintf( buf+len, BUFSIZ, "s%d := bat(oid,%s);\n", *nr, t->name );
+			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n", *nr, t->name );
 		}
 		k++;
 		while(n){
@@ -285,7 +290,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_update: {
 		int l = statement_dump( s->op2.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_bind(myc, %ld).update(s%d);\n", 
+			"s%d := mvc_bind(myc, %ld).replace(s%d);\n", 
 			*nr, s->op1.cval->id, l);
 		s->nr = (*nr)++;
 	} break;
@@ -407,7 +412,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 
 	}
 	if (sql->debug && s->type != st_insert_list)
-		len += snprintf( buf+len, BUFSIZ,"t1 := time(); printf(\"%d %%d\n\", t1 - t0);\n", s->nr);
+		len += snprintf( buf+len, BUFSIZ,"t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", s->nr);
 
 	buf[len] = '\0';
 	sql->out->write( sql->out, buf, 1, len );

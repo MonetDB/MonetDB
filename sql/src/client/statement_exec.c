@@ -245,6 +245,11 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		else 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.%s();\n", 
 					*nr, l, s->op2.aggrval->name );
+			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n"
+				, *nr+1, basecolumn(s->op1.stval)->tpe->name );
+			len += snprintf( buf+len, BUFSIZ, "s%d.insert(0,s%d);\n"
+				, *nr+1, *nr );
+			(*nr)++;
 		s->nr = (*nr)++;
 	} 	break;
 	case st_exists: {
@@ -254,7 +259,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (n){
 			char *tpe = (char*)atomtype2string(n->data.aval );
 			type *t = sql->cat->bind_type( sql->cat, s->op1.sval );
-			len += snprintf( buf+len, BUFSIZ, "s%d := bat(oid,%s);\n", *nr, t->name );
+			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n", *nr, t->name );
 		}
 		k++;
 		while(n){
