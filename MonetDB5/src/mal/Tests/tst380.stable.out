@@ -66,7 +66,7 @@ end getLng;	# 5
 #	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 #end dir;
 function Admin.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
-    atm := inspect.getAtoms();	# 1 INSPECTatom_names (atm:bat[:int,:str])
+    atm := inspect.getAtomNames();	# 1 INSPECTatom_names (atm:bat[:int,:str])
     brev := bat.reverse(b);	# 2 BKCreverse (brev:bat[:str,:int])<-(b:bat[:int,:str])
     bm := bat.mirror(brev);	# 3 BKCmirror (bm:bat[:str,:str])<-(brev:bat[:str,:int])
     bHead := Admin.get(brev,"getHeadType","htype");	# 4  (bHead:bat[:any,:any])<-(brev:bat[:str,:int])($6:str)($7:str)

@@ -1,7 +1,7 @@
 # Stream functions seem to provide a better control structure
 # The first stream doesn;t do much, because its state can not be inspected.
 
-stream random(seed:int):bit;
+factory random(seed:int):bit;
 	i:= seed;
 barrier L:= true;
 	i:= 125 *i;

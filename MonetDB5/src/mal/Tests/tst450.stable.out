@@ -18,18 +18,17 @@ stdout of test 'tst450` in directory 'src/mal` itself:
 #d:= inspect.getDefinition("inspect","dir"); print(d);
 #
 function Admin.main():int;	# 0  (main:int)
-    a := inspect.getAtoms();	# 1 INSPECTatom_names (a:bat[:int,:str])
+    a := inspect.getAtomNames();	# 1 INSPECTatom_names (a:bat[:int,:str])
     io.print(a);	# 2 IOprint_val ($2:int)<-(a:bat[:int,:str])
     m := inspect.getModules();	# 3 INSPECTmoduleNames (m:bat[:void,:str])
     io.print(m);	# 4 IOprint_val ($4:int)<-(m:bat[:void,:str])
-    stmt := inspect.getDefinition("algebra","select");	# 5 INSPECTsymbolDef (stmt:bat[:int,:str])<-($6:str)($7:str)
-    sig := inspect.getSignature("algebra","select");	# 6 INSPECTsymbolSignature (sig:bat[:str,:str])<-($6:str)($7:str)
-    tpe := inspect.getType("algebra","select");	# 7 INSPECTsymbolType (tpe:bat[:str,:str])<-($6:str)($7:str)
-    n := inspect.help("algebra","insert");	# 8 INSPECThelp2 (n:bat[:int,:str])<-($6:str)($11:str)
-    io.print(n);	# 9 IOprint_val ($12:int)<-(n:bat[:int,:str])
-    d := inspect.getDefinition("inspect","dir");	# 10 INSPECTsymbolDef (d:bat[:int,:str])<-($14:str)($15:str)
-    io.print(d);	# 11 IOprint_val ($16:int)<-(d:bat[:int,:str])
-end main;	# 12  
+    stmt := inspect.getDefinition("algebra","select");	# 5 INSPECTgetDefinition (stmt:bat[:int,:str])<-($6:str)($7:str)
+    sig := inspect.getSignature("algebra","select");	# 6 INSPECTgetSignature (sig:bat[:str,:str])<-($6:str)($7:str)
+    n := inspect.help("algebra","insert");	# 7 INSPECThelp2 (n:bat[:int,:str])<-($6:str)($10:str)
+    io.print(n);	# 8 IOprint_val ($11:int)<-(n:bat[:int,:str])
+    d := inspect.getDefinition("inspect","dir");	# 9 INSPECTgetDefinition (d:bat[:int,:str])<-($13:str)($14:str)
+    io.print(d);	# 10 IOprint_val ($15:int)<-(d:bat[:int,:str])
+end main;	# 11  
 #-------------------------#
 # atom	name		  # name
 # int	str		  # type
@@ -81,7 +80,7 @@ end main;	# 12
 [ nil,	  "enum"	  ]
 [ nil,	  "io"		  ]
 [ nil,	  "tablet"	  ]
-[ nil,	  "streams"	  ]
+[ nil,	  "stream"		  ]
 [ nil,	  "clients"	  ]
 [ nil,	  "mapi"	  ]
 [ nil,	  "aggrX3"	  ]

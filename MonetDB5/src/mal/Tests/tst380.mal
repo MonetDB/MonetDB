@@ -26,7 +26,7 @@ function getLng(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 	return z;
 end getLng;
 function dir(b:bat[:int,:str]):void;
-	atm:= inspect.getAtoms();
+	atm:= inspect.getAtomNames();
 	brev:= reverse(b);
 	bm := mirror(brev);
 	bHead:= get(brev,"getHeadType","htype");

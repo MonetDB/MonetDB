@@ -20,7 +20,7 @@ stdout of test 'tst023` in directory 'src/mal` itself:
 #end help
 function transaction.help():void;	# 0  (help:void)
     io.print("added function to specific module");	# 1 IOprint_val ($1:int)<-($2:str)
-    b := inspect.getDefinition("transaction","help");	# 2 INSPECTsymbolDef (b:bat[:int,:str])<-($4:str)($5:str)
+    b := inspect.getDefinition("transaction","help");	# 2 INSPECTgetDefinition (b:bat[:int,:str])<-($4:str)($5:str)
     io.print(b);	# 3 IOprint_val ($6:int)<-(b:bat[:int,:str])
 end help;	# 4  
 #transaction.help();

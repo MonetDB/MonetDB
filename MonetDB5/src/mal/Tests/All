@@ -16,6 +16,7 @@ tst015
 tst016
 tst020
 tst023
+tst024
 tst027
 tst030
 tst031
@@ -59,8 +60,6 @@ tst107
 tst108
 tst109
 tst110
-tst1101
-tst1102
 tst115
 tst1150
 tst120
@@ -126,15 +125,7 @@ tst400
 tst401
 tst450
 tst500
-tst5000
-tst5001
-tst5002
-tst5003
-tst5005
-tst5006
-tst5007
 tst501
-tst5020
 tst550
 tst600
 tst601
@@ -152,7 +143,6 @@ tst750
 tst755
 tst760
 tst770
-tst780
 tst820
 tst890
 tst900

@@ -1,6 +1,6 @@
 # Stream functions seem to provide a better control structure
 
-stream random(seed:int) (noes:bit,val:int);
+factory random(seed:int) (noes:bit,val:int);
 	i:= seed;
 barrier L:= true;
 	i:= 125 *i;
