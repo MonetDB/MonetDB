@@ -2873,7 +2873,6 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 
 	mapi_hdl_check(hdl, "mapi_query_part");
 	mid = hdl->mid;
-	assert(hdl->result == NULL);
 	assert(mid->active == NULL || mid->active == hdl);
 	mid->active = hdl;
 	/* remember the query just for the error messages */
@@ -2903,7 +2902,6 @@ mapi_query_done(MapiHdl hdl)
 
 	mapi_hdl_check(hdl, "mapi_query_done");
 	mid = hdl->mid;
-	assert(hdl->result == NULL);
 	assert(mid->active == NULL || mid->active == hdl);
 	mid->active = hdl;
 	stream_flush(mid->to);

@@ -527,7 +527,7 @@ error(stream *s)
 		snprintf(buf, BUFSIZ, "Error writing file %s\n", s->name);
 		return strdup(buf);
 	}
-	return strdup("Unkonwn error");
+	return strdup("Unknown error");
 }
 
 static ssize_t
