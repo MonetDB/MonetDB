@@ -27,7 +27,8 @@ lib_sqlserver = {
 		sql_mvc.mx \    
 		sql_privileges.mx \  
 		sql_context.mx \
-		sql_gencode.mx
+		sql_backend.mx 
+
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
 	LIBS = ../common/libsql $(MONET_LIBS)
 }

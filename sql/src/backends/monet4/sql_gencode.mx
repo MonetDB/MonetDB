@@ -25,9 +25,34 @@
 @a N.J. Nes
 @* 
 
+@h
+#ifndef _SQL_GENCODE_H_
+#define _SQL_GENCODE_H_
+
+#include "mem.h"
+#include "sql_statement.h"
+#include "sql_context.h"
+
+sql_export int stmt_dump( stmt *s, int *nr, context *sql );
+
+#endif /*_SQL_GENCODE_H_*/
+
 @c
-#include "sql_gencode.h"
+#include <sql_gencode.h>
 #include <string.h>
+
+@(
+		if (c->debug&8192) {
+			char *sqzd_cmd = NULL;
+			int misq_x = 0;
+			CMDsqueezeStr2Str(&sqzd_cmd, cmd, &misq_x);
+			if (sqzd_cmd && (sqzd_cmd != str_nil)) {
+				/*_DELETE?*/free(cmd);
+				cmd = sqzd_cmd;
+			}
+		}
+@)
+
 
 static void write_head( context *sql, int nr )
 {

@@ -25,7 +25,7 @@
 @a N.J. Nes
 @* 
 
-@* Context code
+@* Session code
 
 This small module contains the code to instantiate an SQL client.
 This code strongly depends on the front-end/back-end setup.
@@ -34,7 +34,7 @@ This code strongly depends on the front-end/back-end setup.
 #ifndef _SQL_SESSION_H_
 #define _SQL_SESSION_H_
 
-#include <sql_context.h>
+#include <sql_backend.h>
 #include <monet_context.h>
 #include <kernel.h>
 
@@ -44,6 +44,9 @@ extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
 @c
 #include "sql_session.h"
 #include "sql_server.h"
+#include <sql_context.h>
+#include <sql_scope.h>
+#include <sql_qc.h>
 
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
@@ -57,12 +60,295 @@ extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
 }
 @c
 
+static YYSTREE milnode(int tok, int tpe, ptr valp) 
+{
+        YYSTREE res = yynode(tok, tpe);
+        VALset(&res->yyval, tpe, valp);
+        return res;
+}
+
+static YYSTREE milnode2(int tok, ValPtr valp) 
+{
+        YYSTREE res = yynode(tok, valp->vtype);
+	res->yyval = *valp;
+        return res;
+}
+
+void backend_dumpproc( context *c, int id, stream *cout, stmt *s )
+{
+	int nr = 1;
+	int i = 0;
+	char buf[BUFSIZ];
+	node *n;
+
+	i = snprintf( buf, BUFSIZ, "proc sql%d (", id);
+	if (c->params){
+		for (n = c->params->h; n; n = n->next){
+			var *v = n->data;
+
+			i += snprintf(buf+i, BUFSIZ-i, "%s %s%c", 
+				v->s->op2.typeval->type->name,
+				v->name, (n->next)?',':' '
+				);
+		}
+	}
+	i += snprintf(buf+i, BUFSIZ-i, ") : void {\n");
+	cout->write(cout, buf, i, 1); 
+
+    	stmt_dump( s, &nr, c );
+
+	cout->write(cout, "}\n", 2, 1);
+}
+	
+int backend_parse( context *c, char *cmd, Cntxt stack )
+{
+	int err = 0;
+
+	if (cmd){
+		ValRecord v;
+
+		v.vtype = TYPE_void;
+
+		err = interpret_str( stack, cmd, &v);
+	}
+	return err;
+}
+
+Cntxt backend_newstack( Cntxt stk )
+{
+	Cntxt procstk;
+
+	procstk = CNTXTnew(stk);
+	CNTXTuse(procstk);
+	monet_cntxt[procstk].reuse = TRUE;
+
+	return procstk;
+}
+
+void backend_freestack( backend_stack stk )
+{
+	Cntxt procstk = (Cntxt)stk;
+
+	monet_cntxt[procstk].reuse = FALSE;
+	CNTXTfree1(procstk);
+}
+
+void backend_freecode( backend_code code )
+{
+	YYSTREE procnode = (YYSTREE)code;
+	if (code){
+		/* clear arguments */
+		int i;
+		int l = procnode->yysons[1]->cnt;
+		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
+
+		for (i=1; i<l; i++){
+			argv[i].vtype = TYPE_void; 
+			argv[i].len = 0; 
+		}
+	}
+}
+
+YYSTREE backend_interpret( Cntxt procstk, char *name, list *args )
+{
+	YYSTREE procnode;
+	YYSTREE argtree;
+	node *n;
+	int err = 0;
+	ValRecord v;
+
+	v.vtype = TYPE_void;
+	procnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name)); 
+ 	argtree = yynode(0,0); 
+	if (args){
+  		for (n=args->h; n; n = n->next){
+			atom *a = n->data;
+			YYSTREE arg = milnode2(TOK_CONSTANT, &a->data );
+				/* todo cleanup should first remove
+				   these nodes, without cleaning the
+				   shared values!! */
+
+       			argtree = yyexpand(argtree, arg);
+		}
+	}
+	yyexpand(procnode, argtree);
+	yyexpand(procnode, yynode(0,TYPE_int));
+	err = interpret( procstk, procnode, &v);
+	return procnode;
+}
+
+int backend_fastpath( Cntxt procstk, YYSTREE procnode, list *args )
+{
+	int err = 0;
+	ValRecord v;
+	node *n;
+
+	v.vtype = TYPE_void;
+	if (args){
+		int i;
+
+		ValPtr argv = (ValPtr) procnode->yysons[1]->yyval.val.pval;
+	  	for (i=1, n=args->h; n; i++, n = n->next){
+			atom *a = n->data;
+			argv[i] = a->data;
+		}
+	}
+	err = interpret( procstk, procnode->yysons[1]->yysons[0], &v);
+	return err;
+}
+
+
 int connect_error(stream *in, stream *out, int sock)
 {
 	close_stream(in);
 	close_stream(out);
 	close(sock);
 	return GDK_FAIL;
+}
+
+int sqlexecute(context * c, stream *out, Cntxt stk )
+{
+	stream *cout = c->out;
+	char *cmd = NULL, *s;
+	int i, err = 0;
+	cq *q = NULL;
+
+	cmd_init(c);
+
+	s = c->buf;
+
+	c->mvc->type = Q_PARSE;
+	c->mvc->status = 0;
+
+	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
+		if (!err)
+			err = c->mvc->status;
+		return sqlcleanup(c, cmd, err);
+	}
+	
+	if (c->trace){
+		char *buf = s;
+
+		char old = *c->buf;
+
+		*c->buf = '\0';
+		*c->buf = old;
+
+		stream_writeInt( out, Q_DEBUGP );
+		stream_writeInt( out, 1 );
+		while( buf < c->buf) {
+			int i;
+			char b[BUFSIZ];
+
+		  	while( *buf != '\n' && buf < c->buf) buf++;
+			i = snprintf(b, BUFSIZ, "# %5d: ", c->cnt);
+		  	out->write(out, b, 1, i);
+		  	out->write(out, s, 1, buf - s);
+			out->write(out, "\n", 1, 1);
+			s = ++buf;
+		}
+		c->cnt++;
+		out->flush(out);
+	}
+	if ( !(q = qc_find(c->qc, c->sym, c->params, c->key)) ){
+		stmt *s = sql_symbol2stmt(c);
+
+		if (!s && c->mvc->status){
+			err = c->mvc->status;
+			return sqlcleanup(c, cmd, err);
+		}
+
+		backend_dumpproc( c, c->qc->id, cout, s );
+		cmd = buffer_get_buf(c->outbuf);
+    		cout->flush( cout );
+		stmt_destroy(s);
+	
+		if (c->debug&64){
+			err = debug_cmd(c, cmd, out, 1);
+		} else {
+			err = backend_parse( c, cmd, stk );
+		} 
+		q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
+
+		c->sym = NULL;
+		c->params = NULL;
+
+		/* beware to use free instead of _DELETE
+ 	 	 * as the stream library is build with out 
+	 	 * libbat ie. it cannot use gdkmalloc 
+	 	 * can be used */
+	        free(cmd); 
+		cmd = NULL;
+
+		if (err)
+			return sqlcleanup(c, cmd, err);
+	}
+	if (c->debug){
+		char buf[BUFSIZ];
+		node *n;
+
+		i = snprintf(buf, BUFSIZ, "sql%d (", q->id );
+		cout->write(cout, buf, i, 1 );
+		if (c->args){
+	  		for (n=c->args->h; n; n = n->next){
+				atom *a = n->data;
+				atom_dump(a, cout);
+				if (n->next)
+					cout->write(cout, ",", 1, 1); 
+			}
+		}
+		cout->write(cout, ");\n", 3, 1);
+
+		cmd = buffer_get_buf(c->outbuf);
+    		cout->flush( cout );
+		if (c->debug&64){
+			err = debug_cmd(c, cmd, out, 0);
+		} else {
+			err = backend_parse( c, cmd, stk );
+		} 
+	} else if (!q->code){
+		char buf[BUFSIZ];
+		Cntxt procstk = backend_newstack(stk);
+		YYSTREE procnode;
+
+		snprintf( buf, BUFSIZ, "sql%d", q->id);
+
+		c->mvc->type = q->type;
+		procnode = backend_interpret( procstk, buf, c->args);
+
+		if (!err){
+			q->code = (backend_code)procnode;
+			q->stk = (backend_stack)procstk;
+		} else {
+			backend_freestack( (backend_stack)procstk );
+		}
+	} else {
+		c->mvc->type = q->type;
+		err = backend_fastpath( (Cntxt)q->stk, (YYSTREE)q->code, c->args);
+	}
+/*
+	if (qc_size(c->qc) > 10){
+		if (c->qc) qc_destroy(c->qc, stk); 
+		c->qc = qc_create();
+	}
+*/
+
+	if (!err && !(c->debug&64)){
+		ssize_t status, type;
+
+		if ((status = mvc_status(c->mvc)) < 0){
+			char *errstr = "Error in result";
+			stream_writeInt( out, mvc_type(c->mvc) );
+			stream_writeInt( out, status );
+			out->write( out, errstr, strlen(errstr), 1 );
+			out->flush( out );
+  		} else if ( (type = mvc_type(c->mvc)) != Q_RESULT ) {
+			stream_writeInt( out, type );
+			stream_writeInt( out, status );
+			out->flush( out );
+  		}
+	}
+	return sqlcleanup(c, cmd, err);
 }
 
 
@@ -186,7 +472,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 		while( sql->buf && *sql->buf && *sql->buf != EOT ){
 			char *ibuf = sql->buf;
 
-			err = sqlexecute(sql, out, stk, res);
+			err = sqlexecute(sql, out, stk);
 			if (err){ /* output error */
 				char *buf = GDKerrbuf;
 				stream_writeInt( out, -1 );
@@ -207,7 +493,7 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 	mvc_destroy(m);
 
-	if (sql->qc) qc_destroy(sql->qc, stk); 
+	if (sql->qc) qc_destroy(sql->qc); 
 	sql->qc = NULL;
 
 	sql_exit_context( sql );

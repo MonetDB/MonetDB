@@ -80,11 +80,11 @@ sql_export void cmd_init(context * c);
 sql_export void cmd_add_token(context * c, char *token);
 sql_export void cmd_add_string(context * c, char *str);
 
+sql_export struct stmt *sql_symbol2stmt( context *c );
 
 #endif	/* _SQL_CONTEXT_H_ */
 
 @c
-
 #include "sql_context.h"
 #include "sql_symbol.h"
 #include "sql_scan.h"
@@ -93,8 +93,9 @@ sql_export void cmd_add_string(context * c, char *str);
 #include "sql_rel2bin.h"
 #include "sql_scope.h"
 #include "sql_qc.h"
+#include "sql_backend.h"
 
-stmt *symbol2stmt( context *c ){
+stmt *sql_symbol2stmt( context *c ){
 	stmt *s = semantic(c, c->sym);
 	if (s){
 		stmt *opt = optimize(c, s);
@@ -123,238 +124,13 @@ int sqlcleanup( context *c, char *cmd, int err)
 	return err;
 }
 
-
-int milinterpret( context *c, char *cmd, stream *out, Cntxt stk, int part )
+int debug_cmd( context *c, char *cmd, stream *out, int part )
 {
-	int err = 0;
-	if (cmd){
-@(
-		if (c->debug&8192) {
-			char *sqzd_cmd = NULL;
-			int misq_x = 0;
-			CMDsqueezeStr2Str(&sqzd_cmd, cmd, &misq_x);
-			if (sqzd_cmd && (sqzd_cmd != str_nil)) {
-				/*_DELETE?*/free(cmd);
-				cmd = sqzd_cmd;
-			}
-		}
-@)
-		if (c->debug&64){
-			stream_writeInt( out, (part)?Q_DEBUGP:Q_DEBUG );
-			stream_writeInt( out, c->debug );
-			out->write( out, cmd, strlen(cmd), 1 );
-			out->flush( out );
-		} else {
-			ValRecord v;
-			v.vtype = TYPE_void;
-
-			err = interpret_str( stk, cmd, &v);
-		}
-	}
-	return err;
-}
-
-YYSTREE milnode(int tok, int tpe, ptr valp) 
-{
-        YYSTREE res = yynode(tok, tpe);
-        VALset(&res->yyval, tpe, valp);
-        return res;
-}
-
-YYSTREE milnode2(int tok, ValPtr valp) 
-{
-        YYSTREE res = yynode(tok, valp->vtype);
-	res->yyval = *valp;
-        return res;
-}
-
-int sqlexecute(context * c, stream *out, Cntxt stk, ValPtr res )
-{
-	stream *cout = c->out;
-	char *cmd = NULL, buf[BUFSIZ], *s;
-	node *n;
-	int i, err = 0;
-	cq *q = NULL;
-
-	ValRecord v;
-	v.vtype = TYPE_void;
-
-	cmd_init(c);
-
-	s = c->buf;
-
-	c->mvc->type = Q_PARSE;
-	c->mvc->status = 0;
-
-	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
-		if (!err)
-			err = c->mvc->status;
-		return sqlcleanup(c, cmd, err);
-	}
-	
-	if (c->trace){
-		char *buf = s;
-
-		char old = *c->buf;
-
-		*c->buf = '\0';
-		*c->buf = old;
-
-		stream_writeInt( out, Q_DEBUGP );
-		stream_writeInt( out, 1 );
-		while( buf < c->buf) {
-			int i;
-			char b[BUFSIZ];
-
-		  	while( *buf != '\n' && buf < c->buf) buf++;
-			i = snprintf(b, BUFSIZ, "# %5d: ", c->cnt);
-		  	out->write(out, b, 1, i);
-		  	out->write(out, s, 1, buf - s);
-			out->write(out, "\n", 1, 1);
-			s = ++buf;
-		}
-		c->cnt++;
-		out->flush(out);
-	}
-	if ( !(q = qc_find(c->qc, c->sym, c->params, c->key)) ){
-	    	int nr = 1;
-		int id = c->qc->id;
-		stmt *s = symbol2stmt(c);
-
-		if (!s && c->mvc->status){
-			err = c->mvc->status;
-			return sqlcleanup(c, cmd, err);
-		}
-
-		i = snprintf( buf, BUFSIZ, "proc sql%d (", id);
-		if (c->params){
-			for (n = c->params->h; n; n = n->next){
-				var *v = n->data;
-
-				i += snprintf(buf+i, BUFSIZ-i,
-					"%s %s%c", 
-					v->s->op2.typeval->type->name,
-					v->name,
-					(n->next)?',':' '
-					);
-			}
-		}
-		i += snprintf(buf+i, BUFSIZ-i, ") : void {\n");
-		cout->write(cout, buf, i, 1); 
-
-	    	stmt_dump( s, &nr, c );
-		if (s) stmt_destroy(s);
-
-		cout->write(cout, "}\n", 2, 1);
-	
-		cmd = buffer_get_buf(c->outbuf);
-    		cout->flush( cout );
-	
-		err = milinterpret( c, cmd, out, stk, 1 );
-		q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
-
-		c->sym = NULL;
-		c->params = NULL;
-
-		/* beware to use free instead of _DELETE
- 	 	 * as the stream library is build with out 
-	 	 * libbat ie. it cannot use gdkmalloc 
-	 	 * can be used */
-	        free(cmd); 
-		cmd = NULL;
-
-		if (err)
-			return sqlcleanup(c, cmd, err);
-	}
-	if (c->debug){
-		i = snprintf(buf, BUFSIZ, "sql%d (", q->id );
-		cout->write(cout, buf, i, 1 );
-		if (c->args){
-	  		for (n=c->args->h; n; n = n->next){
-				atom *a = n->data;
-				atom_dump(a, cout);
-				if (n->next)
-					cout->write(cout, ",", 1, 1); 
-			}
-		}
-		cout->write(cout, ");\n", 3, 1);
-
-		cmd = buffer_get_buf(c->outbuf);
-    		cout->flush( cout );
-		err = milinterpret( c, cmd, out, stk, 0 );
-	} else if (!q->mil){
-		YYSTREE procnode;
-		Cntxt procstk;
-		YYSTREE args;
-
-		snprintf( buf, BUFSIZ, "sql%d", q->id);
-		procnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(buf)); 
- 		args = yynode(0,0); 
-		if (c->args){
-	  		for (n=c->args->h; n; n = n->next){
-				atom *a = n->data;
-				YYSTREE arg = milnode2(TOK_CONSTANT, &a->data );
-					/* todo cleanup should first remove
-					   these nodes, without cleaning the
-					   shared values!! */
-
-        			args = yyexpand(args, arg);
-			}
-		}
-		yyexpand(procnode, args);
-		yyexpand(procnode, yynode(0,TYPE_int));
-
-		procstk = CNTXTnew(stk);
-		CNTXTuse(procstk);
-		monet_cntxt[procstk].reuse = TRUE;
-
-		c->mvc->type = q->type;
-		err = interpret( procstk, procnode, &v);
-
-		if (!err){
-			q->mil = procnode;
-			q->stk = procstk;
-		} else {
-			monet_cntxt[procstk].reuse = FALSE;
-			CNTXTfree1(procstk);
-		}
-	} else {
-		YYSTREE procnode = q->mil;
-
-		if (c->args){
-			ValPtr argv = (ValPtr) 
-				procnode->yysons[1]->yyval.val.pval;
-	  		for (i=1, n=c->args->h; n; i++, n = n->next){
-				atom *a = n->data;
-				argv[i] = a->data;
-			}
-		}
-		c->mvc->type = q->type;
-		err = interpret( q->stk, procnode->yysons[1]->yysons[0], &v);
-	}
-/*
-	if (qc_size(c->qc) > 10){
-		if (c->qc) qc_destroy(c->qc, stk); 
-		c->qc = qc_create();
-	}
-*/
-
-	if (!err && !(c->debug&64)){
-		ssize_t status, type;
-
-		if ((status = mvc_status(c->mvc)) < 0){
-			char *errstr = "Error in result";
-			stream_writeInt( out, mvc_type(c->mvc) );
-			stream_writeInt( out, status );
-			out->write( out, errstr, strlen(errstr), 1 );
-			out->flush( out );
-  		} else if ( (type = mvc_type(c->mvc)) != Q_RESULT ) {
-			stream_writeInt( out, type );
-			stream_writeInt( out, status );
-			out->flush( out );
-  		}
-	}
-	return sqlcleanup(c, cmd, err);
+	stream_writeInt( out, (part)?Q_DEBUGP:Q_DEBUG );
+	stream_writeInt( out, c->debug );
+	out->write( out, cmd, strlen(cmd), 1 );
+	out->flush( out );
+	return 0;
 }
 
 void sql_init_context(context * c, int debug, int trace, int reply_size, mvc * mvc)

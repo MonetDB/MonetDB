@@ -32,15 +32,15 @@
 #include <mem.h>
 #include <list.h>
 #include <sql_symbol.h>
-#include <monet_context.h>
+#include <sql_backend.h>
 
 typedef struct cq {
 	struct cq *next;
 	int	type;
 	symbol 	*s;
 	list 	*params;
-	Cntxt	stk;
-	YYSTREE mil;
+	backend_stack	stk;
+	backend_code code;
 	int 	id;
 	int 	key;
 } cq;
@@ -51,7 +51,7 @@ typedef struct qc {
 } qc;
 
 sql_export qc *qc_create();
-sql_export void qc_destroy( qc *cache, Cntxt stk );
+sql_export void qc_destroy( qc *cache /*, Cntxt stk */ );
 sql_export cq *qc_find( qc *cache, symbol *s, list *params, int key );
 sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type );
 sql_export int qc_size( qc *cache );
@@ -71,7 +71,7 @@ qc *qc_create()
 	return r;
 }
 
-void qc_destroy( qc *cache, Cntxt stk )
+void qc_destroy( qc *cache /*, Cntxt stk */ )
 {
 	char buf[BUFSIZ];
 	cq *q, *n;
@@ -81,23 +81,15 @@ void qc_destroy( qc *cache, Cntxt stk )
 	for (q = cache->q; q; q = n){
 		n = q->next;
 		
-		if (q->params && q->mil){
-			/* clear arguments */
-			node *m; 
-			int i;
-			ValPtr argv = (ValPtr) 
-				q->mil->yysons[1]->yyval.val.pval;
-			for (i=1, m = q->params->h; m; i++, m = m->next){
-				argv[i].vtype = TYPE_void; 
-				argv[i].len = 0; 
-			}
-		}
 		if (q->params)
 			list_destroy(q->params);
-		if (q->stk){ 
-			monet_cntxt[q->stk].reuse = FALSE;
-			CNTXTfree1(q->stk);
-		}
+
+		if (q->code)
+			backend_freecode( q->code );
+
+		if (q->stk)
+			backend_freestack( q->stk );
+
 /* somehow this gives problems (sudden module unloads, procs not found )!!
 		snprintf(buf, BUFSIZ, "undef sql%d;", q->id );
 		interpret_str(stk, buf, &v);
@@ -158,7 +150,7 @@ cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type )
 	n->params = params;
 	n->next = cache->q;
 	n->stk = 0;
-	n->mil = NULL;
+	n->code = NULL;
 	n->type = type;
 	n->key = key;
 	cache -> q = n;
