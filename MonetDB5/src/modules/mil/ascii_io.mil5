@@ -1,3 +1,4 @@
+# This version reflects changes needed by MIL5 
 proc load_format( str fmt ) : BAT[str,BAT] := {
 	var names := new(void,str); names.seqbase(oid(0));
 	var seps := new(void,str); seps.seqbase(oid(0));
@@ -84,15 +85,15 @@ proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] := {
 	fmtbats.insert(nil,seps);
 	fmtbats.insert(nil,types);
 
-	names := new(void,str); names.seqbase(oid(0));
+	var nms := new(void,str); nms.seqbase(oid(0));
 	seps := new(void,str); seps.seqbase(oid(0));
-	names.insert(nil,"names");seps.insert(nil,",");
-	names.insert(nil,"seps");seps.insert(nil,",");
-	names.insert(nil,"types");seps.insert(nil,"\n");
-	dump(names, seps, fmtbats, fmt, 1000);
-	names.insert(nil,"bats"); 
+	nms.insert(nil,"names");seps.insert(nil,",");
+	nms.insert(nil,"seps");seps.insert(nil,",");
+	nms.insert(nil,"types");seps.insert(nil,"\n");
+	dump(nms, seps, fmtbats, fmt, 1000);
+	nms.insert(nil,"bats"); 
 	fmtbats.insert(nil,bats);
-	return names.reverse.join(fmtbats);
+	return nms.reverse.join(fmtbats);
 }
 
 proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
