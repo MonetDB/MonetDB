@@ -801,7 +801,7 @@ public class MonetResultSet implements ResultSet {
 	 * @return the description of this ResultSet object's columns
 	 */
 	public ResultSetMetaData getMetaData() {
-		// return inner class which implements the ResultSetMetaData interface 
+		// return inner class which implements the ResultSetMetaData interface
 		return(new ResultSetMetaData() {
 			/**
 			 * Returns the number of columns in this ResultSet object.
@@ -1245,29 +1245,26 @@ public class MonetResultSet implements ResultSet {
 		}
 
 		try {
+			cal.setTime(MonetConnection.mTimestamp.parse("1970-01-01 00:00:00.000"));
+
 			switch(dataType) {
 				default:
-					return(new java.util.Date(0L));
+					throw new java.text.ParseException("Unsupported data type", 0);
 
 				case Types.DATE:
-					synchronized(MonetConnection.mDate) {
-						MonetConnection.mDate.setCalendar(cal);
-						return(MonetConnection.mDate.parse(monetDate));
-					}
+					cal.setTime(MonetConnection.mDate.parse(monetDate));
+				break;
 				case Types.TIME:
-					synchronized(MonetConnection.mTime) {
-						MonetConnection.mTime.setCalendar(cal);
-						return(MonetConnection.mTime.parse(monetDate));
-					}
+					cal.setTime(MonetConnection.mTime.parse(monetDate));
+				break;
 				case Types.TIMESTAMP:
-					synchronized(MonetConnection.mTimestamp) {
-						MonetConnection.mTimestamp.setCalendar(cal);
-						return(MonetConnection.mTimestamp.parse(monetDate));
-					}
+					cal.setTime(MonetConnection.mTimestamp.parse(monetDate));
+				break;
 			}
 		} catch(java.text.ParseException e) {
-			return(new java.sql.Date(0L));
+			// keep default value
 		}
+		return(cal.getTime());
 	}
 
 	/**
@@ -1281,7 +1278,7 @@ public class MonetResultSet implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public java.sql.Date getDate(int columnIndex) throws SQLException {
-		return(getDate(columnIndex, Calendar.getInstance()));
+		return(getDate(columnIndex,	Calendar.getInstance()));
 	}
 
 	/**

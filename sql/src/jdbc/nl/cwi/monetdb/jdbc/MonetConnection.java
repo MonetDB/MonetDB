@@ -74,6 +74,14 @@ public class MonetConnection extends Thread implements Connection {
 	final static SimpleDateFormat mDate =
 		new SimpleDateFormat("yyyy-MM-dd");
 
+	static {
+		// make sure strict parsing of time fields is used, such
+		// that partial matches are not allowed
+		mTimestamp.setLenient(false);
+		mTime.setLenient(false);
+		mDate.setLenient(false);
+	}
+
 	/** a simple sequence counter for MonetConnections */
 	private static int sequence = 0;
 
