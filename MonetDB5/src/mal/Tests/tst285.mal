@@ -1,9 +1,0 @@
-b:= new(:int,:str);
-insert(b,1,"hello");
-insert(b,2,"goodbye");
-
-z1:= match(b,"hel");
-print(z1);
-
-z2:= match(b,".*[ly].*");
-print(z2);
