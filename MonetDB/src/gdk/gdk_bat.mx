@@ -25,7 +25,7 @@
 @a M. L. Kersten, P. Boncz
 @* BAT Module
 In this Chapter we describe the BAT implementation in more detail.
-The routines mentioned are primarilly meant to simplify the library
+The routines mentioned are primarily meant to simplify the library
 implementation.
 
 @+ BAT Construction
@@ -43,7 +43,7 @@ with heaps to manage the variable-sized data items of both
 dimensions.  The buns are assumed to be stored as loc-size
 objects.  This is essentially an array of structs to store the
 associations.  The size is determined at BAT creation time using an
-upper bound on the number of elements to be accomodated.  In case of
+upper bound on the number of elements to be accommodated.  In case of
 overflow, its storage space is extended automatically.
 
 The capacity of a BAT places an upper limit on the number of BUNs to
@@ -359,7 +359,7 @@ they have fix/unfix handles. As an optimization, in the case of no stable
 elements, we quickly empty the heaps by copying a standard small empty image 
 over them.
 
-Also, the BATclear must take care of search acclerators. The builtin search
+Also, the BATclear must take care of search accelerators. The builtin search
 accelerators are disposable, so BATclear kills them. Also it considers that
 the quickest way to rebuild an empty user accelerator is to destroy the
 old and build new. The accelerators are only preserved for very small BATs.
@@ -581,7 +581,7 @@ Binary units (tuples) are the elements stored in BATs. We
 discuss here BUN insert, replace and delete.
 
 The below are help macro's that actually move the BUNs
-around and adapt search accellerator structures.
+around and adapt search accelerator structures.
  
 @{
 @h
@@ -967,7 +967,7 @@ exists in the first place) and the new value takes its place.
 In order to make updates on void columns workable; replaces on them 
 are always done in-place. Performing them without bun-movements 
 greatly simplifies the problem. The 'downside' is that when transaction
-managament has to be performed, replaced values should be saved 
+management has to be performed, replaced values should be saved 
 explicitly.
 
 @= uncommit_replace
@@ -1219,7 +1219,7 @@ size_t BATmemsize(BAT *b, int dirty) {
 @}
 @-
 The key and name properties can be changed at any time.
-Keyed dimensions are automatically supported by an auxilary hash-based
+Keyed dimensions are automatically supported by an auxiliary hash-based
 access structure to speed up searching. Turning off the key integrity 
 property does not cause the index to disappear. It can still be used to
 speed-up retrieval. The routine @%BATkey@ sets the key property of the
@@ -1289,7 +1289,7 @@ BAT *BATseqbase(BAT *b, oid o) {
 }
 
 @- 
-BATs have a logical name that is indepent of their 
+BATs have a logical name that is independent of their 
 location in the file system (this depends on batCacheid).
 The dimensions of the BAT can be given a separate name.
 It helps front-ends in identifying the column of interest.
@@ -1427,7 +1427,7 @@ int BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc) {
 @- BATcheckmodes
 
 Checks legal heap modes. This is done at BATsave time on a temporary copy of the BAT descriptor
-(DESCsetmodes). It now is also used from TMcommit, as one of the cirteria for whether a heap
+(DESCsetmodes). It now is also used from TMcommit, as one of the criteria for whether a heap
 needs priv storage is whether the BAT has been committed ever (see also dirty\_bat() in gdk\_bbp.mx).
 @c
 static int HEAPcheckmode(Heap *h, int persistent, int unloadable, int writeable) {
@@ -1480,12 +1480,12 @@ are involved.
 @-
 @T
 In case of a change from writable->readonly (PRIV->MMAP), nothing needs to be done immediately.
-The mapped BAT is saved in the old mode (in X, not X.priv), and made un-modifyable.
+The mapped BAT is saved in the old mode (in X, not X.priv), and made un-modifiable.
 As there are no updates, we need not worry about saving either.
 @-
 @T
 A change from readonly->writable (MMAP->PRIV) is more traumatic. We must unload, and re-load 
-immediately, before the BAT can become modifyable.
+immediately, before the BAT can become modifiable.
 @-
 @T
 This picture is complicated further by the new MMAP heaps for temporary BATs.
@@ -1536,7 +1536,7 @@ after they have been created -- which can happen on readonly bats). In case of
 readonly mmap heaps, we see that due to H=map in all cases, HEAPsave will use
 the (efficient) msync. This is not dangerous when saving an accelerator heap the
 first time, as its file will be ignored if [ht]accCopiedtodisc in the .desc
-is not set (only happens after fully succesful heap write).
+is not set (only happens after fully successful heap write).
 @c
 /* transition heap from readonly to writable (or appendable) */
 static int HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload) {
@@ -1709,7 +1709,7 @@ Thus, we must be able to save any transient BAT to disk.
 
 What we don't allow is to make such bats persistent. 
 
-Allthough the persistent state does influence the allowed mmap modes, this only
+Although the persistent state does influence the allowed mmap modes, this only
 goes for the *real* committed persistent state. Making the bat persistent with BATmode 
 does not matter for the heap modes until the commit point is reached. So we do not
 need to do anything with heap modes yet at this point.
