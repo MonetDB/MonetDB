@@ -41,7 +41,7 @@ sub new {
 	#print "new mapi:$server\n";
 	$mapi->{SOCKET} = new IO::Socket::INET( $server )
 	|| die "!ERROR can't connect to $server : $!";
-	# binmode($mapi->{SOCKET},":utf8");
+	binmode($mapi->{SOCKET},":utf8");
 	if( $mapi->{trace}){
 		print "Connection to socket established\n";
 	}
