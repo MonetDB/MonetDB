@@ -306,6 +306,10 @@ AC_SUBST(X_CFLAGS)
 AC_SUBST(X_CXXFLAGS)
 AC_SUBST(NO_X_CFLAGS)
 
+dnl  default javac flags
+JAVACFLAGS="$JAVACFLAGS -g:none -O"
+AC_SUBST(JAVACFLAGS)
+
 bits=32
 AC_ARG_WITH(bits,
 [  --with-bits=<#bits>     specify number of bits (32 or 64)],[
@@ -566,8 +570,12 @@ if test "x$enable_debug" = xyes; then
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     CXXFLAGS=" $CXXFLAGS "
     CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+    JAVACFLAGS=" $JAVACFLAGS "
+    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
+    dnl  add "-g"
     CFLAGS="$CFLAGS -g"
     CXXFLAGS="$CXXFLAGS -g"
+    JAVACFLAGS="$JAVACFLAGS -g"
     case "$GCC-$host_os" in
       yes-aix*)
         CFLAGS="$CFLAGS -gxcoff"
@@ -603,7 +611,10 @@ if test "x$enable_optim" = xyes; then
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     CXXFLAGS=" $CXXFLAGS "
     CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+    JAVACFLAGS=" $JAVACFLAGS "
+    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
+    JAVACFLAGS="$JAVACFLAGS -g:none -O"
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host-$gcc_ver" in
