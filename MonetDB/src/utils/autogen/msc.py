@@ -55,13 +55,17 @@ def msc_subdirs(fd, var, values, msc):
     # to cope with conditional subdirs:
     Vals = []
     for v in values:
-	cond = string.split(v, '?', 1)
-	if (len(cond) == 1):
-		Vals.append(cond[0])
-	else:
-		thn = string.split(cond[1], ':', 1)
-		if (len(thn) > 1):
-			Vals.append(thn[1])
+        cond = string.split(v, '?', 1)
+        if len(cond) == 1:
+                # non-conditional => use as is
+                Vals.append(cond[0])
+        else:
+        	# conditional => use "then" or "else"
+                thn = string.split(cond[1], ':', 1)
+                if cond[0] == 'CROSS_COMPILING'  and  len(thn) > 1:
+                        Vals.append(thn[1])
+                elif cond[0] == 'MONET4':
+                        Vals.append(thn[0])
     values = Vals
     # HACK to keep uncompilable stuff out of Windows makefiles.
     if 'calibrator' in values:
