@@ -60,6 +60,7 @@ AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 AC_DEFUN(AM_MONET_COMPILER,
 [
 dnl check for compiler
+gcc="auto"
 AC_ARG_WITH(gcc,
 [  --with-gcc=<compiler>   which C compiler to use
   --without-gcc           do not use GCC], [
@@ -69,17 +70,18 @@ AC_ARG_WITH(gcc,
 	*)	CC=$withval;;
 	esac])
 
+if test "x$gcc" = "xauto"; then
+	CC="gcc"
+	CXX="g++"
+	gcc="yes"
+fi
+
 AC_ARG_WITH(gxx,
 [  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
 	*)	CXX=$withval;;
 	esac])
-
-AC_PROG_CC
-AC_PROG_CXX
-AC_PROG_CPP
-AC_PROG_GCC_TRADITIONAL
 
 bits=32
 AC_ARG_WITH(bits,
@@ -94,7 +96,7 @@ case $withval in
 esac
 bits=$withval
 ])
-case "$GCC-$host_os-$bits" in
+case "$gcc-$host_os-$bits" in
 yes-solaris*-64)
 	case `$CC -v 2>&1` in
 	*'gcc version 3.'*)	;;
@@ -142,6 +144,20 @@ aix*)
     ;;
 esac
 AC_SUBST(MEL_LIBS)
+
+AC_PROG_CC()
+AC_PROG_CXX()
+AC_PROG_CPP()
+AC_PROG_GCC_TRADITIONAL()
+
+AC_PROG_INSTALL()
+AC_DISABLE_STATIC()
+AC_ENABLE_SHARED()
+AC_PROG_LD()
+AC_LIBTOOL_SETUP()
+AC_PROG_LIBTOOL()
+AM_PROG_LIBTOOL()
+
 ])
 
 AC_DEFUN(AM_MONET_OPTIONS,
@@ -324,7 +340,6 @@ save_LIBS="$LIBS"
 LIBS="$LIBS $MALLOC_LIBS"
 AC_CHECK_FUNCS(mallopt mallinfo)
 LIBS="$save_LIBS"
-
 
 SOCKET_LIBS=""
 AC_CHECK_FUNC(gethostbyname_r, [], [
@@ -512,13 +527,9 @@ AM_MONET_OPTIONS()
 AM_MONET_LIBS()
 
 dnl Checks for programs.
-AC_PROG_INSTALL()
+dnl AC_PROG_CC_STDC()
 AM_PROG_LEX()
 AC_PROG_YACC()
-AC_DISABLE_STATIC()
-AC_ENABLE_SHARED()
-AM_PROG_LIBTOOL()
-dnl AC_PROG_CC_STDC()
 AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
