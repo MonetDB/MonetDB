@@ -1,9 +1,14 @@
-stdout of test 'server` in directory 'src/tools` itself:
+stdout of test 'server-single_2` in directory 'src/tools` itself:
 
 
-# 11:58:03 >  
-# 11:58:03 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_tools server.prelude < server.milM
-# 11:58:03 >  
+# 11:58:02 >  
+# 11:58:02 >  Mtimeout -timeout 180 ./server-single_2 server-single_2 server-single_2.prelude
+# 11:58:02 >  
+
+
+# 11:58:02 >  
+# 11:58:02 >  Mtimeout -timeout 60 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_tools server-single_2.prelude < server-single_2.mil
+# 11:58:02 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -128,7 +133,7 @@ Start of MIL prelude.
 [ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
 [ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -569,8 +574,8 @@ unknown(0)#"                            ]
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Thu Jul 25 11:58:03 2002",	  ""		  ]
-[ "adm",  "Thu Jul 25 11:58:03 2002",	  "clients()"	  ]
+[ "adm",  "Thu Jul 25 11:58:02 2002",	  ""		  ]
+[ "adm",  "Thu Jul 25 11:58:02 2002",	  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
@@ -578,7 +583,7 @@ unknown(0)#"                            ]
 [ "elapsed",	  0	  ]
 [ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  190	  ]
+[ "system",	  180	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------#
 # BAT:			  monet_environment				  #
@@ -586,7 +591,7 @@ unknown(0)#"                            ]
 #-------------------------------------------------------------------------#
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
 [ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "20056"					  ]
+[ "monet_pid",		  "20023"					  ]
 [ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
 [ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"				  ]
@@ -613,7 +618,7 @@ unknown(0)#"                            ]
 #-------------------------------------------------------------------------#
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
 [ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "20056"					  ]
+[ "monet_pid",		  "20023"					  ]
 [ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
 [ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"				  ]
@@ -652,14 +657,14 @@ unknown(0)#"                            ]
 #---------------------------------#
 [ "memincr",	  978944	  ]
 [ "arena",	  1034784	  ]
-[ "ordblks",	  43		  ]
+[ "ordblks",	  42		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  978480	  ]
-[ "fordblks",	  56304		  ]
+[ "uordblks",	  978528	  ]
+[ "fordblks",	  56256		  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -669,8 +674,8 @@ unknown(0)#"                            ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Thu Jul 25 11:58:03 2002"	  ]
-[ 1,	  "Thu Jul 25 11:58:03 2002"	  ]
+[ 0,	  "Thu Jul 25 11:58:02 2002"	  ]
+[ 1,	  "Thu Jul 25 11:58:02 2002"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -684,7 +689,7 @@ unknown(0)#"                            ]
 [ "elapsed",	  0	  ]
 [ "user",	  130	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  190	  ]
+[ "system",	  180	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------#
 # BAT:			  monet_environment				  #
@@ -692,7 +697,7 @@ unknown(0)#"                            ]
 #-------------------------------------------------------------------------#
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
 [ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "20056"					  ]
+[ "monet_pid",		  "20023"					  ]
 [ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
 [ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"				  ]
@@ -731,14 +736,14 @@ unknown(0)#"                            ]
 #---------------------------------#
 [ "memincr",	  0		  ]
 [ "arena",	  1034784	  ]
-[ "ordblks",	  42		  ]
+[ "ordblks",	  43		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  989080	  ]
-[ "fordblks",	  45704		  ]
+[ "uordblks",	  989128	  ]
+[ "fordblks",	  45656		  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -878,7 +883,7 @@ vars();
 [ "SHT_MAX",		  "sht",  "liquid",	  "constant",	  "32767"		  ]
 [ "CHR_MIN",		  "chr",  "liquid",	  "constant",	  "'\201'"		  ]
 [ "CHR_MAX",		  "chr",  "liquid",	  "constant",	  "'\177'"		  ]
-[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "32767"		  ]
+[ "RAND_MAX",		  "int",  "liquid",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
@@ -1339,7 +1344,7 @@ clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Thu Jul 25 11:58:03 2002",	  "clients()"	  ]
+[ "adm",  "Thu Jul 25 11:58:02 2002",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
@@ -1348,7 +1353,7 @@ cpu().print();
 [ "elapsed",	  0	  ]
 [ "user",	  140	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  190	  ]
+[ "system",	  180	  ]
 [ "elapsystem",	  0	  ]
 env();
 #-------------------------------------------------------------------------#
@@ -1357,7 +1362,7 @@ env();
 #-------------------------------------------------------------------------#
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
 [ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "20056"					  ]
+[ "monet_pid",		  "20023"					  ]
 [ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
 [ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"				  ]
@@ -1385,7 +1390,7 @@ environment().print();
 #-------------------------------------------------------------------------#
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
 [ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "20056"					  ]
+[ "monet_pid",		  "20023"					  ]
 [ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
 [ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"				  ]
@@ -1412,7 +1417,7 @@ io().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  400	  ]
+[ "minflt",	  397	  ]
 [ "majflt",	  519	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1424,16 +1429,16 @@ memory().print();
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  -155648	  ]
-[ "arena",	  879136	  ]
-[ "ordblks",	  319		  ]
+[ "memincr",	  -147456	  ]
+[ "arena",	  887328	  ]
+[ "ordblks",	  320		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  718928	  ]
-[ "fordblks",	  160208	  ]
+[ "uordblks",	  718944	  ]
+[ "fordblks",	  168384	  ]
 threads();
 #-------------------------#
 # BAT:	  thread	  #
@@ -1445,7 +1450,7 @@ view_client_login().print();
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Thu Jul 25 11:58:03 2002"	  ]
+[ 0,	  "Thu Jul 25 11:58:02 2002"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1460,7 +1465,7 @@ view_gdk_cpu().print();
 [ "elapsed",	  0	  ]
 [ "user",	  150	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  190	  ]
+[ "system",	  180	  ]
 [ "elapsystem",	  0	  ]
 view_gdk_env().print();
 #-------------------------------------------------------------------------#
@@ -1469,7 +1474,7 @@ view_gdk_env().print();
 #-------------------------------------------------------------------------#
 [ "gdk_arch",		  "32biti686-pc-linux-gnu"			  ]
 [ "gdk_version",	  "4.3.5"					  ]
-[ "monet_pid",		  "20056"					  ]
+[ "monet_pid",		  "20023"					  ]
 [ "prefix",		  "/ufs/niels/data/monet/Linux"			  ]
 [ "exec_prefix",	  "/ufs/niels/data/monet/Linux"			  ]
 [ "gdk_dbname",		  "Tests_src_tools"				  ]
@@ -1496,7 +1501,7 @@ view_gdk_io().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  400	  ]
+[ "minflt",	  397	  ]
 [ "majflt",	  519	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
@@ -1509,15 +1514,15 @@ view_gdk_memory().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "memincr",	  0	  ]
-[ "arena",	  879136  ]
+[ "arena",	  887328  ]
 [ "ordblks",	  324	  ]
 [ "smblks",	  0	  ]
 [ "hblkhd",	  0	  ]
 [ "hblks",	  0	  ]
 [ "usmblks",	  0	  ]
 [ "fsmblks",	  0	  ]
-[ "uordblks",	  717856  ]
-[ "fordblks",	  161280  ]
+[ "uordblks",	  717872  ]
+[ "fordblks",	  169456  ]
 view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #
@@ -1533,7 +1538,7 @@ End of MIL script.
 
 quit();
 
-# 11:58:03 >  
-# 11:58:03 >  Done.
-# 11:58:03 >  
+# 11:58:02 >  
+# 11:58:02 >  Done.
+# 11:58:02 >  
 
