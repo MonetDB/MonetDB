@@ -247,7 +247,7 @@ str SQLstatement(int *ret, str *cmd){
 	stream_printf(GDKout,"#SQLstatement:%s\n",*cmd);
 #endif
 	c = getClient();
-	//appendInput(c,*cmd);
+	/*appendInput(c,*cmd);*/
 	*ret= 0;
 	return MAL_SUCCEED;
 }
