@@ -5,6 +5,7 @@ from codegen import find_org
 #automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
 automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '' ]
 script_ext = [ 'mil' ]
+am_assign = "+="
 
 def split_filename(f):
     base = f
@@ -63,7 +64,7 @@ def am_cflags(fd, var, values, am ):
     o = ""
     for v in values:
         o = o + " " + v
-    fd.write("%s += %s\n" % (var,o) )
+    fd.write("%s %s %s\n" % (var,am_assign,o) )
 
 def am_extra_dist(fd, var, values, am ):
     for i in values:
@@ -86,8 +87,8 @@ def am_libdir(fd, var, values, am ):
     am['LIBDIR'] = values[0]
 
 def am_mtsafe(fd, var, values, am ):
-    fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
-    fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
+    fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
+    fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
 
 def am_list2string(l,pre,post):
     res = ""
@@ -280,8 +281,8 @@ def am_binary(fd, var, binmap, am ):
         binname = name
     am['BINS'].append(binname)
     if (binmap.has_key('MTSAFE')):
-        fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
-        fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
+        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
+        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
 
     if (binmap.has_key("LIBS")):
         fd.write(am_additional_libs(binname, "", "BIN", binmap["LIBS"],am))
@@ -321,8 +322,8 @@ def am_bins(fd, var, binsmap, am ):
     if (binsmap.has_key("NAME")):
         name = binsmap["NAME"][0] # use first name given
     if (binsmap.has_key('MTSAFE')):
-        fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
-        fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
+        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
+        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
     for binsrc in binsmap['SOURCES']:
         SCRIPTS = []
         bin,ext = split_filename(binsrc)
@@ -387,8 +388,8 @@ def am_library(fd, var, libmap, am ):
 
     am['LIBS'].append(sep+libname)
     if (libmap.has_key('MTSAFE')):
-        fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
-        fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
+        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
+        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
 
     if (libmap.has_key("LIBS")):
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
@@ -429,8 +430,8 @@ def am_libs(fd, var, libsmap, am ):
         scripts_ext = libsmap['SCRIPTS']
 
     if (libsmap.has_key('MTSAFE')):
-        fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
-        fd.write("CXXFLAGS+=$(thread_safe_flag_spec)\n")
+        fd.write("CFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
+        fd.write("CXXFLAGS %s $(thread_safe_flag_spec)\n" % (am_assign))
 
     for libsrc in libsmap['SOURCES']:
         SCRIPTS = []
@@ -521,7 +522,11 @@ output_funcs = { 'SUBDIRS': am_subdirs,
                  'HEADERS' : am_headers,
                 }
 
-def output(tree, cwd, topdir):
+def output(tree, cwd, topdir, automake):
+    global am_assign
+    if (int(automake) >= int(1005000)):
+        am_assign = "="
+
     fd = open(os.path.join(cwd,'Makefile.am'),"w")
 
     fd.write('''

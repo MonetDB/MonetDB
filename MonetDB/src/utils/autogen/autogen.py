@@ -78,8 +78,11 @@ def read_makefile(p,cwd):
             p.parse("\n", lineno,line)
         lineno = lineno + 1
 
+automake="100400"
 if len(sys.argv) > 1:
     topdir = sys.argv[1]
+    if len(sys.argv) > 2:
+    	automake = sys.argv[2]
 else:
     topdir = os.getcwd()
 
@@ -99,11 +102,11 @@ def expand_subdirs(subdirs):
             res.append(dir)
     return res
 
-def main(cwd,topdir):
+def main(cwd,topdir,automake):
     p = parser()
     read_makefile(p,cwd)
     codegen(p.curvar,cwd,topdir)
-    (InstallList,OutList) = am.output(p.curvar,cwd,topdir)
+    (InstallList,OutList) = am.output(p.curvar,cwd,topdir,automake)
     msc.output(p.curvar,cwd,topdir)
     if ('SUBDIRS' in p.curvar.keys()):
         subdirs = expand_subdirs(p.curvar.value('SUBDIRS'))
@@ -111,7 +114,7 @@ def main(cwd,topdir):
             d = os.path.join(cwd,dir)
             if (os.path.exists(d)):
                 print(d)
-                (deltaInstallList, deltaOutList) = main(d,topdir)
+                (deltaInstallList, deltaOutList) = main(d,topdir,automake)
                 InstallList = InstallList + deltaInstallList
                 OutList = OutList + deltaOutList
                 #cmd = "cd " + dir + "; " + sys.argv[0] + " " + topdir
@@ -119,7 +122,7 @@ def main(cwd,topdir):
     return InstallList,OutList
 
 InstallListFd = open("install.lst", "w")
-(InstallList,OutList) = main(topdir,topdir)
+(InstallList,OutList) = main(topdir,topdir,automake)
 InstallListFd.writelines( InstallList )
 InstallListFd.close()
 
