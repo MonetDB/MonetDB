@@ -753,7 +753,7 @@ maintain the (hidden) auxiliary search structures.
 The elements of the BAT structure are introduced in the remainder.
 Instead of using the underlying types hidden beneath it, one should
 use a @%BAT@ type that is supposed to look like this:
-@verbatim
+@example
 typedef struct {
           /* static BAT properties */
           str    batId;            /* bat name */
@@ -811,7 +811,7 @@ typedef struct {
           str    taccname;         /* accelerator name */
           Heap   taccelerator;     /* storage for tail accelerator */
  } BAT;
-@end verbatim
+@end example
 
 The internal structure of the @strong{ BAT} record is in fact much more complex,
 but GDK programmers should refrain of making use of that.
@@ -2083,7 +2083,7 @@ ACCremoveall (BAT *b);
 @item void
 @tab
 	ACCdestroy  (int id, BAT *b, Heap* acc);
-@item@item  void
+@item void
 @tab
 	ACCins   (int id, BAT *b, Heap* acc, int idx, ptr val);
 @item void
@@ -2117,7 +2117,7 @@ Valid names are "destroy","insert","save","commit","abort" and "buncluster".
 
 @item @emph{ ACCdelete()} unregisters an accelerator definition.
 
-@item@emph{ ACCindex()} looks up the accelerator id with a certain name.
+@item @emph{ ACCindex()} looks up the accelerator id with a certain name.
 @end itemize
 
 The @%ACCremoveall()@ routine destroys all search accelerators
@@ -2964,7 +2964,7 @@ print_books(BAT *author\_books, str author)
         HASHloop(b, (b)->hhash, i, author)
                 printf("%s\n", ((str) BUNtail(b, BUNptr(b,i)));
 }
-@end verbatim
+@end example
 @
 Note that for optimization purposes, we could have used a
 @%HASHloop_str@ instead, and also a @%BUNtvar@ instead of

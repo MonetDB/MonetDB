@@ -55,7 +55,7 @@ PrEnv(int env)
 			if (bodymode == 0)
 				ofile_printf("\\end{verbatim}\\normalsize}\n");
 		} else if TEXIMODE {
-			ofile_printf("@end verbatim\n@end example \n");
+			ofile_printf("@end example\n");
 		} else if WWWMODE
 			ofile_printf("</font></pre>\n");
 		break;
@@ -75,7 +75,7 @@ PrEnv(int env)
 			if (bodymode == 0)
 				ofile_printf("{\\codesize\\begin{verbatim}\n");
 		} else if TEXIMODE {
-			ofile_printf("@example\n@verbatim\n");
+			ofile_printf("@example\n");
 		} else if WWWMODE
 			ofile_printf("<pre><font size=\"-1\" color=\"%s\">", code_color);
 		break;
