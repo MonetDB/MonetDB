@@ -211,31 +211,31 @@ In this context, it calls the parser and executes the tree read.
 Then the sub-client is killed.
 @c
 int interpret_str(Cntxt stk, str buf, ValPtr res) {
-        int     i = -1;
+	int i = -1;
  
-        res->vtype = TYPE_void;
+	res->vtype = TYPE_void;
 
-        /* Parse and interpret the script code. */
-        if (buf && *buf) {
+	/* Parse and interpret the script code. */
+	if (buf && *buf) {
 		Client c = forkClient(stk, FALSE);
 		char *input_bak;
 		if (c == NULL)
 			return i;
 		input_bak = c->input;
-                c->input = buf;
+		c->input = buf;
 
-                if (parseClient(c, FALSE)) {
-                        i = interpret(c->stk, c->tree, res);
+		if (parseClient(c, FALSE)) {
+			i = interpret(c->stk, c->tree, res);
 			if (i != -TOK_RETURN) {
 				VALclear(res);
 			}
-                        CLEANUP(c->tree);
+			CLEANUP(c->tree);
 			Myyfree(c->tree);
 			c->tree = NULL;
-                }
-                c->input = input_bak;
+		}
+		c->input = input_bak;
 		closeClient(c, FALSE);
-        }
+	}
 	return i;
 }
 
