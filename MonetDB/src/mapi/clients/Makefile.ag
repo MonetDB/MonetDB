@@ -21,4 +21,4 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = C java perl python Tests haskell tcl php
+SUBDIRS = C mapi perl python Tests haskell tcl php
