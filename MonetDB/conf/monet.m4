@@ -292,12 +292,19 @@ AC_ARG_ENABLE(debug,
 [  --enable-debug          enable full debugging [default=off]],
   enable_debug=$enableval, enable_debug=no)
 if test "x$enable_debug" = xyes; then
-  if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -O0"
-    CXXFLAGS="$CXXFLAGS -O0"
+  if test "x$enable_optim" = xyes; then
+    AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
+  else
+    dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
+    CFLAGS="`echo " $CFLAGS " | sed -e 's| \-O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
+    CXXFLAGS="`echo " $CXXFLAGS " | sed -e 's| \-O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
+    if test "x$GCC" = xyes; then
+      CFLAGS="$CFLAGS -O0"
+      CXXFLAGS="$CXXFLAGS -O0"
+    fi
+    CFLAGS="$CFLAGS -g"
+    CXXFLAGS="$CXXFLAGS -g"
   fi
-  CFLAGS="$CFLAGS -g"
-  CXXFLAGS="$CXXFLAGS -g"
 fi
 
 dnl --enable-optimize
@@ -306,10 +313,16 @@ AC_ARG_ENABLE(optimize,
 [  --enable-optimize       enable extra optimization [default=off]],
   enable_optim=$enableval, enable_optim=no)
 if test "x$enable_optim" = xyes; then
-  dnl Optimization flags
-  if test "x$enable_debug" = xno; then
+  if test "x$enable_debug" = xyes; then
+    AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
+  elif test "x$enable_prof" = xyes; then
+    AC_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
+  elif test "x$enable_instrument" = xyes; then
+    AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
+  else
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
     CFLAGS="`echo " $CFLAGS " | sed -e 's| \-g | |g' -e 's|^ ||' -e 's| $||'`"
+    dnl  Optimization flags
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
@@ -364,7 +377,6 @@ if test "x$enable_optim" = xyes; then
       *-sun-solaris*) CFLAGS="$CFLAGS -xO5";;
       esac   
     fi
-
   fi
 fi
 AC_SUBST(NO_INLINE_CFLAGS)
@@ -392,10 +404,14 @@ AC_ARG_ENABLE(profile,
 [  --enable-profile        enable profiling [default=off]],
   enable_prof=$enableval, enable_prof=no)
 if test "x$enable_prof" = xyes; then
-  CFLAGS="$CFLAGS -DPROFILE"
-  need_profiling=yes
-  if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -pg"
+  if test "x$enable_optim" = xyes; then
+    AC_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
+  else
+    CFLAGS="$CFLAGS -DPROFILE"
+    need_profiling=yes
+    if test "x$GCC" = xyes; then
+      CFLAGS="$CFLAGS -pg"
+    fi
   fi
 fi
 AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
@@ -406,10 +422,14 @@ AC_ARG_ENABLE(instrument,
 [  --enable-instrument        enable instrument [default=off]],
   enable_instrument=$enableval, enable_instrument=no)
 if test "x$enable_instrument" = xyes; then
-  CFLAGS="$CFLAGS -DPROFILE"
-  need_instrument=yes
-  if test "x$GCC" = xyes; then
-    CFLAGS="$CFLAGS -finstrument-functions -g"
+  if test "x$enable_optim" = xyes; then
+    AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
+  else
+    CFLAGS="$CFLAGS -DPROFILE"
+    need_instrument=yes
+    if test "x$GCC" = xyes; then
+      CFLAGS="$CFLAGS -finstrument-functions -g"
+    fi
   fi
 fi
 
