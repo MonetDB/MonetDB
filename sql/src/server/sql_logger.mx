@@ -319,8 +319,11 @@ static int logger_open(logger *logger){
 static void logger_close(logger *logger){
 	stream *log = logger->log;
 
-	stream_close(log);
-	stream_destroy(log);
+	if (log) {
+		stream_close(log);
+		stream_destroy(log);
+	}
+	logger->log = NULL;
 }
 
 static int logger_readlog( logger *logger, char *filename ){
@@ -516,6 +519,7 @@ int logger_exit(logger *logger)
 	FILE *fp;
 	char filename[BUFSIZ];
 
+	logger_close(logger);
 	if (GDKmove( logger->dir, LOGFILE, NULL, 
 		     logger->dir, LOGFILE, "bak" )<0) { 
 		return SQL_ERR;
@@ -553,7 +557,6 @@ int logger_restart(logger *logger)
 {
 	int res = 0;
 
-	logger_close(logger);
 	if ((res = logger_exit(logger)) == SQL_OK) 
 		res = logger_open(logger);
 	return res;
