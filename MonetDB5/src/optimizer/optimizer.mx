@@ -37,7 +37,7 @@ command prelude()
 address optimizer_prelude
 comment "Initialize the optimizer";
 
-pattern optimize(mod:any, fcn:any)
+pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";
 
@@ -49,50 +49,50 @@ comment "Common subexpression optimizer";
 
 pattern aliasRemoval():str 
 address QOTARoptimizer;
-pattern aliasRemoval(mod:any, fcn:any):str 
+pattern aliasRemoval(mod:str, fcn:str):str 
 address QOTARoptimizerCALL
 comment "Alias removal optimizer";
 
 pattern deadCodeRemoval():str 
 address QOTDCoptimizer;
-pattern deadCodeRemoval(mod:any, fcn:any):str 
+pattern deadCodeRemoval(mod:str, fcn:str):str 
 address QOTDCoptimizerCALL
 comment "Dead code optimizer";
 
 pattern selectPushdown():str 
 address QOTSPoptimizer;
-pattern selectPushdown(mod:any, fcn:any):str 
+pattern selectPushdown(mod:str, fcn:str):str 
 address QOTSPoptimizerCALL
 comment "Selection push-down optimizer";
 
 pattern reversalRemoval():str 
 address QOTRRoptimizer;
-pattern reversalRemoval(mod:any, fcn:any):str 
+pattern reversalRemoval(mod:str, fcn:str):str 
 address QOTRRoptimizerCALL
 comment "Reversal idempotency removal";
 
 pattern expressionAccumulation():str 
 address QOTORoptimizer;
-pattern expressionAccumulation(mod:any, fcn:any):str 
+pattern expressionAccumulation(mod:str, fcn:str):str 
 address QOTORoptimizerCALL
 comment "Replace calculations with accumulator model";
 
 pattern garbageCollector():str 
 address QOTGCoptimizer;
-pattern garbageCollector(mod:any, fcn:any):str 
+pattern garbageCollector(mod:str, fcn:str):str 
 address QOTGCoptimizerCALL
 comment "Garbage collector optimizer";
 
 pattern factorize():str 
 address QOTFToptimizer;
-pattern factorize(mod:any, fcn:any):str 
+pattern factorize(mod:str, fcn:str):str 
 address QOTFToptimizerCALL
 comment "Garbage collector optimizer";
 
 pattern setDebug():void 
 address QOTdebugOptimizers;
 
-pattern showFlowGraph(M:any,F:any,s:str):void 
+pattern showFlowGraph(M:str,F:str,s:str):void 
 address QOTshowFlowGraph
 comment "Dump the data flow of the function 
 	M.F in a format recognizable by the 
@@ -175,15 +175,23 @@ str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 @-
 MAL functions can be optimized explicitly using the routines below.
+Beware, the function names should be known as literalstrings, because
+you may not know the runtime situation.
 @= QOTC
 str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme= getArgName(mb,p,1);
-	str	fcnnme= getArgName(mb,p,2);
+	str	modnme;
+	str	fcnnme;
 	Scope  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
 
-	(void) stk; /* fool compiler */
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
 	scope = findModule(c->nspace,modnme);
 	if( scope)
 		s= findSymbolInModule(scope,fcnnme);
@@ -215,10 +223,17 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(FT)@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str modnme= getArgName(mb,pci,1);
-	str fcnnme= getArgName(mb,pci,2);
+	str modnme;
+	str fcnnme;
 	Symbol s;
 	(void) stk;
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,pci,1);
+		fcnnme= (str)getArgValue(stk,pci,2);
+	} else {
+		modnme= getArgDefault(mb,pci,1);
+		fcnnme= getArgDefault(mb,pci,2);
+	}
 	s = findMALSymbol(modnme,fcnnme);
 	if( s == NULL)
 		return throwMessage("optimizer.optimize","operation not found\n");
@@ -227,12 +242,22 @@ str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str fname= (str) getArgValue(stk,p,3);
-	str modnme= getArgName(mb,p,1);
-	str fcnnme= getArgName(mb,p,2);
+	str fname;
+	str modnme;
+	str fcnnme;
 	Scope  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
+	(void) mb;
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+		fname= (str) getArgValue(stk,p,3);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+		fname= getArgDefault(mb,p,3);
+	}
 
 	scope = findModule(c->nspace,modnme);
 	if( scope)

@@ -33,7 +33,7 @@ changes.
 @mal
 module costmodel;
 
-pattern recalculate(modnme:any,fcnnme:any)
+pattern recalculate(modnme:str,fcnnme:str)
 address CMrecalculate
 comment "recalculate the properties for the code block.";
 
@@ -55,11 +55,10 @@ comment "recalculate the properties for the code block.";
 @c
 #include "costmodel.h"
 
-
 str CMrecalculate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    str     modnme= getArgName(mb,pci,1);
-    str     fcnnme= getArgName(mb,pci,2);
+    str     modnme= getArgValue(stk,pci,1);
+    str     fcnnme= getArgValue(stk,pci,2);
     Scope  scope=NULL;
     Symbol s= NULL;
     scope = findModule(getClient()->nspace,modnme);
@@ -70,6 +69,6 @@ str CMrecalculate(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         return throwMessage("costmodel.recalculate","operation not found");
 	RMcalculator(s->def);
 
-	(void) stk; /* fool compiler */
+	(void) mb; /* fool compiler */
 	return MAL_SUCCEED;
 }

@@ -530,6 +530,7 @@ denotes the signature and can not be removed.
         if(@1) {
 			removeInstruction(mb,@1);
             chkFlow(mb);
+			chkDeclarations(mb);
         }
 @c
 #include "mal_optimizer.h"
@@ -603,7 +604,8 @@ of an instruction calls for either a recalculation or delta propagation.
 Unclear what will be the best strategy. For the time being we just recalc.
 
 Also take care of the nested block structure. Because the span should
-fall within a single block. [TODO]
+fall within a single block. Alternatively, the end of lifespan
+should adhire to the end of block. [TODO]
 @c
 void debugLifespan(MalBlkPtr mb){
     int i;
@@ -617,9 +619,11 @@ void debugLifespan(MalBlkPtr mb){
                 v->beginLifespan, v->endLifespan);
     }
 }
+#define MAXDEPTH 64
 void setLifespan(MalBlkPtr mb){
     int pc,k;
     InstrPtr p;
+	int blks[MAXDEPTH], top= 0;
 
     for(k=0;k<mb->vtop;k++){
         VarPtr v= getVar(mb, k);
@@ -627,11 +631,23 @@ void setLifespan(MalBlkPtr mb){
     }
     for(pc=0;pc<mb->stop; pc++){
         p= getInstrPtr(mb,pc);
+		if( blockStart(p)){
+			if( top <MAXDEPTH-1)
+				blks[top++]= pc;
+			/* raise error */
+		} 
         for(k=0;k<p->argc; k++){
             VarPtr v= getVar(mb, p->argv[k]);
-            if( v->beginLifespan==0) v->beginLifespan= pc;
-            v->endLifespan = pc;
+            if( v->beginLifespan==0)
+				v->beginLifespan= pc;
+			if( pc > v->endLifespan ) {
+				/* end only if the beginLifspan falls in the same blk*/
+				/* otherwise it is the corresponding exit. */
+				v->endLifespan = pc;
+			}
         }
+		if( blockExit(p))
+			top--;
     }
     /* debugLifespan(mb); */
 }
@@ -1254,6 +1270,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[1]);
                 removeInstruction(mb,q);
                 chkFlow(mb);
+				chkDeclarations(mb);
                 return 1;
             }
         }
@@ -1267,6 +1284,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[3]);
                 removeInstruction(mb,q);
                 chkFlow(mb);
+				chkDeclarations(mb);
                 return 1;
             }
         }
@@ -1281,6 +1299,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 p= pushArgument(mb,p,q->argv[3]);
                 removeInstruction(mb,q);
                 chkFlow(mb);
+				chkDeclarations(mb);
                 return 1;
             }
         }
