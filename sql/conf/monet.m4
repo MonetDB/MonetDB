@@ -151,12 +151,14 @@ AC_SUBST(PTHREAD_INCS)
 dnl libreadline
 have_readline=auto
 READLINE_LIBS=""
+READLINE_INCS=""
 AC_ARG_WITH(readline,
 [  --with-readline=DIR     readline library is installed in DIR], 
 	[have_readline="$withval"])
 if test "x$have_readline" != xno; then
   if test "x$have_readline" != xauto; then
     READLINE_LIBS="-L$withval/lib"
+    READLINE_INCS="-I$withval/include"
   fi
 
   save_LDFLAGS="$LDFLAGS"
@@ -170,9 +172,11 @@ if test "x$have_readline" != xno; then
 
   if test "x$have_readline" != xyes; then
     READLINE_LIBS=""
+    READLINE_INCS=""
   fi
 fi
 AC_SUBST(READLINE_LIBS)
+AC_SUBST(READLINE_INCS)
 
 DL_LIBS=""
 AC_CHECK_LIB(dl, dlopen, [ DL_LIBS="-ldl" ] )

@@ -7,7 +7,8 @@ INCLUDES = \
 	-I$(MONET_PREFIX)/include/monet \
 	-I$(MONET_PREFIX)/include/plain \
 	-I$(MONET_PREFIX)/include/stream \
-	../common
+	../common \
+	$(READLINE_INCS)
 
 bin_sql_client = {
 	SOURCES = sql_client.c catalog_client.c statement_dump.c \
