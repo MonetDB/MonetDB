@@ -348,18 +348,19 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 		o << "_Module_Install( TBLinstall *inst, str user );\n";
 	o << "int " << d.Name() << "_Module_Delete( str user );\n";
 
+
+#if 0
 	language *l = new exports();
 	tableptr->traverse( l, o );
 	delete(l);
 	o << "\n";
 
-#if 0
 	l = new forward();
 	print_list( o, d.Defs(), l );
 	delete(l);
 	o << "\n";
 #else
-	l;
+	language *l;
 #endif
 
 	l = new typecheck();
@@ -913,10 +914,12 @@ ostream &protoize::gen_atom( ostream &o, const Atom &d ){
 		o << "void";
 	}
  	o << " " << d.Name() << ";\n";
+/*
 	if (d.size() == 0 && !d.parent() && !d.type() ){
 		o << "extern int " << d.Name() << "_size();\n";
 		o << "extern int " << d.Name() << "_align();\n";
 	}
+*/
 	return o;
 }
 
@@ -926,7 +929,6 @@ ostream &exports::gen_atom( ostream &o, const Atom &d ){
 }
 
 ostream &protoize::gen_acc( ostream &o, const Acc &d ){
-	o << "extern int ACC_" << d.Name() << ";\n";
 	o << "typedef ptr " << d.Name() << ";\n";
 	return o;
 }

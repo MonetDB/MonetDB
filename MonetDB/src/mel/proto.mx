@@ -29,6 +29,7 @@ class proto: public language {
 	ostream &gen_any_arg( ostream &o, const AnyArg &m );
 	ostream &gen_prelude( ostream &o, const Prelude &m );
 	ostream &gen_epilogue( ostream &o, const Epilogue &m );
+	ostream &gen_dependency( ostream &o, const Dependency &m );
     private:
 	const Atom *atom;
 	char *acc;
@@ -62,6 +63,11 @@ char *upper(char *str){
 	return res;
 }
 
+ostream &proto::gen_dependency( ostream &o, const Dependency &d ){ 
+	o << "#include <" << d.Module()->Name() << ".proto.h>\n";
+	return o;
+}
+
 ostream &proto::gen_module( ostream &o, const Module &d ){ 
 
 	o << "/*\n";
@@ -86,6 +92,7 @@ ostream &proto::gen_module( ostream &o, const Module &d ){
 	o << "extern \"C\" {\n";
 	o << "#endif\n\n";
 
+	gen_list( o, d.Deps(), "" );
 	gen_list( o, d.Defs(), "" );
 
 	o << "#ifdef __cplusplus\n";
