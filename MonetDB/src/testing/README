@@ -103,7 +103,7 @@ have changed since my proposal.
   * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT $MONET_PREFIX/lib/MonetDB/mapi.mil [TST.prologue] &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT $MONETDB_PREFIX/lib/MonetDB/mapi.mil [TST.prologue] &
          MapiClient < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
@@ -122,7 +122,7 @@ have changed since my proposal.
    Additionally, MkillUsers is scheduled as at-job to kill orphaned
    processes that Mtimeout cannot reach any more.)
 
-  (Mserver is called with "--config=$MONET_CONF --debug=$GDK_DEBUG $setMONET_MOD_PATH --set monet_prompt=".
+  (Mserver is called with "--config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH --set monet_prompt=".
    See below and "Mserver --help" for details.)
 
   (MapiClient is called with "--port=$MAPIPORT".
@@ -137,9 +137,9 @@ have changed since my proposal.
   tests are found in TSTSRCBASE, tests extracted from .mx or .in files
   during testing are fould in TSTBLDBASE, and Mtest.py writes the test
   output to TSTTRGBASE. The default settings are as follows:
-	TSTSRCBASE=$MONET_SOURCE  (where you cecked out Monet's source tree)
-	TSTBLDBASE=$MONET_BUILD   (where you called configure and make)
-	TSTTRGBASE=$MONET_PREFIX  (where you told configure to put Monet)
+	TSTSRCBASE=$MONETDB_SOURCE  (where you cecked out Monet's source tree)
+	TSTBLDBASE=$MONETDB_BUILD   (where you called configure and make)
+	TSTTRGBASE=$MONETDB_PREFIX  (where you told configure to put Monet)
   You can over rule any of these defaults by setting the respective
   environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
   line option to Mtest.py. 
@@ -155,16 +155,16 @@ have changed since my proposal.
   Hence, if you compiled Monet in a path that contains a symbolic link,
   e.g., ~/dev/monet -> /net/myhost/export/scratch1/myname/monet,
   you should either
-  a) overrule the initial setting of MONET_SOURCE, MONET_BUILD,
-     and MONET_PREFIX which were hardcoded during configure as (e.g.)
-	MONET_SOURCE=~/dev/monet
-	MONET_BUILD=~/dev/monet/$OSVER
-	MONET_PREFIX=~/dev/monet/$OSVER
+  a) overrule the initial setting of MONETDB_SOURCE, MONETDB_BUILD,
+     and MONETDB_PREFIX which were hardcoded during configure as (e.g.)
+	MONETDB_SOURCE=~/dev/monet
+	MONETDB_BUILD=~/dev/monet/$OSVER
+	MONETDB_PREFIX=~/dev/monet/$OSVER
      by
      either setting the respective environment variables (e.g.) as follows
-	MONET_SOURCE=/net/myhost/export/scratch1/myname/monet
-	MONET_BUILD=/net/myhost/export/scratch1/myname/monet/$OSVER
-	MONET_PREFIX=/net/myhost/export/scratch1/myname/monet/$OSVER
+	MONETDB_SOURCE=/net/myhost/export/scratch1/myname/monet
+	MONETDB_BUILD=/net/myhost/export/scratch1/myname/monet/$OSVER
+	MONETDB_PREFIX=/net/myhost/export/scratch1/myname/monet/$OSVER
      before running Mtest.py 
      or using the respective command line options to Mtest.py
   or
@@ -200,12 +200,12 @@ have changed since my proposal.
     default settings:
 	name		default					description
 	----		-------					-----------
-	MONET_SOURCE	(where you checked out Monet)		base of Monet's source tree
-	MONET_BUILD	(where you called configure & make)	base of extracted source tree
-	MONET_PREFIX	(where you installed Monet to)		base of Monet distribution
-	TSTSRCBASE	$MONET_SOURCE				base of test source tree
-	TSTBLDBASE	$MONET_BUILD				base of extracted test tree
-	TSTTRGBASE	$MONET_PREFIX				base for test output
+	MONETDB_SOURCE	(where you checked out Monet)		base of Monet's source tree
+	MONETDB_BUILD	(where you called configure & make)	base of extracted source tree
+	MONETDB_PREFIX	(where you installed Monet to)		base of Monet distribution
+	TSTSRCBASE	$MONETDB_SOURCE				base of test source tree
+	TSTBLDBASE	$MONETDB_BUILD				base of extracted test tree
+	TSTTRGBASE	$MONETDB_PREFIX				base for test output
 	MAPICLIENT	MapiClient				mapi-client program	`)
 	SQLCLIENT	Msql					sql-client program	`)
 
@@ -213,7 +213,7 @@ have changed since my proposal.
        "--config=", "--host=", & "--port=" options.
 
     The following variables are currently still used legacy, but they will disappear soon...
-	MONET_MOD_PATH	$MONET_PREFIX/lib;MONET_PREFIX/lib/Monet
+	MONETDB_MOD_PATH	$MONETDB_PREFIX/lib;MONETDB_PREFIX/lib/Monet
 
     The setting of all these environment variables maybe overruled
     by commandline options with the same names, e.g., "--MAPICLIENT=MapiClient.py".
@@ -230,9 +230,9 @@ have changed since my proposal.
 	OS		`uname`
 	OSVER		`uname``uname -r`
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
-	MSERVER		"$MTIMEOUT Mserver --config=$MONET_CONF --debug=$GDK_DEBUG $setMONET_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR --set mapi_port=$MAPIPORT --set sql_port=$SQLPORT --set monet_prompt= --trace"
-	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT --config=$MONET_CONF --host=$HOST --port=$MAPIPORT"
-	MSHUTDOWN	"$MTIMEOUT Mshutdown.py --config=$MONET_CONF --host=$HOST --port=$MAPIPORT"
+	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR --set mapi_port=$MAPIPORT --set sql_port=$SQLPORT --set monet_prompt= --trace"
+	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
+	MSHUTDOWN	"$MTIMEOUT Mshutdown.py --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
 	MDIFF		"$MTIMEOUT Mdiff"
 	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$SQLPORT --trace"
 	MAPIPORT	the MAPI port (random number between 40000 and 49999)
@@ -243,12 +243,12 @@ have changed since my proposal.
 	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
 	TSTBLDDIR	$TSTBLDBASE/$TSTDIR/Tests
 	TSTTRGDIR	$TSTTRGBASE/mTests/$TSTDIR
-	MONET_CONF	location of MonetDB.conf (default: $MONET_PREFIX/etc/MonetDB.conf)
-	SQL_LOGDIR	as read from $MONET_CONF or set by --sql_logdir=<path>
-	GDK_DBFARM	as read from $MONET_CONF or set by --dbfarm=<path>
+	MONETDB_CONF	location of MonetDB.conf (default: $MONETDB_PREFIX/etc/MonetDB.conf)
+	SQL_LOGDIR	as read from $MONETDB_CONF or set by --sql_logdir=<path>
+	GDK_DBFARM	as read from $MONETDB_CONF or set by --dbfarm=<path>
 	GDK_DEBUG	debug bitmask for Mserver (default: 10)
-	MONET_MOD_PATH	new module search path of Mserver (if set via --monet_mod_path=<pathlist>)
-	setMONET_MOD_PATH	"--set monet_mod_path=$MONET_MOD_PATH"	(if --monet_mod_path=<pathlist> is used)
+	MONETDB_MOD_PATH	new module search path of Mserver (if set via --monet_mod_path=<pathlist>)
+	setMONETDB_MOD_PATH	"--set monet_mod_path=$MONETDB_MOD_PATH"	(if --monet_mod_path=<pathlist> is used)
 	setGDK_DBFARM	"--set gdk_dbfarm=$GDK_DBFARM"	(if --dbfarm=<path> is used)
 	setSQL_LOGDIR	"--set sql_logdir=$SQL_LOGDIR"	(if --sql_logdir=<path> is used)
 
@@ -300,7 +300,7 @@ have changed since my proposal.
 
 
 - A development session is then supposed to proceed as follows:
-  (assuming TSTSRCBASE=$MONET_SOURCE and TSTBLDBASE=$MONET_BUILD)
+  (assuming TSTSRCBASE=$MONETDB_SOURCE and TSTBLDBASE=$MONETDB_BUILD)
 
 	cd $TSTSRCBASE
 	run  cvs update

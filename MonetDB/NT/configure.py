@@ -47,8 +47,8 @@ subs = [
     ('@VERSION@',           r"4.3.19"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
-    ('@MONET_BUILD@',       build),
-    ('@MONET_SOURCE@',      source),
+    ('@MONETDB_BUILD@',       build),
+    ('@MONETDB_SOURCE@',      source),
     ('@NO_X_CFLAGS@',       ''),
 ]
 

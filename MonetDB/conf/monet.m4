@@ -22,7 +22,7 @@ dnl 		Niels Nes <Niels.Nes@cwi.nl>
 dnl 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
-AC_DEFUN([MONET_VERSION_TO_NUMBER],
+AC_DEFUN([MONETDB_VERSION_TO_NUMBER],
 [`$1 | sed 's|[[_\-]][[a-zA-Z0-9]]*$||' | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
 
 AC_DEFUN([AM_MONET],
@@ -30,26 +30,26 @@ AC_DEFUN([AM_MONET],
 
 dnl check for monet
 have_monet=auto
-MONET_CFLAGS=""
-MONET_LIBS=""
-MONET_MOD_PATH=""
-MONET_PREFIX="."
+MONETDB_CFLAGS=""
+MONETDB_LIBS=""
+MONETDB_MOD_PATH=""
+MONETDB_PREFIX="."
 if test "x$1" = "x"; then
-  MONET_REQUIRED_VERSION="4.3.19"
+  MONETDB_REQUIRED_VERSION="4.3.19"
 else
-  MONET_REQUIRED_VERSION="$1"
+  MONETDB_REQUIRED_VERSION="$1"
 fi
 AC_ARG_WITH(monet,
 	AC_HELP_STRING([--with-monet=DIR], [monet is installed in DIR]),
 	have_monet="$withval")
 if test "x$have_monet" != xno; then
   MPATH="$withval/bin:$PATH"
-  AC_PATH_PROG(MONET_CONFIG,monet-config,,$MPATH)
+  AC_PATH_PROG(MONETDB_CONFIG,monetdb-config,,$MPATH)
 
-  if test "x$MONET_CONFIG" != x; then
-    AC_MSG_CHECKING(whether MonetDB version $MONET_REQUIRED_VERSION or newer is installed) 
-    MONETVERS=`$MONET_CONFIG --version`
-    if test MONET_VERSION_TO_NUMBER(echo $MONETVERS) -ge MONET_VERSION_TO_NUMBER(echo $MONET_REQUIRED_VERSION); then
+  if test "x$MONETDB_CONFIG" != x; then
+    AC_MSG_CHECKING(whether MonetDB version $MONETDB_REQUIRED_VERSION or newer is installed) 
+    MONETVERS=`$MONETDB_CONFIG --version`
+    if test MONETDB_VERSION_TO_NUMBER(echo $MONETVERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB_REQUIRED_VERSION); then
       have_monet=yes
       AC_MSG_RESULT($have_monet: found version $MONETVERS)
     else
@@ -59,28 +59,28 @@ if test "x$have_monet" != xno; then
   fi
 
   if test "x$have_monet" != xyes; then
-    MONET_CFLAGS=""
-    MONET_INCS=""
-    MONET_INCLUDEDIR=""
-    MONET_LIBS=""
-    MONET_MOD_PATH=""
-    MONET_PREFIX=""
+    MONETDB_CFLAGS=""
+    MONETDB_INCS=""
+    MONETDB_INCLUDEDIR=""
+    MONETDB_LIBS=""
+    MONETDB_MOD_PATH=""
+    MONETDB_PREFIX=""
   else
-    MONET_CFLAGS=`$MONET_CONFIG --cflags`
-    MONET_INCS=`$MONET_CONFIG --includes`
-    MONET_INCLUDEDIR=`$MONET_CONFIG --pkgincludedir`
-    MONET_LIBS=`$MONET_CONFIG --libs`
-    MONET_MOD_PATH=`$MONET_CONFIG --modpath`
-    MONET_PREFIX=`$MONET_CONFIG --prefix`
-    CLASSPATH="$CLASSPATH:`$MONET_CONFIG --classpath`"
+    MONETDB_CFLAGS=`$MONETDB_CONFIG --cflags`
+    MONETDB_INCS=`$MONETDB_CONFIG --includes`
+    MONETDB_INCLUDEDIR=`$MONETDB_CONFIG --pkgincludedir`
+    MONETDB_LIBS=`$MONETDB_CONFIG --libs`
+    MONETDB_MOD_PATH=`$MONETDB_CONFIG --modpath`
+    MONETDB_PREFIX=`$MONETDB_CONFIG --prefix`
+    CLASSPATH="$CLASSPATH:`$MONETDB_CONFIG --classpath`"
   fi
 fi
-AC_SUBST(MONET_CFLAGS)
-AC_SUBST(MONET_INCS)
-AC_SUBST(MONET_INCLUDEDIR)
-AC_SUBST(MONET_LIBS)
-AC_SUBST(MONET_MOD_PATH)
-AC_SUBST(MONET_PREFIX)
+AC_SUBST(MONETDB_CFLAGS)
+AC_SUBST(MONETDB_INCS)
+AC_SUBST(MONETDB_INCLUDEDIR)
+AC_SUBST(MONETDB_LIBS)
+AC_SUBST(MONETDB_MOD_PATH)
+AC_SUBST(MONETDB_PREFIX)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 ]) dnl AC_DEFUN AM_MONET
@@ -109,7 +109,7 @@ if test "x$have_monet5" != xno; then
   if test "x$MONET5_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB version $MONET5_REQUIRED_VERSION or newer is installed) 
     MONET5VERS=`$MONET5_CONFIG --version`
-    if test MONET_VERSION_TO_NUMBER(echo $MONET5VERS) -ge MONET_VERSION_TO_NUMBER(echo $MONET5_REQUIRED_VERSION); then
+    if test MONETDB_VERSION_TO_NUMBER(echo $MONET5VERS) -ge MONETDB_VERSION_TO_NUMBER(echo $MONET5_REQUIRED_VERSION); then
       have_monet5=yes
       AC_MSG_RESULT($have_monet5: found version $MONET5VERS)
     else
@@ -143,7 +143,7 @@ AC_SUBST(MONET5_PREFIX)
 AM_CONDITIONAL(HAVE_MONET5,test x$have_monet5 = xyes)
 ]) dnl AC_DEFUN AM_MONET5
 
-AC_DEFUN([AM_MONET_COMPILER],
+AC_DEFUN([AM_MONETDB_COMPILER],
 [
 
 dnl Some special requirements for MacOS X/Darwin
@@ -512,7 +512,7 @@ if test "x$have_java" != xno; then
   if test "x$JAVA" != "x"; then
     AC_MSG_CHECKING(for Java >= 1.4)
     JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
-    if test MONET_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONET_VERSION_TO_NUMBER(echo "1.4"); then
+    if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.4"); then
       have_java_1_4=yes
     else
       have_java_1_4=no
@@ -547,9 +547,9 @@ AC_SUBST(JAR)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
 
-]) dnl AC_DEFUN AM_MONET_COMPILER
+]) dnl AC_DEFUN AM_MONETDB_COMPILER
 
-AC_DEFUN([AM_MONET_TOOLS],[
+AC_DEFUN([AM_MONETDB_TOOLS],[
 
 dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
 dnl this macro block the requirement is pushed to the next level, e.g. configure.ag
@@ -754,9 +754,9 @@ AC_CHECK_TOOL(OBJC,objc)
 dnl Checks for header files.
 AC_HEADER_STDC()
 
-]) dnl AC_DEFUN AM_MONET_TOOLS
+]) dnl AC_DEFUN AM_MONETDB_TOOLS
 
-AC_DEFUN([AM_MONET_OPTIONS],
+AC_DEFUN([AM_MONETDB_OPTIONS],
 [
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
@@ -987,9 +987,9 @@ fi
 AC_SUBST(SHARED_LIBS)
 AM_CONDITIONAL(LINK_STATIC,test "x$enable_static" = xyes)
 
-]) dnl AC_DEFUN AM_MONET_OPTIONS
+]) dnl AC_DEFUN AM_MONETDB_OPTIONS
 
-AC_DEFUN([AM_MONET_LIBS],
+AC_DEFUN([AM_MONETDB_LIBS],
 [
 dnl libpthread
 have_pthread=auto
@@ -1449,14 +1449,14 @@ AM_CONDITIONAL(HAVE_PHP, test $have_php = yes)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
-]) dnl AC_DEFUN AM_MONET_LIBS
+]) dnl AC_DEFUN AM_MONETDB_LIBS
 
-AC_DEFUN([AM_MONET_CLIENT],[
+AC_DEFUN([AM_MONETDB_CLIENT],[
 
 dnl check for Monet and some basic utilities
 AM_MONET($1)
-MPATH="$MONET_PREFIX/bin:$PATH"
+MPATH="$MONETDB_PREFIX/bin:$PATH"
 AC_PATH_PROG(MX,Mx$EXEEXT,,$MPATH)
 AC_PATH_PROG(MEL,mel$EXEEXT,,$MPATH)
 
-]) dnl AC_DEFUN AM_MONET_CLIENT
+]) dnl AC_DEFUN AM_MONETDB_CLIENT

@@ -45,8 +45,8 @@ if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
 
-# MONET_BUILD and MONET_SOURCE are *only* used for monet-config
-# MONET_SOURCE is the absolute path name of the source directory
+# MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb-config
+# MONETDB_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 
 # The Q versions of various variables are used in places where \'s
@@ -54,14 +54,14 @@ fi
 # in path names, so there is no need to do anything special here
 # except set the variables.  The command to set them in case we do
 # need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
-MONET_BUILD=[`pwd`]
-AC_SUBST(MONET_BUILD)
-QMONET_BUILD="$MONET_BUILD"
-AC_SUBST(QMONET_BUILD)
-MONET_SOURCE=[`(cd $srcdir && pwd)`]
-AC_SUBST(MONET_SOURCE)
-QMONET_SOURCE="$MONET_SOURCE"
-AC_SUBST(QMONET_SOURCE)
+MONETDB_BUILD=[`pwd`]
+AC_SUBST(MONETDB_BUILD)
+QMONETDB_BUILD="$MONETDB_BUILD"
+AC_SUBST(QMONETDB_BUILD)
+MONETDB_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(MONETDB_SOURCE)
+QMONETDB_SOURCE="$MONETDB_SOURCE"
+AC_SUBST(QMONETDB_SOURCE)
 
 # if no --prefix option, we must set Qprefix to the default value
 # the problem is that prefix is set very late in the process if it
@@ -100,10 +100,10 @@ AC_SUBST(Qincludedir)
 Qinfodir="$infodir"
 AC_SUBST(Qinfodir)
 
-AM_MONET_COMPILER()
-AM_MONET_TOOLS()
-AM_MONET_OPTIONS()
-AM_MONET_LIBS()
+AM_MONETDB_COMPILER()
+AM_MONETDB_TOOLS()
+AM_MONETDB_OPTIONS()
+AM_MONETDB_LIBS()
 
 DIRSEP="/"
 case "$target_os" in
@@ -263,8 +263,8 @@ AC_SYS_LARGEFILE()
 dnl Mx and mel are used during make
 if test x$cross_compiling != xyes; then
 	dnl  When not cross-compiling, make sure we use the MEL/Mx created during the very make.
-	MEL="$MONET_BUILD/src/mel/mel$EXEEXT"
-	MX="$MONET_BUILD/src/utils/Mx/Mx$EXEEXT"
+	MEL="$MONETDB_BUILD/src/mel/mel$EXEEXT"
+	MX="$MONETDB_BUILD/src/utils/Mx/Mx$EXEEXT"
 	AC_SUBST(MEL)
 	AC_SUBST(MX)
 else

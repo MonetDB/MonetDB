@@ -88,7 +88,7 @@ int Link::generate_code( ostream &o, Symbol *root ){
 
 
 ostream &Link::gen_module( ostream &o, const Module &d ){ 
-	char *p, *q ,*mod_path = getenv("MONET_MOD_PATH");
+	char *p, *q ,*mod_path = getenv("MONETDB_MOD_PATH");
 	monet_mod_path = new List(10);
 	if (mod_path){
 		mod_path = strdup(mod_path);

@@ -43,6 +43,9 @@ Provides access to some of the C stdlib.h functions.
 
 .END unix;
 
+@- Implementation
+The remainder is a straight forward mapping to the underlying
+facilities
 @c
 
 #include "unix.proto.h"

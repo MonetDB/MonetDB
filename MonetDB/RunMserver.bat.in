@@ -1,6 +1,6 @@
 @echo off
 
-set builddir=@MONET_BUILD@
+set builddir=@MONETDB_BUILD@
 
 set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\calibrator\.libs;%builddir%\src\mapi\.libs
 

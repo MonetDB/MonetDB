@@ -48,7 +48,7 @@ html:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html	\
 	$(top_srcdir)/doc/mkdoc.py
 	mv $(prefix)/doc/MonetDB/TechDocs/Core/Mx $(prefix)/doc/
 	mv $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation $(prefix)/doc/
-	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(MONET_BUILD) $(prefix)
+	python $(top_srcdir)/doc/mkdoc.py $(top_srcdir) $(MONETDB_BUILD) $(prefix)
 	mkdir -p $(prefix)/doc/MonetDB/TechDocs/Core $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java
 	mv $(prefix)/doc/Mx $(prefix)/doc/MonetDB/TechDocs/Core/
 	mv $(prefix)/doc/Documentation $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/

@@ -212,8 +212,8 @@ class Comment:
 def _configure(str):
     # expand configure variables in str and return result
     config = [
-        ('${source}', '@QMONET_SOURCE@'),
-        ('${build}', '@QMONET_BUILD@'),
+        ('${source}', '@QMONETDB_SOURCE@'),
+        ('${build}', '@QMONETDB_BUILD@'),
 
         ('${bindir}', '@Qbindir@'),
 ##        ('${sbindir}', '@Qsbindir@'),
@@ -1514,7 +1514,7 @@ def RunTest(env, TST, BusyPorts) :
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
-        ##LEFTOVERTMPBATS="`find $MONETFARM/dbfarm/*/bat/ -name tmp_\* -print 2> /dev/null`"
+        ##LEFTOVERTMPBATS="`find $MONETDBFARM/dbfarm/*/bat/ -name tmp_\* -print 2> /dev/null`"
         ##if [ "$LEFTOVERTMPBATS" ] ; then
         ##      ls -alF $LEFTOVERTMPBATS 2> /dev/null > .all.left-over.tmp.bats.
         ##      diff -u0 $TSTTRGBASE/Tests/.old.left-over.tmp.bats. .all.left-over.tmp.bats. | grep '^\+[^\+]' > .new.left-over.tmp.bats.
@@ -2231,7 +2231,7 @@ def FindCmdLst(env) :
     dirs = [ os.path.join(os.getcwd(),"."), os.path.join(env['TSTSRCBASE'],".") ]
     if os.environ.has_key('HOME'):
         dirs.append(os.path.join(os.environ['HOME'],"."))
-    dirs.append(path(env['MONET_PREFIX']+"/share/MonetDB/"))
+    dirs.append(path(env['MONETDB_PREFIX']+"/share/MonetDB/"))
     for d in dirs:
         f = d+'Mprofile-commands.lst'
         if os.path.isfile(f):
@@ -2240,16 +2240,16 @@ def FindCmdLst(env) :
 ### FindCmdLst(env) #
 
 _MonetConfigDict = {
-    '--source': '@QMONET_SOURCE@',
-    '--build': '@QMONET_BUILD@',
+    '--source': '@QMONETDB_SOURCE@',
+    '--build': '@QMONETDB_BUILD@',
     '--prefix': '@Qprefix@',
     }
 def GetMonetConfig(arg) :
     # this works for arg in ('--source', '--build', '--prefix')
     return _configure(_MonetConfigDict[arg])
 ##    value = ""
-##    #pOut,pIn = popen2.popen2(os.path.join(THISPATH,'monet-config')+' '+arg)
-##    pOut,pIn = popen2.popen2('monet-config '+arg)
+##    #pOut,pIn = popen2.popen2(os.path.join(THISPATH,'monetdb-config')+' '+arg)
+##    pOut,pIn = popen2.popen2('monetdb-config '+arg)
 ##    pIn.close()
 ##    qOut = pOut.readlines()
 ##    pOut.close()
@@ -2267,26 +2267,26 @@ def main(argv) :
 
     SQLprefix = os.environ.get('SQL_PREFIX', '')
 
-    vars = ['MONET_SOURCE', 'MONET_BUILD', 'MONET_PREFIX',
+    vars = ['MONETDB_SOURCE', 'MONETDB_BUILD', 'MONETDB_PREFIX',
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX'                                   ]
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars = vars + [ 'SQLCLIENT', 'MAPICLIENT', 'X100CLIENT']    #, 'MONET_MOD_PATH' ]
+        vars = vars + [ 'SQLCLIENT', 'MAPICLIENT', 'X100CLIENT']    #, 'MONETDB_MOD_PATH' ]
     if THISFILE == "Mprofile.py":
         vars = vars + ['CMDLST']
 
     # most intuitive (?) default settings
-    dft['MONET_SOURCE']   = "GetMonetConfig('--source')"
-    dft['MONET_BUILD']    = "GetMonetConfig('--build')"
-    dft['MONET_PREFIX']   = "GetMonetConfig('--prefix')"    # or THISPATH ?
+    dft['MONETDB_SOURCE']   = "GetMonetConfig('--source')"
+    dft['MONETDB_BUILD']    = "GetMonetConfig('--build')"
+    dft['MONETDB_PREFIX']   = "GetMonetConfig('--prefix')"    # or THISPATH ?
     dft['SQL_PREFIX']     = "SQLprefix"
-    dft['TSTSRCBASE']     = "env['MONET_SOURCE']"
-    dft['TSTBLDBASE']     = "env['MONET_BUILD']"
-    dft['TSTTRGBASE']     = "env['MONET_PREFIX']"   # or os.getcwd() ?
+    dft['TSTSRCBASE']     = "env['MONETDB_SOURCE']"
+    dft['TSTBLDBASE']     = "env['MONETDB_BUILD']"
+    dft['TSTTRGBASE']     = "env['MONETDB_PREFIX']"   # or os.getcwd() ?
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
-        dft['MONET_MOD_PATH'] = "''"   #"os.path.join(env['MONET_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONET_PREFIX'],'lib','MonetDB')"
-        dft['setMONET_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONET_MOD_PATH']+'\"'"
+        dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
+        dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(40000,49999))"
@@ -2311,20 +2311,20 @@ def main(argv) :
         # long name, short name, GDK option, argument, comment
         (None, 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
-        ('MONET_SOURCE', None, 'MONET_SOURCE', '<path>',
+        ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
          'default: "%s"' % GetMonetConfig('--source')),
-        ('MONET_BUILD', None, 'MONET_BUILD', '<path>',
+        ('MONETDB_BUILD', None, 'MONETDB_BUILD', '<path>',
          'default: "%s"' % GetMonetConfig('--build')),
-        ('MONET_PREFIX', None, 'MONET_PREFIX', '<path>',
+        ('MONETDB_PREFIX', None, 'MONETDB_PREFIX', '<path>',
          'default: "%s"' % GetMonetConfig('--prefix')),
         ('SQL_PREFIX', None, 'SQL_PREFIX', '<path>',
          'default: "%s"' % SQLprefix),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
-         'default: <MONET_SOURCE>'),
+         'default: <MONETDB_SOURCE>'),
         ('TSTBLDBASE', None, 'TSTBLDBASE', '<path>',
-         'default: <MONET_BUILD>'),
+         'default: <MONETDB_BUILD>'),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
-         'default: <MONET_PREFIX>'),
+         'default: <MONETDB_PREFIX>'),
         ]
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -2409,7 +2409,7 @@ def main(argv) :
             env['GDK_DEBUG'] = str(int(a))
         a = opts.get('monet_mod_path')
         if a is not None:
-            env['MONET_MOD_PATH'] = a
+            env['MONETDB_MOD_PATH'] = a
         a = opts.get('gdk_dbfarm')
         if a is not None:
             env['GDK_DBFARM'] = a
@@ -2443,8 +2443,8 @@ def main(argv) :
     STDOUT.flush()
     #env['par'] = par
 
-    if env.has_key('MONET_PREFIX'):
-        bp = os.path.join(env['MONET_PREFIX'],"bin")
+    if env.has_key('MONETDB_PREFIX'):
+        bp = os.path.join(env['MONETDB_PREFIX'],"bin")
         if os.environ.has_key('PATH'):
             bp = bp+os.pathsep+os.environ['PATH']
         os.environ['PATH'] = bp
@@ -2459,7 +2459,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars + ['MAPIPORT', 'SQLPORT', 'GDK_DEBUG', 'MONET_MOD_PATH']
+        vars_ = vars + ['MAPIPORT', 'SQLPORT', 'GDK_DEBUG', 'MONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -2468,10 +2468,10 @@ def main(argv) :
             #TODO:
             # make sure, that PATHs ar absolute
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        if env['MONET_MOD_PATH']:
-            env['setMONET_MOD_PATH'] = eval(dft['setMONET_MOD_PATH'])
+        if env['MONETDB_MOD_PATH']:
+            env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
         else:
-            env['setMONET_MOD_PATH'] = ''
+            env['setMONETDB_MOD_PATH'] = ''
         if env.has_key('GDK_DBFARM'):
             env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
         else:
@@ -2493,12 +2493,12 @@ def main(argv) :
     #
     #if not os.path.indir(TSTSRCBASE):
     #       ErrXit("Illegal TSTSRCBASE: directory '"+a"` does not exist!")
-    #if not os.path.indir(MONET_SOURCE):
-    #       ErrXit("Illegal MONET_SOURCE: directory '"+a"` does not exist!")
-    #if not os.path.indir(MONET_BUILD):
-    #       ErrXit("Illegal MONET_BUILD: directory '"+a"` does not exist!")
-    #if not os.path.indir(MONET_PREFIX):
-    #       ErrXit("Illegal MONET_PREFIX: directory '"+a"` does not exist!")
+    #if not os.path.indir(MONETDB_SOURCE):
+    #       ErrXit("Illegal MONETDB_SOURCE: directory '"+a"` does not exist!")
+    #if not os.path.indir(MONETDB_BUILD):
+    #       ErrXit("Illegal MONETDB_BUILD: directory '"+a"` does not exist!")
+    #if not os.path.indir(MONETDB_PREFIX):
+    #       ErrXit("Illegal MONETDB_PREFIX: directory '"+a"` does not exist!")
 
     # ensure consistent TSTSRCBASE
     if os.path.basename(env['TSTSRCBASE']) == TSTSUFF  and  os.path.isfile(os.path.join(env['TSTSRCBASE'],"All")):
@@ -2571,9 +2571,9 @@ def main(argv) :
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
+        mapi_mil = env['MONETDB_BUILD']+path("/src/mapi/mapi.mil")
         if not os.path.isfile(mapi_mil):
-            mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
+            mapi_mil = env['MONETDB_PREFIX']+path("/lib/MonetDB/mapi.mil")
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
@@ -2587,7 +2587,7 @@ def main(argv) :
                 if not os.path.isfile(sql_server_mil):
                     sql_server_mil = env['TSTTRGBASE']+path("/lib/MonetDB/sql_server.mil")
                     if not os.path.isfile(sql_server_mil):
-                        sql_server_mil = env['MONET_PREFIX']+path("/lib/MonetDB/sql_server.mil")
+                        sql_server_mil = env['MONETDB_PREFIX']+path("/lib/MonetDB/sql_server.mil")
                         if not os.path.isfile(sql_server_mil):
                             sql_server_mil = ''
         env['SQL_SERVER_MIL'] = sql_server_mil
@@ -2595,7 +2595,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQL_SERVER','SQL_SERVER_MIL'] 
+        vars_ = vars_ + ['SQL_LOGDIR','GDK_DBFARM','setMONETDB_MOD_PATH','MAPI_MIL','SQL_SERVER','SQL_SERVER_MIL'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -2604,9 +2604,9 @@ def main(argv) :
     STDOUT.flush()
 
     ## set/extend PATH & LD_LIBRARY_PATH
-    #bp = ""        #os.path.join(env['MONET_PREFIX'],"bin")
+    #bp = ""        #os.path.join(env['MONETDB_PREFIX'],"bin")
     #if THISFILE in ["Mtest.py", "Mprofile.py"]:
-    #       lp = env['MONET_MOD_PATH']
+    #       lp = env['MONETDB_MOD_PATH']
     #else: # THISFILE == "Mapprove.py"
     #       lp = ""
     #if os.name == "nt"  and  lp:
@@ -2640,7 +2640,7 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         exe['Mserver']     = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set monet_prompt= --trace' % \
-                                                         (opts.config, env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'])
+                                                         (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'])
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'

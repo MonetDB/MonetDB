@@ -25,7 +25,7 @@ MTSAFE
 INCLUDES = ../common ../gdk ../monet $(PTHREAD_INCS) 
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
-MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
+MONETDB_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
 
 STATIC_MODS = \
 	../modules/plain/lib_algebra ../modules/plain/lib_arith \
@@ -87,11 +87,11 @@ largeTOC_SHARED_MODS =	\
 	../modules/contrib/lib_vector
 
 EXTRA_DIST = static_modules.mx 
-#monet-config.mx.in monet-config.bat.in
+#monetdb-config.mx.in monetdb-config.bat.in
 
 bin_Mserver = {
 	SOURCES = Mserver.mx initmodules.mx 
-	LIBS = ../monet/libmonet  @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) \
+	LIBS = ../monet/libmonet  @SHARED_LIBS@ ../gdk/libbat $(MONETDB_LIBS) \
 		../common/libmutils ../common/libstream
 }
 
@@ -103,11 +103,11 @@ doc_Mserver = {
 scripts_sh = {
 	EXT = ""
 	DIR = bindir
-	SOURCES = monet-config.mx.in 
+	SOURCES = monetdb-config.mx.in 
 }
 
 scripts_bat = {
 	DIR = bindir
-	SOURCES = monet-config.bat.in 
+	SOURCES = monetdb-config.bat.in 
 }
 

@@ -22,8 +22,8 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 pkg=@PACKAGE@
-source=@MONET_SOURCE@
-build=@MONET_BUILD@
+source=@MONETDB_SOURCE@
+build=@MONETDB_BUILD@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 
