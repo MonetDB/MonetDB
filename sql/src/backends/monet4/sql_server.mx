@@ -106,8 +106,8 @@ stream.
 
 	.COMMAND mvc_result_table( mvc m, int nr_cols, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
 
-	.COMMAND mvc_result_column( mvc m, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
-	.COMMAND mvc_result_column( mvc m, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
+	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
+	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
 
 	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
 		mvc_export_result_wrap; "export a result to stream s"
@@ -347,13 +347,13 @@ int mvc_result_row_wrap( int *res_id, mvc *M, int *nr_cols, ptr p, int p_type ){
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-int mvc_result_column_wrap( mvc *M, str name, str type, int *digits, int *scale, BAT *b ){
-	if (mvc_result_column( *(mvc**)M, name, type, *digits, *scale, b)) 
+int mvc_result_column_wrap( mvc *M, str tn, str name, str type, int *digits, int *scale, BAT *b ){
+	if (mvc_result_column( *(mvc**)M, tn, name, type, *digits, *scale, b)) 
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-int mvc_result_value_wrap( mvc *M, str name, str type, int *digits, int *scale, ptr p, int mtype ){
-	if (mvc_result_value( *(mvc**)M, name, type, *digits, *scale, p, mtype)) 
+int mvc_result_value_wrap( mvc *M, str tn, str name, str type, int *digits, int *scale, ptr p, int mtype ){
+	if (mvc_result_value( *(mvc**)M, tn, name, type, *digits, *scale, p, mtype)) 
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }

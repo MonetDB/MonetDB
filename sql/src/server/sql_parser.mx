@@ -2153,8 +2153,9 @@ user:
 
 literal:
     string
-		{  sql_subtype *t = sql_bind_subtype("VARCHAR", strlen($1), 0 ); 
-		   $$ = _newAtomNode( atom_string(t, $1)); }
+		{  char *s = sql2str($1);
+		   sql_subtype *t = sql_bind_subtype("VARCHAR", strlen(s), 0 ); 
+		   $$ = _newAtomNode( atom_string(t, s)); }
 
  |  user 
 		{  mvc *m = (mvc*)parm;

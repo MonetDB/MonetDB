@@ -1127,14 +1127,19 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 			len = 0;
 			for(; n; n = n->next){
 				stmt *r = n->data;
+				char *tname = table_name(r);
+				char *tn = (tname)?tname:"";
 				char *cn = column_name(r);
-				size_t sl = strlen(cn) + strlen(tail_type(r)->type->sqlname);
+				size_t sl;
+
+				sl += strlen(tn), strlen(cn) + strlen(tail_type(r)->type->sqlname);
 				if (buflen - len < 128 + sl) {
 					buflen += BUFSIZ + sl;
 					buf = RENEW_ARRAY(char,buf,buflen);
 				}
 				len = snprintf( buf, buflen,
-					"mvc_result_column(myc, \"%s\", \"%s\", %d, %d, s%d);\n", 
+					"mvc_result_column(myc, \"%s\", \"%s\", \"%s\", %d, %d, s%d);\n", 
+					tn,
 					cn,
 					tail_type(r)->type->sqlname,
 					tail_type(r)->digits,
@@ -1143,6 +1148,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 				);
 				assert(len <= buflen);
 				_DELETE(cn);
+				if (tname) _DELETE(tname);
 				write_command(sql,buf);
 				write_part(sql,buf,len);
 				len = 0;
