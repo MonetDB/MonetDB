@@ -121,36 +121,36 @@ barrier tj_a := vj_a;	# 10  (tj_a:bit)<-(vj_a:bit) jump 13
     redo sj_a;	# 12  (sj_a:bit) jump 6
 exit tj_a;	# 13  (tj_a:bit)
 exit sj_a;	# 14  (sj_a:bit)
-    t := alarm.time();	# 15 CLKtime (t:int)
+    t := alarm.time();	# 15 ALARMtime (t:int)
     ug_a := bat.reverse(int_1M);	# 16 CMDreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
     vg_a := algebra.join(int_1M,ug_a);	# 17 CMDjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
     wg_a := algebra.count(vg_a);	# 18 CMDcount_bat (wg_a:int)<-(vg_a:bat[:void,:void])
     xg_a := system.printf("count %d = ",wg_a);	# 19 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
-    x := alarm.time();	# 20 CLKtime (x:int)
+    x := alarm.time();	# 20 ALARMtime (x:int)
     yg_a := calc.-(x,t);	# 21 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
     ah_a := system.printf("%d ms\n",yg_a);	# 22 SYSprint_formatted_int (ah_a:int)<-($28:str)(yg_a:int)
-    t := alarm.time();	# 23 CLKtime (t:int)
+    t := alarm.time();	# 23 ALARMtime (t:int)
     ug_a := bat.reverse(int_1M);	# 24 CMDreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
     vg_a := algebra.join(int_1M,ug_a);	# 25 CMDjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
     wg_a := algebra.count(vg_a);	# 26 CMDcount_bat (wg_a:int)<-(vg_a:bat[:void,:void])
     xg_a := system.printf("count %d = ",wg_a);	# 27 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
-    x := alarm.time();	# 28 CLKtime (x:int)
+    x := alarm.time();	# 28 ALARMtime (x:int)
     yg_a := calc.-(x,t);	# 29 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
     ah_a := system.printf("%d ms\n",yg_a);	# 30 SYSprint_formatted_int (ah_a:int)<-($28:str)(yg_a:int)
-    t := alarm.time();	# 31 CLKtime (t:int)
+    t := alarm.time();	# 31 ALARMtime (t:int)
     ug_a := bat.reverse(int_1M);	# 32 CMDreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
     vg_a := algebra.join(int_1M,ug_a);	# 33 CMDjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
     wg_a := algebra.count(vg_a);	# 34 CMDcount_bat (wg_a:int)<-(vg_a:bat[:void,:void])
     xg_a := system.printf("count %d = ",wg_a);	# 35 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
-    x := alarm.time();	# 36 CLKtime (x:int)
+    x := alarm.time();	# 36 ALARMtime (x:int)
     yg_a := calc.-(x,t);	# 37 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
     ah_a := system.printf("%d ms\n",yg_a);	# 38 SYSprint_formatted_int (ah_a:int)<-($28:str)(yg_a:int)
-    t := alarm.time();	# 39 CLKtime (t:int)
+    t := alarm.time();	# 39 ALARMtime (t:int)
     ug_a := bat.reverse(int_1M);	# 40 CMDreverse (ug_a:bat[:lng,:void])<-(int_1M:bat[:void,:lng])
     vg_a := algebra.join(int_1M,ug_a);	# 41 CMDjoin (vg_a:bat[:void,:void])<-(int_1M:bat[:void,:lng])(ug_a:bat[:lng,:void])
     wg_a := algebra.count(vg_a);	# 42 CMDcount_bat (wg_a:int)<-(vg_a:bat[:void,:void])
     xg_a := system.printf("count %d = ",wg_a);	# 43 SYSprint_formatted_int (xg_a:int)<-($24:str)(wg_a:int)
-    x := alarm.time();	# 44 CLKtime (x:int)
+    x := alarm.time();	# 44 ALARMtime (x:int)
     yg_a := calc.-(x,t);	# 45 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
     ah_a := system.printf("%d ms\n",yg_a);	# 46 SYSprint_formatted_int (ah_a:int)<-($28:str)(yg_a:int)
     zinfo := bat.info(vg_a);	# 47 CMDinfo (zinfo:bat[:str,:str])<-(vg_a:bat[:void,:void])
@@ -166,36 +166,36 @@ barrier tj_b := vj_b;	# 55  (tj_b:bit)<-(vj_b:bit) jump 58
     redo sj_b;	# 57  (sj_b:bit) jump 51
 exit tj_b;	# 58  (tj_b:bit)
 exit sj_b;	# 59  (sj_b:bit)
-    t := alarm.time();	# 60 CLKtime (t:int)
+    t := alarm.time();	# 60 ALARMtime (t:int)
     ug_b := bat.reverse(M2);	# 61 CMDreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
     vg_b := algebra.join(M2,ug_b);	# 62 CMDjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
     wg_b := algebra.count(vg_b);	# 63 CMDcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
     xg_b := system.printf("count %d = ",wg_b);	# 64 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
-    x := alarm.time();	# 65 CLKtime (x:int)
+    x := alarm.time();	# 65 ALARMtime (x:int)
     yg_b := calc.-(x,t);	# 66 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
     ah_b := system.printf("%d ms\n",yg_b);	# 67 SYSprint_formatted_int (ah_b:int)<-($28:str)(yg_b:int)
-    t := alarm.time();	# 68 CLKtime (t:int)
+    t := alarm.time();	# 68 ALARMtime (t:int)
     ug_b := bat.reverse(M2);	# 69 CMDreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
     vg_b := algebra.join(M2,ug_b);	# 70 CMDjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
     wg_b := algebra.count(vg_b);	# 71 CMDcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
     xg_b := system.printf("count %d = ",wg_b);	# 72 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
-    x := alarm.time();	# 73 CLKtime (x:int)
+    x := alarm.time();	# 73 ALARMtime (x:int)
     yg_b := calc.-(x,t);	# 74 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
     ah_b := system.printf("%d ms\n",yg_b);	# 75 SYSprint_formatted_int (ah_b:int)<-($28:str)(yg_b:int)
-    t := alarm.time();	# 76 CLKtime (t:int)
+    t := alarm.time();	# 76 ALARMtime (t:int)
     ug_b := bat.reverse(M2);	# 77 CMDreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
     vg_b := algebra.join(M2,ug_b);	# 78 CMDjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
     wg_b := algebra.count(vg_b);	# 79 CMDcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
     xg_b := system.printf("count %d = ",wg_b);	# 80 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
-    x := alarm.time();	# 81 CLKtime (x:int)
+    x := alarm.time();	# 81 ALARMtime (x:int)
     yg_b := calc.-(x,t);	# 82 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
     ah_b := system.printf("%d ms\n",yg_b);	# 83 SYSprint_formatted_int (ah_b:int)<-($28:str)(yg_b:int)
-    t := alarm.time();	# 84 CLKtime (t:int)
+    t := alarm.time();	# 84 ALARMtime (t:int)
     ug_b := bat.reverse(M2);	# 85 CMDreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
     vg_b := algebra.join(M2,ug_b);	# 86 CMDjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
     wg_b := algebra.count(vg_b);	# 87 CMDcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
     xg_b := system.printf("count %d = ",wg_b);	# 88 SYSprint_formatted_int (xg_b:int)<-($24:str)(wg_b:int)
-    x := alarm.time();	# 89 CLKtime (x:int)
+    x := alarm.time();	# 89 ALARMtime (x:int)
     yg_b := calc.-(x,t);	# 90 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
     ah_b := system.printf("%d ms\n",yg_b);	# 91 SYSprint_formatted_int (ah_b:int)<-($28:str)(yg_b:int)
     zinfo := bat.info(vg_b);	# 92 CMDinfo (zinfo:bat[:str,:str])<-(vg_b:bat[:lng,:lng])
@@ -286,10 +286,10 @@ end main;	# 94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 290 ms
-count 1000000 = 213 ms
-count 1000000 = 213 ms
-count 1000000 = 216 ms
+count 1000000 = 276 ms
+count 1000000 = 206 ms
+count 1000000 = 208 ms
+count 1000000 = 207 ms
 #-------------------------------------------------#
 # h				tmp_10		  # name
 # str				str		  # type
@@ -375,10 +375,10 @@ count 1000000 = 216 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 336 ms
-count 1000000 = 225 ms
-count 1000000 = 225 ms
-count 1000000 = 275 ms
+count 1000000 = 289 ms
+count 1000000 = 201 ms
+count 1000000 = 201 ms
+count 1000000 = 201 ms
 #-------------------------------------------------#
 # h				tmp_16		  # name
 # str				str		  # type
