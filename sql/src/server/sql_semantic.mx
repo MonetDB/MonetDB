@@ -3458,6 +3458,18 @@ is_idx_updated(sql_idx *i, stmt **updates )
 	return update;
 }
 
+static int 
+first_updated_col(stmt **updates, int cnt )
+{
+	int i;
+
+	for(i = 0; i < cnt; i++) {
+		if (updates[i])
+			return i;
+	}
+	return -1;
+}
+
 static stmt *
 update_check_ukey( context * sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol )
 {
@@ -3663,21 +3675,22 @@ sql_update_idxs(context * sql, sql_table *t, stmt **updates, list *l)
 {
 	int res = 1;
 	node *n;
+	int updcol;
 
 	(void)sql; 
 
 	if (!t->idxs.set)
 		return res;
 
+	updcol = first_updated_col(updates, list_length(t->columns.set));
  	for(n = t->idxs.set->h; n; n = n->next){
 	    	sql_idx *i = n->data;
 	    	stmt *is = NULL;
-		int updcol = 0;
 
 		/* check if update is needed, 
 		 * ie atleast on of the idx columns is updated 
 		 */
-		if ( (updcol = is_idx_updated(i, updates)) == 0)
+		if ( is_idx_updated(i, updates) == 0)
 			continue;
 
 		if (i->type == unique){
@@ -4007,6 +4020,7 @@ static stmt *update_table(context * sql, dlist * qname,
 			char *cname = assignment->h->data.sval;
 			cvar *cl = scope_bind_column(scp, NULL, cname);
 			sql_column *c = NULL;
+
 			if (!cl) {
 				stmt_destroy(s);
 				list_destroy(l);
@@ -4015,7 +4029,12 @@ static stmt *update_table(context * sql, dlist * qname,
 					 tname, assignment->h->data.sval);
 			}
 			a = assignment->h->next->data.sym;
-			v = sql_value_exp(sql, scp, a, NULL, s);
+			if (a)
+				v = sql_value_exp(sql, scp, a, NULL, s);
+			else 
+				v = stmt_atom(atom_general(
+					sql_dup_subtype(tail_type(cl->s)), 
+					NULL));
 
 			if (!v) {
 				stmt_destroy(s);
