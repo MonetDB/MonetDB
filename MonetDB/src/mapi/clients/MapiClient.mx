@@ -276,9 +276,9 @@ void usage(char *prog) {
 	fprintf(stderr, "[-c or --config config_file ]\n" );
 	fprintf(stderr, "[-h or --host hostname ]\n" );
 	fprintf(stderr, "[-p or --port portnr ]\n" );
- 	fprintf(stderr, "[-d or --debug [ debug_level] ] ");
- 	fprintf(stderr, "[      --noheaders ] ");
- 	fprintf(stderr, "[-? or --help ] \n");
+ 	fprintf(stderr, "[-d or --debug [ debug_level] ]\n" );
+ 	fprintf(stderr, "[      --noheaders ]\n" );
+ 	fprintf(stderr, "[-? or --help ]\n");
  	EXIT(1);
 }
 
