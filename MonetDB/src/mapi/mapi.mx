@@ -268,9 +268,9 @@ Get the new information for the server socket and start listening.
 			continue;
 		}
 		if (STREQ(cmd,"")) {
-			int i=0, mpl;
+			int i=0;
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
-			char *mp, *nmp;
+			char *mp;
 			int blocked=0;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
 			stream *fdout= NULL;
@@ -312,15 +312,7 @@ Get the new information for the server socket and start listening.
 			}
 			*user = 0;
 			mp = GDKgetenv("monet_prompt");
-			mpl = strlen(mp);
-			nmp = GDKmalloc(mpl +4);
-			nmp[0] = '\1';
-			strncpy(nmp+1,mp,mpl);
-			nmp[mpl+1] = '\1';
-			nmp[mpl+2] = '\n';
-			nmp[mpl+3] = '\0';
-			c = initClient(name, nmp, FALSE);
-			GDKfree(nmp);
+			c = initClient(name, mp, FALSE);
 			if (c == 0) {
 				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
@@ -642,9 +634,9 @@ Get the new information for the server socket and start listening.
 		}
 
 		if (STREQ(cmd,"")) {
-			int i=0, mpl;
+			int i=0;
 			char *name = (char*) GDKmalloc(BLOCK), *user = name,*s;
-			char *mp, *nmp;
+			char *mp;
 			int blocked=0;
 			stream *fdin = ssl_rastream(ssl, "Mserver mapi read");
 			stream *fdout= NULL;
@@ -691,15 +683,7 @@ Get the new information for the server socket and start listening.
 			}
 			*user = 0;
 			mp = GDKgetenv("monet_prompt");
-			mpl = strlen(mp);
-			nmp = GDKmalloc(mpl +4);
-			nmp[0] = '\1';
-			strncpy(nmp+1,mp,mpl);
-			nmp[mpl+1] = '\1';
-			nmp[mpl+2] = '\n';
-			nmp[mpl+3] = '\0';
-			c = initClient(name, nmp, FALSE);
-			GDKfree(nmp);
+			c = initClient(name, mp, FALSE);
 			if (c == 0) {
 				stream_printf(fdout, "MAPIlistenSSL:Failed to init client for user %s\n", name );
 				GDKfree(name);
