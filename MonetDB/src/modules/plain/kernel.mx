@@ -681,6 +681,10 @@ cntxt record administration between running jobs. They need to belong
 to different clients.  Schedule the background request.
 @c
 	c = forkClient(stk, TRUE);
+	if (c == NULL) {
+		GDKerror("fork: error creating a new thread.\n");
+		return -1;
+	}
         res->vtype = TYPE_int;
         res->val.ival = c->stk;
         c->tree = lt->yysons[0];
