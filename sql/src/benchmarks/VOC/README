@@ -5,3 +5,6 @@ monitor for performance degrations.
 The voc_dump.sql file contains all information to
 built it. Alternatively, you can incrementally
 built if from the components.
+
+The voc_dump.sql files should be made available
+in the (binary) distribution.
