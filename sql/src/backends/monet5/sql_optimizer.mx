@@ -94,6 +94,7 @@ sql_export void optimizeQueryInCache(Client c);
 sql_export str SQLoptimizer(Client c);
 sql_export void SQLsetAccessMode(Client c);
 sql_export void SQLkdiffOptimizer(Client c);
+sql_export void SQLmarkTOptimizer(Client c);
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
@@ -192,7 +193,8 @@ reaching performance/typing consequences.
 @c
 	resetOptimizerDebugger();
 	optimizerDebug(c->curprg->def,"Parser output",1,0);
-	SQLkdiffOptimizer(c);
+	/* SQLkdiffOptimizer(c); it is not so effective */
+	SQLmarkTOptimizer(c); 
 @-
 Reduce the program before other optimizations take place
 @c
@@ -577,5 +579,40 @@ The code is wrong, we should not try it more than once
 		printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 	}
+}
+@- markT ->markH
+Another peephole optimization. M5 contains more primitives to play with.
+@c
+void
+SQLmarkTOptimizer(Client c){
+	MalBlkPtr mb;
+	InstrPtr p, *old;
+	int i,limit,actions=0;
+	long clk= GDKusec();
+
+	mb= c->curprg->def;
+	setLifespan(mb);
+	limit= mb->stop;
+	old = mb->stmt;
+	newMalBlkStmt(mb,mb->stop);
+	for(i=0;i<limit; i++){
+		p= old[i];
+		if( functionId(p) && strcmp(functionName(p),"markT")== 0 &&
+			mb->var[p->argv[0]]->endLifespan== i+1 &&
+			 functionId(old[i+1]) && strcmp(functionId(old[i+1]),"reverse")== 0 ){
+	printf("endof life %d\n",mb->var[p->argv[0]]->endLifespan);
+			actions++;
+			GDKfree(functionId(p));
+			setFunctionId(p,  GDKstrdup("markH"));
+			p->argv[0]= old[i+1]->argv[0];
+			pushInstruction(mb,p);
+			i++;
+			freeInstruction(old[i]);
+			continue;
+		}	
+		pushInstruction(mb,p);
+	}
+	GDKfree(old);
+	optimizerCheck(mb,"sql.markT",1,GDKusec()-clk);
 }
 @}
