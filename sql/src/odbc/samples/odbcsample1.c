@@ -274,6 +274,16 @@ main(int argc, char **argv)
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt2);
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle");
 
+	/* drop the test table */
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle");
+
+	ret = SQLExecDirect(stmt, (SQLCHAR*) "DROP TABLE test", SQL_NTS);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect");
+
+	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle");
+
 	ret = SQLDisconnect(dbc);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLDisconnect");
 
