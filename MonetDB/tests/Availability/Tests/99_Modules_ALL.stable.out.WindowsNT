@@ -1,13 +1,13 @@
 stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 
 
-# 15:55:37 >  
-# 15:55:37 >  Mtimeout -timeout 210 Mserver -monetrc /var/tmp/manegold.GNU_32.18284/monet/.GNU_32/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 99_Modules_ALL.milS
-# 15:55:37 >  
+# 00:03:25 >  
+# 00:03:25 >   Mserver "--config=D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\conf\monet.conf" --debug=10 --set "monet_mod_path=D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\modules\plain;D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\modules\calibrator;D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\mapi" --dbfarm "D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\dbfarm" --set monet_prompt= "D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\Tests\trace.mil" --dbname=Tests_tests_Availability  < 99_Modules_ALL.milS
+# 00:03:25 >  
 
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-win32/32bit; dynamically linked.
 setoid(oid(20000000));
 
 #All_mods:=MODULES.sort.copy;
@@ -28,7 +28,6 @@ All_mods@batloop {
      wisc: loading... done.
    vector: loading... done.
       url: loading... done.
-     unix: loading... done.
      uchr: loading... done.
     trans: loaded.
      tpcd: loading... done.
@@ -42,7 +41,6 @@ All_mods@batloop {
        qt: loading... done.
    perfex: loading... done.
       oo7: loading... done.
-    mprof: loading... done.
 monettime: loading... done.
     mmath: loaded.
       mel: loading... done.
@@ -57,7 +55,7 @@ malalgebra: loading... done.
   ddbench: loading... done.
  counters: loading... done.
   cluster: loaded.
-     blob: loaded.
+     blob: loading... done.
 bitvector: loaded.
    bitset: loading... done.
 bat_arith: loading... done.
@@ -98,7 +96,6 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "mel"		  ]
 [ "mmath"	  ]
 [ "monettime"	  ]
-[ "mprof"	  ]
 [ "oo7"		  ]
 [ "perfex"	  ]
 [ "qt"		  ]
@@ -112,7 +109,6 @@ table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod
 [ "tpcd"	  ]
 [ "trans"	  ]
 [ "uchr"	  ]
-[ "unix"	  ]
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]

@@ -1,20 +1,16 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
 
-# 15:26:01 >  
-# 15:26:01 >  Mtimeout -timeout 600 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_sigs  < none.milS
-# 15:26:01 >  
+# 00:13:12 >  
+# 00:13:12 >   Mserver "--config=D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\conf\monet.conf" --debug=10 --set "monet_mod_path=D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\modules\plain;D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\modules\calibrator;D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\src\mapi" --dbfarm "D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\dbfarm" --set monet_prompt= "D:\TmpDir\monet.ntv_32-d.24786\monet\WindowsNT5.0\Tests\trace.mil" --dbname=Tests_tests_sigs  < none.milS
+# 00:13:12 >  
 
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-win32/32bit; dynamically linked.
 setoid(20000000);
 
 loaded;
-# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
-# dbname:Tests_tests_sigs
-# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_tests_sigs
-
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -58,7 +54,6 @@ loaded;
 [ "ddbench",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "enum",	  nil	  ]
-[ "io",		  nil	  ]
 [ "iterator",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
@@ -68,7 +63,6 @@ loaded;
 [ "mel",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "monettime",	  nil	  ]
-[ "mprof",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "perfex",	  nil	  ]
 [ "qt",		  nil	  ]
@@ -82,7 +76,6 @@ loaded;
 [ "tpcd",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "uchr",	  nil	  ]
-[ "unix",	  nil	  ]
 [ "url",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "wisc",	  nil	  ]
@@ -145,7 +138,6 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "wisc",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
-[ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "tcpip",	  nil	  ]
@@ -164,7 +156,6 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
-[ "io",		  nil	  ]
 [ "enum",	  nil	  ]
 [ "decimal",	  nil	  ]
 [ "ddbench",	  nil	  ]
@@ -177,7 +168,6 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "alarm",	  nil	  ]
 [ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
-[ "mprof",	  nil	  ]
 
 others@batloop{
 	printf("\n\tloading %s\n\n",$h);
@@ -333,45 +323,6 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading unix
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "blob",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "unix",	  1		  ]
-#-----------------#
-# BAT:	  tmp_29  #
-# (str)	  (void)  #
-#-----------------#
-[ "unix", nil	  ]
-[ "blob", nil	  ]
-
-	dropping unix
-
-
-	dropping blob
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
 	loading uchr
 
 #---------------------------------#
@@ -483,9 +434,7 @@ others@batloop{
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
@@ -496,16 +445,8 @@ others@batloop{
 # (str)		  (void)  #
 #-------------------------#
 [ "streams",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping streams
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -630,9 +571,7 @@ others@batloop{
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "bitvector",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "qt",		  1		  ]
 [ "stats",	  1		  ]
@@ -647,8 +586,6 @@ others@batloop{
 [ "qt",		  nil	  ]
 [ "uchr",	  nil	  ]
 [ "bitvector",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 [ "stats",	  nil	  ]
 
 	dropping qt
@@ -658,12 +595,6 @@ others@batloop{
 
 
 	dropping bitvector
-
-
-	dropping io
-
-
-	dropping blob
 
 
 	dropping stats
@@ -859,9 +790,7 @@ others@batloop{
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  1		  ]
@@ -874,19 +803,11 @@ others@batloop{
 #-------------------------#
 [ "mapi",	  nil	  ]
 [ "streams",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping mapi
 
 
 	dropping streams
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1036,45 +957,6 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading io
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "blob",	  1		  ]
-[ "cluster",	  1		  ]
-[ "io",		  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_25  #
-# (str)	  (void)  #
-#-----------------#
-[ "io",	  nil	  ]
-[ "blob", nil	  ]
-
-	dropping io
-
-
-	dropping blob
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
 	loading enum
 
 #---------------------------------#
@@ -1083,29 +965,24 @@ others@batloop{
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "enum",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-#-----------------#
-# BAT:	  tmp_29  #
-# (str)	  (void)  #
-#-----------------#
-[ "enum", nil	  ]
-[ "io",	  nil	  ]
-[ "blob", nil	  ]
+#-------------------------#
+# BAT:		  tmp_35  #
+# (str)		  (void)  #
+#-------------------------#
+[ "enum",	  nil	  ]
+[ "streams",	  nil	  ]
 
 	dropping enum
 
 
-	dropping io
-
-
-	dropping blob
+	dropping streams
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1161,13 +1038,12 @@ others@batloop{
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "ddbench",	  1		  ]
 [ "enum",	  1		  ]
-[ "io",		  2		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  2		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]
@@ -1177,8 +1053,7 @@ others@batloop{
 #-------------------------#
 [ "ddbench",	  nil	  ]
 [ "xtables",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
+[ "streams",	  nil	  ]
 [ "enum",	  nil	  ]
 
 	dropping ddbench
@@ -1187,10 +1062,7 @@ others@batloop{
 	dropping xtables
 
 
-	dropping io
-
-
-	dropping blob
+	dropping streams
 
 
 	dropping enum
@@ -1285,9 +1157,7 @@ others@batloop{
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "bitvector",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -1297,16 +1167,8 @@ others@batloop{
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping bitvector
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1398,9 +1260,7 @@ others@batloop{
 [ "arith",	  1		  ]
 [ "ascii_io",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
 [ "cluster",	  1		  ]
-[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
@@ -1412,19 +1272,11 @@ others@batloop{
 #-------------------------#
 [ "ascii_io",	  nil	  ]
 [ "streams",	  nil	  ]
-[ "io",		  nil	  ]
-[ "blob",	  nil	  ]
 
 	dropping ascii_io
 
 
 	dropping streams
-
-
-	dropping io
-
-
-	dropping blob
 
 #---------------------------------#
 # module	| usage_count	  #
@@ -1505,7 +1357,6 @@ others@batloop{
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-quit;
 
 	loading aggr
 
@@ -1540,42 +1391,9 @@ quit;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+quit;
 
-	loading mprof
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "mprof",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_41  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mprof",	  nil	  ]
-
-	dropping mprof
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-# 15:26:05 >  
-# 15:26:05 >  Done.
-# 15:26:05 >  
+# 00:13:17 >  
+# 00:13:17 >  Done.
+# 00:13:17 >  
 

@@ -57,12 +57,10 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "tcpip"	  ]
 [ "tpcd"	  ]
 [ "uchr"	  ]
-[ "unix"	  ]
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]
 [ "xtables"	  ]
-[ "mprof"	  ]
 Plain_mods@batloop {
 	The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
@@ -210,7 +208,7 @@ Module: "ascii_io"
 [ "load_format",	  "PROC:      ",  "load_format(str) : BAT[str,BAT]",						  "not available"	  ]
 [ "make_persistent",	  "PROC:      ",  "make_persistent(BAT[str,BAT]) : any",					  "not available"	  ]
 [ "merge_data",		  "PROC:      ",  "merge_data(BAT[str,BAT]) : any",						  "not available"	  ]
-[ "output",		  "COMMAND:   ",  "output(BAT[any,any], BAT[void,str], BAT[void,BAT], stream) : void",		  ""			  ]
+[ "output",		  "COMMAND:   ",  "output(BAT[any,any], BAT[void,str], BAT[void,BAT], Stream) : void",		  ""			  ]
 
 Module: "bat_arith"
 
@@ -908,18 +906,6 @@ Module: "uchr"
 # function	| type	| signature	| help	  #
 #-------------------------------------------------#
 
-Module: "unix"
-
-[ 4 ]
-[ 4 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature				| help																									  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "getenv",	  "COMMAND:   ",  "getenv(str) : str",			  "Get the environment variable string."																				  ]
-[ "run",	  "COMMAND:   ",  "run(blob, str, ..str..) : blob",	  "Execute a command, passing the optional strings as commandline arguments.\nThis function pipes the blob data to its childs stdin.\nThe data from the childs stdout is caught and returned as a blob."  ]
-[ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",		  "Set the environment variable string."																				  ]
-[ "system",	  "COMMAND:   ",  "system(str) : int",			  "Execute a command and give back the return value"																			  ]
-
 Module: "url"
 
 [ 18 ]
@@ -1114,46 +1100,6 @@ Module: "xtables"
 [ "tunique",		  "COMMAND:   ",  "tunique(BAT[oid,any::1]) : BAT[any::1,void]",				  "get all unique tail values. Optimized for getting all unique\n         oids from a cross-table computed by CTgroup."																								  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[void,bit], BAT[void,oid], BAT[oid,int]) : BAT[oid,int]",		  "not available"																																				  ]
-
-Module: "mprof"
-
-[ 32 ]
-[ 32 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature					| help							  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "-",			  "OPERATOR:  ",  "-(Mallinfo, Mallinfo) : Mallinfo",		  "Subtract the memory info records"			  ]
-[ "-",			  "OPERATOR:  ",  "-(Rusage, Rusage) : Rusage",			  "Subtract the io and swap records"			  ]
-[ "-",			  "OPERATOR:  ",  "-(Tms, Tms) : Tms",				  "Subtract the timing records"				  ]
-[ "Ma_arena",		  "COMMAND:   ",  "Ma_arena(Mallinfo) : int",			  "Dynamic allocated arena size"			  ]
-[ "Ma_fordblks",	  "COMMAND:   ",  "Ma_fordblks(Mallinfo) : int",		  "Free ordinary blocks in arena"			  ]
-[ "Ma_fsmblks",		  "COMMAND:   ",  "Ma_fsmblks(Mallinfo) : int",			  "Free small blocks in arena"				  ]
-[ "Ma_new",		  "COMMAND:   ",  "Ma_new() : Mallinfo",			  "Get malloc information"				  ]
-[ "Ma_uordblks",	  "COMMAND:   ",  "Ma_uordblks(Mallinfo) : int",		  "Used ordinary blocks in arena"			  ]
-[ "Ma_usmblks",		  "COMMAND:   ",  "Ma_usmblks(Mallinfo) : int",			  "Used small blocks in arena"				  ]
-[ "Ru_inblock",		  "COMMAND:   ",  "Ru_inblock(Rusage) : int",			  "Extract the actual physical read count"		  ]
-[ "Ru_majflt",		  "COMMAND:   ",  "Ru_majflt(Rusage) : int",			  "Extract the major page faults"			  ]
-[ "Ru_maxrss",		  "COMMAND:   ",  "Ru_maxrss(Rusage) : int",			  "Extract the maximum resident set size utilized"	  ]
-[ "Ru_minflt",		  "COMMAND:   ",  "Ru_minflt(Rusage) : int",			  "Extract the minor page faults"			  ]
-[ "Ru_new",		  "COMMAND:   ",  "Ru_new() : Rusage",				  "Extract system resource usage record"		  ]
-[ "Ru_nivcsw",		  "COMMAND:   ",  "Ru_nivcsw(Rusage) : int",			  "Extract the non-voluntary context switch count"	  ]
-[ "Ru_nswap",		  "COMMAND:   ",  "Ru_nswap(Rusage) : int",			  "Extract the actual process swap count"		  ]
-[ "Ru_nvcsw",		  "COMMAND:   ",  "Ru_nvcsw(Rusage) : int",			  "Extract the voluntary context switch count"		  ]
-[ "Ru_oublock",		  "COMMAND:   ",  "Ru_oublock(Rusage) : int",			  "Extract the actual physical write count"		  ]
-[ "Tms_new",		  "COMMAND:   ",  "Tms_new() : Tms",				  "Create a new Tms record"				  ]
-[ "Tms_stime",		  "COMMAND:   ",  "Tms_stime(Tms) : int",			  "Extract the system time part from the record"	  ]
-[ "Tms_utime",		  "COMMAND:   ",  "Tms_utime(Tms) : int",			  "Extract the user time part from the record"		  ]
-[ "emptyMallinfo",	  "PROC:      ",  "emptyMallinfo(..any..) : any",		  "not available"					  ]
-[ "insB",		  "COMMAND:   ",  "insB(str, int, Tms, Rusage, Mallinfo) : int",  "Insert the begin of a new labelled time period"	  ]
-[ "insE",		  "COMMAND:   ",  "insE(str, int, Tms, Rusage, Mallinfo) : int",  "Insert the end of a new labelled time period"	  ]
-[ "pmB",		  "COMMAND:   ",  "pmB(str) : int",				  "Start a new labelled timing period"			  ]
-[ "pmClear",		  "COMMAND:   ",  "pmClear() : void",				  "Clear the performance bats"				  ]
-[ "pmE",		  "COMMAND:   ",  "pmE(str) : int",				  "End a labelled timing period"			  ]
-[ "pmExit",		  "COMMAND:   ",  "pmExit() : void",				  "Removes the Mprof bats"				  ]
-[ "pmPrint",		  "PROC:      ",  "pmPrint(..any..) : any",			  "not available"					  ]
-[ "pmStart",		  "COMMAND:   ",  "pmStart() : void",				  "Initializes the mprof bats"				  ]
-[ "pmSummary",		  "PROC:      ",  "pmSummary(..any..) : any",			  "not available"					  ]
-[ "pmTag",		  "COMMAND:   ",  "pmTag(str, str) : void",			  "Add comment to a timing period"			  ]
 
 quit;
 
