@@ -98,6 +98,7 @@ It uses the features offered by the MAL parser.
 #include "mal_builder.h"
 #include "mal_parser.h"
 
+#undef currChar
 #define MAXSCOPES 128
 
 typedef struct IDS{
@@ -129,11 +130,14 @@ mal_export int parseMILprg(Client cntxt, MalBlkPtr curPrg);
 #include "mal_builder.h"
 #include "mal_parser.h"
 #include "mil_parser.h"
+#include "mil_scenario.h"
 
 mal_export str mapid(str n);
 mal_export int ismapped(str n);
 
 #define BE(X) ((MILbackend)(X->state[PARSER]))
+#define needMore(X)  currChar(X)  /* need at least one more character */
+#define advanceMore(X,Y) {advance(X,Y); needMore(X);}
 
 extern int parseMILtype(Client cntxt,str tnme);
 extern int parseMILexpr(Client cntxt,MalBlkPtr currBlk);
@@ -143,6 +147,17 @@ extern void parseMILstmtend(Client cntxt, MalBlkPtr currBlk);
 extern void parseMILblock(Client cntxt, MalBlkPtr currBlk);
 extern int parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme);
 extern void parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs);
+@-
+The MIL parser may request for more information to complete a parsing request.
+@c
+char currChar(Client c){
+	if( *CURRENT(c) ==0){
+		MILreader(c);
+		c->yycur=0;
+	}
+	return *CURRENT(c);
+}
+
 @-
 The name space for MIL is nested. This means we have to map names according
 to the scope in which they are introduced. Furthermore, we have to keep track
@@ -360,7 +375,7 @@ int parseMILassignment(Client cntxt, MalBlkPtr currBlk, str nme){
 	int 		varid, i;
 
 	varid = fndId(BE(cntxt),nme);
-	if( varid == 0){
+	if( varid == 0 || varid > currBlk->vtop){
 		parseError(cntxt,"Variable not declared\n");
 		varid 	= newVariable(currBlk,nme,TYPE_any);
 		newId(BE(cntxt),nme,varid);
@@ -384,7 +399,7 @@ int parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme){
 		skipToEnd(cntxt);
 		return 0;
 	}
-	advance(cntxt,1);
+	advanceMore(cntxt,1);
 	skipSpace(cntxt);
 
 	currInstr = newInstruction(ASSIGNsymbol);
@@ -408,17 +423,18 @@ int parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme){
 		i= parseMILexpr(cntxt,currBlk);
 		pushArgument(currBlk,currInstr,i);
 		skipSpace(cntxt);
-		if( currChar(cntxt) == ',')
-			advance(cntxt,1);
-		else if( currChar(cntxt) != ')' ) {
+		if( currChar(cntxt) == ','){
+			advanceMore(cntxt,1);
+		} else if( currChar(cntxt) != ')' ) {
 			parseError(cntxt,"',' expected\n");
 			skipToEnd(cntxt);
 			break;
 		}
 		skipSpace(cntxt);
 	}
-	if( currChar(cntxt) == ')' ) advance(cntxt,1);
-	skipSpace(cntxt);
+	if( currChar(cntxt) == ')' ) {
+		advanceMore(cntxt,1);
+	}
 
 	pushInstruction(currBlk,currInstr);
 	return varid;
@@ -429,10 +445,10 @@ for a function call whose first argument is factored out.
 @c
 int parseMILpathexpr(Client cntxt, MalBlkPtr currBlk, int varid){
 	InstrPtr 	currInstr;
-	int 		i,j,k;
+	int 		newvar,j,k;
 	str			nme;
 
-	advance(cntxt,1);
+	advanceMore(cntxt,1);
 	skipSpace(cntxt);
 
 	nme= parseMILoperator(cntxt);
@@ -440,11 +456,11 @@ int parseMILpathexpr(Client cntxt, MalBlkPtr currBlk, int varid){
 		parseError(cntxt,"<identifier> or <operator> expected\n");
 		return varid;
 	}
-	i = parseMILfunctioncall(cntxt,currBlk,nme);
+	newvar = parseMILfunctioncall(cntxt,currBlk,nme);
 	currInstr = currBlk->stmt[currBlk->stop-1];
 
 	/* shuffle arguments arround */
-	pushArgument(currBlk,currInstr,i);
+	pushArgument(currBlk,currInstr,newvar);
 
 	k = currInstr->retc;
 	k += idcmp(functionName(currInstr),"tactics")==0 ? 1:0;
@@ -454,7 +470,7 @@ int parseMILpathexpr(Client cntxt, MalBlkPtr currBlk, int varid){
 
 	skipSpace(cntxt);
 	if( currChar(cntxt) == '.')
-		return parseMILpathexpr(cntxt,currBlk,varid);
+		return parseMILpathexpr(cntxt,currBlk,newvar);
 
 	return varid;
 }
@@ -488,7 +504,7 @@ int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 		} else 	varid = parseMILvariable(cntxt,currBlk,nme);
 	} else if( currChar(cntxt) == '(') {
 		/* ( expr ) */
-		advance(cntxt,1); skipSpace(cntxt);
+		advanceMore(cntxt,1); skipSpace(cntxt);
 		varid= parseMILexpr(cntxt,currBlk);
 		if( !keyphrase1(cntxt,")") ){
 			parseError(cntxt,"')' expected\n");
@@ -498,7 +514,7 @@ int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 	} else if( currChar(cntxt) == '[' || currChar(cntxt)== '{') {
 		bracket= currChar(cntxt);
 
-		advance(cntxt,1);
+		advanceMore(cntxt,1);
 		len = idLength(cntxt);
 		if( len == 0){
 			len = operatorLength(cntxt);
@@ -514,7 +530,7 @@ int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 			skipToEnd(cntxt);
 			return newTmpVariable(currBlk,TYPE_any);
 		}
-		advance(cntxt,1);
+		advanceMore(cntxt,1);
 		snprintf(newname,1024,"%c%s%c",bracket,nme,bracket);
 		varid = parseMILfunctioncall(cntxt,currBlk,GDKstrdup(newname));
 	} 
@@ -554,7 +570,7 @@ int parseMILexpr(Client cntxt, MalBlkPtr currBlk){
 	stk[top]= lhs = parseMILfactor(cntxt,currBlk);
 	skipSpace(cntxt);
 	if( currChar(cntxt) == '@'){
-		advance(cntxt,1);
+		advanceMore(cntxt,1);
 		parseMILbatloop(cntxt,currBlk,lhs);
 		return lhs;
 	}
@@ -565,7 +581,7 @@ int parseMILexpr(Client cntxt, MalBlkPtr currBlk){
 		ostk[top] = operator;
 		priority[top]= 1; /* refine later */
 
-		skipSpace(cntxt);
+		needMore(cntxt); skipSpace(cntxt);
 		stk[++top]= parseMILfactor(cntxt,currBlk);
 		@:exprCode(top-1, TRUE)@
 	} while(1);
@@ -574,15 +590,14 @@ int parseMILexpr(Client cntxt, MalBlkPtr currBlk){
 }
 void parseMILstmtend(Client cntxt, MalBlkPtr currBlk){
 	(void) currBlk;
-	if( currChar(cntxt) ==0) return;
 	if( currChar(cntxt) != ';' && currChar(cntxt) != '}'){
 		parseError(cntxt,"';' expected\n");
 	} else advance(cntxt,1);
 }
 void parseMILstmt(Client cntxt, MalBlkPtr currBlk){
 	if( currChar(cntxt) == '{')
-		parseMILblock(cntxt,currBlk);
-	else parseMILexpr(cntxt,currBlk);
+		return parseMILblock(cntxt,currBlk);
+	parseMILexpr(cntxt,currBlk);
 	parseMILstmtend(cntxt,currBlk);
 }
 void parseMILblock(Client cntxt, MalBlkPtr currBlk){
@@ -598,16 +613,16 @@ void parseMILblock(Client cntxt, MalBlkPtr currBlk){
 		leaveMILscope(cntxt);
 	} else 
 	if( currChar(cntxt)=='{'){
-		advance(cntxt,1);
+		advanceMore(cntxt,1);
 		skipSpace(cntxt);
 		enterMILscope(cntxt);
-		while( currChar(cntxt)!='}' ){
+		do{
+			if( currChar(cntxt) == '}')
+				break;
 			parseMILprg(cntxt,currBlk);
-			skipSpace(cntxt);
-			if(currChar(cntxt) == 0) break;
-		}
+		} while( *CURRENT(cntxt)!='}' );
+		advance(cntxt,1);
 		leaveMILscope(cntxt);
-		skipSpace(cntxt);
 	} else parseMILstmt(cntxt,currBlk); 
 }
 int parseMILbatstmt(Client cntxt,MalBlkPtr currBlk ){
@@ -667,12 +682,16 @@ void parseMILifstmt(Client cntxt, MalBlkPtr currBlk){
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '('){
 		parseError(cntxt,"'(' expected\n");
-	} else advance(cntxt,1);
+	} else {
+		advanceMore(cntxt,1);
+	}
 	lhs = parseMILexpr(cntxt,currBlk);
 	skipSpace(cntxt);
 	if( currChar(cntxt) != ')'){
 		parseError(cntxt,"')' expected\n");
-	} else advance(cntxt,1);
+	} else {
+		advanceMore(cntxt,1);
+	}
 
 	cvar = newTmpVariable(currBlk, TYPE_bit);
 	currInstr= newInstruction(ASSIGNsymbol);
@@ -782,7 +801,9 @@ void parseMILwhilestmt(Client cntxt, MalBlkPtr currBlk){
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '('){
 		parseError(cntxt,"'(' expected\n");
-	} else advance(cntxt,1);
+	} else {
+		advanceMore(cntxt,1);
+	}
 
 	cvar = newTmpVariable(currBlk, TYPE_bit);
 	currInstr= newInstruction(ASSIGNsymbol);
@@ -799,8 +820,9 @@ void parseMILwhilestmt(Client cntxt, MalBlkPtr currBlk){
 	skipSpace(cntxt);
 	if( currChar(cntxt) != ')'){
 		parseError(cntxt,"')' expected\n");
-	} else advance(cntxt,1);
-	skipSpace(cntxt);
+	} else {
+		advanceMore(cntxt,1);
+	}
 
 	currInstr= newInstruction(ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
@@ -883,17 +905,17 @@ int parseMILtype(Client cntxt,str tnme){
 	tpe = getTypeIndex(tnme,strlen(tnme),-1);
 	if( tpe == TYPE_bat){
 		if( currChar(cntxt)=='['){
-			advance(cntxt,1);
+			advanceMore(cntxt,1);
 			len= idLength(cntxt);
 			ht = getTypeIndex(CURRENT(cntxt), len, -1);
-			advance(cntxt,len); 
+			advanceMore(cntxt,len); 
 			skipSpace(cntxt);
 			if( currChar(cntxt) != ',')
 				parseError(cntxt,"',' expected\n");
-			advance(cntxt,1);
+			advanceMore(cntxt,1);
 			len= idLength(cntxt);
 			tt = getTypeIndex(CURRENT(cntxt), len, -1);
-			advance(cntxt,len); 
+			advanceMore(cntxt,len); 
 			skipSpace(cntxt);
 			if( currChar(cntxt) != ']')
 				parseError(cntxt,"',' expected\n");
@@ -952,12 +974,15 @@ void parseMILprocdef(Client cntxt, MalBlkPtr currBlk){
 		parseError(cntxt,"<identifier> or <operator> expected\n");
 		skipToEnd(cntxt);
 		return;
-	}
+	} 
+	needMore(cntxt);
 	skipSpace(cntxt);
 	if( currChar(cntxt) == ';') return;
 	if( currChar(cntxt) != '(')
 		parseError(cntxt,"'(' expected\n");
-	else advance(cntxt,1);
+	else {
+		advanceMore(cntxt,1);
+	}
 	skipSpace(cntxt);
 
 	/* temporary suspend capturing in the main block */
@@ -978,20 +1003,22 @@ void parseMILprocdef(Client cntxt, MalBlkPtr currBlk){
 		/* parse argument */
 		parseMILparameter(cntxt,currBlk, currInstr);
 		skipSpace(cntxt);
-		if( currChar(cntxt) == ',' )
-			advance(cntxt,1);
-		else
+		if( currChar(cntxt) == ',' ) {
+			advanceMore(cntxt,1);
+		} else
 		if( currChar(cntxt) != ')' ){
 			parseError(cntxt,"')' expected\n");
 			break;
 		}
 		skipSpace(cntxt);
 	}
-	if( currChar(cntxt) ==')') advance(cntxt,1);
+	if( currChar(cntxt) ==')') {
+		advanceMore(cntxt,1);
+	}
 	skipSpace(cntxt);
 	if( currChar(cntxt) ==':') {
 		int len;
-		advance(cntxt,1);
+		advanceMore(cntxt,1);
 		skipSpace(cntxt);
 		len= idLength(cntxt);
 		if( len == 0)
@@ -1014,7 +1041,6 @@ void parseMILprocdef(Client cntxt, MalBlkPtr currBlk){
 		cntxt->curprg = cntxt->backup;
 		cntxt->backup = 0;
 	}
-	skipToEnd(cntxt);
 	if(cntxt->listing)
 		printFunction(GDKout, currBlk, cntxt->listing);
 	showErrors();
@@ -1031,40 +1057,59 @@ void parseMILbreakstmt(Client cntxt, MalBlkPtr currBlk){
 	pushInstruction(currBlk, currInstr);
 }
 
+#define NL(X) ((X)=='\n' || (X)=='\r')
+
+void parseMILinput(Client cntxt, MalBlkPtr currBlk){
+	InstrPtr currInstr;
+	int len=0;
+	char *c = CURRENT(cntxt);
+
+	if( NL(*c)) return;
+	currInstr = newInstruction(ASSIGNsymbol);
+	setModuleId(currInstr,GDKstrdup("io"));
+	setFunctionId(currInstr,GDKstrdup("print"));
+	while (*c && !NL(*c)) { c++; len++;}
+	c= GDKmalloc(len+2);
+	c[0]='#';
+	strncpy(c+1, CURRENT(cntxt),len);
+	c[len+1]= 0;
+	len= newConstant(currBlk, TYPE_str, c, FALSE);
+	pushArgument(currBlk,currInstr,len);
+	pushInstruction(currBlk,currInstr);
+}
 int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 	char c;
 
-	echoInput(cntxt);
-	while( (c=currChar(cntxt)) ){
+	if( *CURRENT(cntxt))
+		parseMILinput(cntxt,currBlk);
+	while( (c= *CURRENT(cntxt)) ){
 		switch(c) {
 		case '#':
 			while( currChar(cntxt) && currChar(cntxt)!='\n')
 				nextChar(cntxt);
 			if( currChar(cntxt) ) nextChar(cntxt);
-			echoInput(cntxt);
+			if( *CURRENT(cntxt))
+				parseMILinput(cntxt,currBlk);
 			continue;
 		case '\n': case '\r': case '\f':
 			nextChar(cntxt);
-			echoInput(cntxt);
+			parseMILinput(cntxt,currBlk);
 			continue;
 		case ';': 
 			BE(cntxt)->constantdeclaration = 0;
 		case '\t': case ' ':
 			nextChar(cntxt);
-		case 0: /* get more input */
-			MALreader(cntxt);
-			continue;
+		case 0: 
+			return cntxt->curprg->def->errors;
 		case '/':
 			if( keyphrase2(cntxt,"/}")){
 				return cntxt->curprg->def->errors;
 			}
 			goto MILstmt;
-		case '}':
-			skipSpace(cntxt);
-			return cntxt->curprg->def->errors;
 		case '{':
 			parseMILblock(cntxt,currBlk);
-			break;
+		case '}':
+			return cntxt->curprg->def->errors;
 		case 'b':
 			if( keyphrase(cntxt,"break",5) )
 				parseMILbreakstmt(cntxt,currBlk);

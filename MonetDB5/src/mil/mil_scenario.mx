@@ -36,6 +36,7 @@ comment "Switch to processing MIL statements";
 #include "mal_session.h"
 #include "mal_parser.h"
 
+mal_export str MILreader(Client c);
 mal_export str MILparser(Client c);
 mal_export str MILengine(Client c);
 mal_export void enterMILscope(Client c);
@@ -101,7 +102,7 @@ str MILexitClient(Client c)
 @-
 The MIL reader collects a (sequence) of statements from the input
 stream, but only when no unresolved 'nxt' character is visible.
-
+Actually, we can use the MAL reader for this purpose.
 @c
 str MILreader(Client c){
     int go = TRUE;
