@@ -1,6 +1,0 @@
-load
-select_simple_join
-select_join
-select_key_prefix_join
-select_distinct
-select_group
