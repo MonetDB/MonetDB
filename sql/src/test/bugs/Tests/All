@@ -27,7 +27,7 @@ insert_into_select-bug-sf-978043
 union-bug-sf-978045
 object_name-bug-sf-985242
 view_join-bug-sf-990096
-bug-sf-1000576
+cast_bool2int-bug-sf-1000576
 escape_quote-bug-sf-1006469
 case_cast-bug-sf-1019506
 select_constant_from_where_1=1-bug-sf-1019529

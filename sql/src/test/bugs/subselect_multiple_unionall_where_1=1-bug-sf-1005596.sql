@@ -3,7 +3,7 @@
 -- Mserver terminal.  The last query seems just to be a little bit
 -- too much and crashes the server.
 -- Although the first queries run, they do not result in the desired
--- output, but return an error in turn.
+-- output, but return an error instead.
 
 -- a very small version of the query, produces lots of terminal bogus
 SELECT 1 AS number;
