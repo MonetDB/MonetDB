@@ -720,7 +720,7 @@ through the definition of MIL we do not want the nils to appear in
 the result (as (nil {<,=,>} ANY) = bit(nil) != true).
 
 @= indexselect
-	IDXrng(m, tl, th, &x, &y);
+	IDXrng_(m, tl, th, li, hi, &x, &y);
 	if (equi == 0) {
 	    while(x < y && @3_EQ(nil, BUNt@2(b, *x), @1)) {
 	    	x++; /* if this is a range-select, we skip nil */
