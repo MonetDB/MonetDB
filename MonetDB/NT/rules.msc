@@ -18,11 +18,13 @@ SOCKET_LIBS = wsock32.lib
 MEL=$(TOPDIR)\src\mel\mel
 MX=$(TOPDIR)\src\utils\Mx\Mx
 YACC=bison -y
-BISONSIMPLE=\tmp\vim57\bison.simple
 LEX=flex 
 CP=copy
 MV=rename
 DEL=del
+PYTHON=python
+#PYTHON = "c:\program files\python\python.exe" 
+#PYTHON = "c:\python16\python.exe" 
 
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -l -x h $<
@@ -40,14 +42,12 @@ DEL=del
 	$(MX) $(MXFLAGS) -l -x mil $<
 
 {$(SRCDIR)}.mx.y:
-	copy $(BISONSIMPLE) .
 	$(MX) $(MXFLAGS) -l -x y $<
 
 {$(SRCDIR)}.mx.l:
 	$(MX) $(MXFLAGS) -l -x l $<
 
 {$(SRCDIR)}.mx.yy:
-	copy $(BISONSIMPLE) .
 	$(MX) $(MXFLAGS) -l -x Y $<
 
 {$(SRCDIR)}.mx.ll:
