@@ -13,7 +13,6 @@ bin_Mtimeout = {
 	SOURCES = Mtimeout.c
 }
 
-bin_SCRIPTS = Mtest.py Mlog Mfilter.py MkillUsers
 bin_Mapprove.py = bin_Mtest.py
 bin_Mapprove.py.bat = bin_Mtest.py.bat
 bin_Mprofile.py = bin_Mtest.py
@@ -34,3 +33,7 @@ scripts_lst = {
 	SOURCES = Mprofile-commands.lst
 }
 
+scripts_sh = {
+	DIR = bindir
+	SOURCES = Mtest.py Mlog Mfilter.py MkillUsers
+}
