@@ -338,7 +338,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 	b= cntxt->input;
 	skipBlanc(b);
 	switch(*b){
-	case 0: break;
+	case 0: return;
 	case 'a': if( strncmp("atoms",b,5)==0) showAtoms(out);
 		break;
 	case 'c': if( strncmp("call",b,4)==0){
