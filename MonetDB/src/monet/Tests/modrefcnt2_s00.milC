@@ -15,10 +15,9 @@
 # 'illegal type' "lock"...
 
 # should not show module "lock":
-loaded;
+loaded();
 
 # should all fail:
 sigs("lock");
-test.print;
-test.count.print;
-
+bat("test").print();
+bat("test").count().print();

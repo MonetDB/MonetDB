@@ -46,7 +46,7 @@ printf("\nReady.\n");
 Ready.
 # in the global context on the Mserver konsole (after all clients are gone):
 
-loaded;
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -76,16 +76,16 @@ sigs("lock");
 [ "sema_down(sema) : void"	  ]
 [ "sema_try(sema) : int"	  ]
 [ "sema_up(sema) : void"	  ]
-test.print;
+bat("test").print();
 #-----------------#
 # BAT:	  test	  #
 # (int)	  (lock)  #
 #-----------------#
-test.count.print;
+bat("test").count().print();
 [ 0 ]
 
 drop("lock");
-loaded;
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#

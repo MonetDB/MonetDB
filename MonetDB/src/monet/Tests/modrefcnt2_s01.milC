@@ -5,10 +5,9 @@
 module(lock);
 
 # should show module "lock" with refcount 1:
-loaded;
+loaded();
 
 # should all succeed:
 sigs("lock");
-test.print;
-test.count.print;
-
+bat("test").print();
+bat("test").count().print();

@@ -8,8 +8,8 @@ module("lock");
 VAR test := new(int,lock);
 test.rename("test");
 
-loaded;
+loaded();
 sigs("lock");
-test.print;
-test.count.print;
+test.print();
+test.count().print();
 
