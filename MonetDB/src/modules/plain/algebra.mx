@@ -680,9 +680,13 @@ that for the moment are defined as procs.
 		var idxund;
 		var isper;
 		var idx;
+		var wasper;
 		
 		idxper := find_unescaped_occurrence(pat, '%');
 		idxund := find_unescaped_occurrence(pat, '_');
+
+		# force matching without position freedom for the first part
+		wasper := false;
 
         if ((idxper = -1) and (idxund = -1)) {
 			# no % or _ found at all, return simple selection on the given
@@ -705,18 +709,53 @@ that for the moment are defined as procs.
 			}
 		}
 
-		if (idx > 0) {
-			s := b.[search](pat.string(0, idx)).select(0);
-			if (isper) {
-				b := b.[string](s, [-](b.semijoin(s).[length](), s));
+		while (idx < pat.length()) {
+			if (wasper) {
+				# do position free match
+				
+				# is idx is smaller than 0 at this point, then both idxper and
+				# idxund are -1; we only have a tail, so we should see if it
+				# matches to complete this search
+				if (idx < 0) {
+					if (pat.length() > 0) {
+						b := b.[endsWith](pat).[ifthen](b);
+					}
+					break;
+				}
+				if (isper) {
+					s := b.[search](pat.string(0, idx)).select(0, int(nil));
+					b := b.[string](s.[+](idx));
+				} else {
+					b := ((b.[length]()).[>=](idx + 1)).[ifthen](b);
+					s := b.[search](pat.string(0, idx)).select(0, int(nil));
+					b := b.[string](s.[+](idx + 1));
+				}
 			} else {
-				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
-			}
-		}
+				# do a startsWith match
 
-		while ((idx :+= 1) < pat.length()) {
+				# is idx is smaller than 0 at this point, then both idxper and
+				# idxund are -1; we only have a tail, so we should see if it
+				# matches to complete this search
+				if (idx < 0) {
+					b := (b.[=](pat)).[ifthen](b);
+					break;
+				}
+
+				b := (b.[startsWith](pat.string(0, idx))).[ifthen](b);
+				if (isper) {
+					# shortcut; everything matches with an empty string
+					if (idx > 0) b := b.[string](idx);
+				} else {
+					b := ((b.[length]()).[>=](idx + 1)).[ifthen](b);
+					b := b.[string](idx + 1);
+				}
+			}
+
+			wasper := isper;
+
 			# remove from the search pattern what we have matched so far
-            pat := pat.string(idx, pat.length()-idx);
+			idx :+= 1;	# include the wilcard char!
+			pat := pat.string(idx);
 
 			# find next match for the last matching char (% or _)
 			if (isper) {
@@ -728,7 +767,7 @@ that for the moment are defined as procs.
 				# correct value of other index
 				if (idxper > 0) idxper :-= idx;
 			}
-				
+
 			if ((idxper = -1) and (idxund = -1)) {
 				idx := -1;
 			} else if (idxper = -1) {
@@ -746,22 +785,6 @@ that for the moment are defined as procs.
 					idx := idxund;
 					isper := false;
 				}
-			}
-		
-			# is idx is smaller than 0 at this point, then both idxper and
-			# idxund are -1
-			if (idx < 0) {
-				if (pat.length() > 0) {
-					b := [endsWith](b,pat).[ifthen](b);
-				}
-				break;
-			}
-			
-			s := b.[search](pat.string(0, idx)).select(0, int(nil));
-			if (isper) {
-				b := b.[string](s, [-](b.semijoin(s).[length](), s));
-			} else {
-				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
 			}
 		}
 
