@@ -34,7 +34,7 @@ $(prefix)/doc/jdbcmanual/jdbcmanual.tex:	$(top_srcdir)/src/jdbc/jdbcmanual.tex
 $(prefix)/doc/jdbcmanual/jdbcmanual.aux:	$(prefix)/doc/jdbcmanual/jdbcmanual.tex
 	(cd $(prefix)/doc/jdbcmanual; latex jdbcmanual.tex; latex jdbcmanual.tex)
 
-html:	$(prefix)/doc/jdbcmanual.html $(prefix)/doc/jdbcmanual/jdbcmanual.aux
+jdbcmanual_html:	$(prefix)/doc/jdbcmanual.html $(prefix)/doc/jdbcmanual/jdbcmanual.aux
 	(cd $(prefix); latex2html -ascii_mode -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/jdbcmanual doc/jdbcmanual/jdbcmanual.tex)
 
 
@@ -49,6 +49,7 @@ $(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
 $(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures.tex
 	(cd $(prefix)/doc/SQLfeatures; latex SQLfeatures.tex; latex SQLfeatures.tex)
 
-html:	$(prefix)/doc/SQLsessionDemo.html $(prefix)/doc/SQLfeatures/SQLfeatures.aux
+SQL_html:	$(prefix)/doc/SQLsessionDemo.html $(prefix)/doc/SQLfeatures/SQLfeatures.aux
 	(cd $(prefix); latex2html -ascii_mode -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex)
 
+html: jdbcmanual_html SQL_html
