@@ -28,8 +28,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	       SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	ODBCDescRec *pColumnHeader = NULL;
-	char *colName = NULL;
+	ODBCDescRec *rec = NULL;
 	int colNameLen = 0;
 
 #ifdef ODBCDEBUG
@@ -60,31 +59,30 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	}
 
 	/* OK */
-	pColumnHeader = stmt->ImplRowDescr->descRec + nCol;
+	rec = stmt->ImplRowDescr->descRec + nCol;
 
-	colName = pColumnHeader->sql_desc_name;
-	if (colName)
-		colNameLen = strlen(colName);
+	if (rec->sql_desc_name)
+		colNameLen = strlen((char *) rec->sql_desc_name);
 
 	/* now copy the data */
-	if (szColName && colName) {
-		strncpy((char *) szColName, colName, nColNameMax - 1);
+	if (szColName && rec->sql_desc_name) {
+		strncpy((char *) szColName, (char *) rec->sql_desc_name, nColNameMax - 1);
 		szColName[nColNameMax - 1] = 0; /* null terminate it */
 	}
 	if (pnColNameLength)
-		*pnColNameLength = colName ? colNameLen : SQL_NULL_DATA;
+		*pnColNameLength = rec->sql_desc_name ? colNameLen : SQL_NULL_DATA;
 
 	if (pnSQLDataType)
-		*pnSQLDataType = pColumnHeader->sql_desc_type;
+		*pnSQLDataType = rec->sql_desc_type;
 
 	if (pnColSize)
-		*pnColSize = pColumnHeader->sql_desc_length;
+		*pnColSize = rec->sql_desc_length;
 
 	if (pnDecDigits)
-		*pnDecDigits = pColumnHeader->sql_desc_scale;
+		*pnDecDigits = rec->sql_desc_scale;
 
 	if (pnNullable)
-		*pnNullable = pColumnHeader->sql_desc_nullable;
+		*pnNullable = rec->sql_desc_nullable;
 
 	if (colNameLen >= nColNameMax) {
 		/* 01004 = String data, right truncation */

@@ -32,12 +32,10 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		  SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
 		  SQLINTEGER BufferLength, SQLINTEGER *StrLen_or_IndPtr)
 {
-	ODBCDescRec *rec;
-	MapiMsg rc = MOK;
-
-	(void) ColumnSize;
-	(void) DecimalDigits;
-	(void) BufferLength; /* only used for (unimplemented) output params */
+	ODBCDesc *apd, *ipd;
+	ODBCDescRec *apdrec, *ipdrec;
+	SQLRETURN rc;
+	MapiMsg ret = MOK;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
@@ -45,8 +43,13 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 	clearStmtErrors(stmt);
 
 	/* check input parameters */
+	if (ParameterNumber <= 0) {
+		/* Invalid descriptor index */
+		addStmtError(stmt, "07009", NULL, 0);
+		return SQL_ERROR;
+	}
 	/* For safety: limit the maximum number of columns to bind */
-	if (ParameterNumber <= 0 || ParameterNumber > MONETDB_MAX_BIND_COLS) {
+	if (ParameterNumber > MONETDB_MAX_BIND_COLS) {
 		/* HY000 = General Error */
 		addStmtError(stmt, "HY000",
 			     "Maximum number of bind columns (8192) exceeded",
@@ -54,14 +57,62 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		return SQL_ERROR;
 	}
 
-	if (InputOutputType != SQL_PARAM_INPUT) {
-		/* HYC00 = Optional feature not implemented */
+	switch (InputOutputType) {
+	case SQL_PARAM_INPUT:
+		break;
+	case SQL_PARAM_INPUT_OUTPUT:
+	case SQL_PARAM_OUTPUT:
+		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00",
 			     "Output parameters are not supported", 0);
 		return SQL_ERROR;
+	default:
+		/* Invalid parameter type */
+		addStmtError(stmt, "HY105", NULL, 0);
+		return SQL_ERROR;
 	}
 
-	rec = addODBCDescRec(stmt->ImplParamDescr, ParameterNumber);
+	apd = stmt->ApplParamDescr;
+	ipd = stmt->ImplParamDescr;
+	apdrec = addODBCDescRec(stmt->ApplParamDescr, ParameterNumber);
+	ipdrec = addODBCDescRec(stmt->ImplParamDescr, ParameterNumber);
+
+	rc = SQLSetDescField_(apd, ParameterNumber,
+			      SQL_DESC_CONCISE_TYPE,
+			      (SQLPOINTER) (ssize_t) ValueType, 0);
+	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+		return rc;
+	rc = SQLSetDescField_(ipd, ParameterNumber,
+			      SQL_DESC_CONCISE_TYPE,
+			      (SQLPOINTER) (ssize_t) ParameterType, 0);
+	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+		return rc;
+	apdrec->sql_desc_parameter_type = InputOutputType;
+	switch (ParameterType) {
+	case SQL_DECIMAL:
+	case SQL_NUMERIC:
+	case SQL_FLOAT:
+	case SQL_REAL:
+	case SQL_DOUBLE:
+		ipdrec->sql_desc_precision = ColumnSize;
+		break;
+	default:
+		ipdrec->sql_desc_length = ColumnSize;
+		break;
+	}
+	switch (ParameterType) {
+	case SQL_DECIMAL:
+	case SQL_NUMERIC:
+		ipdrec->sql_desc_scale = DecimalDigits;
+		break;
+	default:
+		ipdrec->sql_desc_precision = DecimalDigits;
+		break;
+	}
+	apdrec->sql_desc_data_ptr = ParameterValuePtr;
+	apdrec->sql_desc_octet_length = BufferLength;
+	apdrec->sql_desc_indicator_ptr = StrLen_or_IndPtr;
+	apdrec->sql_desc_octet_length_ptr = StrLen_or_IndPtr;
 
 	switch (ValueType) {
 	case SQL_C_CHAR:
@@ -69,61 +120,74 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		   sizeof(long)==8, SQLINTEGER is typedef'ed as int,
 		   otherwise as long, but on those other systems, long
 		   and int are the same size, so the cast works */
-		rc = mapi_param_string(stmt->hdl, ParameterNumber - 1,
-				       ParameterType, ParameterValuePtr,
-				       (int *) StrLen_or_IndPtr);
+		ret = mapi_param_string(stmt->hdl, ParameterNumber - 1,
+					ParameterType, ParameterValuePtr,
+					(int *) StrLen_or_IndPtr);
 		break;
 	case SQL_C_SSHORT:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_SHORT, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_SHORT, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_USHORT:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_USHORT, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_USHORT, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_SLONG:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_LONG, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_LONG, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_ULONG:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_ULONG, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_ULONG, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_STINYINT:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_TINY, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_TINY, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_UTINYINT:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_UTINY, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_UTINY, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_SBIGINT:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_LONGLONG, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_LONGLONG, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_UBIGINT:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_ULONGLONG, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_ULONGLONG, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_FLOAT:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_FLOAT, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_FLOAT, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_DOUBLE:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_DOUBLE, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_DOUBLE, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_TYPE_DATE:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_DATE, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_DATE, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_TYPE_TIME:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_TIME, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_TIME, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
-		rc = mapi_param_type(stmt->hdl, ParameterNumber - 1,
-				     MAPI_DATETIME, ParameterType, ParameterValuePtr);
+		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1,
+				      MAPI_DATETIME, ParameterType,
+				      ParameterValuePtr);
 		break;
 	case SQL_C_DEFAULT:
 		/* these are supported */
@@ -139,7 +203,7 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		return SQL_ERROR;
 	}
 
-	if (rc == MOK)
+	if (ret == MOK)
 		return SQL_SUCCESS;
 
 	addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);

@@ -23,7 +23,7 @@
 				return SQL_ERROR;			\
 			}						\
 			strncpy((char *) Value, str ? (char *) str : "", BufferLength); \
-			*StringLength = str ? strlen(str) : 0;		\
+			*StringLength = str ? strlen((char *) str) : 0;	\
 			if (*StringLength >= BufferLength) {		\
 				addDescError(desc, "01004", NULL, 0);	\
 				return SQL_SUCCESS_WITH_INFO;		\

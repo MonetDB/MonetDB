@@ -44,7 +44,7 @@ SQLExecute_(ODBCStmt *stmt)
 {
 	int i = 0;
 	int nrCols;
-	ODBCDescRec *pCol;
+	ODBCDescRec *rec;
 	MapiHdl hdl;
 	MapiMsg msg;
 
@@ -102,35 +102,35 @@ SQLExecute_(ODBCStmt *stmt)
 		return SQL_ERROR;
 	}
 
-	pCol = stmt->ImplRowDescr->descRec + 1;
+	rec = stmt->ImplRowDescr->descRec + 1;
 	for (i = 0; i < nrCols; i++) {
 		struct msql_types *p;
 		char *s;
 
 		s = mapi_get_name(hdl, i);
-		pCol->sql_desc_base_column_name = strdup(s);
-		pCol->sql_desc_label = strdup(s);
-		pCol->sql_desc_name = strdup(s);
-		pCol->sql_desc_display_size = strlen(s) + 2;
+		rec->sql_desc_base_column_name = (SQLCHAR *) strdup(s);
+		rec->sql_desc_label = (SQLCHAR *) strdup(s);
+		rec->sql_desc_name = (SQLCHAR *) strdup(s);
+		rec->sql_desc_display_size = strlen(s) + 2;
 
 		s = mapi_get_type(hdl, i);
-		pCol->sql_desc_type_name = strdup(s);
+		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		for (p = msql_types; p->name; p++) {
 			if (strcmp(p->name, s) == 0) {
-				pCol->sql_desc_type = p->type;
+				rec->sql_desc_type = p->type;
 				break;
 			}
 		}
 
-		pCol->sql_desc_base_table_name = strdup("tablename");
-		pCol->sql_desc_local_type_name = strdup("Mtype");
-		pCol->sql_desc_catalog_name = strdup("catalog");
-		pCol->sql_desc_literal_prefix = strdup("pre");
-		pCol->sql_desc_literal_suffix = strdup("suf");
-		pCol->sql_desc_schema_name = strdup("schema");
-		pCol->sql_desc_table_name = strdup("table");
+		rec->sql_desc_base_table_name = (SQLCHAR *) strdup("tablename");
+		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("Mtype");
+		rec->sql_desc_catalog_name = (SQLCHAR *) strdup("catalog");
+		rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("pre");
+		rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("suf");
+		rec->sql_desc_schema_name = (SQLCHAR *) strdup("schema");
+		rec->sql_desc_table_name = (SQLCHAR *) strdup("table");
 
-		pCol++;
+		rec++;
 	}
 
 	stmt->State = EXECUTED;

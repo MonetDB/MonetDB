@@ -51,6 +51,8 @@ SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 		setODBCDescRecCount(stmt->ApplRowDescr, 0);
 		return SQL_SUCCESS;
 	case SQL_RESET_PARAMS:
+		setODBCDescRecCount(stmt->ApplParamDescr, 0);
+		setODBCDescRecCount(stmt->ImplParamDescr, 0);
 		mapi_clear_params(stmt->hdl);
 		return SQL_SUCCESS;
 	default:
