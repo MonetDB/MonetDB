@@ -28,7 +28,6 @@ import string
 import random
 import time
 import socket
-import select
 #import signal
 #import getpass
 import Mfilter
@@ -68,22 +67,17 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
  -c<path>
  --config=<path>
          : location of monet.conf file; default is
-                %smonet.conf                        
-
- --monet_mod_path=<pathlist>
-         : overwrite Mserver's default module search path
- --dbfarm=<directory>
-         : overwrite default location of database directory
+		%smonet.conf                        
 """ % (TSTDBG, path(GetMonetConfig('--prefix')+"/etc/"))
 
     if THISFILE == "Mprofile.py":
         print '''\
  --CMDLST=<path>
          : location of .Mprofile-commands.lst file; default is the first found of
-                %s.Mprofile-commands.lst                        
-                <TSTSRCBASE>%s.Mprofile-commands.lst            
-                %s.Mprofile-commands.lst                               
-                %sMprofile-commands.lst                                                                      
+		%s.Mprofile-commands.lst                        
+		<TSTSRCBASE>%s.Mprofile-commands.lst            
+		%s.Mprofile-commands.lst                               
+		%sMprofile-commands.lst                                                                      
 ''' % (os.getcwd()+os.sep,
        os.sep,
        os.environ['HOME']+os.sep,
@@ -98,7 +92,6 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
                      or any of these plus suffix '.STATIC')
             (default: <sys> = '')
  -r      : proceed in subdirectories as well (implies 'All')
- -f      : force approval of error messages (i.e., lines starting with '!')
 """ % (OS, OSVER, OSVER)
 
     print '''\
@@ -110,13 +103,13 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
  --TSTBLDBASE=<abspath>
  --TSTTRGBASE=<abspath>
          : overrule defaults:
-                MONET_SOURCE=%s
-                MONET_BUILD=%s
-                MONET_PREFIX=%s
-                SQL_PREFIX=%s
-                TSTSRCBASE=<MONET_SOURCE>
-                TSTBLDBASE=<MONET_BUILD>
-                TSTTRGBASE=<MONET_PREFIX>
+		MONET_SOURCE=%s
+		MONET_BUILD=%s
+		MONET_PREFIX=%s
+		SQL_PREFIX=%s
+		TSTSRCBASE=<MONET_SOURCE>
+		TSTBLDBASE=<MONET_BUILD>
+		TSTTRGBASE=<MONET_PREFIX>
 ''' % (GetMonetConfig('--source'),
        GetMonetConfig('--build'),
        GetMonetConfig('--prefix'),
@@ -124,15 +117,15 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         print '''\
- --MAPICLIENT=<mapi-client program>
- --SQLCLIENT=<sql-client program>
- --MAPIPORT=<port-no.>
- --SQLPORT=<port-no.>
+ --MAPICLIENT=<mapi-client program call>
+ --SQLCLIENT=<sql-client program call>
+ --MAPIPORT=<host-name:port-no.>
+ --SQLPORT=<portno.>
          : overrule defaults:
-                MAPICLIENT=%s
-                SQLCLIENT=%s
-                MAPIPORT=%s
-                SQLPORT=%s
+		MAPICLIENT=%s
+		SQLCLIENT=%s
+		MAPIPORT=%s
+		SQLPORT=%s
 ''' % (dft['MAPICLIENT'], dft['SQLCLIENT'], dft['MAPIPORT'], dft['SQLPORT'])
 
     print """\
@@ -147,7 +140,7 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
          for details about  %s.
 """ % (THISFILE,
        THISFILE,
-       path(GetMonetConfig('--source')+"/src/testing/"),
+       path(GetMonetConfig('--source')+"/src/utils/testing/"),
        THISFILE)
 
 ### Usage () #
@@ -184,16 +177,20 @@ def startswith(str,pre) :
     return not ((len(str) < len(pre)) or (str[:len(pre)] != pre))
 ### startswith(str,pre) #
 
-import urllib
-##def path(str) :
-##    return string.replace(str, '/', os.sep)
-path = urllib.url2pathname
+def path(str) :
+    return string.replace(str, '/', os.sep)
 ### path(str) #
 
-##def url(str) :
-##    return string.replace(str, os.sep, '/')
-url = urllib.pathname2url
+def url(str) :
+    return string.replace(str, os.sep, '/')
 ### url(str) #
+
+def rmtree(path) :
+    if os.name == "nt":
+        os.system("rmdir /s/q %s" % path)
+    else:
+        os.system("rm -rf %s" % path)
+### rmtree(path) #
 
 def CreateHtmlIndex (env) :
     TSTDIR=env['TSTDIR']
@@ -232,8 +229,8 @@ def CreateHtmlIndex (env) :
             f.write("<FONT COLOR=#000000>%s</FONT>" % OSVER)
             #TODO ?
             #f.write("""\
-                        #<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
-                        #""")
+			#<A HREF='.$THISFILE.Master.Log.OutErr' TARGET='${OSVER}_${TSTDIR}_body'><FONT COLOR=#000000>$OSVER</FONT></A>
+			#""")
         f.write("</FONT></TH>\n")
         for l in BODY:
             f.write(l)
@@ -316,7 +313,6 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
 </FRAMESET>
 </HTML>
 """ % (HTMLTITLE, rows, frames))
-            f.close()
 
     f = open(".%s%s.html" % (TST, WHAT),"w")
     f.write("""\
@@ -453,7 +449,6 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 
 def AddSubToHtmlIndex (env, TSTDIR) :
     TSTTRGBASE = env['TSTTRGBASE']
-    TSTPREF = env['TSTPREF']
 
     if os.path.isfile(os.path.join(TSTTRGBASE,TSTPREF,TSTDIR,".index.html")):
         BACK = os.getcwd()
@@ -491,7 +486,6 @@ def SkipTest(env, TST, EXT, REASON) :
 <TD ALIGN=CENTER><FONT FACE='helvetica, arial'><A HREF='.%(tst)s.src.index.html' TARGET='%(osver)s_%(tstdir)s_body'><FONT COLOR=#000000>
 %(tst)s</FONT></A><BR><A HREF='.%(tst)s.SKIPPED' TARGET='%(osver)s_%(tstdir)s_body'>(skipped)</A></FONT></TD>
 """ % {'tst':TST, 'osver':OSVER, 'tstdir':TSTDIR})
-    f.close()
     if not env.has_key('_'+TSTDIR+'_BODY_')  or  \
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
        not env['_'+TSTDIR+'_BODY_'][1]:
@@ -516,14 +510,13 @@ def find_test_dirs(thisdir) :
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
     TSTSRCBASE = env['TSTSRCBASE']
-    TSTPREF = env['TSTPREF']
     if testdir == TSTSRCBASE:
         TSTDIR = os.curdir
     else:
         TSTDIR = testdir[len(TSTSRCBASE+os.sep):]
-    TSTSRCDIR = os.path.normpath(os.path.join(testdir,TSTSUFF))
-    TSTBLDDIR = os.path.normpath(os.path.join(env['TSTBLDBASE'],TSTDIR,TSTSUFF))
-    TSTTRGDIR = os.path.normpath(os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR))
+    TSTSRCDIR = os.path.join(testdir,TSTSUFF)
+    TSTBLDDIR = os.path.join(env['TSTBLDBASE'],TSTDIR+TSTSUFF)
+    TSTTRGDIR = os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR)
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         TSTDB = TSTPREF+"_"+string.replace(TSTDIR, os.sep, '_')
@@ -557,7 +550,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTDB)):
             try:
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTDB))
+                rmtree(os.path.join(env['GDK_DBFARM'],TSTDB))
             except:
                 Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
                 #TODO:
@@ -595,13 +588,12 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
             return td
 
         for TST in testlist:
-            td = td + ApproveOutput(env, TST)
+            ApproveOutput(env, TST)
 
     return td
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
-    sem = 0
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -609,7 +601,6 @@ def ApproveOutput (env, TST) :
     os.chdir(TSTSRCDIR)
     EXTENSIONS = par['EXTENSION']
     SYSTEM = par['SYSTEM']
-    FORCE = par['FORCE']
 
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
@@ -619,28 +610,15 @@ def ApproveOutput (env, TST) :
         stableOUTPUT = os.path.join(TSTSRCDIR,TST+".stable."+WHAT+SYSTEM)
         if os.path.isfile(testOUTPUT):
 #                       print "Approving "+testOUTPUT+" -> "+stableOUTPUT
-            if os.path.isfile(stableOUTPUT):
-                oc = 'overwriting old'
-            else:
-                oc = 'creating new'
-            print "Approving %s -> stable.%s%s  (%s file)" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM, oc)
+            print "Approving %s -> stable.%s%s" % (os.path.join(TSTDIR,TST+".test."+WHAT), WHAT, SYSTEM)
             f = open(stableOUTPUT, "w")
             for l in fileinput.input(testOUTPUT):
                 if len(l) == 0  or  l[0] != '!':        # or  filter.match(ln):
                     f.write(l)
-                else:
-                    if FORCE:
-                        f.write(l)
-                        as = 'Approving'
-                    else:
-                        as = 'Skipping'
-                    Warn('%s error message: "%s"' % (as,string.replace(l, os.linesep, '')))
-                    sem = 1
             f.flush()
             f.close()
         else:
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
-    return sem
 ### ApproveOutput (env, TST) #
 
 def isexecutable(TST) :
@@ -660,28 +638,16 @@ def isexecutable(TST) :
 ### isexecutable(TST) #
 
 def GetBitsAndModsAndStatic(env) :
-    TSTPREF = env['TSTPREF']
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" --dbname="+TSTPREF)
     pIn.write('''\
-        loaded;
-        help("kunion");
-        {
-            # print a list of all modules found
-            # "Modules: mod1, mod2, ..."
-            MODs := kunion([~monet_mod_nme].reverse,[~view_modules].reverse).kunique;
-            printf("\\nModules: ");
-            x := "";
-            MODs@batloop{
-                printf("%s\'%s\'",x,$h);
-                x:=",";
-            }
-            printf("\\n");
-        }
-        quit;
-    ''')
+MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModules: ");x:="";MODs@batloop{printf("%s\'%s\'",x,$h);x:=",";}printf("\\n");quit;
+''')
     ##module("NoModule");
     pIn.close()
-    qOut, qErr = ReadMultiple([pOut, pErr])
+    qOut = pOut.readlines()
+    qErr = pErr.readlines()
+    pOut.close()
+    pErr.close()
     env['TST_BITS'] = ""
     env['TST_MODS'] = []
     env['TST_STATIC'] = ""
@@ -689,7 +655,7 @@ def GetBitsAndModsAndStatic(env) :
         tbs = re.compile("^# compiled for .*/([63][42]bit); (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
         #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
-        for l in string.split(qOut, '\n'):
+        for l in qOut:
             bs = tbs.match(l)
             if bs:
                 env['TST_BITS'] = bs.group(1)
@@ -704,20 +670,10 @@ def GetBitsAndModsAndStatic(env) :
             #if s:
             #       env['TST_STATIC'] = "1"
             #       os.environ['TST_STATIC'] = env['TST_STATIC']
-        if not env['TST_BITS']:
-            Warn("Checking for Bits failed!")
-        if not env['TST_MODS']:
-            Warn("Checking for Modules failed!")
-        if not env['TST_BITS'] or not env['TST_MODS']:
-            STDERR.write(qOut)
-            STDERR.write("\n")
-            STDERR.write(qErr)
-            STDERR.write("\n")
-            STDERR.flush()
     else:
         Warn("No output from Mserver when checking for Bits & Modules!?")
         if qErr:
-            STDERR.write(qErr)
+            STDERR.writelines(qErr)
             STDERR.write("\n")
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
@@ -732,7 +688,7 @@ def CheckMods(env, TST, SERVER) :
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "MAPI":
-        for m in "str", "mapi":
+        for m in "unix", "str", "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
@@ -745,33 +701,24 @@ def CheckMods(env, TST, SERVER) :
 def CheckBATs(env, TST, TSTDB) :
     pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" --dbname="+TSTDB)
     pIn.write('''\
-        {
-            # print a list of all persisten BATs
-            # "BATs: bat1, bat2, ..."
-            BATs := view_bbp_name;
-            printf("\\nBATs: ");
-            x := "";
-            BATs@batloop{
-                printf("%s\'%s\'",x,$t);
-                x:=",";
-            }
-            printf("\\n");
-        }
-        quit;
-    ''')
+BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s\'%s\'",x,$t);x:=",";}printf("\\n");quit;
+''')
     pIn.close()
-    qOut, qErr = ReadMultiple([pOut, pErr])
+    qOut = pOut.readlines()
+    qErr = pErr.readlines()
+    pOut.close()
+    pErr.close()
     TST_BATS = []
     if qOut:
         tb = re.compile("^BATs: (.*)$", re.MULTILINE)
-        for l in string.split(qOut, '\n'):
+        for l in qOut:
             b = tb.match(l)
             if b:
                 TST_BATS = eval(b.group(1))
     else:
         Warn("No output from Mserver when checking for Bats!?")
         if qErr:
-            STDERR.write(qErr)
+            STDERR.writelines(qErr)
             STDERR.write("\n")
             STDERR.flush()
 
@@ -787,8 +734,12 @@ def CheckBATs(env, TST, TSTDB) :
 def StartAt(cmd) :
     pOut,pIn,pErr = popen2.popen3(cmd)
     pIn.close()
-    qOut, qErr = ReadMultiple([pOut, pErr])
-    return string.strip(string.split(qOut, '\n', 1)[0])
+    ATJOB = string.strip(pOut.readline())
+    pOut.readlines()
+    pErr.readlines()
+    pOut.close()
+    pErr.close()
+    return ATJOB
 ### StartAt(cmd) #
 
 def StopAt(ATJOB,ME) :
@@ -880,10 +831,10 @@ def RunTest(env, TST, BusyPorts) :
         SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
         SkipTest(env, TST, EXT, "as Mshutdown is not available.")
-    elif SERVER == "MAPI" and  not env['MAPI_MIL']:
-        SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
-        #elif SERVER == "MAPI" and  os.name == "nt":
-        #SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
+    elif SERVER == "MAPI" and  not os.path.isfile(env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")):
+        SkipTest(env, TST, EXT, "as "+env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")+" is not available.")
+    elif SERVER == "MAPI" and  os.name == "nt":
+        SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         SkipTest(env, TST, EXT, "as "+string.split(env['MAPICLIENT'])[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
@@ -896,10 +847,10 @@ def RunTest(env, TST, BusyPorts) :
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
         #SkipTest(env, TST, EXT, "as java is not in $PATH.")
-    elif SERVER == "SQL" and  not env['CATALOG_MIL']:
-        SkipTest(env, TST, EXT, "as catalog.mil is not available.")
-    elif SERVER == "SQL" and  not env['SQLSERVER_MIL']:
-        SkipTest(env, TST, EXT, "as sqlserver.mil is not available.")
+    elif SERVER == "SQL" and  not os.path.isfile(env['SQL_PREFIX']+path("/share/sql/catalog.mil")):
+        SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")+" is not available.")
+    elif SERVER == "SQL" and  not os.path.isfile(env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")):
+        SkipTest(env, TST, EXT, "as "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_client'][0]:
         SkipTest(env, TST, EXT, "as "+string.split(env['SQLCLIENT'])[0]+" is not available.")
     elif MissingMods:
@@ -981,8 +932,10 @@ def RunTest(env, TST, BusyPorts) :
             open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
 
-        if os.path.isfile(TST+".prelude")  and  EXT not in  ['.milC','.sql']:
+        if os.path.isfile(TST+".prelude"):
             PRELUDE = TST+".prelude"
+            if EXT == ".milC":
+                PRELUDE = "-prelude "+PRELUDE
         else:
             PRELUDE = ""
 
@@ -1062,9 +1015,6 @@ def RunTest(env, TST, BusyPorts) :
 
         if os.name != "nt":
             StopAt(ATJOB1,ME)
-        else:
-            while os.path.exists(os.path.join(TSTTRGBASE,".KILLED.lck")):
-                time.sleep(1)
 
         killed = 0
         n = TST+".KILLED."
@@ -1100,7 +1050,7 @@ def RunTest(env, TST, BusyPorts) :
         TestErr.close()
 
         timeout = 0
-        mto = re.compile("^!(Mtimeout:)? Timeout:", re.MULTILINE)
+        mto = re.compile("^!Mtimeout: Timeout: ", re.MULTILINE)
         for l in fileinput.input(TestErr.name):
             if mto.match(l):
                 timeout = 1
@@ -1178,7 +1128,7 @@ def RunTest(env, TST, BusyPorts) :
             while timedout and ACCURACYerr >= 0:
                 if ACCURACYerr == 0:
                     MDIFF = MDIFF0
-                timedout = os.system('%s %s %s -A%s -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], str(ACCURACYerr), REVe, TST, STABLEerr, TST, TST))
+                timedout = os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -A'+str(ACCURACYerr)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
                 ACCURACYerr = ACCURACYerr - 1
 
             AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
@@ -1205,8 +1155,8 @@ def randomPort(l,h) :
     port = 0
     rpt = 0
     while rpt < repeat:
-        port = random.randrange(l,h,1)
-        if CheckPort(host,port)[0]:
+	port = random.randrange(l,h,1)
+	if CheckPort(host,port)[0] == 1:
             rpt = rpt + 1
         else:
             break
@@ -1221,15 +1171,18 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
     wait = 61
     repeat = 5
     host = ''
-    port = int(env[SERVER+'PORT'])
+    port = 0
+    if SERVER == "MAPI":
+        port = int(string.splitfields(env['MAPIPORT'],':')[1])
+    if SERVER == "SQL":
+        port = int(env['SQLPORT'])
     rpt = 0
     while rpt < repeat:
         busy, Serrno, Serrstr = CheckPort(host,port)
-        if busy:
+        if busy == 1:
             rpt = rpt + 1
-            Smsg = """
-! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! Waiting %d seconds (%d/%d) ... """ % (SERVER, host, port, Serrno, Serrstr, wait, rpt, repeat)
+            Smsg =      "\n! Socket-Check failed for "+SERVER+"server on <"+host+":"+str(port)+"> with #"+str(Serrno)+"; '"+Serrstr+"' !"
+            Smsg = Smsg+"\n! Waiting "+str(wait)+" seconds (%d/%d) ... " % (rpt,repeat)
             STDERR.write(Smsg)
             STDERR.flush()
             SrvrErr.write(Smsg)
@@ -1262,54 +1215,11 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
     return pIn, pOut, pErr
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
-def ReadMultiple(inpipes, outpipes = None):
-    if outpipes is None:
-        # we will return a list of strings, one for each of the pipes,
-        # with the input from the corresponding pipe
-        outbuffers = [''] * len(inpipes)
-    else:
-        # we will return nothing.  the input from the pipes will be
-        # written to the correspondging outpipes.
-        outbuffers = None
-    if os.name == 'nt':
-        # On Windows, select only works on sockets.
-        # We must hope that reading the pipes in order won't cause
-        # deadlock.
-        for i in range(len(inpipes)):
-            if outpipes is None:
-                outbuffers[i] = inpipes[i].read()
-            else:
-                outpipes[i].write(inpipes[i].read())
-            inpipes[i].close()
-    else:
-        readlist = inpipes[:]
-        while readlist:
-            readers, dummy1, dummy2 = select.select(readlist, [], [])
-            todelete = []
-            for r in readers:
-                data = os.read(r.fileno(), 1024)
-                if not data:
-                    # we hit EOF on this pipe
-                    todelete.append(r)
-                else:
-                    for i in range(len(inpipes)):
-                        if r is inpipes[i]:
-                            if outpipes is None:
-                                outbuffers[i] = outbuffers[i] + data
-                            else:
-                                outpipes[i].write(data)
-            for r in todelete:
-                # remove the pipe from consideration and close it
-                readlist.remove(r)
-                r.close()
-    if outpipes is not None:
-        for p in outpipes:
-            p.flush()
-    return outbuffers
-### ReadMultiple(inpipes, outpipes = None) #
-
 def CollectIt(pOut, pErr, TestOut, TestErr) :
-    ReadMultiple([pOut, pErr], [TestOut, TestErr])
+    TestOut.writelines(pOut.readlines()) ; TestOut.flush()
+    TestErr.writelines(pErr.readlines()) ; TestErr.flush()
+    pOut.close()
+    pErr.close()
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
 
 def RunIt(cmd, TestIn, TestOut, TestErr) :
@@ -1324,7 +1234,7 @@ def Log() :
 
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     ATJOB2 = ""
-    LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
+    LogLine = env['TSTDIR']+os.sep+TST+EXT+' '+PRELUDE+' (<='+str(STIMEOUT+60)+'s) ...'
     STDERR.flush()
     STDOUT.write(prompt()+LogLine)
     STDOUT.flush()
@@ -1347,12 +1257,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             PROLOGUE = " "+TST+".prologue"
 
         Srvr = MTO+str(STO)+" "+exe['Mserver'][1]+" --dbname="+TSTDB
-        Srvr = Srvr+" --set "+string.lower(SERVER)+"_port="+env[SERVER+'PORT']
         if SERVER == "MAPI":
-            Srvr = Srvr+" "+env['MAPI_MIL']
+            Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")
         else:
-            Srvr = Srvr+" "+env['CATALOG_MIL']
-            Srvr = Srvr+" "+env['SQLSERVER_MIL']
+            Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/catalog.mil")
+            Srvr = Srvr+" "+env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
         Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
@@ -1410,7 +1319,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             if test.match(f):
                 TSTs.append(f)
 
-        Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" < "
+        Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" "+PRELUDE+" < "
         for f in TSTs:
             RunIt(Clnt+f, "", ClntOut, ClntErr)
 
@@ -1429,7 +1338,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             if test.match(f):
                 TSTs.append(f)
 
-        Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" < "
+        Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" "+PRELUDE+" < "
         for f in TSTs:
             RunIt(Clnt+f, "", ClntOut, ClntErr)
 
@@ -1459,7 +1368,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             ShwnOut = open(TST+".shutdown.out","w")
             ShwnErr = open(TST+".shutdown.err","w")
             RunIt(Shwn, "", ShwnOut, ShwnErr)
-            time.sleep(0.5)             # give it time to actually shut down
 
         try:
             if SERVER == "MAPI":
@@ -1505,37 +1413,30 @@ def Check(command, input) :
     pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
     pIn.write(input)
     pIn.close()
-    qOut, qErr = ReadMultiple([pOut, pErr])
-    qOut = string.split(qOut, '\n')
-    qErr = string.split(qErr, '\n')
-    test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
-                       r"^!WARNING: monet_checkbat: "                                        "|"
-                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
-                       r"^!WARNING: BBPdir: initializing BBP."                               "|"
-                       r"^!ERROR: yyclean: BAT -?[0-9]+ OVERWRITTEN \(stamp 0 != -?[0-9]+\)" ,
-                       re.MULTILINE)
-    noErr = []
-    for l in qOut+qErr:
-        if l[:1] == "!":
-            if test.match(l):
-                if l[:10] != "!WARNING: ":
-                    noErr.append(l+"\n")
-            else:
-                ErrMsg("'"+command+"` failed:")
-                if qOut and len(qOut[-1]) >= 8 and qOut[-1][:8] == "! Exit 1":
-                    qErr.append(qOut.pop())
-                for l in qOut+qErr:
-                    STDERR.write(l)
-                    STDERR.write("\n")
-                STDERR.write("\n")
-                STDERR.flush()
-                #sys.exit(1)
-                return 1
-    if noErr:
-        STDOUT.flush()
-        STDERR.writelines(noErr)
+    qOut = pOut.readlines()
+    qErr = pErr.readlines()
+    rOut = pOut.close()
+    rErr = pErr.close()
+    rOutErr = ( rOut or rErr )
+    if not rOutErr:
+        for l in qOut+qErr:
+            if l[0] == "!":
+                if ( len(l) < 26  or  
+                   ( l[:24] != "!WARNING: BATpropcheck: " and 
+                     l[:26] != "!WARNING: monet_checkbat: " and 
+                     l[:59] != "!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock." and 
+                     l[:35] != "!WARNING: BBPdir: initializing BBP." ) ) :
+                    rOutErr = 1
+    if rOutErr:
+        ErrMsg("'"+command+"` failed:")
+        if qOut  and  len(qOut[-1]) >= 8  and  qOut[-1][:8] == "! Exit 1":
+            qErr.append(qOut.pop())
+        STDERR.writelines(qOut)
+        STDERR.writelines(qErr)
+        STDERR.write("\n")
         STDERR.flush()
-    return 0
+        #sys.exit(1)
+    return rOutErr
 ### Check(command, input) #
 
 def CheckExec(cmd) :
@@ -1573,13 +1474,13 @@ def SetExecEnv(exe,verbose) :
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 if THISFILE == "Mprofile.py":
-    dftTSTPREF = "Profiles"
+    TSTPREF = "Profiles"
     TSTDBG = str(0)
     dftIGNORE = '^[#~]'
 else:
     dftIGNORE = '^#'
     TSTDBG = str(2+8)
-    dftTSTPREF = "Tests"
+    TSTPREF = "Tests"
 TSTSUFF = "Tests"
 
 if os.environ.has_key('HOST'):
@@ -1663,7 +1564,7 @@ def ReadFromMonetConf(env, var) :
 
 def GetMonetConfig(arg) :
     value = ""
-    #pOut,pIn = popen2.popen2(os.path.join(THISPATH,'monet-config')+' '+arg)
+    #pOut,pIn = popen2.popen2(THISPATH+os.sep+'monet-config '+arg)
     pOut,pIn = popen2.popen2('monet-config '+arg)
     pIn.close()
     qOut = pOut.readlines()
@@ -1701,13 +1602,11 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONET_CONF']     = "FindMonetConf(env)"
-        dft['MONET_MOD_PATH'] = "''"   #"os.path.join(env['MONET_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONET_PREFIX'],'lib','MonetDB')"
-        dft['setMONET_MOD_PATH'] = "'--set monet_mod_path='+env['MONET_MOD_PATH']"
-        dft['setGDK_DBFARM'] = "'--dbfarm '+env['GDK_DBFARM']"
-        dft['MAPIPORT']       = "str(randomPort(50000,59999))"
+        #dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'MonetDB'"
+        dft['MAPIPORT']       = "HOST+':'+str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
-        dft['SQLCLIENT']      = "'sql_client'"	# --port='+env['SQLPORT']"
-        dft['MAPICLIENT']     = "'MapiClient'"	# --port='+env['MAPIPORT']"
+        dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"
+        dft['MAPICLIENT']     = "'MapiClient -everything'"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
     env = {}
@@ -1716,16 +1615,12 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         par['IGNORE']    = '-I"'+dftIGNORE+'"'
         par['CONTEXT']   = '-C1'
-        if os.name == "nt":
-            par['ACCURACY'] = 0
-        else:
-            par['ACCURACY'] = 1
+        par['ACCURACY']  = 1
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         par['TIMEOUT']   = 60
     if THISFILE == "Mapprove.py":
         par['EXTENSION'] = ['out', 'err']
         par['SYSTEM']    = ''
-        par['FORCE']     = 0
     par['RECURSIVE'] = 0
 
     # get current environment
@@ -1743,12 +1638,12 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         shortOpts = shortOpts + "t:"
         shortOpts = shortOpts + "c:d:"
-        longOpts  = longOpts  + ["config=", "debug=", "monet_mod_path=", "dbfarm="]
+        longOpts  = longOpts  + ["config=", "debug="]
         longOpts  = longOpts  + ["MAPIPORT=", "SQLPORT=", "SQLCLIENT=", "MAPICLIENT="]
     if THISFILE == "Mprofile.py":
         longOpts  = longOpts  + ["CMDLST="]
     if THISFILE == "Mapprove.py":
-        shortOpts = shortOpts + "x:s:f"
+        shortOpts = shortOpts + "x:s:"
     try:
         opts, args = getopt.getopt(argv[1:], shortOpts, longOpts)
     except getopt.GetoptError:
@@ -1786,8 +1681,6 @@ def main(argv) :
                 Usage()
                 ErrXit("Extension (-x) must be one of: 'out', 'err' !")
             par['EXTENSION'] = [a]
-        elif o == "-f":
-            par['FORCE'] = 1
         elif o == "-s":
             XTS = []
             for xts in ('', '.'+OS, '.'+OSVER, '.'+OSVER+'.32bit', '.'+OSVER+'.64bit'):
@@ -1802,10 +1695,6 @@ def main(argv) :
             env['GDK_DEBUG'] = str(int(a))
         elif o == "-c"  or  o == "--config":
             env['MONET_CONF'] = a
-        elif o == "--monet_mod_path":
-            env['MONET_MOD_PATH'] = a
-        elif o == "--dbfarm":
-            env['GDK_DBFARM'] = a
         elif len(o) > 2  and  o[:2] == "--"  and  string.upper(o[2:]) in vars:
             env[string.upper(o[2:])] = a
             #TODO:
@@ -1830,7 +1719,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars + ['GDK_DEBUG', 'MONET_CONF', 'MONET_MOD_PATH']
+        vars_ = vars + ['GDK_DEBUG', 'MONET_CONF']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -1838,15 +1727,6 @@ def main(argv) :
             env[v] = eval(dft[v])
             #TODO:
             # make sure, that PATHs ar absolute
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        if env['MONET_MOD_PATH']:
-            env['setMONET_MOD_PATH'] = eval(dft['setMONET_MOD_PATH'])
-        else:
-            env['setMONET_MOD_PATH'] = ''
-        if env.has_key('GDK_DBFARM'):
-            env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
-        else:
-            env['setGDK_DBFARM'] = ''
 
     if ( THISFILE in ["Mtest.py", "Mprofile.py"] )  and  not env['MONET_CONF']:
         Usage()
@@ -1868,10 +1748,6 @@ def main(argv) :
     #if not os.path.indir(MONET_PREFIX):
     #       ErrXit("Illegal MONET_PREFIX: directory '"+a"` does not exist!")
 
-    # ensure consistent TSTSRCBASE
-    if os.path.basename(env['TSTSRCBASE']) == TSTSUFF  and  os.path.isfile(os.path.join(env['TSTSRCBASE'],"All")):
-        ErrXit('TSTSRCBASE itself must not be a test-directory, i.e., called "%s" and contain an "All" file!' % TSTSUFF)
-
     # make TSTxxxBASE absolute physical paths
     BACK = os.getcwd()
     for p in 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE':
@@ -1884,15 +1760,6 @@ def main(argv) :
         else:
             ErrXit("Illegal "+p+": directory '"+env[p]+"' does not exist!")
     os.chdir(BACK)
-
-    if THISFILE == "Mapprove.py" \
-       and not os.path.exists(os.path.join(env['TSTTRGBASE'],dftTSTPREF )) \
-       and     os.path.isfile(os.path.join(env['TSTTRGBASE'],'times.lst')):
-        env['TSTPREF'] = os.path.basename(env['TSTTRGBASE'])
-        env['TSTTRGBASE'] = os.path.dirname(env['TSTTRGBASE'])
-    else:
-        env['TSTPREF'] = dftTSTPREF
-    TSTPREF = env['TSTPREF']
 
     # some relative path's for relocatable HTML output
     if env['TSTSRCBASE'] == env['TSTBLDBASE']  and  env['TSTBLDBASE'] == env['TSTTRGBASE']:
@@ -1911,36 +1778,13 @@ def main(argv) :
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"] and not env.has_key('GDK_DBFARM'):
-        env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
-
-    # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapi_mil = env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")
-        if not os.path.isfile(mapi_mil):
-            mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
-            if not os.path.isfile(mapi_mil):
-                mapi_mil = ''
-        env['MAPI_MIL'] = mapi_mil
-        catalog_mil = env['SQL_PREFIX']+path("/share/sql/catalog.mil")
-        if not os.path.isfile(catalog_mil):
-            catalog_mil = env['TSTBLDBASE']+path("/src/server/catalog.mil")
-            if not os.path.isfile(catalog_mil):
-                catalog_mil = env['TSTSRCBASE']+path("/src/server/catalog.mil")
-                if not os.path.isfile(catalog_mil):
-                    catalog_mil = ''
-        env['CATALOG_MIL'] = catalog_mil
-        sqlserver_mil = env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
-        if not os.path.isfile(sqlserver_mil):
-            sqlserver_mil = env['TSTBLDBASE']+path("/src/server/sqlserver.mil")
-            if not os.path.isfile(sqlserver_mil):
-                sqlserver_mil = ''
-        env['SQLSERVER_MIL'] = sqlserver_mil
+        env['GDK_DBFARM'] = path(ReadFromMonetConf(env, "gdk_dbfarm"))
 
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','CATALOG_MIL','SQLSERVER_MIL'] 
+        vars_ = vars_ + ['GDK_DBFARM']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -1949,7 +1793,7 @@ def main(argv) :
     STDOUT.flush()
 
     ## set/extend PATH & LD_LIBRARY_PATH
-    #bp = ""        #os.path.join(env['MONET_PREFIX'],"bin")
+    #bp = ""        #env['MONET_PREFIX']+os.sep+"bin"
     #if THISFILE in ["Mtest.py", "Mprofile.py"]:
     #       lp = env['MONET_MOD_PATH']
     #else: # THISFILE == "Mapprove.py"
@@ -1983,13 +1827,13 @@ def main(argv) :
     # check for executables, set their standard options and export them
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
-        exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config=%s --debug=%s %s %s --set monet_prompt=' % (env['MONET_CONF'], env['GDK_DEBUG'], env['setMONET_MOD_PATH'], env['setGDK_DBFARM'])
-        exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --config=%s --host=%s --port=%s' % (env['MONET_CONF'], HOST, env['MAPIPORT'])
-        exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
-        exe['python']      = CheckExec('python')       , 'python'
-        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s --config=%s --host=%s --port=%s' % (env['MAPICLIENT'], env['MONET_CONF'], HOST, env['MAPIPORT'])
-        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
+        exe['Mtimeout']    = CheckExec('Mtimeout')   , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
+        exe['Mserver']     = CheckExec('Mserver')    , 'Mserver --config='+env['MONET_CONF']+' --debug='+env['GDK_DEBUG']+' --set monet_prompt='
+        exe['Mshutdown']   = CheckExec('Mshutdown')  , 'Mshutdown'
+        exe['Mdiff']       = CheckExec('Mdiff')      , 'Mdiff'
+        exe['python']      = CheckExec('python')     , 'python'
+        exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), env['MAPICLIENT']
+        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , env['SQLCLIENT']
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -2086,17 +1930,14 @@ def main(argv) :
                     shutil.copy(f,"D:"+os.sep+"Tools")
 
         if os.path.exists(os.path.join(env['TSTTRGBASE'],TSTPREF)):
-            try:
-                shutil.rmtree(os.path.join(env['TSTTRGBASE'],TSTPREF))
-            except:
-                ErrXit("Failed to remove %s" % os.path.join(env['TSTTRGBASE'],TSTPREF))
+            shutil.rmtree(os.path.join(env['TSTTRGBASE'],TSTPREF))
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
 
         if os.path.exists(os.path.join(env['GDK_DBFARM'],TSTPREF)):
             try:
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'],TSTPREF))
+                rmtree(os.path.join(env['GDK_DBFARM'],TSTPREF))
             except:
                 ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'],TSTPREF))
         try:
@@ -2112,12 +1953,16 @@ def main(argv) :
         STDOUT.flush()
 
         host = ''
-        for S in 'MAPI', 'SQL':
-            port = int(env[S+'PORT'])
-            busy, Serrno, Serrstr = CheckPort(host,port)
-            if busy:
-                Warn("Skipping %s tests as %sPORT=%s is not available (Error #%d: '%s')!" % (S,S,env[S+'PORT'],Serrno,Serrstr))
-                BusyPorts.append(S)
+        port = int(string.splitfields(env['MAPIPORT'],':')[1])
+        busy, Serrno, Serrstr = CheckPort(host,port)
+        if busy == 1:
+            Warn("Skipping MAPI tests as MAPIPORT=%s is not available (Error #%d: '%s')!" % (env['MAPIPORT'],Serrno,Serrstr))
+            BusyPorts.append('MAPI')
+        port = int(env['SQLPORT'])
+        busy, Serrno, Serrstr = CheckPort(host,port)
+        if busy == 1:
+            Warn("Skipping SQL tests as SQLPORT=%s is not available (Error #%d: '%s')!" % (env['SQLPORT'],Serrno,Serrstr))
+            BusyPorts.append('SQL')
 
     STDERR.flush()
     t_ = 0
@@ -2167,7 +2012,6 @@ def main(argv) :
 
  After that, re-run Mtest. 
 """ % os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html")
-            sys.exit(1)
         else:
             print """\
 
@@ -2175,7 +2019,6 @@ def main(argv) :
 
  If necessary, you can checkin your modifications, now. 
 """
-            sys.exit(0)
 
     if THISFILE == "Mapprove.py":
         print """\
@@ -2184,27 +2027,10 @@ def main(argv) :
 
  Then, re-run Mtest.py.
 """
-        if t_:
-            if par['FORCE']:
-                print """\
- In case (some of) the approved error messages are not correct/expected,
- re-run Mapprove.py without -f to skip their approval.
-"""
-            else:
-                print """\
- In case (some of) the skipped error messages are correct/expected,
- re-run Mapprove.py with -f to force their approval.
-"""
 ### main(argv) #
 
 if __name__ == "__main__":
-    if '--trace' in sys.argv:
-        sys.argv.remove('--trace')
-        import trace
-        t = trace.Trace(trace=1, count=0)
-        t.runfunc(main, sys.argv)
-    else:
-        main(sys.argv)
+    main(sys.argv)
 
 #       END
 #############################################################################

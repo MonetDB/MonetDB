@@ -1,0 +1,55 @@
+
+## Use: nmake -f makefile.msc install
+
+# Change this to wherever you want to install the DLLs. This directory
+# should be in your PATH.
+BIN = C:\bin
+
+################################################################
+
+# Nothing much configurable below
+
+# cl -? describes the options
+CC = cl -GF -W3 -MD -nologo -Zi -G6
+# optimize use -Ox
+
+# No general LDFLAGS needed
+LDFLAGS = /link
+INSTALL = copy
+MKDIR = mkdir
+ECHO = echo
+CD = cd
+
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
+
+CXXEXT = \"cxx\"
+
+CFLAGS = $(CFLAGS) $(INCLUDES)
+CXXFLAGS = $(CFLAGS)
+TOPDIR = .\..
+SRCDIR = $(TOPDIR)\..\src
+!INCLUDE $(TOPDIR)\rules.msc
+all: all-msc all-recursive
+install: install-recursive install-msc
+SUBDIRS =  parser odbc
+all-recursive: parser-all odbc-all 
+parser-all: parser parser\Makefile
+	$(CD) parser && $(MAKE) /nologo /k all 
+parser: 
+	if not exist parser $(MKDIR) parser
+parser\Makefile: $(SRCDIR)\parser\Makefile.msc
+	$(INSTALL) $(SRCDIR)\parser\Makefile.msc parser\Makefile
+odbc-all: odbc odbc\Makefile
+	$(CD) odbc && $(MAKE) /nologo /k all 
+odbc: 
+	if not exist odbc $(MKDIR) odbc
+odbc\Makefile: $(SRCDIR)\odbc\Makefile.msc
+	$(INSTALL) $(SRCDIR)\odbc\Makefile.msc odbc\Makefile
+install-recursive: parser-install odbc-install 
+parser-install: $(bindir) $(libdir)
+	$(CD) parser && $(MAKE) /nologo /k install
+odbc-install: $(bindir) $(libdir)
+	$(CD) odbc && $(MAKE) /nologo /k install
+all-msc:
+install-msc: install-exec install-data
+install-exec:   

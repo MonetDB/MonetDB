@@ -1,0 +1,12 @@
+# 64 bits
+# native
+#CC='cc -xargs=v9' CXX='CC -xargs=v9' \
+# GNU
+	../configure --prefix=`pwd` --with-monet=`monet-config --prefix`
+# 32 bits
+# native
+#CC='cc' CXX='CC' \
+# GNU
+#CC='gcc -m32' CXX='g++ -m32' \
+	../configure --prefix=`pwd` --with-monet=`monet-config --prefix`
+

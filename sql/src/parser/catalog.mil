@@ -1,0 +1,124 @@
+module(str,xtables);
+
+proc catalog_bat( str name, int tt ) := {
+	if (view_bbp_name.reverse.exist(name)){
+		return bat(name);
+	}
+	var b := new(oid,tt,1000);
+	b.persists(true);
+	b.rename(name);
+	return b;
+}
+
+catalog_bat("schema_id", oid);
+catalog_bat("schema_name", str);
+catalog_bat("schema_auth", str);
+
+if (schema_id.count() < 1){
+	var s := oid(schema_id.count());
+	schema_id.insert(s,oid(1));
+	schema_name.insert(s,"default-schema");
+	schema_auth.insert(s,"default-user");
+}
+
+b := catalog_bat("table_id", oid);
+b.reverse.accbuild(hash);
+b := catalog_bat("table_name", str);
+b.reverse.accbuild(hash);
+catalog_bat("table_temp", bit);
+catalog_bat("table_schema", oid);
+catalog_bat("table_query", str);
+
+b := catalog_bat("column_id", oid);
+b.reverse.accbuild(hash);
+b := catalog_bat("column_name", str);
+b.reverse.accbuild(hash);
+catalog_bat("column_type", str);
+catalog_bat("column_table", oid);
+catalog_bat("column_default", str);
+catalog_bat("column_null", bit);
+catalog_bat("column_bat", bat);
+catalog_bat("column_number", int);
+
+catalog_bat("type_sql", str);
+catalog_bat("type_db", str);
+catalog_bat("type_module", str);
+catalog_bat("type_cast", str);
+
+proc new_type( str sqlname, str nme, str downcast, str mod ) := {
+	id := oid(type_sql.count());
+	type_sql.insert(id, sqlname);
+	type_db.insert(id, nme);
+	type_cast.insert(id, downcast);
+	type_module.insert(id, mod);
+}
+
+proc resolve_column( column ) := {
+	var cid := column_id.reverse.find(oid(column));
+	return column_bat.find(cid);
+}
+
+if (type_sql.count() <= 0){
+	new_type( "CHARACTER", "str", "", "" );
+	new_type( "VARCHAR", "str", "CHARACTER", "" );
+	new_type( "STRING", "str", "VARCHAR", "" );
+	
+	new_type( "NUMERIC", "int", "STRING", "" );
+	new_type( "DECIMAL", "int", "NUMERIC", "" );
+	new_type( "INTEGER", "int", "DECIMAL", "" );
+	new_type( "SMALLINT", "int", "INTEGER", "" );
+
+	new_type( "FLOAT", "dbl", "INTEGER", "" );
+	new_type( "REAL", "dbl", "FLOAT", "" );
+	new_type( "DOUBLE", "dbl", "REAL", "" );
+
+	new_type( "DATE", "str", "STRING", "datetime" );
+	new_type( "DATETIME", "str", "STRING", "datetime" );
+	new_type( "TIME", "str", "STRING", "datetime" );
+}
+	
+catalog_bat("sql_aggr_name", str);
+catalog_bat("sql_aggr_module", str);
+
+if (sql_aggr_name.count() <= 0){
+	id := 0;
+	sql_aggr_name.insert(oid(id),"min");
+	sql_aggr_module.insert(oid(id),"");
+	id := id + 1;
+	sql_aggr_name.insert(oid(id),"max");
+	sql_aggr_module.insert(oid(id),"");
+	id := id + 1;
+	sql_aggr_name.insert(oid(id),"count");
+	sql_aggr_module.insert(oid(id),"");
+	id := id + 1;
+	sql_aggr_name.insert(oid(id),"avg");
+	sql_aggr_module.insert(oid(id),"");
+}
+
+catalog_bat("sql_func_name", str);
+catalog_bat("sql_func_module", str);
+
+if (sql_func_name.count() <= 0){
+	id := 0;
+	sql_func_name.insert(oid(id),"sub");
+	sql_func_module.insert(oid(id),"");
+	id := id + 1;
+	sql_func_name.insert(oid(id),"add");
+	sql_func_module.insert(oid(id),"");
+	id := id + 1;
+	sql_func_name.insert(oid(id),"mul");
+	sql_func_module.insert(oid(id),"");
+	id := id + 1;
+	sql_func_name.insert(oid(id),"div");
+	sql_func_module.insert(oid(id),"");
+
+	id := id + 1;
+	sql_func_name.insert(oid(id),"neg");
+	sql_func_module.insert(oid(id),"");
+	id := id + 1;
+	sql_func_name.insert(oid(id),"pos");
+	sql_func_module.insert(oid(id),"");
+}
+
+
+commit();
