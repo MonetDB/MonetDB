@@ -518,7 +518,7 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 
 	hdisjunct = (BAThordered(r)&BAThordered(l)&1) && (ATOMcmp(l->htype, 
 	      BUNhead(l,BUNlast(l)-BUNsize(l)), BUNhead(r,BUNfirst(r))) < 0);
-	tdisjunct = (BATtordered(r)&BATtordered(l)&1) && (ATOMcmp(l->htype, 
+	tdisjunct = (BATtordered(r)&BATtordered(l)&1) && (ATOMcmp(l->ttype, 
 	      BUNtail(l,BUNlast(l)-BUNsize(l)), BUNtail(r,BUNfirst(r))) < 0);
 
 	if (!hdisjunct) {
