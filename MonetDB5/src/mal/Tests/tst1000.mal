@@ -1,9 +1,0 @@
-#Access BATs 
-
-b:= new(:int,:int);
-insert(b,1,2);
-bat.setName(b,"mybat");
-c:= bbp.bind("mybat");
-print(c);
-x:= bbp.getNames();
-print(x);
