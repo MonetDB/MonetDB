@@ -1,0 +1,11 @@
+module("unix");
+
+var TSB := getenv("TSTSRCBASE");
+var TD  := getenv("TSTDIR");
+
+bulkload("atom",  TSB+"/"+TD+"/ATOM.int.tbl",  ",", "\n", 4893);
+bulkload("bond",  TSB+"/"+TD+"/BOND.int.tbl",  ",", "\n", 5243);
+bulkload("model", TSB+"/"+TD+"/MODEL.int.tbl", ",", "\n",  188);
+
+commit;
+quit;

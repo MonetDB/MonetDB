@@ -1,0 +1,89 @@
+stdout of test 'check1a` in directory 'src/benchmarks/arno` itself:
+
+
+# 20:24:16 >  
+# 20:24:16 >  Mtimeout -timeout 21 Mserver -monetrc /export/scratch1/manegold/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/share/Monet/monet.Mtest.conf -db Tests_src_benchmarks_arno check1a.prelude < check1a.milM
+# 20:24:16 >  
+
+# Monet Database Server V4.3.4
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# dbfarm:/export/scratch1/manegold/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/dbfarm
+# dbname:Tests_src_benchmarks_arno
+# dbdir:/export/scratch1/manegold/Monet/4.3/monet/_Linux_GNU_32_d_--enable-optimize_/dbfarm/Tests_src_benchmarks_arno
+
+loaded;
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+Try: modules;                - for other modules.
+     ls;                     - for persistent bat listing.
+     sigs("<module>")        - for available commands per module.
+     help("<command>")       - for help one-liner for a command.
+ls;
+#---------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#---------------------------------------------------------------------------------------------------------#
+[ "column_bat",		  "oid",  "bat",  17,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "column_default",	  "oid",  "str",  17,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "column_id",		  "oid",  "oid",  17,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "column_name",	  "oid",  "str",  17,	  0,	  "clean",	  "load", "pers", 4,	  1	  ]
+[ "column_null",	  "oid",  "bit",  17,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "column_number",	  "oid",  "int",  17,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "column_table",	  "oid",  "oid",  17,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "column_type",	  "oid",  "str",  17,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "schema_auth",	  "oid",  "str",  1,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "schema_id",		  "oid",  "oid",  1,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "schema_name",	  "oid",  "str",  1,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "sql_aggr_imp",	  "oid",  "str",  73,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_aggr_module",	  "oid",  "str",  73,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_aggr_name",	  "oid",  "str",  73,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_aggr_result",	  "oid",  "str",  73,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_aggr_type",	  "oid",  "str",  73,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_atom_atom_id",	  "oid",  "str",  4893,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_atom_charge",	  "oid",  "int",  4893,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_atom_element",	  "oid",  "str",  4893,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_atom_id",	  "oid",  "oid",  4893,	  0,	  "clean",	  "disk", "pers", 0,	  2	  ]
+[ "sql_atom_model_id",	  "oid",  "int",  4893,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_atom_type",	  "oid",  "str",  4893,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_bond_atom1",	  "oid",  "str",  5243,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_bond_atom2",	  "oid",  "str",  5243,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_bond_bond_id",	  "oid",  "int",  5243,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_bond_id",	  "oid",  "oid",  5243,	  0,	  "clean",	  "disk", "pers", 0,	  2	  ]
+[ "sql_bond_model_id",	  "oid",  "int",  5243,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_bond_type",	  "oid",  "str",  5243,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_func_imp",	  "oid",  "str",  139,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_func_module",	  "oid",  "str",  139,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_func_name",	  "oid",  "str",  139,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_func_result",	  "oid",  "str",  139,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_func_type1",	  "oid",  "str",  139,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_func_type2",	  "oid",  "str",  139,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_func_type3",	  "oid",  "str",  139,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "sql_model_id",	  "oid",  "oid",  188,	  0,	  "clean",	  "disk", "pers", 0,	  2	  ]
+[ "sql_model_is_mutagen", "oid",  "str",  188,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_model_logp",	  "oid",  "int",  188,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_model_lumo",	  "oid",  "int",  188,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "sql_model_model_id",	  "oid",  "int",  188,	  0,	  "clean",	  "load", "pers", 0,	  2	  ]
+[ "table_id",		  "oid",  "oid",  3,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "table_name",		  "oid",  "str",  3,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "table_query",	  "oid",  "str",  0,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "table_schema",	  "oid",  "oid",  3,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "table_temp",		  "oid",  "bit",  3,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "type_cast",		  "oid",  "str",  18,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "type_db",		  "oid",  "str",  18,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+[ "type_module",	  "oid",  "str",  18,	  0,	  "clean",	  "load", "pers", 0,	  1	  ]
+[ "type_sql",		  "oid",  "str",  18,	  0,	  "clean",	  "load", "pers", 1,	  1	  ]
+quit;
+
+# 20:24:18 >  
+# 20:24:18 >  Done.
+# 20:24:18 >  
+
