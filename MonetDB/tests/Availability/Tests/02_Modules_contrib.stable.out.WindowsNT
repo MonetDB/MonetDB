@@ -39,6 +39,7 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "oo7"		  ]
 [ "qt"		  ]
 [ "tpcd"	  ]
+[ "txtsim"	  ]
 [ "vector"	  ]
 [ "wisc"	  ]
 Plain_mods@batloop {
@@ -304,16 +305,26 @@ Module: "iterator"
 
 Module: "malalgebra"
 
-[ 16 ]
-[ 16 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature									| help								  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the fetch implementation of the join."	  ]
-[ "hashjoin",		  "COMMAND:   ",  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the hash implementation of the join."	  ]
-[ "indexjoin",		  "COMMAND:   ",  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the index implementation of the join."	  ]
-[ "lrhashjoin",		  "COMMAND:   ",  "lrhashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the lrhash implementation of the join."	  ]
-[ "mergejoin",		  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the merge implementation of the join."	  ]
+[ 25 ]
+[ 25 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature									help																													  # name
+# str			str		str										str																													  # type
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'fetchjoin' implementation of the join."																						  ]
+[ "hashjoin",		  "COMMAND:   ",  "hashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'hashjoin' implementation of the join."																						  ]
+[ "indexjoin",		  "COMMAND:   ",  "indexjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'indexjoin' implementation of the join."																						  ]
+[ "leftfetchjoin",	  "COMMAND:   ",  "leftfetchjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftfetchjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
+[ "lefthashjoin",	  "COMMAND:   ",  "lefthashjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'lefthashjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
+[ "leftjoin",		  "COMMAND:   ",  "leftjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."		  ]
+[ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'leftmergejoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head in maintained in the result."	  ]
+[ "mergejoin",		  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'mergejoin' implementation of the join."																						  ]
+[ "ord_select",		  "COMMAND:   ",  "ord_select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]",			  "Like standard 'select(b, value);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_select",		  "COMMAND:   ",  "ord_select(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,any::2]",		  "Like standard 'select(b, low, high);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_select",		  "COMMAND:   ",  "ord_select(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,any::2]",	  "Like standard 'select(b, low, high, l_in, h_in);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."								  ]
+[ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2) : BAT[any::1,void]",				  "Like standard 'uselect(b, value);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2, any::2) : BAT[any::1,void]",			  "Like standard 'uselect(b, low, high);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
+[ "ord_uselect",	  "COMMAND:   ",  "ord_uselect(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,void]",	  "Like standard 'uselect(b, low, high, l_in, h_in);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."								  ]
 [ "test_malalgebra",	  "PROC:      ",  "test_malalgebra() : void",							  "not available"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,dbl]) : BAT[oid,dbl]",					  "grouped tail sum"						  ]
 [ "{_csum}",		  "COMMAND:   ",  "{_csum}(BAT[oid,flt]) : BAT[oid,flt]",					  "grouped tail sum"						  ]
@@ -407,6 +418,20 @@ Module: "tpcd"
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail sum"																  ]
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail sum"																  ]
 [ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail sum"																  ]
+
+Module: "txtsim"
+
+[ 5 ]
+[ 5 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature					help																	  # name
+# str			str		str						str																	  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "editdistance",	  "COMMAND:   ",  "editdistance(str, str) : int",		  "Alias for Levenshtein(str,str)"													  ]
+[ "editdistance2",	  "COMMAND:   ",  "editdistance2(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2"			  ]
+[ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings"									  ]
+[ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str, int, int, int) : int",	  "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)"	  ]
+[ "soundex",		  "COMMAND:   ",  "soundex(str) : str",				  "Soundex function for phonetic matching"												  ]
 
 Module: "vector"
 

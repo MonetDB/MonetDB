@@ -52,7 +52,9 @@ class BaseCursor:
         self.close()
 
     def nextset(self):
-        pass
+        if (self._result.next_result()):
+            return True
+        return None
 
     def setinputsizes(self, *args):
         """Does nothing, required by DB API."""
@@ -166,6 +168,10 @@ class CursorStoreResultMixIn:
     
     def _query(self, q):
         rowcount = self._BaseCursor__do_query(q)
+        self._cacheResult()
+        return rowcount
+
+    def _cacheResult(self):
         self._rows = []
         while self._result.fetch_row() > 0:
             if self._fetch_type == 0: row = ()
@@ -175,8 +181,13 @@ class CursorStoreResultMixIn:
                 if self._fetch_type == 0: row = row + (val,)
                 else: row[self.description[i][0]] = val
             self._rows.append(row)
-        return rowcount
-            
+        
+    def nextset(self):
+        if (self._result.next_result()):
+            self._cacheResult()
+            return True
+        return None
+
     def fetchone(self):
         """Fetches a single row from the cursor. None indicates that
         no more rows are available."""
@@ -256,9 +267,9 @@ class CursorDictRowsMixIn:
         return self.fetchall()
 
 
-class Cursor (BaseCursor, CursorStoreResultMixIn, CursorTupleRowsMixIn):
+class Cursor (CursorStoreResultMixIn, CursorTupleRowsMixIn, BaseCursor):
     pass
 
-class DictCursor (BaseCursor, CursorStoreResultMixIn, CursorDictRowsMixIn):
+class DictCursor (CursorStoreResultMixIn, CursorDictRowsMixIn, BaseCursor):
     pass
 

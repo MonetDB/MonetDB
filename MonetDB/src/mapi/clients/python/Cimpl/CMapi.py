@@ -384,6 +384,12 @@ class MapiQuery:
             raise IOError(self.__mid.error_str())
         return ret
 
+    def next_result(self):
+        ret = MapiLib.mapi_next_result(self.__hdl)
+        if self.__mid.error():
+            raise IOError(self.__mid.error_str())
+        return ret
+
     def get_table(self, fnr):
         ret = MapiLib.mapi_get_table(self.__hdl, fnr)
         if self.__mid.error():

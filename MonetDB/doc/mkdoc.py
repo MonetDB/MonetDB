@@ -23,16 +23,17 @@
 
 import sys, os, string
 
-if len(sys.argv) != 3:
+if len(sys.argv) != 4:
     print '''\
-Usage: %s srcdir dstdir
+Usage: %s srcdir blddir dstdir
 
 where srcdir is the top of the MonetDB source directory tree, and
 dstdir is the top of the installation tree.''' % sys.argv[0]
     sys.exit(1)
 
 srcdir = sys.argv[1]
-dstdir = sys.argv[2]
+blddir = sys.argv[2]
+dstdir = sys.argv[3]
 
 # Here a hack to make this work on Windows:
 # The command name cannot have any spaces, not even quoted, so we
@@ -97,67 +98,82 @@ def removedir(dir):
             os.remove(fn)
     os.rmdir(dir)
 
-removedir(os.path.join(dstdir, 'doc', 'www'))
-copyfile(os.path.join(srcdir, 'doc', 'monet.html'),
-         os.path.join(dstdir, 'doc', 'monet.html'))
+removedir(os.path.join(dstdir, 'doc', 'MonetDB'))
+copyfile(os.path.join(srcdir, 'doc', 'MonetDB.html'),
+         os.path.join(dstdir, 'doc', 'MonetDB.html'))
 
-for f in ['monet', 'mil', 'mel']:
-    runMx(os.path.join(srcdir, 'doc'), f, os.path.join(dstdir, 'doc', 'www', 'Services'))
+for f in ['mil']:
+    runMx(os.path.join(srcdir, 'doc'), f, os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'FrontEnds'))
+for f in ['monet', 'mel']:
+    runMx(os.path.join(srcdir, 'doc'), f, os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core'))
 for f in ['monet.gif', 'mel.gif']:
     d = string.split(f,'.')[0]
     copyfile(os.path.join(srcdir, 'doc', f),
-             os.path.join(dstdir, 'doc', 'www', 'Services', d, f))
+             os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', d, f))
 
 runMx(os.path.join(srcdir, 'src', 'mel'), 'mel',
-      os.path.join(dstdir, 'doc', 'www', 'Services', 'mel'), '-tool')
+      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'mel'), '-tool')
 
 for f in ['gdk', 'gdk_atoms']:
     runMx(os.path.join(srcdir, 'src', 'gdk'), f,
-          os.path.join(dstdir, 'doc', 'www', 'Services'))
+          os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core'))
 for f in ['bat.gif', 'bat1.gif', 'bat2.gif']:
     copyfile(os.path.join(srcdir, 'src', 'gdk', f),
-             os.path.join(dstdir, 'doc', 'www', 'Services', 'gdk', f))
+             os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'gdk', f))
 
 runMx(os.path.join(srcdir, 'src', 'monet'), 'monet',
-      os.path.join(dstdir, 'doc', 'www'))
+      os.path.join(dstdir, 'doc', 'MonetDB'))
 copyfile(os.path.join(srcdir, 'src', 'monet', 'monet.gif'),
-         os.path.join(dstdir, 'doc', 'www', 'monet', 'monet.gif'))
+         os.path.join(dstdir, 'doc', 'MonetDB', 'monet', 'monet.gif'))
 
 runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'Mapi',
-      os.path.join(dstdir, 'doc', 'www', 'APIs'), 'C')
+      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'APIs'), os.sep + 'C')
 
 runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'MapiClient',
-      os.path.join(dstdir, 'doc', 'www'))
+      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Tools'))
 
 runMx(os.path.join(srcdir, 'src', 'tools'), 'Mserver',
-      os.path.join(dstdir, 'doc', 'www'))
+      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Tools'))
 
 runMx(os.path.join(srcdir, 'src', 'mapi'), 'mapi',
-      os.path.join(dstdir, 'doc', 'www', 'Modules'))
+      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'Modules'))
 
 runMx(os.path.join(srcdir, 'src', 'modules', 'calibrator'), 'calib',
-      os.path.join(dstdir, 'doc', 'www', 'Modules'))
+      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'Modules'))
 
 for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
           'blob', 'counters', 'decimal', 'enum', 'kernel',
           'lock', 'mmath', 'monettime', 'pcl', 'radix', 'streams', 'str', 'sys',
           'tcpip', 'trans', 'unix', 'url', 'xtables']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'plain'), f,
-          os.path.join(dstdir, 'doc', 'www', 'Modules'))
+          os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'Modules'))
 
 for f in ['bitset', 'bitvector', 'ddbench', 'mel', 'mprof', 'oo7', 'qt', 'tpcd',
           'wisc']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'contrib'), f,
-          os.path.join(dstdir, 'doc', 'www', 'Modules'))
+          os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'Modules'))
 
 for f in ['README', 'load.mil', 'init.mil']:
     copyfile(os.path.join(srcdir, 'scripts', 'gold', f),
-             os.path.join(dstdir, 'doc', 'www', f))
+             os.path.join(dstdir, 'doc', 'MonetDB', f))
 for f in ['HowToStart', 'HowToStart-Win32.txt']:
     copyfile(os.path.join(srcdir, f),
-             os.path.join(dstdir, 'doc', 'www', f))
+             os.path.join(dstdir, 'doc', 'MonetDB', f))
+os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Unix'))
+copyfile(os.path.join(srcdir, 'HowToStart'),
+             os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Unix', 'index.html'))
+os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Windows'))
+copyfile(os.path.join(srcdir, 'HowToStart-Win32.txt'),
+             os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Windows', 'index.html'))
 
-f = open(os.path.join(dstdir, 'doc', 'www', 'sql.html'), 'w')
+os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc'))
+copyfile(os.path.join(blddir, 'conf', 'monet.conf'),
+             os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc', 'monet.conf'))
+os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'share', 'MonetDB', 'docs', 'gdk'))
+copyfile(os.path.join(blddir, 'src', 'gdk', 'gdk_atoms.html'),
+             os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'share', 'MonetDB', 'docs', 'gdk', 'gdk_atoms.html'))
+
+f = open(os.path.join(dstdir, 'doc', 'MonetDB', 'sql.html'), 'w')
 f.write('''\
 <html>
   <body>
