@@ -114,18 +114,7 @@ dnl AC_CHECK_PROG(MKDIR,mkdir,mkdir -p)
 dnl AC_CHECK_PROG(TAGS,ctags,ctags)
 
 AC_C_CONST()
-case $GCC-$host_os in
-gcc-aix*)	
-        dnl  With the native AIX/IBM compiler (xlc), 
-	dnl  AC_C_INLINE() detects that inline is "__inline"
-	dnl  (while it detects "inline" with gcc).
-	dnl  However, system header files do use "inline",
-	dnl  complain if inline is defined as "__inline".
-	dnl  Simply skipping the inline-detection
-	dnl  and using the default "inline" seems to work fine...
-	;;
-*)	AC_C_INLINE();;
-esac
+AC_C_INLINE()
 
 dnl get monet compiler options (debug,warning,optimize,profiling,instrument)
 
