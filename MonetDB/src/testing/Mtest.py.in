@@ -842,7 +842,10 @@ def CheckBATs(env, TST, TSTDB) :
         }
         quit;
     ''')
-    pIn.close()
+    try:
+        pIn.close()
+    except IOError, (IOerrNo, IOerrStr):
+        Warn("Closing input pipe in CheckBATs failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     qOut, qErr = ReadMultiple([pOut, pErr])
     TST_BATS = []
     if qOut:
@@ -1678,7 +1681,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 n = q.name
                 q.close()
             q = open(n,'r')
-            TestOut.write(q.read())
+            try:
+                TestOut.write(q.read())
+            except IOError, (IOerrNo, IOerrStr):
+                Warn("Reading from input '%s' or writing to output '%s' failed with #%d: '%s'." % (q.name, TestOut.name, IOerrNo, IOerrStr))
+            except MemoryError:
+                Warn("Reading from input '%s' or writing to output '%s' failed with 'MemoryError'." % (q.name, TestOut.name))
             TestOut.flush()
             q.close()
         TestErr = open(TestErrFile, 'a')

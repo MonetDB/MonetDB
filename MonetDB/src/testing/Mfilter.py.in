@@ -258,7 +258,10 @@ def mFilter (FILE, IGNORE) :
         fout.write("# %9d lines, %9d words, %9d chars   in all lines\n"                     % (al,aw,ac))
         fout.write("\n")
         for ln in ftmp:
-            fout.write(ln)
+            try:
+                fout.write(ln)
+            except IOError, (IOerrNo, IOerrStr):
+                Warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
     fout.close()
     if os.name == "nt":
