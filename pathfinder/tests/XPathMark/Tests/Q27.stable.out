@@ -1,0 +1,16 @@
+<XPATH_RESULT>
+<person id="person3">
+  <name>Baldomir Melton</name>
+  <emailaddress>mailto:Melton@versata.com</emailaddress>
+  <creditcard>4396 8149 5210 4179</creditcard>
+  <watches>
+    <watch open_auction="open_auction3"/>
+  </watches>
+</person>
+<person id="person4">
+  <name>Mitch Koyama</name>
+  <emailaddress>mailto:Koyama@imag.fr</emailaddress>
+  <homepage>http://www.imag.fr/~Koyama</homepage>
+  <creditcard>2742 7237 7761 6914</creditcard>
+</person>
+</XPATH_RESULT>

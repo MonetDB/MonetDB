@@ -1,0 +1,39 @@
+<XPATH_RESULT>
+<person id="person7">
+  <name>Vasanth Gaudioso</name>
+  <emailaddress>mailto:Gaudioso@newpaltz.edu</emailaddress>
+  <phone>+0 (756) 51213177</phone>
+  <address>
+    <street>11 Roccetti St</street>
+    <city>Vancouver</city>
+    <country>United States</country>
+    <zipcode>7</zipcode>
+  </address>
+  <homepage>http://www.newpaltz.edu/~Gaudioso</homepage>
+  <profile income="21300.50">
+    <interest category="category0"/>
+    <interest category="category0"/>
+    <interest category="category0"/>
+    <business>No</business>
+  </profile>
+</person>
+<person id="person9">
+  <name>Svatopluk Quinlan</name>
+  <emailaddress>mailto:Quinlan@smu.edu</emailaddress>
+  <phone>+0 (532) 3727767</phone>
+  <address>
+    <street>2 Simaioforidis St</street>
+    <city>Stockholm</city>
+    <country>United States</country>
+    <zipcode>32</zipcode>
+  </address>
+  <creditcard>5862 5383 6967 8859</creditcard>
+  <profile income="83400.71">
+    <interest category="category0"/>
+    <interest category="category0"/>
+    <education>Graduate School</education>
+    <gender>female</gender>
+    <business>Yes</business>
+  </profile>
+</person>
+</XPATH_RESULT>

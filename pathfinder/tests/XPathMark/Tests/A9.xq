@@ -1,0 +1,1 @@
+//*[boolean(namespace-uri())]
