@@ -85,7 +85,6 @@ class BaseCursor:
                 r = self._query(query)
             else:
                 query = query % self.connection.literal(args)
-                print query
                 r = self._query(query)
         except TypeError, m:
             if m.args[0] in ("not enough arguments for format string",
