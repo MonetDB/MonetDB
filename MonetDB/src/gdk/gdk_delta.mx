@@ -21,7 +21,7 @@ This optimizes processing on such BATs (DDBENCH).
 @h
 #define DELTAprintf DELTADEBUG printf
 #define DELTAinit(P1)	{ 						\
-	(P1)->batBuns->free = MAX(sizeof(int), (P1)->dims.bunwidth);	\
+	(P1)->batBuns->free = MAX(sizeof(int), (P1)->dims.bunwidth);    \
 	(P1)->batDeleted = (P1)->batHole = ((char*) (Bunbase(P1))) + 	\
 			((P1)->batBuns->free - (P1)->dims.bunwidth);	\
 	(P1)->batInserted = BUNlast((P1)); 				\
@@ -40,8 +40,7 @@ and convert them back into pointers upon reload.
 
 @{
 @h
-
-#define DELTAsave(P1) 	if ((P1)->batBuns->base){			\
+#define DELTAsave(P1)	if ((P1)->batBuns->base) {			\
 	(P1)->batInserted = (BUN) BUNindex((P1), (P1)->batInserted); 	\
 	(P1)->batDeleted = (BUN) BUNindex((P1), (P1)->batDeleted); 	\
 	(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole); 		\
@@ -161,7 +160,7 @@ BAT *BATcommit(BAT *b) {
 		b->batDirtydesc = 1;
 	}
 	b->batDeleted = b->batHole; 
-	if (b->batBuns->base){
+	if (b->batBuns->base) {
 		b->batInserted = BUNlast(b); 
 	} else {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));

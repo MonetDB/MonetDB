@@ -16,7 +16,6 @@ are not being harmed too much.
 
 @{
 @+ Join Algorithms
-
 @{
 All join related operations have the same prelude to check
 domain compatibility and to creates the BAT to hold the result.
@@ -259,7 +258,6 @@ The aftermath -- property setting -- is relatively straightforward here.
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
-@c
 BAT* BATfetchjoin(BAT *l, BAT *r) {
         int xx, yy, zz, base, offset, end;
         BUN r_cur, l_cur, l_end, dst;
@@ -285,13 +283,13 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 		dst = BUNfirst(bn);
 		zz = BUNsize(bn);
 
-		if (l->ttype && ATOMstorage(tpe) == TYPE_chr) {
+		if (r->ttype && ATOMstorage(tpe) == TYPE_chr) {
 			@:fetchjoin(tloc,tloc,chr,SIMPLE)@
-		} else if (l->ttype && ATOMstorage(tpe) == TYPE_sht) {
+		} else if (r->ttype && ATOMstorage(tpe) == TYPE_sht) {
 			@:fetchjoin(tloc,tloc,sht,SIMPLE)@
-		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
+		} else if (r->ttype && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
 			@:fetchjoin(tloc,tloc,int,SIMPLE)@
-		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl)) {
+		} else if (r->ttype && (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl)) {
 			@:fetchjoin(tloc,tloc,lng,SIMPLE)@
 		} else {
 			@:fetchjoin(tail,tail,tpe,ATOM)@

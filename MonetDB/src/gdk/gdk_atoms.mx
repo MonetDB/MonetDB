@@ -1452,7 +1452,7 @@ int strToStr(char** dst, int *len, char* src) {
 		    } else if (r[cur] == '"') {
 		        s[l++] = '\\'; s[l++] = '"';
 		    } else if (!allowed_chr(r[cur])) {
-        		sprintf(s+l, "\\%03o", r[cur]); l+=4;
+        		sprintf(s+l, "\\%03o", (unsigned char) r[cur]); l+=4;
 		    } else {
 		        s[l++] = r[cur];
 		    }

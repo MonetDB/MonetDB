@@ -20,8 +20,6 @@ as synced with the head of the original @%BAT@, and for instance
 @
 Each alignment sequence is given a unique identifier, so as to easily
 detect this situation. It is retained in the @%BAT descriptor@.
-@
-TODO: should batSet be forbidden?
 @h
 #ifndef _GDK_ALIGN_H_
 #define _GDK_ALIGN_H_

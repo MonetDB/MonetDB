@@ -199,7 +199,7 @@ int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	/*(void)unlink(path2); */
 	ret = rename(path1,path2);
 
-	IODEBUG THRprintf(GDKerr, "move %s %s = %d (%dms)\n", path1, path2, ret, GDKms()-t0); 
+	/*IODEBUG*/ THRprintf(GDKerr, "move %s %s = %d (%dms)\n", path1, path2, ret, GDKms()-t0); 
 	return ret;
 }
 

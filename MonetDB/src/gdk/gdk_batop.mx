@@ -106,21 +106,21 @@ BAT *BATins(BAT *b, BAT *n) {
 		}
 		if (b->htype == TYPE_void) {
 			BATloopFast(n, p, q, xx) {
-				bunfastins_nocheck(b, r, NULL, BUNtail(n, p), yy);
+				bunfastins_nocheck(b, r, NULL, BUNtail(n, p), yy); 
 				r += yy;
 			}
 		} else if (b->hhash_heap) {
 			int i = BUNindex(b, BUNlast(b));
 			BATloopFast(n, p, q, xx) {
 				ptr v = BUNhloc(n,p);
-                               	bunfastins_nocheck(b, r, v, BUNtail(n, p), yy); 
-                               	HASHins_int(b->hhash, i, v); 
-                               	r += yy; i++; 
+				bunfastins_nocheck(b, r, v, BUNtail(n, p), yy); 
+				HASHins_int(b->hhash, i, v); 
+				r += yy; i++; 
 			}
 		} else {
 			BATloopFast(n, p, q, xx) {
-                               	bunfastins_nocheck(b, r, BUNhead(n, p), BUNtail(n, p), yy); 
-                               	r += yy;
+				bunfastins_nocheck(b, r, BUNhead(n, p), BUNtail(n, p), yy); 
+				r += yy;
 			}
 		}
 		b->batDirty = 1;
@@ -551,7 +551,7 @@ We have to do it: create a new BAT and put everything into it.
 	}
         bn->hsorted = BAThordered(b);
         bn->tsorted = BATtordered(b);
-	if (BAThdense(b)) { 
+	if (BAThdense(b)) {
 		BATseqbase(bn, b->hseqbase+*l); 
 	}
 	if (BATtdense(b)) {
@@ -646,7 +646,7 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
                 BATloopFast(b, p, q, xx) {
                     ptr v = BUNt@3(b, p); 
                     if ((!lval || @4_LE(tl,v,@1)) && (!hval || @4_LE(v,th,@1)))
-                       @:bunins_notnil(@1,&yy,@4)@
+		    	@:bunins_notnil(@1,&yy,@4)@
 		    /* avoid computing BUNpos many times over */
 		    if (yy != oid_nil) yy++; 
                 }
@@ -654,7 +654,7 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
                 BATloopFast(b, p, q, xx) {
                     ptr v = BUNt@3(b, p); 
                     if ((!lval || @4_LE(tl,v,@1)) && (!hval || @4_LE(v,th,@1)))
-                       @:bunins_notnil(@1,BUNh@2(b,p),@4)@
+		    	@:bunins_notnil(@1,BUNh@2(b,p),@4)@
                 }
             }
 	/* Build a hash-table on the fly for equi-select. 
@@ -745,9 +745,9 @@ Examine type, and values for lower- and higher-bound.
 	}
 
         if (hval && (ATOMcmp(t, tl,th) > 0)) {
-            /* empty range */
-            return BATnew(ht, tt, 10);
-        }
+	    /* empty range */
+	    return BATnew(ht, tt, 10);
+	}
 
 @- Slice Implementations
 When the result is a dense slice of the BAT, we can optimize.

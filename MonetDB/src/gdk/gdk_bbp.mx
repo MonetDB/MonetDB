@@ -1725,6 +1725,7 @@ static int force_move(str srcdir, str dstdir, str name) {
 	if ((p=strrchr(name, '.'))!=NULL && strcmp(p,".kill")){
 		int len = p-name;
 
+printf("#DEBUG: force_move .kill\n");
 		strncpy(srcpath,name,len);
 		srcpath[len] = '\0';
 		GDKfilepath(dstpath, dstdir, srcpath, NULL);
@@ -1740,6 +1741,7 @@ static int force_move(str srcdir, str dstdir, str name) {
 		return ret;
 	} 
 	/* try to rename it */
+printf("#DEBUG: normal force_move \n");
 	ret = GDKmove(dstdir, name, NULL, srcdir, name, NULL);
 	IODEBUG THRprintf(GDKerr, "link %s %s = %d\n", srcpath, dstpath, ret);
 	if (ret) {
@@ -1843,7 +1845,7 @@ the number of bytes of space freed.
 @c
 
 static int persistent_bat(bat bid) {
-	if ((bid >= 0 || bid < BBPsize) && BBP_logical(bid)) {
+	if (bid >= 0 && bid < BBPsize && BBP_logical(bid)) {
 		BAT *b = BBP_cache(bid);
 		if (b == NULL || b->batCopiedtodisk) {
 			return TRUE;
@@ -1915,7 +1917,7 @@ lng BBPdiskscan(str parent) {
 		if (r) {
 			GDKsyserror("BBPdiskscan: stat(%s)", fullname);
 			continue;
-		} else { 
+		} else {
 			/* record the real disk occupancy; not just the bytesize */
 			filesize = st.st_size;
 		}

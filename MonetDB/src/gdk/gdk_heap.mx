@@ -57,27 +57,9 @@ The below is the interface to uniformly create, extend and delete heaps of all k
 #include "gdk.h"
 
 #endif /* _GDK_HEAP_H_ */
-
-@- Anonymous Virtual memory
-To prevent fragmentation on large blocks anonymous memory can be used
-for allocating large heaps..
-Use the -mmap <treshold> command switch to set the treshold above which 
-VM is used. The default threshold is 2GB: which means that VM is not 
-used in practice.
 @c
 #include "gdk_heap.h"
 #include "gdk_posix.h"
-
-@c
-#define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
-#define roundup_4(x)	(((((x)-1)>>2)+1)<<2)
-#define blocksize(h,p)	((h)->sizefcn?(*(h)->sizefcn)(p):(p)->size)
-
-static INLINE int roundup_num(int number, int alignment) {
-   int rval = number + alignment -1;
-   rval -= (rval % alignment);
-   return(rval);
-}
 
 int HEAPalloc(Heap *h, int nitems, int itemsize) {
         h->base = NULL;
@@ -271,7 +253,6 @@ int HEAPfree(Heap* h) {
         if (h->storage == STORE_MEM) { /* plain memory */
                 GDKfree(h->base);
         } else if (h->filename) { /* mapped file, or STORE_PRIV */
-                FILE *fp;
                 int ret = GDKmunmap(h->base, h->maxsize);
                 if (ret < 0) {
                         GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
@@ -279,15 +260,21 @@ int HEAPfree(Heap* h) {
                 IODEBUG THRprintf(GDKerr, "munmap(base=%d, size=%d) = %d\n", 
                                                 (int) h->base, h->maxsize, ret);
 		if (h->storage == STORE_PRIV) {
-			/* move back the file from X.priv to X */
+			/* may need to move back the file from X.priv to X */
 			int len = strlen(h->filename);
                 	if (len < 5 || strcmp(h->filename+len-5, ".priv")) {
 				GDKerror("HEAPfree: priv-heap has unexpected name %s\n", h->filename);
 			} else {
-                        	long_str src, dst;
+				struct stat st;
+                        	long_str path, dst;
                         	strcpy(dst, h->filename);
                         	dst[len-5] = 0; /* cut off the .priv bit */
-                        	GDKmove(BATDIR,h->filename,NULL,BATDIR,dst,NULL); /* may fail; dst might already exist (a newer version) */
+
+				GDKfilepath(path, BATDIR, dst, NULL);
+				/* dst may already exist (a newer version) */
+				if (stat(path, &st)) 
+                        	  	GDKmove(BATDIR, h->filename, NULL,
+					  	BATDIR, dst, NULL); 
 			}
                 }
                 GDKfree(h->filename);
@@ -307,25 +294,26 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	h->maxsize = h->size;
 	h->offset = 0;
 	h->filename = NULL;
+
 	/* legacy 1: some old repositories have wrong mmap modes => correct during load */
-	if (h->size < GDKvm_minsize()) {
-		h->storage = STORE_MEM; /* don't scatter memory in too small mmap-files */
+        if ((h->storage&STORE_MMAP) && h->size < GDKvm_minsize()) {
+                h->storage = STORE_MEM; /* don't scatter memory in too small mmap-files */
 		desc_status = 1; /* modified descriptor */
-	}
+        }
 	IODEBUG {
 		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=%d,free=%d,size=%d) = %d\n", 
 			nme, ext, h->storage, h->offset, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
-         * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv
+         * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv 
          */
 	strcpy(priv, ext); 
 	strcat(priv, ".priv");
 	if (fp == NULL) {
 		/* file-not-found may be caused because it exists as .ext.priv => link to .ext */
-		GDKmove(BATDIR, nme, priv, BATDIR, nme, ext); 
+		ret = GDKmove(BATDIR, nme, priv, BATDIR, nme, ext); 
 	} else {
-		ret += fclose(fp);
+		ret = fclose(fp);
 	}
 	if (ret == 0 && h->storage == STORE_PRIV) {
 		/* silently remove any previous .ext.priv file */
@@ -393,7 +381,7 @@ int HEAPdelete(Heap* h, str o, str ext) {
         /* move a .priv to the .ext name; and delete the .priv */
         strcpy(priv, ext);
         strcat(priv, ".priv");
-        GDKmove(BATDIR, o, priv, BATDIR, o, ext); /* may fail (dst exist/src not)*/
+        GDKmove(BATDIR, o, priv, BATDIR, o, ext); 
 
 	if (h->filename) {
 		ret = GDKunlink(BATDIR, h->filename, NULL);
@@ -440,6 +428,17 @@ typedef struct hfblock
    int size;		/* Size of this block in freelist	*/
    int next;		/* index of next block 			*/
 } CHUNK;
+@c
+#define roundup_8(x)	(((((x)-1)>>3)+1)<<3)
+#define roundup_4(x)	(((((x)-1)>>2)+1)<<2)
+#define blocksize(h,p)	((h)->sizefcn?(*(h)->sizefcn)(p):(p)->size)
+
+static INLINE int roundup_num(int number, int alignment) {
+   int rval = number + alignment -1;
+   rval -= (rval % alignment);
+   return(rval);
+}
+
 @h
 /*
 // Return the index of the private heap part. This private part is always 8
@@ -451,11 +450,38 @@ void HEAP_destroy(Heap *h) {
    HEAPfree(h);
 }
 
-void HEAP_initialize(Heap* heap, int nbytes, int nprivate, int alignment) {
-   HEADER* hheader;
-   int head;
-   CHUNK* headp; 
+void HEAP_empty(Heap* heap, int nprivate, int alignment) {
+   /*
+   // Find position of header block.
+   */
+   HEADER *hheader = HEAP_index(heap,0,HEADER);
 
+   /*
+   // Calculate position of first and only free block.
+   */
+   int head = roundup_num(HEAP_private(heap) + roundup_8(nprivate),alignment);
+   CHUNK* headp = HEAP_index(heap,head,CHUNK);
+
+   /*
+   // Fill header block.
+   */
+   hheader->head = head;
+   hheader->sizefcn = NULL;
+   hheader->alignment = alignment;
+   hheader->firstblock = head;
+
+   /*
+   // Fill first free block.
+   */
+   headp->size = heap->size - head;
+   headp->next = 0;
+#ifdef TRACE
+   THRprintf(GDKerr, "We created the following heap\n");
+   HEAP_printstatus(heap);
+#endif
+}
+
+void HEAP_initialize(Heap* heap, int nbytes, int nprivate, int alignment) {
    /*
    // For now we know about two alignments.
    */
@@ -474,35 +500,9 @@ void HEAP_initialize(Heap* heap, int nbytes, int nprivate, int alignment) {
    }
 
    /*
-   // Find position of header block.
-   */
-   hheader = HEAP_index(heap,0,HEADER);
-
-   /*
-   // Calculate position of first and only free block.
-   */
-   head = roundup_num(HEAP_private(heap) +
-          roundup_8(nprivate),alignment);
-   headp = HEAP_index(heap,head,CHUNK);
-
-   /*
-   // Fill header block.
-   */
-   hheader->head = head;
-   hheader->sizefcn = NULL;
-   hheader->alignment = alignment;
-   hheader->firstblock = head;
-
-   /*
-   // Fill first free block.
-   */
-   headp->size = heap->size - head;
-   headp->next = 0;
-
-#ifdef TRACE
-   THRprintf(GDKerr, "We created the following heap\n");
-   HEAP_printstatus(heap);
-#endif
+   // initialize heap as empty
+    */
+   HEAP_empty(heap, nprivate, alignment);
 }
 
 
@@ -897,12 +897,10 @@ void HEAP_initialize_compact(Heap* heap, int nbytes, int nprivate, int alignment
 
 /* reinitialize the size function after a load */
 void HEAP_init(Heap *heap, int tpe) {
-
-   if (BATatoms[tpe].atomHeapCheck == HEAP_check) {
-      HEADER* hheader = HEAP_index(heap,0,HEADER);
-      if (hheader->sizefcn) {
+     HEADER* hheader = HEAP_index(heap,0,HEADER);
+     if (hheader->sizefcn) {
           hheader->sizefcn = BATatoms[tpe].atomLen;
-      }
+     }
 
      /* make sure the freelist does not point after the end of the heap */
      if (hheader->head > heap->free) {
@@ -924,7 +922,6 @@ void HEAP_init(Heap *heap, int tpe) {
            idx = blk->next;
         } 
      }
-   }
 }
 
 /* a heap is mmapabble (in append-only mode) if it only has a hole at the end */
