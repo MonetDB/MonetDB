@@ -459,6 +459,16 @@ int sqlexecute(backend * be, stream *out, Cntxt stk )
 }
 
 @-
+Sidestepping SQL to directly executed a single MIL statement 
+in the same context.
+@c
+void sidestepSQL(Cntxt stk, context *sqlc){
+	ValRecord res;
+	fprintf(stderr,"sidestep:%s",sqlc->buf, stream *out);
+	res.vtype= TYPE_void;
+	interpret_str(stk, sqlc->buf+6, &res);
+}
+@-
 The new SQL client server works with a Mapi compliant front-end.
 The routine below is called when someone knocks on the door for
 an SQL connection.
@@ -523,7 +533,7 @@ Use default setting for trace and reply_size.
 			return connect_error(in, out);
 	}
 	*user=0;
-	fprintf(stdout,"mapisqlclient: connection:%s\n",buf);
+	/*fprintf(stdout,"mapisqlclient: connection:%s\n",buf);*/
 	fflush(stdout);
 	user= buf;
 	passwd= strrchr(user,':');
@@ -680,6 +690,18 @@ These lines should be eaten away into the prompt is encountered.
 
 		while( sqlc->buf && *sqlc->buf && *sqlc->buf != EOT ){
 			/*char *ibuf = sqlc->buf;*/
+@-
+To enable tracing of SQL execution using its MIL code
+requires the same client context. This means that we should
+have an escape from the sql parser and directly address the
+MIL interpreter. This is accomplished with a prepend of the
+query string with "--mil ", which would be considered comment
+in the standard. 
+@c
+			if(strncmp(sqlc->buf,"--mil ",6)==0){
+				sidestepSQL(stk,sqlc,out);
+				break;
+			}
 
 			err = sqlexecute(sql, out, stk);
 			if (err){ /* output error */
