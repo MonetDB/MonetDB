@@ -63,7 +63,7 @@ Just type RETURN when asked for the password.
 
 Then get the software by using the command:
 
- cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb login checkout MonetDB
+ cvs -d:pserver:anonymous@cvs.monetdb.sourceforge.net:/cvsroot/monetdb checkout MonetDB
 
 This will create a directory MonetDB in your current working directory.
 
