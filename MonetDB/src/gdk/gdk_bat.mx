@@ -481,13 +481,32 @@ BAT *batcopy(BAT *b, int ht, int tt, int writeable) {
 			tt = TYPE_oid;
 		}
 		bn = BATnew(ht, tt, BATcount(b));
-		r  = BUNfirst(bn);
-		yy = BUNsize(bn);
-		BATloopFast(b, p, q, xx) {
-			ptr h = BUNhead(b,p);
-			ptr t = BUNtail(b,p);
-			bunfastins_nocheck(bn, r, h, t, yy);
-			r += yy;
+@-
+In case we are dealing with fixed size atoms, it suffices to
+ensure enough space (already done by BATnew) and a fast memory
+copy of the valid BUN sequence.
+@c
+                if((ht <TYPE_str && tt<TYPE_str) &&
+                  !(ht==TYPE_bat || ht== TYPE_ptr) &&
+                  !(tt==TYPE_bat || tt== TYPE_ptr) ){
+                        memcpy( (char*)BUNfirst(bn),
+                                (char*)BUNfirst(b),
+                                BATcount(b)* BUNsize(b) );
+                        bn->batDirty = 1;
+                        bn->batDirtybuns= 1;
+                        bn->batDirtydesc = 1;
+                        bn->batBuns->free= b->batBuns->free;
+                        bn->hseqbase = b->hseqbase;
+                        bn->tseqbase = b->tseqbase;
+		} else {
+			r  = BUNfirst(bn);
+			yy = BUNsize(bn);
+			BATloopFast(b, p, q, xx) {
+				ptr h = BUNhead(b,p);
+				ptr t = BUNtail(b,p);
+				bunfastins_nocheck(bn, r, h, t, yy);
+				r += yy;
+			}
 		}
 		bn->hsorted = BAThordered(b);
 		bn->tsorted = BATtordered(b);
