@@ -1097,7 +1097,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 			@:free_batlist@
 			return GDK_FAIL;
 		}
-		hsh = (BAThash(BATmirror(batlist[ii]), NULL) != NULL);
+		hsh = (BAThash(BATmirror(batlist[ii]), 0) != NULL);
 		srt = (BATtordered(batlist[ii])&1);
 		all_hash &= hsh;
 		all_sort &= srt;
