@@ -2283,14 +2283,17 @@ mapi_seek_row(Mapi mid, int rownr, int whence)
 	    rownr < mid->cache.first + mid->cache.tuplecount) {
 		/* we've got the requested tuple in the cache */
 		mid->cache.reader = mid->cache.tupleindex[rownr - mid->cache.first] - 1;
-		return MOK;
+	} else {
+		/* we don't have the requested tuple in the cache
+		   reset the cache and at the next fetch we'll get the data */
+		if (mapi_cache_freeup(mid, 100) == MOK) {
+			mid->cache.first = rownr;
+		}
 	}
-	/* we don't have the requested tuple in the cache
-	   reset the cache and at the next fetch we'll get the data */
-	if (mapi_cache_freeup(mid, 100) == MOK) {
-		mid->cache.first = rownr;
-		return MOK;
-	}
+	/* mapi_seek_row als fetches the seeked-to row */
+	if (!mid->error)
+		(void) mapi_fetch_row(mid);
+
 	return mid->error;
 }
 
@@ -2547,6 +2550,8 @@ mapi_fetch_line_internal(Mapi mid)
 	mid->cache.tuplerev[mid->cache.writer + 1] = mid->cache.tuplecount + 1;
 	if (*reply == '[') {
 		mid->cache.tupleindex[mid->cache.tuplecount++] = mid->cache.writer;
+		if (mid->rows_affected < mid->cache.first + mid->cache.tuplecount)
+			mid->rows_affected = mid->cache.first + mid->cache.tuplecount;
 	}
 	mid->cache.writer++;
 	if (mid->trace)
