@@ -141,16 +141,10 @@ doRequest(Mapi mid, const char *buf)
 {
 	MapiHdl hdl;
 
-	if ((hdl = mapi_query(mid, buf)) == NULL) {
+	if ((hdl = mapi_quick_query(mid, buf, toConsole)) == NULL) {
 		mapi_explain(mid, stderr);
 		return 1;
 	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
-	mapi_quick_response(hdl, toConsole);
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
