@@ -231,17 +231,31 @@ proc aggrtst(int num, int fanout, str agg, ..str..) {
 PROC test_aggrX3() : void := {
 	module("decimal");
 	var printed := FALSE;
-	aggrtst(5,9,"sum","uchr", "sht","int","lng","flt","dbl");
-	aggrtst(5,9,"sum_lng","uchr", "sht","int","lng");
+	aggrtst(5,9,"sum","sht","int","lng","flt","dbl");
+	aggrtst(5,9,"sum_lng","sht","int","lng");
 	aggrtst(5,9,"sum_dbl","flt","dbl");
-	aggrtst(5,9,"prod","uchr", "sht","int","lng","flt","dbl");
-	aggrtst(5,9,"prod_lng","uchr", "sht","int","lng");
+	aggrtst(5,9,"prod","sht","int","lng","flt","dbl");
+	aggrtst(5,9,"prod_lng","sht","int","lng");
 	aggrtst(5,9,"prod_dbl","flt","dbl");
-	aggrtst(5,9,"avg","uchr", "sht","int","lng","flt","dbl");
-	aggrtst(5,9,"min","uchr", "sht","int","lng","flt","dbl","decimal");
-	aggrtst(5,9,"max","uchr", "sht","int","lng","flt","dbl","decimal");
-	aggrtst(5,9,"count","uchr", "sht","int","lng","flt","dbl","decimal");
-	aggrtst(5,9,"card","uchr", "sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"avg","sht","int","lng","flt","dbl");
+	aggrtst(5,9,"min","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"max","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"count","sht","int","lng","flt","dbl","decimal");
+	aggrtst(5,9,"card","sht","int","lng","flt","dbl","decimal");
+}
+
+PROC test_aggrX3_uchr() : void := {
+	module("decimal");
+	var printed := FALSE;
+	aggrtst(5,9,"sum","uchr");
+	aggrtst(5,9,"sum_lng","uchr");
+	aggrtst(5,9,"prod","uchr");
+	aggrtst(5,9,"prod_lng","uchr");
+	aggrtst(5,9,"avg","uchr");
+	aggrtst(5,9,"min","uchr");
+	aggrtst(5,9,"max","uchr");
+	aggrtst(5,9,"count","uchr");
+	aggrtst(5,9,"card","uchr");
 }
 
 @{

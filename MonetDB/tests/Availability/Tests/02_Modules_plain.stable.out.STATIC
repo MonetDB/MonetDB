@@ -103,8 +103,8 @@ Plain_mods@batloop {
 
 Module: "aggr"
 
-[ 49 ]
-[ 49 ]
+[ 50 ]
+[ 50 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature							| help				  #
 #---------------------------------------------------------------------------------------------------------------------------------#
@@ -112,6 +112,7 @@ Module: "aggr"
 [ "card",	  "PROC:      ",  "card(BAT[any,any]) : int",					  "not available"		  ]
 [ "size",	  "PROC:      ",  "size(BAT[any,bit]) : int",					  "not available"		  ]
 [ "test_aggr",	  "PROC:      ",  "test_aggr() : void",						  "not available"		  ]
+[ "test_aggr_uchr",	  "PROC:      ",  "test_aggr_uchr() : void",						  "not available"		  ]
 [ "toset",	  "PROC:      ",  "toset(BAT[any,any]) : str",					  "not available"		  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
@@ -160,8 +161,8 @@ Module: "aggr"
 
 Module: "aggrX3"
 
-[ 102 ]
-[ 102 ]
+[ 103 ]
+[ 103 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function	| type		| signature								| help				  #
 #-----------------------------------------------------------------------------------------------------------------------------------------#
@@ -169,6 +170,7 @@ Module: "aggrX3"
 [ "card",	  "PROC:      ",  "card(BAT[any,any]) : int",						  "not available"		  ]
 [ "size",	  "PROC:      ",  "size(BAT[any,bit]) : int",						  "not available"		  ]
 [ "test_aggrX3",  "PROC:      ",  "test_aggrX3() : void",						  "not available"		  ]
+[ "test_aggrX3_uchr",  "PROC:      ",  "test_aggrX3_uchr() : void",						  "not available"		  ]
 [ "toset",	  "PROC:      ",  "toset(BAT[any,any]) : str",						  "not available"		  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",			  "grouped tail average on dbl"	  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,dbl], BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",	  "grouped tail average on dbl"	  ]
