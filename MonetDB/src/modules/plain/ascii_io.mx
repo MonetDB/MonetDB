@@ -260,6 +260,26 @@ int assign_BATs( ascii *as, BAT *bats ){
 }
 
 static
+int check_BATs( ascii *as ){
+	ascii_io *fmt = as->format;
+	int i;
+	int cnt = BATcount(fmt[0].c);
+	oid base = fmt[0].c->hseqbase;
+
+	if (base == oid_nil) return -1;
+
+	for (i=0; i<as->nr_attrs; i++){
+		BAT *b = fmt[i].c;
+		if (BATcount(fmt[i].c) != cnt ||
+		    fmt[i].c->hseqbase != base)
+			return -1;
+
+		fmt[i].p = (ptr)BUNfirst(fmt[i].c);
+	}
+	return base;
+}
+
+static
 int create_bats( ascii *as ){
 	ascii_io *fmt = as->format;
 	int i;
@@ -428,6 +448,47 @@ int output_line( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs, 
 	return 0;
 }
 
+static INLINE
+int output_line_dense( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs ){
+	int i;
+	for( i = 0; i<nr_attrs; i++){
+		char *p = BUNtail(fmt[i].c, fmt[i].p);
+		if (fmt[i].adt == TYPE_str){
+			int l = strlen(p);
+			(void)fd->write( fd, "\"", 1, 1 );
+			(void)fd->write( fd, p, 1, l );
+			(void)fd->write( fd, "\"", 1, 1 );
+		} else {
+			int l = ADT_toStr(buf, len, fmt[i].adt, p);
+			(void)fd->write( fd, *buf, 1, l );
+		}
+		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
+		fmt[i].p = BUNnext( fmt[i].c, fmt[i].p );
+	}
+	return 0;
+}
+
+static INLINE
+int output_line_lookup( char **buf, int *len, ascii_io *fmt, stream *fd, int nr_attrs, int id ){
+	int i;
+	for( i = 0; i<nr_attrs; i++){
+		char *p = BUNtail(fmt[i].c, BUNptr(fmt[i].c,id+BUNindex(fmt[i].c,BUNfirst(fmt[i].c))));
+		if (fmt[i].adt == TYPE_str){
+			char *s = (char*)p;
+			int l = strlen(s);
+			(void)fd->write( fd, "\"", 1, 1 );
+			(void)fd->write( fd, s, 1, l );
+			(void)fd->write( fd, "\"", 1, 1 );
+		} else {
+			int l = ADT_toStr(buf, len, fmt[i].adt, p);
+			(void)fd->write( fd, *buf, 1, l );
+		}
+		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
+	}
+	return 0;
+}
+
+
 #define SIZE 1*1024*1024
 static
 int load_file( ascii *as, stream *fd ){
@@ -513,6 +574,46 @@ int output_file( ascii *as, BAT *order, stream *fd ){
 	return i;
 }
 
+static
+int output_file_dense( ascii *as, stream *fd ){
+	int len = BUFSIZ; 
+	char *buf = GDKmalloc(len);
+	BUN p,q;
+        int i = 0;
+	
+	for(i=0; i<as->nr; i++){
+		if(output_line_dense( &buf, &len, as->format, fd, as->nr_attrs )<0){
+			GDKfree(buf);
+			return -1;
+		}
+		if (ascii_io_debug && (i%1000000) == 0)
+			fprintf(stderr, "dumped %d lines\n", i);
+        } 
+	GDKfree(buf);
+	return i;
+}
+
+static
+int output_file_ordered( ascii *as, BAT *order, stream *fd ){
+	int len = BUFSIZ; 
+	char *buf = GDKmalloc(len);
+	BUN p,q;
+        int i = 0;
+	
+	BATloop( order, p, q){
+		oid h = *(oid*)BUNhead(order, p);
+		if(output_line_lookup( &buf, &len, as->format, fd, as->nr_attrs, h )<0){
+			GDKfree(buf);
+			return -1;
+		}
+		if (ascii_io_debug && (i%1000000) == 0)
+			fprintf(stderr, "dumped %d lines\n", i);
+        } 
+	GDKfree(buf);
+	return i;
+}
+
+
 BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, 
 		 char *datafile, int nr ){
 	BAT *bats = NULL;
@@ -559,12 +660,20 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats,
 }
 int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
 	ascii as;
+	int base = -1;
 
 	as.nr_attrs = 0;
 	as.nr = -1;
 	if (create_dumpformat( &as, NULL, seps, bats) >= 0 && 
 	    assign_BATs( &as, bats ) >=  0){
-		output_file( &as, order, s ); 
+		if ((base = check_BATs( &as )) >= 0 ){
+			if (order->hseqbase == base && BATcount(order) == as.nr)
+				output_file_dense( &as, s );
+			else
+				output_file_ordered( &as, order, s );
+		} else {
+			output_file( &as, order, s ); 
+		}
 	}
 	destroy_format( &as );
 	return as.nr;
