@@ -42,7 +42,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:
-		switch ((SQLINTEGER) Value) {
+		switch ((SQLINTEGER) (ssize_t) Value) {
 		case SQL_OV_ODBC3:
 			env->ODBCVersion = ODBC_3;
 			break;

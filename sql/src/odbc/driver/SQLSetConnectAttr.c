@@ -40,7 +40,7 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 
 	switch (Attribute) {
 	case SQL_ATTR_AUTOCOMMIT:
-		dbc->autocommit = (SQLUINTEGER) ValuePtr == SQL_AUTOCOMMIT_ON;
+		dbc->autocommit = (SQLUINTEGER) (size_t) ValuePtr == SQL_AUTOCOMMIT_ON;
 		if (dbc->mid) {
 			mapi_setAutocommit(dbc->mid, dbc->autocommit);
 			if (dbc->autocommit) {
