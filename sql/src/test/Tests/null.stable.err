@@ -60,15 +60,15 @@ stderr of test 'null` in directory 'src/test` itself:
 MAPI  = monetdb@draco:54898
 ACTION= read_into_cache
 QUERY = insert into t3 values(NULL,5);
-ERROR = !ERROR: null constraint t3.id failed
+ERROR = !ERROR: null constraint t3.id violated
 MAPI  = monetdb@draco:54898
 ACTION= read_into_cache
 QUERY = insert into t3 values(NULL,6);
-ERROR = !ERROR: null constraint t3.id failed
+ERROR = !ERROR: null constraint t3.id violated
 MAPI  = monetdb@draco:54898
 ACTION= read_into_cache
 QUERY = insert into t3 values(NULL,NULL);
-ERROR = !ERROR: null constraint t3.id failed
+ERROR = !ERROR: null constraint t3.id violated
 
 # 11:33:24 >  
 # 11:33:24 >  Done.
