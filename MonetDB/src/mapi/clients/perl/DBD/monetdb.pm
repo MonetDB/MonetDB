@@ -141,7 +141,6 @@ sub data_sources {
 }
 
 
-sub disconnect_all {}
 
 package DBD::monetdb::db;
 
@@ -241,6 +240,131 @@ sub get_info {
     my $v = $DBD::monetdb::GetInfo::info{int($info_type)};
     $v = $v->($dbh) if ref $v eq 'CODE';
     return $v;
+}
+
+
+sub monetdb_catalog_info {
+    my($dbh) = @_;
+    my $sql = <<'SQL';
+select cast( null as varchar ) as table_cat
+     , cast( null as varchar ) as table_schem
+     , cast( null as varchar ) as table_name
+     , cast( null as varchar ) as table_type
+     , cast( null as varchar ) as remarks
+ where 0 = 1
+ order by table_cat
+SQL
+    my $sth = $dbh->prepare($sql) or return;
+    $sth->execute or return;
+    return $sth;
+}
+
+
+sub monetdb_schema_info {
+    my($dbh) = @_;
+    my $sql = <<'SQL';
+select cast( null as varchar ) as table_cat
+     , "name"                  as table_schem
+     , cast( null as varchar ) as table_name
+     , cast( null as varchar ) as table_type
+     , cast( null as varchar ) as remarks
+  from sys."schemas"
+ order by table_schem
+SQL
+    my $sth = $dbh->prepare($sql) or return;
+    $sth->execute or return;
+    return $sth;
+}
+
+
+my $ttp = {
+ 'TABLE'           => 't."istable" = true  and t."system" = false and t."temporary" = 0'
+,'SYSTEM TABLE'    => 't."istable" = true  and t."system" = true  and t."temporary" = 0'
+,'LOCAL TEMPORARY' => 't."istable" = true  and t."system" = false and t."temporary" = 1'
+,'VIEW'            => 't."istable" = false                                             '
+};
+
+
+sub monetdb_tabletype_info {
+    my($dbh) = @_;
+    my $sql = <<"SQL";
+select distinct
+       cast( null as varchar ) as table_cat
+     , cast( null as varchar ) as table_schem
+     , cast( null as varchar ) as table_name
+     , case
+         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar )
+         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar )
+         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar )
+         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar )
+         else                                cast('INTERNAL TABLE TYPE' as varchar )
+       end                     as table_type
+     , cast( null as varchar ) as remarks
+  from sys."tables" t
+ order by table_type
+SQL
+    my $sth = $dbh->prepare($sql) or return;
+    $sth->execute or return;
+    return $sth;
+}
+
+
+sub monetdb_table_info {
+    my($dbh, $c, $s, $t, $tt) = @_;
+    my $sql = <<"SQL";
+select cast( null     as varchar ) as table_cat
+     , cast( s."name" as varchar ) as table_schem
+     , cast( t."name" as varchar ) as table_name
+     , case
+         when $ttp->{'TABLE'          } then cast('TABLE'               as varchar )
+         when $ttp->{'SYSTEM TABLE'   } then cast('SYSTEM TABLE'        as varchar )
+         when $ttp->{'LOCAL TEMPORARY'} then cast('LOCAL TEMPORARY'     as varchar )
+         when $ttp->{'VIEW'           } then cast('VIEW'                as varchar )
+         else                                cast('INTERNAL TABLE TYPE' as varchar )
+       end                         as table_type
+     , cast( null     as varchar ) as remarks
+  from sys."schemas" s
+     , sys."tables"  t
+ where t."schema_id" = s."id"
+SQL
+    my @bv = ();
+    $sql .= qq(   and s."name"   like ?\n), push @bv, $s if $s;
+    $sql .= qq(   and t."name"   like ?\n), push @bv, $t if $t;
+    if ( @$tt ) {
+        $sql .= "   and ( 1 = 0\n";
+        for ( @$tt ) {
+            my $p = $ttp->{uc $_};
+            $sql .= "      or $p\n" if $p;
+        }
+        $sql .= "       )\n";
+    }
+    $sql .=   " order by table_type, table_schem, table_name\n";
+    my $sth = $dbh->prepare($sql) or return;
+    $sth->execute(@bv) or return;
+    $dbh->set_err(0,"Catalog parameter '$c' ignored") if defined $c;
+    return $sth;
+}
+
+
+sub table_info {
+    my($dbh, $c, $s, $t, $tt) = @_;
+    if ( defined $c && defined $s && defined $t ) {
+        if    ( $c eq '%' && $s eq ''  && $t eq '') {
+            return monetdb_catalog_info($dbh);
+        }
+        elsif ( $c eq ''  && $s eq '%' && $t eq '') {
+            return monetdb_schema_info($dbh);
+        }
+        elsif ( $c eq ''  && $s eq ''  && $t eq '' && defined $tt && $tt eq '%') {
+            return monetdb_tabletype_info($dbh);
+        }
+    }
+    my @tt;
+    if ( defined $tt ) {
+        @tt = split /,/, $tt;
+        s/^\s*'?//, s/'?\s*$// for @tt;
+    }
+    return monetdb_table_info($dbh, $c, $s, $t, \@tt);
 }
 
 
