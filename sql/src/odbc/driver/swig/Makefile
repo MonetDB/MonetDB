@@ -6,7 +6,7 @@ all:	odbc_wrap.c setup.py
 
 odbc_wrap.c: odbc.i
 	rm -rf build
-	$(SWIG) -python -DHAVE_LONG_LONG odbc.i
+	$(SWIG) -python -DHAVE_LONG_LONG -I/ufs/sjoerd/Monet/include odbc.i
 
 clean:
 	rm -rf odbc_wrap.c odbc.py odbc.pyc odbc.pyo build

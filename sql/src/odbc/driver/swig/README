@@ -38,7 +38,7 @@ odbc.SQLExecDirect(stmt, """CREATE TABLE model (
 )""")
 odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
-odbc.SQLExecDirect(stmt, "INSERT INTO model (model_id, is_mutagen, lumo, logp, dt, tm, ts) VALUES (1, 'T', -1, 4, DATE '2003-10-01', TIME '14:51:12', TIMESTAMP '2003-10-01 14:51:12')")
+odbc.SQLExecDirect(stmt, "INSERT INTO model (model_id, is_mutagen, lumo, logp, dt, tm, ts) VALUES (1, 'T', -1, 4, DATE '2003-10-01', TIME '14:51:12', TIMESTAMP '2003-10-01 14:51:12.5')")
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
 odbc.SQLExecDirect(stmt, "SELECT * FROM model")
 odbc.SQLFetch(stmt)

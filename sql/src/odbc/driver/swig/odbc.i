@@ -3,6 +3,12 @@
 %{
 #include <sqltypes.h>
 #include <sqlucode.h>
+
+#ifdef SQL_MAX_OPTION_STRING_LENGTH
+#define BUFLEN ((SQL_MAX_OPTION_STRING_LENGTH) > 1024 ? (SQL_MAX_OPTION_STRING_LENGTH) : 1024)
+#else
+#define BUFLEN 1024
+#endif
 %}
 
 %ignore __SQLTYPES_H;
@@ -10,7 +16,7 @@
 
 /*
   output arg to return a Handle
-*/
+ */
 %typemap(in, numinputs=0) SQLHANDLE *OUTPUT (SQLHANDLE temp) {
    $1 = &temp;
 }
@@ -18,20 +24,6 @@
    PyObject *o = SWIG_NewPointerObj((void *) *$1, $1_descriptor, 0);
    $result = t_output_helper($result, o);
 }
-// SQLAllocConnect
-%newobject SQLAllocConnect;
-%apply SQLHANDLE *OUTPUT {SQLHDBC *ConnectionHandle};
-// SQLAllocEnv
-%newobject SQLAllocEnv;
-%apply SQLHANDLE *OUTPUT {SQLHENV *EnvironmentHandle};
-#if (ODBCVER >= 0x0300)
-// SQLAllocHandle
-%newobject SQLAllocHandle;
-%apply SQLHANDLE *OUTPUT {SQLHANDLE *OutputHandle};
-#endif
-// SQLAllocStmt
-%newobject SQLAllocStmt;
-%apply SQLHANDLE *OUTPUT {SQLHSTMT *StatementHandle};
 
 /*
   output arg to return a 5-byte state string
@@ -41,71 +33,52 @@
 	$1 = tempbuf;
 }
 %typemap(argout,fragment="t_output_helper") SQLCHAR *Sqlstate {
-	PyObject *o = PyString_FromStringAndSize($1, 5);
+	PyObject *o = PyString_FromString($1);
 	$result = t_output_helper($result, o);
 }
-
-// SQLError, SQLGetDiagRec
-%apply int *OUTPUT {SQLINTEGER *NativeError};
-// SQLDescribeCol
-%apply int *OUTPUT {SQLSMALLINT *DataType};
-%apply int *OUTPUT {SQLULEN *ColumnSize};
-%apply int *OUTPUT {SQLSMALLINT *DecimalDigits};
-%apply int *OUTPUT {SQLSMALLINT *Nullable};
 
 /*
   three args to return a string: MessageText points to a buffer of
   length BufferLength which is filled with *TextLength characters plus
   a NUL byte.  If the buffer is too small, *TextLength returns the
-  required value.
+  required buffer size.
   The arg names are for SQLError and SQLGetDiagRec, but the pattern
   occurs in other functions as well.
 */
-%typemap(in, numinputs=0) (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) (SQLCHAR msgbuf[1024], SQLSMALLINT msglen) {
+%typemap(in, numinputs=0) (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) (SQLCHAR msgbuf[BUFLEN], $*3_type msglen) {
 	$1 = msgbuf;
-	$2 = (SQLSMALLINT) sizeof(msgbuf);
+	$2 = ($2_type) sizeof(msgbuf);
 	$3 = &msglen;
 }
 %typemap(argout,fragment="t_output_helper") (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) {
 	PyObject *o = PyString_FromStringAndSize($1, *$3 >= $2 ? $2 - 1 : *$3);
 	$result = t_output_helper($result, o);
 }
-// SQLDataSources
-%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1) };
-%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2) };
-// SQLDescribeCol
-%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *ColumnName, SQLSMALLINT BufferLength, SQLSMALLINT *NameLength) };
-// SQLGetCursorName
-%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *CursorName, SQLSMALLINT BufferLength, SQLSMALLINT *NameLength) };
-// SQLGetDescRec
-%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *Name, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength) };
 
-// SQLColumns, SQLSpecialColumns, SQLStatistics, SQLTables
-%apply (char *STRING, int LENGTH) { (SQLCHAR *CatalogName, SQLSMALLINT NameLength1) };
-%apply (char *STRING, int LENGTH) { (SQLCHAR *SchemaName, SQLSMALLINT NameLength2) };
-%apply (char *STRING, int LENGTH) { (SQLCHAR *TableName, SQLSMALLINT NameLength3) };
-%apply (char *STRING, int LENGTH) { (SQLCHAR *ColumnName, SQLSMALLINT NameLength4) };
-%apply (char *STRING, int LENGTH) { (SQLCHAR *TableType, SQLSMALLINT NameLength4) };
+// SQLAllocConnect
+%newobject SQLAllocConnect;
+%apply SQLHANDLE *OUTPUT {SQLHDBC *ConnectionHandle};
 
-// SQLConnect
-%apply (char *STRING, int LENGTH) { (SQLCHAR *ServerName, SQLSMALLINT NameLength1) };
-%apply (char *STRING, int LENGTH) { (SQLCHAR *UserName, SQLSMALLINT NameLength2) };
-%apply (char *STRING, int LENGTH) { (SQLCHAR *Authentication, SQLSMALLINT NameLength3) };
+// SQLAllocEnv
+%newobject SQLAllocEnv;
+%apply SQLHANDLE *OUTPUT {SQLHENV *EnvironmentHandle};
 
-// SQLExecDirect, SQLPrepare
-%apply (char *STRING, int LENGTH) { (SQLCHAR *StatementText, SQLINTEGER TextLength) };
+// SQLAllocHandle
+#if (ODBCVER >= 0x0300)
+%newobject SQLAllocHandle;
+%apply SQLHANDLE *OUTPUT {SQLHANDLE *OutputHandle};
+#endif
 
-// SQLSetCursorName
-%apply (char *STRING, int LENGTH) { (SQLCHAR *CursorName, SQLSMALLINT NameLength) };
+// SQLAllocStmt
+%newobject SQLAllocStmt;
+%apply SQLHANDLE *OUTPUT {SQLHSTMT *StatementHandle};
 
-// SQLNumResultCols
-%apply int *OUTPUT {SQLSMALLINT *ColumnCount};
-
-// SQLRowCount
-%apply int *OUTPUT {SQLLEN *RowCount};
+// SQLBrowseConnect
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn) };
 
 // SQLColAttribute
-%typemap(in, numinputs=1) (SQLUSMALLINT FieldIdentifier, SQLPOINTER CharacterAttribute, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLPOINTER NumericAttribute) (char tempbuf[1024], SQLSMALLINT buflen, int temp) {
+%typemap(in, numinputs=1) (SQLUSMALLINT FieldIdentifier, SQLPOINTER CharacterAttribute, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLPOINTER NumericAttribute) (char tempbuf[BUFLEN], $*4_type buflen, int temp) {
 	$1 = ($1_ltype) PyInt_AsLong($input);
 	if (PyErr_Occurred()) SWIG_fail;
 	$2 = (SQLPOINTER) tempbuf;
@@ -142,8 +115,217 @@
 	$result = t_output_helper($result, o);
 }
 
+// SQLColumnPrivileges, SQLPrimaryKeys, SQLProcedureColumns, SQLProcedures,
+// SQLTablePrivileges
+%apply (char *STRING, int LENGTH) { (SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *szTableName, SQLSMALLINT cbTableName) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *szColumnName, SQLSMALLINT cbColumnName) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *szProcName, SQLSMALLINT cbProcName) };
+
+// SQLColumns, SQLSpecialColumns, SQLStatistics, SQLTables
+%apply (char *STRING, int LENGTH) { (SQLCHAR *CatalogName, SQLSMALLINT NameLength1) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *SchemaName, SQLSMALLINT NameLength2) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *TableName, SQLSMALLINT NameLength3) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *ColumnName, SQLSMALLINT NameLength4) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *TableType, SQLSMALLINT NameLength4) };
+
+// SQLConnect
+%apply (char *STRING, int LENGTH) { (SQLCHAR *ServerName, SQLSMALLINT NameLength1) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *UserName, SQLSMALLINT NameLength2) };
+%apply (char *STRING, int LENGTH) { (SQLCHAR *Authentication, SQLSMALLINT NameLength3) };
+
+// SQLDataSources
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1) };
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2) };
+
+// SQLDescribeCol
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *ColumnName, SQLSMALLINT BufferLength, SQLSMALLINT *NameLength) };
+%apply int *OUTPUT {SQLSMALLINT *DataType};
+%apply int *OUTPUT {SQLULEN *ColumnSize};
+%apply int *OUTPUT {SQLSMALLINT *DecimalDigits};
+%apply int *OUTPUT {SQLSMALLINT *Nullable};
+
+// SQLDescribeParam
+%apply int *OUTPUT {SQLSMALLINT *pfSqlType};
+%apply int *OUTPUT {SQLULEN *pcbParamDef};
+%apply int *OUTPUT {SQLSMALLINT *pibScale};
+%apply int *OUTPUT {SQLSMALLINT *pfNullable};
+
+// SQLDriverConnect
+%apply (char *STRING, int LENGTH) {(SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn)};
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) {(SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)};
+
+// SQLError, SQLGetDiagRec
+%apply int *OUTPUT {SQLINTEGER *NativeError};
+
+// SQLExecDirect, SQLPrepare
+%apply (char *STRING, int LENGTH) { (SQLCHAR *StatementText, SQLINTEGER TextLength) };
+
+// SQLExtendedFetch
+%apply int *OUTPUT {SQLROWSETSIZE *pcrow};
+%apply int *OUTPUT {SQLUSMALLINT *rgfRowStatus};
+
+// SQLForeignKeys
+%apply (char *STRING, int LENGTH) {(SQLCHAR *szPkCatalogName, SQLSMALLINT cbPkCatalogName)};
+%apply (char *STRING, int LENGTH) {(SQLCHAR *szPkSchemaName, SQLSMALLINT cbPkSchemaName)};
+%apply (char *STRING, int LENGTH) {(SQLCHAR *szPkTableName, SQLSMALLINT cbPkTableName)};
+%apply (char *STRING, int LENGTH) {(SQLCHAR *szFkCatalogName, SQLSMALLINT cbFkCatalogName)};
+%apply (char *STRING, int LENGTH) {(SQLCHAR *szFkSchemaName, SQLSMALLINT cbFkSchemaName)};
+%apply (char *STRING, int LENGTH) {(SQLCHAR *szFkTableName, SQLSMALLINT cbFkTableName)};
+
+// SQLGetConnectAttr, SQLGetEnvAttr, SQLGetStmtAttr
+%typemap(in, numinputs=1) (SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength) (char tempbuf[BUFLEN], $*4_type len) {
+	$1 = ($1_type) PyInt_AsLong($input);
+	if (PyErr_Occurred()) SWIG_fail;
+	$2 = tempbuf;
+	$3 = len = sizeof(tempbuf);
+	$4 = &len;
+};
+%typemap(argout,fragment="t_output_helper") (SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength) {
+	PyObject *o;
+	switch ($1) {
+	/* SQLGetConnectAttr values */
+	case SQL_ATTR_ACCESS_MODE:
+	case SQL_ATTR_ASYNC_ENABLE:
+	case SQL_ATTR_AUTO_IPD:
+	case SQL_ATTR_AUTOCOMMIT:
+	case SQL_ATTR_CONNECTION_DEAD:
+	case SQL_ATTR_CONNECTION_TIMEOUT:
+	case SQL_ATTR_LOGIN_TIMEOUT:
+	case SQL_ATTR_METADATA_ID:
+	case SQL_ATTR_ODBC_CURSORS:
+	case SQL_ATTR_PACKET_SIZE:
+	case SQL_ATTR_TRACE:
+	case SQL_ATTR_TRANSLATE_OPTION:	/* 32-bit value */
+	case SQL_ATTR_TXN_ISOLATION: /* 32-bit value */
+	/* SQLGetEnvAttr values */
+	case SQL_ATTR_CONNECTION_POOLING:
+	case SQL_ATTR_CP_MATCH:
+	case SQL_ATTR_ODBC_VERSION:
+#if SQL_ATTR_AUTO_IPD != SQL_ATTR_OUTPUT_NTS
+	case SQL_ATTR_OUTPUT_NTS:
+#endif
+	/* SQLGetStmtAttr values */
+	case SQL_ATTR_CONCURRENCY:
+	case SQL_ATTR_CURSOR_SCROLLABLE:
+	case SQL_ATTR_CURSOR_SENSITIVITY:
+	case SQL_ATTR_CURSOR_TYPE:
+	case SQL_ATTR_ENABLE_AUTO_IPD:
+	case SQL_ATTR_KEYSET_SIZE:
+	case SQL_ATTR_MAX_LENGTH:
+	case SQL_ATTR_MAX_ROWS:
+	case SQL_ATTR_NOSCAN:
+	case SQL_ATTR_PARAM_BIND_TYPE:
+	case SQL_ATTR_PARAMSET_SIZE:
+	case SQL_ATTR_QUERY_TIMEOUT:
+	case SQL_ATTR_RETRIEVE_DATA:
+	case SQL_ATTR_ROW_ARRAY_SIZE:
+	case SQL_ATTR_ROW_BIND_TYPE:
+	case SQL_ATTR_ROW_NUMBER:
+	case SQL_ATTR_SIMULATE_CURSOR:
+	case SQL_ATTR_USE_BOOKMARKS:
+		/* SQLUINTEGER */
+		o = PyInt_FromLong((long) * (SQLUINTEGER *) $2);
+		break;
+	case SQL_ATTR_CURRENT_CATALOG:
+	case SQL_ATTR_TRACEFILE:
+	case SQL_ATTR_TRANSLATE_LIB:
+		/* string */
+		o = PyString_FromStringAndSize((char *) $2, *$4 >= $3 ? $3 - 1 : *$4);
+		break;
+	case SQL_ATTR_QUIET_MODE:
+	case SQL_ATTR_APP_PARAM_DESC:
+	case SQL_ATTR_APP_ROW_DESC:
+	case SQL_ATTR_IMP_PARAM_DESC:
+	case SQL_ATTR_IMP_ROW_DESC:
+		/* handle */
+		if (* (SQLHANDLE *) $2)
+			o = SWIG_NewPointerObj((void *) * (SQLHANDLE *) $2, $descriptor(SQLHANDLE *), 0);
+		else {
+			o = Py_None;
+			Py_INCREF(o);
+		}
+		break;
+	case SQL_ATTR_FETCH_BOOKMARK_PTR:
+		/* pointer to binary bookmark value */
+		/* TODO: implement */
+		o = Py_None;
+		Py_INCREF(o);
+		break;
+	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
+	case SQL_ATTR_PARAMS_PROCESSED_PTR:
+	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
+	case SQL_ATTR_ROWS_FETCHED_PTR:
+		/* pointer to integer */
+		/* TODO: implement */
+		o = Py_None;
+		Py_INCREF(o);
+		break;
+	case SQL_ATTR_PARAM_OPERATION_PTR:
+	case SQL_ATTR_PARAM_STATUS_PTR:
+	case SQL_ATTR_ROW_OPERATION_PTR:
+	case SQL_ATTR_ROW_STATUS_PTR:
+		/* pointer to array of SQLUSMALLINT */
+		/* TODO: implement */
+		o = Py_None;
+		Py_INCREF(o);
+		break;
+	}
+	$result = t_output_helper($result, o);
+}
+
+// SQLGetConnectOption, SQLGetStmtOption
+%typemap(in, numinputs=1) (SQLUSMALLINT Option, SQLPOINTER Value) (char tempbuf[BUFLEN]) {
+	$1 = ($1_type) PyInt_AsLong($input);
+	if (PyErr_Occurred()) SWIG_fail;
+	$2 = tempbuf;
+};
+%typemap(argout,fragment="t_output_helper") (SQLUSMALLINT Option, SQLPOINTER Value) {
+	PyObject *o;
+	switch ($1) {
+	case SQL_ACCESS_MODE:
+	case SQL_AUTOCOMMIT:
+	case SQL_LOGIN_TIMEOUT:
+	case SQL_ODBC_CURSORS:
+	case SQL_OPT_TRACE:
+	case SQL_PACKET_SIZE:
+	case SQL_QUIET_MODE:
+	case SQL_TRANSLATE_OPTION:
+	case SQL_TXN_ISOLATION:
+	case SQL_QUERY_TIMEOUT:
+	case SQL_MAX_ROWS:
+	case SQL_NOSCAN:
+	case SQL_MAX_LENGTH:
+	case SQL_ASYNC_ENABLE:
+	case SQL_BIND_TYPE:
+	case SQL_CURSOR_TYPE:
+	case SQL_CONCURRENCY:
+	case SQL_KEYSET_SIZE:
+	case SQL_ROWSET_SIZE:
+	case SQL_SIMULATE_CURSOR:
+	case SQL_RETRIEVE_DATA:
+	case SQL_USE_BOOKMARKS:
+/*		case SQL_GET_BOOKMARKS:	is deprecated in ODBC 3.0+ */
+	case SQL_ROW_NUMBER:
+		/* SQLUINTEGER */
+		o = PyInt_FromLong((long) * (SQLUINTEGER *) $2);
+		break;
+	case SQL_CURRENT_QUALIFIER:
+	case SQL_OPT_TRACEFILE:
+	case SQL_TRANSLATE_DLL:
+		/* string */
+		o = PyString_FromString((char *) $2);
+		break;
+	}
+	$result = t_output_helper($result, o);
+}
+
+// SQLGetCursorName
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *CursorName, SQLSMALLINT BufferLength, SQLSMALLINT *NameLength) };
+
 // SQLGetData
-%typemap(in, numinputs=1) (SQLSMALLINT TargetType, SQLPOINTER TargetValue, SQLLEN BufferLength, SQLLEN *StrLen_or_Ind) (SQLLEN len, SQLCHAR tempbuf[2048]) {
+%typemap(in, numinputs=1) (SQLSMALLINT TargetType, SQLPOINTER TargetValue, SQLLEN BufferLength, SQLLEN *StrLen_or_Ind) ($*4_type len, SQLCHAR tempbuf[2048]) {
 	$1 = ($1_ltype) PyInt_AsLong($input);
 	if (PyErr_Occurred()) SWIG_fail;
 	$2 = tempbuf;
@@ -247,11 +429,87 @@
 	$result = t_output_helper($result, o);
 }
 
+%ignore SQLGetDescField;
+%ignore SQLGetDescRec;
+
+// SQLGetDiagField
+%typemap(in, numinputs=1) (SQLSMALLINT DiagIdentifier, SQLPOINTER DiagInfo, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength) (char tempbuf[BUFLEN], $*4_type len) {
+	$1 = ($1_ltype) PyInt_AsLong($input);
+	if (PyErr_Occurred()) SWIG_fail;
+	$2 = tempbuf;
+	$3 = len = sizeof(tempbuf);
+	$4 = &len;
+};
+%typemap(argout,fragment="t_output_helper") (SQLSMALLINT DiagIdentifier, SQLPOINTER DiagInfo, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength) {
+	PyObject *o;
+	switch ($1) {
+	case SQL_DIAG_DYNAMIC_FUNCTION:
+	case SQL_DIAG_CLASS_ORIGIN:
+	case SQL_DIAG_CONNECTION_NAME:
+	case SQL_DIAG_MESSAGE_TEXT:
+	case SQL_DIAG_SERVER_NAME:
+	case SQL_DIAG_SQLSTATE:
+	case SQL_DIAG_SUBCLASS_ORIGIN:
+		/* string */
+		o = PyString_FromStringAndSize((char *) $2, *$4 >= $3 ? $3 - 1 : *$4);
+		break;
+	case SQL_DIAG_CURSOR_ROW_COUNT:
+	case SQL_DIAG_DYNAMIC_FUNCTION_CODE:
+	case SQL_DIAG_NUMBER:
+	case SQL_DIAG_ROW_COUNT:
+	case SQL_DIAG_COLUMN_NUMBER:
+	case SQL_DIAG_NATIVE:
+	case SQL_DIAG_ROW_NUMBER:
+		/* SQLINTEGER */
+		o = PyInt_FromLong((long) * (SQLINTEGER *) $2);
+		break;
+	case SQL_DIAG_RETURNCODE:
+		/* SQLRETURN */
+		o = PyInt_FromLong((long) * (SQLRETURN *) $2);
+		break;
+	default:
+		PyErr_SetString(PyExc_ValueError, "bad info type");
+		SWIG_fail;
+	}
+	$result = t_output_helper($result, o);
+}
+
+// SQLGetFunctions
+%apply int *OUTPUT {SQLUSMALLINT *Supported};
+%typemap(in, numinputs=1) (SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported) (SQLUSMALLINT tempbuf[SQL_API_ODBC3_ALL_FUNCTIONS_SIZE]) {
+	$1 = ($1_ltype) PyInt_AsLong($input);
+	if (PyErr_Occurred()) SWIG_fail;
+	$2 = tempbuf;
+}
+%typemap(argout,fragment="t_output_helper") (SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported) {
+	PyObject *o;
+	int i;
+	switch ($1) {
+	case SQL_API_ODBC3_ALL_FUNCTIONS:
+		o = PyList_New(SQL_API_ODBC3_ALL_FUNCTIONS_SIZE);
+		for (i = 0; i < SQL_API_ODBC3_ALL_FUNCTIONS_SIZE; i++)
+			PyList_SetItem(o, i, PyInt_FromLong((long) $2[i]));
+		break;
+	case SQL_API_ALL_FUNCTIONS:
+		o = PyList_New(100);
+		for (i = 0; i < 100; i++)
+			PyList_SetItem(o, i, PyInt_FromLong((long) $2[i]));
+		break;
+	default:
+		o = PyInt_FromLong((long) *$2);
+		break;
+	}
+	if (PyErr_Occurred()) {
+		Py_XDECREF(o);
+		SWIG_fail;
+	}
+}
+
 // SQLGetInfo
 // InfoTypes SQL_DRIVER_HDESC and SQL_DRIVER_HSTMS use *InfoValue as
 // input/output value.  This has not (yet) been implemented by this
 // code.
-%typemap(in, numinputs=1) (SQLUSMALLINT InfoType, SQLPOINTER InfoValue, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength) (char tempbuf[1024], SQLSMALLINT len) {
+%typemap(in, numinputs=1) (SQLUSMALLINT InfoType, SQLPOINTER InfoValue, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength) (char tempbuf[BUFLEN], $*4_type len) {
 	$1 = ($1_ltype) PyInt_AsLong($input);
 	if (PyErr_Occurred()) SWIG_fail;
 	$2 = tempbuf;
@@ -455,7 +713,73 @@
 	$result = t_output_helper($result, o);
 }
 
+// SQLNativeSql
+%apply (char *STRING, int LENGTH) { (SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn) };
+%apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr) };
+
+// SQLNumParams
+%apply int *OUTPUT {SQLSMALLINT *pcpar};
+
+// SQLNumResultCols
+%apply int *OUTPUT {SQLSMALLINT *ColumnCount};
+
+%ignore SQLParamOptions;
+
+// SQLPutData (questionable)
+%apply (char *STRING, int LENGTH) { (SQLPOINTER Data, SQLLEN StrLen_or_Ind) };
+
+// SQLRowCount
+%apply int *OUTPUT {SQLLEN *RowCount};
+
+// SQLSetConnectAttr, SQLSetEnvAttr, SQLSetStmtAttr
+%typemap(in, numinputs=1) (SQLPOINTER Value, SQLINTEGER StringLength) (SQLUINTEGER u, SQLHANDLE h) {
+	u = (SQLUINTEGER) PyInt_AsUnsignedLongMask($input);
+	if (!PyErr_Occurred()) {
+		$1 = (SQLPOINTER) &u;
+		$2 = 0;
+	} else {
+		PyErr_Clear();
+		$1 = (SQLPOINTER) PyString_AsString($input);
+		if (!PyErr_Occurred()) {
+			$2 = PyString_Size($input);
+		} else {
+			PyErr_Clear();
+			if (SWIG_ConvertPtr($input, &h, $descriptor(SQLHANDLE *), 0) == 0) {
+				$1 = (SQLPOINTER) &h;
+				$2 = 0;
+			} else {
+				PyErr_SetString(PyExc_ValueError, "bad value type");
+				SWIG_fail;
+			}
+		}
+	}
+}
+
+// SQLSetConnectOption, SQLSetStmtOption
+%typemap(in, numinputs=1) (SQLULEN Value) (SQLUINTEGER u) {
+	u = (SQLUINTEGER) PyInt_AsUnsignedLongMask($input);
+	if (!PyErr_Occurred()) {
+		$1 = (SQLULEN) &u;
+	} else {
+		PyErr_Clear();
+		$1 = (SQLULEN) PyString_AsString($input);
+		if (PyErr_Occurred()) {
+			PyErr_Clear();
+			PyErr_SetString(PyExc_ValueError, "bad value type");
+			SWIG_fail;
+		}
+	}
+}
+
+// SQLSetCursorName
+%apply (char *STRING, int LENGTH) { (SQLCHAR *CursorName, SQLSMALLINT NameLength) };
+
 %ignore SQLBindCol;		/* can't be implemented in Python */
+%ignore SQLBindParam;		/* not part of ODBC */
+%ignore SQLSetDescField;	/* can't be implemented in Python */
+%ignore SQLSetDescRec;
+%ignore SQLBindParameter;
+%ignore SQLSetParam;
 
 /*
   Generate exception for failed call
