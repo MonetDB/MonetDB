@@ -278,13 +278,14 @@ at commit-time.
 			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)! */
 			while(size > 0)  {
 				/* circumvent problems by writing huge buffers in chunks <= 1GB */
-				err = write(fd, buf, MIN(1<<29, size));
-				if (err < 0) {
+				int ret = write(fd, buf, MIN(1<<29, size));
+				if (ret < 0) {
+					err = ret;
 					GDKsyserror("GDKsave: error %d on: name=%s, ext=%s, mode=%d\n", 
 							err, nme,ext?ext:"", mode );
 					break;
 				}
-				size -= err;
+				size -= ret;
 			}
 			IODEBUG THRprintf(GDKerr, "fwrite(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", buf, size, fd, err);
 	       	}  else {
