@@ -8,6 +8,7 @@ ascii_io
 bat
 blob
 mmath
+mmath_nan
 mmath2
 str
 url
