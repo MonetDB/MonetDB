@@ -194,6 +194,8 @@ Directive str2dir[]={
     "xsl",XSL,"xsl",
     "cfg",Config,"cfg",
     "swig",Swig,"i",
+    "Y",CCyacc,"yy",
+    "L",CClex,"ll",
     "{",InHide,"",
     "}",OutHide,"",
     NULL,Nop,NULL};

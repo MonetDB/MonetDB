@@ -1,6 +1,6 @@
 
 MTSAFE
-INCLUDES = -I../gdk -I../monet
+INCLUDES = ../gdk ../monet
 
 GDK_LIBS = $(THREAD_LIBS) $(MALLOC_LIBS)
 MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)

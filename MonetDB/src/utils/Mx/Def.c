@@ -283,6 +283,8 @@ char *	name;
 	case XSL:
 	case Config:
 	case Swig:
+	case CCyacc:
+	case CClex:
 	    if (allTrue()){
 		d= NwDef(dir, mod, sec, lino);
 		d->d_cmd = cmd;

@@ -1,8 +1,8 @@
 
 MTSAFE
 
-INCLUDES = $(top_builddir)/src/gdk $(top_builddir)/src/monet \
-	   $(top_builddir)/src/modules/plain
+INCLUDES = top_builddir/src/gdk top_builddir/src/monet \
+	   top_builddir/src/modules/plain
 
 mod_gis = {
 	SOURCES = \

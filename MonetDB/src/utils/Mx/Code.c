@@ -66,6 +66,8 @@ again:  switch( d->d_dir ){
 	case XSL:
 	case Config:
 	case Swig:
+	case CCyacc:
+	case CClex:
             if(!extract(d->d_dir)) break;
 	    WriteFile(fname, d->d_dir);
 	    mode=d->d_dir;
@@ -302,6 +304,8 @@ void	CodeLine()
 	case Clex:
 	case Java:
 	case fGrammar:
+	case CCyacc:
+	case CClex:
 		ofile_printf("\n/* %s:%d */\n", mx_file, mx_line);
 		break;
 	case Tcl:

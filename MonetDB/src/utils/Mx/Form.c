@@ -185,6 +185,8 @@ again:  switch( d->d_dir ){
                 case XSL:       PrCodeDisplay(d,"xsl"); break; 
                 case Config:    PrCodeDisplay(d,"cfg"); break; 
                 case Swig:      PrCodeDisplay(d,"i"); break; 
+                case CCyacc:    PrCodeDisplay(d,"yy"); break; 
+                case CClex:     PrCodeDisplay(d,"ll"); break; 
 		default:
 	    		Fatal("GenForm", "Non directive:%s [%s:%d]",
 		  		dir2str(d->d_dir), d->d_file, d->d_line);
