@@ -122,7 +122,7 @@ have changed since my proposal.
    Additionally, MkillUsers is scheduled as at-job to kill orphaned
    processes that Mtimeout cannot reach any more.)
 
-  (Mserver is called with "--config=$MONET_CONF --debug=$GDK_DEBUG --set monet_prompt=".
+  (Mserver is called with "--config=$MONET_CONF --debug=$GDK_DEBUG $setMONET_MOD_PATH --set monet_prompt=".
    See below and "Mserver --help" for details.)
 
   (MapiClient is called with "--port=$MAPIPORT".
@@ -229,7 +229,7 @@ have changed since my proposal.
 	OS		`uname`
 	OSVER		`uname``uname -r`
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
-	MSERVER		"$MTIMEOUT Mserver --config=$MONET_CONF --debug=$GDK_DEBUG' --set monet_prompt="
+	MSERVER		"$MTIMEOUT Mserver --config=$MONET_CONF --debug=$GDK_DEBUG' $setMONET_MOD_PATH --set monet_prompt="
 	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT"
 	MSHUTDOWN	"$MTIMEOUT Mshutdown.py"
 	MDIFF		"$MTIMEOUT Mdiff"
@@ -243,6 +243,8 @@ have changed since my proposal.
 	MONET_CONF	location of monet.conf (default: $MONET_PREFIX/etc/monet.conf)
 	GDK_DBFARM	as read from $MONET_CONF
 	GDK_DEBUG	debug bitmask for Mserver (default: 10)
+	MONET_MOD_PATH	new module search path of Mserver (if set via --monet_mod_path=<pathlist>)
+	setMONET_MOD_PATH	"--set monet_mod_path=$MONET_MOD_PATH" (if --monet_mod_path=<pathlist> is used)
 
 
 - For each directory, Mtest.py creates a database $TSTDB in $GDK_DBFARM

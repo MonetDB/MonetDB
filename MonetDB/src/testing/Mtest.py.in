@@ -68,6 +68,9 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
  --config=<path>
          : location of monet.conf file; default is
 		%smonet.conf                        
+
+ --monet_mod_path=<pathlist>
+         : overwrite Mserver's default module search path
 """ % (TSTDBG, path(GetMonetConfig('--prefix')+"/etc/"))
 
     if THISFILE == "Mprofile.py":
@@ -1597,7 +1600,8 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONET_CONF']     = "FindMonetConf(env)"
-        #dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'MonetDB'"
+        dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'MonetDB'"
+        dft['setMONET_MOD_PATH'] = "'--set monet_mod_path='+env['MONET_MOD_PATH']"
         dft['MAPIPORT']       = "str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"
@@ -1633,7 +1637,7 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         shortOpts = shortOpts + "t:"
         shortOpts = shortOpts + "c:d:"
-        longOpts  = longOpts  + ["config=", "debug="]
+        longOpts  = longOpts  + ["config=", "debug=", "monet_mod_path="]
         longOpts  = longOpts  + ["MAPIPORT=", "SQLPORT=", "SQLCLIENT=", "MAPICLIENT="]
     if THISFILE == "Mprofile.py":
         longOpts  = longOpts  + ["CMDLST="]
@@ -1690,6 +1694,8 @@ def main(argv) :
             env['GDK_DEBUG'] = str(int(a))
         elif o == "-c"  or  o == "--config":
             env['MONET_CONF'] = a
+        elif o == "--monet_mod_path":
+            env['MONET_MOD_PATH'] = a
         elif len(o) > 2  and  o[:2] == "--"  and  string.upper(o[2:]) in vars:
             env[string.upper(o[2:])] = a
             #TODO:
@@ -1714,7 +1720,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars + ['GDK_DEBUG', 'MONET_CONF']
+        vars_ = vars + ['GDK_DEBUG', 'MONET_CONF', 'MONET_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -1722,6 +1728,10 @@ def main(argv) :
             env[v] = eval(dft[v])
             #TODO:
             # make sure, that PATHs ar absolute
+    if env['MONET_MOD_PATH']:
+        env['setMONET_MOD_PATH'] = eval(dft['setMONET_MOD_PATH'])
+    else:
+        env['setMONET_MOD_PATH'] = ''
 
     if ( THISFILE in ["Mtest.py", "Mprofile.py"] )  and  not env['MONET_CONF']:
         Usage()
@@ -1823,7 +1833,7 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']    = CheckExec('Mtimeout')     , 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
-        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config='+env['MONET_CONF']+' --debug='+env['GDK_DEBUG']+' --set monet_prompt='
+        exe['Mserver']     = CheckExec('Mserver')      , 'Mserver --config='+env['MONET_CONF']+' --debug='+env['GDK_DEBUG']+' '+env['setMONET_MOD_PATH']+' --set monet_prompt='
         exe['Mshutdown']   = CheckExec('Mshutdown.py') , 'Mshutdown.py --set mapi_port='+env['MAPIPORT']
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
