@@ -258,6 +258,10 @@ int backend_fastpath( Cntxt procstk, YYSTREE callnode, list *args )
 
 int connect_error(stream *in, stream *out)
 {
+	/* Make sure that the read- (in-) stream is closed first,
+	 * as the related write- (out-) stream closes the shared
+	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
+	 */
 	close_stream(in);
 	close_stream(out);
 	return GDK_FAIL;
@@ -735,6 +739,10 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	ret = sqlclient2(m, stk, in, out, trace, reply_size);
 	mvc_destroy(m);
+	/* Make sure that the read- (in-) stream is closed first,
+	 * as the related write- (out-) stream closes the shared
+	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
+	 */
 	close_stream(in);
 	close_stream(out);
 	return ret;

@@ -264,6 +264,10 @@ be reset, but also this client should be terminated immediately.
 @c
 int connect_error(stream *in, stream *out)
 {
+	/* Make sure that the read- (in-) stream is closed first,
+	 * as the related write- (out-) stream closes the shared
+	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
+	 */
 	if (in) {
 		stream_close(in);
 		stream_destroy(in);
@@ -910,6 +914,10 @@ These lines should be eaten away into the prompt is encountered.
 
 	ret = sqlclient2(m, stk, in, out, trace, blocked, prompt );
 	mvc_destroy(m);
+	/* Make sure that the read- (in-) stream is closed first,
+	 * as the related write- (out-) stream closes the shared
+	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
+	 */
 	close_stream(in);
 	close_stream(out);
 	/*fprintf(stderr,"mapisqlclient finished\n");*/
