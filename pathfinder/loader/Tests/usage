@@ -1,4 +1,0 @@
-#!/bin/sh
-
-Mlog -x $MTIMEOUT pf-shred -h | sed 's|^ \(    \-c: compress node properties\)|=\1|' | sed 's|^\(Usage: pf-shred \)|= \1|'
-

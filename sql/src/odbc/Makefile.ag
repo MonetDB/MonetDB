@@ -1,5 +1,0 @@
-
-SUBDIRS = include \
-	  NATIVE_WIN32?winsetup:setup \
-	  driver samples \
-	  HAVE_PYTHON_SWIG?python
