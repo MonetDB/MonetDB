@@ -519,7 +519,7 @@ public class MonetPreparedStatement
 	 *
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
-	 * @param SQLException if a database access error occurs
+	 * @throws SQLException if a database access error occurs
 	 */
 	public void setFloat(int parameterIndex, float x) throws SQLException {
 		setValue(parameterIndex, "" + x);

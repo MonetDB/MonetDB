@@ -1721,8 +1721,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *	</OL>
 	 *
 	 * @param catalog a catalog name; "" retrieves those without a catalog
-	 * @param schema a schema name; "" retrieves those without a schema
-	 * @param table a table name
+	 * @param schemaPattern a schema name; "" retrieves those without a schema
+	 * @param tableNamePattern a table name
 	 * @param columnNamePattern a column name pattern
 	 * @return ResultSet each row is a column privilege description
 	 * @see #getSearchStringEscape
