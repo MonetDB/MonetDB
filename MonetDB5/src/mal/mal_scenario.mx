@@ -146,6 +146,7 @@ mal_export Scenario newScenario();
 mal_export Scenario dropScenario();
 mal_export str setScenario(Client c, str nme);
 mal_export void runScenario(Client c);
+mal_export void runScenarioBody(Client c);
 mal_export void fillScenario(Client c, Scenario scen);
 mal_export void clrScenario(Client c);
 
@@ -508,11 +509,8 @@ coordination).
         continue;
     }
 @c
-void runScenario(Client c){
+void runScenarioBody(Client c){
     str msg;
-    int cnt=0;
-    Client c1;
-	
 	assert(c && c->phase[READER]!= 0);
 
     while( c->mode > FINISHING ){
@@ -523,6 +521,14 @@ void runScenario(Client c){
         @:runPhase(SCHEDULER)@
         @:runPhase(ENGINE)@
     }
+}
+void runScenario(Client c){
+    int cnt=0;
+    Client c1;
+	
+	assert(c && c->phase[READER]!= 0);
+
+	runScenarioBody(c);
 #ifdef MAL_SCENARIO_DEBUG
     printf("About to terminate scenario %s\n",c->scenario);
 #endif

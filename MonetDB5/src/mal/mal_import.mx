@@ -188,6 +188,7 @@ stack frame. Life becomes a little complicated when the script contains
 a definition.
 
 @c
+/* Old version
 void callString(Client c, str s, int listing)
 {
 	int len = strlen(s);
@@ -206,5 +207,62 @@ void callString(Client c, str s, int listing)
 	pushClientInput(c, 
 		bstream_create( buffer_rastream(b, "callString"), b->len ),
 		listing, "");
+}
+*/
+void callString(Client c, str s, int listing)
+{
+    bstream *oldfdin = c->fdin;
+    int oldyycur = c->yycur;
+    int oldlisting = c->listing;
+	int oldmode = c->mode;
+    int oldblkmode = c->blkmode;
+    str oldprompt = c->prompt;
+	ClientInput *oldbak = c->bak;
+
+	Scope oldnspace = c->nspace;
+    Symbol oldprg = c->curprg;
+    MalStkPtr oldglb = c->glb;
+	int len = strlen(s);
+	buffer *b;
+	
+	c->yycur = 0;
+    c->prompt = GDKstrdup(""); /* do not produce visible prompts */
+	c->promptlength= strlen(c->prompt);
+    c->listing = listing;
+	c->bak = NULL;
+	c->fdin = NULL;
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (s[len-1] != '\n') {
+		char *n = GDKmalloc(len + 1 + 1);
+		strncpy(n, s, len);
+		n[len] = '\n';
+		n[len+1] = 0;
+		s = n;
+		len++;
+	}
+	buffer_init(b, s, len ); 
+	pushClientInput(c, 
+		bstream_create( buffer_rastream(b, "callString"), b->len ),
+		listing, "");
+
+@-
+We have saved the context and parsed the result.
+Now we can execute the program using a separated client.
+@c
+	initClientPrg(c, "main"); /* create new context */
+	runScenarioBody(c);
+
+    c->fdin = oldfdin; 
+    c->yycur = oldyycur; 
+    c->listing = oldlisting;
+    c->mode = oldmode;
+    c->blkmode = oldblkmode;
+    c->prompt = oldprompt;
+	c->promptlength= strlen(c->prompt);
+    c->glb = oldglb;
+    c->nspace = oldnspace;
+    c->curprg = oldprg;
+	c->bak = oldbak;
 }
 @}

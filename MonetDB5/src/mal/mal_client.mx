@@ -879,6 +879,8 @@ int readClient(Client c){
         /* end of stream reached */
         if (c->bak) {
             popClientInput(c);
+			if( c->fdin == NULL)
+				return 0;
             return readClient(c);
         }
         return 0;
