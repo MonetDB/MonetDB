@@ -671,7 +671,7 @@ int ATOMlen(int t, ptr src) {
 }
 
 int ATOMheap(int t, Heap* hp, int cap) {
-	int (*h)() = BATatoms[t].atomHeap;
+	int (*h)(Heap *, int) = BATatoms[t].atomHeap;
 	return (h)?(*h)(hp, cap):0;
 }
 

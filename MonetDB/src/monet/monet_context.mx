@@ -131,7 +131,7 @@ void CNTXTinit() {
 int CNTXTrealloc(flt factor) {
     /* extend the VM region; make it start at the same base address */
     size_t oldsize = monet_cntxtmax+1;
-    size_t newsize = oldsize*factor;
+    size_t newsize = (size_t) (oldsize*factor);
     size_t maxsize = MAX(newsize,(size_t) monet_cntxtlim)*sizeof(CntxtRec);
     CntxtRec* p = (CntxtRec*) GDKvmrealloc(monet_cntxtbuf, oldsize*sizeof(CntxtRec), 
 					newsize*sizeof(CntxtRec), maxsize, &maxsize);
@@ -168,7 +168,7 @@ Cntxt CNTXTnew(Cntxt outer){
 	int i;
 
 	MT_set_lock(monet_contextLock, "CNTXTnew");
-	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc(BATMARGIN)) {
+	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)BATMARGIN)) {
 		MT_unset_lock(monet_contextLock, "CNTXTnew");
 		return 0;
 	}
@@ -191,7 +191,7 @@ Cntxt CNTXTreserve(Cntxt outer) {
 	CNTXTclient(outer, &c);
 
 	MT_set_lock(monet_contextLock, "CNTXTreserve");
-	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc(BATMARGIN)) {
+	if (monet_cntxtcur >= monet_cntxtmax && !CNTXTrealloc((flt)oBATMARGIN)) {
 		MT_unset_lock(monet_contextLock, "CNTXTnew");
 		return 0;
 	}
@@ -273,7 +273,6 @@ Copy the stack with all its variables.
 @c
 Cntxt CNTXTcopy(Cntxt srcstk){
 	Cntxt res, tmp = CNTXTnew(-1); 
-        Variable v;
 
 	res = tmp;
 	while(srcstk>=0){

@@ -327,7 +327,6 @@ void freeClient(Client c) {
 	if (c->father < 0) { /* normal client */
 		Thread t = THRget(THRgettid()); 
 		stream *bkin = t->data[1], *bkout = t->data[0];
-		ValRecord res;
 
 		monetSetChannel(t, bkin, bkout);
        		TBL_exitclient(c);

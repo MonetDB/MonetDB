@@ -1607,7 +1607,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 		lt->yysons[3]->yyval.val.pval = (ptr) handle->params;
 		handle->parcap = parallel;
 	}
-	handle->tuple_interpret = (int (*)()) interpret_fcn(ht, tt, parallel>1);
+	handle->tuple_interpret = (int (*)(ptr, ptr, ptr)) interpret_fcn(ht, tt, parallel>1);
 	handle->parmax = parallel;
 	handle->status = 0;
 	handle->h_len = BATatoms[ht].atomLen;

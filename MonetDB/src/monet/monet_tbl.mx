@@ -891,7 +891,7 @@ char *TBL_atomname(int atm) {
 We expect this function NOT to be called if the module is already
 in use. (That is <name>_Module_Install should not even be called.)
 @c
-int TBL_fcn_pro_size = 0;
+size_t TBL_fcn_pro_size = 0;
 oid TBL_oid = 10000; /* we cannot use the db oids, as the user may change
 		 	the current number. This will turn around the order 
 			of the functions in the function tables, corrupting

@@ -422,7 +422,7 @@ void GDKmemchk(int memchk, int vmchk) {
 }
 
 void GDKmeminc(lng memdelta, lng vmdelta) {
-	long segsize = (lng) SEG_SIZE(vmdelta,MT_VMUNITLOG);
+	long segsize = (long) SEG_SIZE(vmdelta,MT_VMUNITLOG);
 
 	GDK_mem_cursize += memdelta;
 #ifdef GDK_VM_KEEPHISTO
@@ -435,7 +435,7 @@ void GDKmeminc(lng memdelta, lng vmdelta) {
 }
 
 void GDKmemdec(lng memdelta, lng vmdelta) {
-	long segsize = (lng) SEG_SIZE(vmdelta,MT_VMUNITLOG);
+	long segsize = (long) SEG_SIZE(vmdelta,MT_VMUNITLOG);
 
 	GDK_mem_cursize -= memdelta;
 #ifdef GDK_VM_KEEPHISTO
@@ -546,11 +546,11 @@ void GDKmemfail(str s, int len, lng memtarget, lng vmtarget) {
 
 	/* bumped your nose against the wall; try to prevent repetition by adjusting maxsizes */
 	if (memtarget) {
-		lng newmax = 0.7 * GDKmem_inuse();
+		lng newmax = (lng) (0.7 * GDKmem_inuse());
 		if (newmax < GDK_mem_maxsize) GDK_mem_maxsize = newmax;
 	}
 	if (vmtarget) {
-		lng newmax = 0.7 * GDKvm_cursize();
+		lng newmax = (lng) (0.7 * GDKvm_cursize());
 		if (newmax < GDK_vm_maxsize) GDK_vm_maxsize = newmax;
 	}
 
@@ -870,7 +870,7 @@ int GDKinit(char *dbname, char *dbfarm) {
 	GDKtmLock = MT_create_lock(); 
 
 	/* Mserver intends to rob 85% of all memory as a default */
- 	GDK_mem_maxsize = ((lng) MT_npages()) * ((lng) MT_pagesize())*0.85; 
+ 	GDK_mem_maxsize = (lng) (MT_npages() * MT_pagesize() * 0.85); 
 
 	GDKremovedir(DELDIR);  
 	BBPinit(); 
@@ -1289,7 +1289,7 @@ Thread THRnew(MT_Id pid, str name) {
 			(unsigned long) s->tid, (unsigned long) pid, s->sp); 
 	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads); 
 	GDKnrofthreads++; 
-	MT_alloc_register(&tid, 1, '0'+ ((int)(long) tid) - 1);
+	MT_alloc_register(&tid, 1, (char) ('0'+ ((int)tid) - 1));
 	MT_unset_lock(GDKthreadLock, "THRnew"); 
 
 	return s; 

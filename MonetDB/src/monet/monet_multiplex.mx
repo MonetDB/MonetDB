@@ -269,7 +269,7 @@ by doing binary search on the 10M table.
 
 @- execution
 @c
-	if (sig->pack_fcn == sig->fast_fcn) { /* TOK_PROC */
+	if ((GDKfcn) sig->pack_fcn == sig->fast_fcn) { /* TOK_PROC */
  		return interpret_multiplex_fcn(
 					name, argc, argv, res,
 					sig->assignop, stk, min_size,
@@ -1233,7 +1233,7 @@ head values only (no empty sets possible).
 	minpos = BUNindex(b, (p=BUNfirst(b)));
 
  	/* try to establish whether we can use the non-packed direct implementation */
-	if (sig->pack_fcn != sig->fast_fcn) { /* {Y} with Y is not TOK_PROC */
+	if ((GDKfcn) sig->pack_fcn != sig->fast_fcn) { /* {Y} with Y is not TOK_PROC */
 	    if (sig->fast_fcn && 
                 /* fast path call available */
 	        ATOMstorage(b->htype) <= TYPE_flt && 

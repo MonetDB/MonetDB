@@ -120,8 +120,8 @@ context.
 typedef struct { 
     char_type      buf[BITS];        /* space for buffered IO. */
     int            block_compress;   /* are we block-compressing? */
-    int            maxbits;	     /* user settable max # bits/code */
-    int            n_bits;	     /* number of bits/code */
+    size_t         maxbits;	     /* user settable max # bits/code */
+    size_t         n_bits;	     /* number of bits/code */
     code_int       maxcode;          /* should NEVER generate this code */
     code_int       highestcode;	     /* maximum code, given n_bits */
     count_int      htab[HSIZE];      /* hash table */
@@ -131,8 +131,8 @@ typedef struct {
     long int       bytes_out;	     /* length of compressed output */
     int            clear_flg;
     long int       ratio;
-    int            offset;
-    int            size;
+    size_t         offset;
+    size_t         size;
     count_int      checkpoint;
 } globals_t; 
 
@@ -358,7 +358,7 @@ nomatch:
 	output (&global, (code_int) ent, fp_out );
  	ent = c;
 	if ( global.free_ent < global.maxcode ) {
- 	    codetabof (i) = global.free_ent++;
+ 	    codetabof (i) = (unsigned short) global.free_ent++;
 	    htabof (i) = fcode;
 	}
 	else if ( (count_int)global.in_count >= global.checkpoint && 
@@ -395,8 +395,8 @@ globals_t *global;
 code_int  code;
 FILE *fp_out;
 {
-    register int off = global->offset, r_off=off;
-    register int n_bits= global->n_bits, bits=n_bits;
+    register size_t off = global->offset, r_off=off;
+    register size_t n_bits= global->n_bits, bits=n_bits;
     register char_type * bp = global->buf;
 
     if ( code >= 0 ) {
@@ -417,7 +417,7 @@ hunk on the left.
 Get any 8 bit parts in the middle (<=1 for up to 16 bits). 
 @c
 	if ( bits >= 8 ) {
-	    *bp++ = code;
+	    *bp++ = (char_type) code;
 	    code >>= 8;
 	    bits -= 8;
 	}
@@ -425,7 +425,7 @@ Get any 8 bit parts in the middle (<=1 for up to 16 bits).
 Last bits. 
 @c
 	if(bits)
-	    *bp = code;
+	    *bp = (char_type) code;
 	off += n_bits;
 	if ( off == (n_bits << 3) ) {
 	    bp = global->buf;
@@ -448,7 +448,7 @@ then increase it, if possible.
 Write the whole buffer, because the input side won't
 discover the size increase until after it has read it.
 @c
-	    if ( off > 0 ) {
+	    if ( off != 0 ) {
 		if( fwrite( global->buf, 1, n_bits, fp_out ) != n_bits)
 			writeerr("output2");
 		global->bytes_out += n_bits;
@@ -471,7 +471,7 @@ discover the size increase until after it has read it.
 @-
 At EOF, write the rest of the buffer.
 @c
-	if ( off > 0 ) {
+	if ( off != 0 ) {
 		off = (off + 7) / 8;
 		if( fwrite( global->buf, 1, off, fp_out ) != off )
 			writeerr("output_rest");
@@ -637,7 +637,7 @@ a new buffer full, too.
 	    global->clear_flg = 0;
 	}
 	global->size = fread( global->buf, 1, global->n_bits, fp_in );
-	if ( global->size <= 0 )
+	if ( global->size == 0 && feof(fp_in) )
 	    return -1; /* End of file. */
 	global->offset = 0;
 @-
