@@ -283,7 +283,11 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         DIFF = "<B><I>Major differences</I></B>"
     else:
-        ErrXit("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
+        f = open(TST+WHAT+".diff.html","a")
+        f.write("\n<!--MajorDiffs-->\n")
+        f.close()
+        DIFF = "<B><I>Major differences</I></B>"
     SYSTEM = OSVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -429,7 +433,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         o = 2
     else:
-        ErrXit("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
     for l in fileinput.input(TST+".err.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
@@ -439,7 +443,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         e = 2
     else:
-        ErrXit("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
     if   o==2 or e==2:
         f.write("<B><I>"+TST+"</I></B>")
     elif o==1 or e==1:

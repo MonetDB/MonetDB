@@ -73,7 +73,7 @@
 #define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff%s00>",(m?"aa":"00")); clr[f]=5-m; }
 #define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"<FONT SIZE=1 COLOR=#ff%sff>",(m?"aa":"00")); clr[f]=7-m; }
 
-#define BUFLEN 4096
+#define BUFLEN 16384
 
 char* HTMLsave(char* s)
 {
