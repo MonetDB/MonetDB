@@ -122,7 +122,8 @@ int			monet_nclients = 0;
 @-
 Upon acceptance of a connection a client record is initialized.
 @c
-Client initClient(str nme, str prompt, int thread){
+Client initClient(str nme, str prompt, int thread)
+{
 	Client 	c;
 
 	/* find an empty client slot. The console entry (0) is reserved. */
@@ -177,7 +178,8 @@ The first time a client needs input (or when the last input contained
 errors) its read request is entered into the queue.
 @c
 
-static YYSTREE scheduleFile(str filename) {
+static YYSTREE scheduleFile(str filename)
+{
         YYSTREE r = yynode(TOK_BUILTIN, TYPE_ptr);
         YYSTREE n = yynode(TOK_CONSTANT, 0);
         yyexpand(r, n);
@@ -200,7 +202,8 @@ static YYSTREE scheduleFile(str filename) {
 	req = _tmp; 					\
 }
 
-void scheduleClient(Client c){	
+void scheduleClient(Client c)
+{	
 	static int monet_first = 1;
 	Request req = NULL;
 	YYSTREE t;
@@ -228,7 +231,8 @@ void scheduleClient(Client c){
 	putRequest(req);
 }
 
-void rescheduleClient(Client c) {	
+void rescheduleClient(Client c)
+{
 	Request rm = newRequest(c->stk, c->mil_accept, 0);
 	QMmessage(rm,"readCmd;");
 	putRequest(rm);
@@ -244,7 +248,8 @@ takes place in a forked client, so that all MIL resources (context records)
 can be freed immediately, independent from the MIL execution context 
 of the father.
 @c
-Client forkClient(Cntxt stk, int thread){
+Client forkClient(Cntxt stk, int thread)
+{
         Client father = NULL, son = NULL;
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) { 
@@ -297,7 +302,8 @@ freeClient() frees up the client slot, file descriptors, user name and
 prompt, and all cached context (i.e. MIL variable) records that were
 used in the client session.
 @c
-void freeClient(Client c) {
+void freeClient(Client c)
+{
 	if (c->mode <= FINISHING) {
 		GDKwarning("freeClient(%d): double entry prevented\n", c->stk);
 		MT_unset_lock(monet_contextLock, "freeClient");
@@ -364,7 +370,8 @@ void freeClient(Client c) {
 closeClient is called if a MIL client session ends. Most of the time it leads
 to a freeClient to free up resources.
 @c
-int closeClient(Client c, int thread) {
+int closeClient(Client c, int thread)
+{
 	static int killadm = FALSE;
 
 	/* end of script reading client? */
@@ -423,7 +430,8 @@ killClient() interrupts the MIL session abruptly, killing any executing MIL
 interpreter threads. It is not deadlock safe nor memory leak free, and should
 be used only as a last resort to kill an out-of-control query.
 @c
-void killClient(Client c, int thread){
+void killClient(Client c, int thread)
+{
     if (c && c->user) {
         int   me = THRgettid();
 	Request	r,q=QMclient(0,c);
@@ -439,7 +447,8 @@ void killClient(Client c, int thread){
 			MT_sleep_ms(1000); /* why is this needed, isn't MTsafe*/
 			monetFork();
 		}
-	    	rmRequest(q); clrRequest(q);
+	    	rmRequest(q);
+ 		clrRequest(q);
 	    }
 	} while((q=r) != NULL);
 	closeClient(c, thread);
@@ -451,7 +460,8 @@ the minimal point that something can be executed, hence it detects just when we 
 that a MIL (parallel) block counts as one statement, but may span many lines.
 @c
 static 
-void enlargebuffer(Client c){
+void enlargebuffer(Client c)
+{
 	size_t i;
 	size_t l;
 
@@ -462,7 +472,8 @@ void enlargebuffer(Client c){
 	c->limit = c->input+i;
 }
 
-int readClient(Client c){
+int readClient(Client c)
+{
 	ssize_t i;
 	int doflush=0;
 	char instring = 0;
@@ -481,17 +492,13 @@ int readClient(Client c){
 	do {
 		if (instring != '"') {
 			size_t l = strlen(c->prompt);
-			if (c == monet_clients) {
-				for(s=c->prompt; *s; s++)
-					if (isprint((int) *s))
-						if (stream_write(fd, s, 1, 1) != 1)
-							return 0;
-		    	} else if (stream_write(fd, c->prompt, l, 1) != 1) {
+		    	if (stream_write(fd, c->prompt, l, 1) != 1)
 				return 0;
-			}
-			stream_flush(fd);
+			if (stream_flush(fd))
+				return 0;
 		}
- 		s = c->top; *s = 0;
+ 		s = c->top;
+		*s = 0;
 		while ((i = stream_read(c->fdin, c->top, 1, 1)) == 1) {
 			PARSEDEBUG THRprintf(GDKerr, "%c (" SZFMT ")", *c->top, i);
 			assert (!stream_errnr(fd) && !stream_errnr(c->fdin));
@@ -504,56 +511,58 @@ int readClient(Client c){
 #endif
 			if (*c->top == '\n') {
 				incomment = 0;
-				if (c->top > c->input && c->top[-1] != '\\') {
+				if (c->top > c->input && c->top[-1] != '\\')
 					instring = 0;
-				}
 				break;
 			}
-			if (!isspace((int) *c->top)) {
-				doflush = 0;
-			}
-			switch(*c->top) {
+			switch (*c->top) {
 			case '#':
-				if (!instring) {
+				if (!instring)
 					incomment++;
-				} break;
+				break;
 			case '{':
-				if (!(incomment || instring)) {
+				if (!incomment && !instring) {
 					bracket++;
-				} break;
+					doflush = 0;
+				}
+				break;
 			case '}':
-				if (!(incomment || instring)) {
-					bracket--; doflush=1; 
-				} break;
-			case '\'':
-			case '"':
-				if ((!incomment) && 
-				    (c->top <= c->input || c->top[-1] != '\\')) 
-				{
-				    if (instring == *c->top) {
-					instring = 0;
-				    } else if (!instring) {
-					instring = *c->top;
-			  	    }
-				} break;
-			case ';':
-				if (!(incomment || instring)) { 
+				if (!incomment && !instring) {
+					bracket--;
 					doflush=1;
 				}
+				break;
+			case '\'':
+			case '"':
+				if (!incomment && 
+				    (c->top <= c->input || c->top[-1] != '\\')) {
+					if (instring == *c->top)
+						instring = 0;
+					else if (!instring)
+						instring = *c->top;
+					doflush = 0;
+				}
+				break;
+			case ';':
+				if (!incomment && !instring)
+					doflush=1;
+				break;
+			default:
+				if (!incomment && !isspace((int) *c->top))
+					doflush = 0;
+				break;
 			}
-			c->top++;
-			if (c->top >= c->limit-1) {
-				enlargebuffer(c);
+			if (!incomment) {
+				/* no need to pass comments to parser */
+				c->top++;
+				if (c->top >= c->limit-1)
+					enlargebuffer(c);
 			}
 		}
-		if (i <= 0) {
+		if (i <= 0)
 			return 0;
-		}
 		c->top++;
-		if (doflush && bracket <= 0) {
-			break;
-		}
-	} while(1);
+	} while (!doflush || bracket > 0);
 
 	*c->top = 0;
 	return 1;
@@ -571,7 +580,8 @@ PETER: this could be changed; freeing ASAP makes purify output easier to judge.
 
 As yacc/lex are not thread-safe, we lock around the parsing actions.
 @c
-void lockparser(Client c){
+void lockparser(Client c)
+{
 	MT_set_lock(monet_parserLock, "lockparser");
 	ll_client = c;
 	c->cptr = c->input;
@@ -579,7 +589,8 @@ void lockparser(Client c){
 	yylogstart(); /* init node allocation logging */
 }
 
-void unlockparser(Client c){
+void unlockparser(Client c)
+{
 	yylogclean(); /* clean supurfluous nodes */
 	c->top = c->input;
 	ll_client = 0;
@@ -588,7 +599,8 @@ void unlockparser(Client c){
 
 extern int yyparse(void);
  
-YYSTREE parseClient(Client c, int reschedule){	
+YYSTREE parseClient(Client c, int reschedule)
+{	
 	Request cur = 0, after;
 	int r;
 
@@ -632,7 +644,8 @@ containing a parsed MIL tree in to the MIL queue.
 If and end-of-stream is detected, we signal in the queue that the
 corresponding client should be terminated.
 @c
-int serveClient(Cntxt stk, YYSTREE lt, ValPtr res){
+int serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
+{
         int     i = 0;
         Client  c;
         Thread  t;
@@ -662,7 +675,8 @@ int serveClient(Cntxt stk, YYSTREE lt, ValPtr res){
         return 0;
 }
 
-str moduleClient(Client c, str mod, str parmod ){
+str moduleClient(Client c, str mod, str parmod )
+{
         str init_script=NULL;
 
 	if (TBL_loadmod(c, mod, parmod, 0, &init_script) == 0) {
@@ -672,7 +686,8 @@ str moduleClient(Client c, str mod, str parmod ){
 	return init_script;
 }
 
-int dropClient(Client c, YYSTREE lt) {
+int dropClient(Client c, YYSTREE lt)
+{
         while (lt) {
 	    int i; 
             for(i = 0; i < lt->cnt; i++)  {
@@ -698,7 +713,8 @@ int dropClient(Client c, YYSTREE lt) {
 	return 1;
 }
 
-void moduleEnterClient(Client c, str mod){
+void moduleEnterClient(Client c, str mod)
+{
 	if (mod){
 		modstack *s = (modstack*)GDKmalloc(sizeof(modstack));
 		s->mod = GDKstrdup(mod);
@@ -708,7 +724,8 @@ void moduleEnterClient(Client c, str mod){
 	}
 }
 
-void moduleExitClient(Client c){
+void moduleExitClient(Client c)
+{
 	if (c->m_stack){
 		modstack *s = c->m_stack;
 		ptr var = CNTXTregvars(c);
@@ -719,7 +736,8 @@ void moduleExitClient(Client c){
 	}
 }
 
-str moduleGetClient(Client c){
+str moduleGetClient(Client c)
+{
 	str mod = NULL;
 	while (c && c->father >= 0 && !c->m_stack )
 		c = monet_clients + c->father;
