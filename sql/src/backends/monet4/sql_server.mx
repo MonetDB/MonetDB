@@ -655,21 +655,29 @@ module(mapi); # mapi_listen
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
-var err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
 
-tzone_local(TIMEZONE("GMT"));
 proc SQLclient( Stream s_in, Stream s_out ) : void {
 	fork(sqlclient(s_in, s_out));
 }
 
-if (isnil(err)){
-	fork(sqllogmanager());
+proc sql_server_start() : void {
+	var err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
 
-	mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
-	# start a default mapi client for debugging, this should go once
-	# MonetDB SQL gets stable.
-	mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
-} else {
-	printf(err);
-	drop(sql_server);
+	tzone_local(TIMEZONE("GMT"));
+
+	if (isnil(err)){
+		fork(sqllogmanager());
+
+		mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
+		# start a default mapi client for debugging, this should go once
+		# MonetDB SQL gets stable.
+		mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
+	} else {
+		printf(err);
+		drop(sql_server);
+	}
+}
+
+if (mod() = "main") {
+	sql_server_start();
 }

@@ -51,3 +51,12 @@ bin_Mserver = {
 	SOURCES = Mserver.mx initmodules.mx 
 	LIBS = -L$(MONETDB_PREFIX)/lib -lmonet @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
+
+lib_embedded = {
+	SOURCES = embeddedclient.mx initmodules.mx
+}
+
+bin_prog = {
+	SOURCES = prog.c
+	LIBS = -L$(MONETDB_PREFIX)/lib -lembedded -lMapi -lmonet -lbat $(MONETDB_LIBS) -lmutils -lstream
+}

@@ -42,10 +42,14 @@ load the dynamic libraries before we load and run the scripts.
 #endif
 	@:load_module(@1)@
 }
+@h
+void static_module_init(void);
 @c
 #include "gdk.h"
 #include "monet.h"
 
-void static_module_init() {
+void
+static_module_init(void)
+{
 @include static_modules.mx
 }
