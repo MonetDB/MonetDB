@@ -28,8 +28,12 @@ from the Version 4 code base.
 module sql;
 
 command sql():void 
-address SQLlanguage
+address SQLsession
 comment "Switch to processing SQL statements";
+
+command init()
+address SQLinitEnvironment
+comment "Initialize the environment for MAL";
 
 command eval(cmd:str):void 
 address SQLstatement

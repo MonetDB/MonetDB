@@ -26,10 +26,62 @@ the client record. They are initialized as part of the initialization
 phase of the scenario.
 
 The SQL compiler uses only a small subset of the MAL language.
-This involves ca 65 different operators, divided into the
-catalog management (23) and query processing (42)
-[Make complete list of SQL functions]
-
+This involves ca 70 different operators, divided into the
+catalog management (?) and query processing (?)
+@{
+[Make complete list of MAL instructions used in the compilation]
+alarm.usec
+algebra.count
+algebra.ds_link
+algebra.join
+algebra.kunique
+algebra.likeselect
+algebra.tmark
+algebra.outerjoin
+algebra.semijoin
+algebra.sintersect
+algebra.slice
+algebra.tunique
+algebra.uselect
+bat.append
+batcalc.project
+bat.insert
+bat.mirror
+bat.new
+bat.replace
+bat.reverse
+bat.seqbase
+bat.{setReadMode, setWriteMode}
+bat.sort
+bat.tsort
+bbp.project
+calc.{<,<=,=,!=,>,>=}
+calc.{-.+.*,/,%}
+calc.{oid,int,flt,dbl,str,chr,bit}
+group.group 
+group.refine
+group.refine_reverse
+io.printf
+multiplex.tactics
+sql.assert
+sql.bind
+sql.bind_dbat
+sql.bind_idxbat
+sql.bind_ubat
+sql_cache.???
+sql.clear_table
+sql.column
+sql.columnBind
+sql.eval
+sql.output
+sql.print
+sql.update_var
+str.codeset
+stream.close
+stream.openRead
+str.iconv
+??.{sum,min,max,count}
+@}
 @h
 #ifndef _SQL_OPTIMIZER_H_
 #define _SQL_OPTIMIZER_H_
@@ -87,7 +139,7 @@ An error in the compilation should be reported to the user.
 
 @-
 The first step towards an SQL optimizer.
-This versions simply runs through the MAL script and re-orders the instructions
+This version simply runs through the MAL script and re-orders the instructions
 into catalog operations, query graph, and result preparation.
 This distinction is used to turn the function into a factory, which would
 enable re-entry when used as a cache-optimized query.
@@ -210,7 +262,9 @@ around for each column.
 			}
 		}
 @-
-Check if the relation is already made write-enabled.
+Check if the relation is already made write-enabled in the plan.
+It uses the knowledge that at this stage the plan is still a linear
+sequence of instructions.
 @c
 		if (setWriteMode && p->fcn == setWriteMode) {
 			for (j = 0; j < k; j++)

@@ -279,6 +279,33 @@ dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 	@:SQLpostlude@
 }
 
+InstrPtr
+dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2)
+{
+	InstrPtr q;
+	int match=0;
+
+	switch (*name){
+	case '+': case '-': case '*': case '/': case '%':
+		match=1;
+		break;
+	case '<': case '>': case '=': case '!':
+		if( *(name+1) && *(name+1)=='=') match++; else
+		if( *(name+1) == 0) match++;
+	}
+	if( match ){
+		q = newStmt(mb, "batcalc", name);
+		q = pushArgument(mb, q, o1);
+		q = pushArgument(mb, q, o2);
+	} else {
+		q = newStmt(mb, "multiplex", "tactics");
+		q = pushStr(mb, q, name);
+		q = pushArgument(mb, q, o1);
+		q = pushArgument(mb, q, o2);
+	}
+	return q;
+}
+
 @-
 The intermediate results of this translation are mostly readonly.
 Set this property to reduce copying.
@@ -445,7 +472,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_mark:{
-			dump_2(sql, mb, s, "algebra", "markTail");
+			dump_2(sql, mb, s, "algebra", "tmark");
 		}
 			break;
 		case st_reverse:{
@@ -570,10 +597,8 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				default:
 					GDKerror("Unknown operator");
 				}
-				q = newStmt(mb, "multiplex", "tactics");
-				q = pushStr(mb, q, convertOperator(op));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
+				q= dump_multiplex(mb,convertOperator(op),l,r);
+				s->nr = getDestVar(q);
 				k = getDestVar(q);
 				q = newStmt(mb, "algebra", "uselect");
 				q = pushArgument(mb, q, k);
@@ -918,10 +943,8 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
-				q = newStmt(mb, "multiplex", "tactics");
-				q = pushStr(mb, q, convertOperator(s->op4.funcval->func->imp));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
+				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r);
+				s->nr = getDestVar(q);
 			} else {
 				q = newStmt(mb, NULL, s->op4.funcval->func->imp);
 				q = pushArgument(mb, q, l);
@@ -955,7 +978,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					int n = op->nr;
 
 					if (!op->nrcols) {
-						q = newStmt(mb, "batcalc", "zipper");
+						q = newStmt(mb, "batcalc", "project");
 						q = pushArgument(mb, q, h->nr);
 						q = pushArgument(mb, q, n);
 						ops[opslen++] = getDestVar(q);
@@ -995,7 +1018,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int g = backend_dumpstmt(sql, mb, s->op2.stval);
 				int e = backend_dumpstmt(sql, mb, s->op3.stval);
 
-				q = newStmt(mb, 0, s->op4.aggrval->aggr->imp);
+				q = newStmt(mb, NULL, s->op4.aggrval->aggr->imp);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, e);
@@ -1010,7 +1033,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_atom:{
 			atom *a = s->op1.aval;
 			if (atom_null(a)) {
-				q = newStmt(mb, 0, a->tpe->type->base.name);
+				q = newStmt(mb, NULL, a->tpe->type->base.name);
 				q = pushNilType(mb, q, a->tpe->type->base.name);
 			} else {
 				int k;

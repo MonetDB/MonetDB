@@ -38,6 +38,7 @@ sql_export str SQLexitClient(Client c);
 sql_export str SQLinitClient(Client c);
 sql_export str SQLexit(Client c);
 sql_export str SQLinit(Client c);
+sql_export str SQLinitEnvironment(int *ret);
 
 sql_export str SQLparser(Client c);
 sql_export str SQLengine(Client c);
@@ -99,9 +100,8 @@ SQLinit(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinit Monet 5\n");
 #endif
-	if (SQLinitialized) {
-		return throwMessage("SQLinit", "Catalogue already available\n");
-	}
+	if (SQLinitialized)
+		return MAL_SUCCEED;
 	SQLinitialized = FALSE;
 	(void) c;		/* not used */
 	backend_init(&monet5_freestack, &monet5_freecode, &monet5_parse);
@@ -175,32 +175,22 @@ sendProperty(stream *out, char *name, char *value)
 		return 0;
 	return 1;
 }
-
-str
-SQLinitClient(Client c)
+@-
+It should become possible to initialize the SQL
+from a MAL program to setup an environment to
+debug independently of the parser plans
+produced. This should not touch the IO parameters.
+@c
+str 
+SQLinitAdmin(Client c)
 {
+	str msg;
 	mvc *m;
 	str schema;
-
-	if (c->yycur) {
-		c->fdin->pos += c->yycur;
-		c->yycur = 0;
-		c->fdin->buf[c->fdin->pos] = 0;
-	}
-#ifdef _SQL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#SQLinitClient\n");
-#endif
-
-	if (SQLinitialized == FALSE) {
-		char *msg = SQLinit(c);
-
-		if (msg)
-			return msg;
-/*
-		return throwMessage("SQLinitClient",
-			"Catalogue not available\n");
-*/
-	}
+	msg = SQLinit(c);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	
 	if ((backend *) c->state[PARSER] == 0) {
 		m = mvc_create(1, 0, c->fdin, c->fdout);
 		/* replace user name with client record setting later on */
@@ -218,13 +208,32 @@ SQLinitClient(Client c)
 			}
 		}
 		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
+	((backend*)c->state[PARSER])->language = 's';	/*expect SQL text first */
 		c->state[OPTIMIZE] = m;
 	} else {
 		m = c->state[OPTIMIZE];
 	}
+	return MAL_SUCCEED;
+}
+
+str
+SQLinitClient(Client c)
+{
+	str msg;
+
+	if (c->yycur) {
+		c->fdin->pos += c->yycur;
+		c->yycur = 0;
+		c->fdin->buf[c->fdin->pos] = 0;
+	}
+#ifdef _SQL_SCENARIO_DEBUG
+	stream_printf(GDKout, "#SQLinitClient\n");
+#endif
+
+	msg= SQLinitAdmin(c);
 
 	c->fdin->eof = 1;	/* force prompt on first iteration */
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -247,7 +256,7 @@ SQLexitClient(Client c)
 }
 
 str
-SQLlanguage(str *ret)
+SQLsession(str *ret)
 {
 	str msg = MAL_SUCCEED;
 
@@ -261,6 +270,12 @@ SQLlanguage(str *ret)
 A statement received internally is simply appended for
 execution
 @c
+str
+SQLinitEnvironment(int *ret)
+{
+	(void) ret;
+	return SQLinitAdmin(getClient());
+}
 str
 SQLstatement(int *ret, str *cmd)
 {
@@ -454,7 +469,7 @@ SQLparser(Client c)
 	m = be->mvc;
 
 	assert(m);
-	be->language = 'S';	/* expect SQL text first */
+	/* be->language = 'S';	expect SQL text first */
 
 	m->type = Q_PARSE;
 
