@@ -376,6 +376,10 @@ end@2@3:;
 	} break;
 
 @= batcheck
+
+#define intersect_size(l,r) MIN(BATcount(l), BATcount(r))
+#define diff_size(l,r) BATcount(l)
+
 int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
 	int (*cmp)(), (*merge)()=0;
 
@@ -427,7 +431,7 @@ BAT *BAT@1@2(BAT *l, BAT *r) {
 	ERRORcheck(TAILCHECK@1(l,r),
 		"BUN@1@2: incompatible tail-types");
 
-	smaller = MIN(BATcount(l), BATcount(r));
+	smaller = @2_size(l,r);
 
 	/* create result BAT */
 	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY)); 
