@@ -75,12 +75,12 @@ command listen_ssl(port:int, maxusers:int,
 	keyfile:str,certfile:str, cmd:str):int
 address MAPIlistenSSL
 comment "Start the Mapi listener on <port> for 
-	<maxusers> using SSL.\n<keyfile> and 
+	<maxusers> using SSL. <keyfile> and 
 	<certfile> give the path names for files 
 	with the server key and certificates in 
-	PEM format.\nFor a new client connection 
+	PEM format. For a new client connection 
 	MAL procedure <cmd>(Stream s_in, Stream s_out) 
-	is called.\nIf no <cmd> is specified a new 
+	is called.If no <cmd> is specified a new 
 	client thread is forked.";
 
 command stop(id:int):bit
@@ -830,4 +830,3 @@ str MAPIresume(int *res, int *skey){
         (void) res; (void)skey; /* fool compiler */
         return MAL_SUCCEED;
 }
-
