@@ -41,18 +41,18 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	for(i=0;i<tcnt;i++){
 	    char buf[BUFSIZ+1];
 	    char *start = buf, *n = readline(s, buf);
-	    char *sqlname, *monetname, *cast;
+	    char *sqlname, *name, *cast;
 
 	    n = strchr(start, '\t'); *n = '\0';
 	    sqlname = removeQuotes(start, '"');
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    monetname = removeQuotes(start, '"');
+	    name = removeQuotes(start, '"');
 
 	    n = strchr(start = n+1, '\0'); *n = '\0';
 	    cast = removeQuotes(start, '"');
 
-	    c->create_type( c, sqlname, monetname, cast, i );
+	    c->create_type( c, sqlname, name, cast, i );
 	}
 	/* TODO load proper type cast table */
 
@@ -86,25 +86,18 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	tcnt = readnr(s);
 	c->tables = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname, *query;
+	    char *tname;
 	    int temp;
 	    char buf[BUFSIZ+1];
 	    char *start = buf, *n = readline(s, buf);
 
 	    n = strchr(start, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
-
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    temp = atoi(start);
+	    tname = start;
 
 	    n = strchr(start = n+1, '\0'); *n = '\0';
-	    query = removeQuotes(start, '"');
+	    temp = atoi(start);
 
-	    if (strlen(query)){
-	      sqlexecute(lc, query );
-	    } else {
-	      (void)c->create_table( c, tname, temp );
-	    }
+	    (void)c->create_table( c, tname, temp );
 	}
 
 	tcnt = readnr(s);
@@ -116,16 +109,16 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	    table *t;
 
 	    n = strchr(start, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
+	    tname = start;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    cname = removeQuotes(start, '"');
+	    cname = start;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    ctype = removeQuotes(start, '"');
+	    ctype = start;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    def = removeQuotes(start, '"');
+	    def = start;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    nll = atoi(start);
@@ -139,6 +132,23 @@ catalog *catalog_create_stream( stream *s, context *lc ){
 	/* loop over all schema's call create_schema */
 	/* loop over all table's call create_table */
 	/* loop over all column's call create_column */
+
+	/* bats are void-aligned */
+	/* read views */
+	tcnt = readnr(s);
+	for(i=0;i<tcnt;i++){
+	    char *tname, *query;
+	    char buf[BUFSIZ+1];
+	    char *start = buf, *n = readline(s, buf);
+
+	    n = strchr(start, '\t'); *n = '\0';
+	    tname = start;
+
+	    n = strchr(start = n+1, '\0'); *n = '\0';
+	    query = start;
+
+	    sqlexecute(lc, query );
+	}
 
 	return c;
 }

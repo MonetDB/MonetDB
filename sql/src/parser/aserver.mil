@@ -163,13 +163,17 @@ proc ascii_export_catalog(Output):= {
 	output_count( sql_func_name, Output);
 	server_output( Output, sql_func_name );
 
-	output_count( table_name, Output);
-	var queries := [ table_query.union( table_name.diff( table_query )) ~ const "" ];
-	server_output( Output, table_name, table_temp, queries );
+	tables := table_name.diff( table_query );
+	output_count( tables, Output);
+	server_output( Output, tables, table_temp.semijoin(tables) );
 
-	output_count( column_name, Output);
 	var table_names := column_table.join(table_name);
+	output_count( table_names, Output);
 	server_output( Output, table_names, column_name, column_type, column_default, column_null, column_number );
+
+	var views := table_name.semijoin(table_query); 
+	output_count( views, Output);
+	server_output( Output, views, table_query );
 }
 
 proc SQLclient_thread( int sock ):= {

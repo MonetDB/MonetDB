@@ -33,12 +33,10 @@ int client(char *host, int port ){
             host_info -> h_length);
     server.sin_port = htons (port);
     
-    printf("connecting\n");
     if (connect (sock, (struct sockaddr *) &server, sizeof server) < 0) {
       fprintf (stderr, "client: could not connect to server");
       exit (4);
     }
-    printf("connected\n");
  
     return sock;
 }

@@ -250,16 +250,19 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		s->nr = (*nr)++;
 	} break;
 	case st_insert: {
-		if (s->op2.stval){
-			int l = statement_dump( s->op2.stval, nr, sql );
-			len += snprintf( buf+len, BUFSIZ, "s%d := Insert(resolve_column(\"%s\",\"%s\"),s%d);\n", 
-			*nr, s->op1.cval->table->name, s->op1.cval->name, l );
-		} else {
-			len += snprintf( buf+len, BUFSIZ, "s%d := Insert(resolve_column(\"%s\",\"%s\"),%s(nil));\n", 
-			*nr, s->op1.cval->table->name, s->op1.cval->name,
-			s->op1.cval->tpe->name );
-		}
-		s->nr = (*nr)++;
+                int r = statement_dump( s->op2.stval, nr, sql );
+                if (s->op3.stval){
+                        int l = statement_dump( s->op3.stval, nr, sql );
+                        len += snprintf( buf+len, BUFSIZ, "s%d := resolve_column(
+\"%s\",\"%s\").insert(oid(s%d),s%d);\n", 
+                        *nr, s->op1.cval->table->name, s->op1.cval->name, r, l);
+                } else {
+                        len += snprintf( buf+len, BUFSIZ, "s%d := resolve_column(
+\"%s\",\"%s\").insert(oid(s%d),%s(nil));\n",
+                        *nr, s->op1.cval->table->name, s->op1.cval->name, r,
+			s->op1.cval->tpe->name  );
+                }
+                s->nr = (*nr)++;
 	} break;
 	case st_insert_column: {
 		int l = statement_dump( s->op1.stval, nr, sql );

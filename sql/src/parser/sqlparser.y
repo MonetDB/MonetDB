@@ -4,6 +4,7 @@
 #include "sqlexecute.h"
 #include "symbol.h"
 #include <mem.h>
+#include <stdlib.h>
 
 #define _symbol_create(t,d)         symbol_create( (context*)parm, t, d)
 #define _symbol_create_list(t,d)    symbol_create_list( (context*)parm, t, d)
@@ -1109,8 +1110,8 @@ function_ref:
 literal:
     STRING   { $$ = _symbol_create_atom( SQL_ATOM, atom_string($1) );}
  |  INT      { $$ = _symbol_create_atom( SQL_ATOM, atom_int(strtol($1,&$1,10)));}
- |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1))); }
- |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1))); }
+ |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
+ |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
  ;
 
 	/* miscellaneous */

@@ -5,6 +5,7 @@ module(sql);
 module(ascii_io);
 
 proc create_table( name, temp ):= {
+print("create_table");
 	var t:=oid(table_name.count());
 	table_name.insert(t,name);
 	table_temp.insert(t,temp);
@@ -13,6 +14,7 @@ proc create_table( name, temp ):= {
 }
 
 proc drop_column( oid c ):= {
+print("drop_column");
         column_name.delete(c);
         column_type.delete(c);
         column_table.delete(c);
@@ -27,6 +29,7 @@ proc drop_column( oid c ):= {
 }
 
 proc drop_table( str name, bit cascade ):= {
+print("drop_table");
         var t := table_name.reverse().find(name);
         table_name.delete(t);
         table_temp.delete(t);
@@ -40,12 +43,14 @@ proc drop_table( str name, bit cascade ):= {
 }
 
 proc create_view( name, query ):= {
+print("create_view");
 	var t:=oid(create_table( name, false));
 	table_query.insert( t, query );
 	return t;
 }
 
 proc create_column( tid, cname, sqltype, seqnr ):= {
+print("create_column");
 	var c:=oid(column_name.count());
 	column_name.insert(c, cname );
 	column_type.insert(c, sqltype );
@@ -74,6 +79,7 @@ proc default( cid, val ):= {
 }
 
 proc Insert(col, val):= {
+print("insert");
 	var cnt := oid(col.count());
 	col.insert(cnt, val);
 	return col;
