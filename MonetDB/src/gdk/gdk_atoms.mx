@@ -550,18 +550,22 @@ The current policy is to use the smallest value in any ordered domain.
 The routine atomnil returns a pointer to the nil value representation.
 @{
 @h
-#define	GDK_chr_max ((chr) 127)
-#define	GDK_chr_min ((chr) -128)
-#define	GDK_sht_max ((sht) 32767)
-#define	GDK_sht_min ((sht) -32768)
-#define	GDK_int_max ((int) 2147483647)
-#define	GDK_int_min ((int) (-2147483647-1))
-#define	GDK_flt_max ((flt) 3.402823466E+38F)
-#define	GDK_flt_min (-GDK_flt_max)
-#define	GDK_lng_max (LL_CONSTANT( 9223372036854775807))
-#define	GDK_lng_min (LL_CONSTANT(-9223372036854775807)-LL_CONSTANT(1))
-#define	GDK_dbl_max ((dbl) 1.7976931348623157E+308)
-#define	GDK_dbl_min (-GDK_dbl_max)
+#define GDK_bit_max ((bit) 1)
+#define GDK_bit_min ((bit) 0)
+#define GDK_chr_max ((chr) 127)
+#define GDK_chr_min ((chr) -128)
+#define GDK_sht_max ((sht) 32767)
+#define GDK_sht_min ((sht) -32768)
+#define GDK_int_max ((int) 2147483647)
+#define GDK_int_min ((int) (-2147483647-1))
+#define GDK_flt_max ((flt) 3.402823466E+38F)
+#define GDK_flt_min (-GDK_flt_max)
+#define GDK_lng_max (LL_CONSTANT( 9223372036854775807))
+#define GDK_lng_min (LL_CONSTANT(-9223372036854775807)-LL_CONSTANT(1))
+#define GDK_dbl_max ((dbl) 1.7976931348623157E+308)
+#define GDK_dbl_min (-GDK_dbl_max)
+/* GDK_oid_max see below */
+#define GDK_oid_min ((oid) 0)
 
 /* representation of the nil */
 gdk_export chr		chr_nil; 	
@@ -582,8 +586,10 @@ gdk_export str		str_nil;
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_OID == SIZEOF_INT
 #define oid_nil	((oid) int_nil)
+#define GDK_oid_max ((oid) GDK_int_max)
 #else
 #define oid_nil	((oid) lng_nil)
+#define GDK_oid_max ((oid) GDK_lng_max)
 #endif
 #define void_nil	oid_nil
 @c

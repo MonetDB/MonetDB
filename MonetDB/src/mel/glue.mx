@@ -776,7 +776,7 @@ ostream &unpack_setresult::gen_type_arg( ostream &o, const TypeArg &d ){
 	case TYPE_SHT: o << "shval = sht_nil;\n"; break;
 	case TYPE_INT: o << "ival = int_nil;\n"; break;
 	case TYPE_PTR: o << "pval = ptr_nil;\n"; break;
-	case TYPE_OID: o << "ival = (int)oid_nil;\n"; break;
+	case TYPE_OID: o << "oval = oid_nil;\n"; break;
 	case TYPE_FLT: o << "fval = flt_nil;\n"; break;
 	case TYPE_DBL: o << "dval = dbl_nil;\n"; break;
 	case TYPE_LNG: o << "lval = lng_nil;\n"; break;

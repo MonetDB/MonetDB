@@ -1027,9 +1027,11 @@ xit:	return i;
 Any atom can be casted to another one. All numeric values can be interchanged,
 and conversion to and from string is always possible.
 @c
-#define trivial_cast(dst,src)	(dst==src || (ATOMstorage(dst)==ATOMstorage(src)\
-     &&	((dst != TYPE_str) || BATatoms[src].atomToStr == BATatoms[TYPE_str].atomToStr)\
-     &&	((src != TYPE_str) || BATatoms[dst].atomFromStr == BATatoms[TYPE_str].atomFromStr))) 
+#define trivial_cast(dst,src)	\
+	((dst) == (src) || \
+	 (ATOMstorage(dst) == ATOMstorage(src) && \
+	  ((dst) != TYPE_str || BATatoms[src].atomToStr == BATatoms[TYPE_str].atomToStr) && \
+	  ((src) != TYPE_str || BATatoms[dst].atomFromStr == BATatoms[TYPE_str].atomFromStr)))
 
 int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 	int tpe = ATOMindex(atom);
@@ -1037,7 +1039,13 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 	if (argc == 1) {
 		res->vtype = TYPE_int;
 		res->val.ival = tpe;
-	} else if (trivial_cast(tpe,val->vtype)) {
+	} else if ((tpe == val->vtype ||
+		    (ATOMstorage(tpe) == ATOMstorage(val->vtype) &&
+		     ATOMstorage(tpe) == TYPE_str && /* extra compared to trivial_cast above */
+		     (tpe != TYPE_str ||
+		      BATatoms[val->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) &&
+		     ((val->vtype) != TYPE_str ||
+		      BATatoms[tpe].atomFromStr == BATatoms[TYPE_str].atomFromStr)))) {
 		VALcopy(res,val);
 		res->vtype = tpe;
 	} else if (val->vtype == TYPE_str) {

@@ -65,13 +65,13 @@ ValPtr VALnew(void){
 
 ValPtr VALset(ValPtr v, int t, ptr p){
 	switch(ATOMstorage(v->vtype = t)) {
+	case TYPE_bit:
 	case TYPE_chr: v->val.cval[0] = *(chr*) p; 
 		       v->val.cval[1] = 0;
 		       v->val.cval[2] = 0;
 		       v->val.cval[3] = 0;
 		       break;
 	case TYPE_sht: v->val.shval = *(sht*) p; break;
-	case TYPE_bit:
 	case TYPE_int: v->val.ival = *(int*) p; break;
 	case TYPE_flt: v->val.fval = *(flt*) p; break;
 	case TYPE_dbl: v->val.dval = *(dbl*) p; break;
@@ -84,10 +84,10 @@ ValPtr VALset(ValPtr v, int t, ptr p){
 
 void *VALget(ValPtr v){
 	switch(ATOMstorage(v->vtype)) {
-	case TYPE_chr: return (void*) &v->val.cval[0];
+	case TYPE_bit:
+	case TYPE_chr: return (void *) &v->val.cval[0];
 	case TYPE_sht: return (void *) &v->val.shval;
 	case TYPE_void:
-	case TYPE_bit:
 	case TYPE_int: return (void *) &v->val.ival;
 	case TYPE_flt: return (void *) &v->val.fval;
 	case TYPE_dbl: return (void *) &v->val.dval;
@@ -114,7 +114,7 @@ void VALempty(ValPtr v){
 }
 
 ValPtr VALcopy(ValPtr d, ValPtr s){
-	if (ATOMextern(s->vtype) == 0) {
+	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
                 d->val.pval = ATOMnil(s->vtype);
@@ -131,30 +131,6 @@ ValPtr VALcopy(ValPtr d, ValPtr s){
 		memcpy(d->val.pval, p, d->len);
 	}
 	return d;
-}
-@-
-Moving a value from a BUN into a value record, making proper copies
-on the way.
-@c
-ValPtr VALinit(ValPtr d, int tpe, ptr s){
-        if (ATOMextern(tpe) == 0) {
-                d->vtype= tpe;
-                memcpy(&d->val.ival, s, ATOMlen(tpe,s));
-        } else
-        if (s == 0) {
-                GDKerror("VALinit:unsupported init\n");
-                d->vtype= TYPE_int;
-        } else if( ATOMstorage(tpe) == TYPE_str) {
-                d->vtype = TYPE_str;
-                d->val.sval = GDKstrdup(s);
-                d->len = strLen(s);
-        } else {
-                d->vtype= tpe;
-                d->len = ATOMlen(tpe,s);
-                d->val.pval = GDKmalloc(d->len);
-                memcpy(d->val.pval, s, d->len);
-        }
-        return d;
 }
 @-
 VALprint shows the contents of a value record, but without
@@ -180,37 +156,86 @@ illegal values, or type combinations involved, it gives
 up with an ILLEGALVALUE.
 
 @= valcheck
-	(@1 < GDK_@2_min || @1 > GDK_@2_max) ? @2_nil : (@2) @1
+	((lng) @1 < (lng) GDK_@2_min || (lng) @1 > (lng) GDK_@2_max) ? @2_nil : (@2) @1
 @= valconvert
-	if (dst_tpe == TYPE_chr) {
-		t->val.cval[0] = @:valcheck(@1,chr)@; 
-	} else if (dst_tpe == TYPE_sht) {
-		t->val.shval = @:valcheck(@1,sht)@; 
-	} else if (dst_tpe == TYPE_bat) {
-		bat bid = (bat) @1;
-		if (ABS(@1) > BBPsize || BBP_logical(bid) == NULL) {
-			bid = 0;
-			p = ILLEGALVALUE;
-		} else {
-			p = (ptr) BATdescriptor(bid);
-		} t->val.bval = bid; 
-	} else if (dst_tpe == TYPE_int) {
-		t->val.ival = @:valcheck(@1,int)@; 
-	} else if (dst_tpe == TYPE_flt) {
-		t->val.fval = @:valcheck(@1,flt)@; 
-	} else if (dst_tpe == TYPE_lng) {
-		t->val.lval = @:valcheck(@1,lng)@; 
-	} else if (dst_tpe == TYPE_dbl) {
-		t->val.dval = @:valcheck(@1,dbl)@; 
+	switch (src_tpe) {
+	case TYPE_bit:
+		@1 = @:valcheck(t->val.cval[0],@2)@;
+		break;
+	case TYPE_chr:
+		@1 = @:valcheck(t->val.cval[0],@2)@;
+		break;
+	case TYPE_sht:
+		@1 = @:valcheck(t->val.shval,@2)@;
+		break;
+	case TYPE_bat:
+		@1 = @:valcheck(t->val.bval,@2)@;
+		break;
+	case TYPE_int:
+		@1 = @:valcheck(t->val.ival,@2)@;
+		break;
+	case TYPE_oid:
+		/* no need to compare to GDK_@2_min, since source
+		   value is unsigned (i.e. >= 0) and all GDK_*_min values
+		   are <= 0 (in fact, compilers may warn about the
+		   test) */
+		@1 = ((lng) t->val.oval > (lng) GDK_@2_max) ? @2_nil : (@2) t->val.oval;
+		break;
+	case TYPE_lng:
+		@1 = @:valcheck(t->val.lval,@2)@;
+		break;
+	case TYPE_flt:
+		@1 = ((dbl) t->val.fval < (dbl) GDK_@2_min || (dbl) t->val.fval > (dbl) GDK_@2_max) ? @2_nil : (@2) t->val.fval;
+		break;
+	case TYPE_dbl:
+		@1 = (t->val.dval < (dbl) GDK_@2_min || t->val.dval > (dbl) GDK_@2_max) ? @2_nil : (@2) t->val.dval;
+		break;
+	}
+@= valfconvert
+	/* dbl always fits; flt almost always fits */
+	switch (src_tpe) {
+	case TYPE_bit:
+	case TYPE_chr:
+		@1 = (@2) t->val.cval[0];
+		break;
+	case TYPE_sht:
+		@1 = (@2) t->val.shval;
+		break;
+	case TYPE_int:
+		@1 = (@2) t->val.ival;
+		break;
+	case TYPE_oid:
+		@1 = (@2) t->val.oval;
+		break;
+	case TYPE_lng:
+		@1 = (@2) t->val.lval;
+		break;
+	case TYPE_flt:
+		@1 = (@2) t->val.fval;
+		break;
+	case TYPE_dbl:
+		/* only need to do range check on dbl for flt->dbl conversion */
+		if (t->val.dval < (dbl) GDK_@2_min || t->val.dval > (dbl) GDK_@2_max)
+			@1 = @2_nil;
+		else
+			@1 = (@2) t->val.dval;
+		break;
+	case TYPE_bat:
+		@1 = (@2) t->val.bval;
+		break;
 	}
 @c
-ptr VALconvert(int typ, ValPtr t){
-	int src_tpe = ATOMstorage(t->vtype), dst_tpe = typ;
+ptr VALconvert(int typ, ValPtr t)
+{
+	int src_tpe = t->vtype, dst_tpe = typ;
 	ptr p = VALptr(t);
 
-        if (dst_tpe != TYPE_bat) {
+	/* use base types for user types */
+	if (src_tpe > TYPE_str)
+		src_tpe = ATOMstorage(src_tpe);
+	if (dst_tpe > TYPE_str)
 		dst_tpe = ATOMstorage(dst_tpe);
-	}  
+
 	if (src_tpe != dst_tpe && t->vtype != typ && dst_tpe != TYPE_void) { 
 		if (src_tpe >= TYPE_str || dst_tpe >= TYPE_str) { 
 			if (ATOMcmp(src_tpe, ATOMnilptr(src_tpe), p) == 0) {
@@ -219,22 +244,106 @@ ptr VALconvert(int typ, ValPtr t){
 			} else { 
 				return ILLEGALVALUE; 
 			}
-		} else if ((t->vtype == TYPE_bat && t->val.bval == 0 ) ||
-	    	           ATOMcmp(src_tpe, ATOMnilptr(src_tpe), p) == 0) 
-		{
+		} else if ((t->vtype == TYPE_bat && t->val.bval == 0) ||
+	    	           ATOMcmp(src_tpe, ATOMnilptr(src_tpe), p) == 0) {
 			memcpy(p, ATOMnilptr(dst_tpe), ATOMsize(dst_tpe));
-		} else if (src_tpe == TYPE_chr) {
-			@:valconvert(t->val.cval[0], chr)@;
-		} else if (src_tpe == TYPE_sht) {
-			@:valconvert(t->val.shval, sht)@;
-		} else if (src_tpe == TYPE_int) {
-			@:valconvert(t->val.ival, int)@;
-		} else if (src_tpe == TYPE_flt) {
-			@:valconvert(t->val.fval, flt)@;
-		} else if (src_tpe == TYPE_lng) {
-			@:valconvert(t->val.lval, lng)@;
-		} else if (src_tpe == TYPE_dbl) {
-			@:valconvert(t->val.dval, dbl)@;
+		} else {
+			switch (dst_tpe) {
+			case TYPE_bat:
+			{
+				bat bid = (bat) 0;
+				switch (src_tpe) {
+				case TYPE_bit:
+				case TYPE_chr:
+					if (ABS(t->val.cval[0]) <= BBPsize)
+						bid = (bat) t->val.cval[0];
+					break;
+				case TYPE_sht:
+					if (ABS(t->val.shval) <= BBPsize)
+						bid = (bat) t->val.shval;
+					break;
+				case TYPE_int:
+					if (ABS(t->val.ival) <= BBPsize)
+						bid = (bat) t->val.ival;
+					break;
+				case TYPE_oid:
+					if (ABS(t->val.oval) <= BBPsize)
+						bid = (bat) t->val.oval;
+					break;
+				case TYPE_lng:
+					if (ABS(t->val.lval) <= BBPsize)
+						bid = (bat) t->val.lval;
+					break;
+				case TYPE_flt:
+					if (ABS(t->val.fval) <= BBPsize)
+						bid = (bat) t->val.fval;
+					break;
+				case TYPE_dbl:
+					if (ABS(t->val.dval) <= BBPsize)
+						bid = (bat) t->val.dval;
+					break;
+				}
+				if (bid == 0 || BBP_logical(bid) == NULL) {
+					bid = 0;
+					p = ILLEGALVALUE;
+				} else {
+					p = (ptr) BATdescriptor(bid);
+				}
+				t->val.bval = bid;
+				break;
+			}
+			case TYPE_bit:
+				/* bits are funny: true iff value != 0 */
+				switch (src_tpe) {
+				case TYPE_bit:
+				case TYPE_chr:
+					t->val.cval[0] = (t->val.cval[0] != 0);
+					break;
+				case TYPE_sht:
+					t->val.cval[0] = (t->val.shval != 0);
+					break;
+				case TYPE_int:
+					t->val.cval[0] = (t->val.ival != 0);
+					break;
+				case TYPE_oid:
+					t->val.cval[0] = (t->val.oval != 0);
+					break;
+				case TYPE_lng:
+					t->val.cval[0] = (t->val.lval != 0);
+					break;
+				case TYPE_flt:
+					t->val.cval[0] = (t->val.fval != 0);
+					break;
+				case TYPE_dbl:
+					t->val.cval[0] = (t->val.dval != 0);
+					break;
+				case TYPE_bat:
+					t->val.cval[0] = (t->val.bval != 0);
+					break;
+				}
+				break;
+			case TYPE_chr:
+				@:valconvert(t->val.cval[0],chr)@;
+				break;
+			case TYPE_sht:
+				@:valconvert(t->val.shval,sht)@;
+				break;
+			case TYPE_int:
+				@:valconvert(t->val.ival,int)@;
+				break;
+			case TYPE_oid:
+				@:valconvert(t->val.oval,oid)@;
+				break;
+			case TYPE_lng:
+				@:valconvert(t->val.lval,lng)@;
+				break;
+			case TYPE_flt:
+				@:valfconvert(t->val.fval,flt)@;
+				break;
+			case TYPE_dbl:
+				@:valfconvert(t->val.dval,dbl)@;
+				break;
+			}
 		}
 	}
 	t->vtype = typ;
