@@ -153,8 +153,19 @@ def parse_config(file, options = ConfigOptions):
             sys.stderr.write('syntax error in %s\n' % file)
             f.close()
             sys.exit(1)
-        # only keep first non-blank part as value, rest is comment
-        val = string.split(val, None, 1)[0]
+        quote = False
+        for i in range(len(val)):
+            c = val[i]
+            if c == '"':
+                quote = not quote
+            elif not quote and c == '#':
+                val = string.strip(val[:i])
+                break
+        if quote:
+            sys.stderr.write('syntax error in %s\n' % file)
+            f.close()
+            sys.exit(1)
+        val = string.replace(val, '"', '')
         setattr(options, key, val)
 
 def print_options(options):
