@@ -1,14 +1,14 @@
 stdout of test 'bug-sf-941788` in directory 'src/test/bugs` itself:
 
 
-# 21:38:27 >  
-# 21:38:27 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=41835 --set sql_port=53845 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 21:38:27 >  
+# 13:20:50 >  
+# 13:20:50 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=42732 --set sql_port=58979 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 13:20:50 >  
 
-# Monet Database Server V4.3.17
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
 
@@ -17,14 +17,17 @@ quit();
 
 Over..
 
-# 21:38:28 >  
-# 21:38:28 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53845  < bug-sf-941788.sql
-# 21:38:28 >  
+# 13:20:51 >  
+# 13:20:51 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=58979  < bug-sf-941788.sql
+# 13:20:51 >  
 
+# 3 # querytype
+# ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables # table_name
 # TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
-# character,	varchar,	varchar,	character,	character,	character,	character,	character,	character,	character # type
-# 14,	,	,	,	,	,	,	,	,	 # tuplecount
-# 0,	,	,	,	,	,	,	,	,	 # id
+# char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+# 1,	3,	10,	12,	0,	1,	1,	1,	2,	6 # length
+# 23,	,	,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	,	,	 # id
 [ NULL,	"sys",	"modules",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"schemas",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"ptables",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
@@ -49,11 +52,11 @@ Over..
 [ NULL,	"sys",	"r",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"test",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 # 3 # querytype
-# ,	,	,	,	,	,	,	,	,	 # table_name
+# ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables,	ttables # table_name
 # TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
-# character,	varchar,	varchar,	varchar,	varchar,	character,	character,	character,	varchar,	varchar # type
-# 1,	3,	10,	23,	0,	1,	1,	1,	2,	6 # length
-# 30,	,	,	,	,	,	,	,	,	 # tuplecount
+# char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+# 1,	3,	10,	12,	0,	1,	1,	1,	2,	6 # length
+# 23,	,	,	,	,	,	,	,	,	 # tuplecount
 # 2,	,	,	,	,	,	,	,	,	 # id
 [ NULL,	"sys",	"auths",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"db_users",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
@@ -79,7 +82,7 @@ Over..
 [ NULL,	"sys",	"types",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"user_role",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 
-# 21:38:28 >  
-# 21:38:28 >  Done.
-# 21:38:28 >  
+# 13:20:51 >  
+# 13:20:51 >  Done.
+# 13:20:51 >  
 
