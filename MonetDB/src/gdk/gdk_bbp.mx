@@ -214,7 +214,7 @@ int		BBPin = 0;		/* bats loaded statistic */
 int		BBPout = 0;		/* bats saved statistic */
 
 @-
-we put a simple limit of (BBPLOCKMASK+1)*BBP_desc_max (= 8192, currently) to the number
+we put a simple limit of (BBPLOCKMASK+1)*BBP_desc_max (= 65536, currently) to the number
 of BAT descriptors that can be cached. Reason is that each descriptor takes 1K, and big
 DD repositories that are "in the air" for a long time may have hundreds of thousands
 of BATs. While that is really a DD problem, this causes say 100MB of memory consumption
@@ -228,7 +228,11 @@ The swap algorithm is simple FIFO, which is not optimal, of course..
 @h
 extern int      BBP_desc_max, BBP_desc_count[BBPLOCKMASK+1];
 @c
-int             BBP_desc_max = 1024;
+#if SIZEOF_VOID_P==8
+int             BBP_desc_max = 1<<30; /* 64-bits platforms have practically no limit on cached bat descriptors */
+#else
+int             BBP_desc_max = 8192; /* 32-bits platforms prefer to have less than 8*8192=64K descs ~= 64MB in the malloc heap for those */
+#endif
 int             BBP_desc_count[BBPLOCKMASK+1] = {0};
 
 
@@ -753,35 +757,6 @@ speed, but still write operations have to be locked.
 
 #ifdef DEBUG_THREADLOCAL_BATS
 Create the shadow version (reversed) of a bat.
-@c
-BAT *BBPmirror(BAT *b)
-{
-	BAT *bn = (BAT*) GDKmalloc(sizeof(BAT));
-	BBP_cache(-b->batCacheid) = bn;
-	bn->GDKversion = b->GDKversion;
-	bn->batId = b->batId;
-	bn->batCacheid = -b->batCacheid;
-	bn->batBuns = b->batBuns;
-	bn->dims.headtype = b->dims.tailtype;
-	bn->dims.tailtype = b->dims.headtype;
-	bn->dims.headloc = b->dims.tailloc; 
-	bn->dims.tailloc = b->dims.headloc; 
-	bn->dims.headkey = b->dims.tailkey;
-	bn->dims.tailkey = b->dims.headkey;
-	bn->dims.headvarsized = b->dims.tailvarsized;
-	bn->dims.tailvarsized = b->dims.headvarsized;
-	bn->dims.bunwidth = b->dims.bunwidth;
-	bn->dims.bunshift = b->dims.bunshift;
-	bn->dims.hseq = b->dims.tseq;
-	bn->dims.tseq = b->dims.hseq;
-	bn->H = b->T; bn->T = b->H;
-	bn->P = b->P; bn->U = b->U; 
-	bn->hhash_heap = b->thash_heap; 
-	bn->thash_heap = b->hhash_heap;
-	bn->hidx_heap = b->tidx_heap; 
-	bn->tidx_heap = b->hidx_heap;
-	return bn;
-}
 @- 
 An existing BAT is inserted into the BBP 
 @c
@@ -821,11 +796,18 @@ bat BBPinsert(BAT *b) {
 	MT_Id pid = BBP_getpid();
 	long_str dirname;
 	bat i;
-		
+	
+	/* ciritical section: get a new BBP entry */ 	
         if (pid != locked_by) {
                 MT_set_lock(GDKcacheLock, "BBPinsert");
         }
  	i = BBPgetentry();
+        if (pid != locked_by) {
+                MT_unset_lock(GDKcacheLock, "BBPinsert");
+        }
+	/* rest of the work outside the lock , as GDKstrdup/GDKmalloc may trigger a BBPtrim */
+
+	/* fill in basic BBP fields for the new bat */
 	sprintf(b->batId, "tmp_%d", (int)i); /* make a unique temporary name */
 	BBPgetsubdir(dirname, i);
 
@@ -839,16 +821,14 @@ bat BBPinsert(BAT *b) {
 	BBP_desc(i) = NULL;
         BBP_refs(i) = 1; /* new bats have 1 pin */
 	BBP_lrefs(i) = 0; /* ie. no logical refs */
-       	BBP_logical(i) = GDKstrdup(b->batId);
        	BBP_logical(-i) = NULL;
+       	BBP_logical(i) = GDKstrdup(b->batId);
 	BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(b->batId) - 4);
 	GDKfilepath(BBP_physical(i), dirname, b->batId+4, NULL);
 
         BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", 
 				(int) i, b->batId, ATOMname(b->htype), ATOMname(b->ttype));
-        if (pid != locked_by) {
-                MT_unset_lock(GDKcacheLock, "BBPinsert");
-        }
+
 	return i;
 }
 
@@ -856,7 +836,7 @@ void BBPcacheit(BAT* b) {
 	MT_Id pid = BBP_getpid();
         bat i = 0;
 	int mode;
-        BAT *bm;
+        BAT *bm = (BAT*) GDKmalloc(sizeof(BAT)); /* alloc before lock to prevent trim problems */
 
         if (pid != locked_by) {
                 MT_set_lock(GDKtrimLock, "BBPcacheit");
@@ -864,6 +844,7 @@ void BBPcacheit(BAT* b) {
         }
         if (b->batId[0]) {
 		i = b->batCacheid;
+		assert(i > 0);
         } else {
                 i = BBPinsert(b); /* bat was not previously entered */
         }
@@ -873,10 +854,39 @@ void BBPcacheit(BAT* b) {
 	mode = (BBP_status(i) | BBPLOADED) & ~BBPWAITING;
 	BBP_status_set(i, mode, "BBPcacheit");
         BBP_lastused(i) = BBPLASTUSED(GDKstamp() + ((mode==BBPLOADED)?150:0));
-        if (BBP_desc(i) == NULL) BBP_desc_count[ABS(i)&BBPLOCKMASK]++;
+        if (BBP_desc(i) == NULL) 
+		BBP_desc_count[ABS(i)&BBPLOCKMASK]++;
+        BBP_desc(i) = (BATstore*) b;
+
+	/* fill in the mirror record */
+	bm->GDKversion = b->GDKversion;
+	bm->batId = b->batId;
+	bm->batCacheid = -i;
+	bm->batBuns = b->batBuns;
+	bm->dims.headtype = b->dims.tailtype;
+	bm->dims.tailtype = b->dims.headtype;
+	bm->dims.headloc = b->dims.tailloc; 
+	bm->dims.tailloc = b->dims.headloc; 
+	bm->dims.headkey = b->dims.tailkey;
+	bm->dims.tailkey = b->dims.headkey;
+	bm->dims.headvarsized = b->dims.tailvarsized;
+	bm->dims.tailvarsized = b->dims.headvarsized;
+	bm->dims.bunwidth = b->dims.bunwidth;
+	bm->dims.bunshift = b->dims.bunshift;
+	bm->dims.hseq = b->dims.tseq;
+	bm->dims.tseq = b->dims.hseq;
+	bm->H = b->T; 
+	bm->T = b->H;
+	bm->P = b->P; 
+	bm->U = b->U; 
+	bm->hhash_heap = b->thash_heap; 
+	bm->thash_heap = b->hhash_heap;
+	bm->hidx_heap = b->tidx_heap; 
+	bm->tidx_heap = b->hidx_heap;
+
+	/* cache it! */
         BBP_cache(i) = b;
-        BBP_cache(-i) = bm = BBPmirror(b);
-        BBP_desc(i) = (BATstore*) ((i>0)?b:bm);
+        BBP_cache(-i) = bm;
 
         if (pid != locked_by) {
                 MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit");
@@ -1043,7 +1053,7 @@ The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
 incremented with @%BBPfix@ and decremented with @%BBPunfix@.
 @c
-static
+static INLINE
 void BBPspin(bat i, str s, int event) {
 	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&event)) {
 		lng spin = LL_CONSTANT(0);
@@ -1056,7 +1066,7 @@ void BBPspin(bat i, str s, int event) {
 }
 
 int BBPincref(bat i, int logical) {
-	MT_Id pid = BBP_getpid();
+	int lock = (BBP_getpid() != locked_by); 
 	int refs = 0;
 
 	if (i == bat_nil) {
@@ -1067,10 +1077,10 @@ int BBPincref(bat i, int logical) {
 	if (i < 0) i = -i;
 	if (i < BBPsize && BBP_logical(i)) { /* no BBPcheck as BBPresurrect should not provoke an GDKerror */
 		for (;;) {
-			if (pid != locked_by) 
+			if (lock) 
 				MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPincref"); 
 			if (BBP_status(i) & BBPUNLOADING) { /* must wait for unload, then reload */
-				if (pid != locked_by) 
+				if (lock) 
 					MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPincref spin wait"); 
 				BBPspin(i, "BBPincref", BBPWAITING);
 			} else { 
@@ -1085,23 +1095,31 @@ int BBPincref(bat i, int logical) {
 				refs = ++BBP_refs(i);
 			}
 		}
-		if (pid != locked_by) 
+		if (lock) 
 			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
 	}
 	return refs;
 }
 
-int BBPdecref(bat i, int logical) {
-	MT_Id pid = BBP_getpid();
+void BBPshare(bat parent) {
+	int lock = (BBP_getpid() != locked_by); 
+	int fix = 0;
+	if (parent < 0) 
+		parent = -parent;
+	if (lock) 
+        	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
+        if (++BBP_cache(parent)->batSharecnt == 1) 
+		fix = 1;
+	if (lock) 
+        	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
+	if (fix) BBPincref(parent, FALSE); 
+}
+
+static INLINE
+int decref(bat i, int logical, int lock) {
 	int refs = 0, swap = 0;
 	BAT *b;
 
-	if (BBPcheck(i, "BBPdecref") == 0) {
-		return -1;
-	}
-	if (i < 0) i = -i;
-        if(pid != locked_by) 
-		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
 
 	/* decrement references by one */
 	if (logical) {
@@ -1135,7 +1153,7 @@ int BBPdecref(bat i, int logical) {
 	}
         
 	/* unlock before re-locking in unload; as saving a dirty persistent bat may take a long time */
-	if (pid != locked_by) 
+	if (lock) 
 		MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
 
         if (swap) {
@@ -1146,30 +1164,28 @@ int BBPdecref(bat i, int logical) {
 	return refs;
 }
 
-void BBPshare(bat parent) {
-	MT_Id pid = BBP_getpid();
-	int fix = 0;
-
-	if (pid != locked_by) 
-        	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
-        if (++BBP_cache(parent)->batSharecnt == 1) 
-		fix = 1;
-	if (pid != locked_by) 
-        	MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
-	if (fix) BBPfix(parent);
+int BBPdecref(bat i, int logical) {
+	int lock = (BBP_getpid() != locked_by); 
+	if (BBPcheck(i, "BBPdecref") == 0) {
+		return -1;
+	}
+	if (i < 0) i = -i;
+        if (lock) MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPdecref");
+	return decref(i, logical, lock);
 }
 
-void BBPunshare(bat parent) {
-	MT_Id pid = BBP_getpid();
-	int unfix = 0;
 
-	if (pid != locked_by) 
+void BBPunshare(bat parent) {
+	int lock = (BBP_getpid() != locked_by); 
+	if (parent < 0) 
+		parent = -parent;
+	if (lock) 
 		MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPunshare");
-        if (--BBP_cache(parent)->batSharecnt == 0) 
-		unfix = 1;
-	if (pid != locked_by) 
+        if (--BBP_cache(parent)->batSharecnt == 0) {
+		(void) decref(parent, FALSE, lock); 
+	} else if (lock) {
 		MT_unset_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPunshare");
-	if (unfix) BBPunfix(parent);
+	}
 }
 
 @
@@ -1805,7 +1821,8 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 		}
 
 		/* release the BBP locks */
-                BBPunlock("BBPtrim");
+		for(i=0; i <= BBPLOCKMASK; i++)
+			MT_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPtrim");
 		MT_unset_lock(GDKcacheLock, "BBPtrim");
 
 		/* do the unload work unlocked */
@@ -1978,7 +1995,7 @@ int BBPsync(int commit) {
 
 	if (ret == 0 && bbpdirty) {
 		ret = BBPdir();
-	} else if (!bbpdirty) {
+	} else if (ret == 0 && !bbpdirty) {
 		/* restore BBP.dir */
 		ret = GDKmove( BAKDIR,"BBP","dir", BATDIR,"BBP","dir");
 	}

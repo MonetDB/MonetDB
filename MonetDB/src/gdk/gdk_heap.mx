@@ -206,13 +206,13 @@ ifndef NOEXTEND_PRIVMAP
 		}
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
-		if (h->filename == NULL || (size*4 < GDK_mem_maxsize)) {
+		if (h->filename == NULL || (size*4 < MAX(GDKvm_minsize(),GDK_mem_maxsize))) {
         		h->storage = STORE_MEM;
                 	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize);
 			if (h->base != NULL) return 0;
 		}
 		/* too big: convert it to a disk-based temporary heap */
-		if (h->filename) {
+		if (h->filename && size >= GDKvm_minsize()) {
 			long_str path;
 			int fd;
 			h->filename = (str) GDKmalloc(strlen(nme)+strlen(ext)+2);

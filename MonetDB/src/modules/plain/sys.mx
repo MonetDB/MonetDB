@@ -1219,60 +1219,49 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 		@:heap(mem,&b->taccelerator,tacc)@
 	} 
 	/* totals per category */
-	if (buns) BUNins(bn, "_tot/buns", &buns);
-	if (head) BUNins(bn, "_tot/head", &head);
-	if (tail) BUNins(bn, "_tot/tail", &tail);
-	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
-	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
-	if (hind) BUNins(bn, "_tot/hind", &hind);
-	if (tind) BUNins(bn, "_tot/tind", &tind);
-	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
-	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
+	BUNins(bn, "_tot/buns", &buns);
+	BUNins(bn, "_tot/head", &head);
+	BUNins(bn, "_tot/tail", &tail);
+	BUNins(bn, "_tot/hhsh", &hhsh);
+	BUNins(bn, "_tot/thsh", &thsh);
+	BUNins(bn, "_tot/hind", &hind);
+	BUNins(bn, "_tot/tind", &tind);
+	BUNins(bn, "_tot/hacc", &hacc);
+	BUNins(bn, "_tot/tacc", &tacc);
 
 	/* special area 1: BBP rec */
 	sz = BBPlimit*sizeof(BBPrec) + n;
-	if (sz) BUNins(bn, "_tot/bbp", &sz);
+	BUNins(bn, "_tot/bbp", &sz);
 	tot += sz;
 
 	/* special area 2: monet context records */
 	sz = monet_cntxtmax*sizeof(CntxtRec);
-	if (sz) BUNins(bn, "_tot/mil", &sz);
+	BUNins(bn, "_tot/mil", &sz);
 
 	/* this concludes all major traceable Monet memory usages */
 	tot += sz;
-	if (tot) BUNins(bn, "_tot/found", &tot);
+	BUNins(bn, "_tot/found", &tot);
 
 	/* now look at what the global statistics report (to see if it coincides) 
   	 */
 
-
-	/* how much memory has been allocated with malloc */
-	tot = GDKmem_heapinuse(); 
-	if (tot) BUNins(bn, "_tot/malloc", &tot);
-
-	/* how much *used* bytes in heap? (e.g. using mallinfo) */
+	/* how much *used* bytes in heap? */
  	m = MT_mallinfo();
-	sz = (size_t) (m.usmblks + m.uordblks);
-	if (sz) BUNins(bn, "_tot/malloc_heap", &tot);
+	sz = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
+	BUNins(bn, "_tot/malloc", &tot);
 
-	/* on linux, heapinuse (tot of all non-redirected GDKvmalloc) can be larger than heapsize!!!
-         * compute the space that was apparently allocated with mmap(anon).
-  	 */
-	sz = (tot > sz)?tot-sz:0;
+	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
+	sz = GDKvm_heapsize(); 
+	BUNins(bn, "_tot/heap", &sz);
 
-	/* measures heap size (e.g. using sbrk) */
-	tot = GDKmem_heapsize(); 
-	if (tot) BUNins(bn, "_tot/heap", &tot);
+	tot = GDKmem_cursize();
+	       
+	/* allocated swap area memory that is not plain malloc() */
+	sz = MAX(0, sz-tot);
+	BUNins(bn, "_tot/valloc", &sz);
 
-	tot += sz; /* add mmap(anon) mallocs to total heap size */
-
-	/* how much data allocated with GDKvmalloc (includes redirected GDKmalloc) */ 
-	sz = GDK_mem_cursize; 
-	if (sz) BUNins(bn, "_tot/valloc", &sz);
-
-	/* swap-area memory is in either GDKvmalloc or heap, must sum them */
-	tot += sz; 
-	if (tot) BUNins(bn, "_tot/swapmem", &tot);
+	/* swap-area memory is in either GDKvmalloc or heap */
+	BUNins(bn, "_tot/swapmem", &tot);
 
 	BBPunlock("get_mem_usage");
 	*ret = bn;
@@ -1303,32 +1292,32 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 		@:heap(vm,&b->taccelerator,tacc)@
 	} 
 	/* totals per category */
-	if (buns) BUNins(bn, "_tot/buns", &buns);
-	if (head) BUNins(bn, "_tot/head", &head);
-	if (tail) BUNins(bn, "_tot/tail", &tail);
-	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
-	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
-	if (hind) BUNins(bn, "_tot/hind", &hind);
-	if (tind) BUNins(bn, "_tot/tind", &tind);
-	if (hacc) BUNins(bn, "_tot/hacc", &hacc);
-	if (tacc) BUNins(bn, "_tot/tacc", &tacc);
+	BUNins(bn, "_tot/buns", &buns);
+	BUNins(bn, "_tot/head", &head);
+	BUNins(bn, "_tot/tail", &tail);
+	BUNins(bn, "_tot/hhsh", &hhsh);
+	BUNins(bn, "_tot/thsh", &thsh);
+	BUNins(bn, "_tot/hind", &hind);
+	BUNins(bn, "_tot/tind", &tind);
+	BUNins(bn, "_tot/hacc", &hacc);
+	BUNins(bn, "_tot/tacc", &tacc);
 
 	/* special area 1: BBP rec */
 	sz = BBPmaxsize*sizeof(BBPrec);
-	if (sz) BUNins(bn, "_tot/bbp", &sz);
+	BUNins(bn, "_tot/bbp", &sz);
 	tot += sz;
 
 	/* special area 2: monet context records */
 	sz = monet_cntxtlim*sizeof(CntxtRec);
-	if (sz) BUNins(bn, "_tot/mil", &sz);
+	BUNins(bn, "_tot/mil", &sz);
 
 	/* this concludes all major traceable Monet virtual memory usages */
 	tot += sz;
-	if (tot) BUNins(bn, "_tot/found", &tot);
+	BUNins(bn, "_tot/found", &tot);
 
         /* all VM is either GDKmmap or GDKvmalloc (possibly redirected GDKmalloc), *plus* the heap */
 	sz = GDKvm_cursize();
-	if (sz) BUNins(bn, "_tot/vm", &sz);
+	BUNins(bn, "_tot/vm", &sz);
 
 	BBPunlock("get_vm_usage");
 	*ret = bn;

@@ -961,10 +961,9 @@ int print_tabwidth(BAT *b, str title, col_format_t *c) {
         if (t >= 0 && t < GDKatomcnt && tostr) {
             size_t off = BUNindex(b, BUNfirst(b));
 	    int k;
-            size_t j, i, probe = MIN(10000,MAX(200,cnt/100));
+            size_t j, i, probe = MIN(cnt,MAX(200,MIN(1024,cnt/100)));
             for(i=0; i < probe; i++) {
-		if (i >= cnt) break;
-                j = off + ((cnt < probe)?i:(rand() % cnt));
+                j = off + ((probe==cnt)?i:(rand() % MIN(16384,cnt)));
                 k = (*tostr)(&c->buf, &c->size,  BUNtail(b,BUNptr(b,j)));
                 if (k > max) max=k;
             }
