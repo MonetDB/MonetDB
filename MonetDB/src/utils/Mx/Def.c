@@ -265,6 +265,7 @@ char *	name;
 	case Cyacc:
 	case Clex:
 	case Prolog:
+	case Haskell:
 	case Monet:
 	case MILcode:
 	case HTML:

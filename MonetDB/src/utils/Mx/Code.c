@@ -46,6 +46,7 @@ again:  switch( d->d_dir ){
 	case Clex:
 	case Cyacc:
 	case Prolog:
+	case Haskell:
 	case OQLspec:
 	case ODLspec:
 	case Monet:
@@ -302,6 +303,10 @@ void	CodeLine()
 	case BibTeX:
             break;
             
+	case Haskell:
+		ofile_printf("\n-- %s:%d \n", mx_file, mx_line);
+		break;
+
 	case Prolog:
 	case Cyacc:
 	case Clex:

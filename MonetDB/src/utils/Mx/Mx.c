@@ -179,6 +179,7 @@ Directive str2dir[]={
     "oql",OQLspec,"oql",
     "sql",SQL,"sql",
     "p",Prolog,"pl",
+    "hs",Haskell,"hs",
     "m",Monet,"m",
     "mil",MILcode,"mil",
     "w",HTML,"www",

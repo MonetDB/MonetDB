@@ -178,6 +178,7 @@ again:  switch( d->d_dir ){
 		case OQLspec:	PrCodeDisplay(d,"oql"); break;
 		case ODLspec:	PrCodeDisplay(d,"odl"); break;
 		case Prolog:	PrCodeDisplay(d,"plg"); break;
+		case Haskell:	PrCodeDisplay(d,"hs"); break;
 		case SQL:       PrCodeDisplay(d,"sql"); break;
 		case Qnap:	PrCodeDisplay(d,"qnp"); break;
 		case Tcl:	PrCodeDisplay(d,"tcl"); break;
