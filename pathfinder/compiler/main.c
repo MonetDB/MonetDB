@@ -682,13 +682,13 @@ main (int argc, char *argv[])
     }
 
     /* Now call the main compiler driver */
-    if ( pf_compile( /*stdout,*/ status) < 0 )
+    if ( pf_compile( /*stdin, stdout,*/ status) < 0 )
         goto failure;
 
     exit (EXIT_SUCCESS);
 
  failure:
-    exit (EXIT_FAILURE); /* JF: cannot be called in runtime env */
+    exit (EXIT_FAILURE);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

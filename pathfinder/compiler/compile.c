@@ -169,8 +169,9 @@ static PFcnode_t * unfold_lets (PFcnode_t *c);
  * (starting with the parser).
  */
 int
-pf_compile ( /*FILE* pfout,*/ PFstate_t *status)
+pf_compile ( /*FILE pfin, FILE* pfout,*/ PFstate_t *status)
 {
+    /* FILE* pfin  = stdin;  incomplete, JF */
     FILE* pfout = stdout; /* incomplete, JF */
 
     PFpnode_t  *proot  = NULL;

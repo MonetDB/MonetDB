@@ -237,7 +237,8 @@ reduce (PFma_op_t *p, int goalnt)
     /*
      * Recursively invoke compilation.  This means bottom-up compilation.
      */
-    for (unsigned short i = 0; nts[i]; i++)
+    unsigned short i;
+    for (i = 0; nts[i]; i++)
         reduce (kids[i], nts[i]);
 
     /* Nothing to do if this subtree is already translated */

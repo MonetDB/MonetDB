@@ -227,7 +227,9 @@ reduce (PFalg_op_t *p, int goalnt)
     PFma_gen_kids (p, rule, kids);
 
     /* recursively translate all leaf expressions */
-    for (unsigned short i = 0; nts[i]; i++)
+    unsigned short i;
+
+    for (i = 0; nts[i]; i++)
         reduce (kids[i], nts[i]);
 
     /*
@@ -279,8 +281,10 @@ reduce (PFalg_op_t *p, int goalnt)
             copy_env (p->env, L(p)->env);
 
             /* Now append everything we get from R */
-            for (unsigned int i = 0; i < (unsigned int) R(p)->schema.count; i++)
-                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+            unsigned int i;
+            PFalg_simple_type_t t;
+            for (i = 0; i < (unsigned int) R(p)->schema.count; i++)
+                for (t = 1; t; t <<= 1)
                     if (t & R(p)->schema.items[i].type) {
                         if (t == R(p)->schema.items[i].type)
                             /*
@@ -449,13 +453,16 @@ reduce (PFalg_op_t *p, int goalnt)
         } break;
 
         /* Rel:  project (Rel) */
-        case 6:
+        case 6: {
             /* Just copy entries to new environment under new names */
-            for (unsigned int i = 0; i < (unsigned int) p->sem.proj.count; i++)
-                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+            unsigned int i;
+            PFalg_simple_type_t t;
+            for (i = 0; i < (unsigned int) p->sem.proj.count; i++)
+                for (t = 1; t; t <<= 1)
                     if (t & p->schema.items[i].type)
                         LOOKUP (p, p->sem.proj.items[i].new, t)
                             = LOOKUP (L(p), p->sem.proj.items[i].old, t);
+            }
             break;
 
         /* Rel:  rownum (Rel) */

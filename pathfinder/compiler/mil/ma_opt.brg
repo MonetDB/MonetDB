@@ -195,7 +195,8 @@ reduce (PFma_op_t *p, int goalnt)
     /*
      * Recursively invoke rewriting.  This means bottom-up rewriting.
      */
-    for (unsigned short i = 0; nts[i]; i++)
+    unsigned short i;
+    for (i = 0; nts[i]; i++)
         reduce (kids[i], nts[i]);
 
     switch (rule) {

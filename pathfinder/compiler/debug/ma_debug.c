@@ -244,8 +244,10 @@ ma_dot (PFarray_t *dot, PFma_op_t *n, char *node)
 static void
 clear_node_ids (PFma_op_t *n)
 {
+    unsigned int i;
+
     n->node_id = 0;
-    for (unsigned int i = 0; i < MILALGEBRA_MAXCHILD && n->child[i]; i++)
+    for (i = 0; i < MILALGEBRA_MAXCHILD && n->child[i]; i++)
         clear_node_ids (n->child[i]);
 }
 
