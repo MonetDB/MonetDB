@@ -14,12 +14,6 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @a M. Kersten
 @v 0.0
@@ -365,6 +359,7 @@ str MALengine(Client c){
 			c->glb= reallocGlobalStack(c->glb, prg->def->vsize);
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk =  prg->def;
+		c->glb->cmd= c->itrace?'n':0;
 	}
 
 	if( c->listing) printFunction(c->fdout,c->curprg->def, c->listing);
@@ -379,7 +374,6 @@ str MALengine(Client c){
 	resetInstructions(prg->def,1);
 	resetVariables(prg->def,c->glb,0);
 	prg->def->errors = 0;
-	if( c->glb) c->glb->cmd= c->itrace?'n':0;
 	return msg;
 }
 @}
