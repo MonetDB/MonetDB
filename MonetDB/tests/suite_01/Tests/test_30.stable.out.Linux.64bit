@@ -16,18 +16,17 @@ unknown("hello");
 !ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 
 #simple procedure with withdrawal
-proc c:= clock.print;
-c;
+proc c(){ clock.print();}
+c();
 !WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 undef c;
-c;
-!WARNING: interpret: convert identifier 'c' to string.
+c();
 
 # block administration
 
 # how about variables in a block
-{ i:=123; vars;}
+{ i:=123; vars();}
 #-----------------------------------------------------------------------------------------#
 # tmp_31		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
