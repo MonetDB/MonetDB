@@ -63,21 +63,18 @@ pattern ftable( filep:stream,
 address IOftable 
 comment "Print an n-ary table to a file.";
 
-pattern print(order:int,b:bat[:any$1,:any], 
-		b2:bat[:any$1,:any]...):int
+pattern print(order:int,b:bat[:any$1,:any], b2:bat[:any$1,:any]...):int
 address IOotable
 comment "The same as normal table print, but 
 	enforces to use the order of BAT 
 	number [1..argc] to do the printing.";
 
-pattern table(b1:bat[:any$1,:any], 
-		b2:bat[:any$1,:any]...):int 
+pattern table(b1:bat[:any,:any], b2:bat[:any,:any]...):int 
 address IOttable
 comment "Print an n-ary table. Like print,
 	but does not print oid column";
 
-pattern table(order:int, b1:bat[:any$1,:any], 
-		b2:bat[:any$1,:any]...):int 
+pattern table(order:int, b1:bat[:any$1,:any], b2:bat[:any$1,:any]...):int 
 address IOtotable
 comment "Print an n-ary table.";
 pattern ftable(fp:stream, order:int,

@@ -256,7 +256,7 @@ end main;	# 6
 [ 224@0,  "command",	  "io",		  "stderr",		  "():stream address io_stderr;"													  ]
 [ 225@0,  "command",	  "io",		  "stdin",		  "():stream address io_stdin;"														  ]
 [ 226@0,  "pattern",	  "io",		  "table",		  "(order:int,b1:bat[:any$1,:any],b2:bat[:any$1,:any]...):int address IOtotable;"							  ]
-[ 227@0,  "pattern",	  "io",		  "table",		  "(b1:bat[:any$1,:any],b2:bat[:any$1,:any]...):int address IOttable;"									  ]
+[ 227@0,  "pattern",	  "io",		  "table",		  "(b1:bat[:any,:any],b2:bat[:any,:any]...):int address IOttable;"											  ]
 [ 228@0,  "pattern",	  "tablet",	  "dump",		  "(s:stream,b:bat[:any,:any]...):int address TABdump;"											  ]
 [ 229@0,  "pattern",	  "tablet",	  "display",		  "(v:bat[:any,:any]...):int address TABdisplayTable;"											  ]
 [ 230@0,  "pattern",	  "tablet",	  "display",		  "(v:any...):int address TABdisplayRow;"												  ]
