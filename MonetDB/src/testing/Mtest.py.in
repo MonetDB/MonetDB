@@ -1501,7 +1501,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         ME = ""
         ATJOB1 = ""
         MkillUsers = ""
-        if os.name != "nt" and sys.platform != 'cygwin':
+        if os.name != "nt" and sys.platform != 'cygwin' and not env.get('NO_AT'):
             for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
                     os.remove(f)
@@ -1538,7 +1538,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         TX = t1 - t0
         STDOUT.write(" %7.3fs " % TX)
 
-        if os.name != "nt" and sys.platform != 'cygwin':
+        if ATJOB1:
             StopAt(ATJOB1,ME)
             os.system(WHAT.replace('\\', '').replace(" -p"+ME+" ", ' '))
         else:
@@ -2422,6 +2422,7 @@ def main(argv) :
              'default: %s' % dft['X100CLIENT']),
             ('XQUERYCLIENT', None, 'XQUERYCLIENT', '<XQuery to MIL compiler>',
              'default: %s' % dft['XQUERYCLIENT']),
+            ('no-at', None, 'no_at', None, 'Do not use at command'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -2485,6 +2486,9 @@ def main(argv) :
         a = opts.get('sql_logdir')
         if a is not None:
             env['SQL_LOGDIR'] = a
+        a = opts.get('no_at')
+        if a is not None:
+            env['NO_AT'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
