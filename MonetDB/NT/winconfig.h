@@ -217,6 +217,7 @@
 
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV 1
+#define putenv _putenv
 
 /* Define if you have the rmdir function.  */
 #define HAVE_RMDIR 1
@@ -225,7 +226,7 @@
 #define HAVE_SELECT 1
 
 /* Define if you have the setenv function.  */
-#define HAVE_SETENV 1
+/* #define HAVE_SETENV */
 
 /* Define if you have the snprintf function.  */
 #define HAVE_SNPRINTF 1
