@@ -42,7 +42,7 @@ lib__ascii_io = {
 	SOURCES = ascii_io.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = lib_streams
+	LIBS = ../../gdk/libbat ../../monet/libmonet libstream lib_streams
 }
 
 

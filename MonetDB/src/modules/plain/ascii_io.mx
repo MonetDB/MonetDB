@@ -119,10 +119,8 @@ extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr 
 #endif
 @c
 
-#include "ascii_io.h"
-#include "config.h"
 #include <gdk.h>
-#include <streams.h>
+#include "ascii_io.h"
 
 #include <string.h>
 #include <ctype.h>

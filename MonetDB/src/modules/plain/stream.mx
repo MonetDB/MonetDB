@@ -23,6 +23,16 @@ data files.
 #include <ctype.h>
 #include <stdio.h>
 
+#ifdef _MSC_VER
+#ifndef LIBSTREAM
+#define stream_export extern __declspec(dllimport) 
+#else
+#define stream_export extern __declspec(dllexport) 
+#endif
+#else
+#define stream_export extern 
+#endif
+
 typedef struct stream {
 	short byteorder;
 	char *filename;
@@ -35,36 +45,36 @@ typedef struct stream {
 	void (*destroy)( struct stream *s );
 } stream;
 
-stream *open_rstream( char *filename );
-stream *open_wstream( char *filename );
+stream_export stream *open_rstream( char *filename );
+stream_export stream *open_wstream( char *filename );
 /* open in ascii stream in read mode */
-stream *open_rastream( char *filename ); 
+stream_export stream *open_rastream( char *filename ); 
 /* open in ascii stream in write mode*/
-stream *open_wastream( char *filename ); 
+stream_export stream *open_wastream( char *filename ); 
 
 #ifdef HAVE_LIBZ
-stream *open_gzrstream( char *filename );
-stream *open_gzwstream( char *filename );
-stream *open_gzrastream( char *filename );
-stream *open_gzwastream( char *filename );
+stream_export stream *open_gzrstream( char *filename );
+stream_export stream *open_gzwstream( char *filename );
+stream_export stream *open_gzrastream( char *filename );
+stream_export stream *open_gzwastream( char *filename );
 #endif
 
 #ifdef HAVE_LIBBZ2
-stream *open_bzrstream( char *filename );
-stream *open_bzwstream( char *filename );
-stream *open_bzrastream( char *filename );
-stream *open_bzwastream( char *filename );
+stream_export stream *open_bzrstream( char *filename );
+stream_export stream *open_bzwstream( char *filename );
+stream_export stream *open_bzrastream( char *filename );
+stream_export stream *open_bzwastream( char *filename );
 #endif
 
-stream *socket_rstream( int socket, char *name );
-stream *socket_wstream( int socket, char *name );
-stream *socket_rastream( int socket, char *name );
-stream *socket_wastream( int socket, char *name );
+stream_export stream *socket_rstream( int socket, char *name );
+stream_export stream *socket_wstream( int socket, char *name );
+stream_export stream *socket_rastream( int socket, char *name );
+stream_export stream *socket_wastream( int socket, char *name );
 
-stream *file_rstream( FILE *fp, char *name );
-stream *file_wstream( FILE *fp, char *name );
-stream *file_rastream( FILE *fp, char *name );
-stream *file_wastream( FILE *fp, char *name );
+stream_export stream *file_rstream( FILE *fp, char *name );
+stream_export stream *file_wstream( FILE *fp, char *name );
+stream_export stream *file_rastream( FILE *fp, char *name );
+stream_export stream *file_wastream( FILE *fp, char *name );
 
 #endif /*_STREAM_H_*/
 @c
