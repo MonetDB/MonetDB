@@ -1843,6 +1843,7 @@ non_reserved_word:
 | PATH		{ $$ = _strdup("path"); }
 | ROLE		{ $$ = _strdup("role"); }
 | NULLX		{ $$ = _strdup("null"); }
+| DEFAULT	{ $$ = _strdup("default"); }
 ;
 
 name_commalist:
