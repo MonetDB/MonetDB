@@ -1,0 +1,23 @@
+s := "hello";
+i := 1;
+f := 3.14;
+c := 'a';
+b:= true;
+bb:= new(void,str);
+
+st:= type(s); printf("string %d\n",st);
+it:= type(i); printf("int %d\n",it);
+ft:= type(f); printf("flt %d\n",ft);
+ct:= type(c); printf("chr %d\n",ct);
+bt:= type(b); printf("bit %d\n",bt);
+bbt:= type(bb); printf("bat %d\n",bbt);
+
+# get them as strings
+v:= "";
+v:= typename(st); printf("string %s\n",v);
+v:= typename(it); printf("int %s\n",v);
+v:= typename(ft); printf("flt %s\n",v);
+v:= typename(ct); printf("chr %s\n",v);
+v:= typename(bt); printf("bit %s\n",v);
+v:= typename(bbt); printf("bat %s\n",v);
+
