@@ -107,7 +107,7 @@ This module contains a simple interface for internet connections.
 @h
 #ifndef MAPI_H
 #define MAPI_H
-#define BLOCKED
+/*#define BLOCKED*/
 
 #include <streams.h>
 #include <monet_context.h>
