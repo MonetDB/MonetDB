@@ -10,19 +10,20 @@ stdout of test '02_Modules_contrib` in directory 'tests/Availability` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
-Static_fcn:=monet_fcntbl.reverse.copy;
+var MODULES:=bat("MODULES");
+var Static_fcn:=monet_fcntbl.reverse().copy();
 
-Fname:=new(oid,str);Fname.col_name("function");
-FnameS:=new(oid,str);FnameS.col_name("function");
-Ftype:=new(oid,str);Ftype.col_name("type");
-Fsig:=new(oid,str);Fsig.col_name("signature");
-Fhelp:=new(oid,str);Fhelp.col_name("help");
-Fnts:=new(oid,str);
+var Fname:=new(oid,str);	Fname.col_name("function");
+var FnameS:=new(oid,str);	FnameS.col_name("function");
+var Ftype:=new(oid,str);	Ftype.col_name("type");
+var Fsig:=new(oid,str);		Fsig.col_name("signature");
+var Fhelp:=new(oid,str);	Fhelp.col_name("help");
+var Fnts:=new(oid,str);
 
-Plain_mods:=MODULES.select("contrib").sort.copy;
-table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
+var Plain_mods:=MODULES.select("contrib").sort().copy();
+table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 #-----------------#
-# 17 modules	  # name
+# 13 modules	  #
 #-----------------#
 [ "array"	  ]
 [ "bat_cast"	  ]
@@ -43,17 +44,17 @@ table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 [ "vector"	  ]
 [ "wisc"	  ]
 Plain_mods@batloop {
-	The_mod:=$h;
+	var The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
 	module($h);
 
-	Mod_fcn:=sdiff(monet_fcntbl.reverse,Static_fcn).reverse;
-	Mod_fcn.sort@batloop {
-	    addThis:=false;
+	var Mod_fcn:=sdiff(monet_fcntbl.reverse(),Static_fcn).reverse();
+	Mod_fcn.sort()@batloop {
+	    var addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
 	    } else {
-		m:=monet_mod_nme.find(monet_fcn_mid.find($t));
+		var m:=monet_mod_nme.find(monet_fcn_mid.find($t));
 		if (m.startsWith("_")) {
 		    m:=string(m,1);
 		}
@@ -62,10 +63,10 @@ Plain_mods@batloop {
 		}
 	    }
 	    if (addThis) {
-		Tname:=$h;
-		Ttype:=help_tpe(monet_fcn_tpe.find($t));
-		Tsig:=format_fcn_sig($t);
-		Thelp:="";
+		var Tname:=$h;
+		var Ttype:=help_tpe(monet_fcn_tpe.find($t));
+		var Tsig:=format_fcn_sig($t);
+		var Thelp:="";
 		if (monet_fcn_dsc.exist($t)) {
 			Thelp:=monet_fcn_dsc.find($t);
 		} else {
@@ -80,20 +81,20 @@ Plain_mods@batloop {
 	}
 
 	drop($h);
-	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse);
+	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse());
 
-	Fnts.count.print;
-	Fnts.reverse.sort.reverse@batloop {
+	Fnts.count().print();
+	Fnts.reverse().sort().reverse()@batloop {
 		FnameS.insert($h,Fname.find($h));
 	}
-	FnameS.count.print; table(1,FnameS,Ftype,Fsig,Fhelp);
+	FnameS.count().print(); table(1,FnameS,Ftype,Fsig,Fhelp);
 
-	Fname.delete;
-	FnameS.delete;
-	Ftype.delete;
-	Fsig.delete;
-	Fhelp.delete;
-	Fnts.delete;
+	Fname.delete();
+	FnameS.delete();
+	Ftype.delete();
+	Fsig.delete();
+	Fhelp.delete();
+	Fnts.delete();
 }
 
 Module: "array"
@@ -147,7 +148,7 @@ Module: "bitset"
 [ "bitset_or",		  "COMMAND:   ",  "bitset_or(bitset, bitset) : bitset",		  "OR this BitSet with an other BitSet."		  ]
 [ "bitset_setBit",	  "COMMAND:   ",  "bitset_setBit(bitset, int) : bitset",	  "Set the specified bit from this BitSet."		  ]
 [ "bitset_toInt",	  "COMMAND:   ",  "bitset_toInt(bitset) : int",			  "Convert this BitSet to an integer."			  ]
-[ "bitset_toStr",	  "PROC:      ",  "bitset_toStr(any) : any",			  "not available"					  ]
+[ "bitset_toStr",	  "PROC:      ",  "bitset_toStr(bitset) : str",			  "not available"					  ]
 [ "bitset_xor",		  "COMMAND:   ",  "bitset_xor(bitset, bitset) : bitset",	  "XOR this BitSet with an other BitSet."		  ]
 [ "newBitset",		  "COMMAND:   ",  "newBitset() : bitset",			  "Create a new empty BitSet."				  ]
 [ "newBitset",		  "COMMAND:   ",  "newBitset(int) : bitset",			  "Create a new BitSet from an existing integer."	  ]
@@ -232,8 +233,8 @@ Module: "ddbench"
 [ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,any], BAT[void,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
 [ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
 [ "not",		  "PROC:      ",  "not(BAT[void,bit32]) : BAT[void,bit32]",						  "not available"																																											  ]
-[ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : any",					  "not available"																																											  ]
-[ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",				  "not available"																																											  ]
+[ "orderby_table",	  "PROC:      ",  "orderby_table(str, str, ..BAT[any::1,any]..) : void",				  "not available"																																											  ]
+[ "print",		  "PROC:      ",  "print(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",				  "not available"																																											  ]
 [ "refine",		  "COMMAND:   ",  "refine(BAT[oid,void], BAT[oid,any::1], any::1) : BAT[oid,void]",			  "like val_oidsubsel(sel,b,v), but *OVERWRITES* sel with result."																																					  ]
 [ "refine",		  "COMMAND:   ",  "refine(BAT[oid,void], BAT[oid,any::1], any::1, any::1) : BAT[oid,void]",		  "like rng_oidsubsel(sel,b,lo,hi), but *OVERWRITES* sel with result."																																					  ]
 [ "refine",		  "COMMAND:   ",  "refine(BAT[void,bit32], BAT[oid,any::1], any::1) : BAT[void,bit32]",			  "like val_bitsubsel(sel,b,v), but *OVERWRITES* sel with result."																																					  ]
@@ -252,7 +253,7 @@ Module: "ddbench"
 [ "subselect",		  "COMMAND:   ",  "subselect(BAT[oid,void], BAT[oid,any::1], any::1, any::1) : BAT[oid,void]",		  "uselect, on b.semijoin(sel), optimized for enum types"																																						  ]
 [ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1) : BAT[void,bit32]",		  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
 [ "subselect",		  "COMMAND:   ",  "subselect(BAT[void,bit32], BAT[oid,any::1], any::1, any::1) : BAT[void,bit32]",	  "do a bitselect on the subset indicated by the first BAT param"																																					  ]
-[ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : any",				  "not available"																																											  ]
+[ "table",		  "PROC:      ",  "table(str, BAT[any::1,any], ..BAT[any::1,any]..) : void",				  "not available"																																											  ]
 [ "test_ddbench",	  "PROC:      ",  "test_ddbench() : void",								  "not available"																																											  ]
 [ "test_streams",	  "PROC:      ",  "test_streams() : void",								  "not available"																																											  ]
 [ "test_xtables",	  "PROC:      ",  "test_xtables() : void",								  "not available"																																											  ]
@@ -261,10 +262,10 @@ Module: "ddbench"
 [ "val_oidselect",	  "COMMAND:   ",  "val_oidselect(BAT[oid,any::1], any::1) : BAT[void,oid]",				  "uselect, optimized for enumeration types"																																								  ]
 [ "vals_bitselect",	  "COMMAND:   ",  "vals_bitselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "computes multiple bitmasks for each equi-select 'v' on 'sel'"																																					  ]
 [ "vals_oidselect",	  "COMMAND:   ",  "vals_oidselect(BAT[oid,any::1], any::1, ..any::1..) : BAT[int,BAT]",			  "uselect, optimized for enum types, on multiple equi-select predicates"																																				  ]
-[ "xtable_histo_direct",  "PROC:      ",  "xtable_histo_direct(..any..) : any",							  "not available"																																											  ]
-[ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : any",							  "not available"																																											  ]
-[ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : any",							  "not available"																																											  ]
-[ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(any, any) : any",							  "not available"																																											  ]
+[ "xtable_histo_direct",  "PROC:      ",  "xtable_histo_direct(..any..) : void",						  "not available"																																											  ]
+[ "xtable_histo_remap",	  "PROC:      ",  "xtable_histo_remap(..any..) : void",							  "not available"																																											  ]
+[ "xtable_print",	  "PROC:      ",  "xtable_print(..any..) : void",							  "not available"																																											  ]
+[ "xtable_realloc",	  "PROC:      ",  "xtable_realloc(BAT[any::1,any::2], int) : BAT[any::1,any::2]",			  "not available"																																											  ]
 [ "xtable_test",	  "PROC:      ",  "xtable_test(str, BAT[any,any], BAT[any,any], BAT[any,any]) : void",			  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[any::1,any]) : BAT[any::1,int]",						  "not available"																																											  ]
 [ "{count}",		  "PROC:      ",  "{count}(BAT[oid,bit], BAT[oid,oid], BAT[oid,int]) : BAT[oid,int]",			  "not available"																																											  ]
@@ -345,7 +346,7 @@ Module: "mel"
 #---------------------------------------------------------------------------------#
 # function	| type		| signature		| help			  #
 #---------------------------------------------------------------------------------#
-[ "mel_test",	  "PROC:      ",  "mel_test() : any",	  "not available"	  ]
+[ "mel_test",	  "PROC:      ",  "mel_test() : void",	  "not available"	  ]
 [ "test_mel",	  "PROC:      ",  "test_mel() : void",	  "not available"	  ]
 
 Module: "oo7"
@@ -386,27 +387,27 @@ Module: "tpcd"
 # function	| type		| signature										| help																		  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "avg",	  "PROC:      ",  "avg(..any..) : any",									  "not available"																  ]
-[ "debug",	  "PROC:      ",  "debug(..any..) : any",								  "not available"																  ]
+[ "debug",	  "PROC:      ",  "debug() : void",									  "not available"																  ]
 [ "dvjoin",	  "COMMAND:   ",  "dvjoin(BAT[oid,void], BAT[void,any::1], BAT[oid,any::2]) : BAT[any::1,any::2]",	  "Performs join(A.extent,A.vector,B) using a datavector on A.tail. \n     Creates a vextoridx on the head of B; if not present already."	  ]
 [ "dvsemijoin",	  "COMMAND:   ",  "dvsemijoin(BAT[oid,void], BAT[void,any::1], BAT[oid,any::2]) : BAT[oid,any::1]",	  "Performs semijoin(A.extent,A.vector,B) using a datavector on A.tail. \n     Creates a vextoridx on the head of B; if not present already."	  ]
 [ "extent",	  "COMMAND:   ",  "extent(BAT[oid,any::1]) : BAT[oid,void]",						  "If there is a datavector on the tail of the BAT, this returns\n     the associated extent BAT, else it gives an error."			  ]
 [ "gjoin",	  "PROC:      ",  "gjoin() : <predefinition>",								  "not available"																  ]
-[ "gjoin",	  "PROC:      ",  "gjoin(any, any) : any",								  "not available"																  ]
-[ "gorder",	  "PROC:      ",  "gorder(any) : any",									  "not available"																  ]
-[ "gselect",	  "PROC:      ",  "gselect(..any..) : any",								  "not available"																  ]
-[ "gsemijoin",	  "PROC:      ",  "gsemijoin(any, any) : any",								  "not available"																  ]
+[ "gjoin",	  "PROC:      ",  "gjoin(BAT[any,any], BAT[any,any]) : BAT[any,any]",					  "not available"																  ]
+[ "gorder",	  "PROC:      ",  "gorder(BAT[any,any]) : BAT[any,any]",						  "not available"																  ]
+[ "gselect",	  "PROC:      ",  "gselect(BAT[any,any], ..any..) : BAT[any,any]",					  "not available"																  ]
+[ "gsemijoin",	  "PROC:      ",  "gsemijoin(BAT[any,any], BAT[any,any]) : BAT[any,any]",				  "not available"																  ]
 [ "gsum",	  "PROC:      ",  "gsum(BAT[any,any]) : int",								  "not available"																  ]
-[ "guselect",	  "PROC:      ",  "guselect(..any..) : any",								  "not available"																  ]
-[ "udiff",	  "PROC:      ",  "udiff(..any..) : any",								  "not available"																  ]
-[ "uintersect",	  "PROC:      ",  "uintersect(..any..) : any",								  "not available"																  ]
-[ "uunion",	  "PROC:      ",  "uunion(..any..) : any",								  "not available"																  ]
-[ "uunique",	  "PROC:      ",  "uunique(..any..) : any",								  "not available"																  ]
+[ "guselect",	  "PROC:      ",  "guselect(BAT[any,any], ..any..) : BAT[any,any]",					  "not available"																  ]
+[ "udiff",	  "PROC:      ",  "udiff(..BAT[any,any]..) : BAT[any,any]",						  "not available"																  ]
+[ "uintersect",	  "PROC:      ",  "uintersect(..BAT[any,any]..) : BAT[any,any]",					  "not available"																  ]
+[ "uunion",	  "PROC:      ",  "uunion(..BAT[any,any]..) : BAT[any,any]",						  "not available"																  ]
+[ "uunique",	  "PROC:      ",  "uunique(..BAT[any,any]..) : BAT[any,any]",						  "not available"																  ]
 [ "vector",	  "COMMAND:   ",  "vector(BAT[oid,any::1]) : BAT[void,any::1]",						  "If there is a datavector on the tail of the BAT, this returns\n     the associated unary vector BAT, else it gives an error."		  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail average"															  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail average"															  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail average"															  ]
 [ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail average"															  ]
-[ "{count}",	  "PROC:      ",  "{count}(..any..) : any",								  "not available"																  ]
+[ "{count}",	  "PROC:      ",  "{count}(..any..) : int",								  "not available"																  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail maximum"															  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail maximum"															  ]
 [ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail maximum"															  ]
@@ -422,8 +423,8 @@ Module: "tpcd"
 
 Module: "txtsim"
 
-[ 5 ]
-[ 5 ]
+[ 6 ]
+[ 6 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature					help																	  # name
 # str			str		str						str																	  # type
@@ -433,6 +434,7 @@ Module: "txtsim"
 [ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str) : int",		  "Calculates Levenshtein distance (edit distance) between two strings"									  ]
 [ "levenshtein",	  "COMMAND:   ",  "levenshtein(str, str, int, int, int) : int",	  "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)"	  ]
 [ "soundex",		  "COMMAND:   ",  "soundex(str) : str",				  "Soundex function for phonetic matching"												  ]
+[ "stringdiff",		  "PROC:      ",  "stringdiff(str, str) : int",			  "not available"															  ]
 
 Module: "vector"
 
@@ -593,7 +595,7 @@ Module: "wisc"
 [ "wisc",	  "COMMAND:   ",  "wisc(str, int) : void",	  "Wisconsin Benchmark Database Generator"	  ]
 [ "wiscdestroy",  "COMMAND:   ",  "wiscdestroy(str) : void",	  "WBD destroy table"				  ]
 
-quit;
+quit();
 
 # 15:30:10 >  
 # 15:30:10 >  Done.

@@ -169,6 +169,8 @@ test = (
                 "|" r'^\[ "(mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$'
                 # src/gdk/cast:
                 "|" r'^\[ (\-|)0 \]$'
+                # src/mapi/monet_BATs (on Linux2.4.26.ntv_32-d):
+                "|" r'^\[ "monet_mod_use",\t* *(44|66)\t* *\]$'
                 # Tokens depend on flex/bison
                 "|" r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]'
                 # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/

@@ -27,7 +27,7 @@ loaded();
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
-[~mmn()].reverse().sort().print();
+mmn().reverse().mark(oid(nil)).sort().print();
 #-------------------------#
 # BAT:		  tmp_30  #
 # (str)		  (void)  #
@@ -41,7 +41,7 @@ loaded();
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "uchr",	  nil	  ]
-[~view_modules].reverse().kunique().sort().print();
+view_modules.reverse().mark(oid(nil)).kunique().sort().print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -113,7 +113,7 @@ loaded();
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
-[~mmn()].reverse().sort().print();
+mmn().reverse().mark(oid(nil)).sort().print();
 #-------------------------#
 # BAT:		  tmp_27  #
 # (str)		  (void)  #
@@ -133,8 +133,8 @@ loaded();
 # # loaded();
 # # [~mmn()].reverse().sort().print();
 
-fix:=mmn().reverse().copy();
-[fix~].print();
+var fix:=mmn().reverse().copy();
+fix.mark(oid(nil)).print();
 #-------------------------#
 # BAT:		  tmp_30  #
 # (str)		  (void)  #
@@ -150,8 +150,8 @@ fix:=mmn().reverse().copy();
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 
-others:=kdiff(view_modules.reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
-[others~].print();
+var others:=kdiff(view_modules.reverse().kunique(),mmn().reverse()).sort().access(BAT_WRITE).revert();
+others.mark(oid(nil)).print();
 #-------------------------#
 # BAT:		  tmp_26  #
 # (str)		  (void)  #
@@ -203,8 +203,8 @@ others@batloop(){
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded();
-	off:=kdiff(mmn().reverse(),fix);
-	[off~].print();
+	var off:=kdiff(mmn().reverse(),fix);
+	off.mark(oid(nil)).print();
 	off@batloop(){
 		printf("\n\tdropping %s\n\n",$h);
 	}
@@ -550,48 +550,7 @@ others@batloop(){
 	dropping streams
 
 #---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "uchr",	  2		  ]
-
-	loading pf_support
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "pf_support",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "uchr",	  2		  ]
-#-------------------------#
-# h		tmp_37	  # name
-# str		void	  # type
-#-------------------------#
-[ "pf_support",	  nil	  ]
-
-	dropping pf_support
-
-#---------------------------------#
-# module		usage_count	  # name
-# str		int		  # type
+# module	| usage_count	  #
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -797,6 +756,47 @@ others@batloop(){
 
 #---------------------------------#
 # module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+
+	loading pf_support
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "pf_support",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
+#-------------------------#
+# h		tmp_37	  # name
+# str		void	  # type
+#-------------------------#
+[ "pf_support",	  nil	  ]
+
+	dropping pf_support
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
@@ -1217,7 +1217,7 @@ others@batloop(){
 [ "uchr",	  2		  ]
 [ "url",	  1		  ]
 #-------------------------#
-# h		tmp_30	  # name
+# h		tmp_44	  # name
 # str		void	  # type
 #-------------------------#
 [ "image",	  nil	  ]
@@ -1431,7 +1431,7 @@ others@batloop(){
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
 #-------------------------#
-# h		tmp_35	  # name
+# h		tmp_45	  # name
 # str		void	  # type
 #-------------------------#
 [ "color",	  nil	  ]
@@ -1583,7 +1583,7 @@ others@batloop(){
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
 #-------------------------#
-# h		tmp_34	  # name
+# h		tmp_45	  # name
 # str		void	  # type
 #-------------------------#
 [ "bat_mmath",	  nil	  ]
@@ -1621,7 +1621,7 @@ others@batloop(){
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
 #-------------------------#
-# h		tmp_35	  # name
+# h		tmp_48	  # name
 # str		void	  # type
 #-------------------------#
 [ "bat_cast",	  nil	  ]
@@ -1740,7 +1740,7 @@ others@batloop(){
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
 #-------------------------#
-# h		tmp_32	  # name
+# h		tmp_43	  # name
 # str		void	  # type
 #-------------------------#
 [ "array",	  nil	  ]

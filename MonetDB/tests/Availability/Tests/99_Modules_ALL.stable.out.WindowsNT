@@ -10,15 +10,19 @@ stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 
-PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+var MODULES:=bat("MODULES");
+
+PROC mmn() : BAT[oid,str] {
+	 return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
+}
 
 #All_mods:=MODULES.sort.copy;
 module("cluster");
 # # module(Meta);
-All_mods:=MODULES.sort.copy.access(BAT_WRITE).revert;
+var All_mods:=MODULES.sort().copy().access(BAT_WRITE).revert();
 All_mods@batloop {
 	printf("%9s: ",$h);
-	if (not(monet_mod_nme.reverse.exist($h))) {
+	if (not(monet_mod_nme.reverse().exist($h))) {
 		printf("loading... ");
 		module($h);
 		printf("done.\n");
@@ -78,9 +82,9 @@ bat_arith: loading... done.
    aggrX3: loading... done.
      aggr: loading... done.
 
-table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
+table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count())));
 #-----------------#
-# 50 modules	  # name
+# 45 modules	  #
 #-----------------#
 [ "aggr"	  ]
 [ "aggrX3"	  ]
@@ -182,7 +186,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 ##}
 ##FmodS.count.print; table(1,FmodS,Fname,Ftype,Fsig,Fhelp);
 
-quit;
+quit();
 
 # 13:58:48 >  
 # 13:58:48 >  Done.
