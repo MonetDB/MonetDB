@@ -53,8 +53,11 @@ which refer to the position of the code block in the original \Mx document.
 
 In document extraction mode, a file for a document formatting program
 is generated, which includes the comment and the program code.
-Currently the \LaTeX\ and ``troff -ms'' and Netscape-enhanced HTML 
-formatting programs are supported. 
+The preferred output is Texinfo format, which provides a basis
+to generate both printable and web-enabled documentation.
+\footnote{Backward compatibility to produce \LaTeX\ 
+``troff -ms'' and Netscape-enhanced HTML 
+formatting programs is also supported. }
 In-line directives for typesetting characters in bold,
 italics or in code font are included in \Mx. It is not possible to
 express everything you want in \Mx. There is an escape mechanism,
@@ -105,6 +108,7 @@ the \Mx program.
 
 \begin{verbatim}
 Usage: Mx <flags> <file>.mx.
+        -i              Produce texinfo document.
         -t              Produce LaTeX document (default).
         -c              Extract code.
         -R<dir>         Set target directory to <dir>).
@@ -137,6 +141,10 @@ By default \Mx extracts all the code files.
 The {\tt -D\macro} option is used for defining body-less macros. If used in
 combination with the conditional statements, a single \Mx document can
 produce different document and code versions.
+
+The {\tt -i} option produces a file to be processed by
+makeinfo. Use the option {\tt -i -B} to produce a body
+file to be included in a texinfo file.
 
 The example in table 1 illustrates the use of code directives,
 conditional statements and the definition of the base name for the
