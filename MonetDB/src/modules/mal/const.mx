@@ -100,12 +100,6 @@ int isAuthorized(str nme){
 	c= getClient();
 	return idcmp(c->user,nme)==0;
 }
-void insertToBox(Box box, str nme, str val){
-	ValRecord vr;
-	vr.vtype= TYPE_str;
-	vr.val.pval= val;
-	depositBox(box,nme,&vr);
-}
 str CONSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValRecord vr;

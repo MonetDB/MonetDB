@@ -133,9 +133,10 @@ comment "Returns a copy of a BAT sorted on the head column.";
 #comment "Returns a sorted copy of a BAT.";
 @- vertical projection
 @mal
-command project ( b:bat[any::1,any], val:any::2) : 
-				bat[any::1, any::2] = CMDproject
-comment "Fill the tail column with a constant value.";
+# moved to mal.mx
+#pattern project( b:bat[any::1,any], val:any::2) : 
+				#bat[any::1, any::2] = CMDproject
+#comment "Fill the tail column with a constant value.";
 @+ Sets
 @T
 Sets in Monet can be viewed in two ways:
@@ -194,10 +195,14 @@ comment "Select unique tuples from the input BAT. Double elimination is
  Result is a BAT with real set() semantics.";
 @- head-unique elements
 @mal
-command kunique ( b:bat[any::1,any::2] ) : 
-				bat[any::1,any::2] = CMDkunique
+command kunique ( b:bat[any::1,any::2] ) : bat[any::1,any::2] = CMDkunique
 comment "Select unique tuples from the input BAT. Double elimination is done
  only looking at the head column. Result is a BAT with hkeyed() == true.";
+
+command tunique ( b:bat[any::1,any::2] ) : bat[any::1,any::2] = CMDtunique
+comment "Select unique tail tuples from the input BAT. equivalent to
+	revers().kunique() ";
+
 @- bun-intersecting elements
 @mal
 command intersect ( left:bat[any::1,any::2], right:bat[any::1,any::2]) : 
@@ -772,15 +777,16 @@ str CMD@1(int *result, int* bid, int *param) {
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
 
-str CMDproject(int *result, int *bid, ptr *p, int *t) {
-	BAT *b, *bn;
-	@:getBATdescriptor(result,bid,b,CMDproject)@
-	bn= BATconst(b, *t, *p);
+str CMDtunique(int *result, int *bid) {
+	BAT *b,*bn;
+	@:getBATdescriptor(result,bid,b,CMDtunique)@
+	*result = 0;
+	bn = (BAT*) BATkunique(BATreverse(b));
 	if( bn ) {
 		*result = bn->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return throwMessage("CMDproject:GDKerror");
+	return throwMessage("CMDtunique:GDKerror");
 }
 
 str CMDmark(int *result, int *bid, oid *base){

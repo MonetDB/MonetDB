@@ -22,7 +22,8 @@ string values are passed to the module layer as (str *)
 and we have to de-reference them before entering the gdk library.
 This calls for knowlegde on the underlying BAT typs`s
 @= derefStr
-	if( ATOMstorage(@1->@2type)== TYPE_str) @3 = *(str *)@3;
+	if( ATOMstorage(@1->@2type)== TYPE_str ||	
+	    ATOMstorage(@1->@2type) >TYPE_str) @3 = *(str *)@3;
 @-
 The code speaks for itself
 @mal
@@ -586,6 +587,8 @@ str CMDdestroy_bat(int *r, int *bid) {
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, TRANSIENT);
+	if( BATdestroy(b))
+		return throwException("CMDdestroy_bat:failed in bbp\n");
 	*r = TRUE;
 	return MAL_SUCCEED;
 } 

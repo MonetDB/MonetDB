@@ -65,35 +65,39 @@ can be used as well; note for instance that histogram == \{count\}(b.reverse).
 
 @* Module Definition
 The Monet interface module specification is shown below.
+Ideally we should defined stronger type constraints, e.g.
+command group(attr:bat[{void,oid},any::1]
+
 @mal
 module group;
 
-command group(attr:bat[oid,any::1] ) 
-	:(histo:bat[any::1,int], grp:bat[oid,oid]) = CTgroup
+command group(attr:bat[any::2,any::1] ) 
+	:(histo:bat[any::1,int], grp:bat[any::2,oid]) = CTgroup
 comment "Cross tabulation group initialization.
          Returned head values are identical as in 'attr'. Tail values are from
          the same domain and indicate unique groups in 'attr' tail column.";
-command group(attr:bat[oid,any::1] ) 
-	:bat[oid,oid] = CTgroup2
+command group(attr:bat[any::2,any::1] ) 
+	:bat[any::2,oid] = CTgroup2
  
-command group(attr:bat[oid,any::1], N:int, rng:int) 
-	:(histo:bat[any::1,int],grp:bat[oid,oid]) = CTgroup_custom 
+command group(attr:bat[any::2,any::1], N:int, rng:int) 
+	:(histo:bat[any::1,int],grp:bat[any::2,oid]) = CTgroup_custom 
 comment "Cross tabulation group initialization like CTgroup, but with user
          provided #bits in hashmask and #distinct values in range.";
  
-command group(ct:bat[oid,any], attr:bat[oid,any::1]) 
-	:(map:bat[any::1,oid],grp:bat[oid,oid]) = CTderive 
+command group(ct:bat[any::2,any], attr:bat[any::2,any::1]) 
+	:(map:bat[any::1,oid],grp:bat[any::2,oid]) = CTderive 
 comment "Cross tabulation group extension step.
          Returned head values are identical as in 'ct'. Tail values are from
          the same domain and indicate further refinement of the groups in 'ct',
          taking into account also the tail-values in 'attr'.";
-command group(ct:bat[oid,any], attr:bat[oid,any::1]) 
-	:bat[oid,oid] = CTderive2;
+command group(ct:bat[any::2,any], attr:bat[any::2,any::1]) 
+	:bat[any::2,oid] = CTderive2;
 
-command regroup(ct:bat[oid,oid],attr:bat[oid,any]) : bat[oid,oid] = CTregroup
+command regroup(ct:bat[any::2,oid],attr:bat[any::2,any]) :
+	 bat[any::2,oid] = CTregroup
 comment "Performs a regrouping, modifying ct doing a group";
 
-command refine(b:bat[oid,any], a:bat[oid,any]) : bat[oid,oid] = CTrefine 
+command refine(b:bat[any::2,any], a:bat[any::2,any]) : bat[any::2,oid] = CTrefine 
 comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
          values of a second bat 'a' (where the heads of a and b match 1-1).  
          The effect of this is similar to (hash-based) CTderive, with the 
@@ -101,7 +105,7 @@ comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
 @-
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
-@mal
+oldstuff
 command subhisto(sel:BAT[void,bit], grp:BAT[void,oid], domain:BAT[oid,any]) 
 	: BAT[oid,int] = CTsubhisto
 comment "optimized sub-histogram for synced grp[void,oid] and sel[void,bit] 
@@ -120,36 +124,36 @@ most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @mal
 
-command sum(b:BAT[oid,sht], e:BAT[oid,any]) : BAT[oid,sht] = CTsum_sht 
+command sum(b:BAT[any::2,sht], e:BAT[any::2,any]) : BAT[any::2,sht] = CTsum_sht 
 	comment "grouped tail sum";
-command sum(b:BAT[oid,int], e:BAT[oid,any]) : BAT[oid,int] = CTsum_int 
+command sum(b:BAT[any::2,int], e:BAT[any::2,any]) : BAT[any::2,int] = CTsum_int 
 	comment "grouped tail sum";
-command sum(b:BAT[oid,lng], e:BAT[oid,any]) : BAT[oid,lng] = CTsum_lng 
+command sum(b:BAT[any::2,lng], e:BAT[any::2,any]) : BAT[any::2,lng] = CTsum_lng 
 	comment "grouped tail sum";
-command sum(b:BAT[oid,flt], e:BAT[oid,any]) : BAT[oid,flt] = CTsum_flt 
+command sum(b:BAT[any::2,flt], e:BAT[any::2,any]) : BAT[any::2,flt] = CTsum_flt 
 	comment "grouped tail sum";
-command sum(b:BAT[oid,dbl], e:BAT[oid,any]) : BAT[oid,dbl] = CTsum_dbl 
+command sum(b:BAT[any::2,dbl], e:BAT[any::2,any]) : BAT[any::2,dbl] = CTsum_dbl 
 	comment "grouped tail sum";
 
-command avg(b:BAT[oid,sht], e:BAT[oid,any]) : BAT[oid,sht] = CTavg_sht 
+command avg(b:BAT[any::2,sht], e:BAT[any::2,any]) : BAT[any::2,sht] = CTavg_sht 
 	comment "grouped tail average";
-command avg(b:BAT[oid,int], e:BAT[oid,any]) : BAT[oid,int] = CTavg_int 
+command avg(b:BAT[any::2,int], e:BAT[any::2,any]) : BAT[any::2,int] = CTavg_int 
 	comment "grouped tail average";
-command avg(b:BAT[oid,lng], e:BAT[oid,any]) : BAT[oid,lng] = CTavg_lng 
+command avg(b:BAT[any::2,lng], e:BAT[any::2,any]) : BAT[any::2,lng] = CTavg_lng 
 	comment "grouped tail average";
-command avg(b:BAT[oid,flt], e:BAT[oid,any]) : BAT[oid,flt] = CTavg_flt 
+command avg(b:BAT[any::2,flt], e:BAT[any::2,any]) : BAT[any::2,flt] = CTavg_flt 
 	comment "grouped tail average";
 command avg(b:BAT[int,dbl], e:BAT[int,any]) : BAT[int,dbl] = CTavg_dbl 
 	comment "grouped tail average";
 
-command min(b:BAT[oid,any::1], e:BAT[oid,any]) : BAT[oid,any::1] = CTmin 
+command min(b:BAT[any::2,any::1], e:BAT[any::2,any]) : BAT[any::2,any::1] = CTmin 
 	comment "grouped tail minimum";
-command max(b:BAT[oid,any::1], e:BAT[oid,any]) : BAT[oid,any::1] = CTmax 
+command max(b:BAT[any::2,any::1], e:BAT[any::2,any]) : BAT[any::2,any::1] = CTmax 
 	comment "grouped tail maximum";
 
-command count(b:BAT[oid,any], e:BAT[oid,any]) : BAT[oid,int] = CTcount 
+command count(b:BAT[any::2,any], e:BAT[any::2,any]) : BAT[any::2,int] = CTcount 
 	comment "grouped count";
-command size(b:BAT[oid,bit], e:BAT[oid,any]) : BAT[oid,int] = CTsize
+command size(b:BAT[any::2,bit], e:BAT[any::2,any]) : BAT[any::2,int] = CTsize
 	comment "grouped count of true values";
 
 
@@ -249,6 +253,12 @@ static int TYPE_idxentry;
 		return throwMessage("@4:cannot access descriptor @2");
         }
 	if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
+@-
+Recall that we only support void- and oid- typed heads.
+This is captured as a runtime check in the implementation.
+@= chkHeader
+	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
+		return throwException("@2:(v)oid head required\n");
 @+ Core Grouping Algorithms
 @T
 We use hash-grouping all the way. This implementation employs
@@ -526,6 +536,7 @@ str CTgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	BAT *histo= 0, *bn=0;
 	BAT *b;
 	@:getBATdescriptor(retbid,bid,b,CTgroup)@
+	@:chkHeader(b,CTgroup)@
 	bn = BATnew(b->htype, TYPE_oid, BATcount(b));
 
 	/* Poor man's clustered test: sorted & !keyed => clustered  */
@@ -704,7 +715,9 @@ str CTregroup(int* retid, int* ctid, int* bid) {
 	str ret;
 
 	@:getBATdescriptor(retid,ctid,ct,CTderive)@
+	@:chkHeader(ct,CTregroup)@
 	@:getBATdescriptor(retid,bid,b,CTderive)@
+	@:chkHeader(b,CTregroup)@
 	BBPfix(ct->batCacheid);
 	retval= & dummy;
 	ret= regroup(retval, ct, b, tailtype(b, TRUE), NULL);
@@ -718,7 +731,9 @@ str CTderive(int* mapid, int* retid, int  *ctid, int* bid) {
 	str ret;
 
 	@:getBATdescriptor(retid,ctid,ct,CTderive)@
+	@:chkHeader(ct,CTregroup)@
 	@:getBATdescriptor(retid,bid,b,CTderive)@
+	@:chkHeader(b,CTregroup)@
 	if (tailtype(ct, TRUE) != TYPE_int) {
 		int rethisto,retbid, bid= ct->batCacheid;
 		str s;
@@ -753,6 +768,7 @@ str CTsubhisto(int *retid, int *selid, int *grpid, int *domid) {
 
 	@:getBATdescriptor(retid,selid,sel,CTsubhisto)@
 	@:getBATdescriptor(retid,grpid,grp,CTsubhisto)@
+	@:chkHeader(grp,CTsubhisto)@
 	@:getBATdescriptor(retid,domid,dom,CTsubhisto)@
 
 	filter = (bit*) BUNtloc(sel,BUNfirst(sel));
@@ -833,7 +849,9 @@ str CTrefine(int *retid, int *bid, int *aid) {
     BAT *bn;
 
     @:getBATdescriptor(retid,bid,b,CTrefine)@
+    @:chkHeader(b,CTrefine)@
     @:getBATdescriptor(retid,aid,a,CTrefine)@
+    @:chkHeader(a,CTrefine)@
 
     if (b->tkey) { /* if key, no further refinements can take place */
 	bn = BATmark(b, 0);
@@ -1079,7 +1097,9 @@ str CTsum_@1(int *retval, int *bid,int  *eid){
 	int xx,i,range,min,max;
 
 	@:getBATdescriptor(retval,bid,b,CTsum)@
+	@:chkHeader(b,CTsum_@1)@
 	@:getBATdescriptor(retval,eid,e,CTsum)@
+	@:chkHeader(e,CTsum_@1)@
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -1122,7 +1142,9 @@ str CTavg_@1(int *retval, int *bid,int  *eid){
 	BUN p, q, r;
 
 	@:getBATdescriptor(retval,bid,b,CTavg)@
+	@:chkHeader(b,CTsum_@1)@
 	@:getBATdescriptor(retval,eid,e,CTavg)@
+	@:chkHeader(e,CTsum_@1)@
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
 	ALIGNsetH(bn, e);
@@ -1180,7 +1202,9 @@ str CT@1(int *retval, int *bid,int  *eid){
 	BUN p, q, r;
 
 	@:getBATdescriptor(retval,bid,b,CT@1)@
+	@:chkHeader(b,CT@1)@
 	@:getBATdescriptor(retval,eid,e,CT@1)@
+	@:chkHeader(e,CT@1)@
 
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	cmp = BATatoms[bn->ttype].atomCmp;
@@ -1270,7 +1294,9 @@ str CTcount(int *retval, int *bid,int  *eid){
 
 
 	@:getBATdescriptor(retval,bid,b,CTcount)@
+	@:chkHeader(e,CTcount@1)@
 	@:getBATdescriptor(retval,eid,e,CTcount)@
+	@:chkHeader(e,CTcount@1)@
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	btt = b->ttype;
         bt_nil = ATOMnilptr(b->ttype);
@@ -1317,7 +1343,9 @@ str CTsize(int *retval, int *bid,int  *eid){
 	int xx;
 
 	@:getBATdescriptor(retval,bid,b,CTsize)@
+	@:chkHeader(b,CTsize)@
 	@:getBATdescriptor(retval,eid,e,CTsize)@
+	@:chkHeader(e,CTsize)@
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));	
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;

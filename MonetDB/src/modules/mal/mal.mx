@@ -35,6 +35,13 @@ comment "Creates a new empty BAT, directly allocating for 'size' elements.";
 pattern bat(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty BAT, directly allocating for 'size' elements.";
 
+@+ Algebraic operators
+Those that rely on knowledge of the runtime environment
+@mal
+pattern project( b:bat[any::1,any], val:any::2) :
+			bat[any::1, any::2] = CMDproject
+comment "Fill the tail column with a constant value.";
+
 @+ Iterator primitives
 This module contains the framework for the construction of iterators.
 Iterators enumerate elements in a collection defined by a few paramaters,
@@ -112,7 +119,15 @@ pattern mdb(b:bit):void = mdbToggle
 	comment "Start interactive debugger";
 pattern mdb():void = mdbToggle
 	comment "Start interactive debugger";
-
+@-
+Redirected script evaluations.
+@mal
+command cwd(s:str):nil= CMDsetCwd
+	comment "Set the working directory for reading files";
+pattern eval(s:str):nil= CMDevalString
+	comment "Evaluate a string representing a MAL program";
+pattern run(f:str):nil= CMDevalFile
+	comment "Load and executed a (local) file";
 @-
 The prime scheme to inspect the MAL interpreter status is to use
 the MAL debugger. However, in case of automatic exception handling
@@ -209,6 +224,27 @@ str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
 	return GDKstrdup(*msg);
 }
+@+
+Algebraic operators
+@c
+str CMDproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *result, *bid, tt;
+	ptr *p;
+        BAT *b, *bn;
+
+	result= (int*) getArgReference(stk,pci,0);
+	bid= (int*) getArgReference(stk,pci,1);
+	p= (ptr*) getArgReference(stk,pci,2);
+	tt=  getArgType(mb,pci,2);
+        @:getBATdescriptor(result,bid,b,CMDproject)@
+        bn= BATconst(b, tt, p);
+        if( bn ) {
+               *result = bn->batCacheid;
+                return MAL_SUCCEED;
+        }
+        return throwMessage("CMDproject:GDKerror");
+}
+
 @+ BAT Iterator Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
 @= getBATdescriptor
@@ -606,3 +642,58 @@ str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         BATmultiprintf(GDKout, i-1, piv, FALSE, 0);
         return MAL_SUCCEED;
 }
+@- Input redirectionrs
+@c
+str CMDevalString(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str s;
+	Client c= getClient();
+	str src;
+	str buf=0;
+	int len =0;
+
+	s= (str) getArgValue(stk,p,1);
+	if(strlen(s)==0) return MAL_SUCCEED;
+	src= (str) GDKmalloc(len=strlen(s)+3);
+	/* GDK_atom routine requires enclosing quotes */
+	strcpy(src,"\"");
+	strcat(src,s);
+	strcat(src,"\"");
+	strFromStr( src, &len, &buf);
+
+	printf("Eval:%s\n",buf);
+	evalString(getClient(),buf,FALSE,stk);
+	GDKfree(src);
+	GDKfree(buf);
+	return MAL_SUCCEED;
+}
+str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str s;
+	FILE *fd;
+	Client c= getClient();
+	char buffer[1024];
+
+	s= (str) getArgValue(stk,p,1);
+	if( strlen(s)+strlen(c->cwd)+2>=1024){
+		return throwException("CMDsetCwd:buffer too small\n");
+	}
+	buffer[0]=0;
+	if( *s != '/'){
+		strcpy(buffer,c->cwd);
+		strcat(buffer,"/");
+	}
+	strcat(buffer,s);
+	printf("run:%s\n",buffer);
+	malImport(getClient(),buffer,FALSE);
+	return MAL_SUCCEED;
+}
+str CMDsetCwd(int *ret, str *fnme){
+	Client c= getClient();
+	char buffer[1024];
+
+printf("change cwd %s\n",c->cwd);
+	if( c->cwd) GDKfree(c->cwd);
+	c->cwd= GDKstrdup(*fnme);
+printf("to  cwd %s\n",c->cwd);
+	return MAL_SUCCEED;
+}
+

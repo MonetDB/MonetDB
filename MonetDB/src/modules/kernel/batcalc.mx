@@ -19,6 +19,8 @@ Optimal processing performance is further obtained when the operators
 can work as 'accumulators', for then we do not pay the price
 of space allocation for a new intermediate. It may imply a BATcopy
 before the accummulator function is being called.
+A new BAT is of course created when the result of a function does not fit 
+the accumulator.
 
 The implementation does not take into account possible overflows
 caused by the operators. However, the operators respect the NIL
@@ -37,26 +39,23 @@ operands.
 @= calcGrp
 #command CMD000(l:bat[lng,lng],r:bat[lng,lng]):bat[lng,lng]= CMD000;
 
-command @1(b:bat[any::1,@2], cst:@2):bat[any::1,@2] = CMDbat@3cst
+command @1(b:bat[any::1,any::2], cst:any::2):bat[any::1,any::2] = CMDbat@3cst
 comment "(BAT,Constant) calculator function with new BAT result";
 
-command @1(a:bat[any::1,@2],b:bat[any::1,@2], 
-	   cst:@2): bat[any::1,@2] = CMDbataccum@3cst
+command @1(a:bat[any::1,any::2],b:bat[any::1,any::2], 
+	   cst:any::2): bat[any::1,any::2] = CMDbataccum@3cst
 comment "(BAT,Constant) calculator function with accumulator BAT result";
 
-command @1(b:bat[any::1,@2], c:bat[any::1,@2]):bat[any::1,@2] = CMDbat@3
+command @1(b:bat[any::1,any::2], c:bat[any::1,any::2]):bat[any::1,any::2] 
+	= CMDbat@3
 comment "Binary BAT calculator function with new BAT result";
 
-command @1(a:bat[any::1,@2],b:bat[any::1,@2], 
-	     c:bat[any::1,@2]):bat[any::1,@2] = CMDbataccum@3
+command @1(a:bat[any::1,any::2],b:bat[any::1,any::2], 
+	     c:bat[any::1,any::2]):bat[any::1,any::2] = CMDbataccum@3
 comment "Binary BAT calculator function with accumulator BAT result";
 
+@-
 @= calculations
-	@:calcGrp(@1,flt,@2)@
-	@:calcGrp(@1,dbl,@2)@
-	@:calcGrp(@1,oid,@2)@
-	@:calcGrp(@1,sht,@2)@
-	@:calcGrp(@1,int,@2)@
 	@:calcGrp(@1,lng,@2)@
 @-
 We need instantiations for the accumulator code,
@@ -71,6 +70,33 @@ but should limit modulo functions to integer-based types.
 	@:calculations(*,MUL)@
 	@:calculations(-,MIN)@
 	@:calculations(+,ADD)@
+@-
+@= unary
+command -(b:bat[any::1,@1]):bat[any::1,@1] = CMDunaryMIN
+comment "Unary minus over the tail of the bat";
+
+command --(b:bat[any::1,@1]):bat[any::1,@1] = CMDunaryMINMIN
+comment "Unary minus over the tail of the bat";
+
+command ++(b:bat[any::1,@1]):bat[any::1,@1] = CMDunaryPLUSPLUS
+comment "Unary minus over the tail of the bat";
+
+command -(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
+	= CMDunaryAccumMIN comment "Unary - over the tail of the bat";
+
+command --(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
+	= CMDunaryAccumMINMIN comment "Unary -- over the tail of the bat";
+
+command ++(a:bat[any::1,@1],b:bat[any::1,@1]):bat[any::1,@1] 
+	= CMDunaryAccumPLUSPLUS comment "Unary ++ over the tail of the bat";
+@mal
+@:unary(oid)@
+@:unary(int)@
+@:unary(lng)@
+@:unary(sht)@
+@:unary(flt)@
+@:unary(dbl)@
+
 @- Comparison routines
 The command signatures are similar to those above, producing a bit result.
 @= comparison
@@ -84,6 +110,7 @@ command @1(a:bat[any::1,bit],b:bat[any::1,@2],cst:@2): bat[any::1,bit]
 @= compareGrp
 	@:comparison(<,@1,LT)@
 	@:comparison(==,@1,EQ)@
+	@:comparison(!=,@1,NEQ)@
 	@:comparison(>,@1,GT)@
 	@:comparison(<=,@1,LE)@
 	@:comparison(>=,@1,GE)@
@@ -152,21 +179,21 @@ Nevertheless, the implementation provided here are much faster compared
 to theVersion 4.3 implementation.
 
 @= coercion
-command @2(b:bat[any::1,@1]):bat[any::1,@2] = CMDcoercion_@1_@2
+command @2(b:bat[any::1,@1]):bat[any::1,@2] = CMDconvert@1_@2
 comment "Coerce an @1 tail to a bat with a @2 tail.";
 @-
+@= coerceList
+	@:coercion(@1,dbl)@
+	@:coercion(@1,flt)@
+	@:coercion(@1,sht)@
+	@:coercion(@1,int)@
+	@:coercion(@1,lng)@
 @mal
-
-	@:coercion(int,flt)@
-	@:coercion(int,dbl)@
-	@:coercion(int,lng)@
-	@:coercion(sht,lng)@
-	@:coercion(sht,int)@
-	@:coercion(sht,flt)@
-	@:coercion(sht,dbl)@
-	@:coercion(flt,dbl)@
-	@:coercion(lng,flt)@
-	@:coercion(lng,dbl)@
+	@:coerceList(sht)@
+	@:coerceList(int)@
+	@:coerceList(lng)@
+	@:coerceList(flt)@
+	@:coerceList(dbl)@
 
 @- Scientific routines
 The mmath functions are also overloaded to provide for
@@ -445,13 +472,52 @@ str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 
 str CMDbatMODcst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	int d;
 
 	@:getBATdescriptor(ret,l,left,CMDbatMOD)@
 	dst= BATcopy(left);
-	d= dst->batCacheid;
-	return CMDbataccumMODcst(ret, &d,l,cst);
+	return CMDbataccumMODcst(ret, &dst->batCacheid,l,cst);
 }
+@- Implementation of unary operations
+@= accumUnary
+	while( p1 < hend ){
+		/* this code is better as x?nil:y  */
+		if(*(@1 *)p2 == @1_nil )
+			*(@1*)p1= @1_nil;
+		else *(@1*)p1= @2 *(@1 *) p2;
+		p1+= s1; p2+= s2; 
+	}
+@= unary_impl
+str CMDunaryAccum@1(int *ret,int *did, int *bid){
+	BAT *b,*dst;
+	int s1,s2;
+	str p1,p2, hend;
+	
+	@:getBATdescriptor(ret,did,dst,CMDunaryAccum@1)@
+	@:getBATdescriptor(ret,bid,b,CMDunaryAccum@1)@
+	@:batinit(1,dst)@
+	@:batinit(2,b)@
+	switch(BATttype(dst)){
+	case TYPE_oid: @:accumUnary(oid,@2)@ break;
+	case TYPE_sht: @:accumUnary(sht,@2)@ break;
+	case TYPE_int: @:accumUnary(int,@2)@ break;
+	case TYPE_lng: @:accumUnary(lng,@2)@ break;
+	case TYPE_flt: @:accumUnary(flt,@2)@ break;
+	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
+	default: return throwMessage("CMDunaryAccumMIN:unexpected type");
+	}
+	return MAL_SUCCEED;
+}
+str CMDunary@1(int *ret, int *bid){
+	BAT *b,*dst;
+	
+	@:getBATdescriptor(ret,bid,b,CMDunary@1)@
+	dst= BATcopy(b);
+	return CMDunaryAccum@1(ret,&dst->batCacheid,bid);
+}
+@c
+@:unary_impl(MIN,-)@
+@:unary_impl(MINMIN,--)@
+@:unary_impl(PLUSPLUS,++)@
 
 @- Implementation of comparisons
 The structure of this code is copied from the arithmetic scheme.
@@ -592,11 +658,13 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 	@:compareImpl(GT,>)@
 	@:compareImpl(LT,<)@
 	@:compareImpl(EQ,==)@
+	@:compareImpl(NEQ,!=)@
 	@:cmpCstImpl(GE,>=)@
 	@:cmpCstImpl(LE,<=)@
 	@:cmpCstImpl(GT,>)@
 	@:cmpCstImpl(LT,<)@
 	@:cmpCstImpl(EQ,==)@
+	@:cmpCstImpl(NEQ,!=)@
 
 @- Implementations of boolean operators
 The code base is straightforward.
@@ -670,38 +738,42 @@ BAT *newBATresult(BAT *b, int tpe){
 	} else bn= BATnew(b->htype, tpe, BATcount(b));
 	return bn;
 }
-	@:coercionImpl(int,lng)@
-	@:coercionImpl(sht,lng)@
-	@:coercionImpl(sht,int)@
-	@:coercionImpl(flt,dbl)@
-	@:coercionImpl(sht,dbl)@
-	@:coercionImpl(int,dbl)@
-	@:coercionImpl(lng,dbl)@
-	@:coercionImpl(sht,flt)@
-	@:coercionImpl(int,flt)@
-	@:coercionImpl(lng,flt)@
-
 @-
 @= coercionImpl
-str CMDcoercion_@1_@2(int *ret, int *bid){
+str CMDconvert@1_@2(int *ret, int *bid){
 	BAT *b,*bn;
 	int xx;
 	BUN p,q;
+	ptr h,t;
+	@1 x;
+	@2 y;
 
-	@:getBATdescriptor(ret,bid,b,CMDcoercion_@1)@
+	@:getBATdescriptor(ret,bid,b,CMDconvert@1)@
 
 	bn= newBATresult(b, TYPE_@2);
-	@:tstBat(CMDcoercion_@1)@
+	@:tstBat(CMDconvert@1)@
 
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNhead(b,p);
-		ptr t = BUNtail(b,p);
-		@2 x= *(@1*)t== @1_nil? @2_nil:*(@1*) t;
-		bunfastins(bn, h, &x);
+		x= *(@1 *) BUNtail(b,p);
+		y= x== @1_nil? @2_nil: x;
+		bunfastins(bn, h, &y);
 	}
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
 }
+@= coercionImpList
+	@:coercionImpl(@1,sht)@
+	@:coercionImpl(@1,int)@
+	@:coercionImpl(@1,lng)@
+	@:coercionImpl(@1,flt)@
+	@:coercionImpl(@1,dbl)@
+@c
+	@:coercionImpList(sht)@
+	@:coercionImpList(int)@
+	@:coercionImpList(lng)@
+	@:coercionImpList(flt)@
+	@:coercionImpList(dbl)@
 @- Implementations of scientific functions
 @c
 	@:scienceFcnImpl(asin)@

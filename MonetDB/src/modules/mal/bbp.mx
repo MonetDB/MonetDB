@@ -91,8 +91,8 @@ command setRole( b:bat[any::1,any::2] , h:str, t:str):bat[any::1,any::2]
 	= CMDbbpsetRoles
 comment "Give the columns of a BAT a new name.";
 
-command setRole( b:bat[any::1,any::2],h:str):bat[any::1,any::2] = CMDbbpsetColumn
-comment "Give the head column of a BAT a new name.";
+command setColumn( b:bat[any::1,any::2],t:str):bat[any::1,any::2] = CMDbbpsetColumn
+comment "Give the tail column of a BAT a new name.";
 
 command isTransient( b:BAT) :bit = CMDbbpisTransient;
 command setTransient( b:BAT) :bit = CMDbbpsetTransient
@@ -451,12 +451,13 @@ str CMDbbpsetRoles(int *r, int *bid, str *hname, str *tname){
 	BBPfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDbbpsetColumn(int *r, int *bid, str *hname){
+str CMDbbpsetColumn(int *r, int *bid, str *tname){
 	BAT *b;
 	@:getBATdescriptor(r,bid,b,CMDbbpsetRoles)@
-	*r= b->batCacheid;
+	if(*tname==0) return throwMessage("CMDsetColumn:column name missing");
 	BBPfix(b->batCacheid);
-	BATroles(b, *hname, b->tident);
+	BATroles(b,b->hident, *tname);
+	*r= b->batCacheid;
 	return MAL_SUCCEED;
 }
 

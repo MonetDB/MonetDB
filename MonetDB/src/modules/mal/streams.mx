@@ -75,13 +75,13 @@ command stream_close( s:stream ) = stream_close_stream
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
-#include "stream/stream.h"
 #include <blob.h>
 #include <io.h>
 
 #endif /*_STREAMS_H_*/
 @c
 #include "streams.h"
+#include "gdk_stream.h"
 #include "monet.h"
 
 str stream_open_rstream( stream *S, str *filename ){

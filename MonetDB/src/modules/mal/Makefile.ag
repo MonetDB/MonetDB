@@ -1,4 +1,3 @@
-
 INCLUDES =  top_builddir/src/gdk top_builddir/src/monet \
         top_builddir/include/atoms \
         top_builddir/src/mal $(Z_CFLAGS) $(BZ_CFLAGS)
@@ -7,7 +6,6 @@ MTSAFE
 
 # install these libs in the pkglib
 LIBDIR = pkglib
-SUBDIRS = stream
 
 LIBS = {
 	SEP = _
@@ -24,14 +22,5 @@ scripts_mal = {
         DIR = pkgdatadir
         SOURCES = startup.mal
 }
-
-lib__streams = {
-        SOURCES = streams.mx
-        HEADERS = h m
-        #SCRIPTS = mil ""
-        LIBS = ../../gdk/libbat ../../monet/libmonet ./stream/libstream \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-}
-
 
 EXTRA_DIST_DIR = Tests

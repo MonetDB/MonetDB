@@ -365,7 +365,12 @@ command @1(v:nil) : @1 = CALCnil_2_@1;
 @:convertCmd(bat)@
 @:convertCmd(chr)@
 
-command str(v:nil) :str = CALCvoid_2_str;
+command str(v:nil) :str = CALCnil_2_str;
+command void(v:nil) :void = CALCnil_2_void;
+command void(v:int) :void = CALCint_2_void;
+command void(v:sht) :void = CALCsht_2_void;
+command void(v:lng) :void = CALClng_2_void;
+
 command setoid(v:int)= intSetoidImpl;
 command setoid(v:lng)= lngSetoidImpl;
 command setoid(v:oid)= oidSetoidImpl;
@@ -1159,7 +1164,7 @@ str voidFromStrImpl(void *ret, str val){
 	memcpy(ret, ATOMnilptr(TYPE_void), ATOMsize(TYPE_void));
 	return MAL_SUCCEED;
 }
-str CALCvoid_2_str(str *ret, void *val){
+str CALCnil_2_str(str *ret, void *val){
 	*ret = ATOMnilptr(TYPE_str);
 	return MAL_SUCCEED;
 }
@@ -1173,8 +1178,20 @@ str CALCoid_2_str(str *ret, oid *val){
 	(void) OIDtoStr(ret,&l, val);
 	return MAL_SUCCEED;
 }
-str voidFromvoidImpl(oid *ret, ptr *val){
+str CALCnil_2_void(oid *ret, ptr *val){
 	*ret = oid_nil;
+	return MAL_SUCCEED;
+}
+str CALClng_2_void(oid *ret, lng *val){
+	*ret = *val;
+	return MAL_SUCCEED;
+}
+str CALCsht_2_void(oid *ret, sht *val){
+	*ret = *val;
+	return MAL_SUCCEED;
+}
+str CALCint_2_void(oid *ret, int *val){
+	*ret = *val;
 	return MAL_SUCCEED;
 }
 str oidFromoidImpl(oid *ret, oid *val){

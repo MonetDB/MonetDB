@@ -11,6 +11,7 @@ Additional modules can be selectively loaded later.
 use "atoms/startup";
 use "kernel/unix";
 use "kernel/lock";
+use "kernel/alarm";
 use "kernel/mmath";
 use "kernel/bat";
 use "kernel/algebra";

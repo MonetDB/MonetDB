@@ -83,6 +83,7 @@ comment "Generic processor for mutiplexed instructions.";
 #define _MAL_MULTIPLEX_H_
 #include "mal.h"
 #include "mal_interpreter.h"
+#include "mal_resolve.h"
 #include "mal_client.h"
 
 /* #define DEBUG_MULTIPLEX  */
@@ -119,12 +120,13 @@ int operatorModifier(str name, str fcnname){
 	return inplace;
 }
 int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
-	MalBlkPtr m, InstrPtr p)
+	MalBlkPtr m, InstrPtr p, int polytype[2*MAXARG])
 {
 	int i, k, t, tpe, tt;
 	int first = TRUE, inplace= FALSE;
 	str fcnname;
 	char name[1024];
+
 	if( !isVarConstant(mb,pci->argv[1]) || getArgType(mb,pci,1)!=TYPE_str){
 #ifdef DEBUG_MULTIPLEX
 		printInstruction(stdout,mb,pci);
@@ -168,9 +170,7 @@ Constants passed into the multiplex operator are a special case.
 
 	/* resolve the type of the derived function call */
 	if( first){
-#ifdef DEBUG_MULTIPLEX
-		printf("multiplexType:at least one BAT argument required\n");
-#endif
+		GDKerror("multiplexType:at least one BAT argument required\n");
 		return -1;
 	} 
 
@@ -199,7 +199,7 @@ Constants passed into the multiplex operator are a special case.
 	pci->modname= 0;
 	/* initialize the instruction further?*/
 	findFunctionType(scope,mb,pci);
-	pci->fcn = CMDmultiplexScript;
+	pci->fcn = (GDKfcn)CMDmultiplexScript;
 	pci->modname= fcnname;
 #ifdef DEBUG_MULTIPLEX
 	printf("--> multiplex instruction\n");
@@ -218,7 +218,7 @@ int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
 	MalBlkPtr m= newMalBlk();
 	InstrPtr p = newInstruction(ASSIGNsymbol);
 
-	i= multiplexType(scope,mb,pci,m,p);
+	i= multiplexType(scope,mb,pci,m,p,0);
 	freeMalBlk(m);
 	return i;
 }
@@ -270,7 +270,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	m1 = newMalBlk();
 	p = newInstruction(ASSIGNsymbol);
 	/* perform type analysis  and function resolution */
-	i= multiplexType(getClient()->nspace,mb,pci,m1,p);
+	i= multiplexType(getClient()->nspace,mb,pci,m1,p,0);
 	if( i<0)
 		return throwMessage("CMDmultiplexScript:type error");
 	/* get result type of multiplexed operation */
