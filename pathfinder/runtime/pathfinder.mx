@@ -1105,10 +1105,12 @@ Print loaded XML-document with the specified name.",
 # In order to simplify the invocation of the axis steps functions, this
 # interface provides...
 # 
+
 @(
 @:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
 @:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
 @)
+
 @:wrap(descendant)@
 @:wrap(descendant_or_self)@
 
@@ -1118,6 +1120,7 @@ Print loaded XML-document with the specified name.",
 @(
 @:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
 @)
+
 @:wrap(child)@
 
 @:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
@@ -1351,6 +1354,8 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
     var uniqueFrag := frag.tunique();
     if (uniqueFrag.count() = 1) {
+	iter.chk_order(FALSE);
+	item.chk_order(FALSE);
 	result := @1 (iter, item, frag.fetch(0), ws);
 	result_iter := result.mark(0@0).reverse();
 	result_item := result.reverse().mark(0@0).reverse();
@@ -1361,6 +1366,8 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         var result_part_frag := frag.ord_uselect(frag.fetch(0)).mark(0@0).reverse();
         var result_part_iter := result_part_frag.leftfetchjoin(iter);
         var result_part_item := result_part_frag.leftfetchjoin(item);
+	result_part_iter.chk_order(FALSE);
+	result_part_item.chk_order(FALSE);
         var result := @1 (result_part_iter, result_part_item, frag.fetch(0), ws);
         result_part_iter := nil;
         result_part_item := nil;
@@ -1378,6 +1385,8 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
             result_part_frag := frag.ord_uselect($h).mark(0@0).reverse();
             result_part_iter := result_part_frag.leftfetchjoin(iter);
             result_part_item := result_part_frag.leftfetchjoin(item);
+  	    result_part_iter.chk_order(FALSE);
+	    result_part_item.chk_order(FALSE);
             result := @1 (result_part_iter, result_part_item, $h, ws);
             result_part_iter := nil;
             result_part_item := nil;
