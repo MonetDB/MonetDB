@@ -503,7 +503,7 @@ BAT* BATmaterialize_(BAT *b, size_t size){
 	BUN p,q; int xx;
 	oid base = b->hseqbase;
 
-	if (b->hseqbase == oid_nil) {
+	if (base == oid_nil) {
 		BATloopFast(b,p,q,xx) {
 		    BUNfastins(bn, &base, BUNtail(b,p)); 
 		}
