@@ -418,12 +418,22 @@ str
 CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bid;
 	Box box;
+	BAT *b;
+	int result;
 
 	(void) mb;
 	@:OpenBox(release)@
 	bid = (int *) getArgValue(stk,pci,1);
+	@:getBATdescriptor(&result,bid,b,bbp.garbage)@
+	if( BBP_lrefs(*bid) ==0)
+		return throwMessage("bbp.garbage","Bat already gone");
+	if( BBP_lrefs(*bid) == 2 && b->batPersistence == PERSISTENT){
+		/* release BAT from pool altogether */
+		BBPdecref(*bid,TRUE);
+	} 
 	if( *bid)
 		BBPdecref(*bid,TRUE);
+	*bid = 0;
 	/* releaseBAT(mb,stk,*bid);*/
 	return MAL_SUCCEED;
 }

@@ -498,7 +498,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	MalBlkPtr m,m1;
 	InstrPtr q,p;
 	static int fcnnr;
-	ValPtr retval;
+	/* ValPtr retval;*/
 
 
 	(void) nilVar; /* fool compiler */
@@ -800,7 +800,7 @@ execute the new routine and to return its value.
 Upon exit, we set the return value of the enclosing instruction
 and leave it up to the interpreter to deal with exception handling.
 @c
-	retval=  &stk->stk[pci->argv[0]];
+	/* retval=  &stk->stk[pci->argv[0]];*/
 	stk->pcup = getPC(mb,pci);
 	ret= runMAL(getClient(),m,1,mb,stk,pci);
 @-
