@@ -102,7 +102,7 @@ SQLRETURN SQLColumns(
 	/* Construct the selection condition query part */
 	if (schName != NULL && (strcmp(schName, "") != 0)) {
 		/* filtering requested on schema name */
-		strcat(work_str, " AND S.SCHEMA_NAME ");
+		strcat(work_str, " AND S.NAME ");
 
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		if (strchr(schName, '%') || strchr(schName, '_')) {
@@ -118,7 +118,7 @@ SQLRETURN SQLColumns(
 
 	if (tabName != NULL && (strcmp(tabName, "") != 0)) {
 		/* filtering requested on table name */
-		strcat(work_str, " AND T.TABLE_NAME ");
+		strcat(work_str, " AND T.NAME ");
 
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		if (strchr(tabName, '%') || strchr(tabName, '_')) {
@@ -134,7 +134,7 @@ SQLRETURN SQLColumns(
 
 	if (colName != NULL && (strcmp(colName, "") != 0)) {
 		/* filtering requested on column name */
-		strcat(work_str, " AND C.COLUMN_NAME ");
+		strcat(work_str, " AND C.NAME ");
 
 		/* use LIKE when it contains a wildcard '%' or a '_' */
 		if (strchr(colName, '%') || strchr(colName, '_')) {
@@ -153,13 +153,13 @@ SQLRETURN SQLColumns(
 	query = GDKmalloc(1000 + strlen(work_str));
 	assert(query);
 
-	strcpy(query, "SELECT '' AS TABLE_CAT, S.SCHEMA_NAME AS TABLE_SCHEM, T.TABLE_NAME AS TABLE_NAME, C.COLUMN_NAME AS COLUMN_NAME, C.DATA_TYPE AS DATA_TYPE, C.TYPE_NAME AS TYPE_NAME, C.COLUMN_SIZE AS COLUMN_SIZE, C.BUFFER_LENGTH AS BUFFER_LENGTH, C.DECIMAL_DIGITS AS DECIMAL_DIGITS, C.NUM_PREC_RADIX AS NUM_PREC_RADIX, C.NULLABLE AS NULLABLE, C.REMARKS AS REMARKS, C.COLUMN_DEF AS COLUMN_DEF, C.SQL_DATA_TYPE AS SQL_DATA_TYPE, C.SQL_DATETIME_SUB AS SQL_DATETIME_SUB, C.CHAR_OCTET_LENGTH AS CHAR_OCTET_LENGTH, C.ORDINAL_POSITION AS ORDINAL_POSITION, C.IS_NULLABLE AS IS_NULLABLE FROM SQL_SCHEMA S, SQL_TABLE T, SQL_COLUMN C WHERE S.SCHEMA_ID = T.SCHEMA_ID AND T.TABLE_ID = C.TABLE_ID");
+	strcpy(query, "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, T.NAME AS TABLE_NAME, C.NAME AS COLUMN_NAME, C.DATA_TYPE AS DATA_TYPE, C.TYPE AS TYPE_NAME, C.TYPE_SIZE AS COLUMN_SIZE, C.TYPE_SIZE AS BUFFER_LENGTH, C.TYPE_DIGITS AS DECIMAL_DIGITS, C.NUM_PREC_RADIX AS NUM_PREC_RADIX, C.NULL AS NULLABLE, '' AS REMARKS, '' AS COLUMN_DEF, C.SQL_DATA_TYPE AS SQL_DATA_TYPE, C.SQL_DATETIME_SUB AS SQL_DATETIME_SUB, C.CHAR_OCTET_LENGTH AS CHAR_OCTET_LENGTH, C.ORDINAL_POSITION AS ORDINAL_POSITION, C.IS_NULLABLE AS IS_NULLABLE FROM SCHEMAS S, TABLES T, COLUMNS C WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID");
 
 	/* add the selection condition */
 	strcat(query, work_str);
 
 	/* add the ordering */
-	strcat(query, " ORDER BY S.SCHEMA_NAME, T.TABLE_NAME, C.ORDINAL_POSITION");
+	strcat(query, " ORDER BY S.NAME, T.NAME, C.ORDINAL_POSITION");
 	GDKfree(work_str);
 
 	/* Done with parameter values evaluation. Now free the C strings. */

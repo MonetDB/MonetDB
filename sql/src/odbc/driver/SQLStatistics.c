@@ -137,7 +137,7 @@ SQLRETURN SQLStatistics(
 	if (schName != NULL && (strcmp(schName, "") != 0)) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND S.SCHEMA_NAME = '");
+		strcat(work_str, " AND S.NAME = '");
 		strcat(work_str, schName);
 		strcat(work_str, "'");
 	}
@@ -148,7 +148,7 @@ SQLRETURN SQLStatistics(
 	assert(query);
 
 	/* TODO: finish the SQL query */
-	strcpy(query, "SELECT '' AS TABLE_CAT, S.SCHEMA_NAME AS TABLE_SCHEM, T.TABLE_NAME AS TABLE_NAME, 1 AS NON_UNIQUE, NULL AS INDEX_QUALIFIER, NULL AS INDEX_NAME, 0 AS TYPE, NULL AS ORDINAL_POSITION, C.COLUMN_NAME AS COLUMN_NAME, 'A' AS ASC_OR_DESC, NULL AS CARDINALITY, NULL AS PAGES, NULL AS FILTER_CONDITION FROM SQL_SCHEMA S, SQL_TABLE T, SQL_COLUMN C WHERE S.SCHEMA_ID = T.SCHEMA_ID AND T.TABLE_ID = C.TABLE_ID AND T.TABLE_ID = K.TABLE_ID");
+	strcpy(query, "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, T.NAME AS TABLE_NAME, 1 AS NON_UNIQUE, NULL AS INDEX_QUALIFIER, NULL AS INDEX_NAME, 0 AS TYPE, NULL AS ORDINAL_POSITION, C.COLUMN_NAME AS COLUMN_NAME, 'A' AS ASC_OR_DESC, NULL AS CARDINALITY, NULL AS PAGES, NULL AS FILTER_CONDITION FROM SCHEMAS S, TABLES T, COLUMNS C WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID AND T.ID = K.TABLE_ID");
 
 	/* add the selection condition */
 	strcat(query, work_str);

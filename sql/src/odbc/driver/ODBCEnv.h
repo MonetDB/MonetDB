@@ -106,19 +106,17 @@ void addEnvErrorObj(ODBCEnv * env, ODBCError * error);
 ODBCError * getEnvError(ODBCEnv * env);
 
 
+/* utility macro to quickly remove any none collected error msgs */
+#define clearEnvErrors(env) { assert(env); \
+	if (env->Error) { deleteODBCErrorList(env->Error); env->Error = NULL; } }
+
+
 /*
  * Destroys the ODBCEnv object including its own managed data.
  *
- * Precondition: env must be valid and no ODBCDbc objects may refer to this env. * Postcondition: env is completely destroyed, env handle is become invalid.
+ * Precondition: env must be valid and no ODBCDbc objects may refer to this env.
+ * Postcondition: env is completely destroyed, env handle is become invalid.
  */
 void destroyODBCEnv(ODBCEnv * env);
-
-/*
- * Clear the contents of the ODBCEnv object.
- *
- * Precondition: env must be valid and no ODBCDbc objects may refer to this env.
- * Postcondition: env managed data is completely destroyed.
- */
-void clearEnvErrors(ODBCEnv * env);
 
 #endif

@@ -103,9 +103,9 @@ The version we want to comply with is defined in ODBCGlobal.h. It must
 be defined before the ODBC header files (sql.h etc.) are included!
 
 In ODBC the API functions can be grouped in several ways:
-1) ODBC 1 or 2 API compliance (Core, extension level 1, extension level 2)
-2) ODBC 3 API compliance (ISO 92, X/Open, ODBC, Deprecated)
-3) handle type (environment, connection, statement, descriptor)
+a) ODBC 1 or 2 API compliance (Core, extension level 1, extension level 2)
+b) ODBC 3 API compliance (ISO 92, X/Open, ODBC, Deprecated)
+c) handle type (environment, connection, statement, descriptor)
 I choose to use the handle type organisation and created new files
 ODBC*[ch] to define the structs and functions for the first three handle
 types. Descriptor handles are currently not supported.
@@ -120,12 +120,12 @@ In ODBC multiple environments (each application uses its own environment),
 The management and validity of these handles is all implemented in
 the ODBCEnv.[ch], ODBCDbc.{ch], ODBCStmt.[ch] and ODBCHostVar.[ch] files.
 
-Error handling is done in a special way in ODBC:
+Error handling in ODBC is done in a special way which is explained here.
 Every ODBC API function returns a code (integer) which can be:
-- SQL_SUCCESS		/* no msg available */
-- SQL_SUCCESS_WITH_INFO	/* a warning msg is available */
-- SQL_ERROR		/* an error msg is available */
-- SQL_INVALID_HANDLE	/* no msg could be set because no valid handle */
+  - SQL_SUCCESS			/* no msg available */
+  - SQL_SUCCESS_WITH_INFO	/* a warning msg is available */
+  - SQL_ERROR			/* an error msg is available */
+  - SQL_INVALID_HANDLE		/* no msg could be set because no valid handle */
 and some special values (SQL_STILL_EXECUTING, SQL_NEED_DATA) we ignore here.
 Only when the return code is SQL_ERROR or SQL_SUCCESS_WITH_INFO an
 error message is available. The error message can be retrieved via
@@ -148,7 +148,7 @@ Although 73 SQL*() functions are implemented, many do not implement the
  requested behavior (e.g. SQLBindParameter()). They just set an error
 and return SQL_ERROR.
 
-The next ODBC API functions are functionaly implemented (some with a TODO):
+The next ODBC API functions are functionaly implemented (some with TODO's):
 ------------------------------------------------------------------------
 - SQLAllocEnv() - SQLAllocConnect() - SQLAllocStmt() - SQLAllocHanlde()
 - SQLFreeEnv()  - SQLFreeConnect()  - SQLFreeStmt()  - SQLFreeHanlde()
@@ -182,7 +182,7 @@ The next ODBC API functions are functionaly implemented (some with a TODO):
   - SQLProcedureColumns()
   - SQLGetTypeInfo()
 
-The next ODBC API functions always return SQL_ERROR or SQL_INVALUD_HANDLE:
+The next ODBC API functions always return SQL_ERROR or SQL_INVALID_HANDLE:
 ------------------------------------------------------------------------
 - SQLBrowseConnect()
 - SQLBindParameter() - SQLSetParam()
@@ -243,7 +243,7 @@ Most important are:
 - all the SQL*W() functions	/* the Unicode (UCS-2) variant API functions */
 
 When these SQL*W() functions are not implemented in a driver the driver
- manager (must be ODBC 3.0 or higher) will convert those ODBC application
+ manager (it must be ODBC 3.0 or higher) will convert those ODBC application
  SQL*W() calls to the ASCII variant (e.g. SQLConnect(), by converting the
  supplied UCS-2 strings to ASCII.
 
@@ -269,7 +269,7 @@ Also on MS Windows you need a setup dll which is called by the ODBC
 TODO 4) Besides the TODOs for increasing the functionality and ODBC compliant
  behavior there are also TODOs considering the performance.
 The performance depends a lot on:
-- what API the SQL frontend provides (is data fetchable row wise, can multiple
+- what API the Monet SQL frontend provides (is data fetchable row wise, can multiple
  rows be returned at once, is data represented in the most optimal form (so
  as int or dbl instead of str) so extra conversions are eliminated)
 - how the communication with the SQL frontend is realised (is all SQL
@@ -279,7 +279,7 @@ The performance depends a lot on:
  bats (indices) for faster joins/retrieval when executing an SQL statement.
 Up till now no performance analysis or tuning is done.
 On the ODBC level not much performance tuning can be done (ODBC is a thin
-wrapper around the SQL frontend API). so it must be done in the SQL frontend,
+wrapper around the Monet SQL frontend API). so it must be done in the SQL frontend,
 the communication APIs, SQL to MIL translator and possibly MonetDB.
 
 

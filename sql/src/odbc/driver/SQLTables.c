@@ -86,14 +86,14 @@ SQLRETURN SQLTables(
 	{
 		/* Special case query to fetch all Catalog names. */
 		/* Note: Catalogs are not supported so the result set will be empty. */
-		query = GDKstrdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, '' AS REMARKS FROM SQL_SCHEMA WHERE 0 = 1");
+		query = GDKstrdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS WHERE 0 = 1");
 	} else {
 	if (catName != NULL && (strcmp(catName, "") == 0) &&
 	    schName != NULL && (strcmp(schName, SQL_ALL_SCHEMAS) == 0) &&
 	    tabName != NULL && (strcmp(tabName, "") == 0) )
 	{
 		/* Special case query to fetch all Schema names. */
-		query = GDKstrdup("SELECT '' AS TABLE_CAT, SCHEMA_NAME AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, REMARKS FROM SQL_SCHEMA ORDER BY SCHEMA_NAME");
+		query = GDKstrdup("SELECT '' AS TABLE_CAT, NAME AS TABLE_SCHEM, '' AS TABLE_NAME, '' AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS ORDER BY NAME");
 	} else {
 	if (catName != NULL && (strcmp(catName, "") == 0) &&
 	    schName != NULL && (strcmp(schName, "") == 0) &&
@@ -101,7 +101,7 @@ SQLRETURN SQLTables(
 	    typName != NULL && (strcmp(typName, SQL_ALL_TABLE_TYPES) == 0) )
 	{
 		/* Special case query to fetch all Table type names. */
-		query = GDKstrdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, DISTINCT TABLE_TYPE, '' AS REMARKS FROM SQL_TABLE ORDER BY TABLE_TYPE");
+		query = GDKstrdup("SELECT '' AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, DISTINCT CASE T.TYPE WHEN 0 THEN 'TABLE'; WHEN 1 THEN 'SYSTEM_TABLE'; WHEN 2 THEN 'VIEW'; WHEN 3 THEN 'LOCAL TEMPORARY TABLE'; ELSE 'INTERNAL TYPE'; END CASE AS TABLE_TYPE, '' AS REMARKS FROM TABLES ORDER BY TYPE");
 		/* TODO: UNION it with all supported table types */
 	}
 	}
@@ -142,7 +142,7 @@ SQLRETURN SQLTables(
 
 		if (schName != NULL && (strcmp(schName, "") != 0)) {
 			/* filtering requested on schema name */
-			strcat(work_str, " AND S.SCHEMA_NAME ");
+			strcat(work_str, " AND S.NAME ");
 
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			if (strchr(schName, '%') || strchr(schName, '_')) {
@@ -158,7 +158,7 @@ SQLRETURN SQLTables(
 
 		if (tabName != NULL && (strcmp(tabName, "") != 0)) {
 			/* filtering requested on table name */
-			strcat(work_str, " AND T.TABLE_NAME ");
+			strcat(work_str, " AND T.NAME ");
 
 			/* use LIKE when it contains a wildcard '%' or a '_' */
 			if (strchr(tabName, '%') || strchr(tabName, '_')) {
@@ -174,9 +174,14 @@ SQLRETURN SQLTables(
 
 		if (typName != NULL && (strcmp(typName, "") != 0)) {
 			/* filtering requested on table type */
-			/* TODO: decompose the string typName into separate
-				values which can be inserted in the SQL:
-				" AND T.TABLE_TYPE IN ('type_1', 'type_n')"
+			/* TODO: decompose the string typName into separate string values (separated by comma).
+				Mapped these string values to type numbers (see enum table_type in catalog.h).
+				The type numbers need to be inserted in the SQL:
+				 " AND T.TYPE IN (<insert the list of numbers here>)"
+				where the comma separated numbers are placed in the <insert ...here> part.
+				Note: when there is no single type number mapped use -1 so the SQL becomes:
+				 " AND T.TYPE IN (-1)"
+				This way no records will be returned and the result set will be empty.
 			 */
 		}
 
@@ -184,13 +189,13 @@ SQLRETURN SQLTables(
 		query = GDKmalloc(1000 + strlen(work_str));
 		assert(query);
 
-		strcpy(query, "SELECT '' AS TABLE_CAT, S.SCHEMA_NAME AS TABLE_SCHEM, T.TABLE_NAME AS TABLE_NAME, T.TABLE_TYPE AS TABLE_TYPE, T.REMARKS FROM SQL_SCHEMA S, SQL_TABLE T WHERE T.SCHEMA_ID = S.SCHEMA_ID ");
+		strcpy(query, "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, T.NAME AS TABLE_NAME, CASE T.TYPE WHEN 0 THEN 'TABLE'; WHEN 1 THEN 'SYSTEM_TABLE'; WHEN 2 THEN 'VIEW'; WHEN 3 THEN 'LOCAL TEMPORARY TABLE'; ELSE 'INTERNAL TABLE TYPE'; END CASE AS TABLE_TYPE, '' AS REMARKS FROM SCHEMAS S, TABLES T WHERE S.ID = T.SCHEMA_ID ");
 
 		/* add the selection condition */
 		strcat(query, work_str);
 
 		/* add the ordering */
-		strcat(query, " ORDER BY S.SCHEMA_NAME, T.TABLE_NAME, T.TABLE_TYPE");
+		strcat(query, " ORDER BY S.NAME, T.NAME, T.TYPE");
 		GDKfree(work_str);
 	}
 

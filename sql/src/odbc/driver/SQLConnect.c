@@ -51,11 +51,16 @@ SQLRETURN SQLConnect(
 	char * uid = NULL;
 	char * pwd = NULL;
 	char * database = NULL;
+	char * schema = NULL;
 	char * host = NULL;
 	int port = 0;
 	int debug = 0;
 	char buf[BUFSIZ + 1];
+#ifdef WIN32
 	char ODBC_INI[] = "ODBC.INI";
+#else
+	char ODBC_INI[] = "~/.odbc.ini";	/* name and place for the user DSNs */
+#endif
 	int socket_fd = 0;
 
 	if (! isValidDbc(dbc))
@@ -94,10 +99,13 @@ SQLRETURN SQLConnect(
 	/* get the other information from the ODBC.INI file */
 	SQLGetPrivateProfileString(dsn, "DATABASE", "", buf, BUFSIZ, ODBC_INI);
 	database = GDKstrdup(buf);
+	/* TODO: Provided database/schema are currently not used/implemented */
 	SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ, ODBC_INI);
 	host = GDKstrdup(buf);
+//	host = GDKstrdup("localhost");
 	SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
 	port = atoi(buf);
+//	port = 45123;
 	SQLGetPrivateProfileString(dsn, "FLAG", "0", buf, BUFSIZ, ODBC_INI);
 	debug = atoi(buf);
 
@@ -110,37 +118,37 @@ SQLRETURN SQLConnect(
 		stream * rs = NULL;
 		stream * ws = NULL;
 		context * lc = NULL;
-		int i;
-		char *schema,*login;
+		int  chars_printed;
+		char * login = NULL;
 
 		rs = block_stream(socket_rstream(socket_fd, "sql client read"));
 		ws = block_stream(socket_wstream(socket_fd, "sql client write"));
 
-		printf("%d\n", debug);
-		i = snprintf(buf, BUFSIZ, "api(milsql,%d);\n", debug );
-		ws->write( ws, buf, i, 1 );
-		ws->flush( ws );
-		/* read login */
-		login = readblock( rs );
-	
-		printf("login(%s,%s)\n", uid, pwd);
-		i = snprintf(buf, BUFSIZ, "login(%s,%s);\n", uid, pwd );
-		ws->write( ws, buf, i, 1 );
-		ws->flush( ws );
+		chars_printed = snprintf(buf, BUFSIZ, "api(milsql,%d);\n", debug );
+		ws->write(ws, buf, chars_printed, 1);
+		ws->flush(ws);
+		/* read login. The returned login value is not used yet. */
+		login = (char *)readblock(rs);
+
+		chars_printed = snprintf(buf, BUFSIZ, "login(%s,%s);\n", uid, pwd);
+		ws->write(ws, buf, chars_printed, 1);
+		ws->flush(ws);
 		/* read schema */
-		schema = readblock( rs );
-		if (schema){
-			char *s = strrchr(schema, '\n');
-			if (s) *s = '\0';
+		schema = (char *)readblock(rs);
+		if (schema) {
+			char * s = strrchr(schema, '\n');
+			if (s)
+				*s = '\0';
 		}
-		if (strlen(schema) > 0){
+		if (strlen(schema) > 0) {
 			lc = &dbc->Mlc;
 			memset(lc, 0, sizeof(context));
 			sql_init_context(lc, ws, debug, default_catalog_create());
 			catalog_create_stream(rs, lc);
+
 			lc->cat->cc_getschemas(lc->cat, schema, uid);
 			lc->cur = ' ';
-			if (dbc->Mrs->errnr || lc->out->errnr){
+			if (rs->errnr || lc->out->errnr) {
 				/* 08001 = Client unable to establish connection */
 				addDbcError(dbc, "08001", "sockets not opened correctly", 0);
 				rc = SQL_ERROR;
@@ -149,6 +157,7 @@ SQLRETURN SQLConnect(
 				dbc->socket = socket_fd;
 				dbc->Mrs = rs;
 				dbc->Connected = 1;
+				/* TODO: if a database name is set, change the current schema to this database name */
 			}
 		} else {
 			/* 08001 = Client unable to establish connection */
@@ -182,7 +191,7 @@ SQLRETURN SQLConnect(
 			GDKfree(dbc->DBNAME);
 			dbc->DBNAME = NULL;
 		}
-		dbc->DBNAME = database;
+		dbc->DBNAME = schema;
 
 	} else {
 		if (uid != NULL) {

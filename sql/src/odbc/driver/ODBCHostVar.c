@@ -190,7 +190,7 @@ void addOdbcOutArray(OdbcOutArray * this, OdbcOutHostVar var)
 }
 
 
-void destroyOdbcinArray(OdbcInArray * this)
+void destroyOdbcInArray(OdbcInArray * this)
 {
 	assert(this);
 

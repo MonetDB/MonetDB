@@ -113,7 +113,7 @@ SQLRETURN SQLForeignKeys(
 	if (pkschName != NULL && (strcmp(pkschName, "") != 0)) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND S1.SCHEMA_NAME = '");
+		strcat(work_str, " AND S1.NAME = '");
 		strcat(work_str, pkschName);
 		strcat(work_str, "'");
 	}
@@ -121,7 +121,7 @@ SQLRETURN SQLForeignKeys(
 	if (pktabName != NULL && (strcmp(pktabName, "") != 0)) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND T1.TABLE_NAME = '");
+		strcat(work_str, " AND T1.NAME = '");
 		strcat(work_str, pktabName);
 		strcat(work_str, "'");
 	}
@@ -129,7 +129,7 @@ SQLRETURN SQLForeignKeys(
 	if (fkschName != NULL && (strcmp(fkschName, "") != 0)) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND S2.SCHEMA_NAME = '");
+		strcat(work_str, " AND S2.NAME = '");
 		strcat(work_str, fkschName);
 		strcat(work_str, "'");
 	}
@@ -137,7 +137,7 @@ SQLRETURN SQLForeignKeys(
 	if (fktabName != NULL && (strcmp(fktabName, "") != 0)) {
 		/* filtering requested on table name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND T2.TABLE_NAME = '");
+		strcat(work_str, " AND T2.NAME = '");
 		strcat(work_str, fktabName);
 		strcat(work_str, "'");
 	}
@@ -147,8 +147,8 @@ SQLRETURN SQLForeignKeys(
 	query = GDKmalloc(1000 + strlen(work_str));
 	assert(query);
 
-	strcpy(query, "SELECT '' AS PKTABLE_CAT, S1.SCHEMA_NAME AS PKTABLE_SCHEM, T1.TABLE_NAME AS PKTABLE_NAME, C1.COLUMN_NAME AS PKCOLUMN_NAME, '' AS FKTABLE_CAT, S1.SCHEMA_NAME AS FKTABLE_SCHEM, T1.TABLE_NAME AS FKTABLE_NAME, C1.COLUMN_NAME AS FKCOLUMN_NAME, KC.ORDINAL_POSITION AS KEY_SEQ, K.UPDATE_RULE AS UPDATE_RULE, K.DELETE_RULE AS DELETE_RULE, K.FK_NAME AS FK_NAME, K.PK_NAME AS PK_NAME, K.DEFERRABILITY AS DEFERRABILITY
- FROM SQL_SCHEMA S, SQL_TABLE T, SQL_COLUMN C WHERE S.SCHEMA_ID = T.SCHEMA_ID AND T.TABLE_ID = C.TABLE_ID");
+	strcpy(query, "SELECT '' AS PKTABLE_CAT, S1.NAME AS PKTABLE_SCHEM, T1.NAME AS PKTABLE_NAME, C1.NAME AS PKCOLUMN_NAME, '' AS FKTABLE_CAT, S1.NAME AS FKTABLE_SCHEM, T1.NAME AS FKTABLE_NAME, C1.NAME AS FKCOLUMN_NAME, KC.ORDINAL_POSITION AS KEY_SEQ, K.UPDATE_RULE AS UPDATE_RULE, K.DELETE_RULE AS DELETE_RULE, K.FK_NAME AS FK_NAME, K.PK_NAME AS PK_NAME, K.DEFERRABILITY AS DEFERRABILITY
+ FROM SCHEMAS S, TABLES T, _COLUMNS C WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID");
 /* TODO finish the FROM en WHERE clauses */
 
 	/* add the selection condition */
@@ -157,10 +157,10 @@ SQLRETURN SQLForeignKeys(
 	/* add the ordering */
 	if (pktabName != NULL) {	/* selection on primary key */
 		/* order on FK output columns */
-		strcat(query, " ORDER BY S2.SCHEMA_NAME, T2.TABLE_NAME, KC.ORDINAL_POSITION");
+		strcat(query, " ORDER BY S2.NAME, T2.NAME, KC.ORDINAL_POSITION");
 	} else {
 		/* order on PK output columns */
-		strcat(query, " ORDER BY S1.SCHEMA_NAME, T1.TABLE_NAME, KC.ORDINAL_POSITION");
+		strcat(query, " ORDER BY S1.NAME, T1.NAME, KC.ORDINAL_POSITION");
 	}
 	GDKfree(work_str);
 

@@ -112,7 +112,7 @@ SQLRETURN SQLPrimaryKeys(
 	if (schName != NULL && (strcmp(schName, "") != 0)) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND S.SCHEMA_NAME = '");
+		strcat(work_str, " AND S.NAME = '");
 		strcat(work_str, schName);
 		strcat(work_str, "'");
 	}
@@ -122,13 +122,13 @@ SQLRETURN SQLPrimaryKeys(
 	query = GDKmalloc(1000 + strlen(work_str));
 	assert(query);
 
-	strcpy(query, "SELECT '' AS TABLE_CAT, S.SCHEMA_NAME AS TABLE_SCHEM, T.TABLE_NAME AS TABLE_NAME, C.COLUMN_NAME AS COLUMN_NAME, KC.ORDINAL_POSITION AS KEY_SEQ, K.KEY_NAME AS PK_NAME FROM SQL_SCHEMA S, SQL_TABLE T, SQL_COLUMN C, SQL_KEY K, SQL_KEYCOLUMN KC WHERE S.SCHEMA_ID = T.SCHEMA_ID AND T.TABLE_ID = C.TABLE_ID AND T.TABLE_ID = K.TABLE_ID AND C.COLUMN_ID = KC.COLUMN_ID AND KC.KEY_ID = K.KEY_ID AND K.IS_PRIMARY = 1");
+	strcpy(query, "SELECT '' AS TABLE_CAT, S.NAME AS TABLE_SCHEM, T.NAME AS TABLE_NAME, C.NAME AS COLUMN_NAME, KC.ORDINAL_POSITION AS KEY_SEQ, K.KEY_NAME AS PK_NAME FROM SCHEMAS S, TABLES T, COLUMNS C, KEYS K, KEYCOLUMNS KC WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID AND T.ID = K.TABLE_ID AND C.ID = KC.COLUMN_ID AND KC.KEY_ID = K.KEY_ID AND K.IS_PRIMARY = 1");
 
 	/* add the selection condition */
 	strcat(query, work_str);
 
 	/* add the ordering */
-	strcat(query, " ORDER BY S.SCHEMA_NAME, T.TABLE_NAME, K.KEY_SEQ");
+	strcat(query, " ORDER BY S.NAME, T.NAME, K.KEY_SEQ");
 	GDKfree(work_str);
 
 	/* Done with parameter values evaluation. Now free the C strings. */

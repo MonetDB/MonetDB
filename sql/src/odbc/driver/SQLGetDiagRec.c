@@ -195,7 +195,7 @@ SQLRETURN SQLGetDiagRec(
 	/* The ODBCError object is already removed from the list */
 
 	/* Now we have copied the error info we must remove the error object itself */
-	deleteError(err);
+	deleteODBCError(err);
 
 	return retCode;
 }

@@ -65,6 +65,7 @@ SQLRETURN  SQLAllocHandle(
 			ODBCEnv * env = (ODBCEnv *)nInputHandle;
 			if (! isValidEnv(env))
 				return SQL_INVALID_HANDLE;
+			break;
 		}
 		case SQL_HANDLE_STMT:
 		case SQL_HANDLE_DESC:
@@ -72,6 +73,7 @@ SQLRETURN  SQLAllocHandle(
 			ODBCDbc * dbc = (ODBCDbc *)nInputHandle;
 			if (! isValidDbc(dbc))
 				return SQL_INVALID_HANDLE;
+			break;
 		}
 		default:
 		{

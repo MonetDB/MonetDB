@@ -169,14 +169,14 @@ ODBCError * getStmtError(ODBCStmt * stmt)
 /*
  * Destroys the ODBCStmt object including its own managed data.
  *
- * Precondition: stmt must be valid and inactive (No prepared query or
- * result sets active, internal State == INITED).
+ * Precondition: stmt must be valid and inactive (internal State == INITED or
+ * State == PREPARED, so NO active result set).
  * Postcondition: stmt is completely destroyed, stmt handle is become invalid.
  */
 void destroyODBCStmt(ODBCStmt * stmt)
 {
 	assert(isValidStmt(stmt));
-	assert(stmt->State == INITED);
+	assert(stmt->State == INITED || stmt->State == PREPARED);
 
 	/* first set this object to invalid */
 	stmt->Type = 0;
@@ -219,4 +219,3 @@ void destroyODBCStmt(ODBCStmt * stmt)
 
 	GDKfree(stmt);
 }
-

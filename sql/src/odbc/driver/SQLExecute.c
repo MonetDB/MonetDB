@@ -126,7 +126,7 @@ SQLRETURN SQLExecute(SQLHSTMT hStmt)
 		return SQL_ERROR;
 	}
 
-	stream_readInt(rs, &type);		/* read result type */
+	stream_readInt(rs, &type);	/* read result type */
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 	if (status < 0) {
 		/* output error */

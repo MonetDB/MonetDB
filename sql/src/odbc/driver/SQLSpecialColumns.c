@@ -149,7 +149,7 @@ SQLRETURN SQLSpecialColumns(
 	if (schName != NULL && (strcmp(schName, "") != 0)) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		strcat(work_str, " AND S.SCHEMA_NAME = '");
+		strcat(work_str, " AND S.NAME = '");
 		strcat(work_str, schName);
 		strcat(work_str, "'");
 	}
@@ -163,7 +163,7 @@ SQLRETURN SQLSpecialColumns(
 		/* Select from the key table the (smallest) primary/unique key */
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION is 1 */
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO is 1 */
-		strcpy(query, "SELECT 1 AS SCOPE, C.COLUMN_NAME AS COLUMN_NAME, C.DATA_TYPE AS DATA_TYPE, C.TYPE_NAME AS TYPE_NAME, C.COLUMN_SIZE AS COLUMN_SIZE, C.BUFFER_LENGTH AS BUFFER_LENGTH, C.DECIMAL_DIGITS AS DECIMAL_DIGITS, 1 AS PSEUDO_COLUMN FROM SQL_SCHEMA S, SQL_TABLE T, SQL_COLUMN C, SQL_KEY K, SQL_KEYCOLUMN KC WHERE S.SCHEMA_ID = T.SCHEMA_ID AND T.TABLE_ID = C.TABLE_ID AND T.TABLE_ID = K.TABLE_ID AND C.COLUMN_ID = KC.COLUMN_ID AND KC.KEY_ID = K.KEY_ID AND K.IS_PRIMARY = 1");
+		strcpy(query, "SELECT 1 AS SCOPE, C.COLUMN_NAME AS COLUMN_NAME, C.DATA_TYPE AS DATA_TYPE, C.TYPE_NAME AS TYPE_NAME, C.COLUMN_SIZE AS COLUMN_SIZE, C.BUFFER_LENGTH AS BUFFER_LENGTH, C.DECIMAL_DIGITS AS DECIMAL_DIGITS, 1 AS PSEUDO_COLUMN FROM SCHEMAS S, TABLES T, COLUMNS C, KEYS K, KEYCOLUMNS KC WHERE S.ID = T.SCHEMA_ID AND T.ID = C.TABLE_ID AND T.ID = K.TABLE_ID AND C.ID = KC.COLUMN_ID AND KC.KEY_ID = K.KEY_ID AND K.IS_PRIMARY = 1");
 		/* TODO: improve the SQL to get the correct result:
 		   - only one set of columns should be returned, also when
 		     multiple primary keys are available for this table.
@@ -172,7 +172,7 @@ SQLRETURN SQLSpecialColumns(
 		     is also the best/smallest key)
 		   TODO: optimize SQL:
 		   - when no schName is set (see above) also no filtering on
-		     SCHEMA_NAME and join with table SQL_SCHEMA is needed!
+		     SCHEMA NAME and join with table SCHEMAS is needed!
 		 */
 
 		/* add the selection condition */
@@ -189,7 +189,7 @@ SQLRETURN SQLSpecialColumns(
 		/* The backend does not have such info available */
 		/* create just a query which results in zero rows */
 		/* Note: PSEUDO_COLUMN is SQL_PC_UNKNOWN is 0 */
-		strcpy(query, "SELECT NULL AS SCOPE, '' AS COLUMN_NAME, 1 AS DATA_TYPE, 'CHAR' AS TYPE_NAME, 1 AS COLUMN_SIZE, 1 AS BUFFER_LENGTH, 0 AS DECIMAL_DIGITS, 0 AS PSEUDO_COLUMN FROM SQL_SCHEMA S WHERE 0 = 1");
+		strcpy(query, "SELECT NULL AS SCOPE, '' AS COLUMN_NAME, 1 AS DATA_TYPE, 'CHAR' AS TYPE_NAME, 1 AS COLUMN_SIZE, 1 AS BUFFER_LENGTH, 0 AS DECIMAL_DIGITS, 0 AS PSEUDO_COLUMN FROM SCHEMAS S WHERE 0 = 1");
 	}
 
 	GDKfree(work_str);
