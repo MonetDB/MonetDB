@@ -15,7 +15,7 @@ lib__sql_server = {
 		sql_server.mx \
 		sql_session.mx \
 		sql_gencode.mx 
-	WINLIBS = -lstr -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra -l_str
 	LIBS = ../../server/libsqlserver $(MONET_LIBS)
 	LDFLAGS = -module
 }
