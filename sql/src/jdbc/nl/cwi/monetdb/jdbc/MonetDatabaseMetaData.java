@@ -146,7 +146,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the JDBC driver name.
 	 */
 	public String getDriverVersion() {
-		return(driver.getMajorVersion() + "." + driver.getMinorVersion());
+		return(((MonetDriver)driver).getDriverVersion());
 	}
 
 	/**
