@@ -600,6 +600,7 @@ int BBPdir(void) {
 	  }
 
 	s->close(s);
+	s->destroy(s);
 	IODEBUG THRprintf(GDKerr, "BBPdir end\n");
 	return 0;
 error:	GDKsyserror("BBPdir failed:\n"); 
@@ -1126,6 +1127,7 @@ int BBPunfix(bat i) {
 	if (pid != locked_by) 
 		MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix"); 
 	assert( (BBP_refs(i) +  BBP_lrefs(i)) > 0);
+	assert( BBP_refs(i) );
 	refs = --BBP_refs(i);
 	if (refs < 0) {
 		GDKwarning("BBPunfix: bat(%d) has refcnt %d\n", i,refs);
