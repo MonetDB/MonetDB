@@ -275,6 +275,15 @@ typedef enum stream_errors {
 #ifndef SHUT_RD
 #define SHUT_RD		0
 #define SHUT_WR		1
+#define SHUT_RDWR	2
+#endif
+
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK EAGAIN
+#endif
+
+#ifndef EINTR
+#define EINTR 	EAGAIN
 #endif
 
 struct stream {
@@ -1173,7 +1182,7 @@ socket_open(int socket, const char *name)
 #ifndef NATIVE_WIN32
 	{
 		int fl = fcntl(socket, F_GETFL);
-		fl |= O_NONBLOCK;
+		fl &= ~O_NONBLOCK;
 		if (fcntl(socket, F_SETFL, fl) < 0) {
 			s->errnr = OPEN_ERROR;
 			return s;
