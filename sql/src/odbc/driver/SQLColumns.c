@@ -50,8 +50,8 @@ SQLColumns_(ODBCStmt *stmt,
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 	/* construct the query now */
-	query = malloc(1000 + nSchemaNameLength + nTableNameLength +
-		       nColumnNameLength);
+	query = (char *) malloc(1000 + nSchemaNameLength + nTableNameLength +
+				nColumnNameLength);
 	assert(query);
 	query_end = query;
 

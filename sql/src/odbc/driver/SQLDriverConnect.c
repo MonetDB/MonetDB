@@ -44,7 +44,7 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 	if (*nconn == 0 || !**conn || **conn == ';')
 		return 0;
 	len = *conn - p;
-	*key = malloc(len + 1);
+	*key = (char *) malloc(len + 1);
 	strncpy(*key, (char *) p, len);
 	(*key)[len] = 0;
 	(*conn)++;
@@ -60,7 +60,7 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = malloc(len + 1);
+		*attr = (char *) malloc(len + 1);
 		strncpy(*attr, (char *) p, len);
 		(*attr)[len] = 0;
 		(*conn)++;
@@ -72,7 +72,7 @@ get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = malloc(len + 1);
+		*attr = (char *) malloc(len + 1);
 		strncpy(*attr, (char *) p, len);
 		(*attr)[len] = 0;
 	}

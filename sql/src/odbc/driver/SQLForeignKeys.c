@@ -59,8 +59,9 @@ SQLForeignKeys_(ODBCStmt *stmt,
 
 	/* first create a string buffer (1000 extra bytes is plenty:
 	   we actually need under 600) */
-	query = malloc(1000 + nPKSchemaNameLength + nPKTableNameLength +
-		       nFKSchemaNameLength + nFKTableNameLength);
+	query = (char *) malloc(1000 + nPKSchemaNameLength +
+				nPKTableNameLength + nFKSchemaNameLength +
+				nFKTableNameLength);
 	assert(query);
 	query_end = query;
 

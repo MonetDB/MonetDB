@@ -105,8 +105,9 @@ SQLTables_(ODBCStmt *stmt,
 		char *query_end;
 
 		/* construct the query now */
-		query = malloc(1000 + nCatalogNameLength + nSchemaNameLength +
-			       nTableNameLength + nTableTypeLength);
+		query = (char *) malloc(1000 + nCatalogNameLength +
+					nSchemaNameLength + nTableNameLength +
+					nTableTypeLength);
 		assert(query);
 		query_end = query;
 

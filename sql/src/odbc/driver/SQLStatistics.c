@@ -86,7 +86,7 @@ SQLStatistics_(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	query = malloc(1000 + nTableNameLength + nSchemaNameLength);
+	query = (char *) malloc(1000 + nTableNameLength + nSchemaNameLength);
 	assert(query);
 	query_end = query;
 

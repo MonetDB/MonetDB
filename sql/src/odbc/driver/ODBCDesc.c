@@ -16,7 +16,7 @@ newODBCDesc(ODBCDbc *dbc)
 
 	assert(dbc);
 
-	desc = malloc(sizeof(ODBCDesc));
+	desc = (ODBCDesc *) malloc(sizeof(ODBCDesc));
 	if (desc == NULL) {
 		/* HY001: Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
@@ -160,10 +160,10 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 		desc->descRec = NULL;
 	} else if (desc->descRec == NULL) {
 		assert(desc->sql_desc_count == 0);
-		desc->descRec = malloc((count + 1) * sizeof(*desc->descRec));
+		desc->descRec = (ODBCDescRec *) malloc((count + 1) * sizeof(*desc->descRec));
 	} else {
 		assert(desc->sql_desc_count > 0);
-		desc->descRec = realloc(desc->descRec,
+		desc->descRec = (ODBCDescRec *) realloc(desc->descRec,
 					(count + 1) * sizeof(*desc->descRec));
 	}
 	if (count > desc->sql_desc_count) {

@@ -329,35 +329,35 @@ getErrorRecCount(ODBCError *error)
  * Precondition: both head and this must be valid (non NULL)
  */
 void
-appendODBCError(ODBCError **head, ODBCError *this)
+appendODBCError(ODBCError **head, ODBCError *err)
 {
 	assert(head);
-	assert(this);
+	assert(err);
 
 	while (*head)
 		head = &(*head)->next;
-	*head = this;
-	this->next = NULL;	/* just to be sure */
+	*head = err;
+	err->next = NULL;	/* just to be sure */
 }
 
 
 #if 0				/* unused */
 /*
- * Prepends a valid ODBCError object 'this' to the front of the list
+ * Prepends a valid ODBCError object 'err' to the front of the list
  * of a valid ODBCError object 'head' and return the new head.
  *
- * Precondition: both head and this must be valid (non NULL)
- * Returns: the new head (which is the same as the prepended 'this').
+ * Precondition: both head and err must be valid (non NULL)
+ * Returns: the new head (which is the same as the prepended 'err').
  */
 void
-prependODBCError(ODBCError **head, ODBCError *this)
+prependODBCError(ODBCError **head, ODBCError *err)
 {
 	assert(head);
-	assert(this);
-	assert(this->next == NULL);
+	assert(err);
+	assert(err->next == NULL);
 
-	this->next = *head;
-	*head = this;
+	err->next = *head;
+	*head = err;
 }
 #endif
 

@@ -213,7 +213,8 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 		   otherwise as long, but on those other systems, long
 		   and int are the same size, so the cast works */
 		ret = mapi_param_string(stmt->hdl, ParameterNumber - 1,
-					ParameterType, ParameterValuePtr,
+					ParameterType,
+					(char *) ParameterValuePtr,
 					(int *) StrLen_or_IndPtr);
 		break;
 	case SQL_C_SSHORT:

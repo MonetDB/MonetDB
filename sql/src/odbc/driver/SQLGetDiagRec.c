@@ -167,7 +167,7 @@ SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle,
 	ODBCLOG("SQLGetDiagRecW %d %d\n", handleType, recNumber);
 #endif
 
-	msg = malloc(bufferLength * 4);
+	msg = (SQLCHAR *) malloc(bufferLength * 4);
 
 	rc = SQLGetDiagRec_(handleType, handle, recNumber, state,
 			    nativeErrorPtr, msg, bufferLength * 4, &n);

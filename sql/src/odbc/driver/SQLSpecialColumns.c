@@ -104,7 +104,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	}
 
 	/* first create a string buffer (1000 extra bytes is plenty */
-	query = malloc(1000 + nTableNameLength + nSchemaNameLength);
+	query = (char *) malloc(1000 + nTableNameLength + nSchemaNameLength);
 	assert(query);
 	query_end = query;
 

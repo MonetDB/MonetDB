@@ -24,7 +24,6 @@
 #define _H_ODBCSTMT
 
 #include "ODBCGlobal.h"
-#include "ODBCHostVar.h"
 #include "ODBCError.h"
 #include "ODBCDbc.h"
 #include "ODBCDesc.h"

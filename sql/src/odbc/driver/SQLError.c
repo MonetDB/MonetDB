@@ -59,7 +59,7 @@ SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
 	ODBCLOG("SQLErrorW\n");
 #endif
 
-	errmsg = malloc(nErrorMsgMax * 4);
+	errmsg = (SQLCHAR *) malloc(nErrorMsgMax * 4);
 
 	/* use mapping as described in ODBC 3 SDK Help file */
 	rc = SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT :

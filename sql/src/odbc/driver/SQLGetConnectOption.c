@@ -88,7 +88,7 @@ SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
-		ptr = malloc(SQL_MAX_OPTION_STRING_LENGTH);
+		ptr = (SQLPOINTER) malloc(SQL_MAX_OPTION_STRING_LENGTH);
 		break;
 	default:
 		ptr = pvParam;

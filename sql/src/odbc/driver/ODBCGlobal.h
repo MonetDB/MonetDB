@@ -40,6 +40,8 @@
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
 #define MONETDB_SERVER_NAME  "MonetDB"
 
+#define ODBCDEBUG	1
+
 #ifdef _MSC_VER
 #ifndef LIBMONETODBC
 #define odbc_export extern __declspec(dllimport) 

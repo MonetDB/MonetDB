@@ -34,7 +34,7 @@ typedef struct tODBCDRIVERENV {
 	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 
 	/* Env children: list of ODBC Connection handles created in this Env */
-	void *FirstDbc;		/* first in list or NULL */
+	struct tODBCDRIVERDBC *FirstDbc;		/* first in list or NULL */
 	SQLINTEGER sql_attr_odbc_version;
 } ODBCEnv;
 

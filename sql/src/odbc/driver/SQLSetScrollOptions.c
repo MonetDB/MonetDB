@@ -33,13 +33,15 @@ SQLSetScrollOptions(SQLHSTMT hStmt, SQLUSMALLINT fConcurrency,
 	(void) crowKeyset;	/* Stefan: unused!? */
 	(void) crowRowset;	/* Stefan: unused!? */
 
-	if (!isValidStmt(hStmt))
+	if (!isValidStmt((ODBCStmt *) hStmt))
 		return SQL_INVALID_HANDLE;
+
+	clearStmtErrors((ODBCStmt *) hStmt);
 
 	/* TODO: implement the mapping to multiple SQLSetStmtAttr() calls */
 	/* See ODBC 3.5 SDK Help file for details */
 
 	/* for now simply return "not supported" error */
-	addStmtError(hStmt, "IM001", NULL, 0);
+	addStmtError((ODBCStmt *) hStmt, "IM001", NULL, 0);
 	return SQL_ERROR;
 }

@@ -111,7 +111,7 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	if (!isValidDesc(desc))
 		return SQL_INVALID_HANDLE;
 
-	name = malloc(BufferLength * 4);
+	name = (SQLCHAR *) malloc(BufferLength * 4);
 
 	rc = SQLGetDescRec_(desc, RecordNumber, name, BufferLength, &n, Type,
 			    SubType, Length, Precision, Scale, Nullable);

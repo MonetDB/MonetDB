@@ -24,7 +24,7 @@
 #include <float.h>
 
 
-#ifdef NATIVE_WIN32
+#ifdef _MSC_VER
 /* Windows seems to need this */
 BOOL WINAPI
 DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
@@ -127,7 +127,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 		l += n + 1;
 	}
 	/* convert */
-	buf = malloc(l);
+	buf = (SQLCHAR *) malloc(l);
 	for (s1 = s, p = buf, i = 0; i < length; s1++, i++) {
 		c = *s1;
 		if (0xD800 <= c && c <= 0xDBFF) {

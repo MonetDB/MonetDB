@@ -166,7 +166,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle,
 	case SQL_DIAG_DYNAMIC_FUNCTION:
 	case SQL_DIAG_CLASS_ORIGIN:
 		n = BufferLength * 4;
-		ptr = malloc(n);
+		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:
 		n = BufferLength;
