@@ -367,7 +367,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* Query:              CoreExpr */
         case 2:
-            break;
+	    break;
 
         /* CoreExpr:           Atom */
         case 3:
@@ -1020,7 +1020,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
         assert (args->kind == c_arg && R(args)->kind == c_nil);
 
         return *PFty_simplify (
-                (PFty_quantifier (TY(L(args)))) (PFty_prime (TY(L(args)))));
+                (PFty_quantifier (TY(L(args)))) (PFty_prime (PFty_defn (TY(L(args))))));
     }
 
     /* Typing rules for fn:data() are described by the special
@@ -1029,9 +1029,12 @@ specific (PFfun_t *fn, PFcnode_t *args)
     if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "data"))) {
         /* fn:data() gets exactly one argument */
         assert (args->kind == c_arg && R(args)->kind == c_nil);
-
         return *PFty_simplify (
-                (PFty_quantifier (TY(L(args))) (PFty_data_on (TY(L(args))))));
+                (PFty_quantifier (TY(L(args))) (PFty_data_on (PFty_defn (TY(L(args)))))));
+    }
+
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "zero-or-one"))) {
+        return *PFty_simplify (PFty_opt (PFty_prime (PFty_defn (TY(L(args))))));
     }
 
     return fn->ret_ty;

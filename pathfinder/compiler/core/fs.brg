@@ -3081,7 +3081,7 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
 
     assert (e);
 
-    exp_prime = PFty_prime (expected);
+    exp_prime = PFty_prime (PFty_defn (expected));
 
     if (PFty_subtype (exp_prime, PFty_atomic ())) {
 
@@ -3095,17 +3095,18 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
         /* Steps 1 and 2:
          *
          * let $v1 := e return
-         *   for $v2 in $v1 return
-         *     let $v3 := fn:data ($v2) return
+         *   let $v2 := fn:data ($v1) return
+         *     for $v3 in $v2 return
          *       convert-op ($v3, exp_prime)
          */
         ret = let (
                 letbind (var (v1), e),
-                for_ (
-                  forbind (forvars (var (v2), nil ()), var (v1)),
-                  let (
-                    letbind (var (v3), fn_data (var (v2))),
-                    fs_convert_op_by_type (var (v3), exp_prime))));
+                let (
+		  letbind (var (v2), fn_data (var (v1))),
+                  for_ (
+                    forbind (forvars (var (v3), nil ()), var (v2)),
+                      fs_convert_op_by_type (var (v3), exp_prime))));
+
     }
     else
         /* do nothing if expected is not atomic */
