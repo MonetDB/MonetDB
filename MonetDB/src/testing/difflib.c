@@ -76,7 +76,7 @@
 
 #define BUFLEN 16384
 
-#ifndef HAVE_DECL_STRDUP
+#if !HAVE_DECL_STRDUP
 #ifdef HAVE_STRDUP
 extern char *strdup(const char *);
 #else
