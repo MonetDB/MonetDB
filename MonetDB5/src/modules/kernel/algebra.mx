@@ -623,8 +623,13 @@ command count ( b:bat[:any,:any], ignore_nils:bit )
 	:int 
 address ALGcount_nil
 comment "Return the number of elements currently 
-	in a BAT
-ignores BUNs with nil-tail iff ignore_nils==TRUE.";
+	in a BAT ignores BUNs with nil-tail iff 
+	ignore_nils==TRUE.";
+command count_no_nil ( b:bat[:any,:any])
+	:int 
+address ALGcount_no_nil
+comment "Return the number of elements currently 
+	in a BAT ignoring BUNs with nil-tail";
 command topN ( b:bat[:any,:any], top:lng ) :int 
 address ALGtopN
 comment "Trim all but the top N tuples.";
@@ -1724,6 +1729,10 @@ str ALGcount_nil(int *result, int *bid, bit *ignore_nils) {
 	@:getBATdescriptor(result,bid,b,count_nil)@
 	CMDcount_nil(result,b,ignore_nils);
 	return MAL_SUCCEED;
+}
+str ALGcount_no_nil(int *result, int *bid) {
+	bit ignore_nils= 1;
+	return ALGcount_nil(result,bid,&ignore_nils);
 }
 
 str ALGproject(int *result, int *bid, ptr p,int *t) {

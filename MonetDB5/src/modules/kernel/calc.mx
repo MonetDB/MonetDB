@@ -100,7 +100,6 @@ at function resoluton.
 @mal
 module calc;
 
-	@:mal_isnil(any)@
 	@:mal_isnil(chr)@
 	@:mal_isnil(bit)@
 	@:mal_isnil(sht)@
@@ -419,6 +418,8 @@ address CALCnil2bat;
 
 command str(v:void) :str 
 address CALCnil2str;
+
+
 command void(v:void) :void 
 address CALCnil2void;
 command void(v:int) :void 
@@ -953,8 +954,8 @@ str CALCcompBetweenany(bit *retval, ptr *val, int tpe, ptr *low, ptr *high){
 }
 
 @= c_isnil
-str CALCisnil_@1(bit *retval, @1 val) {
-	*retval = (val == @1_nil);
+str CALCisnil_@1(bit *retval, @1 *val) {
+	*retval = (*val == @1_nil);
 	return MAL_SUCCEED;
 }
 str CALCnil2@1(@1 *retval, ptr val){

@@ -1595,7 +1595,7 @@ str BKCnewBATlng(int *res, int *ht, int *tt){
 
 }
 str BKCnewBat(int *res, int *ht, int *tt){
-	size_t cap=0;
+	int cap=0;
 	return BKCnewBATint(res,ht,tt,&cap);
 }
 str BKCreverse(int *ret, int *bid){
