@@ -2165,7 +2165,12 @@ void mvc_exit()
 	if (mvc_debug)
 		fprintf(stderr, "mvc_exit\n");
 
+	/* never started! */
+	if (!logger)
+		return ;
+
 	MT_set_lock(mvc_lock, "mvc_commit");
+	logger = NULL;
 	/* busy wait till the logmanager is ready with the cleanup */
 	while (cleanup) 
 		MT_sleep_ms(100); 
@@ -2184,17 +2189,16 @@ mvc_logmanager()
 {
 	int res = SQL_OK;
 
-	if (!logger || log_changes(logger) < 100)
-		return;
-
 	MT_set_lock(mvc_lock, "mvc_commit");
-	/* mvc_exit removed the logger */
-	if (!logger)	
+	if (!logger || log_changes(logger) < 1000) {
+		MT_unset_lock(mvc_lock, "mvc_commit");
 		return;
+	}
+
 	res = logger_restart(logger);
 	cleanup = 1;
 	MT_unset_lock(mvc_lock, "mvc_commit");
-	if (logger && res == SQL_OK)
+	if (cleanup && res == SQL_OK)
 		logger_cleanup(logger);
 	cleanup = 0;
 }
