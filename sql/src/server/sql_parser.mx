@@ -1288,6 +1288,13 @@ assignment:
 	  dlist_append_string(l, $1); 
 	  dlist_append_symbol(l, $3); 
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
+
+ |  column '=' NULLX
+
+	{ dlist *l = dlist_create();
+	  dlist_append_string(l, $1); 
+	  dlist_append_symbol(l, NULL ); 
+	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
  ;
 
 target_commalist:
