@@ -37,36 +37,58 @@ prologue {
  * via doxygen.
  */	
 #include "algopt_impl.h"
-
-
 };
 
 node  lit_tbl      /* literal table */
+      doc_tbl      /* literal table */
+
       disjunion    /* union two relations with same schema */
+      difference   /* difference */
+      intersect    /* intersection */
+
       cross        /* cross product (Cartesian product) */
       eqjoin       /* equi-join */
-      project      /* algebra projection and renaming operator */
+      scjoin       /* staircase join */
+
       rownum       /* consecutive number generation */
-      serialize    /* result serialization */
-      difference   /* difference */
-      select_
+
+      project      /* algebra projection and renaming operator */
+      select_      /* selection of rows where column value not false */
+      sum          /* partitioned sum of column */
+      count_       /* partitioned row count */
+      distinct     /* duplicate elimination */
+
+      type
+      cast         /* cast algebra data types */
 
       num_add      /* arithmetic plus operator */
       num_subtract /* arithmetic minus operator */
       num_multiply /* arithmetic times operator */
       num_divide   /* arithmetic divide operator */
+      num_modulo   /* arithmetic modulo operator */
+      num_neg      /* numeric negation */
 
       num_gt       /* numeric greater than */
       num_eq       /* numeric equal */
 
+      and          /* logical and */
+      or           /* logical or */
       not          /* logical negation (true <--> false) */
 
-      cast         /* cast algebra data types */
+      element      /* element construction */
+      attribute    /* attribute construction */
+      textnode     /* text node construction */
+      docnode      /* document node construction */
+      comment      /* comment construction */
+      processi     /* processing instruction construction */
 
-      type
+      strconcat
+      merge_adjacent
 
       seqty1
       all
+
+      serialize    /* result serialization */
       ;
 
 
@@ -76,8 +98,7 @@ label Query
       ;
 
 
-Query:    serialize (AlgExpr, AlgExpr)
-    { assert ($$);  /* avoid `root unused' warning */ };
+Query:    serialize (AlgExpr, AlgExpr);
 
 AlgExpr:  EmptyExpr
     =
@@ -96,72 +117,11 @@ AlgExpr:  EmptyExpr
                                0 /* no of tuples */, NULL /* tuples */);
     }
     ;
-
 AlgExpr:  lit_tbl;
+AlgExpr:  doc_tbl;
+
 AlgExpr:  disjunion (AlgExpr, AlgExpr);
-AlgExpr:  cross (AlgExpr, AlgExpr);
-AlgExpr:  eqjoin (AlgExpr, AlgExpr);
-AlgExpr:  project (AlgExpr);
-AlgExpr:  rownum (AlgExpr);
-AlgExpr:  difference (AlgExpr, AlgExpr);
-AlgExpr:  select_ (AlgExpr);
-AlgExpr:  num_add (AlgExpr);
-AlgExpr:  num_subtract (AlgExpr);
-AlgExpr:  num_multiply (AlgExpr);
-AlgExpr:  num_divide (AlgExpr);
-AlgExpr:  cast (AlgExpr);
-AlgExpr:  not (AlgExpr);
-AlgExpr:  num_gt (AlgExpr);
-AlgExpr:  num_eq (AlgExpr);
-AlgExpr:  type (AlgExpr);
-AlgExpr:  seqty1 (AlgExpr);
-AlgExpr:  all (AlgExpr);
-
-AlgExpr:  cross (AlgExpr, lit_tbl)
-    {
-        /*
-         * The cross product with one operand being a literal table
-         * with just one tuple is particularly easy: it means just
-         * adding one or more columns to the table. This rule normalizes
-         * this situation and puts the one-tuple literal table to the
-         * left, so we will only have to catch it in that order when
-         * generating MIL code.
-         *
-         * (But only do it if the left operand is not a literal table
-         * with exactly one tuple. Otherwise we'd end up with an
-         * infinite loop.)
-         */
-        if (($1$->kind != aop_lit_tbl || $1$->sem.lit_tbl.count != 1)
-            && $2$->sem.lit_tbl.count == 1)
-            REWRITE;
-        else
-            ABORT;
-    }
-    =
-    {
-        return cross ($2$, $1$);
-    }
-    ;
-AlgExpr:  cast (AlgExpr)
-    {
-        /*
-         * If an algebra expression already has the requested
-         * type, remove the cast.
-         */
-        int i;
-        for (i = 0; i < $1$->schema.count; i++)
-            if (!strcmp ($$->sem.cast.att, $1$->schema.items[i].name)) {
-                if ($$->sem.cast.ty == $1$->schema.items[i].type)
-                    REWRITE;
-                else
-                    ABORT;
-            }
-    }
-    =
-    { return $1$;};
-
 AlgExpr:  disjunion (EmptyExpr, AlgExpr)
-    { REWRITE; }
     =
     {
         /*
@@ -170,8 +130,8 @@ AlgExpr:  disjunion (EmptyExpr, AlgExpr)
         return $2$;
     }
     ;
+
 AlgExpr:  disjunion (AlgExpr, EmptyExpr)
-    { REWRITE; }
     =
     {
         /*
@@ -181,6 +141,72 @@ AlgExpr:  disjunion (AlgExpr, EmptyExpr)
     }
     ;
 
+AlgExpr:  difference (AlgExpr, AlgExpr);
+AlgExpr:  difference (AlgExpr, EmptyExpr)
+    =
+    {
+        /*
+         * R \ {}  ==>  R
+         */
+        return $1$;
+    }
+    ;
+
+AlgExpr:  intersect (AlgExpr, AlgExpr);
+AlgExpr:  cross (AlgExpr, AlgExpr);
+AlgExpr:  eqjoin (AlgExpr, AlgExpr);
+AlgExpr:  scjoin (AlgExpr, AlgExpr);
+AlgExpr:  rownum (AlgExpr);
+AlgExpr:  project (AlgExpr);
+AlgExpr:  select_ (AlgExpr);
+AlgExpr:  sum (AlgExpr);
+AlgExpr:  count_ (AlgExpr);
+AlgExpr:  distinct (AlgExpr);
+AlgExpr:  type (AlgExpr);
+
+AlgExpr:  cast (AlgExpr);
+AlgExpr:  cast (AlgExpr)
+    {
+        /*
+         * If an algebra expression already has the requested
+         * type, remove the cast.
+         */
+        int i;
+
+        for (i = 0; i < $1$->schema.count; i++)
+            if (!strcmp ($$->sem.cast.att, $1$->schema.items[i].name)) {
+                if ($$->sem.cast.ty == $1$->schema.items[i].type)
+                    REWRITE;
+                else
+                    ABORT;
+            }
+    }
+    =
+    { return $1$; }
+    ;
+
+AlgExpr:  num_add (AlgExpr);
+AlgExpr:  num_subtract (AlgExpr);
+AlgExpr:  num_multiply (AlgExpr);
+AlgExpr:  num_divide (AlgExpr);
+AlgExpr:  num_modulo (AlgExpr);
+AlgExpr:  num_neg (AlgExpr);
+AlgExpr:  num_gt (AlgExpr);
+AlgExpr:  num_eq (AlgExpr);
+AlgExpr:  and (AlgExpr);
+AlgExpr:  or (AlgExpr);
+AlgExpr:  not (AlgExpr);
+AlgExpr:  element (AlgExpr, AlgExpr, AlgExpr);
+AlgExpr:  attribute (AlgExpr, AlgExpr);
+AlgExpr:  textnode (AlgExpr);
+AlgExpr:  docnode (AlgExpr, AlgExpr);
+AlgExpr:  comment (AlgExpr);
+AlgExpr:  processi (AlgExpr);
+AlgExpr:  strconcat (AlgExpr);
+AlgExpr:  merge_adjacent (AlgExpr, AlgExpr);
+AlgExpr:  seqty1 (AlgExpr);
+AlgExpr:  all (AlgExpr);
+
 EmptyExpr: lit_tbl
     {
         /* Only a literal table with no tuples is an empty expression. */
@@ -188,37 +214,59 @@ EmptyExpr: lit_tbl
             ABORT;
 
         cost = 0;
-    };
+    }
+    ;
 
-EmptyExpr: project (EmptyExpr);
+EmptyExpr:  disjunion (EmptyExpr, EmptyExpr);
+EmptyExpr:  difference (EmptyExpr, AlgExpr);
+EmptyExpr:  difference (EmptyExpr, EmptyExpr);
+EmptyExpr:  intersect (EmptyExpr, AlgExpr);
+EmptyExpr:  intersect (AlgExpr, EmptyExpr);
+EmptyExpr:  intersect (EmptyExpr, EmptyExpr);
+EmptyExpr:  cross (EmptyExpr, AlgExpr);
+EmptyExpr:  cross (AlgExpr, EmptyExpr);
+EmptyExpr:  cross (EmptyExpr, EmptyExpr);
+EmptyExpr:  eqjoin (EmptyExpr, AlgExpr);
+EmptyExpr:  eqjoin (AlgExpr, EmptyExpr);
+EmptyExpr:  eqjoin (EmptyExpr, EmptyExpr);
+EmptyExpr:  scjoin (EmptyExpr, AlgExpr);
+EmptyExpr:  scjoin (AlgExpr, EmptyExpr);
+EmptyExpr:  scjoin (EmptyExpr, EmptyExpr);
+EmptyExpr:  rownum (EmptyExpr);
+EmptyExpr:  project (EmptyExpr);
+EmptyExpr:  select_ (EmptyExpr);
+EmptyExpr:  sum (EmptyExpr);
+EmptyExpr:  count_ (EmptyExpr);
+EmptyExpr:  distinct (EmptyExpr);
+EmptyExpr:  type (EmptyExpr);
+EmptyExpr:  cast (EmptyExpr);
+EmptyExpr:  num_add (EmptyExpr);
+EmptyExpr:  num_subtract (EmptyExpr);
+EmptyExpr:  num_multiply (EmptyExpr);
+EmptyExpr:  num_divide (EmptyExpr);
+EmptyExpr:  num_modulo (EmptyExpr);
+EmptyExpr:  num_neg (EmptyExpr);
+EmptyExpr:  num_gt (EmptyExpr);
+EmptyExpr:  num_eq (EmptyExpr);
+EmptyExpr:  and (EmptyExpr);
+EmptyExpr:  or (EmptyExpr);
+EmptyExpr:  not (EmptyExpr);
+EmptyExpr:  element (AlgExpr, EmptyExpr, AlgExpr);
+EmptyExpr:  element (AlgExpr, EmptyExpr, EmptyExpr);
+EmptyExpr:  element (EmptyExpr, EmptyExpr, AlgExpr);
+EmptyExpr:  element (EmptyExpr, EmptyExpr, EmptyExpr);
+EmptyExpr:  attribute (EmptyExpr, AlgExpr);
+EmptyExpr:  attribute (AlgExpr, EmptyExpr);
+EmptyExpr:  attribute (EmptyExpr, EmptyExpr);
+EmptyExpr:  textnode (EmptyExpr);
+EmptyExpr:  comment (EmptyExpr);
+EmptyExpr:  processi (EmptyExpr);
+EmptyExpr:  strconcat (EmptyExpr);
+EmptyExpr:  merge_adjacent (EmptyExpr, AlgExpr);
+EmptyExpr:  merge_adjacent (AlgExpr, EmptyExpr);
+EmptyExpr:  merge_adjacent (EmptyExpr, EmptyExpr);
+EmptyExpr:  seqty1 (EmptyExpr);
+EmptyExpr:  all (EmptyExpr);
 
-EmptyExpr: cross (EmptyExpr, AlgExpr);
-EmptyExpr: cross (AlgExpr, EmptyExpr);
-EmptyExpr: cross (EmptyExpr, EmptyExpr);
-
-EmptyExpr: eqjoin (EmptyExpr, AlgExpr);
-EmptyExpr: eqjoin (AlgExpr, EmptyExpr);
-EmptyExpr: eqjoin (EmptyExpr, EmptyExpr);
-
-EmptyExpr: rownum (EmptyExpr);
-
-EmptyExpr: difference (EmptyExpr, AlgExpr);
-EmptyExpr: select_ (EmptyExpr);
-
-EmptyExpr: num_add (EmptyExpr);
-EmptyExpr: num_subtract (EmptyExpr);
-EmptyExpr: num_multiply (EmptyExpr);
-EmptyExpr: num_divide (EmptyExpr);
-
-EmptyExpr: num_gt (EmptyExpr);
-EmptyExpr: num_eq (EmptyExpr);
-
-EmptyExpr: not (EmptyExpr);
-
-EmptyExpr: cast (EmptyExpr);
-
-EmptyExpr: type (EmptyExpr);
-EmptyExpr: seqty1 (EmptyExpr);
-EmptyExpr: all (EmptyExpr);
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

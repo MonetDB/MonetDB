@@ -122,7 +122,7 @@
 #define element(a,b,c)    PFalg_element ((a),(b),(c))
 
 /* attribute-constructing operator */
-#define attribute(a,b,c)  PFalg_attribute ((a),(b),(c))
+#define attribute(a,b)    PFalg_attribute ((a),(b))
 
 /* text node-constructing operator */
 #define textnode(a)       PFalg_textnode ((a))
@@ -137,7 +137,7 @@
 #define processi(a)       PFalg_processi ((a))
 
 /* constructor for fs:item-sequence-to-node-sequence() functionality */
-#define items_to_nodes(a) PFalg_pf_item_seq_to_node_seq ((a))
+#define strconcat(a)      PFalg_strconcat ((a))
 
 /* constructor for pf:merge-adjacent-text-nodes() functionality */
 #define merge_adjacent(a,b) PFalg_pf_merge_adjacent_text_nodes ((a),(b))

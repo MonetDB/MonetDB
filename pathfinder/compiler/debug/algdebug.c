@@ -83,7 +83,7 @@ char *a_id[]  = {
     , [aop_docnode]          = "DOC"              /* lawn green */
     , [aop_comment]          = "COMMENT"          /* lawn green */
     , [aop_processi]         = "PI"               /* lawn green */
-    , [aop_items_to_nodes]   = "item-sequence-to-node-sequence"
+    , [aop_concat]           = "strconcat"
     , [aop_merge_adjacent]   = "merge-adjacent-text-nodes"
     , [aop_seqty1]           = "SEQTY1"
     , [aop_all]              = "ALL"
@@ -162,7 +162,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         , [aop_docnode]        = "lawngreen"
         , [aop_comment]        = "lawngreen"
         , [aop_processi]       = "lawngreen"
-        , [aop_items_to_nodes] = "grey"
+        , [aop_concat]         = "grey"
         , [aop_merge_adjacent] = "grey"
         , [aop_seqty1]         = "grey"
         , [aop_all]            = "grey"
@@ -431,7 +431,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_docnode:
         case aop_comment:
         case aop_processi:
-        case aop_items_to_nodes:
+        case aop_concat:
         case aop_merge_adjacent:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
@@ -647,7 +647,7 @@ alg_pretty (PFalg_op_t *n)
         case aop_docnode:
         case aop_comment:
         case aop_processi:
-        case aop_items_to_nodes:
+        case aop_concat:
         case aop_merge_adjacent:
             break;
 

@@ -930,7 +930,7 @@ PFbui_pf_item_seq_to_node_seq (PFalg_op_t *loop __attribute__((unused)),
      * (concatenated) strings
      */
     PFalg_op_t *t_nodes = textnode (
-                              items_to_nodes (
+                              strconcat (
 				  cast (part2, "item", aat_str)));
 
     /* project the new text nodes on "iter", "pos", "item", form

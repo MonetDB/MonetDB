@@ -1799,13 +1799,12 @@ PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tag,
 
 /** Constructor for attribute operators.
  *
- * @a doc is the current document, @a tag constructs the attributes'
- * names, and @a cont is the content of the attributes.
+ * @a name is the name of the attribute, and @a val is the value of
+ * the attribute.
  */
-PFalg_op_t * PFalg_attribute (PFalg_op_t *doc, PFalg_op_t *tag,
-			      PFalg_op_t *cont)
+PFalg_op_t * PFalg_attribute (PFalg_op_t *name, PFalg_op_t *val)
 {
-    PFalg_op_t *ret = alg_op_wire3 (aop_attribute, doc, tag, cont);
+    PFalg_op_t *ret = alg_op_wire2 (aop_attribute, name, val);
     int i;
 
     /* set result schema */
@@ -1947,9 +1946,9 @@ PFalg_op_t * PFalg_processi (PFalg_op_t *cont)
  * schema is the same as the input schema.
  */
 PFalg_op_t *
-PFalg_pf_item_seq_to_node_seq (PFalg_op_t *n)
+PFalg_strconcat (PFalg_op_t *n)
 {
-    PFalg_op_t *ret = alg_op_wire1 (aop_items_to_nodes, n);
+    PFalg_op_t *ret = alg_op_wire1 (aop_concat, n);
     int i;
 
     /* set result schema */

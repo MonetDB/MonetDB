@@ -868,8 +868,7 @@ ConstructorExpr: attr (TagName, CoreExpr)
          *
          * doc:        proj_pre,size,level,kind,prop,frag (n)
          */
-        PFalg_op_t *attr = attribute (PFalg_alg_union ([[ $2$ ]].doc),
-                                      [[ $1$ ]].result,
+        PFalg_op_t *attr = attribute ([[ $1$ ]].result,
                                       [[ $2$ ]].result);
 
         [[ $$ ]] = (struct  PFalg_pair_t) {
@@ -1058,7 +1057,19 @@ ConstructorExpr: pi (lit_str)
     }
     ;
 
-TagName:         tag;
+TagName:         tag
+    =
+    {
+        [[ $$ ]] = (struct  PFalg_pair_t) {
+                 .result = cross (loop,
+                                  lit_tbl( attlist ("pos", "item"),
+                                           tuple (lit_nat (1),
+                                                  lit_str (
+                                                      PFqname_str (
+                                                          $$->sem.qname))))),
+                 .doc = PFalg_empty_frag () };
+    }
+    ;
 TagName:         CoreExpr;
 
 FunctionAppl:    apply (FunctionArgs)

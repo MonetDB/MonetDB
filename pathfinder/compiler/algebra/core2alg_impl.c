@@ -807,10 +807,9 @@ PFalg_op_t *PFalg_alg_union (PFarray_t *frags)
     /* pick first fragment */
     ret = *((PFalg_op_t **) PFarray_at (frags, 0));
 
-    for (i = 1; i < PFarray_last (frags); i++){
-        fprintf (stderr, "disjunion is next\n");
+    for (i = 1; i < PFarray_last (frags); i++)
         ret = disjunion (ret, *((PFalg_op_t **) PFarray_at (frags, i)));
-    }
+
     return ret;
 }
 

@@ -62,7 +62,7 @@ static PFalg_op_t * find_unary (PFalg_op_t *new);
 static PFalg_op_t * find_sum (PFalg_op_t *new);
 static PFalg_op_t * find_count (PFalg_op_t *new);
 static PFalg_op_t * find_distinct (PFalg_op_t *new);
-static PFalg_op_t * find_items_to_nodes (PFalg_op_t *new);
+static PFalg_op_t * find_strconcat (PFalg_op_t *new);
 static PFalg_op_t * find_merge_adjacent (PFalg_op_t *new);
 
 static bool tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b);
@@ -982,11 +982,11 @@ static PFalg_op_t * find_distinct (PFalg_op_t *new)
 
 
 /**
- * Check whether the items_to_nodes expression @ new already exists
+ * Check whether the strconcat expression @ new already exists
  * in the array of existing expressions. It must have the same child
  * node.
  */
-static PFalg_op_t * find_items_to_nodes (PFalg_op_t *new)
+static PFalg_op_t * find_strconcat (PFalg_op_t *new)
 {
     return find_distinct (new);
 }
@@ -1134,8 +1134,8 @@ find_subexp (PFalg_op_t *new)
         case aop_processi:
 	    return new;
 
-        case aop_items_to_nodes:
-	    return find_items_to_nodes (new);
+        case aop_concat:
+	    return find_strconcat (new);
 
         case aop_merge_adjacent:
 	    return find_merge_adjacent (new);

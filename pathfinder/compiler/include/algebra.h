@@ -216,7 +216,7 @@ enum PFalg_op_kind_t {
     , aop_docnode          /**< document node-constructing operator */
     , aop_comment          /**< comment-constructing operator */
     , aop_processi         /**< processing instruction-constructing operator */
-    , aop_items_to_nodes   /**< operator for fs:item-sequence-to-node-sequence
+    , aop_concat           /**< required for fs:item-sequence-to-node-sequence
                                 builtin function */
     , aop_merge_adjacent   /**< operator for pf:merge-adjacent-text-nodes
                                 builtin function */
@@ -593,8 +593,7 @@ PFalg_op_t * PFalg_element (PFalg_op_t *doc, PFalg_op_t *tags,
                             PFalg_op_t *cont);
 
 /** Constructor for attribute operators. */
-PFalg_op_t * PFalg_attribute (PFalg_op_t *doc, PFalg_op_t *tags,
-			      PFalg_op_t *cont);
+PFalg_op_t * PFalg_attribute (PFalg_op_t *tags, PFalg_op_t *cont);
 
 /** Constructor for text node operators. */
 PFalg_op_t * PFalg_textnode (PFalg_op_t *cont);
@@ -608,8 +607,10 @@ PFalg_op_t * PFalg_comment (PFalg_op_t *cont);
 /** Constructor for processing instruction operators. */
 PFalg_op_t * PFalg_processi (PFalg_op_t *cont);
 
-/** Constructor for fs:item-sequence-to-node-sequence() functionality */
-PFalg_op_t *PFalg_pf_item_seq_to_node_seq (PFalg_op_t *n);
+/** Constructor required for fs:item-sequence-to-node-sequence()
+ * functionality
+ */
+PFalg_op_t *PFalg_strconcat (PFalg_op_t *n);
 
 /** Constructor for pf:merge-adjacent-text-nodes() functionality */
 PFalg_op_t *PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc,

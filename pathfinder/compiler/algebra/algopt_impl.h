@@ -45,32 +45,60 @@
 
 static int TWIG_ID[] = {
       [aop_lit_tbl]      = lit_tbl    /**< literal table */
-    , [aop_disjunion]    = disjunion  /**< union two relations w/ same schema */
+    , [aop_doc_tbl]      = doc_tbl    /**< document table */
+
+    , [aop_disjunion]    = disjunion  /**< union two relations w/ same
+				       * schema */
+    , [aop_difference]   = difference
+    , [aop_intersect]    = intersect
+
     , [aop_cross]        = cross      /**< cross product (Cartesian product) */
     , [aop_eqjoin]       = eqjoin     /**< equi-join */
-    , [aop_project]      = project    /**< projection and renaming operator */
+    , [aop_scjoin]       = scjoin     /**< staircase join */
+
     , [aop_rownum]       = rownum     /**< consecutive number generation */
 
-    , [aop_serialize]    = serialize  /**< serialize algebra expression below
-                                           (This is mainly used explicitly match
-                                           the expression root during the Twig
-                                           pass.) */
-    , [aop_difference]   = difference
+    , [aop_project]      = project    /**< projection and renaming operator */
     , [aop_select]       = select_
+    , [aop_sum]          = sum
+    , [aop_count]        = count_
+    , [aop_distinct]     = distinct
+
+    , [aop_type]         = type
+    , [aop_cast]         = cast         /**< algebra cast operator */
+
     , [aop_num_add]      = num_add      /**< arithmetic plus operator */
-    , [aop_num_subtract] = num_subtract /**< arithmetic plus operator */
-    , [aop_num_multiply] = num_multiply /**< arithmetic plus operator */
-    , [aop_num_divide]   = num_divide   /**< arithmetic plus operator */
+    , [aop_num_subtract] = num_subtract /**< arithmetic minus operator */
+    , [aop_num_multiply] = num_multiply /**< arithmetic times operator */
+    , [aop_num_divide]   = num_divide   /**< arithmetic divide operator */
+    , [aop_num_modulo]   = num_modulo   /**< arithmetic modulo operator */
+    , [aop_num_neg]      = num_neg      /**< arithmetic negation operator */
 
     , [aop_num_gt]       = num_gt       /**< numeric equal operator */
     , [aop_num_eq]       = num_eq       /**< numeric equal operator */
 
+    , [aop_bool_and]     = and          /**< boolean and */
+    , [aop_bool_or]      = or           /**< boolean or */
     , [aop_bool_not]     = not          /**< boolean negation */
+
+    , [aop_element]      = element      /**< element construction */
+    , [aop_attribute]    = attribute    /**< attribute construction */
+    , [aop_textnode]     = textnode     /**< text node construction */
+    , [aop_docnode]      = docnode      /**< document node construction */
+    , [aop_comment]      = comment      /**< comment construction */
+    , [aop_processi]     = processi     /**< pi construction */
+
+    , [aop_concat]       = strconcat
+    , [aop_merge_adjacent] = merge_adjacent
     
-    , [aop_cast]         = cast         /**< algebra cast operator */
-    , [aop_type]         = type
     , [aop_seqty1]       = seqty1
     , [aop_all]          = all
+
+    , [aop_serialize]    = serialize  /**< serialize algebra expression below
+                                           (This is mainly used explicitly
+                                           match the expression root during
+                                           the Twig pass.) */
+
 };
 
 /** twig: setup twig */
@@ -80,25 +108,43 @@ static int TWIG_ID[] = {
  * MIL tree constructor functions of the same name below
  */
 #undef lit_tbl
+#undef doc_tbl
 #undef disjunion
+#undef difference
+#undef intersect
 #undef cross
 #undef eqjoin
-#undef project
+#undef scjoin
 #undef rownum
-#undef serialize
-#undef difference
+#undef project
 #undef select_
+#undef sum
+#undef count_
+#undef distinct
+#undef type
+#undef cast
 #undef num_add
 #undef num_subtract
 #undef num_multiply
 #undef num_divide
+#undef num_modulo
+#undef num_neg
 #undef num_gt
 #undef num_eq
+#undef and
+#undef or
 #undef not
-#undef cast
-#undef type
+#undef element
+#undef attribute
+#undef textnode
+#undef docnode
+#undef comment
+#undef processi
+#undef strconcat
+#undef merge_adjacent
 #undef seqty1
 #undef all
+#undef serialize
 
 /* ----------------------- End of twig setup -------------------- */
 
