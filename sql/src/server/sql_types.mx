@@ -695,8 +695,8 @@ void sqltypeinit()
 	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 0, 0, 10, 	"int");
 	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 	"lng");
 	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 		"date");
-	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 		"time");
-	*t++ = sql_create_type("DATETIME", 0, 0, 0, 		"datetime");
+	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 		"daytime");
+	*t++ = sql_create_type("DATETIME", 0, 0, 0, 		"timestamp");
 	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0,0, 		"timestamp");
 	*t = NULL;
 
