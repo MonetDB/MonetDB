@@ -289,7 +289,7 @@ stats_report(ptr *_st, str outfile)
   FILE *fp;
 
   if ((fp = fopen(outfile, "a")) == NULL) {
-    GDKerror("[stats_report]: Cannot open %s for writing: %s\n",
+    GDKerror("stats_report: Cannot open %s for writing: %s\n",
 	     outfile, strerror(errno));
     return GDK_FAIL;
   }

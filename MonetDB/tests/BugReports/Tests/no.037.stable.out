@@ -60,23 +60,23 @@ ls();
 #-------------------------------------------------------------------------------------------------#
 mem.print();
 !ERROR: interpret: unknown variable 'mem'.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 printf("#~BeginVariableOutput~#\n"); memory().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1662976	  ]
-[ "arena",	  1668728	  ]
-[ "ordblks",	  437		  ]
+[ "memincr",	  1654784	  ]
+[ "arena",	  1661440	  ]
+[ "ordblks",	  455		  ]
 [ "smblks",	  0		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1461192	  ]
-[ "fordblks",	  207536	  ]
+[ "uordblks",	  1453896	  ]
+[ "fordblks",	  207544	  ]
 #~EndVariableOutput~#
 quit();
 

@@ -69,12 +69,12 @@ loaded();
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 test.print();
-!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: DESCload: atom 'lock' unknown, in BAT '28'.
 !ERROR: interpret: MIL operator invocation of 'print(BAT)' with illegal types.
 test.count().print();
-!ERROR: atom 'lock' unknown, in BAT '28'.
+!ERROR: DESCload: atom 'lock' unknown, in BAT '28'.
 !ERROR: interpret: MIL operator invocation of 'count(BAT)' with illegal types.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 
 quit();
 

@@ -375,7 +375,7 @@ int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
 			continue;
 		    (void) interpret(c->stk, lt->yysons[i], &res1);
 		    if (ret < 0 || res1.vtype != TYPE_str) {
-			   GDKerror("module: illegal argument.\n");
+			   GDKerror("CMDmodule: illegal argument.\n");
 			   return GDK_FAIL;
  		    }
 		    mod = res1.val.sval; 
@@ -484,7 +484,7 @@ int CMDcast(Cntxt stk, YYSTREE lt, ValPtr res){
         i = interpret(stk, lt->yysons[1], argv);
 	tpe = argv[0].val.ival;
         if (i < 0 || argv[0].vtype != TYPE_int || tpe < 0 || tpe > GDKatomcnt) {
-            GDKerror("cast: 2nd parameter should be INT type specifier.\n");
+            GDKerror("CMDcast: 2nd parameter should be INT type specifier.\n");
             return -1;
         }
         i = interpret(stk, lt->yysons[0], argv);
@@ -500,12 +500,12 @@ int CMDbatcast(Cntxt stk, YYSTREE lt, ValPtr res){
         i = interpret(stk, lt->yysons[1], argv);
 	tpe = argv[0].val.ival;
         if (i < 0 || argv[0].vtype != TYPE_int || tpe < 0 || tpe > GDKatomcnt) {
-        	GDKerror("[batcast]: 2nd parameter should be INT type specifier.\n");
+        	GDKerror("CMDbatcast: 2nd parameter should be INT type specifier.\n");
         	return -1;
         }
         i = interpret(stk, lt->yysons[0], argv);
 	if (i < 0 || argv[0].vtype != TYPE_bat || !BATdescriptor(bid = argv[0].val.bval)) {
-        	GDKerror("[batcast]: first parameter should be a valid bat.\n");
+        	GDKerror("CMDbatcast: first parameter should be a valid bat.\n");
 		return -1;
 	}
 	i = interpret_batcast(ATOMname(tpe), 2, argv, res);
@@ -592,7 +592,7 @@ int CMDwack(int stk, YYSTREE lt, ValPtr res) {
 		BBP_cache(bid) = BBP_cache(-bid) = 0;
 		return 0;
 	}
-	GDKerror("CMDwack(%d): illegal BAT.\n", res->val.ival);
+	GDKerror("CMDwack: %d illegal BAT.\n", res->val.ival);
 	return -1;
 }
 @-
@@ -615,21 +615,21 @@ int CMDfreeze(Cntxt stk, YYSTREE lt, ValPtr res){
 					if (s >= 0) {
 						s = monet_cntxt[s].outer;
 					} else {
-						GDKerror("illegal context.\n");
+						GDKerror("CMDfreeze: illegal context.\n");
 						return -1;
 					}
 				}
 				if ((act = VARfind(&s, nme)) == 0) {
-					GDKerror("variable '%s' does not exist.\n",nme);
+					GDKerror("CMDfreeze: variable '%s' does not exist.\n",nme);
 					return -1;
 				}
 				if (act->constant) {
-					GDKerror("cannot freeze constant '%s'.\n",nme);
+					GDKerror("CMDfreeze: cannot freeze constant '%s'.\n",nme);
 					return -1;
 				}
 				VARfreeze(act);
 			} else {
-				GDKerror("FREEZE works on variable names only.\n");
+				GDKerror("CMDfreeze: FREEZE works on variable names only.\n");
 				return -1;
 			}
 		}
@@ -673,7 +673,7 @@ int CMDfork(Cntxt stk, YYSTREE lt, ValPtr res){
 
 	@:builtin_args(1)@;
 	if (monet_singlethreaded) {
-		GDKerror("fork: cannot execute in -single mode.\n");
+		GDKerror("CMDfork: cannot execute in -single mode.\n");
 		return -1;
 	} 
 @-
@@ -683,7 +683,7 @@ to different clients.  Schedule the background request.
 @c
 	c = forkClient(stk, TRUE);
 	if (c == NULL) {
-		GDKerror("fork: error creating a new thread.\n");
+		GDKerror("CMDfork: error creating a new thread.\n");
 		return -1;
 	}
         res->vtype = TYPE_int;
@@ -735,7 +735,7 @@ int CMDrunon(Cntxt stk, YYSTREE lt, ValPtr res){
 	@:builtin_operand(1, TYPE_int, p)@
 	i = *(int*) p;
 	if ((i < 0) || (i >= THREADS)) {
-		GDKerror("runon: Illegal thread\n");
+		GDKerror("CMDrunon: Illegal thread\n");
 		return -1;
 	} else {
 		q = newRequest(stk, arg(lt, 0), 0);
@@ -826,7 +826,7 @@ int CMDnotify(Cntxt stk, YYSTREE lt, ValPtr res){
 	YYSTREE ev = 0, ov = 0;
  
 	if( lt->cnt <1 || lt->cnt>2 ){
-		GDKerror("notify: two arguments expected.\n");
+		GDKerror("CMDnotify: two arguments expected.\n");
 		return -1;
 	}
 	if( lt->cnt == 2) {
@@ -846,11 +846,11 @@ int CMDnotify(Cntxt stk, YYSTREE lt, ValPtr res){
 	if( ov && ov->token == monet_tokident) {
 		v= VARfind(&stk, ov->yyval.val.sval);
 		if (v == 0){
-			GDKerror("notify: variable not found\n");
+			GDKerror("CMDnotify: variable not found\n");
 			return -1;
 		}
 		if (v->binding.vtype != TYPE_int) {
-			GDKerror("notify: int variable expected\n");
+			GDKerror("CMDnotify: int variable expected\n");
 			return -1;
 		}
 		obj = v->binding.val.ival;
@@ -1232,7 +1232,7 @@ int print_table(int *order, BAT *arg1, ...) {
         do {
 		if(argc==MAXPARAMS){
 			va_end (ap);
-			   GDKerror("too many arguments.\n");
+			   GDKerror("print_table: too many arguments.\n");
 			   return GDK_FAIL;
 		}
 		piv[argc] = va_arg (ap,BAT*) ;
@@ -1252,7 +1252,7 @@ int print_table_default(BAT *b, ...) {
         do {
 		if(argc==MAXPARAMS){
 			   va_end (ap);
-			   GDKerror("too many arguments.\n");
+			   GDKerror("print_table_default: too many arguments.\n");
 			   return GDK_FAIL;
 		}
 		piv[argc] = va_arg (ap,BAT*) ;

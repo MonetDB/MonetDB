@@ -636,7 +636,7 @@ int monet_sprintf(str *res, str format, va_list ap){
 	char addbuf[100], *add = addbuf, *dst, *buf, *cur, *paramseen = NULL;
 
         if (format == NULL) {
-                GDKerror("monet_sprintf(): NULL pointer passed as format.\n");
+                GDKerror("monet_sprintf: NULL pointer passed as format.\n");
                 return GDK_FAIL;
         } else if (strchr(format, '%') == NULL) {
 		*res = GDKstrdup(format);

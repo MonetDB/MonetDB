@@ -39,7 +39,7 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "hsorted",			  "1"		  ]
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
-[ "hseqbase",			  "nil"		  ]
+[ "hseqbase",			  "0@0"		  ]
 [ "hkey",			  "0"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
@@ -47,7 +47,7 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "halignflushed",		  "20000000"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
-[ "tseqbase",			  "nil"		  ]
+[ "tseqbase",			  "0@0"		  ]
 [ "tsorted",			  "1"		  ]
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "4"		  ]
@@ -58,10 +58,10 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
-[ "batStamp",			  "-167"	  ]
-[ "lastUsed",			  "3822"	  ]
+[ "batStamp",			  "-160"	  ]
+[ "lastUsed",			  "2974"	  ]
 [ "keepAround",			  "0"		  ]
-[ "curStamp",			  "168"		  ]
+[ "curStamp",			  "161"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -147,7 +147,7 @@ b.find(int(nil)).print();
 b.find(10).print();
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 
 # Can we delete them and re-insert them later on
 b.delete(4,16);

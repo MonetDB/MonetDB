@@ -476,7 +476,7 @@ void ATOMproperty(str id, str property, GDKfcn arg) {
 		atomset(BATatoms[t].atomLen, (int (*)(void *)) arg); 
 	    }
     if (BATatoms[t].storage != t)
-    GDKerror("ATOMproperty(%s): overload of %s violates inheritance from %s.\n",
+    GDKerror("ATOMproperty: %s overload of %s violates inheritance from %s.\n",
 		ATOMname(t), property, ATOMname(BATatoms[t].storage));
 /*
 */

@@ -1254,11 +1254,11 @@ int CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
 	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
-		GDKerror("select: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		GDKerror("CMDselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
 	}
 	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
-		GDKerror("select: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		GDKerror("CMDselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
 	return (*result = BATselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
@@ -1267,11 +1267,11 @@ int CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
 	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
-		GDKerror("uselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		GDKerror("CMDuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
 	}
 	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
-		GDKerror("uselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		GDKerror("CMDuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
 	return (*result = BATuselect_(b, low, high, *l_in, *h_in))?GDK_SUCCEED:GDK_FAIL;
@@ -1591,7 +1591,7 @@ bunins_failed:
 
 int CMDr@1_@2(oid* ret, BAT *b, ptr v) {
 	if ((BAThordered(b)&1) == 0) {
-		GDKerror("r@1_@2: %s should be sorted on head\n", BBP_logical(b->batCacheid));
+		GDKerror("CMDr@1_@2: %s should be sorted on head\n", BBP_logical(b->batCacheid));
 		return GDK_FAIL;
 	} else if (BATcount(b) > 0) {
 		BUN p = NULL;

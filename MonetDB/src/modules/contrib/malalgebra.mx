@@ -135,7 +135,7 @@ BATmalfetchjoin(BAT *l, BAT *r) {
   } else if (rfetch) {
     return BATfetchjoin(l, r, oid_nil);
   }
-  GDKerror( "Cannot perform fetchjoin: neither left tail nor right head are dense OID columns.\n");
+  GDKerror( "BATmalfetchjoin: Cannot perform fetchjoin: neither left tail nor right head are dense OID columns.\n");
   return NULL;
 }
 
@@ -146,7 +146,7 @@ BATmalleftfetchjoin(BAT *l, BAT *r) {
   if (rfetch) {
     return BATleftfetchjoin(l, r, oid_nil);
   }
-  GDKerror( "Cannot perform leftfetchjoin: right head is no dense OID column.\n");
+  GDKerror( "BATmalleftfetchjoin: Cannot perform leftfetchjoin: right head is no dense OID column.\n");
   return NULL;
 }
 
@@ -171,14 +171,14 @@ BATmallefthashjoin(BAT *l, BAT *r) {
 BAT*
 BATmalmergejoin(BAT *l, BAT *r) {
   if ( !((BATtordered(l)&1)||(BAThordered(r)&1)) ) {
-    GDKerror( "Cannot perform mergejoin: neither left tail nor right head is ordered.\n" );
+    GDKerror( "BATmalmergejoin: Cannot perform mergejoin: neither left tail nor right head is ordered.\n" );
     return NULL;
   }
 /*
  * Stefan: There is no reason not to perform a mergejoin on voids, is there?
  *
   if ( (l->ttype==TYPE_void) || (r->htype==TYPE_void) ) {
-    GDKerror( "Cannot perform mergejoin on void fields.\n" );
+    GDKerror( "BATmalmergejoin: Cannot perform mergejoin on void fields.\n" );
     return NULL;    
   }
 */
@@ -189,7 +189,7 @@ BATmalmergejoin(BAT *l, BAT *r) {
 BAT*
 BATmalleftmergejoin(BAT *l, BAT *r) {
   if ( !(BAThordered(r)&1) ) {
-    GDKerror( "Cannot perform leftmergejoin: right head is ordered.\n" );
+    GDKerror( "BATmalleftmergejoin: Cannot perform leftmergejoin: right head is ordered.\n" );
     return NULL;
   }
   return BATleftmergejoin(l,r,oid_nil);
@@ -198,7 +198,7 @@ BATmalleftmergejoin(BAT *l, BAT *r) {
 BAT*
 BATmalindexjoin(BAT *l, BAT *r) {
   if (l->ttype == TYPE_void && r->htype == TYPE_void) {
-    GDKerror( "Cannot perform indexjoin on void columns.\n" );
+    GDKerror( "BATmalindexjoin: Cannot perform indexjoin on void columns.\n" );
     return NULL;
   }
   return BATindexjoin(l,r,oid_nil);
@@ -208,7 +208,7 @@ BATmalindexjoin(BAT *l, BAT *r) {
 BAT*
 BATmalleftindexjoin(BAT *l, BAT *r) {
   if (r->htype == TYPE_void) {
-    GDKerror( "Cannot perform leftindexjoin: right head must not be void.\n" );
+    GDKerror( "BATmalleftindexjoin: Cannot perform leftindexjoin: right head must not be void.\n" );
     return NULL;
   }
   return BATleftindexjoin(l,r,oid_nil);
@@ -244,11 +244,11 @@ int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
 	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
-		GDKerror("ord_@1select: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		GDKerror("CMDord_@1select: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
 	}
 	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
-		GDKerror("ord_@1select: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		GDKerror("CMDord_@1select: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
 	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;

@@ -1087,7 +1087,7 @@ static int battheta(BAT* inner, BAT* outer, BAT* l, BAT* r, int op, bit swap) {
 	    (outer && (TYPEerror(outer->htype, l->htype) ||
                        TYPEerror(outer->ttype, r->ttype))))
 	{
-		GDKerror("BATtheta: type unequality\n");
+		GDKerror("BATtheta: argument types incompatible\n");
 		return -1;
 	}
 

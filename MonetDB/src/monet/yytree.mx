@@ -103,7 +103,7 @@ void checklist(YYSTREE t) {
 			fprintf(stderr, PTRFMT " ", PTRFMTCAST (void *) t1);
 			t1 = t1->next;
 		}
-		GDKerror("double present %d!!\n", t);
+		GDKerror("checklist: double present %d!!\n", t);
 		break;
 	    }
 	}
@@ -605,7 +605,7 @@ if trees are more than 2-deep.
 		x = 0;\
 	} else if ((x<0) && (res->vtype == TYPE_str) && res->val.sval) {\
                 char *s = (char*) TBL_getname(fcn);\
-                GDKerror("%s: %s.\n", s?s:"null", res->val.sval);\
+                GDKerror("yytree: %s: %s.\n", s?s:"null", res->val.sval);\
 	        CLEANUP(lt); res->vtype = TYPE_void; lt->dealloc = 0;\
         }
 #define CATCHBREAK(x) ((x==-TOK_BREAK)?0:x)

@@ -344,13 +344,13 @@ int CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b) {
     int yy = BUNsize(bn);
   
     if (!ALIGNsynced(bn, b)) { 
-	GDKerror("[:rotate_xor_hash=](%s,%d,%s): not synced on head.\n", bn->batId, *rotate, b->batId);
+	GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", bn->batId, *rotate, b->batId);
 	return GDK_FAIL;
     } else if (VIEWparent(bn) || bn->batRestricted) {
-	GDKerror("[:rotate_xor_hash=](%s,%d,%s): left operand not writeable.\n", bn->batId, *rotate, b->batId);
+	GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", bn->batId, *rotate, b->batId);
 	return GDK_FAIL;
     } else if (*rotate < 0 || *rotate >= 32) {
-	GDKerror("[:rotate_xor_hash=](%s,%d,%s): illegal number of rotate bits.\n", bn->batId, *rotate, b->batId);
+	GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", bn->batId, *rotate, b->batId);
 	return GDK_FAIL;
     } else if (tpe == TYPE_chr) {
 	chr *cur = (chr*) BUNtloc(b, BUNfirst(b));

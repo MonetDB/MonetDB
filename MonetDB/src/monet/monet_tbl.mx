@@ -531,11 +531,11 @@ ptr TBL_openmod(Client client, str module) {
     if (module) {      
         ret=(ptr)DL_open(module, (RTLD_NOW|RTLD_GLOBAL));
     } else {
-            if (!ret) GDKerror("locate module: %s.\n", module);
+            if (!ret) GDKerror("TBL_openmod: locate module: %s.\n", module);
             return 0;
     }
 
-    if (!ret) GDKerror("DL_open: %s.\n", DL_error());
+    if (!ret) GDKerror("TBL_openmod: DL_open: %s.\n", DL_error());
     return ret; /* none found */
 }
 
@@ -1258,7 +1258,7 @@ static BAT *TBL_fathercopy( Client client, Client father, str nme ){
 		BBPdecref(o->batCacheid, FALSE);
    		n->binding.val.bval = b->batCacheid;
 	} else {
-		GDKerror("variable %s not found\n",  buf );
+		GDKerror("TBL_fathercopy: variable %s not found\n",  buf );
 	}
 	return b;
 }
@@ -1657,7 +1657,7 @@ static int unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int na
 	if (foundvar) {
 		Client c;
 		CNTXTclient(i, &c);
-		GDKerror("drop(%s) failed: live variable %s of type %s in %s context %d.\n",
+		GDKerror("unloadmod_check_use: drop(%s) failed: live variable %s of type %s in %s context %d.\n",
 			module, foundvar, ATOMname(j), c->user, i);
 		GDKfree(foundvar);
 		return -1; /* will not be able to drop module */
@@ -1677,11 +1677,11 @@ static int unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int na
 					if (cnt == 0) {
 						break;
 					} else if (cnt > 0) {
-						GDKerror("drop(%s) failed: %s[%s,%s] has %d reference%s.\n",
+						GDKerror("unloadmod_check_use: drop(%s) failed: %s[%s,%s] has %d reference%s.\n",
 							module, BBP_logical(i), ATOMname(b->htype), 
 							ATOMname(b->ttype), cnt, cnt>1?"s":"");
 					} else {
-						GDKerror("drop(%s) failed: %s[%s,%s] could not be unloaded due to write errors.\n",
+						GDKerror("unloadmod_check_use: drop(%s) failed: %s[%s,%s] could not be unloaded due to write errors.\n",
 							module, BBP_logical(i), ATOMname(b->htype), ATOMname(b->ttype));
 					} 
 					BBPunlock("drop");
@@ -1695,11 +1695,11 @@ static int unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int na
 					if (cnt == 0) {
 						break;
 					} else if (cnt > 0) {
-						GDKerror("drop(%s) failed: %s with %s accelerator has %d reference%s.\n",
+						GDKerror("unloadmod_check_use: drop(%s) failed: %s with %s accelerator has %d reference%s.\n",
 							module, BBP_logical(i), ACCname(accs[j]), 
 							cnt, cnt>1?"s":"");
 					} else {
-						GDKerror("drop(%s) failed: %s with %s accelerator could not be unloaded due to write errors.\n",
+						GDKerror("unloadmod_check_use: drop(%s) failed: %s with %s accelerator could not be unloaded due to write errors.\n",
 							module, BBP_logical(i), ACCname(accs[j]));
 					} 
 					BBPunlock("drop");

@@ -155,13 +155,13 @@ ls();
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-------------------------------------------------------------------------------------------------#
 bat("a").print();
-!ERROR: print(param 1): invalid BAT.
+!ERROR: interpret_params: print(param 1): invalid BAT.
 bat("b").print();
-!ERROR: print(param 1): invalid BAT.
+!ERROR: interpret_params: print(param 1): invalid BAT.
 bat("c").print();
-!ERROR: print(param 1): invalid BAT.
+!ERROR: interpret_params: print(param 1): invalid BAT.
 bat("d").print();
-!ERROR: print(param 1): invalid BAT.
+!ERROR: interpret_params: print(param 1): invalid BAT.
 quit();   
 
 # 20:15:03 >  

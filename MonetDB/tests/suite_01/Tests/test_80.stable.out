@@ -19,7 +19,7 @@ bats@batloop() {
         tmp.print();
 }
 !ERROR: interpret: unknown variable 'bats'.
-!ERROR: batloop(param 1): evaluation error.
+!ERROR: interpret_params: batloop(param 1): evaluation error.
 !ERROR: interpret_iterator: iterator should work on a BAT.
 
 quit();

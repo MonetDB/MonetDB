@@ -345,14 +345,14 @@ int blob_fromstr(char* instr,int* l,blob** val)
 
    if (i < nitems)
    {
-	 GDKerror("blob too short \n");
+	 GDKerror("blob_fromstr: blob too short \n");
 	 return -1;
    }
 
    s = strchr(s,')');
    if (s == 0)
    {
-      GDKerror("Missing ')' in blob\n");
+      GDKerror("blob_fromstr: Missing ')' in blob\n");
    }
 
    return s-instr;

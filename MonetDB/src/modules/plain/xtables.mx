@@ -1117,7 +1117,7 @@ CThistosum(
 
 		BUNfndOID(qb, b, &oh);
 		if( qb == NULL ) {
-			GDKerror("CThistosum:Matching count entry not found\n");
+			GDKerror("CThistosum: Matching count entry not found\n");
 			continue;
 		}
 		ot = *(oid *) BUNtloc(b,qb);

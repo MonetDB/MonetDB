@@ -984,10 +984,10 @@ a loop through the tuples to be deleted. [todo]
 size_t BATtopN(BAT *b, size_t topN){
 	BATcheck(b,"BATtopN");
 	if( topN > BATcount(b)) {
-		GDKerror("BATtrim not enough tuples in target\n");
+		GDKerror("BATtopN: not enough tuples in target\n");
 	} else
 	if( topN * BUNsize(b) > b->batBuns->size) {
-		GDKerror("BATtrim not enough capacity\n");
+		GDKerror("BATtopN: not enough capacity to keep result\n");
 	} else
 	if( b->dims.headvarsized || b->dims.tailvarsized ){
 		HASHremove(b);

@@ -376,7 +376,7 @@ int ll_getch(void) {
         char ch;
 
         if (ll_client == 0) {
-                GDKfatal("no client for lexical.\n");
+                GDKfatal("parser: no client for lexical.\n");
         }
    	do {
         	ch = *ll_client->cptr;
@@ -404,7 +404,7 @@ int ll_getstring(char *buf, int max_size)
 	int statement = 0;
 
         if (ll_client == 0) {
-               	GDKfatal("no client for lexical.\n");
+               	GDKfatal("parser: no client for lexical.\n");
         }
 	while(buf < end){
    		do {
@@ -1493,21 +1493,21 @@ int CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res){
 			    if (s >= 0) {
 				    s = monet_cntxt[s].outer;
 			    } else {
-				    GDKerror("illegal context.\n");
+				    GDKerror("CMDconstant: illegal context.\n");
 				    return -1;
 			    }
 		    }
 		    if ((act = VARfind(&s, nme)) == 0) {
-			    GDKerror("variable '%s' does not exist.\n",nme);
+			    GDKerror("CMDconstant: variable '%s' does not exist.\n",nme);
 			    return -1;
 		    }
 		    if (act->constant) {
-			    GDKerror("cannot assign to constant '%s'.\n",nme);
+			    GDKerror("CMDconstant: cannot assign to constant '%s'.\n",nme);
 			    return -1;
 		    }
 		    VARfixate(act);
 		} else {
-		    GDKerror("CONST works on variable names only.\n");
+		    GDKerror("CMDconstant: CONST works on variable names only.\n");
 		    return -1;
 		}
         }

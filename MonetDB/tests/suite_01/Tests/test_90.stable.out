@@ -19,11 +19,11 @@ var x;
 #var 34;
 time().print();
 !ERROR: interpret: no matching MIL operator to 'time()'.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 module("alarm");
 printf("#~BeginVariableOutput~#\n"); time().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 283 ]
+[ 875 ]
 #~EndVariableOutput~#
 quit();
 

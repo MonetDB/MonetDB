@@ -345,7 +345,7 @@ BAT *createBat(char *name, int ht, int tt)
 		b = BATnew(ht,tt,100000);
 
 	if(b==0) {
-		GDKerror("fatal error in oo7:createBat\n");
+		GDKerror("createBat: fatal error in oo7:createBat\n");
 		return(0);
 	}
 
@@ -988,7 +988,7 @@ BAT *BATsubgraph(BAT *b, BAT *dag)
 	BATcheck(dag, "BATsubgraph"); 
 	ERRORcheck(TYPEerror(b->ttype,b->htype), "BATsubgraph:type conflict\n"); 
 	if (ATOMstorage(b->ttype) != TYPE_int || b->ttype >= TYPE_flt) {
-		GDKerror("subgraph works on INT-like types.\n");
+		GDKerror("BATsubgraph: subgraphs works on INT-like types only.\n");
 		return 0;
 	}
 
@@ -1001,7 +1001,7 @@ BAT *BATsubgraph(BAT *b, BAT *dag)
 	bn->hsorted = bn->tsorted = 0;
 
 	if (BATprepareHash(dag)) {
-		GDKerror("BATsubgraph: couldn't hash\n");
+		GDKerror("BATsubgraph: couldn't hash in subgraph\n");
 		return bn;
 	}
 

@@ -43,7 +43,7 @@ ls;
 #-------------------------------------------------------------------------------------------------#
 [ "b",	  "int",  "int",  0,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 bat("a").print();
-!ERROR: print(param 1): invalid BAT.
+!ERROR: interpret_params: print(param 1): invalid BAT.
 bat("b").print();
 #-----------------#
 # BAT:	  b	  #
@@ -51,7 +51,7 @@ bat("b").print();
 #-----------------#
 # tidy up
 bat("a").persists(false); 
-!ERROR: persists(param 1): invalid BAT.
+!ERROR: interpret_params: persists(param 1): invalid BAT.
 bat("b").persists(false); 
 commit();
 quit();

@@ -237,12 +237,12 @@ BAT *TEMgetEvents(Client c) {
 	stk= c->stk;
 	v= VARfind(&stk, "monet_events");
 	if ( v == 0) {
-		GDKerror("event: 'monet_events' not found.\n");
+		GDKerror("TEMgetEvents: 'monet_events' not found.\n");
 		return 0;
 	}
 	b= BBPdescriptor(v->binding.val.bval);
 	if( b == 0){
-		GDKerror("event: 'monet_events' bat not found.\n");
+		GDKerror("TEMgetEvents: 'monet_events' bat not found.\n");
 		return 0;
 	}
 	return b;
@@ -257,12 +257,12 @@ BAT *TEMgetTriggers(Client c) {
 	stk= c->stk;
 	v= VARfind(&stk, "monet_triggers");
 	if ( v == 0) {
-		GDKerror("event: 'monet_triggers' not found.\n");
+		GDKerror("TEMgetTriggers: 'monet_triggers' not found.\n");
 		return 0;
 	}
 	b= BBPdescriptor(v->binding.val.bval);
 	if( b == 0){
-		GDKerror("event: 'monet_triggers' bat not found.\n");
+		GDKerror("TEMgetTriggers: 'monet_triggers' bat not found.\n");
 		return 0;
 	}
 	return b;
@@ -277,11 +277,11 @@ void TEMdefEvent(Client c, str id) {
 	TRGDEBUG THRprintf(GDKout, "TEMinsEvent: %s %d\n", id, i);
 	b= TEMgetEvents(c);
 	if( b == 0) {
-		GDKerror("TEMinsEvent: user event table missing\n");
+		GDKerror("TEMdefEvent: user event table missing\n");
 		return;
 	}
 	if( BUNfnd(b,id) != 0 ){
-		GDKerror("TEMinsEvent: event defined twice\n");
+		GDKerror("TEMdefEvent: event defined twice\n");
 	} else {
 		BUNins(b, id, &i);
 	}
@@ -349,7 +349,7 @@ int TEMnotify(Cntxt stk, str name, int *obj) {
 
 	p= BUNfnd(b, name);
 	if( p == 0) {
-		GDKerror("notify: event identifier expected.\n");
+		GDKerror("TEMnotify: event identifier expected.\n");
 		return -1;
 	}
 	evnt = * (int *) BUNtail(b,p);
@@ -375,7 +375,7 @@ YYSTREE	TEMnewevent(YYSTREE object, YYSTREE event, int negation) {
 	b = TEMgetEvents(ll_client);
 	p = BUNfnd(b, event->yyval.val.sval);
 	if ( p == 0 ){
-		GDKerror(" event %s not defined\n",event->yyval.val.sval);
+		GDKerror("TEMnewevent: %s not defined\n",event->yyval.val.sval);
 	} 
  	ev->yysons[0] = object;
 	ev->yysons[1] = event;

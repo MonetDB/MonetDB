@@ -167,7 +167,7 @@ will even be the case for long 64-bit integers.
 			if (enum_tpe[xx] == (x))					\
 				break;							\
 		if ((xx>=MAX_ENUM) || ((b=BBPdescriptor(enum_map[xx])) == NULL)) {	\
-			GDKerror("%s: illegal enum type.\n", (y));			\
+			GDKerror("ENUM_CHK: %s illegal enum type.\n", (y));			\
 			return GDK_FAIL;						\
 		}									\
 		(void) b;	/* keep compilers happy */
@@ -432,7 +432,7 @@ int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 	ptr v;
 	ENUM_CHK(*enum_t, "decode");
 	if (srctpe != *enum_t) {
-	 	GDKerror("decode: incompatible source type.\n");
+	 	GDKerror("enum_decode: incompatible source type.\n");
 		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) { 
@@ -502,13 +502,13 @@ int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 int enum_encode_multi(BAT** dst, int *enum_t, BAT *src){
 	ENUM_CHK(*enum_t, "[encode]");
 	if (src->ttype != b->htype) {
-	 	GDKerror("[encode]: incompatible source type.\n");
+	 	GDKerror("enum_encode_multi: incompatible source type.\n");
 		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) { 
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		GDKerror("[encode](): illegal tail type.\n");
+		GDKerror("enum_encode_multi: illegal tail type.\n");
 	        return GDK_FAIL;
 	    case TYPE_chr:	@:encode(chr,char,loc,_chr)@
 	    case TYPE_sht:	@:encode(chr,char,loc,_sht)@
@@ -524,7 +524,7 @@ int enum_encode_multi(BAT** dst, int *enum_t, BAT *src){
 	} else {
 	    switch(ATOMstorage(src->ttype)) {
 	    case TYPE_void: 
-		GDKerror("[encode](): illegal tail type.\n");
+		GDKerror("enum_encode_multi: illegal tail type.\n");
 	        return GDK_FAIL;
 	    case TYPE_chr:	@:encode(sht,short,loc,_chr)@
 	    case TYPE_sht:	@:encode(sht,short,loc,_sht)@
@@ -566,7 +566,7 @@ int enum_encode_multi(BAT** dst, int *enum_t, BAT *src){
 int enum_decode_multi(BAT** dst, int *enum_t, BAT *src){
 	ENUM_CHK(*enum_t, "[decode]");
 	if (src->ttype != *enum_t) {
-	 	GDKerror("[decode]: incompatible source type.\n");
+	 	GDKerror("enum_decode_multi: incompatible source type.\n");
 		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) { 
@@ -574,7 +574,7 @@ int enum_decode_multi(BAT** dst, int *enum_t, BAT *src){
 	} else if (ATOMstorage(*enum_t) == TYPE_sht) { 
 	    @:decode(sht,short)@
 	} else {
-	    GDKerror("[decode](): illegal tail type.\n");
+	    GDKerror("enum_decode_multi: illegal tail type.\n");
 	    return GDK_FAIL;
 	}
 	ALIGNsetH(*dst, src);

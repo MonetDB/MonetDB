@@ -128,8 +128,8 @@ int CMDpart_order(
 
 	ALIGNchk(b, "CMDpart_order");
 	if (!ATOMlinear(b->htype)) {
-		GDKerror("CMDpart_order(%d): cannot order a %s head\n",
-				b->batCacheid, ATOMname(b->htype));
+		GDKerror("CMDpart_order: %s cannot order a %s head\n",
+				BBPname(b->batCacheid), ATOMname(b->htype));
 	}
 @-
 fool the partition function into thinking there are no varsized atoms 

@@ -264,7 +264,7 @@ Clear the specified bit in this BitSet.
 extern int bitset_clearBit( bitset* res, bitset* theBitSet, int* theBit ) {
 
 	if (*theBit >= (int) (sizeof(bitset)*8)) {
-		GDKerror("This bit doesn't exist in the set\n");
+		GDKerror("bitset_clearBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
 
@@ -285,7 +285,7 @@ Flip the specified bit in this BitSet.
 extern int bitset_flipBit( bitset* res, bitset* theBitSet, int* theBit ) {
 
 	if (*theBit >= (int) (sizeof(bitset)*8)) {
-		GDKerror("This bit doesn't exist in the set\n");
+		GDKerror("bitset_flipBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
 
@@ -305,7 +305,7 @@ Get the specified bit from this BitSet.
 extern int bitset_getBit( bit* res, bitset* theBitSet, int* theBit ) {
 
 	if (*theBit >= (int) (sizeof(bitset)*8)) {
-		GDKerror("This bit doesn't exist in the set\n");
+		GDKerror("bitset_getBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
 
@@ -327,7 +327,7 @@ Set the specified bit from this BitSet.
 extern int bitset_setBit( bitset* res, bitset* theBitSet, int* theBit ) {
 
 	if (*theBit >= (int) (sizeof(bitset)*8)) {
-		GDKerror("This bit doesn't exist in the set\n");
+		GDKerror("bitset_setBit: This bit doesn't exist in the set\n");
 		return GDK_FAIL;
 	}
 

@@ -234,7 +234,8 @@ RETSIGTYPE BATSIGignore(int nr) {
 }
 
 RETSIGTYPE BATSIGabort(int nr) {
-	GDKfatal("signal %d caught by thread %lx\n", nr, (size_t) MT_getpid()); 
+	GDKfatal("BATSIGabort: signal %d caught by thread %lx\n", 
+		nr, (size_t) MT_getpid()); 
 }
 
 #ifdef SIGCHLD
@@ -253,7 +254,7 @@ RETSIGTYPE BATSIGchild(int nr) {
 RETSIGTYPE BATSIGcrash(int nr) {
 	static int crash = 0;
 	if (!crash++) {
-		GDKerror("Mserver internal error (%s), please restart.\n"
+		GDKerror("BATSIGcrash: Mserver internal error (%s), please restart.\n"
 			 "(One potential cause could be that your disk might be full...)\n",
 #ifdef SIGBUS
 			 nr == SIGBUS ? "Bus error" :
@@ -905,7 +906,7 @@ void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
 #ifdef GDK_MEM_NULLALLOWED
 		return NULL;
 #else
-		GDKfatal("GDKmalloc called with size " SZFMT "", size);
+		GDKfatal("GDKmallocmax: called with size " SZFMT "", size);
 #endif
 	}
 	size = (size+3) & ~3; /* round up to a multiple of four */
@@ -929,9 +930,9 @@ void* GDKmallocmax(size_t size, size_t *maxsize, int emergency) {
 		if (s == NULL) { 
 			if (emergency) return NULL;
 			MT_alloc_print();
-               		GDKfatal("GDKmalloc failed for %u bytes",size);
+               		GDKfatal("GDKmallocmax: failed for %u bytes",size);
 		} else {
-			THRprintf(GDKerr, "GDKmalloc: recovery ok. Continuing..\n");
+			THRprintf(GDKerr, "GDKmallocmax: recovery ok. Continuing..\n");
 		}
 	}
 	*maxsize = size;
@@ -984,7 +985,7 @@ ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize, int emergency) {
 	}
 #endif
         if (size <= 0) {
-                GDKfatal("GDKrealloc called with size %u", size);
+                GDKfatal("GDKreallocmax: called with size %u", size);
         }
 	/* round up to a multiple of four */
 	size = (size+3) & ~3; 
@@ -1105,7 +1106,7 @@ void* GDKvmalloc(size_t size, size_t *maxsize, int emergency) {
                 if (ret == NULL) {
 			if( emergency == 0) return NULL;
                         MT_alloc_print();
-                        GDKfatal("GDKvmalloc failed for %u bytes",size);
+                        GDKfatal("GDKvmalloc: failed for %u bytes",size);
                 } else {
                         THRprintf(GDKerr, "GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
                 }
@@ -1125,7 +1126,7 @@ void* GDKvmrealloc(void* pold, size_t oldsize, size_t newsize, size_t oldmax, si
                 if (ret == NULL) {
 			if( emergency == 0) return NULL;
                         MT_alloc_print();
-                        GDKfatal("GDKvrealloc failed for %u bytes (from %u)", newsize, oldsize);
+                        GDKfatal("GDKvrealloc: failed for %u bytes (from %u)", newsize, oldsize);
                 } else  {
                         THRprintf(GDKerr, "GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
                 }
@@ -1218,7 +1219,7 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 	GDKremovedir(DELDIR);  
 	BBPinit(); 
 	GDKenv = BATnew(TYPE_str,TYPE_str,100);
-	if(GDKenv==NULL) GDKfatal("Could not create BAT");
+	if(GDKenv==NULL) GDKfatal("GDKinit: Could not create environment BAT");
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
 
@@ -1699,7 +1700,7 @@ Thread THRnew(MT_Id pid, str name) {
 	}
 	if (s == t) {
 		MT_unset_lock(GDKthreadLock, "THRnew"); 
-		GDKfatal("THRnew:too many threads\n"); 
+		GDKfatal("THRnew: too many threads\n"); 
 	}
 
 	tid = s->tid;
@@ -1723,7 +1724,7 @@ Thread THRnew(MT_Id pid, str name) {
 
 void THRdel(Thread t) {	
 	if (t < GDKthreads || t > GDKthreads + THREADS) {
-		GDKfatal("THRdel\n"); 
+		GDKfatal("THRdel: illegal call\n"); 
 	}
 	MT_set_lock(GDKthreadLock, "THRdel"); 
 	if (t->cleanup) {

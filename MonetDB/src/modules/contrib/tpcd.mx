@@ -804,7 +804,7 @@ DVbuild(
 Create a new BAT, which will contain the data vector.
 @c
 	if (HEAPalloc(hp, sizeof(datavector), 1) < 0) {
-		GDKerror("could not allocate datavector\n");
+		GDKerror("DVbuild: could not allocate datavector\n");
 		return;
 	}
 	hp->free = hp->size;

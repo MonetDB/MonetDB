@@ -56,7 +56,7 @@ b.find(str(nil)).print();
 b.find("cat").print();
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
-!ERROR: print(param 1): evaluation error.
+!ERROR: interpret_params: print(param 1): evaluation error.
 
 # Can we delete them and re-insert them later on
 b.delete("fox",4);

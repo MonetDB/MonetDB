@@ -455,7 +455,7 @@ clusterhashByName( clusterhash *res, char *chname  ) {
   batId = *(int*) BUNtail( ncrev, bun );
   if (! (ch = (clusterhash*) BUNtail( salgebra_cache, BUNfnd( salgebra_cache, &batId ) ) ) ) {
     MT_unset_lock(salgebra_cacheLock, "clusterhashByName");
-    GDKerror( "Inconsistency in clusterhash repository...\n" );
+    GDKerror( "clusterhashByName: Inconsistency in clusterhash repository...\n" );
     clusterhashNil( res );
     return GDK_FAIL;
   }
@@ -629,7 +629,7 @@ salgebra_CHbuild( clusterhash* ch, BAT* b ) {
   /* CHECK: existing clusterhash on this bat? */
   MT_set_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CHbuild");
   if ( salgebra_isCached( ch->b = bid ) ) { 
-    GDKerror( "Clusterhash already exists.\n" );
+    GDKerror( "salgebra_CHbuild: Clusterhash already exists.\n" );
     clusterhashNil( ch );
     MT_unset_lock(salgebra_chashLock[ABS(bid)&BBPLOCKMASK], "CHbuild");
     return GDK_FAIL;
@@ -743,7 +743,7 @@ salgebra_mergesort_matches( oid *res, oid *a, int na, oid *b, int nb ) {
     } else if (*a > *b) {
       *res++ = *b++;
     } else {
-      GDKerror( "clusterhash head values are not unique" );
+      GDKerror( "salgebra_mergesort_matches: clusterhash head values are not unique" );
     }
   while (a < ae) *res++ = *a++;
   while (b < be) *res++ = *b++;
@@ -844,7 +844,7 @@ salgebra_CMDgetBAT( BAT** res, clusterhash* ch ) {
   @:CHECKnil(error,FAIL)@
   *res = BATdescriptor( ch->b );
   if ( !(*res) ) {
-    GDKerror( "Bat %s is no longer valid.\n", ch->bname );
+    GDKerror( "CMDgetBAT: Bat %s is no longer valid.\n", ch->bname );
     return GDK_FAIL;
   }
   return GDK_SUCCEED;
@@ -878,7 +878,7 @@ salgebra_CMDrename( clusterhash* ch, str name ) {
   MT_set_lock(salgebra_cacheLock, "rename");
   ncrev = BATmirror( salgebra_namecache );
   if (BUNfnd(ncrev, name)) {
-    GDKerror( "A clusterhash with name %s already exists.\n", name );
+    GDKerror( "salgebra_CMDrename: A clusterhash with name %s already exists.\n", name );
     MT_unset_lock(salgebra_cacheLock, "rename");
     return GDK_FAIL;
   }

@@ -135,7 +135,7 @@ bitvector_set(BAT *b_src, int *bnum)
 
   entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_set]: BAT too small %d < %u\n",
+    GDKerror("bitvector_set: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
@@ -154,7 +154,7 @@ bitvector_isset(bit *rv, BAT *b_src, int *bnum)
 
   entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_isset]: BAT too small %d < %u\n",
+    GDKerror("bitvector_isset: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
@@ -172,7 +172,7 @@ bitvector_clr(BAT *b_src, int *bnum)
 
   entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_clr]: BAT too small %d < %u\n",
+    GDKerror("bitvector_clr: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
@@ -191,7 +191,7 @@ bitvector_isclr(bit *rv, BAT *b_src, int *bnum)
 
   entry = (size_t) *bnum / (sizeof(lng) * 8);
   if (BATcount(b_src) < entry + 1) {
-    GDKerror("[bitvector_isclr]: BAT too small %d < %u\n",
+    GDKerror("bitvector_isclr: BAT too small %d < %u\n",
 	     BATcount(b_src), entry + 1);
     return GDK_FAIL;
   }
@@ -210,7 +210,7 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
   ptr atom_nil;
 
   if (b_src == NULL || b_src->ttype != TYPE_oid || BATorder(b_src) == NULL) {
-    GDKerror("[bitvector_encode]: No OID table.\n");
+    GDKerror("bitvector_encode: No OID table.\n");
     return GDK_FAIL;
   }
   nbits     = (int *)BUNtail(b_src, BUNlast(b_src));
@@ -246,7 +246,7 @@ bitvector_decode(BAT **b_dst, BAT *b_src)
   int xx, n;
 
   if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
-    GDKerror("[bitvector_decode]: None void/lng table.\n");
+    GDKerror("bitvector_decode: None void/lng table.\n");
     return GDK_FAIL;
   }
 
@@ -275,7 +275,7 @@ bitvector_print(BAT *b_src)
   int xx;
 
   if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
-    GDKerror("[bitvector_decode]: None void/lng table.\n");
+    GDKerror("bitvector_decode: None void/lng table.\n");
     return GDK_FAIL;
   }
 
@@ -294,7 +294,7 @@ bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 
   if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng ||
       b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
-    GDKerror("[bitvector_and]: No void/lng table(s).\n");
+    GDKerror("bitvector_and: No void/lng table(s).\n");
     return GDK_FAIL;
   }
 
@@ -326,7 +326,7 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 
   if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng ||
       b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
-    GDKerror("[bitvector_and]: No void/lng table(s).\n");
+    GDKerror("bitvector_and: No void/lng table(s).\n");
     return GDK_FAIL;
   }
 
@@ -379,7 +379,7 @@ bitvector_count(int *count, BAT *b_src)
   
   *count = 0;
   if (b_src->htype != TYPE_void || b_src->ttype != TYPE_lng) {
-    GDKerror("[bitvector_count]: None void/lng table.\n");
+    GDKerror("bitvector_count: None void/lng table.\n");
     return GDK_FAIL;
   }
 

@@ -1265,7 +1265,7 @@ int CMDbatsize_str(int *tot, str batname){
 	BAT *b = bid?(BAT*) BBPgetdesc(bid):NULL;
 
 	if (b == NULL) {
-		GDKerror("CMDbatsize(%s): no such bat.\n", batname);
+		GDKerror("CMDbatsize_str: %s no such bat.\n", batname);
 		return GDK_FAIL;
 	}
 	return CMDbatsize(tot, b);
