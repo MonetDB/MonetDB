@@ -15,7 +15,7 @@ namespace eval ::mapi:: {
 	catch [ set state(port) $env(MONETPORT) ]
 
 	namespace export hostname
-	namespace export port
+	namespace export portnr
 
 	namespace export connect
 	namespace export connected
@@ -30,7 +30,7 @@ proc ::mapi::hostname { } {
 	return [ string trimright $::mapi::state(port) :0123456789 ]
 }
 
-proc ::mapi::port { } {
+proc ::mapi::portnr { } {
 	set idx [ string first ":" $::mapi::state(port) ]
 	incr idx
 	return [ string range $::mapi::state(port) $idx end ]

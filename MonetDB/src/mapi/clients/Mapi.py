@@ -79,7 +79,10 @@ class server:
 		return self.result()
 
 def hostname():
-	p = environ['MAPIPORT']
+	try: 
+		p = environ['MAPIPORT']
+	except:
+		p = ''
 	if (p != ''):
 		p = string.splitfields(p,':')[0]
 	else:
@@ -87,9 +90,13 @@ def hostname():
 	return p
 
 def portnr():
-	p = environ['MAPIPORT']
+	try: 
+		p = environ['MAPIPORT']
+	except:
+		p = ''
+
 	if (p != ''):
-		p = string.splitfields(p,':')[1]
+		p = int(string.splitfields(p,':')[1])
 	else:
 		p = 50000
 	return p

@@ -4,9 +4,9 @@ package require mapi 1.0
 
 set ::mapi::state(trace)        0
 
-mapi::connect [mapi::hostname] [mapi::port] $env(USER)
+mapi::connect [mapi::hostname] [mapi::portnr] $env(USER)
 
-puts "#MapiClient (tcl) connected to [mapi::hostname]:[mapi::port] as $env(USER)"
+puts "#MapiClient (tcl) connected to [mapi::hostname]:[mapi::portnr] as $env(USER)"
 
 while { 1 } {
 	puts -nonewline $mapi::state(prompt)
