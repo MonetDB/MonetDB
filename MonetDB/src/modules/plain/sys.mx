@@ -646,16 +646,8 @@ view_gdk_thread(
 int view_gdk_env(	
 	BAT **retval
 ){
-	BAT *b = *retval = BATnew(TYPE_str, TYPE_str, 12);
-	char prefix[128];
+	BAT *b = *retval = GDKenv;
 	if (b == 0) return GDK_FAIL;
-        sprintf(prefix, "%dbit%s", sizeof(ptr)*8, monet_arch);
-	BUNins(b, "gdk_arch", prefix); 
-	BUNins(b, "gdk_version", monet_version);
-	BUNins(b, "monet_cwd", monet_cwd);
-	/* BUNins(b, "monet_general", monet_general);*/
-	BUNins(b, "monet_pid", local_itoa(getpid()));
-	BUNins(b, "monet_deamon", (monet_deamon?"yes":"no"));
 	@:Pseudo(gdk,env)@
 	return GDK_SUCCEED;
 }
