@@ -1905,6 +1905,12 @@ def main(argv) :
             bp = bp+os.pathsep+os.environ['PATH']
         os.environ['PATH'] = bp
 
+    if env.has_key('SQL_PREFIX'):
+        bp = os.path.join(env['SQL_PREFIX'],"bin")
+        if os.environ.has_key('PATH'):
+            bp = bp+os.pathsep+os.environ['PATH']
+        os.environ['PATH'] = bp
+
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         vars_ = vars + ['GDK_DEBUG', 'MONET_MOD_PATH']

@@ -1,4 +1,4 @@
-stdout of test 'mprof2` in directory 'src/modules/plain` itself:
+stdout of test 'mprof2` in directory 'src/modules/contrib` itself:
 
 #> Mtest (13:31:49):	other mprof2 1200
 #> Mtest (13:31:49):	Mtimeout -timeout 1200 ./mprof2 mprof2

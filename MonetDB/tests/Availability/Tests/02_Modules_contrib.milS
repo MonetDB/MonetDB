@@ -10,9 +10,7 @@ Fsig:=new(oid,str);Fsig.col_name("signature");
 Fhelp:=new(oid,str);Fhelp.col_name("help");
 Fnts:=new(oid,str);
 
-#Plain_mods:=MODULES.select("plain").sort.copy;
-mod_mprof:=MODULES.reverse.select("mprof").reverse;
-Plain_mods:=MODULES.select("plain").copy.access(BAT_WRITE).delete("mprof","plain").sort.copy.access(BAT_WRITE).insert(mod_mprof);
+Plain_mods:=MODULES.select("contrib").sort.copy;
 table(Plain_mods.reverse.col_name(sprintf("%i modules",Plain_mods.count)));
 Plain_mods@batloop {
 	The_mod:=$h;

@@ -1,8 +1,8 @@
-stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
+stdout of test '02_Modules_contrib` in directory 'tests/Availability` itself:
 
 
 # 05:52:33 >  
-# 05:52:33 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_plain.milS
+# 05:52:33 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_tests_Availability  < 02_Modules_contrib.milS
 # 05:52:33 >  
 
 # Monet Database Server V4.3.3
@@ -30,7 +30,6 @@ stdout of test '02_Modules_plain` in directory 'tests/Availability` itself:
 [ "enum"	  ]
 [ "io"		  ]
 [ "lock"	  ]
-[ "logger"	  ]
 [ "malalgebra"	  ]
 [ "mapi"	  ]
 [ "mmath"	  ]
@@ -532,20 +531,6 @@ Module: "lock"
 [ "sema_down",	  "COMMAND: ",	  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"		  ]
 [ "sema_try",	  "COMMAND: ",	  "sema_try(sema) : int",	  "try the semaphpore"					  ]
 [ "sema_up",	  "COMMAND: ",	  "sema_up(sema) : void",	  "increase the semaphore"				  ]
-
-Module: "logger"
-
-[ 6 ]
-[ 6 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function		| type		| signature			| help										  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "backupfile",		  "COMMAND: ",	  "backupfile(str) : void",	  "Backup to the file log and write the log identifier to the file logid"	  ]
-[ "backuphost",		  "COMMAND: ",	  "backuphost(str, int) : void",  "Use the host,port to backup changes to"					  ]
-[ "commit",		  "COMMAND: ",	  "commit() : void",		  "commit on all BATs to the log"						  ]
-[ "logger_debug",	  "COMMAND: ",	  "logger_debug(int) : void",	  "Set the level of debuging"							  ]
-[ "logger_listen",	  "COMMAND: ",	  "logger_listen(int) : void",	  "listens for a client willing to backup to this port"				  ]
-[ "update",		  "COMMAND: ",	  "update() : void",		  "update the all BATs using the log, TODO only needed at initialisation"	  ]
 
 Module: "malalgebra"
 

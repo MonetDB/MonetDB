@@ -57,7 +57,6 @@ loaded;
 [ "iterator",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
-[ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "mel",	  nil	  ]
@@ -65,7 +64,6 @@ loaded;
 [ "monettime",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "pcl",	  nil	  ]
-[ "perfex",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
 [ "salgebra",	  nil	  ]
@@ -149,7 +147,6 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "salgebra",	  nil	  ]
 [ "radix",	  nil	  ]
 [ "qt",		  nil	  ]
-[ "perfex",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
 [ "monettime",	  nil	  ]
@@ -157,7 +154,6 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "mel",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
-[ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "enum",	  nil	  ]
@@ -649,40 +645,6 @@ others@batloop{
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-	loading perfex
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "perfex",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_33  #
-# (str)		  (void)  #
-#-------------------------#
-[ "perfex",	  nil	  ]
-
-	dropping perfex
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
 	loading pcl
 
 #---------------------------------#
@@ -913,40 +875,6 @@ others@batloop{
 [ "malalgebra",	  nil	  ]
 
 	dropping malalgebra
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading logger
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "logger",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_33  #
-# (str)		  (void)  #
-#-------------------------#
-[ "logger",	  nil	  ]
-
-	dropping logger
 
 #---------------------------------#
 # module	| usage_count	  #

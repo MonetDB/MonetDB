@@ -30,55 +30,57 @@
 @:install_load_module(algebra)@
 @:install_load_module(sys)@
 @:install_load_module(trans)@
+
 #ifdef STATIC
 @:install_module(streams)@
+
 /* mapi */
 @:install_module(mapi)@
+
 /* calibrator */
 @:install_module(calib)@
+
 /* plain */
 @:install_module(aggr)@
 @:install_module(aggrX3)@
 @:install_module(alarm)@
 @:install_module(bat_arith)@
-@:install_module(bitset)@
-@:install_module(bitvector)@
 @:install_module(blob)@
-@:install_module(cluster)@
 @:install_module(enum)@
 @:install_module(xtables)@
 @:install_module(ddbench)@
 @:install_module(decimal)@
 @:install_module(lock)@
-@:install_module(malalgebra)@
 @:install_module(mmath)@
 @:install_module(monettime)@
-@:install_module(mprof)@
-@:install_module(oo7)@
 @:install_module(radix)@
-@:install_module(salgebra)@
 @:install_module(stats)@
 @:install_module(tcpip)@
-@:install_module(tpcd)@
 @:install_module(uchr)@
 @:install_module(unix)@
 @:install_module(url)@
-@:install_module(wisc)@
-@:install_module(logger)@
 @:install_module(ascii_io)@
+
+/* contrib */
+@:install_module(bitset)@
+@:install_module(bitvector)@
+@:install_module(cluster)@
+@:install_module(malalgebra)@
+@:install_module(mprof)@
+@:install_module(oo7)@
+@:install_module(salgebra)@
+@:install_module(tpcd)@
+@:install_module(wisc)@
 @:install_module(mel)@
-
 @:install_module(qt)@
+
 #ifndef smallTOC
-@:install_module(vector)@
+/* plain */
 @:install_module(counters)@
-
-@:install_module(iterator)@
-
 @:install_module(pcl)@
+/* contrib */
+@:install_module(iterator)@
+@:install_module(vector)@
 #endif
-/* conflicts */
-/*
-@:install_module(perfex)@
-*/
+
 #endif

@@ -9,7 +9,7 @@ goto end
 set builddir=@MONET_BUILD@
 set srcdir=@MONET_SOURCE@
 
-set MOD_PATH=%builddir%\src\modules\plain;%builddir%\src\modules\calibrator;%builddir%\src\mapi
+set MOD_PATH=%builddir%\src\modules\plain;%builddir%\src\modules\contrib;%builddir%\src\modules\calibrator;%builddir%\src\mapi
 
 set PATH=%builddir%\src\testing;%builddir%\src\tools;%builddir%\src\mapi\clients;%PATH%
 set PYTHONPATH=%builddir%\src\testing;%srcdir%\src\testing;%builddir%\src\common;%srcdir%\src\mapi\clients

@@ -58,7 +58,6 @@ loaded;
 [ "iterator",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
-[ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "mel",	  nil	  ]
@@ -157,7 +156,6 @@ others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRI
 [ "mel",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
-[ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "enum",	  nil	  ]
@@ -880,40 +878,6 @@ others@batloop{
 [ "malalgebra",	  nil	  ]
 
 	dropping malalgebra
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading logger
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "logger",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_31  #
-# (str)		  (void)  #
-#-------------------------#
-[ "logger",	  nil	  ]
-
-	dropping logger
 
 #---------------------------------#
 # module	| usage_count	  #

@@ -56,7 +56,6 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "io",		  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
-[ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "mmath",	  nil	  ]
@@ -134,7 +133,6 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "mmath",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
-[ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "io",		  nil	  ]
 [ "enum",	  nil	  ]
@@ -771,40 +769,6 @@ stdout of test 'none` in directory 'tests/sigs` itself:
 [ "malalgebra",	  nil	  ]
 
 	dropping malalgebra
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-
-	loading logger
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "logger",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-#-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (void)  #
-#-------------------------#
-[ "logger",	  nil	  ]
-
-	dropping logger
 
 #---------------------------------#
 # module	| usage_count	  #

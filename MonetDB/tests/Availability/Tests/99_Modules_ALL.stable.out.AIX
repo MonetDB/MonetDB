@@ -31,7 +31,6 @@ monettime: loading... done.
     mmath: loading... done.
      mapi: loading... done.
 malalgebra: loading... done.
-   logger: loading... done.
      lock: loading... done.
    kernel: loaded.
        io: loaded.
@@ -73,7 +72,6 @@ bat_arith: loading... done.
 [ "io"		  ]
 [ "kernel"	  ]
 [ "lock"	  ]
-[ "logger"	  ]
 [ "malalgebra"	  ]
 [ "mapi"	  ]
 [ "mmath"	  ]

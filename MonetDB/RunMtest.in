@@ -5,7 +5,7 @@ builddir=@QMONET_BUILD@
 srcdir=`cd '@srcdir@'; pwd`
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/mapi/.libs"
+MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/contrib/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/mapi/.libs"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"

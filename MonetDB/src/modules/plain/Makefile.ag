@@ -40,15 +40,11 @@ LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
-		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
-		bitvector.mx blob.mx cluster.mx  \
-		decimal.mx enum.mx iterator.mx kernel.mx lock.mx \
-		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
-		perfex.mx radix.mx salgebra.mx stats.mx str.mx \
-		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
-		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
-		mel.mx ascii_io.mx qt.mx ddbench.mx \
-		bat_arith.mx aggrX3.mx 
+		algebra.mx arith.mx bat.mx kernel.mx str.mx sys.mx trans.mx \
+		\
+		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
+		ddbench.mx decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
+		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx xtables.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \

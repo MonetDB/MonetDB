@@ -1,8 +1,8 @@
-stderr of test '02_Modules_plain` in directory 'tests/Availability` itself:
+stderr of test '02_Modules_contrib` in directory 'tests/Availability` itself:
 
 
 # 13:58:43 >  
-# 13:58:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_plain.milS
+# 13:58:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_Availability  < 02_Modules_contrib.milS
 # 13:58:43 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
