@@ -450,6 +450,7 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	}
 	BBPincref( *ret= bn->batCacheid, TRUE);
 	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
