@@ -128,10 +128,6 @@ def expand_subdirs(subdirs):
 
 # incdirsmap is a map between srcdir and install-include-dir
 def main(cwd, topdir, automake, incdirsmap):
-    if not os.path.exists(os.path.join(cwd, 'Makefile.ag')):
-        OutList = map(lambda x: os.path.join(cwd, x)[len(topdir) + 1:-3],
-                      filter(lambda x: x[-3:] == '.in', os.listdir(cwd)))
-        return [], OutList
     p = parser()
     read_makefile(p, cwd)
     codegen(p.curvar, cwd, topdir, incdirsmap)
