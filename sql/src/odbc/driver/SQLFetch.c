@@ -601,6 +601,11 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 
 	switch (type) {
 	case SQL_C_CHAR:
+	case SQL_C_WCHAR: {
+		SQLPOINTER origptr;
+		SQLINTEGER origbuflen;
+		SQLINTEGER *origlenp;
+
 		if (buflen < 0) {
 			/* HY090: Invalid string or buffer length */
 			addStmtError(stmt, "HY090", NULL, 0);
@@ -608,6 +613,17 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		}
 		if (ardrec && row > 0)
 			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
+		/* if SQL_C_WCHAR is requested, first convert to UTF-8
+		 * (SQL_C_CHAR), and at the end convert to UTF-16 */
+		origptr = ptr;
+		origbuflen = buflen;
+		origlenp = lenp;
+		if (type == SQL_C_WCHAR) {
+			/* allocate temporary space */
+			buflen *= 4;
+			ptr = malloc(buflen + 1);
+			lenp = NULL;
+		}
 		switch (sql_type) {
 			int sz;
 
@@ -633,6 +649,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (sz < 0 || sz >= buflen) {
 				/* 22003: Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -668,6 +686,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 						   range */
 						addStmtError(stmt, "22003",
 							     NULL, 0);
+						if (type == SQL_C_WCHAR)
+							free(ptr);
 						return SQL_ERROR;
 					}
 					/* current precision (i) doesn't fit,
@@ -693,6 +713,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (buflen < 11) {
 				/* 22003: Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
@@ -710,6 +732,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (buflen < 9) {
 				/* 22003: Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
@@ -732,6 +756,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (sz < 0 || sz >= buflen) {
 				/* 22003: Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -766,6 +792,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (sz < 0 || sz >= buflen) {
 				/* 22003: Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -782,6 +810,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (sz < 0 || sz >= buflen) {
 				/* 22003: Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -803,7 +833,18 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			}
 			break;
 		}
+		if (type == SQL_C_WCHAR) {
+			SQLSMALLINT n;
+
+			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
+				       (SQLWCHAR *) origptr, origbuflen,
+				       &n);
+			if (origlenp)
+				*origlenp = n;
+			free(ptr);
+		}
 		break;
+	}
 	case SQL_C_BINARY:
 		if (buflen < 0) {
 			/* HY090: Invalid string or buffer length */
