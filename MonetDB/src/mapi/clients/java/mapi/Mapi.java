@@ -197,7 +197,7 @@ public class Mapi
 	private DataOutputStream toMonet;
 	//private DataInputStream fromMonet;
 	private BufferedReader fromMonet;
-	private DataOutputStream traceLog;
+	private PrintStream traceLog = System.err;
 	
 private void check(String action){
 	if( !connected) setError("Connection lost",action);
@@ -259,9 +259,18 @@ public void trace(boolean flg){
 */
 public void traceLog(String fnme){
 	check("traceLog");
-	System.err.println("!WARNING:setTraceLog not yet implemented");
+	try {
+		traceLog = new PrintStream(new FileOutputStream(fnme),true);
+	} catch(Exception e) {
+		System.err.println("!ERROR:setTraceLog:couldn't open:"+fnme);
+	}
 }
 
+public void traceLog(PrintStream f){
+	check("traceLog");
+	if (f!=null)
+		traceLog = f;
+}
 /**
  * This method can be used to test for the lifelyness of the database server.
  * The ping query depends on the language scenario set by the user.
@@ -313,7 +322,7 @@ throws MapiException
 	connected= false;
 	try{
 		if(trace) 
-			System.err.println("setup socket "+host+":"+port);
+			traceLog.println("setup socket "+host+":"+port);
 		socket   = new Socket( host, port );
 		fromMonet= new BufferedReader(
 			new InputStreamReader(socket.getInputStream()));
@@ -330,7 +339,7 @@ throws MapiException
 	this.username= user;
 	this.password = pwd;
 	this.active = true;
-	if(trace) System.err.println("sent initialization command");
+	if(trace) traceLog.println("sent initialization command");
 	if( pwd.length()>0) pwd= ":"+pwd;
 	if( blocked)
 		toMonet(user+pwd+":blocked\n");
@@ -369,10 +378,10 @@ The language property returned should match the required language interaction.
 	if( gotError()) {
 		connected = false;
 		active= false;
-		if(trace) System.err.println("Error occurred in initialization");
+		if(trace) traceLog.println("Error occurred in initialization");
 		return this;
 	}
-	if(trace) System.err.println("Connection established");
+	if(trace) traceLog.println("Connection established");
 	connected= true;
 	return this;
 }
@@ -398,6 +407,7 @@ public Mapi(Mapi m)
 throws MapiException
 {
 	connect(m.host, m.port, m.username, m.password, m.language);
+	this.traceLog = m.traceLog;
 }
 
 /**
@@ -427,7 +437,7 @@ private void promptMonet() throws MapiException  {
 	prompt= blk.buf.substring(1,lim-1);
 	// finding the prompt indicates end of a query
 	active= false;
-	if( trace) System.err.println("promptText:"+prompt);
+	if( trace) traceLog.println("promptText:"+prompt);
     }
 
 /**
@@ -536,7 +546,7 @@ private int extendColumns(int mf){
 	int nm= maxfields+32;
 	if( nm <= mf)
 		nm= mf+32;
-	if( trace) System.err.println("extendColumns:"+nm);
+	if( trace) traceLog.println("extendColumns:"+nm);
 	Column nf[]= new Column[nm];
 	System.arraycopy(columns,0,nf,0,maxfields);
 	columns= nf;
@@ -545,7 +555,7 @@ private int extendColumns(int mf){
 }
 
 private void extendFields(int cr){
-	if( trace) System.err.println("extendFields:"+cr);
+	if( trace) traceLog.println("extendFields:"+cr);
 	if(cache.fields== null ){
 		String anew[]= new String[maxfields];
 		if( cache.fields[cr]!= null)
@@ -597,7 +607,7 @@ public int sliceRow(){
 		return 0;
 	}
 	if( p[0]!='['){
-		if(trace) System.err.println("Single field:"+s);
+		if(trace) traceLog.println("Single field:"+s);
 		cache.fields[cr][0]= s;
 		// count filds by counting the type columns in header
 		// each type looks like (str)\t
@@ -605,11 +615,11 @@ public int sliceRow(){
 		for(int k=1; k<p.length; k++)
 		if( p[k]=='\t' && p[k-1]==')') i++;
 		if( fieldcnt<i) fieldcnt= i;
-		if(trace) System.err.println("type cnt:"+i);
+		if(trace) traceLog.println("type cnt:"+i);
 		return 1;
 	}
 
-	if( trace) System.err.println("slice:"+(p.length)+":"+s);
+	if( trace) traceLog.println("slice:"+(p.length)+":"+s);
 	do{
 		// skip leading blancs
 		while(f<p.length )
@@ -659,19 +669,19 @@ public int sliceRow(){
 		}
 
 		String fld= s.substring(f,l).trim();
-		if(trace) System.err.println("field ["+cr+"]["
+		if(trace) traceLog.println("field ["+cr+"]["
 				+i+" "+l+"]"+fld+":"+instring+":");
 		cache.fields[cr][i]= fld;
 		// skip any immediate none-space
 		while(l<p.length )
 		if( p[l]=='\t' || p[l] ==' ') break; else l++; 
-		if(trace && instring) System.err.println("skipped to:"+l);
+		if(trace && instring) traceLog.println("skipped to:"+l);
 		f= l;
 		i++;
 		cache.fldcnt[cr]=i;
 		if(i>fieldcnt) fieldcnt=i;
 	} while(f< p.length && p[f]!=']');
-	if(trace) System.err.println("fields extracted:"+i+" fieldcnt:"+fieldcnt);
+	if(trace) traceLog.println("fields extracted:"+i+" fieldcnt:"+fieldcnt);
 	return i;
 }
 
@@ -828,7 +838,7 @@ private void expandQuery(String xtra){
 	String n= query+xtra;
 	query = n;
 	if( qrytemplate != null) qrytemplate= n;
-	if( trace) System.err.print("Modified query:"+query);
+	if( trace) traceLog.print("Modified query:"+query);
 }
 
 private void checkQuery(){
@@ -944,7 +954,7 @@ private void paramStore(){
 		right= query.substring(p+1,query.length());
 		//query= left+columns[i].inparam.toString()+right;
 	}
-	if( trace) System.err.println("paramStore:"+query);
+	if( trace) traceLog.println("paramStore:"+query);
 }
 
 /**
@@ -957,13 +967,13 @@ private void paramStore(){
 private int executeInternal(){
 	paramStore();
 	cacheResetInternal();
-	if(trace) System.err.print("execute:"+query);
+	if(trace) traceLog.print("execute:"+query);
 	if( query.indexOf("#trace on")==0){
-		System.err.println("Set trace on");
 		trace= true;
+		traceLog.println("Set trace on");
 	}
 	if( query.indexOf("#trace off")==0){
-		System.err.println("Set trace off");
+		traceLog.println("Set trace off");
 		trace= false;
 	}
 	try{
@@ -1005,7 +1015,7 @@ private int answerLookAhead(){
 	} while(error==MOK && active &&
 		cache.writer+1< cache.limit);
 	cache.reader= oldrd;
-	if(trace ) System.err.println("query return:"+error);
+	if(trace ) traceLog.println("query return:"+error);
 	return error;
 }
 public int query(String cmd){
@@ -1047,7 +1057,7 @@ public int quickQuery(String cmd, DataOutputStream fd){
 	prepareQueryInternal(cmd);
 	if( error== MOK) executeInternal();
 	if( error== MOK) quickResponse(fd);
-	if(trace && error !=MOK) System.err.println("query returns error");
+	if(trace && error !=MOK) traceLog.println("query returns error");
 	return error;
 }
 public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
@@ -1056,7 +1066,7 @@ public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
 	prepareQueryArrayInternal(cmd,arg);
 	if( error== MOK) executeInternal();
 	if( error== MOK) quickResponse(fd);
-	if(trace && error !=MOK) System.err.println("query returns error");
+	if(trace && error !=MOK) traceLog.println("query returns error");
 	return error;
 }
 /**
@@ -1232,21 +1242,21 @@ private void extendCache(){
 	if(oldsize>0){
 		System.arraycopy(cache.rows,0,newrows,0,oldsize);
 		cache.rows= newrows;
-		//if(trace) System.err.println("Extend the cache.rows storage");
+		//if(trace) traceLog.println("Extend the cache.rows storage");
 	}
 	    
 	int newfldcnt[]= new int[newsize];
 	if(oldsize>0){
 		System.arraycopy(cache.fldcnt,0,newfldcnt,0,oldsize);
 		cache.fldcnt= newfldcnt;
-		//if(trace) System.err.println("Extend the cache.fldcnt storage");
+		//if(trace) traceLog.println("Extend the cache.fldcnt storage");
 		for(int i=oldsize;i<newsize;i++) cache.fldcnt[i]=0;
 	}
 	String newfields[][]= new String[newsize][];
 	if(oldsize>0){
 		System.arraycopy(cache.fields,0,newfields,0,oldsize);
 		cache.fields= newfields;
-		//if(trace) System.err.println("Extend the cache.fields storage");
+		//if(trace) traceLog.println("Extend the cache.fields storage");
 		for(int i=oldsize;i<newsize;i++) 
 			cache.fields[i]= new String[maxfields];
 	}
@@ -1277,7 +1287,7 @@ public String fetchLine() throws MapiException {
 }
 public String fetchLineInternal() throws MapiException {
 	if( cache.writer>0 && cache.reader+1<cache.writer){
-		if( trace) System.err.println("useCachedLine:"+cache.rows[cache.reader+1]);
+		if( trace) traceLog.println("useCachedLine:"+cache.rows[cache.reader+1]);
 		return cache.rows[++cache.reader];
 	}
 	if( ! active) return null;
@@ -1299,10 +1309,10 @@ public String fetchLineInternal() throws MapiException {
 		setError("Lost connection with server","fetchLine");
 		return null;
 	}
-	if( trace) System.err.println("Start reading from server");
+	if( trace) traceLog.println("Start reading from server");
 	try {
 		blk.buf = fromMonet.readLine();
-		if(trace) System.err.println("gotLine:"+blk.buf);
+		if(trace) traceLog.println("gotLine:"+blk.buf);
 	} catch(IOException e){
 		connected= false;
 		error= Mapi.MAPIERROR;
@@ -1374,7 +1384,7 @@ private void keepProp(String name, String colname){
 private void headerDecoder() {
 	String line= cache.rows[cache.reader];
 	if (trace)
-		System.err.println("header:"+line);
+		traceLog.println("header:"+line);
 	int etag= line.lastIndexOf("#");
 	if(etag==0 || etag== line.length())
 		return;
@@ -1383,7 +1393,7 @@ private void headerDecoder() {
 	cache.rows[cache.reader]="[ "+cache.rows[cache.reader].substring(1,etag);
 	int cnt= sliceRow();
 	if (trace)
-		System.err.println("columns "+cnt);
+		traceLog.println("columns "+cnt);
 	extendColumns(cnt);
 	if (tag.equals("# name")) {
 		for (int i=0;i<cnt;i++) {
@@ -1397,10 +1407,10 @@ private void headerDecoder() {
 				columns[i] = new Column();
 			columns[i].columntype = type;
 			if (trace)
-				System.err.println("column["+i+"].type="+columns[i].columntype);
+				traceLog.println("column["+i+"].type="+columns[i].columntype);
 		}
 	} else if (trace)
-		System.err.println("Unrecognized header tag "+tag);
+		traceLog.println("Unrecognized header tag "+tag);
 	//REST LATER
 
 	cache.rows[cache.reader]= line;
@@ -1410,7 +1420,7 @@ private void headerDecoder() {
 private int getRow(){
         String reply= "";
 
-	//if( trace) System.err.println("getRow:active:"+active+
+	//if( trace) traceLog.println("getRow:active:"+active+
 		//" reader:"+(cache.reader+1)+" writer:"+cache.writer);
         while( active ||cache.reader+1< cache.writer){
 		if( active){
@@ -1418,13 +1428,13 @@ private int getRow(){
 				reply= fetchLineInternal();
 			} catch(MapiException e){ 
 				if(trace)
-				 System.err.print("Got exception in getRow");
+				 traceLog.print("Got exception in getRow");
 				reply=null;
 			}
 			if( gotError() || reply == null) return MERROR;
 		} else reply = cache.rows[++cache.reader];
 
-		if(trace) System.err.println("getRow:"+cache.reader);
+		if(trace) traceLog.println("getRow:"+cache.reader);
 		if( reply.length()>0)
 		switch(reply.charAt(0)){
 		    case '#': 
@@ -1488,7 +1498,7 @@ public String unquote(String msg){
 		l= msg.lastIndexOf(bracket);
 		if( l<=f){
 			if(trace) 
-			System.err.println("closing '"+bracket+"' not found:"+msg);
+			traceLog.println("closing '"+bracket+"' not found:"+msg);
 			return msg;
 		}
 		return msg.substring(f+1,l);
@@ -1528,11 +1538,11 @@ private void toMonet(String msg) throws MapiException {
 
 	if( msg== null || msg.equals("")){
 		if(trace)
-			System.err.println("Attempt to send an empty message");
+			traceLog.println("Attempt to send an empty message");
 		return;
 	}
 	try{
-		if( trace) System.err.println("toMonet:"+msg);
+		if( trace) traceLog.println("toMonet:"+msg);
 		int size= msg.length();
 		toMonet.writeBytes(msg);
 		toMonet.flush();
