@@ -148,13 +148,12 @@ typedef struct mvc {
 } mvc;
 
 
-extern void mvc_init(int debug, char *dirname);
+extern void mvc_init(int debug);
 extern void mvc_exit();
 
 extern mvc *mvc_create( int debug );
 extern void mvc_destroy( mvc *c );
 extern char *mvc_login( mvc *c, char *user, char *passwd );
-extern char *mvc_admin_login( mvc *c );
 /* later a change_schema and a change_database could be added 
 	connect to ...
 */
@@ -229,6 +228,7 @@ extern size_t void_replace_bat( BAT *b, BAT *u);
 #include "logger.h"
 #include <statement.h>
 #include <types.h>
+#include <privileges.h>
 
 #define TR_OLD 0
 #define TR_NEW 1
@@ -325,15 +325,6 @@ size_t void_append_bat( BAT *b, BAT *u){
 	BATseqbase(u, sbase);
 	BATins(b, u);
 	return sz;
-}
-
-static BAT *bat_descriptor(bat bid)
-{
-	if (bid){
-		BBPfix(bid);
-		return BATdescriptor(bid);
-	}
-	return NULL;
 }
 
 static BAT *bat_lcopy(BAT *b){
@@ -1267,16 +1258,21 @@ static void mvc_init_type( struct bm *bm )
 	bat_destroy(O_type);
 }
 
-void mvc_init(int debug, char *dirname)
+void mvc_init(int debug)
 {
 	struct bm *bm = NULL;
 	mvc_debug = debug;
-
+	char *logdir = GDKgetenv("sql_logdir");
+	char *dbname = GDKgetenv("gdk_dbname");
+	
+	assert(logdir && dbname);
 	if (mvc_debug)
-		fprintf(stderr, "mvc_init logdir %s\n", dirname);
+		fprintf(stderr, "mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
+
+	parser_init(debug);
 
 	bm = bm_create();
-	logger = logger_create(mvc_debug, dirname, bm);
+	logger = logger_create(mvc_debug, logdir, dbname, bm);
 
 	mvc_init_schema(bm);
 	mvc_init_table(bm);
@@ -1368,6 +1364,8 @@ void mvc_init(int debug, char *dirname)
 		mvc_create_column(m, t, "auth_id", "MEDIUMINT",0,0, 1 );
 		mvc_create_column(m, t, "privileges", "MEDIUMINT",0,0, 2 );
 
+		/* add monetdb user */
+		sql_create_user(m, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
 		mvc_create_schema(m, "default-schema", "sqladmin");
 
 		m->trans->schema = s;
@@ -1442,23 +1440,6 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 		_DELETE(schema);
 		return NULL;
 	}
-	return schema;
-}
-
-/* back door ;-) can only be used by server, todo initial user setup */
-char *mvc_admin_login(mvc *m)
-{
-	char *schema = NULL;
-	BAT *name_user = BATmirror(mvc_bind(m, "sys", "users", "name", 0 ));
-
-	if (mvc_debug)
-		fprintf(stderr, "mvc_admin_login\n");
-
-	if (!BATcount(name_user)){
-		m->trans->schema = find_schema(m->trans, "sys");
-		schema = _strdup("sys");
-	}
-	bat_destroy(name_user);
 	return schema;
 }
 
@@ -2706,9 +2687,10 @@ void mvc_drop_table(mvc * m, sql_schema *s, char *name, bit cascade)
 		if (!s->dtables) 
 			s->dtables = list_create((fdestroy)&table_destroy);
 		list_move_data(s->tables, s->dtables, t);
+		t->wtime = tr->stime;
 	}
 	/* TODO cascade, ie. remove al references to this table */
-	t->wtime = s->wtime = tr->wtime = tr->stime;
+	s->wtime = tr->wtime = tr->stime;
 }
 
 static sql_column *bootstrap_create_column(mvc * m, sql_table *t, char *name,
@@ -2893,9 +2875,29 @@ sql_column * mvc_null(mvc * m, sql_column * col, int flag)
 	if (m->debug)
 		fprintf(stderr, "mvc_null %s %d\n", col->name, flag);
 
-	col->null = flag;
+	if (col->null != flag){
+		sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
+		BAT *b, *r;
+		oid rid = 0;
+	
+		/* replace null value in sys columns */
+		b = bind_bat(tr, find_column(syscolumn, "id"), 1);
+		r = BATmirror(b);
+		rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & col->id ));
+		BBPunfix(b->batCacheid);
+		b = bind_bat(tr, find_column(syscolumn, "null"), 1);
+		bun_inplace(b, rid, &flag); 
+		BBPunfix(b->batCacheid);
 
-	col->wtime = tr->wtime = tr->stime;
+		if (col->flag != TR_NEW) {
+			b = bind_ubat(tr, find_column(syscolumn, "null"), 1);
+			BUNins(b, (ptr) & rid, (ptr) & flag); 
+			BBPunfix(b->batCacheid);
+		}
+		col->flag = flag;
+		col->wtime = tr->wtime = tr->stime;
+	}
+
 	return col;
 }
 
@@ -2906,10 +2908,29 @@ sql_column * mvc_default(mvc * m, sql_column * col, char *val)
 	if (m->debug)
 		fprintf(stderr, "mvc_default %s %s\n", col->name, val);
 
-	_DELETE(col->def);
-	col->def = _strdup(val);
+	if (strcmp(col->def, val) != 0){
+		sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
+		BAT *b, *r;
+		oid rid = 0;
+	
+		/* replace default value in sys columns */
+		b = bind_bat(tr, find_column(syscolumn, "id"), 1);
+		r = BATmirror(b);
+		rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & col->id ));
+		BBPunfix(b->batCacheid);
+		b = bind_bat(tr, find_column(syscolumn, "default"), 1);
+		bun_inplace(b, rid, val); 
+		BBPunfix(b->batCacheid);
 
-	col->wtime = tr->wtime = tr->stime;
+		if (col->flag != TR_NEW) {
+			b = bind_ubat(tr, find_column(syscolumn, "default"), 1);
+			BUNins(b, (ptr) & rid, (ptr) val); 
+			BBPunfix(b->batCacheid);
+		}
+		_DELETE(col->def);
+		col->def = _strdup(val);
+		col->wtime = tr->wtime = tr->stime;
+	}
 	return col;
 }
 

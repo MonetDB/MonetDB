@@ -18,15 +18,9 @@ SQL client and the corresponding MIL runtime startup.
 	.ATOM sql_key = ptr;
 	.END;
 	
-	.BUILTIN sqlclient( mvc m,  Stream in, Stream out ) = 
+	.BUILTIN sqlclient( int sock ) = 
 		sqlclient;
 		"parse the next sql command and convert this to mil code"
-
-	.COMMAND parser_init( int debug ) = parser_init_wrap; 
-		"initialize the global structures for the sql parser such as keywords/types/functions/aggrs"
-
-	.COMMAND parser_exit() = parser_exit_wrap; 
-		"cleanup the global structures"
 
 	.COMMAND sql_type(str sqlname, int digits, int scale, int radix, str name ) = 
 		sql_type_wrap; "Add a new sql type"
@@ -37,7 +31,7 @@ SQL client and the corresponding MIL runtime startup.
 	.COMMAND sql_func(str name, str imp, str tp1, str tp2, str tp3, str rtp)
 		= sql_func_wrap; "Add a new sql function"
 
-	.COMMAND mvc_init(int debug, str dir_name) = mvc_init_wrap; 
+	.COMMAND mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
 
 	.COMMAND mvc_exit() = mvc_exit_wrap; 
@@ -51,9 +45,6 @@ SQL client and the corresponding MIL runtime startup.
 
 	.COMMAND mvc_login( mvc m, str user, str passwd ) : str 
 		= mvc_login_wrap; "database login"
-
-	.COMMAND mvc_admin_login( mvc m ) : str 
-		= mvc_admin_login_wrap; "an initial passwordless login by the admin is allowed too setup the initial users (only once)"
 
 	.COMMAND mvc_status( mvc m ) : int 
 		= mvc_status_wrap; "return the status of the last mvc operation"
@@ -143,13 +134,14 @@ SQL client and the corresponding MIL runtime startup.
 @+ void bats
 To prevent void bats to convert to oid bats we need overloaded insert and
 replace commands. 
+ 	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
 @m
-	.COMMAND renumber( BAT[oid,any::1] b1, oid o ) : BAT[oid,any::1] = bat_renumber;
-		"renumber the bat using the offset o"
 
- 	.COMMAND insert( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
+ 	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
 
- 	.COMMAND insert( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
+ 	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
+
+ 	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
 
 	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
@@ -174,8 +166,8 @@ replace commands.
 #include <context.h>
 #include <kernel.h>
 
-int mvc_init_wrap( int* debug, str dir_name){
-	mvc_init(*debug, dir_name);
+int mvc_init_wrap( int* debug ){
+	mvc_init(*debug );
 	return GDK_SUCCEED;
 }
 int mvc_exit_wrap( ){
@@ -183,14 +175,6 @@ int mvc_exit_wrap( ){
 	return GDK_SUCCEED;
 }
 
-int parser_init_wrap( int* debug){
-	parser_init(*debug );
-	return GDK_SUCCEED;
-}
-int parser_exit_wrap( ){
-	parser_exit();
-	return GDK_SUCCEED;
-}
 int sql_type_wrap( str sqlname, int *digits, int *scale, int *radix, str name ){
 	(void)sql_create_type( sqlname, *digits, *scale, *radix, name );
 	return GDK_SUCCEED;
@@ -216,13 +200,6 @@ int mvc_destroy_wrap( mvc *c ){
 
 int mvc_login_wrap( str *r, mvc *c, str user, str passwd  ){
 	*r = mvc_login( *(mvc**)c, user, passwd );
-	if (*r == NULL)
-		*r = _strdup("");
-	return GDK_SUCCEED;
-}
-
-int mvc_admin_login_wrap( str *r, mvc *c ){
-	*r = mvc_admin_login( *(mvc**)c );
 	if (*r == NULL)
 		*r = _strdup("");
 	return GDK_SUCCEED;
@@ -392,22 +369,6 @@ int mvc_import_table_wrap( int *res, mvc *c, Stream *s, str tname , str sep, str
 	return GDK_SUCCEED;
 }
 
-int bat_renumber( BAT **r, BAT *in, oid *O )
-{
-	oid o = *O;
-	if (BAThdense(in)){
-		BATseqbase(in, in->hseqbase + o);
-	} else {
-		oid *n = (oid*)BUNhead(in,BUNfirst(in)), *e = n + BATcount(in);
-		while(n<e){
-			*n += o;
-		}
-	}
-	BBPfix(in->batCacheid);
-	*r = in;
-	return GDK_SUCCEED;
-}
-
 int bat_append_void_bat_wrap( BAT **res, BAT *i, BAT *u )
 {
 	*res = i;
@@ -420,6 +381,31 @@ int bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 {
 	*res = i;
 	void_insert_bat( i, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	BUN r,s;
+        oid o;
+	
+	assert(i->htype == TYPE_oid && u->htype == TYPE_oid);
+	BATmax(BATmirror(i),&o);
+	BATloop(u, r, s){
+		oid h = *(oid*)BUNhead(u,r) + o;
+		BUNins(i, &h,  BUNtail(u,r));
+        }
+	*res = i;
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+{
+	oid h = i->hseqbase + BATcount(i);
+	*res = i;
+	BUNins( i, (ptr) & h, u );
 	BBPfix(i->batCacheid);
 	return GDK_SUCCEED;
 }
@@ -445,13 +431,7 @@ module(mmath);
 module(decimal);
 module(mapi); # mapi_listen 
 
-# dirty hack for comments ask menzo
-PROC renameFUNC(str OLD,str NEW) : void := {
- 	VAR funcs := monet_fcn_nme.select(OLD);
- 	funcs := [funcs~NEW];
- 	monet_fcn_nme.replace(funcs);
- 	monet_fcntbl.reverse.replace(funcs);
-}
+mvc_init(int(monet_environment.find("sql_debug")));
 
 const QPARSE := 1;
 const QTABLE := 2;
@@ -459,60 +439,6 @@ const QUPDATE := 3;
 const QDATA := 4;
 const QHEADER := 5;
 const QDEBUG := 5;
-
-var sql_debug := int(monet_environment.find("sql_debug"));
-parser_init(sql_debug);
-
-var dbname := monet_environment.find("gdk_dbname");
-var dbfarm := monet_environment.find("gdk_dbfarm");
-mvc_init(sql_debug,dbfarm + "/" + dbname + "/log");
-
-proc initialize(int debug) {
-	# change to sql statements !!
-	var myc := mvc_create(debug);
-	var schema := mvc_admin_login(myc);
-	
-	if (schema != ""){
-		user_name := mvc_bind( myc, schema, "users", "name", 1);
-		user_name.access(BAT_WRITE);
-		if (user_name.count() = 0){
-			mvc_create_user( myc, "monetdb", "monetdb", "MonetDB Admin", "sys", 0);
-			# probably needs priv's too 
-			mvc_commit( myc, 0, "");
-		}
-	}
-	mvc_destroy( myc );
-}
-
-initialize(sql_debug);
-
-
-proc sep():= {
-	return "\t";
-}
-
-proc load_seps( BAT[void,BAT] bats, str Sep, str Rsep ) : BAT[void,str] := {
-	var seps := new(void,str); seps.seqbase(oid(0));
-	var id := 0;
-	var cnt := bats.count - 1;
-	bats@batloop(){
-		if (id != cnt) {
-			seps.insert(nil,Sep);
-		} else {
-			seps.insert(nil,Rsep);
-		}
-		id += 1;
-	}
-	return seps;
-}
-
-proc oid_insert( b1, b2 ) := {
-	var o := b1.reverse.max();
-	return b1.insert(renumber(b2,o));
-}
-
-proc bat_name(b):= return str(b);
-proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
 
 proc input( mvc myc, Stream Input, str tname, BAT fnames, str Sep, str rSep, int sz ):={
 	var s := Input;
@@ -590,68 +516,12 @@ proc server_output( Stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void
 	stream_flush( Output );
 }
 
-proc SQLclient_thread( int sock ):= {
-
-	var Output := block_stream(
-		socket_wstream( sock, sprintf("SQLserver-%d", sock) ));
-	var Input := block_stream(
-		socket_rstream( sock, sprintf("SQLserver-%d", sock) ));
-
-	var cmd := stream_read( Input ); # api('api',debug);
-	#print(cmd);
-
-	if (cmd.startsWith("api") = false ){
-		printf("Protocol error: %s\n", cmd);
-		return -1;
-	}
-
-	cmd := string(cmd,search(cmd, '(') + 1);
-	var api := string(cmd,0,search(cmd, ','));
-
-	if ((api.startsWith("sql")) = false){
-		printf("Protocol api error: %s\n", api);
-		return -1;
-	}
-
-	cmd := string(cmd,search(cmd, ',') + 1);
-	var debug := string(cmd,0,r_search(cmd, ')'));
-
-	stream_write( Output, "login\n");
-	stream_flush( Output );
-
-	cmd := stream_read( Input ); # login(user,passwd);
-
-	if (cmd.startsWith("login") = false ){
-		printf("Protocol error: %s\n", cmd);
-		return -1;
-	}
-
-	cmd := string(cmd,search(cmd, '(') + 1);
-	var user := string(cmd,0,search(cmd, ','));
-	cmd := string(cmd,search(cmd, ',') + 1);
-	var passwd := string(cmd,0,r_search(cmd, ')'));
-
-	var myc := mvc_create(int(debug));
-	var schema := mvc_login( myc, user, passwd );
-	var db := environment.find("gdk_dbname");
-
-	stream_write( Output, db + "," + schema + "\n");
-	stream_flush( Output );
-
-	if (schema != ""){
-		sqlclient( myc, Input, Output );
-	}
-	stream_close( Output );
-	stream_close( Input );
-
-	socket_close( sock );
-	return 0;
-}
-
-proc SQLclient( int sock ) := {
-	dsock := socket_dup(sock);
-	#printf("# [ %d %d ]\n",sock, dsock);
-	fork(SQLclient_thread(dsock));
+# dirty hack for comments ask menzo
+PROC renameFUNC(str OLD,str NEW) : void := {
+ 	VAR funcs := monet_fcn_nme.select(OLD);
+ 	funcs := [funcs~NEW];
+ 	monet_fcn_nme.replace(funcs);
+ 	monet_fcntbl.reverse.replace(funcs);
 }
 
 proc new_quit() := {
@@ -659,19 +529,13 @@ proc new_quit() := {
 	eval("old_quit;");
 }
 
-proc get_sql_port() := {
-	if (monet_environment.exist("sql_port")){
-		return int(monet_environment.find("sql_port"));
-	}
-	var port := 45123;
-	var sqlport := getenv("SQLPORT");
-	if (length(sqlport) > 0){
-		port := int(sqlport);
-	}
-	return port;
-}
-
 renameFUNC("quit", "old_quit");
 renameFUNC("new_quit", "quit");
 
-mapi_listen(get_sql_port(), 5, "SQLclient").fork();
+proc SQLclient( int sock ) := {
+	dsock := socket_dup(sock);
+	#printf("# [ %d %d ]\n",sock, dsock);
+	fork(sqlclient(dsock));
+}
+
+mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();

@@ -36,32 +36,103 @@ This code strongly depends on the front-end/back-end setup.
 
 extern catalog *mvc_catalog_create( mvc *m, context *lc );
 
-int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
-	buffer *bbuf = buffer_create( BUFSIZ );
-	int err = 0;
-	stmt *s = NULL;
-	char *cmd = NULL;
-	char *errbuf = GDKmalloc(GDKMAXERRLEN);
+int connect_error(stream *in, stream *out, int sock)
+{
+	close_stream(in);
+	close_stream(out);
+	close(sock);
+	return GDK_FAIL;
+}
 
-	mvc **M, *m;
-	stream **In, *in, **Out, *out, *ws;
+int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
+	buffer *bbuf;
+	int debug = 0, err = 0, l = 0, i, sock, *Sock;
+	stmt *s = NULL;
+	char *cmd = NULL, buf[BUFSIZ+1], *errbuf;
+	char *user, *passwd, *schema, *dbname;
+        Client  c; 
+	Variable v;
+
+	mvc *m;
+	stream *in, *out, *ws;
 	context *lc;
 
-  	if (lt->cnt != 3) {
-        	return handle_argerror(res, lt->cnt, 3);
+  	if (lt->cnt != 1) {
+		close(sock);
+        	return handle_argerror(res, lt->cnt, 1);
   	}
-  	@:builtin_operand(0,TYPE_mvc,M)@
-	m = *M;
-  	@:builtin_operand(1,TYPE_Stream,In)@
-	in = *In;
-  	@:builtin_operand(2,TYPE_Stream,Out)@
-	out = *Out;
+  	@:builtin_operand(0,TYPE_int,Sock)@
+	sock = *Sock;
+
+	out = block_stream( socket_wstream( sock, "SQLSERVER" ));
+	in  = block_stream( socket_rstream( sock, "SQLSERVER" ));
+
+	if ((i = in->read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+		return connect_error(in, out, sock);
+	buf[i] = 0;
+	/* expect api(sql,debug); */
+	l = strlen("api(sql,");
+	if (i > l+1 )
+		debug = strtol(buf+l,NULL,10);
+
+	i=snprintf(buf, BUFSIZ, "login\n" );
+	out->write(out, buf, 1, i);
+	out->flush(out);
+
+	if ((i = in->read(in, buf, 1, BUFSIZ)) >= BUFSIZ)
+		return connect_error(in, out, sock);
+	buf[i] = 0;
+	/* expect login(user,passwd); */
+	l = strlen("login(");
+	if (i > l+1 ){
+		char *s, *e = strchr(buf+l,',');
+		if (!e) return connect_error(in, out, sock);
+		*e = 0;
+		s = e+1; /* skip comma */
+		e = strrchr(s, ')');
+		if (!e) return connect_error(in, out, sock);
+		*e = 0;
+		user = GDKstrdup(buf+l);
+		passwd = GDKstrdup(s);
+	} else {
+		return connect_error(in, out, sock);
+	}
+
+	m = mvc_create(debug);
+	schema = mvc_login( m, user, passwd );
+	dbname = GDKgetenv("gdk_dbname");
+
+	i = snprintf(buf, BUFSIZ, "%s,%s\n", dbname, schema?schema:"" );
+	out->write(out, buf, 1, i);
+	out->flush(out);
+
+	if (!schema){ 
+		GDKfree(user);
+		GDKfree(passwd);
+		mvc_destroy(m);
+		return connect_error(in, out, sock);
+	}
 
 	lc = NEW(context);
+ 	bbuf = buffer_create( BUFSIZ );
 	ws = buffer_wastream( bbuf, "SQLserver" );
-	sql_init_context( lc, ws, m->debug, default_catalog_create() );
+	sql_init_context( lc, ws, debug, default_catalog_create() );
 	mvc_catalog_create( m, lc );
 
+	/* add myc and Output, Input to the stack */
+	v = VARnew(stk, "myc");
+	v->binding.vtype = TYPE_mvc;
+	v->binding.val.pval = m;
+
+	v = VARnew(stk, "Output");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = out;
+
+	v = VARnew(stk, "Input");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = in;
+
+ 	errbuf = GDKmalloc(GDKMAXERRLEN);
 	GDKsetbuf(errbuf);
 
 	while(lc->cur != EOF ){
@@ -99,9 +170,8 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 			    {
 				int i;
 				ssize_t status;
-				ValRecord res;
-        			res.vtype = TYPE_void; 
-				i = interpret_str( stk, cmd, &res);
+        			res->vtype = TYPE_void; 
+				i = interpret_str( stk, cmd, res);
 
 				if (i < 0){
 					char *errstr = "Mil error";
@@ -137,5 +207,8 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 	mvc_destroy(m);
 	sql_exit_context( lc );
+	close_stream(in);
+	close_stream(out);
+	close(sock);
 	return GDK_SUCCEED;
 }

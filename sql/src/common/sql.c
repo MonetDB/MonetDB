@@ -2227,9 +2227,9 @@ static stmt *sql_select(context * sql, scope * scp, SelectNode *sn, int toplevel
 			cvar *cv = tv->columns->h->data;
 			stmt *tmp = stmt_dup(cv -> s);
 			if (!cur) {
-				if (tv->s->type == st_basetable ){
+				if (isbasetable(tv->s)){
 					cur = stmt_diff(tmp, stmt_reverse(
-					   stmt_tbat(tv->s->op1.tval, RDONLY, st_dbat )));
+					   stmt_tbat(basetable_table(tv->s), RDONLY, st_dbat )));
 				} else {
 					cur = tmp;
 				}
@@ -3019,10 +3019,46 @@ static void cleanup_inserts(stmt **inserts, int cnt){
 	_DELETE(inserts);
 }
 
-static stmt *sql_insert(context * sql, stmt **inserts, int len)
+static stmt *sql_insert_check_keys(context * sql, tvar *tv, stmt **inserts, int len)
+{
+	/* int insert = 1;
+	 * while insert and has u/pkey and not defered then
+	 * 	if u/pkey values exist then
+	 * 		insert = 0
+	 * while insert and has fkey and not defered then
+	 *	find id of corresponding u/pkey  
+	 *	if (!found)
+	 *		insert = 0
+	 * if insert
+	 * 	insert values
+	 * 	insert fkey/pkey index
+	 */
+	if (isbasetable(tv->s)){
+		table *t = basetable_table(tv->s);
+		node *n;
+		if (t->keys) for(n = t->keys->h; n; n = n->next){
+			node *m;
+			key *k = n->data;
+			printf("key %s, ", k->name);
+			for(m = k->columns->h; m; m = m->next){
+				column *c = m->data;
+				printf("%s, ", c->name);
+			}
+			printf("\n" );
+		}
+	}
+	return NULL;
+}
+
+static stmt *sql_insert(context * sql, tvar *tv, stmt **inserts, int len)
 {
 	int i; 
 	list *l = create_stmt_list();
+
+	stmt *ckeys = sql_insert_check_keys(sql, tv, inserts, len);
+
+	if (ckeys) /* first check all the keys */
+		list_append(l, ckeys);
 
 	for (i = 0; i < len; i++) {
 		if (!inserts[i])
@@ -3133,20 +3169,8 @@ static stmt *insert_into(context * sql, dlist * qname,
 		if (s) 
 			stmt_dup(s);
 	}
+	res = sql_insert(sql, tv, inserts, len);
 	scp = scope_close(scp);
-	/* int insert = 1;
-	 * while insert and has u/pkey and not defered then
-	 * 	if u/pkey values exist then
-	 * 		insert = 0
-	 * while insert and has fkey and not defered then
-	 *	find id of corresponding u/pkey  
-	 *	if (!found)
-	 *		insert = 0
-	 * if insert
-	 * 	insert values
-	 * 	insert fkey/pkey index
-	 */
-	res = sql_insert(sql, inserts, len);
 	_DELETE(inserts);
 	return res;
 }
@@ -3251,14 +3275,14 @@ static stmt *sql_delete(context * sql, dlist * qname, symbol * opt_where)
 		/* should s be getting a default some where */
 		v = stmt_const( stmt_reverse(first_subset(s)), 
 					stmt_atom(atom_general(to, NULL)));
-		assert (tv->s->type == st_basetable);
+		assert (isbasetable(tv->s));
 		list_append(l, stmt_append(
-				stmt_tbat(tv->s->op1.tval, INS, st_dbat), 
+				stmt_tbat(basetable_table(tv->s), INS, st_dbat),
 				stmt_reverse(v)));
 		/* switched of as its not used and insert first needs code
 		 * to fill this bat 
 		list_append(l, stmt_replace(
-				stmt_tbat(tv->s->op1.tval, DEL, st_obat), 
+				stmt_tbat(basetable_table(tv->s), DEL, st_obat),
 				stmt_dup(v)));
 				*/
 		for(n = t->columns->h; n; n = n->next){

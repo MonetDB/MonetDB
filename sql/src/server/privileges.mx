@@ -9,24 +9,28 @@ These are administrated on multiple levels where lower levels (ie.
 table or column level) overwrite privileges on higher levels.
 
 @h
+#ifndef _SQLPRIV_H_
+#define _SQLPRIV_H_
+
 /* privileges */
+#include <mvc.h>
 
-#define 
+extern int sql_privileges( int authid );
+extern int sql_table_privileges( int authid, int tableid, int globalprivs );
+extern int sql_column_privileges( int authid, int columnid, int tableprivs );
 
-int sql_privileges( int authid, int globalprivs );
-int sql_table_privileges( int authid, int tableid, int globalprivs );
-int sql_column_privileges( int authid, int columnid, int tableprivs );
-int sql_create_role(mvc *m,  str auth, int grantor ) ;
-int sql_drop_role( mvc *m, str auth );
-int sql_grant_role( mvc *m, str grantee, str auth );
-int sql_revoke_role( mvc *m, str grantee, str auth );
-int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,int grantor );
-int sql_drop_user(mvc *m,  str user);
+extern int sql_create_role(mvc *m,  str auth, int grantor ) ;
+extern int sql_drop_role( mvc *m, str auth );
+extern int sql_grant_role( mvc *m, str grantee, str auth );
+extern int sql_revoke_role( mvc *m, str grantee, str auth );
+extern int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,int grantor );
+extern int sql_drop_user(mvc *m,  str user);
 
+#endif /*_SQLPRIV_H_ */
 @c
 #include <gdk.h>
 #include <monet_context.h>
-#include <mvc.h>
+#include <privileges.h>
 
 static BAT *desc(char *bname)
 {

@@ -91,7 +91,7 @@ Actually, the logger should issue commit statements after each block.
 
 #include "bm.h"
 
-extern struct logger *logger_create(int debug, char *dirname, struct bm *bm );
+extern struct logger *logger_create(int debug, char *logdir, char *dbname, struct bm *bm );
 extern void logger_destroy(struct logger *logger);
 extern void logger_exit(struct logger *logger);
 extern void logger_restart(struct logger *logger );
@@ -410,7 +410,7 @@ static void logger_load( logger *logger, FILE *fp ){
 	bm_load(logger->bm, fp);
 }
 
-logger *logger_new(int debug, char *dirname, struct bm *bm){
+logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 	logger *logger = NEW(struct logger);
 	FILE *fp;
 	char filename[BUFSIZ];
@@ -418,7 +418,7 @@ logger *logger_new(int debug, char *dirname, struct bm *bm){
 	logger->debug = debug;
 	logger->id = 1;
 	logger->tid = 0;
-	snprintf(filename, BUFSIZ, "%s%c", dirname, DIR_SEP );
+	snprintf(filename, BUFSIZ,"%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	logger->dir = _strdup(filename);
 	logger->log = NULL;
 	logger->bm = bm;
@@ -430,7 +430,7 @@ logger *logger_new(int debug, char *dirname, struct bm *bm){
 		logger_readlogs(logger, fp, filename);
 	} else if ( (fp = fopen(filename, "w")) == NULL){
 		if (!GDKcreatedir(filename)){
-			fprintf(stderr, "Could not create log directory %s\n", dirname);
+			fprintf(stderr, "Could not create log directory %s\n", logger->dir);
 			exit(1);
 		} else if ( (fp = fopen(filename, "w")) == NULL){
 			fprintf(stderr, "could not create file %s\n", filename);
@@ -444,8 +444,8 @@ logger *logger_new(int debug, char *dirname, struct bm *bm){
 	return logger;
 }
 
-logger *logger_create(int debug, char *dirname, struct bm *bm ){
-	logger *logger =  logger_new(debug, dirname, bm);
+logger *logger_create(int debug, char *logdir, char *dbname, struct bm *bm ){
+	logger *logger =  logger_new(debug, logdir, dbname, bm);
 	logger_open(logger);
 	return logger;
 }

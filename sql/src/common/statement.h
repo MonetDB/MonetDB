@@ -156,6 +156,8 @@ extern stmt *stmt_column_revoke(stmt *c, char *authid, int privilege);
 */
 
 extern stmt *stmt_basetable(table *t); 
+#define isbasetable(s) (s->type == st_basetable)
+#define basetable_table(s) s->op1.tval 
 
 extern stmt *stmt_cbat(column * c, stmt * basetable, int access, int type);
 extern stmt *stmt_ibat(stmt * i, stmt * basetable );

@@ -497,6 +497,7 @@ int sqltypeinit()
 	sql_func_cmd( "substring", "string", "str", "int", "int", "str");
 	sql_func_cmd( "strconcat", "+", "str", "str", "", "str");
 }
+
 void parser_exit()
 {
 	list_destroy(aggrs);

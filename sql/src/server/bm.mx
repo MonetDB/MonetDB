@@ -35,7 +35,7 @@ bat ids.
 
 #include <gdk.h>
 
-/* TODO move void_* functions into bm */
+extern BAT *bat_descriptor(bat bid);
 extern void bat_destroy(BAT *b);
 
 extern struct bm *bm_create();
@@ -87,7 +87,7 @@ typedef struct bm {
 	BAT*	bat_oversion;	/* 	[ void, int ]   */
 } bm;
 
-static BAT *bat_descriptor(bat bid)
+BAT *bat_descriptor(bat bid)
 {
 	if (bid){
 		BBPfix(bid);
