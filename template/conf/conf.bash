@@ -289,7 +289,7 @@ if [ "${os}" = "SunOS" ] ; then
 		libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
 		# GNU ar in /usr/local/bin doesn't support 64bit
 		AR='/usr/ccs/bin/ar' ; export AR
-		AR_FLAGS='-s -r -cu' ; export AR_FLAGS
+		AR_FLAGS='-r -cus' ; export AR_FLAGS
 		if [ -d "${soft32}" ] ; then
 			# libraries compiled with gcc may need the gcc libs, so
 			# at them to the LD_LIBRARY_PATH 
