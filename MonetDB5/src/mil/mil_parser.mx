@@ -364,7 +364,7 @@ void popBlock(){
 str getLast(char c){
 	char buf[IDLENGTH];
 	if(itop==0){
-		printf("\n#ERROR: no iterators on stack\n");
+		printf("\n#ERROR: no iterator '%c' on stack\n",c);
 		return GDKstrdup("unknown");
 	}
 	sprintf(buf,"%s%c",iterators[itop-1],c);
@@ -617,7 +617,7 @@ stmt: ';'
 	   printf("barrier\t%s:= not(%s);\n",$3.val,$1.val);
 	}
 	stmt
-	{ printf("exit\t%s;\n",$3.val); popIterator();}
+	{ printf("exit\t%s;\n",$3.val); popBlock();}
     |   TOK_BREAK ';'
 	{ printf("leave\t%s;\n",getLastIterator()); }
     ;
