@@ -492,17 +492,6 @@ static char *phases[] = {
  */
 static char *progname = 0;
 
-/* This function is created to hide the use of setjmp() for the compiler.
- * If setjmp() is used directly it starts to complain about clobbered variables.
- */
-static int hidden_setjmp() {
-	if (setjmp(PFexitPoint) != 0) {
-                fputs(PFerrbuf, stderr);
-                return 1;
-        }
-        return 0;
-}
-
 /**
  * Entry point to the Pathfinder compiler,
  * parses the command line (switches), then invokes the compiler driver
@@ -695,10 +684,6 @@ main (int argc, char *argv[])
                     strerror (errno));
             goto failure;
         }
-    }
-
-    if (hidden_setjmp() != 0 ) {
-        goto failure;
     }
 
     /* Now call the main compiler driver */

@@ -165,6 +165,15 @@ pf_read(FILE *pfin) {
 int
 pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 {
+    /* Call setjmp() before variables are declared;
+     * otherwise, some compilers complain about clobbered variables.
+     */
+    if (setjmp(PFexitPoint) != 0 ) {
+        fputs(PFerrbuf, stderr);
+        return ( -1 ); /* EXIT_FAILURE */
+    }
+
+ {
     PFpnode_t  *proot  = NULL;
     PFcnode_t  *croot  = NULL;
     PFalg_op_t *aroot  = NULL;
@@ -493,6 +502,7 @@ subexelim:
 
  failure:
     return ( -1 ); /* EXIT_FAILURE */
+ }
 }
 
 /**
