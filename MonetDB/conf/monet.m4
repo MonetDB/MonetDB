@@ -1494,7 +1494,8 @@ AC_MSG_CHECKING([for PHP])
 if test "x$have_php" != xno; then
 	php_prefix="`$PHP_CONFIG --prefix 2>/dev/null`"
 	PHP_INCS=" `$PHP_CONFIG --includes 2>/dev/null`"
-	PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir 2>/dev/null`"
+	PHP_PREFIX="`$PHP_CONFIG --prefix`"
+	PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$PHP_PREFIX++g 2>/dev/null`"
  
 	if test -z "$php_prefix"; then
 		if test x"$have_php" = xyes -o x"$PHP_CONFIG" != xphp-config; then

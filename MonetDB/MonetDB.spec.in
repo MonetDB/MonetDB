@@ -18,9 +18,14 @@ Source: %{name}-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+BuildRequires: php
 
 %package client
 Summary: MonetDB clients
+Group: System
+
+%package php
+Summary: MonetDB php interface
 Group: System
 
 %package server
@@ -45,6 +50,13 @@ accellerators, SQL- and XML- frontends.
 
 %description client
 Add the MonetDB client description here
+
+%description php
+Add the MonetDB php description here
+Requires: %{name}-client
+Requires: php
+%define php_extensiondir %(php-config --extension-dir)
+
 
 %description server
 Add the MonetDB server description here
@@ -114,13 +126,16 @@ rm -fr $RPM_BUILD_ROOT
 # fix should be install in script langs subdirs
 %{prefix}/share/%{name}/perl/* 
 %{prefix}/share/%{name}/python/* 
-%{prefix}/share/%{name}/php/*
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
 
 %pre client 
 %{_sbindir}/groupadd -g %{monetdb_gid} -r monetdb 2>/dev/null || :
 %{_sbindir}/useradd -d %{localstatedir}/%{name} -s /bin/true -g monetdb -M -r -u %{monetdb_uid} monetdb 2>/dev/null || :
+
+%files php
+%defattr(-,monetdb,monetdb) 
+%{php_extensiondir}/*
 
 %files server
 %defattr(-,monetdb,monetdb) 
