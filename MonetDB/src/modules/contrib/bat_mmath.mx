@@ -154,7 +154,7 @@ int batbat_@1_@2(BAT **ret, BAT *l, BAT *r) {
 			}
 		}
 	        GDKfree(lbuf);
-	} if ((BUNsize(l)==BUNsize(r))) {
+	} else if ((BUNsize(l)==BUNsize(r))) {
 		REGISTER chr *lp, *lq, *rp;
 		REGISTER int bs = BUNsize(l);
 		REGISTER int sze = (4096/bs)*bs;
