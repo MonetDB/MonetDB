@@ -46,7 +46,7 @@ sql_server_export void backend_dumpproc( backend *be, int id, stmt *s );
 
 sql_server_export int backend_dumpstmt_( stmt *s, int *nr, backend *sql );
 @(
-		if (c->debug&8192) {
+		if (mvc_debug_on(c->mvc,8192)) {
 			char *sqzd_cmd = NULL;
 			int misq_x = 0;
 			CMDsqueezeStr2Str(&sqzd_cmd, cmd, &misq_x);
@@ -62,7 +62,7 @@ static void write_head( backend *sql, int nr )
 {
         (void) nr; /* Stefan: unused!? */
 
-	if (sql->debug&2){
+	if (mvc_debug_on(sql->mvc,2)) {
 		char *t0 = "var t0 := time();\n";
 		int l = strlen(t0);
 		stream_write( sql->out, t0, 1, l );
@@ -71,7 +71,7 @@ static void write_head( backend *sql, int nr )
 
 static void write_tail( backend *sql, int nr)
 {
-	if (sql->debug&2){
+	if (mvc_debug_on(sql->mvc,2)) {
 		char dbg[BUFSIZ];
 		int l = snprintf( dbg, BUFSIZ,
 		"var t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", nr);
@@ -84,13 +84,13 @@ static void write_part( backend *sql, char *buf, int len )
 	buf[len] = '\0';
 	stream_write( sql->out, buf, 1, len );
 
-	if (sql->debug&8)
+	if (mvc_debug_on(sql->mvc,8)) 
 		fwrite( buf, 1, len, stderr);
 }
 
 static void write_command( backend *sql, char *buf )
 {
-	if (sql->debug&(1024+2048)) {
+	if (mvc_debug_on(sql->mvc,1024+2048)) {
 		int l;
 		char v[BUFSIZ];
 		char *s = _strdup(buf), *c = s;
@@ -105,7 +105,7 @@ static void write_command( backend *sql, char *buf )
 
 static void write_result( backend *sql, char *buf )
 {
-	if (sql->debug&(1024+2048)) {
+	if (mvc_debug_on(sql->mvc,1024+2048)) {
 		int l;
 		char v[BUFSIZ], *a = buf, *b, *y, z;
 		while (a && (y = strstr(a," := "))) {
@@ -120,7 +120,7 @@ static void write_result( backend *sql, char *buf )
 				"	var x := count(%s);"
 				"	printf(\"| %%d * { %%s , %%s } |\\n\",x,head(%s),tail(%s));",
 				b, b, b, b, b );
-			if (sql->debug&2048) {
+			if (mvc_debug_on(sql->mvc,2048)) {
 			    l += snprintf( v+l, BUFSIZ-l,
 				"	if (x < 40) {"
 				"		print(%s);"
@@ -428,7 +428,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 			  		".access(BAT_WRITE)"); 
 		}
 		len += snprintf( buf+len, BUFSIZ-len, "; #%s\n", hname);
-		if (sql->debug&4){
+		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf( buf+len, BUFSIZ-len, 
 				"s%d.info.print();", -s->nr);
 		}
@@ -454,7 +454,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		  		".access(BAT_WRITE)"); 
 		}
 		len += snprintf( buf+len, BUFSIZ-len, ";\n" ); 
-		if (sql->debug&4){
+		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf( buf+len, BUFSIZ-len, 
 			"s%d.info.print();\n", -s->nr);
 		}
@@ -476,7 +476,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		  		".access(BAT_WRITE)"); 
 		}
 		len += snprintf( buf+len, BUFSIZ-len, ";\n" ); 
-		if (sql->debug&4){
+		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf( buf+len, BUFSIZ-len, 
 			"s%d.info.print();\n", -s->nr);
 		}
@@ -717,7 +717,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 			len = snprintf( buf, BUFSIZ, 
 					"error impossible\n");
 	  	} 
-		if (sql->debug&4){
+		if (mvc_debug_on(sql->mvc,4)) {
 			len += snprintf(buf +len, BUFSIZ-len, 
 				"s%d.info.print;\n", -s->nr);
 		}
@@ -998,7 +998,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		write_head(sql,-s->nr);
 		buf = NEW_ARRAY(char, BUFSIZ+1);
 		buf[0] = 0;
-		if (sql->debug&1){
+		if (mvc_debug_on(sql->mvc,1)) {
 			if (lst->type == st_list){
 				list *l = lst->op1.lval;
 
@@ -1011,7 +1011,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 				}
 			}
 		}
-		if (sql->debug&32){
+		if (mvc_debug_on(sql->mvc,32)) {
 			len += snprintf( buf+len, BUFSIZ-len,
 			"stream_write(Output,\"0\\n\");stream_flush(Output);\n");
 			if (lst->type == st_list){

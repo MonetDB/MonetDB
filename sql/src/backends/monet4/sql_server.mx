@@ -67,7 +67,7 @@ for the time being.
 	.BUILTIN quit() = mvc_exit_wrap; 
 		"cleanup the global catalog and quit server"
 
-	.BUILTIN mvc_create( int debug, Stream rs, Stream ws ) : mvc = mvc_create_wrap;
+	.BUILTIN mvc_create( Stream rs, Stream ws ) : mvc = mvc_create_wrap;
 		"Create multi version catalog"
 
 	.COMMAND mvc_destroy( mvc m ) = mvc_destroy_wrap;
@@ -325,16 +325,14 @@ int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 int 
 mvc_create_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 { 
-	int *Debug = NULL;
 	stream **Rs, **Ws;
 
-  	if (lt->cnt != 3) {
-        	return handle_argerror(res, lt->cnt, 3);
+  	if (lt->cnt != 2) {
+        	return handle_argerror(res, lt->cnt, 2);
   	}
-	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
-	builtin_operand( stk, lt, 1, (ptr*)&Rs, TYPE_Stream, res);
-	builtin_operand( stk, lt, 2, (ptr*)&Ws, TYPE_Stream, res);
-        res->val.pval = (ptr) mvc_create( *Debug, 1, 
+	builtin_operand( stk, lt, 0, (ptr*)&Rs, TYPE_Stream, res);
+	builtin_operand( stk, lt, 1, (ptr*)&Ws, TYPE_Stream, res);
+        res->val.pval = (ptr) mvc_create( 1, 
 			(backend_stack)stk, bstream_create(*Rs, 1), *Ws );
         res->vtype = TYPE_mvc;
 	return GDK_SUCCEED;

@@ -42,7 +42,6 @@ This code strongly depends on the front-end/back-end setup.
 #include <str.h>
 
 typedef struct backend {
-	int 	debug;
 	int 	trace;
 	mvc 	*mvc;
 
@@ -90,7 +89,6 @@ static backend *backend_create( int trace, mvc *c )
 {
 	backend *b = NEW(backend);
 
-	b->debug = c->debug;
 	b->mvc = c;
 	
  	b->outbuf = buffer_create( BUFSIZ );
@@ -523,6 +521,11 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 	v->binding.val.sval = NULL;
 	m->explain = &v->binding;
 
+	v = VARnew(stk, "debug");
+	v->binding.vtype = TYPE_int;
+	v->binding.val.ival = 0;
+	m->debug = &v->binding;
+
 	v = VARnew(stk, "reply_size");
 	v->binding.vtype = TYPE_int;
 	v->binding.val.ival = 100;
@@ -648,7 +651,7 @@ sqlstatement(char *cmd, Cntxt stk )
 	backend *sql;
 	Variable v;
 
-	m = mvc_create(0, 0, (backend_stack)stk, NULL, GDKout );
+	m = mvc_create(0, (backend_stack)stk, NULL, GDKout );
 	m->user_id = m->role_id = 0;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
@@ -728,7 +731,7 @@ the DBA.
 @c
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	int debug = 0, trace = 0, ret = GDK_SUCCEED;
+	int trace = 0, ret = GDK_SUCCEED;
 	ssize_t i=0;
 	char buf[BUFSIZ+1];
 	char *user, *passwd, *schema;
@@ -773,8 +776,7 @@ Use default setting for trace.
 			return connect_error(in, out);
 	}
 	*user=0;
-	/*fprintf(stdout,"mapisqlclient: connection:%s\n",buf);*/
-	fflush(stdout);
+	/*fprintf(stdout,"mapisqlclient: connection:%s\n",buf); */
 	user= buf;
 	passwd= strrchr(user,':');
 	if(passwd && strncmp(passwd,":blocked",8)==0){
@@ -811,7 +813,7 @@ These lines should be eaten away into the prompt is encountered.
 @c
 
 	rs = bstream_create(in, BLOCK);
-	m = mvc_create(debug, 1, (backend_stack)stk, rs, out );
+	m = mvc_create(1, (backend_stack)stk, rs, out );
 	schema = mvc_login( m, user, passwd );
 	GDKfree(user);  /* possible leakage */
 	GDKfree(passwd);

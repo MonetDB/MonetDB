@@ -92,7 +92,7 @@ void cmd_init(mvc * m)
 {
 	struct scanner *c = &m->scanner;
 
-	if (c->sql && m->debug & D__SQL)
+	if (c->sql && mvc_debug_on(m,1) & D__SQL)
 		fprintf(stderr, "%s\n", c->sql);
 	c->sql[0] = '\0';
 	c->sqllen = 1;

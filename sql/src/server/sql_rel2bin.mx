@@ -497,7 +497,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 		if (list_length(l) == 1){
 			res = stmt_dup(l->h->data);
 		} else {
-			if (!(c->debug&4096)) {
+			if (!mvc_debug_on(c,4096)) {
 				l = shrink_select_ranges(l);
 			}
 			res = (stmt*)list_reduce(l, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
@@ -517,7 +517,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 		os = stmt_semijoin(
 			rel2bin(c, s->op1.stval),
 			rel2bin(c, s->op2.stval));
-		if (!(c->debug&4096)) {
+		if (!mvc_debug_on(c,4096)) {
 			ns = eliminate_semijoin(os);
 		} else {
 			ns = stmt_dup(os);
@@ -535,7 +535,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 		stmt *os, *ns;
 
 		os = stmt_reverse(rel2bin(c, s->op1.stval));
-		if (!(c->debug&4096)) {
+		if (!mvc_debug_on(c,4096)) {
 			ns = eliminate_reverse(os);
 		} else {
 			ns = stmt_dup(os);
