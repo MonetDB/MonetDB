@@ -347,7 +347,7 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 	    BATatoms[t].storage = t;  /* default */
 	}
 	if (strcmp("size", property) == 0) {
-	    if ((long) arg) {
+	    if (arg) {
 		BATatoms[t].size = (int) (long) arg; 
 		BATatoms[t].varsized = 0; 
 		BATatoms[t].align = align((int) (long) arg); 
@@ -364,43 +364,43 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 	    	BATatoms[t] = BATatoms[(int)(long) arg]; /* copy from example */
 	    	strcpy(BATatoms[t].name, id); /* restore name */ 
 	} else if (strcmp("fromstr", property) == 0) {
-		BATatoms[t].atomFromStr = (int (*)()) arg; 
+		BATatoms[t].atomFromStr = (int (*)(char *,int *,void **)) arg; 
 	} else if (strcmp("tostr", property) == 0) {
-		BATatoms[t].atomToStr = (int (*)()) arg; 
+		BATatoms[t].atomToStr = (int (*)(char ** ,int *,void *)) arg; 
 	} else if (strcmp("fix", property) == 0) {
-		BATatoms[t].atomFix = (int (*)()) arg; 
+		BATatoms[t].atomFix = (int (*)(void *)) arg; 
 	} else if (strcmp("unfix", property) == 0) {
-		BATatoms[t].atomUnfix = (int (*)()) arg; 
+		BATatoms[t].atomUnfix = (int (*)(void *)) arg; 
 	} else {
 #define atomset(dst,val) oldval = (ptr) dst; if (val == NULL || dst == val) goto out; dst = val;
   	    ptr oldval = NULL;
 
 	    if (strcmp("heap", property) == 0) {
 		BATatoms[t].varsized = 1;
-		atomset(BATatoms[t].atomHeap, (int (*)()) arg); 
+		atomset(BATatoms[t].atomHeap, (int (*)(Heap *,int)) arg); 
 	    } else if (strcmp("heapconvert", property) == 0) {
-		atomset(BATatoms[t].atomHeapConvert, (void (*)()) arg); 
+		atomset(BATatoms[t].atomHeapConvert, (void (*)(Heap *,int)) arg); 
 	    } else if (strcmp("check", property) == 0) {
-		atomset(BATatoms[t].atomHeapCheck, (int (*)()) arg); 
+		atomset(BATatoms[t].atomHeapCheck, (int (*)(Heap *,HeapRepair *)) arg); 
 	    } else if (strcmp("del", property) == 0) {
-		atomset(BATatoms[t].atomDel, (void (*)()) arg); 
+		atomset(BATatoms[t].atomDel, (void (*)(Heap *,int *)) arg); 
 	    } else if (strcmp("convert", property) == 0) {
-		atomset(BATatoms[t].atomConvert, (void (*)()) arg); 
+		atomset(BATatoms[t].atomConvert, (void (*)(void *,int)) arg); 
 	    } else if (strcmp("put", property) == 0) {
-		atomset(BATatoms[t].atomPut, (void (*)()) arg); 
+		atomset(BATatoms[t].atomPut, (void (*)(Heap *,int *,void *)) arg); 
 	    } else if (strcmp("null", property) == 0) {
-		ptr atmnull = ((ptr (*)())arg)();
+		ptr atmnull = ((ptr (*)(void))arg)();
 		atomset(BATatoms[t].atomNull, atmnull); 
 	    }
 	    if (oldval) goto out; 
 
 	    /* these ADT functions *must* be equal for overloaded types */
 	    if (strcmp("cmp", property) == 0) {
-		atomset(BATatoms[t].atomCmp, (int (*)()) arg); 
+		atomset(BATatoms[t].atomCmp, (int (*)(void *,void *)) arg); 
 	    } else if (strcmp("hash", property) == 0) {
-		atomset(BATatoms[t].atomHash, (unsigned int (*)()) arg); 
+		atomset(BATatoms[t].atomHash, (unsigned int (*)(void *)) arg); 
 	    } else if (strcmp("length", property) == 0) {
-		atomset(BATatoms[t].atomLen, (int (*)()) arg); 
+		atomset(BATatoms[t].atomLen, (int (*)(void *)) arg); 
 	    }
     if (BATatoms[t].storage != t)
     GDKerror("ATOMproperty(%s): overload of %s violates inheritance from %s.\n",
