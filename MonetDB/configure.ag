@@ -156,7 +156,8 @@ AC_CACHE_CHECK(for _sys_siglist, mn_cv_have__sys_siglist, [
 
 AC_TRY_LINK([#include <unistd.h>
 #include <stdlib.h>
-#include <signal.h>], [extern char *_sys_siglist[]; char *p =_sys_siglist[0];], mn_cv_have__sys_siglist=yes, mn_cv_have__sys_siglist=no)])
+#include <signal.h>
+#include <stdio.h>], [printf("%s\n", _sys_siglist[0]);], mn_cv_have__sys_siglist=yes, mn_cv_have__sys_siglist=no)])
 if test $mn_cv_have__sys_siglist = yes; then
 	AC_DEFINE(HAVE__SYS_SIGLIST, 1, [Define if you have _sys_siglist])
 fi
