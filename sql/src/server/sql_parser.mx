@@ -2406,9 +2406,17 @@ nonzero:
 	;
 
 data_type:
-    CHARACTER opt_var	{ $$ = sql_bind_subtype("CHARACTER", 0, 0); }
+    CHARACTER opt_var	{ if ($2 == 0)
+				$$ = sql_bind_subtype("CHARACTER", 0, 0); 
+			  else
+				$$ = sql_bind_subtype("VARCHAR", 0, 0); 
+			}
  |  CHARACTER opt_var '(' nonzero ')'	
-			{ $$ = sql_bind_subtype("CHARACTER", $4, 0); }
+			{ if ($2 == 0)
+				$$ = sql_bind_subtype("CHARACTER", $4, 0); 
+			  else
+				$$ = sql_bind_subtype("VARCHAR", $4, 0); 
+			}
  |  sqlDECIMAL		{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'	
 			{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }

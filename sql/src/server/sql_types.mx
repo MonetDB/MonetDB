@@ -890,6 +890,7 @@ void sqltypeinit()
 	sql_create_alias(T->sqlname, "TEXT");
 	sql_create_alias(T->sqlname, "TINYTEXT");
 	sql_create_alias(T->sqlname, "STRING");
+	sql_create_alias(T->sqlname, "CLOB");
 
 	/* INT(n) n <= 2 -> TINYINT
 		  n <= 4 -> SMALLINT
