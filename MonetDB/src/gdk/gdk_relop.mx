@@ -192,7 +192,7 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 	case TYPE_flt: @:mergejoin(simple,loc,flt)@
 	case TYPE_lng: @:mergejoin(simple,loc,lng)@
 	case TYPE_dbl: @:mergejoin(simple,loc,dbl)@
-	default: if (l->hvarsized) {
+	default: if (l->tvarsized) {
 		       int var = ATOMstorage(l->ttype); 	
       		       @:mergejoin(atom,var,var)@
 		 } else {
