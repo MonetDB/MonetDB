@@ -1535,7 +1535,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results[4][0] = "TEMPORARY TABLE";
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1680,7 +1680,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1735,7 +1735,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1790,7 +1790,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1895,7 +1895,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -1952,7 +1952,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -2355,7 +2355,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		};
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -2501,7 +2501,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results, getStmt()));
+			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage());
 		}
@@ -3011,10 +3011,9 @@ class MonetVirtualResultSet extends MonetResultSet {
 	MonetVirtualResultSet(
 		String[] columns,
 		String[] types,
-		String[][] results,
-		Statement stmt
+		String[][] results
 	) throws IllegalArgumentException {
-		super(columns, types, results.length, stmt);
+		super(columns, types, results.length);
 
 		this.results = results;
 		closed = false;
@@ -3065,5 +3064,16 @@ class MonetVirtualResultSet extends MonetResultSet {
 			results = null;
 			// types and columns are MonetResultSets private parts
 		}
+	}
+
+	/**
+	 * Retrieves the fetch size for this ResultSet object, which will be
+	 * zero, since it's a virtual set.
+	 *
+	 * @return the current fetch size for this ResultSet object
+	 * @throws SQLException if a database access error occurs
+	 */
+	public int getFetchSize() throws SQLException {
+		return(0);
 	}
 }

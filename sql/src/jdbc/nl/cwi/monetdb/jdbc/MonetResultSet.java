@@ -40,7 +40,7 @@ public class MonetResultSet implements ResultSet {
 
 	// a blank final is immutable once assigned in the constructor
 	/** A Header to retrieve lines from */
-	private final MonetStatement.Header header;
+	private final MonetConnection.Header header;
 	/** The names of the columns in this ResultSet */
 	private final String[] columns;
 	/** The MonetDB types of the columns in this ResultSet */
@@ -72,22 +72,21 @@ public class MonetResultSet implements ResultSet {
 	 */
 	MonetResultSet(
 		Statement statement,
-		MonetStatement.Header header,
-		int resultSetType,
-		int resultSetConcurrency)
+		MonetConnection.Header header)
 		throws IllegalArgumentException, SQLException
 	{
-		if (statement == null || header == null)
-			throw new IllegalArgumentException("Statement or Header is null or empty!");
+		if (header == null)
+			throw new IllegalArgumentException("Header is null!");
 
 		this.statement = statement;
-		this.type = resultSetType;
-		this.concurrency = resultSetConcurrency;
 		this.header = header;
+		this.type = header.getRSType();
+		this.concurrency = header.getRSConcur();
 		// well there is only one supported concurrency, so we don't have to
 		// bother about that
 
-		// throws SQLException on getters of Header
+		// throws SQLException on getters of Header, so we find out immediately
+		// if an error occurred for this query
 		columns = header.getNames();
 		types = header.getTypes();
 		tableID = "" + header.getID();
@@ -111,8 +110,7 @@ public class MonetResultSet implements ResultSet {
 	MonetResultSet(
 		String[] columns,
 		String[] types,
-		int results,
-		Statement stmt
+		int results
 	) throws IllegalArgumentException
 	{
 		if (columns == null || types == null) {
@@ -124,13 +122,10 @@ public class MonetResultSet implements ResultSet {
 		if (results < 0) {
 			throw new IllegalArgumentException("Negative rowcount not allowed!");
 		}
-		if (stmt == null) {
-			throw new IllegalArgumentException("Cannot create a ResultSet which is not associated to a Statement!");
-		}
 
 		this.header = null;
 		this.tableID = null;
-		this.statement = stmt;
+		this.statement = null; // no parent, required for specs
 
 		this.columns = columns;
 		this.types = types;
@@ -692,13 +687,12 @@ public class MonetResultSet implements ResultSet {
 
 	/**
 	 * Retrieves the fetch size for this ResultSet object.
-	 * In our case this is equal to the fetchsize of the parent statement.
 	 *
 	 * @return the current fetch size for this ResultSet object
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getFetchSize() throws SQLException {
-		return(statement.getFetchSize());
+		return(header.getCacheSize());
 	}
 
 	/**

@@ -1,16 +1,15 @@
 RELEASE NOTES
-MonetDB JDBC driver version 0.4 beta
+MonetDB JDBC driver version 0.6 beta
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2004-04-18
+Release date: 2004-08-01
 
-This JDBC driver for MonetDB is a thirth implementation of a JDBC driver
-for the Monet Main Memory Database. See http://monetdb.cwi.nl/ for more info
-regarding this database.
+This JDBC driver is designed for use with MonetDB, a main-memory database.  For
+more information see http://monetdb.cwi.nl/.
 
-This release is far from a complete implementation of the JDBC interface. This
+This release is far from a complete implementation of the JDBC interface.  This
 implementation also doesn't follow the JDBC specification at all points. Below
-the current state of this driver is listed. Please read before you decide to use
+the current state of this driver is listed.  Please read before you decide to use
 this driver.
 
 - Currently implemented are:
@@ -27,6 +26,7 @@ this driver.
 	. getTypeMap()
 	. getWarnings()
 	. isClosed()
+	. prepareStatement(String)
 	. releaseSavepoint(java.sql.Savepoint)
     . rollback()
 	. rollback(java.sql.Savepoint)
@@ -44,6 +44,7 @@ this driver.
     . getFetchDirection()
     . getFetchSize()
     . getMaxRows()
+	. getMoreResults()
 	. getResultSet()
 	. getResultSetConcurrency()
     . getResultSetType()
@@ -111,20 +112,11 @@ this driver.
     . all methods implemented, correctness not guaranteed :)
   * java.sql.SavePoint interface
     . all methods implemented
+
 - Note that Statement's executeUpdate is implemented via executeQuery and does
   NOT return the number of affected rows.
-- Statement's execute, executeUpdate and executeQuery do not support multiline
-  queries. Newlines in strings (quoted) are allowed, but newlines anywhere else
-  lead to parser errors.
 - The getObject methods do not return all types correct, and currently ignore
   any given type map.
 - Auto-commit behaviour is defined by the server which handles the auto-commit.
-- The connection with the database server currently knows two modes: line-mode
-  and block-mode. The first is the default due to its known stability, the
-  latter is still tested, although it seems to work correctly. The major
-  advantage of using block-mode over line-mode is that multi-line queries are
-  allowed. To enable block-mode one can call MonetDriver.setBlockMode(true)
-  before creating a Connection, or by creating a build.local.properties with
-  JDBC_DEF_BLOCKMODE=true in it. The latter method changes the default method
-  for the driver, and requires a rebuild of the driver using ant. This is
-  disencouraged for non-developers.
+- A preliminary version of a PreparedStatement is included which supports some
+  set-methods.
