@@ -1,0 +1,35 @@
+stdout of test 'default` in directory 'src/test` itself:
+
+
+# 17:34:20 >  
+# 17:34:20 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=45693 --set sql_port=56897 --set monet_prompt= --trace "--dbname=mTests_src_test" "/export/scratch1/roberto/Monet/stable/build/sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 17:34:20 >  
+
+# Monet Database Server V4.3.16
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit;
+
+Over..
+
+# 17:34:21 >  
+# 17:34:21 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=aquila --port=56897  < default.sql
+# 17:34:21 >  
+
+# id,	text1,	text2,	text3,	text4 # name
+# int,	varchar,	varchar,	varchar,	varchar # type
+# 3,	,	,	,	 # tuplecount
+# 0,	,	,	,	 # id
+[ 1,	"test1",	"test2",	"test3",	"test4"	]
+[ 2,	NULL,	"test2",	"foo",	"foo"	]
+[ NULL,	NULL,	"test2",	"foo",	"foo"	]
+
+# 17:34:21 >  
+# 17:34:21 >  Done.
+# 17:34:21 >  
+
