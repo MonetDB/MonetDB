@@ -33,6 +33,16 @@
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
 #define MONETDB_SERVER_NAME  "MonetDB"
 
+#ifdef _MSC_VER
+#ifndef LIBMONETODBC
+#define odbc_export extern __declspec(dllimport) 
+#else
+#define odbc_export extern __declspec(dllexport) 
+#endif
+#else
+#define odbc_export extern 
+#endif
+
 /* MonetDB / SQL frontend include files */
 #include <mem.h>		/* for ??() */
 #include <query.h>		/* for ??() */

@@ -7,6 +7,8 @@
 #ifndef __SQLUCODE_H
 #define __SQLUCODE_H
 
+#include "sqltypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,7 +28,7 @@ extern "C" {
 
 /* UNICODE versions */
 
-SQLRETURN SQL_API SQLColAttributeW(
+odbc_export SQLRETURN SQL_API SQLColAttributeW(
 	SQLHSTMT		hstmt,
 	SQLUSMALLINT	iCol,
 	SQLUSMALLINT	iField,
@@ -35,7 +37,7 @@ SQLRETURN SQL_API SQLColAttributeW(
 	SQLSMALLINT  *pcbCharAttr,
 	SQLPOINTER		pNumAttr);	
 
-SQLRETURN SQL_API SQLColAttributesW(
+odbc_export SQLRETURN SQL_API SQLColAttributesW(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       icol,
     SQLUSMALLINT       fDescType,
@@ -44,7 +46,7 @@ SQLRETURN SQL_API SQLColAttributesW(
     SQLSMALLINT        *pcbDesc,
     SQLLEN             *pfDesc);
 
-SQLRETURN SQL_API SQLConnectW(
+odbc_export SQLRETURN SQL_API SQLConnectW(
     SQLHDBC            hdbc,
     SQLWCHAR        *szDSN,
     SQLSMALLINT        cbDSN,
@@ -54,7 +56,7 @@ SQLRETURN SQL_API SQLConnectW(
     SQLSMALLINT        cbAuthStr);
 
 
-SQLRETURN SQL_API SQLDescribeColW(
+odbc_export SQLRETURN SQL_API SQLDescribeColW(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       icol,
     SQLWCHAR        *szColName,
@@ -66,7 +68,7 @@ SQLRETURN SQL_API SQLDescribeColW(
     SQLSMALLINT    *pfNullable);
 
 
-SQLRETURN SQL_API SQLErrorW(
+odbc_export SQLRETURN SQL_API SQLErrorW(
     SQLHENV            henv,
     SQLHDBC            hdbc,
     SQLHSTMT           hstmt,
@@ -76,26 +78,26 @@ SQLRETURN SQL_API SQLErrorW(
     SQLSMALLINT        cbErrorMsgMax,
     SQLSMALLINT    *pcbErrorMsg);
 
-SQLRETURN SQL_API SQLExecDirectW(
+odbc_export SQLRETURN SQL_API SQLExecDirectW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szSqlStr,
     SQLINTEGER         cbSqlStr);
 
-SQLRETURN SQL_API SQLGetConnectAttrW(
+odbc_export SQLRETURN SQL_API SQLGetConnectAttrW(
     SQLHDBC            hdbc,
     SQLINTEGER         fAttribute,
     SQLPOINTER         rgbValue,
     SQLINTEGER         cbValueMax,
     SQLINTEGER     *pcbValue);
 
-SQLRETURN SQL_API SQLGetCursorNameW(
+odbc_export SQLRETURN SQL_API SQLGetCursorNameW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCursor,
     SQLSMALLINT        cbCursorMax,
     SQLSMALLINT    *pcbCursor);
 
 #if (ODBCVER >= 0x0300)
-SQLRETURN  SQL_API SQLSetDescFieldW(SQLHDESC DescriptorHandle,
+odbc_export SQLRETURN  SQL_API SQLSetDescFieldW(SQLHDESC DescriptorHandle,
            						   SQLSMALLINT RecNumber, 
 								   SQLSMALLINT FieldIdentifier,
            						   SQLPOINTER Value, 
@@ -103,7 +105,7 @@ SQLRETURN  SQL_API SQLSetDescFieldW(SQLHDESC DescriptorHandle,
 
 
 
-SQLRETURN SQL_API SQLGetDescFieldW(
+odbc_export SQLRETURN SQL_API SQLGetDescFieldW(
     SQLHDESC           hdesc,
     SQLSMALLINT        iRecord,
     SQLSMALLINT        iField,
@@ -111,7 +113,7 @@ SQLRETURN SQL_API SQLGetDescFieldW(
     SQLINTEGER		   cbValueMax,
     SQLINTEGER     *pcbValue);
 
-SQLRETURN SQL_API SQLGetDescRecW(
+odbc_export SQLRETURN SQL_API SQLGetDescRecW(
     SQLHDESC           hdesc,
     SQLSMALLINT        iRecord,
     SQLWCHAR        *szName,
@@ -124,7 +126,7 @@ SQLRETURN SQL_API SQLGetDescRecW(
     SQLSMALLINT    *pScale,
     SQLSMALLINT    *pNullable);
 
-SQLRETURN SQL_API SQLGetDiagFieldW(
+odbc_export SQLRETURN SQL_API SQLGetDiagFieldW(
     SQLSMALLINT        fHandleType,
     SQLHANDLE          handle,
     SQLSMALLINT        iRecord,
@@ -133,7 +135,7 @@ SQLRETURN SQL_API SQLGetDiagFieldW(
     SQLSMALLINT        cbDiagInfoMax,
     SQLSMALLINT    *pcbDiagInfo);
 
-SQLRETURN SQL_API SQLGetDiagRecW(
+odbc_export SQLRETURN SQL_API SQLGetDiagRecW(
     SQLSMALLINT        fHandleType,
     SQLHANDLE          handle,
     SQLSMALLINT        iRecord,
@@ -147,18 +149,18 @@ SQLRETURN SQL_API SQLGetDiagRecW(
 #endif
 
 
-SQLRETURN SQL_API SQLPrepareW(
+odbc_export SQLRETURN SQL_API SQLPrepareW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szSqlStr,
     SQLINTEGER         cbSqlStr);
 
-SQLRETURN SQL_API SQLSetConnectAttrW(
+odbc_export SQLRETURN SQL_API SQLSetConnectAttrW(
     SQLHDBC            hdbc,
     SQLINTEGER         fAttribute,
     SQLPOINTER         rgbValue,
     SQLINTEGER         cbValue);
 
-SQLRETURN SQL_API SQLSetCursorNameW(
+odbc_export SQLRETURN SQL_API SQLSetCursorNameW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCursor,
     SQLSMALLINT        cbCursor);
@@ -169,7 +171,7 @@ SQLRETURN SQL_API SQLSetCursorNameW(
 
 
 
-SQLRETURN SQL_API SQLColumnsW(
+odbc_export SQLRETURN SQL_API SQLColumnsW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -180,32 +182,32 @@ SQLRETURN SQL_API SQLColumnsW(
     SQLWCHAR        *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN SQL_API SQLGetConnectOptionW(
+odbc_export SQLRETURN SQL_API SQLGetConnectOptionW(
     SQLHDBC            hdbc,
     SQLUSMALLINT       fOption,
     SQLPOINTER         pvParam);
 
 
 
-SQLRETURN SQL_API SQLGetInfoW(
+odbc_export SQLRETURN SQL_API SQLGetInfoW(
     SQLHDBC            hdbc,
     SQLUSMALLINT       fInfoType,
     SQLPOINTER         rgbInfoValue,
     SQLSMALLINT        cbInfoValueMax,
     SQLSMALLINT    *pcbInfoValue);
 
-SQLRETURN SQL_API	SQLGetTypeInfoW(
+odbc_export SQLRETURN SQL_API	SQLGetTypeInfoW(
 	SQLHSTMT			StatementHandle,
 	SQLSMALLINT			DataType);
 
 
-SQLRETURN SQL_API SQLSetConnectOptionW(
+odbc_export SQLRETURN SQL_API SQLSetConnectOptionW(
     SQLHDBC            hdbc,
     SQLUSMALLINT       fOption,
     SQLULEN            vParam);
 
 
-SQLRETURN SQL_API SQLSpecialColumnsW(
+odbc_export SQLRETURN SQL_API SQLSpecialColumnsW(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fColType,
     SQLWCHAR        *szCatalogName,
@@ -217,7 +219,7 @@ SQLRETURN SQL_API SQLSpecialColumnsW(
     SQLUSMALLINT       fScope,
     SQLUSMALLINT       fNullable);
 
-SQLRETURN SQL_API SQLStatisticsW(
+odbc_export SQLRETURN SQL_API SQLStatisticsW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -228,7 +230,7 @@ SQLRETURN SQL_API SQLStatisticsW(
     SQLUSMALLINT       fUnique,
     SQLUSMALLINT       fAccuracy);
 
-SQLRETURN SQL_API SQLTablesW(
+odbc_export SQLRETURN SQL_API SQLTablesW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -241,7 +243,7 @@ SQLRETURN SQL_API SQLTablesW(
 
 
 
-SQLRETURN SQL_API SQLDataSourcesW(
+odbc_export SQLRETURN SQL_API SQLDataSourcesW(
     SQLHENV            henv,
     SQLUSMALLINT       fDirection,
     SQLWCHAR        *szDSN,
@@ -254,7 +256,7 @@ SQLRETURN SQL_API SQLDataSourcesW(
 
 
 
-SQLRETURN SQL_API SQLDriverConnectW(
+odbc_export SQLRETURN SQL_API SQLDriverConnectW(
     SQLHDBC            hdbc,
     SQLHWND            hwnd,
     SQLWCHAR        *szConnStrIn,
@@ -265,7 +267,7 @@ SQLRETURN SQL_API SQLDriverConnectW(
     SQLUSMALLINT       fDriverCompletion);
 
 
-SQLRETURN SQL_API SQLBrowseConnectW(
+odbc_export SQLRETURN SQL_API SQLBrowseConnectW(
     SQLHDBC            hdbc,
     SQLWCHAR        *szConnStrIn,
     SQLSMALLINT        cbConnStrIn,
@@ -273,7 +275,7 @@ SQLRETURN SQL_API SQLBrowseConnectW(
     SQLSMALLINT        cbConnStrOutMax,
     SQLSMALLINT    *pcbConnStrOut);
 
-SQLRETURN SQL_API SQLColumnPrivilegesW(
+odbc_export SQLRETURN SQL_API SQLColumnPrivilegesW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -284,20 +286,20 @@ SQLRETURN SQL_API SQLColumnPrivilegesW(
     SQLWCHAR        *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN SQL_API SQLGetStmtAttrW(
+odbc_export SQLRETURN SQL_API SQLGetStmtAttrW(
     SQLHSTMT           hstmt,
     SQLINTEGER         fAttribute,
     SQLPOINTER         rgbValue,
     SQLINTEGER         cbValueMax,
     SQLINTEGER     *pcbValue);
 
-SQLRETURN SQL_API SQLSetStmtAttrW(
+odbc_export SQLRETURN SQL_API SQLSetStmtAttrW(
     SQLHSTMT           hstmt,
     SQLINTEGER         fAttribute,
     SQLPOINTER         rgbValue,
     SQLINTEGER         cbValueMax);
 
-SQLRETURN SQL_API SQLForeignKeysW(
+odbc_export SQLRETURN SQL_API SQLForeignKeysW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szPkCatalogName,
     SQLSMALLINT        cbPkCatalogName,
@@ -313,7 +315,7 @@ SQLRETURN SQL_API SQLForeignKeysW(
     SQLSMALLINT        cbFkTableName);
 
 
-SQLRETURN SQL_API SQLNativeSqlW(
+odbc_export SQLRETURN SQL_API SQLNativeSqlW(
     SQLHDBC            hdbc,
     SQLWCHAR        *szSqlStrIn,
     SQLINTEGER         cbSqlStrIn,
@@ -322,7 +324,7 @@ SQLRETURN SQL_API SQLNativeSqlW(
     SQLINTEGER     *pcbSqlStr);
 
 
-SQLRETURN SQL_API SQLPrimaryKeysW(
+odbc_export SQLRETURN SQL_API SQLPrimaryKeysW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -331,7 +333,7 @@ SQLRETURN SQL_API SQLPrimaryKeysW(
     SQLWCHAR        *szTableName,
     SQLSMALLINT        cbTableName);
 
-SQLRETURN SQL_API SQLProcedureColumnsW(
+odbc_export SQLRETURN SQL_API SQLProcedureColumnsW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -342,7 +344,7 @@ SQLRETURN SQL_API SQLProcedureColumnsW(
     SQLWCHAR        *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN SQL_API SQLProceduresW(
+odbc_export SQLRETURN SQL_API SQLProceduresW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -352,7 +354,7 @@ SQLRETURN SQL_API SQLProceduresW(
     SQLSMALLINT        cbProcName);
 
 
-SQLRETURN SQL_API SQLTablePrivilegesW(
+odbc_export SQLRETURN SQL_API SQLTablePrivilegesW(
     SQLHSTMT           hstmt,
     SQLWCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -361,7 +363,7 @@ SQLRETURN SQL_API SQLTablePrivilegesW(
     SQLWCHAR        *szTableName,
     SQLSMALLINT        cbTableName);
 
-SQLRETURN SQL_API SQLDriversW(
+odbc_export SQLRETURN SQL_API SQLDriversW(
     SQLHENV            henv,
     SQLUSMALLINT       fDirection,
     SQLWCHAR        *szDriverDesc,
@@ -374,7 +376,7 @@ SQLRETURN SQL_API SQLDriversW(
 
 /* ANSI versions */
 
-SQLRETURN SQL_API SQLColAttributeA(
+odbc_export SQLRETURN SQL_API SQLColAttributeA(
 	SQLHSTMT		hstmt,
 	SQLSMALLINT		iCol,
 	SQLSMALLINT		iField,
@@ -383,7 +385,7 @@ SQLRETURN SQL_API SQLColAttributeA(
 	SQLSMALLINT  *pcbCharAttr,
 	SQLPOINTER		pNumAttr);	
 
-SQLRETURN SQL_API SQLColAttributesA(
+odbc_export SQLRETURN SQL_API SQLColAttributesA(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       icol,
     SQLUSMALLINT       fDescType,
@@ -392,7 +394,7 @@ SQLRETURN SQL_API SQLColAttributesA(
     SQLSMALLINT    *pcbDesc,
     SQLINTEGER     *pfDesc);
 
-SQLRETURN SQL_API SQLConnectA(
+odbc_export SQLRETURN SQL_API SQLConnectA(
     SQLHDBC            hdbc,
     SQLCHAR         *szDSN,
     SQLSMALLINT        cbDSN,
@@ -402,7 +404,7 @@ SQLRETURN SQL_API SQLConnectA(
     SQLSMALLINT        cbAuthStr);
 
 
-SQLRETURN SQL_API SQLDescribeColA(
+odbc_export SQLRETURN SQL_API SQLDescribeColA(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       icol,
     SQLCHAR         *szColName,
@@ -414,7 +416,7 @@ SQLRETURN SQL_API SQLDescribeColA(
     SQLSMALLINT    *pfNullable);
 
 
-SQLRETURN SQL_API SQLErrorA(
+odbc_export SQLRETURN SQL_API SQLErrorA(
     SQLHENV            henv,
     SQLHDBC            hdbc,
     SQLHSTMT           hstmt,
@@ -424,26 +426,26 @@ SQLRETURN SQL_API SQLErrorA(
     SQLSMALLINT        cbErrorMsgMax,
     SQLSMALLINT    *pcbErrorMsg);
 
-SQLRETURN SQL_API SQLExecDirectA(
+odbc_export SQLRETURN SQL_API SQLExecDirectA(
     SQLHSTMT           hstmt,
     SQLCHAR           *szSqlStr,
     SQLINTEGER         cbSqlStr);
 
-SQLRETURN SQL_API SQLGetConnectAttrA(
+odbc_export SQLRETURN SQL_API SQLGetConnectAttrA(
     SQLHDBC            hdbc,
     SQLINTEGER         fAttribute,
     SQLPOINTER         rgbValue,
     SQLINTEGER         cbValueMax,
     SQLINTEGER     *pcbValue);
 
-SQLRETURN SQL_API SQLGetCursorNameA(
+odbc_export SQLRETURN SQL_API SQLGetCursorNameA(
     SQLHSTMT           hstmt,
     SQLCHAR        	*szCursor,
     SQLSMALLINT        cbCursorMax,
     SQLSMALLINT    *pcbCursor);
 
 #if (ODBCVER >= 0x0300)
-SQLRETURN SQL_API SQLGetDescFieldA(
+odbc_export SQLRETURN SQL_API SQLGetDescFieldA(
     SQLHDESC           hdesc,
     SQLSMALLINT        iRecord,
     SQLSMALLINT        iField,
@@ -451,7 +453,7 @@ SQLRETURN SQL_API SQLGetDescFieldA(
     SQLINTEGER		   cbValueMax,
     SQLINTEGER     *pcbValue);
 
-SQLRETURN SQL_API SQLGetDescRecA(
+odbc_export SQLRETURN SQL_API SQLGetDescRecA(
     SQLHDESC           hdesc,
     SQLSMALLINT        iRecord,
     SQLCHAR        *szName,
@@ -464,7 +466,7 @@ SQLRETURN SQL_API SQLGetDescRecA(
     SQLSMALLINT    *pScale,
     SQLSMALLINT    *pNullable);
 
-SQLRETURN SQL_API SQLGetDiagFieldA(
+odbc_export SQLRETURN SQL_API SQLGetDiagFieldA(
     SQLSMALLINT        fHandleType,
     SQLHANDLE          handle,
     SQLSMALLINT        iRecord,
@@ -473,7 +475,7 @@ SQLRETURN SQL_API SQLGetDiagFieldA(
     SQLSMALLINT        cbDiagInfoMax,
     SQLSMALLINT    *pcbDiagInfo);
 
-SQLRETURN SQL_API SQLGetDiagRecA(
+odbc_export SQLRETURN SQL_API SQLGetDiagRecA(
     SQLSMALLINT        fHandleType,
     SQLHANDLE          handle,
     SQLSMALLINT        iRecord,
@@ -484,7 +486,7 @@ SQLRETURN SQL_API SQLGetDiagRecA(
     SQLSMALLINT    *pcbErrorMsg);
 
 
-SQLRETURN SQL_API SQLGetStmtAttrA(
+odbc_export SQLRETURN SQL_API SQLGetStmtAttrA(
     SQLHSTMT           hstmt,
     SQLINTEGER         fAttribute,
     SQLPOINTER         rgbValue,
@@ -493,22 +495,22 @@ SQLRETURN SQL_API SQLGetStmtAttrA(
 
 #endif
 
-SQLRETURN SQL_API	SQLGetTypeInfoA(
+odbc_export SQLRETURN SQL_API	SQLGetTypeInfoA(
 	SQLHSTMT			StatementHandle,
 	SQLSMALLINT			DataTyoe);
 
-SQLRETURN SQL_API SQLPrepareA(
+odbc_export SQLRETURN SQL_API SQLPrepareA(
     SQLHSTMT           hstmt,
     SQLCHAR        	*szSqlStr,
     SQLINTEGER         cbSqlStr);
 
-SQLRETURN SQL_API SQLSetConnectAttrA(
+odbc_export SQLRETURN SQL_API SQLSetConnectAttrA(
     SQLHDBC            hdbc,
     SQLINTEGER         fAttribute,
     SQLPOINTER         rgbValue,
     SQLINTEGER         cbValue);
 
-SQLRETURN SQL_API SQLSetCursorNameA(
+odbc_export SQLRETURN SQL_API SQLSetCursorNameA(
     SQLHSTMT           hstmt,
     SQLCHAR           *szCursor,
     SQLSMALLINT        cbCursor);
@@ -519,7 +521,7 @@ SQLRETURN SQL_API SQLSetCursorNameA(
 
 
 
-SQLRETURN SQL_API SQLColumnsA(
+odbc_export SQLRETURN SQL_API SQLColumnsA(
     SQLHSTMT           hstmt,
     SQLCHAR        	*szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -530,36 +532,36 @@ SQLRETURN SQL_API SQLColumnsA(
     SQLCHAR        	*szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN SQL_API SQLGetConnectOptionA(
+odbc_export SQLRETURN SQL_API SQLGetConnectOptionA(
     SQLHDBC            hdbc,
     SQLUSMALLINT       fOption,
     SQLPOINTER         pvParam);
 
 
 
-SQLRETURN SQL_API SQLGetInfoA(
+odbc_export SQLRETURN SQL_API SQLGetInfoA(
     SQLHDBC            hdbc,
     SQLUSMALLINT       fInfoType,
     SQLPOINTER         rgbInfoValue,
     SQLSMALLINT        cbInfoValueMax,
     SQLSMALLINT*       pcbInfoValue);
 
-SQLRETURN SQL_API SQLGetStmtOptionA(
+odbc_export SQLRETURN SQL_API SQLGetStmtOptionA(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fOption,
     SQLPOINTER         pvParam);
 
-SQLRETURN SQL_API SQLSetConnectOptionA(
+odbc_export SQLRETURN SQL_API SQLSetConnectOptionA(
     SQLHDBC            hdbc,
     SQLUSMALLINT       fOption,
     SQLULEN            vParam);
 
-SQLRETURN SQL_API SQLSetStmtOptionA(
+odbc_export SQLRETURN SQL_API SQLSetStmtOptionA(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fOption,
     SQLULEN            vParam);
 
-SQLRETURN SQL_API SQLSpecialColumnsA(
+odbc_export SQLRETURN SQL_API SQLSpecialColumnsA(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fColType,
     SQLCHAR        	*szCatalogName,
@@ -571,7 +573,7 @@ SQLRETURN SQL_API SQLSpecialColumnsA(
     SQLUSMALLINT       fScope,
     SQLUSMALLINT       fNullable);
 
-SQLRETURN SQL_API SQLStatisticsA(
+odbc_export SQLRETURN SQL_API SQLStatisticsA(
     SQLHSTMT           hstmt,
 
     SQLCHAR        *szCatalogName,
@@ -583,7 +585,7 @@ SQLRETURN SQL_API SQLStatisticsA(
     SQLUSMALLINT       fUnique,
     SQLUSMALLINT       fAccuracy);
 
-SQLRETURN SQL_API SQLTablesA(
+odbc_export SQLRETURN SQL_API SQLTablesA(
     SQLHSTMT           hstmt,
 
     SQLCHAR        *szCatalogName,
@@ -598,7 +600,7 @@ SQLRETURN SQL_API SQLTablesA(
 
 
 
-SQLRETURN SQL_API SQLDataSourcesA(
+odbc_export SQLRETURN SQL_API SQLDataSourcesA(
     SQLHENV            henv,
     SQLUSMALLINT       fDirection,
     SQLCHAR        *szDSN,
@@ -611,7 +613,7 @@ SQLRETURN SQL_API SQLDataSourcesA(
 
 
 
-SQLRETURN SQL_API SQLDriverConnectA(
+odbc_export SQLRETURN SQL_API SQLDriverConnectA(
     SQLHDBC            hdbc,
     SQLHWND            hwnd,
     SQLCHAR        *szConnStrIn,
@@ -622,7 +624,7 @@ SQLRETURN SQL_API SQLDriverConnectA(
     SQLUSMALLINT       fDriverCompletion);
 
 
-SQLRETURN SQL_API SQLBrowseConnectA(
+odbc_export SQLRETURN SQL_API SQLBrowseConnectA(
     SQLHDBC            hdbc,
     SQLCHAR        *szConnStrIn,
     SQLSMALLINT        cbConnStrIn,
@@ -630,7 +632,7 @@ SQLRETURN SQL_API SQLBrowseConnectA(
     SQLSMALLINT        cbConnStrOutMax,
     SQLSMALLINT    *pcbConnStrOut);
 
-SQLRETURN SQL_API SQLColumnPrivilegesA(
+odbc_export SQLRETURN SQL_API SQLColumnPrivilegesA(
     SQLHSTMT           hstmt,
     SQLCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -641,7 +643,7 @@ SQLRETURN SQL_API SQLColumnPrivilegesA(
     SQLCHAR        *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN SQL_API SQLDescribeParamA(
+odbc_export SQLRETURN SQL_API SQLDescribeParamA(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       ipar,
     SQLSMALLINT    *pfSqlType,
@@ -650,7 +652,7 @@ SQLRETURN SQL_API SQLDescribeParamA(
     SQLSMALLINT    *pfNullable);
 
 
-SQLRETURN SQL_API SQLForeignKeysA(
+odbc_export SQLRETURN SQL_API SQLForeignKeysA(
     SQLHSTMT           hstmt,
     SQLCHAR        *szPkCatalogName,
     SQLSMALLINT        cbPkCatalogName,
@@ -666,7 +668,7 @@ SQLRETURN SQL_API SQLForeignKeysA(
     SQLSMALLINT        cbFkTableName);
 
 
-SQLRETURN SQL_API SQLNativeSqlA(
+odbc_export SQLRETURN SQL_API SQLNativeSqlA(
     SQLHDBC            hdbc,
     SQLCHAR        *szSqlStrIn,
     SQLINTEGER         cbSqlStrIn,
@@ -675,7 +677,7 @@ SQLRETURN SQL_API SQLNativeSqlA(
     SQLINTEGER     *pcbSqlStr);
 
 
-SQLRETURN SQL_API SQLPrimaryKeysA(
+odbc_export SQLRETURN SQL_API SQLPrimaryKeysA(
     SQLHSTMT           hstmt,
     SQLCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -684,7 +686,7 @@ SQLRETURN SQL_API SQLPrimaryKeysA(
     SQLCHAR        *szTableName,
     SQLSMALLINT        cbTableName);
 
-SQLRETURN SQL_API SQLProcedureColumnsA(
+odbc_export SQLRETURN SQL_API SQLProcedureColumnsA(
     SQLHSTMT           hstmt,
     SQLCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -695,7 +697,7 @@ SQLRETURN SQL_API SQLProcedureColumnsA(
     SQLCHAR        *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN SQL_API SQLProceduresA(
+odbc_export SQLRETURN SQL_API SQLProceduresA(
     SQLHSTMT           hstmt,
     SQLCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -705,7 +707,7 @@ SQLRETURN SQL_API SQLProceduresA(
     SQLSMALLINT        cbProcName);
 
 
-SQLRETURN SQL_API SQLTablePrivilegesA(
+odbc_export SQLRETURN SQL_API SQLTablePrivilegesA(
     SQLHSTMT           hstmt,
     SQLCHAR        *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -714,7 +716,7 @@ SQLRETURN SQL_API SQLTablePrivilegesA(
     SQLCHAR        *szTableName,
     SQLSMALLINT        cbTableName);
 
-SQLRETURN SQL_API SQLDriversA(
+odbc_export SQLRETURN SQL_API SQLDriversA(
     SQLHENV            henv,
     SQLUSMALLINT       fDirection,
     SQLCHAR        *szDriverDesc,

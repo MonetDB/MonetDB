@@ -19,6 +19,10 @@
 #ifndef __SQLTYPES_H
 #define __SQLTYPES_H
 
+#ifndef odbc_export
+#define odbc_export extern
+#endif
+
 /****************************
  * default to the 3.51 definitions. should define ODBCVER before here if you want an older set of defines
  ***************************/

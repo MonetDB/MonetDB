@@ -1708,7 +1708,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_DRIVER_PROMPT               2
 #define SQL_DRIVER_COMPLETE_REQUIRED    3
 
-SQLRETURN  SQLDriverConnect(
+odbc_export SQLRETURN  SQLDriverConnect(
     SQLHDBC            hdbc,
     SQLHWND            hwnd,
     SQLCHAR 		  *szConnStrIn,
@@ -1816,7 +1816,7 @@ SQLRETURN  SQLDriverConnect(
 "YEAR,ZONE"
 */
 
-SQLRETURN  SQLBrowseConnect(
+odbc_export SQLRETURN  SQLBrowseConnect(
     SQLHDBC            hdbc,
     SQLCHAR 		  *szConnStrIn,
     SQLSMALLINT        cbConnStrIn,
@@ -1825,12 +1825,12 @@ SQLRETURN  SQLBrowseConnect(
     SQLSMALLINT       *pcbConnStrOut);
 
 #if (ODBCVER >= 0x0300)
-SQLRETURN	SQLBulkOperations(
+odbc_export SQLRETURN	SQLBulkOperations(
 	SQLHSTMT			StatementHandle,
 	SQLSMALLINT			Operation);
 #endif  /* ODBCVER >= 0x0300 */
 
-SQLRETURN  SQLColAttributes(
+odbc_export SQLRETURN  SQLColAttributes(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       icol,
     SQLUSMALLINT       fDescType,
@@ -1839,7 +1839,7 @@ SQLRETURN  SQLColAttributes(
     SQLSMALLINT 	  *pcbDesc,
     SQLLEN 		      *pfDesc);
 
-SQLRETURN  SQLColumnPrivileges(
+odbc_export SQLRETURN  SQLColumnPrivileges(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1850,7 +1850,7 @@ SQLRETURN  SQLColumnPrivileges(
     SQLCHAR 		  *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN  SQLDescribeParam(
+odbc_export SQLRETURN  SQLDescribeParam(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       ipar,
     SQLSMALLINT 	  *pfSqlType,
@@ -1858,14 +1858,14 @@ SQLRETURN  SQLDescribeParam(
     SQLSMALLINT 	  *pibScale,
     SQLSMALLINT 	  *pfNullable);
 
-SQLRETURN  SQLExtendedFetch(
+odbc_export SQLRETURN  SQLExtendedFetch(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fFetchType,
     SQLROWOFFSET       irow,
     SQLROWSETSIZE 	  *pcrow,
     SQLUSMALLINT 	  *rgfRowStatus);
 
-SQLRETURN  SQLForeignKeys(
+odbc_export SQLRETURN  SQLForeignKeys(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szPkCatalogName,
     SQLSMALLINT        cbPkCatalogName,
@@ -1880,10 +1880,10 @@ SQLRETURN  SQLForeignKeys(
     SQLCHAR 		  *szFkTableName,
     SQLSMALLINT        cbFkTableName);
 
-SQLRETURN  SQLMoreResults(
+odbc_export SQLRETURN  SQLMoreResults(
     SQLHSTMT           hstmt);
 
-SQLRETURN  SQLNativeSql(
+odbc_export SQLRETURN  SQLNativeSql(
     SQLHDBC            hdbc,
     SQLCHAR 		  *szSqlStrIn,
     SQLINTEGER         cbSqlStrIn,
@@ -1891,16 +1891,16 @@ SQLRETURN  SQLNativeSql(
     SQLINTEGER         cbSqlStrMax,
     SQLINTEGER 		  *pcbSqlStr);
 
-SQLRETURN  SQLNumParams(
+odbc_export SQLRETURN  SQLNumParams(
     SQLHSTMT           hstmt,
     SQLSMALLINT 	  *pcpar);
 
-SQLRETURN  SQLParamOptions(
+odbc_export SQLRETURN  SQLParamOptions(
     SQLHSTMT           hstmt,
     SQLUINTEGER        crow,
     SQLUINTEGER 	  *pirow);
 
-SQLRETURN  SQLPrimaryKeys(
+odbc_export SQLRETURN  SQLPrimaryKeys(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1909,7 +1909,7 @@ SQLRETURN  SQLPrimaryKeys(
     SQLCHAR 		  *szTableName,
     SQLSMALLINT        cbTableName);
 
-SQLRETURN  SQLProcedureColumns(
+odbc_export SQLRETURN  SQLProcedureColumns(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1920,7 +1920,7 @@ SQLRETURN  SQLProcedureColumns(
     SQLCHAR 		  *szColumnName,
     SQLSMALLINT        cbColumnName);
 
-SQLRETURN  SQLProcedures(
+odbc_export SQLRETURN  SQLProcedures(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1929,13 +1929,13 @@ SQLRETURN  SQLProcedures(
     SQLCHAR 		  *szProcName,
     SQLSMALLINT        cbProcName);
 
-SQLRETURN  SQLSetPos(
+odbc_export SQLRETURN  SQLSetPos(
     SQLHSTMT           hstmt,
     SQLSETPOSIROW      irow,
     SQLUSMALLINT       fOption,
     SQLUSMALLINT       fLock);
 
-SQLRETURN  SQLTablePrivileges(
+odbc_export SQLRETURN  SQLTablePrivileges(
     SQLHSTMT           hstmt,
     SQLCHAR 		  *szCatalogName,
     SQLSMALLINT        cbCatalogName,
@@ -1944,7 +1944,7 @@ SQLRETURN  SQLTablePrivileges(
     SQLCHAR 		  *szTableName,
     SQLSMALLINT        cbTableName);
 
-SQLRETURN  SQLDrivers(
+odbc_export SQLRETURN  SQLDrivers(
     SQLHENV            henv,
     SQLUSMALLINT       fDirection,
     SQLCHAR 		  *szDriverDesc,
@@ -1954,7 +1954,7 @@ SQLRETURN  SQLDrivers(
     SQLSMALLINT        cbDrvrAttrMax,
     SQLSMALLINT 	  *pcbDrvrAttr);
 
-SQLRETURN  SQLBindParameter(
+odbc_export SQLRETURN  SQLBindParameter(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       ipar,
     SQLSMALLINT        fParamType,
@@ -1992,7 +1992,7 @@ SQLRETURN  SQLBindParameter(
 #endif /* ODBC_STD */
 
 #if (ODBCVER >= 0x0300)
-SQLRETURN  SQLAllocHandleStd(
+odbc_export SQLRETURN  SQLAllocHandleStd(
 	SQLSMALLINT		fHandleType,
 	SQLHANDLE		hInput,
 	SQLHANDLE	   *phOutput);
@@ -2019,7 +2019,7 @@ SQLRETURN  SQLAllocHandleStd(
 #define SQL_SCROLL_STATIC               (-3L) /*-SQL_CURSOR_STATIC */
 
 /*      Deprecated functions from prior versions of ODBC */
-SQLRETURN  SQLSetScrollOptions(    /*      Use SQLSetStmtOptions */
+odbc_export SQLRETURN  SQLSetScrollOptions(    /*      Use SQLSetStmtOptions */
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fConcurrency,
     SQLLEN             crowKeyset,
