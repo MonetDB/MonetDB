@@ -1245,14 +1245,19 @@ BAT *BATset(BAT *b, int flag) {
 
 @= mmap_write
     if (@2.base != NULL && @2.storage == STORE_MMAP && @2.filename != NULL) {
-	@1 = STORE_PRIV; action = 2;
+	@1 = STORE_PRIV; 
+        action = 2;
     } else @1 = @2.storage;
 @= mmap_read
     if (@2.base != NULL && @2.filename != NULL) {
       str p = strstr(@2.filename, ".priv");
-      if (p || @2.storage == STORE_PRIV) {
-	if (p) *p = 0;
-        @1 = STORE_MMAP; action = 1;
+      if (@2.storage == STORE_PRIV) {
+        @1 = STORE_MMAP; 
+        action = 2;
+      } else if (p) {
+        @1 = STORE_MMAP; 
+        action = 1;
+	*p = 0; 
       }
     } else @1 = @2.storage;
 @c
@@ -1271,7 +1276,6 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	        b = BATsetaccess(batcopy(b,b->htype,b->ttype,TRUE),mode); 
 		if (b->batStamp > 0) b->batStamp = -b->batStamp; /* prevent MIL setaccess */
 	    } else {
-		
 		if (mode == BAT_READ) {
 		    @:mmap_read(m1,(*b->batBuns))@
 		    @:mmap_read(m2,b->hheap)@
@@ -1301,8 +1305,10 @@ BAT *BATsetaccess(BAT *b, int mode) {
 	    b->batDirtydesc = TRUE;
 
 	    if (action) {
-	  	bat bid = b->batCacheid;
 		BATmmap(b, m1, m2, m3, m4, m5);
+	    }
+	    if (action == 2) {
+	  	bat bid = b->batCacheid;
 		BBPsave(b);
 		BATfree(b);
 		BBPuncacheit(bid, TRUE);
