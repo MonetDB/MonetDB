@@ -2,7 +2,7 @@
 
 EXTRA_DIST = sqlserver.mil
 
-INCLUDES = $(MONET_INCS) ../common ../client 
+INCLUDES = ../common ../client $(MONET_INCS)
 
 lib__sqlserver = {
 	DIR = libdir/MonetDB
