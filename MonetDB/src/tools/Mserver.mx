@@ -211,56 +211,12 @@ Execute scripts.
 @- 
 thread management.
 @C
-/*
-	if (monet_singlethreaded) {
-		if (monet_background > 1) {
-			scheduleClient(c);
-		}
-		monetSingle(0);
-	} else {
-		if (monet_internet) {
-			monetInternet(); /* accept other clients */
-/*
-			MT_down_sema(monet_started, "Mserver monet_started");
-		} else {
-			base_nr_threads--;
-		}
-		if (monet_background > 1) {
-		}
-	}
-*/
-
 	scheduleClient(c);
 	monetInterpreter((void*)&status);
-	
-@-
-First wait until all threads are started
-@C
-
-/*
-	if (monet_singlethreaded == 0) {
-	    do {
-		sleep(1);
-	    } while( GDKnrofthreads <= base_nr_threads);
-	}
-*/
 @-
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
 @C
-/*
-	if (monet_singlethreaded == 0) {
-		MT_down_sema(monet_main, "Mserver monet_main");
-	    do {
-		sleep(1);
-		PARDEBUG {
-			QMprint(); 
-			printf("#await rest %d > %d\n",  
-				GDKnrofthreads,  monet_background);
-		}
-	    } while (GDKnrofthreads > base_nr_threads);
-	}
-*/
 @-
 Peter: for the time being avoid difficult things like dropping everything 
 	monet_exit();
