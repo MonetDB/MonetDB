@@ -18,7 +18,7 @@ exit	sj_a;
         ug_a := reverse(int_1M);
         vg_a := join(int_1M,ug_a);
         wg_a := count(vg_a);
-        xg_a := printf("count %d = ",wg_a);
+        xg_a := printf("#count %d = ",wg_a);
         x:= alarm.time();
         yg_a := -(x,t);                                                                ah_a := printf("%d ms\n",yg_a);
 
@@ -27,7 +27,7 @@ exit	sj_a;
         ug_a := reverse(int_1M);
         vg_a := join(int_1M,ug_a);
         wg_a := count(vg_a);
-        xg_a := printf("count %d = ",wg_a);
+        xg_a := printf("#count %d = ",wg_a);
         x:= alarm.time();
         yg_a := -(x,t);                                                                ah_a := printf("%d ms\n",yg_a);
 
@@ -35,7 +35,7 @@ exit	sj_a;
         ug_a := reverse(int_1M);
         vg_a := join(int_1M,ug_a);
         wg_a := count(vg_a);
-        xg_a := printf("count %d = ",wg_a);
+        xg_a := printf("#count %d = ",wg_a);
         x:= alarm.time();
         yg_a := -(x,t);                                                                ah_a := printf("%d ms\n",yg_a);
 
@@ -44,7 +44,7 @@ exit	sj_a;
         ug_a := reverse(int_1M);
         vg_a := join(int_1M,ug_a);
         wg_a := count(vg_a);
-        xg_a := printf("count %d = ",wg_a);
+        xg_a := printf("#count %d = ",wg_a);
         x:= alarm.time();
         yg_a := -(x,t);                                                                ah_a := printf("%d ms\n",yg_a);
 
@@ -67,7 +67,7 @@ exit	sj_b;
         ug_b := reverse(M2);
         vg_b := join(M2,ug_b);
         wg_b := count(vg_b);
-        xg_b := printf("count %d = ",wg_b);
+        xg_b := printf("#count %d = ",wg_b);
         x:= alarm.time();
         yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
 
@@ -76,7 +76,7 @@ exit	sj_b;
         ug_b := reverse(M2);
         vg_b := join(M2,ug_b);
         wg_b := count(vg_b);
-        xg_b := printf("count %d = ",wg_b);
+        xg_b := printf("#count %d = ",wg_b);
         x:= alarm.time();
         yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
 
@@ -84,7 +84,7 @@ exit	sj_b;
         ug_b := reverse(M2);
         vg_b := join(M2,ug_b);
         wg_b := count(vg_b);
-        xg_b := printf("count %d = ",wg_b);
+        xg_b := printf("#count %d = ",wg_b);
         x:= alarm.time();
         yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
 
@@ -93,7 +93,7 @@ exit	sj_b;
         ug_b := reverse(M2);
         vg_b := join(M2,ug_b);
         wg_b := count(vg_b);
-        xg_b := printf("count %d = ",wg_b);
+        xg_b := printf("#count %d = ",wg_b);
         x:= alarm.time();
         yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
 
