@@ -4,6 +4,7 @@
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
 
+find . -name .cache* \-exec rm {} \;
 src/utils/autogen/autogen.py
 test -f conf/ltmain.sh || libtoolize -c -f; 
 #if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
