@@ -285,6 +285,7 @@ char *	name;
 	case Swig:
 	case CCyacc:
 	case CClex:
+	case BibTeX:
 	    if (allTrue()){
 		d= NwDef(dir, mod, sec, lino);
 		d->d_cmd = cmd;

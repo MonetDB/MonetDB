@@ -196,6 +196,7 @@ Directive str2dir[]={
     "swig",Swig,"i",
     "Y",CCyacc,"yy",
     "L",CClex,"ll",
+    "bib",BibTeX,"bib",
     "{",InHide,"",
     "}",OutHide,"",
     NULL,Nop,NULL};

@@ -68,6 +68,7 @@ again:  switch( d->d_dir ){
 	case Swig:
 	case CCyacc:
 	case CClex:
+	case BibTeX:
             if(!extract(d->d_dir)) break;
 	    IoWriteFile(fname, d->d_dir);
 	    mode=d->d_dir;
@@ -298,6 +299,7 @@ void	CodeLine()
 	case DTD:
 	case XSL:
 	case Swig:
+	case BibTeX:
             break;
             
 	case Prolog:

@@ -109,8 +109,13 @@ again:  switch( d->d_dir ){
 	    	if (!Hide()) 
 		latex2html(d->d_blk, dirbak!=Qtex, d[1].d_dir!=Qtex);
 	    } else { 
-		PrCmd(d->d_blk);
-	    	Newline;
+               /* was: 
+                    PrCmd(d->d_blk);
+                    Newline;
+                  seems incorrect, as @[ @$ and the like still should be processed 
+                */
+	    	PrEnv(E_CMD);
+                FormBlk(d);
 	    	PrEnv(E_TEXT);
 	    }
 	    break;
@@ -189,6 +194,10 @@ again:  switch( d->d_dir ){
                 case Swig:      PrCodeDisplay(d,"i"); break; 
                 case CCyacc:    PrCodeDisplay(d,"yy"); break; 
                 case CClex:     PrCodeDisplay(d,"ll"); break; 
+                case BibTeX:    /* writes out a .bib file;
+				   NOTE: this is unrelated to the magic *bibtexfile that seems
+					 only of importance in Tex2Html -- CHECK!!!
+				 */ break; 
 		default:
 	    		Fatal("GenForm", "Non directive:%s [%s:%d]",
 		  		dir2str(d->d_dir), d->d_file, d->d_line);
