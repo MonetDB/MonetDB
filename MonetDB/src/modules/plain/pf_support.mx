@@ -363,12 +363,26 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 	break;
 @c
 	/* merge-union the first two BATs */
+/* HACK(?): compare [v]oid (unsigned) at int/lng (signed) to get nil's first... */
+#if SIZEOF_OID == SIZEOF_INT
 	if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_void) {
-		@:merged_union_1(oid,tvar,tvar,simple)@
+		@:merged_union_1(int,tvar,tvar,simple)@
 	} else if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_oid) {
-		@:merged_union_1(oid,tvar,tloc,simple)@
+		@:merged_union_1(int,tvar,tloc,simple)@
 	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_void) {
-		@:merged_union_1(oid,tloc,tvar,simple)@
+		@:merged_union_1(int,tloc,tvar,simple)@
+	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_oid) {
+		@:merged_union_1(int,tloc,tloc,simple)@
+#else
+	if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_void) {
+		@:merged_union_1(lng,tvar,tvar,simple)@
+	} else if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_oid) {
+		@:merged_union_1(lng,tvar,tloc,simple)@
+	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_void) {
+		@:merged_union_1(lng,tloc,tvar,simple)@
+	} else if (b[0]->ttype==TYPE_oid && b[1]->ttype==TYPE_oid) {
+		@:merged_union_1(lng,tloc,tloc,simple)@
+#endif
 	} else {
 		any = b[0]->ttype;
 		switch(ATOMstorage(b[0]->ttype)) {
@@ -390,8 +404,18 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 	for (k=1; k<npairs; k++) {
 		i = (k<<1);
 		j = i+1;
+/* HACK(?): compare [v]oid (unsigned) at int/lng (signed) to get nil's first... */
+#if SIZEOF_OID == SIZEOF_INT
 		if (b[i]->ttype==TYPE_void || b[j]->ttype==TYPE_void) {
-			@:merged_union_3(oid,tail,simple)@
+			@:merged_union_3(int,tail,simple)@
+		} else if (b[i]->ttype==TYPE_oid && b[j]->ttype==TYPE_oid) {
+			@:merged_union_3(int,tloc,simple)@
+#else
+		if (b[i]->ttype==TYPE_void || b[j]->ttype==TYPE_void) {
+			@:merged_union_3(lng,tail,simple)@
+		} else if (b[i]->ttype==TYPE_oid && b[j]->ttype==TYPE_oid) {
+			@:merged_union_3(lng,tloc,simple)@
+#endif
 		} else {
 			any = b[i]->ttype;
 			switch(ATOMstorage(b[i]->ttype)) {
