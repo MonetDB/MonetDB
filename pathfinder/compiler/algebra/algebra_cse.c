@@ -85,7 +85,7 @@ eliminate_subexp (PFalg_op_t *new)
 
     /* recursively call subexpression elimination on all children of 'n' */
     for (i = 0; i < PFALG_OP_MAXCHILD && new->child[i] !=NULL; i++)
-	new->child[i] = eliminate_subexp (new->child[i]);
+        new->child[i] = eliminate_subexp (new->child[i]);
 
     /* check if this node (n) was already built */
     return find_subexp (new);
@@ -111,48 +111,48 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 
     for (i = 0; i < a.count; i++) {
         if (a.atoms[i].type != b.atoms[i].type)
-	    break;
+            break;
 
-	switch (a.atoms[i].type) {
-	    /* if type is nat, compare nat member of union */
-	    case aat_nat:
-		if (a.atoms[i].val.nat != b.atoms[i].val.nat)
-		    mismatch = true;
-		break;
-	    /* if type is int, compare int member of union */
-	    case aat_int:
-		if (a.atoms[i].val.int_ != b.atoms[i].val.int_)
-		    mismatch = true;
-		break;
-	    /* if type is str, compare str member of union */
-	    case aat_str:
-		if (strcmp(a.atoms[i].val.str, b.atoms[i].val.str))
-		    mismatch = true;
-		break;
-	    /* if type is node, compare node member of union */
-	    case aat_node:
-		if (a.atoms[i].val.node != b.atoms[i].val.node)
-		    mismatch = true;
-		break;
-	    /* if type is float, compare float member of union */
-	    case aat_dec:
-		if (a.atoms[i].val.dec != b.atoms[i].val.dec)
-		    mismatch = true;
-		break;
-	    /* if type is double, compare double member of union */
-	    case aat_dbl:
-		if (a.atoms[i].val.dbl != b.atoms[i].val.dbl)
-		    mismatch = true;
-		break;
-	    /* if type is double, compare double member of union */
-	    case aat_bln:
-		if ((a.atoms[i].val.bln && !b.atoms[i].val.bln) ||
-		    (!a.atoms[i].val.bln && b.atoms[i].val.bln))
-		    mismatch = true;
-		break;
-	}
-	if (mismatch)
-	    break;
+        switch (a.atoms[i].type) {
+            /* if type is nat, compare nat member of union */
+            case aat_nat:
+                if (a.atoms[i].val.nat != b.atoms[i].val.nat)
+                    mismatch = true;
+                break;
+            /* if type is int, compare int member of union */
+            case aat_int:
+                if (a.atoms[i].val.int_ != b.atoms[i].val.int_)
+                    mismatch = true;
+                break;
+            /* if type is str, compare str member of union */
+            case aat_str:
+                if (strcmp(a.atoms[i].val.str, b.atoms[i].val.str))
+                    mismatch = true;
+                break;
+            /* if type is node, compare node member of union */
+            case aat_node:
+                if (a.atoms[i].val.node != b.atoms[i].val.node)
+                    mismatch = true;
+                break;
+            /* if type is float, compare float member of union */
+            case aat_dec:
+                if (a.atoms[i].val.dec != b.atoms[i].val.dec)
+                    mismatch = true;
+                break;
+            /* if type is double, compare double member of union */
+            case aat_dbl:
+                if (a.atoms[i].val.dbl != b.atoms[i].val.dbl)
+                    mismatch = true;
+                break;
+            /* if type is double, compare double member of union */
+            case aat_bln:
+                if ((a.atoms[i].val.bln && !b.atoms[i].val.bln) ||
+                    (!a.atoms[i].val.bln && b.atoms[i].val.bln))
+                    mismatch = true;
+                break;
+        }
+        if (mismatch)
+            break;
     }
 
     return (i == a.count);
@@ -177,39 +177,39 @@ find_lit_tbl (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /* see if we have the same number of arguments */
-	    if (new->schema.count != old->schema.count)
-		continue;
+            /* see if we have the same number of arguments */
+            if (new->schema.count != old->schema.count)
+                continue;
 
-	    /* see if attribute names match old schema */
-	    for (j = 0; j < new->schema.count; j++)
-		if (strcmp(new->schema.items[j].name,
-			   old->schema.items[j].name))
-		    break;
-	    if (j != new->schema.count)
-		continue;
+            /* see if attribute names match old schema */
+            for (j = 0; j < new->schema.count; j++)
+                if (strcmp(new->schema.items[j].name,
+                           old->schema.items[j].name))
+                    break;
+            if (j != new->schema.count)
+                continue;
 
-	    /* test if number of tuples matches */
-	    if (new->sem.lit_tbl.count != old->sem.lit_tbl.count)
-		continue;
+            /* test if number of tuples matches */
+            if (new->sem.lit_tbl.count != old->sem.lit_tbl.count)
+                continue;
 
-	    /* test if tuples match */
-	    for (j = 0; j < new->sem.lit_tbl.count; j++)
-		if (!tuple_eq (new->sem.lit_tbl.tuples[j],
-			       old->sem.lit_tbl.tuples[j]))
-		    break;
+            /* test if tuples match */
+            for (j = 0; j < new->sem.lit_tbl.count; j++)
+                if (!tuple_eq (new->sem.lit_tbl.tuples[j],
+                               old->sem.lit_tbl.tuples[j]))
+                    break;
 
-	    if (j != new->sem.lit_tbl.count)
-		continue;
+            if (j != new->sem.lit_tbl.count)
+                continue;
 
-	    /*
-	     * if we came until here, old and new table must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new table must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -239,10 +239,10 @@ find_doc_tbl (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (old->kind != aop_doc_tbl)
-	    continue;
+        if (old->kind != aop_doc_tbl)
+            continue;
 
-	return old;
+        return old;
     }
 
     /*
@@ -276,26 +276,26 @@ find_union_cross (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same child nodes: the order
-	     * of the operands (child[0] and child[1]) does not matter,
-	     * i.e we try both combinations; the schema of both nodes
-	     * is guaranteed to be equal; as for the node kind, we only
-	     * have to make sure that both node kinds match; the calling
-	     * routine makes sure that only union and cross product nodes
-	     * can arrive here
-	     */
-	    if (new->kind != old->kind
-		|| !((new->child[0] == old->child[0]
-		      && new->child[1] == old->child[1])
-		|| (new->child[0] == old->child[1]
-		      && new->child[1] == old->child[0])))
-		continue;
+            /*
+             * see if the old node has the same child nodes: the order
+             * of the operands (child[0] and child[1]) does not matter,
+             * i.e we try both combinations; the schema of both nodes
+             * is guaranteed to be equal; as for the node kind, we only
+             * have to make sure that both node kinds match; the calling
+             * routine makes sure that only union and cross product nodes
+             * can arrive here
+             */
+            if (new->kind != old->kind
+                || !((new->child[0] == old->child[0]
+                      && new->child[1] == old->child[1])
+                || (new->child[0] == old->child[1]
+                      && new->child[1] == old->child[0])))
+                continue;
 
-	return old;
-	}
+        return old;
+        }
     }
 
     /* 
@@ -329,19 +329,19 @@ find_difference (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same child nodes: in contrast
-	     * to union and cross product operators, the order of the
-	     * child operands of a difference operator does matter
-	     */
-	    if (new->child[0] != old->child[0]
-	     || new->child[1] != old->child[1])
-		continue;
+            /*
+             * see if the old node has the same child nodes: in contrast
+             * to union and cross product operators, the order of the
+             * child operands of a difference operator does matter
+             */
+            if (new->child[0] != old->child[0]
+             || new->child[1] != old->child[1])
+                continue;
 
-	    return old;
-	}
+            return old;
+        }
     }
 
     /*
@@ -374,24 +374,24 @@ find_eqjoin (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same children and join
-	     * attributes
-	     */
-	    if (new->child[0] != old->child[0]
-	     || new->child[1] != old->child[1]
-	     || new->sem.eqjoin.att1 != old->sem.eqjoin.att1
-	     || new->sem.eqjoin.att2 != old->sem.eqjoin.att2)
-		continue;
+            /*
+             * see if the old node has the same children and join
+             * attributes
+             */
+            if (new->child[0] != old->child[0]
+             || new->child[1] != old->child[1]
+             || new->sem.eqjoin.att1 != old->sem.eqjoin.att1
+             || new->sem.eqjoin.att2 != old->sem.eqjoin.att2)
+                continue;
 
-	    /*
-	     * if we came until here, old and new join must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new join must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -425,30 +425,30 @@ find_scjoin (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same children, same location
-	     * step, and kind test
-	     */
-	    if (new->child[0] != old->child[0]
-	     || new->child[1] != old->child[1]
-	     || new->sem.scjoin.test != old->sem.scjoin.test
-	     || new->sem.scjoin.axis != old->sem.scjoin.axis
-	     || (old->sem.scjoin.test == aop_name
-		 &&  PFqname_eq(new->sem.scjoin.str.qname,
-				old->sem.scjoin.str.qname))
-	     || (old->sem.scjoin.test == aop_pi_tar
-		 && strcmp(new->sem.scjoin.str.target,
-			   old->sem.scjoin.str.target)))
-		continue;
+            /*
+             * see if the old node has the same children, same location
+             * step, and kind test
+             */
+            if (new->child[0] != old->child[0]
+             || new->child[1] != old->child[1]
+             || new->sem.scjoin.test != old->sem.scjoin.test
+             || new->sem.scjoin.axis != old->sem.scjoin.axis
+             || (old->sem.scjoin.test == aop_name
+                 &&  PFqname_eq(new->sem.scjoin.str.qname,
+                                old->sem.scjoin.str.qname))
+             || (old->sem.scjoin.test == aop_pi_tar
+                 && strcmp(new->sem.scjoin.str.target,
+                           old->sem.scjoin.str.target)))
+                continue;
 
-	    /*
-	     * if we came until here, old and new join must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new join must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -479,22 +479,22 @@ find_select (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same child and selection
-	     * attribute
-	     */
-	    if (new->child[0] != old->child[0]
-		|| strcmp (new->sem.select.att, old->sem.select.att))
-		continue;
+            /*
+             * see if the old node has the same child and selection
+             * attribute
+             */
+            if (new->child[0] != old->child[0]
+                || strcmp (new->sem.select.att, old->sem.select.att))
+                continue;
 
-	    /*
-	     * if we came until here, old and new selection must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new selection must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -524,23 +524,23 @@ find_negate (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same child and negation
-	     * and result attribute
-	     */
-	    if (new->child[0] != old->child[0]
-		|| strcmp (new->sem.negate.att, old->sem.negate.att)
-		|| strcmp (new->sem.negate.res, old->sem.negate.res))
-		continue;
+            /*
+             * see if the old node has the same child and negation
+             * and result attribute
+             */
+            if (new->child[0] != old->child[0]
+                || strcmp (new->sem.negate.att, old->sem.negate.att)
+                || strcmp (new->sem.negate.res, old->sem.negate.res))
+                continue;
 
-	    /*
-	     * if we came until here, old and new negation must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new negation must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -572,24 +572,24 @@ find_type (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same child, typed attribute,
-	     * result attribute, and requested type
-	     */
-	    if (new->child[0] != old->child[0]
-		|| strcmp (new->sem.type.att, old->sem.type.att)
-		|| strcmp (new->sem.type.res, old->sem.type.res)
-		|| !PFty_eq (new->sem.type.ty, old->sem.type.ty))
-		continue;
+            /*
+             * see if the old node has the same child, typed attribute,
+             * result attribute, and requested type
+             */
+            if (new->child[0] != old->child[0]
+                || strcmp (new->sem.type.att, old->sem.type.att)
+                || strcmp (new->sem.type.res, old->sem.type.res)
+                || !PFty_eq (new->sem.type.ty, old->sem.type.ty))
+                continue;
 
-	    /*
-	     * if we came until here, old and new type test must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new type test must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -620,23 +620,23 @@ find_cast (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same child, typed attribute,
-	     * and requested type
-	     */
-	    if (new->child[0] != old->child[0]
-		|| strcmp (new->sem.cast.att, old->sem.cast.att)
-		|| !PFty_eq (new->sem.cast.ty, old->sem.cast.ty))
-		continue;
-	    
-	    /*
-	     * if we came until here, old and new type cast must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * see if the old node has the same child, typed attribute,
+             * and requested type
+             */
+            if (new->child[0] != old->child[0]
+                || strcmp (new->sem.cast.att, old->sem.cast.att)
+                || !PFty_eq (new->sem.cast.ty, old->sem.cast.ty))
+                continue;
+            
+            /*
+             * if we came until here, old and new type cast must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -666,35 +666,35 @@ find_project (PFalg_op_t *new)
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
-	int         j;
+        int         j;
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /* see if the old node has the same child */
-	    if (new->child[0] != old->child[0])
-		continue;
+            /* see if the old node has the same child */
+            if (new->child[0] != old->child[0])
+                continue;
 
-	    /* does the old node have the same number of attributes? */
-	    if (new->sem.proj.count != old->sem.proj.count)
-		continue;
+            /* does the old node have the same number of attributes? */
+            if (new->sem.proj.count != old->sem.proj.count)
+                continue;
 
-	    /* see if the projection lists match */
-	    for (j = 0; j < new->sem.proj.count; j++)
-		if (strcmp (new->sem.proj.items[j].new,
-			    old->sem.proj.items[j].new)
-		 || strcmp (new->sem.proj.items[j].old,
-			    old->sem.proj.items[j].old))
-		    break;
+            /* see if the projection lists match */
+            for (j = 0; j < new->sem.proj.count; j++)
+                if (strcmp (new->sem.proj.items[j].new,
+                            old->sem.proj.items[j].new)
+                 || strcmp (new->sem.proj.items[j].old,
+                            old->sem.proj.items[j].old))
+                    break;
 
-	    if (j != new->sem.proj.count)
-		continue;
+            if (j != new->sem.proj.count)
+                continue;
 
-	    /*
-	     * if we came until here, old and new projection must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new projection must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -724,48 +724,48 @@ find_rownum (PFalg_op_t *new)
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
-	int         j;
+        int         j;
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same child and row-numbering
-	     * attribute
-	     */
-	    if (new->child[0] != old->child[0]
-		|| strcmp (new->sem.rownum.attname,
-			   old->sem.rownum.attname))
-		continue;
+            /*
+             * see if the old node has the same child and row-numbering
+             * attribute
+             */
+            if (new->child[0] != old->child[0]
+                || strcmp (new->sem.rownum.attname, old->sem.rownum.attname))
+                continue;
 
-	    /* see if both nodes have the same partitioning attribute */
-	    if (!(new->sem.rownum.part == NULL
-		  && old->sem.rownum.part == NULL)
-		|| (new->sem.rownum.part == NULL
-		  && old->sem.rownum.part != NULL)
-		|| (new->sem.rownum.part != NULL
-		  && old->sem.rownum.part == NULL)
-		|| strcmp (new->sem.rownum.part, old->sem.rownum.part))
-		continue;
+            /* see if both nodes have the same partitioning attribute */
+            if (!(new->sem.rownum.part == NULL
+                  && old->sem.rownum.part == NULL)
+                || (new->sem.rownum.part == NULL
+                    && old->sem.rownum.part != NULL)
+                || (new->sem.rownum.part != NULL
+                    && old->sem.rownum.part == NULL)
+                || (new->sem.rownum.part && old->sem.rownum.part
+                    && strcmp (new->sem.rownum.part, old->sem.rownum.part)))
+                continue;
 
-	    /* does the old node have the same number of sort attributes? */
-	    if (new->sem.rownum.sortby.count != old->sem.rownum.sortby.count)
-		continue;
+            /* does the old node have the same number of sort attributes? */
+            if (new->sem.rownum.sortby.count != old->sem.rownum.sortby.count)
+                continue;
 
-	    /* see if the sortby lists match */
-	    for (j = 0; j < new->sem.rownum.sortby.count; j++)
-		if (strcmp (new->sem.rownum.sortby.atts[j],
-			    old->sem.rownum.sortby.atts[j]))
-		    break;
+            /* see if the sortby lists match */
+            for (j = 0; j < new->sem.rownum.sortby.count; j++)
+                if (strcmp (new->sem.rownum.sortby.atts[j],
+                            old->sem.rownum.sortby.atts[j]))
+                    break;
 
-	    if (j != new->sem.rownum.sortby.count)
-		continue;
+            if (j != new->sem.rownum.sortby.count)
+                continue;
 
-	    /*
-	     * if we came until here, old and new projection must be equal;
-	     * return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * if we came until here, old and new projection must be equal;
+             * return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -795,25 +795,25 @@ find_arithmetic (PFalg_op_t *new)
 
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
-	if (new->kind == old->kind) {
+        if (new->kind == old->kind) {
 
-	    /*
-	     * see if the old node has the same children, operand
-	     * attributes, and result attribute
-	     */
-	    if (new->child[0] != old->child[0]
-	     || new->child[1] != old->child[1]
-	     || strcmp (new->sem.arithm.att1, old->sem.arithm.att1)
-	     || strcmp (new->sem.arithm.att2, old->sem.arithm.att2)
-	     || strcmp (new->sem.arithm.res, old->sem.arithm.res))
-		continue;
-	    
-	    /*
-	     * if we came until here, old and new arithmetic expression
-	     * must be equal; return the existing one
-	     */
-	    return old;
-	}
+            /*
+             * see if the old node has the same children, operand
+             * attributes, and result attribute
+             */
+            if (new->child[0] != old->child[0]
+             || new->child[1] != old->child[1]
+             || strcmp (new->sem.arithm.att1, old->sem.arithm.att1)
+             || strcmp (new->sem.arithm.att2, old->sem.arithm.att2)
+             || strcmp (new->sem.arithm.res, old->sem.arithm.res))
+                continue;
+            
+            /*
+             * if we came until here, old and new arithmetic expression
+             * must be equal; return the existing one
+             */
+            return old;
+        }
     }
 
     /*
@@ -835,50 +835,50 @@ find_subexp (PFalg_op_t *new)
     switch (new->kind)
     {
         case aop_lit_tbl:
-	    return find_lit_tbl (new);
+            return find_lit_tbl (new);
 
         case aop_doc_tbl:
-	    return find_doc_tbl (new);
+            return find_doc_tbl (new);
 
         case aop_disjunion:
         case aop_cross:
-	    return find_union_cross (new);
+            return find_union_cross (new);
 
         case aop_difference:
-	    return find_difference (new);
+            return find_difference (new);
 
         case aop_eqjoin:
-	    return find_eqjoin (new);
+            return find_eqjoin (new);
 
         case aop_scjoin:
-	    return find_scjoin (new);
+            return find_scjoin (new);
 
         case aop_select:
-	    return find_select (new);
+            return find_select (new);
 
         case aop_negate:
-	    return find_negate (new);
+            return find_negate (new);
 
         case aop_type:
-	    return find_type (new);
+            return find_type (new);
 
         case aop_cast:
-	    return find_cast (new);
+            return find_cast (new);
 
         case aop_project:
-	    return find_project (new);
+            return find_project (new);
 
         case aop_rownum:
-	    return find_rownum (new);
+            return find_rownum (new);
 
         case aop_serialize:
-	    return new;
+            return new;
 
         case aop_num_add:
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
-	    return find_arithmetic (new);
+            return find_arithmetic (new);
     }
 
     return new;
