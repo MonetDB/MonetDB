@@ -188,7 +188,7 @@ proc dump_data( BAT[str,BAT] fmt, BAT[str,BAT] bats, str data, int cnt) := {
 	dump( names, seps, names.join(bats).reverse().mark().reverse(), data, cnt );
 }
 
-proc import( BAT[any,any] b, str filename ) {
+proc import( BAT[any,any] b, str filename ) : BAT[any,any] {
 
 	var names := new(void,str).seqbase(0@0);
 	names.insert(oid(nil),"head");
@@ -202,6 +202,7 @@ proc import( BAT[any,any] b, str filename ) {
 
 	var bats := load( names, seps, types, filename, -1);
 	b.insert (bats.find("head").reverse.join(bats.find("tail")));
+	return b;
 }
 
 proc export( BAT[any,any] b, str filename ) {
