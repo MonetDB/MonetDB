@@ -50,7 +50,6 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "qt",		  "contrib"	  ]
 [ "radix",	  "plain"	  ]
 [ "salgebra",	  "plain"	  ]
-[ "sql_server",	  "UNKNOWN"	  ]
 [ "stats",	  "plain"	  ]
 [ "str",	  "static"	  ]
 [ "streams",	  "plain"	  ]
@@ -70,13 +69,13 @@ ls;
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  51,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir;
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  51,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  653,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -157,7 +156,6 @@ table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col
 [ "qt"			  ]
 [ "radix"		  ]
 [ "salgebra"		  ]
-[ "sql_server"		  ]
 [ "stats"		  ]
 [ "streams"		  ]
 [ "tcpip"		  ]
