@@ -321,7 +321,14 @@ m_export int		monet_tokobject;	/* value of TOK_OBJECT */
 m_export char 		monet_arch[PATHLENGTH];
 m_export char 		monet_version[PATHLENGTH];
 
+@-
+Locking in an embedded situation can be relaxed.
+Ideally, they are all removed.
 @h
+#define monet_set_lock(X,Y)   if(monet_embedded == 0) MT_set_lock(X,Y)
+#define monet_unset_lock(X,Y) if(monet_embedded == 0) MT_unset_lock(X,Y)
+#define monet_up_sema(X,Y)    if(monet_embedded == 0) MT_up_sema(X,Y)
+#define monet_down_sema(X,Y)  if(monet_embedded == 0) MT_down_sema(X,Y)
 #endif /* _MONET_H_ */
 @c 
 #include "monet.h"
@@ -413,14 +420,16 @@ Client monet_init(void){
 	monet_running = 1;
 
         ll_init();
-        monet_critical   = MT_create_lock();
-        monet_contextLock= MT_create_lock();
-        monet_parserLock = MT_create_lock();
-        monet_notifyLock = MT_create_lock();
-        monet_voidLock   = MT_create_lock();
-        monet_started    = MT_create_sema(0);
-        monet_available  = MT_create_sema(0);
-        monet_forksync   = MT_create_sema(0);
+	if(monet_embedded == 0) {
+		monet_critical   = MT_create_lock();
+		monet_contextLock= MT_create_lock();
+		monet_parserLock = MT_create_lock();
+		monet_notifyLock = MT_create_lock();
+		monet_voidLock   = MT_create_lock();
+		monet_started    = MT_create_sema(0);
+		monet_available  = MT_create_sema(0);
+		monet_forksync   = MT_create_sema(0);
+	}
 
 	if (GDKgetenv_isyes("monet_nostalgic")) {
 		monet_nostalgic = 1;

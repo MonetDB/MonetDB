@@ -900,6 +900,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 		stream_destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
+	if( monet_embedded >1) return 0;
 	q = topRequest(c);
 	if (q) {
 		q->ev_kill = 1 + c->stk;

@@ -1743,7 +1743,7 @@ BAT *BATmode(BAT *b, int mode) {
 		} else if (b->batPersistence == PERSISTENT) {
 			BBPdecref(bid, TRUE);
 		}
-                MT_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
+                gdk_set_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
                 if (mode == PERSISTENT) {
                         if (!(BBPstatus(bid)&BBPDELETED))
                                 BBP_status_on(bid, BBPNEW, "BATmode");
@@ -1763,7 +1763,7 @@ BAT *BATmode(BAT *b, int mode) {
                         }
                 }
                 b->batPersistence = mode;
-                MT_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
+                gdk_unset_lock(GDKswapLock[bid&BBPLOCKMASK], "BATmode");
         }
         return b;
 }

@@ -264,7 +264,7 @@ Its argument is the element type and the maximum number of BUNs
 be stored under the hash function. 
 @c
 BAT* BAThash(BAT *b, int *collision) {
-    MT_set_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
+    gdk_set_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
     if (b->hhash_heap == NULL) {
 	unsigned int xx, tpe = ATOMstorage(b->htype);
 	size_t i, cnt = BATcount(b);
@@ -307,7 +307,7 @@ BAT* BAThash(BAT *b, int *collision) {
 		hp->filename = GDKmalloc(strlen(nme)+12);
 		sprintf(hp->filename, "%s.%chash", nme, b->batCacheid>0?'h':'t');
 		if (HASHnew(h, hp, ATOMtype(b->htype), BATcapacity(b), (size_t)mask) == NULL) {
-    			MT_unset_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
+    			gdk_unset_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
 			GDKfree(hp->filename);
 			GDKfree(hp);
 			return NULL;
@@ -337,7 +337,7 @@ BAT* BAThash(BAT *b, int *collision) {
 	}
         b->hhash_heap = BATmirror(b)->thash_heap = hp; 
     }
-    MT_unset_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
+    gdk_unset_lock(GDKhashLock[ABS(b->batCacheid)&BBPLOCKMASK], "BAThash");
     return b; 
 }
 
@@ -566,7 +566,7 @@ BAT* BATidx(BAT *b, BAT *h) {
     if (b->htype == TYPE_void || !ATOMlinear(b->htype)) {
 	    return NULL;
     }
-    MT_set_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
+    gdk_set_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
     if (b->hidx_heap == NULL) {
 	    size_t cnt = BATcount(b);
 	    BAT *unique = h;
@@ -580,7 +580,7 @@ BAT* BATidx(BAT *b, BAT *h) {
 	    hp->filename = GDKmalloc(strlen(nme)+12);
 	    sprintf(hp->filename, "%s.%cidx", nme, b->batCacheid>0?'h':'t');
 	    if (HEAPalloc(hp, MAX(1,cnt), sizeof(BUN)) < 0) {
-                MT_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
+                gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
 		GDKfree(hp->filename);
 		GDKfree(hp);
 		return NULL;
@@ -602,7 +602,7 @@ dynamic check using sampling to see whether there are many doubles.
 			BBPreclaim(s);
 		}
 		if (v == NULL) {
-                	MT_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
+                	gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
 			HEAPfree(hp);
 			return NULL;
 		}
@@ -619,7 +619,7 @@ Use randomized order for insert elements to get a nicely balanced tree
 	        sprintf(tmp.filename, "%s.%cidxtmp", nme, b->batCacheid>0?'h':'t');
 		if (HEAPalloc(&tmp, MAX(1,cnt), sizeof(Tnode)) < 0) {
 			idx->base = idx->last = idx->first = NULL;
-                	MT_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
+                	gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
 			HEAPfree(hp);
 			return NULL;
 		}
@@ -667,7 +667,7 @@ construction in one pass from a sorted histogram
 	        sprintf(tmp.filename, "%s.%cidxtmp", nme, b->batCacheid>0?'h':'t');
 		if (histo == NULL || HEAPalloc(&tmp, BATcount(histo), sizeof(BUN*)) < 0) {
 			idx->base = idx->last = idx->first = NULL;
-                	MT_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
+                	gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
 			HEAPfree(hp);
 			return NULL;
 		}
@@ -701,7 +701,7 @@ construction in one pass from a sorted histogram
 	    idx->stack = idx->root = 0; 
 	    b->hidx_heap = BATmirror(b)->tidx_heap = hp; 
     }
-    MT_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
+    gdk_unset_lock(GDKidxLock[ABS(b->batCacheid)&BBPLOCKMASK], "BATidx");
     return b; 
 }
 
@@ -1273,7 +1273,7 @@ void ACCdelete(int i) {
 
 void ACCproperty(str name, str prop, ptr fcn) {
 	int i;
-	MT_set_lock(GDKthreadLock, "ACCproperty");
+	gdk_set_lock(GDKthreadLock, "ACCproperty");
 	i = ACCindex(name);
 	if (i < 0) {
 		i = -i;
@@ -1304,7 +1304,7 @@ void ACCproperty(str name, str prop, ptr fcn) {
 	} else if (strcmp(prop, "repair") == 0) {
 		BATaccelerators[i].accRepair = (int (*)(Heap*, BAT*)) fcn;
 	}
-        MT_unset_lock(GDKthreadLock, "ACCproperty");
+        gdk_unset_lock(GDKthreadLock, "ACCproperty");
 }
 
 char *ACCname(int t) {

@@ -101,18 +101,18 @@ void monetInterpreter(void* status){
 	t = THRnew(MT_getpid(), "Interpreter");
 	if (t) {
 		monet_threads++;
-		MT_up_sema(monet_forksync, "monetInterpreter");
+		monet_up_sema(monet_forksync, "monetInterpreter");
 		PARDEBUG THRprintf(GDKerr, "monetInterpreter()\n" );
 
 		doRequest(t,0);
-		MT_set_lock(monet_critical, "monetInterpreter");
+		monet_set_lock(monet_critical, "monetInterpreter");
 		THRdel(t);
  		monet_threads--;
-		MT_unset_lock(monet_critical, "monetInterpreter");
+		monet_unset_lock(monet_critical, "monetInterpreter");
 	} else {
 		if (status)
 			* (int *) status = -1;
-		MT_up_sema(monet_forksync, "monetInterpreter");
+		monet_up_sema(monet_forksync, "monetInterpreter");
 	}
        	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
 	MT_exit_thread(0);
@@ -151,18 +151,18 @@ MT_Id monetFork(void) {
 		}
 		monet_embedded++;
 	}
-	MT_set_lock(monet_critical, "monetFork");
+	monet_set_lock(monet_critical, "monetFork");
 	/* exclusive access to monet_forksync barrier
 	 * and monet_threads counter. */
 	if (MT_create_thread(&p, monetInterpreter, &status) != 0) {
 		GDKsyserror("monetFork:failed\n");
 		p = ~ (MT_Id) 0;
 	} else {
-		MT_down_sema(monet_forksync, "monetFork");
+		monet_down_sema(monet_forksync, "monetFork");
 		if (status)
 			p = ~ (MT_Id) 0;
 	}
-	MT_unset_lock(monet_critical, "monetFork");
+	monet_unset_lock(monet_critical, "monetFork");
 	return p;
 }
 

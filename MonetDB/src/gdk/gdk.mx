@@ -2262,6 +2262,14 @@ gdk_export MT_Lock		GDKtmLock;
 
 gdk_export int		GDKnrofthreads; 
 gdk_export int		GDKdebug; 
+gdk_export int		GDKembedded; 
+@-
+The embedded version can live with less control.
+@h
+#define gdk_set_lock(X,Y)   if(GDKembedded == 0) MT_set_lock(X,Y)
+#define gdk_unset_lock(X,Y) if(GDKembedded == 0) MT_unset_lock(X,Y)
+#define gdk_up_sema(X,Y)    if(GDKembedded == 0) MT_up_sema(X,Y)
+#define gdk_down_sema(X,Y)  if(GDKembedded == 0) MT_down_sema(X,Y)
 @}
 @-
 The kernel maintains a central table of all active threads.

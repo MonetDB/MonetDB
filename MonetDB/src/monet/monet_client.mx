@@ -120,7 +120,7 @@ Client initClient(str nme, str prompt, int thread)
 	Client 	c;
 
 	/* find an empty client slot. The console entry (0) is reserved. */
-	MT_set_lock(monet_contextLock, "initClient");
+	monet_set_lock(monet_contextLock, "initClient");
 	for(c = monet_clients; c < monet_clients+MAXCLIENTS; c++) {
 		if (c->mode == FINISHED) {
 			monet_nclients++;
@@ -128,7 +128,7 @@ Client initClient(str nme, str prompt, int thread)
 			break;
 		}
 	}
-	MT_unset_lock(monet_contextLock, "initClient");
+	monet_unset_lock(monet_contextLock, "initClient");
 
 	if (c == monet_clients+MAXCLIENTS) {
 		GDKerror("initClient: Out of client slots\n");
@@ -284,9 +284,9 @@ Client forkClient(Cntxt stk, int thread)
         		monet_cntxt[son->stk].outer = stk;
         		monet_cntxt[son->stk].shadow = 1;
 		}
-		MT_set_lock(monet_contextLock, "forkClient");
+		monet_set_lock(monet_contextLock, "forkClient");
 		father->children++;
-		MT_unset_lock(monet_contextLock, "forkClient");
+		monet_unset_lock(monet_contextLock, "forkClient");
 
 		if (thread)
 			if (monetFork() == ~ (MT_Id) 0) return 0;
@@ -303,7 +303,7 @@ void freeClient(Client c)
 {
 	if (c->mode <= FINISHING) {
 		GDKwarning("freeClient(%d): double entry prevented\n", c->stk);
-		MT_unset_lock(monet_contextLock, "freeClient");
+		monet_unset_lock(monet_contextLock, "freeClient");
 		return;
 	}
 	/* free the client record */
@@ -311,7 +311,7 @@ void freeClient(Client c)
 		monet_clients[c->father].children--;
 	}
 	c->mode = FINISHING;
-	MT_unset_lock(monet_contextLock, "freeClient");
+	monet_unset_lock(monet_contextLock, "freeClient");
 
 	/* epilogue: free all resources taken by client */
 	if (c->tree) {
@@ -403,7 +403,7 @@ int closeClient(Client c, int thread)
                 }
  	} else {
 		/* client: free your recources immediately */
-		MT_set_lock(monet_contextLock, "closeClient");
+		monet_set_lock(monet_contextLock, "closeClient");
 		freeClient(c);
 		if (thread) {
 			putkillRequest();
@@ -411,12 +411,12 @@ int closeClient(Client c, int thread)
 	}
 
 	/* the adm is freed by the last client */
-	MT_set_lock(monet_contextLock, "closeClient");
+	monet_set_lock(monet_contextLock, "closeClient");
 	if (killadm == FALSE && --monet_nclients == 0) {
 		killadm = TRUE;
 		freeClient(monet_clients);	
 	} else {
-		MT_unset_lock(monet_contextLock, "closeClient");
+		monet_unset_lock(monet_contextLock, "closeClient");
 	}
 	return 0;
 }
@@ -442,8 +442,6 @@ void killClient(Client c, int thread)
 			THRdel(t);
 	        	MT_kill_thread(victim);
 			MT_sleep_ms(1000); /* why is this needed, isn't MTsafe*/
-			if( monet_embedded >1 )
-				monet_embedded--;
 			monetFork();
 		}
 	    	rmRequest(q);
@@ -639,7 +637,7 @@ As yacc/lex are not thread-safe, we lock around the parsing actions.
 @c
 void lockparser(Client c)
 {
-	MT_set_lock(monet_parserLock, "lockparser");
+	monet_set_lock(monet_parserLock, "lockparser");
 	ll_client = c;
 	c->cptr = c->input;
 	c->cline = c->input;
@@ -651,7 +649,7 @@ void unlockparser(Client c)
 	Myylogclean(); /* clean supurfluous nodes */
 	c->top = c->input;
 	ll_client = 0;
-	MT_unset_lock(monet_parserLock, "unlockparser");
+	monet_unset_lock(monet_parserLock, "unlockparser");
 }
 
 extern int yyparse(void);

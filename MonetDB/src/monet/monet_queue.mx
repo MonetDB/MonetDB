@@ -210,7 +210,7 @@ int sem=0; char mybuf[16000], *myp = mybuf;
 
 void wakeupRequest(Request p){
 	p->ev_status = EVPENDING;
-	MT_up_sema(monet_available, "wakeupRequest"); 
+	monet_up_sema(monet_available, "wakeupRequest"); 
 }
  
 void putRequest(Request p){
@@ -228,7 +228,7 @@ void putRequest(Request p){
 		if( last->ev_next == NULL) break;
 	}
 
-	MT_set_lock(monet_critical, "putRequest");
+	monet_set_lock(monet_critical, "putRequest");
 
 	QMrequests += cnt;
 	if (qm_first == NULL) {
@@ -254,7 +254,7 @@ are eligable for execution. Their state is set accordingly.
 		stream_printf(GDKerr, "\n");
 		QMprint();
 	}
-       	MT_unset_lock(monet_critical, "putRequest");
+       	monet_unset_lock(monet_critical, "putRequest");
 }
 	
 void nxtRequest(Request p){
@@ -266,13 +266,13 @@ void nxtRequest(Request p){
 	}
 	QMenqueueStat(p);
 
-       	MT_set_lock(monet_critical, "nxtRequest");
+       	monet_set_lock(monet_critical, "nxtRequest");
 	for (q = qm_last; q; q = q->ev_prev) 
 		if (q->ev_process == tid)  break;
 
 	if (q == 0) {
 		GDKerror("nxtRequest: Context request not found\n");
-		MT_unset_lock(monet_critical, "nxtRequest");
+		monet_unset_lock(monet_critical, "nxtRequest");
 		return;
 	} 
 
@@ -293,7 +293,7 @@ void nxtRequest(Request p){
 		stream_printf(GDKerr, "\n");
 		QMprint();
 	}
-       	MT_unset_lock(monet_critical, "nxtRequest");
+       	monet_unset_lock(monet_critical, "nxtRequest");
 }
 	
 @-
@@ -306,8 +306,8 @@ The flag barrier searches requests that lower the barrier request first.
 Request getRequest(Request barrier){
 	Request	q;
 	int tid= THRgettid();
-       	MT_down_sema(monet_available, "getRequest");
-       	MT_set_lock(monet_critical, "getRequest");
+       	monet_down_sema(monet_available, "getRequest");
+       	monet_set_lock(monet_critical, "getRequest");
 
 	if ( barrier) {
 		for (q = qm_first; q; q = q->ev_next) 
@@ -325,8 +325,8 @@ Request getRequest(Request barrier){
 
 	if (monet_singlethreaded ==0 || q == 0) {
 		PARDEBUG QMprint();
-		MT_up_sema(monet_available, "getRequest");
-		MT_unset_lock(monet_critical, "getRequest");
+		monet_up_sema(monet_available, "getRequest");
+		monet_unset_lock(monet_critical, "getRequest");
 
 		/* we did not find anything because what is available is for another process */
 		/* all because of braindead queue impl. => parallel blocks should allocate a private semaphore of course! */ 
@@ -335,7 +335,7 @@ Request getRequest(Request barrier){
 getReq0:
 	q->ev_status = EVRUNNING;
 	PARDEBUG QMprint();
-	MT_unset_lock(monet_critical, "getRequest");
+	monet_unset_lock(monet_critical, "getRequest");
 	QMexecStat(q);
 	q->ev_process = tid;
 	return q;
@@ -386,7 +386,7 @@ old requests.
 void rmRequest(Request r){
 	Request s,t;
 
-	MT_set_lock(monet_critical, "rmRequest");
+	monet_set_lock(monet_critical, "rmRequest");
 	PARDEBUG THRprintf(GDKerr, "remove dependents of " PTRFMT "\n", PTRFMTCAST (void *) r);
 	for ( s=r->ev_wakeup; s; s=t )  {
 		t= s->ev_wakeup;
@@ -395,7 +395,7 @@ void rmRequest(Request r){
 	}
 	PARDEBUG QMprint();
 	r->ev_wakeup = 0;
-	MT_unset_lock(monet_critical, "rmRequest");
+	monet_unset_lock(monet_critical, "rmRequest");
 }
 @-
 Once an event is handled the status field should be changed
@@ -446,17 +446,17 @@ void clrRequest(Request q){
 	q->ev_status = EVDONE;
 	r = q->ev_wakeup;
 
-	MT_set_lock(monet_critical, "clrRequest");
+	monet_set_lock(monet_critical, "clrRequest");
 	QMrequests--;
        	if (r && r->ev_status > 0) {
 		r->ev_status--;
 		if ( r->ev_status==0) {
 			r->ev_status= EVPENDING;
-			MT_up_sema(monet_available, "clrRequest");
+			monet_up_sema(monet_available, "clrRequest");
 		}
 	}
 	unlinkRequest(q);
-	MT_unset_lock(monet_critical, "clrRequest"); 
+	monet_unset_lock(monet_critical, "clrRequest"); 
 }
 
 @- Request exeuction
@@ -590,7 +590,7 @@ A request can be activated using the queue key.
 void QMwakeup(int qkey){
 	Request p;
 
-	MT_set_lock(monet_critical, "QMwakeup");
+	monet_set_lock(monet_critical, "QMwakeup");
 	p = QMrequest(qkey);
 	if (p != NULL) {
 		PARDEBUG THRprintf(GDKerr, "QMwakeup: qkey %d found\n", qkey);
@@ -600,10 +600,10 @@ void QMwakeup(int qkey){
 			p->ev_status = 0;
 			wakeupRequest(p);
 		}
-		MT_unset_lock(monet_critical, "QMwakeup");
+		monet_unset_lock(monet_critical, "QMwakeup");
 		return;
 	}
-	MT_unset_lock(monet_critical, "QMwakeup");
+	monet_unset_lock(monet_critical, "QMwakeup");
 	PARDEBUG THRprintf(GDKerr, "QMwakeup: qkey %d not found\n", qkey);
 }
 @-
@@ -730,9 +730,9 @@ void QMprintStat(void) {
 
 void QMclearStat(void){
 	Request q,r;
-	MT_set_lock(monet_critical, "QMclearStat");
+	monet_set_lock(monet_critical, "QMclearStat");
 	q = qm_top; qm_top = qm_bot = 0;
-	MT_unset_lock(monet_critical, "QMclearStat");
+	monet_unset_lock(monet_critical, "QMclearStat");
 	for( ; q; q= r ) {
 		r= q->ev_next;
 		GDKfree(q);

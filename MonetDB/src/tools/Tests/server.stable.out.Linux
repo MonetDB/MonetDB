@@ -565,7 +565,7 @@ Start of MIL prelude.
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  29,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_environment",	  "str",  "str",  30,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_aut",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_dat",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -635,16 +635,16 @@ Start of MIL prelude.
 # client	name	login				tree											  # name
 # int	str	str				str											  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 0,	  "adm",  "Sun Oct 17 11:40:14 2004",	  "clients()"										  ]
-[ 1,	  "adm",  "Sun Oct 17 11:40:14 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
+[ 0,	  "adm",  "Sun Oct 17 16:58:58 2004",	  "clients()"										  ]
+[ 1,	  "adm",  "Sun Oct 17 16:58:58 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  340	  ]
+[ "user",	  320	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1500	  ]
+[ "system",	  1540	  ]
 [ "elapsystem",	  0	  ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
@@ -653,7 +653,7 @@ Start of MIL prelude.
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"	  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "617"							  ]
+[ "monet_pid",		  "4151"						  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -669,14 +669,15 @@ Start of MIL prelude.
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47829"						  ]
+[ "mapi_port",		  "46715"						  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53677"						  ]
+[ "sql_port",		  "59349"						  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"	  ]
+[ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/src/tools"	  ]
 #---------------------------------------------------------------------------------#
@@ -686,7 +687,7 @@ Start of MIL prelude.
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"	  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "617"							  ]
+[ "monet_pid",		  "4151"						  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -702,14 +703,15 @@ Start of MIL prelude.
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47829"						  ]
+[ "mapi_port",		  "46715"						  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53677"						  ]
+[ "sql_port",		  "59349"						  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"	  ]
+[ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/src/tools"	  ]
 #-------------------------#
@@ -717,13 +719,13 @@ Start of MIL prelude.
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1581	  ]
+[ "minflt",	  1587	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  167	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  242	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
@@ -736,8 +738,8 @@ Start of MIL prelude.
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1653768	  ]
-[ "fordblks",	  136184	  ]
+[ "uordblks",	  1653776	  ]
+[ "fordblks",	  136176	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -747,8 +749,8 @@ Start of MIL prelude.
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Sun Oct 17 11:40:14 2004"	  ]
-[ 1,	  "Sun Oct 17 11:40:14 2004"	  ]
+[ 0,	  "Sun Oct 17 16:58:58 2004"	  ]
+[ 1,	  "Sun Oct 17 16:58:58 2004"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -760,9 +762,9 @@ Start of MIL prelude.
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  340	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  1500	  ]
+[ "user",	  330	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  1540	  ]
 [ "elapsystem",	  0	  ]
 #-----------------------------------------------------------------------------------------#
 # h			monet_environment																																								  # name
@@ -771,7 +773,7 @@ Start of MIL prelude.
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"	  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "617"							  ]
+[ "monet_pid",		  "4151"						  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -787,14 +789,15 @@ Start of MIL prelude.
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47829"						  ]
+[ "mapi_port",		  "46715"						  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53677"						  ]
+[ "sql_port",		  "59349"						  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"	  ]
+[ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/src/tools"	  ]
 #-------------------------#
@@ -802,13 +805,13 @@ Start of MIL prelude.
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1581	  ]
+[ "minflt",	  1587	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  167	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  242	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
@@ -821,8 +824,8 @@ Start of MIL prelude.
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1662584	  ]
-[ "fordblks",	  127368	  ]
+[ "uordblks",	  1662592	  ]
+[ "fordblks",	  127360	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1409,7 +1412,7 @@ dir();
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_environment",	  "str",  "str",  29,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_environment",	  "str",  "str",  30,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_aut",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  671,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_dat",	  "oid",  "str",  612,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -1489,16 +1492,16 @@ clients();
 # BAT:	  name	| login				| tree		  #
 # (int)	  (str)	| (str)				| (str)		  #
 #-----------------------------------------------------------------#
-[ 0,	  "adm",  "Sun Oct 17 11:40:14 2004",	  "clients()"	  ]
+[ 0,	  "adm",  "Sun Oct 17 16:58:58 2004",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  360	  ]
+[ "user",	  350	  ]
 [ "elapuser",	  20	  ]
-[ "system",	  1500	  ]
+[ "system",	  1540	  ]
 [ "elapsystem",	  0	  ]
 env();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -1508,7 +1511,7 @@ env();
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"	  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "617"							  ]
+[ "monet_pid",		  "4151"						  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -1524,14 +1527,15 @@ env();
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47829"						  ]
+[ "mapi_port",		  "46715"						  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53677"						  ]
+[ "sql_port",		  "59349"						  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"	  ]
+[ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/src/tools"	  ]
 environment().print();
@@ -1542,7 +1546,7 @@ environment().print();
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"	  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "617"							  ]
+[ "monet_pid",		  "4151"						  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -1558,14 +1562,15 @@ environment().print();
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47829"						  ]
+[ "mapi_port",		  "46715"						  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53677"						  ]
+[ "sql_port",		  "59349"						  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"	  ]
+[ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/src/tools"	  ]
 io().print();
@@ -1574,13 +1579,13 @@ io().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1582	  ]
+[ "minflt",	  1588	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  168	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  247	  ]
 memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1594,8 +1599,8 @@ memory().print();
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1504864	  ]
-[ "fordblks",	  285088	  ]
+[ "uordblks",	  1504872	  ]
+[ "fordblks",	  285080	  ]
 threads();
 #-------------------------#
 # BAT:	  thread	  #
@@ -1607,7 +1612,7 @@ view_client_login().print();
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Sun Oct 17 11:40:14 2004"	  ]
+[ 0,	  "Sun Oct 17 16:58:58 2004"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1620,9 +1625,9 @@ view_gdk_cpu().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  360	  ]
+[ "user",	  350	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1500	  ]
+[ "system",	  1540	  ]
 [ "elapsystem",	  0	  ]
 view_gdk_env().print();
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -1632,7 +1637,7 @@ view_gdk_env().print();
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"	  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"				  ]
 [ "gdk_version",	  "4.4.1"					  ]
-[ "monet_pid",		  "617"							  ]
+[ "monet_pid",		  "4151"						  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"											  ]
@@ -1648,14 +1653,15 @@ view_gdk_env().print();
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"													  ]
 [ "host",		  "localhost"												  ]
-[ "mapi_port",		  "47829"						  ]
+[ "mapi_port",		  "46715"						  ]
 [ "mapi_noheaders",	  "no"													  ]
 [ "mapi_debug",		  "0"													  ]
-[ "sql_port",		  "53677"						  ]
+[ "sql_port",		  "59349"						  ]
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"	  ]
+[ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/src/tools"	  ]
 view_gdk_io().print();
@@ -1664,13 +1670,13 @@ view_gdk_io().print();
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1582	  ]
+[ "minflt",	  1588	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  0	  ]
-[ "ninvcsw",	  168	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  247	  ]
 view_gdk_memory().print();
 #---------------------------------#
 # BAT:		  mem		  #
@@ -1684,8 +1690,8 @@ view_gdk_memory().print();
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
 [ "fsmblks",	  0		  ]
-[ "uordblks",	  1504264	  ]
-[ "fordblks",	  285688	  ]
+[ "uordblks",	  1504272	  ]
+[ "fordblks",	  285680	  ]
 view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #

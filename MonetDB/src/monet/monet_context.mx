@@ -174,12 +174,12 @@ Cntxt CNTXTnew(Cntxt outer){
 
         CNTXTclient(outer, &c);
 
-        MT_set_lock(monet_contextLock, "CNTXTnew");
+        monet_set_lock(monet_contextLock, "CNTXTnew");
         if (monet_cntxtcur >= MAXCLIENTS) {
                 i = monet_cntxtcur; /* get from freelist */
                 monet_cntxtcur = monet_cntxt[monet_cntxtcur].next;
         } else if (monet_cntxtfree >= monet_cntxtmax && !CNTXTrealloc((flt) BATMARGIN)) {
-                MT_unset_lock(monet_contextLock, "CNTXTnew");
+                monet_unset_lock(monet_contextLock, "CNTXTnew");
                 return 0;
         } else {
                 i = monet_cntxtfree++; /* alloc new at end succeeded */
@@ -190,7 +190,7 @@ Cntxt CNTXTnew(Cntxt outer){
         monet_cntxt[i].next = c->maxstk;
         monet_cntxt[i].outer = outer;
         c->maxstk = i;
-        MT_unset_lock(monet_contextLock, "CNTXTnew");
+        monet_unset_lock(monet_contextLock, "CNTXTnew");
         return i;
 }
 
@@ -217,7 +217,7 @@ void CNTXTfree(Cntxt stk, Client c){
 	Cntxt keep_last = -1, del_last = -1;
 	Cntxt cur;
 
-	MT_set_lock(monet_contextLock, "CNTXTfree");
+	monet_set_lock(monet_contextLock, "CNTXTfree");
 	for(cur = c->maxstk; cur != stk; cur = monet_cntxt[cur].next) {
 		if (monet_cntxt[cur].used == 0 && (monet_cntxt[cur].reuse < 0 
 			|| monet_cntxt[monet_cntxt[cur].reuse].reuse < 0))
@@ -242,7 +242,7 @@ void CNTXTfree(Cntxt stk, Client c){
 	} else {
 		c->maxstk = stk;
 	}
-	MT_unset_lock(monet_contextLock, "CNTXTfree");
+	monet_unset_lock(monet_contextLock, "CNTXTfree");
 }
 @-
 Clearing a context leavs all variables in place, but frees
@@ -311,11 +311,11 @@ Variable VARnew(Cntxt stk, str name){
 	v->constant = 0;
 	v->frozen = 0;
 
-	MT_set_lock(monet_contextLock, "VARnew");
+	monet_set_lock(monet_contextLock, "VARnew");
 	while(monet_cntxt[stk].shadow) stk = monet_cntxt[stk].outer;
 	v->next = monet_cntxt[stk].var;
 	monet_cntxt[stk].var = v;
-	MT_unset_lock(monet_contextLock, "VARnew");
+	monet_unset_lock(monet_contextLock, "VARnew");
 	return v;
 }
 @
@@ -381,7 +381,7 @@ str VARfindinstance(Cntxt *foundstk, int* foundatom, int natoms, int *atoms){
 	Cntxt j;
 	int i;
 
-        MT_set_lock(monet_contextLock, "VARfindinstance");
+        monet_set_lock(monet_contextLock, "VARfindinstance");
 	for (j = 0; j < monet_cntxtmax; j++) {
 		if (!monet_cntxt[j].used) 
 			continue;
@@ -393,14 +393,14 @@ str VARfindinstance(Cntxt *foundstk, int* foundatom, int natoms, int *atoms){
 						str foundvar = GDKstrdup(v->name);
 						*foundstk = j;
 						*foundatom = v->binding.vtype;
-        					MT_unset_lock(monet_contextLock, "VARfindinstance");
+        					monet_unset_lock(monet_contextLock, "VARfindinstance");
 						return foundvar;
 					}
 				}
 			}
 		}
 	}
-        MT_unset_lock(monet_contextLock, "VARfindinstance");
+        monet_unset_lock(monet_contextLock, "VARfindinstance");
 	return NULL;
 }
 
@@ -408,7 +408,7 @@ void VARdel(Cntxt stk, Variable del){
 	Variable cur, last = NULL, modify = NULL;
 	int found = FALSE;
 
-        MT_set_lock(monet_contextLock, "VARdel");
+        monet_set_lock(monet_contextLock, "VARdel");
 	for(cur = monet_cntxt[stk].var; cur; cur = cur->next) {
 		if (cur == del) {
 			modify = last;
@@ -432,6 +432,6 @@ void VARdel(Cntxt stk, Variable del){
 		del->binding.vtype = TYPE_void;
 		/* del->binding.val.pval is leaked on purpose */
 	}
-        MT_unset_lock(monet_contextLock, "VARdel");
+        monet_unset_lock(monet_contextLock, "VARdel");
 }
 @

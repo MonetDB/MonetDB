@@ -308,28 +308,28 @@ up by the last reader. Crucial counter variables are protected by a
 short-term lock ('protector').
 @c
 #define TBL_set_readlock() {					\
-    MT_set_lock(TBL_writelock, "TBL_set_readlock(writelock)");	\
-    MT_set_lock(TBL_protector, "TBL_set_readlock(protector)");	\
+    monet_set_lock(TBL_writelock, "TBL_set_readlock(writelock)");	\
+    monet_set_lock(TBL_protector, "TBL_set_readlock(protector)");	\
     TBL_readers++;						\
-    MT_unset_lock(TBL_protector, "TBL_set_readlock(protector)");\
-    MT_unset_lock(TBL_writelock, "TBL_set_readlock(writelock)");}
+    monet_unset_lock(TBL_protector, "TBL_set_readlock(protector)");\
+    monet_unset_lock(TBL_writelock, "TBL_set_readlock(writelock)");}
 #define TBL_unset_readlock() {					\
-    MT_set_lock(TBL_protector, "TBL_unset_readlock(protector)");\
+    monet_set_lock(TBL_protector, "TBL_unset_readlock(protector)");\
     if (--TBL_readers == 0 && TBL_writer) 			\
-		MT_up_sema(TBL_barrier, "TBL_unset_readlock");	\
-    MT_unset_lock(TBL_protector, "TBL_unset_readlock(protector)");	}
+		monet_up_sema(TBL_barrier, "TBL_unset_readlock");	\
+    monet_unset_lock(TBL_protector, "TBL_unset_readlock(protector)");	}
 #define TBL_set_writelock() {					\
-    MT_set_lock(TBL_writelock, "TBL_set_writelock(writelock)");	\
-    MT_set_lock(TBL_protector, "TBL_set_writelock(protector)");	\
+    monet_set_lock(TBL_writelock, "TBL_set_writelock(writelock)");	\
+    monet_set_lock(TBL_protector, "TBL_set_writelock(protector)");	\
     TBL_writer = TBL_readers;					\
-    MT_unset_lock(TBL_protector, "TBL_set_writelock(protector)");\
+    monet_unset_lock(TBL_protector, "TBL_set_writelock(protector)");\
     if (TBL_writer) 						\
-	MT_down_sema(TBL_barrier, "TBL_set_writelock");		}
+	monet_down_sema(TBL_barrier, "TBL_set_writelock");		}
 #define TBL_unset_writelock() {					\
-    MT_set_lock(TBL_protector, "TBL_unset_writelock(protector)");	\
+    monet_set_lock(TBL_protector, "TBL_unset_writelock(protector)");	\
     TBL_writer = 0;						\
-    MT_unset_lock(TBL_protector, "TBL_unset_writelock(protector)");\
-    MT_unset_lock(TBL_writelock, "TBL_unset_writelock");	}
+    monet_unset_lock(TBL_protector, "TBL_unset_writelock(protector)");\
+    monet_unset_lock(TBL_writelock, "TBL_unset_writelock");	}
 
 
 @+ Dynamic Loading  
@@ -1265,9 +1265,11 @@ Since all code will move to modules this function will be come obsolute.
  	TBL_@1_@2 = TBL_create(monet_clients,"@1_@2",@5,TYPE_@3,TYPE_@4,@6,@7);
 @c
 void TBL_init(void) {
-        TBL_protector = MT_create_lock();
-        TBL_writelock = MT_create_lock();
-        TBL_barrier = MT_create_sema(0);
+	if( monet_embedded == 0) {
+		TBL_protector = MT_create_lock();
+		TBL_writelock = MT_create_lock();
+		TBL_barrier = MT_create_sema(0);
+	}
 
 	TBL_M_lock(NULL);
 

@@ -302,7 +302,7 @@ BAT *interpret_pin(batrec *r, str s) {
 	} else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
 		BAT *_b = BBP_cache(ABS(r->id));
 		int tid = THRgettid();
-		MT_set_lock(monet_voidLock, "pin");
+		monet_set_lock(monet_voidLock, "pin");
 		if (_b->void_cnt && _b->void_tid != tid) {
 			BAT *v = VIEWcreate(b);
 			BBPunfix(r->id);
@@ -316,7 +316,7 @@ BAT *interpret_pin(batrec *r, str s) {
 		}
 		_b->void_cnt++;
 		_b->void_tid = tid;
-		MT_unset_lock(monet_voidLock, "pin");
+		monet_unset_lock(monet_voidLock, "pin");
 	}
 	r->id = b->batCacheid;
     	r->stamp = b->batStamp;
@@ -332,7 +332,7 @@ void interpret_unpin(batrec *r, str s) {
 		GDKerror("interpret_unpin: %s bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
 	    } else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
 		BAT *_b = BBPdescriptor(ABS(r->id));
-		MT_set_lock(monet_voidLock, "unpin");
+		monet_set_lock(monet_voidLock, "unpin");
 		if (--(_b->void_cnt) == 0) {
 			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[" SSZFMT "," SSZFMT "]\n", 
 				s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
@@ -341,7 +341,7 @@ void interpret_unpin(batrec *r, str s) {
 			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => %d[" SSZFMT "," SSZFMT "]\n", 
 				s, (int) b->batCacheid, _b->void_cnt, _b->void_tid);
 		}
-		MT_unset_lock(monet_voidLock, "unpin");
+		monet_unset_lock(monet_voidLock, "unpin");
 	    }
 	}
         BBPunfix(r->id);
@@ -458,28 +458,28 @@ void closeProfiler(stream *o)
 {
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
-	MT_set_lock(profilerLock, "startProfiler");
+	monet_set_lock(profilerLock, "startProfiler");
 	if( o == eventstream){ 
 		eventstream= NULL;
 	}
-	MT_unset_lock(profilerLock, "startProfiler");
+	monet_unset_lock(profilerLock, "startProfiler");
 }
 int startProfiler(stream *o)
 {
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
-	MT_set_lock(profilerLock, "startProfiler");
+	monet_set_lock(profilerLock, "startProfiler");
 	eventstream= o;
 	delayswitch=1;
 	showheader=1;
-	MT_unset_lock(profilerLock, "startProfiler");
+	monet_unset_lock(profilerLock, "startProfiler");
 	return 0;
 }
 int stopProfiler(void)
 {
-	MT_set_lock(profilerLock, "stopProfiler");
+	monet_set_lock(profilerLock, "stopProfiler");
 	eventstream= NULL;
-	MT_unset_lock(profilerLock, "stopProfiler");
+	monet_unset_lock(profilerLock, "stopProfiler");
 	return 0;
 }
 #else
@@ -1894,7 +1894,7 @@ int setProfilerFilter(str left, str right)
 	}
 	if( profilerLock==NULL)
 		profilerLock= MT_create_lock();
-	MT_set_lock(profilerLock, "startProfiler");
+	monet_set_lock(profilerLock, "startProfiler");
 	if( strcmp(left,"*")==0 && strcmp(right,"*")==0){
 		for(i=0;i<filtertop;i++){
 			if(filter[i][0]) GDKfree(filter[i][0]);
@@ -1905,7 +1905,7 @@ int setProfilerFilter(str left, str right)
 			filterlength[i][1]= 0;
 		}
 		filtertop=0;
-		MT_unset_lock(profilerLock, "startProfiler");
+		monet_unset_lock(profilerLock, "startProfiler");
 		return GDK_SUCCEED;
 	}
 	filter[filtertop][0]= GDKstrdup(left);
@@ -1917,7 +1917,7 @@ int setProfilerFilter(str left, str right)
 		filterlength[filtertop][1]= 0; /* quick test */
 	else 	filterlength[filtertop][1]= strlen(right);
 	filtertop++;
-	MT_unset_lock(profilerLock, "startProfiler");
+	monet_unset_lock(profilerLock, "startProfiler");
 	return GDK_SUCCEED;
 }
 static int tstpattern(str pattern, int len, str callee)
@@ -1954,20 +1954,20 @@ any performance profiling.
 #define log(X,Y) if(eventstream && (stream_errnr(eventstream) \
 		||  stream_printf(eventstream,X,Y)<0)){ \
 		eventstream=0;\
-		MT_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
+		monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
 #define log0(X) if(eventstream && (stream_errnr(eventstream) \
 		|| stream_printf(eventstream,X)<0) ){ \
 		eventstream=0;\
-		MT_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
+		monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
 #define log2(X,Y,Z) if(eventstream && (stream_errnr(eventstream) \
 		|| stream_printf(eventstream,X,Y,Z)<0) ){ \
 		eventstream=0;\
-		MT_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
+		monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
 #define flushLog() if(eventstream && stream_errnr(eventstream)){eventstream=0;\
-	MT_unset_lock(profilerLock, "onlineProfilerEvent"); return;} \
+	monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;} \
 	else stream_flush(eventstream); \
 	if(eventstream && stream_errnr(eventstream)){eventstream=0;\
-	MT_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
+	monet_unset_lock(profilerLock, "onlineProfilerEvent"); return;} 
 
 void onlineProfilerHeader(void)
 {
@@ -2060,13 +2060,13 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
 	if( delayswitch==0){
 		delayswitch= -1;
 	} 
-	MT_set_lock(profilerLock, "onlineProfilerEvent");
+	monet_set_lock(profilerLock, "onlineProfilerEvent");
 	if( showheader>0){
 		onlineProfilerHeader();
 		showheader--;
 	}
 	if(eventstream==NULL || stream_errnr(eventstream)){
-		MT_unset_lock(profilerLock, "onlineProfilerEvent");
+		monet_unset_lock(profilerLock, "onlineProfilerEvent");
 			eventstream=NULL;
 			return;
 	}
@@ -2074,7 +2074,7 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
 	namebuf[0]=0;
 	yydeparseFunction(monet_clients,lt,namebuf,namebuf+1024);
 	if( !tstFilter(caller,namebuf)) {
-		MT_unset_lock(profilerLock, "onlineProfilerEvent");
+		monet_unset_lock(profilerLock, "onlineProfilerEvent");
 		return;
 	}
 
@@ -2127,7 +2127,7 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
 	eventcounter++;
 	if (eventstream && stream_flush(eventstream))
 		eventstream = 0; 
-	MT_unset_lock(profilerLock, "onlineProfilerEvent");
+	monet_unset_lock(profilerLock, "onlineProfilerEvent");
 }
 
 #else

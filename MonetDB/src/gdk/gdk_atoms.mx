@@ -388,7 +388,7 @@ static int align(int n) {
 
 void ATOMproperty(str id, str property, GDKfcn arg) {
 	int t;
-	MT_set_lock(GDKthreadLock, "ATOMproperty");
+	gdk_set_lock(GDKthreadLock, "ATOMproperty");
 	t = ATOMindex(id); 
 	if (t < 0) {
 	    t = -t;
@@ -476,7 +476,7 @@ void ATOMproperty(str id, str property, GDKfcn arg) {
 */
 	    BATatoms[t].storage = t;  /* critical redefine: undo remapping */
 	}
-out:	MT_unset_lock(GDKthreadLock, "ATOMproperty");
+out:	gdk_unset_lock(GDKthreadLock, "ATOMproperty");
 }
 
 int ATOMindex(str nme) {
@@ -1813,20 +1813,20 @@ oid OIDrand(void) {
 Initialize the current OID number to be starting at 'o'. 
 @c
 oid OIDbase(oid o){
-	MT_set_lock(MT_system_lock, "OIDbase");
+	gdk_set_lock(MT_system_lock, "OIDbase");
 	GDKoid = o;
-	MT_unset_lock(MT_system_lock, "OIDbase");
+	gdk_unset_lock(MT_system_lock, "OIDbase");
 	return o;
 }
 
 oid OIDseed(oid o) {
 	oid t, p = GDKoid;
 
-	MT_set_lock(MT_system_lock, "OIDseed");
+	gdk_set_lock(MT_system_lock, "OIDseed");
  	t = OIDrand();
 	if (o > t) t = o;
 	if (p >= t) t = p;
-	MT_unset_lock(MT_system_lock, "OIDseed");
+	gdk_unset_lock(MT_system_lock, "OIDseed");
 	return t;
 }
 @-
@@ -1850,14 +1850,14 @@ Write the current sequence of OID seeds to a file in string format.
 @c
 int OIDwrite(stream *s) {
 	int ret = 0;
-	MT_set_lock(MT_system_lock, "OIDwrite");
+	gdk_set_lock(MT_system_lock, "OIDwrite");
 	if (GDKoid) {
 		GDKflushed = GDKoid;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
 		if (stream_errnr(s) || stream_write(s, " ", 1, 1) <= 0)
 			ret = -1;
 	}
-	MT_unset_lock(MT_system_lock, "OIDwrite");
+	gdk_unset_lock(MT_system_lock, "OIDwrite");
 	return ret;
 }
 
@@ -1872,11 +1872,11 @@ Reserve a range of unique OIDs
 @c
 oid OIDnew(size_t inc) {
 	oid ret;
-	MT_set_lock(MT_system_lock, "OIDnew");
+	gdk_set_lock(MT_system_lock, "OIDnew");
 	if (!GDKoid) GDKoid = OIDrand();
 	ret = GDKoid; 
 	GDKoid += inc; 
-	MT_unset_lock(MT_system_lock, "OIDnew");
+	gdk_unset_lock(MT_system_lock, "OIDnew");
 	return ret; 
 }
 @-

@@ -4,7 +4,7 @@ The Embedded MonetDB version is optimized for running on small board computers
 as a database back-end for a single Mapi client.
 Within this context, much of the code to facilitate and protect 
 concurrent use of the kernel can be disabled. For example, locking of critical
-resource is not needed anymore, which results in significant 
+resources is not needed anymore, which results in significant 
 performance improvements.
 </p>
 <p>
@@ -35,6 +35,17 @@ We can not support multiple MAPI connections to the embedded kernel,
 because each connection would lead to a thread awaiting input.
 Evidently, both threads may receive MIL requests, which should be
 synchronized. Although each thread could be given exclusive access, such
-a situation quickly leads to hard to detect raise conditions and
-deadlocks in the applications.
+a situation quickly leads to hard to handle raise conditions and
+detect deadlocks in the applications.
+</p>
+<p>
+The implementation is organized around two global variables, monet_embedded 
+and GDKembedded. They are set using a configuration parameter. Moreover,
+setting monet_embedded implies also setting GDKembedded, and turning
+the server into a daemon process.
+</p>
+<p>
+The minimal footprint of MonetDB V4.4 is about 15 Mb (+ ca 4Mb for SQL).
+After module loading the space quickly grows to about 60Mb.
+This footprint should be reduced.
 </p>

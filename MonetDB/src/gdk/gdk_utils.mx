@@ -482,7 +482,7 @@ void GDKmem_heapcheck(int t) {
 {	size_t _memdelta = (size_t) @1;
 	size_t _vmdelta = (size_t) SEG_SIZE(@2,MT_VMUNITLOG);
 
-        MT_set_lock(GDKthreadLock, "GDKmeminc");
+        gdk_set_lock(GDKthreadLock, "GDKmeminc");
 	GDK_mem_cursize += _memdelta;
 #ifdef GDK_VM_KEEPHISTO
 {	int _idx;
@@ -490,7 +490,7 @@ void GDKmem_heapcheck(int t) {
         GDK_vm_nallocs[_idx]++; }
 #endif
         GDK_vm_cursize += _vmdelta;
-        MT_unset_lock(GDKthreadLock, "GDKmeminc");
+        gdk_unset_lock(GDKthreadLock, "GDKmeminc");
 }
 
 @- memdec(size_t memdelta, size_t vmdelta)
@@ -498,7 +498,7 @@ void GDKmem_heapcheck(int t) {
 {	size_t _memdelta = (size_t) @1;
 	size_t _vmdelta = (size_t) SEG_SIZE(@2,MT_VMUNITLOG);
 
-        MT_set_lock(GDKthreadLock, "GDKmemdec");
+        gdk_set_lock(GDKthreadLock, "GDKmemdec");
 	GDK_mem_cursize -= _memdelta;
 #ifdef GDK_VM_KEEPHISTO
 {	int _idx;
@@ -506,7 +506,7 @@ void GDKmem_heapcheck(int t) {
         GDK_vm_nallocs[_idx]--; }
 #endif
         GDK_vm_cursize -= _vmdelta;
-        MT_unset_lock(GDKthreadLock, "GDKmemdec");
+        gdk_unset_lock(GDKthreadLock, "GDKmemdec");
 }
 @c
 void GDKmemdump(void) {
@@ -845,21 +845,21 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 		if (newmax < GDK_vm_maxsize) GDK_vm_maxsize = newmax;
 	}
 
-        if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKmemfail");
+        if (GDKthreadLock) gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	THRprintf(GDKerr, "%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", 
 			s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	GDKdebug |= 4;
-        if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKmemfail");
+        if (GDKthreadLock) gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 
         BBPtrim(memtarget, vmtarget);
 
-        if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKmemfail");
+        if (GDKthreadLock) gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug,bak);
 	THRprintf(GDKerr, "%s(" SZFMT ") fail => BBPtrim(ready) usage[mem=" SZFMT ",vm=" SZFMT "]\n", 
 			s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
-        if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKmemfail");
+        if (GDKthreadLock) gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 }
 
 /* the blocksize is stored in the ssize_t before it. Negative size <=> VM memory */
@@ -1193,18 +1193,20 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 #endif
 #endif
 
-	GDKthreadLock = MT_create_lock(); 
-	for(i=0; i<= BBPLOCKMASK; i++) {
-		GDKstatusLock[i] = MT_create_lock(); 
-		GDKswapLock[i] = MT_create_lock(); 
-		GDKidxLock[i] = MT_create_lock(); 
-		GDKhashLock[i] = MT_create_lock(); 
+	if( GDKembedded == 0) {
+		GDKthreadLock = MT_create_lock(); 
+		for(i=0; i<= BBPLOCKMASK; i++) {
+			GDKstatusLock[i] = MT_create_lock(); 
+			GDKswapLock[i] = MT_create_lock(); 
+			GDKidxLock[i] = MT_create_lock(); 
+			GDKhashLock[i] = MT_create_lock(); 
+		}
+		GDKcacheLock = MT_create_lock(); 
+		GDKunloadLock = MT_create_lock(); 
+		GDKunloadBarrier = MT_create_lock(); 
+		GDKtrimLock = MT_create_lock(); 
+		GDKtmLock = MT_create_lock(); 
 	}
-	GDKcacheLock = MT_create_lock(); 
-	GDKunloadLock = MT_create_lock(); 
-	GDKunloadBarrier = MT_create_lock(); 
-	GDKtrimLock = MT_create_lock(); 
-	GDKtmLock = MT_create_lock(); 
 
 	/* Mserver intends to rob 85% of all memory as a default */
  	GDK_mem_maxsize = (size_t) ((double)MT_npages() * (double)MT_pagesize() * 0.85); 
@@ -1233,11 +1235,11 @@ int GDKstopped = 1;
 gdk_export void GDKexit(int status);
 @c
 void GDKexit(int status) {
-        if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKexit");
+        if (GDKthreadLock) gdk_set_lock(GDKthreadLock, "GDKexit");
         if (GDKstopped == 0) {
                 GDKstopped++; /* shouldn't there be a lock here? */
                 GDKnrofthreads = 0;
-                if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKexit");
+                if (GDKthreadLock) gdk_unset_lock(GDKthreadLock, "GDKexit");
 
 		/* Kill all threads except myself */
 		if(status == 0) {
@@ -1257,7 +1259,7 @@ void GDKexit(int status) {
 		GDKunlockHome(); 
 		MT_global_exit(status); 
 	} 
-	if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKexit");
+	if (GDKthreadLock) gdk_unset_lock(GDKthreadLock, "GDKexit");
 }
 
 @
@@ -1265,6 +1267,7 @@ All semaphores used by the application should be mentioned here.
 They are initialized during system initialization.
 @c
 int		GDKdebug = 0; 
+int		GDKembedded = 0;
 
 MT_Lock		GDKthreadLock = NULL; 
 MT_Lock		GDKstatusLock[BBPLOCKMASK+1]; 
@@ -1679,10 +1682,10 @@ Thread THRnew(MT_Id pid, str name) {
  	Thread 	t;
 	Thread	s; 
 
-	MT_set_lock(GDKthreadLock, "THRnew"); 
+	gdk_set_lock(GDKthreadLock, "THRnew"); 
 	for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 		if (s->pid == pid) {
-			MT_unset_lock(GDKthreadLock, "THRnew"); 
+			gdk_unset_lock(GDKthreadLock, "THRnew"); 
 			GDKwarning("THRnew:duplicate %d\n", pid); 
 			return s; 
 		}
@@ -1693,7 +1696,7 @@ Thread THRnew(MT_Id pid, str name) {
 		}
 	}
 	if (s == t) {
-		MT_unset_lock(GDKthreadLock, "THRnew"); 
+		gdk_unset_lock(GDKthreadLock, "THRnew"); 
 		GDKfatal("THRnew: too many threads\n"); 
 	}
 
@@ -1711,7 +1714,7 @@ Thread THRnew(MT_Id pid, str name) {
 	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads); 
 	GDKnrofthreads++; 
 	MT_alloc_register(&tid, 1, (char) ('0'+ ((int)tid) - 1));
-	MT_unset_lock(GDKthreadLock, "THRnew"); 
+	gdk_unset_lock(GDKthreadLock, "THRnew"); 
 
 	return s; 
 }
@@ -1720,7 +1723,7 @@ void THRdel(Thread t) {
 	if (t < GDKthreads || t > GDKthreads + THREADS) {
 		GDKfatal("THRdel: illegal call\n"); 
 	}
-	MT_set_lock(GDKthreadLock, "THRdel"); 
+	gdk_set_lock(GDKthreadLock, "THRdel"); 
 	if (t->cleanup) {
 		(*t->cleanup)(t);
 	}
@@ -1729,7 +1732,7 @@ void THRdel(Thread t) {
 		(size_t) t->pid, GDKnrofthreads); 
 	t->pid = 0; 
 	GDKnrofthreads--; 
-	MT_unset_lock(GDKthreadLock, "THRdel"); 
+	gdk_unset_lock(GDKthreadLock, "THRdel"); 
 }
 @- 
 The easiest way to terminate a thread is to identify its name
@@ -1818,7 +1821,7 @@ int THRprintf(stream *s, const char *format, ...) {
         va_list ap;
 
 	if (MT_system_lock) {
-		MT_set_lock(MT_system_lock, "THRprintf");
+		gdk_set_lock(MT_system_lock, "THRprintf");
 	}
 	if (*format != '!') {
 	        c = '#';
@@ -1857,7 +1860,7 @@ int THRprintf(stream *s, const char *format, ...) {
 		n = -1;
 	if (bf != THRprintbuf) free(bf);
 	if (MT_system_lock) {
-		MT_unset_lock(MT_system_lock, "THRprintf");
+		gdk_unset_lock(MT_system_lock, "THRprintf");
 	}
         return n;
 }

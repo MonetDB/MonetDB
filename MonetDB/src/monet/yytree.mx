@@ -114,13 +114,13 @@ YYSTREE Myylognode( int tok, int val) {
 YYSTREE Myynode( int tok, int val) {
 	YYSTREE t;
 
-  	MT_set_lock(monet_critical, "Myynode");
+  	monet_set_lock(monet_critical, "Myynode");
 	t = nfree;
 	if (t)
 		nfree = t->nfree;
 	else
 		t =(YYSTREE) GDKmalloc(sizeof(*t));
-        MT_unset_lock(monet_critical, "Myynode");
+        monet_unset_lock(monet_critical, "Myynode");
 	memset(t, 0, sizeof(*t));
 	t->token = tok;
 	t->yyval.vtype = val;
@@ -135,10 +135,10 @@ YYSTREE Myynode( int tok, int val) {
 		GDKfree((@1)->yyval.val.pval);
 		(@1)->yyval.val.pval = 0;
 	}
-  	MT_set_lock(monet_critical, "yykill");
+  	monet_set_lock(monet_critical, "yykill");
 	(@1)->nfree = nfree;
 	nfree = (@1);
-        MT_unset_lock(monet_critical, "yykill");
+        monet_unset_lock(monet_critical, "yykill");
 @
 
 @-
