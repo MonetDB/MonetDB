@@ -15,5 +15,4 @@
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
 
-SUBDIRS = server backends odbc HAVE_JAVA?jdbc LINK_STATIC?tools
-
+SUBDIRS = include server backends odbc HAVE_JAVA?jdbc LINK_STATIC?tools
