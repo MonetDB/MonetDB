@@ -20,14 +20,21 @@ Packager: Niels Nes <Niels.Nes@cwi.nl>
 Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 BuildRequires: python 
 
-#%define buildphp 0
-#%define buildperl 0
-#%define builddoc 0
+%define builddoc 0
+%if 0
+%define buildphp 1
+%define buildperl 1
+%define comp_cc gcc
+%define comp_cxx g++
+%endif
 
-%ifarch x86_64
-%define bits 64
-%else
+# groups of related archs
+%define all_x86 i386 i586 i686
+
+%ifarch %{all_x86}
 %define bits 32
+%else
+%define bits 64
 %endif
 
 %package client
@@ -129,6 +136,8 @@ rm -rf $RPM_BUILD_ROOT
 
 ./configure \
 	--enable-bits=%{bits} \
+	--with-gcc="%{comp_cc}" \
+	--with-gxx="%{comp_cxx}" \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} \

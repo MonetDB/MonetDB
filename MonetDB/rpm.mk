@@ -36,7 +36,7 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%_topdir           $(rpmtopdir)"        >> $(rpmtopdir)/rpmmacros
 	echo "%tmpdir            %{_tmppath}"         >> $(rpmtopdir)/rpmmacros
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
-	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
+	#echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 	#( if [ "$(DOCTOOLS_TRUE)" = "#" ] ; then \
 	#	echo "%builddoc  0"                   >> $(rpmtopdir)/rpmmacros ; \
 	# else \
@@ -52,8 +52,8 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	 else \
 		echo "%buildperl  1"                   >> $(rpmtopdir)/rpmmacros ; \
 	fi )
-	echo "%comp_cc  $CC"                  	>> $(rpmtopdir)/rpmmacros ; 
-	echo "%comp_cxx $CXX"                  	>> $(rpmtopdir)/rpmmacros ; 
+	echo "%comp_cc  $(CC)"                 	       >> $(rpmtopdir)/rpmmacros ; 
+	echo "%comp_cxx $(CXX)"                	       >> $(rpmtopdir)/rpmmacros ; 
 
 	$(RPMBUILD) --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
