@@ -83,9 +83,15 @@ this facilitates the use of the string module in bulk operations.
 .OPERATOR (str) "+" (any) : str = strConcat; 
 	"Concatenate two strings."
 .COMMAND length( str s ) : int = strLength; 
-	"Return the length of a string."
+	"Return the length of a string in characters."
+.COMMAND nbytes( str s ) : int = strBytes; 
+	"Return the length of a string in bytes."
 .COMMAND chrAt( str s, int index ) : chr = strChrAt; 
-	"String array lookup operation."
+	"String array lookup operation. DEPRECATED: non-ASCII characters become nil, use: string(str,pos,1)"
+.COMMAND unicodeAt(str s, int index) : int = strWChrAt;
+	"get a unicode character (as an int) from a string position. (!DS2.2)"
+.COMMAND unicode(int wchar) : str = strFromWChr;
+	"convert a unicode to a one-character string. (!DS2.2)"
 
 .COMMAND startsWith( str s, str prefix ) : bit = strPrefix;
         "Prefix check."
@@ -98,9 +104,9 @@ this facilitates the use of the string module in bulk operations.
         "Convert a string to upper case."
 
 .COMMAND search( str s, chr c ) : int = strChrSearch; 
-	"Search for a character. Returns position, -1 if not found."
+	"Search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: search(str,str)"
 .COMMAND r_search( str s, chr c ) : int = strReverseChrSearch; 
-	"Reverse search for a char. Returns position, -1 if not found."
+	"Reverse search for a character. Returns position, -1 if not found. DEPRECATED: does not work for non-ASCII characters, use: r_search(str,str)"
 .COMMAND search( str s, str s2 ) : int = strStrSearch; 
 	"Search for a substring. Returns position, -1 if not found."
 .COMMAND r_search( str s, str s2 ) : int = strReverseStrSearch; 
@@ -116,6 +122,9 @@ this facilitates the use of the string module in bulk operations.
          Iff repeated = true this is repeated while 'src' can be found in the result string.
  	 In order to prevent recursion and result strings of unlimited size, repeating
          is only done iff src is not a substring of dst."
+
+.PRELUDE  = strPrelude;
+.EPILOGUE = strEpilogue;
 
 .END str;
 
@@ -206,8 +215,8 @@ while((i :+= 1) < 65535) {
   }
   if (s.unicodeAt(4) != i) printf("bug in unicodeAt at %d (=%d)\n", i, s.unicodeAt(4));
   if (s.length() != 7) printf("bug in length at %d (=%d)\n", i, s.length);
-  if (s.toUpper.toLower != s.toLower) printf("nonreversible toUpper/toLower at %d(%s,%s,%s,%s)\n", i, s, s.toUpper, s.toUpper.toLower, s.toLower);
-  if (s.toLower.toUpper != s.toUpper) printf("nonreversible toLower/toUpper at %d(%s,%s,%s,%s)\n", i, s, s.toUpper, s.toUpper.toLower, s.toLower);
+  if (s.toUpper.toLower != s.toLower) printf("nonreversible toUpper/toLower at %d\n", i);
+  if (s.toLower.toUpper != s.toUpper) printf("nonreversible toLower/toUpper at %d\n", i);
   if (s.search(t) != 4) printf("bug1 in s.search at %d (=%d)\n", i, s.search(t));
   if (s.search("je") != 5) printf("bug2 in s.search at %d (=%d)\n", i, s.search("je"));
   if (s.r_search(t) != 4) printf("bug1 in s.r_search at %d (=%d)\n", i, s.r_search(t));
