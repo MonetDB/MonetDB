@@ -165,7 +165,7 @@ str CMDsetAllProfiler(int *res){
 }
 str CMDclrFilterProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler(clrFilter)@
-	resetFilter(getClient()->nspace, *mod, *fcn);
+	resetFilter(getClient()->nspace /*, *mod, *fcn*//*Stefan: unused!*/);
 	return MAL_SUCCEED;
 }
 str CMDclrAllProfiler(int *res){
@@ -176,19 +176,19 @@ str CMDclrAllProfiler(int *res){
 
 str CMDsetProfilerStream(int *res, str *fnme){
 	@:checkProfiler(setProfiler)@
-	setLogFile(getClient()->nspace, *fnme);
+	setLogFile(/*getClient()->nspace,*//*Stefan: unused!*/  *fnme);
 	return MAL_SUCCEED;
 }
 
 str CMDstartPointProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler(startPoint)@
-	setStartPoint(getClient()->nspace, *mod, *fcn);
+	setStartPoint(/*getClient()->nspace, *mod, *fcn*//*Stefan: unused!*/);
 	return MAL_SUCCEED;
 }
 
 str CMDendPointProfiler(int *res, str *mod, str *fcn){
 	@:checkProfiler(endPoint)@
-	setStartPoint(getClient()->nspace, *mod, *fcn);
+	setStartPoint(/*getClient()->nspace, *mod, *fcn*//*Stefan: unused!*/);
 	return MAL_SUCCEED;
 }
 

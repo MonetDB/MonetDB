@@ -847,7 +847,7 @@ for reading unfinished definitions is also terminated.
 		curInstr->fcn = getAddress(nme);
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
-			malAtomProperty(curBlk,curInstr);
+			malAtomProperty(/*curBlk,*//*Stefan: unused!*/ curInstr);
 	} else return (MalBlkPtr) parseError(cntxt,"'=' expected\n");
 @-
 Each procedure definition opens a structure in which the
@@ -905,7 +905,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	getInstrPtr(curBlk,0)->token= kind;
 	curPrg->kind = kind;
 	insertSymbol(cntxt->nspace,curPrg);
-	trimMalBlk(curBlk);
+	trimMalBlk(/*curBlk*//*Stefan: unused!*/);
 	chkProgram(cntxt->nspace,curBlk);
 	if( cntxt->backup){
 		cntxt->curprg = cntxt->backup;
@@ -962,7 +962,7 @@ int parseEnd(Client cntxt)
 		advance(cntxt,l);
 		pushEndInstruction(curBlk);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
-		trimMalBlk(cntxt->curprg->def);
+		trimMalBlk(/*cntxt->curprg->def*//*Stefan: unused!*/);
 		cntxt->blkmode =0;
 		chkProgram(cntxt->nspace, cntxt->curprg->def);
 		if( cntxt->backup){

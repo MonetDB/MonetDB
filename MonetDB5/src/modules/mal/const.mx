@@ -164,7 +164,7 @@ str CONSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str CONSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:authorize(close)@
-	if( closeBox("const",TRUE) ==0) return MAL_SUCCEED;
+	if( closeBox("const" /*,TRUE*//*Stefan: unused!*/) ==0) return MAL_SUCCEED;
 	return throwMessage("const.close","failed to close box");
 }
 str CONSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

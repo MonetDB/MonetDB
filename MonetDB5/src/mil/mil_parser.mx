@@ -312,7 +312,7 @@ Once the input is available parsing runs in a critial section for
 a single client thread.
 
 @c
-int mil_parse(str buf, int listing){
+int mil_parse(/*str buf, int listing*//*Stefan: unused!*/){
 	return 0;
 }
 
@@ -510,7 +510,7 @@ The grammatica should be context free.
 #undef yyerror
 #define yyerror(X)      { mil_parseError(X);  }
 
-#define YYPRINT(file,tpe,val)	mil_print(file,tpe,val)
+#define YYPRINT(file,tpe,val)	mil_print(file, /*tpe,*//*Stefan: unused!*/ ,val)
 int yydebug = 1;
 int constantdeclaration = 0;
 void debugParser(int i){ yydebug=i; }
@@ -1044,7 +1044,7 @@ void mil_parseError(str msg){
         GDKerror(buf);
 }
 
-static void mil_print(FILE *f, int tpe, YYSTYPE v)
+static void mil_print(FILE *f, /*int tpe,*//*Stefan: unused!*/ YYSTYPE v)
 {
 	if( v.len >0) fprintf(f," %s ", v.val);
 }

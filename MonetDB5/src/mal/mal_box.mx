@@ -178,10 +178,10 @@ typedef struct BOX{
 mal_export Box newBox(str name);
 mal_export Box findBox(str name);
 mal_export Box openBox(str name);
-mal_export int closeBox(str name,int flag);
+mal_export int closeBox(str name /*,int flag*//*Stefan: unused!*/);
 mal_export void destroyBox(str name);
 mal_export str boxFileName(Box box, str extension);
-mal_export int saveBox(Box box,int flag);
+mal_export int saveBox(Box box /*,int flag*//*Stefan: unused!*/);
 mal_export void loadBox(str nme);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
@@ -191,7 +191,7 @@ mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
 mal_export str getBoxName(Box box, lng i);
-mal_export str toString(Box box, lng i);
+mal_export str toString(/*Box box, lng i*//*Stefan: unused!*/);
 mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 
 mal_export void printSomeBox(stream *fd, int k);
@@ -214,7 +214,7 @@ only.
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
 #include "mal_client.h"		/* for getClient() */
-#include "mal_debugger.h"	/* for printStackElm() & printStack() */
+#include "mal_debugger.h"	/* for printStack() */
 #include "mal_import.h"		/* for malImport() */
 
 #define MAXSPACES 64	/* >MAXCLIENTS+ max modules !! */
@@ -287,10 +287,10 @@ Box openBox(str name){
 	loadBox(name);
 	return box;
 }
-int closeBox(str name,int flag){
+int closeBox(str name /*,int flag*//*Stefan: unused!*/){
 	Box box;
 	if( (box=findBox(name))){
-		saveBox(box,flag);
+		saveBox(box /*,flag*//*Stefan: unused!*/);
 		return 0;
 	}
 	return -1;
@@ -410,6 +410,8 @@ int releaseBox(Box box, str name){
 int releaseAllBox(Box box){
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout,"releaseAllBox:%s \n",box->name);
+#else
+	(void) box;
 #endif
 	return 0;
 }
@@ -450,7 +452,7 @@ str getBoxName(Box box, lng i){
 	s= getVarName(box->sym,i);
 	return GDKstrdup(s);
 }
-str toString(Box box, lng i){
+str toString(/*Box box, lng i*//*Stefan: unused!*/){
 	return GDKstrdup("");
 }
 @+ Persistency
@@ -487,7 +489,7 @@ str boxFileName(Box box, str backup){
 	snprintf(boxfile+i,PATHLENGTH-i,"/%s.box", box->name);
 	return GDKstrdup(boxfile);
 }
-int saveBox(Box box,int flag){
+int saveBox(Box box /*,int flag*//*Stefan: unused!*/){
 	int i, ret=0;
 	ValPtr v;
 	stream *f;

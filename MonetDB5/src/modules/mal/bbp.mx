@@ -221,7 +221,7 @@ str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	if( closeBox("bbp",TRUE) ==0) return MAL_SUCCEED;
+	if( closeBox("bbp" /*,TRUE*//*Stefan: unused!*/) ==0) return MAL_SUCCEED;
 	return throwMessage( "bbp.close","failed to close 'bbp' box");
 }
 str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

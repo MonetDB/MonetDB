@@ -317,7 +317,7 @@ str MALparser(Client c){
 		return throwMessage("MALparser","function signature missing\n");
 	}
 	pushEndInstruction(c->curprg->def);
-	trimMalBlk(c->curprg->def);
+	trimMalBlk(/*c->curprg->def*//*Stefan: unused!*/);
 	chkProgram(c->nspace, c->curprg->def);
 	if( c->curprg->def->errors){
 		showErrors(c);

@@ -80,17 +80,17 @@ mal_export str deactivateCounter(str name);
 mal_export str openProfilerStream();
 mal_export str closeProfilerStream();
 
-mal_export void eventRecord(Scope cntxt, MalBlkPtr mb,
+mal_export void eventRecord(/*Scope cntxt,*//*Stefan: unused!*/  MalBlkPtr mb,
 			   MalStkPtr stk, InstrPtr pci);
-mal_export str setLogFile(Scope cntxt, str fname);
-mal_export str setStartPoint(Scope cntxt, str mod, str fcn);
-mal_export str setEndPoint(Scope cntxt, str mod, str fcn);
+mal_export str setLogFile(/*Scope cntxt,*//*Stefan: unused!*/  str fname);
+mal_export str setStartPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/);
+mal_export str setEndPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/);
 mal_export str startProfiling();
 mal_export str stopProfiling();
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export int eventFilter(Scope cntxt, str mod, str fcn);
-mal_export int resetFilter(Scope cntxt, str mod, str fcn);
+mal_export int resetFilter(Scope cntxt /*, str mod, str fcn*//*Stefan: unused!*/);
 
 mal_export void profileReport(Scope cntxt,int outer, stream *out);
 
@@ -214,7 +214,7 @@ void HASHinfoProfile(Hash *h, str s){
 	snprintf(buf+i,MAXPATHLEN-i,"%d\"", h->lim);
 	log0(buf);
 }
-void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+void eventRecord(/*Scope cntxt,*//*Stefan: unused!*/  MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #ifdef MALprofiler
 	struct tms newTms;
         struct mallinfo infoMalloc;
@@ -433,7 +433,7 @@ inspect the properties of BATs and their propagation.
 #endif
 }
 
-str setLogFile(Scope cntxt, str fname){
+str setLogFile(/*Scope cntxt,*//*Stefan: unused!*/  str fname){
 #ifdef MALprofiler
 	if( profileLock==0) profileLock= MT_create_lock();
 	MT_set_lock(profileLock,"profileLock");
@@ -464,7 +464,7 @@ str closeProfilerStream(){
 	eventstream = NULL;
 	return MAL_SUCCEED;
 }
-str setStartPoint(Scope cntxt, str mod, str fcn){
+str setStartPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/){
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# start point not set\n");
@@ -474,7 +474,7 @@ str setStartPoint(Scope cntxt, str mod, str fcn){
 #endif
 	return MAL_SUCCEED;
 }
-str setEndPoint(Scope cntxt, str mod, str fcn){
+str setEndPoint(/*Scope cntxt, str mod, str fcn*//*Stefan: unused!*/){
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ?*/)@
 	stream_printf(GDKout,"# end point not set\n");
@@ -561,7 +561,7 @@ int eventFilter(Scope cntxt, str mod, str fcn){
 #endif
 	return -1;
 }
-int resetFilter(Scope cntxt, str mod, str fcn){
+int resetFilter(Scope cntxt /*, str mod, str fcn*//*Stefan: unused!*/){
 #ifdef MALprofiler
         int j,k;
         Scope s=cntxt;

@@ -49,13 +49,13 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(stream *f);
-mal_export void printStackElm(stream *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index, int cnt,int first);
+mal_export void printStackElm(stream *f, /*MalBlkPtr mb,*//*Stefan: unused!*/ VarPtr n, ValPtr v,int index, int cnt,int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
 
-mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int mdbToggle(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p);
+mal_export int mdbSetCmd(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p);
 mal_export void printBBPinfo(stream *out);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
@@ -219,7 +219,7 @@ to the context.
 @c
 #define MDBstatus(X) stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
 
-int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+int mdbToggle(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();
 	int b=0;
 	if( p->argc==1){
@@ -240,7 +240,7 @@ int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return 0;
 }
 
-int mdbSetCmd(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+int mdbSetCmd(/*MalBlkPtr mb,*//*Stefan: unused!*/ MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();
 	int b;
 	b= *(chr *) getArgReference(stk,p,1);
@@ -426,7 +426,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 			stream_printf(out,"%sSymbol not found\n","#mdb ");
 			continue;
 		} 
-		printStackElm(out,mb,getVar(mb,i),stk->stk+i,i,size,first);
+		printStackElm(out, /*mb,*//*Stefan: unused!*/ getVar(mb,i),stk->stk+i,i,size,first);
 		continue;
 	}
 	case 'u':
@@ -559,11 +559,11 @@ void printStack(stream *f, MalBlkPtr mb, MalStkPtr s){
 	stream_printf(f,"#mdb ");
         stream_printf(f,"Stack size=%d top=%d\n",s->stksize,s->stktop);
         for( ; i<mb->vtop ; i++){
-		printStackElm(f, mb, getVar(mb,i), s->stk+i,i,0,0);
+		printStackElm(f, /*mb,*//*Stefan: unused!*/ getVar(mb,i), s->stk+i,i,0,0);
         }
 }
 
-void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt,int first){
+void printStackElm(stream *f, /*MalBlkPtr mb,*//*Stefan: unused!*/ VarPtr n, ValPtr v, int index, int cnt,int first){
 	str nme,nmeOnStk;
 	char nmebuf[PATHLENGTH];
 	if( n->tmpindex){

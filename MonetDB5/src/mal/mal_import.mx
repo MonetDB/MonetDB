@@ -40,7 +40,7 @@ mal_export void malImport(Client c, str modname, str libname, int listing);
 mal_export stream *malOpenSource(str fname);
 mal_export str malLoadScript(Client c, str modname);
 mal_export void callString(Client c, str s, int listing);
-mal_export void runScript(Client c, str fname, int listing,MalStkPtr stk);
+mal_export void runScript(Client c, /*str fname,*//*Stefan: unused!*/ int listing /*,MalStkPtr stk*//*Stefan: unused!*/);
 #endif /*  _MAL_IMPORT_H*/
 @-
 The import context is located. If the module already exists, 
@@ -218,7 +218,7 @@ stack frame. Life becomes a little complicated when the script contains
 a definition.
 
 @c
-void runScript(Client c, str fname, int listing, MalStkPtr glb)
+void runScript(Client c, /*str fname,*//*Stefan: unused!*/ int listing /*, MalStkPtr glb*//*Stefan: unused!*/)
 {	
 	stream *fd = NULL, *oldinput;
 	int oldlisting= c->listing;

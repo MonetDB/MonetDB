@@ -65,7 +65,7 @@ html
 
 #include "mal_instruction.h"
 mal_export void malAtomDefinition(str name,int tpe);
-mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
+mal_export int malAtomProperty(/*MalBlkPtr mb,*//*Stefan: unused!*/ InstrPtr pci);
 mal_export int malAtomArray(int tpe, int idx);
 mal_export int malAtomFixed(int size, int align);
 mal_export void showAtoms(stream *fd);	/* used in src/mal/mal_debugger.c */
@@ -113,7 +113,7 @@ void setAtomName(InstrPtr pci){
 	setFunctionId(pci, GDKstrdup(buf));
 }
 
-int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
+int malAtomProperty(/*MalBlkPtr mb,*//*Stefan: unused!*/ InstrPtr pci){
 	str name= functionName(pci);
 	int tpe = getTypeIndex(moduleName(pci));
 	if( tpe<0 || tpe>= GDKatomcnt)

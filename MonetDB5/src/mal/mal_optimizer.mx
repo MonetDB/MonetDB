@@ -431,7 +431,7 @@ catalog management (23) and query processing (42)
 mal_export void debugOptimizers();
 mal_export str CXoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str ARoptimizer(Client cntxt,MalBlkPtr mb, int pc);
-mal_export str DCoptimizer(Client cntxt,MalBlkPtr mb, int pc);
+mal_export str DCoptimizer(Client cntxt,MalBlkPtr mb /*, int pc*//*Stefan: unused!*/);
 mal_export str SPoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str RRoptimizer(Client cntxt,MalBlkPtr mb, int pc);
 mal_export str MALoptimizer(Client c);
@@ -465,7 +465,7 @@ denotes the signature and can not be removed.
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
-int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
+int isInvariant(/*MalBlkPtr mb, int pcf, int pcl, int varid*//*Stefan: unused!*/);
 int hasSideEffects(InstrPtr p);
 
 void debugOptimizers(Client c, MalBlkPtr mb, int pc){
@@ -629,7 +629,7 @@ int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
 			return i;
 		}
 		for(;k < q->argc; k++)
-		if( q->argv[k]== varid && ! isInvariant(mb,pc,i,varid)) 
+		if( q->argv[k]== varid && ! isInvariant(/*mb,pc,i,varid*//*Stefan: unused!*/)) 
 			return i;
 		if( blockStart(p)) blkcount++;
 		if( blockExit(p)) blkcount--;
@@ -742,7 +742,7 @@ For each function it should be relatively easy to determine its
 safety property. This calls for accessing the function MAL block
 and to inspect the arguments of the signature.
 @c
-int isUnsafeFunction(MalBlkPtr mb, InstrPtr q)
+int isUnsafeFunction(/*MalBlkPtr mb,*//*Stefan: unused!*/  InstrPtr q)
 {
 	Symbol s=0;
 	Client c;
@@ -757,9 +757,9 @@ Instructions are unsafe is one of the arguments is also mentioned
 in the result list. Alternatively, the 'unsafe' property is set
 for the function call itself.
 @c
-int isUnsafeInstruction(MalBlkPtr mb, InstrPtr q)
+int isUnsafeInstruction(/*MalBlkPtr mb,*//*Stefan: unused!*/ InstrPtr q)
 {	int j,k;
-	if( isUnsafeFunction(mb,q)) return TRUE;
+	if( isUnsafeFunction(/*mb,*//*Stefan: unused!*/ q)) return TRUE;
 	for(j=0; j<q->retc; j++)
 	for(k=q->retc; k<q->argc; k++)
 	if( q->argv[k] == q->argv[j]) return TRUE;
@@ -769,7 +769,7 @@ int isUnsafeInstruction(MalBlkPtr mb, InstrPtr q)
 The routine isInvariant determines if the variable V is not
 changed in the instruction sequence identified by the range [pcf,pcl].
 @c
-int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
+int isInvariant(/*MalBlkPtr mb, int pcf, int pcl, int varid*//*Stefan: unused!*/)
 {
 	return TRUE;
 }
@@ -811,7 +811,7 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 		return TRUE;
 	}
 
-	if( isUnsafeFunction(mb,q)){
+	if( isUnsafeFunction(/*mb,*//*Stefan: unused!*/ q)){
 		for(i=p->retc; i<p->argc; i++)
 		for(j=q->retc; j<q->argc; j++)
 		if( p->argv[i]== q->argv[j]) {
@@ -829,7 +829,7 @@ int safetyBarrier(Client cntxt,MalBlkPtr mb,InstrPtr p, InstrPtr q)
 }
 int isUpdated(MalBlkPtr mb, int pc)
 {	InstrPtr p,q;
-	int j,k,pcf=pc;
+	int j,k /*,pcf=pc*//*Stefan: unused!*/;
 
 	p= getInstrPtr(mb,pc);
 	for(pc++; pc< mb->stop; pc++){
@@ -846,7 +846,7 @@ int isUpdated(MalBlkPtr mb, int pc)
 			/* TO WEAK, test stability of its arguments */
 			for(j=0;j<p->argc;j++)
 			if( p->argv[j]==q->argv[k] && 
-			    isInvariant(mb,pcf,pc,q->argv[k])) c++;
+			    isInvariant(/*mb,pcf,pc,q->argv[k]*//*Stefan: unused!*/)) c++;
 			return c!= p->argc;
 		}
 
@@ -950,7 +950,7 @@ int hasSideEffects(InstrPtr p){
 	if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
 	return FALSE;
 }
-str DCoptimizer(Client cntxt, MalBlkPtr mb, int pc)
+str DCoptimizer(Client cntxt, MalBlkPtr mb /*, int pc*//*Stefan: unused!*/)
 {	int i,j,k,dc=0,se;
 	InstrPtr p;
 	int *varused;
@@ -1256,7 +1256,7 @@ int showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f){
 At a later stage we could extend the flow details with the status
 of crucial properties, e.g. processing time, cost, size
 @c
-void showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
+void showFlowDetails(MalBlkPtr mb, /*MalStkPtr stk,*//*Stefan: unused!*/ InstrPtr p, int pc, stream *f){
 	str s,msg;
 	msg= instruction2str(mb,p,0);
 	stream_printf(f,"n%d [fontsize=8, shape=box, label=\"",pc);
@@ -1265,7 +1265,7 @@ void showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 	stream_printf(f,"\"];\n");
 	GDKfree(msg);
 }
-void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
+void showFlowGraph(MalBlkPtr mb, /*MalStkPtr stk,*//*Stefan: unused!*/ str fname){
 	stream *f;
 	InstrPtr p;
 	int i,k;
@@ -1275,13 +1275,13 @@ void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
 	p= getInstrPtr(mb,0);
 	stream_printf(f,"digraph %s{\n", functionName(p));
 	p= getInstrPtr(mb,0);
-	showFlowDetails(mb,stk,p,0,f);
+	showFlowDetails(mb,/*stk,*//*Stefan: unused!*/p,0,f);
 	for(k=p->retc;k<p->argc;k++){
 		showOutFlow(mb,0,p->argv[k],f);
 	}
 	for(i=1;i<mb->stop-1;i++){
 		p= getInstrPtr(mb,i);
-		showFlowDetails(mb,stk,p,i,f);
+		showFlowDetails(mb,/*stk,*//*Stefan: unused!*/p,i,f);
 		for(k=0;k<p->retc;k++){
 			showOutFlow(mb,i,p->argv[k],f);
 		}
@@ -1294,12 +1294,12 @@ Summarization of the data flow dependencies can be modelled as a dependency grap
 It can be made explicit or kept implicit using the operators needed.
 We start with the latter. The primary steps to deal with is dead code removal.
 @c
-int removeDeadSink(MalBlkPtr mb, int pc, InstrPtr p){
+int removeDeadSink(/*MalBlkPtr mb, int pc, InstrPtr p*//*Stefan: unused!*/){
 	/* detect if the destination variable is not used anymor*/
 	/* return if it worked out */
 	return FALSE;
 }
-int removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p){
+int removeDeadSource(/*MalBlkPtr mb, int pc, InstrPtr p*//*Stefan: unused!*/){
 	/* detect if the source variable is not used anymor*/
 	/* return if it worked out */
 	return FALSE;
@@ -1336,7 +1336,7 @@ the new location identified by the target.
 The routines for this aspect are available from in mal_instruction.mx
 
 @c
-void moveConstantsFirst(MalBlkPtr mb){
+void moveConstantsFirst(/*MalBlkPtr mb*//*Stefan: unused!*/){
 	/* move all expression dealing with constants to the beginning */
 	/* could be used to shortcut stack initialization */
 }

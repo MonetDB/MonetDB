@@ -244,7 +244,7 @@ str MAPIsuspendClient(int *ret, int *skey, int *timeout) {
 	return suspendClient(getClient(), *skey, *timeout);
 }
 str MAPIresumeClient(int *ret, int *skey) {
-	return resumeClient(getClient(), *skey);
+	return resumeClient(/*getClient(*//*Stefan: unused!*/), *skey);
 }
 @-
 It is advisable to trace the interactions of clients on the server

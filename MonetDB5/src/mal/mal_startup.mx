@@ -145,7 +145,7 @@ void closeClientPrg(Client cntxt, int flag){
 		if( p->token != ENDDEFsymbol)
 			pushEndInstruction(mb);
 	}
-	trimMalBlk(mb);
+	trimMalBlk(/*mb*//*Stefan: unused!*/);
 	chkProgram(cntxt->nspace, cntxt->curprg->def);
 	showErrors(cntxt);
 	if( cntxt->backup){
