@@ -42,6 +42,7 @@ a := new(int,int);
 [sqrt](a);
 !ERROR: interpret: no matching MIL operator to '[sqrt](BAT[int,int])'.
 !MAYBE YOU MEAN:
+!	sqrt(flt) : flt
 !	sqrt(dbl) : dbl
 quit;
 

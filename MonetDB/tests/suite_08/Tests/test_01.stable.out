@@ -276,6 +276,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOu
 [ "sql_api",		  "sql(default-schema)"					  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "default-schema"					  ]
+[ "sql_logdir",		  "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm/log"		  ]
 [ "monet_cwd",		  "/ufs/manegold/tmp/Tests-d10/Tests/tests/suite_08"	  ]
 #~EndVariableOutput~#
 
