@@ -2,6 +2,7 @@
 
 echo "create bdy files"
 
+mkdir ${MONET5_PREFIX}/share/MonetDB5
 cd ${MONET5_PREFIX}/../src/mal
 ls
 for f in  `ls *.mx`

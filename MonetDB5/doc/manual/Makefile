@@ -3,6 +3,7 @@
 #inclusion in the MonetDB5 website
 
 pdf: 
+	-mkdir ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
@@ -12,6 +13,7 @@ pdf:
 	echo "Manual created" 
 
 web:
+	-mkdir ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
@@ -21,6 +23,7 @@ web:
 	echo "Web created"
 
 xml:
+	-mkdir ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
@@ -30,6 +33,7 @@ xml:
 	echo "XML file created"
 
 gdkpdf: 
+	-mkdir ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp gdkmanual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
