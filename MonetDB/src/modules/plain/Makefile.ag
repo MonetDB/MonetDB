@@ -18,7 +18,8 @@ LIBS = {
 		perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx \
 		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
 		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
-		mel.mx
+		mel.mx \
+		bat_arith.mx aggrX3.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	LIBS = ../../gdk/libbat ../../monet/libmonet \

@@ -1,0 +1,198 @@
+@f bat_arith
+@a S. Manegold 
+@t Optimized Multiplexed Basic Arithmetics on BATs
+@v 1.0
+
+This module provides optimized code-expanded implementations of multiplxed
+basic arithmetics ([+],[-],[*],[/]) on void-headed, head-aligned BATs.
+Only the standard types sht, int, lng, flt, dbl are supported.
+
+@m
+.MODULE bat_arith;
+
+@t
+\begin{verbatim}
+	signatures
+	@1:	sht, int, lng, flt, dbl	arithmetic type
+	@2:	+,   -,   *,   /	basic arithmetic operator
+	@3:	add, sub, mul, div	basic arithmetic operator name
+\end{verbatim}
+@= signatures
+.OPERATOR (BAT[void,@1]) "[@2]" (BAT[void,@1]) : BAT[void,@1] = batbat_@1_@3;
+	"optimized multiplexed @3 ('@2') on head-aligned [void,@1] BATs"
+.OPERATOR (@1) "[@2]" (BAT[void,@1]) : BAT[void,@1] = valbat_@1_@3;
+	"optimized multiplexed left-scalar @3 ('@2') on [void,@1] BAT"
+.OPERATOR (BAT[void,@1]) "[@2]" (@1) : BAT[void,@1] = batval_@1_@3;
+	"optimized multiplexed right-scalar @3 ('@2') on [void,@1] BAT"
+@m
+@:signatures(sht,+,add)@
+@:signatures(sht,-,sub)@
+@:signatures(sht,*,mul)@
+@:signatures(sht,/,div)@
+@:signatures(int,+,add)@
+@:signatures(int,-,sub)@
+@:signatures(int,*,mul)@
+@:signatures(int,/,div)@
+@:signatures(lng,+,add)@
+@:signatures(lng,-,sub)@
+@:signatures(lng,*,mul)@
+@:signatures(lng,/,div)@
+@:signatures(flt,+,add)@
+@:signatures(flt,-,sub)@
+@:signatures(flt,*,mul)@
+@:signatures(flt,/,div)@
+@:signatures(dbl,+,add)@
+@:signatures(dbl,-,sub)@
+@:signatures(dbl,*,mul)@
+@:signatures(dbl,/,div)@
+
+.END bat_arith;
+
+@+ Implementation
+@c
+#include <gdk.h>
+#include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include "bat_arith.proto.h"
+
+@c
+/*	implementation
+	@1:	sht, int, lng, flt, dbl	arithmetic type
+	@2:	+,   -,   *,   /	basic arithmetic operator
+	@3:	add, sub, mul, div	basic arithmetic operator name
+*/
+@= implementations
+int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
+	REGISTER @1 *lp, *lq, *rp, *bnp;
+	REGISTER int cnt = 4096/sizeof(@1);
+	@1* lbuf = GDKmalloc(2*cnt*sizeof(@1));
+	@1* rbuf = lbuf+cnt;
+	BAT *bn;
+
+        ALGODEBUG THRprintf(GDKout, "batbat_@1_@3[@2](l=%s,r=%s);\n",l->batId,r->batId);
+ 	ERRORcheck((l->hseqbase!=r->hseqbase)||(BATcount(l)!=BATcount(r)),
+ 	           "batbat_@1_@3: BATs l & r must be head-aligned.\n");
+
+	bn = BATnew(TYPE_void, l->ttype, BATcount(l));
+	BATseqbase(bn,l->hseqbase);
+	lq = (@1*)BUNtloc(l,BUNlast(l));
+	lp = (@1*)BUNtloc(l,BUNfirst(l));
+	rp = (@1*)BUNtloc(r,BUNfirst(r));
+	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+	for (; lp < lq; lp+=cnt, rp+=cnt) {
+		REGISTER int x = (((lq-lp)<cnt)?(lq-lp):cnt);
+		REGISTER int y = x*sizeof(@1);
+		REGISTER int i;
+		memcpy(lbuf,lp,y);
+		memcpy(rbuf,rp,y);
+		for (i=0; i<x; i++) {
+			if ((lbuf[i] != @1_nil) && (rbuf[i] != @1_nil)) {
+				*bnp = lbuf[i] @2 rbuf[i];
+			} else {
+				*bnp = @1_nil;
+			}
+			bnp++;
+		}
+	}
+        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+        if (!bn->batDirty) bn->batDirty = TRUE;
+        GDKfree(lbuf);
+
+        *ret = bn;
+        return GDK_SUCCEED;
+}
+int valbat_@1_@3(BAT **ret, @1 *v, BAT *b) {
+	REGISTER @1 *bp, *bq, *bnp;
+	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	BAT *bn;
+
+        ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2](v,b=%s);\n",b->batId);
+
+	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
+	BATseqbase(bn,b->hseqbase);
+	bq = (@1*)BUNtloc(b,BUNlast(b));
+	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+	if (vv != @1_nil) {
+		for (; bp < bq; bp++) {
+			@1 bv = *(@1*)BUNtloc(b,bp);
+			@1 bnv;
+			if (bv != @1_nil) {
+				bnv = vv @2 *(@1*)BUNtloc(b,bp);
+			} else {
+				bnv = @1_nil;
+			}
+			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &bnv);
+			bnp++;
+		}
+	} else {
+		@1 bnv = @1_nil;
+		for (; bp < bq; bp++) {
+			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &bnv);
+			bnp++;
+		}
+	}
+        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+        if (!bn->batDirty) bn->batDirty = TRUE;
+
+        *ret = bn;
+        return GDK_SUCCEED;
+}
+int batval_@1_@3(BAT **ret, BAT *b, @1 *v) {
+	REGISTER @1 *bp, *bq, *bnp;
+	REGISTER @1 vv = (((*v)!=@1_nil)?(*v):@1_nil);
+	BAT *bn;
+
+        ALGODEBUG THRprintf(GDKout, "batval_@1_@3[@2](v,b=%s);\n",b->batId);
+
+	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
+	BATseqbase(bn,b->hseqbase);
+	bq = (@1*)BUNtloc(b,BUNlast(b));
+	bp = (@1*)BUNtloc(b,BUNfirst(b));
+	bnp = (@1*)BUNtloc(bn,BUNlast(bn));
+	if (vv != @1_nil) {
+		for (; bp < bq; bp++) {
+			@1 bv = *(@1*)BUNtloc(b,bp);
+			@1 bnv;
+			if (bv != @1_nil) {
+				bnv = *(@1*)BUNtloc(b,bp) @2 vv;
+			} else {
+				bnv = @1_nil;
+			}
+			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &bnv);
+			bnp++;
+		}
+	} else {
+		@1 bnv = @1_nil;
+		for (; bp < bq; bp++) {
+			void@1_bunfastins_nocheck_noinc(bn, bnp, NULL, &bnv);
+			bnp++;
+		}
+	}
+        bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
+        if (!bn->batDirty) bn->batDirty = TRUE;
+
+        *ret = bn;
+        return GDK_SUCCEED;
+}
+@c
+@:implementations(sht,+,add)@
+@:implementations(sht,-,sub)@
+@:implementations(sht,*,mul)@
+@:implementations(sht,/,div)@
+@:implementations(int,+,add)@
+@:implementations(int,-,sub)@
+@:implementations(int,*,mul)@
+@:implementations(int,/,div)@
+@:implementations(lng,+,add)@
+@:implementations(lng,-,sub)@
+@:implementations(lng,*,mul)@
+@:implementations(lng,/,div)@
+@:implementations(flt,+,add)@
+@:implementations(flt,-,sub)@
+@:implementations(flt,*,mul)@
+@:implementations(flt,/,div)@
+@:implementations(dbl,+,add)@
+@:implementations(dbl,-,sub)@
+@:implementations(dbl,*,mul)@
+@:implementations(dbl,/,div)@
+
