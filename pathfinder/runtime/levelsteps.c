@@ -238,7 +238,7 @@ PFparent_lev(BAT** res, BAT* level, BAT* context, int* height, int* upperbound)
 
     int ctx_bunsize, res_bunsize, stack_top;
     BUN ctx_cur, ctx_last, res_cur;
-    oid ctx_next_pre, level_cur/*, level_last*//* StM: not used in this case */;
+    oid ctx_next_pre, level_cur;
     chr search_level, *level_val, *stack; 
 
     /* result bat allocation. for result size use the upperbound parameter */
@@ -280,7 +280,6 @@ PFparent_lev(BAT** res, BAT* level, BAT* context, int* height, int* upperbound)
     res_cur = BUNlast(result) - res_bunsize;
 
     level_cur = ctx_next_pre;
-    /*level_last = level->hseqbase;*//* StM: */ /* not used in this case */
 
     /* definition for "array-like" access on level values of given nodes */
     level_val = ((chr*) BUNfirst(level)) - level->hseqbase;

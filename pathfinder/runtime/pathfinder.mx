@@ -38,14 +38,14 @@
 @m
 .MODULE pathfinder;
 
-@:scjbr_cmd(_void_incl,Result includes nodes exactly on the boundary.)@
-@:scjbr_cmd(_void_excl,Result excludes nodes exactly on the boundary.)@
+@:scj_cmd(_descorself,Result includes nodes exactly on the boundary.)@
+@:scj_cmd(_desc,Result excludes nodes exactly on the boundary.)@
 
-@= scjbr_cmd
-.COMMAND staircasejoin_br@1(BAT[oid,oid] doc,
-                         BAT[oid,oid] context,
-                         int height,
-                         int upperbound) : BAT[oid,void] = PFstaircasejoin_br@1;
+@= scj_cmd
+.COMMAND scj_void@1(BAT[void,int] doc,
+                    BAT[oid,any] context,
+                    int height,
+                    int upperbound): BAT[oid,void] = PFscj_void@1;
 "PARAMETERS
   doc: document BAT (preorder rank, postorder rank)
   context: context node sequence (preorder rank, postorder rank)
@@ -166,23 +166,24 @@ const PI := chr(3);
 const DOCUMENT := chr(4);
 
 # INITIALIZATION of working set (T*-BATs)
-var Tpre_size := new(void,int).seqbase(PRE_BASE);
-var Tpre_level := new(void,chr).seqbase(PRE_BASE);
-var Tpre_prop := new(void,oid).seqbase(PRE_BASE);
-var Tpre_kind := new(void,chr).seqbase(PRE_BASE);
-var Tprop_ns := new(void,str).seqbase(PRE_BASE);
-var Tprop_loc := new(void,str).seqbase(PRE_BASE);
-var Tprop_text := new(void,str).seqbase(PRE_BASE);
-var Tprop_com := new(void,str).seqbase(PRE_BASE);
-var Tprop_ins := new(void,str).seqbase(PRE_BASE);
-var Tprop_tgt := new(void,str).seqbase(PRE_BASE);
-var Tattr_ns := new(void,str).seqbase(ATTR_BASE);
-var Tattr_loc := new(void,str).seqbase(ATTR_BASE);
-var Tattr_val := new(void,str).seqbase(ATTR_BASE);
-var Tattr_own := new(void,oid).seqbase(ATTR_BASE);
-var Tdoc_pre := new(void,oid).seqbase(DOC_BASE);
-var Tdoc_name := new(void,str).seqbase(DOC_BASE);
-var Theight := 0;
+var Tpre_size;
+var Tpre_level;
+var Tpre_prop;
+var Tpre_kind;
+var Tprop_ns;
+var Tprop_loc;
+var Tprop_text;
+var Tprop_com;
+var Tprop_ins;
+var Tprop_tgt;
+var Tattr_ns;
+var Tattr_loc;
+var Tattr_val;
+var Tattr_own;
+var Tdoc_pre;
+var Tdoc_name;
+var Theight;
+clear_working_set();
 
 # called by compress_properties
 PROC compress_val(BAT[oid,oid] pre_prop, BAT[oid,oid] pre_newprop,
@@ -352,6 +353,31 @@ ADDHELP("doc_to_working_set", "rode", "Nov 2003",
 str document name\n\
 DESCRIPITON:\n\
 Load persistent document into working set (T-BATs).",
+"pathfinder");
+
+PROC clear_working_set() : void :=
+{
+    Tpre_size := new(void,int).seqbase(PRE_BASE);
+    Tpre_level := new(void,chr).seqbase(PRE_BASE);
+    Tpre_prop := new(void,oid).seqbase(PRE_BASE);
+    Tpre_kind := new(void,chr).seqbase(PRE_BASE);
+    Tprop_ns := new(void,str).seqbase(PRE_BASE);
+    Tprop_loc := new(void,str).seqbase(PRE_BASE);
+    Tprop_text := new(void,str).seqbase(PRE_BASE);
+    Tprop_com := new(void,str).seqbase(PRE_BASE);
+    Tprop_ins := new(void,str).seqbase(PRE_BASE);
+    Tprop_tgt := new(void,str).seqbase(PRE_BASE);
+    Tattr_ns := new(void,str).seqbase(ATTR_BASE);
+    Tattr_loc := new(void,str).seqbase(ATTR_BASE);
+    Tattr_val := new(void,str).seqbase(ATTR_BASE);
+    Tattr_own := new(void,oid).seqbase(ATTR_BASE);
+    Tdoc_pre := new(void,oid).seqbase(DOC_BASE);
+    Tdoc_name := new(void,str).seqbase(DOC_BASE);
+    Theight := 0;
+}
+ADDHELP("clear_working_set", "rode", "Dec 2003",
+"DESCRIPITON:\n\
+Empty the working set (T-BATs).",
 "pathfinder");
 
 PROC delete_doc(str name) : void :=
@@ -620,6 +646,8 @@ PROC endtag_print(oid pre, BAT[oid,str] S) : void :=
 
 PROC xml_print(BAT[oid,any] CS) : void :=
 {
+    if (CS.count = 0) return; 
+    
     # line feed
     printf("\n");
 
