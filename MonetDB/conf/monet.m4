@@ -128,7 +128,18 @@ dnl if test "x$CC$CXX" = "x"; then
 dnl	CC=gcc 	CXX=g++
 dnl fi
 case $CC in
+arm-linux-gcc)
+	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
+	CFLAGS="$CFLAGS -Wall"
+	dnl "-W"
+	;;
 gcc)	
+	dnl  Some systems (SunOS) require these to find the right prototypes, e.g. for *time_r();
+	dnl  however, other systems (IRIX,CYGWIN,Darwin) don't "like" these at all...
+	case "$host_os" in
+	irix*|cygwin*|darwin*)	;;
+	*)	CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500";;
+	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall"
 	dnl "-W"
@@ -143,7 +154,7 @@ icc|ecc)
 	;;
 esac
 case $CXX in
-g++)	
+arm-linux-g++|g++)	
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	dnl CXXFLAGS="$CXXFLAGS -Wall"
 	dnl "-W"
@@ -265,18 +276,35 @@ AC_DEFUN(AM_MONET_CxxFLAGS,[
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 case $CC in
-gcc)	
-	dnl CFLAGS="$CFLAGS -Werror-implicit-function-declaration"
-	dnl  Be rigid ;-)
-	CFLAGS="$CFLAGS -Wno-unused-function -Wno-format -Werror"
+arm-linux-gcc)	
+	dnl  Be rigid ;-) ...
+	CFLAGS="$CFLAGS -Werror-implicit-function-declaration"
+	dnl CFLAGS="$CFLAGS -Werror"
+	dnl  ... however, some things aren't solved, yet ...
+	CFLAGS="$CFLAGS -Wno-format"
 	dnl "-Wno-sign-compare"
 	;;
+gcc)	
+	dnl  Be rigid ;-) ...
+	CFLAGS="$CFLAGS -Werror-implicit-function-declaration"
+	CFLAGS="$CFLAGS -Werror"
+	dnl  ... however, some things aren't solved, yet ...
+	CFLAGS="$CFLAGS -Wno-unused-function -Wno-format"
+	dnl "-Wno-sign-compare"
+	dnl  ... and some are beyond our control:
+	dnl  In some cases, there is a (possible) uninitialized variable in bison.simple ... |-(
+	case $host_os in 
+	solaris*) CFLAGS="$CFLAGS -Wno-uninitialized";;
+	esac
+	;;
 icc|ecc)
+	dnl  Be rigid ;-) ...
 	dnl  Let warning #266 "function declared implicitly" become an error.
-	dnl CFLAGS="$CFLAGS -we266"
-	dnl  Be rigid ;-)
-	CFLAGS="$CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357 -Werror"
+	CFLAGS="$CFLAGS -we266"
+	CFLAGS="$CFLAGS -Werror"
+	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
+	CFLAGS="$CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357"
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
 	dnl  # 279: controlling expression is constant
@@ -295,17 +323,35 @@ icc|ecc)
 	;;
 esac
 case $CXX in
-g++)	
-	dnl CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
-	dnl  Be rigid ;-)
-	CXXFLAGS="$CXXFLAGS -Wno-unused-function -Wno-format -Werror"
+arm-linux-g++)	
+	dnl  Be rigid ;-) ...
+	CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
+	dnl CXXFLAGS="$CXXFLAGS -Werror"
+	dnl  ... however, some things aren't solved, yet ...
+	CXXFLAGS="$CXXFLAGS -Wno-format"
 	dnl "-Wno-sign-compare"
 	;;
+g++)	
+	dnl  Be rigid ;-) ...
+	CXXFLAGS="$CXXFLAGS -Werror-implicit-function-declaration"
+	CXXFLAGS="$CXXFLAGS -Werror"
+	dnl  ... however, some things aren't solved, yet ...
+	CXXFLAGS="$CXXFLAGS -Wno-unused-function -Wno-format"
+	dnl "-Wno-sign-compare"
+	dnl  ... and some are beyond our control:
+	dnl  In some cases, there is a (possible) uninitialized variable in bison.simple ... |-(
+	case $host_os in 
+	solaris*) CXXFLAGS="$CXXFLAGS -Wno-uninitialized";;
+	esac
+	;;
 icpc|ecpc)
+	dnl  Be rigid ;-) ...
 	dnl  Let warning #266 "function declared implicitly" become an error.
-	dnl CXXFLAGS="$CXXFLAGS -we266"
-	dnl  Be rigid ;-)
-	CXXFLAGS="$CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357 -Werror"
+	CXXFLAGS="$CXXFLAGS -we266"
+	CXXFLAGS="$CXXFLAGS -Werror"
+	dnl  ... however, some things aren't solved, yet:
+	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
+	CXXFLAGS="$CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,108,188,1357"
 	;;
 esac
 
@@ -363,9 +409,9 @@ if test "x$enable_debug" = xyes; then
   else
     dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
-    CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     CXXFLAGS=" $CXXFLAGS "
-    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's|^ ||' -e 's| $||'`"
+    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     CFLAGS="$CFLAGS -g"
     CXXFLAGS="$CXXFLAGS -g"
   fi
