@@ -23,10 +23,6 @@ The program uses the Mapi interface.
 
 #include "Mapi.h"
 
-int	debug;
-char 	*address;
-Msession   mid;
-
 void usage() {
 	printf("usage: Mshutdown [-d<debug level>] [-port <host:port>]\n");
 	exit(1);
@@ -36,8 +32,12 @@ int main(int argc, char** argv) {
 	int i;
 	char *rtrn;
 	char *s;
+	int  debug;
+	char *address;
+	Msession mid;
 
-	address = getenv("MONETPORT");
+	address = getenv("MAPIPORT");
+	if (!address) address = getenv("MONETPORT");
         for(i = 1; i < argc; i++) 
 	if (argv[i][0] == '-') {
 		switch(argv[i][1]) {
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 	*s = 0;
 	i = atoi(s+1);
 	if( *address == 0 ) address = 0;
-	mid = Mconnect(address,i,0,0);
+	mid = Mconnect(address,i,"adm",0);
 	if( Merror(mid)) {
 		Mexplain(mid,stdout);
 		exit(1);

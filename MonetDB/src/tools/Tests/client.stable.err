@@ -1,8 +1,22 @@
 stderr of test 'client` in directory 'src/tools` itself:
 
-#> Mtest:	milC client milC -prelude client.prelude
-#> Mtest:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db src_tools -background &
-#> Mtest:	sleep 9
-#> Mtest:	Mtimeout -timeout 600 Mclient -prelude client.prelude < client.milC
-#> Mtest:	Mtimeout -timeout 600 Mshutdown
-#> Mtest:	sleep 9
+
+# 20:39:26 >  
+# 20:39:26 >  Mtimeout -timeout 630 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32.4079/monet/.GNU_32/Linux2.4.1-0.1.9/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/monet/tmp/manegold.GNU_32.4079/monet/.GNU_32/Linux2.4.1-0.1.9/share/Monet/mapi.mil 
+# 20:39:26 >  
+
+
+# 20:39:35 >  
+# 20:39:35 >  Mtimeout -timeout 210 MapiClient -everything -prelude client.prelude < client.milC
+# 20:39:35 >  
+
+
+# 20:39:38 >  
+# 20:39:38 >  Mtimeout -timeout 210 Mshutdown
+# 20:39:38 >  
+
+
+# 20:49:56 >  
+# 20:49:56 >  Done.
+# 20:49:56 >  
+

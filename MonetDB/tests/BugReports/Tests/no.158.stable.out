@@ -24,15 +24,19 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
-
-#You are system administrator (adm)!
+setoid(oid(20000000));
+module("unix");
+test1.print;
 #-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  1	  ]
+source(sprintf("%s/no.158.source.mil",getenv("TSTTRGDIR")));
+test2.print;
 #-----------------#
 # BAT:	  tmp_70  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  2	  ]
+quit;

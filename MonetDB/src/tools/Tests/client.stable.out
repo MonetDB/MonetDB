@@ -29,11 +29,6 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-# 09:11:54 >  
-# 09:11:54 >  Mclient -prelude client.prelude < client.milC
-# 09:11:54 >  
-
-# start session on src_tools
 Start of MIL server prelude.
 [ 1 ]
 [ 10 ]
@@ -549,11 +544,13 @@ Start of MIL server prelude.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      4,         1,   running,         0, "listen(get_mapi_port(),5#"    ]
-#[     53,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
-unknown(1)#"                   ]
-#[     58,         2,   running,        57, "queue()#"                      ]
-[ 2 ]
+#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+unknown(0)#"                            ]
+#[      3,         2,   running,         0, "listen(get_mapi_port(),5)#"                            ]
+#[     51,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+unknown(1)#"                            ]
+#[     52,         3,   running,        51, "queue()#"                            ]
+[ 3 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
@@ -1208,11 +1205,13 @@ Start of MIL script.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      4,         1,   running,         0, "listen(get_mapi_port(),5#"    ]
-#[    137,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 5ff97720.
-unknown(1)#"                   ]
-#[    142,         2,   running,       141, "queue()#"                      ]
-[ 2 ]
+#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+unknown(0)#"                            ]
+#[      3,         2,   running,         0, "listen(get_mapi_port(),5)#"                            ]
+#[    135,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+unknown(1)#"                            ]
+#[    136,         3,   running,       135, "queue()#"                            ]
+[ 3 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
@@ -1352,15 +1351,13 @@ unknown(1)#"                   ]
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
-! Terminating connection
-! Connection broken
 
 # 09:12:23 >  
 # 09:12:23 >  Mshutdown
 # 09:12:23 >  
 
-Shutdown of server in progress
-connection= medusa:26670
+Mdorequest:shutdown;
+connection= bezaan:16916
 template= shutdown;
 query= shutdown;
 Error text= !terminating connection

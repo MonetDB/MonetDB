@@ -3,6 +3,7 @@
 NAME="$1"
 PRELUDE="$2 $3"
 
-mserver="`echo $MSERVER' ' | sed 's| -d8 | |g'`"
-Mlog   "$mserver -db $TSTDB < Arjen_01.milM"
-        $mserver -db $TSTDB < Arjen_01.milM
+Mlog   "echo 'debugmask(2);' > d2.mil"
+        echo 'debugmask(2);' > d2.mil
+Mlog   "$MSERVER -db $TSTDB d2.mil Arjen_01.milM"
+        $MSERVER -db $TSTDB d2.mil Arjen_01.milM

@@ -45,6 +45,10 @@ Try: modules;                - for other modules.
 [ 2@0,	  "test"		  ]
 [ 2@0,	  "this"		  ]
 [ 2@0,	  "database"		  ]
+setoid(oid(20000000));
+
+# [t_i, n_i]
+w.histogram.print;
 #---------------------------------#
 # BAT:			  tmp_28  #
 # (str)			  (int)	  #
@@ -58,6 +62,12 @@ Try: modules;                - for other modules.
 [ "functionality",	  1	  ]
 [ "it",			  1	  ]
 [ "thoroughly",		  1	  ]
+
+#split w in twee tabellen
+docid := new( void, oid );
+tid := new( void, str );
+docid.insert( [w~].reverse );
+docid.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -77,6 +87,8 @@ Try: modules;                - for other modules.
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
+tid.insert( [~w] );
+tid.print;
 #---------------------------------#
 # BAT:	  tmp_29		  #
 # (void)  (str)			  #
@@ -96,6 +108,9 @@ Try: modules;                - for other modules.
 [ nil,	  "test"		  ]
 [ nil,	  "this"		  ]
 [ nil,	  "database"		  ]
+
+docid.seqbase( 1000@0 );
+docid.print;
 #-----------------#
 # BAT:	  tmp_28  #
 # (void)  (oid)	  #
@@ -115,6 +130,8 @@ Try: modules;                - for other modules.
 [ 1012@0, 2@0	  ]
 [ 1013@0, 2@0	  ]
 [ 1014@0, 2@0	  ]
+tid.seqbase( 1000@0 );
+tid.print;
 #---------------------------------#
 # BAT:	  tmp_29		  #
 # (void)  (str)			  #
@@ -134,6 +151,7 @@ Try: modules;                - for other modules.
 [ 1012@0, "test"		  ]
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
+tid.reverse.print;
 #---------------------------------#
 # BAT:			  tmp_29  #
 # (str)			  (void)  #
@@ -153,6 +171,8 @@ Try: modules;                - for other modules.
 [ "test",		  1012@0  ]
 [ "this",		  1013@0  ]
 [ "database",		  1014@0  ]
+tidx:=tid.copy;
+tidx.print;
 #---------------------------------#
 # BAT:	  tmp_30		  #
 # (void)  (str)			  #
@@ -172,6 +192,8 @@ Try: modules;                - for other modules.
 [ 1012@0, "test"		  ]
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
+tidy:=([oid](tid)).copy;
+tidy.print;
 #-----------------#
 # BAT:	  tmp_32  #
 # (void)  (oid)	  #
@@ -191,6 +213,7 @@ Try: modules;                - for other modules.
 [ 1012@0, nil	  ]
 [ 1013@0, nil	  ]
 [ 1014@0, nil	  ]
+print( docid, tid );
 #-----------------------------------------#
 # BAT:	  tmp_28| tmp_29		  #
 # (void)  (oid)	| (str)			  #
@@ -210,6 +233,9 @@ Try: modules;                - for other modules.
 [ 1012@0, 2@0,	  "test"		  ]
 [ 1013@0, 2@0,	  "this"		  ]
 [ 1014@0, 2@0,	  "database"		  ]
+
+
+CTgroup( docid, tid ).print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (void)  (oid)	  #
@@ -229,6 +255,9 @@ Try: modules;                - for other modules.
 [ 1012@0, 1012@0  ]
 [ 1013@0, 1013@0  ]
 [ 1014@0, 1014@0  ]
+
+# t_i, tf_ij
+join( tidx.reverse, CTgroup( docid, tid ).histogram).print;
 #---------------------------------#
 # BAT:			  tmp_35  #
 # (str)			  (int)	  #
@@ -246,6 +275,7 @@ Try: modules;                - for other modules.
 [ "test",		  1	  ]
 [ "this",		  1	  ]
 [ "database",		  1	  ]
+join( tidy.reverse, CTgroup( docid, tid ).histogram).print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (oid)	  (int)	  #
@@ -263,6 +293,7 @@ Try: modules;                - for other modules.
 [ nil,	  1	  ]
 [ nil,	  1	  ]
 [ nil,	  1	  ]
+join( tid.reverse, CTgroup( docid, tid ).histogram).print;
 #---------------------------------#
 # BAT:			  tmp_35  #
 # (str)			  (int)	  #
@@ -280,6 +311,11 @@ Try: modules;                - for other modules.
 [ "test",		  1	  ]
 [ "this",		  1	  ]
 [ "database",		  1	  ]
+# d_j, max tf_j
+djtfij := new( oid, int );
+djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram ) );
+
+{max}(djtfij).print;
 #-----------------#
 # BAT:	  tmp_31  #
 # (oid)	  (int)	  #
@@ -287,6 +323,12 @@ Try: modules;                - for other modules.
 [ 0@0,	  2	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  1	  ]
+
+# This way it works. However, if I do not do an explicit new and insert,
+# then the server crashes as follows:
+
+djtfijx :=join( docid.reverse, CTgroup( docid, tid ).histogram );
+{max}(djtfijx).print;
 #-----------------#
 # BAT:	  tmp_36  #
 # (oid)	  (int)	  #
@@ -294,3 +336,4 @@ Try: modules;                - for other modules.
 [ 0@0,	  2	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  1	  ]
+quit;

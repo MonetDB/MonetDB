@@ -71,10 +71,15 @@ Try: modules;                - for other modules.
 [ "vector",	  "plain"	  ]
 [ "wisc",	  "plain"	  ]
 [ "xtables",	  "plain"	  ]
+setoid(oid(20000000));
+
+ls;
 #-----------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-----------------------------------------------------------------------------------------#
 [ "MODULES",	  "str",  "str",  41,	  0,	  "clean",	  "load", "pers", 1	  ]
+
+dir;
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
@@ -101,6 +106,8 @@ Try: modules;                - for other modules.
 [ "monet_mod_load",	  "oid",  "str",  3,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_nme",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_use",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1	  ]
+
+table(monet_mod_nme.reverse.sort.reverse.col_name("static modules"));
 #-----------------#
 # static modules  #
 #-----------------#
@@ -111,6 +118,8 @@ Try: modules;                - for other modules.
 [ "str"		  ]
 [ "sys"		  ]
 [ "trans"	  ]
+
+table(kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).sort.reverse.col_name("dynamic modules"));
 #-------------------------#
 # dynamic modules	  #
 #-------------------------#
@@ -148,3 +157,7 @@ Try: modules;                - for other modules.
 [ "vector"		  ]
 [ "wisc"		  ]
 [ "xtables"		  ]
+
+commit;
+
+quit;

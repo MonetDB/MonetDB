@@ -1,9 +1,27 @@
 stderr of test 'multiClientSeq` in directory 'src/tools` itself:
 
-#> Mtest:	milCXs multiClientSeq milC
-#> Mtest:	Mtimeout -timeout 123 Mserver -yaccsilent -d8 -db src_tools -background &
-#> Mtest:	sleep 9
-#> Mtest:	Mtimeout -timeout 123 Mclient < multiClientSeq_s00.milC
-#> Mtest:	Mtimeout -timeout 123 Mclient < multiClientSeq_s01.milC
-#> Mtest:	Mshutdown
-#> Mtest:	sleep 9
+
+# 20:49:57 >  
+# 20:49:57 >  Mtimeout -timeout 840 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32.4079/monet/.GNU_32/Linux2.4.1-0.1.9/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/monet/tmp/manegold.GNU_32.4079/monet/.GNU_32/Linux2.4.1-0.1.9/share/Monet/mapi.mil 
+# 20:49:57 >  
+
+
+# 20:50:06 >  
+# 20:50:06 >  Mtimeout -timeout 210 MapiClient -everything  < multiClientSeq_s00.milC
+# 20:50:06 >  
+
+
+# 20:50:08 >  
+# 20:50:08 >  Mtimeout -timeout 210 MapiClient -everything  < multiClientSeq_s01.milC
+# 20:50:08 >  
+
+
+# 20:50:10 >  
+# 20:50:10 >  Mtimeout -timeout 210 Mshutdown
+# 20:50:10 >  
+
+
+# 21:03:57 >  
+# 21:03:57 >  Done.
+# 21:03:57 >  
+

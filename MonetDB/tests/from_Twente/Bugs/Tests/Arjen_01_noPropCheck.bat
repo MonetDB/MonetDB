@@ -4,6 +4,5 @@
 @set NAME=%1
 @set PRELUDE=%2 %3
 
-@set serverm=%MSERVER: -d8 = %
-
-%serverm% -db %TSTDB% < Arjen_01.milM
+echo debugmask(2); > d2.mil
+%MSERVER% -db %TSTDB% d2.mil Arjen_01.milM

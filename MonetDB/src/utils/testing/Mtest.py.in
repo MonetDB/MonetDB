@@ -588,8 +588,8 @@ def runtest(env, TST) :
 	elif EXT == ".py"   and  not env['exe']['python'][0]:
 		SkipTest(env, TST, EXT, "as python is not available.")
 		#TODO:
-	elif EXT == ".milC":
-		SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by Mtest.")
+		#elif EXT == ".milC":
+		#SkipTest(env, TST, EXT, "as MapiClient-tests are temporary not supported by Mtest.")
 	elif EXT == ".milC"  and  os.name == "nt":
 		SkipTest(env, TST, EXT, "as MapiClient is currently not working on WindowsNT.")
 		#TODO:
@@ -750,8 +750,7 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr):
 	TestErr.write(Prompt(cmd)) ; TestErr.flush()
 	pOut,pIn,pErr = popen2.popen3(cmd)
 	pIn.write(TestIn)
-	pIn.close()
-	return pOut, pErr
+	return pIn, pOut, pErr
 
 def CollectIt(pOut, pErr, TestOut, TestErr):
 	TestOut.writelines(pOut.readlines()) ; TestOut.flush()
@@ -760,7 +759,8 @@ def CollectIt(pOut, pErr, TestOut, TestErr):
 	pErr.close()
 
 def RunIt(cmd, TestIn, TestOut, TestErr):
-	pOut, pErr = LaunchIt(cmd, TestIn, TestOut, TestErr)
+	pIn, pOut, pErr = LaunchIt(cmd, TestIn, TestOut, TestErr)
+	pIn.close()
 	CollectIt(pOut, pErr, TestOut, TestErr)
 
 def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
@@ -807,7 +807,8 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 			if test.match(f):
 				TSTs.append(f)
 
-		Srvr = MTO+str(TIO*(len(TSTs)+2))+" "+exe['Mserver'][1]+" -db "+TSTDB+" "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" -background"
+		Srvr = MTO+str(TIO*(len(TSTs)+2))+" "+exe['Mserver'][1]+" -db "+TSTDB+" "+env['MONET_PREFIX']+regsub.gsub("/",os.sep,"/share/Monet/mapi.mil")+" "
+		#-background"
 		Clnt = MTO+str(TIO)+" "+exe['MapiClient'][1]+" "+PRELUDE+" < "
 		Shwn = MTO+str(TIO)+" "+exe['Mshutdown'][1]
 
@@ -818,7 +819,8 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 		ShwnOut = open(TST+".shutdown.out","w")
 		ShwnErr = open(TST+".shutdown.err","w")
 
-		pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
+		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
+		#pSrvrIn.close()
 		time.sleep(9)
 
 		for f in TSTs:
@@ -830,6 +832,7 @@ def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr) :
 
 		RunIt(Shwn, "", ShwnOut, ShwnErr)
 
+		pSrvrIn.close()
 		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
 
 		for q in [SrvrOut, ClntOut, ShwnOut]:
