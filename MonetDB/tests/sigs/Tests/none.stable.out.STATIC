@@ -1,16 +1,14 @@
 stdout of test 'none` in directory 'tests/sigs` itself:
 
 
-# 16:53:23 >  
-# 16:53:23 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
-# 16:53:23 >  
+# 16:57:30 >  
+# 16:57:30 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build-static/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build-static/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build-static/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build-static/src/mapi/.libs" --dbfarm "/ufs/sjoerd/src/MonetDB/build-static/dbfarm" --set monet_prompt= --trace --dbname=mTests_tests_sigs  < none.milS
+# 16:57:30 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.3.7
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; statically linked.
 setoid(20000000);
-
-PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
 
 loaded;
 #---------------------------------#
@@ -20,28 +18,24 @@ loaded;
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
-[~mmn()].reverse.sort.print;
+[~monet_mod_nme].reverse.sort.print;
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_27  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
 [ "arith",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "kernel",	  nil	  ]
-[ "main",	  nil	  ]
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
-[ "uchr",	  nil	  ]
 [~view_modules].reverse.kunique.sort.print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "aggr",	  nil	  ]
@@ -64,6 +58,7 @@ loaded;
 [ "iterator",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "lock",	  nil	  ]
+[ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "mel",	  nil	  ]
@@ -99,14 +94,12 @@ loaded;
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
-[~mmn()].reverse.sort.print;
+[~monet_mod_nme].reverse.sort.print;
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_29  #
 # (str)		  (void)  #
 #-------------------------#
 [ "algebra",	  nil	  ]
@@ -114,37 +107,34 @@ loaded;
 [ "bat",	  nil	  ]
 [ "cluster",	  nil	  ]
 [ "kernel",	  nil	  ]
-[ "main",	  nil	  ]
 [ "str",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
-[ "uchr",	  nil	  ]
 
 # # module("Meta");
 # # loaded;
-# # [~mmn()].reverse.sort.print;
+# # [~monet_mod_nme].reverse.sort.print;
 
-fix:=mmn().reverse.copy;
+fix:=monet_mod_nme.reverse.copy;
 [fix~].print;
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
-[ "main",	  nil	  ]
 [ "kernel",	  nil	  ]
 [ "arith",	  nil	  ]
 [ "str",	  nil	  ]
-[ "uchr",	  nil	  ]
 [ "bat",	  nil	  ]
 [ "algebra",	  nil	  ]
 [ "sys",	  nil	  ]
 [ "trans",	  nil	  ]
 [ "cluster",	  nil	  ]
 
-others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE).revert;
+mprof:=view_modules.select("mprof").reverse.kunique;
+others:=kdiff(view_modules.reverse.kunique,monet_mod_nme.reverse).access(BAT_WRITE).delete("mprof").sort.access(BAT_WRITE).revert.insert(mprof);
 [others~].print;
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -152,6 +142,7 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
 [ "unix",	  nil	  ]
+[ "uchr",	  nil	  ]
 [ "tpcd",	  nil	  ]
 [ "tcpip",	  nil	  ]
 [ "streams",	  nil	  ]
@@ -161,12 +152,12 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "qt",		  nil	  ]
 [ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
-[ "mprof",	  nil	  ]
 [ "monettime",	  nil	  ]
 [ "mmath",	  nil	  ]
 [ "mel",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
+[ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "enum",	  nil	  ]
@@ -182,12 +173,13 @@ others:=kdiff(view_modules.reverse.kunique,mmn().reverse).sort.access(BAT_WRITE)
 [ "alarm",	  nil	  ]
 [ "aggrX3",	  nil	  ]
 [ "aggr",	  nil	  ]
+[ "mprof",	  nil	  ]
 
 others@batloop{
 	printf("\n\tloading %s\n\n",$h);
 	module($h);
 	loaded;
-	off:=kdiff(mmn().reverse,fix);
+	off:=kdiff(monet_mod_nme.reverse,fix);
 	[off~].print;
 	off@batloop{
 		printf("\n\tdropping %s\n\n",$h);
@@ -206,14 +198,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_27  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "xtables",	  nil	  ]
@@ -228,11 +218,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading wisc
 
@@ -244,14 +232,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 [ "wisc",	  1		  ]
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "wisc", nil	  ]
@@ -266,11 +252,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading vector
 
@@ -282,15 +266,13 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "mmath",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 [ "vector",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_28  #
 # (str)		  (void)  #
 #-------------------------#
 [ "vector",	  nil	  ]
@@ -309,11 +291,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading url
 
@@ -325,14 +305,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 [ "url",	  1		  ]
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_30  #
 # (str)	  (void)  #
 #-----------------#
 [ "url",  nil	  ]
@@ -347,11 +325,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading unix
 
@@ -363,14 +339,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 [ "unix",	  1		  ]
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_33  #
 # (str)	  (void)  #
 #-----------------#
 [ "unix", nil	  ]
@@ -385,11 +359,43 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
+
+	loading uchr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  1		  ]
+#-----------------#
+# BAT:	  tmp_30  #
+# (str)	  (void)  #
+#-----------------#
+[ "uchr", nil	  ]
+
+	dropping uchr
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
 
 	loading tpcd
 
@@ -401,14 +407,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  2		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tpcd",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_33  #
 # (str)	  (void)  #
 #-----------------#
 [ "tpcd", nil	  ]
@@ -423,11 +427,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading tcpip
 
@@ -439,14 +441,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "tcpip",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_33  #
 # (str)		  (void)  #
 #-------------------------#
 [ "tcpip",	  nil	  ]
@@ -461,11 +461,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading streams
 
@@ -477,14 +475,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_30  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "streams",	  nil	  ]
@@ -499,11 +495,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading stats
 
@@ -515,12 +509,10 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "stats",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
 # BAT:		  tmp_33  #
 # (str)		  (void)  #
@@ -537,11 +529,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading salgebra
 
@@ -553,21 +543,18 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "salgebra",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_33  #
+# BAT:		  tmp_34  #
 # (str)		  (void)  #
 #-------------------------#
 [ "salgebra",	  nil	  ]
 
 	dropping salgebra
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -576,11 +563,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading radix
 
@@ -592,21 +577,18 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "radix",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_26  #
+# BAT:		  tmp_35  #
 # (str)		  (void)  #
 #-------------------------#
 [ "radix",	  nil	  ]
 
 	dropping radix
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -615,11 +597,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading qt
 
@@ -632,22 +612,25 @@ others@batloop{
 [ "bitvector",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "qt",		  1		  ]
 [ "stats",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  3		  ]
+[ "uchr",	  1		  ]
 #-------------------------#
 # BAT:		  tmp_34  #
 # (str)		  (void)  #
 #-------------------------#
 [ "qt",		  nil	  ]
+[ "uchr",	  nil	  ]
 [ "bitvector",	  nil	  ]
 [ "stats",	  nil	  ]
 
 	dropping qt
+
+
+	dropping uchr
 
 
 	dropping bitvector
@@ -655,7 +638,6 @@ others@batloop{
 
 	dropping stats
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -664,11 +646,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading pcl
 
@@ -680,14 +660,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "pcl",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_34  #
 # (str)	  (void)  #
 #-----------------#
 [ "pcl",  nil	  ]
@@ -702,11 +680,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading oo7
 
@@ -718,14 +694,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "oo7",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_35  #
 # (str)	  (void)  #
 #-----------------#
 [ "oo7",  nil	  ]
@@ -740,50 +714,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
-
-	loading mprof
-
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "mprof",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "uchr",	  2		  ]
-#-------------------------#
-# BAT:		  tmp_47  #
-# (str)		  (void)  #
-#-------------------------#
-[ "mprof",	  nil	  ]
-
-	dropping mprof
-
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
-[ "algebra",	  1		  ]
-[ "arith",	  1		  ]
-[ "bat",	  1		  ]
-[ "cluster",	  1		  ]
-[ "kernel",	  1		  ]
-[ "main",	  1		  ]
-[ "str",	  1		  ]
-[ "sys",	  1		  ]
-[ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading monettime
 
@@ -795,21 +728,18 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "monettime",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_46  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "monettime",	  nil	  ]
 
 	dropping monettime
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -818,11 +748,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading mmath
 
@@ -834,14 +762,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "mmath",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_50  #
+# BAT:		  tmp_35  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mmath",	  nil	  ]
@@ -856,11 +782,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading mel
 
@@ -872,21 +796,18 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "mel",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-----------------#
-# BAT:	  tmp_49  #
+# BAT:	  tmp_36  #
 # (str)	  (void)  #
 #-----------------#
 [ "mel",  nil	  ]
 
 	dropping mel
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -895,11 +816,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading mapi
 
@@ -911,15 +830,13 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_46  #
+# BAT:		  tmp_36  #
 # (str)		  (void)  #
 #-------------------------#
 [ "mapi",	  nil	  ]
@@ -930,7 +847,6 @@ others@batloop{
 
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -939,11 +855,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading malalgebra
 
@@ -955,14 +869,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "malalgebra",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_45  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "malalgebra",	  nil	  ]
@@ -977,11 +889,43 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
+
+	loading logger
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "logger",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_31  #
+# (str)		  (void)  #
+#-------------------------#
+[ "logger",	  nil	  ]
+
+	dropping logger
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
 
 	loading lock
 
@@ -994,20 +938,17 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-----------------#
-# BAT:	  tmp_52  #
+# BAT:	  tmp_37  #
 # (str)	  (void)  #
 #-----------------#
 [ "lock", nil	  ]
 
 	dropping lock
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1016,11 +957,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading iterator
 
@@ -1033,20 +972,17 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "iterator",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_50  #
+# BAT:		  tmp_36  #
 # (str)		  (void)  #
 #-------------------------#
 [ "iterator",	  nil	  ]
 
 	dropping iterator
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1055,11 +991,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading enum
 
@@ -1072,14 +1006,12 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "enum",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_47  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "enum",	  nil	  ]
@@ -1090,7 +1022,6 @@ others@batloop{
 
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1099,11 +1030,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading decimal
 
@@ -1116,20 +1045,17 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "decimal",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_52  #
+# BAT:		  tmp_31  #
 # (str)		  (void)  #
 #-------------------------#
 [ "decimal",	  nil	  ]
 
 	dropping decimal
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1138,11 +1064,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading ddbench
 
@@ -1156,21 +1080,19 @@ others@batloop{
 [ "ddbench",	  1		  ]
 [ "enum",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
-[ "streams",	  1		  ]
+[ "streams",	  2		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 [ "xtables",	  1		  ]
 #-------------------------#
-# BAT:		  tmp_45  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ddbench",	  nil	  ]
 [ "xtables",	  nil	  ]
-[ "enum",	  nil	  ]
 [ "streams",	  nil	  ]
+[ "enum",	  nil	  ]
 
 	dropping ddbench
 
@@ -1178,12 +1100,11 @@ others@batloop{
 	dropping xtables
 
 
-	dropping enum
-
-
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
+
+	dropping enum
+
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1192,11 +1113,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading counters
 
@@ -1209,20 +1128,17 @@ others@batloop{
 [ "cluster",	  1		  ]
 [ "counters",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_49  #
+# BAT:		  tmp_38  #
 # (str)		  (void)  #
 #-------------------------#
 [ "counters",	  nil	  ]
 
 	dropping counters
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1231,11 +1147,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading calib
 
@@ -1248,13 +1162,11 @@ others@batloop{
 [ "calib",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_46  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "calib",	  nil	  ]
@@ -1269,11 +1181,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading blob
 
@@ -1286,20 +1196,17 @@ others@batloop{
 [ "blob",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-----------------#
-# BAT:	  tmp_45  #
+# BAT:	  tmp_38  #
 # (str)	  (void)  #
 #-----------------#
 [ "blob", nil	  ]
 
 	dropping blob
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1308,11 +1215,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading bitvector
 
@@ -1325,13 +1230,11 @@ others@batloop{
 [ "bitvector",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_47  #
+# BAT:		  tmp_39  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitvector",	  nil	  ]
@@ -1346,11 +1249,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading bitset
 
@@ -1363,20 +1264,17 @@ others@batloop{
 [ "bitset",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_54  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bitset",	  nil	  ]
 
 	dropping bitset
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1385,11 +1283,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading bat_arith
 
@@ -1402,13 +1298,11 @@ others@batloop{
 [ "bat_arith",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_49  #
+# BAT:		  tmp_38  #
 # (str)		  (void)  #
 #-------------------------#
 [ "bat_arith",	  nil	  ]
@@ -1423,11 +1317,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading ascii_io
 
@@ -1440,14 +1332,12 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_46  #
+# BAT:		  tmp_39  #
 # (str)		  (void)  #
 #-------------------------#
 [ "ascii_io",	  nil	  ]
@@ -1458,7 +1348,6 @@ others@batloop{
 
 	dropping streams
 
-#BBPreclaim: bat(32) view=0 lrefs=0 plevel=0 ref=2 stat=129
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -1467,11 +1356,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading alarm
 
@@ -1484,13 +1371,11 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 #-------------------------#
-# BAT:		  tmp_45  #
+# BAT:		  tmp_37  #
 # (str)		  (void)  #
 #-------------------------#
 [ "alarm",	  nil	  ]
@@ -1505,11 +1390,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading aggrX3
 
@@ -1522,13 +1405,11 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  3		  ]
 #-------------------------#
-# BAT:		  tmp_47  #
+# BAT:		  tmp_38  #
 # (str)		  (void)  #
 #-------------------------#
 [ "aggrX3",	  nil	  ]
@@ -1543,11 +1424,9 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 	loading aggr
 
@@ -1560,13 +1439,11 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  3		  ]
 #-----------------#
-# BAT:	  tmp_54  #
+# BAT:	  tmp_39  #
 # (str)	  (void)  #
 #-----------------#
 [ "aggr", nil	  ]
@@ -1581,14 +1458,46 @@ others@batloop{
 [ "bat",	  1		  ]
 [ "cluster",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
+
+	loading mprof
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "mprof",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# BAT:		  tmp_50  #
+# (str)		  (void)  #
+#-------------------------#
+[ "mprof",	  nil	  ]
+
+	dropping mprof
+
+#---------------------------------#
+# module	| usage_count	  #
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "cluster",	  1		  ]
+[ "kernel",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
 quit;
 
-# 16:53:25 >  
-# 16:53:25 >  Done.
-# 16:53:25 >  
+# 16:57:31 >  
+# 16:57:31 >  Done.
+# 16:57:31 >  
 

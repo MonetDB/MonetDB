@@ -436,8 +436,8 @@ typedef struct {
         return(1);
     }
 
-    void atom_@1s_del(Heap* h,var_t* index) {
-        HEAP_free(h,(size_t)*index);
+    void atom_@1s_del(Heap* h,int* index) {
+        HEAP_free(h,*index);
     }
 
     @1s *atom_@1s_null(void) {
@@ -448,7 +448,7 @@ typedef struct {
         return(nullptr);
     }
     
-    void atom_@1s_put(Heap* h, var_t* bun, @1s* val) {
+    void atom_@1s_put(Heap* h, int* bun, @1s* val) {
         char* base;
 
         *bun  = HEAP_malloc(h,@1ssize(val->dimension));
@@ -1404,7 +1404,5 @@ dblv.print;
 @:fixedsize_operators_c(int,64)@
 
 @mil
-PROC test_vector() : void := {   
-	@:varsized_tests@
-}
+@:varsized_tests@
 

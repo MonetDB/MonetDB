@@ -279,7 +279,8 @@
 /* #undef HAVE_SOCKLEN_T */
 
 /* Define to 1 if the system has the type `ssize_t'. */
-/* #undef HAVE_SSIZE_T */
+#define HAVE_SSIZE_T 1
+typedef int ssize_t;
 
 /* Define to 1 if you have the <stdint.h> header file. */
 /* #undef HAVE_STDINT_H */
@@ -305,9 +306,6 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
-
-/* Define to 1 if you have the `strsignal' function. */
-/* #undef HAVE_STRSIGNAL */
 
 /* Define to 1 if you have the `strstr' function. */
 #define HAVE_STRSTR 1

@@ -267,42 +267,8 @@ An error at this stage normally lead to an abort.
 #ifndef _GDK_H_
 #define _GDK_H_
 
-#include <config.h>		/* we always have this */
-
-/* standard includes upon which all configure tests depend */
-#include <stdio.h>
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#if HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-#if STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# if HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-#if HAVE_STRING_H
-# if !STDC_HEADERS && HAVE_MEMORY_H
-#  include <memory.h>
-# endif
-# include <string.h>
-#endif
-#if HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#if HAVE_INTTYPES_H
-# include <inttypes.h>
-#else
-# if HAVE_STDINT_H
-#  include <stdint.h>
-# endif
-#endif
-#if HAVE_UNISTD_H
-# include <unistd.h>
+#ifdef HAVE_CONFIG_H 
+#include <config.h>
 #endif
 
 #ifdef _AIX
@@ -311,8 +277,23 @@ An error at this stage normally lead to an abort.
 #endif
 #endif
 
-#include <ctype.h>      /* isspace etc. */
+#if defined (__GNUC__) && defined (__STDC__)
+#define INLINE	inline
+#else
+#define INLINE
+#endif
 
+#define REGISTER	register
+
+#ifdef __cplusplus
+extern "C" { 
+#endif
+
+#include <ctype.h>      /* isspace etc. */
+#include <string.h>     /* strcmp, index etc. */
+#include <memory.h>     /* memcpy */
+
+#include <sys/types.h>
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
 #endif
@@ -337,50 +318,22 @@ An error at this stage normally lead to an abort.
 # endif
 #endif
 
-#if HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#endif
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
-#endif
-
-#include <assert.h>     
-
-
-#if defined (__GNUC__) && defined (__STDC__)
-#define INLINE	inline
-#else
-#define INLINE
-#endif
-
-#define REGISTER	register
-
-#ifndef HAVE_SSIZE_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ssize_t;
-#else
-typedef long ssize_t;
-#endif
-#endif
-
-#ifndef HAVE_PTRDIFF_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ptrdiff_t;
-#else
-typedef long ptrdiff_t;
-#endif
-#endif
-
-#ifdef __cplusplus
-extern "C" { 
-#endif
 
 #include "gdk_posix.h"	
 #include "gdk_system.h"	
 #include <stream.h>	
+
+#include <assert.h>     
+
+#undef BUS_OBJERR
+#include <sys/stat.h>
+
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h> 
+#endif
+
+/* TODO: need to look better where to start this */
+#ifndef BAT32IMAGE
 
 #undef MIN
 #undef MAX
@@ -512,13 +465,7 @@ typedef char 		*BUN; 		/* pointer in some heap. */
 typedef	char		long_str[IDLENGTH];/* standard GDK static string */
 typedef	char		short_str[OLDLENGTH];/* old GDK small static string */
 
-typedef size_t hash_t;		/* type used for hash tables */
-typedef size_t var_t;		/* type used for heap index of var-sized BAT */
-#if SIZEOF_SIZE_T == SIZEOF_INT	/* a type compatible with var_t */
-#define TYPE_var	TYPE_int
-#else
-#define TYPE_var	TYPE_lng
-#endif
+typedef size_t hash_t;
 
 @- Checking and Error definitions:
 @h
@@ -571,7 +518,30 @@ gdk_export int 		GDKsilent; 	/* should GDK shut up? */
 	}								\
 }
 @}
+@- Type Definitons of GDK structures
+We stick to 32-bit memory image of the BAt datastructures as
+our persistent representation.
+
+64-bits compilation converts this automatically using the 
+BAT32IMAGE switch.
+
+The BAT32IMAGE define causes this file to define all BAT
+structures with hardcoded 32-bits sizes (pointers get represented
+as int fields). This version is used in 64-bits compilation
+to read out descriptor information.
 @{
+@= PTR
+#ifdef BAT32IMAGE
+	int
+#else 
+	@1
+#endif
+@= DEF
+#ifdef BAT32IMAGE
+	@1_32IMAGE
+#else 
+	@1
+#endif
 @h
 typedef struct TN {
  	BUN 		v; 		/* value associated with this node. */
@@ -579,34 +549,41 @@ typedef struct TN {
 	struct TN	*r; 		/* rigth subtree: bigger nodes. */
 } Tnode; 
 
+#endif /* !BAT32IMAGE */
+
 typedef struct {
 	int 		type; 		/* type of index entity */
 	size_t	 	lim; 		/* collision list size */
 	hash_t	 	mask; 		/* number of hash buckets-1 (power of 2) */
-	hash_t*		hash;		/* hash table */
-	hash_t*		link;		/* collision list */
-} Hash; 
+	@:PTR(hash_t*)@ hash;		/* hash table */
+	@:PTR(hash_t*)@ link;		/* collision list */
+} 
+@:DEF(Hash)@; 
+
+ 
+typedef struct {
+	@:PTR(Tnode*)@	root;		/* root of index structure. */
+	@:PTR(Tnode*)@	stack;		/* stack with space for nodes */
+	@:PTR(Tnode*)@	free;		/* index of first free node. */	
+	@:PTR(BUN*)@	base;		/* lowest BUN in heap. */
+	@:PTR(BUN*)@	first;		/* first BUN in index order. */
+	@:PTR(BUN*)@	last;	 	/* last BUN in index order. */
+} 
+@:DEF(IDX)@, 
+@:DEF(*Index)@; 
 
 typedef struct {
-	Tnode*		root;		/* root of index structure. */
-	Tnode*		stack;		/* stack with space for nodes */
-	Tnode*		free;		/* index of first free node. */	
-	BUN*		base;		/* lowest BUN in heap. */
-	BUN*		first;		/* first BUN in index order. */
-	BUN*		last;	 	/* last BUN in index order. */
-} IDX, *Index;
-
-typedef struct {
-	size_t		offset;		/* offset from start of file (bytes).*/
-       	size_t		maxsize;	/* maximum realloc size (bytes) */
-	size_t		free;		/* index where free area starts. */
-	size_t		size; 		/* size of the heap (bytes)*/
-	BUN		base; 		/* base pointer in memory. */
+	@:PTR(size_t)@	offset;		/* offset from start of file (bytes).*/
+       	@:PTR(size_t)@	maxsize;	/* maximum realloc size (bytes) */
+	@:PTR(size_t)@	free;		/* index where free area starts. */
+	@:PTR(size_t)@	size; 		/* size of the heap (bytes)*/
+	@:PTR(str)@	base; 		/* base pointer in memory. */
 	sht		storage; 	/* storage status. */
 	bit		copied; 	/* a copy of an existing map. */
 	chr		padding; 	/* not used. */
-	str		filename;	/* file containing image of the heap */
-} Heap;
+	@:PTR(str)@	filename;	/* file containing image of the heap */
+} 
+@:DEF(Heap)@; 
 @
 @}
 
@@ -760,6 +737,8 @@ be clustered horizontally.
 
 @{
 @h
+#ifndef BAT32IMAGE
+
 typedef struct {
 	sht		headtype;	/* type id. */
 	sht		tailtype;	/* type id. */
@@ -792,13 +771,15 @@ typedef struct {
 	bat		parentid;	/* cache id of VIEW parent bat */ 
 } BATrec;
 
+#endif /* !BAT32IMAGE */
+
 typedef struct {
 	/* bunheap data */	
-	Heap		buns;		/* space for the buns. */ 
+	@:DEF(Heap)@	buns;		/* space for the buns. */ 
 	/* delta status administration */	
-        BUN		deleted;	/* start of deleted elements */
-        BUN		hole;		/* to store next deletion */
-        BUN		inserted;	/* start of inserted elements */
+        @:PTR(BUN)@	deleted;	/* start of deleted elements */
+        @:PTR(BUN)@	hole;		/* to store next deletion */
+        @:PTR(BUN)@	inserted;	/* start of inserted elements */
 	int		sharecnt;	/* VIEW share count */
 	char		map_dirty;	/* new mmap mode present */
 	char		map_buns;	/* mmap mode for bun heap */
@@ -806,15 +787,17 @@ typedef struct {
 	char		map_theap;	/* mmap mode for tail atom heap */
 	char		map_hacc;	/* mmap mode for head accelerator heap */
 	char		map_tacc;	/* mmap mode for tail accelerator heap */
-} BUNrec;
+} 
+@:DEF(BUNrec)@;
+
 
 typedef struct {
 	short_str	id;	 	/* label for head/tail column */
 	short_str	atom; 		/* head atom name */
-	Heap		heap;		/* space for the head/tail column. */
-	Hash		hash;		/* hash index on head/tail column. */
-	IDX		idx;		/* tree index on head/tail column. */ 
-	Heap		accelerator;	/* contains heap accelerator. */ 
+	@:DEF(Heap)@	heap;		/* space for the head/tail column. */
+	@:DEF(Hash)@	hash;		/* hash index on head/tail column. */
+	@:DEF(IDX)@	idx;		/* tree index on head/tail column. */ 
+	@:DEF(Heap)@	accelerator;	/* contains heap accelerator. */ 
 	chr		heapdirty;	/* specific heap dirty marker */
 	chr		accdirty;	/* specific accelerator dirty marker */
 	sht		acctype;	/* accelerator-type */
@@ -828,45 +811,50 @@ typedef struct {
 	size_t		nodense; 	/* position that proves dense==FALSE */
 	int		dummy1,dummy2, dummy3;
 	int		accCopiedtodisk;
-} COLrec;
+} 
+@:DEF(COLrec)@;
 
 typedef struct {
 	/* static bat properties */
 	int		GDKversion; 	/* FIRST! */
-	str		batId;		/* BAT id: points to P->id */
+	@:PTR(str)@	batId;		/* BAT id: points to P->id */
         bat		batCacheid;    	/* index into BBP */ 
 	Dimensions	dims;		/* BAT dimensions */	
-	Heap*		batBuns;	/* pointer to U->buns */
+	@:PTR(Heap*)@	batBuns;	/* pointer to U->buns */
 	/* static column properties */
-	Heap*		hhash_heap;	/* hash table: points into H->hash */
-	Heap*		thash_heap;	/* hash table: points into T->hash */
-	Heap*		hidx_heap;	/* index tree: points into H->idx */
-	Heap*		tidx_heap;	/* index tree: points into T->idx */
+	@:PTR(Heap*)@	hhash_heap;	/* hash table: points into H->hash */
+	@:PTR(Heap*)@	thash_heap;	/* hash table: points into T->hash */
+	@:PTR(Heap*)@	hidx_heap;	/* index tree: points into H->idx */
+	@:PTR(Heap*)@	tidx_heap;	/* index tree: points into T->idx */
 	/* dynamic column properties */
-	COLrec*		H;		/* column info */
-	COLrec*		T;		/* column info */
+	@:PTR(COLrec*)@	H;		/* column info */
+	@:PTR(COLrec*)@	T;		/* column info */
 	/* dynamic bat properties */
-	BATrec*		P;		/* cache and sort info */
-	BUNrec*		U;		/* cache and sort info */
+	@:PTR(BATrec*)@	P;		/* cache and sort info */
+	@:PTR(BUNrec*)@	U;		/* cache and sort info */
 	/* void hack fields */
 	long 		void_tid;	/* thread that reads this bat */
 	long 		void_cnt;	/* nr of reads */
 	oid		void_seq1;
 	oid 		void_seq2;
-} BAT;
+} 
+@:DEF(BAT)@;
 
 @-
 The different parts of which a BAT consists are physically stored 
 next to each other in the @%BATstore@ type.
 @h
 typedef struct {
-        BAT		B;		/* storage for BAT descriptor */
-        COLrec		H;		/* storage for head column */
-        COLrec		T;		/* storage for tail column */
+        @:DEF(BAT)@	B;		/* storage for BAT descriptor */
+        @:DEF(COLrec)@	H;		/* storage for head column */
+        @:DEF(COLrec)@	T;		/* storage for tail column */
         BATrec		P;		/* storage for BATrec */
-        BUNrec		U;		/* storage for BUNrec */
+        @:DEF(BUNrec)@	U;		/* storage for BUNrec */
 	long_str	fullid;		/* new full bat name */
-} BATstore;
+} 
+@:DEF(BATstore)@;
+
+#ifndef BAT32IMAGE
 
 typedef int (*GDKfcn)();
 
@@ -1022,16 +1010,18 @@ gdk_export void HEAP_initialize_compact(
 	int (*sizefcn)(ptr)  /* BATatoms[].atomLen function */
 );
 
-gdk_export var_t HEAP_malloc     (Heap* heap, size_t nbytes);
-gdk_export void HEAP_free        (Heap *heap, var_t block);  
-gdk_export size_t HEAP_private   (Heap* h);   
+gdk_export void HEAP_destroy     (Heap* h);              
+gdk_export size_t  HEAP_malloc      (Heap* heap, size_t nbytes);
+gdk_export void HEAP_free        (Heap *heap, size_t block);  
+gdk_export size_t  HEAP_private     (Heap* h);   
+gdk_export void HEAP_printstatus (Heap* h);
 gdk_export void HEAP_checkformat (Heap* h);
 gdk_export int  HEAP_check       (Heap* h, HeapRepair *hr);
 gdk_export void HEAP_convert     (Heap* h);                
 gdk_export void HEAP_init        (Heap *heap, int tpe);  
 gdk_export int  HEAP_mmappable   (Heap *heap);  
 
-#define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
+#define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)(HEAP->base + INDEX))
 @}
 
 
@@ -1098,7 +1088,7 @@ The BATs contain a number of fixed-sized slots to store the binary
 associations.  These slots are called BUNs or BAT units. A BUN
 variable is a pointer into the storage area of the BAT, but it has
 limited validity. After a BAT modification, previously obtained BUNs
-may no longer reside at the same location.
+may no longer recide at the same location.
 @
 The association list does not contain holes.  This density permits
 users to quickly access successive elements without the need to test
@@ -1109,11 +1099,11 @@ first.
 @
 The update operations come in three flavors. Elementwise updates
 can use @%BUNins@, @%BUNreplace@, @%BUNdel@, and @%BUNdelHead@. 
-The batch update are @%BATins@ and @%BATdel@.
+The batch update are @%BATins@and @%BATdel@.
 @
 Only experts interested in speed may use @%BUNfastins@, since it skips most 
 consistency checks, does not update search accelerators, and does
-not maintain the @%hsorted@ and @%tsorted@ flags. Beware!
+not maintain the @%hstorted@ and @%tsorted@ flags. Beware!
 @
 The routine @%BUNfnd@ provides fast access to a single BUN providing
 a value for the head of the binary association. 
@@ -1199,37 +1189,38 @@ gdk_export BUN 		BUNfnd     (BAT *b, ptr left);
 		HASHfnd_lng(p,b,(lng*)v);\
 	}
 #endif
-#define BUNfndSTD(p,b,v) ((p) = BUNfnd(b,v))
+#define BUNfndSTD(p,b,v)\
+	(p=BUNfnd(b,v))
 
-#define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase == oid_nil ?\
-				TYPE_void : ATOMtype((b)->htype))
-#define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase == oid_nil ?\
-				TYPE_void : ATOMtype((b)->ttype))
-#define BAThstore(b)	(BAThdense(b) ? TYPE_void : (b)->htype)
-#define BATtstore(b)	(BATtdense(b) ? TYPE_void : (b)->ttype)
-#define Bunbase(b)	((b)->batBuns->base)
-#define Hbase(b)	((b)->hheap.base)
-#define Tbase(b)	((b)->theap.base)
+#define BAThtype(b)	(((b)->htype==TYPE_void && (b)->hseqbase == oid_nil)?\
+				TYPE_void:ATOMtype((b)->htype))
+#define BATttype(b)	(((b)->ttype==TYPE_void && (b)->tseqbase == oid_nil)?\
+				TYPE_void:ATOMtype((b)->ttype))
+#define BAThstore(b)	(BAThdense(b)?TYPE_void:(b)->htype)
+#define BATtstore(b)	(BATtdense(b)?TYPE_void:(b)->ttype)
+#define Bunbase(b)	((char*) (b)->batBuns->base)
+#define Hbase(b)	((char*) (b)->hheap.base)
+#define Tbase(b)	((char*) (b)->theap.base)
 
-#define BUNhead(b,p)	((b)->hvarsized ? BUNhvar(b,p) : BUNhloc(b,p))
-#define BUNtail(b,p)	((b)->tvarsized ? BUNtvar(b,p) : BUNtloc(b,p))
+#define BUNhead(b,p)	(BUN)((b)->hvarsized?BUNhvar(b,p):BUNhloc(b,p))
+#define BUNtail(b,p)	(BUN)((b)->tvarsized?BUNtvar(b,p):BUNtloc(b,p))
 
 #define BUNsize(b)	((b)->dims.bunwidth)
-#define BUNptr(b,i)	((BUN) ((char *) Bunbase(b) + ((b)->batElmshift < 0 ? \
-				(i) * BUNsize(b) : (i) << (b)->batElmshift)))
-#define BUNindex(b,p)	((size_t) ((b)->batElmshift < 0 ? \
-                        	(((char*)(p)-(char*)Bunbase(b))/BUNsize(b)) :\
-                        	(((char*)(p)-(char*)Bunbase(b)) >> (b)->batElmshift)))
+#define BUNptr(b,i)    ((BUN) (Bunbase(b) + (((b)->batElmshift<0)?\
+				((i)*BUNsize(b)):((i)<<(b)->batElmshift))))
+#define BUNindex(b,p)  ((size_t) (((b)->batElmshift<0)?\
+                        	((((BUN)p) - Bunbase(b))/BUNsize(b)):\
+                        	((((BUN)p) - Bunbase(b)) >> (b)->batElmshift)))
 
-#define BUNhloc(b,p)	((BUN) (((char *) (p)) + (b)->hloc))
-#define BUNtloc(b,p)	((BUN) (((char *) (p)) + (b)->tloc))
-#define BUNhvar(b,p)	((b)->htype?(BUN)((char *) Hbase(b)+*(var_t*)BUNhloc(b,p)):(BUN)BUNhpos(b,p))
-#define BUNtvar(b,p)	((b)->ttype?(BUN)((char *) Tbase(b)+*(var_t*)BUNtloc(b,p)):(BUN)BUNtpos(b,p))
+#define BUNhloc(b,p)	((BUN) (((char*) p) + (b)->hloc))
+#define BUNtloc(b,p)	((BUN) (((char*) p) + (b)->tloc))
+#define BUNhvar(b,p)	((b)->htype?(Hbase(b)+*(int*)BUNhloc(b,p)):(BUN)BUNhpos(b,p))
+#define BUNtvar(b,p)	((b)->ttype?(Tbase(b)+*(int*)BUNtloc(b,p)):(BUN)BUNtpos(b,p))
 
-#define BUNfirst(b)	((BUN) ((char *) (b)->batHole + BUNsize(b)))
-#define BUNlast(b)	((BUN) ((char *) Bunbase(b) + (b)->batBuns->free))
-#define BUNnext(b,p)	((BUN) ((char *) (p) + BUNsize(b)))
-#define BUNprev(b,p)	((BUN) ((char *) (p) - BUNsize(b)))
+#define BUNfirst(b)	(((char*) (b)->batHole) + BUNsize(b))
+#define BUNlast(b)	(Bunbase(b)+ (b)->batBuns->free)
+#define BUNnext(b,p)	(p + BUNsize(b))
+#define BUNprev(b,p)	(p - BUNsize(b))
 
 #define BUNgetpos(b,p)	(((b)->batElmshift < 0)?\
 				((p-BUNfirst(b)) / BUNsize(b)):\
@@ -1378,8 +1369,8 @@ and @%BATflipflop@ (which assigns to the alternate view).
 @{
 @h
 gdk_export BAT*		BATclear  (BAT *b); 
-gdk_export BAT*		BATcopy   (BAT *b); 
-gdk_export BAT*		BATrcopy  (BAT *b); 
+gdk_export BAT* 		BATcopy   (BAT *b); 
+gdk_export BAT* 		BATrcopy  (BAT *b); 
 gdk_export BAT*		BATmark   (BAT *b, oid base); 
 gdk_export BAT*		BATnumber (BAT *b); 
 gdk_export BAT*		BATgroup (BAT *b, int start, int incr, int grpsize); 
@@ -1435,14 +1426,10 @@ expected usage pattern of the memory in a heap.
 @{
 @h
 /* Heap storage modes */
-#define STORE_MODEMASK	0xFF	/* mask for below bits */
 #define STORE_MEM	0	/* load into GDKmalloced memory */
 #define STORE_MMAP	1	/* mmap() into virtual memory */
 #define STORE_COMPR	2	/* compressed STORE_MEM: currently ignored */
 #define STORE_PRIV	3	/* BAT copy of copy-on-write mmap */
-
-/* Flags to be ORed into above mode bits */
-#define STORE_VARSIZE	0x100	/* variable sized */
 
 /* Buffer management advise for heaps */
 #define BUF_NORMAL	0     /* No further special treatment */
@@ -1469,7 +1456,7 @@ gdk_export int      GDKcreatedir  (str nme);
 gdk_export int      GDKremovedir  (str nme);
 
 gdk_export char*    GDKload   (str nme, str ext, size_t size, size_t chunk, int mode);
-gdk_export int      GDKsave   (str nme, str ext, void *buf, size_t size, int mode);
+gdk_export int      GDKsave   (str nme, str ext, str buf, size_t size, int mode);
 gdk_export int      GDKunlink (str dir, str nme, str extension);
 gdk_export int      GDKmove   (str dir1, str nme1, str ext1, str dir2, str nme2, str ext2);
 @
@@ -1606,11 +1593,11 @@ typedef struct {
         volatile int status;	/* always available bat info */
 } BBPrec;
 
-gdk_export bat 		BBPmaxsize;
-gdk_export bat 		BBPlimit;
-gdk_export bat		BBP_free;
+gdk_export int 		BBPmaxsize;
+gdk_export int 		BBPlimit;
+gdk_export int		BBP_free;
 gdk_export int		BBP_dirty;	/* BBP table dirty? */
-gdk_export bat		BBPsize;	/* current size of BBP tables */
+gdk_export int		BBPsize;	/* current size of BBP tables */
 gdk_export BBPrec*       	BBP;
 
 /* fast defines without checks; internal use only  */
@@ -1815,8 +1802,8 @@ typedef struct {
 	int	(*atomUnfix)		(ptr atom);
 
 	/* varsized atom-only ADT functions */
-	void	(*atomPut)		(Heap*, var_t* off, ptr src); 
-	void	(*atomDel)		(Heap*, size_t* atom); 
+	void	(*atomPut)		(Heap*, int* off, ptr src); 
+	void	(*atomDel)		(Heap*, int* atom); 
 	int	(*atomLen)		(ptr atom); 
 	void	(*atomHeap)		(Heap*, size_t); 
 	/* optional functions */
@@ -1828,7 +1815,7 @@ gdk_export atomDesc		BATatoms[];
 gdk_export int 		GDKatomcnt; 
 
 gdk_export void ATOMdelete    (int id);
-gdk_export void ATOMproperty  (char* nme, char *property, GDKfcn fcn);
+gdk_export void ATOMproperty  (char* nme, char *property, int (*fcn)());
 gdk_export int  ATOMindex     (char* nme);
 gdk_export int  ATOMdump      (void);
 
@@ -2155,6 +2142,7 @@ gdk_export int	GDKfatal    (char* format, ... );
 #include "gdk_bbp.h"
 #include "gdk_desc.h" 
 #include "gdk_utils.h"
+#include "gdk_heap.h"
 #include "gdk_bat.h"
 
 #define BBPLOCKMASK     7
@@ -2596,7 +2584,7 @@ If so, we can just compare integer index numbers instead of strings:
 @h
 #define HASHloop_fstr(b, h, hb, idx, v) \
         for (hb = h.hash[strHash(v)&h.mask], idx = strLocate(&(b)->hheap,v);\
-	     hb; hb = h.link[hb]) if (*(var_t*) BUNhloc(b, BUNptr(b, hb)) == idx)
+	     hb; hb = h.link[hb]) if (*(int*) BUNhloc(b, BUNptr(b, hb)) == idx)
 @
 The following example shows how the hashloop is used:
 @T
@@ -2744,10 +2732,19 @@ Much used, but not necessarily kernel-operations on BATs.
 {\tt \begin{tabular}{|lll|}\hline
 BAT* & BAThistogram & (BAT *b)\\
 BAT* & BATsample& (BAT* b,size_t n)\\
+ptr & BATsum & (BAT* b, ptr sumval)\\
+ptr & BATmax & (BAT *b, ptr maxval)\\
+ptr & BATmin & (BAT *b, ptr minval)\\
 \hline\end{tabular}}
+@
+The routines @%BATmax@, @%BATmin@ (and others) provide statistical
+information on the BAT header.
 @
 The routine @%BAThistogram@ produces a new BAT with a frequency distribution
 of the tail of its operand.
+@
+The routine @%BATsum@ works only on the flt and int datatypes.
+It computes a sum over the tails.
 @
 The routine @%BATsample@ returns a random sample on n BUNs of a BAT.
 @
@@ -2758,7 +2755,10 @@ properties. They can be used to improve query processing at higher levels.
 @h
 
 gdk_export BAT*		BATsample    (BAT *b, size_t n);
+gdk_export ptr 		BATsum       (BAT *b, ptr sumval);
 gdk_export BAT*		BAThistogram (BAT *b); 
+gdk_export ptr              BATmin       (BAT *b, ptr minval);
+gdk_export ptr              BATmax       (BAT *b, ptr maxval);
 @}
 @- alignment-id transformations
 @T
@@ -2941,6 +2941,8 @@ typedef struct {
 	int 		vtype;
 	int 	       	len;
 } *ValPtr, ValRecord;
+
+#endif /* BAT32IMAGE */
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
 #define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))

@@ -93,11 +93,6 @@ this facilitates the use of the string module in bulk operations.
 .COMMAND unicode(int wchar) : str = strFromWChr;
 	"convert a unicode to a one-character string. (!DS2.2)"
 
-.COMMAND codeset() : str = codeset;
-	"Return the locale's codeset"
-.COMMAND iconv(str org, str fromCodeset, str toCodeset ) : str = strIconv;
-	"String codeset conversion"
-
 .COMMAND startsWith( str s, str prefix ) : bit = strPrefix;
         "Prefix check."
 .COMMAND endsWith( str s, str suffix ) : bit = strSuffix; 
@@ -138,105 +133,104 @@ this facilitates the use of the string module in bulk operations.
 The following script is used for testing the string module. 
 
 @mil
+setoid(oid(20000000));
 
-PROC test_str() : void := {
-  setoid(oid(20000000));
-  i1 := "This is a test";
-  i2 := "of the str atomic type";
+i1 := "This is a test";
+i2 := "of the str atomic type";
 
-  (("concat an int "+1)+" with a string "+i1+(" with an dbl "+dbl(1.0))).print; 
-  (("concat an int "+1) + " with a string").print; 
+(("concat an int "+1)+" with a string "+i1+(" with an dbl "+dbl(1.0))).print; 
+(("concat an int "+1) + " with a string").print; 
 
-  length( i1 ).print;
-  sres := (i1 + " ") + i2;
-  sres.print;
-  len := length(sres);
-  string( sres, 10).print;
-  string( sres, -10).print;
-  string( sres, 10, len - 10 ).print;
-  string( sres, 10, 10 ).print;
-  string( sres, -10, 10 ).print;
-  string( sres, -10, 20 ).print;
-  string( sres, 10, len).print;
-  string( sres, len, 10).print;
-  string( sres, -(len), 10).print; 
-  string( sres, -(len + 5), 10).print; 
-  chrAt( sres, 5 ).print;
-  chrAt( sres, -3).print;
-  chrAt( sres, len + 20).print;
-  chrAt( sres, len).print;
-  chrAt( sres, len - 1).print;
-  chrAt( sres, 0).print;
-  startsWith( i2, "of the" ).print;
-  startsWith( i2, i2 ).print;
-  startsWith( i2, "k" ).print;
-  endsWith( i2, "type" ).print;
-  endsWith( i2, i2 ).print;
-  endsWith( i2, "k" ).print;
-  toLower( i1 ).print;
-  toUpper( i1 ).print;
-  search( "Hello this is a test for search", 'a' ).print;
-  r_search( "Hello this is a test for search", 'a' ).print;
-  search( "Hello this is a test for search", "ar" ).print;
-  r_search( "Hello this is a test for search", "ar" ).print;
-  search( "Hello this is a test for search", "is" ).print;
-  r_search( "Hello this is a test for search", "is" ).print;
-  search( "Hello this is a test for search", "Hello" ).print;
-  r_search( "Hello this is a test for search", "Hello" ).print;
-  search( "Hello this is a test for search", "arch" ).print;
-  r_search( "Hello this is a test for search", "arch" ).print;
-  search( "Hello this is a test for search", "xxx" ).print;
-  r_search( "Hello this is a test for search", "yyy" ).print;
-  
+length( i1 ).print;
+sres := (i1 + " ") + i2;
+sres.print;
+len := length(sres);
+string( sres, 10).print;
+string( sres, -10).print;
+string( sres, 10, len - 10 ).print;
+string( sres, 10, 10 ).print;
+string( sres, -10, 10 ).print;
+string( sres, -10, 20 ).print;
+string( sres, 10, len).print;
+string( sres, len, 10).print;
+string( sres, -(len), 10).print; 
+string( sres, -(len + 5), 10).print; 
+chrAt( sres, 5 ).print;
+chrAt( sres, -3).print;
+chrAt( sres, len + 20).print;
+chrAt( sres, len).print;
+chrAt( sres, len - 1).print;
+chrAt( sres, 0).print;
+startsWith( i2, "of the" ).print;
+startsWith( i2, i2 ).print;
+startsWith( i2, "k" ).print;
+endsWith( i2, "type" ).print;
+endsWith( i2, i2 ).print;
+endsWith( i2, "k" ).print;
+toLower( i1 ).print;
+toUpper( i1 ).print;
+search( "Hello this is a test for search", 'a' ).print;
+r_search( "Hello this is a test for search", 'a' ).print;
+search( "Hello this is a test for search", "ar" ).print;
+r_search( "Hello this is a test for search", "ar" ).print;
+search( "Hello this is a test for search", "is" ).print;
+r_search( "Hello this is a test for search", "is" ).print;
+search( "Hello this is a test for search", "Hello" ).print;
+r_search( "Hello this is a test for search", "Hello" ).print;
+search( "Hello this is a test for search", "arch" ).print;
+r_search( "Hello this is a test for search", "arch" ).print;
+search( "Hello this is a test for search", "xxx" ).print;
+r_search( "Hello this is a test for search", "yyy" ).print;
 
-  trim("   f ").print;
-  trim("abc").print;
-  trim("   x").print;
-  trim("x   ").print;
-  trim("").print;
-  trim(str(nil)).print;
-  
-  substitute("A.B.C",".","\\.",false).print;
-  substitute("A.B.C",".","\\.",true).print;
-  
-  #unicode tests
-  var i := 0;
-  while((i :+= 1) < 65535) {
-    var t := unicode(i) + "je";
-    var s := "test" + t;
-    var u := s + " ";
-    var v := " " + s;
-    if (s.chrAt(3) != 't') printf("bug1 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
-    if (s.chrAt(5) != 'j') printf("bug2 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
-    if (i < 256) {
-      if (isnil(s.chrAt(4))) {
-        printf("char %d is nil\n", i);
-      } else if (s.chrAt(4) != chr(i)) {
-        printf("bug3 in chrAt at %d (=%d)\n", i, int(s.chrAt(4)));
-      }
-    } else {
-      if (not(isnil(s.chrAt(4)))) printf("bug4 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
-      if (s.search('j') != 5) printf("bug in s.searchChr at %d (=%d)\n", i, s.search('j'));
-      if (s.r_search('t') != 3) printf("bug in s.r_searchChr at %d (=%d)\n", i, s.r_search('t'));
+
+trim("   f ").print;
+trim("abc").print;
+trim("   x").print;
+trim("x   ").print;
+trim("").print;
+trim(str(nil)).print;
+
+substitute("A.B.C",".","\\.",false).print;
+substitute("A.B.C",".","\\.",true).print;
+
+#unicode tests
+var i := 0;
+while((i :+= 1) < 65535) {
+  var t := unicode(i) + "je";
+  var s := "test" + t;
+  var u := s + " ";
+  var v := " " + s;
+  if (s.chrAt(3) != 't') printf("bug1 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
+  if (s.chrAt(5) != 'j') printf("bug2 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
+  if (i < 256) {
+    if (isnil(s.chrAt(4))) {
+      printf("char %d is nil\n", i);
+    } else if (s.chrAt(4) != chr(i)) {
+      printf("bug3 in chrAt at %d (=%d)\n", i, int(s.chrAt(4)));
     }
-    if (s.unicodeAt(4) != i) printf("bug in unicodeAt at %d (=%d)\n", i, s.unicodeAt(4));
-    if (s.length() != 7) printf("bug in length at %d (=%d)\n", i, s.length);
-    if (s.toUpper.toLower != s.toLower) printf("nonreversible toUpper/toLower at %d\n", i);
-    if (s.toLower.toUpper != s.toUpper) printf("nonreversible toLower/toUpper at %d\n", i);
-    if (s.search(t) != 4) printf("bug1 in s.search at %d (=%d)\n", i, s.search(t));
-    if (s.search("je") != 5) printf("bug2 in s.search at %d (=%d)\n", i, s.search("je"));
-    if (s.r_search(t) != 4) printf("bug1 in s.r_search at %d (=%d)\n", i, s.r_search(t));
-    if (s.r_search("je") != 5) printf("bug2 in s.r_search at %d (=%d)\n", i, s.r_search("je"));
-    if (s.string(4) != t) printf("bug1 in stringtail at %d (=%s)\n", i, s.string(4));
-    if (s.string(5) != "je") printf("bug2 in stringtail at %d (=%s)\n", i, s.string(5));
-    if (s.string(4,3) != t) printf("bug1 in substring at %d (=%s)\n", i, s.string(4,2));
-    if (s.string(5,2) != "je") printf("bug2 in substring at %d (=%s)\n", i, s.string(5,2));
-    if (v.ltrim != s) printf("bug in ltrim at %d (=%s)\n", i, u.ltrim);
-    if (u.rtrim != s) printf("bug in rtrim at %d (=%s)\n", i, v.ltrim);
-    if (not(startsWith(u,s))) printf("bug in startsWith at %d\n", i);
-    if (not(endsWith(v,s))) printf("bug in endsWith at %d\n", i);
+  } else {
+    if (not(isnil(s.chrAt(4)))) printf("bug4 in chrAt at %d (=%d)\n", i, int(s.chrAt(i)));
+    if (s.search('j') != 5) printf("bug in s.searchChr at %d (=%d)\n", i, s.search('j'));
+    if (s.r_search('t') != 3) printf("bug in s.r_searchChr at %d (=%d)\n", i, s.r_search('t'));
   }
+  if (s.unicodeAt(4) != i) printf("bug in unicodeAt at %d (=%d)\n", i, s.unicodeAt(4));
+  if (s.length() != 7) printf("bug in length at %d (=%d)\n", i, s.length);
+  if (s.toUpper.toLower != s.toLower) printf("nonreversible toUpper/toLower at %d\n", i);
+  if (s.toLower.toUpper != s.toUpper) printf("nonreversible toLower/toUpper at %d\n", i);
+  if (s.search(t) != 4) printf("bug1 in s.search at %d (=%d)\n", i, s.search(t));
+  if (s.search("je") != 5) printf("bug2 in s.search at %d (=%d)\n", i, s.search("je"));
+  if (s.r_search(t) != 4) printf("bug1 in s.r_search at %d (=%d)\n", i, s.r_search(t));
+  if (s.r_search("je") != 5) printf("bug2 in s.r_search at %d (=%d)\n", i, s.r_search("je"));
+  if (s.string(4) != t) printf("bug1 in stringtail at %d (=%s)\n", i, s.string(4));
+  if (s.string(5) != "je") printf("bug2 in stringtail at %d (=%s)\n", i, s.string(5));
+  if (s.string(4,3) != t) printf("bug1 in substring at %d (=%s)\n", i, s.string(4,2));
+  if (s.string(5,2) != "je") printf("bug2 in substring at %d (=%s)\n", i, s.string(5,2));
+  if (v.ltrim != s) printf("bug in ltrim at %d (=%s)\n", i, u.ltrim);
+  if (u.rtrim != s) printf("bug in rtrim at %d (=%s)\n", i, v.ltrim);
+  if (not(startsWith(u,s))) printf("bug in startsWith at %d\n", i);
+  if (not(endsWith(v,s))) printf("bug in endsWith at %d\n", i);
 }
+quit;
 
 @{
 @* Implementation Code
@@ -255,13 +249,6 @@ PROC test_str() : void := {
 #include "ctype.h"
 #include "str.h"
 #include <string.h>
-
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#endif
 
 @+ UTF-8 Handling
 @T
@@ -472,11 +459,11 @@ int UTF8_strlen(str val) {
 		int c = *s++;
 		pos++;
 		if (c < 0xC0) continue;
-		if (*s++ < 0x80) return int_nil;
+		if ((*(s++)) < 0x80) return int_nil;
 		if (c < 0xE0) continue;
-		if (*s++ < 0x80) return int_nil;
+		if ((*(s++)) < 0x80) return int_nil;
 		if (c < 0xF0) continue;
-		if (*s++ < 0x80) return int_nil;
+		if ((*(s++)) < 0x80) return int_nil;
 	}
 	return pos;
 }
@@ -493,11 +480,11 @@ int UTF8_strpos(str val, str end) {
 		pos++;
 		if (c == 0) return -1;
 		if (c < 0xC0) continue;
-		if (*s++ < 0x80) return -1;
+		if ((*(s++)) < 0x80) return -1;
 		if (c < 0xE0) continue;
-		if (*s++ < 0x80) return -1;
+		if ((*(s++)) < 0x80) return -1;
 		if (c < 0xF0) continue;
-		if (*s++ < 0x80) return -1;
+		if ((*(s++)) < 0x80) return -1;
 	}
 	return pos;
 }
@@ -508,11 +495,11 @@ str UTF8_strtail(str val, int pos) {
 	while(*s && pos-- > 0) {
 		int c = *s++;
 		if (c < 0xC0) continue;
-		if (*s++ < 0x80) return NULL;
+		if ((*(s++)) < 0x80) return NULL;
 		if (c < 0xE0) continue;
-		if (*s++ < 0x80) return NULL;
+		if ((*(s++)) < 0x80) return NULL;
 		if (c < 0xF0) continue;
-		if (*s++ < 0x80) return NULL;
+		if ((*(s++)) < 0x80) return NULL;
 	}
 	return (str) s;
 }
@@ -539,8 +526,7 @@ str UTF8_strtail(str val, int pos) {
 
 int strConcat(str *res, str s, ptr val, int t ){
 	str valstr = NULL;
-	size_t l1;
-	int l2 = 0;
+	int l1, l2 = 0;
 
 	RETURN_NIL_IF(strNil(s)||ATOMcmp(t,val,ATOMnilptr(t))==0,TYPE_str);
 	if (t <= 0) return GDK_FAIL;
@@ -624,46 +610,6 @@ int strWChrAt( int *res, str val, int *at ){
 	return GDK_SUCCEED;
 }
 
-int codeset( str *res ){
-#ifdef HAVE_NL_LANGINFO
-	char *codeset = nl_langinfo(CODESET);
-	if (!codeset)
-		return GDK_FAIL;
-	*res = GDKstrdup(codeset);
-	return GDK_SUCCEED;
-#else
-	GDKerror("MIL-`codeset()' not available as C-`nl_langinfo()' wasn't found during compilation.\n");
-	return GDK_FAIL;
-#endif
-}
-
-int strIconv( str *res, str org, str f, str t)
-{
-#ifdef HAVE_ICONV
-	size_t len = strlen(org);
-	iconv_t cd = iconv_open( t, f);
-	size_t size = 4*len; 		/* make sure enough memory is claimed */
-	char *r; 
-
-	if (!cd){
-		GDKerror("Cannot convert strings from (%s) to (%s)\n", f, t);
-		return GDK_FAIL;
-	}
-	*res = r = GDKmalloc(size); 
-	if (iconv(cd, &org, &len, &r, &size) == (size_t) -1){
-		GDKfree(*res);
-		*res = NULL;
-		GDKerror("String convertion failed from (%s) to (%s)\n", f, t);
-		return GDK_FAIL;
-	}
-	*r = 0;
-	iconv_close(cd);
-	return GDK_SUCCEED;
-#else
-	GDKerror("MIL-`iconv()' not available as C-`iconv()' wasn't found during compilation.\n");
-	return GDK_FAIL;
-#endif
-}
 
 int strChrAt( chr *res, str val, int *at ){
 	int v;
@@ -677,11 +623,11 @@ int strChrAt( chr *res, str val, int *at ){
 }
 
 int strPrefix( bit *res, str s, str prefix ){
-	size_t pl, i;
+	int pl, i;
 
 	RETURN_NIL_IF(strNil(s)||strNil(prefix),TYPE_bit);
    	pl = strlen(prefix);
-	if (strlen(s) < pl){
+	if ((int)strlen(s)<pl){
 		*res = 0;
 		return GDK_SUCCEED;
 	}
@@ -696,7 +642,7 @@ int strPrefix( bit *res, str s, str prefix ){
 }
 
 int strSuffix( bit *res, str s, str suffix ){
-	size_t i, sl, sul;
+	int i, sl, sul;
 	RETURN_NIL_IF(strNil(s)||strNil(suffix),TYPE_bit);
    	sl = strlen(s);
    	sul = strlen(suffix);
@@ -756,9 +702,9 @@ int strStrSearch( int *res, str s, str s2 ){
 }
 
 int strReverseStrSearch( int *res, str s, str s2 ){
-	size_t len, slen;
+	int len, slen;
 	char *p, *q;
-	size_t i;
+	int i;
 
 	RETURN_NIL_IF(strNil(s)||strNil(s2),TYPE_int);
 	*res = -1;
@@ -796,7 +742,7 @@ int strReverseChrSearch( int *res, str s, chr *c ){
 
 int strStrip(str *res, str s) {
 	str start = s;
-	size_t len;
+	int len;
 
 	while (GDKisspace(*start))
 		start++;
@@ -823,7 +769,7 @@ int strLtrim(str *res, str s) {
 }
 
 int strRtrim(str *res, str s) {
-	size_t len = strlen(s);
+	int len = strlen(s);
 
 	RETURN_NIL_IF(strNil(s), TYPE_str);
 	while(len > 0 && GDKisspace(s[len-1])) len--;
@@ -833,9 +779,8 @@ int strRtrim(str *res, str s) {
 	return GDK_SUCCEED;
 }
 int strSubstitute(str *res, str s, str src, str dst, bit *g) {
-	int repeat = *g;
-	size_t lsrc = strlen(src), ldst = strlen(dst);
-	size_t l = strLen(s), n = l + ldst;
+	int repeat = *g, lsrc = strlen(src), ldst = strlen(dst);
+	int l = strLen(s), n = l + ldst;
 	str buf, fnd, end; 
 
 	if (repeat && ldst > lsrc) {

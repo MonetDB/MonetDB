@@ -24,11 +24,7 @@
 @f stream
 @a Niels Nes
 @* An simple interface to streams 
-Processing files, streams, and sockets is quite different on Linux and Windows
-platforms. To improve portability between both, we advise to replace the stdio
-actions with the stream functionality provided here.
-
-This interface can also be used to open 'non compressed, gzipped, bz2zipped' 
+This interface can be used to open 'non compressed, gzipped, bz2zipped' 
 data files and sockets. Using this interface one could easily switch between
 the various underlying storage types.
 
@@ -147,8 +143,6 @@ stream_export stream *open_bzrastream( char *filename );
 stream_export stream *open_bzwastream( char *filename );
 #endif
 
-stream_export void close_stream( stream *s );
-
 stream_export stream *socket_rstream( int socket, char *name );
 stream_export stream *socket_wstream( int socket, char *name );
 stream_export stream *socket_rastream( int socket, char *name );
@@ -224,13 +218,6 @@ The bstream_read will atleast read the next 'size' bytes. If the not read data
 it is resized. The spare byte is kept.
 
 @h
-
-typedef enum stream_errors {
-	NO__ERROR = 0,
-	OPEN_ERROR,
-	READ_ERROR, 
-	WRITE_ERROR
-}stream_errors;
 #endif /*_STREAM_H_*/
 @c
 #include <config.h>
@@ -264,13 +251,20 @@ typedef enum stream_errors {
 #endif
 
 #ifndef HAVE_SSIZE_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
+#if SIZEOF_OID == SIZEOF_INT
 typedef int ssize_t;
 #else
 typedef long ssize_t;
 #endif
-#define HAVE_SSIZE_T 1
+#define HAVE_SSIZE_T
 #endif
+
+typedef enum steam_errors {
+	NO__ERROR = 0,
+	OPEN_ERROR,
+	READ_ERROR, 
+	WRITE_ERROR
+}stream_errors;
 
 int stream_init(void){
 #ifdef NATIVE_WIN32
@@ -356,13 +350,12 @@ static void stream_close( stream *s ){
 	if (!fp) return;
 	if (fp != stdin && fp != stdout && fp != stderr)
 		fclose( fp );
-	else if (s->access == ST_WRITE)
+	else
 		fflush( fp );
 }
 
 static void stream_flush( stream *s ){
-	if (s->access == ST_WRITE)
-		fflush( (FILE*)s->stream_data);
+	fflush( (FILE*)s->stream_data);
 }
 
 static stream *open_stream( char *filename, char *flags ){
@@ -545,8 +538,7 @@ static void stream_gzclose( stream *s ){
 	gzclose( (gzFile*)s->stream_data);
 }
 static void stream_gzflush( stream *s ){
-	if (s->access == ST_WRITE)
-		gzflush( (gzFile*)s->stream_data, Z_SYNC_FLUSH);
+	gzflush( (gzFile*)s->stream_data, Z_SYNC_FLUSH);
 }
 stream *open_gzstream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
@@ -609,8 +601,7 @@ static void stream_bzclose( stream *s ){
 	BZ2_bzclose( (BZFILE*)s->stream_data);
 }
 static void stream_bzflush( stream *s ){
-	if (s->access == ST_WRITE)
-		BZ2_bzflush( (BZFILE*)s->stream_data);
+	BZ2_bzflush( (BZFILE*)s->stream_data);
 }
 stream *open_bzstream( char *filename, char *flags ){
 	stream *s = create_stream(filename);
@@ -908,9 +899,9 @@ stream *buffer_wastream( buffer *b, char *name ){
 
 typedef struct bs {
 	stream *s;
-	unsigned onr;
-	unsigned inr;
-	unsigned itotal;
+	int onr;
+	int inr;
+	int itotal;
 	int eob; 
 	char out[BLOCK];
 	char in[BLOCK];
@@ -957,16 +948,16 @@ size_t bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 static
 size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	bs *s = (bs*)ss->stream_data;
-	unsigned nr = 0;
+	int nr = 0;
 
 	size_t todo = cnt * elmsize;
-	if (s->inr + todo < s->itotal) {
+	if (todo < s->itotal - s->inr){
 		memcpy( buf, s->in + s->inr, todo );
 
 		s->inr += todo;
 		return cnt;
 	}
-	if (todo + s->inr >= s->itotal) {
+	if (todo >= s->itotal - s->inr ){
 		size_t rest = s->itotal - s->inr;
 		memcpy( buf, s->in + s->inr, rest );
 		buf += rest;
@@ -980,7 +971,7 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		return cnt - (todo/elmsize);
 	}
 	while (todo >= BLOCK){
-		stream_readInt( s->s, (int *) &nr );
+		stream_readInt( s->s, &nr );
 		s->s->read( s->s, buf, 1, (size_t) nr);
 		buf += nr;
 		todo -= nr;
@@ -990,7 +981,7 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		}
 	} 
 	if (todo){
-		stream_readInt( s->s, (int *) &nr );
+		stream_readInt( s->s, &nr );
 
 		if (nr < BLOCK)
 			s->eob = 1;
@@ -1189,7 +1180,7 @@ extern int stream_printf( stream *s, const char *format, ...)
 	va_end (ap);
 @c
 	@:stream_printf_va_vsnprintf@
-	while (i < 0 || (size_t) i >= bfsz) {
+	while ((i < 0) || (i >= bfsz)) {
 		if (i >= 0)		/* glibc 2.1 */
 			bfsz = (size_t)i+1; /* precisely what is needed */
 		else			/* glibc 2.0 */
@@ -1245,15 +1236,5 @@ void bstream_destroy( bstream *s )
 {
 	free(s->buf);
 	free(s);
-}
-
-void close_stream( stream *s )
-{
-	if (s && !s->errnr){
-		s->close( s );
-		s->destroy( s );
-	} else if (s) {
-		s->destroy( s );
-	}
 }
 

@@ -47,7 +47,7 @@ extern "C" {
 
 /* Generic initialization/cleanup routines */
 m_export void  TBL_init(void);
-m_export void  TBL_initclient(Client c, Client father);
+m_export void  TBL_initclient(Client c);
 m_export void  TBL_exitclient(Client c);
 
             
@@ -67,7 +67,7 @@ m_export void  TBL_printsigs(str s, int stk, str nme);
 m_export int   TBL_formatsig(str s, oid fid);
 m_export int   TBL_procreturn(int argc, ValPtr argv, ValPtr res, YYSTREE t);
 m_export void* TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv);
-m_export oid   TBL_loadmod(Client client, str module, str parmod, int level, str *initstr);
+m_export oid   TBL_loadmod(Client client, str module, int level, str *initstr);
 m_export int   TBL_unloadmod(Client client, str module, int level);
 
 m_export BAT *TBL_fcn_nme;
@@ -224,7 +224,6 @@ TBL_setaggr_resolve(
 
 #define ERROR(progname,	filename, lineno) { THRprintf(GDKerr, "Mserver: "); }
 
-static void TBL_Insert_Depend( oid mid, str name );
 
 BAT *TBL_fcn_nme = NULL;  /* BAT(oid, str): (function name, FID). */
 BAT *TBL_fcn_fcn = NULL;  /* BAT(oid, ptr): (FID, implementation fcn). */
@@ -436,6 +435,7 @@ void* DL_open(char* nme, int mode) {
 			void *hdl;
 			if ((hdl = dlopen(fullname, mode)) != NULL) {
 				tbl = (dltable*) DL_reglib(nme, hdl, 0);
+				tbl->dynamic_handle = hdl;
 			} else
 				DL_errmsg = dlerror();
 			GDKfree(fullname);
@@ -867,14 +867,14 @@ BAT* TBL_getdir(void) {
    
 #ifndef STATIC 
     char *name,*basename;
-    size_t liblen = strlen("lib");
+    size_t liblen = strlen("lib_");
 
     MSP_rewind_module_list();
     for (;;) {
-            name=MSP_next_module(".mil");
+            name=MSP_next_module();
             if (!name) break;
             basename=strrchr(name,DIR_SEP)+1;
-	    if (strncmp(basename,"lib",liblen)==0)
+	    if (strncmp(basename,"lib_",liblen)==0)
 	       basename+=liblen;
             BUNins(b, &i, basename);
             i++;
@@ -882,7 +882,7 @@ BAT* TBL_getdir(void) {
 #else 
     for(i=0; i<DL_TABLE_MAXLIBS; i++)  
     	if (DL_mod[i] != NULL) {
-            BUNins(b, &i, DL_mod[i]+1);
+            BUNins(b, &i, DL_mod[i]);
         }
 #endif
     return b;
@@ -1044,17 +1044,17 @@ saved on disk so no commit is needed.
 @+ Loading and Dropping Modules
 @c
 oid TBL_M_load(TBLinstall *inst, Client client, str module) {
-  ptr hdl = NULL;
+  ptr hdl;
   oid mid = 0;
   char mod_init_name[PATHLENGTH];
-  oid (*mod_init)(TBLinstall *, str) = NULL;;
+  oid (*mod_init)(TBLinstall *, str);
 
   dlFPRINTF(GDKerr, "  TBL_M_load(%s)\n", module);
   if (!(hdl = TBL_openmod(client, module))) {
     GDKerror("TBL_loadmod: module load %s cancelled.\n", module);
     return 0;
   }
-  
+
   sprintf(mod_init_name, "%s_Module_Install", module);
   mod_init = (oid (*)(TBLinstall *, str))DL_sym(hdl, mod_init_name);
   if (mod_init == NULL) {
@@ -1076,22 +1076,6 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   BUNdelHead(TBL_mod_hdl, &mid);
   BUNins(TBL_mod_hdl, &mid, &hdl);
   dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
-  return mid;
-}
-
-oid TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript)
-{
-  oid mid = 0;
-  char *fullname;
-
-  if (strcmp(module,"main") == 0){
-	mid = TBL_Install_Info( inst, client->user, module);
-  	dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
-  } else if ((fullname = MSP_locate_script(module)) != NULL) {
-	*initscript = monet_load_script(fullname, module);
-	mid = TBL_Install_Info( inst, client->user, module);
-  	dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
-  }
   return mid;
 }
 
@@ -1218,11 +1202,15 @@ int TBL_M_decref(Client client, oid mid) {
   return i;
 }
 
-void TBL_inc_mod_use(Client client, Client father){
+void TBL_inc_mod_use(Client client){
+	Client father = client;
 	BAT *modules_used;
 	BUN p,q;
 	int xx;
 
+	while (father->father != -1) {
+		father = monet_clients + father->father; 
+  	}
 	modules_used = BATselect(TBL_mod_use, &father, &father);
 	BATloopFast(modules_used, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(modules_used,p); 
@@ -1287,7 +1275,7 @@ loaded	byuser	level	ACTION (in order!)
 @c
 
 
-oid TBL_loadmod(Client client, str module, str parmod, int level, str *initstr) {
+oid TBL_loadmod(Client client, str module, int level, str *initstr) {
   /* State
    */
   TBLinstall inst;
@@ -1321,28 +1309,21 @@ Lets do the things in the right order, see above!
   loaded = (mid != 0);
   
   dlFPRINTF(GDKerr, "  loaded = %d\n", loaded);
+
+  cinstalled = TBL_M_cinstalled(client, mid);
+  if (cinstalled) 
+	used = 1;
+
+  dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
+
   if (!loaded) {
-    if (module[0] == '_'){
-      mid = TBL_M_load(&inst, client, module); /* generates a mid! */
-    } else {
-      mid = TBL_load_script(&inst, client, module, initstr);	
-      used = 1; /* Script is now loaded, ie not need for M_initscript */
-    }
+    mid = TBL_M_load(&inst, client, module); /* generates a mid! */
     loaded = (mid != 0);
   }
   dlFPRINTF(GDKerr, "  loaded = %d, mid = %ld\n", loaded, (long)mid);
 
   if (!loaded)
     goto xit;
-
-  cinstalled = TBL_M_cinstalled(client, mid);
-  if (parmod){
-      oid pmid = TBL_module_lookup(parmod);
-      TBL_Insert_Depend(pmid, module );
-  }
-  if (cinstalled) 
-	used = 1;
-  dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
 
   if (loaded && !cinstalled) {
     dlPRINT("TBL_loadmod: loaded but not installed! Installing...\n");
@@ -2188,20 +2169,19 @@ deletes a MIL procedure. If pid is nil all procs with the
 given name are deleted.
 @c
 void TBL_delproc(Client client, str nme, oid pid, int lock) {
-	BAT *cb = BATmirror(client->fcntbl);
    	int xx, yy = TOK_PROC;
+        BAT *sb, *tb, *bb, *cb = BATmirror(client->fcntbl);
 	BUN p,q;
+
   
 	if (lock) TBL_M_lock(client);
+	sb = BATuselect(cb, nme, nme);
+        tb = BATsemijoin(TBL_fcn_tpe, sb);
+	BBPreclaim(sb);
+        bb = BATuselect(tb, &yy, &yy);
+	BBPreclaim(tb);
 
 	if (pid == oid_nil) {
-          BAT *sb, *tb, *bb;
-	  sb = BATuselect(cb, nme, nme);
-          tb = BATsemijoin(TBL_fcn_tpe, sb);
-	  BBPreclaim(sb);
-          bb = BATuselect(tb, &yy, &yy);
-	  BBPreclaim(tb);
-
 	  BATloopFast(bb, p, q, xx) {
 	    BUN s;
 	    int cnt;
@@ -2225,10 +2205,8 @@ void TBL_delproc(Client client, str nme, oid pid, int lock) {
   		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 	    }
  	  }
-	  BBPreclaim(bb);
 	} else {
-	  int type = *(int*)BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid));
-	  if (type == TOK_PROC){
+	  if (BUNfnd(bb, &pid)){
 	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
 	    if (cnt == 1){
 		YYSTREE *x = (YYSTREE*)
@@ -2247,6 +2225,7 @@ void TBL_delproc(Client client, str nme, oid pid, int lock) {
 	    }
 	  }
 	}
+	BBPreclaim(bb);
 	if (lock) TBL_M_unlock(client);
 }
 
@@ -2323,7 +2302,7 @@ Both tables are session and user specific.
 
 #define TBL_SIZE	750
 
-void TBL_initclient(Client client, Client father) {
+void TBL_initclient(Client client) {
 	int	i;
 
 	if (monet_clients != client){
@@ -2331,8 +2310,7 @@ void TBL_initclient(Client client, Client father) {
 		client->acctbl = TBL_lookup(client, "acctbl"); 
 		client->atomtbl = TBL_lookup(client, "atomtbl"); 
 		TBL_incproc(client); /* inc reference counts to functions */
-		if (father)
-		    TBL_inc_mod_use(client, father); /* inc mod use counters */
+		TBL_inc_mod_use(client); /* inc mod use counters */
 	} else {
 		client->fcntbl = TBL_create(client, "fcntbl", 
 				    BATnew(TYPE_str, TYPE_oid, TBL_SIZE));
@@ -2438,18 +2416,11 @@ is called from the generated code in the routine <modulename>_Module_Install.
 It is called one time for each module that it is dependent on.
 @c
 
-static void TBL_Insert_Depend( oid mid, str name )
-{
-  if (BUNlocate(TBL_mod_dep, &mid, name) == NULL) {
-    BUNins(TBL_mod_dep, &mid, name);  
-  }
-}
 void TBL_Install_Depend(TBLinstall *inst, oid mid, str user, str name) {
-  /* use parent module NULL else circular dependencies are added */
-  if (!TBL_loadmod(inst->client, name, NULL, inst->level+1, inst->initstr)) {
-    GDKwarning("TBL_Install_Depend: requires module %s, not loaded!\n", name);
-  } else {
-    TBL_Insert_Depend(mid, name);
+  if (!TBL_loadmod(inst->client, name, inst->level+1, inst->initstr)) {
+   GDKwarning("TBL_Install_Depend: requires module %s, not loaded!\n", name);
+  } else if (BUNlocate(TBL_mod_dep, &mid, name) == NULL) {
+   BUNins(TBL_mod_dep, &mid, name);  
   }
 }
 

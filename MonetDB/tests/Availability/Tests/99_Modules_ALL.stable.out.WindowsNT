@@ -10,8 +10,6 @@ stdout of test '99_Modules_ALL` in directory 'tests/Availability` itself:
 # compiled for i686-pc-win32/32bit; dynamically linked.
 setoid(oid(20000000));
 
-PROC mmn() : BAT[oid,str] := return(monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)));
-
 #All_mods:=MODULES.sort.copy;
 module("cluster");
 # # module(Meta);
@@ -31,7 +29,7 @@ All_mods@batloop {
    vector: loading... done.
       url: loading... done.
      unix: loading... done.
-     uchr: loaded.
+     uchr: loading... done.
     trans: loaded.
      tpcd: loading... done.
     tcpip: loading... done.
@@ -42,6 +40,7 @@ All_mods@batloop {
  salgebra: loading... done.
     radix: loading... done.
        qt: loading... done.
+   perfex: loading... done.
       pcl: loading... done.
       oo7: loading... done.
 monettime: loading... done.
@@ -49,6 +48,7 @@ monettime: loading... done.
       mel: loading... done.
      mapi: loading... done.
 malalgebra: loading... done.
+   logger: loading... done.
      lock: loading... done.
    kernel: loaded.
  iterator: loading... done.
@@ -69,7 +69,7 @@ bat_arith: loading... done.
    aggrX3: loading... done.
      aggr: loading... done.
 
-table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
+table(monet_mod_nme.reverse.sort.reverse.col_name(sprintf("%i modules",monet_mod_nme.count)));
 #-----------------#
 # 43 modules	  #
 #-----------------#
@@ -92,7 +92,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 [ "iterator"	  ]
 [ "kernel"	  ]
 [ "lock"	  ]
-[ "main"	  ]
+[ "logger"	  ]
 [ "malalgebra"	  ]
 [ "mapi"	  ]
 [ "mel"		  ]
@@ -100,6 +100,7 @@ table(mmn().reverse.sort.reverse.col_name(sprintf("%i modules",mmn().count)));
 [ "monettime"	  ]
 [ "oo7"		  ]
 [ "pcl"		  ]
+[ "perfex"	  ]
 [ "qt"		  ]
 [ "radix"	  ]
 [ "salgebra"	  ]

@@ -63,6 +63,7 @@ gdk_export void BATSIGcrash(int);
 
 char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 char	GDKdbnameStr[PATHLENGTH] = { 0 };
+char	GDKdirStr[PATHLENGTH] = { 0 };
 
 BAT 	*GDKenv = NULL;
 
@@ -132,6 +133,9 @@ static int GDKenvironment(str dbname, str dbfarm)
 
 	strncpy(GDKdbnameStr, dbname, PATHLENGTH);
 	strncpy(GDKdbfarmStr, dbfarm, PATHLENGTH);
+	snprintf(GDKdirStr, PATHLENGTH, "%s%c%s",
+			GDKdbfarmStr,DIR_SEP,GDKdbnameStr);
+
 	return 1;
 }
 
@@ -227,17 +231,17 @@ It should be extended to cope with the specifics of the interrupt
 received.
 @c
 #include <signal.h>
-RETSIGTYPE BATSIGignore(int nr) {
+void BATSIGignore(int nr) {
 	GDKsyserror("! ERROR signal %d caught by thread %ld\n", 
 		nr, (long) MT_getpid()); 
 }
 
-RETSIGTYPE BATSIGabort(int nr) {
+void BATSIGabort(int nr) {
 	GDKfatal("signal %d caught by thread %ld\n", nr, (long) MT_getpid()); 
 }
 
 #ifdef SIGPIPE
-RETSIGTYPE BATSIGpipe(int nr) {
+void BATSIGpipe(int nr) {
 	int	status; 
 
 	while (waitpid(-1, &status, WNOHANG) > 0)
@@ -248,7 +252,7 @@ RETSIGTYPE BATSIGpipe(int nr) {
 #endif
 
 
-RETSIGTYPE BATSIGcrash(int nr) {
+void BATSIGcrash(int nr) {
 	static int crash = 0;
 	if (!crash++) {
 		GDKlog(GDKCRASH);
@@ -337,19 +341,15 @@ volatile size_t	GDK_mem_cursize = 0;
 volatile size_t	GDK_vm_cursize = 0;
 	 size_t	GDK_vm_minsize = 131072;
 	 size_t	GDK_vm_maxsize = GDK_VM_MAXSIZE;
-struct malloc_hist {
-	lng	xxx;
-	int	yyy;
-};
 #ifdef GDK_VM_KEEPHISTO
 	 BAT*	GDK_vm_histo = NULL;
-volatile struct malloc_hist GDK_vm_nallocbuf[MAX_BIT] = { { 0 } };
-volatile struct malloc_hist* GDK_vm_nallocs = GDK_vm_nallocbuf;
+volatile int GDK_vm_nallocbuf[MAX_BIT<<2] = { 0 };
+volatile int* GDK_vm_nallocs = GDK_vm_nallocbuf;
 #endif
 #ifdef GDK_MEM_KEEPHISTO
 	 BAT*	GDK_mem_histo = NULL;
-volatile struct malloc_hist	GDK_nmallocbuf[MAX_BIT] = { { 0 } };
-volatile struct malloc_hist*	GDK_nmallocs = GDK_nmallocbuf;
+volatile int	GDK_nmallocbuf[MAX_BIT<<2] = { 0 };
+volatile int*	GDK_nmallocs = GDK_nmallocbuf;
 #endif
 
 size_t GDKvm_heapsize(void) {
@@ -399,6 +399,7 @@ static int GDK_mem_allocs = 0;
         if (_mask&size) break;\
         _mask >>=1;\
   }\
+  idx <<= 2;\
 }
 
 /* at least each 50M of memory increase, BBPtrim is run */
@@ -412,9 +413,9 @@ void GDKmemchk(int memchk, int vmchk) {
 	size_t memtarget = GDKmem_inuse();
 	size_t vmtarget = GDKvm_cursize();
 	MEMDEBUG {
-		THRprintf(GDKerr, "GDKmemchk (memcur=%lu,memmax=%lu) (vmcur=%lu,vmmax=%lu)\n",
-			(unsigned long) memtarget, (unsigned long) GDK_mem_maxsize, 
-			(unsigned long) GDK_vm_cursize, (unsigned long) GDK_vm_maxsize);
+		THRprintf(GDKerr, "GDKmemchk (memcur=%u,memmax=%u) (vmcur=%u,vmmax=%u)\n",
+			(unsigned int) memtarget, (unsigned int) GDK_mem_maxsize, 
+			(unsigned int) GDK_vm_cursize, (unsigned int) GDK_vm_maxsize);
 	}
 	memtarget = (memchk && memtarget > GDK_mem_maxsize) ? memtarget - GDK_mem_maxsize : 0;
 	vmtarget = (vmchk && vmtarget > GDK_vm_maxsize) ? vmtarget - GDK_vm_maxsize : 0;
@@ -431,7 +432,7 @@ void GDKmeminc(size_t memdelta, size_t vmdelta) {
 #ifdef GDK_VM_KEEPHISTO
 {	int idx;
         GDKmallidx(idx, segsize);
-        GDK_vm_nallocs[idx].yyy++; }
+        GDK_vm_nallocs[idx]++; }
 #endif
         GDK_vm_cursize += segsize;
 	CHKMEM(memdelta,vmdelta);
@@ -444,7 +445,7 @@ void GDKmemdec(size_t memdelta, size_t vmdelta) {
 #ifdef GDK_VM_KEEPHISTO
 {	int idx;
         GDKmallidx(idx, segsize);
-        GDK_vm_nallocs[idx].yyy--; }
+        GDK_vm_nallocs[idx]--; }
 #endif
         GDK_vm_cursize -= segsize;
 }
@@ -524,8 +525,8 @@ void GDKmemdump(void) {
 		BUN p,q;
 		THRprintf(GDKerr, "!memory histogram\n");
 		BATloop(GDK_mem_histo, p, q) {
-			THRprintf(GDKerr, "! %ld %d\n", 
-				(long) *(lng*) BUNhloc(GDK_mem_histo,p), 
+			THRprintf(GDKerr, "! %d %d\n", 
+				*(int*) BUNhloc(GDK_mem_histo,p), 
 				*(int*) BUNtloc(GDK_mem_histo,p));
 		}
 	}
@@ -535,8 +536,8 @@ void GDKmemdump(void) {
 		BUN p,q;
 		THRprintf(GDKerr, "\n!virtual memory histogram\n");
 		BATloop(GDK_vm_histo, p, q) {
-			THRprintf(GDKerr, "! %ld %d\n", 
-				(long) *(lng*) BUNhloc(GDK_vm_histo,p), 
+			THRprintf(GDKerr, "! %d %d\n", 
+				*(int*) BUNhloc(GDK_vm_histo,p), 
 				*(int*) BUNtloc(GDK_vm_histo,p));
 		}
 	}
@@ -636,7 +637,7 @@ void* GDKmalloc(size_t size) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
 		GDKmallidx(idx, realsize);
-		GDK_nmallocs[idx].yyy++; 
+		GDK_nmallocs[idx]++; 
 #endif
 		GDK_heap_inuse += realsize;
 	}}
@@ -653,7 +654,7 @@ void GDKfree (void *blk) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
 		GDKmallidx(idx,size);
-		GDK_nmallocs[idx].yyy--;
+		GDK_nmallocs[idx]--;
 /*		if (GDK_mallocs[idx]-- <= 0) {
 			GDKwarning("free(%p): unused pointer\n", blk);
 		} else */
@@ -883,16 +884,16 @@ int GDKinit(char *dbname, char *dbfarm) {
 	BATmode(GDK_mem_histo, TRANSIENT);
 	for(i=3; i<22; i++) {
 		lng j = 1<<i;
-		BUNins(GDK_mem_histo, (ptr)&j, (ptr)&GDK_nmallocs.yyy[i]);
+		BUNins(GDK_mem_histo, (ptr)&j, (ptr)(GDK_nmallocs+(4*i)));
 	}
         BATfakeCommit(GDK_mem_histo);
-	GDK_nmallocs = ((struct malloc_hist*) GDK_mem_histo->batBuns->base) - 2;
+	GDK_nmallocs = ((int*) GDK_mem_histo->batBuns->base) - 6;
 #endif
 #ifdef GDK_VM_KEEPHISTO
 #ifdef WIN32
 #ifndef NATIVE_WIN32
 	GDKmallidx(i, 67108864);
-	GDK_vm_nallocs[i].yyy++; 
+	GDK_vm_nallocs[i]++; 
 #endif
 #endif
 	GDK_vm_histo = BATnew(TYPE_lng,TYPE_int,MAX_BIT);
@@ -900,10 +901,10 @@ int GDKinit(char *dbname, char *dbfarm) {
 	BATmode(GDK_vm_histo, TRANSIENT);
 	for(i=12; i<31; i++) {
 		lng j = 1<<i;
-		BUNins(GDK_vm_histo, &j, &GDK_vm_nallocs[i].yyy);
+		BUNins(GDK_vm_histo, &j, GDK_vm_nallocs+(4*i));
 	}
 	BATfakeCommit(GDK_vm_histo);
-	GDK_vm_nallocs = ((struct malloc_hist*) GDK_vm_histo->batBuns->base) - 8; 
+	GDK_vm_nallocs = ((int*) GDK_vm_histo->batBuns->base) - 42; 
 #endif
 
 	GDKenv = BATnew(TYPE_str,TYPE_str,100);
@@ -968,20 +969,11 @@ normal routines yet. So we have a local fatal here instead of GDKfatal.
 @c
 void GDKlockHome(void) {
 	char *p=0, buf[1024], host[PATHLENGTH];
-	char GDKdirStr[PATHLENGTH];
 @-
 Go there and obtain the global database lock.
 @c
-	/* The DIR_SEP at the end of the path is needed for a succesfull
-	   call to GDKcreatedir */
-
-	snprintf(GDKdirStr, PATHLENGTH, "%s%c%s%c",
-			GDKdbfarmStr, DIR_SEP, GDKdbnameStr, DIR_SEP);
-
 	if (chdir(GDKdirStr) < 0 ){
-	    if (!GDKcreatedir(GDKdirStr) || chdir(GDKdirStr) < 0)
-	        GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
-	    GDKwarning("GDKlockHome: created directory %s\n", GDKdirStr);
+	    GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
 	}
 	if (GDKrecovery  && unlink(GDKLOCK) < 0) {
 	    GDKfatal("GDKlockHome: unlock DB failed\n"); 
@@ -1298,8 +1290,13 @@ Thread THRnew(MT_Id pid, str name) {
 	s->name = name; 
 	s->cleanup = NULL;
 	s->sp = THRsp();
+#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
+	/* C99 defines p for pointer argument */
+	PARDEBUG THRprintf(GDKerr, "%p %p sp = %lu\n", s->tid, pid, s->sp); 
+#else
 	PARDEBUG THRprintf(GDKerr, "%lu %lu sp = %lu\n", 
 			(unsigned long) s->tid, (unsigned long) pid, s->sp); 
+#endif
 	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads); 
 	GDKnrofthreads++; 
 	MT_alloc_register(&tid, 1, (char) ('0'+ ((int)tid) - 1));
@@ -1422,7 +1419,7 @@ int THRprintf(stream *s, char *format, ...) {
 	p = bf;
 	*p++ = c;
 	if (GDKdebug&1) {
-		sprintf(p, "%02ld ", (long) THRgettid());
+		sprintf(p, "%02d ", (int) (long) THRgettid());
 		while(*p) p++;
 	}
 	m = p-bf;
@@ -1431,7 +1428,7 @@ int THRprintf(stream *s, char *format, ...) {
         va_end (ap);
 @c
 	@:THRprintf_va_vsnprintf@
-	while (n < 0 || (size_t) n >= bfsz-m) {
+	while ((n < 0) || (n >= bfsz-m)) {
 		if (n >= 0)		/* glibc 2.1 */
 			bfsz = m+n+1;	/* precisely what is needed */
 		else			/* glibc 2.0 */

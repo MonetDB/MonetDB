@@ -97,6 +97,8 @@ The following options are supported:
 #include  <pwd.h> 
 #endif
 
+extern int errno;                       /* pass errors  */
+
 #define EXIT(x)	{ exit(x); }
 #define LINEMODE	23
 #define BLOCKMODE	32
@@ -112,13 +114,13 @@ int doRequest(Msession mid, char *buf ){
 	char *rtrn;
  
 	if (Mdorequest(mid, buf) != MOK){
-		return 'q';
+		return (int)'q';
 	}
 	while ((rtrn=Mgetreply(mid)) != 0) {
 		fprintf(toConsole, "%s\n",rtrn);
 	}
 	if (Merror(mid)) {
-		return 'q';
+		return (int)'q';
 	}
 	return 0;
 }

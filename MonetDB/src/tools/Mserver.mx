@@ -91,7 +91,6 @@ extern "C" {
 #include "monet_client.h"
 #include "monet_process.h"
 #include "monet_options.h"
-#include <locale.h>
 
 extern void		static_module_init(Client c, char buf[]); 
 }
@@ -274,9 +273,6 @@ A grain size of 128 bytes is used to keep overhead low.
 	set_terminate( Mserver_abort );
 #endif
 @C
-	if (setlocale(LC_CTYPE, "") == NULL){ 
-                GDKfatal( "cannot set locale\n");
-	}
 
 #ifdef HAVE_MALLOPT
 	@:mallopt@

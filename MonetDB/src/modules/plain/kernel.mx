@@ -73,15 +73,6 @@ loading and unloading new modules.
  In command-line mode, you can save typing the \" (though this often
  will collide with a MIL keyword)."
 
-.BUILTIN mod() : str = CMDmodule_peek;
-"During module loading a module stack is kept. This function returns the top module" 
-
-.BUILTIN module_push(str modname) = CMDmodule_enter;
-"During module loading a variable module is set to the current module name. The previous module is pushed onto a stack" 
-
-.BUILTIN module_pop() = CMDmodule_exit;
-"During module loading a variable module is set to the current module name. At the end of a module load the enclosing module is popped from a stack" 
-
 @+ Basic Value Manipulation
 @m
 .BUILTIN type(any v) : int = CMDtype; 
@@ -239,36 +230,6 @@ any client activity.
 .BUILTIN wack(int i) : int = CMDwack;
 "Cut the reference from a BAT in the BBPcache; return its BUN heap pointer."
 
-@- Printing 
-@m
-.COMMAND print(ANY value) = CMDprint_val;
-"Print a MIL value between square brackets."
-
-.COMMAND print(BAT[ANY::1,ANY], ...BAT[ANY::1,ANY]...) = CMDprint_table;
- "BATs are printed with '#' for legend lines, and the BUNs on seperate
- lines between brackets, containing each to comma separated values
- (head and tail).
- If multiple BATs are passed for printing, print() performs an implicit
- natural join, producing a multiattribute table."
-
-.COMMAND print(INT order, BAT[ANY::1,ANY], ...BAT[ANY::1,ANY]...)
-                                                = CMDprint_otable;
- "The same as normal table print, but enforces to use the order of
-  BAT number [1..argc] to do the printing."
-
-.COMMAND table(BAT[any::1,any], ...BAT[any::1,any]...) = print_table_default;
-	"Print an n-ary table. Like print(n-ary) but does not print oid column"
-
-.COMMAND table(INT order, BAT[any::1,any], ...BAT[any::1,any]...) = print_table;
-	"Print an n-ary table. Use the ordering of param [1..argc]"
-
-.COMMAND printf(str format, ...) = print_format;
-	"Print a formatted string on the standard client output." 
-
-.COMMAND sprintf(str format, ...) : str = print_str;
-	"Print a formatted string on the standard client output." 
-
-
 .END kernel;
 
 @{
@@ -356,40 +317,16 @@ by that module cease to be known for that user.
 
 @c
 int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
-	int ret = 0;
+	str initscript;
 	Client c;
 
-	/* run initscript in the clients lowest stack */
 	CNTXTclient(stk, &c);
-        while (lt && ret >= 0) {
-	        int i; 
-                for(i = 0; i < lt->cnt; i++)  {
-		    int ret1 = 0;
-		    ValRecord res1;
-		    str initstr = NULL;
-        	    str mod;
-
-                    if (!lt->yysons[i]) 
-			continue;
-		    ret1 = interpret(c->stk, lt->yysons[i], &res1);
-		    if (ret < 0 || res1.vtype != TYPE_str) {
-			   GDKerror("module: illegal argument.\n");
-			   return GDK_FAIL;
- 		    }
-		    mod = res1.val.sval; 
-		    initstr = moduleClient( c, mod, moduleGetClient(c) );
-	            if (initstr != NULL) {
-			moduleEnterClient(c, mod);
-                	ret = interpret_str(c->stk, initstr, res);
-			moduleExitClient(c);
-			GDKfree(initstr);
-	            }
-                }
-                lt = lt->overflow;
-        }
-	if (ret < 0)
-		return GDK_FAIL;
-        return GDK_SUCCEED;
+        initscript = moduleClient(c, lt, FALSE);
+        if (initscript) {
+		/* run initscript in the clients lowest stack */
+                return interpret_str(c->stk, initscript, res);
+	}
+        return 0;
 }
  
 int CMDdrop(Cntxt stk, YYSTREE lt, ValPtr res){
@@ -399,42 +336,6 @@ int CMDdrop(Cntxt stk, YYSTREE lt, ValPtr res){
 	return dropClient(c, lt);
 }
 
-int CMDmodule_peek(Cntxt stk, YYSTREE lt, ValPtr res){
-	str r = NULL; 
-	Client c;
-
-	CNTXTclient(stk, &c);
-	r = moduleGetClient(c);
-	if (!r) 
-		r = "main";
-
-	res->val.sval = GDKstrdup(r);
-        res->len = strLen(r);
-        res->vtype = TYPE_str;
-
-	return GDK_SUCCEED;
-}
-
-int CMDmodule_enter(Cntxt stk, YYSTREE lt, ValPtr res){
-	str mod = NULL;
-	Client c;
-
-	CNTXTclient(stk, &c);
-        @:builtin_args(1)@
-        @:builtin_operand(0, TYPE_str, mod)@
-	moduleEnterClient(c, mod);
-	res->vtype = TYPE_void;
-	return GDK_SUCCEED;
-}
-
-int CMDmodule_exit(Cntxt stk, YYSTREE lt, ValPtr res){
-	Client c;
-
-	CNTXTclient(stk, &c);
-	moduleExitClient(c);
-	res->vtype = TYPE_void;
-	return GDK_SUCCEED;
-}
 
 @+ Value, Types and Variables
 @c
@@ -1103,109 +1004,5 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 	yyfree(t);
 	BBPunfix(bid);
 	return i;
-}
-
-@+ Printing
-@c
-int CMDprint_val(ptr val, int tpe) {
-        stream *fp = GDKout;
-        fp->write(fp, "[ ", 2, 1);
-        ATOMprint(tpe, val, fp);
-        fp->write(fp, " ]\n", 3, 1);
-        return GDK_SUCCEED;
-}
-
-int CMDprint_bats(int argc, BAT *argv[], int order) {
-        stream *fp = GDKout;
-        BATmultiprintf(fp, argc+1, argv, TRUE, order);
-        return GDK_SUCCEED;
-}
-
-int CMDprint_otable(int *order, BAT *arg1, ...) {
-        BAT *b, *piv[MAXPARAMS];
-        int nbats = 0;
-        va_list ap;
-
-        va_start(ap,arg1);
-        piv[nbats++] = arg1;
-        while((b = va_arg(ap, BAT*)) != NULL) {
-                piv[nbats++] = b;
-        }
-        return CMDprint_bats(nbats, piv, *order);
-}
-
-int CMDprint_table(BAT* b, ...) {
-        BAT *piv[MAXPARAMS];
-        int nbats = 0;
-        va_list ap;
-
-        va_start(ap,b);
-	if (!b)
-		return GDK_FAIL;
-        do {
-                piv[nbats++] = b;
-        } while((b = va_arg(ap, BAT*)) != NULL);
-        return CMDprint_bats(nbats, piv, 0);
-}
-
-int print_format(str format, ...) {
-	va_list ap;
-	int ret; 
-	str s; 
-
-	va_start(ap,format);
-	ret = monet_sprintf(&s, format, ap);
-	va_end(ap);
-	if (ret == GDK_FAIL) {
-		return GDK_FAIL;
-	}
-	ret = GDKout->write(GDKout, s, strlen(s), 1);
-	GDKfree(s);
- 	if (ret < 0) {
-		GDKsyserror("printf():");
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-
-int print_str(str *s, str format, ...) {
-	va_list ap;
-	int ret; 
-
-	va_start(ap,format);
-	ret = monet_sprintf(s, format, ap);
-	va_end(ap);
-	return ret;
-}
-
-
-int print_table(int *order, BAT *arg1, ...) {
-	BAT *piv[MAXPARAMS];
-	int argc = 0;
-	va_list ap;
-
-        va_start (ap, arg1);
-	piv[argc++] = arg1;
-        do {
-		piv[argc] = va_arg (ap,BAT*) ;
-	} while(piv[argc++]);
-        va_end (ap);
-	BATmultiprintf(GDKout, argc, piv, FALSE, *order);
-	return GDK_SUCCEED;
-}
-
-int print_table_default(BAT *b, ...) {
-	BAT *piv[MAXPARAMS];
-	int argc = 1;
-	va_list ap;
-
-	piv[0] = b;
-        va_start (ap, b);
-        do {
-		piv[argc] = va_arg (ap,BAT*) ;
-	} while(piv[argc++]);
-        va_end (ap);
-	BATmultiprintf(GDKout, argc, piv, FALSE, 0);
-	return GDK_SUCCEED;
 }
 @}

@@ -88,11 +88,9 @@ loaded;
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 {
 printf("\nloading '%s' ... ","enum");
@@ -115,12 +113,10 @@ loading 'enum' ... done.
 [ "bat",	  1		  ]
 [ "enum",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 dropping 'enum' ... done.
 
@@ -131,11 +127,9 @@ dropping 'enum' ... done.
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 
 quit;
 

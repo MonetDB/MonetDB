@@ -211,7 +211,8 @@ def am_additional_libs(name, sep, type, list, am):
     for l in list:
         if l[0] in ("-", "$", "@"):
             add = add + " " + l
-        else:
+        elif type != 'LIB' or \
+             os.path.basename(string.replace(l, '/', os.sep))[:4] != 'lib_':
             add = add + " " + am_translate_dir(l, am) + ".la"
     return add + "\n"
 
@@ -244,12 +245,6 @@ def am_deps(fd, deps, objext, am):
 
 # list of scripts to install
 def am_scripts(fd, var, scripts, am):
-#todo handle 'EXT' for empty ''.
-
-    s, ext = string.split(var, '_', 1);
-    ext = [ ext ]
-    if scripts.has_key("EXT"):
-        ext = scripts["EXT"] # list of extentions 
 
     sd = "SCRIPTSDIR"
     if scripts.has_key("DIR"):
@@ -260,14 +255,8 @@ def am_scripts(fd, var, scripts, am):
         am['EXTRA_DIST'].append(src)
 
     for script in scripts['TARGETS']:
-	s,ext2 = rsplit_filename(script)
-	if not ext2 in ext:
-		continue
-	name = "script_" + script
-        if name not in am['BIN_SCRIPTS']:
-            am['BIN_SCRIPTS'].append(name)
-	else:
-	    continue
+        if script not in am['BIN_SCRIPTS']:
+            am['BIN_SCRIPTS'].append("script_" + script)
         fd.write("script_%s: %s\n" % (script, script))
         fd.write("\tchmod a+x $<\n")
         if sd == "$(sysconfdir)":

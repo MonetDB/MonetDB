@@ -29,7 +29,7 @@ EXTRA_DIST = \
 
 scripts_m4 = {
 	DIR = pkgdatadir/conf
-	SOURCES = monet.m4 
+	SOURCES = monet.m4 conf.bash
 }
 
 scripts_conf = {

@@ -22,8 +22,8 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 #
-# ! this file should be kept identical in         !
-# ! monet, sql, xml, acoi, template, playpen, gis !
+# ! this file should be kept identical in !
+# ! monet, sql, xml, acoi, template       !
 #
 # In the following. ${what} is one of monet, sql, xml, acoi. 
 # It is automatically derived from the current directory name.
@@ -219,15 +219,12 @@ if [ "${os}" = "Linux" ] ; then
 			fi
 		  elif [ "`hostname`" = "theo.sara.nl" ] ; then
 			# specific settings for Sara's Itanium system
-			binpath="/home/niels/soft/local/bin:${binpath}"
-			libpath="/home/niels/soft/local/lib:${libpath}"
+			if [ "${COMP}" = "ntv" ] ; then
+				binpath="/home/niels/opt/intel/compiler70/ia64/bin:${binpath}"
+				libpath="/home/niels/opt/intel/compiler70/ia64/lib:${libpath}"
+			fi
 		fi
 	fi
-fi
-
-if [ "${os}" = "Darwin" ] ; then
-	# "our" autoconf on sap 
-	binpath="/Users/manegold/soft/local/bin:${binpath}"
 fi
 
 if [ "${os}" = "SunOS" ] ; then
@@ -247,12 +244,14 @@ if [ "${os}" = "SunOS" ] ; then
 		# libraries compiled with gcc may need the gcc libs, so
 		# at them to the LD_LIBRARY_PATH 
 		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
-		# some tools are not in ${soft64} on apps
-		binpath="${soft32}/bin:${binpath}"
 	fi
 	if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
 		# propper/extended LD_LIBRARY_PATH for native 32bit shared libs on SunOS
 		libpath="/usr/ucblib:${libpath}"
+	fi
+	if [ "${COMP}${BITS}" = "GNU64" ] ; then
+		# our gcc/g++ on apps is in ${soft32} (also for 64 bit)
+		binpath="${soft32}/bin:${binpath}"
 	fi
 	if [ "${what}" = "SQL"  -a  "${COMP}" = "ntv" ] ; then
 		# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
@@ -362,18 +361,6 @@ if [ "${what}" != "MONET"  -a  "${WHAT_PREFIX}" != "${MONET_PREFIX}" ] ; then
 	modpath="${WHAT_PREFIX}/lib/MonetDB"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 	mtest_modpath="--monet_mod_path=`${MONET_PREFIX}/bin/monet-config --modpath`:${modpath}"
-fi
-if [ "${os}" = "IRIX64" ] ; then
-	# IRIX64 requires this to find dependend modules
-	if [ "${what}" = "MONET" ] ; then
-		libpath="${WHAT_PREFIX}/lib/MonetDB:${libpath}"
-	  else
-		libpath="${MONET_PREFIX}/lib/MonetDB:${libpath}"
-	fi
-fi
-if [ "${os}${COMP}${BITS}${what}" = "SunOSntv64MONET" ] ; then
-	# native 64-bit version on SunOS needs this to find libmonet
-	libpath="${WHAT_PREFIX}/lib:${libpath}"
 fi
 
 # remove trailing ':'

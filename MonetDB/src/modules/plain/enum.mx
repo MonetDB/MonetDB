@@ -110,9 +110,7 @@ will even be the case for long 64-bit integers.
 .PRELUDE = enum_prelude;
 .EPILOGUE = enum_epilogue;
 
-.END enum;
-
-@mil
+.LOAD
     proc enum_load(str name) := {
 	var tpe := enum_load(bat(name));
 	monet_atomtbl.insert(sprintf("%s",name),tpe);
@@ -138,6 +136,10 @@ will even be the case for long 64-bit integers.
     ADDHELP("enum_trick", "boncz", "Dec  5 1998",
          "create a view on a BAT with a diffrent enum map.", "enum");
 
+.END;
+.END enum;
+
+
 @{
 @* Implementation
 @c
@@ -145,6 +147,7 @@ will even be the case for long 64-bit integers.
 #include "streams.h"
 #include "enum.proto.h"
 
+typedef int (*fcn)();
 #define ENUM_CHK(x,y)\
 	     BAT *b;\
 	     int xx;\
@@ -179,12 +182,7 @@ int enum_tpe[MAX_ENUM] = { -1 };
 @:imp(70)@	@:imp(71)@	@:imp(72)@	@:imp(73)@ 	@:imp(74)@
 @:imp(75)@	@:imp(76)@	@:imp(77)@	@:imp(78)@ 	@:imp(79)@
 
-struct {
-	int (*tochr)(str*, int*, ptr);
-	int (*fromchr)(str, int*, ptr*);
-	int (*tosht)(str*, int*, ptr);
-	int (*fromsht)(str, int*, ptr*);
-} enum_conv[MAX_ENUM] = {
+fcn enum_conv[MAX_ENUM*4+1] = { 
 @:def(0)@	@:def(1)@	@:def(2)@	@:def(3)@ 	@:def(4)@
 @:def(5)@	@:def(6)@	@:def(7)@	@:def(8)@ 	@:def(9)@
 @:def(10)@	@:def(11)@	@:def(12)@	@:def(13)@ 	@:def(14)@
@@ -201,25 +199,25 @@ struct {
 @:def(65)@	@:def(66)@	@:def(67)@	@:def(68)@ 	@:def(69)@
 @:def(70)@	@:def(71)@	@:def(72)@	@:def(73)@ 	@:def(74)@
 @:def(75)@	@:def(76)@	@:def(77)@	@:def(78)@ 	@:def(79)@
-};
+0 };
 
 @= def
-	{tostr@1chr, fromstr@1chr, tostr@1sht, fromstr@1sht,},
+	tostr@1chr, fromstr@1chr, tostr@1sht, fromstr@1sht,
 @= imp
 	@:template(@1,chr,char)@ @:template(@1,sht,short)@
 @= template
-static int tostr@1@2(char** dst, int* len, ptr src){
+static int tostr@1@2(char** dst, int* len, @2* src){
 	BAT *b = BATdescriptor(enum_map[@1]);
 	int l; ptr v; 
 
-	if (*(@2*)src == @2_nil) {
+	if (*src == @2_nil) {
 		v = ATOMnilptr(b->htype);
 	} else {
 		BUN p = BUNptr(b, 1 + *(unsigned @3*) src); 
 		v = BUNhead(b,p);
 	}
 	if (b->htype != TYPE_str) {
-		int (*tostr)(str*, int*, ptr) = BATatoms[b->htype].atomToStr;
+		fcn tostr = BATatoms[b->htype].atomToStr;
 		return (*tostr)(dst, len, v);
 	}
 	l = strLen(v);
@@ -228,15 +226,15 @@ static int tostr@1@2(char** dst, int* len, ptr src){
 		*dst = (char*) GDKmalloc(*len = l);
 	}
 	memcpy(*dst, v, l);
-	return (l-1); /* return string length excluding eos */
+	return l; 
 }
-static int fromstr@1@2(str src, int* len, ptr* dst){
+static int fromstr@1@2(str src, int* len, @2** dst){
 	BAT *b = BATdescriptor(enum_map[@1]);
 	int r, l = 0;
 	BUN p; ptr v;
 
 	if (b->htype != TYPE_str) {
-		int (*fromstr)(str, int*, ptr*) = BATatoms[b->htype].atomFromStr;
+		fcn fromstr = BATatoms[b->htype].atomFromStr;
  		v = (ptr) GDKmalloc(l=32);
 		r = (*fromstr)(src, &l, &v);
 	} else {
@@ -244,12 +242,12 @@ static int fromstr@1@2(str src, int* len, ptr* dst){
 		v = src;
 	}
 	if (*len < sizeof(@2)) {
-		*(@2**)dst = (@2*) GDKmalloc(*len = sizeof(@2));
+		*dst = (@2*) GDKmalloc(*len = sizeof(@2));
 	}
 	if ((p = SORTfnd(b, v)) != NULL) {
 		**(unsigned @3**) dst = (unsigned @3) (BUNindex(b,p)-1);
 	} else {
-		**(@2**)dst = @2_nil;
+		**dst = @2_nil;
 	}
 	if (l) GDKfree(v);
 	return r;
@@ -263,13 +261,13 @@ enum_export int enum_load(int *retval, BAT *h) {
 		if (enum_map[i] == 0) {
 			char *name = h->batId;
 			if (BATcount(h) > 255) {
-				ATOMproperty(name, "storage", (GDKfcn) TYPE_sht); 
-				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht);
-				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht);
+				ATOMproperty(name, "storage", (fcn) TYPE_sht); 
+				ATOMproperty(name, "tostr", enum_conv[i*4+2]);
+				ATOMproperty(name, "fromstr", enum_conv[i*4+3]);
 			} else {
-				ATOMproperty(name, "storage", (GDKfcn) TYPE_chr); 
-				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tochr);
-				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromchr);
+				ATOMproperty(name, "storage", (fcn) TYPE_chr); 
+				ATOMproperty(name, "tostr", enum_conv[i*4]);
+				ATOMproperty(name, "fromstr", enum_conv[i*4+1]);
 			}
 			enum_tpe[i] = *retval = ATOMindex(name);
 			enum_map[i] = h->batCacheid;

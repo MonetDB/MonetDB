@@ -127,7 +127,7 @@ next@2@3@5:;
 		}
 	}
 @= elim
-{	int xx, (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
+{	int xx, (*cmp)() = BATatoms[b->ttype].atomCmp;
 	size_t zz;
 	BUN p, q, r; 
 	if (BAThordered(b)&1) {
@@ -152,7 +152,7 @@ next@2@3@5:;
 	case TYPE_dbl:	@:elim(@1,loc,_dbl,simple_CMP(h,BUNhloc(b,r),dbl))@
 	case TYPE_lng:	@:elim(@1,loc,_lng,simple_CMP(h,BUNhloc(b,r),lng))@
 	default: 
-	    {	int (*merge)(ptr, ptr)= BATatoms[b->htype].atomCmp;
+	    {	int (*merge)()= BATatoms[b->htype].atomCmp;
 		if (b->hvarsized) {
 			@:elim(@1,var,var,((*merge)(h,BUNhvar(b,r))))@
 		} else {
@@ -410,7 +410,7 @@ end@2@3:;
 #define diff_size(l,r) BATcount(l)
 
 int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
-	int (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
+	int (*cmp)(), (*merge)()=0;
 
 	/* determine how to do the intersect */
 	if (BAThordered(l)&BAThordered(r)&1) {
@@ -523,7 +523,7 @@ BAT* BATmaterialize_(BAT *b, size_t size){
 
 @= union
 BAT *BAT@1union(BAT *l, BAT *r) {
-	int hdisjunct, tdisjunct, bnhdense, bntdense;
+	int hdisjunct, tdisjunct;
 	BAT *bn, *b=0;
 	BUN p,q;
 	int xx;
@@ -548,8 +548,6 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 	      BUNhead(l,BUNlast(l)-BUNsize(l)), BUNhead(r,BUNfirst(r))) < 0);
 	tdisjunct = (BATtordered(r)&BATtordered(l)&1) && (ATOMcmp(l->ttype, 
 	      BUNtail(l,BUNlast(l)-BUNsize(l)), BUNtail(r,BUNfirst(r))) < 0);
-        bnhdense = (BAThdense(r)&BAThdense(l)&1) & !hdisjunct;
-        bntdense = (BATtdense(r)&BATtdense(l)&1) & !tdisjunct;
 
 	if (!hdisjunct) {
 	      b = r = BAT@1diff(r, bn); 
@@ -561,8 +559,6 @@ BAT *BAT@1union(BAT *l, BAT *r) {
 	ACCremoveall(bn); 
 
 	/* set alignment info */
-        if (!bnhdense) bn->hseqbase = oid_nil;
-        if (!bntdense) bn->tseqbase = oid_nil;
 	bn->hsorted = hdisjunct?GDK_SORTED:FALSE;
 	bn->tsorted = tdisjunct?GDK_SORTED:FALSE;
 	bn->talign = bn->halign = 0;

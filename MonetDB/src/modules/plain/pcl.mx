@@ -85,9 +85,7 @@ later add low level api
 .PRELUDE = pcl_init;
 .EPILOGUE = pcl_exit;
 
-.END pcl;
-
-@mil
+.LOAD
 
 var pcl_events := new(str,int,100);
 
@@ -188,6 +186,9 @@ pcl_events.insert( "PCL_MEM_FP_RATIO",            60);
 
 pcl_events := pcl_events.reverse;
 
+.END;
+
+.END pcl;
   
 @+ Implementation
 @c
@@ -241,10 +242,10 @@ void pcl_exit(){
 
 int pcl_start(BAT *event, int *mode){
 	int clist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0;
+	int res, i = 0, cnt = BATcount(event);
 	BUN p,q;
 
-	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
+	if (cnt > PCL_MAX_EVENT_PER_CALL){
 		GDKwarning("Can only start %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
@@ -266,10 +267,10 @@ int pcl_start(BAT *event, int *mode){
 
 int pcl_start_rates(BAT *event, int *mode){
 	int clist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0;
+	int res, i = 0, cnt = BATcount(event);
 	BUN p,q;
 
-	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
+	if (cnt > PCL_MAX_EVENT_PER_CALL){
 		GDKwarning("Can only start %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
@@ -292,8 +293,7 @@ int pcl_start_rates(BAT *event, int *mode){
 int pcl_stop(BAT **result, BAT *event){
 	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
 	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0;
-	size_t cnt = BATcount(event);
+	int res, i = 0, cnt = BATcount(event);
 	BUN p,q;
 
 	if (cnt > PCL_MAX_EVENT_PER_CALL){
@@ -320,8 +320,7 @@ int pcl_stop(BAT **result, BAT *event){
 int pcl_stop_rates(BAT **result, BAT *event){
 	PCL_CNT_TYPE ilist[PCL_MAX_EVENT_PER_CALL];
 	PCL_FP_CNT_TYPE flist[PCL_MAX_EVENT_PER_CALL];
-	int res, i = 0;
-	size_t cnt = BATcount(event);
+	int res, i = 0, cnt = BATcount(event);
 	BUN p,q;
 
 	if (cnt > PCL_MAX_EVENT_PER_CALL){
@@ -346,27 +345,26 @@ int pcl_stop_rates(BAT **result, BAT *event){
 }
 
 int pcl_query(BAT **result, BAT *event, int *mode){
-	int res;
-	size_t cnt = BATcount(event);
-	int clist;
+	int res, cnt = BATcount(event);
+	int clist[1];
 	BUN p,q;
 
 	*result = BATnew(TYPE_int,TYPE_int,cnt);
 	BATloop(event,p,q){
 		int ev = *(int*)BUNhloc(event,p);
-		clist = ev;
-		res = PCLquery(pcl_desc, &clist, 1, *mode);
+		clist[0] = ev;
+		res = PCLquery(pcl_desc, clist, 1, *mode);
 		BUNins(*result, &ev, &res);
 	}
 	return GDK_SUCCEED;
 }
 
 int pcl_try(bit *result, BAT *event, int *mode){
-	int i, res;
+	int i, res, cnt = BATcount(event);
 	int clist[PCL_MAX_EVENT_PER_CALL];
 	BUN p,q;
 
-	if (BATcount(event) > PCL_MAX_EVENT_PER_CALL){
+	if (cnt > PCL_MAX_EVENT_PER_CALL){
 		GDKwarning("Can only start %d events per call\n", 
 			PCL_MAX_EVENT_PER_CALL);
 		return GDK_FAIL;
@@ -386,21 +384,22 @@ int pcl_try(bit *result, BAT *event, int *mode){
 #endif
 
 @mil
+module(pcl);
 
-PROC test_pcl() : void := {
-  names := bat(str,void);
-  names.insert("PCL_L1CACHE_MISS",  nil);
-  names.insert("PCL_L1DCACHE_MISS", nil);
-  names.insert("PCL_L1ICACHE_MISS", nil);
+names := bat(str,void);
+names.insert("PCL_L1CACHE_MISS",  nil);
+names.insert("PCL_L1DCACHE_MISS", nil);
+names.insert("PCL_L1ICACHE_MISS", nil);
 
-  available := pcl_query(pcl_events.reverse.project(nil).reverse,1).select(0);
+available := pcl_query(pcl_events.reverse.project(nil).reverse,1).select(0);
 
-  L1MISS_EVENTS := pcl_events.reverse.semijoin(available).reverse.semijoin(names);
-  L1MISS_EVENTS.print;
+L1MISS_EVENTS := pcl_events.reverse.semijoin(available).reverse.semijoin(names);
+L1MISS_EVENTS.print;
 
-  events := L1MISS_EVENTS.reverse.project(nil).reverse();
-  pcl_start(events,1);
-  counts := pcl_stop(events);
-  counts.print;
-}
+events := L1MISS_EVENTS.reverse.project(nil).reverse();
+pcl_start(events,1);
+counts := pcl_stop(events);
+counts.print;
+
+
 

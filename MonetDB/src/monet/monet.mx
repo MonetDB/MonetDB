@@ -250,7 +250,6 @@ typedef struct {
 @h
 m_export int 	monet_running;
 m_export ptr	monet_init	(void);
-m_export str	monet_load_script(str file, str module);
 m_export ptr	monet_eval	(str mil_script, int *ret_type);
 m_export int	monet_exec	(str mil_script);
 m_export void	monet_exit	(void);
@@ -325,7 +324,6 @@ m_export int		monet_tokobject;	/* value of TOK_OBJECT */
 
 m_export char 		monet_arch[PATHLENGTH];
 m_export char 		monet_version[PATHLENGTH];
-
 @h
 #endif /* _MONET_H_ */
 @c 
@@ -375,8 +373,14 @@ void monet_hello(void) {
         printf("# Monet Database Server V%s\n", monet_version);
         printf("# Copyright (c) 1993-2003, CWI. ");
         printf("All rights reserved.\n");
-        printf("# compiled for %s/%lubit; %s linked.\n", 
-			monet_arch, (unsigned long) (sizeof(ptr)*8), linkinfo );
+#if defined(__STDC_VERSION__) && __STD_VERSION__ >= 199901
+	/* C99 defines z length modifier to indicate size_t */
+        printf("# compiled for %s/%zdbit; %s linked.\n", 
+			monet_arch, sizeof(ptr)*8, linkinfo );
+#else
+        printf("# compiled for %s/%ldbit; %s linked.\n", 
+			monet_arch, (long) (sizeof(ptr)*8), linkinfo );
+#endif
     }
 }
 
@@ -432,7 +436,7 @@ ptr monet_init(void){
         if (c == 0) monet_exit();
 	c->login = time(0);
 	c->socket = 0;
-        TBL_initclient(c, NULL); /* register user 'adm' for a function table. */
+        TBL_initclient(c); /* register user 'adm' for a function table. */
 @-
 Make constants for important language tokens
 @c
@@ -442,63 +446,12 @@ Make constants for important language tokens
 	@:tokenvar(TOK_COMMAND)@
 	@:tokenvar(TOK_ITERATOR)@
 	@:tokenvar(TOK_OBJECT)@
-	moduleClient(c, "main", NULL);
 @-
 Install all link-in modules.
 @c
 
         c->listing = monet_listing;
 	return (ptr) c;
-}
-@- Monet load MIL script
-
-@c
-str monet_load_script(str file, str mod)
-{
-	FILE *fp = NULL;
-	int i = 0, totlen = 8192;
-        char *buf = (char *) GDKmalloc(totlen), *p = buf;
-	char *mpop = "module_pop();\n";
-
-@-
-Open the scriptfile.
-@c
-        if ((fp = fopen(file, "r")) == 0) {
-                GDKerror("monet_load_script: could not open file: %s (%s)\n", file, mod?mod:"main");
-                return NULL;
-        }
-@-
-Read the entire file, realloc if necessary.
-@c
-	if (mod){
-	     i = snprintf(p, totlen, "module_push(\"%s\");\n", mod);
-	     p += i;
-	}
-        while((i+=fread(p, 1, totlen-i, fp)) == totlen ) {
-                int len = totlen; totlen *= 2;
-                p = GDKmalloc(totlen);
-                memcpy(p, buf, len);
-                GDKfree(buf);
-                buf = p; p += len;
-        }
-        fclose(fp);
-	p = buf + i;
-
-	if (mod){
-	     int l = (int) strlen(mpop);
-	     if ((i + l + 1) > totlen){
-                p = GDKmalloc(i + l + 1);
-                memcpy(p, buf, i);
-                GDKfree(buf);
-                buf = p; p += i;
-	     }
-		
-	     strncpy(p, mpop, l);
-	     i += l;
-	}
-
-        buf[i] = 0;
-	return buf;
 }
 
 @- Monet MIL Evaluation

@@ -1,277 +1,864 @@
 stdout of test 'arith` in directory 'src/modules/plain` itself:
 
 
-# 16:12:05 >  
-# 16:12:05 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src_modules_plain arith.prelude < arith.milM
-# 16:12:05 >  
+# 12:41:42 >  
+# 12:41:42 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_modules_plain  < arith.milM
+# 12:41:42 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-module("arith");
-test_arith();
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for mips-sgi-irix6.5/64bit; dynamically linked.
+
+#line 276 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+setoid(oid(20000000));
+module(arith);
+sht1 := sht(2);
+sht2 := sht(5);
+int1 := 5;
+int2 := 2;
+flt1 := 2.5;
+flt2 := 5.4;
+dbl1 := dbl(-2.500001);	       # may also need string since float is default
+dbl2 := dbl(54.00456789);      # real and is less significant	
+lng1 := lng("-9000000000000"); # string needed because lng doesn't fit in an
+lng2 := lng("5400456789");     # int
+oid1 := oid(int1);
+oid2 := oid(int2);
+
+sht1.print;
 [ 2 ]
+sht2.print;
 [ 5 ]
+int1.print;
 [ 5 ]
+int2.print;
 [ 2 ]
+flt1.print;
 [ 2.5 ]
+flt2.print;
 [ 5.4 ]
+dbl1.print;
 [ -2.5 ]
+dbl2.print;
 [ 54.0046 ]
+lng1.print;
 [ -9000000000000 ]
+lng2.print;
 [ 5400456789 ]
+oid1.print;
 [ 5@0 ]
+oid2.print;
 [ 2@0 ]
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ ('a' < 'z').print;  ('z' < 'a').print;  ('a' < 'a').print;
 [ true ]
 [ false ]
 [ false ]
+('a' <= 'z').print; ('z' <= 'a').print; ('a' <= 'a').print;
 [ true ]
 [ false ]
 [ true ]
+ ('a' = 'z').print;  ('z' = 'a').print;  ('a' = 'a').print;
 [ false ]
 [ false ]
 [ true ]
+('a' >= 'z').print; ('z' >= 'a').print; ('a' >= 'a').print;
 [ false ]
 [ true ]
 [ true ]
+ ('a' > 'z').print;  ('z' > 'a').print;  ('a' > 'a').print;
 [ false ]
 [ true ]
 [ false ]
+
+
+#line 304 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ (sht1 < sht2).print;  (sht2 < sht1).print;  (sht1 < sht1).print;
 [ true ]
 [ false ]
 [ false ]
+(sht1 <= sht2).print; (sht2 <= sht1).print; (sht1 <= sht1).print;
 [ true ]
 [ false ]
 [ true ]
+ (sht1 = sht2).print;  (sht2 = sht1).print;  (sht1 = sht1).print;
 [ false ]
 [ false ]
 [ true ]
+(sht1 >= sht2).print; (sht2 >= sht1).print; (sht1 >= sht1).print;
 [ false ]
 [ true ]
 [ true ]
+ (sht1 > sht2).print;  (sht2 > sht1).print;  (sht1 > sht1).print;
 [ false ]
 [ true ]
 [ false ]
+
+
+#line 305 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ (int1 < int2).print;  (int2 < int1).print;  (int1 < int1).print;
 [ false ]
 [ true ]
 [ false ]
+(int1 <= int2).print; (int2 <= int1).print; (int1 <= int1).print;
 [ false ]
 [ true ]
 [ true ]
+ (int1 = int2).print;  (int2 = int1).print;  (int1 = int1).print;
 [ false ]
 [ false ]
 [ true ]
+(int1 >= int2).print; (int2 >= int1).print; (int1 >= int1).print;
 [ true ]
 [ false ]
 [ true ]
+ (int1 > int2).print;  (int2 > int1).print;  (int1 > int1).print;
 [ true ]
 [ false ]
 [ false ]
+
+
+#line 306 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ (flt1 < flt2).print;  (flt2 < flt1).print;  (flt1 < flt1).print;
 [ true ]
 [ false ]
 [ false ]
+(flt1 <= flt2).print; (flt2 <= flt1).print; (flt1 <= flt1).print;
 [ true ]
 [ false ]
 [ true ]
+ (flt1 = flt2).print;  (flt2 = flt1).print;  (flt1 = flt1).print;
 [ false ]
 [ false ]
 [ true ]
+(flt1 >= flt2).print; (flt2 >= flt1).print; (flt1 >= flt1).print;
 [ false ]
 [ true ]
 [ true ]
+ (flt1 > flt2).print;  (flt2 > flt1).print;  (flt1 > flt1).print;
 [ false ]
 [ true ]
 [ false ]
+
+
+#line 307 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ (dbl1 < dbl2).print;  (dbl2 < dbl1).print;  (dbl1 < dbl1).print;
 [ true ]
 [ false ]
 [ false ]
+(dbl1 <= dbl2).print; (dbl2 <= dbl1).print; (dbl1 <= dbl1).print;
 [ true ]
 [ false ]
 [ true ]
+ (dbl1 = dbl2).print;  (dbl2 = dbl1).print;  (dbl1 = dbl1).print;
 [ false ]
 [ false ]
 [ true ]
+(dbl1 >= dbl2).print; (dbl2 >= dbl1).print; (dbl1 >= dbl1).print;
 [ false ]
 [ true ]
 [ true ]
+ (dbl1 > dbl2).print;  (dbl2 > dbl1).print;  (dbl1 > dbl1).print;
 [ false ]
 [ true ]
 [ false ]
+
+
+#line 308 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ (lng1 < lng2).print;  (lng2 < lng1).print;  (lng1 < lng1).print;
 [ true ]
 [ false ]
 [ false ]
+(lng1 <= lng2).print; (lng2 <= lng1).print; (lng1 <= lng1).print;
 [ true ]
 [ false ]
 [ true ]
+ (lng1 = lng2).print;  (lng2 = lng1).print;  (lng1 = lng1).print;
 [ false ]
 [ false ]
 [ true ]
+(lng1 >= lng2).print; (lng2 >= lng1).print; (lng1 >= lng1).print;
 [ false ]
 [ true ]
 [ true ]
+ (lng1 > lng2).print;  (lng2 > lng1).print;  (lng1 > lng1).print;
 [ false ]
 [ true ]
 [ false ]
+
+
+#line 309 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ (oid1 < oid2).print;  (oid2 < oid1).print;  (oid1 < oid1).print;
 [ false ]
 [ true ]
 [ false ]
+(oid1 <= oid2).print; (oid2 <= oid1).print; (oid1 <= oid1).print;
 [ false ]
 [ true ]
 [ true ]
+ (oid1 = oid2).print;  (oid2 = oid1).print;  (oid1 = oid1).print;
 [ false ]
 [ false ]
 [ true ]
+(oid1 >= oid2).print; (oid2 >= oid1).print; (oid1 >= oid1).print;
 [ true ]
 [ false ]
 [ true ]
+ (oid1 > oid2).print;  (oid2 > oid1).print;  (oid1 > oid1).print;
 [ true ]
 [ false ]
 [ false ]
+
+
+#line 310 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 393 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+ ("abcde" < "abcdf").print;  ("abcdf" < "abcde").print;  ("abcde" < "abcde").print;
 [ true ]
 [ false ]
 [ false ]
+("abcde" <= "abcdf").print; ("abcdf" <= "abcde").print; ("abcde" <= "abcde").print;
 [ true ]
 [ false ]
 [ true ]
+ ("abcde" = "abcdf").print;  ("abcdf" = "abcde").print;  ("abcde" = "abcde").print;
 [ false ]
 [ false ]
 [ true ]
+("abcde" >= "abcdf").print; ("abcdf" >= "abcde").print; ("abcde" >= "abcde").print;
 [ false ]
 [ true ]
 [ true ]
+ ("abcde" > "abcdf").print;  ("abcdf" > "abcde").print;  ("abcde" > "abcde").print;
 [ false ]
 [ true ]
 [ false ]
+
+
+#line 311 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(sht1 + sht2).print;
 [ 7 ]
+(sht1 - sht2).print;
 [ -3 ]
+(sht1 * sht2).print;
 [ 10 ]
+(sht1 / sht2).print;
 [ 0 ]
+
+
+#line 313 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(sht1 + int2).print;
 [ 4 ]
+(sht1 - int2).print;
 [ 0 ]
+(sht1 * int2).print;
 [ 4 ]
+(sht1 / int2).print;
 [ 1 ]
+
+
+#line 314 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(sht1 + flt2).print;
 [ 7.4 ]
+(sht1 - flt2).print;
 [ -3.4 ]
+(sht1 * flt2).print;
 [ 10.8 ]
+(sht1 / flt2).print;
 [ 0.37037 ]
+
+
+#line 315 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(sht1 + dbl2).print;
 [ 56.0046 ]
+(sht1 - dbl2).print;
 [ -52.0046 ]
+(sht1 * dbl2).print;
 [ 108.009 ]
+(sht1 / dbl2).print;
 [ 0.0370339 ]
+
+
+#line 316 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(sht1 + lng2).print;
 [ 5400456791 ]
+(sht1 - lng2).print;
 [ -5400456787 ]
+(sht1 * lng2).print;
 [ 10800913578 ]
+(sht1 / lng2).print;
 [ 0 ]
+
+
+#line 317 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(int1 + sht2).print;
 [ 10 ]
+(int1 - sht2).print;
 [ 0 ]
+(int1 * sht2).print;
 [ 25 ]
+(int1 / sht2).print;
 [ 1 ]
+
+
+#line 319 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(int1 + int2).print;
 [ 7 ]
+(int1 - int2).print;
 [ 3 ]
+(int1 * int2).print;
 [ 10 ]
+(int1 / int2).print;
 [ 2 ]
+
+
+#line 320 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(int1 + flt2).print;
 [ 10.4 ]
+(int1 - flt2).print;
 [ -0.4 ]
+(int1 * flt2).print;
 [ 27 ]
+(int1 / flt2).print;
 [ 0.925926 ]
+
+
+#line 321 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(int1 + dbl2).print;
 [ 59.0046 ]
+(int1 - dbl2).print;
 [ -49.0046 ]
+(int1 * dbl2).print;
 [ 270.023 ]
+(int1 / dbl2).print;
 [ 0.0925848 ]
+
+
+#line 322 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(int1 + lng2).print;
 [ 5400456794 ]
+(int1 - lng2).print;
 [ -5400456784 ]
+(int1 * lng2).print;
 [ 27002283945 ]
+(int1 / lng2).print;
 [ 0 ]
+
+
+#line 323 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(flt1 + sht2).print;
 [ 7.5 ]
+(flt1 - sht2).print;
 [ -2.5 ]
+(flt1 * sht2).print;
 [ 12.5 ]
+(flt1 / sht2).print;
 [ 0.5 ]
+
+
+#line 325 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(flt1 + int2).print;
 [ 4.5 ]
+(flt1 - int2).print;
 [ 0.5 ]
+(flt1 * int2).print;
 [ 5 ]
+(flt1 / int2).print;
 [ 1.25 ]
+
+
+#line 326 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(flt1 + flt2).print;
 [ 7.9 ]
+(flt1 - flt2).print;
 [ -2.9 ]
+(flt1 * flt2).print;
 [ 13.5 ]
+(flt1 / flt2).print;
 [ 0.462963 ]
+
+
+#line 327 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(flt1 + dbl2).print;
 [ 56.5046 ]
+(flt1 - dbl2).print;
 [ -51.5046 ]
+(flt1 * dbl2).print;
 [ 135.011 ]
+(flt1 / dbl2).print;
 [ 0.0462924 ]
+
+
+#line 328 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(flt1 + lng2).print;
 [ 5.40046e+09 ]
+(flt1 - lng2).print;
 [ -5.40046e+09 ]
+(flt1 * lng2).print;
 [ 1.35011e+10 ]
+(flt1 / lng2).print;
 [ 4.62924e-10 ]
+
+
+#line 329 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(dbl1 + sht2).print;
 [ 2.5 ]
+(dbl1 - sht2).print;
 [ -7.5 ]
+(dbl1 * sht2).print;
 [ -12.5 ]
+(dbl1 / sht2).print;
 [ -0.5 ]
+
+
+#line 331 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(dbl1 + int2).print;
 [ -0.500001 ]
+(dbl1 - int2).print;
 [ -4.5 ]
+(dbl1 * int2).print;
 [ -5 ]
+(dbl1 / int2).print;
 [ -1.25 ]
+
+
+#line 332 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(dbl1 + flt2).print;
 [ 2.9 ]
+(dbl1 - flt2).print;
 [ -7.9 ]
+(dbl1 * flt2).print;
 [ -13.5 ]
+(dbl1 / flt2).print;
 [ -0.462963 ]
+
+
+#line 333 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(dbl1 + dbl2).print;
 [ 51.5046 ]
+(dbl1 - dbl2).print;
 [ -56.5046 ]
+(dbl1 * dbl2).print;
 [ -135.011 ]
+(dbl1 / dbl2).print;
 [ -0.0462924 ]
+
+
+#line 334 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(dbl1 + lng2).print;
 [ 5.40046e+09 ]
+(dbl1 - lng2).print;
 [ -5.40046e+09 ]
+(dbl1 * lng2).print;
 [ -1.35011e+10 ]
+(dbl1 / lng2).print;
 [ -4.62924e-10 ]
+
+
+#line 335 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(lng1 + sht2).print;
 [ -8999999999995 ]
+(lng1 - sht2).print;
 [ -9000000000005 ]
+(lng1 * sht2).print;
 [ -45000000000000 ]
+(lng1 / sht2).print;
 [ -1800000000000 ]
+
+
+#line 337 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(lng1 + int2).print;
 [ -8999999999998 ]
+(lng1 - int2).print;
 [ -9000000000002 ]
+(lng1 * int2).print;
 [ -18000000000000 ]
+(lng1 / int2).print;
 [ -4500000000000 ]
+
+
+#line 338 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(lng1 + flt2).print;
 [ -9e+12 ]
+(lng1 - flt2).print;
 [ -9e+12 ]
+(lng1 * flt2).print;
 [ -4.86e+13 ]
+(lng1 / flt2).print;
 [ -1.66667e+12 ]
+
+
+#line 339 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(lng1 + dbl2).print;
 [ -9e+12 ]
+(lng1 - dbl2).print;
 [ -9e+12 ]
+(lng1 * dbl2).print;
 [ -4.86041e+14 ]
+(lng1 / dbl2).print;
 [ -1.66653e+11 ]
+
+
+#line 340 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(lng1 + lng2).print;
 [ -8994599543211 ]
+(lng1 - lng2).print;
 [ -9005400456789 ]
+(lng1 * lng2).print;
 [ 3059533224668508160 ]
+(lng1 / lng2).print;
 [ -1666 ]
+
+
+#line 341 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+
+abs(sht2).print;
 [ 5 ]
+abs(int2).print;
 [ 2 ]
+abs(flt2).print;
 [ 5.4 ]
+abs(dbl2).print;
 [ 54.0046 ]
+abs(lng2).print;
 [ 5400456789 ]
+
+max(sht1,sht2).print;
 [ 5 ]
+max(int1,int2).print;
 [ 5 ]
+max(flt1,flt2).print;
 [ 5.4 ]
+max(dbl1,dbl2).print;
 [ 54.0046 ]
+max(lng1,lng2).print;
 [ 5400456789 ]
+
+min(sht1,sht2).print;
 [ 2 ]
+min(int1,int2).print;
 [ 2 ]
+min(flt1,flt2).print;
 [ 2.5 ]
+min(dbl1,dbl2).print;
 [ -2.5 ]
+min(lng1,lng2).print;
 [ -9000000000000 ]
+
+
+#line 405 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+(oid1 + oid2).print;
+!ERROR: interpret: no matching MIL operator to '+(oid, oid)'.
+!MAYBE YOU MEAN:
+!	+(str, any) : str
+!	+(lng, dbl) : dbl
+!	+(lng, flt) : dbl
+!	+(lng, lng) : lng
+!	+(lng, int) : lng
+!	+(lng, sht) : lng
+!	+(lng, chr) : lng
+!	+(dbl, dbl) : dbl
+!	+(dbl, flt) : dbl
+!	+(dbl, lng) : dbl
+!	+(dbl, int) : dbl
+!	+(dbl, sht) : dbl
+!	+(dbl, chr) : dbl
+!	+(flt, dbl) : dbl
+!	+(flt, flt) : flt
+!	+(flt, lng) : flt
+!	+(flt, int) : flt
+!	+(flt, sht) : flt
+!	+(flt, chr) : flt
+!	+(int, dbl) : dbl
+!	+(int, flt) : flt
+!	+(int, lng) : lng
+!	+(int, int) : int
+!	+(int, sht) : int
+!	+(int, chr) : int
+!	+(sht, dbl) : dbl
+!	+(sht, flt) : flt
+!	+(sht, lng) : lng
+!	+(sht, int) : int
+!	+(sht, sht) : sht
+!	+(sht, chr) : sht
+!	+(chr, dbl) : dbl
+!	+(chr, flt) : flt
+!	+(chr, lng) : lng
+!	+(chr, int) : int
+!	+(chr, sht) : sht
+!	+(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(oid1 - oid2).print;
+!ERROR: interpret: no matching MIL operator to '-(oid, oid)'.
+!MAYBE YOU MEAN:
+!	-(dbl) : dbl
+!	-(lng) : lng
+!	-(flt) : flt
+!	-(int) : int
+!	-(sht) : sht
+!	-(chr) : chr
+!	-(lng, dbl) : dbl
+!	-(lng, flt) : dbl
+!	-(lng, lng) : lng
+!	-(lng, int) : lng
+!	-(lng, sht) : lng
+!	-(lng, chr) : lng
+!	-(dbl, dbl) : dbl
+!	-(dbl, flt) : dbl
+!	-(dbl, lng) : dbl
+!	-(dbl, int) : dbl
+!	-(dbl, sht) : dbl
+!	-(dbl, chr) : dbl
+!	-(flt, dbl) : dbl
+!	-(flt, flt) : flt
+!	-(flt, lng) : flt
+!	-(flt, int) : flt
+!	-(flt, sht) : flt
+!	-(flt, chr) : flt
+!	-(int, dbl) : dbl
+!	-(int, flt) : flt
+!	-(int, lng) : lng
+!	-(int, int) : int
+!	-(int, sht) : int
+!	-(int, chr) : int
+!	-(sht, dbl) : dbl
+!	-(sht, flt) : flt
+!	-(sht, lng) : lng
+!	-(sht, int) : int
+!	-(sht, sht) : sht
+!	-(sht, chr) : sht
+!	-(chr, dbl) : dbl
+!	-(chr, flt) : flt
+!	-(chr, lng) : lng
+!	-(chr, int) : int
+!	-(chr, sht) : sht
+!	-(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(oid1 * oid2).print;
+!ERROR: interpret: no matching MIL operator to '*(oid, oid)'.
+!MAYBE YOU MEAN:
+!	*(lng, dbl) : dbl
+!	*(lng, flt) : dbl
+!	*(lng, lng) : lng
+!	*(lng, int) : lng
+!	*(lng, sht) : lng
+!	*(lng, chr) : lng
+!	*(dbl, dbl) : dbl
+!	*(dbl, flt) : dbl
+!	*(dbl, lng) : dbl
+!	*(dbl, int) : dbl
+!	*(dbl, sht) : dbl
+!	*(dbl, chr) : dbl
+!	*(flt, dbl) : dbl
+!	*(flt, flt) : flt
+!	*(flt, lng) : flt
+!	*(flt, int) : flt
+!	*(flt, sht) : flt
+!	*(flt, chr) : flt
+!	*(int, dbl) : dbl
+!	*(int, flt) : flt
+!	*(int, lng) : lng
+!	*(int, int) : int
+!	*(int, sht) : int
+!	*(int, chr) : int
+!	*(sht, dbl) : dbl
+!	*(sht, flt) : flt
+!	*(sht, lng) : lng
+!	*(sht, int) : int
+!	*(sht, sht) : sht
+!	*(sht, chr) : sht
+!	*(chr, dbl) : dbl
+!	*(chr, flt) : flt
+!	*(chr, lng) : lng
+!	*(chr, int) : int
+!	*(chr, sht) : sht
+!	*(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+(oid1 / oid2).print;
+!ERROR: interpret: no matching MIL operator to '/(oid, oid)'.
+!MAYBE YOU MEAN:
+!	/(lng, dbl) : dbl
+!	/(lng, flt) : dbl
+!	/(lng, lng) : lng
+!	/(lng, int) : lng
+!	/(lng, sht) : lng
+!	/(lng, chr) : lng
+!	/(dbl, dbl) : dbl
+!	/(dbl, flt) : dbl
+!	/(dbl, lng) : dbl
+!	/(dbl, int) : dbl
+!	/(dbl, sht) : dbl
+!	/(dbl, chr) : dbl
+!	/(flt, dbl) : dbl
+!	/(flt, flt) : flt
+!	/(flt, lng) : flt
+!	/(flt, int) : flt
+!	/(flt, sht) : flt
+!	/(flt, chr) : flt
+!	/(int, dbl) : dbl
+!	/(int, flt) : flt
+!	/(int, lng) : lng
+!	/(int, int) : int
+!	/(int, sht) : int
+!	/(int, chr) : int
+!	/(sht, dbl) : dbl
+!	/(sht, flt) : flt
+!	/(sht, lng) : lng
+!	/(sht, int) : int
+!	/(sht, sht) : sht
+!	/(sht, chr) : sht
+!	/(chr, dbl) : dbl
+!	/(chr, flt) : flt
+!	/(chr, lng) : lng
+!	/(chr, int) : int
+!	/(chr, sht) : sht
+!	/(chr, chr) : chr
+!ERROR: print(param 1): evaluation error.
+
+
+#line 361 "/var/tmp/manegold.GNU_64-d.30097/monet/src/modules/plain/arith.mx"
+
+max(oid1,oid2).print;
 [ 5@0 ]
+min(oid1,oid2).print;
 [ 2@0 ]
+
+inv(flt2).print;
 [ 0.185185 ]
+inv(dbl2).print;
 [ 0.018517 ]
+
+(int1% int2).print;
 [ 1 ]
+(int1<<int2).print;
 [ 20 ]
+(int1>>int2).print;
 [ 1 ]
+
+(int1 or  int2).print;
 [ 7 ]
+(int1 and int2).print;
 [ 0 ]
+(int1 xor int2).print;
 [ 7 ]
+not(int2).print;
 [ -3 ]
+
+bit1 := true;
+bit2 := false;
+(bit1 or  bit2).print;
 [ true ]
+(bit1 and bit2).print;
 [ false ]
+(bit1 xor bit2).print;
 [ true ]
+not(bit2).print;
 [ true ]
+
+srand( 1234 );
+rand().print;
 [ 479142414 ]
 quit;
 

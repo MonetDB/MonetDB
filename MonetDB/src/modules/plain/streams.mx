@@ -128,10 +128,7 @@ the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump)
     .COMMAND fgetc( Stream filep ): int = io_fgetc; 
 	"See: man fgetc"
 
-.END streams;
-
-@mil
-
+.LOAD
 	# backward compatibility with old io module (alas: seek has gone..)
 	const EOF := -1;
 	proc fputs(str buf, Stream s):void		stream_write(s, buf);
@@ -139,12 +136,14 @@ the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump)
 	proc fflush(Stream s):void 			stream_flush(s);
 	proc fopen(str filename, str mode) : Stream {
 		if (mode.startsWith("r")) {
-			return open_rastream(filename);
+			return open_rstream(filename);
 		} else if (mode.startsWith("w")) {
-			return open_wastream(filename);
+			return open_wstream(filename);
 		} 
 		return Stream(ptr(0));
 	}
+.END;
+.END streams;
 @h
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
@@ -168,45 +167,62 @@ int io_stdin (Stream *ret) { *(stream**)ret = GDKin;  return GDK_SUCCEED; }
 int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
 int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
 
-@= open_stream
-int stream_open_@1( Stream *S, str filename ){
-	stream *s;
-
-	if ((s = open_@1( filename )) == NULL || s->errnr){
-		if (s) s->destroy(s);
-		GDKerror("Could not open file %s\n", filename );
+int stream_open_rstream( Stream *S, str filename ){
+	if ((*(stream**)S = open_rstream( filename )) == NULL){
 		return GDK_FAIL; 
 	} else {
-		*(stream**)S = s;
 		return GDK_SUCCEED;
 	}
 }
-@c
-@:open_stream(rstream)@
-@:open_stream(wstream)@
-@:open_stream(rastream)@
-@:open_stream(wastream)@
-
-@= open_socket
-int stream_socket_@1( Stream *S, int *socket, str name ){
-	stream *s;
-
-	if ((s = socket_@1( *socket, name )) == NULL || s->errnr){
-		if (s) s->destroy(s);
-		GDKerror("Could not open socket %s\n", name );
+int stream_open_wstream( Stream *S, str filename ){
+	if ((*(stream**)S = open_wstream( filename )) == NULL){
 		return GDK_FAIL; 
 	} else {
-		*(stream**)S = s;
 		return GDK_SUCCEED;
 	}
 }
-@c
-@:open_socket(rstream)@
-@:open_socket(wstream)@
-@:open_socket(rastream)@
-@:open_socket(wastream)@
-
-@c
+int stream_open_rastream( Stream *S, str filename ){
+	if ((*(stream**)S = open_rastream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_open_wastream( Stream *S, str filename ){
+	if ((*(stream**)S = open_wastream( filename )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_rstream( Stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rstream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_wstream( Stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wstream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_rastream( Stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_rastream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
+int stream_socket_wastream( Stream *S, int *socket, str name ){
+	if ((*(stream**)S = socket_wastream( *socket, name )) == NULL){
+		return GDK_FAIL; 
+	} else {
+		return GDK_SUCCEED;
+	}
+}
 int stream_write_string( Stream *S, str data ){
 	stream *s = *(stream**)S;
 	s->write( s, data, 1, strlen(data));
@@ -251,7 +267,12 @@ int stream_flush( Stream *S ){
 }
 
 int stream_close_stream( Stream *S ){
-	close_stream(*(stream**)S);
+	stream *s = *(stream**)S;
+	if (s && !s->errnr){
+		s->close( s );
+	} else if (s) {
+		s->destroy( s );
+	}
 	return GDK_SUCCEED;
 }
 
@@ -303,7 +324,7 @@ int bstream_destroy_wrap( Bstream *BS ){
 }
 
 int bstream_read_wrap( int *res, Bstream *BS, int *size ){
-	*res = (int) bstream_read( *(bstream**)BS, (size_t) *size ); 
+	*res = bstream_read( *(bstream**)BS, (size_t) *size ); 
 	return GDK_SUCCEED;
 }
 
@@ -421,7 +442,7 @@ int io_fgets(str *res, Stream *S){
 int io_fputc(int *c, stream *S){
 	stream *s = *(stream**)S;
 	char data[2];
-	data[0] = (char) *c; 
+	data[0] = (char) *(int*) c; 
 	data[1] = 0;
 	s->write( s, data, 1, 1);
 	return GDK_SUCCEED;
@@ -434,13 +455,15 @@ int io_fwrite(Stream *S, str buf, int *nbytes ){
 }
 @mil
 
-PROC test_streams() : void := {
-    s := open_wastream( "test.mil" );
-    stream_write( s, "test\n" );
-    stream_close( s );
+module(streams);
 
-    s := open_rastream( "test.mil" );
-    st := stream_read( s );
-    stream_close( s );
-    print(st);
-}
+s := open_wastream( "test.mil" );
+stream_write( s, "test\n" );
+stream_close( s );
+
+s := open_rastream( "test.mil" );
+st := stream_read( s );
+stream_close( s );
+print(st);
+quit;
+

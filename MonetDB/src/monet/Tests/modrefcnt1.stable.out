@@ -21,11 +21,9 @@ loaded;
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  2		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 test.print;
 #-----------------#
 # BAT:	  tmp_28  #
@@ -44,11 +42,9 @@ loaded;
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 test.print;
 #-----------------#
 # BAT:	  tmp_28  #
@@ -66,11 +62,9 @@ loaded;
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
-[ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ "uchr",	  2		  ]
 test.print;
 !ERROR: atom 'lock' unknown, in BAT '29'.
 !ERROR: atom 'lock' unknown, in BAT '29'.

@@ -48,10 +48,9 @@ void MSP_rewind_module_list(void);
 
 /* search for module and return the complete path */
 char *MSP_locate_module(char *);
-char *MSP_locate_script(char *);
 
 /* return next module found in the list */
-char *MSP_next_module(char *);
+char *MSP_next_module(void);
 
 #endif
 @c
@@ -71,7 +70,6 @@ struct moddir {
 
 static struct moddir *moddir_list=0;
 
-#if 0				/* not used */
 static void print_moddir_list(void) {
     struct moddir *entry=moddir_list;
     while(entry)
@@ -80,7 +78,6 @@ static void print_moddir_list(void) {
             entry=entry->next;
         }
 }
-#endif
 
 static 
 void insert_moddir_entry(char *name) {
@@ -162,8 +159,7 @@ void MSP_rewind_module_list(void) {
     dirp=0;
 }
     
-#define LIBLEN	3
-char *MSP_next_module(char *ext) {
+char *MSP_next_module(void) {
     struct dirent *dent=0;
     char *next_module;
 
@@ -182,14 +178,15 @@ char *MSP_next_module(char *ext) {
             while((dent=readdir(dirp))!=0)
                 {
                     char *suffix=0;
-                    if ((suffix=strstr(dent->d_name,ext))==NULL) continue;
+                    if ((suffix=strstr(dent->d_name,SO_EXT))==0 || 
+		       	 strncmp(dent->d_name,"lib_",4)!=0) continue; 
 		    /*
 		     * On some platforms (e.g., MacOS X/Mach-O/Darwin), 
 		     * a library's version number (e.g., ".0"/".0.0.0")
 		     * is not appended to the suffix, but rather placed
 		     * between the library's name and suffix; however,
-		     * we only want to match "lib<name><ext>", here,
-		     * but not "lib<name><version><ext>":
+		     * we only want to match "lib_<name><SO_EXT>", here,
+		     * but not "lib_<name><version><SO_EXT>":
 		     */
 		    if (((suffix-2)>=dent->d_name) &&
 		        (suffix[-2]=='.')          &&
@@ -209,9 +206,10 @@ char *MSP_next_module(char *ext) {
     return 0;
 }
 
+#define LIBLEN	4
 static char *MSP_libname( char *name ){
     char *libname = (char*)GDKmalloc( strlen(name) + LIBLEN + 1 );
-    strcpy(libname, "lib");
+    strcpy(libname, "lib_");
     strcpy(libname+LIBLEN, name);
     return libname;
 }
@@ -224,7 +222,7 @@ char *MSP_locate_module(char *mod_name) {
     MSP_rewind_module_list();
     for (;;)
         {
-            next_module=MSP_next_module(SO_EXT);
+            next_module=MSP_next_module();
             if (!next_module) break;
 	    fulllen = strlen(next_module);
             if ( fulllen > len &&
@@ -235,36 +233,6 @@ char *MSP_locate_module(char *mod_name) {
 			SO_EXT_LEN = strlen(SO_EXT);
                     fullname=(char *)GDKmalloc(fulllen+SO_EXT_LEN+1);
                     sprintf(fullname,"%s%s",next_module, SO_EXT);
-                    GDKfree(next_module);
-                    GDKfree(name);
-                    return fullname;
-                }
-	    GDKfree(next_module);
-        }
-    GDKfree(name);
-    return 0;
-}
-
-#define MIL_EXT ".mil"
-
-char *MSP_locate_script(char *mod_name) {
-    int MIL_EXT_LEN = (int) strlen(MIL_EXT);
-    char *name = GDKstrdup(mod_name); 
-    size_t len = strlen(name);
-    size_t fulllen = 0;
-    char *next_module,*fullname;
-    MSP_rewind_module_list();
-    for (;;)
-        {
-            next_module=MSP_next_module(MIL_EXT);
-            if (!next_module) break;
-	    fulllen = strlen(next_module);
-            if ( fulllen > len &&
-		 next_module[fulllen-len-1] == DIR_SEP &&
-		 !strcmp(&next_module[fulllen-len],name))
-                {
-                    fullname=(char *)GDKmalloc(fulllen+MIL_EXT_LEN+1);
-                    sprintf(fullname,"%s%s",next_module, MIL_EXT);
                     GDKfree(next_module);
                     GDKfree(name);
                     return fullname;

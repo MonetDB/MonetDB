@@ -247,7 +247,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "void\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* INOUT: heap of " << name << "s. */\n";
-	    o << "   size_t*\t\toffset\t/* IN: offset from heapbase.  */\n);\n";
+	    o << "   int*\t\toffset\t/* IN: offset from heapbase.  */\n);\n";
 	    o << "\t/* DEL: delete a " << name << " from the heap.  */\n\n\n";
 	    break;
         case OP_HASH 	:
@@ -273,7 +273,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 	    o << "void\n";
 	    o << d.Name() << "(\n";
 	    o << "   Heap*\thp,\t/* INOUT: heap of " << name << "s. */\n";
-	    o << "   var_t*\t\toffset,\t/* OUT: offset from heapbase. */\n";
+	    o << "   int*\t\toffset,\t/* OUT: offset from heapbase. */\n";
 	    o << "   " << name;
 	    if (!hasPtr)
 		    o << "*";

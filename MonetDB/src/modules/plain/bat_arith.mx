@@ -97,7 +97,7 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 @= implementations
 int batbat_@1_@3(BAT **ret, BAT *l, BAT *r) {
 	REGISTER @1 *lp, *lq, *rp, *bnp;
-	REGISTER int cnt = 4096/(int)sizeof(@1);
+	REGISTER int cnt = 4096/sizeof(@1);
 	@1* lbuf = GDKmalloc(2*cnt*sizeof(@1));
 	@1* rbuf = lbuf+cnt;
 	BAT *bn;

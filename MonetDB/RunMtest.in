@@ -5,7 +5,7 @@ builddir=@QMONET_BUILD@
 srcdir=`cd '@srcdir@'; pwd`
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/contrib/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/mapi/.libs"
+MOD_PATH="${builddir}/src/modules/plain/.libs:${builddir}/src/modules/calibrator/.libs:${builddir}/src/mapi/.libs"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
@@ -16,10 +16,6 @@ PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients
 PYTHONPATH="${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common:${srcdir}/src/mapi/clients"
 LD_LIBRARY_PATH="${MOD_PATH}:${builddir}/src/common/.libs:${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs${LD_LIBRARY_PATH}"
 export PATH PYTHONPATH LD_LIBRARY_PATH
-
-# as opposed to the libraries, <modname>.mil files don't end up the .libs
-# subdirectories, hence:
-MOD_PATH="$MOD_PATH:`echo $MOD_PATH | sed 's|/\.libs||g'`"
 
 # execute Mtest.py in the source directory
 cd "$srcdir"

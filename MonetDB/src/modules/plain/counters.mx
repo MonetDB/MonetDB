@@ -74,11 +74,10 @@ only the elapsed time in microseconds is measured.
 
 .COMMAND init_counters() = init_counters;
  "initialize counters module
-  (to be used on initial load, only)"
+  (to be used in .LOAD sequence, only)"
 
-.END counters;
+.LOAD
 
-@mil
 init_counters();
 
 const native_events := show_native_events();
@@ -158,6 +157,10 @@ PROC counter2str(counter c) : str := {
 ADDHELP("counter2str", "manegold", "Mar 16 2002",
 	"cast counter to string.",
 	"counters");
+
+.END;
+
+.END counters;
 
 @+ Implementation 
 @h
@@ -1929,54 +1932,53 @@ int show_unified_events(BAT **ret) {
 
 @+ Test Script	
 @mil
+module("alarm");
+module("counters");
 
-PROC test_counters() : void := {
-	module("alarm");
+sigs("counters");
 
-	sigs("counters");
+var eu, en, ne, ne2, e0, e1, n0, n1, c;
 
-	var eu, en, ne, ne2, e0, e1, n0, n1, c;
-	
-	en := native_events;
-	ne := count(en);
-	ne2 := ne / 2;
-	
-	en.print;
-	show_native_events.print;
+en := native_events;
+ne := count(en);
+ne2 := ne / 2;
 
-	en@batloop {
-		e0 := $h;
-		if ( e0 < ne2 ) {
-			e1 := e0 + ne2;
-		} else {
-			e1 := ( ne - e0 ) - 1;
-		}
-		n0 := en.find(e0);
-		n1 := en.find(e1);
-		start_count(e0,e1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
-		profile(";",e0,e1).counter2str.print;
-		profile(";",n0,n1).counter2str.print;
-		start_count(n0,n1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
-		start_count(e0,n0).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e0)).print;
-		profile(";",e0,n0).counter2str.print;
-		profile(";",n1,e1).counter2str.print;
-		start_count(n1,e1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e1,e1)).print;
+en.print;
+show_native_events.print;
+
+en@batloop {
+	e0 := $h;
+	if ( e0 < ne2 ) {
+		e1 := e0 + ne2;
+	} else {
+		e1 := ( ne - e0 ) - 1;
 	}
-	
-	eu := unified_events;
-	
-	eu.print;
-	show_unified_events.print;
-	
-	eu@batloop {
-		e0 := $h;
-		e1 := $h;
-		n0 := eu.find(e0);
-		n1 := eu.find(e1);
-		c := start_count(e0,n1);         c.stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
-		profile(";"        ,e0,e1).counter2str.print;
-		profile("sleep(1);",n0,n1).counter2str.print;
-		c := start_count(n0,e1);sleep(1);c.stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
-	}
+	n0 := en.find(e0);
+	n1 := en.find(e1);
+	start_count(e0,e1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
+	profile(";",e0,e1).counter2str.print;
+	profile(";",n0,n1).counter2str.print;
+	start_count(n0,n1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
+	start_count(e0,n0).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e0)).print;
+	profile(";",e0,n0).counter2str.print;
+	profile(";",n1,e1).counter2str.print;
+	start_count(n1,e1).stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e1,e1)).print;
 }
-	
+
+eu := unified_events;
+
+eu.print;
+show_unified_events.print;
+
+eu@batloop {
+	e0 := $h;
+	e1 := $h;
+	n0 := eu.find(e0);
+	n1 := eu.find(e1);
+	c := start_count(e0,n1);         c.stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
+	profile(";"        ,e0,e1).counter2str.print;
+	profile("sleep(1);",n0,n1).counter2str.print;
+	c := start_count(n0,e1);sleep(1);c.stop_count.counter2bat.col_name(sprintf("counters %2d & %2d",e0,e1)).print;
+}
+
+quit;

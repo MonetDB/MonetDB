@@ -35,7 +35,7 @@ LIBS = {
 	SEP = _
 	SOURCES = calib.mx 
 	HEADERS = h m
-	#SCRIPTS = mil ""
+	SCRIPTS = mil ""
 	WINLIBS = ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 	LDFLAGS = -module
@@ -44,9 +44,4 @@ LIBS = {
 BINS = {
 	SOURCES = calibrator.c
 	LIBS = -lm
-}
-
-scripts_mil = {
-	DIR = pkglibdir
-	SOURCES = calib.mx
 }

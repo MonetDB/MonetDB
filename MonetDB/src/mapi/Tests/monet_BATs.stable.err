@@ -1,15 +1,15 @@
 stderr of test 'monet_BATs` in directory 'src/mapi` itself:
 
 
-# 15:54:58 >  
-# 15:54:58 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_mapi" --set mapi_port=50263 "/ufs/niels/data/Linux-i686/lib/MonetDB/mapi.mil" monet_BATs.prologue ; echo ; echo Over..
-# 15:54:58 >  
+# 09:34:01 >  
+# 09:34:01 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_mapi --set mapi_port=50712 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil monet_BATs.prologue ; echo  ; echo Over..
+# 09:34:01 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
-# builtin opt 	gdk_version = 4.3.9
-# builtin opt 	monet_pid = 16022
-# builtin opt 	prefix = /ufs/niels/data/Linux-i686
-# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_version = 4.3.5
+# builtin opt 	monet_pid = 15018
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
+# builtin opt 	exec_prefix = NONE
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
@@ -18,7 +18,7 @@ stderr of test 'monet_BATs` in directory 'src/mapi` itself:
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# builtin opt 	monet_daemon = yes
+# builtin opt 	monet_deamon = yes
 # builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
@@ -28,7 +28,7 @@ stderr of test 'monet_BATs` in directory 'src/mapi` itself:
 # builtin opt 	sql_api = sql(default-schema)
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = default-schema
-# config opt 	prefix = /ufs/niels/data/Linux-i686
+# config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -38,25 +38,23 @@ stderr of test 'monet_BATs` in directory 'src/mapi` itself:
 # config opt 	monet_prompt = monet>
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# config opt 	monet_daemon = no
+# config opt 	monet_deamon = no
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/niels/data/Linux-i686/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /ufs/niels/data/Linux-i686/var/dbfarm
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_mapi
-# cmdline opt 	mapi_port = 50263
+# cmdline opt 	gdk_dbname = Tests_src_mapi
+# cmdline opt 	mapi_port = 50712
 
-# 15:54:59 >  
-# 15:54:59 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50263 < monet_BATs.milC
-# 15:54:59 >  
-
-
-# 15:54:59 >  
-# 15:54:59 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --host=norma --port=50263
-# 15:54:59 >  
+# 09:34:01 >  
+# 09:34:01 >  Mtimeout -timeout 60 MapiClient "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=50712 < monet_BATs.milC
+# 09:34:01 >  
 
 
-# 15:55:00 >  
-# 15:55:00 >  Done.
-# 15:55:00 >  
+# 09:34:01 >  
+# 09:34:01 >  Mtimeout -timeout 60 Mshutdown.py "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --host=stem --port=50712
+# 09:34:01 >  
+
+
+# 09:34:02 >  
+# 09:34:02 >  Done.
+# 09:34:02 >  
 

@@ -26,20 +26,13 @@ import os
 
 #automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
 automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '']
+script_ext = ['mil']
 
 def split_filename(f):
     base = f
     ext = ""
     if string.find(f, ".") >= 0:
         return string.split(f, ".", 1)
-    return base, ext
-
-def rsplit_filename(f):
-    base = f
-    ext = ""
-    s = string.rfind(f, ".")
-    if s >= 0:
-        return f[:s], f[s+1:]
     return base, ext
 
 def msc_dummy(fd, var, values, msc):
@@ -186,9 +179,7 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
     for l in list:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
-        elif l[:2] == "-l":
-            add = add + " lib"+l[2:]+".lib"
-        elif l[0] in ("-", "$"):
+        elif l[0] in  ("-", "$"):
             add = add + " " + l
         elif l[0] not in  ("@"):
             add = add + " " + msc_translate_dir(l, msc) + ".lib"
@@ -196,8 +187,6 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
     for l in dlibs:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
-        elif l[:2] == "-l":
-            add = add + " lib"+l[2:]+".lib"
         elif l[0] in  ("-", "$"):
             add = add + " " + l
         elif l[0] not in  ("@"):
@@ -257,12 +246,7 @@ def msc_deps(fd, deps, objext, msc):
                 fd.write("%s: %s\n" % (x, y))
                 fd.write("\tif exist %s $(CONFIGURE) %s > %s\n" % (y, y, x))
                 msc['_IN'].append(y)
-            getsrc = ""
-            src = msc_translate_dir(msc_translate_ext(msc_translate_file(deplist[0], msc)), msc)
-            if os.path.split(src)[0]:
-                getsrc = "\tif exist %s $(INSTALL) %s %s\n" % (src, src, os.path.split(src)[1])
             if ext == "tab.h":
-                fd.write(getsrc)
                 x, de = split_filename(deplist[0])
                 if de == 'y':
                     fd.write("\t$(YACC) $(YFLAGS) %s.y\n" % b)
@@ -273,35 +257,24 @@ def msc_deps(fd, deps, objext, msc):
                     fd.write("\tif exist y.tab.c $(DEL) y.tab.c\n")
                     fd.write("\tif exist y.tab.h $(MV) y.tab.h %s.tab.h\n" % b)
             if ext == "tab.c":
-                fd.write(getsrc)
                 fd.write("\t$(YACC) $(YFLAGS) %s.y\n" % b)
                 fd.write("\tif exist y.tab.c $(MV) y.tab.c %s.tab.c\n" % b)
                 fd.write("\tif exist y.tab.h $(DEL) y.tab.h\n")
             if ext == "tab.cxx":
-                fd.write(getsrc)
                 fd.write("\t$(YACC) $(YFLAGS) %s.yy\n" % b)
                 fd.write("\tif exist y.tab.c $(MV) y.tab.c %s.tab.cxx\n" % b)
                 fd.write("\tif exist y.tab.h $(DEL) y.tab.h\n")
             if ext == "yy.c":
-                fd.write(getsrc)
                 fd.write("\t$(LEX) $(LFLAGS) %s.l\n" % b)
                 fd.write("\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.c\n" % b)
             if ext == "yy.cxx":
-                fd.write(getsrc)
                 fd.write("\t$(LEX) $(LFLAGS) %s.ll\n" % b)
                 fd.write("\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.cxx\n" % b)
 
             if ext == "glue.c":
-                fd.write(getsrc)
                 fd.write("\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t, b))
             if ext == "proto.h":
-                fd.write(getsrc)
                 fd.write("\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t, b))
-	    if ext == "mil":
-		fd.write(getsrc)
-		if b+".tmpmil" in deplist:
-			fd.write("\t$(MEL) $(INCLUDES) -mil %s.m > $@\n" % (b))
-			fd.write("\ttype %s.tmpmil >> $@\n" % (b))
             if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
                 target, name = msc_find_target(tar, msc)
                 if name[0] == '_':
@@ -309,11 +282,9 @@ def msc_deps(fd, deps, objext, msc):
                 if target == "LIB":
                     d, dext = split_filename(deplist[0])
                     if dext == "c" or dext == "glue.c":
-                        fd.write(getsrc)
                         fd.write("\t$(CC) $(CFLAGS) $(INCLUDES) -DLIB%s -c %s\n" %
                                  (name, msc_translate_ext(deplist[0])))
                     elif dext == "cc":
-                        fd.write(getsrc)
                         fd.write("\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c %s\n" %
                                  (name, msc_translate_ext(deplist[0])))
     msc['DEPS'].append("DONE")
@@ -321,22 +292,12 @@ def msc_deps(fd, deps, objext, msc):
 # list of scripts to install
 def msc_scripts(fd, var, scripts, msc):
 
-    s, ext = string.split(var, '_', 1);
-    ext = [ ext ]
-    if scripts.has_key("EXT"):
-        ext = scripts["EXT"] # list of extentions 
-
     sd = "SCRIPTSDIR"
     if scripts.has_key("DIR"):
         sd = scripts["DIR"][0] # use first name given
     sd = msc_translate_dir(sd, msc)
 
     for script in scripts['TARGETS']:
-	s,ext2 = rsplit_filename(script)
-	if not ext2 in ext:
-		continue
-	if (script, script, '', sd) in msc['INSTALL']:
-		continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(SRCDIR)\\%s.in' % script
             if inf not in msc['_IN']:
@@ -348,8 +309,7 @@ def msc_scripts(fd, var, scripts, msc):
         elif os.path.isfile(os.path.join(msc['cwd'], script)):
             fd.write("%s: $(SRCDIR)\\%s\n" % (script, script))
             fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (script, script, script))
-        if script != 'mprof.mil':
-            msc['INSTALL'].append((script, script, '', sd))
+        msc['INSTALL'].append((script, script, '', sd))
 
 ##    msc_deps(fd, scripts['DEPS'], "\.o", msc)
 
@@ -422,13 +382,8 @@ def msc_binary(fd, var, binmap, msc):
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
-    binlist = []
-    if binmap.has_key("WINLIBS"):
-        binlist = binlist + binmap["WINLIBS"]
     if binmap.has_key("LIBS"):
-        binlist = binlist + binmap["LIBS"]
-    if binlist:
-        fd.write(msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc))
+        fd.write(msc_additional_libs(fd, binname, "", "BIN", binmap["LIBS"], [], msc))
 
     srcs = binname+"_OBJS ="
     for target in binmap['TARGETS']:
@@ -448,7 +403,7 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname))
-    fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname, binname, binname))
+    fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname, binname, binname))
 
     if len(SCRIPTS) > 0:
         fd.write(binname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -486,14 +441,8 @@ def msc_bins(fd, var, binsmap, msc):
 
         if binsmap.has_key(bin + "_LIBS"):
             fd.write(msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc))
-        else:
-            binslist = []
-            if binsmap.has_key("WINLIBS"):
-                binslist = binslist + binsmap["WINLIBS"]
-            if binsmap.has_key("LIBS"):
-                binslist = binslist + binsmap["LIBS"]
-            if binslist:
-                fd.write(msc_additional_libs(fd, bin, "", "BIN", binslist, [], msc))
+        elif binsmap.has_key("LIBS"):
+            fd.write(msc_additional_libs(fd, bin, "", "BIN", binsmap["LIBS"], [], msc))
 
         srcs = bin+"_OBJS ="
         for target in binsmap['TARGETS']:
@@ -515,7 +464,7 @@ def msc_bins(fd, var, binsmap, msc):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin))
-        fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin, bin, bin))
+        fd.write("\t$(CC) $(CFLAGS) -Fe%s.exe $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin, bin, bin))
 
     if len(SCRIPTS) > 0:
         fd.write(name+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -576,9 +525,9 @@ def msc_library(fd, var, libmap, msc):
         dlib = libmap[libname+"_DLIBS"]
     liblist = []
     if libmap.has_key("WINLIBS"):
-        liblist = liblist + libmap["WINLIBS"]
+        liblist += libmap["WINLIBS"]
     if libmap.has_key("LIBS"):
-        liblist = liblist + libmap["LIBS"]
+        liblist += libmap["LIBS"]
     if liblist:
         fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc))
 
@@ -610,7 +559,7 @@ def msc_library(fd, var, libmap, msc):
     ln = "lib" + sep + libname
     fd.write(ln + ".lib: " + ln + ".dll\n")
     fd.write(ln + ".dll: $(" + ln + "_OBJS) \n")
-    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n\n" % (ln, ln, ln))
+    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln, ln, ln))
 
     if len(SCRIPTS) > 0:
         fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -659,9 +608,9 @@ def msc_libs(fd, var, libsmap, msc):
         else:
             libslist = []
             if libsmap.has_key("WINLIBS"):
-                libslist = libslist + libsmap["WINLIBS"]
+                libslist += libsmap["WINLIBS"]
             if libsmap.has_key("LIBS"):
-                libslist = libslist + libsmap["LIBS"]
+                libslist += libsmap["LIBS"]
             if libslist:
                 fd.write(msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc))
 
@@ -685,7 +634,7 @@ def msc_libs(fd, var, libsmap, msc):
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
         fd.write(ln + ".dll: $(" + ln + "_OBJS)\n")
-        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n\n" % (ln, ln, ln))
+        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln, ln, ln))
 
     if len(SCRIPTS) > 0:
         fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -904,13 +853,11 @@ CXXEXT = \\\"cxx\\\"
     if len(msc['BINS']) > 0:
         for v in msc['BINS']:
             fd.write("install_bin_%s: %s.exe\n" % (v, v))
-            fd.write("\tif exist %s.exe $(INSTALL) %s.exe $(bindir)\n" % (v,v))
+            fd.write("\t$(INSTALL) %s.exe $(bindir)\n" % v)
     if len(msc['INSTALL']) > 0:
         for (dst, src, ext, dir) in msc['INSTALL']:
             fd.write("install_%s: %s%s %s\n" % (dst, src, ext, dir))
-            fd.write("\tif exist %s%s $(INSTALL) %s%s %s\\%s%s\n" % (src, ext, src, ext, dir, dst, ext))
-            if ext == '.dll':
-                fd.write("\tif exist %s%s $(INSTALL) %s%s %s\\%s%s\n" % (src, '.lib', src, '.lib', dir, dst, '.lib'))
+            fd.write("\t$(INSTALL) %s%s %s\\%s%s\n" % (src, ext, dir, dst, ext))
         td = []
         for (x, y, u, dir) in msc['INSTALL']:
             if td.count(dir) == 0:
@@ -919,17 +866,10 @@ CXXEXT = \\\"cxx\\\"
                 td.append(dir)
 
     fd.write("install-data:")
-    if cwd != topdir and len(msc['HDRS']) > 0:
-        name=os.path.split(cwd)[1]
-        if len(name) > 0:
-            tHDRS = []
-            for h in msc['HDRS']:
-                tHDRS.append(msc_translate_dir(msc_translate_file(h, msc), msc))
-            fd.write(" install-%sinclude_HEADERS\n" % name)
-            fd.write("%sincludedir = $(includedir)\\%s\n" % (name, name))
-            fd.write("%sinclude_HEADERS = %s\n" % (name, msc_list2string(tHDRS, " ", "")))
-            fd.write("install-%sinclude_HEADERS: $(%sinclude_HEADERS)\n" % (name,name))
-            fd.write("\tif not exist $(%sincludedir) $(MKDIR) $(%sincludedir)\n" % (name,name))
-            for h in tHDRS:
-                fd.write("\tif exist %s $(INSTALL) %s $(%sincludedir)\n" % (h,h,name))
+##    if len(msc['HDRS']) > 0:
+##        if len(name) > 0:
+##            fd.write(" install-%s" % v)
+##            for v in msc['HDRS']:
+##                fd.write("%sincludedir = $(includedir)/%s\n" % (name, name))
+##        fd.write("%sinclude_HEADERS = %s\n" % (name, msc_list2string(am['HDRS'], " ", "")))
     fd.write("\n")

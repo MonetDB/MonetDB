@@ -51,7 +51,7 @@ mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
 
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
 
-code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
+code_extract = { 'mx': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
                   (mx2cc, '.cc'),
@@ -94,7 +94,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
-code_gen = { 'm':       [ '.proto.h', '.glue.c', '.mil' ],
+code_gen = { 'm':       [ '.proto.h', '.glue.c' ],
             'odl':      [ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
             'y':        [ '.tab.c', '.tab.h' ],
             'tab.c':    [ '.tab.o' ],
@@ -109,7 +109,6 @@ code_gen = { 'm':       [ '.proto.h', '.glue.c', '.mil' ],
             'i':        [ '_wrap.c' ],
             'glue.c':   [ '.glue.o' ],
 #            'java':     [ '.class' ],
-	    'tmpmil':	[ '.mil' ],
             'mx.in':    [ '.mx' ],
             'tex':      [ '.dvi' ],
             'dvi':      [ '.ps' ],
@@ -164,6 +163,7 @@ def split_filename(f):
     if string.find(f,".") >= 0:
         return string.split(f,".", 1)
     return base,ext
+
 
 def readfile(f):
     src = open(f, 'rb')
@@ -233,9 +233,8 @@ def do_code_gen(targets, deps, code_map):
                     newtarget = base + newext
                     ntargets.append(newtarget)
                     if deps.has_key(newtarget):
-			if (f not in deps[newtarget]):
-                        	deps[newtarget].append(f)
-		    else:
+                        deps[newtarget].append(f)
+                    else:
                         deps[newtarget] = [ f ]
             else:
                 ntargets.append(f)
@@ -407,7 +406,11 @@ def do_lib(lib,deps):
                         if b not in true_deps:
                             if len(dirname) > 0 and \
                                 (dirname[0] == '$' or os.path.isabs(dirname)):
-                                true_deps.append("-l_"+b) 
+                                # MacOS X/Darwin doesn't like linking-in USEd modules;
+                                # other unixes don't seem to require this, either, 
+                                # hence we skip it.
+                                ##true_deps.append("-l_"+b) 
+                                pass
                                 # user should add -L$dirname to the Makefile.ag
                             else:
                                 true_deps.append(os.path.join(dirname,"lib_"+b))

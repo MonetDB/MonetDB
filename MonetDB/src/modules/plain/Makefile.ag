@@ -36,44 +36,21 @@ lib__streams = {
 	LDFLAGS = -module
 }
 
-lib__str = {
-	DIR = pkglibdir
-	SEP = _
-	SOURCES = str.mx
-	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
-	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
-		../../monet/libmonet \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-	LIBS	= $(ICONV_LIBS)
-	LDFLAGS = -module
-}
-
-lib__xtables = {
-	DIR = pkglibdir
-	SEP = _
-	SOURCES = xtables.mx
-	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
-	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
-		../../monet/libmonet ./lib_algebra \
-		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-	LDFLAGS = -module
-}
-
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
-		algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
-		\
-		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
-		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx uchr.mx unix.mx url.mx
+		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
+		bitvector.mx blob.mx cluster.mx  \
+		decimal.mx enum.mx iterator.mx kernel.mx lock.mx \
+		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
+		perfex.mx radix.mx salgebra.mx stats.mx str.mx \
+		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
+		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
+		mel.mx ascii_io.mx qt.mx ddbench.mx \
+		bat_arith.mx aggrX3.mx 
 	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
+	SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -85,7 +62,7 @@ lib__counters = {
 	DIR = pkglibdir
 	SOURCES = counters.mx
 	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
+	SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -98,7 +75,7 @@ lib__pcl = {
 	DIR = pkglibdir
 	SOURCES = pcl.mx
 	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
+	SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -107,15 +84,5 @@ lib__pcl = {
 	LDFLAGS = -module
 }
 
-scripts_mil = {
-	DIR = pkglibdir
-	SOURCES = streams.mx str.mx xtables.mx \
-         	algebra.mx arith.mx bat.mx kernel.mx sys.mx trans.mx \
-                \
-                aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
-		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
-		monettime.mx radix.mx stats.mx tcpip.mx uchr.mx \
-		unix.mx url.mx counters.mx pcl.mx
-}
 
 EXTRA_DIST_DIR = Tests

@@ -21,8 +21,8 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-EXTRA_DIST = Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in \
-	     MkillUsers.in Mlimit.c prof.py Mprofile-commands.lst
+EXTRA_DIST =  Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in MkillUsers.in Mlimit.c \
+		prof.py Mprofile-commands.lst
 
 INCLUDES = ../common
 
@@ -47,7 +47,7 @@ scripts_bat = {
 
 scripts_py = {
 	DIR = bindir
-	SOURCES = prof.py Mtest.py Mfilter.py 
+	SOURCES = prof.py
 }
 
 scripts_lst = {
@@ -56,7 +56,6 @@ scripts_lst = {
 }
 
 scripts_sh = {
-	EXT = ""
 	DIR = bindir
-	SOURCES = Mlog MkillUsers
+	SOURCES = Mtest.py Mlog Mfilter.py MkillUsers
 }

@@ -92,5 +92,3 @@ monet_daemon=no			# default yes
 #====================================
 #sql_port=45123				#default place to sent the SQL query
 #sql_debug=0				#default place to sent the SQL query
-sql_logdir=@localstatedir@@DIRSEP@dbfarm@DIRSEP@log #default place to store 
-					# transaction logs

@@ -54,7 +54,6 @@ Selections}.
 
 .USE cluster;
 
-
 @- Set-Aggregates
 @m
 .COMMAND {sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int] = sum_int; 
@@ -302,7 +301,8 @@ Memory advise is given for the respective cases.
 \item {\tt gusemijoin(A,B)}:
 the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
 \end{itemize}
-@mil
+@m
+.LOAD 
     const PI := 3.14;
     const E := 2.71;
 
@@ -471,7 +471,7 @@ the same as {\tt gsemijoin(A,B)}, but producing an unary BAT as result.
         }
         return b.select(lo,hi);
     }
-@m
+.END;
 .END tpcd;
 
 @{
@@ -838,7 +838,7 @@ ordered like 'extent'.
 	if (b->hvarsized) {
 	    BATloopFast(b, p, q, xx) {
 		ATOMput((bn)->ttype, &(bn)->theap, 
-			BUNptr(bn,1+vi->vector[yy]), BUNhvar(b,p));
+			(int*) BUNptr(bn,1+vi->vector[yy]), BUNhvar(b,p));
 		yy++;
 	    }
 	} else if (atomsize == sizeof(int)) {

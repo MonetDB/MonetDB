@@ -87,31 +87,20 @@ MXFLAGS= -notouch
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
-%.mil: %.m %.tmpmil $(MEL)
-	$(MEL) $(INCLUDES) -mil $*.m > $@
-	cat $*.tmpmil >> $@
-
-%.tmpmil: %.mx
-	$(MX) $(MXFLAGS) -l -x mil $<
-	$(MV) $*.mil $*.tmpmil
-
-%.mil: %.m $(MEL)
-	$(MEL) $(INCLUDES) -mil $*.m > $@
-
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 
 %.mal: %.mx
 	$(MX) $(MXFLAGS) -x mal $<
 
-%: %.mx 
+%: %.mx
 	$(MX) $(MXFLAGS) -x sh $<
 	chmod a+x $@
 
-%.proto.h: %.m $(MEL)
+%.proto.h: %.m
 	$(MEL) $(INCLUDES) -proto $< > $@
 
-%.glue.c: %.m $(MEL)
+%.glue.c: %.m
 	$(MEL) $(INCLUDES) -glue $< > $@
 
 %.tex: %.mx

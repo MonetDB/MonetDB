@@ -21,19 +21,36 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-INCLUDES = -I../../common -I../../gdk -I../../monet -I../plain \
+INCLUDES = -I../../common -I../../gdk -I../../monet \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
 MTSAFE
+
+lib__streams = {
+	DIR = pkglibdir
+	SOURCES = streams.mx
+	HEADERS = h proto.h m
+	#SCRIPTS = mil ""
+	WINLIBS = ../../common/libstream ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+	LDFLAGS = -module
+}
 
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
-		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
-		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
-		wisc.mx ddbench.mx
+		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
+		bitvector.mx blob.mx cluster.mx  \
+		decimal.mx enum.mx iterator.mx kernel.mx lock.mx \
+		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
+		perfex.mx radix.mx salgebra.mx stats.mx str.mx \
+		sys.mx tcpip.mx  tpcd.mx trans.mx uchr.mx \
+		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx \
+		mel.mx ascii_io.mx qt.mx ddbench.mx \
+		bat_arith.mx aggrX3.mx 
 	HEADERS = h proto.h m
-	#SCRIPTS = mil ""
+	SCRIPTS = mil ""
 	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
 		../../monet/libmonet \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
@@ -41,12 +58,31 @@ LIBS = {
 	LDFLAGS = -module
 }
 
-scripts_mil = {
+lib__counters = {
 	DIR = pkglibdir
-	SOURCES = \
-		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
-		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
-		wisc.mx ddbench.mx
+	SOURCES = counters.mx
+	HEADERS = h proto.h m
+	SCRIPTS = mil ""
+	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
+		../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+	LIBS = $(HWCOUNTERS_LIBS)
+	LDFLAGS = -module
 }
+
+lib__pcl = {
+	DIR = pkglibdir
+	SOURCES = pcl.mx
+	HEADERS = h proto.h m
+	SCRIPTS = mil ""
+	WINLIBS = -L. ../../common/libstream ../../gdk/libbat \
+		../../monet/libmonet \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+	LIBS = $(PCL_LIBS)
+	LDFLAGS = -module
+}
+
 
 EXTRA_DIST_DIR = Tests

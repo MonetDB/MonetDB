@@ -461,8 +461,6 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
             env['_'+TSTDIR+'_BODY_'] = ["."+TST+".out.html", o]
 
     CreateSrcIndex(env, TST, EXT)
-
-    return max(o,e)
 ### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
 def AddSubToHtmlIndex (env, TSTDIR) :
@@ -534,7 +532,6 @@ def find_test_dirs(thisdir) :
 
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
-    Fd = -1
     TSTSRCBASE = env['TSTSRCBASE']
     TSTPREF = env['TSTPREF']
     if testdir == TSTSRCBASE:
@@ -596,15 +593,14 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
 
         for TST in testlist:
             os.environ['TST'] = TST
-            tt,Ft = RunTest(env, TST, BusyPorts)
+            tt = RunTest(env, TST, BusyPorts)
             if tt:
                 t = "%7.3f" % tt
             else:
                 t = '-.---'
-            TIMES.append([TSTDIR,TST,t,Ft])
+            TIMES.append([TSTDIR,TST,t])
             td = td + tt
-            Fd = max(Fd,Ft)
-        TIMES.append([TSTDIR,'',"%7.3f" % td,Fd])
+        TIMES.append([TSTDIR,'',"%7.3f" % td])
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
             CreateHtmlIndex(env)
@@ -757,7 +753,7 @@ def CheckMods(env, TST, SERVER) :
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        for m in "str", "sqlserver", "ascii_io", "alarm", "unix", "xtables", "aggrX3", "monettime", "uchr", "mmath":
+        for m in "str", "sqlserver", "ascii_io", "alarm", "unix", "ddbench", "aggrX3", "monettime", "uchr", "mmath":
             if m not in env['TST_MODS']:
                 missing.append(m)
     return missing
@@ -825,7 +821,6 @@ def StopAt(ATJOB,ME) :
 ### StopAt(ATJOB,ME) #
 
 def RunTest(env, TST, BusyPorts) :
-    Failed = -1
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -883,7 +878,7 @@ def RunTest(env, TST, BusyPorts) :
             #elif os.name == "posix":
         else:
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.milM|.milS|.milC]`")
-        return TX,Failed
+        return TX
 
     MissingMods = CheckMods(env, TST, SERVER)
     MissingBATs = CheckBATs(env, TST, TSTDB)
@@ -949,7 +944,7 @@ def RunTest(env, TST, BusyPorts) :
                 shutil.copy(TSTSRC,TST+EXT)
             else:
                 SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
-                return TX,Failed
+                return TX
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
@@ -972,35 +967,35 @@ def RunTest(env, TST, BusyPorts) :
                     os.system('%s -I"%s" %s -A%d %s.no_prof %s %s.prof.diff.html' % (env['exe']['Mdiff'][1],par['IGNORE'],par['CONTEXT'],par['ACCURACY'],f,f,f))
 
         BITS = env['TST_BITS']
-        ACCURACYout = par['ACCURACY']
-        ACCURACYerr = par['ACCURACY']
         if env['TST_STATIC']:
-            STATIC = "(\.STATIC)?"
+            STATIC = ".STATIC"
         else:
             STATIC = ""
-        dir,file = os.path.split(TST)
-        outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?%s$' % (re.escape(OS), re.escape(RELEASE), BITS, STATIC))
-        bestout = besterr = ''
-        for f in os.listdir(dir or os.curdir):
-            res = outre.match(f)
-            if res is not None:
-                if res.group('tp') == 'out':
-                    if len(bestout) < len(f):
-                        bestout = f
-                else:                   # res.group('tp') == 'err'
-                    if len(besterr) < len(f):
-                        besterr = f
-        if bestout:
-            STABLEout = os.path.join(dir, bestout)[len(TST):]
-        else:
-            STABLEout = ''
-        if besterr:
-            STABLEerr = os.path.join(dir, besterr)[len(TST):]
-        else:
-            STABLEerr = ''
+        ACCURACYout = par['ACCURACY']
+        STABLEout = ""
+        for e in "."+OSVER+"."+BITS , "."+OSVER , "."+OS , "":
+            for s in STATIC , "":
+                es = e+s
+                E = ".stable.out"+es
+                if os.path.isfile(TST+E)  or  not es:
+                    STABLEout = E
+                    break
+            if STABLEout:
+                break
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
+        ACCURACYerr = par['ACCURACY']
+        STABLEerr = ""
+        for e in "."+OSVER+"."+BITS , "."+OSVER , "."+OS , "":
+            for s in STATIC , "":
+                es = e+s
+                E = ".stable.err"+es
+                if os.path.isfile(TST+E)  or  not es:
+                    STABLEerr = E
+                    break
+            if STABLEerr:
+                break
         if not os.path.isfile(TST+STABLEerr):
             open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
@@ -1209,9 +1204,9 @@ def RunTest(env, TST, BusyPorts) :
                 timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
-            Failed = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
+            AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
 
-    return TX,Failed
+    return TX
 ### RunTest(env, TST, BusyPorts) #
 
 def CheckPort(host,port) :
@@ -1388,7 +1383,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         STO = ""
         CTO = ""
 
-    ServerReady = True
     if SERVER in ["MAPI", "SQL"]:
         PROLOGUE = ""
         if os.path.isfile(TST+".prologue"):
@@ -1424,74 +1418,64 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ln=pSrvrOut.readline()
             SrvrOut.write(ln)
             SrvrOut.flush()
-        if ln[:6] != 'Ready.':
-            ServerReady = False
-
     else:
         ClntOutFile = TestOutFile
         ClntErrFile = TestErrFile
 
-    if ServerReady:
-        if   CALL == "other":
-            cmd = MTO+str(CTO)+" "+os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
-            RunIt(cmd, "", ClntOutFile, ClntErrFile)
-        elif CALL == "python":
-            cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-            RunIt(cmd, "", ClntOutFile, ClntErrFile)
-        elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
-            cmd = '%s%s %s --dbname=%s %s < ' % (MTO, str(TOT), exe['Mserver'][1], TSTDB, PRELUDE)
-            if CALL in ["milM", "milS"]:
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    RunIt(cmd+f, "", ClntOutFile, ClntErrFile)
-        elif CALL in ["milC", "milCXs"]:
-            TSTs = []
-            if CALL == "milC":
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    TSTs.append(f)
+    if   CALL == "other":
+        cmd = MTO+str(CTO)+" "+os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
+        RunIt(cmd, "", ClntOutFile, ClntErrFile)
+    elif CALL == "python":
+        cmd = MTO+str(CTO)+" "+exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
+        RunIt(cmd, "", ClntOutFile, ClntErrFile)
+    elif CALL in ["milM", "milS", "milMXs", "milSXs"]:
+        cmd = '%s%s %s --dbname=%s %s < ' % (MTO, str(TOT), exe['Mserver'][1], TSTDB, PRELUDE)
+        if CALL in ["milM", "milS"]:
+            X=""
+        else:
+            X="_s[0-9][0-9]"
+        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+        d = os.listdir(os.getcwd())
+        d.sort()
+        for f in d:
+            if test.match(f):
+                RunIt(cmd+f, "", ClntOutFile, ClntErrFile)
+    elif CALL in ["milC", "milCXs"]:
+        TSTs = []
+        if CALL == "milC":
+            X=""
+        else:
+            X="_s[0-9][0-9]"
+        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+        d = os.listdir(os.getcwd())
+        d.sort()
+        for f in d:
+            if test.match(f):
+                TSTs.append(f)
 
-            Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" < "
-            for f in TSTs:
-                RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
+        Clnt = MTO+str(TOT)+" "+exe['Mapi_Client'][1]+" < "
+        for f in TSTs:
+            RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
 
-            #TODO
-            #elif CALL == "milCXp":
-        elif CALL in ["sql", "sqlXs"]:
-            TSTs = []
-            if CALL == "sql":
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    TSTs.append(f)
+        #TODO
+        #elif CALL == "milCXp":
+    elif CALL in ["sql", "sqlXs"]:
+        TSTs = []
+        if CALL == "sql":
+            X=""
+        else:
+            X="_s[0-9][0-9]"
+        test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+        d = os.listdir(os.getcwd())
+        d.sort()
+        for f in d:
+            if test.match(f):
+                TSTs.append(f)
 
-            Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" < "
-            for f in TSTs:
-                RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
+        Clnt = MTO+str(TOT)+" "+exe['SQL_client'][1]+" < "
+        for f in TSTs:
+            RunIt(Clnt+f, "", ClntOutFile, ClntErrFile)
 
-    else:
-	for fn in ClntOutFile,ClntErrFile:
-	    fp = open(fn,'a')
-	    fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
-	    fp.close()
-	
     if SERVER in ["MAPI", "SQL"]:
         if os.path.isfile(TST+".epilogue"):
             EPILOGUE = open(TST+".epilogue",'r')
@@ -1672,14 +1656,13 @@ HOST = string.split(HOST,'.')[0]
 
 if os.name == "nt":
     OS    = "WindowsNT"
-    RELEASE = "5.0"
+    OSVER = OS+"5.0"
 else:
     OS    = string.split(os.uname()[0],"_NT-")[0]
     if OS == "AIX":
-        RELEASE = os.uname()[3]+"."+os.uname()[2]
+        OSVER = OS+os.uname()[3]+"."+os.uname()[2]
     else:
-        RELEASE = string.split(os.uname()[2],"(")[0]
-OSVER = OS+RELEASE
+        OSVER = OS+string.split(os.uname()[2],"(")[0]
 os.environ['OS'] = OS
 os.environ['OSVER'] = OSVER
 
@@ -1922,12 +1905,6 @@ def main(argv) :
             bp = bp+os.pathsep+os.environ['PATH']
         os.environ['PATH'] = bp
 
-    if env.has_key('SQL_PREFIX'):
-        bp = os.path.join(env['SQL_PREFIX'],"bin")
-        if os.environ.has_key('PATH'):
-            bp = bp+os.pathsep+os.environ['PATH']
-        os.environ['PATH'] = bp
-
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         vars_ = vars + ['GDK_DEBUG', 'MONET_MOD_PATH']
@@ -2012,13 +1989,13 @@ def main(argv) :
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
+        mapi_mil = env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")
         if not os.path.isfile(mapi_mil):
             mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
-        sqlserver_mil = env['SQL_PREFIX']+path("/lib/MonetDB/sqlserver.mil")
+        sqlserver_mil = env['SQL_PREFIX']+path("/share/MonetDB/sqlserver.mil")
         if not os.path.isfile(sqlserver_mil):
             sqlserver_mil = env['TSTBLDBASE']+path("/src/server/sqlserver.mil")
             if not os.path.isfile(sqlserver_mil):
@@ -2227,11 +2204,8 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
-        Failure = [0,0,0,0]
-        for TSTDIR,TST,tt,Ft in TIMES:
+        for TSTDIR,TST,tt in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+"\n")
-            if TST != '':
-                Failure[Ft] += 1 
         fl.write(":\t%7.3f\n" % t_)
         fl.close()
 
@@ -2242,29 +2216,21 @@ def main(argv) :
 
         test = ( re.compile("^.*<B><I>.*$", re.MULTILINE)
                , re.compile("^.*<B>.*$", re.MULTILINE) )
-        Failed = 0
-        for f in Failure[1:]:
-            Failed += f
-        num_tests = 0
-        for f in Failure:
-            num_tests += f
+        failed = 0
         how = ""
-        what = ""
-        if Failure[-1]:
-            what += "  %3d out of %3d tests could not be executed\n" % (Failure[-1],num_tests)
-        if Failure[1]:
-            how = "slightly"
-            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[1],num_tests,how)
-        if Failure[2]:
-            how = "SIGNIFICANTLY"
-            what += "  %3d out of %3d tests produced %s different output\n" % (Failure[2],num_tests,how)
+        for l in fileinput.input(os.path.join(env['TSTTRGBASE'],TSTPREF,"index.head.html")):
+            if   failed<2 and test[0].match(l):
+                failed = 2
+                how = "SIGNIFICANTLY"
+            elif failed<1 and test[1].match(l):
+                failed = 1
+                how = "slightly"
         STDERR.flush()
-        if Failed:
+        if failed:
             print """\
 
  !ERROR:  Testing FAILED %s ! 
 
-%s
  First, check the testing results in  %s  ! 
 
  Then, fix the problems by: 
@@ -2273,7 +2239,7 @@ def main(argv) :
   - approving test output by Mapprove.py (cf. Mapprove.py -?) 
 
  After that, re-run Mtest. 
-""" % (how, what, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
+""" % (how, os.path.join(env['TSTTRGBASE'],TSTPREF,"index.html"))
             sys.exit(1)
         else:
             print """\

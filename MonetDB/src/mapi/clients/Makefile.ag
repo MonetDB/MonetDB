@@ -55,24 +55,17 @@ BINS = {
 		../../common/libmutils ../../common/libstream
 }
 
-scripts_py = {
+scripts_mapi = {
 	DIR = bindir
-	SOURCES = Mshutdown.py.in MapiClient.py.in
+	SOURCES = Mshutdown.py.in MapiClient.py.in Mshutdown.py.bat MapiClient.py.bat
 }
 
-scripts_bat = {
-	DIR = bindir
-	SOURCES = Mshutdown.py.bat MapiClient.py.bat
-}
-
-scripts_perl = {
-	EXT = pl pm
+scripts_pl = {
 	DIR = pkgdatadir/site_perl
 	SOURCES = Mapi.pm MapiClient.pl
 }
 
-scripts_python = {
-	EXT = py
+scripts_py = {
 	DIR = pkgdatadir/python
 	SOURCES = Mapi.py
 }

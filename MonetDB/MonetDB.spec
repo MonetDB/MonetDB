@@ -105,7 +105,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/lib/MonetDB/*.so* 
 %{prefix}/lib/MonetDB/*.la* 
 
-%{prefix}/lib/MonetDB/mapi.mil 
+%{prefix}/share/MonetDB/mapi.mil 
 %{prefix}/share/MonetDB/tools/* 
 
 %files devel

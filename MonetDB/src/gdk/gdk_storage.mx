@@ -56,7 +56,6 @@ extern void DESCclean(BAT*);
 #include "gdk.h"
 #include <stdlib.h>
 #include "gdk_storage.h"
-#include "gdk_compress.h"
 @}
 
 @
@@ -234,7 +233,10 @@ The mode is either STORE_COMPR, STORE_MMAP, or STORE_MEM.
 The mode indicates the disk-layout and the intended mapping.
 The primary concern here is to handle STORE_MMAP and STORE_MEM.
 @c
-int GDKsave(str nme, str ext, void *buf, size_t size, int mode) { 
+extern int compress   (str buf, str end, FILE* fp);
+extern int decompress (FILE* fp, str dst);
+
+int GDKsave(str nme, str ext, str buf, size_t size, int mode) { 
 	int fd = -1, err = 0;
 	FILE *fp = NULL; 
 
@@ -253,20 +255,19 @@ at commit-time.
 		err = MT_msync(buf, size, MMAP_ASYNC);
 		if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-		IODEBUG THRprintf(GDKerr, "MT_msync(buf %lu, size %lu, MMAP_ASYNC) = %d\n", 
-			(unsigned long) buf, (unsigned long) size, err);
+		IODEBUG THRprintf(GDKerr, "MT_msync(buf %ld, size %ld, MMAP_ASYNC) = %d\n", 
+							(long) buf, (long) size, err);
 	} else if (mode == STORE_COMPR) {
 		char extension[PATHLENGTH];
         	sprintf(extension, "%s.Z", ext); 
 		if ((fp = GDKfilelocate(nme, "wb", extension)) != NULL) {
-	                if (compress((char_type *) buf, (char_type *) buf + size, fp) <  0) { 
+	                if (compress((char *) buf, ((char *) buf) + size, fp) <  0) { 
 				err = -1;
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "compress(buf %lu, size %lu, fd %d) = %d\n", 
-				(unsigned long) buf, (unsigned long) size,
-				fileno(fp), err);
+			IODEBUG THRprintf(GDKerr, "compress(buf %ld, size %ld, fd %d) = %d\n", 
+							(long) buf, (long) size, fileno(fp), err);
 	       	}  else {
 			err = -1;
 		}
@@ -277,9 +278,8 @@ at commit-time.
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
 				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "fwrite(buf %lu, size %lu, fd %d) = %d\n", 
-				(unsigned long) buf, (unsigned long) size,
-				fd, err);
+			IODEBUG THRprintf(GDKerr, "fwrite(buf %ld, size %ld, fd %d) = %d\n", 
+							(long) buf, (long) size, fd, err);
 	       	}  else {
 			err = -1;
 		}
@@ -307,8 +307,8 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 	int 	fd = -1;
 	ssize_t	n;
 	size_t	n_expected = 0; 
-	int	varsize = mode & STORE_VARSIZE;
-	int	store = mode & STORE_MODEMASK;
+	int	varsize = mode&256;
+	int	store = mode&255;
 	FILE*	fp = NULL;
 
 	IODEBUG {
@@ -361,7 +361,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 	if ((n = (ssize_t) n_expected) != 0 && fd < 0 && fp == NULL) { 
 	if ((fp = GDKfilelocate(nme, "rb", extension)) != NULL) {
 	    buf = (char *) GDKmalloc(chunk); 
-	    n = (ssize_t) (size - decompress(fp, (char_type *) buf));
+	    n = (ssize_t) (size - decompress(fp, buf)); 
 	} else {
        	    GDKsyserror("GDKload: cannot access: name=%s, extension=%s\n", nme,extension);
 	    return 0; 
@@ -713,7 +713,7 @@ BAT *BATload_intern(bat i) {
 
 BAT *BATload(str nme) {
 	str s = strrchr(nme,DIR_SEP);
-	bat i = BBPindex(s?s+1:nme);
+	int i = BBPindex(s?s+1:nme);
 	BAT *b = BBP_cache(i);
 
 	if (i==0 || b != NULL) {
@@ -1061,10 +1061,7 @@ Init the column descriptors of the tail columns.
         for(j=0; j < argc; j++, total += c[j].tabs) {
 	    cp[j+1] = c+(j+1);
             c[j+1].format = printfcn(argv[j]);
-	    if( (argc==1) || !(strcmp(argv[j]->tident,"t") && strcmp(argv[j]->tident,"h")) )
             c[j+1].tabs = print_tabwidth(argv[j], batname(argv[j]), c+(j+1));
-	    else
-            c[j+1].tabs = print_tabwidth(argv[j], argv[j]->tident, c+(j+1));
             value_fcn[j+1] = (ColFcn) print_format;
         }
         total = 2+(total*8);

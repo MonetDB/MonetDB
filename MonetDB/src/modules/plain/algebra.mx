@@ -36,8 +36,6 @@ values as parameters, and produce new result values, but
 @* Module Definition 
 @m
 .MODULE algebra;
-
-.USE uchr;
 @
 We split between selections that return one value, and selections 
 that return a BAT.
@@ -385,7 +383,7 @@ Implementations a generic Min and Max routines get declared first. The
 {\tt min()} and {\tt max()} routines below catch any tail-type. 
 The type-specific routines defined later are faster, and will 
 override these any implementations.
-
+@c
 @- minimum tail value
 @m
 .COMMAND min ( BAT[any::1,any::2] b ) 	
@@ -399,7 +397,7 @@ Give the lowest tail value. Error on empty BATs."
 Give the highest tail value. Error on empty BATs."
 @+ Type-Specific Sum, Max and Min
 @T
-For X $\in$ \{ uchr,sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
+For X $\in$ \{ sht,int,flt,dbl,lng \},  we define (using the {\em aggregate}
 macro):
 \begin{itemize}
 \item .COMMAND sum(BAT[any,X] : X, 
@@ -407,55 +405,38 @@ macro):
 \item .COMMAND min(BAT[any,X] : X. 
 \end{itemize}
 @m
-@:sum(sum,"Gives the sum of all tail values.")@
-@= sum_definition
-.COMMAND @1_@4 ( BAT[any,@2] ) : @4 = CMD@1_@2_@4; @3
-@= sum
-@:sum_definition(@1,uchr,@2,uchr)@
-@:sum_definition(@1,uchr,@2,sht)@
-@:sum_definition(@1,uchr,@2,int)@
-@:sum_definition(@1,uchr,@2,lng)@
-@:sum_definition(@1,sht,@2,sht)@
-@:sum_definition(@1,sht,@2,int)@
-@:sum_definition(@1,sht,@2,lng)@
-@:sum_definition(@1,int,@2,int)@
-@:sum_definition(@1,int,@2,lng)@
-@:sum_definition(@1,lng,@2,lng)@
-@:sum_definition(@1,flt,@2,flt)@
-@:sum_definition(@1,flt,@2,dbl)@
-@:sum_definition(@1,dbl,@2,dbl)@
-@m
+@:aggregate(sum,"Gives the sum of all tail values.")@
 @:aggregate(max,"Give the highest tail value. Error on empty BATs.")@
 @:aggregate(min,"Give the lowest tail value. Error on empty BATs.")@
+
 @= aggregate_definition
 .COMMAND @1 ( BAT[any,@2] ) : @2 = CMD@1_@2; @3
 @= aggregate
-@:aggregate_definition(@1,uchr,@2)@
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
 @:aggregate_definition(@1,flt,@2)@
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
-@m
-.END algebra;
 
 @* MIL definitions
+@m
+.LOAD
 @- constants for theta() and thetajoin()
-@mil
+@m
 CONST EQ := 0;
 CONST LT := -1;
 CONST LE := -2;
 CONST GT := 1;
 CONST GE := 2;
 
-    PROC ADDHELP(str cmd, str aut, str dat, str hlp, str modname) : void {
+    PROC ADDHELP(str cmd, str aut, str dat, str hlp, str mod) : void {
         #VAR fid := monet_fcn_nme.reverse.find(cmd);
         #VAR fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.find(cmd);
         VAR fid := monet_fcn_nme.select(cmd).kdiff(monet_fcn_aut).reverse.min;
         monet_fcn_dsc.insert(fid, hlp);
         monet_fcn_aut.insert(fid, aut);
         monet_fcn_dat.insert(fid, dat);
-	monet_fcn_mid.insert(fid, monet_mod_nme.reverse.find(modname));
+	monet_fcn_mid.insert(fid, monet_mod_nme.reverse.find(mod));
     }
 
     ADDHELP("ADDHELP", "boncz", "Feb  6 1996",
@@ -469,7 +450,7 @@ CONST GE := 2;
 @- new MIL procedures
 The MIL described in the journal paper needs the below constructs
 that for the moment are defined as procs.
-@mil 
+@m
     PROC semijoin(bat[any::1,any::2] l, bat[any::1,any] r) : bat[any::1,any::2] 
  		return kintersect(l,r);
     ADDHELP("semijoin", "boncz", "Nov  1 1998",
@@ -718,12 +699,8 @@ that for the moment are defined as procs.
             "sorts a BAT according to its head (primary) and tail values (secondary).\
              (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
 
-    proc sum( bat[any,uchr] b ) : uchr { return sum_uchr(b); }
-    proc sum( bat[any,sht] b )  : sht  { return sum_sht(b); }
-    proc sum( bat[any,int] b )  : int  { return sum_int(b); }
-    proc sum( bat[any,lng] b )  : lng  { return sum_lng(b); }
-    proc sum( bat[any,flt] b )  : flt  { return sum_flt(b); }
-    proc sum( bat[any,dbl] b )  : dbl  { return sum_dbl(b); }
+.END;
+.END algebra;
 
 @* Cost Model
 This module contains a full cost model on the algebraic 
@@ -940,139 +917,23 @@ echo "============== +"
 awk '{ a += $1 } END { print "TOTAL="a; }' < /tmp/$$
 rm /tmp/$$
 
-@+ BAT sum operation
-The sum aggregate only works for int and float fields.
-The routines below assumes that the caller knows what type
-is large enough to prevent overflow.
-
-@= sum_implementation
-int CMDsum_@1_@2(@2* res, BAT *b) {
-	BUN p,q;
-	int xx;
-	@2 result=@3;
-
-	BATcheck(b,"BATsumInt");
-	BATloopFast(b, p, q, xx) {
-		@1 *value = (@1*) BUNtloc(b, p);
-		if (*value == @1_nil) {
-			result = @2_nil; break;
-		} else {
-			result += *value;
-		}
-	}
-	*res = result;
-	return GDK_SUCCEED;
-}
-@h
-#ifndef ALGEBRA_H
-#define ALGEBRA_H
-
-#include "uchr.h"
-#include "algebra.proto.h"
-
-algebra_export ptr BATmax( BAT *b, ptr res );
-algebra_export ptr BATmin( BAT *b, ptr res );
-
-#endif
-@c
-#include "algebra.h"
-
-@+ Minimum and Maximum
-The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
-maximum value of the tail column of a BAT.
-Aggregate values are calculated just before they are requested by
-the user. They are not maintained continuously, because we expect
-them to be used sparsely.
+@* Command Implementations in C
+This module contains just a wrapper implementations; since all described 
+operations are part of the GDK kernel.
 
 @= aggregate_implementation
+int CMDsum_@1(@1* result, BAT *b) {
+	return BATsum(b, result)?GDK_SUCCEED:GDK_FAIL;
+}
 int CMDmin_@1(@1* result, BAT *b) {
 	return BATmin(b, result)?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDmax_@1(@1* result, BAT *b) {
 	return BATmax(b, result)?GDK_SUCCEED:GDK_FAIL;
 }
-@= atomaggr
-    if (s > 0 && !(BATtordered(b)&1)) {
-	char* nil = BATatoms[t].atomNull;
-	BUN p,q;
-	int xx;
-        BATloopFast(b, p, q, xx) {
-            x = (ptr) BUNt@2(b, p);
-            if (@3_CMP(x, nil, @4) == 0) {
-                v = nil; break;
-            }
-            if (@3_@5(x, v, @4)) {
-                v = x; 
-            }
-        }	
-    }
-    if (aggr) {
-       memcpy(aggr, x=v, ATOMsize(t));
-    } else {
-       /* alloc new space and copy the atom into it */
-       s = ATOMlen(t, v);
-       memcpy(x = (ptr) GDKmalloc(s), v, s);
-   } 
-@= voidaggr
-    if (aggr) {
-        *(oid *) aggr = *(oid *) (x=v);
-    } else {
-        /* alloc new space and copy the atom into it */
-        memcpy(x = (ptr) GDKmalloc(sizeof(oid)), v, s);
-    } 
-@= aggrmin
-    v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNfirst(b));
-    @:@5aggr(@1,@2,@3,@4,LT)@
-@= aggrmax
-    v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNlast(b)-BUNsize(b));
-    @:@5aggr(@1,@2,@3,@4,GT)@
-
-@= BATaggr
-ptr BAT@1(BAT *b, ptr aggr) {
-	int t;
-	size_t s; 
-	ptr v, x;
-
-	BATcheck(b, "BAT@1"); 
-	s = BATcount(b);	
-	t = b->ttype;
-	if (BATtvoid(b)) {
-	    @:aggr@1(chr,loc,simple,chr,void)@ 
-	} else {
-	    switch(ATOMstorage(t)) {
-	    case TYPE_chr: @:aggr@1(uchr,loc,simple,uchr,atom)@ break;
-	    case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
-	    case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
-	    case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
-	    case TYPE_dbl: @:aggr@1(dbl,loc,simple,dbl,atom)@ break;
-	    case TYPE_lng: @:aggr@1(lng,loc,simple,lng,atom)@ break;
-	    default: if (b->tvarsized) {
-			   @:aggr@1(chr,var,atom,t,atom)@ break;
-		     } else {
-			   @:aggr@1(chr,loc,atom,t,atom)@ break;
-	    }        }
-	}
-	return x;
-}
 @c
-@:BATaggr(min)@
-@:BATaggr(max)@
+#include "gdk.h"
 
-@:sum_implementation(uchr,uchr,0)@
-@:sum_implementation(uchr,sht,0)@
-@:sum_implementation(uchr,int,0)@
-@:sum_implementation(uchr,lng,0)@
-@:sum_implementation(sht,sht,0)@
-@:sum_implementation(sht,int,0)@
-@:sum_implementation(sht,lng,0)@
-@:sum_implementation(int,int,0)@
-@:sum_implementation(int,lng,0)@
-@:sum_implementation(lng,lng,0)@
-@:sum_implementation(flt,flt,0.0)@
-@:sum_implementation(flt,dbl,0.0)@
-@:sum_implementation(dbl,dbl,0.0)@
-
-@:aggregate_implementation(uchr)@
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
 @:aggregate_implementation(flt)@
@@ -1087,7 +948,7 @@ int CMDminany(ptr result, BAT *b) {
 	    return (*(ptr*) result = BATmin(b, NULL))?GDK_SUCCEED:GDK_FAIL;
 	if (BATmin(b, result)) {
 	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(bat*) result);
+		*(BAT**) result = BATdescriptor(*(int*) result);
 	    return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
@@ -1100,17 +961,11 @@ int CMDmaxany(ptr result, BAT *b) {
 	    return (*(ptr*) result = BATmax(b, NULL))?GDK_SUCCEED:GDK_FAIL;
 	if (BATmax(b, result)) {
 	    if (b->ttype == TYPE_bat) 
-		*(BAT**) result = BATdescriptor(*(bat*) result);
+		*(BAT**) result = BATdescriptor(*(int*) result);
 	    return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
-
-@* Command Implementations in C
-This module contains just a wrapper implementations; since all described 
-operations are part of the GDK kernel.
-
-@c
 int CMDselect1(BAT **result, BAT* b, ptr value) {
 	return (*result = (BAT*) BATselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
 }
@@ -1301,8 +1156,9 @@ int CMDfetchbat(BAT** ret, BAT *b, BAT *s){
 	return (*ret = BATfetch(b, s))?GDK_SUCCEED:GDK_FAIL;
 }
 
-static int doCMDfetch(ptr ret, BAT *b, size_t i){
-        if (i >= BATcount(b)) {
+int CMDfetch(ptr ret, BAT *b, int *pos){
+	int i = *pos;
+        if ((i < 0) || ((size_t) i >= BATcount(b))) {
                 GDKerror("CMDfetch: idx out of range\n");
                 return GDK_FAIL;
         }
@@ -1310,7 +1166,7 @@ static int doCMDfetch(ptr ret, BAT *b, size_t i){
 	@:putTail(BUNptr(b,i))@
 @= putTail
 	if (b->theap.base) {
-	    ptr _src = BUNtvar(b,@1);/*b->theap.base + *(var_t*) BUNtloc(b,@1);*/
+	    ptr _src = b->theap.base + *(int*) BUNtloc(b,@1);
 	    int _len = ATOMlen(b->ttype, _src);
 	    ptr _dst = GDKmalloc(_len);
 	    memcpy(_dst, _src, _len);
@@ -1320,7 +1176,7 @@ static int doCMDfetch(ptr ret, BAT *b, size_t i){
 	    if (ATOMvarsized(b->ttype)) {
 		memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
 	    } else if (b->ttype == TYPE_bat) {
-		bat bid = *(bat*) BUNtloc(b, @1);
+		bat bid = *(int*) BUNtloc(b, @1);
 		*(BAT**) ret = BATdescriptor(bid);
 		BBPfix(bid);
 	    } else if (_s == 4) {
@@ -1339,16 +1195,13 @@ static int doCMDfetch(ptr ret, BAT *b, size_t i){
         return GDK_SUCCEED;
 }
 
-int CMDfetch(ptr ret, BAT *b, int *pos){
-	return doCMDfetch(ret, b, (size_t) *pos);
-}
-
 int CMDfetchoid(ptr ret, BAT *b, oid *pos){
+	int newpos = (int) (*pos - b->hseqbase);
 	if (b->hseqbase == oid_nil) {
                 GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
                 return GDK_FAIL;
         }
-	return doCMDfetch(ret, b, (size_t) (*pos - b->hseqbase));
+	return CMDfetch(ret, b, &newpos);
 }
 
 int CMDexist(bit *ret, BAT* b, ptr val){ 

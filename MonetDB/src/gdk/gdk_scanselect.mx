@@ -120,8 +120,8 @@ replacing their generic versions there.
 @h
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t) {\
-            @2put(@3, &(b)->hheap, BUNhloc(b, p), h);\
-            @5put(@6, &(b)->theap, BUNtloc(b, p), t);\
+            @2put(@3, &(b)->hheap, (int*) BUNhloc(b, p), h);\
+            @5put(@6, &(b)->theap, (int*) BUNtloc(b, p), t);\
 	}
 #define @1@4_bunfastins_nocheck(b, p, h, t, s) {\
             (b)->batBuns->free += s;\
@@ -178,31 +178,12 @@ Type-mappers for convenience
 @:HT_bunfastins_typemap(int,flt,int)@
 @:HT_bunfastins_typemap(lng,flt,int)@
 @:HT_bunfastins_typemap(any,flt,int)@
-@:HT_bunfastins_typemap(void,dbl,lng)@
-@:HT_bunfastins_typemap(chr,dbl,lng)@
-@:HT_bunfastins_typemap(sht,dbl,lng)@
-@:HT_bunfastins_typemap(int,dbl,lng)@
-@:HT_bunfastins_typemap(lng,dbl,lng)@
-@:HT_bunfastins_typemap(any,dbl,lng)@
-#if SIZEOF_OID == SIZEOF_INT
-@:HT_bunfastins_typemap(void,oid,int)@
-@:HT_bunfastins_typemap(chr,oid,int)@
-@:HT_bunfastins_typemap(sht,oid,int)@
-@:HT_bunfastins_typemap(int,oid,int)@
-@:HT_bunfastins_typemap(lng,oid,int)@
-@:HT_bunfastins_typemap(flt,oid,int)@
-@:HT_bunfastins_typemap(dbl,oid,int)@
-@:HT_bunfastins_typemap(any,oid,int)@
-#else
-@:HT_bunfastins_typemap(void,oid,lng)@
-@:HT_bunfastins_typemap(chr,oid,lng)@
-@:HT_bunfastins_typemap(sht,oid,lng)@
-@:HT_bunfastins_typemap(int,oid,lng)@
-@:HT_bunfastins_typemap(lng,oid,lng)@
-@:HT_bunfastins_typemap(flt,oid,lng)@
-@:HT_bunfastins_typemap(dbl,oid,lng)@
-@:HT_bunfastins_typemap(any,oid,lng)@
-#endif
+@:HT_bunfastins_typemap(void,dbl,int)@
+@:HT_bunfastins_typemap(chr,dbl,int)@
+@:HT_bunfastins_typemap(sht,dbl,int)@
+@:HT_bunfastins_typemap(int,dbl,int)@
+@:HT_bunfastins_typemap(lng,dbl,int)@
+@:HT_bunfastins_typemap(any,dbl,int)@
 @-
 For backward compatibility:
 (also to be move to gdk.mx and gdk_bat.mx, repectively)
@@ -267,13 +248,13 @@ Further, we need to set bn->batBuns->free only once we're done.
  * Parameter "str_idx" is only used to hand-over the integer index for
  * equi-str-selects.
  */
-BAT* seqscan_@1_@2_@3_@6_@7_nocheck_noinc (BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
+BAT* seqscan_@1_@2_@3_@6_@7_nocheck_noinc (BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, int str_idx)
 {
 	REGISTER BUN _p = BUNlast(bn);
 	REGISTER int _bunsize = BUNsize(bn);	
 	@:seqscanPrologue@
-	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=%ud, str_idx=%ul);\n",
-	                             b->batId, bn->batId, oid_ctr, (unsigned long) str_idx);
+	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7_nocheck_noinc[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=%ud, str_idx=%d);\n",
+	                             b->batId, bn->batId, oid_ctr, str_idx);
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);
 		@4 {
@@ -285,11 +266,11 @@ BAT* seqscan_@1_@2_@3_@6_@7_nocheck_noinc (BAT* b, BAT* bn, ptr tl, ptr th, oid 
 	bn->batBuns->free = _p - bn->batBuns->base;
 	@:seqscanEpilogue@
 }
-BAT* seqscan_@1_@2_@3_@6_@7 (BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_idx)
+BAT* seqscan_@1_@2_@3_@6_@7 (BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, int str_idx)
 {
 	@:seqscanPrologue@
-	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=%ud, str_idx=%ul);\n",
-	                             b->batId, bn->batId, oid_ctr, (unsigned long) str_idx);
+	ALGODEBUG THRprintf(GDKout, "seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=%ud, str_idx=%d);\n",
+	                             b->batId, bn->batId, oid_ctr, str_idx);
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);;
 		@4 {
@@ -480,7 +461,7 @@ Adding test for v != nil for types where nil != MIN.
 	@:DEFseqscanIF(flt,int,tloc,simple,flt,)@
 	@:DEFseqscanIF(dbl,lng,tloc,simple,dbl,)@
 	@:DEFseqscanIF(lng,lng,tloc,simple,lng,)@
-	@:DEFseqscanHTget(eq_str,any,tloc,if (*(var_t*)v == str_idx),tl)@
+	@:DEFseqscanHTget(eq_str,any,tloc,if (*(int*)v == str_idx),tl)@
 	@:DEFseqscanIF(fix,any,tloc,atom,t,&& !atom_EQ(nil,v,t))@
 	@:DEFseqscanIF(var,any,tvar,atom,t,&& !atom_EQ(nil,v,t))@
 @= seqscanTTget
@@ -505,7 +486,7 @@ Adding test for v != nil for types where nil != MIN.
 			 * This is an equi select, so we assemble the
 			 * predicate here and skip seqscanIF. */
 			str_idx = strLocate(&b->theap, tl);
-			@:seqscanHTget(eq_str,any,tloc,if ((*(var_t*)v) == str_idx),tl)@
+			@:seqscanHTget(eq_str,any,tloc,if ((*(int*)v) == str_idx),tl)@
 		} else {
 			@:seqscanIF(var,any,tvar,atom,t,&& !atom_EQ(nil,v,t))@
 		}
@@ -524,8 +505,7 @@ The dispatcher, called from BAT_select (gdk_batop.mx).
 
 @c
 BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi, int lval, int hval, int nocheck) {
-        int AsHt = ATOMstorage(bn->htype), t = b->ttype, AsTt = ATOMstorage(t);
-	var_t str_idx = 0;
+        int AsHt = ATOMstorage(bn->htype), t = b->ttype, AsTt = ATOMstorage(t), str_idx = 0;
 	oid oid_ctr = (oid)0;
 
 	@:seqscanTTget@

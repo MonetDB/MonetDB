@@ -255,14 +255,30 @@ int interpret_file(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 	ptr = res->val.sval;
         CNTXTclient(stk, &c);
-
-	buf = monet_load_script(ptr, NULL);
-	if (buf){
-        	i = interpret_str(stk, buf, res);
-        	GDKfree(buf);
-	} else {
-		i = -1;
-	}
+@-
+Open the scriptfile.
+@c
+        if ((fd = fopen(ptr, "r")) == 0) {
+                GDKerror("interpret_file: could not open file: %s\n", ptr);
+                return -1;
+        }
+@-
+Read the entire file, realloc if necessary.
+@c
+        i = 0; len = totlen = 8192;
+        ptr = buf = (char *) GDKmalloc(totlen);
+ 
+        while((i+=fread(ptr, 1, len , fd)) == totlen) {
+                len = totlen; totlen *= 2;
+                ptr = GDKmalloc(totlen);
+                memcpy(ptr, buf, len);
+                GDKfree(buf);
+                buf = ptr; ptr += len;
+        }
+        fclose(fd);
+        buf[i] = 0;
+        i = interpret_str(stk, buf, res);
+        GDKfree(buf);
         return i;
 }
 
@@ -544,7 +560,7 @@ They are able to produce new values in the process. The deallocation
 primitives CATCH* look after garbage collecting these results.
 @c
 	case TOK_BUILTIN:
-	{	int (*imp)(Cntxt, YYSTREE, ValPtr) = (int (*)(Cntxt, YYSTREE, ValPtr)) lt->yyval.val.pval;
+	{	int (*imp)() = (int (*)()) lt->yyval.val.pval;
 		res->vtype = TYPE_void;
     		res->val.oval = void_nil;
 		stamp = BBPcurstamp();	
@@ -1105,7 +1121,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 			}
 		    } else if (tpe != TYPE_str) {
 			/* str => any: use fromstr ADT routine */
-			int (*fromstr)(str, int*, ptr*) = BATatoms[tpe].atomFromStr;
+			int (*fromstr)() = BATatoms[tpe].atomFromStr;
 			BATloopFast(b,p,q,xx) {
 			    /* nil str value will produce a nil atom value */
 			    (*fromstr)(BUNtvar(b,p), &len, &v);
@@ -1121,13 +1137,13 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 			}
 		    } else {
 			/* any => str: use tostr ADT routine */
-			int (*tostr)(str*,int*,ptr) = BATatoms[b->ttype].atomToStr;
-			int (*cmp)(ptr,ptr) = BATatoms[b->ttype].atomCmp;
+			int (*tostr)() = BATatoms[b->ttype].atomToStr;
+			int (*cmp)() = BATatoms[b->ttype].atomCmp;
 			ptr nilptr = ATOMnilptr(b->ttype);
 			BATloopFast(b,p,q,xx) {
 			    ptr t = BUNtail(b,p);
 			    if ((*cmp)(t, nilptr)) {
-			    	(*tostr)((str*)&v, &len, t);
+			    	(*tostr)(&v, &len, t);
 			    	BUNfastins(bn, BUNhead(b,p), v);
 			    } else {
 			    	BUNfastins(bn, BUNhead(b,p), str_nil);
@@ -1515,7 +1531,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 	ITrecord *handle;
 	YYSTREE	params = lt->yysons[1];
 	YYSTREE	body = lt->yysons[0];
-	int	argc, i, ht, tt, (*cmd)(int, ValRecord *);
+	int	argc, i, ht, tt, (*cmd)();
 
 	/* Deeper contexts get reused across iterations.
 	 */
@@ -1541,7 +1557,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 	 */
 		char *name = lt->yyval.val.sval;
 		/* Try all iterators by that name.  */	
-		if (!(cmd = (int (*)(int, ValRecord *)) TBL_iterator(stk, name, argc+1, argv))) {
+		if (!(cmd = (int (*)()) TBL_iterator(stk, name, argc+1, argv))) {
 			char *signatures = (char*) alloca(8192);
 			if (name) TBL_printsigs(signatures, stk, name);
 			monet_sigerror("iterator", name?name:"name unknown",  
@@ -1563,7 +1579,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 		handle->parmax = handle->parcap = 0;
 	} else {
 		handle = (Iteration) lt->yysons[1]->yyval.val.pval;
-		cmd = (int(*)(int, ValRecord *)) lt->yyval.val.pval;
+		cmd = (int(*)()) lt->yyval.val.pval;
 	}
 
 	/* Fill in handle according to current circumstances 

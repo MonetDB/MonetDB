@@ -195,10 +195,38 @@ Some explanation of what mem_usage() and vm_usage() display:
 .COMMAND format_fcn_sig(oid) : str = format_fcn_sig;
 	"print a function signature"
 
-.END sys;
+@- Printing 
+@m
+.COMMAND print(ANY value) = CMDprint_val;
+"Print a MIL value between square brackets."
+
+.COMMAND print(BAT[ANY::1,ANY], ...BAT[ANY::1,ANY]...) = CMDprint_table;
+ "BATs are printed with '#' for legend lines, and the BUNs on seperate
+ lines between brackets, containing each to comma separated values
+ (head and tail).
+ If multiple BATs are passed for printing, print() performs an implicit
+ natural join, producing a multiattribute table."
+
+.COMMAND print(INT order, BAT[ANY::1,ANY], ...BAT[ANY::1,ANY]...)
+                                                = CMDprint_otable;
+ "The same as normal table print, but enforces to use the order of
+  BAT number [1..argc] to do the printing."
+
+.COMMAND table(BAT[any::1,any], ...BAT[any::1,any]...) = print_table_default;
+	"Print an n-ary table. Like print(n-ary) but does not print oid column"
+
+.COMMAND table(INT order, BAT[any::1,any], ...BAT[any::1,any]...) = print_table;
+	"Print an n-ary table. Use the ordering of param [1..argc]"
+
+.COMMAND printf(str format, ...) = print_format;
+	"Print a formatted string on the standard client output." 
+
+.COMMAND sprintf(str format, ...) : str = print_str;
+	"Print a formatted string on the standard client output." 
 
 @+ MIL Procedure definitions
-@mil
+@m
+.LOAD
 
     PROC help_tpe(int tpe) : str := {
 	IF (tpe = TOK_PROC) RETURN "PROC:      ";
@@ -214,11 +242,8 @@ Some explanation of what mem_usage() and vm_usage() display:
 	printf("%s%s\n",
             help_tpe(monet_fcn_tpe.find(fid)), format_fcn_sig(fid));
 	if (monet_fcn_mid.exist(fid)) {
-            VAR mn := monet_mod_nme.find(monet_fcn_mid.find(fid));
-            if (mn.startsWith("_")) {
-                mn := string(mn,1);
-            }
-	    printf("MODULE:    %s\n", mn);
+	    printf("MODULE:    %s\n",
+                monet_mod_nme.find(monet_fcn_mid.find(fid)));
         }
 	if (and(monet_fcn_aut.exist(fid), monet_fcn_dat.exist(fid))) {
 	    printf("COMPILED:  by %s on %s\n",
@@ -264,27 +289,15 @@ Some explanation of what mem_usage() and vm_usage() display:
     ADDHELP("modules", "boncz", "Aug 14 1997",
 	"list all installed modules, plus owner and db restrictions", "sys"); 
 	
-    PROC loaded() : void := table(1,
-	monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)).reverse.sort.reverse.col_name("module"), 
-	monet_mod_cnt.copy.col_name("usage_count"));
+    PROC loaded() : void := table(1,monet_mod_nme.reverse.sort.reverse.col_name("module"), 
+			     monet_mod_cnt.copy.col_name("usage_count"));
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
 	"list all loaded modules, and the number of active users.", "sys"); 
 
     PROC sigs(str modname) : void := {
-	var modname2;
-	if (modname.startsWith("_")) {
-	    modname2 := string(modname,1);
-	} else {
-	    modname2 := "_" + modname;
-	}
 	if (monet_mod_nme.reverse.exist(modname)) {
 	    var o := monet_mod_nme.reverse.find(modname);
-	    var m := monet_fcn_mid.uselect(o);
-	    if (monet_mod_nme.reverse.exist(modname2)) {
-	    	o := monet_mod_nme.reverse.find(modname2);
-	    	m := union(m,monet_fcn_mid.uselect(o));
-	    }
-	    var b := [format_fcn_sig](m.reverse);
+	    var b := [format_fcn_sig](monet_fcn_mid.uselect(o).reverse);
 	    table(1,b.reverse.sort.reverse.col_name("signature"));
 	} else if ([module_name](view_modules).reverse.exist(modname)) {
   	    ERROR("sigs: must load module first.\n");
@@ -438,6 +451,9 @@ Some explanation of what mem_usage() and vm_usage() display:
     PROC mem_usage(int minsize) : BAT[str,lng] return mem_usage(lng(minsize));
     PROC vm_usage(int minsize) : BAT[str,lng] return vm_usage(lng(minsize));
 
+.END;
+.END sys;
+
 @{
 @* Implementation Code
 @h
@@ -471,6 +487,12 @@ Some explanation of what mem_usage() and vm_usage() display:
  
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)
+
+static char* local_itoa(int i){
+        static char buf[32];
+        sprintf(buf,"%d",i);
+        return buf;
+}
 
 @+ BBP status
 The BAT buffer pool datastructures describe the memory resident information
@@ -707,7 +729,7 @@ view_bbp_lrefcnt(
 		BUNins(b, &i, &lrefcnt);
 	}}
 	BBPunlock("view_bbp_lrefcnt");
-	@:Pseudo(bbp,lrefcnt)@
+	@:Pseudo(bbp,plevel)@
         return GDK_SUCCEED;
 }
 
@@ -1019,8 +1041,8 @@ Note that in multi threaded mode the routine prints the elapsed
 time since the beginning of each process.
 @{
 @c
+static int clk = 0;
 #ifndef NATIVE_WIN32
-static time_t clk = 0;
 static struct tms state;
 #endif
 
@@ -1040,7 +1062,7 @@ int view_gdk_cpu(BAT **retval) {
 	}
 	times(&newst);
 	/* store counters, ignore errors */
-	i = (int) (time(0) - clk);
+	i = time(0) - clk;
 	b = BUNins(b, "elapsed", &i);
 	i= newst.tms_utime *1000/HZ ;
 	b = BUNins(b, "user", &i);
@@ -1084,15 +1106,15 @@ int view_gdk_mem(BAT **retval) {
  
 	memincr = MT_heapcur();
 	b = BUNins(b, "memincr", &i);
-	i = m.arena; b = BUNins(b, "arena", &i);
-	i = m.ordblks; b = BUNins(b, "ordblks", &i);
-	i = m.smblks; b = BUNins(b, "smblks", &i);
-	i = m.hblkhd; b = BUNins(b, "hblkhd", &i);
-	i = m.hblks; b = BUNins(b, "hblks", &i);
-	i = m.usmblks; b = BUNins(b, "usmblks", &i);
-	i = m.fsmblks; b = BUNins(b, "fsmblks", &i);
-	i = m.uordblks; b = BUNins(b, "uordblks", &i);
-	i = m.fordblks; b = BUNins(b, "fordblks", &i);
+	b = BUNins(b, "arena", &m.arena);
+	b = BUNins(b, "ordblks", &m.ordblks);
+	b = BUNins(b, "smblks", &m.smblks);
+	b = BUNins(b, "hblkhd", &m.hblkhd);
+	b = BUNins(b, "hblks", &m.hblks);
+	b = BUNins(b, "usmblks", &m.usmblks);
+	b = BUNins(b, "fsmblks", &m.fsmblks);
+	b = BUNins(b, "uordblks", &m.uordblks);
+	b = BUNins(b, "fordblks", &m.fordblks);
 	@:Pseudo(gdk,mem)@
 	return GDK_SUCCEED;
 }
@@ -1134,7 +1156,7 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, n=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
-	bat i;
+	int i;
 
 	BBPlock("get_mem_usage");
 	for(i=1; i <BBPsize; i++) { 
@@ -1207,7 +1229,7 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 	lng buns=0, hhsh=0, thsh=0, hind=0, tind=0, head=0, tail=0, hacc=0, tacc=0, tot=0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
 	char buf[1024];
-	bat i;
+	int i;
 
 	BBPlock("get_vm_usage");
 	for(i=1; i <BBPsize; i++) {
@@ -1335,8 +1357,7 @@ int view_gdk_bbp(BAT **retval) {
 	int 	pbat = 0;
 	int	pdisk = 0;
 	int	pheat = 0; 
-	bat	i;
-	int	tmp=0,per=0; 
+	int	i,tmp=0,per=0; 
 	BAT	*b;
 
 	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
@@ -1363,6 +1384,108 @@ int view_gdk_bbp(BAT **retval) {
 	b = BUNins(b, "fromdisk", &BBPin);
 
 	@:Pseudo(gdk,bbp)@
+	return GDK_SUCCEED;
+}
+
+@+ Printing
+@c
+int CMDprint_val(ptr val, int tpe) {
+        stream *fp = GDKout;
+        fp->write(fp, "[ ", 2, 1);
+        ATOMprint(tpe, val, fp);
+        fp->write(fp, " ]\n", 3, 1);
+        return GDK_SUCCEED;
+}
+
+int CMDprint_bats(int argc, BAT *argv[], int order) {
+        stream *fp = GDKout;
+        BATmultiprintf(fp, argc+1, argv, TRUE, order);
+        return GDK_SUCCEED;
+}
+
+int CMDprint_otable(int *order, ...) {
+        BAT *b, *piv[MAXPARAMS];
+        int nbats = 0;
+        va_list ap;
+
+        va_start(ap,order);
+        while((b = va_arg(ap, BAT*)) != NULL) {
+                piv[nbats++] = b;
+        }
+        return CMDprint_bats(nbats, piv, *order);
+}
+
+int CMDprint_table(BAT* b, ...) {
+        BAT *piv[MAXPARAMS];
+        int nbats = 0;
+        va_list ap;
+
+        va_start(ap,b);
+	if (!b)
+		return GDK_FAIL;
+        do {
+                piv[nbats++] = b;
+        } while((b = va_arg(ap, BAT*)) != NULL);
+        return CMDprint_bats(nbats, piv, 0);
+}
+
+int print_format(str format, ...) {
+	va_list ap;
+	int ret; 
+	str s; 
+
+	va_start(ap,format);
+	ret = monet_sprintf(&s, format, ap);
+	va_end(ap);
+	if (ret == GDK_FAIL) {
+		return GDK_FAIL;
+	}
+	ret = GDKout->write(GDKout, s, strlen(s), 1);
+	GDKfree(s);
+ 	if (ret < 0) {
+		GDKsyserror("printf():");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int print_str(str *s, str format, ...) {
+	va_list ap;
+	int ret; 
+
+	va_start(ap,format);
+	ret = monet_sprintf(s, format, ap);
+	va_end(ap);
+	return ret;
+}
+
+
+int print_table(int *order, ...) {
+	BAT *piv[MAXPARAMS];
+	int argc = 0;
+	va_list ap;
+
+        va_start (ap, order);
+        do {
+		piv[argc] = va_arg (ap,BAT*) ;
+	} while(piv[argc++]);
+        va_end (ap);
+	BATmultiprintf(GDKout, argc, piv, FALSE, *order);
+	return GDK_SUCCEED;
+}
+
+int print_table_default(BAT *b, ...) {
+	BAT *piv[MAXPARAMS];
+	int argc = 1;
+	va_list ap;
+
+	piv[0] = b;
+        va_start (ap, b);
+        do {
+		piv[argc] = va_arg (ap,BAT*) ;
+	} while(piv[argc++]);
+        va_end (ap);
+	BATmultiprintf(GDKout, argc, piv, FALSE, 0);
 	return GDK_SUCCEED;
 }
 

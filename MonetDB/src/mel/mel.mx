@@ -47,7 +47,6 @@ for the syntax and semantics of the MEL module specification language.
                -use      * Use list generation            		     
                -L     	 * List needed for linking used modules            	
                -glue     * generation of code to glue this module to Monet
-	       -mil	 * generation of mil module load code
 \end{verbatim}
 @T
 Extending Monet involves several steps. 
@@ -105,7 +104,7 @@ consists also of syntac and semantic checks. If the parser ends without
 errors a backend is started.
 
 The frontend started depends on options given to the command. Currently
--html, -glue, -proto, -depend, -mil, -use and -L are supported. 
+-html, -glue, -proto, -depend, -use and -L are supported. 
 
 Foreach mel keyword a c++ class is constructed which holds the properties
 of the statement. These classes inherit from the symbol class so they
@@ -243,7 +242,6 @@ using namespace std;
 #include "proto.h"
 #include "html.h"
 #include "glue.h"
-#include "mil.h"
 
 int   parse_error = 0;        /* number of parse errors. */
 int   sem_error = 0;          /* number of semantic errors. */
@@ -314,7 +312,6 @@ void usage( char *prg ){
 	cerr << "\t -use      /* Use list generation                 */\n";
 	cerr << "\t -L        /* Link information                    */\n";
 	cerr << "\t -glue     /* generation of code to glue this mel module to Monet */\n";
-	cerr << "\t -mil      /* generation of mil module load code */\n";
 }
 
 int handle_args( int argc, char *argv[] ){
@@ -353,9 +350,6 @@ int handle_args( int argc, char *argv[] ){
 			  } else {
 			     outfile = strdup(argv[i]+2);
 			  }
-			  break;
-		case 'm':
-			  l = new mil();
 			  break;
 		case 'p':
 			  l = new proto();

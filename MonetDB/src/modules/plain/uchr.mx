@@ -54,25 +54,6 @@ The uchr atom is just a chr but uses numerical string representations.
 typedef unsigned char uchr;
 
 #include "uchr.proto.h"
-#define uchr_nil chr_nil
-@-
-Type-mappers for convenience
-@= HT_bunfastins_typemap
-#define @1@2_bunfastins_nocheck_noinc(b, p, h, t) @1@3_bunfastins_nocheck_noinc(b, p, h, t)
-#define @1@2_bunfastins_nocheck(b, p, h, t, s)    @1@3_bunfastins_nocheck(b, p, h, t, s)
-#define @1@2_bunfastins(b, h, t) @1@3_bunfastins_nocheck_noinc(b, h, t)
-#define @2@1_bunfastins_nocheck_noinc(b, p, h, t) @3@1_bunfastins_nocheck_noinc(b, p, h, t)
-#define @2@1_bunfastins_nocheck(b, p, h, t, s)    @3@1_bunfastins_nocheck(b, p, h, t, s)
-#define @2@1_bunfastins(b, h, t) @3@1_bunfastins_nocheck_noinc(b, h, t)
-@h
-@:HT_bunfastins_typemap(void,uchr,chr)@
-@:HT_bunfastins_typemap(oid,uchr,chr)@
-@:HT_bunfastins_typemap(chr,uchr,chr)@
-@:HT_bunfastins_typemap(sht,uchr,chr)@
-@:HT_bunfastins_typemap(int,uchr,chr)@
-@:HT_bunfastins_typemap(lng,uchr,chr)@
-@:HT_bunfastins_typemap(any,uchr,chr)@
-
 #endif
 @c
 #include "uchr.h"
@@ -132,8 +113,5 @@ int uchr_tostr(char **uchrStr, int *len, uchr *c) {
 	return 4;
 }
 @mil
-
-PROC test_uchr() : void := {
-  var b := new(int, uchr);
-  b.insert(1,uchr(1));
-}
+var b := new(int, uchr);
+b.insert(1,uchr(1));

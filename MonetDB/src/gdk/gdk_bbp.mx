@@ -145,7 +145,7 @@ gdk_export int  BBPfix       (bat b);
 gdk_export int  BBPunfix     (bat b);
 gdk_export int BBPpersistent(bat b, int pers); 
 gdk_export int BBPtransient (bat b, int trans);
-gdk_export void BATpersistent(void *dummy, var_t *d2, bat *b);
+gdk_export void BATpersistent(void *dummy, int *d2, bat *b);
 gdk_export void BATtransient (void *dummy, bat *b);
 gdk_export void BBPshare     (bat b);
 gdk_export void BBPunshare   (bat b);
@@ -166,9 +166,11 @@ initially. New slots in the BBP are found at O(1) by keeping a freelist
 that uses the 'next' field in the BBPrec records.
 @c
 BBPrec*		BBP = NULL;		/* fixed base VM address of BBP array */
-bat 		BBPmaxsize=BBPMAXSIZE;  /* size of non-commited VM BBP array */ 
-bat 		BBPlimit = 0;		/* current committed VM BBP array */
-bat		BBPsize = 0;		/* current used size of BBP array */ 
+/* the following variables are of type "int"; the values must be
+   compatible with the type "bat" */
+int 		BBPmaxsize=BBPMAXSIZE;  /* size of non-commited VM BBP array */ 
+int 		BBPlimit = 0;		/* current committed VM BBP array */
+int		BBPsize = 0;		/* current used size of BBP array */ 
 bat		BBP_free = 0;		/* first free slot in BBP array */
 
 @- BBP hash index on name
@@ -540,7 +542,7 @@ it may lead to interference in a parallel session.
 
 void BBPexit(void)
 {
-	bat  i;
+	int  i;
 
 	if (!BBP) return; /* AARGH */
 
@@ -832,8 +834,8 @@ int BBPtransient(bat i, int trans) {
 		}
 		if (pid != locked_by)
 	        	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
-	    	if (!(BBP_status(i)&BBPPERSISTENT) && BBP_lrefs(i) == 0 && BBP_refs(i) == 0)
-		{
+	    	if (!(BBP_status(i)&BBPPERSISTENT) && BBP_lrefs(i) == 0 
+		  		&& BBP_refs(i) == 0){
 			BAT *b = (BAT*) BBPquickdesc(i, TRUE);
 			if (BBP_cache(i)) {
 				if (b->batPersistence != SESSION) BBPfree(b);
@@ -844,7 +846,7 @@ int BBPtransient(bat i, int trans) {
 	}
 	return lrefs;
 }
-void BATpersistent(void *dummy, var_t *d2, bat *i) {
+void BATpersistent(void *dummy, int *d2, bat *i) {
 	BBPpersistent(*i,TRUE);
 }
 void BATtransient(void *dummy, bat *i) {
@@ -1454,17 +1456,17 @@ void BBPclean(BAT *b){
 	BUN p, q;
 	int bs=BUNsize(b);
 
-	void (*hatmdel)(Heap*,size_t*) = BATatoms[b->htype].atomDel;
-	void (*tatmdel)(Heap*,size_t*) = BATatoms[b->ttype].atomDel;
+	void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
+	void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
 
 	if (hatmdel || tatmdel) {
 		for(p=b->batDeleted, q=b->batHole; p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
+			if (hatmdel) (*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
+			if (tatmdel) (*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
 		}
 		for(p=BUNfirst(b), q=BUNlast(b); p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (size_t*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (size_t*) BUNtloc(b,p));
+			if (hatmdel) (*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
+			if (tatmdel) (*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
 		}
 	}
 }
@@ -1751,8 +1753,8 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 	}
 	/* done trimming */
 	MEMDEBUG {
-		THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=%lu,vmsize=%lu\n", 
-			(unsigned long) GDKmem_inuse(), (unsigned long) GDKvm_cursize());
+		THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=%u,vmsize=%u\n", 
+			(unsigned int) GDKmem_inuse(), (unsigned int) GDKvm_cursize());
 	}
 	BBP_notrim = 0;
 	MT_unset_lock(GDKtrimLock, "BBPtrim"); 

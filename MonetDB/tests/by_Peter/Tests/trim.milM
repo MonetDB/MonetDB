@@ -13,18 +13,16 @@ while(i < 1000) {
 }
 m1.seqbase(0@0);
 
-dir("tmp");
-
 i := 0;
 mem_maxsize(lng(10*1024*1024));
 #vm_maxsize(lng(100*1024*1024));
 while(i < 10) {
         #mem_usage(100000).print;
 	print("DIR");
-	dir("b_");
+	dir;
         #vm_usage(100000).print;
         print("COPY");
-        var b := m1.copy.rename(sprintf("b_%d",i :+= 1));
+        var b := m1.copy.rename(sprintf("b%d",i :+= 1));
         b.persists(true).commit;
 }
 
@@ -36,10 +34,10 @@ proc countall {
   }
 }
 
-dir("b_");
+dir;
 
-countall(b_1,b_2,b_3,b_4);
+countall(b1,b2,b3,b4);
 
-dir("b_");
+dir;
 
 quit;

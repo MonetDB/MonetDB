@@ -42,7 +42,7 @@ lib_stream  =  {
 }
 
 scripts_py = {
-	DIR = pkgdatadir/python
-	SOURCES = monet_options.py.in
+        DIR = pkgdatadir/python
+        SOURCES = monet_options.py.in
 }
 

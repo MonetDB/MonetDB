@@ -73,35 +73,34 @@ support the operations AND and OR.
 .END bitvector;
 
 @mil
-PROC test_bitvector() : void := {
+module(bitvector);
 
-	a := new(int,oid); 
-	a.insert(10, oid(0)); 
-	a.insert(11, oid(62)); 
-	a.insert(12, oid(64)); 
-	a.insert(13, oid(256)); 
+a := new(int,oid); 
+a.insert(10, oid(0)); 
+a.insert(11, oid(62)); 
+a.insert(12, oid(64)); 
+a.insert(13, oid(256)); 
 
-	b := new(int,oid); 
-	b.insert(10, oid(0)); 
-	b.insert(11, oid(31)); 
-	b.insert(11, oid(32)); 
-	b.insert(12, oid(62)); 
+b := new(int,oid); 
+b.insert(10, oid(0)); 
+b.insert(11, oid(31)); 
+b.insert(11, oid(32)); 
+b.insert(12, oid(62)); 
 
-	bv_a := [encode](a);
-	bv_a.print;
+bv_a := [encode](a);
+bv_a.print;
 
-	bv_b := [encode](b);
-	bv_b.print;
+bv_b := [encode](b);
+bv_b.print;
 
-	bv_c := [and](bv_a, bv_b);
-	bv_c.print;
+bv_c := [and](bv_a, bv_b);
+bv_c.print;
 
-	bv_d := [or](bv_a, bv_b);
-	bv_d.print;
+bv_d := [or](bv_a, bv_b);
+bv_d.print;
 
-	c := [decode](bv_d);
-	c.print;
-}
+c := [decode](bv_d);
+c.print;
 
 @{
 @* Implementation

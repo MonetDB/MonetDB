@@ -473,11 +473,10 @@ these 'sync' OIDs with their own propagation rules.
 @m
 .COMMAND synced (BAT[any,any] b1, BAT[any,any] b2) : bit = CMDsynced;
 "Tests whether two BATs are synced or not. "
-
-.END bat;
-
+@m
+.LOAD
 @- constants for mmap()
-@mil
+@m
     CONST STORE_MEM   := 0;     # load into GDKmalloced memory
     CONST STORE_MMAP  := 1;     # mmap() into virtual memory
     CONST STORE_COMPR := 2;     # currently not implemented this way
@@ -492,14 +491,14 @@ these 'sync' OIDs with their own propagation rules.
     }
 
 @- constants for madvise()
-@mil
+@m
     CONST BUF_NORMAL    := 0;   # No further special treatment
     CONST BUF_RANDOM    := 1;   # Expect random page references
     CONST BUF_SEQUENTIAL:= 2;   # Expect sequential page references
     CONST BUF_WILLNEED  := 3;   # Will need these pages
     CONST BUF_DONTNEED  := 4;   # Don't need these pages
 @- constants for readonly()
-@mil
+@m
     CONST BAT_READ   := 1;      # allow only read access.
     CONST BAT_APPEND := 2;      # allow reads and insertions of new elements.
     CONST BAT_WRITE  := 0;      # allow reads, insertions, and updates.
@@ -545,6 +544,9 @@ these 'sync' OIDs with their own propagation rules.
 
     PROC new(int ht, int tt, lng cnt) : bat[any,any]
 	return bat(ht,tt,cnt);
+.END;
+
+.END bat;
 @
 @{
 @{
@@ -661,11 +663,11 @@ int CMDdelete_bat_head(BAT **r, BAT *b, BAT *s){
 } 
 
 int CMDsize(lng *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDsize")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+	if (BBPcheck(*bid, "CMDsize")) {
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = lng_nil;
-		} else if (BBP_cache((bat) *bid)) {
+		} else if (BBP_cache(*bid)) {
 			*res = (lng) BATcount(b);  
 		} else {
 			/* BAT not loaded */
@@ -676,8 +678,8 @@ int CMDsize(lng *res, int *bid) {
 }
 
 int CMDcapacity(lng *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDcapacity")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+	if (BBPcheck(*bid, "CMDcapacity")) {
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = lng_nil;
 		} else {
@@ -688,24 +690,24 @@ int CMDcapacity(lng *res, int *bid) {
 }
 
 int CMDhtype(int *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDhtype")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+	if (BBPcheck(*bid, "CMDhtype")) {
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = TYPE_void;
 		} else {
-			*res = *bid > 0 ? BAThtype(b) : BATttype(b);
+			*res = (*bid > 0)?BAThtype(b):BATttype(b);
 		}
 	}
 	return GDK_SUCCEED;
 }
 
 int CMDttype(int *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDttype")) {
-		BAT *b = (BAT*) BBPgetdesc((bat) *bid);
+	if (BBPcheck(*bid, "CMDttype")) {
+		BAT *b = (BAT*) BBPgetdesc(*bid);
 		if (b == NULL) {
 			*res = TYPE_void;
 		} else {
-			*res = *bid > 0 ? BATttype(b) : BAThtype(b);
+			*res = (*bid > 0)?BATttype(b):BAThtype(b);
 		}
 	}
 	return GDK_SUCCEED;
@@ -753,14 +755,14 @@ int CMDpersists(BAT **r, BAT *input, bit *param) {
 int CMDrelease(lng *id, BAT *b) {
 	int *p = (int*) id;
 	BATmode(b, SESSION);
-	p[0] = (int) b->batCacheid;
+	p[0] = b->batCacheid;
 	p[1] = b->batStamp; 
 	return GDK_SUCCEED;
 }
 
 int CMDresurrect(BAT **res, lng *id) {
 	int *p = (int*) id;
-	*res = BBPresurrect((bat) p[0], p[1]);
+	*res = BBPresurrect(p[0], p[1]);
 	return *res?GDK_SUCCEED:GDK_FAIL;
 }
 
@@ -924,7 +926,7 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)));
         BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));
         BUNins(bn, "batHole", local_utoa(BUNindex(b, b->batHole)));
-        BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
+        BUNins(bn, "top", local_utoa(BUNindex(b, (Bunbase(b) + b->batBuns->free))));
 	BUNins(bn, "batStamp", local_itoa(b->batStamp));
 	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
         BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));
@@ -975,17 +977,17 @@ int CMDbatsize(int *tot, BAT *b){
 		if (b->theap.base) size += ROUND_UP(b->theap.size, blksize);
 		if (b->haccelerator.base) size += ROUND_UP(b->haccelerator.size, blksize);
 		if (b->taccelerator.base) size += ROUND_UP(b->taccelerator.size, blksize);
-		if (b->hhash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
-		if (b->thash_heap) size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
-		if (b->hidx_heap) size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-		if (b->tidx_heap) size += ROUND_UP(sizeof(BUN) * cnt, blksize); 
+		if (b->hhash_heap) size += ROUND_UP(sizeof(int) * cnt, blksize);
+		if (b->thash_heap) size += ROUND_UP(sizeof(int) * cnt, blksize);
+		if (b->hidx_heap) size += ROUND_UP(sizeof(int) * cnt, blksize);
+		if (b->tidx_heap) size += ROUND_UP(sizeof(int) * cnt, blksize); 
 	}
 	*tot = size;
 	return GDK_SUCCEED;
 }
 
 int CMDbatsize_str(int *tot, str batname){
-	bat bid = BBPindex(batname);
+	int bid = BBPindex(batname);
 	BAT *b = bid?(BAT*) BBPgetdesc(bid):NULL;
 
 	if (b == NULL) {
@@ -1034,7 +1036,7 @@ int CMDname(str *retval, BAT *b){
 }
 
 int CMDunload(bit *res, str input) {
-        bat bid = ABS(BBPindex(input));
+        int bid = ABS(BBPindex(input));
 	*res = FALSE;
         if (bid > 0) {
 		BBPfix(bid);
@@ -1054,7 +1056,7 @@ int CMDcold(str input) {
 }
 
 int CMDsave(bit *res, str input) {
-	bat bid = BBPindex(input);
+	int bid = BBPindex(input);
 	BAT *b;
 	*res = FALSE;
 	if (bid ) {
@@ -1131,7 +1133,7 @@ The import command reads a single BAT from an ascii file. It assumes
 a layout compatible with that produced by print or export.
 @c
 int CMDimport(BAT **ret, BAT *b, str fnme) {
-	int	(*hconvert)(str, int*, ptr*), (*tconvert)(str, int*, ptr*);
+	int	(*hconvert)(), (*tconvert)();
 	size_t	bufsize = 2048; /* NIELS: tmp change used to be 1024 */
 	char	*base, *cur, *end;
 	char	*buf = (char *) GDKmalloc(bufsize);
@@ -1214,8 +1216,8 @@ Parse the line, and insert a BUN.
        		}
        		p += @1(p, @3, @4);			
 @c
-		@:parsevalue(hconvert, '[', &lh, (ptr *) &h)@
-		@:parsevalue(tconvert, 44, &lt, (ptr *) &t)@
+		@:parsevalue(hconvert, '[', &lh, &h)@
+		@:parsevalue(tconvert, 44, &lt, &t)@
 		BUNins(b, h, t);
 		
 @-
@@ -1259,7 +1261,7 @@ int CMDaccdestroy(BAT *b, int *acc) {
 int CMDaccpresent(int *retval, BAT* b) {
 	*retval = 0;
 	if (b->hacctype) {
-	    int (*check)(Heap*, BAT*) = BATaccelerators[b->hacctype].accRepair;
+	    int (*check)() = BATaccelerators[b->hacctype].accRepair;
 	    if (check == NULL || (*check)(&b->haccelerator,b) == GDK_SUCCEED) {
 		*retval = b->hacctype;
  	    }
@@ -1302,25 +1304,24 @@ int CMDhashloop(BAT* b, ptr *handle, ptr v){
 }
 
 @= batlooparg
-	if (@1 > BATcount(b)) {
-		GDKerror("CMDbatloop: @1 parameter out of range (%lu %lu).\n", @1, BATcount(b));
+	if (*@1 < 0 || ((size_t) *@1 > BATcount(b))) {
+		GDKerror("CMDbatloop: @1 parameter out of range.\n");
 		return GDK_FAIL;
 	}
-	@2 = BUNptr(b, BUNindex(b, BUNfirst(b)) + @1);
+	@2 = BUNptr(b, BUNindex(b, BUNfirst(b)) + *@1);
 @= batloopitr
-	while (p <= q) {
+	while(p <= q) {
 		if ((i = ITERATE(BUNh@1(b,p), BUNt@2(b,p), h)) < 0)
 			return i;
-		p = (BUN) ((char *) p + s);
+		p += s;
 	}
 @c
-static int doCMDbatloop(BAT *b, ptr *handle, size_t low, size_t high){
+int CMDbatloop(BAT *b, ptr *handle, int* low, int* high){
 	Iteration h = *(Iteration*)handle;
-	BUN p, q;
+	char *p, *q;
 	int i, s = BUNsize(b);
 
-	if (high < low)
-		return GDK_SUCCEED;
+	if (*high < *low) return GDK_SUCCEED;
 	@:batlooparg(low,p)@
 	@:batlooparg(high,q)@
 	if (b->hvarsized) {
@@ -1339,16 +1340,9 @@ static int doCMDbatloop(BAT *b, ptr *handle, size_t low, size_t high){
 	return GDK_SUCCEED;
 }
 
-/* XXX should be size_t *low, size_t *high for 64 bit architecture */
-int CMDbatloop(BAT *b, ptr *handle, int* low, int* high){
-	return doCMDbatloop(b, handle, (size_t) *low, (size_t) *high);
-}
-
-int CMDbatloop_std(BAT *b, ptr *handle) {
-	size_t n = BATcount(b);
-	if (n == 0)
-		return GDK_SUCCEED;
-	return doCMDbatloop(b, handle, (size_t) 0, n-1);
+int CMDbatloop_std(BAT *b, ptr *h) {
+	int low=0, high=BATcount(b)-1;
+	return CMDbatloop(b, h, &low, &high);
 }
 
 int CMDget_seqbase(oid *o, BAT *b){

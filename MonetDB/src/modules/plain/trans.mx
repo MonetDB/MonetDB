@@ -61,7 +61,6 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 	"give list of deletions since last commit."
 
 .END trans;
-
 @{
 @* Implementation Code 
 @c

@@ -1,12 +1,12 @@
 stdout of test 'monet_mod_cnt-copy_S` in directory 'src/monet` itself:
 
 
-# 15:57:20 >  
-# 15:57:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_src_monet  < monet_mod_cnt-copy_S.milS
-# 15:57:20 >  
+# 09:44:53 >  
+# 09:44:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_src_monet  < monet_mod_cnt-copy_S.milS
+# 09:44:53 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2003, CWI. All rights reserved.
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 monet_mod_cnt.print;
 #---------------------------------#
@@ -14,44 +14,24 @@ monet_mod_cnt.print;
 # (oid)		  (int)		  #
 #---------------------------------#
 [ 10000@0,	  1		  ]
-[ 10001@0,	  1		  ]
-[ 10002@0,	  1		  ]
-[ 10045@0,	  1		  ]
-[ 10046@0,	  1		  ]
-[ 10343@0,	  1		  ]
-[ 10344@0,	  1		  ]
-[ 10368@0,	  2		  ]
-[ 10369@0,	  2		  ]
-[ 10371@0,	  1		  ]
-[ 10372@0,	  1		  ]
-[ 10442@0,	  1		  ]
-[ 10443@0,	  1		  ]
-[ 10537@0,	  1		  ]
-[ 10538@0,	  1		  ]
-[ 10610@0,	  1		  ]
-[ 10611@0,	  1		  ]
+[ 10033@0,	  1		  ]
+[ 10329@0,	  1		  ]
+[ 10350@0,	  1		  ]
+[ 10420@0,	  1		  ]
+[ 10498@0,	  1		  ]
+[ 10577@0,	  1		  ]
 monet_mod_cnt.copy.print;
 #-------------------------#
-# BAT:		  tmp_29  #
+# BAT:		  tmp_28  #
 # (oid)		  (int)	  #
 #-------------------------#
 [ 10000@0,	  1	  ]
-[ 10001@0,	  1	  ]
-[ 10002@0,	  1	  ]
-[ 10045@0,	  1	  ]
-[ 10046@0,	  1	  ]
-[ 10343@0,	  1	  ]
-[ 10344@0,	  1	  ]
-[ 10368@0,	  2	  ]
-[ 10369@0,	  2	  ]
-[ 10371@0,	  1	  ]
-[ 10372@0,	  1	  ]
-[ 10442@0,	  1	  ]
-[ 10443@0,	  1	  ]
-[ 10537@0,	  1	  ]
-[ 10538@0,	  1	  ]
-[ 10610@0,	  1	  ]
-[ 10611@0,	  1	  ]
+[ 10033@0,	  1	  ]
+[ 10329@0,	  1	  ]
+[ 10350@0,	  1	  ]
+[ 10420@0,	  1	  ]
+[ 10498@0,	  1	  ]
+[ 10577@0,	  1	  ]
 a:=view_bbp_name.reverse.mirror.[bat].[count];
 b:=view_bbp_name.reverse.mirror.[bat].[copy].[count];
 c:=a.[-](b);
@@ -59,36 +39,36 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
-#-------------------------------------------------#
-[ "monet_environment",	  25,	  25,	  0	  ]
-[ "monet_fcn_fcn",	  530,	  530,		  0	  ]
-[ "monet_fcn_imp",	  603,	  603,		  0	  ]
-[ "monet_fcn_tpe",	  603,	  603,		  0	  ]
-[ "monet_fcn_mid",	  565,	  565,		  0	  ]
-[ "monet_fcn_sig",	  40,	  40,		  0	  ]
-[ "monet_fcn_dsc",	  565,	  565,		  0	  ]
-[ "monet_fcn_aut",	  565,	  565,		  0	  ]
-[ "monet_fcn_dat",	  565,	  565,		  0	  ]
-[ "monet_fcn_nme",	  603,	  603,		  0	  ]
-[ "monet_fcn_pro",	  1487,	  1487,		  0	  ]
-[ "monet_fcn_cnt",	  603,	  603,		  0	  ]
-[ "monet_mod_nme",	  17,	  17,		  0	  ]
-[ "monet_mod_cnt",	  17,	  17,		  0	  ]
-[ "monet_mod_atm",	  1,	  1,		  0	  ]
+#---------------------------------------------------------#
+[ "monet_environment",	  24,	  24,		  0	  ]
+[ "monet_fcn_fcn",	  515,	  515,		  0	  ]
+[ "monet_fcn_imp",	  579,	  579,		  0	  ]
+[ "monet_fcn_tpe",	  579,	  579,		  0	  ]
+[ "monet_fcn_mid",	  550,	  550,		  0	  ]
+[ "monet_fcn_sig",	  37,	  37,		  0	  ]
+[ "monet_fcn_dsc",	  550,	  550,		  0	  ]
+[ "monet_fcn_aut",	  550,	  550,		  0	  ]
+[ "monet_fcn_dat",	  550,	  550,		  0	  ]
+[ "monet_fcn_nme",	  579,	  579,		  0	  ]
+[ "monet_fcn_pro",	  1447,	  1447,		  0	  ]
+[ "monet_fcn_cnt",	  579,	  579,		  0	  ]
+[ "monet_mod_nme",	  7,	  7,		  0	  ]
+[ "monet_mod_cnt",	  7,	  7,		  0	  ]
+[ "monet_mod_atm",	  0,	  0,		  0	  ]
 [ "monet_mod_acc",	  0,	  0,		  0	  ]
-[ "monet_mod_hdl",	  8,	  8,		  0	  ]
-[ "monet_mod_dep",	  1,	  1,		  0	  ]
-[ "monet_mod_use",	  19,	  19,		  0	  ]
-[ "monet_mod_load",	  0,	  0,		  0	  ]
+[ "monet_mod_hdl",	  7,	  7,		  0	  ]
+[ "monet_mod_dep",	  0,	  0,		  0	  ]
+[ "monet_mod_use",	  7,	  7,		  0	  ]
+[ "monet_mod_load",	  4,	  4,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
-[ "monet_fcntbl",	  603,	  603,		  0	  ]
+[ "monet_fcntbl",	  579,	  579,		  0	  ]
 [ "monet_acctbl",	  2,	  2,		  0	  ]
-[ "monet_atomtbl",	  14,	  14,		  0	  ]
+[ "monet_atomtbl",	  13,	  13,		  0	  ]
 [ "monet_unicode_case",	  685,	  685,		  0	  ]
 [ "tmp_27",		  2,	  2,		  0	  ]
 [ "tmp_28",		  2,	  2,		  0	  ]
 
-# 15:57:21 >  
-# 15:57:21 >  Done.
-# 15:57:21 >  
+# 09:44:53 >  
+# 09:44:53 >  Done.
+# 09:44:53 >  
 

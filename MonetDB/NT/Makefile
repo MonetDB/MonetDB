@@ -15,8 +15,7 @@ check: $(SRCDIR)\Makefile.msc RunMtest.bat
 	$(MAKE) /nologo /k /i /f $(SRCDIR)\Makefile.msc check
 	call RunMtest.bat
 
-install: targetdirs config.h
-	$(INSTALL) config.h $(includedir)
+install: targetdirs
 	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc install
 
 $(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \

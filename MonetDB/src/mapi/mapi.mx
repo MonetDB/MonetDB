@@ -37,18 +37,15 @@ This module contains a simple interface for internet connections.
 
 	.COMMAND stream_until(Stream S,str stop) : str = stream_read_until;
 		"read a string from <S> until the <stop> word"
-
-	.COMMAND socket_close( int s ) = socket_close_wrap;
-		"close a socket"
-
-	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
-		"duplicate a socket"
-
-.END mapi;
-
-@mil
-	VAR mapi_params := bat(int,str);
-	mapi_params.rename("mapi_params");
+.LOAD
+	VAR _params := nil;
+	IF (view_bbp_name.reverse.exist("mapi_params")){
+		_params := bat("mapi_params");
+	} ELSE {
+		_params := new(int,str);
+		_params.rename("mapi_params");
+	}
+	VAR mapi_params := _params;
 
 	PROC listen(int port, int maxusers, str cmd) := {
 		mapi_params.insert(port,cmd);
@@ -56,32 +53,32 @@ This module contains a simple interface for internet connections.
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
-		mod);
+		"mapi");
 
 	PROC listen(int port, int maxusers) := listen(port,maxusers,"");
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.",
-		mod);
+		"mapi");
 
 	PROC listen(int port, str cmd) := listen(port,5,cmd);
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		mod);
+		"mapi");
 
 	PROC listen(int port) := listen(port,5,"");
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.",
-		mod);
+		"mapi");
 
 	PROC listen(str cmd) := listen(50000,5,cmd);
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		mod);
+		"mapi");
 
 	PROC listen() := listen(50000,5,"");
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.",
-		mod);
+		"mapi");
 
 	PROC stream_strip(Stream s,str stop) : str := {
 		VAR res := stream_until(s,stop);
@@ -93,17 +90,21 @@ This module contains a simple interface for internet connections.
 	}
 	ADDHELP("stream_strip", "windhouw", "June  22 2001",
 		"Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string.",
-		mod);
+		"mapi");
 
-	PROC mapi_stream_read(Stream s) : str := RETURN stream_strip(s,(""+chr(1)));
-	ADDHELP("mapi_stream_read", "windhouw", "June  22 2001",
+	PROC stream_read(Stream s) : str := RETURN stream_strip(s,(""+chr(1)));
+	ADDHELP("stream_read", "windhouw", "June  22 2001",
 		"Read a string from <S> until a '\1' character.",
-		mod);
+		"mapi");
 
 	PROC stream_line(Stream s) : str := RETURN stream_strip(s,sprintf("%c",chr(10)));
 	ADDHELP("stream_line", "windhouw", "June  22 2001",
 		"Read a string from <S> until a newline.",
-		mod);
+		"mapi");
+.END;
+
+.END mapi;
+
 @h
 #ifndef MAPI_H
 #define MAPI_H
@@ -139,11 +140,16 @@ This module contains a simple interface for internet connections.
 #define SOCKPTR void *
 #define SOCKLEN int
 #else
+#ifdef NATIVE_WIN32
 #define SOCKPTR struct sockaddr *
-#if HAVE_SOCKLEN_T
+#define SOCKLEN int
+#else
+#define SOCKPTR struct sockaddr *
+#ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
+#endif
 #endif
 #endif
 #endif
@@ -163,7 +169,7 @@ This module contains a simple interface for internet connections.
 int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	struct sockaddr_in server;
 	int 	sock;
-	SOCKLEN 	length = 0;
+	SOCKLEN 	length;
 	int    	on = 1;
 	int 	msgsock;
 	int	i = 0;
@@ -171,9 +177,7 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	int port, *Port;
 	int maxusers, *Maxusers;
 	char *cmd, *Cmd;
-	Client father;
 
-        CNTXTclient(stk, &father);
 	if (lt->cnt != 3) {
 		return handle_argerror(res,lt->cnt,3);
 	}
@@ -221,7 +225,7 @@ Get the new information for the server socket and start listening.
 	listen(sock, maxusers); 
 
 	PARDEBUG {
-		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", port);
+		THRprintf(GDKerr, "MAPIlisten:Internet started at %d\n", server.sin_port);
 	}
 	do {
 		int retval;
@@ -230,13 +234,12 @@ Get the new information for the server socket and start listening.
 
     		FD_ZERO(&fds);
     		FD_SET(sock, &fds);
-    		/* Wait up to 0.5 seconds. */
-    		tv.tv_sec = 0;
-    		tv.tv_usec = 500;
+    		/* Wait up to five seconds. */
+    		tv.tv_sec = 5;
+    		tv.tv_usec = 0;
 
     		retval = select(sock+1, &fds, &fds, &fds, &tv);
-		length = 0;
-    		if (retval && (msgsock = accept(sock, 0, &length)) < 0) {
+    		if (retval && (msgsock = accept(sock, 0, (SOCKLEN *)0)) < 0) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("MAPIlisten:accept failed\n");
 				return GDK_FAIL;
@@ -272,8 +275,7 @@ Get the new information for the server socket and start listening.
 				strncpy(nmp+1,mp,mpl);
 				nmp[mpl+1] = '\1';
 				nmp[mpl+2] = '\0';
-				c = initClient(name, nmp, FALSE);
-				GDKfree(nmp);
+				c = initClient(GDKstrdup(name), nmp, FALSE);
 				if (c == 0) {
 					stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 					GDKfree(name);
@@ -292,27 +294,23 @@ Get the new information for the server socket and start listening.
 				c->socket = msgsock;
 				c->fdin = fdin;
 				c->fdout = fdout;
+@
+changed setbuf to setbuffer to avoid unintentional buffer overflow.
+	                       	setbuffer(c->fdout, c->output, 4096);
+@c
 				c->mode = BLOCKMODE;
 				monet_cntxt[c->stk].outer = CNTXTcopy(stk);
-				TBL_initclient(c, father);
+				TBL_initclient(c);
 				(void)monetFork();
 				scheduleClient(c);
 				PARDEBUG THRprintf(GDKerr, 
 					"CLIENTlisten:client accepted %d\n", 
 						msgsock);
 			} else {
-				ValRecord res;
-				ptr val = &res.val.ival;
-				int cres = 0;
 				char buf[BUFSIZ];
 	
 				snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, msgsock );
-        			res.vtype = TYPE_void; 
-				interpret_str( stk, buf, &res);
-				if ((cres = close(msgsock)) < 0){
-					GDKerror("Error closing socket %d\n", cres );
-					return GDK_FAIL;
-				}
+				interpret_str( stk, buf, res);
 			}
 		}
 	} while (monet_running);
@@ -349,17 +347,9 @@ int stream_read_until(str *res, Stream *S , str stop){
 	return GDK_SUCCEED;
 }
 
-int socket_close_wrap( int *s ){
-	close(*s);
-	return GDK_SUCCEED;
-}
-
-int socket_dup_wrap( int *res, int *s ){
-	*res = dup(*s);
-	return GDK_SUCCEED;
-}
-
 @mil
+module(str,mapi);
+
 proc get_mapi_port() := {
 	if (monet_environment.exist("mapi_port")){
 		return int(monet_environment.find("mapi_port"));
@@ -369,9 +359,7 @@ proc get_mapi_port() := {
 
 proc mapi_server(int port, int nr) := {
         var l := listen(port, nr);
+        printf("!ERROR: listen(%d,%d) failed ... exiting\n", port, nr);
 	quit;
 }
-
-if (mod = "main"){
-	fork(mapi_server(get_mapi_port(),5));
-}
+fork(mapi_server(get_mapi_port(),5));

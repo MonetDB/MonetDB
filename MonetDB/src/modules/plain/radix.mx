@@ -744,9 +744,7 @@ the count of all tail value in b with these radix bits, ignoring the lowmost one
 .COMMAND [integer](BAT[any::1,int] b, int width) : BAT[any::1,any] = BATinteger;
 "create a view that makes tail column appear as an integerX column for some width=X"
 
-.END radix;
-
-@mil
+.LOAD
 
 proc uniform(int s, int d) : bat[oid,int] := return uniform(0@0,s,d); 
 proc uniform(int s) : bat[oid,int] := return uniform(s,s); 
@@ -834,142 +832,143 @@ proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
   return join(left, right);
 }
  
+.END;
+
+
+.END radix;
+
 @mil
+module(radix,alarm);
 
-PROC test_radix() : void := {
-  module("alarm");
+var b := view_bbp_name.reverse;
 
-  var b := view_bbp_name.reverse;
+# create data tables
+if (not(b.exist("smaller_key")))
+  uniform(1000000,1000000).reverse.mark(0@0).reverse.rename("smaller_key").persists(true).mmap(1);
+if (not(b.exist("smaller_a1")))
+  smaller_key.mirror.copy.rename("smaller_a1").persists(true).mmap(1);  
+if (not(b.exist("smaller_aY")))
+  smaller_key.copy.rename("smaller_aY").persists(true).mmap(1);  
 
-  # create data tables
-  if (not(b.exist("smaller_key")))
-    uniform(1000000,1000000).reverse.mark(0@0).reverse.rename("smaller_key").persists(true).mmap(1);
-  if (not(b.exist("smaller_a1")))
-    smaller_key.mirror.copy.rename("smaller_a1").persists(true).mmap(1);  
-  if (not(b.exist("smaller_aY")))
-    smaller_key.copy.rename("smaller_aY").persists(true).mmap(1);  
-  
-  if (not(b.exist("larger_key")))
-    bat(void,int,2000000).insert(smaller_key).insert(smaller_key.copy.seqbase(oid(int(smaller_key.seqbase) + smaller_key.count))).rename("larger_key").persists(true).mmap(1);
-  if (not(b.exist("larger_b1")))
-    larger_key.mirror.copy.rename("larger_b1").persists(true).mmap(1);  
-  if (not(b.exist("larger_bZ")))
-    larger_key.copy.rename("larger_bZ").persists(true).mmap(1);  
-  
-  if (not(b.exist("smaller_all")))
-     [integer]([int]([integer](smaller_key,1).reverse),16).reverse.rename("smaller_all").persists(true).mmap(1);
-  if (not(b.exist("larger_all")))
-     [integer]([int]([integer](larger_key,1).reverse),16).reverse.rename("larger_all").persists(true).mmap(1);
-  
-  # 0) SQL benchmark query
-  # ======================
-  #
-  # SELECT smaller.a1, smaller.aY, larger.b1, larger.bZ
-  # FROM   smaller, larger
-  # where  smaller.key = larger.key
-  
-  # 1) cache-conscious-monet-join-strategy, optimized for a 256KB L2 cache of 32 bytes line width
-  # =============================================================================================
-  #
-  # first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
-  #
-  # We have a 256KB cache, but want to fit comfortable in 128KB. Given a 8-byte relation width an 8-byte hash table, the 
-  # chunk size is 128KB/16 = 8192, and since we have a 1M inner relation this leads to 7 bits clustering, wich we do in 2 
-  # passes (4+3) to fit the 64-entry TLB
-  #
-  cluster_larger := radix_cluster(larger_key, 4, 3);
-  #250
-  cluster_smaller := radix_cluster(smaller_key, 4, 3);
-  #626
-  
-  # phash, followed by radix-sort
-  #
-  # As we have 2M tuples with max value 2000000, we need to cluster on 21 bits (7+7+7) in order to achieve radix-sort.
-  #
-  res_join := phash_join(cluster_larger, cluster_smaller.reverse, 7, 2, false).reverse.radix_cluster(7,7,7).reverse;
-  #2.7
-  res_larger_sorted := res_join.mark(0@0).reverse; 
-  
-  # no longer needed
-  cluster_larger := 0;
-  cluster_smaller := 0;
-  
-  # positional-join projected columns from larger table into result
-  res_b1 := join(res_larger_sorted, larger_b1);
-  #570
-  res_bZ := join(res_larger_sorted, larger_bZ);
-  #570
-  
-  # no longer needed
-  res_larger_sorted := 0;
-  
-  # Given a 128KB of 'comfortable' L2, and 4-byte tuples in smaller_aX, we want chunk sizes of 32768. As we have a 
-  # cardinality of 2M, we create 64 chunks by partial radix-cluster on 6 bits. The maximum value is 1M, hence there 
-  # are 20 significant bits, so we ignore the lower 20-6=14 bits.
-  #
-  res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-14,6); 
-  #589
-  #344
-  
-  # no longer needed
-  res_join := 0;
-  
-  # positional-join and decluster projected columns from smaller table into result
-  #
-  # The window size of the matching window is again the comfortable 128KB, with 4 byte wide tuples its tuple size is 
-  # 32768. As we have 64 clusters, we can use a multiplier of 512. With 64 cluster, TLB trouble is avoided as well. 
-  #
-  borders_smaller := res_smaller_clustered.radix_count(14, 6);
-  res_a1 := join(res_smaller_clustered, smaller_a1).radix_decluster(borders_smaller, 512);
-  res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_smaller, 512);
-  
-  # no longer needed
-  res_smaller_clustered := 0;
-  
-  print(res_b1.slice(1000000,1000100).col_name("b1"), res_bZ.col_name("bZ"), res_a1.col_name("a1"), res_aY.col_name("aY"));
-  print(res_b1.count);
-  
-  # no longer needed
-  res_a1 := 0;
-  res_aY := 0;
-  res_b1 := 0;
-  res_bZ := 0;
-  
-  # 2) cache-conscious-relational-join-strategy 
-  # ===========================================
-  
-  smaller_view := [integer](smaller_all.reverse, 2).reverse;
-  larger_view := [integer](larger_all.reverse, 2).reverse;
-  
-  # the inner relation will be 12+8 = 24 bytes wide, we have 128KB of cache hence can have chunk sizes of 5000.
-  # given an inner relation size of 1M tuples, this leads to  256 clusters of 4096, hence 8 bytes.
-  cluster_smaller := radix_cluster(smaller_view, 4, 4);
-  cluster_larger := radix_cluster(larger_view, 4, 4);
-  res_join := phash_join(cluster_larger, cluster_smaller.reverse, 8, 2, false);
-  
-  # no longer needed
-  cluster_smaller := 0;
-  cluster_larger := 0;
-   
-  print(res_join.slice(1000000,1000100));
-  res_join.count.print;
+if (not(b.exist("larger_key")))
+  bat(void,int,2000000).insert(smaller_key).insert(smaller_key.copy.seqbase(oid(int(smaller_key.seqbase) + smaller_key.count))).rename("larger_key").persists(true).mmap(1);
+if (not(b.exist("larger_b1")))
+  larger_key.mirror.copy.rename("larger_b1").persists(true).mmap(1);  
+if (not(b.exist("larger_bZ")))
+  larger_key.copy.rename("larger_bZ").persists(true).mmap(1);  
 
-  # alternatively, we try without clustering
-  res_join := phash_join(larger_view, smaller_view.reverse, 0, 2, false);
-  
-  print(res_join.slice(1000000,1000100));
-  res_join.count.print;
-  
-  larger_view := [integer](larger_all.reverse, 2).reverse.copy;
-  smaller_view := [integer](smaller_all.reverse, 2).reverse;
-  res_join := phash_join(larger_view, smaller_view.reverse, 0, 2, false);
+if (not(b.exist("smaller_all")))
+   [integer]([int]([integer](smaller_key,1).reverse),16).reverse.rename("smaller_all").persists(true).mmap(1);
+if (not(b.exist("larger_all")))
+   [integer]([int]([integer](larger_key,1).reverse),16).reverse.rename("larger_all").persists(true).mmap(1);
 
-  print(res_join.slice(1000000,1000100));
-  res_join.count.print;
-}
+# 0) SQL benchmark query
+# ======================
+#
+# SELECT smaller.a1, smaller.aY, larger.b1, larger.bZ
+# FROM   smaller, larger
+# where  smaller.key = larger.key
 
-@f radix_quick_test
-@mil
+# 1) cache-conscious-monet-join-strategy, optimized for a 256KB L2 cache of 32 bytes line width
+# =============================================================================================
+#
+# first radix cluster both key columns on H bits (maybe different number of passes and bit settings)
+#
+# We have a 256KB cache, but want to fit comfortable in 128KB. Given a 8-byte relation width an 8-byte hash table, the 
+# chunk size is 128KB/16 = 8192, and since we have a 1M inner relation this leads to 7 bits clustering, wich we do in 2 
+# passes (4+3) to fit the 64-entry TLB
+#
+cluster_larger := radix_cluster(larger_key, 4, 3);
+#250
+cluster_smaller := radix_cluster(smaller_key, 4, 3);
+#626
+
+# phash, followed by radix-sort
+#
+# As we have 2M tuples with max value 2000000, we need to cluster on 21 bits (7+7+7) in order to achieve radix-sort.
+#
+res_join := phash_join(cluster_larger, cluster_smaller.reverse, 7, 2, false).reverse.radix_cluster(7,7,7).reverse;
+#2.7
+res_larger_sorted := res_join.mark(0@0).reverse; 
+
+# no longer needed
+cluster_larger := 0;
+cluster_smaller := 0;
+
+# positional-join projected columns from larger table into result
+res_b1 := join(res_larger_sorted, larger_b1);
+#570
+res_bZ := join(res_larger_sorted, larger_bZ);
+#570
+
+# no longer needed
+res_larger_sorted := 0;
+
+# Given a 128KB of 'comfortable' L2, and 4-byte tuples in smaller_aX, we want chunk sizes of 32768. As we have a 
+# cardinality of 2M, we create 64 chunks by partial radix-cluster on 6 bits. The maximum value is 1M, hence there 
+# are 20 significant bits, so we ignore the lower 20-6=14 bits.
+#
+res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-14,6); 
+#589
+#344
+
+# no longer needed
+res_join := 0;
+
+# positional-join and decluster projected columns from smaller table into result
+#
+# The window size of the matching window is again the comfortable 128KB, with 4 byte wide tuples its tuple size is 
+# 32768. As we have 64 clusters, we can use a multiplier of 512. With 64 cluster, TLB trouble is avoided as well. 
+#
+borders_smaller := res_smaller_clustered.radix_count(14, 6);
+res_a1 := join(res_smaller_clustered, smaller_a1).radix_decluster(borders_smaller, 512);
+res_aY := join(res_smaller_clustered, smaller_aY).radix_decluster(borders_smaller, 512);
+
+# no longer needed
+res_smaller_clustered := 0;
+
+print(res_b1.slice(1000000,1000100).col_name("b1"), res_bZ.col_name("bZ"), res_a1.col_name("a1"), res_aY.col_name("aY"));
+print(res_b1.count);
+
+# no longer needed
+res_a1 := 0;
+res_aY := 0;
+res_b1 := 0;
+res_bZ := 0;
+
+# 2) cache-conscious-relational-join-strategy 
+# ===========================================
+
+smaller_view := [integer](smaller_all.reverse, 2).reverse;
+larger_view := [integer](larger_all.reverse, 2).reverse;
+
+# the inner relation will be 12+8 = 24 bytes wide, we have 128KB of cache hence can have chunk sizes of 5000.
+# given an inner relation size of 1M tuples, this leads to  256 clusters of 4096, hence 8 bytes.
+cluster_smaller := radix_cluster(smaller_view, 4, 4);
+cluster_larger := radix_cluster(larger_view, 4, 4);
+res_join := phash_join(cluster_larger, cluster_smaller.reverse, 8, 2, false);
+
+# no longer needed
+cluster_smaller := 0;
+cluster_larger := 0;
+ 
+print(res_join.slice(1000000,1000100));
+res_join.count.print;
+
+# alternatively, we try without clustering
+res_join := phash_join(larger_view, smaller_view.reverse, 0, 2, false);
+
+print(res_join.slice(1000000,1000100));
+res_join.count.print;
+
+larger_view := [integer](larger_all.reverse, 2).reverse.copy;
+smaller_view := [integer](smaller_all.reverse, 2).reverse;
+res_join := phash_join(larger_view, smaller_view.reverse, 0, 2, false);
+
+print(res_join.slice(1000000,1000100));
+res_join.count.print;
+
+
 quick test
 ==========
 
@@ -1057,7 +1056,6 @@ var b4 := radix_cluster(b2, cnt.bbpname, 1.0, 1, 7);
 b4.info.find("tsorted").print;
 radix_cluster(attr_int,  
 
-@f radix
 @* Implementation
 @c
 #include<math.h>
@@ -1092,7 +1090,7 @@ radix_cluster(attr_int,
 int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
         size_t n = (size_t) *size, i, r;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *bunbase = (char *) Bunbase(b);
+	char *bunbase = Bunbase(b);
 	int bunsize;		/* initialized in BATloopFast */
         oid bs = *base;
 	int j = 0;
@@ -1128,7 +1126,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 	unsigned int r = (unsigned int) n;
         size_t d = (size_t) *domain;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
-	char *bunbase = (char *) Bunbase(b);
+	char *bunbase = Bunbase(b);
 	int bunsize;
 	BUN p, q;
   	int m = *mean, s = *stddev; 
@@ -1146,7 +1144,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 		tot += ftab[i];
         }
         for(tot = (flt) (1.0/tot), i=0; i<d; i++) {
-		itab[i] = (int) ((flt)n*ftab[i]*tot);
+		itab[i] = (int) (n*(ftab[i]*tot));
 		r -= itab[i];
 	}
 	itab[m] += r;
@@ -1161,7 +1159,7 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
 	GDKfree(itab);
 
 	/* mix BUNs randomly */
-        for(r=0,i=0; i<n; i++) {
+        for(r=i=0; i<n; i++) {
                 size_t idx = i + ((r += rand()) % (n-i));
 		int val;
 		p = (BUN) (bunbase + i*bunsize); /* fast version of BUNptr */
@@ -1537,7 +1535,7 @@ BUN radix_buns_@1(BAT *bn, BAT *b, BUN start, BUN end, BUN base,
     	hash_t x = @1_RADIX(p,mask) >> shift;
 	BUN dst = base + cur[x];
     	if (cur[x] == lim[x]) break;
-        ATOMput(htpe, &bn->hheap, BUNhloc(bn,dst), BUNhead(b,src));
+        ATOMput(htpe, &bn->hheap, (int*) BUNhloc(bn,dst), BUNhead(b,src));
 	*(@1*) BUNtloc(bn,dst) = *(@1*) p;
 	cur[x] += dst_bunsize; src += src_bunsize;
 	@1_CHECK(*maxbits, p);
@@ -1648,8 +1646,8 @@ void radix_chunk_@1(BAT *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, 
 	dst[i] = lim[i-1];
 	lim[i] += dst[i];
     }
-    lo_limit = start + MAX((size_t) (0.1*(double)(init-start)), 20*nchunks*BUNsize(bn));
-    hi_limit = MIN(start + (size_t) (0.9*(double)lim[i-1]), end - 32768); 
+    lo_limit = start + MAX((size_t) (0.1*(init-start)), 20*nchunks*BUNsize(bn));
+    hi_limit = MIN(start + (size_t) (0.9*lim[i-1]), end - 32768); 
 
     cur = radix_buns_@1(bn, b, start, init, out, dst, lim, mask, shift, maxbits);
 
@@ -2383,7 +2381,7 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
+	tpe = any = TYPE_int;
     }
 
     /* init variables for the decluster operation */
@@ -2407,7 +2405,7 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_int && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;
@@ -2617,7 +2615,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
+	tpe = any = TYPE_int;
     }
 
     /* init variables for the decluster operation */
@@ -2642,7 +2640,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster2(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_int && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;
@@ -2721,7 +2719,7 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
+	tpe = any = TYPE_int;
     }
 
     /* init variables for the decluster operation */
@@ -2746,7 +2744,7 @@ int radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster3(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_int && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;
@@ -2810,7 +2808,7 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
 
     /* create destination bat and init some variables */
     if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
+	tpe = any = TYPE_int;
     }
 
     /* init variables for the decluster operation */
@@ -2835,7 +2833,7 @@ int radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     default:       @:radix_decluster4(int,atom,tail)@ 
     }
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_int && b->ttype == TYPE_str) {
 	BAT *bm = BATmirror(bn);
         bm->ttype = bn->htype = tpe;
         bm->tvarsized = bn->hvarsized = 1;

@@ -869,7 +869,7 @@ as a set aggregate {\small\tt \{sum\}()}.
 In the above we see why the second (left) parameter is necessary: it 
 makes it possible to work with empty sets/bags as well!
 
-In the new @[<a href="www/aggrX3.html">aggrX3 module</a>@ you find pumps with {\bf three}
+In the new @[<a href="aggr3x.html">aggrX3 module</a>@ you find pumps with {\bf three}
 parameters. At this moment this, tertiary aggregate is defined only for the most
 common aggregate functions, while the binary pump works for all aggregates (including
 your own MIL-procs). In the tertiary pump, the first (left) parameter of the binary pump
@@ -1122,7 +1122,7 @@ As of version 4.1 MIL has 7 standard modules, that are always loaded.
 	system information. This module contains helpful procedures for navigating through the system (ls, help).
 \item[ @[<a href="www/str.html">str</a>@ ] 
 	string handling.
-\item[ @[<a href="www/trans.html">trans</a>@ ] 
+\item[ @[<a href="www/trans.html">str</a>@ ] 
 	support for global transactions (minmal database consistency).
 \end{description}
 
@@ -1152,6 +1152,8 @@ As of version 4.1 MIL has 7 standard modules, that are always loaded.
 \begin{description}
 \item[@[<a href="www/lock.html">lock</a>@]
 	Locks and semaphores.
+\item[@[<a href="www/logger.html">logger</a>@]
+	write-ahead logger.
 \end{description}
 
 @+ OS APIs
@@ -1196,10 +1198,6 @@ As of version 4.1 MIL has 7 standard modules, that are always loaded.
 	Calibrator that automatically extracts relevant hardware parameters from any system.
 \item[@[<a href="www/counters.html">counters</a>@]
 	System-independent hardware counters.
-	(First version, building directly on system-dependend libraries.)
-\item[@[<a href="www/pcl.html">pcl</a>@]
-	System-independent hardware counters.
-	(Second version, building on System-independent @[<a href="http://www.fz-juelich.de/zam/PCL/">PCL</a>@ library
 \item[@[<a href="www/mprof.html">mprof</a>@]
 	Monet performance profiling.
 \end{description}
@@ -1318,7 +1316,7 @@ We recommend you to study the commands in the following modules:
 \item[bats] @[<a href="www/bat.html">bat</a>@ (basic bat management) and
 @[<a href="www/algebra.html">algebra</a>@ (the core algebra).
 
-\item[advanced query processing] @[<a href="www/aggr.html">aggr</a>@ and @[<a href="www/aggrX3.html">aggrX3</a>@ (aggregates),
+\item[advanced query processing] @[<a href="www/aggr.html">aggr</a>@ and @[<a href="aggrX3">aggrX3</a>@ (aggregates),
 @[<a href="www/xtables.html">xtables</a>@ (groupings) and
 @[<a href="www/radix.html">radix</a>@ (cache-conscious join).
 \end{itemize}

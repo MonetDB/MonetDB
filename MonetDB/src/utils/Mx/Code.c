@@ -73,7 +73,6 @@ again:  switch( d->d_dir ){
 	case Monet:
 	case SQL:
         case HTML:
-	case MALcode:
 	case MILcode:
 	case Qnap:
 	case Pspec:

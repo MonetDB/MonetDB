@@ -691,26 +691,6 @@ fi
 AC_SUBST(PCL_CFLAGS)
 AC_SUBST(PCL_LIBS)
 
-AC_CHECK_HEADERS(iconv.h locale.h langinfo.h)
-AC_CHECK_FUNCS(nl_langinfo setlocale)
-
-dnl  If not present in libc, the iconv* functions might be in a separate libiconv;
-dnl  on CYGWIN, they are even called libiconv* (iconv.h takes care of mapping
-dnl  iconv* to libiconv*).
-ICONV_LIBS=""
-have_iconv=no
-AC_CHECK_LIB(iconv, iconv, 
-  [ ICONV_LIBS="-liconv" have_iconv=yes ],
-  [ AC_CHECK_LIB(iconv, libiconv, [ ICONV_LIBS="-liconv" have_iconv=yes ], 
-    [ AC_CHECK_FUNC(iconv, [ have_iconv=yes ], []) 
-    ]) 
-  ]
-)
-if test "x$have_iconv" = xyes; then
-	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv function])
-fi
-AC_SUBST(ICONV_LIBS)   
-
 AC_CHECK_PROG(LATEX,latex,latex)
 AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
 AC_CHECK_PROG(DVIPS,dvips,dvips)

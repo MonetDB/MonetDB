@@ -1,7 +1,6 @@
 00_Mserver
 01_Modules_static
 02_Modules_plain
-02_Modules_contrib
 # 03_Modules_misc
 # # 04_Modules_odmg
 # # 04_Modules_odmgTest

@@ -297,7 +297,6 @@ void	MakeDefs(char *name)
 	case Prolog:
 	case Haskell:
 	case Monet:
-	case MALcode:
 	case MILcode:
 	case HTML:
 	case ODLspec:

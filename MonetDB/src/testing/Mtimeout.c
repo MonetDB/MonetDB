@@ -125,14 +125,10 @@ limit(char **argv)
 	    } else {
 	        int wts = WTERMSIG(status);
 		char msg[1024];
-#ifdef HAVE_STRSIGNAL
-		snprintf(msg, 1022, "%s (%d): ", strsignal(wts), wts);
-#else
 #ifdef HAVE__SYS_SIGLIST
 		snprintf(msg, 1022, "%s (%d): ", _sys_siglist[wts], wts);
 #else
 		snprintf(msg, 1022, "signal %d: ", wts);
-#endif
 #endif
 		invocation(stderr, msg, argv);
 	if (status & 0200) {

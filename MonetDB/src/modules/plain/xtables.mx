@@ -179,10 +179,7 @@ can be used for multi-attribute join.
          Passing is either direct thourgh nested BATs or as string (identified by name); 
          This multi-BAT CTregroup guarantees same group oids for same values"
 
-.END xtables;
-
-@mil
-
+.LOAD
      PROC CTorderby(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
          if (not(b.reverse.ordered)) {
                 b := b.reverse.sort.reverse;
@@ -232,6 +229,9 @@ can be used for multi-attribute join.
      proc print(str spec, bat[any::1,any] b, ..bat[any::1,any]..) {
              orderby_table("print", $(1..));
      }
+.END;
+     
+.END xtables;
 
 @- Histogram reuse
 @T
@@ -248,6 +248,8 @@ will be able to pick it up without computation.
 @* Example Script
 The cross tables are checked using the scripts defined below.
 @mil
+setoid(oid(20000000));
+module(xtables);
 
 # First some procs for convenience: 
 # - xtable_print(group[oid,oid], str, attr1[oid,a1], attr2[oid,a2], ...)
@@ -256,7 +258,7 @@ The cross tables are checked using the scripts defined below.
 #	allocate more memory and return a copy of a bat
 # - xtable_test(str title, bat x, bat y, bat z)
 #	 major test script on xtable functionality
-
+ 
 proc xtable_print := {
     printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
                 $2, $3.count, $1.count, $3.batsize);
@@ -272,7 +274,7 @@ proc xtable_histo_remap := {
     var map := new(oid,oid).key(true).reverse.insert($2);
     map.join($2.histogram).xtable_print($(1..), map.col_name("gid"));
 }
-
+ 
 proc xtable_realloc(b,cap) := {
     var inf := b.info;
     var ht := monet_atomtbl.find(inf.find("head"));
@@ -283,13 +285,13 @@ proc xtable_realloc(b,cap) := {
     if (tt = void) bn.seqbase(b.fetch(0));
     return bn;
 }
-
+ 
 proc xtable_test(title, x, y, z) := {
     printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
                 title, x.count, x.batsize + y.batsize + z.batsize);
     x.col_name("x"); y.col_name("y"); z.col_name("z");
     var yy := [+](y,dbl(1.0)).col_name("yy");
-
+ 
     print(x.slice(0,7).col_name("x"),y,yy,z);
     printf("synced(x,y) := %s\n", synced(x,y).str);
     printf("synced(x,z) := %s\n", synced(x,z).str);
@@ -332,102 +334,99 @@ proc xtable_test(title, x, y, z) := {
     xtable_histo_remap("multiregroup(yy,x)", b1.fetch(1), yy, x, z); 
 }
 
-PROC test_xtables() : void := {
-    setoid(oid(20000000));
+x := new(oid,chr);
+x.insert(1@0,'a');
+x.insert(2@0,'a');
+x.insert(3@0,'b');
+x.insert(4@0,'b');
+x.insert(5@0,'b');
+x.insert(6@0,'b');
+x.insert(7@0,'c');
+x.insert(8@0,'c');
+ 
+y:= new(oid,dbl);
+y.insert(1@0,dbl(1.0));
+y.insert(2@0,dbl(2.0));
+y.insert(3@0,dbl(2.0));
+y.insert(4@0,dbl(2.0));
+y.insert(5@0,dbl(2.0));
+y.insert(6@0,dbl(3.0));
+y.insert(7@0,dbl(1.0));
+y.insert(8@0,dbl(1.0));
+ 
+z:= new(oid,str);
+z.insert(1@0,"c");
+z.insert(2@0,"a");
+z.insert(3@0,"b");
+z.insert(4@0,"c");
+z.insert(5@0,"a");
+z.insert(6@0,"a");
+z.insert(7@0,"c");
+z.insert(8@0,"a");
 
-    x := new(oid,chr);
-    x.insert(1@0,'a');
-    x.insert(2@0,'a');
-    x.insert(3@0,'b');
-    x.insert(4@0,'b');
-    x.insert(5@0,'b');
-    x.insert(6@0,'b');
-    x.insert(7@0,'c');
-    x.insert(8@0,'c');
-     
-    y:= new(oid,dbl);
-    y.insert(1@0,dbl(1.0));
-    y.insert(2@0,dbl(2.0));
-    y.insert(3@0,dbl(2.0));
-    y.insert(4@0,dbl(2.0));
-    y.insert(5@0,dbl(2.0));
-    y.insert(6@0,dbl(3.0));
-    y.insert(7@0,dbl(1.0));
-    y.insert(8@0,dbl(1.0));
-     
-    z:= new(oid,str);
-    z.insert(1@0,"c");
-    z.insert(2@0,"a");
-    z.insert(3@0,"b");
-    z.insert(4@0,"c");
-    z.insert(5@0,"a");
-    z.insert(6@0,"a");
-    z.insert(7@0,"c");
-    z.insert(8@0,"a");
-    
-    xtable_test("small hash", x, y, z);
-     
-    # create vectorized versions
-    x := x.reverse.project.reverse.copy;
-    y := y.reverse.project.reverse.copy;
-    z := z.reverse.project.reverse.copy;
-     
-    # activate voids
-    x.seqbase(1@0);
-    y.seqbase(1@0);
-    z.seqbase(1@0);
-     
-    xtable_test("small vectorized", x, y, z);
-    
-    # deactivate voids
-    x.seqbase(oid(nil));
-    y.seqbase(oid(nil));
-    z.seqbase(oid(nil));
+xtable_test("small hash", x, y, z);
  
-    print("growing vectorized tables from 8 to 512k elements...");
-    x := x.xtable_realloc(512*1024);
-    y := y.xtable_realloc(512*1024);
-    z := z.xtable_realloc(512*1024);
-    var i := 17;
-    while((i := i - 1) > 0) {
-            x.insert(x.copy);
-            y.insert(y.copy);
-            z.insert(z.copy);
-            print(x.count);
-    }
-    print("done!");
+# create vectorized versions
+x := x.reverse.project.reverse.copy;
+y := y.reverse.project.reverse.copy;
+z := z.reverse.project.reverse.copy;
  
-    # materialize the oids again
-    x := [oid](x.reverse.mark(oid(1))).reverse;
-    y := [oid](y.reverse.mark(oid(1))).reverse;
-    z := [oid](z.reverse.mark(oid(1))).reverse;
-    y := y.access(BAT_WRITE);
-    z := z.access(BAT_WRITE);
-    y.insert(0@0,dbl(nil));
-    z.insert(0@0,str(nil));
-    y.delete(0@0);
-    z.delete(0@0);
-     
-    xtable_test("big hash", x, y, z);
-     
-    # let the Mserver find out that the head columns are equal
-    y := x.mirror.join(y);
-    z := x.mirror.join(z);
+# activate voids
+x.seqbase(1@0);
+y.seqbase(1@0);
+z.seqbase(1@0);
  
-    xtable_test("big synced", x, y, z);
-    
-    # activate voids
-    x := x.reverse.mark(1@0).reverse;
-    y := y.reverse.mark(1@0).reverse;
-    z := z.reverse.mark(1@0).reverse;
-    
-    xtable_test("big vectorized", x, y, z);
+xtable_test("small vectorized", x, y, z);
+
+# deactivate voids
+x.seqbase(oid(nil));
+y.seqbase(oid(nil));
+z.seqbase(oid(nil));
+ 
+print("growing vectorized tables from 8 to 512k elements...");
+x := x.xtable_realloc(512*1024);
+y := y.xtable_realloc(512*1024);
+z := z.xtable_realloc(512*1024);
+var i := 17;
+while((i := i - 1) > 0) {
+        x.insert(x.copy);
+        y.insert(y.copy);
+        z.insert(z.copy);
+        print(x.count);
 }
-    
+print("done!");
+ 
+# materialize the oids again
+x := [oid](x.reverse.mark(oid(1))).reverse;
+y := [oid](y.reverse.mark(oid(1))).reverse;
+z := [oid](z.reverse.mark(oid(1))).reverse;
+y := y.access(BAT_WRITE);
+z := z.access(BAT_WRITE);
+y.insert(0@0,dbl(nil));
+z.insert(0@0,str(nil));
+y.delete(0@0);
+z.delete(0@0);
+ 
+xtable_test("big hash", x, y, z);
+ 
+# let the Mserver find out that the head columns are equal
+y := x.mirror.join(y);
+z := x.mirror.join(z);
+ 
+xtable_test("big synced", x, y, z);
+
+# activate voids
+x := x.reverse.mark(1@0).reverse;
+y := y.reverse.mark(1@0).reverse;
+z := z.reverse.mark(1@0).reverse;
+
+xtable_test("big vectorized", x, y, z);
+ 
+quit;
+
 @{
 @* Implementation Code
 @c
-#include "algebra.h"
 #include "xtables.proto.h"
 
 @+ HistoLink
@@ -600,7 +599,7 @@ hashing.
 #define match_sync(b,p,r) r += yy
 #define match_hash(b,p,r) BUNfndOID(r,b,p); if (r == NULL) continue;
 
-#define declare_atom int any = b->ttype; hash_t (*hashfcn)(ptr) = BATatoms[any].atomHash;
+#define declare_atom int any = b->ttype; hash_t (*hashfcn)() = BATatoms[any].atomHash;
 #define declare_simple /* any and hash would otherwise give unused variable warning */
 
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid
@@ -662,7 +661,7 @@ typedef struct {
 		map = m->map; hash = m->hash; mask = m->mask;		\
     	} else {							\
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
-		hash = (hash_t*) alloca((int)(sizeof(hash_t)*((mask=@2)+1))); \
+		hash = (hash_t*) alloca(sizeof(hash_t)*((mask=@2)+1));	\
 		for(xx=0; xx<=@2; xx++) {				\
 			hash[xx] = 0;					\
 		}							\
@@ -688,7 +687,7 @@ map_T map_multigroup(size_t size, size_t heap, int tt) {
 
 	/* init the hash table */
 	for(xx=1; (xx+xx) < size; xx+=xx);
-	HEAPalloc(&m.hp, xx, sizeof(hash_t));
+	HEAPalloc(&m.hp, xx, sizeof(int));
 	m.mask = xx-1;
 	m.hash = (hash_t*) m.hp.base;
 
@@ -704,7 +703,7 @@ void map_free(map_T m) {
 }
 
 #ifndef offsetof
-#define offsetof(type, member)	((size_t) &((type *) 0)->member)
+#define offsetof(type, member)	((int) &((type *) 0)->member)
 #endif
 
 BAT *map2histo(BAT *map) {
@@ -716,20 +715,17 @@ BAT *map2histo(BAT *map) {
 	}
         /* trickily transform a bat[mapentry,any] into bat[oid,int] */
 	map->htype = BATmirror(map)->ttype = TYPE_oid;
-	strcpy(map->hatom, "oid");
 	map->ttype = BATmirror(map)->htype = TYPE_int;
+	strcpy(map->hatom, "oid");
 	strcpy(map->tatom, "int");
 	if (map->tvarsized && map->theap.base) {
 		HEAPfree(&map->theap);
 	}
 	BATmirror(map)->hvarsized = map->tvarsized = 0;
-	/* do these in the right order: map->dims.headloc is used, so
-	 * change it at end
-	 */
-	BATmirror(map)->dims.headloc = 
-	    map->dims.tailloc = map->dims.headloc + (int) offsetof(mapentry_t,cnt);
 	BATmirror(map)->dims.tailloc = 
-	    map->dims.headloc = map->dims.headloc + (int) offsetof(mapentry_t,gid);
+	    map->dims.headloc = map->dims.headloc + offsetof(mapentry_t,gid);
+	BATmirror(map)->dims.headloc = 
+	    map->dims.tailloc = map->dims.headloc + offsetof(mapentry_t,link);
 	return map;
 }
  
@@ -819,7 +815,7 @@ int tailtype(BAT *b, int str_trick) {
 	} else if (tpe == TYPE_dbl) {
 		return TYPE_lng; 
 	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((&b->theap))) {
-		return TYPE_var; /* string offsets are identifying integers */
+		return TYPE_int; /* string offsets are identifying integers */
 	}
 	return tpe;
 }
@@ -1360,11 +1356,10 @@ int CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom) {
                 hash[c] = yy; 
 		yy++;
 	}
-	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
+	bn->batBuns->free = r - Bunbase(bn);
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	strcpy(bn->hatom, "oid");
-	/* assert(offsetof(idxentry_t,hcur) == 0); */
 	ALIGNsetH(bn, dom);
 
         /* add the counts for this selection using the hash table */
@@ -1394,7 +1389,7 @@ int CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom) {
 #define DEFAULT_SIZE 10000
 
 struct refine {
-	var_t off;
+	int off;
 	oid o;
 };
 
@@ -1470,7 +1465,7 @@ int CTrefine(BAT **res, BAT *b, BAT *a) {
 			cur = buf + off;
 		}
 		r += a->tloc;
-		cur->off = base ? (var_t) (r - base) : *(var_t*) r;
+		cur->off = (base)?(r-base):*(int*) r;
 		cur->o = o;
 		cur++;
 	} 

@@ -607,7 +607,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                 int tpe = r->ttype;
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
                 if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
-                        tpe = TYPE_var; /* insert double-eliminated strings as ints */
+                        tpe = TYPE_int; /* insert double-eliminated strings as ints */
                 }
                 bn = BATnew(TYPE_void, ATOMtype(tpe), BATcount(l));
                 ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: %d\n",BATcount(l));
@@ -629,7 +629,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
                         @:voidfetchjoin(tloc,bn->ttype,ATOM)@
                 }
                 /* handle string trick */
-                if (tpe == TYPE_var && ATOMstorage(r->ttype) == TYPE_str) {
+                if (tpe == TYPE_int && ATOMstorage(r->ttype) == TYPE_str) {
                         BAT *bm = BATmirror(bn);
                         bn->ttype = bm->htype = r->ttype;
                         bn->tvarsized = bm->hvarsized = 1;
