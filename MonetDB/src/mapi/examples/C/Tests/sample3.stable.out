@@ -19,8 +19,8 @@ Over..
 # 22:25:16 >  
 
 rows received 2 with 2 fields
-John=23
-Mary=23
+column_0=John column_1=23 
+column_0=Mary column_1=23 
 
 # 22:25:16 >  
 # 22:25:16 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=42910
