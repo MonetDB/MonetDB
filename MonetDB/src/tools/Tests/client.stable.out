@@ -870,14 +870,6 @@ Start of MIL script.
 [ 3,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL script.
-MAPI  = anonymous@draco:53613
-ACTION= mapi_fetch_line
-QUERY = quit();
-ERROR = Connection terminated
-MAPI  = anonymous@draco:53613
-ACTION= mapi_execute
-QUERY = 
-ERROR = communication line broken
 
 # 18:26:55 >  
 # 18:26:55 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_4.3.13-FixedPetersDDsync_PREFIX_MONET_GNU_32_d_--enable-warning_/etc/monet.conf" --host=draco --port=53708

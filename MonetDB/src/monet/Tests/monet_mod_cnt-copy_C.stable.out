@@ -149,12 +149,6 @@ Over..
 [ 10668@0,	  3	  ]
 [ 10669@0,	  3	  ]
 [ 10708@0,	  3	  ]
-MAPI  = monetdb@draco:40223
-ACTION= mapi_get_row
-QUERY = b:=x.reverse.mirror.[bat].[copy].[count];
-ERROR = !WARNING: [copy]: 3 times inserted nil due to errors at tuples "name", "count", "copy.count".
-        !WARNING: [copy]: first error was: !ERROR: BATcopy: BAT required.
-        !ERROR: CMDcopy: operation failed.
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
