@@ -15,7 +15,7 @@ public class Test_PStimezone {
 		System.out.println("0. false\t" + con.getAutoCommit());
 
 		try {
-			stmt.executeUpdate("CREATE TABLE table_Test_PStimezone (ts timestamp, tz timestamp with time zone)");
+			stmt.executeUpdate("CREATE TABLE table_Test_PStimezone (ts timestamp, tsz timestamp with time zone, t time, tz time with time zone)");
 		} catch (SQLException e) {
 			System.out.println(e);
 			System.out.println("Creation of test table failed! :(");
@@ -24,7 +24,7 @@ public class Test_PStimezone {
 		}
 
 		try {
-			pstmt = con.prepareStatement("INSERT INTO table_Test_PStimezone VALUES (?, ?)");
+			pstmt = con.prepareStatement("INSERT INTO table_Test_PStimezone VALUES (?, ?, ?, ?)");
 			System.out.print("1. empty call...");
 			try {
 				// should fail (no arguments given)
@@ -43,20 +43,28 @@ public class Test_PStimezone {
 			
 			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()));
 			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()));
+			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()));
+			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()));
 			pstmt.executeUpdate();
 			
 			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()), c);
 			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()), c);
+			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()), c);
+			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()), c);
 			pstmt.executeUpdate();
 			
 			c.setTimeZone(TimeZone.getTimeZone("PST"));
 			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()));
 			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()), c);
+			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()));
+			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()), c);
 			pstmt.executeUpdate();
 			
 			c.setTimeZone(TimeZone.getTimeZone("GMT+04:15"));
 			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()), c);
 			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()));
+			pstmt.setTime(3, new java.sql.Time(c.getTime().getTime()), c);
+			pstmt.setTime(4, new java.sql.Time(c.getTime().getTime()));
 			pstmt.executeUpdate();
 			
 			System.out.println(" passed :)");
@@ -70,12 +78,18 @@ public class Test_PStimezone {
 			System.out.println(" passed :)");
 
 			while (rs.next()) {
-				System.out.println(rs.getString("ts") + "\t" + rs.getString("tz"));
-				System.out.println(rs.getTimestamp("ts") + "\t" + rs.getTimestamp("tz"));
+				System.out.println(rs.getString("ts") + "\t" + rs.getString("tsz"));
+				System.out.println(rs.getTimestamp("ts") + "\t" + rs.getTimestamp("tsz"));
 				c.setTimeZone(TimeZone.getTimeZone("PST"));
-				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tz", c));
+				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tsz", c));
 				c.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
-				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tz", c));
+				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tsz", c));
+				System.out.println(rs.getString("t") + "\t" + rs.getString("tz"));
+				System.out.println(rs.getTime("t") + "\t" + rs.getTime("tz"));
+				c.setTimeZone(TimeZone.getTimeZone("PST"));
+				System.out.println(rs.getTime("t", c) + "\t" + rs.getTime("tz", c));
+				c.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
+				System.out.println(rs.getTime("t", c) + "\t" + rs.getTime("tz", c));
 				System.out.println();
 			}
 
