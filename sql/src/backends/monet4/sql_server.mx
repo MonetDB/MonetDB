@@ -203,18 +203,19 @@ int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	builtin_operand( stk, lt, 0, (ptr*)&Debug, TYPE_int, res);
 	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
 	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
-		sqlstatement("GRANT ALL on modules to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on schemas to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on tables to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on columns to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on keys to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on idxs to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on keycolumns to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on types to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on users to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on user_role to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on auths to monetdb with grant option;", stk);
-		sqlstatement("GRANT ALL on privileges to monetdb with grant option;", stk);
+		sqlstatement("GRANT ALL on modules to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on schemas to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on tables to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on columns to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on keys to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on idxs to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on keycolumns to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on types to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on users to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on user_role to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on auths to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("GRANT ALL on privileges to monetdb with grant option with hierarchy option;", stk);
+		sqlstatement("CREATE TABLE history (start TIMESTAMP, query VARCHAR, parse MEDIUMINT, mil MEDIUMINT, exec MEDIUMINT, total MEDIUMINT, \"user\" VARCHAR);", stk);
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}
@@ -473,7 +474,7 @@ int trunc2@1( @1 *res, str val, int *d, int *sc )
 		GDKerror("decimal (%s) doesn't have format (%d,%d)", val, *d, *sc);
 		return GDK_FAIL;
 	}
-	*res = (@1) value;
+	*res = value;
 	return GDK_SUCCEED;
 }
 @c
@@ -503,14 +504,11 @@ int trunc2@1( @1 *res, str val, int *d, int *s )
 {
 	ptr p = NULL;
 	int len = 0;
-	int e;
+	int e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	int digits = *d - *s;
 	lng value = 1;
 	
- 	e = ATOMfromstr(TYPE_@1, &p, &len, val);
-	if (e < 0 || !p || 
-	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
-	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
+	if (e <= 0 || !p || ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0) {
 		if (p)
 			GDKfree(p);
 		return GDK_FAIL;
@@ -539,12 +537,9 @@ int cast2@1( @1 *res, str val )
 {
 	ptr p = NULL;
 	int len = 0;
-	int e; 
+	int e = ATOMfromstr(TYPE_@1, &p, &len, val);
 	
-	e = ATOMfromstr(TYPE_@1, &p, &len, val);
-	if (e < 0 || !p || 
-	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
-	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
+	if (e <= 0 || !p || ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0) {
 		if (p)
 			GDKfree(p);
 		return GDK_FAIL;
@@ -572,17 +567,6 @@ module(blob);
 module(mmath);
 module(mkey);
 module(mapi); # mapi_listen 
-
-# extra SQL string functions 
-
-proc substring( str s, int start, int l ) {
-	if (start < 1) start := 1;
-	return string(s, start - 1, l);
-}
-proc substring( str s, int start ) {
-	if (start < 1) start := 1;
-	return string(s, start - 1);
-}
 
 # low memory usage for testing unloading
 #mem_maxsize(0LL);

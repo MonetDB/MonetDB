@@ -44,6 +44,11 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	ODBCLOG("SQLForeignKeys\n");
 #endif
 
+	(void) szPKCatalogName;	/* Stefan: unused!? */
+	(void) nPKCatalogNameLength;	/* Stefan: unused!? */
+	(void) szFKCatalogName;	/* Stefan: unused!? */
+	(void) nFKCatalogNameLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -57,10 +62,8 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	}
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szPKCatalogName, nPKCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szPKTableName, nPKTableNameLength, addStmtError, stmt);
-	fixODBCstring(szFKCatalogName, nFKCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szFKTableName, nFKTableNameLength, addStmtError, stmt);
 
@@ -74,41 +77,16 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	assert(query);
 	query_end = query;
 
-	/* SQLForeignKeys returns a table with the following columns:
-	   VARCHAR	pktable_cat
-	   VARCHAR	pktable_schem
-	   VARCHAR	pktable_name NOT NULL
-	   VARCHAR	pkcolumn_name NOT NULL
-	   VARCHAR	fktable_cat
-	   VARCHAR	fktable_schem
-	   VARCHAR	fktable_name NOT NULL
-	   VARCHAR	fkcolumn_name NOT NULL
-	   SMALLINT	key_seq NOT NULL
-	   SMALLINT	update_rule
-	   SMALLINT	delete_rule
-	   VARCHAR	fk_name
-	   VARCHAR	pk_name
-	   SMALLINT	deferrability
-	 */
-
 	strcpy(query_end,
-	       "select "
-	       "'' as pktable_cat, "
-	       "s1.name as pktable_schem, "
-	       "t1.name as pktable_name, "
-	       "c1.name as pkcolumn_name, "
-	       "'' as fktable_cat, "
-	       "s1.name as fktable_schem, "
-	       "t1.name as fktable_name, "
-	       "c1.name as fkcolumn_name, "
+	       "select '' as pktable_cat, s1.name as pktable_schem, "
+	       "t1.name as pktable_name, c1.name as pkcolumn_name, "
+	       "'' as fktable_cat, s1.name as fktable_schem, "
+	       "t1.name as fktable_name, c1.name as fkcolumn_name, "
 	       "kc.ordinal_position as key_seq, "
-	       "k.update_rule as update_rule, "
-	       "k.delete_rule as delete_rule, "
-	       "k.fk_name as fk_name, "
-	       "k.pk_name as pk_name, "
-	       "k.deferrability as deferrability "
-	       "from sys.schemas s, sys.tables t, columns c "
-	       "where s.id = t.schema_id and t.id = c.table_id");
+	       "k.update_rule as update_rule, k.delete_rule as delete_rule, "
+	       "k.fk_name as fk_name, k.pk_name as pk_name, "
+	       "k.deferrability as deferrability from schemas s, tables t, "
+	       "columns c where s.id = t.schema_id and t.id = c.table_id");
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */

@@ -45,12 +45,12 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	clearDbcErrors(dbc);
 
 	/* check connection state, should not be connected */
-	if (dbc->Connected) {
+	if (dbc->Connected == 1) {
 		/* 08002 = Connection already in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(!dbc->Connected);
+	assert(dbc->Connected == 0);
 
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szDataSource, nDataSourceLength, addDbcError, dbc);
@@ -66,8 +66,6 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		return SQL_ERROR;
 	}
 
-	/* we need NULL-terminated strings for uid and password, so we
-	   need to make copies */
 	fixODBCstring(szUID, nUIDLength, addDbcError, dbc);
 	if (nUIDLength == 0) {
 		uid = strdup(mo_find_option(NULL, 0, "sql_user"));
@@ -133,7 +131,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		if (dbc->DBNAME != NULL)
 			free(dbc->DBNAME);
 		dbc->DBNAME = schema;
-		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
+		mapi_setAutocommit(mid, dbc->autocommit);
 	}
 
 	return rc;

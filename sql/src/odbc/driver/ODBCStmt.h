@@ -59,10 +59,8 @@ typedef struct tODBCDRIVERSTMT {
 	MapiHdl hdl;
 
 	unsigned int currentRow;	/* used by SQLFetch() */
-	unsigned int previousRow;	/* used by SQLFetch() */
 	unsigned int currentCol; /* used by SQLGetData() */
 	SQLINTEGER retrieved;	/* amount of data retrieved */
-	char *query;		/* the query to be executed */
 
 	ODBCDesc *ApplRowDescr;	/* Application Row Descriptor (ARD) */
 	ODBCDesc *ApplParamDescr; /* Application Parameter Descriptor (APD) */
@@ -124,9 +122,9 @@ ODBCError *getStmtError(ODBCStmt *stmt);
 /* utility macro to quickly remove any none collected error msgs */
 #define clearStmtErrors(stmt) do {					\
 				assert(stmt);				\
-				if ((stmt)->Error) {			\
-					deleteODBCErrorList(&(stmt)->Error); \
-					(stmt)->RetrievedErrors = 0;	\
+				if (stmt->Error) {			\
+					deleteODBCErrorList(&stmt->Error); \
+					stmt->RetrievedErrors = 0;	\
 				}					\
 			} while (0)
 

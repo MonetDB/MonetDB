@@ -56,7 +56,6 @@ typedef struct dlist {
 extern dlist *dlist_create();
 extern void dlist_destroy(dlist * l);
 extern void dlist_destroy_keep_data(dlist * l);
-extern void dlist_remove_node( dlist *l, dnode *d );
 extern int dlist_length(dlist * l);
 
 extern dlist *dlist_append_string(dlist * l, char *data);
@@ -331,25 +330,6 @@ void dlist_destroy(dlist * l)
 	}
 }
 
-void dlist_remove_node( dlist *l, dnode *n )
-{
-	dnode *p = l->h;
-	if (p != n)
-		while (p && p->next != n)
-			p = p->next;
-	if (p == n) {
-		l->h = n->next;
-		p = NULL;
-	} else {
-		p->next = n->next;
-	}
-	if (n == l->t)
-		l->t = p;
-	n->data.sval = NULL; /* do not remove data */
-	dnode_destroy(n);
-	l->cnt--;
-}
-
 void dlist_destroy_keep_data(dlist * l)
 {
 	if (l) {
@@ -491,8 +471,6 @@ static int dnode_cmp( dnode *d1, dnode *d2 )
 			return dlist_cmp(d1->data.lval,d2->data.lval);
 		case type_symbol: 	
 			return symbol_cmp(d1->data.sym, d2->data.sym);
-		case type_type: 	
-			return subtype_cmp(d1->data.typeval, d2->data.typeval);
 		default: assert(0);
 		}
 	}

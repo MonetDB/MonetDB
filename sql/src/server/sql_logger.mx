@@ -100,7 +100,7 @@ extern void logger_restart(struct logger *logger );
 extern int logger_cleanup(struct logger *logger );
 
 extern void log_bat(struct logger* logger, oid lbid, BAT *b);
-extern void log_bat_persists(struct logger* logger, BAT *b, oid lbid, char *n );
+extern oid log_bat_persists(struct logger* logger, BAT *b, char *n );
 extern void log_bat_transient(struct logger* logger, oid lbid );
 extern int  log_changes(struct logger *logger );
 
@@ -517,6 +517,7 @@ void logger_exit(logger *logger) {
 void logger_restart(logger *logger) {
 	logger_close(logger);
 	logger_exit(logger);
+	/* TODO add cleanup of old log files */
 	logger_open(logger);
 }
 
@@ -528,19 +529,20 @@ int logger_cleanup(logger *logger) {
 
 
 	snprintf(buf, BUFSIZ,"%s%s.bak-%d", logger->dir, LOGFILE, logger->id);
+	printf(buf);
         if (logger->debug&1)
 		fprintf(stderr, "logger_cleanup %s\n", buf);
 
-	if ( (fp = fopen(buf, "r")) == NULL)
+	if ( (fp = fopen(buf, "r")) != NULL)
 		return res;
 
+	printf(buf);
 	/* skip catalog */
 	while(fgets(id, BUFSIZ, fp) != NULL && id[0] != '\n')
 		;
 
 	while(fgets(id, BUFSIZ, fp) != NULL){
-		char *e = strchr(id,'\n');
-		if (e) *e = 0;
+		printf("(%s.%s)\n", LOGFILE, id);
 		GDKunlink( logger->dir, LOGFILE, id ); 
 	}
 	fclose(fp);
@@ -559,7 +561,7 @@ Changes made to the BAT descriptor should be stored in the log files.
 Actually, we need to save the descriptor file, perhaps we should simply
 introduce a versioning scheme. 
 @c
-void log_bat_persists(logger *logger, BAT *b, oid lbid, char *name )
+oid log_bat_persists(logger *logger, BAT *b, char *name )
 {
 	char *ha, *ta;
 	int len;
@@ -567,6 +569,7 @@ void log_bat_persists(logger *logger, BAT *b, oid lbid, char *name )
 	logformat l;
 	int havevoid = 0;
 
+	oid lbid = bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
 	l.flag = SQL_LOG_CREATE;
 	l.nr = 0;
 	logger->changes++;
@@ -590,6 +593,7 @@ void log_bat_persists(logger *logger, BAT *b, oid lbid, char *name )
 		fprintf(stderr, "Logged new bat %s htype %s ttype %s\n", 
 			name, ha, ta );
 	log_bat(logger, lbid, b);
+	return lbid;
 }
 
 void log_bat_transient(logger *logger, oid lbid ){
@@ -604,6 +608,7 @@ void log_bat_transient(logger *logger, oid lbid ){
 	
         if (logger->debug&1)
 		fprintf(stderr, "Logged destroyed bat %s\n", name);
+	bm_del_bat(logger->bm, lbid);
 }
 
 void log_bat(logger *logger, oid lbid, BAT *b ){

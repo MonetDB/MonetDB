@@ -41,6 +41,8 @@ SQLGetDiagField(SQLSMALLINT HandleType,	/* must contain a valid type */
 	(void) StringLength;	/* Stefan: unused!? */
 
 	/* input & output parameters validity checks */
+	if (!Handle)
+		return SQL_INVALID_HANDLE;
 
 	switch (HandleType) {
 	case SQL_HANDLE_ENV:
@@ -59,10 +61,8 @@ SQLGetDiagField(SQLSMALLINT HandleType,	/* must contain a valid type */
 			return SQL_INVALID_HANDLE;
 		break;
 	case SQL_HANDLE_DESC:
-		/* Check if this struct is still valid/alive */
-		if (!isValidDesc((ODBCDesc *) Handle))
-			return SQL_INVALID_HANDLE;
-		break;
+		/* not yet supported */
+		return SQL_NO_DATA;
 	default:
 		return SQL_INVALID_HANDLE;
 	}

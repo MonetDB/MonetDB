@@ -43,6 +43,9 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	ODBCLOG("SQLSpecialColumns %d ", nIdentifierType);
 #endif
 
+	(void) szCatalogName;	/* Stefan: unused!? */
+	(void) nCatalogNameLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -118,35 +121,21 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	assert(query);
 	query_end = query;
 
-	/* SQLSpecialColumns returns a table with the following columns:
-	   SMALLINT	scope
-	   VARCHAR	column_name NOT NULL
-	   SMALLINT	data_type NOT NULL
-	   VARCHAR	type_name NOT NULL
-	   INTEGER	column_size
-	   INTEGER	buffer_length
-	   SMALLINT	decimal_digits
-	   SMALLINT	pseudo_column
-	 */
 	if (nIdentifierType == SQL_BEST_ROWID) {
 		/* Select from the key table the (smallest) primary/unique key */
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION is 1 */
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO is 1 */
 		strcpy(query_end,
-		       "select "
-		       "1 as scope, "
-		       "c.name as column_name, "
-		       "c.type as data_type, "
-		       "c.type_name as type_name, "
+		       "select 1 as scope, c.name as column_name, "
+		       "c.type as data_type, c.type_name as type_name, "
 		       "c.column_size as column_size, "
 		       "c.buffer_length as buffer_length, "
 		       "c.decimal_digits as decimal_digits, "
-		       "1 as pseudo_column "
-		       "from sys.schemas s, sys.tables t, "
-		       " columns c, keys k, keycolumns kc "
+		       "1 as pseudo_column from schemas s, tables t, "
+		       "columns c, keys k, keycolumns kc "
 		       "where s.id = t.schema_id and t.id = c.table_id and "
-		       " t.id = k.table_id and c.id = kc.'column' and "
-		       " kc.id = k.id" /*" and k.is_primary = 1"*/);
+		       "t.id = k.table_id and c.id = kc.'column' and "
+		       "kc.id = k.id" /*" and k.is_primary = 1"*/);
 		query_end += strlen(query_end);
 		/* TODO: improve the SQL to get the correct result:
 		   - only one set of columns should be returned, also when
@@ -186,16 +175,11 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		/* create just a query which results in zero rows */
 		/* Note: pseudo_column is sql_pc_unknown is 0 */
 		strcpy(query_end,
-		       "select "
-		       "cast(null as smallint) as scope, "
-		       "'' as column_name, "
-		       "cast(1 as smallint) as data_type, "
-		       "'char' as type_name, "
-		       "1 as column_size, "
-		       "1 as buffer_length, "
-		       "cast(0 as smallint) as decimal_digits, "
-		       "cast(0 as smallint) as pseudo_column "
-		       "from sys.schemas s where 0 = 1");
+		       "select null as scope, '' as column_name, "
+		       "1 as data_type, 'char' as type_name, "
+		       "1 as column_size, 1 as buffer_length, "
+		       "0 as decimal_digits, 0 as pseudo_column "
+		       "from schemas s where 0 = 1");
 		query_end += strlen(query_end);
 	}
 

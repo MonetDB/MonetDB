@@ -19,7 +19,6 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
-#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -31,12 +30,13 @@ SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 	ODBCLOG("SQLSetCursorName\n");
 #endif
 
+	(void) szCursor;	/* Stefan: unused!? */
+	(void) nCursorLength;	/* Stefan: unused!? */
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
-
-	fixODBCstring(szCursor, nCursorLength, addStmtError, stmt);
 
 	/* TODO: implement the requested behavior */
 	/* Note: when cursor names are to be implemented the SQL parser &

@@ -3,15 +3,15 @@ package nl.cwi.monetdb.jdbc;
 import java.sql.*;
 import java.util.*;
 import java.io.IOException;
-import java.nio.ByteOrder;
 
 /**
  * A Connection suitable for the Monet database
  * <br /><br />
  * This connection represents a connection (session) to a Monet database. SQL
  * statements are executed and results are returned within the context of a
- * connection. This Connection object holds a physical connection to the Monet
- * database.
+ * connection. <b>In this implementation there is no connection to Monet at this
+ * object.</b> Physical connections to Monet are made in a MonetStatement object
+ * as returned by createStatement().
  * <br /><br />
  * A Connection object's database should able to provide information describing
  * its tables, its supported SQL grammar, its stored procedures, the
@@ -23,11 +23,11 @@ import java.nio.ByteOrder;
  * explicitly in order to commit changes; otherwise, database changes will not
  * be saved.
  * <br /><br />
- * The current state of this connection is that it nearly implements the
- * whole Connection interface.
+ * The current state of this connection is that it only implements the
+ * createStatement() method with default transactions and cursors.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.4 (beta release)
+ * @version 0.3 (beta release)
  */
 public class MonetConnection implements Connection {
 	private final String host;
@@ -39,6 +39,7 @@ public class MonetConnection implements Connection {
 
 	private static boolean debug;
 	private boolean closed;
+	private boolean autoCommit = true;
 
 	private SQLWarning warnings = null;
 	private Map typeMap = new HashMap();
@@ -66,7 +67,6 @@ public class MonetConnection implements Connection {
 	MonetConnection(
 		String hostname,
 		int port,
-		boolean blockMode,
 		String database,
 		String username,
 		String password)
@@ -91,11 +91,7 @@ public class MonetConnection implements Connection {
 
 		try {
 			// make connection to Monet
-			if (blockMode) {
-				monet = new MonetSocketBlockMode(hostname, port);
-			} else {
-				monet = new MonetSocket(hostname, port);
-			}
+			monet = new MonetSocket(hostname, port);
 
 			// make sure we own the lock on monet during the whole login
 			// procedure
@@ -106,53 +102,7 @@ public class MonetConnection implements Connection {
 						(new java.util.Date()).getTime()+".log");
 
 				// log in
-				if (blockMode) {
-					//-- \begin{reverse engineered mode}
-
-					// convenience cast shortcut
-					MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
-
-					// mind the newline at the end
-					blkmon.write(username + ":" + password + ":blocked\n");
-					// We need to send the server our byte order. Java by itself
-					// uses network order, however for performance reasons it
-					// is nice when we can use native byte buffers. Therefore
-					// we send the machine native byte-order to the server here.
-					// A short with value 1234 will be sent to indicate our
-					// byte-order.
-					/*
-					short x = 1234;
-					byte high = (byte)(x >>> 8);	// = 0x04
-					byte low = (byte)x;				// = 0xD2
-					*/
-					final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
-					final byte[] littleEndian = {(byte)0xD2, (byte)0x04};
-					ByteOrder nativeOrder = ByteOrder.nativeOrder();
-					if (nativeOrder == ByteOrder.BIG_ENDIAN) {
-						blkmon.write(bigEndian);
-					} else if (nativeOrder == ByteOrder.LITTLE_ENDIAN) {
-						blkmon.write(littleEndian);
-					} else {
-						throw new AssertionError("Machine byte-order unknown!!!");
-					}
-					blkmon.flush();
-
-					// now read the byte-order of the server
-					byte[] byteorder = new byte[2];
-					if (blkmon.read(byteorder) != 2)
-						throw new SQLException("The server sent an incomplete byte-order sequence");
-					if (byteorder[0] == (byte)0x04) {
-						// set our connection to big-endian mode
-						blkmon.setByteOrder(ByteOrder.BIG_ENDIAN);
-					} else if (byteorder[0] == (byte)0xD2) {
-						// set our connection to litte-endian mode
-						blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
-					}
-
-					//-- \end
-				} else {
-					monet.writeln(username + ":" + password);
-				}
+				monet.writeln(username + ":" + password);
 				// read monet response till prompt
 				String err;
 				if ((err = monet.waitForPrompt()) != null) {
@@ -166,7 +116,7 @@ public class MonetConnection implements Connection {
 			throw new SQLException("IO Exception: " + e.getMessage());
 		}
 
-		setAutoCommit(true);
+		setAutoCommit(autoCommit);
 		closed = false;
 	}
 
@@ -221,9 +171,11 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs or this Connection
 	 *         object is in auto-commit mode
-	 * @see setAutoCommit(boolean)
+	 * @see setAutoCommit(boolean), getAutoCommit()
 	 */
 	public void commit() throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
 		sendCommit();
 	}
 
@@ -290,23 +242,8 @@ public class MonetConnection implements Connection {
 	 * @return the current state of this Connection object's auto-commit mode
 	 * @see setAutoCommit(boolean)
 	 */
-	public boolean getAutoCommit() throws SQLException {
-		// get it from the database
-		Statement stmt;
-
-		stmt = createStatement();
-		ResultSet rs =
-			stmt.executeQuery("SELECT \"value\" FROM \"session\" WHERE \"name\"='auto_commit'");
-		if (rs.next()) {
-			boolean ret = rs.getBoolean(1);
-			rs.close();
-			stmt.close();
-			return(ret);
-		} else {
-			rs.close();
-			stmt.close();
-			throw new SQLException("Driver Panic!!! Monet doesn't want to tell us what we need! BAAAAAAAAAAAD MONET!");
-		}
+	public boolean getAutoCommit() {
+		return(autoCommit);
 	}
 
 	public String getCatalog() {return(null);}
@@ -409,6 +346,7 @@ public class MonetConnection implements Connection {
 	 *         transaction
 	 */
 	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself");
 
@@ -427,9 +365,11 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs or this
 	 *         Connection object is in auto-commit mode
-	 * @see setAutoCommit(boolean)
+	 * @see setAutoCommit(boolean), getAutoCommit()
 	 */
 	public void rollback() throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
 		sendRollback();
 	}
 
@@ -444,6 +384,7 @@ public class MonetConnection implements Connection {
 	 *         in auto-commit mode
 	 */
 	public void rollback(Savepoint savepoint) throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
 		if (!(savepoint instanceof MonetSavepoint)) throw
 			new SQLException("This driver can only handle savepoints it created itself");
 
@@ -479,8 +420,10 @@ public class MonetConnection implements Connection {
 	 * @see getAutoCommit()
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
+		this.autoCommit = autoCommit;
+
 		String error =
-			sendIndependantCommand("SSET auto_commit = " + autoCommit + ";");
+			sendIndependantCommand("SSET autocommit = " + autoCommit + ";");
 		if (error != null) throw new SQLException(error);
 	}
 
@@ -497,6 +440,8 @@ public class MonetConnection implements Connection {
 	 *         object is currently in auto-commit mode
 	 */
 	public Savepoint setSavepoint() throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
 		// send the appropriate query string to the database
@@ -517,6 +462,8 @@ public class MonetConnection implements Connection {
 	 *         object is currently in auto-commit mode
 	 */
 	public Savepoint setSavepoint(String name) throws SQLException {
+		if (autoCommit) throw new SQLException("Currently in auto-commit mode");
+
 		// create a new Savepoint object
 		MonetSavepoint sp;
 		try {

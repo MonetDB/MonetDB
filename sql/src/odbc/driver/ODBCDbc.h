@@ -44,7 +44,7 @@ typedef struct tODBCDRIVERDBC {
 	char *PWD;		/* Password for User ID or NULL */
 	char *DBNAME;		/* Database Name or NULL */
 	int Connected;		/* 1 is Yes, 0 is No */
-	SQLUINTEGER sql_attr_autocommit;
+	int autocommit;
 
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */
@@ -106,9 +106,9 @@ ODBCError *getDbcError(ODBCDbc *dbc);
 /* utility macro to quickly remove any none collected error msgs */
 #define clearDbcErrors(dbc) do {					\
 				assert(dbc);				\
-				if ((dbc)->Error) {			\
-					deleteODBCErrorList(&(dbc)->Error); \
-					(dbc)->RetrievedErrors = 0;	\
+				if (dbc->Error) {			\
+					deleteODBCErrorList(&dbc->Error); \
+					dbc->RetrievedErrors = 0;	\
 				}					\
 			} while (0)
 

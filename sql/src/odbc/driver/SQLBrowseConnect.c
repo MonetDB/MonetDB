@@ -19,7 +19,6 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
-#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -33,6 +32,8 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 	ODBCLOG("SQLBrowseConnect\n");
 #endif
 
+	(void) szConnStrIn;	/* Stefan: unused!? */
+	(void) cbConnStrIn;	/* Stefan: unused!? */
 	(void) szConnStrOut;	/* Stefan: unused!? */
 	(void) cbConnStrOutMax;	/* Stefan: unused!? */
 	(void) pcbConnStrOut;	/* Stefan: unused!? */
@@ -42,15 +43,13 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 
 	clearDbcErrors(dbc);
 
-	fixODBCstring(szConnStrIn, cbConnStrIn, addDbcError, dbc);
-
 	/* check connection state, should not be connected */
-	if (dbc->Connected) {
+	if (dbc->Connected == 1) {
 		/* 08002 = Connection already in use */
 		addDbcError(dbc, "08002", NULL, 0);
 		return SQL_ERROR;
 	}
-	assert(!dbc->Connected);
+	assert(dbc->Connected == 0);
 
 
 	/* TODO: finish implementation */

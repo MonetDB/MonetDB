@@ -42,7 +42,6 @@ struct scanner {
 	bstream *rs;
 	stream 	*ws;
 
-	int yynext;	/* next token, lr(1) isn't powerfull enough for sql */
 	int yysval;	/* start of current token */
 	int yyval;	/* current token */
 	int yycur;	/* next char in the queue */
@@ -137,6 +136,7 @@ init_keywords()
 	keywords_insert("false", BOOL_FALSE);
 	keywords_insert("true", BOOL_TRUE);
 
+	keywords_insert("ALL", ALL);
 	keywords_insert("ALTER", ALTER);
 	keywords_insert("ADD", ADD);
 	keywords_insert("AND", AND);
@@ -145,6 +145,7 @@ init_keywords()
 	keywords_insert("MAX", AGGR);
 	keywords_insert("SUM", AGGR);
 	keywords_insert("COUNT", AGGR);
+	keywords_insert("ANY", ANY);
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);
 	keywords_insert("AUTHORIZATION", AUTHORIZATION);
@@ -156,9 +157,19 @@ init_keywords()
 	keywords_insert("CHARACTER", CHARACTER);
 	keywords_insert("VARYING", VARYING);
 	keywords_insert("CHECK", CHECK);
+	/*
+	   keywords_insert("CLOSE", CLOSE );
+	 */
 	keywords_insert("CONSTRAINT", CONSTRAINT);
+	/*
+	   keywords_insert("CONTINUE", CONTINUE );
+	 */
 	keywords_insert("CREATE", CREATE);
 	keywords_insert("CROSS", CROSS);
+	/*
+	   keywords_insert("CURRENT", CURRENT );
+	   keywords_insert("CURSOR", CURSOR );
+	 */
 	keywords_insert("COPY", COPY );
 	keywords_insert("RECORDS", RECORDS );
 	keywords_insert("DELIMITERS", DELIMITERS );
@@ -166,6 +177,9 @@ init_keywords()
 
 	keywords_insert("DEC", sqlDECIMAL);
 	keywords_insert("DECIMAL", sqlDECIMAL);
+	/*
+	   keywords_insert("DECLARE", DECLARE );
+	 */
 	keywords_insert("DEFAULT", DEFAULT);
 	keywords_insert("DESC", DESC);
 	keywords_insert("DISTINCT", DISTINCT);
@@ -174,9 +188,15 @@ init_keywords()
 	keywords_insert("ESCAPE", ESCAPE);
 	keywords_insert("EXISTS", EXISTS);
 	keywords_insert("EXTRACT", EXTRACT);
+	/*
+	   keywords_insert("FETCH", FETCH );
+	 */
 	keywords_insert("FLOAT", sqlFLOAT);
 	keywords_insert("FOR", FOR);
 	keywords_insert("FOREIGN", FOREIGN);
+	/*
+	   keywords_insert("FOUND", FOUND );
+	 */
 	keywords_insert("FROM", FROM);
 	keywords_insert("REFERENCES", REFERENCES);
 
@@ -192,6 +212,9 @@ init_keywords()
 	keywords_insert("ACTION", ACTION);
 	keywords_insert("CASCADE", CASCADE);
 	keywords_insert("RESTRICT", RESTRICT);
+	/*
+	   keywords_insert("GO", GO );
+	 */
 	keywords_insert("GLOBAL", GLOBAL);
 	keywords_insert("GROUP", GROUP);
 	keywords_insert("HAVING", HAVING);
@@ -201,6 +224,9 @@ init_keywords()
 	keywords_insert("IS", IS);
 	keywords_insert("JOIN", JOIN);
 	keywords_insert("KEY", KEY);
+	/*
+	   keywords_insert("LANGUAGE", LANGUAGE );
+	 */
 	keywords_insert("LEFT", LEFT);
 	keywords_insert("LIKE", LIKE);
 	keywords_insert("LIMIT", LIMIT);
@@ -208,7 +234,14 @@ init_keywords()
 	keywords_insert("NATURAL", NATURAL);
 	keywords_insert("NOT", NOT);
 	keywords_insert("NULL", NULLX);
+	keywords_insert("NUMERIC", NUMERIC);
+	/*
+	   keywords_insert("OF", OF );
+	 */
 	keywords_insert("ON", ON);
+	/*
+	   keywords_insert("OPEN", OPEN );
+	 */
 	keywords_insert("OPTIONS", OPTIONS);
 	keywords_insert("OPTION", OPTION);
 	keywords_insert("OR", OR);
@@ -225,20 +258,18 @@ init_keywords()
 	keywords_insert("ROLE", ROLE);
 	keywords_insert("ADMIN", ADMIN);
 	keywords_insert("PRIVILEGES", PRIVILEGES);
+	keywords_insert("HIERARCHY", HIERARCHY);
 	keywords_insert("PUBLIC", PUBLIC);
 	keywords_insert("CURRENT_USER", CURRENT_USER);
 	keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
 	keywords_insert("SESSION_USER", SESSION_USER);
 
+	keywords_insert("REAL", REAL);
 	keywords_insert("RIGHT", RIGHT);
 	keywords_insert("SCHEMA", SCHEMA);
 	keywords_insert("SELECT", SELECT);
 	keywords_insert("SET", SET);
-
-	keywords_insert("ALL", ALL);
-	keywords_insert("ANY", ANY);
 	keywords_insert("SOME", SOME);
-	keywords_insert("EVERY", EVERY);
 	/*
 	   keywords_insert("SQLCODE", SQLCODE );
 	 */
@@ -247,6 +278,9 @@ init_keywords()
 	keywords_insert("TEMPORARY", TEMPORARY);
 	keywords_insert("TEMP", TEMPORARY);
 	keywords_insert("TO", TO);
+	/*
+	   keywords_insert("UNDER", UNDER );
+	 */
 	keywords_insert("UNION", UNION);
 	keywords_insert("EXCEPT", EXCEPT);
 	keywords_insert("INTERSECT", INTERSECT);
@@ -255,6 +289,9 @@ init_keywords()
 	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);
 	keywords_insert("VIEW", VIEW);
+	/*
+	   keywords_insert("WHENEVER", WHENEVER );
+	 */
 	keywords_insert("WHERE", WHERE);
 	keywords_insert("WITH", WITH);
 
@@ -308,7 +345,7 @@ init_keywords()
 	keywords_insert("SIZE", sqlSIZE);
 
 	keywords_insert("MODULE", MODULE );
-	keywords_insert("TYPE", TYPE );
+	keywords_insert("TYPE", sqlTYPE );
 	keywords_insert("PROCEDURE", PROCEDURE );
 	keywords_insert("FUNCTION", FUNCTION );
 	keywords_insert("RETURNS", RETURNS );
@@ -347,8 +384,16 @@ find_keyword(char *text)
 	keyword *k = keywords[bucket];
 	while (k) {
 		if (len == k->len) {
-			if (strcmp(k->keyword, text) == 0)
-				return k;
+			if (len < 4) {
+				if (*(short *) k->keyword ==
+				    *(short *) text
+				    && strcmp(k->keyword, text) == 0)
+					return k;
+			} else {
+				if (*(int *) k->keyword == *(int *) text
+				    && strcmp(k->keyword, text) == 0)
+					return k;
+			}
 		}
 		k = k->next;
 	}
@@ -374,7 +419,6 @@ scanner_init( struct scanner *s, bstream *rs, stream *ws )
 	s->rs = rs;
 	s->ws = ws;
 
-	s->yynext = 0;
 	s->yyval = 0;
 	s->yybak = 0; /* keep backup of char replaced by EOS */
 	s->yycur = 0;
@@ -390,7 +434,6 @@ scanner_reset( struct scanner *s, char *query )
 	s->buf = query;
 	s->rs = NULL;
 
-	s->yynext = 0;
 	s->yyval = 0;
 	s->yybak = 0; 	/* keep backup of char replaced by EOS */
 	s->yycur = 0;
@@ -421,7 +464,6 @@ scanner_query_processed( struct scanner *s )
 		assert( s->rs->pos <= s->rs->len);
 		s->yycur = 0;
 	}
-	s->key = 0;	/* keep a hask key of the query */
 }
 
 static int 
@@ -516,7 +558,7 @@ scanner_getc_s(struct scanner * lc)
 }
 
 static INLINE int
-scanner_read_more(struct scanner * lc, int n)
+read_more(struct scanner * lc, int n)
 {
 	bstream *b = lc->rs;
 	int more = 0;
@@ -551,7 +593,7 @@ scanner_getc_bs(struct scanner * lc)
 	int c;
 	int n, m, mask;
 
-	if (scanner_read_more(lc, 1) == EOF)
+	if (read_more(lc, 1) == EOF)
 		return EOF;
 
 	s = (unsigned char*) b->buf + b->pos + lc->yycur++;
@@ -569,7 +611,7 @@ scanner_getc_bs(struct scanner * lc)
 		goto error;
 	}
 
-	if (scanner_read_more(lc, n) == EOF)
+	if (read_more(lc, n) == EOF)
 		return EOF;
 	s = (unsigned char*) b->buf + b->pos + lc->yycur;
 
@@ -648,7 +690,7 @@ scanner_string_bs(mvc * c, int quote)
 		lc->yycur--; /* go back to current (possibly invalid) char */
 		/* long utf8, if correct isn't the quote */
 		if (!cur) {
-			cur = scanner_read_more(lc, 1);
+			cur = read_more(lc, 1);
 		} else {
 			cur = scanner_getc_bs(lc);
 		}
@@ -821,7 +863,6 @@ int scanner_symbol@1(mvc * c, int cur)
 		}
 		utf8_putchar(lc, next); 
 		return scanner_token@1(lc, cur);
-	case '?':
 	case '%':
 	case '+':
 	case '*':
@@ -891,12 +932,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 	mvc *c = (mvc *) parm;
 	struct scanner *lc = &c->scanner;
 
-	if (lc->yynext) {
-		int next = lc->yynext;
-		lc->yynext = 0;
-		return next;
-	}
-
 	if (lc->yybak) {
 		if (lc->rs) {
 			lc->rs->buf [ lc->rs->pos + lc->yycur ] = lc->yybak;
@@ -916,22 +951,13 @@ sqllex(YYSTYPE * yylval, void *parm)
 		yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 	else 
 		yylval->sval = (lc->buf + lc->yysval);
-
-	if (token == IDENT || token == COMPARISON || token == AGGR || 
-	    token == aTYPE || token == ALIAS || token == aMODULE )
+	if (token == IDENT || token == COMPARISON ||
+	    token == AGGR || token == TYPE)
 		yylval->sval = _strdup(yylval->sval);
 	if (token == STRING) {
 		if (*yylval -> sval == '"')
 			token = IDENT;
 		yylval->sval = sql_strdup(yylval->sval);
-	}
-
-	if (token == UNION) {
-		int next = sqllex(yylval, parm);
-		if (token == JOIN)
-			token = UNIONJOIN; 
-		else
-			lc->yynext = next;
 	}
 
 	lc->key ^= token;

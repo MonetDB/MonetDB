@@ -20,18 +20,18 @@ import java.net.*;
  * "&gt;&gt;".
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.2 (part of MonetDB JDBC beta release)
+ * @version 1.1 (part of MonetDB JDBC beta release)
  */
 class MonetSocket {
+	private Socket con;
 	private BufferedReader fromMonet;
 	private BufferedWriter toMonet;
-	protected Socket con;
-
-	protected boolean debug = false;
-	protected FileWriter log;
-
-	protected int lineType;
-
+	
+	private boolean debug = false;
+	private FileWriter log;
+	
+	private int lineType;
+	
 	/** there is currently no line is represented by EMPTY */
 	final static int EMPTY = 0;
 	/** a line starting with ! indicates ERROR */
@@ -52,11 +52,7 @@ class MonetSocket {
 		toMonet = new BufferedWriter(
 			new OutputStreamWriter(con.getOutputStream()));
 	}
-
-	protected MonetSocket(Socket con) {
-		this.con = con;
-	}
-
+	
 	/**
 	 * enables logging to a file what is read and written from and to Monet
 	 *
@@ -67,7 +63,7 @@ class MonetSocket {
 		log = new FileWriter(filename);
 		debug = true;
 	}
-
+	
 	/**
 	 * write puts the given string on the stream as is, where is no newline
 	 * appended, and the stream will not be flushed after the write.
@@ -82,13 +78,13 @@ class MonetSocket {
 		// reset the lineType variable, since we've sent data now and the last
 		// line isn't valid anymore
 		lineType = EMPTY;
-
+		
 		// it's a bit nasty if an exception is thrown from the log,
 		// but ignoring it can be nasty as well, so it is decided to
 		// let it go so there is feedback about something going wrong
 		if (debug) log.write("<< " + data);
 	}
-
+	
 	/**
 	 * flushes the stream to monet, forcing all data in the buffer to be
 	 * actually written to the stream.
@@ -102,10 +98,10 @@ class MonetSocket {
 		// let it go so there is feedback about something going wrong
 		if (debug) log.flush();
 	}
-
+	
 	/**
 	 * writeln puts the given string plus a new line character on the stream
-	 * and flushes the stream afterwards so the data will actually be sent
+	 * and flushes the stream afterwards to the data will actually be sent
 	 *
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
@@ -114,7 +110,7 @@ class MonetSocket {
 		write(data + "\n");
 		flush();
 	}
-
+	
 	/**
 	 * readLine reads one line terminated by a newline character and returns
 	 * it without the newline character. This operation can be blocking if there
@@ -128,7 +124,7 @@ class MonetSocket {
 		String line;
 		do {
 			line = fromMonet.readLine();
-
+		
 			// it's a bit nasty if an exception is thrown from the log,
 			// but ignoring it can be nasty as well, so it is decided to
 			// let it go so there is feedback about something going wrong
@@ -137,7 +133,7 @@ class MonetSocket {
 				log.flush();
 			}
 		} while (line != null && line.length() == 0);
-
+		
 		if (line != null) {
 			switch (line.charAt(0)) {
 				case '!': lineType = ERROR; break;
@@ -159,7 +155,7 @@ class MonetSocket {
 
 		return(line);
 	}
-
+	
 	/**
 	 * getLineType returns the type of the last line read
 	 *
@@ -169,7 +165,7 @@ class MonetSocket {
 	public int getLineType() {
 		return(lineType);
 	}
-
+	
 	/**
 	 * Reads up till the MonetDB prompt, indicating the server is ready for a
 	 * new command. All read data is discarded.<br />
@@ -192,7 +188,7 @@ class MonetSocket {
 		}
 		return(ret == "" ? null : ret.trim());
 	}
-
+	
 	/**
 	 * disconnect closes the streams and socket connected to the Monet server
 	 * if possible. If an error occurs during disconnecting it is ignored.
@@ -205,9 +201,10 @@ class MonetSocket {
 			if (debug) log.close();
 		} catch (IOException e) {
 			// ignore it
+			System.err.println(e.toString());
 		}
 	}
-
+	
 	/**
 	 * destructor called by garbage collector before destroying this object
 	 * tries to disconnect the Monet connection if it has not been disconnected

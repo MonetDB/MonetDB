@@ -43,7 +43,7 @@ newODBCEnv(void)
 	env->RetrievedErrors = 0;
 	env->FirstDbc = NULL;
 	env->Type = ODBC_ENV_MAGIC_NR;
-	env->sql_attr_odbc_version = 0;
+	env->ODBCVersion = ODBC_3;
 
 	return env;
 }

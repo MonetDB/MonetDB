@@ -63,35 +63,32 @@ parse_interval_intern(mvc * sql, int sign, char *str, int sk, int ek, int *i)
 	int val = 0;
 	int mul = sign;
 	char sep = ':';
-	int type;
+	int type = -1;
 
 	switch (sk) {
 	case iyear:
 		mul *= 12;
 	case imonth:
 		sep = '-';
-		type = 0;
 		break;
-
 	case iday:
 		mul *= 24;
-		sep = ' ';
 	case ihour:
 		mul *= 60;
 	case imin:
 		mul *= 60;
 	case isec:
-		type = 1;
+		mul *= 1;
 		break;
-
-	default:
-		snprintf(sql->errstr, ERRSIZE,
-			 _("Internal error: parse_interval_internal: bad value for sk (%d)\n"), sk);
-		return -1;
 	}
 
 	val = strtol(str, &n, 10);
 	val *= mul;
+	if (sk == imonth || sk == iyear) {
+		type = 0;
+	} else {
+		type = 1;
+	}
 	*i += val;
 	if (ek != sk) {
 		if (*n != sep) {
@@ -101,7 +98,8 @@ parse_interval_intern(mvc * sql, int sign, char *str, int sk, int ek, int *i)
 				 sep);
 			return -1;
 		}
-		return parse_interval_intern(sql, sign, n + 1, sk + 1, ek, i);
+		return parse_interval_intern(sql, sign, n + 1, sk + 1, ek,
+					     i);
 	} else {
 		return type;
 	}
@@ -121,11 +119,11 @@ parse_interval(mvc * sql, int sign, char *str, struct dlist *pers, int *val)
 		if (dlist_length(pers) == 2) {
 			dlist *e = pers->h->next->data.lval;
 
-			ek = e->h->data.ival;
+			sk = e->h->data.ival;
 		}
 	}
 	*val = 0;
-	if (sk > ek) {
+	if (sk < ek) {
 		snprintf(sql->errstr, ERRSIZE,
 			 _
 			 ("End interval field is larger than the start field\n"));
@@ -153,9 +151,9 @@ char *datetime_field(itype f)
 	case ihour:
 		return "hour";
 	case imin:
-		return "minute";
+		return "min";
 	case isec:
-		return "second";
+		return "sec";
 	}
 	return "year";
 }
