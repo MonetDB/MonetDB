@@ -1727,9 +1727,9 @@ product[5][5] = {
  * Implements the 0 quantifier: t . 0 = ()
  */
 static PFty_t
-fn_none (PFty_t t)
+fn_none (PFty_t unused)
 {
-    (void)t;
+    (void) unused;
     return PFty_empty ();
 }
 

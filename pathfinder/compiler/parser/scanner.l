@@ -170,6 +170,8 @@ gotoState (int s)
  *
  */
 
+#if USE_PAREN_STATE_STACK
+
 /** 
  * maximum depth of paren stack
  * (this effectively limits the maximum depth of nested parenthesized
@@ -224,6 +226,7 @@ resetParenStateOrSwitch (int s)
             paren_sp ? paren_stack[paren_sp - 1] : s);
 #endif
 }
+#endif
 
 %}
 

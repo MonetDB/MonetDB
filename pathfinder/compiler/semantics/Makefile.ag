@@ -19,4 +19,4 @@ lib_semantics = {
 		xquery_fo.c 
 }
 
-EXTRA_DIST = typecheck.mt.m4 typecheck_impl.c.m4 typecheck_impl.c
+EXTRA_DIST = typecheck.mt.sed typecheck_impl.c

@@ -14,12 +14,6 @@
 
 #include "subtyping.h"
 
-/* 
- * Let <:(t, t') denote the subtype relationship of types t and t'
-changesyntax(W<, D:) 
-
- */
-
 #include "typecheck.h"
 
 /* PFcnode_t */
@@ -84,8 +78,8 @@ static int TWIG_ID[] = {
  , [c_kind_elem]          kind_elem
  , [c_kind_attr]          kind_attr
 
- , [c_true]               true_      /**< built-in function fn:true () */
- , [c_false]              false_     /**< built-in function fn:false () */
+ , [c_true]               true_      /**< built-in function `fn:true ()' */
+ , [c_false]              false_     /**< built-in function `fn:false ()' */
  , [c_empty]              empty_     /**< empty sequence */
 
  , [c_root]               root_      /**< document root node */
@@ -153,7 +147,7 @@ static PFarray_t *par_ty;
  * argument types @a args (matching is based on <:).
  *
  * @attention NB. W3C XQuery FS 5.1.4 defines argument type matching
- * based on <: and can be promoted to.  The latter is ignored here.
+ * based on <: and `can be promoted to'.  The latter is ignored here.
  * We will have to find out if we can get away with <: only.
  *
  * @attention NB. This relies on the list of functions for name @a qn
@@ -188,7 +182,8 @@ overload (PFqname_t qn, PFcnode_t *args)
          * expected formal parameter types?
          */
         for (a = 0, match = true; a < fn->arity; a++) {
-            match = match && PFty_subtype(arg->child[0]->type, (fn->par_ty)[a]);
+            match = match && PFty_subtype (arg->child[0]->type,
+                                           (fn->par_ty)[a]);
             if (!match)
                 break;
 
@@ -256,8 +251,8 @@ PFty_check (PFcnode_t *r)
     par_ty = PFarray (sizeof (PFty_t *));
 
     /* invoke twig: the tree is traversed and type annotations are
-     * attached (the type checkers removes proofs and may add
-     * seqcasts, so return the modified core tree);
+     * attached (the type checkers removes `proofs' and may add
+     * `seqcast's, so return the modified core tree);
      */
     core = rewrite (r, 0);
 

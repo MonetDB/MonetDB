@@ -57,15 +57,15 @@ static PFarray_t *attr_stack;
 static PFarray_t *type_stack;
 static PFarray_t *ns_stack;
 
-/** 
+/**
  * Any QName without explicit namespace prefix is imported into
  * the target namespace @a target_ns.
  */
 static PFns_t target_ns;
 
-/** 
- * Test: does namespace prefix @a ns designate 
- * the XML Schema namespace URI? 
+/**
+ * Test: does namespace prefix @a ns designate
+ * the XML Schema namespace URI?
  */
 #define XML_SCHEMA_NS(ns) (strcmp (PFns_xs.uri, (ns)) == 0)
 
@@ -79,27 +79,27 @@ static PFns_t target_ns;
  * (keep this list alphabetically sorted by tag name).
  */
 static const char *xml_schema_tags[] = {
-    "all",           
-    "any",           
-    "anyAttribute",  
-    "attribute",     
+    "all",
+    "any",
+    "anyAttribute",
+    "attribute",
     "attributeGroup",
-    "choice",        
+    "choice",
     "complexContent",
-    "complexType",   
-    "element",       
-    "extension",     
-    "group",         
-    "list",          
-    "restriction",   
-    "schema",        
-    "sequence",      
-    "simpleContent", 
-    "simpleType",    
+    "complexType",
+    "element",
+    "extension",
+    "group",
+    "list",
+    "restriction",
+    "schema",
+    "sequence",
+    "simpleContent",
+    "simpleType",
     "union"
 };
 
-/** 
+/**
  * Number of XML Schema tags we can interpret.
  */
 #define XML_SCHEMA_TAGS (sizeof (xml_schema_tags) / sizeof (char *))
@@ -117,10 +117,11 @@ static action actions[];
 
 /* the line or column in the state
    table where e.g. LIST can be found */
-#define STACKCOL     36
-#define RESTRICTION  41
-#define LIST         67
-#define UNION        73
+#define STACKCOL         36
+#define RESTRICTION      45
+#define RESTRICTION_SIM  50
+#define LIST             83
+#define UNION            89
 
 /**
  * Holes (error states) in the DFA transition table.
@@ -131,7 +132,7 @@ static action actions[];
 /**
  * The DFA transition table itself.
  */
-static int dfa[149][37];
+static int dfa[173][37];
 
 
 /**
@@ -314,7 +315,7 @@ lookup_ns (char *prefix)
             /* lookup for default namespace */
             if (prefix == 0 && ns->ns == 0)
                 return ns;
-            
+
             /* lookup for regular namespace */
             if (prefix && ns->ns && strcmp (ns->ns, prefix) == 0)
                 return ns;
@@ -393,21 +394,21 @@ ref_qname (char *nsloc)
     assert (nsloc);
 
     qn = PFstr_qname (nsloc);
-    
+
     if (qn.ns.ns) {
         if ((ns = lookup_ns (qn.ns.ns))) {
             qn.ns = *ns;
 
             return qn;
-        } 
+        }
         else
             PFoops (OOPS_BADNS,
-                    "(XML Schema import) prefix `%s' unknown", 
+                    "(XML Schema import) prefix `%s' unknown",
                     qn.ns.ns);
     }
 
     qn.ns = target_ns;
-    
+
     return qn;
 }
 
@@ -438,7 +439,7 @@ map_open_tag (void *ctx, char *nsloc)
     PFqname_t qn;
     PFns_t   *ns;
     const char **t;
-  
+
     assert (nsloc);
 
     qn = PFstr_qname (nsloc);
@@ -463,7 +464,7 @@ map_open_tag (void *ctx, char *nsloc)
         PFoops (OOPS_SCHEMAIMPORT, "check schema validity");
     }
 
-    t = (char const **) bsearch (qn.loc, 
+    t = (char const **) bsearch (qn.loc,
                                  xml_schema_tags,
                                  XML_SCHEMA_TAGS,
                                  sizeof (char *),
@@ -471,7 +472,7 @@ map_open_tag (void *ctx, char *nsloc)
 
     if (t)
         return t - xml_schema_tags;
-  
+
     return HOLE;
 }
 
@@ -495,7 +496,7 @@ map_closing_tag (void *ctx, char *nsloc)
 
     if (open_tag == HOLE)
         return HOLE;
-   
+
     return open_tag + XML_SCHEMA_TAGS;
 }
 
@@ -522,19 +523,19 @@ attributes (void *ctx, const xmlChar **atts)
     if (atts)
         while (*atts) {
             qn = PFstr_qname ((char *) *atts);
-            
+
             if (qn.ns.ns) {
                 if (strcmp (qn.ns.ns, XMLNS) == 0) {
                     /* `xmlns:loc="uri"' NS declaration attribute */
                     atts++;
-                    
+
                     /* declare loc namespace |-> uri */
                     push_ns (new_ns (qn.loc, PFstrdup ((char *) *atts)));
                     atts++;
-                    
+
                     continue;
-                }                
-                
+                }
+
                 /* bogus namespace prefix for regular attribute */
                 PFinfo (OOPS_SCHEMAIMPORT,
                         "undeclared attribute `%s'", PFqname_str (qn));
@@ -553,13 +554,13 @@ attributes (void *ctx, const xmlChar **atts)
                 continue;
             }
 
-            
+
             /* attribute name */
             *(char **) PFarray_add (attrs) = PFstrdup ((char *) *atts);
             atts++;
 
             /* attribute value */
-            *(char **) PFarray_add (attrs) = PFstrdup ((char *) *atts); 
+            *(char **) PFarray_add (attrs) = PFstrdup ((char *) *atts);
             atts++;
         }
 
@@ -608,10 +609,10 @@ occurs (PFarray_t *atts, PFty_t t)
                 PFoops (OOPS_SCHEMAIMPORT,
                         "invalid `maxOccurs' value: %s", maxOccurs);
         }
-        else 
+        else
             if (max_occurs < 0 || max_occurs < min_occurs)
                 PFoops (OOPS_SCHEMAIMPORT,
-                        "invalid `maxOccurs' value: %s (`minOccurs' value is %s)", 
+                        "invalid `maxOccurs' value: %s (`minOccurs' value is %s)",
                         maxOccurs, minOccurs);
     }
 
@@ -630,7 +631,7 @@ occurs (PFarray_t *atts, PFty_t t)
      */
     if (min_occurs == 0 && max_occurs > 1)
         return PFty_star (t);
-    
+
     /*
      *                     [[  x  ]]              -->       [[ x ]] +
      *                        / \
@@ -679,7 +680,7 @@ attr_occurs (PFarray_t *atts, PFty_t partial_type)
  * @param atts attributes of this element
  */
 static void
-schema_import_start_element (void *ctx, 
+schema_import_start_element (void *ctx,
                              const xmlChar *t, const xmlChar **atts)
 {
     PFarray_t *attrs;
@@ -691,12 +692,12 @@ schema_import_start_element (void *ctx,
      * this also introduces all namespaces declared via `xmlns=...'
      */
     attrs = attributes (ctx, atts);
-    /* push the attributes such that we can access them when we see </t> 
+    /* push the attributes such that we can access them when we see </t>
      */
     push_attributes (attrs);
 
     open_tag = map_open_tag (ctx, (char *) t);
-    
+
     if (open_tag == HOLE || dfa[state][open_tag] == HOLE) {
         PFinfo (OOPS_SCHEMAIMPORT, "unexpected <%s>", t);
         xmlParserError (ctx, "\n");
@@ -748,17 +749,20 @@ schema_import_end_element (void *ctx, const xmlChar *t)
 #ifdef DEBUG_SCHEMAIMPORT
     PFlog ("schema import: </%s>", t);
 #endif /* DEBUG_SCHEMAIMPORT */
-    
+
     /* access the attributes of this element */
     attributes = pop_attributes ();
 
     /* perform action attached to this DFA edge */
     actions[state] (attributes);
 
+    /* the namespace(s) created in this element go out of scope */
+    pop_ns ();
+
     /* access the context */
-    (void) pop_state ();  
+    (void) pop_state ();
     context = top_state ();
-    
+
     /* if required, change to state indicated by context and perform
      * associated actions
      */
@@ -766,9 +770,7 @@ schema_import_end_element (void *ctx, const xmlChar *t)
         state = context;
         actions[state] (0);
     }
-    
-    /* the namespace(s) created in this element go out of scope */
-    pop_ns ();
+
 }
 
 /**
@@ -787,8 +789,8 @@ schema_import_error (xmlParserCtxtPtr ctx, const char *msg, ...)
 {
     va_list msgs;
     char buf[4096];
- 
-    va_start (msgs, msg);    
+
+    va_start (msgs, msg);
     vsnprintf (buf, sizeof (buf), msg, msgs);
     va_end (msgs);
 
@@ -802,21 +804,33 @@ schema_import_error (xmlParserCtxtPtr ctx, const char *msg, ...)
 
 /**
  * No operation.
- *
- * @param atts unused
  */
 static void nop (PFarray_t *unused)
 {
-    (void)unused;
     /* do nothing */
+    (void) unused;
 }
 
 /**
- * Handle <restriction> and <restriction base=...>. 
+ * XML Schema top-level <schema> ... </schema>.
+ *
+ * @param atts attributes of the <schema> element
+ */
+static void
+start_schema (PFarray_t *atts)
+{
+    char *targetNamespace;
+
+    if ((targetNamespace = attribute_value (atts, "targetNamespace")))
+        target_ns = *new_ns (0, PFstrdup (targetNamespace));
+}
+
+/**
+ * Handle <restriction> and <restriction base=...>.
  *
  * @param atts attributes of the <restriction> element
  */
-static void 
+static void
 start_restriction (PFarray_t *atts)
 {
     if (attribute_value (atts, "base"))
@@ -825,11 +839,24 @@ start_restriction (PFarray_t *atts)
 }
 
 /**
+ * Handle <restriction> and <restriction base=...>.
+ *
+ * @param atts attributes of the <restriction> element
+ */
+static void
+start_simple_restriction (PFarray_t *atts)
+{
+    if (attribute_value (atts, "base"))
+        /* in the RESTRICTION_SIM state, any content is ignored */
+        state = RESTRICTION_SIM;
+}
+
+/**
  * Handle <list> and <list itemType=...>.
  *
  * @param atts attributes of the <list> element
  */
-static void 
+static void
 start_list (PFarray_t *atts)
 {
     if (attribute_value (atts, "itemType"))
@@ -842,7 +869,7 @@ start_list (PFarray_t *atts)
  *
  * @param atts attributes of the <union> element
  */
-static void 
+static void
 start_union (PFarray_t *atts)
 {
     if (attribute_value (atts, "memberTypes"))
@@ -854,28 +881,31 @@ start_union (PFarray_t *atts)
  * Apply the `*' constructor to the topmost type on the stack
  * (map content of <list>)
  */
-static void 
+static void
 end_list (PFarray_t *unused)
 {
-    /*   t   -->   t* 
+    (void) unused;
+
+    /*   t   -->   t*
      */
-    (void)unused;
     push_type (PFty_star (pop_type ()));
 }
 
 /**
  * Apply the `&' type constructor to the two topmost types on the type stack.
  */
-static void 
+static void
 combine_all (PFarray_t *unused)
 {
     /*   t1   -->   t2 & t1
-     *   t2   
-     */
+     *   t2
+     */ 
+
     PFty_t t1;
     PFty_t t2;
 
-    (void)unused;
+    (void) unused;
+
     t1 = pop_type ();
     t2 = pop_type ();
 
@@ -885,17 +915,18 @@ combine_all (PFarray_t *unused)
 /**
  * Apply the `|' type constructor to the two topmost types on the type stack.
  */
-static void 
+static void
 combine_choice (PFarray_t *unused)
 {
     /*   t1   -->   t2 | t1
-     *   t2   
+     *   t2
      */
 
     PFty_t t1;
     PFty_t t2;
 
-    (void)unused;
+    (void) unused;
+
     t1 = pop_type ();
     t2 = pop_type ();
 
@@ -905,17 +936,18 @@ combine_choice (PFarray_t *unused)
 /**
  * Apply the `,' type constructor to the two topmost types on the type stack.
  */
-static void 
+static void
 combine_sequence (PFarray_t *unused)
 {
     /*   t1   -->   t2 , t1
-     *   t2   
+     *   t2
      */
 
     PFty_t t1;
     PFty_t t2;
 
-    (void)unused;
+    (void) unused;
+
     t1 = pop_type ();
     t2 = pop_type ();
 
@@ -925,7 +957,7 @@ combine_sequence (PFarray_t *unused)
 /**
  * Prepend attributes to an element's content type (using `,').
  */
-static void 
+static void
 combine_atts_partial_type (PFarray_t *unused)
 {
     /*   atts   -->   atts , t
@@ -934,7 +966,8 @@ combine_atts_partial_type (PFarray_t *unused)
     PFty_t t;
     PFty_t atts;
 
-    (void)unused;
+    (void) unused;
+
     atts = pop_type ();
     t    = pop_type ();
 
@@ -944,12 +977,12 @@ combine_atts_partial_type (PFarray_t *unused)
 /**
  * A `goto' on the stack.
  */
-static void 
+static void
 goto_stack (PFarray_t *unused)
 {
     /*   s   -->   goto(s)
      */
-    (void)unused;
+    (void) unused;
     (void) pop_state ();
     push_state (dfa[state][STACKCOL]);
 }
@@ -957,59 +990,63 @@ goto_stack (PFarray_t *unused)
 /**
  * Push a `none' type on the stack (used as identity w.r.t. `&')
  */
-static void 
+static void
 end_all_empty (PFarray_t *unused)
 {
+    (void) unused;
+
     /*   t   -->   none
      *             t
      */
-    (void)unused;
     push_type (PFty_none ());
 }
 
 /**
  * Push a `none' type on the stack (used as identity w.r.t. `|')
  */
-static void 
+static void
 end_choice_empty (PFarray_t *unused)
 {
+    (void) unused;
+
     /*   t   -->   none
      *             t
      */
-    (void)unused;
     push_type (PFty_none ());
 }
 
 /**
  * Push an `empty' type on the stack (used as identity w.r.t. `,')
  */
-static void 
+static void
 end_seq_empty (PFarray_t *unused)
 {
+    (void) unused;
+
     /*   t   -->   empty
      *             t
      */
-    (void)unused;
     push_type (PFty_empty ());
 }
 
 /**
  * Push an `empty' type on the stack (empty content of a local complex type)
  */
-static void 
+static void
 end_local_complex_type_eps (PFarray_t *unused)
 {
+    (void) unused;
+
     /*   t   -->   empty
      *             t
      */
-    (void)unused;
     push_type (PFty_empty ());
 }
 
 /**
  * Apply `maxOccurs'/`minOccurs' attributes to topmost type on stack.
  */
-static void 
+static void
 end_choice_seq (PFarray_t *atts)
 {
     /*   t   -->   occurs (m, M, t)
@@ -1028,7 +1065,7 @@ end_choice_seq (PFarray_t *atts)
  *
  * @param atts attributes of the <complexType> element
  */
-static void 
+static void
 end_top_level_eps (PFarray_t *atts)
 {
     /*  [[ <complexType name="n"/> ]]   -->   n |t--> empty
@@ -1036,7 +1073,7 @@ end_top_level_eps (PFarray_t *atts)
     char *name;
     PFty_t imp;
     PFty_t t;
-    
+
     if ((name = attribute_value (atts, "name"))) {
         imp = PFty_named (imported_qname (name));
         t   = PFty_empty ();
@@ -1046,11 +1083,11 @@ end_top_level_eps (PFarray_t *atts)
         PFlog ("schema import: import into types symbol space: %s = %s",
                PFty_str (imp), PFty_str (t));
 #endif /* DEBUG_SCHEMAIMPORT */
-        
+
         return;
     }
 
-    PFoops (OOPS_SCHEMAIMPORT, 
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level type definition");
 }
 
@@ -1059,7 +1096,7 @@ end_top_level_eps (PFarray_t *atts)
  *
  * @param atts attributes of the <complexType> element
  */
-static void 
+static void
 end_top_level_type (PFarray_t *atts)
 {
     /*  [[ <complexType name="n"> t </complexType> ]]   -->   n |t--> [[ t ]]
@@ -1080,9 +1117,9 @@ end_top_level_type (PFarray_t *atts)
 #endif /* DEBUG_SCHEMAIMPORT */
 
         return;
-    } 
-        
-    PFoops (OOPS_SCHEMAIMPORT, 
+    }
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level type definition");
 }
 
@@ -1091,7 +1128,7 @@ end_top_level_type (PFarray_t *atts)
  *
  * @param atts attributes of the <group> element
  */
-static void 
+static void
 end_top_level_eps_group (PFarray_t *atts)
 {
     /*  [[ <group name="n"/> ]]   -->   n |g--> empty
@@ -1112,9 +1149,9 @@ end_top_level_eps_group (PFarray_t *atts)
 
         return;
 
-    } 
-        
-    PFoops (OOPS_SCHEMAIMPORT, 
+    }
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level group definition");
 }
 
@@ -1123,7 +1160,7 @@ end_top_level_eps_group (PFarray_t *atts)
  *
  * @param atts attributes of the <group> element
  */
-static void 
+static void
 end_top_level_group (PFarray_t *atts)
 {
     /*  [[ <group name="n"> t </group> ]]   -->   n |g--> [[ t ]]
@@ -1144,9 +1181,9 @@ end_top_level_group (PFarray_t *atts)
 #endif /* DEBUG_SCHEMAIMPORT */
 
         return;
-    } 
-        
-    PFoops (OOPS_SCHEMAIMPORT, 
+    }
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level group definition");
 }
 
@@ -1155,7 +1192,7 @@ end_top_level_group (PFarray_t *atts)
  *
  * @param atts attributes of the <attributeGroup> element
  */
-static void 
+static void
 end_top_level_eps_attrgrp (PFarray_t *atts)
 {
     /*  [[ <attributeGroup name="n"/> ]]   -->   "n" |ag--> empty
@@ -1176,8 +1213,8 @@ end_top_level_eps_attrgrp (PFarray_t *atts)
 
         return;
 
-    } 
-        
+    }
+
     PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level attributeGroup definition");
 }
@@ -1187,10 +1224,10 @@ end_top_level_eps_attrgrp (PFarray_t *atts)
  *
  * @param atts attributes of the <attributeGroup> element
  */
-static void 
+static void
 end_top_level_attrgrp (PFarray_t *atts)
 {
-    /*  [[ <attributeGroup name="n"> t </attributeGroup> ]] --> 
+    /*  [[ <attributeGroup name="n"> t </attributeGroup> ]] -->
      *  n |ag--> [[ t ]]
      */
     char *name;
@@ -1209,8 +1246,8 @@ end_top_level_attrgrp (PFarray_t *atts)
 #endif /* DEBUG_SCHEMAIMPORT */
 
         return;
-    } 
-        
+    }
+
     PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level attributeGroup definition");
 }
@@ -1221,7 +1258,7 @@ end_top_level_attrgrp (PFarray_t *atts)
  *
  * @param atts attributes of the <complexType> element
  */
-static void 
+static void
 end_top_level_complex_type_wboth (PFarray_t *atts)
 {
     /*  [[ <complexType name="n"> t a0 ... ak </complexType> ]]   -->
@@ -1237,13 +1274,13 @@ end_top_level_complex_type_wboth (PFarray_t *atts)
  *
  * @param atts attributes of the <element> element
  */
-static void 
+static void
 end_top_level_element (PFarray_t *atts)
 {
-    /*  [[ <element name="n" type="t"/> ]] -->  
+    /*  [[ <element name="n" type="t"/> ]] -->
      *  n |e--> element n { named t }
      *
-     *  [[ <element name="n"/> ]]  -->  
+     *  [[ <element name="n"/> ]]  -->
      *  n |e--> element n { anyType }
      */
     char *name;
@@ -1254,9 +1291,9 @@ end_top_level_element (PFarray_t *atts)
     if ((name = attribute_value (atts, "name"))) {
         imp = PFty_named_elem (imported_qname (name));
 
-        if ((type = attribute_value (atts, "type"))) 
+        if ((type = attribute_value (atts, "type")))
             /* @type present */
-            t = PFty_elem (imported_qname (name), 
+            t = PFty_elem (imported_qname (name),
                            PFty_named (ref_qname (type)));
         else
             /* @type absent => xs:anyType */
@@ -1272,8 +1309,8 @@ end_top_level_element (PFarray_t *atts)
 
         return;
     }
-        
-    PFoops (OOPS_SCHEMAIMPORT, 
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level element declaration");
 }
 
@@ -1283,17 +1320,15 @@ end_top_level_element (PFarray_t *atts)
  *
  * @param atts attributes of the <element> element
  */
-static void 
+static void
 end_top_level_element_wsub (PFarray_t *atts)
 {
-    /*  [[ <element name="n"> t </element> ]] -->  
+    /*  [[ <element name="n"> t </element> ]] -->
      *  n |e--> element n { [[ t ]] }
      */
     char *name;
     PFty_t imp;
     PFty_t t;
-    
-    t = pop_type ();
 
     if ((name = attribute_value (atts, "name"))) {
         imp = PFty_named_elem (imported_qname (name));
@@ -1306,9 +1341,9 @@ end_top_level_element_wsub (PFarray_t *atts)
 #endif /* DEBUG_SCHEMAIMPORT */
 
         return;
-    } 
-       
-    PFoops (OOPS_SCHEMAIMPORT, 
+    }
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level element declaration");
 }
 
@@ -1318,13 +1353,13 @@ end_top_level_element_wsub (PFarray_t *atts)
  *
  * @param atts attributes of the <attribute> element
  */
-static void 
+static void
 end_top_level_attribute (PFarray_t *atts)
 {
-    /*  [[ <attribute name="n" type="t"/> ]] -->  
+    /*  [[ <attribute name="n" type="t"/> ]] -->
      *  n |a--> attribute n { named t }
      *
-     *  [[ <attribute name="n"/> ]]  -->  
+     *  [[ <attribute name="n"/> ]]  -->
      *  n |a--> attribute n { anySimpleType }
      */
     char *name;
@@ -1334,8 +1369,8 @@ end_top_level_attribute (PFarray_t *atts)
 
     if ((name = attribute_value (atts, "name"))) {
         imp = PFty_named_attr (imported_qname (name));
-        
-        if ((type = attribute_value (atts, "type"))) 
+
+        if ((type = attribute_value (atts, "type")))
             /* @type present */
             t = PFty_attr (imported_qname (name),
                            PFty_named (ref_qname (type)));
@@ -1352,8 +1387,8 @@ end_top_level_attribute (PFarray_t *atts)
 #endif /* DEBUG_SCHEMAIMPORT */
 
         return;
-    } 
-        
+    }
+
     PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level attribute declaration");
 }
@@ -1364,10 +1399,10 @@ end_top_level_attribute (PFarray_t *atts)
  *
  * @param atts attributes of the <attribute> element
  */
-static void 
+static void
 end_top_level_attribute_wsub (PFarray_t *atts)
 {
-    /*  [[ <attribute name="n"> t </attribute> ]]  -->  
+    /*  [[ <attribute name="n"> t </attribute> ]]  -->
      *  n |a--> attribute n { [[ t ]] }
      */
     char *name;
@@ -1385,29 +1420,29 @@ end_top_level_attribute_wsub (PFarray_t *atts)
 #endif /* DEBUG_SCHEMAIMPORT */
 
         return;
-    } 
-        
-    PFoops (OOPS_SCHEMAIMPORT, 
+    }
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in top-level attribute declaration");
 }
 
 
 /**
  * Map an (empty) local element declaration (and apply occurrence attributes):
- * <element name="n" type="t"/> or <element name="n"/> or <element ref="n"/> 
+ * <element name="n" type="t"/> or <element name="n"/> or <element ref="n"/>
  *
  * @param atts attributes of the <element> element
  */
-static void 
+static void
 end_local_element (PFarray_t *atts)
 {
-    /*  [[ <element name="n" type="t" minOccurs="m" maxOccurs="M"/> ]]  -->  
+    /*  [[ <element name="n" type="t" minOccurs="m" maxOccurs="M"/> ]]  -->
      *  occurs (m, M, element n { named t })
      *
-     *  [[ <element name="n" minOccurs="m" maxOccurs="M"/> ]]  -->  
+     *  [[ <element name="n" minOccurs="m" maxOccurs="M"/> ]]  -->
      *  occurs (element n { anyType })
      *
-     *  [[ <element ref="n" minOccurs="m" maxOccurs="M"/> ]]  -->  
+     *  [[ <element ref="n" minOccurs="m" maxOccurs="M"/> ]]  -->
      *  occurs (m, M, named n)
      */
     char *name;
@@ -1423,12 +1458,12 @@ end_local_element (PFarray_t *atts)
                            PFty_named (ref_qname (type)));
         else
             /* @type absent */
-            t = PFty_elem (imported_qname (name), 
+            t = PFty_elem (imported_qname (name),
                            PFty_xs_anyType ());
-    } 
-    else 
+    }
+    else
         /* @name absent */
-        if ((ref = attribute_value (atts, "ref"))) 
+        if ((ref = attribute_value (atts, "ref")))
             /* @ref present */
             t = PFty_named_elem (ref_qname (ref));
         else
@@ -1439,12 +1474,12 @@ end_local_element (PFarray_t *atts)
 }
 
 /**
- * Map a local element declaration <element name="n"> t </element> 
+ * Map a local element declaration <element name="n"> t </element>
  * (and apply occurrence attributes)
  *
  * @param atts attributes of the <element> element
  */
-static void 
+static void
 end_local_element_wsub (PFarray_t *atts)
 {
     /*  [[ <element name="n" minOccurs="m" maxOccurs="M"> t </element> ]]  -->
@@ -1456,7 +1491,7 @@ end_local_element_wsub (PFarray_t *atts)
     if ((name = attribute_value (atts, "name")))
         t = PFty_elem (imported_qname (name), pop_type ());
     else
-        PFoops (OOPS_SCHEMAIMPORT, 
+        PFoops (OOPS_SCHEMAIMPORT,
                 "missing `name' attribute in local element declaration");
 
     push_type (occurs (atts, t));
@@ -1467,7 +1502,7 @@ end_local_element_wsub (PFarray_t *atts)
  *
  * @param atts attributes of the <extension> element
  */
-static void 
+static void
 end_extension_eps (PFarray_t *atts)
 {
     /*  [[ <extension base="n"/> ]]  -->  named n
@@ -1479,8 +1514,36 @@ end_extension_eps (PFarray_t *atts)
 
         return;
     }
-    
-    PFoops (OOPS_SCHEMAIMPORT, 
+
+    PFoops (OOPS_SCHEMAIMPORT,
+            "missing `base' attribute in derivation by extension or restriction");
+}
+
+/**
+ * Map a type extension: <extension base=...> a0 ... ak </extension>
+ *
+ * @param atts attributes of the <extension> element
+ */
+static void
+end_simple_extension_watts (PFarray_t *atts)
+{
+    /*  [[ <extension base="n"> a0 ... ak </extension> ]]  -->
+     *  ([[ a0 ]] & ... & [[ ak ]]), named n
+     */
+    char *base;
+
+    /**
+     * @bug: the attributes (all group) defined in t needs to be merged with
+     *       the attributes (all group) of type n (if present)
+     */
+    if ((base = attribute_value (atts, "base"))) {
+        push_type (PFty_seq (pop_type (),
+                             PFty_named (ref_qname (base))));
+
+        return;
+    }
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `base' attribute in derivation by extension");
 }
 
@@ -1489,42 +1552,72 @@ end_extension_eps (PFarray_t *atts)
  *
  * @param atts attributes of the <extension> element
  */
-static void 
+
+static void
 end_extension (PFarray_t *atts)
 {
-    /*  [[ <extension base="n"> t </extension> ]]  -->  named n , [[ t ]]  
+    /*  [[ <extension base="n"> t </extension> ]]  -->  named n , [[ t ]]
      */
     char *base;
 
-    /**  
+    /**
      * @bug: the attributes (all group) defined in t needs to be merged with
      *       the attributes (all group) of type n (if present)
      */
     if ((base = attribute_value (atts, "base"))) {
-        push_type (PFty_seq (PFty_named (ref_qname (base)), 
+        push_type (PFty_seq (PFty_named (ref_qname (base)),
                              pop_type ()));
 
         return;
     }
-    
-    PFoops (OOPS_SCHEMAIMPORT, 
+
+    PFoops (OOPS_SCHEMAIMPORT,
+            "missing `base' attribute in derivation by extension or restriction");
+}
+
+/**
+ * Map a type extension <extension base=...> a0 ... ak </extension>
+ *
+ * @param atts attributes of the <extension> element
+ */
+
+static void
+end_extension_watts (PFarray_t *atts)
+{
+    /*  [[ <extension base="n"> a0 ... ak </extension> ]]  -->
+     *  ([[ a0 ]] & ... & [[ ak ]]) & named n
+     */
+    char *base;
+
+    /**
+     * @bug: the attributes (all group) defined in t needs to be merged with
+     *       the attributes (all group) of type n (if present)
+     */
+    if ((base = attribute_value (atts, "base"))) {
+        push_type (PFty_all (pop_type (),
+                             PFty_named (ref_qname (base))));
+
+        return;
+    }
+
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `base' attribute in derivation by extension");
 }
 
 /**
  * Map a type extension w/ attributes:
- * <extension base=...> t a0 ... ak </extension> 
+ * <extension base=...> t a0 ... ak </extension>
  *
  * @param atts attributes of the <extension> element
  */
-static void 
+static void
 end_extension_wboth (PFarray_t *atts)
 {
     /*  [[ <extension base="n"> t a0 ... ak </extension> ]]  -->
-     *  named n , ([[ a0 ]] & ... & [[ ak ]]) , [[ t ]]
+     *  (([[ a0 ]] & ... & [[ ak ]]) & named n), [[ t ]]
      */
+    end_extension_watts (atts);
     combine_atts_partial_type (0);
-    end_extension (atts);
 }
 
 /**
@@ -1533,10 +1626,10 @@ end_extension_wboth (PFarray_t *atts)
  *
  * @param atts attributes of the <group> element
  */
-static void 
+static void
 end_local_group (PFarray_t *atts)
 {
-    /*  [[ <group ref="n" minOccurs="m" maxOccurs="M"/> ]]  -->  
+    /*  [[ <group ref="n" minOccurs="m" maxOccurs="M"/> ]]  -->
      *  occurs (m, M, named "n")
      */
     char *ref;
@@ -1547,7 +1640,7 @@ end_local_group (PFarray_t *atts)
         return;
     }
 
-    PFoops (OOPS_SCHEMAIMPORT, 
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `ref' attribute in group reference");
 }
 
@@ -1556,10 +1649,10 @@ end_local_group (PFarray_t *atts)
  *
  * @param atts attributes of the <restriction> element
  */
-static void 
+static void
 end_restriction_wbase (PFarray_t *atts)
 {
-    /*  [[ <restriction base="n"/> ]]  -->  named n 
+    /*  [[ <restriction base="n"/> ]]  -->  named n
      */
     char *base;
 
@@ -1569,7 +1662,7 @@ end_restriction_wbase (PFarray_t *atts)
         return;
     }
 
-    PFoops (OOPS_SCHEMAIMPORT, 
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `base' attribute in derivation by restriction");
 }
 
@@ -1579,7 +1672,7 @@ end_restriction_wbase (PFarray_t *atts)
  *
  * @param atts attributes of the <list> element
  */
-static void 
+static void
 end_list_wbase (PFarray_t *atts)
 {
     /*  [[ <list itemType="n"/> ]]  -->  (named n)*
@@ -1592,7 +1685,7 @@ end_list_wbase (PFarray_t *atts)
         return;
     }
 
-    PFoops (OOPS_SCHEMAIMPORT, 
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `itemType' attribute in list");
 }
 
@@ -1601,7 +1694,7 @@ end_list_wbase (PFarray_t *atts)
  *
  * @param atts attributes of the <list> element
  */
-static void 
+static void
 end_union_wbase (PFarray_t *atts)
 {
     /*  [[ <union memberTypes="n0 n1 ... nk"/> ]]  -->
@@ -1612,7 +1705,7 @@ end_union_wbase (PFarray_t *atts)
     char *ws = " \f\n\r\t\v";
     PFty_t t;
 
-    
+
     if ((memberTypes = attribute_value (atts, "memberTypes"))) {
         /* initialize result type (none | s = s) */
         t = PFty_none ();
@@ -1621,15 +1714,15 @@ end_union_wbase (PFarray_t *atts)
 
         while ((n = strcspn (memberTypes, ws))) {
             /* type reference (of length n) found */
-            t = PFty_choice (t, 
-                             PFty_named (ref_qname (PFstrndup (memberTypes, 
+            t = PFty_choice (t,
+                             PFty_named (ref_qname (PFstrndup (memberTypes,
                                                                n))));
-            
+
             /* skip over type and ws */
             memberTypes += n;
             memberTypes += strspn (memberTypes, ws);
         }
-        
+
         push_type (*PFty_simplify (t));
 
         return;
@@ -1644,7 +1737,7 @@ end_union_wbase (PFarray_t *atts)
  *
  * @param atts attributes of the <attributeGroup> element
  */
-static void 
+static void
 end_local_attrgrp (PFarray_t *atts)
 {
     /*  [[ <attributeGroup ref="n"/> ]]  -->  named n
@@ -1656,14 +1749,14 @@ end_local_attrgrp (PFarray_t *atts)
 
         /* go to `attribute seen' state */
         state = dfa[state][STACKCOL];
-        
+
         /* execute `attribute seen' state actions */
         actions[state] (0);
-        
+
         return;
     }
 
-    PFoops (OOPS_SCHEMAIMPORT, 
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `ref' attribute in local attribute group");
 }
 
@@ -1675,16 +1768,16 @@ end_local_attrgrp (PFarray_t *atts)
  *
  * @param atts attributes of the <attribute> element
  */
-static void 
+static void
 end_local_attribute (PFarray_t *atts)
 {
-    /*  [[ <attribute name="n" type="t" use="u"/> ]]  -->  
+    /*  [[ <attribute name="n" type="t" use="u"/> ]]  -->
      *  attr_occurs (u, attribute n { named t })
      *
-     *  [[ <attribute name="n" use="u"/> ]]  -->  
+     *  [[ <attribute name="n" use="u"/> ]]  -->
      *  attr_occurs (u, attribute n { anySimpleType })
      *
-     *  [[ <attribute ref="n" use="u"/> ]]  -->  
+     *  [[ <attribute ref="n" use="u"/> ]]  -->
      *  attr_occurs (u, named n)
      */
     char *name;
@@ -1699,11 +1792,11 @@ end_local_attribute (PFarray_t *atts)
                            PFty_named (ref_qname (type)));
         else
             /* @type absent => xs:anySimpleType */
-            t = PFty_attr (imported_qname (name), 
+            t = PFty_attr (imported_qname (name),
                            PFty_xs_anySimpleType ());
     }
     else
-        if ((ref = attribute_value (atts, "ref"))) 
+        if ((ref = attribute_value (atts, "ref")))
             t = PFty_named_attr (ref_qname (ref));
         else
             PFoops (OOPS_SCHEMAIMPORT,
@@ -1724,28 +1817,28 @@ end_local_attribute (PFarray_t *atts)
  *
  * @param atts attributes of the <attribute> element
  */
-static void 
+static void
 end_local_attribute_wsub (PFarray_t *atts)
 {
-    /*  [[ <attribute name="n" use="u"> t </attribute> ]]  -->  
+    /*  [[ <attribute name="n" use="u"> t </attribute> ]]  -->
      *  attr_occurs (u, attribute n { [[ t ]] })
      */
     char *name;
 
     if ((name = attribute_value (atts, "name"))) {
-        push_type (attr_occurs (atts, PFty_attr (imported_qname (name), 
+        push_type (attr_occurs (atts, PFty_attr (imported_qname (name),
                                                  pop_type ())));
 
         /* go to `attribute seen' state */
         state = dfa [state][STACKCOL];
-        
+
         /* execute `attribute seen' state actions */
         actions[state] (0);
 
         return;
     }
 
-    PFoops (OOPS_SCHEMAIMPORT, 
+    PFoops (OOPS_SCHEMAIMPORT,
             "missing `name' attribute in local attribute declaration");
 }
 
@@ -1754,27 +1847,27 @@ end_local_attribute_wsub (PFarray_t *atts)
  *
  * @param atts attributes of the <any> element
  */
-static void 
+static void
 end_any (PFarray_t *atts)
 {
-    /*  [[ <any minOccurs="m" maxOccurs="M"/> ]]  -->  
+    /*  [[ <any minOccurs="m" maxOccurs="M"/> ]]  -->
      *  occurs (m, M, anyElement)
      */
     push_type (occurs (atts, PFty_xs_anyElement ()));
 }
 
 /**
- * Map <anyAttribute> 
+ * Map <anyAttribute>
  *
  * @param atts attributes of the <anyAttribute> element
  */
-static void 
+static void
 end_anyAttribute (PFarray_t *atts)
 {
-    /*  [[ <anyAttribute/> ]]  -->  anyAttribute
+    /*  [[ <anyAttribute/> ]]  -->  anyAttribute*
      */
-    (void)atts;
-    push_type (PFty_xs_anyAttribute ());
+    (void)atts; /* not used */
+    push_type (PFty_star (PFty_xs_anyAttribute ()));
 
     /* go to `attribute seen' state */
     state = dfa[state][STACKCOL];
@@ -1787,362 +1880,418 @@ end_anyAttribute (PFarray_t *atts)
  * binds the callbacks to the xml SAXHandler
  */
 static xmlSAXHandler schema_import_sax = {
-    0                                       /* internalSubset        */
-  , 0                                       /* isStandalone          */
-  , 0                                       /* hasInternalSubset     */
-  , 0                                       /* hasExternalSubset     */
-  , 0                                       /* resolveEntity         */
-  , 0                                       /* getEntity             */
-  , 0                                       /* entityDecl            */
-  , 0                                       /* notationDecl          */
-  , 0                                       /* attributeDecl         */
-  , 0                                       /* elementtDecl          */
-  , 0                                       /* unparsedEntityDecl    */
-  , 0                                       /* setDocumentLocator    */
-  , 0                                       /* startDocument         */
-  , 0                                       /* endDocument           */
-  , schema_import_start_element             /* startElement          */
-  , schema_import_end_element               /* endElement            */
-  , 0                                       /* reference             */
-  , 0                                       /* characters            */
-  , 0                                       /* ignorableWhitespace   */
-  , 0                                       /* processingInstruction */
-  , 0                                       /* comment               */
-  , 0                                       /* warning               */
-  , (errorSAXFunc) schema_import_error      /* error                 */
-  , (errorSAXFunc) schema_import_error      /* fatalError            */
-  , 0                                       /* getParameterEntity    */
-  , 0                                       /* cdataBlock            */
-  , 0                                       /* externalSubset        */
-  , 0                                       /* initialized           */
+    .internalSubset        = 0
+  , .isStandalone          = 0
+  , .hasInternalSubset     = 0
+  , .hasExternalSubset     = 0
+  , .resolveEntity         = 0
+  , .getEntity             = 0
+  , .entityDecl            = 0
+  , .notationDecl          = 0
+  , .attributeDecl         = 0
+  , .elementDecl           = 0
+  , .unparsedEntityDecl    = 0
+  , .setDocumentLocator    = 0
+  , .startDocument         = 0
+  , .endDocument           = 0
+  , .startElement          = schema_import_start_element
+  , .endElement            = schema_import_end_element
+  , .reference             = 0
+  , .characters            = 0
+  , .ignorableWhitespace   = 0
+  , .processingInstruction = 0
+  , .comment               = 0
+  , .warning               = 0
+  , .error                 = (errorSAXFunc) schema_import_error
+  , .fatalError            = (errorSAXFunc) schema_import_error
+  , .getParameterEntity    = 0
+  , .cdataBlock            = 0
+  , .externalSubset        = 0
+  , .initialized           = 0
 };
 
 static action actions [] = {
-    /*       START                    0 */  nop
-    /* start schema                   1 */ ,nop
-    /*       schema'                  2 */ ,nop
-    /* end schema                     3 */ ,nop
-    /* start top level element        4 */ ,nop
-    /*       top level element'       5 */ ,nop
-    /* end top level element          6 */ ,end_top_level_element
-    /* end top level element'         7 */ ,end_top_level_element_wsub
-    /* start local element            8 */ ,nop
-    /*       local element'           9 */ ,nop
-    /* end local level element       10 */ ,end_local_element
-    /* end local level element'      11 */ ,end_local_element_wsub
-    /* start top level complex type  12 */ ,nop
-    /*       top level complex type' 13 */ ,nop
-    /* end top level complex type    14 */ ,end_top_level_eps
-    /* end top level complex type''  15 */ ,end_top_level_type
-    /* end top level complex type''' 16 */ ,end_top_level_complex_type_wboth
-    /* start local complex type      17 */ ,nop
-    /*       local complex type'     18 */ ,nop
-    /* end local complex type        19 */ ,end_local_complex_type_eps
-    /* end local complex type''      20 */ ,nop
-    /* end local complex type'''     21 */ ,combine_atts_partial_type
-    /* start top level simple type   22 */ ,nop
-    /*       top level simple type'  23 */ ,nop
-    /* end top level simple type     24 */ ,end_top_level_type
-    /* start local simple type       25 */ ,nop
-    /*       local simple type'      26 */ ,nop
-    /* end local simple type         27 */ ,nop
-    /* start simple Content          28 */ ,nop
-    /*       simple Content'         29 */ ,nop
-    /* end simple Content            30 */ ,nop
-    /* start complex Content         31 */ ,nop
-    /*       complex Content'        32 */ ,nop
-    /* end complex Content           33 */ ,nop
-    /* start extension               34 */ ,nop
-    /*       extension'              35 */ ,nop
-    /* end extension                 36 */ ,end_extension_eps
-    /* end extension''               37 */ ,end_extension
-    /* end extension'''              38 */ ,end_extension_wboth
-    /* start restriction             39 */ ,start_restriction
-    /*       restriction'            40 */ ,nop
-    /*       restriction''           41 */ ,nop
-    /* end restriction               42 */ ,nop
-    /* end restriction'              43 */ ,end_restriction_wbase
-    /* start top level group         44 */ ,nop
-    /*       top level group'        45 */ ,nop
-    /* end top level group           46 */ ,end_top_level_eps_group
-    /* end top level group           47 */ ,end_top_level_group
-    /* start local group             48 */ ,nop
-    /* end local group               49 */ ,end_local_group
-    /* start all                     50 */ ,nop
-    /*       all'                    51 */ ,goto_stack
-    /*       all''                   52 */ ,combine_all
-    /* end all                       53 */ ,end_all_empty
-    /* end all'                      54 */ ,nop
-    /* start choice                  55 */ ,nop
-    /*       choice'                 56 */ ,goto_stack
-    /*       choice''                57 */ ,combine_choice
-    /* end choice                    58 */ ,end_choice_empty
-    /* end choice                    59 */ ,end_choice_seq
-    /* start sequence                60 */ ,nop
-    /*       sequence'               61 */ ,goto_stack
-    /*       sequence''              62 */ ,combine_sequence
-    /* end sequence                  63 */ ,end_seq_empty
-    /* end sequence                  64 */ ,end_choice_seq
-    /* start list                    65 */ ,start_list
-    /*       list'                   66 */ ,nop
-    /*       list''                  67 */ ,nop
-    /* end list                      68 */ ,end_list
-    /* end list'                     69 */ ,end_list_wbase
-    /* start union                   70 */ ,start_union
-    /*       union'                  71 */ ,goto_stack
-    /*       union''                 72 */ ,combine_choice
-    /*       union'''                73 */ ,nop
-    /* end union                     74 */ ,nop
-    /* end union'                    75 */ ,end_union_wbase
-    /* start any                     76 */ ,nop
-    /* end any                       77 */ ,end_any
-    /* start top level attrgrp       78 */ ,nop
-    /* end top level attrgrp         79 */ ,end_top_level_eps_attrgrp
-    /* end top level attrgrp'        80 */ ,end_top_level_attrgrp
-    /* start top level attribute     81 */ ,nop
-    /*       top level attribute'    82 */ ,nop
-    /* end top level attribute       83 */ ,end_top_level_attribute
-    /* end top level attribute'      84 */ ,end_top_level_attribute_wsub
-    /* start local attrgrp (1)       85 */ ,nop
-    /* end local attrgrp (1)         86 */ ,end_local_attrgrp
-    /* start anyAttribute (1)        87 */ ,nop
-    /* end anyAttribute (1)          88 */ ,end_anyAttribute
-    /* start local attribute (1)     89 */ ,nop
-    /*       local attribute' (1)    90 */ ,nop
-    /* end local attribute (1)       91 */ ,end_local_attribute
-    /* end local attribute' (1)      92 */ ,end_local_attribute_wsub
-    /*       attribute seen (1)      93 */ ,nop
-    /* start local attrgrp (1')      94 */ ,nop
-    /* end local attrgrp (1')        95 */ ,end_local_attrgrp
-    /* start local attribute (1')    96 */ ,nop
-    /* start local attribute' (1')   97 */ ,nop
-    /* end local attribute (1')      98 */ ,end_local_attribute
-    /* end local attribute' (1')     99 */ ,end_local_attribute_wsub
-    /*       attribute seen (1')    100 */ ,combine_all
-    /* start local attrgrp (2)      101 */ ,nop
-    /* end local attrgrp (2)        102 */ ,end_local_attrgrp
-    /* start anyAttribute (2)       103 */ ,nop
-    /* end anyAttribute (2)         104 */ ,end_anyAttribute
-    /* start local attribute (2)    105 */ ,nop
-    /*       local attribute' (2)   106 */ ,nop
-    /* end local attribute (2)      107 */ ,end_local_attribute
-    /* end local attribute' (2)     108 */ ,end_local_attribute_wsub
-    /*       attribute seen (2)     109 */ ,nop
-    /* start local attrgrp (2')     110 */ ,nop
-    /* end local attrgrp (2')       111 */ ,end_local_attrgrp
-    /* start local attribute (2')   112 */ ,nop
-    /*       local attribute' (2')  113 */ ,nop
-    /* end local attribute (2')     114 */ ,end_local_attribute
-    /* end local attribute' (2')    115 */ ,end_local_attribute_wsub
-    /*       attribute seen (2')    116 */ ,combine_all
-    /* start local attrgrp (3)      117 */ ,nop
-    /* end local attrgrp (3)        118 */ ,end_local_attrgrp
-    /* start anyAttribute (3)       119 */ ,nop
-    /* end anyAttribute (3)         120 */ ,end_anyAttribute
-    /* start local attribute (3)    121 */ ,nop
-    /*       local attribute' (3)   122 */ ,nop
-    /* end local attribute (3)      123 */ ,end_local_attribute
-    /* end local attribute' (3)     124 */ ,end_local_attribute_wsub
-    /*       attribute seen (3)     125 */ ,nop
-    /* start local attrgrp (3')     126 */ ,nop
-    /* end local attrgrp (3')       127 */ ,end_local_attrgrp
-    /* start local attribute (3')   128 */ ,nop
-    /*       local attribute' (3')  129 */ ,nop
-    /* end local attribute (3')     130 */ ,end_local_attribute
-    /* end local attribute' (3')    131 */ ,end_local_attribute_wsub
-    /*       attribute seen (3')    132 */ ,combine_all
-    /* start local attrgrp (4)      133 */ ,nop
-    /* end local attrgrp (4)        134 */ ,end_local_attrgrp
-    /* start anyAttribute (4)       135 */ ,nop
-    /* end anyAttribute (4)         136 */ ,end_anyAttribute
-    /* start local attribute (4)    137 */ ,nop
-    /*       local attribute' (4)   138 */ ,nop
-    /* end local attribute (4)      139 */ ,end_local_attribute
-    /* end local attribute' (4)     140 */ ,end_local_attribute_wsub
-    /*       attribute seen (4)     141 */ ,nop
-    /* start local attrgrp (4')     142 */ ,nop
-    /* end local attrgrp (4')       143 */ ,end_local_attrgrp
-    /* start local attribute (4')   144 */ ,nop
-    /*       local attribute' (4')  145 */ ,nop
-    /* end local attribute (4')     146 */ ,end_local_attribute
-    /* end local attribute' (4')    147 */ ,end_local_attribute_wsub
-    /*       attribute seen (4')    148 */ ,combine_all
+    /* START                              0 */  nop
+    /* start schema                       1 */ ,start_schema
+    /*   between schema'                  2 */ ,nop
+    /* end schema'                        3 */ ,nop
+    /* start global element               4 */ ,nop
+    /*   between global element'          5 */ ,nop
+    /* end global element                 6 */ ,end_top_level_element
+    /* end global element'                7 */ ,end_top_level_element_wsub
+    /* start local element                8 */ ,nop
+    /*   between local element'           9 */ ,nop
+    /* end local element                 10 */ ,end_local_element
+    /* end local element'                11 */ ,end_local_element_wsub
+    /* start global complexType          12 */ ,nop
+    /*   between global complexType'     13 */ ,nop
+    /* end global complexType            14 */ ,end_top_level_eps
+    /* end global complexType'           15 */ ,end_top_level_type
+    /* end global complexType''          16 */ ,end_top_level_complex_type_wboth
+    /* start local complexType           17 */ ,nop
+    /*   between local complexType'      18 */ ,nop
+    /* end local complexType             19 */ ,end_local_complex_type_eps
+    /* end local complexType'            20 */ ,nop
+    /* end local complexType''           21 */ ,combine_atts_partial_type
+    /* start global simpleType           22 */ ,nop
+    /*   between global simpleType'      23 */ ,nop
+    /* end global simpleType'            24 */ ,end_top_level_type
+    /* start local simpleType            25 */ ,nop
+    /*   between local simpleType'       26 */ ,nop
+    /* end local simpleType'             27 */ ,nop
+    /* start simpleContent               28 */ ,nop
+    /*   between simpleContent'          29 */ ,nop
+    /* end simpleContent'                30 */ ,nop
+    /* start complexContent              31 */ ,nop
+    /*   between complexContent'         32 */ ,nop
+    /* end complexContent'               33 */ ,nop
+    /* start extension (simple)          34 */ ,nop
+    /* end extension (simple)            35 */ ,end_extension_eps
+    /* end extension' (simple)           36 */ ,end_simple_extension_watts
+    /* start extension (complex)         37 */ ,nop
+    /*   between extension' (complex)    38 */ ,nop
+    /* end extension (complex)           39 */ ,end_extension_eps
+    /* end extension' (type) (complex)   40 */ ,end_extension
+    /* end extension' (atts) (complex)   41 */ ,end_extension_watts
+    /* end extension'' (complex)         42 */ ,end_extension_wboth
+    /* start restriction (sT)            43 */ ,start_restriction
+    /*   between restriction' (sT)       44 */ ,nop
+    /*   between restriction @base (sT)  45 */ ,nop
+    /* end restriction (sT)              46 */ ,end_restriction_wbase
+    /* end restriction' (sT)             47 */ ,nop
+    /* start restriction (simple)        48 */ ,start_simple_restriction
+    /*   between restriction' (simple)   49 */ ,nop
+    /*   betw restr @base (simple)       50 */ ,nop
+    /* end restriction (simple)          51 */ ,end_extension_eps
+    /* end restriction' (type) (simple)  52 */ ,nop
+    /* end restriction' (atts) (simple)  53 */ ,end_simple_extension_watts
+    /* end restriction'' (simple)        54 */ ,combine_atts_partial_type
+    /* start restriction (complex)       55 */ ,nop
+    /*   between restriction' (complex)  56 */ ,nop
+    /* end restriction (complex)         57 */ ,end_extension_eps
+    /* end restriction' (complex)        58 */ ,nop
+    /* end restriction'' (complex)       59 */ ,combine_atts_partial_type
+    /* start global group                60 */ ,nop
+    /*   between global group'           61 */ ,nop
+    /* end global group                  62 */ ,end_top_level_eps_group
+    /* end global group'                 63 */ ,end_top_level_group
+    /* start local group                 64 */ ,nop
+    /* end local group                   65 */ ,end_local_group
+    /* start all                         66 */ ,nop
+    /*   between all'                    67 */ ,goto_stack
+    /*   between all''                   68 */ ,combine_all
+    /* end all                           69 */ ,end_all_empty
+    /* end all'                          70 */ ,nop
+    /* start choice                      71 */ ,nop
+    /*   between choice'                 72 */ ,goto_stack
+    /*   between choice''                73 */ ,combine_choice
+    /* end choice                        74 */ ,end_choice_empty
+    /* end choice'                       75 */ ,end_choice_seq
+    /* start sequence                    76 */ ,nop
+    /*   between sequence'               77 */ ,goto_stack
+    /*   between sequence''              78 */ ,combine_sequence
+    /* end sequence                      79 */ ,end_seq_empty
+    /* end sequence'                     80 */ ,end_choice_seq
+    /* start list                        81 */ ,start_list
+    /*   between list'                   82 */ ,nop
+    /*   between list @itemType          83 */ ,nop
+    /* end list                          84 */ ,end_list_wbase
+    /* end list'                         85 */ ,end_list
+    /* start union                       86 */ ,start_union
+    /*   between union'                  87 */ ,goto_stack
+    /*   between union''                 88 */ ,combine_choice
+    /*   between union @memberTypes      89 */ ,nop
+    /* end union                         90 */ ,end_union_wbase
+    /* end union'                        91 */ ,nop
+    /* start any                         92 */ ,nop
+    /* end any                           93 */ ,end_any
+    /* start global attributeGroup       94 */ ,nop
+    /* end global attributeGroup         95 */ ,end_top_level_eps_attrgrp
+    /* end global attributeGroup'        96 */ ,end_top_level_attrgrp
+    /* start global attribute            97 */ ,nop
+    /*   between global attribute'       98 */ ,nop
+    /* end global attribute              99 */ ,end_top_level_attribute
+    /* end global attribute'            100 */ ,end_top_level_attribute_wsub
+    /* start anyAttribute (1)           101 */ ,nop
+    /* end anyAttribute (1)             102 */ ,end_anyAttribute
+    /* start local attribute (1)        103 */ ,nop
+    /*   between local attribute' (1)   104 */ ,nop
+    /* end local attribute (1)          105 */ ,end_local_attribute
+    /* end local attribute' (1)         106 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (1)   107 */ ,nop
+    /* end local attributeGroup (1)     108 */ ,end_local_attrgrp
+    /*   attribute seen' (1)            109 */ ,nop
+    /* start anyAttribute (1')          110 */ ,nop
+    /* end anyAttribute (1')            111 */ ,end_anyAttribute
+    /* start local attribute (1')       112 */ ,nop
+    /*   between local attribute' (1')  113 */ ,nop
+    /* end local attribute (1')         114 */ ,end_local_attribute
+    /* end local attribute' (1')        115 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (1')  116 */ ,nop
+    /* end local attributeGroup (1')    117 */ ,end_local_attrgrp
+    /*   attribute seen'' (1')          118 */ ,combine_all
+    /* start anyAttribute (2)           119 */ ,nop
+    /* end anyAttribute (2)             120 */ ,end_anyAttribute
+    /* start local attribute (2)        121 */ ,nop
+    /*   between local attribute' (2)   122 */ ,nop
+    /* end local attribute (2)          123 */ ,end_local_attribute
+    /* end local attribute' (2)         124 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (2)   125 */ ,nop
+    /* end local attributeGroup (2)     126 */ ,end_local_attrgrp
+    /*   attribute seen' (2)            127 */ ,nop
+    /* start anyAttribute (2')          128 */ ,nop
+    /* end anyAttribute (2')            129 */ ,end_anyAttribute
+    /* start local attribute (2')       130 */ ,nop
+    /*   between local attribute' (2')  131 */ ,nop
+    /* end local attribute (2')         132 */ ,end_local_attribute
+    /* end local attribute' (2')        133 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (2')  134 */ ,nop
+    /* end local attributeGroup (2')    135 */ ,end_local_attrgrp
+    /*   attribute seen'' (2')          136 */ ,combine_all
+    /* start anyAttribute (3)           137 */ ,nop
+    /* end anyAttribute (3)             138 */ ,end_anyAttribute
+    /* start local attribute (3)        139 */ ,nop
+    /*   between local attribute' (3)   140 */ ,nop
+    /* end local attribute (3)          141 */ ,end_local_attribute
+    /* end local attribute' (3)         142 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (3)   143 */ ,nop
+    /* end local attributeGroup (3)     144 */ ,end_local_attrgrp
+    /*   attribute seen' (3)            145 */ ,nop
+    /* start anyAttribute (3')          146 */ ,nop
+    /* end anyAttribute (3')            147 */ ,end_anyAttribute
+    /* start local attribute (3')       148 */ ,nop
+    /*   between local attribute' (3')  149 */ ,nop
+    /* end local attribute (3')         150 */ ,end_local_attribute
+    /* end local attribute' (3')        151 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (3')  152 */ ,nop
+    /* end local attributeGroup (3')    153 */ ,end_local_attrgrp
+    /*   attribute seen'' (3')          154 */ ,combine_all
+    /* start anyAttribute (4)           155 */ ,nop
+    /* end anyAttribute (4)             156 */ ,end_anyAttribute
+    /* start local attribute (4)        157 */ ,nop
+    /*   between local attribute' (4)   158 */ ,nop
+    /* end local attribute (4)          159 */ ,end_local_attribute
+    /* end local attribute' (4)         160 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (4)   161 */ ,nop
+    /* end local attributeGroup (4)     162 */ ,end_local_attrgrp
+    /*   attribute seen' (4)            163 */ ,nop
+    /* start anyAttribute (4')          164 */ ,nop
+    /* end anyAttribute (4')            165 */ ,end_anyAttribute
+    /* start local attribute (4')       166 */ ,nop
+    /*   between local attribute' (4')  167 */ ,nop
+    /* end local attribute (4')         168 */ ,end_local_attribute
+    /* end local attribute' (4')        169 */ ,end_local_attribute_wsub
+    /* start local attributeGroup (4')  170 */ ,nop
+    /* end local attributeGroup (4')    171 */ ,end_local_attrgrp
+    /*   attribute seen'' (4')          172 */ ,combine_all
 };
 
-static int dfa[149][37] = {
-    /*                                       |  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14| 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36*/
-    /*                                       |                 a       c           START-EVENT                       |                 a       c           END-EVENT                             */
-    /*                                       |                 t       o                                   s         |                 t       o                                   s             */
-    /*                                       |         a       t       m                                   i         |         a       t       m                                   i             */
-    /*                                       |         n       r       p   c                   r           m         |         n       r       p   c                   r           m           S */
-    /*                                       |         y       i       l   o                   e           p   s     |         y       i       l   o                   e           p   s       T */
-    /*                                       |         A   a   b       e   m       e           s           l   i     |         A   a   b       e   m       e           s           l   i       A */
-    /*                                       |         t   t   u       x   p       x           t       s   e   m     |         t   t   u       x   p       x           t       s   e   m       C */
-    /*                                       |         t   t   t       C   l   e   t           r       e   C   p     |         t   t   t       C   l   e   t           r       e   C   p       K */
-    /*                                       |         r   r   e   c   o   e   l   e           i   s   q   o   l     |         r   r   e   c   o   e   l   e           i   s   q   o   l       C */
-    /*                                       |         i   i   G   h   n   x   e   n   g       c   c   u   n   e   u |         i   i   G   h   n   x   e   n   g       c   c   u   n   e   u   O */
-    /*                                       |         b   b   r   o   t   T   m   s   r   l   t   h   e   t   T   n |         b   b   r   o   t   T   m   s   r   l   t   h   e   t   T   n   L */
-    /*                                       | a   a   u   u   o   i   e   y   e   i   o   i   i   e   n   e   y   i | a   a   u   u   o   i   e   y   e   i   o   i   i   e   n   e   y   i   U */
-    /*                                       | l   n   t   t   u   c   n   p   n   o   u   s   o   m   c   n   p   o | l   n   t   t   u   c   n   p   n   o   u   s   o   m   c   n   p   o   M */
-    /*                                       | l   y   e   e   p   e   t   e   t   n   p   t   n   a   e   t   e   n | l   y   e   e   p   e   t   e   t   n   p   t   n   a   e   t   e   n   N */
-    /*                                                                                                                                                                                           */
-    /*       START                  */ [  0] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  1,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /* start schema                 */ [  1] {  _,  _,  _, 81, 78,  _,  _, 12,  4,  _, 44,  _,  _,  _,  _,  _, 22,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  3,  _,  _,  _,  _,  2 },
-    /*       schema'                */ [  2] {  _,  _,  _, 81, 78,  _,  _, 12,  4,  _, 44,  _,  _,  _,  _,  _, 22,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  3,  _,  _,  _,  _, -1 },
-    /* end schema                   */ [  3] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /* start top level element      */ [  4] {  _,  _,  _,  _,  _,  _,  _, 17,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  6,  _,  _,  _,  _,  _,  _,  _,  _,  _,  5 },
-    /*       top level element'     */ [  5] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  7,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level element        */ [  6] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level element'       */ [  7] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start local element          */ [  8] {  _,  _,  _,  _,  _,  _,  _, 17,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _, 10,  _,  _,  _,  _,  _,  _,  _,  _,  _,  9 },
-    /*       local element'         */ [  9] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 11,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local level element      */ [ 10] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local level element'     */ [ 11] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start top level complex type */ [ 12] { 50,  _, 87, 89, 85, 55, 31,  _,  _,  _, 48,  _,  _,  _, 60, 28,  _,  _,  _,  _,  _,  _,  _,  _,  _, 14,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 13 },
-    /*       top level complex type'*/ [ 13] {  _,  _,103,105,101,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 15,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level complex type   */ [ 14] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level complex type'' */ [ 15] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level complex type'''*/ [ 16] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start local complex type     */ [ 17] { 50,  _,119,121,117, 55, 31,  _,  _,  _, 48,  _,  _,  _, 60, 28,  _,  _,  _,  _,  _,  _,  _,  _,  _, 19,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 18 },
-    /*       local complex type'    */ [ 18] {  _,  _,135,137,133,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 20,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local complex type       */ [ 19] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local complex type''     */ [ 20] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local complex type'''    */ [ 21] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start top level simple type  */ [ 22] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 65, 39,  _,  _,  _,  _, 70,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 23 },
-    /*       top level simple type' */ [ 23] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 24,  _, -1 },
-    /* end top level simple type    */ [ 24] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start local simple type      */ [ 25] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 65, 39,  _,  _,  _,  _, 70,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 26 },
-    /*       local simple type'     */ [ 26] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 27,  _, -1 },
-    /* end local simple type        */ [ 27] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start simple Content         */ [ 28] {  _,  _,  _,  _,  _,  _,  _,  _,  _, 34,  _,  _, 39,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 29 },
-    /*       simple Content'        */ [ 29] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 30,  _,  _, -1 },
-    /* end simple Content           */ [ 30] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start complex Content        */ [ 31] {  _,  _,  _,  _,  _,  _,  _,  _,  _, 34,  _,  _, 39,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 32 },
-    /*       complex Content'       */ [ 32] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 33,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end complex Content          */ [ 33] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start extension              */ [ 34] { 50,  _, 87, 89, 85, 55,  _,  _,  _,  _, 48,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 36,  _,  _,  _,  _,  _,  _,  _,  _, 35 },
-    /*       extension'             */ [ 35] {  _,  _,103,105,101,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 37,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end extension                */ [ 36] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end extension''              */ [ 37] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end extension'''             */ [ 38] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start restriction            */ [ 39] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 40 },
-    /*       restriction'           */ [ 40] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 42,  _,  _,  _,  _,  _, -1 },
-    /*       restriction''  */ [RESTRICTION] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 43,  _,  _,  _,  _,  _, 41 },
-    /* end restriction              */ [ 42] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end restriction'             */ [ 43] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start top level group        */ [ 44] { 50,  _,  _,  _,  _, 55,  _,  _,  _,  _,  _,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 46,  _,  _,  _,  _,  _,  _,  _, 45 },
-    /*       top level group'       */ [ 45] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 47,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level group          */ [ 46] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level group          */ [ 47] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start local group            */ [ 48] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 49,  _,  _,  _,  _,  _,  _,  _, 48 },
-    /* end local group              */ [ 49] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start all                    */ [ 50] {  _,  _,  _,  _,  _,  _,  _,  _,  8,  _,  _,  _,  _,  _,  _,  _,  _,  _, 53,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 51 },
-    /*       all'                   */ [ 51] {  _,  _,  _,  _,  _,  _,  _,  _,  8,  _,  _,  _,  _,  _,  _,  _,  _,  _, 54,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 52 },
-    /*       all''                  */ [ 52] {  _,  _,  _,  _,  _,  _,  _,  _,  8,  _,  _,  _,  _,  _,  _,  _,  _,  _, 54,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end all                      */ [ 53] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end all'                     */ [ 54] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start choice                 */ [ 55] {  _, 76,  _,  _,  _, 55,  _,  _,  8,  _, 48,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _, 58,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 56 },
-    /*       choice'                */ [ 56] {  _, 76,  _,  _,  _, 55,  _,  _,  8,  _, 48,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _, 59,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 57 },
-    /*       choice''               */ [ 57] {  _, 76,  _,  _,  _, 55,  _,  _,  8,  _, 48,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _, 59,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end choice                   */ [ 58] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end choice'                  */ [ 59] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start sequence               */ [ 60] {  _, 76,  _,  _,  _, 55,  _,  _,  8,  _, 48,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 63,  _,  _,  _, 61 },
-    /*       sequence'              */ [ 61] {  _, 76,  _,  _,  _, 55,  _,  _,  8,  _, 48,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 64,  _,  _,  _, 62 },
-    /*       sequence''             */ [ 62] {  _, 76,  _,  _,  _, 55,  _,  _,  8,  _, 48,  _,  _,  _, 60,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 64,  _,  _,  _, -1 },
-    /* end sequence                 */ [ 63] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end sequence'                */ [ 64] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start list                   */ [ 65] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 66 },
-    /*       list'                  */ [ 66] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 68,  _,  _,  _,  _,  _,  _, -1 },
-    /*       list''                */ [LIST] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 69,  _,  _,  _,  _,  _,  _, 67 },
-    /* end list                     */ [ 68] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end list'                    */ [ 69] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start union                  */ [ 70] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 71 },
-    /*       union'                 */ [ 71] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 74, 72 },
-    /*       union''                */ [ 72] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 74, -1 },
-    /*       union'''             */ [UNION] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 75, 73 },
-    /* end union                    */ [ 74] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end union'                   */ [ 75] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start any                    */ [ 76] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 77,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 76 },
-    /* end any                      */ [ 77] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start top level attrgrp      */ [ 78] {  _,  _, 87, 89, 85,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 79,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 78 },
-    /* end top level attrgrp        */ [ 79] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level attrgrp'       */ [ 80] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* start top level attribute    */ [ 81] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _, 83,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 82 },
-    /*       top level attribute'   */ [ 82] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 84,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level attribute      */ [ 83] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end top level attribute'     */ [ 84] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /*                                 1st Attribute or Attribute Group called from Top Level Complex Type without other subtypes, Extension without other subtypes or Top Level Attribute Group */
-    /* start local attrgrp (1)      */ [ 85] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 86,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 85 },
-    /* end local attrgrp (1)        */ [ 86] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 93 },
-    /* start anyAttribute (1)       */ [ 87] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 88,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 87 },
-    /* end anyAttribute (1)         */ [ 88] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 93 },
-    /* start local attribute (1)    */ [ 89] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _, 91,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 90 },
-    /*       local attribute' (1)   */ [ 90] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 92,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (1)      */ [ 91] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 93 },
-    /* end local attribute' (1)     */ [ 92] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 93 },
-    /* attribute seen (1)           */ [ 93] {  _,  _,  _, 96, 94,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 80,  _,  _, 15,  _, 37,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /*                         2 or more Attributes or Attribute Groups called from Top Level Complex Type without other subtypes, Extension without other subtypes or Top Level Attribute Group */
-    /* start local attrgrp (1')     */ [ 94] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 95,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 94 },
-    /* end local attrgrp (1')       */ [ 95] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,100 },
-    /* start local attribute (1')   */ [ 96] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _, 98,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 97 },
-    /*       local attribute' (1')  */ [ 97] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 99,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (1')     */ [ 98] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,100 },
-    /* end local attribute' (1')    */ [ 99] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,100 },
-    /*       attribute seen (1')    */ [100] {  _,  _,  _, 96, 94,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 80,  _,  _, 15,  _, 37,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /*                                       1st Attribute or Attribute Group called from Top Level Complex Type with other subtypes, Extension with other subtypes                              */
-    /* start local attrgrp (2)      */ [101] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,102,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,101 },
-    /* end local attrgrp (2)        */ [102] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109 },
-    /* start anyAttribute (2)       */ [103] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,104,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,103 },
-    /* end anyAttribute (2)         */ [104] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109 },
-    /* start local attribute (2)    */ [105] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,107,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,106 },
-    /*       local attribute' (2)   */ [106] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,108,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (2)      */ [107] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109 },
-    /* end local attribute' (2)     */ [108] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109 },
-    /*       attribute seen (2)     */ [109] {  _,  _,  _,112,110,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 16,  _, 38,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /*                                       2 or more Attributes or Attribute Groups called from Top Level Complex Type with other subtypes, Extension with other subtypes                      */
-    /* start local attrgrp (2')     */ [110] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,111,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,110 },
-    /* end local attrgrp (2')       */ [111] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,116 },
-    /* start local attribute (2')   */ [112] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,114,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,113 },
-    /*       local attribute' (2')  */ [113] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,115,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (2')     */ [114] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,116 },
-    /* end local attribute' (2')    */ [115] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,116 },
-    /*       attribute seen (2')    */ [116] {  _,  _,  _,112,110,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 16,  _, 38,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /*                                       1st Attribute or Attribute Group called from Local Complex Type without other subtypes                                                              */
-    /* start local attrgrp (3)      */ [117] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,118,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,117 },
-    /* end local attrgrp (3)        */ [118] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,125 },
-    /* start anyAttribute (3)       */ [119] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,120,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,119 },
-    /* end anyAttribute (3)         */ [120] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,125 },
-    /* start local attribute (3)    */ [121] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,123,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,122 },
-    /*       local attribute' (3)   */ [122] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,124,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (3)      */ [123] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,125 },
-    /* end local attribute' (3)     */ [124] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,125 },
-    /*       attribute seen (3)     */ [125] {  _,  _,  _,128,126,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 20,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /*                                       2 or more Attributes or Attribute Groups called from Local Complex Type without other subtypes                                                      */
-    /* start local attrgrp (3')     */ [126] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,127,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,126 },
-    /* end local attrgrp (3')       */ [127] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,132 },
-    /* start local attribute (3')   */ [128] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,130,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,129 },
-    /*       local attribute' (3')  */ [129] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,131,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (3')     */ [130] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,132 },
-    /* end local attribute' (3')    */ [131] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,132 },
-    /*       attribute seen (3')    */ [132] {  _,  _,  _,128,126,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 20,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /*                                       1st Attribute or Attribute Group called from Local Complex Type with other subtypes                                                                 */
-    /* start local attrgrp (4)      */ [133] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,134,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,133 },
-    /* end local attrgrp (4)        */ [134] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,141 },
-    /* start anyAttribute (4)       */ [135] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,136,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,135 },
-    /* end anyAttribute (4)         */ [136] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,141 },
-    /* start local attribute (4)    */ [137] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,139,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,138 },
-    /*       local attribute' (4)   */ [138] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,140,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (4)      */ [139] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,141 },
-    /* end local attribute' (4)     */ [140] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,141 },
-    /* attribute seen (4)           */ [141] {  _,  _,  _,144,142,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 21,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0 },
-    /*                                       2 or more Attributes or Attribute Groups called from Local Complex Type with other subtypes                                                         */
-    /* start local attrgrp (4')     */ [142] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,143,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,142 },
-    /* end local attrgrp (4')       */ [143] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,148 },
-    /* start local attribute (4')   */ [144] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,146,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,145 },
-    /*       local attribute' (4')  */ [145] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,147,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1 },
-    /* end local attribute (4')     */ [146] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,148 },
-    /* end local attribute' (4')    */ [147] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,148 },
-    /*       attribute seen (4')    */ [148] {  _,  _,  _,144,142,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 21,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0 }
+static int dfa[173][37] = {
+   /*                                            |  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14| 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36*/
+   /*                                            |                 a       c           START-EVENT                       |                 a       c           END-EVENT                             */
+   /*                                            |                 t       o                                   s         |                 t       o                                   s             */
+   /*                                            |         a       t       m                                   i         |         a       t       m                                   i             */
+   /*                                            |         n       r       p   c                   r           m         |         n       r       p   c                   r           m           S */
+   /*                                            |         y       i       l   o                   e           p   s     |         y       i       l   o                   e           p   s       T */
+   /*                                            |         A   a   b       e   m       e           s           l   i     |         A   a   b       e   m       e           s           l   i       A */
+   /*                                            |         t   t   u       x   p       x           t       s   e   m     |         t   t   u       x   p       x           t       s   e   m       C */
+   /*                                            |         t   t   t       C   l   e   t           r       e   C   p     |         t   t   t       C   l   e   t           r       e   C   p       K */
+   /*                                            |         r   r   e   c   o   e   l   e           i   s   q   o   l     |         r   r   e   c   o   e   l   e           i   s   q   o   l       C */
+   /*                                            |         i   i   G   h   n   x   e   n   g       c   c   u   n   e   u |         i   i   G   h   n   x   e   n   g       c   c   u   n   e   u   O */
+   /*                                            |         b   b   r   o   t   T   m   s   r   l   t   h   e   t   T   n |         b   b   r   o   t   T   m   s   r   l   t   h   e   t   T   n   L */
+   /*                                            | a   a   u   u   o   i   e   y   e   i   o   i   i   e   n   e   y   i | a   a   u   u   o   i   e   y   e   i   o   i   i   e   n   e   y   i   U */
+   /*                                            | l   n   t   t   u   c   n   p   n   o   u   s   o   m   c   n   p   o | l   n   t   t   u   c   n   p   n   o   u   s   o   m   c   n   p   o   M */
+   /*                                            | l   y   e   e   p   e   t   e   t   n   p   t   n   a   e   t   e   n | l   y   e   e   p   e   t   e   t   n   p   t   n   a   e   t   e   n   N */
+   /*                                                                                                                                                                                                */
+   /* START                            */ [  0] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  1,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0},
+   /* start schema                     */ [  1] {  _,  _,  _, 97, 94,  _,  _, 12,  4,  _, 60,  _,  _,  _,  _,  _, 22,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  3,  _,  _,  _,  _,  2},
+   /*   between schema'                */ [  2] {  _,  _,  _, 97, 94,  _,  _, 12,  4,  _, 60,  _,  _,  _,  _,  _, 22,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  3,  _,  _,  _,  _, -1},
+   /* end schema'                      */ [  3] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  0},
+   /* start global element             */ [  4] {  _,  _,  _,  _,  _,  _,  _, 17,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  6,  _,  _,  _,  _,  _,  _,  _,  _,  _,  5},
+   /*   between global element'        */ [  5] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  7,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global element               */ [  6] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global element'              */ [  7] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start local element              */ [  8] {  _,  _,  _,  _,  _,  _,  _, 17,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _, 10,  _,  _,  _,  _,  _,  _,  _,  _,  _,  9},
+   /*   between local element'         */ [  9] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 11,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local element                */ [ 10] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local element'               */ [ 11] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start global complexType         */ [ 12] { 66,  _,101,103,107, 71, 31,  _,  _,  _, 64,  _,  _,  _, 76, 28,  _,  _,  _,  _,  _,  _,  _,  _,  _, 14,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 13},
+   /*   between global complexType'    */ [ 13] {  _,  _,119,121,125,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 15,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global complexType           */ [ 14] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global complexType'          */ [ 15] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global complexType''         */ [ 16] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start local complexType          */ [ 17] { 66,  _,137,139,143, 71, 31,  _,  _,  _, 64,  _,  _,  _, 76, 28,  _,  _,  _,  _,  _,  _,  _,  _,  _, 19,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 18},
+   /*   between local complexType'     */ [ 18] {  _,  _,155,157,161,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 20,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local complexType            */ [ 19] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local complexType'           */ [ 20] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local complexType''          */ [ 21] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start global simpleType          */ [ 22] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 81, 43,  _,  _,  _,  _, 86,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 23},
+   /*   between global simpleType'     */ [ 23] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 24,  _, -1},
+   /* end global simpleType'           */ [ 24] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start local simpleType           */ [ 25] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 81, 43,  _,  _,  _,  _, 86,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 26},
+   /*   between local simpleType'      */ [ 26] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 27,  _, -1},
+   /* end local simpleType'            */ [ 27] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start simpleContent              */ [ 28] {  _,  _,  _,  _,  _,  _,  _,  _,  _, 34,  _,  _, 48,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 29},
+   /*   between simpleContent'         */ [ 29] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 30,  _,  _, -1},
+   /* end simpleContent'               */ [ 30] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start complexContent             */ [ 31] {  _,  _,  _,  _,  _,  _,  _,  _,  _, 37,  _,  _, 55,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 32},
+   /*   between complexContent'        */ [ 32] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 33,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end complexContent'              */ [ 33] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start extension (simple)         */ [ 34] {  _,  _,137,139,143,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 35,  _,  _,  _,  _,  _,  _,  _,  _, 34},
+   /* end extension (simple)           */ [ 35] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end extension' (simple)          */ [ 36] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start extension (complex)        */ [ 37] { 66,  _,101,103,107, 71,  _,  _,  _,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 39,  _,  _,  _,  _,  _,  _,  _,  _, 38},
+   /*   between extension' (complex)   */ [ 38] {  _,  _,119,121,125,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 40,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end extension (complex)          */ [ 39] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end extension' (type) (complex)  */ [ 40] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end extension' (atts) (complex)  */ [ 41] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end extension'' (complex)        */ [ 42] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start restriction (sT)           */ [ 43] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 44},
+   /*   between restriction' (sT)      */ [ 44] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 47,  _,  _,  _,  _,  _, -1},
+   /*   betw. restr. @base (sT)*/ [RESTRICTION] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 46,  _,  _,  _,  _,  _, 45},
+   /* end restriction (sT)             */ [ 46] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end restriction' (sT)            */ [ 47] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start restriction (simple)       */ [ 48] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 49},
+   /*   between restriction' (simple)  */ [ 49] {  _,  _,137,139,143,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 52,  _,  _,  _,  _,  _, -1},
+   /*   betw. restr. @base */ [RESTRICTION_SIM] {  _,  _,155,157,161,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 51,  _,  _,  _,  _,  _, 50},
+   /* end restriction (simple)         */ [ 51] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end restriction' (type) (simple) */ [ 52] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end restriction' (atts) (simple) */ [ 53] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end restriction'' (simple)       */ [ 54] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start restriction (complex)      */ [ 55] { 66,  _,101,103,107, 71,  _,  _,  _,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 57,  _,  _,  _,  _,  _, 56},
+   /*   between restriction' (complex) */ [ 56] {  _,  _,119,121,125,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 58,  _,  _,  _,  _,  _, -1},
+   /* end restriction (complex)        */ [ 57] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end restriction' (complex)       */ [ 58] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end restriction'' (complex)      */ [ 59] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start global group               */ [ 60] { 66,  _,  _,  _,  _, 71,  _,  _,  _,  _,  _,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 62,  _,  _,  _,  _,  _,  _,  _, 61},
+   /*   between global group'          */ [ 61] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 63,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global group                 */ [ 62] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global group'                */ [ 63] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start local group                */ [ 64] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 65,  _,  _,  _,  _,  _,  _,  _, 64},
+   /* end local group                  */ [ 65] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start all                        */ [ 66] {  _,  _,  _,  _,  _,  _,  _,  _,  8,  _,  _,  _,  _,  _,  _,  _,  _,  _, 69,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 67},
+   /*   between all'                   */ [ 67] {  _,  _,  _,  _,  _,  _,  _,  _,  8,  _,  _,  _,  _,  _,  _,  _,  _,  _, 70,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 68},
+   /*   between all''                  */ [ 68] {  _,  _,  _,  _,  _,  _,  _,  _,  8,  _,  _,  _,  _,  _,  _,  _,  _,  _, 70,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end all                          */ [ 69] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end all'                         */ [ 70] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start choice                     */ [ 71] {  _, 92,  _,  _,  _, 71,  _,  _,  8,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _, 74,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 72},
+   /*   between choice'                */ [ 72] {  _, 92,  _,  _,  _, 71,  _,  _,  8,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _, 75,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 73},
+   /*   between choice''               */ [ 73] {  _, 92,  _,  _,  _, 71,  _,  _,  8,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _, 75,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end choice                       */ [ 74] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end choice'                      */ [ 75] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start sequence                   */ [ 76] {  _, 92,  _,  _,  _, 71,  _,  _,  8,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 79,  _,  _,  _, 77},
+   /*   between sequence'              */ [ 77] {  _, 92,  _,  _,  _, 71,  _,  _,  8,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 80,  _,  _,  _, 78},
+   /*   between sequence''             */ [ 78] {  _, 92,  _,  _,  _, 71,  _,  _,  8,  _, 64,  _,  _,  _, 76,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 80,  _,  _,  _, -1},
+   /* end sequence                     */ [ 79] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end sequence'                    */ [ 80] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start list                       */ [ 81] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 82},
+   /*   between list'                  */ [ 82] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 85,  _,  _,  _,  _,  _,  _, -1},
+   /*   between list @itemType        */ [LIST] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 84,  _,  _,  _,  _,  _,  _, 83},
+   /* end list                         */ [ 84] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end list'                        */ [ 85] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start union                      */ [ 86] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 87},
+   /*   between union'                 */ [ 87] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 91, 88},
+   /*   between union''                */ [ 88] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 91, -1},
+   /*   between union @memberTypes   */ [UNION] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 90, 89},
+   /* end union                        */ [ 90] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end union'                       */ [ 91] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start any                        */ [ 92] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 93,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 92},
+   /* end any                          */ [ 93] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start global attributeGroup      */ [ 94] {  _,  _,101,103,107,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 95,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 94},
+   /* end global attributeGroup        */ [ 95] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global attributeGroup'       */ [ 96] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* start global attribute           */ [ 97] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _, 99,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 98},
+   /*   between global attribute'      */ [ 98] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,100,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global attribute             */ [ 99] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end global attribute'            */ [100] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /*      first attribute, attributeGroup or anyAttribute called from
+            Top Level Complex Type without other type, complex Extension without other type, complex Restriction without other type or Top Level Attribute Group */
+   /* start anyAttribute (1)           */ [101] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,102,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,101},
+   /* end anyAttribute (1)             */ [102] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109},
+   /* start local attribute (1)        */ [103] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,105,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,104},
+   /*   between local attribute' (1)   */ [104] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,106,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (1)          */ [105] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109},
+   /* end local attribute' (1)         */ [106] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109},
+   /* start local attributeGroup (1)   */ [107] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,108,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,107},
+   /* end local attributeGroup (1)     */ [108] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,109},
+   /*   attribute seen' (1)            */ [109] {  _,  _,110,112,116,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 96,  _,  _, 15,  _, 41,  _,  _, 58,  _,  _,  _,  _,  _,  0},
+   /*      2 or more attributes, attributeGroups or anyAttribute called from
+            Top Level Complex Type without other type, complex Extension without other type, complex Restriction without other type or Top Level Attribute Group */
+   /* start anyAttribute (1')          */ [110] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,111,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,110},
+   /* end anyAttribute (1')            */ [111] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,118},
+   /* start local attribute (1')       */ [112] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,114,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,113},
+   /*   between local attribute' (1')  */ [113] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,115,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (1')         */ [114] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,118},
+   /* end local attribute' (1')        */ [115] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,118},
+   /* start local attributeGroup (1')  */ [116] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,117,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,116},
+   /* end local attributeGroup (1')    */ [117] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,118},
+   /*   attribute seen'' (1')          */ [118] {  _,  _,110,112,116,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 96,  _,  _, 15,  _, 41,  _,  _, 58,  _,  _,  _,  _,  _,  0},
+   /*      first attribute, attributeGroup or anyAttribute called from
+            Top Level Complex Type with other type, complex Extension with other type or complex Restriction with other type */
+   /* start anyAttribute (2)           */ [119] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,120,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,119},
+   /* end anyAttribute (2)             */ [120] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,127},
+   /* start local attribute (2)        */ [121] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,123,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,122},
+   /*   between local attribute' (2)   */ [122] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,124,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (2)          */ [123] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,127},
+   /* end local attribute' (2)         */ [124] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,127},
+   /* start local attributeGroup (2)   */ [125] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,126,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,125},
+   /* end local attributeGroup (2)     */ [126] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,127},
+   /*   attribute seen' (2)            */ [127] {  _,  _,128,130,134,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 16,  _, 42,  _,  _, 59,  _,  _,  _,  _,  _,  0},
+   /*      2 or more attributes, attributeGroups or anyAttribute called from
+            Top Level Complex Type with other type, complex Extension with other type or complex Restriction with other type */
+   /* start anyAttribute (2')          */ [128] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,129,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,128},
+   /* end anyAttribute (2')            */ [129] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,136},
+   /* start local attribute (2')       */ [130] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,132,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,131},
+   /*   between local attribute' (2')  */ [131] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,133,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (2')         */ [132] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,136},
+   /* end local attribute' (2')        */ [133] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,136},
+   /* start local attributeGroup (2')  */ [134] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,135,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,134},
+   /* end local attributeGroup (2')    */ [135] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,136},
+   /*   attribute seen'' (2')          */ [136] {  _,  _,128,130,134,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 16,  _, 42,  _,  _, 59,  _,  _,  _,  _,  _,  0},
+   /*      first attribute, attributeGroup or anyAttribute called from
+            Local Complex Type without other subtype, simple Extension or simple Restriction with other type */
+   /* start anyAttribute (3)           */ [137] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,138,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,137},
+   /* end anyAttribute (3)             */ [138] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,145},
+   /* start local attribute (3)        */ [139] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,141,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,140},
+   /*   between local attribute' (3)   */ [140] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,142,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (3)          */ [141] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,145},
+   /* end local attribute' (3)         */ [142] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,145},
+   /* start local attributeGroup (3)   */ [143] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,144,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,143},
+   /* end local attributeGroup (3)     */ [144] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,145},
+   /*   attribute seen' (3)            */ [145] {  _,  _,146,148,152,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 20,  _, 36,  _,  _, 54,  _,  _,  _,  _,  _,  0},
+   /*      2 or more attributes, attributeGroups or anyAttribute called from
+            Local Complex Type without other subtype, simple Extension or simple Restriction with other type */
+   /* start anyAttribute (3')          */ [146] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,147,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,146},
+   /* end anyAttribute (3')            */ [147] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,154},
+   /* start local attribute (3')       */ [148] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,150,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,149},
+   /*   between local attribute' (3')  */ [149] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,151,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (3')         */ [150] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,154},
+   /* end local attribute' (3')        */ [151] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,154},
+   /* start local attributeGroup (3')  */ [152] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,153,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,152},
+   /* end local attributeGroup (3')    */ [153] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,154},
+   /*   attribute seen'' (3')          */ [154] {  _,  _,146,148,152,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 20,  _, 36,  _,  _, 54,  _,  _,  _,  _,  _,  0},
+   /*      first attribute, attributeGroup or anyAttribute called from
+            Local Complex Type with other subtype or simple Restriction without other type */
+   /* start anyAttribute (4)           */ [155] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,156,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,155},
+   /* end anyAttribute (4)             */ [156] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,163},
+   /* start local attribute (4)        */ [157] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,159,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,158},
+   /*   between local attribute' (4)   */ [158] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,160,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (4)          */ [159] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,163},
+   /* end local attribute' (4)         */ [160] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,163},
+   /* start local attributeGroup (4)   */ [161] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,162,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,161},
+   /* end local attributeGroup (4)     */ [162] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,163},
+   /*   attribute seen' (4)            */ [163] {  _,  _,164,166,170,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 21,  _,  _,  _,  _, 53,  _,  _,  _,  _,  _,  0},
+   /*      2 or more attributes, attributeGroups or anyAttribute called from
+            Local Complex Type with other subtype or simple Restriction without other type */
+   /* start anyAttribute (4')          */ [164] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,165,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,164},
+   /* end anyAttribute (4')            */ [165] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,172},
+   /* start local attribute (4')       */ [166] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 25,  _,  _,  _,  _,168,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,167},
+   /*   between local attribute' (4')  */ [167] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,169,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, -1},
+   /* end local attribute (4')         */ [168] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,172},
+   /* end local attribute' (4')        */ [169] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,172},
+   /* start local attributeGroup (4')  */ [170] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,171,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,170},
+   /* end local attributeGroup (4')    */ [171] {  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,172},
+   /*   attribute seen'' (4')          */ [172] {  _,  _,164,166,170,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _,  _, 21,  _,  _,  _,  _, 53,  _,  _,  _,  _,  _,  0}
 };
 
 /**
@@ -2180,7 +2329,7 @@ schema_import (PFns_t ns, char *xsd_loc)
     /* creates a new stack (ns_stack) */
     ns_stack = PFarray (sizeof (PFns_t*));
 
-    
+
     /* setup the SAX parser context */
     ctx = xmlCreateFileParserCtxt (xsd_loc);
 
@@ -2190,11 +2339,11 @@ schema_import (PFns_t ns, char *xsd_loc)
     /* parse the XML Schema file */
     (void) xmlParseDocument (ctx);
 
-    if (! ctx->wellFormed) 
+    if (! ctx->wellFormed)
         PFoops (OOPS_SCHEMAIMPORT, "check schema well-formedness");
 }
 
-#endif
+#endif  /* HAVE_LIBXML2 */
 
 /**
  * Walk the query prolog's decl_imps chain and initiate a schema import
@@ -2202,7 +2351,7 @@ schema_import (PFns_t ns, char *xsd_loc)
  *
  * @param di root of right-deep decl_imps chain
  */
-void 
+void
 schema_imports (PFpnode_t *di)
 {
     assert (di);
@@ -2232,7 +2381,7 @@ schema_imports (PFpnode_t *di)
 #if HAVE_LIBXML2
             /* access XML Schema location */
             loc = imp->child[1]->sem.str;
-            
+
             /* access target namespace URI for this import */
             assert (imp->child[0]->kind == p_lit_str);
             uri = imp->child[0]->sem.str;
@@ -2295,7 +2444,7 @@ REGULARITY (named_attrgroup)
 void
 PFschema_import (PFpnode_t *root)
 {
-    assert (root && 
+    assert (root &&
             root->kind == p_xquery &&
             root->child[0]->kind == p_prolog);
 
@@ -2304,7 +2453,7 @@ PFschema_import (PFpnode_t *root)
      *           xquery
      *            /  \
      *       prolog   body
-     *       /    \  
+     *       /    \
      * decl_imps  /\
      *           /__\
      */

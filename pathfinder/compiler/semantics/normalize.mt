@@ -4,6 +4,8 @@ prologue {
  * Include all function declarations and definitions that reside
  * in a separate file to document them nicely with doxygen.
  * If you need further functions, also put them into norm_impl.c.
+ *
+ * $Id$
  */
 #include "norm_impl.c"
 

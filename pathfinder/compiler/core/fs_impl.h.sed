@@ -10,10 +10,23 @@
  * $Id$
  */
 
-/* m4: make [[ e ]] a synonym for (e)->core (core equivalent of e),
- * see PFpnode_t in include/abssyn.h
+/*
+ * We use the Unix `sed' tool to make `[[ e ]]' a synonym for
+ * `(e)->core' (the core equivalent of e). The following sed expressions
+ * will do the replacement.
+ *
+ * (The following lines contain the special marker that is used
+ * in the build process. The build process will search the file
+ * for these markers, extract the sed expressions and feed the file
+ * with these expressions through sed. Write sed expressions in
+ * _exactly_ this style!)
+ *
+ *!sed 's/\[\[/(/g'
+ *!sed 's/\]\]/)->core/g'
+ *
+ * (First line translates all `[[' into `(', second line translates all
+ * `]]' into `)->core'.)
  */
-
 
 #include <assert.h>
 #include <string.h>
@@ -79,7 +92,7 @@ static int TWIG_ID[] = {
     [p_is]           is,           /* is (node identity) */
     [p_nis]          nis,          /* isnot (negated node identity) *grin* */
     [p_step]         step,         /* axis step */
-    [p_var]          var,          /* `real' scoped variable */
+    [p_var]          var,          /* ``real'' scoped variable */
     [p_namet]        namet,        /* name test */
     [p_kindt]        kindt,        /* kind test */
     [p_locpath]      locpath,      /* location path */
@@ -296,7 +309,7 @@ PFfs (PFpnode_t *r)
     /* return core equivalent of the root node, i.e.,
      * the core-mapped query
      */
-    core = (rewrite (r, 0) )->core;
+    core = [[ rewrite (r, 0) ]];
 
     /* sanity: current function/argument list stacks need to be empty */
     assert (PFarray_empty (funs));

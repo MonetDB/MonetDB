@@ -94,7 +94,7 @@ order (const void *x, const void *y)
 PFarray_t *
 PFenv_lookup (PFenv_t *e, PFqname_t key)
 {
-    binding_t bind = { .key = key };
+    binding_t bind = { .key = key, .values = NULL };
     void *b;
     unsigned int n;
 

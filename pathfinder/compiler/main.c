@@ -559,8 +559,12 @@ main (int argc, char *argv[])
     PFarray_t *mil_program = 0;
     PFrc_t rc;
 
-    FILE *logf;
+    /* fd of the log file (if present) */
+    int logf = 0;
     char *logfn = 0;
+
+    /* fd of query file (if present) */
+    int query = 0;
 
     /* elapsed time for compiler phase */
     long tm;
@@ -592,7 +596,8 @@ main (int argc, char *argv[])
         case 'h':
             printf ("Pathfinder Compiler, revision $Revision$ ($Date$)\n");
             printf ("(c) University of Konstanz, DBIS group\n\n");
-            printf ("Usage: %s [OPTION]...\n\n", argv[0]);            
+            printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
+            printf ("  Reads from standard input if FILE is omitted.\n\n");
             printf ("  -h%s: print this help message\n",
                     long_option (opt_buf, ", --%s", 'h'));
             printf ("  -q%s: do not print informational messages to log file\n",
@@ -640,7 +645,7 @@ main (int argc, char *argv[])
                         "dæmon cannot listen on port `%s': %s",
                         optarg,
                         strerror (errno));
-                goto bailout;
+                goto failure;
             }
             break;
         
@@ -708,29 +713,51 @@ main (int argc, char *argv[])
 
         default:
             (void) PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
-            goto bailout;
+            goto failure;
         }           /* end of switch */
     }           /* end of while */
-        
+
+    /* connect stdin to query file (if present) 
+     * if we are not in daemon mode
+     */
+    if (optind < argc && ! PFstate.daemon) {
+        if ((query = open (argv[optind], O_RDONLY)) < 0) {
+            PFoops (OOPS_FATAL, 
+                    "cannot read query from file `%s': %s",
+                    argv[optind],
+                    strerror (errno));
+            goto failure;
+        }
+
+        close (fileno (stdin));
+
+        if (dup2 (query, fileno (stdin)) < 0) {
+            PFoops (OOPS_FATAL,
+                    "cannot dup query file: %s",
+                    strerror (errno));
+            goto failure;
+        }
+    }
+
     /* reroute stderr to log file 
      * if this has been requested (via `-l') 
      */
     if (logfn) {
-        if ((logf = fopen (logfn, "a")) == NULL) {
+        if ((logf = open (logfn, O_CREAT | O_WRONLY | O_APPEND)) < 0) {
             PFoops (OOPS_FATAL,
                     "cannot append to log file `%s': %s",
                     logfn,
                     strerror (errno));
-            goto bailout;
+            goto failure;
         }
     
         close (fileno (stderr));
     
-        if (dup2 (fileno (logf), fileno (stderr)) < 0) {
+        if (dup2 (logf, fileno (stderr)) < 0) {
             PFoops (OOPS_FATAL,
                     "failed to reroute log messages: %s",
                     strerror (errno));
-            goto bailout;
+            goto failure;
         }
     }
 
@@ -747,7 +774,7 @@ main (int argc, char *argv[])
     /* Invoke parser on stdin (or whatever stdin has been dup'ed to) 
      */
     if (PFparse (&proot))
-        goto bailout;
+        goto failure;
 
     tm = PFtimer_stop (tm);
     if (PFstate.timing)
@@ -777,7 +804,7 @@ main (int argc, char *argv[])
     /* Check variable scoping and replace QNames by PFvar_t pointers 
      */
     if (PFvarscope (proot))
-        goto bailout;
+        goto failure;
   
     /* Load built-in XQuery F&O into function environment 
      */
@@ -888,7 +915,7 @@ main (int argc, char *argv[])
     /* Map core to MIL 
      */
     if (PFcore2mil (croot, &mroot))
-        goto bailout;
+        goto failure;
 
     tm = PFtimer_stop (tm);
     if (PFstate.timing)
@@ -902,12 +929,11 @@ main (int argc, char *argv[])
     /* Render MIL program in Monet MIL syntax 
      */
     if (!(mil_program = PFmil_gen (mroot)))
-        goto bailout;
+        goto failure;
 
     /* Print MIL program to stdout
      */
     if (mil_program)
-        /* fprintf (stdout, "%s", mil_program); */
         PFmilprint (stdout, mil_program);
 
  bailout:
@@ -915,7 +941,16 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("#garbage collections:\t %d", (int) GC_gc_no);
 
+    if (logf > 0)
+        close (logf);
+
     exit (EXIT_SUCCESS);
+
+ failure:
+    if (logf > 0)
+        close (logf);
+
+    exit (EXIT_FAILURE);
 }
 
 /**

@@ -9,9 +9,10 @@ lib_core = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		fs.mt \
+		fs.mt.sed \
 		core.c \
-		simplify.c 
+		simplify.mt \
+		fs_impl.h.sed
 }
 
-EXTRA_DIST = simpl_impl.c  fs_impl.c.m4  fs_impl.c fs.mt.m4
+EXTRA_DIST = simpl_impl.c 

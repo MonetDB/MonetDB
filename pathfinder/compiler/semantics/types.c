@@ -63,6 +63,7 @@ PFty_none (void)
 {
     PFty_t t = { .type  = ty_none,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -74,6 +75,7 @@ PFty_empty (void)
 {
     PFty_t t = { .type  = ty_empty,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
     
@@ -85,6 +87,7 @@ PFty_item (void)
 {
     PFty_t t = { .type  = ty_item,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -96,6 +99,7 @@ PFty_untyped (void)
 {
     PFty_t t = { .type  = ty_untyped,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -107,6 +111,7 @@ PFty_atomic (void)
 {
     PFty_t t = { .type  = ty_atomic,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -118,6 +123,7 @@ PFty_numeric (void)
 {
     PFty_t t = { .type  = ty_numeric,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -129,6 +135,7 @@ PFty_node (void)
 {
     PFty_t t = { .type  = ty_node,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -140,6 +147,7 @@ PFty_text (void)
 {
     PFty_t t = { .type  = ty_text,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -151,6 +159,7 @@ PFty_pi (void)
 {
     PFty_t t = { .type  = ty_pi,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -162,6 +171,7 @@ PFty_comm (void)
 {
     PFty_t t = { .type  = ty_comm,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -173,6 +183,7 @@ PFty_integer (void)
 {
     PFty_t t = { .type  = ty_integer,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -184,6 +195,7 @@ PFty_decimal (void)
 {
     PFty_t t = { .type = ty_decimal,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -195,6 +207,7 @@ PFty_double (void)
 {
     PFty_t t = { .type = ty_double,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -206,6 +219,7 @@ PFty_string (void)
 {
     PFty_t t = { .type = ty_string,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -217,6 +231,7 @@ PFty_boolean (void)
 {
     PFty_t t = { .type = ty_boolean,
 		 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = NULL,           /* no sensible symbol space*/
 		 .child = { 0 } 
     };
 
@@ -334,6 +349,7 @@ PFty_opt (PFty_t t)
 {
     PFty_t ty = { .type  = ty_opt,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     };
 
@@ -349,6 +365,7 @@ PFty_plus (PFty_t t)
 {
     PFty_t ty = { .type  = ty_plus,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     };
 
@@ -364,6 +381,7 @@ PFty_star (PFty_t t)
 {
     PFty_t ty = { .type  = ty_star,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     };
 
@@ -381,6 +399,7 @@ PFty_seq (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_seq,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     };
 
@@ -400,6 +419,7 @@ PFty_choice (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_choice,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     };
 
@@ -419,6 +439,7 @@ PFty_all (PFty_t t1, PFty_t t2)
 {
     PFty_t ty = { .type  = ty_all,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     };
 
@@ -436,6 +457,7 @@ PFty_elem (PFqname_t qn, PFty_t t)
 {
     PFty_t ty = { .type  = ty_elem,
 		  .name  = qn,
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     };  
 
@@ -451,6 +473,7 @@ PFty_attr (PFqname_t qn, PFty_t t)
 {
     PFty_t ty = { .type  = ty_attr,
 		  .name  = qn,
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     }; 
 
@@ -466,6 +489,7 @@ PFty_doc (PFty_t t)
 {
     PFty_t ty = { .type  = ty_doc,
 		  .name  = { .ns = PFns_wild, .loc = 0 },
+                  .sym_space = NULL,           /* no sensible symbol space*/
 		  .child = { 0, 0 }
     }; 
 

@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <time.h>
 
@@ -52,7 +52,7 @@ static char *oops_msg[] = {
 /** Maximum length of error message strings (messages will be
  *  truncated if necessary) 
  */
-#define OOPS_SIZE   128
+#define OOPS_SIZE   256
 
 /**
  * Log message to compiler log file. This function actually does the
@@ -65,19 +65,22 @@ static void
 log (const char *msg, va_list msgs)
 {
     time_t now;
-    char * anow;
+    char *anow;
+    char buf[OOPS_SIZE];
+    int n;
 
     /* generate time stamp and write to log file */
     (void) time (&now);
     anow = asctime (localtime (&now));
     anow[strlen (anow) - 1] = '\0';
-    fprintf (stderr, "%s: ", anow);
+
+    n = snprintf (buf, OOPS_SIZE, "%s: ", anow);
+    write (fileno (stderr), buf, n);
     
-    vfprintf (stderr, msg, msgs);
+    n = vsnprintf (buf, OOPS_SIZE, msg, msgs);
+    write (fileno (stderr), buf, n);
 
-    fputc ('\n', stderr);
-
-    (void) fflush (stderr);
+    write (fileno (stderr), "\n", 1);
 }
 
 /**
