@@ -737,9 +737,9 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
         	}
 		/*
 		freeClient(c);
+		monet_exit();
 		*/
 		fflush(GDKout);
-		monet_exit();
 		MT_global_exit(*statusp);
 	}
 	q = topRequest(c);
