@@ -53,5 +53,4 @@ doc_gdk = {
 		gdk_posix.mx bat.feps bat1.feps bat2.feps
 }
 
-EXTRA_DIST = index.html 
 EXTRA_DIST_DIR = Tests
