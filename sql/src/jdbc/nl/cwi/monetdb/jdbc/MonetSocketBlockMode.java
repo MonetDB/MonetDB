@@ -28,15 +28,22 @@ import java.net.*;
  * @version 0.2 (part of MonetDB JDBC beta release)
  */
 class MonetSocketBlockMode extends MonetSocket {
+	/** Stream from the Socket for reading */
 	private InputStream fromMonetRaw;
+	/** Stream from the Socket for writing */
 	private OutputStream toMonetRaw;
 
-	private ByteBuffer inputBuffer;
+	/** A buffer which holds the blocks read */
 	private StringBuffer readBuffer;
+	/** The number of available bytes to read */
 	private int readState = 0;
 
+	/** A ByteBuffer for performing a possible swab on an integer for reading */
+	private ByteBuffer inputBuffer;
+	/** A ByteBuffer for performing a possible swab on an integer for sending */
 	private ByteBuffer outputBuffer;
 
+	/** The maximum size of the chunks we fetch data from the stream with */
 	private final static int capacity = 1024;
 
 	MonetSocketBlockMode(String host, int port) throws IOException {
@@ -62,7 +69,8 @@ class MonetSocketBlockMode extends MonetSocket {
 	 *
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
-	 * @see flush(), writeln()
+	 * @see #flush()
+	 * @see #writeln(String data)
 	 */
 	public synchronized void write(String data) throws IOException {
 		write(data.getBytes());
@@ -256,4 +264,3 @@ class MonetSocketBlockMode extends MonetSocket {
 		}
 	}
 }
-

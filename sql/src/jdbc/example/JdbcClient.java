@@ -3,8 +3,8 @@ import java.io.*;
 import java.util.*;
 
 /**
- * This simple example somewhat implements an extended client program for
- * MonetDB. It's look and feel is very much like PostgreSQL's interactive
+ * This rather awkard implemented program acts like an extended client program
+ * for MonetDB. It's look and feel is very much like PostgreSQL's interactive
  * terminal program.
  * Although it looks like this client is designed for MonetDB, it shows
  * the power of the JDBC interface since it built on top of JDBC only.
@@ -121,12 +121,20 @@ public class JdbcClient {
 			} else if (blockmode == null && args[i].startsWith("-B")) {
 				blockmode = "true";
 			} else if (args[i].equals("--help")) {
-				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file] [-u user] [-d] [-D [table]]");
-				System.out.println("where arguments may be written directly after the option like -hlocalhost.");
-				System.out.println("If no host and port are given, localhost 45123 are assumed. The program will ask");
-				System.out.println("for the username if not given but the -u flag specified. If no input file is given,");
-				System.out.println("an interactive session is started on the terminal. The -d option creates a debug log.");
-				System.out.println("The -D option can be used for dumping database tables. If no table is given all are assumed");
+				System.out.println("Usage java -jar MonetJDBC.jar [-h host[:port]] [-p port] [-f file]");
+				System.out.println("                              [-u user] [-d] [-D [table]] [-X [table]]");
+				System.out.println("where arguments may be written directly after the option like -p45123");
+				System.out.println("");
+				System.out.println("If no host and port are given, localhost:45123 is assumed. The program");
+				System.out.println("will ask for the username if not given or avaiable in .monetdb file in");
+				System.out.println("the users home directory. The -u flag overrides the preferences file.");
+		 		System.out.println("If no input file is given using the -f flag, an interactive session is");
+				System.out.println("started on the terminal. The -d option creates a debug log.");
+				System.out.println("");
+				System.out.println("The -D and -X options can be used for dumping database tables. If no");
+				System.out.println("table is given all tables are assumed. -D dumps using SQL format, -X");
+				System.out.println("using an experimental XML format. If the -f flag is used when using");
+				System.out.println("-D or -X the file is used for writing the output to.");
 				System.exit(-1);
 			} else {
 				System.out.println("Ignoring unknown argument: " + args[i]);
@@ -134,11 +142,13 @@ public class JdbcClient {
 		}
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+		PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));
+
 		// do we need to ask for the username?
 		if (hasUser && user == null) {
-			System.out.print("username: ");
+			System.err.print("username: ");
 			if ((user = in.readLine()) == null) {
-				System.out.println("Invalid username!");
+				System.err.println("Invalid username!");
 				System.exit(-1);
 			}
 		}
@@ -149,7 +159,7 @@ public class JdbcClient {
 			try {
 				pass = passfield.getPassword("password: ");
 			} catch(IOException ioe) {
-				System.out.println("Invalid password!");
+				System.err.println("Invalid password!");
 				System.exit(-1);
 			}
 			System.out.println("");
@@ -178,6 +188,8 @@ public class JdbcClient {
 		if (hasDump) {
 			ResultSet tbl;
 
+			if (hasFile) out = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+
 			String[] types = {"TABLE", "VIEW"};
 			if (dump != null) types = null;
 			tbl = dbmd.getTables(null, null, null, types);
@@ -191,6 +203,8 @@ public class JdbcClient {
 					tbl.getString("TABLE_TYPE")));
 			}
 
+			if (!hasXMLDump) out.println("START TRANSACTION;");
+
 			// dump a specific table or not?
 			if (dump != null) { // yes we do
 				for (int i = 0; i < tables.size(); i++) {
@@ -199,7 +213,7 @@ public class JdbcClient {
 						tmp.getFqname().equalsIgnoreCase(dump))
 					{
 						// dump the table
-						doDump(System.out, hasXMLDump, tmp, dbmd, stmt);
+						doDump(out, hasXMLDump, tmp, dbmd, stmt);
 					}
 				}
 			} else {
@@ -241,13 +255,15 @@ public class JdbcClient {
 
 				// we now have the right order to dump tables
 
-				System.out.println("START TRANSACTION;");
 				for (int i = 0; i < tables.size(); i++) {
 					// dump the table
-					doDump(System.out, hasXMLDump, (Table)(tables.get(i)), dbmd, stmt);
+					doDump(out, hasXMLDump, (Table)(tables.get(i)), dbmd, stmt);
 				}
-				System.out.println("COMMIT;");
 			}
+
+			if (!hasXMLDump) out.println("COMMIT;");
+			out.flush();
+
 			con.close();
 			System.exit(0);
 		}
@@ -260,15 +276,16 @@ public class JdbcClient {
 		} else {
 			// use stdin
 			fr = in;
-			System.out.println("Welcome to the MonetDB interactive JDBC terminal!");
-			System.out.println("Database: " + dbmd.getDatabaseProductName() + " " +
+
+			out.println("Welcome to the MonetDB interactive JDBC terminal!");
+			out.println("Database: " + dbmd.getDatabaseProductName() + " " +
 				dbmd.getDatabaseProductVersion() + " (" + dbmd.getDatabaseMajorVersion() +
 				"." + dbmd.getDatabaseMinorVersion() + ")");
-			System.out.println("Driver: " + dbmd.getDriverName() + " " +
+			out.println("Driver: " + dbmd.getDriverName() + " " +
 				dbmd.getDriverVersion() + " (" + dbmd.getDriverMajorVersion() +
 				"." + dbmd.getDriverMinorVersion() + ")");
-			System.out.println("Type \\q to quit, \\h for a list of available commands");
-			System.out.println("auto commit mode: on");
+			out.println("Type \\q to quit, \\h for a list of available commands");
+			out.println("auto commit mode: on");
 		}
 
 		SQLStack stack = new SQLStack();
@@ -276,7 +293,10 @@ public class JdbcClient {
 
 		String query = "", curLine;
 		boolean wasComplete = true, doProcess;
-		if (!hasFile) System.out.print(getPrompt(user, stack));
+		if (!hasFile) {
+			out.print(getPrompt(user, stack));
+			out.flush();
+		}
 		for (int i = 1; (curLine = fr.readLine()) != null; i++) {
 			qp = scanQuery(curLine, stack);
 			if (!qp.isEmpty()) {
@@ -288,11 +308,11 @@ public class JdbcClient {
 						// quit
 						break;
 					} else if (qp.getQuery().startsWith("\\h")) {
-						System.out.println("Available commands:");
-						System.out.println("\\q      quits this program");
-						System.out.println("\\h      this help screen");
-						System.out.println("\\d      list available tables and views");
-						System.out.println("\\d<obj> describes the given table or view");
+						out.println("Available commands:");
+						out.println("\\q      quits this program");
+						out.println("\\h      this help screen");
+						out.println("\\d      list available tables and views");
+						out.println("\\d<obj> describes the given table or view");
 					} else if (qp.getQuery().startsWith("\\d")) {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
 						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
@@ -305,10 +325,10 @@ public class JdbcClient {
 									(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
 									// we found it, describe it
 									if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
-										System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
+										out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
 									} else {
 										createTable(
-											System.out,
+											out,
 											dbmd,
 											new Table(
 												tbl.getString("TABLE_CAT"),
@@ -329,7 +349,7 @@ public class JdbcClient {
 							ResultSet tbl = dbmd.getTables(null, null, null, types);
 							// give us a list with tables
 							while (tbl.next()) {
-								System.out.println(tbl.getString("TABLE_TYPE") + "\t" +
+								out.println(tbl.getString("TABLE_TYPE") + "\t" +
 									tbl.getString("TABLE_SCHEM") + "." +
 									tbl.getString("TABLE_NAME"));
 							}
@@ -377,27 +397,27 @@ public class JdbcClient {
 								ResultSet rs = stmt.getResultSet();
 								ResultSetMetaData md = rs.getMetaData();
 								int col = 1;
-								System.out.print("+----------\n| ");
+								out.print("+----------\n| ");
 								for (; col < md.getColumnCount(); col++) {
 									System.out.print(md.getColumnName(col) + "\t");
 								}
-								System.out.println(md.getColumnName(col));
-								System.out.println("+----------");
+								out.println(md.getColumnName(col));
+								out.println("+----------");
 								int count = 0;
 								for (; rs.next(); count++) {
 									col = 1;
-									System.out.print("| ");
+									out.print("| ");
 									for (; col < md.getColumnCount(); col++) {
-										System.out.print(rs.getString(col) + "\t");
+										out.print(rs.getString(col) + "\t");
 									}
-									System.out.println(rs.getString(col));
+									out.println(rs.getString(col));
 								}
-								System.out.println("+----------");
-								System.out.println(count + " rows");
+								out.println("+----------");
+								out.println(count + " rows");
 								rs.close();
 							} else {
 								// we have an update count
-								System.out.println("affected rows\n-------------\n" + stmt.getUpdateCount());
+								out.println("affected rows\n-------------\n" + stmt.getUpdateCount());
 							}
 						} catch (SQLException e) {
 							System.err.println("Error on line " + i + ": " + e.getMessage());
@@ -409,7 +429,8 @@ public class JdbcClient {
 					wasComplete = qp.isComplete();
 				}
 			}
-			if (!hasFile) System.out.print(getPrompt(user, stack));
+			if (!hasFile) out.print(getPrompt(user, stack));
+			out.flush();
 		}
 
 		// free resources, close the statement
@@ -420,7 +441,7 @@ public class JdbcClient {
 	}
 
 	private static void createTable(
-		PrintStream out,
+		PrintWriter out,
 		DatabaseMetaData dbmd,
 		Table table
 	) throws SQLException {
@@ -566,7 +587,7 @@ public class JdbcClient {
 	private final static int TIME = 3;
 	private final static int DATE = 4;
 
-	public static void dumpTable(PrintStream out, Statement stmt, String table)
+	public static void dumpTable(PrintWriter out, Statement stmt, String table)
 		throws SQLException
 	{
 		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
@@ -648,7 +669,7 @@ public class JdbcClient {
 	}
 
 	public static void doDump(
-		PrintStream out,
+		PrintWriter out,
 		boolean xml,
 		Table table,
 		DatabaseMetaData dbmd,
@@ -672,18 +693,18 @@ public class JdbcClient {
 			} else {
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqname());
 				ResultSetMetaData rsmd = rs.getMetaData();
-				System.out.println("<table name=\"" + table.getFqname()+ "\">");
+				out.println("<table name=\"" + table.getFqname()+ "\">");
 				while (rs.next()) {
-					System.out.println("  <row>");
+					out.println("  <row>");
 					for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-						System.out.print("    ");
-						System.out.print("<" + rsmd.getColumnName(i) + ">");
-						System.out.print(rs.getString(i).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
-						System.out.println("</" + rsmd.getColumnName(i) + ">");
+						out.print("    ");
+						out.print("<" + rsmd.getColumnName(i) + ">");
+						out.print(rs.getString(i).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+						out.println("</" + rsmd.getColumnName(i) + ">");
 					}
-					System.out.println("  </row>");
+					out.println("  </row>");
 				}
-				System.out.println("</table>");
+				out.println("</table>");
 			}
 		}
 	}
@@ -918,9 +939,9 @@ class MaskingThread extends Thread {
             iex.printStackTrace();
          }
          if (!stop) {
-            System.out.print("\r" + prompt + " \r" + prompt);
+            System.err.print("\r" + prompt + " \r" + prompt);
          }
-         System.out.flush();
+         System.err.flush();
       }
    }
 

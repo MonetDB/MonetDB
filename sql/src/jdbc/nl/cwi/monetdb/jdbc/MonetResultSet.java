@@ -29,54 +29,60 @@ import java.text.SimpleDateFormat;
  * @version 0.3 (beta release)
  */
 public class MonetResultSet implements ResultSet {
-	private String[] line;
+	/** The last column read using some getXXX function */
 	private int lastColumnRead = -1;
 	// the following have default access modifier for the MonetVirtualResultSet
+	/** The current line of the buffer split in columns */
 	String[] result;
+	/** Whether this ResultSet is closed or not */
 	boolean closed = false;
+	/** The current position of the cursor for this ResultSet object */
 	int curRow = 0;
 
 	// a blank final is immutable once assigned in the constructor
+	/** A Statement's CacheThread to retrieve lines from */
 	private final MonetStatement.CacheThread cache;
+	/** The names of the columns in this ResultSet */
 	private final String[] columns;
+	/** The MonetDB types of the columns in this ResultSet */
 	private final String[] types;
+	/** The id of this ResultSet (needed for closing) */
 	private final String tableID;
+	/** The number of rows in this ResultSet */
 	final int tupleCount;	// default for the MonetVirtualResultSet
 
-	private final MonetSocket monet;
+	/** The parental Statement object */
 	private final Statement statement;
 
+	/** The type of this ResultSet (forward or scrollable) */
 	private int type = TYPE_FORWARD_ONLY;
+	/** The concurrency of this ResultSet (currently only read-only) */
 	private int concurrency = CONCUR_READ_ONLY;
+	/** The warnings for this ResultSet object */
 	private SQLWarning warnings;
 
 	/**
 	 * Main constructor, sends query to Monet and reads header
 	 *
-	 * @param monet a valid Monet object to communicate to
 	 * @param statement the statement which created this ResultSet
 	 * @param query a query String to execute
 	 * @param resultSetType the type of resultset: forward only, etc.
 	 * @param resultSetConcurrency the concurrency mode
-	 * @throws IllegalArgumentException is monet or query is null or empty
 	 * @throws IOException if communicating with monet failed
 	 * @throws SQLException is a protocol error occurs
 	 */
 	MonetResultSet(
-		MonetSocket monet,
 		Statement statement,
 		String query,
 		int resultSetType,
 		int resultSetConcurrency)
 		throws IllegalArgumentException, IOException, SQLException
 	{
-		if (monet == null ||
-			statement == null ||
+		if (statement == null ||
 			!(query != null && !(query = query.trim()).equals(""))
 		)
-			throw new IllegalArgumentException("Monet or query is null or empty!");
+			throw new IllegalArgumentException("Statement or query is null or empty!");
 
-		this.monet = monet;
 		this.statement = statement;
 		this.type = resultSetType;
 		this.concurrency = resultSetConcurrency;
@@ -143,7 +149,6 @@ public class MonetResultSet implements ResultSet {
 	 * @param String[] columns the column names
 	 * @param String[] types the column types
 	 * @param int results the number of rows in the ResultSet
-	 * @throws IllegalArgumentException is monet or query is null or empty
 	 * @throws IOException if communicating with monet failed
 	 * @throws SQLException is a protocol error occurs
 	 */
@@ -165,7 +170,6 @@ public class MonetResultSet implements ResultSet {
 
 		this.cache = null;
 		this.tableID = null;
-		this.monet = null;
 		this.statement = null;
 
 		this.columns = columns;
@@ -175,8 +179,8 @@ public class MonetResultSet implements ResultSet {
 
 	//== methods of interface ResultSet
 
-	/**
 	// Chapter 14.2.2 Sun JDBC 3.0 Specification
+	/**
 	 * Moves the cursor to the given row number in this ResultSet object.
 	 * <br /><br />
 	 * If the row number is positive, the cursor moves to the given row number
@@ -384,27 +388,21 @@ public class MonetResultSet implements ResultSet {
 	public void close() {
 		if (!closed) {
 			closed = true;
-			// make sure we own the lock on monet
-			synchronized (monet) {
-				try {
-					// send command to server indicating we're done with this
-					// result only if we had an ID in the header... Currently
-					// on updates, inserts and deletes there is no header at all
-					if (tableID != null) {
-						monet.writeln("Xclose " + tableID);
-						// read till prompt (we need to wait for the server to
-						// be ready)
-						monet.waitForPrompt();
-					}
-				} catch (IOException e) {
-					// too bad, we're probably closed already
+			try {
+				// send command to server indicating we're done with this
+				// result only if we had an ID in the header... Currently
+				// on updates, inserts and deletes there is no header at all
+				if (tableID != null) {
+					((MonetConnection)(statement.getConnection())).sendIndependantCommand("Xclose " + tableID);
 				}
+			} catch (SQLException e) {
+				// too bad, we're probably closed already
 			}
 		}
 	}
 
-	/**
 	// Chapter 14.2.3 from Sun JDBC 3.0 specification
+	/**
 	 * Maps the given ResultSet column name to its ResultSet column index.
 	 * Column names supplied to getter methods are case insensitive. If a select
 	 * list contains the same column more than once, the first instance of the
@@ -519,8 +517,8 @@ public class MonetResultSet implements ResultSet {
 		return(getBigDecimal(findColumn(columnName), scale));
 	}
 
-	/**
 	// See Sun JDBC Specification 3.0 Table B-6
+	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as a boolean in the Java programming language.
 	 *
@@ -1220,8 +1218,8 @@ public class MonetResultSet implements ResultSet {
 	private final static SimpleDateFormat mDate =
 		new SimpleDateFormat("yyyy-MM-dd");
 
-	/**
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
+	/**
 	 * Helper method which returns a java.util.Date for columns of type
 	 * TIME, DATE and TIMESTAMP. For the types CHAR, VARCHAR and LONGVARCHAR
 	 * an attempt is made to parse the date according to the given type.
@@ -1237,7 +1235,7 @@ public class MonetResultSet implements ResultSet {
 	 * @return an instance of java.util.Date representing this date corrected
 	 *         with the given Calendar, or 0 if not parseable
 	 * @throws SQLException if a database error occurs
-	 * @see MonetResultSet#getJavaDate(Calendar cal, int col)
+	 * @see #getDate(int col, Calendar cal)
 	 */
 	private java.util.Date getJavaDate(Calendar cal, int col, int type)
 		throws SQLException
@@ -1691,14 +1689,14 @@ public class MonetResultSet implements ResultSet {
 	public void 	updateTimestamp(int columnIndex, Timestamp x) {}
 	public void 	updateTimestamp(String columnName, Timestamp x) {}
 
-	/**
 	// Chapter 14.2.3.3 Sun JDBC 3.0 Specification
+	/**
 	 * Reports whether the last column read had a value of SQL NULL. Note that
 	 * you must first call one of the getter methods on a column to try to read
 	 * its value and then call the method wasNull to see if the value read was
 	 * SQL NULL.
 	 *
-	 * @returns true if the last column value read was SQL NULL and false
+	 * @return true if the last column value read was SQL NULL and false
 	 *          otherwise
 	 */
 	public boolean wasNull() {

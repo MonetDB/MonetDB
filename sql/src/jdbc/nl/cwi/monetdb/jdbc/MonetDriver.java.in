@@ -25,22 +25,29 @@ import java.util.Properties;
 public class MonetDriver implements Driver {
 	// the url kind will be jdbc:monetdb://<host>[:<port>]/<database>
 	// Chapter 9.2.1 from Sun JDBC 3.0 specification
+	/** The prefix of a MonetDB url */
 	private static final String MONETURL = "jdbc:monetdb://";
 	// this is a real beta release (we decide not to follow Sun's rule here)
+	/** Major version of this driver */
 	private static final int DRIVERMAJOR = @JDBC_MAJOR@;
+	/** Minor version of this driver */
 	private static final int DRIVERMINOR = @JDBC_MINOR@;
+	/** Version suffix string */
 	private static final String DRIVERVERSIONSUFFIX = "@JDBC_VER_SUFFIX@";
 	// I don't dare to even think of calling it compliant yet ;)
+	/** Whether this driver is JDBC compliant or not */
 	private static final boolean MONETJDBCCOMPLIANT = false;
 
-	// Monet default port to connect to
+	/** Monet default port to connect to */
 	private static final int PORT = @JDBC_DEF_PORT@;
 
 	// Monet prompts
+	/** MAPI PROMPT1 */
 	final static String prompt1 = "" + (char)1 + (char)1;
+	/** MAPI PROMPT2 */
 	final static String prompt2 = "" + (char)1 + (char)2;
 
-	// do we connect with blockmode or not
+	/** Do we connect with blockmode by default or not */
 	private static boolean blockMode = @JDBC_DEF_BLOCKMODE@;
 
 	// initialize this class: register it at the DriverManager
@@ -200,6 +207,7 @@ public class MonetDriver implements Driver {
 
 	//== end methods of interface driver
 
+	/** A Map containing the mapping between MonetDB types and Java SQL types */
 	static java.util.Map typeMap = new java.util.HashMap();
 	static {
 		// fill the typeMap once

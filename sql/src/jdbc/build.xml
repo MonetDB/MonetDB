@@ -151,11 +151,13 @@
   <!-- Build the documentation -->
   <target name="doc" depends="prepare">
     <mkdir dir="${builddir}/doc"/>
+	<!-- Ant 1.6 supports breakiterator="yes", 1.5 not, so do it with additionalparam -->
     <javadoc
    		packagenames="nl.cwi.monetdb.jdbc"
 		sourcepath="${srcdir}"
 		destdir="${builddir}/doc"
 		access="private"
+		additionalparam="-breakiterator"
 	/>
   </target>
 

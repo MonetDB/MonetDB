@@ -30,23 +30,35 @@ import java.nio.ByteOrder;
  * @version 0.4 (beta release)
  */
 public class MonetConnection implements Connection {
+	/** The hostname to connect to */
 	private final String host;
+	/** The port to connect on the host to */
 	private final int port;
+	/** The database to use (currently not used) */
 	private final String database;
+	/** The username to use when authenticating */
 	private final String username;
+	/** The password to use when authenticating */
 	private final String password;
+	/** A connection to Mserver using a TCP socket */
 	private final MonetSocket monet;
 
+	/** Whether or not debugging is enabled or not */
 	private static boolean debug;
+	/** Whether this Connection is closed (and cannot be used anymore) */
 	private boolean closed;
 
+	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
+	/** The Connection specific mapping of user defined types to Java types (not used) */
 	private Map typeMap = new HashMap();
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
 	// it does !!!NOW!!! (only when you deal with it of course)
+	/** A Map containing all (active) Statements created from this Connection */
 	private Map statements = new WeakHashMap();
 
+	/** The number of results we receive from the server at once */
 	private int curReplySize = -1;	// the server by default uses -1 (all)
 
 	/**
@@ -81,7 +93,7 @@ public class MonetConnection implements Connection {
 			throw new IllegalArgumentException("user should not be null or empty");
 		if (!(password != null && !password.trim().equals("")))
 			throw new IllegalArgumentException("host should not be null or empty");
-		/** @todo check and use the database name here... */
+		/** check and use the database name here... */
 
 		this.host = hostname;
 		this.port = port;
@@ -221,7 +233,7 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs or this Connection
 	 *         object is in auto-commit mode
-	 * @see setAutoCommit(boolean)
+	 * @see #setAutoCommit(boolean)
 	 */
 	public void commit() throws SQLException {
 		sendCommit();
@@ -288,7 +300,7 @@ public class MonetConnection implements Connection {
 	 * Retrieves the current auto-commit mode for this Connection object.
 	 *
 	 * @return the current state of this Connection object's auto-commit mode
-	 * @see setAutoCommit(boolean)
+	 * @see #setAutoCommit(boolean)
 	 */
 	public boolean getAutoCommit() throws SQLException {
 		// get it from the database
@@ -427,7 +439,7 @@ public class MonetConnection implements Connection {
 	 *
 	 * @throws SQLException if a database access error occurs or this
 	 *         Connection object is in auto-commit mode
-	 * @see setAutoCommit(boolean)
+	 * @see #setAutoCommit(boolean)
 	 */
 	public void rollback() throws SQLException {
 		sendRollback();
@@ -476,7 +488,7 @@ public class MonetConnection implements Connection {
 	 *
  	 * @param autoCommit true to enable auto-commit mode; false to disable it
 	 * @throws SQLException if a database access error occurs
-	 * @see getAutoCommit()
+	 * @see #getAutoCommit()
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		String error =
@@ -492,7 +504,7 @@ public class MonetConnection implements Connection {
 	 * Creates an unnamed savepoint in the current transaction and returns the
 	 * new Savepoint object that represents it.
 	 *
-	 * @returns the new Savepoint object
+	 * @return the new Savepoint object
 	 * @throws SQLException if a database access error occurs or this Connection
 	 *         object is currently in auto-commit mode
 	 */
@@ -512,7 +524,7 @@ public class MonetConnection implements Connection {
 	 * returns the new Savepoint object that represents it.
 	 *
 	 * @param name a String containing the name of the savepoint
-	 * @returns the new Savepoint object
+	 * @return the new Savepoint object
 	 * @throws SQLException if a database access error occurs or this Connection
 	 *         object is currently in auto-commit mode
 	 */
@@ -625,7 +637,7 @@ public class MonetConnection implements Connection {
 	 *         executed, or null if no errors occurred
 	 * @throws SQLException if an IO exception occurs
 	 */
-	private String sendIndependantCommand(String command) throws SQLException {
+	String sendIndependantCommand(String command) throws SQLException {
 		String error;
 		// get lock on Monet
 		synchronized(monet) {

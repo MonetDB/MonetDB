@@ -23,16 +23,22 @@ import java.net.*;
  * @version 1.2 (part of MonetDB JDBC beta release)
  */
 class MonetSocket {
+	/** Reader from the Socket */
 	private BufferedReader fromMonet;
+	/** Writer to the Socket */
 	private BufferedWriter toMonet;
+	/** The TCP Socket to Mserver */
 	protected Socket con;
 
+	/** Whether we are debugging or not */
 	protected boolean debug = false;
+	/** The Writer for the debug log-file */
 	protected FileWriter log;
 
+	/** The type of the last line read */
 	protected int lineType;
 
-	/** there is currently no line is represented by EMPTY */
+	/** "there is currently no line" is represented by EMPTY */
 	final static int EMPTY = 0;
 	/** a line starting with ! indicates ERROR */
 	final static int ERROR = 1;
@@ -75,7 +81,8 @@ class MonetSocket {
 	 *
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
-	 * @see flush(), writeln()
+	 * @see #flush()
+	 * @see #writeln(String data)
 	 */
 	public synchronized void write(String data) throws IOException {
 		toMonet.write(data);
@@ -180,7 +187,7 @@ class MonetSocket {
 	 * in one string and returned <b>after</b> the prompt has been found. If no
 	 * errors are present, null will be returned.
 	 *
-	 * @returns a string containing error messages, or null if there aren't any
+	 * @return a string containing error messages, or null if there aren't any
 	 * @throws IOException if an IO exception occurs while talking to the server
 	 */
 	public synchronized String waitForPrompt() throws IOException {
@@ -217,4 +224,3 @@ class MonetSocket {
 		disconnect();
 	}
 }
-

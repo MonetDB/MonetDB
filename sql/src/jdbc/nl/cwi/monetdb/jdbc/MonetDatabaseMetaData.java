@@ -103,7 +103,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * Are NULL values sorted low?
 	 *
 	 * @return negative of nullsAreSortedHigh()
-	 * @see nullsAreSortedHigh()
+	 * @see #nullsAreSortedHigh()
 	 */
 	public boolean nullsAreSortedLow() {
 		return(!nullsAreSortedHigh());
