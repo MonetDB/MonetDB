@@ -155,7 +155,17 @@ def usage(code, msg=''):
 
 
 def calculate_diff(filespec, contextlines):
-    file, oldrev, newrev = string.split(filespec, ',')
+    spec = string.split(filespec, ',')
+    if len(spec) < 3:
+        # Too few parts; command line probable used a replacement
+        # other than "%{sVv}"; don't fail, but don't produce a diff
+        # since we can't be sure what diff to generate.
+        return ''
+    # This allows filenames that contain commas:
+    file = string.join(spec[:-2], ",")
+    oldrev = spec[-2]
+    newrev = spec[-1]
+
     # Make sure we can find a CVS version number
     if not REVCRE.match(oldrev):
         return NOVERSION % filespec
