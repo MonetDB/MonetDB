@@ -994,11 +994,6 @@ int CMDdestroy(bit *res, str input, bit *immediately) {
         return GDK_SUCCEED;
 }
 
-int CMDresurrect(bit *r, str nme) {
-        *r = BBPresurrect(nme);
-        return GDK_SUCCEED;
-}
-
 int CMDsetaccess(BAT **r, BAT *input, int *param) {
 	bat oldCacheid = input->batCacheid;
 	*r = BATsetaccess(input, *param);
