@@ -83,7 +83,7 @@ typedef struct {
  * initializes all other data structures.
  */
 
-BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
+static BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
         /* stream_printf(GDKout,"# FTECH WS[%d][%d] \n",batID,wsID); */
         BUN bun = BUNfnd(ws,&batID);
         if ( !bun )
@@ -102,24 +102,28 @@ BAT* fetchWsContextBAT(BAT* ws, int batID, int wsID) {
         return res;
 }
 
-void switchWsContext(XqueryCtx* ctx, int wsID) {
+static void switchWsContext(XqueryCtx* ctx, int wsID) {
         if ( ctx->curFRAG != wsID ) {
                 int i;
 
                 if ( ctx->curFRAG >= 0 ) {
+                        /* close the old open context */
                         for(i=0; i<WS_BATS; i++) {
                                 if ( ctx->curBAT[i] )
                                         BBPunfix( BBPcacheid( ctx->curBAT[i] ) );
                         }
                 }
                 ctx->curFRAG   = wsID;
-                for(i=0; i<WS_BATS; i++) {
-                        ctx->curBAT[i] = fetchWsContextBAT(ctx->ws,i,wsID);
+                if ( wsID >= 0 ) {
+                        /* open the new context */
+                        for(i=0; i<WS_BATS; i++) {
+                                ctx->curBAT[i] = fetchWsContextBAT(ctx->ws,i,wsID);
+                        }
                 }
         }
 }
 
-void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
+static void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
         ctx->saxMode   = (strcmp(mode,"sax")==0);
         ctx->ws        = ws;
         ctx->curFRAG   = -1; /* empty, no frag loaded */
@@ -133,17 +137,18 @@ void createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
 /**
  * Return if there are still nodes on stack.
  */
-int moreTags(XqueryCtx* ctx) {
+static int moreTags(XqueryCtx* ctx) {
         return (ctx->stackPtr > 0);
 }
 
 /**
  * Push the pre-value, namespace and nodename of stack
  */
-void pushTag(XqueryCtx* ctx, oid pre, str ns, str name) {
+static void pushTag(XqueryCtx* ctx, oid pre, str ns, str name) {
         ctx->tagStack[ctx->stackPtr].pre  = pre;
-        ctx->tagStack[ctx->stackPtr].ns   = strdup(ns); /* incomplete, free? */
-        ctx->tagStack[ctx->stackPtr].name = strdup(name); /* incomplete, free? */
+        /* incomplete, 'ns' and 'name' should not be mallod's and free'd */
+        ctx->tagStack[ctx->stackPtr].ns   = strdup(ns);
+        ctx->tagStack[ctx->stackPtr].name = strdup(name);
         ctx->stackPtr++;
 }
 
@@ -151,15 +156,15 @@ void pushTag(XqueryCtx* ctx, oid pre, str ns, str name) {
  * Three function to retrieve the pre-value, namespace or nodename of the
  * top lement on the stack.
  */
-oid topTag(XqueryCtx* ctx)  { return ctx->tagStack[ctx->stackPtr-1].pre; }
-str topNs(XqueryCtx* ctx)   { return ctx->tagStack[ctx->stackPtr-1].ns; }
-str topName(XqueryCtx* ctx) { return ctx->tagStack[ctx->stackPtr-1].name; }
+static oid topTag(XqueryCtx* ctx)  {return ctx->tagStack[ctx->stackPtr-1].pre;}
+static str topNs(XqueryCtx* ctx)   {return ctx->tagStack[ctx->stackPtr-1].ns;}
+static str topName(XqueryCtx* ctx) {return ctx->tagStack[ctx->stackPtr-1].name;}
 
 /**
  * Pop the top element of the stack. Means that processing the node has
  * finished.
  */
-void popTag(XqueryCtx* ctx) {
+static void popTag(XqueryCtx* ctx) {
         free( topNs(ctx) );
         free( topName(ctx) );
         --ctx->stackPtr;
@@ -178,7 +183,7 @@ void popTag(XqueryCtx* ctx) {
  *
  */
 
-void emit_start() {
+static void emit_start() {
         stream_printf(GDKout,"#-------------------------#\n");
         stream_printf(GDKout,"# h     SAXtape           #\n");
         stream_printf(GDKout,"# str   str               #\n");
@@ -189,7 +194,7 @@ void emit_start() {
 /* define borrowed fom gdk_atoms.mx */
 #define allowed_chr(ch) (!(0 < (ch) && (ch) < 32) && (ch) != '\377')
 
-void emit_escaped(char* src) {
+static void emit_escaped(char* src) {
         /* Emit a string with all special character escaped
          * Function adapted from strToStr() in gdk_atoms.mx
          */
@@ -225,7 +230,7 @@ void emit_escaped(char* src) {
         }
 }
 
-void emit(char* eventName, char* val, int escaped) {
+static void emit(char* eventName, char* val, int escaped) {
         if ( val ) {
                 if ( escaped ) {
                         stream_printf(GDKout,"[\"%s\",\t\"",eventName);
@@ -235,10 +240,10 @@ void emit(char* eventName, char* val, int escaped) {
                         stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val);
                 }
         } else
-                stream_printf(GDKout,"[%s,\tnil]\n",eventName);
+                stream_printf(GDKout,"[\"%s\",\tnil]\n",eventName);
 }
 
-void emit_end() {
+static void emit_end() {
 }
 
 
@@ -262,7 +267,7 @@ void emit_end() {
 /**
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
-void handle_startDocument(XqueryCtx* ctx) {
+static void handle_startDocument(XqueryCtx* ctx) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         emit_start();
@@ -277,7 +282,7 @@ void handle_startDocument(XqueryCtx* ctx) {
 /**
  * Output generation handler. Handles equivalent of * SAX endDocument() event.
  */
-void handle_endDocument(XqueryCtx* ctx) {
+static void handle_endDocument(XqueryCtx* ctx) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         /* emit(END_DOC, NULL); */
@@ -294,7 +299,7 @@ void handle_endDocument(XqueryCtx* ctx) {
  * the usage of an attribute. A sequnce of these events will be ended
  * by a handle_attributeEnd() call.
  */
-void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
+static void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         emit(" attribute",name,0);
@@ -317,7 +322,7 @@ void handle_attribute(XqueryCtx* ctx, str ns, str name, str value) {
  * Output generation handler. This one of my own invented event indicating
  * there will be no more attribute events for this node.
  */
-void handle_attributeEnd(XqueryCtx* ctx) {
+static void handle_attributeEnd(XqueryCtx* ctx) {
         if (ctx->saxMode ) {
         } else { /* xmlMode */
                 stream_printf(GDKout,">");
@@ -328,7 +333,7 @@ void handle_attributeEnd(XqueryCtx* ctx) {
 /**
  * Output generation handler. Handles equivalent of * SAX startElement() event.
  */
-void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
+static void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         emit("startElement",NULL,0);
@@ -350,7 +355,7 @@ void handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) {
 /**
  * Output generation handler. Handles equivalent of * SAX endElement() event.
  */
-void handle_endElement(XqueryCtx* ctx, str ns, str name) {
+static void handle_endElement(XqueryCtx* ctx, str ns, str name) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         emit("endElement",NULL,0);
@@ -373,14 +378,14 @@ void handle_endElement(XqueryCtx* ctx, str ns, str name) {
  * Output generation handler. One on my own again. This one should handle a
  * reference. Don't know wat to to about it now.
  */
-void handle_reference(XqueryCtx* ctx, str name) {
+static void handle_reference(XqueryCtx* ctx, str name) {
         if (ctx && name) {};
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX characters() event.
  */
-void handle_characters(XqueryCtx* ctx, str ch) {
+static void handle_characters(XqueryCtx* ctx, str ch) {
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         emit("characters",NULL,0);
@@ -398,7 +403,7 @@ void handle_characters(XqueryCtx* ctx, str ch) {
  * event. I see no reason why it should be used here but I include it for
  * completeness.
  */
-void handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
+static void handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
         handle_characters(ctx,ch); /* dispatch */
 }
 
@@ -406,7 +411,7 @@ void handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
  * Output generation handler. Again an own event. But this one should be
  * used I think because the comments are used and stored by  Pathfinder.
  */
-void handle_comment(XqueryCtx* ctx, str comm) {
+static void handle_comment(XqueryCtx* ctx, str comm) {
         if (ctx->saxMode ) {
                 /* incomplete */
         } else { /* xmlMode */
@@ -417,7 +422,7 @@ void handle_comment(XqueryCtx* ctx, str comm) {
 /**
  * Output generation handler. Handles equivalent of * SAX processingInstruction() event.
  */
-void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
+static void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
         if (ctx->saxMode ) {
                 /* incomplete */
         } else { /* xmlMode */
@@ -429,7 +434,7 @@ void handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
  * Utility function. It reads the tail value of an element in a 
  * [void,any] BAT indexed by oid_index. 
  */
-ptr indexedTail(str name, BAT* b, oid oid_index) {
+static ptr idxTV(str name, BAT* b, oid oid_index) {
         ptr res;
 
         if ( !b )
@@ -452,27 +457,31 @@ ptr indexedTail(str name, BAT* b, oid oid_index) {
         return res;
 }
 
-ptr IDT(XqueryCtx* ctx, int batId, oid oid_index) {
+/**
+ * Reads the index tailvalue in a Working Set BAT
+ */
+static ptr idxTVinWS(XqueryCtx* ctx, int batId, oid oid_index) {
         BAT* b = ctx->curBAT[batId];
         if ( !b ) 
                 stream_printf(GDKout,"NIL ctx->curBAT[%d]\n",batId);
-        ptr res = indexedTail("tmp",b,oid_index);
+        ptr res = idxTV("tmp",b,oid_index);
         return res;
 }
 
-ptr IDT_FRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index) {
+/**
+ * Reads the index tailvalue in a Working Set BAT or when fragId is not the
+ * current working set it reads in the BAT outside the working set.
+ */
+static ptr idxTVinWSorFRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index) {
         if ( ctx->curFRAG == fragId ) 
-                return IDT(ctx,batId,oid_index);
+                return idxTVinWS(ctx,batId,oid_index);
         else {
                 BAT* b = fetchWsContextBAT(ctx->ws, batId, fragId);
 
                 if ( !b )
                         stream_printf(GDKout,"NIL BAT[%d][%d]\n",fragId,batId);
-
-                ptr res = indexedTail("tmp",b,oid_index);
-
+                ptr res = idxTV("tmp",b,oid_index);
                 BBPunfix( BBPcacheid( b ) );
-
                 return res;
         }
 }
@@ -481,64 +490,64 @@ ptr IDT_FRGN(XqueryCtx* ctx, int fragId, int batId, oid oid_index) {
  * Handle the generation of the attributes of the node with oid 'pre'. This
  * function is only called from the xquery_node_print() function.
  */
-void query_attr_print(XqueryCtx* ctx, oid pre) {
+static void query_attr_print(XqueryCtx* ctx, oid pre) {
         BAT* b = BATuselect(ctx->curBAT[ATTR_OWN],&pre,&pre);
 
         BUN p, q; 
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
                 /* */
-                oid poid = *(oid*)IDT(ctx,ATTR_PROP,id);
-                str val = (str)IDT(ctx,PROP_VAL,poid);
+                oid poid = *(oid*)idxTVinWS(ctx,ATTR_PROP,id);
+                str val = (str)idxTVinWS(ctx,PROP_VAL,poid);
                 /* */
-                oid qoid = *(oid*)IDT(ctx,ATTR_QN,id);
-                str ns   = (str)IDT(ctx,QN_NS,qoid);
-                str name = (str)IDT(ctx,QN_LOC,qoid);
+                oid qoid = *(oid*)idxTVinWS(ctx,ATTR_QN,id);
+                str ns   = (str)idxTVinWS(ctx,QN_NS,qoid);
+                str name = (str)idxTVinWS(ctx,QN_LOC,qoid);
                 /* */
                 handle_attribute(ctx,ns,name,val);
         }
         handle_attributeEnd(ctx);
-        /* BATdelete(b); INCOMPLETE, CRASHES WHY?? */
+        BBPunfix( BBPcacheid( b ) );
 }
 
 /**
  * Handle the generation of the node with oid 'pre'.
  */
-void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
-        chr kind = *(chr*)IDT(ctx,PRE_KIND,pre);
-        oid prop = *(oid*)IDT(ctx,PRE_PROP,pre);
+static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
+        chr kind = *(chr*)idxTVinWS(ctx,PRE_KIND,pre);
+        oid prop = *(oid*)idxTVinWS(ctx,PRE_PROP,pre);
 
         int valueFRAG = ctx->curFRAG;
         if ( pre_frag )
-                valueFRAG = *(int*)IDT(ctx,PRE_FRAG,pre);
+                valueFRAG = *(int*)idxTVinWS(ctx,PRE_FRAG,pre);
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
-                        str name = (str)IDT_FRGN(ctx,valueFRAG,QN_LOC,prop);
-                        str ns   = (str)IDT_FRGN(ctx,valueFRAG,QN_NS,prop);
+                        str name = (str)idxTVinWSorFRGN(ctx,valueFRAG,QN_LOC,prop);
+                        str ns   = (str)idxTVinWSorFRGN(ctx,valueFRAG,QN_NS,prop);
                         handle_startElement(ctx,ns,name);
                         query_attr_print(ctx,pre);
 
-                        oid size = *(oid*)IDT(ctx,PRE_SIZE,pre);
+                        oid size = *(oid*)idxTVinWS(ctx,PRE_SIZE,pre);
                         pushTag(ctx,pre+size,ns,name);
                         break;
                         }
                 case (char)1: {/* TEXT */
-                        handle_characters(ctx,(str)IDT_FRGN(ctx,valueFRAG,PROP_TEXT,prop));
+                        handle_characters(ctx,(str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_TEXT,prop));
                         break;
                         }
                 case (char)2: {/* COMMENT */
-                        handle_comment(ctx,(str)IDT_FRGN(ctx,valueFRAG,PROP_COM,prop));
+                        handle_comment(ctx,(str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_COM,prop));
                         break;
                         }
                 case (char)3: {/* PI */
-                        str target = (str)IDT_FRGN(ctx,valueFRAG,PROP_TGT,prop);
-                        str data   = (str)IDT_FRGN(ctx,valueFRAG,PROP_INS,prop);
+                        str target = (str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_TGT,prop);
+                        str data   = (str)idxTVinWSorFRGN(ctx,valueFRAG,PROP_INS,prop);
                         handle_processingInstruction(ctx,target,data);
                         break;
                         }
                 case (char)4: {/* DOCUMENT */
                         /* The node represents an entire document */
-                        oid offset = *(oid*)IDT(ctx,PRE_SIZE,pre);
+                        oid offset = *(oid*)idxTVinWS(ctx,PRE_SIZE,pre);
                         pushTag(ctx,pre+offset,"","");
                         break;
                         }
@@ -552,7 +561,7 @@ void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
 /**
  * handle the closing tag of a document.
  */
-void xquery_endtag_print(XqueryCtx* ctx, oid pre) {
+static void xquery_endtag_print(XqueryCtx* ctx, oid pre) {
         while( moreTags(ctx) && ((pre==ALLTAGS)||(pre > topTag(ctx))) ) { /*?? */
                 if ( strlen(topName(ctx)) > 0 )
                         handle_endElement(ctx,topNs(ctx),topName(ctx));
@@ -563,7 +572,7 @@ void xquery_endtag_print(XqueryCtx* ctx, oid pre) {
 /**
  * handle the range of pre numbers [from .. to]
  */
-void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
+static void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
         BUN p, q; 
         if ( from == 0 ) /* first BUN, because of 1..n/0..n-1 problem */
                 p = BUNfirst(b);
@@ -582,7 +591,7 @@ void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
         }
 }
 
-void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag) {
+static void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag) {
         oid pre = from;
 
         do {
@@ -605,7 +614,7 @@ void MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag) {
  * Main XML document printing routine
  */
 
-int ws_documentIndex(BAT* ws, str docName) {
+static int ws_documentIndex(BAT* ws, str docName) {
         int doc_loaded_idx = DOC_LOADED;
 
         BUN b = BUNfnd(ws,&doc_loaded_idx);
@@ -632,7 +641,7 @@ int ws_documentIndex(BAT* ws, str docName) {
         return -1;
 }
 
-void doDump(str docName, XqueryCtx* ctx) {
+static void doDump(str docName, XqueryCtx* ctx) {
         stream_printf(GDKout,"# dump of document \"%s\", frag=%d\n",docName,ctx->curFRAG);
         stream_printf(GDKout,"# ********pre_size********:\n");
 
@@ -649,6 +658,7 @@ int xquery_dump_doc_main(BAT* ws, str docName) {
         createWsContext(ctx,ws,docIndex,"xml");
         /* */
         doDump(docName,ctx);
+        switchWsContext(ctx,-1); /* close all open context BAT's */
         /* */
         return GDK_SUCCEED;
 }
@@ -666,6 +676,7 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
         handle_startDocument(ctx);
         xquery_pre_range(ctx,ctx->curBAT[PRE_SIZE],0/*start*/,1 /* first is doc ? */);
         handle_endDocument(ctx);
+        switchWsContext(ctx,-1); /* close all open context BAT's */
         /* */
         return GDK_SUCCEED;
 }
@@ -682,7 +693,7 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 /**
  * Handle the start() of an XQUERY/Pathfinder result sequence
  */
-void  seqStart(XqueryCtx* ctx) {
+static void  seqStart(XqueryCtx* ctx) {
         if ( ctx->saxMode ) {
                 handle_startElement(ctx,NULL,XQRESTAG);
         } else {
@@ -695,7 +706,7 @@ void  seqStart(XqueryCtx* ctx) {
 /**
  * Handle the end() of an XQUERY/Pathfinder result sequence
  */
-void  seqEnd(XqueryCtx* ctx) {
+static void  seqEnd(XqueryCtx* ctx) {
         if ( ctx->saxMode ) {
                 handle_endElement(ctx,NULL,XQRESTAG);
         } else {
@@ -708,8 +719,8 @@ void  seqEnd(XqueryCtx* ctx) {
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
-void  seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag) {
-        int size = *(int*)IDT(ctx,PRE_SIZE,preVal);
+static void  seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag) {
+        int size = *(int*)idxTVinWS(ctx,PRE_SIZE,preVal);
         /* stream_printf(GDKout,"Emit NODE: %d, size = %d\n",preVal,size); */
         MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag);
 }
@@ -717,7 +728,7 @@ void  seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag) {
 /**
  * Emit a Boolean element of an XQUERY/Pathfinder result sequence
  */
-void  seqEmitBool(XqueryCtx* ctx, int bv) {
+static void  seqEmitBool(XqueryCtx* ctx, int bv) {
         char *bool_str = (char*)(bv?"true":"false");
 
         if ( ctx->saxMode ) {
@@ -731,7 +742,7 @@ void  seqEmitBool(XqueryCtx* ctx, int bv) {
 /**
  * Emit a Integer element of an XQUERY/Pathfinder result sequence
  */
-void  seqEmitInt(XqueryCtx* ctx, int iv) {
+static void  seqEmitInt(XqueryCtx* ctx, int iv) {
         if ( ctx->saxMode ) {
                 char buff[32];
 
@@ -746,7 +757,7 @@ void  seqEmitInt(XqueryCtx* ctx, int iv) {
 /**
  * Emit a Double element of an XQUERY/Pathfinder result sequence
  */
-void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
+static void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
         if ( ctx->saxMode ) {
                 char buff[32];
 
@@ -761,7 +772,7 @@ void  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
 /**
  * Emit a String element of an XQUERY/Pathfinder result sequence
  */
-void  seqEmitStr(XqueryCtx* ctx, str sv) {
+static void  seqEmitStr(XqueryCtx* ctx, str sv) {
         if ( ctx->saxMode ) {
                 handle_characters(ctx,sv);
         } else {
@@ -828,7 +839,7 @@ int xquery_print_result_main(
         BATloop(item, p, q) {
                 oid pre = *(oid*)BUNhead(item, p);
                 oid valoid = *(oid*)BUNtail(item, p);
-                int cmbn_frag_kind = *(int*)indexedTail("kind",kind,pre);
+                int cmbn_frag_kind = *(int*)idxTV("kind",kind,pre);
                 if ( DEBUG_BAT )
                         stream_printf(GDKout,"## pre=%d\tcbn=%d\tkind=%d\tv_oid=%d\t",pre,cmbn_frag_kind,XTRACT_KIND(cmbn_frag_kind),valoid);
                 switch( XTRACT_KIND(cmbn_frag_kind) ) {
@@ -844,7 +855,7 @@ int xquery_print_result_main(
                         break;
                         };
                  case NODE: {
-                        // incomplete, suppose just ignore
+                        // incomplete. Suppose just ignore ?
                         // stream_printf(GDKout,"<!--node-not-impl-yet-->\n");
                         break;
                         };
@@ -854,25 +865,25 @@ int xquery_print_result_main(
                         break;
                         }
                  case DBL: {
-                        dbl dv = *(dbl*)indexedTail("dblVAL",dblVAL,valoid);
+                        dbl dv = *(dbl*)idxTV("dblVAL",dblVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
                         seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case DEC: {
-                        dbl dv = *(dbl*)indexedTail("decCVAL",decVAL,valoid);
+                        dbl dv = *(dbl*)idxTV("decCVAL",decVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%f\n",dv);
                         seqEmitDbl(ctx,dv); /* INCOMPLETE ?diff between d and e */
                         break;
                         }
                  case INT: {
-                        int iv = *(int*)indexedTail("intVAL",intVAL,valoid);
+                        int iv = *(int*)idxTV("intVAL",intVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"%d\n",iv);
                         seqEmitInt(ctx,iv);
                         break;
                         }
                  case STR: {
-                        str sv = (str)indexedTail("strVAL",strVAL,valoid);
+                        str sv = (str)idxTV("strVAL",strVAL,valoid);
                         if (DEBUG_BAT) stream_printf(GDKout,"\"%s\"\n",sv);
                         seqEmitStr(ctx,sv);
                         break;
@@ -885,11 +896,14 @@ int xquery_print_result_main(
         /* */
         seqEnd(ctx);
         /* */
+        switchWsContext(ctx,-1); /* close all open context BAT's */
+        /* */
         return GDK_SUCCEED;
 }
 
+/* incomplete, should remove pf_ping() */
 void call2pf_ping() {
-        /* pf_ping(); Sjoerd, remove comments here */
+        pf_ping();
 }
 
 static FILE *string2FILE(char* s) {
