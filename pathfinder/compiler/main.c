@@ -500,8 +500,17 @@ static char *progname = 0;
 int
 main (int argc, char *argv[])
 {
+    /* Call setjmp() before variables are declared;
+     * otherwise, some compilers complain about clobbered variables.
+     */
+    int rtrn = 0;
+    if ((rtrn = setjmp(PFexitPoint)) != 0 ) {
+        fputs (PFerrbuf, stderr);
+        exit ( rtrn<0 ? -rtrn : rtrn );
+    }
+
+ {
     unsigned int i;
-    int rtrn = -(EXIT_FAILURE);
 
     PFstate_t* status = &PFstate;
 
@@ -688,7 +697,7 @@ main (int argc, char *argv[])
     }
 
     /* Now call the main compiler driver */
-    if ( (rtrn = pf_compile(pfin, stdout, status)) < 0 )
+    if ( pf_compile(pfin, stdout, status) < 0 )
         goto failure;
 
     if ( pfin != stdin )
@@ -697,7 +706,8 @@ main (int argc, char *argv[])
     exit (EXIT_SUCCESS);
 
  failure:
-    exit (-rtrn); /*(EXIT_FAILURE)*/
+    exit (EXIT_FAILURE);
+ }
 }
 
 /* vim:set shiftwidth=4 expandtab: */
