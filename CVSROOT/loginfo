@@ -30,6 +30,7 @@ ALL $CVSROOT/CVSROOT/warn %s
 CVSROOT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} sjoerd@users.sourceforge.net
 
 MonetDB $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
+pathfinder $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-checkins@lists.sourceforge.net
 sql $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-sql-checkins@lists.sourceforge.net
 template $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-templ-chkins@lists.sourceforge.net
 
