@@ -139,9 +139,6 @@ CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
 @-
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the CT by means of a histolink.
-@-
-histogram support. during group computation we already compute histograms
-for quick re-use. They are attached to the CT by means of a histolink.
 @m
 .ACCELERATOR histolink(any);
       .BUILD     = CTbuild_hl;
