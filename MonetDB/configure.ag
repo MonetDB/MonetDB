@@ -130,17 +130,17 @@ AC_HEADER_TIME()
 AC_STRUCT_TM()
 AC_STRUCT_TIMEZONE()
 AC_LANG_CPLUSPLUS()
-AC_TRY_COMPILE( [], [ bool x = true; ], [ AC_DEFINE(HAVE_BOOL) ] )
+AC_TRY_COMPILE( [], [ bool x = true; ], [ AC_DEFINE(HAVE_BOOL, 1, [Define if the compiler has bool type defined]) ] )
 AC_LANG_C()
 AC_C_BIGENDIAN()
-AC_TRY_COMPILE( [], [ long long x; ], [ AC_DEFINE(HAVE_LONGLONG)]  )
+AC_TRY_COMPILE( [], [ long long x; ], [ AC_DEFINE(HAVE_LONGLONG, 1, [Define if the compiler has long long type defined])]  )
 AC_CHECK_SIZEOF(char,1)
 AC_CHECK_SIZEOF(short,2)
 AC_CHECK_SIZEOF(int,4)
 AC_CHECK_SIZEOF(long,4)
 AC_CHECK_SIZEOF(long long,8)
 
-dnl only win32 AC_TRY_COMPILE( [], [ __int64 x; ], [ AC_DEFINE(HAVE__INT64)] )
+dnl only win32 AC_TRY_COMPILE( [], [ __int64 x; ], [ AC_DEFINE(HAVE__INT64, 1, [Define if the compiler the __int64 type defined])] )
 
 dnl Checks for library functions.
 AC_FUNC_ALLOCA()
@@ -160,7 +160,7 @@ ctime_r3=yes
 AC_MSG_CHECKING(ctime_r3)
 AC_TRY_COMPILE( [#include <time.h> ], 
 [ char buf[26]; time_t t; ctime_r(&t,buf,26); ], 
-[ AC_DEFINE(HAVE_CTIME_R3) ], [ ctime_r3=no ])
+[ AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)]) ], [ ctime_r3=no ])
 AC_MSG_RESULT($ctime_r3)
 
 dnl Mx and mel are used during make

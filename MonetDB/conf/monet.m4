@@ -373,15 +373,15 @@ if test "x$have_pthread" != xno; then
   LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
   AC_CHECK_LIB(pthread, sem_init, 
 	[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread" 
-          AC_DEFINE(HAVE_LIBPTHREAD) 
+          AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library]) 
 	  have_pthread=yes ] , 
 	dnl sun
 	[ AC_CHECK_LIB(pthread, sem_post, 
 		[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4" 
-          	AC_DEFINE(HAVE_LIBPTHREAD) 
+          	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library]) 
 	  	have_pthread=yes ] , [ have_pthread=no], "-lposix4" )
 	] )
-  AC_CHECK_LIB(pthread, pthread_sigmask, AC_DEFINE(HAVE_PTHREAD_SIGMASK))
+  AC_CHECK_LIB(pthread, pthread_sigmask, AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1, [Define if you have the pthread_sigmask function]))
   LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_pthread" != xyes; then
@@ -409,11 +409,11 @@ if test "x$have_readline" != xno; then
   LDFLAGS="$LDFLAGS $READLINE_LIBS"
   AC_CHECK_LIB(readline, readline, 
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline" 
-          AC_DEFINE(HAVE_LIBREADLINE) 
+          AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library]) 
 	  have_readline=yes ]
 	, [ AC_CHECK_LIB(readline, rl_history_search_forward, 
 	[ READLINE_LIBS="$READLINE_LIBS -lreadline -ltermcap" 
-          AC_DEFINE(HAVE_LIBREADLINE) 
+          AC_DEFINE(HAVE_LIBREADLINE, 1, [Define if you have the readline library]) 
 	  have_readline=yes ]
 	, have_readline=no, "-ltermcap" ) ], )
   LDFLAGS="$save_LDFLAGS"
@@ -470,7 +470,7 @@ if test "x$have_z" != xno; then
   	save_LDFLAGS="$LDFLAGS"
   	LDFLAGS="$LDFLAGS $Z_LIBS"
   	AC_CHECK_LIB(z, gzopen, Z_LIBS="$Z_LIBS -lz"
-        	AC_DEFINE(HAVE_LIBZ) have_z=yes, have_z=no)
+        	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library]) have_z=yes, have_z=no)
   	LDFLAGS="$save_LDFLAGS"
   fi
 
@@ -503,7 +503,7 @@ if test "x$have_bz" != xno; then
   	save_LDFLAGS="$LDFLAGS"
   	LDFLAGS="$LDFLAGS $BZ_LIBS"
   	AC_CHECK_LIB(bz2, BZ2_bzopen, BZ_LIBS="$BZ_LIBS -lbz2"
-        	AC_DEFINE(HAVE_LIBBZ2) have_bz=yes, have_bz=no)
+        	AC_DEFINE(HAVE_LIBBZ2, 1, [Define if you have the bz2 library]) have_bz=yes, have_bz=no)
   	LDFLAGS="$save_LDFLAGS"
   fi
 
@@ -542,24 +542,24 @@ if test "x$have_hwcounters" != xno; then
 	AC_CHECK_HEADERS( libperfctr.h ,
 	 AC_CHECK_LIB( perfctr, vperfctr_open , 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
-	    AC_DEFINE(HAVE_LIBPERFCTR)
+	    AC_DEFINE(HAVE_LIBPERFCTR, 1, [Define if you have the perfctr library])
 	    have_hwcounters=yes ] ) ,
         AC_CHECK_HEADERS( libpperf.h,
 	 AC_CHECK_LIB( pperf, start_counters, 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
-	    AC_DEFINE(HAVE_LIBPPERF)
+	    AC_DEFINE(HAVE_LIBPPERF, 1, [Define if you have the pperf library])
 	    have_hwcounters=yes ] )
 	)) ;;
    solaris*)
 	AC_CHECK_HEADERS( libcpc.h ,
 	 AC_CHECK_LIB( cpc, cpc_access , 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
-	    AC_DEFINE(HAVE_LIBCPC)
+	    AC_DEFINE(HAVE_LIBCPC, 1, [Define if you have the cpc library])
 	    have_hwcounters=yes ] ) ,
 	AC_CHECK_HEADERS( perfmon.h ,
 	 AC_CHECK_LIB( perfmon, clr_pic , 
 	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
-	    AC_DEFINE(HAVE_LIBPERFMON)
+	    AC_DEFINE(HAVE_LIBPERFMON, 1, [Define if you have the perfmon library])
 	    have_hwcounters=yes ] )
   	)) ;;
    irix*)
