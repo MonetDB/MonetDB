@@ -839,7 +839,7 @@ Module: "profiler"
 [ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",	  "not available"							  ]
 [ "getProfilerCount",	  "COMMAND:   ",  "getProfilerCount() : BAT[str,int]",	  "Get a copy of the profiler summary table"				  ]
 [ "profile",		  "PROC:      ",  "profile() : int",			  "not available"							  ]
-[ "resetProfilerCount",	  "COMMAND:   ",  "resetProfilerCount() : void",	  "Set all counters to zero again"					  ]
+[ "resetProfiler",	  "COMMAND:   ",  "resetProfiler() : void",		  "Set all counters to zero again"					  ]
 [ "setFilter",		  "COMMAND:   ",  "setFilter(str, str) : int",	  "Set the profile filter strings"	  ]
 [ "startProfiler",	  "COMMAND:   ",  "startProfiler() : void",		  "Collect command and proc counts"					  ]
 [ "startProfiler",	  "COMMAND:   ",  "startProfiler(Stream) : int",  "Start the event profiling stream; output is sent to Stream output"	  ]
