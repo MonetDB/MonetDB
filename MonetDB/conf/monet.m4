@@ -263,7 +263,7 @@ if test "x$enable_optim" = xyes; then
   if test "x$enable_debug" = xno; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
-      gcc_ver="`gcc --version | head -1 | sed 's|[^0-9]*\([0-9][0-9\.]*[0-9]\)[^0-9].*|\1|'`"
+      gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
       case "$host-$gcc_ver" in
       i*86-*-*-3.2)   CFLAGS="$CFLAGS -O6"
                       case "$host" in
