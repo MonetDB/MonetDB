@@ -54,7 +54,7 @@ stdout of test 'tst270` in directory 'src/mal` itself:
 #profiler.closeStream();
 #
 function Admin.main():int;	# 0  (main:int)
-    profiler.activate("tick");	# 1 CMDactivateProfiler ($1:void)<-($2:str)
+    profiler.activate("ticks");	# 1 CMDactivateProfiler ($1:void)<-($2:str)
     profiler.activate("pc");	# 2 CMDactivateProfiler ($3:void)<-($4:str)
     profiler.activate("statement");	# 3 CMDactivateProfiler ($5:void)<-($6:str)
     profiler.setFilter("*","insert");	# 4 CMDsetFilterProfiler ($7:void)<-($8:str)($9:str)
@@ -90,8 +90,8 @@ end main;	# 30
 # str				str		  # type
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_4"	  ]
-[ "batCacheid",			  "4"		  ]
+[ "batId",			  "tmp_13"	  ]
+[ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "int"		  ]
@@ -124,10 +124,10 @@ end main;	# 30
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
-[ "batStamp",			  "4"		  ]
-[ "lastUsed",			  "6"		  ]
+[ "batStamp",			  "13"		  ]
+[ "lastUsed",			  "15"		  ]
 [ "keepAround",			  "0"		  ]
-[ "curStamp",			  "5"		  ]
+[ "curStamp",			  "14"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -135,21 +135,21 @@ end main;	# 30
 [ "batBuns.size",		  "424"		  ]
 [ "batBuns.maxsize",		  "424"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",		  "4.buns"	  ]
+[ "batBuns.filename",		  "13.buns"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "0"		  ]
 [ "hheap.size",			  "0"		  ]
 [ "hheap.maxsize",		  "0"		  ]
 [ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "4.hheap"	  ]
+[ "hheap.filename",		  "no file"	  ]
 [ "hheap.offset",		  "0"		  ]
 [ "theapdirty",			  "clean"	  ]
 [ "theap.free",			  "0"		  ]
 [ "theap.size",			  "0"		  ]
 [ "theap.maxsize",		  "0"		  ]
 [ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "4.theap"	  ]
+[ "theap.filename",		  "no file"	  ]
 [ "theap.offset",		  "0"		  ]
 [ "hacctype",			  "null"	  ]
 [ "haccdirty",			  "clean"	  ]

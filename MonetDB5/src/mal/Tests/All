@@ -118,6 +118,7 @@ tst2550
 tst256
 tst260
 tst270
+tst272
 tst277
 tst280
 tst285
@@ -195,6 +196,7 @@ tst4620
 tst4630
 tst4631
 tst4730
+tst4800
 
 # Old x100 test moved to x100Tests
 #tst6000

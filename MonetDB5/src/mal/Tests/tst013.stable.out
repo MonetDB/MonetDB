@@ -38,7 +38,7 @@ barrier i := 1;	# 4  (i:int)<-($6:int) jump 12
 barrier calc.>(i,3);	# 7 CALCcompGTintint ($9:bit)<-(i:int)($8:int) jump 10
     io.print("leave loop");	# 8 IOprint_val ($10:int)<-($11:str)
     leave i;	# 9  (i:int) jump 12
-exit $9;	# 10  ($9:bit)
+exit ;	# 10  ($9:bit)
     redo i;	# 11  (i:int) jump 5
 exit i;	# 12  (i:int)
 end main;	# 13  
