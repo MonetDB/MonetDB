@@ -901,7 +901,7 @@ BAT* aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT * b, BAT *g, BAT *e, size
 	BUN p, q, r;
 	int xx;
 	oid bhsb;
-	size_t base, end, w;
+	size_t base, end = 0, w;
 	ssize_t offset;
 
 	(void) end; /* fool compiler */
@@ -1043,7 +1043,7 @@ str aggrX3_@1_@3_@4(int *retid, int *bid, int *eid){
 	BAT *b, *e;
 	BAT *bn;
 	int (*cmp)(ptr,ptr);
-	ptr nil, zero ;
+	ptr nil, zero = NULL ;
 	int xx;
 	size_t off;
 	ptr *extremes;
@@ -1567,7 +1567,7 @@ BAT* aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid ra
 	BUN p, q, r;
 	int xx;
 	oid bhsb;
-	size_t base, end, w;
+	size_t base, end = 0, w;
 	ssize_t offset;
 	(void) end; /* fool compiler */
 

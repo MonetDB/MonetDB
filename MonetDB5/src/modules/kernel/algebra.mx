@@ -733,7 +733,7 @@ extern ptr BATmax(BAT *b, ptr aggr);
 @= aggregate_implementation
 str CMDmin_@1(@1* res, int *bid) {
         BAT *b;
-	int result;
+	int result = 0;
 	(void) result; /* fool compiler */
 
 	*res = @1_nil;
@@ -743,7 +743,7 @@ str CMDmin_@1(@1* res, int *bid) {
 }
 str CMDmax_@1(@1* res, int *bid) {
         BAT *b;
-	int result;
+	int result= 0;
 	(void) result; /* fool compiler */
 	*res = @1_nil;
         @:getBATdescriptor(&result,bid,b,max)@
@@ -760,7 +760,7 @@ str CMDmax_@1(@1* res, int *bid) {
 
 str CMDminany(ptr result, int *bid) {
         BAT *b;
-	int res;
+	int res = 0;
 	(void) res; /* fool compiler */
         @:getBATdescriptor(&res,bid,b,minany)@
         if (!ATOMlinear(b->ttype))
@@ -778,7 +778,7 @@ str CMDminany(ptr result, int *bid) {
 }
 str CMDmaxany(ptr result, int *bid) {
         BAT *b;
-	int res;
+	int res = 0;
 	(void) res; /* fool compiler */
         @:getBATdescriptor(&res,bid,b,maxany)@
         if (!ATOMlinear(b->ttype))
@@ -965,7 +965,7 @@ str CMDthetajoin(int *result, int *lid, int *rid, str *opname) {
 
 str CMDtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
 	BAT *inner,*outer, *left, *right;
-	int result, opc= operatorCode(*opname);
+	int result= 0, opc= operatorCode(*opname);
 	(void) result; /* fool compiler */
 	@:getBATdescriptor(&result,iid,inner,theta)@
 	@:getBATdescriptor(&result,oi,outer,theta)@
@@ -1422,7 +1422,7 @@ str CMDfetchoid(int * ret, int *bid, oid *pos){
 
 str CMDfetch(ptr ret, int *bid, lng *pos){
 	BAT *b;
-	int result;
+	int result= 0;
 	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,fetch);
@@ -1431,7 +1431,7 @@ str CMDfetch(ptr ret, int *bid, lng *pos){
 str CMDexist(bit *ret, int *bid, ptr val){ 
 	BAT *b;
 	BUN q;
-	int result;
+	int result= 0;
 	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,exist);
@@ -1443,7 +1443,7 @@ str CMDexist(bit *ret, int *bid, ptr val){
 str CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){ 
 	BAT *b;
 	BUN q;
-	int result;
+	int result= 0;
 	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,exist);
@@ -1457,7 +1457,7 @@ str CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){
 str CMDfind(ptr ret, int *bid, ptr val){ 
 	BAT *b;
 	BUN q;
-	int result;
+	int result= 0;
 	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,find);
