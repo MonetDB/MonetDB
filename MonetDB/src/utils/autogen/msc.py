@@ -69,7 +69,7 @@ def msc_subdirs(fd, var, values, msc ):
 def msc_assignment(fd, var, values, msc ):
     o = ""
     for v in values:
-        o = o + " " + v
+        o = o + " " + string.replace(v, '/', '\\')
     fd.write("%s = %s\n" % (var,o) )
 
 def msc_cflags(fd, var, values, msc ):
@@ -617,7 +617,7 @@ def msc_includes(fd, var, values, msc):
     incs = "-I$(SRCDIR)"
     for i in values:
         if (i[0] == "-" or i[0] == "$"):
-            incs = incs + " " + i
+            incs = incs + " " + string.replace(i, '/', '\\')
         else:
             incs = incs + " -I" + msc_translate_dir(i,msc) \
                    + msc_add_srcdir(i,msc," -I");
