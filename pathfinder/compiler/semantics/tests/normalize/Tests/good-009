@@ -1,9 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-declare xmlspace preserve;
-declare xmlspace strip;
-declare namespace bar = "http://www.bar.foo";
-1.3
-EOT
-echo $?

@@ -1,8 +1,0 @@
-#!/bin/bash
-
-pf -s3 <<'EOT'
-import schema namespace foo = "myschema" at "http://www.myschema.org/";
-
-foo:bar
-EOT
-echo $?
