@@ -27,15 +27,7 @@ $(prefix)/doc/SQLsessionDemo.html:	$(top_srcdir)/SQLsessionDemo.html
 	-@mkdir -p $(prefix)/doc
 	cp $< $@
 
-$(prefix)/doc/SQLfeatures/content.shtml:	$(top_srcdir)/SQLfeatures/content.shtml
-	-@mkdir -p $(prefix)/doc/SQLfeatures
-	cp $< $@
-
-$(prefix)/doc/SQLfeatures/title.txt:	$(top_srcdir)/SQLfeatures/title.txt
-	-@mkdir -p $(prefix)/doc/SQLfeatures
-	cp $< $@
-
-$(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures/SQLfeatures.tex
+$(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
 	-@mkdir -p $(prefix)/doc/SQLfeatures
 	cp $< $@
 

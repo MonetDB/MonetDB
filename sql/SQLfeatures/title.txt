@@ -1,2 +1,0 @@
-sql 
-sql: module that adds SQL-99 support to MonetDB.
