@@ -517,6 +517,7 @@ mal_export Symbol   newSymbol(str nme, int kind);
 mal_export void     freeSymbol(Symbol s);
 mal_export void     freeSymbolList(Symbol s);
 mal_export MalBlkPtr    newMalBlk(int maxvars, int maxstmts);
+mal_export void 	newMalBlkStmt(MalBlkPtr mb, int maxstmts);
 mal_export void     prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void     freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr    copyMalBlk(MalBlkPtr);
@@ -622,25 +623,28 @@ void freeSymbolList(Symbol s){
     }
 }
  
+void newMalBlkStmt(MalBlkPtr mb, int maxstmts){
+	InstrPtr *p;
+    p = (InstrPtr *)GDKmalloc(sizeof(InstrPtr) * maxstmts);
+    if( p== NULL )
+        GDKfatal("newMalBlk:could not get instruction storage\n");
+    bzero((char *)p, sizeof(InstrPtr) * maxstmts);
+    mb->stmt = p; mb->stop = 0; mb->ssize = maxstmts;
+}
 MalBlkPtr newMalBlk(int maxvars, int maxstmts){
     MalBlkPtr mb;
     VarPtr *v;
-    InstrPtr *p;
 
     v = (VarPtr *) GDKmalloc(sizeof(VarPtr) * maxvars);
     if( v== NULL )
         GDKfatal("newMalBlk:could not get variable storage\n");
     bzero(v, sizeof(VarPtr) * maxvars);
-    p = (InstrPtr *)GDKmalloc(sizeof(InstrPtr) * maxstmts);
-    if( p== NULL )
-        GDKfatal("newMalBlk:could not get instruction storage\n");
-    bzero((char *)p, sizeof(InstrPtr) * maxstmts);
     mb = (MalBlkPtr) GDKmalloc(sizeof(MalBlkRecord));
     if( mb== NULL )
         GDKfatal("newMalBlk:could not get storage\n");
+	newMalBlkStmt(mb,maxstmts);
 
     mb->var = v; mb->vtop = 0; mb->vsize = maxvars;
-    mb->stmt = p; mb->stop = 0; mb->ssize = maxstmts;
     mb->help = mb->binding= NULL;
     mb->errors = 0;
     mb->props= NULL;
@@ -868,7 +872,7 @@ void oldmoveInstruction(InstrPtr new, InstrPtr p){
     space = sizeof(InstrRecord) + sizeof(int) * p->argc;
     memcpy((char*) new, (char*) p, space);
     setFunctionId(new, functionId(p)? GDKstrdup(functionName(p)): NULL);
-    setModuleId(new, moduleId(p));
+    setModuleId(new, moduleId(p)? GDKstrdup(moduleId(p)):NULL);
 }
 @-
 Query optimizers walk their way through a MAL program block.
