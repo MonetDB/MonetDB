@@ -206,6 +206,9 @@ needed for tracing the parser.
 ("{"{OPER}"}")	|
 ("{"{IDENT}"}")	| 
 ({IDENT})	      { yytext[yyleng]=0; Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
+[-+*%^|&/]"="	{
+			Vector(TOK_OPERATOR2, TYPE_str, yytext,yyleng); 
+		}
 (":"{IDENT}"=")	|
 (":"{OPER}"=")	| 
 ({OPER}"="?)	{	yytext[yyleng]=0;
@@ -309,18 +312,20 @@ newline is retained to gain quick access.
 Beware, we first produce the comment line before attempting
 the parse.
 @c
+char *comment;
 int mil_getch() {
         char ch, *s = NULL;
 	ch = *mil_stack->cptr;
+	int i=0;
 
         if (ch == '\n' || (ch && mil_stack->cptr == mil_stack->buf) ){
                 if (mil_stack->listing) { 
 #ifdef M2Moffline
-			printf("#");
 			for(s= mil_stack->nxtline; *s && *s!='\n'; s++)
-				printf("%c",*s);
-                        printf("\n");
-                        fflush(stdout);
+				i++;
+			comment= (char*) GDKmalloc(i+1);
+			strncpy(comment,mil_stack->nxtline,i);
+			comment[i]=0;
 #else
 	TODO
 #endif
@@ -543,15 +548,15 @@ char *bindFcn(str nme){
 		}
 		sprintf(buffer,"multiplex.script(\"%s\",", nme+1);
 */
-		sprintf(buffer,"multiplex.tactics(\"%s\",", nme+1);
+		sprintf(buffer,"multiplex.tactics(\"%s\",", mapid(nme+1));
 		break;
 	case '{':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"group.%s(", nme+1);
+		sprintf(buffer,"group.%s(", mapid(nme+1));
 		break;
 	case '(':
 		nme[strlen(nme)-1]=0;
-		sprintf(buffer,"mil.inplace(\"%s\",", nme+1);
+		sprintf(buffer,"mil.inplace(\"%s\",", mapid(nme+1));
 		break;
 	default: if(strchr(nme,'(') ) return nme;
 		sprintf(buffer,"%s(",nme);
@@ -590,6 +595,12 @@ char *emitExpr0(char *msg){
 	} 
 	return msg;
 }
+@-
+Handling comments is tricky due to the large number of reduce/reduce
+conflicts. They spoil the structure of the function signature.
+Therefore, we switch to a situation that a command it remembered
+and output when the lhs variable is shown.
+@c
 @+ The Bison Grammar
 The grammatica should be context free.
 @y
@@ -607,6 +618,8 @@ int constantdeclaration = 0;
 void debugParser(int i){ yydebug=i; }
 
 yystype accum;
+extern char *comment;
+#define rem	if(comment){printf("#%s\n",comment);comment=0;}
 %}
 
 %token TOK_ITERTEMP TOK_TEMPLATE TOK_VARTEMP TOK_RANGETEMP
@@ -614,7 +627,7 @@ yystype accum;
 %token TOK_PAREND TOK_IDENT TOK_IF TOK_WHILE
 %token TOK_BREAK TOK_RETURN TOK_VAR 
 %token TOK_CONST TOK_BAT
-%token TOK_OPERATOR
+%token TOK_OPERATOR TOK_OPERATOR2
 %token TOK_SETOP TOK_SETAGGR TOK_PROCDEF
 %token TOK_STRING TOK_ITERATION TOK_ITERATION_PAR TOK_ELSE
 %token TOK_MODULE 
@@ -652,16 +665,17 @@ statement_list:
 
 statement:
         stmt { constantdeclaration = 0;}
-    |   varidents ';' { constantdeclaration = 0; }
     ;
 
 stmt: ';'
+    |   varidents ';' { constantdeclaration = 0; }
     |   expression ';'
     |   expression TOK_ITERATION_PAR expression ']' iterator
 	{ char local[100];
 	  $2.val= newName();
 	  pushIterator($2.val);
 #ifdef M2Moffline
+	rem;
 	  printf("barrier\t%s:= bunStream(%s,%sH,%sT);\n",
 		$2.val,$4.val,$2.val,$2.val);
 #else
@@ -685,6 +699,7 @@ stmt: ';'
 	  $2.val= newName();
 	  pushIterator($2.val);
 #ifdef M2Moffline
+	rem;
 	  printf("barrier\t%s:= bunStream(%s,%sH,%sT);\n",
 		$2.val,$1.val,$2.val,$2.val);
 #else
@@ -707,7 +722,8 @@ stmt: ';'
     |   TOK_RETURN ret_value ';'
 	{
 #ifdef M2Moffline
-		printf("\treturn %s;\n", $2.val);
+	rem;
+		printf("\treturn %s:=%s;\n",newName(), $2.val);
 #else
 	TODO
 #endif
@@ -716,6 +732,7 @@ stmt: ';'
     |   whilestmt '(' 
 	{ $2.val= newName();
 #ifdef M2Moffline
+	rem;
 	  printf("barrier\t%s:= true;\n",$1.val);
 #else
 	TODO
@@ -725,6 +742,7 @@ stmt: ';'
 	 term ')' 
 	{
 #ifdef M2Moffline
+	rem;
 	 printf("barrier\t%s:= %s;\n",$2.val,$4.val); 
 #else
 	TODO
@@ -772,6 +790,7 @@ stmt: ';'
 	  $3.val= newName();
 	  pushBlock($3.val);
 #ifdef M2Moffline
+	rem;
 	  printf("barrier\t%s:= not(%s);\n",$3.val,$1.val);
 #else
 	TODO
@@ -794,6 +813,7 @@ stmt: ';'
 ifhead: TOK_IF '(' term ')'
 	{ $1.val = newName();
 #ifdef M2Moffline
+	rem;
 	   printf("barrier\t%s:= %s;\n",$1.val,$3.val);
 #else
 	TODO
@@ -843,7 +863,7 @@ parallel_block:
     ;
 
 proc_definition:
-        TOK_PROCDEF proc_name proc_header stmt
+        TOK_PROCDEF proc_name '(' proc_header sequential_block
 	{ 
 #ifdef M2Moffline
 	  printf("end %s;\n",$2.val); 
@@ -857,7 +877,7 @@ proc_definition:
 #else
 	TODO
 #endif
-	} stmt
+	} sequential_block
 	{ 
 #ifdef M2Moffline
 	  printf("end %s;\n",$2.val); 
@@ -871,7 +891,7 @@ proc_definition:
 #else
 	TODO
 #endif
-	} TOK_ASSIGNMENT stmt
+	} TOK_ASSIGNMENT sequential_block
 	{ 
 #ifdef M2Moffline
 	  printf("end %s;\n",$2.val); 
@@ -879,7 +899,7 @@ proc_definition:
 	TODO
 #endif
 	}
-    |   TOK_PROCDEF proc_name proc_header TOK_ASSIGNMENT stmt
+    |   TOK_PROCDEF proc_name '(' proc_header TOK_ASSIGNMENT stmt
 	{ 
 #ifdef M2Moffline
 	  printf("end %s;\n",$2.val); 
@@ -951,31 +971,17 @@ proc_name:
 	$$=$1;} ;
 
 proc_header:
-        '(' mel_header ')' ':' mel_type
+         mel_header ret_type;
+	
+ret_type: ')' ':' mel_type
 	{ 
 #ifdef M2Moffline
-	  printf("):%s;\n",$5.val);
+	  printf("):%s;\n",$3.val);
 #else
 	TODO
 #endif
 	}
-    |   '(' mel_header ')' 
-	{ 
-#ifdef M2Moffline
-	  printf("):void;\n");
-#else
-	TODO
-#endif
-	}
-    |    '(' ')' ':' mel_type
-	{ 
-#ifdef M2Moffline
-	  printf("):%s;\n",$4.val);
-#else
-	TODO
-#endif
-	}
-    |    '(' ')' 
+    |     ')' 
 	{ 
 #ifdef M2Moffline
 	  printf("):void;\n");
@@ -1039,10 +1045,14 @@ mel_params:
 
 mel_type:
         tok_ident 
-    |   TOK_BAT
     |   TOK_BAT '[' mel_atom ',' mel_atom ']'
 	{ char buf[PATHLENGTH];
 	  sprintf(buf,"bat[:%s,:%s]",$3.val,$5.val);
+	  $$.val= GDKstrdup(buf);
+	}
+    |   TOK_BAT 
+	{ char buf[PATHLENGTH];
+	  sprintf(buf,"bat[:any,:any]");
 	  $$.val= GDKstrdup(buf);
 	}
     |   mel_any
@@ -1057,11 +1067,11 @@ mel_atom:
 mel_any:
         TOK_ANY TOK_ANYNUM type_var
 	{ char buf[PATHLENGTH];
-	  sprintf(buf,":any$%s",$3.val);
+	  sprintf(buf,"any$%s",$3.val);
 	  $$.val= GDKstrdup(buf);
 	}
     |   TOK_ANY
-	{ $$.val = GDKstrdup(":any");
+	{ $$.val = GDKstrdup("any");
 	  /* printf("\n# ERROR: 'any' types should be bound to a type variable\n"); */
 	}
     ;
@@ -1085,6 +1095,7 @@ expression:
     |   constant template TOK_ASSIGNMENT term
 	{ newId($2.val); 
 #ifdef M2Moffline
+	rem;
 	  printf("\t%s := %s;\n", $2.val, $4.val); 
 #else
 	TODO
@@ -1093,6 +1104,7 @@ expression:
     |   constant tok_ident TOK_ASSIGNMENT term
 	{ newId($2.val); 
 #ifdef M2Moffline
+	rem;
 	  printf("\t%s := %s;\n", $2.val, $4.val); 
 #else
 	TODO
@@ -1106,6 +1118,13 @@ constant: TOK_CONST
 	
 term :
 	factor
+    |	factor1 TOK_OPERATOR2 term	/* deal with += and friends */
+	{ char stmt[1024];
+	  $1.val = emitExpr($1.val);
+	  $3.val = emitExpr($3.val);
+	  sprintf(stmt,"%c(%s,%s)", $2.val[0],$1.val,$3.val);
+	  $$.val=GDKstrdup($1.val);
+	}
     |	factor1 TOK_OPERATOR term
 	{ char stmt[1024];
 	  $1.val = emitExpr($1.val);
@@ -1138,6 +1157,7 @@ template:
     |   TOK_VARTEMP expression ')'
 	{ char *nme= newName();
 #ifdef M2Moffline
+	rem;
 	  printf("\t%s := mil.getVarTemp(%s);\n",nme,$2.val);
 #else
 	TODO
@@ -1147,6 +1167,7 @@ template:
     |   TOK_VARTEMP expression TOK_RANGETEMP ')'
 	{ char *nme= newName();
 #ifdef M2Moffline
+	rem;
 	  printf("\t%s := mil.getVarTempRange(%s);\n",nme,$2.val);
 #else
 	TODO
@@ -1160,7 +1181,7 @@ factor: factor1  |TOK_CONSTANT
 	;
 factor1:
        TOK_STRING
-    |   TOK_BAT
+    |   TOK_BAT {$1.val=":bat[:any,:any]"; $$=$1;}
     |  	variable_reference
 	{$1.val= bindId($1.val); $$=$1;}
     |   '[' multiplex_expression ']' 
@@ -1179,6 +1200,7 @@ multiplex_expression:
       multiplex_term multiplex_comma multiplex_term
 	{ $$.val= newName();
 #ifdef M2Moffline
+	rem;
 	printf("\t%s:= zipper(%s,%s);\n", $$.val, $1.val, $3.val);
 #else
 	TODO
@@ -1187,6 +1209,7 @@ multiplex_expression:
     | multiplex_term
 	/* { $$.val= newName();
 #ifdef M2Moffline
+	rem;
 	printf("\t%s:= M2m.batconstruct1(%s);\n", $$.val, $1.val);
 #else
 	TODO
@@ -1199,6 +1222,7 @@ multiplex_term:
     |   expression '?' bat_expression ':' 
 	{$$.val = newName();
 #ifdef M2Moffline
+	rem;
 	 printf("\t%s := ifthen(%s,%s);\n",$$.val, $1.val,$3.val);
 #else
 	TODO
@@ -1207,6 +1231,7 @@ multiplex_term:
     |   expression '?' bat_expression ':' expression
 	{$$.val = newName();
 #ifdef M2Moffline
+	rem;
 	 printf("\t%s := ifthenelse(%s,%s,%s);\n",$$.val,
 		$1.val,$3.val,$5.val);
 #else
@@ -1220,7 +1245,8 @@ bat_expression:
      |   /* empty */
 	{ $$.val =newName();
 #ifdef M2Moffline
-	  printf("\t%s:= nil;\n",$$.val);
+	rem;
+	  printf("\t%s:= 0@0:oid;\n",$$.val);
 #else
 	TODO
 #endif
@@ -1330,8 +1356,8 @@ ident_decl:
     |   tok_ident TOK_ASSIGNMENT term
  	{newId($1.val); 
 #ifdef M2Moffline
+	rem;
 	  printf("\t%s:= %s;\n",$1.val,$3.val); 
-	  printf("\t%s:= nil;\n",$$.val);
 #else
 	TODO
 #endif
