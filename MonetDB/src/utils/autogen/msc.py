@@ -67,11 +67,11 @@ def msc_mtsafe(fd, var, values, msc ):
 def msc_add_srcdir(path,msc,prefix =""):
     dir = path
     if (dir[0] == '$'):
-	return ""
+        return ""
     elif not os.path.isabs(dir):
-	dir = "$(SRCDIR)/" + dir
+        dir = "$(SRCDIR)/" + dir
     else:
-	return ""
+        return ""
     return prefix+string.replace(dir, '/', '\\')
 
 def msc_translate_dir(path,msc):
@@ -144,19 +144,19 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
     else:
         add = name + " ="
     for l in list:
-	if (l == "@LIBOBJS@"):
+        if (l == "@LIBOBJS@"):
             add = add + " $(LIBOBJS)"
         elif (l[0] in  ("-", "$", "@")):
             add = add + " " + l
-	else:
+        else:
             add = add + " " + msc_translate_dir(l,msc) + ".lib"
             deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     for l in dlibs:
-	if (l == "@LIBOBJS@"):
+        if (l == "@LIBOBJS@"):
             add = add + " $(LIBOBJS)"
         elif (l[0] in  ("-", "$", "@")):
             add = add + " " + l
-	else:
+        else:
             add = add + " " + msc_translate_dir(l,msc) + ".lib"
             deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     if (type != "MOD"):
@@ -192,16 +192,16 @@ def msc_deps(fd,deps,objext, msc):
             fd.write( tf + ":" )
             _in = []
             for d in deplist:
-    	      if not os.path.isabs(d):
-               	dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d,msc)),msc)
-                if dep[-3:] == '.in':
-                    if dep not in msc['_IN']:
-                        _in.append((d[:-3],dep))
-                    dep = d[:-3]
-                if (dep != t):
-                    fd.write( " " + dep)
-	      else:
-		print("!WARNING: dropped absolute dependency " + d ) 
+                if not os.path.isabs(d):
+                    dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d,msc)),msc)
+                    if dep[-3:] == '.in':
+                        if dep not in msc['_IN']:
+                            _in.append((d[:-3],dep))
+                        dep = d[:-3]
+                    if (dep != t):
+                        fd.write( " " + dep)
+                else:
+                    print("!WARNING: dropped absolute dependency " + d ) 
             fd.write("\n")
             for x,y in _in:
                 # TODO
@@ -478,23 +478,23 @@ def msc_library(fd, var, libmap, msc ):
 
     srcs = "lib" + sep + libname + "_OBJS ="
     for target in libmap['TARGETS']:
-	if (target == "@LIBOBJS@"):
-		srcs = srcs + " $(LIBOBJS)"
-	else:
-        	t,ext = split_filename(target)
-        	if (ext == "o"):
-            		srcs = srcs + " " + t + ".obj"
-        	elif (ext == "glue.o"):
-            		srcs = srcs + " " + t + ".glue.obj"
-        	elif (ext == "tab.o"):
-            		srcs = srcs + " " + t + ".tab.obj"
-        	elif (ext == "yy.o"):
-            		srcs = srcs + " " + t + ".yy.obj"
-        	elif (ext in hdrs_ext):
-            		HDRS.append(target)
-        	elif (ext in scripts_ext):
-            		if (target not in SCRIPTS):
-                		SCRIPTS.append(target)
+        if (target == "@LIBOBJS@"):
+            srcs = srcs + " $(LIBOBJS)"
+        else:
+            t,ext = split_filename(target)
+            if (ext == "o"):
+                    srcs = srcs + " " + t + ".obj"
+            elif (ext == "glue.o"):
+                    srcs = srcs + " " + t + ".glue.obj"
+            elif (ext == "tab.o"):
+                    srcs = srcs + " " + t + ".tab.obj"
+            elif (ext == "yy.o"):
+                    srcs = srcs + " " + t + ".yy.obj"
+            elif (ext in hdrs_ext):
+                    HDRS.append(target)
+            elif (ext in scripts_ext):
+                    if (target not in SCRIPTS):
+                            SCRIPTS.append(target)
     fd.write(srcs + "\n")
     ln = "lib" + sep + libname
     fd.write( ln + ".lib: " + ln + ".dll\n" )
@@ -583,7 +583,7 @@ def msc_includes(fd, var, values, msc):
             incs = incs + " " + i
         else:
             incs = incs + " -I" + msc_translate_dir(i,msc) \
-		+ msc_add_srcdir(i,msc," -I");
+                   + msc_add_srcdir(i,msc," -I");
     fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': msc_subdirs,
@@ -639,7 +639,7 @@ CXXEXT = \\\"cxx\\\"
 ''')
 
     if not tree.has_key('INCLUDES'):
-	tree.add('INCLUDES',[])
+        tree.add('INCLUDES',[])
 
     msc = {}
     msc['BUILT_SOURCES'] = []

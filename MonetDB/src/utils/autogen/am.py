@@ -166,10 +166,10 @@ def am_deps(fd,deps,objext, am):
                 fd.write( n + " " )
             fd.write( t + ":" )
             for d in deplist:
-    		if not os.path.isabs(d):
-                	fd.write( " " + am_translate_dir(d,am) )
-		else:
-			print("!WARNING: dropped absolute dependency " + d ) 
+                if not os.path.isabs(d):
+                    fd.write( " " + am_translate_dir(d,am) )
+                else:
+                    print("!WARNING: dropped absolute dependency " + d ) 
             fd.write("\n")
     am['DEPS'].append("DONE")
 
@@ -483,11 +483,11 @@ def am_libs(fd, var, libsmap, am ):
 def am_add_srcdir(path,am,prefix =""):
     dir = path
     if (dir[0] == '$'):
-	return ""
+        return ""
     elif not os.path.isabs(dir):
-	dir = "$(srcdir)/" + dir
+        dir = "$(srcdir)/" + dir
     else:
-	return ""
+        return ""
     return prefix+dir
 
 def am_translate_dir(path,am):
@@ -515,7 +515,7 @@ def am_includes(fd, var, values, am):
             incs = incs + " " + i
         else:
             incs = incs + " -I" + am_translate_dir(i,am) \
-		+ am_add_srcdir(i,am," -I");
+                   + am_add_srcdir(i,am," -I");
     fd.write("INCLUDES = " + incs + "\n")
 
 output_funcs = { 'SUBDIRS': am_subdirs,
@@ -557,7 +557,7 @@ CXXEXT = \\\"cc\\\"
 ''')
 
     if not tree.has_key('INCLUDES'):
-	tree.add('INCLUDES',[])
+        tree.add('INCLUDES',[])
 
     am = {}
     if tree.has_key('NAME'):
