@@ -116,7 +116,6 @@ mal_export str MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
 @c
 #include "mal_macro.h"
 #include "mal_interpreter.h"
-#include "mal_optimizer.h"
 @-
 The optimizer hooks are introduced first.
 They are refered to from the optimizer module.
