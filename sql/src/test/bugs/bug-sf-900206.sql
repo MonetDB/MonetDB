@@ -1,3 +1,4 @@
+-- set debug=4096;
 create table RKB( head int(9) unique, tail int(9));
 create table RKA( head int(9) unique, tail int(9));
 create table tapestry( a0 int(9) unique, a1 int(9));
