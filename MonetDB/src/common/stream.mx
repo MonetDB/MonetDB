@@ -1644,7 +1644,7 @@ int stream_readSht( stream *s, short *val )
 	return ok;
 }
 
-int stream_writeSht( stream *s, const short val )
+int stream_writeSht( stream *s, short val )
 {
 	int ok = s->write(s, (void*)&val, sizeof(short), 1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
@@ -1659,7 +1659,7 @@ int stream_readInt( stream *s, int *val )
 		*val = normal_int_SWAP(*val);	
 	return ok;
 }
-int stream_writeInt( stream *s, const int val )
+int stream_writeInt( stream *s, int val )
 {
 	int ok = s->write(s, (void*)&val, sizeof(int), (size_t)1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
@@ -1675,7 +1675,7 @@ int stream_readLng( stream *s, lng *val )
 	return ok;
 }
 
-int stream_writeLng( stream *s, const lng val )
+int stream_writeLng( stream *s, lng val )
 {
 	int ok = s->write(s, (void*)&val, sizeof(lng), (size_t)1)==1;
 	if (!ok) s->errnr = WRITE_ERROR;
