@@ -30,7 +30,6 @@
 #ifndef _SQL_REL2BIN_H
 #define _SQL_REL2BIN_H
 
-#include "sql_context.h"
 #include "sql_statement.h"
 #include "sql_types.h"
 

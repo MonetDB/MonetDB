@@ -32,7 +32,7 @@
 #include "sql_server.h"
 #include "sql_session.h"
 #include "sql_statement.h"
-#include "sql_context.h"
+#include "sql_backend.h"
 #include "sql_scope.h"
 
 sql_server_export int backend_dumpstmt( stmt *s, int *nr, backend *sql );

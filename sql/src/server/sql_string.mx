@@ -40,6 +40,7 @@ extern char *toLower(const char *v);
 extern char *strconcat(const char *s1, const char *s2);
 extern char *strip_extra_zeros(char *v);
 extern char *sql2str( char *s );
+extern char *sql_strdup( char *s );
 
 #endif /*_SQL_STRING_H_*/
 
@@ -129,5 +130,16 @@ char *sql2str( char *s )
 	}
 	*p = '\0';
 	return s;
+}
+
+char *
+sql_strdup( char *s )
+{
+	int l = strlen(s);
+	char *r = NEW_ARRAY(char,l);
+
+	memcpy(r, s+1, l-2);
+	r[l-2] = 0;
+	return r;
 }
 

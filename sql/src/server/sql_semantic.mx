@@ -33,14 +33,14 @@
 #include <stdarg.h>
 #include <sql_list.h>
 #include "sql_symbol.h"
-#include "sql_context.h"
 #include "sql_parser.h"
 
 sql_export stmt *semantic( mvc * sql, symbol * sym);
+
 sql_export void sql_add_arg( mvc *sql, atom *v );		/* used in src/server/sql_parser.y */
 sql_export void sql_add_param( mvc *sql, char *name, stmt *s );	/* used in src/server/sql_parser.y */
-sql_export void sql_destroy_params( mvc *sql );			/* used in src/server/sql_context.c */
-sql_export void sql_destroy_args( mvc *sql );			/* used in src/server/sql_context.c */
+sql_export void sql_destroy_params( mvc *sql );			/* used in backend */
+sql_export void sql_destroy_args( mvc *sql );			/* used in backend */
 
 #endif /*_SQL_SEMANTIC_H_*/
 
@@ -183,13 +183,8 @@ sqlparse_intern(mvc *m, char *query)
 
 	m->qc = NULL;
 	m->cache = 0;
-	m->scanner.buf = query;
-	m->scanner.cur = ' ';
-	m->scanner.key = 0;
-	m->scanner.sql = NEW_ARRAY(char, BUFSIZ);
-	m->scanner.sqlsize = BUFSIZ;
-	m->scanner.sql[0] = '\0';
-	m->scanner.rs = NULL;
+
+	scanner_reset(&m->scanner, query);
 
 	m->params = NULL;
 	m->args = NULL;
@@ -199,7 +194,6 @@ sqlparse_intern(mvc *m, char *query)
 	sq = sql_subquery(m, NULL, m->sym);
 
 	symbol_destroy(m->sym);
-	_DELETE(m->scanner.sql);
 	*m = o;
 	return sq;
 }
@@ -479,7 +473,7 @@ static tvar *sql_subquery_optname(mvc * sql, scope * scp,
 	if (!sq)
 		return NULL;
 
-	return table_optname(sql, scp, sq, sql->scanner.sql, sn->name);
+	return table_optname(sql, scp, sq, QUERY(sql->scanner), sn->name);
 }
 
 static char *schema_name(dlist * name_auth)
@@ -1470,7 +1464,7 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 				printf("empty join result\n");
 				return NULL;
 			}
-			res = table_optname(sql, scp, tq, sql->scanner.sql, q->data.lval->t->data.sym);
+			res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
 			scp = scope_close(nscp);
 			return res;
 		}
@@ -1482,7 +1476,7 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 				printf("empty join result\n");
 				return NULL;
 			}
-			res = table_optname(sql, scp, tq, sql->scanner.sql, q->data.lval->t->data.sym);
+			res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
 			scp = scope_close(nscp);
 			return res;
 		}
@@ -1516,7 +1510,7 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 				stmt *r = stmt_dup(m->next->data);
 				list_append(unions, stmt_union(l, r));
 			}
-			res = table_optname(sql, scp, stmt_list(unions), sql->scanner.sql, q->data.lval->t->data.sym);
+			res = table_optname(sql, scp, stmt_list(unions), QUERY(sql->scanner), q->data.lval->t->data.sym);
 			list_destroy(matching_columns);
 			scp = scope_close(nscp);
 			return res;
@@ -2581,7 +2575,7 @@ static stmt *create_view(mvc * sql, stmt * ss,
 
 		stmt *stct = NULL;
 		stmt *sq = sql_subquery(sql, NULL, query);
-		char *subquery = strfnd(sql->scanner.sql, " as ");
+		char *subquery = strfnd(QUERY(sql->scanner), " as ");
 		list *l;
 
 		if (!sq)
@@ -4727,7 +4721,7 @@ static stmt *create_func(mvc * sql, dlist * qname, dlist *params, sql_subtype *r
 				sql_dup_subtype(an->next->data.typeval)));
 	}
 	if (body){ /* sql func */
-		char *subquery = strfnd(sql->scanner.sql, " as ");
+		char *subquery = strfnd(QUERY(sql->scanner), " as ");
 		stmt *b = NULL;
 		
 		for(n=params->h; n; n = n->next){ 

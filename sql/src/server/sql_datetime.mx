@@ -29,7 +29,7 @@
 #ifndef _SQL_DATETIME_H_
 #define _SQL_DATETIME_H_
 
-#include "sql_context.h"
+#include "sql_mvc.h"
 #include "sql_symbol.h"
 
 typedef enum inttype {
@@ -53,7 +53,7 @@ char *datetime_field(itype field);
 
 @c
 #include "sql_datetime.h"
-#include <string.h>
+#include "sql_string.h"
 #include <stdlib.h>
 
 int 

@@ -36,7 +36,6 @@ This code strongly depends on the front-end/back-end setup.
 
 #include "sql_server.h"
 #include <sql_backend.h>
-#include <sql_context.h>
 #include <monet_context.h>
 #include <kernel.h>
 #include <str.h>
@@ -65,8 +64,9 @@ extern int sqlstatement(char *cmd, Cntxt stk );
 #include "sql_session.h"
 #include "sql_server.h"
 #include "sql_gencode.h"	/* for backend_dumpproc() */
-#include <sql_context.h>
 #include <sql_semantic.h>
+#include <sql_optimize.h>
+#include <sql_rel2bin.h>
 #include <sql_scope.h>
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
@@ -194,10 +194,12 @@ void monet4_freecode( backend_code code, backend_stack stk, int nr)
 		reset_arg_tree( callnode->yysons[0] );
 
 		/* clear fastpath arguments */
- 		argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
-		for (i=1; i<l; i++){
-			argv[i].vtype = TYPE_void; 
-			argv[i].len = 0; 
+		if (callnode->yysons[1]) {
+ 			argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
+			for (i=1; i<l; i++){
+				argv[i].vtype = TYPE_void; 
+				argv[i].len = 0; 
+			}
 		}
 
 		/* cleanup proc */
@@ -235,7 +237,6 @@ YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args, int *err )
 
 int backend_fastpath( Cntxt procstk, YYSTREE callnode, list *args )
 {
-	int err = 0;
 	ValRecord v;
 	node *n;
 
@@ -249,8 +250,7 @@ int backend_fastpath( Cntxt procstk, YYSTREE callnode, list *args )
 			argv[i] = a->data;
 		}
 	}
-	err = interpret( procstk, callnode->yysons[1]->yysons[0], &v);
-	return err;
+	return interpret( procstk, callnode->yysons[1]->yysons[0], &v);
 }
 
 @-
@@ -311,55 +311,74 @@ int explain_cmd( mvc *c, char *cmd, stream *out )
 		mvc_export_table( c, out, t_id, 0, -1 );
 }
 
+stmt *sql_symbol2stmt( mvc *c ){
+	stmt *s = semantic(c, c->sym);
+	if (s){
+		stmt *opt = optimize(c, s);
+		stmt_destroy(s);
+		s = rel2bin(c, opt);
+		stmt_destroy(opt);
+	}
+	return s;
+}
+
+int sqlcleanup( mvc *c, int err)
+{
+	sql_destroy_params(c);
+	sql_destroy_args(c);
+
+	if (c->sym) {
+		symbol_destroy(c->sym);
+		c->sym = NULL;
+	}
+	scanner_query_processed(&(c->scanner));
+	return err;
+}
+
+#ifdef PROFILE
+#define ulng unsigned long long
+
+ulng 
+sql_clock(){
+	ulng tsc;
+#if defined(i386)
+	__asm__ __volatile__("rdtsc" : "=A" (tsc));
+#elif !defined(ia64) 
+	tsc = (ulng) clock();
+#elif defined(__GNUC__)
+	__asm__ __volatile__("mov %0=ar.itc" : "=r"(tsc) :: "memory");
+#else
+	tsc = (ulng) __getReg(_IA64_REG_AR_ITC);
+#endif
+	return tsc;
+}
+
+	lng p00,p1,p0;
+	p00 = p0 = sql_clock();
+	p1 = sql_clock();
+	printf("parsing %lld\n", p1 - p0);
+	p0 = p1;
+#endif
+
 int sqlexecute(backend * be, stream *out )
 {
 	mvc *c = be->mvc;
-	char *cmd = NULL, *s;
 	int err = 0, explain = 0, cache = 0;
 	cq *q = NULL;
-
-	cmd_init(c);
-
-	s = c->scanner.buf;
 
 	c->type = Q_PARSE;
 	c->status = 0;
 
 	cache = c->cache;
+	
 	if ((err = sqlparse(c)) || c->status || !c->sym) {
+		scanner_query_processed(&(c->scanner));
 		if (!err)
 			err = c->status;
 		c->cache = cache;
-		return sqlcleanup(c, cmd, err);
+		return sqlcleanup(c, err);
 	}
 	
-	if (be->trace){
-		char *buf = s;
-
-		char old = *c->scanner.buf;
-
-		*c->scanner.buf = '\0';
-		*c->scanner.buf = old;
-
-		while( buf < c->scanner.buf) {
-			int i;
-			char b[BUFSIZ];
-
-		  	while( *buf != '\n' && buf < c->scanner.buf) 
-				buf++;
-			i = snprintf(b, BUFSIZ, "# %5d: ", c->scanner.cnt);
-		  	if (stream_write(out, b, 1, i) != i ||
-		  	    stream_write(out, s, 1, buf - s) != (buf-s) ||
-			    stream_write(out, "\n", 1, 1) != 1)
-				return -1;
-
-			s = ++buf;
-		}
-		c->scanner.cnt++;
-		if (stream_flush(out) < 0)
-			return -1;
-	}
-
 	if (c->explain && 
 	    c->explain->vtype == TYPE_str && c->explain->val.sval &&
 	    strcmp(c->explain->val.sval, "mil") == 0) {
@@ -367,13 +386,15 @@ int sqlexecute(backend * be, stream *out )
 	}
 	if (explain || !c->cache || 
 	    !(q = qc_find(c->qc, c->sym, c->params, c->scanner.key))) {
+		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && c->status){
 			err = c->status;
 			c->cache = cache;
-			return sqlcleanup(c, cmd, err);
+			return sqlcleanup(c, err);
 		}
+		assert(s);
 		if (s->type == st_assign)
 			explain = 0;
 
@@ -424,13 +445,14 @@ int sqlexecute(backend * be, stream *out )
  	 	 * as the stream library is built without 
 	 	 * libbat i.e. it cannot use gdkmalloc */
 	        free(cmd); 
-		cmd = NULL;
 
 		if (err) {
 			c->cache = cache;
-			return sqlcleanup(c, cmd, err);
+			return sqlcleanup(c, err);
 		}
 	}
+
+	scanner_query_processed(&(c->scanner));
 	if (q && !q->code) {
 		char buf[BUFSIZ];
 		Cntxt procstk = backend_newstack(c->stk);
@@ -445,10 +467,9 @@ int sqlexecute(backend * be, stream *out )
 			q->code = (backend_code)callnode;
 			q->stk = (backend_stack)(ptrdiff_t)procstk;
 		} else {
-			/*
 			monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
-			*/
 			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
+printf("err %d\n", err);
 		}
 	} else if (q) {
 		c->type = q->type;
@@ -463,8 +484,6 @@ int sqlexecute(backend * be, stream *out )
 		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
-	sql_destroy_args(c);
-	sql_destroy_params(c);
 
 	if (!err && !explain) {
 		/* ssize_t status; */
@@ -474,7 +493,7 @@ int sqlexecute(backend * be, stream *out )
   		} 
 	}
 	c->cache = cache;
-	return sqlcleanup(c, cmd, err);
+	return sqlcleanup(c, err);
 }
 
 @-
@@ -535,15 +554,16 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 	errbuf[0] = '\0';
 	GDKsetbuf(errbuf);
 
-	/*fprintf(stderr,"mapisqlclient:accept queries\n");*/
 	in->eof = 1;		/* force prompt on first iteration */
 	while(go){
-		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
-		while (in->pos < in->len && isspace((int)(in->buf[in->pos])))
+		while (in->pos < in->len && 
+                       (isspace((int)(in->buf[in->pos])) || 
+		        in->buf[in->pos] == ';' ))
 			in->pos++;
 
 		if (in->pos >= in->len) {
 			ssize_t rd;
+			assert(in->pos == in->len);
 			if (in->eof || !isa_block_stream(in->s)) {
 				language = 0;
 				if (stream_write(out,prompt,promptlength,1) != 1 ||
@@ -566,12 +586,24 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 			if (language == 0)
 				language = in->buf[in->pos++];
 		}
+@-
+To enable tracing of SQL execution using its MIL code
+requires the same client context. This means that we should
+have an escape from the sql parser and directly address the
+MIL interpreter. This is accomplished with a prepend of the
+query string with "--mil ", which would be considered comment
+in the standard. 
+
+ removed --mil support, should be replaced with language == 'M' 
+		if (language == 'M') {
+			sidestep(stk, in->buf+in->pos);
+			in->pos = in->len; /* HACK: should use parsed lenght */
+		}
+@c
 		if (language != 'S' && language != 'X') {
 			error(out, "!ERROR:Unrecognized language prefix");
 			break;
 		}
-		/* remove --mil support, should be replaced with language == 'M'
-		 */
 		if (language == 'X') {
 			int n, id, off, len;
 			int reply_size = 0;
@@ -604,17 +636,11 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 			break;
 		}
 
-@-
-To enable tracing of SQL execution using its MIL code
-requires the same client context. This means that we should
-have an escape from the sql parser and directly address the
-MIL interpreter. This is accomplished with a prepend of the
-query string with "--mil ", which would be considered comment
-in the standard. 
-@c
 		err = sqlexecute(sql, out);
+
 		if (err){ /* output error */
 			char *buf = GDKerrbuf;
+
 			if (error(out, m->errstr) < 0){
 				go = !go;
 				break;
@@ -622,35 +648,12 @@ in the standard.
 			if (buf && buf[0] &&
 		 	   (stream_write( out, "\n", 1, 1 ) != 1 ||
 			    stream_write( out, buf, strlen(buf), 1 ) !=1)){
-/*
-				fprintf(stderr,"error length:%d\n", strlen(buf));
-				fprintf(stderr,"mapisqlclient:error 3\n");
-					fprintf(stderr,"buf:%s\n",buf);
-*/
 				go = !go;
 				break;
 			}
-			/* buf[0] = 0; reset error buf */
-	
-/* ignore echoding of the errorneous query
-			if (stream_write( out, " in:\n", 5, 1) != 1){
-				fprintf(stdout,"mapisqlclient:error 4\n");
-				go= FALSE;
-				break;
-			}
-			if (ibuf != m->scanner.buf)
-				m->scanner.buf[-1] = '\0';
-			while (ibuf[0] == '\n') ibuf++;
-			if( stream_write( out, ibuf, strlen(ibuf), 1) != 1){
-				fprintf(stdout,"mapisqlclient:error 5\n");
-				go= FALSE;
-				break;
-			}
-			if (stream_flush(out)) {
-				go = !go;
-				break;
-			}
-End of echo */
+			/* reset error buffers */
+			m->errstr[0] = 0;
+			buf[0] = 0; 
 		}
 	}
 
@@ -679,10 +682,11 @@ sqlstatement(char *cmd, Cntxt stk )
 	v->binding.vtype = TYPE_mvc;
 	v->binding.val.pval = m;
 
-	m->scanner.buf = cmd;
-	m->scanner.cur = ' ';
+	scanner_reset(&m->scanner, cmd = _strdup(cmd) );
+
 	err = sqlexecute(sql, GDKout);
 	backend_destroy( sql );
+	GDKfree(cmd);
 	mvc_commit(m, 0, NULL);
 	mvc_destroy(m);
 	VARdel(stk, v);
@@ -712,13 +716,7 @@ mvc_sql(mvc *c, char *cmd )
 
 	m->qc = NULL;
 	m->cache = 0;
-	m->scanner.buf = cmd;
-	m->scanner.cur = ' ';
-	m->scanner.rs = NULL;
-	m->scanner.key = 0;
-	m->scanner.sql = NEW_ARRAY(char, BUFSIZ);
-	m->scanner.sqlsize = BUFSIZ;
-	m->scanner.sql[0] = '\0';
+	scanner_reset(&m->scanner, cmd );
 
 	m->params = NULL;
 	m->args = NULL;
@@ -726,7 +724,6 @@ mvc_sql(mvc *c, char *cmd )
 
 	err = sqlexecute(sql, GDKout );
 	backend_destroy( sql );
-	_DELETE(m->scanner.sql);
 	assert (m->qc == NULL);
 	*m = o;
 	VARdel(stk, v);
@@ -796,13 +793,11 @@ Use default setting for trace.
 			return connect_error(in, out);
 	}
 	*user=0;
-	/*fprintf(stdout,"mapisqlclient: connection:%s\n",buf); */
 	user= buf;
 	passwd= strrchr(user,':');
 	if(passwd && strncmp(passwd,":blocked",8)==0){
 		blocked = 1;
 		*passwd=0;
-		/* fprintf(stdout,"read in blocked mode: %s\n",user);*/
 	} 
 
 	passwd= strchr(user,':');
@@ -832,14 +827,13 @@ The server should emit an identity message, e.g. the Mserver version
 These lines should be eaten away into the prompt is encountered.
 @c
 
-	rs = bstream_create(in, isa_block_stream(in) ? BLOCK : 0);
+	rs = bstream_create(in, isa_block_stream(in) ? (128 * BLOCK) : 0);
 	m = mvc_create(1, (backend_stack)stk, rs, out );
 	schema = mvc_login( m, user, passwd );
 	GDKfree(user);  /* possible leakage */
 	GDKfree(passwd);
 
 	if (!schema){ 
-		/* fprintf(stderr,"mapisqlclient: schema authorization error %s:%s \n",user,passwd);*/
 		/* close the connection to the Monet server */
 		if( error(out, "!ERROR:Schema authorization error") == 0 &&
 		    stream_write(out,prompt,strlen(prompt),1) >=0 )
@@ -868,7 +862,6 @@ These lines should be eaten away into the prompt is encountered.
 	bstream_destroy(rs);
 	close_stream(in);
 	close_stream(out);
-	/*fprintf(stderr,"mapisqlclient finished\n");*/
 	return ret;
 }
 

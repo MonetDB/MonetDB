@@ -33,6 +33,7 @@
 #include <sql_mem.h>
 #include <gdk.h>
 #include <stdarg.h>
+#include <sql_scan.h>
 #include <sql_query.h>
 #include <sql_list.h>
 #include <sql_types.h>
@@ -215,28 +216,6 @@ typedef struct res_table {
 	struct res_table *next;
 } res_table;
 
-struct scanner {
-	int cur;
-	int prev;	/* previous token lr(1) is to restrictive for SQL */
-
-	int yyval;
-	char *yytext;
-	int yylen;
-	int yysize;
-	int cnt;
-
-	char *sql;
-	int sqllen;
-	int sqlsize;
-	int key;
-
-	int 	lineno;
-	char*	buf;
-
-	bstream 	*rs;
-	stream 	*ws;
-};
-
 #define ERRSIZE 1024
 
 typedef struct mvc {
@@ -361,8 +340,8 @@ sql_export int mvc_debug_on( mvc *m, int flag);
 #include <gdk.h>
 
 #include "sql_mvc.h"
+#include "sql_qc.h"
 #include "sql_logger.h"
-#include "sql_context.h"
 #include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_privileges.h"
@@ -2655,27 +2634,7 @@ mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->result_id = 0;
 	m->results = NULL;
 
-	/* scanner */
-	m->scanner.prev = 0;
-	m->scanner.cur = ' ';
-	m->scanner.buf = NULL;
-	m->scanner.rs = rs;
-	m->scanner.ws = ws;
-
-	m->scanner.cnt = 0;
-	m->scanner.lineno = 1;
-
-	m->scanner.yyval = 0;
-	m->scanner.yytext = NEW_ARRAY(char, BUFSIZ);
-	m->scanner.yytext[0] = 0;
-	m->scanner.yylen = 0;
-	m->scanner.yysize = BUFSIZ;
-
-	m->scanner.sql = NEW_ARRAY(char, BUFSIZ);
-	m->scanner.sqlsize = BUFSIZ;
-	m->scanner.sql[0] = '\0';
-
-	cmd_init(m);
+	scanner_init(&m->scanner, rs, ws);
 	return m;
 }
 
@@ -2699,12 +2658,6 @@ mvc_destroy(mvc * m)
 
 	if (m->qc) qc_destroy(m->qc); 
 	m->qc = NULL;
-
-	if (m->scanner.sql != NULL)
-		_DELETE(m->scanner.sql);
-	m->scanner.sql = NULL;
-
-	_DELETE(m->scanner.yytext);
 
 	_DELETE(m);
 }

@@ -27,7 +27,6 @@ lib_sqlserver = {
 		sql_logger.mx \      
 		sql_mvc.mx \    
 		sql_privileges.mx \  
-		sql_context.mx \
 		sql_backend.mx \
 		sql_query.mx \
 		sql_list.mx \
