@@ -212,7 +212,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_null: {
 		int c = stmt_dump( s->op1.stval, nr, sql );
 		len = snprintf( buf, BUFSIZ, 
-		    "s%d := mvc_not_null(myc, s%d, %d );\n", 
+		    "s%d := mvc_null(myc, s%d, %d );\n", 
 		    	-s->nr, c, s->flag );
 		dump(sql,buf,len,-s->nr);
 	} break;
