@@ -217,6 +217,8 @@ if [ ! -x bootstrap ] ; then
 
 	# prepend target bin-dir to PATH
 	binpath="${PREFIX}/bin:${binpath}"
+	# prepend Monet's lib dirs to LD_LIBRARY_PATH
+	libpath="${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet:${libpath}"
 	# remove trailing ':'
 	binpath=`echo "${binpath}" | sed 's|:$||'`
 	libpath=`echo "${libpath}" | sed 's|:$||'`
