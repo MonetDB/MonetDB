@@ -1,4 +1,4 @@
-stderr of test 'bug-00001` in directory 'src/test/bugs` itself:
+stderr of test 'create_insert_select_aggr-bug-00001` in directory 'src/test/bugs` itself:
 
 
 # 21:23:43 >  
@@ -53,7 +53,7 @@ stderr of test 'bug-00001` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 21:23:44 >  
-# 21:23:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51365  < bug-00001.sql
+# 21:23:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51365  < create_insert_select_aggr-bug-00001.sql
 # 21:23:44 >  
 
 MAPI  = monetdb@sn-1:51239
