@@ -971,6 +971,8 @@ int conn_insert(str host, int port, int me, int sock)
 		    int *p = malloc(sizeof(int));
 		    *p = i;
 		    if (MT_create_thread(&t, conn_waiter, (void*) p) != 0) {
+			    /* failed to start thread */
+			    free(p);
 			    connections[i].me = 0;
 			    connections[i].valid = 0;
 			    i = -1;
