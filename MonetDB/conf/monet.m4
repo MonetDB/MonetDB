@@ -761,10 +761,12 @@ if test "x$have_openssl" != xno; then
 
   save_LDFLAGS="$LDFLAGS"
   LDFLAGS="$LDFLAGS $OPENSSL_LIBS"
-  AC_CHECK_LIB(ssl, SSL_read, 
-	[ OPENSSL_LIBS="$OPENSSL_LIBS -lssl" 
+  AC_CHECK_LIB(ssl, SSL_read,
+	[ OPENSSL_LIBS="$OPENSSL_LIBS -lssl"
 	  have_openssl=yes ]
 	, have_openssl=no )
+  dnl on some systems, -lcrypto needs to be passed as well
+  AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
   LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_openssl" = xyes; then
