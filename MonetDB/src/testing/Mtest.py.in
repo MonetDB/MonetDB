@@ -283,7 +283,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         DIFF = "<B><I>Major differences</I></B>"
     else:
-    	ErrXit("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
+        ErrXit("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
     SYSTEM = OSVER+":"
     if COMPILER:
         SYSTEM = COMPILER+", "+SYSTEM
@@ -429,7 +429,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         o = 2
     else:
-    	ErrXit("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
+        ErrXit("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
     for l in fileinput.input(TST+".err.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
@@ -439,7 +439,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
     elif l[:17] == '<!--MajorDiffs-->':
         e = 2
     else:
-    	ErrXit("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
+        ErrXit("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
     if   o==2 or e==2:
         f.write("<B><I>"+TST+"</I></B>")
     elif o==1 or e==1:
@@ -1087,7 +1087,7 @@ def RunTest(env, TST, BusyPorts) :
 
         killed = 0
         n = TST+".KILLED."
-        for (x,p) in [("out",TestOut),("err",TestErr)]:
+        for (x,txf) in [("out",TestOutFile),("err",TestErrFile)]:
             f = n+x
             if os.name == "nt":
                 for t in os.path.join(TSTTRGBASE,f), os.path.join(TSTTRGBASE,".KILLED."+x):
@@ -1096,9 +1096,11 @@ def RunTest(env, TST, BusyPorts) :
                         os.remove(t)
                         break
             if os.path.isfile(f):
+                p = open(txf, 'a')
                 for l in fileinput.input(f):
                     p.write("! "+l)
                     killed = 1
+                p.close()
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -1114,9 +1116,6 @@ def RunTest(env, TST, BusyPorts) :
         ##fi
         ##rm -f .new.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats.
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
-
-        TestOut.close()
-        TestErr.close()
 
         timeout = 0
         mto = re.compile("^!(Mtimeout:)? Timeout:", re.MULTILINE)
