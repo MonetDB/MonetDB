@@ -1221,14 +1221,14 @@ int backend_dumpstmt( stmt *s, int *nr, backend *sql )
 	int ret = 0;
 
 	stream_write(sql->out, "{\n", 2, 1); 
-	{
+	if (mvc_debug_on(sql->mvc,2+1024+2048)) {
 		char *t0 = "var t00 := time();\n";
 		int l = strlen(t0);
 		stream_write( sql->out, t0, 1, l );
 	}
     	ret = backend_dumpstmt_( s, nr, sql );
 	backend_dec_nr2(s);
-	{
+	if (mvc_debug_on(sql->mvc,2+1024+2048)) {
 		char dbg[BUFSIZ];
 		int l = snprintf( dbg, BUFSIZ,
 		"var t11 := time(); printf(\"# wall-clock: %%d ms\\n\", t11 - t00);\n");
