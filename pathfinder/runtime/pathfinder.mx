@@ -1392,6 +1392,20 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @
 
 @mil
+PROC concat (BAT[any,str] strings) : str :=
+{
+    var result := "";
+    strings@batloop () {
+        result :+= $t;
+    }
+    return result;
+}
+ADDHELP("concat", "tsheyar", "Aug 2004",
+"PARAMETERS:\n\
+BAT[any,str] list of strings\n\
+DESCRIPITON:\n\
+concatenates list of strings to one string",
+"pathfinder");
 
 PROC combine_string (BAT[any,str] strings) : str :=
 {
