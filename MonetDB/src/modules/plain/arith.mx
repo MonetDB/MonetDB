@@ -616,6 +616,9 @@ int bit_switch(ptr retval, bit *b, ptr v1, int tpe, ptr v2) {
     }
     if (ATOMextern(tpe)) {
 	*(ptr**) retval = ATOMdup(tpe, p);
+    } else if (tpe == TYPE_bat) {
+	BBPfix(((BAT*)p)->batCacheid);
+	*(BAT**) retval = p; 
     } else {
 	memcpy(retval, p, ATOMsize(tpe)); 
     }
