@@ -1,11 +1,11 @@
 stdout of test 'monettime` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other monettime 1086
-#> Mtest:	Mtimeout -timeout 1086 ./monettime monettime
-#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db modules_plain monettime.mil
-# Monet Database Server V4.1
+#> Mtest (13:33:32):	other monettime 1200
+#> Mtest (13:33:32):	Mtimeout -timeout 1200 ./monettime monettime
+#> Mlog (13:33:32):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain monettime.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:monettime.mil
 
 loaded;
@@ -27,12 +27,12 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 521 "monettime.mx"
+#line 526 "../../../../src/modules/plain/monettime.mx"
 
 
 
 
-#line 525 "monettime.mx"
+#line 530 "../../../../src/modules/plain/monettime.mx"
 # test the various ways to create rules
 var rule_jan := rule("1st MON from start of JAN@01:15");
 var rule_mar := rule("first WEDNE on or after march 10@01:15");
@@ -126,7 +126,7 @@ print(rule_bat.col_name("rule"),
 
 
 
-#line 570 "monettime.mx"
+#line 575 "../../../../src/modules/plain/monettime.mx"
 # test the various ways to create tzones, using some of the above created rules
 var tzone_00 := tzone("GMT");
 var tzone_01 := tzone("GMT+01:00");
@@ -199,7 +199,7 @@ print([minutes](tzone_bat).col_name("minutes"),
 
 
 
-#line 604 "monettime.mx"
+#line 609 "../../../../src/modules/plain/monettime.mx"
 # test the various ways to create dates
 var date_00 := date(2000,01,01);
 var date_01 := date("5000-JAN-01");
@@ -1093,7 +1093,7 @@ print(date_seq.col_name("date"),
 
 
 
-#line 669 "monettime.mx"
+#line 674 "../../../../src/modules/plain/monettime.mx"
 # test the various ways top create daytimes
 var daytime_00 := daytime(23,59,59,999);
 var daytime_01 := daytime("23:59");
@@ -1158,7 +1158,7 @@ print(daytime_bat.col_name("daytime"),
 
 
 
-#line 709 "monettime.mx"
+#line 714 "../../../../src/modules/plain/monettime.mx"
 # create timestamps in bulk from the above bats with dates, daytimes and tzones
 var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE);
 # KILL
@@ -1195,7 +1195,7 @@ print(timestamp_bat.col_name("timestamp"),
       [date](timestamp_bat,TIMEZONE("American Samoa")).col_name("American Samoa"),
       [daytime](timestamp_bat,TIMEZONE("American Samoa")));
 #---------------------------------------------------------------------------------------------------------#
-# BAT:	  timestamp			| Wake Island	| tmp_41	| American Samoa| tmp_44	  #
+# BAT:	  timestamp			| Wake Island	| tmp_39	| American Samoa| tmp_42	  #
 # (oid)	  (timestamp)			| (date)	| (daytime)	| (date)	| (daytime)	  #
 #---------------------------------------------------------------------------------------------------------#
 [ 0@0,	  2000-01-02 00:59:59.999,	  2000-01-02,	  11:59:59.999,	  2000-01-01,	  12:59:59.999	  ]

@@ -2,7 +2,8 @@ import string
 import os
 import regsub
 
-automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
+#automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
+automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h' ]
 script_ext = [ 'mil' ]
 
 def am_assignment(fd, var, values, am ):

@@ -196,7 +196,7 @@ extern List<char> *dirs;
 
 @C
 #include "mel.h"
-#include "mel_tab.h"
+#include "mel.tab.h"
 #include <iostream.h>
 #include <fstream.h>
 
@@ -409,7 +409,7 @@ int main(int argc, char *argv[] ){
 @L 
 %{
 #include "mel.h"
-#include "mel_tab.h"
+#include "mel.tab.h"
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>

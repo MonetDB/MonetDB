@@ -1,7 +1,7 @@
 stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
-#> Mtest (13:37:20):	milM Arjen_01 milM
-#> Mtest (13:37:20):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_Bugs Arjen_01.milM
+#> Mtest (22:25:08):	milM Arjen_01 milM
+#> Mtest (22:25:08):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_Bugs Arjen_01.milM
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -121,7 +121,7 @@ _MMcastnil_7 := _MMsemijoin_6.mark(0@0);   _MMcastnil_7.print;
 _MMjoin_8 := join(indexA,_MMcastnil_7);   _MMjoin_8.print;
 #-----------------#
 # BAT:	  tmp_32  #
-# (oid)	  (oid)	  #
+# (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
@@ -135,7 +135,7 @@ _MMreverse_9 := reverse(_MMcastnil_7);   _MMreverse_9.print;
 _MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print;
 #-----------------#
 # BAT:	  tmp_33  #
-# (oid)	  (int)	  #
+# (void)  (int)	  #
 #-----------------#
 [ 0@0,	  20	  ]
 [ 1@0,	  30	  ]
@@ -160,11 +160,11 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "version",			  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714",	  "980714"	  ]
 [ "batId",			  "tmp_24",	  "tmp_23",	  "tmp_25",	  "tmp_26",	  "tmp_27",	  "tmp_29",	  "tmp_30",	  "tmp_31",	  "tmp_32",	  "tmp_31",	  "tmp_33"	  ]
-[ "batCacheid",			  "24",		  "23",		  "25",		  "26",		  "27",		  "29",		  "-30",	  "31",		  "32",		  "-31",	  "-33"		  ]
+[ "batCacheid",			  "24",		  "23",		  "25",		  "26",		  "27",		  "29",		  "-30",	  "31",		  "-32",	  "-31",	  "33"		  ]
 [ "batParentid",		  "0",		  "0",		  "0",		  "25",		  "0",		  "28",		  "-25",	  "25",		  "0",		  "25",		  "0"		  ]
 [ "batSharecnt",		  "0",		  "0",		  "3",		  "1",		  "0",		  "1",		  "1",		  "1",		  "0",		  "1",		  "0"		  ]
-[ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "oid"		  ]
-[ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "int"		  ]
+[ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "void"	  ]
+[ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
 [ "batPersistence",		  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient"	  ]
 [ "batRestricted",		  "updatable",	  "updatable",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only"	  ]
 [ "batRefcnt",			  "2",		  "2",		  "3",		  "2",		  "2",		  "2",		  "2",		  "3",		  "2",		  "3",		  "2"		  ]
@@ -173,35 +173,35 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 [ "head_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "hsorted",			  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
-[ "hident",			  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",		  "t"		  ]
+[ "hident",			  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",		  "t",		  "h"		  ]
 [ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "hseqbase",			  "0",		  "0",		  "0",		  "1",		  "0",		  "0",		  "1",		  "1",		  "1",		  "0",		  "0"		  ]
 [ "hkey",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
-[ "hloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "4"		  ]
-[ "hvarsized",			  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "0",		  "1",		  "0"		  ]
-[ "halign",			  "2011",	  "2019",	  "2019",	  "2019",	  "2019",	  "2030",	  "2019",	  "2019",	  "2040",	  "2021",	  "2021"	  ]
-[ "halignflushed",		  "2000",	  "2002",	  "2020",	  "2020",	  "2028",	  "2030",	  "2020",	  "2020",	  "2040",	  "2021",	  "2043"	  ]
-[ "tident",			  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "h",		  "h"		  ]
+[ "hloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hvarsized",			  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "0",		  "1",		  "1"		  ]
+[ "halign",			  "2011",	  "2019",	  "2019",	  "2019",	  "2019",	  "2030",	  "2019",	  "2019",	  "2039",	  "2021",	  "2021"	  ]
+[ "halignflushed",		  "2000",	  "2002",	  "2020",	  "2020",	  "2028",	  "2030",	  "2020",	  "2020",	  "2039",	  "2021",	  "2040"	  ]
+[ "tident",			  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "h",		  "h",		  "t"		  ]
 [ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
 [ "tseqbase",			  "0",		  "-2147483648",  "-2147483648",  "0",		  "-2147483648",  "0",		  "0",		  "0",		  "0",		  "1",		  "-2147483648"	  ]
 [ "tsorted",			  "65",		  "65",		  "65",		  "65",		  "0",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
 [ "tkey",			  "1",		  "1",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
-[ "tloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "4",		  "0",		  "0"		  ]
-[ "tvarsized",			  "0",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "0",		  "1",		  "0"		  ]
-[ "talign",			  "2010",	  "2018",	  "2021",	  "2021",	  "2029",	  "2031",	  "2021",	  "2021",	  "2021",	  "2019",	  "2042"	  ]
-[ "talignflushed",		  "2001",	  "2003",	  "2021",	  "2021",	  "2029",	  "2031",	  "2021",	  "2021",	  "2041",	  "2020",	  "2042"	  ]
+[ "tloc",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "tvarsized",			  "0",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
+[ "talign",			  "2010",	  "2018",	  "2021",	  "2021",	  "2029",	  "2031",	  "2021",	  "2021",	  "2021",	  "2019",	  "2041"	  ]
+[ "talignflushed",		  "2001",	  "2003",	  "2021",	  "2021",	  "2029",	  "2031",	  "2021",	  "2021",	  "2038",	  "2020",	  "2041"	  ]
 [ "batInserted",		  "1",		  "1",		  "4",		  "1",		  "4",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "top",			  "5",		  "5",		  "8",		  "4",		  "8",		  "4",		  "3",		  "3",		  "3",		  "3",		  "3"		  ]
-[ "batStamp",			  "-72",	  "-73",	  "-74",	  "-77",	  "-78",	  "-80",	  "-81",	  "-82",	  "-84",	  "-82",	  "-85"		  ]
-[ "curStamp",			  "86",		  "93",		  "96",		  "99",		  "102",	  "105",	  "108",	  "111",	  "114",	  "117",	  "120"		  ]
+[ "batStamp",			  "-72",	  "-73",	  "-74",	  "-77",	  "-78",	  "-80",	  "-81",	  "-82",	  "-83",	  "-82",	  "-84"		  ]
+[ "curStamp",			  "85",		  "92",		  "95",		  "98",		  "101",	  "104",	  "107",	  "110",	  "113",	  "116",	  "119"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
-[ "batBuns.free",		  "20",		  "20",		  "8",		  "4",		  "8",		  "16",		  "3",		  "3",		  "24",		  "3",		  "24"		  ]
-[ "batBuns.size",		  "220",	  "220",	  "55",		  "4",		  "55",		  "220",	  "3",		  "3",		  "440",	  "3",		  "440"		  ]
-[ "batBuns.maxsize",		  "220",	  "220",	  "55",		  "4",		  "55",		  "220",	  "3",		  "3",		  "440",	  "3",		  "440"		  ]
+[ "batBuns.free",		  "20",		  "20",		  "8",		  "4",		  "8",		  "16",		  "3",		  "3",		  "12",		  "3",		  "12"		  ]
+[ "batBuns.size",		  "212",	  "212",	  "56",		  "4",		  "56",		  "212",	  "3",		  "3",		  "212",	  "3",		  "212"		  ]
+[ "batBuns.maxsize",		  "212",	  "212",	  "56",		  "4",		  "56",		  "212",	  "3",		  "3",		  "212",	  "3",		  "212"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]

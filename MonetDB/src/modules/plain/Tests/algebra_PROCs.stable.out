@@ -1,10 +1,10 @@
 stdout of test 'algebra_PROCs` in directory 'src/modules/plain` itself:
 
-#> Mtest:	milS algebra_PROCs milS
-#> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db modules_plain -single algebra_PROCs.milS
-# Monet Database Server V4.1
+#> Mtest (13:31:39):	milS algebra_PROCs milS
+#> Mtest (13:31:39):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain -single algebra_PROCs.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Wed Jan 19 11:06:12 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:algebra_PROCs.milS
 
 loaded;
@@ -38,7 +38,7 @@ a.insert("B",2);
 a.insert("C",3);
 a.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_24  #
 # (str)	  (int)	  #
 #-----------------#
 [ "A",	  1	  ]
@@ -51,7 +51,7 @@ b.insert(2,2.2);
 b.insert(3,3.3);
 b.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_23  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -60,7 +60,7 @@ b.print;
 
 thetajoin(a,b,LT).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (str)	  (flt)	  #
 #-----------------#
 [ "A",	  2.2	  ]
@@ -68,7 +68,7 @@ thetajoin(a,b,LT).print;
 [ "B",	  3.3	  ]
 join(a,b,"loth").print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (str)	  (flt)	  #
 #-----------------#
 [ "A",	  2.2	  ]
@@ -78,7 +78,7 @@ join(a,b,"loth").print;
 b.insert(4,4.4);
 b.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_23  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -88,7 +88,7 @@ b.print;
 
 thetajoin(a,b,LT).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (str)	  (flt)	  #
 #-----------------#
 [ "A",	  2.2	  ]
@@ -99,7 +99,7 @@ thetajoin(a,b,LT).print;
 [ "C",	  4.4	  ]
 join(a,b,"loth").print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (str)	  (flt)	  #
 #-----------------#
 [ "A",	  2.2	  ]
@@ -111,7 +111,7 @@ join(a,b,"loth").print;
 
 select(b,flt(nil),3.4).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -119,7 +119,7 @@ select(b,flt(nil),3.4).print;
 [ 3,	  3.3	  ]
 mil_select(b,"<=",3.4).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -127,7 +127,7 @@ mil_select(b,"<=",3.4).print;
 [ 3,	  3.3	  ]
 mil_select(b,"loth",3.4).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -135,7 +135,7 @@ mil_select(b,"loth",3.4).print;
 [ 3,	  3.3	  ]
 mil_select(b,"[in]",1.1,3.4).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -143,7 +143,7 @@ mil_select(b,"[in]",1.1,3.4).print;
 [ 3,	  3.3	  ]
 mil_select(b,"between",1.1,3.4).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -151,7 +151,7 @@ mil_select(b,"between",1.1,3.4).print;
 [ 3,	  3.3	  ]
 neg_select(b,">",3.4).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -159,7 +159,7 @@ neg_select(b,">",3.4).print;
 [ 3,	  3.3	  ]
 neg_select(b,"grth",3.4).print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -167,7 +167,7 @@ neg_select(b,"grth",3.4).print;
 [ 3,	  3.3	  ]
 neg_select(b,"between",3.4,5.5).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]
@@ -175,7 +175,7 @@ neg_select(b,"between",3.4,5.5).print;
 [ 3,	  3.3	  ]
 rev_select(b,">=",3.4).print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (int)	  (flt)	  #
 #-----------------#
 [ 1,	  1.1	  ]

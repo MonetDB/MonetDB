@@ -228,7 +228,7 @@ typedef struct YYS {
 
 #define arg(T,	I)       ((T)->yysons[I])
 
-#include "monet_parse_tab.h"  /* needed for lex */
+#include "monet_parse.tab.h"  /* needed for lex */
 
 @- Iteration Records
 

@@ -90,7 +90,7 @@ OPER	{P}+
 The Bison parser generator will produce the table with token names
 needed for tracing the parser.
 @l
-#include "mil_parser_tab.h"
+#include "mil_parser.tab.h"
 
 
 #define RETURN(Y)       { PARSEDEBUG {\

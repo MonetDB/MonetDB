@@ -1,7 +1,7 @@
 stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 
-#> Mtest (13:37:22):	milM Arjen_02 milM
-#> Mtest (13:37:22):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_Bugs Arjen_02.milM
+#> Mtest (20:56:20):	milM Arjen_02 milM
+#> Mtest (20:56:20):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_from_Twente_Bugs Arjen_02.milM
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
@@ -79,7 +79,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batRefcnt",			  "2",		  "2",		  "2"		  ]
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batSet",			  "0",		  "0",		  "0"		  ]
-[ "void_tid",			  "2",		  "2",		  "2"		  ]
+[ "void_tid",			  "1",		  "1",		  "1"		  ]
 [ "void_cnt",			  "1",		  "1",		  "1"		  ]
 [ "hsorted",			  "65",		  "65",		  "65"		  ]
 [ "hident",			  "h",		  "h",		  "h"		  ]
@@ -109,8 +109,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "16",		  "7",		  "8"		  ]
-[ "batBuns.size",		  "220",	  "55",		  "220"		  ]
-[ "batBuns.maxsize",		  "220",	  "55",		  "220"		  ]
+[ "batBuns.size",		  "212",	  "56",		  "212"		  ]
+[ "batBuns.maxsize",		  "212",	  "56",		  "212"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0"		  ]
@@ -182,7 +182,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batRefcnt",			  "2",		  "2",		  "2"		  ]
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batSet",			  "0",		  "0",		  "0"		  ]
-[ "void_tid",			  "2",		  "2",		  "2"		  ]
+[ "void_tid",			  "1",		  "1",		  "1"		  ]
 [ "void_cnt",			  "1",		  "1",		  "1"		  ]
 [ "hsorted",			  "65",		  "65",		  "65"		  ]
 [ "hident",			  "h",		  "h",		  "h"		  ]
@@ -212,8 +212,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "16",		  "7",		  "8"		  ]
-[ "batBuns.size",		  "220",	  "55",		  "220"		  ]
-[ "batBuns.maxsize",		  "220",	  "55",		  "220"		  ]
+[ "batBuns.size",		  "212",	  "56",		  "212"		  ]
+[ "batBuns.maxsize",		  "212",	  "56",		  "212"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0"		  ]
@@ -287,7 +287,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batRefcnt",			  "2",		  "3",		  "2"		  ]
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batSet",			  "0",		  "0",		  "0"		  ]
-[ "void_tid",			  "2",		  "2",		  "2"		  ]
+[ "void_tid",			  "1",		  "1",		  "1"		  ]
 [ "void_cnt",			  "1",		  "1",		  "1"		  ]
 [ "hsorted",			  "65",		  "65",		  "65"		  ]
 [ "hident",			  "h",		  "h",		  "h"		  ]
@@ -317,8 +317,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "16",		  "7",		  "2"		  ]
-[ "batBuns.size",		  "220",	  "55",		  "2"		  ]
-[ "batBuns.maxsize",		  "220",	  "55",		  "2"		  ]
+[ "batBuns.size",		  "212",	  "56",		  "2"		  ]
+[ "batBuns.maxsize",		  "212",	  "56",		  "2"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0"		  ]

@@ -653,7 +653,7 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
 		if (b->ttype == TYPE_oid) {
 			b->tkey = bm->hkey |= b->tdense = TRUE;
 			b->tseqbase = bm->hseqbase = *(oid*) t;
-		} else if (b->htype) {
+		} else if (b->ttype) {
 			b->tkey = bm->hkey |= TRUE;
 		}
 	    }

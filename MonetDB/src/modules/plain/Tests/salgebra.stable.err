@@ -1,5 +1,5 @@
 stderr of test 'salgebra` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other salgebra 1200
-#> Mtest:	Mtimeout -timeout 1200 ./salgebra salgebra
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_plain salgebra.mil
+#> Mtest (20:34:28):	other salgebra 1200
+#> Mtest (20:34:28):	Mtimeout -timeout 1200 ./salgebra salgebra
+#> Mlog (20:34:28):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain salgebra.mil

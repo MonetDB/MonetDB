@@ -1,5 +1,5 @@
 stderr of test 'url` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other url
-#> Mtest:	./url url
-#> Mlog:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db modules_plain -single /ufs/manegold/Current/monet/IRIX6.3/modules/plain/url.mil
+#> Mtest (13:31:51):	other url 1200
+#> Mtest (13:31:51):	Mtimeout -timeout 1200 ./url url
+#> Mlog (13:31:51):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain url.mil

@@ -1,11 +1,11 @@
 stdout of test 'str` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other str 1086
-#> Mtest:	Mtimeout -timeout 1086 ./str str
-#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db modules_plain str.mil
-# Monet Database Server V4.1
+#> Mtest (13:31:50):	other str 1200
+#> Mtest (13:31:50):	Mtimeout -timeout 1200 ./str str
+#> Mlog (13:31:50):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain str.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Apr 11 05:46:23 MET DST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:str.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 97 "str.mx"
+#line 101 "../../../../src/modules/plain/str.mx"
 setoid(oid(20000000));
 
 i1 := "This is a test";

@@ -267,11 +267,12 @@ typedef struct {
   bat	hv, tv;     /* the head values; the tail values (iff !isPerfect) */
 } clusterhash;
 
+#include "salgebra.proto.h"
+
 #endif /* __SALGEBRA_H__ */
 
 @c
 #include "salgebra.h"
-#include "salgebra.proto.h"
 
 @* Clusterhash implementation
 

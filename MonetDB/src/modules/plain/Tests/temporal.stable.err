@@ -1,5 +1,5 @@
 stderr of test 'temporal` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other temporal
-#> Mtest:	Mtimeout -timeout 1200 ./temporal temporal
-#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db modules_plain temporal.mil
+#> Mtest (13:32:18):	other temporal 1200
+#> Mtest (13:32:18):	Mtimeout -timeout 1200 ./temporal temporal
+#> Mlog (13:32:19):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain temporal.mil

@@ -7,7 +7,7 @@
 
 #include "symbol.h"
 #include "list.h"
-#include "mel_tab.h"
+#include "mel.tab.h"
 
 enum cmd_types {
    	NORMAL,

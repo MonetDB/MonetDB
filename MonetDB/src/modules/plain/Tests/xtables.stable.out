@@ -1,11 +1,11 @@
 stdout of test 'xtables` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other xtables 1086
-#> Mtest:	Mtimeout -timeout 1086 ./xtables xtables
-#> Mlog:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db modules_plain xtables.mil
-# Monet Database Server V4.1
+#> Mtest (13:31:52):	other xtables 1200
+#> Mtest (13:31:52):	Mtimeout -timeout 1200 ./xtables xtables
+#> Mlog (13:31:52):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain xtables.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri May 12 09:01:57 MET DST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:xtables.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 216 "xtables.mx"
+#line 216 "../../../../src/modules/plain/xtables.mx"
 setoid(oid(20000000));
 
 
@@ -145,7 +145,7 @@ z.insert(7@0,"c");
 z.insert(8@0,"a");
 
 xtable_test("small hash", x, y, z);
-# xtable_test: small hash grouping (8 tuples, 8756 bytes)
+# xtable_test: small hash grouping (8 tuples, 32768 bytes)
 
 #-----------------------------------------#
 # BAT:	  x	| y	| yy	| z	  #
@@ -162,7 +162,7 @@ xtable_test("small hash", x, y, z);
 synced(x,y) := true
 synced(x,z) := true
 
-# group(x) (ct: 8 elts, 3 groups, 1120 bytes)
+# group(x) (ct: 8 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| x	| gid	  #
 #-------------------------#
@@ -170,7 +170,7 @@ synced(x,z) := true
 [ 4,	  'b',	  3@0	  ]
 [ 2,	  'c',	  7@0	  ]
 
-# group(x,y) (ct: 8 elts, 5 groups, 900 bytes)
+# group(x,y) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -180,7 +180,7 @@ synced(x,z) := true
 [ 1,	  'b',	  3,	  6@0	  ]
 [ 2,	  'c',	  1,	  7@0	  ]
 
-# orderby(x,y) (ct: 8 elts, 5 groups, 1120 bytes)
+# orderby(x,y) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -190,7 +190,7 @@ synced(x,z) := true
 [ 1,	  'b',	  3,	  4@0	  ]
 [ 2,	  'c',	  1,	  5@0	  ]
 
-# subhisto(x,y|1-2) (ct: 8 elts, 5 groups, 1112 bytes)
+# subhisto(x,y|1-2) (ct: 8 elts, 5 groups, 8192 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -200,7 +200,7 @@ synced(x,z) := true
 [ 0,	  3,	  6@0	  ]
 [ 2,	  1,	  7@0	  ]
 
-# group(x,y|1-2) (ct: 7 elts, 4 groups, 1120 bytes)
+# group(x,y|1-2) (ct: 7 elts, 4 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -209,7 +209,7 @@ synced(x,z) := true
 [ 3,	  'b',	  2,	  3@0	  ]
 [ 2,	  'c',	  1,	  7@0	  ]
 
-# regroup(x,y,z) (ct: 7 elts, 7 groups, 1340 bytes)
+# regroup(x,y,z) (ct: 7 elts, 7 groups, 16384 bytes)
 #-----------------------------------------#
 # count	| x	| y	| z	| gid	  #
 #-----------------------------------------#
@@ -221,7 +221,7 @@ synced(x,z) := true
 [ 1,	  'c',	  1,	  "c",	  7@0	  ]
 [ 1,	  'c',	  1,	  "a",	  8@0	  ]
 
-# multigroup(y) (ct: 8 elts, 3 groups, 1120 bytes)
+# multigroup(y) (ct: 8 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -229,7 +229,7 @@ synced(x,z) := true
 [ 4,	  2,	  2@0	  ]
 [ 1,	  3,	  3@0	  ]
 
-# multigroup(yy) (ct: 8 elts, 3 groups, 900 bytes)
+# multigroup(yy) (ct: 8 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| yy	| gid	  #
 #-------------------------#
@@ -237,7 +237,7 @@ synced(x,z) := true
 [ 4,	  3,	  3@0	  ]
 [ 1,	  4,	  4@0	  ]
 
-# multigroup(y,x) (ct: 8 elts, 5 groups, 900 bytes)
+# multigroup(y,x) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| y	| x	| gid	  #
 #---------------------------------#
@@ -247,7 +247,7 @@ synced(x,z) := true
 [ 1,	  3,	  'b',	  4@0	  ]
 [ 2,	  1,	  'c',	  5@0	  ]
 
-# multigroup(yy,x) (ct: 8 elts, 5 groups, 900 bytes)
+# multigroup(yy,x) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| yy	| x	| gid	  #
 #---------------------------------#
@@ -257,7 +257,7 @@ synced(x,z) := true
 [ 1,	  4,	  'b',	  7@0	  ]
 [ 2,	  2,	  'c',	  8@0	  ]
 
-# multiregroup(y,x) (ct: 8 elts, 8 groups, 900 bytes)
+# multiregroup(y,x) (ct: 8 elts, 8 groups, 12288 bytes)
 #-----------------------------------------#
 # count	| y	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -270,7 +270,7 @@ synced(x,z) := true
 [ 1,	  1,	  'c',	  "c",	  7@0	  ]
 [ 1,	  1,	  'c',	  "a",	  8@0	  ]
 
-# multiregroup(yy,x) (ct: 8 elts, 8 groups, 900 bytes)
+# multiregroup(yy,x) (ct: 8 elts, 8 groups, 12288 bytes)
 #-----------------------------------------#
 # count	| yy	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -294,7 +294,7 @@ y.seqbase(1@0);
 z.seqbase(1@0);
  
 xtable_test("small vectorized", x, y, z);
-# xtable_test: small vectorized grouping (8 tuples, 7711 bytes)
+# xtable_test: small vectorized grouping (8 tuples, 32768 bytes)
 
 #-----------------------------------------#
 # BAT:	  x	| y	| yy	| z	  #
@@ -311,7 +311,7 @@ xtable_test("small vectorized", x, y, z);
 synced(x,y) := true
 synced(x,z) := true
 
-# group(x) (ct: 8 elts, 3 groups, 900 bytes)
+# group(x) (ct: 8 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| x	| gid	  #
 #-------------------------#
@@ -319,7 +319,7 @@ synced(x,z) := true
 [ 4,	  'b',	  3@0	  ]
 [ 2,	  'c',	  7@0	  ]
 
-# group(x,y) (ct: 8 elts, 5 groups, 900 bytes)
+# group(x,y) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -329,7 +329,7 @@ synced(x,z) := true
 [ 1,	  'b',	  3,	  6@0	  ]
 [ 2,	  'c',	  1,	  7@0	  ]
 
-# orderby(x,y) (ct: 8 elts, 5 groups, 1120 bytes)
+# orderby(x,y) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -339,7 +339,7 @@ synced(x,z) := true
 [ 1,	  'b',	  3,	  4@0	  ]
 [ 2,	  'c',	  1,	  5@0	  ]
 
-# subhisto(x,y|1-2) (ct: 8 elts, 5 groups, 727 bytes)
+# subhisto(x,y|1-2) (ct: 8 elts, 5 groups, 8192 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -349,7 +349,7 @@ synced(x,z) := true
 [ 0,	  3,	  6@0	  ]
 [ 2,	  1,	  7@0	  ]
 
-# group(x,y|1-2) (ct: 7 elts, 4 groups, 1120 bytes)
+# group(x,y|1-2) (ct: 7 elts, 4 groups, 12288 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -358,7 +358,7 @@ synced(x,z) := true
 [ 3,	  'b',	  2,	  3@0	  ]
 [ 2,	  'c',	  1,	  7@0	  ]
 
-# regroup(x,y,z) (ct: 7 elts, 7 groups, 1340 bytes)
+# regroup(x,y,z) (ct: 7 elts, 7 groups, 16384 bytes)
 #-----------------------------------------#
 # count	| x	| y	| z	| gid	  #
 #-----------------------------------------#
@@ -370,7 +370,7 @@ synced(x,z) := true
 [ 1,	  'c',	  1,	  "c",	  7@0	  ]
 [ 1,	  'c',	  1,	  "a",	  8@0	  ]
 
-# multigroup(y) (ct: 8 elts, 3 groups, 900 bytes)
+# multigroup(y) (ct: 8 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -378,7 +378,7 @@ synced(x,z) := true
 [ 4,	  2,	  2@0	  ]
 [ 1,	  3,	  3@0	  ]
 
-# multigroup(yy) (ct: 8 elts, 3 groups, 900 bytes)
+# multigroup(yy) (ct: 8 elts, 3 groups, 12288 bytes)
 #-------------------------#
 # count	| yy	| gid	  #
 #-------------------------#
@@ -386,7 +386,7 @@ synced(x,z) := true
 [ 4,	  3,	  3@0	  ]
 [ 1,	  4,	  4@0	  ]
 
-# multigroup(y,x) (ct: 8 elts, 5 groups, 900 bytes)
+# multigroup(y,x) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| y	| x	| gid	  #
 #---------------------------------#
@@ -396,7 +396,7 @@ synced(x,z) := true
 [ 1,	  3,	  'b',	  4@0	  ]
 [ 2,	  1,	  'c',	  5@0	  ]
 
-# multigroup(yy,x) (ct: 8 elts, 5 groups, 900 bytes)
+# multigroup(yy,x) (ct: 8 elts, 5 groups, 12288 bytes)
 #---------------------------------#
 # count	| yy	| x	| gid	  #
 #---------------------------------#
@@ -406,7 +406,7 @@ synced(x,z) := true
 [ 1,	  4,	  'b',	  7@0	  ]
 [ 2,	  2,	  'c',	  8@0	  ]
 
-# multiregroup(y,x) (ct: 8 elts, 8 groups, 900 bytes)
+# multiregroup(y,x) (ct: 8 elts, 8 groups, 12288 bytes)
 #-----------------------------------------#
 # count	| y	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -419,7 +419,7 @@ synced(x,z) := true
 [ 1,	  1,	  'c',	  "c",	  7@0	  ]
 [ 1,	  1,	  'c',	  "a",	  8@0	  ]
 
-# multiregroup(yy,x) (ct: 8 elts, 8 groups, 900 bytes)
+# multiregroup(yy,x) (ct: 8 elts, 8 groups, 12288 bytes)
 #-----------------------------------------#
 # count	| yy	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -464,7 +464,7 @@ print("done!");
 [ "done!" ]
  
 xtable_test("big vectorized", x, y, z);
-# xtable_test: big vectorized grouping (524288 tuples, 7170081 bytes)
+# xtable_test: big vectorized grouping (524288 tuples, 7192576 bytes)
 
 #-----------------------------------------#
 # BAT:	  x	| y	| yy	| z	  #
@@ -481,7 +481,7 @@ xtable_test("big vectorized", x, y, z);
 synced(x,y) := true
 synced(x,z) := true
 
-# group(x) (ct: 524288 elts, 3 groups, 2097852 bytes)
+# group(x) (ct: 524288 elts, 3 groups, 2109440 bytes)
 #-------------------------#
 # count	| x	| gid	  #
 #-------------------------#
@@ -489,7 +489,7 @@ synced(x,z) := true
 [ 262144, 'b',	  3@0	  ]
 [ 131072, 'c',	  7@0	  ]
 
-# group(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# group(x,y) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -499,7 +499,7 @@ synced(x,z) := true
 [ 65536,  'b',	  3,	  6@0	  ]
 [ 131072, 'c',	  1,	  7@0	  ]
 
-# orderby(x,y) (ct: 524288 elts, 5 groups, 4195024 bytes)
+# orderby(x,y) (ct: 524288 elts, 5 groups, 4206592 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -509,7 +509,7 @@ synced(x,z) := true
 [ 65536,  'b',	  3,	  4@0	  ]
 [ 131072, 'c',	  1,	  5@0	  ]
 
-# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 2622137 bytes)
+# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 2633728 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -519,7 +519,7 @@ synced(x,z) := true
 [ 0,	  3,	  6@0	  ]
 [ 131072, 1,	  7@0	  ]
 
-# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3670736 bytes)
+# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3682304 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -528,7 +528,7 @@ synced(x,z) := true
 [ 196608, 'b',	  2,	  3@0	  ]
 [ 131072, 'c',	  1,	  7@0	  ]
 
-# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5505764 bytes)
+# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5521408 bytes)
 #-----------------------------------------#
 # count	| x	| y	| z	| gid	  #
 #-----------------------------------------#
@@ -540,7 +540,7 @@ synced(x,z) := true
 [ 65536,  'c',	  1,	  "c",	  7@0	  ]
 [ 65536,  'c',	  1,	  "a",	  8@0	  ]
 
-# multigroup(y) (ct: 524288 elts, 3 groups, 2097852 bytes)
+# multigroup(y) (ct: 524288 elts, 3 groups, 2109440 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -548,7 +548,7 @@ synced(x,z) := true
 [ 262144, 2,	  2@0	  ]
 [ 65536,  3,	  3@0	  ]
 
-# multigroup(yy) (ct: 524288 elts, 3 groups, 2097852 bytes)
+# multigroup(yy) (ct: 524288 elts, 3 groups, 2109440 bytes)
 #-------------------------#
 # count	| yy	| gid	  #
 #-------------------------#
@@ -556,7 +556,7 @@ synced(x,z) := true
 [ 262144, 3,	  3@0	  ]
 [ 65536,  4,	  4@0	  ]
 
-# multigroup(y,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# multigroup(y,x) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| y	| x	| gid	  #
 #---------------------------------#
@@ -566,7 +566,7 @@ synced(x,z) := true
 [ 65536,  3,	  'b',	  4@0	  ]
 [ 131072, 1,	  'c',	  5@0	  ]
 
-# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| yy	| x	| gid	  #
 #---------------------------------#
@@ -576,7 +576,7 @@ synced(x,z) := true
 [ 65536,  4,	  'b',	  7@0	  ]
 [ 131072, 2,	  'c',	  8@0	  ]
 
-# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2109440 bytes)
 #-----------------------------------------#
 # count	| y	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -589,7 +589,7 @@ synced(x,z) := true
 [ 65536,  1,	  'c',	  "c",	  7@0	  ]
 [ 65536,  1,	  'c',	  "a",	  8@0	  ]
 
-# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2109440 bytes)
 #-----------------------------------------#
 # count	| yy	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -614,7 +614,7 @@ y.delete(0@0);
 z.delete(0@0);
  
 xtable_test("big hash", x, y, z);
-# xtable_test: big hash grouping (524288 tuples, 21325992 bytes)
+# xtable_test: big hash grouping (524288 tuples, 21356544 bytes)
 
 #-----------------------------------------#
 # BAT:	  x	| y	| yy	| z	  #
@@ -631,7 +631,7 @@ xtable_test("big hash", x, y, z);
 synced(x,y) := true
 synced(x,z) := true
 
-# group(x) (ct: 524288 elts, 3 groups, 4195024 bytes)
+# group(x) (ct: 524288 elts, 3 groups, 4206592 bytes)
 #-------------------------#
 # count	| x	| gid	  #
 #-------------------------#
@@ -639,7 +639,7 @@ synced(x,z) := true
 [ 262144, 'b',	  3@0	  ]
 [ 131072, 'c',	  7@0	  ]
 
-# group(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# group(x,y) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -649,7 +649,7 @@ synced(x,z) := true
 [ 65536,  'b',	  3,	  6@0	  ]
 [ 131072, 'c',	  1,	  7@0	  ]
 
-# orderby(x,y) (ct: 524288 elts, 5 groups, 4195024 bytes)
+# orderby(x,y) (ct: 524288 elts, 5 groups, 4206592 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -659,7 +659,7 @@ synced(x,z) := true
 [ 65536,  'b',	  3,	  4@0	  ]
 [ 131072, 'c',	  1,	  5@0	  ]
 
-# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 6292188 bytes)
+# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 6303744 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -669,7 +669,7 @@ synced(x,z) := true
 [ 0,	  3,	  6@0	  ]
 [ 131072, 1,	  7@0	  ]
 
-# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3670736 bytes)
+# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3682304 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -678,7 +678,7 @@ synced(x,z) := true
 [ 196608, 'b',	  2,	  3@0	  ]
 [ 131072, 'c',	  1,	  7@0	  ]
 
-# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5505764 bytes)
+# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5521408 bytes)
 #-----------------------------------------#
 # count	| x	| y	| z	| gid	  #
 #-----------------------------------------#
@@ -690,7 +690,7 @@ synced(x,z) := true
 [ 65536,  'c',	  1,	  "c",	  7@0	  ]
 [ 65536,  'c',	  1,	  "a",	  8@0	  ]
 
-# multigroup(y) (ct: 524288 elts, 3 groups, 4195024 bytes)
+# multigroup(y) (ct: 524288 elts, 3 groups, 4206592 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -698,7 +698,7 @@ synced(x,z) := true
 [ 262144, 2,	  2@0	  ]
 [ 65536,  3,	  3@0	  ]
 
-# multigroup(yy) (ct: 524288 elts, 3 groups, 2097852 bytes)
+# multigroup(yy) (ct: 524288 elts, 3 groups, 2109440 bytes)
 #-------------------------#
 # count	| yy	| gid	  #
 #-------------------------#
@@ -706,7 +706,7 @@ synced(x,z) := true
 [ 262144, 3,	  3@0	  ]
 [ 65536,  4,	  4@0	  ]
 
-# multigroup(y,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# multigroup(y,x) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| y	| x	| gid	  #
 #---------------------------------#
@@ -716,7 +716,7 @@ synced(x,z) := true
 [ 65536,  3,	  'b',	  4@0	  ]
 [ 131072, 1,	  'c',	  5@0	  ]
 
-# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| yy	| x	| gid	  #
 #---------------------------------#
@@ -726,7 +726,7 @@ synced(x,z) := true
 [ 65536,  4,	  'b',	  7@0	  ]
 [ 131072, 2,	  'c',	  8@0	  ]
 
-# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2109440 bytes)
 #-----------------------------------------#
 # count	| y	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -739,7 +739,7 @@ synced(x,z) := true
 [ 65536,  1,	  'c',	  "c",	  7@0	  ]
 [ 65536,  1,	  'c',	  "a",	  8@0	  ]
 
-# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2109440 bytes)
 #-----------------------------------------#
 # count	| yy	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -757,7 +757,7 @@ y := x.mirror.join(y);
 z := x.mirror.join(z);
  
 xtable_test("big synced", x, y, z);
-# xtable_test: big synced grouping (524288 tuples, 12937304 bytes)
+# xtable_test: big synced grouping (524288 tuples, 12963840 bytes)
 
 #-----------------------------------------#
 # BAT:	  x	| y	| yy	| z	  #
@@ -774,7 +774,7 @@ xtable_test("big synced", x, y, z);
 synced(x,y) := true
 synced(x,z) := true
 
-# group(x) (ct: 524288 elts, 3 groups, 4195024 bytes)
+# group(x) (ct: 524288 elts, 3 groups, 4206592 bytes)
 #-------------------------#
 # count	| x	| gid	  #
 #-------------------------#
@@ -782,7 +782,7 @@ synced(x,z) := true
 [ 262144, 'b',	  3@0	  ]
 [ 131072, 'c',	  7@0	  ]
 
-# group(x,y) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# group(x,y) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -792,7 +792,7 @@ synced(x,z) := true
 [ 65536,  'b',	  3,	  6@0	  ]
 [ 131072, 'c',	  1,	  7@0	  ]
 
-# orderby(x,y) (ct: 524288 elts, 5 groups, 4195024 bytes)
+# orderby(x,y) (ct: 524288 elts, 5 groups, 4206592 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -802,7 +802,7 @@ synced(x,z) := true
 [ 65536,  'b',	  3,	  4@0	  ]
 [ 131072, 'c',	  1,	  5@0	  ]
 
-# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 6292188 bytes)
+# subhisto(x,y|1-2) (ct: 524288 elts, 5 groups, 6303744 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -812,7 +812,7 @@ synced(x,z) := true
 [ 0,	  3,	  6@0	  ]
 [ 131072, 1,	  7@0	  ]
 
-# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3670736 bytes)
+# group(x,y|1-2) (ct: 458752 elts, 4 groups, 3682304 bytes)
 #---------------------------------#
 # count	| x	| y	| gid	  #
 #---------------------------------#
@@ -821,7 +821,7 @@ synced(x,z) := true
 [ 196608, 'b',	  2,	  3@0	  ]
 [ 131072, 'c',	  1,	  7@0	  ]
 
-# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5505764 bytes)
+# regroup(x,y,z) (ct: 458752 elts, 7 groups, 5521408 bytes)
 #-----------------------------------------#
 # count	| x	| y	| z	| gid	  #
 #-----------------------------------------#
@@ -833,7 +833,7 @@ synced(x,z) := true
 [ 65536,  'c',	  1,	  "c",	  7@0	  ]
 [ 65536,  'c',	  1,	  "a",	  8@0	  ]
 
-# multigroup(y) (ct: 524288 elts, 3 groups, 2097852 bytes)
+# multigroup(y) (ct: 524288 elts, 3 groups, 2109440 bytes)
 #-------------------------#
 # count	| y	| gid	  #
 #-------------------------#
@@ -841,7 +841,7 @@ synced(x,z) := true
 [ 262144, 2,	  2@0	  ]
 [ 65536,  3,	  3@0	  ]
 
-# multigroup(yy) (ct: 524288 elts, 3 groups, 2097852 bytes)
+# multigroup(yy) (ct: 524288 elts, 3 groups, 2109440 bytes)
 #-------------------------#
 # count	| yy	| gid	  #
 #-------------------------#
@@ -849,7 +849,7 @@ synced(x,z) := true
 [ 262144, 3,	  3@0	  ]
 [ 65536,  4,	  4@0	  ]
 
-# multigroup(y,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# multigroup(y,x) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| y	| x	| gid	  #
 #---------------------------------#
@@ -859,7 +859,7 @@ synced(x,z) := true
 [ 65536,  3,	  'b',	  4@0	  ]
 [ 131072, 1,	  'c',	  5@0	  ]
 
-# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2097852 bytes)
+# multigroup(yy,x) (ct: 524288 elts, 5 groups, 2109440 bytes)
 #---------------------------------#
 # count	| yy	| x	| gid	  #
 #---------------------------------#
@@ -869,7 +869,7 @@ synced(x,z) := true
 [ 65536,  4,	  'b',	  7@0	  ]
 [ 131072, 2,	  'c',	  8@0	  ]
 
-# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+# multiregroup(y,x) (ct: 524288 elts, 8 groups, 2109440 bytes)
 #-----------------------------------------#
 # count	| y	| x	| z	| gid	  #
 #-----------------------------------------#
@@ -882,7 +882,7 @@ synced(x,z) := true
 [ 65536,  1,	  'c',	  "c",	  7@0	  ]
 [ 65536,  1,	  'c',	  "a",	  8@0	  ]
 
-# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2097852 bytes)
+# multiregroup(yy,x) (ct: 524288 elts, 8 groups, 2109440 bytes)
 #-----------------------------------------#
 # count	| yy	| x	| z	| gid	  #
 #-----------------------------------------#

@@ -1,5 +1,5 @@
 stderr of test 'arith` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other arith
-#> Mtest:	./arith arith
-#> Mlog:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db modules_plain -single /ufs/manegold/Current/monet/IRIX6.3/modules/plain/arith.mil
+#> Mtest (13:31:40):	other arith 1200
+#> Mtest (13:31:40):	Mtimeout -timeout 1200 ./arith arith
+#> Mlog (13:31:40):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain arith.mil

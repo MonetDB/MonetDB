@@ -1733,11 +1733,12 @@ printf("#DEBUG: force_move .kill\n");
 		IODEBUG THRprintf(GDKerr, "unlink %s = %d\n", dstpath, ret);
 		if (GDKcreatedir(dstdir)) ret = 0;
 		ret = GDKmove(dstdir, srcpath, "priv", dstdir, srcpath, NULL);
-		return ret;
 		if (ret) GDKsyserror(
-			"force_move: link(%s.priv,%s)=%d\n", srcpath, srcpath);
+		    	"force_move: link(%s%c%s.priv,%s)=%d\n", 
+			srcdir, DIR_SEP,srcpath, dstpath);
 		IODEBUG THRprintf(GDKerr, 
-			"link %s.priv %s = %d\n", srcpath, srcpath, ret);
+			"link %s%c%s.priv %s = %d\n", 
+			srcdir, DIR_SEP, srcpath, dstpath, ret);
 		return ret;
 	} 
 	/* try to rename it */

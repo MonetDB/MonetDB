@@ -1,5 +1,5 @@
 stderr of test 'io` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other io
-#> Mtest:	./io io
-#> Mlog:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db modules_plain -single /ufs/manegold/Current/monet/IRIX6.3/modules/plain/io.mil
+#> Mtest (13:31:44):	other io 1200
+#> Mtest (13:31:44):	Mtimeout -timeout 1200 ./io io
+#> Mlog (13:31:44):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain io.mil

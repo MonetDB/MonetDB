@@ -1,10 +1,10 @@
 stdout of test 'mmath2` in directory 'src/modules/plain` itself:
 
-#> Mtest:	milS mmath2 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain -single mmath2.milS
-# Monet Database Server V4.1
+#> Mtest (13:31:46):	milS mmath2 milS
+#> Mtest (13:31:46):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain -single mmath2.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:mmath2.milS
 
 loaded;
@@ -35,7 +35,7 @@ sin(M_PI_4).print;
 sin(M_PI_2).print;
 [ 1 ]
 sin(M_PI).print;
-[ 1.22465e-16 ]
+[ 1.22461e-16 ]
 sin(3*M_PI_2).print;
 [ -1 ]
 cos(dbl(0)).print;
@@ -43,21 +43,21 @@ cos(dbl(0)).print;
 cos(M_PI_4).print;
 [ 0.707107 ]
 cos(M_PI_2).print;
-[ 6.12323e-17 ]
+[ 6.12303e-17 ]
 cos(M_PI).print;
 [ -1 ]
 cos(3*M_PI_2).print;
-[ -1.83697e-16 ]
+[ -1.83691e-16 ]
 tan(dbl(0)).print;
 [ 0 ]
 tan(M_PI_4).print;
 [ 1 ]
 tan(M_PI_2).print;
-[ 1.63312e+16 ]
+[ 1.63318e+16 ]
 tan(M_PI).print;
-[ -1.22465e-16 ]
+[ -1.22461e-16 ]
 tan(3*M_PI_2).print;
-[ 5.44375e+15 ]
+[ 5.44393e+15 ]
 asin(dbl(-1)).print;
 [ -1.5708 ]
 asin(dbl(-0.5)).print;
@@ -90,7 +90,7 @@ atan(dbl(1)).print;
 [ 0.785398 ]
 
 asin(sin(M_PI)).print;
-[ 1.22465e-16 ]
+[ 1.22461e-16 ]
 acos(cos(M_PI)).print;
 [ 3.14159 ]
 atan(tan(M_PI_2)).print;

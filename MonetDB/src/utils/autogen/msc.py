@@ -2,7 +2,8 @@ import string
 import regsub
 import os
 
-automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
+#automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
+automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h' ]
 script_ext = [ 'mil' ]
 
 def msc_list2string(l,pre,post):
@@ -19,13 +20,13 @@ def msc_subdirs(fd, var, values, msc ):
   fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
   for v in values:
     fd.write("%s-all: %s\n" % (v,v))
-    fd.write("\t$(CD) %s && $(MAKE) /nologo /k /f Makefile.msc all \n" % v) 
+    fd.write("\t$(CD) %s && $(MAKE) /nologo /k all \n" % v) 
     fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (v,v,v))
-    fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\n" % (v,v))
+    fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\\Makefile\n" % (v,v))
   fd.write("install-recursive: %s\n" % msc_list2string(values,"","-install ") )
   for v in values:
     fd.write("%s-install: $(bindir) $(libdir)\n" % v)
-    fd.write("\t$(CD) %s && $(MAKE) /nologo /k /f Makefile.msc install\n" % v) 
+    fd.write("\t$(CD) %s && $(MAKE) /nologo /k install\n" % v) 
 
 def msc_assignment(fd, var, values, msc ):
   o = ""
@@ -150,11 +151,36 @@ def msc_deps(fd,deps,objext, msc):
       fd.write( " " + msc_translate_dir(\
 		msc_translate_ext(msc_translate_file(d,msc)),msc) )
     fd.write("\n");
+    if (ext == "tab.h"):
+	x,de = string.split(deplist[0],".",1)
+	if (de == 'y'):
+		fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
+		fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.c\n" % (b))
+		fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b))
+	else:
+		fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
+		fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.cxx\n" % (b))
+		fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b))
+    if (ext == "tab.c"):
+	fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
+	fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.c\n" % (b) )
+	fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b) )
+    if (ext == "tab.cxx"):
+	fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
+	fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.cxx\n" % (b) )
+	fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b) )
+    if (ext == "yy.c"):
+	fd.write( "\t$(LEX) $(LFLAGS) -o%s.yy.c %s.l\n" % (b,b) );
+	fd.write( "\tif exist lex_yy.c $(MV) lex_yy.c %s.yy.c\n" % (b) )
+    if (ext == "yy.cxx"):
+	fd.write( "\t$(LEX) $(LFLAGS) -o%s.yy.cc %s.ll\n" % (b,b) );
+	fd.write( "\tif exist lex_yy.c $(MV) lex_yy.c %s.yy.cxx\n" % (b) )
+		
     if (ext == "glue.c"):
 	fd.write( "\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t,b) );
     if (ext == "proto.h"):
 	fd.write( "\t$(MEL) $(INCLUDES) -o %s -proto %s.m\n" % (t,b) );
-    if (ext == "obj" or ext == "glue.obj"):
+    if (ext == "obj" or ext == "glue.obj" or ext == "tab.obj" or ext == "yy.obj"):
 	target,name = msc_find_target(tar,msc);
 	if (target == "LIB"):
 	  d,dext = string.split(deplist[0],".",1)
@@ -206,6 +232,10 @@ def msc_binary(fd, var, binmap, msc ):
       srcs = srcs + " " + t + ".obj" 
     elif (ext == "glue.o"):
       srcs = srcs + " " + t + ".glue.obj" 
+    elif (ext == "tab.o"):
+      srcs = srcs + " " + t + ".tab.obj" 
+    elif (ext == "yy.o"):
+      srcs = srcs + " " + t + ".yy.obj" 
     elif (ext in hdrs_ext):
       HDRS.append(target)
     elif (ext in scripts_ext):
@@ -263,6 +293,10 @@ def msc_bins(fd, var, binsmap, msc ):
           srcs = srcs + " " + t + ".obj" 
         elif (ext == "glue.o"):
           srcs = srcs + " " + t + ".glue.obj" 
+    	elif (ext == "tab.o"):
+          srcs = srcs + " " + t + ".tab.obj" 
+        elif (ext == "yy.o"):
+          srcs = srcs + " " + t + ".yy.obj" 
 	elif (ext in hdrs_ext):
 	  HDRS.append(target)
         elif (ext in scripts_ext):
@@ -325,6 +359,10 @@ def msc_library(fd, var, libmap, msc ):
       srcs = srcs + " " + t + ".obj" 
     elif (ext == "glue.o"):
       srcs = srcs + " " + t + ".glue.obj" 
+    elif (ext == "tab.o"):
+      srcs = srcs + " " + t + ".tab.obj" 
+    elif (ext == "yy.o"):
+      srcs = srcs + " " + t + ".yy.obj" 
     elif (ext in hdrs_ext):
       HDRS.append(target)
     elif (ext in scripts_ext):
@@ -333,13 +371,8 @@ def msc_library(fd, var, libmap, msc ):
   fd.write(srcs + "\n")
   ln = "lib" + sep + libname
   fd.write( ln + ".lib: " + ln + ".dll\n" );
-  fd.write( ln + ".dll: " + ln + ".def $(" + ln + "_OBJS) \n" )
-  fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (ln,ln,ln,ln))
-
-  fd.write( ln + ".def: \n" )
-  fd.write( "\t$(ECHO) EXPORTS > $@\n" )
-  fd.write( "\t$(ECHO) 	%s_Module_Install >> $@\n" % libname )
-  fd.write( "\t$(ECHO) 	%s_Module_Delete >> $@\n" % libname )
+  fd.write( ln + ".dll: $(" + ln + "_OBJS) \n" )
+  fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln,ln,ln))
 
   if (len(SCRIPTS) > 0):
     fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -384,19 +417,18 @@ def msc_libs(fd, var, libsmap, msc ):
           srcs = srcs + " " + t + ".obj" 
         elif (ext == "glue.o"):
           srcs = srcs + " " + t + ".glue.obj" 
+        elif (ext == "tab.o"):
+          srcs = srcs + " " + t + ".tab.obj" 
+        elif (ext == "yy.o"):
+          srcs = srcs + " " + t + ".yy.obj" 
         elif (ext in scripts_ext):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
     ln = "lib" + sep + lib
     fd.write( ln + ".lib: " + ln + ".dll\n" );
-    fd.write( ln + ".dll: " + ln + ".def $(" + ln + "_OBJS) \n" )
-    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (ln,ln,ln,ln))
-
-    fd.write( ln + ".def: \n" )
-    fd.write( "\t$(ECHO) EXPORTS > $@\n" )
-    fd.write( "\t$(ECHO) 	%s_Module_Install >> $@\n" % lib )
-    fd.write( "\t$(ECHO) 	%s_Module_Delete >> $@\n" % lib )
+    fd.write( ln + ".dll: $(" + ln + "_OBJS) \n" )
+    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS)\n\n" % (ln,ln,ln))
 
   if (len(SCRIPTS) > 0):
     fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))

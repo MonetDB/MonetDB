@@ -455,7 +455,7 @@ int readClient(Client c){
 	FILE *fd = GDKout;
 	str  s;
  
-	PARSEDEBUG THRprintf(GDKerr, "accept client %d input %d eof %di buffer:\n#%s\n", 
+	PARSEDEBUG THRprintf(GDKerr, "accept client %d input %d eof %d buffer:\n#%s\n", 
 			c-monet_clients, fileno(c->fdin), feof(c->fdin), c->top);
 @-
 The next statement block is read. Care is taken to recognize the

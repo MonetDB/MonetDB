@@ -1,11 +1,11 @@
 stdout of test 'io` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other io
-#> Mtest:	Mtimeout -timeout 420 ./io io
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain io.mil
-# Monet Database Server V4.1
+#> Mtest (13:31:44):	other io 1200
+#> Mtest (13:31:44):	Mtimeout -timeout 1200 ./io io
+#> Mlog (13:31:44):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain io.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:io.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 142 "io.mx"
+#line 142 "../../../../src/modules/plain/io.mx"
 setoid(oid(20000000));
 
 

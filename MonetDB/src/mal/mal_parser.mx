@@ -87,7 +87,7 @@ OPER	{P}+
 The Bison parser generator will produce the table with token names
 needed for tracing the parser.
 @l
-#include "mal_parser_tab.h"
+#include "mal_parser.tab.h"
 
 #define RETURN(Y)       { PARSEDEBUG {\
                                 THRprintf(GDKerr, "%s %s\n", mallexname(Y), yytext);\

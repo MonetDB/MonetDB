@@ -275,24 +275,24 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 
 	/* optimize for propagation of void columns in the result */	
 	if (BAThvoid(l)) {
-		int tpe = ATOMtype(r->ttype);
+		int tpe = r->ttype;
 		if (ATOMstorage(tpe) == TYPE_str && ELIMDOUBLES(&r->theap)) {
 			tpe = TYPE_int; /* insert double-eliminated strings as ints */
 		}
-		bn = BATnew(TYPE_void, tpe, BATcount(l));
+		bn = BATnew(TYPE_void, ATOMtype(tpe), BATcount(l));
 		dst = BUNfirst(bn);
 		zz = BUNsize(bn);
 
-		if (r->ttype && ATOMstorage(tpe) == TYPE_chr) {
+		if (l->ttype && ATOMstorage(tpe) == TYPE_chr) {
 			@:fetchjoin(tloc,tloc,chr,SIMPLE)@
-		} else if (r->ttype && ATOMstorage(tpe) == TYPE_sht) {
+		} else if (l->ttype && ATOMstorage(tpe) == TYPE_sht) {
 			@:fetchjoin(tloc,tloc,sht,SIMPLE)@
-		} else if (r->ttype && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
+		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_int || ATOMstorage(tpe) == TYPE_flt)) {
 			@:fetchjoin(tloc,tloc,int,SIMPLE)@
-		} else if (r->ttype && (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl)) {
+		} else if (l->ttype && (ATOMstorage(tpe) == TYPE_lng || ATOMstorage(tpe) == TYPE_dbl)) {
 			@:fetchjoin(tloc,tloc,lng,SIMPLE)@
 		} else {
-			@:fetchjoin(tail,tail,tpe,ATOM)@
+			@:fetchjoin(tail,tail,bn->ttype,ATOM)@
 		}
 		/* handle string trick */
 		if (tpe == TYPE_int && ATOMstorage(r->ttype) == TYPE_str) {

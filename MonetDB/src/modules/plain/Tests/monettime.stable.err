@@ -1,5 +1,5 @@
 stderr of test 'monettime` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other monettime
-#> Mtest:	Mtimeout -timeout 1200 ./monettime monettime
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_plain monettime.mil
+#> Mtest (13:33:32):	other monettime 1200
+#> Mtest (13:33:32):	Mtimeout -timeout 1200 ./monettime monettime
+#> Mlog (13:33:32):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain monettime.mil

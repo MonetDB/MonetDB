@@ -13,13 +13,12 @@ INSTALL = copy
 MKDIR = mkdir
 ECHO = echo
 CD = cd
-#PYTHON = "c:\program files\python\python.exe" 
-PYTHON = "c:\python16\python.exe" 
 
 TOPDIR = .
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
 
 CXXEXT = "cxx"
+!INCLUDE rules.msc
 
 all: all-msc all-recursive
 
@@ -31,11 +30,11 @@ all-recursive: src-recursive
 	cd .. && $(PYTHON) src\utils\autogen\autogen.py
 
 src-recursive: src ../makefile.msc 
-	cd src && nmake /k /nologo -f Makefile.msc SRCDIR=..\..\src
+	cd src && nmake /k /nologo -f Makefile
 
 src:
 	if not exist src $(MKDIR) src
-	$(INSTALL) ..\src\Makefile.msc src
+	$(INSTALL) ..\src\Makefile.msc src\Makefile
 
 all-msc: config.h unistd.h sys\socket.h
 

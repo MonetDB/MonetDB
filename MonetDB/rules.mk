@@ -1,6 +1,8 @@
 
 MEL=$(top_builddir)/src/mel/mel
 MX=$(top_builddir)/src/utils/Mx/Mx
+CP=cp
+MV=mv
 MXFLAGS= -notouch
 
 %.h: %.mx
@@ -9,24 +11,49 @@ MXFLAGS= -notouch
 %.c: %.mx
 	$(MX) $(MXFLAGS) -x c $<
 
-%_tab.y: %.mx
+%.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
-	$(MV) $*.y $@
 
-%_yy.l: %.mx
+%.tab.c: %.y
+	$(YACC) $(YFLAGS) $*.y
+	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
+	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+
+%.tab.h: %.y
+	$(YACC) $(YFLAGS) $*.y
+	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
+	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+
+%.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 
-	$(MV) $*.l $@
+
+%.yy.c: %.l
+	$(LEX) $(LFLAGS) $*.l
+	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
+
 
 %.cc: %.mx
 	$(MX) $(MXFLAGS) -x C $<
 
-%_tab.yy: %.mx
+%.yy: %.mx
 	$(MX) $(MXFLAGS) -x Y $< 
-	$(MV) $*.yy $@
 
-%_yy.ll: %.mx
+%.tab.cc: %.yy
+	$(YACC) $(YFLAGS) $*.yy
+	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
+	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+
+%.tab.h: %.yy
+	$(YACC) $(YFLAGS) -d $*.yy
+	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
+	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+
+%.ll: %.mx
 	$(MX) $(MXFLAGS) -x L $<
-	$(MV) $*.ll $@
+
+%.yy.cc: %.ll
+	$(LEX) $(LFLAGS) $*.ll
+	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.cc ; fi
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<

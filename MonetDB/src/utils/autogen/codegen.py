@@ -24,23 +24,27 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2cc, '.cc'), 
 		  (mx2c, '.c'), 
 		  (mx2h, '.h'), 
-		  (mx2y, '_tab.y'), 
-		  (mx2l, '_yy.l'), 
-		  (mx2yy, '_tab.yy'), 
-		  (mx2ll, '_yy.ll'), 
+		  (mx2y, '.y'), 
+		  (mx2l, '.l'), 
+		  (mx2yy, '.yy'), 
+		  (mx2ll, '.ll'), 
 		  (mx2odl, '.odl') ]  
 }
 end_code_extract = { 'mx': e_mx }
 
-code_gen = { 'm': [ '.proto.h', '.glue.c' ],
-	    'odl': [ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
-	    'y': [ '.c', '.h' ],
-	    'l': [ '.c' ], 
-	    'yy': [ '.cc', '.h' ],
-	    'll': [ '.cc' ], 
-	    'cc': [ '.o' ],
-	    'c': [ '.o' ],
-	    'glue.c': [ '.glue.o' ]
+code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
+	    'odl': 	[ '_odl.h', '_odl.cc', '_mil.cc', '_odl.m' ],
+	    'y': 	[ '.tab.c', '.tab.h' ],
+	    'tab.c': 	[ '.tab.o' ],
+	    'l': 	[ '.yy.c' ], 
+	    'yy.c': 	[ '.yy.o' ],
+	    'yy': 	[ '.tab.cc', '.tab.h' ],
+	    'tab.cc': 	[ '.tab.o' ],
+	    'll': 	[ '.yy.cc' ], 
+	    'yy.cc': 	[ '.yy.o' ],
+	    'cc': 	[ '.o' ],
+	    'c': 	[ '.o' ],
+	    'glue.c': 	[ '.glue.o' ]
 }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_]*\)[>\"]"
@@ -61,7 +65,8 @@ dep_map = { 'glue.c': [ '.proto.h' ],
 	    'glue.o': [ '.proto.h' ]
 }
 
-dep_rules = { 'glue.o': ('glue.c', 'm', '.proto.h') 
+dep_rules = { 'glue.c': [ 'm', '.proto.h' ] , 
+	      'proto.h': [ 'm', '.proto.h']
 }
 
 lib_map = [ 'glue.c', 'm' ]
@@ -137,30 +142,51 @@ def find_org(deps,f):
   return org
 
 def do_deps(targets,deps,includes,incmap,cwd):
-  do_scan(targets,deps,incmap,cwd)
-  do_dep_combine(deps,includes,cwd)
-  do_dep_rules(deps,cwd)
-
-def do_dep_combine(deps,includes,cwd):
+  cache = {}
+  do_scan(targets,deps,incmap,cwd,cache)
+  do_dep_rules(deps,cwd,cache)
+  do_dep_combine(deps,includes,cwd,cache)
   cachefile = cwd + os.sep + '.cache'
-  cache = shelve.open( cachefile )
+  if os.path.exists( cachefile ):
+    os.unlink(cachefile)
+  cache_store = shelve.open( cachefile, "c")
+  for k,vals in cache.items():
+	cache_store[k] = vals
+  cache_store.close()
+
+def do_recursive_combine(deplist,cache,depfiles):
+  for d in deplist:
+    if (cache.has_key(d)):
+      if (d not in depfiles):
+        depfiles.append(d)
+        do_recursive_combine(cache[d],cache,depfiles)
+
+def do_dep_combine(deps,includes,cwd,cache):
   for target,depfiles in deps.items():
     for d in depfiles:
-      df,de = string.split(d,".",1)
       if (includes.has_key(d)):
 	for f in includes[d]:
 	  if (f not in depfiles):
 	    depfiles.append(f)
       elif (cache.has_key(d)):
-	for f in cache[d]:
-	  if (f not in depfiles):
-	    depfiles.append(f)
-  cache.close()
+	do_recursive_combine(cache[d],cache,depfiles)
 
-def do_dep_rules(deps,cwd):
-  cachefile = cwd + os.sep + '.cache'
-  cache = shelve.open( cachefile)
-  for target,depfiles in deps.items():
+def do_dep_rules(deps,cwd,cache):
+  for target in deps.keys():
+    tf,te = string.split(target,".",1)
+    if (dep_rules.has_key(te)):
+      (dep,new) = dep_rules[te]
+      if (cache.has_key(tf+"."+dep)):
+        if (tf+new not in cache[target]):
+      	  cache[target].append(tf+new)
+	for d in cache[tf+"."+dep]:
+          df,de = string.split(d,".",1)
+	  if (de == dep and df+new not in cache[target]):
+      	    cache[target].append(df+new)
+
+def olddo_dep_rules(deps,cwd,cache):
+  for target in cache.keys():
+    depfiles = cache[target]
     tf,te = string.split(target,".",1)
     if (dep_rules.has_key(te)):
       (dep,old,new) = dep_rules[te]
@@ -176,13 +202,8 @@ def do_dep_rules(deps,cwd):
           for depext in dep_map[de]:
 	    if (df+depext not in depfiles):
 	      depfiles.append(df+depext)
-  cache.close()
 
-def do_scan(targets,deps,incmap,cwd):
-  cachefile = cwd + os.sep + '.cache'
-  if os.path.exists( cachefile ):
-    os.unlink(cachefile)
-  cache = shelve.open( cachefile, "c")
+def do_scan(targets,deps,incmap,cwd,cache):
   for target,depfiles in deps.items():
       base,ext = string.split(target,".", 1)
       if (not cache.has_key(target)):
@@ -221,7 +242,6 @@ def do_scan(targets,deps,incmap,cwd):
         cache[target] = inc_files
   #for i in cache.keys():
     #print(i,cache[i])
-  cache.close()
 
 def do_lib(lib,deps):
   true_deps = []

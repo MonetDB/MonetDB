@@ -64,6 +64,8 @@ typedef struct blob
    /*unsigned*/ char data[1];
 } blob;
 
+#include "blob.proto.h"
+
 #endif /* __BLOB_H__ */
 @c
 #include <stdlib.h>
@@ -73,7 +75,6 @@ typedef struct blob
 #include <gdk_heap.h>
 
 #include "blob.h"
-#include "blob.proto.h"
 
 size_t blobsize(int nitems)
 {

@@ -1,11 +1,11 @@
 stdout of test 'url` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other url
-#> Mtest:	Mtimeout -timeout 420 ./url url
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain url.mil
-# Monet Database Server V4.1
+#> Mtest (13:31:51):	other url 1200
+#> Mtest (13:31:51):	Mtimeout -timeout 1200 ./url url
+#> Mlog (13:31:51):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain url.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:url.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 73 "url.mx"
+#line 73 "../../../../src/modules/plain/url.mx"
 setoid(oid(20000000));
 module(url);
 u:= url("http://www.cwi.nl/~mk/Acoi/index.html");
@@ -81,7 +81,7 @@ t.insert(7, url("http://robotics.stanford.edu/icons/ "));
 
 t.print;
 #-------------------------------------------------------------------------#
-# BAT:	  tmp_38							  #
+# BAT:	  tmp_37							  #
 # (int)	  (url)								  #
 #-------------------------------------------------------------------------#
 [ 1,	  "http://www.cwi.nl"						  ]
@@ -93,7 +93,7 @@ t.print;
 [ 7,	  "http://robotics.stanford.edu/icons/ "			  ]
 t.[getHost].print;
 #-----------------------------------------#
-# BAT:	  tmp_39			  #
+# BAT:	  tmp_36			  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 1,	  "www.cwi.nl"			  ]
@@ -105,7 +105,7 @@ t.[getHost].print;
 [ 7,	  "robotics.stanford.edu"	  ]
 t.[getPort].print;
 #-----------------#
-# BAT:	  tmp_39  #
+# BAT:	  tmp_36  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  nil	  ]
@@ -117,7 +117,7 @@ t.[getPort].print;
 [ 7,	  nil	  ]
 t.[getDomain].print;
 #-----------------#
-# BAT:	  tmp_39  #
+# BAT:	  tmp_36  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "nl"	  ]
@@ -129,7 +129,7 @@ t.[getDomain].print;
 [ 7,	  "edu"	  ]
 t.[getFile].print;
 #-----------------------------------------#
-# BAT:	  tmp_39			  #
+# BAT:	  tmp_36			  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 1,	  "www.cwi.nl"			  ]
@@ -141,7 +141,7 @@ t.[getFile].print;
 [ 7,	  " "				  ]
 t.[getAnchor].print;
 #-----------------#
-# BAT:	  tmp_39  #
+# BAT:	  tmp_36  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  nil	  ]
@@ -153,7 +153,7 @@ t.[getAnchor].print;
 [ 7,	  nil	  ]
 t.[getBasename].print;
 #-----------------------------------------#
-# BAT:	  tmp_39			  #
+# BAT:	  tmp_36			  #
 # (int)	  (str)				  #
 #-----------------------------------------#
 [ 1,	  "www"				  ]
@@ -165,7 +165,7 @@ t.[getBasename].print;
 [ 7,	  " "				  ]
 t.[getProtocol].print;
 #-----------------#
-# BAT:	  tmp_39  #
+# BAT:	  tmp_36  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "http"  ]
@@ -177,7 +177,7 @@ t.[getProtocol].print;
 [ 7,	  "http"  ]
 t.[getUser].print;
 #-------------------------#
-# BAT:	  tmp_39	  #
+# BAT:	  tmp_36	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  nil		  ]

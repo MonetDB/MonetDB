@@ -1,11 +1,11 @@
 stdout of test 'malalgebra` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other malalgebra 1200
-#> Mtest:	Mtimeout -timeout 1200 ./malalgebra malalgebra
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db modules_plain malalgebra.mil
-# Monet Database Server V4.1
+#> Mtest (21:31:53):	other malalgebra 1200
+#> Mtest (21:31:53):	Mtimeout -timeout 1200 ./malalgebra malalgebra
+#> Mlog (21:31:53):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain malalgebra.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for Linux2.2.14-12/32bit on Tue Jul  4 17:17:35 CEST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:malalgebra.mil
 
 loaded;
@@ -27,7 +27,7 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 172 "malalgebra.mx"
+#line 172 "../../../../src/modules/plain/malalgebra.mx"
 
 #
 # Simple test of some algorithms against the baseline
@@ -56,23 +56,23 @@ Ntestfailed := 0;
 
 
 
-#line 213 "malalgebra.mx"
+#line 213 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 202 "malalgebra.mx"
+#line 202 "../../../../src/modules/plain/malalgebra.mx"
 VAR result_oid := join( [oid](l), [oid](r.reverse).reverse );
 
 
-#line 214 "malalgebra.mx"
+#line 214 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 202 "malalgebra.mx"
+#line 202 "../../../../src/modules/plain/malalgebra.mx"
 VAR hashresult_oid := hashjoin( [oid](l), [oid](r.reverse).reverse );
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(hashresult_oid) ) ) {
   Ndiff := diff( result_oid, hashresult_oid ).count;
   printf( "Algorithm hash leads to %d different answers.\n", Ndiff );
@@ -81,16 +81,16 @@ IF( not( isnil(hashresult_oid) ) ) {
 Algorithm hash leads to 0 different answers.
 
 
-#line 215 "malalgebra.mx"
+#line 215 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 202 "malalgebra.mx"
+#line 202 "../../../../src/modules/plain/malalgebra.mx"
 VAR fetchresult_oid := fetchjoin( [oid](l), [oid](r.reverse).reverse );
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(fetchresult_oid) ) ) {
   Ndiff := diff( result_oid, fetchresult_oid ).count;
   printf( "Algorithm fetch leads to %d different answers.\n", Ndiff );
@@ -99,16 +99,16 @@ IF( not( isnil(fetchresult_oid) ) ) {
 Algorithm fetch leads to 0 different answers.
 
 
-#line 216 "malalgebra.mx"
+#line 216 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 202 "malalgebra.mx"
+#line 202 "../../../../src/modules/plain/malalgebra.mx"
 VAR mergeresult_oid := mergejoin( [oid](l), [oid](r.reverse).reverse );
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(mergeresult_oid) ) ) {
   Ndiff := diff( result_oid, mergeresult_oid ).count;
   printf( "Algorithm merge leads to %d different answers.\n", Ndiff );
@@ -117,16 +117,16 @@ IF( not( isnil(mergeresult_oid) ) ) {
 Algorithm merge leads to 0 different answers.
 
 
-#line 217 "malalgebra.mx"
+#line 217 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 202 "malalgebra.mx"
+#line 202 "../../../../src/modules/plain/malalgebra.mx"
 VAR indexresult_oid := indexjoin( [oid](l), [oid](r.reverse).reverse );
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(indexresult_oid) ) ) {
   Ndiff := diff( result_oid, indexresult_oid ).count;
   printf( "Algorithm index leads to %d different answers.\n", Ndiff );
@@ -135,24 +135,24 @@ IF( not( isnil(indexresult_oid) ) ) {
 Algorithm index leads to 0 different answers.
 
 
-#line 218 "malalgebra.mx"
+#line 218 "../../../../src/modules/plain/malalgebra.mx"
 
 
 
-#line 199 "malalgebra.mx"
+#line 199 "../../../../src/modules/plain/malalgebra.mx"
 VAR result_void := join( l, r );
 
 
-#line 220 "malalgebra.mx"
+#line 220 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 199 "malalgebra.mx"
+#line 199 "../../../../src/modules/plain/malalgebra.mx"
 VAR hashresult_void := hashjoin( l, r );
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(hashresult_void) ) ) {
   Ndiff := diff( result_void, hashresult_void ).count;
   printf( "Algorithm hash leads to %d different answers.\n", Ndiff );
@@ -161,16 +161,16 @@ IF( not( isnil(hashresult_void) ) ) {
 Algorithm hash leads to 0 different answers.
 
 
-#line 221 "malalgebra.mx"
+#line 221 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 199 "malalgebra.mx"
+#line 199 "../../../../src/modules/plain/malalgebra.mx"
 VAR fetchresult_void := fetchjoin( l, r );
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(fetchresult_void) ) ) {
   Ndiff := diff( result_void, fetchresult_void ).count;
   printf( "Algorithm fetch leads to %d different answers.\n", Ndiff );
@@ -179,18 +179,18 @@ IF( not( isnil(fetchresult_void) ) ) {
 Algorithm fetch leads to 0 different answers.
 
 
-#line 222 "malalgebra.mx"
+#line 222 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 199 "malalgebra.mx"
+#line 199 "../../../../src/modules/plain/malalgebra.mx"
 VAR mergeresult_void := mergejoin( l, r );
 !ERROR: Cannot perform mergejoin on void fields.
 !ERROR: CMDmergejoin: operation failed.
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(mergeresult_void) ) ) {
   Ndiff := diff( result_void, mergeresult_void ).count;
   printf( "Algorithm merge leads to %d different answers.\n", Ndiff );
@@ -198,16 +198,16 @@ IF( not( isnil(mergeresult_void) ) ) {
 }
 
 
-#line 223 "malalgebra.mx"
+#line 223 "../../../../src/modules/plain/malalgebra.mx"
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 
-#line 199 "malalgebra.mx"
+#line 199 "../../../../src/modules/plain/malalgebra.mx"
 VAR indexresult_void := indexjoin( l, r );
 
 
-#line 205 "malalgebra.mx"
+#line 205 "../../../../src/modules/plain/malalgebra.mx"
 IF( not( isnil(indexresult_void) ) ) {
   Ndiff := diff( result_void, indexresult_void ).count;
   printf( "Algorithm index leads to %d different answers.\n", Ndiff );
@@ -216,7 +216,7 @@ IF( not( isnil(indexresult_void) ) ) {
 Algorithm index leads to 0 different answers.
 
 
-#line 224 "malalgebra.mx"
+#line 224 "../../../../src/modules/plain/malalgebra.mx"
 
 
 printf( "RESULT: %d tests failed.\n", Ntestfailed );

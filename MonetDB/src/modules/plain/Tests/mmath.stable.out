@@ -1,11 +1,11 @@
 stdout of test 'mmath` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other mmath
-#> Mtest:	Mtimeout -timeout 420 ./mmath mmath
-#> Mlog:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain mmath.mil
-# Monet Database Server V4.1
+#> Mtest (13:31:45):	other mmath 1200
+#> Mtest (13:31:45):	Mtimeout -timeout 1200 ./mmath mmath
+#> Mlog (13:31:45):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain mmath.mil
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:mmath.mil
 
 loaded;
@@ -27,11 +27,11 @@ Try: modules;                - for other modules.
 
 #You are system administrator (adm)!
 
-#line 102 "mmath.mx"
+#line 106 "../../../../src/modules/plain/mmath.mx"
 
 setoid(oid(20000000));
 asin(sin(M_PI)).print;
-[ 1.22465e-16 ]
+[ 1.22461e-16 ]
 acos(cos(M_PI)).print;
 [ 3.14159 ]
 atan(tan(M_PI_2)).print;

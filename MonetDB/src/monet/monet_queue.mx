@@ -464,6 +464,7 @@ int handleRequest(Thread t, Request q, ValPtr res){
             monetSetChannel(t, q->ev_client->fdin, q->ev_client->fdout))
         {
                 clrRequest(q);
+ 
                 return 0;
         }
 @-

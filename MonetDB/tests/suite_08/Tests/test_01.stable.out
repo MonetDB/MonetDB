@@ -1,10 +1,10 @@
 stdout of test 'test_01` in directory 'tests/suite_08` itself:
 
-#> Mtest:	milM test_01 milM
-#> Mtest:	Mtimeout -timeout 543 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_08 test_01.milM
-# Monet Database Server V4.1
+#> Mtest (16:27:22):	milM test_01 milM
+#> Mtest (16:27:22):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_08 test_01.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Mon Mar 27 04:35:32 MET DST 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_01.milM
 
 loaded;
@@ -116,7 +116,7 @@ view_bbp_location.print;
 [ 21,	  "21"		  ]
 [ 22,	  "22"		  ]
 
-# Pseudo bat to map a BAT id into its name
+# Pseudo bat to map a BAT id into its heat
 view_bbp_heat.print;
 #-----------------#
 # BAT:	  heat	  #
@@ -144,6 +144,35 @@ view_bbp_heat.print;
 [ 20,	  0	  ]
 [ 21,	  0	  ]
 [ 22,	  0	  ]
+
+# Pseudo bat to map a BAT id into its dirty status
+view_bbp_dirty.print;
+#-------------------------#
+# BAT:	  status	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "dirty"	  ]
+[ 2,	  "dirty"	  ]
+[ 3,	  "dirty"	  ]
+[ 4,	  "dirty"	  ]
+[ 5,	  "dirty"	  ]
+[ 6,	  "dirty"	  ]
+[ 7,	  "dirty"	  ]
+[ 8,	  "dirty"	  ]
+[ 9,	  "dirty"	  ]
+[ 10,	  "dirty"	  ]
+[ 11,	  "dirty"	  ]
+[ 12,	  "dirty"	  ]
+[ 13,	  "dirty"	  ]
+[ 14,	  "dirty"	  ]
+[ 15,	  "dirty"	  ]
+[ 16,	  "dirty"	  ]
+[ 17,	  "dirty"	  ]
+[ 18,	  "dirty"	  ]
+[ 19,	  "dirty"	  ]
+[ 20,	  "dirty"	  ]
+[ 21,	  "dirty"	  ]
+[ 22,	  "dirty"	  ]
 
 # Pseudo bat to map a BAT id into its disk/loaded/dirty status
 view_bbp_status.print;
@@ -204,49 +233,43 @@ view_bbp_kind.print;
 [ 22,	  "tran"  ]
 
 # Pseudo bat with statistics on the use of BAT buffer pool
-view_bbp_info.print;
-!WARNING: interpret: convert identifier 'view_bbp_info' to string.
+"view_bbp_info".print;
 [ "view_bbp_info" ]
 
 # Pseudo bat to map an atom type id into its name
-view_atom_name.print;
-!WARNING: interpret: convert identifier 'view_atom_name' to string.
+"view_atom_name".print;
 [ "view_atom_name" ]
 
 # Pseudo bat with variable settings for GDK
-view_gdk_info.print;
-!WARNING: interpret: convert identifier 'view_gdk_info' to string.
-[ "view_gdk_info" ]
+"view_gdk_env".print;
+[ "view_gdk_env" ]
 printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------#
-# BAT:		  env								  #
-# (str)		  (str)								  #
-#---------------------------------------------------------------------------------#
-[ "dbname",	  "tests_suite_08"						  ]
-[ "server",	  "medusa"							  ]
-[ "port",	  "31703"							  ]
-[ "directory",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5/dbfarm/tests_suite_08"	  ]
-[ "owner",	  "monet"							  ]
-[ "prefix",	  "32bitIRIX646.5"						  ]
-[ "processid",	  "10204605"							  ]
-[ "home",	  "/var/tmp/monet.GNU_32/monet/IRIX646.5"			  ]
-[ "version",	  "4.1"								  ]
+#-------------------------------------------------------------------------#
+# BAT:		  env							  #
+# (str)		  (str)							  #
+#-------------------------------------------------------------------------#
+[ "dbname",	  "tests_suite_08"					  ]
+[ "server",	  "apollo-hrn0615.multiweb.net"				  ]
+[ "port",	  "50072"						  ]
+[ "directory",	  "/home/niels/new/monet/Linux/dbfarm/tests_suite_08"	  ]
+[ "owner",	  "niels"						  ]
+[ "prefix",	  "32biti686-pc-linux-gnu"				  ]
+[ "processid",	  "10774"						  ]
+[ "home",	  "/home/niels/new/monet/Linux"				  ]
+[ "version",	  "4.2"							  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
-view_thread_name.print;
-!WARNING: interpret: convert identifier 'view_thread_name' to string.
-[ "view_thread_name" ]
+"view_gdk_thread".print;
+[ "view_gdk_thread" ]
 printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------#
-# BAT:	  thread		  #
-# (int)	  (str)			  #
-#---------------------------------#
-[ 1,	  "Server"		  ]
-[ 2,	  "Interpreter"		  ]
-[ 3,	  "InternetServer"	  ]
+#-------------------------#
+# BAT:	  thread	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its name
@@ -264,7 +287,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login.print; printf("#~EndVaria
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Mon Mar 27 05:19:40 2000"	  ]
+[ 0,	  "Tue Sep 12 16:27:22 2000"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
@@ -276,14 +299,10 @@ view_client_tree.print;
 [ 0,	  "print(view_client_tree())"	  ]
 
 # Pseudo bat to map module name to their functions
-view_mod_fcn.print;
-!WARNING: interpret: convert identifier 'view_mod_fcn' to string.
-[ "view_mod_fcn" ]
+#view_mod_fcn.print;
 
 # Pseudo bat to map queue entry to its action
-view_queue_action.print;
-!WARNING: interpret: convert identifier 'view_queue_action' to string.
-[ "view_queue_action" ]
+#view_queue_action.print;
 
 # Pseudo bat to gain access to all visible variables
 view_var_type = view_var_type; 

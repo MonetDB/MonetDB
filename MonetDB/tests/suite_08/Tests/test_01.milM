@@ -11,8 +11,11 @@ view_bbp_refcnt.print;
 # Pseudo bat to map a BAT id into its disk location
 view_bbp_location.print;
 
-# Pseudo bat to map a BAT id into its name
+# Pseudo bat to map a BAT id into its heat
 view_bbp_heat.print;
+
+# Pseudo bat to map a BAT id into its dirty status
+view_bbp_dirty.print;
 
 # Pseudo bat to map a BAT id into its disk/loaded/dirty status
 view_bbp_status.print;
@@ -21,17 +24,17 @@ view_bbp_status.print;
 view_bbp_kind.print;
 
 # Pseudo bat with statistics on the use of BAT buffer pool
-view_bbp_info.print;
+"view_bbp_info".print;
 
 # Pseudo bat to map an atom type id into its name
-view_atom_name.print;
+"view_atom_name".print;
 
 # Pseudo bat with variable settings for GDK
-view_gdk_info.print;
+"view_gdk_env".print;
 printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 
 # Pseudo bat to map thread to name
-view_thread_name.print;
+"view_gdk_thread".print;
 printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariableOutput~#\n");
 
 # Pseudo bat to map client identifier to its name
@@ -44,10 +47,10 @@ printf("#~BeginVariableOutput~#\n"); view_client_login.print; printf("#~EndVaria
 view_client_tree.print;
 
 # Pseudo bat to map module name to their functions
-view_mod_fcn.print;
+#view_mod_fcn.print;
 
 # Pseudo bat to map queue entry to its action
-view_queue_action.print;
+#view_queue_action.print;
 
 # Pseudo bat to gain access to all visible variables
 view_var_type = view_var_type; 

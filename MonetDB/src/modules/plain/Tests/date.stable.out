@@ -1,8 +1,8 @@
 stdout of test 'date` in directory 'src/modules/plain` itself:
 
-#> Mtest (13:50:47):	other date 420
-#> Mtest (13:50:47):	Mtimeout -timeout 420 ./date date
-#> Mlog (13:50:47):	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain date.mil
+#> Mtest (13:32:17):	other date 1200
+#> Mtest (13:32:17):	Mtimeout -timeout 1200 ./date date
+#> Mlog (13:32:17):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain date.mil
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.

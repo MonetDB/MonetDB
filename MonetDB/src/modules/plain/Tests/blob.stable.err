@@ -1,5 +1,5 @@
 stderr of test 'blob` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other blob
-#> Mtest:	./blob blob
-#> Mlog:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db modules_plain -single /ufs/manegold/Current/monet/IRIX6.3/modules/plain/blob.mil
+#> Mtest (13:31:43):	other blob 1200
+#> Mtest (13:31:43):	Mtimeout -timeout 1200 ./blob blob
+#> Mlog (13:31:43):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain blob.mil

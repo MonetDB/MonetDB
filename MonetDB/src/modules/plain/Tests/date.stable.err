@@ -1,5 +1,5 @@
 stderr of test 'date` in directory 'src/modules/plain` itself:
 
-#> Mtest:	other date
-#> Mtest:	./date date
-#> Mlog:	Mtimeout -timeout 600 Mserver -yaccsilent -d8 -db modules_plain date.mil
+#> Mtest (13:32:17):	other date 1200
+#> Mtest (13:32:17):	Mtimeout -timeout 1200 ./date date
+#> Mlog (13:32:17):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain date.mil
