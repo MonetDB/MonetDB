@@ -247,6 +247,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			/* add a newline to the end since that makes
 			   further processing easier */
 			if (buf) {
+				add_history(buf);
 				length = strlen(buf);
 				buf = realloc(buf, length + 2);
 				buf[length++] = '\n';
@@ -354,35 +355,35 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			}
 		}
 
+		if (!prepared) {
+			assert(hdl == NULL);
+			timerStart();
+			hdl = mapi_query_prep(mid);
+			if (mapi_error(mid))
+				break;
+			prepared = 1;
+		}
+		if (length > 0) {
+			mapi_query_part(hdl, line, length);
+			if (mapi_error(mid))
+				break;
+		}
 		if ((length == 0 || line[length - 1] == '\n') && linemode) {
 			char *rtrn;
 
 			/* send rest of or whole query */
-			if (prepared) {
-				assert(hdl != NULL);
-				if (length > 0) {
-					mapi_query_part(hdl, line, length);
-					if (mapi_error(mid))
-						break;
-				}
-				mapi_query_done(hdl);
+			assert(hdl != NULL);
+			if (length > 0) {
+				mapi_query_part(hdl, line, length);
 				if (mapi_error(mid))
 					break;
-				prepared = 0;
-			} else {
-				assert(hdl == NULL);
-				/* send one complete line */
-				timerStart();
-				hdl = mapi_query(mid, line);
-				if (mapi_error(mid))
-					break;
-#ifdef HAVE_LIBREADLINE
-				if (prompt && length > 1) {
-					line[--length] = 0;
-					add_history(buf);
-				}
-#endif
 			}
+			if (mapi_query_done(hdl) == MMORE)
+				continue; /* get more data */
+
+			if (mapi_error(mid))
+				break;
+			prepared = 0;
 
 			while ((rtrn = mapi_fetch_line(hdl)) != 0)
 				fprintf(toConsole, "%s\n", rtrn);
@@ -392,21 +393,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				break;
 			mapi_close_handle(hdl);
 			hdl = NULL;
-		} else {
-			/* send part of query */
-			if (!prepared) {
-				assert(hdl == NULL);
-				timerStart();
-				hdl = mapi_query_prep(mid);
-				if (mapi_error(mid))
-					break;
-				prepared = 1;
-			}
-			if (length > 0) {
-				mapi_query_part(hdl, line, length);
-				if (mapi_error(mid))
-					break;
-			}
 		}
 	}
 	/* only reached on error */

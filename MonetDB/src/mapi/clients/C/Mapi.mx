@@ -493,7 +493,7 @@ MERROR  & Mapi internal error.\\
 @{
 @+ Implementation
 @c
-#include "monetdb_config.h"
+#include "monet_utils.h"
 #include   "Mapi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -570,19 +570,13 @@ typedef int MapiMsg;
 #define MOK		0
 #define MERROR		(-1)
 #define MTIMEOUT	(-2)
+#define MMORE		(-3)
 
 #define LANG_MAL	0
 #define LANG_MIL	1
 #define LANG_SQL	2
 #define LANG_XCORE	3
 #define LANG_XQUERY	4
-
-#define PROMPTBEG		'\001'	/* start prompt bracket */
-#ifdef MONET5
-#define PROMPTEND		'\002'	/* end prompt bracket */
-#else
-#define PROMPTEND		'\001'	/* end prompt bracket */
-#endif
 @-
 The table field information is extracted from the table headers
 obtained from the server. This list may be extended in the future.
@@ -880,7 +874,7 @@ static int mapi_extend_fields(MapiHdl hdl, int minfields);
 static int mapi_extend_params(MapiHdl hdl, int minparams);
 static int mapi_slice_row(MapiHdl hdl);
 static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action);
-static char *mapi_fetch_line_internal(MapiHdl hdl);
+static char *mapi_fetch_line_internal(MapiHdl hdl, int *wantmore);
 static MapiMsg mapi_finish_internal(MapiHdl hdl);
 static void mapi_lost_connection(Mapi mid);
 
@@ -2171,20 +2165,21 @@ answer_lookahead(MapiHdl hdl)
 {
 	/* look ahead to detect errors */
 	int oldrd;
+	MapiMsg rc;
 
 	do {
 		oldrd = hdl->cache.reader;
 		do {
-			mapi_get_row(hdl);
-		} while (hdl->mid->error == MOK && hdl->mid->active &&
+			rc = mapi_get_row(hdl);
+		} while (rc == MOK && hdl->mid->active &&
 			 hdl->cache.writer + 1 < hdl->cache.limit);
 		hdl->cache.reader = oldrd;
 		if (hdl->mid->active)
 			mapi_extend_cache(hdl);
-	} while (hdl->mid->error == MOK && hdl->mid->active);
+	} while (hdl->mid->error == MOK && hdl->mid->active && rc == MOK);
 	if (hdl->mid->trace)
 		printf("mapi_query return:%d\n", hdl->mid->error);
-	return hdl->mid->error;
+	return hdl->mid->error == MOK ? rc : hdl->mid->error;
 }
 
 static MapiMsg
@@ -2266,6 +2261,11 @@ mapi_query(Mapi mid, const char *cmd)
 		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
+	while (ret == MMORE) {
+		stream_flush(mid->to); /* signal that this really was it */
+		check_stream(mid, mid->to, stream_error(mid->to), "mapi_query", hdl);
+		ret = answer_lookahead(hdl);
+	}
 	return hdl;
 }
 
@@ -2668,12 +2668,14 @@ The content received is analysed further by mapi_getRow()
 
 @c
 char *
-mapi_fetch_line_internal(MapiHdl hdl)
+mapi_fetch_line_internal(MapiHdl hdl, int *wantmore)
 {
 	char *reply, *s;
 	ssize_t k;
 	Mapi mid;
 
+	if (wantmore)
+		*wantmore = 0;
 	if (hdl->cache.writer > 0 && hdl->cache.reader + 1 < hdl->cache.writer)
 		return hdl->cache.rows[++hdl->cache.reader];
 
@@ -2751,6 +2753,10 @@ mapi_fetch_line_internal(MapiHdl hdl)
 	}
 	if (mid->blk.buf[mid->blk.nxt] == PROMPTBEG) {
 		promptMonet(mid);
+		if (mid->blk.buf[mid->blk.nxt + 1] == PROMPT2[1]) {
+			assert(wantmore);
+			*wantmore = 1;
+		}
 		return 0;
 	}
 	/* we have a complete line in the buffer */
@@ -2787,7 +2793,7 @@ mapi_fetch_line(MapiHdl hdl)
 	char *reply;
 
 	mapi_hdl_check0(hdl, "mapi_fetch_line");
-	reply = mapi_fetch_line_internal(hdl);
+	reply = mapi_fetch_line_internal(hdl, NULL);
 	if (reply == NULL && hdl->mid->languageId == LANG_SQL &&
 	    !hdl->mid->active && hdl->rows_affected > 0 &&
 	    hdl->cache.first + hdl->cache.tuplecount < hdl->rows_affected) {
@@ -2795,8 +2801,9 @@ mapi_fetch_line(MapiHdl hdl)
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid, hdl->cache.first + hdl->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
-		answer_lookahead(hdl);
-		reply = mapi_fetch_line_internal(hdl);
+		if (answer_lookahead(hdl) == MERROR)
+			return NULL;
+		reply = mapi_fetch_line_internal(hdl, NULL);
 	}
 	return reply;
 }
@@ -2810,7 +2817,7 @@ mapi_finish_internal(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_finish");
 	if (hdl->mid->active)
-		while (mapi_fetch_line_internal(hdl) != (char *) 0)
+		while (mapi_fetch_line_internal(hdl, NULL) != (char *) 0)
 			;
 	return hdl->mid->error;
 }
@@ -2836,7 +2843,7 @@ empy the row cache.
 	do {								\
 		s= strchr(mid->blk.buf+mid->blk.nxt,PROMPTBEG);		\
 		if (s) {						\
-			ptrdiff_t len = s-mid->blk.buf;			\
+			ptrdiff_t len = s - mid->blk.buf;		\
 			fwrite(mid->blk.buf+mid->blk.nxt,1,len,fd);	\
 			mid->blk.nxt += len;				\
 			promptMonet(mid);				\
@@ -2885,34 +2892,33 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 		/* read until we find the prompt */
 		s = mid->blk.buf;
 		while ((k = stream_read(mid->from, s, 1, 1)) == 1) {
-			fwrite(s, 1, 1, fd);
 			if (*s == PROMPTBEG) {
 				s++;
+				while (stream_read(mid->from, s, 1, 1) == 1) {
+					if (*s == '\n') {
+						*(s + 1) = 0;
+						break;
+					}
+					s++;
+					if (s == mid->blk.buf + mid->blk.lim)
+						break;
+				}
+				check_stream(mid, mid->from,
+					     "Connection terminated",
+					     "mapi_quick_response",
+					     mid->error);
 				break;
 			}
+			fwrite(s, 1, 1, fd);
 		}
 		check_stream(mid, mid->from, "Connection terminated",
 			     "mapi_quick_response", mid->error);
-		if (k == 1) {
-			while (stream_read(mid->from, s, 1, 1) == 1) {
-				k++;
-				if (*s == '\n') {
-					*(s + 1) = 0;
-					break;
-				}
-				s++;
-				if (s == mid->blk.buf + mid->blk.lim)
-					break;
-			}
-			check_stream(mid, mid->from, "Connection terminated",
-				     "mapi_quick_response", mid->error);
-		}
 	}
 
 	if (k > 0) {
 		handlePart(k);
 	}
-	mapi_fetch_line_internal(hdl);	/* get rid of prompt possibly */
+	mapi_fetch_line_internal(hdl, NULL); /* get rid of prompt possibly */
 	return mid->error;
 }
 
@@ -3016,11 +3022,12 @@ mapi_get_row(MapiHdl hdl)
 {
 	char *reply = 0;
 	Mapi mid = hdl->mid;
+	int wantmore = 0;
 
 	while (mid->active || hdl->cache.reader + 1 < hdl->cache.writer) {
-		reply = mapi_fetch_line_internal(hdl);
+		reply = mapi_fetch_line_internal(hdl, &wantmore);
 		if (reply == 0)
-			return MERROR;
+			return wantmore ? MMORE : MERROR;
 
 		switch (reply[0]) {
 		case '#':
@@ -3038,8 +3045,8 @@ mapi_get_row(MapiHdl hdl)
 			REALLOC(mid->errorstr, size + strlen(reply) + 2);
 			strcpy(mid->errorstr + size, reply);
 			strcat(mid->errorstr + size, "\n");
-		}
 			break;
+		}
 		default:
 			return MOK;
 		}
@@ -3456,7 +3463,8 @@ mapi_fetch_row(MapiHdl hdl)
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid, hdl->cache.first + hdl->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_row", MERROR);
-		answer_lookahead(hdl);
+		if (answer_lookahead(hdl) == MERROR)
+			return 0;
 		if (mapi_get_row(hdl) == MOK)
 			return mapi_slice_row(hdl);
 	}
