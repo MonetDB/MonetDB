@@ -112,7 +112,6 @@ extern struct direct* win_readdir (DIR *dir);
 extern void win_rewinddir (DIR *dir);
 extern int win_closedir (DIR *dir);
 
-#include <winsock.h>
 extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
 #define gettimeofday(x,y)	MT_gettimeofday(x,y)
 #endif

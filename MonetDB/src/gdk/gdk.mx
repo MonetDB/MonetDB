@@ -1618,6 +1618,9 @@ typedef struct {
         volatile int status;	/* always available bat info */
 } BBPrec;
 
+extern int 		BBPmaxsize;
+extern int 		BBPlimit;
+extern int		BBP_free;
 extern int		BBP_dirty;	/* BBP table dirty? */
 extern int		BBPsize;	/* current size of BBP tables */
 extern BBPrec*       	BBP;
@@ -2358,11 +2361,11 @@ Ideally, it should become possible to specify the transaction protocol in more
 detail by the user.
 @{
 @h
-int	TMnew       (str cntxt); 
-int	TMcommit    (); 
-int	TMabort     (); 
-int	TMresume    (str cntxt); 
-str	TMcntxt     (); 
+extern int	TMnew       (str cntxt); 
+extern int	TMcommit    (); 
+extern int	TMabort     (); 
+extern int	TMresume    (str cntxt); 
+extern str	TMcntxt     (); 
 @
 @}
 

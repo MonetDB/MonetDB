@@ -58,7 +58,7 @@ BAT *BATloaddesc    (str nme);
 @
 Convert a BAT that contains little endian data into big endian (or vice versa).
 @h
-BAT* BATconvert     (BAT *b);
+extern BAT* BATconvert     (BAT *b);
 
 
 @- defines

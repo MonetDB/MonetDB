@@ -89,6 +89,7 @@ EXPORTS
 	ACCunloadall
 	BATidx
 	BAThashsplit
+	BAThashjoin
 	BATrangesplit
 	SORTfnd
 	SORTfndfirst
@@ -176,6 +177,7 @@ EXPORTS
 	BATsdiff
 	BATkdiff
 	BATmultijoin
+	BATconvert  
 	GDKenviron
 	GDKenvironName
 	GDKrecovery
@@ -200,10 +202,7 @@ EXPORTS
 	strLocate    
 	strHeapCheck
 	GDKsilent
-	BBP_dirty 
-	BBPsize
-	BBP
-	BBP_curstamp
+	GDKatomcnt
 	BATatoms
 	GDKoid
 	GDKdb
@@ -212,8 +211,10 @@ EXPORTS
 	GDK_mem_start
 	GDK_mem_maxsize
 	GDK_mem_bigsize
+	GDK_mem_cursize
 	GDK_vm_minsize
 	GDK_vm_maxsize
+	GDK_vm_cursize
 	GDKthreadLock
 	GDKswapLock
 	GDKidxLock
@@ -289,6 +290,13 @@ EXPORTS
 	DESCclean
 	BBPin
 	BBPout
+	BBPmaxsize
+	BBPlimit
+	BBP_free 
+	BBP_dirty 
+	BBPsize
+	BBP
+	BBP_curstamp
 	GDKlog
 	GDKlockHome
 	GDKunlockHome
@@ -399,5 +407,11 @@ EXPORTS
 	HASHremove
 	HASHdestroy
 	HASHprobe
+	HASHlist
 	ACC_index
 	ACC_hash
+	TMnew    
+	TMcommit
+	TMabort
+	TMresume
+	TMcntxt
