@@ -81,9 +81,9 @@ int main(int argc, char** argv)
                  argv[0],LWC,context,ignore,caption,revision,old_fn,new_fn,html_fn));
 
   if ( oldnew2html (LWC,context,ignore,old_fn,new_fn,html_fn,caption,revision) )
-      fprintf(STDERR,"%s and %s differ!\n",old_fn,new_fn);
+      fprintf(STDERR,"%s and %s do differ!\n",old_fn,new_fn);
     else
-      fprintf(STDERR,"%s and %s don't differ.\n",old_fn,new_fn);
+      fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn);
 
   TRACE(fprintf(STDERR,"done.\n"));
   return 0;

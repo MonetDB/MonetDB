@@ -54,7 +54,7 @@ Usage:  '''+THISFILE+'''  [options] ( [<dir>] [<tests>] | [<dirs>] )
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		print('''\
  -t<sec> : timeout: kill (hanging) tests after <sec> seconds;
-            -t0 means no timeout (default: -t600)
+            -t0 means no timeout (default: -t60)
  -r      : proceed in subdirectories as well (implies 'All`)
 
  --monetrc=<path>
@@ -710,6 +710,17 @@ BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s'%s'",x,$t)
 	return missing
 ### CheckBATs(env, TST, TSTDB) #
 
+def StartAt(cmd) :
+	pOut,pIn,pErr = popen2.popen3(cmd)
+	pIn.close()
+	ATJOB = string.strip(pOut.readline())
+	pOut.readlines()
+	pErr.readlines()
+	pOut.close()
+	pErr.close()
+	return ATJOB
+### StartAt(cmd) #
+
 def RunTest(env, TST) :
 	TSTDB = env['TSTDB']
 	TSTDIR  = env['TSTDIR']
@@ -896,14 +907,28 @@ def RunTest(env, TST) :
 		TIMEOUTED = "Mtimeout"
 		for v in env['exe'].keys():
 			TIMEOUTED = TIMEOUTED+"|"+string.upper(v)
-		test = re.compile("^.*("+TIMEOUTED+").*$")
+		test = re.compile("^[^#]*("+TIMEOUTED+")[^#]*(# ([0-9]+)x|#.*)?$")
 		TIMEOUT = par['TIMEOUT']
+		if os.path.isfile(TST+".timeout"):
+			for f in fileinput.input(TST+".timeout"):
+				TOf = int(string.strip(f))
+				if TOf > 1:
+					TIMEOUT = TIMEOUT * TOf
+		if env['exe']['Mtimeout'][0]:
+			env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout '+str(TIMEOUT)+' '
+			SetExecEnv(env['exe'],0)
 		CTIMEOUT = 0
 		if   CALL in ["other", "python"]:
 			CTIMEOUT = CTIMEOUT + 60
 			for l in fileinput.input(TST+EXT):
-				if test.match(l):
-					CTIMEOUT = CTIMEOUT + TIMEOUT
+				TOm = test.match(l)
+				if TOm:
+					TOx = TOm.group(3)
+					if TOx and (int(TOx) > 1):
+						TOx = int(TOx)
+					else:
+						TOx = 1
+					CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
 		elif CALL in ["milMXs", "milSXs", "milCXs", "sqlXs"]:
 			test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$")
 			d = os.listdir(os.getcwd())
@@ -919,25 +944,25 @@ def RunTest(env, TST) :
 			STIMEOUT = STIMEOUT + TIMEOUT + 60
 
 		ME = ""
-		ATJOB = ""
+		ATJOB1 = ""
+		ATJOB2 = ""
+		MkillUsers = ""
 		if os.name != "nt":
+			for f in TST+".KILLED.out", TST+".KILLED.err":
+				if os.path.isfile(f):
+					os.remove(f)
 			ME = str(os.getpid())
 			WAIT = str(int(STIMEOUT / 60) + 2)
 			FILES = TSTTRGDIR+os.sep+TST+" "+TSTTRGDIR+os.sep+TST+".*"
 			for f in ["bat/\\*", '.gdk_lock']:
 				FILES = FILES+" "+env['GDK_DBFARM']+os.sep+TSTDB+os.sep+path(f)
-			WHAT = THISPATH+os.sep+"MkillUsers -l"+ME+" -p"+ME+" "+FILES+" \\>"+TSTTRGDIR+os.sep+TST+".KILLED.out 2\\>"+TSTTRGDIR+os.sep+TST+".KILLED.err"
+			WHAT = THISPATH+os.sep+"MkillUsers -l"+ME+" -p"+ME+" "+FILES+" \\>\\>"+TSTTRGDIR+os.sep+TST+".KILLED.out 2\\>\\>"+TSTTRGDIR+os.sep+TST+".KILLED.err"
 			WHEN = "now + "+WAIT+" minutes"
 			cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'" 
-			pOut,pIn,pErr = popen2.popen3(cmd)
-			pIn.close()
-			ATJOB = string.strip(pOut.readline())
-			pOut.readlines()
-			pErr.readlines()
-			pOut.close()
-			pErr.close()
+			ATJOB1 = StartAt(cmd)
 			#TODO:
 			#LOG1x at -l >&2
+			MkillUsers = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'" 
 
 		#if THISFILE == "Mtest.py":
 		TestOut = open(TST+".test.out","w")
@@ -949,7 +974,7 @@ def RunTest(env, TST) :
 		TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 
 		t0 = time.time()
-		DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT)
+		ATJOB2 = DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers)
 		t1 = time.time()
 		TX = t1 - t0
 		STDOUT.write(" %7.3fs\n" % TX)
@@ -962,7 +987,9 @@ def RunTest(env, TST) :
 				ATRM = 'at -d '
 			else:
 				ATRM = 'at -r '
-			os.system(ATRM+ATJOB)
+			if ATJOB2:
+				os.system(ATRM+ATJOB2)
+			os.system(ATRM+ATJOB1)
 			#TODO:
 			#LOG1x at -l >&2
 
@@ -996,6 +1023,10 @@ def RunTest(env, TST) :
 
 		TestOut.close()
 		TestErr.close()
+
+		if env['exe']['Mtimeout'][0]:
+			env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
+			SetExecEnv(env['exe'],0)
 
 		if THISFILE in ["Mtest.py", "Mprofile.py"]:
 			os.system("python "+THISPATH+os.sep+"Mfilter.py "+par['IGNORE']+" "+TST+STABLEout+" "+TST+STABLEerr+" "+TST+".test.out "+TST+".test.err")
@@ -1093,7 +1124,8 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
 	CollectIt(pOut, pErr, TestOut, TestErr)
 ### RunIt(cmd, TestIn, TestOut, TestErr) #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers) :
+	ATJOB2 = ""
 	STDERR.flush()
 	STDOUT.write(time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE+" ...")
 	STDOUT.flush()
@@ -1229,6 +1261,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 			except IOError:
 				nop = ''
 
+		if os.name != "nt":
+			ATJOB2 = StartAt(MkillUsers)
 		CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
 
 		if SERVER == "MAPI":
@@ -1254,7 +1288,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 
 	TestOut.write(Prompt('Done.')) ; TestOut.flush()
 	TestErr.write(Prompt('Done.')) ; TestErr.flush()
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT) #
+	return ATJOB2
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers) #
 
 def Check(command, input) :
 	pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
@@ -1289,6 +1324,27 @@ def CheckExec(cmd) :
 			return p+os.sep+cmd+x[1]
 	return ""
 ### CheckExec(cmd) #
+
+def SetExecEnv(exe,verbose) :
+	if os.name == "nt":
+		CALL = "call "
+	else:
+		CALL = ""
+	if verbose:
+		STDERR.flush()
+	for v in exe.keys():
+		V = string.upper(v)
+		if  v != 'Mtimeout':
+			os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
+		elif exe[v][0]:
+			os.environ[V] = CALL+exe[v][1]
+		else:
+			os.environ[V] = ""
+		if verbose:
+			print(V+" = "+exe[v][0]+" : "+exe[v][1])
+	if verbose:
+		STDOUT.flush()
+### SetExecEnv(exe,verbose) #
 
 #############################################################################
 #	MAIN
@@ -1437,7 +1493,7 @@ def main(argv) :
 		par['CONTEXT']   = '-c1'
 		par['ACCURACY']  = 1
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
-		par['TIMEOUT']   = 600
+		par['TIMEOUT']   = 60
 	if THISFILE == "Mapprove.py":
 		par['EXTENSION'] = ['out', 'err']
 		par['SYSTEM']    = ''
@@ -1646,22 +1702,8 @@ def main(argv) :
 		exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , env['SQLCLIENT']
 		if not exe['Mtimeout'][0]:
 			exe['Mtimeout'] = '', ''
-		if os.name == "nt":
-			CALL = "call "
-		else:
-			CALL = ""
-		STDERR.flush()
-		for v in exe.keys():
-			V = string.upper(v)
-			if  v != 'Mtimeout':
-				os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
-			elif exe[v][0]:
-				os.environ[V] = CALL+exe[v][1]
-			else:
-				os.environ[V] = ""
-			print(V+" = "+exe[v][0]+" : "+exe[v][1])
-		STDOUT.flush()
 		env['exe'] = exe
+		SetExecEnv(exe,1)
 
 		#TODO:
 		#exe['JAVA']       = 'java'

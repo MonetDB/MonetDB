@@ -20,6 +20,7 @@ files="`ls -d $* 2>/dev/null`"
 
 if [ ! "$files" ] ; then  exit 0 ; fi
 
+sync ; while [ -f $LOCKFILE ] ; do sleep 9 ; done
 touch $LOCKFILE
 
 function  LOG1  () { prompt="\n# `date +%H:%M:%S` >  " ; echo -en "$prompt$prompt$*$prompt\n\n" ; }
@@ -45,18 +46,18 @@ done
 
 case `uname` in
   Linux)
-	pids1="$cpids`fuser $files | cut -d: -f2- | sed 's|[a-z]||g'`"
+	pids1="$cpids`fuser $files | cut -d: -f2- | sed 's|[a-z]||g' | sed 's| *'$PARENT'||g'`"
 	PS="ps -f $pids1"
 	FUSER="fuser -v"
 	;;
   IRIX|IRIX64)
-  	pids0="`echo $cpids | sed 's| |,|g'``fuser -q $files`"
+  	pids0="`echo $cpids | sed 's| |,|g'``fuser -q $files | sed 's|,*'$PARENT'||g'`"
   	pids1="`echo $pids0 | sed 's|,| |g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
 	;;
   SunOS)
-	pids1="$cpids`fuser $files 2>/dev/null`"
+	pids1="$cpids`fuser $files 2>/dev/null | sed 's| *'$PARENT'||g'`"
 	pids0="`echo $pids1 | sed 's| |,|g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
@@ -67,12 +68,16 @@ esac
 
 if [ "$pids1" ] ; then
 	pids2="(`echo $pids1 | sed 's/ /|/g'`)"
+	echo PARENT=$PARENT
+	echo CHILD=$CHILD
+	echo files=$files
 	echo cpids=$cpids
 	echo pids1=$pids1
 	echo pids2=$pids2
 	LOG2x	$PS
 	LOG2x	$FUSER   $files
-	LOG2x	fuser -k $files
+	#LOG2x	fuser -k $files
+	LOG2x	kill     $pids1
 	if [ "$cpids" ] ; then
 		sleep 3
 		LOG2x   kill $cpids

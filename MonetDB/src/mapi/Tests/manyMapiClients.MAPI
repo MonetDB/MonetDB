@@ -7,9 +7,9 @@ while [ $i -lt $n ] ; do
 	i=$[i+1]
 	echo "$i:"
 	echo "$i:" >&2
-#	$MAPICLIENT <<- EOF
-	MapiClient -everything <<- EOF
+	$MAPI_CLIENT <<- EOF	# 195x
 		print($i);
 	EOF
 done
 echo "done: $i"
+
