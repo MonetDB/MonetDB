@@ -602,6 +602,8 @@ dump_table(Mapi mid, char *tname)
 				   certain characters escaped */
 				putc('"', toConsole);
 				while (*s) {
+					/* strToStr and strFromStr in gdk_atoms.mx only
+					   support \t \n \\ \" and \377 */
 					switch (*s) {
 					case '\\':
 					case '"':
@@ -612,14 +614,6 @@ dump_table(Mapi mid, char *tname)
 						putc('\\', toConsole);
 						putc('n', toConsole);
 						break;
-					case '\r':
-						putc('\\', toConsole);
-						putc('r', toConsole);
-						break;
-					case '\f':
-						putc('\\', toConsole);
-						putc('f', toConsole);
-						break;
 					case '\t':
 						putc('\\', toConsole);
 						putc('t', toConsole);
@@ -627,7 +621,7 @@ dump_table(Mapi mid, char *tname)
 					default:
 						if ((0 < *s && *s < 32) || *s == '\377') {
 							char *tmp = malloc(sizeof(char) * 4 + 1);
-							snprintf(tmp, 4, "\\%03o", (unsigned char)*s);
+							snprintf(tmp, 5, "\\%03o", (unsigned char)*s);
 							fwrite(tmp, 4, 1, toConsole);
 							free(tmp);
 						} else {

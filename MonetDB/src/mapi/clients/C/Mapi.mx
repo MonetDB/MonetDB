@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 The mapi_connect() operation establishes a communication channel
 with a running server on the local machine. The user identification
 is the ubiquitous anonymous guest, for whom we do not require a password.
-The query language interface is either "sql" of "mil". 
+The query language interface is either "sql" of "mil".
 Future versions are expected to recognize also "xcore" and "xquery",
 and the experimental languages "ram" and "mal".
 
@@ -3143,6 +3143,7 @@ unquote(char *msg, char **start, char **next)
 					) {
 						char *tmp = malloc(sizeof(char) * 3 + 1);
 						strncpy(tmp, p, 3);
+						tmp[3] = '\0';
 						*s = (unsigned char)strtol(tmp, NULL, 8);
 						free(tmp);
 						p += 2;
