@@ -93,9 +93,9 @@ void monetInterpreter(void* status){
 	doRequest(t,0);
 	MT_set_lock(monet_critical, "monetInterpreter");
  	monet_threads--;
-	if (!monet_threads) MT_up_sema(monet_main, "monetInterpreter");
 	MT_unset_lock(monet_critical, "monetInterpreter");
 	THRdel(t);
+	if (GDKnrofthreads < monet_background) MT_up_sema(monet_main, "monetInterpreter");
        	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
 	MT_exit_thread(0);
 }
