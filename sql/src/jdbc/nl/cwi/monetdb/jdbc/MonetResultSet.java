@@ -281,7 +281,7 @@ public class MonetResultSet implements ResultSet {
 		if (column != columns.length) throw new AssertionError("Illegal result length: " + column + "\nlast read: " + result[column - 1]);
 		// trim spaces off all columns and unquote + unescape if they are quoted
 		for (i = 0; i < result.length; i++) {
-			if (result[i].equals("nil")) {
+			if (result[i].equals("NULL")) {
 				result[i] = null;
 			} else 	if (result[i].startsWith("\"") && result[i].endsWith("\"")) {
 				result[i] = result[i].substring(1, result[i].length() - 1);
