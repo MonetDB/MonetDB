@@ -9,20 +9,27 @@
 #else
 #define BUFLEN 1024
 #endif
+
+static PyObject *ErrorObject;
 %}
 
 %ignore __SQLTYPES_H;
 %include "/usr/include/sqltypes.h"
 
+%init %{
+	ErrorObject = PyErr_NewException("odbc.error", NULL, NULL);
+	PyDict_SetItemString(d, "error", ErrorObject);
+%}
+
 /*
   output arg to return a Handle
  */
 %typemap(in, numinputs=0) SQLHANDLE *OUTPUT (SQLHANDLE temp) {
-   $1 = &temp;
+	$1 = &temp;
 }
 %typemap(argout,fragment="t_output_helper") SQLHANDLE *OUTPUT {
-   PyObject *o = SWIG_NewPointerObj((void *) *$1, $1_descriptor, 0);
-   $result = t_output_helper($result, o);
+	PyObject *o = SWIG_NewPointerObj((void *) *$1, $1_descriptor, 0);
+	$result = t_output_helper($result, o);
 }
 
 /*
@@ -355,6 +362,8 @@
 			o = PyString_FromStringAndSize((char *) $2, *$4 >= $3 ? $3 - 1 : *$4);
 		break;
 	case SQL_C_BIT:
+		o = PyBool_FromLong((long) * (SQLCHAR *) $2);
+		break;
 	case SQL_C_UTINYINT:
 		o = PyInt_FromLong((long) * (SQLCHAR *) $2);
 		break;
@@ -378,6 +387,7 @@
 	case SQL_C_DOUBLE:
 		o = PyFloat_FromDouble((double) * (SQLDOUBLE *) $2);
 		break;
+	case SQL_C_TINYINT:
 	case SQL_C_STINYINT:
 		o = PyInt_FromLong((long) * (SQLSCHAR *) $2);
 		break;
@@ -470,7 +480,7 @@
 		o = PyInt_FromLong((long) * (SQLRETURN *) $2);
 		break;
 	default:
-		PyErr_SetString(PyExc_ValueError, "bad info type");
+		PyErr_SetString(ErrorObject, "bad info type");
 		SWIG_fail;
 	}
 	$result = t_output_helper($result, o);
@@ -709,7 +719,7 @@
 		o = PyInt_FromLong((long) * (SQLINTEGER *) $2);
 		break;
 	default:
-		PyErr_SetString(PyExc_ValueError, "bad info type");
+		PyErr_SetString(ErrorObject, "bad info type");
 		SWIG_fail;
 	}
 	$result = t_output_helper($result, o);
@@ -750,7 +760,7 @@
 				$1 = (SQLPOINTER) &h;
 				$2 = 0;
 			} else {
-				PyErr_SetString(PyExc_ValueError, "bad value type");
+				PyErr_SetString(ErrorObject, "bad value type");
 				SWIG_fail;
 			}
 		}
@@ -767,7 +777,7 @@
 		$1 = (SQLULEN) PyString_AsString($input);
 		if (PyErr_Occurred()) {
 			PyErr_Clear();
-			PyErr_SetString(PyExc_ValueError, "bad value type");
+			PyErr_SetString(ErrorObject, "bad value type");
 			SWIG_fail;
 		}
 	}
@@ -790,14 +800,17 @@
 %{
 #define CheckResult(res,tpe,hnd)					\
 	if (res == SQL_ERROR) {				  		\
-		char msg[256];						\
+		char msg[256], state[6];				\
 		SQLSMALLINT len;					\
-		SQLGetDiagRec(tpe, hnd, 1, NULL, NULL, msg, 256, &len);	\
-		PyErr_SetString(PyExc_RuntimeError, msg);		\
+		PyObject *errobj;					\
+		SQLGetDiagRec(tpe, hnd, 1, state, NULL, msg, 256, &len); \
+		errobj = Py_BuildValue("ss", msg, state);		\
+		PyErr_SetObject(ErrorObject, errobj);			\
+		Py_XDECREF(errobj);					\
 		return NULL;						\
 	}								\
 	if (res == SQL_INVALID_HANDLE) {				\
-		PyErr_SetString(PyExc_RuntimeError, "Invalid handle");	\
+		PyErr_SetString(ErrorObject, "Invalid handle");		\
 		return NULL;						\
 	}
 %}
