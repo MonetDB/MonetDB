@@ -30,7 +30,7 @@ phase of the scenario.
 #define _SQL_OPTIMIZER_H_
 #include "sql.h"
 
-#define _SQL_OPTIMIZER_DEBUG  
+/* #define _SQL_OPTIMIZER_DEBUG  */
 
 sql_export void addQueryToCache(Client c);
 sql_export void optimizeQueryInCache(Client c);
@@ -49,6 +49,8 @@ type checked and optimized.
 
 void addQueryToCache(Client c)
 {
+	backend *be = ((backend*)c->state[PARSER]);
+
         insertSymbol(findScope(c->nspace,"sqlcache"), c->curprg);
         trimMalBlk(c->curprg->def);
         c->blkmode =0;
@@ -63,7 +65,8 @@ An error in the compilation should be reported to the user.
             stream_flush(c->fdout);
             return;
         }
-        optimizeQueryInCache(c);
+	if (be->mvc->factory)
+        	optimizeQueryInCache(c);
 }
 @-
 The first attempt to building an SQL optimizer.
@@ -74,9 +77,11 @@ enable re-entry when used as a cache-optimized query.
 @c
 str SQLoptimizer(Client c) {
     (void) c;
+#ifdef _SQL_OPTIMIZER_DEBUG
     printf("SQLoptimizer\n");
         printFunction(c->fdout,c->curprg->def, LIST_MAL_ALL);
     printf("done\n");
+#endif
     return MAL_SUCCEED;
 }
 

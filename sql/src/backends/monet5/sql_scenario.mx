@@ -33,7 +33,6 @@ phase of the scenario.
 /* #define _SQL_SCENARIO_DEBUG */
 /* #define _SQL_READER_DEBUG */
 /* #define _SQL_PARSER_DEBUG  */
-#define _SQL_OPTIMIZER_DEBUG  
 
 sql_export str SQLexitClient(Client c);
 sql_export str SQLinitClient(Client c);
@@ -249,9 +248,6 @@ The current analysis is simple and fulfills our short-term needs.
 A future version may analyze the parameter settings in more detail.
 @c
 
-#define skip() while(*c->nxt && isspace(*c->nxt) ) c->nxt++;
-#define tst(X) (strncmp(c->nxt,(X),strlen(X))==0 && isspace(c->nxt[strlen(X)]))
-
 void SQLsetDebugger(Client c)
 {
 	InstrPtr q;
@@ -324,8 +320,9 @@ str SQLparser(Client c) {
 		msg= throwMessage("SQLparser","Parser errors\n");
                 sqlcleanup(m, err, cache);
         }
-	len= strlen(m->scanner.buf);
-	c->nxt +=len;
+	/*len= strlen(m->scanner.buf);*/
+	len = m->scanner.yycur;
+	c->nxt += len;
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
@@ -381,6 +378,17 @@ In the final phase we add any debugging control
 				       GDKstrdup("false"),0));
 		pushInstruction(c->curprg->def,q);
 	}
+
+	/*
+ 	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * and on schema changes
+	 */
+	if (m->cache &&
+	   ( m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id > 100)) {
+		if (m->qc) qc_destroy(m->qc);
+		m->qc = qc_create();
+	}
+
         sqlcleanup(m, err, cache);
 @-
 During the execution of the query exceptions can be raised.
@@ -421,6 +429,7 @@ be stored in an SQL table
 @c
         if (explainSQL()){
 		char safe = *c->nxt;
+
 		*c->nxt=0;
 		be->qry= GDKstrdup(c->nxt-len);
 		be->Tparse= GDKusec()-T0;
@@ -457,22 +466,19 @@ unless auto_commit has been set.
 	}
 	c->glb= oldglb;
 	if( explainSQL()){
-		lng tot= be->Tparse;
 		int ret;
-		char buf[BUFSIZ], *stmt= buf, *qs, *t, *lim=buf+BUFSIZ;
+		lng tot= be->Tparse;
+		char buf[BUFSIZ], *qs, *stmt = buf;
 
 		tot+= be->Texec = GDKusec()-T0;
-		snprintf(buf, BUFSIZ, "%s","set explain='none';insert into history values(now,'");
-		qs= be->qry;
-		for(t= buf+strlen(buf);*qs &&  t<lim-4; t++){
-			if( *qs== '\n') {qs++; continue;}
-			if( *qs=='\'') { *t++= '\\'; *t++= '\\'; *t++= '\\';}
-			*t= *qs++;
-		}
-		*t=0;
-		ret= strlen(buf);
-		snprintf(buf+ret, BUFSIZ-ret, "',%ld,0,%ld,%ld,USER);set explain='sql';\n", 
-			be->Tparse, be->Texec, tot);
+		qs= sql_escape(be->qry);
+		snprintf(buf, BUFSIZ, 
+			"set explain = 'none';"
+			"insert into sys.history " 
+			"values(now,'%s',%lld,0,%lld,%lld,USER);\n"
+			"set explain = 'performance';",
+			qs, be->Tparse, be->Texec, tot);
+		_DELETE(qs);
 @-
 This code causes a recursion, because the reset of the explain
 triggers the history action. A better approach is to directly
@@ -484,8 +490,8 @@ Then the SQL history table is just a view over a few basic bats.
 		printf("[total %d]\n",tot);
 		if( be->qry) GDKfree(be->qry);
 		be->qry= NULL;
-		(void) stmt;
-		/* DELAY SQLstatement(&ret,&stmt); */
+
+		(void)SQLstatement(&ret, &stmt); 
 	}
 	return msg;
 }

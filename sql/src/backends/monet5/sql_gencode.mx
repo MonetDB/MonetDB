@@ -447,7 +447,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= newStmt(mb,"algebra","likeselect");
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
-			@:SQLpostlude@
 			break;
 			}
 		case cmp_notlike:{
@@ -459,14 +458,12 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= newStmt(mb,"algebra"," kdiff");
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,k);
-			@:SQLpostlude@
 			break;
 			}
 		case cmp_equal:{
 			q= newStmt(mb,"algebra",cmd);
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,r);
-			@:SQLpostlude@
 			break;
 			}
 		case cmp_notequal:{
@@ -500,7 +497,6 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,l);
 			q= pushArgument(mb,q,k);
 			q= pushArgument(mb,q,r);
-			@:SQLpostlude@
 			break;
 		case cmp_gt:
 			q= newStmt(mb,"calc",tail_type(s)->type->base.name);
@@ -528,6 +524,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			GDKerror("SQL2MAL: error impossible\n");
 	  	} 
 		}
+		s->nr= getDestVar(q);
 		@:SQLpostlude@
 	} break;
 	case st_uselect2: 
