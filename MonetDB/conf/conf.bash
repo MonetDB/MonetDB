@@ -218,13 +218,28 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="/home/niels/soft/local/lib:${libpath}"
 		fi
 	fi
+	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
+		# java in Konstanz
+		binpath="/usr/lib/java/bin:${binpath}"
+	fi
 	if [ -x /net/lin_local/twig/twig ] ; then
 		# twig in Konstanz
 		binpath="/net/lin_local/twig:${binpath}"
 	fi
-	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
-		# java in Konstanz
-		binpath="/usr/lib/java/bin:${binpath}"
+	if [ "${what}" = "PATHFINDER"  -a  -d /net/lin_local/libgc-devel ] ; then
+		# libgc in Konstanz
+		conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
+	fi
+fi
+
+if [ "${os}" = "CYGWIN" ] ; then
+	if [ -x ${softpath}/bin/twig ] ; then
+		# twig on winxp
+		binpath="${softpath}/bin:${binpath}"
+	fi
+	if [ "${what}" = "PATHFINDER"  -a  -d ${softpath} ] ; then
+		# libgc on winxp
+		conf_opts="${conf_opts} --with-gc=${softpath}"
 	fi
 fi
 
@@ -238,6 +253,10 @@ if [ "${os}" = "Darwin" ] ; then
 	done
 	binpath="${mypath}:${binpath}"
 	unset mypath
+	if [ "${what}" = "PATHFINDER"  -a  -d /Users/monet/soft/local ] ; then
+		# libgc in Amherst
+		conf_opts="${conf_opts} --with-gc=/Users/monet/soft/local/"
+	fi
 fi
 
 if [ "${os}" = "SunOS" ] ; then
@@ -342,12 +361,6 @@ if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; th
 			;;
 		esac
 	fi
-elif [ "${os}" = "Linux"  -a  "${what}" = "PATHFINDER"  -a  -d /net/lin_local/libgc-devel ] ; then
-	# libgc in Konstanz
-	conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
-elif [ "${os}" = "Darwin"  -a  "${what}" = "PATHFINDER"  -a  -d /Users/monet/soft/local ] ; then
-	# libgc in Amherst
-	conf_opts="${conf_opts} --with-gc=/Users/monet/soft/local/"
 fi
 
 # CWI specific additional package settings
