@@ -260,11 +260,8 @@ def am_scripts(fd, var, scripts, am):
         am['EXTRA_DIST'].append(src)
 
     for script in scripts['TARGETS']:
-	try:
-		s,ext2 = rsplit_filename(script)
-		if not ext2 in ext:
-			continue
-	except:
+	s,ext2 = rsplit_filename(script)
+	if not ext2 in ext:
 		continue
 	name = "script_" + script
         if name not in am['BIN_SCRIPTS']:

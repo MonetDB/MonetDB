@@ -35,6 +35,14 @@ def split_filename(f):
         return string.split(f, ".", 1)
     return base, ext
 
+def rsplit_filename(f):
+    base = f
+    ext = ""
+    s = string.rfind(f, ".")
+    if s >= 0:
+        return f[:s], f[s+1:]
+    return base, ext
+
 def msc_dummy(fd, var, values, msc):
     res = fd
 
@@ -320,11 +328,8 @@ def msc_scripts(fd, var, scripts, msc):
     sd = msc_translate_dir(sd, msc)
 
     for script in scripts['TARGETS']:
-	try:
-		s,ext2 = rsplit_filename(script)
-		if not ext2 in ext:
-			continue
-	except:
+	s,ext2 = rsplit_filename(script)
+	if not ext2 in ext:
 		continue
 	if (script, script, '', sd) in msc['INSTALL']:
 		continue
