@@ -53,6 +53,11 @@ base="`pwd`"
 wh_t="`basename $base | perl -pe 's|^([a-zA-Z]+)([^a-zA-Z].*)?$|$1|'`"
 what="`echo ${wh_t} | tr [:lower:] [:upper:]`"
 
+# Ugly hack: (Arjen)
+if [ "${what}" = "MONETDB" ] ; then
+  what="MONET"
+fi
+
 if [ "${what}" != "MONET" ] ; then
 	if [ ! "${MONET_PREFIX}" ] ; then
 		MONET_PREFIX=`monet-config --prefix`
@@ -292,7 +297,7 @@ if [ "${INSTRUMENT}" ] ; then
 fi
 
 if [ "${what}" != "MONET" ] ; then
-	# tell configure where to find Monet
+	# tell configure where to find MonetDB
 	conf_opts="${conf_opts} --with-monet=${MONET_PREFIX}"
 fi
 
