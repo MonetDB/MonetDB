@@ -28,6 +28,7 @@ import string
 import random
 import time
 import socket
+import select
 #import signal
 #import getpass
 import Mfilter
@@ -1221,8 +1222,22 @@ def LaunchIt(cmd, TestIn, TestOut, TestErr) :
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
 def CollectIt(pOut, pErr, TestOut, TestErr) :
-    TestOut.writelines(pOut.readlines()) ; TestOut.flush()
-    TestErr.writelines(pErr.readlines()) ; TestErr.flush()
+    readlist = [pOut, pErr]
+    while readlist:
+        readers, dummy1, dummy2 = select.select(readlist, [], [])
+        todelete = []
+        for r in readers:
+            data = os.read(r.fileno(), 1024)
+            if not data:
+                todelete.append(r)
+            elif r is pOut:
+                TestOut.write(data)
+            elif r is pErr:
+                TestErr.write(data)
+        for r in todelete:
+            readlist.remove(r)
+    TestOut.flush()
+    TestErr.flush()
     pOut.close()
     pErr.close()
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
