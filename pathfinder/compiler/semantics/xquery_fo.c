@@ -188,9 +188,18 @@
     .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
                             PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_boolean () }                                          \
-, /* fn:error (item?) as none */                                         \
+, /* fn:error () as none */                                              \
   { .ns = PFns_fn, .loc = "error",                                       \
-    .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_none () }                                             \
+, /* fn:error (string?) as none */                                       \
+  { .ns = PFns_fn, .loc = "error",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_none () }                                             \
+, /* fn:error (string?, string) as none */                               \
+  { .ns = PFns_fn, .loc = "error",                                       \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_string () },                            \
     .ret_ty = PFty_none () }                                             \
 , /* op:or (boolean, boolean) as boolean */                              \
   { .ns = PFns_op, .loc = "or",                                          \

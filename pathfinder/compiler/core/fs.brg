@@ -2277,8 +2277,7 @@ reduce (PFpnode_t * p, int goalnt)
                         typeswitch (
                             var (v1),
                             cases (case_ (C(R(p)), var (v1)),
-                                   default_ (APPLY (fn_error, var(v1))))));
-                    /* FIXME: fn_error works only with more then 1 argument */
+                                   default_ (APPLY (fn_error, str("err:XP0050"))))));
         } break;
 
         /* CastableExpr:           CastExpr */

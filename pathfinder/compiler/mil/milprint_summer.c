@@ -7443,6 +7443,61 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# ignored fn:unordered\n");
         return translate2MIL (f, code, cur_level, counter, L(args));
     }
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
+    {
+        if (fun->arity == 0)
+        {
+            milprintf(f, "ERROR (\"err:FOER0000\");\n");
+            return NORMAL;
+        }
+
+        item_ext = kind_str(STR);
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+        }
+        milprintf(f,
+                "var item_result;\n"
+                "if (iter.count() != loop%03u.count())\n"
+                "{ # add zero values needed for fn:sum\n"
+                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter, difference, "
+                                           "item%s, fake_project(\"err:FOER0000\"));\n"
+                "difference := nil_oid_oid;\n"
+                "item%s := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "}\n",
+                cur_level, 
+                cur_level,
+                item_ext,
+                item_ext);
+
+        if (fun->arity == 2)
+        {
+            counter++;
+            saveResult_ (f, counter, STR);
+
+            rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+            if (!rc)
+            {
+                milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+            }
+            milprintf(f, 
+                    "ERROR(item%s%03u.fetch(0) + \": \" + item%s.fetch(0));\n",
+                    item_ext, counter, item_ext);
+            deleteResult_ (f, counter, STR);
+        }
+        else
+        {
+            milprintf(f, 
+                    "ERROR(item%s.fetch(0));\n",
+                    item_ext);
+        }
+        return NORMAL;
+    }
     else 
     {
         PFlog("function %s is not supported and therefore ignored",
