@@ -346,21 +346,32 @@ The commands are self-explanatory.
 The prompt string sent to the user indicates the debugger mode.
 @c
 void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
+	int m = 1;
     char *b,*c;
     stream *out = cntxt->fdout;
     int listing=cntxt->listing;
+	char *oldprompt = cntxt->prompt;
+	int oldpromptlength = cntxt->promptlength;
 
     if( p != NULL){
         stream_printf(out,"#mdb ");
         printInstruction(out,mb,p,listing);
     }
+	if (cntxt==mal_clients){
+		cntxt -> prompt = "mdb>";
+		cntxt -> promptlength = 4;
+	}
     do {
+		char *msg = NULL;
     	cntxt->fdin->pos += cntxt->yycur; 
 		cntxt->yycur = 0;
 		cntxt->fdin->buf[cntxt->fdin->pos] = 0;
 
-		if (readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001")) <= 0) {
-        	return;
+		if (cntxt->phase[READER] && (msg=(*cntxt->phase[READER])(cntxt)) ) {
+			GDKfree(msg);
+        	break;
+		} else if (readClient(cntxt,(cntxt==mal_clients?"mdb>":"\001mdb>\001")) <= 0) {
+        	break;
 		}
     	b = CURRENT(cntxt);
     	skipBlanc(cntxt,b);
@@ -369,9 +380,8 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
         if( c) *c =0;
     	switch(*b){
     	case 0: 
-    		cntxt->fdin->pos += cntxt->yycur; 
-			cntxt->yycur = 0;
-        	return;
+			m = 0; 
+			break;
     	case 'a': 
 			if( strncmp("atoms",b,5)==0) 
 				showAtoms(out);
@@ -383,10 +393,8 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
          	}
          	stk->cmd= 'c';
         	skipWord(cntxt,b);
-    		cntxt->fdin->pos += cntxt->yycur; 
-			cntxt->yycur = 0;
-			cntxt->fdin->buf[cntxt->fdin->pos] = 0;
-         	return;
+			m = 0;
+			break;
     	case 'h': mdbHelp(out); break;
     	case 'q': 
         	stk->cmd= 'q';/* return from this debugger */
@@ -405,7 +413,8 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
             	break;
         	} 
         	stk->cmd= *b;
-        	return;
+			m = 0;
+			break;
     	case 'm': /* display a module */
         	{
         		str modnme, fcnname;
@@ -621,7 +630,12 @@ signatures satisfying the pattern.
 			b++;
 			cntxt->yycur++;
 		}
-    } while(1);
+    } while(m);
+    cntxt->fdin->pos += cntxt->yycur; 
+	cntxt->yycur = 0;
+	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
+	cntxt->prompt = oldprompt;
+	cntxt->promptlength = oldpromptlength;
 }
 void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
     InstrPtr p;

@@ -786,6 +786,8 @@ int readClient(Client c,str prompt){
 			in->eof = 0;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
+			if (!in->mode) /* read one line at a time in line mode */
+				break;
 			sum += rd;
 		}
 		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
