@@ -1434,7 +1434,7 @@ void GDKaddbuf(const char *message)
 	strcpy(prefix, "!");	/* default prefix */
 	while (p && *p) {
 		if (*p == '!') {
-			int preflen;
+			size_t preflen;
 
 			/* remember last ! prefix (e.g. "!ERROR: ")
 			   for any subsequent lines that start without ! */
@@ -1447,7 +1447,7 @@ void GDKaddbuf(const char *message)
 				;
 			if (*p == ':' && *++p == ' ') {
 				/* found prefix, now remember it */
-				preflen = (int) (p - message) + 1;
+				preflen = (size_t) (p - message) + 1;
 				if (preflen > sizeof(prefix) - 1)
 					preflen = sizeof(prefix) - 1;
 				strncpy(prefix, message, preflen);

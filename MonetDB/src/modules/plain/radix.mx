@@ -3335,7 +3335,8 @@ int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
 
 int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	ssize_t n, c_cnt = BATcount(c), v_cnt = BATcount(v);
-	int prev_bits = -1, radix_shift, radix_bits = *rb;
+	size_t prev_bits = ~ (size_t) 0;
+	int radix_shift, radix_bits = *rb;
 	int oidhead = (BUNsize(c) != sizeof(oid));
 	ssize_t width = BUNsize(v), i = MAX(1, BATcount(v) - 1);
 	ssize_t vectorsize = *vs, stride = *st;

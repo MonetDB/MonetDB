@@ -60,7 +60,7 @@ The generator can be loaded as a module into any running server.
 
 char	string1[54] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char	*rndstr;
-int	count;
+oid	count;
 
 void WISCinitRndStr(int u1)
 {
@@ -211,7 +211,7 @@ WISCgenerator(
 	int	i;
 	BAT 	*b[16];
 
-	count = *cnt;
+	count = (oid) *cnt;
 	stream_printf(GDKout,"WISC generator active on \"%s\" with %d tuples\n",
 		nme,*cnt);
 	stream_flush(GDKout);

@@ -189,8 +189,8 @@ yes-*)
 	X_CFLAGS="$X_CFLAGS -Werror"
 	X_CXXFLAGS="$X_CXXFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet ...
-	X_CFLAGS="$X_CFLAGS -Wno-format -Wno-sign-compare"
-	X_CXXFLAGS="$X_CXXFLAGS -Wno-format -Wno-sign-compare"
+	X_CFLAGS="$X_CFLAGS -Wno-format"
+	X_CXXFLAGS="$X_CXXFLAGS -Wno-format"
 	dnl  ... and some are beyond our control:
 	case "$gcc_ver" in
 		dnl  Some versions of flex and bison require these:

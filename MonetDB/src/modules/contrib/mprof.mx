@@ -577,7 +577,7 @@ Tms_fromstr(
 		}
 	}
 	if (*T_ptr){
-	   	if (*len < sizeof(Tms) ){
+	   	if (*len < (int) sizeof(Tms) ){
 			GDKfree(*T_ptr);
 			*T_ptr = NULL;
 		}
@@ -760,7 +760,7 @@ Ma_fromstr(
 	m.fsmblks = fsmblks;
 	m.uordblks = uordblks;
 	if (*M_ptr){
-	   	if (*len < sizeof(Mallinfo) ){
+	   	if (*len < (int) sizeof(Mallinfo) ){
 			GDKfree(*M_ptr);
 			*M_ptr = NULL;
 		}
@@ -936,7 +936,7 @@ Ru_fromstr(
         	&ru.ru_nivcsw);
 	if( i != 8 ) return 0;
 	if (*R_ptr){
-	   	if (*len < sizeof(Rusage) ){
+	   	if (*len < (int) sizeof(Rusage) ){
 			GDKfree(*R_ptr);
 			*R_ptr = NULL;
 		}

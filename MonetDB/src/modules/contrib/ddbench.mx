@@ -722,7 +722,7 @@ static size_t estimate(BAT* b, size_t lo, size_t hi) {
 @= atommem
         if (!*dst) {
                 *dst = (@1 *) GDKmalloc(*len = @2);
-        } else if (*len < @2) {
+        } else if (*len < (int) @2) {
                 GDKfree(*dst);
                 *dst = (@1 *) GDKmalloc(*len = @2);
         }

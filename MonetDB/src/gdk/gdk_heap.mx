@@ -571,7 +571,7 @@ void HEAP_initialize(Heap* heap, size_t nbytes, size_t nprivate, int alignment) 
    if (alignment != 8) {
       alignment = 4;
    }
-   if (alignment < sizeof(size_t))
+   if ((size_t) alignment < sizeof(size_t))
       alignment = sizeof(size_t);
 
    /*
