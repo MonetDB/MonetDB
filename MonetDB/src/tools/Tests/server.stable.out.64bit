@@ -569,19 +569,19 @@ Start of MIL prelude.
 #-----------------------------------------------------------------------------------------------------------------#
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "adm_fcntbl",		  "str",  "oid",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "adm_fcntbl",		  "str",  "oid",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  30,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_aut",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dat",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  570,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_nme",	  "oid",  "str",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1667,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_aut",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_dat",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  573,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_nme",	  "oid",  "str",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_cnt",	  "oid",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -641,29 +641,29 @@ Start of MIL prelude.
 # client	name	login				tree											  # name
 # int	str	str				str											  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 0,	  "adm",  "Fri Oct 22 16:56:06 2004",	  "clients()"										  ]
-[ 1,	  "adm",  "Fri Oct 22 16:56:06 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
+[ 0,	  "adm",  "Sun Oct 24 00:20:34 2004",	  "clients()"										  ]
+[ 1,	  "adm",  "Sun Oct 24 00:20:34 2004",	  "setoid(oid(10000000));printf(\"Start of MIL prelude.\\n\");print(clientid());qstat"	  ]
 #-------------------------#
 # gdk		cpu	  # name
 # str		int	  # type
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  640	  ]
+[ "user",	  580	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  80	  ]
+[ "system",	  100	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------------------------------------------------------#
 # h			monet_environment					  # name
 # str			str							  # type
 #---------------------------------------------------------------------------------#
-[ "config",		  "/var/tmp/niels//SunOS-sun4u/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "64bitsparc-sun-solaris2.8"				  ]
+[ "config",		  "/local/home/monet/MonetDB/IRIX64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"				  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "12696"						  ]
-[ "prefix",		  "/var/tmp/niels//SunOS-sun4u"				  ]
-[ "exec_prefix",	  "/var/tmp/niels//SunOS-sun4u"				  ]
+[ "monet_pid",		  "79084287"						  ]
+[ "prefix",		  "/local/home/monet/MonetDB/IRIX64"			  ]
+[ "exec_prefix",	  "/local/home/monet/MonetDB/IRIX64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"					  ]
-[ "gdk_dbfarm",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"						  ]
 [ "gdk_vm_minsize",	  "134217728"						  ]
@@ -672,32 +672,32 @@ Start of MIL prelude.
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
 [ "monet_nostalgic",	  "no"							  ]
-[ "monet_mod_path",	  "/var/tmp/niels//SunOS-sun4u/lib/MonetDB"		  ]
+[ "monet_mod_path",	  "/local/home/monet/MonetDB/IRIX64/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"							  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "44339"						  ]
+[ "mapi_port",		  "44573"						  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "51380"						  ]
+[ "sql_port",		  "55635"						  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"							  ]
-[ "sql_logdir",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/log"		  ]
+[ "sql_logdir",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/log"	  ]
 [ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
-[ "monet_cwd",		  "/scratch/niels/SunOS-sun4u/mTests/src/tools"		  ]
+[ "monet_cwd",		  "/local/home/monet/MonetDB/IRIX64/mTests/src/tools"	  ]
 #---------------------------------------------------------------------------------#
 # h			monet_environment					  # name
 # str			str							  # type
 #---------------------------------------------------------------------------------#
-[ "config",		  "/var/tmp/niels//SunOS-sun4u/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "64bitsparc-sun-solaris2.8"				  ]
+[ "config",		  "/local/home/monet/MonetDB/IRIX64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"				  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "12696"						  ]
-[ "prefix",		  "/var/tmp/niels//SunOS-sun4u"				  ]
-[ "exec_prefix",	  "/var/tmp/niels//SunOS-sun4u"				  ]
+[ "monet_pid",		  "79084287"						  ]
+[ "prefix",		  "/local/home/monet/MonetDB/IRIX64"			  ]
+[ "exec_prefix",	  "/local/home/monet/MonetDB/IRIX64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"					  ]
-[ "gdk_dbfarm",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"						  ]
 [ "gdk_vm_minsize",	  "134217728"						  ]
@@ -706,46 +706,46 @@ Start of MIL prelude.
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
 [ "monet_nostalgic",	  "no"							  ]
-[ "monet_mod_path",	  "/var/tmp/niels//SunOS-sun4u/lib/MonetDB"		  ]
+[ "monet_mod_path",	  "/local/home/monet/MonetDB/IRIX64/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"							  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "44339"						  ]
+[ "mapi_port",		  "44573"						  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "51380"						  ]
+[ "sql_port",		  "55635"						  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"							  ]
-[ "sql_logdir",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/log"		  ]
+[ "sql_logdir",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/log"	  ]
 [ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
-[ "monet_cwd",		  "/scratch/niels/SunOS-sun4u/mTests/src/tools"		  ]
+[ "monet_cwd",		  "/local/home/monet/MonetDB/IRIX64/mTests/src/tools"	  ]
 #-------------------------#
 # gdk		io	  # name
 # str		int	  # type
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  0	  ]
+[ "maxrss",	  5696	  ]
+[ "minflt",	  245	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  14	  ]
-[ "nvcsw",	  6	  ]
-[ "ninvcsw",	  9	  ]
+[ "inblock",	  3	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  2	  ]
 #---------------------------------#
 # gdk		mem		  # name
 # str		int		  # type
 #---------------------------------#
-[ "memincr",	  3106816	  ]
-[ "arena",	  3145696	  ]
-[ "ordblks",	  9659		  ]
-[ "smblks",	  4600		  ]
-[ "hblkhd",	  2576		  ]
-[ "hblks",	  46		  ]
-[ "usmblks",	  149156	  ]
-[ "fsmblks",	  66044		  ]
-[ "uordblks",	  2482896	  ]
-[ "fordblks",	  445024	  ]
+[ "memincr",	  2867200	  ]
+[ "arena",	  2924512	  ]
+[ "ordblks",	  10127		  ]
+[ "smblks",	  3900		  ]
+[ "hblkhd",	  1872		  ]
+[ "hblks",	  39		  ]
+[ "usmblks",	  114992	  ]
+[ "fsmblks",	  9808		  ]
+[ "uordblks",	  2588944	  ]
+[ "fordblks",	  208896	  ]
 #-------------------------#
 # gdk	thread		  # name
 # int	str		  # type
@@ -755,8 +755,8 @@ Start of MIL prelude.
 # client	login				  # name
 # int	str				  # type
 #-----------------------------------------#
-[ 0,	  "Fri Oct 22 16:56:06 2004"	  ]
-[ 1,	  "Fri Oct 22 16:56:06 2004"	  ]
+[ 0,	  "Sun Oct 24 00:20:34 2004"	  ]
+[ 1,	  "Sun Oct 24 00:20:34 2004"	  ]
 #-----------------#
 # client	name	  # name
 # int	str	  # type
@@ -768,22 +768,22 @@ Start of MIL prelude.
 # str		int	  # type
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  660	  ]
+[ "user",	  600	  ]
 [ "elapuser",	  20	  ]
-[ "system",	  80	  ]
+[ "system",	  100	  ]
 [ "elapsystem",	  0	  ]
 #---------------------------------------------------------------------------------#
 # h			monet_environment					  # name
 # str			str							  # type
 #---------------------------------------------------------------------------------#
-[ "config",		  "/var/tmp/niels//SunOS-sun4u/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "64bitsparc-sun-solaris2.8"				  ]
+[ "config",		  "/local/home/monet/MonetDB/IRIX64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"				  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "12696"						  ]
-[ "prefix",		  "/var/tmp/niels//SunOS-sun4u"				  ]
-[ "exec_prefix",	  "/var/tmp/niels//SunOS-sun4u"				  ]
+[ "monet_pid",		  "79084287"						  ]
+[ "prefix",		  "/local/home/monet/MonetDB/IRIX64"			  ]
+[ "exec_prefix",	  "/local/home/monet/MonetDB/IRIX64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"					  ]
-[ "gdk_dbfarm",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"						  ]
 [ "gdk_vm_minsize",	  "134217728"						  ]
@@ -792,46 +792,46 @@ Start of MIL prelude.
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
 [ "monet_nostalgic",	  "no"							  ]
-[ "monet_mod_path",	  "/var/tmp/niels//SunOS-sun4u/lib/MonetDB"		  ]
+[ "monet_mod_path",	  "/local/home/monet/MonetDB/IRIX64/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"							  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "44339"						  ]
+[ "mapi_port",		  "44573"						  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "51380"						  ]
+[ "sql_port",		  "55635"						  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"							  ]
-[ "sql_logdir",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/log"		  ]
+[ "sql_logdir",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/log"	  ]
 [ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
-[ "monet_cwd",		  "/scratch/niels/SunOS-sun4u/mTests/src/tools"		  ]
+[ "monet_cwd",		  "/local/home/monet/MonetDB/IRIX64/mTests/src/tools"	  ]
 #-------------------------#
 # gdk		io	  # name
 # str		int	  # type
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  0	  ]
+[ "maxrss",	  5712	  ]
+[ "minflt",	  245	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  14	  ]
-[ "nvcsw",	  6	  ]
-[ "ninvcsw",	  9	  ]
+[ "inblock",	  3	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  2	  ]
 #---------------------------------#
 # gdk		mem		  # name
 # str		int		  # type
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  3145696	  ]
-[ "ordblks",	  9672		  ]
-[ "smblks",	  4600		  ]
-[ "hblkhd",	  2576		  ]
-[ "hblks",	  46		  ]
-[ "usmblks",	  150376	  ]
-[ "fsmblks",	  64824		  ]
-[ "uordblks",	  2491296	  ]
-[ "fordblks",	  436624	  ]
+[ "memincr",	  16384		  ]
+[ "arena",	  2940896	  ]
+[ "ordblks",	  10155		  ]
+[ "smblks",	  3900		  ]
+[ "hblkhd",	  1872		  ]
+[ "hblks",	  39		  ]
+[ "usmblks",	  115056	  ]
+[ "fsmblks",	  9744		  ]
+[ "uordblks",	  2598416	  ]
+[ "fordblks",	  215808	  ]
 #-------------------------#
 # gdk	thread		  # name
 # int	str		  # type
@@ -1421,19 +1421,19 @@ dir();
 #-----------------------------------------------------------------------------------------------------------------#
 [ "adm_acctbl",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "adm_fcntbl",		  "str",  "oid",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "adm_fcntbl",		  "str",  "oid",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  30,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_aut",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_cnt",	  "oid",  "int",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dat",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  570,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  611,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_nme",	  "oid",  "str",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1667,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_aut",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_cnt",	  "oid",  "int",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_dat",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  573,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  614,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_nme",	  "oid",  "str",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  670,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  673,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_cnt",	  "oid",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -1503,30 +1503,30 @@ clients();
 # client	name	login				tree		  # name
 # int	str	str				str		  # type
 #-----------------------------------------------------------------#
-[ 0,	  "adm",  "Fri Oct 22 16:56:06 2004",	  "clients()"	  ]
+[ 0,	  "adm",  "Sun Oct 24 00:20:34 2004",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # gdk		cpu	  # name
 # str		int	  # type
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  780	  ]
-[ "elapuser",	  120	  ]
-[ "system",	  80	  ]
+[ "user",	  730	  ]
+[ "elapuser",	  130	  ]
+[ "system",	  100	  ]
 [ "elapsystem",	  0	  ]
 env();
 #---------------------------------------------------------------------------------#
 # h			monet_environment					  # name
 # str			str							  # type
 #---------------------------------------------------------------------------------#
-[ "config",		  "/var/tmp/niels//SunOS-sun4u/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "64bitsparc-sun-solaris2.8"				  ]
+[ "config",		  "/local/home/monet/MonetDB/IRIX64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"				  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "12696"						  ]
-[ "prefix",		  "/var/tmp/niels//SunOS-sun4u"				  ]
-[ "exec_prefix",	  "/var/tmp/niels//SunOS-sun4u"				  ]
+[ "monet_pid",		  "79084287"						  ]
+[ "prefix",		  "/local/home/monet/MonetDB/IRIX64"			  ]
+[ "exec_prefix",	  "/local/home/monet/MonetDB/IRIX64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"					  ]
-[ "gdk_dbfarm",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"						  ]
 [ "gdk_vm_minsize",	  "134217728"						  ]
@@ -1535,33 +1535,33 @@ env();
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
 [ "monet_nostalgic",	  "no"							  ]
-[ "monet_mod_path",	  "/var/tmp/niels//SunOS-sun4u/lib/MonetDB"		  ]
+[ "monet_mod_path",	  "/local/home/monet/MonetDB/IRIX64/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"							  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "44339"						  ]
+[ "mapi_port",		  "44573"						  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "51380"						  ]
+[ "sql_port",		  "55635"						  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"							  ]
-[ "sql_logdir",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/log"		  ]
+[ "sql_logdir",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/log"	  ]
 [ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
-[ "monet_cwd",		  "/scratch/niels/SunOS-sun4u/mTests/src/tools"		  ]
+[ "monet_cwd",		  "/local/home/monet/MonetDB/IRIX64/mTests/src/tools"	  ]
 environment().print();
 #---------------------------------------------------------------------------------#
 # h			monet_environment					  # name
 # str			str							  # type
 #---------------------------------------------------------------------------------#
-[ "config",		  "/var/tmp/niels//SunOS-sun4u/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "64bitsparc-sun-solaris2.8"				  ]
+[ "config",		  "/local/home/monet/MonetDB/IRIX64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"				  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "12696"						  ]
-[ "prefix",		  "/var/tmp/niels//SunOS-sun4u"				  ]
-[ "exec_prefix",	  "/var/tmp/niels//SunOS-sun4u"				  ]
+[ "monet_pid",		  "79084287"						  ]
+[ "prefix",		  "/local/home/monet/MonetDB/IRIX64"			  ]
+[ "exec_prefix",	  "/local/home/monet/MonetDB/IRIX64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"					  ]
-[ "gdk_dbfarm",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"						  ]
 [ "gdk_vm_minsize",	  "134217728"						  ]
@@ -1570,48 +1570,48 @@ environment().print();
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
 [ "monet_nostalgic",	  "no"							  ]
-[ "monet_mod_path",	  "/var/tmp/niels//SunOS-sun4u/lib/MonetDB"		  ]
+[ "monet_mod_path",	  "/local/home/monet/MonetDB/IRIX64/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"							  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "44339"						  ]
+[ "mapi_port",		  "44573"						  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "51380"						  ]
+[ "sql_port",		  "55635"						  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"							  ]
-[ "sql_logdir",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/log"		  ]
+[ "sql_logdir",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/log"	  ]
 [ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
-[ "monet_cwd",		  "/scratch/niels/SunOS-sun4u/mTests/src/tools"		  ]
+[ "monet_cwd",		  "/local/home/monet/MonetDB/IRIX64/mTests/src/tools"	  ]
 io().print();
 #-------------------------#
 # gdk		io	  # name
 # str		int	  # type
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  0	  ]
+[ "maxrss",	  5712	  ]
+[ "minflt",	  245	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  14	  ]
-[ "nvcsw",	  6	  ]
-[ "ninvcsw",	  10	  ]
+[ "inblock",	  4	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  2	  ]
 memory().print();
 #---------------------------------#
 # gdk		mem		  # name
 # str		int		  # type
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  3145696	  ]
-[ "ordblks",	  9450		  ]
-[ "smblks",	  4600		  ]
-[ "hblkhd",	  2576		  ]
-[ "hblks",	  46		  ]
-[ "usmblks",	  115528	  ]
-[ "fsmblks",	  99672		  ]
-[ "uordblks",	  2357520	  ]
-[ "fordblks",	  570400	  ]
+[ "arena",	  2940896	  ]
+[ "ordblks",	  9725		  ]
+[ "smblks",	  3900		  ]
+[ "hblkhd",	  1872		  ]
+[ "hblks",	  39		  ]
+[ "usmblks",	  102896	  ]
+[ "fsmblks",	  21904		  ]
+[ "uordblks",	  2436848	  ]
+[ "fordblks",	  377376	  ]
 threads();
 #-------------------------#
 # gdk	thread		  # name
@@ -1623,7 +1623,7 @@ view_client_login().print();
 # client	login				  # name
 # int	str				  # type
 #-----------------------------------------#
-[ 0,	  "Fri Oct 22 16:56:06 2004"	  ]
+[ 0,	  "Sun Oct 24 00:20:34 2004"	  ]
 view_client_name().print();
 #-----------------#
 # client	name	  # name
@@ -1635,24 +1635,24 @@ view_gdk_cpu().print();
 # gdk		cpu	  # name
 # str		int	  # type
 #-------------------------#
-[ "elapsed",	  0	  ]
-[ "user",	  790	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  740	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  80	  ]
+[ "system",	  100	  ]
 [ "elapsystem",	  0	  ]
 view_gdk_env().print();
 #---------------------------------------------------------------------------------#
 # h			monet_environment					  # name
 # str			str							  # type
 #---------------------------------------------------------------------------------#
-[ "config",		  "/var/tmp/niels//SunOS-sun4u/etc/MonetDB.conf"	  ]
-[ "gdk_arch",		  "64bitsparc-sun-solaris2.8"				  ]
+[ "config",		  "/local/home/monet/MonetDB/IRIX64/etc/MonetDB.conf"	  ]
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"				  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "12696"						  ]
-[ "prefix",		  "/var/tmp/niels//SunOS-sun4u"				  ]
-[ "exec_prefix",	  "/var/tmp/niels//SunOS-sun4u"				  ]
+[ "monet_pid",		  "79084287"						  ]
+[ "prefix",		  "/local/home/monet/MonetDB/IRIX64"			  ]
+[ "exec_prefix",	  "/local/home/monet/MonetDB/IRIX64"			  ]
 [ "gdk_dbname",		  "mTests_src_tools"					  ]
-[ "gdk_dbfarm",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/dbfarm"	  ]
+[ "gdk_dbfarm",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/dbfarm"	  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"						  ]
 [ "gdk_vm_minsize",	  "134217728"						  ]
@@ -1661,48 +1661,48 @@ view_gdk_env().print();
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
 [ "monet_nostalgic",	  "no"							  ]
-[ "monet_mod_path",	  "/var/tmp/niels//SunOS-sun4u/lib/MonetDB"		  ]
+[ "monet_mod_path",	  "/local/home/monet/MonetDB/IRIX64/lib/MonetDB"	  ]
 [ "monet_daemon",	  "no"							  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "44339"						  ]
+[ "mapi_port",		  "44573"						  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "51380"						  ]
+[ "sql_port",		  "55635"						  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"							  ]
-[ "sql_logdir",		  "/var/tmp/niels//SunOS-sun4u/var/MonetDB/log"		  ]
+[ "sql_logdir",		  "/local/home/monet/MonetDB/IRIX64/var/MonetDB/log"	  ]
 [ "gdk_embedded",	  "no"							  ]
 [ "monet_embedded",	  "no"							  ]
-[ "monet_cwd",		  "/scratch/niels/SunOS-sun4u/mTests/src/tools"		  ]
+[ "monet_cwd",		  "/local/home/monet/MonetDB/IRIX64/mTests/src/tools"	  ]
 view_gdk_io().print();
 #-------------------------#
 # gdk		io	  # name
 # str		int	  # type
 #-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  0	  ]
+[ "maxrss",	  5712	  ]
+[ "minflt",	  245	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  14	  ]
-[ "nvcsw",	  6	  ]
-[ "ninvcsw",	  10	  ]
+[ "inblock",	  4	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  2	  ]
 view_gdk_memory().print();
 #---------------------------------#
 # gdk		mem		  # name
 # str		int		  # type
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  3145696	  ]
-[ "ordblks",	  9455		  ]
-[ "smblks",	  4600		  ]
-[ "hblkhd",	  2576		  ]
-[ "hblks",	  46		  ]
-[ "usmblks",	  115424	  ]
-[ "fsmblks",	  99776		  ]
-[ "uordblks",	  2356960	  ]
-[ "fordblks",	  570960	  ]
+[ "arena",	  2940896	  ]
+[ "ordblks",	  9720		  ]
+[ "smblks",	  3900		  ]
+[ "hblkhd",	  1872		  ]
+[ "hblks",	  39		  ]
+[ "usmblks",	  102864	  ]
+[ "fsmblks",	  21936		  ]
+[ "uordblks",	  2436224	  ]
+[ "fordblks",	  378000	  ]
 view_gdk_thread().print();
 #-------------------------#
 # gdk	thread		  # name
