@@ -18,5 +18,6 @@ Start Mserver, and do:
 
   source ( MONET_PREFIX + "/share/MonetDB/sqlserver.mil" );
 
-then use sql_client for issueing SQL commands.
+then use sql_client for issueing SQL commands:
+  sql_client --user=monetdb --passwd=monetdb
 
