@@ -795,12 +795,12 @@ view_client_login(
         for(i=0; i < MAXCLIENTS; i++)
 	if( monet_clients[i].user) {
 		time_t logintime=(time_t)monet_clients[i].login;
-
-#ifdef CYGWIN32
-		localtime(&logintime);
-#else
 		struct tm localt;
-		localtime_r(&logintime,&localt);
+
+#ifdef HAVE_LOCALTIME_R
+		(void) localtime_r(&logintime,&localt);
+#else
+		localt = *localtime(&logintime);
 #endif
 
 #ifdef HAVE_CTIME_R3
