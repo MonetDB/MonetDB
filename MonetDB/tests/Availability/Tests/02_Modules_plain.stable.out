@@ -498,7 +498,7 @@ Module: "ddbench"
 [ "rngs_oidselect",	  "COMMAND:   ",  "rngs_oidselect(BAT[oid,any::1], any::1, any::1, ..any::1..) : BAT[int,BAT]",		  "uselect, optimized for enum types, on multiple range-select predicates"																																				  ]
 [ "semijoin",		  "PROC:      ",  "semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",				  "not available"																																											  ]
 [ "semijoin",		  "PROC:      ",  "semijoin(BAT[void,bit32], BAT[void,bit32]) : BAT[void,bit32]",			  "not available"																																											  ]
-[ "stats",		  "COMMAND:   ",  "stats(BAT[void,bit32]) : BAT[str,int]",						  "produce info on this bit-selection"																																									  ]
+[ "stats",		  "COMMAND:   ",  "stats(BAT[void,bit32]) : BAT[str,lng]",						  "produce info on this bit-selection"																																									  ]
 [ "subhisto",		  "COMMAND:   ",  "subhisto(BAT[oid,any::1], BAT[oid,any]) : BAT[any,int]",				  "computes a subset-histogram on b, receiving the subset as a selection BAT"																																				  ]
 [ "subhisto",		  "COMMAND:   ",  "subhisto(BAT[oid,any::1], BAT[void,bit32]) : BAT[any,int]",				  "computes a subset-histogram on b, receiving the subset as a bitmask"																																					  ]
 [ "subhistos",		  "COMMAND:   ",  "subhistos(BAT[oid,any::1], ..BAT[void,bit32]..) : BAT[int,BAT]",			  "computes multiple subset-histograms on b, receiving multiple bitmasks"																																				  ]
