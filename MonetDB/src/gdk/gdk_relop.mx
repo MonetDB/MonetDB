@@ -300,14 +300,25 @@ bunins_failed:
 	return NULL;
 }
 
-BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate) {
+static BAT *batmergejoin(BAT *l, BAT *r, size_t estimate, int swap) {
         @:joincheck(BATmergejoin, l->ttype, r->htype)@
-	if (((BAThordered(r)&1)==0) || ((BATtordered(l)&1) && (BATcount(l) > BATcount(r)))) {
+	if ( swap && (((BAThordered(r)&1)==0) || ((BATtordered(l)&1) && (BATcount(l) > BATcount(r)))) ) {
 		/* reverse join if required (r not sorted) or if l is larger (quick jump through l with binary search) */
 		BAT *bn = mergejoin(BATmirror(r), BATmirror(l), NULL, NULL, estimate);
 		return bn?BATmirror(bn):NULL;
 	}
 	return mergejoin(l, r, NULL, NULL, estimate);
+}
+
+BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate) {
+	/* allows swapping of left and right input for faster processing */
+	return batmergejoin(l, r, estimate, 1);
+}
+
+BAT *BATleftmergejoin(BAT *l, BAT *r, size_t estimate) {
+	/* do not swap left and right input, 
+	   and hence maintain order of left head in result */
+	return batmergejoin(l, r, estimate, 0);
 }
 
 @- hash join
@@ -619,7 +630,7 @@ bunins_failed:
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
-BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
+static BAT* batfetchjoin(BAT *l, BAT *r, size_t estimate, int swap) {
         int xx, yy, zz, lht, rtt;
 	size_t base, end;
 	ssize_t offset;
@@ -634,11 +645,15 @@ BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
 		estimate = BATcount(l);
 	}
 
-        if (!BAThdense(r)) {
+	if (swap) {
+            if (!BAThdense(r)) {
                 ERRORcheck(!BATtdense(l), "BATfetchjoin: one join column must be dense");
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));\n");
                 return BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l), estimate));
-        }
+            }
+	} else {
+		ERRORcheck(!BAThdense(r), "BATleftfetchjoin: head column of right input must be dense");
+	}
         if (BATtordered(l)&1) {
                 /* optimization to be able to carry over more void head columns */
                 ssize_t r_lo = *(ssize_t*) BUNhead(r, BUNfirst(r));
@@ -788,10 +803,22 @@ ready:
         ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: actual resultsize: " SZFMT "\n",BATcount(bn));
         return ret;
 }
+
+BAT* BATfetchjoin(BAT *l, BAT *r, size_t estimate) {
+	/* allows swapping of left and right input for faster processing */
+	return batfetchjoin(l, r, estimate, 1);
+}
+
+BAT* BATleftfetchjoin(BAT *l, BAT *r, size_t estimate) {
+	/* do not swap left and right input, 
+	   and hence maintain order of left head in result */
+	return batfetchjoin(l, r, estimate, 0);
+}
+
 @-
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
-static BAT *batjoin(BAT *l, BAT *r, size_t estimate) {
+static BAT *batjoin(BAT *l, BAT *r, size_t estimate, int swap) {
 	size_t i, lsize, rsize;
         int lfetch, rfetch, must_hash; 
         lng logr, logl;
@@ -821,12 +848,12 @@ collect statistics that help us decide what to do
 In special cases (equal join columns, void join columns, or ordered 
 join columns), we take special action.
 @c
-	if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
+	if (swap && lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " SZFMT "));\n", estimate);
 		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), estimate));
 	} else if (rfetch) {
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATfetchjoin(l, r, " SZFMT ");\n", estimate);
-		return BATfetchjoin(l, r, estimate);
+		return batfetchjoin(l, r, estimate, swap);
 	}
 @-
 If both are ordered we do merge-join, or if hash-join is not possible right 
@@ -834,24 +861,24 @@ away and one input is ordered and the other is much smaller, we do nested
 loop binary search (both implemented by BATmergejoin).
 @c
 	if ((BATtordered(l)&BAThordered(r)&1) || (must_hash &&
-		  (((BATtordered(l)&1) && ((lng)BATcount(l) > logl*(lng)BATcount(r))) ||
+		  (((BATtordered(l)&1) && ((lng)BATcount(l) > logl*(lng)BATcount(r)) && swap) ||
 		   ((BAThordered(r)&1) && ((lng)BATcount(r) > logr*(lng)BATcount(l))))))
 	{ 
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r," SZFMT ");\n", estimate);
-		return BATmergejoin(l, r, estimate);
+		return batmergejoin(l, r, estimate, swap);
 	}
 @-
 if hash join is not right away possible and we have a binary tree index,
 we do nested loop index lookup join.
 @c
-	if (must_hash && (l->tidx_heap || r->hidx_heap)) {
+	if (must_hash && ((l->tidx_heap && swap) || r->hidx_heap)) {
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATthetajoin(l,r,JOIN_EQ," SZFMT ");\n", estimate);
 		return BATthetajoin(l, r, JOIN_EQ, estimate);
 	}
 @-
 hash join: the bread&butter join of monet
 @c
-	if (rsize < lsize) { /* assume largest fits memory */
+	if ( swap && (rsize < lsize)) { /* assume largest fits memory */
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," SZFMT "));\n", estimate);
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
         }
@@ -860,7 +887,16 @@ hash join: the bread&butter join of monet
 }
 
 BAT *BATjoin(BAT *l, BAT *r, size_t estimate) {
-        BAT *b = batjoin(l, r, estimate);
+	/* allows swapping of left and right input for faster processing */
+        BAT *b = batjoin(l, r, estimate, 1);
+        BATpropcheck(b, BATPROPS_ALL);
+        return b;
+}
+
+BAT *BATleftjoin(BAT *l, BAT *r, size_t estimate) {
+	/* do not swap left and right input, 
+	   and hence maintain order of left head in result */
+        BAT *b = batjoin(l, r, estimate, 0);
         BATpropcheck(b, BATPROPS_ALL);
         return b;
 }

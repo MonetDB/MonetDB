@@ -35,13 +35,22 @@ Too many bugs.
 @= join
   .COMMAND @1join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right) :
                     BAT[any::1,any::3] = CMD@1join;
-  "Hook directly into the @1 implementation of the join."
+  "Hook directly into the '@1join' implementation of the join."
+@= leftjoin
+  .COMMAND left@1join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right) :
+                    BAT[any::1,any::3] = CMD@1join;
+  "Hook directly into the 'left@1join' implementation of the join.
+   prefix 'left' means that left and right input are not swapped during processing,
+   and hence, the order of the left input's head in maintained in the result."
 @m
 @:join(fetch)@
 @:join(merge)@
 @:join(hash)@
-@:join(lrhash)@
 @:join(index)@
+@:leftjoin()@
+@:leftjoin(fetch)@
+@:leftjoin(merge)@
+@:leftjoin(hash)@
 
 @= sum
 .COMMAND {_csum}(BAT[oid,@1] b) : BAT[oid,@1] = CMDclustered_sum_@1; 
@@ -88,6 +97,12 @@ Too many bugs.
 #include "malalgebra.h"
 #include "malalgebra.proto.h"
 
+/* don't reorder! */
+BAT*
+BATmalleftjoin(BAT *l, BAT *r) {
+  return BATleftjoin(l, r, oid_nil);
+}
+
 BAT*
 BATmalfetchjoin(BAT *l, BAT *r) {
   int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
@@ -99,6 +114,17 @@ BATmalfetchjoin(BAT *l, BAT *r) {
     return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), oid_nil));
   }
   GDKerror( "Cannot perform fetchjoin.\n");
+  return NULL;
+}
+
+/* don't reorder! */
+BAT*
+BATmalleftfetchjoin(BAT *l, BAT *r) {
+  int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
+  if (rfetch) {
+    return BATleftfetchjoin(l, r, oid_nil);
+  }
+  GDKerror( "Cannot perform leftfetchjoin.\n");
   return NULL;
 }
 
@@ -116,7 +142,7 @@ BATmalhashjoin(BAT *l, BAT *r) {
 
 /* don't reorder! */
 BAT*
-BATmallrhashjoin(BAT *l, BAT *r) {
+BATmallefthashjoin(BAT *l, BAT *r) {
   return BAThashjoin(l,r,oid_nil);
 }
 
@@ -137,6 +163,16 @@ BATmalmergejoin(BAT *l, BAT *r) {
   return BATmergejoin(l,r,oid_nil);
 }
 
+/* don't reorder! */
+BAT*
+BATmalleftmergejoin(BAT *l, BAT *r) {
+  if ( !((BATtordered(l)&1)||(BAThordered(r)&1)) ) {
+    GDKerror( "Cannot perform leftmergejoin: neither left nor right bat is ordered.\n" );
+    return NULL;
+  }
+  return BATleftmergejoin(l,r,oid_nil);
+}
+
 BAT*
 BATmalindexjoin(BAT *l, BAT *r) {
   return BATthetajoin(l,r,JOIN_EQ,oid_nil);
@@ -150,10 +186,13 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
   return (*result = (BAT*) BATmal@1join(left, right))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
-@:joincmd(hash)@
-@:joincmd(lrhash)@
+@:joincmd(left)@
 @:joincmd(fetch)@
+@:joincmd(leftfetch)@
 @:joincmd(merge)@
+@:joincmd(leftmerge)@
+@:joincmd(hash)@
+@:joincmd(lefthash)@
 @:joincmd(index)@
 
 @}
@@ -238,12 +277,20 @@ PROC test_malalgebra() : void := {
 	@:compresults(fetch,oid)@
 	@:compresults(merge,oid)@
 	@:compresults(index,oid)@
+	@:compresults(left,oid)@
+	@:compresults(lefthash,oid)@
+	@:compresults(leftfetch,oid)@
+	@:compresults(leftmerge,oid)@
 
 	@:jointest_void()@
 	@:compresults(hash,void)@
 	@:compresults(fetch,void)@
 	@:compresults(merge,void)@
 	@:compresults(index,void)@
+	@:compresults(left,void)@
+	@:compresults(lefthash,void)@
+	@:compresults(leftfetch,void)@
+	@:compresults(leftmerge,void)@
 
 	printf( "RESULT: %d tests failed.\n", Ntestfailed );
 }
