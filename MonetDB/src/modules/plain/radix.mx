@@ -1109,15 +1109,32 @@ int
 BATuniform(BAT **bn, oid *base, int *size, int *domain)
 {
 	size_t n = (size_t) * size, i, r;
-	BAT *b = BATnew(TYPE_oid, TYPE_int, n);
+	BAT *b = NULL;
 	char *firstbun;
 	int bunsize;		/* initialized in BATloopFast */
 	oid bs = *base;
 	int j = 0;
 	BUN p, q;
 
+	if (*size < 0) {
+		GDKerror("BATuniform: size must not be negative");
+		return GDK_FAIL;
+	}
+
+	b = BATnew(TYPE_oid, TYPE_int, n);
 	if (b == NULL)
 		return GDK_FAIL;
+	if (n == 0) {
+		b->tsorted = TRUE;
+		b->hsorted = TRUE;
+		b->hdense = TRUE;
+		BATseqbase(b, *base);
+		BATkey(b, TRUE);
+		BATkey(BATmirror(b), TRUE);
+		*bn = b;
+		return GDK_SUCCEED;
+	}
+
 	firstbun = (char *) BUNfirst(b);
 	/* preset b->batBuns->free to make BATloopFast work */
 	b->batBuns->free += n * BUNsize(b);
@@ -1155,7 +1172,7 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	size_t n = (size_t) * size, i;
 	unsigned int r = (unsigned int) n;
 	size_t d = (size_t) * domain;
-	BAT *b = BATnew(TYPE_oid, TYPE_int, n);
+	BAT *b = NULL;
 	char *firstbun;
 	int bunsize;
 	BUN p, q;
@@ -1164,8 +1181,25 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	int *itab;
 	flt *ftab, tot = 0.0;
 
+	if (*size < 0) {
+		GDKerror("BATnormal: size must not be negative");
+		return GDK_FAIL;
+	}
+
+        b = BATnew(TYPE_oid, TYPE_int, n);
 	if (b == NULL)
 		return GDK_FAIL;
+	if (n == 0) {
+		b->tsorted = TRUE;
+		b->hsorted = TRUE;
+		b->hdense = TRUE;
+		BATseqbase(b, *base);
+		BATkey(b, TRUE);
+		BATkey(BATmirror(b), TRUE);
+		*bn = b;
+		return GDK_SUCCEED;
+	}
+
 	firstbun = (char *) BUNfirst(b);
 	itab = (int *) GDKmalloc(d * sizeof(int));
 	ftab = (flt *) itab;

@@ -11,13 +11,13 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -48,13 +48,13 @@ loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -85,12 +85,12 @@ loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
+[ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -112,12 +112,12 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
+[ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -144,13 +144,13 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -180,12 +180,12 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
+[ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]
@@ -209,12 +209,12 @@ Over..
 # module		usage_count	  # name
 # str		int		  # type
 #---------------------------------#
-[ "_mapi",	  1		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "kernel",	  1		  ]
 [ "main",	  1		  ]
+[ "mapi",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  1		  ]
 [ "sys",	  1		  ]

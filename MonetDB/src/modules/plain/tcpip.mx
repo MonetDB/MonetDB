@@ -1032,6 +1032,8 @@ hostname(void)
 	return TCPhostname;
 }
 
+static int listeners = 0, ports[256] = { 0 };
+
 static int
 conn_insert(str host, int port, int me, int sock)
 {
@@ -1044,7 +1046,6 @@ conn_insert(str host, int port, int me, int sock)
 		i = -1;
 	} else {
 		MT_Id t = 0;
-		char *p;
 
 		if (GDKdebug & 65536) {
 			THRprintf(GDKerr, "Allocate connection record %d (%d, %d)\n", i, port, me);
@@ -1054,12 +1055,17 @@ conn_insert(str host, int port, int me, int sock)
 		connections[i].port = port;
 		connections[i].sock = sock;
 		connections[i].waiter = (Thread) 0;
-		if ((p = strchr(host, ' ')) != NULL) {
-			char buf[64];
-			sprintf(buf, "%s %d\n", hostname(), getpid());
-			if (strcmp(host, buf) == 0)
-				me = 0;
-			*p = 0;
+		if (me == -1 &&
+		    (strcasecmp(host, "localhost") == 0 ||
+		     strcasecmp(host, hostname()) == 0)) {
+			int port_no;
+
+			for (port_no = 0; port_no < 256; port_no++) {
+				if (ports[port_no] == port) {
+					me = 0;
+					break;
+				}
+			}
 		}
 		strncpy(connections[i].hostname, host, sizeof(connections[i].hostname));
 		connections[i].hostname[sizeof(connections[i].hostname) - 1] = 0;
@@ -1136,8 +1142,6 @@ wait_bat(BAT **retval)
 @+ prelude
 Init the global structures.
 @c
-int listeners = 0, ports[256] = { 0 };
-
 bat *
 TCPprelude(void)
 {
@@ -1212,8 +1216,12 @@ TCPlisten(int *port)
 Register ourselves
 @c
 	MT_set_lock(TCPlock, "TCPlisten");
-	while (ports[port_no])
+	while (port_no < 256 && ports[port_no])
 		port_no++;
+	if (port_no == 256) {
+		GDKsyserror("TCPlisten: too many listners\n");
+		return GDK_FAIL;
+	}
 	ports[port_no] = *port;
 	listeners++;
 	MT_unset_lock(TCPlock, "TCPlisten");
@@ -1392,7 +1400,7 @@ In the meantime, the other way round might have gotten through.  If so, use it.
 We really initiated a new connection
 @c
 		*retval = conn_insert(host, port, -1, fd);
-		sprintf(buf, "%s %d\n", hostname(), getpid());
+		sprintf(buf, "%s\n", hostname());
 		if (send(fd, buf, strlen(buf), 0) != (int) strlen(buf)) {
 			GDKsyserror("conn_insert: could not communicate.\n");
 			conn_delete(*retval);

@@ -6,6 +6,8 @@ goto end
 
 :skip
 
+setlocal
+
 set builddir=@MONETDB_BUILD@
 set srcdir=@MONETDB_SOURCE@
 
@@ -16,8 +18,11 @@ set PYTHONPATH=%builddir%\src\testing;%srcdir%\src\testing;%builddir%\src\common
 set PATH=%MOD_PATH%;%builddir%\src\common;%builddir%\src\gdk;%builddir%\src\mapi\clients\C;%builddir%\src\modules\plain\stream;%builddir%\src\monet;%PATH%
 
 REM execute Mtest.py in the source directory
-cd %srcdir%
+pushd %srcdir%
 
 call python "%builddir%\src\testing\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--config=%builddir%\conf\MonetDB.conf" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\log" "--TSTTRGBASE=%builddir%" %*
+
+popd
+endlocal
 
 :end

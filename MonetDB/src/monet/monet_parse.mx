@@ -292,6 +292,7 @@ command:	     {	int i, l = (int) strlen(yytext);
 "{|"		      { BEGIN(0); Symbol(TOK_PARBLOCK);			      }
 "|}"		      { BEGIN(0); Symbol(TOK_PAREND);			      }
 {S}		      ;
+")"		      { BEGIN(idconst); Symbol(*yytext);		      }
 .		      { BEGIN(0); Symbol(*yytext);			      }
 %%
 int

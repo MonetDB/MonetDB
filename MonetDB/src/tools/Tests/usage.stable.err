@@ -27,7 +27,6 @@ Options are:
 Usage: MapiClient [ options ]
 Options are:
  -b t/f      | --blocked=true/false /* blocked mode */
- -d          | --debug=[level]  /* set debug level */
  -D          | --dump           /* dump sql database */
  -e          | --error          /* exit on error */
  -h hostname | --host=hostname  /* host to connect to */

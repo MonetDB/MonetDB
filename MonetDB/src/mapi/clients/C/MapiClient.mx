@@ -41,7 +41,6 @@ The following options are supported:
 
 \begin{tabular} {l l l}
  -b t/f      & --blocked=true/false& blocked mode \\
- -d          & --debug=[level]  & set debug level \\
  -D          & --dump           & dump sql database \\
  -e          & --error          & exit on error \\
  -h hostname & --host=hostname  & host to connect to \\
@@ -1112,7 +1111,6 @@ usage(const char *prog)
 	fprintf(stderr, "Usage: %s [ options ]\n", prog);
 	fprintf(stderr, "Options are:\n");
 	fprintf(stderr, " -b t/f      | --blocked=true/false /* blocked mode */\n");
-	fprintf(stderr, " -d          | --debug=[level]  /* set debug level */\n");
 	fprintf(stderr, " -D          | --dump           /* dump sql database */\n");
 	fprintf(stderr, " -e          | --error          /* exit on error */\n");
 	fprintf(stderr, " -h hostname | --host=hostname  /* host to connect to */\n");
@@ -1155,7 +1153,6 @@ main(int argc, char **argv)
 	static struct option long_options[] = {
 		{"blocked", 1, 0, 'b'},
 		{"config", 1, 0, 'c'},
-		{"debug", 2, 0, 'd'},
 		{"dump", 0, 0, 'D'},
 		{"error", 0, 0, 'e'},
 		{"interactive", 0, 0, 'i'},
@@ -1181,7 +1178,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:el:u:p:P:qHh:s:DtTd::?5", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:el:u:p:P:qHh:s:DtT?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
@@ -1242,9 +1239,6 @@ main(int argc, char **argv)
 			break;
 		case 't':
 			trace = 1;
-			break;
-		case 'd':
-			setlen = mo_add_option(&set, setlen, opt_cmdline, "debug", optarg ? optarg : "2");
 			break;
 		case 'S':{
 			char *eq = strchr(optarg, '=');

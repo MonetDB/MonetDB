@@ -891,6 +891,10 @@ proc mapi_server(int port, int nr) : void {
 	quit();
 }
 
-if (mod() = "main"){
+proc mapi_start() : void {
 	fork(mapi_server(get_mapi_port(),5));
+}
+
+if (mod() = "main"){
+	mapi_start();
 }
