@@ -818,9 +818,6 @@ public class MonetResultSet implements ResultSet {
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
-			case Types.DATE:
-			case Types.TIME:
-			case Types.TIMESTAMP:
 			default:
 				return(getString(i));
 			case Types.BOOLEAN:
@@ -835,6 +832,12 @@ public class MonetResultSet implements ResultSet {
 			case Types.BLOB:
 				// luckily, an array is an object ;-)
 				return(getString(i).getBytes());
+			case Types.DATE:
+				return(getDate(i));
+			case Types.TIME:
+				return(getTime(i));
+			case Types.TIMESTAMP:
+				return(getTimestamp(i));
 		}
 	}
 
