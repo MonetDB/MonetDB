@@ -9,6 +9,7 @@ y:=[oid](x);
 z:=x.copy.access(BAT_APPEND);
 z.insert(2,nil);
 z.access(BAT_READ);
+w:=x.copy.reverse.mark(0@0).reverse;
 
 d:=debugmask();
 debugmask(or(d,131072));
@@ -18,6 +19,9 @@ y.print;
 
 x.print;
 {min}(x).print;
+
+w.print;
+{min}(w).print;
 
 z.print;
 {min}(z).print;
