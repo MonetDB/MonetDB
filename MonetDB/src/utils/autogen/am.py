@@ -270,8 +270,8 @@ def am_library(fd, var, libmap, am ):
 
 # temporarily switched off, the by libtool created scripts cause problems
 # for so-so linking
-#  if (libmap.has_key("LIBS")):
-#    fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
+  if (libmap.has_key("LIBS")):
+    fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"],am))
 
   for src in libmap['SOURCES']:
     base,ext = split_filename(src) 	
