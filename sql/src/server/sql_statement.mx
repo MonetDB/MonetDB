@@ -104,9 +104,11 @@ typedef enum stmt_type {
 
 	st_set,
 	st_sets,
-	st_ptable,
-	st_pivot,
-	st_partial_pivot,
+
+	st_ptable,  /* (R(tables) */
+	st_pivot,   /* binary relation between R and input table */
+	st_groupby, /* (R, groupby columns) */
+
 	/* used internally only */
 	st_list
 } st_type;
@@ -165,8 +167,8 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define isbasetable(s) (s->type == st_basetable)
 #define basetable_table(s) s->op1.tval 
 
-#define ptable_ppivots(s) 	((s)->op1.lval)
-#define ptable_pivots(s) 	((s)->op2.lval)
+#define ptable_pivots(s) 	((s)->op1.lval)
+#define ptable_parent(s)	((s)->op2.stval)
 #define ptable_statements(s) 	((s)->op3.stval)
 
 extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type);
@@ -209,9 +211,9 @@ extern stmt *stmt_union(stmt * op1, stmt * op2);
 extern stmt *stmt_list(list * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
-extern stmt *stmt_ptable();
+extern stmt *stmt_ptable( stmt *p );
 extern stmt *stmt_pivot(stmt *s, stmt *ptable);
-extern stmt *stmt_partial_pivot(stmt *s, stmt *ptable);
+extern stmt *stmt_groupby( stmt *p, list *cols );
 
 extern stmt *stmt_find(stmt *b, stmt *v );
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
@@ -341,7 +343,7 @@ const char * st_type2string(st_type type) {
 	ST(sets);
 	ST(ptable);
 	ST(pivot);
-	ST(partial_pivot);
+	ST(groupby);
 	ST(list);
 	default:	
 		assert(0);
@@ -516,7 +518,7 @@ void stmt_destroy(stmt * s)
 		case st_alias: case st_column_alias:
 		case st_append: case st_insert: case st_replace:
 		case st_exception: case st_predicate:
-		case st_partial_pivot: case st_pivot:
+		case st_pivot:
 	  	case st_find:
 		case st_sql:
 
@@ -526,11 +528,17 @@ void stmt_destroy(stmt * s)
 			break;
 
 		case st_set: case st_sets: case st_list:
+
 		case st_ptable:
 			list_destroy(s->op1.lval);
-			if (s->op2.lval) list_destroy(s->op2.lval);
+			if (s->op2.stval) stmt_destroy(s->op2.stval);
 			if (s->op3.stval) stmt_destroy(s->op3.stval);
-			if (s->op4.stval) stmt_destroy(s->op4.stval);
+			break;
+
+		case st_groupby:
+			stmt_destroy(s->op1.stval);
+			list_destroy(s->op2.lval);
+			if (s->op3.stval) stmt_destroy(s->op3.stval);
 			break;
 
 		case st_var:
@@ -633,7 +641,7 @@ void stmt_reset(stmt * s)
 	case st_alias: case st_column_alias:
 	case st_append: case st_insert: case st_replace:
 	case st_exception: case st_predicate:
-	case st_partial_pivot: case st_pivot:
+	case st_pivot:
 	case st_find:
 	case st_sql:
 	case st_temp:
@@ -656,8 +664,8 @@ void stmt_reset(stmt * s)
 	case st_ptable:
 		/* cannot reset pivots as they point back to the pivot table, 
 		   which would lead to a recusive reset */
+		if (s->op2.stval) stmt_reset(s->op2.stval);
 		if (s->op3.stval) stmt_reset(s->op3.stval);
-		if (s->op4.stval) stmt_reset(s->op4.stval);
 		break;
 	case st_sets: 
 	{
@@ -1284,43 +1292,17 @@ stmt *stmt_sets(list * l1)
 }
 
 /* ptable 
-		list of ppivots
 		list of pivots
+		parent
 		statements	
  */
 
-stmt *stmt_ptable()
+stmt *stmt_ptable(stmt * ptable)
 {
 	stmt *s = stmt_create(st_ptable);
 	s->op1.lval = list_create( (fdestroy)NULL );
-	s->op2.lval = list_create( (fdestroy)NULL );
-	s->op3.stval = NULL;
-	s->op4.stval = NULL;
-	s->nrcols = 2;
-	return s;
-}
-
-static void stmt_ptable_add_ppivot( stmt *ptable, stmt *piv )
-{
-	list_append(ptable->op1.lval, piv);
-}
-
-static void stmt_ptable_add_pivot( stmt *ptable, stmt *piv )
-{
-	list_append(ptable->op2.lval, piv);
-}
-
-stmt *stmt_partial_pivot(stmt * base, stmt *ptable)
-{
-	stmt *s = stmt_create(st_partial_pivot);
-
-	s->op1.stval = base;
 	s->op2.stval = ptable;
-	stmt_ptable_add_ppivot(ptable, s);
 	s->nrcols = 2;
-	assert(ptable->type == st_ptable);
-	s->h = stmt_dup(ptable); /* the ptable is the new base table */
-	s->t = stmt_dup(base); 	 /* pivots have oid's in the tail */
 	return s;
 }
 
@@ -1328,13 +1310,26 @@ stmt *stmt_pivot(stmt * base, stmt *ptable)
 {
 	stmt *s = stmt_create(st_pivot);
 
+	assert(ptable->type == st_ptable);
+
 	s->op1.stval = base;
 	s->op2.stval = ptable;
-	stmt_ptable_add_pivot(ptable, s);
-	s->nrcols = 2;
-	assert(ptable->type == st_ptable);
 	s->h = stmt_dup(ptable); /* the ptable is the new base table */
 	s->t = stmt_dup(base); 	 /* pivots have oid's in the tail */
+	s->nrcols = 2;
+	list_append(ptable_pivots(ptable), s);
+	return s;
+}
+
+stmt *stmt_groupby( stmt *ptable, list *cols )
+{
+	stmt *s = stmt_create(st_groupby);
+
+	assert(ptable->type == st_ptable);
+
+	s->op1.stval = ptable;
+	s->op2.lval = cols;
+	s->nrcols = 2;
 	return s;
 }
 
@@ -1545,7 +1540,7 @@ sql_subtype *tail_type(stmt * st)
 	case st_alias:
 	case st_column_alias:
 	case st_ibat:
-	case st_partial_pivot: case st_pivot:
+	case st_pivot:
 	case st_group:
 	case st_group_ext:
 	case st_mark:
@@ -1615,7 +1610,7 @@ sql_subtype *head_type(stmt * st)
 	case st_append:
 	case st_insert:
 	case st_replace:
-	case st_partial_pivot: case st_pivot:
+	case st_pivot:
 	case st_mark:
 	case st_group:
 	case st_group_ext:
@@ -1708,7 +1703,7 @@ char *column_name(stmt * st)
 	case st_semijoin:
 	case st_diff:
 	case st_unique:
-	case st_partial_pivot: case st_pivot:
+	case st_pivot:
 	case st_replace:
 		return column_name(st->op1.stval);
 
@@ -1783,13 +1778,15 @@ char *table_name(stmt * st)
 	case st_diff:
 	case st_aggr:
 	case st_unique:
-	case st_partial_pivot: case st_pivot:
+	case st_pivot:
 		return table_name(st->op1.stval);
 
 	case st_basetable:
 		return _strdup(st->op2.sval);
 	case st_bat:
 		return table_name(st->h);
+	case st_var:
+	case st_temp:
 	case st_alias:
 		return _strdup("unknown");
 	case st_column_alias:

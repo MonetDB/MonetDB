@@ -177,7 +177,7 @@ scope *scope_open(scope * p)
 {
 	scope *s = NEW(scope);
 
-	s->ptable = stmt_ptable();
+	s->ptable = stmt_ptable( stmt_ptable( NULL ) );
 	s->pivots = list_create( (fdestroy)&stmt_destroy );
 	s->ppivots = list_create( (fdestroy)&stmt_destroy );
 	s->outers = list_create( (fdestroy)&stmt_destroy );
@@ -242,8 +242,8 @@ static int stmt_cmp(stmt *s1, stmt *s2)
 	return (int)(s1-s2);
 }
 
-static void scope_add_table_(scope * scp, stmt *s, int outer ){
-	
+static void scope_add_table_(scope * scp, stmt *s, int outer )
+{
 	if (outer) {
 		if (list_find(scp->outers, s, (fcmp)&stmt_cmp) == NULL)
 			list_append(scp->outers, stmt_dup(s));
@@ -251,7 +251,7 @@ static void scope_add_table_(scope * scp, stmt *s, int outer ){
 	list_append(scp->pivots, 
 		stmt_pivot(stmt_dup(s), stmt_dup(scp->ptable)));
 	list_append(scp->ppivots, 
-		stmt_partial_pivot(stmt_dup(s), stmt_dup(scp->ptable)) );
+		stmt_pivot(stmt_dup(s), stmt_dup(ptable_parent(scp->ptable))) );
 }
 
 cvar *table_add_column(tvar * t, stmt * s, 
@@ -353,7 +353,8 @@ static cvar *bind_table_column(list * columns, char *tname, char *cname)
 	return NULL;
 }
 
-int ambigious_column( list *cols, cvar *cv )
+static int 
+ambigious_column( list *cols, cvar *cv )
 {
 	node *n; 
 

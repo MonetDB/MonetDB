@@ -64,13 +64,6 @@ static int stmt_cmp_nrcols( stmt *s, int *nr ){
 	return -1;
 }
 
-static int stmt_cmp_filter( stmt *s ){
-	if (s->type == st_filter){
-		return 0;
-	}
-	return -1;
-}
-
 /* key is a join output */
 static int cmp_sel_head( stmt *sel, stmt *key )
 {
@@ -798,6 +791,22 @@ static stmt *set2pivot(list * l)
 	return stmt_list(pivots);
 }
 
+/* list of stmt's containing filter steps is transformed into a pivot table */
+static stmt *filter_pivots(list *pivots, list *filters)
+{
+	stmt *filter = 
+		list_reduce(filters, (freduce)&stmt_semijoin, (fdup)&stmt_dup);
+	list *nl = create_stmt_list();
+	node *n;
+
+	for (n = pivots->h; n; n = n->next) {
+		stmt *p = stmt_dup(n->data);
+		stmt *np = stmt_semijoin(p, stmt_dup(filter));
+		list_append(nl, np);
+	}
+	return stmt_list(nl);
+}
+
 /* The group code is needed for double elimination.
  * if a value is selected twice once on the left hand of the
  * 'OR' and once on the right hand of the 'OR' it will be in the
@@ -879,28 +888,6 @@ static stmt *op_stmt2pivot(stmt * s)
 	}
 	return s;
 }
-
-static stmt *op_stmt2filter(stmt *s)
-{
-	if (s->type != st_set && s->type != st_sets) {
-		s = stmt_set(s);
-	}
-	if (s->type == st_sets) {
-		printf("= TODO st_sets filter not handled\n" );
-		stmt_destroy(s);
-	} else {
-		stmt *res = NULL;
-		list *l = s->op1.lval;
-		list *filters = 
-			list_select(l, (void*)1L, (fcmp)&stmt_cmp_filter, (fdup)&stmt_dup);
-		res = list_reduce(filters, (freduce)&stmt_semijoin, (fdup)&stmt_dup);
-		list_destroy(filters);
-		stmt_destroy(s);
-		return res;
-	}
-	return NULL;
-}
-
 
 static stmt *find_pivot(stmt * subset, stmt * t)
 {
@@ -1052,47 +1039,47 @@ stmt *optimize( mvc *c, stmt *s ){
 
 	case st_pivot: {
 
-		stmt *filter;
 		stmt *ns = optimize(c, s->op2.stval); /* optimize ptable */
 		stmt *np = find_pivot(ns, s->t);
 		stmt_destroy(ns);
 
-		filter = op_stmt2filter(stmt_dup(s->op2.stval->op3.stval));
-		if (filter){
-			np = stmt_semijoin(np, optimize(c, filter));
-			stmt_destroy(filter);
-		}
 		s->optimized = np->optimized = 1;
 		if (np != s) {
 			s->rewritten = stmt_dup(np);
 		}
 		return np;
 	}
-	
-	case st_partial_pivot: {
-	
-		stmt *ns = optimize(c, s->op2.stval); /* optimize ptable */
-		stmt *np = find_pivot(ns, s->t);
-		stmt_destroy(ns);
-		s->optimized = np->optimized = 1;
-		if (np != s) {
-			s->rewritten = stmt_dup(np);
-		}
-		return np;
-	}
-	
+
 	case st_ptable: {
-
-		stmt *pivots = op_stmt2pivot(stmt_dup(s->op3.stval));
-		/* also optimize the pivots */
-		stmt *np = optimize(c, pivots);
-		assert(np);
-		stmt_destroy(pivots);
-		s->optimized = np->optimized = 1;
-		if (np != s) {
-			s->rewritten = stmt_dup(np);
+		if (ptable_parent(s)) {
+			stmt *parent = optimize(c, ptable_parent(s));
+			stmt *f, *np;
+			if (!ptable_statements(s))
+				return parent;
+			/* filter statements */
+			f = filter_pivots(parent->op1.lval, 
+					ptable_statements(s)->op1.lval );
+			np = optimize(c, f);
+			stmt_destroy(f);
+			s->optimized = np->optimized = 1;
+			if (np != s) {
+				s->rewritten = stmt_dup(np);
+			}
+			return np;
 		}
-		return np;
+		if (ptable_statements(s)) {
+			stmt *pivots = op_stmt2pivot(stmt_dup(ptable_statements(s)));
+			/* also optimize the pivots */
+			stmt *np = optimize(c, pivots);
+			assert(np);
+			stmt_destroy(pivots);
+			s->optimized = np->optimized = 1;
+			if (np != s) {
+				s->rewritten = stmt_dup(np);
+			}
+			return np;
+		}
+		return s;
 	}
 
 	case st_set: case st_sets: 

@@ -83,7 +83,6 @@ static stmt *tail_column(stmt * st)
 	case st_alias:
 
 	case st_pivot:
-	case st_partial_pivot: 
 
 		return tail_column(st->op1.stval);
 
@@ -157,7 +156,6 @@ static stmt *head_column(stmt * st)
 	case st_alias:
 
 	case st_pivot:
-	case st_partial_pivot: 
 
 		return head_column(st->op1.stval);
 
@@ -188,6 +186,7 @@ static stmt *head_column(stmt * st)
 	case st_predicate:
 	case st_op:
 	case st_ptable:
+	case st_groupby:
 		return NULL;
 
 	/* stmts without head column which also are not expected */
@@ -226,7 +225,7 @@ static sql_column *basecolumn(stmt * st)
 	case st_reverse:
 		return basecolumn(head_column(st->op1.stval));
 
-	case st_partial_pivot: case st_pivot:
+	case st_pivot:
 		return basecolumn(st->op1.stval);
 	case st_bat:
 		return st->op1.cval;
@@ -841,7 +840,6 @@ stmt *rel2bin( mvc *c, stmt *s )
 		return stmt_dup(s);
 
 	case st_pivot: 
-	case st_partial_pivot:
 	case st_ptable:
 	case st_set: case st_sets: 
 	default:
