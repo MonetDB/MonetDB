@@ -13,11 +13,10 @@ from a database, or removes a database (storage inclusive) altogether.
 \begin{verbatim}
 Mdestroydb [-home <file>] -db <name> {-user <usr>}\n");
 
-Mcreatedb [-home <file>] -db <name> {-user <usr>} [-port <port>] [-dir <dbdir>]
+Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]
 	  the special file 'homes' is expected in $MONETHOME
 	  the default database directory is $MONETHOME/dbfarm/
  	  the default users are 'adm' and 'guest'
-	  the default tcp port is 50050
 \end{verbatim}
  
 These utilities were improved so they now update (and create, if necessary) the
@@ -103,7 +102,7 @@ $MONETHOME/dbfarm/$DB/users/$USER/prelude.mil  # (editable) session prelude
 int error, fatal;
 char homes[PATHLENGTH] = {0}, *home=NULL, *dist, *farm, *db=NULL;
 str  prog, user[64] = { 0 };
-char dir=0, defaultport[IDLENGTH] = "50050";
+char dir=0;
 
 extern str getenv();
 extern void dbargs(int argc,char **argv);
@@ -118,10 +117,9 @@ By default adm and guest are introduced
 void usage(){
         printf("usage:\nMdestroydb [-home <file>] -db <name> {-user <usr>}\n");
 	printf("\tthe special file 'homes' is expected in $MONETHOME\n");
-	printf("Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>] [-port <port>]\n");
+	printf("Mcreatedb [-home <file>] -db <name> {-user <usr>} [-dir <dbdir>]\n");
 	printf("\tthe default users are 'adm' and 'guest'\n");
 	printf("\tthe default database directory is $MONETHOME/dbfarm/\n");
-	printf("\tthe default tcp port is 50050\n");
 	exit(0);
 }
 
@@ -132,7 +130,7 @@ int main(int argc, char **argv) {
 
 	dbargs(argc,argv);
 
-	/* try to determine GDKport and GDKdir beforehand */
+	/* try to determine GDKdir beforehand */
 	if (strcmp(prog, "Mdestroydb") && !GDKenviron[GDKdir][0]) {
 		strcpy(s=GDKenviron[GDKdir], farm);
 		if ((n = strlen(s)) != 0) {
@@ -143,18 +141,10 @@ int main(int argc, char **argv) {
 		strcpy(s+n+7, db);
 		fprintf(stderr, "Mcreatedb: using default dbdir %s.\n", s);
 	}
-	if (strcmp(prog, "Mdestroydb") && !GDKenviron[GDKport][0]) {
-		if (((s=getenv("MONETPORT")) == NULL)||(s=strchr(s,':')) == NULL) {
-			strcpy(s=GDKenviron[GDKport], "50050");
-			fprintf(stderr, "Mcreatedb: using default port %s.\n", s);
-		} else {
-			strcpy(GDKportStr, s+1);
-	    
-		}
-	}
 	/* lookup/add our (db,user) pairs in the homes file */
 	do {
-		if (GDKhomeScan(user[i], db, homes) == 0) {
+		int create = strcmp(prog, "Mdestroydb");
+		if (GDKhomeScan(user[i], db, homes, create) == 0) {
 			GDKhomeIns(user[i], db, homes);
 		}
 	} while(user[++i]);
@@ -391,8 +381,6 @@ void dbargs(int argc,char **argv) {
 			db = argv[++i];
 		} else if( strcmp(argv[i],"-dir")==0){
 			strcpy(GDKenviron[GDKdir], argv[++i]);
-		} else if( strcmp(argv[i],"-port")==0){
-			strcpy(GDKenviron[GDKport], argv[++i]);
 		} else if( strcmp(argv[i],"-user")==0) {
 			user[usr++] = argv[++i];
 		}

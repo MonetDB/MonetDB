@@ -759,26 +759,14 @@ int CMDshutdown(Cntxt stk, YYSTREE lt, ValPtr res){
 	{
 		fprintf(GDKout,"No permission for shutdown; quit.\n");
 		fflush(GDKout);
-	} else if (monet_background != 1) {
-		fflush(GDKout);
-		MT_global_exit(1);
-	} else {
-		THRexit("InternetServer");
-
+	} else if (monet_background == 1) {
 		fprintf(GDKout,"Shutdown of server in progress\n");
 		fflush(GDKout);
 		closeClient(monet_clients, TRUE);
-		monet_background++; /* last Interpreter thread will wakeup main thread */
+	} else {
+		fflush(GDKout);
+		MT_global_exit(1);
 	}
-	return CMDquit(stk, lt, res);
-}
-@-
-A server running in the background should be stopped using 
-the routine @%shutdown@ issued by the database owner.
-		closeClient(monet_clients+stk, TRUE);
-		return CMDquit(0, lt, res);
-	}
-	GDKwarning("shutdown: permission denied\n");
 	return CMDquit(stk, lt, res);
 }
 

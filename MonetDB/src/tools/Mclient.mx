@@ -38,8 +38,6 @@ The following options are supported:
 If your MONETPORT environment variable points to "HOST:PORT" already, you
 can omit this option.
 \item {\em -debug}. Illustrate internalworking.
-\item {\em -db.} Connect to a Monet server using the
-information maintained in the homes file.
 \item {\em -prelude.} At the start of the client session, execute --
 before going into command-line mode-- a local file containing MIL statements.
 \item {\em -c.} just execute a one-line MIL command (non-interactive mode).
@@ -65,15 +63,26 @@ $MONETHOME/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 @c
 /*  (Copyright) 1995-1996 M.L. Kersten, CWI, Amsterdam
 	Monet textual interface monitor.
-*/
 #include <gdk.h>
-#include  <stdio.h> 
-#include  <ctype.h> 
-#include  <sys/types.h> 
-#include  <sys/socket.h> 
-#include  <errno.h> 
-#include  <string.h> 
-#include  <signal.h> 
+*/
+#ifdef HAVE_CONFIG_H 
+#include <config.h>
+#endif
+#include <stdio.h> 
+#include <ctype.h> 
+#include <sys/types.h> 
+#include <sys/socket.h> 
+#include <sys/stat.h>
+#include <errno.h> 
+#ifdef HAVE_NETDB_H
+# include <netinet/in.h> 
+# include <netdb.h> 
+#endif
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h> 
+#endif
+#include <string.h> 
+#include <signal.h> 
 #ifdef HAVE_UNISTD_H
 #include  <unistd.h> 
 #endif
@@ -508,7 +517,6 @@ int rwpopen(char* cmd, FILE** fp_in, FILE** fp_out) {
 @c
 void usage() {
 	fprintf(stderr, "Usage: %s [-port host:port] ", program);
- 	fprintf(stderr, "[-db name ] ");
 	fprintf(stderr, "[-session key] ");
  	fprintf(stderr, "[-prelude  pfile ]\n");
  	fprintf(stderr, "[-c command] ");
@@ -547,10 +555,7 @@ int main(int argc, char **argv) {
 		if (argv[i][0] == '-') {
 			switch(argv[i][1]) {
 			case 'd':
-				if( strcmp(argv[i],"-db") == 0) {
-					if( findport(argv[++i])==0)
-						EXIT(0);
-				} else debug++;
+				debug++;
 				break;
 			case 'p':
 				if (strcmp(argv[i], "-port") == 0) {
@@ -668,36 +673,3 @@ Check basic working of Monet interaction.
 	EXIT(0);
 	return 0;
 }
-@+ Home file
-Uses the common code from gdk_utils.mx
-@c
-#include <gdk.h>
-
-int findport(char *dbnme) {
-        char *home,homefile[PATHLENGTH];
-        FILE *fp;
- 
-        home = (char*) getenv("MONETFARM");
-        if( home == 0) {
-            home = (char*) getenv("MONETHOME");
-            if( home == 0) {
-                fprintf(toConsole,"MONETHOME variable not set.\n");
-                return 0;
-            }
-        }
-        sprintf(homefile, "%s%chomes", home, DIR_SEP);
-
-        GDKhomeScan(name, dbnme, homefile);
- 
-        strcat(strcat(GDKenviron[GDKdir], DIR_SEP_STR), ".gdk_lock");
-        fp = fopen(GDKenviron[GDKdir],"r");
-        if (fp == NULL){
-                fprintf(stderr,"! Server '%s' not running\n", dbnme);
-                return 0;
-        }
-	fseek(fp, 1L, SEEK_SET);
-        fgets(address,80,fp);
-        fclose(fp);
-        return 1;
-}
-@}

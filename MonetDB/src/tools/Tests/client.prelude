@@ -1,6 +1,6 @@
 setoid(oid(10000000));
 
-printf("Start of MIL prelude.\n");
+printf("Start of MIL server prelude.\n");
 
 clientid().print();
 debugmask().print();
@@ -47,5 +47,5 @@ view_gdk_thread().print();
 
 printf("#~EndVariableOutput~#\n");
 
-printf("End of MIL prelude.\n");
+printf("End of MIL server prelude.\n");
 

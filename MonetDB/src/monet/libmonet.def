@@ -25,7 +25,6 @@ EXPORTS
 	monet_welcome
 	monet_background
 	monet_pid
-	monet_port
 	monet_internet
 	monet_singlethreaded
 	monet_yaccsilent

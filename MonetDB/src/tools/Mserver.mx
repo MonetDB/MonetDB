@@ -163,7 +163,6 @@ void* malloc(size_t size) {
 int main(int argc, char** argv) {
 	char buf[256];
 	int status = 1;
-	int base_nr_threads;
 	Client c;
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -196,18 +195,11 @@ A grain size of 128 bytes is used to keep overhead low.
 	c = (Client) monet_init(argc,argv);
 	static_module_init(c,buf);
 	monet_hello();
-	base_nr_threads = monet_background;
 @-
 Execute scripts.
 @C
 	if (monet_script ) printf("#script:%s\n",monet_script);
 	if (monet_prelude ) printf("#prelude:%s\n",monet_prelude);
-
-        if ((monet_script && scriptClient(c,monet_script,0) == 0) ||
-            (monet_prelude && scriptClient(c,monet_prelude,1) ==0))
-        {
-                monet_exit();
-        }
 @- 
 thread management.
 @C

@@ -182,6 +182,18 @@ errors) its read request is entered into the queue.
 @c
 static YYSTREE mil_general=NULL, mil_prelude=NULL, mil_epilogue=NULL;
 
+static YYSTREE scheduleFile(str filename) {
+        YYSTREE r = yynode(TOK_BUILTIN, TYPE_ptr);
+        YYSTREE n = yynode(TOK_CONSTANT, 0);
+        yyexpand(r, n);
+        n->yyval.vtype = TYPE_str;
+        n->yyval.val.sval = GDKstrdup(filename);
+        n->yyval.len = strLen(filename);
+        r->yyval.val.pval = (ptr) interpret_file;
+        r->dealloc = 0;
+        return r;
+}
+
 void scheduleClient(Client c){	
 	Request first = NULL, second, third;
 	YYSTREE n;
@@ -195,43 +207,49 @@ void scheduleClient(Client c){
 	third = newRequest(c->stk, c->mil_accept, TRUE);
 	QMmessage(third,"readCmd;");
 	if (mil_general == NULL) {
-        	yyexpand(mil_general = yynode(TOK_BUILTIN, TYPE_ptr), 
-			 n = yynode(TOK_CONSTANT, 0));
-		n->yyval.vtype = TYPE_str;
-		n->yyval.val.sval = GDKstrdup("general.mil");
-		n->yyval.len = strLen("general.mil");
-		mil_general->yyval.val.pval = (ptr) interpret_file;
-	
-        	yyexpand(mil_prelude = yynode(TOK_BUILTIN, TYPE_ptr), 
-			 n = yynode(TOK_CONSTANT, 0));
-        	n->yyval.vtype = TYPE_str;
-        	n->yyval.val.sval = GDKstrdup("prelude.mil");
-		n->yyval.len = strLen("prelude.mil");
-		mil_prelude->yyval.val.pval = (ptr) interpret_file;
-
-        	yyexpand(mil_epilogue = yynode(TOK_BUILTIN, TYPE_ptr), 
-			 n = yynode(TOK_CONSTANT, 0));
-        	n->yyval.vtype = TYPE_str;
-        	n->yyval.val.sval = GDKstrdup("epilogue.mil");
-		n->yyval.len = strLen("epilogue.mil");
-		mil_epilogue->yyval.val.pval = (ptr) interpret_file;
-		mil_epilogue->dealloc = mil_general->dealloc = 
-			mil_prelude->dealloc = 0;
+                mil_general = scheduleFile("general.mil");
+                mil_prelude = scheduleFile("prelude.mil");
+                mil_epilogue = scheduleFile("epilogue.mil");
 
 		first = newRequest(0, mil_general, 0);
 		QMmessage(first, "source(general.mil);");
 
 	        second = newRequest(c->stk, mil_prelude, 1);
-		first->ev_wakeup = second;
-		second->ev_next  = first; 
-		first->ev_prev   = second;
+                QMmessage(second,"source(prelude.mil);");
+
+                first->ev_wakeup = second;
+                second->ev_next  = first;
+                first->ev_prev   = second;
+
+                if (monet_prelude) {
+                        first = second;
+                        second = newRequest(0, scheduleFile(monet_prelude), 1);
+                        QMmessage(second,"source(<user prelude>);");
+
+                        first->ev_wakeup = second;
+                        second->ev_next  = first;
+                        first->ev_prev   = second;
+                }
+                if (monet_script) {
+                        first = second;
+                        second = newRequest(0, scheduleFile(monet_script), 1);
+                        QMmessage(second,"source(<user script>);");
+
+                        first->ev_wakeup = second;
+                        second->ev_next  = first;
+                        first->ev_prev   = second;
+                }
 	} else {
 	        second = newRequest(c->stk, mil_prelude, 0);
+		QMmessage(second,"source(prelude.mil);");
 	}
-	QMmessage(second,"source(prelude.mil);");
-	second->ev_wakeup = third;
-	third->ev_next    = second; 
-	second->ev_prev   = third;
+        if (c == monet_clients && monet_background == 1) {
+                third = second;
+        } else {
+                second->ev_wakeup = third;
+                third->ev_next    = second;
+                second->ev_prev   = third;
+        }
         putRequest(third);
 }
 

@@ -339,10 +339,10 @@ int bats_create() {
 	    } else {
 	        columns[i].b = b = BATnew(ht, columns[i].type, 100);
 	    }
-	    if (ht == TYPE_void) {
-		b->hseqbase = curoid;
-	    }
 	    b->hsorted = b->tsorted = 0;
+	    if (ht == TYPE_void) {
+		BATseqbase(b, curoid);
+	    }
 
 	    j = BBPindex(nme);
 	    if (j > 0) {

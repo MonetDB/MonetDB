@@ -21,7 +21,6 @@ The program uses the Mapi interface.
 #include <stdlib.h>
 
 #include "Mapi.h"
-#include <gdk.h>
 
 int	debug;
 char 	*address;

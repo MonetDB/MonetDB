@@ -940,7 +940,9 @@ int
 TCPterminate(
    int*     	port	/* pointer to integer.*/
 ){
-	int fd = socket_open(GDKenviron[GDKserver], *port, "TCPterminate");
+	char host [BUFSIZ];
+	int t = gethostname(host, BUFSIZ );
+	int fd = socket_open(host, *port, "TCPterminate");
 	if (fd) {
 	    write(fd, "stop\n", 5);
 	    return GDK_SUCCEED;
@@ -1011,7 +1013,7 @@ In the meantime, the other way round might have gotten through.  If so, use it.
 We really initiated a new connection
 @c
 	    *retval = conn_insert(host, port, -1, fd);
-	    sprintf(buf, "%s\n", GDKenviron[GDKserver]);
+	    sprintf(buf, "%s\n", host);
 	    if (send(fd, buf, strlen(buf), 0) != (int) strlen(buf)) {
 		GDKsyserror("conn_insert: could not communicate.\n");
 		conn_delete(*retval);

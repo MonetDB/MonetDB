@@ -77,7 +77,8 @@ BAT *void_bat_create(int ctype,int ptr,int d1,int d2,int nr) {
 
 BAT *view_create(BAT *b1,BAT *b2,int cnt){
 	/* todo check if b1 head != b1 tail (oid,seqbase)*/
-	return BATjoin(BATmirror(b1), b2);
+	if (BATcount(b1)) return BATjoin(BATmirror(b1), b2); 
+	return b2;
 }
 ptr *ADT_fromStr( int type, char *s){
         int l = 0;
