@@ -95,7 +95,7 @@ derived from the parser to avoid a loop in the define-structure.
 
 mal_export str  getTypeName(malType tpe);
 mal_export malType coercion(malType t1, malType t2);
-mal_export int  getTypeIndex(str nme, int len);
+mal_export int  getTypeIndex(str nme, int len, int deftpe);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
 mal_export int  idcmp(str n, str m);
@@ -253,7 +253,7 @@ linear search through the type table. This code should actually
 be integrated with the kernel.  
 @c
 #define qt(x) (nme[1]==x[1] && nme[2]==x[2] && x[3]==0)
-int getTypeIndex(str nme, int len){
+int getTypeIndex(str nme, int len, int deftype){
     int i;
     char buf[IDLENGTH+2];
     switch(*nme){
@@ -273,7 +273,7 @@ int getTypeIndex(str nme, int len){
     buf[i]=0;
     i= ATOMindex(buf);
     /*stream_printf(GDKout,"getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
-    if( i== -GDKatomcnt) i = TYPE_any;
+    if( i== -GDKatomcnt) i = deftype;
     return i;
 }
 int findGDKtype(int type){

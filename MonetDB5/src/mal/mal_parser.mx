@@ -445,7 +445,11 @@ int simpleTypeId(Client cntxt){
         parseError(cntxt,"Type identifier expected\n");
         return -1;
     }
-    tpe= getTypeIndex(cntxt->nxt,l);
+    tpe= getTypeIndex(cntxt->nxt,l,-1);
+    if( tpe < 0){
+        parseError(cntxt,"Type identifier expected\n");
+        return -1;
+    }
     advance(cntxt,l);
     skipSpace(cntxt);
     return tpe;
@@ -1234,7 +1238,8 @@ of a function call.
     }
     if( l || (l=idLength(cntxt))) {
 startFCNcall:
-        {v= cntxt->nxt; advance(cntxt,l);
+        {
+        v= cntxt->nxt; advance(cntxt,l);
         if( currChar(cntxt) != '.' &&
             currChar(cntxt) != '(' &&
             (idCharacter[(int)(*v)]) ){
@@ -1268,24 +1273,27 @@ startFCNcall:
                 pushInstruction(curBlk,curInstr);
                 return;
             }
+            skipSpace(cntxt);
             if(nextChar(cntxt) != '(')
             {   parseError(cntxt,"'(' expected\n");
                 pushInstruction(curBlk,curInstr);
                 return;
             }
             skipSpace(cntxt);
-        } else if( cntxt->nxt[l] != '(')
-        {
-            parseError(cntxt,"'(' expected\n");
-            pushInstruction(curBlk,curInstr);
-            return;
-        } else { 
-            arg= idCopy(cntxt,l);
-            nextChar(cntxt); skipSpace(cntxt);
-            setFunctionId(curInstr, arg);
+        } else {
+            if( cntxt->nxt[l] != '(')
+            {
+                parseError(cntxt,"'(' expected\n");
+                pushInstruction(curBlk,curInstr);
+                return;
+            } else { 
+                arg= idCopy(cntxt,l);
+                nextChar(cntxt); skipSpace(cntxt);
+                setFunctionId(curInstr, arg);
+            }
         }
 /*getarguments:*//* not used */
-
+        skipSpace(cntxt);
         @:parseArguments()@ /* parseAssign() -> void */
         skipSpace(cntxt);
         if( currChar(cntxt)!=';')

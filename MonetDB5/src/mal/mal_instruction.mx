@@ -966,7 +966,7 @@ They have preference over variable names.
 malType getType(MalBlkPtr mb, str nme){
     int i;
     i= findVariable(mb,nme);
-    if( i< 0) return getTypeIndex(nme,strlen(nme));
+    if( i< 0) return getTypeIndex(nme,strlen(nme), TYPE_any);
     if( i>=0) return getVarType(mb,i);
     return TYPE_any;
 }
@@ -1477,7 +1477,7 @@ InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p,str name){
         int v;
 
     v= findVariable(mb,name);
-    if( v<0) v= newVariable(mb,name,getTypeIndex(name,strlen(name)));
+    if( v<0) v= newVariable(mb,name,getTypeIndex(name,strlen(name),TYPE_any));
     else GDKfree(name);
     return pushArgument(mb,p,v);
 }
