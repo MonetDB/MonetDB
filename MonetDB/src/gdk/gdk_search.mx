@@ -398,6 +398,8 @@ void HASHremove(BAT *b) {
 			GDKerror("HASHremove: view-bat cannot remove parent hash-table\n");
 		} else {
 			HEAPfree(b->hhash_heap);
+        		if (b->hhash_heap->storage&STORE_MMAP) 
+                		HEAPdelete(b->hhash_heap, BBP_physical(b->batCacheid), (b->batCacheid>0)?"hhash":"thash");
 			GDKfree(b->hhash_heap);
 		}
 		memset(&b->hhash, 0, sizeof(Hash));
@@ -479,6 +481,9 @@ void IDXremove(BAT *b) {
 			GDKerror("IDXremove: view-bat cannot remove parent idx-tree\n");
 		} else {
 			HEAPfree(b->hidx_heap);
+        		if (b->hidx_heap->storage&STORE_MMAP) 
+                		HEAPdelete(b->hhash_heap, BBP_physical(b->batCacheid), (b->batCacheid>0)?"hidx":"tidx");
+			GDKfree(b->hidx_heap);
 		}
 		memset(&b->hidx, 0, sizeof(IDX));
 		BATmirror(b)->tidx_heap = b->hidx_heap = NULL; 
@@ -1130,7 +1135,7 @@ int ACCunload(int id, BAT *b, Heap *acc) {
 
 int ACCdestroy(int id, BAT* b, Heap* acc){
 	int ret = 0;
-	if (b->haccCopiedtodisk) {
+	if (b->haccCopiedtodisk || (b->haccelerator.storage&STORE_MMAP)) {
 		str nme = BBP_physical(b->batCacheid);
 		HEAPdelete(&b->haccelerator, nme, "hacc");
 		b->haccCopiedtodisk = 0;
