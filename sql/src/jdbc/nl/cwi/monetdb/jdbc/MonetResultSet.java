@@ -46,7 +46,7 @@ import java.text.SimpleDateFormat;
  * result sets.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.6
+ * @version 0.7
  */
 public class MonetResultSet implements ResultSet {
 	/** The last column read using some getXXX function */
@@ -198,12 +198,16 @@ public class MonetResultSet implements ResultSet {
 		curRow = row;
 
 		if (tmpLine == null) return(false);
+		int len = tmpLine.length();
+		char[] chrLine = new char[len];
+		tmpLine.getChars(0, len, chrLine, 0);
 
 		// extract separate fields by examining string, char for char
 		boolean inString = false, escaped = false;
-		int cursor = 2, column = 0, i = 2, len = tmpLine.length();
+		int cursor = 2, column = 0, i = 2;
+		StringBuffer uesc = new StringBuffer();
 		for (; i < len; i++) {
-			switch(tmpLine.charAt(i)) {
+			switch(chrLine[i]) {
 				case '\\':
 					escaped = !escaped;
 				break;
@@ -235,21 +239,23 @@ public class MonetResultSet implements ResultSet {
 				break;
 				case '\t':
 					if (!inString &&
-						(i > 0 && tmpLine.charAt(i - 1) == ',') ||
-						(i + 1 == len - 1 && tmpLine.charAt(++i) == ']')) // dirty
+						(i > 0 && chrLine[i - 1] == ',') ||
+						(i + 1 == len - 1 && chrLine[++i] == ']')) // dirty
 					{
 						// split!
-						if (tmpLine.charAt(cursor) == '"' &&
-							tmpLine.charAt(i - 2) == '"')
+						if (chrLine[cursor] == '"' &&
+							chrLine[i - 2] == '"')
 						{
-							StringBuffer uesc = new StringBuffer();
+							// reuse the StringBuffer by cleaning it
+							uesc.delete(0, uesc.length());
+							// prevent capacity increasements
+							uesc.ensureCapacity((i - 2) - (cursor + 1));
 							for (int pos = cursor + 1; pos < i - 2; pos++) {
-								char cur = tmpLine.charAt(pos);
-								if (cur == '\\' && pos + 1 < i - 2) {
-									cur = tmpLine.charAt(++pos);
+								if (chrLine[pos] == '\\' && pos + 1 < i - 2) {
+									pos++;
 									// strToStr and strFromStr in gdk_atoms.mx only
 									// support \t \n \\ \" and \377
-									switch (cur) {
+									switch (chrLine[pos]) {
 										case '\\':
 											uesc.append('\\');
 										break;
@@ -265,26 +271,27 @@ public class MonetResultSet implements ResultSet {
 										case '0': case '1': case '2': case '3':
 											// this could be an octal number, let's check it out
 											if (pos + 2 < i - 2 &&
-												tmpLine.charAt(pos + 1) >= '0' && tmpLine.charAt(pos + 1) <= '7' &&
-												tmpLine.charAt(pos + 2) >= '0' && tmpLine.charAt(pos + 2) <= '7'
+												chrLine[pos + 1] >= '0' && chrLine[pos + 1] <= '7' &&
+												chrLine[pos + 2] >= '0' && chrLine[pos + 2] <= '7'
 											) {
 												// we got the number!
 												try {
-													uesc.append((char)(Integer.parseInt("" + cur + tmpLine.charAt(pos + 1) + tmpLine.charAt(pos + 2), 8)));
+													uesc.append((char)(Integer.parseInt("" + chrLine[pos] + chrLine[pos + 1] + chrLine[pos + 2], 8)));
 													pos += 2;
 													break;
 												} catch (NumberFormatException e) {
 													// hmmm, this point should never be reached actually...
+													throw new AssertionError("Flow error, should never try to parse non-number");
 												}
 											}
 											// do default action if number seems not to be correct
 										default:
 											// this is wrong, just ignore the escape, and print the char
-											uesc.append(cur);
+											uesc.append(chrLine[pos]);
 										break;
 									}
 								} else {
-									uesc.append(cur);
+									uesc.append(chrLine[pos]);
 								}
 							}
 
