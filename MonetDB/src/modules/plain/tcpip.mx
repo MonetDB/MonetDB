@@ -1055,18 +1055,6 @@ conn_insert(str host, int port, int me, int sock)
 		connections[i].port = port;
 		connections[i].sock = sock;
 		connections[i].waiter = (Thread) 0;
-		if (me == -1 &&
-		    (strcasecmp(host, "localhost") == 0 ||
-		     strcasecmp(host, hostname()) == 0)) {
-			int port_no;
-
-			for (port_no = 0; port_no < 256; port_no++) {
-				if (ports[port_no] == port) {
-					me = 0;
-					break;
-				}
-			}
-		}
 		strncpy(connections[i].hostname, host, sizeof(connections[i].hostname));
 		connections[i].hostname[sizeof(connections[i].hostname) - 1] = 0;
 		if (me) {

@@ -88,7 +88,6 @@ usage(void)
 	Message("\t-d\t\tProduce a draft document");
 	Message("\t-x <extension>\tExtract <extension> labelled code");
 	Message("\t-w\t\tExtract HTML code");
-	Message("\t-W\t\tExtract HTML code for inclusion");
 	Message("\t-D <id>\t\tDefine macro 'id'");
 	Message("\t-T <string>\tDefine default hide text <string>");
 	Message("\t-l\t\tNo #line and alike statements");
