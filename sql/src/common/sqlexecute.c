@@ -117,7 +117,7 @@ statement *sqlexecute( context *lc, char *buf ){
 }
 
 void sql_statement_init(context *lc){
-	if (lc->sql && lc->debug)
+	if (lc->sql && lc->debug&16)
 		fprintf(stderr, "%s\n", lc->sql );
 	lc->sql[0] = '\0';
 	lc->sqllen = 1;

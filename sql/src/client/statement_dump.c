@@ -12,7 +12,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
     if (s){
     	if (s->nr) return s->nr;
 
-	if (sql->debug && s->type != st_insert_list)
+	if (sql->debug&2 && s->type != st_insert_list)
 		len += snprintf( buf+len, BUFSIZ,"t0 := time();\n");
 
 	switch(s->type){
@@ -162,7 +162,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			"s%d := mvc_bind(myc, %ld);\n", *nr, s->op1.cval->id );
 
 			s->nr = (*nr)++;
-			if (sql->debug >= 2){
+			if (sql->debug&4){
 				len += snprintf( buf+len, BUFSIZ, 
 				"s%d.print();\n", s->nr );
 			}
@@ -265,7 +265,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		while(n){
 			len += snprintf( buf+len, BUFSIZ, "s%d := atom(%s);\n", k++, 
 					atom2string(n->data.aval) );
-			len += snprintf( buf+len, BUFSIZ, "insert(s%d, s%d);\n", *nr, k);
+			len += snprintf( buf+len, BUFSIZ, "insert(oid(s%d), s%d);\n", *nr, k);
 			n = n->next;
 		}
 		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.semijoin(s%d);\n", k, l, *nr);
@@ -400,29 +400,26 @@ int statement_dump( statement *s, int *nr, context *sql ){
                 if (s->op3.stval){
                         int l = statement_dump( s->op3.stval, nr, sql );
                         len += snprintf( buf+len, BUFSIZ,
-                        "s%d := mvc_bind(myv, %ld).insert(s%d,s%d);\n",
+                        "s%d := mvc_bind(myc, %ld).insert(oid(s%d),s%d);\n",
                         *nr, s->op1.cval->id, r, l);
                 } else {
                         len += snprintf( buf+len, BUFSIZ,
-                        "s%d := mvc_bind(myv, %ld).insert(s%d,%s(nil));\n",
+                        "s%d := mvc_bind(myc, %ld).insert(oid(s%d),%s(nil));\n",
                         *nr, s->op1.cval->id, r, s->op1.cval->tpe->name );
                 }
                 s->nr = (*nr)++;
         } break;
 
 	}
-	if (sql->debug && s->type != st_insert_list)
+	if (sql->debug&2 && s->type != st_insert_list)
 		len += snprintf( buf+len, BUFSIZ,"t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", s->nr);
 
 	buf[len] = '\0';
 	sql->out->write( sql->out, buf, 1, len );
-	/*
-	if ( (s->nr%10000) == 0){
-		len = 0;
-		len += snprintf( buf+len, BUFSIZ, "print(%d);\n", s->nr );
-		sql->out->write( sql->out, buf, 1, len );
-	}
-	*/
+
+	if (sql->debug&8)
+		fwrite( buf, 1, len, stderr);
+
     	return s->nr;
     }
     return 0;

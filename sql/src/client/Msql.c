@@ -154,7 +154,7 @@ main(int ac, char **av)
 			usage(prog);
 			break;
 		case 'd':
-			debug=1;
+			debug=2;
 			if (optarg) debug=strtol(optarg,NULL,10);
 			break;
 		case 'h':
@@ -186,8 +186,6 @@ main(int ac, char **av)
 		printf("\n");
 		usage(prog);
 	}
-
-	if (debug) fprintf(stderr, "debug on %d\n", debug );
 
 	fd = client( host, port);
 	rs = block_stream(socket_rstream( fd, "sql client read"));
