@@ -77,6 +77,29 @@ char * texDocStyle = 0;
 #define	Main	main
 #endif
 
+static void
+usage(void)
+{
+	Message("Usage: Mx <flags> <file>.mx");
+	Message("\t-t\t\tProduce LaTeX document (default)");
+	Message("\t-c\t\tExtract code");
+	Message("\t-R <dir>\tSet target directory to <dir>)");
+	Message("\t-S <style>\tSet LaTeX documentstyle to 'style'");
+	Message("\t-s\t\tProduce nroff -ms document");
+	Message("\t-1\t\tSingle column (default) ");
+	Message("\t-2\t\tDouble column");
+	Message("\t-H <n>\t\tSet hide level to 'n' (-H0 default)");
+	Message("\t-d\t\tProduce a draft document");
+	Message("\t-x <extension>\tExtract <extension> labelled code");
+	Message("\t-w\t\tExtract HTML code");
+	Message("\t-W\t\tExtract HTML code for inclusion");
+	Message("\t-D <id>\t\tDefine macro 'id'");
+	Message("\t-T <string>\tDefine default hide text <string>");
+	Message("\t-l\t\tNo #line and alike statements");
+	Message("\t-n\t\tNon changed files won't be touched");
+	Message("\t-+\t\tTreat @c (C code) as @C (C++ code)");
+}
+
 int	Main(argc, argv)
 int	argc;
 char **	argv;
@@ -87,24 +110,7 @@ char **	argv;
 #endif
 
 	if( argc == 1) {
-		Message("Usage: Mx <flags> <file>.mx");
-		Message("\t-t\t\tProduce LaTeX document (default)");
-		Message("\t-c\t\tExtract code");
-		Message("\t-R <dir>\tSet target directory to <dir>)");
-		Message("\t-S <style>\tSet LaTeX documentstyle to 'style'");
-		Message("\t-s\t\tProduce nroff -ms document");
-		Message("\t-1\t\tSingle column (default) ");
-		Message("\t-2\t\tDouble column");
-		Message("\t-H <n>\t\tSet hide level to 'n' (-H0 default)");
-		Message("\t-d\t\tProduce a draft document");
-		Message("\t-x <extension>\tExtract <extension> labelled code");
-		Message("\t-w\t\tExtract HTML code");
-		Message("\t-W\t\tExtract HTML code for inclusion");
-		Message("\t-D <id>\t\tDefine macro 'id'");
-		Message("\t-T <string>\tDefine default hide text <string>");
-		Message("\t-l\t\tNo #line and alike statements");
-		Message("\t-n\t\tNon changed files won't be touched");
-		Message("\t-+\t\tTreat @c (C code) as @C (C++ code)");
+		usage();
 	    	exit(1);
 	}
 	InitDef();
@@ -183,6 +189,8 @@ char **	argv;
 			break;
 		default:
 			Error("Unknown flag:%c", i);
+			usage();
+			exit(1);
 		}
 	}
 
