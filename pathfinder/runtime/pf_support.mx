@@ -43,10 +43,10 @@ implementation on to of MonetDB within the "Pathfinder" project.
  from b's tail. The tail of g gives for each group the base value for the new
  OID sequence."
 
-.COMMAND merged_union( BAT[void,any::1] left, BAT[void,any::1] right, ..BAT[void,any].. )
+.COMMAND merged_union( BAT[oid,any::1] left, BAT[oid,any::1] right, ..BAT[oid,any].. )
 		: BAT[void,BAT] = CMDmerged_union;
 "PARAMETERS:
-Even number of BAT[void,any] with pairs of equal tail type;
+Even number of BAT[oid,any] with dense heads and pairs of equal tail type;
 all odd BATs must be head-aligned and all even BATs must be head-aligned;
 first two BATs must be sorted on tail values.
 DESCRIPITON:
@@ -81,12 +81,13 @@ DESCRIPITON:
 string_join constructs for each iter one strings by appending the strings
 with the separator for this iter in between."
 
-.COMMAND mposjoin( BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item )
+.COMMAND mposjoin( BAT[oid,oid] pre, BAT[oid,oid] frag, BAT[oid, bat] ws_item )
 		: BAT[void,any] = CMDmposjoin;
 "PARAMETERS:
-BAT[void,oid] - the values which have to be looked up
-BAT[void,oid] - the corresponding fragments in which the values have to be looked up
-BAT[void,BAT[void,any]] - the list of bats where the values are looked up
+BAT[oid,oid] - the values which have to be looked up
+BAT[oid,oid] - the corresponding fragments in which the values have to be looked up
+BAT[oid,BAT[oid,any]] - the list of bats where the values are looked up
+All BAT-heads must be dense.
 DESCRIPITON:
 looks up the values in a list of bats. The first argument specifies the
 value to be looked up (joined) and the second one saves which bat contains
@@ -94,12 +95,13 @@ the value (see also 'mvaljoin').
 The result is a bat with the tail values from the batlist (any) and the same
 void column like the first two arguments"
 
-.COMMAND mvaljoin( BAT[void,oid] pre, BAT[void,oid] frag, BAT[void, bat] ws_item )
+.COMMAND mvaljoin( BAT[oid,oid] pre, BAT[oid,oid] frag, BAT[oid, bat] ws_item )
 		: BAT[oid,oid] = CMDmvaljoin;
 "PARAMETERS:
-BAT[void,oid] - the values which have to be joined
-BAT[void,oid] - the corresponding fragments in which the values have to be looked up
-BAT[void,BAT[void,oid]] - the list of bats where the tail values are joined
+BAT[oid,oid] - the values which have to be joined
+BAT[oid,oid] - the corresponding fragments in which the values have to be looked up
+BAT[oid,BAT[oid,oid]] - the list of bats where the tail values are joined
+All BAT-heads must be dense.
 DESCRIPITON:
 joins the tail values of the first argument with the tail values of the bat
 from one bat of the third argument. Which bat from the list is chosen is
@@ -301,6 +303,14 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 
 	for (i=0; i<nbats; i+=2) {
 		j = i+1;
+		if (!BAThdense(b[i])) {
+			GDKerror("merged_union: BAT %d must have a dense head.\n", i+1);
+			return GDK_FAIL;
+		}
+		if (!BAThdense(b[j])) {
+			GDKerror("merged_union: BAT %d must have a dense head.\n", j+1);
+			return GDK_FAIL;
+		}
 		if (ATOMtype(b[i]->ttype) != ATOMtype(b[j]->ttype)) {
 			GDKerror("merged_union: BATs %d & %d must have the same tail types.\n", i+1, j+1);
 			return GDK_FAIL;
@@ -733,12 +743,12 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	else if (bun_sep == last_sep) {
 		GDKerror("string_join: expected oid %i@0 in iter_str "
                          "is missing in separator (0 rows).",
-                         *(oid*)BUNhead(iter_str,bun_iter_str));
+                         *(oid*)BUNhead(iter_str,bun_iter_str)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		return GDK_FAIL;
 	}
 	else if (bun_iter_str == last_iter_str) {
 		sep0 = oid_nil;
-		sep_oid = *(oid*)BUNhead(separator,bun_sep);
+		sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		@:append_sep_and_set_props@
  	       	return GDK_SUCCEED;
 	}
@@ -755,7 +765,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	len = 0;
 	actual_str[0] = '\0';
 
-	i0 = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+	i0 = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	first_string = 1;
 	sep0 = oid_nil;
 
@@ -763,7 +773,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	/* - goes to the next row in the separator bat
 	     to get the separator for the next iter value
 	   - produces an error if oids are not aligned */
-	sep_oid = *(oid*)BUNhead(separator,bun_sep);
+	sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 
 	while (i0 > sep_oid && bun_sep != last_sep) {
 		if (sep0 == sep_oid) {
@@ -773,7 +783,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 		bunfastins(bn, &sep_oid, "");
 		sep0 = sep_oid;
 		bun_sep += bs_sep;
-	        sep_oid = *(oid*)BUNhead(separator,bun_sep);
+	        sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	}
 	if (i0 == sep_oid && bun_sep != last_sep) {
 		sep = (str)BUNtvar(separator,bun_sep);
@@ -789,8 +799,8 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	@:get_next_separator@
 
 	for (; bun_iter_str < last_iter_str ; bun_iter_str += bs_iter_str) {
-		i = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-		s = (str)BUNtvar(iter_str,bun_iter_str); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		i = *(oid*)BUNhead(iter_str,bun_iter_str); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
+		s = (str)BUNtvar(iter_str,bun_iter_str);
 
 		size_t l = strlen(s) + sep_len + 1;
 
@@ -840,7 +850,7 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 
 @= append_sep_and_set_props
 	while (bun_sep != last_sep) {
-	        sep_oid = *(oid*)BUNhead(separator,bun_sep);
+	        sep_oid = *(oid*)BUNhead(separator,bun_sep); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		if (sep0 == sep_oid) {
 			GDKerror("string_join: the head of separator has to be keyed.");
 			return GDK_FAIL;
@@ -901,7 +911,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
 	ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
-		"mposjoin: all input BATs (pre, frag, ws_item) must be void-headed with non-nil seqbase.\n");
+		"mposjoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
 	ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
 		"mposjoin: first two input BATs (pre & frag) must be head-aligned.\n");
 	ERRORcheck(len==0,
@@ -918,7 +928,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		bat bid = *(bat*)BUNtloc(ws_item, pw);
 		batlist[ii] = BATdescriptor(bid);
 		if (!BAThdense(batlist[ii])) {
-			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must be void-headed with non-nil seqbase.\n");
+			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have a dense head.\n");
 			ii++;
 			@:free_batlist@
 			return GDK_FAIL;
@@ -1044,7 +1054,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
 	ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
-		"mvaljoin: all input BATs (pre, frag, ws_item) must be void-headed with non-nil seqbase.\n");
+		"mvaljoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
 	ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
 		"mvaljoin: first two input BATs (pre & frag) must be head-aligned.\n");
 	ERRORcheck(len==0,
@@ -1065,7 +1075,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		bat bid = *(bat*)BUNtloc(ws_item, pw);
 		batlist[ii] = BATdescriptor(bid);
 		if (!BAThdense(batlist[ii])) {
-			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must be void-headed with non-nil seqbase.\n");
+			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have a dense head.\n");
 			ii++;
 			@:free_batlist@
 			return GDK_FAIL;
@@ -1111,20 +1121,20 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	BUN r;
 	b = BATmirror(b);
 	HASHloop_oid(b, b->hhash, h, &p, r) {
-		oidoid_bunfastins(bn,&base,BUNtvar(b,r));
+		oidoid_bunfastins(bn,&base,BUNtail(b,r)); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 	}
 @= sort_only
 	BUN rp, rq;
 	int bs;
 	SORTloop_oid(b, rp, rq, &p, &p, bs) {
-		oidoid_bunfastins(bn,&base,BUNhvar(b,rp));
+		oidoid_bunfastins(bn,&base,BUNhead(b,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	}
 @= scan_only
 	BUN rp, rq;
 	int bs;
 	BATloopFast(b, rp, rq, bs) {
 		if (p == *(oid*)BUNtail(b,rp)) { /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-			oidoid_bunfastins(bn,&base,BUNhvar(b,rp));
+			oidoid_bunfastins(bn,&base,BUNhead(b,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 		}
 	}
 @= hash_scan
