@@ -2,6 +2,25 @@
 #include "mem.h"
 #include "statement.h"
 
+static
+char *atom_dump( atom *a){
+	char buf[1024];
+	switch (a->type){
+	case int_value: sprintf(buf, "%d", a->data.ival); break;
+	case string_value: sprintf(buf, "\"%s\"", a->data.sval); break;
+	case float_value: sprintf(buf, "%f", a->data.dval); break;
+	case general_value:
+			if (a->data.sval)
+			  sprintf(buf, "%s(\"%s\")", 
+				a->tpe->name, a->data.sval );
+			else 
+			  sprintf(buf, "%s(nil)", a->tpe->name );
+			break;
+	}
+	return _strdup(buf);
+}
+
+
 int statement_dump( statement *s, int *nr, context *sql ){
     char buf[BUFSIZ+1];
     int len = 0;
@@ -395,7 +414,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		k++;
 		while(n){
 			len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", k, 
-					atom2string(n->data.aval) );
+					atom_dump(n->data.aval) );
 			len += snprintf( buf+len, BUFSIZ, "s%d.insert(s%d, oid(%d));\n", *nr, k++, r++);
 			n = n->next;
 		}
@@ -404,7 +423,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		s->nr = (*nr)++;
 	} 	break;
 	case st_atom: {
-		len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", *nr, atom2string(s->op1.aval));
+		len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", *nr, atom_dump(s->op1.aval));
 		s->nr = (*nr)++;
 	} break;
 	case st_insert_column: {
@@ -491,7 +510,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 						a = a->op1.stval;
 					}
 					len += snprintf( buf+len, BUFSIZ, "%s,",
-					   	s = atom2string(a->op1.aval) );
+					   	s = atom_dump(a->op1.aval) );
 					_DELETE(s);
 				} else {
 					len += snprintf( buf+len, BUFSIZ, 

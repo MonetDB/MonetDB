@@ -57,15 +57,16 @@ char *atom2string( atom *a){
 	char buf[1024];
 	switch (a->type){
 	case int_value: sprintf(buf, "%d", a->data.ival); break;
-	case string_value: return addQuotes( a->data.sval);
+	case string_value: sprintf(buf, "\'%s\'", a->data.sval);
 	case float_value: sprintf(buf, "%f", a->data.dval); break;
 	case general_value:
 			if (a->data.sval)
-			  sprintf(buf, "%s%s(\"%s\")", 
-				atom_prefix, a->tpe->name, a->data.sval );
-			else 
-			  sprintf(buf, "%s%s(nil)", atom_prefix, a->tpe->name );
+				sprintf(buf, "%s \'%s\'", 
+					a->tpe->name, a->data.sval ); 
+			else
+				sprintf(buf, "NULL" ); 
 			break;
+	default:
 	}
 	return _strdup(buf);
 }

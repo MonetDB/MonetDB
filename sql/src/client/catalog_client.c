@@ -33,6 +33,15 @@ static char *readblock( stream *s ){
 	return buf;
 }
 
+static char *removeQuotes( char *v, char c ){
+	char *s = NEW_ARRAY(char, strlen(v)), *n = s;
+	while(*v && *v != c) v++;
+	v++; /* skip \' */
+	while(*v && *v != c) *n++ = *v++;
+	*n = '\0';
+	return s;	
+}
+
 static long oidrange( struct catalog *cat, int nr ){
 	cc *i = (cc*)cat->cc;
 	char buf[BUFSIZ], *e = NULL;
@@ -54,6 +63,7 @@ static void send_getfunctions( catalog *cat ){
 	i->out->write(i->out, buf, strlen(buf), 1);
 	i->out->flush(i->out);
 }
+
 static void send_getschema( catalog *cat, char *schema ){
 	char buf[BUFSIZ];
 	cc *i = (cc*)cat->cc;
@@ -62,7 +72,6 @@ static void send_getschema( catalog *cat, char *schema ){
 	i->out->write(i->out, buf, strlen(buf), 1);
 	i->out->flush(i->out);
 }
-
 
 void getfunctions( catalog *c ){
 	stream *s = ((cc*)c->cc)->in;

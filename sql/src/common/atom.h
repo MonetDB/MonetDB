@@ -1,8 +1,6 @@
 #ifndef _ATOM_H_
 #define _ATOM_H_
 
-#define atom_prefix ""
-
 #include "catalog.h"
 
 typedef	enum atomtype {
@@ -30,8 +28,9 @@ extern atom *atom_general( type *tpe, char *val );
 
 /* duplicate atom */
 extern atom *atom_dup( atom *a );
-extern char *atom2string( atom *a );
-extern type *atom_type(atom *a);
-extern void atom_destroy( atom *a );
 
+extern char *atom2string(atom *a);
+extern type *atom_type(atom *a);
+
+extern void atom_destroy( atom *a );
 #endif /* _ATOM_H_ */

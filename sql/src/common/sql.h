@@ -13,8 +13,6 @@
 #define N_(String) (String)
 
 extern char *toLower(char *v);
-extern char *removeQuotes(char *v, char Q);
-extern char *addQuotes(char *v);
 
 typedef enum tokens {
 	SQL_CREATE_SCHEMA,

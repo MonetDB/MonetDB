@@ -35,26 +35,6 @@ char *toLower( char *v ){
 	return s;
 }
 
-char *removeQuotes( char *v, char c ){
-	char *s = NEW_ARRAY(char, strlen(v)), *n = s;
-	while(*v && *v != c) v++;
-	v++; /* skip \' */
-	while(*v && *v != c) *n++ = *v++;
-	*n = '\0';
-	return s;	
-}
-
-char *addQuotes( char *s ){
-        int l = strlen(s);
-        char *ns = NEW_ARRAY(char, l+3), *n = ns;
-        *ns++ = '"';
-        strncpy(ns, s, l);
-        ns += l;
-        *ns++ = '"';
-        *ns = '\0';
-        return n;
-}
-
 char *strconcat( const char *s1, const char *s2 ){
 	int i,j,l1 = strlen(s1);
 	int l2 = strlen(s2)+1;
