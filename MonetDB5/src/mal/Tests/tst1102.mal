@@ -24,10 +24,10 @@
 print(t);
 	rb:= new(:int,:url);
 print("start loop");
-barrier mloop := chopper.bunStream(t,h:int,B2:url);        
+barrier (mloop:lng,h:int,B2:url) := chopper.newIterator(t);        
 	print(h);
 	print(B2);
 	insert(rb,h,B2);
-	redo mloop:=chopper.bunStream(t,h:int,B2:url);
+	redo (mloop:lng,h:int,B2:url) := chopper.hasMoreElements(t);        
 exit mloop;
 	print(rb);

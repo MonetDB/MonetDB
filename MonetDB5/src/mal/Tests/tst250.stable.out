@@ -44,10 +44,10 @@ function Admin.main():int;	# 0  (main:int)
     err := bat.insert(b,n0,n0);	# 12 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
     err := bat.insert(b,n0,81);	# 13 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)($22:int)
     io.print(b);	# 14 IOprint_val ($23:int)<-(b:bat[:int,:int])
-barrier v := chopper.bunStream(b,h,t);	# 15 CHPbunStream (v:lng)<-(b:bat[:int,:int])(h:int)(t:int) jump 19
+barrier (v,h,t):= chopper.newIterator(b);	# 15 CHPbunIterator (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 19
     io.printf("%d,",h);	# 16 IOprint_formatted_int ($27:int)<-($28:str)(h:int)
     io.printf("%d\n",t);	# 17 IOprint_formatted_int ($29:int)<-($30:str)(t:int)
-    redo v := chopper.bunStream(b,h,t);	# 18 CHPbunStream (v:lng)<-(b:bat[:int,:int])(h:int)(t:int) jump 16
+    redo (v,h,t):= chopper.hasMoreElements(b);	# 18 CHPbunHasMoreElements (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 16
 exit v;	# 19  (v:lng)
 end main;	# 20  
 #-----------------#

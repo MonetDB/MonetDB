@@ -61,75 +61,21 @@ stdout of test 'tst251` in directory 'src/mal` itself:
 #
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.insert(b,1,15);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($6:int)
-    bat.insert(b,2,4);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:int,:int])($8:int)($9:int)
-    n0 := calc.int(nil);	# 4 CALCnil2int (n0:int)<-($11:void)
-    bat.insert(b,3,n0);	# 5 BKCinsert_bun ($12:void)<-(b:bat[:int,:int])($13:int)(n0:int)
-    bat.insert(b,4,16);	# 6 BKCinsert_bun ($14:void)<-(b:bat[:int,:int])($9:int)($15:int)
-    bat.insert(b,5,25);	# 7 BKCinsert_bun ($16:void)<-(b:bat[:int,:int])($17:int)($18:int)
-    bat.insert(b,6,36);	# 8 BKCinsert_bun ($19:void)<-(b:bat[:int,:int])($20:int)($21:int)
-    bat.insert(b,7,49);	# 9 BKCinsert_bun ($22:void)<-(b:bat[:int,:int])($23:int)($24:int)
-    bat.insert(b,8,64);	# 10 BKCinsert_bun ($25:void)<-(b:bat[:int,:int])($26:int)($27:int)
-    bat.insert(b,9,n0);	# 11 BKCinsert_bun ($28:void)<-(b:bat[:int,:int])($29:int)(n0:int)
-    bat.insert(b,n0,n0);	# 12 BKCinsert_bun ($30:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
-    bat.insert(b,n0,81);	# 13 BKCinsert_bun ($31:void)<-(b:bat[:int,:int])(n0:int)($32:int)
-    io.print(b);	# 14 IOprint_val ($33:int)<-(b:bat[:int,:int])
-barrier v := chopper.bunStream(b,h,t);	# 15 CHPbunStream (v:lng)<-(b:bat[:int,:int])(h:int)(t:int) jump 19
-    io.printf("[ %d,",h);	# 16 IOprint_formatted_int ($37:int)<-($38:str)(h:int)
-    io.printf("%d]\n",t);	# 17 IOprint_formatted_int ($39:int)<-($40:str)(t:int)
-    redo v := chopper.bunStream(b,h,t);	# 18 CHPbunStream (v:lng)<-(b:bat[:int,:int])(h:int)(t:int) jump 16
-exit v;	# 19  (v:lng)
-    c := bbp.new(:int,:str);	# 20 CMDBATnew (c:bat[:int,:str])<-($42:int)($43:str)
-    bat.insert(c,1,"hello");	# 21 BKCinsert_bun ($44:void)<-(c:bat[:int,:str])($45:int)($46:str)
-    bat.insert(c,2,"brave");	# 22 BKCinsert_bun ($47:void)<-(c:bat[:int,:str])($48:int)($49:str)
-    bat.insert(c,3,"world");	# 23 BKCinsert_bun ($50:void)<-(c:bat[:int,:str])($51:int)($52:str)
-    bat.insert(c,4,"");	# 24 BKCinsert_bun ($53:void)<-(c:bat[:int,:str])($54:int)($55:str)
-    x := calc.str(nil);	# 25 CALCnil2str (x:str)<-($57:void)
-    bat.insert(c,5,x);	# 26 BKCinsert_bun ($58:void)<-(c:bat[:int,:str])($59:int)(x:str)
-    bat.insert(c,6,"!");	# 27 BKCinsert_bun ($60:void)<-(c:bat[:int,:str])($61:int)($62:str)
-    io.print(c);	# 28 IOprint_val ($63:int)<-(c:bat[:int,:str])
-barrier v := chopper.bunStream(c,h,ts);	# 29 CHPbunStream (v:lng)<-(c:bat[:int,:str])(h:int)(ts:str) jump 33
-    io.printf("[%d,",h);	# 30 IOprint_formatted_int ($65:int)<-($66:str)(h:int)
-    io.printf("%s]\n",ts);	# 31 IOprint_formatted_str ($67:int)<-($68:str)(ts:str)
-    redo v := chopper.bunStream(c,h,ts);	# 32 CHPbunStream (v:lng)<-(c:bat[:int,:str])(h:int)(ts:str) jump 30
-exit v;	# 33  (v:lng)
-    d := bbp.new(:str,:str);	# 34 CMDBATnew (d:bat[:str,:str])<-($70:str)($71:str)
-    bat.insert(d,"one","red");	# 35 BKCinsert_bun ($72:void)<-(d:bat[:str,:str])($73:str)($74:str)
-    bat.insert(d,"two","green");	# 36 BKCinsert_bun ($75:void)<-(d:bat[:str,:str])($76:str)($77:str)
-    io.print(d);	# 37 IOprint_val ($78:int)<-(d:bat[:str,:str])
-barrier w := chopper.bunStream(d,hs,ts);	# 38 CHPbunStream (w:lng)<-(d:bat[:str,:str])(hs:str)(ts:str) jump 42
-    io.printf("[ %s,",hs);	# 39 IOprint_formatted_str ($81:int)<-($82:str)(hs:str)
-    io.printf("%s]\n",ts);	# 40 IOprint_formatted_str ($83:int)<-($68:str)(ts:str)
-    redo w := chopper.bunStream(d,hs,ts);	# 41 CHPbunStream (w:lng)<-(d:bat[:str,:str])(hs:str)(ts:str) jump 39
-exit w;	# 42  (w:lng)
-end main;	# 43  
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  15	  ]
-[ 2,	  4	  ]
-[ 3,	  nil	  ]
-[ 4,	  16	  ]
-[ 5,	  25	  ]
-[ 6,	  36	  ]
-[ 7,	  49	  ]
-[ 8,	  64	  ]
-[ 9,	  nil	  ]
-[ nil,	  nil	  ]
-[ nil,	  81	  ]
-[ 1,15]
-[ 2,4]
-[ 3,nil]
-[ 4,16]
-[ 5,25]
-[ 6,36]
-[ 7,49]
-[ 8,64]
-[ 9,nil]
-[ nil,nil]
-[ nil,81]
+    c := bbp.new(:int,:str);	# 1 CMDBATnew (c:bat[:int,:str])<-($2:int)($3:str)
+    bat.insert(c,1,"hello");	# 2 BKCinsert_bun ($4:void)<-(c:bat[:int,:str])($5:int)($6:str)
+    bat.insert(c,2,"brave");	# 3 BKCinsert_bun ($7:void)<-(c:bat[:int,:str])($8:int)($9:str)
+    bat.insert(c,3,"world");	# 4 BKCinsert_bun ($10:void)<-(c:bat[:int,:str])($11:int)($12:str)
+    bat.insert(c,4,"");	# 5 BKCinsert_bun ($13:void)<-(c:bat[:int,:str])($14:int)($15:str)
+    x := calc.str(nil);	# 6 CALCnil2str (x:str)<-($17:void)
+    bat.insert(c,5,x);	# 7 BKCinsert_bun ($18:void)<-(c:bat[:int,:str])($19:int)(x:str)
+    bat.insert(c,6,"!");	# 8 BKCinsert_bun ($20:void)<-(c:bat[:int,:str])($21:int)($22:str)
+    io.print(c);	# 9 IOprint_val ($23:int)<-(c:bat[:int,:str])
+barrier (v,h,ts):= chopper.newIterator(c);	# 10 CHPbunIterator (v:lng)(h:int)(ts:str)<-(c:bat[:int,:str]) jump 14
+    io.printf("[%d,",h);	# 11 IOprint_formatted_int ($27:int)<-($28:str)(h:int)
+    io.printf("%s]\n",ts);	# 12 IOprint_formatted_str ($29:int)<-($30:str)(ts:str)
+    redo (v,h,ts):= chopper.hasMoreElements(c);	# 13 CHPbunHasMoreElements (v:lng)(h:int)(ts:str)<-(c:bat[:int,:str]) jump 11
+exit v;	# 14  (v:lng)
+end main;	# 15  
 #-------------------------#
 # h	tmp_5		  # name
 # int	str		  # type
@@ -146,12 +92,4 @@ end main;	# 43
 [4,]
 [5,nil]
 [6,!]
-#-------------------------#
-# h	tmp_6		  # name
-# str	str		  # type
-#-------------------------#
-[ "one",  "red"		  ]
-[ "two",  "green"	  ]
-[ one,red]
-[ two,green]
 >

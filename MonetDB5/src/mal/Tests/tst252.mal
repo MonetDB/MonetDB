@@ -4,10 +4,10 @@ b:= new(:str,:str);
 insert(b,"one","red");
 insert(b,"two","green");
 print(b);
-barrier v:= bunStream(b,h:str,t:str);
+barrier (v,h,t):= newIterator(b);
 	printf("[ %s,",h);
 	printf("%s]\n",t);
-	redo v:= bunStream(b,h:str,t:str);
+	redo (v,h,t):= hasMoreElements(b);
 exit v;
 
 

@@ -18,8 +18,8 @@
 
         rb:= new(:int,:url);
 	print("start loop");
-barrier mloop:lng := chopper.bunStream(t,h:int,B2:url);
+barrier (mloop:lng,h:inr,B2:url) := chopper.newIterator(t);
 	print(B2);
-	redo mloop:=chopper.bunStream(t,h:int,B2);
+	redo (mloop:lng,h:inr,B2:url) := chopper.hasMoreElements(t);
 exit mloop;
 

@@ -25,10 +25,10 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,"one","red");	# 2 BKCinsert_bun ($4:void)<-(b:bat[:str,:str])($5:str)($6:str)
     bat.insert(b,"two","green");	# 3 BKCinsert_bun ($7:void)<-(b:bat[:str,:str])($8:str)($9:str)
     io.print(b);	# 4 IOprint_val ($10:int)<-(b:bat[:str,:str])
-barrier v := chopper.bunStream(b,h,t);	# 5 CHPbunStream (v:lng)<-(b:bat[:str,:str])(h:str)(t:str) jump 9
+barrier (v,h,t):= chopper.newIterator(b);	# 5 CHPbunIterator (v:lng)(h:str)(t:str)<-(b:bat[:str,:str]) jump 9
     io.printf("[ %s,",h);	# 6 IOprint_formatted_str ($14:int)<-($15:str)(h:str)
     io.printf("%s]\n",t);	# 7 IOprint_formatted_str ($16:int)<-($17:str)(t:str)
-    redo v := chopper.bunStream(b,h,t);	# 8 CHPbunStream (v:lng)<-(b:bat[:str,:str])(h:str)(t:str) jump 6
+    redo (v,h,t):= chopper.hasMoreElements(b);	# 8 CHPbunHasMoreElements (v:lng)(h:str)(t:str)<-(b:bat[:str,:str]) jump 6
 exit v;	# 9  (v:lng)
 end main;	# 10  
 #-------------------------#
