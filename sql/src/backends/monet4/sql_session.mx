@@ -1557,30 +1557,36 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 		   value, instead of the maximum values taken now, which
 		   include the optional sign */
 		} else if (strcmp(c->type->type->sqlname, "smallint") == 0) {
-			ok = (stream_write(s, "6", 2, 1) == 1);
+			count = 1;
+			count += c->type->digits ? c->type->digits : 5;
+			ok = (stream_printf(s, SZFMT, count) == 1);
 		} else if (strcmp(c->type->type->sqlname, "int") == 0) {
-			ok = (stream_write(s, "11", 2, 1) == 1);
+			count = 1;
+			count += c->type->digits ? c->type->digits : 10;
+			ok = (stream_printf(s, SZFMT, count) == 1);
 		} else if (strcmp(c->type->type->sqlname, "bigint") == 0) {
-			ok = (stream_write(s, "20", 2, 1) == 1);
+			count = 1;
+			count += c->type->digits ? c->type->digits : 19;
+			ok = (stream_printf(s, SZFMT, count) == 1);
 		} else if (strcmp(c->type->type->sqlname, "decimal") == 0) {
-			count = 1 + c->type->type->digits + c->type->type->scale;
-			if (!(c->type->type->scale)) count += 1;
+			count = 1 + c->type->digits;
+			if (c->type->scale > 0) count += 1;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "date") == 0) {
 			ok = (stream_write(s, "10", 2, 1) == 1);
 		} else if (strcmp(c->type->type->sqlname, "time") == 0) {
 			count = 8;
-			if (c->type->type->scale) /* time zone */
+			if (c->type->scale) /* time zone */
 				count += 6; /* +03:30 */
-			if (c->type->type->digits) /* fractional seconds precision */
-				count += 1 + c->type->type->digits;
+			if (c->type->digits) /* fractional seconds precision */
+				count += 1 + c->type->digits;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "timestamp") == 0) {
 			count = 10 + 1 + 8;
-			if (c->type->type->scale) /* time zone */
+			if (c->type->scale) /* time zone */
 				count += 6; /* +03:30 */
-			if (c->type->type->digits) /* fractional seconds precision */
-				count += 1 + c->type->type->digits;
+			if (c->type->digits) /* fractional seconds precision */
+				count += 1 + c->type->digits;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else {
 			ok = (stream_write(s, "0", 1, 1) == 1);
