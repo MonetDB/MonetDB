@@ -3,6 +3,7 @@ Hi all Monet and DS hackers,
 here comes the new version of the testing environment. Only a few details
 have changed since my proposal.
 
+
 - The testing environment consists of the following tools:
   + Mtest.py	a python script to run tests
   + Mfilter.py	a python script to filter the test output before running Mdiff 
@@ -15,13 +16,16 @@ have changed since my proposal.
 		(used "fuser" to detect such processes)
   (Mtimeout and MkillUsers are currently available on Unix, only)
 
+
 - In each directory of the current Monet and/or DS source tree tests may be
   provided in a subdirectory called "Tests". Of course, the tests should
   deal with the part/modules where they are located and they should be
   provided and maintained by the respective developer (see also below).
 
+
 - Each "Tests" directory must contain a file "All" that contains the names
   of all tests in that directory (one name per line).
+
 
 - Each test named TST consists of
   + a test script which is ONE of the following:
@@ -89,6 +93,7 @@ have changed since my proposal.
   (MapiClient is called with "-everything".
    See "MapiClient -help" for details.)
 
+
 - Mtest.py uses three directory trees based at TSTSRCBASE, TSTBLDBASE, and
   TSTTRGBASE, respectively. These trees have similar purpose as the SOURCE,
   BUILD, and PREFIX trees when configuring and compiling Monet: the original
@@ -100,8 +105,38 @@ have changed since my proposal.
 	TSTTRGBASE=$MONET_PREFIX  (where you told configure to put Monet)
   You can over rule any of these defaults by setting the respective
   environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
-  line option to Mtest.py. In any case, all directories must be given as
-  absolute paths.
+  line option to Mtest.py. 
+
+  IMPORTANT NOTE:
+
+  In any case, all directories must be given as ABSOLUTE PHYSICAL PATHS,
+  i.e., starting with "/" on Unix (or "[<drive-letter>:]\" on Windows, and
+  not containing any symbolic link(s). 
+  The latter is a restiction that might be released in the future, but for
+  the time being, using paths that contain symbolic links will cause
+  problems with Mtest.py.
+  Hence, if you compiled Monet in a path that contains a symbolic link,
+  e.g., ~/dev/monet -> /net/myhost/export/scratch1/myname/monet,
+  you should either
+  a) overrule the initial setting of MONET_SOURCE, MONET_BUILD,
+     and MONET_PREFIX which were hardcoded during configure as (e.g.)
+	MONET_SOURCE=~/dev/monet
+	MONET_BUILD=~/dev/monet/$OSVER
+	MONET_PREFIX=~/dev/monet/$OSVER
+     by setting the respective environment variables (e.g.) as follows
+	MONET_SOURCE=/net/myhost/export/scratch1/myname/monet
+	MONET_BUILD=/net/myhost/export/scratch1/myname/monet/$OSVER
+	MONET_PREFIX=/net/myhost/export/scratch1/myname/monet/$OSVER
+     before running Mtest.py
+  or
+  b) overrule the default settings of TSTSRCBASE, TSTBLDBASE, and
+     TSTTRGBASE (e.g.) as follows
+	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
+	TSTBLDBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
+	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
+     either by setting the repective environment variables or using the
+     respective command line option \s to Mtest.py (see above).
+
 
 - Further, Mtest.py needs a .monet.conf just like Mserver. To distinguish it
   from your usual .monet.conf, the one for Mtest.py is called .monet.Mtest.conf. 
@@ -114,8 +149,10 @@ have changed since my proposal.
   giving --MONETRC=<path> as commandline option to Mtest.py. Mtest.py calls
   Mserver, Mcreatedb, and Mdestroydb with "-monetrc $MONETRC".
 
+
 - Each test is identified by its name and its directory path relative to
   TSTSRCBASE, but without the trailing "/Tests".
+
 
 - Running one or several tests is done by simply calling
   + "Mtest.py <names...>" to run tests <names...> in
@@ -127,6 +164,7 @@ have changed since my proposal.
   If Mtest.py is not called in (a subdirectory of) $TSTSRCBASE, Mtest.py
   changes ("cd's") to $TSTSRCBASE before starting its work.
   For more details call "Mtest.py --help".
+
 
 - Environment variables:
   + Mtest.pydoesn't need any special environment variables to be set.
@@ -145,6 +183,10 @@ have changed since my proposal.
 
     the following variables are currently still used legacy, but they will disappear soon...
 	MONET_MOD_PATH	$MONET_PREFIX/lib;MONET_PREFIX/lib/Monet
+
+  NOTE: 
+  All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
+  above).
 
   + Further environment variables that Mtest.py exports (to be used in test
     scripts) are:
@@ -167,17 +209,21 @@ have changed since my proposal.
 	TSTTRGDIR	$TSTTRGBASE/Tests/$TSTDIR
 	GDK_DBFARM	as read from $MONETRC
 
+
 - For each directory, Mtest.py creates a database $TSTDB in $GDK_DBFARM
   before running any test.
+
 
 - A test is skipped (i.e. not executed), 
   if $TST.modules exists and contains modules that are not available, or
   if $TST.BATs exists and contains BATs that are not available in the
   current database $TSTDB.
 
+
 - While executing test "$TSTSRCDIR/TST", Mtest.py uses $TSTTRGDIR as working
   directory; for convenience, all files "$TSTSRCDIR/TST*" are copied to
   $TSTTRGDIR.
+
 
 - Mtest.py stores the output of test "$TSTSRCDIR/TST" in
   $TSTTRGDIR/TST.test.{out,err} and checks it against
@@ -189,6 +235,7 @@ have changed since my proposal.
   created as $TSTTRGDIR/.index.html.  
   For the whole test run, a global entry point to the test results is
   created as $TSTTRGBASE/Tests/index.html.
+
   
 - Mfilter.py is used to filter out variable date form the test output to
   avoid no-error differences when running Mdiff. Mfilter.py prefixes all
@@ -199,12 +246,14 @@ have changed since my proposal.
   MIL Example:
 	printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n);
 
+
 - A tool Mapprove.py is provided to copy the recent output from
   $TSTTRGDIR/TST.test.{out,err} to $TSTSRCDIR/TST.stable.{out,err}. Lines
   starting with a '!' (i.e. error messages) are eliminated during copying. 
   Of course, $TSTTRGDIR/TST.test.{out,err} have to be checked and claimed
   correct before being approved!
   See "Mapprove.py -?" for command-line options.
+
 
 - A development session is than supposed to proceed as follows:
   (assuming TSTSRCBASE=$MONET_SOURCE and TSTBLDBASE=$MONET_BUILD)
