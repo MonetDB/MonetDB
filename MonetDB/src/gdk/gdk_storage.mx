@@ -50,7 +50,6 @@ extern void DESCclean(BAT*);
 #include "gdk.h"
 #include <stdlib.h>
 #include "gdk_storage.h"
-#include "gdk_compress.h"
 @}
 
 @
@@ -172,10 +171,7 @@ FILE *GDKfilelocate(str nme, str mode, str extension) {
 
 
 @-
-Unlink the file. It starts with trying to removed the uncompressed
-version. If it fails then the compressed file is removed
-This way we save about half the system calls, because each file can 
-only be in one state.
+Unlink the file. 
 @c
 static int delete_file(str path) {
 	int err = unlink(path); 
@@ -189,9 +185,6 @@ int GDKunlink(str dir, str nme, str ext) {
 		char path[MAXPATHLEN];
 		struct stat st;
 		GDKfilepath(path,dir,nme,ext);
-		if (stat(path, &st) == 0)
-			return delete_file(path);
-		strcat(path, ".Z");
 		if (stat(path, &st) == 0)
 			return delete_file(path);
 	}
@@ -222,11 +215,10 @@ int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 @+ Save and load.
 The BAT is saved on disk in several files. The extension DESC
 denotes the descriptor, BUNs the bun heap, and HHEAP and THEAP
-the other heaps. The storage mechanism on file is either compressed or
-memory-layout. The latter is required for memory mapped files.
-The mode is either STORE_COMPR, STORE_MMAP, or STORE_MEM.
+the other heaps. The storage mechanism off a file can be memory mapped
+(STORE_MMAP) or malloced (STORE_MEM).
 
-The mode indicates the disk-layout and the intended mapping.
+These modes indicates the disk-layout and the intended mapping.
 The primary concern here is to handle STORE_MMAP and STORE_MEM.
 @c
 int GDKsave(str nme, str ext, void *buf, size_t size, int mode) { 
@@ -251,19 +243,8 @@ at commit-time.
 		IODEBUG THRprintf(GDKerr, "MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", 
 			PTRFMTCAST buf, size, err);
 	} else if (mode == STORE_COMPR) {
-		char extension[PATHLENGTH];
-        	sprintf(extension, "%s.Z", ext); 
-		if ((fp = GDKfilelocate(nme, "wb", extension)) != NULL) {
-	                if (compress((char_type *) buf, (char_type *) buf + size, fp) <  0) { 
-				err = -1;
-			}
-			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
-				     nme,ext?ext:"", mode );
-			IODEBUG THRprintf(GDKerr, "compress(buf " PTRFMT ", size " SZFMT ", fd %d) = %d\n", 
-				PTRFMTCAST buf, size, fileno(fp), err);
-	       	}  else {
-			err = -1;
-		}
+		GDKsyserror("compressed bats are no longer supported\n");
+		err = -1;
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
 			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)! */
@@ -302,7 +283,7 @@ Further initialization of the atom heaps require a separate action
 defined in their implementation.
 @c
 char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
-        char	extension[PATHLENGTH], *buf = NULL;
+        char	*buf = NULL;
 	int 	fd = -1;
 	ssize_t	n;
 	size_t	n_expected = 0; 
@@ -313,7 +294,6 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 	IODEBUG {
 	    THRprintf(GDKerr, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext?ext:"", store);
 	}
-	sprintf(extension, "%s.Z", ext); 
 
 	if (store == STORE_MEM) {
 	    if ((fd = GDKfdlocate(nme, "rb+", ext)) >= 0) {
@@ -351,14 +331,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 		n_expected = 0;
 	    }
 	}
-	if ((n = (ssize_t) n_expected) != 0 && fd < 0 && fp == NULL) { 
-	if ((fp = GDKfilelocate(nme, "rb", extension)) != NULL) {
-	    buf = (char *) GDKmalloc(chunk); 
-	    n = (ssize_t) (size - decompress(fp, (char_type *) buf));
-	} else {
-       	    GDKsyserror("GDKload: cannot access: name=%s, extension=%s\n", nme,extension);
-	    return 0; 
-	}}
+	n = (ssize_t) n_expected;
 	if (n > 0 && !varsize) {
        	    GDKerror("GDKload: read error: name=%s, ext=%s, n=%d\n", nme,ext?ext:"",n);
 	    return 0;
@@ -385,9 +358,6 @@ Saving and restoring BATs is left to the upper layers. The library merely
 copies the data into place. 
 Failure to read or write the BAT results in a NULL, otherwise
 it returns the BAT pointer. 
-
-Notice that the BAT may have been declared as (de) compressed.
-In that case, we should change the disk layout structure with care.
 @c
 static int DESCatom(str nme) {
 	int tpe = ATOMindex(nme);
