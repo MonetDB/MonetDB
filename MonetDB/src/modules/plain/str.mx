@@ -154,6 +154,10 @@ trim("   x").print;
 trim("x   ").print;
 trim("").print;
 trim(str(nil)).print;
+
+substitute("A.B.C",".","\\.",false).print;
+substitute("A.B.C",".","\\.",true).print;
+
 quit;
 
 @{
@@ -455,7 +459,7 @@ int strSubstitute(str *res, str s, str src, str dst, bit *g) {
 		memmove(fnd+ldst, fnd+lsrc, end-fnd);
 		memcpy(fnd, dst, ldst);
 		end += ldst - lsrc;
-		fnd += ldst - 1; 
+		fnd += ldst; 
 	} while(repeat);
 
 	return GDK_SUCCEED;
