@@ -414,10 +414,19 @@ def msc_headers(fd, var, headers, msc):
     for header in headers['TARGETS']:
         h, ext = split_filename(header)
         if ext in hdrs_ext:
-            fd.write('%s: "$(SRCDIR)\\%s"\n' % (header, header))
-##            fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
-##            fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
-            fd.write('\tif exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header))
+            if os.path.isfile(os.path.join(msc['cwd'], header+'.in')):
+                inf = '$(SRCDIR)\\%s.in' % header
+                if inf not in msc['_IN']:
+                    # TODO
+                    # replace this hack by something like configure ...
+                    fd.write('%s: "%s"\n' % (header, inf))
+                    fd.write('\tif exist "%s" $(CONFIGURE) "%s" > "%s"\n' % (inf, inf, header))
+                    msc['_IN'].append(inf)
+            else:
+                fd.write('%s: "$(SRCDIR)\\%s"\n' % (header, header))
+##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
+##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
+                fd.write('\tif exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header))
             msc['INSTALL'].append((header, header, '', sd))
 
 ##    msc_find_ins(msc, headers)
