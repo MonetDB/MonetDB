@@ -22,6 +22,7 @@
 #include "ODBCEnv.h"
 #include "ODBCDbc.h"
 #include "ODBCStmt.h"
+#include "ODBCUtil.h"
 
 SQLRETURN SQL_API
 SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,

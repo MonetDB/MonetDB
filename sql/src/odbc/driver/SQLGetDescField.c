@@ -291,8 +291,11 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 	rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
 
-	if (ptr != Value)
-		fixWcharOut(rc, ptr, n, Value, BufferLength, StringLength, addDescError, desc);
+	if (ptr != Value) {
+		SQLSMALLINT nn = (SQLSMALLINT) n;
+
+		fixWcharOut(rc, ptr, nn, Value, BufferLength, StringLength, addDescError, desc);
+	}
 
 	return rc;
 }

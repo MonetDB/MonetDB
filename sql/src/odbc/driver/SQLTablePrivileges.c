@@ -103,9 +103,8 @@ SQLTablePrivilegesW(SQLHSTMT hStmt,
 	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
 	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
 
-	rc = SQLTablePrivileges_(stmt, szCatalogName, nCatalogNameLength,
-				 szSchemaName, nSchemaNameLength,
-				 szTableName, nTableNameLength);
+	rc = SQLTablePrivileges_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
+				 table, SQL_NTS);
 
   exit:
 	if (catalog)

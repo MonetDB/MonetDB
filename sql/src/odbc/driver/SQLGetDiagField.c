@@ -19,6 +19,7 @@
 #include "ODBCDbc.h"
 #include "ODBCStmt.h"
 #include "ODBCError.h"
+#include "ODBCUtil.h"
 
 #define copyDiagString(str, buf, len, lenp)				\
 		do {							\

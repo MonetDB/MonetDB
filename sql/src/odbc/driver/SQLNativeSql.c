@@ -69,7 +69,8 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;
-	SQLSMALLINT n;
+	SQLINTEGER n;
+	SQLSMALLINT nn;
 	SQLCHAR *sqlin, *sqlout;
 
 #ifdef ODBCDEBUG
@@ -86,7 +87,8 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, cbSqlStrMax * 4, &n);
 
-	fixWcharOut(rc, sqlout, n, szSqlStr, cbSqlStrMax, pcbSqlStr, addStmtError, stmt);
+	nn = (SQLSMALLINT) n;
+	fixWcharOut(rc, sqlout, nn, szSqlStr, cbSqlStrMax, pcbSqlStr, addStmtError, stmt);
 
 	return rc;
 }

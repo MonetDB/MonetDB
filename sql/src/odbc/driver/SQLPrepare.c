@@ -104,7 +104,7 @@ SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 	fixWcharIn(szSqlStr, nSqlStrLength, sql, addStmtError, stmt, return SQL_ERROR);
 
-	rc = SQLPrepare_(stmt, szSqlStr, nSqlStrLength);
+	rc = SQLPrepare_(stmt, sql, SQL_NTS);
 
 	if (sql)
 		free(sql);

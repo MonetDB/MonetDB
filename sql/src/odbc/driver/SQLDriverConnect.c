@@ -255,9 +255,8 @@ SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
 	fixWcharIn(szConnStrIn, nConnStrIn, in, addDbcError, dbc, return SQL_ERROR);
 	prepWcharOut(out, cbConnStrOutMax);
 
-	rc = SQLDriverConnect_(dbc, hWnd, szConnStrIn, nConnStrIn,
-			       szConnStrOut, cbConnStrOutMax, pnConnStrOut,
-			       &n);
+	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, out,
+			       cbConnStrOutMax * 4, &n, nDriverCompletion);
 
 	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pnConnStrOut, addDbcError, dbc);
 	if (out)

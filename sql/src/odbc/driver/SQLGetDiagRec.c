@@ -22,6 +22,7 @@
 #include "ODBCDbc.h"
 #include "ODBCStmt.h"
 #include "ODBCError.h"
+#include "ODBCUtil.h"
 
 SQLRETURN
 SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,

@@ -143,8 +143,11 @@ SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
 	rc = SQLGetConnectAttr_(dbc, Attribute, ptr, n, &n);
 
-	if (ptr != ValuePtr)
-		fixWcharOut(rc, ptr, n, ValuePtr, BufferLength, StringLength, addDbcError, dbc);
+	if (ptr != ValuePtr) {
+		SQLSMALLINT nn = (SQLSMALLINT) n;
+
+		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength, StringLength, addDbcError, dbc);
+	}
 
 	return rc;
 }
