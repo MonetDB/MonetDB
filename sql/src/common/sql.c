@@ -3182,18 +3182,20 @@ static stmt *create_schema(context * sql, dlist * auth_name,
 }
 
 
-static stmt *copyfrom(context * sql, dlist * qname, char *file, char *sep)
+static stmt *copyfrom(context * sql, dlist * qname, char *file, dlist *seps, int nr)
 {
 	catalog *cat = sql->cat;
 	char *tname = table_name(qname);
 	table *t = cat_bind_table(cat, sql->cat->cur_schema, tname);
+	char *tsep = seps->h->data.sval;
+	char *rsep = seps->h->next->data.sval;
 
 	if (!t) {
 		snprintf(sql->errstr, ERRSIZE,
 			 _("Copy into non existing table %s"), tname);
 		return NULL;
 	}
-	return stmt_copyfrom(t, file, sep);
+	return stmt_copyfrom(t, file, tsep, rsep, nr);
 
 }
 
@@ -3474,7 +3476,8 @@ static stmt *sql_stmt(context * sql, symbol * s)
 			dlist *l = s->data.lval;
 			ret = copyfrom(sql, l->h->data.lval,
 				       l->h->next->data.sval,
-				       l->h->next->next->data.sval);
+				       l->h->next->next->data.lval,
+				       l->h->next->next->next->data.ival);
 		}
 		break;
 	case SQL_INSERT_INTO:

@@ -141,7 +141,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	grantee
 	opt_column_name
 	opt_to_savepoint
-	opt_seps
 	opt_using
 
 %type <l>
@@ -181,6 +180,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	scalar_exp_list
 	when_value_list
 	when_search_list
+	opt_seps
 
 %type <ival>
 	drop_action 
@@ -193,6 +193,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_sign
 	opt_all
 	intval
+	opt_nr
 
 %type <bval>
 	opt_trans
@@ -263,7 +264,7 @@ UNDER WHENEVER
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 
 %token CASE WHEN THEN ELSE END NULLIF COALESCE
-%token COPY DELIMITERS
+%token COPY RECORDS DELIMITERS 
 
 %%
 
@@ -638,23 +639,41 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY qname FROM STRING opt_seps
+    COPY opt_nr INTO qname FROM STRING opt_seps 
 	{ dlist *l = dlist_create();
-	  dlist_append_list(l, $2);
-	  dlist_append_string(l, $4);
-	  dlist_append_string(l, $5);
+	  dlist_append_list(l, $4);
+	  dlist_append_string(l, $6);
+	  dlist_append_list(l, $7);
+	  dlist_append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
  ;
 
 opt_seps:
-    /* empty */			{ $$ = _strdup("|"); }
- |  opt_using DELIMITERS STRING { $$ = $3; }
+    /* empty */		
+				{ dlist *l = dlist_create(); 
+				  dlist_append_string(l, _strdup("|")); 
+				  dlist_append_string(l, _strdup("\n")); 
+				  $$ = l; }
+ |  opt_using DELIMITERS STRING 
+				{ dlist *l = dlist_create(); 
+				  dlist_append_string(l, $3); 
+				  dlist_append_string(l, _strdup("\n")); 
+				  $$ = l; }
+ |  opt_using DELIMITERS STRING ',' STRING 
+				{ dlist *l = dlist_create(); 
+				  dlist_append_string(l, $3); 
+				  dlist_append_string(l, $5);
+				  $$ = l; }
  ;
 
 opt_using:
     /* empty */			{ $$ = NULL; }
  |  USING			{ $$ = NULL; }
  ;
+
+opt_nr:
+    /* empty */			{ $$ = -1; }
+ |  intval RECORDS		{ $$ = $1; }
 
 delete_stmt:
     DELETE FROM qname opt_where_clause 

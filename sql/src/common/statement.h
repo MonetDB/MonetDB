@@ -147,7 +147,7 @@ extern stmt *stmt_output(stmt * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
 
-extern stmt *stmt_copyfrom(table * t, char *file, char *sep );
+extern stmt *stmt_copyfrom(table * t, char *file, char *tsep, char *rsep, int nr );
 
 extern stmt *stmt_insert(table * t, list * l);
 extern stmt *stmt_insert_column(stmt * c, stmt * a);

@@ -233,8 +233,7 @@ void stmt_destroy(stmt * s)
 			if (s->op2.sval) _DELETE(s->op2.sval);
 			break;
 		case st_copyfrom:
-			if (s->op2.sval) _DELETE(s->op2.sval);
-			if (s->op3.sval) _DELETE(s->op3.sval);
+			if (s->op2.lval) list_destroy(s->op2.lval);
 			break;
 		}
 		list_destroy(s->uses);
@@ -746,13 +745,16 @@ stmt *stmt_union(stmt * op1, stmt * op2)
 	return s;
 }
 
-stmt *stmt_copyfrom(table * t, char * file, char * sep )
+stmt *stmt_copyfrom(table * t, char * file, char * tsep, char * rsep, int nr )
 {
 	stmt *s = stmt_create();
 	s->type = st_copyfrom;
 	s->op1.tval = t;
-	s->op2.sval = _strdup(file);
-	s->op3.sval = _strdup(sep);
+	s->op2.lval = list_create(&free);
+	list_append( s->op2.lval, _strdup(file));
+	list_append( s->op2.lval, _strdup(tsep));
+	list_append( s->op2.lval, _strdup(rsep));
+	s->flag = nr; 
 	return s;
 }
 

@@ -582,10 +582,11 @@ proc bat_name(b):= return str(b);
 proc bat_type(b):= return monet_atomtbl.reverse.find(b.ttype());
 
 proc input( mvc myc, str tname, str fname, str Sep, str rSep, int sz ):={
+	print(fname);
 	var s := open_rastream( fname );
-	if (rSep = "newline"){
-		rSep := "\n";
-	}
+	#if (rSep = "newline"){
+	#	rSep := "\n";
+	#}
 	mvc_import_table( myc, s, tname, Sep, rSep, sz );
 	stream_close(s);
 }

@@ -113,6 +113,7 @@ void init_keywords()
 	   keywords_insert("CURSOR", CURSOR );
 	 */
 	keywords_insert("COPY", COPY );
+	keywords_insert("RECORDS", RECORDS );
 	keywords_insert("DELIMITERS", DELIMITERS );
 
 	keywords_insert("DEC", DECIMAL);

@@ -561,9 +561,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 	} break;
 	case st_copyfrom: {
+		node *m = s->op2.lval->h;
+		char *file = m->data;
+		char *tsep = m->next->data;
+		char *rsep = m->next->next->data;
 		len += snprintf( buf+len, BUFSIZ, 
-			"input(myc, \"%s\", \"%s\",\"%s\", \"newline\", -1);\n",
-				s->op1.tval->name, s->op2.sval, s->op3.sval );
+			"input(myc, \"%s\", \"%s\",\"%s\", \"%s\", %d);\n",
+				s->op1.tval->name, file, tsep, rsep, s->flag);
 	} break;
 	case st_insert: {
 		stmt *r = s->op2.lval->h->data;
