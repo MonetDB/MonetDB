@@ -35,11 +35,13 @@ the WIN32 native platform.
 # endif
 #endif
 
+#define NOMALLOPT 	/* we assume no mallopt if there is no mallinfo */
+
 #if (defined(WIN32) && (!defined(__CYGWIN__)) && (!defined(__CYGWIN32__)))
 # define NATIVE_WIN32 1
 #endif
 
-#ifdef HAVE_NOMALLINFO
+#ifndef HAVE_MALLINFO
 #define M_MXFAST	1  /* set size of blocks to be fast */
 #define M_NLBLKS	2  /* set number of block in a holding block */
 #define M_GRAIN		3  /* set number of sizes mapped to one, for */
@@ -60,11 +62,10 @@ struct mallinfo  {
 };
 typedef struct mallinfo mallinfo_t;
 
-#define NOMALLOPT 	/* we assume no mallopt if there is no mallinfo */
 #define mallinfo() 		{0}
 #define mallopt(cmd,value)	0
 
-#endif /* HAVE_NOMALLINFO */
+#endif /* ! HAVE_MALLINFO */
 
 gdk_export struct mallinfo MT_mallinfo();
 
