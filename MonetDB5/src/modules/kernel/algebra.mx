@@ -183,9 +183,9 @@ command sort_reverse( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address ALGsort_rev
 comment "Returns a BAT copy sorted on the tail column.";
 
-#command sort_ht( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
-#address ALGsort_ht
-#comment "Returns a lexicographically sorted copy.";
+command htsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+address ALGhtsort
+comment "Returns a lexicographically sorted copy.";
 @+ Set operations
 Sets in Monet can be viewed in two ways:
 (1) by looking at both columns of a BAT together (Set-, or s-operators).
@@ -1828,6 +1828,30 @@ str ALG@1(int *result, int* bid, int *param) {
 @:ALGbinary(kdiff)@
 @:ALGbinaryint(sample)@
 
+/* add item missing in the kernel */
+str ALGhtsort(int *result, int *lid ) {
+	BAT *b, *bc, *bk, *bn= NULL;
+	size_t cnt;
+	ptr p,q;
+
+	@:getBATdescriptor(result,lid,b,htsort)@
+	cnt= BATcount(b);
+	bn= BATnew( b->htype, b->ttype, cnt);
+	if( bn ==0)
+		return throwMessage("algebra.htsort", "GDKerror");
+	bk= BATsort(BATkunique(b));
+	BATloop(bk,p,q){
+		bc= BATselect(b,p,p);
+		bc= BATsort(bc);
+		BATins(bn,bc);
+	}
+	if( bn ) {
+		bn= BATsetaccess(bn,1);
+		BBPfix(*result = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.htsort", "GDKerror");
+}
 str ALGcount_bat(lng *result, int *bid) {
 	BAT *b;
 	bit ignore_nils= FALSE;
