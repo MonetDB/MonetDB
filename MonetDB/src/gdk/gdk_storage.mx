@@ -673,6 +673,11 @@ BAT *BATload_intern(bat i) {
 		ALIGNcommit(b);
 	}
 	b->batDirtydesc |= b->batMapdirty; /* if some heap mode changed, make desc dirty */
+	b->batMapbuns = b->batBuns->storage;
+	b->batMaphheap = b->hheap.storage;
+	b->batMaptheap = b->theap.storage;
+	b->batMaphacc = b->haccelerator.storage;
+	b->batMaptacc = b->taccelerator.storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug&2)) || (GDKdebug&8)) {
 		BATpropcheck_(b,TRUE); 

@@ -65,6 +65,8 @@ If not, all files in BACKUP/ are moved back to their original location.
 #define BBPSAVING       512 	/* set while we are saving */
 #define BBPWAITING      896	
 
+#define BBPRENAMED	1024	/* set if bat ir renamed since last commit */
+
 #define BBPTRIM_ALL	(1<<30) /* a very large yet non-negative int */
 
 gdk_export int              BBPin;	/* BATs swapped into BBP  */
@@ -897,8 +899,10 @@ int BBPrename(bat bid, str nme) {
 		BBP_insert(bid);
 	}
 	b->batDirtydesc = 1;
-	if (b->batPersistence&PERSISTENT)
+	if (b->batPersistence&PERSISTENT){
+		BBP_status(i) |= BBPRENAMED;
 		BBPdirty(1);
+	}
 	MT_unset_lock(GDKcacheLock, "BBPrename"); 
 	BBP_notrim = NULL;
 	MT_unset_lock(GDKtrimLock, "BBPrename"); 
@@ -1900,7 +1904,7 @@ lng BBPdiskscan(str parent) {
 		int r, ok = (p && bid), delete = FALSE, filesize;
 		struct stat st;
 
-		if (parent == NULL && strcmp(dent->d_name, "BBP.dir") == 0) {
+		if (parent == NULL && strncmp(dent->d_name, "BBP.", 4) == 0) {
 			continue;
 		}
 		strcpy(dst, dent->d_name);
