@@ -1187,24 +1187,24 @@ operations are part of the GDK kernel.
 
 @c
 int CMDselect1(BAT **result, BAT* b, ptr value) {
-	return (*result = (BAT*) BATselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BATselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDuselect1(BAT **result, BAT* b, ptr value) {
-	return (*result = (BAT*) BATuselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BATuselect(b, value, 0))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDselect(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = (BAT*) BATselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BATselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDuselect(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = (BAT*) BATuselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BATuselect(b, low, high))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh) 
 {
-	return (*result = (BAT*) BATrestrict(b, hlow, hhigh, tlow, thigh))?
+	return (*result = BATrestrict(b, hlow, hhigh, tlow, thigh))?
 		GDK_SUCCEED:GDK_FAIL;
 }
 int CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate) {
-	return (*result = (BAT*) BATthetajoin(left, right, *mode, (*estimate == lng_nil)?oid_nil:*estimate))?
+	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil)?oid_nil:*estimate))?
 		GDK_SUCCEED:GDK_FAIL;
 }
 int CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode) {
@@ -1212,7 +1212,7 @@ int CMDtheta(BAT *inner, BAT *outer, BAT *left, BAT *right, int *mode) {
 	return GDK_SUCCEED;
 }
 int CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus) {
-	return (*result = (BAT*) BATbandjoin(left, right, minus, plus))?
+	return (*result = BATbandjoin(left, right, minus, plus))?
 		GDK_SUCCEED:GDK_FAIL;
 }
 
@@ -1220,20 +1220,20 @@ int CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus) {
 Let cut this text down with some Mx macro's
 @= unary
 int CMD@1(BAT **result, BAT *b) {
-	return (*result = (BAT*) @2(b))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = @2(b))?GDK_SUCCEED:GDK_FAIL;
 }
 @= unaryint
 int CMD@1(int *result, BAT *b) {
-	*result = (int) @2(b);
+	*result = @2(b);
 	return GDK_SUCCEED;
 }
 @= binary
 int CMD@1(BAT **result, BAT *left, BAT* right) {
-	return (*result = (BAT*) @2(left, right))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = @2(left, right))?GDK_SUCCEED:GDK_FAIL;
 }
 @= binaryestimate
 int CMD@1(BAT **result, BAT *left, BAT* right, lng *estimate) {
-	return (*result = (BAT*) @2(left, right, (*estimate==lng_nil)?oid_nil:*estimate))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = @2(left, right, *estimate==lng_nil?(size_t)oid_nil:(size_t)*estimate))?GDK_SUCCEED:GDK_FAIL;
 }
 @= binaryint
 int CMD@1(BAT **result, BAT* b, int *param) {
@@ -1267,7 +1267,7 @@ int CMDcount_nil(int *result, BAT *b, bit *ignore_nils) {
 }
 
 int CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize) {
-        return (*result = (BAT *) BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
+        return (*result = BATgroup(b, *start, *incr, *grpsize))?GDK_SUCCEED:GDK_FAIL;
 }
 
 int CMDproject(BAT** res, BAT *b, ptr p, int t) {
