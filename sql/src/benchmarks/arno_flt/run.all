@@ -1,29 +1,30 @@
 #!/bin/sh
 PWD=`pwd`
-#SQL="Msql -u monetdb -P monetdb --debug=64"
-SQL="Msql -u monetdb -P monetdb --host=norma"
+SQL="Msql -u monetdb -P monetdb"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
 
 echo "creating"
 $SQL < create_tables.flt.sql
+
 echo "insert BONDs"
 $SQL < insert_BOND.flt.sql   
-echo $?
+
 echo "insert ATOMs"
 $SQL < insert_ATOM.flt.sql    
-echo $?
+
 echo "insert MODELs"
 $SQL < insert_MODEL.flt.sql
-echo $?
+
 echo "check0"
 $SQL < Tests/check0.sql
-#echo "queries"
-#$SQL < queries.sql
 
-#echo "queries_sorted"
-#$SQL < queries_sorted.sql
+echo "queries"
+$SQL < queries.sql
 
-#echo "drop"
-#$SQL < drop.sql
+echo "queries_sorted"
+$SQL < queries_sorted.sql
+
+echo "drop"
+$SQL < drop.sql
