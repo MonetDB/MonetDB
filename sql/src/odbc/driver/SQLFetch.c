@@ -41,7 +41,7 @@ SQLFetch(SQLHSTMT hStmt)
 	}
 
 	stmt->retrieved = 0;
-	stmt->currentCol = -1;
+	stmt->currentCol = 0;
 
 	if (mapi_fetch_row(stmt->Dbc->mid) == 0)
 		return SQL_NO_DATA;

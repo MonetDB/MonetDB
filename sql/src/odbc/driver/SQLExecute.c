@@ -79,7 +79,7 @@ SQLExecute(SQLHSTMT hStmt)
 	hstmt->nrCols = mapi_get_field_count(mid);
 	hstmt->currentRow = 0;
 	hstmt->retrieved = 0;
-	hstmt->currentCol = -1;
+	hstmt->currentCol = 0;
 
 	if (hstmt->nrCols == 0 && mapi_get_row_count(mid) == 0) {
 		hstmt->State = PREPARED;
