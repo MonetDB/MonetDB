@@ -37,6 +37,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#if HAVE_SIGNAL_H
+#include <signal.h>
+#endif
 
 #include "compile.h"
 #include "compile_interface.h"
@@ -115,6 +118,7 @@ PFstate_t PFstate = {
     .print_algebra_tree  = false,
     .print_ma_tree       = false,
     .parse_hsk           = false,
+    .summer_branch       = true,
     .genType             = PF_GEN_XML
 };
 
@@ -126,10 +130,15 @@ PFquery_t PFquery = {
     .inherit_ns         = false, /* implementation def'd: inherit-ns: no */
 };
 
+/** Compilation stage we've last been in. */
+unsigned int last_stage = 0;
 
 #define STOP_POINT(a) \
+    last_stage = (a); \
     if ((a) == status->stop_after) \
         goto bailout;
+
+void segfault_handler (int sig);
 
 /**
  * Linking test funn, remove if succeed
@@ -156,6 +165,11 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     /* elapsed time for compiler phase */
     long tm;
+
+#if HAVE_SIGNAL_H
+    /* setup sementation fault signal handler */
+    signal (SIGSEGV, segfault_handler);
+#endif
 
     /* setup for garbage collector 
      */
@@ -284,7 +298,6 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
         PFlog ("core tree optimization:\t %s", PFtimer_str (tm));
 
     STOP_POINT(12);
-
 
     /*
      * generate temporary MIL Code (summer branch version)
@@ -474,6 +487,9 @@ int
 pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
 {
         PFstate_t* status = &PFstate; /* incomplete */
+
+        PFstate.invokation = invoke_monetdb;
+
         status->summer_branch = true;
         if ( strcmp(mode,"xml") == 0 ) {
                 status->genType = PF_GEN_XML;
@@ -489,5 +505,45 @@ pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
         int res = pf_compile(pfin,pfout,status);
         return res;
 }
+
+#if HAVE_SIGNAL_H
+/**
+ * This handler is called whenever we get a SIGSEGV.
+ *
+ * It will print out some informative message and then terminate the program.
+ */
+RETSIGTYPE
+segfault_handler (int sig)
+{
+    fprintf (stderr, "!ERROR: Segmentation fault.\n");
+    fprintf (stderr,
+             "The Pathfinder compiler experienced an internal problem.\n");
+    fprintf (stderr,
+             "You may want to report this problem to the Pathfinder \n");
+    fprintf (stderr,
+             "development team (pathfinder@inf.uni-konstanz.de).\n\n");
+    fprintf (stderr,
+             "When reporting problems, please attach your XQuery input,\n");
+    fprintf (stderr,
+             "as well as the following information:\n");
+    fprintf (stderr, "  Invokation: ");
+
+    switch (PFstate.invokation) {
+        case invoke_cmdline: fprintf (stderr, "command line\n");
+                             break;
+        case invoke_monetdb: fprintf (stderr, "MonetDB\n");
+                             break;
+        default:             fprintf (stderr, "unknown\n");
+                             break;
+    }
+
+    fprintf (stderr, "  Compilation stage: %u\n\n", last_stage);
+
+    fprintf (stderr, "We apologize for the inconvenience...\n\n");
+
+    signal (sig, SIG_DFL);
+    raise (sig);
+}
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -715,13 +715,13 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           attr (tag, CoreExpr) */
         case 37:
-            TY(p) = *PFty_simplify (PFty_attr (L(p)->sem.qname, TY(R(p))));
+            TY(p) = *PFty_simplify (PFty_attr (L(p)->sem.qname,
+                                               PFty_untypedAtomic ()));
             break;
             
         /* CoreExpr:           attr (CoreExpr, CoreExpr) */
         case 38:
         {
-            PFty_t t1 = TY(R(p));
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
             if (!PFty_promotable (TY(L(p)), PFty_string ()))
@@ -730,7 +730,7 @@ reduce (PFcnode_t * p, int goalnt)
                         " has illegal type '%s'",
                         PFty_str (TY(L(p))));
 
-            TY(p)= *PFty_simplify (PFty_attr (wild, t1));
+            TY(p)= *PFty_simplify (PFty_attr (wild, PFty_untypedAtomic ()));
         } break;
 
         /* CoreExpr:           text (CoreExpr) */

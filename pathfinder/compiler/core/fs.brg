@@ -2908,13 +2908,7 @@ reduce (PFpnode_t * p, int goalnt)
         case 188:
             /*
              * The translation rules rooted at AttributeValue compile
-             * the attribute value into a single string. The W3C specification
-             * converts this string into an xdt:untypedAtomic afterwards.
-             * However, I can't really see sense in this cast, so I left
-             * the attribute value as it is. After the attribute has been
-             * constructed, its value will have the type xdt:untypedAtomic
-             * anyway.
-             *   Jens, 27.08.04
+             * the attribute value into a single string.
              */
             C(p) = constr_attr (C(L(p)), C(R(p)));
             break;

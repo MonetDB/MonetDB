@@ -155,6 +155,10 @@ AH_VERBATIM([__attribute__],
 dnl [AC_DEFINE([ __attribute__(a) ],,
 dnl            [Compiler does not understand __attribute__.])
 
+dnl We use signal handlers to catch segmentation faults and
+dnl give helpful messages to the user, if available.
+AC_CHECK_HEADERS(signal.h)
+AC_TYPE_SIGNAL
 
 
 dnl The user may enter a location of the libxml2 library on the command line

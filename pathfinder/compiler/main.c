@@ -23,11 +23,6 @@
  *  created by U Konstanz are Copyright (C) 2000-2005 University
  *  of Konstanz. All Rights Reserved.
  *
- *  Contributors:
- *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
- *          Jens Teubner <jens.teubner@uni-konstanz.de>
- *
  * $Id$
  */
 
@@ -41,7 +36,7 @@
  * Lexical scanning of the input query is done with a
  * <a href="http://www.gnu.org/software/flex/">flex</a> generated
  * scanner. The implementation in parser/XQuery.l follows the appendix of
- * the <a href="http://www.w3.org/TR/2002/WD-xquery-20020430">April 30</a>
+ * the <a href="http://www.w3.org/TR/2004/WD-xquery-20041029/">October 2004</a>
  * working draft of the <a href="http://www.w3.org">W3 Consortium</a>.
  * The scanner dissects the input query into lexical tokens that serve
  * as an input for the @ref parsing "Parser".
@@ -53,7 +48,7 @@
  * <a href="http://www.gnu.org/software/bison/bison.html">bison</a> (see
  * file parser/XQuery.y). The implementation closely follows the grammar
  * described in the
- * <a href="http://www.w3.org/TR/2002/WD-xquery-20020430">April 30</a>
+ * <a href="http://www.w3.org/TR/2004/WD-xquery-20041029/">October 2004</a>
  * working draft of the <a href="http://www.w3.org">W3 Consortium</a>.
  *
  * The output of the parser is an abstract syntax tree (aka ``parse tree'')
@@ -83,38 +78,15 @@
  exprseq (a, exprseq (b, exprseq (c, nil)))
  @endverbatim
  *
- * Abstract syntax normalization is done with a twig based pattern matcher.
- * Twig is a generic utility to create tree manipulation programs. Based
- * on a tree grammar, it generates a tree walker that searches the abstract
- * syntax tree for tree patterns specified by the programmer. Action code
- * (written in C) can be invoked on encountering certain tree patterns.
- * If more than one tree pattern match a part of the tree, @e cost
- * definitions help choosing the right action code to invoke.
+ * Abstract syntax normalization is done with a BURG based pattern matcher.
  *
- * The twig input file for the abstract syntax tree normalization is
- * normalize.mt, located in the semantics subdirectory. After processing
- * it with @c twig, the pattern matcher is generated as C code. To allow
- * for documentation of the contained C functions with doxygen, most of
- * the C code is implemented in semantics/norm_impl.c. The twig generated
- * code includes this file. More information on twig, as well as the
- * sources can be found at http://www.inf.uni-konstanz.de/~teubner/twig/
- *
- * @subsection varscoping Variable Scope Checking
- *
- * The parsing phase is followed by a tree traversal that analyzes
- * variable declaration and usages. Scoping rules are verified and
- * to each variable a unique memory block is assigned that contains all
- * required information about this variable. Multiple references to the
- * same variable result in references to the same memory block, following
- * the XQuery scoping rules.
- *
- * Variable scoping is implemented in semantics/varscope.c. In
- * pathfinder/variable.c access and helper functions around variables are
- * implemented.
+ * The BURG input file for the abstract syntax tree normalization is
+ * normalize.brg, located in the semantics subdirectory. After processing
+ * it with @c BURG, the pattern matcher is generated as C code.
  *
  * @subsection ns Namespace Resolution
  *
- * Another tree traversal ensures that the given query uses XML
+ * The compiler then checks that the given query uses XML
  * Namespaces (NS) correctly.  In a qualified name (QName) @c ns:loc,
  * it is mandatory that the NS prefix @c ns is in scope, according to
  * the W3C XQuery and W3C XML Namespace rules.
@@ -136,12 +108,25 @@
  * access the actual NS resolution function (this should be needed in
  * main.c, only).
  *
+ * @subsection varscoping Variable Scope Checking
+ *
+ * Namespace resolution is followed by a scope-checking phase that
+ * checks variable declaration and usages. Scoping rules are verified and
+ * to each variable a unique memory block is assigned that contains all
+ * required information about this variable. Multiple references to the
+ * same variable result in references to the same memory block, following
+ * the XQuery scoping rules.
+ *
+ * Variable scoping is implemented in semantics/varscope.c. In
+ * pathfinder/variable.c access and helper functions around variables are
+ * implemented.
+ *
  * @subsection fun_check Checking for Correct Function Usage
  *
  * Similar to checking the variable scoping rules, correct usage of
  * functions is checked in a next phase. Valid functions are either
  * built-in functions or user-defined functions (defined in the query
- * prolog with ``<code>define function</code>''). Function usage is
+ * prolog with ``<code>declare function</code>''). Function usage is
  * checked in PFfun_check() (file semantics/functions.c). We maintain
  * an environment of visible functions (#PFfun_env).  This environment
  * holds function descriptors (#PFfun_t). Before traversing the whole
@@ -167,21 +152,22 @@
  * The abstract syntax tree used in the previous processing steps very
  * closely represents the surface syntax of XQuery. For internal
  * query optimization and evaluation steps, however, we use another,
- * more suitable query representation, called <em>core</em>. Although
- * very similar to the XML Query surface language, core is missing some
+ * more suitable query representation, called <em>Core</em>. Although
+ * very similar to the XML Query surface language, Core is missing some
  * ``syntactic sugar'' and makes many implicit semantics (i.e., implicit
  * casting rules) more explicit.
  *
- * Our core language is very close to the proposal by the W3C, described
+ * Our Core language is very close to the proposal by the W3C, described
  * in the XQuery Formal Semantics document. Core is the data structure
  * on which the subsequent type inference and type checking phases will
- * operate on. Internally, core is described by a tree structure
- * consisting of #PFcnode_t nodes.
+ * operate on. Internally, Core is described by a tree structure
+ * consisting of #PFcnode_t nodes. Core compilation is implemented
+ * with help of a BURG pattern matcher in fs.brg.
  *
  * @subsection core_simplification Core Simplification and Normalization
  *
  * The Formal Semantics compilation sometimes produces unnecessarily
- * complex Core code. The simplification phase in @c simplify.mt
+ * complex Core code. The simplification phase in @c simplify.brg
  * simplifies some of these cases and normalizes the Core language tree.
  *
  * @subsection type_inference Type Inference and Check
@@ -197,7 +183,7 @@
  *
  * The Core language tree is now labeled with static type information,
  * allowing for various optimizations and rewrites of the tree. This
- * is done in @c coreopt.mt.
+ * is done in @c coreopt.brg.
  *
  * <b>Example:</b>
  *
@@ -220,7 +206,7 @@
  * Pathfinder compiles XQuery expressions for execution on a relational
  * backend (MonetDB). The heart of the compiler is thus the compilation
  * from XQuery Core to a language over relational data, i.e., a purely
- * relational algebra. This compilation is done in @c core2alg.mt.sed.
+ * relational algebra. This compilation is done in @c core2alg.brg.
  *
  * The compilation follows the ideas described in the paper presented
  * at the TDM'04 workshop (``Relational Algebra: Mother Tongue---XQuery:
@@ -375,7 +361,10 @@
  *  - Lucian Vacariuc
  *  - Michael Wachter
  *
- * For our work on XML and XQuery we had great support from Maurice van
+ * The MIL generation back-end has been implemented by Jan Rittinger,
+ * with great support from the people at CWI.
+ *
+ * For our work on XML and XQuery we had support from Maurice van
  * Keulen (keulen@cs.utwente.nl) from the
  * <a href="http://www.cs.utwente.nl/eng/">University of Twente, The
  * Netherlands</a>. Since 2003, Pathfinder is a joint effort also with
@@ -408,8 +397,10 @@
  * order of one-character option names.
  */
 static struct option long_options[] = {
+    { "enable-algebra",                0, NULL, 'A' },
     { "print-att-dot",                 0, NULL, 'D' },
-    { "read-haskell-output",           0, NULL, 'H' },
+/*  { "read-haskell-output",           0, NULL, 'H' }, */
+    { "fullhelp",                      0, NULL, 'H' },
     { "print-mil_summer",              0, NULL, 'M' },
     { "optimize",                      0, NULL, 'O' },
     { "print-human-readable",          0, NULL, 'P' },
@@ -512,6 +503,8 @@ main (int argc, char *argv[])
 
     PFstate_t* status = &PFstate;
 
+    PFstate.invokation = invoke_cmdline;
+
     /* fp of query file (if present) */
     FILE* pfin = stdin;
 
@@ -533,10 +526,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DHMO::PTachmpqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTachmpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DHMO::PTachmpqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTachmpqrs:t");
 #endif
 
         if (c == -1)
@@ -550,12 +543,36 @@ main (int argc, char *argv[])
             printf ("  Reads from standard input if FILE is omitted.\n\n");
             printf ("  -h%s: print this help message\n",
                     long_option (opt_buf, ", --%s", 'h'));
+            printf ("  -H%s: print help message for advanced options\n",
+                    long_option (opt_buf, ", --%s", 'H'));
+            printf ("  -T%s: print elapsed times for compiler phases\n",
+                    long_option (opt_buf, ", --%s", 'T'));
+            printf ("  -O[0-3]%s: select optimization level (default=1)\n",
+                    long_option (opt_buf, ", --%s", 'O'));
+            printf ("\n");
+            printf ("Enjoy.\n");
+            exit (0);
+          
+        case 'H':
+            printf ("Pathfinder XQuery Compiler ($Revision$, $Date$)\n");
+            printf ("(c) University of Konstanz, DBIS group\n\n");
+            printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
+            printf ("  Reads from standard input if FILE is omitted.\n\n");
+            printf ("  -h%s: print short help message\n",
+                    long_option (opt_buf, ", --%s", 'h'));
+            printf ("  -H%s: print this help message for advanced options\n",
+                    long_option (opt_buf, ", --%s", 'H'));
             printf ("  -q%s: do not print informational messages to log file\n",
                     long_option (opt_buf, ", --%s", 'q'));
+            /*
             printf ("  -H%s: read algebra code from Teggy's Haskell prototype"
                     "\n        (will not read XQuery input then)\n",
-                    long_option (opt_buf, ", --%s", 'M'));
-            printf ("  -M%s: print MIL code (summer version) and stop\n",
+                    long_option (opt_buf, ", --%s", 'H'));
+            */
+            printf ("  -A%s: turn on internal algebra code.\n"
+                    "        Don't use this, it WILL break.\n",
+                    long_option (opt_buf, ", --%s", 'A'));
+            printf ("  -M%s: print MIL code (summer version) (default)\n",
                     long_option (opt_buf, ", --%s", 'M'));
             printf ("  -P%s: print internal tree structure human-readable\n",
                     long_option (opt_buf, ", --%s", 'P'));
@@ -565,7 +582,7 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'T'));
             printf ("  -O[0-3]%s: select optimization level (default=1)\n",
                     long_option (opt_buf, ", --%s", 'O'));
-            printf ("  -t%s: print static types (in {...}) for core\n",
+            printf ("  -t%s: print static types (in {...}) for Core\n",
                     long_option (opt_buf, ", --%s", 't'));
             printf ("  -s%s: stop processing after certain phase:\n",
                     long_option (opt_buf, ", --%s", 's'));
@@ -616,8 +633,14 @@ main (int argc, char *argv[])
             status->print_dot = true;
             break;
 
+        /*
         case 'H':
             status->parse_hsk = true;
+            break;
+        */
+
+        case 'A':
+            status->summer_branch = false;
             break;
 
         case 'M':
