@@ -262,6 +262,7 @@ class java_parser:
     def __init__(self):
         self.status = None
         self.count = 0
+        self.ncount = 0
         self.classes = []
         self.pclass = None
         self.package = None
@@ -271,8 +272,10 @@ class java_parser:
 
         if token == '{':
             self.count = self.count + 1
+            self.ncount = self.ncount + 1
         if token == '}':
             self.count = self.count - 1
+            self.ncount = self.ncount - 1
         # handle packeges 
         if self.status == 'package':
             if token == ';':
@@ -291,7 +294,8 @@ class java_parser:
             self.status = 'new('
         if self.status == 'new(' and token == ')':
             self.status = 'new()'
-        if self.status == 'new()' and token == '{':
+            self.ncount = 0             # reset
+        if self.status == 'new()' and token == '{' and self.ncount == 0:
             self.classes.append(self.pclass + "$$%d" % self.anonnr)
             self.anonnr = self.anonnr + 1
             self.status = None
