@@ -61,7 +61,7 @@ itemID := nil;
 1.print;
         oid_item_backup := nil;
 2.print;
-        oid_str := merged_union(textNodes.reverse, oid_str.reverse).reverse;
+        oid_str := merged_union(textNodes, oid_str).fetch(0);
         var oid_prop := oid_str.leftjoin(prop_name.reverse);
         oid_str := nil;
         prop_name := nil;

@@ -43,6 +43,22 @@ implementation on to of MonetDB within the "Pathfinder" project.
  from b's tail. The tail of g gives for each group the base value for the new
  OID sequence."
 
+.COMMAND merged_union( BAT[void,any::1] left, BAT[void,any::1] right, ..BAT[void,any].. ) :
+			BAT[void,BAT] = CMDmerged_union;
+"PARAMETERS:
+Even number of BAT[void,any] with pairs of equal tail type;
+all odd BATs must be head-aligned and all even BATs must be head-aligned;
+first two BATs must be sorted on tail values.
+DESCRIPITON:
+Merges pairs of bats according to the order as defined by the first pair's tails."
+@(
+"Returns the union of two *tail-sorted* BATs. All BUNs of both BATs appear
+ in the result, i.e., duplicates are not eliminated. As opposed to standard
+ "union", the sortedness on the tail column is maintained in the result and
+ all BUNs in the result appear in the same order as in their respective
+ input."
+@)
+
 .END pf_support;
 
 @* Module Implementation
@@ -55,6 +71,7 @@ implementation on to of MonetDB within the "Pathfinder" project.
 #endif
 @c
 #include "pf_support.h"
+#include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 
 @= mark_grp_loop3
 {	BUN p, q;
@@ -143,4 +160,198 @@ bunins_failed:
 
 int CMDmark_grp(BAT** res, BAT *b, BAT *g){
 	return (*res=BATmark_grp(b, g))?GDK_SUCCEED:GDK_FAIL;
+}
+
+int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
+	BAT *b[MAXPARAMS], *bn[MAXPARAMS>>1], *BN;
+	BUN cur[MAXPARAMS], lst[MAXPARAMS], dst[MAXPARAMS>>1], DST;
+	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
+	int nbats = 2, npairs = 1, i, j, k, any;
+	chr *w;
+	size_t sze, h;
+	va_list ap;
+	
+	*res = NULL;
+
+	/* check arguments */
+
+	BATcheck(L, "CMDmerged_union");
+	BATcheck(R, "CMDmerged_union");
+	ERRORcheck(!(BATtordered(L)&1), "merged_union: tail of first BAT must not be sorted.\n");
+	ERRORcheck(!(BATtordered(R)&1), "merged_union: tail of second BAT must not be sorted.\n");
+
+	b[0] = L;
+	b[1] = R;
+	va_start(ap,R);
+	while((b[nbats] = va_arg(ap, BAT*)) != NULL) {
+		nbats++;
+	}
+	va_end(ap);
+	
+	if (nbats&1) {
+		GDKerror("merged_union: uneven number of BATs: %d.\n", nbats);
+		return GDK_FAIL;
+	}
+	npairs = nbats>>1;
+
+	for (i=0; i<nbats; i+=2) {
+		j = i+1;
+		if (b[i]->ttype != b[j]->ttype) {
+			GDKerror("merged_union: BATs %d & %d must have the same tail types.\n", i, j);
+			return GDK_FAIL;
+		}
+		if (b[i]->hseqbase != b[0]->hseqbase) {
+			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 0.\n", i);
+			return GDK_FAIL;
+		}
+		if (b[j]->hseqbase != b[1]->hseqbase) {
+			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 1.\n", j);
+			return GDK_FAIL;
+		}
+		if (BATcount(b[i]) != BATcount(b[0])) {
+			GDKerror("merged_union: BAT %d must have the same size as BAT 0.\n", i);
+			return GDK_FAIL;
+		}
+		if (BATcount(b[j]) != BATcount(b[1])) {
+			GDKerror("merged_union: BAT %d must have the same size as BAT 1.\n", j);
+			return GDK_FAIL;
+		}
+	}
+
+	/* create result BATs */
+
+	sze = BATcount(b[0]) + BATcount(b[1]);
+	BN = BATnew(TYPE_void, TYPE_bat, npairs);
+	if (BN == NULL) {
+		return GDK_FAIL;
+	}
+	for (k=0; k<npairs; k++) {
+		i = k<<1;
+		bn[k] = BATnew(TYPE_void, (b[i]->ttype!=TYPE_void)?b[i]->ttype:TYPE_oid, sze);
+		if (bn[k] == NULL) {
+			while (k>0) {
+				BBPreclaim(bn[--k]);
+			}
+			BBPreclaim(BN);
+			return GDK_FAIL;
+		}
+	}
+	w = (chr*)GDKmalloc(sze);
+	if (w == NULL) {
+		goto bunins_failed;
+	}
+
+	/* do the merged_union */
+
+	for (k=0; k<npairs; k++) {
+		bns[k] = BUNsize(bn[k]);
+		dst[k] = BUNlast(bn[k]);
+	}
+	for (i=0; i<nbats; i++) {
+		bs[i] = BUNsize(b[i]);
+		cur[i] = BUNfirst(b[i]);
+		lst[i] = BUNlast(b[i]);
+	}
+@= merged_union_0
+	/* copy tails from BAT @3 to the results; 
+	   for each BUN, remember in w, whether it came from BAT 0 or BAT 1 */
+	while ((cur[@3] < lst[@3]) && (@4)) {
+		void@1_bunfastins_nocheck_noinc(bn[0],dst[0],0,BUN@2(b[@3],cur[@3]));
+		cur[@3] += bs[@3];
+		dst[0] += bns[0];
+		w[h++] = (chr)@3;
+	}
+@= merged_union_1
+	/* merge-union the first two BATs; regard and preserve tail-order */
+	h = 0;
+	while ((cur[0] < lst[0]) && (cur[1] < lst[1])) {
+		@:merged_union_0(@1,@2,0,@3_LE(BUN@2(b[0],cur[0]), BUN@2(b[1],cur[1]), @1))@
+		if (cur[0] < lst[0]) {
+			@:merged_union_0(@1,@2,1,@3_GT(BUN@2(b[0],cur[0]), BUN@2(b[1],cur[1]), @1))@
+		}
+	}
+	/* get remaining BUNs */
+	@:merged_union_0(@1,@2,0,TRUE)@
+	@:merged_union_0(@1,@2,1,TRUE)@
+	break;
+@= merged_union_2
+	/* merge-union each of the remaining BAT-pairs; 
+	   w tell us, from which BAT we need to get the next BUN */
+	for (h=0; h<sze; h++) {
+		j = i + (int)w[h];
+		void@1_bunfastins_nocheck_noinc(bn[k],dst[k],0,BUN@2(b[j],cur[j]));
+		cur[j] += bs[j];
+		dst[k] += bns[k];
+	}
+	break;
+@c
+	/* merge-union the first two BATs */
+	any = b[0]->ttype;
+	switch(ATOMstorage(b[0]->ttype)) {
+	case TYPE_chr:	@:merged_union_1(chr,tloc,simple)@
+	case TYPE_sht:	@:merged_union_1(sht,tloc,simple)@
+	case TYPE_int:	@:merged_union_1(int,tloc,simple)@
+	case TYPE_flt:	@:merged_union_1(flt,tloc,simple)@
+	case TYPE_lng:	@:merged_union_1(lng,tloc,simple)@
+	case TYPE_dbl:	@:merged_union_1(dbl,tloc,simple)@
+	default:	@:merged_union_1(any,tail,atom)@
+	}
+	/* merge-union each of the remaining BAT-pairs */
+	for (k=1; k<npairs; k++) {
+		i = (k<<1);
+		any = b[i]->ttype;
+		switch(ATOMstorage(b[i]->ttype)) {
+		case TYPE_chr:	@:merged_union_2(chr,tloc)@
+		case TYPE_sht:	@:merged_union_2(sht,tloc)@
+		case TYPE_int:	@:merged_union_2(int,tloc)@
+		case TYPE_flt:	@:merged_union_2(flt,tloc)@
+		case TYPE_lng:	@:merged_union_2(lng,tloc)@
+		case TYPE_dbl:	@:merged_union_2(dbl,tloc)@
+		default:	@:merged_union_2(any,tail)@
+		}
+	}
+
+	/* set BAT properties */
+
+	for (k=0; k<npairs; k++) {
+		BATseqbase(bn[k], (oid)0);
+		bn[k]->batBuns->free = dst[k] - bn[k]->batBuns->base;
+		if (!bn[k]->batDirty) bn[k]->batDirty = TRUE;
+		BATkey(bn[k],TRUE);
+		BATkey(BATmirror(bn[k]),FALSE);
+		bn[k]->hsorted = GDK_SORTED;
+		bn[k]->tsorted = FALSE;
+		bn[k]->hdense = TRUE;
+		bn[k]->tdense = FALSE;
+	}
+
+	/* insert bn[] BATs in BN BAT */
+
+	DST = BUNlast(BN);
+	BS = BUNsize(BN);
+	BATseqbase(BN, (oid)0);
+	for (k=0; k<npairs; k++) {
+		voidany_bunfastins_nocheck_noinc(BN,DST,0,&bn[k]->batCacheid);
+		DST += BS;
+	}
+	BN->batBuns->free = DST - BN->batBuns->base;
+	if (!BN->batDirty) BN->batDirty = TRUE;
+	BATkey(BN,TRUE);
+	BATkey(BATmirror(BN),TRUE);
+	BN->hsorted = GDK_SORTED;
+	BN->tsorted = FALSE;
+	BN->hdense = TRUE;
+	BN->tdense = FALSE;
+
+	*res = BN;
+
+	GDKfree(w);
+
+	return GDK_SUCCEED;
+bunins_failed:
+	BBPreclaim(BN);
+	for (k=0; k<npairs; k++) {
+		BBPreclaim(bn[k]);
+	}
+	return GDK_FAIL;
 }

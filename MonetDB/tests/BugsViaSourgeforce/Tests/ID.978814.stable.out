@@ -110,10 +110,10 @@ kind001 := nil;
 # h	tmp_68		  # name
 # void	BAT		  # type
 #-------------------------#
-[ 0@0,	  <~tmp_67>	  ]
-[ 1@0,	  <~tmp_70>	  ]
-[ 2@0,	  <~tmp_69>	  ]
-[ 3@0,	  <~tmp_71>	  ]
+[ 0@0,	  <tmp_67>	  ]
+[ 1@0,	  <tmp_68>	  ]
+[ 2@0,	  <tmp_69>	  ]
+[ 3@0,	  <tmp_70>	  ]
 #-----------------------------------------#
 # t	tmp_67	tmp_70	tmp_69	tmp_71	  # name
 # void	oid	oid	oid	chr	  # type
@@ -263,8 +263,8 @@ print(iter001,pos001,item001,kind001);
 print(iter,pos,item,kind);
 print("the call of 'merged_union' triggers the error");
 var merged_result := merged_union (iter001, iter, pos001, pos, item001, item, kind001, kind);
-#merged_result.print;
-#print (merged_result.fetch(0), merged_result.fetch(1), merged_result.fetch(2), merged_result.fetch(3));
+merged_result.print;
+print (merged_result.fetch(0), merged_result.fetch(1), merged_result.fetch(2), merged_result.fetch(3));
 merged_result := nil;
 
 var iter2 := iter; var pos2 := pos; var item2 := item; var kind2 := kind;
@@ -329,6 +329,22 @@ v_kind001 := nil;
 [ 0@0,	  1@0,	  1@0,	  1@0,	  i	  ]
 [ 1@0,	  2@0,	  1@0,	  1@0,	  i	  ]
 [ "the call of 'merged_union' triggers the error" ]
+#-------------------------#
+# h	tmp_61		  # name
+# void	BAT		  # type
+#-------------------------#
+[ 0@0,	  <tmp_78>	  ]
+[ 1@0,	  <tmp_62>	  ]
+[ 2@0,	  <tmp_76>	  ]
+[ 3@0,	  <tmp_63>	  ]
+#-----------------------------------------#
+# t	tmp_75	tmp_62	tmp_73	tmp_66	  # name
+# void	oid	oid	oid	chr	  # type
+#-----------------------------------------#
+[ 0@0,	  1@0,	  1@0,	  0@0,	  i	  ]
+[ 1@0,	  1@0,	  1@0,	  1@0,	  i	  ]
+[ 2@0,	  2@0,	  1@0,	  0@0,	  i	  ]
+[ 3@0,	  2@0,	  1@0,	  1@0,	  i	  ]
 [ "the next line produces the error" ]
 [ 1 ]
 [ 2 ]
