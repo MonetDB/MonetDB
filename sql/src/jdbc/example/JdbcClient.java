@@ -906,7 +906,7 @@ public class JdbcClient {
 				type == Types.CHAR
 			) {
 				if (size <= 0) throw
-					new SQLException("Illegal value for precision of type (" + size + ")");
+					new SQLException("Illegal value for precision of type " + cols.getString("TYPE_NAME") + " (" + size + ")");
 		 		out.print("(" + size + ")");
 			} else if (type == Types.CLOB) {
 				if (size > 0) out.print("(" + size + ")");
