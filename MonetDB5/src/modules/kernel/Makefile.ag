@@ -21,13 +21,13 @@ LIBS = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 	LDFLAGS = -lm
 }
-doc_kernel = {
-	DIR = pkgdatadir/docs/modules/kernel
-	SOURCES = \
-		calc.mx bat.mx algebra.mx status.mx unix.mx \
-		mapi.mx mmath.mx lock.mx alarm.mx \
-		batcalc.mx group.mx aggrX3.mx 
-}
+#doc_kernel = {
+#	DIR = pkgdatadir/docs/modules/kernel
+#	SOURCES = \
+#		calc.mx bat.mx algebra.mx status.mx unix.mx \
+#		mapi.mx mmath.mx lock.mx alarm.mx \
+#		batcalc.mx group.mx aggrX3.mx 
+#}
 
 scripts_mal = {
 	DIR = pkglibdir
