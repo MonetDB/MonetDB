@@ -2233,6 +2233,12 @@ mapi_cache_limit(Mapi mid, int limit)
 				mid->cache.reader = mid->cache.writer;
 		}
 	}
+	if (mid->languageId == LANG_SQL) {
+		stream_printf(mid->to, "Xreply_size %d\n", limit);
+		stream_flush(mid->to);
+		mid->active = 1;
+		mapi_finish_internal(mid);
+	}
 	return MOK;
 }
 
