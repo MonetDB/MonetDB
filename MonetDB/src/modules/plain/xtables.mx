@@ -13,10 +13,13 @@ without permission of the copyright owner. }
 @{
 @+ Document control
 @T
+(June 2001:) Arjen made the size of the hashtable parametric, which is needed
+for text corpora (many different clusters (>30000), widely varying size (Zipfian)).
 (May 2001:) Arjen added some minor changes to better handle `clustered' groups;
-for now, limited applicability to a derived property using
+for now, limited applicability to a derived property, using
 $$ \mathrm{sorted} \land \mathrm{keyed} \implies \mathrm{clustered} $$
 
+(before:)
 \begin{verbatim}
 New implementation of xtables *from*scratch*. Got fed up with histolink. 
 This is simple stable and fast. good memory performance.
@@ -85,6 +88,10 @@ CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
         "Cross tabulation group initialization.
          Returned head values are identical as in 'attr'. Tail values are from
          the same domain and indicate unique groups in 'attr' tail column."
+ 
+.COMMAND _CTgroup(BAT[oid,any] attr, int N, int rng) : BAT[oid,oid] = CTgroup_custom;
+        "Cross tabulation group initialization like CTgroup, but with user
+         provided #bits in hashmask and #distinct values in range."
  
 .COMMAND CTderive(BAT[oid,any] ct, BAT[oid,any] attr) : BAT[oid,oid] = CTderive;
         "Cross tabulation group extension step.
@@ -609,17 +616,22 @@ typedef struct {
 	Heap hp;		/* storage for hash buckets */
 } map_T;
 
-#define map_init(map,hash,mask,entry,mapsize)\
+@:map_init_def(STANDARD,STANDARD_MASK,4096)@
+@:map_init_def(CUSTOM,custom_MASK,custom_rng)@
+
+@= map_init_def
+#define map_init_@1(map,hash,mask,entry,mapsize)\
 	if (m) {\
 		map = m->map; hash = m->hash; mask = m->mask;\
     	} else {\
-		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), 4096);\
-		hash = (int*) alloca(sizeof(int)*((mask=STANDARD_MASK)+1));\
-		for(xx=0; xx<=STANDARD_MASK; xx++) {\
+		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);\
+		hash = (int*) alloca(sizeof(int)*((mask=@2)+1));\
+		for(xx=0; xx<=@2; xx++) {\
 			hash[xx] = 0;\
 		}\
     	} entry.cnt = 1;\
 	mapsize = BUNindex(map, BUNlast(map));
+@c
 
 map_T map_multigroup(int size, int heap, int tt) {
 	int xx, yy;
@@ -675,9 +687,36 @@ BAT *map2histo(BAT *map) {
 	    map->dims.tailloc = map->dims.headloc + 4;
 	return map;
 }
+ 
+@T
+The group macro is split along three dimensions:
+\begin{description}
+\item [type:] Type specific implementation for selecting the right
+hash function and data size etc.;
+\item [clustered:] The \{clustered and unclustered\} select the
+appropriate algorithm, i.e., with or without taking advantage of 
+an order of values in the parent groups;
+\item [physical properties:] Values \{standard and custom\}, 
+chosing between a fixed predefined and a custom hashmask. Custom
+allows the user to determine the size of the hashmask (and indirectly 
+the estimated size of the result). The hashmask is $2^n - 1$ where $n$ 
+is given by the user, or 1023 otherwise, and the derived result
+size is $4 \cdot 2^n$.
+\end{description}
+
+Further research should point out whether fitting a simple statistical 
+model (possibly a simple mixture model) can help choose these parameters 
+automatically; the current idea is that the user (which could be a
+domain-specific extension of the higher-level language) knows the 
+properties of the data, especially for IR in which the standard grouping
+settings differ significantly from the original datamining application.
+@c
+
+#define group_params_STANDARD /* fixed */
+#define group_params_CUSTOM   int custom_MASK, int custom_rng,
 
 @= group
-BAT *CTgroup_@1_@4(BAT *b, BAT *bn, map_T *m){
+BAT *CTgroup_@1_@4_@5( group_params_@5 BAT *b, BAT *bn, map_T *m ){
 	oid *dst = (oid*) BUNfirst(bn);
 	int xx, zz, *hash, mask, mapsize;
 	mapentry_t entry, *e;
@@ -685,7 +724,7 @@ BAT *CTgroup_@1_@4(BAT *b, BAT *bn, map_T *m){
 	BAT *map;
 	declare_@3
  
-	map_init(map,hash,mask,entry,mapsize); 
+	map_init_@5(map,hash,mask,entry,mapsize); 
 
 	/* core hash grouping algorithm */
 	BATloopFast(b, p, q, xx) {
@@ -739,45 +778,59 @@ int tailtype(BAT *b, int str_trick) {
 	return tpe;
 }
 
-/* Generate both 'normal' CTgroup and clustered CTgroup */
-@= wrappedgroup
-@:group(chr,tloc,simple,@1)@
-@:group(sht,tloc,simple,@1)@
-@:group(int,tloc,simple,@1)@
-@:group(lng,tloc,simple,@1)@
-@:group(any,tail,atom,@1)@
+/* Generate both 'normal' CTgroup and clustered CTgroups */
+@= wrappedgroupinner
+@:group(chr,tloc,simple,@1,@2)@
+@:group(sht,tloc,simple,@1,@2)@
+@:group(int,tloc,simple,@1,@2)@
+@:group(lng,tloc,simple,@1,@2)@
+@:group(any,tail,atom,@1,@2)@
 @c
 
-@:wrappedgroup(unclustered)@
-@:wrappedgroup(clustered)@
+/* Generate both 'normal' CTgroup and parameterized CTgroups */
+@= wrappedgroupouter
+@:wrappedgroupinner(unclustered,@1)@
+@:wrappedgroupinner(clustered,@1)@
+@c
+
+@:wrappedgroupouter(STANDARD)@
+@:wrappedgroupouter(CUSTOM)@
 
 @= returnvalue
         @1 =
 @c
 
-@= choosegroup
-	/* Choose appropriate @4 CTgroup implementation */
-	switch(@1) {
-	case TYPE_chr: @?@5:returnvalue(@5)@ CTgroup_chr_@4(b,@2,@3); break;
-	case TYPE_sht: @?@5:returnvalue(@5)@ CTgroup_sht_@4(b,@2,@3); break;
-	case TYPE_int: @?@5:returnvalue(@5)@ CTgroup_int_@4(b,@2,@3); break;
-	case TYPE_lng: @?@5:returnvalue(@5)@ CTgroup_lng_@4(b,@2,@3); break;
-	default:       @?@5:returnvalue(@5)@ CTgroup_any_@4(b,@2,@3);
-	}
-@c
+#define declare_mask_STANDARD	/* fixed */
+#define declare_mask_CUSTOM 	int mask = (1 << *N) - 1;
 
 int
 CTgroup(
    BAT**        retval, /* put pointer to BAT[oid,oid] record here. */
-   BAT*         b   /* pointer to BAT[oid,oid] record.*/
+   BAT*         b       /* pointer to BAT[oid,oid] record.*/
 )
-{		
+{
+  @:CTgroupbody(STANDARD)@
+}
+
+int
+CTgroup_custom(
+   BAT**        retval, 	/* put pointer to BAT[oid,oid] record here. */
+   BAT*         b,      	/* pointer to BAT[oid,oid] record.*/
+   int*	        N,		/* number of bits for hashmask */
+   int*	        rng		/* expected number of entries in map */
+)
+{
+  @:CTgroupbody(CUSTOM)@
+}
+
+@= CTgroupbody
 	BAT *histo, *bn = BATnew(b->htype, TYPE_oid, BATcount(b));
+        declare_mask_@1 
 	/* Poor man's clustered test: sorted & !keyed => clustered  */
 	if ( (b->tsorted) && !(b->tkey) ) {
-	  @:choosegroup(tailtype(b,TRUE),bn,NULL,clustered,histo)@
+	  @:choosegroup@1(tailtype(b,TRUE),bn,NULL,clustered,histo)@
 	} else {
-	  @:choosegroup(tailtype(b,TRUE),bn,NULL,unclustered,histo)@
+	  @:choosegroup@1(tailtype(b,TRUE),bn,NULL,unclustered,histo)@
 	}
 
 	bn->tsorted = 0;
@@ -785,7 +838,38 @@ CTgroup(
 	CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
 	*retval = bn;
 	return GDK_SUCCEED;
-}
+@c
+
+@= choosegroupSTANDARD
+	/* Choose appropriate @4 CTgroup implementation */
+	switch(@1) {
+	case TYPE_chr: @?@5:returnvalue(@5)@ CTgroup_chr_@4_STANDARD(b,@2,@3); break;
+	case TYPE_sht: @?@5:returnvalue(@5)@ CTgroup_sht_@4_STANDARD(b,@2,@3); break;
+	case TYPE_int: @?@5:returnvalue(@5)@ CTgroup_int_@4_STANDARD(b,@2,@3); break;
+	case TYPE_lng: @?@5:returnvalue(@5)@ CTgroup_lng_@4_STANDARD(b,@2,@3); break;
+	default:       @?@5:returnvalue(@5)@ CTgroup_any_@4_STANDARD(b,@2,@3);
+	}
+@c
+
+@= choosegroupCUSTOM
+	/* Choose appropriate @4 CTgroup implementation */
+	switch(@1) {
+	case TYPE_chr: 
+	  @?@5:returnvalue(@5)@ CTgroup_chr_@4_CUSTOM(mask,*rng,b,@2,@3); 
+	  break;
+	case TYPE_sht: 
+	  @?@5:returnvalue(@5)@ CTgroup_sht_@4_CUSTOM(mask,*rng,b,@2,@3);
+	  break;
+	case TYPE_int: 
+	  @?@5:returnvalue(@5)@ CTgroup_int_@4_CUSTOM(mask,*rng,b,@2,@3); 
+	  break;
+	case TYPE_lng: 
+	  @?@5:returnvalue(@5)@ CTgroup_lng_@4_CUSTOM(mask,*rng,b,@2,@3); 
+	  break;
+	default:       
+	  @?@5:returnvalue(@5)@ CTgroup_any_@4_CUSTOM(mask,*rng,b,@2,@3);
+	}
+@c
 
 static str batsig(BAT *b, str nme) {
 	if (b) {
@@ -860,9 +944,9 @@ CTmultigroup(
 			ct = BATnew(b->htype, TYPE_oid, BATcount(b));
 			/* Poor man's clustered test: sorted & !keyed => clustered  */
 			if ( (b->tsorted) && !(b->tkey) ) {
-			  @:choosegroup(tt,ct,&m,clustered)@
+			  @:choosegroupSTANDARD(tt,ct,&m,clustered)@
 			} else {
-			  @:choosegroup(tt,ct,&m,unclustered)@
+			  @:choosegroupSTANDARD(tt,ct,&m,unclustered)@
 			}
 		} else {
 			if (t < TYPE_int && t > TYPE_oid) {
@@ -896,7 +980,7 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 	BAT *map;
 	declare_@4
    
-	map_init(map,hash,mask,entry,mapsize); 
+	map_init_STANDARD(map,hash,mask,entry,mapsize); 
 
 	/* core hash grouping algorithm */
 	BATloopFast(b, p, q, xx) {
