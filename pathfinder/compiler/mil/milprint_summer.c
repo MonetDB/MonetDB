@@ -5196,17 +5196,37 @@ translate2MIL (opt_t *f, int act_level, int counter, PFcnode_t *c)
 	    milprintf(f,
                     "if (iter.tunique().count() != iter.count()) {"
 		    "ERROR (\"more than one value per iteration in order by expression\"); }\n"
-		    /* can't be sure wether CTrefine
-		       works the expected way with missing rows */
-                    "if (iter.count() != loop%03u.count()) {"
-		    "print (\"no guarantee for correct order in order by expression "
-				"(empty greatest and empty least ignored)\"); }\n"
 		    "{ # orderspec\n"
 		    "var order := iter.reverse().leftfetchjoin(item%s);\n"
+                    "if (iter.count() != loop%03u.count()) {",
+		    container,
+		    act_level);
+	    if (c->sem.mode.empty == p_greatest)
+	    {
+	        milprintf(f,
+			/* generate a max value */
+			"order.access(BAT_APPEND);\n"
+			"order := order.insert(loop%03u.reverse()"
+					      ".kdiff(iter.reverse())"
+					      ".project(max(order)+1));\n"
+			"order.access(BAT_READ);\n",
+			act_level);
+	    }
+	    else
+	    {
+	        milprintf(f,
+			/* generate a min value */
+			"order.access(BAT_APPEND);\n"
+			"order := order.insert(loop%03u.reverse()"
+					      ".kdiff(iter.reverse())"
+					      ".project(cast(nil,ttype(order))));\n"
+			"order.access(BAT_READ);\n",
+			act_level);
+	    }
+	    milprintf(f,
+		    "}\n"
 		    "refined%03u := refined%03u.CTrefine%s(order);\n"
 		    "} # end of orderspec\n",
-		    act_level,
-		    container,
                     counter, counter, descending);
 
 	    /* evaluate rest of orderspecs until end of list is reached */
