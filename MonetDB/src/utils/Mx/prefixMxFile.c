@@ -41,7 +41,7 @@ extern int      optind, opterr, optopt;
 # include <getopt.h>
 #else
 #ifndef HAVE_GETOPT
-# include <getopt.c>
+# include "getopt.c"
 #endif
 #endif
 
