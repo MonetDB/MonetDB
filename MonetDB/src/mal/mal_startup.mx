@@ -114,7 +114,7 @@ void resetClientPrg(Client cntxt){
         InstrPtr p;
         MalBlkPtr mb;
 
-        cntxt->curprg = newFunction(cntxt->nspace, GDKstrdup("main"));
+        cntxt->curprg = newFunction(GDKstrdup("main"));
         mb = cntxt->curprg->def;
         p = getSignature(cntxt->curprg);
         p->modname= GDKstrdup(cntxt->nspace->name);
@@ -135,10 +135,8 @@ void closeClientPrg(Client cntxt, int flag){
 	} else return;
 	if( flag){
 		p = getInstrPtr(mb,i);
-		if( p->token != ENDDEFsymbol){
-			p = newInstruction(mb, ENDDEFsymbol);
-			pushInstruction(mb,p);
-		}
+		if( p->token != ENDDEFsymbol)
+			pushEndInstruction(mb);
 	}
 	chkClientPrg(cntxt,flag);
 	resetClientPrg(cntxt);

@@ -197,7 +197,7 @@ char mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 	case 'S': /* display symbol table */
 		skipWord(b);
 		skipBlanc(b);
-		debugScope(b);
+		debugScope(cntxt->nspace,b);
 		break;
 	case 't': /* trace breakpoint */
 		if( strncmp("timer",b,5)==0){
@@ -284,7 +284,7 @@ signatures satisfying the pattern.
 			modname=b;
 			fcnname= strchr(b,'.');
 			if( fcnname == NULL){
-				fsym= findScope(mal_scope,modname);
+				fsym= findScope(cntxt->nspace,modname);
 				if( fsym==0) {
 					fprintf(out,"scope not found\n");
 					continue;
@@ -297,18 +297,19 @@ signatures satisfying the pattern.
 					}
 				}
 				continue;
-			} else {
-				*fcnname = 0;
-				fcnname ++;
+			} 
+			*fcnname = 0;
+			fcnname ++;
+			fsym= findScope(cntxt->nspace,modname);
+			if( fsym==0) {
+				fprintf(out,"scope not found\n");
+				continue;
 			}
 			/* display the overloaded symbol definition */
-			if( displayScope(out,modname,fcnname)==0){
+			if( displayScope(out,fsym,fcnname)==0){
 				fprintf(out,"Symbol '%s.%s' not found\n",
 					modname,fcnname);
-				continue;
-			} else continue; 
-			fs= findSymbolInScope(mal_scope,fcnname);
-			if( fs) printFunction(out,fs->def);
+			} 
 			continue;
 		}
 		printFunction(out,mb);

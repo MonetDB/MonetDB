@@ -105,9 +105,9 @@ mal_export void		insertSymbol(Scope cntxt, Symbol prg);
 mal_export Scope	findScope(Scope cntxt, str name);
 mal_export Symbol 	findSymbolInScope(Scope v, str fcn);
 mal_export Symbol 	findSymbol(str mod, str fcn);
-mal_export int	 	displayScope(FILE *f, str mod, str fcn);
+mal_export int	 	displayScope(FILE *f, Scope v, str fcn);
 mal_export int 		showScopeTrail(FILE *fd, Scope s);
-mal_export void 	debugScope(str nme);
+mal_export void 	debugScope(Scope v, str nme);
 
 
 #endif /* _MAL_SCOPE_H_ */
@@ -268,12 +268,10 @@ Symbol findSymbol(str mod, str fcn){
 	v= findScope(mal_scope, mod);
 	return findSymbolInScope(v,fcn);
 }
-int displayScope(FILE *f, str mod, str fcn){
-	Scope v;
+int displayScope(FILE *f, Scope v, str fcn){
 	Symbol s;
 	int i,k=0;
 
-	v= findScope(mal_scope, mod);
 	if( v == NULL || fcn == NULL) return 0;
 	s= v->subscope[*fcn];
 	while(s!=NULL){
@@ -294,23 +292,21 @@ void  printScope(Scope cntxt, int tab, int outer)
 	Symbol t;
 	FILE *fd= GDKout;
 
-	while(s!= NULL){
-		fprintf(fd,"SCOPE %s",s->name);
-		if( s->subscope)
-		for(j=0;j<MAXSCOPE;j++)
-		if(s->subscope[j]){
-			fprintf(fd,"[%c]",j);
-			for(t= s->subscope[j];t!=NULL;t=t->peer) {
-				fprintf(fd," %s",t->name);
-				if( getSignature(t)==NULL ||
-				    (getSignature(t)->fcn==0 &&
-				     getSignature(t)->token == COMMANDsymbol &&
-				     getSignature(t)->blk==0) ) fprintf(fd,"(?)");
-			}
-			fprintf(fd,"\n");
+	fprintf(fd,"SCOPE %s",s->name);
+	if( s->subscope)
+	for(j=0;j<MAXSCOPE;j++)
+	if(s->subscope[j]){
+		fprintf(fd,"[%c]",j);
+		for(t= s->subscope[j];t!=NULL;t=t->peer) {
+			fprintf(fd," %s",t->name);
+			if( getSignature(t)==NULL ||
+			    (getSignature(t)->fcn==0 &&
+			     getSignature(t)->token == COMMANDsymbol &&
+			     getSignature(t)->blk==0) ) fprintf(fd,"(?)");
 		}
-			fprintf(fd,"\n");
+		fprintf(fd,"\n");
 	}
+	fprintf(fd,"\n");
 	if(outer && cntxt->outer) printScope(cntxt->outer,tab+1, outer);
 }
 
@@ -324,16 +320,15 @@ int showScopeTrail(FILE *fd, Scope s)
 	printf("\n");
 }
 
-void debugScope(str nme){
+void debugScope(Scope start, str nme){
 	Scope m;
 	FILE *fd= GDKout;
-	if( mal_scope== 0) GDKerror("mal_scope == NULL\n");
-	if( nme==0 || *nme ==0) printScope(mal_scope,0,TRUE);
+	if( nme==0 || *nme ==0) printScope(start,0,TRUE);
 	else{
 		char *s;
 		for(s=nme;*s && (isalnum(*s) ||*s=='_');s++);
 		*s = 0;
-		m= findScope(mal_scope,nme);
+		m= findScope(start,nme);
 		if( m== NULL) fprintf(fd,"Scope name '%s' not found\n",nme);
 		else printScope(m,0,FALSE);
 	}

@@ -346,7 +346,7 @@ void freeClient(Client c)
 	} 
 	/* forked client also */
 
-	if( c->curprg ) freeScope(c->curprg);
+	if( c->curprg ) freeSymbol(c->curprg);
 	c->curprg= 0;
 	if( !isAdministrator(c) && c->nspace){
 		freeScope(c->nspace);

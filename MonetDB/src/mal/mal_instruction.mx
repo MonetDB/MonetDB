@@ -130,7 +130,7 @@ typedef struct MALBLK{
 	struct SYMDEF  *sym;	/* pointer to enclosing proc symbol */
 	int	  vtop;		/* next free slot */
 	int	  vsize;	/* byte size of arena */
-	VarRecord  *var;	/* Variable table */
+	VarRecord  **var;	/* Variable table */
 	int	  ctop;		/* next free slot */
 	int	  csize;	/* byte size of arena */
 	char	  *code;	/* Instruction encoding */
@@ -149,18 +149,19 @@ Allocation of space assumes a rather exotic number of arguments.
 #define getModName(M)	getInstrPtr(M,0)->modname 
 #define getPrgSize(M)	(M)->stop
 
-#define getVar(M,I)	(M)->var+I
-#define getVarName(M,I)  (M)->var[I].name
-#define getVarType(M,I)  (M)->var[I].type
-#define getVarIndex(M,I)  (M)->var[I].index
-#define getVarLiteral(M,I)  (M)->var[I].literal
-#define isVarConstant(M,I) ((M)->var[I].isaconstant)
-#define isVarUsed(M,I) ((M)->var[I].isused)
-#define getVarConstant(M,I)  ((M)->var[I].value)
-#define copyVar(M,I,J)	(M)->var[I] = (M)->var[J]
+#define getVar(M,I)	(M)->var[I]
+#define getVarName(M,I)  (M)->var[I]->name
+#define getVarType(M,I)  (M)->var[I]->type
+#define getVarIndex(M,I)  (M)->var[I]->index
+#define getVarLiteral(M,I)  (M)->var[I]->literal
+#define isVarConstant(M,I) ((M)->var[I]->isaconstant)
+#define isVarUsed(M,I) ((M)->var[I]->isused)
+#define getVarConstant(M,I)  ((M)->var[I]->value)
+#define copyVar(M,I,J)	GDKfree((M)->var[I]);(M)->var[I] = (M)->var[J];\
+		(M)->var[J]= NULL;
 
-#define getDestName(M,P) getVarName(M,(P)->argv[0])
-#define getDestType(M,P)  getVarType((M),(P)->argv[0])
+#define setDestType(M,P)  getVarType((M),(P)->argv[0])
+#define getDestType(M,P)  destinationType((M),(P))
 #define getArgName(M,P,I)  getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)  getVarType((M),(P)->argv[I])
 #define getArgIndex(M,P,I)  getVarIndex((M),(P)->argv[I])
@@ -179,14 +180,18 @@ mal_export int		findVariable(MalBlkPtr mb, str name);
 mal_export int		findVariableLenght(MalBlkPtr mb, str name,int len);
 mal_export malType	getType(MalBlkPtr mb, str nme);
 mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
+mal_export void		copyVariable(MalBlkPtr dst,MalBlkPtr src, VarPtr v);
 mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
 mal_export void		freeVariable(MalBlkPtr mb, int varid);
 mal_export int		newConstant(MalBlkPtr mb, malType type, str val);
 mal_export int		isVARG(MalBlkPtr mb, InstrPtr p, int i);
 
 mal_export void		pushInstruction(MalBlkPtr mb, InstrPtr p);
+mal_export void		pushEndInstruction(MalBlkPtr mb);
 mal_export void		pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export void		setReturnArgument(InstrPtr p, int varid);
+mal_export malType	destinationType(MalBlkPtr mb, InstrPtr p);
+mal_export str		getDestName(MalBlkPtr mb, InstrPtr p);
 mal_export void 	printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void		promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p);
@@ -227,11 +232,11 @@ void freeSymbolList(Symbol s){
  
 MalBlkPtr newMalBlk(){
 	MalBlkPtr mb;
-	VarPtr v;
+	VarPtr *v;
 	char *c;
 	int *n;
 
-	v = (VarPtr)GDKmalloc(sizeof(VarRecord) * MAXVARS);
+	v = (VarPtr *)GDKmalloc(sizeof(VarPtr) * MAXVARS);
 	if( v== NULL )
 		GDKfatal("newMalBlk:could not get variable storage\n");
 	c = (char *)GDKmalloc(MALBLKSIZE);
@@ -274,18 +279,14 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
 	if( mb== NULL )
 		GDKfatal("newMalBlk:could not get storage\n");
 	mb->sym= old->sym;
-	mb->var = (VarPtr)GDKmalloc(sizeof(VarRecord) * old->vsize);
-	mb->vtop = old->vtop;
+	mb->var = (VarPtr *)GDKmalloc(sizeof(VarPtr) * old->vsize);
 	mb->vsize = old->vsize;
-	memcpy((char*) mb->var, old->var, sizeof(VarRecord) * old->vsize);
+	memcpy((char*) mb->var, old->var, sizeof(VarPtr) * old->vsize);
 	if( mb->var== NULL )
 		GDKfatal("newMalBlk:could not get variable storage\n");
-	for(i=0;i<mb->vtop;i++){
-		if( mb->var[i].name)
-			mb->var[i].name = GDKstrdup(mb->var[i].name);
-		if( mb->var[i].literal)
-			mb->var[i].literal = GDKstrdup(mb->var[i].literal);
-	}
+	mb->vtop = 0;
+	for(i=0;i<old->vtop;i++)
+		copyVariable(mb,old,getVar(old,i));
 
 	mb->code = (char *)GDKmalloc( mb->csize = old->csize);
 	mb->ctop = old->ctop;
@@ -336,7 +337,6 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 	p->fcnname= NULL;
 	p->argc= 1;
 	p->argv[0] = -1;
-	/* p->pc=0;*/
 	p->typechk = TYPE_UNKNOWN;
 	return p;
 }
@@ -411,16 +411,16 @@ int newVariable(MalBlkPtr mb, str name, malType type){
         int n,l;
         
 	if( mb->vtop+1 >= mb->vsize){
-		VarRecord *new;
+		VarPtr *new;
 		int s= mb->vtop + MAXVARS;
-		new= (VarPtr) GDKmalloc(s*sizeof(VarRecord));
+		new= (VarPtr *) GDKmalloc(s * sizeof(VarPtr));
 		/*printf("generate new variable block\n");*/
 		if( new== NULL ){
 			mb->errors++;
 			GDKerror("newMalBlk:no storage left\n");
 			return mb->vtop;
 		}
-		memcpy(new,mb->var, sizeof(VarRecord)*mb->vtop);
+		memcpy(new,mb->var, sizeof(VarPtr) * mb->vtop);
 		GDKfree(mb->var);
 		mb->vsize= s;
 		mb->var= new;
@@ -438,6 +438,8 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		return n;
 	}
 	n = mb->vtop;
+	getVar(mb,n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
+	bzero( (str) getVar(mb,n), sizeof(VarRecord));
 	getVarName(mb,n) = name;
 	getVarType(mb,n) = type;
 	getVarIndex(mb,n) = n;
@@ -451,13 +453,28 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 	str name = newTmpName(mb->vtop);
 	return newVariable(mb,name,type);
 }
+void	copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
+	VarPtr w;
+
+	w = (VarPtr) GDKmalloc(sizeof(VarRecord));
+	bzero( (str) w , sizeof(VarRecord));
+        w->name = GDKstrdup(v->name);
+        w->type = v->type;
+        w->index = v->index;
+        w->literal= v->literal? GDKstrdup(v->literal):NULL;
+        w->isaconstant = v->isaconstant;
+        w->isused = v->isused;
+	VALcopy(&w->value,&v->value);
+	dst->var[dst->vtop++]= w;
+}
 void freeVariable(MalBlkPtr mb, int varid){
-	VarRecord v;
-	v= mb->var[varid];
-	if( v.name ==0) return;
-	if( v.name) GDKfree(v.name); v.name = 0;
-	if( v.literal) GDKfree(v.literal); v.literal= 0;
-	VALclear(&v.value);
+	VarPtr v;
+	v= getVar(mb,varid);
+	if( v->name ==0) return;
+	if( v->name) GDKfree(v->name); v->name = 0;
+	if( v->literal) GDKfree(v->literal); v->literal= 0;
+	VALclear(&v->value);
+	getVar(mb,varid) = NULL;
 }
 @- Constants
 Constants are stored in the symbol table and referenced
@@ -499,7 +516,7 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 	k= mb->vtop - MAL_VAR_WINDOW;
 	if( k<0) k=0;
 	for(i= mb->vtop-1; i>=k;i--){
-		VarPtr v= mb->var+i;
+		VarPtr v= getVar(mb,i);
 		if( v->literal &&
 		    /* v->type == type &&*/
 		    idcmp(v->literal,val)==0 
@@ -633,6 +650,14 @@ void pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
 void setReturnArgument(InstrPtr p, int varid){
 	p->argv[0]= varid;
 }
+str getDestName(MalBlkPtr mb, InstrPtr p){
+	if( p->argc>0) return getVarName(mb,p->argv[0]);
+	return "";
+}
+malType destinationType(MalBlkPtr mb, InstrPtr p){
+	if( p->argc>0) return getVarType(mb,p->argv[0]);
+	return malAnyType;
+}
 
 @-
 Instructions are simply appended to a MAL block, provided the
@@ -661,9 +686,14 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
-	/* p->pc= i;*/
 	mb->stmt[i]= ((char *) p)-((char*)mb->code);
 	mb->stop++;
+}
+mal_export void pushEndInstruction(MalBlkPtr mb){
+	InstrPtr p;
+	p= newInstruction(mb,ENDDEFsymbol);
+	p->argc =0;
+	pushInstruction(mb,p);
 }
 @-
 The internal representation should be such that it becomes

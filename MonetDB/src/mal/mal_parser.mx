@@ -698,16 +698,14 @@ int parseEnd(Client cntxt)
 		if ( keyword(cntxt,"function",8)){
 			if( curPrg->kind != FUNCTIONsymbol) 
 				parseError(cntxt,"'end function' expected\n");
-                        curInstr = newInstruction(curBlk, ENDDEFsymbol);
-                        pushInstruction(curBlk,curInstr);
+                        pushEndInstruction(curBlk);
 			closeClientPrg(cntxt,TRUE);
 			showit= TRUE;
 		} else
 		if ( keyword(cntxt,"handler",5)){
 			if( curPrg->kind != HANDLERsymbol) 
 				parseError(cntxt,"'end agent' expected\n");
-                        curInstr = newInstruction(curBlk, ENDDEFsymbol);
-                        pushInstruction(curBlk,curInstr);
+                        pushEndInstruction(curBlk);
 			closeClientPrg(cntxt,TRUE);
 		} else{
 			i = findVariableLength(curBlk,cntxt->nxt,l);

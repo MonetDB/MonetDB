@@ -48,7 +48,7 @@ html
 
 /* #define DEBUG_MAL_FCN */
 
-mal_export Symbol	newFunction(Scope scope, str nme);
+mal_export Symbol	newFunction(str nme);
 mal_export void 	initSymbolTable(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr m, str modname, str fcnname);
 mal_export InstrPtr newCmdCall(MalBlkPtr m, str modname, str fcnname);
@@ -81,7 +81,7 @@ The MAL functions are constructed incrementally while parsing the source.
 #include "mal_function.h"
 #define MAXINSTR 200
 
-Symbol newFunction(Scope scope, str nme){
+Symbol newFunction(str nme){
 	Symbol s;
 	InstrPtr c;
 	MalBlkPtr mb;
@@ -380,8 +380,9 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	int i;
 	InstrPtr pp;
 
-	/* printf("clone the function %s\n",proc->name);*/
-	new= newFunction(scope,GDKstrdup(proc->name));
+	/* printf("clone the function %s to scope %s\n",
+			proc->name,scope->name);*/
+	new= newFunction(GDKstrdup(proc->name));
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 	pp = getSignature(new);
