@@ -98,8 +98,8 @@ comment "Generic processor for mutiplexed
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-/*#define DEBUG_MULTIPLEX  */
-/*#define TRACE_MULTIPLEX   */
+/* #define DEBUG_MULTIPLEX */
+/* #define TRACE_MULTIPLEX */
 
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
@@ -400,7 +400,7 @@ barrier mloop:= bunStream(Ai,h,t);
 catch 	MALexception;
 	#ignore errors
 end	MALexception;
-	redo mloop;
+	redo mloop:= bunStream(Ai,h,t);
 end mloop;
 	return resB;
 end CMD000;
@@ -414,16 +414,16 @@ The algorithm consists of two phases: phase one deals with
 collecting the relevant information, phase two is the actual
 code construction.
 @= malInstr
-	q= newInstruction(@1symbol);
+	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= @2 ;
-	if(@1symbol == EXITsymbol) q->barrier= EXITsymbol;
+	q->barrier= EXITsymbol;
 	pushInstruction(m,q);
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i,k,l,mloop,refBat=0,resB,refType,cr;
 	int nilVar=0 /*, mvar*/;
 	str ret= MAL_SUCCEED;
-	int hvar,rIndex=0;
+	int hvar,ivar=0, rIndex=0;
 #ifdef DEBUG_MULTIPLEX
 	int assignop = FALSE;
 #endif
@@ -491,12 +491,15 @@ find the actule arguments at the proper place of the callee.
 
 	/* resB := new(headtype,tailtype */
 	q= newInstruction(ASSIGNsymbol);
-	q->argv[0]= resB = newVariable(m,GDKstrdup("resB"),refType);
+	q->argc=0;
+	resB = newVariable(m,GDKstrdup("resB"),refType);
+	pushArgument(m,q,resB);
 	setModuleId(q, GDKstrdup("bbp"));
 	setFunctionId(q, GDKstrdup("new"));
-	q->argv[1]= newTmpVariable(m, getHeadType(refType));
-	q->argv[2]= newTmpVariable(m, getTailType(refType));
-	q->argc= 3;
+	i= newTypeVariable(m, getHeadType(refType));
+	pushArgument(m,q,i);
+	i= newTypeVariable(m, getTailType(refType));
+	pushArgument(m,q,i);
 	pushInstruction(m,q);
 	
 	/* create nil constant for void-columns */
@@ -544,7 +547,7 @@ find the actule arguments at the proper place of the callee.
 	q->argv[1] = refBat;
 	hvar= q->argv[2] = newVariable(m,GDKstrdup("h"),getHeadType(refType));
 	sprintf(name,"B%d",rIndex);
-	q->argv[3] = newVariable(m,GDKstrdup(name),
+	q->argv[3] = ivar = newVariable(m,GDKstrdup(name),
 		getTailType(getArgType(mb,pci,refBat)));
 	q->argc= 4;
 	pushInstruction(m,q);
@@ -562,7 +565,8 @@ find the actule arguments at the proper place of the callee.
 		if( nilVar){
 			setFunctionId(q, GDKstrdup("fetch"));
 			q->argv[2]= mvar;
-		} else */ { setFunctionId(q, GDKstrdup("find"));
+		} else 
+*/ 		{ setFunctionId(q, GDKstrdup("find"));
 			q->argv[2]= hvar;
 		}
 		q->argc=3;
@@ -571,7 +575,7 @@ find the actule arguments at the proper place of the callee.
 	q= newInstruction(ASSIGNsymbol);
 	q->argv[0]= newTmpVariable(m,TYPE_any);
 	setFunctionId(q, GDKstrdup("print"));
-	q->argv[1] = zv;
+	q->argv[1] = hvar;
 	q->argc=2;
 	pushInstruction(m,q);
 #endif
@@ -622,14 +626,14 @@ find the actule arguments at the proper place of the callee.
 
 
 	/* catch   MALexception; */
-	q= newInstruction(CATCHsymbol);
+	q= newInstruction(ASSIGNsymbol);
 	q->barrier = CATCHsymbol;
 	k= q->argv[0]= newVariable(m, GDKstrdup("MALexception"),TYPE_str);
 	pushInstruction(m,q);
 
 #ifdef TRACE_MULTIPLEX
 	/* z:= inspect.symbolDefinition(); print(z); */
-	{ int zz;
+	{ int zz= hvar;
 	q= newInstruction(ASSIGNsymbol);
 	setModuleId(q, GDKstrdup("io"));
 	setFunctionId(q, GDKstrdup("print"));
@@ -662,15 +666,28 @@ find the actule arguments at the proper place of the callee.
 	pushInstruction(m,q);
 #endif
 	@:malInstr(EXIT,k)@	/* end  MALexception; */
-	@:malInstr(REDO,mloop)@	/* redo mloop; */
+	/* redo mloop:= bunStream(refBat,h,rIndex); */
+	q= newInstruction(ASSIGNsymbol);
+	q->barrier = REDOsymbol;
+	q->argv[0]= mloop;
+	setModuleId(q, GDKstrdup("chopper"));
+	setFunctionId(q, GDKstrdup("bunStream"));
+	q->argv[1] = refBat;
+	q->argv[2] = hvar; 
+	q->argv[3] = ivar;
+	q->argc= 4;
+	pushInstruction(m,q);
 	@:malInstr(EXIT,mloop)@	/* redo mloop; */
-	q= newInstruction(RETURNsymbol);
+
+	q= newInstruction(ASSIGNsymbol);
+	q->barrier= RETURNsymbol;
 	q->argv[0]= resB ;
 	q->argv[1]= resB ;
 	q->argc=2;
 	q->retc=1;
 	pushInstruction(m,q);
-	@:malInstr(END,0)@/* end function ; */
+	q= newInstruction(ENDsymbol);
+	pushInstruction(m,q);
 @-
 It is time to type check the code and request for any optimization.
 @c

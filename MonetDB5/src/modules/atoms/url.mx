@@ -736,7 +736,7 @@ void plustospace(char *str) {
 Here you find the wrappers around the V4 url library included above.
 @c
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 
 int URLfromString(str src, int *len, str *url){
 	/* actually parse the message for valid url */

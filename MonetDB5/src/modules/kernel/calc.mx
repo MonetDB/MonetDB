@@ -94,6 +94,8 @@ at function resoluton.
 @= mal_isnil
 	command isnil(v:@1) :bit = CALCisnil_@1
 	comment "is a value nil?";
+	command isnotnil(v:@1) :bit = CALCisnotnil_@1
+	comment "is a value not equal to nil?";
 @-
 [Mx bug, space required here]
 
@@ -109,6 +111,10 @@ module calc;
 	@:mal_isnil(lng)@
 	@:mal_isnil(dbl)@
 	@:mal_isnil(str)@
+command isnil(v:void) :bit = CALCisnil_void
+comment "is a value nil?";
+command isnotnil(v:void) :bit = CALCisnotnil_void
+comment "is a value not equal to nil?";
 
 @- comparisons 
 @T 
@@ -958,6 +964,10 @@ str CALCisnil_@1(bit *retval, @1 *val) {
 	*retval = (*val == @1_nil);
 	return MAL_SUCCEED;
 }
+str CALCisnotnil_@1(bit *retval, @1 *val) {
+	*retval = (*val != @1_nil);
+	return MAL_SUCCEED;
+}
 str CALCnil2@1(@1 *retval, ptr val){
 	(void) val;/* fool compiler */
 	memcpy(retval, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
@@ -976,7 +986,11 @@ str CALCnil2@1(@1 *retval, ptr val){
 @:c_isnil(bat)@
 
 str CALCisnil_str(bit *retval, str *val) {
-	*retval = (*val == str_nil);
+	*retval = (*val == ATOMnilptr(TYPE_str));
+	return MAL_SUCCEED;
+}
+str CALCisnotnil_str(bit *retval, str *val) {
+	*retval = (*val != ATOMnilptr(TYPE_str));
 	return MAL_SUCCEED;
 }
 str CALCstr2nil(str *retval, str *val) {
@@ -988,6 +1002,14 @@ str CALCstr2nil(str *retval, str *val) {
 str CALCisnil_any(bit *retval, ptr *val, int tpe) {
 	ptr nilval = ATOMnilptr(tpe);
 	*retval = (ATOMcmp(tpe, nilval, *val) == 0);
+	return MAL_SUCCEED;
+}
+str CALCisnil_void(bit *retval, oid *val) {
+	*retval = (*val == oid_nil);
+	return MAL_SUCCEED;
+}
+str CALCisnotnil_void(bit *retval, oid *val) {
+	*retval = (*val != oid_nil);
 	return MAL_SUCCEED;
 }
 @= c_between_op

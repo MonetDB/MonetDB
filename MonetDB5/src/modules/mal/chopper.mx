@@ -24,7 +24,7 @@
 @f chopper
 @v 2.0
 @a M.L.Kersten
-@* Chopper
+@* BAT chopper
 Processing a complex query involving access to many resources
 and with a wide disparity of processing requirements is often
 organized as a dataflow problem. 

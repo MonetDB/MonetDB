@@ -2344,7 +2344,7 @@ The Monet V5 API interface is defined here
 
 @c
 #include "mal.h"
-#include "mal_function.h"
+#include "mal_exception.h"
 #include <mal_box.h>
 @-
 @= coerce
@@ -2822,21 +2822,6 @@ str MTIMEdaytime3(daytime *ret, int *h, int *m, int *s){
 	return MAL_SUCCEED;
 }
 
-str MTIMEcurrent_timestamp(timestamp *t)
-{
-	(void)t; /* fool compiler */
-	return throwMessage("mtime","current_timestamp not yet implemented\n");
-}
-str MTIMEcurrent_date(date *t)
-{
-	(void)t; /* fool compiler */
-	return throwMessage("mtime","current_date not yet implemented\n");
-}
-str MTIMEcurrent_time(daytime *t)
-{
-	(void)t; /* fool compiler */
-	return throwMessage("mtime","current_date not yet implemented\n");
-}
 str MTIMEepoch(timestamp *ret){
 	date d0= todate(1,1,1970);
 	int zero=0;
@@ -2884,4 +2869,23 @@ str MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint){
 	return MAL_SUCCEED;
 }
 
-
+str MTIMEcurrent_timestamp(timestamp *t)
+{
+	MTIMEepoch(t);
+	return MAL_SUCCEED;
+}
+str MTIMEcurrent_date(date *d)
+{
+	timestamp stamp;
+	MTIMEcurrent_timestamp(&stamp);
+	MTIMEtimestamp_extract_date_default(d, &stamp);
+	return MAL_SUCCEED;
+}
+str MTIMEcurrent_time(daytime *t)
+{
+	timestamp stamp;
+	MTIMEcurrent_timestamp(&stamp);
+	MTIMEtimestamp_extract_daytime_default(t, &stamp);
+	return MAL_SUCCEED;
+}
+@}

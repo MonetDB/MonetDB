@@ -1198,7 +1198,7 @@ int strSplit(BAT **Res, str s, str sep)
 @- Wrappers
 Here you find the wrappers around the version 4 library code
 @c
-#include "mal_function.h"
+#include "mal_exception.h"
 
 str strMatch(int  *ret, str *val, str *pat){
 	regex_t prg;
