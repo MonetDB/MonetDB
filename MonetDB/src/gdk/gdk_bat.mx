@@ -1692,7 +1692,7 @@ for determining which algebra commands set properties sub-optimally.
         if (disprove_key) {
           if(p < q) {
             int cnt = BATcount(b);
-            int lim = MIN(cnt,(mode&BATPROPS_ALL)?INT_MAX:16000);
+            int lim = MIN(cnt,(mode&BATPROPS_ALL)?GDK_int_max:16000);
 	    q = BUNptr(b, yy+lim);
             if(p < q) {
                 BAT *bv = VIEWcreate(b);
