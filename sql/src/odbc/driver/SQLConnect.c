@@ -132,7 +132,7 @@ SQLRETURN SQLConnect(	SQLHDBC        hDrvDbc,
 	sql_init_context( lc, ws, debug, default_catalog_create() );
 	catalog_create_stream( hDbc->hDbcExtras->rs, lc );
 
-	lc->cat->cc_getschema( lc->cat, szDATABASE, "monetdb" );
+	lc->cat->cc_getschemas( lc->cat, szDATABASE, "monetdb" );
 
 	if (hDbc->hDbcExtras->rs->errnr || lc->out->errnr){
 		printf("sockets not opened correctly\n");

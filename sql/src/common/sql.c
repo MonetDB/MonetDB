@@ -233,14 +233,26 @@ static stmt *sql_column_ref(context * sql, scope * scp, symbol * column_r)
 	return cs;
 }
 
-static char *table_name(dlist * tname)
+static schema *qname_schema(context *sql, dlist * qname)
 {
-	assert(tname && tname->h);
+	schema *s = sql->cat->cur_schema;
+	assert(qname && qname->h);
 
-	if (dlist_length(tname) == 1) {
-		return tname->h->data.sval;
-	} else if (dlist_length(tname) == 2) {
-		return tname->h->next->data.sval;
+	if (dlist_length(qname) == 2) {
+		char *name = qname->h->data.sval;
+		s = cat_bind_schema(sql->cat, name);
+	}
+	return s;
+}
+
+static char *qname_table(dlist * qname)
+{
+	assert(qname && qname->h);
+
+	if (dlist_length(qname) == 1) {
+		return qname->h->data.sval;
+	} else if (dlist_length(qname) == 2) {
+		return qname->h->next->data.sval;
 	}
 	return "Unknown";
 }
@@ -362,8 +374,11 @@ static tvar *table_ref(context * sql, scope * scp, symbol * tableref)
 	   (ie tableref->data.lval->h->next->data.sym */
 
 	if (tableref->token == SQL_NAME) {
-		tname = table_name(tableref->data.lval->h->data.lval);
-		t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
+		schema *s = 
+			qname_schema(sql, tableref->data.lval->h->data.lval);
+		tname = qname_table(tableref->data.lval->h->data.lval);
+				
+		t = cat_bind_table(sql->cat, s, tname);
 		if (!t) {
 			snprintf(sql->errstr, ERRSIZE,
 				 _("Unknown table %s"), tname);
@@ -2917,7 +2932,7 @@ static stmt *create_view(context * sql, schema * schema, stmt * ss,
 {
 
 	catalog *cat = sql->cat;
-	char *name = table_name(qname);
+	char *name = qname_table(qname);
 
 	if (cat_bind_table(cat, schema, name)) {
 		snprintf(sql->errstr, ERRSIZE,
@@ -2986,7 +3001,7 @@ static stmt *column_constraint_type(context * sql, symbol * s, stmt * ss,
 	case SQL_FOREIGN_KEY:
 	{
 		dnode *n = s->data.lval->h;
-		char *tname = table_name(n->data.lval);
+		char *tname = qname_table(n->data.lval);
 		char *cname = n->data.lval->h->data.sval;
 		table *ft = cat_bind_table(sql->cat, c->table->schema, tname);
 		key *rk = cat_table_bind_sukey(ft, cname);
@@ -3102,7 +3117,7 @@ static stmt *table_foreign_key( context * sql, symbol * s, stmt * ss, stmt * ts,
 	catalog *cat = sql->cat;
 	stmt *res = NULL;
 	dnode *n = s->data.lval->h;
-	char *tname = table_name(n->data.lval);
+	char *tname = qname_table(n->data.lval);
 	table *ft = cat_bind_table( cat, t->schema, tname );
 
 	if (!ft){
@@ -3261,7 +3276,7 @@ static stmt *create_table(context * sql, schema * schema, stmt * ss,
 			int temp, dlist * qname, dlist * columns)
 {
 	catalog *cat = sql->cat;
-	char *name = table_name(qname);
+	char *name = qname_table(qname);
 
 	if (cat_bind_table(cat, schema, name)) {
 		snprintf(sql->errstr, ERRSIZE,
@@ -3287,7 +3302,7 @@ static stmt *create_table(context * sql, schema * schema, stmt * ss,
 static stmt *drop_table(context * sql, dlist * qname, int drop_action)
 {
 	stmt *res = NULL;
-	char *tname = table_name(qname);
+	char *tname = qname_table(qname);
 	table *t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
 
 	if (!t) {
@@ -3305,7 +3320,7 @@ static stmt *alter_table(context * sql, schema *schema, stmt *ss,
 		dlist * qname, symbol * te)
 {
 	catalog *cat = sql->cat;
-	char *name = table_name(qname);
+	char *name = qname_table(qname);
 	table *table = NULL;
 
 	if ((table =
@@ -3371,7 +3386,7 @@ static stmt *create_schema(context * sql, dlist * auth_name,
 static stmt *copyfrom(context * sql, dlist * qname, char *file, dlist *seps, int nr)
 {
 	catalog *cat = sql->cat;
-	char *tname = table_name(qname);
+	char *tname = qname_table(qname);
 	table *t = cat_bind_table(cat, sql->cat->cur_schema, tname);
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
@@ -3407,7 +3422,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 	tvar *tv = NULL;
 
 	catalog *cat = sql->cat;
-	char *tname = table_name(qname);
+	char *tname = qname_table(qname);
 	table *t = cat_bind_table(cat, sql->cat->cur_schema, tname);
 	list *l, *collist = NULL;
 	int i, len = 0;
@@ -3511,7 +3526,7 @@ static stmt *sql_update(context * sql, dlist * qname,
 			dlist * assignmentlist, symbol * opt_where)
 {
 	stmt *s = NULL;
-	char *tname = table_name(qname);
+	char *tname = qname_table(qname);
 	table *t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
 
 	if (!t) {
@@ -3575,7 +3590,7 @@ static stmt *sql_update(context * sql, dlist * qname,
 static stmt *delete_searched(context * sql, dlist * qname,
 			     symbol * opt_where)
 {
-	char *tname = table_name(qname);
+	char *tname = qname_table(qname);
 	table *t = cat_bind_table(sql->cat, sql->cat->cur_schema, tname);
 
 	if (!t) {

@@ -33,7 +33,7 @@
 	.END;
 	
 
-    	.COMMAND sql_create_context( int debug, stream o, mvc c ) : context = 
+    	.COMMAND sql_create_context( int debug, stream o, mvc c, str schema, str user ) : context = 
 		sql_create_context; "create a context for the sql interpreter"
 
     	.COMMAND sql_destroy_context( context c ) = 
@@ -93,19 +93,19 @@
 	.COMMAND mvc_set_iso_level( mvc m, int level ) : int = 
 		mvc_set_iso_level_wrap; "Change the isolation level"
 
-	.COMMAND mvc_bind( mvc c, str tname, str cname, int access ) : 
+	.COMMAND mvc_bind( mvc c, str sname, str tname, str cname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
 
-	.COMMAND mvc_bind_ubat( mvc c, str tname, str cname, int acess ) : 
+	.COMMAND mvc_bind_ubat( mvc c, str sname, str tname, str cname, int acess ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_ubat_wrap; "Bind bat with the updates to tname.cname"
 
-	.COMMAND mvc_bind_obat( mvc c, str tname, int access ) : 
+	.COMMAND mvc_bind_obat( mvc c, str sname, str tname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_obat_wrap; "Bind the oid bat, tname.OID"
 
-	.COMMAND mvc_bind_dbat( mvc c, str tname, int access ) : 
+	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_dbat_wrap; "Bind the table deletes bat, tname.deletes"
 
@@ -162,7 +162,7 @@
 		int = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
-	.COMMAND mvc_export_schema( mvc c, stream s ) = mvc_export_schema_wrap; 
+	.COMMAND mvc_export_schemas( mvc c, stream s ) = mvc_export_schemas_wrap; 
 		"Export the schema info of the current transaction"
 
 	.LOAD
@@ -211,12 +211,12 @@ int isNil_wrap( bit *b, str s)
 }
 
 
-int sql_create_context( context *res, int *debug, stream *ws, mvc *m ){
+int sql_create_context( context *res, int *debug, stream *ws, mvc *m, str schema, str user ){
 	context *lc = NEW(context);
 
 	sql_init_context( lc, *(stream**)ws, *debug, default_catalog_create() );
 	catalog_create( lc, *(mvc**)m );
-	lc->cat->cc_getschema( lc->cat, "default-schema", "default-user");
+	lc->cat->cc_getschemas( lc->cat, schema, user);
 	*(context**)res = lc;
 	return GDK_SUCCEED;
 }
@@ -455,32 +455,32 @@ int mvc_set_iso_level_wrap( int *res, mvc *m, int *level ){
 	return GDK_SUCCEED;
 }
 
-int mvc_bind_wrap( BAT** res, mvc* c, str tname, str cname, int *access){
-	*res = mvc_bind( *(mvc**)c, tname, cname, *access );
+int mvc_bind_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int *access){
+	*res = mvc_bind( *(mvc**)c, sname, tname, cname, *access );
 	if (*res){
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
 
-int mvc_bind_ubat_wrap( BAT** res, mvc* c, str tname, str cname, int *access ){
-	*res = mvc_bind_ubat( *(mvc**)c, tname, cname, *access );
+int mvc_bind_ubat_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int *access ){
+	*res = mvc_bind_ubat( *(mvc**)c, sname, tname, cname, *access );
 	if (*res){
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
 
-int mvc_bind_obat_wrap( BAT** res, mvc* c, str tname, int *access ){
-	*res = mvc_bind_obat( *(mvc**)c, tname, *access );
+int mvc_bind_obat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
+	*res = mvc_bind_obat( *(mvc**)c, sname, tname, *access );
 	if (*res){
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
 
-int mvc_bind_dbat_wrap( BAT** res, mvc* c, str tname, int *access ){
-	*res = mvc_bind_dbat( *(mvc**)c, tname, *access );
+int mvc_bind_dbat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
+	*res = mvc_bind_dbat( *(mvc**)c, sname, tname, *access );
 	if (*res){
 		return GDK_SUCCEED;
 	}
@@ -585,8 +585,8 @@ int mvc_import_table_wrap( int *res, mvc *c, stream *s, str tname , str sep, str
 	return GDK_SUCCEED;
 }
 
-int mvc_export_schema_wrap( mvc *c, stream *s ){
-	mvc_export_schema( *(mvc**)c, *(stream**)s );
+int mvc_export_schemas_wrap( mvc *c, stream *s ){
+	mvc_export_schemas( *(mvc**)c, *(stream**)s );
 	return GDK_SUCCEED;
 }
 @mil
@@ -876,7 +876,7 @@ proc SQLclient_sql( Output, Input, cmd, debug ) := {
 
 	var buf := buffer_create( 1024 );
 	var LOutput := buffer_wastream( buf, sprintf("SQLserver-%d", sock ));
-	var c := sql_create_context( 0, LOutput, myc );
+	var c := sql_create_context( 0, LOutput, myc, schema, "monetdb" );
 
 	sqlclient( myc, c, Input, Output );
 

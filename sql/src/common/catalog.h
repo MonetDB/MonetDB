@@ -53,7 +53,7 @@ typedef struct catalog {
 	schema *cur_schema;
 	struct list *schemas;
 
-	void (*cc_getschema) (struct catalog * cat, char *schema, char *user);
+	void (*cc_getschemas) (struct catalog * cat, char *schema, char *user);
 	void (*cc_destroy) (struct catalog * cat);
 
 	void *cc;		/* to put specific catalog data */

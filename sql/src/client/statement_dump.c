@@ -386,8 +386,10 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			s->nr = -stmt_dump( s->op1.cval->s, nr, sql );
 		} else {
 			len = snprintf( buf, BUFSIZ, 
-			  	"s%d := mvc_bind%s(myc, \"%s\", \"%s\", %d)",
-			  -s->nr, type, s->op1.cval->table->name, 
+			   "s%d := mvc_bind%s(myc, \"%s\", \"%s\", \"%s\", %d)",
+			  -s->nr, type, 
+			  s->op1.cval->table->schema->name, 
+			  s->op1.cval->table->name, 
 			  s->op1.cval->name, s->flag);
 
 			if (s->flag > RDONLY){
@@ -407,8 +409,11 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_obat: {
 		char type = (s->type==st_dbat)?'d':'o';
 		len = snprintf( buf, BUFSIZ, 
-		  	"s%d := mvc_bind_%cbat(myc, \"%s\", %d)",
-			  -s->nr, type, s->op1.tval->name, s->flag);
+		  	"s%d := mvc_bind_%cbat(myc, \"%s\", \"%s\", %d)",
+			  -s->nr, type, 
+			  s->op1.tval->schema->name, 
+			  s->op1.tval->name, 
+			  s->flag);
 
 		if (s->flag > RDONLY){
 			len += snprintf( buf+len, BUFSIZ-len, 

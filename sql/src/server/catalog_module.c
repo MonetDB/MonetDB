@@ -19,18 +19,20 @@ static int key_cmp( key *k, long *id )
 	return 1;
 }
 
-static void getschema( catalog *c, char *schema, char *user ){
-	node *n;
+static void getschemas( catalog *c, char *schema, char *user ){
+	node *n,*l;
 	context *lc = ((cc*)c->cc)->lc;
 	mvc *myc = ((cc*)c->cc)->myc;
 	list *keys = list_create(NULL);
 
 	if (c->schemas) list_destroy( c->schemas );
 	c->schemas = list_create((fdestroy)&cat_drop_schema);
-	c->cur_schema = cat_create_schema( c, 0, schema, user );
-	list_append( c->schemas, c->cur_schema );
 	
-	for(n = myc->trans->schema->tables->h; n; n = n->next){
+	for(l = myc->trans->schemas->h; l; l = l->next){
+	    sql_schema *ns = l->data;
+	    c->cur_schema = cat_create_schema(c, 0, ns->name, user );
+	    list_append( c->schemas, c->cur_schema );
+	    for(n = ns->tables->h; n; n = n->next){
 		sql_table *nt = n->data;
 
 		if (!nt->view){
@@ -73,7 +75,9 @@ static void getschema( catalog *c, char *schema, char *user ){
 		} else {
 	      		sqlexecute( lc, nt->query );
 		}
+	    }
 	}
+	c->cur_schema = cat_bind_schema( c, schema );
 }
 
 static void cc_destroy( catalog *c ){
@@ -88,7 +92,7 @@ catalog *catalog_create( context *lc, mvc *myc ){
 	CC->lc = lc;
 	CC->myc = myc;
 	c->cc = (char*)CC;
-	c->cc_getschema = &getschema;
+	c->cc_getschemas = &getschemas;
 	c->cc_destroy = &cc_destroy;
 	return c;
 }

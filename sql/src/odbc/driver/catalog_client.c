@@ -46,11 +46,11 @@ static void send_gettypes( catalog *cat ){
 	i->out->flush(i->out);
 }
 
-static void send_getschema( catalog *cat ){
+static void send_getschemas( catalog *cat ){
 	char buf[BUFSIZ];
 	cc *i = (cc*)cat->cc;
 
-	sprintf(buf, "mvc_export_schema(myc, Output);\n");
+	sprintf(buf, "mvc_export_schemas(myc, Output);\n");
 	i->out->write(i->out, buf, strlen(buf), 1);
 	i->out->flush(i->out);
 }
@@ -129,23 +129,12 @@ void gettypes( catalog *c ){
 	_DELETE(buf);
 }
 
-void getschema( catalog *c, char *schema, char *user ){
+char *getschema( catalog *c, context *lc, schema *schema, char *buf ){
 	list *keys = list_create(NULL);
-	stream *s = ((cc*)c->cc)->in;
-	context *lc = ((cc*)c->cc)->lc;
 	int i, tcnt;
-	char *buf, *start, *n;
+	char *start, *n;
 
-	send_getschema(c);
-
-	buf = readblock(s);
 	n = start = buf;
-
-	if (c->schemas) list_destroy( c->schemas );
-	c->schemas = list_create((fdestroy)&cat_drop_schema);
-
-	c->cur_schema = cat_create_schema( c, 0, schema, user );
-	list_append( c->schemas, c->cur_schema );
 
 	tcnt = strtol(n,&n,10); 
 	for(i=0;i<tcnt;i++){
@@ -172,7 +161,7 @@ void getschema( catalog *c, char *schema, char *user ){
 	    if (cnr){
 		int j;
 	    	table *t = 
-		       cat_create_table( c, id, c->cur_schema, tname, 0, NULL);
+		       cat_create_table( c, id, schema, tname, 0, NULL);
 
 		for(j=0;j<cnr;j++){
             		long id = 0;
@@ -244,6 +233,41 @@ void getschema( catalog *c, char *schema, char *user ){
 	    	sqlexecute(lc, query );
 	    }
 	}
+	list_destroy(keys);
+	return n+1;
+}
+
+void getschemas( catalog *c, char *cur_schema_name, char *user ){
+	list *keys = list_create(NULL);
+	stream *s = ((cc*)c->cc)->in;
+	context *lc = ((cc*)c->cc)->lc;
+	int i, tcnt;
+	char *buf, *start, *n;
+
+	send_getschemas(c);
+
+	buf = readblock(s);
+	n = start = buf;
+
+	if (c->schemas) list_destroy( c->schemas );
+	c->schemas = list_create((fdestroy)&cat_drop_schema);
+
+	tcnt = strtol(n,&n,10); 
+	n++;
+	for(i=0;i<tcnt;i++){
+		char *name;
+		schema *sch = NULL;
+
+	    	n = strchr(start = n, '\n'); *n = '\0';
+		name = start;
+
+		sch = cat_create_schema( c, 0, name, user );
+		c->cur_schema = sch;
+
+		list_append( c->schemas, sch );
+		n = getschema(c, lc, sch, n+1);
+	}
+	c->cur_schema = cat_bind_schema(c, cur_schema_name);
 	_DELETE(buf);
 }
 
@@ -262,7 +286,7 @@ catalog *catalog_create_stream( stream *in, context *lc ){
 	CC->out = lc->out;
 	CC->lc = lc;
 	c->cc = (char*)CC;
-	c->cc_getschema = &getschema;
+	c->cc_getschemas = &getschemas;
 	c->cc_destroy = &cc_destroy;
 
 	types_init( lc->debug );

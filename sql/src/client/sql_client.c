@@ -310,7 +310,7 @@ main(int ac, char **av)
 	sql_init_context( &lc, ws, debug, default_catalog_create() );
 	catalog_create_stream( rs, &lc );
 
-	lc.cat->cc_getschema( lc.cat, schema, user );
+	lc.cat->cc_getschemas( lc.cat, schema, user );
 	lc.cur = ' ';
 	if (debug&64){
 		ws = lc.out;

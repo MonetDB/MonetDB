@@ -141,10 +141,10 @@ extern int mvc_rollback( mvc *c, int chain, char *name );
 extern int mvc_release( mvc *c, char *name );
 extern int mvc_set_iso_level(mvc * m, int level);
 
-extern BAT *mvc_bind( mvc *c, char *tname, char *cname, int access );
-extern BAT *mvc_bind_ubat( mvc *c, char *tname, char *cname, int access );
-extern BAT *mvc_bind_obat( mvc *c, char *tname, int access );
-extern BAT *mvc_bind_dbat( mvc *c, char *tname, int access );
+extern BAT *mvc_bind( mvc *c, char *sname, char *tname, char *cname, int access );
+extern BAT *mvc_bind_ubat( mvc *c, char *sname, char *tname, char *cname, int access );
+extern BAT *mvc_bind_obat( mvc *c, char *sname, char *tname, int access );
+extern BAT *mvc_bind_dbat( mvc *c, char *sname, char *tname, int access );
 
 extern sql_schema *mvc_bind_schema( mvc *c, char *sname );
 extern sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
@@ -165,7 +165,7 @@ extern sql_key *mvc_create_key( mvc *m, sql_table *t, int kt, sql_key *fk );
 extern sql_key *mvc_key_add_column( mvc *m, sql_key *k, sql_column *c );
 
 extern void mvc_export(stream *s, BAT *order, BAT *bats, char *sep, char *rsep);
-extern void mvc_export_schema( mvc *c, stream *s );
+extern void mvc_export_schemas( mvc *c, stream *s );
 extern int mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
 
 #endif /*__MVC_H*/
@@ -1720,11 +1720,12 @@ static BAT *bind_writable(sql_trans * tr, sql_column * c)
 	return b;
 }
 
-BAT *mvc_bind(mvc * m, char *tname, char *cname, int access)
+BAT *mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
-	sql_table *t = find_table(tr->schema, tname);
+	sql_schema *s = find_schema(tr, sname);
+	sql_table *t = find_table(s, tname);
 	sql_column *c;
 
 	if (m->debug)
@@ -1746,11 +1747,12 @@ BAT *mvc_bind(mvc * m, char *tname, char *cname, int access)
 	return b;
 }
 
-BAT *mvc_bind_ubat(mvc * m, char *tname, char *cname, int access )
+BAT *mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
 {
 	sql_trans *tr = m->trans;
 	BAT *nb, *b = NULL;
-	sql_table *t = find_table(tr->schema, tname);
+	sql_schema *s = find_schema(tr, sname);
+	sql_table *t = find_table(s, tname);
 	sql_column *c;
 
 	if (m->debug)
@@ -1777,11 +1779,12 @@ BAT *mvc_bind_ubat(mvc * m, char *tname, char *cname, int access )
 	return b;
 }
 
-BAT *mvc_bind_obat(mvc * m, char *tname, int access )
+BAT *mvc_bind_obat(mvc * m, char *sname, char *tname, int access )
 {
 	sql_trans *tr = m->trans;
 	BAT *nb, *b = NULL;
-	sql_table *t = find_table(tr->schema, tname);
+	sql_schema *s = find_schema(tr, sname);
+	sql_table *t = find_table(s, tname);
 	sql_column *c;
 
 	if (m->debug)
@@ -1806,11 +1809,12 @@ BAT *mvc_bind_obat(mvc * m, char *tname, int access )
 	t->rtime = tr->rtime = tr->stime;
 	return b;
 }
-BAT *mvc_bind_dbat(mvc * m, char *tname, int access )
+BAT *mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 {
 	sql_trans *tr = m->trans;
 	BAT *nb, *b = NULL;
-	sql_table *t = find_table(tr->schema, tname);
+	sql_schema *s = find_schema(tr, sname);
+	sql_table *t = find_table(s, tname);
 	sql_column *c;
 
 	if (m->debug)
@@ -2235,16 +2239,15 @@ sql_column * mvc_default(mvc * m, sql_column * col, char *val)
 	return col;
 }
 
-void mvc_export_schema(mvc * c, stream * s )
+void mvc_export_schema(mvc * c, stream * s, sql_schema *schema )
 {
-	sql_trans *tr = c->trans;
 	node *n;
 	char buf[BUFSIZ];
 	int i;
 
-	i = snprintf(buf, BUFSIZ, "%d\n", list_length(tr->schema->tables));
+	i = snprintf(buf, BUFSIZ, "%d\n", list_length(schema->tables));
 	s->write(s, buf, i, 1);
-	for (n = tr->schema->tables->h; n; n = n->next) {
+	for (n = schema->tables->h; n; n = n->next) {
 		sql_table *t = n->data;
 		int clen = list_length(t->columns);
 		int klen = t->keys?list_length(t->keys):0;
@@ -2282,6 +2285,26 @@ void mvc_export_schema(mvc * c, stream * s )
 			}
 		}
 	}
+}
+
+void mvc_export_schemas(mvc * c, stream * s )
+{
+	sql_trans *tr = c->trans;
+	node *n;
+	int i;
+	char buf[BUFSIZ];
+
+	i = snprintf(buf, BUFSIZ, "%d\n", list_length(tr->schemas));
+	s->write(s, buf, i, 1);
+
+	for (n = tr->schemas->h; n; n = n->next) {
+		sql_schema *schema = n->data;
+
+		i = snprintf(buf, BUFSIZ, "%s\n", schema->name);
+		s->write(s, buf, i, 1);
+		mvc_export_schema(c, s, schema);
+	}
+
 	s->flush(s);
 }
 
@@ -2379,7 +2402,7 @@ int mvc_import_table( mvc *m, stream *s, char *tname,
 		BBPunfix(ba->batCacheid);
 		BBPunfix(in->batCacheid);
 	} 
-	b = mvc_bind_obat(m, t->name, INS);
+	b = mvc_bind_obat(m, t->s->name, t->name, INS);
 	newid = OIDnew(cnt);
 	nr = cnt;
 	for(;cnt;cnt--, newid++)
