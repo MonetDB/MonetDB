@@ -355,7 +355,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 			strlen(s->op1.cval->base.name);
 		if (s->h->type == st_basetable){
 			hname = s->h->op1.tval->base.name;
-			len += strlen(hname);
+			buflen += strlen(hname);
 		}
 		buf = NEW_ARRAY(char, buflen+1);
 		len = snprintf( buf, buflen, 
