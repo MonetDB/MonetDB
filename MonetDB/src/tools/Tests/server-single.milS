@@ -19,7 +19,7 @@ view_client_tree().print();
 view_gdk_bbp().print();
 view_var_name.reverse.join(view_var_constant()).print();
 view_var_name.reverse.join(view_var_kind()).print();
-view_var_name_reverse.join(view_var_type()).print();
+view_var_name.reverse.join(view_var_type()).print();
 
 dir();
 ls();
