@@ -3,9 +3,9 @@ import java.sql.*;
 public class Test_Cautocommit {
 	public static void main(String[] args) throws Exception {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-		//nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
-		Connection con1 = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
-		Connection con2 = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
+		System.out.println(args[0]);
+		Connection con1 = DriverManager.getConnection(args[0]);
+		Connection con2 = DriverManager.getConnection(args[0]);
 		Statement stmt1 = con1.createStatement();
 		Statement stmt2 = con2.createStatement();
 		ResultSet rs = null;
