@@ -3,10 +3,10 @@
 cp=""
 if [ -f "$MONETDB_BUILD/src/mapi/clients/java/mapi.jar" ]; then
 	cp="`$CYGPATH_WP "$MONETDB_BUILD/src/mapi/clients/java/mapi.jar"`"
-elif [ -f "$MONETDB_PREFIX/lib/MonetDB/java/mapi.jar" ]; then
-	cp="`$CYGPATH_WP "$MONETDB_PREFIX/lib/MonetDB/java/mapi.jar"`"
+elif [ -f "$MONETDB_PREFIX/share/MonetDB/lib/mapi.jar" ]; then
+	cp="`$CYGPATH_WP "$MONETDB_PREFIX/share/MonetDB/lib/mapi.jar"`"
 else
-	echo "Neither $MONETDB_BUILD/src/mapi/clients/java/mapi.jar nor $MONETDB_PREFIX/lib/MonetDB/java/mapi.jar found"
+	echo "Neither $MONETDB_BUILD/src/mapi/clients/java/mapi.jar nor $MONETDB_PREFIX/share/MonetDB/lib/mapi.jar found"
 	exit 1
 fi
 

@@ -1,7 +1,7 @@
 @echo off
 
 if exist "%MONETDB_BUILD%\src\mapi\clients\java\mapi.jar" goto l1
-set CLASSPATH=%MONETDB_PREFIX\lib\MonetDB\java\mapi.jar;%CLASSPATH%
+set CLASSPATH=%MONETDB_PREFIX\share\MonetDB\lib\mapi.jar;%CLASSPATH%
 goto s1
 :l1
 set CLASSPATH=%MONETDB_BUILD%\src\mapi\clients\java\mapi.jar;%CLASSPATH%
