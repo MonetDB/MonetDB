@@ -994,16 +994,13 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		}
 	} break;
         case st_find: {
+            /* this command is called to fetch a BAT from an import */
 	    /* dump_2(sql,mb,s,"algebra","find");*/
-            int k;
 	    int o1 = backend_dumpstmt(sql,mb, s->op1.stval);
 	    int o2 = backend_dumpstmt(sql,mb, s->op2.stval);
 	    @:SQLprelude@
-	    q= newStmt(mb,"bat","reverse");
+	    q= newStmt(mb,"sql","bindColumn");
 	    q= pushArgument(mb,q,o1);
-            k= getDestVar(q);
-	    q= newStmt(mb,"algebra","find");
-	    q= pushArgument(mb,q,k);
 	    q= pushArgument(mb,q,o2);
 	    s->nr = getDestVar(q);
 	    @:SQLpostlude@

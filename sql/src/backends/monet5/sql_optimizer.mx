@@ -142,6 +142,7 @@ Reduce the program before other optimizations take place
             p= getInstrPtr(mb,i);
             if( functionName(p) && moduleName(p) &&
                 strncmp(functionName(p),"bind",4)==0 &&
+                !strcmp(functionName(p),"bindColumn")==0 &&
                 strcmp(moduleName(p),"sql") ==0 )
                 ns[k++]= p;
             if( setWriteMode && p->fcn == setWriteMode) {
@@ -173,6 +174,7 @@ Inject the factory loop
             p= getInstrPtr(mb,i);
             if( !(functionName(p) && moduleName(p) &&
                 strncmp(functionName(p),"bind",4)==0 &&
+                !strcmp(functionName(p),"bindColumn")==0 &&
                 strcmp(moduleName(p),"sql") ==0 ) )
                 doit = 1;
             if( setWriteMode)
