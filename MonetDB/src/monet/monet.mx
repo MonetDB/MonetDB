@@ -370,7 +370,7 @@ void monet_hello(void) {
 
     if (GDKgetenv_isyes("monet_welcome")) {
         printf("# Monet Database Server V%s\n", monet_version);
-        printf("# Copyright (c) 1993-2003, CWI. ");
+        printf("# Copyright (c) 1993-2004, CWI. ");
         printf("All rights reserved.\n");
         printf("# compiled for %s/" SZFMT "bit; %s linked.\n", 
 			monet_arch, (size_t) (sizeof(ptr)*8), linkinfo );

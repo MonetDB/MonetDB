@@ -796,7 +796,7 @@ Martin Kersten <lt>Martin.Kersten@cwi.nl<gt>
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003 CWI Netherlands. All rights reserved.
+Copyright (C) 2003-2004 CWI Netherlands. All rights reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself. 
