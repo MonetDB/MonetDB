@@ -144,7 +144,8 @@ class DB_monetdb extends DB_common
         $user = ($u=$dsninfo['username'])?$u:"monetdb";
         $pw = ($p=$dsninfo['password'])?$p:"monetdb";
 
-        $connect_function = $persistent ? 'monetdb_pconnect' : 'monetdb_connect';
+        //$connect_function = $persistent ? 'monetdb_pconnect' : 'monetdb_connect';
+        $connect_function = 'monetdb_connect';
 
         @ini_set('track_errors', true);
         $conn = @$connect_function($lang, $dbhost, $port, $user, $pw);
@@ -220,7 +221,9 @@ class DB_monetdb extends DB_common
             }
             $this->num_rows[$result] = $numrows;
             return $result;
-        }
+        } elseif (DB::isManip($query)){
+            $this->affected = @monetdb_affected_rows($result);
+	}
         return DB_OK;
     }
 
@@ -301,8 +304,10 @@ class DB_monetdb extends DB_common
     function freeResult($result)
     {
         if (is_resource($result)) {
+	/* help help
             unset($this->row[(int)$result]);
             unset($this->num_rows[(int)$result]);
+	*/
             $this->affected = 0;
 	    return true;
             // return @monetdb_free_result($result);
@@ -417,9 +422,9 @@ class DB_monetdb extends DB_common
     function affectedRows()
     {
         if (DB::isManip($this->last_query)) {
-            $result = @monetdb_affected_rows($this->connection);
-        } else {
-            $result = 0;
+	    $result = $this->affected;
+	} else {
+	    $result = 0;
         }
         return $result;
      }
@@ -538,8 +543,9 @@ class DB_monetdb extends DB_common
 
     function modifyLimitQuery($query, $from, $count)
     {
-        // FIXME: LIMIT x OFFSET y ??
         $query = $query . " LIMIT $count";
+	if ($from > 0)
+        	$query = $query . " OFFSET $from";
         return $query;
     }
 
@@ -591,10 +597,10 @@ class DB_monetdb extends DB_common
     {
         switch ($type) {
             case 'tables':
-                $sql = "SELECT name FROM tables WHERE type=0;";
+                $sql = "SELECT name FROM ptables WHERE istable=true and system=false;";
                 break;
             case 'views':
-	        $sql = "SELECT name FROM tables WHERE type=2;";
+	        $sql = "SELECT name FROM ptables WHERE istable=false and system=false;";
                 break;
             case 'users':
                 $sql = "SELECT name FROM users;";
@@ -683,7 +689,8 @@ class DB_monetdb extends DB_common
      * @internal
      */
     function escapeSimple($str) {
-        return str_replace("'", "''", str_replace('\\', '\\\\', @monetdb_escape_string($str)));
+        #return str_replace("'", "''", str_replace('\\', '\\\\', @monetdb_escape_string($str)));
+        return str_replace("'", "''", @monetdb_escape_string($str));
     }
 
     // {{{ quoteIdentifier()
@@ -706,8 +713,6 @@ class DB_monetdb extends DB_common
     }
 
     // }}}
-    
-    
 }
 
 ?>
