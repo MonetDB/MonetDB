@@ -19,43 +19,50 @@ collection.
 
 module mal;
 
-command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
-command nextElement(i:int, first:int, last:int):bit = intForloop; 
-command nextElement(i:sht, first:sht, last:sht):bit = shtForloop; 
-command nextElement(i:chr, first:chr, last:chr):bit = chrForloop; 
 
 command nextElement(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep; 
 command nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep; 
-command nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep; 
 command nextElement(i:chr, first:chr, last:chr, step:chr):bit = chrForloopStep; 
-command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep; 
 command nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep; 
+command nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep; 
+command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep; 
 
-@-
-A BATloop construct uses an integer cursor to keep track of its
-position in the underlying table. To avoid side-effects, the access mode
-is set to readonly and restored upon leaving the barrier.
-The head and tail elements can be obtained
-using the fetchHead and fetchTail functions, which are to be defined for
-all atomary types.
-@= fetch
-@-
-postponed until information is available
-command fetchHead(b:bat[@1, any], cursor:lng):@1= CMD@1fetchHeadImpl;
-command fetchTail(b:bat[any, @1], cursor:lng):@1= CMD@1fetchTailImpl;
+command nextElement(i:chr, first:chr, last:chr):bit = chrForloop; 
+command nextElement(i:sht, first:sht, last:sht):bit = shtForloop; 
+command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
+command nextElement(i:int, first:int, last:int):bit = intForloop; 
+@+ BAT iterator
+A BATloop iterator uses an integer cursor to keep track of its
+position in the underlying table. 
+The head and tail elements can be obtained using the getHead and 
+getTail functions, which are to be defined for all atomary types.
 @mal
-command batloop(b:bat[any,any], cursor:lng):bit = batloopStep comment "";
-	@:fetch(any)@
-	@:fetch(bit)@
-	@:fetch(chr)@
-	@:fetch(sht)@
-	@:fetch(int)@
-	@:fetch(lng)@
-	@:fetch(oid)@
-	@:fetch(ptr)@
-	@:fetch(str)@
-	@:fetch(flt)@
-	@:fetch(dbl)@
+command batloop(i:int,b:bat[any,any]):bit = CMDnextElement_int
+comment "Iterate over the elements of a BAT using a cursor.";
+
+pattern batloop(i:int,b:bat[any::1,any::2],h:any::1,t:any::2):bit 
+	= CMDnextElement
+comment "Iterate over the elements of a BAT using a cursor.";
+
+command batslice(i:int,b:bat[any,any],low:int,high:int):bit = CMDnextSlice
+comment "Iterator over all BUNs of b.slice(low,high)";
+
+command hashloop(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop
+comment "Iterate over the elements of a BAT using its hash index.
+Each call we set 'i' to denote the next element";
+@-
+The head and tail values can be extracted using the cursor,
+but is often more effective due to overhead involved in
+location of the underlying BAT.
+The generic solutions are also provided as patterns, because this
+trims the number of function signatures in the symbol table.
+@mal
+pattern getHead(b:bat[any::1,any], i:lng):any::1 = CMDgetHead
+comment "return the BUN head value using the iterator.";
+
+pattern getTail(b:bat[any,any::1], i:lng):any::1 = CMDgetTail
+comment "return the BUN tail value using the iterator.";
+
 @-
 @+ The Monet Debugger interface
 To enable ease of debugging and performance monitoring, the MAL interpreter
@@ -92,4 +99,115 @@ pattern mdb():void = MDBmdb
 @c
 #include "monet.h"
 
-int batloopStep(int *ret){ return 0;}
+@+ BAT Iterator Implementation
+Part of the code is copied from the V 4.3 bat.mx file.
+@= batcheck
+        if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
+        @3= (BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) {
+                *@1 = 0;
+                return GDK_FAIL;
+        }
+@-
+@= hashiter
+	if (b->tvarsized) {
+		HASHloop@1(b, b->hhash, idx, v, p)
+			if ((i = ITERATE(v, BUNtvar(b,p), h)) < 0) return i;
+	} else {
+		HASHloop@1(b, b->hhash, idx, v, p)
+			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
+	} break;
+@c
+int CMDhashloop(int *ret, lng *cursor, int *bid)
+{
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	GDKerror("not yet implemented\n");
+	return GDK_SUCCEED;
+}
+
+@-
+In principle, we could add iterators with other range bounds.
+@= nextLoop
+int CMDnextElement_@1(bit *ret, @1 *cursor, int *bid)
+{
+	BAT *b;
+	int limit;
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	limit=  BUNindex(b,BUNlast(b));
+	if( *cursor <0)
+		*cursor = BUNindex(b,BUNfirst(b));
+	else	*cursor = *cursor+1;
+	*ret = *cursor < limit;
+	return GDK_SUCCEED;
+}
+@-
+@c
+	@:nextLoop(int)@
+
+int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	BAT *b;
+	int *cursor;
+	bit *ret;
+	int *bid;
+	int limit;
+	BUN p;
+	ValPtr head, tail;
+
+	if( pci->argc != 5) printf("exception in nextElement\n");
+	ret = (bit *) getArgReference(stk,pci,0);
+	cursor = (int *) getArgReference(stk,pci,1);
+	bid = (int *) getArgReference(stk,pci,2);
+	head = &stk->stk[pci->argv[3]];
+	tail = &stk->stk[pci->argv[4]];
+
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	limit=  BUNindex(b,BUNlast(b));
+
+	if( *cursor <0)
+		*cursor = BUNindex(b,BUNfirst(b));
+	else	*cursor = *cursor+1;
+	*ret = *cursor < limit;
+
+	if( *ret== FALSE) return GDK_SUCCEED;
+/* todo head = ... tail = ... */
+	p = BUNptr(b,*cursor);
+	/* garbageElement(head);
+	garbageElement(tail); */
+	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
+	VALinit( tail, getArgType(mb,pci,4),BUNtail(b,p));
+	return GDK_SUCCEED;
+}
+int CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
+{
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDnextSlice")@
+	if( *cursor > *high){
+		*ret = FALSE;
+	} else 
+	if( *cursor < *low){
+		*ret = TRUE;
+		*cursor = BUNindex(b,BUNfirst(b));
+	} else
+		*cursor = *cursor+1;
+	return GDK_SUCCEED;
+}
+@-
+The fetch operations are all pretty straight forward, provided
+you know the underlying type.
+@= getElement
+int CMDgetHead_@1_@2(@1 *ret, @2 *cursor, int bid){
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDgetHead_@1_@2")@
+	printf("getHead_@1_@2 not yet implemented\n");
+	return GDK_SUCCEED;
+}
+@c
+int CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	printf("getHead not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	printf("getTail not yet implemented\n");
+	return GDK_SUCCEED;
+}
