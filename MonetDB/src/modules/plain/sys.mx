@@ -421,11 +421,11 @@ Some explanation of what mem_usage() and vm_usage() display:
 
     PROC tail(bat[any,any] b) : int := 
          return adm_atomtbl.reverse.find(b.ttype);
-    ADDHELP("tail","boncz","Mar 22 1998","Get tail-type as an int","sys");
+    ADDHELP("tail","boncz","Mar 22 1998","Get tail-type as a string","sys");
 
     PROC head(bat[any,any] b) : int:= 
          return adm_atomtbl.reverse.find(b.htype);
-    ADDHELP("head","boncz","Mar 22 1998","Get head-type as an int","sys");
+    ADDHELP("head","boncz","Mar 22 1998","Get head-type as a string","sys");
 
     PROC readonly( BAT[any::1,any::2] b, int mode) : BAT[any::1,any::2]
         := return access(b,mode);
