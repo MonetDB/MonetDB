@@ -471,6 +471,18 @@ sub rows {
 }
 
 
+sub finish {
+    my ($sth) = @_;
+    my $hdl = $sth->{monetdb_hdl};
+    if ( MapiLib::mapi_finish($hdl) ) {
+        my $mapi = $sth->{Database}{monetdb_connection};
+        my $err = MapiLib::mapi_error($mapi) || -1;
+        return $sth->set_err($err, MapiLib::mapi_error_str($mapi));
+    }
+    return $sth->SUPER::finish;
+}
+
+
 sub FETCH {
     my $sth = shift;
     my $key = shift;
@@ -559,7 +571,6 @@ DBD::monetdb - DBD implementation on top of SWIG bindings
   while (my $ref = $sth->fetchrow_arrayref()) {
     print "Found a row: id = $ref->[0], name = $ref->[1]\n";
   }
-  $sth->finish();
 
   # Disconnect from the database.
   $dbh->disconnect();
