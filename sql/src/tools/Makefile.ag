@@ -15,11 +15,13 @@ STATIC_MODS = -L$(MONET_PREFIX)/lib/Monet \
 
 smallTOC_SHARED_MODS =	\
 	-l_mapi	\
+	-l_aggr	\
 	-l_alarm	\
 	-l_blob	\
 	-l_ddbench	\
 	-l_enum	\
 	-l_io	\
+	-l_monettime	\
 	-l_unix	\
 	-l_xtables	\
 	-l_ascii_io	\
@@ -30,7 +32,6 @@ smallTOC_SHARED_MODS =	\
 	../server/lib_mvc
 
 nonSQL_MODS = \
-	-l_aggr	\
 	-l_bitset	\
 	-l_bitvector	\
 	-l_cluster	\
@@ -38,7 +39,6 @@ nonSQL_MODS = \
 	-l_lock	\
 	-l_malalgebra	\
 	-l_mmath	\
-	-l_monettime	\
 	-l_mprof	\
 	-l_oo7	\
 	-l_radix	\
