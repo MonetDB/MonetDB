@@ -178,13 +178,13 @@ if ($db) {
 	exit;
 }
 
-print_query("ls;", $GET_ROW);
+print_query("ls();", $GET_ROW);
 
-print_query("dir?;", $GET_ARRAY);
+print_query("dir();", $GET_ARRAY);
 
-print_query("new(int,flt).insert(1,1.1).insert(2,2.2).insert(3,3.3).insert(4,4.4).print;", $GET_ASSOC);
+print_query("new(int,flt).insert(1,1.1).insert(2,2.2).insert(3,3.3).insert(4,4.4).print();", $GET_ASSOC);
 
-print_query("adm_atomtbl.reverse.print;", $GET_OBJECT);
+print_query("bat(\"adm_atomtbl\").reverse().print();", $GET_OBJECT);
 
 echo "<hr><center>T H E &nbsp; &nbsp; E N D</center><hr/>\n";
 
