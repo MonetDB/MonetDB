@@ -49,7 +49,7 @@ module 'sql_server2'
 [ "mvc_create_module(mvc, str) : sql_module"				  ]
 [ "mvc_create_role(mvc, str, int) : void"				  ]
 [ "mvc_create_schema(mvc, str, str) : sql_schema"				  ]
-[ "mvc_create_table(mvc, sql_schema, str, int) : sql_table"			  ]
+[ "mvc_create_table(mvc, sql_schema, str, int, int) : sql_table"	  ]
 [ "mvc_create_user(mvc, str, str, str, str, int) : void"			  ]
 [ "mvc_create_view(mvc, sql_schema, str, str) : sql_table"			  ]
 [ "mvc_default(mvc, sql_column, str) : sql_column"				  ]
