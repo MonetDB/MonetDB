@@ -42,19 +42,19 @@ This calls for knowlegde on the underlying BAT typs`s
 @= derefStr
 	if( @1->@2type== TYPE_str) @3 = *(str *)@3;
 @-
+The code speaks for itself
+@mal
 
-@- BAT basics
+module bat;
+
 command bind(nme:str): bat[any,any] = CMDbind
 comment "Locates the bat in the current dictionary";
 
 command bind(dictionary:str,nme:str): bat[any,any] = CMDbind2
 comment "Locates the bat in a specific dictionary";
 
-@-
-
-@mal
-
-module bat;
+command release(b:bat[any,any]):void = CMDrelease
+comment "Release the BAT from the client pool";
 
 pattern new(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
@@ -156,7 +156,7 @@ comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kerne
  eliminate duplicates. Use b := b.sunique;
  Returns the BAT itself.";
 
-command isaSet( b:bat[any,any]) : bit = CMDgetmode
+command isaSet( b:bat[any,any]) : bit = CMDisaSet
 comment "return whether the BAT mode is set to unique.";
 
 command setAccess( b:bat[any,any], mode:str) : int = CMDsetAccess
@@ -192,10 +192,10 @@ They mimick a for-loop as described in 'iterator.mx'.
 The iterator is initialized with a value outside the range 0..BATcount(b).
 @mal
 
-command nextElement(i:int,b:bat[any,any]):bit = CMDbatloop
+command nextElement(i:int,b:bat[any,any]):bit = CMDnextElement
 comment "Iterate over the elements of a BAT using an index.";
 
-command nextElement(i:int,b:bat[any,any],low:int,high:int):bit = CMDbatloopslice
+command nextElement(i:int,b:bat[any,any],low:int,high:int):bit = CMDnextSlice
 comment "Iterator over all BUNs of b.slice(low,high)";
 
 command nextHashElement(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop
@@ -223,7 +223,11 @@ loaded.  The BBP applies a simple but effective LRU based swapping
 algorithm. BATs have a {\em heat}, which drops over time, and is 
 increased when a BAT is used by some command.  If the size of the 
 allocated arena gets to be large, BATs may be swapped out. 
+
+Note, we should move old-fashioned mil operator definitions
+into a separate module. 
 @mal
+command setName ( b:bat[any,any] , s:str) : BIT = CMDrename;
 command rename ( b:bat[any,any] , s:str) : BIT = CMDrename;
 command bbpname ( b:bat[any,any] , s:str) : BIT = CMDrename
 comment "Give a logical name to a BAT. This can fail if a BAT with 
@@ -232,6 +236,8 @@ name 's' already exists. The command then returns FALSE, ales TRUE.";
 command bbpname ( b:bat[any,any]) : STR = CMDname
 comment "Gives back the logical name of a BAT.";
 
+command setRoles ( b:bat[any::1,any::2] , h:str, t:str):int = CMDroles
+comment "Give a logical name to the columns of a BAT.";
 command roles ( b:bat[any::1,any::2] , h:str, t:str):int = CMDroles
 comment "Give a logical name to the columns of a BAT.";
 
@@ -503,6 +509,18 @@ the arguments of BATnew into types.
 @c
 #include "monet.h"
 
+int CMDbind(int *ret, str *nme){
+	GDKerror("bind() not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDbind2(int *ret, str *dict, str *nme){
+	GDKerror("bind() not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int CMDrelease(int *ret, str *nme){
+	GDKerror("release() not yet implemented\n");
+	return GDK_SUCCEED;
+}
 int CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int ht, tt, cap=0;
 	str hn,tn;
@@ -513,11 +531,11 @@ int CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	ht = ATOMindex(hn);
 	tt = ATOMindex(tn);
 	if( p->argc>3)
-		cap= *(int *) getArgReference(m,s,p,3);
+		cap= *(int *) getArgReference(s,p,3);
 	b = BATnew(ht,tt,cap);
 	if( b){
 		int *i;
-		i= (int *) getArgReference(m,s,p,0);
+		i= (int *) getArgReference(s,p,0);
 		*i= b->batCacheid;
 		return GDK_SUCCEED;
 	}
@@ -591,7 +609,6 @@ int CMDinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@); 
-/* 	BUNins(b, h,t); */
 	return *r= GDK_SUCCEED;
 } 
 
@@ -711,6 +728,12 @@ int CMDsetset(int *res, int *bid, bit *param) {
 	@:batcheck(res,bid,b,"CMDsetset")@
 	BATset(b, *param?BOUND2BTRUE:FALSE);
         return *res= GDK_SUCCEED;
+}
+int CMDisaSet(int *res, int *bid) {
+	BAT *b;
+	@:batcheck(res,bid,b,"CMDsetset")@
+	*res = b->batSet;
+        return GDK_SUCCEED;
 }
 
 int CMDordered(bit *res, int *bid) {
@@ -1064,10 +1087,9 @@ int CMDunload(bit *res, str *input) {
         return GDK_SUCCEED;
 }
 int CMDload(int *res, str *input) {
-	BAT *b= BBPindex(*input);
-	if( b) *res = b->batCacheid;
-	else return GDK_FAIL;
-        return GDK_SUCCEED;
+	int bid= BBPindex(*input);
+	*res = bid;
+        return bid?GDK_SUCCEED:GDK_FAIL;
 }
 
 int CMDhot(str *input) {
@@ -1170,7 +1192,7 @@ int CMDexport(int *ret, int *bid, str *fnme) {
 The import command reads a single BAT from an ascii file. It assumes
 a layout compatible with that produced by print or export.
 @c
-int CMDimport(int *ret, int *bid, str fnme) {
+int CMDimport(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	int	(*hconvert)(), (*tconvert)();
 	int	bufsize = 2048; /* NIELS: tmp change used to be 1024 */
@@ -1178,7 +1200,7 @@ int CMDimport(int *ret, int *bid, str fnme) {
 	char	*buf = (char *) GDKmalloc(bufsize);
 	ptr	*h = 0, *t = 0;
 	int	lh = 0,	lt = 0;
-	FILE	*fp = fopen(fnme, "r");
+	FILE	*fp = fopen(*fnme, "r");
 
 	@:batcheck(ret,bid,b,"CMDimport")@
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
@@ -1193,7 +1215,7 @@ Open the file. Memory map it to minimize buffering problems.
 	    	struct stat st;
             	fstat(fileno(fp), &st);
 		(void)fclose(fp); 
-            	base = cur = (char*)MT_mmap(fnme, 0, 0, st.st_size, NULL);
+            	base = cur = (char*)MT_mmap(*fnme, 0, 0, st.st_size, NULL);
 		end = cur + st.st_size;
 	}
 @-
@@ -1309,73 +1331,43 @@ are handled in a completely different manner.
 			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
 	} break;
 @c
-int CMDhashloop(BAT* b, ptr *handle, ptr v){
-/*
-	Iteration h = *(Iteration*)handle;
-	char *p; 
-	int idx, i;
-
-	if (!BATprepareHash(b)) 
-	switch(ATOMstorage(BAThtype(b))) {
-	case TYPE_chr:	@:hashiter(_chr)@
-	case TYPE_sht:	@:hashiter(_sht)@
-	case TYPE_int: 
-	case TYPE_flt:	@:hashiter(_int)@
-	case TYPE_dbl:
-	case TYPE_lng:	@:hashiter(_lng)@
-	default: if (b->hvarsized) {
-			@:hashiter(var)@
-		 } else  {
-			@:hashiter(loc)@
-		 }
-        }
-*/
+int CMDhashloop(int *ret, int *cursor, int *bid)
+{
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	GDKerror("not yet implemented\n");
 	return GDK_SUCCEED;
 }
 
-@= batlooparg
-	if (*@1 < 0 || (*@1 > BATcount(b))) {
-		GDKerror("CMDbatloop: @1 parameter out of range.\n");
-		return GDK_FAIL;
-	}
-	@2 = BUNptr(b, BUNindex(b, BUNfirst(b)) + *@1);
-@= batloopitr
-	while(p <= q) {
-		if ((i = ITERATE(BUNh@1(b,p), BUNt@2(b,p), h)) < 0)
-			return i;
-		p += s;
-	}
-@c
-int CMDbatloop(BAT *b, ptr *handle, int* low, int* high){
-/*
-	Iteration h = *(Iteration*)handle;
-	char *p, *q;
-	int i, s = BUNsize(b);
-
-	if (*high < *low) return GDK_SUCCEED;
-	@:batlooparg(low,p)@
-	@:batlooparg(high,q)@
-	if (b->hvarsized) {
-		if (b->tvarsized) {
-			@:batloopitr(var,var)@
-		} else {
-			@:batloopitr(var,loc)@
-		}
-	} else {
-		if (b->tvarsized) {
-			@:batloopitr(loc,var)@
-		} else {
-			@:batloopitr(loc,loc)@
-		}
-	}
-*/
+int CMDnextElement(int *ret, int *cursor, int *bid)
+{
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	if( *cursor > BUNindex(b,BUNlast(b)) ){
+		*ret = FALSE;
+	} else
+	if( *cursor <0){
+		*ret = TRUE;
+		*cursor = BUNindex(b,BUNfirst(b));
+	} else
+		*cursor = *cursor+1;
+	return GDK_SUCCEED;
+}
+int CMDnextSlice(int *ret, int *cursor, int *bid, int *low, int *high)
+{
+	BAT *b;
+	@:batcheck(ret,bid,b,"CMDnextElement")@
+	if( *cursor > *high){
+		*ret = FALSE;
+	} else 
+	if( *cursor < *low){
+		*ret = TRUE;
+		*cursor = BUNindex(b,BUNfirst(b));
+	} else
+		*cursor = *cursor+1;
 	return GDK_SUCCEED;
 }
 
-int CMDbatloop_std(BAT *b, ptr *h) {
-	int low=0, high=BATcount(b)-1;
-	return CMDbatloop(b, h, &low, &high);
-}
 
 int CMDseqbase(int *r, int *bid, oid* o){
 	BAT *b;

@@ -14,7 +14,7 @@
 #	return z;
 #end function;
 function simple(z:lng):lng;	#0:(simple:lng->0)(z:lng->1)
-	z := arith.+(z,1);	#1:(z:lng->1)(z:lng->1)($2:lng->2)
+	z := arith.+(z,1);	#1:(z:lng->1)(z:lng->1)($14:lng->14)
 	return z;	#2:(z:lng->1)
 end function;	#3:
 #
@@ -24,9 +24,10 @@ end function;	#3:
 #	redo v;
 #end	v;
 #
-function Service.main():int;	#0:(main:int->0)
-	k := 0;	#1:(k:lng->1)($2:lng->2)
-barrier	v := arith.<(k,1000000);	#2:(v:bit->3)(k:lng->1)($4:lng->4)
-	k := Service.simple(k);	#3:(k:lng->1)(k:lng->1)
-	redo v ;	#4:(v:bit->3)
-end	v;	#5:(v:bit->3)
+function Client.main():int;	#0:(main:int->0)
+	k := 0;	#1:(k:lng->13)($14:lng->14)
+barrier	v := arith.<(k,1000000);	#2:(v:bit->15)(k:lng->13)($16:lng->16)
+	k := Client.simple(k);	#3:(k:lng->13)(k:lng->13)
+	redo v ;	#4:(v:bit->15)
+end	v;	#5:(v:bit->15)
+end function;	#6:

@@ -107,6 +107,7 @@ void initStack(MalBlkPtr mb){
 	for(i=0;i<GDKatomcnt; i++){
 		j= newVariable(mb, GDKstrdup(ATOMname(i)), i);
 		isVarConstant(mb,j) = TRUE;
+		isVarUsed(mb,j) = FALSE;
 		getVarConstant(mb,j).val.ival = i;
 		getVarConstant(mb,j).vtype= TYPE_int; 
 	}
@@ -145,6 +146,9 @@ void chkFlowOfControl(Symbol prg){
 		case ENDsymbol:
 			chkEnd(mb,p);
 			break;
+		case RAISEsymbol:
+			chkRaise(mb,p);
+			break;
 		case CATCHsymbol:
 			chkCatch(mb,p);
 			break;
@@ -154,8 +158,6 @@ void chkFlowOfControl(Symbol prg){
 		}
 		if( p->barrier == BARRIERsymbol)
 			chkBarrier(mb,p);
-		if( p->barrier == RAISEsymbol)
-			chkRaise(mb,p);
 	}
 }
 @-
@@ -170,26 +172,33 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 	char buf[1024];
 
 	v = pp->argv[0];
-	if( v>=0)
 	for(i= begBlk+1; i<mb->stop; i++){
 		InstrPtr p= getInstrPtr(mb,i);
 		if( (p->barrier == BARRIERsymbol || 
-		     p->barrier == CATCHsymbol)  &&
-		     p->argv[0] == v){
-			i= chkBrackets(mb,pp,i);
-			continue;
-		} else
-		if( p->token == ENDsymbol && p->argv[0] == v){
-			if(cnt) break;
+		     p->barrier == CATCHsymbol) ) {
+			if( p->argv[0] != v){
+				i= chkBrackets(mb,p,i);
+				continue;
+			}
+			cnt=1; break;
+		} 
+		if( p->token == ENDsymbol){
+			if( p->argv[0] == v) {
+				return i;
+			} else {
+			mb->errors++;
+			sprintf(buf,"ERROR:%d:end-label '%s' doesnot match '%s'\n",
+				p->pc,getVarName(mb,p->argv[0]),
+				getVarName(mb,v)
+				);
+			GDKerror(buf);
 			return i;
-		} else
-		if( p->token==ENDsymbol) cnt++;
-		else
-		if( p->token==BARRIERsymbol || p->token==CATCHsymbol) cnt--;
+			}
+		} 
 	}
 	if( cnt!= 0)
-		sprintf(buf,"ERROR:%d: non-hierarchical block structure %s\n",
-			pp->pc,getVarName(mb,v));
+	sprintf(buf,"ERROR:%d: non-hierarchical block structure %s %d\n",
+			pp->pc,getVarName(mb,v),cnt);
 	else sprintf(buf,"ERROR: %d: begin-label '%s' without end-label\n", 
 		begBlk,getVarName(mb,v));
 	GDKerror(buf);
@@ -208,13 +217,14 @@ void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 	     p->barrier == CATCHsymbol) &&
 	     p->argv[0] == v){
 		i = chkBrackets(mb,pp,i);
-	} else
+	} /* else
+
 	if( p->token== ENDsymbol && p->argv[0]==v){
 		mb->errors++;
 		sprintf(buf,"ERROR:%d: end-label '%s' without begin-label\n", 
 			p->pc,getVarName(mb,v));
 		GDKerror(buf);
-	} 		
+	} */ 		
 	}
 
 	if( getArgType(mb,pp,0) != TYPE_bit && pp->token==BARRIERsymbol){

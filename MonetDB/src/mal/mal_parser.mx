@@ -625,6 +625,8 @@ Most functions are (dynamically) linked with the kernel.
 		curInstr->argv[0]=i;
 		curInstr->modname = GDKstrdup(cntxt->nspace->name);
 		curInstr->fcn = getAddress(nme);
+		if( curInstr->fcn == 0)
+		printf("#function address for '%s' not found\n",nme);
 		curPrg->binding = GDKstrdup(nme);
 		/* defAtomCommand(curInstr);*/
 	} else return (MalBlkPtr) parseError(cntxt,"'=' expected\n");
@@ -687,6 +689,7 @@ MalBlkPtr parseFunction(Client cntxt){
 	if( ! keyword(cntxt,"function",8) ) return 0;
 	@:fcnHeader@
 	@:helpInfo@
+	initStack(curBlk);
 	insertSymbol(cntxt->nspace,curPrg); 
 	staticTypeCheck(curInstr);
 	return curBlk;
@@ -743,7 +746,7 @@ int parseEnd(Client cntxt, int *block)
 @-
 The control statements are :
 @T
-cntrl	: (CATCH | RAISE | BARRIER) identifier\\
+cntrl	: (CATCH | REDO | LEAVE | RAISE | RETURN) identifier\\
 @= parseCntrl
 int parse@3(Client cntxt)
 {	InstrPtr curInstr;
@@ -773,6 +776,7 @@ int parse@3(Client cntxt)
 @:parseCntrl("redo", 4,REDO, malAnyType)@
 @:parseCntrl("return", 6,RETURN, malAnyType)@
 @:parseCntrl("leave", 5,LEAVE, malAnyType)@
+@:parseCntrl("raise", 5,RAISE, malAnyType)@
 
 @-
 Most instructions are simple assignments, possibly
@@ -808,12 +812,19 @@ factor	: constant | var | type'('constant')'\\
 		idx= 0;
 		parseError(cntxt,"<factor> expected\n");
 	}
+@-
+The assignment expression is the most complex term recognized.
+@T
+assign	: [identifier ':='] expr\\
+expr	: factor \{ operator factor \}\\
+factor	: fcn_call | variable | constant\\
+
 @c
 void parseAssign(Client cntxt, int kind)
 {	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
-	int i, l,lt,rt;
+	int i=0, k=0, lt,rt;
 	str v, op, arg=0, r;
 
 	curPrg = cntxt->curprg;
@@ -821,25 +832,24 @@ void parseAssign(Client cntxt, int kind)
 	curInstr = newInstruction(curBlk,ASSIGNsymbol);
 
 	curInstr->barrier = kind;
-	l= idLength(cntxt);
-	if( l==0) {
+	i= idLength(cntxt);
+	if( i==0) {
 		parseError(cntxt,"<identifier> expected\n"); 
 		return;
 	}
+	arg= idCopy(cntxt,i);
 
-	/* test destination variable */
-	if( (i=findVariableLength(curBlk,cntxt->nxt,l)) == -1){
-		v= idCopy(cntxt,l);
-		i= newVariable(curBlk, v, malAnyType);
-	} else{
-		advance(cntxt,l);
-	}
-	curInstr->argv[0]= i;
-
-	if( ! keyphrase2(cntxt,":=") ){
-		if( curInstr->barrier) goto part3;
-		parseError(cntxt,"':=' expected\n");
-		return;
+	/* test destination variable or function call */
+	if( keyphrase2(cntxt,":=") ){
+		curInstr->argv[0]= newVariable(curBlk,arg,malAnyType);
+	} else {
+		if( curInstr->barrier) {
+			curInstr->argv[0]= newVariable(curBlk,arg,malAnyType);
+			curInstr->token= kind;
+			goto part3;
+		}
+		curInstr->argv[0]= newTmpVariable(curBlk,malAnyType);
+		goto idseen;
 	}
 	/* now parse the expression */
 	if( i= cstLength(cntxt,&lt)){
@@ -865,6 +875,7 @@ void parseAssign(Client cntxt, int kind)
 	}
 	if( (i= idLength(cntxt)) || (i=operatorLength(cntxt))) {
 		arg= idCopy(cntxt,i);
+idseen:
 		if( currChar(cntxt) != '.' &&
 		    currChar(cntxt) != '(') {
 			pushArgumentId(curInstr,arg);
@@ -911,11 +922,11 @@ part2:
 		curInstr->fcnname = idCopy(cntxt,i);
 		if( i = idLength(cntxt)) {
 			/* test variable */
-			if( (i=findVariableLength(curBlk,cntxt->nxt,l)) == -1){
-				v= idCopy(cntxt,l);
-				i= newVariable(curBlk, v, malAnyType);
-			} else advance(cntxt,l);
-			pushArgument(curInstr,i); 
+			if( (k=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
+				v= idCopy(cntxt,i);
+				k= newVariable(curBlk, v, malAnyType);
+			} else advance(cntxt,i);
+			pushArgument(curInstr,k); 
 			goto part3;
 		} 
 		if( (v= charCst(cntxt)) ){
@@ -1000,7 +1011,7 @@ void parseMal(Client cntxt){
 			  }
 			  goto allLeft;
 		case 'R': case 'r': 
-			  if( keyword(cntxt,"raise",5)) kind= RAISEsymbol; 
+			  if( parseRAISE(cntxt)) break;
 			  if( parseREDO(cntxt)) break;
 			  if( parseRETURN(cntxt)) break;
 			  if( keyword(cntxt,"rule",4) ) {
@@ -1017,7 +1028,6 @@ void parseMal(Client cntxt){
 		}
 	}
 	chkFlowOfControl(cntxt->mainprg);
-
 }
 @- Error display
 Display the error information for the current client.

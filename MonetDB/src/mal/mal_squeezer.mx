@@ -70,29 +70,26 @@ All examples are meant to help identifying the API for squeezer construction.
 #include "mal_resolve.h"
 
 #define DEBUG_MAL_SQUEEZER 1
-mal_export ptr getArgValue(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k);
-mal_export ptr getArgReference(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k);
+mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
+mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
+
 #endif /*  _MAL_SQUEEZE_H*/
+
 @+ Pattern analysis
 Patterns analysis routines need handy functions to obtain the
 argument values. Note that the garbage collection  for return
 arguments should be handled by the pattern implementation.
 (see keepBAT,keepString,releaseBAT,releaseString)
-
 @c
 #include "mal_squeezer.h"
 
-ptr getArgValue(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
+ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 	int j;
 	ptr val = NULL;
 	ValPtr v;
 
 	j = pci->argv[k];
-	if( isVarConstant(mb,j) )
-		v= &getVarConstant(mb,j);
-	else {
-		v= &stk->stk[j];
-	}
+	v= &stk->stk[j];
 	switch(ATOMstorage(v->vtype)){
 	case TYPE_void: val= (ptr) & v->val.ival; break;
 	case TYPE_bit: val= (ptr) & v->val.bval; break;
@@ -115,18 +112,21 @@ ptr getArgValue(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
 Alternatively, the routines can obtain a reference to a particular
 value. This particularly handy for the squeezers, while the former
 is mostly used to prepare a call to the linked libraries.
+
 @c
-ptr getArgReference(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
+
+INLINE
+ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k){
+#ifdef STRUCT_ALIGNED
+	return (ptr) & stk->stk[pci->argv[k]].val.ival;
+#else
 	int j;
 	ptr val = NULL;
 	ValPtr v;
 
 	j = pci->argv[k];
-	if( isVarConstant(mb,j) )
-		v= &getVarConstant(mb,j);
-	else {
-		v= &stk->stk[j];
-	}
+	v= &stk->stk[j];
+
 	switch(ATOMstorage(v->vtype)){
 	case TYPE_void: val= (ptr) & v->val.ival; break;
 	case TYPE_bit: val= (ptr) & v->val.bval; break;
@@ -144,6 +144,7 @@ ptr getArgReference(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int k){
 		GDKerror("evalParameters:unknown value type\n");
 	}
 	return val;
+#endif
 } 
 @-
 The sqzPrepare function simple copies the procedure definition
@@ -224,7 +225,7 @@ str sqzAccess(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int j,symid;
 	InstrPtr pp, newstmt;
 
-	nme = (str *) getArgValue(m,s,p,1);
+	nme = (str) getArgValue(s,p,1);
 	symid= findVariable(m,nme);
 	printf("entering sqzAccess blocking %d %s\n",symid,nme);
 	@:prepareSqueeze(10)@

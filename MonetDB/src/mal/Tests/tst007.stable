@@ -55,7 +55,7 @@
 #
 #
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 barrier	H := batoperatie;	#1 dynamic:(H:any->13)(batoperatie:any->14)
 	Tail := bat.fetch(b,H);	#2 unknown:(Tail:any->15)(b:any->16)(H:any->13)
 	redo H ;	#3:(H:any->13)
@@ -82,6 +82,6 @@ end	FTE;	#23:(FTE:any->30)
 barrier	FS := ~;	#24 dynamic:(FS:any->31)(~:any->32)
 end	FS;	#25:(FS:any->31)
 end function;	#26:
-CATCH ERROR MALexception:Service.main[2]:Instruction type not fixed
+CATCH ERROR MALexception:Client.main[2]:Instruction type not fixed
 
-MALexception:Service.main[2]:Instruction type not fixed
+MALexception:Client.main[2]:Instruction type not fixed

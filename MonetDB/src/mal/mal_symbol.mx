@@ -5,16 +5,11 @@
 
 The MAL name spaces are organized in a hierarchy of module scopes.
 Each module scope itself is organized as a list of subscopes
-characterised by the type of the first argument. Parameterless
-functions are grouped under the module name directly. 
+indexed by the first character of the function name.
 
-To simplify function call resolution, each scope level is organized 
-as a linked list of symbols. The symbol kind is determined from the
-first instruction, i.e. COMMAND, FUNCTION, or PATTERN.
-
-A function call mod.fcn(T0 A0, ..) is resolved as follows. We traverse the
+A function call mod.fcn(Anme:Type, ..) is resolved as follows. We traverse the
 nested scopes towards the root to locate the MODULE symbol named 'mod'.
-From there we search the subscope T0 and try to resolve the procedure.
+From there we search the subscope 'Anme' and try to resolve the procedure.
 If it fails and 'mod' was not given we continue our search in outer
 scopes.
 
@@ -63,8 +58,8 @@ management)
 
 The name and kind information is replicated from the MAL blocks.
 The name is a shared string and need not be garbage collected here.
-The symbol/instruction kinds are introduced here instead of reusing the defines 
-derived from the parser to avoid a loop in the define-structure.
+The symbol/instruction kinds are introduced here instead of reusing 
+the defines derived from the parser to avoid a loop in the define-structure.
 The type dispatching table is only required for SCOPYsymbols, a union
 structure would have been better.
 @h
@@ -92,17 +87,15 @@ html
 #define _MAL_NAMESPACE_H_
 #include "mal_instruction.h"
 
-#define MAXSCOPE 258
+#define MAXSCOPE 256
 
 mal_export Symbol mal_scope;	/* the root of the tree */
-mal_export Symbol MAL_scope;		/* the bottom of the imported scopes */
 
 mal_export void		initScope();
 mal_export Symbol 	newScope(Symbol cntxt, str nme);
 mal_export Symbol	insertSymbol(Symbol cntxt, Symbol prg);
 mal_export Symbol	findScope(Symbol cntxt, str name);
-mal_export Symbol	findTypeScope(Symbol cntxt, MalBlkPtr mb, InstrPtr sig);
-mal_export int		getSubScope(MalBlkPtr mb, InstrPtr sig);
+mal_export int		getSubScope(str nme);
 mal_export Symbol	fixateScope(Symbol cntxt, str nme);
 mal_export Symbol 	findSymbol(str mod, str fcn);
 mal_export int	 	displaySymbol(FILE *f, str mod, str fcn);
@@ -115,7 +108,7 @@ mal_export void 	freeAllSymbols();
 
 #endif /* _MAL_NAMESPACE_H_ */
 @-
-Upon system restart, the global scope is created. It is called "_root" and
+Upon system restart, the global scope is created. It is called "root" and
 does not contain any symbol definitions. It merely functions as an anchor
 point for the modules to be added later.
 
@@ -140,7 +133,6 @@ point for the modules to be added later.
 #include "mal_symbol.h"
 
 Symbol mal_scope;	/* the root of the tree */
-Symbol MAL_scope;		/* the bottom of the imported scopes */
 
 void newSubScope(Symbol cntxt){
 	int len = (MAXSCOPE)*sizeof(Symbol);
@@ -153,32 +145,24 @@ void	initScope()
 	int kind= SCOPEsymbol;
 	@:newsymbol(initScope)@
 	newSubScope(cur);
-	MAL_scope = mal_scope = cur;
+	mal_scope = cur;
 }
 @-
 After filling in a structure it is added to the multi-level
-symbol table. Beware that malType values are in the range -2 .. 254.
-The polymorphic types are stored at entry 257 and the parameterless
-functions at 256. Elements of malAnyType (255) are internal to MAL and should
-be recast to any of the real types.
+symbol table.
 @c
-int getSubScope(MalBlkPtr mb, InstrPtr sig){
-	int t;
-	if( sig== NULL) return 257;
-	if( sig->argc==1) return 256;
-	if( !isPolymorphicArgument(mb,sig,1) ){ 
-		t = getTailType(getArgType(mb,sig,1));
-		if( t<0 || t>255) GDKerror("illegal type in getSubScope");
-		if( t!= malAnyType) return (int) t;
+int getSubScope(str nme) { 
+	if(nme == NULL){
+		return GDKerror("getSubScope with null function\n");
 	}
-	return 257;
+	return *nme;
 }
 Symbol insertSymbol(Symbol cntxt, Symbol prg){
         InstrPtr sig;
         int t;
 
         sig = getSignature(prg);
-        t = getSubScope(prg->def, sig);
+        t = getSubScope(sig->fcnname);
         if( cntxt->subscope == NULL){
 		newSubScope(cntxt);
                 cntxt->subscope[t] = prg;
@@ -192,7 +176,6 @@ Symbol insertSymbol(Symbol cntxt, Symbol prg){
 @-
 Finding a scope is unrestricted. for modules we explicitly look for
 the start of a new module scope.
-The routine findTypeScope returns the subscope starting point.
 @c
 Symbol findScope(Symbol cntxt, str name){
 	if( cntxt->name==NULL) return NULL;
@@ -205,19 +188,7 @@ Symbol findScope(Symbol cntxt, str name){
         return cntxt;
 }
 @-
-Searching can be speedup using the type identifier rather then the name.
-todo
-@c
-Symbol findTypeScope(Symbol cntxt, MalBlkPtr mb, InstrPtr sig){
-	Symbol cur ;
-
-	if( cntxt->subscope == 0) return NULL;
-	cur= cntxt->subscope[sig->argc>1? getArgType(mb,sig,0): 0];
-        return cur;
-}
-
-@-
-Every module scope is under the control of a single thread.
+Every module scope symbol is under the control of a single thread.
 However, definition of a new module scope may interfere with concurrent
 actions of multiple threads. This calls for a secure update 
 of the scope tree structure. 
@@ -267,7 +238,7 @@ void  printScope(Symbol cntxt, int tab, int outer)
 		if( s->subscope)
 		for(j=0;j<MAXSCOPE;j++)
 		if(s->subscope[j]){
-			printf("[%d]",j);
+			printf("[%c]",j);
 			for(t= s->subscope[j];t!=NULL;t=t->peer) {
 				printf(" %s",t->name);
 				if( getSignature(t)==NULL ||
@@ -282,12 +253,12 @@ void  printScope(Symbol cntxt, int tab, int outer)
 }
 void debugScope(str nme){
 	Symbol m;
-	if( nme==0 || *nme ==0) printScope(MAL_scope,0,TRUE);
+	if( nme==0 || *nme ==0) printScope(mal_scope,0,TRUE);
 	else{
 		char *s;
-		for(s=nme;*s && !isspace(*s);s++);
+		for(s=nme;*s && (isalnum(*s) ||*s=='_');s++);
 		*s = 0;
-		m= findScope(MAL_scope,nme);
+		m= findScope(mal_scope,nme);
 		if( m== NULL) printf("Scope name '%s' not found\n",nme);
 		else printScope(m,0,FALSE);
 	}
@@ -330,14 +301,12 @@ Symbol findSymbol(str mod, str fcn){
 	Symbol v, s;
 	int i;
 
-	v= findScope(MAL_scope, mod);
-	if( v == NULL) return NULL;
-	for(i=0;i<MAXSCOPE;i++){
-		s= v->subscope[i];
-		while(s!=NULL){
-			if( idcmp(s->name,fcn)==0 ) return s;
-			s= s->peer;
-		}
+	v= findScope(mal_scope, mod);
+	if( v == NULL || fcn == NULL) return NULL;
+	s= v->subscope[*fcn];
+	while(s!=NULL){
+		if( idcmp(s->name,fcn)==0 ) return s;
+		s= s->peer;
 	}
 	return NULL;
 }
@@ -345,17 +314,15 @@ int displaySymbol(FILE *f, str mod, str fcn){
 	Symbol v, s;
 	int i,k=0;
 
-	v= findScope(MAL_scope, mod);
-	if( v == NULL) return NULL;
-	for(i=0;i<MAXSCOPE;i++){
-		s= v->subscope[i];
-		while(s!=NULL){
-			if( idcmp(s->name,fcn)==0 ) {
-				printFunction(f,s->def);
-				k++;
-			}
-			s= s->peer;
+	v= findScope(mal_scope, mod);
+	if( v == NULL || fcn == NULL) return 0;
+	s= v->subscope[*fcn];
+	while(s!=NULL){
+		if( idcmp(s->name,fcn)==0 ) {
+			printFunction(f,s->def);
+			k++;
 		}
+		s= s->peer;
 	}
 	return k;
 }

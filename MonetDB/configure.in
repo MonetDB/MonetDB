@@ -386,14 +386,12 @@ src/utils/autogen/Makefile
 src/gdk/Makefile
 src/mal/Makefile
 src/monet/Makefile
-src/mil/Makefile
+src/M2m/Makefile
 src/modules/Makefile
-src/modules/plain/Makefile
 src/modules/kernel/Makefile
 src/modules/atoms/Makefile
 src/modules/mal/Makefile
-src/mapi/Makefile
-src/mapi/clients/Makefile
+src/modules/mapi/Makefile
 src/tools/Makefile
 src/tools/monet-config.mx
 conf/Makefile

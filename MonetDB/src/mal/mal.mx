@@ -26,6 +26,12 @@ mal_export int             mal_xlisting;
 mal_export int             mal_debug;
 mal_export int             mal_trace;
 mal_export MT_Lock	mal_contextLock;
+
+/*#define MALprofiler 1		activate the profiler */
+#undef MALprofiler
+
+#define STRUCT_ALIGNED
+
 #endif /*  _MAL_H*/
 @c
 #include "mal.h"
@@ -41,13 +47,52 @@ int             mal_trace= 0;
 MT_Lock		mal_contextLock=0;
 @-
 Initialization of the MAL context
+The compiler directive STRUCT_ALIGNED tells that the
+fields in the VALrecord all start at the same offset.
+This knowledge avoids low-level type decodings, but should
+be assured at least once.
 @c
+
+void tstAligned()
+{
+	int allAligned=0;
+	ValRecord v;
+	ptr val, base;
+	base = (ptr) & v.val.ival; 
+	val= (ptr) & v.val.ival; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.bval; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.cval[0]; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.shval; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.br.id; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.ival; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.oval; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.pval; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.fval; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.dval; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.lval; if(val != base){allAligned = -1; return;}
+	val= (ptr) & v.val.sval; if(val != base){allAligned = -1; return;}
+	allAligned = 1;
+#ifdef STRUCT_ALIGNED
+	if(allAligned<0)
+		GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
+#else
+	if(allAligned>0)
+		GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
+#endif
+}
 int mal_init(){
 	Client c;
 	mal_contextLock= MT_create_lock();
+	tstAligned();
 	initScope();
         c= initClient(GDKstrdup("adm"),NULL,0);
-        if( malStartupAdmin(c,GDKdbnameStr,mal_listing) == NULL) return -1;
+        if( malStartupAdmin(c,GDKdbnameStr,mal_listing) == 0) return -1;
 	initLibraries(FALSE);
 	return 0;
+}
+
+int mal_exit(Client cntxt){
+#ifdef MALprofiler
+	profileReport( cntxt->nspace,1,stdout);
+#endif
 }

@@ -18,7 +18,7 @@
 #end 	b1;
 #	s1:= nil:str;
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	s0 := "hello";	#1:(s0:str->13)($14:str->14)
 	s0 := "world";	#2:(s0:str->13)($15:str->15)
 	b1 := arith.=(s0,"world");	#3:(b1:bit->16)(s0:str->13)($15:str->15)

@@ -95,8 +95,8 @@ int malStartupAdmin(Client c, str dbname,int listing){
 	} 
 	fclose(fd);
 
-	c->nspace= newScope(mal_scope,GDKstrdup("Service"));
+	c->nspace= newScope(mal_scope,GDKstrdup("Client"));
 	if( malImport(buf,0,0) == NULL) return 0;
-	MAL_scope = c->nspace;
+	mal_scope = c->nspace;
 	return 1;
 }

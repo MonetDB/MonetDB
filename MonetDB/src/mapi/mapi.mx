@@ -1,38 +1,102 @@
 @f mapi
-@a N.J. Nes P. Boncz
+@a N.J. Nes P. Boncz M. Kersten
 @t Monets Simple Internet Interface
 @v 1.1
 
-This module contains a simple interface for internet connections.
+This module contains a simple interface for setting up
+internet connections and to initialize a client session.
+Without loading this interface, Monet runs in administrator
+mode. The information about activitated listeners is stored in 
+a few tables view_mapi_owner, view_mapi_port, view_mapi_maxusers,
+and view_mapi_users.
 
-@m
-.MODULE mapi;
+Clients may initialize a private listener to implement
+specific services. For example, in an OLTP environment
+it may make sense to have a listener for each transaction
+type, which simply parses a sequence of transaction parameters.
 
-.COMMAND listen()  = MAPIlisten_default;
-	"start a Mapi server with the default port number."
-.COMMAND listen(int port, int maxusers) = MAPIlisten; 
-	"start a Mapi server."
+The information about open listeners is maintain in global tables.
+They behave as views on the actual state.
+No protection is currently possible against malicious users changing them. 
 
-.END mapi;
+Authorization of access to the server is handled as part
+of the client record initialization phase.
+@mal
+module mapi;
 
+command mapiListen():bit  = MAPIlisten_default
+	comment "Start a Mapi server with the default settings.";
+command mapiListen(port:int, maxusers:int):bit = MAPIlisten
+	comment "Start a Mapi server.";
+command mapiClose(port:int):bit = MAPIclose
+	comment "Terminate a listener owned by the client";
+
+# initialization code
+	vm:= bat.new(int,str);
+	bat.setName(vm,"view_mapi_owner");
+	bat.setRoles(vm,"mapi","owner");
+	bat.setPersistent(vm);
+
+	vm:= bat.new(int,int);
+	bat.setName(vm,"view_mapi_port");
+	bat.setRoles(vm,"mapi","port");
+	bat.setPersistent(vm);
+
+	vm:= bat.new(int,int);
+	bat.setName(vm,"view_mapi_maxusers");
+	bat.setRoles(vm,"mapi","maxusers");
+	bat.setPersistent(vm);
+
+	vm:= bat.new(int,int);
+	bat.setName(vm,"view_mapi_users");
+	bat.setRoles(vm,"mapi","users");
+	bat.setPersistent(vm);
+
+	vm:= bat.new(int,int);
+	bat.setName(vm,"view_mapi_timeout");
+	bat.setRoles(vm,"mapi","timeout");
+	bat.setPersistent(vm);
+	
+	mapiListen();
 @h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ *		   Niels Nes <Niels.Nes@cwi.nl>
+ */
+
 #ifndef MAPI_H
 #define MAPI_H
 
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
-/* #include <mapi.proto.h>*/
 
 #endif /* MAPI_H */
 @c
 #include "mapi.h"
-#include <monet.h>
-#include  <sys/types.h> 
+#include "mal_client.h"
 #include  <sys/socket.h> 
 
 #define SOCKPTR struct sockaddr *
 
-int MAPIlisten(int *port, int *maxusers){
+int MAPIlisten(int *ret, int *port, int *maxusers){
 	struct sockaddr_in server;
 	int 	sock;
 #ifdef AIX
@@ -52,7 +116,7 @@ int MAPIlisten(int *port, int *maxusers){
 @-
 Set server port and allow internet connections from any workstation.
 Bind the socket to the server port.
-The port id should be obtained from the Homes file.
+The port id is obtained from the Monet configuration file.
 @c
 	if (*port == 0)
 		*port = MAPIPORT;
@@ -98,6 +162,7 @@ Get the new information for the server socket and start listening.
 			char *name = (char*) alloca(BUFSIZ), *user = name;
 			FILE *fdin = fdopen(msgsock, "r");
 			FILE *fdout = fdopen(msgsock, "w");
+			Client c;
 
 			if (fdin == 0){
 				GDKsyserror("monetServer: fdin problems\n");
@@ -113,8 +178,8 @@ Get the new information for the server socket and start listening.
 				*user = fgetc(fdin);
 			}
 			*user = 0;
-			fprintf(stderr,"create a client context \n");
-			if (0 == 0) {
+			c = initClient(GDKstrdup(name), 0, msgsock);
+			if (c == 0) {
 				fprintf(fdout, "Failed to init client for user %s\n", name );
 				fflush(fdout);
 				(void) fclose(fdin);
@@ -122,34 +187,19 @@ Get the new information for the server socket and start listening.
 				close(msgsock);
 				continue;
 			}
+			/* scheduleClient(c);*/
 		}
 	} while (1);
+	*ret = TRUE;
 	return GDK_SUCCEED;
 }
 
-int MAPIlisten_default(){
+int MAPIlisten_default(int *ret){
 	int port = MAPIPORT;
 	int maxusers = MAPIMAXUSERS;
-	return MAPIlisten(&port, &maxusers);
+	return MAPIlisten(ret, &port, &maxusers);
 }
-
-
-@mil
-module(unix,str,mapi);
-
-proc get_mapi_port() := {
-	var mapi_port := getenv("MAPIPORT");
-	var port := 0;
-	var p := search( mapi_port, ":" );
-	if (p >= 0){
-		port := int(string(mapi_port, p+1));
-	} else {
-		mapi_port := getenv("MONETPORT");
-		p := search( mapi_port, ":" );
-		if (p >= 0){
-			port := int(string(mapi_port, p+1));
-		}
-	}
-	return port;
+int MAPIclose(int *ret, int *port)
+{
+	return GDK_SUCCEED;
 }
-fork(listen(get_mapi_port(),5));

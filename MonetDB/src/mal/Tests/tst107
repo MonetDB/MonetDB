@@ -1,5 +1,4 @@
 # analyse the basic interpreter loop
-# illegal destination type of a barrier
 
 	i:=0;
 barrier	v:= true;

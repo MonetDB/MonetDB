@@ -79,8 +79,9 @@ typedef struct CLIENT{
 	str 	user;		/* user name. */
 	str	password;	/* of user */
 	int	permission;	/* access mode */
-	int	language;	/* language indicator */
+	str	language;	/* language indicator */
 	int	trace;		/* trace execution */
+	long	timer;		/* trace time in usec */
 @-
 The time interval between requests are maintained. At some point
 we will kill clients when their time-out value is exceeded.
@@ -217,7 +218,8 @@ Client initClient(str nme, str passwd, int msgsock){
 		return NULL;
 	}
 
-       	c->user = nme; c->language= MALPARSER;
+       	c->user = nme; 
+	c->language= GDKstrdup("mal");
 
 	c->fdin = msgsock? fdopen(msgsock, "r"):stdin;
 	c->input = (str) GDKmalloc(BLOCKSIZE);
@@ -227,11 +229,12 @@ Client initClient(str nme, str passwd, int msgsock){
 	c->nxt = c->input;
 
 	c->fdout = msgsock? fdopen(msgsock, "w"):stdout;
-	c->output = (str) GDKmalloc(BLOCKSIZE);
+	setbuffer(c->fdout, c->output, 4096);
+	/* c->output = (str) GDKmalloc(BLOCKSIZE);*/
  	c->socket = msgsock;
 	
-	c->nspace = MAL_scope;
-	c->mainprg = c->curprg = 0;
+	c->nspace = mal_scope;
+	c->curprg = c->mainprg=0;
 
 	c->father = NULL;
 	c->login = time(0); c->delay= TIMEOUT;
@@ -529,6 +532,7 @@ void setClientMain(Client cntxt){
         curInstr = getSignature(cntxt->mainprg);
         curInstr->modname= GDKstrdup(cntxt->nspace->name);
         getVarType(curBlk,findVariable(curBlk,"main"))= TYPE_int;
+	initStack(curBlk);
         staticTypeCheck(curInstr);
         insertSymbol(cntxt->nspace,cntxt->mainprg);
 }
@@ -537,7 +541,6 @@ void closeClientMain(Client cntxt){
         MalBlkPtr curBlk;
 
         curBlk = cntxt->mainprg->def;
-        curInstr = getSignature(cntxt->mainprg);
         curInstr= newInstruction(curBlk,ENDDEFsymbol);
         pushInstruction(curBlk,curInstr);
 }

@@ -17,7 +17,7 @@
 #end	v;
 #	k:= 3;
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	i := 0;	#1:(i:int->13)($14:int->14)
 	v := false;	#2:(v:bit->15)($16:bit->16)
 barrier	v := v;	#3:(v:bit->15)(v:bit->15)

@@ -287,12 +287,15 @@ void monet_init(int argc, char **argv ){
 
         for(i=0; monet_script[i]; i++)
                 prg = malImport(monet_script[i],mal_listing,0);
+	closeClientMain(getClient());
+	if( mal_listing )
+		printFunction(stdout,getClient()->mainprg->def);
+
         if( prg ) {
                 str msg= runMAL(getClient(),prg->def,0);
 		if( msg && msg != (str) GDK_SUCCEED) printf(msg);
         }
-	/* start administrator loop */
-	/* runClient(c);*/
+	mal_exit(getClient());
         freeAllSymbols();
 }
 
@@ -314,6 +317,7 @@ main(int argc, char** argv){
     mal_string = argv[--argc];
     monet_init(argc, argv);
  /*   monet_eval(mil_string,&restype);*/
+    mal_exit();
     monet_exit();
 }
 #endif

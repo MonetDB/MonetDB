@@ -113,42 +113,37 @@ mal_export int updPolyType(int formal, int actual, int polytype[2*MAXARG]);
 @+ Function call resolution
 Search the first definition of the operator in the visible scopes
 and check the parameter types.
-For a polymorphic MAL procedure we make a fully instantiated clone, but
-only at the service layer. This effectively overloads the MAL procedure.
+For a polymorphic MAL function we make a fully instantiated clone, but
+only at the client layer. This effectively overloads the MAL procedure.
 It will be prepended to the symbol list as it is more restrictive.
-[think, proc M.p(any::1 a,...) is copied to the service layer as p(any::1 a).
+[think, proc M.p(any::1 a,...) is copied to the client layer as p(any::1 a).
 But this may interfere with any p(...) define below M. Furthermore, how
 to easily recognize a second instantiation of p(...)]
 @c
 #include "mal_resolve.h"
-#define DEBUGFCN "____"
+#define DEBUGFCN "___"
 int tracefcn;
 
 @-
 A function may be characterised by its module, i.e. the location to
 start the search. Ommision of the module name implies searching from
-the service layer upward.
+the client layer upward.
 After fixation of the module starting point, the argument type of
 the first parameter is used to isolate a subscope.
 @c
 malType findFunctionType(Symbol scope, MalBlkPtr mb, InstrPtr p){
 	Symbol s,m;
 	InstrPtr sig;
-	int donetwice=0, i,j,k,l, polymorphic, unmatched = 0, s1;
+	int i,j,k,l, polymorphic, unmatched = 0, s1;
 	int lev, varargs=0, foundbutwrong=0;
 	int polytype[2*MAXARG];
 
 @-
-Walk your way through the scope levels first to find the module
-related symbols. Within the module find the type scope.
-Once we have fixed the scope level, locate the element in its list
+Within a module find the subscope to locate the element in its list
 of symbols.
-If it turns out not to exist, we should inspect the list of
-polymorphic routines, which is stored in the list 257 (getSubScope(mb,0)).
 @c
 	m= s= scope;
-	s= m->subscope[lev = getSubScope(mb,p)];
-redosearch:
+	s= m->subscope[lev = getSubScope(p->fcnname)];
 	while(s != NULL){	/* single scope elements */
 	if( idcmp(p->fcnname,s->name ) ){
 		s= s->peer; continue;
@@ -227,7 +222,7 @@ At a later stage we may automatically insert such coercion requests.
 	if( unmatched) { s= s->peer; continue; }
 	if( polymorphic){
 		/* what to do with varargs */
-		if( s->kind == COMMANDsymbol)
+		if( s->kind == COMMANDsymbol || s->kind==PATTERNsymbol)
 			s1= getPolyReturn(s->def,sig, polytype);
 		else {
 			s = cloneFunction(scope, s, mb,p);
@@ -282,17 +277,8 @@ determine the calling strategy, i.e. FCNcall, CMDcall, RLRcall, PATcall
 	s= s->peer;
 	} /* while */
 @-
-We haven;t found the function. Try the scope attached to its
-first type (provided the module was not explictly given.
-Note that we have to also check the typescope with the polymorphic functions.
+We haven;t found the function. 
 @c
-	if( p->argc>1){
-		if(donetwice==0){
-			s= m->subscope[MAXSCOPE-1];
-			donetwice++;
-			goto redosearch;
-		}
-	}
 	if( foundbutwrong){
 		char buf[1024];
 		sprintf(buf,"ERROR: type conflict in assignment of %s.%s\n",

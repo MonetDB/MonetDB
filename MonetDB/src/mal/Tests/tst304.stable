@@ -15,10 +15,10 @@
 #	n0:=0;
 #end	myNewException;
 #
-function Service.main():int;	#0:(main:int->0)
-raise	myNewException := "new exception";	#1:(myNewException:str->13)($14:str->14)
-	c4 := "should not come here";	#2:(c4:str->15)($16:str->16)
-catch	myNewException;	#3:(myNewException:str->13)
-	n0 := 0;	#4:(n0:int->17)($18:int->18)
-end	myNewException;	#5:(myNewException:str->13)
+function Client.main():int;	#0:(main:int->0)
+	myNewException;	#1:(myNewException:any->13)
+	c4 := "should not come here";	#2:(c4:str->14)($15:str->15)
+catch	myNewException;	#3:(myNewException:any->13)
+	n0 := 0;	#4:(n0:int->16)($17:int->17)
+end	myNewException;	#5:(myNewException:any->13)
 end function;	#6:

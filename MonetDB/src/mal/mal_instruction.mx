@@ -94,7 +94,7 @@ typedef struct{
 	str     name;	/* argname or lexical value repr */
 	malType	type;	/* internal type signature */
         bit	isaconstant;	/* value cannot change */
-	int	accessmode;	/* for external scope */
+	int	isused;	/* for stack copying scope */
 	short	offset;	/* offset in stack */
 	str	value;	/* initial value -> ValRecord */
 	ValRecord cstvalue;
@@ -115,10 +115,12 @@ typedef struct {
 @-
 For performance analysis we keep track of the number of calls
 and the total time spent while executing the instruction.
-(See mal_performance.mx)
+(See mal_profiler.mx)
 @h
-	int	count;
-	int	ticks;		/* micro seconds */
+#ifdef MALprofiler
+	long	counter;
+	long	ticks;		/* micro seconds spent */
+#endif
 	GDKfcn	fcn;		/* resolved function address */
 	struct MALBLK *blk;	/* resolved MAL function address */
 @-
@@ -166,8 +168,8 @@ Allocation of space assumes a rather exotic number of arguments.
 #define getVarOffset(M,I)  (M)->var[I].offset
 #define getVarValue(M,I)  (M)->var[I].value
 #define isVarConstant(M,I) ((M)->var[I].isaconstant)
+#define isVarUsed(M,I) ((M)->var[I].isused)
 #define getVarConstant(M,I)  ((M)->var[I].cstvalue)
-#define getVarAccess(M,I) (M)->var[I].accessmode
 #define getRetType(S)	getDestType(((S).def),0)
 
 mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
@@ -189,6 +191,7 @@ mal_export void pushArgument(InstrPtr p, int varid);
 mal_export void setReturnArgument(InstrPtr p, int varid);
 mal_export void printInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
 mal_export void promptInstruction(FILE *fd, MalBlkPtr mb,InstrPtr p);
+mal_export str instruction2str(MalBlkPtr mb,InstrPtr p);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export str raiseException(MalBlkPtr mb, int pc, str name, str msg);
 mal_export str raiseException2(str name, str msg);
@@ -428,13 +431,16 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	n= findVariable(mb,name);
 	/* check for type names */
 	if( n>=0){
-		if( getVarType(mb,n) != malAnyType &&
-		    getVarType(mb,n) != type){
+		if( type != malAnyType){
+		    if( getVarType(mb,n) != type  &&
+		        getVarType(mb,n) != malAnyType){
 			char buf[1024];
 			sprintf(buf,"ERROR:'%s' type mismatch %d vs %d\n",
 				name, getVarType(mb,n),type);
 			GDKerror(buf);
+		    }
 		}
+		/* GDKfree(name); not correct, check use!!!*/
 		return n;
 	}
 	n = mb->vtop;
@@ -443,7 +449,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	getVarOffset(mb,n) = n;
 	getVarValue(mb,n)= NULL;
 	isVarConstant(mb,n) = 0;
-	getVarAccess(mb,n) = 0;
+	isVarUsed(mb,n) = 0;
 	mb->vtop++;
 	return n;
 } 
@@ -512,7 +518,7 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 /* printf("new constant %d val %s\n",k,val);*/
 	getVarValue(mb,k)= val;
 	isVarConstant(mb,k) = 1;
-	getVarAccess(mb,k) = 0;
+	isVarUsed(mb,k) = 0;
 	vr = &getVarConstant(mb,k);
 @-
 The current GDK layer does not perform a value range check.
@@ -540,7 +546,7 @@ to make the user aware of this situation.
 			vr->val.cval[3]= 0;
 			break;
 	case TYPE_sht: {long l= strtol(val,NULL,0);
-			if( l>256 || l<0) {
+			if( l>255 || l<0) {
 				if( l<2^31 && l> -2^31){
 				sprintf(buf,"WARNING:newConstant:sht coerced to int\n");
 				GDKerror(buf);
@@ -631,6 +637,7 @@ void pushArgument(InstrPtr p, int varid){
 	p->argv[n] = varid;
 	p->argv[p->argc] = -1;
 	m->ctop += sizeof(int);
+	isVarUsed(m,varid) = TRUE;
 } 
 void setReturnArgument(InstrPtr p, int varid){
 	p->argv[0]= varid;
@@ -698,12 +705,24 @@ str hiddenInstructionArgs(MalBlkPtr mb,InstrPtr p,str s){
 }
 @-
 It receives the space to store the definition
+The MAL profiler dumps some performance data at the
+beginning of each line.
+
+@= performanceData
+#ifdef MALprofiler
+	if( p->counter){
+		double avg= p->ticks/(p->counter+0.0);
+		sprintf(t,"[%7d,%5.2f]\t",p->counter,avg);
+		advance(t);
+	} 
+#endif
 @c
 str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 	int i;
 	str t,tpe;
 
 	t=s;
+	@:performanceData@
 	if( p->token== FUNCTIONsymbol)
 		sprintf(t,"function "); 
 	else if( p->token == COMMANDsymbol)
@@ -753,13 +772,12 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	s= GDKmalloc(len);
 	s[0]=0;
 	t=s;
+	@:performanceData@
 	if( getDestName(mb,p) ) nme= getDestName(mb,p); else nme="";
 	advance(t);
 	if( p->barrier){
 		if( p->barrier== BARRIERsymbol)
 			sprintf(t,"barrier"); 
-		else if( p->barrier == RAISEsymbol)
-			sprintf(t,"raise");
 	}
 	advance(t);
 	switch( p->token){
@@ -771,7 +789,10 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 			if( p->argc<=1 && p->fcnname==NULL)
 				sprintf(t,"\t%s",nme); 
 			else
+			if( *nme!='$')
 				sprintf(t,"\t%s := ",nme); 
+			else
+				sprintf(t,"\t"); 
 			break;
 		case REDOsymbol:
 			sprintf(t,"\tredo %s ",nme); break;
@@ -833,10 +854,12 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	advance(t);
 	sprintf(t,";");
 #ifdef DEBUG_MAL_INSTR
+#ifndef MALprofiler
 	if( mal_xlisting){
 		advance(t);
 		t= hiddenInstructionArgs(mb,p,t);
 	}
+#endif
 #endif
 	advance(t);
 	sprintf(t,"\n");

@@ -73,12 +73,11 @@ html
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
  */
 #ifndef _MAL_LINKER_H
-/* #include "monet.h"*/
 #include "mal_instruction.h"
 #include "mal_symbol.h"
 #include <dlfcn.h>
 
-/*#define DEBUG_MAL_LINKER */
+/* #define DEBUG_MAL_LINKER */
 #define MONET64 1
 mal_export void *getAddress(str fcnname);
 mal_export void *loadModuleLibrary(str modname);
@@ -103,7 +102,7 @@ void *getAddress(str fcnname){
 	void (*adr)();
 	str msg;
 
-#ifdef DEBUG_MAL_LINKER
+#ifdef DEBUG_MAL_LINKER2
         printf("addres of %s ?\n", fcnname);
 #endif
         dl= dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
@@ -119,8 +118,7 @@ void *getAddress(str fcnname){
 			fcnname);
 		GDKerror(buf);
 	}
-	/* if( adr== NULL) printf("address of '%s' not found\n",fcnname);*/
-#ifdef DEBUG_MAL_LINKER
+#ifdef DEBUG_MAL_LINKER2
 	if( adr != NULL)
         printf("addres of %s %o %s\n", fcnname,(int) adr, (msg?msg:""));
 #endif
@@ -153,7 +151,7 @@ void *loadModuleLibrary(str modname){
 	str library=0;
 	str msg= NULL;
 
-	if( isPreloaded(modname)) return;
+	/* STATIC load only !if( isPreloaded(modname)) return;*/
 	if( (library=strrchr(modname,DIR_SEP))  != NULL){
 		*library=0;
 		library++;
@@ -231,6 +229,9 @@ static str preloaded[]={
 
 int isPreloaded(str nme){
 	int i;
+#ifdef DEBUG_MAL_LINKER
+	printf("load:%s:preloaded?\n",nme);
+#endif
 	for(i=0;preloaded[i];i++) 
 	if( strcmp(preloaded[i],nme)==0) return 1;
 	return 0;

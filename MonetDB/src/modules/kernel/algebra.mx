@@ -12,7 +12,7 @@ values as parameters, and produce new result values, but
 @* Module Definition 
 Unlike the previous Monet versions, we reduce the number
 of functions returning a BAT reference. This was previously needed
-to simplify recursive bat-expression.
+to simplify recursive bat-expression and manage reference counts.
 In the current version we return only a BAT identifier when a new
 bat is being created.
 @-
@@ -29,6 +29,7 @@ that return a BAT.
 @+ Value Selections
 [Somehow we need this next marker to force Mx to produce good output]
 @-
+
 @mal
 
 module algebra;
@@ -420,6 +421,7 @@ command @1 ( b:bat[any,@2] ) : @2 = CMD@1_@2 comment @3;
 @* MIL definitions
 @mil
 @- constants for theta() and thetajoin()
+The BATs used for storing help information should have been created upfront.
 @mil
 CONST EQ := 0;
 CONST LT := -1;
@@ -662,17 +664,8 @@ ADDHELP("rev_select", "boncz", "Aug  6 1998",
         return R;
     }
     ADDHELP("sort_ht", "manegold", "Dec 17 1998",
-            "sorts a BAT according to its head (primary) and tail values (secondary).\
-             (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
+            "sorts a BAT according to its head (primary) and tail values (secondary). (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
 
-.END;
-
-@* Cost Model
-OBSOLETE
-This module contains a full cost model on the algebraic 
-operators, in the form of executable Prolog clauses.
-We in turn discuss the basic concepts of this model:
-properties, propagation rules, and cost functions.
 
 @+ Modeling With Properties
 @T
@@ -741,147 +734,6 @@ for each algebraic operand. Since each algebraic operands may apply
 different strategies, according to different status in its operand properties, 
 each algebraic operator may have different propagation rules with these 
 different situations as conditions.
-
-This module speficies full property propagation rules for the entire set
-of standard algebraic MIL operators.
-
-@- Kernel vs Model Properties
-@T
-The properties managed by the model are a superset of the ones maintained 
-run-rime by the query. The reason for this follows:
-
-Suppose we do {\tt B:=select(A,l,h)}
-from a large table A into B. If we now do {\tt C:=semijoin(A,B)} 
-we will get a C with the same size of B. Moreover they will be exactly 
-equal, so the {\tt sync()} properies of B and C will be equal. 
-This transformation of {\tt sync()} properties can be done run-time
-without any properties, but not by a cost model at compile time.
-
-The cost model needs to explicitly recall that B is a subset of A.
-It can easily deduce this from the fact that B was the result of a 
-{\tt select()} on A. Only then will it be able to propagate the {\tt sync()}s 
-of B to C. For these and similar reasons, the {\tt subset()}, {\tt subcol()} 
-and {\tt distinct()} properties were introduced into the model, 
-although they do not occur in the Monet kernel at run-time.
-
-@- Cost Functions
-@T
-With the property propagation rules in hand, for each algebraic operator,
-split out for each different algorithmic strategy in each operator, it is 
-a small step to a full cost model. In the last section, cost functions 
-can be found for each different akgorithm. The design of this prolog program
-is such that the propagation rules are separated from the cost functions.
-In this way, we can experiment with different cost functions without modifying
-all code.
-
-@- Disclaimer
-As a first attempt we give a very simple cost model without any memory status
-and IO (yet), nor does it discriminate between cost factors for different
-atomic types. BATs are estimated by uniform distribution data, instead
-of more sophisticated methods like sampling or histograms. The cost
-functions just give a crude estimation of CPU cost for each operator.
-
-@+ Model Implementation
-The model is implemented as a series of prolog clauses. SWI/prolog
-gives you a free inference system, a programmer can directly concentrate
-on the rules that make up his model. This was the rationale for going 
-with prolog.
-
-The model consists of a bunch of prolog clauses that correspond 1-1 to 
-MIL algebra primitives. Special prolog clauses also exist for introducing
-a data model (that is, persistent BATs) in the model. 
-
-@- Data Definition
-@T
-We quickly sketch the prolog clauses that can be used to declare 
-an object-oriented data model, mapped on Monet BATs, in the 
-prolog cost model:
-\begin{itemize}
-\item 
-{\small extent(table-name, cardinality)}\\
-declares the existence of a table. Monet will generate an extent for
-it that consists of a bat[oid,nil]. The oid column contains OIDs
-of all objects instances of this table. This bat is simply named 
-$<table-name>$. 
-\item 
-{\small attrib(table-name, attr-name, value-type, ordinality, min-value, max-value)}\\
-declares an attribute, and hence a BAT with [void,value] tuples. The void column
-is a dense column that contains OIDs of all objects. This bat is named 
-$table\_attr$. Monet actually generates automatically an {\bf inversion-list}
-bat[oid,value] that is sorted on the values. This bat is named {$tableRattr$}. 
-\item 
-{\small attrib(table-name, attr-name, value-type, ordinality)}\\
-This is a shorter way to declare an attribute. You do not need to specify
-the minimum and maximum values that are used in the uniform estimations; 
-monet assumes them, to be zero and $ordinality$.
-This is only applicable for numerical attributes.
-\item 
-{\small relation(table-name, attr-name, table-name, ordinality)}\\
-A relation is an attribute that refers to an object instead of a value.
-This will translate into a value of type oid. But referential integrity gives
-you now more knowledge: the values of this column will be a subset of the
-extent of the objects referred to. So you specify in the third parameter
-this table-name, and need not give a domain size (the cost model infers
-this from the extent).
-
-\item 
-{\small select_est(Result, tries, domain)}\\
-This clause yields a result in the first parameter. It computes
-the expected number of different colors if you select $tries$ time
-from the same set of $domain$ different values.
-
-This formula stems from the inner workings of the cost model but
-might come handy for estimating ordinalities that were generated with
-random assumptions. 
-\end{itemize}
-
-@- MIL to Prolog
-@T
-For each execution order, we give a mil-like prolog script. The
-first line tpcd() clause instantiates the tpcd data model.
-The other lines correspond 1-1 with MIL assignments statements,
-in which the variable to which is assigned is placed as the first
-parameter of the prolog clause. The prolog clause corresponds directly
-with the name of the MIL command mto be invoked, with the command
-signature appended to it after an underscore. That is 
-{\bf\begin{verbatim}
-X := uselect(bat_x,any_y);
-\end{verbatim}}
-in MIL becomes:
-{\bf\begin{verbatim}
-uselect_batany(X, bat_x, any_y),
-\end{verbatim}}
-in prolog.
-
-Remember to change the ; into commas, but to end the script with
-a dot, and to place an empty white line at the end. That's what
-the SWI/prolog compiler wants you to do anyway.  
-
-{\bf As the reverse(bat) operation is common, we allow to identify
-     the reverse view on a persistent bat {\tt table\_attr} with  
-     the standard synonym {\tt table\_attr\_} (underscore appended).}
-
-@- Bugs
-@T
-We should package this program into a utility that eats MIL
-directly.  It would be an attractive idea to have it calleable
-as an extension module from MIL directly. 
-
-@- Utility
-@sh
-#/bin/sh
-# COST MODEL UTILITY
-# ==================
-#
-# usage: milmodel milscript # pl-ified milscript
-#
-# COMPILE THE MODEL WITH: pl -o milmodel -c algebra.pl
-#
-milmodel < $1 2>/dev/null|egrep -v "^#"|fgrep "#"|fgrep -v "new"> /tmp/$$
-more /tmp/$$
-echo "============== +"
-awk '{ a += $1 } END { print "TOTAL="a; }' < /tmp/$$
-rm /tmp/$$
 
 @* Command Implementations in C
 This module contains just a wrapper implementations; since all described 
@@ -1255,7 +1107,6 @@ int ylen;
         if (*x == (char )NULL) {
                 return 0;
         }
-/* printf("compare %s against %s %d ",x,y,ylen);*/
         for (r = x+strlen(x)-ylen; x <= r; x++) {
                 int ok = 1;
                 char *s = x;
@@ -1265,11 +1116,9 @@ int ylen;
                         ok = 0; break;
                     }
                 if (ok){
-/*			printf("ok\n"); */
 			return 1;
 		}
         }
-/* 	printf("wrong\n");*/
         return 0;
 }
 
@@ -1309,13 +1158,13 @@ int CMDslice(BAT **retval, BAT *b, int *start, int *end){
 
 @- BUN Get/Fetch
 @c
-int CMDposition(int *retval, int *bid, ptr *val){
+int CMDposition(int *retval, int *bid, ptr val){
 	BAT *b;
 	ptr p,v;
 
 	@:batcheck2(retval,bid,b,"CMDposition")@
-	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
-	v = BUNfnd(b, p);
+	@:derefStr(b,h,val)@
+	v = BUNfnd(b, val);
         if (v == 0) {
                 GDKerror("CMDposition: item not found\n");
                 return GDK_FAIL;
@@ -1323,14 +1172,14 @@ int CMDposition(int *retval, int *bid, ptr *val){
         *retval = BUNindex(b, v)- BUNindex(b, BUNfirst(b));
         return GDK_SUCCEED;
 }
-int CMDpositionBUN(int *retval, int *bid, ptr *val, ptr *tval){
+int CMDpositionBUN(int *retval, int *bid, ptr val, ptr tval){
 	BAT *b;
-	ptr p,o,v;
+	ptr v;
 
 	@:batcheck2(retval,bid,b,"CMDpositionBUN")@
-	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
-	o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) *tval)->batCacheid:tval;
-	v = BUNlocate(b, p,o);
+	@:derefStr(b,h,val)@
+	@:derefStr(b,t,tval)@
+	v = BUNlocate(b, val, tval);
         if (v == 0) {
                 GDKerror("CMDposition: item not found\n");
                 return GDK_FAIL;
@@ -1412,28 +1261,26 @@ int CMDfetchoid(ptr *ret, int *bid, oid *pos){
 	return CMDfetch(*ret, bid, &newpos);
 }
 
-int CMDexist(bit *ret, int *bid, ptr *val){ 
+int CMDexist(bit *ret, int *bid, ptr val){ 
 	BAT *b;
-	ptr p;
 	BUN q;
 	int result;
 
 	@:batcheck2(&result,bid,b,"CMDexist");
-	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:*val;
-	q = BUNfnd(b, p);
+	@:derefStr(b,h,val)@
+	q = BUNfnd(b, val);
 	*ret = q?1:0;
         return GDK_SUCCEED;
 }
-int CMDexistBUN(bit *ret, int *bid, ptr *val, ptr *tval){ 
+int CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){ 
 	BAT *b;
-	ptr p,o;
 	BUN q;
 	int result;
 
 	@:batcheck2(&result,bid,b,"CMDexistBUN");
-	p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;
-	o = (b->ttype == TYPE_bat)?(ptr) &((BAT*) *tval)->batCacheid:tval;
-	q = BUNlocate(b, p, o);
+	@:derefStr(b,h,val)@
+	@:derefStr(b,t,tval)@
+	q = BUNlocate(b, val, tval);
 	*ret = q?1:0;
         return GDK_SUCCEED;
 }
@@ -1446,7 +1293,6 @@ int CMDfind(ptr ret, int *bid, ptr val){
 
 	@:batcheck2(&result,bid,b,"CMDfind");
 	@:derefStr(b,h,val)@
-	/* p = (b->htype == TYPE_bat)?(ptr) &((BAT*) *val)->batCacheid:val;*/
 	q = BUNfnd(b, val);
 	if (q == NULL) {
 		GDKerror("CMDfind: value not found.\n");
@@ -1455,3 +1301,4 @@ int CMDfind(ptr ret, int *bid, ptr val){
 	@:putTail(q)@
         return GDK_SUCCEED;
 }
+

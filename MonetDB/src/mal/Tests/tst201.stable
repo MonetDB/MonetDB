@@ -166,7 +166,7 @@ WARNING:newConstant:int coerced to lng
 ##b.reverse.like(" fox").print;
 ##quit;
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	_v0 := atoms.oid(20000000);	#1:(_v0:oid->13)($14:int->14)
 	_v1 := atoms.setoid(_v0);	#2:(_v1:any->15)(_v0:oid->13)
 	_v2 := bat.new(str,int);	#3:(_v2:bat[str,int]->16)(str:str->12)(int:int->6)

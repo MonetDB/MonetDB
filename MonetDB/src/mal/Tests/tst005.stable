@@ -14,7 +14,7 @@
 #	redo l;
 #end l;
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	r := 0;	#1:(r:int->13)($14:int->14)
 	l := arith.<(r,1);	#2:(l:bit->15)(r:int->13)($16:int->16)
 barrier	l;	#3:(l:bit->15)

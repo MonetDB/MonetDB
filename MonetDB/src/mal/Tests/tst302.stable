@@ -18,12 +18,12 @@
 #end	IllegalAccess;
 #
 ERROR: recursive exception 'IllegalAccess' not allowed
-function Service.main():int;	#0:(main:int->0)
-raise	IllegalAccess := "new exception";	#1:(IllegalAccess:str->13)($14:str->14)
-	c4 := "should not come here";	#2:(c4:str->15)($16:str->16)
-catch	IllegalAccess;	#3:(IllegalAccess:str->13)
-	n0 := 0;	#4:(n0:int->17)($18:int->18)
-raise	IllegalAccess := "an illegal exception raise";	#5:(IllegalAccess:str->13)($19:str->19)
-end	IllegalAccess;	#6:(IllegalAccess:str->13)
+function Client.main():int;	#0:(main:int->0)
+	IllegalAccess;	#1:(IllegalAccess:any->13)
+	c4 := "should not come here";	#2:(c4:str->14)($15:str->15)
+catch	IllegalAccess;	#3:(IllegalAccess:any->13)
+	n0 := 0;	#4:(n0:int->16)($17:int->17)
+	IllegalAccess;	#5:(IllegalAccess:any->13)
+end	IllegalAccess;	#6:(IllegalAccess:any->13)
 end function;	#7:
-SyntaxError::'Service.main' contains errors
+SyntaxError::'Client.main' contains errors

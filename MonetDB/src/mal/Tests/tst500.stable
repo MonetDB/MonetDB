@@ -9,23 +9,24 @@
 ## recursive MAL calls 
 #
 #function simple(i:int, lim:int, s:str):flt;
+#	i:= i+1;
 #barrier	v:= i<lim;
 #	z:= simple(i,lim,s);
 #end	v;
 #	r:= 3.14:flt;
 #	return r;
 #end function;
-function simple(i:int,lim:int,s:str):flt;	#0:(simple:flt->0)(i:int->13)(lim:int->14)(s:str->15)
-	i := arith.+(i,1);	#1:(i:int->13)(i:int->13)($16:int->16)
-barrier	v := <(i,l);	#2 unknown:(v:any->17)(i:int->13)(l:any->18)
-	z := Service.simple(i,lim,s);	#3:(z:flt->19)(i:int->13)(lim:int->14)(s:str->15)
-end	v;	#4:(v:any->17)
-	r := 3.14;	#5:(r:flt->20)($21:flt->21)
-	return r;	#6:(r:flt->20)
+function simple(i:int,lim:int,s:str):flt;	#0:(simple:flt->0)(i:int->1)(lim:int->2)(s:str->3)
+	i := arith.+(i,1);	#1:(i:int->1)(i:int->1)($16:int->16)
+barrier	v := arith.<(i,lim);	#2:(v:bit->17)(i:int->1)(lim:int->2)
+	z := Client.simple(i,lim,s);	#3:(z:flt->18)(i:int->1)(lim:int->2)(s:str->3)
+end	v;	#4:(v:bit->17)
+	r := 3.14;	#5:(r:flt->19)($20:flt->20)
+	return r;	#6:(r:flt->19)
 end function;	#7:
 #
 #r:= simple(0,2,"hello");
 #
-function Service.main():int;	#0:(main:int->0)
-	r := Service.simple(0,2,"hello");	#1:(r:flt->13)($14:int->14)($15:int->15)($16:str->16)
+function Client.main():int;	#0:(main:int->0)
+	r := Client.simple(0,2,"hello");	#1:(r:flt->13)($14:int->14)($15:int->15)($16:str->16)
 end function;	#2:

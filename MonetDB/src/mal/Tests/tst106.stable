@@ -10,15 +10,16 @@
 #
 #command f(a:any::1,b:any::2, c:any::1) :bat[any::1,any::2] =f;
 ERROR: address of function f not found
-command Service.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = f;	#0 unknown:(f:bat[any::1,any::2]->0)(a:any::1->13)(b:any::2->14)(c:any::1->15)
+#function address for 'f' not found
+command Client.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = f;	#0 unknown:(f:bat[any::1,any::2]->0)(a:any::1->1)(b:any::2->2)(c:any::1->3)
 #
 #b:= f(1,2,"help");
 #a:= f(1,2,1);
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	b := f(1,2,"help");	#1 unknown:(b:any->13)($14:int->14)($15:int->15)($16:str->16)
-	a := Service.f(1,2,1);	#2:(a:bat[int,int]->17)($14:int->14)($15:int->15)($14:int->14)
+	a := Client.f(1,2,1);	#2:(a:bat[int,int]->17)($14:int->14)($15:int->15)($14:int->14)
 end function;	#3:
-CATCH ERROR MALexception:Service.main[1]:Instruction type not fixed
+CATCH ERROR MALexception:Client.main[1]:Instruction type not fixed
 
-MALexception:Service.main[1]:Instruction type not fixed
+MALexception:Client.main[1]:Instruction type not fixed

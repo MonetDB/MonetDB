@@ -15,7 +15,7 @@
 #f := flt(3.4);
 #j := sht("1");
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	o := atoms.oid("999@0");	#1:(o:oid->13)($14:str->14)
 	os := atoms.str(o);	#2:(os:str->15)(o:oid->13)
 	i := atoms.sht(1);	#3:(i:sht->16)($17:int->17)

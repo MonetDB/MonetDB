@@ -1,5 +1,6 @@
 @t The Atom Module
 @a M.L. Kersten
+@v 1.0
 @* Introduction
 Monet supports definitions of user-defined types. 
 This feature is of particular interest to system experts. 
@@ -180,7 +181,7 @@ int voidToStrImpl(str *ret, void *val){
 }
 int oidFromStrImpl(oid *ret, str *val){
 	int l = strlen(*val);
-	(void) OIDfromStr(*val, &l, ret);
+	(void) OIDfromStr(*val, &l, (ptr) ret);
 	return GDK_SUCCEED;
 }
 int oidToStrImpl(str *ret, oid *val){
@@ -188,8 +189,16 @@ int oidToStrImpl(str *ret, oid *val){
 	(void) OIDtoStr(ret,&l, val);
 	return GDK_SUCCEED;
 }
-int voidFromvoidImpl(ptr *ret, ptr *val){
+int voidFromvoidImpl(oid *ret, ptr *val){
 	*ret = oid_nil;
+	return GDK_SUCCEED;
+}
+int oidFromoidImpl(oid *ret, oid *val){
+	*ret= *val;
+	return GDK_SUCCEED;
+}
+int oidFromvoidImpl(oid *ret, void *val){
+	memcpy(ret, ATOMnilptr(TYPE_oid), ATOMsize(TYPE_oid));
 	return GDK_SUCCEED;
 }
 @:convertImpl(sht)@
@@ -233,11 +242,59 @@ int @1From@2Impl(@1 *res, @2 *val){
 
 int shtFromlngImpl(sht *res, lng *val){
 	/* perform a range check !! */
+	if( *val<0 ||*val >255){
+		raiseException2("ERROR","coercion error lng->sht\n");
+		return GDK_FAIL;
+	}
 	*res = *val;
 	return GDK_SUCCEED;
 }
 int shtFromintImpl(sht *res, int *val){
 	/* perform a range check !! */
+	if( *val<0 ||*val >255){
+		raiseException2("ERROR","coercion error int->sht\n");
+		return GDK_FAIL;
+	}
 	*res = *val;
+	return GDK_SUCCEED;
+}
+int atoms_tostr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_tostr:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_fromstr(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_fromstr:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_nequal(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_nequal:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_hash(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_hash:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_null(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_null:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_convert(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_convert:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_put(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_put:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_del(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_del:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_heap(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_heap:not yet implemented\n");
+	return GDK_SUCCEED;
+}
+int atoms_length(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	GDKerror("ERROR:atoms_length:not yet implemented\n");
 	return GDK_SUCCEED;
 }

@@ -13,7 +13,7 @@
 #s:= "hello world";
 #
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	a := arith.+(3,1);	#1:(a:int->13)($14:int->14)($15:int->15)
 	c := arith.+(7,8);	#2:(c:int->16)($17:int->17)($18:int->18)
 	b := arith.+(3.5,2.7);	#3:(b:flt->19)($20:flt->20)($21:flt->21)

@@ -1,8 +1,6 @@
 
 INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/monet -I$(MONET_BUILD)/src/mal
 
-SUBDIRS = clients
-
 MTSAFE
 
 # install these libs in the pkglib
@@ -10,15 +8,15 @@ LIBDIR = pkglib
 
 lib__mapi = {
 	SOURCES = mapi.mx
-	HEADERS = h proto.h m
-	SCRIPTS = mil ""
-	LIBS = ../gdk/libbat ../monet/libmonet \
+	HEADERS = h 
+	SCRIPTS = mal mil ""
+	LIBS = ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-scripts_mil = {
-	DIR = pkgdatadir
-	SOURCES = mapi.mil
-}
+#scripts_mil = {
+	#DIR = pkgdatadir
+	#SOURCES = mapi.mil
+#}
 
 EXTRA_DIST_DIR = Tests

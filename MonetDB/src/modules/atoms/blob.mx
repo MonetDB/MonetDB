@@ -21,44 +21,44 @@ the bytes-size of the blob (excluding the integer), and then just binary data.
 
 @* Module Definition
 @mal
-ATOM MODULE blob;
+atom module blob;
 
-      COMMAND tostr(b:blob):str = blob_tostr;
-      COMMAND fromstr(s:str):blob = blob_fromstr;
-      COMMAND nequal(l:blob,r:blob):bit  = blob_nequal;
-      COMMAND hash(b:blob):int	= blob_hash;
-      COMMAND null():blob	= blob_null;
-      COMMAND convert(b:blob,direction:int):int = blob_convert;
-      COMMAND put(heap:ptr,bun:int,val:blob):int= blob_put;
-      COMMAND del(heap:ptr,index:int):int = blob_del;
-      COMMAND length(b:blob):lng = blob_length;
-      COMMAND heap(heap:ptr, capacity:int):int = blob_heap;
+      command tostr(b:blob):str = blob_tostr;
+      command fromstr(s:str):blob = blob_fromstr;
+      command nequal(l:blob,r:blob):bit  = blob_nequal;
+      command hash(b:blob):int	= blob_hash;
+      command null():blob	= blob_null;
+      command convert(b:blob,direction:int):int = blob_convert;
+      command put(heap:ptr,bun:int,val:blob):int= blob_put;
+      command del(heap:ptr,index:int):int = blob_del;
+      command length(b:blob):lng = blob_length;
+      command heap(heap:ptr, capacity:int):int = blob_heap;
 
 @+ string functions
 Manipulation functions to extract strings from blobs and vice versa.
 Not to be confused with blob parsing and printing.
 @mal
-   COMMAND tostr(v:blob) : str = fromblob
+   command tostr(v:blob) : str = fromblob
 	comment "get the bytes from blob as a string, till the first 0 byte
          or the end of the blob";
-   COMMAND tostr(v:blob, index:int ) : str = fromblob_idx
+   command tostr(v:blob, index:int ) : str = fromblob_idx
 	comment "get the bytes from blob as a string, starting at byte 'index'
          till the first 0 byte or the end of the blob.";
-   COMMAND toblob(v:str) : blob = toblob
+   command toblob(v:str) : blob = toblob
 	comment "store a string as a blob.";
 @-
 The registration of the atom functions relies on the atom module rules.
 @mal
-FUNCTION init();
+function init();
 	nme:= "blob";
 	Zstr:= atoms.tostr(nme);
 	Zblob:= atoms.fromstr(nme);
 	Zbit:= atoms.nequal(nme);
 	Z:= atoms.hash(nme);
 	Zblob:= atoms.null(nme);
-	Z:= atoms.convert(nme);
-	Z:= atoms.put(nme);
-	Z:= atoms.del(nme);
+	Zint:= atoms.convert(nme);
+	Zint:= atoms.put(nme);
+	Zint:= atoms.del(nme);
 	Zlng:= atoms.length(nme);
 
 CATCH GDKerror;

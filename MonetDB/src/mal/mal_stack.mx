@@ -6,6 +6,8 @@ The runtime context of a MAL procedure is allocated on the runtime stack
 of the corresponding interpreter.
 Access to the elements in the stack are through index offsets,
 determined during MAL procedure parsing.
+This method has been proven highy efficient compared to using 
+individual GDKmalloci calls.
 
 Unlike Monet Version 4, the scope administration for MAL procedures is
 decoupled from their actual runtime behavior. This means we are
@@ -54,7 +56,7 @@ typedef struct MALSTK {
 	ValRecord stk[0];
 }MalStack, *MalStkPtr;
 
-#define STACKINCR	512
+#define STACKINCR	128
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT)	S= (MalStkPtr) alloca(stackSize(CNT));\
 			memset((void *) S, 0, stackSize(CNT));\

@@ -7,7 +7,6 @@
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
 ## analyse the basic interpreter loop
-## illegal destination type of a barrier
 #
 #	i:=0;
 #barrier	v:= true;
@@ -20,7 +19,7 @@
 #end	t;
 #	i:= 0;
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	i := 0;	#1:(i:int->13)($14:int->14)
 barrier	v := true;	#2:(v:bit->15)($16:bit->16)
 	leave v;	#3:(v:bit->15)

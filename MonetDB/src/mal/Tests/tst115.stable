@@ -10,7 +10,8 @@
 #
 #command + (L:any::1,R:any::1):any::1 = addIntInt; 
 ERROR: address of function addIntInt not found
-command Service.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 unknown:(addIntInt:any::1->15)(L:any::1->13)(R:any::1->14)
+#function address for 'addIntInt' not found
+command Client.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 unknown:(addIntInt:any::1->3)(L:any::1->1)(R:any::1->2)
 #
 #function doitOnce():int;
 #	z:= 12;
@@ -27,11 +28,11 @@ end function;	#3:
 #	i:= j+k;
 #	return i;
 #end function;
-function doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->13)
+function doitTwice(i:int):int;	#0:(doitTwice:int->0)(i:int->1)
 	j := 2;	#1:(j:int->14)($15:int->15)
 	k := 11111;	#2:(k:int->16)($17:int->17)
-	i := Service.+(j,k);	#3:(i:int->13)(j:int->14)(k:int->16)
-	return i;	#4:(i:int->13)
+	i := Client.+(j,k);	#3:(i:int->1)(j:int->14)(k:int->16)
+	return i;	#4:(i:int->1)
 end function;	#5:
 #
 #
@@ -42,15 +43,14 @@ end function;	#5:
 #c:= 3;
 #d:= doitTwice("wrong");
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	a := 1;	#1:(a:int->13)($14:int->14)
-	b := Service.doitOnce();	#2:(b:int->15)
+	b := Client.doitOnce();	#2:(b:int->15)
 	c := 2;	#3:(c:int->16)($17:int->17)
-	d := Service.doitTwice(3);	#4:(d:int->18)($19:int->19)
+	d := Client.doitTwice(3);	#4:(d:int->18)($19:int->19)
 	c := 3;	#5:(c:int->16)($19:int->19)
 	d := doitTwice("wrong");	#6 unknown:(d:int->18)($20:str->20)
 end function;	#7:
-mal_interpreter address Service.+ unknown
-CATCH ERROR MALexception:Service.main[6]:Instruction type not fixed
+CATCH ERROR MALexception:Client.main[6]:Instruction type not fixed
 
-MALexception:Service.main[6]:Instruction type not fixed
+MALexception:Client.main[6]:Instruction type not fixed

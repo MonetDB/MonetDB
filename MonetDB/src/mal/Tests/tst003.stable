@@ -11,7 +11,7 @@
 #a:=b;	#b not yet defined
 #b:=c;	#c undefined
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	a := b;	#1 dynamic:(a:any->13)(b:any->14)
 	b := c;	#2 dynamic:(b:any->14)(c:any->15)
 end function;	#3:

@@ -37,7 +37,7 @@ WARNING:newConstant:int coerced to lng
 #err := print(b);
 #err := print(b,b,b);
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	o := atoms.oid(20000000);	#1:(o:oid->13)($14:int->14)
 	err := atoms.setoid(o);	#2:(err:int->15)(o:oid->13)
 	b := bat.new(int,int);	#3:(b:bat[int,int]->16)(int:int->6)(int:int->6)

@@ -1,5 +1,6 @@
 @f arith
 @a N.J. Nes, P. Boncz, M. Kersten
+@v 2.0
 @t The Arithmetics Module
 @* Introduction
 @T
@@ -61,13 +62,16 @@ test routines (it would otherwise become rather difficult to test
 whether a value is nil). 
 
 @* Module Definition
-Most of the primitives.
+Most of the primitives are defined here. 
+A heuristic is to organize the routines along the types 
+(int,lng,sht,bit,oid,flt,...) to reduce number of checks
+at function resoluton.
 @= mal_isnil
-	#command @1(v:void) :@1 = @1_tonil;
-
 	command isnil(v:@1) : bit = @2_isnil
-		comment "is a value nil?";
+	comment "is a value nil?";
 @-
+[Mx bug, space required here]
+
 @mal
 
 module arith;
@@ -89,6 +93,10 @@ The {\tt mel\_comp\_ops} Mx macro implements the mel interface to the
 arithmetic operations. Note that comparison operators with unequal
 operands are already supported in the kernel, but are not nearly as fast,
 (because they have to convert values on the fly).  
+A heuristic is to organize the routines along the types 
+(int,lng,sht,bit,oid,flt,...) to reduce number of checks
+at function resoluton. The least interesting one is pushed
+first onto the symbol table stack.
 @= mal_eq_ops
 	command =(left:@1, right:@1) : bit = @2_comp_EQ
 		comment "left equal to right?";
@@ -108,15 +116,21 @@ operands are already supported in the kernel, but are not nearly as fast,
 		comment "checks (low <= val <= high)";
 @mal
         @:mal_comp_ops(any::1,any)@
-        @:mal_eq_ops(bit,chr)@
-        @:mal_eq_ops(bit,sht)@
-        @:mal_eq_ops(bit,int)@
-        @:mal_eq_ops(bit,lng)@
+
+        @:mal_comp_ops(oid,oid)@
+        @:mal_comp_ops(flt,flt)@
+        @:mal_comp_ops(flt,dbl)@
+        @:mal_comp_ops(dbl,dbl)@
 
         @:mal_comp_ops(chr,chr)@
         @:mal_comp_ops(chr,sht)@
         @:mal_comp_ops(chr,int)@
         @:mal_comp_ops(chr,lng)@
+
+        @:mal_eq_ops(bit,chr)@
+        @:mal_eq_ops(bit,sht)@
+        @:mal_eq_ops(bit,int)@
+        @:mal_eq_ops(bit,lng)@
 
         @:mal_comp_ops(sht,chr)@
         @:mal_comp_ops(sht,sht)@
@@ -127,11 +141,6 @@ operands are already supported in the kernel, but are not nearly as fast,
         @:mal_comp_ops(int,sht)@
         @:mal_comp_ops(int,int)@
         @:mal_comp_ops(int,lng)@
-
-        @:mal_comp_ops(oid,oid)@
-        @:mal_comp_ops(flt,flt)@
-        @:mal_comp_ops(flt,dbl)@
-        @:mal_comp_ops(dbl,dbl)@
 
         @:mal_comp_ops(lng,chr)@
         @:mal_comp_ops(lng,sht)@
@@ -160,6 +169,23 @@ atomic types and a result type.
 @-
 The coercions described below ensure that there is never an information loss.
 @mal
+
+	@:mal_arith_ops(flt,chr,flt)@
+	@:mal_arith_ops(flt,sht,flt)@
+	@:mal_arith_ops(flt,int,flt)@
+	@:mal_arith_ops(flt,lng,flt)@
+	@:mal_arith_ops(flt,flt,flt)@
+	@:mal_arith_ops(flt,dbl,dbl)@
+
+	@:mal_arith_ops(dbl,chr,dbl)@
+	@:mal_arith_ops(dbl,sht,dbl)@
+	@:mal_arith_ops(dbl,int,dbl)@
+	@:mal_arith_ops(dbl,lng,dbl)@
+	@:mal_arith_ops(dbl,flt,dbl)@
+	@:mal_arith_ops(dbl,dbl,dbl)@
+
+	@:mal_arith_ops(oid,oid,oid)@
+
 	@:mal_arith_ops(chr,chr,chr)@
 	@:mal_arith_ops(chr,sht,sht)@
 	@:mal_arith_ops(chr,int,int)@
@@ -188,22 +214,6 @@ The coercions described below ensure that there is never an information loss.
 	@:mal_arith_ops(lng,flt,flt)@
 	@:mal_arith_ops(lng,dbl,dbl)@
 
-	@:mal_arith_ops(flt,chr,flt)@
-	@:mal_arith_ops(flt,sht,flt)@
-	@:mal_arith_ops(flt,int,flt)@
-	@:mal_arith_ops(flt,lng,flt)@
-	@:mal_arith_ops(flt,flt,flt)@
-	@:mal_arith_ops(flt,dbl,dbl)@
-
-	@:mal_arith_ops(dbl,chr,dbl)@
-	@:mal_arith_ops(dbl,sht,dbl)@
-	@:mal_arith_ops(dbl,int,dbl)@
-	@:mal_arith_ops(dbl,lng,dbl)@
-	@:mal_arith_ops(dbl,flt,dbl)@
-	@:mal_arith_ops(dbl,dbl,dbl)@
-
-	@:mal_arith_ops(oid,oid,oid)@
-
 @- binary  operations { max, min, }
 @= mal_binary_ops
    	command max(l:@1, r:@1) : @1 = @2_binary_MAX; 
@@ -225,12 +235,12 @@ The coercions described below ensure that there is never an information loss.
    	command -(x:@1) : @1 = @1_unary_NEG comment "negative value";
 @-
 @mal
+	@:mal_unary_ops(dbl)@
+	@:mal_unary_ops(flt)@
 	@:mal_unary_ops(chr)@
 	@:mal_unary_ops(sht)@
 	@:mal_unary_ops(int)@
-	@:mal_unary_ops(flt)@
 	@:mal_unary_ops(lng)@
-	@:mal_unary_ops(dbl)@
 
 @- boolean { or, xor, and, not }
 @mal
@@ -275,11 +285,10 @@ array. Specific operations work with this interpretation.
 	comment "initialize the rand() function with a seed";
 
 @+ Example script 
-The following example script will do each operation in the
-arith module. It can be used for testing.
+The following example MIL script will do each operation in the
+arith module. It can be used for testing and the M2m compiler.
 
 @mil
-module("kernel/arith");
 setoid(oid(20000000));
 chr1 := 'a';
 chr2 := 'c';
@@ -893,4 +902,5 @@ int @3_binary@1(@3 *res , @3 *a, @3 *b ) {
    return(GDK_SUCCEED);
 }
 @
+
 @}

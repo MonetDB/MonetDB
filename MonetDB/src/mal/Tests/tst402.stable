@@ -14,7 +14,7 @@
 #	redo v1;
 #end	v1;
 #
-function Service.main():int;	#0:(main:int->0)
+function Client.main():int;	#0:(main:int->0)
 	i := ' ';	#1:(i:chr->13)($14:chr->14)
 barrier	v1 := iterator.nextElement(i,'A','C');	#2:(v1:bit->15)(i:chr->13)($16:chr->16)($17:chr->17)
 	v := "do something";	#3:(v:str->18)($19:str->19)

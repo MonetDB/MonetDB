@@ -55,6 +55,9 @@ Symbol malImport(str fname,int listing,int loaded){
 	char *buf;
 	Symbol	prg;
 	char path[PATHLENGTH];
+        InstrPtr curInstr;
+        MalBlkPtr curBlk;
+
 	Client c= getClient();
 	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
 	int oldlisting = c->listing;
@@ -110,11 +113,19 @@ resolving addresses.
 	c->listing = listing;
 	setClientMain(c);
 	parseMal(c);
-	if( listing && c->mainprg) printFunction(stdout,c->mainprg->def);
+	
+
 	/* reset the input buffer */
 	GDKfree(c->input);
 	if( oldmain) {
-		if( c->mainprg != oldmain) closeClientMain(c);
+		if( c->mainprg != oldmain) {
+			/* closeClientMain(c);*/
+			curBlk = c->curprg->def;
+			curInstr= newInstruction(curBlk,ENDDEFsymbol);
+			pushInstruction(curBlk,curInstr);
+			if( listing && c->mainprg) 
+				printFunction(stdout,c->mainprg->def);
+		}
 		c->mainprg = oldmain;
 	}
 	c->listing = oldlisting;

@@ -56,12 +56,15 @@ mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe);
 str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env){
 	MalBlkPtr mb=mbcaller;
 	MalStkPtr stk= NULL;
-	int space = 0;
+	int space = 0,i;
 	ValPtr retval, lhs,rhs;
-	InstrPtr pci=0;
+	InstrPtr pci=0, stop=0;
 	str ret=0;
 	char 	cmd='n';	/* debugger command */
 	ptr argv[MAXARG];
+	static MalStkPtr oldstk;	/* experiment */
+	static int oldspace;
+	long timer;
 	@:performanceVariables@
 
 	if( mbcaller->errors){
@@ -70,26 +73,31 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env){
 			getModName(mb),getFcnName(mb));
 		return raiseException2("SyntaxError",buf);
 	}
-	/* allocate space for value stack */
-allocStackLabel:
-	space += STACKINCR;
-	newStack(stk,space);
-	@:safeguardStack@
-
-@-
-Prepare a new interpreter call. The env stackframe is only set when
-a MAL function is called recursively.
-Notice that arguments are always the first entries on the stack.
-They are followed by predefined constants.
-@c
 	if( env){
-		int k;
+		/* locate instructions for called function */
+		/* currently the same as the callee */
 		pci= getInstrPtr(mbcaller,env->pc);
 		mb= pci->blk;
-		if( mb == NULL){
-			GDKerror("runMAL: MAL instruction list not defined\n");
-			return 0;
-		}
+	} 
+@-
+Prepare a new interpreter call. This involves two steps, (1) allocate
+the minimum amount of stack space needed, some slack resources
+are included to permit code squeezers to add a few variables at run time,
+(2) copying the arguments into the new stack frame.
+Notice that arguments are always the first entries on the stack.
+They are followed by predefined constants.
+
+The env stackframe is only set when a MAL function is called recursively.
+@c
+	/* allocate space for value stack */
+	space= mb->vtop+8;
+	newStack(stk,space);
+	stk->stktop= mb->vtop; 
+	stk->blk= mb;
+	@:safeguardStack@
+
+	if( env){
+		int k;
 		/* printf("recursive MAL function call %s[%d]\n",
 			pci->fcnname,env->pc); */
 		for(k=1;k<pci->argc;k++){
@@ -101,18 +109,30 @@ They are followed by predefined constants.
 		}
 		stk->up = env;
 		env->down = stk;
-		stk->pc = 0;
 		cmd = env->cmd;
-	} else mb = mbcaller;
+	} 
+@-
+An optimization is to copy all constant variables used in functions immediately
+onto the value stack. Then we do not have to check for the location
+later on any more. The effect is optimal, if at least ca. 20 constants
+are referenced in a function (a gain on tst400a of 20% has been observed).
+Otherwise, it is cheaper to lookup them up. 
+This requires a change in pushArgument and the variable record structure,
+we have not included this option yet.
+@c
+	for(i=0;i< stk->stktop;i++)
+	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
+		lhs = &stk->stk[i];
+		rhs = &getVarConstant(mb,i);
+		VALcopy(lhs,rhs);
+	}
 
-	stk->blk= mb;
-	if( mb->vtop>= space) goto allocStackLabel;
-	stk->stktop= mb->vtop; /* check for overflow !*/
 	/* run the program */
 MALrestart:
 	stk->pc =0;
 	stk->exception = -1;
-	while(stk->pc < mb->stop ){
+	stop = mb->stop;
+	while(stk->pc < stop ){
 		pci = getInstrPtr(mb,stk->pc);
 		@:exceptionTest@
 
@@ -121,8 +141,9 @@ MALrestart:
 			if( cmd == 'q') goto MALevalExit;
 			if( cmd == 'r') goto MALrestart;
 		}
-		@:performance@
+		@:beginProfile@
 		@:MALinterpret@
+		@:endProfile@
 	}
 MALevalExit:
 	while( cntxt->trace && cmd != 'q' ){
@@ -174,9 +195,11 @@ elements in the value stack.
 		@:barrierControl@ break;
 	case RLRcall:
 	case PATcall:
-		@:patterncall@ stk->pc++; break;
+		@:patterncall@ 
+		stk->pc++; break;
 	case CMDcall:
-		@:commandcall@ stk->pc++; break;
+		@:commandcall@ 
+		stk->pc++; break;
 	case FCNcall:
 		stk->cmd= cmd;
 		@:functioncall@ stk->pc++; 
@@ -187,13 +210,15 @@ elements in the value stack.
 	case FUNCTIONsymbol:
 	case RAISEsymbol:
 	case ENDsymbol:
-		stk->pc++; break;
+		stk->pc++; 
+		break;
 	case CATCHsymbol:
 		stk->exception = pci->argv[0]; /* skip it */
 		stk->pc++; break;
 	case RETURNsymbol:
 		if( env != NULL){
 			rhs = &stk->stk[pci->argv[0]];
+			@:endProfile@
 			pci = getInstrPtr(mbcaller,env->pc);
 			lhs = &env->stk[pci->argv[0]];
 			VALcopy(lhs,rhs);
@@ -216,17 +241,15 @@ symbol table and moves it to the stackframe location.
 @= assignStmt
 {	
 	lhs = &stk->stk[pci->argv[0]];
-	if( isVarConstant(mb,pci->argv[1]))
+	/* if( isVarConstant(mb,pci->argv[1]))
 		rhs = &getVarConstant(mb,pci->argv[1]);
-	else	rhs = &stk->stk[pci->argv[1]];
+	else */ 	rhs = &stk->stk[pci->argv[1]];
 	VALcopy(lhs,rhs);
 	ret = 0;
 }
-if( pci->barrier == RAISEsymbol){
-	stk->exception= pci->argv[0];
-} else {
+if( pci->barrier == BARRIERsymbol){
 	@:barrierControl@
-}
+} 
 
 @+ MAL API
 The linkage between MAL interpreter and compiled C-routines
@@ -258,23 +281,13 @@ into the stack frame rather than pointers to the actual value.
 
 The argument list and their location on the runtime stack frame
 are determined at compile time.
-The first offset in the arg list denotes the location of the return value.
-Although the MAL interpreter should already give a warning when
-a function can not be resolved, this is the latest moment to check
-
-@= preparecall
-	if( pci->fcn == NULL){
-		char buf[1024];
-		sprintf(buf,"mal_interpreter address %s.%s unknown\n",
-			pci->modname,pci->fcnname);
-		GDKerror(buf);
-		ret= raiseException(mb,stk->pc,"MALexception",buf);
-		goto exceptionHdlr;
-	} 
 
 @= commandcall
-	@:preparecall@
 	@:evalParameters@
+	if( pci->fcn== NULL)
+		ret= raiseException(mb,stk->pc,"MALexception",
+			"address of function missing\n");
+	else
 	switch(pci->argc){
 	case 0 : ret = (str) (*pci->fcn)(); break;
 	case 1 : ret = (str) (*pci->fcn)(argv[0]); break;
@@ -295,7 +308,6 @@ a function can not be resolved, this is the latest moment to check
 	@:resultParameter@
 
 @= patterncall
-	@:preparecall@
 	retval=  &stk->stk[pci->argv[0]];
 	retval->vtype = getGDKtype(mb->var[pci->argv[0]].type);
 	ret = (str) (*pci->fcn)(mb,stk,pci);
@@ -329,7 +341,7 @@ the bind(namespace,batname,mode) operation.[todo]
 	retval=  &stk->stk[pci->argv[0]];
 	retval->vtype = getGDKtype(mb->var[pci->argv[0]].type);
 	for(k=0;k<pci->argc; k++){
-		argv[k] =(ptr) getArgReference(mb,stk,pci,k);
+		argv[k] =(ptr) getArgReference(stk,pci,k);
 	} 
 	@:clearResult(retval)@
 }
@@ -355,7 +367,9 @@ and we have to do some housekeeping, such as string length adjustment.
 			retval->len= ATOMlen(TYPE_str,retval->val.pval);
 		}
 	}
-	@:barrierControl@
+	if( pci->barrier==BARRIERsymbol){
+		@:barrierControl@
+	}
 
 @+ Flow of control statements
 Each assignment (function call) may be part of the initialization
@@ -366,8 +380,7 @@ labeled statemtent. This might be optimized later.
 The upper layers have assured that the result variable is of type boolean.
 
 @= barrierControl
-if( pci->barrier==BARRIERsymbol){
-ValPtr v;
+{ ValPtr v;
 	v= &stk->stk[pci->argv[0]];
 	/* skip to end of barrier */
 	if( v->val.bval== FALSE) @:leaveControl@
@@ -393,6 +406,7 @@ the beginning.
 	if( p->barrier == BARRIERsymbol && p->argv[0]== pci->argv[0]){
 		break;
 	} }
+	@:endProfile@
 	/* semantic validity of redo stmt has been checked already */
 	/* continue re-execution of the barrier statement */
 	continue;
@@ -547,12 +561,18 @@ administration code.
 @+ Performance section
 This will be dealt with at a later stage.
 @= performanceVariables
-#ifdef PROFILER
-	int oldclk=0,newclk=0;
+#ifdef MALprofiler
+	long oldclk=0,newclk=0;
 #endif
-@= performance
-#ifdef PROFILER
-	pci->count++;
+@= beginProfile
+#ifdef MALprofiler
+	oldclk= GDKusec();
+#endif
+
+@= endProfile
+#ifdef MALprofiler
+	newclk= GDKusec();
+	pci->counter++;
 	pci->ticks += newclk-oldclk;
 	oldclk=newclk;
 #endif

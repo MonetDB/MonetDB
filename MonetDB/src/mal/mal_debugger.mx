@@ -168,7 +168,7 @@ char gdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 	skipBlanc(b);
 	switch(*b){
 	case 0: return cmd;
-	case 'c': if( strcmp("call",b)==0){
+	case 'c': if( strncmp("call",b,4)==0){
 			GDKerror("call instruction not yet implemented\n");
 		 }
 		 return 'c';
@@ -183,6 +183,11 @@ char gdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 		debugScope(b);
 		break;
 	case 't': /* trace breakpoint */
+		if( strncmp("timer",b,5)==0){
+			if( cntxt->timer==0)
+				cntxt->timer = GDKusec();
+			else cntxt->timer = 0;
+		}
 	case 'b':
 		skipWord(b);
 		if(*b==0) { gdbShowBreakpoints(cntxt); continue;}
@@ -267,7 +272,7 @@ signatures satisfying the pattern.
 			modname=b;
 			fcnname= strchr(b,'.');
 			if( fcnname == NULL){
-				fsym= findScope(MAL_scope,modname);
+				fsym= findScope(mal_scope,modname);
 				if( fsym==0) {
 					fprintf(out,"scope not found\n");
 					continue;
@@ -318,10 +323,20 @@ char gdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,char cmd){
 		} /* else printf("skip line %d\n", stk->pc);*/
 		break;
 	case 's': case 'n':
+		if( cntxt->timer){
+			long n= GDKusec();
+			long l= n - cntxt->timer;
+			fprintf(cntxt->fdout,"[%-3d usec] ",l);
+		}
 		cmd= gdbCommand(cntxt,mb,stk,p,cmd);
 		break;
 	case 'r': cmd = 'n';
+		if( cntxt->timer){
+			long l= GDKusec() - cntxt->timer;
+			fprintf(cntxt->fdout,"[%d usec]",l);
+		}
 	}
+	if( cntxt->timer) cntxt->timer = GDKusec();
 	return cmd;
 
 }
@@ -351,9 +366,8 @@ void printStackElm(FILE *f, VarPtr n, ValPtr v){
 	 	VALprint(f, v);
 	}
 	nme= malTypeName(n->type);
-	fprintf(f,":%s%s%s", nme, (n->accessmode?" protected":""),
+	fprintf(f,":%s%s%s", nme, (n->isused?" used":""),
 			(n->isaconstant?" constant":""));
-	/*fprintf(f,"type %d <-%d",getGDKtype(n->type),v->vtype);*/
 	printf("\n");
 	GDKfree(nme);
 }
@@ -373,5 +387,6 @@ void gdbHelp(FILE *f){
 	fprintf(f,"where -- print stack trace\n");
 	fprintf(f,"print <var> -- display value of a variable\n");
 	fprintf(f,"run -- restart current procedure\n");
+	fprintf(f,"timer -- produce micro-second response time\n");
 	fprintf(f,"help -- this message\n");
 }

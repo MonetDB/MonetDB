@@ -12,12 +12,12 @@ function prStr(format:str,arg:str[]):void;
 	limit:= Array.getLength(arg);
 barrier  b:= iterator.nextElement(i,0,limit);	#elm:= arg[i]
 	elm:= Array.get(arg,i);  #elm:= arg[i]
-	e1:= printf("argument ");
-	e1:= printf(i);
-	e1:= printf(elm);
+	printf("argument ");
+	printf(i);
+	printf(elm);
 end b;
 end function; 
 
-e1:= pr("hello",1,true);
-e1:= prStr("hello",1,true);
-e1:= prStr("hello","quick","brown","fox");
+pr("hello",1,true);
+prStr("hello",1,true);
+prStr("hello","quick","brown","fox");
