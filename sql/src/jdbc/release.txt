@@ -1,5 +1,5 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.1 (Rise_rc1)
+MonetDB JDBC driver version 1.1 (Rise_rc2)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
 Release date: 2005-01-21
