@@ -371,7 +371,6 @@ Peter: for the time being avoid difficult things like dropping everything
 @C
 	monet_exit();
 	MT_global_exit(0);  
-	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux; see gdk.h (gdk.mx) for details */
 	return 0;
 } /* main */
 @}
