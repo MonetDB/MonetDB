@@ -221,11 +221,11 @@ atom module date : int;
 A few interval operations.
 @mal
 command date_sub_sec_interval(t:date,sec:int):date = date_sub_sec_interval_wrap
-comment "Subtract seconds from a date\n";
+comment "Subtract seconds from a date";
 command date_add_sec_interval(t:date,sec:int):date = date_add_sec_interval_wrap
-comment "Add seconds to a date\n";
+comment "Add seconds to a date";
 command date_add_month_interval(t:date,sec:int):date = date_add_month_interval_wrap
-comment "Add months to a date\n";
+comment "Add months to a date";
 @- daytime atom
 @T
 A valid time of day to the detail of milliseconds, like 23:59:59:000
