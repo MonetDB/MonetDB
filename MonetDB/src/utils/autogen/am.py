@@ -290,12 +290,12 @@ def am_scripts(fd, var, scripts, am):
 	cond = ''
 	s = script
 	if scripts.has_key('COND'):
-            condname = scripts['COND']
+            condname = string.join(scripts['COND'], '+')
             fd.write("C_%s = \n" % (script))
             fd.write("if %s\n" % (condname))
             fd.write("	C_%s = %s\n" % (script,script))
             fd.write("endif\n")
-            cond = '#' + string.join(scripts['COND'], '+')
+            cond = '#' + condname
 	    s = "$(C_" + s + ")"
 		
         am['INSTALL'].append(s)
