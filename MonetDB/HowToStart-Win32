@@ -32,16 +32,29 @@ Pthreads for Win32
 	(ftp://sources.redhat.com/pub/pthreads-win32/)
 	Pthreads should be installed to C:\Pthreads, otherwise you need
 	to patch the "PTHREAD = C:\Pthreads" line in "NT\rules.msc"
-	according to your setup.
+	according to your setup. Newer versions of Pthreads seem to
+	have the "include" & "lib" directory not in C:\Pthreads, but in
+	C:\Pthreads\prebuilt. In that case, you either have to move the
+	"include" & "lib" directory from C:\Pthreads\prebuilt to 
+	C:\Pthreads, or set "PTHREAD = C:\Pthreads\prebuilt" in
+	"NT\rules.msc".
 
 UnxUtils for Win32
 	(http://UnxUtils.sourceforge.net/)
-	UnxUtils must be installed in the root directory ("\", i.e., without
-	the default "\UnxUtils\" prefix) of the drive where you what to
-	compile MonetDB.
-	Next to some tools used by Mtest.py for testing MonetDB (see below),
-	UnxUtils provide the lexical analyzer generator "flex" and the
-	parser generator "bison", which are required to compile MonetDB.
+	UnxUtils must be installed in the root directory ("\", i.e.,
+	without the default "\UnxUtils\" prefix) of the drive where you
+	what to compile MonetDB. 
+	The same drive is required, as the UnxUtils do not know about
+	drive letters, and hence absolut paths start with "\" (i.e.,
+	without a leading "C:", "D:", ...).  The default "\UnxUtils\"
+	prefix has to be omitted, as other the UnxUtils' "bison" does
+	not find its own "bison.simple" file, which it expects to be in
+	"/usr/share/bison/bison.simple" (aka.
+	"\usr\share\bison\bison.simple").
+	Next to some tools used by Mtest.py for testing MonetDB (see
+	below), UnxUtils provide the lexical analyzer generator "flex"
+	and the parser generator "bison", which are required to compile
+	MonetDB.
 	
 Microsoft Visual C++
 	You need Microsoft Visual C++ 5 or higher.
@@ -90,9 +103,8 @@ Make sure that the proper environment for MSVC++ is set,
 otherwise call the corresponding BAT file.
 (see C:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT).
 
-Make sure that Python, C:\Pthreads\lib, and C:\UnxUtils\usr\local\wbin 
-(or wherever you installed Python, Pthreads and UnxUtils) are 
-in the PATH of your command shell.
+Make sure that Python, C:\Pthreads\lib (or wherever you installed
+Pthreads), and \usr\local\wbin are in the PATH of your command shell.
 
 When all prerequisites have been satisfied, you type
 
@@ -158,15 +170,4 @@ NOTE: the current 'nmake install' does not yet generate this
       tree, call
 
  nmake html
-
-Troubleshooting:
-================
-Installation of UnxUtils may conflict with already installed software.
-For example, the 'make' utility name is also used by some Java IDEs.
-This problem can be circumvented by setting the PATH variable only
-in the UnxUtils shell.
-
-Make complaints with a "missing separator on line 9", which indicates 
-that you use the wrong make command.  Most likely the MSVC has 
-not been properly set
 
