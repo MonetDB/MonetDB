@@ -33,9 +33,10 @@ bin_Mload = {
 bin_Mdestroydb = bin_Mcreatedb
 BINS = {
 	SOURCES = Mcreatedb.mx Mdump.mx Mshutdown.mx \
-	          Mrecover.mx Mcgi.mx Mclient.mx 
+	          Mrecover.mx Mcgi.mx Mclient.mx Mapiclient.mx
 	LIBS = libMapi ../gdk/libbat $(MAPI_LIBS)
 	Mclient_LIBS = ../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS) 
+	Mapiclient_LIBS = libMapi ../gdk/libbat $(MAPI_LIBS) $(READLINE_LIBS) 
 }
 
 bin_SCRIPTS = monet-config

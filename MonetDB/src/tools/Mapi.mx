@@ -159,6 +159,12 @@ MMONETERR & Monet error.\\
 @{
 @+ Implementation
 @h
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include  <stdio.h>
+
 #define NAMELEN	256
 #define ERRLEN	1024
 #define QRYLEN	32000
@@ -208,24 +214,6 @@ typedef MsessionStruct *Msession;
 
 #define Merror(x)	((x)->error)
 #define Metext(x)	((x)->errortext)
-
-/*
-#define GDK_NOLINK
-#include <gdk.h>
-
-#define TYPE_void	0
-#define TYPE_bit	1
-#define TYPE_chr	2
-#define TYPE_sht	3
-#define TYPE_bat	4              
-#define TYPE_int	5
-#define TYPE_oid	6
-#define TYPE_ptr	7               
-#define TYPE_flt	8
-#define TYPE_dbl	9
-#define TYPE_lng	10
-#define TYPE_str	11
-*/
 
 #ifdef __cplusplus
 extern "C" {
@@ -279,16 +267,16 @@ The Monet application interface commands are described below.
 They have been developed to ease interaction.
 
 @c
-#include   <gdk.h>
 #include   "Mapi.h"
+#include  <gdk.h>
 
+#include  <stdio.h>
 #include  <sys/types.h>
 #include  <sys/socket.h>
 
 #include  <signal.h>
-/*
-#include  <sys/wait.h>
-*/
+#include  <string.h>
+#include  <memory.h>
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -301,12 +289,6 @@ They have been developed to ease interaction.
 # endif
 #endif
 
-
-/*
-#if sun && !solaris
-extern char *strchr();
-#endif
-*/
 
 char *Mmessages[]= { 
 	"No error:",
