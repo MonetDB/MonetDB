@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-949135` in directory 'src/test/bugs` itself:
+stdout of test 'insert_into_groupby-bug-sf-949135` in directory 'src/test/bugs` itself:
 
 
 # 13:20:54 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:20:55 >  
-# 13:20:55 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=51304  < bug-sf-949135.sql
+# 13:20:55 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=51304  < insert_into_groupby-bug-sf-949135.sql
 # 13:20:55 >  
 
 # 6 # querytype
