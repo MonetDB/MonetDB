@@ -2311,14 +2311,11 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 MapiHdl
 mapi_query_prep(Mapi mid) 
 {
-	MapiHdl hdl;
-
 	if (mid->languageId == LANG_SQL) {
 		/* indicate to server this is a SQL command */
 		stream_write(mid->to, "S", 1, 1);
 	}
-	hdl = prepareQuery(mapi_new_handle(mid), "large query");
-	return hdl;
+	return mapi_new_handle(mid);
 }
 
 MapiMsg
