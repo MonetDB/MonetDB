@@ -29,7 +29,7 @@ Clients gain access to the Monet server through a internet connection
 or through its server console.
 Access through the internet requires a Monet client program at the
 source, but ordinary telnet connections can be applied when the internet
-number of the database server is publicised.
+number of the database server is publicized.
 @-
 The number of clients permitted concurrent access is a compile time option.
 They are referenced internally by number. The console is the first and 
@@ -565,13 +565,13 @@ int readClient(Client c){
 
 
 @-
-parseClient() parses the client MIL string byffer into a MIL parse tree. This
+parseClient() parses the client MIL string buffer into a MIL parse tree. This
 is also the point that the context resources of the previous MIL parse tree are
-released. In the past, frreing resources could not be done right away after
+released. In the past, freeing resources could not be done right away after
 executing the tree, because return values would be lost. Improvements in MIL
 value fixing and the return statement have now made this unnecessary.
 
-PETER: this coule be changed; freeing ASAP makes purify output easier to judge.
+PETER: this could be changed; freeing ASAP makes purify output easier to judge.
 
 As yacc/lex are not thread-safe, we lock around the parsing actions.
 @c
@@ -630,7 +630,7 @@ serveClient() tries to read MIL from the client input stream, and parse it.
 It is typically called from the MIL queue, which basically has two kinds
 of requests: serveClient and MIL execution.
 
-It calls on parseClient(), which will again add a MIL executuin request 
+It calls on parseClient(), which will again add a MIL execution request 
 containing a parsed MIL tree in to the MIL queue. 
 
 If and end-of-stream is detected, we signal in the queue that the
