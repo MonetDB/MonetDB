@@ -1574,7 +1574,7 @@ public boolean isConnected(){
 
 
 /* 
-The low-level operation toMonet attempts to sent a string to the server.
+The low-level operation toMonet attempts to send a string to the server.
 It assumes that the string is properly terminated and a connection to
 the server still exists.
 */
@@ -1590,6 +1590,8 @@ private void toMonet(String msg) throws MapiException {
 	try{
 		if( trace) traceLog.println("toMonet:"+msg);
 		int size= msg.length();
+		if( language.equals("sql"))
+			toMonet.writeBytes("S");
 		toMonet.writeBytes(msg);
 		toMonet.flush();
 	} catch( IOException e){

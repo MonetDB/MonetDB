@@ -548,12 +548,11 @@ These lines should be eaten away into the prompt is encountered.
 	/* GDKfree(passwd);*/
 
 	if (!schema){ 
-		char *msg= "!ERROR:Schema authorization error\n";
 		fprintf(stderr,"mapisqlclient: schema authorization error %s:%s \n",user,passwd);
 		/* close the connection to the Monet server */
-		if( stream_write(out, msg, strlen(msg), i) >=0 &&
+		if( error(out, "!ERROR:Schema authorization error") == 0 &&
 		    stream_write(out,prompt,promptlength,1) >=0 )
-		    stream_flush(out);
+			stream_flush(out);
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
@@ -597,6 +596,14 @@ These lines should be eaten away into the prompt is encountered.
 		}
 		stream_flush(out);
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
+		if (stream_read(in, start, 1, 1) != 1) {
+			error(out, "!ERROR:Connection terminated");
+			break;
+		}
+		if (*start != 'S') {
+			error(out, "!ERROR:Expected S prefix");
+			break;
+		}
 		if( blocked ){
 			int nsize = BUFSIZ;
 			while ((len = stream_read(in, start, 1, nsize)) == nsize){
@@ -604,7 +611,7 @@ These lines should be eaten away into the prompt is encountered.
 				nsize *= 4;
 				size += nsize;
 				inbuf = RENEW_ARRAY(char, inbuf, size); 
-				start = inbuf + size - nsize - 1;
+				start = inbuf + inlen;
 				*start = '\0';
 			}
 			if( len < 0){
@@ -618,8 +625,7 @@ These lines should be eaten away into the prompt is encountered.
 			char *lim= inbuf + size;
 			while( (len= stream_read(in,s,1,1))==1 ){
 				if(len<0) {
-					char *msg= "!ERROR:Connection terminated";
-					stream_write(out,msg,strlen(msg),1);
+					error(out, "!ERROR:Connection terminated");
 					inlen=0;
 					break;
 				}

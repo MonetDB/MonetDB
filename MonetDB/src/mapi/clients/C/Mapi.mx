@@ -2054,6 +2054,10 @@ mapi_execute_internal(Mapi mid)
 	if (mid->trace) {
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
+	if (mid->languageId == LANG_SQL) {
+		/* indicate to server this is a SQL command */
+		stream_write(mid->to, "S", 1, 1);
+	}
 	stream_write(mid->to, cmd, 1, size);
 	check_stream(mid, mid->to, "write error on stream", "mapi_execute",
 		     mid->error);
