@@ -1,6 +1,10 @@
 #!/bin/bash
-for f in  `ls tst??? tst1??? tst11?? tst12?? tst2???`
+for f in  `ls tst*.mal`
 do
-	echo "---->" $f
-	cp `basename $f .mal`.output `basename $f .mal`.stable
+	b=`basename $f .mal`
+	s=$b.stable
+	t=test_out_err/$b.test
+	echo "---->" $f $b $s $t
+	cp $t.out $s.out
+	cp $t.err $s.err
 done

@@ -1,6 +1,10 @@
 #!/bin/bash
-for f in  `ls tst???.mal tst1???.mal tst2???.mal`
+for f in  `ls tst*.mal`
 do
-	echo "---->" $f
-	diff `basename $f .mal`.output `basename $f .mal`.stable
+	b=`basename $f .mal`
+	s=$b.stable
+	t=test_out_err/$b.test
+	echo "---->" $f $b $s $t
+	diff $t.out $s.out
+	diff $t.err $s.err
 done

@@ -1,10 +1,23 @@
 #!/bin/bash
-echo "Initialize database"
-rm -rf /usr/mk/Linux/var/MonetDB/demo/*
 
-for f in  `ls tst???.mal tst1???.mal tst2???.mal tst3???.mal tst5???.mal`
+DBFARM=$PWD/dbfarm
+DBNAME=test
+MSERVER="Mtimeout -timeout 123 Mserver --dbfarm=$DBFARM --dbname=$DBNAME -c All.conf --set monet_prompt= --trace"
+
+echo "Initialize database"
+rm -rf $DBFARM/$DBNAME
+echo 'quit();' | $MSERVER
+
+mkdir -p test_out_err
+for f in  `ls tst*.mal`
 do
-	echo "---->" $f
-	Mserver -c tst.conf $f </dev/null > `basename $f .mal`.output 
-	diff -I'^# config:/' -I'^# dbfarm:/' `basename $f .mal`.output `basename $f .mal`.stable
+	b=`basename $f .mal`
+	s=$b.stable
+	t=test_out_err/$b.test
+	echo "---->" $f $b $s $t
+	echo "stdout of test '$b\` in directory 'src/mal\` itself:" > $t.out
+	echo "stderr of test '$b\` in directory 'src/mal\` itself:" > $t.err
+	$MSERVER $f </dev/null >> $t.out 2>> $t.err
+	diff -I'^# [Cc]ompiled for ' -I'^# config:' -I'^# dbfarm:' -I'^# dbname:' $t.out $s.out
+	diff -I'^# [Cc]ompiled for ' -I'^# config:' -I'^# dbfarm:' -I'^# dbname:' $t.err $s.err
 done
