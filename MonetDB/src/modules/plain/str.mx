@@ -162,7 +162,7 @@ quit;
 #ifndef __string_H__
 #define __string_H__
 
-#include "string.proto.h"
+#include "str.proto.h"
 
 #endif /* __string_H__ */
 @}
@@ -171,7 +171,7 @@ quit;
 @c
 #include <gdk.h>
 #include "ctype.h"
-#include "string.h"
+#include "str.h"
 #include <string.h>
 
 #define RETURN_NIL_IF(b,t) \

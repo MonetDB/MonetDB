@@ -22,7 +22,7 @@ Provides access to some of the C stdlib.h functions.
 .END unix;
 
 @c
-#include <gdk.h>
+#include "unix.proto.h"
 #include <stdlib.h>
 
 int 

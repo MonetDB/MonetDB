@@ -41,7 +41,7 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 @{
 @* Implementation Code 
 @c
-#include <gdk.h>
+#include "trans.proto.h"
 
 int global_sync() { BBPsync(TRUE); return GDK_SUCCEED; }
 int global_commit() { TMcommit(); return GDK_SUCCEED; }

@@ -100,12 +100,10 @@ proc dump_data( BAT[str,BAT] fmt, str data, int cnt) := {
 #ifndef _ASCII_IO2_H_
 #define _ASCII_IO2_H_
 
-#include <gdk.h>
+#include <ascii_io.proto.h>
 
 extern BAT *ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, int nr );
 extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr );
-
-extern void init_ascii_io(int debug);
 
 #endif
 @c
@@ -140,7 +138,7 @@ static int ascii_io_debug = 0;
 
 ptr bun_tail(BAT *b, int nr){
 	REGISTER int _i = BUNindex((b),BUNfirst((b)));
-	return BUNtail(b, BUNptr(b,_i+nr));
+	return (ptr)BUNtail(b, BUNptr(b,_i+nr));
 }
 
 
@@ -198,10 +196,10 @@ int create_loadformat( ascii *as, BAT *names, BAT *seps, BAT *types ){
 
 	as->nr_attrs = BATcount(names);
 	for (p=0; p<as->nr_attrs; p++){
-		fmt[p].name = bun_tail(names, p);
-		fmt[p].sep = sep_dup(bun_tail(seps, p));
+		fmt[p].name = (char*)bun_tail(names, p);
+		fmt[p].sep = sep_dup((char*)bun_tail(seps, p));
 		fmt[p].seplen = strlen( fmt[p].sep );
-		fmt[p].type = bun_tail(types, p);
+		fmt[p].type = (char*)bun_tail(types, p);
 		fmt[p].adt = ATOMindex( fmt[p].type );
 	}
 	return as->nr_attrs;
@@ -215,8 +213,8 @@ int create_dumpformat( ascii *as, BAT *names, BAT *seps, BAT *bats ){
 	as->nr_attrs = BATcount(names);
 	for (p=0; p<as->nr_attrs; p++){
 		BAT *b = (BAT*)BATdescriptor(*(bat*)bun_tail(bats, p));
-		fmt[p].name = bun_tail(names, p);
-		fmt[p].sep = sep_dup(bun_tail(seps, p));
+		fmt[p].name = (char*)bun_tail(names, p);
+		fmt[p].sep = sep_dup((char*)bun_tail(seps, p));
 		fmt[p].seplen = strlen( fmt[p].sep );
 		fmt[p].type = ATOMname(b->ttype);
 		fmt[p].adt = (b)->ttype;
@@ -364,7 +362,7 @@ int dump_line( ascii_io *fmt, stream *fd, int nr_attrs, int id ){
 	char *str;
 	int i;
 	for( i = 0; i<nr_attrs; i++){
-		str = ADT_toStr(fmt[i].adt, bun_tail(fmt[i].c,id));
+		str = ADT_toStr(fmt[i].adt, (char*)bun_tail(fmt[i].c,id));
 		(void)fd->write( fd, str, 1, strlen(str) );
 		(void)fd->write( fd, fmt[i].sep, 1, fmt[i].seplen );
 		GDKfree(str);
@@ -467,8 +465,9 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats,
 	}
 }
 
-void init_ascii_io(int debug){
-	ascii_io_debug = debug;
+int init_ascii_io(int *debug){
+	ascii_io_debug = *debug;
+	return GDK_SUCCEED;
 }
 int ascii_io_load( BAT **bats, BAT *names, BAT* seps, BAT* types, str datafile, int *nr){
 	*bats = ASCIIload( names, seps, types, datafile, *nr );

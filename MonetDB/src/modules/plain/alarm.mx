@@ -53,6 +53,7 @@ typedef struct {
 
 @c
 #include "alarm.h"
+#include "alarm.proto.h"
 
 static monet_timer_t            timer[MAXtimer]; 
 static int                      timerTop = 0; 
@@ -157,7 +158,7 @@ int CMDsleep(int *secs){
 /*
 		MT_Sema s = CLKalarm(*secs+time(0), 0);
 		(void)CLKprelude();
-                MT_down_sema(s, "CLKsleep"); /* block on this */
+                MT_down_sema(s, "CLKsleep"); */ /* block on this */
 /*
 		MT_destroy_sema(s);
 */

@@ -54,7 +54,7 @@ TODO
 @{
 @* Implementation Code 
 @c
-#include <gdk.h>
+#include "logger.proto.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -275,8 +275,8 @@ void logger_bat(buf_p buf, BAT *b ){
 	    bwrite(buf, &l, sizeof(logf));
 	    for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
 		int s1,s2;
-		ptr h = (ptr)BUNhead(b,p);
-		ptr t = (ptr)BUNtail(b,p);
+		ptr h = BUNhead(b,p);
+		ptr t = BUNtail(b,p);
 		bwrite(buf, h, s1=ATOMlen(b->htype,h));
 		bwrite(buf, t, s2=ATOMlen(b->ttype,t));
 		sz += (s1+s2);
@@ -292,8 +292,8 @@ void logger_bat(buf_p buf, BAT *b ){
 	    bwrite(buf, &l, sizeof(logf));
 	    for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
 		int s1,s2;
-		ptr h = (ptr)BUNhead(b,p);
-		ptr t = (ptr)BUNtail(b,p);
+		ptr h = BUNhead(b,p);
+		ptr t = BUNtail(b,p);
 		bwrite(buf, h, s1=ATOMlen(b->htype,h));
 		bwrite(buf, t, s2=ATOMlen(b->ttype,t));
 		sz += (s1+s2);
