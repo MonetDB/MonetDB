@@ -68,6 +68,11 @@ operands.
     address CMDbataccum@3cst
     comment "(BAT,Constant) calculator function with accumulator BAT result";
 
+    command @1(a:bat[:any$1,:any$2], cst:any$2, b:bat[:any$1,:any$2])
+	:bat[:any$1,:any$2] 
+    address CMDbataccum@3cst2
+    comment "(BAT,Constant) calculator function with accumulator BAT result";
+
     command @1(b:bat[:any$1,:any$2], c:bat[:any$1,:any$2])
 	        :bat[:any$1,:any$2] 
         address CMDbat@3
@@ -467,6 +472,9 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	}
 	return MAL_SUCCEED;
 }
+str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l){
+	return CMDbataccum@1cst(ret, r, l, cst);
+}
 
 str CMDbat@1cst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
@@ -576,6 +584,9 @@ str CMDbataccumMODcst(int *ret, int *r, int *l, void *cst)
 	return MAL_SUCCEED;
 }
 
+str CMDbataccumMODcst2(int *ret, int *r, void *cst, int *l){
+	return CMDbataccumMODcst(ret, r, l, cst);
+}
 str CMDbatMODcst(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 
