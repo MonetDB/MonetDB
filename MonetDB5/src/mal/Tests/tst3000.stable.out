@@ -29,7 +29,7 @@ stdout of test 'tst3000` in directory 'src/mal` itself:
 ## n:= new(int,int);{n.cost:=12;}
 #
 function Admin.main():int;	# 0  (main:int)
-    i := 1;	# 1  (i:int)<-($2:int)
+    i{constant=true} := 1;	# 1  (i:int)<-($2:int)
     j{blah=2} := "kk";	# 2  (j:str)<-($4:str)
     k{freeze=1,blah=4} := "whatever";	# 3  (k:str)<-($6:str)
     n{cost=12} := bbp.new(:int,:int);	# 4 CMDBATnew (n:bat[:int,:int])<-($8:int)($9:int)

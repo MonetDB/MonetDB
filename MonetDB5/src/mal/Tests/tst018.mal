@@ -1,0 +1,13 @@
+# handling assignments of 'nil';
+
+i:= 23;
+i:= nil;
+print(i);
+
+b:= new(:int,:int);
+b:= nil;
+print(b);
+
+s:= "hello";
+s:= nil;
+print(s);
