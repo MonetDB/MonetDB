@@ -906,8 +906,8 @@ def RunTest(env, TST, BusyPorts) :
         SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
     elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
         SkipTest(env, TST, EXT, "as Mshutdown is not available.")
-    elif SERVER == "MAPI" and  not env['MAPISERVER_MIL']:
-        SkipTest(env, TST, EXT, "as 'mapiserver.mil' is not available.")
+    elif SERVER == "MAPI" and  not env['MAPI_MIL']:
+        SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
         #elif SERVER == "MAPI" and  os.name == "nt":
         #SkipTest(env, TST, EXT, "as Mapi is (currently?) not working on WindowsNT.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
@@ -1396,7 +1396,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         Srvr = '%s%s %s "--dbname=%s" --set %s_port=%s' % (MTO, str(STO), exe['Mserver'][1], TSTDB, string.lower(SERVER), env[SERVER+'PORT'])
         if SERVER == "MAPI":
-            Srvr = '%s "%s"' % (Srvr, env['MAPISERVER_MIL'])
+            Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
         else:
             Srvr = '%s "%s"' % (Srvr, env['SQLSERVER_MIL'])
         Srvr = Srvr+PROLOGUE
@@ -2011,12 +2011,12 @@ def main(argv) :
 
     # find mil script for MAPI and SQL server
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        mapiserver_mil = env['MONET_PREFIX']+path("/share/MonetDB/mapiserver.mil")
-        if not os.path.isfile(mapiserver_mil):
-            mapiserver_mil = env['MONET_BUILD']+path("/src/mapi/mapiserver.mil")
-            if not os.path.isfile(mapiserver_mil):
-                mapiserver_mil = ''
-        env['MAPISERVER_MIL'] = mapiserver_mil
+        mapi_mil = env['MONET_PREFIX']+path("/lib/MonetDB/mapi.mil")
+        if not os.path.isfile(mapi_mil):
+            mapi_mil = env['MONET_BUILD']+path("/src/mapi/mapi.mil")
+            if not os.path.isfile(mapi_mil):
+                mapi_mil = ''
+        env['MAPI_MIL'] = mapi_mil
         sqlserver_mil = env['SQL_PREFIX']+path("/share/MonetDB/sqlserver.mil")
         if not os.path.isfile(sqlserver_mil):
             sqlserver_mil = env['TSTBLDBASE']+path("/src/server/sqlserver.mil")
@@ -2027,7 +2027,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPISERVER_MIL','SQLSERVER_MIL'] 
+        vars_ = vars_ + ['GDK_DBFARM','setMONET_MOD_PATH','MAPI_MIL','SQLSERVER_MIL'] 
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
