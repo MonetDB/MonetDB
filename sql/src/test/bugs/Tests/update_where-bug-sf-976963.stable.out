@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-976963` in directory 'src/test/bugs` itself:
+stdout of test 'update_where-bug-sf-976963` in directory 'src/test/bugs` itself:
 
 
 # 13:21:23 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:21:24 >  
-# 13:21:24 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < bug-sf-976963.sql
+# 13:21:24 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < update_where-bug-sf-976963.sql
 # 13:21:24 >  
 
 # 6 # querytype

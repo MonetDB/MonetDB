@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-978043` in directory 'src/test/bugs` itself:
+stdout of test 'insert_into_select-bug-sf-978043` in directory 'src/test/bugs` itself:
 
 
 # 13:21:27 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:21:28 >  
-# 13:21:28 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < bug-sf-978043.sql
+# 13:21:28 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < insert_into_select-bug-sf-978043.sql
 # 13:21:28 >  
 
 # 6 # querytype
