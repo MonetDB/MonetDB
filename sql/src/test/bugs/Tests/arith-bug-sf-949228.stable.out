@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-949228` in directory 'src/test/bugs` itself:
+stdout of test 'arith-bug-sf-949228` in directory 'src/test/bugs` itself:
 
 
 # 11:10:57 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 11:10:57 >  
-# 11:10:57 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=56034  < bug-sf-949228.sql
+# 11:10:57 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=56034  < arith-bug-sf-949228.sql
 # 11:10:57 >  
 
 # 3 # querytype

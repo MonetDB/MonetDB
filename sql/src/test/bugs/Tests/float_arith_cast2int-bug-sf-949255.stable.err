@@ -1,4 +1,4 @@
-stderr of test 'bug-sf-949255` in directory 'src/test/bugs` itself:
+stderr of test 'float_arith_cast2int-bug-sf-949255` in directory 'src/test/bugs` itself:
 
 
 # 21:56:40 >  
@@ -53,7 +53,7 @@ stderr of test 'bug-sf-949255` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 21:56:40 >  
-# 21:56:40 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=59522  < bug-sf-949255.sql
+# 21:56:40 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=59522  < float_arith_cast2int-bug-sf-949255.sql
 # 21:56:40 >  
 
 
