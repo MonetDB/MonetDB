@@ -462,10 +462,9 @@ Atom storage may be defined in terms of an existing type.
 		} else tpe= TYPE_int;
 		malAtomDef(modname,tpe);
 	}
-	if( findScope(cntxt->nspace,modname) != NULL){
-		GDKerror("duplicate module '%s'\n",modname);
+	if( findScope(cntxt->nspace,modname) != NULL)
 		cntxt->curprg->def->errors  = FATALINPUT;
-	} else	cntxt->nspace = fixateScope(cntxt->nspace, modname);
+	else	cntxt->nspace = fixateScope(cntxt->nspace, modname);
 	GDKfree(modname);
 	@:typeInfo@
 	skipToEnd(cntxt);

@@ -174,7 +174,7 @@ mal_export void 	freeSymbolList(Symbol s);
 mal_export MalBlkPtr	newMalBlk();
 mal_export void		freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr	copyMalBlk(MalBlkPtr);
-mal_export void		expandMalBlk(MalBlkPtr mb);
+mal_export void		expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void		trimMalBlk(MalBlkPtr mb);
 
 mal_export int		findVariable(MalBlkPtr mb, str name);
@@ -317,20 +317,42 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
 The MalBlk structures potentially consume a lot a of space, because it
 is not possible to precisely estimate the default sizes of the var and stmt
 components. The routines below provide a mechanism to handle the issue.
+The expandMalBlk routine takes the number of new-lines as a parameter
+and guesses the size of variable and statement table.
 
 Experience shows that trimming leads to memory fragmentation (140K lost
 after Mserver init) and is therefore turned off.
 @c
-void trimexpand(MalBlkPtr mb, int size){
+void trimexpand(MalBlkPtr mb, int varsize, int stmtsize){
 	VarRecord **v;
-	v= (VarRecord **) GDKmalloc(sizeof(ValPtr)* (mb->vtop+size));
-	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * (mb->vtop+size));
+	InstrPtr *stmt;
+	int len;
+
+	if( varsize<0 || stmtsize<0)
+		GDKfatal("trimexpand: illegal arguments\n");
+	len = sizeof(ValPtr)* (mb->vtop+varsize);
+	v= (VarRecord **) GDKmalloc(len);
+	if( v== NULL)
+		GDKfatal("newMalBlk:could not get variable storage\n");
+
+	bzero((char*) v, len);
+	memcpy((str) v, (str) mb->var, sizeof(ValPtr) * mb->vtop);
 	GDKfree(mb->var);
 	mb->var = v;
-	mb->vsize = mb->vtop+size;
+	mb->vsize = mb->vtop+varsize;
+
+	len = sizeof(InstrPtr) * (mb->ssize+stmtsize);
+	stmt = (InstrPtr *)GDKmalloc(len);
+	if( stmt== NULL )
+		GDKfatal("newMalBlk:could not get instruction storage\n");
+	bzero((char*) stmt, len);
+	memcpy((str) stmt, (str) mb->stmt, sizeof(InstrPtr) * mb->stop);
+	GDKfree(mb->stmt);
+	mb->stmt= stmt;
+	mb->ssize = mb->ssize + stmtsize;
 }
-void expandMalBlk(MalBlkPtr mb){
-	/* trimexpand(mb,MAXVARS);*/
+void expandMalBlk(MalBlkPtr mb, int lines){
+	trimexpand(mb,lines*1.1,lines);
 }
 void trimMalBlk(MalBlkPtr mb){
  /* printf("safe %d %d\n",mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
@@ -580,7 +602,9 @@ int newConstant(MalBlkPtr mb, malType type, str val){
 	if( k<0) k=0;
 	for(i= mb->vtop-1; i>=k;i--){
 		VarPtr v= getVar(mb,i);
-		if( v->literal && idcmp(v->literal,val)==0 ) {
+		if( v->literal && 
+		    v->type == type &&
+		    idcmp(v->literal,val)==0 ) {
 			GDKfree(val);
 			return i;
 		}

@@ -112,7 +112,7 @@ void *getAddress(str fcnname){
         adr= dlsym(dl,fcnname);
 	msg= dlerror();
 	if(noDlopen && adr == NULL)
-		GDKerror("address of function '%s' not found\n", fcnname);
+		GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
 	if( adr != NULL)
         printf("addres of %s %o %s\n", fcnname,(int) adr, (msg?msg:""));

@@ -89,6 +89,8 @@ void malImport(Client c, str fname,int listing){
 	FILE *fd;
 	long i=0,len;
 	Symbol	prg;
+	str	s;
+	int lines=0;
 
 	str oldinput= c->input, oldnxt=c->nxt, oldlimit= c->limit;
 	int oldlisting = c->listing;
@@ -112,6 +114,17 @@ void malImport(Client c, str fname,int listing){
         fclose(fd);
         c->input[i] = 0;
 @-
+It makes sense to estimate the number of instructions in the loaded
+file, because it will avoid repeated extend of the MAL block later
+on. In passing, we can also get rid of the NT <cr><lf> combination.
+@c
+	for(s=c->input; *s; s++){
+		if(*s=='\n') lines++;
+		if(*s== 13) *s= ' '; /* get rid of ^M */
+	}
+	/* printf("%s:lines encountered %d\n",fname,lines);*/
+
+@-
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
@@ -119,7 +132,10 @@ resolving addresses.
 
 	c->listing = listing;
 	resetClientPrg(c);
+	expandMalBlk(c->curprg->def,lines);
 	parseMal(c);
+	/* printf("%s:statements %d",fname, c->curprg->def->stop);
+	printf(" variables %d\n",c->curprg->def->vtop); */
 	closeClientPrg(c);
 	prg = findSymbolInScope(c->nspace,"main");
 	showErrors(c);
