@@ -24,17 +24,22 @@
 
 @a M. Kersten
 @v 0.0
-@* Mal type utilities
+@+ Type implementation
 @T
 The MAL type module overloads the atom structure managed in the GDK
-library. In particular, it encodes bat type information in a single
-long to safe space. Actually, it makes sense to include the built-in
-type BAT in GDK.
-
-For the time being we assume GDK to support at most 255 different
-atomic types. If this grows, then the encoding scheme presented
-below permits $2^15$ different bat types at most
+library. For the time being, we assume GDK to support at most 255 different
+atomic types. 
+Type composition is limited to at most two builtin types to form
+a BAT. Furthermore, the polymorphic type ANY can be qualified
+with a type variable index ANY\$I, where I is a small integer. 
 Beware the TYPE\_any is a speudo type known within MAL only.
+
+Within the MAL layer types are encoded in 32-bit integers using
+bit stuffing. 
+The integer contains the following fields:
+anyHeadIndex (bit 25-22), anyTailIndex (bit 21-18),
+batType (bit 17) headType (16-9) and tailType(8-0)
+This encoding scheme permits $2^{15}$ different bat types.
 @{
 @h
 #ifndef MAL_TYPE_H
@@ -55,14 +60,7 @@ typedef int malType;
 #define getTailType(X)	((X) & 0377 )
 #define isaBatType(X) 	((X)!=TYPE_any && (1<<16) & (X))
 #define isaVecType(X) 	((X)!=TYPE_any && (1<<16) & (X))
-@-
-Procedure type parameters may be qualified by a formal type term any$I ,
-where I is a small integer. 
-The malType long contains the following fields:
-anyHeadIndex (bit 25-22), anyTailIndex (bit 21-18),
-batType (bit 17) headType (16-9) and tailType(8-0)
 
-@h
 #define setAnyHeadIndex(X,I) X |= ((I & 017)<<22);
 #define setAnyTailIndex(X,I) X |= ((I & 017)<<18);
 #define isAnyExpression(X) ((X) >> 17)

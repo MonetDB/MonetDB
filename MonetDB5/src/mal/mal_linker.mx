@@ -23,7 +23,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ Dynamic loading and execution
+@+ Dynamic loading 
 @T
 In line with previous versions of Monet it is possible to extend
 the functionalty with user-defined modules. The corresponding code

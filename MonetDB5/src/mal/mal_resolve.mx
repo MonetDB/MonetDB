@@ -24,7 +24,6 @@
 @a M. Kersten
 @v 0.0
 @* MAL type resolution
-@+ Type resolution principles.
 The type resolution scheme should be flexible and efficient.
 Given the interpretative nature of many of the MAL instructions,
 when and where type resolution takes place is a critical design issue.
@@ -51,11 +50,10 @@ end function;
 The function definition is polymorphic typed on the 2cnd argument,
 it becomes a concrete type upon invocation. 
 
-The first assignment can be type checked during parsing, i.e. TYPE_FIXED, 
+The first assignment can be type checked during parsing
 and could even lead to a frozen value. Looking up a BAT leads to
 an element bat[ht,tt] where ht and tt are runtime dependent types.
-We can not typecheck the bat selection. It should be done at runtime,
-i.e. TYPE_DYNAMIC.
+We can not typecheck the bat selection. It should be done at runtime.
 We can check t at compile time, because we only have to assure
 that count() is given a bat argument. This assumes that we can infer
 that 'h' is indeed a BAT, which requires assurance that all 'select'
@@ -63,14 +61,13 @@ operators produce a bat. In general, this is not possible, as a user may
 overload the select() operation  to return somethin else as a bat[any,any];
 Because print(t) contains an undetermined typed
 argument we should postpone typechecking as well.
-The last print statement can be checked upon function invocation,
-i.e. TYPE_DYNAMIC.
+The last print statement can be checked upon function invocation.
 
 Life becomes really complex if the body contains a loop, which changes
 the variable types. For then we also have to keep track of the original
 state of the function. Or alternatively, type checking should consider
 the runtime stack rather than the function definition itself.
-@-
+
 A few conclusions can be drawn. 1) Every statement should carry a
 flag to indicate whether it has been type-resolved. 
 1a) you can always postpone type checking,
@@ -83,15 +80,17 @@ the type through the runtime stack rather than the symbol table,
 This precludes loops where the typing scheme changes with each step.
 Instead, such type changes should be factored out algoritmically.
 
+The type resolution status is marked in each instruction.
+TYPE_FIXED implies that the type of the instruction is fully
+resolved, it is marked TYPE_DYNAMIC otherwise.
+
 Alternatie solutions.
 A) split the function such that type analysis only occurs at the
    function call level.
 Disadvantage, it does not work for the example above.
 Moreover, you need to carry too much contextual information.
 
-Choicepoint. We either enforce that the Mal instructions contain the 
-relevant module or we have to provide for a controlled search through
-the collection of all known operations.
+Omission of the module name leads to a search process.
 The current policy is to start at the client module level and inspect
 the outer scopes when the symbol is not found. This may lead
 to ambigous behavior though. If a module M imports K for its function K.f()

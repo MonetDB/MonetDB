@@ -2,12 +2,17 @@
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB website
 ps,pdf:
-	cp overview.tex *.sty  ../../Linux/share/MonetDB
+	cp modules.tex overview.tex *.sty  ../../Linux/share/MonetDB
 	(cd ../../Linux/share/MonetDB/; \
 	latex -interaction=batchmode overview.tex ;\
 	latex -interaction=batchmode overview.tex ;\
 	dvips overview.dvi -o overview.ps ; \
-	ps2pdf overview.ps overview.pdf)
+	ps2pdf overview.ps overview.pdf; \
+	latex -interaction=batchmode modules.tex ;\
+	latex -interaction=batchmode modules.tex ;\
+	dvips modules.dvi -o modules.ps ; \
+	ps2pdf modules.ps modules.pdf; \
+	)
 
 web:
 	rm -rf ../../Linux/share/MonetDB/Web

@@ -24,7 +24,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ MAL interpretation
+@* MAL execution
 The MAL interpreter always works in the context of a single user session,
 which provides for storage access to global variables and modules.
 
@@ -467,7 +467,8 @@ is made part of the start-up procedure.
 	ret = 0;
 }
 @:blockControl@
-
+@-
+@}
 @+ MAL API
 The linkage between MAL interpreter and compiled C-routines
 is kept as simple as possible.
@@ -500,6 +501,7 @@ into the stack frame rather than pointers to the actual value.
 The argument list and their location on the runtime stack frame
 are determined at compile time.
 
+@{
 @= commandcall
 	@:evalParameters@
 	if( pci->fcn== NULL)
@@ -698,25 +700,28 @@ jumps are re-established.
 	/* semantic validity of redo stmt has been checked already */
 	/* continue re-execution of the barrier statement */
 	continue;
+@-
+@}
 @+ Parallel processing
 The MAL interpreter can be cloned to obtain parallel running threads.
 Such threads share the stackframe of the caller for data exchange.
 The consequence is that a thread may only terminate when it is
 not the parent of one or more children
 administered on a stack-frame variable.
-@-
+
 A thread block encountered in a MAL program leads to at most
 one thread instance. This is detected by setting the thread
 variable to the process id. The thread block is skipped when it
 has already been set. 
-@-
+
 A thread can be separated from its parent using the command
 thread.exec(arguments). The thread identity is being returned.
-@-
+
 Wait for all children to end. Using a timer to control malicious
 children does not work in general, because you don;t know
 what default will work. Instead, the list of children 
 threads should be accessible.
+@{
 @= waitForChildren
 waitForChildren(stk);
 @c
@@ -804,6 +809,8 @@ Joining a process thread is controlled with a lock part of the stack frame
 		}
 		goto MALevalExit;
 	}
+@-
+@}
 @+ Exception handling
 Calling a built-in or user-defined routine may lead to an error, 
 which in Monet 4.x leads to a message on the user's console,
@@ -825,7 +832,7 @@ alltogether searching for a catch block at a higher layer.
 For the time being we have ignored cascaded/stacked exceptions.
 The policy is to pass the first recognized exception to a context
 in which it can be handled.
-
+@{
 @= exceptionTypeTest
 if( pci->typechk== TYPE_UNKNOWN){
 	@:dynamicTypeCheck@
@@ -837,6 +844,8 @@ if( pci->typechk== TYPE_UNKNOWN){
 		goto MALevalExit;
 	}
 }
+@-
+@}
 @-
 Exceptions raised within a linked-in function requires some care.
 First, the called procedure does not know anything about the MAL
@@ -856,6 +865,7 @@ to require all functions to return a string-pointer. Upon successfull
 call, this string function is NULL. Otherwise it contains an
 encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
+@{
 
 @= exceptionHndlr
 if( ret != MAL_SUCCEED ){
@@ -902,6 +912,8 @@ if( ret != MAL_SUCCEED ){
 	@:skipToCatch(symid)@
 }
 @-
+@}
+@+ Dynamic type checking
 During execution we may end up with functions that require
 a dynamic type check, because their arguments may not have
 been known upon compile time.
@@ -911,8 +923,9 @@ type information in the program description, because the
 actual types may differ between calls.
 
 Note that the module and function name may be obtained from
-a string variable. Before we return the original values
+a string variable. [not any more] Before we return the original values
 should be reset.
+@{
 
 @= dynamicTypeCheck
 	altpci= pci;
@@ -941,6 +954,8 @@ str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
 	return raiseException(mb,pc, "setDynamicType",buf);
 }
 
+@-
+@}
 @+ BAT reference counting
 A key issue is to deal with temporary BATs in an efficient way.
 References to bats in the buffer pool may cause dangling references
@@ -958,7 +973,7 @@ keep bat_views around, which depend on the existence of the
 underlying BAT.
 
 Look further in mal_instruction.mx for the before/after calls.
-
+@{
 @= BATfix
 if(@1->vtype == TYPE_bat)
 { 	BAT *b;
@@ -968,6 +983,8 @@ if(@1->vtype == TYPE_bat)
 	} else raiseException(mb,@2,"interpreter",
 		"Can not find bat, internal error\n");
 }
+@-
+@}
 
 @+ Garbage collection
 Garbage collection is relatively straightforward, because most values are
@@ -979,6 +996,7 @@ All string values are private to the VALrecord, which means they
 have to freed explicitly before a MAL function returns. 
 The first step is to always clear the destination variable
 before a function call is made.
+@{
 @c
 #ifdef NOGARBAGE
 int nogarbage;
@@ -993,6 +1011,8 @@ void garbageElement(ValPtr v)
 	if( v->vtype== TYPE_bat) batFinalCall(v);
 }
 @-
+@}
+
 The second major area to be careful, is management of the BAT reference counts.
 
 Before we return from the interpreter, we should free all
@@ -1005,6 +1025,7 @@ administration code.
 Also note that for top-level stack frames (no environment available),
 we should retain the value stack because it acts as a global variables. 
 This situation is indicated by the 'global' in the stack frame. 
+@{
 Upon termination of the session, the stack should be cleared.
 @c
 void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
@@ -1024,13 +1045,15 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
 	printStack(GDKout,mb,stk);
 #endif
 }
-
+@-
+@}
 @+ Performance section
 The interpreter has a built-in performance monitor hook, which is
 activated using the compile option MALprofiler. Activation can lead to
 a significant performance degradation, because for all traced functions
 we have to keep track of essential system counter information.
 
+@{
 @= performanceVariables
 #ifdef MALprofiler
 	long newclk=0;

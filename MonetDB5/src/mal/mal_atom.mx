@@ -22,25 +22,25 @@
 @'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
 @'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 @a M.L.Kersten
-@* Atom administration
+@* Atomary types 
+@T
 Monet supports an extensible type system to accomodate a wide
 spectrum of database kernels and application needs.
 The type administration keeps track of their properties and
 provides access to the underlying implementations.
-@-
+
 The Monet Assembler Language recognizes the definition of a new
-atom type by replacing the MODULE keyword with ATOM MODULE.
+atom type by replacing the {\sc module} keyword with {\sc atom module}.
 Atoms definitions require special care, because their definition and 
 properties should be communicated with the GDK kernel library.
-The commands defined in an ATOM MODULE block are screened as of interest 
-to the gdk_atom library. 
-@+ Builtin types
-The Monet kernel back-ends (GDK,x100) come with a set of built-in types.
-The GDK atom structure is used to administer all types known.
+The commands defined in an {\sc atom module} block are screened as of interest 
+to the gdk\_atom library. 
 
 @+ Predefined types
-A small collection of predefined types are shipped with the sysem.
-They implement the types encountered essential for end-user applications,
+The Monet kernel back-ends (GDK,x100) come with a set of built-in types.
+The GDK atom structure is used to administer all types known.
+A small collection of user-defined types are shipped with the sysem.
+They implement types considered essential for end-user applications,
 such as date, time, blob, and url.
 They are implemented using the type extension mechanism described below.
 As such, they provide examples for future extensions.

@@ -1304,6 +1304,7 @@ startFCNcall:
 			nextChar(cntxt);
 			skipSpace(cntxt);
 			setModuleScope(curInstr, findScope(cntxt->nspace,arg));
+			/*GDKfree(arg);*/
 			i = idLength(cntxt);
 			if( i==0) i= operatorLength(cntxt);
 			if( i )

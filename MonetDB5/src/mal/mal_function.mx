@@ -24,7 +24,7 @@
 
 @a M. Kersten
 @v 0.0
-@+ MAL functions
+@* MAL functions
 MAL functions are represented by MAL instruction lists.
 The first instruction should contain its signature.
 @-
@@ -310,6 +310,7 @@ int getBarrierEnvelop(MalBlkPtr mb){
 	}
 	return newTmpVariable(mb,TYPE_any);
 }
+@}
 @+ Function cloning
 MAL supports functions defined with type variables.
 Each time such a MAL routine is called, a complete copy of
@@ -326,7 +327,7 @@ returning the symbol with the instantiated function.
 Beware that polymorphic type variables should be propagated.
 This may imply propagation of a type to a component type of
 a BAT.
-Replace a particular variable, indexed by v
+@{
 @c
 void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int i,x;
@@ -420,7 +421,19 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 #endif
 	return new;
 }
+@-
+@}
 @- Exception handling
+The default return value for any MAL implementation routine is a
+string. A NULL indicates that execution was succesful, otherwise
+the string encodes information to analyse the error occurred.
+
+The string pattern is strict and easy to analyse for receiving
+function.
+
+Exceptions can be cascaded to form a trail of exceptions recognized
+during the exection.
+@{
 @c
 str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
         char buf[4196];
