@@ -59,53 +59,41 @@ stderr of test 'bug-sf-975308` in directory 'src/test/bugs` itself:
 # 16:06:04 >  
 
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = CREATE TABLE test (
 ERROR = !Create Table name test already in use
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = INSERT INTO test values( 2,3 );
 ERROR = !current transaction is aborted (please ROLLBACK)
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = INSERT INTO test values( 2,4 );
 ERROR = !current transaction is aborted (please ROLLBACK)
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = SELECT * from test;
 ERROR = !current transaction is aborted (please ROLLBACK)
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = COMMIT;
 ERROR = !transaction commit failed
         !ERROR: Cannot commit this transaction will abort instead
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = UPDATE test SET y = 1;
 ERROR = !Updating non existing column test.y
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = SELECT * from test;
 ERROR = !current transaction is aborted (please ROLLBACK)
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = COMMIT;
 ERROR = !transaction commit failed
         !ERROR: Cannot commit this transaction will abort instead
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = UPDATE test SET x = 1;
 ERROR = !Updating non existing column test.x
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = SELECT * from test;
 ERROR = !current transaction is aborted (please ROLLBACK)
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = DROP table test;
 ERROR = !Cannot drop Table test, views depend on it
 MAPI  = monetdb@stem:50118
-ACTION= read_into_cache
 QUERY = COMMIT;
 ERROR = !transaction commit failed
         !ERROR: Cannot commit this transaction will abort instead
