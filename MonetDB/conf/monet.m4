@@ -60,7 +60,6 @@ AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 AC_DEFUN(AM_MONET_COMPILER,
 [
 dnl check for compiler
-gcc="auto"
 AC_ARG_WITH(gcc,
 [  --with-gcc=<compiler>   which C compiler to use
   --without-gcc           do not use GCC], [
@@ -70,18 +69,17 @@ AC_ARG_WITH(gcc,
 	*)	CC=$withval;;
 	esac])
 
-if test "x$gcc" = "xauto"; then
-	CC="gcc"
-	CXX="g++"
-	gcc="yes"
-fi
-
 AC_ARG_WITH(gxx,
 [  --with-gxx=<compiler>   which C++ compiler to use], [
 	case $withval in
 	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
 	*)	CXX=$withval;;
 	esac])
+
+AC_PROG_CC()
+AC_PROG_CXX()
+AC_PROG_CPP()
+AC_PROG_GCC_TRADITIONAL()
 
 bits=32
 AC_ARG_WITH(bits,
@@ -96,7 +94,7 @@ case $withval in
 esac
 bits=$withval
 ])
-case "$gcc-$host_os-$bits" in
+case "$GCC-$host_os-$bits" in
 yes-solaris*-64)
 	case `$CC -v 2>&1` in
 	*'gcc version 3.'*)	;;
@@ -144,11 +142,6 @@ aix*)
     ;;
 esac
 AC_SUBST(MEL_LIBS)
-
-AC_PROG_CC()
-AC_PROG_CXX()
-AC_PROG_CPP()
-AC_PROG_GCC_TRADITIONAL()
 
 AC_PROG_INSTALL()
 AC_DISABLE_STATIC()
