@@ -25,7 +25,7 @@ import string
 import os
 
 #automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
-automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '']
+automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
 
 def split_filename(f):
     base = f
@@ -218,12 +218,12 @@ def msc_find_hdrs(target, deps, hdrs):
             pf = f
     return pf
 
-def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
-    deps = "lib"+sep+name+".dll: "
+def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll = '.dll'):
+    deps = pref+sep+name+dll+": "
     if type == "BIN":
         add = name+"_LIBS ="
     elif type == "LIB":
-        add = "lib"+sep+name+"_LIBS ="
+        add = pref+sep+name+"_LIBS ="
     else:
         add = name + " ="
     for l in list:
@@ -616,10 +616,19 @@ def msc_library(fd, var, libmap, msc):
 
     name = var[4:]
     sep = ""
+    pref = ''
+    dll = '.dll'
     if (libmap.has_key("NAME")):
         libname = libmap['NAME'][0]
     else:
         libname = name
+
+    if libmap.has_key('PREFIX'):
+        if libmap['PREFIX']:
+            pref = libmap['PREFIX'][0]
+        else:
+            pref = ''
+            dll = '.pyd'                # HACK!!!
 
     if (libname[0] == "_"):
         sep = "_"
@@ -644,7 +653,7 @@ def msc_library(fd, var, libmap, msc):
 
     v = sep + libname
     msc['LIBS'].append(v)
-    msc['INSTALL'].append(('lib'+v,'lib'+v,'.dll','$('+lib+'dir)'))
+    msc['INSTALL'].append((pref+v,pref+v,dll,'$('+lib+'dir)'))
     if ld != 'LIBDIR':
         fd.write("%sdir = %s\n" % (lib,ld))
 
@@ -660,14 +669,14 @@ def msc_library(fd, var, libmap, msc):
     if libmap.has_key("LIBS"):
         liblist = liblist + libmap["LIBS"]
     if liblist:
-        fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc))
+        fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc, pref, dll))
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
         if ext not in automake_ext:
             msc['EXTRA_DIST'].append(src)
 
-    srcs = "lib" + sep + libname + "_OBJS ="
+    srcs = pref + sep + libname + "_OBJS ="
     for target in libmap['TARGETS']:
         if target == "@LIBOBJS@":
             srcs = srcs + " $(LIBOBJS)"
@@ -687,13 +696,13 @@ def msc_library(fd, var, libmap, msc):
                     if target not in SCRIPTS:
                             SCRIPTS.append(target)
     fd.write(srcs + "\n")
-    ln = "lib" + sep + libname
-    fd.write(ln + ".lib: " + ln + ".dll\n")
-    fd.write(ln + ".dll: $(" + ln + "_OBJS) \n")
-    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n" % (ln, ln, ln))
+    ln = pref + sep + libname
+    fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
+    fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln))
+    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)\n" % (ln, dll, ln, ln))
     if sep == "_":
         fd.write("\tif not exist .libs $(MKDIR) .libs\n")
-        fd.write('\tif exist "%s.dll" $(INSTALL) "%s.dll" .libs\\%s.dll\n' % (ln, ln, ln))
+        fd.write('\tif exist "%s%s" $(INSTALL) "%s%s" .libs\\%s%s\n' % (ln, dll, ln, dll, ln, dll))
     fd.write("\n")
 
     if SCRIPTS:

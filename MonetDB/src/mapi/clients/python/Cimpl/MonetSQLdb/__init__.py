@@ -26,7 +26,7 @@ apilevel = "2.0"
 paramstyle = "pyformat"
 
 
-from Mapi import *
+from CMapi import *
 from monetexceptions import *
 import cursors, converters
 

@@ -26,7 +26,7 @@ import os
 from codegen import find_org
 
 #automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
-automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '']
+automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
 script_ext = ['mil']
 am_assign = "+="
 
@@ -67,7 +67,7 @@ def cond_subdir(fd, dir, i):
 
 def am_sort_libs(libs, tree):
     res = []
-    for (lib,sep) in libs:
+    for (pref,lib,sep) in libs:
         after = -1
         # does lib depend on a other library 
         if tree.has_key('lib_'+ lib):
@@ -90,7 +90,7 @@ def am_sort_libs(libs, tree):
                         pos = res.index(l)
                         if pos > after:
                             after = pos 
-        res.insert(after + 1, (lib, sep))
+        res.insert(after + 1, (pref, lib, sep))
     return res
 
 def am_subdirs(fd, var, values, am):
@@ -208,11 +208,11 @@ def am_additional_flags(name, sep, type, list, am):
         add = add + " " + l
     return add + "\n"
 
-def am_additional_libs(name, sep, type, list, am):
+def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
     if type == "BIN":
         add = am_normalize(name)+"_LDADD ="
     elif type == "LIB":
-        add = "lib"+sep+name+"_la_LIBADD ="
+        add = pref+sep+name+"_la_LIBADD ="
     else:
         add = name + " ="
     for l in list:
@@ -524,10 +524,17 @@ def am_mods_to_libs(fd, var, modmap, am):
 def am_library(fd, var, libmap, am):
     name = var[4:]
     sep = ""
+    pref = 'lib'
     if libmap.has_key("NAME"):
         libname = libmap['NAME'][0]
     else:
         libname = name
+
+    if libmap.has_key("PREFIX"):
+        if libmap['PREFIX']:
+            pref = libmap['PREFIX'][0]
+        else:
+            pref = ''
 
     if libname[0] == "_":
         sep = "_"
@@ -545,17 +552,17 @@ def am_library(fd, var, libmap, am):
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):
-        am['NLIBS'].append((libname, sep))
+        am['NLIBS'].append((pref, libname, sep))
     else:
-        am['LIBS'].append((libname, sep))
-        am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
+        am['LIBS'].append((pref, libname, sep))
+        am['InstallList'].append("\t%s/%s%s%s.so\n" % (ld, pref, sep, libname))
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
         fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if libmap.has_key("LIBS"):
-        fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am))
+        fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am, pref))
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
     if libmap.has_key("LDFLAGS"):
@@ -566,8 +573,8 @@ def am_library(fd, var, libmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
-    srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
+    nsrcs = "nodist_"+pref+sep+libname+"_la_SOURCES ="
+    srcs = "dist_"+pref+sep+libname+"_la_SOURCES ="
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -658,7 +665,7 @@ def am_libs(fd, var, libsmap, am):
 
         ld = am_translate_dir(ld, am)
         fd.write("%sdir = %s\n" % (libname, ld))
-        am['LIBS'].append((libname, sep))
+        am['LIBS'].append(('lib', libname, sep))
         am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libsmap.has_key('HEADERS'):
@@ -910,7 +917,7 @@ CXXEXT = \\\"cc\\\"
     fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
 
-    if len(am['LIBS']) > 0:
+    if am['LIBS']:
         lib = 'lib'
         ld = am['LIBDIR']
         ld = am_translate_dir(ld, am)
@@ -920,12 +927,12 @@ CXXEXT = \\\"cc\\\"
 
         libs = am_sort_libs(am['LIBS'], tree)
         s = ""
-        for (lib, sep) in am['LIBS']:
-            fd.write("%s_LTLIBRARIES = lib%s%s.la\n" % (lib, sep, lib))
+        for (pref, lib, sep) in am['LIBS']:
+            fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
 
-    if len(am['NLIBS']) > 0:
-        for (lib, sep) in am['NLIBS']:
-            fd.write("noinst_LTLIBRARIES = lib%s%s.la\n" % (sep, lib))
+    if am['NLIBS']:
+        for (pref, lib, sep) in am['NLIBS']:
+            fd.write("noinst_LTLIBRARIES = %s%s%s.la\n" % (pref, sep, lib))
 
     if len(am['BINS']) > 0:
         fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS'], " ", ""))

@@ -1,0 +1,27 @@
+SWIGFLAGS = -I../../C
+INCLUDES = -I../../C -I@PYTHONINC@
+
+# we need this flag to allow for a name that does not start with "lib"
+_MapiLib_la_LDFLAGS = -module
+
+# with gcc we could use these
+#X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
+# but we certainly have to override the default X_CFLAGS:
+X_CFLAGS =
+
+SUBDIRS = MonetSQLdb
+
+lib_MapiLib = {
+	PREFIX =
+	NAME = _MapiLib
+	SOURCES = MapiLib.py.i
+	LIBS = ../../C/libMapi
+	DIR = pkgdatadir/python
+}
+
+headers_py = {
+	HEADERS = py
+	SOURCES = MapiLib.py.i CMapi.py
+	TARGETS = MapiLib.py CMapi.py
+	DIR = pkgdatadir/python
+}
