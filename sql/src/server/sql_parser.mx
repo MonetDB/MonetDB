@@ -1895,6 +1895,12 @@ aggr_ref:
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+ |  AGGR '(' ident '.' '*' ')' 
+		{ dlist *l = dlist_create();
+  		  dlist_append_string(l, $1);
+  		  dlist_append_int(l, FALSE);
+  		  dlist_append_symbol(l, NULL);
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AGGR '(' DISTINCT column_ref ')' 
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, $1);
