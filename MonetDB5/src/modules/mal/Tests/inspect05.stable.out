@@ -310,7 +310,7 @@ Commands
 [ "mal",	  "newRange"			  ]
 [ "mal",	  "newRange"			  ]
 [ "mal",	  "newRange"			  ]
-[ "mal",	  "newRang"			  ]
+[ "mal",	  "newRange"		  ]
 [ "mal",	  "raise"			  ]
 [ "mal",	  "source"			  ]
 [ "factory",	  "getLocations"	  ]
