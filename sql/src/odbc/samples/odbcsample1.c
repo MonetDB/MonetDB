@@ -3,22 +3,26 @@
 #include <sql.h>
 #include <sqlext.h>
 
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 {
 	SQLCHAR state[6];
-	SQLINTEGER errno;
+	SQLINTEGER errnr;
 	SQLCHAR msg[256];
 	SQLSMALLINT msglen;
 
-	switch (SQLGetDiagRec(tpe, hnd, 1, state, &errno, msg, sizeof(msg), &msglen)) {
+	switch (SQLGetDiagRec(tpe, hnd, 1, state, &errnr, msg, sizeof(msg), &msglen)) {
 	case SQL_SUCCESS_WITH_INFO:
 		if (msglen >= sizeof(msg))
 			fprintf(stderr, "(message truncated)\n");
 	case SQL_SUCCESS:
 		fprintf(stderr,
-			"%s: %s: SQLstate %s, Errno %d, Message %s\n",
-			func, pref, state, errno, msg);
+			"%s: %s: SQLstate %s, Errnr %d, Message %s\n",
+			func, pref, state, errnr, msg);
 		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr,
