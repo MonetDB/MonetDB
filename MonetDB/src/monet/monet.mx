@@ -307,6 +307,7 @@ m_export int		monet_welcome;		/* display welcome message? */
 m_export int		monet_deamon;		/* set server console is deaf */
 m_export int		monet_singlethreaded;	/* in singlethreaded mode? */
 m_export str		monet_script[MAXSCRIPT];/* batch of requests */
+m_export str		monet_prelude ;
 m_export MT_Lock		monet_critical;		/* critical section queue mgmt*/
 m_export MT_Lock		monet_parserLock;	/* protects access to yacc/lex*/
 m_export MT_Lock		monet_contextLock;	/* protects CNTXT structures */
@@ -337,6 +338,7 @@ char            *monet_prompt="\1>\1";
 int             monet_listing=0, monet_welcome=1, monet_deamon=2;
 int             monet_singlethreaded=0;
 str             monet_script[MAXSCRIPT]={0};
+str		monet_prelude =0;
 MT_Lock         monet_critical, monet_notifyLock, monet_voidLock;
 MT_Lock		monet_parserLock, monet_contextLock;
 MT_Sema         monet_started, monet_available, monet_forksync;
@@ -441,6 +443,9 @@ void MILenvironment()
 		else
 		if( strcmp(s,"monet_version")==0)
                     monet_ver = val;
+		else
+		if( strcmp(s,"monet_prelude")==0)
+                    monet_prelude=GDKstrdup(val);
 		else
 		if( strcmp(s,"monet_deamon")==0)
                     monet_deamon=yesno(val);

@@ -1,0 +1,622 @@
+<HTML>
+<HEAD>
+<TITLE>Monet System Overview</TITLE>
+</HEAD>
+<BODY bgcolor="#FFFFFF" text="#000000" vlink="#871F78" link="#6666ff">
+<center><h1>An overview of the Monet Database System</h1>
+<h2>version 4.3 </h2></center>
+<center><h3>Peter Boncz, Martin Kersten,Niels Nes, Stefan Manegold</h3></center>
+<center><h3>28/2/2001</h3></center>
+<hr size=5 noshade><br><a name=mod_1_0_0>
+<h2><I>Table of contents </I></h2>
+Table..
+<hr size=5 noshade><br>
+<h2><a name=Introduction>1 Introduction</a></h2>
+Monet is a novel database system under development since 1993 at CWI and its
+research partners. The Monet project started out as a serious attempt to build
+a complete database kernel, which challenges areas unexplored in commercial and
+research systems. The origin of the system architecture
+goes back to the early eigthies, when the Troll database kernel was developed
+at the Vrije Universiteit, Amsterdam and subsequently widely distributed.
+Troll was a typical first-generation relational algebra engine, with an emphasis on
+algorithms, a simple textual algebraic interface, and limited optimizer functionality.
+<p>
+A second architecture was developed between 1985 and 1992 as a co-production
+between the database research group of CWI and University of Twente
+in the context of the <a href="http:...">PRISMA</a> project. 
+This project  researched the consequences
+of a highly parallel platform (100 cpus) and a large main-memory(>1Gbyte)
+on the architecture of an sql-compliant database engine.
+A complete functional system was delivered early nineties and subsequently
+abandoned, primarilly due to the limitations imposed upon the portability of
+the system by  its proprietary implementation language POOL and refocussing
+of Philips Research on the core business of the company.
+<p>
+The wealth of experience gained in over a decade of research in database kernel
+architectures lead to the incremental design of what now constitute the Monet
+Database System. The initial version was designed and implemented by Kersten
+and gradually taken over by Boncz as part of his PhD research track. Over its
+eight years of development many people have contributed to its development
+as implementors of missing functionality or application developers. A small
+core team has been formed, a.k.o. <a href="">Monet racing team</a>, which for the last couple of
+years spent a significant amount of time and energy to make the Monet Database 
+System accessible for wider deployment. The open-source version currently
+available at <a href="">the Monet web-site</a> is a tribute to this activity.
+
+The remainder of this document provides a synposis of the discriminative
+features of Monet,  installation information, and a short tutorial got get
+a flavour of using it.
+
+<a href="Features"></a><h4>1.1. Monet Features </h4>
+Monet distinguishes itself  from commercial database systems in a strong drive to 
+develop the best accessible database kernel for research purposes. 
+Moreover, time has proven that this kernel is of  industrial strength, as illustrated by its
+inclusion in the Data Distilleries product line. The salient features are summarized
+as follows:
+
+<ul> 
+<li> <i>Binary Relational Data Storage:</i>
+The Monet database system is the first kernel relying fully on binary relational tables
+the prime storage scheme for n-ary, and object-oriented datamodels. It comes with
+an algebra based on materializing all intermediate results, rather then relying on pipelineing
+techniques. Search accellerators are automatically created, maintained and dropped
+based on their contribution to speed-up performance of the operators.
+<li> <i>Main-memory Orientation:</i>
+Given the sizeable memories available in current computer platforms,
+the focus to gain performance in a database setting can (and is) shifting.
+Main-memory techniques are the driving force for algorithms and storage
+structures
+<li><i>Multi-threaded Process Architecture</i> The code base has been
+designed with multi-threaded processing on large SMP machines in mind.
+<li> <i>Extensible Type System:</i>
+<li> <i>Retargetable Query Optimizer:</i>
+A just-in-time query compiler will become available within a next release.
+Its design goals are to enable a wide-spectrum optimizer infrastructure, which
+encompasses both traditional cost-based techniques, but also multi-query-,
+ session-based -, and symbolic- optimization techniques.
+<li> <i>Cooperative Transaction Management:</i>
+Transaction processing is not burried deep into the kernel code, where
+all users of the database have to pay the performance price. Instead, 
+Monet assumes a cooperative environment, where the compilers/interpreters
+produce calls to a transaction manager upon need. Moreover, the just-in-time
+optimizer may take control and inject protective transaction management calls
+into the MIL streams.
+<li> <i>Multiple Datamodel Support:</i>
+SQL, ODMG, XML
+In addition, it has an object-oriented interface, including 
+a distributed persistent Java(tm) interface
+developed and distributed by Data Distilleries.
+<li> <i>Multiple Application Interfacing:</i>
+XML, JDBC, PHP
+<li><i>Open-source</i> After many years locked into the laboratory, Monet is now made avaiable 
+as an open-source database kernel, supported by CWI to secure uptake of this technology..
+</ul>
+
+Since the Monet Database System is not a commercial product, you may
+expect some areas of business relevance not well-matured. For example,
+the current SQL-frontend is still focussed on SQL-92, rather then the
+emerging SQL-3 standard. Likewise, graphical database design and
+administration tools would benefit from a (sizeable) investment in time
+by a gifted GUI designer. Yet, these shortcomings, together commerical support and training
+provide a breeding ground for commercial ventures to deploy this technology in existing
+and novel markets.
+
+
+<h4><a name=architecture>1.2 System Architecture</a></h4>
+A concise overview of the components comprising the Monet Database System 
+architecture is shown in Figure 1. Monet has a Front-end/Back-end design
+to provide an extendible architecture that facilitates data independence.
+ <ul> 
+<li>  <i> back-end server;</i>
+The physical  Mserver database back-end, with its tabular datastructures,
+search accelerators and physical algebra commands is separated from
+the logical user interface.
+<li>  <i> front-end(s);</i>
+Several database front-ends translate between user-interfaces
+like ODMG or relational SQL and the Monet database back-end.
+<li>  <i> intermediate language</i>
+Frontend and back-end communicate in a language called the
+ <a href="http://"> Monet Interpreter Language</a>, or MIL. The functional core of
+this language is formed by a  <b> BAT</b> algebra, supplemented
+with programming language control constructs and parallel execution
+constructs.
+</ul>
+
+For more detailed information on the why, what and how about Monet,
+we refer to the published (scientific) papers on Monet, available at the 
+<a href="http://www.cwi.nl/htbin/ins1/publications">CWI web site</a>.
+Another source of information are the past
+ <a href="http://www.monetsolutions.com/Information/Documentation/Tutorials/tutorials.html">
+ presentations </a> given about Monet.
+<center><p><img src="monet.gif" align=center><br>
+
+<a name="fig1">&#60;Fig1&#62; <i> Front-end/Back-end Architecture</i>
+</center>
+
+<hr size=5 noshade><br><a name=mod_2_2_0></a>
+<h2>2 Reference Manuals</h2>
+<h4>2.1 System Utilities</h4>The Monet system consists of the following utilities and packages:
+<table>
+<tr>
+ <td><a href="man/Mserver.html">Mserver</a> 	</td><td>to start a Monet server session. Administrator command.</td>
+</tr><tr>
+<td><a href="man/Mcreatedb.html">Mcreatedb</a>	</td><td>to create a Monet database. Administrator command.</td>
+</tr><tr>
+<td> <a href="man/Mcreatedb.html">Mdestroydb</a>	</td><td>to destroy a Monet database. Administrator command.</td>
+</tr><tr>
+<td> <a href="man/Mclient.html">Mclient</a>		</td><td> to  establish a client-session.</td>		
+</tr><tr>
+<td> <a href="man/mel.html">mel</a>		</td><td> to parse Monet extension module specifications.</td>
+</tr><tr>
+<td> <a href="man/mapi.html">mapi</a> 		</td><td> to  interface with C, Java, Perl, Python, and PHP programs.</td>
+</tr><tr>
+<td> <a href="man/sql.html">Sql </a>		</td><td> to compile SQL programs into MIL.</td>
+</tr><tr>
+<td> <a href="/~monet/papers/mxdoc.ps.gz">Mx</a>	</td><td>  to document Monet code. </td>
+</tr>
+</table>
+<p>
+The Monet extension system is primarilly used by advanced system programmers
+to extend the functionality of the database kernel. In our experience there is
+limited need to add functionality using modules. Often a straight forward MIL procedure
+is more effective and efficient. In particular, it avoids crashing a server due to
+unavoidable programming bugs. </p>
+<p>
+The application programming interface is geared towards simple interaction with
+the server using MIL code. It is up to the programmer to parse the results obtained.
+The SQL component comes with an ODBC interface.
+</p>
+<p>
+The Monet documentation utility Mx has been modelled after Knuth's suggestion for
+illiterate programming style. Mx supports co-development of source code and documentation
+in a simple textual style. Upon need, the components are disassembled for processing
+by compiler and document generators.
+</p>	
+<h4>2.2 MIL Database Interface</h4>The <a href="mil.html">MIL</a> reference manual contains information
+about its syntax and semantics. MIL is a  modular language.  
+All its primitives are contained in modules. A collection of
+these modules can be loaded, which yields a particular 'dialect'of MIL. 
+Loading a module is done with the
+<a href="../scw/monet/monet\_cmd/8/module\_index.html"><tt>module()</tt></a>
+command, and it can be deactivated with the
+<a href="../scw/monet/monet\_cmd/8/drop\_index.html"><tt>drop()</tt></a> command.
+The modules are grouped according to their functionality.
+<p>
+<table>
+<tr>
+<td ><i>Kernel modules</i></td>		<td> </td>	
+</tr><tr>
+<td> <a href="kernel/aggregate.html">aggregate</a></td>	<td>Fast aggregation operations.</td>
+</tr><tr>
+<td> <a href="kernel/algebra.html">algebra</a></td>	<td>Relational core of BAT commands (select, join, etc).</td>
+</tr><tr>
+<td> <a href="kernel/arith.html">arithmetic</a></td>	<td>Simple arithmetic operators on the standard types.</td>
+</tr><tr>
+<td><a href="kernel/bat.html">bat</a></td>		<td>Basic commands to create and manipulate BATs.</td>
+</tr><tr>
+<td><a href="kernel/cluster.html">cluster</a></td>	<td>Efficient sorting operations and other forms of clustering BATs.</td>
+</tr><tr>
+<td><a href="kernel/enum.html">enum</a></td>	<td>Automatic creation of enumeration types. Used for space compression. </td>
+</tr><tr>
+<td><a href="kernel/kernel.html">kernel</a></td> 	<td> Builtin system primitives which cannot be overloaded.</td>
+</tr><tr>
+<td><a href="kernel/lock.html">lock</a></td>		<td>Locks and semaphores.</td>
+</tr><tr>
+<td><a href="kernel/sys.html">system</a></td>	<td>Procedures for navigating through the system (ls, help).</td>
+</tr><tr>
+<td><a href="kernel/trans.html">trans</a></td>	<td>Transaction management primitives.</td>
+</tr><tr>
+<td> <a href="kernel/xtables.html">xtables</a></td>	<td>Cross-table operations for data mining.
+</td>
+</tr>
+
+<tr>
+<td ><i>System modules</i></td>		<td></td>	
+</tr><tr>
+<td> <a href="system/alarm.html">alarm</a></td>	<td>OS timers and interrupts.</td>
+</tr><tr>
+<td><a href="system/io.html">io</a></td>		<td>Standard IO module a la  <tt> stdio.h</tt>.</td>
+</tr><tr>
+<td><a href="system/logger.html">logger</a></td>	<td>Logger for transaction processor.</td>
+</tr><tr>
+<td> <a href="system/mmath.html">mmath</a></td>	<td>Mathematic operations a la  <tt> math.h</tt>.</td>
+</tr><tr>
+<td><a href="system/stream.html">stream</a></td>	<td>Stream IO a la <tt> stdio.h</tt>.</td>
+</tr><tr>
+<td><a href="system/tcpip.html">tcpip</a></td>	<td>TCP/IP asynchronous communication.</td>
+</tr><tr>
+<td> <a href="system/unix.html">unix</a></td>	<td>Provides access to some of the C stdlib.h functions.</td>
+</tr>
+
+<tr>
+<td ><i>Atom modules</i></td>		<td> </td>	
+</tr><tr>
+<td> <a href="atoms/bitset.html">bitset</a></td>	<td>Compact bit-set manipulation. </td>
+</tr><tr>
+<td> <a href="atoms/bitvector.html">bitvector</a></td>	<td>Compact bit-set manipulation. </td>
+</tr><tr>
+<td> <a href="atoms/blob.html">blob</a></td>	<td>The generic variable-size atom. </td>
+</tr><tr>
+<td> <a href="atoms/decimal.html">decimal</a></td>	<td>Arbitrary precision arithmetic. </td>
+</tr><tr>
+<td> <a href="atoms/monettime.html">monettime</a></td><td>Temporal data types and operations on them.</td>
+</tr><tr>
+<td> <a href="atoms/quadtree.html">quadtree</a></td>	<td>Quadtree implementation</td>
+</tr><tr>
+<td><a href="atoms/str.html">str</a></td>		<td>String manipulation module Java style.</td>
+</tr><tr>
+<td> <a href="atoms/uchr.html">uchr</a></td>	<td>.... </td>
+</tr><tr>
+<td> <a href="atoms/uchr.html">url</a></td>	<td>URL operations, Java style </td>
+</tr>
+
+<tr>
+<td  ><i>Benchmark code</i></td>		<td> </td>	
+</tr><tr>
+<td><a href="benchmarks/ddbench.html">ddbench</a></td>	<td>Drill-down benchmark for data mining.</td>
+</tr><tr>
+<td><a href="benchmarks/oo7.html">oo7</a></td>		<td>OO7 benchmark generation and specific operations.</td>
+</tr><tr>
+<td> <a href="benchmarks/tpcd.html">tpcd</a></td>		<td>Very efficient aggregation operations included.</td>
+</tr><tr>
+<td><a href="benchmarks/wisc.html">wisc</a></td>		<td>Wisconsin benchmark code.</td>
+</tr
+
+<tr>
+<td ><i>Miscellaneous</i></td>		<td> </td>	
+</tr><tr>
+<td><a href="misc/counters.html">counters</a></td>	<td>Operating system hardware counters.</td>
+</tr><tr>
+<td><a href="misc/iterator.html">iterators</a></td>	<td>Experiment with iterator approach.</td>
+</tr><tr>
+<td><a href="misc/malalgebra.html">malalgebra</a></td>	<td>....</td>
+</tr><tr>
+<td><a href="misc/mprof.html">mprof</a></td>	<td>Monet performance profiling.</td>
+</tr><tr>
+<td><a href="misc/perfex.html">perfexs</a></td>	<td>....</td>
+</tr><tr>
+<td><a href="misc/salgebra.html">salgebra</a></td>	<td>Algebra geared towards sorting..</td>
+</tr><tr>
+<td><a href="misc/stats.html">stats</a></td>	<td>...</td>
+</tr><tr>
+<td><a href="misc/radix.html">radix</a></td>	<td>Cache consience approach.</td>
+<tr>
+</table>
+
+</p>
+<a name=mod_2_3_0></a>
+<h4>2.3 MEL Database Extension Interface</h4>
+One of the distinctive features of the Monet Database System is the ability
+to exend the kernel at several levels. You can introduce Abstract Data Types,
+user-defined functions, and excellerators on database tables. These facilities
+put you in the position of a database engineer. However, in our experience you should
+be reluctant to extend the code base. In many cases, we could develop more
+efficient algorithms using the power of the relational algebra over binary tables.
+Even in cases, where researchers were looking for complex datastructure to manage
+and query (k-NN) high-dimensional spaces.
+<p>
+The Monet Extension Language is the specification language for database extension
+modules.  The <a href="mel.html">MEL reference manual</a> contains 
+information about its syntax and semantics. It also contains documentation
+about the C/C++ programming environment you can use for implementring modules.
+The <a href="man/mel.html">MEL Utility</a> is used to do various kinds 
+of compilations of MEL specifications into header files, etc.
+<p>
+We use the <a href="/~monet/papers/mxdoc.ps.gz">Mx utility</a>
+to integrate our MEL specification with the C/C++ implementation code.
+Mx has been in use for about 15 years, but still it is no legacy code.
+In all these years, it has helped bringing across snippets of design rationale, warnings,
+and explanations, which would have definitely be lost when postponed until
+a good documentation document was produced. Gifted writers are invited to
+extend the documentation in places warranted by complexity of the code or
+the sloppyness of the original contributor.<br>
+The Mx tool disentangle the source code from the documentation.
+It also allows to build a documented, cross-linked <a href="">Monet Source Code Web</a>
+between all source files. Use it to browse both  <i> MEL definition</i> and  <i> implementation code</i>
+that belongs to all standard Monet kernel modules
+
+<hr size=5 noshade>
+<a name=mod_3_0_0></a>
+<h2>3 The Distribution</h2>
+Monet is distributed as a (GNU-)compressed tar-file. There are two distributions available:
+ <dl> 
+<dt><b>monet_<i>&#60;</i>version<i>&#62;</i>-<i>&#60;</i>architecture<i>&#62;</i>.tar.Z:</b>
+<dd>
+This is the  <i> binary distribution</i> that
+contains all libraries, tool-binaries and standard
+modules, and some script files, and header files that are 
+necessary to use Monet for querying and programming goals.<br>There are different versions of each binary distribution,
+currently available are  <tt> SunOS5.8, IRIX6.4</tt> ,  <tt> Windows NT/98</tt>,
+ <tt> AIX 4.3</tt>, and  <tt> Linux 2.2 and 2.4</tt>.
+The binary distribution has size of 6MB, and uncompressed needs
+16MB of disk space.
+<dt>
+<b>monet_<i>&#60;</i>version<i>&#62;</i>.tar.Z:</b>
+<dd>
+This is the  <i> source distribution</i>. 
+This does not contain any precompiled libraries, tools or utilities.
+The source distribution has size ?? MB, and uncompressed needs 18 MB
+of disk space. Compiling it will cost you another 44 MB. <br>
+</dl>
+<hr size=1 noshade>
+
+<a name=mod_3_1_0></a>
+<h4>3.1 Binary Distribution</h4>We explain in 5 easy steps how to install the Monet binary distribution on
+your system.
+<br><a name=mod_3_1_1>
+<h5>3.1.1 Step 0: What do we need? </b></h5>
+ <ol> 
+<li> the compressed tarfile containing the 
+<a href="http://www.monetsolutins.com/">binary Monet</a> distribution.
+<li> a Sun Solaris (SUNOS_5-8), Silicon Graphics IRIX (IRIX_6-3),
+Windows NT (NT_5.0), AIX, 
+or x86 Linux machine (Linux_2-2-14).
+</ol><br>
+<br><a name=mod_3_1_2>
+<h5><b>3.1.2 Step 1: Choose a Place. </b></h5>
+Go to the place where you want to put Monet, for example:
+ <pre>$ mkdir /home/boncz/monet
+$ cd /home/boncz/monet
+$
+</pre><br><br><a name=mod_3_1_3>
+<h5>3.1.3 Step 2: Untar the Archive.</h5>
+ <pre>zcat monet_4-3.Linux_2-4.tar.Z | tar xf -
+</pre>
+This will unpack a complete binary Monet-tree (version 4-3)
+for a Linux version 2.4 platform.
+The root directory where you extract this (in this example  <tt> 
+/home/boncz/monet</tt>) we call the 'Monet directory'  in the sequel.
+It contains the binaries, libraries, standard modules, header files, 
+MIL scripts and documentation. 
+<br>
+All machine/OS dependent files
+are inside an OS-specific directory (e.g. SunOS5.8). In this way
+you can have Monet installed on a shared filessytem between multiple
+OS architectures, without having to cope with multiple root directories.
+You may now inspect the monet/README file to see what you got.
+<br><a name=mod_3_1_4>
+<h5><b>3.1.4 Step 3: Environment Variables</b></h5>
+If you intend to quickstart your first session, you do not have to
+set any variables, provided you stay in the Monet directory.
+
+In the Monet directory you find a file called 'monet.conf'
+(a copy of  '.monet.sample.conf'). 
+It contains variable settings for the Monet server instance.
+You may wish to changed the 'dbfarm' variable to a location where
+you want to group your database files. If you intend to use a single
+database, it is adviced to set the 'dbname' variable as well.
+The remaining environment variables are explained in the file and
+documentation.
+The .monet.conf can be copied to your home directory to make it visible 
+in all directories where you start Mserver.
+
+Add the Monet 'bin' subdirectory to your search path, otherwise
+your shell won't easily find the binaries. The path variable is
+typically maintained in your .csrhc/.bashrc/.shrc/.tcshrc
+or whatever initialization file your shell has! Please 
+note that your shell may work with the 'setenv X=Y' style
+shell variable assignment. If it doesn't, you still need to
+export all variables.
+
+<br><a name=mod_3_1_5>
+<h5>3.1.5 Step 4: Demonstrations</h5>
+Together with the standard scripts also comes with demo databases, 
+called <a href="http:dbfarm/VOC/www/index.html> dbfarm/VOC  </a>
+and <a href="http:dbfarm/gold/www/index.html> dbfarm/gold  </a> .
+The former is a tiny database for a multi-national trading company in the 16-18th century.
+The latter is derived from a 20th century car-insurrance company, which
+should be loaded from ASCII and comes with data-mining query scripts on them.
+Both applications are illustrated below.
+
+<br><a name=mod_3_1_6>
+<h5>3.1.6 Step 4a: Start a Database Application</h5>
+Monet comes with a database derived from the East-Indian Trading
+Company (VOC) archives. It is a very small database intended to demonstrate
+the capabilities of Monet on a variety of data types and primarilly
+as a web-enabled application server.
+
+The VOC database application is accessible from the Monet distribution web-page.
+If you haven't experience it, it is now a good time to enjoy a little tour back into history.
+Take your favoured web-browser (Netscape or Explorer) and 
+enter the <a href="http://www.monetsolutions.com/.../VOC/index.html">VOC web address </a>
+
+A copy of the VOC database is included in the distribution.
+In your Monet directory start the database server by typing:
+ <pre>Mserver -db VOC
+</pre><br>It should respond with a welcoming message and some advice 
+on what to do next. That is, take a fresh terminal window and
+type:
+ <pre>Mclient -db VOC -port echolood:5050 -sql
+</pre><br>where 'echolood' should be replaced by the name of your machine.
+You have now started the textual front-end of the Monet server.
+It expects you to enter SQL queries, which will be executed against
+your copy of the VOC database.
+
+<a name=mod_3_1_7></a>
+<h5>3.1.7 Step 4a: Create a Test Database</h5>
+Monet comes with a demonstration database mimicking a car insurance
+database. Some standard data mining query scripts are available
+on this database. You can find the sources in the 
+ <tt> <a href="/~monet/scripts/gold/">src/gold/</a></tt> 
+directory.  The 
+<a href="/~monet/scripts/gold/README">README</a> 
+file contains detailed instructions.<br>
+
+<hr size=1 noshade>
+<br><a name=mod_3_2_0></a>
+<h4>3.2 Source Distribution</h4>
+The source distribution is also available from the Monet web site.
+The below text discusses the main items needed for succesfully 
+making binaries with it. You can obtain a copy from the web site
+and install it in a directory of your choosing (say: /home/boncz).
+
+ <pre>$ zcat monet&#60;version&#62;.tar.Z | tar xf -
+$
+</pre>
+By following the below instructions for making, you will create the
+binaries, the main libraries, the standard collection of extension modules,
+and the tools.
+<h5>3.2.2 Preliminaries</h5>
+Compiling Monet from its sources involves three major directory
+structures:
+
+<table>
+<tr><td> BASE</td><td>where the common source base has been checked out from the  cvs repository.</td></tr>
+
+<tr><td>BUILD</td><td>where "configure" puts the architecture-specific source tree
+                that it generates from the common source base in BASE.
+                here, also the compilation takes place.</td></tr>
+
+<tr><td>PREFIX</td><td>where "make install" finally puts the binaries, libraries,
+                include files, etc.</td></tr>
+</table>
+<p>
+In principle, BASE, BUILD, and PREFIX might be identical, but in many cases,
+it's convenient if they make-up separate directory trees. Then, one can
+easily "rm -rf" BUILD, in order to rebuild the whole stuff from scratch, or
+"rm -rf" BASE and BUILD, once everything is compiled an properly installed
+in PREFIX.
+<p>
+In the remainder, we will just refer to BASE, BUILD, and PREFIX. You can
+(have to ;-) decide for yourself, whether they should be all identical, all
+different, or maybe BASE == BUILD != PREFIX, or BASE != BUILD == PREFIX. In
+any case, BASE, BUILD, & PREFIX should always be given as absolute paths.
+
+<h5>3.2.3 Preparing your environment</h5>
+The Monet development system needs two environment variables BUILD and PREFIX
+to work properly. They are set to convenient defaults upon first use:
+<pre>
+        BUILD=BASE/`uname`
+        PREFIX=BUILD
+</pre>
+You can overrule this default by selecting your desired build and
+target directory and setting the variables in your shell before
+continuing.<br>
+Likewise, the Monet development system needs the identity of the
+desired compiler ("GNU" or "ntv" (native)) and the desired
+binary type (32bit or 64bit). You can do this by setting
+the following environment variables:
+<pre>
+        COMP="GNU"      or      COMP="ntv"
+        BITS="32"       or      BITS="64"
+</pre>
+If not or wrongly set,  COMP=GNU BITS=32 are used as default.
+<br>
+After that, you need to set your (architecture dependent) environment to be
+able to compile Monet-4.2. The easiest way to do so, is to
+<pre>
+        source  conf/conf.bash  (for [ba]sh users)
+or
+        source  conf/conf.csh   (for [t]csh users)
+</pre>
+in BASE. These scripts look for the preset environment variables to adopt to
+you preferences.
+<p>
+Depending on the architecture your currently working on, and depending on
+your settings for COMP, BITS, BUILD, and PREFIX, conf/conf.{ba,c}sh setup
+the environment as needed by configure. Among others, these script take care
+of
+<table>
+<tr><td> - setting the proper PATH & LD_LIBRARY_PATH,</td></tr>
+<tr><td> - choosing the proper C/C++ compiler calls (i.e., setting command name and
+   flags in CC & CXX).</td></tr>
+</table>
+For details, have a look at the scripts; they're not too weird ... ;-)
+Finally, these scripts tell you how to go on, and which flags to use with
+configure.
+
+<h5>3.2.4 Bootstrap & Configure</h5>
+Once you setup your environment properly (see above), you need to execute
+the following in BASE:
+<pre>
+        ./bootstrap
+        cd ${BUILD}
+        ${BASE}/configure --prefix=${PREFIX}
+</pre>
+Unless you (or a cvs update) modify any "Makefile.ag"-file, or delete any of
+the files created by bootstrap or configure, you need to execute them only
+once after a cvs checkout.
+<p>
+NOTE: Never edit any of the files created by bootstrap or configure. Here,
+it becomes most convenient, if you use BASE != BUILD: configure puts all its
+output to BUILD and keep BASE "clean"; bootstrap create its output in BASE,
+but actually only "Makefile.{am,msc,in}"-file. So, never touch any on these,
+and never touch anything in BUILD. If you need some changes to one those
+files, you must look for its origin in BASE (i.e., checked out from the cvs
+tree) and modify this. Unless it is a "Makefile.ag"-file, you do not even have
+to re-run bootstrap or configure. Configure takes care of the dependencies
+between the original source file (and the bootstrap output) in BASE and the
+configure output in BUILD. You only have to edit (your) original source file
+in BASE and the call "make" in BUILD (see below).
+
+<h5>3.2.4 Make & Make Install</h5>
+Once bootstrap-ed and configure-d, you can compile Monet,by simply calling
+<pre>
+        make
+</pre>
+in BUILD. This compiles everything in about 10 minutes (on 550Mhz Linux box),
+and leaves the results in BUILD.
+<br>
+To finally move the results to your favorite destination (i.e., PREFIX),
+just call
+<pre>
+        make install
+</pre>
+in BUILD. Of course, this only works properly when make was successful...
+Well, a simple "make install" without a "make" before should also work; make
+install also checks the dependencies back to the original sources, and just
+do a make first, if necessary.
+<br>
+As already mentioned above, during "normal development", you will just edit
+(your) sources in BASE and then call make / make install in BUILD. Very
+convenient ...
+
+<h5><b>3.2.5 Required Software</b></h5>
+You need the following tools (beside the UNIX standards 
+like sed, echo, etc.):
+ <ul>  
+<li> the GNU Make tool, version 3.76 or later;
+To reduce the complexity of the Makefiles we switched to GNU  <tt> gmake</tt>.
+This utility allows for inclusion of one Makefile in the other, 
+is backwardly compatible with most Unix makes, and available on almost
+any system.
+<li> the GNU readline library;
+The Mclient program for user interaction has command line completion,
+that stems from the GNU readline library. Note that the Mclient
+program is not an essential part of the Monet database system and
+is only provided for convenience.
+</ul> <br>You can find the latest release of both at prep.ai.mit.edu:/pub/gnu.
+On some systems GNU make is called gmake, however, in the documentation 
+ <i> we refer to it simply as  <b> make</b></i>.
+ 
+<hr size=1 noshade>
+<br><hr size=5 noshade>
+<a name=mod_4_0_0>
+<h2>4 Copyright Notice</h2>
+ <pre>/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the &#34;License&#34;); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an &#34;AS
+ * IS&#34; basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten &#60;Martin.Kersten@cwi.nl&#62;
+ *		   Peter Boncz &#60;Peter.Boncz@cwi.nl&#62;
+ *		   Niels Nes &#60;Niels.Nes@cwi.nl&#62;
+ *		   Stefan Manegold  &#60;Stefan.Manegold@cwi.nl&#62;
+ */
+
+</pre>
+</BODY>
+</HTML>

@@ -211,6 +211,9 @@ void scheduleClient(Client c){
 	}
 	if( mil_general == NULL) {
 		char buf[PATHLENGTH];
+		if( monet_prelude)
+		sprintf(buf,monet_prelude);
+		else
 		sprintf(buf,"%s/share/Monet/general.mil",GDKdistrStr);
 		mil_general = scheduleFile(buf);
 		QMADD(req, 0, mil_general, "source(general.mil);");
