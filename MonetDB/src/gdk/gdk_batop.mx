@@ -756,8 +756,8 @@ BAT *BAT_indexselect(BAT *b, BAT *bn, ptr tl, ptr th, int equi) {
 }
 
 BAT *BAT_select(BAT *b, ptr tl, ptr th, int tail) {
-	int	hval, lval, equi, offset, t, ht, tt;
-	size_t 	batcnt, estimate = 0;
+	int	hval, lval, equi, t, ht, tt;
+	size_t 	offset, batcnt, estimate = 0;
 	ptr	nil;
 	BAT	*bn; 
 	BUN	 p,q;
