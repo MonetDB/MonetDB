@@ -260,8 +260,6 @@ SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
 			       cbConnStrOutMax * 4, &n, nDriverCompletion);
 
 	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pnConnStrOut, addDbcError, dbc);
-	if (out)
-		free(out);
 	if (in)
 		free(in);
 	return rc;
