@@ -825,10 +825,6 @@ int ASCIIload_file( ascii *as, bstream *b, stream *out ){
 			char *e = strstr( s, sep );
 			if (e){
 				*e = '\0';
-				if ((e-s) < 1){ /* empty line indicates eof */
-					b->eof = 1;
-					break;
-				}
 				if (insert_line(as, s ) < 0){
 					s = e + seplen;
 					b->pos = (s-b->buf);
