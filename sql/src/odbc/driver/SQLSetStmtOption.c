@@ -38,6 +38,9 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLULEN vParam)
 
 	switch (fOption) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */
+	case SQL_ROWSET_SIZE:
+		fOption = SQL_ATTR_ROW_ARRAY_SIZE;
+		/* fall through */
 	case SQL_QUERY_TIMEOUT:
 	case SQL_MAX_ROWS:
 	case SQL_NOSCAN:
@@ -47,7 +50,6 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLULEN vParam)
 	case SQL_CURSOR_TYPE:
 	case SQL_CONCURRENCY:
 	case SQL_KEYSET_SIZE:
-	case SQL_ROWSET_SIZE:
 	case SQL_SIMULATE_CURSOR:
 	case SQL_RETRIEVE_DATA:
 	case SQL_USE_BOOKMARKS:
