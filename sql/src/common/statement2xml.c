@@ -198,12 +198,12 @@ int stmt2xml( stmt *s, int *nr, context *sql ){
 			xml_field("name", "%s", c->name);
 		FXNODE;
 	} break;
-	case st_not_null: {
+	case st_null: {
 		int c;
-		XNODE("mvc_not_null");
+		XNODE("mvc_null");
 		c = stmt2xml( s->op1.stval, nr, sql );
 		len += snprintf( buf+len, BUFSIZ, 
-		    "s%d := mvc_not_null(myc, s%d );\n", s->nr, c );
+		    "s%d := mvc_null(myc, s%d, %d );\n", s->nr, c, s->flag );
 		xml_field("column_var", "s%d", c);
 		FXNODE;
 	} break;

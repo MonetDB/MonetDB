@@ -144,8 +144,8 @@
 
 	.COMMAND mvc_create_column( mvc m, sql_table t, str name, str type, int type_size, int type_digits, int seqnr ) : sql_column = mvc_create_column_wrap; "Create column"
 
-	.COMMAND mvc_not_null( mvc m, sql_column col ) : 
-		sql_column = mvc_not_null_wrap; "Set column not null"
+	.COMMAND mvc_null( mvc m, sql_column col, int flag ) : 
+		sql_column = mvc_null_wrap; "Set column null or not"
 
 	.COMMAND mvc_default( mvc m, sql_column col, str val ) :
 		sql_column = mvc_default_wrap; "Set column default value"
@@ -590,8 +590,8 @@ int mvc_drop_column_wrap( mvc* c, sql_table *t, str name){
 	return GDK_SUCCEED;
 }
 
-int mvc_not_null_wrap( sql_column* res, mvc* c, sql_column* col){
-	*(sql_column**)res = mvc_not_null( *(mvc**)c, *(sql_column**)col );
+int mvc_null_wrap( sql_column* res, mvc* c, sql_column* col, int *flag){
+	*(sql_column**)res = mvc_null( *(mvc**)c, *(sql_column**)col, *flag );
 	return GDK_SUCCEED;
 }
 

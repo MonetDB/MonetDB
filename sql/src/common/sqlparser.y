@@ -700,6 +700,7 @@ opt_match:
 
 column_constraint_type:
     NOT NULLX	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
+ |  NULLX	{ $$ = _symbol_create( SQL_NULL, NULL); }
  |  UNIQUE	{ $$ = _symbol_create( SQL_UNIQUE, NULL ); }
  |  PRIMARY KEY	{ $$ = _symbol_create( SQL_PRIMARY_KEY, NULL ); }
  |  REFERENCES qname '(' column_ref ')' opt_match opt_ref_action

@@ -2870,8 +2870,9 @@ static stmt *column_constraint_type(context * sql, char *name, symbol * s, stmt 
 		}
 	} break;
 	case SQL_NOT_NULL:
-		c->null = 0;
-		res = stmt_not_null(cs);
+	case SQL_NULL:
+		c->null = (s->token == SQL_NOT_NULL)?0:1;
+		res = stmt_null(cs, c->null);
 		stmt_destroy(ss);
 		stmt_destroy(ts);
 		break;
@@ -3328,24 +3329,22 @@ static stmt *insert_into(context * sql, dlist * qname,
 			"Inserting into non existing table %s", tname);
 	}
 	if (columns) {
-		/* XXX: what to do for the columns which are not listed */
-		dnode *n = columns->h;
+		dnode *n;
+
 		collist = create_column_list();
-		while (n) {
+		for (n = columns->h; n; n = n->next ) {
 			column *c = cat_bind_column(cat, t, n->data.sval);
 			if (c) {
 				list_append(collist, c);
 			} else {
-				return sql_error(sql, 02, 
-					"Inserting into non existing column %s.%s", tname, n->data.sval);
+				return sql_error(sql, 02, "Inserting into non existing column %s.%s", tname, n->data.sval);
 			}
-			n = n->next;
 		}
 	} else {
 		collist = t->columns;
 	}
 
-	len = list_length(collist);
+	len = list_length(t->columns);
 	inserts = NEW_ARRAY(stmt *, len);
 	for (i = 0; i < len; i++)
 		inserts[i] = NULL;
@@ -3375,6 +3374,16 @@ static stmt *insert_into(context * sql, dlist * qname,
 				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins, 0 );
 			}
 
+		}
+		for(i=0; i<len; i++){
+			if (!inserts[i]){
+				node *m;
+				for(m = t->columns->h; m; m = m->next){
+					column *c = m->data;
+					if (c->colnr == i)
+						inserts[i] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_atom(atom_general(c->tpe, _strdup(c->default_value))) , 0 );
+				}
+			}
 		}
 	} else {
 		stmt *s = sql_subquery(sql, NULL, val_or_q);

@@ -126,8 +126,6 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		int cur = 1;
 		ColumnHeader *pCol = NULL;
 
-		fprintf(stderr, "QHEADER %d\n", status);
-
 		nCols = status;
 
 		hstmt->nrCols = nCols;
@@ -202,8 +200,6 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
-
-		fprintf(stderr, "QTABLE %d\n", status);
 
 		nRows = status;
 

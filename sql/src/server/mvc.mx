@@ -180,7 +180,7 @@ extern sql_table *mvc_create_view( mvc *c, sql_schema *s, char *name, char *sql)
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, int type);
 extern void mvc_drop_column( mvc *c, sql_table *t, char *name );
 extern sql_column *mvc_create_column( mvc *c, sql_table *t, char *name, char *type, int type_size, int type_digits, int seqnr );
-extern sql_column *mvc_not_null( mvc *c, sql_column *col );
+extern sql_column *mvc_null( mvc *c, sql_column *col, int flag );
 extern sql_column *mvc_default( mvc *c, sql_column *col, char *val );
 
 extern sql_key *mvc_create_key( mvc *m, char *sname, 
@@ -2787,14 +2787,14 @@ void mvc_drop_column(mvc * m, sql_table *t, char *name)
 	col->wtime = t->wtime = tr->wtime = tr->stime;
 }
 
-sql_column * mvc_not_null(mvc * m, sql_column * col)
+sql_column * mvc_null(mvc * m, sql_column * col, int flag)
 {
 	sql_trans *tr = m->trans;
 
 	if (m->debug)
-		fprintf(stderr, "mvc_not_null %s\n", col->name);
+		fprintf(stderr, "mvc_null %s %d\n", col->name, flag);
 
-	col->null = 0;
+	col->null = flag;
 
 	col->wtime = tr->wtime = tr->stime;
 	return col;

@@ -117,7 +117,7 @@ void stmt_destroy(stmt * s)
 		case st_column: case st_create_column:
 		case st_table: case st_create_table: 
 
-		case st_not_null:
+		case st_null:
 		case st_reverse:
 		case st_count:
 		case st_group:
@@ -236,7 +236,7 @@ void stmt_reset( stmt *s ){
 	s->nr = 0;
 	switch(s->type){
 		/* stmt_reset  op1 */
-	case st_not_null: case st_reverse: case st_count: 
+	case st_null: case st_reverse: case st_count: 
 	case st_group: case st_group_ext: 
 	case st_order: case st_unop: case st_alias: case st_column_alias:
 	case st_output: case st_result: case st_exists: 
@@ -428,11 +428,12 @@ stmt *stmt_create_column(stmt *table, column * c)
 	return s;
 }
 
-stmt *stmt_not_null(stmt * col)
+stmt *stmt_null(stmt * col, int flag)
 {
 	stmt *s = stmt_create();
-	s->type = st_not_null;
+	s->type = st_null;
 	s->op1.stval = col;
+	s->flag = flag;
 	return s;
 }
 

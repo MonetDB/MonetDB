@@ -27,7 +27,7 @@ typedef enum stmt_type {
 	st_drop_table,
 	st_create_table,
 	st_create_column,
-	st_not_null,
+	st_null,
 	st_default,
 	st_create_key,
 	st_create_role,
@@ -132,7 +132,7 @@ extern stmt *stmt_create_schema(schema * s);
 extern stmt *stmt_drop_table(stmt *s, char * name, int drop_action);
 extern stmt *stmt_create_table(stmt *s, table * t);
 extern stmt *stmt_create_column(stmt *t, column * c);
-extern stmt *stmt_not_null(stmt * col);
+extern stmt *stmt_null(stmt * col, int flag);
 extern stmt *stmt_default(stmt * col, stmt * def);
 
 extern stmt *stmt_key(key *k, stmt *rk );  
