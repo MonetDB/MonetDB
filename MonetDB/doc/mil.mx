@@ -108,7 +108,7 @@ that contain BATs).
 @
 On the syntax level in MIL, we @%always abbreviate BAT types@ as @#bat@,
 omitting the signature. For textual signature descriptions, throughout this
-document (and in the @[<a href="mel.html">Monet Extension Language</a>@),
+document (and in the @[<a href="../mel/index.html">Monet Extension Language</a>@),
 we abbreviate BAT signatures at the first level: e.g. @#BAT[OID,BAT]@. This
 is pure pragmatics, in order to preserve simplicity.
 @T
@@ -126,13 +126,13 @@ It has OIDs in the heads, and strings in the tail. It contains five BUNs:
 \end{verbatim}}
 
 More information about the internal layout of BATs is available in the
-@[<a href="www/gdk.html#mod_1_3_0">technical documentation of GDK</a>@.
+@[<a href="../gdk/index.html#mod_1_3_0">technical documentation of GDK</a>@.
 
 @- Type Identifiers
 In MIL, type identifiers {@#void,bit,sht,int,bat,oid,ptr,flt,dbl,lng,str@}
 are just synonyms for integer type numbers. Just try @#int.print;@
 it will display an integer value. Type numbers may change over time
-(see the @[<a href="mel.html">Monet Extension Language</a>@),
+(see the @[<a href="../mel/index.html">Monet Extension Language</a>@),
 and can be looked up from their corresponding strings in the
 BAT @#monet_atomtbl@:
 @-
@@ -199,7 +199,7 @@ using Monet servers with different database-IDs, cross-system OID
 unicity can be ensured.
 
 Although OIDs should be generated with the command
-{\tt @[<a href="www/modules/kernel.html#mod_2_2_0">newoid(INT range):OID</a>@} to ensure their uniqueness, you
+{\tt @[<a href="../../Modules/kernel/index.html#mod_2_2_0">newoid(INT range):OID</a>@} to ensure their uniqueness, you
 can also enter OIDs by hand for debugging purposes.
 
 You just type a number closed with an 'at' sign, e.g.  {\small\tt 12345\@},
@@ -227,13 +227,13 @@ of {\em accelerator-identifiers}.
 @-
 These accelerator identifiers serve to identify a specific
 search accelerator, and are used by the @%search accelerator management@
-commands, that can be found in the @[<a href="www/modules/bat.html">BAT module</a>@.
+commands, that can be found in the @[<a href="../../Modules/bat/index.html">BAT module</a>@.
 
 @-
 Just like the set of type-identifiers, these identifiers are just synonyms for
 integer accelerator numbers (just try typing @#hash.print;@). And just like
 the set of type-identifiers, this set can change over time
-(see the @[<a href="mel.html">Monet Extension Language</a>@),
+(see the @[<a href="../mel/index.html">Monet Extension Language</a>@),
 and their mapping to strings can be looked up in system BAT by the name
 of @#monet_acctbl@:
 @T
@@ -360,7 +360,7 @@ and the
 
 @+ Statements
 @T
-Interaction with an @[<a href="www/Mserver.html">Mserver</a>@ takes the form of a client
+Interaction with an Mserver takes the form of a client
 session, that is defined as a sequence of {\em statements}:
 \begin{itemize}
 
@@ -428,9 +428,9 @@ will join them in parallel, with a maximum number of 16 jobs in parallel at the 
 
 During program execution, the status of variables can dynamically be
 changed  using the built-in commands
-{\tt @[<a href="www/modules/kernel.html#mod_2_2_1">constant(..IDENT..)</a>@}
+{\tt @[<a href="../../Modules/kernel/index.html#mod_2_2_1">constant(..IDENT..)</a>@}
 (which fixes value and type) and
-{\tt @[<a href="www/modules/kernel.html#mod_2_2_1">freeze(..IDENT..)</a>@}
+{\tt @[<a href="../../Modules/kernel/index.html#mod_2_2_1">freeze(..IDENT..)</a>@}
 (which fixes only the type).
 
 Also, the {\tt vars()} command produces a table of all active variables
@@ -466,9 +466,9 @@ in the current context:
 >
 \end{verbatim}
 The standard collection of variables consists of a number of constants that are needed
-by various operators ({\tt @[<a href="www/modules/bat.html#mod_2_0_3">access</a>@(BAT[any,any], int {\bf BAT\_XX})},
-{\tt @[<a href="www/modules/bat.html#mod_2_0_6">madvise</a>@(BAT[any,any], int {\bf BUF\_XX})} and
-{\tt @[<a href="www/modules/bat.html#mod_2_0_6">mmap</a>@(BAT[any,any], int {\bf STORE\_XX})}). The
+by various operators ({\tt @[<a href="../../Modules/bat/index.html#mod_2_0_3">access</a>@(BAT[any,any], int {\bf BAT\_XX})},
+{\tt @[<a href="../../modules/bat/index.html#mod_2_0_6">madvise</a>@(BAT[any,any], int {\bf BUF\_XX})} and
+{\tt @[<a href="../../modules/bat/index.html#mod_2_0_6">mmap</a>@(BAT[any,any], int {\bf STORE\_XX})}). The
 {\tt values\_status} tells whether it is a variable or a constant. For variables, the {\tt type\_status}
 may either be {\tt liquid} or {\tt frozen}, which indicates whether the variable may be assigned a value
 of another type.
@@ -612,7 +612,7 @@ processing.\\
 @- Command Signature Notation
 @T
 In {\tt command} signature definitions throughout this document,
-we will use @[<a href="mel.html">MEL (Monet Extension Language)</a>@ syntax:
+we will use @[<a href="../mel/index.html">MEL (Monet Extension Language)</a>@ syntax:
 \begin{itemize}
 \item {\bf\tiny COMMAND} {\tt command-name}({\small TYPE name, ...VARARGTYPE...}) : {\small RETURNTYPE}
 \end{itemize}
@@ -686,7 +686,7 @@ the {\bf natural join} on equal head values of all its BAT parameters.
 [ 5,   2   ]         [ 5,   2   ]       [ 5,   4   ]
 \end{verbatim}
 {\center\em Multiplex Operator Example: using the numerical '+' operator
-(@[<a href="www/modules/arith.html">arith module</a>@)}}
+(@[<a href="../../Modules/arith/index.html">arith module</a>@)}}
 
 \begin{itemize}
 \item All parameter head types should be equal or void
@@ -775,13 +775,13 @@ VOID columns can be created using the {\tt\small{\bf [,B].copy}}
 {\em bat projection}. It creates a view on top of B, in which the left
 column seems to be missing; when you print it, all head values are {\tt nil}.
 Another way of creating a BAT with a VOID column is to use
-@[<a href="www/modules/bat.html#mod_2_0_1"><tt>new(VOID,T)</tt></a>@
+@[<a href="../../Modules/bat/index.html#mod_2_0_1"><tt>new(VOID,T)</tt></a>@
 (you can also use the constructor {\small\tt bat(VOID,T)}).
 This will yield an empty BAT with a VOID head column.
 @-
 You need to activate the VOID column in a BAT created by hand by specifying a
 base OID of your choice.  This can be done with the command
-@[<a href="www/modules/bat.html#mod_2_0_3"><tt>bat[VOID,T].<bf>seqbase</bf>(oid)</tt></a>@.
+@[<a href="../../modules/bat/index.html#mod_2_0_3"><tt>bat[VOID,T].<bf>seqbase</bf>(oid)</tt></a>@.
 
 @+ Operations on BATs with a VOID column
 @T
@@ -810,16 +810,16 @@ of the specific features of a VOID: lookup on OID number can be very
 efficient, since you need to do nothing more
 than subtract the base number in order to know the position of
 a BUN. For instance, the
-{\small\tt\bf @[<a href="www/modules/algebra.html#mod_2_1_0">bat[VOID,T].find(oid):T</a>@}
+@[<a href="../../Modules/algebra/index.html#mod_2_1_0">bat[VOID,T].find(oid):T</a>@
 will use positional lookup.
 
 Similar optimizations have been made in the
-{\small\tt\bf @[<a href="www/modules/algebra.html#mod_2_5_1">semijoin</a>@}
+@[<a href="../../Modules/algebra/index.html#mod_2_5_1">semijoin</a>@
 and
-{\small\tt\bf @[<a href="www/modules/algebra.html#mod_2_5_4">join</a>@}
+@[<a href="../../Modules/algebra/index.html#mod_2_5_4">join</a>@
 when one of the join columns is virtual
 oid. The same goes for the
-{\small\tt\bf @[<a href="www/modules/algebra.html#mod_2_2_2">select</a>@}
+@[<a href="../../Modules/algebra/index.html#mod_2_2_2">select</a>@
 operation when the selection column is a virtual oid.
 
 @+ Pump
@@ -868,7 +868,7 @@ as a set aggregate {\small\tt \{sum\}()}.
 In the above we see why the second (right) parameter is necessary: it
 makes it possible to work with empty sets/bags as well!
 
-In the new @[<a href="www/modules/aggrX3.html">aggrX3 module</a>@ you find pumps with {\bf three}
+In the new @[<a href="../../Modules/aggrX3/index.html">aggrX3 module</a>@ you find pumps with {\bf three}
 parameters. At this moment this, tertiary aggregate is defined only for the most
 common aggregate functions, while the binary pump works for all aggregates (including
 your own MIL-procs). In the tertiary pump, the first (left) parameter of the binary pump
@@ -927,18 +927,18 @@ For reasons similar to the pump, a tertiary {\tt CTrefine} will soon be introduc
 two void-headed parameters where the tail columns make up the head and tail of the first parameter
 in the binary version.
 
-More information on grouping and ordering can be found in the @[<a href="www/modules/xtables.html">xtables module</a>@.
+More information on grouping and ordering can be found in the @[<a href="../../modules/xtables/index.html">xtables module</a>@.
 
 @+ Updates and Transactions
 @T
 By default, Monet only has support for global database-wide transactions. A successful
-{\tt @[<a href="www/modules/trans.html#mod_2_0_1">commit():bit</a>@}
+{\tt @[<a href="../../Modules/trans/index.html#mod_2_0_1">commit():bit</a>@}
 ensures that all {\em persistent} BATs have safely been written to disk. This is an all or nothing
-operation, as the {\tt @[<a href="www/modules/trans.html#mod_2_0_1">abort()</a>@} allows one to regress
+operation, as the {\tt @[<a href="../../Modules/trans/index.html#mod_2_0_1">abort()</a>@} allows one to regress
 to the status at the last succeeded commit.
 
-BATs can be appended into with {\tt @[<a href="www/modules/bat.html#mod_2_0_2">insert()</a>@} and deleted from
-with {\tt @[<a href="www/modules/bat.html#mod_2_0_2">delete</a>@}.
+BATs can be appended into with {\tt @[<a href="../../Modules/bat/index.html#mod_2_0_2">insert()</a>@} and deleted from
+with {\tt @[<a href="../../Modules/bat/index.html#mod_2_0_2">delete</a>@}.
 
 The default BAT access mode is {\tt BAT\_READ} (an exception are newly created empty BATs,
 which have access mode {\tt BAT\_WRITE}). There is also an access mode {\tt BAT\_APPEND} that
@@ -948,7 +948,7 @@ only allows inserts.
 @* Extension Modules
 @T
 All MIL primitives are in fact defined by extension modules, which have
-a specification in the @[<a href="mel.html">Monet Extension Language</a>@ (MEL).
+a specification in the @[<a href="../mel/index.html">Monet Extension Language</a>@ (MEL).
 
 @+ Inspecting Modules
 @T
@@ -974,11 +974,11 @@ So we now query for all available modules using the {\tt modules()} operator:
 >
 \end{verbatim}
 
-This tells us that Monet has the @[<a href="www/modules/monettime.html">monettime</a>@
+This tells us that Monet has the @[<a href="../../Modules/monettime/index.html">monettime</a>@
 module, but it is not loaded yet. This module defines a number of temporal data
 types and operations.
 
-The @[<a href="mel.html">MEL</a>@ specification of this module
+The @[<a href="../mel/index.html">MEL</a>@ specification of this module
 contains code like this:
 
 \begin{verbatim}
@@ -1005,7 +1005,7 @@ in a "Day-Month-Year hour:minute" format.
 \end{verbatim}}
 
 When you try to use a 'timestamp' without loading
-the @[<a href="www/modules/monettime.html">monettime</a>@
+the @[<a href="../../Modules/monettime/index.html">monettime</a>@
 module, a runtime error occurs!
 
 \begin{verbatim}
@@ -1109,110 +1109,110 @@ according to their functionality.
 @T
 As of version 4.1 MIL has 7 standard modules, that are always loaded.
 \begin{description}
-\item[ @[<a href="www/modules/kernel.html">kernel</a>@ ]
+\item[ @[<a href="../../Modules/kernel/index.html">kernel</a>@ ]
 	these are the builtin system primitives.  They cannot be overloaded.
-\item[ @[<a href="www/modules/bat.html">bat</a>@ ]
+\item[ @[<a href="../../Modules/bat/index.html">bat</a>@ ]
 	basic commands to create and manipulate BATs.
-\item[ @[<a href="www/modules/algebra.html">algebra</a>@ ]
+\item[ @[<a href="../../Modules/algebra/index.html">algebra</a>@ ]
 	relational core of BAT commands (select, join, etc).
-\item[ @[<a href="www/modules/arith.html">arith</a>@ ]
+\item[ @[<a href="../../Modules/arith/index.html">arith</a>@ ]
 	simple arithmetic operators on the standard types.
-\item[ @[<a href="www/modules/sys.html">sys</a>@ ]
+\item[ @[<a href="../../Modules/sys/index.html">sys</a>@ ]
 	system information. This module contains helpful procedures for navigating through the system (ls, help).
-\item[ @[<a href="www/modules/str.html">str</a>@ ]
+\item[ @[<a href="../../Modules/str/index.html">str</a>@ ]
 	string handling.
-\item[ @[<a href="www/modules/trans.html">trans</a>@ ]
+\item[ @[<a href="../../Modules/trans/index.html">trans</a>@ ]
 	support for global transactions (minimal database consistency).
 \end{description}
 
 @+ Query Processing
 @T
 \begin{description}
-\item[@[<a href="www/modules/algebra.html">algebra</a>@]
+\item[@[<a href="../../Modules/algebra/index.html">algebra</a>@]
 	Relational core of BAT commands (select, join, etc).
-\item[@[<a href="www/modules/aggr.html">aggr</a>@]
+\item[@[<a href="../../Modules/aggr/index.html">aggr</a>@]
 	Binary aggregation operations.
-\item[@[<a href="www/modules/aggrX3.html">aggrX3</a>@]
+\item[@[<a href="../../Modules/aggrX3/index.html">aggrX3</a>@]
 	Fast tertiary aggregation operations.
-\item[@[<a href="www/modules/xtables.html">xtables</a>@]
+\item[@[<a href="../../Modules/xtables/index.html">xtables</a>@]
 	Cross-table operations for data mining.
-\item[@[<a href="www/modules/radix.html">radix</a>@]
+\item[@[<a href="../../Modules/radix/index.html">radix</a>@]
 	Cache-conscious query processing.
-\item[@[<a href="www/modules/enum.html">enum</a>@]
+\item[@[<a href="../../Modules/enum/index.html">enum</a>@]
 	Automatic creation of enumeration types. Used for space compression.
-\item[@[<a href="www/modules/mmath.html">mmath</a>@]
+\item[@[<a href="../../Modules/mmath/index.html">mmath</a>@]
 	Mathematic operations a la  {\tt math.h}.
-\item[@[<a href="www/modules/ascii_io.html">ascii_io</a>@]
+\item[@[<a href="../../Modules/ascii_io/index.html">ascii_io</a>@]
 	Bulk loading.
 \end{description}
 
 @+ Transactions
 @T
 \begin{description}
-\item[@[<a href="www/modules/lock.html">lock</a>@]
+\item[@[<a href="../../Modules/lock/index.html">lock</a>@]
 	Locks and semaphores.
 \end{description}
 
 @+ OS APIs
 @T
 \begin{description}
-\item[@[<a href="www/modules/unix.html">unix</a>@]
+\item[@[<a href="../../Modules/unix/index.html">unix</a>@]
 	Provides access to some of the C stdlib.h functions.
-\item[@[<a href="www/modules/alarm.html">alarm</a>@]
+\item[@[<a href="../../Modules/alarm/index.html">alarm</a>@]
 	OS timers and interrupts.
 	Standard IO module a la  {\tt stdio.h}.
-\item[@[<a href="www/modules/streams.html">streams</a>@]
+\item[@[<a href="../../Modules/streams/index.html">streams</a>@]
 	Stream IO a la {\tt stdio.h}.
-\item[@[<a href="www/modules/tcpip.html">tcpip</a>@]
+\item[@[<a href="../../Modules/tcpip/index.html">tcpip</a>@]
 	TCP/IP asynchronous communication.
 \end{description}
 
 @+ Extension Atoms
 @T
 \begin{description}
-\item[@[<a href="www/modules/bitset.html">bitset</a>@]
+\item[@[<a href="../../Modules/bitset/index.html">bitset</a>@]
 	Compact bit-set manipulation.
-\item[@[<a href="www/modules/bitvector.html">bitvector</a>@]
+\item[@[<a href="../../Modules/bitvector/index.html">bitvector</a>@]
 	Compact bit-set manipulation.
-\item[@[<a href="www/modules/blob.html">blob</a>@]
+\item[@[<a href="../../Modules/blob/index.html">blob</a>@]
 	The generic variable-size atom.
-\item[@[<a href="www/modules/decimal.html">decimal</a>@]
+\item[@[<a href="../../Modules/decimal/index.html">decimal</a>@]
 	Arbitrary precision arithmetic.
-\item[@[<a href="www/modules/monettime.html">monettime</a>@]
+\item[@[<a href="../../Modules/monettime/index.html">monettime</a>@]
 	 data types and operations on them.
-\item[@[<a href="www/modules/qt.html">qt</a>@]
+\item[@[<a href="../../Modules/qt/index.html">qt</a>@]
 	Quadtree implementation
-\item[@[<a href="www/modules/str.html">str</a>@]
+\item[@[<a href="../../Modules/str/index.html">str</a>@]
 	String manipulation module supporting UTF-8.
-\item[@[<a href="www/modules/url.html">url</a>@]
+\item[@[<a href="../../Modules/url/index.html">url</a>@]
 	URL operations
 \end{description}
 
 @+ Performance Monitoring
 @T
 \begin{description}
-\item[@[<a href="www/modules/calib.html">calib</a>@]
+\item[@[<a href="../../Modules/calib/index.html">calib</a>@]
 	Calibrator that automatically extracts relevant hardware parameters from any system.
-\item[@[<a href="www/modules/counters.html">counters</a>@]
+\item[@[<a href="../../Modules/counters/index.html">counters</a>@]
 	System-independent hardware counters.
 	(First version, building directly on system-dependent libraries.)
-\item[@[<a href="www/modules/pcl.html">pcl</a>@]
+\item[@[<a href="../../Modules/pcl/index.html">pcl</a>@]
 	System-independent hardware counters.
 	(Second version, building on System-independent @[<a href="http://www.fz-juelich.de/zam/PCL/">PCL</a>@ library
-\item[@[<a href="www/modules/mprof.html">mprof</a>@]
+\item[@[<a href="../../Modules/mprof/index.html">mprof</a>@]
 	Monet performance profiling.
 \end{description}
 
 @+ Benchmark Generators
 @T
 \begin{description}
-\item[@[<a href="www/modules/ddbench.html">ddbench</a>@]
+\item[@[<a href="../../Modules/ddbench/index.html">ddbench</a>@]
 	Drill-down benchmark for data mining.
-\item[@[<a href="www/modules/oo7.html">oo7</a>@]
+\item[@[<a href="../../Modules/oo7/index.html">oo7</a>@]
 	OO7 benchmark generation and specific operations.
-\item[@[<a href="www/modules/tpcd.html">tpcd</a>@]
+\item[@[<a href="../../Modules/tpcd/index.html">tpcd</a>@]
 	Efficient aggregation operations included.
-\item[@[<a href="www/modules/wisc.html">wisc</a>@]
+\item[@[<a href="../../Modules/wisc/index.html">wisc</a>@]
 	Wisconsin benchmark code.
 \end{description}
 
@@ -1230,8 +1230,8 @@ MIL blocks or parallel iterators put many jobs in this queue, that are
 then consumed by these multiple MIL interpreter threads, thus creating
 parallelism.
 
-At startup of the {\tt @[<a href="www/Mserver.html">Mserver</a>@}, one such interpreter
-thread is created.  For each incoming {\tt @[<a href="www/MapiClient.html">MapiClient</a>@}
+At startup of the Mserver, one such interpreter
+thread is created.  For each incoming MapiClient
 session, a new thread is created as well.
 
 \begin{verbatim}
@@ -1260,8 +1260,8 @@ session, a new thread is created as well.
 [ 2,      "Interpreter"   ]
 >
 \end{verbatim}
-You can get a listing of all Monet threads with the {\tt @[<a href="www/modules/kernel.html#mod_2_3_2">threads()</a>@} command.
-The {\tt @[<a href="www/modules/kernel.html#mod_2_3_2">threadcnt(int delta)</a>@} command allows to increase or decrease the number of
+You can get a listing of all Monet threads with the {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_2">threads()</a>@} command.
+The {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_2">threadcnt(int delta)</a>@} command allows to increase or decrease the number of
 MIL interpreter threads.
 
 @+ Client Sessions
@@ -1272,12 +1272,12 @@ multiple threads busy (threads are thus a lower-level concept than clients).
 
 Clients can:
 \begin{itemize}
-\item fork other clients with {\tt @[<a href="www/modules/kernel.html#mod_2_3_1">fork(expr):int</a>@},
-which returns a client-id.  \item killed with {\tt @[<a href="www/modules/kernel.html#mod_2_3_1">kill(int id)</a>@}.
-\item listed with {\tt @[<a href="www/modules/sys.html#mod_2_1_0">clients()</a>@}.
+\item fork other clients with {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_1">fork(expr):int</a>@},
+which returns a client-id.  \item killed with {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_1">kill(int id)</a>@}.
+\item listed with {\tt @[<a href="../../Modules/sys/index.html#mod_2_1_0">clients()</a>@}.
 \end{itemize}
 
-A common application of {\tt @[<a href="www/modules/kernel.html#mod_2_3_1">fork()</a>@} is to start a Mapi listener in the background:
+A common application of {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_1">fork()</a>@} is to start a Mapi listener in the background:
 \begin{verbatim}
 > module(mapi);
 > listen(45678).fork;
@@ -1298,28 +1298,29 @@ A common application of {\tt @[<a href="www/modules/kernel.html#mod_2_3_1">fork(
 #-------------------------------------------------------------------------#
 [ 0,      "adm",  "Mon Oct  7 15:59:18 2002",     "clients()"             ]
 >
-\end{verbatim}
+end{verbatim}
 
-The session is ended with a {\tt @[<a href="www/modules/kernel.html#mod_2_3_1">quit()</a>@}. Note that typing this in the
-{\tt @[<a href="www/Mserver.html">Mserver</a>@} console with stop the Monet server
-immediately, whereas in the {\tt @[<a href="www/MapiClient.html">MapiClient</a>@} it
+The session is ended with a {\tt @[<a href="../../Modules/kernel/index.html#mod_2_3_1">quit()</a>@}. Note that typing this in the
+{\tt @[<a href="../Mserver/index.html">Mserver</a>@} console with stop the Monet server
+immediately, whereas in the {\tt @[<a href="www/MapiClient/index.html">MapiClient</a>@} it
 will only end the current user session. The server can be shutdown from the
-{\tt @[<a href="www/MapiClient.html">MapiClient</a>@} (and also from the
-{\tt @[<a href="www/Mserver.html">Mserver</a>@} console) with {\tt @[<a href="www/modules/kernel.html#mod_2_3_1">shutdown()</a>@}.
+{\tt @[<a href="../MapiClient/index.html">MapiClient</a>@} (and also from the
+{\tt @[<a href="../Mserver/index.html">Mserver</a>@} console) with {\tt @[<a href="../../Modules/kernel.html#mod_2_3_1">shutdown()</a>@}.
 
 @* Further Reference
 @T
 We recommend you to study the commands in the following modules:
 \begin{description}
-\item[system] @[<a href="www/modules/kernel.html">kernel</a>@ (special keywords),
-@[<a href="www/modules/sys.html">sys</a>@ (especially look at the @[<a href="www/modules/sys.html#mod_2_1_0">PROCs</a>@).
+\item[system] @[<a href="../../Modules/kernel/index.html">kernel</a>@ (special keywords),
+@[<a href="../../Modules/sys/index.html">sys</a>@ (especially look at the @[<a href="www/modules/sys.html#mod_2_1_0">PROCs</a>@).
 
-\item[bats] @[<a href="www/modules/bat.html">bat</a>@ (basic bat management) and
-@[<a href="www/modules/algebra.html">algebra</a>@ (the core algebra).
+\item[bats] @[<a href="../../Modules/bat/index.html">bat</a>@ (basic bat management) and
+@[<a href="../../Modules/algebra/index.html">algebra</a>@ (the core algebra).
 
-\item[advanced query processing] @[<a href="www/modules/aggr.html">aggr</a>@ and @[<a href="www/modules/aggrX3.html">aggrX3</a>@ (aggregates),
-@[<a href="www/modules/xtables.html">xtables</a>@ (groupings) and
-@[<a href="www/modules/radix.html">radix</a>@ (cache-conscious join).
+\item[advanced query processing] @[<a href="../../Modules/aggr/index.html">aggr</a>@ and
+ @[<a href="../../Modules/aggrX3/index.html">aggrX3</a>@ (aggregates),
+@[<a href="../../Modules/xtables/index.html">xtables</a>@ (groupings) and
+@[<a href="../../Modules/radix/index.html">radix</a>@ (cache-conscious join).
 \end{description}
 
 The @[<a href="http://www.cwi.nl/htbin/ins1/publications?request=abstract&key=Bo:DISS:02">Ph.D. thesis</a>@
