@@ -865,30 +865,28 @@ char *GDKstrdup(char *s) {
 @- virtual memory
 allocations affect only the logical VM resources.
 @c
-/*
-void *GDKmmap(void* addr, size_t len, int prot, int flags, int fd, off_t off) {
-        char *ret = mmap(addr, len, prot, flags, fd, off);
-        if (ret == (char*) -1) {
+void *GDKmmap(char* path, int mode, size_t off, size_t len, void *fixed) {
+        void *ret = MT_mmap(path, mode, off, len, fixed);
+        if (ret == (void*) -1) {
 		GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
-        	ret = mmap(addr, len, prot, flags, fd, off);
-        	if (ret != (char*) -1) {
-			THRprintf(GDKerr, "GDKmmap: recovery ok. Continuing..\n");
+        	ret = MT_mmap(path, mode, off, len, fixed);
+        	if (ret != (void*) -1) {
+		    THRprintf(GDKerr, "GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
-        if (ret != (char*) -1) {
+        if (ret != (void*) -1) {
         	GDKmeminc(len, len);
         }
         return (void*) ret;
 }
 
-int GDKmunmap(void* addr, size_t len) {
-        int ret = munmap(addr, len);
+int GDKmunmap(void* addr, size_t size) {
+        int ret = MT_munmap(addr, size);
         if (ret == 0) {
-                GDKmemdec(len, len);
+                GDKmemdec(size, size);
         }
         return ret;
 }
-*/
 
  
 @- VM alloc

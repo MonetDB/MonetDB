@@ -342,8 +342,8 @@ void MT_unset_lock(MT_Lock l, char *name)	{
  
 int	MT_try_lock (MT_Lock l) {
 	if (MT_debug & 1024) {
-		fprintf(MT_out,"MT_try_lock:%u %d\n", 
-			(unsigned int) THRgettid(), (int) l);
+		fprintf(MT_out,"MT_try_lock:%lu %ld\n", 
+			(long)MT_getpid(), (long) l);
 		fflush(MT_out);
 	}
 	if (l == NULL) return 0;
@@ -391,8 +391,8 @@ void MT_down_sema(MT_Sema s, char *name){
 
 int	MT_try_sema (MT_Sema s){
 	if (MT_debug & 1024) {
-		fprintf(MT_out,"MT_try_sema:%u %d\n", 
-			(unsigned int) THRgettid(), (int) s);
+		fprintf(MT_out,"MT_try_sema:%lu %ld\n", 
+			(long) MT_getpid(), (long) s);
 		fflush(MT_out);
 	}
 	if (s == NULL) return 0;

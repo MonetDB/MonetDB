@@ -135,7 +135,7 @@ PROT_NONE, so we can do it.
 		totsize -=  h->offset + h->size;
 		fclose(fp);
 	        GDKfilepath(path,BATDIR,h->filename,NULL);
-		b = MT_mmap(path, MMAP_COPY, h->offset+h->size, totsize, 
+		b = GDKmmap(path, MMAP_COPY, h->offset+h->size, totsize, 
 			    h->base+h->offset+h->size);
 		if ((b == (char*) -1)) {
 			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n",
@@ -230,10 +230,10 @@ grab everything we can now.
 		dst->size = dst->maxsize; /* take it all, now */
 
 #else
-		b = (char *) MT_mmap(path, MMAP_COPY, newoffset, dst->maxsize, NULL);	
+		b = (char *) GDKmmap(path, MMAP_COPY, newoffset, dst->maxsize, NULL);	
 		if (b == (char*) -1) b = 0;
 #endif
-		dst->base = (char *) MT_mmap(path, MMAP_COPY, newoffset, dst->size, b);	
+		dst->base = (char *) GDKmmap(path, MMAP_COPY, newoffset, dst->size, b);	
 
 		if (dst->base == (char*) -1) {
 			shiftback = 0;
@@ -264,7 +264,7 @@ int HEAPfree(Heap* h) {
                 GDKfree(h->base);
         } else if (h->filename) { /* mapped file, or STORE_PRIV */
                 FILE *fp;
-                int ret = MT_munmap(h->base, h->maxsize);
+                int ret = GDKmunmap(h->base, h->maxsize);
                 if (ret < 0) {
                         GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
                 }

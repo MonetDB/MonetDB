@@ -1030,7 +1030,7 @@ Open the file. Memory map it to minimize buffering problems.
 	} else {
 	    	struct stat st;
             	fstat(fileno(fp), &st);
-		(void)fclose(fp);
+		(void)fclose(fp); 
             	base = cur = (char*)MT_mmap(fnme, 0, 0, st.st_size, NULL);
 		end = cur + st.st_size;
 	}
@@ -1073,7 +1073,6 @@ Parse the line, and insert a BUN.
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
        		if (*p == 0){
 		       	GDKerror("CMDimport: error in %s\n",buf);
-		       	(void) fclose(fp);
 			return GDK_FAIL;
        		}
        		p += @1(p, @3, @4);			
@@ -1098,7 +1097,6 @@ Cleanup and exit. Return the filled BAT.
 	if (t) GDKfree(t);
 	GDKfree(buf);
 	MT_munmap(base, end-base);
-	(void) fclose(fp);
 	BBPfix(b->batCacheid);
 	*ret = b;
 	return GDK_SUCCEED;
