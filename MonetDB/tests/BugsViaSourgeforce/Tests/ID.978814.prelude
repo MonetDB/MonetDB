@@ -1,0 +1,301 @@
+# some stuff from module pathfinder
+
+# DEFINITION of constants concerning the data model
+const DOC_BASE := 0@0;
+const PRE_BASE := 0@0;
+const ATTR_BASE := 1073741824@0; #2 * 2^29
+const ELEMENT := chr(0);
+const TEXT := chr(1);
+const COMMENT := chr(2);
+const PI := chr(3);
+const DOCUMENT := chr(4);
+
+# INITIALIZATION of working set (T*-BATs)
+var Tpre_size := new(void,int).seqbase(PRE_BASE);
+var Tpre_level := new(void,chr).seqbase(PRE_BASE);
+var Tpre_prop := new(void,oid).seqbase(PRE_BASE);
+var Tpre_kind := new(void,chr).seqbase(PRE_BASE);
+var Tprop_ns := new(void,str).seqbase(PRE_BASE);
+var Tprop_loc := new(void,str).seqbase(PRE_BASE);
+var Tprop_text := new(void,str).seqbase(PRE_BASE);
+var Tprop_com := new(void,str).seqbase(PRE_BASE);
+var Tprop_ins := new(void,str).seqbase(PRE_BASE);  
+var Tprop_tgt := new(void,str).seqbase(PRE_BASE);
+var Tattr_ns := new(void,str).seqbase(ATTR_BASE);
+var Tattr_loc := new(void,str).seqbase(ATTR_BASE);
+var Tattr_val := new(void,str).seqbase(ATTR_BASE);
+var Tattr_own := new(void,oid).seqbase(ATTR_BASE);
+var Tdoc_pre := new(void,oid).seqbase(DOC_BASE);
+var Tdoc_name := new(void,str).seqbase(DOC_BASE);
+var Theight := 0;
+
+# merged_union procs
+proc merged_union (bat[any::1,any::2] first, bat[any::1, any::2] second) : bat[any::1,any::2] :=
+{
+   var count_fst := first.count;
+   var count_snd := second.count;
+   var size_new := count_fst + count_snd;
+
+   # creates the bats for the comparison
+   var iter_fst := {count}(first.reverse, first.tunique);
+   var iter_snd := {count}(second.reverse, second.tunique);
+   iter_fst := iter_fst.[-](1);
+   iter_snd := iter_snd.[-](1);
+
+   # initialization of the counting variables
+   var i := 0;
+   var j := 0;
+   # maximum for the while loop over the both bats
+   var iter_count_fst := iter_fst.count;
+   var iter_count_snd := iter_snd.count;
+   # set the first offset to 0 that the slice starts at the beginning
+   var offset_fst := 0;
+   var offset_snd := 0;
+
+   if (first.head = "void")
+      eval ("var result := bat(void, " + first.tail + 
+         ", size_new).seqbase(0@0);");
+   else
+      eval ("var result := bat(" + first.head + ", " + first.tail + 
+         ", size_new);");
+
+   # iterates until one of the input tables is completely consumed
+   while ((i < iter_count_fst) and (j < iter_count_snd))
+   {
+          # if the value of the first argument is bigger
+          # than the value of the second argument ...
+          if (iter_fst.reverse.fetch(i) > iter_snd.reverse.fetch(j))
+          {
+             next_slice := second.slice (offset_snd, 
+                                         (offset_snd + iter_snd.fetch(j)));
+             result.insert(next_slice);
+             offset_snd := offset_snd + iter_snd.fetch(j) + 1;
+             j :+= 1;
+          }
+          else
+          {
+             next_slice := first.slice (offset_fst, 
+                                        (offset_fst + iter_fst.fetch(i)));
+             result.insert(next_slice);
+             offset_fst := offset_fst + iter_fst.fetch(i) + 1;
+             i :+= 1;
+          }
+   }
+   # if the second argument is completely consumed the rest of the
+   # first argument is appended to the result for each pair
+   if ((i < iter_count_fst) and (j = iter_count_snd))
+   {
+      next_slice := first.slice (offset_fst, count_fst);
+      result.insert(next_slice);
+   }
+   # if the first argument is completely consumed the rest of the
+   # second argument is appended to the result for each pair
+   if ((i = iter_count_fst) and (j < iter_count_snd))
+   {
+      next_slice := second.slice (offset_snd, count_snd);
+      result.insert(next_slice);
+   }
+   return result;
+}
+
+proc merged_union (bat[void,any::1] first, bat[void, any::1] second) : bat[void,any::1] :=
+{
+   var count_fst := first.count;
+   var count_snd := second.count;
+   var size_new := count_fst + count_snd;
+
+   # creates the bats for the comparison
+   var iter_fst := {count}(first.reverse, first.tunique);
+   var iter_snd := {count}(second.reverse, second.tunique);
+   iter_fst := iter_fst.[-](1);
+   iter_snd := iter_snd.[-](1);
+
+   # initialization of the counting variables
+   var i := 0;
+   var j := 0;
+   # maximum for the while loop over the both bats
+   var iter_count_fst := iter_fst.count;
+   var iter_count_snd := iter_snd.count;
+   # set the first offset to 0 that the slice starts at the beginning
+   var offset_fst := 0;
+   var offset_snd := 0;
+
+   eval ("var result := bat(void," + first.tail + 
+         ", size_new).seqbase(0@0);");
+
+   # iterates until one of the input tables is completely consumed
+   while ((i < iter_count_fst) and (j < iter_count_snd))
+   {
+          # if the value of the first argument is bigger
+          # than the value of the second argument ...
+          if (iter_fst.reverse.fetch(i) > iter_snd.reverse.fetch(j))
+          {
+             next_slice := second.slice (offset_snd, 
+                                         (offset_snd + iter_snd.fetch(j)));
+             result.insert(next_slice);
+             offset_snd := offset_snd + iter_snd.fetch(j) + 1;
+             j :+= 1;
+          }
+          else
+          {
+             next_slice := first.slice (offset_fst, 
+                                        (offset_fst + iter_fst.fetch(i)));
+             result.insert(next_slice);
+             offset_fst := offset_fst + iter_fst.fetch(i) + 1;
+             i :+= 1;
+          }
+   }
+   # if the second argument is completely consumed the rest of the
+   # first argument is appended to the result for each pair
+   if ((i < iter_count_fst) and (j = iter_count_snd))
+   {
+      next_slice := first.slice (offset_fst, count_fst);
+      result.insert(next_slice);
+   }
+   # if the first argument is completely consumed the rest of the
+   # second argument is appended to the result for each pair
+   if ((i = iter_count_fst) and (j < iter_count_snd))
+   {
+      next_slice := second.slice (offset_snd, count_snd);
+      result.insert(next_slice);
+   }
+   return result.reverse.mark(0@0).reverse;
+}
+
+proc merged_union (bat[void,any::1] first, bat[void, any::1] second, ..bat[void,any]..) : bat[void,bat] :=
+{
+   # tests the input for a even number of arguments
+   if (($0%2) != 0) ERROR ("odd number of arguments");
+   var count_fst := first.count;
+   var count_snd := second.count;
+   var size_new := count_fst + count_snd;
+   var k := 1;
+
+   # tests if the types of pairs fit
+   while ((k :+= 2) < $0)
+   {
+      if (((($(k).tail != "void") or ($(k+1).tail != "oid"))
+          and
+          (($(k).tail != "oid") or ($(k+1).tail != "void")))
+           and
+           ($(k).tail != $(k+1).tail))
+              ERROR ("tails of argument %i and %i don't fit", k, (k+1));
+
+      if ($(k).count != count_fst)
+         ERROR ("argument %i has the wrong size (found: %i, expected: %i)",
+                k, $(k).count, count_fst);
+      if ($(k+1).count != count_snd)
+         ERROR ("argument %i has the wrong size (found: %i, expected: %i)",
+                (k+1), $(k+1).count, count_snd);
+   }
+
+   # creates the bats for the comparison
+   var iter_fst := {count}(first.reverse, first.tunique);
+   var iter_snd := {count}(second.reverse, second.tunique);
+   iter_fst := iter_fst.[-](1);
+   iter_snd := iter_snd.[-](1);
+
+   # initialization of the counting variables
+   var i := 0;
+   var j := 0;
+   # maximum for the while loop over the both bats
+   var iter_count_fst := iter_fst.count;
+   var iter_count_snd := iter_snd.count;
+   # set the first offset to 0 that the slice starts at the beginning
+   var offset_fst := 0;
+   var offset_snd := 0;
+
+   # creates resulting bats for the variables with the necessary types
+   # (it has to be done in one expression because otherwise the variables would be
+   # deleted after the block "{ }")
+   k := -1;
+   while ((k :+= 2) < $0)
+      if ($(k).tail = "void")
+         eval ("var var" + str(k) + " := bat (void, oid, size_new).seqbase(0@0);");
+      else
+         eval ("var var" + str(k) + " := bat(void, "
+               + $(k).tail + ", size_new).seqbase(0@0);");
+
+   # iterates until one of the input tables is completely consumed
+   while ((i < iter_count_fst) and (j < iter_count_snd))
+   {
+          # if the value of the first argument is bigger
+          # than the value of the second argument ...
+          if (iter_fst.reverse.fetch(i) > iter_snd.reverse.fetch(j))
+          {
+             # for each pair a slice is transferred to the output bat of the pair
+             k := 1;
+             while (k < $0)
+             {
+                next_slice := $(k+1).slice (offset_snd, 
+                                            (offset_snd + iter_snd.fetch(j)));
+                eval ("var" + str(k) + ".insert(next_slice);");
+                k :+= 2;
+             }
+             offset_snd := offset_snd + iter_snd.fetch(j) + 1;
+             j :+= 1;
+          }
+          else
+          {
+             k := 1;
+             while (k < $0)
+             {
+                next_slice := $(k).slice (offset_fst, 
+                                          (offset_fst + iter_fst.fetch(i)));
+                eval ("var" + str(k) + ".insert(next_slice);");
+                k :+= 2;
+             }
+             offset_fst := offset_fst + iter_fst.fetch(i) + 1;
+             i :+= 1;
+          }
+   }
+   # if the second argument is completely consumed the rest of the
+   # first argument is appended to the result for each pair
+   if ((i < iter_count_fst) and (j = iter_count_snd))
+   {
+      k := 1;
+      while (k < $0)
+      {
+         next_slice := $(k).slice (offset_fst, count_fst);
+         eval ("var" + str(k) + ".insert(next_slice);");
+         k :+= 2;
+      }
+   }
+   # if the first argument is completely consumed the rest of the
+   # second argument is appended to the result for each pair
+   if ((i = iter_count_fst) and (j < iter_count_snd))
+   {
+      k := 1;
+      while (k < $0)
+      {
+         next_slice := $(k+1).slice (offset_snd, count_snd);
+         eval ("var" + str(k) + ".insert(next_slice);");
+         k :+= 2;
+      }
+   }
+   
+   count_fst := nil;
+   count_snd := nil;
+   size_new := nil;
+   iter_fst := nil;
+   iter_snd := nil;
+   i := nil;
+   j := nil;
+   iter_count_fst := nil;
+   iter_count_snd := nil;
+   offset_fst := nil;
+   offset_snd := nil;
+
+   # the merged pairs are inserted into a result bat
+   var result := bat(void,bat).seqbase(0@0);
+   k := 1;
+   while (k < $0)
+   {
+      eval ("result.insert(nil,var" + str(k) + ".reverse.mark(0@0).reverse);");
+      eval ("var" + str(k) + " := nil;");
+      k :+= 2;
+   }
+   k := nil;
+ 
+   return result;
+}
