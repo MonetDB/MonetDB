@@ -69,7 +69,8 @@ command flush( s:stream ) = stream_flush_stream
 
 command close( s:stream ) = stream_close_stream 
 	"close and destroy the stream s";
-
+@-
+@{
 @h
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
@@ -176,3 +177,4 @@ str open_block_stream( stream *S, stream *is ){
 		return MAL_SUCCEED;
 	}
 }
+@}

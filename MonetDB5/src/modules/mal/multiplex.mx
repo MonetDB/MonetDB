@@ -22,7 +22,6 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f multiplex
-@t The Multiplex Script
 @a Peter Boncz, Martin Kersten
 
 @* Multiplexed Function Execution 
@@ -38,7 +37,8 @@ on a series of BATs with corresponding head values
 by putting the command between square brackets, giving the
 following corresponding signature:.
 \begin{verbatim}
-[CMD](bat[:any$1,:T1],...,bat[any$1,Tn]) :bat[any$1,Tr]
+[CMD](bat[:any$1,:T1],...,bat[any$1,Tn])
+	:bat[any$1,Tr]
 \end{verbatim}
 and
 \begin{verbatim}
@@ -74,16 +74,22 @@ primitive implementation,
 we generate a MAL script on the fly, which is then executed.
 Subsequent improvements should come from massaging the MAL code
 or to derived a fast C-based implementation.
-@{
 @mal
-module multiplex check = CMDmultiplexTypeCheck;
+module multiplex 
+check  CMDmultiplexTypeCheck;
 
-pattern tactics(CMD:str, a:any...):any = CMDmultiplexScript
-comment "Tactical optimizer for multiplexed instructions.";
+pattern tactics(CMD:str, a:any...):any 
+address CMDmultiplexScript
+comment "Tactical optimizer for multiplexed 
+	instructions.";
 
-pattern script(CMD:str, a:any...):any = CMDmultiplexScript
-comment "Generic processor for mutiplexed instructions.";
+pattern script(CMD:str, a:any...):any 
+address CMDmultiplexScript
+comment "Generic processor for mutiplexed 
+	instructions.";
 
+@-
+@{
 @h
 #ifndef _MAL_MULTIPLEX_H_
 #define _MAL_MULTIPLEX_H_

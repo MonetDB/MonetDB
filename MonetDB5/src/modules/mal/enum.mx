@@ -21,24 +21,24 @@
 @' 		Niels Nes <Niels.Nes@cwi.nl>
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-@ enum
+@f enum
 @a Peter Boncz
 @v 1.0
 @* Enumeration Datatypes
 When large sets of data are stored and memory is short, one 
 seeks for memory occupation optimizations.
-@-
+
 One way to do this when the ordinality is low, is to substitute
 the datatype to a smaller ordinal datatype. For instance, when 
 less than 256 different string values occur in an attribute, one 
 could store them as a byte. 
-@-
+
 This remapping can be encapsulated nicely by introducing an 'enum'
 atomic type, that appears to be the original type, but is in fact
 stored as something smaller. Encode and decode commands, as well 
 as 'tostr' and 'fromstr' ADT functions, can be generated beforehand
 and use a mapping table to translate between the two representations. 
-@-
+
 Further space optimizations into values smaller than a byte are
 impossible in Monet, since all values need to have a unique memory address.
 Though it may by a problem to waste memory, one should also realize that 
@@ -47,10 +47,10 @@ more complex. This is obviously true for complex compression schemes, but
 even loading a single byte value is considerably slower on custom CPUs
 than loading an entire 32-bit integer. On 64-bits architectures, this 
 will even be the case for long 64-bit integers. 
-@-
+
 This module implements encodings using 'chr' (1-byte encoding),
 and 'sht' (2-byte encoding).
-@-
+
 The prototypical use of the enum facility runs as follows.
 The user starts with collecting the values of interest in a BAT, say B.
 Subsequently, the command enum.create(:NME,B) creates a new type NME,
@@ -60,65 +60,88 @@ As soon as a bat of values is associated with the type, its
 underlying type changes based on the storage space needed.
 The create command will inspect the content of B and creates a 
 BAT in the database to represent the values. 
-@-
+
 To enable the type checker to analyse the programs upfront, 
 the MAL program should 'pre-define' existence of the type
 using the instruction 'atom NME:enum'.
-@-
+
 Furthermore, the enumerated types are considered ordinary BATs,
 whose scope is limited unless they are explicitly made persistent.
 Destroying an enumerated type removes its encoding bat and the
 information from the GDK atom library, but does not affect the
 MAL programs. This implies a runtime error as soon as you
 try to encode/decode a value.
-@{
-@* Module Definition 
+
 @mal
 atom enum:int;
 module enum;
 
-pattern create(e:any$2, src:bat[:any,:any$1]):bat[:any$1,:any$2]= ENUMcreate
-comment "Associate a value domain with an enumerated type.";
+pattern create(e:any$2, src:bat[:any,:any$1])
+	:bat[:any$1,:any$2]	
+address ENUMcreate
+comment "Associate a value set with an enumerated type.";
 
-pattern load(map:any$1):bat[:any,:any$1] = ENUMload
-comment "Load/activate a previously created enumeration type.";
+pattern load(map:any$1):bat[:any,:any$1] 
+address ENUMload
+comment "Load/activate an enumeration type.";
 
-pattern destroy(map:any):void = ENUMdestroy
+pattern destroy(map:any):void 
+address ENUMdestroy
 comment "Destroy an enumeration type";
 
-pattern encode(e:any$1,v:any$2):any$1 = ENUMencode
+pattern encode(e:any$1,v:any$2):any$1 
+address ENUMencode
 comment "Encode a value using a small map";
 
-pattern encode(e:any$2,b:bat[:any$1,:any]):bat[:any$1,:any$2] = ENUMencode_multi
-comment "Encode a BAT of tail values, into a new BAT of encoded values.
-This action is actually a join operation.";
+pattern encode(e:any$2,b:bat[:any$1,:any])
+	:bat[:any$1,:any$2] 	
+address ENUMencode_multi
+comment "Encode a BAT of tail values into 
+	a new BAT of encoded values.This action is 
+	actually a join operation.";
 
-pattern lower(e:any$1, v:any):any$1 = ENUMlower
-comment "Encode to the lowest value in the encoded domain that is 
-	equal to or larger than v";
+pattern lower(e:any$1, v:any):any$1 
+address ENUMlower
+comment "Encode to the lowest value in the encoded 
+	domain that is equal to or larger than v";
 
-pattern upper(e:any$1, v:any):any$1 = ENUMupper
-comment "Encode to the highest value in the encoded domain that is 
+pattern upper(e:any$1, v:any):any$1 
+address ENUMupper
+comment "Encode to the highest value in 
+	the encoded domain that is 
 	equal to or less than v";
 
-pattern decode(e:any):any = ENUMdecode
+pattern decode(e:any):any 	
+address ENUMdecode
 comment "Decode a value";
 
-pattern decode(b:bat[:any$2,:any$1]) :bat[:any$2,:any] = ENUMdecode_multi
-comment "Decode a BAT of tail values, into a new BAT of decoded values";
+pattern decode(b:bat[:any$2,:any$1]) 
+	:bat[:any$2,:any] 	
+address ENUMdecode_multi
+comment "Decode a BAT of tail values
+	into a new BAT of decoded values";
 
-pattern getTable(e:any) :bat[:any,:any] = ENUMtable
+pattern getTable(e:any) :bat[:any,:any] 
+address ENUMtable
 comment "Return the enumeration BAT of an enum type";
 
-command isEnum(tpe:bat[:any,:any]) :bit = isEnum
-comment "Returns true iff the bat is used as an enumerated type";
+command isEnum(tpe:bat[:any,:any]) :bit 
+address isEnum
+comment "Returns true iff the bat is 
+	used as an enumerated type";
 
-pattern setHistogram(tpe:any$1, b:bat[:any,:any]):void = ENUMsethisto
-comment "registers the fact that ENUMtable(tpe) is a histogram on b's head column";
+pattern setHistogram(tpe:any$1, 
+		b:bat[:any,:any]):void 			
+address ENUMsethisto
+comment "registers the fact that ENUMtable(tpe) 
+	is a histogram on b's head column";
 
-pattern isHistogram(tpe:any,b:bat[:any,:any]) :bit = ENUMishisto
-comment "returns whether ENUMtable(tpe) is a histogram on b's head column";
-
+pattern isHistogram(tpe:any,b:bat[:any,:any]) 
+	:bit 			
+address ENUMishisto
+comment "returns whether ENUMtable(tpe) is 
+	a histogram on b's head column";
+@-
 @{
 @* Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
@@ -703,4 +726,5 @@ str ENUMepilogue() {
 	}
 	return MAL_SUCCEED;
 }
+@-
 @}

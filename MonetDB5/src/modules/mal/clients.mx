@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f clients
-@t MAL client management
 @a Martin Kersten
 @v 0.1
-@* Introduction
+@* Client management
 
 This module contains the primitives to inspect and adjust
 the client records maintained during a Mserver session.
@@ -33,26 +32,32 @@ A rudimentatry authroization scheme should be  enforced.
 @mal
 module clients;
 
-command setListing(flg:int):void= CLTsetListing
-        comment "Turn on/off echoing of MAL instructions";
+command setListing(flg:int):void
+address CLTsetListing
+comment "Turn on/off echo of MAL instructions";
+command setDebug(flg:int):void
+address CLTsetDebug
+comment "Set the flag in the debugging bitset";
+command getScenario():str 
+address CLTgetScenario
+comment "Retrieve current scenario name";
+command setScenario(msg:str):str 
+address CLTsetScenario
+comment "Switch to other scenario handler, 
+	return previous one";
 
-command setDebug(flg:int):void= CLTsetDebug
-	comment "Set the flag in the debugging bitset";
+command clearDebug(flg:int):void
+address CLTclearDebug
+comment "Clear the flag in the debugging bitset";
 
-command getScenario():str = CLTgetScenario
-	comment "Retrieve current scenario name";
-
-command setScenario(msg:str):str = CLTsetScenario
-	comment "Switch to other scenario handler, return previous one";
-
-command clearDebug(flg:int):void= CLTclearDebug
-	comment "Clear the flag in the debugging bitset";
-
-command login( ):bat[:int,:str] = CLTLogin
-	comment "Pseudo bat to map client identifiers to their login time";
-
-command info( ):bat[:int,:str] = CLTInfo
-	comment "Pseudo bat with client attributes ";
+command login( ):bat[:int,:str] 
+address CLTLogin
+comment "Pseudo bat of client login time";
+command info( ):bat[:int,:str] 
+address CLTInfo
+comment "Pseudo bat with client attributes";
+@-
+@{
 @+ Monet client data
 Portions of the client record can be directly obtained for
 backward compatibility. The routine clientInfo provides more
@@ -175,3 +180,4 @@ str CLTclearDebug(int *ret, int *flg){
 	(void)ret; (void) flg; /*fool compiler */
 	return throwMessage("clients.clearDebug","not yet implemented");
 }
+@}

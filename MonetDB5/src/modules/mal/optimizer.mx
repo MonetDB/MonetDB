@@ -22,11 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f optimizer
-@t The optimizer support functions
 @a Martin Kersten
 @v 0.1
-
-@* The optimizer
+@* Optimizer support 
 This module contains the framework for inclusion query transformers, i.e.
 C-programs geared at optimizing a piece of MAL.
 The query transformer appears at the language level as an ordinary function,
@@ -36,33 +34,51 @@ Each optimizer function has access to the runtime scope of the
 routine in which it is called. This can be used to maintain status
 information between successive calls. 
 
+The routines below are linked with the kernel by default
 @mal
-# The routines below are linked with the kernel by default
 
 MODULE optimizer;
 
-pattern CXoptimizer():str = QOTCXoptimizer;
-pattern CXoptimizer(mod:any, fcn:any):str = QOTCXoptimizerCALL
+pattern CXoptimizer():str 
+address QOTCXoptimizer;
+pattern CXoptimizer(mod:any, fcn:any):str 
+address QOTCXoptimizerCALL
 comment "Common subexpression optimizer";
-pattern ARoptimizer():str = QOTARoptimizer;
-pattern ARoptimizer(mod:any, fcn:any):str = QOTARoptimizerCALL
+
+pattern ARoptimizer():str 
+address QOTARoptimizer;
+pattern ARoptimizer(mod:any, fcn:any):str 
+address QOTARoptimizerCALL
 comment "Alias removal optimizer";
-pattern DCoptimizer():str = QOTDCoptimizer;
-pattern DCoptimizer(mod:any, fcn:any):str = QOTDCoptimizerCALL
+
+pattern DCoptimizer():str 
+address QOTDCoptimizer;
+pattern DCoptimizer(mod:any, fcn:any):str 
+address QOTDCoptimizerCALL
 comment "Dead code optimizer";
-pattern SPoptimizer(mod:any, fcn:any):str = QOTSPoptimizerCALL
+
+pattern SPoptimizer():str 
+address QOTSPoptimizer;
+pattern SPoptimizer(mod:any, fcn:any):str 
+address QOTSPoptimizerCALL
 coment "Selection push-down optimizer";
-pattern SPoptimizer():str = QOTSPoptimizer;
-pattern RRoptimizer():str = QOTRRoptimizer;
-pattern RRoptimizer(mod:any, fcn:any):str = QOTRRoptimizerCALL
+
+pattern RRoptimizer():str 
+address QOTRRoptimizer;
+pattern RRoptimizer(mod:any, fcn:any):str 
+address QOTRRoptimizerCALL
 comment "Reversal idempotency removal";
 
-pattern debugOptimizers():void = QOTdebugOptimizers;
+pattern debugOptimizers():void 
+address QOTdebugOptimizers;
 
-pattern showFlowGraph(M:any,F:any,s:str):void = CMDshowFlowGraph
-comment "Dump the data flow of the function M.F in a format
-recognizable by the command 'dot' on the file s";
-
+pattern showFlowGraph(M:any,F:any,s:str):void 
+address CMDshowFlowGraph
+comment "Dump the data flow of the function 
+	M.F in a format recognizable by the 
+	command 'dot' on the file s";
+@-
+@{
 @+ Dummy code 
 @h
 #ifndef _OPTIMIZER_H
@@ -137,4 +153,4 @@ str CMDshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         }
         return NULL;
 }
-
+@}

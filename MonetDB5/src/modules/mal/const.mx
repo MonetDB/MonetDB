@@ -22,15 +22,13 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f const
-@t MAL constant management
 @a Martin Kersten
 @v 0.1
-@* Constant space management
-
+@* Predefined constants
 This module shows the behavior of a simple box of objects.
-Objects are stored into the box using deposit() and taken
-out with take(). Once you are done, elements can be
-removed by name or reference using discard().
+Objects are stored into the box using {\sc deposit} and taken
+out with {\sc take}. Once you are done, elements can be
+removed by name or reference using {\sc discard}.
 
 A box should be opened before being used. It is typically used
 to set-up the list of current users and to perform authorization.
@@ -41,6 +39,7 @@ are encapsulated in the prelude routine called.
 
 Furthermore, it implements a simple authorization scheme, 
 prohibiting all updates unless issued by the system administrator.
+
 @mal
 module const
 comment "The const module provides a box abstraction store for global constants.
@@ -49,44 +48,49 @@ simple mal program, which is scanned and made available by opening the box.
 A future implementation should provide transaction support over the box, which
 would permit multiple clients to exchange (scalar) information easily.";
 
-pattern open():void= CONSTopen
-comment "Locate the constant box and open it";
-
-pattern close():void= CONSTclose
+pattern open():void
+address CONSTopen
+comment "Locate and open the constant box";
+pattern close():void
+address CONSTclose
 comment "Close the constant box ";
-
-pattern destroy():void= CONSTdestroy
+pattern destroy():void
+address CONSTdestroy
 comment "Destroy the box";
+pattern take(name:str):any 
+address CONSTtake
+comment "Locate and take the typed value";
+pattern deposit(name:str,v:any) :void 		
+address CONSTdeposit
+comment "Enter a new value into the box";
 
-pattern take(name:str):any = CONSTtake
-comment "Locates the typed value in the constant box";
-
-pattern deposit(name:str,v:any):void = CONSTdeposit
-comment "Enter a new value into the constant box";
-
-pattern releaseAll():void = CONSTreleaseAll
-comment "Release all constants for this client";
-
-pattern release(name:str,val:any):void = CONSTrelease
+pattern releaseAll():void 
+address CONSTreleaseAll
+comment "Release all constants";
+pattern release(name:str,val:any) :void 		
+address CONSTrelease
 comment "Release a new constant value";
-
-pattern release(name:str):void = CONSTrelease
+pattern release(name:str):void 
+address CONSTrelease
 comment "Release a new constant value";
-
-pattern toString(name:str):str = CONSTtoString
-comment "Get the string representation of an element in the box";
-
-pattern discard(name:str):void = CONSTdiscard
+pattern toString(name:str):str 
+address CONSTtoString
+comment "Get the string representation 
+	of an element in the box";
+pattern discard(name:str) :void 		
+address CONSTdiscard
 comment "Release the const from the box";
+pattern iterator(nme:str) :lng 		
+address CONSTiterator
+comment "Locate next element in the box";
 
-pattern iterator(nme:str):lng = CONSTiterator
-comment "Locates the next element in the constant box";
-
-pattern prelude():void = CONSTprelude
+pattern prelude():void 
+address CONSTprelude
 comment "Initialize the const box";
 
 const.prelude();
 @-
+@{
 @+ Implementation
 @h
 #ifndef _ITERATOR_H
@@ -287,3 +291,4 @@ str CONSTiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }
+@}

@@ -22,11 +22,10 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f io
-@t The io Module
 @a N.J. Nes, M.L. Kersten
 @d 01/07/1996, 31/01/2002
 
-@+ Introduction
+@* The io Module
 @T
 This module contains all the file access commands. The implementation
 is very simple. All function call the stdio library function.
@@ -82,47 +81,73 @@ given input fstream.
 
 Look at the related ANSI-C/POSIX manual pages to get the needed information.
 This module uses the blob atom.
-@* Module Definition
+
 @mal
 atom module fstream :ptr
-comment "Mapping to the FILE descriptor on the Unix platforms.
-Should be replaced by the stream package primitives on NT";
+comment "Mapping to the FILE descriptor 
+	on the Unix platforms. Should be 
+	replaced by the stream package 
+	primitives on NT";
 
 atom module bipipe :lng;
-command popen( ) :bipipe = io_popen 
+command popen( ) :bipipe 
+address io_popen 
 comment "Open a bidirectional pipe. See:man pipe" ;
-command fdpipe(b:bipipe, up:bit, mode:str) :fstream = io_fdpipe 
+command fdpipe(b:bipipe,up:bit,mode:str):fstream 
+address io_fdpipe 
 comment "Open a fstream in one direction through a pipe." ;
 
 module io;
-command fopen ( filename:str, mode:str ) :fstream = io_fopen 
-comment "See:man fopen. Returns fstream, or fstream(nil) on failure.";
-command freopen ( filename:str, mode:str, f:fstream ) :fstream = io_freopen 
-comment "See:man freopen. Returns fstream, or fstream(nil) on failure.";
-command fsize( filename:str ) :int = io_fsize 
-comment "Return the filesize, or -1 when there was some error";
-command ferror() :str = io_ferror 
-comment "returns last error message. str(nil) if none. ";
+command fopen(filename:str,mode:str):fstream 
+address io_fopen 
+comment "See:man fopen. Returns fstream, 
+	or fstream(nil) on failure.";
+command freopen(nme:str,mode:str,f:fstream):fstream 
+address io_freopen 
+comment "See:man freopen. Returns fstream, 
+	or fstream(nil) on failure.";
+command fsize( filename:str ) :int 
+addrss io_fsize 
+comment "Return the filesize or -1";
+command ferror() :str 
+addrss io_ferror 
+comment "returns last error message or nil.";
 
-command fclose( f:fstream ):void = io_fclose comment "See:man fclose";
-command fflush( f:fstream ):void = io_fflush comment "See:man fflush";
-command feof( f:fstream ) :bit = io_feof comment "See: man feof";
-command fread( filep:fstream, nbytes:int ) :blob = io_fread 
+command fclose( f:fstream ):void 
+address io_fclose comment "See:man fclose";
+command fflush( f:fstream ):void 
+address io_fflush comment "See:man fflush";
+command feof( f:fstream ) :bit 
+address io_feof comment "See: man feof";
+command fread( filep:fstream, nbytes:int ) :blob 
+address io_fread 
 comment "See:man fread";
-command fwrite( filep:fstream, buf:str, nbytes:int ):void = io_fwrite_str 
+command fwrite(fp:fstream,buf:str,bytes:int):void 
+address io_fwrite_str 
 comment "See:man fwrite";
-command fwrite( filep:fstream, buf:blob, nbytes:int ):void = io_fwrite 
+command fwrite(fp:fstream,buf:blob,bytes:int):void 
+address io_fwrite 
 comment "See:man fwrite";
-command fseek( filep:fstream, pos:int, offset:int ) :int = io_fseek 
+command fseek(fp:fstream,pos:int,offset:int):int 
+address io_fseek 
 comment "See:man fseek";
-command ftell( filep:fstream ) :int = io_ftell 
+command ftell( filep:fstream ) :int 
+address io_ftell 
 comment "See:man ftell";
 
-command fputs( s:str, filep:fstream):void = io_fputs comment "See:man fputs";
-command fgets( filep:fstream ):str = io_fgets comment "See: man fgets";
+command fputs(s:str,fp:fstream):void 
+address io_fputs 
+comment "See:man fputs";
+command fgets(fp:fstream ):str 
+address io_fgets 
+comment "See: man fgets";
 
-command fputc( c:int, filep:fstream ):void = io_fputc comment "See:man fputs";
-command fgetc( filep:fstream ):chr = io_fgetc comment "See: man fgetc";
+command fputc(c:int,filep:fstream ):void 
+address io_fputc 
+comment "See:man fputs";
+command fgetc(filep:fstream ):chr 
+address io_fgetc 
+comment "See: man fgetc";
 
 @+ Printing 
 The polymorphic print commands are collected here.
@@ -130,46 +155,65 @@ Watch out, the order of definitions is crucial, because the most
 specific should be introduced last.
 @mal
 
-pattern print(b1:bat[:any$1,:any], b2:bat[:any$1,:any]...):int = CMDtable
- comment "BATs are printed with '#' for legend lines, and the BUNs on seperate
- lines between brackets, containing each to comma separated values
- (head and tail).
- If multiple BATs are passed for printing, print() performs an implicit
- natural join, producing a multiattribute table.";
+pattern print(b1:bat[:any$1,:any], 
+		b2:bat[:any$1,:any]...):int 
+address CMDtable
+comment "BATs are printed with '#' for legend lines,
+	 and the BUNs on seperate lines between 
+	brackets, containing each to comma separated 
+	values (head and tail). If multiple BATs are 
+	passed for printing, print() performs an 
+	implicit natural join, producing a 
+	multiattribute table.";
 
-pattern ftable( filep:fstream, b1:bat[:any$1,:any], b:bat[:any$1,:any]... ):int
-= CMDftable comment "Print an n-ary table to a file.";
+pattern ftable( filep:fstream, b1:bat[:any$1,:any],
+		b:bat[:any$1,:any]... ):int
+address CMDftable 
+comment "Print an n-ary table to a file.";
 
-pattern print(order:int,b:bat[:any$1,:any], b2:bat[:any$1,:any]...):int
-                                                = CMDotable
- comment "The same as normal table print, but enforces to use the order of
-  BAT number [1..argc] to do the printing.";
+pattern print(order:int,b:bat[:any$1,:any], 
+		b2:bat[:any$1,:any]...):int
+address CMDotable
+comment "The same as normal table print, but 
+	 enforces to use the order of BAT number 
+	[1..argc] to do the printing.";
 
-pattern table(b1:bat[:any$1,:any], b2:bat[:any$1,:any]...):int = CMDttable
-	comment "Print an n-ary table. Like print(n-ary) but does not print oid column";
+pattern table(b1:bat[:any$1,:any], 
+		b2:bat[:any$1,:any]...):int 
+address CMDttable
+comment "Print an n-ary table. Like print(n-ary) but 
+	does not print oid column";
 
-pattern table(order:int, b1:bat[:any$1,:any], b2:bat[:any$1,:any]...):int 
-	= CMDtotable
-	comment "Print an n-ary table. Use the ordering of param [1..argc]";
-pattern ftable(fp:fstream, order:int,b1:bat[:any$1,:any], b:bat[:any$1,:any]...)
-	= CMDfotable 
-comment "Print an n-ary table to a file, using order of BAT [1..argc].";
+pattern table(order:int, b1:bat[:any$1,:any], 
+		b2:bat[:any$1,:any]...):int 
+address CMDtotable
+comment "Print an n-ary table.";
+pattern ftable(fp:fstream, order:int,
+	b1:bat[:any$1,:any], b:bat[:any$1,:any]...)
+address CMDfotable 
+comment "Print an n-ary table to a file.";
 
-pattern print(val:any):int = CMDprint_val
-	comment "Print a MIL value between square brackets.";
+pattern print(val:any):int 
+address CMDprint_val
+comment "Print a MIL value between square brackets.";
 
-pattern prompt(val:any):int = CMDprompt_val
-	comment "Print a MIL value without square brackets.";
-pattern printft(val:any):int = CMDprint_ft
-	comment "Select default format ";
+pattern prompt(val:any):int 
+address CMDprompt_val
+comment "Print a MIL value without square brackets.";
+pattern printft(val:any):int 
+address CMDprint_ft
+comment "Select default format ";
 
-pattern fprint( filep:fstream , arg:any... ):void = io_fprint 
-comment "Print a (comma seperated) list of arguments";
+pattern fprint(fp:fstream,arg:any...):void 
+address io_fprint 
+comment "Print a (comma seperated) list ";
 
-pattern fprintf( filep:fstream, format:str, arg:any... ):void = io_fprintf 
+pattern fprintf(fp:fstream,fmt:str,a:any...):void 
+address io_fprintf 
 comment "See:man fprintf";
 
-
+@-
+@{
 @- MIL initializations 
 The constants for the seek function.
 @* Example Script
@@ -202,7 +246,6 @@ printf( "%s %d %c %d %f\n", "test", 10, 'c', 10, 7.0 );
 printf( "%s\n", s );
 
 quit;
-@{
 @* Implementation Code
 
 @h

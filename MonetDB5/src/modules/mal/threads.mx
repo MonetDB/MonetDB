@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f threads
-@t MAL thread management
 @a Martin Kersten
 @v 0.1
-@* MAL Thread
+@* MAL thread management
 Upon receiving a MAL program from the client it is handed
 to the default client thread for interpretation.
 However, the MAL virtual machine also supports running multiple threads
@@ -57,6 +56,8 @@ comment "Stop thread at next convenient point";
 
 pattern kill(nme:int):str= THREADkill
 comment "Forced termination an executing thread";
+@-
+@{
 @h
 #ifndef _MAL_THREADS_H
 #include "monet.h"
@@ -90,3 +91,4 @@ str THREADstop(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 str THREADkill(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	return MAL_SUCCEED;
 }
+@}

@@ -22,54 +22,56 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f box
-@t MAL constant management
 @a Martin Kersten
 @v 0.1
-@* Constant space management
+@* The generic box
 
 This module shows the behavior of a simple box of objects.
-Objects are stored into the box using deposit() and taken
-out with take(). Once you are done, elements can be
-removed by name or reference using discard().
+Objects are stored into the box using {\sc deposit} and taken
+out with {\sc take}. Once you are done, elements can be
+removed by name or reference using {\sc discard}.
 
 A box should be opened before being used. It is typically used
 to set-up the list of current users and to perform authorization.
 @mal
 module box;
 
-pattern open(bname:str):void= BOXopen
+pattern open(bname:str):void	
+address BOXopen
 comment "Locate the boxant box and open it ";
-
-pattern close(bname:str):void= BOXclose
+pattern close(bname:str):void	
+address BOXclose
 comment "Close the box ";
-
-pattern destroy(bname:str):void= BOXdestroy
+pattern destroy(bname:str):void	
+address BOXdestroy
 comment "Destroy the box ";
-
-pattern take(bname:str,name:str):any = BOXtake
-comment "Locates the typed value in the boxant box";
-
-pattern deposit(bname:str,name:str,v:any):void = BOXdeposit
+pattern take(bname:str,name:str):any 
+address BOXtake
+comment "Locates the typed value in the box";
+pattern deposit(bname:str,name:str,v:any):void 			
+address BOXdeposit
 comment "Enter a new value into the box";
-
-pattern releaseAll(bname:str,):void = BOXreleaseAll
+pattern releaseAll(bname:str,) :void 			
+address BOXreleaseAll
 comment "Release all objects for this client";
-
-pattern release(bname:str,name:str,val:any):void = BOXrelease
+pattern release(bname:str,nme:str,val:any):void 			
+address BOXrelease
 comment "Release the BAT from the client pool";
-
-pattern release(bname:str,name:str):void = BOXrelease
+pattern release(bname:str,name:str) :void 			
+address BOXrelease
 comment "Release the BAT from the client pool";
-
-pattern toString(bname:str,name:str):str = BOXtoString
-comment "Get the string representation of the i-th element in the box";
-
-pattern discard(bname:str,name:str):void = BOXdiscard
+pattern toString(bname:str,name:str) :str 			
+address BOXtoString
+comment "Get the string representation of 
+	the i-th element in the box";
+pattern discard(bname:str,name:str) :void 			
+address BOXdiscard
 comment "Release the BAT from the client pool";
-
-pattern iterator(nme:str):lng = BOXiterator
+pattern iterator(nme:str):lng 
+address BOXiterator
 comment "Locates the next element in the box";
 @-
+@{
 @+ Dummy code 
 @h
 #ifndef _ITERATOR_H
@@ -198,3 +200,4 @@ str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }
+@}

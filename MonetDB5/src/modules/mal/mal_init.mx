@@ -22,9 +22,8 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f mal_init
-@t Mal Startup file
 @a Martin Kersten
-@* Introduction
+@* Mal Startup file
 Upon starting the Monet/MAL server we need to initialize the symbol table.
 This encompasses loading the signatures of several key modules.
 They are listed below. 
@@ -60,3 +59,5 @@ use "mal/optimizer";
 In practice, we have to introduce different startup for each
 client group or database.
 @c
+
+@-

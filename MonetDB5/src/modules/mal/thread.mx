@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f thread
-@t The Thread Module
 @a M.L. Kersten
 @v 1.0
-@* Introduction
+@* The Thread Module
 The MAL interpreter can be cloned to obtain parallel running threads.
 Such threads share the stackframe of the caller for data exchange.
 The consequence is that a thread may only terminate when it is
@@ -66,6 +65,8 @@ comment "Attempt a soft kill of a thread";
 
 pattern exec(arg:any ...):int= CMDthreadExec
 comment "Run a function independently";
+@-
+@{
 @c
 @+ The Module implementation
 @h
@@ -106,3 +107,4 @@ str CMDthreadExec(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	(void) m; (void)s; (void) p; /* fool compiler */
 	return throwMessage("thread.exec", "not yet implemented\n");
 }
+@}

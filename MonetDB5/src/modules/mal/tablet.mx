@@ -22,10 +22,9 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f tablet
-@t The table io module
 @a Niels Nes, Martin Kersten
 @d 29/07/2003
-@* Introduction
+@* The table io module
 
 A database cannot live without ascii tabular print/dump/load operations. 
 It is needed to produce reasonable listings, to exchange answers
@@ -245,7 +244,6 @@ merge with existing bats with the merge_data script.
 
 The dump_format scripts dump a format file for a given set of 
 to be dumped bats. These bats can be dumped with dump_data.
-@{
 @mal
 # the major tablet shuffling routiens
 module tablet;
@@ -330,6 +328,8 @@ command getPageCnt():void = TABgetPageCnt
 	comment "Return the size in number of pages";
 command getPage(i:int):void = TABgetPage
 	comment "Produce the i-th page of output";
+@-
+@{
 @+ Implementation
 The implementation needs the stream abstraction, which also provides
 primitives to compress/decompress files on the fly.

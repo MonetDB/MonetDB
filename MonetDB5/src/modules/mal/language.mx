@@ -22,7 +22,6 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f language
-@t MAL extensions
 @a Martin Kersten
 @v 0.1
 @* MAL extensions
@@ -35,13 +34,14 @@ Note that the modules located in the kernel directory should not
 rely on the MAL datastructures. That's why we have to deal with
 some bat operations here.
 
+The routines below are linked with the kernel by default
 @mal
-# The routines below are linked with the kernel by default
-
 module mal;
 
-command raise(msg:str) :str = CMDraise
-comment "Raise an exception labelled with a specific message.";
+command raise(msg:str) :str 
+address CMDraise
+comment "Raise an exception labelled 
+	with a specific message.";
 
 @+ Iterator primitives
 Iterators enumerate elements in a collection defined by a few paramaters,
@@ -50,68 +50,66 @@ call by recognizing that the control variable lies outside the intended
 collection.
 
 @mal
+command nextElement(i:flt,f:flt,l:flt,s:flt):bit 
+address fltForloopStep; 
+command nextElement(i:dbl,f:dbl,l:dbl,s:dbl):bit 
+address dblForloopStep; 
+command nextElement(i:sht,f:sht,l:sht,s:sht):bit 
+address shtForloopStep; 
+command nextElement(i:lng,f:lng,l:lng,s:lng):bit 
+address lngForloopStep; 
+command nextElement(i:int,f:int,l:int,s:int):bit 
+address intForloopStep
+comment "These routine provide an iterator over 
+	a scalar domain. The step size depends 
+	on the underlying type."; 
 
-command nextElement(i:flt, first:flt, last:flt, step:flt):bit = fltForloopStep; 
-command nextElement(i:dbl, first:dbl, last:dbl, step:dbl):bit = dblForloopStep; 
-command nextElement(i:sht, first:sht, last:sht, step:sht):bit = shtForloopStep; 
-command nextElement(i:lng, first:lng, last:lng, step:lng):bit = lngForloopStep; 
-command nextElement(i:int, first:int, last:int, step:int):bit = intForloopStep
-comment "This routine provides an iterator over a scalar domain.
-         The step size is dependent on the underlying type."; 
-
-command nextElement(i:chr, first:chr, last:chr ):bit = chrForloop; 
-command nextElement(i:sht, first:sht, last:sht):bit = shtForloop; 
-command nextElement(i:lng, first:lng, last:lng):bit = lngForloop; 
-command nextElement(i:int, first:int, last:int):bit = intForloop
-comment "This routine provides an iterator over a scalar domain.
-         The step size is dependent on the underlying type."; 
+command nextElement(i:chr, f:chr, l:chr ):bit 
+address chrForloop; 
+command nextElement(i:sht, f:sht, l:sht) :bit 
+address shtForloop; 
+command nextElement(i:lng, f:lng, l:lng) :bit 
+address lngForloop; 
+command nextElement(i:int, f:int, l:int) :bit 
+address intForloop
+comment "This routine provides an iterator
+	over a scalar domain. The step size 
+	depends on the underlying type."; 
 @- Monet help system
 All procedural abstractions may contain a string with commentary text.
 This information is retained in the symbol table for subsequent use.
 Often, it is more appropriate to extract the comments into a BAT
 for subsequent analysis.
 @mal
-command help(k:str):bat[:str,:str] = CMDhelp
-comment "Search the commentary strings for one matching the keyword";
-
-command help(mod:str,fcn:str):bat[:int,:str] = CMDhelpComment2
-comment "Collect the comments for a given function pattern";
+command help(k:str):bat[:str,:str] 
+address CMDhelp
+comment "Search the commentary strings for 
+	one matching the keyword";
+command help(mod:str,fcn:str)
+	:bat[:int,:str] 
+address CMDhelp2
+comment "Collect the comments for a given 
+	function pattern";
 @- Monet Manual construction
 The manual operations ease offline inspection of the all the Monet function.
 It purposely generates an XML organized file, because we expect external
 tools to massage it further for presentation. The envisioned 
 tagging structure becomes
-@T
-\begin{verbatim}
-<manual>
-  <module>
-    <command name=... signature=... binding=...>
-       <comment>
-       </comment>
-    </command>
-    <pattern name=... signature=... binding=...>
-       <comment>
-       </comment>
-    </command>
-    <function name=... signature=... >
-       <comment>
-       </comment>
-       <body>
-       </body>
-    </command>
-  </module>
-</manual>
-\end{verbatim}
 @-
 @mal
-command manual(file:str,mod:str)= CMDmanual2
+command manual(file:str,mod:str)
+address CMDmanual2
 comment "Generate a synopsis of a module";
-command manual(file:str,mod:str,recursive:int)= CMDmanual
+command manual(file:str,mod:str,recursive:int)
+address CMDmanual
+comment "Generate a recursive synopsis of a module";
+command manual(mod:str)
+address CMDmanual1
 comment "Generate a synopsis of a module";
-command manual(mod:str)= CMDmanual1
-comment "Generate a synopsis of a module";
-command manual()= CMDmanual0
-comment "Produces a XML-formatted manual over all modules loaded.";
+command manual()
+address CMDmanual0
+comment "Produces a XML-formatted manual 
+	over all modules loaded.";
 
 @+ Macro expansion
 Running a script stored in a file is interpreted as
@@ -119,15 +117,21 @@ It is typically used to initialize a context, therefore we need
 to provide the runtime context. For the call variants we have
 to determine an easy way to exchange the parameter/return values.
 @mal
-command call(s:str):void= CMDcallString
-	comment "Evaluate a string representing a program";
-pattern call(s:bat[:any,:str]):void= CMDcallBAT
-	comment "Evaluate a program stored in a BAT of instructions";
-command source(f:str):void= CMDevalFile
-	comment "Execute the program in a (local) file";
-pattern include(f:str):void= CMDincludeFile
-	comment "Merge the instructions stored in the file 
-		with the current program";
+command call(s:str):void
+address CMDcallString
+comment "Evaluate a MAL string program";
+pattern call(s:bat[:any,:str]):void
+address CMDcallBAT
+comment "Evaluate a program stored in a BAT";
+command source(f:str):void
+address CMDevalFile
+comment "Execute the program in a (local) file";
+pattern include(f:str):void
+address CMDincludeFile
+comment "Merge the instructions stored in the 
+	file with the current program";
+@-
+@{
 @+ Dummy code 
 @h
 #ifndef _LANGUAGE_H
@@ -371,7 +375,7 @@ str CMDhelp(int *ret, str *mod)
 	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
-str CMDhelpComment2(int *ret, str *mod, str *fcn) 
+str CMDhelp2(int *ret, str *mod, str *fcn) 
 {	Symbol s;
 	str msg;
 
@@ -469,3 +473,5 @@ str @1ForloopStep(bit *res, @1 *i, @1 *first, @1 *last, @1 *step){
 @-
 There are a few atomairy storage types we have to introduce here:
 OID, str, void, bit, ptr
+@-
+@}
