@@ -188,10 +188,11 @@ command addscale(value:decimal, delta:int) : decimal = decimal_movedot
 @- internal
 These commands are internal to the procedures in the load section. 
 @mal
-command bulkdivide(b:bat[any::1,decimal], d:decimal, p:int ) : bat[any::1,decimal] = decimal_bulkdivide
-	comment "";
-command bulkdivide(b:bat[any::1,decimal], d:decimal) : bat[any::1,decimal] = decimal_bulkdivide_default
-	 comment "";
+command divide(b:bat[any::1,decimal], d:decimal, p:int ) : bat[any::1,decimal] = decimal_bulkdivide
+	comment "Perform the divide operation over a bat of decimals";
+command divide(b:bat[any::1,decimal], d:decimal) : bat[any::1,decimal] = decimal_bulkdivide_default
+	 comment "Perform the divide operation over a bat of decimals";
+
 command istenfold(d:decimal) : bit = decimal_istenfold
 	comment "returns whether decimal is an exact multiple of 10 .";
 command decimal_minrepeat(x:int) : void = decimal_setminrepeat

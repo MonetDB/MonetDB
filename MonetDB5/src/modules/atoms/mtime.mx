@@ -269,10 +269,15 @@ an explicit GMT specifier, it is taken to be a timestamp in the local
 timezone. The default local timzone is just GMT+00, but iit can be set 
 arbitrarily.
 @mal
-atom module timestamp : lng;
+atom module timestamp : lng;	# not stored as a lng !
 	command fromstr() = timestamp_fromstr;
 	command tostr() = timestamp_tostr;
 	#.NULL	 = timestamp_null;
+	command  epoch():timestamp= CMDepoch
+	comment "unix-time (epoch) support: seconds since 1-jan-1970 GMT";
+	command epoch(t:timestamp):lng = CMDepoch2
+	comment "unix-time (epoch) support: seconds since epoch";
+
 	@:compareGrp(timestamp)@
 
 @T
@@ -327,18 +332,28 @@ atom module tzone : lng;
 	command fromstr() = tzone_fromstr;
 	command tostr()   = tzone_tostr;
 	#.NULL	 = tzone_null;
+	command timestamp(secs:lng):timestamp= CMDtimestamp
+	comment "Enhancement of timestamp atom definition";
+
 
 atom module rule : int;
 	command fromstr() = rule_fromstr;
 	command tostr() = rule_tostr;
+	command define(m:int,d:int,w:int,h:int,min:int):rule = CMDruleDef0
+	comment "Introduce a synomym timezone rule.";
+	command define(m:int,d:str,w:int,h:int,min:int):rule = CMDruleDef1
+	comment "Introduce a synomym timezone rule.";
+	command define(m:int,d:str,w:int,min:int):rule = CMDruleDef2
+	comment "Introduce a synomym timezone rule.";
+
 
 module mtime;
 
-command int(d:date):int = CMDdate_2int;
-command int(d:daytime):int = CMDdaytime_2int;
-command lng(d:timestamp):int = CMDtimestamp_2lng;
-command lng(d:tzone):lng = CMDtzone_2lng;
-command int(d:rule):int = CMDrule_2int;
+#command int(d:date):int = CMDdate_2int;
+#command int(d:daytime):int = CMDdaytime_2int;
+#command lng(d:timestamp):int = CMDtimestamp_2lng;
+#command lng(d:tzone):lng = CMDtzone_2lng;
+#command int(d:rule):int = CMDrule_2int;
 
 command tzone_local(t:tzone):void = tzone_set_local 
 comment "set the local tzone; which is used for printing timestamps";
@@ -780,16 +795,13 @@ typedef int date;
 
 @-
 @= coerce
-str CMD@1_2@2(@2 *ret,@2 *src){
+str CMD@1_2@2(@2 *ret,@1 *src){
 	*ret= *src;
 	return MAL_SUCCEED;
 }
 @c
-@:coerce(date,int)@
-@:coerce(daytime,int)@
-@:coerce(timestamp,lng)@
-@:coerce(tzone,lng)@
-@:coerce(rule,int)@
+@:coerce(date,lng)@
+@:coerce(daytime,lng)@
 
 @- daytime
 Daytime values are also stored as the number of milliseconds that passed since 
@@ -2281,4 +2293,51 @@ str CMDcurrent_date(date *t)
 str CMDcurrent_time(daytime *t)
 {
 	return throwMessage("mtime","current_date not yet implemented\n");
+}
+str CMDepoch(timestamp *ret){
+	date d0= todate(1,1,1970);
+	int zero=0;
+	daytime d1;
+	daytime_create(&d1,&zero,&zero,&zero,&zero);
+	tzone d2;
+	str s= "GMT";
+	tzone_create_fromstr(&d2, &s);
+	timestamp_create(ret,&d0,&d1,&d2);
+	return MAL_SUCCEED;
+}
+str CMDepoch2(lng *ret, timestamp *t){
+	timestamp e;
+	timestamp r;
+	lng v;
+	CMDepoch(&e);
+	timestamp_diff(&v,&e,t);
+	*ret = v/1000;
+	return MAL_SUCCEED;
+}
+str CMDtimestamp(timestamp *ret, int *sec){
+	timestamp e;
+	CMDepoch(&e);
+	lng l = *sec * 1000;
+	timestamp_add(ret,&e, &l);
+	return MAL_SUCCEED;
+}
+str CMDruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint){
+	int d0 = 60* *h;
+	int d1 = d0+ *mint;
+	rule_create(ret, m, d, w, &d1);
+	return MAL_SUCCEED;
+}
+str CMDruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint){
+	int d;
+	day_from_str(&d, dnme);
+	int d0 = 60* *h;
+	int d1 = d0+ *mint;
+	rule_create(ret, m, &d, w, &d1);
+	return MAL_SUCCEED;
+}
+str CMDruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint){
+	int d;
+	day_from_str(&d, dnme);
+	rule_create(ret, m, &d, w, mint);
+	return MAL_SUCCEED;
 }
