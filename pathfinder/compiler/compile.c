@@ -207,6 +207,10 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     PFmil_t    *mroot  = NULL;
     PFarray_t  *mil_program = NULL;
 
+    /* FIXME: switch off optimization for summer branch */
+    int optimize = status->optimize;
+    if (status->summer_branch) status->optimize = 0; /* done for speed */
+
     /* elapsed time for compiler phase */
     long tm;
 
@@ -373,6 +377,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
      */
 
     if (status->summer_branch) {
+        status->optimize = optimize; /* can enable dead code elimination */
         tm = PFtimer_start ();
         PFprintMILtemp (pfout, croot, status);
         tm = PFtimer_stop (tm);
