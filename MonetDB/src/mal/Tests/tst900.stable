@@ -25,11 +25,11 @@
 #print(tz);
 #x:= multiplex.+(b,b);
 #a:= b [+] b;
-!ERROR: a:= b [+] b;
-!             ^operator expected
 multiplex against operator +
 	x := multiplex.+(b,b);	#16 unknown:void (x:bat[lng,lng])(b:bat[lng,lng])(b:bat[lng,lng])
 	arith.+($1,$2);	#0:lng ($0:lng)($1:lng)($2:lng)
+!ERROR: a:= b [+] b;
+!             ^operator expected
 function Admin.main():int;	#0:void (main:int)
 	b := bat.new(lng,lng);	#1:BAT (b:bat[lng,lng])(lng:lng)(lng:lng)
 	t0 := system.usec();	#2:lng (t0:lng)

@@ -172,7 +172,6 @@ we simple avoid an increment when running out of formal arguments.
 
 @c
 	sig = getSignature(s); 
-	/*varargs=isVARG(s->def,sig,sig->argc-1);*/
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		printf("%s varargs %d\n",p->fcnname,sig->varargs);
@@ -185,18 +184,20 @@ we simple avoid an increment when running out of formal arguments.
 
 	polymorphic = 0;
 	unmatched = 0;
-	for(k=i=1;i<p->argc;i++){
-		int itype;
-		if( (itype=getArgType(mb,p,i)) == getArgType(s->def,sig,k) )
-			goto varargtst;
-		if( sig->polymorphic && isPolymorphicArgument(s->def,sig,k) ){
 @-
+The simple case could be taken care of separately to speedup processing
+However, it turned out not to make a big difference.
 The first time we encounter a polymorphic argument in the
 signature, we initialize a type variable table.
 Subsequently, the polymorphic arguments update this table
 and check for any type mismatches that might occur.
 There are at most 2 type variables involved per argument.
 @c
+	for(k=i=1;i<p->argc;i++){
+		int itype;
+		if( (itype=getArgType(mb,p,i)) == getArgType(s->def,sig,k) )
+			goto varargtst;
+		if( sig->polymorphic && isPolymorphicArgument(s->def,sig,k) ){
 			if( polymorphic==0){
 				for(l=0;l<2*p->argc;l++) polytype[l]= malAnyType;
 				polymorphic++;
@@ -205,13 +206,6 @@ There are at most 2 type variables involved per argument.
 				    itype, polytype) == 0)
 					goto varargtst;
 		}
-@-
-It is possible that you may have to coerce the value to another type.
-We assume that coercions are explicit at the MAL
-level. (e.g. var2:= var0:int). This avoids repeated type analysis
-just before you execute a function.
-At a later stage we may automatically insert such coercion requests.
-@c
 #ifdef DEBUG_MAL_RESOLVE
 		if(tracefcn) printf("mismatch %d,%d test %s poly %s\n",
 			i,k, malTypeName(itype),
@@ -226,6 +220,13 @@ Take care of variable argument lists.
 		k++;
 		if( k == sig->argc && sig->varargs) k--; 
 	}
+@-
+It is possible that you may have to coerce the value to another type.
+We assume that coercions are explicit at the MAL
+level. (e.g. var2:= var0:int). This avoids repeated type analysis
+just before you execute a function.
+At a later stage we may automatically insert such coercion requests.
+@c
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		 printf("finished param test, unmatched=%d polymorphic=%d\n",

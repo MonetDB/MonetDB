@@ -10,7 +10,6 @@
 ## The first and foremost BAT operations
 #
 #o:=oid(20000000);
-!ERROR: WARNING:newConstant:int coerced to lng
 #err:=setoid(o);
 ##test basic functionality of the BAT library.
 ##focussed on integers

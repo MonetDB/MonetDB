@@ -12,7 +12,6 @@
 ## Predefined code segment
 ##use "mal/iterator";		CAUSES an ERROR!!
 #	_v0:= oid(20000000);
-!ERROR: WARNING:newConstant:int coerced to lng
 #	_v1:= setoid(_v0);
 ##setoid(oid(20000000));
 ###test basic functionality of the BAT library.
@@ -277,7 +276,6 @@ end function;	#91:void
 [ 1 ]
 [ 4 ]
 [ nil ]
-!ERROR: CMDfind: value not found.
 [ 0 ]
 #-------------------------#
 # BAT:		  tmp_5	  #

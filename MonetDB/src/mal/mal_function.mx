@@ -307,8 +307,8 @@ str raiseException(MalBlkPtr mb, int pc, str name, str msg){
 str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
         char buf[4196];
         if( strlen(name)+strlen(msg)+2 <2048)
-                sprintf(buf,"%s:%s.%s[%d]:%s\n%s", name, getModName(mb),
-			getFcnName(mb),pc,msg,oldmsg);
+                sprintf(buf,"%s%s:%s.%s[%d]:%s\n",oldmsg, name, getModName(mb),
+			getFcnName(mb),pc,msg);
         else    sprintf(buf,"%s:%s.%s[%d]",name, getModName(mb),
 			getFcnName(mb),pc);
         return GDKstrdup(buf);

@@ -47,6 +47,7 @@ html
 #include "mal_client.h"
 
 /*#define DEBUG_MAL_INTERPRETER */
+mal_export void showErrors(Client cntxt);
 mal_export str runMAL(Client c,MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb);
 mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe);
 mal_export void garbageElement(ValPtr v);
@@ -54,6 +55,14 @@ mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
 #endif /*  _MAL_INTERPRET_H*/
 @c
 #include "mal_interpreter.h"
+
+void showErrors(Client cntxt){
+	if( cntxt->errbuf==0 ) return;
+	if( *cntxt->errbuf){
+		fputs(cntxt->errbuf,cntxt->fdout);
+		*cntxt->errbuf=0;
+	}
+}
 
 str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 	MalBlkPtr mb=mbcaller;
@@ -72,6 +81,7 @@ str runMAL(Client cntxt, MalBlkPtr mbcaller, MalStkPtr env, MalStkPtr glb){
 
 	if( mbcaller->errors){
 		char buf[1024];
+		showErrors(cntxt);
 		sprintf(buf,"'%s.%s' contains errors\n",
 			getModName(mb),getFcnName(mb));
 		return raiseException2("SyntaxError",buf);
@@ -504,20 +514,21 @@ if( ret != (str) GDK_SUCCEED && ret != NULL){
 		symid = findVariable(mb,ret);
 	} else {
 		if( ret == (str) GDK_FAIL ){
-			msg= GDKstrdup(GDKerrbuf);
+			if( cntxt->errbuf){
+				msg= GDKstrdup(cntxt->errbuf);
+				*cntxt->errbuf= 0;
+			} else msg = GDKstrdup("unspecified error\n");
 			symid = findVariable(mb,"GDKerror");
 		} else {
-			GDKerror("syntax error in exception message");
+			ret= appendException(mb,stk->pc,"MALexception",
+			"syntax error in exception message", msg);
 			stk->pc++;
 			continue;
 		}
 	}
 	if( symid == -1){
 		*msg=':';
-/*		terminate this block and pass error 
-		if( env == NULL) 
-		fprintf(cntxt->fdout,"CATCH ERROR %s\n",ret);
-*/
+/*		terminate this block and pass error  */
 		stk->exception = pci->argv[0];
 		goto MALevalExit;
 	}

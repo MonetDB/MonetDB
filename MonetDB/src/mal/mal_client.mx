@@ -119,6 +119,7 @@ activities. Each client runs in its own process thread. Its identity
 is retained here for access by others (=father).
 @h
 	Thread		mythread;
+	str		errbuf;		/* location of GDK exceptions */
 	struct CLIENT	*father;	
 @-
 Each client has a private entry point into the namespace and
@@ -127,7 +128,7 @@ Moreover, the parser needs some administration variables
 to keep track of critical elements.
 @h
 	Scope		nspace;
-	OBJspace	ospace;
+	Box		ospace;
 	Symbol		curprg;		/* focus of parser */
 } *Client, ClientRec;
 
@@ -260,6 +261,7 @@ collect the buffer when in use.
 	c->logout= c->login+c->delay;
 	c->mode = AWAITING;
 	c->itrace = mal_trace;
+	c->errbuf = 0;
 
 	if( ! isAdministrator(c)){
 		c->prompt = GDKstrdup(PROMPT);
@@ -280,6 +282,8 @@ void initClientThread(Client c)
 {
 	Thread t;
 	c->mythread = t=  THRnew(MT_getpid(),c->user);
+	GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
+	c->errbuf = GDKerrbuf;
 @-
 The GDK thread administration should be set to reflect use of
 the proper IO descriptors.
@@ -363,6 +367,11 @@ void freeClient(Client c)
 	c->output= NULL;
 	GDKfree(c->language); c->language = NULL;
 	GDKfree(c->prompt); c->prompt = NULL;
+	if(c->errbuf){
+		GDKsetbuf(0);
+		GDKfree(c->errbuf);
+		c->errbuf=0;
+	}
 	c->father = 0;
 	c->login = c->delay = c->logout = 0;
 	c->mode = FREECLIENT;

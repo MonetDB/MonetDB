@@ -117,9 +117,6 @@ clashes.
  * All Rights Reserved.
  * 
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- *		   Stefan Manegold  <Stefan.Manegold@cwi.nl>
  */
 
 #ifndef _MAL_BIND_H
@@ -127,28 +124,28 @@ clashes.
 #include "mal_instruction.h"
 #include "mal_stack.h"
 
-typedef struct OBJSPACE{        /* see objectspace.mx */
+typedef struct BOX{        /* see objectspace.mx */
         MT_Lock lock;           /* provide exclusive access */
         MalBlkPtr sym;		
         MalStkPtr stk;
-        struct OBJSPACE *outer;
-} *OBJspace, ObjectSpaceRecord;
+        struct BOX *outer;
+} *Box, BoxRecord;
 
-mal_export void initObjectSpace();
-mal_export OBJspace newObjectSpace(OBJspace outer);
-mal_export void freeObjectSpace(OBJspace obj);
-mal_export void deleteObjectSpace(OBJspace obj);
+mal_export void initBox();
+mal_export Box newBox(Box outer);
+mal_export void freeBox(Box obj);
+mal_export void deleteBox(Box obj);
 
-mal_export void printSomeObjectSpace(FILE *fd, int k);
-mal_export void printObjectSpace(FILE *fd, OBJspace obj);
+mal_export void printSomeBox(FILE *fd, int k);
+mal_export void printBox(FILE *fd, Box obj);
 #endif /* _MAL_BIND_H */
 @-
 The hierarchy of object spaces ends at the root of the tree.
 This is a dummy element and should contain system-wide objects
 only.
-@= newOBJ
-	obj= (OBJspace) GDKmalloc(sizeof(ObjectSpaceRecord));
-	bzero((char*) obj, sizeof(ObjectSpaceRecord));
+@= newBOX
+	obj= (Box) GDKmalloc(sizeof(BoxRecord));
+	bzero((char*) obj, sizeof(BoxRecord));
 	obj->sym= newMalBlk();
 	obj->stk = newGlobalStack(MAXVARS);
 @-
@@ -156,46 +153,46 @@ only.
 #include "mal_box.h"
 
 #define MAXSPACES 64	/* >MAXCLIENTS !! */
-OBJspace objSpace[MAXSPACES];
+Box boxes[MAXSPACES];
 
-void initObjectSpace()
+void initBox()
 {
-	OBJspace obj;
-	@:newOBJ@
-	objSpace[0]= obj;
+	Box obj;
+	@:newBOX@
+	boxes[0]= obj;
 }
 
-OBJspace newObjectSpace(OBJspace outer){
-	OBJspace obj;
+Box newBox(Box outer){
+	Box obj;
 	int i;
-        MT_set_lock(mal_contextLock, "deleteObjectSpace");
-	@:newOBJ@
+        MT_set_lock(mal_contextLock, "deleteBox");
+	@:newBOX@
 	obj->outer = outer;
 
 	for(i=0; i<MAXSPACES; i++)
-	if( objSpace[i]== NULL) {
-		objSpace[i]= obj;
+	if( boxes[i]== NULL) {
+		boxes[i]= obj;
 		break;
 	}
 	if( i== MAXSPACES)
 		GDKerror("too many object spaces\n");
-        MT_unset_lock(mal_contextLock, "deleteObjectSpace");
+        MT_unset_lock(mal_contextLock, "deleteBox");
 	return obj;
 
 }
-void freeObjectSpace(OBJspace obj){
+void freeBox(Box obj){
 	freeMalBlk(obj->sym);
 	freeStack(obj->stk);
 }
-void deleteObjectSpace(OBJspace obj){
+void deleteBox(Box obj){
 	int i,j;
-        MT_set_lock(mal_contextLock, "deleteObjectSpace");
+        MT_set_lock(mal_contextLock, "deleteBox");
 	for(i=j=0;i<MAXSPACES;i++){
-		if( objSpace[j] == obj)
-			freeObjectSpace(obj);
-		else objSpace[i] = objSpace[j++];
+		if( boxes[j] == obj)
+			freeBox(obj);
+		else boxes[i] = boxes[j++];
 	}
-        MT_unset_lock(mal_contextLock, "deleteObjectSpace");
+        MT_unset_lock(mal_contextLock, "deleteBox");
 
 }
 @- Binding 
@@ -214,12 +211,12 @@ int releaseObject(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 Utilities for the debugger permit dumping of all the object
 spaces.
 @c
-void printObjectSpace(FILE *fd, OBJspace obj)
+void printBox(FILE *fd, Box obj)
 { printStack(fd,obj->sym,obj->stk); }
 
-void printSomeObjectSpace(FILE *fd, int k)
+void printSomeBox(FILE *fd, int k)
 {
-	if( objSpace[k]== 0){
-		GDKerror("printSomeObjectSpace:illegal space id\n");
-	} else printObjectSpace(fd,objSpace[k]);
+	if( boxes[k]== 0){
+		GDKerror("printSomeBox:illegal space id\n");
+	} else printBox(fd,boxes[k]);
 }

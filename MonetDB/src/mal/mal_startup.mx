@@ -191,7 +191,7 @@ void chkClientPrg(Client cntxt)
 	if( signature == FALSE){
 		str msg=instruction2str(mb,p);
 		GDKerror("SYNTAX ERROR: signature missing\n!%s\n",msg);
-		printFunction(stdout,mb);
+		/* printFunction(stdout,mb);*/
 		GDKfree(msg);
 	}
 }

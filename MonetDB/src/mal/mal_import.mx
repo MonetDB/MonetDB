@@ -122,6 +122,7 @@ resolving addresses.
 	parseMal(c);
 	closeClientPrg(c);
 	prg = findSymbolInScope(c->nspace,"main");
+	if( prg && prg->def->errors) showErrors(c);
 	if( prg && listing) printFunction(c->fdout,prg->def);
 	
 	/* reset the input buffer */
@@ -138,6 +139,7 @@ resolving addresses.
 		if( msg && msg != (str) GDK_SUCCEED){
 			GDKerror(msg);
 			GDKfree(msg);
+			showErrors(c);
 		}
 	} 
 }
@@ -181,7 +183,8 @@ void processInput(Client c,MalStkPtr glb)
 				GDKerror(msg);
 				GDKfree(msg);
 			}
-		}
+		} 
+		showErrors(c);
 		resetMalBlk(c->curprg->def,glb);
 	}
 }

@@ -12,12 +12,12 @@
 #print("User bound to %s\n",u);
 #
 #v:int:= take("roomnumber");
-!ERROR: v:int:= take("roomnumber");
-!        ^'.' or '(' expected
 #v:= v+1;
 #release("roomnumber",v);
 #release("roomnumber",v); # failure? done twice or implicit take?
 #
+!ERROR: v:int:= take("roomnumber");
+!        ^'.' or '(' expected
 !ERROR: 'print' undefined in Admin.main[2]
 function Admin.main():int;	#0:void (main:int)
 	Admin.take(u,"user");	#1:bit ($1:bit)(u:str)($3:str)
