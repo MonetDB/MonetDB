@@ -122,15 +122,16 @@ sub resetState{
 #packge the request and ship it, the back-end reads blocks!
 sub doRequest {
 	my($mapi,$cmd) = @_;
-	if( $mapi->{trace}) {
-		print "Send:$cmd\n";
-	}
 	#my($missing) = 256 - length($cmd) % 256;
 	#my($blk) = $cmd . ' ' x $missing; 
 	$cmd =~ s/\n/ /g;
 	$cmd .= "\n";
 	if ($mapi->{LANG} eq 'sql') {
 	  $cmd = "S" . $cmd;
+	}
+	$mapi->resetState();
+	if( $mapi->{trace}) {
+		print "Send:$cmd\n";
 	}
 	$mapi->{SOCKET}->send( $cmd )
 		|| die "!ERROR can't send $cmd: $!";
@@ -207,12 +208,11 @@ sub getLine {
 	}
 	while ( index($buf,"\n") <0 ) {
 		$mapi->{SOCKET}->recv($buf,256);
-#		|| die "!ERROR can't receive: $!";
 		if (length($buf) == 0) {
 		  if ($mapi->{trace}) {
 		    print "received empty\n";
 		  }
-		  last;
+		  die "!ERROR can't receive: $!";
 		}
 		if($mapi->{trace}) {
 		  print "received:".$buf."\n";
