@@ -11,7 +11,7 @@ INSERT INTO ff VALUES (2, 'Jochem');
 select * from ff;
 
 select (4-1)*5;
-select current_date;
+--select current_date;
 
 select * from tables;
 

@@ -42,11 +42,6 @@ Over..
 # 1 # tuplecount
 # 3 # id
 [ 15	]
-# current_date # name
-# date # type
-# 1 # tuplecount
-# 4 # id
-[ 2004-05-07	]
 # id,	name,	schema_id,	query,	type # name
 # mediumint,	varchar,	mediumint,	varchar,	mediumint # type
 # 16,	,	,	,	 # tuplecount
@@ -98,7 +93,7 @@ Over..
 [ 1005680,	"env",	1005450,	"",	1	]
 [ 1006949,	"foo",	1005450,	"",	0	]
 [ 1007114,	"ff",	1005450,	"",	0	]
-[ 1007382,	"s4",	1005450,	"",	0	]
+[ 1007370,	"s4",	1005450,	"",	0	]
 # i # name
 # int # type
 # 1 # tuplecount
