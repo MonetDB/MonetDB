@@ -277,7 +277,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		s->nr = getDestVar(q);
 		q= pushArgument(mb,q,o1);
 		} break;
-        case st_var: {
+	case st_var: {
 		q= newAssignment(mb);
 		s->nr = getDestVar(q);
 		if (s->op1.sval) {
@@ -379,21 +379,23 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		} break;
 	case st_limit: {
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int k;
-
+		int k = backend_dumpstmt(sql,mb, s->op2.stval);
 		@:SQLprelude@
+
+		/* since both arguments of algebra.slice are inclusive
+		   correct the LIMIT value by substracting 1 */
 		q= newStmt(mb,"calc","-");
-		q= pushArgument(mb,q,l);
+		q= pushArgument(mb,q,k);
 		q= pushInt(mb,q,1);
 		k= getDestVar(q);
-
-		q= newStmt(mb,"bat","slice");
+	
+		q= newStmt(mb,"algebra","slice");
+		q= pushArgument(mb,q,l);
 		q= pushInt(mb,q,0);
 		q= pushArgument(mb,q,k);
 		s->nr= getDestVar(q);
 		@:SQLpostlude@
-		break;
-	}
+	} 	break;
 	case st_order: {
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
 		int k;
