@@ -15,7 +15,7 @@ extern catalog *catalog_create_stream( stream *s, context *lc );
 void usage( char *prog ){
 	fprintf(stderr, "sql_client\n");
 	fprintf(stderr, "\toptions:\n");
-	fprintf(stderr, "\t\t -d          | --debug\n"); 
+	fprintf(stderr, "\t\t -d [level]  | --debug=level\n"); 
 	fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
 	fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, "\t\t -s schema   | --schema=schema  /* schema to use */\n");
@@ -135,7 +135,7 @@ main(int ac, char **av)
 
 	static struct option long_options[] =
              {
-               {"debug", 0, 0, 'd'},
+               {"debug", 2, 0, 'd'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
                {"schema", 1, 0, 's'},
@@ -164,6 +164,7 @@ main(int ac, char **av)
 			break;
 		case 'd':
 			debug=1;
+			if (optarg) debug=strtol(optarg,NULL,10);
 			break;
 		case 'h':
 			host=_strdup(optarg);
