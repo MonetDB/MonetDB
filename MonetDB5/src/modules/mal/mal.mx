@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f mal
 @t MAL extensions
 @a Martin Kersten
@@ -27,8 +50,6 @@ comment "Switch to other scenario handler, return previous one";
 
 command mil():void = CMDlanguageMIL
 comment "Switch to processing MIL statements";
-command sql():void = CMDlanguageSQL
-comment "Switch to processing SQL statements";
 
 command raise(msg:str) :str = CMDraise
 comment "Raise an exception labelled with a specific message.";
@@ -58,20 +79,6 @@ pattern project( b:bat[any::1,any], val:any::2) :
 			bat[any::1, any::2] = CMDproject
 comment "Fill the tail column with a constant value.";
 
-@+ Calculation
-Coercion of values at the MAL level is supported by the cast
-operation.
-@mal
-command cast(v:any, w:str):str= CMDcast_str
-comment "Cast a value to another built-in type.";
-command cast(v:any, w:int):int= CMDcast;
-command cast(v:any, w:lng):lng= CMDcast;
-command cast(v:any, w:sht):sht= CMDcast;
-command cast(v:any, w:flt):flt= CMDcast;
-command cast(v:any, w:dbl):dbl= CMDcast;
-command cast(v:any, w:chr):chr= CMDcast;
-command cast(v:any, w:oid):oid= CMDcast;
-command cast(v:any, w:bit):bit= CMDcast;
 @+ Iterator primitives
 Iterators enumerate elements in a collection defined by a few paramaters,
 e.g. a lower/upper bound, or a bat. An iterator is initialized in the first
@@ -142,7 +149,56 @@ comment "return the BUN head value using the cursor.";
 pattern getTail(b:bat[any,any::1],i:lng):any::1 = CMDgetTail
 comment "return the BUN tail value using the cursor.";
 
+@- Monet help system
+All procedural abstractions may contain a string with commentary text.
+This information is retained in the symbol table for subsequent use.
+Often, it is more appropriate to extract the comments into a BAT
+for subsequent analysis.
+@mal
+command help(k:str):bat[str,str] = CMDhelp
+comment "Search the commentary strings for one matching the keyword";
+
+command helpComment(mod:str):bat[str,str] = CMDhelpComment
+comment "Collect the commentaries for all routines in a given module";
+command helpComment(mod:str,fcn:str):bat[int,str] = CMDhelpComment2
+comment "Obtain the comments for a given function";
+@- Monet Manual construction
+The manual operations ease offline inspection of the all the Monet function.
+It purposely generates an XML organized file, because we expect external
+tools to massage it further for presentation. The envisioned 
+tagging structure becomes
+@T
+\begin{verbatim}
+<manual>
+  <module>
+    <command name=... signature=... binding=...>
+       <comment>
+       </comment>
+    </command>
+    <pattern name=... signature=... binding=...>
+       <comment>
+       </comment>
+    </command>
+    <function name=... signature=... >
+       <comment>
+       </comment>
+       <body>
+       </body>
+    </command>
+  </module>
+</manual>
+\end{verbatim}
 @-
+@mal
+command manual(file:str,mod:str)= CMDmanual2
+comment "Generate a synopsis of a module";
+command manual(file:str,mod:str,recursive:int)= CMDmanual
+comment "Generate a synopsis of a module";
+command manual(mod:str)= CMDmanual1
+comment "Generate a synopsis of a module";
+command manual()= CMDmanual0
+comment "Produces a XML-formatted manual over all modules loaded.";
+
 @+ The Monet Debugger interface
 To enable ease of debugging and performance monitoring, the MAL interpreter
 comes with a hardwired gdb-like text-based debugger.
@@ -156,15 +212,6 @@ pattern mdb():void = mdbToggle
 
 command debugmask(i:int):int= CMDdebug
 "Return the debug mask. If a MASK is nonzero, set it to that value.";
-
-command manual(file:str,mod:str)= CMDmanual2
-comment "Generate a synopsis of a module";
-command manual(file:str,mod:str,recursive:int)= CMDmanual
-comment "Generate a synopsis of a module";
-command manual(mod:str)= CMDmanual1
-comment "Generate a synopsis of a module";
-command manual()= CMDmanual0
-comment "Generate a synopsis of a module";
 @+ MAL inspection
 The command below inspect the MAL administration and, therefore,
 can not be included in the kernel library.
@@ -179,27 +226,6 @@ comment "capture listing parameter and safe it on the MAL stack";
 
 command setListingDetails(z:int) = CMDsetListingDetails
 comment "Set listing parameter";
-
-@- Debugger display
-A key tool for analysis of the MAL code is being able to dump
-any routine, module. For queries, it is also illustrative to display
-the flow graph.
-@mal
-pattern showFunction(M:any,F:any,full:bit,s:str):void = CMDshowFunction1
-comment "Dump the routine M.F on the file s. The flag indicates the level
-of detail needed";
-pattern showFunction(M:any,F:any,full:bit):void = CMDshowFunction2
-comment "Dump the routine M.F on standard out. The flag indicates the level
-of detail needed";
-pattern showFunction(M:any,F:any):void = CMDshowFunction3
-comment "Dump the routine M.F on standard out.";
-pattern showFunction():void = CMDshowFunction4
-comment "Dump the current routine on standard out.";
-
-
-pattern showFlow(M:any,F:any,s:str):void = CMDshowFlow
-comment "Dump the data flow of the function M.F in a format
-recognizable by the command 'dot' on the file s";
 
 @- Monet module code
 
@@ -330,37 +356,24 @@ end divide;
 @+ Session control
 Redirected script evaluations.
 @mal
-command cwd(s:str):str= CMDsetCwd
-	comment "Return the current working directory. Set it to a new one.";
 pattern eval(s:str):void= CMDevalString
 	comment "Evaluate a string representing a MAL program";
 pattern source(f:str):void= CMDevalFile
 	comment "Load and executed a (local) file";
 @+ Dummy code 
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 #ifndef _ITERATOR_H
 #define _ITERATOR_H
 #endif /* _ITERATOR_H*/
+@-
+@= Pseudo
+        if (BBPindex("view_@1_@2") <= 0)
+                BATname(b, "@2");
+        BATroles(b,"@1","@2");
+        BATmode(b,TRANSIENT);
+        BATfakeCommit(b);
+        *ret = b->batCacheid;
+
 @c
 #include <stdarg.h>
 #include <time.h>
@@ -377,13 +390,6 @@ str CMDlanguageMIL(str *ret){
 	str msg= MAL_SUCCEED;
 	stream_printf(GDKout,"#Continue as MIL session\n");
 	msg= setScenario(getClient(),"mil");
-	*ret = 0;
-	return msg;
-}
-str CMDlanguageSQL(str *ret){
-	str msg= MAL_SUCCEED;
-	stream_printf(GDKout,"#Continue as SQL session\n");
-	msg= setScenario(getClient(),"sql");
 	*ret = 0;
 	return msg;
 }
@@ -414,64 +420,6 @@ str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 
 	return (str) CMDnewBat2(res,&ht,&tt,&cap);
 }
-@+ Display routines
-@= getFunction
-str     modnme= getArgName(mb,p,1);
-str     fcnnme= getArgName(mb,p,2);
-Scope  scope=NULL;
-Symbol s= NULL;
-Client c= getClient();
-
-scope = findScope(c->nspace,modnme);
-if( scope)
-	s= findSymbolInScope(scope,fcnnme);
-
-if( s == NULL)
-	GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
-
-@c
-void CMDshowFunction(MalBlkPtr m, lng flg, stream *f) {
-	printFunction(f,m,flg);
-}
-str CMDshowFunction1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	lng flg= *(lng*) getArgValue(stk,p,3);
-	str fname= (str) getArgValue(stk,p,4);
-	@:getFunction(showFunction)@
-	else { 
-		CMDshowFunction(s->def,LIST_MAL_INSTR,GDKout);
-	}
-	return NULL;
-}
-str CMDshowFunction2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	lng flg= *(lng*) getArgValue(stk,p,3);
-	@:getFunction(showFunction)@
-	else { 
-		CMDshowFunction(s->def,LIST_MAL_INSTR,GDKout);
-	}
-	return NULL;
-}
-str CMDshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	@:getFunction(showFunction)@
-	else { 
-		CMDshowFunction(s->def,(lng) FALSE,GDKout);
-	}
-	return NULL;
-}
-str CMDshowFunction4(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	CMDshowFunction(mb,(lng) FALSE,GDKout);
-	return NULL;
-}
-str CMDshowFlow(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str fname= (str) getArgValue(stk,p,3);
-	@:getFunction(showFunction)@
-	else { 
-		showFlow(s->def,stk,fname);
-	}
-	return NULL;
-}
-
-
-
 @+ Exception implementation
 @c
 str CMDraise(str *ret,  str *msg){
@@ -772,13 +720,12 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	if( isaBatType(tpe)){
-		BAT *b = BBPdescriptor(*(int*)val);
+		BAT *b = BATdescriptor(*(int*)val);
 		if( b== NULL) {
 			return throwMessage("mal.print","descriptor access failed");
 		}
 		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0);
-		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
         stream_printf(fp,"[ ");
@@ -806,7 +753,7 @@ str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
         BAT *piv[MAXPARAMS],*b;
-        int nbats = 0,k;
+        int nbats = 0;
 	int tpe,i=1,order=0;
 	ptr val;
 
@@ -817,16 +764,13 @@ str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
 	for(; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) {
-			for(k=0; k< nbats; k++) BBPunfix(piv[k]->batCacheid);
+		if( !isaBatType(tpe)) 
 			return throwMessage("mal.otable"," BAT expected");
-		}
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) return throwMessage("mal.otable","GDKerror");
                 piv[nbats++] = b;
         } 
         BATmultiprintf(GDKout, nbats, piv, flg, order);
-	for(k=0; k< nbats; k++) BBPunfix(piv[k]->batCacheid);
 	GDKout->flush(GDKout);
         return MAL_SUCCEED;
 }
@@ -909,39 +853,96 @@ str CMDdebug(int *ret, int *flg){
 	if( *flg) GDKdebug = *flg;
 	return MAL_SUCCEED;
 }
-str CMDmanual(int *ret, str *fname, str *mod, int *recursive){
+str CMDmanual(int *ret, str *fname, str *mod,int *recursive){
 	stream *fs;
 	fs= open_wastream(*fname);
 	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
-	dumpManualHeader(fs);
 	dumpManual(fs, findScope(getClient()->nspace,*mod),*recursive);
-	dumpManualFooter(fs);
 	return MAL_SUCCEED;
 }
-str CMDmanual2(int *ret, str *fname, str *mod){
-	stream *fs;
-	fs= open_wastream(*fname);
-	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
-	dumpManualHeader(fs);
-	dumpManual(fs, findScope(getClient()->nspace,*mod),0);
-	dumpManualFooter(fs);
-	return MAL_SUCCEED;
+str CMDmanual2(int *ret, str *fname, str *mod,int *recursive){
+	int r= 0;
+	return CMDmanual(ret,fname,mod,&r);
 }
 str CMDmanual1(int *ret, str *mod){
-	dumpManualHeader(GDKout);
 	dumpManual(GDKout, findScope(getClient()->nspace,*mod),0);
-	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
 str CMDmanual0(int *ret){
-	dumpManualHeader(GDKout);
 	dumpManual(GDKout, getClient()->nspace,1);
-	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
 str CMDsetCwd(str *ret, str *fnme){
 	Client c= getClient();
 	*ret = c->cwd;
 	c->cwd= GDKstrdup(*fnme);
+	return MAL_SUCCEED;
+}
+str CMDhelp(int *ret, str *mod) 
+{	Client cntxt= getClient();
+	Scope m;
+	Symbol s;
+	str msg;
+	int i;
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.help", "failed to create BAT");
+        return throwMessage("catalog.help", "Search by keyword not yet available");
+
+	m= findScope(cntxt->nspace,*mod);
+	if(m)
+	for(i=0;i<256;i++){
+		s= m->subscope[i];
+		while(s!= NULL){
+			msg= s->def->help;
+			if( msg){
+				BUNins(b,s->name,msg);
+			}
+			s= s->peer;
+		}
+	}
+	@:Pseudo(help,Comment)@
+	return MAL_SUCCEED;
+}
+str CMDhelpComment(int *ret, str *mod) 
+{	Client cntxt= getClient();
+	Scope m;
+	Symbol s;
+	str msg;
+	int i;
+
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.helpComment", "failed to create BAT");
+
+	m= findScope(cntxt->nspace,*mod);
+	if(m)
+	for(i=0;i<256;i++){
+		s= m->subscope[i];
+		while(s!= NULL){
+			msg= s->def->help;
+			if(msg== NULL) msg= str_nil;
+			BUNins(b,s->name,msg);
+			s= s->peer;
+		}
+	}
+	@:Pseudo(help,Comment)@
+	return MAL_SUCCEED;
+}
+str CMDhelpComment2(int *ret, str *mod, str *fcn) 
+{	Symbol s;
+	str msg;
+
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+        if (b == 0) return throwMessage("catalog.helpComment", "failed to create BAT");
+
+	s= findSymbol(*mod,*fcn);
+	while(s!= NULL){
+		if(idcmp(s->name,*fcn)==0){
+			msg= s->def->help;
+			if(msg== NULL) msg= str_nil;
+			BUNins(b,s->name,msg);
+		}
+		s= s->peer;
+	}
+	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }

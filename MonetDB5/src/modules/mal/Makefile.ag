@@ -7,10 +7,10 @@ MTSAFE
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = squeezer.mx mal.mx mal_init.mx box.mx multiplex.mx  \
+	SOURCES = mal.mx mal_init.mx box.mx multiplex.mx  \
 		atoms.mx profiler.mx const.mx bbp.mx io.mx \
 		enum.mx  streams.mx tcpip.mx catalog.mx ascii_io.mx \
-		thread.mx optimizer.mx
+		thread.mx optimizer.mx clients.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -20,8 +20,9 @@ LIBS = {
 scripts_mal = {
 	DIR = sysconfdir/MonetDB/mal
 	SOURCES = mal_init.mal tcpip.mal thread.mal io.mal streams.mal \
-		ascii_io.mal enum.mal profiler.mal mal.mal squeezer.mal \
-		multiplex.mal const.mal bbp.mal box.mal catalog.mal optimizer.mal
+		ascii_io.mal enum.mal profiler.mal mal.mal \
+		multiplex.mal const.mal bbp.mal box.mal catalog.mal \
+		optimizer.mal clients.mal
 }
 
 EXTRA_DIST_DIR = Tests

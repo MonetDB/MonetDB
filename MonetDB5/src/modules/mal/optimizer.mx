@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2003 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
+
 @f optimizer
 @t The optimizer support functions
 @a Martin Kersten
@@ -18,41 +41,30 @@ information between successive calls.
 
 MODULE optimizer;
 
-PATTERN CXoptimizer(mod:any, fcn:any):str = QOTCXoptimizerCALL;
-PATTERN ARoptimizer(mod:any, fcn:any):str = QOTARoptimizerCALL;
-PATTERN DCoptimizer(mod:any, fcn:any):str = QOTDCoptimizerCALL;
-PATTERN SPoptimizer(mod:any, fcn:any):str = QOTSPoptimizerCALL;
-PATTERN RRoptimizer(mod:any, fcn:any):str = QOTRRoptimizerCALL;
+pattern CXoptimizer():str = QOTCXoptimizer;
+pattern CXoptimizer(mod:any, fcn:any):str = QOTCXoptimizerCALL
+comment "Common subexpression optimizer";
+pattern ARoptimizer():str = QOTARoptimizer;
+pattern ARoptimizer(mod:any, fcn:any):str = QOTARoptimizerCALL
+comment "Alias removal optimizer";
+pattern DCoptimizer():str = QOTDCoptimizer;
+pattern DCoptimizer(mod:any, fcn:any):str = QOTDCoptimizerCALL
+comment "Dead code optimizer";
+pattern SPoptimizer():str = QOTSPoptimizer;
+pattern SPoptimizer(mod:any, fcn:any):str = QOTSPoptimizerCALL
+coment "Selection push-down optimizer";
+pattern RRoptimizer():str = QOTRRoptimizer;
+pattern RRoptimizer(mod:any, fcn:any):str = QOTRRoptimizerCALL
+comment "Reversal idempotency removal";
 
-PATTERN debugOptimizers():void = QOTdebugOptimizers;
-PATTERN CXoptimizer():str = QOTCXoptimizer;
-PATTERN ARoptimizer():str = QOTARoptimizer;
-PATTERN DCoptimizer():str = QOTDCoptimizer;
-PATTERN SPoptimizer():str = QOTSPoptimizer;
-PATTERN RRoptimizer():str = QOTRRoptimizer;
+pattern debugOptimizers():void = QOTdebugOptimizers;
+
+pattern showFlow(M:any,F:any,s:str):void = CMDshowFlow
+comment "Dump the data flow of the function M.F in a format
+recognizable by the command 'dot' on the file s";
 
 @+ Dummy code 
 @h
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- */
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
 #endif /* _OPTIMIZER_H*/
@@ -101,3 +113,25 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr s, InstrPtr p){
 	@:QOTC(DC)@
 	@:QOTC(SP)@
 	@:QOTC(RR)@
+
+
+str CMDshowFlow(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+        str fname= (str) getArgValue(stk,p,3);
+	str     modnme= getArgName(mb,p,1);
+	str     fcnnme= getArgName(mb,p,2);
+	Scope  scope=NULL;
+	Symbol s= NULL;
+	Client c= getClient();
+
+	scope = findScope(c->nspace,modnme);
+	if( scope)
+		s= findSymbolInScope(scope,fcnnme);
+
+	if( s == NULL)
+		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
+        else {
+                showFlow(s->def,stk,fname);
+        }
+        return NULL;
+}
+
