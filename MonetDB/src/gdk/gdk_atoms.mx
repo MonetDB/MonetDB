@@ -326,21 +326,21 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 	    BATatoms[t].storage = t;  /* default */
 	}
 	if (strcmp("size", property) == 0) {
-	    if ((int) arg) {
-		BATatoms[t].size = (int) arg; 
+	    if ((long) arg) {
+		BATatoms[t].size = (int) (long) arg; 
 		BATatoms[t].varsized = 0; 
-		BATatoms[t].align = align((int) arg); 
+		BATatoms[t].align = align((int) (long) arg); 
 	    } else { 
 		BATatoms[t].size = sizeof(int); 
 		BATatoms[t].varsized = 1; 
 		BATatoms[t].align = sizeof(int); 
 	    } 
 	} else if (strcmp("linear", property) == 0) {
-		BATatoms[t].linear = (int) arg; 
+		BATatoms[t].linear = (int) (long) arg; 
 	} else if (strcmp("align", property) == 0) {
-		BATatoms[t].align = (int) arg; 
+		BATatoms[t].align = (int) (long) arg; 
 	} else if (strcmp("storage", property) == 0) {
-	    	BATatoms[t] = BATatoms[(int) arg]; /* copy from example */
+	    	BATatoms[t] = BATatoms[(int)(long) arg]; /* copy from example */
 	    	strcpy(BATatoms[t].name, id); /* restore name */ 
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)()) arg; 
@@ -947,7 +947,7 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 	} **dst = error?((ptr) ptr_nil):((ptr) base);
 	return p-src;
 }
-@:atomtostr(ptr,%x,unsigned int)@
+@:atomtostr(ptr,%lx,unsigned long)@
 
 int dblFromStr(char* src, int* len, dbl **dst) {
 	char *p = src;
