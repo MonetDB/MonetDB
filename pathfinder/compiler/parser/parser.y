@@ -1690,7 +1690,7 @@ AttributeList               : /* empty */
 			    | S QName OptS '=' OptS AttributeValue
                               AttributeList
                               { $$[ROOT] = $$[HOLE] = 
-                                  p_wire2 (p_exprseq,
+                                  p_wire2 (p_contseq,
                                            @$,
                                            p_wire2 (p_attr,
                                                     loc_rng (@2, @6),
@@ -1723,7 +1723,7 @@ QuotAttributeContent        : QuotAttributeContentTexts_
                               { /* add trailing '\0' to string */
 				*((char *) PFarray_add ($1)) = '\0';
 
-                                $$ = p_wire2 (p_exprseq, @1,
+                                $$ = p_wire2 (p_contseq, @1,
                                               (c = p_leaf (p_lit_str, @1),
                                                c->sem.str = PFarray_at ($1, 0),
                                                c),
@@ -1766,7 +1766,7 @@ AposAttributeContent        : AposAttributeContentTexts_
                               { /* add trailing '\0' to string */
 				*((char *) PFarray_add ($1)) = '\0';
 
-                                $$ = p_wire2 (p_exprseq, @1,
+                                $$ = p_wire2 (p_contseq, @1,
                                               (c = p_leaf (p_lit_str, @1),
                                                c->sem.str = PFarray_at ($1, 0),
                                                c),

@@ -237,8 +237,11 @@ label Query
       AttributeConstructor          
       TextConstructor
       AttributeValue
-      OptContSequence_
-      ContSequence
+      OptElemContSequence_
+      ElemContSequence
+      OptAttrContSequence_
+      AttrContSequence
+      AttrEnclosedExpr
       PathExpr
       LocationStep_
       LocationPath_
@@ -1524,20 +1527,38 @@ Constructor:            TextConstructor;
 ElementConstructor:     elem (TagName, ElementContent)
     =
     {
-        PFfun_t *is2ns = 
-                function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
-
-        [[ $$ ]] = constr_elem ([[ $1$ ]], APPLY (is2ns, [[ $2$ ]]));
+        /*
+         * FIXME:
+         *   The code that has been generated for $2$ has piecewise gone
+         *   through item-sequence-to-node-sequence() and is thus a
+         *   sequence of nodes.
+         *   Additionally, the W3C specification [XQ, 3.7.1.3] demands
+         *    -- adjacent text nodes to be merged into one, and
+         *    -- empty text nodes to be removed.
+         *   I'd recommend to introduce something like
+         *   ``merge-adjacent-text-nodes()'' here and wrap it around $2$.
+         *   This, however, would break Jan's code. So I leave it as it
+         *   is for now, but we should do that as soon as possible.
+         *     Jens, 27.08.04
+         */
+        [[ $$ ]] = constr_elem ([[ $1$ ]], [[ $2$ ]]);
     }
     ;
 
 AttributeConstructor:   attr (TagName, AttributeValue)
     =
     {
-        PFfun_t *is2uA = 
-                function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
-
-        [[ $$ ]] = constr_attr ([[ $1$ ]], APPLY (is2uA, [[ $2$ ]]));
+        /*
+         * The translation rules rooted at AttributeValue compile
+         * the attribute value into a single string. The W3C specification
+         * converts this string into an xdt:untypedAtomic afterwards.
+         * However, I can't really see sense in this cast, so I left
+         * the attribute value as it is. After the attribute has been
+         * constructed, its value will have the type xdt:untypedAtomic
+         * anyway.
+         *   Jens, 27.08.04
+         */
+        [[ $$ ]] = constr_attr ([[ $1$ ]], [[ $2$ ]]);
     }
     ;
 
@@ -1599,14 +1620,14 @@ TagName:                Expr
     }
     ;
 
-ElementContent:         OptContSequence_;
+ElementContent:         OptElemContSequence_;
 
-AttributeValue:         OptContSequence_;
+AttributeValue:         OptAttrContSequence_;
 
-OptContSequence_:       EmptySequence_;
-OptContSequence_:       ContSequence;
+OptElemContSequence_:   EmptySequence_;
+OptElemContSequence_:   ElemContSequence;
 
-ContSequence:           contseq (Expr, EmptySequence_)
+ElemContSequence:       contseq (Expr, EmptySequence_)
     =
     {
         /*
@@ -1628,7 +1649,7 @@ ContSequence:           contseq (Expr, EmptySequence_)
                            seq (var (v3), var (v2)))));
     }
     ;
-ContSequence:           contseq (Expr, ContSequence)
+ElemContSequence:       contseq (Expr, ElemContSequence)
     =
     {
         /*
@@ -1648,6 +1669,90 @@ ContSequence:           contseq (Expr, ContSequence)
                  let (var (v2), [[ $2$ ]],
                       let (var (v3), APPLY (is2ns, var (v1)),
                            seq (var (v3), var (v2)))));
+    }
+    ;
+
+OptAttrContSequence_:   empty_seq
+    =
+    {
+        /*
+         * An empty attribute value shall result in an empty string.
+         * [XQ, 3.7.1.1].
+         */
+        [[ $$ ]] = str ("");
+    }
+    ;
+
+OptAttrContSequence_:   AttrContSequence;
+
+AttrContSequence:       contseq (AttrEnclosedExpr, empty_seq)
+    =
+    {
+        /*
+         * The first argument is already a string (after rule
+         * AttrEnclosedExpr). So we can just return that.
+         */
+        [[ $$ ]] = [[ $1$ ]];
+    }
+    ;
+AttrContSequence:       contseq (AttrEnclosedExpr, AttrContSequence)
+    =
+    {
+        /*
+         * Both arguments have type xs:string after they had been
+         * converted in the rule AttrEnclosedExpr. All that is left
+         * to do is to concatenate them.
+         *
+         * let $v1 := [[ e1 ]] return
+         *   let $v2 := [[ e2 ]] return
+         *     fn:concat ($v1, $v2)
+         */
+        PFvar_t *v1 = new_var (NULL);
+        PFvar_t *v2 = new_var (NULL);
+        PFfun_t *concat = function (PFqname (PFns_fn, "concat"));
+
+        [[ $$ ]] =
+            let (var (v1), [[ $1$ ]],
+                 let (var (v2), [[ $2$ ]],
+                     APPLY (concat, var (v1), var (v2))));
+    }
+    ;
+
+AttrEnclosedExpr:       Expr
+    =
+    {
+        /*
+         * Convert enclosed expression in attribute values as described in
+         * [XQ, Section 3.7.1.1]:
+         *
+         *  a. Apply atomization (fn:data) to the enclosed expression.
+         *  b. Cast each atomic value in the resulting sequence to a string
+         *  c. Merge all the resulting strings with a space character
+         *     inbetween.
+         *
+         * let $v1 := [[ $1$ ]] return
+         *   let $v2 := fn:data( $v1 ) return
+         *     let $v3 := for $v4 in $v2 return fn:string($v4)
+         *       return
+         *       fn:string-join( $v3, " " )
+         */
+        PFcnode_t *ret = NULL;
+        PFvar_t *v1 = new_var (NULL);
+        PFvar_t *v2 = new_var (NULL);
+        PFvar_t *v3 = new_var (NULL);
+        PFvar_t *v4 = new_var (NULL);
+        PFfun_t *string = function (PFqname (PFns_fn, "string"));
+        PFfun_t *string_join = function (PFqname (PFns_fn, "string-join"));
+
+        ret =
+            let (var (v1), [[ $$ ]],
+                let (var (v2), fn_data (var (v1)),
+                    let (var (v3),
+                        for_ (var (v4), nil (), var (v2),
+                            APPLY (string, var (v4))),
+                        APPLY (string_join, var (v3), str (" ")))));
+
+        [[ $$ ]] = ret;
     }
     ;
 

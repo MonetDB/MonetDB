@@ -700,195 +700,21 @@
   { .ns = PFns_fn, .loc = "string",                                      \
     .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
     .ret_ty = PFty_string () }                                           \
+, /* fn:string-join (string*, string) as string */                       \
+  { .ns = PFns_fn, .loc = "string-join",                                 \
+    .arity = 2, .par_ty = { PFty_star (PFty_string ()),                  \
+                            PFty_string () },                            \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:concat (string, string) as string */                             \
+  /* This is more strict that the W3C variant. Maybe we can do with */   \
+  /* that strict variant. */                                             \
+  { .ns = PFns_fn, .loc = "concat",                                      \
+    .arity = 2, .par_ty = { PFty_string(), PFty_string() },              \
+    .ret_ty = PFty_string () }                                           \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
     .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:is-boolean (xs:anyItem*) as xs:boolean */                        \
-  { .ns = PFns_pf, .loc = "is-boolean",                                  \
-    .arity = 1, .par_ty = { PFty_star (PFty_xs_anyItem()) },             \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-integer (xs:anyItem*) as xs:boolean */                        \
-  { .ns = PFns_pf, .loc = "is-integer",                                  \
-    .arity = 1, .par_ty = { PFty_star (PFty_xs_anyItem()) },             \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-string (xs:anyItem*) as xs:boolean */                         \
-  { .ns = PFns_pf, .loc = "is-string",                                   \
-    .arity = 1, .par_ty = { PFty_star (PFty_xs_anyItem()) },             \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-double (xs:anyItem*) as xs:boolean */                         \
-  { .ns = PFns_pf, .loc = "is-double",                                   \
-    .arity = 1, .par_ty = { PFty_star (PFty_xs_anyItem()) },             \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-text-node (node *) as xs:boolean */                           \
-  { .ns = PFns_pf, .loc = "is-text-node",                                \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-processing-instruction-node (node *) as xs:boolean */         \
-  { .ns = PFns_pf, .loc = "is-processing-instruction-node",              \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-document-node (node *) as xs:boolean */                       \
-  { .ns = PFns_pf, .loc = "is-document-node",                            \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-element (node *) as xs:boolean */                             \
-  { .ns = PFns_pf, .loc = "is-element",                                  \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_xs_boolean () }                                       \
-, /* pf:is-attribute (node *) as xs:boolean */                           \
-  { .ns = PFns_pf, .loc = "is-attribute",                                \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_xs_boolean () }                                       \
-                                                                         \
-  /***** XPath accessor functions **********/                            \
-                                                                         \
-, /* pf:ancestor (node *) as node *  */                                  \
-  { .ns = PFns_pf, .loc = "ancestor",                                    \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:ancestor-or-self (node *) as node *  */                          \
-  { .ns = PFns_pf, .loc = "ancestor-or-self",                            \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:attribute (node *) as node *  */                                 \
-  { .ns = PFns_pf, .loc = "attribute",                                   \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:child (node *) as node *  */                                     \
-  { .ns = PFns_pf, .loc = "child",                                       \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:descendant (node *) as node *  */                                \
-  { .ns = PFns_pf, .loc = "descendant",                                  \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:descendant-or-self (node *) as node *  */                        \
-  { .ns = PFns_pf, .loc = "descendant-or-self",                          \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:following (node *) as node *  */                                 \
-  { .ns = PFns_pf, .loc = "following",                                   \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:following-sibling (node *) as node *  */                         \
-  { .ns = PFns_pf, .loc = "following-sibling",                           \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:parent (node *) as node *  */                                    \
-  { .ns = PFns_pf, .loc = "parent",                                      \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:preceding (node *) as node *  */                                 \
-  { .ns = PFns_pf, .loc = "preceding",                                   \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:preceding-sibling (node *) as node *  */                         \
-  { .ns = PFns_pf, .loc = "preceding-sibling",                           \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:self (node *) as node *  */                                      \
-  { .ns = PFns_pf, .loc = "self",                                        \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-                                                                         \
-, /* pf:ancestor-nametest (node *) as node *  */                         \
-  { .ns = PFns_pf, .loc = "ancestor-nametest",                           \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:ancestor-or-self-nametest (node *) as node *  */                 \
-  { .ns = PFns_pf, .loc = "ancestor-or-self-nametest",                   \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:attribute-nametest (node *) as node *  */                        \
-  { .ns = PFns_pf, .loc = "attribute-nametest",                          \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:child-nametest (node *) as node *  */                            \
-  { .ns = PFns_pf, .loc = "child-nametest",                              \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:descendant-nametest (node *) as node *  */                       \
-  { .ns = PFns_pf, .loc = "descendant-nametest",                         \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:descendant-or-self-nametest (node *) as node *  */               \
-  { .ns = PFns_pf, .loc = "descendant-or-self-nametest",                 \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:following-nametest (node *) as node *  */                        \
-  { .ns = PFns_pf, .loc = "following-nametest",                          \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:following-sibling-nametest (node *) as node *  */                \
-  { .ns = PFns_pf, .loc = "following-sibling-nametest",                  \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:parent-nametest (node *) as node *  */                           \
-  { .ns = PFns_pf, .loc = "parent-nametest",                             \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:preceding-nametest (node *) as node *  */                        \
-  { .ns = PFns_pf, .loc = "preceding-nametest",                          \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:preceding-sibling-nametest (node *) as node *  */                \
-  { .ns = PFns_pf, .loc = "preceding-sibling-nametest",                  \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-, /* pf:self-nametest (node *) as node *  */                             \
-  { .ns = PFns_pf, .loc = "self-nametest",                               \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_node ()) }                                 \
-                                                                         \
-, /* pf:comment-filter (node *) as comment *  */                         \
-  { .ns = PFns_pf, .loc = "comment-filter",                              \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_comm ()) }                                 \
-, /* pf:text-filter (node *) as text *  */                               \
-  { .ns = PFns_pf, .loc = "text-filter",                                 \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_text ()) }                                 \
-, /* pf:processing-instruction-filter (node *) as processing-instruction *  */ \
-  { .ns = PFns_pf, .loc = "processing-instruction-filter",               \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_pi ()) }                                   \
-, /* pf:document-filter (node *) as document { xs:anyType } *  */        \
-  { .ns = PFns_pf, .loc = "document-filter",                             \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_doc (PFty_xs_anyType ())) }                \
-, /* pf:element-filter (node *) as element *  */                         \
-  { .ns = PFns_pf, .loc = "element-filter",                              \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_xs_anyElement ()) }                        \
-, /* pf:attribute-filter (node *) as attribute *  */                     \
-  { .ns = PFns_pf, .loc = "attribute-filter",                            \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_star (PFty_xs_anyAttribute ()) }                      \
                                                                          \
 , /* pf:root () as document { xs:anyType } *  */                         \
   { .ns = PFns_pf, .loc = "root",                                        \
