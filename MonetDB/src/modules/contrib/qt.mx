@@ -1235,6 +1235,7 @@ publish(BAT **clusters, int c0, int c1, int c2, int image)
   rv = bitvector_set(clusters[c0 * NIRBINS * NIRBINS + 
 			     c1 * NIRBINS + c2], &image);
   assert(rv == GDK_SUCCEED);
+  (void)rv; /* fake usage to fool compilers in case assertions are disabled */
 }
 
 int
