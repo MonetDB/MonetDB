@@ -101,7 +101,7 @@ int ALIGNsetH(BAT *b1, BAT *b2) {
 		b2->halign=OIDnew(1);
 		b2->batDirtydesc = TRUE;
 	}
-	if (BAThdense(b2)) {
+	if (BAThvoid(b2)) {
 		if (b1->htype != TYPE_void) b1->hdense = TRUE;
 		BATseqbase(b1, b2->hseqbase);
 	}
@@ -132,7 +132,7 @@ int ALIGNsynced(BAT* b1, BAT* b2) {
 		return 1; /* same bat. trivial case */
 	if (b1->halign && b1->halign == b2->halign)
 		return 1; /* columns marked as equal by algorithmics */ 
-	if (BAThdense(b1) && BAThdense(b2) && b1->hseqbase == b2->hseqbase)
+	if (BAThvoid(b1) && BAThvoid(b2) && b1->hseqbase == b2->hseqbase)
 		return 1; /* equal void columns */
 	if (VIEWparent(b1) && ALIGNsynced(BBPcache(VIEWparent(b1)), b2))
 		return 1; /* view on same bat --- left recursive def.. */

@@ -439,8 +439,8 @@ BAT *batcopy(BAT *b, int writeable) {
 		BUN p, q, r;
 
 		if (!writeable) {
-			if (tt && BAThdense(b)) ht = TYPE_void;
-			if (ht && BATtdense(b)) tt = TYPE_void;
+			if (tt && BAThvoid(b)) ht = TYPE_void;
+			if (ht && BATtvoid(b)) tt = TYPE_void;
 		}
 		bn = BATnew(ht, tt, BATcount(b));
 		r  = BUNfirst(bn);
@@ -631,15 +631,17 @@ BAT *BUNins(BAT *b, ptr h, ptr t) {
 		    }
 	    	}
 	    } else {
-		if (!b->hkey) b->hkey = bm->tkey = TRUE;
 		if (b->htype == TYPE_oid) {
-			b->hdense = TRUE;
+			b->hdense = b->hkey = bm->tkey = TRUE;
 			b->hseqbase = bm->tseqbase = *(oid*) h;
+		} else if (b->htype) {
+			b->hkey = bm->tkey = TRUE;
 		}
-		if (!b->tkey) b->tkey = bm->hkey = TRUE;
 		if (b->ttype == TYPE_oid) {
-			b->tdense = TRUE;
+			b->tdense = b->tkey = bm->hkey = TRUE;
 			b->tseqbase = bm->hseqbase = *(oid*) t;
+		} else if (b->htype) {
+			b->tkey = bm->hkey = TRUE;
 		}
 	    }
             bunfastins(b, h, t);
@@ -954,7 +956,7 @@ BUN BUNlocate(BAT *b, ptr x, ptr y) {
 
 	@:swapif(b->htype == TYPE_void && b->hseqbase == oid_nil && *(oid*)x == oid_nil)@
 	if (y==NULL || (b->ttype==TYPE_void && 
-	    b->hseqbase == oid_nil && *(oid*)y==oid_nil)) 
+	    b->tseqbase == oid_nil && *(oid*)y==oid_nil)) 
 	{
 		return BUNfnd(b,x);
 	} 
@@ -1183,8 +1185,8 @@ int BATgetaccess(BAT *b) {
 }
 
 @- 
-Changing the BAT identifier affects its permanent location on the
-file system.
+BATs have a logical name that is indepent of their 
+location in the file system (this depends on batCacheid).
 The dimensions of the BAT can be given a separate name.
 It helps front-ends in identifying the column of interest.
 The new name should be recognizable as an identifier.
@@ -1281,7 +1283,7 @@ BAT *BATseqbase(BAT *b, oid o) {
         	m->tseqbase = b->hseqbase = o;
 
 		/* adapt keyness */
-		if (b->htype == TYPE_void || (b->hsorted&b->hdense&1)) {
+		if (BAThvoid(b)) {
         	    if (o == oid_nil) {
                		if (b->hkey) m->tkey = b->hkey = FALSE;
         	    } else {
@@ -1336,7 +1338,7 @@ check if duplicated properties are equal
 @c
 if (sanity_check) {
 	BAT *bm = BATmirror(b);
-	if (BAThdense(b) && b->hseqbase != bm->tseqbase) {
+	if (BAThvoid(b) && b->hseqbase != bm->tseqbase) {
 		oid o = (b->htype && yy != xx)?*(oid*) BUNhloc(b,BUNfirst(b)):oid_nil;
 		GDKerror("BATpropcheck: BAT %d set inconsistent hseqbase=%d\n", b->batCacheid, o);
 		b->hseqbase = bm->tseqbase = o; b->batDirty = TRUE;
