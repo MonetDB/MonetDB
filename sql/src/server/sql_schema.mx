@@ -902,6 +902,7 @@ static char *table_constraint_name(symbol* s, sql_table* t)
 	/* create a descriptive name like table_col_pkey */
 	char* suffix; /* stores the type of this constraint */
 	dnode *nms = NULL;
+	static char buf[BUFSIZ];
 
 	switch (s->token) {
 		case SQL_UNIQUE:
@@ -935,7 +936,6 @@ static char *table_constraint_name(symbol* s, sql_table* t)
 			nms = NULL;
 	}
 
-	static char buf[BUFSIZ];
 	snprintf(buf, BUFSIZ, "%c%s",
 		INTERNAL_KEY_MARKER,
 		t->base.name
