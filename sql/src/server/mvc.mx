@@ -176,6 +176,8 @@ extern BAT *mvc_bind_ubat( mvc *c, char *sname, char *tname, char *cname, int ac
 extern BAT *mvc_bind_obat( mvc *c, char *sname, char *tname, int access );
 extern BAT *mvc_bind_dbat( mvc *c, char *sname, char *tname, int access );
 
+extern BAT *mvc_bind_kbat(  mvc *c, char *sname, char *tname, char *key, int access );
+
 extern sql_schema *mvc_bind_schema( mvc *c, char *sname );
 extern sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
 extern sql_column *mvc_bind_column( mvc *c, sql_table *t, char *cname );
@@ -378,6 +380,11 @@ static BAT *bind_obat( sql_trans *tr, sql_table *t, int access )
 static BAT *bind_dbat( sql_trans *tr, sql_table *t, int access )
 {
 	return tab_bind(tr, t->dbid, t, access);
+}
+
+static BAT *bind_key( sql_trans *tr, sql_key *k, int access )
+{
+	return tab_bind(tr, k->bid, k->t, access);
 }
 
 
@@ -1261,11 +1268,12 @@ static void mvc_init_type( struct bm *bm )
 void mvc_init(int debug)
 {
 	struct bm *bm = NULL;
-	mvc_debug = debug;
 	char *logdir = GDKgetenv("sql_logdir");
 	char *dbname = GDKgetenv("gdk_dbname");
 	
 	assert(logdir && dbname);
+
+	mvc_debug = debug;
 	if (mvc_debug)
 		fprintf(stderr, "mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
 
@@ -2073,6 +2081,28 @@ BAT *mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 	assert(b->htype == TYPE_void && b->hseqbase == 0);
 	return b;
 }
+
+BAT *mvc_bind_kbat(mvc * m, char *sname, char *tname, char *kname, int access )
+{
+	sql_trans *tr = m->trans;
+	BAT *b = NULL;
+	sql_schema *s = find_schema(tr, sname);
+	sql_table *t = find_table(s, tname);
+	sql_key *k = find_key(t, kname);
+
+	if (m->debug)
+		fprintf(stderr, "mvc_bind_kbat %s.%s\n", tname, kname );
+
+	/* TODO check for access */
+
+	assert(t);
+	b = bind_key(tr, k, access);
+
+	t->rtime = tr->rtime = tr->stime;
+	assert(b->htype == TYPE_void && b->hseqbase == 0);
+	return b;
+}
+
 
 sql_schema *mvc_bind_schema(mvc * m, char *sname )
 {
