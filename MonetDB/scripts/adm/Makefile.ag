@@ -1,0 +1,5 @@
+
+scripts_mil = {
+	DIR = pkgdatadir/adm
+	SOURCES = epilogue.mil  prelude.mil
+}
