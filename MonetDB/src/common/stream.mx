@@ -96,8 +96,8 @@ typedef struct stream {
 		int i;
 	} stream_data;
 	int errnr;
-	size_t (*read)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
-	size_t (*write)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
+	ssize_t (*read)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
+	ssize_t (*write)( struct stream *s, char *buf, size_t elmsize, size_t cnt );
 	void (*close)( struct stream *s);
 	char *(*error)( struct stream *s );
 	void (*destroy)( struct stream *s );
@@ -188,7 +188,7 @@ stream_export buffer *stream_get_buffer( stream *s );
    read will then start with a new major block.
  */
 stream_export stream *block_stream( stream *s );
-stream_export size_t bs_read_next( stream *s, char *buf, int *last );
+stream_export ssize_t bs_read_next( stream *s, char *buf, int *last );
 stream_export int isa_block_stream(stream *s);
 
 @+ buffered streams
@@ -333,14 +333,14 @@ static char *stream_error( stream *s ){
 	return strdup("Unkonwn error");
 }
 
-static size_t stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	FILE *fp = (FILE*)s->stream_data.p;
 	if (!feof(fp))
 		return fread( buf, elmsize, cnt, fp);
 	return 0;
 }
 
-static size_t stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	size_t res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data.p);
 	return res;
 }
@@ -523,13 +523,15 @@ stream *open_wastream( char *filename ){
 
 
 #ifdef HAVE_LIBZ
-static size_t stream_gzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t stream_gzread( stream *s, char *buf, size_t elmsize, size_t cnt )
+{
 	int size = (int)(elmsize*cnt);
 	size = gzread( (gzFile*)s->stream_data.p, buf, size );
 	if (size) return size/elmsize;
 	return 0;
 }
-static size_t stream_gzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t stream_gzwrite( stream *s, char *buf, size_t elmsize, size_t cnt)
+{
 	int size = (int)(elmsize*cnt);
 	size = gzwrite( (gzFile*)s->stream_data.p, buf, size );
 	if (size) return size/elmsize;
@@ -587,13 +589,15 @@ stream *open_gzwastream( char *filename ){
 #endif
 
 #ifdef HAVE_LIBBZ2
-static size_t stream_bzread( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t stream_bzread( stream *s, char *buf, size_t elmsize, size_t cnt )
+{
 	int size = (int)(elmsize*cnt);
 	size = BZ2_bzread( (BZFILE*)s->stream_data.p, buf, size );
 	if (size) return size/elmsize;
 	return 0;
 }
-static size_t stream_bzwrite( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t stream_bzwrite( stream *s, char *buf, size_t elmsize, size_t cnt)
+{
 	int size = (int)(elmsize*cnt);
 	size = BZ2_bzwrite( (BZFILE*)s->stream_data.p, buf, size );
 	if (size) return size/elmsize;
@@ -650,23 +654,28 @@ stream *open_bzwastream( char *filename ){
 }
 #endif
 
-static size_t socket_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t socket_write( stream *s, char *buf, size_t elmsize, size_t cnt )
+{
 	size_t size = elmsize*cnt;
+	ssize_t sz;
+
+	assert(!s->errnr);
 #ifdef NATIVE_WIN32
-	int sz = send( s->stream_data.i, buf, size, 0 );
+	sz = send( s->stream_data.i, buf, size, 0 );
 #else
-	ssize_t sz = write( s->stream_data.i, buf, size );
+	sz = write( s->stream_data.i, buf, size );
 #endif
 	if (sz > 0) return (size_t)sz/elmsize;
-	return 0;
+	if (sz < 0) 
+		s->errnr = WRITE_ERROR;
+	return sz;
 }
-static size_t socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
-#ifdef NATIVE_WIN32
-	int nr = 0;
-#else
+static ssize_t socket_read( stream *s, char *buf, size_t elmsize, size_t cnt )
+{
 	ssize_t nr = 0;
-#endif
 	size_t res = 0, size = elmsize*cnt;
+
+	assert(!s->errnr);
 	while( res < size && (
 #ifdef NATIVE_WIN32
 		(nr = recv( s->stream_data.i, buf+res, size-res, 0 ))
@@ -677,10 +686,14 @@ static size_t socket_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	){
 		 res += (nr>0)?nr:0;
 	}
-	if (nr < 0) return 0;
+	if (nr < 0){
+		s->errnr = READ_ERROR;
+		return nr;
+	}
 	if (res) return res/elmsize;
 	return 0;
 }
+
 static void socket_flush( stream *s ){
 	(void) s;
 	/* not needed */
@@ -728,8 +741,11 @@ stream *socket_open( int socket, char *name ){
 stream *socket_rstream( int socket, char *name ){
 	stream *s = socket_open( socket, name );
 	s->type = ST_BIN;
-	if (s->errnr == NO__ERROR)
-		read( socket, (char*)&s->byteorder, sizeof(short)); 
+	if (s->errnr == NO__ERROR){
+		int sz = sizeof(short);
+		if (read( socket, (char*)&s->byteorder, sz) < sz)
+			s->errnr = READ_ERROR;
+	}
 	return s;
 }
 
@@ -737,8 +753,11 @@ stream *socket_wstream( int socket, char *name ){
 	stream *s = socket_open( socket, name );
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
-	if (s->errnr == NO__ERROR)
-	   	write( socket, (char*)&s->byteorder, sizeof(short));
+	if (s->errnr == NO__ERROR){
+		int sz = sizeof(short);
+	   	if (write( socket, (char*)&s->byteorder, sz) < sz)
+			s->errnr = WRITE_ERROR;
+	}
 	return s;
 }
 
@@ -847,7 +866,8 @@ buffer *stream_get_buffer( stream *s ){
 	return (buffer*)s->stream_data.p;
 }
 
-static size_t buffer_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t buffer_read( stream *s, char *buf, size_t elmsize, size_t cnt )
+{
 	size_t size = elmsize*cnt;
 	buffer *b = (buffer*)s->stream_data.p;
 	if (b->pos+size <= b->len){
@@ -859,7 +879,8 @@ static size_t buffer_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 		return 0;
 	}
 }
-static size_t buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t buffer_write( stream *s, char *buf, size_t elmsize, size_t cnt )
+{
 	size_t size = elmsize*cnt;
 	buffer *b = (buffer*)s->stream_data.p;
 	if (b->pos+size > b->len){
@@ -926,8 +947,9 @@ bs *bs_create( stream *s ){
 	return ns;
 }
 
-static
-size_t bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t 
+bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt )
+{
 	bs *s = (bs*)ss->stream_data.p;
 	size_t todo = cnt * elmsize;
 	if (s->onr + todo >= BLOCK){
@@ -936,13 +958,19 @@ size_t bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		buf += rest;
 		todo -= rest;
 
-		stream_writeInt( s->s, BLOCK);
-		s->s->write( s->s, s->out, 1, BLOCK);
+		if (!stream_writeInt( s->s, BLOCK) ||
+		     s->s->write( s->s, s->out, 1, BLOCK) != BLOCK){
+			ss->errnr = WRITE_ERROR;
+			return -1;
+		}
 		s->onr = 0;
 
 		while (todo >= BLOCK){
-			stream_writeInt( s->s, BLOCK);
-			s->s->write( s->s, buf, 1, BLOCK);
+			if (!stream_writeInt( s->s, BLOCK) ||
+			    s->s->write( s->s, buf, 1, BLOCK) != BLOCK){
+				ss->errnr = WRITE_ERROR;
+				return -1;
+			}
 			buf += BLOCK;
 			todo -= BLOCK;
 		}
@@ -952,8 +980,8 @@ size_t bs_write( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	return cnt;
 }
 
-static
-size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
+static ssize_t 
+bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 	bs *s = (bs*)ss->stream_data.p;
 	unsigned nr = 0;
 
@@ -978,8 +1006,11 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		return cnt - (todo/elmsize);
 	}
 	while (todo >= BLOCK){
-		stream_readInt( s->s, (int *) &nr );
-		s->s->read( s->s, buf, 1, (size_t) nr);
+		if (!stream_readInt( s->s, (int *) &nr )
+		    || s->s->read( s->s, buf, 1, (size_t) nr) != nr){
+			ss->errnr = READ_ERROR;
+			return -1;
+		}
 		buf += nr;
 		todo -= nr;
 		if (nr < BLOCK){
@@ -988,12 +1019,15 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 		}
 	} 
 	if (todo){
-		stream_readInt( s->s, (int *) &nr );
+		if (!stream_readInt( s->s, (int *) &nr ) ||
+		    s->s->read( s->s, s->in, 1, (size_t) nr) != nr){
+			ss->errnr = READ_ERROR;
+			return -1;
+		}
 
 		if (nr < BLOCK)
 			s->eob = 1;
 
-		s->s->read( s->s, s->in, 1, (size_t) nr);
 		if (nr < todo)
 			memcpy( buf, s->in, (size_t) nr );
 		else
@@ -1017,7 +1051,7 @@ size_t bs_read( stream *ss, char *buf, size_t elmsize, size_t cnt ){
 }
 
 extern 
-size_t bs_read_next( stream *ss, char *buf, int *last ){
+ssize_t bs_read_next( stream *ss, char *buf, int *last ){
 	bs *s = (bs*)ss->stream_data.p;
 	int nr = 0;
 
@@ -1032,8 +1066,11 @@ size_t bs_read_next( stream *ss, char *buf, int *last ){
 		s->eob = 0;
 		return rest;
 	} else {
-		stream_readInt( s->s, &nr);
-		s->s->read( s->s, buf, (size_t) 1, (size_t) nr);
+		if (!stream_readInt( s->s, &nr) ||
+		   s->s->read( s->s, buf, (size_t) 1, (size_t) nr) != nr){
+			ss->errnr = READ_ERROR;
+			return -1;
+		}
 		if (nr < BLOCK){
 			*last = 1;
 			s->itotal = s->inr = 0;
@@ -1046,8 +1083,10 @@ static
 void bs_flush(stream *ss){
 	bs *s = (bs*)ss->stream_data.p;
 	if (s->onr){
-		stream_writeInt( s->s, s->onr);
-		s->s->write( s->s, s->out, 1, s->onr );
+		if (!stream_writeInt( s->s, s->onr) ||
+			s->s->write( s->s, s->out, 1, s->onr ) != s->onr){
+			ss->errnr = WRITE_ERROR;
+		}
 	}
 	s->onr = 0;
 }
