@@ -27,10 +27,10 @@ This optimizes processing on such BATs (DDBENCH).
 	(P1)->batInserted = BUNlast((P1)); 				\
 	(P1)->batElmshift = BATelmshift((P1)); 				\
 	DELTAprintf(							\
-	 	"#DELTAinit %s free %d ins %d del %d hole %d base %d\n",\
-		(P1)->batId, (int)(P1)->batBuns->free, 			\
-		(int)(P1)->batInserted, (int)(P1)->batDeleted, 		\
-		(int)(P1)->batHole, (int)(P1)->batBuns->base );   	\
+	 	"#DELTAinit %s free %ld ins %ld del %ld hole %ld base %ld\n",\
+		(P1)->batId, (long)(P1)->batBuns->free, 		\
+		(long)(P1)->batInserted, (long)(P1)->batDeleted, 	\
+		(long)(P1)->batHole, (long)(P1)->batBuns->base );   	\
 	memset((P1)->batHole, 0, BUNsize(P1));				}
 @
 @}
@@ -46,22 +46,22 @@ and convert them back into pointers upon reload.
 	(P1)->batHole = (BUN) BUNindex((P1), (P1)->batHole); 		\
 }									\
 	DELTAprintf(							\
-	 	"#DELTAsave %s free %d ins %d del %d hole %d base %d\n",\
-		(P1)->batId, (int)(P1)->batBuns->free, 			\
-		(int)(P1)->batInserted, (int)(P1)->batDeleted, 		\
-		(int)(P1)->batHole, (int)(P1)->batBuns->base );   	
+	 	"#DELTAsave %s free %ld ins %ld del %ld hole %ld base %ld\n",\
+		(P1)->batId, (long)(P1)->batBuns->free, 		\
+		(long)(P1)->batInserted, (long)(P1)->batDeleted, 	\
+		(long)(P1)->batHole, (long)(P1)->batBuns->base );   	
 	
 
 #define DELTAload(P1)	{						\
 	DELTAprintf(							\
-		"#DELTAload %s free %d ins %d del %d hole %d base %d\n",\
-		(P1)->batId, (int)(P1)->batBuns->free, 			\
-		(int)(P1)->batInserted, (int)(P1)->batDeleted, 		\
-		(int)(P1)->batHole, (int)(P1)->batBuns->base );   	\
+		"#DELTAload %s free %ld ins %ld del %ld hole %ld base %ld\n",\
+		(P1)->batId, (long)(P1)->batBuns->free, 		\
+		(long)(P1)->batInserted, (long)(P1)->batDeleted, 	\
+		(long)(P1)->batHole, (long)(P1)->batBuns->base );   	\
 	if ((P1)->batBuns->base){					\
-	  (P1)->batInserted = BUNptr((P1), (int) (P1)->batInserted); 	\
-	  (P1)->batDeleted = BUNptr((P1), (int) (P1)->batDeleted); 	\
-	  (P1)->batHole = BUNptr((P1), (int) (P1)->batHole); 		\
+	  (P1)->batInserted = BUNptr((P1), (int) (long) (P1)->batInserted);\
+	  (P1)->batDeleted = BUNptr((P1), (int) (long) (P1)->batDeleted);\
+	  (P1)->batHole = BUNptr((P1), (int) (long) (P1)->batHole); 	\
 	}								\
 }
 @	
@@ -121,9 +121,9 @@ BAT *BATprecommit (BAT *b) {
 batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).
 @c
 BAT *BATcommit(BAT *b) {
-	DELTAprintf("#BATcommit1 %s free %d ins %d del %d hole %d base %d\n", 
-	  (b)->batId, (int)(b)->batBuns->free, (int)(b)->batInserted, 
-	  (int)(b)->batDeleted, (int)(b)->batHole, (int)(b)->batBuns->base );
+	DELTAprintf("#BATcommit1 %s free %ld ins %ld del %ld hole %ld base %ld\n", 
+	  (b)->batId, (long)(b)->batBuns->free, (long)(b)->batInserted, 
+	  (long)(b)->batDeleted, (long)(b)->batHole, (long)(b)->batBuns->base );
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batHole  && BBP_cache(b->batCacheid)) {
 		void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
@@ -156,9 +156,9 @@ BAT *BATcommit(BAT *b) {
 	} else {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
-	DELTAprintf("#BATcommit2 %s free %d ins %d del %d hole %d base %d\n", 
-	  (b)->batId, (int)(b)->batBuns->free, (int)(b)->batInserted, 
-	  (int)(b)->batDeleted, (int)(b)->batHole, (int)(b)->batBuns->base );
+	DELTAprintf("#BATcommit2 %s free %ld ins %ld del %ld hole %ld base %ld\n", 
+	  (b)->batId, (long)(b)->batBuns->free, (long)(b)->batInserted, 
+	  (long)(b)->batDeleted, (long)(b)->batHole, (long)(b)->batBuns->base );
 	return b; 
 }
 @-
