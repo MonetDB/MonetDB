@@ -25,11 +25,19 @@
 
 $(prefix)/doc/SQLsessionDemo.html:	$(top_srcdir)/SQLsessionDemo.html
 	-@mkdir -p $(prefix)/doc
-	cp $(top_srcdir)/SQLsessionDemo.html $(prefix)/doc
+	cp $< $@
 
-$(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures.tex
+$(prefix)/doc/SQLfeatures/content.shtml:	$(top_srcdir)/SQLfeatures/content.shtml
 	-@mkdir -p $(prefix)/doc/SQLfeatures
-	cp $(top_srcdir)/SQLfeatures.tex $(prefix)/doc/SQLfeatures
+	cp $< $@
+
+$(prefix)/doc/SQLfeatures/title.txt:	$(top_srcdir)/SQLfeatures/title.txt
+	-@mkdir -p $(prefix)/doc/SQLfeatures
+	cp $< $@
+
+$(prefix)/doc/SQLfeatures/SQLfeatures.tex:	$(top_srcdir)/SQLfeatures/SQLfeatures.tex
+	-@mkdir -p $(prefix)/doc/SQLfeatures
+	cp $< $@
 
 $(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures.tex
 	(cd $(prefix)/doc/SQLfeatures; latex SQLfeatures.tex; latex SQLfeatures.tex)
