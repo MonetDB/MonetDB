@@ -1,3 +1,26 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2002 CWI.
+@' All Rights Reserved.
+@'
+@' Contributor(s):
+@'              Martin Kersten <Martin.Kersten@cwi.nl>
+@'              Niels Nes <Niels.Nes@cwi.nl>
+@'              Stefan Manegold <Stefan.Manegold@cwi.nl>
+@'              Peter Boncz <Peter.Boncz@cwi.nl>
+
 @a M. Kersten and Peter Boncz and Niels Nes
 @v 4
 @f Mclient
@@ -66,28 +89,6 @@ $MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
 #include "Mapi.h"
 #endif /* _Mclient_H_*/
 @c
-/*
- * The contents of this file are subject to the Monet Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at 
- * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
- * 
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- * 
- * The Original Code is the Monet Database System.
- * 
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
- * All Rights Reserved.
- * 
- * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
- *		   Peter Boncz <Peter.Boncz@cwi.nl>
- *		   Niels Nes <Niels.Nes@cwi.nl>
- */
 #include "Mclient.h"
 
 #include <monet_options.h>
@@ -269,15 +270,25 @@ int doRequest(Mapi mid, char *buf ){
 	if (mapi_query(mid, buf) != MOK){
 		return 'q';
 	}
-/*
+/* simple client loop */
 	while(rtrn=mapi_fetch_line(mid)){
 		fprintf(toConsole, "%s\n",rtrn);
 	}
-*/
+/*	This one tests several facilities of Mapi 
 	while( (i= mapi_fetch_row(mid)) ){
 		int d= mapi_num_fields(mid);
+		int j;
 		fprintf(toConsole,"next row %d %d fields?\n",i,d);
+		fprintf(toConsole,"[ ");
+		for(j=0;j<d;j++){
+			char *s= mapi_fetch_field(mid,j);
+			fprintf(toConsole,"length %d\n",strlen(s));
+			fprintf(toConsole,"%s", s);
+			if(j<d-1) fprintf(toConsole,",\t");
+		}
+		fprintf(toConsole," ]");
 	}
+*/
 	if (mapi_error(mid)) {
 		return 'q';
 	}
@@ -630,9 +641,9 @@ int main(int ac, char **av) {
         prompt = mo_find_option(set, setlen, "prompt");
         if (!prompt) {
 		if(strcmp(language,"mal")) {
-			char buf[256];
-			snprintf(buf,256,"%s> ",language);
-			prompt = _strdup(buf);
+			char pbuf[256];
+			snprintf(pbuf,256,"%s> ",language);
+			prompt = _strdup(pbuf);
 		} else 	prompt = _strdup(">");
 	}
 	if (host == NULL) strcpy(host,"localhost");
@@ -648,7 +659,8 @@ int main(int ac, char **av) {
 		passwd = simple_prompt("Password: ", BUFSIZ, 0 );
 
 	toConsole = stdout;
-	mid = mapi_connect(host,port, user, passwd,0);
+	snprintf(buf,BUFSIZ,"%s:%d",host,port);
+	mid = mapi_connect(buf, user, passwd,0);
 	/* fprintf(toConsole,"#connect %s:%d %s:%d\n",
 			host,port,user,skey);
 	*/
@@ -658,9 +670,9 @@ int main(int ac, char **av) {
 		EXIT(2);
 	}
 	if( language && strcmp(language,"mal")){
-		char buf[BUFSIZ];
-		snprintf(buf,BUFSIZ,"%s();",language);
-		doRequest(mid, buf);				\
+		char lang[BUFSIZ];
+		snprintf(lang,BUFSIZ,"%s();",language);
+		doRequest(mid, lang);				\
 	}
  
 	if (prelude) {
