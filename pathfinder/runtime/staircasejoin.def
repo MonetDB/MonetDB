@@ -1,0 +1,25 @@
+
+@:scjbr_cmd(_void_incl,Result includes nodes exactly on the boundary.)@
+@:scjbr_cmd(_void_excl,Result excludes nodes exactly on the boundary.)@
+
+@= scjbr_cmd
+.COMMAND staircasejoin_br@1(BAT[oid,oid] doc,
+                         BAT[oid,oid] context,
+                         int height,
+                         int upperbound) : BAT[oid,void] = PFstaircasejoin_br@1;
+"PARAMETERS
+  doc: document BAT (preorder rank, postorder rank)
+  context: context node sequence (preorder rank, postorder rank)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+doc represents a collection of (x,y) coordinates of nodes where
+each x- and each y-coordinate occurs only once. context represents
+a sub-collection of 'boundary nodes'. For each boundary node,
+staircasejoin uselects all nodes from doc (x-coordinates), which
+have an x-coordinate between the boundary node and the next one (or
+right edge of the xy-plane in case there is no next), and an y-coordinate
+smaller than the y-coordinate of the boundary node. context effectively
+represents a boundary in the xy-plane of doc for which staircasejoin
+uselects the nodes in the bottom-right part. @2"
+@m

@@ -1,0 +1,23 @@
+################################################################
+# pair.def : Monet module definitions for pair ADT
+#
+
+.ATOM pair[8];
+	.TOSTR   = PAIRto_str;
+	.NULL    = PAIRnull;
+.END;
+
+.COMMAND newpair(BAT[any,any], BAT[any,any]) : pair = PAIRnew;
+"Create a new pair of two bats."
+
+.COMMAND clrpair(pair) : void = PAIRclr;
+"Clear a pair. Necessary for BAT reference counting. Before a pair
+variable is going out of scopy (or you do p:=nil), this function has to
+be called. It sets fst and snd to nil."
+
+.COMMAND fst(pair) : BAT[any,any] = PAIRfst;
+"Return the first bat of a pair."
+
+.COMMAND snd(pair) : BAT[any,any] = PAIRsnd;
+"Return the second bat of a pair"
+

@@ -1,0 +1,48 @@
+.COMMAND child_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFchild_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+child step evaluation from the given context."
+
+.COMMAND parent_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFparent_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+parent step evaluation from the given context."
+
+.COMMAND followingsibling_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFfollowingsibling_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+following-sibling evaluation from the given context."
+
+.COMMAND precedingsibling_lev(BAT[void,chr] doc_level,
+                   BAT[oid,any] context,
+		   int estimation,
+                   int height) : BAT[oid,void] = PFprecedingsibling_lev;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+preceding-sibling evaluation from the given context."
+

@@ -1,0 +1,158 @@
+.COMMAND estimate_desc(BAT[oid,any] context,
+                       BAT[void,oid] prepost,
+                       BAT[void,chr] level) : int = PFestimate_desc;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+DESCRIPTION
+result size estimation for descendant steps"
+
+.COMMAND estimate_par(BAT[oid,any] context,
+                      BAT[void,int] group_histogram,
+		      BAT[void,int] parents_of_group,
+		      int doc_size) : int = PFestimate_par;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  group_histogram: number of nodes within each group
+  parents_of_group: number of parents belonging to nodes in that group
+  doc_size: number of nodes with this tag name
+DESCRIPTION
+result size estimation for parent steps"
+
+.COMMAND estimate_par_tag(BAT[oid,any] context,
+                          int tag_size,
+		          int tag_par) : int = PFestimate_par_tag;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  tag_size: number of nodes with that tag name
+  tag_par: number of parents of nodes with that tag name
+DESCRIPTION
+result size estimation for parent steps"
+
+.COMMAND estimate_pfs(BAT[oid,any] context,
+                      BAT[void,int] group_histogram,
+		      BAT[void,int] parents_of_group,
+		      int doc_size) : int = PFestimate_pfs;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  group_histogram: number of nodes within each group
+  parents_of_group: number of parents belonging to nodes in that group
+  doc_size: number of nodes with this tag name
+DESCRIPTION
+result size estimation for preceding-/following-sibling steps"
+
+.COMMAND estimate_pfs_tag(BAT[oid,any] context,
+                          int tag_size,
+		          int tag_par,
+			  int tag_pfs,
+			  int tag_pfs1) : int = PFestimate_pfs_tag;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  tag_size: number of nodes with that tag name
+  tag_par: number of parents of nodes with that tag name
+  tag_pfs: number of preceding-/following-siblings of nodes with that tag name
+  tag_pfs1: sum of all preceding-/following-siblings of all nodes with that tag name
+DESCRIPTION
+result size estimation for preceding-/following-sibling steps"
+
+.COMMAND distr_anc(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      int maxdepth) : BAT[int,void] = PFdistr_anc;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+evaluates level distribution of the ancestor-pruned context set"
+
+.COMMAND sample_anc1(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      int maxdepth) : BAT[int,void] = PFsample_anc1;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+sampling based level distribution model of the ancestor-pruned context set"
+
+.COMMAND sample_anc2(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      int maxdepth) : BAT[int,void] = PFsample_anc2;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+sampling based level distribution model of the ancestor-pruned context set"
+
+.COMMAND histo_anc(BAT[oid,any] context,
+                      BAT[void,int] anc_histo,
+                      int doc_size,
+		      int maxdepth) : BAT[int,void] = PFhisto_anc;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  prepost: void doc_prepost table
+  doc_size: the size of the prepost table
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+histogram based level distribution model of the ancestor-pruned context set"
+
+.COMMAND estimate_anc1(BAT[oid,any] context,
+                      BAT[void,oid] prepost,
+                      BAT[void,chr] level,
+		      BAT[void,int] level_histogram,
+		      BAT[void,int] parents_of_level,
+		      int maxdepth) : int = PFestimate_anc1;
+"PARAMETERS
+  context: context node sequence (preorder rank, postorder rank)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  level_histogram: statistics about distribution of nodes on levels
+  parents_of_level: statistics about the number of parents of all nodes in that level
+  maxdepth: maxdepth of xml tree
+DESCRIPTION
+sampling based result size estimation for ancestor steps"
+
+.COMMAND estimate_anc2(BAT[oid,any] context,
+                      BAT[void,int] level_histogram,
+		      BAT[void,int] parents_of_level,
+		      BAT[void,int] pruned_level,
+		      int maxdepth,
+		      int doc_size) : int = PFestimate_anc2;
+"PARAMETERS
+  context: context node sequence (preorder rank, any)
+  level_histogram: statistics about distribution of nodes on levels
+  parents_of_level: statistics about the number of parents of all nodes in that level
+  pruned_level: statistics about the level-distribution ancestor-pruned nodes 
+  maxdepth: maxdepth of xml tree
+  doc_size: the size of the document
+DESCRIPTION
+histogram based size estimation for ancestor steps"
+
+.COMMAND estimate_anc_tag(BAT[oid,any] context,
+                          BAT[void,oid] prepost,
+                          BAT[void,chr] level,
+		          BAT[void,int] level_histogram,
+		          BAT[void,int] parents_of_level,
+			  int maxdepth,
+			  int tag_size,
+			  int tag_par) : int = PFestimate_anc_tag;
+"PARAMETERS
+  context: context node sequence (preorder rank, postorder rank)
+  prepost: void doc_prepost table
+  level: void doc_level table
+  level_histogram: statistics about distribution of nodes on levels
+  parents_of_level: statistics about the number of parents of all nodes in that level
+  maxdepth: maxdepth of xml tree
+  tag_size: number of nodes with this tag name
+  tag_par: number of parents of nodes with this tag name
+DESCRIPTION
+sampling based result size estimation for ancestor steps"
+
