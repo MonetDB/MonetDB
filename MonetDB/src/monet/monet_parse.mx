@@ -456,7 +456,7 @@ void ll_init(void) {
 
 	/* operator starter symbols (an operator cannot come after an operator) */
         ll_nocommand[(int)':'] = 1; /* a := ..  / b ? a : c */
-	ll_nocommand[(int)'>'] = 1; /* a < .. */
+	ll_nocommand[(int)'<'] = 1; /* a < .. */
 	ll_nocommand[(int)'>'] = 1; /* a > .. */
 	ll_nocommand[(int)'='] = 1; /* a = .. */
 	ll_nocommand[(int)'%'] = 1; /* a % b */
