@@ -411,8 +411,9 @@ STATforceUpdate(int *ret, str *nme)
 str
 STATdump(int *ret)
 {
+	BAT *piv[MAXPARAMS];
+
 	(void) ret;
-    BAT *piv[MAXPARAMS];
 	piv[0]= STAT_id_nme;
 		/* STAT_id_expire, */
 		/* STAT_id_stamp, */
