@@ -1155,7 +1155,7 @@ def GetBitsAndModsAndStatic(env) :
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
-    if env['VERSION'] > 49900:
+    if env['VERSION'] >= 49900:
         return missing
     if os.path.isfile(TST+".modules"):
         for m in fileinput.input(TST+".modules"):
@@ -1969,7 +1969,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER == "MAPI":
             Srvr = '%s "%s"' % (Srvr, env['MAPI_MIL'])
         if SERVER == "SQL":
-            Srvr = '%s "%s"' % (Srvr, env['SQL_SERVER_MIL'])
+            if env['VERSION'] >= 49900:
+                Srvr = "%s --dbinit='include sql; include sql_cache; listen(%s:lng);'" % (Srvr, env['SQLPORT'])
+            else:
+                Srvr = '%s "%s"' % (Srvr, env['SQL_SERVER_MIL'])
         Srvr = Srvr+PROLOGUE
         #-background"
         if os.name == "nt":
@@ -2379,6 +2382,9 @@ def main(argv) :
     if THISFILE == "Mprofile.py":
         vars = vars + ['CMDLST']
 
+    env = {}
+    env['VERSION'] = MonetDBVersion()
+
     # most intuitive (?) default settings
     dft['MONETDB_SOURCE']   = "GetMonetConfig('--source')"
     dft['MONETDB_BUILD']    = "GetMonetConfig('--build')"
@@ -2395,14 +2401,15 @@ def main(argv) :
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(40000,49999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
-        dft['SQLCLIENT']      = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
+        if env['VERSION'] >= 49900:
+            dft['SQLCLIENT']  = "'MapiClient -5 --language=sql'" # --port='+env['SQLPORT']"
+        else:
+            dft['SQLCLIENT']  = "'MapiClient --language=sql'" # --port='+env['SQLPORT']"
         dft['MAPICLIENT']     = "'MapiClient'" # --port='+env['MAPIPORT']"
         dft['X100CLIENT']     = "'x100run_mapi'" # --port='+env['MAPIPORT']"
         dft['XQUERYCLIENT']   = "'pf -M'" # --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
-    env = {}
-    env['VERSION'] = MonetDBVersion()
 
     #par = {}
     # get current environment
@@ -2761,7 +2768,7 @@ def main(argv) :
         exe['SQL_client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
         exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s' % env['XQUERYCLIENT']
-        if not exe['Mtimeout'][0]:
+        if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
         SetExecEnv(exe,1)
