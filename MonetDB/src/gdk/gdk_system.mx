@@ -244,7 +244,7 @@ typedef struct {
 	pthread_cond_t cond;
 } pthread_sema_t;
 #else
-#define pthread_sema_t sem_t;
+#define pthread_sema_t sem_t
 #endif
 
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
