@@ -340,12 +340,15 @@ AC_TRY_COMPILE( [#include <time.h> ],
 [ AC_DEFINE(HAVE_CTIME_R3) ], [ ctime_r3=no ])
 AC_MSG_RESULT($ctime_r3)
 
+SHARED_LIBS=''
 [
 if [ "$enable_static" = "yes" ]; then
 	CFLAGS="$CFLAGS -DSTATIC"
+	SHARED_LIBS='$(SHARED_LIBS)'
 fi
 ]
 
+AC_SUBST(SHARED_LIBS)
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)

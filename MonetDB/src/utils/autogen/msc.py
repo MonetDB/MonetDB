@@ -125,21 +125,24 @@ def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
     deps = "lib"+sep+name+".dll: "
     if (type == "BIN"):
     	add = name+"_LIBS =" 
-    else:
+    elif (type == "LIB"):
     	add = "lib"+sep+name+"_LIBS =" 
+    else:
+    	add = name + " =" 
     for l in list:
-      if (l[0] == "-" or l[0] == "$"):
+      if (l[0] in  ("-", "$")):
       	add = add + " " + l 
-      else:
+      elif (l[0] != "@"  and  l[-1] != "@"):
       	add = add + " " + msc_translate_dir(l,msc) + ".lib"
 	deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
     for l in dlibs:
-      if (l[0] == "-" or l[0] == "$"):
+      if (l[0] in  ("-", "$")):
       	add = add + " " + l 
-      else:
+      elif (l[0] != "@"  and  l[-1] != "@"):
       	add = add + " " + msc_translate_dir(l,msc) + ".lib"
 	deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
-    fd.write( deps + "\n")
+    if (type != "MOD"):
+      fd.write( deps + "\n")
     return add + "\n"
   
 def msc_translate_ext( f ):
@@ -250,7 +253,13 @@ def msc_binary(fd, var, binmap, msc ):
         msc['INSTALL'].append((i,i,'','$(bindir)'))
     else: # link
       src = binmap[0][4:]
-      msc['INSTALL'].append((name,src,'.exe','$(bindir)'))
+      n_nme,n_ext = split_filename(name)
+      s_nme,s_ext = split_filename(src)
+      if n_ext  and  s_ext  and  n_ext == s_ext:
+        ext = ''
+      else:
+        ext = '.exe'
+      msc['INSTALL'].append((name,src,ext,'$(bindir)'))
     return
   
   HDRS = []
@@ -366,6 +375,9 @@ def msc_bins(fd, var, binsmap, msc ):
 
   msc_deps(fd,binsmap['DEPS'],".obj",msc);
 
+def msc_mods_to_libs(fd, var, modmap, msc ):
+  msc_assignment(fd,var,modmap,msc)
+  fd.write(msc_additional_libs(fd, var[:-4]+"LIBS", "", "MOD", modmap, [], msc))
 
 def msc_library(fd, var, libmap, msc ):
 
@@ -525,6 +537,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'MTSAFE' : msc_mtsafe,
 		 'CFLAGS' : msc_cflags,
 		 'CXXFLAGS' : msc_cflags,
+		 'SHARED_MODS' : msc_mods_to_libs,
 		}
 
 def output(tree, cwd, topdir):

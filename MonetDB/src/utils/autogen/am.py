@@ -110,10 +110,12 @@ def am_find_ins(am,map):
 def am_additional_libs(name,sep,type,list, am):
     if (type == "BIN"):
     	add = name+"_LDADD =" 
-    else:
+    elif (type == "LIB"):
     	add = "lib"+sep+name+"_la_LIBADD =" 
+    else:
+    	add = name + " =" 
     for l in list:
-      if (l[0] == "-" or l[0] == "$"):
+      if (l[0] in  ("-", "$", "@")):
       	add = add + " " + l 
       else:
       	add = add + " " + am_translate_dir(l,am) + ".la"
@@ -300,6 +302,10 @@ def am_bins(fd, var, binsmap, am ):
   am_find_ins(am, binsmap)
   am_deps(fd,binsmap['DEPS'],".o",am);
 
+def am_mods_to_libs(fd, var, modmap, am ):
+  am_assignment(fd,var,modmap,am)
+  fd.write(am_additional_libs(var[:-4]+"LIBS", "", "MOD", modmap, am))
+
 def am_library(fd, var, libmap, am ):
 
   SCRIPTS = []
@@ -449,6 +455,7 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		 'SCRIPTS' : am_scripts,
 		 'CFLAGS' : am_cflags,
 		 'CXXFLAGS' : am_cflags,
+		 'SHARED_MODS' : am_mods_to_libs,
 		}
 
 
