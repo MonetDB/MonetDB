@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-900206` in directory 'src/test/bugs` itself:
+stdout of test 'insert_update_arith-bug-sf-900206` in directory 'src/test/bugs` itself:
 
 
 # 16:15:04 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 16:15:05 >  
-# 16:15:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < bug-sf-900206.sql
+# 16:15:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=50816  < insert_update_arith-bug-sf-900206.sql
 # 16:15:05 >  
 
 # 6 # querytype

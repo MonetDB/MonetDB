@@ -1,6 +1,6 @@
 bug-00001
 bug-sf-854312
-bug-sf-900198
+create_insert_select-bug-sf-900198
 insert_update_arith-bug-sf-900206
 insert_delete-bug-sf-904025
 union_all_where_1=1-bug-sf-936386

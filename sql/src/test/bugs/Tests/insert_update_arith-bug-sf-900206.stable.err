@@ -1,4 +1,4 @@
-stderr of test 'bug-sf-900206` in directory 'src/test/bugs` itself:
+stderr of test 'insert_update_arith-bug-sf-900206` in directory 'src/test/bugs` itself:
 
 
 # 12:08:33 >  
@@ -54,7 +54,7 @@ stderr of test 'bug-sf-900206` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 12:08:34 >  
-# 12:08:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=51881  < bug-sf-900206.sql
+# 12:08:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=51881  < insert_update_arith-bug-sf-900206.sql
 # 12:08:34 >  
 
 
