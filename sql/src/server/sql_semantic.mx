@@ -734,10 +734,10 @@ static int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 			ls = fix_scale( sql, r, ls, 0, 0);
 			rs = fix_scale( sql, i, rs, 0, 0);
 		}
-		*L = ls;
-		*R = rs;
 		if (!ls || !rs)
 			return -1;
+		*L = ls;
+		*R = rs;
 		return 0;
 	}
 	return -1;
