@@ -483,6 +483,93 @@ event_t K7_event[K7_NUMEVENTS + 1] = {
 	{29, 29, (str) &chr_nil, (str) &chr_nil, 0x76, 0}
 };
 
+  /* K8 (x86_64) Opteron */
+
+#define K8_NUMEVENTS 79
+event_t K8_event[K8_NUMEVENTS + 1] = {
+	{ 0,  0, (str) &chr_nil, "K7_DATA_CACHE_ACCESSES", 0x40, 0},
+	{ 1,  1, (str) &chr_nil, "K7_DATA_CACHE_MISSES", 0x41, 0},
+	{ 2,  2, "L1_data_misses", "K7_DATA_CACHE_REFILLS_FROM_L2", 0x42, 0},
+	{ 3,  3, "L2_data_misses", "K7_DATA_CACHE_REFILLS_FROM_SYSTEM", 0x43, 0},
+	{ 4,  4, (str) &chr_nil, "K7_DATA_CACHE_WRITEBACKS", 0x44, 0},
+	{ 5,  5, "TLB_misses",   "K7_L1_DTLB_MISSES_AND_L2_DTLB_HITS", 0x45, 0},
+	{ 6,  6, (str) &chr_nil, "K7_L1_AND_L2_DTLB_MISSES", 0x46, 0},
+	{ 7,  7, (str) &chr_nil, "K7_MISALIGNED_DATA_REFERENCES", 0x47, 0},
+	{ 8,  8, (str) &chr_nil, "K7_INSTRUCTION_CACHE_FETCHES", 0x80, 0},
+	{ 9,  9, (str) &chr_nil, "K7_INSTRUCTION_CACHE_MISSES", 0x81, 0},
+	{10, 10, "iTLB_misses", "K7_L1_ITLB_MISSES_AND_L2_ITLB_HITS", 0x84, 0},
+	{11, 11, (str) &chr_nil, "K7_L1_AND_L2_ITLB_MISSES", 0x85, 0},
+	{12, 12, (str) &chr_nil, "K7_RETIRED_INSTRUCTIONS", 0xC0, 0},
+	{13, 13, (str) &chr_nil, "K7_RETIRED_OPS", 0xC1, 0},
+	{14, 14, "branches", "K7_RETIRED_BRANCHES", 0xC2, 0},
+	{15, 15, "branch_misses", "K7_RETIRED_BRANCHES_MISPREDICTED", 0xC3, 0},
+	{16, 16, "Tbranches", "K7_RETIRED_TAKEN_BRANCHES", 0xC4, 0},
+	{17, 17, "Tbranch_misses", "K7_RETIRED_TAKEN_BRANCHES_MISPREDICTED", 0xC5, 0},
+	{18, 18, (str) &chr_nil, "K7_RETIRED_FAR_CONTROL_TRANSFERS", 0xC6, 0},
+	{19, 19, (str) &chr_nil, "K7_RETIRED_RESYNC_BRANCHES", 0xC7, 0},
+	{20, 20, (str) &chr_nil, "K7_INTERRUPTS_MASKED_CYCLES", 0xCD, 0},
+	{21, 21, (str) &chr_nil, "K7_INTERRUPTS_MASKED_WHILE_PENDING_CYCLES", 0xCE, 0},
+	{22, 22, (str) &chr_nil, "K7_NUMBER_OF_TAKEN_HARDWARE_INTERRUPTS", 0xCF, 0},
+	{23, 23, (str) &chr_nil, "K8_DISPATCHED_FPU_OPS", 0x00, 0},
+	{24, 24, (str) &chr_nil, "K8_NO_FPU_OPS", 0x01, 0},
+	{25, 25, (str) &chr_nil, "K8_FAST_FPU_OPS", 0x02, 0},
+	{26, 26, (str) &chr_nil, "K8_SEG_REG_LOAD", 0x20, 0},
+	{27, 27, (str) &chr_nil, "K8_SELF_MODIFY_RESYNC", 0x21, 0},
+	{28, 28, (str) &chr_nil, "K8_LS_RESYNC_BY_SNOOP", 0x22, 0},
+	{29, 29, (str) &chr_nil, "K8_LS_BUFFER_FULL", 0x23, 0},
+	{30, 30, (str) &chr_nil, "K8_OP_LATE_CANCEL", 0x25, 0},
+	{31, 31, (str) &chr_nil, "K8_CFLUSH_RETIRED", 0x26, 0},
+	{32, 32, (str) &chr_nil, "K8_CPUID_RETIRED", 0x27, 0},
+	{33, 33, (str) &chr_nil, "K8_ACCESS_CANCEL_LATE", 0x48, 0},
+	{34, 34, (str) &chr_nil, "K8_ACCESS_CANCEL_EARLY", 0x49, 0},
+	{35, 35, (str) &chr_nil, "K8_ECC_BIT_ERR", 0x4A, 0},
+	{36, 36, (str) &chr_nil, "K8_DISPATCHED_PRE_INSTRS", 0x4B, 0},
+	{37, 37, "cycles", "K8_CPU_CLK_UNHALTED", 0x76, 0},
+	{38, 38, (str) &chr_nil, "K8_BU_INT_L2_REQ", 0x7D, 0},
+	{39, 39, (str) &chr_nil, "K8_BU_FILL_REQ", 0x7E, 0},
+	{40, 40, (str) &chr_nil, "K8_BU_FILL_L2", 0x7F, 0},
+	{41, 41, "L1_inst_misses", "K8_IC_REFILL_FROM_L2", 0x82, 0},
+	{42, 42, "L2_inst_misses", "K8_IC_REFILL_FROM_SYS", 0x83, 0},
+	{43, 43, (str) &chr_nil, "K8_IC_RESYNC_BY_SNOOP", 0x86, 0},
+	{44, 44, (str) &chr_nil, "K8_IC_FETCH_STALL", 0x87, 0},
+	{45, 45, (str) &chr_nil, "K8_IC_STACK_HIT", 0x88, 0},
+	{46, 46, (str) &chr_nil, "K8_IC_STACK_OVERFLOW", 0x89, 0},
+	{47, 47, (str) &chr_nil, "K8_RETIRED_NEAR_RETURNS", 0xC8, 0},
+	{48, 48, (str) &chr_nil, "K8_RETIRED_RETURNS_MISPREDICT", 0xC9, 0},
+	{49, 49, (str) &chr_nil, "K8_RETIRED_BRANCH_MISCOMPARE", 0xCA, 0},
+	{50, 50, (str) &chr_nil, "K8_RETIRED_FPU_INSTRS", 0xCB, 0},
+	{51, 51, (str) &chr_nil, "K8_RETIRED_FASTPATH_INSTRS", 0xCC, 0},
+	{52, 52, (str) &chr_nil, "K8_DECODER_EMPTY", 0xD0, 0},
+	{53, 53, (str) &chr_nil, "K8_DISPATCH_STALLS", 0xD1, 0},
+	{54, 54, (str) &chr_nil, "K8_DISPATCH_STALL_FROM_BRANCH_ABORT", 0xD2, 0},
+	{55, 55, (str) &chr_nil, "K8_DISPATCH_STALL_SERIALIZATION", 0xD3, 0},
+	{56, 56, (str) &chr_nil, "K8_DISPATCH_STALL_SEG_LOAD", 0xD4, 0},
+	{57, 57, (str) &chr_nil, "K8_DISPATCH_STALL_REORDER_BUFFER", 0xD5, 0},
+	{58, 58, (str) &chr_nil, "K8_DISPATCH_STALL_RESERVE_STATIONS", 0xD6, 0},
+	{59, 59, (str) &chr_nil, "K8_DISPATCH_STALL_FPU", 0xD7, 0},
+	{60, 60, (str) &chr_nil, "K8_DISPATCH_STALL_LS", 0xD8, 0},
+	{61, 61, (str) &chr_nil, "K8_DISPATCH_STALL_QUIET_WAIT", 0xD9, 0},
+	{62, 62, (str) &chr_nil, "K8_DISPATCH_STALL_PENDING", 0xDA, 0},
+	{63, 63, (str) &chr_nil, "K8_FPU_EXCEPTIONS", 0xDB, 0},
+	{64, 64, (str) &chr_nil, "K8_DR0_BREAKPOINTS", 0xDC, 0},
+	{65, 65, (str) &chr_nil, "K8_DR1_BREAKPOINTS", 0xDD, 0},
+	{66, 66, (str) &chr_nil, "K8_DR2_BREAKPOINTS", 0xDE, 0},
+	{67, 67, (str) &chr_nil, "K8_DR3_BREAKPOINTS", 0xDF, 0},
+	{68, 68, (str) &chr_nil, "K8_MEM_PAGE_ACCESS", 0xE0, 0},
+	{69, 69, (str) &chr_nil, "K8_MEM_PAGE_TBL_OVERFLOW", 0xE1, 0},
+	{70, 70, (str) &chr_nil, "K8_DRAM_SLOTS_MISSED", 0xE2, 0},
+	{71, 71, (str) &chr_nil, "K8_MEM_TURNAROUND", 0xE3, 0},
+	{72, 72, (str) &chr_nil, "K8_MEM_BYPASS_SAT", 0xE4, 0},
+	{73, 73, (str) &chr_nil, "K8_SIZED_COMMANDS", 0xEB, 0},
+	{74, 74, (str) &chr_nil, "K8_PROBE_RESULT", 0xEC, 0},
+	{75, 75, (str) &chr_nil, "K8_HYPERTRANSPORT_BUS0_WIDTH", 0xF6, 0},
+	{76, 76, (str) &chr_nil, "K8_HYPERTRANSPORT_BUS1_WIDTH", 0xF7, 0},
+	{77, 77, (str) &chr_nil, "K8_HYPERTRANSPORT_BUS2_WIDTH", 0xF8, 0},
+	{78, 78, (str) &chr_nil, "K8_LOCKED_OP", 0x24, 0},
+	{37, 37, (str) &chr_nil, (str) &chr_nil, 0x76, 0}
+};
+
+
 #elif ( defined(HW_Linux) && defined(HW_ia64) )
 
 #if defined(HAVE_LIBPFM)
@@ -2168,6 +2255,11 @@ init_counters(void)
 				NumEvents = NoEvent = K7_NUMEVENTS;
 				event = K7_event;
 				break;
+			case PERFCTR_X86_AMD_K8:
+			case PERFCTR_X86_AMD_K8C:
+				NumEvents = NoEvent = K8_NUMEVENTS;
+				event = K8_event;
+				break;
 			}
 		}
 		if (vperfctr_stop(Self) != 0) {
@@ -2322,6 +2414,8 @@ start_count(counter *retval, int *event0, int *event1)
 		case PERFCTR_X86_INTEL_PII:
 		case PERFCTR_X86_INTEL_PIII:
 		case PERFCTR_X86_AMD_K7:
+		case PERFCTR_X86_AMD_K8:
+		case PERFCTR_X86_AMD_K8C:
 			P6_K7_cesr0.cesr.evsel = event[e0].code;
 			P6_K7_cesr1.cesr.evsel = event[e1].code;
 			P6_K7_cesr0.cesr.umask = event[e0].mask;
