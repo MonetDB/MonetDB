@@ -115,9 +115,9 @@ command size(b:BAT[oid,bit]) : int = CMDsize
 	comment "grouped count of true values in the tail";
 command hasNil(b:BAT[any,any]) : bit = CMDhasNil
         comment "return if there is a nil value in the tail column";
-command card(b:BAT[any,any]) : int = CMDcard_unlimited
+command card(b:BAT[any,any]) : lng = CMDcard_unlimited
         comment "return the number of different values in a tail column";
-command card(b:BAT[any,any], maxelements:int) : int = CMDcard
+command card(b:BAT[any,any], maxelements:int) : lng = CMDcard
         comment "as card(b), but returns nil if card(b) > maxelements";
 @-
 OLD STUFF, recast in MAL proc 
@@ -2293,8 +2293,8 @@ if (BATtordered(b)&1) {
 }
 @c
 
-str CMDcard(size_t *result, int *bid, unsigned int* maxelements) {
-	unsigned int maxsize = *maxelements; 
+str CMDcard(size_t *result, int *bid, size_t* maxelements) {
+	size_t maxsize = *maxelements; 
 	BAT *b;
 	size_t cursize;
 
