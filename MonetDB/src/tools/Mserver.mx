@@ -430,6 +430,7 @@ Execute scripts.
 @- 
 thread management.
 @C
+	THRnew(MT_getpid(), "Interpreter");
 	scheduleClient(c);
 	monetInterpreter((void *) &status);
 @-

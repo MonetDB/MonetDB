@@ -1945,45 +1945,60 @@ THRsp(void)
 	return sp;
 }
 
+static Thread
+GDK_find_thread(MT_Id pid)
+{
+	Thread t, s;
+
+	for (t = GDKthreads, s = t + THREADS; t < s; t++) {
+		if (t->pid && t->pid == pid) {
+			return t;
+		}
+	}
+	return NULL;
+}
+
 Thread
 THRnew(MT_Id pid, str name)
 {
 	MT_Id tid = 0;
 	Thread t;
-	Thread s;
+	Thread s = GDK_find_thread(pid);
 
 	gdk_set_lock(GDKthreadLock, "THRnew");
-	for (s = GDKthreads, t = s + THREADS; s < t; s++) {
-		if (s->pid == pid) {
+	if (s == NULL) {
+		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
+			if (s->pid == pid) {
+				gdk_unset_lock(GDKthreadLock, "THRnew");
+				GDKwarning("THRnew:duplicate %d\n", pid);
+				return s;
+			}
+		}
+		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
+			if (s->pid == 0) {
+				break;
+			}
+		}
+		if (s == t) {
 			gdk_unset_lock(GDKthreadLock, "THRnew");
-			GDKwarning("THRnew:duplicate %d\n", pid);
-			return s;
+			GDKfatal("THRnew: too many threads\n");
 		}
-	}
-	for (s = GDKthreads, t = s + THREADS; s < t; s++) {
-		if (s->pid == 0) {
-			break;
-		}
-	}
-	if (s == t) {
-		gdk_unset_lock(GDKthreadLock, "THRnew");
-		GDKfatal("THRnew: too many threads\n");
-	}
+		tid = s->tid;
+		memset((char *) s, 0, sizeof(*s));
+		s->pid = pid;
+		s->tid = tid;
+		s->data[1] = THRdata[1];
+		s->data[0] = THRdata[0];
+		s->cleanup = NULL;
+		s->sp = THRsp();
 
-	tid = s->tid;
-	memset((char *) s, 0, sizeof(*s));
-	s->pid = pid;
-	s->tid = tid;
-	s->data[1] = THRdata[1];
-	s->data[0] = THRdata[0];
+		PARDEBUG THRprintf(GDKerr, "%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
+		PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads);
+
+		GDKnrofthreads++;
+		MT_alloc_register(&tid, 1, (char) ('0' + ((int) tid) - 1));
+	}
 	s->name = name;
-	s->cleanup = NULL;
-	s->sp = THRsp();
-	PARDEBUG THRprintf(GDKerr, "%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
-	PARDEBUG THRprintf(GDKerr, "nrofthreads %d\n", GDKnrofthreads);
-
-	GDKnrofthreads++;
-	MT_alloc_register(&tid, 1, (char) ('0' + ((int) tid) - 1));
 	gdk_unset_lock(GDKthreadLock, "THRnew");
 
 	return s;
@@ -2009,19 +2024,6 @@ THRdel(Thread t)
 The easiest way to terminate a thread is to identify its name
 A zero is returned when the thread could not be found
 @c
-static Thread
-GDK_find_thread(MT_Id pid)
-{
-	Thread t, s;
-
-	for (t = GDKthreads, s = t + THREADS; t < s; t++) {
-		if (t->pid && t->pid == pid) {
-			return t;
-		}
-	}
-	return NULL;
-}
-
 int
 THRexit(str nme)
 {
