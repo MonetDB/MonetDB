@@ -72,6 +72,7 @@ MONET_LIBS="/LIBPATH:$(MONET_PREFIX)\lib" "/LIBPATH:$(MONET_PREFIX)\lib\MonetDB"
 !ELSE
 MONET_LIBS="\"/LIBPATH:$(MONET_PREFIX)\lib\"" "\"/LIBPATH:$(MONET_PREFIX)\lib\MonetDB\""
 !ENDIF
+MONET4=yes
 
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -x h $<
