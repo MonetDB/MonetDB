@@ -26,6 +26,7 @@
 @:install_module(xtables)@
 @:install_module(ascii_io)@
 @:install_module(streams)@
+@:install_module(uchr)@
 
 /* non-SQL */
 #ifndef SQLmodules
@@ -43,7 +44,6 @@
 @:install_module(stats)@
 @:install_module(tcpip)@
 @:install_module(tpcd)@
-@:install_module(uchr)@
 @:install_module(url)@
 @:install_module(wisc)@
 @:install_module(logger)@

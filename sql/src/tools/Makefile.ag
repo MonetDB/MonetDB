@@ -28,6 +28,7 @@ smallTOC_SHARED_MODS =	\
 	-l_xtables	\
 	-l_ascii_io	\
 	-l_streams	\
+	-l_uchr	\
 	\
 	../server/lib_sqlserver
 
@@ -46,7 +47,6 @@ nonSQL_MODS = \
 	-l_stats	\
 	-l_tcpip	\
 	-l_tpcd	\
-	-l_uchr	\
 	-l_url	\
 	-l_wisc	\
 	-l_logger	\
