@@ -30,7 +30,7 @@ m_export void  TBL_exitclient(Client c);
             
 m_export void  TBL_newproc(Client c, str nme, 
 			 YYSTREE body, YYSTREE sig, YYSTREE ret);
-m_export void  TBL_delproc(Client client, str nme, oid pid, int lock);
+m_export void  TBL_delproc(Client client, str nme, int pid, int lock);
 
 
 /* old info functions */
@@ -2108,7 +2108,7 @@ void TBL_incproc(Client client) {
 deletes a MIL procedure. If pid is less than 0 all procs with the 
 given name are deleted.
 @c
-void TBL_delproc(Client client, str nme, oid pid, int lock) {
+void TBL_delproc(Client client, str nme, int pid, int lock) {
    	int xx, yy = TOK_PROC;
         BAT *sb, *tb, *bb, *cb = BATmirror(client->fcntbl);
 	BUN p,q,r;
@@ -2128,17 +2128,15 @@ void TBL_delproc(Client client, str nme, oid pid, int lock) {
 	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
 
 	    if (cnt == 1){
-	    	(void) BATprepareHash(TBL_fcn_imp);
-	    	HASHloop_oid(TBL_fcn_imp, TBL_fcn_imp->hhash, yy, &pid, r) {
-			YYSTREE t=*(YYSTREE*)BUNtloc(TBL_fcn_imp,r);
-			if (t) {
-		    		/* free disguised name */
-		    		GDKfree(t->yyval.val.pval); 
-		    		yyfree(t);
-			}
-			break;
-	    	}	
-	    	BUNdelete(cb, s);
+		YYSTREE *x = (YYSTREE*)
+			BUNtloc(TBL_fcn_imp,BUNfnd(TBL_fcn_imp,&pid));
+
+		if (x && *x) {
+	    		/* free disguised name */
+	    		GDKfree((*x)->yyval.val.pval); 
+	    		yyfree((*x));
+		}
+	    	BUNdelete(cb, BUNfnd(cb, &pid));
 	    	TBL_Deinstall_Function(pid);
 	    } else {
 		cnt--;

@@ -489,7 +489,9 @@ copy of the valid BUN sequence.
                 if(!VIEWparent(b) &&
 		   (ht <TYPE_str && tt<TYPE_str) &&
                   !(ht==TYPE_bat || ht== TYPE_ptr) &&
-                  !(tt==TYPE_bat || tt== TYPE_ptr) ){
+                  !(tt==TYPE_bat || tt== TYPE_ptr) &&
+		    b->dims.headloc == bn->dims.headloc && 
+		    BUNsize(b) == BUNsize(bn)  ){
                         memcpy( (char*)BUNfirst(bn),
                                 (char*)BUNfirst(b),
                                 BATcount(b)* BUNsize(b) );
