@@ -2680,7 +2680,7 @@ parse_header_line(MapiHdl hdl, char *line)
 
 	if (strcmp(line, "#-") == 0) {
 		/* start of new SQL result */
-		return new_result(hdl);
+		return NULL;
 	}
 
 	if ((result = hdl->lastresult) == NULL)
@@ -2953,7 +2953,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			copy = strdup(line);
 			result = parse_header_line(hdl, line);
 			hdl->active = result;
-			add_cache(result, copy);
+			if (result)
+				add_cache(result, copy);
 			break;
 		default:
 			if (result == NULL) {
