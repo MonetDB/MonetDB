@@ -3778,4 +3778,10 @@ mapi_is_connected(Mapi mid)
 	return mid->connected;
 }
 
+int
+mapi_is_connected(Mapi mid)
+{
+	return mid->connected;
+}
+
 @}
