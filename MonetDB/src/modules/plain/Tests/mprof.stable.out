@@ -1,4 +1,4 @@
-stdout of test 'mprof` in directory 'modules/plain` itself:
+stdout of test 'mprof` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other mprof
 #> Mtest:	Mtimeout -timeout 420 ./mprof mprof

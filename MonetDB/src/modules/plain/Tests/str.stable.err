@@ -1,4 +1,4 @@
-stderr of test 'str` in directory 'modules/plain` itself:
+stderr of test 'str` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other str
 #> Mtest:	Mtimeout -timeout 600 ./str str

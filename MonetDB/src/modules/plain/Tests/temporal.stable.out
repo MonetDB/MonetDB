@@ -1,4 +1,4 @@
-stdout of test 'temporal` in directory 'modules/plain` itself:
+stdout of test 'temporal` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other temporal
 #> Mtest:	Mtimeout -timeout 420 ./temporal temporal

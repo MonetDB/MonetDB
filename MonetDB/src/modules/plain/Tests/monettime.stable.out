@@ -1,4 +1,4 @@
-stdout of test 'monettime` in directory 'modules/plain` itself:
+stdout of test 'monettime` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other monettime 1086
 #> Mtest:	Mtimeout -timeout 1086 ./monettime monettime

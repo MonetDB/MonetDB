@@ -1,4 +1,4 @@
-stderr of test 'monettime` in directory 'modules/plain` itself:
+stderr of test 'monettime` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other monettime
 #> Mtest:	Mtimeout -timeout 1200 ./monettime monettime

@@ -1,4 +1,4 @@
-stdout of test 'url` in directory 'modules/plain` itself:
+stdout of test 'url` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other url
 #> Mtest:	Mtimeout -timeout 420 ./url url

@@ -1,4 +1,4 @@
-stdout of test 'xtables` in directory 'modules/plain` itself:
+stdout of test 'xtables` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other xtables 1086
 #> Mtest:	Mtimeout -timeout 1086 ./xtables xtables

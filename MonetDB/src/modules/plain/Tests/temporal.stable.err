@@ -1,4 +1,4 @@
-stderr of test 'temporal` in directory 'modules/plain` itself:
+stderr of test 'temporal` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other temporal
 #> Mtest:	Mtimeout -timeout 1200 ./temporal temporal

@@ -1,4 +1,4 @@
-stdout of test 'mmath` in directory 'modules/plain` itself:
+stdout of test 'mmath` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other mmath
 #> Mtest:	Mtimeout -timeout 420 ./mmath mmath

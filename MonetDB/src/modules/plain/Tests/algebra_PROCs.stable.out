@@ -1,4 +1,4 @@
-stdout of test 'algebra_PROCs` in directory 'modules/plain` itself:
+stdout of test 'algebra_PROCs` in directory 'src/modules/plain` itself:
 
 #> Mtest:	milS algebra_PROCs milS
 #> Mtest:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -d8 -db modules_plain -single algebra_PROCs.milS

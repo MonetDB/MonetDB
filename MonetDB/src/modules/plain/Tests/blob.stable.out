@@ -1,4 +1,4 @@
-stdout of test 'blob` in directory 'modules/plain` itself:
+stdout of test 'blob` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other blob
 #> Mtest:	Mtimeout -timeout 420 ./blob blob

@@ -1,4 +1,4 @@
-stdout of test 'date` in directory 'modules/plain` itself:
+stdout of test 'date` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other date
 #> Mtest:	Mtimeout -timeout 420 ./date date

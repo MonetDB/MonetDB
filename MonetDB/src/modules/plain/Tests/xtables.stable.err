@@ -1,4 +1,4 @@
-stderr of test 'xtables` in directory 'modules/plain` itself:
+stderr of test 'xtables` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other xtables
 #> Mtest:	./xtables xtables

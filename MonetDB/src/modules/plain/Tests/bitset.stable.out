@@ -1,4 +1,4 @@
-stdout of test 'bitset` in directory 'modules/plain` itself:
+stdout of test 'bitset` in directory 'src/modules/plain` itself:
 
 #> Mtest:	other bitset
 #> Mtest:	Mtimeout -timeout 420 ./bitset bitset

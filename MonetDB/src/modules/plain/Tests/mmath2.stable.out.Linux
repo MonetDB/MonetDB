@@ -1,4 +1,4 @@
-stdout of test 'mmath2` in directory 'modules/plain` itself:
+stdout of test 'mmath2` in directory 'src/modules/plain` itself:
 
 #> Mtest:	milS mmath2 milS
 #> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db modules_plain -single mmath2.milS
