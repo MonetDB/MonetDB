@@ -112,6 +112,8 @@ void* malloc(size_t size) {
 @C
 #ifdef NATIVE_WIN32
 #include <eh.h>
+extern int optind;
+
 void Mserver_abort() {
         fprintf(stderr,"\n! Mserver_abort() was called by terminate(). !\n");
         fflush(stderr);
@@ -227,8 +229,12 @@ void monet_init( opt *set, int setlen)
 	if ((p=GDKgetenv("gdk_mmap")) )
 		GDKmem_bigsize() = strtol(p,NULL,10);
 
+	/* you don;t need the commandline arguments anymore */
+	/* mo_free_options(set,setlen); GDK library can not deal with this*/
+	/* keep them around until goodbye */
 	monet_hello(set,setlen);
-	if( mal_init(GDKstrdup(modpath),pf)) return;
+
+	if( mal_init(GDKstrdup(modpath),pf, set, setlen)) return;
 	if( pf!=prefix) GDKfree(pf);
 
 	if( GDKgetenv("mal_listing"))
@@ -238,6 +244,7 @@ void monet_init( opt *set, int setlen)
 		GDKfree(monet_script[i]);
 		monet_script[i]=0;
         }
+	GDKfree(monet_script);
         initClientPrg(mal_clients,"main");
         serveClient(mal_clients);
 }
@@ -390,14 +397,7 @@ A grain size of 128 bytes is used to keep overhead low.
 #endif
 	monet_init(set, setlen);
 
-	mo_free_options(set,setlen);
-@-
-At the end of a multi-threaded session we should wait
-for all processes to terminate properly.
-@C
-@-
-Peter: for the time being avoid difficult things like dropping everything 
-@C
+	assert(0);	/* should not come here */
 	MT_global_exit(0);  
 	return 0; 
 }
