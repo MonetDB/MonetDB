@@ -26,8 +26,8 @@
 #include <string.h>
 #endif
 
-static int
-get_key_attr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
+int
+ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 {
 	SQLCHAR *p;
 	size_t len;
@@ -123,7 +123,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		return SQL_ERROR;
 	}
 
-	while (get_key_attr(&szConnStrIn, &nConnStrIn, &key, &attr)) {
+	while (ODBCGetKeyAttr(&szConnStrIn, &nConnStrIn, &key, &attr)) {
 		if (strcasecmp(key, "dsn") == 0 && dsn == NULL)
 			dsn = attr;
 		else if (strcasecmp(key, "uid") == 0 && uid == NULL)
@@ -194,13 +194,44 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 				cbConnStrOutMax = -1;
 			}
 		}
+		if (host) {
+			if (cbConnStrOutMax > 0) {
+				n = snprintf((char *) szConnStrOut, 
+					     cbConnStrOutMax,
+					     "HOST=%s;", host);
+				if (n < 0)
+					n = cbConnStrOutMax + 1;
+				cbConnStrOutMax -= n;
+				szConnStrOut += n;
+			} else {
+				cbConnStrOutMax = -1;
+			}
+		}
+		if (port) {
+			char portbuf[10];
+
+			if (cbConnStrOutMax > 0) {
+				n = snprintf((char *) szConnStrOut, 
+					     cbConnStrOutMax,
+					     "PORT=%d;", port);
+				if (n < 0)
+					n = cbConnStrOutMax + 1;
+				cbConnStrOutMax -= n;
+				szConnStrOut += n;
+			} else {
+				cbConnStrOutMax = -1;
+			}
+			port = snprintf(portbuf, sizeof(portbuf), "%d", port);
+		}
 
 		/* calculate how much space was needed */
 		if (pnConnStrOut)
 			*pnConnStrOut = strlen(dsn ? dsn : "DEFAULT") 
 				+ 5 +
 				(uid ? strlen(uid) + 5 : 0) +
-				(pwd ? strlen(pwd) + 5 : 0);
+				(pwd ? strlen(pwd) + 5 : 0) +
+				(host ? strlen(host) + 6 : 0) +
+				(port ? port + 6 : 0);
 
 		/* if it didn't fit, say so */
 		if (cbConnStrOutMax < 0) {
@@ -215,6 +246,8 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		free(uid);
 	if (pwd)
 		free(pwd);
+	if (host)
+		free(host);
 	return rc;
 }
 

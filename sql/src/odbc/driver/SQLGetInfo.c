@@ -275,7 +275,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_DATA_SOURCE_NAME:
-		sValue = dbc->DSN ? dbc->DSN : "";
+		sValue = dbc->dsn ? dbc->dsn : "";
 		break;
 	case SQL_DATA_SOURCE_READ_ONLY:
 		sValue = "N";
@@ -460,7 +460,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_USER_NAME:
-		sValue = dbc->UID ? dbc->UID : "";
+		sValue = dbc->uid ? dbc->uid : "";
 		break;
 	case SQL_NUMERIC_FUNCTIONS:
 		nValue = SQL_FN_NUM_ABS | SQL_FN_NUM_ACOS | SQL_FN_NUM_ASIN |

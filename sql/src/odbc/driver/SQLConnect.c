@@ -134,15 +134,18 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		/* store internal information and clean up buffers */
 		dbc->Connected = 1;
 		dbc->mid = mid;
-		if (dbc->DSN != NULL)
-			free(dbc->DSN);
-		dbc->DSN = dsn;
-		if (dbc->UID != NULL)
-			free(dbc->UID);
-		dbc->UID = uid;
-		if (dbc->PWD != NULL)
-			free(dbc->PWD);
-		dbc->PWD = pwd;
+		if (dbc->dsn != NULL)
+			free(dbc->dsn);
+		dbc->dsn = dsn;
+		if (dbc->uid != NULL)
+			free(dbc->uid);
+		dbc->uid = uid;
+		if (dbc->pwd != NULL)
+			free(dbc->pwd);
+		dbc->pwd = pwd;
+		if (dbc->host)
+			free(dbc->host);
+		dbc->host = strdup(host);
 		if (dbc->DBNAME != NULL)
 			free(dbc->DBNAME);
 		dbc->DBNAME = schema;

@@ -39,9 +39,11 @@ typedef struct tODBCDRIVERDBC {
 	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 
 	/* connection information */
-	char *DSN;		/* Data source name or NULL */
-	char *UID;		/* User ID or NULL */
-	char *PWD;		/* Password for User ID or NULL */
+	char *dsn;		/* Data source name or NULL */
+	char *uid;		/* User ID or NULL */
+	char *pwd;		/* Password for User ID or NULL */
+	char *host;		/* Server host */
+	int port;		/* Server port */
 	char *DBNAME;		/* Database Name or NULL */
 	int Connected;		/* 1 is Yes, 0 is No */
 	SQLUINTEGER sql_attr_autocommit;
@@ -123,6 +125,8 @@ ODBCError *getDbcError(ODBCDbc *dbc);
 void destroyODBCDbc(ODBCDbc *dbc);
 
 SQLRETURN ODBCFreeDbc_(ODBCDbc *dbc);
+int ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn,
+		   char **key, char **attr);
 SQLRETURN SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
 SQLRETURN SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
 SQLRETURN SQLConnect_(ODBCDbc *dbc,

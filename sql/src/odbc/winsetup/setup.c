@@ -56,7 +56,7 @@ BOOL
 ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
 	     WORD msgmax, WORD *msgout)
 {
-	ODBCLOG("ConfigDriver\n");
+	ODBCLOG("ConfigDriver %d %s %s\n", request, driver ? driver : "(null)", args ? args : "(null)");
 
 	if (msgout)
 		*msgout = 0;
@@ -84,7 +84,7 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
 BOOL
 ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 {
-	ODBCLOG("ConfigDSN\n");
+	ODBCLOG("ConfigDSN %d %s %s\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)");
 
 	if (strcmp(driver, DriverName) != 0) {
 		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
@@ -110,7 +110,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 }
 
 BOOL WINAPI
-DllMain(HINSTANCE hinstDLL, DWORD reason,LPVOID reserved)
+DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
 {
 	ODBCLOG("DllMain %d\n", reason);
 

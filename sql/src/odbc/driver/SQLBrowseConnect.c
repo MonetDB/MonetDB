@@ -27,6 +27,11 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 		  SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
 		  SQLSMALLINT *pcbConnStrOut)
 {
+	char *key, *attr;
+	char *dsn, *uid, *pwd, *host;
+	int port;
+	SQLSMALLINT len = 0;
+
 	(void) szConnStrOut;	/* Stefan: unused!? */
 	(void) cbConnStrOutMax;	/* Stefan: unused!? */
 	(void) pcbConnStrOut;	/* Stefan: unused!? */
@@ -44,16 +49,74 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 		return SQL_ERROR;
 	}
 
+	dsn = dbc->dsn;
+	uid = dbc->uid;
+	pwd = dbc->pwd;
+	host = dbc->host;
+	port = dbc->port;
 
-	/* TODO: finish implementation */
-	/* TODO: check szConnStrIn, parse it and retrieve the different settings */
-	/* TODO: next call (an internal version of) SQLConnect() */
+	while (ODBCGetKeyAttr(&szConnStrIn, &cbConnStrIn, &key, &attr)) {
+		if (strcasecmp(key, "dsn") == 0 && dsn == NULL)
+			dsn = attr;
+		else if (strcasecmp(key, "uid") == 0 && uid == NULL)
+			uid = attr;
+		else if (strcasecmp(key, "pwd") == 0 && pwd == NULL)
+			pwd = attr;
+		else if (strcasecmp(key, "host") == 0 && host == NULL)
+			host = attr;
+		else if (strcasecmp(key, "port") == 0 && port == 0) {
+			port = atoi(attr);
+			free(attr);
+		} else
+			free(attr);
+		free(key);
+	}
 
+	if (dsn != NULL && uid != NULL && pwd != NULL) {
+		return SQLConnect_(dbc, dsn, SQL_NTS, uid, SQL_NTS,
+				   pwd, SQL_NTS, host, port);
+	}
 
-	/* For now just report "not supported" and return error */
-	/* Driver does not support this function */
-	addDbcError(dbc, "IM001", NULL, 0);
-	return SQL_ERROR;
+	if (dsn == NULL) {
+		if (cbConnStrOutMax > 0)
+			strncpy(szConnStrOut, "DSN={MonetDB};", cbConnStrOutMax);
+		len += 14;
+		szConnStrOut += 14;
+		cbConnStrOutMax -= 14;
+	}
+	if (uid == NULL) {
+		if (cbConnStrOutMax > 0)
+			strncpy(szConnStrOut, "UID:Login ID=?;", cbConnStrOutMax);
+		len += 15;
+		szConnStrOut += 15;
+		cbConnStrOutMax -= 15;
+	}
+	if (pwd == NULL) {
+		if (cbConnStrOutMax > 0)
+			strncpy(szConnStrOut, "PWD:Password=?;", cbConnStrOutMax);
+		len += 15;
+		szConnStrOut += 15;
+		cbConnStrOutMax -= 15;
+	}
+	if (host == NULL) {
+		if (cbConnStrOutMax > 0)
+			strncpy(szConnStrOut, "*HOST:Server=?;", cbConnStrOutMax);
+		len += 15;
+		szConnStrOut += 15;
+		cbConnStrOutMax -= 15;
+	}
+	if (port == 0) {
+		if (cbConnStrOutMax > 0)
+			strncpy(szConnStrOut, "*PORT:Port=?;", cbConnStrOutMax);
+		len += 13;
+		szConnStrOut += 13;
+		cbConnStrOutMax -= 13;
+	}
+
+	if (pcbConnStrOut)
+		*pcbConnStrOut = len;
+
+	return SQL_NEED_DATA;
 }
 
 SQLRETURN SQL_API

@@ -51,9 +51,11 @@ newODBCDbc(ODBCEnv *env)
 	dbc->Error = NULL;
 	dbc->RetrievedErrors = 0;
 
-	dbc->DSN = NULL;
-	dbc->UID = NULL;
-	dbc->PWD = NULL;
+	dbc->dsn = NULL;
+	dbc->uid = NULL;
+	dbc->pwd = NULL;
+	dbc->host = NULL;
+	dbc->port = 0;
 	dbc->DBNAME = NULL;
 
 	dbc->Connected = 0;
@@ -181,18 +183,16 @@ destroyODBCDbc(ODBCDbc *dbc)
 
 	/* cleanup own managed data */
 	deleteODBCErrorList(&dbc->Error);
-	if (dbc->DSN) {
-		free(dbc->DSN);
-	}
-	if (dbc->UID) {
-		free(dbc->UID);
-	}
-	if (dbc->PWD) {
-		free(dbc->PWD);
-	}
-	if (dbc->DBNAME) {
+	if (dbc->dsn)
+		free(dbc->dsn);
+	if (dbc->uid)
+		free(dbc->uid);
+	if (dbc->pwd)
+		free(dbc->pwd);
+	if (dbc->host)
+		free(dbc->host);
+	if (dbc->DBNAME)
 		free(dbc->DBNAME);
-	}
 
 	free(dbc);
 }

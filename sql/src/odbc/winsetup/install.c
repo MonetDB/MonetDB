@@ -258,7 +258,7 @@ InstallMyDriver(const char *driverpath)
 
 	snprintf(driver, sizeof(driver),
 		 "%s;Driver=%s\\%s;Setup=%s\\%s;APILevel=1;"
-		 "ConnectFunctions=YYN;DriverODBCVer=%s;SQLLevel=3;",
+		 "ConnectFunctions=YYY;DriverODBCVer=%s;SQLLevel=3;",
 		 DriverName, inpath, DriverDLL, inpath, DriverDLLs,
 		 MONETDB_ODBC_VER);
 
