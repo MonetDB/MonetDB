@@ -191,6 +191,20 @@ int socket_open(str host, int port, str fcn){
 	} else if (connect(fd, addr, len)) {
 	    GDKsyserror("%s(%s:%d): could not connect with.\n", fcn,host,port); 
 	} else {
+#ifdef SO_KEEPALIVE
+	    { int opt = 0; 
+	    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char *) &opt,
+		       sizeof(opt)); }
+#endif
+#ifdef IPTOS_THROUGHPUT
+	    { int tos = IPTOS_THROUGHPUT; 
+	    setsockopt(fd, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)); }
+#endif
+#ifdef TCP_NODELAY
+	    { int nodelay = 1;
+	    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
+		       sizeof(nodelay)); }
+#endif
 	    return fd;
 	}
 	return 0;
@@ -205,7 +219,7 @@ int socket_read(int fd, int size, char* dst, char* msg){
 
 	/* some systems do not give you all at once */
 	for(m = size; m > 0; m -= n, dst += n){
-	    n = read(fd, dst, m);
+	    n = recv(fd, dst, m, 0);
 	    if (n < 0) {
 		GDKsyserror("socket_read: ");
 		break;
@@ -232,7 +246,7 @@ char* socket_gets(int fd, char *buf, int len){
 	int n;
 
 	for(end = buf + len; buf < end; buf++) {
-	    n = read(fd, buf,1);
+	    n = recv(fd, buf,1,0);
 	    if (n <= 0) {
 		GDKsyserror("socket_gets: ");
 		return NULL;
@@ -798,7 +812,8 @@ int conn_insert(str host, int port, int me, int sock) {
 	    connections[i].port = port;
 	    connections[i].sock = sock;
 	    strcpy(connections[i].hostname, host);
-	    MT_create_thread(&t, conn_waiter, (void*)i);
+	    if (me != -1)
+		MT_create_thread(&t, conn_waiter, (void*)i);
 	}
 	return i;
 }
@@ -935,6 +950,20 @@ create the socket
 @- 
 the listener heard something...
 @c
+#ifdef SO_KEEPALIVE
+	    { int opt = 0; 
+	    setsockopt(msgsock, SOL_SOCKET, SO_KEEPALIVE, (char *) &opt,
+		       sizeof(opt)); }
+#endif
+#ifdef IPTOS_THROUGHPUT
+	    { int tos = IPTOS_THROUGHPUT; 
+	    setsockopt(msgsock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos)); }
+#endif
+#ifdef TCP_NODELAY
+	    { int nodelay = 1;
+	    setsockopt(msgsock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
+		       sizeof(nodelay)); }
+#endif
 	    if (socket_gets(msgsock, line, 1024) == NULL){
 		close(msgsock);
 		continue;
@@ -981,7 +1010,7 @@ TCPterminate(
 	int t = gethostname(host, BUFSIZ );
 	int fd = socket_open(host, *port, "TCPterminate");
 	if (fd) {
-	    write(fd, "stop\n", 5);
+	    socket_write(fd, 5, "stop\n", "TCPterminate");
 	    return GDK_SUCCEED;
 	}
 	socket_close(fd);
