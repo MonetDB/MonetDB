@@ -2308,15 +2308,13 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	mapi_hdl_check(hdl, "mapi_query_part");
 	mid = hdl->mid;
 	/* remember the query just for the error messages */
-	if (hdl->query) {
-		size_t l = strlen(hdl->query);
-		hdl->query = realloc(hdl->query, l + size + 1);
-		strncpy(hdl->query + l, query, size);
-		hdl->query[l + size] = 0;
-	} else {
-		hdl->query = malloc(size + 1);
-		strncpy(hdl->query, query, size);
-		hdl->query[size] = 0;
+	if (hdl->query == NULL) {
+		size_t sz = size;
+		if (sz > 512)
+			sz = 512;
+		hdl->query = malloc(sz + 1);
+		strncpy(hdl->query, query, sz);
+		hdl->query[sz] = 0;
 	}
 		
 	if (mid->trace) {
