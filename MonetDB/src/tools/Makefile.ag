@@ -88,7 +88,8 @@ bin_Mserver = {
 	LIBS = ../monet/libmonet  @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) ../common/libmutils ../common/libstream
 }
 
-scripts_mcsh = {
+scripts_sh = {
+	EXT = ""
 	DIR = bindir
 	SOURCES = monet-config.mx.in 
 }
