@@ -403,24 +403,44 @@ public class JdbcClient {
 									// we have a ResultSet, print it
 									ResultSet rs = stmt.getResultSet();
 									ResultSetMetaData md = rs.getMetaData();
-									int col = 1;
-									out.print("+----------\n| ");
-									for (; col < md.getColumnCount(); col++) {
-										out.print(md.getColumnName(col) + "\t");
+									// find the widths of the columns
+									int[] width = new int[md.getColumnCount()];
+									for (int j = 0; j < md.getColumnCount(); j++) {
+										width[j] = Math.max(md.getColumnDisplaySize(j + 1), md.getColumnName(j + 1).length());
 									}
-									out.println(md.getColumnName(col));
-									out.println("+----------");
+
+									out.print("+");
+									for (int j = 0; j < width.length; j++)
+										out.print("-" + repeat('-', width[j]) + "-+");
+									out.println();
+
+									out.print("|");
+									for (int j = 0; j < width.length; j++) {
+										out.print(" " + md.getColumnName(j + 1) + repeat(' ', width[j] - md.getColumnName(j + 1).length()) +  " |");
+									}
+									out.println();
+
+									out.print("+");
+									for (int j = 0; j < width.length; j++)
+										out.print("=" + repeat('=', width[j]) + "=+");
+									out.println();
+
 									int count = 0;
 									for (; rs.next(); count++) {
-										col = 1;
-										out.print("| ");
-										for (; col < md.getColumnCount(); col++) {
-											out.print(rs.getString(col) + "\t");
+										out.print("|");
+										for (int j = 0; j < width.length; j++) {
+											String data = rs.getString(j + 1);
+											out.print(" " + data + repeat(' ', width[j] - data.length()) +  " |");
 										}
-										out.println(rs.getString(col));
+										out.println();
 									}
-									out.println("+----------");
-									out.println(count + " rows");
+
+									out.print("+");
+									for (int j = 0; j < width.length; j++)
+										out.print("-" + repeat('-', width[j]) + "-+");
+									out.println();
+
+									out.println(count + " row" + (count != 1 ? "s" : ""));
 									rs.close();
 								} else {
 									// we have an update count
@@ -450,6 +470,12 @@ public class JdbcClient {
 		// close the connection with the database
 		con.close();
 		fr.close();
+	}
+
+	private static String repeat(char chr, int cnt) {
+		StringBuffer sb = new StringBuffer(cnt);
+		for (int i = 0; i < cnt; i++) sb.append(chr);
+		return(sb.toString());
 	}
 
 	private static void createTable(

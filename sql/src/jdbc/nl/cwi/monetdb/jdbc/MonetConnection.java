@@ -1233,6 +1233,10 @@ public class MonetConnection extends Thread implements Connection {
 		private int id;
 		/** The query type of this `result' */
 		private int queryType;
+		/** The max string length for each column in this result */
+		private int[] columnLengths;
+		/** The table for each column in this result */
+		private String[] tableNames;
 		/** A Map of result blocks (chunks of size fetchSize/cacheSize) */
 		private Map resultBlocks;
 
@@ -1271,7 +1275,7 @@ public class MonetConnection extends Thread implements Connection {
 		 * @param rsc the ResultSet concurrency to use
 		 */
 		Header(MonetConnection parent, int cs, int mr, int rst, int rsc) {
-			isSet = new boolean[5];
+			isSet = new boolean[7];
 			resultBlocks = new HashMap();
 			cachethread = parent;
 			cacheSize = cs;
@@ -1313,6 +1317,10 @@ public class MonetConnection extends Thread implements Connection {
 				setID(values[0]);
 			} else if (name.equals("querytype")) {
 				setQueryType(values[0]);
+			} else if (name.equals("table_name")) {
+				setTableNames(values);
+			} else if (name.equals("length")) {
+				setColumnLengths(values);
 			} else {
 				throw new SQLException("Unknown header: " + name);
 			}
@@ -1390,6 +1398,36 @@ public class MonetConnection extends Thread implements Connection {
 		}
 
 		/**
+		 * Sets the table_name header and updates the bitmask
+		 *
+		 * @param name an array of Strings holding the column's table names
+		 */
+		private void setTableNames(String[] name) {
+			this.tableNames = name;
+			isSet[5] = true;
+		}
+
+		/**
+		 * Sets the length header and updates the bitmask
+		 *
+		 * @param name an array of Strings holding the column lengths
+		 */
+		private void setColumnLengths(String[] len) {
+			// convert each string to an int
+			this.columnLengths = new int[len.length];
+			for (int i = 0; i < len.length; i++) {
+				this.columnLengths[i] = 0;
+				try {
+					this.columnLengths[i] = Integer.parseInt(len[i]);
+				} catch (NumberFormatException e) {
+					// too bad
+				}
+			}
+
+			isSet[6] = true;
+		}
+
+		/**
 		 * Adds the given RawResults to this Header at the given block
 		 * position.
 		 *
@@ -1411,13 +1449,16 @@ public class MonetConnection extends Thread implements Connection {
 			boolean hasSome = isSet[0] || isSet[1] || isSet[2] || isSet[3];
 			if (hasSome) {
 				String error = "";
-				if (!isSet[0]) error += "name header missing\n";
-				if (!isSet[1]) error += "type header missing\n";
-				if (!isSet[2]) error += "tuplecount header missing\n";
-				if (!isSet[3]) error += "id header missing\n";
 				if (!isSet[4]) error += "querytype header missing\n";
-				if (!(isSet[0] && isSet[1] && isSet[2] && isSet[3] && isSet[4]))
-					throw new SQLException(error);
+				if (queryType == MonetStatement.Q_TABLE ||
+					queryType == MonetStatement.Q_UPDATE)
+				{
+					if (!isSet[0]) error += "name header missing\n";
+					if (!isSet[1]) error += "type header missing\n";
+					if (!isSet[2]) error += "tuplecount header missing\n";
+					if (!isSet[3]) error += "id header missing\n";
+				}
+				if (error != "") throw new SQLException(error);
 
 				if (maxRows != 0)
 					tuplecount = Math.min(tuplecount, maxRows);
@@ -1476,6 +1517,24 @@ public class MonetConnection extends Thread implements Connection {
 		 */
 		int getQueryType() {
 			return(queryType);
+		}
+
+		/**
+		 * Returns the tables of the columns
+		 *
+		 * @return the tables of the columns
+		 */
+		String[] getTableNames() {
+			return(tableNames);
+		}
+
+		/**
+		 * Returns the lengths of the columns
+		 *
+		 * @return the lengths of the columns
+		 */
+		int[] getColumnLengths() {
+			return(columnLengths);
 		}
 
 		/**

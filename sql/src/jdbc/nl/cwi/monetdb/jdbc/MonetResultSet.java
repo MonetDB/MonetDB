@@ -849,11 +849,33 @@ public class MonetResultSet implements ResultSet {
 			public boolean isCurrency(int column) {return(false);}
 			public int isNullable(int column) {return(columnNullableUnknown);}
 			public boolean isSigned(int column) {return(false);}
-			public int getColumnDisplaySize(int column) {return(-1);}
+
+			/**
+			 * Indicates the designated column's normal maximum width in
+			 * characters.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the normal maximum number of characters allowed as the
+			 *         width of the designated column
+			 */
+			public int getColumnDisplaySize(int column) {
+				return(header.getColumnLengths()[column - 1]);
+			}
+
 			public String getSchemaName(int column) {return(null);}
 			public int getPrecision(int column) {return(-1);}
 			public int getScale(int column) {return(-1);}
-			public String getTableName(int column) {return(null);}
+
+			/**
+			 * Gets the designated column's table name.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return table name or "" if not applicable
+			 */
+			public String getTableName(int column) {
+				return(header.getTableNames()[column - 1]);
+			}
+
 			public String getCatalogName(int column) {return(null);}
 			public boolean isReadOnly(int column) {return(false);}
 			public boolean isWritable(int column) {return(false);}
