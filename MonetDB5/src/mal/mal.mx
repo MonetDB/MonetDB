@@ -189,6 +189,7 @@ Name & Used in & Protects\\
 mal\_contextLock       & mal\_client.mx      & {\em created  }\\
 \end{tabular}
  
+@mal
 @+ Monet Basic Definitions 
 Definitions that need to included in every file of the Monet system,
 as well as in user defined module implementations.

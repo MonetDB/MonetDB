@@ -346,7 +346,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 			break;
 		 }
 		 stk->cmd= 'c';
-		 break;
+		 return;
 	case 'h': mdbHelp(out); break;
 	case 'q': 
 		stk->cmd= 'q';/* return from this debugger */
