@@ -2052,7 +2052,7 @@ int TBL_multiplex_resolve(str name, int argc, ValPtr argv,
 {
 	int optimize = FALSE, optimize_true = TRUE;
 	int consts = 0, i=0, tok=TOK_COMMAND, tpe = TBL_RESOLVE_NOFCN;
-        lng swap[1+MAXPARAMS];
+        batrec swap[1+MAXPARAMS];
         BAT *assignbat = NULL;
  
         if (argc <= 1 || argc >= MAXPARAMS) {
@@ -2062,7 +2062,8 @@ int TBL_multiplex_resolve(str name, int argc, ValPtr argv,
         sig->array_opt = sig->merge_opt = 0;
 	sig->ret_tpe = TBL_RESOLVE_NOFCN; 
         for(i=1; i < argc; i++) {
-            swap[i] = 0;
+            swap[i].id = 0;
+            swap[i].stamp = 0;
             if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
                 BAT *b = BATdescriptor(argv[i].val.bval);
                 int z = 0;
@@ -2072,7 +2073,8 @@ int TBL_multiplex_resolve(str name, int argc, ValPtr argv,
 			optimize_true = FALSE;
 		} 
                 argv[i].vtype = ATOMtype(b->ttype);
-                swap[i] = argv[i].val.lval;
+                swap[i].id = argv[i].val.br.id;
+                swap[i].stamp = argv[i].val.br.stamp;
  
                 /* we might need a real value for function resolution! */
                 if (b->ttype == TYPE_bat) {
@@ -2199,9 +2201,10 @@ and store the results in resp. sig->array\_opt and sig->merge\_opt.
 Ready With Resolution
 @c
 ready:	for(i=1; i < argc; i++) {
-                if (swap[i]) {
+                if (swap[i].id) {
                         argv[i].vtype = TYPE_bat;
-                        argv[i].val.lval = swap[i];
+                        argv[i].val.br.id = swap[i].id;
+                        argv[i].val.br.stamp = swap[i].stamp;
                 }
         }
         return tok;
