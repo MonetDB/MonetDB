@@ -63,7 +63,7 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_nme",	  "oid",  "str",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_proc",	  "str",  "oid",  90,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "monet_mod_use",	  "oid",  "ptr",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_mod_use",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  26,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 ls;
@@ -102,7 +102,7 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_nme",	  "oid",  "str",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_proc",	  "str",  "oid",  90,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "monet_mod_use",	  "oid",  "ptr",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_mod_use",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  26,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 ls;
@@ -146,7 +146,7 @@ dir;
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_nme",	  "oid",  "str",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_proc",	  "str",  "oid",  90,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "monet_mod_use",	  "oid",  "ptr",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_mod_use",	  "oid",  "int",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  26,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 ls;

@@ -36,17 +36,17 @@ Start of MIL script.
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  3		  ]
-[ "algebra",	  3		  ]
-[ "arith",	  3		  ]
-[ "bat",	  3		  ]
-[ "kernel",	  3		  ]
-[ "main",	  3		  ]
-[ "str",	  3		  ]
-[ "streams",	  3		  ]
-[ "sys",	  3		  ]
-[ "trans",	  3		  ]
-[ "uchr",	  6		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 #-----------------------------------------------------------------------------------------#
 # MIL Procedure										  #
 #-----------------------------------------------------------------------------------------#
@@ -556,7 +556,7 @@ Start of MIL script.
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_nme",	  "oid",  "str",  20,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_proc",	  "str",  "oid",  95,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "monet_mod_use",	  "oid",  "ptr",  66,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_mod_use",	  "oid",  "int",  66,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  27,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "tmp_28",		  "str",  "oid",  700,	  0,	  "dirty",	  "load", "tran", 1,	  2		  ]

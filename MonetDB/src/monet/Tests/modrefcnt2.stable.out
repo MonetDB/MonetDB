@@ -11,18 +11,18 @@ stdout of test 'modrefcnt2` in directory 'src/monet` itself:
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  2		  ]
-[ "algebra",	  2		  ]
-[ "arith",	  2		  ]
-[ "bat",	  2		  ]
-[ "kernel",	  2		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
 [ "lock",	  1		  ]
-[ "main",	  2		  ]
-[ "str",	  2		  ]
-[ "streams",	  2		  ]
-[ "sys",	  2		  ]
-[ "trans",	  2		  ]
-[ "uchr",	  4		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 #---------------------------------#
 # signature			  #
 #---------------------------------#
@@ -50,18 +50,18 @@ loaded;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  2		  ]
-[ "algebra",	  2		  ]
-[ "arith",	  2		  ]
-[ "bat",	  2		  ]
-[ "kernel",	  2		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
 [ "lock",	  1		  ]
-[ "main",	  2		  ]
-[ "str",	  2		  ]
-[ "streams",	  2		  ]
-[ "sys",	  2		  ]
-[ "trans",	  2		  ]
-[ "uchr",	  4		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 sigs("lock");
 #---------------------------------#
 # signature			  #
@@ -89,17 +89,17 @@ loaded;
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  2		  ]
-[ "algebra",	  2		  ]
-[ "arith",	  2		  ]
-[ "bat",	  2		  ]
-[ "kernel",	  2		  ]
-[ "main",	  2		  ]
-[ "str",	  2		  ]
-[ "streams",	  2		  ]
-[ "sys",	  2		  ]
-[ "trans",	  2		  ]
-[ "uchr",	  4		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 sigs("lock");
 !ERROR: sigs: must load module first.
 ;
@@ -116,17 +116,17 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  3		  ]
-[ "algebra",	  3		  ]
-[ "arith",	  3		  ]
-[ "bat",	  3		  ]
-[ "kernel",	  3		  ]
-[ "main",	  3		  ]
-[ "str",	  3		  ]
-[ "streams",	  3		  ]
-[ "sys",	  3		  ]
-[ "trans",	  3		  ]
-[ "uchr",	  6		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 
 
 # 22:59:33 >  
@@ -136,18 +136,18 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  3		  ]
-[ "algebra",	  3		  ]
-[ "arith",	  3		  ]
-[ "bat",	  3		  ]
-[ "kernel",	  3		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
 [ "lock",	  1		  ]
-[ "main",	  3		  ]
-[ "str",	  3		  ]
-[ "streams",	  3		  ]
-[ "sys",	  3		  ]
-[ "trans",	  3		  ]
-[ "uchr",	  6		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 #---------------------------------#
 # signature			  #
 #---------------------------------#
@@ -174,33 +174,33 @@ Over..
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  3		  ]
-[ "algebra",	  3		  ]
-[ "arith",	  3		  ]
-[ "bat",	  3		  ]
-[ "kernel",	  3		  ]
-[ "main",	  3		  ]
-[ "str",	  3		  ]
-[ "streams",	  3		  ]
-[ "sys",	  3		  ]
-[ "trans",	  3		  ]
-[ "uchr",	  6		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 
 
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
-[ "_mapi",	  3		  ]
-[ "algebra",	  3		  ]
-[ "arith",	  3		  ]
-[ "bat",	  3		  ]
-[ "kernel",	  3		  ]
-[ "main",	  3		  ]
-[ "str",	  3		  ]
-[ "streams",	  3		  ]
-[ "sys",	  3		  ]
-[ "trans",	  3		  ]
-[ "uchr",	  6		  ]
+[ "_mapi",	  1		  ]
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "kernel",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "streams",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+[ "uchr",	  2		  ]
 
 
 # 15:23:57 >  
