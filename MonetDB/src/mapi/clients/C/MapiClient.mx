@@ -99,7 +99,7 @@ char *conv( char *org, iconv_t cd)
 		size_t size = len * 4;
 		char *buf = malloc(size);
 		char *to = buf;
-		char *from = org;
+		ICONV_CONST char *from = org;
 
 		if (iconv(cd, &from, &len, &to, &size ) == (size_t)(-1)){
 			perror("conv ");

@@ -649,13 +649,14 @@ int strIconv( str *res, str org, str f, str t)
 	iconv_t cd = iconv_open( t, f);
 	size_t size = 4*len; 		/* make sure enough memory is claimed */
 	char *r; 
+	ICONV_CONST char *from = org;
 
 	if (!cd){
 		GDKerror("Cannot convert strings from (%s) to (%s)\n", f, t);
 		return GDK_FAIL;
 	}
 	*res = r = GDKmalloc(size); 
-	if (iconv(cd, &org, &len, &r, &size) == (size_t) -1){
+	if (iconv(cd, &from, &len, &r, &size) == (size_t) -1){
 		GDKfree(*res);
 		*res = NULL;
 		GDKerror("String convertion failed from (%s) to (%s)\n", f, t);

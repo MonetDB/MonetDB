@@ -835,6 +835,21 @@ AC_CHECK_LIB(iconv, iconv,
 )
 if test "x$have_iconv" = xyes; then
 	AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv function])
+	AC_TRY_COMPILE([
+#include <stdlib.h>
+#include <iconv.h>
+extern
+#ifdef __cplusplus
+"C"
+#endif
+#if defined(__STDC__) || defined(__cplusplus)
+size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
+#else
+size_t iconv();
+#endif
+], [], iconv_const="", iconv_const="const")
+	AC_DEFINE_UNQUOTED(ICONV_CONST, $iconv_const, 
+	 [Define as const if the declaration of iconv() needs const for 2nd argument.])
 fi
 AC_SUBST(ICONV_LIBS)   
 
