@@ -16,8 +16,8 @@ stdout of test 'tst_priv` in directory 'tests/by_Peter` itself:
 # compiled for i686-pc-win32/32bit; dynamically linked.
 # test change of private mmap -> malloced under extends
 new(void,str,1000000).persists(true).access(BAT_WRITE).rename("a");
-d := new(void,int,1000);
-i := 0;
+var d := new(void,int,1000);
+var i := 0;
 while(i < 1000) d.insert(nil,i :+= 1);
 d := [str](d).seqbase(0@0);
 a.seqbase(0@0).insert(d);
@@ -30,15 +30,15 @@ while(i < 100) {
 
 a.mmap(1,1,1,1,1);
 unload("a");
-a.info.reverse.select("theap.storage").reverse.print;
+a.info.reverse().select("theap.storage").reverse().print();
 #-------------------------------------------------#
 # t			tmp_31			  # name
 # str			str			  # type
 #-------------------------------------------------#
 [ "theap.storage",	  "memory mapped"	  ]
 
-[int](a.mirror);
-e := [str]([int](a.mirror));
+[int](a.mirror());
+var e := [str]([int](a.mirror()));
 debugmask(49);
 a.insert(e);
 #01 pers(0) 26 (a) refs(1,1)
@@ -68,13 +68,13 @@ a.insert(e);
 debugmask(9);
 
 #a.mmap(1,1,1,1,1);
-a.info.reverse.select("theap.storage").reverse.print;
+a.info.reverse().select("theap.storage").reverse().print();
 #-----------------------------------------#
 # BAT:			  tmp_23	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "theap.storage",	  "malloced"	  ]
-e := [str]([int](a.mirror));
+e := [str]([int](a.mirror()));
 debugmask(49);
 a.insert(e);
 #01 pers(0) 26 (a) refs(1,1)
@@ -98,23 +98,22 @@ a.insert(e);
 #01 trans(0) 26 (a) refs(2,1)
 debugmask(9);
 
-a.info.reverse.select("theap.storage").reverse.print;
+a.info.reverse().select("theap.storage").reverse().print();
 #-----------------------------------------#
 # BAT:			  tmp_30	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "theap.storage",	  "malloced"	  ]
 a.insert(nil,"make dirty..");
-commit;
-#01 #BBPdir: writing BBP.dir (52 bats).
+commit();
+#01 #BBPdir: writing BBP.dir (34 bats).
 
-a.destroy;
-commit;
-#01 #BBPdir: writing BBP.dir (52 bats).
+a.destroy();
+commit();
 
-quit;
+quit();
 
-# 17:07:54 >  
-# 17:07:54 >  Done.
-# 17:07:54 >  
+# 12:30:22 >  
+# 12:30:22 >  Done.
+# 12:30:22 >  
 

@@ -97,8 +97,8 @@ p("b","1");
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 
 # passing parameters;
-a:=35;
-echo(a,"hello").print;
+var a:=35;
+echo(a,"hello").print();
 #-----------------------------------------------------------------------------------------#
 # tmp_34		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -232,7 +232,7 @@ New("r","C","Ch");
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-vars;
+vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_38		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -453,7 +453,7 @@ s(0,999);
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 [ 8 ]
-quit;
+quit();
 
 # 18:34:03 >  
 # 18:34:03 >  Done.

@@ -10,8 +10,8 @@ stdout of test 'test_00` in directory 'tests/suite_01` itself:
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 setoid(oid(20000000));
 #problem: Monet -prelude fatal sometimes leaves a monet thread behind.
-b:= new(int,str,0);
-vars;
+var b:= new(int,str,0);
+vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_32		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -51,8 +51,8 @@ vars;
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<adm_atomtbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<adm_acctbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
-bn:= fragment(b,1,5,str(nil),str(nil));
-vars;
+var bn:= fragment(b,1,5,str(nil),str(nil));
+vars();
 #-----------------------------------------------------------------------------------------#
 # tmp_32		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
@@ -98,7 +98,7 @@ print(bn);
 # BAT:	  tmp_37  #
 # (int)	  (str)	  #
 #-----------------#
-quit;
+quit();
 
 # 18:33:44 >  
 # 18:33:44 >  Done.
