@@ -48,6 +48,13 @@ command assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
 
+command assert(b:int,msg:str):void
+address SQLassertInt
+comment "Generate an exception when b!=0";
+command assert(b:lng,msg:str):void
+address SQLassertLng
+comment "Generate an exception when b!=0";
+
 pattern output(a:any...)
 address SQLoutput;
 pattern output(a:bat[:any,:any]...)
@@ -323,7 +330,7 @@ Failure to find the state descriptor aborts the session.
 printf("Re-establish context for client not expected\n");
 		_client->state[OPTIMIZE] == mvc_create(0,0,NULL,GDKout);
 		schema = mvc_login( _client->state[OPTIMIZE], 
-				"monetdb", "monetdb" );
+				GDKstrdup("monetdb"), GDKstrdup("monetdb") );
 		if( !schema)
 			return throwMessage("getContext","unknown schema for monetdb\n");
 		else

@@ -994,7 +994,19 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		}
 	} break;
         case st_find: {
-		dump_2(sql,mb,s,"algebra","find");
+	    /* dump_2(sql,mb,s,"algebra","find");*/
+            int k;
+	    int o1 = backend_dumpstmt(sql,mb, s->op1.stval);
+	    int o2 = backend_dumpstmt(sql,mb, s->op2.stval);
+	    @:SQLprelude@
+	    q= newStmt(mb,"bat","reverse");
+	    q= pushArgument(mb,q,o1);
+            k= getDestVar(q);
+	    q= newStmt(mb,"algebra","find");
+	    q= pushArgument(mb,q,k);
+	    q= pushArgument(mb,q,o2);
+	    s->nr = getDestVar(q);
+	    @:SQLpostlude@
 	} break;
        case st_bulkinsert: {
                 char *tname = s->op1.stval->op1.tval->base.name;
@@ -1012,10 +1024,9 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,file);
 			q= pushStr(mb,q,"UTF-8");
 			q= pushArgument(mb,q,codeset);
-			file= getDestVar(q);
 
 			/* TODO use a bstream */
-			q= newStmt(mb,"io","open_rastream");
+			q= newStmt(mb,"stream","openRead");
 			q= pushArgument(mb,q,file);
 			file= getDestVar(q);
 
@@ -1024,9 +1035,10 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushStr(mb,q,tname);
 			q= pushArgument(mb,q,sep);
 			q= pushArgument(mb,q,rsep);
-			q= pushArgument(mb,q,s->flag);
+                        q= pushInt(mb,q,s->flag);
+                        s->nr= getDestVar(q);
 
-			q= newStmt(mb,"io","stream_close");
+			q= newStmt(mb,"stream","close");
 			q= pushArgument(mb,q,file);
                 } else {
 			q= newStmt(mb,"sql","importTable");
@@ -1034,9 +1046,9 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushStr(mb,q,tname);
 			q= pushArgument(mb,q,sep);
 			q= pushArgument(mb,q,rsep);
-			q= pushArgument(mb,q,s->flag);
+                        q= pushInt(mb,q,s->flag);
+                        s->nr= getDestVar(q);
                 }
-		s->nr= getDestVar(q);
         } break;
         case st_filter:
                 s->nr = backend_dumpstmt(sql,mb, s->op1.stval);

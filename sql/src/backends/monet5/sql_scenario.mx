@@ -54,6 +54,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_optimizer.h"
 #include "sql_cache.h"
 #include "sql_env.h"
+#include "io.h"
 #include "mal_parser.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
@@ -257,7 +258,6 @@ stream, but only when no unresolved 'nxt' character is visible.
 In combination with SQLparser this ensures that all statements
 are handled one by one.
 @c
-#define _SQL_READER_DEBUG
 str SQLreader(Client c){
 	int go = TRUE;
 	lng T0;
@@ -652,7 +652,7 @@ str SQLoutput(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return MAL_SUCCEED;
 }
 str SQLoutputBats(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-        IOtableAll(GDKout,mb,stk,p,1,0,FALSE);
+        IOprint_tables(mb,stk,p);
 	return MAL_SUCCEED;
 }
 @-
@@ -660,6 +660,18 @@ Assertion errors detected during the execution of a code block
 raises an exception.
 @c
 str SQLassert(int *ret, bit *flg, str *msg){
+	(void) ret;
+	if( *flg)
+		return throwException("SQLerror","assert",*msg);
+	return MAL_SUCCEED;
+}
+str SQLassertInt(int *ret, int *flg, str *msg){
+	(void) ret;
+	if( *flg)
+		return throwException("SQLerror","assert",*msg);
+	return MAL_SUCCEED;
+}
+str SQLassertLng(int *ret, lng *flg, str *msg){
 	(void) ret;
 	if( *flg)
 		return throwException("SQLerror","assert",*msg);
