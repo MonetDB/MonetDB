@@ -88,7 +88,7 @@ reconnect()	&	Restart with a clean session
 rows_affected() & 	Obtain number of rows changed
 quickResponse()	&       Quick pass response to stream
 initStream()	&	Prepare for reading a stream of answers
-seekRow() 	&       Move row reader to specific location in cache
+seekRow() 	&       Move row reader to specific row location in cache
 timeout()  	&       Set timeout for long-running queries[TODO]
 trace()    	&       Set trace flag
 traceLog()	& 	Keep log of interaction
@@ -122,6 +122,7 @@ import java.applet.Applet;
 import java.applet.*;
 import java.io.*;
 import java.net.Socket;
+import java.util.regex.*;
 
 public class Mapi 
 {
@@ -199,6 +200,9 @@ public class Mapi
 	private BufferedReader fromMonet;
 	private PrintStream traceLog = System.err;
 	
+	/* Monet 4.3 header type info regexp */
+	private static Pattern p = Pattern.compile("^.*?\\((.+?)\\).*$");
+
 private void check(String action){
 	if( !connected) setError("Connection lost",action);
 	clrError();
@@ -359,17 +363,17 @@ The language property returned should match the required language interaction.
 */
 	while( !gotError() && active && fetchRow()>0){
 		if( cache.fldcnt[cache.reader]== 0){
-			System.err.println("!ERROR:Unexpected reply:"
+			System.out.println("Unexpected reply:"
 				+ cache.rows[cache.reader]);
 			continue;
 		}
 		String property= fetchField(0);
 		String value= fetchField(1);
-		//System.err.println("fields:"+property+","+value);
+		//System.out.println("fields:"+property+","+value);
 		if( property.equals("language") && !lang.equals("") &&
 		   !value.equals(lang)){
 			setError("Incompatible language requirement","connect");
-			System.err.println("!WARNING:exepected:"+lang);
+			System.out.println("exepcted:"+lang);
 		} else language= lang;
 		if( property.equals("version")) version= value;
 		if( property.equals("dbname")) dbname= value;
@@ -396,7 +400,7 @@ The language property returned should match the required language interaction.
 */
 public static Mapi connectSSL( String host, int port, String user, String pwd, String lang )
 {
-	System.err.println("!WARNING:connectSSL not yet implemented");
+	System.out.println("connectSSL not yet implemented");
 	return null;
 }
 
@@ -501,7 +505,7 @@ private boolean checkColumns(int fnr, String action){
 public int bind(int fnr, Object o){
 	check("bind");
 	if( !checkColumns(fnr,"bind")) return MERROR;
-	System.err.println("!WARNING:bind() yet supported");
+	System.out.println("bind() yet supported");
 	//columns[fnr].outparam = o;
 	return MOK;
 }
@@ -514,7 +518,7 @@ public int bind(int fnr, Object o){
 public int bindVar(int fnr, int tpe, Object o){
 	check("bindVar");
 	if( !checkColumns(fnr,"bindVar")) return MERROR;
-	System.err.println("!WARNING:bindVar() not supported");
+	System.out.println("bindVar() not supported");
 	//columns[fnr].outparam = o;
 	return MOK;
 }
@@ -530,7 +534,7 @@ public int bindVar(int fnr, int tpe, Object o){
 public int bindNumeric(int fnr, int scale, int prec, Object o){
 	check("bindNumeric");
 	if( !checkColumns(fnr,"bindVar")) return MERROR;
-	System.err.println("!WARNING:bindVar() not supported");
+	System.out.println("bindVar() not supported");
 	columns[fnr].scale = scale;
 	columns[fnr].precision = prec;
 	//columns[fnr].outparam = o;
@@ -570,7 +574,7 @@ private void extendFields(int cr){
  * simplifies the work for the programmers.
 */
 private void storeBind(){
-	System.err.print("!WARNING:storeBind() Not supported");
+	System.out.print("storeBind() Not supported");
 	//int cr= cache.reader;
 	//for(int i=0; i< fieldcnt; i++)
 	//if( columns[i].outparam != null){
@@ -658,7 +662,7 @@ public int sliceRow(){
 			case '\'':
 			case '"':
 				if(instring ){
-					//System.err.println("bracket:"+p[l]+l);
+					//System.out.println("bracket:"+p[l]+l);
 					if( bracket==p[l]) {
 						done=true;
 						break;
@@ -696,11 +700,12 @@ public int fetchRow(){
 public int fetchAllRows(){
 	check("fetchAllRows");
 	cacheLimit(-1);
-	cache.tuples=0;
+	//cache.tuples=0;
 	while( getRow()== MOK)
 		sliceRow();
 	fetchReset();
-	return cache.tuples;
+	//return cache.tuples;
+	return cache.tupleCount;
 }
 
 public String fetchField(int fnr){
@@ -712,7 +717,7 @@ public String fetchField(int fnr){
 	}
 	if( fnr>=0){
 		if( cache.fldcnt[cr]==0){
-			//System.err.println("reslice");
+			//System.out.println("reslice");
 			sliceRow();
 		}
 		if( fnr < cache.fldcnt[cr])
@@ -1117,14 +1122,14 @@ public int closeStream(String cmd){
 public int cacheFreeup(int percentage){
 	if( cache.writer==0 && cache.reader== -1) return MOK;
 	if( percentage==100){
-		//System.err.println("allocate new cache struct");
+		//System.out.println("allocate new cache struct");
 		cache= new RowCache();
 		return MOK;
 	}
 	if( percentage <0 || percentage>100) percentage=100;
 	int k= (cache.writer * percentage) /100;
 	if( k < 1) k =1;
-	System.err.println("shuffle cache:"+percentage+" tuples:"+k);
+	System.out.println("shuffle cache:"+percentage+" tuples:"+k);
 	for(int i=0; i< cache.writer-k; i++){
 		cache.rows[i]= cache.rows[i+k];
 		cache.fldcnt[i]= cache.fldcnt[i+k];
@@ -1141,7 +1146,16 @@ public int cacheFreeup(int percentage){
 	if(cache.reader < -1) cache.reader= -1;
 	cache.writer -=k;
 	if(cache.writer < 0) cache.writer= 0;
-	System.err.println("new reader:"+cache.reader+" writer:"+cache.writer);
+	System.out.println("new reader:"+cache.reader+" writer:"+cache.writer);
+	//rebuild the tuple index
+	cache.tupleCount=0;
+	int i=0;
+	for(i=0; i<cache.writer; i++){
+		if( cache.rows[i].indexOf("#")==0 ) continue;
+		if( cache.rows[i].indexOf("!")==0 ) continue;
+		cache.tuples[cache.tupleCount++]= i;
+	}
+	for(i= cache.tupleCount; i<cache.limit; i++)cache.tuples[i]= -1;
 	return MOK;
 }
 /**
@@ -1162,7 +1176,7 @@ private void cacheResetInternal()
 	if(columns[0]!= null){
 		columns[0].columntype="str";
 	}
-	cache.tuples= 0;
+	cache.tupleCount= 0;
 	cacheFreeup(100);
 }
 
@@ -1200,8 +1214,11 @@ public int fetchReset(){
 }
 
 /**
- * Reset the row pointer to the requested row number;
- * Comments lines are ignored.
+ * Reset the row pointer to the requested tuple;
+ * Tuples are those rows that not start with the
+ * comment bracket. The mapping of tuples to rows
+ * is maintained during parsing to speedup subsequent
+ * access in the cache.
  * @param rownr - the row of interest
  */
 public int seekRow(int rownr){
@@ -1209,14 +1226,23 @@ public int seekRow(int rownr){
 	int i, sr=rownr;
 	cache.reader= -1;
 	if( rownr<0) return setError("Illegal row number","seekRow");
+	i= cache.tuples[rownr];
+	if(i>=0) {
+		cache.reader= i;
+		return MOK;
+	}
+/*
 	for(i=0; rownr>=0 && i<cache.writer; i++){
 		if( cache.rows[i].indexOf("#")==0 ) continue;
 		if( cache.rows[i].indexOf("!")==0 ) continue;
 		if( --rownr <0) break;
 	}
-	if( rownr>=0) return setError("Row not found "+sr+" tuples "+cache.tuples,"seekRow");
+	if( rownr>=0) return setError("Row not found "+sr
+					+" tuples "+cache.tuples,"seekRow");
 	cache.reader= i;
 	return MOK;
+*/
+	return setError("Illegal row number","seekRow");
 }
 /**
  * These are the lowest level operations to retrieve a single line from the 
@@ -1227,21 +1253,25 @@ public int seekRow(int rownr){
 private void extendCache(){
 	int oldsize= cache.limit;
 	if( oldsize == cache.rowlimit){
-		System.err.println("Row cache limit reached extendCache");
+		System.out.println("Row cache limit reached extendCache");
 		setError("Row cache limit reached","extendCache");
 		// shuffle the cache content
 		if( cache.shuffle>0)
-		System.err.println("Reshuffle the cache ");
+		System.out.println("Reshuffle the cache ");
 	}
-	int incr = oldsize /10;
-	int newsize = oldsize +(incr<100? 100: incr);
+	int incr = oldsize ;
+	if(incr >200000) incr= 20000;
+	int newsize = oldsize +incr;
 	if( newsize >cache.rowlimit && cache.rowlimit>0)
 		newsize = cache.rowlimit;
 
 	String newrows[]= new String[newsize];
+	int newtuples[]= new int[newsize];
 	if(oldsize>0){
+		System.arraycopy(cache.tuples,0,newtuples,0,oldsize);
 		System.arraycopy(cache.rows,0,newrows,0,oldsize);
 		cache.rows= newrows;
+		cache.tuples= newtuples;
 		//if(trace) traceLog.println("Extend the cache.rows storage");
 	}
 	    
@@ -1266,8 +1296,8 @@ private void extendCache(){
 private int clearCache(){
 	// remove all left-over fields
 	if( cache.reader+2<cache.writer){
-		System.err.println("Cache reset with non-read lines");
-		System.err.println("reader:"+cache.reader+" writer:"+cache.writer);
+		System.out.println("Cache reset with non-read lines");
+		System.out.println("reader:"+cache.reader+" writer:"+cache.writer);
 		setError("Cache reset with non-read lines","clearCache");
 	}
 	cacheFreeup(cache.shuffle);
@@ -1309,6 +1339,10 @@ public String fetchLineInternal() throws MapiException {
 		setError("Lost connection with server","fetchLine");
 		return null;
 	}
+	// we should reserve space
+        // manage the row cache space first
+        if( cache.writer >= cache.limit)
+		extendCache();
 	if( trace) traceLog.println("Start reading from server");
 	try {
 		blk.buf = fromMonet.readLine();
@@ -1330,14 +1364,10 @@ public String fetchLineInternal() throws MapiException {
 		case PROMPTBEG:
 			promptMonet();
 			return null;
-		case '[': cache.tuples++;
+		case '[': cache.tuples[cache.tupleCount++]= cache.reader+1;
 		}
 	}	    
 
-	// we have at least one complete line in the buffer
-        // manage the row cache space first
-        if( cache.writer >= cache.limit)
-		extendCache();
         cache.rows[cache.writer] = blk.buf;
         cache.writer++;
         return cache.rows[++cache.reader];
@@ -1457,12 +1487,13 @@ private int getRow(){
  * the methods below provide access to the relevant Mapi components
 */
 public int getTupleCount(){
-	int cnt=0;
-	for(int i=0;i<cache.writer;i++){
-		if(cache.rows[i].charAt(0)=='[') cnt++;
-	}
-	//System.err.println("counted "+cnt+" maintained "+cache.tuples);
-	return cnt;
+	//int cnt=0;
+	return cache.tupleCount;
+	//for(int i=0;i<cache.writer;i++){
+		//if(cache.rows[i].charAt(0)=='[') cnt++;
+	//}
+	//System.out.println("counted "+cnt+" maintained "+cache.tuples);
+	//return cnt;
 }
 /**
  * unquoteInternal() squeezes a character array to expand
@@ -1485,7 +1516,7 @@ private int unquoteInternal(char msg[], int first)
 }
 
 public String quote(String msg){
-	System.err.println("!WARNING:Not yet implemented");
+	System.out.println("Not yet implemented");
 	return null;
 }
 public String unquote(String msg){
@@ -1557,7 +1588,7 @@ private void toMonet(String msg) throws MapiException {
 */
 public int timeout(int time){
 	check("timeout");
-	System.err.println("!WARNING:timeout() not yet implemented");
+	System.out.println("timeout() not yet implemented");
 	return MOK;
 }
 
@@ -1579,17 +1610,19 @@ class IoCache
 class RowCache{
     int rowlimit= -1;   /* maximal number of rows to cache */
     int shuffle= 100;	/* percentage of tuples to shuffle upon overflow */
-    int limit=100;      /* current storage space limit */
+    int limit=10000;      /* current storage space limit */
     int writer= 0;
     int reader= -1;
-    int tuples=0;     /* actual tuples in cache */
     int  fldcnt[] = new int[limit];   /* actual number of columns in each row */
     String rows[]= new String[limit]; /* string representation of rows received */
     String fields[][]= new String[limit][];
+    int  tuples[]= new int[limit];	/* tuple index */
+    int tupleCount=0;
     public RowCache(){
 	for(int i=0;i<limit; i++){
 		fields[i]= new String[maxfields];
 		rows[i]=null;
+		tuples[i]= -1;
 		fldcnt[i]=0;
 		for(int j=0;j<maxfields;j++) fields[i][j]= null;
 	}
