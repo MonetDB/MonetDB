@@ -182,6 +182,11 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         GDKerror("%s: inconsistent workingset: tail of pre_size_frag not type INT.\n", name);
         @:ll_return(GDK_FAIL)@
     }
+    if (BUNsize(pre_size_frag) != sizeof(int))
+    {
+        GDKerror("%s: inconsistent workingset: head (oid) of pre_size_frag must NOT be materialized.\n", name);
+        @:ll_return(GDK_FAIL)@
+    }
 
     BUNfndVOID(p, workingset, &doc_height_id);
     if (p == NULL)
@@ -395,7 +400,6 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
 typedef struct stack_item_C si_C;
 
 struct stack_item_C {
-    oid ctx;            /* ctx node (preorder rank) */
     oid eocs;           /* end of ctx scope (pre + size) */
     oid next_child;     /* preorder rank of the next child node */
     BUN first;          /* first iter row of the actual ctx node */
@@ -408,7 +412,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
     BAT *res = *result;
     si_C *stack = 0;
     int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, *size = 0;
-    oid pre = 0, ctx = 0;
+    oid pre = 0, ctx = 0, cur_ctx = 0;
     BUN cur_bun = 0, iter_bun = 0, ctx_bun = 0, ctx_last = 0;
 
     /* not used, here; keep compilers happy */
@@ -443,12 +447,12 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
 @
 @= pushctx
     si_C new_stack_item;
-    new_stack_item.ctx = ctx;
     new_stack_item.eocs = ctx + size[ctx];
     new_stack_item.next_child = ctx + 1;
     new_stack_item.first = iter_bun;
     new_stack_item.last = iter_bun;
     stack[stack_top++] = new_stack_item;
+    cur_ctx = ctx;
 @
 @= popctx
     stack_top--;
@@ -469,7 +473,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
         }
         /* only a new iter has to be added
            to the list of active iters */
-        else if (stack[stack_top-1].ctx == ctx) {
+        else if (cur_ctx == ctx) {
             stack[stack_top-1].last = iter_bun;
             @:getnextctx@
         }
@@ -559,7 +563,6 @@ typedef struct stack_item_D si_D;
 
 struct stack_item_D {
     oid iter_idx;       /* index of iter */
-    oid ctx;            /* ctx node (preorder rank) */
     oid eocs;           /* end of ctx scope (pre + size) */
 };
 
@@ -647,7 +650,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     if (!onstack_get(iter_idx)) {
         si_D new_stack_item;
         new_stack_item.iter_idx = iter_idx;
-        new_stack_item.ctx = ctx;
         new_stack_item.eocs = ctx + size[ctx];
         stack[stack_top++] = new_stack_item;
         onstack_set(iter_idx);
@@ -670,13 +672,11 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
        the next ctx node (or the end of the stack top
        ctx node scope) is reached */
     while (ctx_bun < ctx_last) {
-        /* put the new ctx node on the stack */
-        @:pushctx_D@
-        @:getnextctx_D@
+        oid cur_ctx = ctx;
         /* scan over all iters for the current ctx node;
            only a new (non-active) iters have to be added
            to the list of active iters */
-        while (ctx_bun < ctx_last && ctx == stack[stack_top-1].ctx) {
+        while (ctx_bun < ctx_last && ctx == cur_ctx) {
             @:pushctx_D@
             @:getnextctx_D@
         }
