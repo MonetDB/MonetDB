@@ -317,8 +317,8 @@ int isTypeName(str n){
 
 int isIdentifier(str s)
 {
-	if( ! isalpha(*s) ) return -1;
+	if( ! isalpha((int)*s) ) return -1;
 	for( ;s && *s; s++)
-	if( ! isalnum(*s) && *s !='_') return -1;
+	if( ! isalnum((int)*s) && *s !='_') return -1;
 	return 0;
 }

@@ -124,7 +124,6 @@ static int noDlopen;
 void *getAddress(str fcnname){
 	void *dl;
 	void (*adr)();
-	str msg;
 
 #ifdef DEBUG_MAL_LINKER2
         stream_printf(GDKout,"addres of %s ?\n", fcnname);
@@ -135,12 +134,12 @@ void *getAddress(str fcnname){
                 exit(0);
         }
         adr= dlsym(dl,fcnname);
-	msg= dlerror();
 	if(noDlopen && adr == NULL)
 		GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
 	if( adr != NULL)
-        stream_printf(GDKout,"addres of %s %o %s\n", fcnname,(int) adr, (msg?msg:""));
+        stream_printf(GDKout,"addres of %s %o %s\n", fcnname,(int) adr, 
+	(dlerror()?dlerror():""));
 #endif
 	dlclose(dl);
 	return adr;
@@ -173,7 +172,6 @@ str loadModuleLibrary(str modname){
 	void *handle = NULL;
 	str path ="";
 	str library=0;
-	str msg= NULL;
 	int i = 0, idx;
 
 	for(idx=0;modulesLoaded[idx] && idx<128;idx++)
@@ -204,14 +202,13 @@ str loadModuleLibrary(str modname){
 #endif
 		if( access(buf,R_OK)== 0){
 			handles[idx]= handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
-			msg =dlerror();
 #ifdef DEBUG_MAL_LINKER
 			stream_printf(GDKout,"load:%s:%s\n",buf,handle==NULL?
-				(msg?msg:"failed"):"succeeded");
+				(handle==NULL?dlerror():"failed"):"succeeded");
 #endif
-			if(msg != NULL)
-			return (str) throwException("loaderException",
-					"loadModuleLibrary", msg);
+			if(handle == NULL)
+				return (str) throwException("loaderException",
+					"loadModuleLibrary", buf);
 			return 0;
 		}
 	} 
@@ -231,11 +228,9 @@ str loadModuleLibrary(str modname){
 #ifdef DEBUG_MAL_LINKER
 		stream_printf(GDKout,"attempt to load:%s\n",buf,handle==NULL?"failed":"succeeded");
 #endif
-		msg= dlerror();
-		if( msg != NULL)
-			stream_printf(GDKout,"attempt to load:%s failed\n",modname);
+		if( handle == NULL)
 			return (str) throwException("loaderException",
-				"loadModuleLibrary", msg);
+				"loadModuleLibrary", buf);
 	}
         MT_set_lock(mal_contextLock, "loadModule");
 	for(i=0;modulesLoaded[i] && i<127;i++);
