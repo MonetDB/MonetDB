@@ -323,7 +323,9 @@ int MT_path_absolute(char *pathname) {
 void MT_init_posix(){
 	MT_heapbase = 0;
 
+/*
 	_set_sbh_threshold(MT_SMALLBLOCK);
+*/
 	MT_alloc_init();
 }
 

@@ -926,7 +926,11 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 @:atomtostr(int,%d,int)@
 
 @:numfromstr(lng,19,9223372036854775807)@
+#ifdef NATIVE_WIN32
+@:atomtostr(lng,%I64d,lng)@
+#else
 @:atomtostr(lng,%lld,lng)@
+#endif
 @
 int lngToStr(char **dst, int *len, lng *src) {
 	char *p;
@@ -1227,7 +1231,7 @@ void strHeapConvert(Heap *h,int dir) {
 int strPut(Heap *h, int *dst, str v) {
 	int *l, off, i = GDK_STRLEN(v);
 	int len = (((i-1) >> 2) + 2) << 2; /* round up to 4-byte alignment + 4 (next pointer) */
-	int elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
+	unsigned int elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
 
 	/* search hash-table, if double-elimination is still in place */
 	off = strOldHash(v) & GDK_STRHASHMASK; 
@@ -1246,7 +1250,7 @@ int strPut(Heap *h, int *dst, str v) {
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
 	if (h->free + len >= h->size) {
-		size_t newsize = len + h->size*BATMARGIN;
+		size_t newsize = len + (size_t)((dbl)h->size*BATMARGIN);
 
 		/* XXX: if the heap just becomes too big, insert a nil (last 4 bytes are free) */
 		if (newsize > GDK_VM_MAXSIZE) {

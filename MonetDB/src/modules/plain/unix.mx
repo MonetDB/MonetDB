@@ -75,6 +75,23 @@ int unix_getenv(str *res, str varname) {
     return GDK_SUCCEED;
 }
 
+#ifndef HAVE_SETENV
+#ifdef HAVE_PUTENV
+int setenv(char *name, char *value, int overwrite) {
+        int ret = 0;
+        if (overwrite || getenv(name) == NULL) {
+                char *p = (char*) GDKmalloc(2+strlen(name)+strlen(value));
+                strcpy(p, name);
+                strcat(p, "=");
+                strcat(p, value);
+                ret = putenv(p);
+                /* GDKfree(p); */
+        }
+        return ret;
+}
+#endif
+#endif
+
 int unix_setenv(bit *res, str varname, str valname) {
     *res = setenv(varname, valname, TRUE);
     return GDK_SUCCEED;

@@ -750,6 +750,7 @@ int @1_isnil(bit *retval, @1* val) {
 
 int str_isnil(bit *retval, str val) {
         *retval = (*(chr*) (val) == GDK_chr_min);
+	return GDK_SUCCEED;
 }
 
 int any_isnil(bit *retval, ptr val, int tpe) {

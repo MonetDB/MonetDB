@@ -597,6 +597,7 @@ int monet_sprintf(str *res, str format, va_list ap){
 		if (paramseen) {
 			char *p, meta[100];
 			int extra = 0;
+			int len;
 
 			if (GDKisdigit(*cur)) {
 				if (dotseen) {
@@ -614,15 +615,18 @@ int monet_sprintf(str *res, str format, va_list ap){
 			} else if (*cur == 'l') {
 				cur++;
 				if (*cur == 'l') {
-					cur++; extra = 1;
+					cur++; 
+					/* start of ll*/
+					extra = (cur-paramseen)-2; 
 				}
 			} 
 			if ((p = va_arg(ap,char*)) == NULL) {
 				return_error(toofew_error);
 			}
 			type = ATOMstorage(va_arg(ap,int));
-			memcpy(meta, paramseen, 1+(cur-paramseen));
-			meta[1+(cur-paramseen)] = 0;
+			len = 1+(cur-paramseen);
+			memcpy(meta, paramseen, len);
+			meta[len] = 0;
                         if (ATOMcmp(type, ATOMnilptr(type), p) == 0) {
                                 /* value is nil; attempt to print formatted 'nil'
                                    without generating %ls etc. */
@@ -652,6 +656,7 @@ int monet_sprintf(str *res, str format, va_list ap){
 				}
 				@:sprintf(ival)@
 			} else if (strchr("diouxX", *cur)) {
+				int i;
 				lng lval;
 				if (dotseen) { 
 					return_error(format_error);
@@ -670,6 +675,14 @@ int monet_sprintf(str *res, str format, va_list ap){
 				} else {
 					return_error(type_error);
 				}
+#ifdef NATIVE_WIN32 
+				for(i=len; i>=(extra+2); i--){
+					meta[i+1] = meta[i];
+				}
+				meta[extra] = 'I';
+				meta[extra+1] = '6';
+				meta[extra+2] = '4';
+#endif
 				@:sprintf(lval)@
 		    	} else if (strchr("feEgG", *cur)) {
 				dbl dval;

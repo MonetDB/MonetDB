@@ -66,7 +66,6 @@ gdk_export void BATSIGcrash(int);
 char	GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 char	GDKdbnameStr[PATHLENGTH] = { 0 };
 char	GDKdirStr[PATHLENGTH] = { 0 };
-char	GDKdistrStr[PATHLENGTH] = MONET_PREFIX;
 
 BAT 	*GDKenv = NULL;
 
@@ -91,23 +90,6 @@ BAT 	*GDKenv = NULL;
 
 #ifdef HAVE_PWD_H
 # include <pwd.h>
-#endif
-
-#ifndef HAVE_SETENV
-#ifdef HAVE_PUTENV
-int setenv(char *name, char *value, int overwrite) {
-        int ret = 0;
-        if (overwrite || getenv(name) == NULL) {
-                char *p = (char*) GDKmalloc(2+strlen(name)+strlen(value));
-                strcpy(p, name);
-                strcat(p, "=");
-                strcat(p, value);
-                ret = putenv(p);
-                /* GDKfree(p); */
-        }
-        return ret;
-}
-#endif
 #endif
 
 @- Monet configuration file
@@ -204,7 +186,6 @@ A system log can be maintained in the database to keep track
 of session and crash information. It should be regulary be
 refreshed to avoid disk overflow.
 @c
-#ifndef GDK_NOLINK
 #define GDKLOCK	".gdk_lock"
 
 static FILE* GDKlockFile = 0; 
@@ -1434,7 +1415,6 @@ int THRprintf(stream *s, char *format, ...) {
         return 0;
 }
 
-#endif
 @}
 @h
 #endif /* _GDK_UTILS_H_ */

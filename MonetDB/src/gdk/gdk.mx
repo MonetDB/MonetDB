@@ -351,10 +351,6 @@ extern "C" {
 #define GDKisupperl(c)  (((unsigned char) (c)) >= 192 && ((unsigned char) (c)) <= 223)
 #define GDKislowerl(c)  (((unsigned char) (c)) >= 224 && ((unsigned char) (c)) <= 255)
 
-#ifdef DEF_SETENV
-extern int setenv(char *name, char *value, int overwrite);
-#endif
-
 #define GDKPROP		6	/*	use one spare! */
 #define MONETHOME	"MONETHOME"
 #ifndef NATIVE_WIN32
