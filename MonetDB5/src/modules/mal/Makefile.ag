@@ -1,7 +1,7 @@
 
 INCLUDES = $(MONETDB_INCS) \
         -I../../modules/atoms \
-        -I../../mal $(Z_CFLAGS) $(BZ_CFLAGS)
+        -I../../mal $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS)
 
 MTSAFE
 
@@ -19,6 +19,17 @@ LIBS = {
 	SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) 
 }
+
+lib_pcre = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = pcre.mx
+
+	HEADERS = h 
+	SCRIPTS = mal mil ""
+	LIBS = $(MONETDB_LIBS) $(PCRE_LIBS)
+}
+
 #doc_mal = {
 #	DIR = pkgdatadir/docs/modules/mal
 #	SOURCES = \
@@ -35,7 +46,7 @@ scripts_mal = {
 		atoms.mx profiler.mx const.mx mil.mx bbp.mx  \
 		enum.mx streams.mx inspect.mx crackers.mx io.mal \
 		chopper.mx thread.mx optimizer.mx clients.mx tablet.mx \
-		transaction.mx factory.mx mdb.mx costmodel.mx
+		transaction.mx factory.mx mdb.mx costmodel.mx pcre.mx
 }
 
 #EXTRA_DIST_DIR = Tests
