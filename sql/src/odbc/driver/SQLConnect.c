@@ -54,8 +54,8 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szDataSource, nDataSourceLength);
 	if (nDataSourceLength == 0) {
-		szDataSource = "Default";
-		nDataSourceLength = strlen(szDataSource);
+		szDataSource = (SQLCHAR*)"Default";
+		nDataSourceLength = strlen((char*)szDataSource);
 	}
 	dsn = dupODBCstring(szDataSource, nDataSourceLength);
 	/* for now we only allow the default data source */
