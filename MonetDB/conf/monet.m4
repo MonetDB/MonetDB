@@ -296,8 +296,10 @@ if test "x$enable_debug" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-debug is not possible.])
   else
     dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
-    CFLAGS="`echo " $CFLAGS " | sed -e 's| \-O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
-    CXXFLAGS="`echo " $CXXFLAGS " | sed -e 's| \-O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS=" $CFLAGS "
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
+    CXXFLAGS=" $CXXFLAGS "
+    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[0-9] | |g' -e 's|^ ||' -e 's| $||'`"
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -O0"
       CXXFLAGS="$CXXFLAGS -O0"
@@ -321,7 +323,8 @@ if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
-    CFLAGS="`echo " $CFLAGS " | sed -e 's| \-g | |g' -e 's|^ ||' -e 's| $||'`"
+    CFLAGS=" $CFLAGS "
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
