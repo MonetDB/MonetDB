@@ -1008,10 +1008,6 @@ def RunTest(env, TST) :
 				for l in fileinput.input(f):
 					p.write("! "+l)
 					killed = 1
-		if killed:
-			STDOUT.write("(Killed!)")
-		STDOUT.write("\n")
-		STDOUT.flush()
 
 		#TODO:
 		##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -1030,6 +1026,19 @@ def RunTest(env, TST) :
 
 		TestOut.close()
 		TestErr.close()
+
+		timeout = 0
+		mto = re.compile("^!Mtimeout: Timeout: ")
+		for l in fileinput.input(TestErr.name):
+			if mto.match(l):
+				timeout = 1
+
+		if timeout:
+			STDOUT.write("(Timeout!) ")
+		if killed:
+			STDOUT.write("(Killed!) ")
+		STDOUT.write("\n")
+		STDOUT.flush()
 
 		if env['exe']['Mtimeout'][0]:
 			env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout '+str(par['TIMEOUT'])+' '
@@ -1105,7 +1114,12 @@ def RunTest(env, TST) :
 ### RunTest(env, TST) #
 
 def CheckSocket(env,SERVER,SrvrErr,LogLine) :
-	wait = 66
+#	if OS == "SunOS":
+#		wait = 241
+#	else:
+#		wait = 61
+	wait = 61
+	repeat = 5
 	host=''
 	port = 0
 	if SERVER == "MAPI":
@@ -1113,22 +1127,27 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
 	if SERVER == "SQL":
 		port = int(env['SQLPORT'])
 	S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	try:
-		S.bind((host,port))
-	except socket.error, (Serrno,Serrstr):
-		Smsg =      "\n! Socket-Check failed for "+SERVER+"server on <"+host+":"+str(port)+"> with #"+str(Serrno)+"; '"+Serrstr+"' !"
-		Smsg = Smsg+"\n! Waiting "+str(wait)+" seconds... "
-		STDERR.write(Smsg)
-		STDERR.flush()
-		SrvrErr.write(Smsg)
-		SrvrErr.flush()
-		time.sleep(wait)
+	rpt = 0
+	while rpt < repeat:
+		try:
+			S.bind((host,port))
+		except socket.error, (Serrno,Serrstr):
+			rpt = rpt + 1
+			Smsg =      "\n! Socket-Check failed for "+SERVER+"server on <"+host+":"+str(port)+"> with #"+str(Serrno)+"; '"+Serrstr+"' !"
+			Smsg = Smsg+"\n! Waiting "+str(wait)+" seconds (%d/%d) ... " % (rpt,repeat)
+			STDERR.write(Smsg)
+			STDERR.flush()
+			SrvrErr.write(Smsg)
+			SrvrErr.flush()
+			time.sleep(wait)
+		else:
+			S.close()
+			break
+	if rpt != 0:
 		SrvrErr.write("Done.\n\n")
 		SrvrErr.flush()
 		STDERR.write("Done.\n"+LogLine)
 		STDERR.flush()
-	else:
-		S.close()
 ### CheckSocket(env,SERVER,SrvrErr,LogLine) #
 
 def Prompt(cmd) :
