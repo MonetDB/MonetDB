@@ -84,7 +84,8 @@ c.print;
 @{
 @* Implementation
 @c
-#include "gdk.h"
+#include "io.h"
+#include "bitvector.proto.h"
 
 #define numentries(a, b)	(((a) + (b) - 1) / (b))
 

@@ -41,7 +41,7 @@ with stats_add.  A results file can be created through stats_report.
 #include <stdio.h>
 #include <assert.h>
 #include <sys/types.h>
-#include "gdk.h"
+#include "stats.proto.h"
 
 struct _StatOps_t;
 typedef struct _StatOps_t StatOps_t;
@@ -359,7 +359,7 @@ Mean_m(Stats_t *st)
 static gdk_uint64
 Stddev_m(Stats_t *st)
 {
-  gdk_uint64 sigsq;
+  gdk_int64 sigsq;
 
   sigsq = Variance_m(st);
   if (sigsq <= 0) return 0;
@@ -380,7 +380,8 @@ static gdk_uint64
 Conf95_m(Stats_t *st)
 {
   if (st->st_nadds == 0) return (gdk_uint64)-1;
-  return (19600 * Stddev_m(st)) / sqrt(st->st_nadds * 100000000);
+  return (19600 * (gdk_int64)Stddev_m(st)) / 
+		sqrt((gdk_int64)st->st_nadds * 100000000);
 }
 
 static gdk_uint64

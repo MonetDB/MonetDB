@@ -121,6 +121,8 @@ will even be the case for long 64-bit integers.
 @* Implementation
 @c
 #include "gdk.h"
+#include "io.h"
+#include "enum.proto.h"
 
 typedef int (*fcn)();
 #define ENUM_CHK(x,y)\
@@ -373,7 +375,8 @@ int enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe){
 	return GDK_SUCCEED;
 } 
 
-int enum_decode(ptr *dst, int *dsttpe, int *enum_t, ptr src, int srctpe){
+int enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe){
+	ptr *dst = (ptr*)xdst;
 	ptr v;
 	ENUM_CHK(*enum_t, "decode");
 	if (srctpe != *enum_t) {
@@ -522,7 +525,7 @@ int enum_table(BAT** dst, int *enum_t) {
 	return GDK_SUCCEED;
 }
 
-int enum_chktpe(int tpe) {
+enum_export int enum_chktpe(int tpe) {
 	int i;
 	for(i=0; i<MAX_ENUM; i++)
 		if (enum_tpe[i] == tpe) return TRUE;

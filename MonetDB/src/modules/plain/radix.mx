@@ -241,6 +241,9 @@ while(n < 16000000) {
 @c
 #include "monet.h"
 
+#define integer int
+#include "radix.proto.h"
+
 int uniform(BAT** bn, oid *base, int *size, int *domain) {
         unsigned int n=*size, i, j = 0, r=0;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
@@ -382,10 +385,7 @@ typedef struct {
 	int size; /* size of chunk (in bytes) */
 } move_t;
 
-#define integer int
 int integerHash(int*i) { return int_HUSSLE(*i); }
-
-#include "radix.proto.h"
 
 int BAT2integer(BAT **ret, BAT* b) {
 	BAT *m = BATmirror(b);

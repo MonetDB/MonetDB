@@ -82,6 +82,9 @@ in the head of the resulting table; the tail contains the matching IDs.
 #include <math.h>
 #include <unistd.h>
 #include "gdk.h"
+#include <io.h>
+#include <bitvector.proto.h>
+#include <stats.proto.h>
 
 #define HUEBINS		256
 #define GREYSAT		((256 * 20) / 100)
@@ -106,9 +109,9 @@ in the head of the resulting table; the tail contains the matching IDs.
 
 #define isgrey(sat)	((sat) <= GREYSAT)
 #define NS(x)		((Time)(x))
-#define US(x)		(NS(x) * 1000LL)
-#define MS(x)		(US(x) * 1000LL)
-#define S(x)		(MS(x) * 1000LL)
+#define US(x)		(NS(x) * LL_CONSTANT(1000))
+#define MS(x)		(US(x) * LL_CONSTANT(1000))
+#define S(x)		(MS(x) * LL_CONSTANT(1000))
 
 typedef enum {
   N = 0, NE = 1, E = 2, SE = 3, S = 4, SW = 5, W = 6, NW = 7, Parent = 8
@@ -122,7 +125,7 @@ typedef enum {
   ColorSpace_IR_12 = COLORSPACE_IR_12
 } colorspace_t;
 
-typedef long long Time;
+typedef gdk_int64 Time;
 
 static char *dirs[] = {
   "North", "NorthEast", "East", "SouthEast", 
@@ -284,12 +287,12 @@ qt_prelude()
     for (failed = n = 0; n != NIRBINS * NIRBINS * NIRBINS; n++) {
       char cname[128];
 
-      snprintf(cname, 128, "IR_W_%d_%d_%d", 
+      sprintf(cname, "IR_W_%d_%d_%d", 
 	       n / (NIRBINS * NIRBINS),
 	       (n / NIRBINS) % NIRBINS, n % NIRBINS);
       ir_wclusters[n] = BATload(cname);
 
-      snprintf(cname, 128, "IR_N_%d_%d_%d", 
+      sprintf(cname, "IR_N_%d_%d_%d", 
 	       n / (NIRBINS * NIRBINS),
 	       (n / NIRBINS) % NIRBINS, n % NIRBINS);
       ir_nclusters[n] = BATload(cname);
@@ -1056,7 +1059,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum,
       GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
       return GDK_FAIL;
     }
-    snprintf(cname, 128, "IR_W_%d_%d_%d", 
+    sprintf(cname, "IR_W_%d_%d_%d", 
 	     n / (NIRBINS * NIRBINS),
 	     (n / NIRBINS) % NIRBINS, n % NIRBINS);
     (void)BATrename(ir_wclusters[n], cname);
@@ -1066,7 +1069,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum,
       GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
       return GDK_FAIL;
     }
-    snprintf(cname, 128, "IR_N_%d_%d_%d", 
+    sprintf(cname, "IR_N_%d_%d_%d", 
 	     n / (NIRBINS * NIRBINS),
 	     (n / NIRBINS) % NIRBINS, n % NIRBINS);
     (void)BATrename(ir_nclusters[n], cname);
