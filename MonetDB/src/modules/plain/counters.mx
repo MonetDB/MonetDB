@@ -1962,7 +1962,7 @@ PROC test_counters() : void {
 	en.print();
 	show_native_events.print();
 
-	en@batloop {
+	en@batloop() {
 		e0 := $h;
 		if ( e0 < ne2 ) {
 			e1 := e0 + ne2;
@@ -1986,7 +1986,7 @@ PROC test_counters() : void {
 	eu.print();
 	show_unified_events.print();
 	
-	eu@batloop {
+	eu@batloop() {
 		e0 := $h;
 		e1 := $h;
 		n0 := eu.find(e0);
