@@ -39,7 +39,7 @@ $(prefix)/doc/Mx/mxdoc.aux:	$(prefix)/doc/Mx/mxdoc.tex
 	(cd $(prefix)/doc/Mx; latex mxdoc.tex; latex mxdoc.tex)
 
 $(prefix)/doc/Mx/index.html:	$(prefix)/doc/Mx/mxdoc.aux
-	(cd $(prefix); latex2html -ascii_mode -noimages -notiming -noaddress -style http://monetdb.cwi.nl/MonetDB.css -dir doc/Mx doc/Mx/mxdoc.tex)
+	(cd $(prefix); latex2html -ascii_mode -no_images -no_timing -no_address -style http://monetdb.cwi.nl/MonetDB.css -dir doc/Mx doc/Mx/mxdoc.tex)
 
 $(prefix)/doc/MapiJava/index.html:	$(top_srcdir)/src/mapi/clients/java/MapiClient.java	\
 					$(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java	\
