@@ -363,6 +363,11 @@ aix*)
     case "$GCC" in
       yes)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -mthreads"
+        dnl  With "-On" (n>0), compilation of monet_multiplex.mx fails on sara's solo with
+        dnl  "Assembler:
+        dnl   /tmp/cc8qluZf.s: line 33198: Displacement must be divisible by 4.";
+        dnl  hence:
+        NO_OPTIMIZE_FILES="monet_multiplex.mx"
         ;;
       *)
         THREAD_SAVE_FLAGS="$THREAD_SAVE_FLAGS -qthreaded"
@@ -374,6 +379,7 @@ esac
 AC_SUBST(MEL_LIBS)
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
+AC_SUBST(NO_OPTIMIZE_FILES)
 
 have_java=auto
 JAVA_VERSION=""
