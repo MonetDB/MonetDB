@@ -52,4 +52,4 @@ $(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures
 SQL_html:	$(prefix)/doc/SQLsessionDemo.html $(prefix)/doc/SQLfeatures/SQLfeatures.aux
 	(cd $(prefix); latex2html -ascii_mode -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex)
 
-html: jdbcmanual_html SQL_html
+html: SQL_html jdbcmanual_html
