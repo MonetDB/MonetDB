@@ -284,6 +284,26 @@ Some explanation of what mem_usage() and vm_usage() display:
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
 	"list all loaded modules, and the number of active users.", "sys"); 
 
+    PROC atoms():void :={
+	nme:= new(void,str); nme.seqbase(0@0); 
+	sze:= new(void,str); sze.seqbase(0@0); 
+	aln:= new(void,str); aln.seqbase(0@0);
+	monet_mod_atm@batloop(){
+		var i:= search($t,'=');
+		var j:= search($t,',');
+		nme.insert(nil,$t.string(0,i));
+		var k:= j - 1;
+		sze.insert(nil,$t.string(i+1,k-i));
+		if(j>0){
+		aln.insert(nil,$t.string(j+1,$t.length-j));
+		} else {
+		aln.insert(nil,$t.string(i+1,$t.length-i));
+		}
+	}
+	table(1,nme.col_name("atom type"),
+		sze.col_name("size"),
+		aln.col_name("alignment"));
+    }
     PROC sigs(str modname) : void := {
 	var modname2;
 	if (modname.startsWith("_")) {
