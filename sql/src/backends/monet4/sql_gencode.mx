@@ -93,7 +93,7 @@ static void write_command( backend *sql, char *buf )
 {
 	if (mvc_debug_on(sql->mvc,1024+2048)) {
 		char *s = _strdup(buf), *c = s;
-		int l = strlen(s) + 32;;
+		int l = strlen(s) + 32;
 		char *v = NEW_ARRAY(char, l);
 		while ((c = strchr(c,'"')))	*c = '`';
 		c = s;
