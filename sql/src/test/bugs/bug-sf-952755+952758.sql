@@ -1,5 +1,0 @@
-START TRANSACTION;
-
-CREATE TABLE test(num numeric(2,8));
-
-ROLLBACK;

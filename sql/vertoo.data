@@ -1,3 +1,0 @@
-sql = major:2; minor:4; release:3;
-MonetDB = major:4; minor:4; release:2;
-jdbc = major:1; minor:0; suffix:Dawn SR-1+;
