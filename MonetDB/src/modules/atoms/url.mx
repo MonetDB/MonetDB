@@ -119,7 +119,7 @@ The URLs are stored as strings without further optimization.
 A more compact representation is feasible, but not considered yet to
 invest energy.
 @= Pseudo
-        BATrename(b,"@1_@2");
+        /* BATrename(b,"@1_@2");*/
         BATroles(b,"@1","@2");
         BATmode(b,TRANSIENT);
 @-

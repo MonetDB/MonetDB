@@ -1,0 +1,136 @@
+@f uchr
+@t The uchr module
+@a Niels Nes
+@v 1.0
+@* Introduction
+@T
+The uchr atom is just a chr but uses numerical string representations.
+
+
+@* Implementation
+
+@+ MEL definition
+@mal
+atom module uchr:chr;
+command fromstr() = uchr_fromstr;
+command tostr()   = uchr_tostr;
+
+command uchr(s:str):uchr = uchr_createStr;
+command uchr(i:int):uchr = uchr_createInt;
+command uchr(i:sht):uchr = uchr_createSht;
+command uchr(i:lng):uchr = uchr_createLng;
+
+@+ C implementation
+@c
+
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Niels Nes <Niels.Nes@cwi.nl>
+ */
+
+/* #define DEBUG */
+
+@h
+#ifndef _UCHR_H
+#define _UCHR_H
+typedef unsigned char uchr;
+
+#endif
+@c
+#include "uchr.h"
+#include "gdk.h"
+#include "mal.h"
+
+@- Atom commands
+@c
+
+int uchr_fromstr(str uchrStr, int *len, uchr** c) {
+	char *end = NULL;
+
+#ifdef DEBUG
+	printf("* uchr_fromstr:\n");
+	printf("  - uchrStr: %s\n",(uchrStr!=NULL?uchrStr:"null"));
+	printf("  - *len: %d\n",*len);
+#endif
+
+	if (!*c){
+		*c = (uchr*)GDKmalloc(sizeof(uchr));
+	} else if (*len < sizeof(uchr)){
+		GDKfree(*c);
+		*c = GDKmalloc(sizeof(uchr));
+		*len = sizeof(uchr);
+	}
+
+	**c = (uchr)strtol(uchrStr, &end, 10);
+
+#ifdef DEBUG
+	printf("  = *c: %d\n", (int)**c);
+	printf("  = *len: %d\n",*len);
+#endif
+
+	return end-uchrStr;
+}
+
+int uchr_tostr(char **uchrStr, int *len, uchr *c) {
+
+#ifdef DEBUG
+	printf("* uchr_tostr:\n");
+	printf("  - *len: %d\n",*len);
+	printf("  - c: %s\n",(c!=NULL?c:"null"));
+#endif
+
+	/* allocate and fill a new string */
+	
+	if (*len < 4) {
+		GDKfree(*uchrStr);
+		*uchrStr = GDKmalloc(4);
+		*len = 4;
+	}
+	sprintf(*uchrStr,"%u",(int)*c);
+
+#ifdef DEBUG
+	printf("  = *uchrStr: %s\n",*uchrStr);
+	printf("  = *len: %d\n",*len);
+#endif
+	return 4;
+}
+
+str uchr_createLng(uchr *ret, lng *i){
+	*ret= *i;
+	return MAL_SUCCEED;
+}
+
+str uchr_createSht(uchr *ret, sht *i){
+	*ret= *i;
+	return MAL_SUCCEED;
+}
+
+str uchr_createInt(uchr *ret, int *i){
+	*ret= *i;
+	return MAL_SUCCEED;
+}
+
+str uchr_createStr(uchr *ret, str *s){
+	int i = strtol(*s,NULL,0);
+	*ret= i;
+	return MAL_SUCCEED;
+}
+@mil
+var b := new(int, uchr);
+b.insert(1,uchr(1));

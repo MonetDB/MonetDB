@@ -19,6 +19,7 @@ use "atoms/str";
 use "atoms/url";
 use "atoms/uchr";
 use "atoms/monettime";
+use "atoms/decimal";
 @-
 @h
 /*
