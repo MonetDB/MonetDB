@@ -1008,11 +1008,11 @@ def RunTest(env, TST, BusyPorts) :
         if bestout:
             STABLEout = os.path.join(dir, bestout)[len(TST):]
         else:
-            STABLEout = ''
+            STABLEout = '.stable.out'
         if besterr:
             STABLEerr = os.path.join(dir, besterr)[len(TST):]
         else:
-            STABLEerr = ''
+            STABLEerr = '.stable.err'
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
