@@ -404,7 +404,7 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	}
 	
 	if(username) strcpy(mid->username,username);
-	else strcpy(mid->username,cuserid((char*)NULL));
+	else strcpy(mid->username,(char*)cuserid(NULL));
 
 	if(password) strcpy(mid->password,password);
 	else strcpy(mid->password,"");
@@ -926,7 +926,7 @@ char *Mgetreply(Msession mid) {
 	mid->error = MOK;
 	mid->reply[0]=0;
 
-        while ((ch = getc(mid->from)) != 1) {
+        while (!feof(mid->from) && (ch = getc(mid->from)) != 1) {
                 if (ferror(mid->from)) break;
 		if( ch == '\n') break;
                 if (!isprint(ch) && !isspace(ch)) {

@@ -472,7 +472,7 @@ void DESCclean(BAT* b) {
 }
 
 #define PERSISTENT_TYPE(fcn, col, tpe)\
-	if (tpe != TYPE_bat && (BATatoms[tpe].atomFix||BATatoms[tpe].atomUnfix)) {\
+	if (tpe != TYPE_bat && (BATatoms[tpe].atomUnfix||BATatoms[tpe].atomFix)) {\
 		GDKerror("%s: %s[%s,%s] has transient %s type.\n", \
 		    fcn, b->batId, ATOMname(b->htype), ATOMname(b->ttype), col);\
 		return b;\

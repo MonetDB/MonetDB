@@ -74,7 +74,7 @@ proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] := {
 	var names := [bbpname](bats);
 	var seps  := dump_seps(bats);
 	var types := [bat_ttype](bats);
-	fmtbats:= new(void,bat); fmtbats.seqbase(oid(0));
+	var fmtbats:= new(void,bat); fmtbats.seqbase(oid(0));
 	fmtbats.insert(nil,names);
 	fmtbats.insert(nil,seps);
 	fmtbats.insert(nil,types);

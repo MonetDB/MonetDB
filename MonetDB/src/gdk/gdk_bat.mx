@@ -363,8 +363,8 @@ BAT *BATclear(BAT *b) {
 
 	/* we must dispose of all inserted atoms */
 	if (b->batDeleted == b->batHole && b->batHole == b->batInserted - bs && 
-	    BATatoms[b->htype].atomUnfix == NULL && 
-	    BATatoms[b->ttype].atomUnfix == NULL)
+	    BATatoms[b->htype].atomDel == NULL && 
+	    BATatoms[b->ttype].atomDel == NULL)
 	{
 		/* no stable elements: we do a quick heap clean */
 		/* need to clean heap which keep data even though the
@@ -381,7 +381,7 @@ BAT *BATclear(BAT *b) {
 			ATOMheap(b->ttype, &b->theap, cap);
 		}
 	} else {
-		/* do unfix and heap-deleted of all inserted atoms */
+		/* do heap-delete of all inserted atoms */
 		void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
 
@@ -410,6 +410,25 @@ BAT *BATclear(BAT *b) {
 
 int BATfree(BAT *b) {
 	/* deallocate all memory for a bat */
+	int bs=BUNsize(b);
+	BUN p, q;
+
+	/* we must dispose of all inserted atoms */
+	if (BBP_plevel(b->batCacheid) <= 0 &&
+ 	    (BATatoms[b->htype].atomDel != NULL || 
+	    BATatoms[b->ttype].atomDel != NULL))
+	{
+		/* do heap-delete of all inserted atoms */
+		void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
+		void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
+
+		if (hatmdel || tatmdel) 
+		for(p=b->batInserted, q=BUNlast(b); p < q; p += bs) {
+			if (hatmdel) (*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
+			if (tatmdel) (*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
+		}
+	}
+
 	BATreset(b);
 	ACCunloadall(b);
         DELTAsave(b); /* convert to disk format */

@@ -708,7 +708,6 @@ void BBPtransient(bat i) {
 			BBP_status_off(i, BBPPERSISTENT, "BBPtransient");
 			if (BBP_refs(i) == 0){
 				BAT *b = BBP_cache(i);
-				printf("BBPfree %d\n", i );
 				if (b) BBPfree(b);
 			}
 		}
@@ -942,6 +941,9 @@ int BBPfix(bat i) {
 
 	if (i < 0) i = -i;
 	if (BBPcheck(i, "BBPfix")) {
+		BATDEBUG {
+			THRprintf(GDKerr, "fix %d (%s)\n", i, BBP_logical(i)); 
+		}
 		while(TRUE) {
 			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPfix"); 
 			if (BBP_status(i) & BBPUNLOADING) { /* must wait for unload, then reload */
@@ -963,6 +965,9 @@ int BBPunfix(bat i) {
 
 	if (BBPcheck(i, "BBPunfix") == 0) {
 		return -1;
+	}
+	BATDEBUG {
+		THRprintf(GDKerr, "unfix %d (%s)\n", i, BBP_logical(i)); 
 	}
 	if (i < 0) i = -i;
 	MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPunfix"); 

@@ -4,7 +4,7 @@ PROC tmp() : void := {
         var nme := view_bbp_name.access(BAT_WRITE).col_name("name");
         var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
         nme.replace(rev).table(view_bbp_heat, sts.col_name("status"),
-                view_bbp_kind, view_bbp_refcnt);
+                view_bbp_persistlevel, view_bbp_refcnt);
 }
 
 #NOTE: the reference counter of bat(name) is during insertion

@@ -267,7 +267,9 @@ int enum_new(int *retval, str name, BAT* b){
 	BATorder(h);
 	BATrename(h, name);
 	BATmode(h, PERSISTENT);
+/*
 	BBPsave(h);
+*/
 	ret = enum_load(retval, h);
 	BBPunfix(h->batCacheid);
 	return ret;
