@@ -211,19 +211,16 @@ command check() : lng = check_bbp_size
 In most cases we pass a BAT identifier, which should be unified
 with a BAT descriptor. Upon failure we can simply abort the function.
 
-@= batcheck
+@= getBATdescriptor
         if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
         @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) {
-                *@1 = 0;
-                return GDK_FAIL;
-        }
-@= batcheck2
-        if( BBPcheck(*@2,@4)== 0 ) {
-                return *@1 = GDK_FAIL;
-        }
+        if( @3 == NULL) { *@1 = 0; return GDK_FAIL; }
+	if( *@2 <0) @3= BATmirror(@3);
+@= getBATdescriptor2
+        if( BBPcheck(*@2,@4)== 0 ) return *@1 = GDK_FAIL;
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) return *@1 = GDK_FAIL;
+	if( *@2 <0) @3= BATmirror(@3);
 @= chkIdentifier
 	/* generate exception if string is not an identifier */
         if( isIdentifier(@1)){
@@ -465,7 +462,7 @@ int CMDbbp_iterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 int CMDbbp_setRoles(int *r, int *bid, str *hname, str *tname){
 	BAT *b;
-	@:batcheck(r,bid,b,"CMDbbp_setRoles")@
+	@:getBATdescriptor(r,bid,b,"CMDbbp_setRoles")@
 	BATroles(b, *hname, *tname);
 	*r= b->batCacheid;
 	BBPfix(b->batCacheid);
@@ -473,7 +470,7 @@ int CMDbbp_setRoles(int *r, int *bid, str *hname, str *tname){
 }
 int CMDbbp_setColumn(int *r, int *bid, str *hname){
 	BAT *b;
-	@:batcheck(r,bid,b,"CMDbbp_setRoles")@
+	@:getBATdescriptor(r,bid,b,"CMDbbp_setRoles")@
 	*r= b->batCacheid;
 	BBPfix(b->batCacheid);
 	BATroles(b, *hname, b->tident);
@@ -483,7 +480,7 @@ int CMDbbp_setColumn(int *r, int *bid, str *hname){
 int CMDbbp_rename(bit *retval, int *bid, str *s){
 	BAT *b;
 	int ret;
-	@:batcheck(retval,bid,b,"CMDbbp_rename")@
+	@:getBATdescriptor(retval,bid,b,"CMDbbp_rename")@
 	ret = BATname(b,*s);
 	*retval = FALSE;
         if (ret == 1) {
@@ -503,14 +500,14 @@ int CMDbbp_rename(bit *retval, int *bid, str *s){
 
 int CMDbbp_name(str *retval, int *bid){
 	BAT *b;
-	@:batcheck(retval,bid,b,"CMDbbp_name")@
+	@:getBATdescriptor(retval,bid,b,"CMDbbp_name")@
 	*retval = GDKstrdup(BBPname(b->batCacheid));
 	return GDK_SUCCEED;
 }
 
 int CMDbbp_setPersistent(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDbbp_setPersistence")@
+	@:getBATdescriptor(res,bid,b,"CMDbbp_setPersistence")@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	*res= b->batPersistence & PERSISTENT;
@@ -519,7 +516,7 @@ int CMDbbp_setPersistent(int *res, int *bid) {
 }
 int CMDbbp_isPersistent(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDbbp_setPersistence")@
+	@:getBATdescriptor(res,bid,b,"CMDbbp_setPersistence")@
 	BATpropcheck(b);
 	BATpropcheck(BATmirror(b));
 	BATmode(b, PERSISTENT);
@@ -528,14 +525,14 @@ int CMDbbp_isPersistent(int *res, int *bid) {
 }
 int CMDbbp_setTransient(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDbbp_setTransient")@
+	@:getBATdescriptor(res,bid,b,"CMDbbp_setTransient")@
 	*res= b->batPersistence & TRANSIENT;
 	BATmode(b, TRANSIENT);
         return GDK_SUCCEED;
 }
 int CMDbbp_isTransient(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDbbp_setTransient")@
+	@:getBATdescriptor(res,bid,b,"CMDbbp_setTransient")@
 	*res= b->batPersistence & TRANSIENT;
         return GDK_SUCCEED;
 }
@@ -550,7 +547,7 @@ int CMDbbp_unload(bit *res, str *input) {
 }
 int CMDbbp_isCached(int *res, int *bid) {
 	BAT *b;
-	@:batcheck(res,bid,b,"CMDbbp_isCached")@
+	@:getBATdescriptor(res,bid,b,"CMDbbp_isCached")@
 	*res = 0;
 	GDKerror("CMDbbp_isCached:not yet implemented\n");
         return GDK_SUCCEED;
@@ -587,7 +584,7 @@ int CMDbbp_save(bit *res, str *input) {
 }
 int CMDbbp_save2(bit *res, int *bid) {
 	BAT *b;
-	@:batcheck2(res,bid,b,"CMDbbp_save")@
+	@:getBATdescriptor2(res,bid,b,"CMDbbp_save")@
 	if (b && BATdirty(b)) { 
 		if (BBPsave(b) == 0) *res = TRUE;
 	}
@@ -608,7 +605,7 @@ int CMDbbp_save2(bit *res, int *bid) {
 int CMDbbp_mmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 			int *hacc, int *tacc)
 {	BAT *b;
-	@:batcheck(res,bid,b,"CMDbbp_mmap")@
+	@:getBATdescriptor(res,bid,b,"CMDbbp_mmap")@
 	@:change_heap(bns,(*b->batBuns))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
@@ -623,7 +620,7 @@ int CMDbbp_mmap(int *res, int *bid, int *bns, int *hhp, int *thp,
 int CMDbbp_madvise(int *res, int *bid, int *bns, int *hhp, int *thp, 
 		 	        int *hacc, int *tacc)
 {	BAT *b;
-	@:batcheck(res,bid,b,"CMDbbp_madvice")@
+	@:getBATdescriptor(res,bid,b,"CMDbbp_madvice")@
 	return *res= BATmadvise(b, (*bns==int_nil)?-1:*bns, 
 		(*hhp==int_nil)?-1:*hhp, (*thp==int_nil)?-1:*thp, 
 		(*hacc==int_nil)?-1:*hacc, 
@@ -647,7 +644,7 @@ presented.
 int CMDbbp_export(int *ret, int *bid, str *fnme) {
 	BAT *b;
 	FILE	*f = fopen(*fnme, "w");
-	@:batcheck(ret,bid,b,"CMDbbp_export")@
+	@:getBATdescriptor(ret,bid,b,"CMDbbp_export")@
 	if (f == NULL) {
 		GDKsyserror("CMDbbp_export: could not open file %s\n",*fnme);
 		return *ret= GDK_FAIL;
@@ -671,7 +668,7 @@ int CMDbbp_import(int *ret, int *bid, str *fnme) {
 	int	lh = 0,	lt = 0;
 	FILE	*fp = fopen(*fnme, "r");
 
-	@:batcheck(ret,bid,b,"CMDbbp_import")@
+	@:getBATdescriptor(ret,bid,b,"CMDbbp_import")@
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 @-

@@ -208,13 +208,11 @@ int CMDraise(str *ret,  str *msg){
 }
 @+ BAT Iterator Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
-@= batcheck
+@= getBATdescriptor
         if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
         @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) {
-                *@1 = 0;
-                return GDK_FAIL;
-        }
+        if( @3 == NULL) { *@1 = 0; return GDK_FAIL; }
+	if(*@2 <0) @3= BATmirror(@3);
 @-
 @= hashiter
 	if (b->tvarsized) {
@@ -228,7 +226,7 @@ Part of the code is copied from the V 4.3 bat.mx file.
 int CMDhashloop(int *ret, lng *cursor, int *bid)
 {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
 	GDKerror("not yet implemented\n");
 	return GDK_SUCCEED;
 }
@@ -240,7 +238,7 @@ int CMDnextElement_@1(bit *ret, @1 *cursor, int *bid)
 {
 	BAT *b;
 	int limit;
-	@:batcheck(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor <0)
 		*cursor = BUNindex(b,BUNfirst(b));
@@ -268,7 +266,7 @@ int CMDnextElement(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	head = &stk->stk[pci->argv[3]];
 	tail = &stk->stk[pci->argv[4]];
 
-	@:batcheck(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
 	limit=  BUNindex(b,BUNlast(b));
 
 	if( *cursor <0)
@@ -308,7 +306,7 @@ int CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[2]];
 	tail = &stk->stk[pci->argv[3]];
-	@:batcheck(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
 	limit=  BUNindex(b,BUNlast(b));
 
 	if( *cursor >=limit){
@@ -335,7 +333,7 @@ int CMDbatstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 int CMDnextSlice(int *ret, lng *cursor, int *bid, lng *low, lng *high)
 {
 	BAT *b;
-	@:batcheck(ret,bid,b,"CMDnextSlice")@
+	@:getBATdescriptor(ret,bid,b,"CMDnextSlice")@
 	if( *cursor > *high){
 		*ret = FALSE;
 	} else 
@@ -365,7 +363,7 @@ int CMDgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	head = &stk->stk[pci->argv[0]];
 
-	@:batcheck(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
 		return (int)raiseException(mb,stk->pc,"MALexception",
@@ -391,7 +389,7 @@ int CMDgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,1);
 	tail = &stk->stk[pci->argv[0]];
 
-	@:batcheck(ret,bid,b,"CMDnextElement")@
+	@:getBATdescriptor(ret,bid,b,"CMDnextElement")@
 	limit=  BUNindex(b,BUNlast(b));
 	if( *cursor<0  || *cursor >=limit) {
 		return (int)raiseException(mb,stk->pc,"MALexception",

@@ -107,12 +107,11 @@ oldstuff
 @{
 @* Implementation
 Part of the code is copied from the V 4.3 bat.mx file.
-@= batcheck
+@= getBATdescriptor
         if( BBPcheck(*@2,@4)==0) return GDK_FAIL;
         @3= (BAT*) BBPgetdesc(*@2);
-        if( @3 == NULL) {
-                *@1 = 0;
-                return GDK_FAIL;                                                        }
+        if( @3 == NULL) { *@1 = 0; return GDK_FAIL;}
+	if( *@2 <0) @3= BATmirror(@3);
 @-
 Note that we have to build the table with pre-instantiated
 function references, because there is no easy way from the GDK layer
@@ -256,7 +255,7 @@ int enum_reload(int *retval, int bid) {
 	int i;
 	BAT *h;
 
-	@:batcheck(retval,&bid,h,"enum_load")@
+	@:getBATdescriptor(retval,&bid,h,"enum_load")@
 	MT_set_lock(mal_contextLock, "enum_load");
 	for(i=0; i<MAX_ENUM; i++) {
 		if (enum_map[i] == 0) {
@@ -294,7 +293,7 @@ int enum_create(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tpe= getArgType(mb,pci,1);
 	bid= *(int*) getArgReference(stk,pci,2);
 	name= malTypeName(tpe);
-	@:batcheck(retval,&bid,b,"enum_create")@
+	@:getBATdescriptor(retval,&bid,b,"enum_create")@
 	h = BAThistogram(b);
 	nil = ATOMnilptr(b->htype);
 	BUNdelHead(h, nil);
@@ -498,7 +497,7 @@ int enum_encode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ENUM_CHK(tpe,"enum_encode_multi");
 	bid= *(int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:batcheck(retval,&bid,src,"enum_encode_multi")@
+	@:getBATdescriptor(retval,&bid,src,"enum_encode_multi")@
 
 	if (src->ttype != b->htype) {
 	 	GDKerror("[encode]: incompatible source type.\n");
@@ -566,7 +565,7 @@ int enum_decode_multi(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	bid= (int*) getArgReference(stk,pci,1);
 	retval= (int*) getArgReference(stk,pci,0);
-	@:batcheck(retval,bid,src,"enum_encode_multi")@
+	@:getBATdescriptor(retval,bid,src,"enum_encode_multi")@
 	tpe= src->ttype;
 	ENUM_CHK(tpe,"enum_encode_multi");
 	if (ATOMstorage(tpe) == TYPE_chr) { 
@@ -609,7 +608,7 @@ int enum_table(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 int isEnum(bit *ret, int *bid){
 	BAT *b;
 	int i;
-	@:batcheck(ret,bid,b,"isEnum")@
+	@:getBATdescriptor(ret,bid,b,"isEnum")@
 	*ret= FALSE;
 	for(i=0; i<MAX_ENUM; i++)
 		if (enum_map[i] == b->batCacheid) { *ret= TRUE;break;}
@@ -620,7 +619,7 @@ int enum_sethisto(int *retval, int* tpe, int *bid) {
 	BAT *b,*column;
 	int xx;
 	ENUM_CHK(*tpe, "enum_sethisto");
-	@:batcheck(retval,bid,column,"enum_sethisto")@
+	@:getBATdescriptor(retval,bid,column,"enum_sethisto")@
 	if (column->halign == 0) {
 		column->halign = OIDnew(1);
 		column->batDirtydesc = TRUE;
@@ -638,7 +637,7 @@ int enum_ishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid= (int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
 	ENUM_CHK(tpe, "enum_ishisto");
-	@:batcheck(retval,bid,column,"enum_ishisto")@
+	@:getBATdescriptor(retval,bid,column,"enum_ishisto")@
 	*retval = (enum_histo[xx] == column->halign);
 	return GDK_SUCCEED;
 }
