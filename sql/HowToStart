@@ -21,7 +21,7 @@ Python
 	more information.
 
 autoconf/automake/libtool 
-	MonetDB/SQL uses GNU autoconf (>= 2.53), automake (>= 1.4), and
+	MonetDB/SQL uses GNU autoconf (>= 2.53), automake (>= 1.5), and
 	libtool (>= 1.4) during configuration of the software.  See
 	http://www.gnu.org/software/autoconf/,
 	http://www.gnu.org/software/automake/, and

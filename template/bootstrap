@@ -51,7 +51,7 @@ find . -name .incs.\* \-exec rm {} \;
 rm -rf autom4*.cache
 
 
-REQ_AM_VERSION="1.4"
+REQ_AM_VERSION="1.5"
 NEW_AM_VERSION="1.7"
 AM_VERSION=`automake --version 2>/dev/null | sed -n -e '/^automake/{s/.* //g;s/-.*//g;p;q;}'`
 _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
