@@ -1994,7 +1994,7 @@ def main(argv) :
             if not os.path.isfile(mapi_mil):
                 mapi_mil = ''
         env['MAPI_MIL'] = mapi_mil
-        sqlserver_mil = env['SQL_PREFIX']+path("/share/sql/sqlserver.mil")
+        sqlserver_mil = env['SQL_PREFIX']+path("/share/MonetDB/sqlserver.mil")
         if not os.path.isfile(sqlserver_mil):
             sqlserver_mil = env['TSTBLDBASE']+path("/src/server/sqlserver.mil")
             if not os.path.isfile(sqlserver_mil):
