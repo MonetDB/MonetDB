@@ -677,7 +677,7 @@ str ENUMsethisto( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str ENUMishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*column;
-	int xx,*retval;
+	int xx, *retval;
 	int tpe,*bid;
 	str tname;
 
