@@ -532,6 +532,7 @@ static ptr idxTV(str name, BAT* b, oid oid_index) {
 
 static ptr idxTVinWS(XqueryCtx* ctx, int batId, oid oid_index) {
         BAT* b = wsBAT(ctx, batId);
+
         if ( !b )
                 return NULL;
         ptr res = idxTV("tmp",b,oid_index);
@@ -568,12 +569,14 @@ static void query_attr_print(XqueryCtx* ctx, oid pre) {
                 oid id = *(oid*)BUNhead(b, p);
                 /* */
                 oid poid = *(oid*)idxTVinWS(ctx,ATTR_PROP,id);
-                str val  = (str)idxTVinWS(ctx,PROP_VAL,poid);
+                int frag = *(oid*)idxTVinWS(ctx,ATTR_FRAG,id);
+                str val  = (str)idxTVinWSorFRGN(ctx,frag,PROP_VAL,poid);
                 /* */
                 oid qoid = *(oid*)idxTVinWS(ctx,ATTR_QN,id);
-                str ns   = (str)idxTVinWS(ctx,QN_NS,qoid);
-                str name = (str)idxTVinWS(ctx,QN_LOC,qoid);
+                str ns   = (str)idxTVinWSorFRGN(ctx,frag,QN_NS,qoid);
+                str name = (str)idxTVinWSorFRGN(ctx,frag,QN_LOC,qoid);
                 /* */
+
                 handle_attribute(ctx,ns,name,val);
         }
         handle_attributeEnd(ctx);
@@ -596,7 +599,6 @@ static void xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag) {
                         str ns   = (str)idxTVinWSorFRGN(ctx,valueFRAG,QN_NS,prop);
                         handle_startElement(ctx,ns,name);
                         query_attr_print(ctx,pre);
-
                         oid size = *(oid*)idxTVinWS(ctx,PRE_SIZE,pre);
                         pushTag(ctx,pre+size,ns,name);
                         break;
@@ -648,6 +650,7 @@ static void xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
                 p = BUNfirst(b);
         else
                 BUNfndOID(p, b,&from);
+        /* BATprintf(GDKout,b); */
         for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
                 oid pre = *(oid*)BUNhead(b, p);
                 do {
@@ -1024,6 +1027,7 @@ int xquery_xquery(str  mode, str q) {
         FILE    *milStream;
         FILE    *queryStream;
 
+        /* stream_printf(GDKerr,"xquery_xquery(\"%s\",\"%s\")\n",mode,q) */;
         /* first open a temporary file to store the comp */
 #ifdef XQMILDEBUG
         char* milFile = XQMILDEBUG;
