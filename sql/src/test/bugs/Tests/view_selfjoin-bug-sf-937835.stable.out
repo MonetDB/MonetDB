@@ -1,4 +1,4 @@
-stdout of test 'bug-sf-937835` in directory 'src/test/bugs` itself:
+stdout of test 'view_selfjoin-bug-sf-937835` in directory 'src/test/bugs` itself:
 
 
 # 13:20:46 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 13:20:46 >  
-# 13:20:46 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=58979  < bug-sf-937835.sql
+# 13:20:46 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=58979  < view_selfjoin-bug-sf-937835.sql
 # 13:20:46 >  
 
 # 6 # querytype
