@@ -182,7 +182,6 @@ can be used for multi-attribute join.
 .END xtables;
 
 @mil
-     module(_xtables);
 
      PROC CTorderby(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
          if (not(b.reverse.ordered)) {

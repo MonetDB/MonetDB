@@ -77,9 +77,6 @@ to be dumped bats. These bats can be dumped with dump_data.
 .END ascii_io;
 
 @mil
-module(streams);
-module(_ascii_io);
-
 proc load_format( str fmt ) : BAT[str,BAT] := {
 	var names := new(void,str); names.seqbase(oid(0));
 	var seps := new(void,str); seps.seqbase(oid(0));

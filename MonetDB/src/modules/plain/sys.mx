@@ -199,7 +199,6 @@ Some explanation of what mem_usage() and vm_usage() display:
 
 @+ MIL Procedure definitions
 @mil
-    module(_sys);
 
     PROC help_tpe(int tpe) : str := {
 	IF (tpe = TOK_PROC) RETURN "PROC:      ";

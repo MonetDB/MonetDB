@@ -113,9 +113,6 @@ will even be the case for long 64-bit integers.
 .END enum;
 
 @mil
-    module(streams);
-    module(_enum);
-
     proc enum_load(str name) := {
 	var tpe := enum_load(bat(name));
 	monet_atomtbl.insert(sprintf("%s",name),tpe);

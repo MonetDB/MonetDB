@@ -82,9 +82,6 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 
 .END bat_arith;
 
-@mil
-module(_bat_arith);
-
 @* Implementation
 @c
 #include <gdk.h>

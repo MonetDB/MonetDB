@@ -478,7 +478,6 @@ these 'sync' OIDs with their own propagation rules.
 
 @- constants for mmap()
 @mil
-    module(_bat);
     CONST STORE_MEM   := 0;     # load into GDKmalloced memory
     CONST STORE_MMAP  := 1;     # mmap() into virtual memory
     CONST STORE_COMPR := 2;     # currently not implemented this way

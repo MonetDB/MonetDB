@@ -271,9 +271,6 @@ any client activity.
 
 .END kernel;
 
-@mil
-module(_kernel);
-
 @{
 @* Implementation
 The routines for Monet command interpretation are collected here.

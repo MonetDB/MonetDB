@@ -138,7 +138,6 @@ this facilitates the use of the string module in bulk operations.
 The following script is used for testing the string module. 
 
 @mil
-module(_str);
 
 if (mod = "main") {
   setoid(oid(20000000));

@@ -378,7 +378,6 @@ by the increased cube sizes (probably not; {\em limit=1000} performs best).
 .MODULE ddbench;
 
 .USE xtables;
-.USE streams;
 .USE enum;
 
 .ATOM bit32 = int;
@@ -515,10 +514,6 @@ work only on void BATs with enum tails.
 .END ddbench;
 
 @mil
-    module(xtables);
-    module(enum);
-    module(_ddbench);
-
     proc group(bat[oid,any] b) : bat[oid,oid] {
         return CTgroup(b);
     }

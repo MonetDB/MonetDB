@@ -62,9 +62,6 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 
 .END trans;
 
-@mil
-module(_trans);
-
 @{
 @* Implementation Code 
 @c

@@ -281,8 +281,6 @@ array. Specific operations work with this interpretation.
 @
 The constants defined in limit.h are defined using autoloaded mil code.
 @mil
-	module(_arith);
-
         const RAND_MAX   := getRAND_MAX();
 @:limit_milconst(CHR)@
 @:limit_milconst(SHT)@

@@ -433,7 +433,6 @@ macro):
 .END algebra;
 
 @* MIL definitions
-@mil
 @- constants for theta() and thetajoin()
 @mil
 CONST EQ := 0;
@@ -464,7 +463,6 @@ CONST GE := 2;
 The MIL described in the journal paper needs the below constructs
 that for the moment are defined as procs.
 @mil 
-    module(_algebra);
     PROC semijoin(bat[any::1,any::2] l, bat[any::1,any] r) : bat[any::1,any::2] 
  		return kintersect(l,r);
     ADDHELP("semijoin", "boncz", "Nov  1 1998",

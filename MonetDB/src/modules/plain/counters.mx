@@ -79,7 +79,6 @@ only the elapsed time in microseconds is measured.
 .END counters;
 
 @mil
-
 init_counters();
 
 const native_events := show_native_events();

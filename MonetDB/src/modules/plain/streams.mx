@@ -131,7 +131,6 @@ the sqlserver, which in v5.x will output mal instructions (ie no ascii mil dump)
 .END streams;
 
 @mil
-	module(_streams);
 
 	# backward compatibility with old io module (alas: seek has gone..)
 	const EOF := -1;

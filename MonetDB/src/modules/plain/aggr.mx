@@ -76,8 +76,6 @@ test scripts were added.
 .END aggr;
 
 @mil
-    module(_aggr);
-
     proc size(BAT[any,bit] b) : int {
 	var h := b.histogram;
 	if (h.exist(true)) 
