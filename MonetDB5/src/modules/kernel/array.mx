@@ -22,6 +22,11 @@
 The array support library constructs the index arrays essential
 for the Relational Algebra Model language.
 The grid filler operation assumes that there is enough space.
+The shift variant multiplies all elements with a constant factor.
+It is a recurring operation for the RAM front-end and will save
+an additional copying.
+
+The optimization is captured in a contraction macro.
 
 
 @mal
@@ -31,9 +36,19 @@ command grid(i:int,j:int,k:int,l:int) :bat[:void,:int]
 address ARRAYgrid
 comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)";
 
+command grid(i:int,j:int,k:int,l:int,s:int) :bat[:void,:int] 
+address ARRAYgridShift
+comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elements with a factor s";
+
 command grid(b:bat[:void,:int],i:int,j:int,k:int,l:int) :bat[:void,:int] 
 address ARRAYgridBAT
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
+
+command grid(b:bat[:void,:int],i:int,j:int,k:int,l:int,s:int) :bat[:void,:int] 
+address ARRAYgridBAT
+comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elemenets with a factor s";
 
 pattern print(a:bat[:any$1,:any],b:bat[:any$1,:int]...) :void 
 address ARRAYprint
@@ -77,13 +92,14 @@ extern ptr BATmax(BAT *b, ptr aggr);
 /*----------------------------------------------------------------------------*/
 
 int
-fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
+fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
 {
 	register int *ptr;
 	int i = *groups;
 	int n = *groupsize + *offset;
 	int r = *clustersize;
 	int o = *offset;
+	int s = *shift;
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
@@ -98,7 +114,7 @@ fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 			register int ri = r;
 
 			while (ri--)
-				(*(ptr ++)) = ni;
+				(*(ptr ++)) = ni * s;
 			ni++;
 		}
 	}
@@ -116,6 +132,7 @@ grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 	int n = *groupsize + *offset;
 	int r = *clustersize;
 	int o = *offset;
+	int s = 1;
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
@@ -123,7 +140,23 @@ grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 
 	new_int_bat(*out, (i * (n - o) * r));
 	add_ints(*out, (i * (n - o) * r));
-	return fillgrid(out,groups,groupsize,clustersize,offset);
+	return fillgrid(out,groups,groupsize,clustersize,offset, &s);
+}
+int
+gridShift(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+{
+	int i = *groups;
+	int n = *groupsize + *offset;
+	int r = *clustersize;
+	int o = *offset;
+
+#ifdef EXCESSIVE_DEBUGGING
+	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
+#endif
+
+	new_int_bat(*out, (i * (n - o) * r));
+	add_ints(*out, (i * (n - o) * r));
+	return fillgrid(out,groups,groupsize,clustersize,offset,shift);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -341,10 +374,30 @@ ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize, int *offset){
 	return MAL_SUCCEED;
 }
 str
+ARRAYgridShift(int *ret, int *groups, int *groupsize, int *clustersize, int *offset, int *shift){
+	BAT *bn;
+	if( gridShift(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
+		return throwMessage("array.grid","Failed to create the grid\n");
+	BBPincref( *ret= bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+str
 ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset){
 	BAT *bn;
+	int shift= 1;
 	@:getBATdescriptor(ret,bid,bn,array.grid)@
-	if( fillgrid(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
+	if( fillgrid(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
+		return throwMessage("array.grid","Failed to create the grid\n");
+	BBPincref( *ret= bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+str
+ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset, int *shift){
+	BAT *bn;
+	@:getBATdescriptor(ret,bid,bn,array.grid)@
+	if( fillgrid(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		return throwMessage("array.grid","Failed to create the grid\n");
 	BBPincref( *ret= bn->batCacheid, TRUE);
 	BBPunfix(*ret);
