@@ -606,8 +606,7 @@ public String unescapeMILstr(String str) {
 		}
 		unescape = false;
 	}
-	dst[d]='\0';
-	return new String(dst);
+	return new String(dst,0,d);
 }
 
 /**
