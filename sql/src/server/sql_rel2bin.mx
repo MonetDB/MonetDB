@@ -62,34 +62,45 @@ stmt *range_select( stmt *s1, stmt *s2 )
 	if (c1 == c2){
 		int cmp1 = s1->flag;
 		int cmp2 = s2->flag;
+		int cmpX = 0;
 
 		if (cmp1 == cmp_gt && cmp2 == cmp_lt){
-			return stmt_select2(
-				stmt_dup(s1->op1.stval),
-				stmt_dup(s1->op2.stval),
-				stmt_dup(s2->op2.stval),
-				0);
+			cmpX = 0;
 		} else if (cmp1 == cmp_gt && cmp2 == cmp_lte){
-			return stmt_select2(
-				stmt_dup(s1->op1.stval),
-				stmt_dup(s1->op2.stval),
-				stmt_dup(s2->op2.stval),
-				1);
+			cmpX = 1;
 		} else if (cmp1 == cmp_gte && cmp2 == cmp_lt){
-			return stmt_select2(
-				stmt_dup(s1->op1.stval),
-				stmt_dup(s1->op2.stval),
-				stmt_dup(s2->op2.stval),
-				2);
+			cmpX = 2;
 		} else if (cmp1 == cmp_gte && cmp2 == cmp_lte){
-			return stmt_select2(
-				stmt_dup(s1->op1.stval),
-				stmt_dup(s1->op2.stval),
-				stmt_dup(s2->op2.stval),
-				3);
+			cmpX = 3;
 		}
+		return stmt_select2(
+			stmt_dup(s1->op1.stval),
+			stmt_dup(s1->op2.stval),
+			stmt_dup(s2->op2.stval),
+			cmpX);
 	}
 	return stmt_semijoin(stmt_dup(s1),stmt_dup(s2));
+}
+
+list *distill_range_selects(list *l){
+	node *n1, *n2;
+	for ( n1 = l->h; n1; n1 = n1->next){
+		stmt *s1 = n1->data;
+		if (s1->type == st_select && s1->flag < cmp_equal){
+			for ( n2 = n1->next; n2; n2 = n2->next){
+				stmt *s2 = n2->data;
+				if (s2->type == st_select && s2->flag < cmp_equal
+				     && basecolumn(s1) == basecolumn(s2)         ){
+					stmt *rs = range_select(s1,s2);
+					l  = list_prepend(l,rs);
+					n1 = list_remove_node(l,n1);
+					n2 = list_remove_node(l,n2);
+					break;
+				}
+			}
+		}
+	}
+	return l;
 }
 
 stmt *rel2bin( context *c, stmt *s ){
@@ -151,9 +162,12 @@ stmt *rel2bin( context *c, stmt *s ){
 		for(n = s->op1.lval->h; n; n = n->next ){
 			list_append(l, rel2bin(c, n->data));
 		}
-		if (list_length(l) == 2){
+		if (list_length(l) == 1){
+			res = stmt_dup(l->h->data);
+		} else if (list_length(l) == 2){
 			res = range_select(l->h->data, l->h->next->data);
 		} else {
+			l = distill_range_selects(l);
 			res = (stmt*)list_reduce(l, (freduce)&stmt_semijoin, (fdup)&stmt_dup );
 		}
 		list_destroy(l);

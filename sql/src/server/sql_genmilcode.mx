@@ -478,7 +478,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			break;
 		case cmp_lt:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d);\n", 
+			  "s%d := s%d.uselect(%s(nil), s%d, FALSE, FALSE);\n", 
 			  -s->nr, l, tail_type(s)->type->name, r ); 
 			break;
 		case cmp_lte:
@@ -488,7 +488,7 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 			break;
 		case cmp_gt:
 			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil));\n", 
+			  "s%d := s%d.uselect(s%d, %s(nil), FALSE, FALSE);\n", 
 			  -s->nr, l, r, tail_type(s)->type->name ); 
 			break;
 		case cmp_gte: 
@@ -507,28 +507,24 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r1 = stmt_dump( s->op2.stval, nr, sql );
 		int r2 = stmt_dump( s->op3.stval, nr, sql );
+		char *bits = NULL;
 		switch(s->flag){
 		case 0: 
-			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(s%d, s%d, FALSE, FALSE);\n", 
-			  -s->nr, l, r1, r2 ); 
+			bits = ", FALSE, FALSE";
 			break;
 		case 1: 
-			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(s%d, s%d, FALSE, TRUE);\n", 
-			  -s->nr, l, r1, r2 ); 
+			bits = ", FALSE, TRUE";
 			break;
 		case 2: 
-			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(s%d, s%d, TRUE, FALSE);\n", 
-			  -s->nr, l, r1, r2 ); 
+			bits = ", TRUE, FALSE";
 			break;
 		case 3: 
-			len = snprintf( buf, BUFSIZ, 
-			  "s%d := s%d.uselect(s%d, s%d, TRUE, TRUE);\n", 
-			  -s->nr, l, r1, r2 ); 
+			bits = ", TRUE, TRUE";
 			break;
 		}
+		len = snprintf( buf, BUFSIZ, 
+		  "s%d := s%d.uselect(s%d, s%d%s);\n", 
+		  -s->nr, l, r1, r2, bits ); 
 		dump(sql,buf,len,-s->nr);
 	} break;
 	case st_like: 
