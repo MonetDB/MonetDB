@@ -161,12 +161,16 @@ test = (
                 "|" r'^\[ "(mapi_params|tmp_62)",\t* *[10],\t* *[10],\t* *0\t* *\]$'
                 # src/gdk/cast:
                 "|" r'^\[ (\-|)0 \]$'
+                # Tokens depend on flex/bison
+                "|" r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]'
                 # Mtest warnings:
                 "|" r'^Over\.\.$'
                 "|" r'^(quit)?;$'
                 "|" r'^(printf\("\\n)?! Mserver still running after Mshutdown\. Quitting now\. !(\\n"\);)?$'
                 "|" r"^! Socket-Check failed for (SQL|MAPI)server on <[a-zA-Z0-9]*:[0-9]+> with #[0-9]+; '.*' !$"
                 "|" r'^! Waiting [0-9]+ seconds \([0-9]/[0-9]\) \.\.\. (Done\.)?$'
+                "|" r'^! Using new (SQL|MAPI)PORT=[0-9]+ !$'
+                "|" r'^! (SQL|MAPI)PORT was not properly released by Mserver !$'
                  ,  re.MULTILINE)
         )
 
