@@ -111,8 +111,9 @@ extern int mvc_login( mvc *c, char *schema, char *user, char *passwd );
  * The special statement_release can be used to release savepoints. 
  */
 extern int mvc_commit( mvc *c, int chain, char *name );
-extern void mvc_rollback( mvc *c, int chain, char *name );
-extern void mvc_release( mvc *c, char *name );
+extern int mvc_rollback( mvc *c, int chain, char *name );
+extern int mvc_release( mvc *c, char *name );
+extern int mvc_set_iso_level(mvc * m, int level);
 
 extern BAT *mvc_bind( mvc *c, char *tname, char *cname );
 extern sql_schema *mvc_bind_schema( mvc *c, char *sname );
@@ -381,15 +382,12 @@ static sql_key *load_key(BAT * keys, BUN j, sql_table *t)
 		t->pkey = nk;
 
 	cols = BATselect(kc_id, (ptr) & nk->id, (ptr) & nk->id);
-/*
-	rcols = bat_semijoin(kc_nr, cols);
-	bat_decref(cols);
-	cols = bat_reverse(rcols);
-	bat_decref(rcols);
-	rcols = bat_sort(cols);
-	bat_decref(cols);
-	cols = bat_reverse(rcols);
-*/
+	rcols = BATsemijoin(kc_nr, cols);
+	BBPunfix(cols->batCacheid);
+	cols = BATreverse(rcols);
+	rcols = BATsort(cols);
+	BBPunfix(cols->batCacheid);
+	cols = BATreverse(rcols);
 
 	ccnt = BATcount(cols);
 	if (ccnt) {
@@ -445,7 +443,7 @@ static sql_table *load_table(BAT * tables, BUN j)
 	t->name = _strdup(bun_find(sql_table_name, lid));
 	t->temp = 0;
 	t->query = _strdup(bun_find(sql_table_query, lid));
-	t->view = *(int *) bun_find(sql_table_isview, lid);
+	t->view = *(bit *) bun_find(sql_table_isview, lid);
 	t->rtime = 0;
 	t->wtime = 0;
 	t->flag = TR_OLD;
@@ -458,23 +456,17 @@ static sql_table *load_table(BAT * tables, BUN j)
 	t->ncolumn = NULL;
 
 	cols = BATselect(sql_column_table, (ptr) & t->id, (ptr) & t->id);
-	/*
-	rcols = bat_semijoin(sql_column_number, cols);
+	rcols = BATsemijoin(sql_column_number, cols);
 	BBPunfix(cols->batCacheid);
-	cols = bat_reverse(rcols);
-	BBPunfix(rcols->batCacheid);
-	rcols = bat_sort(cols);
+	cols = BATreverse(rcols);
+	rcols = BATsort(cols);
 	BBPunfix(cols->batCacheid);
-	cols = bat_reverse(rcols);
-	*/
+	cols = BATreverse(rcols);
 
 	if (!t->view) {
 		BATloop (cols,p,q)
 			list_append(t->columns, load_column(cols, p));
 	}
-	/*
-	BBPunfix(rcols->batCacheid);
-	*/
 	BBPunfix(cols->batCacheid);
 
 	keys = BATselect(key_table, (ptr) & t->id, (ptr) & t->id);
@@ -739,7 +731,7 @@ void mvc_init(int debug, char *dirname)
 		new_schema("default-schema", "sqladmin");
 	}
 
-	/*logger_init(mvc_debug, dirname);*/
+	logger_init(mvc_debug, dirname);
 
 	mvc_lock = MT_create_lock();
 
@@ -766,7 +758,7 @@ void mvc_exit()
 	if (mvc_debug)
 		printf("mvc_exit\n");
 
-	/* logger_exit(); */
+	logger_exit(); 
 	types_exit();
 
 	BBPunfix(sql_schema_id->batCacheid);
@@ -815,10 +807,6 @@ mvc *mvc_create(int debug)
 
 	MT_unset_lock(mvc_lock, "mvc_create");
 	return m;
-}
-
-static void log_bat(BAT *b){
-	BATfakeCommit(b);
 }
 
 static void bat_log_persists(BAT *ob){
@@ -940,7 +928,7 @@ static void rollforward_table(sql_trans * tr, sql_schema * os, sql_table * ct)
 				void_insert_bat(ob, ins);
 			}
 			if (BATcount(ins) || BATcount(delids)) {
-				BATfakeCommit(ob);
+				log_bat(ob);
 			}
 
 /*
@@ -1043,6 +1031,7 @@ void mvc_drop_columns(sql_trans * tr, sql_table * t)
 static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 				     sql_table * nt)
 {
+	bit view = nt->view;
 	nt->id = BATcount(sql_table_id);
 	nt->rtime = ns->rtime;
 	nt->wtime = ns->wtime;
@@ -1050,7 +1039,7 @@ static void mvc_forward_create_table(sql_trans * tr, sql_schema * ns,
 	BUNins(sql_table_id, (ptr) & nt->id, (ptr) & nt->id);
 	BUNins(sql_table_schema, (ptr) & nt->id, (ptr) & ns->id);
 	BUNins(sql_table_name, (ptr) & nt->id, (ptr) nt->name);
-	BUNins(sql_table_isview, (ptr) & nt->id, (ptr) & nt->view);
+	BUNins(sql_table_isview, (ptr) & nt->id, (ptr) & view);
 	BUNins(sql_table_query, (ptr) & nt->id, (ptr) nt->query);
 
 	if (!nt->view){
@@ -1252,7 +1241,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 {
 	sql_trans *tr = m->trans;
 	int level = (chain)?tr->level:ISO_SERIALIZABLE;
-	int res = 0;
+	int res = -1;
 
 	if (m->debug)
 		printf("mvc_commit\n");
@@ -1260,13 +1249,13 @@ int mvc_commit(mvc * m, int chain, char *name)
 	/* savepoint then simply make a copy of the current transaction */
 	if (name && name[0] != '\0'){
 		m->trans = trans_dup(m->trans, name);
-		return 1;
+		return 0;
 	}
 
 	/* if there is nothing to commit reused the transaction */
 	if (tr->wtime == 0) {
 		tr->stime = timestamp();
-		return 1;
+		return 0;
 	}
 
 	MT_set_lock(mvc_lock, "mvc_commit");
@@ -1275,7 +1264,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 	if (validate(tr)) {
 		/* write phase */
 		rollforward_schemas(tr);
-		res = 1;
+		res = 0;
 	}
 
 	MT_unset_lock(mvc_lock, "mvc_commit");
@@ -1289,8 +1278,9 @@ int mvc_commit(mvc * m, int chain, char *name)
 	return res;
 }
 
-void mvc_rollback(mvc * m, int chain, char *name)
+int mvc_rollback(mvc * m, int chain, char *name)
 {
+	int res = 0;
 	int level = (chain)?m->trans->level:ISO_SERIALIZABLE;
 	sql_trans *tr = m->trans;
 
@@ -1307,13 +1297,15 @@ void mvc_rollback(mvc * m, int chain, char *name)
 		m->trans = trans_dup(tr,NULL);
 	}
 	m->trans->level = level;
+	return res;
 }
 
 /* release all savepoints up including the given named savepoint 
  * but keep the current changes.
  * */
-void mvc_release(mvc * m, char *name)
+int mvc_release(mvc * m, char *name)
 {
+	int res = 0;
 	sql_trans *tr = m->trans;
 	sql_trans *p = tr->parent;
 
@@ -1322,20 +1314,20 @@ void mvc_release(mvc * m, char *name)
 
 	tr->parent = p; 
 	m->trans = tr; /* restart at savepoint */
+	return res;
 }
 
-void mvc_set_iso_level(mvc * m, int level)
+int mvc_set_iso_level(mvc * m, int level)
 {
+	int res = 0;
 	(void) mvc_commit(m,1,NULL);
 	m->trans->level = level;
+	return res;
 }
 
 void mvc_destroy(mvc * m)
 {
 	sql_trans *tr;
-
-	if (m->trans->wtime)
-		mvc_commit(m,0,NULL);
 
 	tr = m->trans;
 	while(tr->parent) tr = trans_destroy(tr);

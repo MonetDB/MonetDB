@@ -12,6 +12,9 @@
 	.COMMAND socket_close( int s ) = socket_close_wrap;
 		"close a socket"
 
+	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
+		"dup a socket"
+
     	.ATOM context = ptr;
     	.END;
 
@@ -71,11 +74,14 @@
 	.COMMAND mvc_commit( mvc m, int chain, str name ) : int = 
 		mvc_commit_wrap; "Commit transaction/savepoint and chain"
 
-	.COMMAND mvc_rollback( mvc m, int chain, str name ) = 
+	.COMMAND mvc_rollback( mvc m, int chain, str name ) : int = 
 		mvc_rollback_wrap; "Rollback transaction/savepoint and chain"
 
-	.COMMAND mvc_release( mvc m, str name ) = 
+	.COMMAND mvc_release( mvc m, str name ) : int = 
 		mvc_release_wrap; "Release the savepoint"
+
+	.COMMAND mvc_set_iso_level( mvc m, int level ) : int = 
+		mvc_set_iso_level_wrap; "Change the isolation level"
 
 	.COMMAND mvc_bind( mvc c, str tname, str cname ) : BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
@@ -311,18 +317,24 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
       	perror ("accept () failed");
 	break;
     } else if(retval){
+	ValRecord res;
+	ptr val = &res.val.ival;
+	int cres = 0;
 	char buf[BUFSIZ];
 	
 	snprintf( buf, BUFSIZ, "%s(%d);\n", cmd, fd );
-	interpret_str( stk, buf, res);
-	/*
-	int res = 0;
-	if ((res = close(fd)) < 0){
-		fprintf(stderr, "Error closing socket %d\n", res );
+        res.vtype = TYPE_void; 
+	interpret_str( stk, buf, &res);
+	/*TODO: we need to cleanup val */
+	if ((cres = close(fd)) < 0){
+		fprintf(stderr, "Error closing socket %d\n", cres );
 		return;
 	}
-	*/
     }
+  }
+  printf("closing socket\n");
+  if (close(sock) < 0){
+	perror("Error closing sock\n");
   }
   return 0;
 }
@@ -331,6 +343,12 @@ int socket_close_wrap( int *s ){
 	close(*s);
 	return GDK_SUCCEED;
 }
+
+int socket_dup_wrap( int *res, int *s ){
+	*res = dup(*s);
+	return GDK_SUCCEED;
+}
+
 
 int mvc_create_wrap( mvc *res, int *debug ){
 	*(mvc**)res = mvc_create( *debug );
@@ -355,13 +373,18 @@ int mvc_commit_wrap( int* res, mvc* m, int* chain, str name){
 	return GDK_SUCCEED;
 }
 
-int mvc_rollback_wrap( mvc *m, int *chain, str name ){
-	mvc_rollback( *(mvc**)m, *chain, name );
+int mvc_rollback_wrap( int *res, mvc *m, int *chain, str name ){
+	*res = mvc_rollback( *(mvc**)m, *chain, name );
 	return GDK_SUCCEED;
 }
 
-int mvc_release_wrap( mvc *m, str name ){
-	mvc_release( *(mvc**)m, name );
+int mvc_release_wrap( int *res, mvc *m, str name ){
+	*res = mvc_release( *(mvc**)m, name );
+	return GDK_SUCCEED;
+}
+
+int mvc_set_iso_level_wrap( int *res, mvc *m, int *level ){
+	*res = mvc_set_iso_level( *(mvc**)m, *level );
 	return GDK_SUCCEED;
 }
 
@@ -574,6 +597,13 @@ proc write_output( stream Output, str v ) := {
 	stream_write(Output, buf );
 }
 
+proc result( stream Output, int res ) := {
+	var buf := str(res) + "\n";
+	stream_writeInt( Output, 0 ); # write not done.
+	stream_write(Output, buf );
+	stream_flush( Output );
+}
+
 proc ascii_io_output( bat Order, bat bats, stream Output, str Sep ) : int := {
 	var Max := bats.reverse.max();
 	var seps := [ bats ~ const Sep];
@@ -621,8 +651,6 @@ proc SQLclient_sql( Output, Input, cmd ) := {
 		cmd := sql2code( c, Input );
 	}
 	mvc_destroy( myc );
-	stream_writeInt( Output, 1 );
-	stream_flush( Output );
 	sql_destroy_context( c );
 	stream_close( Output );
 	stream_close( Input );
@@ -641,8 +669,6 @@ proc SQLclient_mil( Output, Input, cmd ) := {
 		cmd := stream_read( Input );
 	}
 	mvc_destroy( myc );
-	stream_writeInt( Output, 1 );
-	stream_flush( Output );
 	stream_close( Output );
 	stream_close( Input );
 }
@@ -656,10 +682,13 @@ proc SQLclient_thread( int sock ):= {
 
 	var cmd := stream_read( Input ); # info
 	#print(cmd);
+	if (cmd.startsWith("info") = false ){
+		printf("Protocol error: %s\n", cmd);
+		return -1;
+	}
 
 	cmd := stream_read( Input ); # api
 	#print(cmd);
-
 	if (cmd.startsWith("sql")){
 		SQLclient_sql( Output, Input, cmd );
 	} else {
@@ -667,6 +696,7 @@ proc SQLclient_thread( int sock ):= {
 	}
 
 	socket_close( sock );
+	return 0;
 }
 
 proc sqlexecute( str cmd, stream Output ):= {
@@ -675,8 +705,9 @@ proc sqlexecute( str cmd, stream Output ):= {
 }
 
 proc SQLclient( int sock ) := {
-	printf("# [ %d ]\n",sock);
-	SQLclient_thread(sock).fork();
+	dsock := socket_dup(sock);
+	printf("# [ %d %d ]\n",sock, dsock);
+	SQLclient_thread(dsock).fork();
 }
 
 proc get_sql_port() := {

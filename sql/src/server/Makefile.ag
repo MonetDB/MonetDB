@@ -11,7 +11,7 @@ INCLUDES = \
 	$(GETOPT_INCS)
 
 lib__sqlserver = {
-	SOURCES = sqlserver.mx mvc.mx \
+	SOURCES = sqlserver.mx mvc.mx logger.mx \
 		catalog_module.c statement_exec.c
 	LIBS = ../common/libsql \
 		-L$(MONET_PREFIX)/lib/Monet 

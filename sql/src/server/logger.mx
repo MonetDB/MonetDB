@@ -1,0 +1,123 @@
+@f logger
+@t Transactions
+@a N. J. Nes
+@v 1.0
+@T
+@* Introduction
+In the philosophy of Monet, transaction management overhead should only
+be paid when necessary. Transaction management is for this purpose 
+implemented as a module. This module, once loaded, takes care of writing
+the commited changes, to a transaction log. The log may reside on the
+same system and therefor the writes are done to disk but could also
+reside on an other system and then the changes are flushed through
+the network.  
+
+The main interface to this logging system is the commit call which
+writes all the delta to the log file. Each bat in Monet keeps track 
+of the changes using the delta management. On commit these changes are
+writen to the log file and the delta management is reset. Since each 
+commit is writen to the same log file, the beginning and end are 
+marked by a log identifier. A server restart should only (re)process
+blocks which are completely writen to disk. 
+
+@* Implementation Code 
+@h
+#ifndef _LOGGER_H_
+#define _LOGGER_H_
+
+#include <gdk.h>
+
+extern void logger_init(int debug, char *dirname );
+extern void logger_exit();
+extern void log_bat(BAT *b);
+
+#endif /*_LOGGER_H_*/
+@c
+#include "logger.h"
+#include "stream.h"
+#include "mem.h"
+
+#define LOG_INSERT 	3
+#define LOG_DELETE	4
+#define LOG_CREATE 	5
+#define LOG_DESTROY	6
+
+typedef struct logformat_t {
+	char flag;
+	int nr;
+	int id;
+} logformat;
+
+
+
+static int   logger_debug = 1;
+static char *logdir 	= NULL;
+static stream *log 	= NULL;
+
+int readlogs( char *filename ){
+	stream *s = open_rstream(filename);
+
+	/* if the file doesn't there is nothing to readback */ 
+	if (!s || s->errnr){
+		if (s) s->destroy(s);
+	       	return 0;
+	}
+	
+	/* read of logs failed */
+	return -1;
+}
+
+void logger_init(int debug, char *dirname){
+	char buf[BUFSIZ];
+
+	logdir = strdup(dirname);
+	logger_debug = debug;
+
+	snprintf(buf, BUFSIZ, "%s%c%d.log", logdir, DIR_SEP, 0);
+	readlogs(buf);
+	log = open_wstream(buf);
+}
+
+void logger_exit(){
+	_DELETE(logdir);
+	log->close(log);
+	log->destroy(log);
+}
+
+void log_bat(BAT *b ){
+	/* TODO write deletes/inserts to log */
+	logformat l;
+	int 	status;
+	BUN	p; 
+
+	l.id = b->batCacheid;
+	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
+	if (l.nr){
+	    	l.flag = LOG_INSERT;
+		log->write( log, (char*)&l, sizeof(logformat), 1 );
+	    	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
+			int s1,s2;
+			ptr h = BUNhead(b,p);
+			ptr t = BUNtail(b,p);
+			log->write( log, h, ATOMlen(b->htype,h), 1 );
+			log->write( log, t, ATOMlen(b->ttype,t), 1 );
+	    	}
+		if (logger_debug)
+			printf("Logged %ld %d inserts\n", l.id, l.nr );
+	}
+	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
+	if (l.nr){
+	    	l.flag = LOG_DELETE;
+		log->write( log, (char*)&l, sizeof(logformat), 1 );
+	    	for (p = b->batDeleted; p < b->batHole; p = BUNnext(b, p)){
+			int s1,s2;
+			ptr h = BUNhead(b,p);
+			ptr t = BUNtail(b,p);
+			log->write( log, h, ATOMlen(b->htype,h), 1 );
+			log->write( log, t, ATOMlen(b->ttype,t), 1 );
+	    	}
+	    	if (logger_debug)
+			fprintf(stderr, "Logged %ld %d deletes\n", l.id, l.nr );
+	}
+	BATfakeCommit(b);
+}
