@@ -31,7 +31,7 @@ $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html:	$(top_sr
 					$(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java	\
 					$(top_srcdir)/src/mapi/clients/java/mapi/MapiException.java
 	-@mkdir -p $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation
-	lynx -source http://monetdb.cwi.nl/MonetDB.css > $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/MonetDB.css
+	sh $(top_srcdir)/src/utils/http_get.sh http://monetdb.cwi.nl/MonetDB.css > $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/MonetDB.css
 	javadoc -d $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation -stylesheetfile $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/MonetDB.css\
 		$(top_srcdir)/src/mapi/clients/java/MapiClient.java       	\
 	        $(top_srcdir)/src/mapi/clients/java/mapi/Mapi.java        	\
