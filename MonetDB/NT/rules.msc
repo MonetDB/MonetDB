@@ -9,11 +9,13 @@ PTHREAD = D:\Pthreads
 PTHREAD_LIBS = $(PTHREAD)\pthread.lib
 PTHREAD_INCS = -I$(PTHREAD) 
 
-pkglibdir = $(TOPDIR)
-pkgbindir = $(TOPDIR)
-libdir = $(TOPDIR)
-bindir = $(TOPDIR)
-
+pkg = Monet
+libdir = $(TOPDIR)\lib
+bindir = $(TOPDIR)\bin
+datadir = $(TOPDIR)\share
+pkglibdir = $(libdir)\$(pkg)
+pkgbindir = $(bindir)
+pkgdatadir = $(datadir)\$(pkg)
 
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = -I$(PTHREAD)

@@ -1,46 +1,23 @@
 
-################################################################
-
-# Nothing much configurable below
-
-# cl -? describes the options
-CC = cl -GF -W3 -D -nologo -Zi -G6
-CXX = $(CC)
-# optimize use -Ox
-
-# No general LDFLAGS needed
-LDFLAGS = /link
+TOPDIR = .
+SRCDIR = $(TOPDIR)\..
 INSTALL = copy
-KDIR = mkdir
+MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-TOPDIR = .
-CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
-CXXEXT = "cxx"
+!INCLUDE $(TOPDIR)\rules.msc
 
-all: all-msc all-recursive
+all: $(SRCDIR)\Makefile.msc all-msc
+	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc all
 
-all-recursive: src-recursive
+install: targetdirs
+	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc install
 
-..\Makefile.msc: ..\src\utils\autogen\autogen.py \
-	..\src\utils\autogen\codegen.py \
-	..\src\utils\autogen\msc.py
-	cd .. && $(PYTHON) src\utils\autogen\autogen.py
-
-src-recursive: ../Makefile.msc src
-	cd src && nmake /k /nologo -f Makefile
-
-src:
-	if not exist src $(KDIR) src
-	$(INSTALL) ..\src\Makefile.msc src\Makefile
-
-install: install-recursive
-
-install-recursive: install-src-recursive
-
-install-src-recursive: ../Makefile.msc src
-	cd src && nmake /k /nologo -f Makefile install
+$(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
+	$(SRCDIR)\src\utils\autogen\codegen.py \
+	$(SRCDIR)\src\utils\autogen\msc.py
+	$(CD) $(SRCDIR) && $(PYTHON) src\utils\autogen\autogen.py
 
 all-msc: config.h unistd.h sys\socket.h
 
@@ -54,9 +31,17 @@ unistd.h:
 	$(ECHO) #endif >> unistd.h
 
 sys\socket.h: 
-	if not exist sys $(KDIR) sys
+	if not exist sys $(MKDIR) sys
 	$(ECHO) #ifndef SOCKET_H > sys\socket.h
 	$(ECHO) #define SOCKET_H >> sys\socket.h
 	$(ECHO) #include "winsock.h" >> sys\socket.h
 	$(ECHO) #endif >> sys\socket.h
+
+targetdirs:
+	if not exist $(libdir) $(MKDIR) $(libdir)
+	if not exist $(bindir) $(MKDIR) $(bindir)
+	if not exist $(datadir) $(MKDIR) $(datadir)
+	if not exist $(pkglibdir) $(MKDIR) $(pkglibdir)
+	if not exist $(pkgbindir) $(MKDIR) $(pkgbindir)
+	if not exist $(pkgdatadir) $(MKDIR) $(pkgdatadir)
 
