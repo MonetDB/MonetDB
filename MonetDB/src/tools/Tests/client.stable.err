@@ -1,19 +1,14 @@
 stderr of test 'client` in directory 'src/tools` itself:
 
 
-# 20:39:26 >  
-# 20:39:26 >  Mtimeout -timeout 630 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32.4079/monet/.GNU_32/Linux2.4.1-0.1.9/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/monet/tmp/manegold.GNU_32.4079/monet/.GNU_32/Linux2.4.1-0.1.9/share/Monet/mapi.mil 
-# 20:39:26 >  
+# 13:09:23 >  
+# 13:09:23 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/data/monet/Linux/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_src_tools --set mapi_port=59123 /ufs/niels/data/monet/Linux/share/MonetDB/mapi.mil ; echo  ; echo Over..
+# 13:09:23 >  
 
-
-# 12:46:20 >  
-# 12:46:20 >  Mtimeout -timeout 180 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_tools /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/share/MonetDB/mapi.mil ; echo  ; echo Over..
-# 12:46:20 >  
-
-# builtin opt 	gdk_arch = 64bitmips-sgi-irix6.5
+# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 4.3.5
-# builtin opt 	monet_pid = 8099583
-# builtin opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# builtin opt 	monet_pid = 23720
+# builtin opt 	prefix = /ufs/niels/data/monet/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -24,18 +19,16 @@ stderr of test 'client` in directory 'src/tools` itself:
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
 # builtin opt 	monet_deamon = yes
-# system opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
-# system opt 	exec_prefix = ${prefix}
-# system opt 	gdk_dbfarm = ${prefix}/var/dbfarm
-# system opt 	gdk_dbname = demo
-# system opt 	gdk_debug = 0
-# system opt 	gdk_mmap = 33554432
-# system opt 	monet_admin = adm
-# system opt 	monet_prompt = monet>
-# system opt 	monet_welcome = yes
-# system opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
-# system opt 	monet_deamon = no
-# config opt 	prefix = /var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql
+# builtin opt 	sql_user = sqladmin
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/niels/data/monet/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
 # config opt 	gdk_dbname = demo
@@ -49,18 +42,19 @@ stderr of test 'client` in directory 'src/tools` itself:
 # cmdline opt 	gdk_debug = 10
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = Tests_src_tools
+# cmdline opt 	mapi_port = 59123
 
-# 12:46:20 >  
-# 12:46:20 >  Mtimeout -timeout 60 MapiClient -everything -prelude client.prelude < client.milC
-# 12:46:20 >  
-
-
-# 12:46:34 >  
-# 12:46:34 >  Mtimeout -timeout 60 Mshutdown
-# 12:46:34 >  
+# 13:09:24 >  
+# 13:09:24 >  Mtimeout -timeout 60 MapiClient --port=59123 --config=/ufs/niels/data/monet/Linux/etc/monet.conf < client.milC
+# 13:09:24 >  
 
 
-# 12:46:34 >  
-# 12:46:34 >  Done.
-# 12:46:34 >  
+# 13:09:25 >  
+# 13:09:25 >  Mtimeout -timeout 60 Mshutdown.py --config=/ufs/niels/data/monet/Linux/etc/monet.conf --set mapi_port=59123
+# 13:09:25 >  
+
+
+# 13:09:25 >  
+# 13:09:25 >  Done.
+# 13:09:25 >  
 

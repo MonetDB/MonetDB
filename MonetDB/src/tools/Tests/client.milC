@@ -9,7 +9,6 @@ qstat();
 bbp.print();
 loaded();
 procs();
-vars();
 view_bbp_kind().print();
 view_bbp_location().print();
 view_bbp_name().print();
@@ -27,6 +26,7 @@ view_bbp_heat().print();
 
 printf("#~BeginVariableOutput~#\n");
 
+vars();
 queue();
 threadid().print();
 
