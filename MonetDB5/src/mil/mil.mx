@@ -14,6 +14,11 @@ by receiving an empty line. This is a rather limited
 approach, but avoid building a complex MIL parser at
 this stage. Perhaps we can revamp M2m later on to be
 included as a small parser.
+@mal
+module mil;
+command mil():void = MILsession
+comment "Switch to processing MIL statements";
+
 @h
 
 /*
@@ -128,3 +133,14 @@ str MILengine(Client c) {
 	c->glb= oldglb;
 	return msg;
 }
+@-
+Command implementations.
+@c
+str MILsession(str *ret){
+        str msg= MAL_SUCCEED;
+        stream_printf(GDKout,"#Continue as MIL session\n");
+        msg= setScenario(getClient(),"mil");
+        *ret = 0;
+        return msg;
+}
+
