@@ -1026,7 +1026,8 @@ specific (PFfun_t *fn, PFcnode_t *args)
     /* Typing rules for fn:data() are described by the special
      * judgement `data on' (W3C FS 6.2.3), implemented in PFty_data_on()
      */
-    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "data"))) {
+    if ((! PFqname_eq (fn->qname, PFqname (PFns_fn, "data")))
+        || (! PFqname_eq (fn->qname, PFqname (PFns_pf, "typed-value")))) {
         /* fn:data() gets exactly one argument */
         assert (args->kind == c_arg && R(args)->kind == c_nil);
         return *PFty_simplify (

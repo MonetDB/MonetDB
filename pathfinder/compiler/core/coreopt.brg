@@ -567,13 +567,13 @@ reduce (PFcnode_t * p, int goalnt)
             }
 
             /*
-             * We don't support validation (yet).
              * On non-validated nodes, typed-value() always returns
              * the string-value of the node as xs:untypedAtomic.
              * (see also Data Model, 6.2.3)
              */
             if (! PFqname_eq (p->sem.fun->qname,
-                              PFqname (PFns_pf, "typed-value"))) {
+                              PFqname (PFns_pf, "typed-value"))
+                && PFty_subtype (TY(p), PFty_untypedAtomic ())) {
 
                 PFcnode_t *c = PFmalloc (sizeof (PFcnode_t));
                 PFvar_t   *v = new_var (NULL);

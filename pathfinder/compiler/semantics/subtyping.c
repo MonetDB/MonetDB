@@ -1792,24 +1792,10 @@ PFty_prime (PFty_t t)
 }
 
 /**
- * Implementation of the "data on" judgement (W3C Formal Semantics 6.2.3)
- * that describes the special typing rules for the fn:data() function.
- *
- *  - data on (none)    = none
- *  - data on (empty)   = empty
- *  - data on (t1 , t2) = data on (t1) | data on (t2)
- *  - data on (t1 | t2) = data on (t1) | data on (t2)
- *  - data on (t1 & t2) = data on (t1) | data on (t2)
- *  - data on (t1?)     = data on (t1) | empty
- *  - data on (t1*)     = data on (t1) | empty
- *  - data on (t1+)     = data on (t1)
- *  - data on (t)       = t                  if t <: atomic
- *  - data on (t)       = xs:string          if t <: comment | processing-instr
- *  - data on (t)       = xdt:untypedAtomic  if t <: text | elem | attr | doc
- *  - data on (named n) = none
+ * Worker for #PFty_data_on().
  */
-PFty_t
-PFty_data_on (PFty_t t)
+static PFty_t
+data_on (PFty_t t)
 {
     switch (t.type) {
 
@@ -1847,10 +1833,58 @@ PFty_data_on (PFty_t t)
                 return t;
             else if (PFty_subtype (t, PFty_choice (PFty_comm (), PFty_pi ())))
                 return PFty_xs_string ();
+            else if (PFty_subtype (t, PFty_xs_anyElement ())) {
+                PFty_t t1 = PFty_data_on (content (t));
+                if (PFty_subtype (t1, PFty_xs_anySimpleType ()))
+                    return t1;
+                else
+                    return PFty_untypedAtomic ();
+            }
+            /* Disregard attributes in element content */
+            else if (PFty_subtype (t, PFty_xs_anyAttribute ()))
+                return PFty_none ();
             else
                 return PFty_untypedAtomic ();
     }
 }
+
+/**
+ * Implementation of the "data on" judgement (W3C Formal Semantics 6.2.3)
+ * that describes the special typing rules for the fn:data() function.
+ *
+ *  - data on (none)    = none
+ *  - data on (empty)   = empty
+ *  - data on (t1 , t2) = data on (t1) | data on (t2)
+ *  - data on (t1 | t2) = data on (t1) | data on (t2)
+ *  - data on (t1 & t2) = data on (t1) | data on (t2)
+ *  - data on (t1?)     = data on (t1) | empty
+ *  - data on (t1*)     = data on (t1) | empty
+ *  - data on (t1+)     = data on (t1)
+ *  - data on (t)       = t                  if t <: atomic
+ *  - data on (t)       = xs:string          if t <: comment | processing-instr
+ *  - data on (t)       = data on (t')       if t <: elem * { t' }
+ *                                               or t <: attr * { t' }  [1]
+ *  - data on (t)       = xdt:untypedAtomic  if t <: text | doc
+ *
+ *  - data on (named n) = none
+ *
+ * [1] Remark: We only look into attributes on top-level. We disregard
+ *     attributes that are within the content of some element.
+ */
+PFty_t
+PFty_data_on (PFty_t t)
+{
+    if (t.type == ty_attr) {
+        PFty_t t1 = data_on (content (t));
+        if (PFty_subtype (t1, PFty_xs_anySimpleType ()))
+            return t1;
+        else
+            return PFty_untypedAtomic ();
+    }
+    else
+        return data_on (t);
+}
+
 
 enum quantifier {
     none = 0      /**<  0  */

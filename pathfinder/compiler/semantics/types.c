@@ -602,7 +602,9 @@ PFty_xs_anyNode (void)
 PFty_t
 PFty_xs_anySimpleType (void)
 {
-    return PFty_star (PFty_atomic ());
+    return PFty_star (PFty_choice (PFty_numeric (),
+                                   PFty_choice (PFty_boolean (),
+                                                PFty_string ())));
 }
 
 /** type xs:anyElement = elem * { xs:anyType } */
@@ -615,13 +617,13 @@ PFty_xs_anyElement (void)
 }
 
 
-/** type xs:anyAttribute = attr * { xs:anySimpleType } */
+/** type xs:anyAttribute = attr * { atomic* } */
 PFty_t
 PFty_xs_anyAttribute (void)
 {
     PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
 
-    return PFty_attr (wild, PFty_xs_anySimpleType ());
+    return PFty_attr (wild, PFty_star (PFty_atomic ()));
 }
 
 /** type xdt:untypedAtomic = untypedAtomic */

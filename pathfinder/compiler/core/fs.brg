@@ -1557,7 +1557,7 @@ reduce (PFpnode_t * p, int goalnt)
                 case p_kind_attr:
                     /* attribute */
                     C(p) = seqtype (PFty_attr (PFqname (PFns_wild, NULL),
-                                PFty_xs_anySimpleType ()));
+                                               PFty_star (PFty_atomic ())));
                     break;
                 default:
                     PFoops_loc (OOPS_FATAL, p->loc,
@@ -1576,7 +1576,7 @@ reduce (PFpnode_t * p, int goalnt)
                     break;
                 case p_kind_attr:
                     elem_attr = PFty_attr;
-                    any = PFty_xs_anySimpleType ();
+                    any = PFty_star (PFty_atomic ());
                     break;
                 default:
                     PFoops_loc (OOPS_FATAL, p->loc,
@@ -2468,7 +2468,7 @@ reduce (PFpnode_t * p, int goalnt)
                                   cases (
                                     case_ (
                                       seqtype (
-                                          PFty_star (PFty_xs_anySimpleType ())),
+                                          PFty_star (PFty_atomic ())),
                                       var (v2)),
                                     default_ (
                                       APPLY (fn_error, str ("err:XP0018")))

@@ -1400,7 +1400,7 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
         }
     }
     else if (PFty_subtype (in_ty, PFty_attr (PFqname (PFns_wild, NULL),
-                                             PFty_xs_anySimpleType ())))
+                                             PFty_star (PFty_atomic ()))))
     {
         if (strcmp (axis, "attribute"))
         {
@@ -1430,7 +1430,7 @@ translateLocsteps (opt_t *f, PFcnode_t *c)
         loop_liftedSCJ (f, axis, 0, ns, loc); 
 
         /* test pattern we don't support */
-        if (!PFty_eq (PFty_child(in_ty), PFty_xs_anySimpleType ()))
+        if (!PFty_eq (PFty_child(in_ty), PFty_star (PFty_atomic ())))
         {
             PFlog ("attribute body %s in %s step ignored", 
                    PFty_str(in_ty),

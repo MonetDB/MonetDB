@@ -96,9 +96,9 @@
        [[ xs:anyType ]]               = item*
        [[ xs:anyItem ]]               = item
        [[ xs:anyNode ]]               = node
-       [[ xs:anySimpleType ]]         = atomic*
+       [[ xs:anySimpleType ]]         = numeric | string | boolean
        [[ xs:anyElement ]]            = elem * { [[ xs:anyType ]] }
-       [[ xs:anyAttribute ]]          = attr * { [[ xs:anySimpleType ]] }
+       [[ xs:anyAttribute ]]          = attr * { atomic* }
        [[ xdt:untypedAtomic ]]        = untypedAtomic
        [[ xdt:untypedAny ]]           = untypedAny
        [[ qn ]]                       = [[ named qn ]]

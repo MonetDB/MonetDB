@@ -1393,7 +1393,7 @@ end_top_level_attribute (PFarray_t *atts)
      *  n |a--> attribute n { named t }
      *
      *  [[ <attribute name="n"/> ]]  -->
-     *  n |a--> attribute n { anySimpleType }
+     *  n |a--> attribute n { atomic* }
      */
     char *name;
     char *type;
@@ -1408,9 +1408,9 @@ end_top_level_attribute (PFarray_t *atts)
             t = PFty_attr (imported_qname (name),
                            PFty_named (ref_qname (type)));
         else
-            /* @type absent => xs:anySimpleType */
+            /* @type absent => atomic* */
             t = PFty_attr (imported_qname (name),
-                           PFty_xs_anySimpleType ());
+                           PFty_star (PFty_atomic ()));
 
         PFty_import (imp, t);
 
@@ -1808,7 +1808,7 @@ end_local_attribute (PFarray_t *atts)
      *  attr_occurs (u, attribute n { named t })
      *
      *  [[ <attribute name="n" use="u"/> ]]  -->
-     *  attr_occurs (u, attribute n { anySimpleType })
+     *  attr_occurs (u, attribute n { atomic* })
      *
      *  [[ <attribute ref="n" use="u"/> ]]  -->
      *  attr_occurs (u, named n)
@@ -1824,9 +1824,9 @@ end_local_attribute (PFarray_t *atts)
             t = PFty_attr (imported_qname (name),
                            PFty_named (ref_qname (type)));
         else
-            /* @type absent => xs:anySimpleType */
+            /* @type absent => atomic* */
             t = PFty_attr (imported_qname (name),
-                           PFty_xs_anySimpleType ());
+                           PFty_star (PFty_atomic ()));
     }
     else
         if ((ref = attribute_value (atts, "ref")))
