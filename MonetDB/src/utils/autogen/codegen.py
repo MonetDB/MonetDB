@@ -24,7 +24,7 @@ mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
 mx2xsl = re.compile("^@xsl[ \t\r\n]+", re.MULTILINE)
 mx2sh = re.compile("^@sh[ \t\r\n]+", re.MULTILINE)
 mx2tex = re.compile("^@T[ \t\r\n]+", re.MULTILINE)
-mx2html = re.compile("^@T[ \t\r\n]+", re.MULTILINE)
+mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
 
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
 
