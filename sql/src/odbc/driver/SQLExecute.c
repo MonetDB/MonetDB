@@ -108,7 +108,7 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 		hStmt->hStmtExtras->aResults = NEW_ARRAY(char*,(nCols+1)*(nRows+1));
 		hStmt->hStmtExtras->nCols = nCols;
 		for( nColumn = 1; nColumn <= nCols; nColumn++){
-			column *col = basecolumn(n->data.stval);
+			column *col = head_column(n->data.stval);
 			COLUMNHDR* cHdr = NEW(COLUMNHDR);
 			(hStmt->hStmtExtras->aResults[nColumn]) = (char*)cHdr;
 			cHdr->pszSQL_DESC_BASE_COLUMN_NAME = strdup(col->name);
