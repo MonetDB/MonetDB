@@ -891,6 +891,7 @@ public class MonetResultSet implements ResultSet {
 					case Types.DATE:
 					case Types.TIME:
 					case Types.TIMESTAMP:
+					default:
 						return(false);
 				}
 			}
