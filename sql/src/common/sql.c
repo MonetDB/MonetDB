@@ -807,13 +807,12 @@ static statement *sql_join
   	}
   	subset = s;
 	if (subset){
-        	list *rl = list_create();
+        	list *l1, *l2;
 	    	table *t = NULL;
 		node *n;
 		statement *fs1 = find_subset(subset, tv1);
 		statement *fs2 = find_subset(subset, tv2);
-		statement *ld = NULL, *lc = NULL;
-		statement *rd = NULL, *rc = NULL;
+		statement *ld = NULL, *rd = NULL;
 
 		if(!fs1 || !fs2) return NULL;
 
@@ -824,7 +823,6 @@ static statement *sql_join
 			ld = statement_diff( 
 				statement_column(cs,tv1), 
 				   statement_reverse(subset) );
-			lc = statement_count( ld );
 		}
 		t = tv2->data.tval;
 		if (jointype == jt_right || jointype == jt_full){
@@ -833,31 +831,13 @@ static statement *sql_join
 			rd = statement_diff( 
 				statement_column(cs,tv2), 
 				   statement_reverse(subset) );
-			rc = statement_count( rd );
 		}
-		if (jointype == jt_full){
-			statement *lnil = statement_const(rd,statement_atom(NULL));
-			statement *rnil = statement_const(ld,statement_atom(NULL));
-			ld = statement_insert_column( ld,
-			       statement_remark( lnil, 
-				 statement_count(ld), 0));
-			rd = statement_insert_column( rnil,
-			       statement_remark( rd, 
-				 statement_count(rnil), 0));
-		} else {
-			if (ld){
-				ld = statement_mark(statement_reverse(ld),0);
-				rd = statement_const(ld,statement_atom(NULL));
-			} else if (rd){
-				rd = statement_mark(statement_reverse(rd),0);
-				ld = statement_const(rd,statement_atom(NULL));
-			}
-		}
+		l1 = list_create();
 		t = tv1->data.tval;
 	    	for(n = t->columns->h; n; n = n->next){
 			column *cs = n->data.cval;
 
-			  list_append_statement(rl, 
+			  list_append_statement(l1, 
 			    statement_join(fs1, 
 				statement_column(cs, tv1), cmp_equal));
 	    	}
@@ -865,11 +845,62 @@ static statement *sql_join
 	    	for(n = t->columns->h; n; n = n->next){
 			column *cs = n->data.cval;
 
-			  list_append_statement(rl, 
+			  list_append_statement(l1, 
 			    statement_join(fs2, 
 				statement_column(cs, tv2), cmp_equal));
 	    	}
-		s = statement_list(rl);
+		l2 = list_create();
+		if (jointype == jt_left || jointype == jt_full){
+			node *m = l1->h;
+			t = tv1->data.tval;
+	    		for(n = t->columns->h; n; n = n->next, m = m->next){
+				column *cs = n->data.cval;
+	
+			  	list_append_statement(l2, 
+			    		statement_union(m->data.stval, 
+					 statement_join(ld, 
+					  statement_column(cs, tv1), 
+					  	cmp_equal)));
+	    		}
+			t = tv2->data.tval;
+	    		for(n = t->columns->h; n; n = n->next, m = m->next){
+				column *cs = n->data.cval;
+	
+			  	list_append_statement(l2, 
+			    		statement_union(m->data.stval, 
+					 statement_const(ld,
+				          statement_atom(
+						 atom_general(cs->tpe,NULL)))));
+	    		}
+			list_destroy(l1);
+			l1 = l2;
+		}
+		if (jointype == jt_right || jointype == jt_full){
+			node *m = l1->h;
+			t = tv1->data.tval;
+	    		for(n = t->columns->h; n; n = n->next, m = m->next){
+				column *cs = n->data.cval;
+	
+			  	list_append_statement(l2, 
+			    		statement_union(m->data.stval, 
+					 statement_const(rd,
+				          statement_atom(
+						 atom_general(cs->tpe,NULL)))));
+	    		}
+			t = tv2->data.tval;
+	    		for(n = t->columns->h; n; n = n->next, m = m->next){
+				column *cs = n->data.cval;
+	
+			  	list_append_statement(l2, 
+			    		statement_union(m->data.stval, 
+					 statement_join(rd, 
+					  statement_column(cs, tv2), 
+					  	cmp_equal)));
+	    		}
+			list_destroy(l1);
+			l1 = l2;
+		}
+		s = statement_list(l1);
 	}
 	scope_close(scp);
 	return s;

@@ -30,9 +30,8 @@ extern atom *atom_general( type *tpe, char *val );
 
 /* duplicate atom */
 extern atom *atom_dup( atom *a );
-
-extern char *atom2string(atom *a);
+extern char *atom2string( atom *a );
 extern type *atom_type(atom *a);
-
 extern void atom_destroy( atom *a );
+
 #endif /* _ATOM_H_ */

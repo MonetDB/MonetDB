@@ -582,9 +582,11 @@ type *tail_type( statement *st ){
 	case st_select: 
 	case st_select2: 
 	case st_unique: 
+	case st_union:
 	case st_update: 
 	case st_delete: 
 	case st_insert: 
+	case st_mark: 
 	case st_name: return tail_type(st->op1.stval);
 
 	case st_column: return st->op1.cval->tpe; 
@@ -610,13 +612,17 @@ type *head_type( statement *st ){
 	case st_binop:
 	case st_triop: 
 	case st_unique:
+	case st_union:
 	case st_name: 
 	case st_join: 
+	case st_semijoin: 
 	case st_select: 
 	case st_select2: 
 			return head_type(st->op1.stval);
 
+	case st_mark: 
 	case st_column: return NULL; /* oid */
+
 	case st_reverse: return tail_type(st->op1.stval);
 	case st_atom: return atom_type(st->op1.aval);
 	default:
@@ -644,7 +650,8 @@ statement *_basecolumn( statement *st ){
 	case st_mark: return basecolumn(st->op1.stval);
 	default:
 		assert(0);
-		fprintf( stderr, "missing base column type %d\n", st->type);
+		fprintf( stderr, "missing base column %d %s\n", 
+				st->type, statement2string(st));
 		return NULL;
 	}
 }
@@ -667,7 +674,8 @@ statement *basecolumn( statement *st ){
 	case st_mark: return basecolumn(st->op1.stval);
 	default:
 		assert(0);
-		fprintf( stderr, "missing base column %d\n", st->type);
+		fprintf( stderr, "missing base column %d %s\n", 
+				st->type, statement2string(st));
 		return NULL;
 	}
 }
@@ -689,15 +697,18 @@ char *aggr_name( char *n1, char *n2){
 char *column_name( statement *st ){
 	switch(st->type){
 	case st_join: return column_name(st->op2.stval);
-	case st_select: return column_name(st->op1.stval);
+	case st_union: 
+	case st_select: 
 	case st_select2: return column_name(st->op1.stval);
+
 	case st_column: return st->op1.cval->name;
 	case st_aggr: return aggr_name( st->op2.aggrval->name, 
 				column_name( st->op1.stval ));
 	case st_name: return st->op2.sval;
 	case st_unique: return column_name(st->op1.stval);
 	default:
-		fprintf( stderr, "missing name %d\n", st->type);
+		fprintf( stderr, "missing name %d %s\n", 
+				st->type, statement2string(st));
 		return NULL;
 	}
 }

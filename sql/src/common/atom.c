@@ -60,8 +60,11 @@ char *atom2string( atom *a){
 	case string_value: return addQuotes( a->data.sval);
 	case float_value: sprintf(buf, "%f", a->data.dval); break;
 	case general_value:
-			sprintf(buf, "%s%s(\"%s\")", 
-				atom_prefix, a->tpe->name, a->data.sval ); 
+			if (a->data.sval)
+			  sprintf(buf, "%s%s(\"%s\")", 
+				atom_prefix, a->tpe->name, a->data.sval );
+			else 
+			  sprintf(buf, "%s%s(nil)", atom_prefix, a->tpe->name );
 			break;
 	}
 	return _strdup(buf);
