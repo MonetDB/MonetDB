@@ -70,11 +70,11 @@ while test $# -gt 0; do
 	;;
 
     --cflags)
-       	echo -I $prefix -I $prefix/include -I $prefix/include/common -I $prefix/include/gdk -I $prefix/include/monet -I $prefix/include/plain
+       	echo -I$prefix -I$prefix/include -I$prefix/include/common -I$prefix/include/gdk -I$prefix/include/monet -I$prefix/include/plain
        	;;
 
     --libs)
-       	echo -L $prefix/lib/@PACKAGE@
+       	echo -L$prefix/lib/@PACKAGE@
        	;;
 
     --modpath)
