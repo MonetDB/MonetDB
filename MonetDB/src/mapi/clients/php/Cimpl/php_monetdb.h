@@ -12,7 +12,8 @@
   | obtain it through the world-wide-web, please send a note to          |
   | license@php.net so we can mail you a copy immediately.               |
   +----------------------------------------------------------------------+
-  | Author: Marcin Zukowski <marcin@cwi.nl>                              |
+  | Authors: Marcin Zukowski <marcin@cwi.nl>,                            |
+  |          Arjan Scherpenisse <A.C.Scherpenisse@cwi.nl>                |
   | partly derived from work of authors of MySQL PHP module and          |
   | Manfred Stienstra <manfred.stienstra@dwerg.net>                      |
   +----------------------------------------------------------------------+

@@ -12,7 +12,8 @@
   | obtain it through the world-wide-web, please send a note to          |
   | license@php.net so we can mail you a copy immediately.               |
   +----------------------------------------------------------------------+
-  | Author: Marcin Zukowski <marcin@cwi.nl>                              |
+  | Authors: Marcin Zukowski <marcin@cwi.nl>,                            |
+  |          Arjan Scherpenisse <A.C.Scherpenisse@cwi.nl>                |
   | partly derived from work of authors of MySQL PHP module and          |
   | Manfred Stienstra <manfred.stienstra@dwerg.net>                      |
   +----------------------------------------------------------------------+
@@ -120,13 +121,15 @@ static void _free_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
 	phpMonetConn *monet_link = (phpMonetConn *)rsrc->ptr;
 	phpMonetHandle *h = monet_link->first, *next;
-
+    int i = 0;
 	while (h) {
+        i++;
 		fflush(stderr);
 		next = h->next;
 		free(h);
 		h = next;		
 	}
+    /* fprintf(stderr, "Freed link and %d handles\n", i); */
 	mapi_destroy(monet_link->mid);
 	monet_link->mid = NULL;
 	free(monet_link);
@@ -139,6 +142,7 @@ static void _free_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 static void _free_monetdb_handle(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 {
 	MapiHdl monet_handle = (MapiHdl)rsrc->ptr;
+    /* fprintf(stderr, "Freeing result\n"); */
 	mapi_close_handle(monet_handle);
 }
 /* }}} */
@@ -237,9 +241,10 @@ static void php_monetdb_set_default_link(int id TSRMLS_DC)
 {
 	zend_list_addref(id);
 
+    /*
 	if (MONET_G(default_link) != -1) {
-		zend_list_delete(MONET_G(default_link));
-	}
+        zend_list_delete(MONET_G(default_link));
+    } */
 
 	MONET_G(default_link) = id;
 }
@@ -923,7 +928,9 @@ PHP_FUNCTION(monetdb_info)
 	zval **mapi_link=NULL ;
 	int id ;
 	phpMonetConn *conn ;
-	
+	char *val;
+    long l;
+    
 	switch( ZEND_NUM_ARGS() ) {
 		case 0:
 			id = MONET_G(default_link);
@@ -945,14 +952,25 @@ PHP_FUNCTION(monetdb_info)
 		RETURN_FALSE;
 	}
 
-	add_assoc_string(return_value, "dbname", mapi_get_dbname(conn->mid), 1);
-	add_assoc_string(return_value, "host", mapi_get_host(conn->mid), 1);
-	add_assoc_string(return_value, "user", mapi_get_user(conn->mid), 1);
-	add_assoc_string(return_value, "language", mapi_get_lang(conn->mid), 1);
+	if ((val = mapi_get_dbname(conn->mid)))
+        add_assoc_string(return_value, "dbname", val, 1);
+	if ((val = mapi_get_host(conn->mid)))
+        add_assoc_string(return_value, "host", val, 1);
+    if ((val = mapi_get_user(conn->mid)))
+        add_assoc_string(return_value, "user", val, 1);
+    
+	if ((val = mapi_get_lang(conn->mid)))
+        add_assoc_string(return_value, "language", val, 1);
+    
 	/* add_assoc_string(return_value, "motd", mapi_get_motd(conn->mid), 1);  */
-	add_assoc_string(return_value, "mapi version", mapi_get_mapi_version(conn->mid), 1);
-	add_assoc_string(return_value, "monet version", mapi_get_monet_version(conn->mid), 1);
-	add_assoc_long(return_value, "monet version id", mapi_get_monet_versionId(conn->mid));
+	if ((val = mapi_get_mapi_version(conn->mid)))
+        add_assoc_string(return_value, "mapi version", val, 1);
+    
+	if ((val = mapi_get_monet_version(conn->mid)))
+        add_assoc_string(return_value, "monet version", val, 1);
+    
+	if ((l = mapi_get_monet_versionId(conn->mid)))
+        add_assoc_long(return_value, "monet version id", l);
 }
 
 
