@@ -1272,7 +1272,7 @@ Note that they may consume recognizable overhead.
 lng GDKusec() {
 	struct timeval tp;
 	gettimeofday(&tp, &GDKtime_zero);
-        return ((lng) (tp.tv_sec-GDKtime_startsec))*100000(lng)0 + (lng) tp.tv_usec;
+        return ((lng) (tp.tv_sec-GDKtime_startsec))*(lng)1000000 + (lng) tp.tv_usec;
 }
 
 
