@@ -82,10 +82,6 @@ command destroyCatalog()
 address mvc_destroy_wrap
 comment "Destroy multi version catalog";
 
-command login( user:str, passwd:str ):str
-address mvc_login_wrap
-comment "Login to an SQL database";
-
 command update_var( varname:str ):void
 address mvc_update_var_wrap
 comment "Update a session variable";
@@ -412,15 +408,6 @@ str mvc_update_var_wrap( int *ret, str *varname ){
 	return MAL_SUCCEED;
 }
 
-
-str mvc_login_wrap(str *r, str *user, str *passwd  ){
-	mvc *m;
-	@:getContext(m)@
-	*r = mvc_login( m, *user, *passwd );
-	if (*r != 0)
-		return throwException(MALEXCEPTION,"mvc_login_wrap","error");
-	return MAL_SUCCEED;
-}
 
 BAT *
 mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
