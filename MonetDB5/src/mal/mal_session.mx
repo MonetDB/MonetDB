@@ -62,7 +62,7 @@ int malBootstrap(){
 	c= initClient(GDKstrdup("Admin"),NULL,0,0);
 	c->nspace= newScope(NULL, GDKstrdup("Admin"));
 	initLibraries();
-	defaultScenario(c);
+	if( defaultScenario(c)) return 0;
 	bf= GDKgetenv("mal_bootstrap");
 	if( bf) bootfile= bf;
 	malInclude(c,bootfile,0,0);
@@ -174,7 +174,11 @@ void scheduleClient( str command, bstream *fin, stream *fout)
 	c->sessionkey = key;
 
 	if (!lang) {
-		defaultScenario(c);
+		if( (s=defaultScenario(c)) ){
+            stream_printf(c->fdout,"!%s\n", s);
+            stream_flush(c->fdout);
+            return;
+        }
 	} else if ((s=setScenario(c, lang)) != NULL){
 		stream_printf(c->fdout,"!%s\n", s);
 		stream_flush(c->fdout);
@@ -270,6 +274,7 @@ void serveClient(void *dummy)
 {	
 	MalBlkPtr mb;
 	Client c= (Client) dummy;
+    str msg= 0;
 
 	if( !isAdministrator(c) ) initClientThread(c);
 @-
@@ -281,7 +286,12 @@ The scenarios are run until we finally close the last one.
 	c->glb->stktop =mb->vtop;
 	c->glb->blk = mb;
 
-	if( c->scenario==0) defaultScenario(c);
+	if( c->scenario==0)
+        msg = defaultScenario(c);
+    if( msg){
+        GDKerror("could not initialize default scenario\n");
+        c->mode = FINISHING+1;
+    } else
 	do{
 		runScenario(c);
 		if( c->mode == FINISHING) break;
@@ -297,8 +307,8 @@ The scenarios are run until we finally close the last one.
 		TMcommit();
 	    }
 	}
-        if( !isAdministrator(c))
-	    closeClient(c);
+    if( !isAdministrator(c))
+    closeClient(c);
 }
 @+ MAL scenario components
 The stages of processing user requests are controlled by a

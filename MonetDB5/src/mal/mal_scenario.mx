@@ -221,7 +221,7 @@ Scenario getFreeScenario(){
 if( @1->@2){
     if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress( @1->@2);
     if( @1->@2Cmd == 0) {
-        return throwMessage("initScenario","@2 address not found\n"); }
+        GDKerror("initScenario","@2 address not found\n"); }
 }
 @-
 A scenario is initialized only once per session. 
@@ -254,11 +254,10 @@ str initScenario(Client c, Scenario s){
     @:initScen(s,engine)@
     fillScenario(c,s);
 
-    return 0;
+    return MAL_SUCCEED;
 }
 str defaultScenario(Client c){
-    initScenario(c,scenarioRec);
-    return MAL_SUCCEED;
+    return initScenario(c,scenarioRec);
 }
 @-
 The Monet debugger provides an option to inspect the scenarios currently
@@ -464,6 +463,8 @@ void runScenario(Client c){
     str msg;
     int cnt=0;
     Client c1;
+	
+	assert(c && c->phase[READER]!= 0);
 
     while( c->mode > FINISHING ){
         @:runPhase(READER)@

@@ -51,10 +51,10 @@ into pieces, such that their partial result satisfies our limits.
 The chopper module provides the necessary functionality for this.
 
 If p is broken into pieces, then all the following steps in the
-flowgraph towards the consumers of p should comprise of 'p-repeatable'
+flowgraph towards the consumers of p should comprise of 'p-invariant'
 steps and the destination of p has an incremental variant.
 Likewise, between the point where the operands are broken into
-pieces and consumed, it should have p-repeatable statements.
+pieces and consumed, it should have p-invariant statements.
 
 The latter is easy, we simply replace the product by a nested loop
 (no further optimization yet). This will ensure that the prelude 
@@ -83,7 +83,16 @@ This property often occurs in the optimizer framework and can be checked.
 
 The update statement +(p,4) now also becomes dependent on 
 a partial result and all code depending on it should be moved into the body
-of the iterations.
+of the iteration.
+
+Barrier and catch blocks are tricky. For catch blocks we should
+detect if an exception could be raised on which we have to react.
+For barrier loops, all operations become basically partial.
+
+The example implementation addresses only part of this problem
+space. In particular, it will concentrate on the SQL plans, which
+have a limited operator set and relatively clean behavior.
+
 The underlying action involves an exchange operator, which should be
 aware of the nested structure of the program.
 
