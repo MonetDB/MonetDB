@@ -260,13 +260,13 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     memset(tmp_res, 0, num_tmp_res * sizeof(BAT*));
     tmp_size = MAX(100, res_size/max_num_iters);	/* FIXME: estimate size! */
     for (j=0; j<num_tmp_res; j++) {
-    	tmp_res[j] = BATnew(TYPE_void, TYPE_oid, tmp_size);
+        tmp_res[j] = BATnew(TYPE_void, TYPE_oid, tmp_size);
         if (tmp_res[j] == NULL) 
         { 
             GDKerror("%s: could not allocate result BAT[oid,oid] of size " SZFMT ".\n", name, tmp_size);
             @:ll_return(GDK_FAIL)@
         }
-	BATseqbase(tmp_res[j], oid_nil);
+        BATseqbase(tmp_res[j], oid_nil);
     }
 }
 
@@ -363,7 +363,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         size_t lst_idx  = fst_idx  + 1;
         BUN    lst_BUN  = fst_BUN  + bun_size;
 
-	/* FIXME/TODO: use binary search (SORTfndfirst/SORTfndlast) on [fst_BUN,max_BUN] ? */
+        /* FIXME/TODO: use binary search (SORTfndfirst/SORTfndlast) on [fst_BUN,max_BUN] ? */
         while (lst_BUN < max_BUN && *(oid*)BUNtail(iter_bat, lst_BUN) < max_iter)
         {
             lst_BUN += bun_size;
@@ -374,13 +374,13 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         iter_chunk = BATslice(iter_bat, fst_idx, lst_idx);
         ctx_chunk  = BATslice(ctx_bat,  fst_idx, lst_idx);
 
-	if (!(BATtordered(ctx_chunk)&1)  ||  fst_iter != lst_iter) {
+        if (!(BATtordered(ctx_chunk)&1)  ||  fst_iter != lst_iter) {
             /* ctx nodes not sorted or more than one iter => sort on ctx & iter */
             BAT *iter_tmp = iter_chunk, *ctx_tmp = ctx_chunk;
             @:ll_sort_2(ctx_chunk, iter_chunk)@
             BBP_unfix_reclaim(iter_tmp);
             BBP_unfix_reclaim(ctx_tmp);
-	}
+        }
 
         assert((num_tmp_res==0) || (((lst_iter - fst_iter) + 1) <= num_tmp_res));
         if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self, tmp_res) == GDK_FAIL)
@@ -497,19 +497,19 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
             size_t _newcap = MAX(_reqcap, BATgrows(b));\
             if (BATextend((b), _newcap) == NULL) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed "\
-                	 "for " SZFMT " buns (" SZFMT " bytes).\n",\
-                	 __func__, (b)->batId, (b)->batCacheid,\
-                	 _newcap, _newcap * _bunsize);\
+                         "for " SZFMT " buns (" SZFMT " bytes).\n",\
+                         __func__, (b)->batId, (b)->batCacheid,\
+                         _newcap, _newcap * _bunsize);\
                 goto bunins_failed;\
             }\
             _newcap = BATbuncount(b);\
             if (_newcap < _reqcap) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
-                	 "required " SZFMT " buns (" SZFMT " bytes), "\
-                	 "got only " SZFMT " buns (" SZFMT " bytes).\n",\
-                	 __func__, (b)->batId, (b)->batCacheid,\
-                	 _reqcap, _reqcap * _bunsize,\
-                	 _newcap, _newcap * _bunsize);\
+                         "required " SZFMT " buns (" SZFMT " bytes), "\
+                         "got only " SZFMT " buns (" SZFMT " bytes).\n",\
+                         __func__, (b)->batId, (b)->batCacheid,\
+                         _reqcap, _reqcap * _bunsize,\
+                         _newcap, _newcap * _bunsize);\
                 goto bunins_failed;\
             }\
         }\
@@ -815,7 +815,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
        - only need to evaluate the inner loop and pop, because 
          there are no more new ctx nodes */
     while (stack_top) {
-    	@:finish_scope_descendant@
+        @:finish_scope_descendant@
     }
 @
 @= finish_scope_descendant
