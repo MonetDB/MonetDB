@@ -36,7 +36,7 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	}
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\".*s\"\n", cbSqlStrIn, szSqlStrIn);
+	ODBCLOG("\"%.*s\"\n", cbSqlStrIn, szSqlStrIn);
 #endif
 
 	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn);
