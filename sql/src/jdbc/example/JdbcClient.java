@@ -1,6 +1,6 @@
 import java.sql.*;
 import java.io.*;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * This simple example somewhat implements an extended client program for
@@ -110,12 +110,12 @@ public class JdbcClient {
 				dump = args[i + 1];
 				i++;
 				hasXMLDump = true;
-				hasDump = false;
+				hasDump = true;
 			} else if (!hasDump && args[i].startsWith("-X")) {
 				dump = args[i].substring(2);
 				if (dump.equals("")) dump = null;
 				hasXMLDump = true;
-				hasDump = false;
+				hasDump = true;
 			} else if (blockmode == null && args[i].startsWith("-b")) {
 				blockmode = "false";
 			} else if (blockmode == null && args[i].startsWith("-B")) {
@@ -176,83 +176,75 @@ public class JdbcClient {
 		Statement stmt = con.createStatement();
 
 		if (hasDump) {
-			System.out.println("START TRANSACTION;");
+			ResultSet tbl;
+
 			String[] types = {"TABLE", "VIEW"};
 			if (dump != null) types = null;
-			ResultSet tbl = dbmd.getTables(null, null, null, types);
+			tbl = dbmd.getTables(null, null, null, types);
 
-			// use new metadata object (with another statement)
-			DatabaseMetaData wdbmd = con.getMetaData();
-			while (tbl.next()) {
-				if (dump != null && !(tbl.getString("TABLE_NAME").equalsIgnoreCase(dump) ||
-					(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(dump)))
-					continue;
-				else if (tbl.getString("TABLE_NAME").equals("history") &&
-						tbl.getString("TABLE_SCHEM").equals("sys"))
-					continue;
-
-				if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
-					System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
-				} else {
-					// dump the table
-					createTable(
-						System.out,
-						wdbmd,
-						tbl.getString("TABLE_CAT"),
-						tbl.getString("TABLE_SCHEM"),
-						tbl.getString("TABLE_NAME"),
-						tbl.getString("TABLE_TYPE")
-					);
-					dumpTable(
-						System.out,
-						stmt,
-						tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")
-					);
-				}
+			LinkedList tables = new LinkedList();
+			while(tbl.next()) {
+				tables.add(new Table(
+					tbl.getString("TABLE_CAT"),
+					tbl.getString("TABLE_SCHEM"),
+					tbl.getString("TABLE_NAME"),
+					tbl.getString("TABLE_TYPE")));
 			}
-			tbl.close();
-			System.out.println("COMMIT;");
-			System.exit(0);
-		} else if (hasXMLDump) {
-			String[] types = {"TABLE", "VIEW"};
-			if (dump != null) types = null;
-			ResultSet tbl = dbmd.getTables(null, null, null, types);
 
-			// use new metadata object (with another statement)
-			DatabaseMetaData wdbmd = con.getMetaData();
-			while (tbl.next()) {
-				if (dump != null && !(tbl.getString("TABLE_NAME").equalsIgnoreCase(dump) ||
-					(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(dump)))
-					continue;
-				else if (tbl.getString("TABLE_NAME").equals("history") &&
-						tbl.getString("TABLE_SCHEM").equals("sys"))
-					continue;
-
-				if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
-					System.out.println("<!-- unable to represent VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim() + " -->");
-				} else {
-					String table = tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME");
-					ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
-					ResultSetMetaData rsmd = rs.getMetaData();
-					System.out.println("<table name=\"" + table + "\">");
-					while (rs.next()) {
-						System.out.println("  <row>");
-						for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-							System.out.print("    ");
-							System.out.print("<" + rsmd.getColumnName(i) + ">");
-							System.out.print(rs.getString(i).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
-							System.out.println("</" + rsmd.getColumnName(i) + ">");
-						}
-						System.out.println("  </row>");
+			// dump a specific table or not?
+			if (dump != null) { // yes we do
+				for (int i = 0; i < tables.size(); i++) {
+					Table tmp = (Table)(tables.get(i));
+					if (tmp.getName().equalsIgnoreCase(dump) ||
+						tmp.getFqname().equalsIgnoreCase(dump))
+					{
+						// dump the table
+						doDump(System.out, hasXMLDump, tmp, dbmd, stmt);
 					}
-					System.out.println("</table>");
-
-					rs.close();
 				}
+			} else {
+				tbl = dbmd.getImportedKeys(null, null, null);
+				while(tbl.next()) {
+					// find FK table object
+					Table fk = Table.findTable(tbl.getString("FKTABLE_SCHEM") + "." + tbl.getString("FKTABLE_NAME"), tables);
+
+					// find PK table object
+					Table pk = Table.findTable(tbl.getString("PKTABLE_SCHEM") + "." + tbl.getString("PKTABLE_NAME"), tables);
+
+					// should not be possible to happen
+					if (fk == null || pk == null)
+						throw new Exception("Illegal table; table not found in list");
+
+					// add PK table dependancy to FK table
+					fk.addDependancy(pk);
+				}
+
+				// find the graph
+				// at this point we know there are no cycles, thus a solution exists
+				for(int i = 0; i < tables.size(); i++) {
+					List needs = ((Table)(tables.get(i))).requires(tables.subList(0, i + 1));
+					if (needs.size() > 0) {
+						tables.removeAll(needs);
+						tables.addAll(i, needs);
+
+						// re-evaluate this position, for there is a new table now
+						i--;
+					}
+				}
+
+				// we now have the right order to dump tables
+
+				System.out.println("START TRANSACTION;");
+				for (int i = 0; i < tables.size(); i++) {
+					// dump the table
+					doDump(System.out, hasXMLDump, (Table)(tables.get(i)), dbmd, stmt);
+				}
+				System.out.println("COMMIT;");
 			}
-			tbl.close();
+			con.close();
 			System.exit(0);
 		}
+
 
 		BufferedReader fr;
 		if (hasFile) {
@@ -311,10 +303,12 @@ public class JdbcClient {
 										createTable(
 											System.out,
 											dbmd,
-											tbl.getString("TABLE_CAT"),
-											tbl.getString("TABLE_SCHEM"),
-											tbl.getString("TABLE_NAME"),
-											tbl.getString("TABLE_TYPE")
+											new Table(
+												tbl.getString("TABLE_CAT"),
+												tbl.getString("TABLE_SCHEM"),
+												tbl.getString("TABLE_NAME"),
+												tbl.getString("TABLE_TYPE")
+											)
 										);
 									}
 									found = true;
@@ -421,17 +415,26 @@ public class JdbcClient {
 	private static void createTable(
 		PrintStream out,
 		DatabaseMetaData dbmd,
-		String cat,
-		String schem,
-		String table,
-		String tableType
+		Table table
 	) throws SQLException {
+		if (table.getType().equals("VIEW")) {
+			String[] types = new String[0];
+			types[0] = table.getType();
+			ResultSet tbl = dbmd.getTables(table.getCat(), table.getSchem(), table.getName(), types);
+			if (!tbl.next()) throw new SQLException("Whoops no data for " + table);
+
+			out.print("CREATE VIEW ");
+		 	out.print(table.getFqname());
+			out.print(" AS ");
+		 	out.print(tbl.getString("REMARKS").trim());
+		}
+
 		String comment = null;
 		int i;
-		out.print("CREATE "); out.print(tableType); out.print(" ");
-		out.print(schem); out.print("."); out.print(table); out.println(" (");
+		out.print("CREATE "); out.print(table.getType()); out.print(" ");
+		out.print(table.getFqname()); out.println(" (");
 		// put all columns with their type in place
-		ResultSet cols = dbmd.getColumns(cat, schem, table, null);
+		ResultSet cols = dbmd.getColumns(table.getCat(), table.getSchem(), table.getName(), null);
 		for (i = 0; cols.next(); i++) {
 			int type = cols.getInt("DATA_TYPE");
 			if (i > 0) out.println(",");
@@ -456,7 +459,7 @@ public class JdbcClient {
 		cols.close();
 
 		// the primary key constraint
-		cols = dbmd.getPrimaryKeys(cat, schem, table);
+		cols = dbmd.getPrimaryKeys(table.getCat(), table.getSchem(), table.getName());
 		for (i = 0; cols.next(); i++) {
 			if (i == 0) {
 				out.println(","); out.println();
@@ -472,7 +475,7 @@ public class JdbcClient {
 		cols.close();
 
 		// unique constraints
-		cols = dbmd.getIndexInfo(cat, schem, table, true, true);
+		cols = dbmd.getIndexInfo(table.getCat(), table.getSchem(), table.getName(), true, true);
 		while (cols.next()) {
 			out.print(",");
 			if (comment != null) {
@@ -496,7 +499,7 @@ public class JdbcClient {
 		cols.close();
 
 		// foreign keys
-		cols = dbmd.getImportedKeys(cat, schem, table);
+		cols = dbmd.getImportedKeys(table.getCat(), table.getSchem(), table.getName());
 		while (cols.next()) {
 			out.print(",");
 			if (comment != null) {
@@ -521,7 +524,7 @@ public class JdbcClient {
 		out.println(");");
 
 		// create indexes
-		cols = dbmd.getIndexInfo(cat, schem, table, false, true);
+		cols = dbmd.getIndexInfo(table.getCat(), table.getSchem(), table.getName(), false, true);
 		comment = null;
 		while (cols.next()) {
 			if (!cols.getBoolean("NON_UNIQUE")) {
@@ -634,6 +637,47 @@ public class JdbcClient {
 				}
 			}
 			out.println(");");
+		}
+	}
+
+	public static void doDump(
+		PrintStream out,
+		boolean xml,
+		Table table,
+		DatabaseMetaData dbmd,
+		Statement stmt)
+	throws SQLException	{
+
+		if (!xml) {
+			createTable(
+				out,
+				dbmd,
+				table
+			);
+			dumpTable(
+				out,
+				stmt,
+				table.getFqname()
+			);
+		} else {
+			if (table.getType().equals("VIEW")) {
+				out.println("<!-- unable to represent VIEW " + table + " -->");
+			} else {
+				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqname());
+				ResultSetMetaData rsmd = rs.getMetaData();
+				System.out.println("<table name=\"" + table.getFqname()+ "\">");
+				while (rs.next()) {
+					System.out.println("  <row>");
+					for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+						System.out.print("    ");
+						System.out.print("<" + rsmd.getColumnName(i) + ">");
+						System.out.print(rs.getString(i).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+						System.out.println("</" + rsmd.getColumnName(i) + ">");
+					}
+					System.out.println("  </row>");
+				}
+				System.out.println("</table>");
+			}
 		}
 	}
 
@@ -880,4 +924,80 @@ class MaskingThread extends Thread {
    public void stopMasking() {
       this.stop = true;
    }
+}
+
+class Table {
+	final String cat;
+	final String schem;
+	final String name;
+	final String type;
+	final String fqname;
+	List needs;
+
+	Table(String cat, String schem, String name, String type) {
+		this.cat = cat;
+		this.schem = schem;
+		this.name = name;
+		this.type = type;
+		this.fqname = schem + "." + name;
+
+		needs = new ArrayList();
+	}
+
+	void addDependancy(Table dependsOn) throws Exception {
+		if (this.fqname.equals(dependsOn.fqname))
+			throw new Exception("Cyclic dependancy graphs are not supported (foreign key relation references self)");
+
+		if (dependsOn.needs.contains(this))
+			throw new Exception("Cyclic dependancy graphs are not supported (foreign key relation a->b and b->a)");
+
+		needs.add(dependsOn);
+	}
+
+	List requires(List existingTables) {
+		if (existingTables == null || existingTables.size() == 0)
+			return(new ArrayList(needs));
+
+		List req = new ArrayList();
+		for (int i = 0; i < needs.size(); i++) {
+			if (!existingTables.contains(needs.get(i)))
+				req.add(needs.get(i));
+		}
+
+		return(req);
+	}
+
+	String getCat() {
+		return(cat);
+	}
+
+	String getSchem() {
+		return(schem);
+	}
+
+	String getName() {
+		return(name);
+	}
+
+	String getType() {
+		return(type);
+	}
+
+	String getFqname() {
+		return(fqname);
+	}
+
+	public String toString() {
+		return(fqname);
+	}
+
+
+	static Table findTable(String fqname, List list) {
+		for (int i = 0; i < list.size(); i++) {
+			if (((Table)(list.get(i))).fqname.equals(fqname))
+				return((Table)(list.get(i)));
+		}
+		// not found
+		return(null);
+	}
 }
