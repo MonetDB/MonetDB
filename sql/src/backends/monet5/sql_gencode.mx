@@ -448,23 +448,10 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	} 	break;
 	case st_order: {
 		int l = backend_dumpstmt(sql,mb, s->op1.stval);
-		int k;
 		@:SQLprelude@
-		q= newStmt(mb,"bat","reverse");
+		q= newStmt(mb,"algebra", (s->flag? "sort_reverse":"sort"));
 		q= pushArgument(mb,q,l);
-		k= getDestVar(q);
-
-		if( s->flag) {
-			q= newStmt(mb,"algebra","sort");
-		} else {
-			q= newStmt(mb,"algebra","sort_reverse");
-		}
-		q= pushArgument(mb,q,k);
-		k= getDestVar(q);
-
-		q= newStmt(mb,"bat","reverse");
 		s->nr= getDestVar(q);
-		q= pushArgument(mb,q,k);
 		@:SQLpostlude@
 	} 	break;
 	case st_reorder: {
@@ -478,6 +465,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		}
 		q= pushArgument(mb,q,l);
 		q= pushArgument(mb,q,r);
+		s->nr= getDestVar(q);
 		@:SQLpostlude@
 	} 	break;
 
@@ -999,10 +987,11 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 	    int o1 = backend_dumpstmt(sql,mb, s->op1.stval);
 	    int o2 = backend_dumpstmt(sql,mb, s->op2.stval);
 	    @:SQLprelude@
-	    q= newStmt(mb,"sql","bindColumn");
+	    q= newStmt(mb,"sql","columnBind");
 	    q= pushArgument(mb,q,o1);
 	    q= pushArgument(mb,q,o2);
 	    s->nr = getDestVar(q);
+            /* adjust destination type !! */
 	    @:SQLpostlude@
 	} break;
        case st_bulkinsert: {
@@ -1023,7 +1012,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 			q= pushArgument(mb,q,codeset);
 
 			/* TODO use a bstream */
-			q= newStmt(mb,"stream","openRead");
+			q= newStmt(mb,"bstream","openRead");
 			q= pushArgument(mb,q,file);
 			file= getDestVar(q);
 
@@ -1035,7 +1024,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
                         q= pushInt(mb,q,s->flag);
                         s->nr= getDestVar(q);
 
-			q= newStmt(mb,"stream","close");
+			q= newStmt(mb,"bstream","close");
 			q= pushArgument(mb,q,file);
                 } else {
 			q= newStmt(mb,"sql","importTable");
