@@ -21,7 +21,7 @@
 #		Niels Nes <Niels.Nes@cwi.nl>
 #		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SWIGFLAGS = -DHAVE_LONG_LONG srcdir/../include
+SWIGFLAGS = -DHAVE_LONG_LONG $(INCLUDES)
 INCLUDES = \
 	../include \
 	-I$(PYTHONINC) 
