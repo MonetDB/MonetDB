@@ -9,6 +9,9 @@
 #undef HAVE_LIBZ
 #undef HAVE_LIBBZ2
 
+/* Define this if you have the getopt library */
+#undef HAVE_LIBGETOPT
+
 /* Define this if you have ctime_r(time_t*,char *buf,size_t s) */
 #undef HAVE_CTIME_R3
 

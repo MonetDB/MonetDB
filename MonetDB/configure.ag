@@ -395,6 +395,46 @@ if [ "$enable_static" = "yes" ]; then
 fi
 ]
 
+dnl libgetopt
+have_getopt=auto
+GETOPT_LIBS=""
+GETOPT_INCS=""
+AC_ARG_WITH(getopt,
+[  --with-getopt=DIR     getopt library is installed in DIR], 
+	[have_getopt="$withval"])
+if test "x$have_getopt" != xno; then
+  if test "x$have_getopt" != xauto; then
+    GETOPT_LIBS="-L$withval/lib"
+    GETOPT_INCS="-I$withval/include"
+  fi
+
+  save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $GETOPT_INCS"
+  AC_CHECK_HEADERS(getopt.h) 
+  CFLAGS="$save_CFLAGS"
+
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $GETOPT_LIBS"
+  AC_CHECK_LIB(c, getopt_long, 
+	[ GETOPT_LIBS="$GETOPT_LIBS" 
+          AC_DEFINE(HAVE_LIBGETOPT) 
+	  have_getopt=yes ] , 
+	[ AC_CHECK_LIB(getopt, getopt_long_only, 
+		[ GETOPT_LIBS="$GETOPT_LIBS -lgetopt" 
+          	AC_DEFINE(HAVE_LIBGETOPT) 
+	  	have_getopt=yes ] , [ have_getopt=no] )
+	] )
+  LIBS="$save_LIBS"
+
+  if test "x$have_getopt" != xyes; then
+    GETOPT_LIBS=""
+    GETOPT_INCS=""
+  fi
+fi
+AC_SUBST(GETOPT_LIBS)
+AC_SUBST(GETOPT_INCS)
+AM_CONDITIONAL(HAVE_GETOPT,test x$have_getopt = xyes)
+
 AC_SUBST(SHARED_LIBS)
 AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(CFLAGS)
