@@ -889,9 +889,6 @@ mal_export str BKCsetRole(int *r, int *bid, str *hname, str *tname);
 mal_export str BKCdestroyImmediate(bit *r,int *bid, bit *immediate);
 
 #endif /*_BAT_H_*/
-@-
-to be included at a later stage
-            case TYPE_uchr: @:aggr@1(uchr,loc,simple,uchr,atom)@ break;
 @c
 #include "bat.h"
 #include <stream.h>

@@ -691,10 +691,6 @@ command prod(b:bat[:any,:@1] ) :@2
 address ALGprod_@1_@2
 comment "Gives the produc of all tail values";
 @mal
-@:sum_definition(uchr,uchr)@
-@:sum_definition(uchr,sht)@
-@:sum_definition(uchr,int)@
-@:sum_definition(uchr,lng)@
 @:sum_definition(sht,sht)@
 @:sum_definition(sht,int)@
 @:sum_definition(sht,lng)@
@@ -709,7 +705,6 @@ comment "Gives the produc of all tail values";
 command @1 ( b:bat[:any,:@2] ) :@2 
 address ALG@1_@2 comment @3;
 @= aggregate
-@:aggregate_definition(@1,uchr,@2)@
 @:aggregate_definition(@1,sht,@2)@
 @:aggregate_definition(@1,int,@2)@
 @:aggregate_definition(@1,flt,@2)@
@@ -816,7 +811,6 @@ different situations as conditions.
 #define ALGEBRA_H
 
 #include <gdk.h>
-#include "../atoms/uchr.h"
 #include "mal_exception.h"
 #endif
 
@@ -936,7 +930,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 	    @:aggr@1(chr,loc,simple,chr,void)@ 
 	} else {
 	    switch(ATOMstorage(t)) {
-	    case TYPE_chr: @:aggr@1(uchr,loc,simple,uchr,atom)@ break;
 	    case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
 	    case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
 	    case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
@@ -954,10 +947,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:BATaggr(min)@
 @:BATaggr(max)@
 
-@:sum_implementation(uchr,uchr,0)@
-@:sum_implementation(uchr,sht,0)@
-@:sum_implementation(uchr,int,0)@
-@:sum_implementation(uchr,lng,0)@
 @:sum_implementation(sht,sht,0)@
 @:sum_implementation(sht,int,0)@
 @:sum_implementation(sht,lng,0)@
@@ -968,10 +957,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:sum_implementation(flt,dbl,0.0)@
 @:sum_implementation(dbl,dbl,0.0)@
 
-@:prod_implementation(uchr,uchr,1)@
-@:prod_implementation(uchr,sht,1)@
-@:prod_implementation(uchr,int,1)@
-@:prod_implementation(uchr,lng,1)@
 @:prod_implementation(sht,sht,1)@
 @:prod_implementation(sht,int,1)@
 @:prod_implementation(sht,lng,1)@
@@ -982,7 +967,6 @@ ptr BAT@1(BAT *b, ptr aggr) {
 @:prod_implementation(flt,dbl,1.0)@
 @:prod_implementation(dbl,dbl,1.0)@
 
-@:aggregate_implementation(uchr)@
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
 @:aggregate_implementation(flt)@
@@ -1363,12 +1347,7 @@ str ALGprod_@1_@2(@2* res, int *bid) {
         return MAL_SUCCEED;
 }
 @c
-#include "../atoms/uchr.h"
 
-@:ALGsum_implementation(uchr,uchr,0)@
-@:ALGsum_implementation(uchr,sht,0)@
-@:ALGsum_implementation(uchr,int,0)@
-@:ALGsum_implementation(uchr,lng,0)@
 @:ALGsum_implementation(sht,sht,0)@
 @:ALGsum_implementation(sht,int,0)@
 @:ALGsum_implementation(sht,lng,0)@
@@ -1379,10 +1358,6 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 @:ALGsum_implementation(flt,dbl,0.0)@
 @:ALGsum_implementation(dbl,dbl,0.0)@
 
-@:ALGprod_implementation(uchr,uchr,1)@
-@:ALGprod_implementation(uchr,sht,1)@
-@:ALGprod_implementation(uchr,int,1)@
-@:ALGprod_implementation(uchr,lng,1)@
 @:ALGprod_implementation(sht,sht,1)@
 @:ALGprod_implementation(sht,int,1)@
 @:ALGprod_implementation(sht,lng,1)@
@@ -1411,7 +1386,6 @@ str ALGmax_@1(@1* res, int *bid) {
         return throwMessage("algebra.max", "GDKerror");
 }
 @c
-@:ALGaggregate_implementation(uchr)@
 @:ALGaggregate_implementation(sht)@
 @:ALGaggregate_implementation(int)@
 @:ALGaggregate_implementation(flt)@
