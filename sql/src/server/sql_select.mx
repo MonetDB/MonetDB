@@ -901,6 +901,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	int distinct = l->h->next->data.ival;
 	stmt *s = NULL;
 	char *aggrstr = l->h->data.sval;
+	int remove_nils = 0; 
 
 	if (f == sql_where) 
 		return sql_error(sql, 02, "aggregates not allowed in WHERE clause");
@@ -926,9 +927,11 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
 		}
 	} else {
-		/* use cnt as nils shouldn't to be counted */
+		/* use cnt as nils shouldn't be counted */
 		if (strcmp(aggrstr, "count") == 0) {
 			aggrstr = "count_no_nil";
+		} else {
+			remove_nils = 1;
 		}
 		/* the values which are aggregated together, no grp should
 		 * be given there to optain the values */
@@ -945,6 +948,16 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		/* type may have changed, ie. need to fix_scale */
 		sql_subtype *t = tail_type(s);
 
+		/* inconsistent sql requires NULL != NULL and NULL <> NULL, ie unknown
+		 * but also NULL means no values, which means 'ignore'
+		 *
+		 * so here we need to ignore NULLs
+		 */
+		if (remove_nils && stmt_has_null(s)) {
+			sql_subtype *t = tail_type(s);
+			stmt *n = stmt_atom(atom_general(sql_dup_subtype(t), NULL, 0));
+			s = stmt_select2(s, n, stmt_dup(n), 0);
+		}
 		return fix_scale(sql, t, stmt_aggr(s, grp_dup(grp), a), 1, (t->type->scale == SCALE_FIX));
 	} else {
 		char *type = tail_type(s)->type->sqlname;
