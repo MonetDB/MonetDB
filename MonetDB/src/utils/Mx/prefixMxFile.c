@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "disclaimer.h"
 
 #define END_OF_HEADER_MARKER  "@'EOHMARKER (DO NOT EDIT THIS LINE)"
