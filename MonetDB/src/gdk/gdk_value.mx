@@ -180,8 +180,7 @@ illegal values, or type combinations involved, it gives
 up with an ILLEGALVALUE.
 
 @= valcheck
-	(@2) @1 == @1 ? (@2) @1 : @2_nil
-	/*(@1 < GDK_@2_min || @1 > GDK_@2_max) ? @2_nil : (@2) @1*/
+	(@1 < GDK_@2_min || @1 > GDK_@2_max) ? @2_nil : (@2) @1
 @= valconvert
 	if (dst_tpe == TYPE_chr) {
 		t->val.cval[0] = @:valcheck(@1,chr)@; 
