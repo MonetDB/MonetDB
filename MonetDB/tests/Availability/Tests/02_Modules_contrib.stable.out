@@ -186,20 +186,24 @@ Module: "cluster"
 
 Module: "color"
 
-[ 9 ]
-[ 9 ]
+[ 13 ]
+[ 13 ]
 #-------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature			help							  # name
 #-------------------------------------------------------------------------------------------------------------------------#
 [ "blue",	  "COMMAND:   ",  "blue(color) : int",		  "Extracts blue component from a color atom"		  ]
+[ "cb",		  "COMMAND:   ",  "cb(color) : int",		  "Extracts Cb(blue color) component from a color atom"	  ]
+[ "cr",		  "COMMAND:   ",  "cr(color) : int",		  "Extracts Cr(red color) component from a color atom"	  ]
 [ "green",	  "COMMAND:   ",  "green(color) : int",		  "Extracts green component from a color atom"		  ]
 [ "hsv",	  "COMMAND:   ",  "hsv(flt, flt, flt) : color",	  "Converts an HSV triplets to a color atom"		  ]
 [ "hue",	  "COMMAND:   ",  "hue(color) : flt",		  "Extracts hue component from a color atom"		  ]
+[ "luminance",	  "COMMAND:   ",  "luminance(color) : int",	  "Extracts Y(luminance) component from a color atom"	  ]
 [ "red",	  "COMMAND:   ",  "red(color) : int",		  "Extracts red component from a color atom"		  ]
 [ "rgb",	  "COMMAND:   ",  "rgb(int, int, int) : color",	  "Converts an RGB triplets to a color atom"		  ]
 [ "saturation",	  "COMMAND:   ",  "saturation(color) : flt",	  "Extracts saturation component from a color atom"	  ]
 [ "test_color",	  "PROC:      ",  "test_color() : void",	  "not available"					  ]
 [ "value",	  "COMMAND:   ",  "value(color) : flt",		  "Extracts value component from a color atom"		  ]
+[ "ycc",	  "COMMAND:   ",  "ycc(int, int, int) : color",	  "Converts an YCC triplets to a color atom"		  ]
 
 Module: "ddbench"
 
