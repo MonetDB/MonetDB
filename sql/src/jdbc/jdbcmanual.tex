@@ -71,7 +71,7 @@ Make sure this is actually the case.
 Loading the driver in your Java program requires two lines of code, which can be for example:
 \begin{verbatim}
 Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/notused", "monetdb", "monetdb");
+Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
 \end{verbatim}
 The first line makes sure the Java ClassLoader has initialized (and loaded) the Driver class of the MonetDB
 JDBC package, so it is registered with the DriverManager. The second line requests a Connection
@@ -99,7 +99,7 @@ public class MJDBCTest {
         public static void main(String[] args) throws Exception {
                 // make sure the driver is loaded
                 Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-                Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/notused?debug=true", "monetdb", "monetdb");
+                Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database?debug=true", "monetdb", "monetdb");
                 Statement st = con.createStatement();
                 ResultSet rs;
 
