@@ -18,8 +18,8 @@ date
 decimal
 decimal_debug
 monettime
-NOT_WIN32?tcpip1
-NOT_WIN32?tcpip2
+tcpip1
+tcpip2
 slice
 enum
 radix

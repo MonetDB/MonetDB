@@ -252,6 +252,28 @@ socket_gets(int fd, char **buf, int *len)
 	char *s = *buf, *end = *buf + *len;
 
 	while (TRUE) {
+		fd_set fds;
+		struct timeval tv;
+		int retval;
+
+		FD_ZERO(&fds);
+		FD_SET(fd, &fds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 500;
+		retval = select(fd + 1, &fds, NULL, NULL, &tv);
+		if (retval == 0) {
+			/* nothing interesting has happened */
+			continue;
+		}
+		if (retval < 0) {
+			if (MT_geterrno() != EINTR) {
+				GDKsyserror("socket_get: select failed\n");
+				return FALSE;
+			}
+			continue;
+		}
+		if (!FD_ISSET(fd, &fds))
+			continue;
 		if (s == end) {
 			int oldlen = *len;
 
