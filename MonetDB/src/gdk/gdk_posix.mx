@@ -1359,9 +1359,9 @@ void *MT_vmalloc(size_t size, size_t *maxsize) {
 
 void MT_vmfree(void *p, size_t size) {
 	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
-		stream_fprintf(GDKerr, "VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
+		stream_printf(GDKerr, "VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
 	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
-		stream_fprintf(GDKerr, "VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
+		stream_printf(GDKerr, "VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
 }
 
 void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize) {
@@ -1379,7 +1379,7 @@ void* MT_vmrealloc(void* v, size_t oldsize, size_t newsize, size_t oldmaxsize, s
 	if (oldsize > newsize) {
  		size_t ret = VirtualFree(p+newsize, oldsize-newsize, MEM_DECOMMIT);
  		if (ret == 0) 
-			stream_fprintf(GDKerr, "VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", 
+			stream_printf(GDKerr, "VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", 
 				PTRFMTCAST (p+newsize), (ssize_t) (oldsize-newsize));
         } else if (oldsize < newsize) {
  		a = (char*) VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
