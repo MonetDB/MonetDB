@@ -12,7 +12,7 @@ VAR b := new(oid,oid);
 b.rename("b");
 b.persists(true);
 
-VAR cap := (capacity(b) / 4) + 1;
+VAR cap := int(capacity(b) / 4) + 1;
 
 VAR i := cap * 3;
 WHILE (i > 0) {
