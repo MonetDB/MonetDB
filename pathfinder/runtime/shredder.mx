@@ -1413,15 +1413,13 @@ static void my_endElementNsSAX2Func(
 }
 
 
-#define USE_SAX2
-
 /**
  * SAX callback table.
  */
 xmlSAXHandler shredder = {
     .startDocument         = shred_start_document
   , .endDocument           = shred_end_document
-#ifdef USE_SAX2
+#if HAVE_SAX2
   , .startElement          = 0
   , .endElement            = 0
 #else
@@ -1451,13 +1449,11 @@ xmlSAXHandler shredder = {
   , .fatalError            = 0
   , .getParameterEntity    = 0
   , .externalSubset        = catchExternalSubset /* catch this 1 and process */
-#ifdef USE_SAX2
+#if HAVE_SAX2
   , .startElementNs	   = my_startElementNsSAX2Func
   , .endElementNs	   = my_endElementNsSAX2Func
   , .initialized           = XML_SAX2_MAGIC /* set this to zero for SAX1 */
 #else
-  , .startElementNs	   = 0
-  , .endElementNs	   = 0
   , .initialized           = 0
 #endif
 };

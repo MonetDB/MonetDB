@@ -596,6 +596,9 @@ typedef int ssize_t;
 /* Do we have the libxml2 library available to support XML Schema? */
 #define HAVE_LIBXML2 1
 
+/* Do we have the SAX2.h header file available, and hence SAX2 support in libxml2? */
+#define HAVE_SAX2 1
+
 /* Define if you have the z library */
 #define HAVE_LIBZ 1
 
