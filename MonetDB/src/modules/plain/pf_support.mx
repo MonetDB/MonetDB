@@ -177,8 +177,8 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 
 	BATcheck(L, "CMDmerged_union");
 	BATcheck(R, "CMDmerged_union");
-	ERRORcheck(!(BATtordered(L)&1), "merged_union: tail of first BAT must be sorted.\n");
-	ERRORcheck(!(BATtordered(R)&1), "merged_union: tail of second BAT must be sorted.\n");
+	ERRORcheck(BATcount(L)>1 && !(BATtordered(L)&1), "merged_union: tail of first BAT must be sorted.\n");
+	ERRORcheck(BATcount(R)>1 && !(BATtordered(R)&1), "merged_union: tail of second BAT must be sorted.\n");
 
 	b[0] = L;
 	b[1] = R;
@@ -196,7 +196,7 @@ int CMDmerged_union(BAT** res, BAT *L, BAT *R, ...){
 
 	for (i=0; i<nbats; i+=2) {
 		j = i+1;
-		if (b[i]->ttype != b[j]->ttype) {
+		if (BATttype(b[i]) != BATttype(b[j])) {
 			GDKerror("merged_union: BATs %d & %d must have the same tail types.\n", i, j);
 			return GDK_FAIL;
 		}
