@@ -97,8 +97,8 @@ fi
 
 dnl --enable-optimize
 AC_ARG_ENABLE(optimize,
-[  --enable-optimize       enable extra optimization [default=on]],
-  enable_optim=$enableval, enable_optim=yes)
+[  --enable-optimize       enable extra optimization [default=off]],
+  enable_optim=$enableval, enable_optim=no)
 if test "x$enable_optim" = xyes; then
   dnl Optimization flags
   if test "x$enable_debug" = xno; then

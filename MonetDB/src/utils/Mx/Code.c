@@ -288,6 +288,7 @@ char *	ref;
 
 void	CodeLine()
 {
+    char *s;
     if (!noline){
 	switch( mode ){
 	case Macro:
@@ -313,7 +314,15 @@ void	CodeLine()
 		ofile_printf("\n# %s:%d \n", mx_file, mx_line);
 		break;
 	default:
-		ofile_printf("\n#line %d \"%s\"\n", mx_line, mx_file);
+		ofile_printf("\n#line %d \"", mx_line);
+		for(s=mx_file; s[0]; s++) {
+			ofile_putc(s[0]);
+#ifdef NATIVE_WIN32
+			if (s[0] == '\\' && s[1] != ' ') ofile_putc('\\');
+#endif
+		}
+		ofile_putc('"');
+		ofile_putc('\n');
 		break;
 	}
     } else {

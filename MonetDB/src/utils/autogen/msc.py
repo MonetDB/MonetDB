@@ -547,7 +547,7 @@ CC = cl -GF -W3 -MD -nologo -Zi -G6
 
 # No general LDFLAGS needed
 LDFLAGS = /link
-INSTALL = copy /y
+INSTALL = copy
 MKDIR = mkdir
 ECHO = echo
 CD = cd

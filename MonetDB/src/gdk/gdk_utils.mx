@@ -64,10 +64,6 @@ char	GDKmonetrcStr[PATHLENGTH] = { 0 };
 # include <pwd.h>
 #endif
 
-#ifdef __CYGWIN32__
-extern int gethostname(char *s, int len);
-#endif
-
 #ifndef HAVE_SETENV
 #ifdef HAVE_PUTENV
 int setenv(char *name, char *value, int overwrite) {

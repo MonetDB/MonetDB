@@ -187,6 +187,9 @@
 /* Define if you have the <pthread.h> header file.  */
 #define HAVE_PTHREAD_H 1
 
+/* Define if you have the <semaphore.h> header file.  */
+#define HAVE_SEMAPHORE_H 1
+
 /* Define if you have the <rlimit.h> header file.  */
 /* #undef HAVE_RLIMIT_H */
 

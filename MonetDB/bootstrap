@@ -13,19 +13,19 @@ echo ")" >> configure.in
 
 test -f conf/ltmain.sh || libtoolize -c -f; 
 #if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
-#  perl -i -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
+#  perl -i.bak -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
 
 #fi
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
-perl -i -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
 aclocal -I .
 autoheader
 automake -a -c
 
 # dirty hack, needed because automake 1.4 generates the wrong dependency
 #echo "mel_tab.h: mel_tab.cc" >> src/mel/Makefile.in
-perl -i -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
+perl -i.bak -p -e  's/tab\.hh/tab.h/g' src/mel/Makefile.in
 
 #autoupdate
 autoconf

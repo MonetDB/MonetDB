@@ -3,14 +3,13 @@
 
 #include <config.h>
 
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 # include <io.h>
 # include <direct.h>
 # define mkdir(path,op) _mkdir(path)
-#endif
-
-#ifndef DIR_SEP
-#define DIR_SEP '/'
+# define DIR_SEP '\\'
+#else
+# define DIR_SEP '/'
 #endif
 
 #define	DB_DEF	0x10
