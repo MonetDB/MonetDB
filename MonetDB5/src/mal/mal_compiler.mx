@@ -45,30 +45,6 @@ function tst903();
         insert(b,nil,l);
         redo (go,i):= nextElement(1:lng,1000000:lng);
     exit (go,i);
-#setReadMode(b);
-    mx:= max(b);
-#printf("max %d",mx);
-    mi:= min(b);
-#printf(" min %d\n",mi);
-    t0:= alarm.usec();
-    c:= copy(b);
-    t1:= alarm.usec();
-    d0:= t1-t0;
-    printf("#copy %d",d0);
-    cnt:= count(c);
-    printf("#count %d\n",cnt);
-    t0:= alarm.usec();
-    z:= select(b,25:lng,25:lng);
-    t1:= alarm.usec();
-    d0:= t1-t0;
-    printf("#select none %d",d0);
-    cnt:= count(z);
-    printf(" count %d\n",cnt);
-    t0:= alarm.usec();
-    z2:= select(b,mi,mx);
-    t1:= alarm.usec();
-    d0:= t1-t0;
-    printf("#select all %d",d0);
 end tst903;
 @end example
 
@@ -83,23 +59,45 @@ which should be catched.
 Ofcourse the resulting code is not optimal, e.g.
 the following portion for the example is produced:
 @example
-    ...
-        Xmsg = RNGnewRange_lng(&go,&i,&T6);
-        if( !( go == 0 ||go== bit_nil) ) goto EXIT_7; 
+str MCCAdmin_tst903(void *tst903)
+{
+        BAT *b= 0; /* bat[:void,:lng] */
+        void T2 = 0;
+        lng T3 = 0;
+        bit go = 0;
+        lng i = 0;
+        lng T6 = 0;
+        int k = 0;
+        lng l = 0;
+        void T10 = nil;
+        lng T11 = 1;
+        lng T12 = 1000000;
+
+        if( Xmsg = CMDBATnew(&b,&T2,&T3) ) return Xmsg;
+        if( Xmsg = RNGnewRange_lng(&go,&i,&T6) ) return Xmsg;
+        if( !( go == 0 ||go== bit_nil) ) goto EXIT_7;
 BARRIER_3:
-        Xmsg = CALCrandint(&k);
-        Xmsg = CALCint2lng(&l,&k);
-        Xmsg = BKCinsert_bun(&T9,&b,&T10,&l);
-        Xmsg = RNGnextElement_lng(&go,&i,&T11,&T12);
-        if(  go == 0 ||go== bit_nil ) goto BARRIER_3; 
-EXIT_7:
-    ...
+        if( Xmsg = CALCrandint(&k) ) return Xmsg;
+        if( Xmsg = CALCint2lng(&l,&k) ) return Xmsg;
+        if( Xmsg = BKCinsert_bun(&T9,&b,&T10,&l) ) return Xmsg;
+        if( Xmsg = RNGnextElement_lng(&go,&i,&T11,&T12) ) return Xmsg;
+        if(  go == 0 ||go== bit_nil ) goto BARRIER_3;
+EXIT_7: ;
+}
 @end example
 This models a for-loop over an integer range and
 contains an expensive coercion.
 One way to improve code generation is to associate
 a code string to each MAL signature, and make
 exception handling explicit.
+
+@- Limitations
+The current implementation only handles translation
+of command calls and multiplex statements over commands.
+Patterns should be handled differently, e.g.  CMDBATnew
+in the example above would make this program not
+executable.
+@{
 @h
 #ifndef _MAL_COMPILER_H_
 #define _MAL_COMPILER_H_
@@ -123,7 +121,7 @@ static char *mccPrelude[]={
     "   All rights reserved.\n",
     " \n",
     "   The current version does not yet\n",
-    "   CATCH, THREAD blocks\n",
+    "   support THREAD blocks\n",
     "*/\n",
     "#include \"mal.h\"\n",
     "#include \"mal_function.h\"\n",
@@ -276,29 +274,18 @@ Before we generate code, we should check existence of
 CATCH blocks. If they do not exist, then any exception
 terminates the function. Otherwise, we jump to the first one.
 @c
-void mccBody(stream *f,MalBlkPtr mb){
-    int i,j;
-    InstrPtr p;
-    int *catch, ctop=0;
-    catch= (int *) alloca(mb->stop);
-
-    for(i=1; i<mb->stop; i++){
-        p= getInstrPtr(mb,i);
-        if( p->barrier== CATCHsymbol)
-            catch[ctop++]= i;
-    }
-
-    for(i=1; i<mb->stop; i++){
-        p= getInstrPtr(mb,i);
+int mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop){
+    int errors = 0;
+    int j;
         if( p->barrier== EXITsymbol )
-            stream_printf(f,"EXIT_%d:\n",i);
+            stream_printf(f,"EXIT_%d: ;\n",i);
 
         if( p->barrier== CATCHsymbol ){
             stream_printf(f,"CATCH_%d:\n",i);
             stream_printf(f,"if( ");
             mccVar(f,mb,getArg(p,0));
             stream_printf(f," == MAL_SUCCEED) goto EXIT_%d;\n",p->jump);
-            continue;
+            return errors;
         }
     
         if( p->blk && p->blk->binding){
@@ -310,8 +297,8 @@ void mccBody(stream *f,MalBlkPtr mb){
                 mccArg(f,mb,getArg(p,j));
             }
             stream_printf(f,") )");
-            if( ctop)
-                stream_printf(f," goto CATCH_%d;\n",catch[--ctop]);
+            if( *ctop> 0)
+                stream_printf(f," goto CATCH_%d;\n",catch[--*ctop]);
             else stream_printf(f," return Xmsg;\n");
         }
         if( p->barrier)
@@ -343,10 +330,71 @@ void mccBody(stream *f,MalBlkPtr mb){
         default:
             stream_printf(f,"/* case not yet covered: %d */\n",p->barrier);
         }
+    return errors;
+}
+@-
+Multiplex script calls are expanded to their code base.
+@c
+void mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p){
+    int pc= getPC(mb,p);
+    InstrPtr pn;
+
+    pn = copyInstruction(p);
+    if(functionId(pn)) GDKfree(pn->fcnname);
+    if(moduleId(pn)) freeModuleName(p);
+    setModuleId(pn, NULL);
+    setFunctionId(pn, GDKstrdup(getVarConstant(mb,pn->argv[pn->retc]).val.sval));
+    delArgument(pn,pn->retc);
+    typeChecker(getClient()->nspace,mb,pn);
+
+    stream_printf(f,"{\tlng mloop;\n\tptr h,t;\n");
+    stream_printf(f,"MULTIPLEX_BEGIN_%d:\n",pc);
+    stream_printf(f,"TODO\n");
+    mccInstruction(f,mb,pn,pc,0,0);
+    stream_printf(f,"if(mloop > 0 ) goto MULTIPLEX_BEGIN_%d:\n",pc);
+    stream_printf(f,"MULTIPLEX_EXIT_%d: ;\n}\n",pc);
+
+    freeInstruction(pn);
+}
+void mccBody(stream *f,MalBlkPtr mb){
+    int i;
+    InstrPtr p;
+    int *catch, ctop=0,errors=0;
+    catch= (int *) alloca(mb->stop);
+
+    for(i=1; i<mb->stop; i++){
+        p= getInstrPtr(mb,i);
+        if( p->barrier== CATCHsymbol)
+            catch[ctop++]= i;
     }
+
+    for(i=1; i<mb->stop; i++){
+        p= getInstrPtr(mb,i);
+@-
+Unfortunately, we can only compile commands now.
+Patterns require simulation of the context. The best
+approach would be to provide alternative implementations
+directly.
+A simple extension would be to also compile the dependent
+functions.
+@c
+        if( p->token != CMDcall && functionId(p)) {
+            if( moduleName(p) && functionName(p) &&
+                idcmp(moduleName(p),"multiplex")==0 &&
+                idcmp(functionName(p),"script")==0){
+                mccMultiplex(f,mb,p);
+                continue;
+            }
+            GDKwarning("call to %s.%s can not be handled correctly\n",
+                moduleName(p), functionName(p));
+            errors++;
+        }
+        errors+= mccInstruction(f,mb,p,i,catch,&ctop);
+    }
+    if( errors) showErrors();
 }
 void mccExit(stream *f){
-    stream_printf(f,"\treturn Xmsg;\n}\n");
+    stream_printf(f,"}\n");
     (void) stream_close(f);
 }
 
@@ -408,4 +456,4 @@ str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     }
     return msg;
 }
-
+@}
