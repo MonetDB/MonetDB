@@ -214,8 +214,11 @@ Some explanation of what mem_usage() and vm_usage() display:
 	printf("%s%s\n",
             help_tpe(monet_fcn_tpe.find(fid)), format_fcn_sig(fid));
 	if (monet_fcn_mid.exist(fid)) {
-	    printf("MODULE:    %s\n",
-                monet_mod_nme.find(monet_fcn_mid.find(fid)));
+            VAR mn := monet_mod_nme.find(monet_fcn_mid.find(fid));
+            if (mn.startsWith("_")) {
+                mn := string(mn,1);
+            }
+	    printf("MODULE:    %s\n", mn);
         }
 	if (and(monet_fcn_aut.exist(fid), monet_fcn_dat.exist(fid))) {
 	    printf("COMPILED:  by %s on %s\n",
@@ -261,15 +264,27 @@ Some explanation of what mem_usage() and vm_usage() display:
     ADDHELP("modules", "boncz", "Aug 14 1997",
 	"list all installed modules, plus owner and db restrictions", "sys"); 
 	
-    PROC loaded() : void := table(1,monet_mod_nme.reverse.sort.reverse.col_name("module"), 
-			     monet_mod_cnt.copy.col_name("usage_count"));
+    PROC loaded() : void := table(1,
+	monet_mod_nme.kdiff(monet_mod_nme.[startsWith]("_").uselect(true)).reverse.sort.reverse.col_name("module"), 
+	monet_mod_cnt.copy.col_name("usage_count"));
     ADDHELP("loaded", "boncz", "Feb  6 1996", 
 	"list all loaded modules, and the number of active users.", "sys"); 
 
     PROC sigs(str modname) : void := {
+	var modname2;
+	if (modname.startsWith("_")) {
+	    modname2 := string(modname,1);
+	} else {
+	    modname2 := "_" + modname;
+	}
 	if (monet_mod_nme.reverse.exist(modname)) {
 	    var o := monet_mod_nme.reverse.find(modname);
-	    var b := [format_fcn_sig](monet_fcn_mid.uselect(o).reverse);
+	    var m := monet_fcn_mid.uselect(o);
+	    if (monet_mod_nme.reverse.exist(modname2)) {
+	    	o := monet_mod_nme.reverse.find(modname2);
+	    	m := union(m,monet_fcn_mid.uselect(o));
+	    }
+	    var b := [format_fcn_sig](m.reverse);
 	    table(1,b.reverse.sort.reverse.col_name("signature"));
 	} else if ([module_name](view_modules).reverse.exist(modname)) {
   	    ERROR("sigs: must load module first.\n");
