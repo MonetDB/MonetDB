@@ -1329,9 +1329,16 @@ ostream &install::gen_load( ostream &o, const Load &d ){
 	 	memcpy(buf,d.Name()+i,nr);
 		buf[nr] = '\0';
 		if (i != 0)
-	 	  o << "        strncpy((s+strlen(s)),\"" << buf  << "\"," << nr << ");\n";
+	 	  o << "        memcpy((s+strlen(s)),\"" << buf  << "\"," << nr << ");\n";
 		else
-	 	  o << "        strncpy(s,\"" << buf  << "\"," << nr << ");\n";
+	 	  o << "        memcpy(s,\"" << buf  << "\"," << nr << ");\n";
+		// The two memcpy's above used to be strncpy's;
+		// however, with both GNU's gcc 3.2.1 and Intel's ecc 7.0,
+		// the second strncpy strangely did not always work correctly.
+		// With memcpy, everything seems to work correctly.
+		// As we know the exact length of each string-fragment to copy, and
+		// as the final segment is null-terminated within the length to copy,
+		// memcpy should just work as "well" as strncpy, here.
 	 }
 	 o << "      TBL_Install_LoadMIL( mid, s); }\n";
 	 return o; 
