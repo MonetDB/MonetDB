@@ -98,7 +98,6 @@ end main;	# 37
 [ 8,	  64	  ]
 [ 4,	  16	  ]
 [ 9,	  81	  ]
-scan partition 1-10
 [ -113 ]
 #-----------------#
 # h	tmp_4	  # name
@@ -128,7 +127,6 @@ scan partition 1-10
 [ 2,	  8	  ]
 [ 9,	  25	  ]
 [ 26,	  100	  ]
-scan partition 1-10
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
@@ -155,7 +153,6 @@ scan partition 1-10
 #-----------------#
 [ 2,	  79	  ]
 [ 80,	  100	  ]
-scan partition 1-10
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type

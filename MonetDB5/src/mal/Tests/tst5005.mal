@@ -1,0 +1,26 @@
+# Testing the cracker implementation
+b:= new(:int,:int);
+insert(b,10,100);
+insert(b,1,2);
+insert(b,6,36);
+insert(b,5,25);
+insert(b,2,4);
+insert(b,3,9);
+insert(b,7,49);
+insert(b,8,64);
+insert(b,4,16);
+insert(b,9,81);
+
+(cidx,vrng):= crackers.new(b);
+crackers.crack(b,cidx,vrng,9,25);
+crackers.crack(b,cidx,vrng,80,195);
+crackers.crack(b,cidx,vrng,2,2);
+print(cidx);
+print(vrng);
+
+barrier (i,view):= crackers.firstPiece(b,cidx);
+	print(view);
+redo i:= crackers.nextPiece(b,cidx,view,i);
+exit;
+
+dropPiece(view);
