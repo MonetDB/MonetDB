@@ -22,6 +22,7 @@ module 'pathfinder'
 # signature										  # name
 #-----------------------------------------------------------------------------------------#
 [ "child_lev(BAT[void,chr], BAT[oid,any], int, int) : BAT[oid,void]"			  ]
+[ "clear_working_set() : void"							  ]
 [ "compress_properties(str) : void"							  ]
 [ "delete_doc(str) : void"								  ]
 [ "doc_to_working_set(str) : void"							  ]
@@ -29,8 +30,8 @@ module 'pathfinder'
 [ "import_doc(str, str) : void"								  ]
 [ "parent_lev(BAT[void,chr], BAT[oid,any], int, int) : BAT[oid,void]"			  ]
 [ "precedingsibling_lev(BAT[void,chr], BAT[oid,any], int, int) : BAT[oid,void]"		  ]
-[ "staircasejoin_br_void_excl(BAT[oid,oid], BAT[oid,oid], int, int) : BAT[oid,void]"	  ]
-[ "staircasejoin_br_void_incl(BAT[oid,oid], BAT[oid,oid], int, int) : BAT[oid,void]"	  ]
+[ "scj_void_desc(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"	  ]
+[ "scj_void_descorself(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"	  ]
 [ "xml_print() : void"									  ]
 [ "xml_print(BAT[oid,any]) : void"							  ]
 [ "xml_print(str) : void"								  ]
