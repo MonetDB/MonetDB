@@ -1,8 +1,0 @@
-# Variables names may be identical to type names, but
-# then they also have to bear the same value 
-
-str := "hello";
-int := 1:sht;
-flt := "wrong";
-i   := true;
-
