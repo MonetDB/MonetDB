@@ -2128,7 +2128,6 @@ void mvc_export_schema(mvc * c, stream * s )
 	i = snprintf(buf, BUFSIZ, "%d\n", list_length(tr->schema->tables));
 	s->write(s, buf, i, 1);
 	for (n = tr->schema->tables->h; n; n = n->next) {
-		node *m;
 		sql_table *t = n->data;
 		int clen = list_length(t->columns);
 		int klen = t->keys?list_length(t->keys):0;
@@ -2137,6 +2136,7 @@ void mvc_export_schema(mvc * c, stream * s )
 		s->write(s, buf, i, 1);
 
 		if (!t->view) {
+			node *m;
 			for (m = t->columns->h; m; m = m->next) {
 				sql_column *col = m->data;
 				i = snprintf(buf, BUFSIZ,

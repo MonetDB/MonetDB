@@ -36,11 +36,12 @@ static void getschema( catalog *c, char *schema, char *user ){
 		if (!nt->view){
 			node *m;
 	      		table *t = cat_create_table( c, nt->id, c->cur_schema, nt->name, nt->temp, NULL );
+			printf("table %s\n", t->name );
 			for (m = nt->columns->h; m; m = m->next ){
 				sql_column *col = m->data;
-				if (col->colnr >= 0)
-		  			cat_create_column( c, col->id, t, col->name, 
+		  		column *cx = cat_create_column( c, col->id, t, col->name, 
 						col->type, col->def, col->null );
+				printf("\tcolumn %s\n", cx->name );
 			}	
 			if (nt->keys) for (m = nt->keys->h; m; m = m->next ){
 				node *p, *o = NULL;
