@@ -78,7 +78,7 @@ if (@3 == (size_t) oid_nil) {
 		for(_idx=_lcount; _idx > 0; _idx >>= 1) _slices++;
 		_step = _lcount / _slices;
 		_sample = _slices * SAMPLE_SLICE_SIZE;
-		_cnt = (int*) alloca(_slices*sizeof(int));
+		_cnt = (size_t*) alloca(_slices*sizeof(size_t));
 		for(_lo=0; _idx < _slices; _lo += _step) {
 		  	size_t _hi = _lo + SAMPLE_SLICE_SIZE; 
 			l = BATslice(_tmp1, _lo, _hi); /* slice keeps all parent properties */ 
