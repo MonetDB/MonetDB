@@ -189,9 +189,17 @@ static CrackMap *crackMap;
 static int maxCrackMap;
 
 int findCrackMap(int bid){
-	int i;
+	int i,freemap= -1;
 	for(i=0; i<maxCrackMap; i++)
 	if( crackMap[i].bid== bid) return i;
+	else 
+	if( crackMap[i].bid== -1) freemap=i;
+
+	if(freemap!= -1) {
+		crackMap[freemap].bid= bid;
+		return freemap;
+	}
+
 	if( i== maxCrackMap){
 		CrackMap *x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * (i+10));
 		if(crackMap){
@@ -205,9 +213,18 @@ int findCrackMap(int bid){
 	/* init the crackmap */
 	crackMap[i].bid= bid;
 	crackMap[i].pieces = GDKmalloc(sizeof(Piece) *1024);
+	bzero((void*) crackMap[i].pieces, sizeof(Piece) *1024);
 	crackMap[i].freepiece= 0;
 	crackMap[i].maxpiece = 1024;
 	return i;
+}
+void freeCrackMap(int m){
+	assert(m>=0);
+	/* re-initialize crackmap */
+        crackMap[m].bid= -1;
+        bzero((void*) crackMap[m].pieces, sizeof(Piece) * crackMap[m].maxpiece);
+        crackMap[m].freepiece= 0;
+
 }
 void printCrackMapElement(Piece *list, int i, int bid){
 	stream_printf(GDKout,"[ %3d %3d, ",i,bid);
@@ -270,10 +287,6 @@ already. [todo]
 		if( *(int *)v > *(int *)BUNtail(b,vmax)) vmax = p;
 	}
 @-
-Reserve space for the cracker pieces
-@c
-	map->freepiece= 1;
-@-
 Initialize the index tables and reshuffle the BUNs
 according to the tail value;
 @c
@@ -283,13 +296,14 @@ according to the tail value;
 	map->pieces[0].idx_last = BUNindex(b,BUNlast(b))-1;
 	map->pieces[0].kind = LEAF;
 	map->pieces[0].parent = -1;
+	map->freepiece= 1;
 
 	assert(BUNsize(b)<128);
 	p= BUNfirst(b);
-	@:exchange(p,vmin)@
+	if(p!= vmin) @:exchange(p,vmin)@
 	if( p == vmax) vmax= vmin;
 	p= BUNlast(b)- BUNsize(b);
-	@:exchange(vmax,p)@
+	if(vmax!=p) @:exchange(vmax,p)@
 	return MAL_SUCCEED;
 }
 @-
@@ -297,9 +311,20 @@ according to the tail value;
 #ifdef DEBUG_CRACKERS
 	printf("exchange %d %d\n",BUNindex(b,@1),BUNindex(b,@2));
 #endif
+{ /* be aware of reversed bats, which disallow memcpy
 	memcpy(buf, @1, BUNsize(b));
 	memcpy(@1, @2, BUNsize(b));
 	memcpy(@2, buf, BUNsize(b));
+*/
+	(void) buf;
+	int hdummy,tdummy;
+	hdummy= *(int*) BUNhead(b,@1);
+	tdummy= *(int*) BUNtail(b,@1);
+	*(int*) BUNhead(b,@1) = *(int*) BUNhead(b,@2);
+	*(int*) BUNtail(b,@1) = *(int*) BUNtail(b,@2);
+	*(int*) BUNhead(b,@2)= hdummy;
+	*(int*) BUNtail(b,@2)= tdummy;
+}
 @= exchange2
 #ifdef DEBUG_CRACKERS
 	printf("exchange %d %d %d\n",BUNindex(b,@1),
@@ -738,6 +763,7 @@ str CRKdropPiece(int *newpid, int *bid){
         @:getBATdescriptor(&result,bid,b,dropPiece)@
 	(void) result;
 	VIEWdestroy(b);
+	freeCrackMap(findCrackMap(*bid));
 	return MAL_SUCCEED;
 } 
 @-
