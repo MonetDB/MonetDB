@@ -22,6 +22,7 @@ lib__str = {
 	LIBS = $(MONETDB_LIBS) $(ICONV_LIBS) ../../mal/libmal
 }
 
+
 #doc_atoms = {
 #	DIR = pkgdatadir/docs/modules/atoms
 #	SOURCES = str.mx blob.mx url.mx mtime.mx
