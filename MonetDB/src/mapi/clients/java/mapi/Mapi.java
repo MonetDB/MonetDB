@@ -322,6 +322,17 @@ throws MapiException
 		toMonet= new BufferedWriter( 
 			new OutputStreamWriter(socket.getOutputStream()));
 		connected = true;
+
+		// read the challenge from the server
+		char[] b = new char[2];
+		fromMonet.read(b);
+		try {
+			b = new char[Integer.parseInt(new String(b))];
+		} catch (NumberFormatException e) {
+			throw new MapiException("Illegal challenge length: " + (new String(b)));
+		}
+		fromMonet.read(b);
+		// completely discard the challenge for now
 	} catch(IOException e) {
 		error= MERROR;
 		errortext= "Failed to establish contact\n" ;

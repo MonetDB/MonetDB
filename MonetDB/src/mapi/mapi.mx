@@ -342,10 +342,10 @@ Get the new information for the server socket and start listening.
 		if (STREQ(cmd, "")) {
 			int i = 0;
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
-			char *mp;
+			char *mp, *challenge;
 			int blocked = 0;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
-			stream *fdout = NULL;
+			stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
 			Client c;
 
 			assert(name);
@@ -354,6 +354,11 @@ Get the new information for the server socket and start listening.
 				GDKsyserror("MAPIlisten:fdin problems\n");
 				continue;
 			}
+			/* write challenge string, the challenge is currently empty (disabled) */
+			challenge = "::mserver_mil:4\n";
+			/* temporarily misuse name */
+			snprintf(name, BLOCK, "%2d%s", strlen(challenge), challenge);
+			stream_write(fdout, name, strlen(name), 1);
 			/* get user name */
 			stream_read(fdin, user, 1, 1);
 			for (i = 0; !stream_errnr(fdin) && i < BLOCK && *user != '\n'; i++) {

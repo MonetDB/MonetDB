@@ -1951,6 +1951,13 @@ mapi_start_talking(Mapi mid)
 	size_t len;
 	MapiHdl hdl;
 
+	/* consume server challenge */
+	stream_read(mid->from, buf, 1, 2);
+	len = atoi(buf);
+	assert(len <= BLOCK);
+	stream_read(mid->from, buf, 1, len);
+	/* just don't do anything with the challenge */
+
 	if (mid->blocked) {
 		snprintf(buf, BLOCK, "%s:%s:%s:blocked\n", mid->username, mid->password, mid->language);
 	} else {
