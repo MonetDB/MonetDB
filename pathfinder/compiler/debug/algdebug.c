@@ -183,15 +183,12 @@ static void
 alg_pretty (PFalg_op_t *n)
 {
     int c;
-    bool comma;
     int i;
 
     if (!n)
         return;
 
     PFprettyprintf ("%s", a_id[n->kind]);
-
-    comma = true;
 
     switch (n->kind)
     {

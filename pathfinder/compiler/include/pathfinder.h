@@ -54,8 +54,6 @@
 #endif
 
 /** Compilation phases */
-typedef enum PFphases_t PFphases_t;
-
 /** Compilation phases */
 enum PFphases_t {
     phas_parse     = 1   /**< Parsing and abstract syntax tree generation */
@@ -67,6 +65,8 @@ enum PFphases_t {
 
   , phas_all             /**< Do all processing phases */
 };
+
+typedef enum PFphases_t PFphases_t;
 
 /** Output types */
 typedef enum PFoutput_t PFoutput_t;
