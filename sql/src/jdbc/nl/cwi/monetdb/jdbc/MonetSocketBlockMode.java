@@ -44,7 +44,7 @@ import java.net.*;
  * line query, and should be less intensive for the server.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.2
+ * @version 2.3
  */
 class MonetSocketBlockMode extends MonetSocket {
 	/** Stream from the Socket for reading */
@@ -62,8 +62,13 @@ class MonetSocketBlockMode extends MonetSocket {
 	/** A ByteBuffer for performing a possible swab on an integer for sending */
 	private ByteBuffer outputBuffer;
 
-	/** The maximum size of the chunks we fetch data from the stream with */
-	private final int capacity;
+	/** The maximum size of the chunks when we fetch data from the stream
+	 *  (overridden!) */
+	final int readcapacity;
+	/** The maximum size of the chunks when we push data to the stream
+	 *  (overridden!) */
+	final int writecapacity;
+
 
 	MonetSocketBlockMode(String host, int port, int blocksize) throws IOException {
 		super(new Socket(host, port));
@@ -78,8 +83,15 @@ class MonetSocketBlockMode extends MonetSocket {
 
 		readBuffer = new StringBuffer();
 
-		// set the blocksize, use hardcoded default on 0 or negative
-		capacity = blocksize <= 0 ? 8192 : blocksize;
+		// set the blocksize, use socket default on 0 or negative
+		// correct the value with the protocol overhead of 4 bytes
+		if (blocksize <= 5) {
+			readcapacity = con.getReceiveBufferSize() - 4;
+			writecapacity = con.getSendBufferSize() - 4;
+		} else {
+			readcapacity = blocksize - 4;
+			writecapacity = blocksize - 4;
+		}
 	}
 
 	/**
@@ -164,7 +176,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			int blocksize;
 			while (todo > 0) {
 				// write the length of this block
-				blocksize = todo < capacity ? todo : capacity;
+				blocksize = todo < writecapacity ? todo : writecapacity;
 				outputBuffer.rewind();
 				outputBuffer.putInt(blocksize);
 
@@ -290,7 +302,7 @@ class MonetSocketBlockMode extends MonetSocket {
 					if (debug) logRx("new block: " + readState + " bytes");
 				}
 				// 'continue' fetching current block
-				byte[] data = new byte[capacity < readState ? capacity : readState];
+				byte[] data = new byte[readcapacity < readState ? readcapacity : readState];
 				int size = fromMonetRaw.read(data);
 				if (size == -1) throw
 					new IOException("End of stream reached");
@@ -298,17 +310,9 @@ class MonetSocketBlockMode extends MonetSocket {
 				// update the state
 				readState -= size;
 
-				// because the bytes in the array are not necessarily the same
-				// length as the (unicode) string representation, we have to
-				// get rid of unused bytes before converting to a String.
-				if (size < data.length) {
-					byte[] tmp = new byte[size];
-					System.arraycopy(data, 0, tmp, 0, size);
-					data = tmp;
-				}
 				// append the stuff to the buffer; let String do the charset
 				// conversion stuff
-				readBuffer.append(new String(data, "UTF-8"));
+				readBuffer.append(new String(data, 0, size, "UTF-8"));
 
 				if (debug) {
 					logRx("read chunk: " + size +

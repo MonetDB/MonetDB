@@ -973,14 +973,14 @@ public class MonetConnection extends Thread implements Connection {
 			}
 
 			// send the query
-			// If the query is large (> 8192 chars) use a special send thread
-			// to avoid deadlock with the server in the case the TCP buffers
-			// overflow.  In case a large query is sent, the TCP stack can
-			// overflow, which will make a normal write call block.  However,
-			// the server is writing results back to us, which will block as
-			// as well in the end, resulting in a state where both client and
+			// If the query is larger than the TCP buffer size, use a special
+			// send thread to avoid deadlock with the server due to blocking
+			// behaviour when the buffer is full.  Because the server will be
+			// writing back results to us, it will eventually block as well
+			// when its TCP buffer gets full, as we are blocking an not
+			// consuming from it.  The result is a state where both client and
 			// server want to write, but block.
-			if (hdrl.query.length() > 8192) {
+			if (hdrl.query.length() > monet.writecapacity) {
 				// get a reference to the send thread
 				if (sendThread == null) sendThread = new SendThread();
 				// tell it to do some work!
