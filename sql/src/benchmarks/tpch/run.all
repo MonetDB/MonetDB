@@ -1,6 +1,6 @@
 #!/bin/sh
 set -x
-SQL="Msql -u monetdb -P monetdb --trace"
+SQL="MapiClient -lsql -u monetdb -P monetdb --trace"
 if [ $# -eq 1 ]; then
 	SQL="$1"
 fi

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-Msql -u monetdb -P monetdb --port=$SQLPORT < queries.sql
+MapiClient -lsql -u monetdb -P monetdb --port=$SQLPORT < queries.sql
 
