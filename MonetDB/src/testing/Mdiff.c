@@ -100,8 +100,14 @@ int main(int argc, char** argv)
       case 0:
 	  	if (quiet == 0) fprintf(STDERR,"%s and %s are equal.\n",old_fn,new_fn);
 	  break;
-      case 1: fprintf(STDERR,"%s and %s differ slightly.\n",old_fn,new_fn); break;
-      case 2: fprintf(STDERR,"%s and %s differ SIGNIFICANTLY!\n",old_fn,new_fn); break;
+      case 1:
+	  	if (quiet != 0) fprintf(STDERR, "\n");
+		fprintf(STDERR,"%s and %s differ slightly.\n",old_fn,new_fn);
+	  break;
+      case 2:
+	  	if (quiet != 0) fprintf(STDERR, "\n");
+		fprintf(STDERR,"%s and %s differ SIGNIFICANTLY!\n",old_fn,new_fn);
+	  break;
     }
 
   TRACE(fprintf(STDERR,"done.\n"));

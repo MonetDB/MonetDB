@@ -1607,16 +1607,16 @@ def RunTest(env, TST, BusyPorts, COND) :
             if quiet:
                 STDOUT.write("\n%s : Timeout!\n", LogLine)
             else:
-	            STDOUT.write("(Timeout!) ")
+                STDOUT.write("(Timeout!) ")
 
         if killed:
             if quiet:
                 STDOUT.write("\n%s : Killed!\n", LogLine)
             else:
-	            STDOUT.write("(Killed!) ")
+                STDOUT.write("(Killed!) ")
 		
         if not quiet:
-	        STDOUT.write("\n")
+            STDOUT.write("\n")
 
         try:
             STDOUT.flush()
@@ -2190,11 +2190,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     if SERVER in ["MAPI", "SQL"] and ( os.name == "nt" or OS == "CYGWIN" ):
         s = 2
         if not quiet:
-			STDOUT.write(" (sleeping %d secs .." % s)
+            STDOUT.write(" (sleeping %d secs .." % s)
 
         time.sleep(s)
         if not quiet:
-        	STDOUT.write(".. done) ")
+            STDOUT.write(".. done) ")
 			
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
 
