@@ -336,7 +336,7 @@ bunins_failed:
 
 @+ BAT Aggregates
 
-We retain the size() and card() agggregate results in the column descriptor.
+We retain the size() and card() aggregate results in the column descriptor.
 We would like to have such functionality in an extensible way for many aggregates, 
 for DD (1) we do not want to change the binary BAT format on disk and (2) aggr
 and size are the most relevant aggregates. 
@@ -412,7 +412,7 @@ can be sped up using the reference information in the BUN
 and bulk copying the heap.
 @
 @
-There are now seperate versions for each type, and for each a 
+There are now separate versions for each type, and for each a 
 hash- and a merge-algorithms. 
 
 @= histoloop_inner
@@ -631,7 +631,7 @@ bunins_failed:
 The string search is optimized for the degenerated case
 that th = tl, and double elimination in the string heap. 
 
-We allow value selections on the nil atom. This is focrmally
+We allow value selections on the nil atom. This is formally
 not correct, as in MIL (nil = nil) != true.  However, we do 
 need an implementation for selecting nil (in MIL, this is done 
 through is the "isnil" predicate). So we implement it here.
@@ -970,7 +970,7 @@ BAT* BATuselect(BAT *b, ptr h, ptr t) {
 @- Top-N selection
 
 The top-N elements can be easily obtained by trimming the
-space. The auxillary index structures are removed.
+space. The auxiliary index structures are removed.
 For non-variable size BATs it merely requires
 adjustment of the free space labels. Other BATs require
 a loop through the tuples to be deleted. [todo]
@@ -1100,7 +1100,7 @@ BAT *BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th) {
 The baseline algorithm for fragment location is a two-phase process. 
 First we search on the 1st
 dimension and collect the qualifying BUNs in a marking on the
-stack. In the second phase, the tail is analysed for all items
+stack. In the second phase, the tail is analyzed for all items
 already marked and qualifying associations are copied into the result.
 An index is exploited when possible.
 
@@ -1459,7 +1459,7 @@ bunins_failed:
 }
 
 @- range partitioning
-Range parititioning ensures that identical values appear in one
+Range partitioning ensures that identical values appear in one
 partition only. The routine also tries to deliver partitions of
 uniform size.
 @c

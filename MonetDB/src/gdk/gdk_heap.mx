@@ -38,7 +38,7 @@ data using the OS virtual memory management.
 
 \item[STORE\_PRIV: read-write mapped region]
 in order to preserve ACID properties, we use a different memory mapping
-on virtual memory that is writeable, This is because in case of a crash
+on virtual memory that is writable, This is because in case of a crash
 on a dirty STORE\_MMAP heap, the OS may have written some of the dirty pages
 to disk and other not (but it is impossible to determine which).  The OS 
 MAP\_PRIVATE mode does not modify the file on which is being mapped, rather 
@@ -53,7 +53,7 @@ are non-persistent (yet). Such BATs may be made persistent later on, of course.
 Thus, the commit protocol BBPsync/heap\_move (gdk\_bbp.mx) actually does
 not check anymore for hp->storage == STORE\_PRIV, but rather for a .priv suffix 
 in hp->filename. Thus, persistent STORE\_MMAP/.priv heaps are saved with
-by explictly writing a separate full file X to disk (this is expensive, though!).
+by explicitly writing a separate full file X to disk (this is expensive, though!).
 
 Related to this is saving BAT descriptors. These contain hp->storage fields that 
 reflect how the heap should be loaded the *next* time the BAT is re-loaded (may differ
@@ -327,14 +327,14 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 
 @- HEAPsave
 
-Saving STORE_MEM will do a write(fd, buf, size) in GDKsafe (explicit IO).
+Saving STORE_MEM will do a write(fd, buf, size) in GDKsave (explicit IO).
 
 Saving a STORE_PRIV (X.priv) heap means that we must actually write to X, thus
 we convert the mode passed to GDKsave to STORE_MEM.
 
-Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsafe (implicit IO).
+Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit IO).
 
-After GDKsave returns succesfully (>=0), we assume the heaps are safe on stable storage.
+After GDKsave returns successfully (>=0), we assume the heaps are safe on stable storage.
 @c
 int HEAPsave(Heap* h, str nme, str ext) {
 	int store = h->storage;

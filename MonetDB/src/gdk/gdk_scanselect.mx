@@ -52,7 +52,7 @@ This means
 	we're done.
 \item	Expanding on the output-tail-type which is either identical to
 	input-tail-type or TYPE\_void (uselect).
-\item	Expand on output-head-type; usually inhereted from input-head-type.
+\item	Expand on output-head-type; usually inherited from input-head-type.
 \item	Expanding on input-head-type for data read.  Taking special care of
 	void/oid.
 \item	Expanding on the type of predicate: either equi, or range.  The
@@ -64,7 +64,7 @@ This means
 \end{itemize}
 For more details, see the comment next to the code below.
 @-
-Well, to get this feasable (i.e., both the Mx code still readable tomorrow
+Well, to get this feasible (i.e., both the Mx code still readable tomorrow
 and the generated C code compilable), we came up with some kind of "design
 idea":
 
@@ -73,20 +73,20 @@ macros that dispatch to the different alternatives. To give the compiler a
 chance to "concentrate on the important parts", only branches are created,
 here. The actual working block (i.e., the inner BATloopFast) are enclosed in
 a separate function each. Each leaf of the decision tree calls the
-respective function, and each function is called by excatly on leaf.
+respective function, and each function is called by exactly on leaf.
 
 A second set of cascading levels of Mx macros take care of generating the
-wirking functions. For convenice, the matching macros of both sets are
-placed next to eachother.
+working functions. For convenience, the matching macros of both sets are
+placed next to each other.
 
 Altogether, we currently generate 1230(!) different scanselect loops. Some
 compilers (e.g., gcc 2.95.3 on IRIX) try to inline all these functions into
 the decision-/dispatching- tree, and fail with "Branch at has out of range
-target". We "help" these compiler a bit by explicitely switching off
+target". We "help" these compiler a bit by explicitly switching off
 inlining for this file (it doesn't make sense here, anyway).
 
-And finally, what do we achieve by all this efford?
-Well, the on medusa, CPU costs are reduced by (upto) factor 8(!), resulting
+And finally, what do we achieve by all this effort?
+Well, the on medusa, CPU costs are reduced by (up to) factor 8(!), resulting
 in an overall improvement of about factor 4.5.
 
 @+ Implementation
@@ -97,7 +97,7 @@ in an overall improvement of about factor 4.5.
 
 @- "Tools"
 First, we need some tools. These are the type-expanded replacements
-for some generic marcos from gdk.mx, gdk_bat.mx, and gdk_atom.mx.
+for some generic macros from gdk.mx, gdk_bat.mx, and gdk_atom.mx.
 Eventually, they should be moved there to be used in other places as well.
 
 VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
@@ -145,7 +145,7 @@ Type-specific
 HT_bunfastins_nocheck_noinc, HT_bunfastins_nocheck & HT_bunfastins 
 should go to gdk.mx, and
 HT_BUNfastins 
-sould go to gdk_bat.mx 
+should go to gdk_bat.mx 
 replacing their generic versions there.
 @h
 @= T_BUNfastins
@@ -230,7 +230,7 @@ Type-mappers for convenience
 #endif
 @-
 For backward compatibility:
-(also to be move to gdk.mx and gdk_bat.mx, repectively)
+(also to be move to gdk.mx and gdk_bat.mx, respectively)
 @h
 /*
 #define bunfastins_nocheck(b, p, h, t, s) anyany_bunfastins_nocheck(b, p, h, t, s)
@@ -382,7 +382,7 @@ Output-tail-type is either identical to input-tail-type or TYPE_void
 	}
 @-
 
-Expand on output-head-type; usually inhereted from input-head-type.
+Expand on output-head-type; usually inherited from input-head-type.
 
 @c
 /*	@1: input-tail-type for working function name, 

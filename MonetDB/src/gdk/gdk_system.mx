@@ -19,8 +19,8 @@
 @a Niels Nes, Peter Boncz
 @+ Threads
 @T
-This file contains the threads implementation based on the posix 
-thread library interface, consisting of posix standaard thread 
+This file contains the threads implementation based on the Posix 
+thread library interface, consisting of Posix standard thread 
 functions. 
 
 @- Pthread Definitions
@@ -229,7 +229,7 @@ gdk_export size_t _MT_pagesize;
 #endif /*_GDK_SYSTEM_H_*/
 
 
-@- Mthreads Routine implemtations
+@- Mthreads Routine implementations
 @c
 #include "gdk.h"
 

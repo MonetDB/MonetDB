@@ -15,7 +15,7 @@
 </node>
 <node TEXT="Automatic backup/recovery management">
 <node TEXT="Day/weekly schedules"/>
-<node TEXT="Highwatermark scheduling"/>
+<node TEXT="High-watermark scheduling"/>
 </node>
 <node TEXT="Disk volume management" FOLDED="true">
 <node TEXT="Multi-hierarchical chkpoint stores"/>
@@ -51,7 +51,7 @@
 </node>
 </node>
 <node TEXT="Watchdog" FOLDED="true">
-<node TEXT="Ensures lifeliness of a single Mserver instance">
+<node TEXT="Ensures liveliness of a single Mserver instance">
 <node TEXT="Using a prelude command"/>
 <node TEXT="keeping a life connection as an ordinary client"/>
 </node>
@@ -78,17 +78,17 @@
 </node>
 <node TEXT="Multiple servers in a cluster"/>
 <node TEXT="Mserver is protected at local machine"/>
-<node TEXT="Mguardian lifes outside the area of Mservers?"/>
+<node TEXT="Mguardian lives outside the area of Mservers?"/>
 </node>
 <node TEXT="Web-based status monitoring" FOLDED="true">
 <node TEXT="At the level of a single server"/>
-<node TEXT="At the level of managin multiple Mservers"/>
+<node TEXT="At the level of managing multiple Mservers"/>
 </node>
 <node TEXT="Active warning system" FOLDED="true">
 <node TEXT="Email warning to DBA"/>
 </node>
 </node>
-<node TEXT="Configuratiion" POSITION="right">
+<node TEXT="Configuration" POSITION="right">
 <node TEXT="WatchdogPack definition" FOLDED="true">
 <node TEXT="wdp_member(cid, host,port,dbname,user,password, lang)"/>
 <node TEXT="wdp_agenda(cid,at,action)"/>
@@ -136,7 +136,7 @@
 </node>
 <node TEXT="Monitoring" FOLDED="true">
 <node TEXT="Collect session information"/>
-<node TEXT="Obtain webbased state of a single Mserver"/>
+<node TEXT="Obtain web-based state of a single Mserver"/>
 </node>
 <node TEXT="Connection server" FOLDED="true">
 <node TEXT="Should take over Internet thread listener"/>
@@ -149,7 +149,7 @@
 <node TEXT="Revives the watchdogs or call for DBA help"/>
 </node>
 <node TEXT="Mguardian GUI" FOLDED="true">
-<node TEXT="A system wide control centre " FOLDED="true">
+<node TEXT="A system wide control center " FOLDED="true">
 <node TEXT="Gui-based"/>
 <node TEXT="Controls instances in cluster"/>
 <node TEXT="Can collect information from autonomous nodes"/>
@@ -170,7 +170,7 @@
 <node TEXT="Phase 1: Mserver  watchdog" FOLDED="true">
 <node TEXT="Performs rudimentary guardian actions &#xa;before admitting a Mserver Instance"/>
 <node TEXT="Regular auto-reboot to clean up system"/>
-<node TEXT="Simple autobackup mechanism"/>
+<node TEXT="Simple auto-backup mechanism"/>
 <node TEXT="Tell users about  the language/instance port to use"/>
 </node>
 <node TEXT="Phase 2: Mserver watchdogpack" FOLDED="true">
@@ -191,7 +191,7 @@
 <node TEXT="Hot failover within Mserver convoy"/>
 <node TEXT="Prototyping as Mknife scripts"/>
 </node>
-<node TEXT="Phase 4: Mguardian clustercontrol" FOLDED="true">
+<node TEXT="Phase 4: Mguardian cluster control" FOLDED="true">
 <node TEXT="Primary portal for client connectivity"/>
 <node TEXT="start/stop Mservers"/>
 </node>

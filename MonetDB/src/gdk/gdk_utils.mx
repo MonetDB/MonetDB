@@ -87,7 +87,7 @@ BAT 	*GDKenv = NULL;
 
 @- Monet configuration file
 Parse a possible MonetDB.conf file (either in the default location
-<prefix>/etc/MonetDB.conf, or as specified by either an enviroment variable
+<prefix>/etc/MonetDB.conf, or as specified by either an environment variable
 $MONETDB_CONFIG, or by command line option -c/--config) 
 to extract pre-settings of system variables.
 Un-recognized parameters are simply skipped, because they  may be
@@ -174,7 +174,7 @@ dealt with on a per client basis.
 
 @-
 A system log can be maintained in the database to keep track
-of session and crash information. It should be regulary be
+of session and crash information. It should regularly be
 refreshed to avoid disk overflow.
 @c
 #define GDKLOCK	".gdk_lock"
@@ -287,7 +287,7 @@ int BATSIGinit(void) {
 @+ Memory management
 Memory management in GDK mostly relies on the facilities offered by the 
 underlying OS.  The below routines monitor the available memory resources
-which consist of physical swapspace and logical vm space.
+which consist of physical swap space and logical vm space.
 @T
 There are three kinds of memory, that affect these two resources in different ways: 
 \begin{description}
@@ -297,12 +297,12 @@ In principal, no physical memory is needed to keep the system afloat here,
 as the memory mapped file is swapped onto a disk object that already exists.
 
 Actually, there are two kings of memory mapping used in GDK, namely 
-read-only direct mapped and writeable copy-on write. For the dirty
+read-only direct mapped and writable copy-on write. For the dirty
 pages, the latter actually also consumes physical memory resources, 
 but that is ignored here for simplicity.
 
 \item[anonymous virtual memory]
-This is virtual memory that is mapped on the swapfile. Hence, this consumes
+This is virtual memory that is mapped on the swap file. Hence, this consumes
 both logical VM space resources and physical memory space.
 
 \item[malloced memory] 
@@ -583,7 +583,7 @@ a malloc was done. This is code originally developed by DD, and is used only  by
 Two bats are used:
 \begin{itemize}
 \item stackBat: Contains a DAG of all methods used for memory allocation.
-\item memBat: contains a mapping from allocated memory adresses to an index
+\item memBat: contains a mapping from allocated memory addresses to an index
 in the stackBat which indicates the place the memory is allocated.
 \end{itemize}
 @c
@@ -806,28 +806,28 @@ Normally, GDK gives fatal errors on illegal block sizes.
 This can be overridden with  GDK\_MEM\_NULLALLOWED.
 
 \item[resource tracking]
-Many malloc interfaces lack a routine that tells the size of a blobk
+Many malloc interfaces lack a routine that tells the size of a block
 by the pointer. We need this information for correct malloc statistics.
 
 \item[outstanding block histograms]
 In order to solve the problem, we allocate extra memory in front of the 
-returned block. With te resource tracking in place, we keep a total of 
+returned block. With the resource tracking in place, we keep a total of 
 allocated bytes.  Also, if GDK\_MEM\_KEEPHISTO is defined, we keep a histogram 
-of the outsanding blocks on the log2 of the blocksize (similarly for virtual.
+of the outstanding blocks on the log2 of the block size (similarly for virtual.
 memory blocks; define GDK\_VM\_KEEPHISTO).
 
 \item[ensuring 8-byte alignment]
 While doing the resource tracking, we can in one go solve the problem
-of 32-bit systems that return non-8 bytes algigned pointers. This is
+of 32-bit systems that return non-8 bytes aligned pointers. This is
 encoded by storing a size + 1 (we always normalize sizes to multiples of 
 8, so this is easily recognized). This check only done if 
 GDK\_MEM\_MISALIGN is {\bf not} enabled.
 
 \item[redirection to anonymous VM]
-Sometimes, fragmentation problems arise on mallocs that are not tuneable.
+Sometimes, fragmentation problems arise on mallocs that are not tunable.
 In that case, it makes sense to redirect large block requests (taken to be
 larger than GDK\_mem\_bigsize) to anonymous virtual memory. The seamless
-implmentation of this stores the {\bf negative} blocksize in front of the
+implementation of this stores the {\bf negative} block size in front of the
 pointer (as well as the VM maxsize), so the malloc primitives can recognize
 these redirected blocks.This behavior is enabled by defining GDK\_MEM\_VMREDIRECT.
 \end{description}
@@ -1142,11 +1142,11 @@ The parameter @%db@ is followed by the database name relative to
 the environment variable dbfarm.
 The parameter @%monetrc@ tells that the system variables setting
 should be overruled by the specification given in the file argument.
-This format is only necessary to temporarely experiment with variable settings,
+This format is only necessary to temporarily experiment with variable settings,
 without disturbing a system/site default setting.
 
 The interface code to the operating system is highly dependent on
-the processing environment. It can be filtered away with compiletime flags.
+the processing environment. It can be filtered away with compile-time flags.
 Suicide is necessary due to some system implementation errors.
 
 The kernel requires file descriptors for I/O with the user.
@@ -1222,7 +1222,7 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
 
 @- 
 Upon closing the session, all persistent BATs should be saved and
-the transcient BATs should be removed.
+the transient BATs should be removed.
 The buffer pool manager takes care of this.
 @h
 gdk_export int GDKstopped;
@@ -1279,7 +1279,7 @@ MT_Lock		GDKtmLock;
 Concurrency control requires actions at several levels of the system.
 First, it should be ensured that each database  is controlled by a single
 server process (group). Subsequent attempts should be stopped.
-This is regulated throught file locking against ".gdk_lock".
+This is regulated through file locking against ".gdk_lock".
 Furthermore, the server process is moved to the database directory
 for improved speed.
 @-
@@ -1327,7 +1327,7 @@ We have the lock, are the only process currently allowed in this section.
 	MT_init();
 	OIDinit();
 @-
-Print the new process list in the global lockfile.
+Print the new process list in the global lock file.
 @c
 	fseek(GDKlockFile, 0, SEEK_SET);
 	ftruncate(fileno(GDKlockFile), 0);
@@ -1651,7 +1651,7 @@ They are initialized during system initialization.
 @- 
 The first action upon thread creation is to add it to the pool
 of known threads. This should be done by the thread itself.
-Subsequently, the thread descriptor can be obtained usign @%THRget@.
+Subsequently, the thread descriptor can be obtained using @%THRget@.
 Note that the users should have gained exclusive access already.
 A new entry is initialized automatically when not found.
 Its file descriptors are the same as for the server and should be
@@ -1777,7 +1777,7 @@ int THRhighwater(void) {
 @{
 @- 
 I/O is organized per thread, because users may gain access through
-the internet.
+the network.
 The code below should be improved to gain speed.
 @c
 

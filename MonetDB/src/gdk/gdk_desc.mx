@@ -20,24 +20,24 @@
 @a Peter Boncz
 @v 1.0
 @* Introduction
-Changes to the BAT descriptors cause problems as persistent
-BATs with older descriptor versions may be still around. BAT versions
+Changes to the BAT descriptors cause problems, as persistent
+BATs with older descriptor versions may still be around. BAT versions
 are marked in the first field of a BAT. Apart from the current BAT
 format, we keep recognizing two historic formats.
 
 Changes in the BAT image are not only introduced by developers, 
-but also by different systems. Two factors are of incluence:
-32- or 64-bits operating systems, and little-endian or big-endian
+but also by different systems. Two factors are of influence:
+32- or 64-bit operating systems, and little-endian or big-endian
 hardware. Both issues are resolved by code in this file.
 
-The 32- vs 64-bits issue is resolved by saving the 32
-bits image. 64-bits versions swizzle this when they get
+The 32- vs 64-bit issue is resolved by saving the 32-bit
+image. 64-bit versions transform this when they get
 loaded and saved.
 
-The little-endian and big endian problem is resolved using a lazy approach.
+The little-endian and big-endian problem is resolved using a lazy approach.
 Intel saves BATs in different format than Sun, but when one loads the other, 
 they do on-the-fly conversions using the new routine @%BATconvert@. 
-This routine uses little/big endian conversion functionality newly
+This routine uses little/big-endian conversion functionality newly
 introduced to the atom ADT (atomConvert and atomHeapConvert).
 @h
 #ifndef _GDK_DESC_H_
@@ -66,7 +66,7 @@ These functions save/load a BAT descriptor to/from disk.
 int  BATsavedesc    (BAT *b, str nme);
 BAT *BATloaddesc    (str nme);
 @
-Convert a BAT that contains little endian data into big endian (or vice versa).
+Convert a BAT that contains little-endian data into big endian (or vice versa).
 @h
 gdk_export BAT* BATconvert     (BAT *b, int direction);
 
@@ -110,11 +110,11 @@ typedef unsigned int normal_int;
 
 
 @- 64 vs 32 BIT conversion
-The current BAT descriptor structures now work with full 64 bits 
+The current BAT descriptor structures now work with full 64-bit
 pointers, directly in the format. We still support loading and saving
 of old BATs that use the 32-bit format(s). The old definitions
 are below (in a shortened format). We have macros that copy all
-relevant fields from a (new) 64-bit BAT structure to an (old) 32-bits
+relevant fields from a (new) 64-bit BAT structure to an (old) 32-bit
 BAT, and vice versa.
 @c
 @= Hash_ALL

@@ -210,7 +210,7 @@ we dynamically determine the mask size by starting out with mask size = BATcount
 (just 1.5% of memory storage overhead). Then we start building the hash table 
 on the first 25% of the BAT. As we aim for max-collisions list length of 4,
 the list on 25% should not exceed length 1. So, if a small number of collisssions
-occurs (mask/2) then we abandon the attemp and restart with a mask that is 4 times 
+occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 times 
 larger. This converges after three cycles to direct hashing.
 @c
 #include "gdk.h"
@@ -419,13 +419,13 @@ void HASHdestroy(BAT *b) {
 
 
 @+  Binary Index Trees
-In this @`index@9 implementation we have choosen for attachment of a sorted list
+In this @`index@9 implementation we have chosen for attachment of a sorted list
 of BUNs to a column whenever a primitive warrants its construction to
 speed-up (future) processing. This sorted list is discarded as soon as it 
 becomes invalid by an update on the underlying structure.
-This approach favours query dominant environments.
+This approach favors query dominant environments.
 
-The index is an auxilary structure. The sort order can be reflected
+The index is an auxiliary structure. The sort order can be reflected
 in the BUN ordering by applying @%BATsort@, which produces a copy
 where the elements are put in the proper sort order.
 
@@ -474,7 +474,7 @@ gdk_export BUN*	IDXfndlast_loc   (BAT *b, ptr v);
 gdk_export BUN*	IDXfndlast_var   (BAT *b, ptr v);
 
 @- 
-Once a BAT is being destroyed, it should also take care of the indices
+Once a BAT is being destroyed, it should also take care of the indexes
 maintained.
 @c
 void IDXremove(BAT *b) {
@@ -898,13 +898,13 @@ void IDXrng(BAT *b, ptr v, ptr w, BUN **p, BUN **q){
 @+ Binary Search on a Sorted BAT
 We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that 
 search for a TAIL value 'v' in a sorted BAT. If the value is present, it 
-returns a pointer to its first occurence; else it returns @%BUNfirst(b)@.
+returns a pointer to its first occurrence; else it returns @%BUNfirst(b)@.
 The latter routine returns a pointer to the BUN just after the last 
-occurence of 'v', else it returns @%BUNlast(b)@.
+occurrence of 'v', else it returns @%BUNlast(b)@.
 @
 @
 From the above routines we now also defined the @`SORTfnd@5 and @%SORTfnd_tpe@
-routines that look vor a certain value and return a (not necesarrily the first
+routines that look for a certain value and return a (not necessarily the first
 or last) reference to it, or NULL (if the value does not exist).
 
 Note: of the SORTfnd and IDXfnd macros, only @`SORTfndfirst@5(b,v) and 
@@ -958,7 +958,7 @@ By Peter sept-99. This is a simple implementation that avoids all multiply
 and divs on most bats by using integer BUNindex numbers rather than absolute
 pointers (the BUNptr employed to obtain a pointer uses shift where possible).
 Also, the gradient-based approach has been dropped again, which allows all
-atoms to be treated in one macro. Main motivation: distrust of gradent
+atoms to be treated in one macro. Main motivation: distrust of gradient
 performance on odmg data and its high mult/div overhead.
 
 @= SORTfnd

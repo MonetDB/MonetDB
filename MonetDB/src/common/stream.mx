@@ -229,7 +229,7 @@ stream_export ssize_t bstream_next(bstream *s);
 The bstream_create gets a read stream (rs) as input and the initial chunk size
 and creates a buffered stream from this. A spare byte is kept at the end
 of the buffer.
-The bstream_read will atleast read the next 'size' bytes. If the not read data
+The bstream_read will at least read the next 'size' bytes. If the not read data
 (aka pos < len) together with the new data will not fit in the current buffer
 it is resized. The spare byte is kept.
 
