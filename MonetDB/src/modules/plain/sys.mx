@@ -334,11 +334,10 @@ Some explanation of what mem_usage() and vm_usage() display:
 
     proc dir(bat[int,str] b) {
         var nme := view_bbp_name;
-	var atm := adm_atomtbl.copy.access(BAT_WRITE).delete("BAT"); #doubly present
 	
 	table(1, b.reverse.sort.reverse.col_name("name"),
-		[htype](b.join(nme.reverse)).outerjoin(atm.reverse).col_name("htype"),	
-		[ttype](b.join(nme.reverse)).outerjoin(atm.reverse).col_name("ttype"),	
+		[head](b.join(nme.reverse)).col_name("htype"),	
+		[tail](b.join(nme.reverse)).col_name("ttype"),	
 		[count](b.mirror).col_name("count"),	
 		view_bbp_heat.col_name("heat"),
 		view_bbp_dirty.col_name("dirty"),
@@ -442,14 +441,6 @@ Some explanation of what mem_usage() and vm_usage() display:
 
     PROC bbp() : bat[str,int] := RETURN view_gdk_bbp;
     ADDHELP("bbp", "boncz", "Mar 22 1998", "Global BBP usage info", "sys");
-
-    PROC tail(bat[any,any] b) : str := 
-         return adm_atomtbl.reverse.find(b.ttype);
-    ADDHELP("tail","boncz","Mar 22 1998","Get tail-type as a string","sys");
-
-    PROC head(bat[any,any] b) : str := 
-         return adm_atomtbl.reverse.find(b.htype);
-    ADDHELP("head","boncz","Mar 22 1998","Get head-type as a string","sys");
 
     PROC readonly( BAT[any::1,any::2] b, int mode) : BAT[any::1,any::2]
         := return access(b,mode);

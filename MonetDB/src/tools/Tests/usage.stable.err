@@ -33,6 +33,7 @@ Options are:
  -l language | --language=lang  /* {mal,sql,mil} */
  -P passwd   | --passwd=passwd  /* password */
  -p portnr   | --port=portnr    /* port to connect to */
+ -q          | --quiet          /* don't print welcome message */
  -s stmt     | --statement=stmt /* run single statement */
  -t          | --trace          /* trace Monet interaction */
  -T          | --time           /* time commands */

@@ -172,6 +172,7 @@ mapi_finish()	&	Terminate the current query\\
 mapi_get_dbname()	&	Database being served\\
 mapi_get_host()	&	Host name of server\\
 mapi_get_language()	& Query language name\\
+mapi_get_motd()	&	Get server welcome message\\
 mapi_get_user()	&	Current user name\\
 mapi_get_mapi_version()	& Mapi version name\\
 mapi_get_monet_version()	& MonetDB version name\\
@@ -483,6 +484,7 @@ table output returned from the server.
 \item[ char *mapi_get_lang(Mapi mid)]:
 \item[ char *mapi_get_version(Mapi mid)]:
 \item[ int mapi_get_versionId(Mapi mid)]:
+\item[ char *mapi_get_motd(Mapi mid)]:
 
 \item[MapiMsg mapi_error(Mapi mid)]:
 Return the last error code or 0 if there is no error.
@@ -672,6 +674,7 @@ typedef struct MapiStruct {
 	char database[MAPINAMELEN];	/* to obtain from server */
 	int languageId;
 	int versionId;		/* Monet 4 or 5 */
+	char *motd;		/* welcome message from server */
 
 	int autocommit;		/* auto-commit every query (SQL) */
 	int trace;		/* Trace Mapi interaction */
@@ -864,6 +867,7 @@ mapi_export char *mapi_get_user(Mapi mid);
 mapi_export char *mapi_get_mapi_version(Mapi mid);
 mapi_export char *mapi_get_monet_version(Mapi mid);
 mapi_export int mapi_get_monet_versionId(Mapi mid);
+mapi_export char *mapi_get_motd(Mapi mid);
 mapi_export int mapi_is_blocked(Mapi mid);
 mapi_export char *mapi_get_table(MapiHdl hdl,int fnr);
 mapi_export char *mapi_get_name(MapiHdl hdl,int fnr);
@@ -1182,6 +1186,7 @@ mapi_new(void)
 	m->languageId = LANG_MIL;
 	m->versionId = 4;
 #endif
+	m->motd = NULL;
 	strcpy(m->mapiversion, "mapi 1.0");
 	strcpy(m->username, "anonymous");
 	strcpy(m->password, "unknown");
@@ -1656,10 +1661,26 @@ mapi_reconnect(Mapi mid)
 		mapi_get_row(hdl);
 		if (mapi_error(mid)) {
 			mapi_explain(mid, stdout);
-			break;
+			return mid->error;
 		}
-		if (hdl->cache.rows)
-			mid->versionId = strcmp("Mserver 5.0", hdl->cache.rows[0]) == 0 ? 5 : 4;
+	}
+	if (hdl->cache.rows) {
+		int i;
+		size_t motdlen = 0;
+		for (i = 0; i < hdl->cache.writer; i++)
+			if (hdl->cache.rows[i] && hdl->cache.rows[i][0] == '#')
+				motdlen += strlen(hdl->cache.rows[i]) + 1;
+		if (motdlen > 0) {
+			mid->motd = malloc(motdlen + 1);
+			*mid->motd = 0;
+			for (i = 0; i < hdl->cache.writer; i++)
+				if (hdl->cache.rows[i] &&
+				    hdl->cache.rows[i][0] == '#') {
+					strcat(mid->motd, hdl->cache.rows[i]);
+					strcat(mid->motd, "\n");
+				}
+		}
+		mid->versionId = strcmp("Mserver 5.0", hdl->cache.rows[0]) == 0 ? 5 : 4;
 	}
 	mapi_close_handle(hdl);
 
@@ -3147,8 +3168,9 @@ of the unquoted part section.
    value), or to the trailing ] or NULL byte if this was the last
    value.
    msg is *not* a const string: it is altered by this function.
+   The function returns true if the string was quoted.
 */
-static void
+static int
 unquote(char *msg, char **start, char **next)
 {
 	char *p = msg, *s;
@@ -3184,19 +3206,19 @@ unquote(char *msg, char **start, char **next)
 					*s = '\f';
 					break;
 				case '0': case '1': case '2': case '3':
-					/* this could be the start of an octal sequence, check it out */
-					if (*(p + 1) && *(p + 2) &&
-						*(p + 1) >= '0' && *(p + 1) <= '7' &&
-						*(p + 2) >= '0' && *(p + 2) <= '7'
-					) {
-						char *tmp = malloc(sizeof(char) * 3 + 1);
-						strncpy(tmp, p, 3);
-						tmp[3] = '\0';
-						*s = (unsigned char)strtol(tmp, NULL, 8);
-						free(tmp);
+					/* this could be the start of
+					   an octal sequence, check it
+					   out */
+					if (p[1] && p[2] &&
+					    p[1] >= '0' && p[1] <= '7' &&
+					    p[2] >= '0' && p[2] <= '7') {
+						*s = ((p[0] - '0') << 6) |
+							((p[1] - '0') << 3) |
+							(p[2] - '0');
 						p += 2;
 						break;
 					}
+					/* fall through */
 				default:
 					*s = *p;
 					break;
@@ -3214,6 +3236,8 @@ unquote(char *msg, char **start, char **next)
 			p++;
 		if (*p == ',')
 			p++;
+		*next = p;
+		return 1;
 	} else {
 		/* p points at first non-white space character */
 		*start = p;	/* record start of value */
@@ -3236,8 +3260,9 @@ unquote(char *msg, char **start, char **next)
 		   *p will be 0 as well, and thus **next will be 0,
 		   terminating the loop in our caller. */
 		*s = 0;
+		*next = p;
+		return 0;
 	}
-	*next = p;
 }
 
 @-
@@ -3735,6 +3760,13 @@ mapi_get_monet_versionId(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_monet_versionId");
 	return mid->versionId;
+}
+
+char *
+mapi_get_motd(Mapi mid)
+{
+	mapi_check0(mid, "mapi_get_motd");
+	return mid->motd;
 }
 
 int

@@ -323,6 +323,7 @@ Get the new information for the server socket and start listening.
 			c->fdin = fdin;
 			c->fdout = fdout;
 			c->mode = BLOCKMODE;
+			monet_hello(fdout);
 			CNTXTcopy(stk,c);
 			TBL_initclient(c, father);
 			(void)monetFork();

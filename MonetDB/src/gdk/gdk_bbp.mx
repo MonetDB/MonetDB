@@ -705,6 +705,21 @@ BATstore* BBPgetdesc(bat i) {
         	b = BBP_cache(i);
         	if (b == NULL) {
 			b = (BAT*) BBP_desc(i);
+			if (b) {
+				int t = -1;
+				if (strcmp(ATOMname(b->htype),b->hatom) && (t = ATOMindex(b->hatom)) >= 0) {
+					b->htype = t;
+				}
+				if (strcmp(ATOMname(b->ttype),b->tatom) && (t = ATOMindex(b->tatom)) >= 0) {
+					b->ttype = t;
+				}
+				if (strcmp(ACCname(b->hacctype),b->haccname) && (t = ACCindex(b->haccname)) > 0) {
+					b->hacctype = t;ACCindex(b->haccname);
+				}
+				if (strcmp(ACCname(b->tacctype),b->taccname) && (t = ACCindex(b->taccname)) > 0) {
+					b->tacctype = t;
+				}
+			}
 		}
     		if (b == NULL && nme) { 
                 	b = (BAT*) BATloaddesc(nme);
@@ -724,7 +739,6 @@ BATstore* BBPgetdesc(bat i) {
     	}
 	return (BATstore*) b;
 }
-
 
 str BBPlogical(bat bid, str buf) {
 	if (buf == NULL) {

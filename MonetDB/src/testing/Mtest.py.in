@@ -792,7 +792,7 @@ def GetBitsAndModsAndStatic(env) :
     env['TST_MODS'] = []
     env['TST_STATIC'] = ""
     if qOut:
-        tbs = re.compile("^# compiled for .*/([63][42]bit); (.*) linked", re.MULTILINE)
+        tbs = re.compile("^# Compiled for .*/([63][42]bit); (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
         #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
         for l in string.split(qOut, '\n'):

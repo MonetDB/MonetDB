@@ -427,7 +427,7 @@ capabilities depend on the malloc implementation used at run time.
 	if (!c) 
 		usage(prog);
 
-	monet_hello();
+	monet_hello(NULL);
 	static_module_init(c,buf);
 @-
 Execute scripts.

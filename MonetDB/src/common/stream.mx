@@ -2113,7 +2113,8 @@ bstream_read(bstream *s, size_t size)
 
 	if (s->pos > 0) {
 		if (s->pos < s->len)
-			memmove(s->buf, s->buf + s->pos, s->len - s->pos);
+			/* move all data and end of string marker */
+			memmove(s->buf, s->buf + s->pos, s->len - s->pos + 1);
 		s->len -= s->pos;
 		s->pos = 0;
 	}

@@ -210,11 +210,11 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
  It contains all properties of the BAT record. See the BAT documentation in
  GDK for more information."
  
-.COMMAND htype ( int bid ) : int = CMDhtype;
-"Returns the type of the head column of a BAT, as an integer type number."
+.COMMAND head ( int bid ) : str = CMDhead;
+"Returns the type of the head column of a BAT, as a string."
  
-.COMMAND ttype ( int bid ) : int = CMDttype;
-"Returns the type of the tail column of a BAT, as an integer type number."
+.COMMAND tail ( int bid ) : str = CMDtail;
+"Returns the type of the tail column of a BAT, as a string."
 
 .COMMAND key( BAT[any::1,any::2] b, bit mode) 
 				: BAT[any::1,any::2] = CMDsetkey;
@@ -521,11 +521,19 @@ these 'sync' OIDs with their own propagation rules.
     PROC hot(bat[any::1,any::2] b) : void
 	hot(b.bbpname);
 
-    PROC htype(bat[any,any] b) : int 
-	return htype(int(b));
+    PROC head(bat[any,any] b) : str
+	return head(int(b));
 
-    PROC ttype(bat[any,any] b) : int 
-	return ttype(int(b));
+    PROC tail(bat[any,any] b) : str 
+	return tail(int(b));
+
+    PROC ttype(any b) : int := 
+         return monet_atomtbl.find(b.tail);
+#    ADDHELP("ttype","boncz","Apr 07 2004","Get tail-type as an integer","bat");
+
+    PROC htype(any b) : int := 
+         return monet_atomtbl.find(b.head);
+#    ADDHELP("htype","boncz","Apr 07 2004","Get head-type as an integer","bat");
 
     PROC new(int ht, int tt) : bat[any,any]
 	return bat(ht,tt);
@@ -700,28 +708,32 @@ int CMDcapacity(lng *res, int *bid) {
 	return GDK_SUCCEED;
 }
 
-int CMDhtype(int *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDhtype")) {
+int CMDhead(str *res, int *bid) {
+	if (BBPcheck((bat) *bid, "CMDhead")) {
+		str ret = str_nil;
 		BAT *b = lock_desc((bat) *bid);
-		if (b == NULL) {
-			*res = TYPE_void;
-		} else {
-			*res = *bid > 0 ? BAThtype(b) : BATttype(b);
+		if (b) {
+			ret = *bid > 0 ? b->hatom : b->tatom;
 		}
+		*res = GDKstrdup(ret);
 		unlock_desc(*bid);
+	} else {
+		*res = GDKstrdup(str_nil);
 	}
 	return GDK_SUCCEED;
 }
 
-int CMDttype(int *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDttype")) {
+int CMDtail(str *res, int *bid) {
+	if (BBPcheck((bat) *bid, "CMDtail")) {
+		str ret = str_nil;
 		BAT *b = lock_desc((bat) *bid);
-		if (b == NULL) {
-			*res = TYPE_void;
-		} else {
-			*res = *bid > 0 ? BATttype(b) : BAThtype(b);
+		if (b) {
+			ret = *bid > 0 ? b->tatom : b->hatom;
 		}
+		*res = GDKstrdup(ret);
 		unlock_desc(*bid);
+	} else {
+		*res = GDKstrdup(str_nil);
 	}
 	return GDK_SUCCEED;
 }
