@@ -61,22 +61,22 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:void)<-(b:bat[:int,:int])($20:int)($30:int)
     io.print(b);	# 12 IOprint_val ($31:int)<-(b:bat[:int,:int])
     crackers.new(b);	# 13 CRKnew ($32:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,9,25);	# 14 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($20:int)($15:int)
+    y := crackers.crack(b,9,25);	# 14 CRKcrackRange (y:int)<-(b:bat[:int,:int])($20:int)($15:int)
     io.print(y);	# 15 IOprint_val ($34:int)<-(y:int)
     crackers.info(b);	# 16 CRKinfo ($35:void)<-(b:bat[:int,:int])
     io.print(b);	# 17 IOprint_val ($36:int)<-(b:bat[:int,:int])
     crackers.new(b);	# 18 CRKnew ($37:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,80,195);	# 19 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($38:int)($39:int)
+    y := crackers.crack(b,80,195);	# 19 CRKcrackRange (y:int)<-(b:bat[:int,:int])($38:int)($39:int)
     io.print(y);	# 20 IOprint_val ($40:int)<-(y:int)
     crackers.info(b);	# 21 CRKinfo ($41:void)<-(b:bat[:int,:int])
     io.print(b);	# 22 IOprint_val ($42:int)<-(b:bat[:int,:int])
     crackers.new(b);	# 23 CRKnew ($43:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,2,2);	# 24 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($44:int)($44:int)
+    y := crackers.crack(b,2,2);	# 24 CRKcrackRange (y:int)<-(b:bat[:int,:int])($44:int)($44:int)
     io.print(y);	# 25 IOprint_val ($45:int)<-(y:int)
     crackers.info(b);	# 26 CRKinfo ($46:void)<-(b:bat[:int,:int])
     io.print(b);	# 27 IOprint_val ($47:int)<-(b:bat[:int,:int])
     crackers.new(b);	# 28 CRKnew ($48:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,40,2);	# 29 CRKcrackNaive (y:int)<-(b:bat[:int,:int])($49:int)($44:int)
+    y := crackers.crack(b,40,2);	# 29 CRKcrackRange (y:int)<-(b:bat[:int,:int])($49:int)($44:int)
     io.print(y);	# 30 IOprint_val ($50:int)<-(y:int)
     crackers.info(b);	# 31 CRKinfo ($51:void)<-(b:bat[:int,:int])
     io.print(b);	# 32 IOprint_val ($52:int)<-(b:bat[:int,:int])
@@ -116,8 +116,8 @@ end main;	# 36
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
-[ 9,	  81	  ]
 [ 10,	  100	  ]
+[ 9,	  81	  ]
 [ 2 ]
 # idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name
 [   0   4, P, -1 -2147483648, 2147483647, 1, 10, 1, -1, 2 ]
@@ -127,6 +127,7 @@ end main;	# 36
 # h	tmp_4	  # name
 # int	int	  # type
 #-----------------#
+[ 1,	  2	  ]
 [ 2,	  4	  ]
 [ 3,	  9	  ]
 [ 5,	  25	  ]
@@ -134,9 +135,8 @@ end main;	# 36
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
-[ 1,	  2	  ]
-[ 9,	  81	  ]
 [ 10,	  100	  ]
+[ 9,	  81	  ]
 [ 1 ]
 # idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name
 [   0   4, P, -1 -2147483648, 2147483647, 1, 10, 1, -1, 2 ]
@@ -147,6 +147,7 @@ end main;	# 36
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
+[ 2,	  4	  ]
 [ 3,	  9	  ]
 [ 5,	  25	  ]
 [ 4,	  16	  ]
@@ -155,6 +156,5 @@ end main;	# 36
 [ 8,	  64	  ]
 [ 10,	  100	  ]
 [ 9,	  81	  ]
-[ 2,	  4	  ]
 [ "MALexception:Admin.main[29]:crackers.crack:illegal range\n" ]
 >

@@ -56,7 +56,7 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,4,16);	# 10 BKCinsert_bun ($27:void)<-(b:bat[:int,:int])($17:int)($28:int)
     bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:void)<-(b:bat[:int,:int])($20:int)($30:int)
     crackers.new(b);	# 12 CRKnew ($31:void)<-(b:bat[:int,:int])
-    crackers.crack(b,9,25);	# 13 CRKcrackNaive ($32:int)<-(b:bat[:int,:int])($20:int)($15:int)
+    crackers.crack(b,9,25);	# 13 CRKcrackRange ($32:int)<-(b:bat[:int,:int])($20:int)($15:int)
     io.print(b);	# 14 IOprint_val ($33:int)<-(b:bat[:int,:int])
     crackers.info(b);	# 15 CRKinfo ($34:void)<-(b:bat[:int,:int])
     io.print("Get the first piece");	# 16 IOprint_val ($35:int)<-($36:str)
@@ -83,8 +83,8 @@ end main;	# 27
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
-[ 9,	  81	  ]
 [ 10,	  100	  ]
+[ 9,	  81	  ]
 # idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name
 [   0   4, P, -1 -2147483648, 2147483647, 1, 10, 1, 2, 3 ]
  [   1   4, L, 0 -2147483648, 8, 1, 2, -1, -1, -1 ]
@@ -113,7 +113,7 @@ end main;	# 27
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
-[ 9,	  81	  ]
 [ 10,	  100	  ]
+[ 9,	  81	  ]
 [ 4 ]
 >

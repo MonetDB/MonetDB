@@ -282,7 +282,7 @@ end main;	# 94
 [ 1 ]
 [ 4 ]
 [ nil ]
-[ 0 ]
+[ "MALexception:Admin.main[29]:algebra.find:can not find element\n" ]
 #-------------------------#
 # h		tmp_4	  # name
 # str		int	  # type

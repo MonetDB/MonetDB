@@ -26,5 +26,5 @@ end main;	# 5
 # int	int	  # type
 #-----------------#
 [ 1,	  360	  ]
-!ERROR: MALexception:bat.setWriteMode:cannot access bat bid in bbp
+!ERROR: MALexception:bat.setWriteMode:cannot access descriptor bid
 >

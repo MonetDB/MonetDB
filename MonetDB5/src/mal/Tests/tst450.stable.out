@@ -66,6 +66,8 @@ end main;	# 12
 # void	str		  # type
 #-------------------------#
 [ nil,	  "Admin"	  ]
+[ nil,	  "mil_sys_procs"	  ]
+[ nil,	  "mil_algebra_procs"	  ]
 [ nil,	  "transaction"	  ]
 [ nil,	  "chopper"	  ]
 [ nil,	  "optimizer"	  ]

@@ -23,5 +23,5 @@ catch MALexception;	# 4  (MALexception:any) jump 6
     io.print("catched the exception");	# 5 IOprint_val ($9:int)<-($10:str)
 exit MALexception;	# 6  (MALexception:any)
 end main;	# 7  
-[ "should not come here anymore" ]
+[ "catched the exception" ]
 >

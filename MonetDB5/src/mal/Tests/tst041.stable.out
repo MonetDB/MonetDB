@@ -52,51 +52,41 @@ function Admin.main():int;	# 0  (main:int)
     io.print(a);	# 12 IOprint_val ($13:int)<-(a:int)
     a := calc.int(63.0);	# 13 CALCdbl2int (a:int)<-($14:dbl)
     io.print(a);	# 14 IOprint_val ($15:int)<-(a:int)
-    a := nil;	# 15  (a:int)<-($2:void)
-    io.print(a);	# 16 IOprint_val ($16:int)<-(a:int)
-    c := true;	# 17  (c:bit)<-($18:bit)
+    c := true;	# 15  (c:bit)<-($17:bit)
+    io.print(c);	# 16 IOprint_val ($18:int)<-(c:bit)
+    c := calc.bit(nil);	# 17 CALCnil2bit (c:bit)<-($2:void)
     io.print(c);	# 18 IOprint_val ($19:int)<-(c:bit)
-    c := calc.bit(nil);	# 19 CALCnil2bit (c:bit)<-($2:void)
-    io.print(c);	# 20 IOprint_val ($20:int)<-(c:bit)
-    c := calc.bit(false);	# 21 CALCbit2bit (c:bit)<-($21:bit)
-    io.print(c);	# 22 IOprint_val ($22:int)<-(c:bit)
-    c := calc.bit(1);	# 23 CALCint2bit (c:bit)<-($23:int)
-    io.print(c);	# 24 IOprint_val ($24:int)<-(c:bit)
-    c := calc.bit("true");	# 25 CALCstr2bit (c:bit)<-($25:str)
-    io.print(c);	# 26 IOprint_val ($26:int)<-(c:bit)
-    c := calc.bit(1.0);	# 27 CALCflt2bit (c:bit)<-($27:flt)
-    io.print(c);	# 28 IOprint_val ($28:int)<-(c:bit)
-    c := calc.bit(0.0);	# 29 CALCdbl2bit (c:bit)<-($29:dbl)
-    io.print(c);	# 30 IOprint_val ($30:int)<-(c:bit)
-    c := nil;	# 31  (c:bit)<-($2:void)
-    io.print(c);	# 32 IOprint_val ($31:int)<-(c:bit)
-    d := 3.14;	# 33  (d:flt)<-($33:flt)
-    io.print(d);	# 34 IOprint_val ($34:int)<-(d:flt)
-    d := calc.flt(nil);	# 35 CALCnil2flt (d:flt)<-($35:void)
-    io.print(d);	# 36 IOprint_val ($36:int)<-(d:flt)
-    d := calc.flt(5);	# 37 CALCint2flt (d:flt)<-($37:int)
-    io.print(d);	# 38 IOprint_val ($38:int)<-(d:flt)
-    d := calc.flt("7.14");	# 39 CALCstr2flt (d:flt)<-($39:str)
-    io.print(d);	# 40 IOprint_val ($40:int)<-(d:flt)
-    d := nil;	# 41  (d:flt)<-($35:void)
-    io.print(d);	# 42 IOprint_val ($41:int)<-(d:flt)
-    e := "hello";	# 43  (e:str)<-($43:str)
-    io.print(e);	# 44 IOprint_val ($44:int)<-(e:str)
-    e := calc.str(nil);	# 45 CALCnil2str (e:str)<-($35:void)
-    io.print(e);	# 46 IOprint_val ($45:int)<-(e:str)
-    e := str.str("nil");	# 47 STRtostr (e:str)<-($46:str)
-    io.print(e);	# 48 IOprint_val ($47:int)<-(e:str)
-    e := nil;	# 49  (e:str)<-($35:void)
-    io.print(e);	# 50 IOprint_val ($48:int)<-(e:str)
-    f := 'Z';	# 51  (f:chr)<-($50:chr)
-    io.print(f);	# 52 IOprint_val ($51:int)<-(f:chr)
-    f := calc.chr(nil);	# 53 CALCnil2chr (f:chr)<-($35:void)
-    io.print(f);	# 54 IOprint_val ($52:int)<-(f:chr)
-    f := calc.chr("X");	# 55 CALCstr2chr (f:chr)<-($53:str)
-    io.print(f);	# 56 IOprint_val ($54:int)<-(f:chr)
-    f := nil;	# 57  (f:chr)<-($35:void)
-    io.print(f);	# 58 IOprint_val ($55:int)<-(f:chr)
-end main;	# 59  
+    c := calc.bit(false);	# 19 CALCbit2bit (c:bit)<-($20:bit)
+    io.print(c);	# 20 IOprint_val ($21:int)<-(c:bit)
+    c := calc.bit(1);	# 21 CALCint2bit (c:bit)<-($22:int)
+    io.print(c);	# 22 IOprint_val ($23:int)<-(c:bit)
+    c := calc.bit("true");	# 23 CALCstr2bit (c:bit)<-($24:str)
+    io.print(c);	# 24 IOprint_val ($25:int)<-(c:bit)
+    c := calc.bit(1.0);	# 25 CALCflt2bit (c:bit)<-($26:flt)
+    io.print(c);	# 26 IOprint_val ($27:int)<-(c:bit)
+    c := calc.bit(0.0);	# 27 CALCdbl2bit (c:bit)<-($28:dbl)
+    io.print(c);	# 28 IOprint_val ($29:int)<-(c:bit)
+    d := 3.14;	# 29  (d:flt)<-($31:flt)
+    io.print(d);	# 30 IOprint_val ($32:int)<-(d:flt)
+    d := calc.flt(nil);	# 31 CALCnil2flt (d:flt)<-($2:void)
+    io.print(d);	# 32 IOprint_val ($33:int)<-(d:flt)
+    d := calc.flt(5);	# 33 CALCint2flt (d:flt)<-($34:int)
+    io.print(d);	# 34 IOprint_val ($35:int)<-(d:flt)
+    d := calc.flt("7.14");	# 35 CALCstr2flt (d:flt)<-($36:str)
+    io.print(d);	# 36 IOprint_val ($37:int)<-(d:flt)
+    e := "hello";	# 37  (e:str)<-($39:str)
+    io.print(e);	# 38 IOprint_val ($40:int)<-(e:str)
+    e := calc.str(nil);	# 39 CALCnil2str (e:str)<-($41:void)
+    io.print(e);	# 40 IOprint_val ($42:int)<-(e:str)
+    e := str.str("nil");	# 41 STRtostr (e:str)<-($43:str)
+    io.print(e);	# 42 IOprint_val ($44:int)<-(e:str)
+    f := 'Z';	# 43  (f:chr)<-($46:chr)
+    io.print(f);	# 44 IOprint_val ($47:int)<-(f:chr)
+    f := calc.chr(nil);	# 45 CALCnil2chr (f:chr)<-($41:void)
+    io.print(f);	# 46 IOprint_val ($48:int)<-(f:chr)
+    f := calc.chr("X");	# 47 CALCstr2chr (f:chr)<-($49:str)
+    io.print(f);	# 48 IOprint_val ($50:int)<-(f:chr)
+end main;	# 49  
 [ nil ]
 [ 23 ]
 [ nil ]
@@ -104,25 +94,25 @@ end main;	# 59
 [ 23 ]
 [ 43 ]
 [ 63 ]
-[ nil ]
 [ true ]
 [ nil ]
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-[ false ]
 [ false ]
 [ 3.1400001 ]
 [ nil ]
 [ 5 ]
 [ 7.13999987 ]
-[ -0 ]
 [ "hello" ]
 [ nil ]
 [ "nil" ]
-
-# 18:26:06 >  
-# 18:26:06 >  Done.
-# 18:26:06 >  
+[ Z ]
+[ nil ]
+[ X ]
+>
+# 22:57:55 >  
+# 22:57:55 >  Done.
+# 22:57:55 >  
 

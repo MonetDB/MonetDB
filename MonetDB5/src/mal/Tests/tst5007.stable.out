@@ -56,16 +56,16 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:void)<-(b:bat[:int,:int])($20:int)($30:int)
     io.print(b);	# 12 IOprint_val ($31:int)<-(b:bat[:int,:int])
     crackers.new(b);	# 13 CRKnew ($32:void)<-(b:bat[:int,:int])
-    crackers.crack(b,9,25);	# 14 CRKcrackNaive ($33:int)<-(b:bat[:int,:int])($20:int)($15:int)
+    crackers.crack(b,9,25);	# 14 CRKcrackRange ($33:int)<-(b:bat[:int,:int])($20:int)($15:int)
     c := crackers.select(b,9,25,true,true);	# 15 CRKselect (c:bat[:int,:int])<-(b:bat[:int,:int])($20:int)($15:int)($35:bit)($35:bit)
     io.print(c);	# 16 IOprint_val ($36:int)<-(c:bat[:int,:int])
-    crackers.crack(b,80,195);	# 17 CRKcrackNaive ($37:int)<-(b:bat[:int,:int])($38:int)($39:int)
+    crackers.crack(b,80,195);	# 17 CRKcrackRange ($37:int)<-(b:bat[:int,:int])($38:int)($39:int)
     c := crackers.select(b,80,195,true,true);	# 18 CRKselect (c:bat[:int,:int])<-(b:bat[:int,:int])($38:int)($39:int)($35:bit)($35:bit)
     io.print(c);	# 19 IOprint_val ($40:int)<-(c:bat[:int,:int])
-    crackers.crack(b,2,2);	# 20 CRKcrackNaive ($41:int)<-(b:bat[:int,:int])($42:int)($42:int)
+    crackers.crack(b,2,2);	# 20 CRKcrackRange ($41:int)<-(b:bat[:int,:int])($42:int)($42:int)
     c := crackers.select(b,2,2,true,true);	# 21 CRKselect (c:bat[:int,:int])<-(b:bat[:int,:int])($42:int)($42:int)($35:bit)($35:bit)
     io.print(c);	# 22 IOprint_val ($43:int)<-(c:bat[:int,:int])
-    crackers.crack(b,20,99);	# 23 CRKcrackNaive ($44:int)<-(b:bat[:int,:int])($45:int)($46:int)
+    crackers.crack(b,20,99);	# 23 CRKcrackRange ($44:int)<-(b:bat[:int,:int])($45:int)($46:int)
     io.print(b);	# 24 IOprint_val ($47:int)<-(b:bat[:int,:int])
     c := crackers.select(b,20,99,true,true);	# 25 CRKselect (c:bat[:int,:int])<-(b:bat[:int,:int])($45:int)($46:int)($35:bit)($35:bit)
     io.print(c);	# 26 IOprint_val ($48:int)<-(c:bat[:int,:int])
@@ -97,8 +97,8 @@ end main;	# 29
 # h	tmp_7	  # name
 # int	int	  # type
 #-----------------#
-[ 9,	  81	  ]
 [ 10,	  100	  ]
+[ 9,	  81	  ]
 #-----------------#
 # h	tmp_8	  # name
 # int	int	  # type

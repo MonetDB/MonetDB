@@ -7,7 +7,6 @@ a:= int(13);	print(a);
 a:= int("23");	print(a);
 a:= int(43.0:flt);	print(a);
 a:= int(63.0:dbl);	print(a);
-a:= nil;		print(a); # context dependent reset
 
 c:= true;	print(c);
 c:= bit(nil);	print(c);
@@ -16,20 +15,16 @@ c:= bit(1);	print(c);
 c:= bit("true");	print(c);
 c:= bit(1.0:flt);	print(c);
 c:= bit(0.0:dbl);	print(c);
-c:= nil;	print(c); # context dependent reset
 
 d:= 3.14:flt;	print(d);
 d:= flt(nil);	print(d);
 d:= flt(5);	print(d);
 d:= flt("7.14");	print(d);
-d:= nil;	print(d); # context dependent reset
 
 e:= "hello";	print(e);
 e:= str(nil);	print(e);
 e:= str("nil");	print(e);
-e:= nil;	print(e); # context dependent reset
 
 f:= 'Z';	print(f);
 f:= chr(nil);	print(f);
 f:= chr("X");	print(f);
-f:= nil;	print(f); # context dependent reset

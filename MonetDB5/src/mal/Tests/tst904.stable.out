@@ -20,7 +20,7 @@ stdout of test 'tst904` in directory 'src/mal` itself:
 #print(xz);
 #
 function Admin.main():int;	# 0  (main:int)
-    clients.setListing(15);	# 1 CLTsetListing ($1:void)<-($2:int)
+    clients.setListing(15);	# 1 CLTsetListing ($1:int)<-($2:int)
     b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-($4:lng)($5:lng)
     i := -1;	# 3  (i:lng)<-($7:lng)
 barrier v := mal.nextElement(i,0,10,1);	# 4 lngForloopStep (v:bit)<-(i:lng)($9:lng)($10:lng)($11:lng) jump 7
