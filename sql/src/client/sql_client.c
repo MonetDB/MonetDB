@@ -76,7 +76,7 @@ void receive( stream *rs ){
 			}
 		}
 		nRows = status;
-		if (type == QTABLE || type == QUPDATE){
+		if (type == QTABLE){ /*|| type == QUPDATE){ */
 			if (nRows > 1)
 				printf("%d Rows affected\n", nRows );
 			else if (nRows == 1)
