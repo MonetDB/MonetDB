@@ -1,0 +1,57 @@
+stdout of test '01` in directory 'src/benchmarks/tpch` itself:
+
+
+# 19:36:41 >  
+# 19:36:41 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=53320 --set sql_port=53292 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 19:36:41 >  
+
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+printf("\nReady.\n");
+
+Ready.
+quit;
+
+Over..
+
+# 19:36:41 >  
+# 19:36:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 01.sql
+# 19:36:41 >  
+
+SQL  connected to database mTests_src_benchmarks_tpch using schema sys
+#     1: 0 select
+#     2: 0 	l_returnflag,
+#     3: 0 	l_linestatus,
+#     4: 0 	sum(l_quantity) as sum_qty,
+#     5: 0 	sum(l_extendedprice) as sum_base_price,
+#     6: 0 	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
+#     7: 0 	sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+#     8: 0 	avg(l_quantity) as avg_qty,
+#     9: 0 	avg(l_extendedprice) as avg_price,
+#    10: 0 	avg(l_discount) as avg_disc,
+#    11: 0 	count(*) as count_order
+#    12: 0 from
+#    13: 0 	lineitem
+#    14: 0 where
+#    15: 0 	l_shipdate <= date '1998-12-01' - interval '90' day (3)
+#    16: 0 group by
+#    17: 0 	l_returnflag,
+#    18: 0 	l_linestatus
+#    19: 0 order by
+#    20: 0 	l_returnflag,
+#    21: 1 	l_linestatus;
+#---------------------------------------------------------------------------------------------------------------------------------------
+#| l_returnflag | l_linestatus | sum_qty | sum_base_price | sum_disc_price | sum_charge | avg_qty | avg_price | avg_disc | count_order |
+#---------------------------------------------------------------------------------------------------------------------------------------
+"A"	"F"	380456	5.32348e+08	5.05822e+08	5.26166e+08	25.5752	35785.7	0.0500813	14876
+"N"	"F"	8971	1.23848e+07	1.17983e+07	1.22825e+07	25.7787	35588.5	0.0477586	348
+"N"	"O"	742802	1.0415e+09	9.89738e+08	1.02942e+09	25.455	35691.1	0.0499311	29181
+"R"	"F"	381449	5.34594e+08	5.07996e+08	5.28524e+08	25.5972	35874	0.0498275	14902
+SQL  4 Rows affected
+#    22: 0 
+
+# 19:36:41 >  
+# 19:36:41 >  Done.
+# 19:36:41 >  
+

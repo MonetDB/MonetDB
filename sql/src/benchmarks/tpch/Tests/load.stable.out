@@ -1,0 +1,41 @@
+stdout of test 'load` in directory 'src/benchmarks/tpch` itself:
+
+
+# 19:02:40 >  
+# 19:02:40 >  Mtimeout -timeout 300 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=56678 --set sql_port=55885 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 19:02:40 >  
+
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+printf("\nReady.\n");
+
+Ready.
+quit;
+
+Over..
+
+# 19:02:41 >  
+# 19:02:41 >  Mtimeout -timeout 180 python load.SQL.py load 
+# 19:02:41 >  
+
+
+# 19:02:41 >  
+# 19:02:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=55885 --trace
+# 19:02:41 >  
+
+SQL  connected to database mTests_src_benchmarks_tpch using schema sys
+#     1: 1 COPY 1500 RECORDS INTO customer from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/customer.tbl' USING DELIMITERS '|', '|\n';
+#     2: 1 COPY 25 RECORDS INTO nation from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/nation.tbl' USING DELIMITERS '|', '|\n';
+#     3: 1 COPY 15000 RECORDS INTO orders from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/orders.tbl' USING DELIMITERS '|', '|\n';
+#     4: 1 COPY 8000 RECORDS INTO partsupp from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/partsupp.tbl' USING DELIMITERS '|', '|\n';
+#     5: 1 COPY 2000 RECORDS INTO part from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/part.tbl' USING DELIMITERS '|', '|\n';
+#     6: 1 COPY 5 RECORDS INTO region from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/region.tbl' USING DELIMITERS '|', '|\n';
+#     7: 1 COPY 100 RECORDS INTO supplier from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/supplier.tbl' USING DELIMITERS '|', '|\n';
+#     8: 1 COPY 70000 RECORDS INTO lineitem from '/ufs/manegold/Monet/4.3/sql/src/benchmarks/tpch/SF-0.01/lineitem.tbl' USING DELIMITERS '|', '|\n';
+#     9: 1 COMMIT;
+
+# 19:03:00 >  
+# 19:03:00 >  Done.
+# 19:03:00 >  
+

@@ -2,11 +2,12 @@
 set -x
 SQL="Msql -u monetdb -P monetdb"
 if [ $# -eq 1 ]; then
-	SQL=$1
+	SQL="$1"
 fi
 
 echo "loading"
-$SQL < c.sql  
+./load.sh "$SQL"
+
 echo "queries"
 $SQL < 01.sql
 $SQL < 02.sql

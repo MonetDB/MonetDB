@@ -6,3 +6,4 @@ CREATE TABLE orders (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_ordersta
 CREATE TABLE lineitem (l_orderkey INT NOT NULL, l_partkey INT NOT NULL, l_suppkey INT NOT NULL, l_linenumber INT NOT NULL, l_quantity FLOAT NOT NULL, l_extendedprice FLOAT NOT NULL, l_discount FLOAT NOT NULL, l_tax FLOAT NOT NULL, l_returnflag VARCHAR(1) NOT NULL, l_linestatus VARCHAR(1) NOT NULL, l_shipdate DATE NOT NULL, l_commitdate DATE NOT NULL, l_receiptdate DATE NOT NULL, l_shipinstruct VARCHAR(25) NOT NULL, l_shipmode VARCHAR(10) NOT NULL, l_comment VARCHAR(44) NOT NULL) ;
 CREATE TABLE nation (n_nationkey INT NOT NULL, n_name VARCHAR(25) NOT NULL, n_regionkey INT NOT NULL, n_comment VARCHAR(152) NOT NULL) ;
 CREATE TABLE region (r_regionkey INT NOT NULL, r_name VARCHAR(25) NOT NULL, r_comment VARCHAR(152) NOT NULL) ;
+COMMIT;
