@@ -39,8 +39,8 @@ printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#
 # (str)				  (str)		  #
 #-------------------------------------------------#
 [ "version",			  "980714"	  ]
-[ "batId",			  "tmp_26"	  ]
-[ "batCacheid",			  "26"		  ]
+[ "batId",			  "tmp_24"	  ]
+[ "batCacheid",			  "24"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "int"		  ]
@@ -74,8 +74,8 @@ printf("#~BeginVariableOutput~#\n"); b.info.print; printf("#~EndVariableOutput~#
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
 [ "top",			  "1"		  ]
-[ "batStamp",			  "-74"		  ]
-[ "curStamp",			  "75"		  ]
+[ "batStamp",			  "-72"		  ]
+[ "curStamp",			  "73"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
@@ -228,9 +228,10 @@ b.select(4,4).print;
 [ 2,	  4	  ]
 # This should cause an error
 b.select(4,3).print;
-!ERROR: BATselect: illegal range.
-!ERROR: CMDselect: operation failed.
-!ERROR: print(param 1): evaluation error.
+#-----------------#
+# BAT:	  tmp_23  #
+# (int)	  (int)	  #
+#-----------------#
 b.select(81,int(nil)).print;
 #-----------------#
 # BAT:	  tmp_25  #
