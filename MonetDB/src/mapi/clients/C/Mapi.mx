@@ -1051,7 +1051,7 @@ mapi_close_handle(MapiHdl hdl)
 		stream_flush(hdl->mid->to);
 		hdl->tableid = -1;
 		mapi_finish_internal(hdl);
-	} 
+	}
 	if (hdl->fields)
 		free(hdl->fields);
 	hdl->fields = NULL;
@@ -2348,7 +2348,9 @@ mapi_cache_reset(MapiHdl hdl)
 	hdl->cache.reader = -1;
 	hdl->cache.writer = 0;
 	hdl->cache.first = 0;
-	memset(hdl->cache.fldcnt, 0, sizeof(int) * hdl->cache.limit);
+	assert(hdl->cache.limit == 0 || hdl->cache.fldcnt != NULL);
+	if (hdl->cache.fldcnt)
+		memset(hdl->cache.fldcnt, 0, sizeof(int) * hdl->cache.limit);
 }
 
 MapiMsg
@@ -3380,10 +3382,13 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 	mapi_check0(hdl->mid, "mapi_fetch_field");
 	cr = hdl->cache.reader;
 
-	if(hdl->cache.fldcnt == 0) {
-		mapi_setError(hdl->mid, "Assertion error", "mapi_fetch_field");
+	if (cr < 0) {
+		mapi_setError(hdl->mid,
+			      "Must do a successful mapi_fetch_row first",
+			      "mapi_fetch_field");
 		return 0;
 	}
+	assert(hdl->cache.fldcnt != NULL);
 	if (fnr >= 0) {
 		/* slice if needed */
 		if (hdl->cache.fldcnt[cr] == 0)
