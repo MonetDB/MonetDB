@@ -157,7 +157,8 @@ def msc_find_target(target,msc):
  
 
 def msc_deps(fd,deps,objext, msc):
-  for tar,deplist in deps.items():
+  if len(msc['DEPS']) <= 0:
+   for tar,deplist in deps.items():
     t = msc_translate_ext(tar)
     b,ext = split_filename(t)
     tf = msc_translate_file(t,msc)
@@ -206,6 +207,10 @@ def msc_deps(fd,deps,objext, msc):
 	  elif (dext == "cc"):
 	    fd.write( "\t$(CXX) $(CXXFLAGS) $(INCLUDES) -DLIB%s -c %s\n" \
 		% (name,msc_translate_ext(deplist[0])) );
+  msc['DEPS'].append("DONE");
+
+def msc_doc(fd, var, docmap, msc ):
+  docmap['TARGETS']=[]
 
 def msc_binary(fd, var, binmap, msc ):
 
@@ -484,6 +489,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'LIB' : msc_library,
 		 'BINS' : msc_bins,
 		 'BIN' : msc_binary,
+		 'DOC' : msc_doc,
 		 'SCRIPTS' : msc_dummy,
  		 'INCLUDES' : msc_includes,
 		 'MTSAFE' : msc_mtsafe,
@@ -532,6 +538,7 @@ CXXEXT = \\\"cxx\\\"
   msc['LIBDIR'] = 'lib'
   msc['TREE'] = tree
   msc['cwd'] = cwd
+  msc['DEPS'] = []
   
   fd.write("CFLAGS = $(CFLAGS) $(INCLUDES)\n" )
   fd.write("CXXFLAGS = $(CFLAGS)\n" )

@@ -23,6 +23,8 @@ mx2swig = "^@swig[ \t\r\n]+"
 mx2java = "^@java[ \t\r\n]+"
 mx2xsl = "^@xsl[ \t\r\n]+"
 mx2sh = "^@sh[ \t\r\n]+"
+mx2tex = "^@T[ \t\r\n]+"
+mx2html = "^@T[ \t\r\n]+"
 
 e_mx = regex.compile('^@[^\{\}]')
 
@@ -42,7 +44,9 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2swig, '.i'), 
 		  (mx2java, '.java'), 
 		  (mx2xsl, '.xsl'), 
-		  (mx2sh, ''), ], 
+		  (mx2sh, ''), 
+		  (mx2tex, '.tex'), 
+		  (mx2html, '.html'), ], 
  		'mx.in': [ (mx2mil, '.mil'),
 		  (mx2mel, '.m'), 
 		  (mx2cc, '.cc'), 
@@ -59,7 +63,9 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2swig, '.i'), 
 		  (mx2java, '.java'), 
 		  (mx2xsl, '.xsl'), 
-		  (mx2sh, ''), ]  
+		  (mx2sh, ''), 
+		  (mx2tex, '.tex'), 
+		  (mx2html, '.html'), ] 
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
@@ -79,18 +85,24 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'glue.c': 	[ '.glue.o' ],
 	    'fgr':     [ '_engine.c', '_proto.h' ],
 	    'java':   [ '.class' ],
-	    'mx.in':	[ '.mx' ]
+	    'mx.in':	[ '.mx' ],
+	    'tex':	[ '.dvi', '.pdf' ],
+	    'dvi':	[ '.ps' ],
+	    'fig':	[ '.eps' ],
+	    'feps':	[ '.eps' ],
 }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_]*\)[>\"]"
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+\([a-zA-Z0-9\.\_, ]*\);"
 m_sep = "[ \t]*,[ \t*]"
 xsl_inc = "^[ \t]*<xsl:{include|import}[ \t]*href=['\"]\([a-zA-Z0-9\.\_]*\)['\"]"
+tex_inc = ".*\\epsffile\{\([a-zA-Z0-9\.\_]*\)"
 
 c_inc = regex.compile(c_inc)
 m_use = regex.compile(m_use)
 m_sep = regex.compile(m_sep)
 xsl_inc = regex.compile(xsl_inc)
+tex_inc = regex.compile(tex_inc)
 
 scan_map = { 'c': [ c_inc, None, '' ], 
 	 'cc': [ c_inc, None, '' ], 
@@ -101,6 +113,7 @@ scan_map = { 'c': [ c_inc, None, '' ],
 	 'll': [ c_inc, None, '' ], 
 	 'm': [ m_use, m_sep, '.m' ],
 	 'xsl': [ xsl_inc, None, '' ], 
+	 'tex': [ tex_inc, None, '' ], 
 }
 
 dep_rules = { 'glue.c': [ 'm', '.proto.h' ] , 
@@ -368,7 +381,19 @@ def codegen(tree, cwd, topdir):
  
   deps = {}
   for i in tree.keys():  
-    if ( i[0:4] == "lib_" or i[0:4] == "bin_" or  \
+    if ( i[0:4] == "doc_" ):
+	  targets = []
+ 	  if (type(tree.value(i)) == type({}) ):
+	    for f in tree.value(i)["SOURCES"]:
+	      (base,ext) = split_filename(f)
+	      do_code_extract(f,base,ext, targets, deps, cwd)
+	    targets = do_code_gen(targets,deps)
+	    do_deps(targets,deps,includes,incmap,cwd)
+	    libs = do_libs(deps)
+      	    tree.value(i)["TARGETS"] = targets
+      	    tree.value(i)["DEPS"] = deps
+
+    elif ( i[0:4] == "lib_" or i[0:4] == "bin_" or  \
          i == "LIBS" or i == "BINS" or i[0:8] == "scripts_" ):
 	  targets = []
  	  if (type(tree.value(i)) == type({}) ):

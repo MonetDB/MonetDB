@@ -103,12 +103,16 @@ def am_additional_libs(name,sep,type,list, am):
     return add + "\n"
   
 def am_deps(fd,deps,objext, am):
-  for t,deplist in deps.items():
-    t = regsub.sub("\.o",objext,t)
+  if len(am['DEPS']) <= 0:
+   for t,deplist in deps.items():
+    n = regsub.sub("\.o",".lo",t)
+    if (t != n):
+	fd.write( n + " " )
     fd.write( t + ":" )
     for d in deplist:
       fd.write( " " + am_translate_dir(d,am) )
     fd.write("\n");
+  am['DEPS'].append("DONE");
 
 
 # list of scripts to install
@@ -129,6 +133,24 @@ def am_scripts(fd, var, scripts, am):
       am['INSTALL'].append(script)
 
   am_deps(fd,scripts['DEPS'],"\.o",am);
+
+def am_doc(fd, var, docmap, am ):
+
+  name = var[4:]
+
+  doc_ext = [ 'pdf', 'ps' ]
+
+  srcs = name+"_DOCS ="
+  for target in docmap['TARGETS']:
+    t,ext = split_filename(target)
+    if (ext in doc_ext):
+      srcs = srcs + " " + am_find_srcs(target,docmap['DEPS'], am)
+  fd.write(srcs + "\n")
+
+  fd.write("all-local-%s: $(%s_DOCS)\n" % (name,name))
+  am['ALL'].append(name)
+  
+  am_deps(fd,docmap['DEPS'],"\.o",am);
 
 def am_binary(fd, var, binmap, am ):
   
@@ -384,6 +406,7 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		 'LIB' : am_library,
 		 'BINS' : am_bins,
 		 'BIN' : am_binary,
+		 'DOC' : am_doc,
  		 'INCLUDES' : am_includes,
 		 'MTSAFE' : am_mtsafe,
 		 'SCRIPTS' : am_scripts,
@@ -430,6 +453,7 @@ CXXEXT = \\\"cc\\\"
   am['HDRS'] = []
   am['LIBDIR'] = "lib"
   am['ALL'] = []
+  am['DEPS'] = []
   for i in tree.keys():
     j = i
     if (string.find(i,'_') >= 0):
