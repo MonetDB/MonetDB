@@ -11,7 +11,7 @@ stdout of test 'q01` in directory 'tests/XMark` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-Ayonca Vijaykrishnan
+text {"Ayonca Vijaykrishnan"}
 </XQueryResult>
 
 # 14:39:53 >  

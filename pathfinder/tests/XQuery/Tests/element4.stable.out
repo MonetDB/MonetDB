@@ -11,7 +11,7 @@ stdout of test 'element4` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<a foo="bar"><b>textnode</b><d><e></e><f></f></d><c foo2="bar"></c></a>
+<a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a>
 </XQueryResult>
 
 # 23:34:30 >  

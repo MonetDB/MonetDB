@@ -14,17 +14,17 @@ stdout of test 'q08` in directory 'tests/XPath` itself:
 <bidder>
 <date>06/13/2001</date>
 <time>13:16:15</time>
-<personref person="person0"></personref>
+<personref person="person0"/>
 <increase>18.00</increase>
 </bidder><bidder>
 <date>09/18/2000</date>
 <time>11:29:44</time>
-<personref person="person23"></personref>
+<personref person="person23"/>
 <increase>12.00</increase>
 </bidder><bidder>
 <date>01/07/1998</date>
 <time>10:23:59</time>
-<personref person="person14"></personref>
+<personref person="person14"/>
 <increase>18.00</increase>
 </bidder>
 </XQueryResult>

@@ -12,7 +12,7 @@ stdout of test 'attr_err` in directory 'tests/XQuery` itself:
 !ERROR: attributes are not unique in element construction of 'foo' within each iter
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<foo></foo>
+<foo/>
 </XQueryResult>
 
 # 23:34:43 >  

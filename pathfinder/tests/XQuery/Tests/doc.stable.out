@@ -11,7 +11,7 @@ stdout of test 'doc` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<textnode></textnode>
+<textnode/>
 </XQueryResult>
 
 # 23:35:31 >  

@@ -11,7 +11,7 @@ stdout of test 'last2` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<c foo2="bar"></c>
+<c foo2="bar"/>
 </XQueryResult>
 
 # 23:35:24 >  

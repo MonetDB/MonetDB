@@ -11,7 +11,7 @@ stdout of test 'q14` in directory 'tests/XMark` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-condemn swan language darkly house tougher stayed surly ready fight troyan conscience licence spain 
+text {"condemn "}text {"swan language darkly "}text {"house tougher stayed "}text {"surly ready fight "}text {"troyan conscience licence spain "}
 </XQueryResult>
 
 # 14:40:07 >  

@@ -11,7 +11,7 @@ stdout of test 'is-after` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<b>textnode</b>"false" "false" <a></a>
+<b>textnode</b>"false" "false" <a/>
 </XQueryResult>
 
 # 23:35:17 >  

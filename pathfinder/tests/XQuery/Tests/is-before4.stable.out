@@ -11,7 +11,7 @@ stdout of test 'is-before4` in directory 'tests/XQuery` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-"false" "false" "false" "false" <e></e><f></f><c foo2="bar"></c><book year="2000">
+"false" "false" "false" "false" <e/><f/><c foo2="bar"/><book year="2000">
         <title>Data on the Web</title>
         <author><last>Abiteboul</last><first>Serge</first></author>
         <author><last>Buneman</last><first>Peter</first></author>

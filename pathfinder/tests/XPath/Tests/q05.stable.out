@@ -22,8 +22,8 @@ stdout of test 'q05` in directory 'tests/XPath` itself:
 </text>
 </description>
 <shipping>Will ship only within country, Buyer pays fixed shipping charges, See description for charges</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 <mail>
 <from>Arlene Mezei mailto:Mezei@pitt.edu</from>
@@ -45,8 +45,8 @@ preventions false voke colour need division conjoin preventions their apemantus 
 </text>
 </description>
 <shipping>Will ship only within country, Will ship internationally, See description for charges</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 </mailbox>
 </item><item id="item13">
@@ -60,8 +60,8 @@ despite instigated moralize sequel noble music carcass recompense choke massacre
 </text>
 </description>
 <shipping>See description for charges</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 </mailbox>
 </item><item id="item14">
@@ -84,7 +84,7 @@ month take executioner contrive guilt big recourse follower therein fool could s
 </parlist>
 </description>
 <shipping>Buyer pays fixed shipping charges</shipping>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
 <mailbox>
 <mail>
 <from>Eckhart Nations mailto:Nations@panasonic.com</from>
@@ -114,8 +114,8 @@ albeit hies silk tables bravely whip violet estates counterfeited slander they b
 </text>
 </description>
 <shipping>Will ship internationally</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 </mailbox>
 </item><item id="item16">
@@ -129,8 +129,8 @@ give sightless goblins believe fainted nice before answer dog dead puts <emph> p
 </text>
 </description>
 <shipping>Will ship only within country, Will ship internationally</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 </mailbox>
 </item><item id="item17">
@@ -144,11 +144,11 @@ spite heard prodigal pound tricks hats ribbon grow increase mortimer execut chee
 </text>
 </description>
 <shipping>See description for charges</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 </mailbox>
 </item><item id="item18">
@@ -162,9 +162,9 @@ spite heard prodigal pound tricks hats ribbon grow increase mortimer execut chee
 </text>
 </description>
 <shipping>Buyer pays fixed shipping charges, See description for charges</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 </mailbox>
 </item><item id="item19">
@@ -178,9 +178,9 @@ spite heard prodigal pound tricks hats ribbon grow increase mortimer execut chee
 </text>
 </description>
 <shipping>Will ship only within country, Will ship internationally</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 </mailbox>
 </item><item id="item20">
@@ -194,10 +194,10 @@ telling yielding torture exit quip locks garish trespasses briefly holds posture
 </text>
 </description>
 <shipping>Will ship only within country, See description for charges</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 <mail>
 <from>Berthier Peuto mailto:Peuto@unf.edu</from>
@@ -228,11 +228,11 @@ twelve sat dismiss yesterday affects converse motion cage such taste estates aug
 </parlist>
 </description>
 <shipping>Will ship internationally, See description for charges</shipping>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
-<incategory category="category0"></incategory>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
+<incategory category="category0"/>
 <mailbox>
 <mail>
 <from>Keith Lampert mailto:Lampert@infomix.com</from>
