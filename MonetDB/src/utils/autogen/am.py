@@ -869,7 +869,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'JAVA': am_java,
                 }
 
-def output(tree, cwd, topdir, automake):
+def output(tree, cwd, topdir, automake, conditional):
     global am_assign
     #if int(automake) >= 1005000 and int(automake) < 1006000:
     #    am_assign = "="
@@ -920,10 +920,14 @@ CXXEXT = \\\"cc\\\"
     am['LIBDIR'] = "libdir"
     am['ALL'] = []
     am['DEPS'] = []
+    if conditional:
+        cond = '#' + string.join(conditional, '+')
+    else:
+        cond = ''
     am['InstallList'] = []
-    am['InstallList'].append(am['CWD']+"\n")
+    am['InstallList'].append(am['CWD']+cond+"\n")
     am['DocList'] = []
-    am['DocList'].append(am['CWD']+"\n")
+    am['DocList'].append(am['CWD']+cond+"\n")
     am['OutList'] = [am['CWD'] + 'Makefile']
 
     for i, v in tree.items():

@@ -112,36 +112,44 @@ else:
 
 def expand_subdirs(subdirs):
     res = []
-    for dir in subdirs:
-        if string.find(dir, "?") > -1:
-            parts = string.split(dir, "?")
+    for subdir in subdirs:
+        if "?" in subdir:
+            parts = string.split(subdir, "?")
             if len(parts) == 2:
                 dirs = string.split(parts[1], ":")
-                for d in dirs:
-                    if string.strip(d) != "":
-                        res.append(d)
+                if len(dirs) > 2:
+                    print "!ERROR:syntax error in conditional subdir:", subdir
+                else:
+                    cond = parts[0]
+                    for d in dirs:
+                        if string.strip(d) != "":
+                            res.append((d, cond))
+                        cond = "!" + cond
             else:
-                print("!ERROR:syntax error in conditional subdir:", dir)
+                print "!ERROR:syntax error in conditional subdir:", subdir
         else:
-            res.append(dir)
+            res.append((subdir, None))
     return res
 
 # incdirsmap is a map between srcdir and install-include-dir
-def main(cwd, topdir, automake, incdirsmap):
+def main(cwd, topdir, automake, incdirsmap, conditional = ()):
     p = parser()
     read_makefile(p, cwd)
     codegen(p.curvar, cwd, topdir, incdirsmap)
-    (InstallList, DocList, OutList) = am.output(p.curvar, cwd, topdir, automake)
+    (InstallList, DocList, OutList) = am.output(p.curvar, cwd, topdir, automake, conditional)
     msc.output(p.curvar, cwd, topdir)
     if p.curvar.has_key('SUBDIRS'):
-        subdirs = expand_subdirs(p.curvar['SUBDIRS'])
-        for dir in subdirs:
+        for (dir, cond) in expand_subdirs(p.curvar['SUBDIRS']):
             d = os.path.join(cwd, dir)
             if os.path.exists(d):
                 incdirsmap.append((d, os.path.join('includedir', dir)))
                 print(d)
+                if cond is None:
+                    cond = ()
+                else:
+                    cond = (cond,)
                 (deltaInstallList, deltaDocList, deltaOutList) = \
-                                   main(d, topdir, automake, incdirsmap)
+                                   main(d, topdir, automake, incdirsmap, conditional + cond)
                 InstallList = InstallList + deltaInstallList
                 DocList = DocList + deltaDocList
                 OutList = OutList + deltaOutList
