@@ -534,7 +534,7 @@ int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 	if (!rt && lt) 
 		return set_type_param(ls, rs);
 
-	if (rt && lt){
+	if (rt && lt) {
 		sql_subtype *i = lt;
 		sql_subtype *r = rt;
 
@@ -558,15 +558,11 @@ int convert_types(mvc * sql, stmt ** L, stmt ** R, int scale_fixing )
 			ls = fix_scale( sql, r, ls, 0, 0);
 			rs = fix_scale( sql, i, rs, 0, 0);
 		}
-		if (!ls || !rs) {
-			if (ls)
-				*L = ls;
-			if (rs)
-				*R = rs;
-			return -1;
-		}
 		*L = ls;
 		*R = rs;
+		if (!ls || !rs) {
+			return -1;
+		}
 		return 0;
 	}
 	return -1;

@@ -695,11 +695,10 @@ sql_binop_(mvc * sql, scope *scp, char *fname, stmt * ls, stmt *rs)
 			}
 		}
 	}
-	res = sql_error(sql, 02, "Binary operator: %s(%s,%s) unknown", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
-	if (ls) 
-		stmt_destroy(ls);
-	if (rs) 
-		stmt_destroy(rs);
+	if (rs && ls)
+		res = sql_error(sql, 02, "Binary operator: %s(%s,%s) unknown", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
+	if (ls) stmt_destroy(ls);
+	if (rs) stmt_destroy(rs);
 	return res;
 }
 
@@ -1739,9 +1738,6 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 			sql_subtype *ct = NULL;
 			if (!ls || !rs1 || !rs2)
 				return NULL;
-			if (rs1->nr > 0 || rs2->nr > 0) {
-				return sql_error(sql, 02, "Between requires an atom on the right handside");
-			}
 			ct = tail_type(ls);
 			rs1 = check_types(sql, ct, rs1);
 			rs2 = check_types(sql, ct, rs2);
@@ -1757,6 +1753,23 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 				tmp = stmt_binop(rs1, rs2, min);
 				rs2 = stmt_binop(rs1, rs2, max);
 				rs1 = tmp;
+			}
+			if ( rs1->nrcols > 0 || rs2->nrcols > 0 ) {
+				stmt *j1, *j2;
+
+				if (sc->token == SQL_NOT_BETWEEN) {
+					j1 = sql_compare( sql, 
+						stmt_dup(ls), rs1, "<", f);
+					j2 = sql_compare( sql, 
+						stmt_dup(ls), rs2, ">", f);
+				} else {
+					j1 = sql_compare( sql, 
+						stmt_dup(ls), rs1, ">=", f);
+					j2 = sql_compare( sql, 
+						stmt_dup(ls), rs2, "<=", f);
+				}
+				stmt_destroy(ls);
+				return sql_and( sql, scp, j1, j2, f );
 			}
 			res = stmt_uselect2(ls, rs1, rs2, 3 
 					/* aka rs1 <= ls <= rs2*/);
