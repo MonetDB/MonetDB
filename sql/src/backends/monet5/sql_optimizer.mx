@@ -449,7 +449,7 @@ exit	doit;
 				cnt= newTmpVariable(mb,TYPE_lng);
 				setVarUsed(mb,cnt,TRUE);
 				q->argv[0]=cnt;
-				q->argv[1]= p->argv[1];
+				q->argv[1]= p->argv[2];
 				q->argc=2;
 				setModuleId(q,GDKstrdup("algebra"));
 				setFunctionId(q,GDKstrdup("count"));
