@@ -110,7 +110,7 @@ stdout of test 'tst1602` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     int_1M := bbp.new(:void,:lng,1000000);	# 1 CMDBATnewint (int_1M:bat[:void,:lng])<-($2:void)($3:lng)($4:int)
-    bat.setSequenceBase(int_1M,0@0);	# 2 BKCsetSequenceBase ($5:int)<-(int_1M:bat[:void,:lng])($6:oid)
+    bat.setSequenceBase(int_1M,0@0);	# 2 BKCsetSequenceBase ($5:any)<-(int_1M:bat[:void,:lng])($6:oid)
     zinfo := bat.info(int_1M);	# 3 BKCinfo (zinfo:bat[:str,:str])<-(int_1M:bat[:void,:lng])
     io.print(zinfo);	# 4 IOprint_val ($8:int)<-(zinfo:bat[:str,:str])
     i := 1000000;	# 5  (i:lng)<-($10:lng)

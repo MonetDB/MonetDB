@@ -50,5 +50,5 @@ end main;	# 12
 # dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # version=5.0
 # config=/ufs/mk/monet5/src/mal/Tests/All.conf
-pi=3.14700007
+# pi=3.14700007
 >
