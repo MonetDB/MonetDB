@@ -62,8 +62,14 @@ subs = [
     ('@VERSION@',           "2.0"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
+    ('@MONET_BUILD@',       build),
+    ('@MONET_SOURCE@',      source),
+    ('@MONET_PREFIX@',      os.getenv('MONET_PREFIX')),
     ('@QDIRSEP@',           "\\\\"),
     ('@Qprefix@',           Qprefix),
+    ('@QMONET_BUILD@',      Qbuild),
+    ('@QMONET_SOURCE@',     Qsource),
+    ('@SQL_BACKEND@',       "monet4"),
 ]
 
 
