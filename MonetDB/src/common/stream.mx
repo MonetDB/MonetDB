@@ -1166,6 +1166,35 @@ stream *ssl_rstream(int socket, const char *name, const char *keyfile, const cha
 	}
 	return s;
 }
+
+stream *ssl_wstream(int socket, const char *name, const char *keyfile, const char *certfile)
+{
+	stream *s = ssl_open(socket, name, keyfile, certfile);
+	s->access = ST_WRITE;
+	s->type = ST_BIN;
+	if (s->errnr == NO__ERROR) {
+		stream_write(s, (void*)&s->byteorder, sizeof(short), 1);
+	}
+	return s;
+}
+
+stream *ssl_rastream(int socket, const char *name, const char *keyfile, const char *certfile)
+{
+	stream *s;
+
+	s = ssl_open(socket, name, keyfile, certfile);
+	s->access = ST_READ;
+	s->type = ST_ASCII;
+	return s;
+}
+
+stream *ssl_wastream(int socket, const char *name, const char *keyfile, const char *certfile)
+{
+	stream *s = ssl_open(socket, name, keyfile, certfile);
+	s->access = ST_WRITE;
+	s->type = ST_ASCII;
+	return s;
+}
 #endif	/* HAVE_OPENSSL */
 
 stream *file_stream( const char *name ){
