@@ -259,12 +259,6 @@ build the cluster hash from the enum.
 #define __SALGEBRA_H__
 #include "gdk.h"
 
-#if defined (__GNUC__) && defined (__STDC__)
-#define INLINE	inline
-#else
-#define INLINE
-#endif
-
 @+ Type definition
 @T
 
