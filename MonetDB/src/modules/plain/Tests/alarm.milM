@@ -1,3 +1,0 @@
-module("alarm");
-test_alarm();
-quit();
