@@ -162,8 +162,10 @@ extern void popBlock();
 extern str getLastIterator();
 extern char *bindFcn(str nme);
 extern char *bindId(str nme);
+extern char *mapi_quote(const char *msg, int size);
 
-#define rem	if(comment){printf("#%s\n",comment);comment=0;}
+#define rem	if(comment){ printf("\tmil.line(\"%s\");\n",mapi_quote(comment,strlen(comment))); comment=0;}
+
 extern char *comment;
 #endif /* _MIL_PARSER_H */
 @l
@@ -545,6 +547,9 @@ str bindId(str nme){
 		break;
 	}
 	if( ismapped(nme)) return nme;
+	if( strcmp(nme,"nil")==0){
+		return nme;
+	}
 	if( *nme =='$') {
 		return nme;
 	}
@@ -660,7 +665,7 @@ void debugParser(int i){ yydebug=i; }
 
 yystype accum;
 extern char *comment;
-#define rem	if(comment){printf("#%s\n",comment);comment=0;}
+#define rem	if(comment){ printf("\tmil.line(\"%s\");\n",mapi_quote(comment,strlen(comment))); comment=0;}
 %}
 
 %token TOK_ITERTEMP TOK_TEMPLATE TOK_VARTEMP TOK_RANGETEMP
@@ -676,7 +681,7 @@ extern char *comment;
 
 %left TOK_ITERATION
 %left TOK_ASSIGNMENT TOK_OPERATOR
-%left '?' ':'
+%left ':'
 %%
 program:
         MIL_session 
@@ -1222,82 +1227,16 @@ factor: factor1  |TOK_CONSTANT
 factor1:
        TOK_STRING
     |   TOK_BAT {$1.val=":bat[:any,:any]"; $$=$1;}
+    |   fcn_path
     |  	variable_reference
 	{$1.val= bindId($1.val); $$=$1;}
-    |   '[' multiplex_expression ']' 
-	{ $$= $2;}
     | 	fcn_call
     |   '(' expression ')' { $$= $2;}
     ;
-@-
-The separator should be limited to ',' and '~' should be
-added back as an operator symbol.
-@y
-multiplex_comma: ',' |  '~'
-    ;
 
-multiplex_expression:
-      multiplex_term multiplex_comma multiplex_term
-	{ $$.val= newName();
-#ifdef M2Moffline
-	rem; printf("\t%s := zipper(%s,%s);\n", $$.val, $1.val, $3.val);
-#else
-	TODO
-#endif
-	}
-    | multiplex_term
-	/* { $$.val= newName();
-#ifdef M2Moffline
-	rem; printf("\t%s := M2m.batconstruct1(%s);\n", $$.val, $1.val);
-#else
-	TODO
-#endif
-	}*/
-    ;
 
-multiplex_term:
-        bat_expression
-    |   expression '?' bat_expression ':' 
-	{$$.val = newName();
-#ifdef M2Moffline
-	rem; printf("\t%s := ifthen(%s,%s);\n",$$.val, $1.val,$3.val);
-#else
-	TODO
-#endif
-	}
-    |   expression '?' bat_expression ':' expression
-	{$$.val = newName();
-#ifdef M2Moffline
-	rem; printf("\t%s := ifthenelse(%s,%s,%s);\n",$$.val,
-		$1.val,$3.val,$5.val);
-#else
-	TODO
-#endif
-	}
-    ;
-
-bat_expression:
-        expression
-     |   /* empty */
-	{ $$.val =newName();
-#ifdef M2Moffline
-	rem; printf("\t%s := 0@0:oid;\n",$$.val);
-#else
-	TODO
-#endif
-    };
-
-fcn_call: 
-	fcn_call_A
-/*
-    | 	fcn_call '.' tok_ident
-	{ char stmt[1024];
-	  $1.val= emitExpr($1.val);
-	  sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
-	  $$.val = GDKstrdup(stmt);
-	}
-*/
-    |	fcn_call '.' fcn_call_B
+fcn_path: 
+	fcn_target '.' fcn_call
 	{ char stmt[1024], *s;
 	  /* move the result of the function into the second call */
 	  $1.val = emitExpr($1.val);
@@ -1306,18 +1245,46 @@ fcn_call:
 		 GDKerror("unexpected function\n"); 
 	  else{
 		*s = 0;
-		sprintf(stmt,"%s%s,%s", bindFcn($3.val),$1.val,s+1);
+		if(*(s+1) != ')')
+			sprintf(stmt,"%s%s,%s", bindFcn($3.val),$1.val,s+1);
+		else sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
+	  }
+	  $$.val = GDKstrdup(stmt);
+	}
+    |	fcn_call '.' fcn_call
+	{ char stmt[1024], *s;
+	  /* move the result of the function into the second call */
+	  $1.val = emitExpr($1.val);
+	  s= strchr($3.val,'(');
+	  if(s==0)
+		 GDKerror("unexpected function\n"); 
+	  else{
+		*s = 0;
+		if(*(s+1) != ')')
+			sprintf(stmt,"%s%s,%s", bindFcn($3.val),$1.val,s+1);
+		else sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
+	  }
+	  $$.val = GDKstrdup(stmt);
+	}
+    |	fcn_path  '.' fcn_call
+	{ char stmt[1024], *s;
+	  /* move the result of the function into the second call */
+	  $1.val = emitExpr($1.val);
+	  s= strchr($3.val,'(');
+	  if(s==0)
+		 GDKerror("unexpected function\n"); 
+	  else{
+		*s = 0;
+		if(*(s+1) != ')')
+			sprintf(stmt,"%s%s,%s", bindFcn($3.val),$1.val,s+1);
+		else sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
 	  }
 	  $$.val = GDKstrdup(stmt);
 	}
     ;
 
-fcn_call_A:
-       fcn_call_B
-   |	fcn_target
-    ;
 
-fcn_call_B:
+fcn_call:
     	fcn_hdr '(' ')'
 	{ char stmt[1024];
 	  sprintf(stmt,"%s)", bindFcn($1.val));
@@ -1357,9 +1324,8 @@ fcn_hdr:
 	{ $$= $1; }
     ;
  
-fcn_target : TOK_CONSTANT 
-   |	'[' multiplex_expression ']'  { $$.val= $2.val;}
-   |	'(' expression ')'  {$$.val= $2.val;}
+fcn_target : 
+  	'(' expression ')'  {$$.val= $2.val;}
    |	variable_reference  {$1.val= bindId($1.val); $$=$1;}
     ;
 
@@ -1367,7 +1333,11 @@ expr_list:
      	expression
 	{$$.val = emitExpr($1.val);}
     |	expr_list ',' expression
-	{ $$.val= emitExpr( glue(glue($1.val,","),$3.val));}
+	{
+	if(strlen($3.val)>0)
+	 $$.val= emitExpr( glue(glue($1.val,","),$3.val));
+	else $$.val=$1.val;
+	}
     ;
 
 module_list:
@@ -1484,5 +1454,54 @@ char *getOperator(char *nme){
 	strncpy(n,nme+1,l-2);
 	n[l-1] = 0;
 	return n;
+}
+#define PLACEHOLDER     '?'
+
+char *
+mapi_quote(const char *msg, int size)
+{
+	char *s = malloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
+	char *t = s;
+
+	/* the condition is tricky: if initially size < 0, we must
+	   continue until a NULL byte, else, size gives the number of
+	   bytes to be copied */
+	while (size < 0 ? *msg : size > 0) {
+		if (size > 0)
+			size--;
+		switch (*msg) {
+		case '"':	/* added for mil-parser */
+			*t++ = '\\';
+			*t++ = '"';
+			break;
+		case '\n':
+			*t++ = '\\';
+			*t++ = 'n';
+			break;
+		case '\t':
+			*t++ = '\\';
+			*t++ = 't';
+			break;
+		case PLACEHOLDER:
+			*t++ = '\\';
+			*t++ = PLACEHOLDER;
+			break;
+		case '\\':
+			*t++ = '\\';
+			*t++ = '\\';
+			break;
+		case '\0':
+			*t++ = '\\';
+			*t++ = '0';
+			break;
+		default:
+			*t++ = *msg;
+			break;
+		}
+		msg++;
+		/* also deal with binaries */
+	}
+	*t = 0;
+	return s;
 }
 @}
