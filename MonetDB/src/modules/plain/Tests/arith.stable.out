@@ -1692,5 +1692,5 @@ not(bit2).print;
 
 srand( 1234 );
 rand().print;
-[ 479142414 ]
+[ 3558 ]
 quit;

@@ -55,7 +55,7 @@ ch_2.info.print;
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "26"	  ]
+[ "batId",	  "39"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "3"	  ]
 ch_2 := nil;
@@ -76,7 +76,7 @@ ch.info.print;
 [ "name",	  "ti"	  ]
 [ "bname",	  "ti"	  ]
 [ "ttype",	  "oid"	  ]
-[ "batId",	  "26"	  ]
+[ "batId",	  "39"	  ]
 [ "perfect",	  "1"	  ]
 [ "refCnt",	  "2"	  ]
 #ch2.info.print;
@@ -86,7 +86,7 @@ CHdir();
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 26,	  "ti",		  2,		  ti		  ]
+[ 39,	  "ti",		  2,		  ti		  ]
 
 # use the clusterhash for a uselect or a ujoin
 uselect( ch, 0@0 ).print;
@@ -137,7 +137,7 @@ CHdir();
 # BAT:	  ch_namecache	| ch_refcnt	| ch_cache	  #
 # (int)	  (str)		| (int)		| (clusterhash)	  #
 #---------------------------------------------------------#
-[ 26,	  "ti",		  2,		  ti		  ]
+[ 39,	  "ti",		  2,		  ti		  ]
 
 ch := nil;
 drop( "salgebra" );
