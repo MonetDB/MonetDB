@@ -1612,7 +1612,6 @@ typedef struct {
 bbptrim_t bbptrim[BBPMAXTRIM];
 int bbptrimfirst = BBPMAXTRIM, bbptrimlast = 0, bbpunloadtail, bbpunload, bbptrimmax = BBPMAXTRIM, bbpscanstart = 1;
 
-
 static bat BBPtrim_scan(int mem, int vm, int descs, bat bbppos, bat bbplim) {
 	bbptrimlast = 0;
 	bbptrimmax = BBPMAXTRIM;
