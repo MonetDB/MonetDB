@@ -226,13 +226,21 @@ brackets and escapes. They are eaten away in strCopy.
 @c
 int stringLength(Client cntxt){
 	int l=0;
+	int quote =0;
 	str s= cntxt->nxt;
 	if( *s != '"') return 0;
 	s++;
 	while( *s ){
-		if( *s == '"' && *(s-1) != '\\') break;
-		l++;
-		s++;
+		if( quote ){ 
+			l++; 
+			s++;
+			quote=0;
+		} else {
+			if( *s == '"' ) break;
+			quote= *s == '\\';
+			l++;
+			s++;
+		}
 	}
 	return l+2;
 }
@@ -498,9 +506,6 @@ a MAL instruction record as quickly as possible. Its context is
 manipulated during the parsing process, by keeping the  curPrg,
 curBlk, and curInstr variables.
 
-The language does not support '#include' style commands, which
-means we do not need a stack to keep track of the parsing context.
-
 The language statements of the parser are gradually introduced, with
 the overall integration framework last.
 The convention is to return a zero when an error has been
@@ -569,6 +574,8 @@ Atom storage may be defined in terms of an existing type.
 An import statement is immediately taken into effect. This
 calls for temporary switching the input for a particular client.
 The administration for this is handled by malImport.
+No listing is produced, because module sources are assumed to
+be debugged upfront already.
 @T
 importStmt : USE identifier \\
 	   : USE string\\
@@ -582,7 +589,7 @@ str parseImport(Client cntxt)
 
 	@:parsePath@
 
-	malImport(cntxt,modnme,modnme, cntxt->listing);
+	malImport(cntxt,modnme,modnme, 0);
 	GDKfree(modnme);
 	skipToEnd(cntxt);
 	return "";

@@ -135,7 +135,6 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 	if( getInstrPtr(mb,i)==p) return i;
 	return -1;
 }
-
 @h
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
 			  (X)->token == COMMANDsymbol || \
@@ -386,6 +385,7 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		new->def->var[i]->fixtype=0;
 	new->def->errors= 0;
 	/* check for errors after fixation , TODO*/
+	/* beware, we should now ignore any cloning */
 	chkProgram(scope,new->def);
 	if( new->def->errors){
 		str err;

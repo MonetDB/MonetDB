@@ -371,10 +371,16 @@ If the call refers to a polymorphic function, we
 clone it to arrive at a bounded instance. Polymorphic patterns and
 commands are responsible for type resolution themselves.
 Note that cloning pre-supposes that the function being cloned
-does not contain errors detected earlier in the process.
+does not contain errors detected earlier in the process,
+nor does it contain polymorphic actual arguments.
 @c
 	if( polymorphic){ 
-		if( s->kind!= COMMANDsymbol && s->kind!=PATTERNsymbol ){
+		int cnt=0;
+		for(k=i=p->retc;i<p->argc;i++){
+			int actual = getArgType(mb,p,i);
+			if( isPolymorphic(actual)) cnt++;
+		}
+		if(cnt==0 && s->kind!= COMMANDsymbol && s->kind!=PATTERNsymbol ){
 			s = cloneFunction(scope, s, mb,p);
 			if( s->def->errors) return -3;
 		}
