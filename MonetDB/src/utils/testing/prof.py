@@ -14,9 +14,20 @@
 # Mserver -db gold prof_input_file_name.mil
 # You can now observe the results....
 
-import regex,string,os
+import string,os,re
 from sys import argv
 import os
+
+# some helper variables
+_dquoted_string = r'"([^"\\]|\\.)*"' # double-quoted string
+_squoted_string = r"'([^'\\]|\\.)*'" # single-quoted string
+_quoted_string = '(%s|%s)' % (_dquoted_string, _squoted_string) # quoted string
+_mquoted_string = '[^\'"]*(%s[^\'"]*)*' % _quoted_string # any number of quoted strings
+
+re_clbracket = re.compile('^'+_mquoted_string+r'\}.', re.MULTILINE) # line with unquoted closing bracket
+re_clbracket_end = re.compile('^'+_mquoted_string+r'\}'+'[\n\t ]*$', re.MULTILINE) # line ending with unquoted closing barcket
+re_hash = re.compile('^'+_mquoted_string+'#.', re.MULTILINE)
+re_mquoted_string_only = re.compile('^'+_mquoted_string + '$', re.MULTILINE)
 
 dn = os.path.dirname(argv[0])
 
@@ -72,21 +83,21 @@ g_epatt = 'pmE("' + global_tag_name + '");'
 fin_fil.write(g_bpatt+'\n')
 
 for line in input_fil.readlines() :
-    if regex.search('#',line) == -1 :
-        if regex.search('quit;',line) != -1 :
+    if string.find(line, '#') == -1 :
+        if string.find(line, 'quit;') != -1 :
             quit = 1
             fin_fil.write(g_epatt+'\n')
             fin_fil.write('printf("#~BeginProfilingOutput~#\\n");\n')
             fin_fil.write('pmSummary();\n')
             fin_fil.write('printf("#~EndProfilingOutput~#\\n");\n')
     semicolon = 0
-    if regex.search(';',line) != -1 :
+    if string.find(line,';') != -1 :
         with_semicolon = 1
     else :
         with_semicolon = 0
     first_time_in_loop = 1
     for splitted_sentence in string.split(line,";") :
-        if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*}\([\n\t ]*\)$',splitted_sentence) != -1 :
+        if re_clbracket_end.search(splitted_sentence) is not None:
             close_brac = 1
         if concatenate == 1 :
             if semicolon == 0 :
@@ -94,36 +105,36 @@ for line in input_fil.readlines() :
             else :
                 splitted_sentence = temp_sentence + ';' + splitted_sentence
             concatenate = 0
-            if (beeninhash == 1 and regex.search('#',splitted_sentence) != -1) :
+            if (beeninhash == 1 and string.find(splitted_sentence, '#') != -1) :
                 if semicolon == 1 :
                     with_semicolon = 0
-            if (regex.search('#',splitted_sentence) != -1 and regex.search('\n',splitted_sentence) == -1) :
+            if (string.find(splitted_sentence, '#') != -1 and string.find(splitted_sentence, '\n') == -1) :
                 concatenate = 1
                 temp_sentence = splitted_sentence
             else :
                 temp_sentence = ''
 
-        if regex.search('#',splitted_sentence) != -1 :
-            if regex.search('\(.\)*\(#\)[^;]*\(.\)\([^\n\t ]\)',line) != -1 :
-                if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*#.',splitted_sentence) != -1 :
-                    if beeninhash == 0 :
-                        concatenate = 1
-                        temp_sentence = splitted_sentence
-                        semicolon = 1
-                    beeninhash = 1
-
-        if regex.search('"',splitted_sentence) != -1 :
-            if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*$',splitted_sentence) == -1 :
-                temp_sentence = splitted_sentence
+        if string.find(splitted_sentence, '#') != -1 and \
+           re.search('.*#[^;]*.[^\n\t ]',line) is not None and \
+           re_hash.search(splitted_sentence) is not None:
+            if beeninhash == 0 :
                 concatenate = 1
+                temp_sentence = splitted_sentence
                 semicolon = 1
+            beeninhash = 1
 
-        if regex.search('#',splitted_sentence) == -1 :
+        if string.find(splitted_sentence, '"') != -1 and \
+           re_mquoted_string_only.search(splitted_sentence) is None:
+            temp_sentence = splitted_sentence
+            concatenate = 1
+            semicolon = 1
+
+        if string.find(splitted_sentence, '#') == -1 :
 #                       if (with_semicolon == 0 and
-            if (regex.search('\n',splitted_sentence) != -1 and splitted_sentence!='\n') :
-                if (regex.search('{',splitted_sentence) == -1 and regex.search('}',splitted_sentence) == -1) :
+            if string.find(splitted_sentence, '\n') != -1 and splitted_sentence!='\n':
+                if string.find(splitted_sentence,'{') == -1 and string.find(splitted_sentence,'}') == -1:
                     temp_sentence = splitted_sentence
-                    if regex.search('\n',temp_sentence) != -1 :
+                    if string.find(temp_sentence,'\n') != -1 :
                         t_sentence = string.split(splitted_sentence,"\n")
                         temp_sentence = t_sentence[0]
                     concatenate = 1
@@ -136,7 +147,7 @@ for line in input_fil.readlines() :
         if (splitted_sentence!='\n' and concatenate == 0) :
             beeninhash = 0
             concatenate = 0
-            if regex.search('#',temp_sentence) == -1 :
+            if string.find(temp_sentence,'#') == -1 :
                 flag = 1
                 cnt = 0
                 for j in splitted_sentence :
@@ -148,7 +159,7 @@ for line in input_fil.readlines() :
                         break
             if flag == 0 :
                 if with_semicolon == 1 :
-                    if (first_time_in_loop == 1 or regex.search('\n',splitted_sentence) == -1 or regex.search('#',splitted_sentence) != -1) :
+                    if first_time_in_loop == 1 or string.find(splitted_sentence,'\n') == -1 or string.find(splitted_sentence,'#') != -1:
                         line1 = splitted_sentence + ';\n'
                 else :
                     line1 = splitted_sentence
@@ -168,10 +179,10 @@ for line in input_fil.readlines() :
                         if line2[temp] == ' ' or line2[temp] == '\n' :
                             line2=line2[0:temp]
                             break
-                    if regex.search('\<'+line2+'\>',line1) != -1 :
-                        if regex.search('#',line1) == -1 :
+                    if re.search(r'\b'+line2+r'\b',line1) is not None:
+                        if string.find(line1,'#') == -1 :
                             found = 1
-#                                                       if (line2 !='join' or ( line2 == 'join' and regex.search('\<' + 'semijoin' + '\>',splitted_sentence) == -1)) :
+##                            if (line2 !='join' or ( line2 == 'join' and re.search(r'\b' + 'semijoin' + r'\b',splitted_sentence) == -1)) :
                             if prev_line2!='' :
                                 multiple = 1
                             if multiple == 0 :
@@ -186,8 +197,8 @@ for line in input_fil.readlines() :
                             prev_line2 = line2
 
                 if found == 1 :
-                    if regex.search('^[^"\']*\(\("\([^"\]\|[\]"\|[\][^"]\)*"\|\'\([^\']\|[\].\)\'\)[^"\']*\)*}.',line1) == -1 :
-                        bra_place = regex.search('{',line1)
+                    if re_clbracket.search(line1) is None:
+                        bra_place = string.find(line1,'{')
                         if bra_place != -1 :
                             temp_line1 = line1[0:bra_place+1]
                             line1 = line1[bra_place+1:]
