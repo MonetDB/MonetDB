@@ -55,8 +55,8 @@ use "mal/inspect";
 use "mal/optimizer";
 use "mal/chopper";
 use "mal/transaction";
-use "sql/sql_server";
-use "sql/sql";
+#use "sql/sql_server";
+#use "sql/sql";
 
 @-
 In practice, we have to introduce different startup for each
