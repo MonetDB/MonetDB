@@ -254,14 +254,9 @@ void SQLsetDebugger(Client c)
 {
 	InstrPtr q;
         mvc *m;
-        m = ((backend*)c->state[PARSER])->mvc;
+        m = ((mvc*)c->state[OPTIMIZE]);
 
-        if(m == 0) return;
-        printf("SQL debugger %d\n",m->debug);
-        if( m->debug == 0) return;
-	q= newInstruction(ASSIGNsymbol);
-	functionId(q)= GDKstrdup("showFunction");
-	pushInstruction(c->curprg->def,q);
+        if(m == 0 || m->debug == 0) return;
 	q= newInstruction(ASSIGNsymbol);
 	functionId(q)= GDKstrdup("mdb");
 	q= pushArgument(c->curprg->def,q,
@@ -308,7 +303,6 @@ str SQLparser(Client c) {
 
         if (!m->trans)
                 mvc_trans(m);
-    printf("SQL debugger: %d\n",m->debug);
 
         if (explainPerformance())
 		T0 = GDKusec();
