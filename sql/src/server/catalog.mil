@@ -1,12 +1,15 @@
 module(sqlserver);
 module(str);
 module(sys);
+module(uchr);
 
 types_init(1);
 
 sql_type("OID", "oid", "");
 
 sql_type("BOOL", "bit", "");
+
+sql_type("UBYTE", "uchr", "");
 
 sql_type("VARCHAR(1)", "chr", "");
 sql_type("CHARACTER", "str", "VARCHAR(1)");
