@@ -734,24 +734,55 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
 @
 @= inner_loop_descendant
 {
-    int s = 0;
-    /* loop over all iters on the stack */
-    for ( s = 0 ; s < stack_top ; s++ ) {
-        oid idx = stack[s].iter_idx;
-        oid iter = idx + fst_iter;
-        oid p = pre;
-        size_t grow = (@1 - pre) + 1;
-        BUN dst = NULL;
-        size_t bunsize = BUNsize(tmp_res[idx]);
+    /* first, we collect the results for first iter on the stack,
+       then, we copy these results to the remaining iters on the stack */
 
-        /* check, if result buffer is big enough; otherwise extend it */
-        PFll_check_BAT_capacity(tmp_res[idx], grow);
-        /* iterate over all descendants until the next limit is reached
-           (either descendant ctx node or end of scope)
-           and insert their pre value into the results */
-        for ( p = pre , dst = BUNlast(tmp_res[idx]) ; p <= @1 ; p++ , dst += bunsize ) {
+    size_t grow = (@1 - pre) + 1;
+    int s = 0;
+    oid idx0 = stack[s].iter_idx, idx = idx0;
+    oid iter = idx + fst_iter;
+    oid p = pre;
+    BUN fst_res = NULL, cur_res = NULL, lst_res = NULL, dst = NULL;
+    size_t bunsize0 = BUNsize(tmp_res[idx]), bunsize = BUNsize(tmp_res[idx]);
+
+    /* check, if result buffer is big enough; otherwise extend it */
+    PFll_check_BAT_capacity(tmp_res[idx], grow);
+    
+    /* copy (see below) must start here */
+    fst_res = BUNlast(tmp_res[idx]);
+
+    /* iterate over all descendants until the next limit is reached
+       (either descendant ctx node or end of scope)
+       and insert their pre value into the results */
+    dst = BUNlast(tmp_res[idx]); 
+    for ( p = pre ; p <= @1 ; p++ ) {
+        /* if ( ANY TEST ) {  */
             *(oid*)BUNhloc(tmp_res[idx], dst) = iter;
             *(oid*)BUNtloc(tmp_res[idx], dst) = p;
+            dst += bunsize;
+        /* } */
+    }
+    tmp_res[idx]->batBuns->free = dst - tmp_res[idx]->batBuns->base;
+    
+    /* copy (see below) must end here */
+    lst_res = BUNlast(tmp_res[idx]);
+
+    /* now loop over all remaining iters on the stack, ... */
+    for ( s = 1 ; s < stack_top ; s++ ) {
+        idx = stack[s].iter_idx;
+        iter = idx + fst_iter;
+        p = pre;
+        bunsize = BUNsize(tmp_res[idx]);
+
+        /* (check, if result buffer is big enough; otherwise extend it) */
+        PFll_check_BAT_capacity(tmp_res[idx], grow);
+
+        /* ... and copy the (new) results from the first iter */
+        dst = BUNlast(tmp_res[idx]);
+        for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize0 ) {
+            *(oid*)BUNhloc(tmp_res[idx], dst) = iter;
+            *(oid*)BUNtloc(tmp_res[idx], dst) = *(oid*)BUNtloc(tmp_res[idx0], cur_res);
+            dst += bunsize;
         }
         tmp_res[idx]->batBuns->free = dst - tmp_res[idx]->batBuns->base;
     }
