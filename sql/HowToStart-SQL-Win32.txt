@@ -6,7 +6,7 @@ Windows system (NT, 2000, XP), and that you are planning to compile and
 install the MonetDB SQL front end on the same system.
 For compilation and installation on a Unix system (e.g., Linux, IRIX,
 Solaris, AIX, MacOS X/Darwin, or CYGWIN) see the instructions in the
-file 'HowToStart'.
+file 'HowToStart-SQL'.
 
 
 Prerequisites:
@@ -70,7 +70,7 @@ Microsoft Visual C++
 	still compile on Windows using the Cygnus Posix-emulation
 	environment "CYGWIN" (http://www.cygwin.com). In that case, you
 	should follow the standard instructions in the file
-	'HowToStart'. Alternatively, it might be possible to use the
+	'HowToStart-SQL'. Alternatively, it might be possible to use the
 	free WIN32-GNU compilers (http://www.mingw.org/index.shtml) as a
 	drop-in replacement for the Microsoft tools, but we have not
 	tried this yet.

@@ -6,7 +6,7 @@ This document assumes that you have installed MonetDB on a Unix system
 you are planning to compile and install the MonetDB SQL front end on 
 the same system.
 For compilation and installation on a native Windows system (NT, 2000, XP)
-see the instructions in the file 'HowToStart-Win32.txt'.
+see the instructions in the file 'HowToStart-SQL-Win32.txt'.
 
 
 Prerequisites:
