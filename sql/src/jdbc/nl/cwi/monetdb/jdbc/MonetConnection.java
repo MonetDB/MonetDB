@@ -569,8 +569,8 @@ public class MonetConnection implements Connection {
 
 	/**
 	 * Changes the reply size of the server to the given value. If the given
-	 * is the same as the current value, the call is ignored and this method
-	 * will immediately return.
+	 * value is the same as the current value, the call is ignored and this
+	 * method will immediately return.
 	 *
 	 * @param size the new reply size to use
 	 * @throws SQLException if a database (access) error occurs

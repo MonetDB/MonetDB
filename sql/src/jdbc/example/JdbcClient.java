@@ -397,33 +397,40 @@ public class JdbcClient {
 					if (qp.isComplete()) {
 						try {
 							// execute the query, let the driver decide what type it is
-							if (stmt.execute(query)) {
-								// we have a ResultSet, print it
-								ResultSet rs = stmt.getResultSet();
-								ResultSetMetaData md = rs.getMetaData();
-								int col = 1;
-								out.print("+----------\n| ");
-								for (; col < md.getColumnCount(); col++) {
-									System.out.print(md.getColumnName(col) + "\t");
-								}
-								out.println(md.getColumnName(col));
-								out.println("+----------");
-								int count = 0;
-								for (; rs.next(); count++) {
-									col = 1;
-									out.print("| ");
+							boolean nextRslt = stmt.execute(query);
+							do {
+								if (nextRslt) {
+									// we have a ResultSet, print it
+									ResultSet rs = stmt.getResultSet();
+									ResultSetMetaData md = rs.getMetaData();
+									int col = 1;
+									out.print("+----------\n| ");
 									for (; col < md.getColumnCount(); col++) {
-										out.print(rs.getString(col) + "\t");
+										System.out.print(md.getColumnName(col) + "\t");
 									}
-									out.println(rs.getString(col));
+									out.println(md.getColumnName(col));
+									out.println("+----------");
+									int count = 0;
+									for (; rs.next(); count++) {
+										col = 1;
+										out.print("| ");
+										for (; col < md.getColumnCount(); col++) {
+											out.print(rs.getString(col) + "\t");
+										}
+										out.println(rs.getString(col));
+									}
+									out.println("+----------");
+									out.println(count + " rows");
+									rs.close();
+								} else {
+									// we have an update count
+									out.println("affected rows\n-------------\n" + stmt.getUpdateCount());
 								}
-								out.println("+----------");
-								out.println(count + " rows");
-								rs.close();
-							} else {
-								// we have an update count
-								out.println("affected rows\n-------------\n" + stmt.getUpdateCount());
-							}
+
+								nextRslt = stmt.getMoreResults();
+								out.println();
+								out.flush();
+							} while (nextRslt || (stmt.getUpdateCount() != -1));
 						} catch (SQLException e) {
 							System.err.println("Error on line " + i + ": " + e.getMessage());
 							System.err.println("Executed query: " + query);

@@ -44,7 +44,7 @@ class MonetSocketBlockMode extends MonetSocket {
 	private ByteBuffer outputBuffer;
 
 	/** The maximum size of the chunks we fetch data from the stream with */
-	private final static int capacity = 1024;
+	private final static int capacity = 2048;
 
 	MonetSocketBlockMode(String host, int port) throws IOException {
 		super(new Socket(host, port));

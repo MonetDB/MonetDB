@@ -21,12 +21,13 @@ import java.text.SimpleDateFormat;
  * iterate through the result set.
  * <br /><br />
  * The current state of this ResultSet is that it supports positioning in the
- * result set, absolute and relative. Due to the way the Mapi protocol works
- * there is no performance difference between FORWARD_ONLY or scrollable in
- * both directions.
+ * result set, absolute and relative. A slight performance difference between
+ * FORWARD_ONLY or result sets scrollable in both directions can be noticed as
+ * for FORWARD_ONLY result sets the memory usage will be likely lower for large
+ * result sets.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.3 (beta release)
+ * @version 0.4 (beta release)
  */
 public class MonetResultSet implements ResultSet {
 	/** The last column read using some getXXX function */
@@ -34,14 +35,12 @@ public class MonetResultSet implements ResultSet {
 	// the following have default access modifier for the MonetVirtualResultSet
 	/** The current line of the buffer split in columns */
 	String[] result;
-	/** Whether this ResultSet is closed or not */
-	boolean closed = false;
 	/** The current position of the cursor for this ResultSet object */
 	int curRow = 0;
 
 	// a blank final is immutable once assigned in the constructor
-	/** A Statement's CacheThread to retrieve lines from */
-	private final MonetStatement.CacheThread cache;
+	/** A Header to retrieve lines from */
+	private final MonetStatement.Header header;
 	/** The names of the columns in this ResultSet */
 	private final String[] columns;
 	/** The MonetDB types of the columns in this ResultSet */
@@ -68,75 +67,31 @@ public class MonetResultSet implements ResultSet {
 	 * @param query a query String to execute
 	 * @param resultSetType the type of resultset: forward only, etc.
 	 * @param resultSetConcurrency the concurrency mode
-	 * @throws IOException if communicating with monet failed
+	 * @throws IllegalArgumentException if the given arguments are incorrect
 	 * @throws SQLException is a protocol error occurs
 	 */
 	MonetResultSet(
 		Statement statement,
-		String query,
+		MonetStatement.Header header,
 		int resultSetType,
 		int resultSetConcurrency)
-		throws IllegalArgumentException, IOException, SQLException
+		throws IllegalArgumentException, SQLException
 	{
-		if (statement == null ||
-			!(query != null && !(query = query.trim()).equals(""))
-		)
-			throw new IllegalArgumentException("Statement or query is null or empty!");
+		if (statement == null || header == null)
+			throw new IllegalArgumentException("Statement or Header is null or empty!");
 
 		this.statement = statement;
 		this.type = resultSetType;
 		this.concurrency = resultSetConcurrency;
-		this.cache = ((MonetStatement)statement).cache;
+		this.header = header;
 		// well there is only one supported concurrency, so we don't have to
 		// bother about that
 
-		// set the reply size for this query. If it is set to 0 we get a
-		// prompt after the server sent it's header
-		int maxRows = statement.getMaxRows();
-		int cacheSize = statement.getFetchSize();
-		((MonetConnection)statement.getConnection()).setReplySize(
-			maxRows != 0 ? Math.min(maxRows, cacheSize) : cacheSize);
-
-		// check the query (make sure it ends with ';' and escape newlines)
-		if (!query.endsWith(";")) query += ";";
-
-		// let the cache thread do it's work
-		// use lowercase 's' in order to tell the server we don't want a
-		// continuation prompt if it needs more to complete the query
-		cache.newResult("s" + query);
-		Thread.yield();
-
-		// read header info (wait for it if it's not there)
-		Map headers = ((MonetStatement)statement).headers;
-		synchronized(headers) {
-			while (headers.size() == 0) {
-				try {
-					headers.wait();
-				} catch(InterruptedException e) {
-					// shit!
-					throw new SQLException("Interruption while waiting for headers: " + e.getMessage());
-				}
-			}
-		}
-
-		// check if there was an error
-		synchronized(cache) {
-			if (cache.hasError()) {
-				throw new SQLException(cache.getError());
-			}
-		}
-
-		if (headers.get("emptyheader") != null) {
-			columns = new String[0];
-			types = null;
-			tableID = null;
-			tupleCount = -1;
-		} else {
-			columns = (String[])headers.get("name");
-			types = (String[])headers.get("type");
-			tableID = ((MonetStatement)statement).resultID;
-			tupleCount = ((MonetStatement)statement).tupleCount;
-		}
+		// throws SQLException on getters of Header
+		columns = header.getNames();
+		types = header.getTypes();
+		tableID = "" + header.getID();
+		tupleCount = header.getTupleCount();
 
 		// create result array
 		result = new String[columns.length];
@@ -173,7 +128,7 @@ public class MonetResultSet implements ResultSet {
 			throw new IllegalArgumentException("Cannot create a ResultSet which is not associated to a Statement!");
 		}
 
-		this.cache = null;
+		this.header = null;
 		this.tableID = null;
 		this.statement = stmt;
 
@@ -215,7 +170,7 @@ public class MonetResultSet implements ResultSet {
 			new SQLException("(Absolute) positioning not allowed on forward " +
 				" only result sets!");
 
-		if (closed) throw new SQLException("ResultSet is closed!");
+		if (header.isClosed()) throw new SQLException("ResultSet is closed!");
 
 		// first calculate what the JDBC row is
 		if (row < 0) {
@@ -226,7 +181,7 @@ public class MonetResultSet implements ResultSet {
 		if (row < 0) row = 0;	// before first
 		else if (row > tupleCount + 1) row = tupleCount + 1;	// after last
 
-		String tmpLine = cache.getLine(row - 1);
+		String tmpLine = header.getLine(row - 1);
 
 		// store it
 		curRow = row;
@@ -391,18 +346,8 @@ public class MonetResultSet implements ResultSet {
 	 * automatically closed.
 	 */
 	public void close() {
-		if (!closed) {
-			closed = true;
-			try {
-				// send command to server indicating we're done with this
-				// result only if we had an ID in the header... Currently
-				// on updates, inserts and deletes there is no header at all
-				if (tableID != null) {
-					((MonetConnection)(statement.getConnection())).sendIndependantCommand("Xclose " + tableID);
-				}
-			} catch (SQLException e) {
-				// too bad, we're probably closed already
-			}
+		if (!header.isClosed()) {
+			header.close();
 		}
 	}
 
@@ -1524,7 +1469,7 @@ public class MonetResultSet implements ResultSet {
 	 *         called on a closed connection
 	 */
 	public SQLWarning getWarnings() throws SQLException {
-		if (closed) throw new SQLException("Cannot call on closed ResultSet");
+		if (header.isClosed()) throw new SQLException("Cannot call on closed ResultSet");
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
