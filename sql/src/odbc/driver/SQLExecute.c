@@ -70,12 +70,10 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 	 * send prepared query to server
      **************************/
 
-	printf("before sqlexecute\n");
 	res =  sqlexecute( 
 			&((DRVDBC*)hStmt->hDbc)->hDbcExtras->lc,
 			(char*)hStmt->pszQuery
 		); 
-	printf("after sqlexecute\n");
 
 	if (res){
 	    int nr = 1;
@@ -83,7 +81,6 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 
 	    sql->out->flush( sql->out );
 	}
-	printf("done writing\n");
 
     /**************************
 	 * allocate memory for columns headers and result data (row 0 is column header while col 0 is reserved for bookmarks)
@@ -95,9 +92,18 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 		hStmt->hStmtExtras->nCols = nCols;
 	}
 	if (res && res->type == st_output){
-		list *l = res->op1.stval->op1.lval;
-		node *n = l->h;
+		list *l;
+		node *n;
+
 		char *buf = readblock( rs ), *start = buf, *m = buf;
+
+		if (res->op1.stval->type == st_order){
+			l = res->op2.stval->op1.lval;
+		} else {
+			l = res->op1.stval->op1.lval;
+		}
+
+		n = l->h;
 
 		nRows = strtol(m,&m,10);
 		m++;
@@ -111,17 +117,17 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 			column *col = head_column(n->data.stval);
 			COLUMNHDR* cHdr = NEW(COLUMNHDR);
 			(hStmt->hStmtExtras->aResults[nColumn]) = (char*)cHdr;
-			cHdr->pszSQL_DESC_BASE_COLUMN_NAME = strdup(col->name);
-			cHdr->pszSQL_DESC_BASE_TABLE_NAME = strdup(col->table->name);
+			cHdr->pszSQL_DESC_BASE_COLUMN_NAME = strdup("no colname jet");
+			cHdr->pszSQL_DESC_BASE_TABLE_NAME = strdup("table name");
 			cHdr->pszSQL_DESC_CATALOG_NAME = strdup("catalog");
 			cHdr->pszSQL_DESC_LABEL = strdup(column_name(n->data.stval));
 			cHdr->pszSQL_DESC_LITERAL_PREFIX = strdup("pre");
 			cHdr->pszSQL_DESC_LITERAL_SUFFIX = strdup("suf");
-			cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup(col->tpe->name);
+			cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup("str");
 			cHdr->pszSQL_DESC_NAME = strdup("name");
 			cHdr->pszSQL_DESC_SCHEMA_NAME = strdup("schema");
 			cHdr->pszSQL_DESC_TABLE_NAME = strdup("table");
-			cHdr->pszSQL_DESC_TYPE_NAME = strdup(col->tpe->sqlname);
+			cHdr->pszSQL_DESC_TYPE_NAME = strdup("str");
 			n = n->next;
 		}
 
