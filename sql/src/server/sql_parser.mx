@@ -26,6 +26,13 @@
 #include "sql_statement.h"
 #include "sql_trans.h"
 
+/* the next define makes the parser output more specific error messages,
+ * instead of only a dull 'parse error' */
+#define YYERROR_VERBOSE 1
+/* enable this to get an idea of what the parser is doing on stdout
+#define YYDEBUG 1
+*/
+
 typedef enum tokens {
 	SQL_CREATE_SCHEMA,
 	SQL_CREATE_TABLE,
@@ -204,6 +211,7 @@ sql_export int sqlparse(void *);
 }
 %{
 extern int sqllex( YYSTYPE *yylval, void *m );
+int yydebug=1;
 %}
 
 	/* symbolic tokens */
@@ -548,7 +556,7 @@ declare:
 	;
 
 set:
-	SET ident '=' scalar_exp
+    SET ident '=' scalar_exp
 			{ dlist *l = dlist_create();
 			dlist_append_string(l, $2 );
 			dlist_append_symbol(l, $4 );
@@ -1314,19 +1322,16 @@ _transaction_stmt:
 			dlist_append_int(dlist_create(), $3), $4 )); }
  |  START TRANSACTION transaction_mode_list
 		{ $$ = _symbol_create_int( TR_START, $3); }
- |  SET local TRANSACTION transaction_mode_list
-		{ $$ = _symbol_create_int( TR_MODE, $4); }
  |  SET AUTO_COMMIT '=' scalar_exp
 		{ dlist *l = dlist_create();
 			dlist_append_string(l, _strdup("auto_commit") );
 			dlist_append_symbol(l, $4 );
 			$$ = _symbol_create_list( SQL_SET, l);
 		}
- ;
-
-local:
-  /* empty */
- |	LOCAL
+ |  SET LOCAL TRANSACTION transaction_mode_list
+		{ $$ = _symbol_create_int( TR_MODE, $4); }
+ |  SET TRANSACTION transaction_mode_list
+		{ $$ = _symbol_create_int( TR_MODE, $3); }
  ;
 
 transaction_mode_list:
@@ -1768,25 +1773,22 @@ table_ref:
 				  	dlist_append_symbol($1->data.lval, $2);
 				  }
 				}
- |  select_with_parens error
+ |  select_with_parens
 				{ $$ = NULL;
-				  symbol_destroy($1);
-				  yyerror("Subquery table reference needs alias");
+				  yyerror("subquery table reference needs alias, use AS xxx");
 				  YYABORT;
 				}
  |  joined_table 		{ $$ = $1;
 				  dlist_append_symbol($1->data.lval, NULL); }
+/* the following rule seems to be redundant ?
  |  '(' joined_table ')' table_name
 				{ $$ = $2;
 				  dlist_append_symbol($2->data.lval, $4); }
+*/
  ;
 
 table_name:
-	/* empty */
-				{ $$ = NULL;
-				  yyerror("name required, use ... AS xxx");
-				  YYABORT; }
- |   AS ident '(' name_commalist ')'
+    AS ident '(' name_commalist ')'
 				{ dlist *l = dlist_create();
 		  		  dlist_append_string(l, $2);
 		  	  	  dlist_append_list(l, $4);
@@ -2519,7 +2521,7 @@ literal:
 		  if (!t || !$$) {
 			char buf[BUFSIZ];
 
-			snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+			snprintf(buf, BUFSIZ, "type (%s) unknown", $1);
 			yyerror(buf);
 			_DELETE($1);
 			YYABORT;
@@ -2717,7 +2719,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "Scale (%d) should be less than precision (%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "scale (%d) should be less than precision (%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
@@ -2733,7 +2735,7 @@ data_type:
 				$$ = sql_bind_subtype("double", $3, 0);
 			  } else {
 				char buf[BUFSIZ];
-				snprintf(buf, BUFSIZ, "Number of digits for FLOAT values should be between 1 and 53");
+				snprintf(buf, BUFSIZ, "number of digits for FLOAT values should be between 1 and 53");
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
@@ -2743,7 +2745,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "Precision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
@@ -2753,7 +2755,7 @@ data_type:
 				$$ = sql_bind_subtype("double", $3, $5);
 			  } else {
 				char buf[BUFSIZ];
-				snprintf(buf, BUFSIZ, "Number of digits for FLOAT values should be between 1 and 53");
+				snprintf(buf, BUFSIZ, "number of digits for FLOAT values should be between 1 and 53");
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
@@ -2774,7 +2776,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "Precision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
@@ -2787,7 +2789,7 @@ data_type:
 			  if (!t) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+				snprintf(buf, BUFSIZ, "type (%s) unknown", $1);
 				yyerror(buf);
 				_DELETE($1);
 				$$ = NULL;
@@ -2804,7 +2806,7 @@ data_type:
 			  if (!t) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+				snprintf(buf, BUFSIZ, "type (%s) unknown", $1);
 				yyerror(buf);
 				_DELETE($1);
 				$$ = NULL;
@@ -2823,7 +2825,7 @@ type_alias:
 	  	if (!t) {
 			char buf[BUFSIZ];
 
-			snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+			snprintf(buf, BUFSIZ, "type (%s) unknown", $1);
 			yyerror(buf);
 			_DELETE($1);
 			$$ = NULL;
@@ -2902,7 +2904,7 @@ intval:
 		  if (!(v = sql_get_var(m, name))) {
 			char buf[BUFSIZ];
 
-			snprintf(buf, BUFSIZ, "Constant (%s) unknown", $1);
+			snprintf(buf, BUFSIZ, "constant (%s) unknown", $1);
 			yyerror(buf);
 			_DELETE($1);
 			$$ = 0;
@@ -2918,7 +2920,7 @@ intval:
 		  } else {
 			char buf[BUFSIZ];
 
-			snprintf(buf, BUFSIZ, "Constant (%s) has wrong type (number expected)", $1);
+			snprintf(buf, BUFSIZ, "constant (%s) has wrong type (number expected)", $1);
 			yyerror(buf);
 			$$ = 0;
 			YYABORT;
@@ -3180,7 +3182,7 @@ stmt *sql_error( mvc * sql, int error_code, char *format, ... )
 int parse_error(mvc * c, char *err)
 {
 	(void)sql_error( c, 4,
-		 "!ERROR %s at token (%d) in statement: %s\n",
-		 err, c->scanner.yyval, QUERY(c->scanner));
+		 "!%s in: \"%s\"\n",
+		 err, QUERY(c->scanner));
 	return 1;
 }
