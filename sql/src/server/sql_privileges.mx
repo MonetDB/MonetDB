@@ -56,9 +56,7 @@ sql_export int sql_create_privileges(mvc *m, sql_schema *s);
 
 #endif /*_SQL_PRIV_H_ */
 @c
-#include <bat.h>
 #include "sql_privileges.h"
-#include "sql_bm.h"
 #include "sql_statement.h"
 
 @c

@@ -84,7 +84,6 @@ sql_export int sql_session(mvc *sql);
 #endif /* _SQL_ENV_H_ */
 @c
 #include "sql_env.h"
-#include "sql_bm.h"
 #include "sql_scope.h"
 #include "sql_select.h"
 #include "sql_updates.h"

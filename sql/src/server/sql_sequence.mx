@@ -33,7 +33,6 @@ sql_export stmt *sequences(mvc * sql, symbol * s);
 @c
 
 #include "sql_sequence.h"
-#include "sql_bm.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 

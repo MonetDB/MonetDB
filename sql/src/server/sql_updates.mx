@@ -29,7 +29,6 @@
 #include "sql_symbol.h"
 #include "sql_scope.h"
 #include "sql_statement.h"
-#include "sql_bm.h"
 
 sql_export stmt *updates( mvc * sql, symbol * sym);
 
