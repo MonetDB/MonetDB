@@ -50,7 +50,7 @@ print "\nstart simple Monet MIL interaction\n";
   $sth= $dbh->prepare("( xyz 1);\n");
   eval { $sth->execute }; print "ERROR REPORTED: $@" if $@;
 
- $dbh->do("b:=new(int,int);");
+ $dbh->do("var b:=new(int,int);");
  $dbh->do("insert(b,3,7);");
 #|| die "Execution Error:\n".$dbh->errstr;
 #
