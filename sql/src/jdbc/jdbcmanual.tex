@@ -5,18 +5,17 @@
 The most obvious way to connect to a data source using the Java programming language
 is by making use of the in Java defined JDBC framework.
 
-MonetDB has a native Java JDBC driver which allows use of the MonetDB database in
+MonetDB has a native Java JDBC driver type 4 which allows use of the MonetDB database in
 a Java alike way.
 
-This release is far from a complete implementation of the JDBC interface. This
-implementation also doesn't follow the JDBC specification at all points. If you make
-extensive use of JDBC semantics an rely on many of it's defined behaviours, please
+This release is not a complete implementation of the JDBC interface. If you make
+extensive use of JDBC semantics and rely on many of it features, please
 read the release notes which are to be found in the \texttt{src/jdbc} directory of the sql
 CVS tree.
 
-This document will quickly describe how to use the MonetDB JDBC driver in
-Java applications. A familiarity with the Java JDBC API is required to fully understand
-this document. Please note that you can find the complete JDBC API on Sun's web site
+This document will give a short description how to use the MonetDB JDBC driver in
+Java applications.  A familiarity with the Java JDBC API is required to fully understand
+this document.  Please note that you can find the complete JDBC API on Sun's web site
 \texttt{http://java.sun.com/}.
 
 \subsection{Requirements}
@@ -74,7 +73,7 @@ Loading the driver in your Java program requires two lines of code, which can be
 Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/notused", "monetdb", "monetdb");
 \end{verbatim}
-The first line makes sure the Java ClassLoader has initialized the Driver class of the MonetDB
+The first line makes sure the Java ClassLoader has initialized (and loaded) the Driver class of the MonetDB
 JDBC package, so it is registered with the DriverManager. The second line requests a Connection
 object from the DriverManager which is suitable for MonetDB.
 
