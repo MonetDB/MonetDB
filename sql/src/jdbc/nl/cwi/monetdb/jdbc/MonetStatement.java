@@ -480,7 +480,7 @@ public class MonetStatement implements Statement {
 		private final Pattern splitPattern = Pattern.compile(",\t");
 		
 		private int curBlock;
-		private int[] maxLine = new int[1];
+		private int[] maxLine = new int[2];
 		private int cacheSize;
 		private String query = null;
 		private String line[];	// the actual cache
@@ -677,7 +677,7 @@ public class MonetStatement implements Statement {
 
 						synchronized(maxLine) {
 							line[maxLine[0]++] = tmpLine;
-							maxLine.notify();
+							if (maxLine[0] >= maxLine[1]) maxLine.notify();
 						}
 					} else if (monet.getLineType() == MonetSocket.EMPTY) {
 						// empty, will mean Monet stopped somehow (crash?)
@@ -775,7 +775,8 @@ public class MonetStatement implements Statement {
 					if (hasError()) throw new SQLException(getError());
 					// wait for the cache to be filled
 					try {
-						maxLine.wait(); //15000);	// timeout in 15 secs
+						maxLine[1] = blockLine;
+						maxLine.wait();
 					} catch (InterruptedException e) {
 						// hmm, someone woke us up! No good!
 						throw new SQLException("Timeout expired, got tired of waiting...");

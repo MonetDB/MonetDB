@@ -25,7 +25,7 @@ import java.net.*;
 class MonetSocket {
 	private Socket con;
 	private BufferedReader fromMonet;
-	private DataOutputStream toMonet;
+	private BufferedWriter toMonet;
 	
 	private boolean debug = false;
 	private FileWriter log;
@@ -49,7 +49,8 @@ class MonetSocket {
 		con = new Socket(host, port);
 		fromMonet = new BufferedReader(
 			new InputStreamReader(con.getInputStream()));
-		toMonet = new DataOutputStream(con.getOutputStream());
+		toMonet = new BufferedWriter(
+			new OutputStreamWriter(con.getOutputStream()));
 	}
 	
 	/**
@@ -73,7 +74,7 @@ class MonetSocket {
 	 * @see flush(), writeln()
 	 */
 	public synchronized void write(String data) throws IOException {
-		toMonet.writeBytes(data);
+		toMonet.write(data);
 		// reset the lineType variable, since we've sent data now and the last
 		// line isn't valid anymore
 		lineType = EMPTY;
