@@ -1064,6 +1064,11 @@ int BBPincref(bat i, int logical) {
 	MT_Id pid = BBP_getpid();
 	int refs = 0;
 
+	if (i == bat_nil) {
+		/* Stefan: May this happen? Or should we better call GDKerror(), here? */
+		/* GDKerror("BBPincref() called with bat_nil!\n"); */
+		return refs;
+	}
 	if (i < 0) i = -i;
 	if (i < BBPsize && BBP_logical(i)) { /* no BBPcheck as BBPresurrect should not provoke an GDKerror */
 		for (;;) {
