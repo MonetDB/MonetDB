@@ -22,7 +22,7 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 EXTRA_DIST = Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in \
-	     MkillUsers.in Mlimit.c prof.py Mprofile-commands.lst
+	     MkillUsers.in prof.py Mprofile-commands.lst
 
 INCLUDES = ../common
 
