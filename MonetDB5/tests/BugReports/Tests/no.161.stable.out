@@ -168,7 +168,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("test_outer(\"chr\");");	# 48 MILline ($88:void)<-($89:str)
     ha_a := Admin.test_outer("chr");	# 49  (ha_a:void)<-($91:str)
     mil.line("test_outer(\"chr\");");	# 50 MILline ($92:void)<-($89:str)
-    ia_a := Admin.test_outer("chr");	# 51  (ia_a:str)<-($91:str)
+    ia_a := Admin.test_outer("chr");	# 51  (ia_a:void)<-($91:str)
     mil.line("quit();");	# 52 MILline ($94:void)<-($95:str)
     ja_a := clients.quit();	# 53 CLTquit (ja_a:void)
 end main;	# 54  
