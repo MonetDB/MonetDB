@@ -346,6 +346,12 @@ if test "x$enable_warning" = xyes; then
   if test "x$GCC" = xyes; then
     CFLAGS="$CFLAGS -Wall -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
     CXXFLAGS="$CXXFLAGS -Wall -ansi"
+  else
+    case "$host_os" in
+    linux*) CFLAGS="$CFLAGS -w2 -Wall -ansi -c99-"
+            CXXFLAGS="$CXXFLAGS -w2 -Wall -ansi -c99-"
+            ;;
+    esac
   fi
 fi
 
