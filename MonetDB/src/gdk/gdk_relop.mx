@@ -583,7 +583,8 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
 BAT *BATjoin(BAT *l, BAT *r) {
-        int i, logr, logl, lsize, rsize, lfetch, rfetch, must_hash; 
+        int i, lsize, rsize, lfetch, rfetch, must_hash; 
+        lng logr, logl;
  
 	ERRORcheck(l == NULL, "BATjoin: invalid left operand"); 
 	ERRORcheck(r == NULL, "BATjoin: invalid right operand"); 
@@ -623,10 +624,14 @@ away and one input is ordered and the other is much smaller, we do nested
 loop binary search (both implemented by BATmergejoin).
 @c
 	if ((BATtordered(l)&BAThordered(r)&1) || (must_hash &&
-		  (((BATtordered(l)&1) && (BATcount(l) > logl*BATcount(r))) ||
-		   ((BAThordered(r)&1) && (BATcount(r) > logr*BATcount(l))))))
+		  (((BATtordered(l)&1) && ((lng)BATcount(l) > logl*(lng)BATcount(r))) ||
+		   ((BAThordered(r)&1) && ((lng)BATcount(r) > logr*(lng)BATcount(l))))))
 	{ 
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmergejoin(l,r);\n");
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BATtordered(l) = %d\n", BATtordered(l));
+		ALGODEBUG THRprintf(GDKout, "BATjoin: BAThordered(r) = %d\n", BAThordered(r));
+		ALGODEBUG THRprintf(GDKout, "BATjoin: logl: %lld , BATcount(r): %d\n", logl, BATcount(r));
+		ALGODEBUG THRprintf(GDKout, "BATjoin: logr: %lld , BATcount(l): %d\n", logr, BATcount(l));
 		return BATmergejoin(l,r);
 	}
 @-
