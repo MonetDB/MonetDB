@@ -14,7 +14,7 @@ Java(tm) interface.
 
 \begin{center}
 {\epsfxsize=0.55\textwidth
-\epsffile{monet.eps}\\
+\epsffile{monet.eps}
 \label{fig1}{\em Front-end/Back-end Architecture}}
 \end{center}
 
