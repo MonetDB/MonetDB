@@ -18,32 +18,35 @@
 
 MTSAFE
 
+# We compile against the standard interface, so no classpath needed
+CLASSPATH = ""
+
 java_Test_Cautocommit = {
-	DIR = build
+	DIR = pkglibdir/Tests
 	SOURCES = Test_Cautocommit.java
 }
 
 java_Test_Csavepoints = {
-	DIR = build
+	DIR = pkglibdir/Tests
 	SOURCES = Test_Csavepoints.java
 }
 
 java_Test_PStimedate = {
-	DIR = build
+	DIR = pkglibdir/Tests
 	SOURCES = Test_PStimedate.java
 }
 
 java_Test_Rbooleans = {
-	DIR = build
+	DIR = pkglibdir/Tests
 	SOURCES = Test_Rbooleans.java
 }
 
 java_Test_RSpositioning = {
-	DIR = build
+	DIR = pkglibdir/Tests
 	SOURCES = Test_RSpositioning.java
 }
 
 java_Test_Rtimedate = {
-	DIR = build
+	DIR = pkglibdir/Tests
 	SOURCES = Test_Rtimedate.java
 }
