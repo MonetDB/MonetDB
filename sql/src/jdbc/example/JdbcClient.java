@@ -445,9 +445,13 @@ public class JdbcClient {
 
 									out.println(count + " row" + (count != 1 ? "s" : ""));
 									rs.close();
-								} else if (aff >= 0) {
-									// we have an update count
-									out.println(aff + " affected row" + (aff != 1 ? "s" : ""));
+								} else if (aff != -1) {
+									if (aff == Statement.SUCCESS_NO_INFO) {
+										out.println("Operation successful");
+									} else {
+										// we have an update count
+										out.println(aff + " affected row" + (aff != 1 ? "s" : ""));
+									}
 								}
 
 								out.println();
