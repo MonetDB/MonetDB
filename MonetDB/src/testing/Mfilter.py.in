@@ -26,6 +26,10 @@ def Warn(THISFILE,TEXT) :
     sys.stderr.write("%s warning: %s\n" % (THISFILE,TEXT))
 ### Warn(THISFILE,TEXT) #
 
+def wlen(str) :
+    return len(string.join(string.split(str)))
+### wlen(str) #
+
 test = (
         re.compile( r"^module\(mprof\);$"                                            "|"
                     r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'   "|"
@@ -85,7 +89,7 @@ def mFilter (FILE, IGNORE) :
             oline = iline
             for i in -1, -2:
                 w = len(string.split(ftmp[i]))
-                c = len(ftmp[i])
+                c = wlen(ftmp[i])
                 il = il - 1
                 iw = iw - w
                 ic = ic - c
@@ -105,7 +109,7 @@ def mFilter (FILE, IGNORE) :
         for ln in oline, xline:
             if len(ln):
                 w = len(string.split(ln))
-                c = len(ln)
+                c = wlen(ln)
                 if ln != os.linesep  and  \
                    not re.match(IGNORE,ln, re.MULTILINE):
                     il = il + 1
