@@ -31,17 +31,33 @@ SQLSetDescRec(SQLHDESC hDescriptorHandle, SQLSMALLINT nRecordNumber,
 	if (!isValidDesc(desc))
 		return SQL_INVALID_HANDLE;
 
-	(void) nRecordNumber;	/* Stefan: unused!? */
-	(void) nType;		/* Stefan: unused!? */
-	(void) nSubType;	/* Stefan: unused!? */
-	(void) nLength;		/* Stefan: unused!? */
-	(void) nPrecision;	/* Stefan: unused!? */
-	(void) nScale;		/* Stefan: unused!? */
-	(void) pData;		/* Stefan: unused!? */
-	(void) pnStringLength;	/* Stefan: unused!? */
-	(void) pnIndicator;	/* Stefan: unused!? */
-
-	/* IM001: driver not capable */
-	addDescError(desc, "IM001", NULL, 0);
-	return SQL_ERROR;
+	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_TYPE,
+			     (SQLPOINTER) (ssize_t) nType, 0) == SQL_ERROR)
+		return SQL_ERROR;
+	if ((nType == SQL_DATETIME || nType == SQL_INTERVAL) &&
+		SQLSetDescField_(desc, nRecordNumber,
+				 SQL_DESC_DATETIME_INTERVAL_CODE,
+				 (SQLPOINTER) (ssize_t) nSubType,
+				 0) == SQL_ERROR)
+		return SQL_ERROR;
+	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_OCTET_LENGTH,
+			     (SQLPOINTER) (ssize_t) nLength, 0) == SQL_ERROR)
+		return SQL_ERROR;
+	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_PRECISION,
+			     (SQLPOINTER) (ssize_t) nPrecision,
+			     0) == SQL_ERROR)
+		return SQL_ERROR;
+	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_SCALE,
+			     (SQLPOINTER) (ssize_t) nScale, 0) == SQL_ERROR)
+		return SQL_ERROR;
+	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_OCTET_LENGTH_PTR,
+			     (SQLPOINTER) pnStringLength, 0) == SQL_ERROR)
+		return SQL_ERROR;
+	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_INDICATOR_PTR,
+			     (SQLPOINTER) pnIndicator, 0) == SQL_ERROR)
+		return SQL_ERROR;
+	if (SQLSetDescField_(desc, nRecordNumber, SQL_DESC_DATA_PTR,
+			     (SQLPOINTER) pData, 0) == SQL_ERROR)
+		return SQL_ERROR;
+	return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }

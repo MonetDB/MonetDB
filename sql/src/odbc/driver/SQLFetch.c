@@ -455,6 +455,123 @@ getdatetime(ODBCStmt *stmt, const char *data,
 	return SQL_SUCCESS;
 }
 
+static SQLRETURN
+getinterval(ODBCStmt *stmt, ODBCDescRec *irdrec, ODBCDescRec *ardrec,
+	    const char *data, SQL_INTERVAL_STRUCT *ptr, SQLINTERVAL i,
+	    SQLINTERVAL s, SQLINTERVAL e)
+{
+	long val;
+	long maxval;
+
+	/* compare SQLExecute.c for possible values of SQL_DESC_CONCISE_TYPE */
+	switch (irdrec->sql_desc_concise_type) {
+	case SQL_INTERVAL_MONTH:
+		if (s == SQL_IS_YEAR || s == SQL_IS_MONTH)
+			break;
+		addStmtError(stmt, "07006", NULL, 0);
+		return SQL_ERROR;
+	case SQL_INTERVAL_SECOND:
+		if (s != SQL_IS_YEAR && s != SQL_IS_MONTH)
+			break;
+		addStmtError(stmt, "07006", NULL, 0);
+		return SQL_ERROR;
+	case SQL_BIT:
+	case SQL_FLOAT:
+	case SQL_DOUBLE:
+	case SQL_TYPE_DATE:
+	case SQL_TYPE_TIME:
+		addStmtError(stmt, "07006", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	maxval = 1;
+	for (val = ardrec->sql_desc_datetime_interval_precision; val > 0; val--)
+		maxval *= 10;
+
+	if (getnum(stmt, data, SQL_C_SLONG, &val, NULL) == SQL_ERROR)
+		return SQL_ERROR;
+
+	memset(&ptr, 0, sizeof(*ptr));
+	if (val < 0) {
+		val = -val;
+		ptr->interval_sign = SQL_TRUE;
+	} else
+		ptr->interval_sign = SQL_FALSE;
+	ptr->interval_type = i;
+
+	if (e == SQL_IS_YEAR &&
+	    irdrec->sql_desc_concise_type == SQL_INTERVAL_MONTH) {
+		if (val % 12)
+			addStmtError(stmt, "01S07", NULL, 0);
+		val /= 12;
+	}
+	if (irdrec->sql_desc_concise_type == SQL_INTERVAL_SECOND) {
+		switch (e) {
+		case SQL_IS_MINUTE:
+			if (val % 60)
+				addStmtError(stmt, "01S07", NULL, 0);
+			val /= 60;
+			break;
+		case SQL_IS_HOUR:
+			if (val % (60 * 60))
+				addStmtError(stmt, "01S07", NULL, 0);
+			val /= 60 * 60;
+			break;
+		case SQL_IS_DAY:
+			if (val % (24 * 60 * 60))
+				addStmtError(stmt, "01S07", NULL, 0);
+			val /= 24 * 60 * 60;
+			break;
+		default:
+			break;
+		}
+	}
+		
+	if (e == SQL_IS_SECOND) {
+		ptr->intval.day_second.second = val;
+		if (s != e) {
+			ptr->intval.day_second.second %= 60;
+			val /= 60;
+			e = SQL_IS_MINUTE;
+		}
+	}
+	if (e == SQL_IS_MINUTE) {
+		ptr->intval.day_second.minute = val;
+		if (s != e) {
+			ptr->intval.day_second.minute %= 60;
+			val /= 60;
+			e = SQL_IS_HOUR;
+		}
+	}
+	if (e == SQL_IS_HOUR) {
+		ptr->intval.day_second.hour = val;
+		if (s != e) {
+			ptr->intval.day_second.hour %= 24;
+			val /= 24;
+			e = SQL_IS_DAY;
+		}
+	}
+	if (e == SQL_IS_DAY)
+		ptr->intval.day_second.day = val;
+
+	if (e == SQL_IS_MONTH) {
+		ptr->intval.year_month.month = val;
+		if (s != e) {
+			ptr->intval.year_month.month %= 12;
+			val /= 12;
+			e = SQL_IS_YEAR;
+		}
+	}
+	if (e == SQL_IS_YEAR)
+		ptr->intval.year_month.year = val;
+
+	if (val >= maxval) {
+		addStmtError(stmt, "22015", NULL, 0);
+		return SQL_ERROR;
+	}
+	return SQL_SUCCESS;
+}
+
 SQLRETURN
 ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT type,
 	  SQLPOINTER ptr, SQLINTEGER buflen, SQLINTEGER *lenp,
@@ -582,18 +699,79 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT type,
 				   &((TIMESTAMP_STRUCT *) ptr)->second,
 				   &((TIMESTAMP_STRUCT *) ptr)->fraction);
 	case SQL_C_INTERVAL_YEAR:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_YEAR, SQL_IS_YEAR, SQL_IS_YEAR);
 	case SQL_C_INTERVAL_MONTH:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_MONTH, SQL_IS_MONTH, SQL_IS_MONTH);
 	case SQL_C_INTERVAL_DAY:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_DAY, SQL_IS_DAY, SQL_IS_DAY);
 	case SQL_C_INTERVAL_HOUR:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_HOUR, SQL_IS_HOUR, SQL_IS_HOUR);
 	case SQL_C_INTERVAL_MINUTE:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_MINUTE, SQL_IS_MINUTE,
+				   SQL_IS_MINUTE);
 	case SQL_C_INTERVAL_SECOND:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_SECOND, SQL_IS_SECOND,
+				   SQL_IS_SECOND);
 	case SQL_C_INTERVAL_YEAR_TO_MONTH:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_YEAR_TO_MONTH, SQL_IS_YEAR,
+				   SQL_IS_MONTH);
 	case SQL_C_INTERVAL_DAY_TO_HOUR:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_DAY_TO_HOUR, SQL_IS_DAY,
+				   SQL_IS_HOUR);
 	case SQL_C_INTERVAL_DAY_TO_MINUTE:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_DAY_TO_MINUTE, SQL_IS_DAY,
+				   SQL_IS_MINUTE);
 	case SQL_C_INTERVAL_DAY_TO_SECOND:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_DAY_TO_SECOND, SQL_IS_DAY,
+				   SQL_IS_SECOND);
 	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_HOUR_TO_MINUTE, SQL_IS_HOUR,
+				   SQL_IS_MINUTE);
 	case SQL_C_INTERVAL_HOUR_TO_SECOND:
-		break;
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_HOUR_TO_SECOND, SQL_IS_HOUR,
+				   SQL_IS_SECOND);
+	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
+		return getinterval(stmt, &stmt->ImplRowDescr->descRec[nCol],
+				   &stmt->ApplRowDescr->descRec[nCol],
+				   data, (SQL_INTERVAL_STRUCT *) ptr,
+				   SQL_IS_MINUTE_TO_SECOND, SQL_IS_MINUTE,
+				   SQL_IS_SECOND);
 	}
 	addStmtError(stmt, "HYC00", NULL, 0);
 	return SQL_ERROR;
