@@ -69,7 +69,7 @@ int malStartupAdmin(){
 	defaultScenario(c);
 	malImport(c,"mal/mal_init",0,0);
 	mal_scope = c->nspace->outer;
-	showErrors(c);
+	showErrors();
 	return 1;
 }
 @+ Client main routine
@@ -238,7 +238,7 @@ A stack frame is initialized to keep track of global variables.
 The scenarios are run until we finally close the last one.
 @c
 	mb= c->curprg->def;
-	newStack(c->glb,MAXGLOBALS);
+	c->glb= newGlobalStack(MAXGLOBALS+mb->vsize);
 	c->glb->stktop =mb->vtop;
 	c->glb->blk = mb;
 
@@ -304,7 +304,7 @@ str MALparser(Client c){
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);
 		/* catched errors*/
-		showErrors(c);
+		showErrors();
 		@:restoreState@
 		return throwMessage("MALparser","syntax errors\n");
 	}
@@ -323,7 +323,7 @@ str MALparser(Client c){
 	trimMalBlk(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if( c->curprg->def->errors){
-		showErrors(c);
+		showErrors();
 		@:restoreState@
 		return throwMessage("MALparser","semantic errors\n");
 	}
@@ -342,11 +342,14 @@ str MALengine(Client c){
 		return throwMessage("MALengine","main function missing\n");
 
 	if( prg->def->errors){
-		showErrors(c);
+		showErrors();
 		@:restoreState@
 		return throwMessage("MALengine","Program contains errors\n");
 	}
 	if( prg->def->stop ==1) return 0; /* empty block */
+	if(c->glb && prg->def && c->glb->stksize< prg->def->vtop){
+		c->glb= reallocStack(c->glb, prg->def->vsize- c->glb->stktop);
+	}
 	if( c->glb){
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk =  prg->def;
@@ -359,7 +362,7 @@ str MALengine(Client c){
 		GDKerror(msg);
 		if( !c->listing) 
 			printFunction(c->fdout,c->curprg->def, c->listing);
-		showErrors(c);
+		showErrors();
 	}
 	resetInstructions(prg->def,1);
 	resetVariables(prg->def,c->glb,0);

@@ -71,15 +71,11 @@ typedef struct MALSTK {
 #define newStack(S,CNT)	S= (MalStkPtr) alloca(stackSize(CNT));\
 			bzero((char *) S, stackSize(CNT));\
 			(S)->stksize=CNT;
-/*
-#define newStack(S,CNT)	S= (MalStkPtr) GDKmalloc(stackSize(CNT));\
-			bzero((char *) S, stackSize(CNT));\
-			(S)->stksize=CNT;
-*/
 	
 #define newFrame(S,Ssize,Top,Cnt) S= reallocStack(S,&(Ssize),Top,Cnt)
 
 mal_export MalStkPtr newGlobalStack(int size);
+mal_export MalStkPtr reallocStack(MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
 mal_export void chkStack(MalStkPtr stk, int i);	/* used in src/mal/mal_box.c */
 
@@ -119,7 +115,7 @@ MalStkPtr reallocStack(MalStkPtr s, int cnt){
 	if( s->stksize - s->stktop >cnt ) return s;
 	k = k+ ((cnt/STACKINCR)+1) * STACKINCR;
 	newStack(s, k);
-	memcpy(s, old, stackSize(s->stksize)); 
+	memcpy(s, old, stackSize(old->stksize)); 
 	s->stksize = k;
 	GDKfree(old);
 	return s;

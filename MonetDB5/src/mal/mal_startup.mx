@@ -95,7 +95,7 @@ int malStartupAdmin(int listing){
 	initLibraries();
 	startupPrelude(c,SRVINIT,SRVORIGIN);
 	mal_scope = c->nspace->outer;
-	showErrors(c);
+	showErrors();
 	/* showScopeTrail(stdout,c->nspace);*/
 	return 1;
 }
@@ -151,7 +151,7 @@ void closeClientPrg(Client cntxt, int flag){
 	}
 	trimMalBlk(mb);
 	chkProgram(cntxt->nspace, cntxt->curprg->def);
-	showErrors(cntxt);
+	showErrors();
 	if( cntxt->backup){
 		cntxt->curprg = cntxt->backup;
 		cntxt->backup = 0;

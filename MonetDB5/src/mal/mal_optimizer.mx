@@ -509,7 +509,7 @@ str MALoptimizer(Client c)
 				if( p->fcn)
 					msg= (str) (*p->fcn)(mb,0,p);
 				if( msg) {
-					showErrors(c);
+					showErrors();
 					return msg;
 				}
 				pc--; /* optimizer statement has been removed*/

@@ -69,7 +69,6 @@ FUNCTION, FACTORY, COMMAND, PATTERN.
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "mal_client.h"		/* for getClient() */
 
 Symbol newFunction(str nme,int kind){
 	Symbol s;
@@ -394,7 +393,7 @@ Symbol 	cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		err= function2str(new->def,LIST_MAL_ALL);
 		GDKerror("%s",err);
 		GDKfree(err);
-		showErrors(getClient());
+		showErrors();
 	}
 #ifdef DEBUG_CLONE
 	stream_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);

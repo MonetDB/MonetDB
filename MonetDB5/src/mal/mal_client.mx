@@ -685,6 +685,7 @@ void enlargebuffer(Client c, int newsize){
 	int i;
 	int ln;
 
+	assert(newsize>0);
 	ln = c->nxt-c->input;
 	i = c->limit - c->input + newsize;
 	c->input = (char *) GDKrealloc(c->input,i);
@@ -816,8 +817,9 @@ int bstreamClient(Client c, str prompt){
 
 	s = c->nxt; *s = 0;
 	ln= c->nxt - c->input; /* left over bytes */
-	if( (c->limit-c->input) <= BLOCK){
-		@:makespace@
+	if( (c->limit-c->input) < 2*BLOCK){
+		enlargebuffer(c, BLOCK);
+		s = c->nxt; *s = 0;
 	}
 	@:sentPrompt@
 #ifdef MAL_CLIENT_DEBUG
@@ -829,8 +831,8 @@ printf("bstreamClient:read block\n"); fflush(stdout);
 		if( (c->limit-c->input) - size < BLOCK+1){
 			enlargebuffer(c, BLOCK);
 		}
-                s= c->input+size;
-		c->input[size]=0;
+                s= c->nxt+size;
+		*s=0;
         }
 	if( len <0){
 		/* end of stream */

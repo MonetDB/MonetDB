@@ -143,13 +143,13 @@ void processString(Client c)
 		if( c->blkmode) {
 			/*unfinished input */
 			chkProgram(c->nspace, c->curprg->def);
-			showErrors(c); 
+			showErrors(); 
 			if( c->listing)
 				printFunction(c->fdout, c->curprg->def,c->listing);
 		} else
 		if(MALoptimizer(c)==0) 
 			MALengine(c);
-	} else showErrors(c); 
+	} else showErrors(); 
 }
 @-
 Beware that we have to isolate the execution of the source file
@@ -170,7 +170,7 @@ void malImport(Client c, str name, str libname, int listing){
 	MalStkPtr oldstk = c->glb;
 
 	if( (s= malLoadScript(c,name)) ) {
-		stream_printf(getClient()->fdout,"%s\n",s);
+		stream_printf(c->fdout,"%s\n",s);
 		return;
 	}
 @-
@@ -179,7 +179,7 @@ resolving addresses.
 @c
 	if(libname) {
 		if( (s= (str) loadModuleLibrary(libname)) ){
-			stream_printf(getClient()->fdout,"%s\n",s);
+			stream_printf(c->fdout,"%s\n",s);
 			return;
 		}
 	}

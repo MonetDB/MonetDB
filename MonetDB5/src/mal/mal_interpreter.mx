@@ -65,7 +65,7 @@ typedef struct{
 /*#define DEBUG_MAL_INTERPRETER */
 /* #define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
-mal_export void showErrors(Client cntxt);
+mal_export void showErrors();
 mal_export str runMAL(Client c, MalBlkPtr mb, 
 		MalBlkPtr mbcaller, 
 		MalStkPtr env, InstrPtr pcicaller);
@@ -155,7 +155,8 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	return ret;
 #endif
 } 
-void showErrors(Client cntxt){
+void showErrors(){
+	Client cntxt= getClient();
 	int i;
 	if( cntxt->errbuf==0 ) return;
 	if( *cntxt->errbuf){
@@ -178,7 +179,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
 
 	if( mb->errors){
 		char buf[2*PATHLENGTH];
-		showErrors(cntxt);
+		showErrors();
 		sprintf(buf, "'%s.%s' contains errors\n",
 			getModName(mb),getFcnName(mb));
 		return raiseException(mb,0,"SyntaxError",buf);
@@ -196,18 +197,21 @@ We assume here that it aligns with the variable table of the routine
 being called.
 @c
 	/* allocate space for value stack */
+	/* the global stack should be large enough */
 	if( mbcaller== NULL && env != NULL){
 		stk = env;
 		if( mb != stk->blk) 
 			GDKerror("runMAL:misalignment of symbols\n");
 		pci= pcicaller;
 	} else {
-		newStack(stk,mb->vtop);
+		newStack(stk,mb->vsize);
 		stk->stktop= mb->vtop; 
+		stk->stksize= mb->vsize;
 		stk->blk= mb;
 		stk->cmd= cntxt->itrace; /* set debug mode */
 		@:safeguardStack@
 	} 
+	if( stk->stktop>stk->stksize) GDKerror("Unexpected");
 
 	if( env && mbcaller){
 		InstrPtr pp;
@@ -1162,7 +1166,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 	printStack(GDKout,mb,stk);
 #endif
    do{
-	for(k=0;k<mb->vtop-1; k++) 
+	for(k=0;k<mb->vtop; k++) 
 	if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.ival)==bid) {
 		BBPdecref(bid,TRUE);
 		stk->stk[k].val.ival= 0;
