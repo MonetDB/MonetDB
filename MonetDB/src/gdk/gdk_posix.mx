@@ -144,6 +144,10 @@ gdk_export int MT_gettimeofday(struct timeval *tv, int *ignore_zone);
 #define gettimeofday(x,y)	MT_gettimeofday(x,y)
 #endif
 
+#ifndef HAVE_VSNPRINTF
+#define vsnprintf(buf,size,format,ap) vsprintf(buf,format,ap)
+#endif
+
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk_posix.h"
