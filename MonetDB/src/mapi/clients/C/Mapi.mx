@@ -622,7 +622,7 @@ typedef struct MapiStruct {
 	int 	maxfields;
 	MapiField *fields;
 	MapiRowBuf cache;
-	Mapi prev, next;	/* doubly linked list of Mapi's sharing streams */
+	Mapi next;		/* circular list of Mapi's sharing streams */
 
 	stream *tracelog;		/* keep a log for inspection*/
 	stream *from, *to;
@@ -863,6 +863,7 @@ static Mapi mapi_new(void)
 	memset(m, 0, sizeof(MapiStruct));
 
 	/* then fill in some details */
+	m->next = m;		/* the shortest circular list possible */
 	m->blocked = blocked;
 	m->error= MOK;
 	strcpy(m->hostname,"localhost");
@@ -944,12 +945,9 @@ Mapi mapi_dup(Mapi mid)
 	m= mapi_new();
 	if (m == NULL)
 		return NULL;
-	/* link into doubly linked list */
+	/* link into circular list */
 	m->next = mid->next;
-	m->prev = mid;
 	mid->next = m;
-	if (m->next)
-		m->next->prev = m;
 
 	/* copy relevant information */
 	m->to= mid->to;
@@ -1113,16 +1111,19 @@ MapiMsg mapi_disconnect(Mapi mid)
 	mid->cache.rows = NULL;
 	/* only close streams if we're not in a linked list of Mapi's
 	   sharing the streams */
-	if (mid->next || mid->prev) {
-		if (mid->next)
-			mid->next->prev = mid->prev;
-		if (mid->prev)
-			mid->prev->next = mid->next;
-	} else {
+	if (mid->next == mid) {
+		/* only (last) element in circular list, so close streams */
 		(void) stream_close(mid->from);
 		(void) stream_close(mid->to);
+	} else {
+		/* remove from circular list */
+		Mapi m;
+
+		for (m = mid->next; m->next != mid; m = m->next)
+			;
+		m->next = mid->next; /* take out of circular list */
+		mid->next = mid; /* circular list by itself */
 	}
-	mid->next = mid->prev = NULL;
 	mid->from = mid->to = NULL;
 	mid->connected = 0;
 	return MOK;
