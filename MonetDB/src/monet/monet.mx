@@ -381,7 +381,6 @@ m_export MT_Lock		monet_contextLock;	/* protects CNTXT structures */
 m_export MT_Lock		monet_voidLock;		/* protects void hack */
 m_export MT_Sema		monet_available;	/* worker threads in queue */
 m_export MT_Sema		monet_started;		/* internet thread started? */
-m_export MT_Sema		monet_main;		/* main-interpeter sema */
 m_export MT_Sema		monet_forksync;		/* sync semaphore for fork */
 
 m_export int		monet_tokseq;		/* value of TOK_SEQ */
@@ -410,7 +409,7 @@ MT_Id		monet_pid=0;
 str             monet_prelude, monet_script, monet_noAccess = "Anonymous";
 MT_Lock         monet_critical, monet_notifyLock, monet_voidLock;
 MT_Lock		monet_parserLock, monet_contextLock;
-MT_Sema         monet_started, monet_available, monet_main, monet_forksync;
+MT_Sema         monet_started, monet_available, monet_forksync;
 int		monet_modulesilent=0;
 
 @-
@@ -640,19 +639,10 @@ ptr monet_init(int argc, char **argv){
         monet_started    = MT_create_sema(0);
         monet_available  = MT_create_sema(0);
         monet_forksync   = MT_create_sema(0);
-        monet_main	 = MT_create_sema(0);
 
 	CNTXTinit();
         monet_pid = MT_getpid();
-/*
-        THRnew(monet_pid, "Server");
-*/
- 
         TBL_init(); /* init MIL function table management. */
-/*
-        c = initClient(GDKstrdup(MONET_ADMIN), GDKstrdup(monet_prompt), 
-		      (monet_background!=1));
-*/
         c = initClient(GDKstrdup(MONET_ADMIN), GDKstrdup(monet_prompt), FALSE);
         if (c == 0) monet_exit();
 	c->login = time(0);

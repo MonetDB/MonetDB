@@ -39,7 +39,7 @@ m_export void	monetInternet ();
 
 /* monet standard threads */
 m_export void	monetServer	(void *dummy);
-m_export void	monetInterpreter(void* status);
+m_export void	monetInterpreter(void *dummy);
 m_export void	monetSingle  	(int status);
 
 /* interpreter thread handling */
@@ -79,15 +79,14 @@ void monetSingle(int status){
 @+ Monet Interpreter Threads
 @-
 This will be dropped when everything works ok.
-What should be done with the status. { TODO: What's this?? }
 @c
-void monetInterpreter(void* status){
+void monetInterpreter(void* dummy){
 	Thread	t;
 	MT_Id tid;
 
 	t = THRnew(MT_getpid(), "Interpreter");
 	MT_up_sema(monet_forksync, "monetInterpreter");
-	PARDEBUG THRprintf(GDKerr, "monetInterpreter(%d)\n", (int)status);
+	PARDEBUG THRprintf(GDKerr, "monetInterpreter(dummy)\n" );
 	tid = t->tid;
 	if (!monet_threads) monet_threads++;
 
@@ -96,7 +95,6 @@ void monetInterpreter(void* status){
  	monet_threads--;
 	MT_unset_lock(monet_critical, "monetInterpreter");
 	THRdel(t);
-	if (GDKnrofthreads < monet_background) MT_up_sema(monet_main, "monetInterpreter");
        	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
 	MT_exit_thread(0);
 }
