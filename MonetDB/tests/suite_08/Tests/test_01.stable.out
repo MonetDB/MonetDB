@@ -1,10 +1,13 @@
 stdout of test 'test_01` in directory 'tests/suite_08` itself:
 
 
-# 12:06:04 >  
-# 12:06:04 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_suite_08  < test_01.milM
-# 12:06:04 >  
+# 12:15:48 >  
+# 12:15:48 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10   --set monet_prompt= --dbname=Tests_tests_suite_08  < test_01.milM
+# 12:15:48 >  
 
+# Monet Database Server V4.3.5
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -34,7 +37,7 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 23,	  "monet_acctbl"	  ]
 [ 24,	  "monet_atomtbl"	  ]
 #-----------------#
-# BAT:	  group	  #
+# BAT:	  refcnt  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  2	  ]
@@ -118,7 +121,7 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ 23,	  0	  ]
 [ 24,	  0	  ]
 #-------------------------#
-# BAT:	  status	  #
+# BAT:	  dirty		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "dirty"	  ]
@@ -205,33 +208,34 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ "view_atom_name" ]
 [ "view_gdk_env" ]
 #~BeginVariableOutput~#
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  monet_environment										  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3.5"											  ]
-[ "monet_pid",		  "13235"											  ]
-[ "prefix",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp"		  ]
-[ "exec_prefix",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp"		  ]
-[ "gdk_dbname",		  "Tests_tests_suite_08"									  ]
-[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp/var/dbfarm"	  ]
-[ "gdk_debug",		  "10"												  ]
-[ "gdk_mmap",		  "33554432"											  ]
-[ "monet_admin",	  "adm"												  ]
-[ "monet_prompt",	  ""												  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_mod_path",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.3217/monet/.GNU_32-d/Linux2.4.9-14smp/lib/MonetDB"	  ]
-[ "monet_deamon",	  "no"												  ]
-[ "host",		  "localhost"											  ]
-[ "mapi_port",		  "50000"											  ]
-[ "mapi_noheaders",	  "no"												  ]
-[ "mapi_debug",		  "0"												  ]
-[ "sql_port",		  "45123"											  ]
-[ "sql_debug",		  "0"												  ]
-[ "sql_api",		  "sql"												  ]
-[ "sql_user",		  "sqladmin"											  ]
-[ "sql_schema",		  "default-schema"										  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "5707"									  ]
+[ "prefix",		  "/ufs/niels/data/monet/Linux"							  ]
+[ "exec_prefix",	  "/ufs/niels/data/monet/Linux"							  ]
+[ "gdk_dbname",		  "Tests_tests_suite_08"							  ]
+[ "gdk_dbfarm",		  "/ufs/niels/data/monet/Linux/var/dbfarm"					  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/ufs/niels/data/monet/Linux/lib/MonetDB"					  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql(default-schema)"								  ]
+[ "sql_user",		  "monetdb"									  ]
+[ "sql_schema",		  "default-schema"								  ]
+[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/monet/Linux/Tests/tests/suite_08"	  ]
 #~EndVariableOutput~#
 [ "view_gdk_thread" ]
 #~BeginVariableOutput~#
@@ -239,7 +243,7 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 0,	  "Interpreter"	  ]
+[ 1,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #-----------------#
 # BAT:	  name	  #
@@ -251,7 +255,7 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Sat Jun 29 12:06:05 2002"	  ]
+[ 0,	  "Fri Aug 30 12:15:48 2002"	  ]
 #~EndVariableOutput~#
 #-----------------------------------------#
 # BAT:	  tree				  #
@@ -259,7 +263,7 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 #-----------------------------------------#
 [ 0,	  "print(view_client_tree())"	  ]
 
-# 01:26:56 >  
-# 01:26:56 >  Done.
-# 01:26:56 >  
+# 12:15:48 >  
+# 12:15:48 >  Done.
+# 12:15:48 >  
 
