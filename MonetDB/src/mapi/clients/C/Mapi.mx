@@ -1315,7 +1315,7 @@ MapiMsg mapi_reconnect(Mapi mid)
 	char buf[BLOCK];
 	size_t len, ret;
 #ifdef HAVE_OPENSSL
-	SSL *ssl;
+	SSL *ssl = NULL;
 #endif
 
 	hp = gethostbyname(mid->hostname);
