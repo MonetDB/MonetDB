@@ -295,27 +295,20 @@ public class MonetResultSet implements ResultSet {
 					char cur = result[i].charAt(pos);
 					if (cur == '\\' && pos + 1 < len) {
 						cur = result[i].charAt(++pos);
+						// strToStr and strFromStr in gdk_atoms.mx only
+						// support \t \n \\ \" and \377
 						switch (cur) {
 							case '\\':
 								uesc.append('\\');
 							break;
-							case 'r':
-								uesc.append('\r');
-							break;
 							case 'n':
 								uesc.append('\n');
-							break;
-							case 'f':
-								uesc.append('\f');
 							break;
 							case 't':
 								uesc.append('\t');
 							break;
 							case '"':
 								uesc.append('"');
-							break;
-							case '\'':
-								uesc.append('\'');
 							break;
 							case '0': case '1': case '2': case '3':
 								// this could be an octal number, let's check it out
