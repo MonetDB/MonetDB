@@ -537,7 +537,7 @@ int sqlexecute(backend * be, stream *out )
 	}
 
 	if (explain == ex_performance) {
-		query = _strdup(QUERY(c->scanner));
+		query = sql_escape(QUERY(c->scanner));
 		Tmil = GDKusec();
 	}
 
