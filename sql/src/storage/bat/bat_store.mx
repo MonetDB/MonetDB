@@ -1,3 +1,20 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
 @f bat_store
 
 @h
@@ -1500,30 +1517,30 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN);
 		t = bootstrap_create_table(tr, s, "modules", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 0);
+		bootstrap_create_column(tr, t, "name", "clob", 0);
 
 		t = bootstrap_create_table(tr, s, "schemas", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 0);
+		bootstrap_create_column(tr, t, "name", "clob", 0);
 		bootstrap_create_column(tr, t, "authorization", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "ptables", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 0);
+		bootstrap_create_column(tr, t, "name", "clob", 0);
 		bootstrap_create_column(tr, t, "schema_id", "int", 9);
-		bootstrap_create_column(tr, t, "query", "varchar", 0);
+		bootstrap_create_column(tr, t, "query", "clob", 0);
 		bootstrap_create_column(tr, t, "istable", "boolean", 0);
 		bootstrap_create_column(tr, t, "system", "boolean", 0);
 		bootstrap_create_column(tr, t, "clear", "boolean", 0);
 
 		t = bootstrap_create_table(tr, s, "pcolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 0);
-		bootstrap_create_column(tr, t, "type", "varchar", 0);
+		bootstrap_create_column(tr, t, "name", "clob", 0);
+		bootstrap_create_column(tr, t, "type", "clob", 0);
 		bootstrap_create_column(tr, t, "type_digits", "int", 9);
 		bootstrap_create_column(tr, t, "type_scale", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
-		bootstrap_create_column(tr, t, "default", "varchar", 0);
+		bootstrap_create_column(tr, t, "default", "clob", 0);
 		bootstrap_create_column(tr, t, "null", "boolean", 0);
 		bootstrap_create_column(tr, t, "number", "int", 9);
 
@@ -1531,25 +1548,25 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 0);
+		bootstrap_create_column(tr, t, "name", "clob", 0);
 		bootstrap_create_column(tr, t, "rkey", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "idxs", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 0);
+		bootstrap_create_column(tr, t, "name", "clob", 0);
 
 		t = bootstrap_create_table(tr, s, "keycolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "column", "varchar", 0);
+		bootstrap_create_column(tr, t, "column", "clob", 0);
 		bootstrap_create_column(tr, t, "trunc", "int", 9);
 		bootstrap_create_column(tr, t, "nr", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "types", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "systemname", "varchar", 0);
-		bootstrap_create_column(tr, t, "sqlname", "varchar", 0);
+		bootstrap_create_column(tr, t, "systemname", "clob", 0);
+		bootstrap_create_column(tr, t, "sqlname", "clob", 0);
 		bootstrap_create_column(tr, t, "digits", "int", 9);
 		bootstrap_create_column(tr, t, "scale", "int", 9);
 		bootstrap_create_column(tr, t, "radix", "int", 9);
