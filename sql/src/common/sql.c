@@ -1874,18 +1874,21 @@ statement *sql_select
 
   subset = s;
   if (having){
-	list *sl = NULL; 
-	node *n = NULL;
-
 	s = having_condition(sql, scp, having, group, subset);
 
 	if (!s) return NULL;
 
-	sl = list_create();
-	for(n = subset->op1.lval->h; n; n = n->next){
-	  list_append_statement(sl, statement_semijoin( n->data.stval, s) );
+	if (group){
+	  group = statement_reverse( statement_semijoin(
+				  statement_reverse(group), s ));
+	} else {
+	  node *n = NULL;
+	  list *sl = list_create();
+	  for(n = subset->op1.lval->h; n; n = n->next){
+	    list_append_statement(sl, statement_semijoin( n->data.stval, s) );
+	  }
+	  subset = statement_list(sl);
 	}
-	subset = statement_list(sl);
   }
 
   if (subset){
