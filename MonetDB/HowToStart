@@ -258,8 +258,17 @@ and for the respective libraries in <DIR>/lib.
 
 In case either of "bootstrap", "configure", or "make" fails --- especially
 after a "cvs update", or after you changed some code yourself --- please try
-the following step (in that order; if you are using the pre-packages source
+the following steps (in that order; if you are using the pre-packages source
 distribution, you have to skip steps 2 & 3):
+
+(In case you experience problems after a "cvs update", first make sure that
+ you did use "cvs update -dP" (or have a line "update -dP" in your
+ ~/.cvsrc); "-d" ensures, that cvs checks out directories that have been
+ added since your last "cvs update"; "-P" removed directories that have
+ become empty, because all their file have been removed from the cvs
+ repository. In case you did not use "cvs update -dP", re-run "cvs update
+ -dP", and remember to always use "cvs update -dP" from now on (or simply
+ add a line "update -dP" to your ~/.cvsrc)!)
 
 0) In case only "make" fails, you can try to run
 	make clean
