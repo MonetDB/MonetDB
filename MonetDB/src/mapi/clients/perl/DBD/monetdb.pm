@@ -241,6 +241,15 @@ sub rollback {
 }
 
 
+sub get_info {
+    my($dbh, $info_type) = @_;
+    require DBD::monetdb::GetInfo;
+    my $v = $DBD::monetdb::GetInfo::info{int($info_type)};
+    $v = $v->($dbh) if ref $v eq 'CODE';
+    return $v;
+}
+
+
 sub tables {
     my $dbh = shift;
     my @args = @_;
@@ -281,28 +290,6 @@ sub disconnect {
     return 1;
 }
 
-sub get_info {
-    my ($dbh, $w) = @_;
-    my $mapi = $dbh->FETCH('monetdb_connection');
-
-    return "MonetDB"
-      if $w == 17;		# "SQL_DBMS_NAME";
-
-    return "4.0"
-      if $w == 18;		# "SQL_DBMS_VER";
-
-    return "\""
-      if $w == 29;		# "SQL_IDENTIFIER_QUOTE_CHAR";
-
-    return "."
-      if $w == 41;		# "SQL_CATALOG_NAME_SEPARATOR";
-
-    return 0
-      if $w == 114;		# "SQL_CATALOG_LOCATION"; # catalogs not supported
-
-    # FIXME: More values (get from sql/src/odbc/SQLGetInfo.c)
-    undef;
-}
 
 sub FETCH {
     my $dbh = shift;
