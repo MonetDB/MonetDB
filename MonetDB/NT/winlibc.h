@@ -57,6 +57,9 @@ struct passwd {
 #define pthread_sigmask(v,mnew,morg) 0
 #define pthread_kill(tid,sig) 0
 
+/* to get module unix compiled */
+#define fork() -1
+
 #define __getpgid(pid) getpid()
 
 #define setbuffer(x,y,z)	setbuf(x,y)
