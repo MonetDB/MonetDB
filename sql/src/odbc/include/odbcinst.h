@@ -110,6 +110,8 @@ extern "C" {
 
 #ifdef NATIVE_WIN32
 #define INSTAPI __stdcall
+#else
+#define INSTAPI
 #endif
 
 /* HIGH LEVEL CALLS */
