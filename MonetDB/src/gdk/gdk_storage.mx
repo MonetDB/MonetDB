@@ -1061,7 +1061,7 @@ Init the column descriptors of the tail columns.
         for(j=0; j < argc; j++, total += c[j].tabs) {
 	    cp[j+1] = c+(j+1);
             c[j+1].format = printfcn(argv[j]);
-	    if( argc==1)
+	    if( (argc==1) || !(strcmp(argv[j]->tident,"t") && strcmp(argv[j]->tident,"h")) )
             c[j+1].tabs = print_tabwidth(argv[j], batname(argv[j]), c+(j+1));
 	    else
             c[j+1].tabs = print_tabwidth(argv[j], argv[j]->tident, c+(j+1));
