@@ -5407,6 +5407,20 @@ static int test_join(PFcnode_t *for_node,
     snd_inner_cast = 0;
     fst_arg = 0;
 
+/* StM:
+ * I'm not sure, whether this is correct, but at least it avoids some segfaults;
+ * cf. bug reports 1076344, 1078462, 1080515 on SourceForge:
+ * http://sourceforge.net/tracker/index.php?func=detail&aid=1076344&group_id=56967&atid=482468
+ * http://sourceforge.net/tracker/index.php?func=detail&aid=1078462&group_id=56967&atid=482468
+ * http://sourceforge.net/tracker/index.php?func=detail&aid=1080515&group_id=56967&atid=482468
+ */
+    if (for_node->child[3]->child[0] == NULL)
+    {
+	fprintf(stderr,"= Avoiding segfault in compiler/mil/milprint_summer.c:test_join() ;\n");
+	fprintf(stderr,"= correctness of this fix needs to be checked!\n");
+        return subtree_tested;
+    }
+
     if (for_node->child[3]->kind != c_ifthenelse &&
         for_node->child[3]->child[0]->kind != c_apply)
     {
