@@ -538,6 +538,30 @@ scanner_getc_s(struct scanner * lc)
 }
 
 static inline int
+read_more(struct scanner * lc)
+{
+	bstream *b = lc->rs;
+	int more = 0;
+
+	if (lc->mode == LINE_1) 
+		return EOF;
+
+	/* query is not finished ask for more */
+	if (b->eof) { 
+		if (stream_write(lc->ws,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
+			stream_flush(lc->ws);
+		b->eof = 0;
+		more = 1;
+	}
+	/* we need more query text */
+	if (bstream_next( b ) < 0 || 
+	    /* we asked for more data but didn't get any */
+	    (more && b->eof && b->pos+lc->yycur >= b->len))
+		return EOF;
+	return 1;
+}
+
+static inline int
 scanner_getc_bs(struct scanner * lc)
 {
 	bstream *b = lc->rs;
@@ -546,19 +570,7 @@ scanner_getc_bs(struct scanner * lc)
 	int n, m, mask;
 
 	while (b->pos+lc->yycur >= b->len) {
-		int more = 0;
-
-		/* query is not finished ask for more */
-		if (b->eof && lc->mode != LINE_1) { 
-			if (stream_write(lc->ws,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
-				stream_flush(lc->ws);
-			b->eof = 0;
-			more = 1;
-		}
-		/* we need more query text */
-		if (bstream_next( b ) < 0 || 
-		    /* we asked for more data but didn't get any */
-		    (more && b->eof && b->pos+lc->yycur >= b->len))
+		if (read_more(lc) == EOF)
 			return EOF;
 	}
 
@@ -578,7 +590,7 @@ scanner_getc_bs(struct scanner * lc)
 	}
 
 	while (b->pos+lc->yycur+n >= b->len)
-		if (b->eof || bstream_next( b ) <= 0) 
+		if (read_more(lc) == EOF)
 			return EOF;
 
 	mask = utf8chkmsk[n];
