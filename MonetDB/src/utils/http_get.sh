@@ -13,7 +13,7 @@ elif [ `which links >& /dev/null; echo $?` -eq 0 ]; then
 	links -source $1
 elif [ `which curl >& /dev/null; echo $?` -eq 0 ]; then
 	# most sun/apple systems are shipped with this
-	curl $1
+	curl -s $1
 elif [ `which wget >& /dev/null; echo $?` -eq 0 ]; then
 	# wget is a more sophisticated and friendly version of curl
 	wget -q -O - $1
