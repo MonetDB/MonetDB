@@ -127,10 +127,24 @@ typed-instance in the box. We assume this not to happen and
 the exceptions it raises a valuable advice to reconsider
 the programming style.
 
-The type indicator for the destination variable can be used to proceed
-type checking as far as necessary. It avoids multiple type checks
-later on. Failure to find a properly typed object leads 
-to a runtime exception.
+The type indicator for the destination variable should be
+provided to proceed with proper type checking as far as necessary. 
+It avoids multiple type checks later on. 
+Failure to find a properly typed object leads to a runtime exception
+or assuming the wrong type.
+
+[todo and improve] For example, the code fragment
+
+\begin{verbatim}
+M := mil.take("M_PI_2");
+b:= sin(M);
+\end{verbatim}
+
+leads to a polymorphic type check for M. It is marked as TYPE_any.
+This may cause an unwanted
+resolution, because currently batcalc.sin(:bat) would be a permissible
+operation, because a BAT input matched against any
+[todo and improve]
 
 The default is to mark the instruction as polymorphic, which means
 that the type is determined at runtime and may propagate thru
