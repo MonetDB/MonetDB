@@ -61,8 +61,16 @@ MV=copy
 DEL=del
 CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" "$(TOPDIR)" "$(prefix)"
 
+# Use "nmake DEBUG=1" to get a debug build (assertions enabled);
+# use "nmake NDEBUG=1" to get a release build (assertions disabled);
+# use plain "nmake" to get the default.
+!IFNDEF DEBUG
 !IFDEF NDEBUG
 CFLAGS = $(CFLAGS) -DNDEBUG
+!ELSE
+# default in case neither NDEBUG nor DEBUG are defined
+CFLAGS = $(CFLAGS) -DNDEBUG
+!ENDIF
 !ENDIF
 
 MONETDB_INCLUDEDIR=$(MONETDB_PREFIX)\include
