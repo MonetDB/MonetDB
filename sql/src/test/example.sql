@@ -9,4 +9,6 @@ select * from example;
 
 select * from example_view;
 
+commit;
+
 --- drop view example_view;

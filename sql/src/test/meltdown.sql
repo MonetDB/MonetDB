@@ -16,3 +16,5 @@ veranderingen beschikbaar.', 723830965, '');
 
 select * from a;
 --- drop view a;
+
+commit;

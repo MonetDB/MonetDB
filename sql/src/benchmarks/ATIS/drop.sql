@@ -26,3 +26,4 @@ drop table state;
 drop table stop1;
 drop table time_zone;
 drop table transport;
+commit;

@@ -112,3 +112,5 @@ update updates set i=500015 where k=5005;
 delete from updates where k= -5000;
 insert into updates select * from saveupdates;
 delete from updates where k<0;
+
+commit;

@@ -11,3 +11,5 @@ insert into t3 values(NULL,NULL);
 
 select * from t3 where val is NULL;
 drop table t3;
+
+commit;

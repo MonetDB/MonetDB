@@ -123,3 +123,5 @@ SELECT max(saldo)
 FROM account
 WHERE saldo > 10000
 ;
+
+commit;

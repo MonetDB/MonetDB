@@ -428,3 +428,4 @@ EXCEPT CORRESPONDING
 ) AS not_ordered;
 
 
+commit;

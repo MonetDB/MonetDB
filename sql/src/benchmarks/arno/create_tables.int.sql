@@ -23,3 +23,5 @@ CREATE TABLE BOND (
    TYPE char(3),
    PRIMARY KEY (BOND_ID)
 );
+
+commit;

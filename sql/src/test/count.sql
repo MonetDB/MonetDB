@@ -20,3 +20,5 @@ select count(val) from test group by val;
 --        2 
 --        1 
 drop table test;
+
+commit;

@@ -12942,3 +12942,4 @@ INSERT INTO Video VALUES (4,'0083866','http%3A%2F%2Fimages.amazon.com%2Fimages%2
 INSERT INTO Video VALUES (3,'0120915','http%3A%2F%2Fposters.imdb.com%2FPosters%2Fs%2Fswepi1styleb1.jpg',1);
 INSERT INTO Video VALUES (2,'0076759','http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6301773551.01.MZZZZZZZ.gif',1);
 INSERT INTO Video VALUES (1,'0120338','http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif',1);
+commit;

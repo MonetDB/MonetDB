@@ -2,6 +2,7 @@
 
 create table t1(id int, val int);
 create table t2(id int, val int);
+
 insert into t1 values(1,1);
 insert into t1 values(2,2);
 insert into t1 values(3,3);
@@ -40,3 +41,5 @@ select * from t1 where id>2 and id<2;
 
 drop table t1;
 drop table t2;
+
+commit;

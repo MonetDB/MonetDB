@@ -22,3 +22,5 @@ update tenk1 set unique2 = 10088 where tenk1.unique2 =187;
 update tenk1 set unique2 = 10003 where tenk1.unique2 =2000;
 update tenk1 set unique2 = 10020 where tenk1.unique2 =1974;
 update tenk1 set unique2 = 16001 where tenk1.unique2 =1140;
+
+commit;

@@ -15,3 +15,4 @@ DROP TABLE MediaReview;
 DROP TABLE ParentalGuidance;
 DROP TABLE RatingCriterion;
 DROP TABLE Video;
+commit;

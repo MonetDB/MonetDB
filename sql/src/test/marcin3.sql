@@ -13,3 +13,5 @@ select id, sum(val) AS valsum from nutki group by id having valsum>3;
 -- ERROR:  Attribute 'valsum' not found
 
 drop table nutki;
+
+commit;

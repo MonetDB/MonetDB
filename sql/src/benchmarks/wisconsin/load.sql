@@ -31007,3 +31007,5 @@ insert into Bprime values (2992,9997,0,0,2,12,92,992,992,2992,2992,184,185,'CLAA
 insert into Bprime values (0,9998,0,0,0,0,0,0,0,0,0,0,1,'AAAAAA','OUOAAA','OOOOxx');
 insert into Bprime values (2968,9999,0,0,8,8,68,968,968,2968,2968,136,137,'EKAAAA','PUOAAA','VVVVxx');
 delete from Bprime where unique2 >= 1000;
+
+commit;

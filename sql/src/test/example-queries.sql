@@ -7,3 +7,5 @@ insert into example values( 8, 'texxst', 0.0001 );
 select * from example;
 
 select * from example_view;
+
+commit;

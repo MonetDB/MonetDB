@@ -26,3 +26,5 @@ select sum(*) from t3;
 select sum(*),val from t3 group by val ;
 
 drop table t3;
+
+commit;
