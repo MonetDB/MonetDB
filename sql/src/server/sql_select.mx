@@ -1831,8 +1831,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 	return NULL;
 }
 
-static
-    void
+static void
 filter(stmt *ptable, stmt *s)
 {
 	stmt *ps;

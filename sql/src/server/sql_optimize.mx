@@ -817,6 +817,7 @@ filter_pivots(list *pivots, list *filters)
 
 		list_append(nl, np);
 	}
+	stmt_destroy(filter);
 	return stmt_list(nl);
 }
 

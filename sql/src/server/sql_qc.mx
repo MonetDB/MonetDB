@@ -124,6 +124,7 @@ qc_delete(qc *cache, cq *q)
 				cache->q = q->next;
 			}
 			cq_delete(q);
+			break;
 		}
 	}
 }
