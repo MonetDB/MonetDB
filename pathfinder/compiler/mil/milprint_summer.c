@@ -3747,7 +3747,7 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
             "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n"
             "var join_result := htordered_unique_thetajoin(join_item1, join_item2.reverse(), %s);\n"
             "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
-            "var fst_iter := join_result.mark(0@0).reverse();\n"
+            "var fst_iter := join_result.mark(0@0).reverse();\n",
             fst_res, snd_res, comp);
 
     if (lev_fst && lev_snd)

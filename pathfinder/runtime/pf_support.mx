@@ -151,7 +151,7 @@ proc fetch(bat[any::1,any::2] b, bat[void,any] sel) : bat[any::1,any::2] {
 
 proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) : bat[oid,oid] {
     var uniq := true;
-    if ((mode == GT) or (mode == GE)) {
+    if ((mode = GT) or (mode = GE)) {
         if (l.sample(1000).kunique().count() < 900) {
         	l := {max}(l);
 	} else {
@@ -162,7 +162,7 @@ proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) 
 	} else {
 		uniq := false;
 	}
-    } else if ((mode == LT) or (mode == LE)) {
+    } else if ((mode = LT) or (mode = LE)) {
         if (l.sample(1000).kunique().count() < 900) {
         	l := {min}(l);
 	} else {
@@ -176,7 +176,7 @@ proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) 
     } else {
 	uniq := false;
     }
-    var join_order = leftthetajoin(l, r, mode);
+    var join_order := leftthetajoin(l, r, mode);
     var snd_iter := join_order.reverse().mark(0@0).reverse();
     var fst_iter := join_order.mark(0@0).reverse();
     var sorting := fst_iter.CTrefine(snd_iter);
