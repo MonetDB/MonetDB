@@ -6,16 +6,16 @@ import os
 import shelve
 from var import *
 
-mx2mil = "^@mil[ \t]*$"
-mx2mel = "^@m[ \t]*$"
-mx2h = "^@h[ \t]*$"
-mx2c = "^@c[ \t]*$"
-mx2y = "^@y[ \t]*$"
-mx2l = "^@l[ \t]*$"
-mx2cc = "^@C[ \t]*$"
-mx2yy = "^@Y[ \t]*$"
-mx2ll = "^@L[ \t]*$"
-mx2odl = "^@odl[ \t]*$"
+mx2mil = "^@mil[ \t]*"
+mx2mel = "^@m[ \t]*"
+mx2h = "^@h[ \t]*"
+mx2c = "^@c[ \t]*"
+mx2y = "^@y[ \t]*"
+mx2l = "^@l[ \t]*"
+mx2cc = "^@C[ \t]*"
+mx2yy = "^@Y[ \t]*"
+mx2ll = "^@L[ \t]*"
+mx2odl = "^@odl[ \t]*"
 
 e_mx = regex.compile('^@[^\{\}]')
 
@@ -105,7 +105,7 @@ def do_code_extract(f,base,ext, targets, deps, cwd):
 	if (code_extract.has_key(ext)):
 	  for pat,newext in code_extract[ext]:
 	    p = regex.compile(pat)
-	    if (p.search(b) > 0 ):
+	    if (p.search(b) >= 0 ):
 	      extracted = base + newext
 	      targets.append( extracted )
 	      deps[extracted] = [ f ]
@@ -183,25 +183,6 @@ def do_dep_rules(deps,cwd,cache):
           df,de = string.split(d,".",1)
 	  if (de == dep and df+new not in cache[target]):
       	    cache[target].append(df+new)
-
-def olddo_dep_rules(deps,cwd,cache):
-  for target in cache.keys():
-    depfiles = cache[target]
-    tf,te = string.split(target,".",1)
-    if (dep_rules.has_key(te)):
-      (dep,old,new) = dep_rules[te]
-      for d in depfiles:
-        df,de = string.split(d,".",1)
-	if (de == dep and deps.has_key(d)):
-	  incfiles = deps[d]
-	  for i in incfiles:
-            incf,ie = string.split(i,".",1)
-	    if (ie == old and incf+new not in depfiles):
-	      depfiles.append(incf+new)
-        if (dep_map.has_key(de)):
-          for depext in dep_map[de]:
-	    if (df+depext not in depfiles):
-	      depfiles.append(df+depext)
 
 def do_scan(targets,deps,incmap,cwd,cache):
   for target,depfiles in deps.items():
@@ -339,13 +320,13 @@ def codegen(tree, cwd, topdir):
 		n,dummy = string.split(l,"_",1)
 	        tree.value(i)[n+'_DLIBS'] = d
 		#if (tree.value(i).has_key(l)):
-		   #for dep in d:
-		     #tree.value(i)[l].append(dep)
+		  # for dep in d:
+		    # tree.value(i)[l].append(dep)
 		#else:
-	          #tree.value(i)[l] = d
-	          #if (tree.value(i).has_key('LIBS')):
-		     #for dep in tree.value(i)['LIBS']:
-		       #tree.value(i)[l].append(dep)
+	        #  tree.value(i)[l] = d
+	        #  if (tree.value(i).has_key('LIBS')):
+		#     for dep in tree.value(i)['LIBS']:
+		#       tree.value(i)[l].append(dep)
 	    else:
 	      for l,d in libs.items():
 	        tree.value(i)[l] = d

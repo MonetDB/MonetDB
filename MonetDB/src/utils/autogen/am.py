@@ -9,7 +9,7 @@ script_ext = [ 'mil' ]
 def am_assignment(fd, var, values, am ):
   o = ""
   for v in values:
-    o = o + " " + v
+    o = o + " " + am_translate_dir(v,am)
   fd.write("%s = %s\n" % (var,o) )
 
 def am_cflags(fd, var, values, am ):
@@ -94,6 +94,16 @@ def am_deps(fd,deps,objext, am):
     fd.write("\n");
 
 
+# list of scripts to install
+def am_scripts(fd, var, scripts, am):
+  for name in scripts:
+      fd.write("install-exec-local-%s: %s\n" % (name,name))
+      fd.write("\t$(RM) $(DESTDIR)$(SCRIPTDIR)/%s\n" % (name))
+      fd.write("\t$(INSTALL) %s $(DESTDIR)/$(SCRIPTDIR)/%s\n\n" % (name,name))
+      fd.write("uninstall-exec-local-%s: \n" % (name))
+      fd.write("\t$(RM) $(DESTDIR)$(SCRIPTDIR)/%s\n\n" % (name))
+      am['INSTALL'].append(name)
+
 def am_binary(fd, var, binmap, am ):
   
   if (type(binmap) == type([])):
@@ -104,6 +114,7 @@ def am_binary(fd, var, binmap, am ):
       fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n" )
       fd.write("%s" % am_list2string(binmap,"\tchmod a+x ","\n"))
       am['INSTALL'].append(name)
+      am['ALL'].append(name)
     else: # link
       src = binmap[0][4:]
       fd.write("install-exec-local-%s: %s\n" % (name,src))
@@ -111,11 +122,12 @@ def am_binary(fd, var, binmap, am ):
       fd.write("\tcd $(DESTDIR)$(bindir); $(LN_S) %s %s\n\n" % (src,name))
       fd.write("uninstall-exec-local-%s: \n" % (name))
       fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % (name))
+      am['INSTALL'].append(name)
 
       fd.write("all-local-%s: %s\n" % (name,src))
       fd.write("\t$(RM) %s\n" % (name))
       fd.write("\t$(LN_S) %s %s\n\n" % (src,name))
-      am['INSTALL'].append(name)
+      am['ALL'].append(name)
     return
 
   HDRS = []
@@ -280,6 +292,7 @@ def am_library(fd, var, libmap, am ):
 
 def am_libs(fd, var, values, am ):
 
+  sep = ""
   if (values.has_key('SEP')):
   	sep = values['SEP'][0]
 
@@ -305,7 +318,6 @@ def am_libs(fd, var, values, am ):
 #    elif (values.has_key("LIBS")):
 #      fd.write(am_additional_libs(lib, sep, "LIB", values["LIBS"],am))
     if (values.has_key(lib + "_DLIBS")):
-      print(values[lib+"_DLIBS"])
       fd.write(am_additional_libs(lib, sep, "LIB", values[lib + "_DLIBS"],am))
 
     srcs = "lib"+sep+lib+"_la_SOURCES ="
@@ -335,11 +347,17 @@ def am_libs(fd, var, values, am ):
 
 def am_translate_dir(path,am):
     dir = path
+    rest = ""
     if (string.find(path,os.sep) >= 0):
-      d,rest = string.split(path,os.sep, 1) 
-      if (d == "top_srcdir" or d == "top_builddir" or \
-	  d == "srcdir" or d == "builddir"):
-	dir = "$("+d+")"+ os.sep + rest
+      dir,rest = string.split(path,os.sep, 1) 
+      rest = os.sep + rest
+
+    if (dir == "top_srcdir" or dir == "top_builddir" or \
+	  dir == "srcdir" or dir == "builddir" or \
+	  dir == "pkglibdir" or dir == "libdir" or \
+	  dir == "pkgbindir" or dir == "bindir"):
+	dir = "$("+dir+")" 
+    dir = dir + rest
     return dir
 
 def am_includes(fd, var, values, am):
@@ -362,6 +380,7 @@ output_funcs = { 'SUBDIRS': am_assignment,
 		 'BIN' : am_binary,
  		 'INCLUDES' : am_includes,
 		 'MTSAFE' : am_mtsafe,
+		 'SCRIPTS' : am_scripts,
 		 'CFLAGS' : am_cflags,
 		 'CXXFLAGS' : am_cflags,
 		}
@@ -407,6 +426,7 @@ CXXEXT = \\\"cc\\\"
   am['INSTALL'] = []
   am['HDRS'] = []
   am['LIBDIR'] = "lib"
+  am['ALL'] = []
   for i in tree.keys():
     j = string.upper(i[0:3])
     if (output_funcs.has_key(i)):
@@ -432,8 +452,10 @@ CXXEXT = \\\"cc\\\"
   if (len(am['INSTALL']) > 0):
     fd.write("install-exec-local:%s\n" % \
 	am_list2string(am['INSTALL']," install-exec-local-",""))
+
+  if (len(am['ALL']) > 0):
     fd.write("all-local:%s\n" % \
-	am_list2string(am['INSTALL']," all-local-",""))
+	am_list2string(am['ALL']," all-local-",""))
 
   if (len(am['HDRS']) > 0):
     if (len(name) > 0): 

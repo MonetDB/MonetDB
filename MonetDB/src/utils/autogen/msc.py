@@ -19,9 +19,10 @@ def msc_subdirs(fd, var, values, msc ):
   fd.write("%s = %s\n" % (var,o) )
   fd.write("all-recursive: %s\n" % msc_list2string(values,"","-all ") )
   for v in values:
-    fd.write("%s-all: %s\n" % (v,v))
+    fd.write("%s-all: %s %s\\Makefile\n" % (v,v,v))
     fd.write("\t$(CD) %s && $(MAKE) /nologo /k all \n" % v) 
     fd.write("%s: \n\tif not exist %s $(MKDIR) %s\n" % (v,v,v))
+    fd.write("%s\\Makefile: $(SRCDIR)\\%s\\Makefile.msc\n" % (v,v))
     fd.write("\t$(INSTALL) $(SRCDIR)\\%s\\Makefile.msc %s\\Makefile\n" % (v,v))
   fd.write("install-recursive: %s\n" % msc_list2string(values,"","-install ") )
   for v in values:
@@ -56,16 +57,14 @@ def msc_mtsafe(fd, var, values, msc ):
 
 def msc_translate_dir(path,msc):
     dir = path
-    if (string.find(path,os.sep) >= 0):
-      d,rest = string.split(path,os.sep, 1) 
+    if (string.find(path,'/') >= 0):
+      d,rest = string.split(path,'/', 1) 
       if (d == "top_srcdir" or d == "top_builddir"):
 	  d = "$(TOPDIR)"
       elif (d == "srcdir" or d == "builddir"):
           d = "."
       dir = d+ "\\" + rest
-    if (os.sep != "\\"):
-    	return regsub.gsub(os.sep, "\\", dir );
-    return dir
+    return regsub.gsub("/", "\\", dir );
 
 def msc_translate_file(path,msc):
     if (os.path.isfile(msc['cwd']+ os.sep + path)):
@@ -106,13 +105,19 @@ def msc_find_hdrs(target,deps,hdrs):
       pf = f 
   return pf
 
-def msc_additional_libs(fd,name,sep,type,list, msc):
+def msc_additional_libs(fd,name,sep,type,list,dlibs, msc):
     deps = "lib"+sep+name+".dll: "
     if (type == "BIN"):
     	add = name+"_LIBS =" 
     else:
     	add = "lib"+sep+name+"_LIBS =" 
     for l in list:
+      if (l[0] == "-" or l[0] == "$"):
+      	add = add + " " + l 
+      else:
+      	add = add + " " + msc_translate_dir(l,msc) + ".lib"
+	deps = deps + " " + msc_translate_dir(l,msc) + ".lib"
+    for l in dlibs:
       if (l[0] == "-" or l[0] == "$"):
       	add = add + " " + l 
       else:
@@ -155,26 +160,26 @@ def msc_deps(fd,deps,objext, msc):
 	x,de = string.split(deplist[0],".",1)
 	if (de == 'y'):
 		fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
-		fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.c\n" % (b))
+		fd.write( "\tif exist y_tab.c $(DEL) y_tab.c\n" )
 		fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b))
 	else:
 		fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
-		fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.cxx\n" % (b))
+		fd.write( "\tif exist y_tab.c $(DEL) y_tab.c\n" )
 		fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b))
     if (ext == "tab.c"):
 	fd.write( "\t$(YACC) $(YFLAGS) %s.y\n" % (b) );
 	fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.c\n" % (b) )
-	fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b) )
+	fd.write( "\tif exist y_tab.h $(DEL) y_tab.h\n" )
     if (ext == "tab.cxx"):
 	fd.write( "\t$(YACC) $(YFLAGS) %s.yy\n" % (b) );
 	fd.write( "\tif exist y_tab.c $(MV) y_tab.c %s.tab.cxx\n" % (b) )
-	fd.write( "\tif exist y_tab.h $(MV) y_tab.h %s.tab.h\n" % (b) )
+	fd.write( "\tif exist y_tab.h $(DEL) y_tab.h\n" )
     if (ext == "yy.c"):
-	fd.write( "\t$(LEX) $(LFLAGS) -o%s.yy.c %s.l\n" % (b,b) );
-	fd.write( "\tif exist lex_yy.c $(MV) lex_yy.c %s.yy.c\n" % (b) )
+	fd.write( "\t$(LEX) $(LFLAGS) %s.l\n" % (b) );
+	fd.write( "\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.c\n" % (b) )
     if (ext == "yy.cxx"):
-	fd.write( "\t$(LEX) $(LFLAGS) -o%s.yy.cc %s.ll\n" % (b,b) );
-	fd.write( "\tif exist lex_yy.c $(MV) lex_yy.c %s.yy.cxx\n" % (b) )
+	fd.write( "\t$(LEX) $(LFLAGS) %s.ll\n" % (b) );
+	fd.write( "\tif exist lex.yy.c $(MV) lex.yy.c %s.yy.cxx\n" % (b) )
 		
     if (ext == "glue.c"):
 	fd.write( "\t$(MEL) $(INCLUDES) -o %s -glue %s.m\n" % (t,b) );
@@ -223,7 +228,7 @@ def msc_binary(fd, var, binmap, msc ):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
   if (binmap.has_key("LIBS")):
-    fd.write(msc_additional_libs(fd,binname, "", "BIN", binmap["LIBS"],msc))
+    fd.write(msc_additional_libs(fd,binname, "", "BIN", binmap["LIBS"],[],msc))
 	
   srcs = binname+"_OBJS ="
   for target in binmap['TARGETS']:
@@ -280,9 +285,9 @@ def msc_bins(fd, var, binsmap, msc ):
     msc['BINS'].append(bin)
 	
     if (binsmap.has_key(bin + "_LIBS")):
-      fd.write(msc_additional_libs(fd,bin,"","BIN", binsmap[bin + "_LIBS"],msc))
+      fd.write(msc_additional_libs(fd,bin,"","BIN", binsmap[bin + "_LIBS"],[],msc))
     elif (binsmap.has_key("LIBS")):
-      fd.write(msc_additional_libs(fd,bin, "", "BIN", binsmap["LIBS"],msc))
+      fd.write(msc_additional_libs(fd,bin, "", "BIN", binsmap["LIBS"],[],msc))
 
     srcs = bin+"_OBJS ="
     for target in binsmap['TARGETS']:
@@ -344,8 +349,11 @@ def msc_library(fd, var, libmap, msc ):
   if (libmap.has_key('MTSAFE')):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
+  dlib = []
+  if (libmap.has_key(libname+ "_DLIBS")):
+    dlib = libmap[libname+"_DLIBS"]
   if (libmap.has_key("LIBS")):
-    fd.write(msc_additional_libs(fd,libname, sep, "LIB", libmap["LIBS"],msc))
+    fd.write(msc_additional_libs(fd,libname, sep, "LIB", libmap["LIBS"],dlib,msc))
 
   for src in libmap['SOURCES']:
     base,ext = string.split(src,".", 1) 	
@@ -403,10 +411,13 @@ def msc_libs(fd, var, libsmap, msc ):
       msc['EXTRA_DIST'].append(libsrc)
     msc['LIBS'].append(sep+lib)
 	
+    dlib = []
+    if (libsmap.has_key(lib + "_DLIBS")):
+	dlib = libsmap[lib+"_DLIBS"]
     if (libsmap.has_key(lib + "_LIBS")):
-      fd.write(msc_additional_libs(fd,lib,sep,"LIB",libsmap[lib + "_LIBS"],msc))
+      fd.write(msc_additional_libs(fd,lib,sep,"LIB",libsmap[lib + "_LIBS"],dlib,msc))
     elif (libsmap.has_key("LIBS")):
-      fd.write(msc_additional_libs(fd,lib, sep, "LIB", libsmap["LIBS"],msc))
+      fd.write(msc_additional_libs(fd,lib, sep, "LIB", libsmap["LIBS"],dlib,msc))
 
     srcs = "lib"+sep+lib+"_OBJS ="
     for target in libsmap['TARGETS']:
