@@ -15,7 +15,7 @@
 # Portions created by CWI are Copyright (C) 1997-2004 CWI.
 # All Rights Reserved.
 
-INCLUDES = ../../common ../../server $(MONETDB_INCS)
+INCLUDES = ../../include ../../server $(MONETDB_INCS)
 
 lib__sql_server = {
 	DIR = libdir/MonetDB
