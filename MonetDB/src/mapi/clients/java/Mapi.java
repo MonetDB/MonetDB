@@ -44,7 +44,8 @@ getVersionId()	& 	Monet version generation number
 getUser() 	&       Get current user name
 getDBname() 	&       Get current database name
 getTable()    	&       Get current table name
-getFieldCount()	& 	Number of columns in current row
+getColumnCount()& 	Number of columns in current row
+getColumnName()	& 	Get columns name
 getRowCount() 	&       Number of rows in cache or -1
 gotError()    	&       Test for error occurrence
 ping()     	&       Test server for accessibility
@@ -55,6 +56,7 @@ queryArray()	& 	Send a query for execution with arguments
 quickQuery()	&       Send a query for execution
 quickQueryArray()        & Send a query for execution with arguments
 quote()    	& 	Escape characters
+reconnect()	&	Restart with a clean session
 rows_affected() & 	Obtain number of rows changed
 quickResponse()	&       Quick pass response to stream
 seekRow() 	&       Move row reader to specific location in cache
@@ -155,7 +157,7 @@ public class Mapi
 	
 	// Tabular cache
 	private int fieldcnt= 0;
-	private int maxfields= 0;
+	private int maxfields= 32;
 	private int minfields= 0;
 	private int rows_affected =0;
 	private RowCache cache= new RowCache();
@@ -257,7 +259,8 @@ throws MapiException
 {
 	error = MOK;
 	try{
-	    if(trace) System.out.println("setup socket connection");
+		if(trace) 
+			System.out.println("setup socket "+host+":"+port);
 		socket   = new Socket( host, port );
 		fromMonet= new BufferedReader(
 			new InputStreamReader(socket.getInputStream()));
@@ -272,6 +275,7 @@ throws MapiException
 	this.username= user;
 	this.password = pwd;
 	this.active = true;
+	if(trace) System.out.println("sent initialization command");
 	toMonet(user+":"+pwd+"\n");
 	while( !gotError() && active){
 		getRow();
@@ -357,6 +361,16 @@ public void disconnect() {
 	toMonet = null; fromMonet = null; traceLog = null;
 }
 /**
+ * Reset the communication channel, thereby clearing the
+ * global variable settings
+ */
+public void reconnect(){
+	if( connected) disconnect();
+	try{
+	connect(host, port,username,password,language);
+	} catch( MapiException e) {}
+}
+/**
  * Eat away all the remaining lines
 */
 public int finish(){
@@ -365,7 +379,6 @@ public int finish(){
 	} catch( MapiException e) {}
 	return MOK;
 }
-
 //======================= Binding parameters ================
 
 private boolean checkColumns(int fnr, String action){
@@ -426,7 +439,8 @@ private int extendColumns(int mf){
 	int nm= maxfields+32;
 	if( nm <= mf)
 		nm= mf+32;
-	if( trace) System.out.println("extendColumns:"+nm);
+	//if( trace) 
+	System.out.println("extendColumns:"+nm);
 	Columns nf[]= new Columns[nm];
 	System.arraycopy(columns,0,nf,0,maxfields);
 	columns= nf;
@@ -434,14 +448,12 @@ private int extendColumns(int mf){
 	return MOK;
 }
 
-private void extendFields(){
-	int cr= cache.reader;
-	int k= cache.fldcnt[cr];
-	if( trace) System.out.println("extendFields:"+cr+","+k);
-	if(cache.fields== null || maxfields >k){
+private void extendFields(int cr){
+	if( trace) System.out.println("extendFields:"+cr);
+	if(cache.fields== null ){
 		String anew[]= new String[maxfields];
-		if( cache.fields != null && cache.fields[cr]!= null)
-			System.arraycopy(cache.fields[cr],0,anew,0,k);
+		if( cache.fields[cr]!= null)
+			System.arraycopy(cache.fields[cr],0,anew,0,cache.fldcnt[cr]);
 		cache.fields[cr]= anew;
 	}
 }
@@ -464,42 +476,58 @@ private void storeBind(){
  * The slice row constructs a list of string field values.
  * It trims the string quotes but nothing else.
 */
-private String[] sliceRow(){
+public int sliceRow(){
 	int cr= cache.reader;
-	char p[]= cache.rows[cr].toCharArray();
+	String s= cache.rows[cr];
+	if( s== null){
+		setError("Current row missing","sliceRow");
+		return 0;
+	}
+	if( cache.fldcnt[cr]>0) return cache.fldcnt[cr];
+	if( s.length()==0) return 0;
+	if(trace) System.out.println("sliceRow:"+s);
+	char p[]= s.toCharArray();
 	if( p == null)
 		setError("Current row missing","sliceRow");
-	if( cache.fldcnt[cr]>0){
-		storeBind();
-		return cache.fields[cr];
-	}
 	boolean single = p[0]!= '[';
-	int i= single? 1:0;
+	int i=0;
 	int f=1,l;
+	// skip leading blancs
+
 	do{
+		while(f<p.length )
+		if( p[f]=='\t' || p[f] ==' ') f++; else break; 
+		if( trace) System.out.println("slice:"+f);
+
 		if(i== maxfields){
 			if( extendColumns(maxfields+32) != MOK)
-				return null;
-			extendFields();
+				return 0;
+			for(int j=0;j<cache.limit;j++)
+			if( cache.fields[j] != null)
+				extendFields(j);
 		}
-		//l= unquote(p,f);
-		f=l=1;
-		//cache.fields[cr]= f;
+		l=f+1;
 		while(l<p.length )
 		if( p[l]=='\t' || p[l] ==']') break; else l++;
-		f= l+1;
-	} while( !single && p[i]!=']');
+
+		String fld= unquote(s.substring(f, l));
+		if(trace) System.out.println("field ["+cr+"]["+i+"]"+fld);
+		cache.fields[cr][i]= fld;
+
+		f= l;
+		i++;
+	} while(f< p.length && !single && p[f]!=']');
+	cache.fldcnt[cr]=i;
 	if( fieldcnt<i) fieldcnt=i;
-	storeBind();
-	return null;
+	return i;
 }
 
 /**
  * The fetchRow() retrieves a tuple from the server
 */
-public String[] fetchRow(){
-	if( getRow()==MOK) return sliceRow();
-	return null;
+public int fetchRow(){
+	if( getRow()==MOK ) return sliceRow();
+	return 0;
 }
 public int fetchAllRows(){
 	cacheLimit(-1);
@@ -513,10 +541,12 @@ public int fetchAllRows(){
 public String fetchField(int fnr){
 	int cr= cache.reader;
 	if( fnr>=0){
-		if( cache.fldcnt[cr]==0)
+		if( cache.fldcnt[cr]==0){
+			//System.out.println("reslice");
 			sliceRow();
-		//if( fnr < cache.fldcnt[cr])
-			//return cache.flds[cr][fnr];
+		}
+		if( fnr < cache.fldcnt[cr])
+			return cache.fields[cr][fnr];
 	}
 	setError("Illegal field","fetchField");
 	return null;
@@ -525,8 +555,14 @@ public String[] fetchFieldArray(int fnr){
 	System.out.println("Not yet implemented");
 	return null;
 }
-public int getFieldCount(){
+public int getColumnCount(){
 	return fieldcnt;
+}
+public String getColumnName(int i){
+	if(i<fieldcnt && columns[i]!= null && columns[i].columnname!= null)
+		return columns[i].columnname;
+	if( columns[i]==null) return "";
+	return "unknown";
 }
 public int getRowCount(){
 	return rows_affected;
@@ -598,6 +634,10 @@ private void checkQuery(){
 	}
 	expandQuery("\n");
 }
+/**
+ * The query string may contain place holders, which should be replaced
+ * by the arguments presented
+*/
 
 private int prepareQuery(String cmd){
 	if( cmd == null || cmd.length()==0){
@@ -606,8 +646,9 @@ private int prepareQuery(String cmd){
 		query = cmd;
 		qrytemplate= null;
 		int i= cmd.indexOf(PLACEHOLDER);
-		if( i>=0 && i < cmd.length())
+		if( i>=0 && i < cmd.length()){
 			qrytemplate = query;
+		}
 	}
 	checkQuery();
 	return error;
@@ -718,18 +759,20 @@ public int executeArray(String arg[]){
 
 */
 public int query(String cmd){
-	prepareQuery(cmd);
-	if( error== MOK) execute();
-	if( error== MOK){
+	int ret;
+	ret= prepareQuery(cmd);
+	if( ret== MOK) ret= execute();
+	if( ret== MOK){
 		// look ahead to detect errors
 		int oldrd= cache.reader;
 		int rd=0;
-		while(error==MOK && active &&rd++< cache.limit)
+		while(ret==MOK && active &&rd++< cache.limit)
 			getRow();
 		cache.reader= oldrd;
+		ret= error;
 	}
-	if(trace  && error!=MOK) System.out.println("query returns error");
-	return error;
+	if(trace ) System.out.println("query return:"+ret);
+	return ret;
 }
 
 /**
@@ -784,16 +827,23 @@ public int quickQueryArray(String cmd, String arg[], DataOutputStream fd){
 // -------------------- Cache Management ------------------
 private void cacheReset()
 {
+	finish();
 	rows_affected= 0;
 	active= true;
-	for(int i=0; i< cache.writer; i++){
+	if( cache.fldcnt==null)
+		cache.fldcnt = new int[cache.limit];
+	for(int i=0; i< cache.limit; i++){
+		cache.fldcnt[i]=0;
 		cache.rows[i]= null;
-		cache.fields[i]= null;
+		if( cache.fields[i] != null){
+			for(int j=0;j<maxfields;j++)
+				cache.fields[i][j]= null;
+		} else cache.fields[i]= new String[maxfields];
 	}
+	fieldcnt=0;
 	cache.writer=0;
 	cache.reader= -1;
 	cache.tuples= 0;
-	cache.fldcnt = new int[cache.limit];
 }
 
 /**
@@ -874,7 +924,7 @@ int clearCache(){
 */
 public String fetchLine() throws MapiException {
 	    
-	if( cache.writer>=0 && cache.reader+1<cache.writer){
+	if( cache.writer>0 && cache.reader+1<cache.writer){
 		if( trace) System.out.println("useCachedLine:"+cache.rows[cache.reader+1]);
 		return cache.rows[++cache.reader];
 	}
@@ -883,9 +933,6 @@ public String fetchLine() throws MapiException {
 	// get rid of the old buffer space
 	if( cache.writer ==cache.limit && clearCache()!= 0) return null;
 
-	// any IO errors detected already
-	if( error!= MOK)
-		setError("Connection terminated","fetchLine");
 	// check if you need to read more blocks to read a line
 	blk.eos= false;
 
@@ -893,6 +940,7 @@ public String fetchLine() throws MapiException {
 	int n=0;
 	int len= 0;
 	String s="";
+	blk.buf= null;
 	if( trace) System.out.println("Start reading from server");
 	try {
 		blk.buf = fromMonet.readLine();
@@ -902,13 +950,13 @@ public String fetchLine() throws MapiException {
 		errortext= "Communication broken";
 		throw new MapiException( errortext);
 	}
-	if( blk.buf==null || (len= blk.buf.length()) == 0){
+	if( blk.buf==null ){
 		blk.eos= true;	
 		setError("Lost connection with server","fetchLine");
 		connected= false;
 		return null;
 	}
-	if( blk.buf.charAt(0)== PROMPTBEG){
+	if( blk.buf.length()>0 && blk.buf.charAt(0)== PROMPTBEG){
 		promptMonet();
 		return null;
 	}	    
@@ -968,7 +1016,6 @@ private void header(String line){
 	//cache.rows[cache.reader][etag]=']';
 	
 	//REST LATER
-	//sliceRow();
 	cache.rows[cache.reader]= old;
 }
 
@@ -977,6 +1024,8 @@ public int getRow(){
         String reply= "";
         error = MOK;
 
+	if( trace) System.out.println("getRow:active:"+active+
+		" reader:"+(cache.reader+1)+" writer:"+cache.writer);
         while( active ||cache.reader+1< cache.writer){
 		if( active){
 			try{  
@@ -990,6 +1039,7 @@ public int getRow(){
 		} else reply = cache.rows[++cache.reader];
 
 		if(trace) System.out.println("getRow:"+reply);
+		if( reply.length()>0)
 		switch(reply.charAt(0)){
 		    case '#': 
 			header(reply.toString());
@@ -1008,9 +1058,15 @@ public int getRow(){
 			return MOK;
 		}
         }
-        return MOK;
+        return MERROR;
 }
 // ------------------------------- Utilities
+/** The java context provides a table abstraction 
+ * the methods below provide access to the relevant Mapi components
+*/
+public int getRowCnt(){
+	return cache.tuples;
+}
 /**
  * unquoteInternal() squeezes a character array to expand
  * all quoted characters. It also removes leading and trailing blancs.
@@ -1018,15 +1074,17 @@ public int getRow(){
 */
 private int unquoteInternal(char msg[], int first)
 {
-	int i=0, j=0;
-	for(; j< msg.length; j++)
-	if( msg[j] != ' ' && msg[j]!= '\t') break;
+	int f=0, l=0;
+	for(; f< msg.length; f++)
+	if( msg[f] != ' ' && msg[f]!= '\t') break;
 
-	if( j< msg.length && (msg[j]=='"' || msg[j]=='\'')){
-		// quoted string
+	if( f< msg.length && (msg[f]=='"' || msg[f]=='\'')){
+		f++;
+		for(l=f+1; l<msg.length && !(msg[l]=='"' || msg[l]=='\''); l++);
+		l--;
 	} else {
 	}
-	return j;
+	return f;
 }
 
 public String quote(String msg){
@@ -1034,8 +1092,22 @@ public String quote(String msg){
 	return null;
 }
 public String unquote(String msg){
-	System.out.println("Not yet implemented");
-	return null;
+	char p[]= msg.toCharArray();
+	int f=0,l=f;
+	char bracket= ' ';
+	while(f<p.length && p[f]==' ') f++;
+	if( f<p.length) bracket = p[f];
+	if( bracket == '"' || bracket== '\''){
+		for(l= ++f; l<p.length && !( p[l]==bracket); l++){
+		}
+		if( l==p.length)
+			System.out.println("closing bracket "+bracket+" not found:"+msg);
+
+		return msg.substring(f,l);
+	} else 
+	// get rid of comma except when it is a literal char
+	if( p[f]!=',' && p[p.length-1]==',') msg= msg.substring(f,p.length-1);
+	return msg; 
 }
 
 public boolean gotError(){
@@ -1069,6 +1141,7 @@ private void toMonet(String msg) throws MapiException {
 		return;
 	}
 	try{
+		if( trace) System.out.println("toMonet:"+msg);
 		int size= msg.length();
 		toMonet.writeBytes(msg);
 		toMonet.flush();
@@ -1110,6 +1183,11 @@ class RowCache{
     int  fldcnt[] = new int[100];   /* actual number of columns in each row */
     String rows[]= new String[100]; /* string representation of rows received */
     String fields[][]= new String[100][];
+    public RowCache(){
+	for(int i=0;i<100; i++){
+		fields[i]= new String[maxfields];
+	}
+    }
 }
 class Columns{
     String tablename;
