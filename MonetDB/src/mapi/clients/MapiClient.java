@@ -6,7 +6,10 @@ import Mapi.*;
 public class MapiClient 
 {
     public static void usage(){
-       	System.out.println("Usage: java MapiClient $MAPIPORT $USER" );
+	System.out.println("Usage: java MapiClient <host> <port> <user>" );
+       	System.out.println("or   : java MapiClient <port> <user>" );
+       	System.out.println("or   : java MapiClient <user>" );
+       	System.out.println("or   : java MapiClient" );
 	System.exit(1);
     }
 
@@ -14,16 +17,20 @@ public class MapiClient
 	String hostname = "localhost";
 	int portnr = 50000;
 	String user = "niels";
-	if (argv.length > 2 ){
+	if (argv.length > 3 ){
 	   	usage();
 	}
-	if (argv.length >= 1){
-      		hostname = Mapi.hostname(argv[0]);
-		portnr = Mapi.portnr(argv[0]);
-	}
-	if (argv.length == 2){
+	if (argv.length == 1){
+      		user = argv[0];
+	} else if (argv.length == 2){
+		portnr = Integer.parseInt(argv[0]);
       		user = argv[1];
+	} else if (argv.length == 3){
+		hostname = argv[0];
+		portnr = Integer.parseInt(argv[1]);
+      		user = argv[2];
 	}
+
 	try {
       		Mapi M = new Mapi( hostname, portnr, user );
 		Reader r = new BufferedReader(new InputStreamReader(System.in));
