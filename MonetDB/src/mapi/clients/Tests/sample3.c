@@ -30,14 +30,14 @@ main(int argc, char **argv){
 	if( mapi_query(dbh,"select * from emp") ) die(dbh);
 
 	/* Retrieve all tuples in the client cache first */
-	rows= mapi_fetch_all(dbh);
-	printf("rows received %d with %d fields\n",rows, mapi_num_fields(dbh));
+	rows= mapi_fetch_all_rows(dbh);
+	printf("rows received %d with %d fields\n",rows, mapi_get_field_count(dbh));
 
 	/* Interpret the cache as a two-dimensional array */
 	for(i=0;i<rows;i++){
 		char *v;
 		if( mapi_seek_row(dbh,i)) break;
-		for(j=0;j<mapi_num_fields(dbh);j++){
+		for(j=0;j<mapi_get_field_count(dbh);j++){
 			printf("%s=%s ", 
 				mapi_get_name(dbh,j),
 				mapi_fetch_field(dbh,j));
