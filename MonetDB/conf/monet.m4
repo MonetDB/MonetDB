@@ -142,14 +142,44 @@ aix*)
     ;;
 esac
 AC_SUBST(MEL_LIBS)
+])
+
+AC_DEFUN(AM_MONET_TOOLS,[
+
+dnl AM_PROG_LIBTOOL has loads of required macros, when those are not satisfied within
+dnl this macro block the requirement is pushed to the next level, e.g. configure.ag
+dnl this can lead to unwanted orders of checks and thus to wrong settings, e.g.
+dnl - the compilers are set for 64 bit, but the linker for 32 bit;
+dnl - --enable-shared and --disabled-static are ignored as AC_LIBTOOL_SETUP is
+dnl   called earlier then AC_DISABLE_STATIC and AC_ENABLE_SHARED
+dnl To prevent this we take over some of these required macros and call them explicitly.
 
 AC_PROG_INSTALL()
+AC_PROG_LD()
 AC_DISABLE_STATIC()
 AC_ENABLE_SHARED()
-AC_PROG_LD()
+
 AC_LIBTOOL_SETUP()
 AC_PROG_LIBTOOL()
 AM_PROG_LIBTOOL()
+
+dnl AC_PROG_CC_STDC()
+AM_PROG_LEX()
+AC_PROG_YACC()
+AC_PROG_LN_S()
+AC_CHECK_PROG(RM,rm,rm -f)
+AC_CHECK_PROG(MV,mv,mv -f)
+AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
+AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
+
+dnl to shut up automake (.m files are used for mel not for objc)
+AC_CHECK_TOOL(OBJC,objc)
+
+#AM_DEPENDENCIES(CC)
+#AM_DEPENDENCIES(CXX)
+
+dnl Checks for header files.
+AC_HEADER_STDC()
 
 ])
 
@@ -241,7 +271,6 @@ if test "x$enable_instrument" = xyes; then
     CFLAGS="$CFLAGS -finstrument-functions -g"
   fi
 fi
-
 
 ])
 
@@ -514,31 +543,9 @@ AC_SUBST(INSTALL_BACKUP)
 
 AC_DEFUN(AM_MONET_CLIENT,[
 
-dnl Check for options and libraries
-AM_MONET_COMPILER()
-AM_MONET_OPTIONS()
-AM_MONET_LIBS()
-
-dnl Checks for programs.
-dnl AC_PROG_CC_STDC()
-AM_PROG_LEX()
-AC_PROG_YACC()
-AC_PROG_LN_S()
-AC_CHECK_PROG(RM,rm,rm -f)
-AC_CHECK_PROG(MV,mv,mv -f)
-AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
-
 dnl check for Monet and some basic utilities
 AM_MONET($1)
 AC_PATH_PROG(MX,Mx,$MONET_PREFIX/bin:$PATH)
 AC_PATH_PROG(MEL,mel,$MONET_PREFIX/bin:$PATH)
 
-dnl to shut up automake (.m files are used for mel not for objc)
-AC_CHECK_TOOL(OBJC,objc)
-
-#AM_DEPENDENCIES(CC)
-#AM_DEPENDENCIES(CXX)
-
-dnl Checks for header files.
-AC_HEADER_STDC()
 ])
