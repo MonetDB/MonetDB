@@ -193,6 +193,8 @@ test = (
 ##                    r'^! Waiting [0-9]+ seconds \([0-9]/[0-9]\) \.\.\. (?:Done\.)?$',
 ##                    r'^! Using new (?:SQL|MAPI)PORT=[0-9]+ !$',
 ##                    r'^! (?:SQL|MAPI)PORT was not properly released by Mserver !$',
+                # ld warnings on IRIX64:
+                    r"^ld64: WARNING 84 : ../../../common/.libs/libmutils.so is not used for resolving any symbol.$",
                  ]),  re.MULTILINE)
         )
 
