@@ -3585,7 +3585,7 @@ int posjoin_clustered(BAT** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	return GDK_SUCCEED;
 }
 
-static size_t recluster(oid*__r out, oid*__r in, size_t i, size_t n, oid lim, oid loc, int seqbase) {
+static size_t recluster(oid*__r out, oid*__r in, size_t i, size_t n, oid lim, oid loc, oid seqbase) {
     size_t j;
     if (loc == 0) {
         i += i; n += n;
