@@ -359,8 +359,8 @@ char *GDKload(str nme, str ext, int size, int chunk, int mode){
        	    	    GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext?ext:"");
      		    buf = NULL;
 		}
-		IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk %d, mod %d, tpe %d, fd %d, 0) = %ld\n",
-						chunk, mod, tpe, fileno(fp), (long) buf);
+		IODEBUG THRprintf(GDKerr, "mmap(NULL, 0, chunk %d, mod %d, tpe %d, path %s, 0) = %ld\n",
+						chunk, mod, tpe, path, (long) buf);
 		n_expected = 0;
 	    }
 	}
