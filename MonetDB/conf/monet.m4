@@ -325,6 +325,8 @@ if test "x$enable_optim" = xyes; then
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
+    CXXFLAGS=" $CXXFLAGS "
+    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
