@@ -1149,14 +1149,6 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 		stream_write(s, ",\t", 2, 1);
 	stream_write(s, " # id\n", 6, 1);
 
-	if (t->order) {
-		BAT *order = BATdescriptor(t->order);
-		stream_printf(s, "# count " SZFMT "\n", BATcount(order));
-		BBPunfix(order->batCacheid);
-	} else {
-		stream_printf(s, "# count 1\n");
-	}
-
 	stream_flush(s);
 	return 0;
 }
