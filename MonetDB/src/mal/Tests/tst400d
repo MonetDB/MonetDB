@@ -2,7 +2,7 @@
 
 	i:= -1:lng;
 	b:= bat.new(int,int);
-barrier v:= iterator.nextElement(i,0:lng,10000:lng);
+barrier v:= iterator.nextElement(i,0:lng,1000000:lng);
 	z:= bat.insert(b,1,1);
 	redo v;
 end	v;
