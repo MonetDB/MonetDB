@@ -1,7 +1,10 @@
 
 #include <gdk.h>
-#include "mem.h"
 #include "catalog.h"
+#include "context.h"
+#include "mem.h"
+#include "sqlexecute.h"
+
 
 /*
 schema *catalog_schema_create( catalog *cat, char *name, char *user, char *auth);
@@ -15,23 +18,25 @@ ptr BUNfind_safe(BAT *b, oid *tid){
 	return NULL;
 }
 
-catalog *catalog_create(){
-	BUN p,q;
-	catalog *c = default_catalog_create();
+catalog *catalog_create( context *lc ){
+	catalog *c = lc->cat;
 	int i, tcnt;
+	BUN p,q;
 
 	/* schema, name */
 	/*
-	BAT *schema_info_name; 
-	BAT *schema_info_user;
-	BAT *schema_info_auth;
+	BAT *schema_id; 
+	BAT *schema_user;
+	BAT *schema_auth;
 	*/
 
+	BAT *table_id; /* table, id */
 	BAT *table_name; /* table, name */
 	BAT *table_temp;
 	BAT *table_schema;
 	BAT *table_query;
 
+	BAT *column_id; /* column, id */
 	BAT *column_name; /* column, name */
 	BAT *column_type;
 	BAT *column_table; /* column, table */
@@ -47,17 +52,18 @@ catalog *catalog_create(){
 	BAT *sql_func_name;
 
 	/*
-	schema_info = BATdescriptor(BBPindex("schema_info"));
-	schema_info_name = BATdescriptor(BBPindex("schema_info_name"));
-	schema_info_user = BATdescriptor(BBPindex("schema_info_user"));
-	schema_info_auth = BATdescriptor(BBPindex("schema_info_auth"));
+	schema_id = BATdescriptor(BBPindex("schema_id"));
+	schema_name = BATdescriptor(BBPindex("schema_name"));
+	schema_auth = BATdescriptor(BBPindex("schema_auth"));
 	*/
 
+	table_id = BATdescriptor(BBPindex("table_id"));
 	table_name = BATdescriptor(BBPindex("table_name"));
 	table_temp = BATdescriptor(BBPindex("table_temp"));
 	table_schema = BATdescriptor(BBPindex("table_schema"));
 	table_query = BATdescriptor(BBPindex("table_query"));
 
+	column_id = BATdescriptor(BBPindex("column_id"));
 	column_name = BATdescriptor(BBPindex("column_name"));
 	column_type = BATdescriptor(BBPindex("column_type"));
 	column_table = BATdescriptor(BBPindex("column_table"));
@@ -99,28 +105,33 @@ catalog *catalog_create(){
 	    c->create_func( c, tname, tnr );
 	}
 
-	c->tables = list_create();
+	c->schemas = list_create();
+	c->cur_schema = c->create_schema( c, 0, "default-schema", "default-user" );
+	list_append_string( c->schemas, (char*) c->cur_schema );
+
 	/* bats are void-aligned */
 	BATloop(table_name, p, q){
 	    BUN v,w;
-	    oid *tid = (oid*)BUNhead(table_name, p );
+	    oid *lid = (oid*)BUNhead(table_name, p );
 	    char *tname = (char*)BUNtail(table_name, p);
-	    bit temp = *(bit*)BUNfind(table_temp, tid);
-	    char *query = (char*)BUNfind_safe(table_query, tid);
+	    oid *tid = (oid*)BUNfind_safe(table_id, lid );
+	    bit temp = *(bit*)BUNfind(table_temp, lid);
+	    char *query = (char*)BUNfind_safe(table_query, lid);
 	    BAT *columns = BATselect( column_table, tid, tid );
 
 	    if (query){
-		sql_execute( query, stdout, 0, c );
+		sqlexecute( lc, query );
 	    } else { 
-	      table *t = c->create_table( c, tname, temp );
+	      table *t = c->create_table( c, *tid, c->cur_schema, tname, temp, NULL );
 	      BATloop( columns, v, w ){
-		oid *cid = (oid*)BUNhead(columns, v );
-		char *cname = (char*)BUNfind(column_name, cid);
-		char *ctype = (char*)BUNfind(column_type, cid);
-		char *def = (char*)BUNfind(column_default, cid);
-		int nll = *(int*)BUNfind(column_null, cid);
-		int seqnr = *(int*)BUNfind(column_number, cid);
-		c->create_column( c, t, cname, ctype, def, nll, seqnr );
+		oid *lid = (oid*)BUNhead(columns, v );
+		oid cid = (char*)BUNfind(column_id, lid);
+		char *cname = (char*)BUNfind(column_name, lid);
+		char *ctype = (char*)BUNfind(column_type, lid);
+		char *def = (char*)BUNfind(column_default, lid);
+		int nll = *(int*)BUNfind(column_null, lid);
+		int seqnr = *(int*)BUNfind(column_number, lid);
+		c->create_column( c, cid, t, cname, ctype, def, nll, seqnr );
 	      }
 	    }
 	}

@@ -1,5 +1,18 @@
 #include <gdk.h>
+
+#include "symbol.h"
+#include "sqlparser.tab.h"
 #include "sqlexecute.h"
+#include "context.h"
+#include <mem.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <stream.h>
+#include <statement.h>
+#include <catalog.h>
+
+extern catalog *catalog_create( context *lc);
 
 int sql( str file, str output, int debug ){
 	int res;
@@ -13,7 +26,7 @@ int sql( str file, str output, int debug ){
 		return GDK_FAIL;
 	}
 
-	sql_init_context( &lc, out, debug, default_catalog_create() );
+	sql_init_context( &lc, out, debug, default_catalog_create( &OIDnew, NULL) );
 	catalog_create( &lc );
 	res = sql_execute( &lc, in ); 
 

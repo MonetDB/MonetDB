@@ -10,17 +10,27 @@ proc catalog_bat( str name, int tt ) := {
 	return b;
 }
 
-catalog_bat("schema_info", oid);
-catalog_bat("schema_info_name", str);
-catalog_bat("schema_info_user", str);
-catalog_bat("schema_info_authorization", str);
+catalog_bat("schema_id", oid);
+catalog_bat("schema_name", str);
+catalog_bat("schema_auth", str);
 
+if (schema_id.count() < 1){
+	var s := oid(schema_id.count());
+	schema_id.insert(s,oid(1));
+	schema_name.insert(s,"default-schema");
+	schema_auth.insert(s,"default-user");
+}
+
+b := catalog_bat("table_id", oid);
+b.reverse.accbuild(hash);
 b := catalog_bat("table_name", str);
 b.reverse.accbuild(hash);
 catalog_bat("table_temp", bit);
 catalog_bat("table_schema", oid);
 catalog_bat("table_query", str);
 
+b := catalog_bat("column_id", oid);
+b.reverse.accbuild(hash);
 b := catalog_bat("column_name", str);
 b.reverse.accbuild(hash);
 catalog_bat("column_type", str);
@@ -29,45 +39,26 @@ catalog_bat("column_default", str);
 catalog_bat("column_null", bit);
 catalog_bat("column_bat", bat);
 catalog_bat("column_number", int);
-b := catalog_bat("column_fullname", str);
-b.reverse.accbuild(hash);
 
-catalog_bat("sql_type_name", str);
-catalog_bat("sql_type_monet", str);
-catalog_bat("sql_type_module", str);
-catalog_bat("sql_type_cast", str);
+catalog_bat("type_sql", str);
+catalog_bat("type_db", str);
+catalog_bat("type_module", str);
+catalog_bat("type_cast", str);
 
 proc new_type( str sqlname, str nme, str downcast, str mod ) := {
-	id := oid(sql_type_name.count());
-	sql_type_name.insert(id, sqlname);
-	sql_type_monet.insert(id, nme);
-	sql_type_cast.insert(id, downcast);
-	sql_type_module.insert(id, mod);
+	id := oid(type_sql.count());
+	type_sql.insert(id, sqlname);
+	type_db.insert(id, nme);
+	type_cast.insert(id, downcast);
+	type_module.insert(id, mod);
 }
 
-proc resolve_column( str tab, str column ):= {
-	var cid := column_fullname.reverse.find( tab + "_" + column);
+proc resolve_column( column ) := {
+	var cid := column_id.reverse.find(oid(column));
 	return column_bat.find(cid);
-        #var tid := resolve_table(tab);
-        #var columns := column_name.semijoin(column_table.select(tid));
-        #if (columns.reverse.exist(column)){
-        #    cid := columns.reverse.find(column);
-        #    col := column_bat.find(cid);
-        #    return col;
-	#}
-        #printf ("!ERROR: column %s unknown\n", column);
-        #return "";
 }
 
-proc resolve_table( tab ):= {
-        if (table_name.reverse.exist(tab))
-                return table_name.reverse.find(tab);
-        printf ("!ERROR: table %s unknown\n", tab);
-        return "";
-}
-
-
-if (sql_type_name.count() <= 0){
+if (type_sql.count() <= 0){
 	new_type( "CHARACTER", "str", "", "" );
 	new_type( "VARCHAR", "str", "CHARACTER", "" );
 	new_type( "STRING", "str", "VARCHAR", "" );

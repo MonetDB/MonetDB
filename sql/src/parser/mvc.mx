@@ -1,0 +1,113 @@
+@f mvc
+@a N.J. Nes
+@* 
+
+@m
+.MODULE mvc;
+
+.ATOM mvc = ptr;
+.END;
+
+.COMMAND mvc_bind( mvc c, int cid ) : BAT[any::1,any::2] = mvc_bind_wrap;
+		"Bind the column, cid"
+
+.COMMAND mvc_create( int debug ) : mvc = mvc_create_wrap;
+	"Create multi version catalog"
+
+.COMMAND mvc_create_schema( mvc c, int sid, str name, str auth) : int = mvc_create_schema_wrap; 
+	"Create schema"
+
+.COMMAND mvc_drop_schema( mvc c, int sid ) = mvc_drop_schema_wrap;
+	"Drop schema"
+
+.COMMAND mvc_create_table( mvc c, int tid, int sid, str name, bit temp) : int = mvc_create_table_wrap;
+	"Create table"
+
+.COMMAND mvc_drop_table( mvc c, int tid, bit cascade ) = mvc_drop_table_wrap;
+	"Drop table"
+
+.COMMAND mvc_create_view( mvc c, int tid, int sid, str name, str sql) : int = mvc_create_view_wrap; 
+	"Create view"
+
+.COMMAND mvc_create_column( mvc c, int cid, int tid, str name, str type, int seqnr ) : int = mvc_create_column_wrap;
+	"Create column"
+
+.COMMAND mvc_drop_column( mvc c, int cid ) = mvc_drop_column_wrap; 
+	"Drop column"
+
+.COMMAND mvc_not_null( mvc c, int cid ) : int = mvc_not_null_wrap;
+	"Set column not null"
+
+.COMMAND mvc_default( mvc c, int cid, str val ) : int = mvc_default_wrap;
+	"Set column default value"
+
+.COMMAND mvc_insert( mvc c, str val ) = mvc_insert_wrap; 
+	"Fast insert, string format 0,nr_args,(col_id,val)*nr_arg,"
+
+.END mvc;
+@c
+#include "cCatalog.h"
+#include <mvc.proto.h>
+
+int mvc_create_wrap( mvc *res, int *debug ){
+	*(mvc**)res = mvc_create( *debug );
+	return GDK_SUCCEED;
+}
+
+int mvc_bind_wrap( BAT** res, mvc* c, int* cid){
+	*res = mvc_bind( *(mvc**)c, *cid );
+	BBPfix((*res)->batCacheid );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_schema_wrap( int* res, mvc* c, int* sid, str name, str auth){
+	*res = mvc_create_schema( *(mvc**)c, *sid, name, auth );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_schema_wrap( mvc* c, int* sid){
+	mvc_drop_schema( *(mvc**)c, *sid );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_table_wrap( int* res, mvc* c, int* tid, int* sid, str name, bit* temp){
+
+	*res = mvc_create_table( *(mvc**)c, *tid, *sid, name, *temp );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_table_wrap( mvc* c, int* tid, bit* cascade){
+	mvc_drop_table( *(mvc**)c, *tid, *cascade );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_view_wrap( int* res, mvc* c, int* tid, int* sid, str name, str sql){
+	*res = mvc_create_view( *(mvc**)c, *tid, *sid, name, sql );
+	return GDK_SUCCEED;
+}
+
+int mvc_create_column_wrap( int* res, mvc* c, int* cid, int* tid, str name, str type, int* seqnr){
+	*res = mvc_create_column( *(mvc**)c, *cid, *tid, name, type, *seqnr );
+	return GDK_SUCCEED;
+}
+
+int mvc_drop_column_wrap( mvc* c, int* cid){
+	mvc_drop_column( *(mvc**)c, *cid );
+	return GDK_SUCCEED;
+}
+
+mvc_export int mvc_not_null_wrap( int* res, mvc* c, int* cid){
+	*res = mvc_not_null( *(mvc**)c, *cid );
+	return GDK_SUCCEED;
+}
+
+mvc_export int mvc_default_wrap( int* res, mvc* c, int* cid, str val){
+	*res = mvc_default( *(mvc**)c, *cid, val );
+	return GDK_SUCCEED;
+}
+
+mvc_export int mvc_insert_wrap( mvc* c, str val){
+	mvc_insert( *(mvc**)c, val );
+	return GDK_SUCCEED;
+}
+

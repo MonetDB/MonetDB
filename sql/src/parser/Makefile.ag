@@ -29,16 +29,13 @@ lib__sqlserver = {
 	LIBS = -L$(MONETDIST)/lib/Monet
 }
 
-bin_sql_client = {
-	SOURCES = sql_client.c catalog-client.c statement_dump.c
-	LIBS = libsql \
-		-L$(MONETDIST)/lib/Monet -l_tcpip -l_streams \
-		-L$(MONETDIST)/lib -lbat -lmonet \
-		$(GDKLIBS)
+lib__mvc = {
+	SOURCES = mvc.mx cCatalog.c cCatalog.h
+	LIBS = -L$(MONETDIST)/lib/Monet
 }
 
-bin_sql_aclient = {
-	SOURCES = sql_aclient.c catalog-aclient.c statement_adump.c \
+bin_sql_client = {
+	SOURCES = sql_client.c catalog-client.c statement_dump.c \
 		  comm.c comm.h gdk.c mem.h
 	LIBS = libsql \
 		-L$(MONETDIST)/lib/Monet -lstream $(READLINE_LIBS)
