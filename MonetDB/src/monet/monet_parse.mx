@@ -531,7 +531,7 @@ ll_getstring(char *buf, int max_size)
 
 		if (ch == 0)
 			break;
-		if (statement && !isspace((int) ch)) {
+		if (statement && !GDKisspace(ch)) {
 			/* quit before non-whitespace after end of statement */
 			break;
 		}
