@@ -409,7 +409,7 @@ void ATOMproperty(str id, str property, GDKfcn arg) {
 	    BATatoms[t].storage = t;  /* default */
 	}
 	if (strcmp("size", property) == 0) {
-	    if (arg) {
+	    if ((int) (long) arg) {
 		BATatoms[t].size = (int) (long) arg; 
 		BATatoms[t].varsized = 0; 
 		BATatoms[t].align = align((int) (long) arg); 
@@ -655,7 +655,11 @@ from the sets of operations on the father type.
 #define CONV_NTOH               0
 
 @- 
-Recursive BATs are a special case. You should modify their reference count.
+In case that atoms are added to a bat, their logical reference count
+should be incremented (and decremented if deleted). Notice that BATs 
+with atomic types that have logical references (e.g. BATs of BATs but 
+also BATs of ODMG odSet) can never be persistent, as this would make
+the commit tremendously complicated.
 @h
 #define ATOMput(P1, P2, P3, P4)				\
 { int t_ = (P1);                                 	\
@@ -684,6 +688,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
+           ATOMfix(t_, P4);                            \
 } }    }
 
 #define ATOMreplace(P1,	P2, P3, P4)			\
@@ -709,6 +714,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_str) {			\
 		(void) strPut(P2, (var_t*) (P3), (str) (P4));\
 	} else {					\
+            ATOMunfix(t_, P3);                          \
 	    if (BATatoms[t_].atomDel) {		\
 		ATOMdel(t_, P2,(var_t*) P3);		\
 	    } 						\
@@ -717,6 +723,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	    } else {					\
 		memcpy(P3, P4, ATOMsize(P1));		\
 	    }						\
+            ATOMfix(t_, P4);                            \
 } }     }
 
 #define GDK_STRHASHTABLE	(1<<10)
@@ -1014,7 +1021,7 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 		for(q=p; num10(*p); p++) {
 			base = mult10(base) + base10(*p);
 		}
-		if (q-p > @2  || (q-p == @2 && strncmp(q,"@3",@2) > 0)) {
+		if (p-q > @2  || (p-q == @2 && strncmp(q,"@3",@2) > 0)) {
 			error = 1; /* overflow */
 		}
 		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
@@ -1078,8 +1085,7 @@ int lngToStr(char **dst, int *len, lng *src) {
 	}
 	ll = ll/LL_CONSTANT(100000000000000);
 	if (ll) {
-		sprintf(p, "%ld", (ll<0)?-ll:ll); 
-		l += strlen(p);
+		l += sprintf(p, "%ld", (ll<0)?-ll:ll); 
 	}
 	ll = (*src % LL_CONSTANT(100000000000000)) / LL_CONSTANT(10000000);
 	if (l) {
@@ -1182,7 +1188,7 @@ digit octal number to denote a character.
 
 Because in many typical situations lots of double string values occur
 in tables, the string insertion provides automatic double elimination.
-To do this, a GDK_STRHASHTABLE(=1024) bucketet hashtable is hidden in the first 
+To do this, a GDK_STRHASHTABLE(=1024) bucket hashtable is hidden in the first 
 4096 bytes of the string heap, consisting of integer offsets of the first 
 string hashing on that bucket in the heap. Furthermore, the first 4 bytes 
 before each string in the heap is an integer offset to the next string hashing 
@@ -1410,7 +1416,18 @@ int strPut(Heap *h, var_t *dst, str v) {
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
 	if (h->free + len >= h->size) {
-		size_t newsize = len + (size_t)((dbl)h->size*BATMARGIN);
+		/* Something really strange happens here, In a special case
+		   (Pentium II Klamath, gcc version 2.96 20000731,
+		   GNU assembler version 2.10.90 using BFD version 2.10.0.18)
+		   the fldl instruction to load BATMARGIN goes SOMETIMES
+		   (but reproducable) wrong (the register is filled with
+		   -NaN iso 1.5 (BATMARGIN)). So replaced this code:
+		   size_t newsize = len + h->size * BATMARGIN;
+		*/
+		float batmargin = BATMARGIN;
+		float hnewsize  = h->size * batmargin;
+		size_t newsize  = len + hnewsize;
+		assert(newsize);
 
 		/* XXX: if the heap just becomes too big, insert a nil (last var_t bytes are free) */
 		if (newsize > GDK_VM_MAXSIZE) {

@@ -139,10 +139,11 @@ YYSTREE yynode( int tok, int val) {
 	    ATOMextern((@1)->yyval.vtype))
 	{
 		GDKfree((@1)->yyval.val.pval);
+		(@1)->yyval.val.pval = 0;
 	}
   	MT_set_lock(monet_critical, "yykill");
-	@1->nfree = nfree;
-	nfree = @1;
+	(@1)->nfree = nfree;
+	nfree = (@1);
         MT_unset_lock(monet_critical, "yykill");
 @
 

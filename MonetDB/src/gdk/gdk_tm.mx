@@ -46,7 +46,7 @@ Access to the transaction table is regulated by a semaphore.
 char			TMname[MAXTM][IDLENGTH] = { SYSTRANSACTION }; 
 
 int TMnew(str s) {
-	stream_printf(GDKout, "begin transaction %s\n", s); 
+	fprintf(GDKout, "begin transaction %s\n", s); 
 	strcpy(TMname[0], s); 
 
 	return 0; 
@@ -63,129 +63,93 @@ str TMcntxt(void) {
 @
 @}
 @- 
-Upon transaction commit all dirty BATs should be saved on disk. The saving
-of bats is done by BBPsync. Dirty bats on disc (ie unloaded bats) are 
-only loaded if needed; in most cases it is enough to handle 
-the (cached) BAT descriptor. 
-
-The commit goes to a number of steps.
-First the memory versions need to be commited, ie. a commit of 
-the delta status for persistent bats and a clean contents for non 
-persistent bats. Second step is the atomic BBPsync (ie store the 
-correct current bats on disk). Then the BBP status change can be done,
-ie. switch from BBPPERSISTENT to BPPEXISTING and delete the no longer
-persistent bats from disk and memory.
+Upon transaction commit all dirty BATs should be saved on disk.
+Dirty bats on disc are only loaded if needed; in most cases
+it is enough to handle the (cached) BAT descriptor. 
 @{
-@
-TMfakeCommit updates the BBP_status to a new transaction. It collects old bats which
-can be destroyed. The resulting array of bat's can be given to TMkill to destroy these
-bats.
 @c
-int *TMfakeCommit(void){
-	int i, nkills=0, maxkills = 1024, *kills = GDKmalloc((maxkills+1)*sizeof(int));
+int TMcommit() {
+	int nkills=0, maxkills=1024, killbuf[1024], *kills = killbuf;
+	int i, ret = 0;
+
+	/* Acquire BBP locks */
+	BBPlock("TMcommit");
+
+        /* commit the delta status of each BAT */
+        for (i = 1; i < BBPsize; i++)  
+	if (BBP_status(i) & BBPPERSISTENT) {
+		BAT *b = BBPcache(i);
+		if (b == NULL && (BBP_status(i)&BBPSWAPPED)) {
+			b = BBPquickdesc(i, TRUE, FALSE);
+			if (b == NULL) { ret = 1; break; }
+		}
+		if (b) {
+			BATcommit(b);
+		}
+	}
+
+        /* atomic write of all dirty BATs and BBP.dir */
+	if (ret == 0)
+	ret = BBPsync(TRUE);
 
         /* succeeded: adapt BBPstatus of all bats while we're still locked */
+	if (ret == 0) 
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
-			BBP_status_on(i, BBPEXISTING, "TMfakeCommit");
-		} else if ((BBP_status(i)&BBPDELETED) && 
-			BBP_refs(i) <= 0 && BBP_lrefs(i) <= 0 ){
+			BBP_status_on(i, BBPEXISTING, "TMcommit");
+		} else if ((BBP_status(i)&(BBPDELETED|BBPTMP)) && BBP_refs(i) <= 0) {
 			/* We cannot kill here, because some complex accelerators (histolink)
                          * need BBP locks in their delete sequence. Hence we must postpone 
                          * their destruction until after the commit has released all locks.
                          */
 			if (nkills >= maxkills) {
-				kills = (int*) GDKrealloc(kills, ((maxkills*=2)+1)*sizeof(int));
+				int *bak = kills;
+				kills = (int*) GDKmalloc((maxkills*=2)*sizeof(int));
+				memcpy(kills, bak, nkills*sizeof(int));
+				if (bak != killbuf) {
+					GDKfree(bak);
+				}
+			}
+			/* unregister logical names; bat will be called tmp_X again */
+			if (BBP_logical(-i)) {
+                		BBP_delete(-i);
+        			GDKfree(BBP_logical(-i));
+        			BBP_logical(-i) = NULL;
+			}
+        		if (BBPnamecheck(BBP_logical(i)) == 0) {
+				char buf[32];
+				sprintf(buf, "tmp_%d", i);
+                		BBP_delete(i);
+        			GDKfree(BBP_logical(i));
+        			BBP_logical(i) = GDKstrdup(buf);
 			}
 			kills[nkills++] = i;
 			BBP_refs(i) = 1; /* make unkillable; so nobody else can kill it */
-                        BBP_status_on(i, BBPUNLOADING, "TMfakeCommit"); /* make unloadable */
+			BBP_status_on(i, BBPUNLOADING, "TMcommit");
 		}
-		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMfakeCommit");
+		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMcommit");
         }
-	kills[nkills] = 0;
-	return kills;
-}
+	BBPunlock("TMcommit");
 
+	/* outside the lock: now kill all ex-persistent bats */
+	if (ret == 0)
+	for(i=0; i<nkills; i++) {
+                BAT *b = BBPquickdesc(kills[i], TRUE, TRUE);
 
-/* kill removes the disk copy of bats. */
-void TMkill(int *kills){
-	int *killbuf = kills;
-	while(*kills){
-                BAT *b = BBP_cache(*kills);
-
-		if (b){
-			/* Loaded bats need a proper unfix */
-                        BBPunfix(*kills);
+                if (BBP_cache(kills[i])) {
+			/* those that quickdesc decides to load => proper unfix */
+                        BBPunfix(kills[i]);
                 } else {
                         /* the unloaded ones are deleted without loading */
-
-			b = BBPquickdesc(*kills, FALSE);
                         BATdelete(b); /* delete disk images */
-                        BBPclear(*kills); /* clear with locking */
+                        BBPclear(kills[i], TRUE); /* clear with locking */
                 }
-		kills++;
         }
-	if (killbuf) {
-		GDKfree(killbuf);
+	if (kills != killbuf) {
+		GDKfree(kills);
 	}
+	return ret; 
 }
-
-int TMcommit(void) {
-	int cur = 0;
-	int i, ret = 0, *kills = NULL;
-
-	/* Acquire commit lock */
-	MT_set_lock(GDKtmLock, "TMcommit"); 
-	
-        /* Commit the delta status of each persistent BAT 
-         * Clear the BUNs of those BATs which used to be persistent 
-	 *
-	 * Clearing means other BATs could become transient, ie.
-	 * needing the same clear treatment (so we repeat the loop
-	 * until no more BBPclean calls are done). 
-	 */
-        for (i = 1; i < BBPsize; i++) {
-		BAT *b;
-		bat bid = i;
-
-		if ( (BBP_status(bid) & BBPPERSISTENT) ||
-		     (BBP_status(bid) & BBPDELETED)) {
-	
-			BBPfix(bid);
-			b = BBPcache(bid);
-			if (b == NULL) {
-				b = BBPquickdesc(bid, TRUE);
-				if (b == NULL) { 
-					ret = 1; 
-					BBPunfix(bid);
-					break; 
-				}
-			}
-			if (b){
-				if (BBP_status(bid) & BBPPERSISTENT) {
-					if (i > cur) BATcommit(b);
-				} else if (BBP_status(bid) & BBPDELETED) {
-					BBPclean(b);
-					if (i > cur){
-						cur = i;
-						i = 1; /* restart */
-					}
-				}
-			}
-			BBPunfix(bid);
-		}
-	}
-
-        /* atomic write of all dirty BATs and BBP.dir */
-	if (ret == 0) ret = BBPsync(TRUE);
-	if (ret == 0) kills = TMfakeCommit();
-	MT_unset_lock(GDKtmLock, "TMcommit"); 
-	/* outside the lock: now kill all ex-persistent bats */
-	if (ret == 0) TMkill(kills);
-	return ret;
-}
-
 @- 
 Transaction abort is cheap. We use the delta statuses
 to go back to the previous version of each BAT. Also
@@ -196,59 +160,30 @@ persistent again.
 int TMabort(void) {
 	int i; 
 
-	MT_set_lock(GDKtmLock, "TMabort"); 
+	BBPlock("TMabort");
 	for (i = 1; i < BBPsize; i++) { 
 		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPcache(i);
-			if (b == NULL) {
-				b = BATload_intern(i);
-			}
+			BAT *b = BBPquickdesc(i, FALSE);
 			if (b) {
-				BBP_plevel(i)--; 
+				b->batPersistence = TRANSIENT;
 				b->batDirtydesc = 1;
 			}
 		}
 	}
 	for (i = 1; i < BBPsize; i++) { 
 		if (BBP_status(i) & (BBPPERSISTENT|BBPDELETED|BBPSWAPPED)) {
-			BAT *b = BBPcache(i);
-			if (b == NULL) {
-				b = BATload_intern(i);
-			}
+			BAT *b = BBPquickdesc(i, TRUE);
 			ALIGNundo(b);
 			BATundo(b); 
 			if (BBP_status(i)&BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
-				BBP_plevel(i)++; 
+				b->batPersistence = PERSISTENT;
 				b->batDirtydesc = 1;
 			}					
 		}
 		BBP_status_off(i, BBPDELETED|BBPSWAPPED|BBPNEW, "TMabort");
 	}
-	MT_unset_lock(GDKtmLock, "TMabort"); 
+	BBPunlock("TMabort");
 	return 0; 
 }
-
-BAT *BATmode(BAT *b, int mode) {
-	BATcheck(b, "BATmode"); 
-
-	MT_set_lock(GDKtmLock, "BATmode"); 
-	if ((b->batPersistence&mode) == 0){
-		int oldmode = b->batPersistence;
-		b->batPersistence = mode;
-		BBPdirty(1);
-		if (mode&PERSISTENT) {
-			if (VIEWparent(b)) {
-				VIEWreset(b);
-			}
-			BBPpersistent(b->batCacheid, TRUE);
-		} else if (oldmode&PERSISTENT) {
-			BBPtransient(b->batCacheid, TRUE);
-		}
-	}
-	MT_unset_lock(GDKtmLock, "BATmode"); 
-	return b; 
-}
-
-
 @}

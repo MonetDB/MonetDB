@@ -422,7 +422,7 @@ extern "C" {
 @T
 {\tt \begin{tabular}{|lll|}\hline
 int & GDKinit & (char *db, char *dbfarm)\\
-int & GDKexit & ()\\
+int & GDKexit & (int status)\\
 \hline\end{tabular}}
 @
 The session is bracketed by @%GDKinit@ and @%GDKexit@. Initialization involves
@@ -784,7 +784,8 @@ typedef struct {
 	sht		set;  		/* real set semantics */
 	sht		restricted;	/* access priviliges */
 	MT_Id 		tid;		/* which thread created it */
-	unsigned int	lastused;	/* timestamp when last used */
+	bit             keeparound;     /* keeparound even if refcnt == 0 */
+	chr             dummy[3];       /* not used yet */
 	chr 		convert;	/* endian-conversion needed? */
 	chr 		dirty;		/* general dirty marker */
         chr             descdirty;  	/* bat descriptor dirty marker */
@@ -826,7 +827,7 @@ typedef struct {
 	size_t		nokey[2]; 	/* positions that prove key ==FALSE */
 	size_t		nosorted; 	/* position that proves sorted==FALSE */
 	size_t		nodense; 	/* position that proves dense==FALSE */
-	int		dummy1,dummy2, dummy3;
+	int             aggr[3];        /* space for keeping size, card and hasnil aggregates */
 	int		accCopiedtodisk;
 } COLrec;
 
@@ -849,8 +850,20 @@ typedef struct {
 	BATrec*		P;		/* cache and sort info */
 	BUNrec*		U;		/* cache and sort info */
 	/* void hack fields */
+#if 0
+/* PETER: 
+	usage of a long here might solve some (harmless) casting warnings
+	but breaks the 32/64 bit compatibility of bat images. I have actually
+	decided to give up on that in the very near future, but why then not use
+	the MT_Id type right away?? As DD expects 32/64 compatability now, I roll
+	back, expecting this to be reversed in the enhanced 64-bit release spring '03
+
+*/
 	long 		void_tid;	/* thread that reads this bat */
 	long 		void_cnt;	/* nr of reads */
+#endif
+	int 		void_tid;	/* thread that reads this bat */
+	int 		void_cnt;	/* nr of reads */
 	oid		void_seq1;
 	oid 		void_seq2;
 } BAT;
@@ -1275,12 +1288,10 @@ The system support four modes:
 \begin{itemize}
 \item {\small PERSISTENT}, 
 \item {\small TRANSIENT}, and 
-\item {\small SESSION}.
 \end{itemize}
 @
 The PERSISTENT BATs are automatically saved upon session boundary or 
-transaction commit. The SESSION BATs remain in existence during the whole 
-session.
+transaction commit. 
 @
 Thereafter they are lost. TRANSIENT BATs are removed upon transaction boundary.
 They are normally used to maintain temporary results.
@@ -1328,7 +1339,6 @@ gdk_export int		BATgetaccess (BAT *b);
 			(b)->haccdirty || (b)->taccdirty)
 
 #define PERSISTENT	4096
-#define SESSION		2048
 #define TRANSIENT	1024
 
 #define BAT_WRITE		0	/* all kinds of access allowed */	
@@ -1556,6 +1566,8 @@ gdk_export void GDKqsort (void *a, void* base, size_t n, int width, int tpe, int
 {\tt \begin{tabular}{|lll|}\hline
 int & BBPfix & (bat bi)\\
 int & BBPunfix & (bat bi)\\
+int & BBPincref & (bat bi, int logical)\\
+int & BBPdecref & (bat bi, int logical)\\
 void & BBPhot & (bat bi)\\
 void & BBPcold & (bat bi)\\
 str & BBPname & (bat bi)\\
@@ -1600,10 +1612,10 @@ typedef struct {
         bat     next[2];	/* next BBP slot in link list */
         BATstore *cache;	/* cached header info */
         str     path;		/* dir + basename for storage */ 
-        int     refs;		/* number of batrefs */
-	int	plevel;		/* number of times the bat is made persistent */
-	int	lrefs;		/* logical reference count */
-        volatile int status;	/* always available bat info */
+        int     refs;		/* in-memory references on which the loaded status of a BAT relies */
+	int	lrefs;		/* logical references on which the existence of a BAT relies */
+	int     lastused;       /* BBP LRU stamp */
+	volatile int status;    /* status mask used for spin locking */
 } BBPrec;
 
 gdk_export bat 		BBPmaxsize;
@@ -1620,8 +1632,8 @@ gdk_export BBPrec*       	BBP;
 #define BBP_physical(i) BBP[ABS(i)].path
 #define BBP_desc(i)	BBP[ABS(i)].cache
 #define BBP_refs(i)     BBP[ABS(i)].refs
-#define BBP_plevel(i)   BBP[ABS(i)].plevel
 #define BBP_lrefs(i)    BBP[ABS(i)].lrefs
+#define BBP_lastused(i) BBP[ABS(i)].lastused
 #define BBP_status(i)   BBP[ABS(i)].status
 
 /* macros that nicely check parameters */
@@ -1639,11 +1651,12 @@ gdk_export BBPrec*       	BBP;
 #define BBPRENAME_LONG		-3
 
 gdk_export void BBPlock       (str s);
-gdk_export int  BBPunload     (bat b);
 
 gdk_export int  BBPrename     (bat b, str s);
 gdk_export int  BBPfix        (bat b);
 gdk_export int  BBPunfix      (bat b);
+gdk_export int  BBPincref     (bat b, int logical);
+gdk_export int  BBPdecref     (bat b, int logical);
 gdk_export void BBPhot        (bat b);
 gdk_export void BBPcold       (bat b);
 gdk_export void BBPtrim       (size_t memdelta, size_t vmdelta);
@@ -2074,10 +2087,12 @@ and are checked on inconsistent frees and memory leaks.
 gdk_export void *GDKmmap(char* path, int mode, off_t off, size_t len, void *fixed);
 gdk_export int	GDKmunmap(void* addr, size_t len);
 
+gdk_export      ptr     GDK_mem_start;          /* sbrk(0) at start of the program */
 gdk_export	size_t 	GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export	size_t 	GDK_mem_bigsize;	/* size after which we use VM rather than heap memory */
 gdk_export	size_t 	GDK_vm_minsize;		/* smallest size allowed for a vm block */
 gdk_export	size_t 	GDK_vm_maxsize;		/* max allowed size of reserverd vm */
+gdk_export	size_t  GDK_heap_cursize;       /* bytes in use in the malloc heap */
 gdk_export volatile	size_t 	GDK_mem_cursize;	/* committed bytes outside the heap */
 gdk_export volatile	size_t 	GDK_vm_cursize;		/* reserved vm in bytes */
 
@@ -2141,6 +2156,13 @@ by the user. A pointer to this buffer is kept in the pseudo-variable
 #define GDKMESSAGE	"!OS: "
 #define GDKFATAL	"!FATAL: "
 
+/* Data Distilleries uses ICU for internationalization of some Monet error messages */
+#ifdef MONET_ICU_I18N
+gdk_export void   GDKvsnprintf(char *buf, int maxlen, char* format, va_list ap);
+#else
+#define GDKvsnprintf(buf, maxlen, format, ap) vsnprintf(buf, maxlen, format, ap)
+#endif
+
 gdk_export void     GDKaddbuf   (char* msg);
 gdk_export int	GDKwarning  (char* format, ... );
 gdk_export int	GDKerror    (char* format, ... );
@@ -2149,6 +2171,8 @@ gdk_export int	GDKfatal    (char* format, ... );
 @
 @{
 @h
+#define BBPLOCKMASK     7
+
 #include "gdk_delta.h"
 #include "gdk_search.h"
 #include "gdk_atoms.h"
@@ -2156,8 +2180,6 @@ gdk_export int	GDKfatal    (char* format, ... );
 #include "gdk_desc.h" 
 #include "gdk_utils.h"
 #include "gdk_bat.h"
-
-#define BBPLOCKMASK     7
 
 gdk_export MT_Lock		GDKthreadLock;
 gdk_export MT_Lock		GDKstatusLock[BBPLOCKMASK+1]; 
@@ -2253,7 +2275,7 @@ extern "C" {
 static INLINE bat BBPcheck(REGISTER bat x, REGISTER str y) {
 	if (x && x != bat_nil) {
 	    REGISTER bat z = ABS(x);
-	    if (z > BBPsize || BBP[z].nme[0] == NULL) {
+	    if (z >= BBPsize || BBP[z].nme[0] == NULL) {
 		GDKwarning("%s: range error %d\n", y, x);
 	    } else  {
 		return z;
@@ -2442,7 +2464,10 @@ gdk_export int      ALIGNrelated    (BAT *b1, BAT *b2);
 gdk_export int      ALIGNsetH	(BAT *dst, BAT *src);
 
 gdk_export BAT*	BATpropcheck	(BAT *b); 
-gdk_export BAT*	BATpropcheck_	(BAT *b, int sanity_check); 
+gdk_export BAT*	BATpropcheck_	(BAT *b, int mode); 
+#define BATPROPS_QUICK  0 /* only derive easy (non-resource consuming) properties */
+#define BATPROPS_ALL    1 /* derive all possible properties; no matter what cost (key=hash) */
+#define BATPROPS_CHECK  3 /* BATPROPS_ALL, but start from scratch and report illegally set properties */
 
 gdk_export BAT*	VIEWcreate	(BAT *b);
 gdk_export BAT*	VIEWcreate_	(BAT *b, int stable);
@@ -2757,6 +2782,12 @@ properties. They can be used to improve query processing at higher levels.
 @{
 @h
 
+#define GDK_AGGR_SIZE 1
+#define GDK_AGGR_CARD 2
+#define GDK_AGGR_HASNIL 3 
+
+gdk_export int		BATgetaggr   (BAT *b, int idx);
+gdk_export int		BATsetaggr   (BAT *b, int idx, int val);
 gdk_export BAT*		BATsample    (BAT *b, size_t n);
 gdk_export BAT*		BAThistogram (BAT *b); 
 @}
@@ -2947,7 +2978,7 @@ typedef struct {
 
 /* interface definitions */
 gdk_export ValPtr	VALnew		(void);
-gdk_export ptr	VALconvert	(int typ, ValPtr t, int silent);
+gdk_export ptr	VALconvert	(int typ, ValPtr t);
 gdk_export int	VALformat	(char **buf, ValPtr res);
 gdk_export int	VALprint	(stream *fd, ValPtr res);
 gdk_export ValPtr	VALcopy		(ValPtr dst, ValPtr src);

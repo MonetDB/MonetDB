@@ -1882,7 +1882,7 @@ int TBL_setaggr_resolve(str nme, int argc, ValPtr argv,
 		return -2;
             }
             if (extent->hkey == FALSE) {
-		BATpropcheck(extent); /* try to derive hkey */
+		BATpropcheck(extent, BATPROPS_ALL); /* try to derive hkey */
 	    }
             if (extent->hkey == FALSE) {
                 GDKerror("{%s}(Y): extent must contain unique values.\n", nme);

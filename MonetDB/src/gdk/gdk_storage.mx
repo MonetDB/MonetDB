@@ -430,6 +430,12 @@ static BAT *DESCload(int i) {
 	b->void_cnt = 0;
 	/* mil shouldn't mess with just loaded bats */
 	if (b->batStamp > 0) b->batStamp = -b->batStamp;
+
+	/* reconstruct mode from BBP status (BATmode doesn't flush descriptor, so loaded mode may be stale) */
+	b->batPersistence = (BBP_status(b->batCacheid)&BBPTMP)?TRANSIENT:
+               (BBP_status(b->batCacheid)&(BBPNEW|BBPPERSISTENT))?PERSISTENT:SESSION;
+	b->batCopiedtodisk = 1;
+
 	return b;
 }
 
@@ -519,8 +525,8 @@ BAT *BATsave(BAT *bd) {
 	if (!DELTAdirty(b)) ALIGNcommit(b);
 	if (!b->halign) b->halign = OIDnew(1);
 	if (!b->talign) b->talign = OIDnew(1);
-	PERSISTENT_TYPE("@1", "head", ATOMstorage(b->htype));
-	PERSISTENT_TYPE("@1", "tail", ATOMstorage(b->htype));
+	PERSISTENT_TYPE("BATsave", "head", ATOMstorage(b->htype));
+	PERSISTENT_TYPE("BATsave", "tail", ATOMstorage(b->htype));
 
 	/* copy the descriptor to a local variable in order to let our messing in
 	 * the BAT descriptor not affect other threads that only read it. */
@@ -706,7 +712,7 @@ BAT *BATload_intern(bat i) {
 	b->batMaptacc = (char) b->taccelerator.storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug&2)) || (GDKdebug&8)) {
-		BATpropcheck_(b,TRUE); 
+		BATpropcheck_(b, BATPROPS_CHECK); 
 	}
 	return (i<0)?BATmirror(b):b; 	
 }

@@ -1157,6 +1157,7 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	if (nested->hacctype) {
 		ACCdestroy(nested->hacctype, nested, &nested->haccelerator); 
 	}
+	nested->halign = nested->talign = 0;
 	nested_rev->hkey = nested_rev->tkey = nested->hkey = nested->tkey = prop_key; 
 	nested->hsorted = prop_sorted;
 @= exec_interpret

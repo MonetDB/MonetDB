@@ -423,7 +423,7 @@ str ll_getstr(char *buf, int len, int offending) {
 	/* find out if the string goes on */
 	for(p=buf+len-1; p >= buf; p--) {
 		if (*p != '\\') break;
-                else escape = escape?0:1;
+                else escape = !escape;
 	}
 	if (escape) {
 		/* it goes on; append this line to the ll_lines array */

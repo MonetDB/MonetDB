@@ -212,7 +212,10 @@ int interpret_str(Cntxt stk, str buf, ValPtr res) {
         /* Parse and interpret the script code. */
         if (buf && *buf) {
 		Client c = forkClient(stk, FALSE);
-		char *input_bak = c->input;
+		char *input_bak;
+		if (c == NULL)
+			return i;
+		input_bak = c->input;
                 c->input = buf;
 
                 if (parseClient(c, FALSE)) {
@@ -1044,7 +1047,7 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 		res->vtype = TYPE_str;
 	} else {
 		*res = *val;
-		if ((VALconvert(tpe, res, 1) == ILLEGALVALUE) || TYPEerror(tpe, res->vtype)){
+		if ((VALconvert(tpe, res) == ILLEGALVALUE) || TYPEerror(tpe, res->vtype)){
 			GDKerror("interpret_cast: should have a string parameter.\n");
 			return -1;
 		}
@@ -1153,7 +1156,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 		    } else if (b->ttype == TYPE_flt && tpe == TYPE_lng) {
 			reduce = 1; /* rounding off */
 		    }
-		    s = VALconvert(tpe, res, 1); /* try once if this works */
+		    s = VALconvert(tpe, res); /* try once if this works */
 		    if (s == ILLEGALVALUE || TYPEerror(tpe, res->vtype)) {
 			GDKerror("interpret_batcast: impossible to convert '%s' into '%s'.\n", 
 					ATOMname(b->ttype), ATOMname(tpe));
@@ -1165,14 +1168,14 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    res->val.pval = BUNtail(b,p);
-			    s = VALconvert(tpe, res, 1);
+			    s = VALconvert(tpe, res);
 			    BUNfastins(bn, BUNhead(b,p), s);
 			} 
 		    } else {
 			for(p+=xx; p < q; p+=xx) {
 		    	    res->vtype = BATttype(b);
 			    memcpy(&res->val.ival, BUNtail(b,p), len);
-			    s = VALconvert(tpe, res, 1);
+			    s = VALconvert(tpe, res);
 			    BUNfastins(bn, BUNhead(b,p), s);
 			}
 		    }
@@ -1270,7 +1273,7 @@ int interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope){
 
 	if (scope) {
 		if (!lt->old_cntxt) {
-			stk = CNTXTreserve(stk);
+			stk = CNTXTnew(stk);
 			if (stk <= 0) return -1;
 			lt->old_cntxt = stk;
 		} else stk = lt->old_cntxt; 
@@ -1320,7 +1323,7 @@ int interpret_parblock(int stk, YYSTREE lt, ValPtr res, int scope){
 
 	if (scope) {
 		if (!lt->old_cntxt) {
-			stk = CNTXTreserve(stk);
+			stk = CNTXTnew(stk);
 			if (stk <= 0) return -1;
 			lt->old_cntxt = stk; 
 			if (reuse < 0) {

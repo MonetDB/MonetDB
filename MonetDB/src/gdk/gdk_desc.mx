@@ -175,6 +175,9 @@ BAT, and vice versa.
              (@2)->nodense = normal_sizet_@5((@4)->nodense);
                (@2)->dense = (@4)->dense;
      (@2)->accCopiedtodisk = normal_int_@5((@4)->accCopiedtodisk);
+             (@2)->aggr[0] = normal_int_@5((@4)->aggr[0]);
+             (@2)->aggr[1] = normal_int_@5((@4)->aggr[1]);
+             (@2)->aggr[2] = normal_int_@5((@4)->aggr[2]);
 
 @= Dimensions_ALL
              (@2).headtype = short_int_@5((@4).headtype);
@@ -203,7 +206,7 @@ BAT, and vice versa.
          (@2)->persistence = short_int_@5((@4)->persistence);
                  (@2)->set = short_int_@5((@4)->set);
           (@2)->restricted = short_int_@5((@4)->restricted);
-            (@2)->lastused = normal_int_@5((@4)->lastused);
+          (@2)->keeparound = (@4)->keeparound;
                (@2)->dirty = (@4)->dirty;
            (@2)->descdirty = (@4)->descdirty;
            (@2)->bunsdirty = (@4)->bunsdirty;

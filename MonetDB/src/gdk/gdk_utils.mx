@@ -44,7 +44,7 @@ gdk_export int  GDKsec       (void);
 
 gdk_export BAT *GDKenv;
 
-gdk_export void BATSIGcrash(int);
+gdk_export RETSIGTYPE BATSIGcrash(int);
 
 @c
 #ifndef GDK_NOLINK
@@ -412,16 +412,27 @@ void GDKmemchk(int memchk, int vmchk) {
 	size_t memtarget = GDKmem_inuse();
 	size_t vmtarget = GDKvm_cursize();
 	MEMDEBUG {
+	  /* Protect from being called recursivly because THRprintf
+	     allocates memory */
+	  static int printing[THREADS];
+	  int tid = (int) THRgettid();
+	  if (!printing[tid - 1]) {
+		printing[tid - 1] = TRUE;
 		THRprintf(GDKerr, "GDKmemchk (memcur=%lu,memmax=%lu) (vmcur=%lu,vmmax=%lu)\n",
 			(unsigned long) memtarget, (unsigned long) GDK_mem_maxsize, 
 			(unsigned long) GDK_vm_cursize, (unsigned long) GDK_vm_maxsize);
+		printing[tid - 1] = FALSE;
+	  }
 	}
 	memtarget = (memchk && memtarget > GDK_mem_maxsize) ? memtarget - GDK_mem_maxsize : 0;
 	vmtarget = (vmchk && vmtarget > GDK_vm_maxsize) ? vmtarget - GDK_vm_maxsize : 0;
-	if (memtarget > 0 || vmtarget > 0) {
+	if (memtarget > 0 || vmtarget > 0 || BBP_desc_count[0] > (BBP_desc_max + (BBP_desc_max>>3))) {
 		BBPtrim(memtarget, vmtarget);
+		GDK_mem_allocs = GDK_vm_allocs = 0;
+	} else {
+		if (memchk) GDK_mem_allocs = 0;
+		if (vmchk) GDK_vm_allocs = 0;
 	}
-	GDK_mem_allocs = GDK_vm_allocs = 0;
 }
 
 void GDKmeminc(size_t memdelta, size_t vmdelta) {
@@ -510,15 +521,15 @@ static
 void GDKmemdump(void) {
 	struct mallinfo m = MT_mallinfo();
 
-	THRprintf(GDKerr, "\n!mallinfo.arena = %d\n", m.arena);
-	THRprintf(GDKerr, "!mallinfo.ordblks = %d\n", m.ordblks);
-	THRprintf(GDKerr, "!mallinfo.smblks = %d\n", m.smblks);
-	THRprintf(GDKerr, "!mallinfo.hblkhd = %d\n", m.hblkhd);
-	THRprintf(GDKerr, "!mallinfo.hblks = %d\n", m.hblks);
-	THRprintf(GDKerr, "!mallinfo.usmblks = %d\n", m.usmblks);
-	THRprintf(GDKerr, "!mallinfo.fsmblks = %d\n", m.fsmblks);
-	THRprintf(GDKerr, "!mallinfo.uordblks = %d\n", m.uordblks);
-	THRprintf(GDKerr, "!mallinfo.fordblks = %d\n", m.fordblks);
+	THRprintf(GDKerr, "\n!mallinfo.arena = %ld\n", (long) m.arena);
+	THRprintf(GDKerr, "!mallinfo.ordblks = %ld\n", (long) m.ordblks);
+	THRprintf(GDKerr, "!mallinfo.smblks = %ld\n", (long) m.smblks);
+	THRprintf(GDKerr, "!mallinfo.hblkhd = %ld\n", (long) m.hblkhd);
+	THRprintf(GDKerr, "!mallinfo.hblks = %ld\n", (long) m.hblks);
+	THRprintf(GDKerr, "!mallinfo.usmblks = %ld\n", (long) m.usmblks);
+	THRprintf(GDKerr, "!mallinfo.fsmblks = %ld\n", (long) m.fsmblks);
+	THRprintf(GDKerr, "!mallinfo.uordblks = %ld\n", (long) m.uordblks);
+	THRprintf(GDKerr, "!mallinfo.fordblks = %ld\n", (long) m.fordblks);
 #ifdef GDK_MEM_KEEPHISTO
 	if (GDK_mem_histo) {	
 		BUN p,q;
@@ -530,7 +541,7 @@ void GDKmemdump(void) {
 		}
 	}
 #endif
-#ifdef GDK_MEM_KEEPHISTO
+#ifdef GDK_VM_KEEPHISTO
 	if (GDK_vm_histo) {	
 		BUN p,q;
 		THRprintf(GDKerr, "\n!virtual memory histogram\n");
@@ -548,11 +559,11 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 	int bak = GDKdebug;
 
 	/* bumped your nose against the wall; try to prevent repetition by adjusting maxsizes */
-	if (memtarget) {
+	if (memtarget < 0.3 * GDKmem_inuse()) {
 		size_t newmax = (size_t) (0.7 * (double)GDKmem_inuse());
 		if (newmax < GDK_mem_maxsize) GDK_mem_maxsize = newmax;
 	}
-	if (vmtarget) {
+	if (vmtarget < 0.3 * GDKvm_cursize()) {
 		size_t newmax = (size_t) (0.7 * (double)GDKvm_cursize());
 		if (newmax < GDK_vm_maxsize) GDK_vm_maxsize = newmax;
 	}
@@ -755,7 +766,7 @@ int GDKmunmap(void* addr, size_t size) {
         MT_alloc_register(addr, size, 'm');
         ret = MT_munmap(addr, size);
         if (ret == 0) {
-                GDKmemdec(size, size);
+                GDKmemdec((size_t) 0, size);
         }
         return ret;
 }
@@ -874,6 +885,12 @@ int GDKinit(char *dbname, char *dbfarm) {
 
 	/* Mserver intends to rob 85% of all memory as a default */
  	GDK_mem_maxsize = (size_t) ((double)MT_npages() * (double)MT_pagesize() * 0.85); 
+#ifdef DDI_PATCH
+{	size_t vmlimit = GDK_mem_maxsize + GDKvm_cursize() - GDKmem_inuse();
+	if (GDK_vm_maxsize > vmlimit) {
+		GDK_vm_maxsize = vmlimit; /* in order not to swap like mad, limit vm consumption */
+	}}
+#endif
 
 	GDKremovedir(DELDIR);  
 	BBPinit(); 
@@ -924,19 +941,32 @@ gdk_export int GDKstopped;
 int GDKstopped = 1;
 
 @h
-gdk_export void GDKexit(void);
+gdk_export void GDKexit(int status);
 @c
-void GDKexit(void) {
+void GDKexit(int status) {
         if (GDKthreadLock) MT_set_lock(GDKthreadLock, "GDKexit");
         if (GDKstopped == 0) {
                 GDKstopped++; /* shouldn't there be a lock here? */
                 GDKnrofthreads = 0;
                 if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKexit");
+
+		/* Kill all threads except myself */
+		if(status == 0) {
+			MT_Id pid = MT_getpid();
+			Thread t, s;
+			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
+				if (t->pid) {
+					MT_Id victim = t->pid; 
+					if(t->pid != pid)
+						MT_kill_thread(victim); 
+				}
+			}
+		}
 		(void) GDKgetHome();
 		BBPexit(); 
 		GDKlog(GDKLOGOFF);
 		GDKunlockHome(); 
-		MT_global_exit(0); 
+		MT_global_exit(status); 
 	} 
 	if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKexit");
 }
@@ -1163,7 +1193,7 @@ Real errors should be saved in the lock file for post-crash inspection.
 #ifdef COREDUMP
         	abort(); 
 #else
-        	GDKexit(); 
+        	GDKexit(1); 
 	}
 #endif
 	return -1;
