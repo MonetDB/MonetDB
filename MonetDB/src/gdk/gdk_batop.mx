@@ -1464,11 +1464,11 @@ Use the histogram to determine good split boundaries on b.
 	}
 	seps[yy] = nilval;
         BBPreclaim(histo);
-	if (n != yy +1) {
+
+	if (n > 1 && n != yy +1) {
 		GDKwarning("rangesplit: delivering %lu instead of %lu fragments\n", yy+1, n); 
 		n = yy + 1;
 	}
-
 @- 
 CASE 1: just one bucket.
 This is done without copying b.
