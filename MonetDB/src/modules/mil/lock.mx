@@ -1,0 +1,63 @@
+@f lock
+@t Lightweight Lock Module
+@v 1.0
+@a Peter Boncz
+@* Introduction
+This module provides simple SMP lock and thread functionality
+as already present in the Monet system.
+
+@* MEL Definitions
+@mal
+atom module lock:ptr;
+
+command lock_create() : lock = create_lock
+	comment "create an unset lock";
+command lock_set(l:lock) = set_lock
+	comment "try to set a lock; if set, block till it is freed";
+command lock_try(l:lock) : int = try_lock
+	comment "try a lock, if free set it, if not return EBUSY";
+command lock_unset(l:lock) = unset_lock
+	comment "unset a lock";
+command lock_destroy(l:lock) = destroy_lock
+	comment "destroy a lock";
+
+@- semaphores
+@mal
+atom module sema:ptr;
+
+command sema_create(init:int ) : sema = create_sema
+	comment "create an unset sema, with an initial value";
+command sema_down(s:sema) = down_sema
+	comment "decrease the semaphpore if >0; else block";
+command sema_try(s:sema) : int = try_sema
+	comment "try the semaphpore";
+command sema_up(s:sema) = up_sema
+	comment "increase the semaphore";
+command sema_destroy(s:sema) = destroy_sema
+	comment "destroy a sema";
+
+@mil
+	CONST EBUSY := 16;
+@-
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ *		   Peter Boncz <Peter.Boncz@cwi.nl>
+ */
+

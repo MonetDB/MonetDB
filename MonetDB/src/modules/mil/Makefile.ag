@@ -8,7 +8,7 @@ LIBDIR = pkglib
 
 LIBS = {
 	SEP = _
-#	SOURCES = bat.mx  algebra.mx system.mx startup.mx
+#	SOURCES = bat.mx  algebra.mx system.mx startup.mx lock.mx
 	SOURCES = startup.mx
 
 	HEADERS = h 
