@@ -70,6 +70,7 @@ loading module 'pathfinder'
 [ "main",	  1		  ]
 [ "malalgebra",	  1		  ]
 [ "pathfinder",	  1		  ]
+[ "pf_support",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]

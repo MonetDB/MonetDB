@@ -9,4 +9,16 @@ string_join6
 string_join7
 string_join8
 merged_union
+merged_union2
 mark_grp
+load_db
+descendant
+descendant-or-self
+ancestor
+ancestor-or-self
+child
+parent
+following
+preceding
+following-sibling
+preceding-sibling
