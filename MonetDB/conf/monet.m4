@@ -46,6 +46,7 @@ if test "x$have_monet" != xno; then
     MONET_LIBS=`$MONET_CONFIG --libs`
     MONET_MOD_PATH=`$MONET_CONFIG --modpath`
     MONET_PREFIX=`$MONET_CONFIG --prefix`
+    CLASSPATH="$CLASSPATH:`$MONET_CONFIG --classpath`"
   fi
 fi
 AC_SUBST(MONET_CFLAGS)
@@ -54,6 +55,7 @@ AC_SUBST(MONET_INCLUDEDIR)
 AC_SUBST(MONET_LIBS)
 AC_SUBST(MONET_MOD_PATH)
 AC_SUBST(MONET_PREFIX)
+AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 ])
 
@@ -143,6 +145,33 @@ aix*)
 esac
 AC_SUBST(MEL_LIBS)
 AC_SUBST(thread_safe_flag_spec)
+
+have_java=auto
+JAVAC="javac"
+JAR="jar"
+CLASSPATH=""
+AC_ARG_WITH(java,
+[  --with-java=DIR     javac and jar are installed in DIR/bin], have_java="$withval")
+if test "x$have_java" != xno; then
+  AC_PATH_PROG(JAVAC,javac,,$withval/bin:$PATH)
+  AC_PATH_PROG(JAR,jar,,$withval/bin:$PATH)
+  if test "x$JAVAC" != x; then
+     have_java=yes
+  else
+     have_java=no
+  fi
+
+  if test "x$have_java" != xyes; then
+    JAVAC=""
+    JAR=""
+    CLASSPATH=""
+  fi
+fi
+AC_SUBST(JAVAC)
+AC_SUBST(JAR)
+AC_SUBST(CLASSPATH)
+AM_CONDITIONAL(HAVE_JAVA,test x$have_java = xyes)
+
 ])
 
 AC_DEFUN(AM_MONET_TOOLS,[
