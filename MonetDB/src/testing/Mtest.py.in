@@ -1148,6 +1148,8 @@ def GetBitsAndModsAndStatic(env) :
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
+    if env['VERSION'] > 49900:
+        return missing
     if os.path.isfile(TST+".modules"):
         for m in fileinput.input(TST+".modules"):
             m = m.strip()
@@ -1176,7 +1178,7 @@ def CheckBATs(env, TST, TSTDB) :
     missing = []
 
     if env['VERSION'] >= 49900:
-        Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
+        # Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
         return missing
 
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB)
