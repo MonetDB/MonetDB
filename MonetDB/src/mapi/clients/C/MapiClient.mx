@@ -967,18 +967,14 @@ main(int argc, char **argv)
 	} else {
 		struct stat statb;
 		char *prompt = NULL;
+		char promptbuf[16];
 
 		if (fstat(fileno(stdin), &statb) == 0 &&
 		    S_ISCHR(statb.st_mode)) {
-			prompt = mo_find_option(set, setlen, "prompt");
-			if (prompt == NULL) {
-#ifdef MONET5
-				if (strcmp(language, "mal") == 0)
-					prompt = "mal>";
-				else
-#endif
-					prompt = ">";
-			}
+			/* reading from terminal, prepare prompt */
+			sprintf(promptbuf, "%.*s>",
+				(int) sizeof(promptbuf) - 2, language);
+			prompt = promptbuf;
 		}
 		c = doFileByLines(mid, stdin, prompt, linemode);
 	}
