@@ -373,7 +373,7 @@ lng GDKmem_heapsize() {
 
 #ifdef GDK_MEM_SIMPLE
 lng GDKmem_heapinuse() {
-	/* we do not keep statistics ourselves; so we ask malloinfo */
+	/* we do not keep statistics ourselves; so we ask mallinfo */
 	struct mallinfo m = MT_mallinfo();
         return (lng) (m.usmblks + m.uordblks);
 }
@@ -588,7 +588,8 @@ void GDKmemfail(str s, int len, lng memtarget, lng vmtarget) {
 	s = (long*) malloc(size)
 #else
 #define GDKmalloc_prefixsize(s, size) {					\
-	long realsize = size + ((size&3)?12-(size&3):8);		\
+	/* round up to multiple of 4 and add 8: */			\
+	long realsize = ((size) + 11) & ~3;				\
 	char *p = (char *) malloc((size_t) realsize);			\
 	if (p == NULL) {						\
 		s = NULL;						\
