@@ -36,6 +36,8 @@ import time
 STDOUT = sys.stdout
 STDERR = sys.stdout	# err
 
+TIMES = []
+
 random.seed(time.time())
 
 def Usage () :
@@ -429,6 +431,7 @@ def find_test_dirs(thisdir) :
 ### find_test_dirs(thisdir) #
 
 def PerformDir(env, testdir, testlist) :
+	td = 0
 	TSTSRCBASE = env['TSTSRCBASE']
 	if testdir == TSTSRCBASE:
 		TSTDIR = os.curdir
@@ -453,7 +456,7 @@ def PerformDir(env, testdir, testlist) :
 				testlist.append(tst)
 	if not testlist:
 		Warn("No tests found in '"+TSTSRCDIR+"`; skipping directory!")
-		return
+		return td
 
 	env['TSTDB']     = TSTDB
 	env['TSTDIR']    = TSTDIR
@@ -476,19 +479,26 @@ def PerformDir(env, testdir, testlist) :
 				Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
 				#TODO:
 				# add "something" to HTML output
-				return
+				return td
 		if Check(env['exe']['Mtimeout'][1]+env['exe']['Mcreatedb'][1] +" -db "+TSTDB, ""):
 			Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
 			#TODO:
 			# add "something" to HTML output
-			return
+			return td
 		if not os.path.exists(TSTTRGDIR):
 			#TODO: set mode to umask
 			os.makedirs(TSTTRGDIR)
 
 		for TST in testlist:
 			os.environ['TST'] = TST
-			RunTest(env, TST)
+			tt = RunTest(env, TST)
+			if tt:
+				t = "%7.3f" % tt
+			else:
+				t = '-.---'
+			TIMES.append([TSTDIR,TST,t])
+			td = td + tt
+		TIMES.append([TSTDIR,'',"%7.3f" % td])
 
 		CreateHtmlIndex(env)
 		AddSubToHtmlIndex(env, TSTDIR)
@@ -496,10 +506,12 @@ def PerformDir(env, testdir, testlist) :
 	else: # THISFILE == "Mapprove.py"
 		if not os.path.exists(TSTTRGDIR):
 			Warn("Output directory '"+TSTTRGDIR+"` missing; skipping directory!")
-			return
+			return td
 
 		for TST in testlist:
 			ApproveOutput(env, TST)
+
+	return td
 ### PerformDir(env, testdir, testlist) #
 
 def ApproveOutput (env, TST) :
@@ -634,6 +646,7 @@ def RunTest(env, TST) :
 	TSTTRGBASE = env['TSTTRGBASE']
 	os.chdir(TSTSRCDIR)
 
+	TX = 0
 	EXT = "" ; CALL = ""
 	x = isexecutable(TST)
 	if   x[0]:
@@ -667,7 +680,7 @@ def RunTest(env, TST) :
 			#elif os.name == "posix":
 		else:
 			ErrMsg("test missing: '"+TSTSRCDIR+os.sep+TST+"[.py|.milM|.milS|.milC]`")
-		return
+		return TX
 
 	MissingMods = CheckMods(env, TST, EXT)
 	MissingBATs = CheckBATs(env, TST, TSTDB)
@@ -716,7 +729,7 @@ def RunTest(env, TST) :
 				shutil.copy(TSTSRC,TST+EXT)
 			else:
 				SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
-				return
+				return TX
 
 		BITS = env['TST_BITS']
 		for e in "."+OSVER+"."+BITS , "."+OSVER , "."+OS , "":
@@ -794,7 +807,12 @@ def RunTest(env, TST) :
 		TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 		TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
 
+		t0 = time.time()
 		DoIt (env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT)
+		t1 = time.time()
+		TX = t1 - t0
+		STDOUT.write(" %7.3fs\n" % TX)
+		STDOUT.flush()
 
 		if os.name != "nt":
 			while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
@@ -884,6 +902,8 @@ def RunTest(env, TST) :
 		os.system(env['exe']['Mdiff'][1]+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
 
 		AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
+
+	return TX
 ### RunTest(env, TST) #
 
 def Prompt(cmd) :
@@ -914,7 +934,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr) :
 
 def DoIt(env, CALL, TST, EXT, PRELUDE, TestOut, TestErr, XTIMEOUT, TIMEOUT) :
 	STDERR.flush()
-	print(time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE)
+	STDOUT.write(time.strftime('%H:%M:%S> ',time.localtime(time.time()))+env['TSTDIR']+os.sep+TST+EXT+" "+PRELUDE+" ...")
 	STDOUT.flush()
 	TSTDB = env['TSTDB']
 	exe = env['exe']
@@ -1436,17 +1456,25 @@ def main(argv) :
 		print("Modules: ", env['TST_MODS'])
 		STDOUT.flush()
 
+	t_ = 0
 	if len(testdirs) == 1:
-		PerformDir(env, testdirs[0], testlist)
+		t_ = PerformDir(env, testdirs[0], testlist)
 	else:
 		testdirs.sort()
 		for d in testdirs:
-			PerformDir(env, d, [])
+			t_ = t_ + PerformDir(env, d, [])
 
 	if THISFILE == "Mtest.py":
 		env['TSTDIR'] = ""
 		env['TSTTRGDIR'] = env['TSTTRGBASE']+os.sep+"Tests"
 		CreateHtmlIndex(env)
+
+		fn = env['TSTTRGBASE']+os.sep+"Tests"+os.sep+"times."
+		fl = open(fn+"lst","w")
+		for TSTDIR,TST,tt in TIMES:
+			fl.write(url(TSTDIR+os.sep+TST)+":\t"+tt+"\n")
+		fl.write(":\t%7.3f\n" % t_)
+		fl.close()
 
 		test = re.compile("^.*<B>.*$")
 		failed = 0
