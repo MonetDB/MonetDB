@@ -305,7 +305,9 @@ table_optname(mvc *sql, scope *scp, stmt *sq, char *query, symbol *optname)
 	if (columnrefs) {
 		dnode *d;
 
-		assert(list_length(sq->op1.lval) == dlist_length(columnrefs));
+		if (list_length(sq->op1.lval) != dlist_length(columnrefs)) {
+			return sql_error(sql, 02, "Error: Column definition list doesn't match real list of columns");
+		}
 		for (m = sq->op1.lval->h, d = columnrefs->h; d && m; d = d->next, m = m->next) {
 			stmt *st = m->data;
 			stmt *sc = stmt_column(stmt_alias(stmt_dup(st),

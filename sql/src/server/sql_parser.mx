@@ -153,7 +153,7 @@ typedef enum jt {
 } jt;
 
 sql_export char *token2string(int token);
-sql_export stmt *sql_error(mvc *sql, int error_code, char *format, ...);
+sql_export void *sql_error(mvc *sql, int error_code, char *format, ...);
 sql_export int parse_error(mvc *sql, char *s);
 sql_export int sqlparse(void *);
 
@@ -3168,7 +3168,7 @@ char *token2string(int token)
 	}
 }
 
-stmt *sql_error( mvc * sql, int error_code, char *format, ... )
+void *sql_error( mvc * sql, int error_code, char *format, ... )
 {
 	va_list	ap;
 
