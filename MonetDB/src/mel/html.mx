@@ -52,8 +52,6 @@ class html: public language {
 	ostream &gen_any_arg( ostream &o, const AnyArg &m );
 	ostream &gen_prelude( ostream &o, const Prelude &m );
 	ostream &gen_epilogue( ostream &o, const Epilogue &m );
-	ostream &gen_load( ostream &o, const Load &m );
-	ostream &gen_drop( ostream &o, const Drop &m );
     private:
 	int result;
 };
@@ -312,15 +310,5 @@ ostream &html::gen_prelude( ostream &o, const Prelude &d ){
 
 ostream &html::gen_epilogue( ostream &o, const Epilogue &d ){
 	o << "<li> Epilogue implemented with " << d.Name()<< "\n";
-	return o; 
-}
-
-ostream &html::gen_load( ostream &o, const Load &d ){
-	o << "<li> Load script " << d.Name() << "\n";
-	return o; 
-}
-
-ostream &html::gen_drop( ostream &o, const Drop &d ){
-	o << "<li> Drop script " << d.Name() << "\n";
 	return o; 
 }
