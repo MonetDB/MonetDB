@@ -116,7 +116,7 @@ end main;	# 8
 # int	str			str	str		lng	int	str		str	str		int	  # type
 #-------------------------------------------------------------------------------------------------------------------------#
 [ 1,	  "monet_environment",	  "str",  "str",	  33,	  151,	  "dirty",	  "load", "transient",	  3	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  685,	  152,	  "dirty",	  "load", "transient",	  3	  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  3	  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  3	  ]
 [ 4,	  "simplemind",		  "int",  "int",	  0,	  41,	  "dirty",	  "load", "transient",	  3	  ]
 [ "Get second directory" ]
