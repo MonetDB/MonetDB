@@ -1,3 +1,4 @@
+EXTRA_DIST = general.mil quit.mil monet.conf
 EXTRA_DIST_DIR = gold 
 
 SUBDIRS = tools

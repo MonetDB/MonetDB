@@ -1,8 +1,8 @@
 EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh mkinstalldirs missing \
-	ltmain.sh \
-	stamp-h.in config.h.in
+	ltmain.sh stamp-h.in config.h.in \
+	monet.m4 conf.bash conf.csh
 
 scripts_m4 = {
 	DIR = pkgdatadir/conf

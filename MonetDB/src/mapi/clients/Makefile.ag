@@ -6,6 +6,16 @@ GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
 MAPI_LIBS = $(SOCKET_LIBS) $(GDK_LIBS)
 
+EXTRA_DIST = \
+	MapiClient.java  Mapi.hs \
+	MapiClient.php   Mapi.php \
+	MapiClient.pl    Mapi.pm \
+	MapiClient.py    Mapi.py \
+	MapiClient.tcl   Mapi.tcl \
+
+EXTRA_DIST_DIR = Mapi
+
+
 lib_Mapi = {
 	SOURCES = Mapi.mx 
 	LIBS = $(MAPI_LIBS) ../../gdk/libbat
