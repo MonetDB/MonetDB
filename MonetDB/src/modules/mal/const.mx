@@ -1,0 +1,253 @@
+@f const
+@t MAL constant management
+@a Martin Kersten
+@v 0.1
+@* Constant space management
+
+This module shows the behavior of a simple box of objects.
+Objects are stored into the box using deposit() and taken
+out with take(). Once you are done, elements can be
+removed by name or reference using discard().
+
+A box should be opened before being used. It is typically used
+to set-up the list of current users and to perform authorization.
+
+The default constant box is initialized with session values,
+such as 'user','dbname', 'dbfarm', and 'dbdir'. These actions
+are encapsulated in the prelude routine called.
+
+Furthermore, it implements a simple authorization scheme, 
+prohibiting all updates unless issued by the system administrator.
+@mal
+module const;
+
+pattern open():void= CMDconst_open
+comment "Locate the constant box and open it";
+
+pattern close():void= CMDconst_close
+comment "Close the constant box ";
+
+pattern destroy():void= CMDconst_destroy
+comment "Destroy the box";
+
+pattern take(name:str):any = CMDconst_take
+comment "Locates the typed value in the constant box";
+
+pattern deposit(name:str,v:any):void = CMDconst_deposit
+comment "Enter a new value into the constant box";
+
+pattern releaseAll():void = CMDconst_releaseAll
+comment "Release all constants for this client";
+
+pattern release(name:str,val:any):void = CMDconst_release
+comment "Release a new constant value";
+
+pattern release(name:str):void = CMDconst_release
+comment "Release a new constant value";
+
+pattern toString(name:str):str = CMDconst_toString
+comment "Get the string representation of an element in the box";
+
+pattern discard(name:str):void = CMDconst_discard
+comment "Release the const from the box";
+
+pattern iterator(nme:str):lng = CMDconst_iterator
+comment "Locates the next element in the constant box";
+
+pattern prelude():void = CMDconst_prelude
+comment "Initialize the const box";
+
+const.prelude();
+@-
+@+ Implementation
+@h
+/*
+ * The contents of this file are subject to the Monet Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://www.monetsolutions.com/Download/Licensing/MonetPL-1.1.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
+#ifndef _ITERATOR_H
+#define _ITERATOR_H
+#endif /* _ITERATOR_H*/
+@- Module initializaton
+The content of this box my only be changed by the Administrator.
+@= authorize
+	if( !isAuthorized()){
+		return (int) raiseException(mb,stk->pc,"boxException",
+			"unauthorized access to 'const' box\n");
+	}
+@c
+#include "monet.h"
+
+int isAuthorized(){
+	Client c;
+	c= getClient();
+	return idcmp(c->user,"Admin")==0;
+}
+void insertToBox(Box box, str nme, str val){
+	ValRecord vr;
+	vr.vtype= TYPE_str;
+	vr.val.pval= GDKstrdup(val);
+	depositBox(box,nme,&vr);
+}
+int CMDconst_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	ValRecord vr;
+	@:authorize@
+	box= openBox("const");
+	if( box== 0) {
+		return (int) raiseException(mb,stk->pc,"boxException",
+			"failed to open box\n");
+	}
+	insertToBox(box,"user",getClient()->user);
+	insertToBox(box,"database",GDKdbnameStr);
+	insertToBox(box,"dbfarm",GDKdirStr);
+	insertToBox(box,"distribution",GDKdistrStr);
+	insertToBox(box,"monetrc",GDKmonetrcStr);
+	insertToBox(box,"architecture",GDKarchStr);
+	insertToBox(box,"version",GDKversionStr);
+	insertToBox(box,"environment","unknown yet");
+	return GDK_SUCCEED;
+}
+@- Operator implementation
+@c
+int CMDconst_open(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	@:authorize@
+	if(openBox("const") != 0) return GDK_SUCCEED;
+	return (int) raiseException(mb,stk->pc,"boxException",
+		"failed to open box\n");
+}
+
+int CMDconst_close(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	@:authorize@
+	if( closeBox("const",TRUE) ==0) return GDK_SUCCEED;
+	return (int) raiseException(mb,stk->pc,"boxException",
+		"failed to close 'const' box\n");
+}
+int CMDconst_destroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	@:OpenBox@
+	destroyBox("const");
+	return GDK_SUCCEED;
+}
+@-
+Access to a box calls for resolving the first parameter
+to a named box.
+@= OpenBox
+	@:authorize@
+	box= openBox("const");
+	if( box ==0) 
+	return (int) raiseException(mb,stk->pc,"boxException",
+		"failed to open box\n");
+@-
+@c
+int CMDconst_deposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	ValPtr v;
+	Box box;
+
+	@:OpenBox@
+	name = (str) getArgValue(stk,pci,1);
+	v = &stk->stk[pci->argv[2]];
+	if(depositBox(box,name,v) == GDK_FAIL) {
+		char msg[1024];
+		sprintf(msg,"%s:failed to deposit box\n",name);
+		return (int) raiseException(mb,stk->pc,"boxException",msg);
+	}
+	return GDK_SUCCEED;
+}
+
+int CMDconst_take(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	Box box;
+	ValPtr v;
+
+	@:OpenBox@
+	name = (str) getArgValue(stk,pci,1);
+	v = &stk->stk[pci->argv[0]];
+	if(takeBox(box,name,v)== GDK_FAIL) {
+		char msg[1024];
+		sprintf(msg,"%s:failed to take from box\n",name);
+		return (int) raiseException(mb,stk->pc,"boxException",msg);
+	}
+	return GDK_SUCCEED;
+}
+
+int CMDconst_release(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	Box box;
+
+	@:OpenBox@
+        name = (str) getArgValue(stk,pci,1);
+        releaseBox(box,name);
+	return GDK_SUCCEED;
+}
+
+int CMDconst_releaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+
+	@:OpenBox@
+	releaseAllBox(box);
+	return GDK_SUCCEED;
+}
+
+int CMDconst_discard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str name;
+	Box box;
+
+	@:OpenBox@
+        name = (str) getArgValue(stk,pci,1);
+        if( discardBox(box,name) == GDK_FAIL){
+                char msg[1024];
+                snprintf(msg,1024,"failed to discard '%s' from box '%s'\n",
+			name, box->name);
+                return (int) raiseException(mb,stk->pc,"boxException",msg);
+        }
+	return GDK_SUCCEED;
+}
+int CMDconst_toString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	int i;
+	ValPtr v;
+	str nme;
+
+	@:OpenBox@
+	nme = (str) getArgValue(stk,pci,1);
+	i= findVariable(box->sym,nme);
+	if( i <0){
+		char msg[1024];
+		snprintf(msg,1024,"%s:failed to take value from box\n",nme);
+		return (int) raiseException(mb,stk->pc,"boxException",msg);
+	}
+	v= &box->val->stk[i];
+	garbageElement(&stk->stk[pci->argv[0]]);
+	if( VALconvert(TYPE_str,v, TRUE) == ILLEGALVALUE) return GDK_FAIL;
+	VALcopy(&stk->stk[pci->argv[0]], v);
+	return GDK_SUCCEED;
+}
+
+int CMDconst_iterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	@:OpenBox@
+	cursor= (lng*) getArgValue(stk,pci,0);
+	v= &stk->stk[pci->argv[1]];
+	return nextBoxElement(box, cursor, v);
+}

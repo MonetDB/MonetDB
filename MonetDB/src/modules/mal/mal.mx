@@ -321,7 +321,7 @@ The BUN- and BAT-stream manipulate a long handle, i.e.
 the destination variable. It assumes it has been set to
 zero as part of runtime stack initialization. Subsequently,
 it fetches a bun and returns the increment to the control
-variable. If returns zero the control variable has been reset
+variable. If it returns zero the control variable has been reset
 to zero and end of stream has been reached.
 @c
 int CMDbunstream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

@@ -21,7 +21,8 @@ use "mal/mal";
 use "mal/profiler";
 use "mal/squeezer"; 
 use "mal/multiplex";
-use "mal/space"; 
+use "mal/const"; 
+use "mal/box"; 
 @-
 In practice, we have to introduce different startup for each
 client group or database.
