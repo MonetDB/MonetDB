@@ -690,14 +690,14 @@ int CMDgetaccess(int *r, BAT *input) {
         return GDK_SUCCEED;
 }
 
-char* pre(str s1,str s2){
+static char* pre(str s1,str s2){
 	static char buf[64];
-	strcpy(buf,s1); strcat(buf,s2);
+	snprintf(buf, 64, "%s%s", s1, s2);
 	return buf;
 }
 static char* local_itoa(long i){
 	static char buf[32];
-	sprintf(buf,"%ld",i);
+	snprintf(buf, 32, "%ld", i);
 	return buf;
 }
 
@@ -736,7 +736,7 @@ void HASHinfo(BAT *bn, Hash *h, str s){
 	if( cnt[i]) {
 		BUNins(bn, pre(s,local_itoa(i)), local_itoa(cnt[i]));
 	}
-	sprintf(buf, "%d on %d", largetot, largebuckets);
+	snprintf(buf, 32, "%d on %d", largetot, largebuckets);
 	BUNins(bn, pre(s,"collision"), buf);
 }
 
@@ -758,6 +758,15 @@ static void infoHeap(BAT *bn, Heap *hp, str nme){
         BUNins(bn, buf, hp->filename?hp->filename:"no file");
 	strcpy(p, "offset");
         BUNins(bn, buf, local_itoa(hp->offset));
+}
+
+static char *oidtostr( oid i ){
+	int len = 32;
+	static char bf[32];
+	char *p = bf;
+
+	(void)OIDtoStr(&p, &len, &i);
+	return bf;
 }
 
 int CMDinfo(BAT **retval, BAT *b){
@@ -803,7 +812,7 @@ int CMDinfo(BAT **retval, BAT *b){
         BUNins(bn, "hsorted", local_itoa(BAThordered(b)));
         BUNins(bn, "hident",  b->hident);
 	BUNins(bn, "hdense", local_itoa(BAThdense(b)));
-	BUNins(bn, "hseqbase", local_itoa(b->hseqbase));
+	BUNins(bn, "hseqbase", oidtostr(b->hseqbase));
         BUNins(bn, "hkey", local_itoa(b->hkey));
         BUNins(bn, "hloc", local_itoa(b->hloc));
         BUNins(bn, "hvarsized", local_itoa(b->hvarsized));
@@ -812,7 +821,7 @@ int CMDinfo(BAT **retval, BAT *b){
  
         BUNins(bn, "tident", b->tident);
 	BUNins(bn, "tdense", local_itoa(BATtdense(b)));
-	BUNins(bn, "tseqbase", local_itoa(b->tseqbase));
+	BUNins(bn, "tseqbase", oidtostr(b->tseqbase));
         BUNins(bn, "tsorted", local_itoa(BATtordered(b)));
         BUNins(bn, "tkey", local_itoa(b->tkey));
         BUNins(bn, "tloc", local_itoa(b->tloc));
