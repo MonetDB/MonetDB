@@ -380,7 +380,8 @@ BATs. These cases are handled by a pattern in the MIL interpreter,
 except for the built-in types, which are expected to exist.
 @c
 str typeNames[]={"void","bit","chr","sht","bat","int","oid","ptr",
-	"flt","dbl","lng","str","url","lock","sema","blob",0};
+	"flt","dbl","lng","str","url","lock","sema","blob","fstream",
+	"bipipe",0};
 
 int bindId(str nme){
 	int i, fnd= 0;
@@ -861,9 +862,9 @@ expr_list:
 
 module_list:
       modident
-	{printf("use \"kernel/%s\";\n",$1.val);}
+	/* {printf("use \"kernel/%s\";\n",$1.val);}*/
     | module_list ',' modident
-	{printf("use \"kernel/%s\";\n",$3.val);}
+	/* {printf("use \"kernel/%s\";\n",$3.val);}*/
 
 modident:
         TOK_CONSTANT

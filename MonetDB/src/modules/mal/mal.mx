@@ -137,35 +137,6 @@ pattern view_stk_where():bat[int,str] = CMDviewStkWhere
 
 	
 
-@+ Printing 
-The polymorphic print commands are collected here.
-Watch out, the order of definitions is crucial, because the most
-specific should be introduced last.
-@mal
-
-pattern print(b1:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int = CMDprint_table
- comment "BATs are printed with '#' for legend lines, and the BUNs on seperate
- lines between brackets, containing each to comma separated values
- (head and tail).
- If multiple BATs are passed for printing, print() performs an implicit
- natural join, producing a multiattribute table.";
-
-pattern print(order:int,b:bat[ANY::1,ANY], b2:bat[ANY::1,ANY][]):int
-                                                = CMDprint_otable
- comment "The same as normal table print, but enforces to use the order of
-  BAT number [1..argc] to do the printing.";
-
-pattern table(b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_table_default
-	comment "Print an n-ary table. Like print(n-ary) but does not print oid column";
-
-pattern table(order:int, b1:bat[any::1,any], b2:bat[any::1,any][]):int = CMDprint_otable
-	comment "Print an n-ary table. Use the ordering of param [1..argc]";
-
-pattern print(val:any):int = CMDprint_val
-	comment "Print a MIL value between square brackets.";
-pattern printft(val:any):int = CMDprint_ft
-	comment "Select default format ";
-
 @+ Basic Value Manipulation
 The command below inspect the MAL administration and, therefore,
 can not be included in the kernel library.
@@ -539,7 +510,11 @@ int CMDtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @+ Printing
 The print commands are implemented as single instruction rules,
 because they need access to the calling context.
-Check string printing first !!
+At a later stage we can look into the issues related to
+parsing the format string as part of the initialization phase.
+The old method in V4 essentially causes a lot of overhead
+because you have to prepare for the worst (e.g. mismatch format
+identifier and argument value)
 @c
 int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -547,8 +522,8 @@ int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr val = (ptr) getArgReference(stk,pci,1);
         FILE *fp = GDKout;
 	if( val==NULL) {
-		tpe = TYPE_str;
-		val = (ptr) "nil";
+		ATOMprint(TYPE_str, "nil", GDKout);
+		return GDK_SUCCEED;
 	}
 	if( isaBatType(tpe)){
 		BAT *b = BATdescriptor(*(int*)val);
@@ -571,12 +546,13 @@ int CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb,pci,1);
 	ptr val = (ptr) getArgReference(stk,pci,1);
-	switch(ATOMstorage(tpe)){
-	case TYPE_str: 
-		ATOMprint(TYPE_str, *(str*)val, GDKout);
-		break;
-	default: ATOMprint(tpe, val, GDKout);
+	if( val==NULL) {
+		ATOMprint(TYPE_str, "nil", GDKout);
+		return GDK_SUCCEED;
 	}
+	if( tpe == TYPE_str)
+		ATOMprint(TYPE_str, *(str*)val, GDKout);
+	else ATOMprint(tpe, val, GDKout);
 	return GDK_SUCCEED;
 }
 

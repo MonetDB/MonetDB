@@ -46,6 +46,9 @@ Not to be confused with blob parsing and printing.
          till the first 0 byte or the end of the blob.";
    command toblob(v:str) : blob = toblob
 	comment "store a string as a blob.";
+   command nitems(b:blob):int = blob_nitems
+	comment " get the number of bytes in this blob."
+
 @* Example MAL Script
 @mil
 import blob;
@@ -189,6 +192,11 @@ int blob_heap(Heap* heap,int capacity)
 {
    HEAP_initialize(heap,capacity,0,4);
    return 0;
+}
+
+int blob_nitems(int *ret,blob *b) {
+     *ret = b->nitems;
+     return GDK_SUCCEED;
 }
 
 #ifndef ODSTYLE

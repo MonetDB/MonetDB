@@ -1,6 +1,31 @@
 @t Atom administration
 @a M.L. Kersten
 @* Introduction
+Monet supports definitions of user-defined types. 
+This feature is of particular interest to system experts. 
+It is not meant for end-users trying to intruduce record- or 
+struct-like objects in the database. They better decompose
+the complex object structure and represent the components in
+different BATs.
+
+For the courageous at heart, you may enter the difficult world
+of extending the kernel library. This calls for studying the
+documentation associated with the atom structures (gdk_atoms),
+because you have to develop routines complying with the
+signatures required in the GDK library.
+
+Once you have assembled these primitive, you can introduce them
+in a running server using a ATOM MODULE definition, which contains
+a MAL specification of their signature and calls to the routines
+below to register the atom in the kernel.
+
+Each ruler dealing with registering a function performs the necessary
+type check, but relies on the user to comply with this signature in
+its C-implementation. The ruler calls are part of a module
+initialization routine.
+
+A concrete example is the 'blob' datatype (see blob.mx)
+
 The Monet Assembler Language recognizes the definition of a new
 atom type by replacing the MODULE keyword with ATOM MODULE.
 Atoms definitions require special care, because their definition and 

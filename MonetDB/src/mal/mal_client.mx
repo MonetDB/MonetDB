@@ -74,7 +74,9 @@ are located in mal_startup.
 The prompt structure is designed to simplify recognition
 of a prompt, because it should start with a \001 character.
 The information between the prompt brackets can be used to
-pass the mode to the front-end.
+pass the mode to the front-end. Moreover, the prompt can be
+dropped if a single stream of information is expected from the
+server(See mal_profiler.mx).
 
 The user can request server-side compilation as part of the initialization 
 string. 
@@ -377,8 +379,9 @@ void freeClient(Client c)
 	c->input = c->limit= NULL; */
 	if( c->output ) GDKfree(c->output);
 	c->output= NULL;
-	GDKfree(c->language); c->language = NULL;
-	GDKfree(c->prompt); c->prompt = NULL;
+	if(c->language) GDKfree(c->language); c->language = NULL;
+	if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
+	c->promptlength=0;
 	if(c->errbuf){
 		GDKsetbuf(0);
 		GDKfree(c->errbuf);
@@ -505,7 +508,17 @@ void traceAllClients(int flag){
 		else c->sysmon= NULL;
 	}
 }
-
+@-
+Set the prompt sequence for the current client to a particular string.
+Beware that this will interfere with the Mapi protocol, which
+requires a prompt string to be enclosed between \001 characters.
+@c
+void setPrompt(Client c, str newprompt)
+{
+	if( c->prompt) GDKfree(c->prompt);
+	c->prompt= GDKstrdup(newprompt);
+	c->promptlength= strlen(newprompt);
+}
 static 
 void enlargebuffer(Client c, int newsize){
 	str s;
@@ -549,7 +562,7 @@ the front-end to issue the request.
  	last= s = c->input; *s = 0;
 	bytes = c->limit - c->input;
 readAgain:
-	clientPrompt(c,prompt);
+	if(c->promptlength) { clientPrompt(c,prompt);}
 	if( feof(c->fdin) ) return 0;
 @-
 Beware, that in terminal mode you loose backspaceing options.

@@ -453,7 +453,7 @@ More then 9 elements makes it full.
 str memProfileVector(int cells){
 	str v= GDKmalloc(cells+1);
 	int i;
-	long max= sbrk(0);
+	long max= (long) sbrk(0);
 	long min= 0;
 	long granule;
 	if( cells<=0) {

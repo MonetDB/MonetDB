@@ -108,6 +108,7 @@ FILE *eventstream   = 0;
 
 static Tms Tmsnullval;
 int malProfileMode;	/* global flag to indicate profiling mode */
+static int delayswitch; /* to wait before sending the profile info */
 
 int Tms_size(){ return sizeof(Tms); }
 int Tms_align(){ return sizeof(double); }
@@ -207,8 +208,16 @@ void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str stmt,c;
 
 	if( pci->argv[0]<=0 )return;
-	times(&newTms);
+	if( delayswitch >0){
+		delayswitch--;
+		return;
+	}
 	getEventStream();
+	if( delayswitch==0){
+		log0("<MonetProfile>\n");
+		delayswitch= -1;
+	} 
+	times(&newTms);
 	infoMalloc = MT_mallinfo();
 	getrusage(RUSAGE_SELF,&infoUsage);
 
@@ -227,7 +236,7 @@ void eventRecord(Scope cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	log0("\t<mal");
 	stmt= instruction2str(mb,pci,0);
 	c= strchr(stmt,']');
-	if(c) c++;
+	if(c) c++; else c= stmt;
 	while(c && *c && isspace(*c) ) c++;
 
 	log0(" stmt=\"");
@@ -415,7 +424,6 @@ int setLogFile(Scope cntxt, str fname){
 		GDKerror("Could not create event stream file\n");
 		return -1;
 	}
-	fprintf(eventstream,"<MonetProfile>\n");
 	MT_unset_lock(profileLock,"profileLock");
 #else
 	printf("# Monet not compiled for profiling\n");
@@ -428,6 +436,7 @@ int openProfilerStream(){
 	Client c= getClient();
 	malProfileMode = TRUE;
 	eventstream = c->fdout;
+	delayswitch=1;
 	return GDK_SUCCEED;
 }
 int closeProfilerStream(){
@@ -457,9 +466,16 @@ int setEndPoint(Scope cntxt, str mod, str fcn){
 #endif
 	return GDK_SUCCEED;
 }
-
+@-
+When you receive the message to start profiling, we
+should wait for the next instruction the stream
+is initiated. This is controlled by a delay-switch
+@c
 int startProfiling(){
-	if( eventstream != NULL) malProfileMode= TRUE;
+	if( eventstream != NULL){
+		malProfileMode= TRUE;
+		delayswitch=1;
+	}
 	return GDK_SUCCEED;
 }
 int stopProfiling(){
