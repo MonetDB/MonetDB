@@ -654,7 +654,6 @@ BAT *BATload_intern(bat bid, int lock) {
 	}
 	/* load succeeded; register it in BBP  */
 	b->batParentid = b->batSharecnt = 0;
-	b->batCacheid = 0; 
 	b->batMapdirty = 0;
 	BBPcacheit(b, lock);
 

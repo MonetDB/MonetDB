@@ -724,52 +724,48 @@ int BBPentry(str dirname, str batname, int mode) {
 }
 
 void BBPcacheit(BAT* b, int lock) {
-	int i = 0, mode=0;
+        int i = 0, mode=0;
+        BAT *bm;
 
-	if (lock) {
-		MT_set_lock(GDKtrimLock, "BBPcacheit"); 
-		BBP_notrim = THRgettid();
-		MT_set_lock(GDKcacheLock, "BBPcacheit"); 
-	}
-	if (b->batCacheid == 0) {
-		BAT *bm;
-
-		if (b->batId[0]) {
-			mode = BBPLOADED;
-			i = ABS(BBP_find(b->batId, FALSE)); 
-		}
-		if (i == 0) {
-			/* enter in BBP directory structures */
-			i = BBPentry(NULL, NULL, mode);
-			strcpy(b->batId, BBP_logical(i));	
-			b->batStamp = ++BBP_curstamp;
-			b->creator_tid = (int) THRgettid();
-			BBP_refs(i) = 1; /* new bats have 1 pin */
-			BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", i, 
-			 	b->batId, ATOMname(b->htype), ATOMname(b->ttype));
-		}
-		if (lock) {
-			MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit"); 
-		}
-        	b->batLastused = 0x7fffffff & (GDKcsec() + ((mode==BBPLOADED)?150:0));
-		b->batCacheid = i; 
-		BBP_cache(i) = b; 
-		BBP_cache(-i) = bm = BBPmirror(b); 
-		BBP_desc(i) = (BATstore*) ((i>0)?b:bm); 
-		BBP_status(i) &= (BBPSTATUS-BBPLOADED);
-		BBP_status(i) |= BBPLOADED; 
-		if (b->htype == TYPE_bat || b->ttype == TYPE_bat) {
-			BBP_status(i) |= BBPNESTED;
-		}
-		if (lock) {
-			MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit"); 
-		}
-	}
-	if (lock) {
-		MT_unset_lock(GDKcacheLock, "BBPcacheit"); 
-		BBP_notrim = NULL;
-		MT_unset_lock(GDKtrimLock, "BBPcacheit"); 
-	}
+        if (lock) {
+                MT_set_lock(GDKtrimLock, "BBPcacheit");
+                BBP_notrim = THRgettid();
+                MT_set_lock(GDKcacheLock, "BBPcacheit");
+        }
+        if (b->batId[0]) {
+                /* filled in name indicates BAT comes from disk */
+                mode = BBPLOADED;
+                i = b->batCacheid;
+        }
+        if (i == 0) {
+                /* enter in BBP directory structures */
+                i = BBPentry(NULL, NULL, mode);
+                strcpy(b->batId, BBP_logical(i));
+                b->batStamp = ++BBP_curstamp;
+                b->creator_tid = (int) THRgettid();
+                BBP_refs(i) = 1; /* new bats have 1 pin */
+                BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", i,
+                        b->batId, ATOMname(b->htype), ATOMname(b->ttype));
+                b->batCacheid = i;
+        }
+        if (lock) {
+                MT_set_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit");
+        }
+        b->batLastused = 0x7fffffff & (GDKcsec() + ((mode==BBPLOADED)?150:0));
+        BBP_cache(i) = b;
+        BBP_cache(-i) = bm = BBPmirror(b);
+        BBP_desc(i) = (BATstore*) ((i>0)?b:bm);
+        BBP_status(i) &= (BBPSTATUS-BBPLOADED);
+        BBP_status(i) |= BBPLOADED;
+        if (b->htype == TYPE_bat || b->ttype == TYPE_bat) {
+                BBP_status(i) |= BBPNESTED;
+        }
+        if (lock) {
+                MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPcacheit");
+                MT_unset_lock(GDKcacheLock, "BBPcacheit");
+                BBP_notrim = NULL;
+                MT_unset_lock(GDKtrimLock, "BBPcacheit");
+        }
 }
 
 @
@@ -1597,7 +1593,11 @@ static int complexatom(str s, int delaccess) {
 }
 
 BAT *BBPquickdesc(bat bid, int delaccess) { 
-        BAT *b = (BAT*) BBPgetdesc(bid, NULL);
+        BAT *b = BBP_cache(bid);
+        if (b) {
+		return b; /* already cached */
+	}
+	b = (BAT*) BBPgetdesc(bid, NULL);
         if (b == NULL || b->hacctype || complexatom(b->hatom, delaccess) 
                       || b->tacctype || complexatom(b->tatom, delaccess))
 	{
@@ -1900,7 +1900,7 @@ lng BBPdiskscan(str parent) {
 			filesize = st.st_size;
 		}
 
-		if (!persistent_bat(bid)) {
+		if (ok == FALSE || !persistent_bat(bid)) {
 			delete = TRUE;
 		} else if (strncmp(p+1, "hheap", 5) == 0) {
 			BAT *b = (BAT*) BBPgetdesc(bid, NULL);

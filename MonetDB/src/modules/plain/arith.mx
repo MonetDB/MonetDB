@@ -186,7 +186,7 @@ atomic types and a result type.
 	.OPERATOR (bit) "xor" (bit) : bit = bit_binary_XOR; "boolean xor"
 	.OPERATOR "not" (bit) : bit = bit_unary_NOT; "boolean negation"
 	.COMMAND ifthenelse(bit b, any::1 t, any::1 f) : any::1 = bit_switch;
-         "boolean switch: returns b?t:f"
+         "boolean switch: returns b?t:f (returns error on isnil(b)"
 
 @- bitwise operations
 Cardinal numerical types (inclusing {\tt chr} can be regarded as a bit

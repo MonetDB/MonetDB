@@ -1646,6 +1646,7 @@ int decimal_multiply(decimal **ret, decimal *v1, decimal *v2) {
 
 	/* multiply with smallest=v1 below and biggest=v2 above */
 	if (v1_precision > v2_precision) {
+		int swap = v1_precision; v1_precision = v2_precision; v2_precision = swap;
 		tmp = v2; v2 = v1; v1 = tmp; /* swap if necessary */
 	}
 

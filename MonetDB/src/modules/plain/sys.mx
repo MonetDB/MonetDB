@@ -223,10 +223,11 @@ that you might well find very useful.
 	"Show all signatures of the functions in a module.", "sys");
 
     proc dir(bat[int,str] b) {
+        var nme := view_bbp_name;
 	var atm := adm_atomtbl.copy.access(BAT_WRITE).delete("BAT"); #doubly present
 	table(1,b.reverse.sort.reverse.col_name("name"),
-		[htype](b.mirror).outerjoin(atm.reverse).col_name("htype"),	
-		[ttype](b.mirror).outerjoin(atm.reverse).col_name("ttype"),	
+		[htype](b.join(nme.reverse)).outerjoin(atm.reverse).col_name("htype"),	
+		[ttype](b.join(nme.reverse)).outerjoin(atm.reverse).col_name("ttype"),	
 		[count](b.mirror).col_name("count"),	
 		view_bbp_heat.col_name("heat"),
 		view_bbp_dirty.col_name("dirty"),
@@ -236,7 +237,7 @@ that you might well find very useful.
     }
 
     PROC dir() : void := {
-	var nme := view_bbp_name.access(BAT_WRITE).col_name("name");
+        var nme := view_bbp_name.copy.access(BAT_WRITE).col_name("name");
 	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
 	dir(nme.replace(rev));
     }
@@ -263,15 +264,16 @@ that you might well find very useful.
     }
 
     PROC ls() : void := {
-	var nme := view_bbp_name.semijoin(view_bbp_kind.select("pers"));
+	var nme := view_bbp_name;
+	var prs := nme.semijoin(view_bbp_kind.select("pers"));
 	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-	dir(nme.access(BAT_WRITE).col_name("name").replace(rev));
+	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
     }
     PROC ls(str substr) : void := {
-        var sts := view_bbp_status.semijoin(view_bbp_kind.select("pers"));
-        var nme := view_bbp_name.like(substr).access(BAT_WRITE).col_name("name").semijoin(sts);
-        var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
-        dir(nme.replace(rev));
+        var nme := view_bbp_name.like(substr);
+	var prs := nme.semijoin(view_bbp_kind.select("pers"));
+	var rev := [*](nme.reverse.select(int(nil),-1),-1).reverse;
+	dir(prs.access(BAT_WRITE).col_name("name").replace(rev));
     }
     ADDHELP("ls", "boncz", "Feb  6 1996", 
 	"list all data bats. Optionally filter on name with a certain substring", "sys"); 

@@ -2277,6 +2277,7 @@ int CMDlike(BAT **ret, BAT* b, str s) {
 		if (like(BUNtvar(b, u), t, yy)) 
 		    BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u));
 	}
+	GDKfree(t);
 	c->hsorted = BAThordered(b);
 	c->tsorted = BATtordered(b);
 	*ret = c;
