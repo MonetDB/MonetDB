@@ -234,9 +234,9 @@ RETSIGTYPE BATSIGabort(int nr) {
 	GDKfatal("BATSIGabort: signal %d caught by thread %lx\n", 
 		nr, (size_t) MT_getpid()); 
 }
-RETSIGTYPE BATSIGinterupt(int nr) {
+RETSIGTYPE BATSIGinterrupt(int nr) {
 	(void) nr; /* fool compiler */
-	GDKfatal("Interupt received\n");
+	GDKfatal("Interrupt received\n");
 }
 
 #ifdef SIGCHLD
@@ -290,7 +290,7 @@ int BATSIGinit(void) {
 	(void) signal(SIGHUP,  MT_exit_thread);
 #endif
 #ifdef SIGINT
-	(void) signal(SIGINT,  BATSIGinterupt);
+	(void) signal(SIGINT,  BATSIGinterrupt);
 #endif
 	return 0;
 }
