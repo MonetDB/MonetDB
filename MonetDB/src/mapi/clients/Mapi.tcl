@@ -8,11 +8,10 @@ namespace eval ::mapi:: {
 
 	set ::mapi::state(socket)	nil
 	set ::mapi::state(trace)	0
-	set ::mapi::state(port)		"[info hostname]:50000"
+	set ::mapi::state(host)		"[info hostname]"
+	set ::mapi::state(port)		"50000"
 	set ::mapi::state(buffer)	""
 	set ::mapi::state(prompt)	">"
-
-	catch [ set state(port) $env(MONETPORT) ]
 
 	namespace export hostname
 	namespace export portnr
@@ -24,16 +23,6 @@ namespace eval ::mapi:: {
 	namespace export command
 	namespace export query
 
-}
-
-proc ::mapi::hostname { } {
-	return [ string trimright $::mapi::state(port) :0123456789 ]
-}
-
-proc ::mapi::portnr { } {
-	set idx [ string first ":" $::mapi::state(port) ]
-	incr idx
-	return [ string range $::mapi::state(port) $idx end ]
 }
 
 proc ::mapi::connect { server port user } {
@@ -159,5 +148,3 @@ proc ::mapi::dumpstate { } {
 		puts [ format "- %-*s = %s" $maxl $v $::mapi::state($v) ]
 	}
 }
-
-
