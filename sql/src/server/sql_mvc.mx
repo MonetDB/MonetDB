@@ -2060,6 +2060,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 	}
 	/* changes to the existing bases */
 	if (fs->set){
+		/* update existing */
 		if (rollforward_updates) {
 			for (n = fs->set->h; n && n != fs->nelm; n = n->next) {	
 				sql_base *fb = n->data;
@@ -2068,12 +2069,10 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 				if (fb->wtime && fb->flag == TR_OLD)
 					rollforward_updates(tr, fb, tb);
 			}
-		} else {
-			n = fs->nelm;
 		}
 		/* add the new bases */
 		if (fd) {
-			for (; n; n = n->next) {	
+			for (n = fs->nelm; n; n = n->next) {	
 				sql_base *fb = n->data;
 				sql_base *tb = fd(tr, fb, b);
 	
@@ -2269,6 +2268,23 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 	    ft->type == tt_session) 
 		return;
 
+	rollforward_changeset_updates( tr, &ft->columns, &tt->columns, 
+		&tt->base,
+		(rfufunc)NULL, 
+		(rfcfunc)&rollforward_create_column,
+		(rfcfunc)&rollforward_drop_column,
+		(dupfunc)&column_dup );
+	rollforward_changeset_updates( tr, &ft->idxs, &tt->idxs, &tt->base,
+		(rfufunc)NULL, 
+		(rfcfunc)&rollforward_create_idx,
+		(rfcfunc)&rollforward_drop_idx,
+		(dupfunc)&idx_dup );
+	rollforward_changeset_updates( tr, &ft->keys, &tt->keys, &tt->base,
+		(rfufunc)NULL, 
+		(rfcfunc)NULL,
+		(rfcfunc)&rollforward_drop_key,
+		(dupfunc)&key_dup );
+
 	assert(cs_size( &tt->columns) == cs_size( &ft->columns));
 
 	n = ft->columns.set->h;
@@ -2330,22 +2346,6 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		}
 	}
-	rollforward_changeset_updates( tr, &ft->columns, &tt->columns, 
-		&tt->base,
-		(rfufunc)NULL, 
-		(rfcfunc)&rollforward_create_column,
-		(rfcfunc)&rollforward_drop_column,
-		(dupfunc)&column_dup );
-	rollforward_changeset_updates( tr, &ft->idxs, &tt->idxs, &tt->base,
-		(rfufunc)NULL, 
-		(rfcfunc)&rollforward_create_idx,
-		(rfcfunc)&rollforward_drop_idx,
-		(dupfunc)&idx_dup );
-	rollforward_changeset_updates( tr, &ft->keys, &tt->keys, &tt->base,
-		(rfufunc)NULL, 
-		(rfcfunc)NULL,
-		(rfcfunc)&rollforward_drop_key,
-		(dupfunc)&key_dup );
 }
 
 static void
