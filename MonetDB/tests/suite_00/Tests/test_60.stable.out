@@ -1,10 +1,10 @@
 stdout of test 'test_60` in directory 'tests/suite_00` itself:
 
-#> Mtest:	milS test_60 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_60.milS
-# Monet Database Server V4.1
+#> Mtest (20:57:30):	milS test_60 milS
+#> Mtest (20:57:31):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_60.milS
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:test_60.milS
 
 loaded;
@@ -62,10 +62,10 @@ rng.insert(3,5);
 bb := b.groupby(rng);
 bb.print;
 #-------------------------#
-# BAT:	  tmp_31	  #
+# BAT:	  tmp_28	  #
 # (int)	  (BAT)		  #
 #-------------------------#
-[ 0,	  <tmp_28>	  ]
+[ 0,	  <tmp_29>	  ]
 [ 1,	  <tmp_30>	  ]
 [ 2,	  <tmp_31>	  ]
 [ 3,	  <tmp_32>	  ]
@@ -73,21 +73,21 @@ bb.print;
 [ 5,	  <tmp_34>	  ]
 bb@batloop() $t.print;
 #-----------------#
+# BAT:	  tmp_29  #
+# (int)	  (int)	  #
+#-----------------#
+#-----------------#
 # BAT:	  tmp_30  #
 # (int)	  (int)	  #
 #-----------------#
+[ 2,	  4	  ]
+#-----------------#
+# BAT:	  tmp_31  #
+# (int)	  (int)	  #
+#-----------------#
+[ 2,	  4	  ]
 #-----------------#
 # BAT:	  tmp_32  #
-# (int)	  (int)	  #
-#-----------------#
-[ 2,	  4	  ]
-#-----------------#
-# BAT:	  tmp_33  #
-# (int)	  (int)	  #
-#-----------------#
-[ 2,	  4	  ]
-#-----------------#
-# BAT:	  tmp_34  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -99,11 +99,11 @@ bb@batloop() $t.print;
 [ 8,	  64	  ]
 [ nil,	  81	  ]
 #-----------------#
-# BAT:	  tmp_35  #
+# BAT:	  tmp_33  #
 # (int)	  (int)	  #
 #-----------------#
 #-----------------#
-# BAT:	  tmp_36  #
+# BAT:	  tmp_34  #
 # (int)	  (int)	  #
 #-----------------#
 [ 2,	  4	  ]
@@ -126,15 +126,15 @@ t.insert('b','b');
 xx:= x.groupby(t);
 xx.print;
 #-------------------------#
-# BAT:	  tmp_40	  #
+# BAT:	  tmp_37	  #
 # (int)	  (BAT)		  #
 #-------------------------#
-[ 0,	  <tmp_37>	  ]
+[ 0,	  <tmp_38>	  ]
 [ 1,	  <tmp_39>	  ]
 [ 2,	  <tmp_40>	  ]
 xx@batloop() $t.print;
 #-----------------#
-# BAT:	  tmp_39  #
+# BAT:	  tmp_38  #
 # (int)	  (chr)	  #
 #-----------------#
 [ 1,	  'a'	  ]
@@ -144,13 +144,13 @@ xx@batloop() $t.print;
 [ 5,	  'b'	  ]
 [ 6,	  'b'	  ]
 #-----------------#
-# BAT:	  tmp_41  #
+# BAT:	  tmp_39  #
 # (int)	  (chr)	  #
 #-----------------#
 [ 7,	  'c'	  ]
 [ 8,	  'c'	  ]
 #-----------------#
-# BAT:	  tmp_42  #
+# BAT:	  tmp_40  #
 # (int)	  (chr)	  #
 #-----------------#
 [ 3,	  'b'	  ]
@@ -177,15 +177,15 @@ t.insert("b","b");
 xx:= x.groupby(t);
 xx.print;
 #-------------------------#
-# BAT:	  tmp_44	  #
+# BAT:	  tmp_41	  #
 # (int)	  (BAT)		  #
 #-------------------------#
-[ 0,	  <tmp_41>	  ]
+[ 0,	  <tmp_42>	  ]
 [ 1,	  <tmp_43>	  ]
 [ 2,	  <tmp_44>	  ]
 xx@batloop() $t.print;
 #-----------------#
-# BAT:	  tmp_43  #
+# BAT:	  tmp_42  #
 # (int)	  (str)	  #
 #-----------------#
 [ 1,	  "a"	  ]
@@ -195,13 +195,13 @@ xx@batloop() $t.print;
 [ 5,	  "b"	  ]
 [ 6,	  "b"	  ]
 #-----------------#
-# BAT:	  tmp_45  #
+# BAT:	  tmp_43  #
 # (int)	  (str)	  #
 #-----------------#
 [ 7,	  "c"	  ]
 [ 8,	  "c"	  ]
 #-----------------#
-# BAT:	  tmp_46  #
+# BAT:	  tmp_44  #
 # (int)	  (str)	  #
 #-----------------#
 [ 3,	  "b"	  ]
