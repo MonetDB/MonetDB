@@ -1,8 +1,0 @@
-stderr of test 'create_destroy_db` in directory 'src/tools` itself:
-
-#> Mtest (11:53:16):	other create_destroy_db 5400
-#> Mtest (11:53:16):	Mtimeout -timeout 5400 ./create_destroy_db create_destroy_db
-#> Mlog (11:53:16):	Mtimeout -timeout 600 Mcreatedb -user niels -db TestDB1
-Mcreatedb: using default dbdir /home/niels/new/monet/Linux/dbfarm/TestDB1.
-#> Mlog (11:53:17):	echo 'quit;' | Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db TestDB1
-#> Mlog (11:53:17):	Mtimeout -timeout 600 Mdestroydb -db TestDB1
