@@ -188,8 +188,8 @@ res := nil;
 [ "top",		  0,	  "load", "tran", 0	  ]
 [ "tmp_30",		  0,	  "load", "tran", 0	  ]
 [ "two",		  0,	  "load", "tran", 0	  ]
+[ "tmp_33",		  0,	  "load", "tran", 0	  ]
 [ "ten",		  0,	  "load", "tran", 0	  ]
-[ "tmp_34",		  0,	  "load", "tran", 0	  ]
 [ "twenty",		  0,	  "load", "tran", 0	  ]
 
 #BUGS:

@@ -33,7 +33,7 @@ setoid(oid(20000000));
 #split w in twee tabellen
 var docid := new( void, oid );
 var tid := new( void, str );
-docid := [w~].reverse();
+docid := w.mark(nil).reverse();
 docid.print();
 #-----------------#
 # BAT:	  tmp_28  #
@@ -54,7 +54,7 @@ docid.print();
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
 [ nil,	  2@0	  ]
-tid := [~w];
+tid := w.reverse.mark(nil).reverse;
 tid.print();
 #---------------------------------#
 # BAT:	  tmp_23		  #
