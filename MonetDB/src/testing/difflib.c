@@ -477,7 +477,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   FILE *html_fp,*lwc_diff_fp,*clmn_fp[5];
   char line[BUFLEN],ln[BUFLEN],fn_clmn[BUFLEN],*clmn_fn[5],c[3],*ok;
   char *old,*new,*old_time,*new_time,olns[24],nlns[24];
-  int oln,nln,orn,nrn,i,clr[5],newline,newline_,minor=0,major=0;
+  int oln,nln,orn,nrn,i,clr[5],newline,newline_,minor=0,Minor=0,Major=0;
 
   TRACE(fprintf(STDERR,"lwc_diff2html(%s,%s,%s,%s)\n",lwc_diff_fn,html_fn,caption,revision));
 
@@ -568,7 +568,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
       while((ok=fgets(line,BUFLEN,lwc_diff_fp))&&strchr(" -+",line[0]))
        if(line[1]!='\3')
         {
-          if(newline_||newline) minor=(strchr("#=\n",line[1])?1:0);
+          if(newline_||newline) Minor|=(minor=(strchr("#=\n",line[1])?1:0));
           line[strlen(line)-1]='\0';
           if(line[1]=='\2') sprintf(line+1," ");
           if(line[0]==' ')
@@ -590,8 +590,8 @@ int lwc_diff2html (char *old_fn, char *new_fn,
           if(line[0]=='+') { c[1]='+'; SETRED(4,minor); }
           if(line[1]!='\1')
             {
-              if(strchr(" -",line[0])) { fprintf(clmn_fp[0],"%s",HTMLsave(line+1)); major|=(clr[0]&1); }
-              if(strchr(" +",line[0])) { fprintf(clmn_fp[4],"%s",HTMLsave(line+1)); major|=(clr[4]&1); }
+              if(strchr(" -",line[0])) { fprintf(clmn_fp[0],"%s",HTMLsave(line+1)); Major|=(clr[0]&1); }
+              if(strchr(" +",line[0])) { fprintf(clmn_fp[4],"%s",HTMLsave(line+1)); Major|=(clr[4]&1); }
             }
           else
             {
@@ -708,12 +708,12 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   fprintf(html_fp,"</TABLE></CENTER>\n");
   fprintf(html_fp,"<HR>\n");
   fprintf(html_fp,"</BODY>\n</HTML>\n");
-  fprintf(html_fp,"<!--%sDiffs-->\n",major?"Major":(minor?"Minor":"No"));
+  fprintf(html_fp,"<!--%sDiffs-->\n",Major?"Major":(Minor?"Minor":"No"));
   fflush(html_fp); fclose(html_fp);
 
   for(i=0;i<5;i++) { UNLINK(clmn_fn[i]); free(clmn_fn[i]); }
 
-  fclose(lwc_diff_fp); return (major?2:(minor?1:0));
+  fclose(lwc_diff_fp); return (Major?2:(Minor?1:0));
 }
 /* lwc_diff2html */
 
