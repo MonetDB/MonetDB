@@ -362,6 +362,8 @@ STATforceUpdate(int *ret, str *nme)
 	b= BATdescriptor(idx = BBPindex(*nme));
 	if( b== 0)
 		return throwMessage("statistics.forceUpdate","Could not find BAT\n");
+	p= BUNfnd(STAT_id_nme,&idx);
+	if( p ) BUNdelete(STAT_id_nme,p);
 	BUNins(STAT_id_nme,&idx,*nme);
 	cnt = BATcount(b);
 	p= BUNfnd(STAT_id_count,&idx);
