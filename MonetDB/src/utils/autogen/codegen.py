@@ -374,57 +374,48 @@ def do_libs(deps):
                 break
     return libs
 
-def expand_includes(incdirs,topdir):
-    dirs = incdirs
-    change = 1
-    #when there is a variable dependency cycle, this code will loop forever
-    while change > 0:
-        change = 0
-        incdirs = dirs
-        dirs = [ ]
-        for incdir in incdirs:
-            incs = string.split(incdir)
-            for i in incs:
-                if i[0:2] == "-I":
-                    i = i[2:]
-                dir = i
-                if dir[0:2] == "$(":
-                    var, rest = string.split(dir[2:], ')')
-                    if os.environ.has_key( var ):
-                        value = os.environ[var]
-                        dir = value + rest
-                        change = 1
-                if string.find(i,os.sep) >= 0:
-                    d,rest = string.split(i,os.sep, 1)
-                    if d == "top_srcdir" or d == "top_builddir":
-                        dir = os.path.join(topdir, rest)
-                    elif d == "srcdir" or d == "builddir":
-                        dir = rest
-                dirs.append(dir)
+def expand_includes(i,topdir):
+    if i[0:2] == "-I":
+      i = i[2:]
+    if i[0:2] == "$(":
+      var, rest = string.split(i[2:], ')')
+      if os.environ.has_key( var ):
+        value = os.environ[var]
+        incdir = value + rest
+        incs = string.split(incdir)
+        if (len(incs) > 1):
+	  return expand_incdirs(incs,topdir)
+        else:
+	  return (incdir,i)
+    dir = i
+    if string.find(i,os.sep) >= 0:
+      d,rest = string.split(i,os.sep, 1)
+      if d == "top_srcdir" or d == "top_builddir":
+        dir = os.path.join(topdir, rest)
+      elif d == "srcdir" or d == "builddir":
+        dir = rest
+    if os.path.isabs(i):
+      print("!WARNING: it's not portable to use absolute paths: " + i)
+    return [(dir,i)]
 
+def expand_incdirs(incdirs,topdir):
+    dirs = []
+    for incdir in incdirs:
+      incs = string.split(incdir)
+      if (len(incs) > 1):
+	dirs.extend(expand_incdirs(incs,topdir))
+      else:
+	dirs.extend(expand_includes(incs[0],topdir))
     return dirs
 
-def read_depsfile(incdirs, cwd, topdir):
+
+def collect_includes(incdirs, cwd, topdir):
     includes = {}
     incmap = {}
-    for i in incdirs:
-        if i[0:2] == "-I":
-            i = i[2:]
 
-        dirs = expand_includes( [ i ], topdir )
+    dirs = expand_incdirs( incdirs, topdir )
 
-        abs = 0
-        if len(dirs) > 1:
-            abs = 1
-            #print ("!WARNING: "+i+" is bound to a list of paths!")
-            #print ("!WARNING: this leads to the use of absolute paths in:")
-            #print ("!WARNING: "+cwd+os.sep+"Makefile.am")
-
-        for dir in dirs:
-            if abs > 0:
-                #otherwise, <i> could still be a variable bounded to a list
-                i = dir
-
+    for dir,org in dirs:
             if os.path.isabs(dir):
                 f = os.path.join(dir, ".cache")
             else:
@@ -432,20 +423,20 @@ def read_depsfile(incdirs, cwd, topdir):
 
             if os.path.exists(f):
                 cache = shelve.open(f)
-                for d in cache.keys():
-                    inc = []
-                    for dep in cache[d]:
-                        if not os.path.isabs(dep) and dep[0:2] != '$(':
-                            dep = os.path.join(i,dep)
-                        inc.append(dep)
-                    includes[os.path.join(i,d)] = inc
-                    incmap[d] = i
+                for file in cache.keys():
+                    incfiles = []
+                    for inc in cache[file]:
+                        if not os.path.isabs(inc) and inc[0:2] != '$(':
+                            inc = os.path.join(dir,inc)
+                        incfiles.append(inc)
+                    includes[os.path.join(dir,file)] = incfiles
+                    incmap[file] = dir
                 cache.close()
             else:
                 if os.path.exists(dir):
-                    for dep in os.listdir(dir):
-                        includes[os.path.join(i,dep)] = [ os.path.join(i,dep) ]
-                        incmap[dep] = i
+                    for inc in os.listdir(dir):
+                        includes[os.path.join(dir,inc)] = [ os.path.join(dir,inc) ]
+                        incmap[inc] = dir
 
     return includes,incmap
 
@@ -463,7 +454,7 @@ def codegen(tree, cwd, topdir):
     includes = {}
     incmap = {}
     if tree.has_key("INCLUDES"):
-        includes,incmap = read_depsfile(tree["INCLUDES"],cwd, topdir)
+        includes,incmap = collect_includes(tree["INCLUDES"],cwd, topdir)
 
     deps = {}
     for i,v in tree.items():
@@ -489,11 +480,9 @@ def codegen(tree, cwd, topdir):
                     lib = lib[1:]
                 if libs.has_key(lib):
                     d = libs[lib]
-                    if v.has_key('LIBS'):
-                        for l in d:
-                            v['LIBS'].append(l)
-                    else:
-                        v['LIBS'] = d
+                    if not v.has_key('LIBS'):
+			v['LIBS'] = []
+                    v['LIBS'].extend(d)
             elif i == "LIBS":
                 for l,d in libs.items():
                     n,dummy = string.split(l,"_",1)
