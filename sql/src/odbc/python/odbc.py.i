@@ -37,7 +37,7 @@ static PyObject *ErrorObject;
 %}
 
 %ignore __SQLTYPES_H;
-%include "/usr/include/sqltypes.h"
+%include "sqltypes.h"
 
 %init %{
 	PyObject *odbc;
@@ -1080,7 +1080,7 @@ static PyObject *ErrorObject;
 }
 
 %ignore __SQL_H;
-%include "/usr/include/sql.h"
+%include "sql.h"
 
 %ignore __SQLEXT_H;
 %ignore SQLAllocHandleStd;
@@ -1099,4 +1099,4 @@ static PyObject *ErrorObject;
 %ignore TraceVSControl;
 %ignore TRACE_VS_EVENT_ON;
 
-%include "/usr/include/sqlext.h"
+%include "sqlext.h"
