@@ -33,6 +33,13 @@ data files.
     .ATOM Stream = ptr;
     .END;
 
+.COMMAND stdin() : Stream = io_stdin; 
+	"return the input stream to the database client"
+.COMMAND stderr() : Stream = io_stderr;
+	"return the error stream for the database console"
+.COMMAND stdout() : Stream = io_stdout;
+	"return the output stream for the database client"
+
 .COMMAND open_rstream( str filename ) : Stream = stream_open_rstream;
 	"open a file stream for reading"
 .COMMAND open_wstream( str filename ) : Stream = stream_open_wstream;
@@ -113,6 +120,10 @@ typedef ptr Buffer;
 #include <gdk.h>
 #include "streams.h"
 #include <stdio.h>
+
+int io_stdin (Stream *ret) { *(stream**)ret = GDKin;  return GDK_SUCCEED; }
+int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
+int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
 
 int stream_open_rstream( Stream *S, str filename ){
 	if ((*(stream**)S = open_rstream( filename )) == NULL){
