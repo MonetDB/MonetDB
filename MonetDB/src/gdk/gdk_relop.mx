@@ -20,16 +20,44 @@ are not being harmed too much.
 All join related operations have the same prelude to check
 domain compatibility and to creates the BAT to hold the result.
 
+New: we do some dynamic effort to estimate the result size. Good 
+estimates enhance performance and reduce the memory hunger of the join.
+Method: we sample on l, and join on the whole r. This macro is called by 
+the physical join algorithms, hence we already decided on the algorithm 
+and join method, so the initial costs on r (e.g. hash creation) would have 
+to be paid anyway, and are reused later in the real join phase. 
+On small joins we just assume 1-N joins with a limited (=3) hit rate. 
+
 @= joincheck
 	ERRORcheck(l == NULL, "@1: invalid left operand"); 
 	ERRORcheck(r == NULL, "@1: invalid right operand"); 
 	ERRORcheck(TYPEerror(@2,@3), "@1: type conflict\n"); 
 @= joinbat
-	/* TODO: parametrize with estimate */
-	bn = BATnew(BAThtype(l), BATttype(r), MIN(BATcount(l), BATcount(r))); 
+{	int _estimate = @1;
+	if (_estimate == 0) {
+		int _batcnt = BATcount(l);
+		_estimate = MIN(BATcount(r), _batcnt*3); /* stupid default */
+		if (BATcount(l) > 10000) {
+			BAT *_tmp1 = l; 
+			int _lo = _batcnt/2, _hi = _lo + 104;
+			l = BATslice(l, &_lo, &_hi); /* slice keeps all parent properties */ 
+			if (l) {
+				BAT *_tmp2 = @2;
+				if (_tmp2) {
+					/* reserve 105% of what has been estimated */
+					_estimate = (((lng) BATcount(_tmp2)) * (lng) _batcnt)/100LL;
+					BBPreclaim(_tmp2);
+				}		
+				BBPreclaim(l); 
+			}
+			l = _tmp1;
+		}
+	}
+	bn = BATnew(BAThtype(l), BATttype(r), _estimate);
 	if (bn == NULL) {
 		return bn; 
 	}
+}
 
 @- merge join
 In the case that both join columns are ordered, we can do a merging
@@ -132,10 +160,7 @@ BAT *BATmergejoin(BAT *l, BAT *r) {
 		GDKerror("BATmergejoin: right input is not sorted.\n"); 
 		return NULL; 
 	}
-	bn = BATnew(BAThtype(l), BATttype(r), MAX(BATTINY, MIN(BATcount(l), BATcount(r)))); 
-	if (bn == NULL) {
-		return bn; 
-	}
+	@:joinbat(r->hkey?BATcount(l):0, BATmergejoin(l,r))@
 
 	/* the algorithm */
 	switch(ATOMstorage(l->ttype)) {
@@ -202,7 +227,7 @@ BAT* BAThashjoin(BAT* l, BAT* r) {
 	BAT	*bn;
 
         @:joincheck(BAThashjoin, l->ttype, r->htype)@
-        @:joinbat@
+	@:joinbat(r->hkey?BATcount(l):0, BAThashjoin(l,r))@
 
         if (BATprepareHash(r) == 0)
         switch(any = ATOMstorage(l->ttype)) {
@@ -276,7 +301,7 @@ BAT* BATfetchjoin(BAT *l, BAT *r) {
 	/* optimize for propagation of void columns in the result */	
 	if (BAThvoid(l)) {
 		int tpe = r->ttype;
-		if (ATOMstorage(tpe) == TYPE_str && ELIMDOUBLES(&r->theap)) {
+		if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(&r->theap)) {
 			tpe = TYPE_int; /* insert double-eliminated strings as ints */
 		}
 		bn = BATnew(TYPE_void, ATOMtype(tpe), BATcount(l));
@@ -360,7 +385,11 @@ collect statistics that help us decide what to do
 
 	rfetch = BAThdense(r);
 	lfetch = BATtdense(l);
-
+	/* in case of fetchjoin, make sure we propagate a non-join void column */
+	if (lfetch && rfetch) {
+		if (BAThvoid(l) && !BATtvoid(r)) lfetch = 0;
+		if (BATtvoid(r) && !BAThvoid(l)) rfetch = 0;
+	}
 	must_hash = (int) ((rsize < lsize)?l->thash_heap:r->hhash_heap);
 @-
 In special cases (equal join columns, void join columns, or ordered 
@@ -436,7 +465,7 @@ BAT *BATouterjoin(BAT *l, BAT *r) {
 		bn = BATnew(TYPE_void, ATOMtype(r->ttype), BATcount(l));
 		BATseqbase(bn, l->hseqbase);
 	} else {
-		@:joinbat@
+		@:joinbat(r->hkey?BATcount(l):0, BATouterjoin(l,r))@
 	} 
 	/* set sorted flags by hand, because we used BUNfastins() */
 	bn->tsorted = 0;
@@ -588,7 +617,7 @@ BAT *BATthetajoin(BAT *l, BAT *r, int op) {
 		/* go for the hash solution */
 		return BAThashjoin(l, r);
 	}
-	@:joinbat@
+	@:joinbat(0, BATthetajoin(l,r,op))@
 	BATtheta(NULL, bn, l, r, op);
 	return bn;
 }
@@ -618,7 +647,7 @@ BAT *BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2) {
 	BUN v, w;
 	
 	@:joincheck(BATbandjoin, l->ttype, r->htype)@
-	@:joinbat@
+	@:joinbat(0, BATbandjoin(l,r,c1,c2))@
 	switch(ATOMstorage(r->htype)) {
 	case TYPE_chr: @:bandjoin(chr)@
 	case TYPE_sht: @:bandjoin(sht)@

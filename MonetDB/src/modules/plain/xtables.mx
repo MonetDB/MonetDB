@@ -706,7 +706,7 @@ int tailtype(BAT *b, int str_trick) {
 		return TYPE_int; 
 	} else if (tpe == TYPE_dbl) {
 		return TYPE_lng; 
-	} else if (tpe == TYPE_str && str_trick && ELIMDOUBLES((&b->theap))) {
+	} else if (tpe == TYPE_str && str_trick && GDK_ELIMDOUBLES((&b->theap))) {
 		return TYPE_int; /* string offsets are identifying integers */
 	}
 	return tpe;

@@ -210,15 +210,10 @@ gdk_export int _MT_pagesize;
 
 #include <errno.h>
 
-typedef sem_t pthread_sema_t;
-
-static void pthread_sema_up( pthread_sema_t *s );
-static void pthread_sema_down( pthread_sema_t *s );
-
 MT_Lock		MT_system_lock = NULL;		/* system administration lock */
 
 pthread_mutex_t	MT_firstlock[MAXLOCKS];
-pthread_sema_t	MT_firstsema[MAXSEMAS];
+sem_t		MT_firstsema[MAXSEMAS];
 
 int MT_curlock=0, MT_nextlock[MAXLOCKS];
 int MT_cursema=0, MT_nextsema[MAXSEMAS];
@@ -365,24 +360,8 @@ void 	MT_dump_lock (MT_Lock l, FILE *fp, char* name) {
 	fprintf(fp, "%s: MT_dump_lock() not implemented.\n", name);
 }
 
-void pthread_sema_init( pthread_sema_t *s, int nresources ) {
-	(void)sem_init( s, 0, nresources );
-}
-
-void pthread_sema_destroy( pthread_sema_t *s ){
-	(void)sem_destroy( s );
-}
-
-void pthread_sema_up( pthread_sema_t *s ) {
-	(void)sem_post(s);
-}
-
-void pthread_sema_down( pthread_sema_t *s ) {
-	(void)sem_wait(s);
-}
-
 void MT_up_sema(MT_Sema s, char *name){
-    	pthread_sema_up((pthread_sema_t*)s);
+	(void)sem_post((sem_t*)s);
     	if (MT_debug &  1024) {
         	fprintf(MT_out,"MT_up_sema(%lu\@%s) %ld\n", 
 			(long)MT_getpid(), name, (long)s);
@@ -391,7 +370,7 @@ void MT_up_sema(MT_Sema s, char *name){
 }
  
 void MT_down_sema(MT_Sema s, char *name){
-    	pthread_sema_down((pthread_sema_t*)s);
+	(void)sem_wait((sem_t*)s);
     	if (MT_debug &  1024) {
         	fprintf(MT_out,"MT_down_sema(%lu\@%s) %ld\n", 
 			(long)MT_getpid(), name, (long)s);
@@ -411,7 +390,7 @@ int	MT_try_sema (MT_Sema s){
 
 
 MT_Sema	MT_create_sema (int nresources) {
-	pthread_sema_t *new_sema;
+	sem_t *new_sema;
 
 	MT_set_lock(MT_system_lock, "MT_create_sema");
 	if (MT_cursema == -1) {
@@ -422,16 +401,17 @@ MT_Sema	MT_create_sema (int nresources) {
 	MT_cursema = MT_nextsema[MT_cursema];
 	MT_unset_lock(MT_system_lock, "MT_create_sema");
 
-	pthread_sema_init(new_sema, nresources );
+	(void)sem_init( new_sema, 0, nresources );
 	return (MT_Sema) new_sema;
 }
 
 
 void	MT_destroy_sema (MT_Sema s) {
-	int idx = (int) (((pthread_sema_t*) s) - MT_firstsema);
+	int idx = (int) (((sem_t*) s) - MT_firstsema);
 
 	if (s == NULL) return;
-	pthread_sema_destroy(s);
+	(void)sem_destroy( s );
+
 	MT_set_lock(MT_system_lock, "MT_destroy_sema");
 	MT_nextsema[idx] = MT_cursema;
 	MT_cursema = idx;

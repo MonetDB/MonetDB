@@ -577,19 +577,26 @@ need an implementation for selecting nil (in MIL, this is done
 through is the "isnil" predicate). So we implement it here.
 
 @= valselect
-        HASHloop@2(b, b->hhash, i, tl, p)
-            BUNfastins(bn, BUNt@1(b, p), tl);
-        break;
+        HASHloop@2(b, b->hhash, i, tl, p) {
+	    if (q < r) bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
+	    q += bs;
+        } break;
 @= stringselect
 	if (strElimDoubles(&b->hheap)) {
-	    HASHloop_fstr(b, b->hhash, i, j, tl)  
-		BUNfastins(bn, BUNt@1(b, BUNptr(b,i)), tl);
+	    HASHloop_fstr(b, b->hhash, i, j, tl) {
+		p = BUNptr(b, i);
+		if (q < r) bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
+		q += bs;
+	    }
 	} else {
-            HASHloop_str(b, b->hhash, i, tl)
-		BUNfastins(bn, BUNt@1(b, BUNptr(b,i)), tl);
-	} break; 
+            HASHloop_str(b, b->hhash, i, tl) { 
+		p = BUNptr(b, i);
+		if (q < r) bunfastins_nocheck(bn, q, BUNt@1(b, p), tl, bs);
+		q += bs;
+	    }
+	} break;
 @= hashselect
-	switch(ATOMstorage(tpe)) {
+	switch(ATOMstorage(b->htype)) {
 	case TYPE_chr: @:valselect(@1,_chr)@
 	case TYPE_sht: @:valselect(@1,_sht)@
 	case TYPE_int: @:valselect(@1,_int)@
@@ -605,16 +612,24 @@ through is the "isnil" predicate). So we implement it here.
 	}
 @c
 BAT *BAT_hashselect(BAT *b, BAT *bn, ptr tl) {
-	int i, j, tpe;
-	BUN p;
+	int ht = bn->htype, tt = bn->ttype, size = BATcount(bn);
+	int i, j;
 
 	BATflipflop(b);
-	tpe = b->htype;
 	(void) BATprepareHash(b);
-	if (b->tvarsized) {
-	    @:hashselect(var)@
-	} else {
-	    @:hashselect(loc)@
+	while(bn) {
+	    BUN p, q = BUNfirst(bn), r = Bunbase(bn) + bn->batBuns->size;
+	    int bs = BUNsize(bn);
+
+	    if (b->tvarsized) {
+	        @:hashselect(var)@
+	    } else {
+	        @:hashselect(loc)@
+	    }
+	    if (q <= r) break;
+	    size = (q - BUNfirst(bn)) / bs;
+	    BBPreclaim(bn); 
+	    bn = BATnew(ht, tt, size);
 	}
 	return bn;
 }
@@ -663,11 +678,10 @@ the result (as (nil {<,=,>} ANY) = bit(nil) != true).
 		    	@:bunins_notnil(@1,BUNh@2(b,p),@4)@
                 }
             }
-	/* Build a hash-table on the fly for equi-select. 
-	 * Don't do this if the BAT is really big.
-	} else if (size < GDK_BIGMEM) {
-	    return BAT_hashselect(b, bn, tl);
-	 */
+	/* Build a hash-table on the fly for equi-select if the selectivity is low
+         * and there is sufficient memory available */
+	} else if (equi && estimate*100 < batcnt && batcnt*2*sizeof(int) < (GDKmem_inuse() - GDK_mem_maxsize)) { 
+	    bn = BAT_hashselect(b, bn, tl);
 	} else 
 @-
 Single-valued sequential scans for strings are optimized when double
@@ -721,7 +735,8 @@ uses the atom comparison macros from gdk_search.mx.
 	}
 @c
 BAT *BAT_select(BAT *b, ptr tl, ptr th, int tail) {
-	int	hval, lval, equi, offset, size, t, ht, tt;
+	int	hval, lval, equi, offset, t, ht, tt;
+	int 	batcnt, estimate = 0;
 	ptr	nil;
 	BAT	*bn; 
 	BUN	 p,q;
@@ -731,6 +746,7 @@ BAT *BAT_select(BAT *b, ptr tl, ptr th, int tail) {
 @-
 Examine type, and values for lower- and higher-bound.
 @c
+	batcnt = BATcount(b);
 	t = b->ttype; 
 	nil = ATOMnilptr(t);
 	lval = ATOMcmp(t, tl, nil) || (th == NULL);
@@ -740,8 +756,6 @@ Examine type, and values for lower- and higher-bound.
 	} else {
 		hval = ATOMcmp(t, th, nil);
 	}
-        size = b->batBuns->size + (b->hheap.base?b->hheap.size:0) +
-				  (b->theap.base?b->theap.size:0);
 
 	/* preliminarily determine result types */
 	ht = BAThtype(b);
@@ -762,7 +776,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 @c
 	if (BATtordered(b)) {
 	    BAT *v = tail?b:VIEWhead_(b,b->batRestricted); 
-	    int high = BATcount(b)-1;
+	    int high = batcnt-1;
 	    int low = 0;
 
 	    if (BATtdense(b)) {
@@ -800,33 +814,50 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 	    return bn;
 	}
 @-
-Create the result BAT.
+Use sampling to determine a good result size, when the bat is large.
+We do not sample in an equi-select on a BAT with a hash table, as the
+BAT_hashselect code already ensures a good allocation estimate. 
 @c
-        bn = BATnew(ht, tt, BATguess(b));
-	if (bn == NULL) {
-		return bn;
+	if (batcnt > 10000 && (equi == 0 || b->thash_heap == NULL)) {
+            int _lo = batcnt/2, _hi = _lo + 104;
+            BAT *tmp1 = BATslice(b, &_lo, &_hi); /* slice keeps all parent properties */
+            if (tmp1) {
+                BAT *tmp2 = BAT_select(tmp1, tl, th, tail);
+                if (tmp2) {
+		    /* reserve 105% of what has been estimated */
+                    estimate = (((lng) BATcount(tmp2)) * (lng) batcnt)/100LL;
+                    BBPreclaim(tmp2);
+                }
+                BBPreclaim(tmp1);
+	    }
+	} 
+	estimate = MAX(estimate, BATguess(b));
+@-
+Create the result BAT and execute the select algorithm.
+@c
+        bn = BATnew(ht, tt, estimate);
+	if (bn) {
+	    if (equi && b->thash_heap) {
+	    	bn = BAT_hashselect(b, bn, tl);
+	    } else if (b->hvarsized) {
+		@:rangeselect(var)@
+	    } else {
+		@:rangeselect(loc)@
+	    }
 	}
+	if (bn == NULL) {
+	    return NULL; /* error occurred */
+	} 
+@-
+Propagate alignment info. Key properties are inherited from the parent. 
+Hash changes the order; IDX yields ordered tail; scan respects original order.
+@c
         BATkey(bn, b->hkey);
         BATkey(BATmirror(bn), b->tkey);
-	bn->hsorted = bn->tsorted = FALSE;
-@-
-On single-valued selects: if the hash-table exists, we use it.
-@c
-	if (equi && b->thash_heap) {
-	    return BAT_hashselect(b, bn, tl);
-	} 
 
-	if (b->hvarsized) {
-	    @:rangeselect(var)@
-	} else {
-	    @:rangeselect(loc)@
-	}
-@-
-Propagate alignment info, after doing the range-select.
-If index lookup was used, tails will be sorted, and heads (most probably) 
-not. Else, the result is a sequential subslice of the source BAT.
-@c
-        if (b->tidx_heap) {
+	if (equi && b->thash_heap) {
+	    bn->hsorted = bn->tsorted = FALSE;
+        } else if (b->tidx_heap) {
             bn->hsorted = FALSE;
             bn->tsorted = GDK_SORTED;
 	} else {

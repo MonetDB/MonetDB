@@ -459,16 +459,13 @@ The malloc routine checks the memory consumption every 1000 calls,
 or for calls larger that 50000 bytes. Consequently, at least every
 50MB increase, alloc memory is checked. The VM calls always check
 the memory consumption.
-@c
+@h
 /* default setting to administer everything */
 #define GDK_MEM_NULLALLOWED
 #ifdef DDI_PATCH
 #define GDK_MEM_KEEPHISTO
 #define GDK_VM_KEEPHISTO
 #endif
-
-#define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
-#define MAX_BIT		((int) (sizeof(long)<<3))
 
 #if (defined(WIN32) || defined(__sgi) || defined(_AIX))
 #define GDK_MEM_BIGSIZE	LL_CONSTANT(131072)     /* offload malloc fragmentation pressure */
@@ -483,6 +480,10 @@ the memory consumption.
 #else
 #define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736) /* :-| a 32-bit OS: 1.5GB */
 #endif
+@c
+#define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
+#define MAX_BIT		((int) (sizeof(long)<<3))
+
 	 ptr	GDK_mem_start = NULL; 
 volatile lng	GDK_mem_cursize = LL_CONSTANT(0);
 	 lng	GDK_mem_maxsize = LL_CONSTANT(0);
@@ -1116,7 +1117,6 @@ Go there and obtain the global database lock.
 We have the lock, are the only process currently allowed in this section.
 @c
 	MT_init();
-	strHeap(&str_smallHeap, 1);
 	OIDinit();
 @-
 Print the new process list in the global lockfile.

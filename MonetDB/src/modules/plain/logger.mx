@@ -18,9 +18,7 @@ of the changes using the delta management. On commit these changes are
 writen to the log file and the delta management is reset. Since each 
 commit is writen to the same log file, the beginning and end are 
 marked by a log identifier. A server restart should only (re)process
-blocks which are completely writen to disk. The start marker consists of
-a LOG_BEGINBLOCK,logid,length-of-block-between-markers. The end marker
-is just LOG_ENDBLOCK,logid.
+blocks which are completely writen to disk. 
 
 TODO
 	handel bbp updates ??
@@ -243,9 +241,6 @@ void logger_bat(buf_p buf, BAT *b ){
 	logf 	l;
 	BUN	p; 
 
-	if (logger_debug&2 && 
-	    (b->batInserted < BUNlast(b) || b->batDeleted < b->batHole))
-		fprintf(stderr, "logger_bat %s\n", b->batId);
 
 	l.id = b->batCacheid;
 	status = BBPstatus(l.id);
@@ -253,15 +248,19 @@ void logger_bat(buf_p buf, BAT *b ){
 	    l.flag = LOG_CREATE;
 	    l.nr = ((b->htype)<<16) + b->ttype;
 	    bwrite(buf, &l, sizeof(logf));
-            if (logger_debug)
+            if (logger_debug&2)
 		printf("new bat htype %d ttype %d id %d\n", 
 			b->htype, b->ttype, l.id );
 	} 
 	if (status&BBPDELETED){
+	    if (logger_debug&2)
+		fprintf(stderr, "logger_bat destroyed %ld \n", l.id );
 	    l.flag = LOG_DESTROY;
 	    bwrite(buf, &l, sizeof(logf));
 	} 
 	if (status&BBPRENAMED){
+	    if (logger_debug&2)
+		fprintf(stderr, "logger_bat renamed %s \n", BBP_logical(l.id) );
 	    l.flag = LOG_RENAME;
 	    bwrite(buf, &l, sizeof(logf));
 	    bwrite(buf, BBP_logical(l.id), strlen(BBP_logical(l.id)));
@@ -269,6 +268,9 @@ void logger_bat(buf_p buf, BAT *b ){
 	} 
 	l.nr = BUNindex(b, BUNlast(b)) - BUNindex(b, b->batInserted);
 	if (l.nr){
+	    if (logger_debug&2)
+		fprintf(stderr, "logger_bat inserted %d from %s \n", 
+			l.nr, b->batId);
 	    l.flag = LOG_INSERT;
 	    bwrite(buf, &l, sizeof(logf));
 	    for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)){
@@ -282,6 +284,9 @@ void logger_bat(buf_p buf, BAT *b ){
 	}
 	l.nr = BUNindex(b, b->batHole) - BUNindex(b, b->batDeleted);
 	if (l.nr){
+	    if (logger_debug&2)
+		fprintf(stderr, "logger_bat deleted %d from %s \n", 
+			l.nr, b->batId);
 	    l.flag = LOG_DELETE;
 	    printf("%d del %d\n", l.id, l.nr );
 	    bwrite(buf, &l, sizeof(logf));
@@ -320,7 +325,7 @@ static BAT *dirty_bat(int i) {
 }
 
 int logger_commit(){
-	int  i,id,nr; 
+	int  i,id,nr, *kills = NULL; 
 	buf_p buf = new_buffer();
 	/* first build the buffer with data to write
          * then write to file, host
@@ -350,7 +355,8 @@ int logger_commit(){
 	destroy_buffer(buf);
 	BBPunlock("logger_commit");
 
-	TMfakeCommit();
+	kills = TMfakeCommit();
+	TMkill(kills);
 	
 	return GDK_SUCCEED; 
 }
@@ -492,7 +498,7 @@ int logger_listen(int *port){
 
 	length = sizeof(server);
 	if (bind(sock, (SOCKPTR)&server, length) < 0) {
-		GDKsyserror("binding to stream socket (%s) failed\n", *port);
+		GDKsyserror("binding to stream socket (%d) failed\n", *port);
 		return GDK_FAIL;
 	}
 	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
@@ -532,13 +538,13 @@ int logger_listen(int *port){
 
 				if (fread( &nr, sizeof(int), 1, fdin) != 1){
 				    if (!feof(fdin)){
-				    	printf( "Nothing to read (nr) %s\n", 
+				    	printf( "Nothing to read (nr) %d\n", 
 					 	ferror(fdin));
 				    }
 				    break;
 				}
 				if (fread( &id, sizeof(int), 1, fdin) != 1){
-				    printf( "Id missing %s\n",ferror(fdin));
+				    printf( "Id missing %d\n",ferror(fdin));
 				    break;
 				}
 				

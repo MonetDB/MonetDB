@@ -1003,7 +1003,7 @@ int get_mem_usage(BAT **ret, lng *minsize) {
 			BUNins(bn, buf, &sz);
 		} tot += (lng) sz;
 
-		if (b == NULL) {
+		if (b == NULL || VIEWparent(b)) {
 			continue;
 		}
 		@:heap(mem,b->batBuns,buns)@
@@ -1062,7 +1062,7 @@ int get_vm_usage(BAT **ret, lng *minsize) {
 	for(i=1; i <BBPsize; i++) {
 		BAT *b = BBP_cache(i);
 		str s = BBP_logical(i);
-		if (s == NULL || b == NULL) {
+		if (s == NULL || b == NULL || VIEWparent(b)) {
 			continue;
 		}
 		@:heap(vm,b->batBuns,buns)@

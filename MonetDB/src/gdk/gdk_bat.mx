@@ -360,16 +360,22 @@ BAT *BATclear(BAT *b) {
 
 	/* we must dispose of all inserted atoms */
 	if (b->batDeleted == b->batHole && b->batHole == b->batInserted - bs && 
-	    BATatoms[b->htype].atomUnfix == NULL && BATatoms[b->ttype].atomUnfix == NULL)
+	    BATatoms[b->htype].atomUnfix == NULL && 
+	    BATatoms[b->ttype].atomUnfix == NULL)
 	{
 		/* no stable elements: we do a quick heap clean */
-		if (BATatoms[b->htype].smallHeap && BATatoms[b->htype].smallHeap->free <= b->hheap.free) {
-			memcpy(b->hheap.base, BATatoms[b->htype].smallHeap->base, 
-				b->hheap.free = BATatoms[b->htype].smallHeap->free);
+		/* need to clean heap which keep data even though the
+		   BUNs got removed. This means reinitialize when
+		   free > 0
+		*/
+		int cap = 0;
+		if (b->hheap.free > 0){
+			HEAPfree(&b->hheap);
+			ATOMheap(b->htype, &b->hheap, cap);
 		}
-		if (BATatoms[b->ttype].smallHeap && BATatoms[b->ttype].smallHeap->free <= b->theap.free) {
-			memcpy(b->theap.base, BATatoms[b->ttype].smallHeap->base, 
-				b->theap.free = BATatoms[b->ttype].smallHeap->free);
+		if (b->theap.free > 0){
+			HEAPfree(&b->theap);
+			ATOMheap(b->ttype, &b->theap, cap);
 		}
 	} else {
 		/* do unfix and heap-deleted of all inserted atoms */
@@ -1170,10 +1176,10 @@ BAT *BATsetaccess(BAT *b, int mode) {
 		    if (mode == BAT_WRITE) {
 		    	@:mmap_write(m1,(*b->batBuns))@
 		    }
-		    if (mode == BAT_WRITE || b->htype != TYPE_str || ELIMDOUBLES((&b->hheap))) {
+		    if (mode == BAT_WRITE || b->htype != TYPE_str || GDK_ELIMDOUBLES((&b->hheap))) {
 		    	@:mmap_write(m2,b->hheap)@
 		    }
-		    if (mode == BAT_WRITE || b->ttype != TYPE_str || ELIMDOUBLES((&b->theap))) {
+		    if (mode == BAT_WRITE || b->ttype != TYPE_str || GDK_ELIMDOUBLES((&b->theap))) {
 		    	@:mmap_write(m3,b->theap)@
 		    }
 		    @:mmap_write(m4,b->haccelerator)@

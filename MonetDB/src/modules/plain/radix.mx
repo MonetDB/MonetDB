@@ -783,25 +783,6 @@ res_aY := 0;
 res_b1 := 0;
 res_bZ := 0;
 
-quick test
-==========
-
-res_join := uniform(2000000,999999).[oid];
-res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-12,8);
-borders_smaller := res_smaller_clustered.radix_count(12, 8);
-
-res_smaller := res_join.reverse.mark(0@0).reverse;
-t := time; res_a1 := join(res_smaller, smaller_a1); print(time - t);
-
-cl_old := res_smaller_clustered.reverse.mark(0@0).reverse; 
-cl_new := res_smaller_clustered.mark(0@0).reverse; 
-
-t := time; cl_tmp := join(cl_old,  smaller_a1); print(time - t);
-t := time; res_a1 := radix_decluster2(cl_new, cl_old, borders_smaller, 32);print(time - t);
-
-t := time; b := join(res_smaller_clustered,  smaller_a1); print(time - t);
-t := time; res_a1 := radix_decluster(b, borders_smaller, 16);print(time - t);
-
 # 2) cache-conscious-relational-join-strategy 
 # ===========================================
 
@@ -834,6 +815,25 @@ res_join := phash_join(larger_view, smaller_view.reverse, 0, 2, false);
 print(res_join.slice(1000000,1000100));
 res_join.count.print;
 
+
+quick test
+==========
+
+res_join := uniform(2000000,999999).[oid];
+res_smaller_clustered := res_join.reverse.mark(0@0).reverse.radix_cluster(-12,8);
+borders_smaller := res_smaller_clustered.radix_count(12, 8);
+
+res_smaller := res_join.reverse.mark(0@0).reverse;
+t := time; res_a1 := join(res_smaller, smaller_a1); print(time - t);
+
+cl_old := res_smaller_clustered.reverse.mark(0@0).reverse; 
+cl_new := res_smaller_clustered.mark(0@0).reverse; 
+
+t := time; cl_tmp := join(cl_old,  smaller_a1); print(time - t);
+t := time; res_a1 := radix_decluster2(cl_new, cl_old, borders_smaller, 32);print(time - t);
+
+t := time; b := join(res_smaller_clustered,  smaller_a1); print(time - t);
+t := time; res_a1 := radix_decluster(b, borders_smaller, 16);print(time - t);
 
 @* Implementation
 @c
@@ -2000,7 +2000,7 @@ int radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier) {
     }
 
     /* create destination bat and init some variables */
-    if (any == TYPE_str && ELIMDOUBLES(&b->theap)) {
+    if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
 	tpe = any = TYPE_int;
     }
 
@@ -2140,7 +2140,7 @@ int radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
     }
 
     /* create destination bat and init some variables */
-    if (any == TYPE_str && ELIMDOUBLES(&b->theap)) {
+    if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
 	tpe = any = TYPE_int;
     }
 

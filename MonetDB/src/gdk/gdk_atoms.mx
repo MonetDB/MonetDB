@@ -105,18 +105,15 @@ int		dblCmp         (dbl* r, dbl* l);
 
 gdk_export int		strFromStr     (str  src, int* len, str*  dst);
 gdk_export int		strToStr       (str* dst, int* len, str   src);
-gdk_export unsigned int 	strHash        (str s); 
+gdk_export unsigned int strHash        (str s); 
 gdk_export int		strPut         (Heap* b, int *off, str src);
-gdk_export void 		strHeap        (Heap* d, int cap);
+gdk_export void 	strHeap        (Heap* d, int cap);
 gdk_export int		strLen         (str s);
-gdk_export int		strCmp         (str r, str l);
+gdk_export int		strCmp         (str l, str r);
 gdk_export int		strNil         (str s);
-gdk_export void 		strHeapConvert (Heap *h, int directon);
+gdk_export void 	strHeapConvert (Heap *h, int directon);
 gdk_export int		strElimDoubles (Heap *h);
 gdk_export int 		strLocate      (Heap *h, str v);
-gdk_export int		strHeapCheck   (Heap *h, HeapRepair *hr);
-
-gdk_export Heap	str_smallHeap;
 
 #ifdef __cplusplus
 }
@@ -153,7 +150,7 @@ INLINE int  batFix(bat* b)     { return BBPfix(*b); }
 INLINE int  batUnfix(bat* b)   { return BBPunfix(*b); }
 
 atomDesc BATatoms[MAXATOMS] = {
-  { "void",  	TYPE_void, 1, 0, /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, NULL,
+  { "void",  	TYPE_void, 1, 0, /* sizeof(@`void@7) */ 0, 1, (ptr) &int_nil, 
 		(int  (*)()) OIDfromStr,	(int (*)()) OIDtoStr,
  		(int  (*)()) intCmp,		
  		(unsigned int (*)()) intHash, 	(void (*)()) 0,
@@ -161,7 +158,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},			
-  { "bit",  	TYPE_chr, 1, sizeof(bit), sizeof(@`bit@7), 0, (ptr) &chr_nil, NULL,				
+  { "bit",  	TYPE_chr, 1, sizeof(bit), sizeof(@`bit@7), 0, (ptr) &chr_nil, 
 		(int  (*)()) bitFromStr,	(int (*)()) bitToStr,
  		(int  (*)()) chrCmp,		
  		(unsigned int  (*)()) chrHash,	(void (*)()) 0,		
@@ -169,7 +166,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "chr",  	TYPE_chr, 1, sizeof(chr), sizeof(@`chr@7), 0, (ptr) &chr_nil, NULL,
+  { "chr",  	TYPE_chr, 1, sizeof(chr), sizeof(@`chr@7), 0, (ptr) &chr_nil, 
 		(int  (*)()) @`chrFromStr@5,	(int (*)()) @`chrToStr@5,
 	 	(int  (*)()) chrCmp,		
  		(unsigned int  (*)()) chrHash,	(void (*)()) 0,		
@@ -177,7 +174,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "sht",	TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, (ptr) &sht_nil, NULL,
+  { "sht",	TYPE_sht, 1, sizeof(sht), sizeof(@`sht@7), 0, (ptr) &sht_nil,
 		(int  (*)()) @`shtFromStr@5,	(int (*)()) @`shtToStr@5,
  		(int  (*)()) shtCmp,		
  		(unsigned int  (*)()) shtHash, 	(void (*)()) shtConvert,
@@ -185,7 +182,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "BAT",  	TYPE_int, 1, sizeof(bat), sizeof(@`bat@7), 0, (ptr) &int_nil, NULL,
+  { "BAT",  	TYPE_int, 1, sizeof(bat), sizeof(@`bat@7), 0, (ptr) &int_nil,
  		(int  (*)()) batFromStr,	(int (*)()) batToStr,
  		(int  (*)()) intCmp, 		
  		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,
@@ -193,7 +190,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, NULL,
+  { "int",  	TYPE_int, 1, sizeof(int), sizeof(@`int@7), 0, (ptr) &int_nil, 
 		(int  (*)()) intFromStr,	(int (*)()) @`intToStr@5,
 	 	(int  (*)()) intCmp,		
  		(unsigned int  (*)()) intHash, 	(void (*)()) intConvert,
@@ -201,7 +198,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(void (*)()) 0, 		(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "oid",  	TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &int_nil, NULL,
+  { "oid",  	TYPE_int, 1, sizeof(oid), sizeof(@`oid@7), 0, (ptr) &int_nil, 
  		(int  (*)()) OIDfromStr,	(int (*)()) OIDtoStr,
  		(int  (*)()) intCmp,		
  		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,
@@ -210,21 +207,21 @@ atomDesc BATatoms[MAXATOMS] = {
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
 #if SIZEOF_LONG==8
-  { "ptr",  	TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil, NULL,
+  { "ptr",  	TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &lng_nil, 
 		(int  (*)()) @`ptrFromStr@5,	(int (*)()) @`ptrToStr@5,
 	 	(int  (*)()) lngCmp,		
-		(unsigned int  (*)()) lngHash,	(void (*)()) lngConvert,		
+		(unsigned int  (*)()) lngHash,	(void (*)()) lngConvert,	
 #else
-  { "ptr",  	TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil, NULL,
+  { "ptr",  	TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, (ptr) &int_nil,
 		(int  (*)()) @`ptrFromStr@5,	(int (*)()) @`ptrToStr@5,
 	 	(int  (*)()) intCmp,		
-		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,			
+		(unsigned int  (*)()) intHash,	(void (*)()) intConvert,	
 #endif
 		(int  (*)()) 0, 		(int  (*)()) 0,
 		(void (*)()) 0, 		(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "flt",  	TYPE_flt, 1, sizeof(flt), sizeof(@`flt@7), 0, (ptr) &flt_nil, NULL,
+  { "flt",  	TYPE_flt, 1, sizeof(flt), sizeof(@`flt@7), 0, (ptr) &flt_nil, 
 		(int  (*)()) @`fltFromStr@5,	(int (*)()) @`fltToStr@5,
 	 	(int  (*)()) fltCmp,		
  		(unsigned int  (*)()) intHash, 	(void (*)()) intConvert,
@@ -232,7 +229,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "dbl",  	TYPE_dbl, 1, sizeof(dbl), sizeof(@`dbl@7), 0, (ptr) &dbl_nil, NULL,
+  { "dbl",  	TYPE_dbl, 1, sizeof(dbl), sizeof(@`dbl@7), 0, (ptr) &dbl_nil, 
 		(int  (*)()) @`dblFromStr@5,	(int (*)()) @`dblToStr@5,
 		(int  (*)()) dblCmp,		
  		(unsigned int  (*)()) lngHash, 	(void (*)()) lngConvert,
@@ -240,7 +237,7 @@ atomDesc BATatoms[MAXATOMS] = {
  		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "lng",  	TYPE_lng, 1, sizeof(lng), sizeof(@`lng@7), 0, (ptr) &lng_nil, NULL,
+  { "lng",  	TYPE_lng, 1, sizeof(lng), sizeof(@`lng@7), 0, (ptr) &lng_nil, 
 		(int  (*)()) lngFromStr,	(int (*)()) lngToStr,
  		(int  (*)()) lngCmp,		
  		(unsigned int  (*)()) lngHash,	(void (*)()) lngConvert,
@@ -248,14 +245,14 @@ atomDesc BATatoms[MAXATOMS] = {
  		(void (*)()) 0,			(void (*)()) 0,
  		(int (*)()) 0,			(int  (*)()) 0,
  		(void (*)()) 0,			(int  (*)()) 0},
-  { "str",  	TYPE_str, 1, sizeof(int), sizeof(int), 1, (ptr) &chr_nil, &str_smallHeap,			
+  { "str",  	TYPE_str, 1, sizeof(int), sizeof(int), 1, (ptr) &chr_nil,	
 		(int  (*)()) strFromStr,	(int (*)()) strToStr,
 		(int  (*)()) strCmp,		
 	    	(unsigned int  (*)()) strHash,	(void (*)()) 0,
 		(int  (*)()) 0, 		(int  (*)()) 0,
  		(void (*)()) strPut,		(void (*)()) 0,
  		(int (*)()) strLen,		(int (*)()) strHeap,
- 		(void (*)()) strHeapConvert,	(int  (*)()) strHeapCheck} ,
+ 		(void (*)()) strHeapConvert,	(int  (*)()) 0} ,
 };
 int     GDKatomcnt = TYPE_str + 1;
 @
@@ -298,10 +295,6 @@ The incremental atom construction uses hardwired properties.
 This should be improved later on.
 @c
 void ATOMdelete(int id) {
-	if (BATatoms[id].storage == id && BATatoms[id].smallHeap) {
-		GDKfree(BATatoms[id].smallHeap);
-		HEAPfree(BATatoms[id].smallHeap);
-	}
 	memset(BATatoms+id, 0, sizeof(atomDesc));
 	if (id == GDKatomcnt-1) GDKatomcnt--;
 }
@@ -364,14 +357,6 @@ void ATOMproperty(str id, str property, int (*arg) ()) {
 	    if (strcmp("heap", property) == 0) {
 		BATatoms[t].varsized = 1;
 		atomset(BATatoms[t].atomHeap, (int (*)()) arg); 
-		if (BATatoms[t].smallHeap) {
-			HEAPfree(BATatoms[t].smallHeap);
-			GDKfree(BATatoms[t].smallHeap);
-		}
-		if (BATatoms[t].atomHeap) {
-			BATatoms[t].smallHeap = (Heap*) GDKmalloc(sizeof(Heap));
-		 	(*BATatoms[t].atomHeap)(BATatoms[t].smallHeap,1);
-		}
 	    } else if (strcmp("heapconvert", property) == 0) {
 		atomset(BATatoms[t].atomHeapConvert, (void (*)()) arg); 
 	    } else if (strcmp("check", property) == 0) {
@@ -624,15 +609,16 @@ Recursive BATs are a special case. You should modify their reference count.
 	    ATOMfix(t_, P4);				\
 } }     }
 
-#define STRHASHTABLE	(1<<10)
-#define STRHASHMASK	(STRHASHTABLE-1)
-#define STRHASHSIZE 	(STRHASHTABLE << 2)
-#define STRHEAPNIL 	2147430104 /* 4 bytes GDK_chr_min (str_nil pattern) */
-#define AVGSTRLEN	12
-#define MAXCHAIN	10
-#define AVGSTRSPACE	(sizeof(int) + AVGSTRLEN + 1)
-#define ELIMLIMIT	(STRHASHTABLE*(sizeof(int)+MAXCHAIN*AVGSTRSPACE))
-#define ELIMDOUBLES(h)	((h)->free < ELIMLIMIT)
+#define GDK_STRHASHTABLE	(1<<10)
+#define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
+#define GDK_STRHASHSIZE 	(GDK_STRHASHTABLE << 2)
+#define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
+#define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)
+#define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
+#define GDK_ELIMPOWER		18	/* makes for a max 256KB hash table 
+					 * ie 256 string bytes per hash bucket 
+				 	 * ~ 16 strings of UP4(8<=len<=11)=12 + 4 bytes 
+					 */
 
 #endif /* _GDK_ATOMS_H_ */
 
@@ -865,7 +851,7 @@ int batToStr(char **dst, int *len, bat *src) {
 int @1FromStr(char* src, int * len, @1 **dst) {
 	int minus = 0, error = 0;
 	@1 base = 0;
-	str p = src;
+	str q, p = src;
 
 	@:atommem(@1,sizeof(@1))@
 	while(GDKisspace(*p)) p++; 
@@ -878,11 +864,12 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 		if (!num10(*p)) {
 			error = 1; p = src;
 		}
-		while (error == 0) {
-			@1 val = mult10(base) + base10(*p);
-			if (val < base) error = 1;
-			base = val; p++;
-			if (!num10(*p)) break;
+		while(*p == '0') p++;
+		for(q=p; num10(*p); p++) {
+			base = mult10(base) + base10(*p);
+		}
+		if (q-p > @2  || (q-p == @2 && strncmp(q,"@3",@2) > 0)) {
+			error = 1; /* overflow */
 		}
 		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
 			p += 2;
@@ -891,13 +878,13 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 	return p-src;
 }
 @c
-@:numfromstr(sht)@
+@:numfromstr(sht,5,32767)@
 @:atomtostr(sht,%hd,int)@
 
-@:numfromstr(int)@
+@:numfromstr(int,10,2147483647)@
 @:atomtostr(int,%d,int)@
 
-@:numfromstr(lng)@
+@:numfromstr(lng,19,9223372036854775807)@
 @:atomtostr(lng,%lld,lng)@
 @
 int lngToStr(char **dst, int *len, lng *src) {
@@ -1009,26 +996,63 @@ backslash. Furthermode, the backslash may be followed by three
 digit octal number to denote a character.
 
 @- Automatic Double Elimination
+
 Because in many typical situations lots of double string values occur
 in tables, the string insertion provides automatic double elimination.
-To do this, a STRHASHTABLE(=1024) bucketet hashtable is hidden in the first 
+To do this, a GDK_STRHASHTABLE(=1024) bucketet hashtable is hidden in the first 
 4096 bytes of the string heap, consisting of integer offsets of the first 
 string hashing on that bucket in the heap. Furthermore, the first 4 bytes 
 before each string in the heap is an integer offset to the next string hashing 
 on the same number.
 @
 @
-In situations with all uniquely different strings (as in some TPCD tables)
-this double elimination becomes very expensive. HACK: with a simple trick it
-is turned off: if the hash-chains become larger than 20, double-elimination
-is stopped (crudely assuming strings to have some mean length, one EOS char,
-and one integer for each next-pointer). In this way the binary format of the 
-string heaps did not have to be changed, in order to do the check.
-WARNING: any algorithm assuming doubles eliminated should check first with
-@%strElimDoubles(Heap*)@. If this returns FALSE, it is a no-go!!
+However, in many other situations the cardinality of string columns is large,
+or the string values might even be unique. In this case, our fixed-size hash 
+table will start to overflow quickly. Therefore, after the hash table is full
+(this is measured very simplisticly by looking whether the string heap exceeds a 
+heap size = GDK_ELIMLIMIT -- done this way to keep compatability with old bat images) 
+we flush the hash table. If one views the string heaps as consequent chunks
+of size GDK_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
+There is a macro GDK_ELIMBASE(offset) that computes the base of the chunk in which
+a certain byte-offset falls.
+@
+@  
+This is a departure from our previous policy of not looking at the hash tables at 
+all after overflow occured. The advantage of the new approach is that if we have 
+a value distribution that is skewed (ie some values are very frequent), these 
+values will always be double eliminated, saving a considerable amount of space. 
+Disadvantage of the approach is that we always have to reserve space for the next 
+pointer (4 byte integer offset) that is stored right in front of the string (and 
+consequently have to keep all string chunks and offsets aligned to 4). All this 
+translates into some wasted space. However, if there are that many different strings 
+that the hash table overflows, the strings must be relatively long and the relative 
+storage overhead should be low.
+@
+@
+Notice that this mechanism enables keeps a certain linear storage property
+in the string heaps. This is important if we want to take a BATslice on a BAT
+by simply loading or mmap()ping slices of the BAT files on disk into memory.
+This is relevant in order to process a very large BAT iteratively by taking slices
+in order top reduce memory consumption. Notice that if there are few different string 
+values, the hash table has not overflowed, and the string heap size will be small 
+(ie < GDK_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
+If the hash table *has* overflowed, we want to be able to only map a slice of the 
+string heap as well. Now, given that the first string in the BAT-slice is called F1 
+and its heap offset is O1 and the last string in the slice is F2 and its 
+offset is O2, then the slice we should take from the string heap is: 
+@
+@
+[ GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2)) ]
+@
+@
+The below routine strElimDoubles() can be used to check whether all 
+strings are still being double-eliminated in the original hash-table.
+Only then, we know that unequal offset-integers in the BUN array means
+guarantee different strings in the heap. This optimization is made at some 
+points in the GDK. Make sure you check GDK_ELIMDOUBLES before assuming this!
 @c
 int strElimDoubles(Heap *h) {
-	return ELIMDOUBLES(h);
+	return GDK_ELIMDOUBLES(h);
 } 
 
 @- Nil Value
@@ -1036,26 +1060,25 @@ The nil value for strings equates with the empty string. Future extensions may
 consider using a <length,value> pair where the length can be used to indicate
 a missing value.
 @{
+@h
+#define GDK_STRNIL(s)	 ((s) == NULL || *(chr*) (s) == GDK_chr_min)
+#define GDK_STRLEN(s)	 (GDK_STRNIL(s)?1:strlen(s)+1)
+#define GDK_STRCMP(l,r)	 ((*(l) < *(r))?-1:(*(l) > *(r))?1:(GDK_STRNIL(l) && GDK_STRNIL(r))?0:strcmp(l,r))
 @c
-int strNil(str s)  	 { return (!(s) || *(chr*) (s) == GDK_chr_min); }
-int strLen (str s)       { return strNil(s)?2:1+strlen(s); }
-int strCmp (str r,str l) { return strNil(r)?(strNil(l)?0:-1):(strNil(l)?1:
-                                  strcmp(r,l)); }
-
-
-Heap str_smallHeap;
+int strNil(str s)   	 { return GDK_STRNIL(s); }
+int strLen(str s)        { return GDK_STRLEN(s); }
+int strCmp(str l, str r) { return GDK_STRCMP(l,r); }
 
 void strHeap(Heap *d, int cap) {
 	int size;
 	int *h, *e; 
 
 	cap = MAX(cap, BATTINY);
-	size = STRHASHTABLE*sizeof(int) +
-		MIN(STRHASHTABLE*MAXCHAIN, cap)*AVGSTRSPACE;
+	size = (GDK_STRHASHTABLE+1)*sizeof(int) + MIN(GDK_ELIMLIMIT, cap*12);
 	HEAPalloc(d, size, 1);
-	d->free = STRHASHTABLE*sizeof(int); 
+	d->free = GDK_STRHASHTABLE*sizeof(int); 
 	h = (int*) d->base; 
-	for (e = h; e < h + STRHASHTABLE; e++) {
+	for (e = h; e < h + GDK_STRHASHTABLE; e++) {
 		*e = 0; 
 	}
 }
@@ -1063,23 +1086,37 @@ void strHeap(Heap *d, int cap) {
 
 @- Hash Function 
 @T
-Given the diversity of string applications, this is a delicate one,
-because the hash function should work well on as many data distributions 
-as possible, yet be very fast to compute. Therefore:
-\begin{itemize}
-\item we use a fixed maximum of 10 probes,
-\item with a uniform distribution of probes along the string,
-\item including at least first and last character.
-\item exclude leading and trailing spaces from the string
-\end{itemize}
-In an earlier version we used prime multiplication with p=19,
-but then 19^10 gets you over max(int), so we scaled that down to p=7. 
+The old hash function takes a maximum of 10 probes at equal distance and 
+multiplies these together. This hash function does not take all characters into
+account and may therefore run into trouble (e.g. on sets of strings that have
+a long mean length and where only a small portion of the characters differs).
+
+Therefore we switch to new simple hash function that xors and rotates all 
+characters together. 
+
+We preserve the old hash function for use inside string heaps. This ensures that
+old bats with these string heaps will still be compatible. TODO: replace by strHash.
+@h
+#define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
+
+#define GDK_STRHASH(x,y) {                   \
+    str _s = (str) (x);                      \
+    for((y)=0; *_s; _s++) {                  \
+        (y) = GDK_ROTATE(y, 4, 28, 15) ^ *_s;\
+    }}
 @c
 unsigned int strHash(str s) {
+    unsigned int res;
+    GDK_STRHASH(s,res);
+    return res;
+}
+
+static INLINE 
+unsigned int strOldHash(str s) {
 	unsigned int h, len; 
 	char *t;
 
-	if (strNil(s)) {
+	if (GDK_STRNIL(s)) {
 		return 0; 
 	}
 	while(*s == ' ') {
@@ -1110,15 +1147,13 @@ the location of a string in the heap if it exists. Otherwise it returns
 zero.
 @c
 int strLocate(Heap *h, str v) {
-	int *htab;
-	int *e;
-	int *l; 
+	int *htab = (int*) h->base; 
+	int *l, *e = htab + (strOldHash(v) & GDK_STRHASHMASK); 
 
-	htab = (int*) h->base; 
-	e = htab + (strHash(v) & STRHASHMASK); 
 	if (*e) {
 		for (l = e; *l; l = (int*) (((char*) h->base)  + *l)) {
-			if (!strCmp(v, (((char*) h->base)+*l+sizeof(int)))) {
+			str x = (str) (h->base + *l + sizeof(int)); 
+			if (GDK_STRCMP(v, x) == 0) {
 				return *l + sizeof(int); 
 			}
 		}
@@ -1129,170 +1164,72 @@ int strLocate(Heap *h, str v) {
 /* convert the integers in the implicit hash table structure */ 
 void strHeapConvert(Heap *h,int dir) {
 	int *htab = (int*) h->base; 
-	int *l; 
-	int i, j;
+	int *l, i, j; 
 
-	if (ELIMDOUBLES(h)){
 	if (dir == CONV_HTON){
-	    for(i=0; i<STRHASHTABLE; i++) {
+	    for(i=0; i<GDK_STRHASHTABLE; i++) {
 		for (l= htab+i; (j=*l) != 0; l=(int*) (((char*) h->base)+ j)) {
 			*l = normal_int_SWAP(j);
 		}
 	    }
 	} else {
-	    for(i=0; i<STRHASHTABLE; i++) {
+	    for(i=0; i<GDK_STRHASHTABLE; i++) {
 		for (l= htab+i; (j=*l) != 0; l=(int*) (((char*) h->base)+ *l)) {
 			*l = normal_int_SWAP(j);
 		}
 	    }
-	}}
+	}
 }
 
 int strPut(Heap *h, int *dst, str v) {
-	int *l, off = 0, i = strLen(v);
-	int len = (((i-1) >> 2) + 1) << 2; /* round up to 4-byte alignment */
+	int *l, off, i = GDK_STRLEN(v);
+	int len = (((i-1) >> 2) + 2) << 2; /* round up to 4-byte alignment + 4 (next pointer) */
+	int elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
 
 	/* search hash-table, if double-elimination is still in place */
-	if (ELIMDOUBLES(h)) {
-		off = strHash(v) & STRHASHMASK; 
-		for (l = ((int*) h->base) + off; *l; l = (int*) (h->base + *l)) {
-			str x = (str) (h->base + *l + 4); 
-			if ((*v == *x) && (strCmp(v, x) == 0)) {
-				*dst = *l + 4; /* already in heap; do not insert! */
-				return 0; 
-			}
- 		}
-	}
+	off = strOldHash(v) & GDK_STRHASHMASK; 
+	for (l = ((int*) h->base) + off; *l; l = (int*) (h->base + *l)) {
+		str x = (str) (h->base + *l + sizeof(int)); 
+		if (GDK_STRCMP(v, x) == 0) {
+			*dst = *l + sizeof(int); /* already in heap; do not insert! */
+			return 0; 
+		}
+ 	}
 
-	/* check heap for space and determine destination pointer */
-	if (h->free + len + 4 >= h->size) {
-		size_t newsize = len+4+h->size*BATMARGIN;
-		if (h->free + len + 4 < h->maxsize) {
+	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */ 
+	if (h->free + len > elimlimit) {
+		memset(h->base, 0, GDK_STRHASHSIZE); 
+	} 
+
+	/* check heap for space (limited to a certain maximum after which nils are inserted) */
+	if (h->free + len >= h->size) {
+		size_t newsize = len + h->size*BATMARGIN;
+
+		/* XXX: if the heap just becomes too big, insert a nil (last 4 bytes are free) */
+		if (newsize > GDK_VM_MAXSIZE) {
+			h->free = h->size;
+			h->base[h->size - 4] = GDK_chr_min;
+			*dst = h->size - 4;
+			return 0;
+		}
+		if (h->free + len < h->maxsize) {
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize,h->maxsize); 
         	}
 		HEAPextend(h, newsize);
 	}
-	l = (int*) (h->base + h->free); 
 
-	/* add chain link offset in front of string in 4bytes extra space */
-	if (ELIMDOUBLES(h)) {
-		int *htab = (int*) h->base; 
-		*(l++) = htab[off]; htab[off] = h->free; 
-		h->free += 4;
-	}
-
-	/* copy the string in */
-	*dst = h->free;
+	/* insert string in hash table and copy into int the heap */
+	l = (int*) (h->base + h->free);
+	*(l++) = ((int*) h->base)[off]; 
+	((int*) h->base)[off] = h->free;
+	*dst = h->free + sizeof(int);
 	h->free += len;
 	memcpy((char*) l, v, i); 
 
 	return 0; 
 }
 
-@- 
-Though it should not be possible, it was noted that sometimes BATs had corrupted
-string heaps. These supposedly were the product of half saves at a crashed commit. 
-The resulting inconsistent BAT can then again cause a crash! (e.g. when the hash 
-table is not cleared well; this causes havoc on new values inserts). This routine 
-thoroughly examines the head string heap of a BAT and makes corrections were necessary.
-
-Currently all non-control characters of the ASCII/Latin 1 character table
-are allowed.
-@c
-#define STRHASHSIZE (int) (STRHASHTABLE*sizeof(int))
-
-#define allowed_chr(ch) ((ch)==0 || GDKisgraph((ch)) || GDKisspace((ch)) || \
-		         GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
-
-int strHeapCheck(Heap *hp, HeapRepair *hr) {
-	unsigned int pos, mask = 1+((hp->free-STRHASHSIZE)>>7), *valid = (unsigned int*) GDKmalloc(mask*4);
-	unsigned int xx, yy, ret = TRUE, hash = ELIMDOUBLES(hp), scan = !hash;
-        str base = hp->base + STRHASHSIZE;
-	str elim = hp->base + ELIMLIMIT;
-        str last = hp->base + hp->free;
-
-	/* empty the bitvector that records valid heap positions */
-	for(xx=0; xx<mask; xx++) valid[xx] = 0;
-
-	/* check the hashtable to find all valid string positions */
-	if (hash)
-	for(xx=0; xx<STRHASHTABLE; xx++ ) {
-		for(yy = *(int*) (hp->base+ (xx<<2)); yy; yy = *(int*) (hp->base+yy)){
-			if ((yy < STRHASHSIZE) || (hp->base+yy >= elim) || (yy&3)) {
-				GDKwarning("strHeapCheck: strheap[%d..%d] illegal link=%d.\n", STRHASHSIZE, hp->free, yy);
-                        } else {
-                                str s = hp->base + yy + 4;
-				if (strNil(s)) {
-					s++;
-				} else while (s < last && *s && allowed_chr(*s)) {
-                                        s++;
-                                }
-                                if (*s == 0) {
-                                        mask = ((yy-STRHASHSIZE)>>2) + 1;
-                                        pos = mask >> 5;
-                                        mask = 1 << (mask & 31);
-                                        valid[pos] |= mask;
-                                        continue; /* A-OK */
-                                }
-                        }
-			/* error detected; hence we must scan and repair */
-			scan = TRUE; break;
-		}
-	}
-	/* we scan either if the hash table is not functioning anymore (!ELIMDOUBLES) or 
-	 * if it was found to be corrupt in the above code. In the latter case, we not only 
-	 * scan the heap for strings but also rebuild the hash table .
-	 */
-	if (scan) {
-		str cur = base;
-		if (hash) {
-			memset(hp->base, 0, STRHASHSIZE);
-			ret = FALSE;
-		}
-		while(cur < last) {
-			str s = cur, err = NULL;
-
-			/* advance 4 positions if in ELIMDOUBLES range */
-			s += (s < elim)<<2; 
-
-			/* mark this position as legal */
-			mask = (s-base) >> 2;
-			pos = mask >> 5;
-			mask = 1 << (mask & 31);
-			valid[pos] |= mask; 
-
-			/* check correctness of string */
-			if (strNil(s)) {
-				s++;
-			} else while(s < last && *s) {
-				if (!allowed_chr(*s)) err = s;
-				s++;
-			}
-			if (err) {
-				GDKerror("strHeapCheck: illegal char '%d' at position %d.\n", 
-									*err, err - hp->base);
-				memset(cur, 'Z', s-cur); /* we cannot zero it! */
-				ret = FALSE; 
-			}
-			/* insert in the hash table */
-			if (hash) {
-				int *e = ((int*) hp->base) + (strHash(cur+4) & STRHASHMASK);
-				*e = cur - hp->base; 
-				*(int*) cur = *e;
-			} 
-			/* advance to the next string, which is at next 4-aligned position */
-			pos = ++s - base;
-			if (pos&3) pos += 4 - (pos&3);
-			cur = base + pos;
-		}
-        }
-	hr->alignment = 4;
-	hr->minpos = STRHASHSIZE;
-	hr->maxpos = hp->free;
-	hr->validmask = valid;
-	return ret;
-}
 @-
 Convert an "" separated string to a GDK string value.
 @c
@@ -1362,9 +1299,12 @@ int strFromStr(char *src, int *len, char** dst) {
 @-
 Convert a GDK string value to something printable.
 @c
+#define allowed_chr(ch) ((ch)==0 || GDKisgraph((ch)) || GDKisspace((ch)) || \
+		         GDKisspecial((ch)) || GDKisupperl((ch)) || GDKislowerl((ch)))
+
 int strToStr(char** dst, int *len, char* src) {
 	int l=1;
-	if (strNil((str) src)) {
+	if (GDK_STRNIL((str) src)) {
 		@:atommem(char,4)@
 		strcpy(*dst, "nil");
 		return 3;

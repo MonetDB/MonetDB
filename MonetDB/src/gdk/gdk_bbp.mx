@@ -64,6 +64,7 @@ If not, all files in BACKUP/ are moved back to their original location.
 #define BBPLOADING	256 	/* set while we are loading */
 #define BBPSAVING       512 	/* set while we are saving */
 #define BBPWAITING      896	
+#define BBPRENAMED	1024	/* set when bat is renamed in this transaction*/
 
 #define BBPRENAMED	1024	/* set if bat ir renamed since last commit */
 
@@ -741,7 +742,8 @@ void BBPcacheit(BAT* b, int lock) {
                 /* enter in BBP directory structures */
                 i = BBPentry(NULL, NULL, mode);
                 strcpy(b->batId, BBP_logical(i));
-                b->batStamp = ++BBP_curstamp;
+		if (++BBP_curstamp < 0) BBP_curstamp = 0;
+                b->batStamp = BBP_curstamp;
                 b->creator_tid = (int) THRgettid();
                 BBP_refs(i) = 1; /* new bats have 1 pin */
                 BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", i,
@@ -900,7 +902,7 @@ int BBPrename(bat bid, str nme) {
 	}
 	b->batDirtydesc = 1;
 	if (b->batPersistence&PERSISTENT){
-		BBP_status(i) |= BBPRENAMED;
+		BBP_status(bid) |= BBPRENAMED;
 		BBPdirty(1);
 	}
 	MT_unset_lock(GDKcacheLock, "BBPrename"); 
@@ -1265,6 +1267,11 @@ void BBPtrim_select(lng *memtarget, lng *vmtarget, int dirty) {
 
 	/* make the bbptrim-list empty; we will insert the untouched elements in it */
 	bbptrimfirst = BBPMAXTRIM; 
+	if (bbpunload != BBPMAXTRIM){
+		bbpunloadtail = bbpunload;
+		while(bbptrim[bbpunloadtail].next != BBPMAXTRIM) 
+			bbpunloadtail = bbptrim[bbpunloadtail].next;
+	}
 
 	while(next != BBPMAXTRIM) {
 		int cur = next;  /* cur is the entry in the old bbptrimlist we are processing */

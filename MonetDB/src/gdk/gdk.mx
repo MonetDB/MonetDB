@@ -1821,7 +1821,6 @@ typedef struct {
 
 	/* automatically generated fields */
 	ptr	atomNull;		/* global nil value */
-	Heap*	smallHeap;		/* example heap for quick init */		
 
 	/* generic (fixed + varsized atom) ADT functions */
 	int	(*atomFromStr)		(str s, int* len, ptr* dst); 

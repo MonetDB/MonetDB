@@ -451,11 +451,11 @@ static void DESCsetmodes(BAT *b, BAT *img) {
 	b->batMapdirty |= HEAPcheckmode(&img->hheap, b->batMaphheap, b->batRestricted == BAT_WRITE ||
 				(b->batRestricted == BAT_APPEND && 
 	  	 		(BATatoms[b->htype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&img->hheap)) && 
-				(ATOMstorage(b->htype) != TYPE_str || ELIMDOUBLES((&b->hheap)))));
+				(ATOMstorage(b->htype) != TYPE_str || GDK_ELIMDOUBLES((&b->hheap)))));
 	b->batMapdirty |= HEAPcheckmode(&img->theap, b->batMaptheap, b->batRestricted == BAT_WRITE ||
 				(b->batRestricted == BAT_APPEND && 
 	  	 		(BATatoms[b->ttype].atomHeapCheck != HEAP_check || !HEAP_mmappable(&img->theap)) && 
-				(ATOMstorage(b->ttype) != TYPE_str || ELIMDOUBLES((&b->theap)))));
+				(ATOMstorage(b->ttype) != TYPE_str || GDK_ELIMDOUBLES((&b->theap)))));
 	b->batMapdirty |= HEAPcheckmode(&img->haccelerator, b->batMaphacc, b->batRestricted != BAT_READ);
 	b->batMapdirty |= HEAPcheckmode(&img->taccelerator, b->batMaptacc, b->batRestricted != BAT_READ);
 }

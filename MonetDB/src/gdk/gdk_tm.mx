@@ -44,12 +44,15 @@ Upon transaction commit all dirty BATs should be saved on disk.
 Dirty bats on disc are only loaded if needed; in most cases
 it is enough to handle the (cached) BAT descriptor. 
 @{
+@
+TMfakeCommit updates the BBP_status to a new transaction. It collects old bats which
+can be destroyed. The resulting array of bat's can be given to TMkill to destroy these
+bats.
 @c
-void TMfakeCommit(){
-	int nkills=0, maxkills=1024, killbuf[1024], *kills = killbuf;
-	int i;
+int *TMfakeCommit(){
+	int i, nkills=0, maxkills = 1024, *kills = GDKmalloc((maxkills+1)*sizeof(int));
+
         /* succeeded: adapt BBPstatus of all bats while we're still locked */
-	BBPlock("TMfakeCommit");
         for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i)&BBPPERSISTENT) {
 			BBP_status(i) |= BBPEXISTING;
@@ -59,12 +62,7 @@ void TMfakeCommit(){
                          * their destruction until after the commit has released all locks.
                          */
 			if (nkills >= maxkills) {
-				int *bak = kills;
-				kills = (int*) GDKmalloc((maxkills*=2)*sizeof(int));
-				memcpy(kills, bak, nkills*sizeof(int));
-				if (bak != killbuf) {
-					GDKfree(bak);
-				}
+				kills = (int*) GDKrealloc(kills, ((maxkills*=2)+1)*sizeof(int));
 			}
 			kills[nkills++] = i;
 			BBP_refs(i) = 1; /* make unkillable; so nobody else can kill it */
@@ -72,28 +70,33 @@ void TMfakeCommit(){
 		}
 		BBP_status(i) &= ~(BBPDELETED|BBPSWAPPED|BBPNEW);
         }
-	BBPunlock("TMfakeCommit");
+	kills[nkills] = 0;
+	return kills;
+}
 
-	/* outside the lock: now kill all ex-persistent bats */
-	for(i=0; i<nkills; i++) {
-                BAT *b = BBPquickdesc(kills[i], FALSE);
 
-                if (BBP_cache(kills[i])) {
+void TMkill(int *kills){
+	int *killbuf = kills;
+	while(*kills){
+                BAT *b = BBPquickdesc(*kills, FALSE);
+
+                if (BBP_cache(*kills)) {
 			/* those that quickdesc decides to load => proper unfix */
-                        BBPunfix(kills[i]);
+                        BBPunfix(*kills);
                 } else {
                         /* the unloaded ones are deleted without loading */
                         BATdelete(b); /* delete disk images */
-                        BBPclear(kills[i], TRUE); /* clear with locking */
+                        BBPclear(*kills, TRUE); /* clear with locking */
                 }
+		kills++;
         }
-	if (kills != killbuf) {
-		GDKfree(kills);
+	if (killbuf) {
+		GDKfree(killbuf);
 	}
 }
 
 int TMcommit() {
-	int i, ret = 0;
+	int i, ret = 0, *kills = NULL;
 
 	/* Acquire BBP locks */
 	BBPlock("TMcommit");
@@ -111,11 +114,13 @@ int TMcommit() {
 		}
 		if (b) BATcommit(b);
 	}
-	BBPunlock("TMcommit");
 
         /* atomic write of all dirty BATs and BBP.dir */
-	if (ret == 0) ret = BBPsync(FALSE);
-	if (ret == 0) TMfakeCommit();
+	if (ret == 0) ret = BBPsync(TRUE);
+	if (ret == 0) kills = TMfakeCommit();
+	BBPunlock("TMcommit");
+	/* outside the lock: now kill all ex-persistent bats */
+	if (ret == 0) TMkill(kills);
 	return ret;
 }
 
