@@ -74,7 +74,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files client
 %defattr(-,monetdb,monetdb) 
-%{prefix}/bin/Msql 
 %{prefix}/lib/libMonetODBC*
 
 %files server
