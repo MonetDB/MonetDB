@@ -162,16 +162,16 @@ typedef union {
 int yylex();
 extern "C" int yyparse();
 
-extern void  mel_yyerror(char *);
+extern void  mel_yyerror(const char *);
 
 extern void *get_cur_buffer( );
 extern void new_buffer( FILE *f );
 extern void close_and_change( void *buf, FILE *f );
 extern void semerror();
 
-extern char *token2str( int token );
-extern char *type2str( int tpe );
-extern char *get_signature( char* fcn);
+extern const char *token2str( int token );
+extern const char *type2str( int tpe );
+extern const char *get_signature( char* fcn);
 
 
 #define yywrap()	1
@@ -229,7 +229,7 @@ template class ListIterator<Symbol>;
 #if defined(EXPLICIT_TEMPLATES) && !defined(__CYGWIN32__)
 #endif
 
-char *token2str( int token ){
+const char *token2str( int token ){
         switch (token){
         case MEL_MODULE     : return "module";
         case MEL_ITERATOR   : return "iterator";
@@ -259,7 +259,7 @@ char *token2str( int token ){
         return "default";
 }
 
-char* type2str(int t){
+const char* type2str(int t){
 	switch(t) {
 	  case TYPE_BIT: return "bit";
 	  case TYPE_CHR: return "chr";
@@ -703,7 +703,7 @@ int char_concat(char c) {
 	if (chr) chr--;
 	return 1;
 }
-char* get_signature(char* fcn){
+const char* get_signature(char* fcn){
 	int c, echo = 1;
 	script_start();
 	while(*fcn) {
@@ -1131,7 +1131,7 @@ ident:
     |   MEL_VOID
 	{ $$.s = strdup("void"); }
     |   MEL_TYPE
-	{ $$.s = type2str(yyval.i); }
+	{ $$.s = (char*)type2str(yyval.i); }
 
 module_ident:
 	MEL_IDENTIFIER
@@ -1140,10 +1140,10 @@ module_ident:
     |   MEL_VOID
 	{ $$.s = strdup("void"); }
     |   MEL_TYPE
-	{ $$.s = type2str(yyval.i); }
+	{ $$.s = (char*)type2str(yyval.i); }
 %%
 
-void mel_yyerror(char *err) 
+void mel_yyerror(const char *err) 
 { 
 	if (progname) {
 		cerr << progname << ": ";

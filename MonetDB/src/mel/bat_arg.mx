@@ -18,7 +18,7 @@ class BatArg : public Arg {
 	const Arg *atom2() const;
 
 	int isFixed() const;
-	virtual char *toString() const; 
+	virtual const char *toString() const; 
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
 	const Arg *_atom1;
@@ -51,7 +51,7 @@ int BatArg::isFixed() const {
 	return 0;
 }
 
-char *BatArg::toString( ) const {
+const char *BatArg::toString( ) const {
 	return "BAT"; 
 }
 

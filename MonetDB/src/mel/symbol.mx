@@ -12,14 +12,14 @@
 class language;
 class Symbol {
     public:
-	Symbol( int token, char *name );
+	Symbol( int token, const char *name );
 	virtual ~Symbol();
 
 	int operator==(const Symbol &) const;
 	int Token() const;
-	char *Name() const;
-        virtual char *toString() const;
-	void Name( char * name);
+	const char *Name() const;
+        virtual const char *toString() const;
+	void Name( const char * name);
 	virtual ostream &print( language *l, ostream &) const;
     private:
 	int   _token;
@@ -34,7 +34,7 @@ class Symbol {
 #include "language.h"
 #include <string.h>
 
-Symbol::Symbol( int token, char *name )
+Symbol::Symbol( int token, const char *name )
 {
 	_token = token;
 	if (name) 
@@ -63,15 +63,15 @@ int Symbol::Token() const {
 	return _token;
 }
 
-char *Symbol::Name() const {
+const char *Symbol::Name() const {
 	return _name;
 }
 
-char *Symbol::toString() const {
+const char *Symbol::toString() const {
 	return _name;
 }
 
-void Symbol::Name( char *name ) {
+void Symbol::Name( const char *name ) {
    	if (_name)
    		delete(_name);
 	_name = NULL;

@@ -76,7 +76,7 @@ ostream &proto::gen_module( ostream &o, const Module &d ){
 	o << "#include <gdk.h>\n\n";
 
 	o << "#ifdef _MSC_VER\n";
-	o << "#ifndef LIB" << upper(d.Name()) << "\n";
+	o << "#ifndef LIB" << upper(strdup(d.Name())) << "\n";
 	o << "#define " << d.Name() << "_export extern __declspec(dllimport)\n";
 	o << "#else\n";
 	o << "#define " << d.Name() << "_export extern __declspec(dllexport)\n";
@@ -124,7 +124,7 @@ ostream &proto::gen_atom( ostream &o, const Atom &d ){
 }
 
 ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
-	char *name = atom->Name();
+	const char *name = atom->Name();
 	int hasPtr = 0;
 
 	if (atom->top_type() && atom->top_type()->type() == TYPE_STR)
@@ -292,7 +292,7 @@ ostream &proto::gen_atomops( ostream &o, const Atomops &d ){
 }
 
 ostream &proto::gen_acc( ostream &o, const Acc &d ){
-	acc = d.Name();
+	acc = (char*)d.Name();
 	if (d.args()){
 		ListIterator<Symbol> *iter = d.args()->iterator();
 		iter->next(acc_arg);

@@ -12,11 +12,11 @@
 
 class AtomArg : public Arg {
     public:
-	AtomArg( int t, char *n, const Atom *arg, char *v); 
+	AtomArg( int t, const char *n, const Atom *arg, char *v); 
 
 	const Atom *arg() const;
 
-        virtual char *toString() const;
+        virtual const char *toString() const;
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
 	const Atom *_arg;
@@ -29,7 +29,8 @@ class AtomArg : public Arg {
 #include <string.h>
 
 
-AtomArg::AtomArg( int t, char *n, const Atom *arg, char* v ) : Arg(t,n,v) {
+AtomArg::AtomArg( int t, const char *n, const Atom *arg, char* v ) : Arg(t,n,v) 
+{
 	_arg = arg;
 }
 
@@ -37,7 +38,7 @@ const Atom *AtomArg::arg() const {
 	return _arg;
 }
 
-char *AtomArg::toString( ) const {
+const char *AtomArg::toString( ) const {
 /* return this->Name(); */
 	return _arg->toString();
 }

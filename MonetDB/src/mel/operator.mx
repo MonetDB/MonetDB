@@ -19,7 +19,7 @@ class Operator : public Command {
 	Symbol *op1() const;
 	Symbol *op2() const;
 
-	virtual char* Token() const;
+	virtual const char* Token() const;
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
     	void set_op_names();
@@ -71,7 +71,7 @@ Symbol *Operator::op2() const {
 	return _op2;
 }
 
-char* Operator::Token() const {
+const char* Operator::Token() const {
         return "TOK_OPERATOR";
 }
 

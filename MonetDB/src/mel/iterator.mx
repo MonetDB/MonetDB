@@ -14,7 +14,7 @@ class Iterator : public Command {
 	      List<Symbol> *args = NULL,
 	      char *hlp = NULL ); 
 
-	virtual char* Token() const;
+	virtual const char* Token() const;
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
 };
@@ -32,7 +32,7 @@ Iterator::Iterator( int t, char *n, char *fcn,
         : Command(t, n, fcn, NORMAL, NULL, args, hlp) {
 }
 
-char* Iterator::Token() const {
+const char* Iterator::Token() const {
         return "TOK_ITERATOR";
 }
 

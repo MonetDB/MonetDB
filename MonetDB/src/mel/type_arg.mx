@@ -23,7 +23,7 @@ enum type_arg_types_t {
 
 class Arg : public Symbol {
     public:
-	Arg( int t, char *n, char *v=NULL ) : Symbol(t,n){ _value = v; }
+	Arg( int t, const char *n, char *v=NULL ) : Symbol(t,n){ _value = v; }
 	virtual int type() const { return 0; }
 	virtual int isFixed() const { return 1; }
 	char *value() const { return _value; };
@@ -33,9 +33,9 @@ class Arg : public Symbol {
 
 class TypeArg : public Arg {
     public:
-	TypeArg( int t, char *n, int type, char *v=NULL ); 
+	TypeArg( int t, const char *n, int type, char *v=NULL ); 
 
-	virtual char *toString() const;
+	virtual const char *toString() const;
 	static ostream &gen_type( ostream &o, int t );
 	int type() const;
 	int isFixed() const;
@@ -52,11 +52,11 @@ class TypeArg : public Arg {
 #include <string.h>
 
 
-TypeArg::TypeArg( int t, char *n, int type, char *v ) : Arg(t,n,v) {
+TypeArg::TypeArg( int t, const char *n, int type, char *v ) : Arg(t,n,v) {
 	_type = type;
 }
 
-char *TypeArg::toString( ) const {
+const char *TypeArg::toString( ) const {
    	switch (_type){
 	case TYPE_BIT: return "bit"; 
 	case TYPE_CHR: return "chr"; 

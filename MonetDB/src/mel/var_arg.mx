@@ -15,7 +15,7 @@ class VarArg : public Arg {
 	VarArg( int t, char *n, const Symbol *arg = NULL); 
 
 	const Symbol *arg() const;
-        virtual char *toString() const;
+        virtual const char *toString() const;
 	virtual ostream &print( language *l, ostream &o ) const ;
     private:
 	const Symbol *_arg;
@@ -41,7 +41,7 @@ ostream &VarArg::print( language *l, ostream &o ) const {
 	return l->gen_var_arg( o, *this );
 }
 
-char *VarArg::toString( ) const {
+const char *VarArg::toString( ) const {
 	char *buf = new char[80];
 	const char *arg = _arg?_arg->toString():"any";
 

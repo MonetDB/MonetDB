@@ -14,12 +14,12 @@ const int ANY_MAX = 32;
 
 class AnyArg : public Arg {
     public:
-	AnyArg( int t, char *n, int nr = -1, char* s = "null"); 
+	AnyArg( int t, char *n, int nr = -1, const char* s = "null"); 
 
 	int nr() const;
 	AnyArg* bound() const;
 
-        virtual char *toString() const;
+        virtual const char *toString() const;
 	virtual ostream &print( language *l, ostream &o ) const ;
         char typestr[128];
     private:
@@ -38,13 +38,13 @@ extern AnyArg* anynr_find( int, AnyArg* );
 #include <string.h>
 
 
-AnyArg::AnyArg( int t, char *n, int nr, char *s) : Arg(t,n) {
+AnyArg::AnyArg( int t, char *n, int nr, const char *s) : Arg(t,n) {
 	_nr = nr;
 	_bound = anynr_find(nr, this);
 	strcpy(typestr, s);
 }
 
-char *AnyArg::toString( ) const {
+const char *AnyArg::toString( ) const {
         if (_nr > 0) {
                 char *buf = new char[80];
                 sprintf(buf, "any::%d", _nr);

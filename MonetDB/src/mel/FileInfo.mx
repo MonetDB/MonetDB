@@ -96,7 +96,7 @@ void FileInfo::Buffer( void *buf ){
 	_buf = buf;
 }
 
-static char *new_filename( char *dir, char *name, char *ext ){
+static char *new_filename( const char *dir, const char *name, const char *ext ){
 	int len_dir = strlen(dir);
 	int len_name = strlen(name);
 	int len_ext  = strlen(ext);

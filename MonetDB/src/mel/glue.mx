@@ -26,8 +26,8 @@ class glue: public language {
     public:
 	int arg_nr;
 	Symtable *tableptr;
-    	ostream &gen_command_args(ostream &o, const Command &m, char* sep="");
-    	ostream &gen_operator_args(ostream &o, const Operator &m, char* sep="");
+    	ostream &gen_command_args(ostream &o, const Command &m, const char* sep="");
+    	ostream &gen_operator_args(ostream &o, const Operator &m, const char* sep="");
 };
 
 #endif //_GLUE_H_
@@ -277,7 +277,7 @@ int glue::generate_table( ostream &o, Symtable *_tableptr ){
 	return 0;
 }
 
-ostream &glue::gen_command_args( ostream &o, const Command  &d, char* sep){
+ostream &glue::gen_command_args( ostream &o, const Command  &d,const char* sep){
 	if (d.args()){
 	   	arg_nr = 1;
 		ListIterator<Symbol> *iter = d.args()->iterator();
@@ -295,7 +295,7 @@ ostream &glue::gen_command_args( ostream &o, const Command  &d, char* sep){
 	return o;
 }
 
-ostream &glue::gen_operator_args( ostream &o, const Operator &d, char* sep){
+ostream &glue::gen_operator_args( ostream &o, const Operator &d, const char* sep){
 	return this->gen_command_args(o, d, sep);
 }
 
@@ -375,7 +375,7 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 	print_list( o, d.Defs(), l );
 	delete(l);
 
-	modulename = d.Name();
+	modulename = (char*)d.Name();
 	o << "char "<< modulename;
 	o << "_compile_time[] = \"" << gen_time() << "\";\n\n";
 
@@ -432,7 +432,7 @@ void gen_extern_typeops( ostream &o, int op, Arg *t ){
 }
 
 void gen_default_atomops( ostream &o, int op, const Atom &d ){
-   	char *atom = d.Name();
+   	const char *atom = d.Name();
 	char len[1024];
 	if (d.size()){
 	   	sprintf( len, "%d",d.size());
@@ -553,7 +553,7 @@ void gen_default_atomops( ostream &o, int op, const Atom &d ){
 }
 
 
-ostream &print_size( ostream &o, int size, Arg *arg, char *atom_name ){
+ostream &print_size( ostream &o, int size, Arg *arg, const char *atom_name ){
 	if (!arg){
 	   	if (size > 0)
 			o << size;
@@ -568,7 +568,7 @@ ostream &print_size( ostream &o, int size, Arg *arg, char *atom_name ){
 }
 
 ostream &print_align( ostream &o, int size, int align, 
-   			Arg *arg, char *atom_name ){
+   			Arg *arg, const char *atom_name ){
 	if (!arg){
 	   	if (size < 0) {
 		   	o << "0";
@@ -975,7 +975,8 @@ ostream &forward::gen_builtin( ostream &o, const Builtin &d ){
 	return o;
 }
 
-ostream &gen_extern_arg( ostream &o, char *str, int ptr_included, int need_ptr){
+ostream &
+gen_extern_arg( ostream &o, const char *str, int ptr_included, int need_ptr){
    	o << str;
 	if (!ptr_included)
 		o << "*"; 
@@ -1126,7 +1127,7 @@ ostream &install::gen_atom( ostream &o, const Atom &d ){
 ostream &install::gen_acc( ostream &o, const Acc &d ){
 	o << "   TBL_Install_Accelerator( mid, \"" << d.Name() << "\");\n";
 	
-	acc = d.Name();
+	acc = (char*)d.Name();
 	if (d.cmds()){
 	   	Ops **cmds = d.cmds();
 	   	for( int i = OP_INSERT; i <= OP_MOVE; i++ ){  
@@ -1203,7 +1204,7 @@ ostream &install_fcntbl::gen_builtin( ostream &o, const Builtin &d ){
 }
 
 ostream &install_fcntbl::gen_object( ostream &o, const Object &d ){
-	char *fcn = d.arg()?d.arg()->Name():d.Name();
+	const char *fcn = d.arg()?d.arg()->Name():d.Name();
    	o << "   { ";
 	o << "\"" << d.Name() << "\", ";
 	o << "TOK_OBJECT" << ", ";
@@ -1221,7 +1222,7 @@ ostream &install_fcntbl::gen_object( ostream &o, const Object &d ){
 	return o;
 }
 
-ostream &gen_install_arg( ostream &o, char *name, const Arg &d){
+ostream &gen_install_arg( ostream &o, const char *name, const Arg &d){
 	o << "\"" << name << "\"";
 	//if (d.value()) {
 	//	o << d.value();

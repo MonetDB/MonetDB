@@ -100,10 +100,11 @@ class language {
 		return o; 
 	}
 
-	ostream &gen_list( ostream &o, List<Symbol> *, char *sep = "");
+	ostream &gen_list( ostream &o, List<Symbol> *, const char *sep = "");
 };
 
-inline ostream &language::gen_list( ostream &o, List<Symbol> *l, char* sep){ 
+inline ostream &
+language::gen_list( ostream &o, List<Symbol> *l, const char* sep){ 
 	
 	if (l){
 		ListIterator<Symbol> *iter = l->iterator();
