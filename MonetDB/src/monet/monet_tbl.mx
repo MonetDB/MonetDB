@@ -1971,7 +1971,7 @@ We recognize '+=' (and similar for other operators than +) as an TOK_ASSIGNOP.
 if not found, the default is to say it is an identifier. 
 However, with the command-hint passed, we guess it is a command.
 @c
-	if (ret == NULL && guess_if_notfound && !no_command) {
+	if (ret == NULL && guess_if_notfound && no_command == 0 && next_is_ident == 0) {
 		ret = s;
 		*t = next_is_ident?TOK_OPERATOR:TOK_COMMAND;
 	}
