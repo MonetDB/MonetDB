@@ -31,7 +31,7 @@ print(a);
 [ 7,	  "apples"	  ]
 fruit:= enum_create("fruit",a);
 print(fruit);
-[ 16 ]
+[ 15 ]
 x:= encode(fruit,"apples");
 print(x);
 [ apples ]

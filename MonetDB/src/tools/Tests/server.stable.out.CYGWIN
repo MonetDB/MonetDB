@@ -9,7 +9,7 @@ stdout of test 'server` in directory 'src/tools` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 Start of MIL prelude.
-[ 1 ]
+[ 0 ]
 ##------------------------------------------------------------------------#
 ## key   | put   | get  | wakeup  | enter | start | duration | action     #
 ##------------------------------------------------------------------------#
