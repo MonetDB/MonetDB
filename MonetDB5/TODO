@@ -44,6 +44,9 @@ spending its time on copying bats all the time.
 table. This can reduce the number of malloc/free calls significantly.
 [estimate about >15% speed] 
 
+- The garbage control is too complicated and consumes too much power.
+  before/after calls are only focussed on the first destination argument.
+
 API issues
 - Japi should be aligned with latest Mapi 
 - The java front-end terminal and profiler should be re-vived
