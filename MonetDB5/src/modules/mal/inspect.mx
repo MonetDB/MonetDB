@@ -35,23 +35,6 @@ are relevant for resolving function names.
 @mal
 module inspect;
 
-command getModuleNames() :bat[:void,:str] 
-address INSPECTmoduleNames
-comment "Collect bat with all modules loaded" ;
-
-command getPatternNames():bat[:str,:str] 
-address INSPECTpatternNames
-comment "Map module and pattern pairs";
-command getCommandNames():bat[:str,:str] 
-address INSPECTcommandNames
-comment "Map module and commands pairs";
-command getFunctionNames():bat[:str,:str] 
-address INSPECTfunctionNames
-comment "Map module and function pairs";
-command getFactoryNames():bat[:str,:str] 
-address INSPECTfactoryNames
-comment "Map module and function pairs";
-
 command getDefinition(mod:str,fcn:str)
 	:bat[:int,:str] 
 address INSPECTgetDefinition

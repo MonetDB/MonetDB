@@ -347,7 +347,7 @@ First experiment is a simple partitioning on the tail value.
 @= newPiece
 	if(crackMap[@1].maxpiece == crackMap[@1].freepiece ){
 		printf("too many pieces");
-		exit(-1);
+		exit(0);
 	}
 	@2 = crackMap[@1].pieces+ crackMap[@1].freepiece;
 	@2->left= @2->middle= @2->right = -1;
