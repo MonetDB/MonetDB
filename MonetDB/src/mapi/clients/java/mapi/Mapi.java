@@ -183,6 +183,7 @@ public class Mapi
 	private String action="";
 	
 	private String query;
+	private int tableid = -1;
 	private String qrytemplate;
 	private String prompt;
 	
@@ -977,22 +978,34 @@ private void paramStore(){
  * to toggle the trace flag.
 */
 private int executeInternal(){
-	paramStore();
-	cacheResetInternal();
-	if(trace) traceLog.print("execute:"+query);
-	if( query.indexOf("#trace on")==0){
-		trace= true;
-		traceLog.println("Set trace on");
-	}
-	if( query.indexOf("#trace off")==0){
-		traceLog.println("Set trace off");
-		trace= false;
-	}
-	try{
+	try {
+		if( query.startsWith("#trace on")){
+			trace= true;
+			traceLog.println("Set trace on");
+		}
+		if( query.startsWith("#trace off")){
+			traceLog.println("Set trace off");
+			trace= false;
+		}
+		if (tableid >= 0) {
+			if (trace) traceLog.println("execute: Xclose");
+			toMonet.writeBytes("Xclose " + tableid + "\n" );
+			toMonet.flush();
+			do {
+				blk.buf = fromMonet.readLine(); 
+				if(trace) traceLog.println("gotLine:"+blk.buf);
+			} while( blk.buf.charAt(0) != PROMPTBEG);
+			promptMonet();
+		}
+
+		if(trace) traceLog.print("execute:"+query);
+
+		paramStore();
+		cacheResetInternal();
 		toMonet(query);
-	} catch( MapiException m){
-		setError("Write error on stream","execute");
-	}	
+	} catch(Exception e) {
+		setError(e.toString(),"execute");
+	}
 	return error;
 }
 public int execute(){
@@ -1031,6 +1044,9 @@ private int answerLookAhead(){
 	return error;
 }
 public int query(String cmd){
+	if (active) {
+		System.out.println("still active " + query );
+	}
 	if(cmd == null) return setError("Null query","query");
 	prepareQueryInternal(cmd);
 	if( error== MOK) executeInternal();
@@ -1454,6 +1470,15 @@ private void headerDecoder() {
 			if (trace)
 				traceLog.println("column["+i+"].type="+columns[i].columntype);
 		}
+	} else if (tag.equals("# id")) {
+		String s = fetchField(0);
+		try {
+			tableid = Integer.parseInt(s);
+		} catch (Exception e) {
+			//ignore;
+		}
+		if (trace)
+			traceLog.println("got id " + tableid + " \n");
 	} else if (trace)
 		traceLog.println("Unrecognized header tag "+tag);
 	//REST LATER
