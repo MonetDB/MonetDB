@@ -487,15 +487,17 @@ AM_CONDITIONAL(DOCTOOLS, test -n "$LATEX" -a -n "$FIG2DEV" -a -n "$DVIPS")
 INSTALL_BACKUP=""
 AC_MSG_CHECKING([$INSTALL --backup option])
 [ if [ "$INSTALL" ]; then
-	echo "" > c 2>/dev/null
-        $INSTALL --backup=nil c d 1>/dev/null 2>/dev/null
-        if [ $? -eq 0 ]; then
+	if [ ! "`file $INSTALL | grep 'shell script' 2>/dev/null`" ] ; then
+	    echo "" > c 2>/dev/null
+            $INSTALL --backup=nil c d 1>/dev/null 2>/dev/null
+            if [ $? -eq 0 ]; then
                 INSTALL_BACKUP="--backup=nil" 
-        fi
-        $INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null
-        if [ $? -eq 0 ]; then
+            fi
+            $INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null
+            if [ $? -eq 0 ]; then
                 INSTALL_BACKUP="-C --backup=nil" 
-        fi
+       	    fi
+	fi 
 	rm -f c d e 2>/dev/null
 fi ]
 AC_MSG_RESULT($INSTALL_BACKUP)
