@@ -1025,6 +1025,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 		getVar(mb,n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
 	bzero( (str) getVar(mb,n), sizeof(VarRecord));
 	mb->var[n]->name = 0;
+	mb->var[n]->props = NULL;
 	getVarTmp(mb,n) = n;
 	setVarType(mb,n,type);
 	getVarLiteral(mb,n)= NULL;
@@ -1095,6 +1096,8 @@ void freeVariable(MalBlkPtr mb, int varid){
 	if( v->name) GDKfree(v->name); v->name = 0;
 	if( v->literal) GDKfree(v->literal); v->literal= 0;
 	if( v->isaconstant) VALclear(&v->value);
+	if( v->props) freePropertySet(v->props);
+	v->props=0;
 	GDKfree(v);
 	getVar(mb,varid) = NULL;
 }

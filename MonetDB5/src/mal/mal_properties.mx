@@ -386,6 +386,7 @@ typedef struct PROPSET{
 } *PropertySet;
 
 mal_export PropertySet newPropertySet();
+mal_export void freePropertySet(PropertySet ps);
 mal_export PropertySet cpyPropertySet(PropertySet old);
 mal_export Property fndProperty(PropertySet ps, int first, int last, str nme);
 mal_export void setProperty(PropertySet ps, int idx, str nme, int tpe, ptr val);
@@ -410,6 +411,20 @@ PropertySet cpyPropertySet(PropertySet old){
 	memcpy((char*)ps, (char*)old, sizeof(struct PROPSET));
 	GDKwarning("Property set copying not finished\n");
 	return ps;
+}
+void freePropertySet(PropertySet ps){
+	Property p1,p2;
+	int i;
+	for(i=0;i<MAXPROPLIST;i++){
+		p1= ps->prop[i];
+		if(p1)
+		do{
+			p2= p1->nxt;
+			GDKfree(p1);
+			p1=p2;
+		} while(p2);
+	}
+	GDKfree(ps);
 }
 Property fndProperty(PropertySet ps, int first, int last, str nme){
 	Property pr;

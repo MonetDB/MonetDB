@@ -1205,10 +1205,16 @@ startFCNcall:
 
 		/* continue with parseing a function/operator call */
 		if( cntxt->nxt[l] == '.'){
+			Scope scope;
 			arg= idCopy(cntxt,l);
 			nextChar(cntxt);
 			skipSpace(cntxt);
-			setModuleScope(curInstr, findScope(cntxt->nspace,arg));
+			scope= findScope(cntxt->nspace,arg);
+			if( scope==0){
+				parseError(cntxt,"<modulename> expected\n");
+				pushInstruction(curBlk,curInstr);
+				return;
+			} else setModuleScope(curInstr, scope);
 			/*GDKfree(arg);*/
 			i = idLength(cntxt);
 			if( i==0) i= operatorLength(cntxt);

@@ -63,7 +63,7 @@ typedef struct{
 } malTask;
 
 /*#define DEBUG_MAL_INTERPRETER */
-/* #define DEBUG_MAL_PARALLEL */
+/*#define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
 mal_export void showErrors();
 mal_export str runMAL(Client c, MalBlkPtr mb, 
@@ -893,7 +893,7 @@ Joining a process thread is controlled with a lock part of the stack frame
 	stkpc= pci->jump; /* search end of parallel block */
 }
 @= finishChild
-	if( childProcess){
+	if( childProcess && childProcess== getDestVar(pci)){
 		int j,k,lim;
 		MT_set_lock(stk->stklock,"finishChild");
 #ifdef DEBUG_MAL_PARALLEL
@@ -918,6 +918,12 @@ Joining a process thread is controlled with a lock part of the stack frame
 		}
 		goto MALevalExit;
 	}
+#ifdef DEBUG_MAL_PARALLEL
+	else
+	stream_printf(GDKout,"finish the child  ignored "
+		"%d %s\n",childProcess, 
+			getVarName(mb,childProcess));
+#endif
 @-
 @}
 @+ Exception handling
