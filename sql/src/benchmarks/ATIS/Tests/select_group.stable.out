@@ -1,25 +1,28 @@
 stdout of test 'select_group` in directory 'src/benchmarks/ATIS` itself:
 
 
-# 21:13:10 >  
-# 21:13:10 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=0   --set monet_prompt= --dbname=Tests_src_benchmarks_ATIS --set sql_port=54799 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil ; echo  ; echo Over..
-# 21:13:10 >  
+# 11:38:21 >  
+# 11:38:21 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_ATIS" --set sql_port=55508 "/ufs/niels/data/Linux-i686/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 11:38:21 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
+# Monet Database Server V4.3.9
+# Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 printf("\nReady.\n");
 
 Ready.
-# [ 9 10 ]
 quit;
 
 Over..
 
-# 21:13:11 >  
-# 21:13:11 >  Mtimeout -timeout 60 sql_client --port=54799 < select_group.sql
-# 21:13:11 >  
+# 11:38:21 >  
+# 11:38:21 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=55508 < select_group.sql
+# 11:38:21 >  
 
+SQL  connected to database mTests_src_benchmarks_ATIS using schema sys
+#----------------------------------------
+#| day_name | day_code | count_day_code |
+#----------------------------------------
 "MONDAY"	1	64
 "TUESDAY"	2	64
 "WEDNESDAY"	3	64
@@ -28,6 +31,9 @@ Over..
 "SATURDAY"	6	64
 "SUNDAY"	7	64
 SQL  7 Rows affected
+#-----------------------------
+#| day_name | count_day_code |
+#-----------------------------
 "MONDAY"	64
 "TUESDAY"	64
 "WEDNESDAY"	64
@@ -36,11 +42,17 @@ SQL  7 Rows affected
 "SATURDAY"	64
 "SUNDAY"	64
 SQL  7 Rows affected
+#-------------------------
+#| month_name | day_name |
+#-------------------------
 "APRIL"	"THURSDAY"
 "MAY"	"FRIDAY"
 "JUNE"	"SATURDAY"
 "JULY"	"SUNDAY"
 SQL  4 Rows affected
+#----------------------------------------
+#| day_name | day_code | count_day_name |
+#----------------------------------------
 "MONDAY"	1	64
 "TUESDAY"	2	64
 "WEDNESDAY"	3	64
@@ -49,26 +61,59 @@ SQL  4 Rows affected
 "SATURDAY"	6	64
 "SUNDAY"	7	64
 SQL  7 Rows affected
+#---------------
+#| sum_engines |
+#---------------
 278
 SQL  1 Row affected
-2
+#---------------
+#| avg_engines |
+#---------------
+2.05926
 SQL  1 Row affected
-2
+#---------------
+#| avg_engines |
+#---------------
+2.37607
 SQL  1 Row affected
+#-----------------------------------------------------
+#| count_aircraft_code | min_pay_load | max_pay_load |
+#-----------------------------------------------------
 94	240	165710
 SQL  1 Row affected
+#-------------------------------------
+#| min_flight_code | min_flight_code |
+#-------------------------------------
 101908	101908
 SQL  1 Row affected
+#-------------------------------------
+#| min_from_airport | min_to_airport |
+#-------------------------------------
 "ATL"	"ATL"
 SQL  1 Row affected
+#-----------------------
+#| count_aircraft_code |
+#-----------------------
 50
 SQL  1 Row affected
+#-----------------------
+#| count_aircraft_code |
+#-----------------------
 94
 SQL  1 Row affected
+#---------------------
+#| count_flight_code |
+#---------------------
 279
 SQL  1 Row affected
-"ATL"	"BOS"	154
+#------------------------------------------------
+#| from_airport | to_airport | avg_time_elapsed |
+#------------------------------------------------
+"ATL"	"BOS"	154.368
 SQL  1 Row affected
+#-------------------------------
+#| city_code | avg_ground_fare |
+#-------------------------------
 "MATL"	9
 "BBOS"	5
 "DDFW"	6
@@ -81,6 +126,9 @@ SQL  1 Row affected
 "WWAS"	12
 "BBWI"	5
 SQL  11 Rows affected
+#-------------------------------
+#| count_city_code | city_code |
+#-------------------------------
 3	"MATL"
 3	"BBOS"
 2	"DDFW"
@@ -94,14 +142,23 @@ SQL  11 Rows affected
 3	"BBWI"
 1	""
 SQL  12 Rows affected
+#----------------------
+#| category | totalnr |
+#----------------------
 "TURBOPROP"	32
 "JET"	15
 "PROPELLER"	16
 SQL  3 Rows affected
+#-----------------------------
+#| category | count_category |
+#-----------------------------
 "TURBOPROP"	32
 "JET"	15
 "PROPELLER"	16
 SQL  3 Rows affected
+#--------------------------------------------
+#| flight_number | range_miles | fare_class |
+#--------------------------------------------
 296	2400	"Q"
 296	2400	"M"
 296	2400	"BN"
@@ -253,6 +310,9 @@ SQL  3 Rows affected
 166	2500	"Y"
 166	2500	"F"
 SQL  150 Rows affected
+#----------------------------------------------------------
+#| from_airport | to_airport | range_miles | time_elapsed |
+#----------------------------------------------------------
 "PHL"	"BWI"	691	50
 "BWI"	"PHL"	691	43
 "BWI"	"PHL"	691	50
@@ -663,6 +723,9 @@ SQL  150 Rows affected
 "PHL"	"BWI"	1151	50
 "BWI"	"PHL"	1151	53
 SQL  409 Rows affected
+#-----------------------------------------------------
+#| country_name | state_name | city_name | direction |
+#-----------------------------------------------------
 "USA"	"CALIFORNIA"	"OAKLAND"	"SE"
 "USA"	"CALIFORNIA"	"SAN FRANCISCO"	"SE"
 "USA"	"CALIFORNIA"	"OAKLAND"	"SW"
@@ -675,6 +738,9 @@ SQL  409 Rows affected
 "USA"	"TEXAS"	"FORT WORTH"	"E"
 "USA"	"TEXAS"	"DALLAS"	"NW"
 SQL  11 Rows affected
+#-----------------------------------------------------
+#| country_name | state_name | city_name | direction |
+#-----------------------------------------------------
 "USA"	"CALIFORNIA"	"OAKLAND"	"SE"
 "USA"	"CALIFORNIA"	"SAN FRANCISCO"	"SE"
 "USA"	"CALIFORNIA"	"OAKLAND"	"SW"
@@ -687,6 +753,9 @@ SQL  11 Rows affected
 "USA"	"TEXAS"	"FORT WORTH"	"E"
 "USA"	"TEXAS"	"DALLAS"	"NW"
 SQL  11 Rows affected
+#----------------------------------------------------------------------------------------------
+#| from_airport | to_airport | fare_class | night | one_way_cost | rnd_trip_cost | class_days |
+#----------------------------------------------------------------------------------------------
 "SFO"	"DFW"	"Y"	"NO"	328	0	"1234567"
 "SFO"	"DFW"	"B"	"NO"	328	0	"1234567"
 "SFO"	"DFW"	"YN"	"YES"	381	762	"1234567"
@@ -698,6 +767,9 @@ SQL  11 Rows affected
 "SFO"	"DFW"	"F"	"NO"	709	1418	"1234567"
 "SFO"	"DFW"	"F"	"NO"	717	1434	"1234567"
 SQL  10 Rows affected
+#-------------------------------------------------------------------
+#| engines | category | cruising_speed | from_airport | to_airport |
+#-------------------------------------------------------------------
 2	"JET"	579	"PIT"	"DEN"
 2	"JET"	550	"BOS"	"PIT"
 2	"JET"	550	"BWI"	"DEN"
@@ -729,7 +801,7 @@ SQL  10 Rows affected
 4	"JET"	580	"BOS"	"SFO"
 SQL  29 Rows affected
 
-# 21:13:11 >  
-# 21:13:11 >  Done.
-# 21:13:11 >  
+# 11:38:21 >  
+# 11:38:21 >  Done.
+# 11:38:21 >  
 
