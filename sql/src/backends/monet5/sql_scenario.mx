@@ -276,6 +276,9 @@ void SQLsetExplain(Client c){
 The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
+
+#define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
+
 str SQLparser(Client c) {
 	str msg=0;
 	int debug=0, err=0,len;
@@ -284,6 +287,7 @@ str SQLparser(Client c) {
 	MalBlkRecord oldstate;
 	lng T0 = 0;
 	InstrPtr q;
+	int pstatus = 0;
 
 	oldstate= *c->curprg->def;
 #ifdef _SQL_PARSER_DEBUG
@@ -307,18 +311,23 @@ str SQLparser(Client c) {
         if (explainPerformance())
 		T0 = GDKusec();
 
+	pstatus = m->status;
         if ((err = sqlparse(m)) ||
             /* Only forget old errors on transaction boundaries */
             (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
                 if (!err)
                         err = mvc_status(m);
-		stream_printf(c->fdout,"#%s\n", m->errstr);
+		if (m->type != Q_TRANS && pstatus < 0) {
+			stream_write(c->fdout, TRANS_ABORTED, 
+					sizeof(TRANS_ABORTED)-1, 1 );
+		} else {
+			stream_printf(c->fdout,"#%s\n", m->errstr);
+		}
 		*m->errstr=0;
-		msg= throwMessage("SQLparser","Parser errors\n");
                 sqlcleanup(m, err);
+		msg= throwMessage("SQLparser","Parser errors\n");
+		goto finalize;
         }
-	len = m->scanner.yycur;
-	c->nxt += len;
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
@@ -390,11 +399,11 @@ query block.
 			resetVariables(c->curprg->def, c->glb, oldstate.vtop);
 			c->curprg->def->errors=0;
 			msg= throwMessage("SQLparser","Semantic errors\n");
-			stream_flush(c->fdout);
-			return msg;
 		}
 	}
 finalize:
+	len = m->scanner.yycur;
+	c->nxt += len;
 	if( explainPlan()){
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	} 
