@@ -540,6 +540,9 @@ that for the moment are defined as procs.
                     return b.select(nilval, val);
                 } else if (fcn = "<") {
                     var bn := b.select(nilval, val).access(BAT_WRITE);
+		    if ( (b.htype() = void) and (b.seqbase() != oid(nil)) ){
+			bn := [oid](bn.reverse).reverse();
+		    }
                     bn.reverse.delete(val);
                     return bn;
                 } else if (fcn = ">=") {
