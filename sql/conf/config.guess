@@ -844,7 +844,10 @@ EOF
    printf ("%s-${VENDOR}-linux-gnulibc1\n", argv[1]);
 # endif
 #else
-  printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
+# ifdef __INTEL_COMPILER
+   printf ("%s-${VENDOR}-linux-Intel\n", argv[1]);
+# else
+   printf ("%s-${VENDOR}-linux-gnuaout\n", argv[1]);
 #endif
   return 0;
 }
