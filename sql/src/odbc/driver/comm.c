@@ -61,14 +61,14 @@ int client(char *host, int port ){
     int sock;
     int res;
 
-    if ((sock = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
-      fprintf (stderr, "client: could not open socket\n");
-      return -2;
-    }
-
     if (!(hp = gethostbyname (host))) {
       fprintf (stderr, "client: unknown host %s\n", host);
       return -3;
+    }
+
+    if ((sock = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+      fprintf (stderr, "client: could not open socket\n");
+      return -2;
     }
 
     memset(&server, 0, sizeof(server));
@@ -78,6 +78,7 @@ int client(char *host, int port ){
 
     if ((res=connect (sock, (struct sockaddr *) &server, sizeof server)) < 0) {
       fprintf (stderr, "client: could not connect to server %d\n", res);
+      (void) close(sock);
       return -4;
     }
 
