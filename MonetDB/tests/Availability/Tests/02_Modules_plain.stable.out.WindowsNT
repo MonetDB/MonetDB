@@ -50,13 +50,13 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "unix"	  ]
 [ "url"		  ]
 [ "xtables"	  ]
-Plain_mods@batloop {
+Plain_mods@batloop() {
 	var The_mod:=$h;
 	printf("\nModule: \"%s\"\n\n",The_mod);
 	module($h);
 
 	var Mod_fcn:=sdiff(monet_fcntbl.reverse(),Static_fcn).reverse();
-	Mod_fcn.sort()@batloop {
+	Mod_fcn.sort()@batloop() {
 	    var addThis:=false;
 	    if (not(monet_fcn_mid.exist($t))) {
 		addThis:=true;
@@ -91,7 +91,7 @@ Plain_mods@batloop {
 	Static_fcn:=sunion(Static_fcn,monet_fcntbl.reverse());
 
 	Fnts.count().print();
-	Fnts.reverse().sort().reverse()@batloop {
+	Fnts.reverse().sort().reverse()@batloop() {
 		FnameS.insert($h,Fname.find($h));
 	}
 	FnameS.count().print(); table(1,FnameS,Ftype,Fsig,Fhelp);
