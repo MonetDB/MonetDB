@@ -37,7 +37,6 @@
 #include "ODBCStmt.h"
 
 
-/* does ?? retuns ?? */
 /* TODO: move this utility function to src/common/sqlUtil.c */
 static char * receive(stream * rs)
 {

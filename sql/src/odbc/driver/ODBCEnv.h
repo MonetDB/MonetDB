@@ -113,4 +113,12 @@ ODBCError * getEnvError(ODBCEnv * env);
  */
 void destroyODBCEnv(ODBCEnv * env);
 
+/*
+ * Clear the contents of the ODBCEnv object.
+ *
+ * Precondition: env must be valid and no ODBCDbc objects may refer to this env.
+ * Postcondition: env managed data is completely destroyed.
+ */
+void clearEnvErrors(ODBCEnv * env);
+
 #endif

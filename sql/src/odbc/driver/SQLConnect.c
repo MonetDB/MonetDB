@@ -58,7 +58,6 @@ SQLRETURN SQLConnect(
 	char ODBC_INI[] = "ODBC.INI";
 	int socket_fd = 0;
 
-
 	if (! isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 
@@ -111,41 +110,50 @@ SQLRETURN SQLConnect(
 		stream * rs = NULL;
 		stream * ws = NULL;
 		context * lc = NULL;
-		int chars_printed;
+		int i;
+		char *schema,*login;
 
 		rs = block_stream(socket_rstream(socket_fd, "sql client read"));
 		ws = block_stream(socket_wstream(socket_fd, "sql client write"));
 
-		chars_printed = snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", uid, debug, 1);
-		ws->write(ws, buf, chars_printed, 1);
-		ws->flush(ws);
-
-		chars_printed = snprintf(buf, BUFSIZ, "milsql();\n");
-		ws->write(ws, buf, chars_printed, 1);
-		ws->flush(ws);
-
-		chars_printed = snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug);
-		ws->write(ws, buf, chars_printed, 1);
-		ws->flush(ws);
-
-		chars_printed = snprintf(buf, BUFSIZ, "mvc_login(myc, \"%s\",\"%s\",\"%s\");\n", database, uid, pwd);
-		ws->write(ws, buf, chars_printed, 1);
-		ws->flush(ws);
-
-		lc = &dbc->Mlc;
-		memset(lc, 0, sizeof(context));
-		sql_init_context(lc, ws, debug, default_catalog_create());
-		catalog_create_stream(rs, lc);
-		lc->cat->cc_getschemas(lc->cat, database, "default-user");
-		if (dbc->Mrs->errnr || lc->out->errnr){
+		printf("%d\n", debug);
+		i = snprintf(buf, BUFSIZ, "api(milsql,%d);\n", debug );
+		ws->write( ws, buf, i, 1 );
+		ws->flush( ws );
+		/* read login */
+		login = readblock( rs );
+	
+		printf("login(%s,%s)\n", uid, pwd);
+		i = snprintf(buf, BUFSIZ, "login(%s,%s);\n", uid, pwd );
+		ws->write( ws, buf, i, 1 );
+		ws->flush( ws );
+		/* read schema */
+		schema = readblock( rs );
+		if (schema){
+			char *s = strrchr(schema, '\n');
+			if (s) *s = '\0';
+		}
+		if (strlen(schema) > 0){
+			lc = &dbc->Mlc;
+			memset(lc, 0, sizeof(context));
+			sql_init_context(lc, ws, debug, default_catalog_create());
+			catalog_create_stream(rs, lc);
+			lc->cat->cc_getschemas(lc->cat, schema, uid);
+			lc->cur = ' ';
+			if (dbc->Mrs->errnr || lc->out->errnr){
+				/* 08001 = Client unable to establish connection */
+				addDbcError(dbc, "08001", "sockets not opened correctly", 0);
+				rc = SQL_ERROR;
+			} else {
+				/* all went ok, store the connection info */
+				dbc->socket = socket_fd;
+				dbc->Mrs = rs;
+				dbc->Connected = 1;
+			}
+		} else {
 			/* 08001 = Client unable to establish connection */
 			addDbcError(dbc, "08001", "sockets not opened correctly", 0);
 			rc = SQL_ERROR;
-		} else {
-			/* all went ok, store the connection info */
-			dbc->socket = socket_fd;
-			dbc->Mrs = rs;
-			dbc->Connected = 1;
 		}
 	} else {
 		/* 08001 = Client unable to establish connection */

@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <stream.h>
 
+#include <mem.h>
 #include "comm.h"
 
 /* returns a socket descriptor (>= 0) or an error code (< 0) */
@@ -65,5 +66,21 @@ int client(char *host, int port ){
     }
 
     return sock;
+}
+
+char *readblock( stream *s ){
+	int len = 0;
+	int size = BLOCK + 1;
+	char *buf = NEW_ARRAY(char, size ), *start = buf;
+
+	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
+		size += BLOCK;
+		buf = RENEW_ARRAY(char, buf, size); 
+		start = buf + size - BLOCK - 1;
+		*start = '\0';
+	}
+	start += len;
+	*start = '\0';
+	return buf;
 }
 

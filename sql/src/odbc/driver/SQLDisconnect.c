@@ -63,18 +63,18 @@ SQLRETURN SQLDisconnect(SQLHDBC hDbc)
 
 	/* Ready to close the connection and clean up */
 	{
-		int	chars_printed;
+		int	i;
 		stream *	rs = dbc->Mrs;
 		context *	lc = &dbc->Mlc;
 		stream *	ws = lc->out;
 		int	flag = 0;
 		char	buf[BUFSIZ];
 
-		chars_printed = snprintf(buf, BUFSIZ,
+		i = snprintf(buf, BUFSIZ,
 			"s0 := mvc_commit(myc, 0, \"\");\n");
-		chars_printed += snprintf(buf+chars_printed, BUFSIZ-chars_printed,
+		i += snprintf(buf+i, BUFSIZ-i,
 			"result(Output, mvc_type(myc), mvc_status(myc));\n");
-		ws->write(ws, buf, chars_printed, 1);
+		ws->write(ws, buf, i, 1);
 		ws->flush(ws);
 
 		if (stream_readInt(rs, &flag)) {

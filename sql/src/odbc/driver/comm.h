@@ -31,5 +31,6 @@
 #define COMM_DONE 1
 
 int client(char *host, int port);
+char *readblock( stream *s );
 
 #endif /*_COMM_H_*/

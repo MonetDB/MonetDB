@@ -155,3 +155,17 @@ void destroyODBCEnv(ODBCEnv * env)
 	GDKfree((void *)env);
 }
 
+/*
+ * Clear the contents of the ODBCEnv object.
+ *
+ * Precondition: env must be valid and no ODBCDbc objects may refer to this env.
+ * Postcondition: env managed data is completely destroyed.
+ */
+void clearEnvErrors(ODBCEnv * env)
+{
+	assert(isValidEnv(env));
+	assert(env->FirstDbc == NULL);
+
+	deleteODBCErrorList(env->Error);
+	env->Error = NULL;
+}
