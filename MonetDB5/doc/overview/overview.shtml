@@ -8,6 +8,7 @@
 <!--#include virtual="docs/mal/mal_instruction.html" -->
 <!--#include virtual="docs/mal/mal_parser.html" -->
 <!--#include virtual="docs/mal/mal_function.html" -->
+<!--#include virtual="docs/mal/mal_factory.html" -->
 <!--#include virtual="docs/mal/mal_linker.html" -->
 <!--#include virtual="docs/mal/mal_import.html" -->
 <!--#include virtual="docs/mal/mal_interpreter.html" -->

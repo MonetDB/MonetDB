@@ -1,9 +1,9 @@
 #This Makefile can be used to generate the documentation
 #for off-line printing and creates a webstructure for
-#inclusion in the MonetDB website
+#inclusion in the MonetDB5 website
 ps,pdf: 
-	cp modules.tex overview.tex *.sty  ../../Linux/share/MonetDB
-	(cd ../../Linux/share/MonetDB/; \
+	cp modules.tex overview.tex *.sty  ../../Linux/share/MonetDB5
+	(cd ../../Linux/share/MonetDB5/; \
 	latex -interaction=batchmode overview.tex ;\
 	latex -interaction=batchmode overview.tex ;\
 	dvips overview.dvi -o overview.ps ; \
@@ -15,15 +15,15 @@ ps,pdf:
 	)
 
 web:
-	rm -rf ../../Linux/share/MonetDB/Web
-	mkdir ../../Linux/share/MonetDB/web
-	cp overview.shtml ../../Linux/share/MonetDB/web
-	(cd ../../Linux/share/MonetDB/; \
+	rm -rf ../../Linux/share/MonetDB5/Web
+	mkdir ../../Linux/share/MonetDB5/web
+	cp overview.shtml ../../Linux/share/MonetDB5/web
+	(cd ../../Linux/share/MonetDB5/; \
 	mkdir web/mal; cp docs/mal/*html web/mal; \
 	mkdir web/gdk; cp docs/gdk/*html web/gdk; \
 	)
 	echo "Web created"
 
-mklocal: ../../Linux/share/MonetDB/overview.pdf
-	cp ../../Linux/share/MonetDB/overview.pdf /ufs/mk/cwi/public_html/monet5
-	cp ../../Linux/share/MonetDB/modules.pdf /ufs/mk/cwi/public_html/monet5
+mklocal: ../../Linux/share/MonetDB5/overview.pdf
+	cp ../../Linux/share/MonetDB5/overview.pdf /ufs/mk/cwi/public_html/monet5
+	cp ../../Linux/share/MonetDB5/modules.pdf /ufs/mk/cwi/public_html/monet5
