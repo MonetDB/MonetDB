@@ -140,12 +140,16 @@ function InitMaster () {
 	if [ ! "$MONETHOME"     ] ; then  export MONETHOME=$MONETDIST ; fi          ; fLOG1 MONETHOME=$MONETHOME
 	if [ ! -d "$MONETDIST"  ] ; then  ErrXit "MONETDIST directory missing: $MONETDIST" ; fi
 	if [ ! -d "$MONETHOME"  ] ; then  ErrXit "MONETHOME directory missing: $MONETHOME" ; fi
-	if [ -d "$MONETDIST/$xPREFIX$OSVER"  -o  ! -d "$MONETDIST/$xPREFIX$OS" ]
+	if [ "${MONETDIST%/$xPREFIX$OSVER}" != "$MONETDIST"
+	  then	export MONETDISTPREFIX=$MONETDIST
+	 elif [ -d "$MONETDIST/$xPREFIX$OSVER"  -o  ! -d "$MONETDIST/$xPREFIX$OS" ]
 	  then	export MONETDISTPREFIX=$MONETDIST/$xPREFIX$OSVER
 	  else  export MONETDISTPREFIX=$MONETDIST/$xPREFIX$OS
 	fi
 	fLOG1 MONETDISTPREFIX=$MONETDISTPREFIX
-	if [ -d "$MONETHOME/$xPREFIX$OSVER"  -o  ! -d "$MONETHOME/$xPREFIX$OS" ]
+	if [ "${MONETHOME%/$xPREFIX$OSVER}" != "$MONETHOME"
+	  then	export MONETHOMEPREFIX=$MONETHOME
+	 elif [ -d "$MONETHOME/$xPREFIX$OSVER"  -o  ! -d "$MONETHOME/$xPREFIX$OS" ]
 	  then	export MONETHOMEPREFIX=$MONETHOME/$xPREFIX$OSVER
 	  else  export MONETHOMEPREFIX=$MONETHOME/$xPREFIX$OS
 	fi
