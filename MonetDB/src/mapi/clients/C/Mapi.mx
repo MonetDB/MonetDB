@@ -22,7 +22,7 @@
 @' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f Mapi
-@a M.L. Kersten
+@a M.L. Kersten, K.S. Mullender
 @v 2.0
 @d August 2003
 @* The MonetDB Application Programming Interface
@@ -123,7 +123,7 @@ printing as offered by the table.print() commands.
 The Mapi application uses include files found in the MonetDB
 distribution directory or at a central location on your machine.
 Assuming the location of the distribution is marked in the environment
-variable \$MONET\_PREFIX, the following actions are needed to get a
+variable $MONET_PREFIX, the following actions are needed to get a
 working program.
 @T
 \begin{verbatim}
@@ -137,10 +137,13 @@ cc sample.c -I$MONET_PREFIX \
 \end{verbatim}
 
 The location of the libraries in 4.3 are slightly different.
-@+ Command summary
+
+@+ Command Summary
 The quick reference guide to the Mapi library is given below.  More
 details on their constraints and defaults are given in the next
 section.
+
+
 @T
 \begin{tabular}{l l}
 mapi\_bind()	&	Bind string C-variable to a field\\
@@ -157,13 +160,13 @@ mapi\_connect\_ssl()	& Connect to a Mserver using Secure Socket Layer (SSL)\\
 mapi\_destroy()	&	Free handle resources\\
 mapi\_disconnect()	& Disconnect from server\\
 mapi\_error()	&	Test for error occurrence\\
-mapi\_execute\_array()	&Execute a query using string arguments\\
 mapi\_execute()	&	Execute a query\\
+mapi\_execute\_array()	&Execute a query using string arguments\\
 mapi\_explain()	&	Display error message and context on stream\\
 mapi\_explain\_query()	&	Display error message and context on stream\\
 mapi\_fetch\_all\_rows()	&	Fetch all answers from server into cache\\
-mapi\_fetch\_field\_array()	& Fetch all fields from the current row\\
 mapi\_fetch\_field()	&Fetch a field from the current row\\
+mapi\_fetch\_field\_array()	& Fetch all fields from the current row\\
 mapi\_fetch\_line()	&	Retrieve the next line\\
 mapi\_fetch\_reset()	&	Set the cache reader to the beginning\\
 mapi\_fetch\_row()	&	Fetch row of values\\
@@ -180,11 +183,11 @@ mapi\_get\_row\_count()	&	Number of rows in cache or -1\\
 mapi\_get\_user()	&	Current user name\\
 mapi\_next\_result()	&	Go to next result set\\
 mapi\_ping()	&	Test server for accessibility\\
-mapi\_prepare\_array()	&	Prepare a query for execution using arguments\\
 mapi\_prepare()	&	Prepare a query for execution\\
+mapi\_prepare\_array()	&	Prepare a query for execution using arguments\\
+mapi\_query()	&	Send a query for execution\\
 mapi\_query\_array()	& Send a query for execution with arguments\\
 mapi\_query\_handle()	&	Send a query for execution\\
-mapi\_query()	&	Send a query for execution\\
 mapi\_quick\_query\_array()	& Send a query for execution with arguments\\
 mapi\_quick\_query()	&	Send a query for execution\\
 mapi\_quick\_response()	&	Quick pass response to stream\\
@@ -196,11 +199,11 @@ mapi\_setAutocommit()	&	Set auto-commit flag\\
 mapi\_stream\_query()	& Send query and prepare for reading tuple stream\\
 mapi\_table()	&	Get current table name\\
 mapi\_timeout()	&	Set timeout for long-running queries[TODO]\\
-mapi\_trace\_log()	& Keep log of interaction\\
 mapi\_trace()	&	Set trace flag\\
+mapi\_trace\_log()	& Keep log of interaction\\
 mapi\_unquote()	&	remove escaped characters\\
 \end{tabular}
-@+ Mapi library
+@+ Mapi Library
 The routines to build a MonetDB application are grouped in the library
 MonetDB Application Programming Interface, or shorthand Mapi.
 
@@ -218,24 +221,22 @@ The interface assumes a cautious user, who understands and has
 experience with the MIL programming language model. It should also be
 clear that references returned by the API point directly into the
 administrative structures of Mapi.  This means that they are valid
-only for a short period, mostly between successive mapi\_fetch\_row
+only for a short period, mostly between successive mapi_fetch_row
 commands. It also means that it the values are to retained, they have
 to be copied.  A defensive programming style is advised.
 
-Upon an error, the routines mapi\_explain and mapi\_explain\_query
+Upon an error, the routines mapi_explain and mapi_explain_query
 give information about the context of the failed call, including the
 expression shipped and any response received.  The side-effect is
 clearing the error status.
-
-
-@- Error message
-@T
+@- Error Message
 Almost every call can fail since the connection with the database
 server can fail at any time.  Functions that return a handle (either
 Mapi or MapiHdl) may return NULL on failure, or they may return the
 handle with the error flag set.  If the function returns a non-NULL
-handle, always check for errors with mapi\_error.
+handle, always check for errors with mapi_error.
 
+@T
 Functions that return MapiMsg indicate success and failure with the
 following codes.\\
 
@@ -249,10 +250,24 @@ When these functions return MERROR or MTIMEOUT, an explanation of the
 error can be had by calling one of the functions mapi\_error\_str(),
 mapi\_explain(), or mapi\_explain\_query().
 
+To check for error messages from the server, call mapi\_result\_error().
+This function returns NULL if there was no error, or the error message
+if there was.  A user-friendly message can be printed using
+map\_explain\_result().  Typical usage is:
+
+\begin{verbatim}
+do {
+    if ((error = mapi_result_error(hdl)) != NULL)
+        mapi_explain_result(hdl, stderr);
+    while ((line = mapi_fetch_line(hdl)) != NULL)
+        /* use output */;
+} while (mapi_next_result(hdl) == 1);
+\end{verbatim}
+@+ Function Reference
+@- Connecting and Disconnecting
 @T
 \begin{description}
-
-\item[Mapi mapi\_connect(char *host, int port, char *username, char *password, char *lang)]:
+\item[Mapi mapi\_connect(const char *host, int port, const char *username, const char *password, const char *lang)]:
 Setup a connection with a Mserver at a {\em host}:{\em port} and login
 with {\em username} and {\em password}. If host == NULL, the local
 host is accessed.  If port == 0, a default port is used.  If username
@@ -262,7 +277,7 @@ is omitted.  The preferred query language is any of
 \{sql,mil,mal,xcore,xquery\}\\ On success, the function returns a
 pointer to a structure with administration about the connection.
 
-\item[Mapi mapi\_connect\_ssl(char *host, int port, char *username, char *password, char *lang)]:
+\item[Mapi mapi\_connect\_ssl(const char *host, int port, const char *username, const char *password, const char *lang)]:
 Setup a connection with a Mserver at a {\em host}:{\em port} and login
 with {\em username} and {\em password}. The connection is made using
 the Secure Socket Layer (SSL) and hence all data transfers to and from
@@ -270,49 +285,80 @@ the server are encrypted. The parameters are the same as in
 mapi\_connect.
 
 \item[MapiMsg mapi\_disconnect(Mapi mid)]:
-Terminate the session described by {\em mid}. Subsequent use of the
-channel represented by this descriptor leads to a failure.
+Terminate the session described by {\em mid}.  The only possible uses
+of the handle after this call is mapi\_destroy() and mapi\_reconnect().
+Other uses lead to failure.
 
 \item[MapiMsg mapi\_destroy(Mapi mid)]:
-Terminate the session described by {\em mid} and free all
-resources. The handle cannot be used anymore.
+Terminate the session described by {\em mid} if not already done so,
+and free all resources. The handle cannot be used anymore.
 
 \item[MapiMsg mapi\_reconnect(Mapi mid)]:
-Close the current channel and re-establish a fresh connection. This
-will remove all global session variables.
+Close the current channel (if still open) and re-establish a fresh
+connection. This will remove all global session variables.
 
-\item[MapiHdl mapi\_query(Mapi mid, char *Command)]:
+\item[MapiMsg mapi\_ping(Mapi mid)]:
+Test availability of the server. Returns zero upon success.
+\end{description}
+@- Sending Queries
+@T
+\begin{description}
+\item[MapiHdl mapi\_query(Mapi mid, const char *Command)]:
 Send the Command to the database server represented by mid.  This
 function returns a query handle with which the results of the query
 can be retrieved.  The handle should be closed with
 mapi\_close\_handle().  The command response is buffered for
 consumption, c.f. mapi\_fetch\_row().
 
-\item[MapiMsg mapi\_query\_handle(MapiHdl hdl, char *Command)]:
+\item[MapiMsg mapi\_query\_handle(MapiHdl hdl, const char *Command)]:
 Send the Command to the database server represented by hdl, reusing
 the handle from a previous query.  If Command is zero it takes the
 last query string kept around.  The command response is buffered for
 consumption, e.g. mapi\_fetch\_row().
 
-\item[MapiHdl mapi\_query\_array(Mapi mid, char *Command, char **argv)]:
+\item[MapiHdl mapi\_query\_array(Mapi mid, const char *Command, char **argv)]:
 Send the Command to the database server replacing the placeholders (?) 
 by the string arguments presented.
 
-\item[MapiHdl mapi\_quick\_query(Mapi mid, char *Command, FILE *fd)]:
+\item[MapiHdl mapi\_quick\_query(Mapi mid, const char *Command, FILE *fd)]:
 Similar to mapi\_query, except that the response of the server is copied
 immediately to the file indicated.
 
-\item[MapiHdl mapi\_quick\_query\_array(Mapi mid, char *Command, char **argv, FILE *fd)]:
+\item[MapiHdl mapi\_quick\_query\_array(Mapi mid, const char *Command, char **argv, FILE *fd)]:
 Similar to mapi\_query\_array, except that the response of the server
 is not analyzed, but shipped immediately to the file indicated.
 
-\item[MapiHdl mapi\_stream\_query(Mapi mid, char *Command, int windowsize)]:
+\item[MapiHdl mapi\_stream\_query(Mapi mid, const char *Command, int windowsize)]:
 Send the request for processing and fetch a limited number of tuples
 (determined by the window size) to assess any erroneous situation.
 Thereafter, prepare for continual reading of tuples from the stream,
 until an error occurs. Each time a tuple arrives, the cache is shifted
 one.
 
+\item[MapiHdl mapi\_prepare(Mapi mid, const char *Command)]:
+Move the query to a newly allocated query handle (which is returned).
+Possibly interact with the back-end to prepare the query for
+execution.
+
+\item[MapiMsg mapi\_execute(MapiHdl hdl)]:
+Ship a previously prepared command to the backend for execution. A
+single answer is pre-fetched to detect any runtime error. MOK is
+returned upon success.
+
+\item[MapiMsg mapi\_execute\_array(MapiHdl hdl, char **argv)]:
+Similar to mapi\_execute but replacing the placeholders for the string
+values provided.
+
+\item[MapiMsg mapi\_finish(MapiHdl hdl)]:
+Terminate a query.  This routine is used in the rare cases that
+consumption of the tuple stream produced should be prematurely
+terminated. It is automatically called when a new query using the same
+query handle is shipped to the database and when the query handle is
+closed with mapi\_close\_handle().
+\end{description}
+@- Getting Results
+@T
+\begin{description}
 \item[int mapi\_num\_fields(Mapi mid)]:
 Return the number of fields in the current row.
 
@@ -362,24 +408,34 @@ Return a pointer a C-string representation of the value returned.  A
 zero is returned upon encountering an error or when the database value
 is NULL; this can be analyzed in using mapi\_error().
 
-\item[MapiHdl mapi\_prepare(Mapi mid, char *Command)]:
-Move the query to a newly allocated query handle (which is returned).
-Possibly interact with the back-end to prepare the query for
-execution.
-
-\item[MapiMsg mapi\_execute(MapiHdl hdl)]:
-Ship a previously prepared command to the backend for execution. A
-single answer is pre-fetched to detect any runtime error. MOK is
-returned upon success.
-
-\item[MapiMsg mapi\_execute\_array(MapiHdl hdl, char **argv)]:
-Similar to mapi\_execute but replacing the placeholders for the string
-values provided.
-
 \item[MapiMsg mapi\_next\_result(MapiHdl hdl)]:
 Go to the next result set, discarding the rest of the output of the
 current result set.
+\end{description}
+@- Errors
+@T
+\begin{description}
+\item[MapiMsg mapi\_error(Mapi mid)]:
+Return the last error code or 0 if there is no error.
 
+\item[char *mapi\_error\_str(Mapi mid)]:
+Return a pointer to the last error message.
+
+\item[char *mapi\_result\_error(MapiHdl hdl)]:
+Return a pointer to the last error message from the server.
+
+\item[MapiMsg mapi\_explain(Mapi mid, FILE *fd)]:
+Write the error message obtained from Mserver to a file.
+
+\item[MapiMsg mapi\_explain\_query(MapiHdl hdl, FILE *fd)]:
+Write the error message obtained from Mserver to a file.
+
+\item[MapiMsg mapi\_explain\_result(MapiHdl hdl, FILE *fd)]:
+Write the error message obtained from Mserver to a file.
+\end{description}
+@- Parameters
+@T
+\begin{description}
 \item[MapiMsg mapi\_bind(MapiHdl hdl, int fldnr, char **val)]:
 Bind a string variable with a field in the return table.  Upon a
 successful subsequent mapi\_fetch\_row the indicated field is stored
@@ -425,7 +481,10 @@ is NULL-terminated.
 
 \item[MapiMsg mapi\_clear\_params(MapiHdl hdl)]:
 Clear all parameter bindings.
-
+\end{description}
+@- Miscellaneous
+@T
+\begin{description}
 \item[MapiMsg mapi\_setAutocommit(Mapi mid, int autocommit)]:
 Set the autocommit flag (default is off).  This only has an effect
 when the language is SQL.  In that case, a commit statement is added
@@ -452,19 +511,12 @@ stream with 1% refreshing.
 Forcefully shuffle the cache making room for new rows.  It ignores the
 read counter, so rows may be lost.
 
-\item[MapiMsg mapi\_finish(MapiHdl hdl)]:
-Terminate a query.  This routine is used in the rare cases that
-consumption of the tuple stream produced should be prematurely
-terminated. It is automatically called when a new query using the same
-query handle is shipped to the database and when the query handle is
-closed with mapi\_close\_handle().
-
-\item[char * mapi\_quote(char *str, int size)]:
+\item[char * mapi\_quote(const char *str, int size)]:
 Escape special characters such as {\\}n, {\\}t in str with
 backslashes.  The returned value is a newly allocated string which
 should be freed by the caller.
 
-\item[char * mapi\_unquote(char *name)]:
+\item[char * mapi\_unquote(const char *name)]:
 The reverse action of mapi\_quote(), turning the database
 representation into a C-representation. The storage space is
 dynamically created and should be freed after use.
@@ -472,16 +524,11 @@ dynamically created and should be freed after use.
 \item[MapiMsg  mapi\_trace(Mapi mid, int flag)]:
 Set the trace flag to monitor interaction with the server.
 
-\item[MapiMsg  mapi\_trace\_log(Mapi mid, char *fname)]:
+\item[MapiMsg  mapi\_trace\_log(Mapi mid, const char *fname)]:
 Log the interaction between the client and server for offline
 inspection. Beware that the log file overwrites any previous log. It
 is not intended for recovery.
-
-\item[MapiMsg mapi\_ping(Mapi mid)]:
-Test availability of the server. Returns zero upon success.
-
 \end{description}
-
 The remaining operations are wrappers around the data structures
 maintained. Note that column properties are derived from the table
 output returned from the server.
@@ -499,18 +546,6 @@ output returned from the server.
 \item[ int mapi\_get\_versionId(Mapi mid)]:
 \item[ char *mapi\_get\_motd(Mapi mid)]:
 
-\item[MapiMsg mapi\_error(Mapi mid)]:
-Return the last error code or 0 if there is no error.
-
-\item[char *mapi\_error\_str(Mapi mid)]:
-Return a pointer to the last error message.
-
-\item[MapiMsg mapi\_explain(Mapi mid, FILE *fd)]:
-Write the error message obtained from Mserver to a file.
-
-\item[MapiMsg mapi\_explain\_query(MapiHdl hdl, FILE *fd)]:
-Write the error message obtained from Mserver to a file.
-
 %\item[MapiMsg mapi\_timeout(Mapi mid, int timeout)]:
 %Sets the time out time in milli seconds for all subsequent
 %Mapi commands. Default value is 0, wait indefinitely.
@@ -521,7 +556,6 @@ Return a list of accessible database tables.
 \item[char **mapi\_fields(Mapi mid)]:
 Return a list of accessible tables fields. This can also be obtained
 by inspecting the field descriptor returned by mapi\_fetch\_field.
-
 \end{description}
 @
 @{
@@ -830,20 +864,7 @@ typedef struct {		/* used by MAPI_DATETIME */
 	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
 } MapiDateTime;
 
-mapi_export MapiMsg mapi_error(Mapi mid);
-mapi_export char *mapi_error_str(Mapi mid);
-mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
-mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
-mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
-mapi_export MapiMsg mapi_ping(Mapi mid);
-mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
-mapi_export char *mapi_result_error(MapiHdl hdl);
-mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
-mapi_export int mapi_more_results(MapiHdl hdl);
-mapi_export MapiHdl mapi_new_handle(Mapi mid);
-mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
+/* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username,
 			   const char *password, const char *lang);
 mapi_export MapiMsg mapi_destroy(Mapi mid);
@@ -854,6 +875,21 @@ mapi_export Mapi mapi_connect_ssl(const char *host, int port,
 				  const char *lang);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
+mapi_export MapiMsg mapi_ping(Mapi mid);
+
+mapi_export MapiMsg mapi_error(Mapi mid);
+mapi_export char *mapi_error_str(Mapi mid);
+mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
+mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
+mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
+mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
+mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
+mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
+mapi_export char *mapi_result_error(MapiHdl hdl);
+mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
+mapi_export int mapi_more_results(MapiHdl hdl);
+mapi_export MapiHdl mapi_new_handle(Mapi mid);
+mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
 mapi_export MapiMsg mapi_bind(MapiHdl hdl, int fnr, char **ptr);
 mapi_export MapiMsg mapi_bind_var(MapiHdl hdl, int fnr, int type, void *ptr);
 mapi_export MapiMsg mapi_bind_numeric(MapiHdl hdl, int fnr, int scale,
@@ -925,7 +961,7 @@ mapi_export void mapi_setBlocking(int b);
 
 #endif /* _MAPI_H_INCLUDED */
 @
-@+ Mapi functions.
+@+ Mapi Functions.
 The application interface commands are described below.
 They have been developed to ease interaction.
 
@@ -1011,7 +1047,7 @@ mapi_setBlocking(int b)
 	blocked = b != 0;
 }
 
-@+ Error handling
+@+ Error Handling
 All externally visible functions should first call mapi_clrError (usually
 though a call to one of the check macros above) to clear the error flag.
 When an error is detected, the library calls mapi_setError to set the error
@@ -1719,7 +1755,7 @@ mapi_destroy(Mapi mid)
 	return MOK;
 }
 
-@+ Channel constructor
+@+ Channel Constructor
 The first call of an application is to establish a connection with
 an already server. The username and password are sent as part of
 the initialization sequence.
