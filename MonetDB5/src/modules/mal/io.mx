@@ -302,8 +302,8 @@ They merely differ in destination and order prerequisite
 str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
 		  InstrPtr pci, int i, int order, int printhead, int printorder)
 {
-        BAT *piv[MAXPARAMS],*b;
-        int nbats = 0;
+	BAT *piv[MAXPARAMS],*b;
+	int nbats = 0;
 	int tpe,k=i;
 	ptr val;
 	for(; i< pci->argc;i++) {
@@ -313,16 +313,16 @@ str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk,
 			return throwMessage("io.table","BAT expected");
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) {
-		for(k=0; k< nbats;k++) BBPunfix(piv[k]->batCacheid);
-		return throwMessage("io.table","could not access descriptor");
+			for(k=0; k< nbats;k++) BBPunfix(piv[k]->batCacheid);
+			return throwMessage("io.table","could not access descriptor");
 		}
-                piv[nbats++] = b;
-        } 
+		piv[nbats++] = b;
+	} 
 	/*if(printhead)*/ nbats++;
-        BATmultiprintf(f, nbats, piv, printhead, order, printorder);
+	BATmultiprintf(f, nbats, piv, printhead, order, printorder);
 	stream_flush(f);
 	for(k=0; k< nbats-1;k++) BBPunfix(piv[k]->batCacheid);
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str IOotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

@@ -66,13 +66,15 @@ include io;
 include enum;
 include factory;
 include multiplex;
-include language;
-include profiler;
 include const; 
-
 include bbp;
 include box; 
 include inspect;
+include language;
+
+include profiler;
+
+include statistics;
 include costmodel;
 include optimizer;
 include chopper;

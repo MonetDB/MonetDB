@@ -142,7 +142,7 @@ str CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
 	@:authorize(open)@
-	if(openBox("const.open") != 0) return MAL_SUCCEED;
+	if(openBox("const") != 0) return MAL_SUCCEED;
 	return throwMessage("const.open","failed to open box");
 }
 
