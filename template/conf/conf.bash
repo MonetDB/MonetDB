@@ -75,6 +75,11 @@ fi
 base="`pwd`"
 wh_t="`basename $base`"
 what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]'`"
+if [ "${what}" = "MONET5" ] ; then
+	pkgdir="MonetDB5"
+  else
+	pkgdir="MonetDB"
+fi
 
 if [ "${what}" != "MONETDB" ] ; then
 	if [ ! "${MONETDB_PREFIX}" ] ; then
@@ -441,16 +446,16 @@ binpath="${WHAT_PREFIX}/bin:${binpath}"
 # but still needed for the rest:
 if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
 	# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
-	modpath="${WHAT_PREFIX}/lib/MonetDB"
+	modpath="${WHAT_PREFIX}/lib/${pkgdir}"
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 	mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
 fi
 if [ "${os}" = "IRIX64" ] ; then
 	# IRIX64 requires this to find dependend modules
 	if [ "${what}" = "MONETDB" ] ; then
-		libpath="${WHAT_PREFIX}/lib/MonetDB:${libpath}"
+		libpath="${WHAT_PREFIX}/lib/${pkgdir}:${libpath}"
 	  else
-		libpath="${MONETDB_PREFIX}/lib/MonetDB:${libpath}"
+		libpath="${MONETDB_PREFIX}/lib/${pkgdir}:${libpath}"
 	fi
 fi
 if [ "${os}${COMP}${BITS}" = "SunOSntv64" ] ; then
