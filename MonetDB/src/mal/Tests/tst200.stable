@@ -1,5 +1,5 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2001, CWI. All rights reserved.
+# Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
 # gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
 # gdk_dbname:demo
@@ -60,7 +60,7 @@ end function;	#20:
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_6	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -75,7 +75,7 @@ end function;	#20:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #-----------------#
-# tmp_3	| tmp_3	  #
+# tmp_6	| tmp_6	  #
 #-----------------#
 [ 15,	  15	  ]
 [ 4,	  4	  ]

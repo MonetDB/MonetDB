@@ -61,6 +61,7 @@ typedef struct MALSTK {
 #define newStack(S,CNT)	S= (MalStkPtr) alloca(stackSize(CNT));\
 			bzero((char *) S, stackSize(CNT));\
 			(S)->stksize=CNT;
+/*#define newStack(S,CNT)	S= (MalStkPtr) GDKmalloc(stackSize(CNT));\ */
 	
 #define newFrame(S,Ssize,Top,Cnt) S= reallocStack(S,&(Ssize),Top,Cnt)
 

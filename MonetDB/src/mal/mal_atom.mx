@@ -6,11 +6,12 @@ atom type by replacing the MODULE keyword with ATOM MODULE.
 Atoms definitions require special care, because their definition and 
 properties should be communicated with the GDK kernel library.
 The commands defined in an ATOM MODULE block are screened as of interest 
-to the gdk_atom library. This involves both a check on the function name and
-the type signature required. 
-All commands are entered in the symbol table structure and thereby
-become accessible for programming.
+to the gdk_atom library. 
 
+Functions passed to the GDK kernel are not directly accessible
+as MAL routines, because their implementation requires a
+GDK-specific signature. (See GDK documentation)
+This is realized by renaming them to an non-parseable function.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -35,35 +36,81 @@ html
 #ifndef _MAL_ATOM_H
 #define _MAL_ATOM_H
 
-/* #define MAL_ATOM_DEBUG */
+/* #define MAL_ATOM_DEBUG  */
 
 #include "mal_instruction.h"
-mal_export void malAtomDef(str name,int tpe);
+mal_export void malAtomDefinition(str name,int tpe);
+mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
 
 #endif /*  _MAL_ATOM_H*/
 @+
+Every MAL command introduced in an atom module should be checked
+to detect overloading of a predefined function.
+Subsequently, we update the BAT atom structure.
+The function signatures should be parameter-less, which
+enables additional functions with the same name to appear
+as ordinary mal operators.
+
+@= chkItem
+if( idcmp(@1,name)==0 && pci->argc==1){
+	BATatoms[tpe].@2= (@3 (*)()) pci->fcn;
+#ifdef MAL_ATOM_DEBUG
+	printf("replaced the function %s.%s\n",pci->modname,pci->fcnname);
+#endif
+	setAtomName(pci);
+	return 1;
+} 
+@-
+A few fields are set only once, at creation time.
+They should be implemented with parameter-less functions.
+@= setItem
+if( idcmp(@1,name) || pci->argc != 1)
+	return 0;
+else{
+#ifdef MAL_ATOM_DEBUG
+	printf("set the atom property %s.%s\n",pci->modname,pci->fcnname);
+#endif
+	BATatoms[tpe].@2= (@4) (*pci->fcn)();
+	setAtomName(pci);
+	return 1;
+}
 @c
 #include "mal_atom.h"
+void setAtomName(InstrPtr pci){
+	char buf[MAXPATHLEN];
+	snprintf(buf,MAXPATHLEN,"#%s", pci->fcnname);
+	GDKfree(pci->fcnname);
+	pci->fcnname= GDKstrdup(buf);
+}
 
-int isAtomCandidate(str name){
+int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
+	str name= pci->fcnname;
+	int tpe = getTypeIndex(pci->modname);
+	if( tpe<0 || tpe>= GDKatomcnt)
+		GDKfatal("malAtomProperty:illegal type name");
+	if( pci->fcn == 0)
+		GDKwarning("malAtomProperty:function not bound\n");
 	switch(name[0]){
-	case 'a': if( strcmp("align",name)==0) return 1;
-	case 'd': if( strcmp("del",name)==0) return 1;
-	case 'c': if( strcmp("cmp",name)==0) return 1;
-		  if( strcmp("convert",name)==0) return 1;
-	case 'f': if( strcmp("fromstr",name)==0) return 1;
-		  if( strcmp("fix",name)==0) return 1;
-	case 'h': if( strcmp("heap",name)==0) return 1;
-		  if( strcmp("heapconvert",name)==0) return 1;
-		  if( strcmp("hash",name)==0) return 1;
-	case 'l': if( strcmp("length",name)==0) return 1;
-		  if( strcmp("linear",name)==0) return 1;
-	case 'n': if( strcmp("null",name)==0) return 1;
-	case 'p': if( strcmp("put",name)==0) return 1;
-	case 's': if( strcmp("size",name)==0) return 1;
-		  if( strcmp("storage",name)==0) return 1;
-	case 't': if( strcmp("tostr",name)==0) return 1;
-	case 'u': if( strcmp("unfix",name)==0) return 1;
+	case 'a': @:setItem("align",align,TYPE_sht,short)@ break;
+	case 'd': @:chkItem("del",atomDel,void)@ break;
+	case 'c': @:chkItem("cmp",atomCmp,int)@ 
+		  @:chkItem("convert",atomConvert,void)@ break;
+	case 'f': @:chkItem("fromstr",atomFromStr,int)@ 
+		  @:chkItem("fix",atomFix,int)@ break;
+	case 'h': @:chkItem("heap",atomHeap,int)@ 
+		  @:chkItem("heapconvert",atomHeapConvert,void)@ 
+		  @:chkItem("hash",atomHash,unsigned int)@ 
+		  @:chkItem("heapcheck",atomHeapCheck,int)@ break;
+	case 'l': @:chkItem("length",atomLen,int)@ 
+		  @:setItem("linear",linear,TYPE_sht,short)@ break;
+	case 'n': @:setItem("null",atomNull,TYPE_ptr,ptr)@ 
+		  @:chkItem("nequal",atomCmp,int)@ break;
+	case 'p': @:chkItem("put",atomPut,void)@ break; 
+	case 's': @:setItem("size",size,TYPE_sht,short)@
+		  @:setItem("storage",storage,TYPE_int,int); break;
+	case 't': @:chkItem("tostr",atomToStr,int)@ break;
+	case 'u': @:chkItem("unfix",atomUnfix,int)@ 
+	case 'v': @:setItem("varsized",varsized,TYPE_int,int)@ 
 	}
 	return 0;
 }
@@ -75,7 +122,7 @@ The most tedisous work is to check the signature types of the functions
 acceptable for the kernel.
 @c
 
-void malAtomDef(str name, int tpe){
+void malAtomDefinition(str name, int tpe){
 	int i;
 
 	if(strlen(name) >= IDLENGTH){
@@ -91,7 +138,7 @@ void malAtomDef(str name, int tpe){
 		return;
 	}
 #ifdef MAL_ATOM_DEBUG
-	printf("introduce a new atom type '%s' in the kernel\n",name);
+	printf("introduce a new atom type '%s'  %d\n",name,tpe);
 #endif
 	
 	ATOMproperty(name,"",  (int (*)()) 0);
@@ -99,10 +146,5 @@ void malAtomDef(str name, int tpe){
 	memcpy((char*)(BATatoms+i),
 		(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
 	strcpy(BATatoms[i].name, name);
-}
-void defAtomCommand(InstrPtr p){
-#ifdef MAL_ATOM_DEBUG
-	printf("atom candidate '%s' ?%s\n", p->fcnname,
-		(isAtomCandidate(p->fcnname)?"yes":"no"));
-#endif
+	BATatoms[i].storage= tpe;
 }

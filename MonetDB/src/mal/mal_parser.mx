@@ -464,7 +464,7 @@ int parseModule(Client cntxt, int atomary)
 			if( currChar(cntxt)==':') {
 				tpe= typeQualifier(cntxt);
 			} else tpe= TYPE_int;
-			malAtomDef(modname,tpe);
+			malAtomDefinition(modname,tpe);
 			GDKfree(modname);
 			skipToEnd(cntxt);
 			return 1;
@@ -484,11 +484,12 @@ Atom storage may be defined in terms of an existing type.
 		if( currChar(cntxt)==':') {
 			tpe= typeQualifier(cntxt);
 		} else tpe= TYPE_int;
-		malAtomDef(modname,tpe);
+		malAtomDefinition(modname,tpe);
 	}
 	if( findScope(cntxt->nspace,modname) != NULL)
 		cntxt->curprg->def->errors  = FATALINPUT;
 	else	cntxt->nspace = fixateScope(cntxt->nspace, modname);
+	if( atomary) cntxt->nspace->isAtomModule = TRUE;
 	GDKfree(modname);
 	@:typeInfo@
 	skipToEnd(cntxt);
@@ -753,10 +754,12 @@ Most functions are (dynamically) linked with the kernel.
 			return 0;
 		}
 		nme = idCopy(cntxt,i);
+		if( curInstr->modname) GDKfree(curInstr->modname);
 		curInstr->modname = GDKstrdup(cntxt->nspace->name);
 		curInstr->fcn = getAddress(nme);
 		curBlk->binding = nme;
-		/* defAtomCommand(curInstr);*/
+		if( cntxt->nspace->isAtomModule) 
+			malAtomProperty(curBlk,curInstr);
 	} else return (MalBlkPtr) parseError(cntxt,"'=' expected\n");
 @-
 Each procedure definition opens a structure in which the
@@ -813,7 +816,11 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	@:fcnHeader@
 	getInstrPtr(curBlk,0)->token= kind;
 	curPrg->kind = kind;
-	closeClientPrg(cntxt, FALSE);
+	insertSymbol(cntxt->nspace,curPrg);
+	trimMalBlk(curBlk);
+	chkProgram(cntxt->nspace,curBlk);
+	resetClientPrg(cntxt);
+	/* closeClientPrg(cntxt, FALSE);*/
 	@:externalFcn@
 	@:helpInfo@
 	showErrors(cntxt);
@@ -1110,8 +1117,10 @@ This code is used in both positions of the expression
 		goto @1;
 	} 
 	if( i = stringLength(cntxt) ){
-		lt = TYPE_str;
-		i= newConstant(curBlk,lt,strCopy(cntxt,i));
+		v= strCopy(cntxt,i);
+		lt= typeQualifier(cntxt);
+		if(lt==0)lt= TYPE_str;
+		i= newConstant(curBlk,lt,v);
 		pushArgument(curBlk,curInstr,i);
 		goto @1;
 	}

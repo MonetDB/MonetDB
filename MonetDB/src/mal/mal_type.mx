@@ -246,7 +246,7 @@ int idcmp(str n, str m)
 int getTypeIndex(str nme){
 	int i;
 	i= ATOMindex(nme);
-	/* printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
+	/*printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
 	if( idcmp("any",nme)==0 ) return malAnyType;
 	if( idcmp("bat",nme)==0 ){
 /* printf("found a bat[any,any]\n");*/

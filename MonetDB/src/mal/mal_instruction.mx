@@ -277,11 +277,11 @@ void freeMalBlk(MalBlkPtr mb){
 		freeInstruction(getInstrPtr(mb, i));
 	for(i=0;i<mb->vtop; i++)
 		freeVariable(mb, i);
-	GDKfree(mb->stmt); mb->stop = mb->ssize = 0; mb->stmt= 0;
-	GDKfree(mb->var); mb->vtop = mb->vsize = 0; mb->var= 0;
-	if( mb->help) GDKfree(mb->help); mb->help = NULL;
-	if( mb->binding) GDKfree(mb->binding); mb->binding = NULL;
-	mb->errors=0;
+	GDKfree(mb->stmt); 
+	GDKfree(mb->var); 
+	if( mb->binding) GDKfree(mb->binding); 
+	if( mb->help) GDKfree(mb->help); 
+	GDKfree(mb);
 }
 @-
 The routine below should assure that all referenced structures
@@ -492,7 +492,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		VarPtr *new;
 		int s= mb->vtop + MAXVARS;
 		new= (VarPtr *) GDKmalloc(s * sizeof(VarPtr));
-		/*printf("generate new variable block %d\n",s);fflush(stdout);*/
+		/*printf("generate new variable block %d\n",s);*/
 		if( new== NULL ){
 			mb->errors++;
 			GDKerror("newMalBlk:no storage left\n");
@@ -518,10 +518,11 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 		return n;
 	}
 @-
-If we encounter a Monet type name, it is added to the symbol table with proprietary type.
+If we encounter a Monet type name, it is added to the symbol table with 
+proprietary type.
 The makes analyses of patterns like bat(int,str) easier.
 @c
-	l = getTypeIndex(name);
+	if( *name == TMPMARKER) l= malAnyType; else l = getTypeIndex(name);
 	if( l>= 0 && l != malAnyType){
 		if( type != l && type != malAnyType){
 			GDKerror("'%s' type mismatch with %d\n", name, type);
@@ -711,10 +712,24 @@ to make the user aware of this situation.
 			vr->val.sval= (str) GDKstrdup(val);
 			vr->len= strlen((str) val);
 			break;
+@-
+Extended types are always represented as string literals
+and converted to the internal storage structure.
+@c
 	default:{ 
+		ptr *p = (ptr *) &vr->val.ival;
+		/* printf("extended type storage %s\n", ATOMname(tp)); */
+		if( BATatoms[type].atomFromStr== 0) {
 		s= malTypeName(type);
-		GDKerror("newConstant:unknown constant type %s\n", s);
+		GDKerror("newConstant:no string coercion function %s\n", s);
 		GDKfree(s);
+		}
+#ifdef STRUCT_ALIGNED
+		vr->vtype= type;
+		(*BATatoms[type].atomFromStr)(val, &vr->len, (ptr*) p);
+#else
+		GDKerror("newConstants:missing implementation\n");
+#endif
 		}
 	}
 	return idx;
@@ -893,8 +908,8 @@ beginning of each line.
 
 @= performanceData
 #ifdef MALprofiler
-	if( p->counter){
-		double avg= p->ticks/(p->counter+0.0);
+	if( p->counter && p->trace){
+		double avg= (p->ticks+0.0)/p->counter;
 		sprintf(t,"[%7d, %5.2f]\t",p->counter,avg);
 	} else
 	if( p->trace)

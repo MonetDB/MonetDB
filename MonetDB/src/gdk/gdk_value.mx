@@ -126,18 +126,17 @@ ValPtr VALinit(ValPtr d, int tpe, ptr s){
 	if (s == 0) {
 		GDKwarning("VALcopy: copying null %s.\n", ATOMname(tpe)); 
 		d->vtype = TYPE_void;
-	} else if (tpe == TYPE_str) {
+	} else if( tpe == TYPE_str) {
 		d->vtype = TYPE_str;
 		d->val.sval = GDKstrdup(s);
 		d->len = strLen(s);
 	} else {
+		if( ATOMstorage(tpe)== TYPE_str){
+			d->vtype = tpe;
+			d->val.sval = GDKstrdup(*(str*)s);
+			d->len = strLen(*(str*)s);
+		} else
 		GDKwarning("VALcopy: not yet supported %s.\n", ATOMname(tpe)); 
-		d->vtype = TYPE_void;
-		/* ptr p = s->val.pval;
-		d->vtype = tpe;
-		d->val.pval = GDKmalloc(s->len);
-		d->len = s->len;
-		memcpy(d->val.pval, p, s->len); */
 	}
 	return d;
 }
@@ -146,13 +145,13 @@ VALprint shows the contents of a value record, but without
 expanding the BAT contents.
 @c
 int VALprint(FILE *fd, ValPtr res){
-	int t = res->vtype;
+	int t = ATOMstorage(res->vtype);
 	return ATOMprint(t, VALptr(res), fd);
 }	
 
 
 int VALformat(char **buf, ValPtr res){
-	int t = res->vtype;
+	int t = ATOMstorage(res->vtype);
 	*buf = 0;
 	return ATOMformat(t, VALptr(res), buf);
 }

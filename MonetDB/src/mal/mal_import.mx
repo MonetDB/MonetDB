@@ -228,7 +228,7 @@ void processInput(Client c,MalStkPtr glb)
 		} 
 		showErrors(c);
 		resetMalBlk(mb,glb);
-		glb->cmd=0;
+		glb->cmd= c->itrace?'n':0;
 	}
 }
 @-

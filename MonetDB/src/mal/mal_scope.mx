@@ -90,6 +90,7 @@ typedef struct SCOPEDEF {
 	GDKfcn	typeChecker;	/* function address for type checker */
         Symbol *subscope; /* type dispatcher table */
 	Box	box;	/* module related objects */
+	int	isAtomModule; /* atom module definition ? */
 } *Scope, ScopeDefinition;
 
 
@@ -119,15 +120,16 @@ point for the modules to be added later.
 	if( nme == NULL){
 		GDKfatal("@1:unexpected name (=null)\n");
 	}
-        cur = (Scope) GDKmalloc(sizeof(SymRecord));
+        cur = (Scope) GDKmalloc(sizeof(ScopeDefinition));
 	if( cur == NULL){
 		GDKfatal("@1: cannot initialize scope\n");
 	}
-	bzero((str)cur,sizeof(SymRecord));
+	bzero((str)cur,sizeof(ScopeDefinition));
 	cur->name = nme;
 	cur->outer = NULL;
 	cur->typeChecker = NULL;
 	cur->subscope = NULL; 
+	cur->isAtomModule = FALSE;
 
 @c
 #include "mal_scope.h"
@@ -290,7 +292,7 @@ void  printScope(Scope cntxt, int tab, int outer)
 	Symbol t;
 	FILE *fd= GDKout;
 
-	fprintf(fd,"SCOPE %s",s->name);
+	fprintf(fd,"%smodule %s", (cntxt->isAtomModule?"atom ":""),s->name);
 	if( s->typeChecker) fprintf(fd, " typechecker");
 	fprintf(fd,"\n");
 	if( s->subscope)

@@ -84,13 +84,13 @@ arguments should be handled by the pattern implementation.
 #include "mal_client.h"
 
 ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
-	int j;
+	int j=0;
+	ValRecord *v;
 	ptr val = NULL;
-	ValPtr v;
 
 	j = pci->argv[k];
 	v= &stk->stk[j];
-	switch(ATOMstorage(v->vtype)){
+	switch(v->vtype){
 	case TYPE_void: val= (ptr) & v->val.ival; break;
 	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
 	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
@@ -104,7 +104,8 @@ ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 	case TYPE_lng: val= (ptr) & v->val.lval; break;
 	case TYPE_str: val= (ptr) v->val.sval; break;	/* !! */
 	default:
-		GDKerror("evalParameters:unknown value type\n");
+		val= (ptr) v->val.pval; 
+/*		GDKerror("evalParameters:unknown value type\n");*/
 	}
 	return val;
 } 
@@ -115,35 +116,35 @@ is mostly used to prepare a call to the linked libraries.
 
 @c
 
-INLINE
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k){
 #ifdef STRUCT_ALIGNED
 	return (ptr) & stk->stk[pci->argv[k]].val.ival;
 #else
-	int j;
-	ptr val = NULL;
-	ValPtr v;
+	int j=0;
+	ValRecord *v=0;
+	ptr ret = NULL;
 
 	j = pci->argv[k];
 	v= &stk->stk[j];
 
-	switch(ATOMstorage(v->vtype)){
-	case TYPE_void: val= (ptr) & v->val.ival; break;
-	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: val= (ptr) & v->val.br.id; break;
-	case TYPE_int: val= (ptr) & v->val.ival; break;
-	case TYPE_oid: val= (ptr) & v->val.oval; break;
-	case TYPE_ptr: val= (ptr) & v->val.pval; break;
-	case TYPE_flt: val= (ptr) & v->val.fval; break;
-	case TYPE_dbl: val= (ptr) & v->val.dval; break;
-	case TYPE_lng: val= (ptr) & v->val.lval; break;
-	case TYPE_str: val= (ptr) & v->val.sval; break;
+	switch(v->vtype){
+	case TYPE_void: ret= (ptr) & v->val.ival; break;
+	case TYPE_bit: ret= (ptr) & v->val.cval[0]; break;
+	case TYPE_chr: ret= (ptr) & v->val.cval[0]; break;
+	case TYPE_sht: ret= (ptr) & v->val.shval; break;
+	case TYPE_bat: ret= (ptr) & v->val.br.id; break;
+	case TYPE_int: ret= (ptr) & v->val.ival; break;
+	case TYPE_oid: ret= (ptr) & v->val.oval; break;
+	case TYPE_ptr: ret= (ptr) & v->val.pval; break;
+	case TYPE_flt: ret= (ptr) & v->val.fval; break;
+	case TYPE_dbl: ret= (ptr) & v->val.dval; break;
+	case TYPE_lng: ret= (ptr) & v->val.lval; break;
+	case TYPE_str: ret= (ptr) & v->val.sval; break;
 	default:
-		GDKerror("evalParameters:unknown value type\n");
+		 ret= (ptr) & v->val.pval; 
+		/* GDKerror("eretParameters:unknown value type\n");*/
 	}
-	return val;
+	return ret;
 #endif
 } 
 @-

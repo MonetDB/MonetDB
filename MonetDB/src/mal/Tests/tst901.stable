@@ -1,5 +1,5 @@
 # Monet Database Server V5.0
-# Copyright (c) 1993-2001, CWI. All rights reserved.
+# Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
 # gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
 # gdk_dbname:demo
@@ -53,7 +53,7 @@ end	v;	#6:(v:bit)
 	mal.print(z);	#20:($20:int)<-(z:bat[lng,bit])
 end function;	#21:
 #-----------------#
-# BAT:	  tmp_4	  #
+# BAT:	  tmp_7	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -67,7 +67,7 @@ end function;	#21:
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# BAT:	  tmp_5	  #
+# BAT:	  tmp_8	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -81,7 +81,7 @@ end function;	#21:
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_9	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  1	  ]
@@ -95,7 +95,7 @@ end function;	#21:
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# BAT:	  tmp_7	  #
+# BAT:	  tmp_10  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]
@@ -109,7 +109,7 @@ end function;	#21:
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# BAT:	  tmp_8	  #
+# BAT:	  tmp_11  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -123,7 +123,7 @@ end function;	#21:
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# BAT:	  tmp_9	  #
+# BAT:	  tmp_12  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  true	  ]
@@ -137,7 +137,7 @@ end function;	#21:
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# BAT:	  tmp_10  #
+# BAT:	  tmp_13  #
 # (lng)	  (bit)	  #
 #-----------------#
 [ 0,	  false	  ]

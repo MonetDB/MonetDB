@@ -53,7 +53,7 @@ mal_export void printStackElm(FILE *f, MalBlkPtr mb,VarPtr n, ValPtr v,int index
 mal_export void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s);
 
 mal_export int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
+mal_export void printBBPinfo(FILE *out);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
 Before the interpreter is allowed to proceed we give control
@@ -164,17 +164,28 @@ void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk){
 @+ MDB module implementation 
 The following routines are available for inclusion also in MAL programs.
 Either one set is sufficient to produce the required action.
-
+Note that the mdbToggle command is called mostly from within a
+(dummy) function. Therefore, we should also export the debugging mode
+to the context.
 @c
 #define MDBstatus(X) fprintf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
 
 int mdbToggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();
 	int b;
+	if( p->argc==1){
+		/* Toggle */
+		stk->cmd= stk->cmd? 0: 'n';
+		cntxt->itrace = cntxt->itrace == 0;
+		if( stk->up) stk->up->cmd=  b?'n':0;
+		return GDK_SUCCEED;
+	}
 	if( p->argc >1){
 		b= *(int *) getArgReference(stk,p,1);
 	} else b= stk->cmd; 
 	if( stk->cmd == 0) stk->cmd= b?'n':0;
+	if( stk->up) stk->up->cmd=  b?'n':0;
+	cntxt->itrace= b? 1: 0;
 	MDBstatus(b);
 	return GDK_SUCCEED;
 }
@@ -213,6 +224,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case 'h': mdbHelp(out); break;
 	case 'q': 
 		stk->cmd= 'q';/* return from this debugger */
+		cntxt->itrace= 0;
 		MDBstatus(0);
 		return;
 	case 'f': /* finish */
@@ -233,6 +245,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 		break;
 	case 'b':
+		if( strncmp(b,"bbp",3)==0){
+			printBBPinfo(out);
+			continue;
+		}
 		skipWord(b);
 		if(*b==0) { mdbShowBreakpoints(cntxt); continue;}
 		if( !isspace(*b) && *b != 0){
@@ -410,11 +426,97 @@ void printStackElm(FILE *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index){
 	GDKfree(nme);
 }
 @-
+The memory positions for the BATs is useful information to
+asses for memory fragmentation.
+@= heapinfo
+hp= &b->@1;
+if(hp->base){
+	printf("\t@1=%d size=%d\n",hp->base, hp->size);}
+@= hashinfo
+h= &b->@1;
+if(h->mask){
+        printf("\t@1=%d size=%d\n",h, sizeof(*h));
+        printf("\t@1link=%d size=%d\n",h->link, (h->mask+h->lim+1)*sizeof(int));
+}
+@-
+The memProfileVector routine produces a character string to represent
+the usage of memory by BAT information. The characters are interpreted
+as follows:
+.=unused, X=completely used, [0-9]=small elements within the granule
+More then 9 elements makes it full. 
+@= setVector
+	start= (((long)@1)-min)/granule;
+	lim= (((long)@1)-min + @2)/granule;
+	printf("start %d lim %d\n",start,lim);
+
+@c
+str memProfileVector(int cells){
+	str v= GDKmalloc(cells+1);
+	int i;
+	long max= sbrk(0);
+	long min= 0;
+	long granule;
+	if( cells<=0) {
+		GDKerror("memProfileVector:positive argument expected\n");
+		return GDKstrdup("");
+	}
+	v= GDKmalloc(cells+1);
+	if( v== 0) 
+		GDKfatal("memProfileVector:malloca failure\n");
+	
+	for(i=0; i<cells;i++) v[i]='.';
+	v[i]=0;
+
+	for(i=1; i<BBPsize; i++)
+	if( BBP_status(i) & BBPLOADED ){
+		BAT *b = BATdescriptor(i);
+		Heap *hp;
+		Hash *h;
+		long start,lim;
+
+		printf("\tdesc=%d size=%d\n",b, sizeof(*b));
+		hp= b->batBuns;
+		printf("\tbuns=%d size=%d\n",hp->base, hp->size);
+		if( min==0){
+			min= (long)b;
+			max= min + GDKmem_heapsize();
+			granule= (max-min)/cells;
+			printf("granule %dK\n",granule/1024);
+		}
+		@:setVector(b,sizeof(*b))@
+		@:setVector(hp->base,hp->size)@
+
+		@:heapinfo(hheap)@
+		@:heapinfo(theap)@
+		@:heapinfo(haccelerator)@
+		@:heapinfo(taccelerator)@
+		@:hashinfo(hhash)@
+		@:hashinfo(thash)@
+	}
+	return v;
+}
+void printBBPinfo(FILE *out){
+	int i;
+	str v;
+
+	fprintf(out,"#BBP memory layout\n");
+	fprintf(out,"#heap maximum =%d/M\n",GDKmem_heapsize()/(1024*1024));
+	v= memProfileVector(32);
+	fprintf(out,"#%s\n",v);
+	GDKfree(v);
+#ifdef GDK_VM_KEEPHISTO
+	fprintf(out,"#BBP VM history available\n");
+#else
+	fprintf(out,"#BBP VM history not available\n");
+#endif
+}
+@-
 Some utilities for the debugger 
 @c
 void mdbHelp(FILE *f){
 	fprintf(f,"next	-- Advance to next statement\n");
 	fprintf(f,"continue -- Continue program being debugged\n");
+	fprintf(f,"bbp -- BBP memory layout\n");
 	fprintf(f,"break -- set breakpoint on current instruction\n");
 	fprintf(f,"break <var> -- break on assignment to <var>\n");
 	fprintf(f,"step -- advance to next MAL instruction\n");

@@ -140,6 +140,8 @@ observed due the small size of the function).
 
 Moreover, we have to copy the result types to the stack for later
 use. In particular, to enable proper dynamic type analysis.
+Since a stack frame may contain values of a previous call,
+we should first remove garbage.
 @c
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
 	if( isVarConstant(mb,i) && isVarUsed(mb,i) ){
@@ -154,7 +156,6 @@ use. In particular, to enable proper dynamic type analysis.
 			retval->vtype =getGDKtype(getVarType(mb,pci->argv[0]));
 		}
 	}
-
 	/* run the program */
 MALrestart:
 	stk->pc =0;
@@ -416,7 +417,7 @@ and we have to do some housekeeping, such as string length adjustment.
 	switch(ATOMstorage(retval->vtype)){
 	case TYPE_str: 
 		if(retval->val.pval ){
-			retval->len= ATOMlen(TYPE_str,retval->val.pval);
+			retval->len= ATOMlen(retval->vtype,retval->val.pval);
 		}
 	}
 	if( pci->barrier==BARRIERsymbol){
@@ -533,6 +534,8 @@ in which it can be handled.
 if( pci->typechk== TYPE_UNKNOWN){
 	ret= raiseException(mb,stk->pc,"MALexception",
 			    "Instruction type not fixed\n");
+	@:endProfile@
+	goto MALevalExit;
 	@:exceptionHndlr@
 }
 @-
@@ -648,6 +651,7 @@ if(@1->vtype == TYPE_bat && @1->val.bval)
 			@1->val.bval,
 			BBP_refs(b->batCacheid)); */
 	}
+	@1->val.bval =0;
 #ifdef DEBUG_MAL_INTERPRETER 
 	else GDKerror("interpreter:bat '%d' disappeared\n",@1->val.bval);
 #endif
@@ -671,8 +675,8 @@ void garbageElement(ValPtr v)
 		if( v->val.pval && v->val.pval != str_nil) {
 		/* printf("clearing nil? %d ",v->val.pval==str_nil);
 		   printf("%d ",v->val.pval);
-		   printf("%s\n",v->val.pval);
-		*/
+		   printf("%s\n",v->val.pval); */
+		
 			GDKfree(v->val.pval);
 		}
 		v->val.pval= NULL;
@@ -716,7 +720,7 @@ we have to keep track of essential system counter information.
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if( pci->trace){
+	if( malProfileMode){
 		pci->clk= GDKusec();
 		times(&pci->timer);
 	}
@@ -724,7 +728,7 @@ we have to keep track of essential system counter information.
 
 @= endProfile
 #ifdef MALprofiler
-	if( pci->trace){
+	if( malProfileMode){
 		newclk= GDKusec();
 		pci->counter++;
 		pci->ticks += newclk - pci->clk;

@@ -125,6 +125,13 @@ void closeClientPrg(Client cntxt, int flag){
 	if( !(i==0 && p->token == FUNCTIONsymbol)){
 		insertSymbol(cntxt->nspace,cntxt->curprg);
 	} else{
+		if(!flag ) /* comming from parseCommandPattern */
+		{
+			freeMalBlk(mb);
+		} else {
+		printf("freeing unused block %d \n",i);
+			freeMalBlk(mb);
+		}
 		/* garbage collect prg ? no just empty file*/
 		return;
 	}
