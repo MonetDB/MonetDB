@@ -1355,6 +1355,16 @@ def CheckSocket2(env,SERVER,SrvrErr) :
     if busy:
         env[SERVER+'PORT'] = eval(dft[SERVER+'PORT'])
         os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
+        op = 'port=%d' % port
+        np = 'port=%s' % env[SERVER+'PORT']
+        env['exe']['Mserver'][1]     = string.replace(env['exe']['Mserver'][1], op, np)
+        env['exe']['Mshutdown'][1]   = string.replace(env['exe']['Mshutdown'][1], op, np)
+        env['exe']['Mapi_Client'][1] = string.replace(env['exe']['Mapi_Client'][1], op, np)
+        env['exe']['SQL_client'][1]  = string.replace(env['exe']['SQL_client'][1], op, np)
+        os.environ['MSERVER']        = string.replace(os.environ['MSERVER'], op, np)
+        os.environ['MSHUTDOWN']      = string.replace(os.environ['MSHUTDOWN'], op, np)
+        os.environ['MAPI_CLIENT']    = string.replace(os.environ['MAPI_CLIENT'], op, np)
+        os.environ['SQL_CLIENT']     = string.replace(os.environ['SQL_CLIENT'], op, np)
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 ! Using new %sPORT=%s !
