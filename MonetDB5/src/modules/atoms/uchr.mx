@@ -35,8 +35,8 @@ The uchr atom is just a chr but uses numerical string representations.
 @+ MEL definition
 @mal
 atom module uchr:chr;
-command fromstr() = uchr_fromstr;
-command tostr()   = uchr_tostr;
+command fromstr():uchr = uchr_fromstr;
+command tostr():str   = uchr_tostr;
 
 command uchr(s:str):uchr = uchr_createStr;
 command uchr(i:int):uchr = uchr_createInt;

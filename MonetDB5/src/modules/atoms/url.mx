@@ -52,35 +52,35 @@ atom module url:str;
 
 command url(s:str):url = URLnew
 	comment "Create an URL from a string literal";
-command getAnchor(u:url) : str        = URLgetAnchor 
+command getAnchor(u:url) :str        = URLgetAnchor 
 	comment "Extract the anchor (reference) from the URL";
-command getBasename(u:url) : str        = URLgetBasename 
+command getBasename(u:url) :str        = URLgetBasename 
 	comment "Extract the base file name of the URL";
-command getContent(u:url)   : str        = URLgetContent 
+command getContent(u:url)   :str        = URLgetContent 
 	comment "Get the URL resource in a local file";
-command getContext(u:url)   : str        = URLgetContext 
+command getContext(u:url)   :str        = URLgetContext 
 	comment "Get the path context of a URL ";
 command getDirectory(u:url) : bat[int,str]  = URLgetDirectory 
 	comment "Extract the directory names from the URL";
-command getDomain(u:url) : str        = URLgetDomain 
+command getDomain(u:url) :str        = URLgetDomain 
 	comment "Extract the Internet domain from the URL";
-command getExtension(u:url) : str        = URLgetExtension 
+command getExtension(u:url) :str        = URLgetExtension 
 	comment "Extract the file extension of the URL";
-command getFile(u:url) : str        = URLgetFile 
+command getFile(u:url) :str        = URLgetFile 
 	comment "Extract the last file name of the URL";
-command getHost(u:url)   : str        = URLgetHost 
+command getHost(u:url)   :str        = URLgetHost 
 	comment "Extract the server identity from the URL";
-command getPort(u:url) : str        = URLgetPort 
+command getPort(u:url) :str        = URLgetPort 
 	comment "Extract the port id from the URL";
-command getProtocol(u:url) : str        = URLgetProtocol 
+command getProtocol(u:url) :str        = URLgetProtocol 
 	comment "Extract the protocol from the URL";
-command getQuery(u:url) : str        = URLgetQuery 
+command getQuery(u:url) :str        = URLgetQuery 
 	comment "Extract the query string from the URL";
 command getQueryArg(u:url) : bat[str,str]  = URLgetQueryArg 
 	comment "Extract the argument mappings from the URL";
-command getUser(u:url) : str        = URLgetUser 
+command getUser(u:url) :str        = URLgetUser 
 	comment "Extract the user identity from the URL";
-command getRobotURL(u:url) : str        = URLgetRobotURL 
+command getRobotURL(u:url) :str        = URLgetRobotURL 
 	comment "Extract the location of the robot control file";
 command isaURL(u:url)   : bit        = URLisaURL 
 	comment "Check conformity of the URL syntax";
@@ -90,9 +90,9 @@ command newurl(prot:str,host:str,fnme:str)   : url        = URLnew3
 	comment "Construct a URL from protocol, host,and file";
 
 # the remaining instructions replace the string equivalent versions
-command fromstr() = URLfromString
+command fromstr():url = URLfromString
 	comment "Convert a string to an url. ";
-command tostr() = URLtoString
+command tostr():str = URLtoString
 	comment "Convert url to string equivalent";
 @* Example Script
 @mil

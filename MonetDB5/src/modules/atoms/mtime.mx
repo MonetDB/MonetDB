@@ -214,8 +214,8 @@ that extract year, month and day from a date as integers and formats those
 in a string.
 @mal
 atom module date : int;
-	command fromstr() = date_fromstr;
-	command tostr() = date_tostr;
+	command fromstr() :date = date_fromstr;
+	command tostr() :str = date_tostr;
 	@:compareGrp(date)@
 @-
 A few interval operations.
@@ -243,8 +243,8 @@ with: HOUR = integer between 0 and 23
 \end{verbatim}
 @mal
 atom module daytime : int;
-	command fromstr() = daytime_fromstr;
-	command tostr() = daytime_tostr;
+	command fromstr():daytime = daytime_fromstr;
+	command tostr():str = daytime_tostr;
 	@:compareGrp(daytime)@
 
 @- timestamp
@@ -270,8 +270,8 @@ timezone. The default local timzone is just GMT+00, but iit can be set
 arbitrarily.
 @mal
 atom module timestamp : lng;	# not stored as a lng !
-	command fromstr() = timestamp_fromstr;
-	command tostr() = timestamp_tostr;
+	command fromstr():timestamp = timestamp_fromstr;
+	command tostr():str = timestamp_tostr;
 	#.NULL	 = timestamp_null;
 	command  epoch():timestamp= CMDepoch
 	comment "unix-time (epoch) support: seconds since 1-jan-1970 GMT";
@@ -329,16 +329,16 @@ nil-timezone.
 
 @mal
 atom module tzone : lng;
-	command fromstr() = tzone_fromstr;
-	command tostr()   = tzone_tostr;
+	command fromstr():tzone = tzone_fromstr;
+	command tostr():str   = tzone_tostr;
 	#.NULL	 = tzone_null;
 	command timestamp(secs:lng):timestamp= CMDtimestamp
 	comment "Enhancement of timestamp atom definition";
 
 
 atom module rule : int;
-	command fromstr() = rule_fromstr;
-	command tostr() = rule_tostr;
+	command fromstr():rule = rule_fromstr;
+	command tostr():str = rule_tostr;
 	command define(m:int,d:int,w:int,h:int,min:int):rule = CMDruleDef0
 	comment "Introduce a synomym timezone rule.";
 	command define(m:int,d:str,w:int,h:int,min:int):rule = CMDruleDef1

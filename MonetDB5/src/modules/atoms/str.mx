@@ -76,15 +76,15 @@ module str;
 
 command str(s:str):str = CMDstr
 	comment "Noop routine.";
-command string( s:str, offset:int ) : str = STRTail
+command string( s:str, offset:int ) :str = STRTail
 	comment "Return the tail s[offset..n] of a string s[0..n].";
-command string( s:str, offset:int, count:int) : str = STRSubString
+command string( s:str, offset:int, count:int) :str = STRSubString
 	comment "Return substring s[offset..offset+count] of a string s[0..n]";
-command +( l:str, r:str) : str = STRConcat
+command +( l:str, r:str) :str = STRConcat
 	comment "Concatenate two strings.";
-command length( s:str ) : int = STRLength
+command length( s:str ) :int = STRLength
 	comment "Return the length of a string.";
-command nbytes( s:str ) : int = STRBytes
+command nbytes( s:str ) :int = STRBytes
 	comment "Return the length of a string in bytes.";
 command chrAt( s:str, index:lng) : chr = STRChrAt
 	comment "String array lookup operation.";
@@ -94,14 +94,14 @@ command chrAt( s:str, index:int) : chr = STRChrAt
 	comment "String array lookup operation.";
 command match(s:str, pat:str): bit = STRmatch
 	comment "POSIX pattern matching against a string";
-command unicodeAt(s:str, index:int) : int = STRWChrAt
+command unicodeAt(s:str, index:int) :int = STRWChrAt
         comment "get a unicode character (as an int) from a string position.";
-command unicode(wchar:int) : str = STRFromWChr
+command unicode(wchar:int) :str = STRFromWChr
         comment "convert a unicode to a one-character string.";
 
-command codeset() : str = STRcodeset
+command codeset() :str = STRcodeset
         comment "Return the locale's codeset";
-command iconv(org:str, fromCodeset:str, toCodeset:str ) : str = STRIconv
+command iconv(org:str, fromCodeset:str, toCodeset:str ) :str = STRIconv
         comment "String codeset conversion";
 
 command startsWith( s:str, prefix:str ) : bit = STRPrefix
@@ -109,31 +109,31 @@ command startsWith( s:str, prefix:str ) : bit = STRPrefix
 command endsWith( s:str, suffix:str ) : bit = STRSuffix
         comment "Suffix check.";
 
-command toLower( s:str ) : str = STRLower
+command toLower( s:str ) :str = STRLower
         comment "Convert a string to lower case.";
-command toUpper( s:str ) : str = STRUpper
+command toUpper( s:str ) :str = STRUpper
         comment "Convert a string to upper case.";
 
-command search( s:str, c:str ) : int = STRstrSearch
+command search( s:str, c:str ) :int = STRstrSearch
 	comment "Search for a substring. Returns position, -1 if not found.";
-command search( s:str, c:chr ) : int = STRchrSearch
+command search( s:str, c:chr ) :int = STRchrSearch
 	comment "Search for a character. Returns position, -1 if not found.";
-command r_search( s:str, c:str ) : int = STRReverseStrSearch
+command r_search( s:str, c:str ) :int = STRReverseStrSearch
 	comment "Reverse search for a substring. Returns position, -1 if not found.";
-command r_search( s:str, c:chr ) : int = STRReverseChrSearch
+command r_search( s:str, c:chr ) :int = STRReverseChrSearch
 	comment "Reverse search for a char. Returns position, -1 if not found.";
-command search( s:str, s2:str) : int = STRstrSearch
+command search( s:str, s2:str) :int = STRstrSearch
 	comment "Search for a substring. Returns position, -1 if not found.";
-command r_search( s:str, s2:str ) : int = STRReverseStrSearch
+command r_search( s:str, s2:str ) :int = STRReverseStrSearch
 	comment "Reverse search for a substring. 
 	Returns position, -1 if not found.";
-command trim( s:str ) : str = STRStrip
+command trim( s:str ) :str = STRStrip
 	comment "Strip whitespaces around a string.";
-command ltrim( s:str ) : str = STRLtrim
+command ltrim( s:str ) :str = STRLtrim
 	comment "Strip whitespaces from start of a string.";
-command rtrim( s:str ) : str = STRRtrim
+command rtrim( s:str ) :str = STRRtrim
 	comment "Strip whitespaces from end of a string.";
-command substitute( s:str, src:str, dst:str, repeated:bit) : str = STRSubstitute
+command substitute( s:str, src:str, dst:str, repeated:bit) :str = STRSubstitute
 	comment "Substitute first occurrence of substring 'src' by 'dst'.
          Iff repeated = true this is repeated while 'src' can be found in 
 	 the result string. In order to prevent recursion and result strings 
