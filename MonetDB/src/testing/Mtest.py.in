@@ -60,6 +60,18 @@ import select
 import Mfilter
 import prof
 
+F_SKIP = -1
+F_OK = 0
+F_WARN = 1
+F_ERROR = 2
+
+FAILURES = {
+	F_SKIP  : "F_SKIP",
+	F_OK    : "F_OK",
+	F_WARN  : "F_WARN",
+	F_ERROR : "F_ERROR"
+}
+
 # a bunch of classes to help with generating (X)HTML files
 class _Encode:
     # mix-in class for encoding text and attribute values so that they
@@ -755,7 +767,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) :
 
     CreateSrcIndex(env, TST, EXT)
 
-    return max(o,e), td
+    return o, e, td
 ### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
 def AddSubToHtmlIndex (env, TSTDIR, diff) :
@@ -813,7 +825,8 @@ def find_test_dirs(thisdir) :
 
 def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
-    Fd = -1
+    FdOut = -1
+    FdErr = -1
     TSTSRCBASE = env['TSTSRCBASE']
     TSTPREF = env['TSTPREF']
     if testdir == TSTSRCBASE:
@@ -888,21 +901,22 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         body = []
         for TST in testlist:
             os.environ['TST'] = TST
-            tt, Ft, bodyline = RunTest(env, TST, BusyPorts)
+            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts)
             if tt:
                 t = "%7.3f" % tt
             else:
                 t = '-.---'
-            TIMES.append([TSTDIR,TST,t,Ft])
+            TIMES.append([TSTDIR,TST,t,FtOut,FtErr])
             td = td + tt
-            Fd = max(Fd,Ft)
+            FdOut = max(FdErr,FtOut)
+            FdErr = max(FdErr,FtErr)
             if bodyline is not None:
                 body.append(bodyline)
-        TIMES.append([TSTDIR,'',"%7.3f" % td,Fd])
+        TIMES.append([TSTDIR,'',"%7.3f" % td,FdOut,FdErr])
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
             CreateHtmlIndex(env, *body)
-            elem = AddSubToHtmlIndex(env, TSTDIR, Fd)
+            elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
 
         # HACK: remove large data-/input- files to save disk space
         for f in 'tcpip2.init.bat', 'ascii_io.4MBload', 'test100k', 'no.145.k100_unique1', 'test_00.k100_unique1', 'VOCrightpages.xml', 'VOCleftpages.xml':
@@ -1228,6 +1242,8 @@ def StableOutErr(env,par,TST,OS,RELEASE) :
 
 def RunTest(env, TST, BusyPorts) :
     Failed = -1
+    FailedOut = -1
+    FailedErr = -1
     TSTDB = env['TSTDB']
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
@@ -1293,7 +1309,7 @@ def RunTest(env, TST, BusyPorts) :
             #elif os.name == "posix":
         else:
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.milM|.milS|.milC|.sql|.x100]`")
-        return TX,Failed,elem
+        return TX,Failed,Failed,elem
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingBATs = CheckBATs(env, TST, TSTDB)
@@ -1366,7 +1382,7 @@ def RunTest(env, TST, BusyPorts) :
                 SymlinkOrCopy(TSTSRC,TST+EXT)
             else:
                 elem = SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
-                return TX,Failed,elem
+                return TX,Failed,Failed,elem
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
@@ -1587,6 +1603,8 @@ def RunTest(env, TST, BusyPorts) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
+	    if timeout: # test run timed out, expect major differences! 
+		ACCURACYout = 0
             while timedout and ACCURACYout >= 0:
                 if ACCURACYout == 0:
                     MDIFF = MDIFF0
@@ -1609,15 +1627,17 @@ def RunTest(env, TST, BusyPorts) :
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
+	    if timeout: # test run timed out, expect major differences! 
+		ACCURACYerr = 0
             while timedout and ACCURACYerr >= 0:
                 if ACCURACYerr == 0:
                     MDIFF = MDIFF0
                 timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.err.FILTERED %s.err.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
 
-            Failed, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
+            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT)
 
-    return TX,Failed,elem
+    return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts) #
 
 def CheckPort(host,port) :
@@ -2841,10 +2861,12 @@ def main(argv) :
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
         Failure = [0,0,0,0]
-        for TSTDIR,TST,tt,Ft in TIMES:
-            fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+"\n")
+        for TSTDIR,TST,tt,FtOut,FtErr in TIMES:
+            fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
+			"\t"+FAILURES[FtOut]+
+			"\t"+FAILURES[FtErr]+"\n")
             if TST != '':
-                Failure[Ft] += 1 
+                Failure[max(FtOut,FtErr)] += 1 
         fl.write(":\t%7.3f\n" % t_)
         fl.close()
 
@@ -2861,12 +2883,12 @@ def main(argv) :
             num_tests += f
         how = ""
         what = ""
-        if Failure[-1]:
+        if Failure[F_SKIP]:
             what += "  %3d out of %3d tests could not be executed\n" % (Failure[-1],num_tests)
-        if Failure[1]:
+        if Failure[F_WARN]:
             how = "slightly"
             what += "  %3d out of %3d tests produced %s different output\n" % (Failure[1],num_tests,how)
-        if Failure[2]:
+        if Failure[F_ERROR]:
             how = "SIGNIFICANTLY"
             what += "  %3d out of %3d tests produced %s different output\n" % (Failure[2],num_tests,how)
         STDERR.flush()
