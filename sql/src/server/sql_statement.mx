@@ -1734,6 +1734,8 @@ stmt *tail_column(stmt * st)
 		return tail_column(st->op1.lval->h->data);
 
 	case st_kbat: /* required for shrink_select_ranges() in sql_rel2bin.mx */
+	case st_relselect: /* required for eliminate_semijoin() in sql_rel2bin.mx */
+	case st_aggr:
 		printf("= TODO: tail_column(%d=%s) -> NULL !?\n",
 			st->type, st_type2string(st->type) );
 		return NULL;
@@ -1792,6 +1794,11 @@ stmt *head_column(stmt * st)
 		return tail_column(st->op2.stval);
 	case st_list:
 		return head_column(st->op1.lval->h->data);
+
+	case st_temp: /* required for eliminate_semijoin() in sql_rel2bin.mx */
+		printf("= TODO: head_column(%d=%s) -> NULL !?\n",
+			st->type, st_type2string(st->type) );
+		return NULL;
 
 	default:
 		fprintf(stderr, "missing head column %d: %s\n", st->type, st_type2string(st->type) );
@@ -1919,7 +1926,7 @@ char *table_name(stmt * st)
 
 sql_column *basecolumn(stmt * st)
 {
-	if (!st) return NULL; /* required for shrink_select_ranges() in sql_rel2bin.mx */
+	if (!st) return NULL; /* required for shrink_select_ranges() and eliminate_semijoin() in sql_rel2bin.mx */
 	switch (st->type) {
 	case st_reverse:
 	case st_mirror:
