@@ -876,8 +876,9 @@ showCommands(void)
 	fprintf(toConsole, "\\l\t- line is sent immediately\n");
 	fprintf(toConsole, "\\q\t- terminate session\n");
 	fprintf(toConsole, "\\T\t- toggle timer\n");
+	fprintf(toConsole, "\\D\t- dump database\n");
 	fprintf(toConsole, "\\Dtable\t- dump table\n");
-/* 	fprintf(toConsole, "\\t\t- toggle interaction trace\n"); */
+	fprintf(toConsole, "\\t\t- toggle interaction trace\n");
 }
 
 static int
@@ -960,13 +961,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					mark2 = strdup(line + 2);
 					continue;
 				case 't':
-					/* toggle interaction timer */
-					break;
+					/* toggle interaction trace */
+					mapi_trace(mid, !mapi_get_trace(mid));
+					continue;
 				case 'l':
 					linemode = 1;
 					line = "";
 					length = 0;
-					break;
+					continue;
 				case 'b':
 					linemode = 0;
 					continue;
