@@ -1521,6 +1521,7 @@ have_pcre=auto
 need_pcre=no
 PCRE_CFLAGS=""
 PCRE_LIBS=""
+PCRE_CONFIG="pcre-config"
 AC_ARG_WITH(pcre,
 	AC_HELP_STRING([--with-pcre=DIR],
 		[pcre library is installed in DIR]),
@@ -1529,6 +1530,7 @@ if test "x$have_pcre" != xno; then
   if test "x$have_pcre" != xauto; then
     PCRE_CFLAGS="-I$withval/include"
     PCRE_LIBS="-L$withval/lib"
+	PCRE_CONFIG="$withval/bin/pcre-config"
   fi
 
   save_CPPFLAGS="$CPPFLAGS"
@@ -1550,6 +1552,17 @@ if test "x$have_pcre" != xno; then
   	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre"
         	AC_DEFINE(HAVE_LIBPCRE, 1, [Define if you have the pcre library]) have_pcre=yes, have_pcre=no)
   	LDFLAGS="$save_LDFLAGS"
+  fi
+
+  if test "x$have_pcre" = xyes; then
+    	AC_MSG_CHECKING(for pcre >= 4.0)
+		pcre_ver="`$PCRE_CONFIG --version 2>/dev/null`"
+    	if test MONETDB_VERSION_TO_NUMBER(echo $pcre_ver) -ge MONETDB_VERSION_TO_NUMBER(echo "4.0"); then
+      		have_pcre=yes
+    	else
+      		have_pcre=no
+    	fi
+    	AC_MSG_RESULT($have_pcre -> $pcre_ver found)
   fi
 
   if test "x$have_pcre" != xyes; then
