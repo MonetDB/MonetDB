@@ -36,6 +36,7 @@ The strings being passed as arguments are copied in the process.
 mal_export InstrPtr newStmt( MalBlkPtr mb, char *module, char *name ) ;
 mal_export InstrPtr newStmtId( MalBlkPtr mb, char *id, char *module, char *name ) ;
 mal_export InstrPtr newAssignment( MalBlkPtr mb );
+mal_export InstrPtr newFcnCall( MalBlkPtr mb, char *mod, char *fcn );
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val) ;
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, long val) ;
 mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, double val) ;
@@ -76,6 +77,14 @@ newAssignment( MalBlkPtr mb )
 {
 	InstrPtr q= newInstruction(ASSIGNsymbol);
 	pushInstruction(mb,q);
+	return q;
+}
+InstrPtr
+newFcnCall( MalBlkPtr mb, char *mod, char *fcn )
+{
+	InstrPtr q= newAssignment(mb);
+	setModuleId(q,mod);
+	functionName(q) = fcn;
 	return q;
 }
 

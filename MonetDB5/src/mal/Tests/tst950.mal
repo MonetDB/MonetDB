@@ -3,12 +3,12 @@
 t0:= alarm.usec();
 size:= 1024:lng;
 size:= 16* size;
-b:= new(:lng,:lng);
+R:= new(:int,:void);
+S:= new(:void,:int);
 barrier (go,i):= newRange(0:lng);
-	k:= rand();
-	k2:= lng(k);
-	l:= lng(k);
-	insert(b,l,k2);
+	l:= int(i);
+	insert(R,l,nil);
+	insert(S,nil,l);
 	redo (go,i):= nextElement(1:lng,size);
 exit (go,i);
 	t1:= alarm.usec();
@@ -16,20 +16,13 @@ exit (go,i);
 	printf("#loop %d\n",d0);
 	t0:= t1;
 
-	R:= copy(b);
-	S:= copy(b);
-	t1:= alarm.usec();
-	d0:= t1-t0;
-	printf("#create operands %d\n",d0);
-	t0:= t1;
-
-	z:= cross(R,S);
-	size:= count(z);
-	t1:= alarm.usec();
-	d0:= t1-t0;
-	printf("#cross product size %d\n",size);
-	printf("#perform cross product %d\n",d0);
-	t0:= t1;
+#	z:= cross(R,S);
+#	size:= count(z);
+#	t1:= alarm.usec();
+#	d0:= t1-t0;
+#	printf("#cross product size %d\n",size);
+#	printf("#perform cross product %d\n",d0);
+#	t0:= t1;
 
 	chksize:= size/10;
 barrier (b1,rf):= chopper.newChunkIterator(R,chksize);

@@ -15,9 +15,9 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@f mal_meo
+@f mal_mes
 @a M. Kersten
-@* Optimized Materialized Execution 
+@* Materialized Execution Scheduling
 One of the 'short comings' of the BAT storage engine is that is uses
 a simplified look on the size of things. It simply maps huge files into
 memory and its opertors mindlessly constructs huge intermediate results.
@@ -25,7 +25,7 @@ This design decision was consciously taken. Running into such resource
 limits should not be dealt with at all levels of the system, but
 properly factored to a level where better control is available.
 
-The infastrucuture has been stabilized enough to move ahead into
+The infrastrucuture has been stabilized enough to move ahead into
 tackling these problems at the scheduler level. It is the place
 where runtime information becomes available as MAL instruction
 properties, e.g. the size of the the BATs being accessed.
@@ -83,7 +83,7 @@ This property often occurs in the optimizer framework and can be checked.
 
 The update statement +(p,4) now also becomes dependent on 
 a partial result and all code depending on it should be moved into the body
-of the iteration.
+of the iteration as well.
 
 Barrier and catch blocks are tricky. For catch blocks we should
 detect if an exception could be raised on which we have to react.
@@ -110,8 +110,8 @@ could be determined  calculating the maximum volume needed.
 (is a separate scheduler support routine)
 @+ Preliminary results.
 The test suite contains a simple test (tst950) that measures
-the gross impact of this process. It performs a cross-product
-of 1Mx1M bats, which never 
+the gross impact of this process. It aims at a cross-product
+of 16Kx16K bats, which never 
 (tst950) the iterator costs about 10 microseconds per step..
 @+ Optimizer focus
 The first implementation of this optimizer is geared at a SQL front-end.
@@ -122,10 +122,114 @@ called sql_optimizer.
 #ifndef _MAL_MEO_H
 #define _MAL_MEO_H
 #include "mal.h"
+#include "mal_scheduler.h"
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_function.h"
-#include "mal_client.h"
+
+
+#define MAL_MEO_DEBUG 1
 #endif
 @c
-#include "mal_meo.h"
+#include "mal_mes.h"
+#include "mal_builder.h"
+@-
+The cross operator is by large the most 'dangerous', because its
+potential claim on memory is huge.
+Replacing it with an iterator version avoids materialization of
+this intermediate, before it is being consumed by the other
+operators.
+
+A critical issue is to respect the resources available.
+This will be collected at the start of the scheduler call
+and is available as global information.
+@c
+str meo_cross_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int i,l,lb,r,rb;
+	InstrPtr *oldblk;
+	InstrPtr *garbage;
+	InstrPtr ql,qr;
+	int oldtop=0, g=0;
+	MALfcn f;
+
+	(void) stk;
+	oldblk = (InstrPtr *) mb->stmt;
+	oldtop = mb->stop;
+	mb->stmt = alloca(mb->stop *2 * sizeof(InstrPtr));
+	mb->stop= 0;
+	garbage = alloca(mb->stop * sizeof(InstrPtr));
+
+	f= findMALSymbol("algebra","cross")->def->stmt[0]->fcn;
+
+	for(i=0; i< oldtop; i++){
+		p= oldblk[i];
+		if( p->fcn != f) {
+			pushInstruction(mb,p);
+			continue;
+		}
+	/* should not call back to optimizer
+		cost = (int) getCost(mb, 0);
+		if( cost < runtime.freememory/ 4){
+			pushInstruction(mb,p);
+			continue;
+		}
+	*/
+#ifdef MAL_MEO_DEBUG
+		printf("meo_cross_optimizer attempt\n");
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+		/* look ahead to determine scope of the block */
+
+	/* craft the new code block */
+		lb = newTmpVariable(mb, TYPE_bit);
+		l = newTmpVariable(mb, getVarType(mb,p->argv[1]));
+		rb = newTmpVariable(mb, TYPE_bit);
+		r = newTmpVariable(mb, getVarType(mb,p->argv[2]));
+		ql= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("newIterator"));
+		ql->argv[0]= lb;
+		ql->argv[1]= l;
+		ql->retc= 2;
+		ql->argv[2]= p->argv[1];
+		ql->argc = 3;
+
+		ql->barrier= BARRIERsymbol;
+		qr= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("newIterator"));
+		qr->argv[0]= rb;
+		qr->argv[1]= r;
+		qr->retc= 2;
+		qr->argv[2]= p->argv[2];
+		qr->argc = 3;
+		qr->barrier= BARRIERsymbol;
+
+	/* and the intelligence should come here */
+
+	/* redo part */
+		qr= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("hasMoreElements"));
+		qr->argv[0]= rb;
+		qr->argv[1]= r;
+		qr->retc=2;
+		qr->argc=3;
+		qr->barrier= REDOsymbol;
+		ql= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("hasMoreElements"));
+		ql->argv[0]= lb;
+		ql->argv[1]= l;
+		ql->retc=2;
+		ql->argc=3;
+		ql->barrier= REDOsymbol;
+
+	/* exit part */
+		ql= newAssignment(mb);
+		ql->argv[0]= l;
+		ql->argc=1;
+		ql->barrier= EXITsymbol;
+		qr= newAssignment(mb);
+		qr->argv[0]= r;
+		qr->argc=1;
+		qr->barrier= EXITsymbol;
+	}
+	/* if we fail, garbage collection is easy */
+	for(i=0; i < g; i++)
+	if( garbage[i]) {
+	}
+	return MAL_SUCCEED;
+}
 @}

@@ -122,16 +122,26 @@ What the scheduler should do more?
 One of the areas to be decided upon is whether the scheduler is
 also the place to manage the stack spaces. It certainly could
 reconcile parallel executions by inspection of the stack.
+
+Upon starting the scheduler decisions, we should (regularly)
+refresh our notion on the availability of resources.
+This is kept around in a global structure and is the basis for
+micro scheduling decisions.
 @{
 @h
 #include "mal.h"
 #include "mal_macro.h"
-#include "mal_optimizer.h"
 
 /* #define DEBUG_MAL_SCHEDULER     show partial result */
 
 mal_export str MALscheduler(Client c);
 mal_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+struct {
+	int maxmemory;
+	int freespace;
+	int cpuload;
+} runtime;
 
 @+ Scheduler implementation
 @= schedulerCleanup
@@ -165,6 +175,8 @@ str schedulerMALBlock(MalBlkPtr mb)
 #ifdef DEBUG_MAL_SCHEDULER
     int oldstop= mb->stop;
 #endif
+	/* update the runtime status */
+	runtime.freespace= 512* 1024 *1024;
 
     do{
         cnt=0;
