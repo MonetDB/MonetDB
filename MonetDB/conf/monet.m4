@@ -520,6 +520,14 @@ if test "x$enable_debug" = xyes; then
   fi
 fi
 
+dnl --enable-assert
+AC_ARG_ENABLE(assert,
+[  --enable-assert         enable assertions in the code [default=on]],
+  enable_assert=$enableval, enable_assert=yes)
+if test "x$enable_assert" = xno; then
+  CPPFLAGS="$CPPFLAGS -DNDEBUG"
+fi
+
 dnl --enable-optimize
 NO_INLINE_CFLAGS=""
 AC_ARG_ENABLE(optimize,
