@@ -216,6 +216,7 @@ comment "cast @1 to @1 and check for overflow";
 Include the sql_cache functionality
 @mal
 include sql_cache;
+include mil_algebra_procs;
 @h
 #ifndef _SQL_H
 #define _SQL_H
