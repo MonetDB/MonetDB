@@ -658,7 +658,11 @@ def ApproveOutput (env, TST) :
             SYSTEM = par['SYSTEM']
             stableOUTPUT = stableOUT+SYSTEM
         else:
-            stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,OS,RELEASE)[0]
+            if WHAT == 'out':
+                w = 0
+            else: # WHAT == 'err'
+                w = 1
+            stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,OS,RELEASE)[w]
             SYSTEM = string.split(stableOUTPUT, WHAT)[-1]
 
         if os.path.isfile(testOUTPUT):
