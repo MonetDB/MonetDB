@@ -326,6 +326,63 @@ Over..
 # 0 # length
 # 0 # tuplecount
 # 35 # id
+# 3 # querytype
+# like_test # table_name
+# str # name
+# varchar # type
+# 12 # length
+# 3 # tuplecount
+# 36 # id
+[ "123123123"	]
+[ "123123456123"	]
+[ "199993456123"	]
+# 3 # querytype
+# like_test # table_name
+# str # name
+# varchar # type
+# 18 # length
+# 11 # tuplecount
+# 37 # id
+[ ""	]
+[ "t"	]
+[ "ts"	]
+[ "tsz"	]
+[ "a math assignment"	]
+[ "pathfinder is fun!"	]
+[ "123123123"	]
+[ "123123456123"	]
+[ "199993456123"	]
+[ "123456123456"	]
+[ "123454321"	]
+# 3 # querytype
+# like_test # table_name
+# str # name
+# varchar # type
+# 0 # length
+# 0 # tuplecount
+# 38 # id
+# 3 # querytype
+# like_test # table_name
+# str # name
+# varchar # type
+# 0 # length
+# 0 # tuplecount
+# 39 # id
+# 3 # querytype
+# like_test # table_name
+# str # name
+# varchar # type
+# 0 # length
+# 0 # tuplecount
+# 40 # id
+# 3 # querytype
+# like_test # table_name
+# str # name
+# varchar # type
+# 1 # length
+# 1 # tuplecount
+# 41 # id
+[ "t"	]
 # 7 # querytype
 
 # 20:43:54 >  

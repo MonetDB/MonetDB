@@ -60,6 +60,16 @@ SELECT * FROM like_test WHERE str LIKE '%1_3456%';
     -- attention: this one shows why the above like expression returns the
 	--            correct answer... the _ is treated as {1,*} not {1}
 SELECT * FROM like_test WHERE str LIKE '_3456%';
+    -- another simple way to give the like processor a hard time
+SELECT * FROM like_test WHERE str LIKE '%23';
+-- test the ESCAPE statement
+SELECT * FROM like_test WHERE str LIKE '%' ESCAPE '?';
+SELECT * FROM like_test WHERE str LIKE '?%' ESCAPE '?';
+-- test with an ESCAPE character that has a special meaning in a reg exp
+SELECT * FROM like_test WHERE str LIKE '.%' ESCAPE '.';
+SELECT * FROM like_test WHERE str LIKE '..' ESCAPE '.';
+-- test whether escaping the ESCAPE character actually works
+SELECT * FROM like_test WHERE str LIKE 'tt' ESCAPE 't';
 
 -- clean up mess we made
 ROLLBACK;
