@@ -1030,7 +1030,7 @@ void TBL_decproc(oid pid) {
 		YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
 		if (x && *x) {
 	    		GDKfree((*x)->yyval.val.pval); /* free disguised name */
-	    		yyfree((*x));
+	    		Myyfree((*x));
 		}
 		TBL_Deinstall_Function(pid);
 	}

@@ -234,7 +234,7 @@ int interpret_str(Cntxt stk, str buf, ValPtr res) {
 				VALclear(res);
 			}
                         CLEANUP(c->tree);
-			yyfree(c->tree);
+			Myyfree(c->tree);
 			c->tree = NULL;
                 }
                 c->input = input_bak;
@@ -909,7 +909,7 @@ add it to the expansion cache.
 	}
 	argv[0].val.ival = 0;
 #endif
-	    op = yysubstitute_proc((YYSTREE)sig->pack_fcn,argc-1,argv);
+	    op = Myysubstitute_proc((YYSTREE)sig->pack_fcn,argc-1,argv);
 #if 0
 { /* PETER: temporary hack to monitor proc instantiation (2/2) */
 	BUN pp = BUNfnd(yysubst, fcn_nme);
@@ -923,7 +923,7 @@ add it to the expansion cache.
 }
 #endif
 	} else {
-	    op = yynode(i,0);
+	    op = Myynode(i,0);
 	}
 	i = MONETSIG_TOTSIZE(MONETSIG_NWORDS(sig)); /*length*/
 	if (deref_fcn) {
@@ -937,7 +937,7 @@ add it to the expansion cache.
 	sig->fcn_nme = fcn_nme;
 	op->yyval.val.pval  = (ptr) sig; 
 	op->yyval.vtype = TYPE_str; /* this triggers deallocate of sig */
-	yyexpand(opcache, op); /* add 'op' to the expansion list */
+	Myyexpand(opcache, op); /* add 'op' to the expansion list */
 
 @- phase 7: execution
 Comes down to 3 cases: normal, proc, or {X}/[X] execution
@@ -1066,8 +1066,8 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res)
 		return 0;
 	}
 	/* resolve only once: FUNCTION without parameters nor () */
-	yyexpand(lt, yynode(0,0));
-	yyexpand(lt, yynode(TOK_IDENT,TYPE_int));
+	Myyexpand(lt, Myynode(0,0));
+	Myyexpand(lt, Myynode(TOK_IDENT,TYPE_int));
         lt->token = TOK_FUNCTION; 
 	lt->yyval.vtype = TYPE_str;
 	lt->yyval.len = 1+strlen(lt->yyval.val.sval);
@@ -1108,7 +1108,7 @@ int interpret_var(int	stk, YYSTREE lt, ValPtr res)
                         if (i<0) break;
                     } else {
                         lt->yysons[j] = 0;
-                        yyfree(t);
+                        Myyfree(t);
                     }
                 }
             } 
@@ -1131,10 +1131,10 @@ int interpret_trigger(int stk, YYSTREE lt, ValPtr res)
  
 	argc = interpret_params(stk, lt, argv, definition->yyval.val.sval);
 	if (argc < 0) { i = argc; goto xit; }
-	t = yynode(TOK_COMPILED, TYPE_str);
+	t = Myynode(TOK_COMPILED, TYPE_str);
 	t->yyval.len = MAXPARAMS*sizeof(ValRecord);
 	t->yyval.val.pval = argv;
-	t->yysons[0] = yysubstitute_proc(definition, argc-1, argv);
+	t->yysons[0] = Myysubstitute_proc(definition, argc-1, argv);
 	lt->yysons[2] = definition;
 	t->cnt = 1;
 	i = TEMenable(stk, t->yysons[0], res);
@@ -1485,7 +1485,7 @@ int interpret_parblock(int stk, YYSTREE lt, int scope)
 		} else stk = lt->old_cntxt;
 		CNTXTuse(stk);
 	} 
-	bt = yynode(TOK_PAREND, stk);
+	bt = Myynode(TOK_PAREND, stk);
 	barrier = newRequest(stk, bt, 0);
 @-
 The parallel block is translated into a sequence of requests,
@@ -1526,7 +1526,7 @@ Use the first request for immediate execution.
 @c
 	putRequest(p);
 	doRequest(t,barrier);
-	yyfree(bt);
+	Myyfree(bt);
 	if (scope){
 		CNTXTclear(stk);
 	        if (reuse < 0) {
@@ -1615,14 +1615,14 @@ void iterator_maketrees(
 	if (parallel > 1) {
 		if (handle->parmax <= 1) { 
 			YYSTREE t = handle->tree;
-			handle->tree = yynode(TOK_PARBLOCK, 0);
-			if (t) yyexpand(handle->tree,t);
+			handle->tree = Myynode(TOK_PARBLOCK, 0);
+			if (t) Myyexpand(handle->tree,t);
 		}
 		for(i = handle->parmax; i < parallel; i++, p += 2) {
-			yyexpand(handle->tree, yysubstitute_iter(body, 2, p-1));
+			Myyexpand(handle->tree, Myysubstitute_iter(body, 2, p-1));
 		}
 	} else if (handle->tree == 0) { 
-		handle->tree = yysubstitute_iter(body, 2, p-1);
+		handle->tree = Myysubstitute_iter(body, 2, p-1);
 	}
 }
 
@@ -1712,7 +1712,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 		lt->token = TOK_ITCOMPILED;
 		lt->yyval.val.pval = (ptr) cmd;
 		lt->yyval.vtype = TYPE_void;
-		lt->yysons[3] = yynode(0, 0);
+		lt->yysons[3] = Myynode(0, 0);
 
 		/* Fill the iteration handle.
 	 	*/

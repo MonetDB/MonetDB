@@ -547,17 +547,17 @@ int CMDassign(int stk, YYSTREE lt, ValPtr res){
 	if (lt->cnt == 2 && interpret(stk, lt->yysons[0], res) >= 0 &&
 		res->vtype == TYPE_str) 
 	{
-		YYSTREE tt = yynode(TOK_ASSIGNMENT,0);
-		YYSTREE t = yynode(TOK_IDENT,0);
+		YYSTREE tt = Myynode(TOK_ASSIGNMENT,0);
+		YYSTREE t = Myynode(TOK_IDENT,0);
 		VALcopy(&t->yyval, res);
 		t->yyval.len = 0; /* HACK: context level */
-		yyexpand(tt, t);
-		yyexpand(tt, lt->yysons[1]);
+		Myyexpand(tt, t);
+		Myyexpand(tt, lt->yysons[1]);
 		
 		i = interpret_assignment(stk, tt, res);
 		tt->yysons[1] = NULL;
 		tt->cnt = 1;	
-		yyfree(tt);
+		Myyfree(tt);
 	}
 	res->vtype = TYPE_void;
 	res->val.oval = oid_nil;
@@ -1088,10 +1088,10 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 		BBPunfix(bid);
 		return -1;
 	} 
-	t = yynode(TOK_FUNCTION,0); 
+	t = Myynode(TOK_FUNCTION,0); 
 	t->yyval = v;
 	BATloopFast(b, p, q, xx) {
-		child = yynode(TOK_CONSTANT, 0);
+		child = Myynode(TOK_CONSTANT, 0);
 		if (b->htype == TYPE_str) {
 			i = ATOMindex(BUNhvar(b,p));
 			if (i < 0) {
@@ -1115,16 +1115,16 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 			}
 		}
 		child->yyval = *res;
-		yyexpand(t, child);
+		Myyexpand(t, child);
 	}
 	res->vtype = TYPE_void;
 	if (i == 0) {
-		yypostprocess(t);
+		Myypostprocess(t);
 		i = interpret(stk, t, res);
         	CATCHRET(stk,t,res,i);
 	}
 	t->yyval.vtype = TYPE_void;
-	yyfree(t);
+	Myyfree(t);
 	BBPunfix(bid);
 	return i;
 }

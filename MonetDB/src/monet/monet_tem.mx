@@ -368,7 +368,7 @@ stored as 'garbage' directly in the YYSTREE parameters. The count field
 guards removal.
 @c
 YYSTREE	TEMnewevent(YYSTREE object, YYSTREE event, int negation) {
-	YYSTREE ev = yynode(TOK_EVENT, 0);
+	YYSTREE ev = Myynode(TOK_EVENT, 0);
 	BAT 	*b;
 	ptr 	p;
 
@@ -379,7 +379,7 @@ YYSTREE	TEMnewevent(YYSTREE object, YYSTREE event, int negation) {
 	} 
  	ev->yysons[0] = object;
 	ev->yysons[1] = event;
-	ev->yysons[2] = negation? yynode(TOK_CONSTANT,0):0;
+	ev->yysons[2] = negation? Myynode(TOK_CONSTANT,0):0;
 	ev->cnt = 3;
 
 	return ev;
@@ -401,10 +401,10 @@ void TEMdefTrigger(Client client, YYSTREE hdr, YYSTREE event, YYSTREE body) {
 	YYSTREE t;
 	str 	tname;
 	
-	t = yynode(TOK_TRGDEF,0);
-	yyexpand(t,hdr);
-	yyexpand(t,event);
-	yyexpand(t,body);
+	t = Myynode(TOK_TRGDEF,0);
+	Myyexpand(t,hdr);
+	Myyexpand(t,event);
+	Myyexpand(t,body);
 	tname= TRGnme(t);
 	TRGDEBUG THRprintf(GDKout, "TEMdefine %s \n", tname);
 	
@@ -492,7 +492,7 @@ Update the event filters for speed.
 				TRGDEBUG THRprintf(GDKout, "TEMenable: event %s not found\n",ename);
 			 } else {
 				evnt = * (int *) BUNtail(b,p);
-				yyfree(ev->yysons[1]);
+				Myyfree(ev->yysons[1]);
 				ev->yysons[1]= (YYSTREE) evnt;
 			}
 		} 		

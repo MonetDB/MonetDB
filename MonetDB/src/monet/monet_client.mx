@@ -180,9 +180,9 @@ errors) its read request is entered into the queue.
 
 static YYSTREE scheduleFile(str filename)
 {
-        YYSTREE r = yynode(TOK_BUILTIN, TYPE_ptr);
-        YYSTREE n = yynode(TOK_CONSTANT, 0);
-        yyexpand(r, n);
+        YYSTREE r = Myynode(TOK_BUILTIN, TYPE_ptr);
+        YYSTREE n = Myynode(TOK_CONSTANT, 0);
+        Myyexpand(r, n);
         n->yyval.vtype = TYPE_str;
         n->yyval.val.sval = GDKstrdup(filename);
         n->yyval.len = strLen(filename);
@@ -210,8 +210,8 @@ void scheduleClient(Client c)
 	int k;
 
 	if (c->mil_accept == NULL) {
-        	yyexpand(c->mil_accept = yynode(TOK_BUILTIN, TYPE_int),
-        		 t = yynode(TOK_CONSTANT, TYPE_int));
+        	Myyexpand(c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int),
+        		 t = Myynode(TOK_CONSTANT, TYPE_int));
 		c->mil_accept->yyval.val.pval = (ptr) serveClient;
 		t->yyval.val.ival = (int) (c-monet_clients);
 	}
@@ -318,7 +318,7 @@ void freeClient(Client c)
 
 	/* epilogue: free all resources taken by client */
 	if (c->tree) {
-		yyfree(c->tree); /* garbage collect return values in last MIL tree */
+		Myyfree(c->tree); /* garbage collect return values in last MIL tree */
 		c->tree = NULL;
 	}
 	/* destroy MIL stack (must happen before module drops) */
@@ -631,12 +631,12 @@ void lockparser(Client c)
 	ll_client = c;
 	c->cptr = c->input;
 	c->cline = c->input;
-	yylogstart(); /* init node allocation logging */
+	Myylogstart(); /* init node allocation logging */
 }
 
 void unlockparser(Client c)
 {
-	yylogclean(); /* clean supurfluous nodes */
+	Myylogclean(); /* clean supurfluous nodes */
 	c->top = c->input;
 	ll_client = 0;
 	MT_unset_lock(monet_parserLock, "unlockparser");
@@ -661,7 +661,7 @@ YYSTREE parseClient(Client c, int reschedule)
 	lockparser(c);
 
 	if (c->tree) {
-		yyfree(c->tree);
+		Myyfree(c->tree);
 		c->tree = NULL;
 		CNTXTfree2(c->stk, c);
 	}

@@ -99,7 +99,7 @@ char *LEXNAME(int Y)       { if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
 #define input()		(yytchar = yysptr > yysbuf?U(*--yysptr):ll_getch())
 #endif
 #define Symbol(X)	{ RETURN (X); }
-#define Vector(X,Y,Z,V,L)	{ yylval = yylognode(X, Y);                      \
+#define Vector(X,Y,Z,V,L)	{ yylval = Myylognode(X, Y);                      \
                              yylval->yyval.val.Z = V;                       \
                              yylval->yyval.len = L;                         \
                              RETURN (X); }
@@ -597,9 +597,9 @@ The Monet interpreter language provides a sugar version to OO
 programming by considering the first argument the receiver of the method.
 @c
 YYSTREE yysugar(YYSTREE node){
-        YYSTREE t = yylognode(0, 0);
+        YYSTREE t = Myylognode(0, 0);
         if (node) {
-                yylogexpand(t, node); /* put the sugar argument in front. */
+                Myylogexpand(t, node); /* put the sugar argument in front. */
         }
         ll_sugarnode = NULL;
         return t;
@@ -656,7 +656,7 @@ extern YYSTREE yysugar(YYSTREE node);
 %%
 program:
 	monet_session
-	{ ll_client->tree = $1; yypostprocess(ll_client->tree); ll_lastval=0; }
+	{ ll_client->tree = $1; Myypostprocess(ll_client->tree); ll_lastval=0; }
     |   error ';' { ll_clrids(); yyerrok; yyclearin; ll_lastval=0; return 1; }
     |   /* empty */
     ;
@@ -664,11 +664,11 @@ program:
 monet_session:
         session
         {   if (!$1 || $1->token != TOK_SEQ) {
-                $$ = yylognode(TOK_SEQ, 0);
-                if ($1) yylogexpand($$, $1);
+                $$ = Myylognode(TOK_SEQ, 0);
+                if ($1) Myylogexpand($$, $1);
             } else $$ = $1;                                                   }
     |   monet_session session
-        {   $$ = $1; if ($2) yylogexpand($$, $2);                             }
+        {   $$ = $1; if ($2) Myylogexpand($$, $2);                             }
     ;
 
 session:
@@ -724,20 +724,20 @@ trigger_definition:
         {   ll_modcmds = ll_templates = 1;}
         event_expression statement
         {   if ($3) {
-		YYSTREE t = yylognode(TOK_SEQBLOCK, 0);
-		yylogexpand(t, $3); yylogexpand(t, $6);
+		YYSTREE t = Myylognode(TOK_SEQBLOCK, 0);
+		Myylogexpand(t, $3); Myylogexpand(t, $6);
 		$6 = t;
 	    }
-	    yylogout($6);
+	    Myylogout($6);
             TEMdefTrigger(ll_client, $2, $5, $6);
             ll_modcmds = ll_templates = 0;                                    }
     ;
 
 event_expression:
         TOK_ON event_term
-        {   $$= yylognode(0,0); yylogexpand($$, $2);                          }
+        {   $$= Myylognode(0,0); Myylogexpand($$, $2);                          }
     |   event_expression ',' event_term
-        {   $$= yylogexpand($1, $3);                                          }
+        {   $$= Myylogexpand($1, $3);                                          }
     ;
 
 event_term: event_item {
@@ -766,7 +766,7 @@ event_definition:
 @y
 statement_seq:
         /* empty */
-        {   $$ = yylognode(TOK_SEQ,0);                                        }
+        {   $$ = Myylognode(TOK_SEQ,0);                                        }
     |   statement_list
         {   $$ = $1;                                                          }
     ;
@@ -776,10 +776,10 @@ statement_list:
         {   $$ = $1;                                                          }
     |   statement_list statement
         {   if ($1->token != TOK_SEQ) {
-                 $$ = yylognode(TOK_SEQ, 0);
-                 yylogexpand($$, $1);
+                 $$ = Myylognode(TOK_SEQ, 0);
+                 Myylogexpand($$, $1);
             } else  $$ = $1;
-            yylogexpand($$, $2);                                              }
+            Myylogexpand($$, $2);                                              }
     ;
 
 statement:
@@ -788,21 +788,21 @@ statement:
     |   TOK_VAR varidents ';'
         {   $$ = $2; $2->token = TOK_VAR;                                     }
     |   TOK_CONST constidents ';'
-        {   YYSTREE t=$2,tt, n = yylognode(TOK_BUILTIN, TYPE_ptr);
+        {   YYSTREE t=$2,tt, n = Myylognode(TOK_BUILTIN, TYPE_ptr);
             unsigned i;
             n->yyval.val.pval = (ptr) CMDconstant;
-            $$ = yylognode(TOK_SEQ,0);
+            $$ = Myylognode(TOK_SEQ,0);
             $2->token = TOK_VAR;
-            yylogexpand($$, $2); yylogexpand($$,n);
+            Myylogexpand($$, $2); Myylogexpand($$,n);
 	    while(t) {
                 for(i=0; i<t->cnt; i++)
                 if (t->yysons[i]) {
-                    yylogexpand(n, tt=yylognode(TOK_IDENT, TYPE_str));
+                    Myylogexpand(n, tt=Myylognode(TOK_IDENT, TYPE_str));
                     tt->yyval.val.sval=GDKstrdup(t->yysons[i]->yyval.val.sval);
                 }
                 n->cnt = t->cnt;
                 if ((t=t->overflow) != NULL) {
-                    n->overflow=yylognode(0,0); n=n->overflow;
+                    n->overflow=Myylognode(0,0); n=n->overflow;
                 }
             }                                                                 }
     ;
@@ -814,17 +814,17 @@ nonvar_statement:
     |   blk_expression
         {    $$ = $1;                                                         }
     |   TOK_RETURN ret_value ';'
-        {    $$ = yylognode(TOK_RETURN, 0);
-             if ($2) yylogexpand($$, $2);                                     }
+        {    $$ = Myylognode(TOK_RETURN, 0);
+             if ($2) Myylogexpand($$, $2);                                     }
     |   TOK_WHILE '(' expression ')' nonvar_statement
-        {    $$ = yylognode(TOK_WHILE, 0);
-             yylogexpand($$, $3); yylogexpand($$, $5);                        }
+        {    $$ = Myylognode(TOK_WHILE, 0);
+             Myylogexpand($$, $3); Myylogexpand($$, $5);                        }
     |   TOK_IF '(' expression ')' nonvar_statement else_statement
-        {    $$ = yylognode(TOK_IF, 0);
-             yylogexpand($$, $3); yylogexpand($$, $5);
-             if ($6) yylogexpand($$, $6);                                     }
+        {    $$ = Myylognode(TOK_IF, 0);
+             Myylogexpand($$, $3); Myylogexpand($$, $5);
+             if ($6) Myylogexpand($$, $6);                                     }
     |   TOK_BREAK ';'
-        {    $$ = yylognode(TOK_BREAK, 0);                                    }
+        {    $$ = Myylognode(TOK_BREAK, 0);                                    }
     ;
 
 expr_statement:
@@ -833,8 +833,8 @@ expr_statement:
     |   TOK_ITERATION parallel TOK_ITERATOR expression_list
         {   $$ = ll_templates ? (YYSTREE)(size_t)1 /* non-NULL */ : (ptr) 0; ll_templates = 1; } nonvar_statement
         {   ll_templates = ($5 != NULL);
-            yylogexpand($3, $6); yylogexpand($3, $4);
-            if ($2) yylogexpand($3, $2); $$ = $3;                             }
+            Myylogexpand($3, $6); Myylogexpand($3, $4);
+            if ($2) Myylogexpand($3, $2); $$ = $3;                             }
     ;
 
 else_statement:
@@ -865,8 +865,8 @@ sequential_block:
             if ($3->token == TOK_SEQ || $3->token == TOK_SEQBLOCK) {
                     $3->token = TOK_SEQBLOCK;
             } else if ($3->token != TOK_PARBLOCK) {
-                    $$ = yylognode(TOK_SEQBLOCK, 0);
-                    if ($3) yylogexpand($$, $3);
+                    $$ = Myylognode(TOK_SEQBLOCK, 0);
+                    if ($3) Myylogexpand($$, $3);
             }                                                                 }
     ;
 
@@ -882,8 +882,8 @@ parallel_block:
                 $$ = $3;
                 $$->token = TOK_PARBLOCK;
             } else {
-                $$ = yylognode(TOK_SEQBLOCK, 0);
-                yylogexpand($$, $3);
+                $$ = Myylognode(TOK_SEQBLOCK, 0);
+                Myylogexpand($$, $3);
             }                                                                 }
     ;
 
@@ -899,14 +899,14 @@ variable_reference:
         {   ll_idconflict($1->yyval.val.sval);
             $1->yyval.len = 0; /* var depth.. */
 	    if ($2) {
-                $$ = yylognode(TOK_ASSIGNMENT, 0);
-                yylogexpand($$, $1); yylogexpand($$, $2);
+                $$ = Myylognode(TOK_ASSIGNMENT, 0);
+                Myylogexpand($$, $1); Myylogexpand($$, $2);
             } else $$ = $1;                                                   }
     |   template assignment
         {   $1->yyval.len = 0;
             if ($2) {
-                $$ = yylognode(TOK_ASSIGNMENT, 0);
-                yylogexpand($$, $1); yylogexpand($$, $2);
+                $$ = Myylognode(TOK_ASSIGNMENT, 0);
+                Myylogexpand($$, $1); Myylogexpand($$, $2);
             } else $$ = $1;                                                   }
     ;
 
@@ -922,9 +922,9 @@ proc_definition:
 	   	           ($6->token != TOK_SEQBLOCK) &&
                            ($6->token != TOK_PARBLOCK)))
             {
-                $$ = yylognode((params)?TOK_SEQBLOCK:TOK_SEQ, 0);
-		if (params) yylogexpand($$, $3);
-		yylogexpand($$, $6);
+                $$ = Myylognode((params)?TOK_SEQBLOCK:TOK_SEQ, 0);
+		if (params) Myylogexpand($$, $3);
+		Myylogexpand($$, $6);
             } else {
                 $$ = $6;
             }
@@ -935,13 +935,13 @@ proc_definition:
 	    $2->yyval.vtype = TYPE_void;
 
             /* DIRECT: insert the new proc */
-	    yylogout($$);
+	    Myylogout($$);
             TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $$, sig, ret);
 	    if (sig) { yylogfree(sig); }
 	    if (ret) { yylogfree(ret); }
             ll_modcmds = ll_templates = 0;                                    }
     |   TOK_PROCDEF proc_name ';'
-        {   yylogout($2);
+        {   Myylogout($2);
 	    TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $2, $2, NULL);
             $2->token = TOK_CONSTANT;
             $2->yyval.vtype = TYPE_int;                                       }
@@ -981,13 +981,13 @@ proc_header:
 mel_header:
 	mel_params mel_tail
         {   YYSTREE h = (YYSTREE) $1->yyval.val.pval;
-            $$ = $1; if ($2) yylogexpand(h,$2);                               }
+            $$ = $1; if ($2) Myylogexpand(h,$2);                               }
     |   mel_range
-        {   YYSTREE n = yylognode(0,0); yylogexpand(n,$1);
-	    $$ = yylognode(0,TYPE_ptr); $$->yyval.val.pval = (ptr) n;         }
+        {   YYSTREE n = Myylognode(0,0); Myylogexpand(n,$1);
+	    $$ = Myylognode(0,TYPE_ptr); $$->yyval.val.pval = (ptr) n;         }
     |   /* empty */
-        { $$ = yylognode(0,TYPE_ptr);
-          $$->yyval.val.pval = (ptr) yylognode(0,0);                          }
+        { $$ = Myylognode(0,TYPE_ptr);
+          $$->yyval.val.pval = (ptr) Myylognode(0,0);                          }
     ;
 
 mel_tail:
@@ -999,27 +999,27 @@ mel_tail:
 
 mel_range:
 	TOK_RANGETEMP mel_type TOK_RANGETEMP
-        {   $$ = yylognode(TOK_RANGETEMP,0); yylogexpand($$,$2);              }
+        {   $$ = Myylognode(TOK_RANGETEMP,0); Myylogexpand($$,$2);              }
     ;
 
 mel_params:
         mel_type TOK_IDENT
-        {   YYSTREE temp = yylognode(TOK_TEMPLATE, TYPE_int);
-            YYSTREE sig = yylognode(0,0);
-	    yylogexpand(sig, $1);
+        {   YYSTREE temp = Myylognode(TOK_TEMPLATE, TYPE_int);
+            YYSTREE sig = Myylognode(0,0);
+	    Myylogexpand(sig, $1);
 	    ll_argc = 0; temp->yyval.val.ival = ++ll_argc;
 	    $2->token = TOK_ASSIGNMENT;
-	    yylogexpand($2, yylognode(TOK_TEMPLATE,0)); yylogexpand($2, temp);
-            $$ = yylognode(TOK_VAR,TYPE_ptr); yylogexpand($$, $2);
+	    Myylogexpand($2, Myylognode(TOK_TEMPLATE,0)); Myylogexpand($2, temp);
+            $$ = Myylognode(TOK_VAR,TYPE_ptr); Myylogexpand($$, $2);
 	    $$->yyval.val.pval = (ptr) sig;                                   }
     |   mel_params ',' mel_type TOK_IDENT
-        {   YYSTREE temp = yylognode(TOK_TEMPLATE, TYPE_int);
+        {   YYSTREE temp = Myylognode(TOK_TEMPLATE, TYPE_int);
             YYSTREE sig = (YYSTREE) $1->yyval.val.pval;
-	    yylogexpand(sig, $3);
+	    Myylogexpand(sig, $3);
 	    temp->yyval.val.ival = ++ll_argc;
 	    $4->token = TOK_ASSIGNMENT;
-	    yylogexpand($4, yylognode(TOK_TEMPLATE,0)); yylogexpand($4, temp);
-            yylogexpand($1, $4); $$ = $1;                                     }
+	    Myylogexpand($4, Myylognode(TOK_TEMPLATE,0)); Myylogexpand($4, temp);
+            Myylogexpand($1, $4); $$ = $1;                                     }
     ;
 
 mel_type:
@@ -1028,16 +1028,16 @@ mel_type:
 	  if ($2 && strcmp($2->yyval.val.sval,"BAT")) {
                 ll_parserror("only bat types are parametrized");
 	  } else if ($2 == NULL && strcmp($1->yyval.val.sval, "BAT")==0) {
-		YYSTREE any1 = yylognode(TOK_ANY,TYPE_int);
-		YYSTREE any2 = yylognode(TOK_ANY,TYPE_int);
+		YYSTREE any1 = Myylognode(TOK_ANY,TYPE_int);
+		YYSTREE any2 = Myylognode(TOK_ANY,TYPE_int);
 		any1->yyval.val.ival = any2->yyval.val.ival = -1;
-		$$ = yylognode(TOK_ATOM,TYPE_str);
+		$$ = Myylognode(TOK_ATOM,TYPE_str);
 	        $$->yyval.val.sval = GDKstrdup(BATatoms[TYPE_bat].name);
-		yylogexpand($$, any1);
-		yylogexpand($$, any2);
+		Myylogexpand($$, any1);
+		Myylogexpand($$, any2);
 	  }
 	  if ($$ == NULL) {
-		yylogexpand($$=$1,$2);
+		Myylogexpand($$=$1,$2);
 	  } else {
  		yylogfree($1);
           }                                                                   }
@@ -1047,9 +1047,9 @@ mel_type:
 
 mel_bat:
 	'[' mel_atom ',' mel_atom ']'
-        { $$ = yylognode(TOK_ATOM,TYPE_str);
+        { $$ = Myylognode(TOK_ATOM,TYPE_str);
 	  $$->yyval.val.sval = GDKstrdup(BATatoms[TYPE_bat].name);
-	  yylogexpand($$,$2); yylogexpand($$,$4);         		      }
+	  Myylogexpand($$,$2); Myylogexpand($$,$4);         		      }
     |   /* empty */
 	{ $$ = NULL;                                                          }
     ;
@@ -1119,14 +1119,14 @@ simple_expression:
 
 deref_or_simple_expression:
         TOK_DEREF expression ')' expression_list
-        {   $$ = yylognode(TOK_FUNCTION,0);
-            yylogexpand($$,$2); yylogexpand($$,$4);                           }
+        {   $$ = Myylognode(TOK_FUNCTION,0);
+            Myylogexpand($$,$2); Myylogexpand($$,$4);                           }
     |	TOK_SETOP expression ']' expression_list
-        {   $$ = yylognode(TOK_SETOP,0);
-            yylogexpand($$,$2); yylogexpand($$,$4);                           }
+        {   $$ = Myylognode(TOK_SETOP,0);
+            Myylogexpand($$,$2); Myylogexpand($$,$4);                           }
     |	TOK_SETAGGR expression '}' expression_list
-        {   $$ = yylognode(TOK_SETAGGR,0);
-            yylogexpand($$,$2); yylogexpand($$,$4);                           }
+        {   $$ = Myylognode(TOK_SETAGGR,0);
+            Myylogexpand($$,$2); Myylogexpand($$,$4);                           }
     |   '(' expression ')'
         {   $$ = $2;                                                          }
     ;
@@ -1148,8 +1148,8 @@ template:
         temptok
         {   $$ = $1; }
     |   TOK_VARTEMP expression rangetemp
-	{   $$ = yylognode((int)(size_t)$3, 0);
-	    yylogexpand($$,$2); }
+	{   $$ = Myylognode((int)(size_t)$3, 0);
+	    Myylogexpand($$,$2); }
     ;
 
 rangetemp:
@@ -1190,9 +1190,9 @@ command_expression:
 
 operator_expression:
         operator
-        {   if (ll_firstnode) yylogexpand($1, ll_firstnode);                  }
+        {   if (ll_firstnode) Myylogexpand($1, ll_firstnode);                  }
         expression
-        {   yylogexpand($1, $3);
+        {   Myylogexpand($1, $3);
             $1->token = ($1->token == TOK_ASSIGNOP)?TOK_ASSIGNOP:TOK_FUNCTION;
             $$ = $1;                                                          }
     ;
@@ -1240,14 +1240,14 @@ expression_list:
 
 expressions:
         { $$ = ll_sugarnode; } param_expression
-        {    $$ = (ptr) yysugar($1); yylogexpand($$, $2);                     }
+        {    $$ = (ptr) yysugar($1); Myylogexpand($$, $2);                     }
     |   expressions ',' param_expression
-        {    yylogexpand($1, $3); $$ = $1;                                    }
+        {    Myylogexpand($1, $3); $$ = $1;                                    }
     ;
 
 param_expression:
 	TOK_CONST expression
-	{    $$ = yylognode(TOK_CONST,0); yylogexpand($$, $2);                }
+	{    $$ = Myylognode(TOK_CONST,0); Myylogexpand($$, $2);                }
      |  expression
 	{    $$ = $1;                                                         }
     ;
@@ -1261,31 +1261,31 @@ modident:
 
 modidents:
         modident
-        {    $$ = yylognode(0,0);
-             $1->yyval.len = 0; yylogexpand($$, $1);                          }
+        {    $$ = Myylognode(0,0);
+             $1->yyval.len = 0; Myylogexpand($$, $1);                          }
     |   modidents ',' modident
-        {    $3->yyval.len = 0; yylogexpand($1, $3); $$ = $1;                 }
+        {    $3->yyval.len = 0; Myylogexpand($1, $3); $$ = $1;                 }
     ;
 
 constidents:
 	TOK_IDENT TOK_ASSIGNMENT expression
-        {    $$ = yylognode(0,0);
-             yylogexpand($1, yylognode(TOK_TEMPLATE, 0));
-             yylogexpand($1, $3);
+        {    $$ = Myylognode(0,0);
+             Myylogexpand($1, Myylognode(TOK_TEMPLATE, 0));
+             Myylogexpand($1, $3);
              $1->token = TOK_ASSIGNMENT;
-             $1->yyval.len = 0; yylogexpand($$, $1);                          }
+             $1->yyval.len = 0; Myylogexpand($$, $1);                          }
     |   constidents ',' TOK_IDENT TOK_ASSIGNMENT expression
-        {    yylogexpand($3, yylognode(TOK_TEMPLATE, 0));
-             yylogexpand($3, $5);
+        {    Myylogexpand($3, Myylognode(TOK_TEMPLATE, 0));
+             Myylogexpand($3, $5);
              $3->token = TOK_ASSIGNMENT;
-             $3->yyval.len = 0; yylogexpand($1, $3); $$ = $1;                 }
+             $3->yyval.len = 0; Myylogexpand($1, $3); $$ = $1;                 }
     ;
 
 varidents:
         ident_decl
-        {    $$ = yylognode(0,0); yylogexpand($$, $1);                        }
+        {    $$ = Myylognode(0,0); Myylogexpand($$, $1);                        }
     |   varidents ',' ident_decl
-        {    yylogexpand($1, $3); $$ = $1;                                    }
+        {    Myylogexpand($1, $3); $$ = $1;                                    }
     ;
 
 initialization:
@@ -1299,8 +1299,8 @@ ident_decl:
         { ll_resolution = 0; } TOK_IDENT { ll_resolution = 1; } initialization
         {    $$ = $2; $2->yyval.len = 0;
              if ($4) {
-                 yylogexpand($$, yylognode(TOK_TEMPLATE, 0));
-                 yylogexpand($$, $4);
+                 Myylogexpand($$, Myylognode(TOK_TEMPLATE, 0));
+                 Myylogexpand($$, $4);
                  $$->token = TOK_ASSIGNMENT;
              }                                                                }
     ;
