@@ -221,7 +221,7 @@ libstream.so", unless there are references to GDK{realloc,malloc,free}
 in main(). Hence, we add such "fake" references, here.
 (See also the "alloca-story" in sql_client.)
 */
-#if ( defined(__INTEL_COMPILER) && (!defined(STATIC)) )
+#ifdef __INTEL_COMPILER
 	if(0){
 		(void)GDKrealloc(0,0);
 		(void)GDKmalloc(0);
