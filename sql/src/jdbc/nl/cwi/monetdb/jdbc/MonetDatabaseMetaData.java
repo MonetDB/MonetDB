@@ -2398,14 +2398,26 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		boolean approximate
 	) throws SQLException
 	{
-		String query =
-			"SELECT null AS TABLE_CAT, '' AS TABLE_SCHEM, '' AS TABLE_NAME, " +
-			"false AS NON_UNIQUE, '' AS INDEX_QUALIFIER, '' AS INDEX_NAME, " +
-			"0 AS TYPE, 0 AS ORDINAL_POSITION, '' AS COLUMN_NAME, " +
-			"'' AS ASC_OR_DESC, 0 AS CARDINALITY, 0 AS PAGES, " +
-			"'' AS FILTER_CONDITION WHERE 1 = 0";
+		String columns[] = {
+			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE",
+			"INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION", "TYPE",
+			"COLUMN_NAME", "ASC_OR_DESC", "CARDINALITY", "PAGES",
+			"FILTER_CONDITION"
+		};
 
-		return(getStmt().executeQuery(query));
+		String types[] = {
+			"varchar", "varchar", "varchar", "boolean",
+			"varchar", "varchar", "mediumint", "mediumint",
+			"varchar", "varchar", "mediumint", "mediumint", "varchar"
+		};
+
+		String[][] results = new String[0][columns.length];
+
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage());
+		}
 	}
 
 	// ** JDBC 2 Extensions **
