@@ -870,9 +870,10 @@ void sqltypeinit()
 	int i;
 
 	sql_type *ts[100];
-	sql_type **misc, **strings, **numerical, **decimals, **floats, **dates;
-	sql_type **t, *INT, *LNG, *OID, *BIT, *DBL, *T;
-	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP;
+	sql_type **misc, **strings, **numerical;
+	sql_type **decimals, **floats, **dates, **end, **t;
+	sql_type *INT, *LNG, *OID, *BIT, *DBL, *T;
+	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP; 
 
  	t = ts;
 	*t++ = sql_create_type("TABLE", 0, 0, 0, 	 	"bat");
@@ -941,6 +942,7 @@ void sqltypeinit()
 	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0,0, 		"timestamp");
 
 	*t++ = sql_create_type("BLOB", 0, 0, 0, "blob");
+	end = t;
 	*t = NULL;
 
 	for(i=0; ts[i]; i++){
@@ -1055,6 +1057,19 @@ void sqltypeinit()
 	      	sql_create_func("convert", buf, *t, NULL, *u, SCALE_FIX );
 	  }
 	}
+
+
+	/* convert string to temporal */
+	for(t=strings; t < numerical; t++){
+	  sql_type **u;
+	  for(u=dates; u < end; u++){
+	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
+	  }
+	  for(u=misc; u < strings; u++){
+	      	sql_create_func("convert", (*u)->base.name, *t, NULL, *u, SCALE_FIX );
+	  }
+	}
+
 	/* convert string to decimals, these require a more complex conversion
 	   as both number of digits and precision should be checked */
 	for(t=strings; t < numerical; t++){
