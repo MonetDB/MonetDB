@@ -1,7 +1,7 @@
 /* Define this if the compiler has bool type defined */
 #undef HAVE_BOOL
 
-/* Define this if you have the readline library */
+/* Define this if you have the pthread library */
 #undef HAVE_LIBPTHREAD
 
 /* Define this if you have the readline library */

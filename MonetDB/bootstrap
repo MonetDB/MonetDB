@@ -25,7 +25,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 		fi
 	fi
 	AUTOGEN=$MONET_PREFIX/lib/autogen/autogen.py
-	CONFDIR='$MONET_PREFIX/bin/monet-config --pkgdatadir'/conf
+	CONFDIR=`$MONET_PREFIX/bin/monet-config --pkgdatadir`/conf
 fi
 
 find . -name .cache\* \-exec rm {} \;
@@ -40,6 +40,11 @@ if [ $_AM_VERSION -gt $_REQ_AM_VERSION ]; then
 elif [ $_AM_VERSION -lt $_REQ_AM_VERSION ]; then
 	echo "automake $AM_VERSION is older then $REQ_AM_VERSION"
 fi
+
+#Some variables autogen needs to be able to expand
+#to get the dependencies right.
+export MONET_INCLUDEDIR=`$MONET_PREFIX/bin/monet-config --includedir`
+export MONET_INCS=`$MONET_PREFIX/bin/monet-config --includes`
 
 $AUTOGEN `pwd` $_AM_VERSION
 
@@ -111,7 +116,7 @@ test -f conf/ltconfig && perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&
 #EOF
 #)
 
-aclocal -I . -I $CONFDIR
+aclocal -I . -I conf -I $CONFDIR
 
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
