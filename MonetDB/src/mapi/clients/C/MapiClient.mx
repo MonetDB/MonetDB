@@ -634,8 +634,13 @@ int main(int ac, char **av)
 		if(nme) debug= strtol(nme, NULL, 10);
 	}
 	if(port==0){
-		char *nme;
-		nme=mo_find_option(set, setlen, "mapi_port");
+		char *nme, *prt;
+		if (strcmp(language,"sql")==0) {
+			prt="sql_port";
+		} else {
+			prt="mapi_port";
+		}
+		nme=mo_find_option(set, setlen, prt);
 		if(nme) port= strtol(nme, NULL, 10);
 	}
 
