@@ -14,13 +14,19 @@ then
 fi
 
 # enhance PATH with Msql and MonetDB binaries
-PATH="${builddir}/src/client:${MONET_PREFIX}/bin:$PATH"; export PATH
-
-MOD_PATH="${builddir}/src/client/.libs:${builddir}/src/common/.libs:${builddir}/src/odbc/driver/.libs:${builddir}/src/odbc/setup/.libs:${builddir}/src/server/.libs:/ufs/sjoerd/Monet/lib/MonetDB"
+PATH="${builddir}/src/client:${builddir}/src/tools:${MONET_PREFIX}/bin:$PATH"
+MOD_PATH="${builddir}/src/server/.libs:${MONET_PREFIX}/lib/MonetDB"
+libpath="${MOD_PATH}:${builddir}/src/client/.libs:${builddir}/src/common/.libs:${builddir}/src/odbc/driver/.libs:${builddir}/src/odbc/setup/.libs"
+LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
+if [ "${uname}" = "Darwin" ] ; then
+	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"
+	export DYLD_LIBRARY_PATH
+fi
+export PATH LD_LIBRARY_PATH
 
 # execute Mtest.py in the source directory
 cd "$srcdir"
 
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
-exec Mtest.py --monet_mod_path="$MOD_PATH" --SQL_PREFIX="$MONET_PREFIX" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" "${@--r}"
+exec Mtest.py --monet_mod_path="$MOD_PATH" --SQL_PREFIX="${builddir}/src/tools" --TSTSRCBASE="$srcdir" --TSTBLDBASE="$builddir" --TSTTRGBASE="${builddir}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" "${@--r}"
