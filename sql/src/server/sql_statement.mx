@@ -565,7 +565,11 @@ void stmt_destroy(stmt * s)
 		case st_exception:
 		case st_partial_pivot: case st_pivot:
 		case st_export:
-		case st_find:
+	  /*case st_find:*/
+	  /* Stefan: this should be here, but then it causes an
+	   * "Mserver: /ufs/manegold/Monet/4.3/sql/src/server/sql_mem.mx:92: sql_ref_dec: Assertion `r->refcnt > 0' failed."
+	   * in test src/benchmarks/tpch/Tests/load ; hence, we move it below until the respective bug is located and fixed.
+	   */
 
 			if (s->op1.stval) stmt_destroy(s->op1.stval);
 			if (s->op2.stval) stmt_destroy(s->op2.stval);
@@ -648,7 +652,12 @@ void stmt_destroy(stmt * s)
 			if (s->op4.stval) stmt_destroy(s->op4.stval);
 			break;
 
-		case st_senddata:	/* pacify compiler */
+	  case st_find:
+	  /* Stefan: this should be above, but then it causes an
+	   * "Mserver: /ufs/manegold/Monet/4.3/sql/src/server/sql_mem.mx:92: sql_ref_dec: Assertion `r->refcnt > 0' failed."
+	   * in test src/benchmarks/tpch/Tests/load ; hence, we move it here until the respective bug is located and fixed.
+	   */
+	  case st_senddata:	/* pacify compiler */
 			break;
 		}
 		if (s->h) 
