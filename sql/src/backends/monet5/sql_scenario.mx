@@ -52,6 +52,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_scenario.h"
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
+#include "sql_cache.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme,int autocommit);
 
@@ -364,7 +365,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		char name[BUFSIZ];
 
 		(void)snprintf( name, BUFSIZ, "sql%d", be->q->id);
-		backend_call(be, c, name, be->mvc->args );
+		backend_call(be, c, name, m->args );
 	}
 @-
 In the final phase we add any debugging control
@@ -377,16 +378,6 @@ In the final phase we add any debugging control
 			     newConstant(c->curprg->def,TYPE_bit,
 				       GDKstrdup("false"),0));
 		pushInstruction(c->curprg->def,q);
-	}
-
-	/*
- 	 * clear query cache after Transaction boundaries (commit/rollback)
-	 * and on schema changes
-	 */
-	if (m->cache &&
-	   ( m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id > 100)) {
-		if (m->qc) qc_destroy(m->qc);
-		m->qc = qc_create();
 	}
 
         sqlcleanup(m, err, cache);
@@ -445,6 +436,7 @@ str SQLengine(Client c) {
 	str msg =MAL_SUCCEED;
 	MalStkPtr oldglb= c->glb;
 	backend *be= ((backend*)c->state[PARSER]);
+	mvc *m = be->mvc;
 	lng T0;
 
 	if( c->curprg->def->errors)
@@ -462,7 +454,7 @@ unless auto_commit has been set.
 	if( msg != MAL_SUCCEED) stream_printf(GDKout,"error received %s\n",msg);
 	if( c->curprg->def->errors){
 		stream_printf(GDKout,"Execution produced errors");
-		sql_error(be->mvc,1,"Execution produced errors");
+		sql_error(m,1,"Execution produced errors");
 	}
 	c->glb= oldglb;
 	if( explainSQL()){
@@ -493,6 +485,28 @@ Then the SQL history table is just a view over a few basic bats.
 
 		(void)SQLstatement(&ret, &stmt); 
 	}
+
+	/*
+ 	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * and on schema changes
+	 */
+	if (m->cache &&
+	   ( m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id > 100)) {
+		if (m->qc){
+			oid id;
+			int ret = 0;
+
+			for(id = 0; id < m->qc->id; id++){
+				char buf[BUFSIZ], *nme = buf;
+				snprintf(buf, BUFSIZ, "sql%d", id);
+				SQLCacheRemove(&ret, &nme);
+			}
+			(void)ret;
+			qc_destroy(m->qc);
+		}
+		m->qc = qc_create();
+	}
+
 	return msg;
 }
 @-

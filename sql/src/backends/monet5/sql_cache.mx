@@ -63,6 +63,16 @@ if( @3 == NULL) { *@1 = 0;
 		"cannot access descriptor @2");
 }
 @-
+
+@h
+#ifndef _SQL_CACHE_H_
+#define _SQL_CACHE_H_
+#include "sql.h"
+
+#define _SQL_CACHE_DEBUG
+sql_export str SQLCacheRemove(int *ret, str *nme);
+
+#endif /* _SQL_CACHE_H_ */
 @c
 #include "mal.h"
 #include "mal_interpreter.h"
@@ -115,6 +125,9 @@ str SQLCacheRemove(int *ret, str *nme){
         Client c = getClient();
 
 	(void) ret;
+#ifdef _SQL_CACHE_DEBUG
+	stream_printf(GDKout,"SQLCacheRemove %s\n", *nme);
+#endif
 	scope= findScope(c->nspace,"sql_cache");
 	if( scope == NULL)
 		return throwMessage("sql_cache.remove",
