@@ -492,13 +492,12 @@ int sqlexecute(backend * be, stream *out )
 
 		T1 = GDKusec();
 		/* TODO use sql_prepare/execute */
-		snprintf(buf, BUFSIZ, "insert into history values(now,\"%s\",%lld,%lld,%lld,%lld,USER);\n", query, Tparse-T0, Tmil-Tparse, Texec-Tmil, T1-T0);
+		snprintf(buf, BUFSIZ, "insert into history values(now,'%s',%lld,%lld,%lld,%lld,USER);\n", query, Tparse-T0, Tmil-Tparse, Texec-Tmil, T1-T0);
 		_DELETE(query);
 		/* switch of explain to prevent recursion */ 
 		c->explain = NULL; 
 		(void)mvc_sql( c, buf);
 		c->explain = e; 
-		printf(buf);
 	}
 
 	if (!err && explain != ex_mil) {

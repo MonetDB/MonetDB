@@ -406,8 +406,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	CHARACTER VARYING NUMERIC sqlDECIMAL sqlFLOAT REAL
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
-	USER SESSION_USER
-	CURRENT_USER CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
+	USER CURRENT_USER SESSION_USER
+	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
 	LEX_ERROR
 
 %token <sval> sqlDELETE UPDATE SELECT INSERT
@@ -2068,17 +2068,21 @@ interval_type:
 		$$ = sql_bind_subtype("INTERVAL", 0, 0); }
  ;
 
+user:
+ |  USER     
+ |  SESSION_USER     
+ |  CURRENT_USER     
+ ;
+
 literal:
     string
 		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0 ); 
 		   $$ = _newAtomNode( atom_string(t, $1)); }
-/* TODO need to use user name or id ?? */
- |  USER     
-		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
-		   $$ = _newAtomNode( atom_string(t, _strdup($1))); }
- |  SESSION_USER     
-		{  sql_subtype *t = sql_bind_subtype("CHAR", strlen($1), 0);
-		   $$ = _newAtomNode( atom_string(t, _strdup($1))); }
+
+ | user 
+		{  mvc *m = (mvc*)parm;
+		   sql_subtype *t = sql_bind_subtype("CHAR", strlen(m->user),0);
+		   $$ = _newAtomNode( atom_string(t, _strdup(m->user))); }
 
  |  sqlINT   	{ int digits = strlen($1);
 		  long value = strtol($1,&$1,10); 
