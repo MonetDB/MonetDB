@@ -487,11 +487,15 @@ event_t K7_event[K7_NUMEVENTS + 1] = {
 
 #if defined(HAVE_LIBPFM)
 #include <perfmon/pfmlib.h>
+#if PFMLIB_MAJ_VERSION(PFMLIB_VERSION) > 2
+#undef HAVE_LIBPFM
+#else
 typedef struct {
 	pid_t pid;
 	pfmlib_param_t evt;
 	pfarg_reg_t pd[PMU_MAX_PMDS];
 } pfmInfo_t;
+#endif
 #endif
 
 #define X_NUMEVENTS 0
