@@ -32,7 +32,29 @@ the function resolution scheme.
 @mal
 include "thread";
 include "crackers";
-include "kernel_init";
+
+#include "pcl";
+include "unix";
+include "lock";
+include "alarm";
+include "mmath";
+
+include "blob";
+include "str";
+include "url";
+include "mtime";
+
+include "bat";
+#include "mkey";
+include "algebra";
+include "calc";
+include "batcalc";
+include "status";
+include "group";
+include "aggrX3";
+#include "unique";
+include "mapi";
+
 #include "x100core";
 include "clients";
 include "streams";

@@ -26,13 +26,13 @@
 @d 29/07/2003
 @* The table io module
 
-A database cannot live without ascii tabular print/dump/load operations. 
+A database cannot live without ASCII tabular print/dump/load operations. 
 It is needed to produce reasonable listings, to exchange answers
 with a client, and to keep a database version for backup.
 This is precisely where the tablet module comes in handy.
 [This module should replace all other table dump/load functions]
 
-We start with a simple example to illustrate the plain ascii
+We start with a simple example to illustrate the plain ASCII
 representation and the features provided. Consider the
 relational table answer(name:str, age:int, sex:chr, address:str, dob:date)
 obtained by calling the routine tablet.page(B1,...,Bn) where the Bi represent
@@ -230,21 +230,21 @@ dumping is tablet.SQLdump(stream,delim1,delim2);
 
 The load operation is for bulk loading a table, each column will be loaded
 into its own bat. The arguments are void-aligned bats describing the
-input, ie the name of the column, the tuple seperator and the type.  
+input, ie the name of the column, the tuple separator and the type.  
 The nr argument can be -1 (The input (datafile) is read until the end)
 or a maximum.
 
 The dump operation is for dumping a set of bats, which are aligned.
 Again with void-aligned arguments, with name (currently not used), 
-tuple seperator (the last is the record seperator) and bat to be dumped. 
+tuple separator (the last is the record separator) and bat to be dumped. 
 With the nr argument the dump can be limited (-1 for unlimited).
 
 The output operation is for ordered output. A bat (possibly form the collection)
 gives the order. For each element in the order bat the values in the bats are
 searched, if all are found they are outputed in the datafile, with the given
-seperators.
+separators.
 
-The scripts from the LOAD part are all there too for backward compatebility
+The scripts from the LOAD part are all there too for backward compatibility
 with the old Mload format files. 
 
 The load_format loads the format file, since the old format file was
@@ -253,7 +253,7 @@ in a table format it can be loaded with the load command.
 The result from load_format can be used with load_data to load the data
 into a set of new bats.
 
-These bats can be made persistent with the make_pesistent script or
+These bats can be made persistent with the make_persistent script or
 merge with existing bats with the merge_data script.
 
 The dump_format scripts dump a format file for a given set of 
@@ -284,7 +284,7 @@ command dump(names:bat[:void,:str],
 		datafile:str, nr:int)
 	:void 
 address CMDtablet_dump 
-comment "Dump the bat in ascii format";
+comment "Dump the bat in ASCII format";
 
 command output(order:bat[:any,:any], 
 		seps:bat[:void,:str], 
@@ -396,8 +396,8 @@ comment "Produce the i-th page of output";
 @+ Implementation
 The implementation needs the stream abstraction, which also provides
 primitives to compress/decompress files on the fly.
-The file can plain ascii, gzipped or bzipped, decided by the extention 
-(none, gz or bz2). The default is plain ascii, which is formatted to
+The file can plain ASCII, gzipped or bzipped, decided by the extention 
+(none, gz or bz2). The default is plain ASCII, which is formatted to
 pre presented on the screen directly.
 
 @= getBATdescriptor

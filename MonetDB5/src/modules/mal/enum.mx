@@ -28,7 +28,7 @@
 When large sets of data are stored and memory is short, one 
 seeks for memory occupation optimizations.
 
-One way to do this when the ordinality is low, is to substitute
+One way to do this when the cardinality is low, is to substitute
 the datatype to a smaller ordinal datatype. For instance, when 
 less than 256 different string values occur in an attribute, one 
 could store them as a byte. 

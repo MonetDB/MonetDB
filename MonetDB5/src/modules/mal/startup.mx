@@ -14,8 +14,8 @@ The negative effect is that this module is inspected as part of
 the function resolution scheme.
 
 @mal
-use "tcpip";
-use "threads";
+include "tcpip";
+include "threads";
 
 #include "pcl";
 include "unix";
@@ -39,19 +39,16 @@ include "aggrX3";
 #include "unique";
 include "mapi";
 
-use "chopper";
-use "io";
-use "streams";
-use "ascii_io";
-use "enum";
-use "mal";
-use "profiler";
-use "squeezer"; 
-use "multiplex";
-use "const"; 
-use "bbp";
-use "box"; 
-use "catalog";
+include "chopper";
+include "io";
+include "streams";
+include "enum";
+include "mal";
+include "profiler";
+include "multiplex";
+include "const"; 
+include "bbp";
+include "box"; 
 @-
 In practice, we have to introduce different startup for each
 client group or database.
