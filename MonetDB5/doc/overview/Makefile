@@ -1,7 +1,7 @@
 #This Makefile can be used to generate the documentation
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB website
-ps,pdf:
+ps,pdf: 
 	cp modules.tex overview.tex *.sty  ../../Linux/share/MonetDB
 	(cd ../../Linux/share/MonetDB/; \
 	latex -interaction=batchmode overview.tex ;\
@@ -23,3 +23,7 @@ web:
 	mkdir web/gdk; cp docs/gdk/*html web/gdk; \
 	)
 	echo "Web created"
+
+mklocal: ../../Linux/share/MonetDB/overview.pdf
+	cp ../../Linux/share/MonetDB/overview.pdf /ufs/mk/cwi/public_html/monet5
+	cp ../../Linux/share/MonetDB/modules.pdf /ufs/mk/cwi/public_html/monet5
