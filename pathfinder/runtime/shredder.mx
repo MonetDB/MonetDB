@@ -345,6 +345,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 #endif
                 if ( !BAThdense(sb->bat) )
                         stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
+                sb->bat = BATsetaccess( sb->bat, BAT_READ );
                 bat bbb = BBPcacheid( sb->bat );
                 if ( ! BUNins(res, &i, &bbb) ) {
                      stream_printf(GDKerr,"finalizeShredCtx:copy2result fails\n");
@@ -358,7 +359,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         BBPunfix( BBPcacheid( shredCtx->nslocBAT ) );
 #endif
         free( shredCtx );
-        return res;
+        return BATsetaccess( res, BAT_READ );
 }
 
 static int mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile);

@@ -859,20 +859,20 @@ PROC shred_doc_base(str flnm, str name, bit persistent,str opt) : void
     var docid := str(int(doc_oid));
     doc_oid := nil;
 
-    shredRES.fetch(PRE_SIZE).persists(persistent).bbpname("pre_size" + docid);
-    shredRES.fetch(PRE_LEVEL).[chr]().copy().persists(persistent).bbpname("pre_level"+docid);
-    shredRES.fetch(PRE_PROP).persists(persistent).bbpname("pre_prop" + docid);
-    shredRES.fetch(PRE_KIND).[chr]().copy().persists(persistent).bbpname("pre_kind" + docid);
-    shredRES.fetch(QN_NS).persists(persistent).bbpname("qn_ns" + docid);
-    shredRES.fetch(QN_LOC).persists(persistent).bbpname("qn_loc" + docid);
-    shredRES.fetch(PROP_TEXT).persists(persistent).bbpname("prop_text" + docid);
-    shredRES.fetch(PROP_COM).persists(persistent).bbpname("prop_com" + docid);
-    shredRES.fetch(PROP_TGT).persists(persistent).bbpname("prop_tgt" + docid);
-    shredRES.fetch(PROP_INS).persists(persistent).bbpname("prop_ins" + docid);
-    shredRES.fetch(ATTR_OWN).persists(persistent).bbpname("attr_own" + docid);
-    shredRES.fetch(ATTR_QN).persists(persistent).bbpname("attr_qn" + docid);
-    shredRES.fetch(ATTR_PROP).persists(persistent).bbpname("attr_prop" + docid);
-    shredRES.fetch(PROP_VAL).persists(persistent).bbpname("prop_val" + docid);
+    shredRES.fetch(PRE_SIZE).mmap(STORE_MMAP).persists(persistent).bbpname("pre_size" + docid);
+    shredRES.fetch(PRE_LEVEL).[chr]().copy().mmap(STORE_MMAP).persists(persistent).bbpname("pre_level"+docid);
+    shredRES.fetch(PRE_PROP).mmap(STORE_MMAP).persists(persistent).bbpname("pre_prop" + docid);
+    shredRES.fetch(PRE_KIND).[chr]().copy().mmap(STORE_MMAP).persists(persistent).bbpname("pre_kind" + docid);
+    shredRES.fetch(QN_NS).mmap(STORE_MMAP).persists(persistent).bbpname("qn_ns" + docid);
+    shredRES.fetch(QN_LOC).mmap(STORE_MMAP).persists(persistent).bbpname("qn_loc" + docid);
+    shredRES.fetch(PROP_TEXT).mmap(STORE_MMAP).persists(persistent).bbpname("prop_text" + docid);
+    shredRES.fetch(PROP_COM).mmap(STORE_MMAP).persists(persistent).bbpname("prop_com" + docid);
+    shredRES.fetch(PROP_TGT).mmap(STORE_MMAP).persists(persistent).bbpname("prop_tgt" + docid);
+    shredRES.fetch(PROP_INS).mmap(STORE_MMAP).persists(persistent).bbpname("prop_ins" + docid);
+    shredRES.fetch(ATTR_OWN).mmap(STORE_MMAP).persists(persistent).bbpname("attr_own" + docid);
+    shredRES.fetch(ATTR_QN).mmap(STORE_MMAP).persists(persistent).bbpname("attr_qn" + docid);
+    shredRES.fetch(ATTR_PROP).mmap(STORE_MMAP).persists(persistent).bbpname("attr_prop" + docid);
+    shredRES.fetch(PROP_VAL).mmap(STORE_MMAP).persists(persistent).bbpname("prop_val" + docid);
 
     # save all persistent BATs
     if ( persistent ) {
