@@ -163,12 +163,12 @@ CmdCode	m;
     
     f= GetFile(s,m);
     if( (f->f_mode & m) == m ){
-	ofile= fmustopen(f->f_tmp, "a");
+	ofile= fmustopen(f->f_tmp, "ab");
 	if(ofile==NULL)
 	    Fatal("IoWriteFile","can't append to:%s",f->f_tmp);
     } else {
 	f->f_mode |= m;
-	ofile= fmustopen(f->f_tmp, "w");
+	ofile= fmustopen(f->f_tmp, "wb");
 	if(ofile==NULL)
 	    Fatal("IoWriteFile","can't create:%s",f->f_tmp);
         if (disclaimer) insertDisclaimer(ofile,f->f_tmp);

@@ -185,11 +185,11 @@ char *file;
 	    sprintf(filename_body, "%s%c%s", outputdir, DIR_SEP, s);
 
 	    strcat(filename_index, ".index.html");
-	    ofile_index = fopen(filename_index, "w+");
+	    ofile_index = fopen(filename_index, "wb+");
             if (disclaimer) insertDisclaimer(ofile_index,filename_index);
 
 	    strcat(filename_body, ".body.html");
-	    ofile_body = fopen(filename_body, "w+");
+	    ofile_body = fopen(filename_body, "wb+");
             if (disclaimer) insertDisclaimer(ofile_body,filename_body);
 
 	    mx_out = 7; 
