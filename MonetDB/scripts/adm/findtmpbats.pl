@@ -33,8 +33,8 @@ my @dbs         = ();
 my %bats        = ();
 
 sub readBBP ($) {
-  my $dbdir = shift;
-  open BBP, "<$dbdir/BBP.dir";
+  my $bbp = shift;
+  open BBP, "<$bbp";
   <BBP>;
   while (<BBP>) {
     my @fs = split /,\s*/;
@@ -44,10 +44,12 @@ sub readBBP ($) {
 }
 
 sub checkBBP ($) {
-  my $dbdir = shift;
-  # print $dbdir, "\n";
+  my $bbp = shift;
+  my $dbdir;
   %bats = ();
-  readBBP $dbdir;
+  readBBP $bbp;
+  ($dbdir = $bbp) =~ s|(.*/bat)(?:/BACKUP)?/BBP.dir$|$1|;
+  # print "DIR: ", $dbdir, "\n";
   find(\&findtmpbats, $dbdir);
 }
 
@@ -71,7 +73,7 @@ sub findtmpbats {
 
 find 
   sub { 
-    push @dbs, $1 if -f && $File::Find::name =~ m|(.*)/BBP.dir|; 
+    push @dbs, $File::Find::name if -f && $File::Find::name =~ m|.*/BBP.dir$|; 
   }, 
   $dbfarm;
 map { checkBBP $_; } @dbs;
