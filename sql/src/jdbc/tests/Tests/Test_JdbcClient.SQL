@@ -1,30 +1,30 @@
 #!/bin/sh
 
-URL="jdbc:monetdb://${HOST}:${SQLPORT}/database?user=monetdb&password=monetdb${JDBC_EXTRA_ARGS}"
-
 if [ -f $SQL_BUILD/src/jdbc/MonetDB_JDBC.jar ] ; then
-	CLASSPATH="`$CYGPATH_WP "$SQL_BUILD/src/jdbc/MonetDB_JDBC.jar:$CLASSPATH"`"
+	JAR="`$CYGPATH_WP "$SQL_BUILD/src/jdbc/MonetDB_JDBC.jar"`"
   elif [ -f $TSTBLDBASE/src/jdbc/MonetDB_JDBC.jar ] ; then
-	CLASSPATH="`$CYGPATH_WP "$TSTBLDBASE/src/jdbc/MonetDB_JDBC.jar:$CLASSPATH"`"
+	JAR="`$CYGPATH_WP "$TSTBLDBASE/src/jdbc/MonetDB_JDBC.jar"`"
   elif [ -f $SQL_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar ] ; then
-	CLASSPATH="`$CYGPATH_WP "$SQL_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar:$CLASSPATH"`"
+	JAR="`$CYGPATH_WP "$SQL_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar"`"
   elif [ -f $MONETDB_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar ] ; then
-	CLASSPATH="`$CYGPATH_WP "$MONETDB_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar:$CLASSPATH"`"
+	JAR="`$CYGPATH_WP "$MONETDB_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar"`"
   else
-	CLASSPATH="`$CYGPATH_WP "$TSTTRGBASE/share/MonetDB/lib/MonetDB_JDBC.jar:$CLASSPATH"`"
+	JAR="`$CYGPATH_WP "$TSTTRGBASE/share/MonetDB/lib/MonetDB_JDBC.jar"`"
 fi
-if [ -f $SQL_BUILD/src/jdbc/tests/${TST}.class ] ; then
-	CLASSPATH="`$CYGPATH_WP "$SQL_BUILD/src/jdbc/tests:$CLASSPATH"`"
-  elif [ -f $TSTBLDBASE/src/jdbc/tests/${TST}.class ] ; then
-	CLASSPATH="`$CYGPATH_WP "$TSTBLDBASE/src/jdbc/tests:$CLASSPATH"`"
-  elif [ -f $SQL_PREFIX/share/sql/Tests/${TST}.class ] ; then
-	CLASSPATH="`$CYGPATH_WP "$SQL_PREFIX/share/sql/Tests:$CLASSPATH"`"
-  elif [ -f $MONETDB_PREFIX/share/sql/Tests/${TST}.class ] ; then
-	CLASSPATH="`$CYGPATH_WP "$MONETDB_PREFIX/share/sql/Tests:$CLASSPATH"`"
-  else
-	CLASSPATH="`$CYGPATH_WP "$TSTTRGBASE/share/sql/Tests:$CLASSPATH"`"
-fi
-export CLASSPATH
+export JAR
 
+cat << EOF > .monetdb
+user=monetdb
+password=monetdb
+EOF
 
-Mlog -x "java ${TST} \"${URL}\""
+LC_CTYPE="en_US.UTF-8"
+export LC_CTYPE
+
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../JdbcClient_create_tables.sql"
+
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../JdbcClient_inserts_selects.sql"
+
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -d"
+
+rm -f .monetdb
