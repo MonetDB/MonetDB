@@ -2,7 +2,7 @@
 
 set builddir=@MONETDB_BUILD@
 
-set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\calibrator\.libs;%builddir%\src\mapi\.libs
+set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\calibrator\.libs;%builddir%\src\modules\mnetcdf\.libs;%builddir%\src\mapi\.libs
 
 set PATH=%builddir%\src\testing;%builddir%\src\tools;%builddir%\src\mapi\clients\C;%builddir%\src\mapi\clients\python;%PATH%
 set PATH=%MOD_PATH%;%builddir%\src\common;%builddir%\src\gdk;%builddir%\src\mapi\clients\C;%builddir%\src\modules\plain\stream;%builddir%\src\monet;%PATH%
