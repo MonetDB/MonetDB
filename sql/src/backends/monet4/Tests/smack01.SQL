@@ -1,5 +1,5 @@
 #!/bin/sh
 
-export PATH=$MONET_BUILD/src/mapi/examples/C:$MONET_PREFIX/lib/MonetDB/Tests:$PATH
+PATH=$MONET_BUILD/src/mapi/examples/C:$MONET_PREFIX/lib/MonetDB/Tests:$PATH ; export PATH
 
 Mlog -x smack01 $SQLPORT sql
