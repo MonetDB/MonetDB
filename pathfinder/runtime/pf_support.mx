@@ -139,6 +139,15 @@ ADDHELP("chk_order", "manegold", "Jul 24 2004",
 	"  3 (and(r,8)==8): tail is not sorted.",
 	"pf_support");
 
+proc fetch(bat[any::1,any::2] b, bat[void,any] sel) : bat[any::1,any::2] {
+	var cnt := sel.count();
+	var lo := int(sel.seqbase());
+	var hi := lo + cnt - 1;
+	if ((cnt = 0) or isnil(lo)) {
+		lo := 1; hi := 0;
+	}
+	return b.slice(lo,hi);
+}
 
 proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) : bat[oid,oid] {
     var uniq := true;
