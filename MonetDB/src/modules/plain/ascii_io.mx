@@ -909,7 +909,7 @@ output_file_default( ascii *as, BAT *order, stream *fd )
 	int len = BUFSIZ, res = 0; 
 	char *buf = GDKmalloc(len);
 	BUN p,q;
-        size_t i = 0;
+	size_t i = 0;
 	size_t offset = BUNindex(order, BUNfirst(order)) + as->offset;
 
 	for(q = BUNptr(order, offset+as->nr), p = BUNptr(order, offset);
@@ -923,7 +923,7 @@ output_file_default( ascii *as, BAT *order, stream *fd )
 		i++;
 		if (ascii_io_debug && (i%1000000) == 0)
 			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
-        } 
+	} 
 	GDKfree(buf);
 	return res;
 }

@@ -65,6 +65,8 @@ gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
 #endif
 #define ALIGN(n,b)	((b)?(b)*(1+(((n)-1)/(b))):n)
 
+#define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
+
 BAT *BATcreatedesc(int ht, int tt, int heapnames) {
 	BAT *bn;
 @-
@@ -111,11 +113,17 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 	if (heapnames) {
 		str nme = BBP_physical(bn->batCacheid);
 		bn->batBuns->filename = (str) GDKmalloc(strlen(nme)+12);
-		bn->hheap.filename = (str) GDKmalloc(strlen(nme)+12);
-		bn->theap.filename = (str) GDKmalloc(strlen(nme)+12);
 		sprintf(bn->batBuns->filename, "%s.buns", nme);
-		sprintf(bn->theap.filename, "%s.theap", nme);
-		sprintf(bn->hheap.filename, "%s.hheap", nme);
+
+		if (ATOMneedheap(ht)) {
+			bn->hheap.filename = (str) GDKmalloc(strlen(nme)+12);
+			sprintf(bn->hheap.filename, "%s.hheap", nme);
+		}
+
+		if (ATOMneedheap(tt)) {
+			bn->theap.filename = (str) GDKmalloc(strlen(nme)+12);
+			sprintf(bn->theap.filename, "%s.theap", nme);
+		}
 	} else {
 		bn->batBuns->filename = NULL;
 		bn->hheap.filename = NULL;
@@ -848,7 +856,7 @@ bun is moved to its old place. The "hole" pointer is incremented.
 This bun was not committed, and should therefore disappear. The 
 last inserted bun (if present) is copied over it. 
 @c
-        	int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
+		int (*hunfix)(ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix)(ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel)(Heap*, var_t*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*, var_t*) = BATatoms[b->ttype].atomDel;

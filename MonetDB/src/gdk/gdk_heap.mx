@@ -114,7 +114,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 			GDKerror("HEAPalloc: Insufficient space for HEAP.");
 	}
 	if (h->filename && h->base == NULL) {
-        	char privext[PATHLENGTH], *of = h->filename;
+        char privext[PATHLENGTH], *of = h->filename;
 		FILE *fp;
 
 		h->filename = NULL;
@@ -123,7 +123,7 @@ int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
 		if (fp != NULL) {
 			fclose(fp);
 			/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
-        		h->storage = STORE_MMAP;
+        	h->storage = STORE_MMAP;
 			HEAPload(h, nme, ext, FALSE);
 		}
 		GDKfree(of);
@@ -147,7 +147,7 @@ The other way is to just save the mmap-ed heap, free it and reload it.
 @{
 @c
 int HEAPextend(Heap *h, size_t size) {
-        char nme[PATHLENGTH], *ext = NULL;
+	char nme[PATHLENGTH], *ext = NULL;
 	if (h->filename) {
 		strcpy(nme, h->filename);
 		ext = decompose_filename(nme);
@@ -160,7 +160,7 @@ int HEAPextend(Heap *h, size_t size) {
 		if (HEAPsave(h, nme, ext) < 0) 
 			return -1;
 		HEAPfree(h);
-        	h->maxsize = h->size = size;
+		h->maxsize = h->size = size;
 		if (HEAPload(h, nme, ext, FALSE) >= 0) 
 			return 0;
 	} else {
@@ -177,21 +177,22 @@ int HEAPextend(Heap *h, size_t size) {
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
 		if (h->filename == NULL || (size < GDK_vm_minsize)) {
-        		h->storage = STORE_MEM;
-                	h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
+        	h->storage = STORE_MEM;
+            h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
 			if (h->base) return 0;
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (h->filename && size >= GDK_vm_minsize) {
 			FILE *fp;
 
+			GDKfree(h->filename);
 			h->filename = NULL;
 			strcat(ext, ".priv");
 			fp = GDKfilelocate(nme, "wb", ext);
 			if (fp != NULL) {
 				fclose(fp);
 				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
-        			h->storage = STORE_MMAP;
+        		h->storage = STORE_MMAP;
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
@@ -225,23 +226,23 @@ simple: alloc and copy.
 @c
 int HEAPfree(Heap* h) {
 	if  (h->base) {
-        	if (h->storage == STORE_MEM) { /* plain memory */
-                	GDKfree(h->base);
-        	} else { /* mapped file, or STORE_PRIV */
-                	int ret = GDKmunmap(h->base, h->maxsize);
-                	if (ret < 0) {
+        if (h->storage == STORE_MEM) { /* plain memory */
+			GDKfree(h->base);
+        } else { /* mapped file, or STORE_PRIV */
+			int ret = GDKmunmap(h->base, h->maxsize);
+			if (ret < 0) {
 				GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
-                	}
-                	IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", 
-					PTRFMTCAST (void *) h->base, h->maxsize, ret);
-        	} 
-        	h->base = NULL;
+			}
+			IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT 
+				") = %d\n", PTRFMTCAST (void *) h->base, h->maxsize, ret);
+        } 
+		h->base = NULL;
 	}
 	if (h->filename) {
 		GDKfree(h->filename);
+		h->filename = NULL;
 	}
-	h->filename = NULL;
-        return 0;
+	return 0;
 }
 @}
 @- HEAPload

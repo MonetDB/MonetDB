@@ -842,22 +842,22 @@ bat BBPinsert(BAT *b) {
 	BBPgetsubdir(dirname, i);
 
 	if (++BBP_curstamp < 0) BBP_curstamp = 0;
-        b->batCacheid = i;
-        b->batStamp = BBP_curstamp;
-        b->creator_tid = BBP_getpid();
+	b->batCacheid = i;
+	b->batStamp = BBP_curstamp;
+	b->creator_tid = BBP_getpid();
 
 	BBP_status_set(i, 0, "BBPentry");
 	BBP_cache(i) = NULL;
 	BBP_desc(i) = NULL;
-        BBP_refs(i) = 1; /* new bats have 1 pin */
+	BBP_refs(i) = 1; /* new bats have 1 pin */
 	BBP_lrefs(i) = 0; /* ie. no logical refs */
-       	BBP_logical(-i) = NULL;
-       	BBP_logical(i) = GDKstrdup(b->batId);
+	BBP_logical(-i) = NULL;
+	BBP_logical(i) = GDKstrdup(b->batId);
 	BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(b->batId) - 4);
 	GDKfilepath(BBP_physical(i), dirname, b->batId+4, NULL);
 
-        BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", 
-				(int) i, b->batId, ATOMname(b->htype), ATOMname(b->ttype));
+	BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", 
+		(int) i, b->batId, ATOMname(b->htype), ATOMname(b->ttype));
 
 	return i;
 }
