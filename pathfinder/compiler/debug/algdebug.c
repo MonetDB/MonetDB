@@ -325,10 +325,6 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             }
             break;
 
-        case aop_doc_tbl:
-            PFarray_printf (dot, "%s", n->sem.doc_tbl.rel);
-            break;
-
         case aop_select:
             PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                             n->sem.select.att);
@@ -445,6 +441,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_fragment:
         case aop_frag_union:
         case aop_empty_frag:
+        case aop_doc_tbl:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
     }

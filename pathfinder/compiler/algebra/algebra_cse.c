@@ -251,7 +251,8 @@ find_doc_tbl (PFalg_op_t *new)
         PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
 
         if ((old->kind != aop_doc_tbl)
-         || strcmp (new->sem.doc_tbl.rel, old->sem.doc_tbl.rel))
+            || (old->child[0] != new->child[0])
+            || (old->child[1] != new->child[1]))
             continue;
 
         return old;

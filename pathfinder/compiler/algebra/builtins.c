@@ -1104,6 +1104,23 @@ PFbui_fn_empty (PFalg_op_t *loop __attribute__((unused)),
 	.frag = PFalg_empty_set ()};
 }
 
+/**
+ * Built-in function <code>fn:doc(xs:string?)</code>: Return root
+ * node of document that is found under given URI. Return empty
+ * sequence if the argument is the empty sequence.
+ *
+ * The latter (the ``empty sequence'') case is actually nice for
+ * us. No need to access the loop relation in any way.
+ */
+struct PFalg_pair_t
+PFbui_fn_doc (PFalg_op_t *loop __attribute__((unused)),
+              struct PFalg_pair_t *args)
+{
+    PFalg_op_t *doc = doc_tbl (args[0].rel);
+
+    return (struct PFalg_pair_t) {
+        .rel  = roots (doc), .frag = PFalg_set (fragment (doc)) };
+}
 
 /**
  * Build up operator tree for built-in function 'fn:typed-value'.

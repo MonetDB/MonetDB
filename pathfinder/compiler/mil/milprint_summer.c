@@ -245,6 +245,7 @@ init (FILE *f)
  * 
  * @param f the Stream the MIL code is printed to
  */
+static void print_output (FILE *f) __attribute__((unused));
 static void
 print_output (FILE *f)
 {

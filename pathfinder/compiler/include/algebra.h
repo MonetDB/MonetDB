@@ -245,11 +245,6 @@ union PFalg_op_sem_t {
     } lit_tbl;                    /**< semantic content for literal table
                                        constructor */
 
-    /* semantic content for document table operator */
-    struct {
-        char           *rel;      /**< (file) name of the document relation */
-    } doc_tbl;
-
     /* semantic content for projection operator */
     struct {
         int             count;    /**< length of projection list */
@@ -648,7 +643,7 @@ PFalg_op_t * PFalg_empty_frag (void);
 /**
  * Creates a representation for the doc table.
  */
-PFalg_op_t * PFalg_doc_tbl (char *rel);
+PFalg_op_t * PFalg_doc_tbl (PFalg_op_t *rel);
 
 
 /**

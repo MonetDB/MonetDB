@@ -493,7 +493,9 @@ element :   LSQBR ELEM operator operator operator RSQBR
 relation:   LSQBR REL RELREF RSQBR
             {
              /* [REL name] */
-	     $$=doc_tbl ($3);
+             PFoops (OOPS_FATAL,
+                     "Access to doc table now requires an algebra argument.");
+	     /* $$=doc_tbl ($3); */
             }
         ;
 

@@ -2025,15 +2025,11 @@ PFalg_empty_frag (void)
  * represents a fragment of nodes. That's why it also has no schema.
  */
 PFalg_op_t *
-PFalg_doc_tbl (char *rel)
+PFalg_doc_tbl (PFalg_op_t *rel)
 {
     PFalg_op_t         *ret;
 
-    /* instantiate a new document table representation */
-    ret = alg_op_leaf (aop_doc_tbl);
-
-    /* insert name of document relation */
-    ret->sem.doc_tbl.rel = rel;
+    ret = alg_op_wire1 (aop_doc_tbl, rel);
 
     /* set doc table schema */
     ret->schema.count = 0;

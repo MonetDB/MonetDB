@@ -217,10 +217,9 @@ FragRel:  docnode (Frag, Rel);
 FragRel:  comment (Rel);
 FragRel:  processi (Rel);
 FragRel:  merge_adjacent (Frag, Rel);
+FragRel:  doc_tbl (Rel);
 
 
-
-Frag:  doc_tbl;
 Frag:  fragment (FragRel);
 Frag:  frag_union (Frag, Frag);
 Frag:  frag_union (empty_frag, empty_frag)

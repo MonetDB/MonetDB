@@ -78,7 +78,8 @@
 , /* fn:doc (string?) as document? - FIXME: is type of PFty_doc right? */\
   { .ns = PFns_fn, .loc = "doc",                                         \
     .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
-    .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) }                 \
+    .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())),                  \
+    .alg = PFbui_fn_doc }                                                \
 , /* fn:position () as integer */                                        \
   { .ns = PFns_fn, .loc = "position",                                    \
     .arity = 0,                                                          \
