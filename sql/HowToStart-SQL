@@ -270,14 +270,27 @@ In case either of "bootstrap", "configure", or "make" fails --- especially
 after a "cvs update", or after you changed some code yourself --- please try
 the following step (in that order; if you are using the pre-packages source
 distribution, you have to skip steps 2 & 3):
-1) clean-up (remove) your whole build-directory (i.e., the one where you run
-   "configure" and "make", and which should not be your source directory)
-2) go to the top-level source directory and run
+
+0) In case only "make" fails, you can try to run
+	make clean
+   in your build-directory and proceed with step 5; 
+   however, if "make" then still fails, you have to re-start with step 1.
+1) Clean-up your whole build-directory (i.e., the one where you run
+   "configure" and "make") by going there and running
+	make maintainer-clean
+   In case your build-directory is different from your source directory,
+   your are even advised to remove the whole build-directory.
+2) Go to the top-level source directory and run
 	./de-bootstrap
-   this will remove all the files that were created during "bootstrap"
-3) in the top-level source directory, re-run
+   This will remove all the files that were created during "bootstrap".
+3) In the top-level source directory, re-run
 	./bootstrap
-4) in the build-directory, re-run "configure", "make", "make install"
+4) In the build-directory, re-run
+	configure
+   as described above.
+5) In the build-directory, re-run
+	make
+	make install
    as described above.
 
 If this still does not help, please contact us:
