@@ -63,7 +63,7 @@ AC_CHECK_PROG(LATEX,latex,latex)
 AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
 AC_CHECK_PROG(DVIPS,dvips,dvips)
 AC_CHECK_PROG(FIG2DEV,fig2dev,fig2dev)
-AM_CONDITIONAL(DOCTOOLS, test $LATEX -a $FIG2DEV -a $DVIPS) 
+AM_CONDITIONAL(DOCTOOLS, test -n "$LATEX" -a -n "$FIG2DEV" -a -n "$DVIPS") 
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
 
 dnl to shut up automake (.m files are used for mel not for objc)
