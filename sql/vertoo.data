@@ -1,2 +1,2 @@
 monetdb = major:4; minor:6; release:0;
-sql = major:2; minor:6; release:0; rc:rc; build:2;
+sql = major:2; minor:6; release:0; rc:rc; build:3;
