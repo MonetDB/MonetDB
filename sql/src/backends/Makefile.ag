@@ -1,3 +1,4 @@
 
 
-SUBDIRS = MONET4?monet4 MONET5?monet5 
+SUBDIRS = $(SQL_BACKEND)
+DIST_SUBDIRS = monet4 monet5
