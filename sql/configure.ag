@@ -10,47 +10,9 @@ AC_CANONICAL_HOST
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
-dnl check for compiler
-AC_ARG_WITH(gcc,
-[  --with-gcc=<compiler>   which C compiler to use
-  --without-gcc           do not use GCC], [
-	case $withval in
-	no)	CC=cc CXX=CC;;
-	yes)	CC=gcc CXX=g++;;
-	*)	CC=$withval;;
-	esac])
+AM_MONET
 
-AC_ARG_WITH(gxx,
-[  --with-gxx=<compiler>   which C++ compiler to use], [
-	case $withval in
-	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
-	*)	CXX=$withval;;
-	esac])
-
-AC_PROG_CC
-AC_PROG_CXX
-AC_PROG_CPP
-AC_PROG_GCC_TRADITIONAL
-
-dnl some dirty hacks
-thread_safe_flag_spec="-D_REENTRANT"
-[ case "$host_os" in
-  solaris*)
-    case "$CC" in
-      cc*) 
-	echo "$CC=cc"
-        thread_safe_flag_spec="-mt" ;;
-      *) ;;
-    esac
-    LEXLIB=-ll
-    ;;
-  irix*)
-    LEXLIB=-ll
-    ;;
-  aix*)
-    thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
-    ;;
-esac ]
+AM_MONET_COMPILER
 
 dnl Checks for programs.
 AC_PROG_INSTALL
@@ -75,7 +37,6 @@ AC_CHECK_TOOL(OBJC,objc)
 dnl Checks for header files.
 AC_HEADER_STDC
 
-AM_MONET
 AM_MONET_OPTIONS
 AM_MONET_LIBS
 

@@ -57,6 +57,93 @@ AC_SUBST(MONET_PREFIX)
 AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
 ])
 
+AC_DEFUN(AM_MONET_COMPILER,
+[
+dnl check for compiler
+AC_ARG_WITH(gcc,
+[  --with-gcc=<compiler>   which C compiler to use
+  --without-gcc           do not use GCC], [
+	case $withval in
+	no)	CC=cc CXX=CC;;
+	yes)	CC=gcc CXX=g++;;
+	*)	CC=$withval;;
+	esac])
+
+AC_ARG_WITH(gxx,
+[  --with-gxx=<compiler>   which C++ compiler to use], [
+	case $withval in
+	yes|no)	AC_ERROR(must supply a compiler when using --with-gxx);;
+	*)	CXX=$withval;;
+	esac])
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_GCC_TRADITIONAL
+
+bits=32
+AC_ARG_WITH(bits,
+[  --with-bits=<#bits>     specify number of bits (32 or 64)],[
+case $withval in
+32)	;;
+64)	case "$host" in
+	i?86*)	AC_ERROR([$host does not support 64 bits]);;
+	esac
+	;;
+*)	AC_ERROR(--with-bits argument must be either 32 or 64);;
+esac
+bits=$withval
+])
+case "$GCC-$host_os-$bits" in
+yes-solaris*-64)
+	case `$CC -v 2>&1` in
+	*'gcc version 3.'*)	;;
+	*)	AC_ERROR([need GCC version 3.X for 64 bits]);;
+	esac
+	CC="$CC -m$bits"
+	CXX="$CXX -m$bits"
+	;;
+-solaris*-64)
+	CC="$CC -xarch=v9"
+	CXX="$CXX -xarch=v9"
+	;;
+yes-irix*-64)
+	CC="$CC -mabi=$bits"
+	CXX="$CXX -mabi=$bits"
+	;;
+-irix*-64)
+	CC="$CC -$bits"
+	CXX="$CXX -$bits"
+	;;
+esac
+
+dnl some dirty hacks
+dnl we use LEXLIB=-ll because this is usually correctly installed 
+dnl and -lfl usually only in the 32bit version
+thread_safe_flag_spec="-D_REENTRANT"
+# only needed in monet
+MEL_LIBS=""
+case "$host_os" in
+solaris*)
+    case "$CC" in
+      cc*) 
+	echo "$CC=cc"
+	MEL_LIBS="-z muldefs"
+        thread_safe_flag_spec="-mt" ;;
+      *) ;;
+    esac
+    LEXLIB=-ll
+    ;;
+irix*)
+    LEXLIB=-ll
+    ;;
+aix*)
+    thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
+    ;;
+esac
+AC_SUBST(MEL_LIBS)
+])
+
 AC_DEFUN(AM_MONET_OPTIONS,
 [
 dnl --enable-debug
