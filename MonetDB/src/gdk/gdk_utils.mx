@@ -1254,8 +1254,8 @@ int GDKinit(char *dbname, char *dbfarm, int alloc_map) {
                 MT_Id t;
                 MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize);
 	}
-	return 1;
 #endif
+	return 1;
 }
 
 @- 
