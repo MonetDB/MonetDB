@@ -81,6 +81,7 @@ AlgExpr:  EmptyExpr
 AlgExpr:  lit_tbl;
 AlgExpr:  disjunion (AlgExpr, AlgExpr);
 AlgExpr:  cross (AlgExpr, AlgExpr);
+AlgExpr:  eqjoin (AlgExpr, AlgExpr);
 AlgExpr:  project (AlgExpr);
 AlgExpr:  rownum (AlgExpr);
 

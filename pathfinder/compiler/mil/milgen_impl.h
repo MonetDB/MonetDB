@@ -50,6 +50,7 @@ static int TWIG_ID[] = {
       [aop_lit_tbl]   lit_tbl    /**< literal table */
     , [aop_disjunion] disjunion  /**< union two relations with same schema */
     , [aop_cross]     cross      /**< cross product (Cartesian product) */
+    , [aop_eqjoin]    eqjoin     /**< cross product (Cartesian product) */
     , [aop_project]   project    /**< projection and renaming operator */
     , [aop_rownum]    rownum     /**< consecutive number generation */
 
@@ -68,6 +69,7 @@ static int TWIG_ID[] = {
 #undef lit_tbl
 #undef disjunion
 #undef cross
+#undef eqjoin
 #undef project
 #undef rownum
 #undef serialize
@@ -249,9 +251,21 @@ bat (PFmil_ident_t prefix, PFalg_att_t attribute, PFalg_simple_type_t type)
 {
     PFmil_ident_t ret;
     static const char *type_ident[] = {
+          [aat_nat]    "nat"
+        , [aat_int]    "int"
+        , [aat_str]    "str"
+        , [aat_node]   "node"
+        , [aat_dec]    "dec"
+        , [aat_dbl]    "dbl"
+        , [aat_bln]    "bln"
+    };
+
+    /*
+    static const char *type_ident[] = {
           [m_oid]    "oid"
         , [m_int]    "int"
         , [m_str]    "str" };
+    */
 
     /*
     assert (prefix);
@@ -259,9 +273,12 @@ bat (PFmil_ident_t prefix, PFalg_att_t attribute, PFalg_simple_type_t type)
     */
 
     /* allocate for prefix + attribute + max type + underscores + '\0' */
-    ret = PFmalloc (strlen (prefix) + strlen (attribute) + sizeof ("int") + 3);
+    ret = PFmalloc (strlen (prefix) + strlen (attribute) + sizeof ("node") + 3);
 
+    /*
     sprintf (ret, "%s_%s_%s", prefix, attribute, type_ident[impl_types[type]]);
+    */
+    sprintf (ret, "%s_%s_%s", prefix, attribute, type_ident[type]);
 
     return ret;
 }
@@ -316,7 +333,12 @@ deallocate (PFalg_op_t *n, int count)
 
         /* clear the bat_prefix field, so we won't
          * accidentally re-use this BAT */
-        n->bat_prefix = NULL;
+        /* FIXME: This has been commented out to facilitate debugging.
+         *        If the prefix is still available when printing the
+         *        algebra tree as dot output, we print the prefix with
+         *        each node.
+         */
+        /* n->bat_prefix = NULL; */
     }
 }
 
@@ -336,6 +358,22 @@ mono_col (PFalg_op_t *n)
                 return col;
 
     return -1;
+}
+
+/**
+ * Test if the given type is a monomorphic type and return true
+ * in that case. Otherwise return false.
+ */
+static bool
+is_monomorphic (PFalg_type_t type)
+{
+    PFalg_simple_type_t t;
+
+    for (t = 1; t; t <<= 1)
+        if (t == type)
+            return true;
+
+    return false;
 }
 
 /**

@@ -415,17 +415,14 @@ static struct option long_options[] = {
     { "optimize",                      0, NULL, 'O' },
     { "print-human-readable",          0, NULL, 'P' },
     { "timing",                        0, NULL, 'T' },
-    { "stop-after-algebra-generation", 0, NULL, 'a' },
-    { "stop-after-core-compilation",   0, NULL, 'c' },
-    { "daemon",                        0, NULL, 'd' },
+    { "print-algebra",                 0, NULL, 'a' },
+    { "print-core-tree",               0, NULL, 'c' },
+    { "daemon",                        2, NULL, 'd' },
     { "help",                          0, NULL, 'h' },
     { "log",                           0, NULL, 'l' },
-    { "stop-after-mil-generation",     0, NULL, 'm' },
-    { "stop-after-normalizing",        0, NULL, 'n' },
-    { "stop-after-parsing",            0, NULL, 'p' },
+    { "print-parse-tree",              0, NULL, 'p' },
     { "quiet",                         0, NULL, 'q' },
-    { "stop-after-algebra-rewrite",    0, NULL, 'r' },
-    { "stop-after-semantics",          0, NULL, 's' },
+    { "stop-after",                    1, NULL, 's' },
     { "typing",                        0, NULL, 't' },
     { NULL,                            0, NULL, 0 }
 };
@@ -434,7 +431,7 @@ static struct option long_options[] = {
  * character buffer large enough to hold longest
  * command line option plus some extra formatting space
  */
-static char opt_buf[sizeof ("stop-after-algebra-generation") + 8];
+static char opt_buf[sizeof ("print-human-readable") + 8];
 
 static int 
 cmp_opt (const void *o1, const void *o2) 
@@ -504,6 +501,29 @@ static const char
 /* GC_max_retries, GC_gc_no */
 #include "gc.h"
 
+static char *phases[] = {
+    [ 1]    "right after input parsing",
+    [ 2]    "after parse/abstract syntax tree has been normalized",
+    [ 3]    "after namespaces have been checked and resolved",
+    [ 4]    "after variable scoping has been checked",
+    [ 5]    "after XQuery built-in functions have been loaded",
+    [ 6]    "after valid function usage has been checked",
+    [ 7]    "after XML Schema predefined types have been loaded",
+    [ 8]    "after XML Schema document has been imported (if any)",
+    [ 9]    "after the abstract syntax tree has been mapped to Core",
+    [10]    "after the Core tree has been simplified/normalized",
+    [11]    "after type inference and checking",
+    [12]    "after the Core tree has been translated to the internal algebra",
+    [13]    "after the common subexpression elimination on the algebra tree",
+    [14]    "after the algebra tree has been rewritten/optimized",
+    [15]    "after the algebra has been translated to MIL",
+    [16]    "after the MIL program has been serialized"
+};
+
+#define STOP_POINT(a) \
+    if ((a) == PFstate.stop_after) \
+        goto bailout;
+
 /** global state of the compiler */
 PFstate_t PFstate = {
     quiet               : false,
@@ -511,9 +531,12 @@ PFstate_t PFstate = {
     timing              : false,
     print_dot           : false,
     print_pretty        : false,
-    stop_after          : phas_all,
+    stop_after          : 0,
     print_types         : false,
-    optimize            : false
+    optimize            : false,
+    print_parse_tree    : false,
+    print_core_tree     : false,
+    print_algebra_tree  : false
 };
 
 /**
@@ -605,6 +628,7 @@ main (int argc, char *argv[])
     PFalg_op_t *aroot  = 0;
     PFmil_t    *mroot  = 0;
     PFarray_t  *mil_program = 0;
+    unsigned int i;
 
     /* fd of the log file (if present) */
     int logf = 0;
@@ -634,10 +658,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "DMOPTacd:hl:mnpqrst", 
+        c = getopt_long (argc, argv, "DMOPTacd:hl:pqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "DMOPTacd:hl:mnpqrst");
+        c = getopt (argc, argv, "DMOPTacd:hl:pqrs:t");
 #endif
 
         if (c == -1)
@@ -657,6 +681,8 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s file", 'l'));
             printf ("  -d port%s: act as dæmon listening on specified TCP port\n",
                     long_option (opt_buf, ", --%s port", 'd'));
+            printf ("  -M%s: print MIL code (summer version) and stop\n",
+                    long_option (opt_buf, ", --%s", 'M'));
             printf ("  -P%s: print internal tree structure human-readable\n",
                     long_option (opt_buf, ", --%s", 'P'));
             printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
@@ -665,24 +691,20 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'T'));
             printf ("  -O%s: enable (expensive) optimizations\n",
                     long_option (opt_buf, ", --%s", 'O'));
-            printf ("  -t%s: print static types (in {...}) for core (implies -P)\n",
+            printf ("  -t%s: print static types (in {...}) for core\n",
                     long_option (opt_buf, ", --%s", 't'));
-            printf ("  -p%s: stop processing after parsing\n",
-                    long_option (opt_buf, ", --%s", 'p'));
-            printf ("  -s%s: stop after semantical analysis\n",
+            printf ("  -s%s: stop processing after certain phase:\n",
                     long_option (opt_buf, ", --%s", 's'));
-            printf ("  -n%s: stop after core tree normalization\n",
-                    long_option (opt_buf, ", --%s", 'n'));
-            printf ("  -c%s: stop after core language generation\n",
+
+            for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
+                printf ("        %2u  %s\n", i, phases[i]);
+
+            printf ("  -p%s: print internal parse tree\n",
+                    long_option (opt_buf, ", --%s", 'p'));
+            printf ("  -c%s: print internal Core language\n",
                     long_option (opt_buf, ", --%s", 'c'));
-            printf ("  -M%s: print MIL code (summer version) and stop\n",
-                    long_option (opt_buf, ", --%s", 'M'));
             printf ("  -a%s: stop after algebra tree generation\n",
                     long_option (opt_buf, ", --%s", 'a'));
-            printf ("  -r%s: stop after algebra tree rewrite/optimization\n",
-                    long_option (opt_buf, ", --%s", 'r'));
-            printf ("  -m%s: stop after MIL code generation\n",
-                    long_option (opt_buf, ", --%s", 'm'));
             printf ("\n");
             printf ("Enjoy.\n");
             exit (0);
@@ -703,38 +725,22 @@ main (int argc, char *argv[])
             break;
 
         case 'p':
-            if (PFstate.stop_after > phas_parse)
-                PFstate.stop_after = phas_parse;
-            break;
-
-        case 'n':
-            if (PFstate.stop_after > phas_simpl)
-                PFstate.stop_after = phas_simpl;
-            break;
-
-        case 's':
-            if (PFstate.stop_after > phas_semantics)
-                PFstate.stop_after = phas_semantics;
+            PFstate.print_parse_tree = true;
             break;
 
         case 'c':
-            if (PFstate.stop_after > phas_fs)
-                PFstate.stop_after = phas_fs;
+            PFstate.print_core_tree = true;
             break;
 
         case 'a':
-            if (PFstate.stop_after > phas_alg)
-                PFstate.stop_after = phas_alg;
+            PFstate.print_algebra_tree = true;
             break;
 
-        case 'r':
-            if (PFstate.stop_after > phas_algopt)
-                PFstate.stop_after = phas_algopt;
-            break;
-
-        case 'm':
-            if (PFstate.stop_after > phas_mil)
-                PFstate.stop_after = phas_mil;
+        case 's':
+            PFstate.stop_after = atoi (optarg);
+            if (PFstate.stop_after >= (sizeof (phases) / sizeof (*phases)))
+                PFoops (OOPS_CMDLINEARGS,
+                        "unrecognized stop point. Try `%s -h'", progname);
             break;
 
         case 'D':
@@ -742,8 +748,7 @@ main (int argc, char *argv[])
             break;
 
         case 'M':
-            if (PFstate.stop_after > phas_mil_summer)
-                PFstate.stop_after = phas_mil_summer;
+            PFstate.summer_branch = true;
             break;
 
         case 'P':
@@ -760,7 +765,6 @@ main (int argc, char *argv[])
 
         case 't':
             PFstate.print_types = true;
-            PFstate.print_pretty = true;
             break;
 
         default:
@@ -831,10 +835,7 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("parsing:\t\t %s", PFtimer_str (tm));
 
-    if (PFstate.stop_after == phas_parse) {
-        print_abssyn (proot);
-        goto bailout;
-    }
+    STOP_POINT(1);
     
     tm = PFtimer_start ();
 
@@ -846,19 +847,24 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("normalization:\t %s", PFtimer_str (tm));
 
+    STOP_POINT(2);
+    
     tm = PFtimer_start ();
 
-    /* Resolve NS usage 
-     */
+    /* Resolve NS usage */
     PFns_resolve (proot);
 
-    /* Check variable scoping and replace QNames by PFvar_t pointers 
-     */
+    STOP_POINT(3);
+    
+    /* Check variable scoping and replace QNames by PFvar_t pointers */
     PFvarscope (proot);
   
-    /* Load built-in XQuery F&O into function environment 
-     */
+    STOP_POINT(4);
+
+    /* Load built-in XQuery F&O into function environment */
     PFfun_xquery_fo ();
+
+    STOP_POINT(5);
 
     /* Resolve function usage 
      */
@@ -868,24 +874,23 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("semantical analysis:\t %s", PFtimer_str (tm));
 
-    if (PFstate.stop_after == phas_semantics) {
-        print_abssyn (proot);
-        goto bailout;
-    }
+    STOP_POINT(6);
 
     tm = PFtimer_start ();
 
-    /* Load XML Schema/XQuery predefined types into the type environment
-     */
+    /* Load XML Schema/XQuery predefined types into the type environment */
     PFty_predefined ();
     
-    /* XML Schema import 
-     */
+    STOP_POINT(7);
+
+    /* XML Schema import */
     PFschema_import (proot);
 
     tm = PFtimer_stop (tm);
     if (PFstate.timing)
         PFlog ("XML Schema import:\t %s", PFtimer_str (tm));
+
+    STOP_POINT(8);
 
     tm = PFtimer_start ();
 
@@ -897,13 +902,9 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("core mapping:\t\t %s", PFtimer_str (tm));
 
-    if (PFstate.stop_after == phas_fs) {
-        print_core (croot);
-        goto bailout;
-    }
+    STOP_POINT(9);
 
-    /* Core simplification
-     */
+    /* Core simplification */
     tm = PFtimer_start ();
 
     croot = PFsimplify (croot);
@@ -912,13 +913,9 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("core simplification:\t %s", PFtimer_str (tm));
 
-    if (PFstate.stop_after == phas_simpl) {
-        print_core (croot);
-        goto bailout;
-    }
+    STOP_POINT(10);
 
-    /* Type inference and check
-     */
+    /* Type inference and check */
     tm = PFtimer_start ();
   
     croot = PFty_check (croot);
@@ -927,8 +924,7 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("type checking:\t %s", PFtimer_str (tm));
 
-    if (PFstate.print_types)
-        print_core (croot);
+    STOP_POINT(11);
 
 
     /*
@@ -963,7 +959,7 @@ main (int argc, char *argv[])
     /*
      * generate temporary MIL Code (summer branch version)
      */
-    if (PFstate.stop_after == phas_mil_summer) {
+    if (PFstate.summer_branch) {
         tm = PFtimer_start ();
         PFprintMILtemp (stdout, croot);
 
@@ -983,6 +979,8 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("Algebra tree generation:\t %s", PFtimer_str (tm));
 
+    STOP_POINT(12);
+
     /* 
      * common subexpression elimination in the algebra tree
      */
@@ -995,14 +993,9 @@ main (int argc, char *argv[])
         PFlog ("Common subexpression elimination in algebra tree:\t %s",
                PFtimer_str (tm));
 
-    if (PFstate.stop_after == phas_alg) {
-        print_algebra (aroot);
-        goto bailout;
-    }
+    STOP_POINT(13);
 
-    /*
-     * Rewrite/optimize algebra tree
-     */
+    /* Rewrite/optimize algebra tree */
     tm = PFtimer_start ();
 
     aroot = PFalgopt (aroot);
@@ -1012,36 +1005,27 @@ main (int argc, char *argv[])
     if (PFstate.timing)
         PFlog ("Algebra tree rewrite/optimization:\t %s", PFtimer_str (tm));
 
-    if (PFstate.stop_after == phas_algopt) {
-        print_algebra (aroot);
-        goto bailout;
-    }
-
+    STOP_POINT(14);
 
     tm = PFtimer_start ();
 
-    /* Map core to MIL 
-     */
+    /* Map core to MIL */
     mroot = PFmilgen (aroot);
 
     tm = PFtimer_stop (tm);
     if (PFstate.timing)
         PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
 
-    /*
-    if (PFstate.stop_after == phas_mil) {
-        print_mil (mroot);
-        goto bailout;
-    }
-    */
+    STOP_POINT(15);
 
     /* Render MIL program in Monet MIL syntax 
      */
     if (!(mil_program = PFmil_serialize (mroot)))
         goto failure;
 
-    /* Print MIL program to stdout
-     */
+    STOP_POINT(16);
+
+    /* Print MIL program to stdout */
     if (mil_program)
         PFmilprint (stdout, mil_program);
 
@@ -1052,6 +1036,51 @@ main (int argc, char *argv[])
 
     if (logf > 0)
         close (logf);
+
+    /* print abstract syntax tree if requested */
+    if (PFstate.print_parse_tree) {
+        if (proot) {
+            if (PFstate.print_pretty) {
+                printf ("Parse tree %s:\n", phases[PFstate.stop_after]);
+                PFabssyn_pretty (stdout, proot);
+            }
+            if (PFstate.print_dot)
+                PFabssyn_dot (stdout, proot);
+        }
+        else
+            PFinfo (OOPS_NOTICE,
+                    "parse tree not available at this point of compilation");
+    }
+
+    /* print core tree if requested */
+    if (PFstate.print_core_tree) {
+        if (croot) {
+            if (PFstate.print_pretty) {
+                printf ("Core tree %s:\n", phases[PFstate.stop_after]);
+                PFcore_pretty (stdout, croot);
+            }
+            if (PFstate.print_dot)
+                PFcore_dot (stdout, croot);
+        }
+        else
+            PFinfo (OOPS_NOTICE,
+                    "core tree not available at this point of compilation");
+    }
+
+    /* print algebra tree if requested */
+    if (PFstate.print_algebra_tree) {
+        if (aroot) {
+            if (PFstate.print_pretty) {
+                printf ("Algebra tree %s:\n", phases[PFstate.stop_after]);
+                PFalg_pretty (stdout, aroot);
+            }
+            if (PFstate.print_dot)
+                PFalg_dot (stdout, aroot);
+        }
+        else
+            PFinfo (OOPS_NOTICE,
+                    "core tree not available at this point of compilation");
+    }
 
     exit (EXIT_SUCCESS);
 

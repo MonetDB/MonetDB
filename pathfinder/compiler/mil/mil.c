@@ -419,3 +419,24 @@ PFmil_mplus (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_mplus, a, b);
 }
+
+PFmil_t *
+PFmil_ser (const char *prefix,
+           const bool has_nat_part, const bool has_int_part,
+           const bool has_str_part, const bool has_node_part,
+           const bool has_dec_part, const bool has_dbl_part,
+           const bool has_bln_part)
+{
+    PFmil_t *ret = leaf (m_serialize);
+
+    ret->sem.ser.prefix = (char *) prefix;
+    ret->sem.ser.has_nat_part  = has_nat_part;
+    ret->sem.ser.has_int_part  = has_int_part;
+    ret->sem.ser.has_str_part  = has_str_part;
+    ret->sem.ser.has_node_part = has_node_part;
+    ret->sem.ser.has_dec_part  = has_dec_part;
+    ret->sem.ser.has_dbl_part  = has_dbl_part;
+    ret->sem.ser.has_bln_part  = has_bln_part;
+
+    return ret;
+}

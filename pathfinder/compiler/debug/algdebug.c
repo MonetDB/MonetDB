@@ -49,7 +49,10 @@ char *a_id[]  = {
       [aop_lit_tbl]      "TBL"
     , [aop_disjunion]    "U"
     , [aop_difference]   "DIFF"
-    , [aop_cross]        "×"                /* yellow */
+      /* note: dot does not like the sequence "×\nfoo", so we put spaces
+       * around the cross symbol.
+       */
+    , [aop_cross]        " × "              /* yellow */
     , [aop_eqjoin]       "|X|"              /* green */
     , [aop_scjoin]       "/|"               /* light blue */
     , [aop_doc_tbl]      "DOC"
@@ -83,12 +86,14 @@ static char    *child;
 /** Temporary variable for node labels in dot tree */
 /*static char     label[32];*/
 
+#if 0
 /** Print node with no content */
-#define L(t)           snprintf (label, 32, t)
+#define L(t)           snprintf (label, 32, "%s", t)
 /** Print node with single content */
-#define L2(l1, l2)     snprintf (label, 32, "%s\\n%s",     l1, l2)
+#define L2(l1, l2)     snprintf (label, 32, "%s\\n%s",  l1, l2)
 /** Print node with two content parts */
 #define L3(l1, l2, l3) snprintf (label, 32, "%s %s %s", l1, l2, l3)
+#endif
 
 /**
  * Print algebra tree in AT&T dot notation.
@@ -101,6 +106,27 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
 {
     int c;
     static int node_id = 1;
+
+    static char *color[] = {
+        [aop_lit_tbl]       "grey",
+        [aop_disjunion]     "grey",
+        [aop_difference]    "grey",
+        [aop_cross]         "yellow",
+        [aop_eqjoin]        "green",
+        [aop_scjoin]        "lightblue",
+        [aop_doc_tbl]       "grey",
+        [aop_select]        "grey",
+        [aop_negate]        "grey",
+        [aop_type]          "grey",
+        [aop_cast]          "grey",
+        [aop_project]       "grey",
+        [aop_rownum]        "red",
+        [aop_serialize]     "grey",
+        [aop_num_add]       "grey",
+        [aop_num_subtract]  "grey",
+        [aop_num_multiply]  "grey",
+        [aop_num_divide]    "grey"
+    };
 
     n->node_id = node_id;
     node_id++;
@@ -161,17 +187,14 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
                 if (n->sem.lit_tbl.count > 1)
                     PFarray_printf (dot, "...");
             }
-
-            PFarray_printf (dot, "\"");
-
             break;
 
         case aop_cross:
-            PFarray_printf (dot, "%s\",color=yellow", a_id[n->kind]);
+            PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
 
         case aop_eqjoin:
-            PFarray_printf (dot, "%s (%s:%s)\",color=green",
+            PFarray_printf (dot, "%s (%s:%s)",
                             a_id[n->kind], n->sem.eqjoin.att1,
                             n->sem.eqjoin.att2);
             break;
@@ -256,27 +279,26 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
                 default: PFoops (OOPS_FATAL,
                         "unknown kind test in dot output");
             }
-            PFarray_printf (dot, "\",color=lightblue");
             break;
 
         case aop_select:
-            PFarray_printf (dot, "%s (%s)\"", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                             n->sem.select.att);
             break;
 
         case aop_negate:
-            PFarray_printf (dot, "%s (%s:%s)\"", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:%s)", a_id[n->kind],
                             n->sem.negate.res, n->sem.negate.att);
             break;
 
         case aop_type:
-            PFarray_printf (dot, "%s (%s:%s,%s)\"", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
                             n->sem.type.res, n->sem.type.att,
                             PFty_str (n->sem.type.ty));
             break;
 
         case aop_cast:
-            PFarray_printf (dot, "%s (%s,%s)\"", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s,%s)", a_id[n->kind],
                             n->sem.cast.att, PFty_str (n->sem.cast.ty));
             break;
 
@@ -284,7 +306,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_num_subtract:
         case aop_num_multiply:
         case aop_num_divide:
-            PFarray_printf (dot, "%s (%s:%s, %s)\"", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:%s, %s)", a_id[n->kind],
                             n->sem.arithm.res, n->sem.arithm.att1,
                             n->sem.arithm.att2);
             break;
@@ -306,7 +328,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
                 else
                     PFarray_printf (dot, ",%s", n->sem.proj.items[c].old);
 
-            PFarray_printf (dot, ")\"");
+            PFarray_printf (dot, ")");
             break;
 
         case aop_rownum:
@@ -322,14 +344,21 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
             if (n->sem.rownum.part)
                 PFarray_printf (dot, "/%s", n->sem.rownum.part);
 
-            PFarray_printf (dot, ")\",color=red");
+            PFarray_printf (dot, ")");
             break;
 
-        default:          PFarray_printf (dot, "%s\"", a_id[n->kind]);
+        default:          PFarray_printf (dot, "%s", a_id[n->kind]);
     }
 
+    /*
+     * print variable name used in the MIL program to represent this
+     * expression if available
+     */
+    if (n->bat_prefix)
+        PFarray_printf (dot, "\\n%s", n->bat_prefix);
+
     /* close up label */
-    PFarray_printf (dot, "];\n");
+    PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
     for (c = 0; c < PFALG_OP_MAXCHILD && n->child[c] != 0; c++) {      
         child = (char *) PFmalloc (sizeof ("node4294967296"));

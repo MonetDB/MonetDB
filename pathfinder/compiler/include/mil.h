@@ -61,6 +61,12 @@ enum PFmil_kind_t {
 
     , m_nop          /**< `no operation', do nothing.
                           (This may be produced during compilation.) */
+
+    , m_serialize    /**< serialization function.
+                          The serialization function must be provided by the
+                          pathfinder extension module. For now we just have
+                          a simple MIL script that does the work mainly for
+                          debugging purposes. */
 };
 typedef enum PFmil_kind_t PFmil_kind_t;
 
@@ -88,6 +94,23 @@ union PFmil_sem_t {
     PFmil_type_t  t;     /**< MIL type (for #m_type nodes) */
     PFmil_ident_t ident; /**< MIL identifier (a string) */
     PFmil_access_t access; /**< BAT access specifier, only for #m_access nodes*/
+
+    struct {
+        char *prefix;
+        bool has_nat_part;
+        bool has_int_part;
+        bool has_str_part;
+        bool has_node_part;
+        bool has_dec_part;
+        bool has_dbl_part;
+        bool has_bln_part;
+    } ser;               /**< Parameters for serialization function. This may
+                              change depending on the final serialization
+                              function in the pathfinder runtime module. For
+                              now we have a simple MIL script that does the
+                              work for debugging purposes and takes just these
+                              parameters.
+                          */
 };
 typedef union PFmil_sem_t PFmil_sem_t;
 
@@ -188,6 +211,12 @@ PFmil_t * PFmil_plus (const PFmil_t *, const PFmil_t *);
 
 /** MIL multiplexed plus operator */
 PFmil_t * PFmil_mplus (const PFmil_t *, const PFmil_t *);
+
+PFmil_t * PFmil_ser (const char *prefix,
+                     const bool has_nat_part, const bool has_int_part,
+                     const bool has_str_part, const bool has_node_part,
+                     const bool has_dec_part, const bool has_dbl_part,
+                     const bool has_bln_part);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

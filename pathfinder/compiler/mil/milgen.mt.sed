@@ -5,6 +5,37 @@ prologue {
 /*
  * Map algebra expressions to MIL
  *
+ * The code in this file compiles an algebra expression tree into a
+ * MIL program that computes the algebra expression result. The code
+ * produces a unique prefix for each algebra expression node (almost,
+ * in few cases an algebra expression need not be computed explicitly).
+ * This prefix will be available in the algebra tree node in the field
+ * @a bat_prefix after compilation. If print the algebra tree as AT&T
+ * dot code, each node will be labeled with this prefix.
+ *
+ * For each prefix (i.e., each algebra tree node) BATs are produced
+ * for each attribute/type combination. The BATs names are composed
+ * from the prefix, following an underscore (`_'), the attribute
+ * (``column'') name, another underscore, and the type of this BAT, e.g.
+ *
+ *  - @c a0013_iter_nat: Algebra node `a0013', attribute `iter' of
+ *    type `nat' (Will be implemented as @c oid).
+ *  - @c a0013_item_str: Values of type `string' that contribute to
+ *    attribute `item' of the algebra node `a0013'.
+ *
+ * Algebra results will be computed bottom-up and stored in their
+ * corresponding BATs. Each result is kept as long as the result may
+ * still be used for some computation. As soon as a result has been
+ * used the last time, it will be set to @c nil and thus discarded.
+ * (Actually, the variable will be set to @c unused, with @c unused
+ * defined to @c nil before the actual computation starts. This
+ * should make reading and debugging the resulting MIL code a bit
+ * easier.)
+ *
+ * The resulting MIL code will finally call the @c serialize function
+ * from the Pathfinder runtime module.
+ *
+ *
  * Copyright Notice:
  * -----------------
  *
@@ -61,6 +92,7 @@ prologue {
 node  lit_tbl      /* literal table */
       disjunion    /* union two relations with same schema */
       cross        /* cross product (Cartesian product) */
+      eqjoin       /* equi-join */
       project      /* algebra projection and renaming operator */
       rownum       /* consecutive number generation */
       serialize    /* result serialization */
@@ -78,6 +110,14 @@ Query:    serialize (AlgExpr)
     }
     =
     {
+        bool has_nat_part =  (aat_nat  & attr_type ($1$, "item"));
+        bool has_int_part =  (aat_int  & attr_type ($1$, "item"));
+        bool has_str_part =  (aat_str  & attr_type ($1$, "item"));
+        bool has_node_part = (aat_node & attr_type ($1$, "item"));
+        bool has_dec_part =  (aat_dec  & attr_type ($1$, "item"));
+        bool has_dbl_part =  (aat_dbl  & attr_type ($1$, "item"));
+        bool has_bln_part =  (aat_bln  & attr_type ($1$, "item"));
+
         /*
          * Set the variable `unused' to nil. Lateron, we will ``free''
          * variables by setting them to `unused'. Effectively this is
@@ -86,13 +126,23 @@ Query:    serialize (AlgExpr)
          */
         execute (assgn (unused (), nil ()));
 
+        /* invoke compilation */
         tDO ($%1$);
 
-        /* Here we would do serialization */
+        /*
+         * serialize result. We might need to rewrite this slightly
+         * as soon as we have a ``real'' serialization function.
+         */
+        execute (serialize ($1$->bat_prefix,
+                            has_nat_part, has_int_part, has_str_part,
+                            has_node_part, has_dec_part, has_dbl_part,
+                            has_bln_part
+                           ));
 
         /* and then we clean up */
+        deallocate ($1$, $$->refctr);
 
-        assert ($$);
+        assert ($$); /* avoid `root unused' warning */
     }
     ;
 
@@ -350,21 +400,111 @@ AlgExpr:  disjunion (AlgExpr, AlgExpr)
                      * If we inserted into the BAT from above, we need to
                      * set it read-only afterwards.
                      */
-                    if (t & $1$->schema.items[i].type)
+                    if (t & attr_type ($1$, $2$->schema.items[i].name))
+                    /* if (t & $1$->schema.items[i].type) */
                         execute (binsert (var (bat ($$->bat_prefix,
-                                                    $$->schema.items[i].name,
+                                                    $2$->schema.items[i].name,
                                                     t)),
                                           shiftedS),
                                  access (var (bat ($$->bat_prefix,
-                                                   $$->schema.items[i].name,
+                                                   $2$->schema.items[i].name,
                                                    t)),
                                          BAT_READ));
                     else
                         execute (assgn (var (bat ($$->bat_prefix,
-                                                  $$->schema.items[i].name,
+                                                  $2$->schema.items[i].name,
                                                   t)),
                                         shiftedS));
                 }
+
+        /* maybe we can already de-allocate our arguments */
+        deallocate ($1$, $$->refctr);
+        deallocate ($2$, $$->refctr);
+    }
+    ;
+
+AlgExpr:  eqjoin (AlgExpr, AlgExpr)
+    =
+    {
+        /*
+         * Equi-join between R and S, over attributes r and s.
+         * 
+         * tmp := <R>_<r>_<t>.join (<S>_<s>_<t>.reverse);
+         * tmp1 := tmp.mark (0@0).reverse;
+         * tmp2 := tmp.reverse.mark (0@0).reverse;
+         *
+         * <prefix>_<attR>_<t> := tmp1.join (<R>_<attR>_<t>);
+         *  ...
+         * <prefix>_<attS>_<t> := tmp2.join (<S>_<attS>_<t>);
+         *  ...
+         * tmp := unused; tmp1 := unused; tmp2 := unused;
+         *
+         * Note that this requires the join attributes to have
+         * the same monomorphic type.
+         */
+
+        PFalg_simple_type_t  t;             /* used for iteration over types */
+        int                  i;
+
+        assert ($1$->bat_prefix); assert ($2$->bat_prefix);
+
+        /* Both attributes must have the same type
+         * That type must be monomorphic. */
+        assert (attr_type ($1$, $$->sem.eqjoin.att1)
+                == attr_type ($2$, $$->sem.eqjoin.att2));
+        assert (is_monomorphic (attr_type ($1$, $$->sem.eqjoin.att1)));
+
+        /* only need to translate this expression if not already done so. */
+        if ($$->bat_prefix)
+            break;
+
+        $$->bat_prefix = new_var ();
+
+        /* Create the tmp BATs */
+        execute (
+            assgn (var ("tmp"),
+                   join (var (bat ($1$->bat_prefix,
+                                   $$->sem.eqjoin.att1,
+                                   attr_type ($1$, $$->sem.eqjoin.att1))),
+                         reverse (var (bat ($2$->bat_prefix,
+                                            $$->sem.eqjoin.att2,
+                                            attr_type($2$,
+                                                      $$->sem.eqjoin.att2)))))),
+            assgn (var ("tmp1"),
+                   reverse (mark (var ("tmp"), lit_oid (0)))),
+            assgn (var ("tmp2"),
+                   reverse (mark (reverse (var ("tmp")), lit_oid (0)))));
+
+        /* Now fetch all the attributes from R */
+        for (i = 0; i < $1$->schema.count; i++)
+            for (t = 1; t; t <<= 1)
+                if (t & $1$->schema.items[i].type)
+                    execute (
+                        assgn (var (bat ($$->bat_prefix,
+                                         $1$->schema.items[i].name,
+                                         t)),
+                               join (var ("tmp1"),
+                                     var (bat ($1$->bat_prefix,
+                                               $1$->schema.items[i].name,
+                                               t)))));
+
+        /* and now those from S */
+        for (i = 0; i < $2$->schema.count; i++)
+            for (t = 1; t; t <<= 1)
+                if (t & $2$->schema.items[i].type)
+                    execute (
+                        assgn (var (bat ($$->bat_prefix,
+                                         $2$->schema.items[i].name,
+                                         t)),
+                               join (var ("tmp2"),
+                                     var (bat ($2$->bat_prefix,
+                                               $2$->schema.items[i].name,
+                                               t)))));
+
+        /* we no longer need the tmp variables */
+        execute (assgn (var ("tmp"), unused()),
+                 assgn (var ("tmp1"), unused()),
+                 assgn (var ("tmp2"), unused()));
 
         /* maybe we can already de-allocate our arguments */
         deallocate ($1$, $$->refctr);
@@ -596,11 +736,13 @@ AlgExpr:  rownum (AlgExpr)
          * We make a few assumptions here:
          *  - The operand expression has already been translated.
          *  - There is at least one sort specifier.
+         *    (We might need to loosen this restriction in the future.)
          *  - The attribute that we group over must be of type oid.
          */
         assert ($1$->bat_prefix);
         assert ($$->sem.rownum.sortby.count >= 1);
-        assert (attr_type ($1$, $$->sem.rownum.part) == aat_nat);
+        assert ((!$$->sem.rownum.part)
+                || attr_type ($1$, $$->sem.rownum.part) == aat_nat);
 
         /* no need to do anything if we already translated that expression */
         if ($$->bat_prefix)
@@ -680,7 +822,16 @@ AlgExpr:  rownum (AlgExpr)
                 assgn (var ("tmp"), unused ()),
                 assgn (var ("tmp2"), unused ()));
         else
-            PFoops (OOPS_FATAL, "not implemented yet");
+            /*
+             * If no partitioning attribute is given, just do a simple
+             * mark (0@0).
+             */
+            execute (
+                assgn (var (bat ($$->bat_prefix,
+                                 $$->sem.rownum.attname,
+                                 aat_nat)),
+                       mark (var ("tmp"), lit_oid (0))),
+                assgn (var ("tmp"), unused ()));
 
 
         /*
@@ -705,13 +856,16 @@ AlgExpr:  rownum (AlgExpr)
          * decision.
          *
          * For now, we do a
-         *   <prefix>_<att>_<t>.order;      # This destructively re-orders
+         *   <prefix>_<att>_<t> := <prefix>_<att>_<t>.sort;
          *   <prefix>_<att>_<t>.reverse.mark (0@0).reverse; # Make head void
          */
         execute (
-            order (var (bat ($$->bat_prefix,
+            assgn (var (bat ($$->bat_prefix,
                              $$->sem.rownum.attname,
-                             aat_nat))),
+                             aat_nat)),
+                   sort (var (bat ($$->bat_prefix,
+                                   $$->sem.rownum.attname,
+                                   aat_nat)))),
             assgn (var (bat ($$->bat_prefix,
                              $$->sem.rownum.attname,
                              aat_nat)),

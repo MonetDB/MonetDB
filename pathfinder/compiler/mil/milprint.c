@@ -15,6 +15,7 @@
                     | expr '.insert (' expr ')'                <m_binsert>
                     | expr '.access (' restriction ')'         <m_access>
                     | <nothing>                                <m_nop>
+                    | 'serialize (...)'                        <m_serialize>
 
    expression       : Variable                                 <m_var>
                     | literal                                  <m_lit_*, m_nil>
@@ -214,6 +215,18 @@ print_statement (PFmil_t * n)
 
         /* `nop' nodes (`no operation') may be produced during compilation */
         case m_nop:
+            break;
+
+        case m_serialize:
+            milprintf ("serialize (\"%s\"", n->sem.ser.prefix);
+            milprintf (n->sem.ser.has_nat_part ? ", true" : ", false");
+            milprintf (n->sem.ser.has_int_part ? ", true" : ", false");
+            milprintf (n->sem.ser.has_str_part ? ", true" : ", false");
+            milprintf (n->sem.ser.has_node_part ? ", true" : ", false");
+            milprintf (n->sem.ser.has_dec_part ? ", true" : ", false");
+            milprintf (n->sem.ser.has_dbl_part ? ", true" : ", false");
+            milprintf (n->sem.ser.has_bln_part ? ", true" : ", false");
+            milprintf (")");
             break;
 
         default:

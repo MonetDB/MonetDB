@@ -126,3 +126,7 @@
 
 /** multiplexed arithmetic plus */
 #define mplus(a,b) PFmil_mplus ((a), (b))
+
+/** serialization function */
+#define serialize(prefix, a, b, c, d, e, f, g) \
+    PFmil_ser ((prefix), (a), (b), (c), (d), (e), (f), (g))

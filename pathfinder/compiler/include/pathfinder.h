@@ -79,9 +79,13 @@ struct PFstate_t {
     bool timing;              /**< command line switch: -T */
     bool print_dot;           /**< command line switch: -D */
     bool print_pretty;        /**< command line switch: -P */
-    PFphases_t stop_after;    /**< processing phase to stop after */
+    unsigned int stop_after;  /**< processing phase to stop after */
     bool print_types;         /**< command line switch: -t */
     bool optimize;            /**< command line switch: -O */
+    bool print_parse_tree;    /**< command line switch: -p */
+    bool print_core_tree;     /**< command line switch: -c */
+    bool print_algebra_tree;  /**< command line switch: -a */
+    bool summer_branch;       /**< command line switch: -M */
 };
 
 /** global state of the compiler */
