@@ -27,14 +27,16 @@ def Warn(THISFILE,TEXT) :
 ### Warn(THISFILE,TEXT) #
 
 test = (
-        re.compile( r"^Mdestroydb: processing database ..*. in "                     "|"
+        re.compile( r"^module\(mprof\);$"                                            "|"
+                    r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'   "|"
+                    r'^printf\("#~BeginProfilingOutput~#\\n"\);$'                    "|"
+                    r"^Mdestroydb: processing database ..*. in "                     "|"
                     r"^Mcreatedb: processing database ..*. in "                      "|"
                     r"^Mcreatedb: using default dbdir "                              "|"
                     r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"   "|"
                     r"^Mcreatedb: database .* has been initialized succesfully!$"    "|"
-                    r"^module\(mprof\);$"                                            "|"
-                    r'^pm([BE]\("(global_.+|[a-zA-Z0-9_]+[0-9])"\)|Summary\(\));$'   "|"
-                    r'^printf\("#~BeginProfilingOutput~#\\n"\);$'                    "|"
+                    r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$" "|"
+                    r"^!WARNING: BBPdir: initializing BBP.$"                         "|"
                     r"^connection= .*:[0-9]*$"                                       "|"
                     r"^Connecting to server: localhost:[0-9]*$"                      "|"
                     r"^server listening on port [0-9]*$",

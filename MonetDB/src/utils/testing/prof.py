@@ -6,12 +6,12 @@
 # To get the system performances of all SQl commands, type at prompt
 # python prof.py input_file_name.mil
 # Then compile the output file as follows
-# Mserver -db gold prof_input_file_name.mil
+# Mserver --dbname=gold prof_input_file_name.mil
 # To get the system performances of selected SQL commands, make a file
 # with any name (your_file) which has SQl commands in seperate lines.
 # python prof.py input_file_name.mil your_file
 # Then compile the output file as follows
-# Mserver -db gold prof_input_file_name.mil
+# Mserver --dbname=gold prof_input_file_name.mil
 # You can now observe the results....
 
 import string

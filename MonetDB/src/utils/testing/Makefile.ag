@@ -1,6 +1,6 @@
 
 EXTRA_DIST =  Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in MkillUsers.in Mlimit.c \
-		monet.Mtest.conf monet.Mprofile.conf prof.py Mprofile-commands.lst
+		prof.py Mprofile-commands.lst
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
@@ -19,11 +19,6 @@ bin_Mprofile.py.bat = bin_Mtest.py.bat
 scripts_bat = {
 	DIR = bindir
 	SOURCES = Mlog.bat Mtest.py.bat
-}
-
-scripts_conf = {
-	DIR = pkgdatadir
-	SOURCES = monet.Mtest.conf monet.Mprofile.conf
 }
 
 scripts_py = {
