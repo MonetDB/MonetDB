@@ -53,6 +53,7 @@ extern void DESCclean(BAT*);
 
 #endif /* _GDK_STORAGE_H_ */
 @c
+#include <stdlib.h>
 #include "gdk_bat.h"
 #include "gdk_delta.h"
 #include "gdk_atoms.h"
@@ -704,11 +705,11 @@ BAT *BATload_intern(bat i) {
 		ALIGNcommit(b);
 	}
 	b->batDirtydesc |= b->batMapdirty; /* if some heap mode changed, make desc dirty */
-	b->batMapbuns = b->batBuns->storage;
-	b->batMaphheap = b->hheap.storage;
-	b->batMaptheap = b->theap.storage;
-	b->batMaphacc = b->haccelerator.storage;
-	b->batMaptacc = b->taccelerator.storage;
+	b->batMapbuns = (char) b->batBuns->storage;
+	b->batMaphheap = (char) b->hheap.storage;
+	b->batMaptheap = (char) b->theap.storage;
+	b->batMaphacc = (char) b->haccelerator.storage;
+	b->batMaptacc = (char) b->taccelerator.storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug&2)) || (GDKdebug&8)) {
 		BATpropcheck_(b,TRUE); 
@@ -916,8 +917,6 @@ int print_nil(char** dst, int *len, ptr dummy) {
 
 #define printfcn(b)	((b->ttype==TYPE_void && b->tseqbase==oid_nil)?\
 			          print_nil:BATatoms[b->ttype].atomToStr)
-
-extern int rand();
 
 static 
 int print_tabwidth(BAT *b, str title, col_format_t *c) {

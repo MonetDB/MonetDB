@@ -57,8 +57,8 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
         ERRORcheck(r == NULL, "@1: invalid right operand");
         ERRORcheck(TYPEerror(@2,@3), "@1: type conflict\n");
 @= joinestimate
-{       int _lcount = BATcount(l);
-        int _rcount = BATcount(r);
+{       size_t _lcount = BATcount(l);
+        size_t _rcount = BATcount(r);
         if (@1 == JOIN_EQ) {
                 /* key property gives a bound for equality join; only use this knowledge if
                  * the other column is smaller (i.e. optimization is useful)
@@ -93,14 +93,14 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
                         }
                         BBPreclaim(l);
                 }
-                if (_div) @3 = (((lng) _tot) * ((lng) _lcount)) / (((lng) _div)*LL_CONSTANT(1000));
+                if (_div) @3 = (size_t) ((((lng) _tot) * ((lng) _lcount)) / (((lng) _div)*LL_CONSTANT(1000)));
                 l = _tmp1;
         }
 }
 @= joinbat
-{       int _estimate = 0;
+{       size_t _estimate = 0;
         @:joinestimate(@1, @2, _estimate)@
-        ESTIDEBUG THRprintf(GDKout, "%s.joinbat: estimated resultsize: %d\n",@3,_estimate);
+        ESTIDEBUG THRprintf(GDKout, "%s.joinbat: estimated resultsize: %u\n",@3,_estimate);
         bn = BATnew(BAThtype(l), BATttype(r), _estimate);
         if (bn == NULL) {
                 return bn;

@@ -116,7 +116,7 @@ int BATelmshift(BAT *b) {
         for(sh=0; i != 0; sh++) {
                 i >>= 1;
         }
-	if (BUNsize(b) != (1 << sh)) {
+	if (BUNsize(b) != ((size_t) 1 << sh)) {
 		return -1;
 	}
 	return sh;
@@ -196,8 +196,8 @@ BAT *BATnew(int ht, int tt, size_t cap) {
 	cap += 2; 
 
 	b = BATnewstorage(ht, tt, cap); 
-	b->hsorted = ATOMlinear(ht); 
-	b->tsorted = ATOMlinear(tt);
+	b->hsorted = (bit) ATOMlinear(ht); 
+	b->tsorted = (bit) ATOMlinear(tt);
 
 	return b;
 }
@@ -263,13 +263,13 @@ size_t BATgrows(BAT *b) {
 	if (newcap < BATTINY) newcap = 2 * BATTINY; else
 	if (newcap < 10 * BATTINY ) newcap = 4 * newcap; else
 	if( newcap < 50 * BATTINY ) newcap = 2 * newcap; else
-		newcap = newcap * BATMARGIN; 
+		newcap = (size_t) (newcap * BATMARGIN); 
 	if (newcap == oldcap)
 		newcap += 10;
 
 	/* if we can extend in reserved space, do not miss the opportunity */
 	if (b->batBuns->size + BUNsize(b) <= b->batBuns->maxsize) {
-		int rescap = oldcap + (b->batBuns->maxsize - b->batBuns->size)/BUNsize(b) - 1;
+		size_t rescap = oldcap + (b->batBuns->maxsize - b->batBuns->size)/BUNsize(b) - 1;
 		newcap = MIN(newcap,rescap);
 	}
 	return newcap;
@@ -635,7 +635,7 @@ This code assumes that new elements are appended to the BUN list.
 if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
 {
-      b = BATmaterialize(b, ((dbl)BATcount(b)*1.2));
+      b = BATmaterialize(b, (int) (BATcount(b)*1.2));
 }
 @c
 INLINE BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t);
@@ -1048,7 +1048,7 @@ BUN BUNlocate(BAT *b, ptr x, ptr y) {
 		int i = *(oid*) x - b->hseqbase;
 		cmp= BATatoms[b->ttype].atomCmp; 
 
-		if (i >= 0 && i < BATcount(b)) {
+		if (i >= 0 && (size_t) i < BATcount(b)) {
 			i += BUNindex(b,BUNfirst(b));
 			p = BUNptr(b, i);
 			if ((*cmp)(y, BUNtail(b, p)) == 0) return p; 
@@ -1415,7 +1415,7 @@ if (sanity_check) {
 	    b->H != bm->T || b->htype != bm->ttype || b->hloc != bm->tloc || 
 	    b->dims.headvarsized != bm->dims.tailvarsized  ||
 	    b->dims.bunshift != bm->dims.bunshift ||
-	    b->dims.bunwidth != bm->dims.bunwidth || b->batBuns->size <= 0 ||
+	    b->dims.bunwidth != bm->dims.bunwidth || b->batBuns->size == 0 ||
 	    b->batDeleted < b->batBuns->base || b->batHole < b->batDeleted ||
 	    b->batHole > b->batInserted || b->batBuns->free > b->batBuns->size||
 	    b->batInserted > (b->batBuns->base + b->batBuns->free))
@@ -1423,9 +1423,9 @@ if (sanity_check) {
 	int val =
 	   ((b->GDKversion != bm->GDKversion) + (b->U != bm->U) + (b->P != bm->P) +
 	    (b->H != bm->T) + (b->htype != bm->ttype) + (b->hloc != bm->tloc) + 
-	    b->dims.headvarsized != bm->dims.tailvarsized  +
-	    b->dims.bunshift != bm->dims.bunshift +
-	    b->dims.bunwidth != bm->dims.bunwidth + b->batBuns->size <= 0 +
+	    (b->dims.headvarsized != bm->dims.tailvarsized)  +
+	    (b->dims.bunshift != bm->dims.bunshift) +
+	    (b->dims.bunwidth != bm->dims.bunwidth) + (b->batBuns->size == 0) +
 	    (b->batDeleted < b->batBuns->base) + (b->batHole < b->batDeleted) +
 	    (b->batHole > b->batInserted) + (b->batBuns->free > b->batBuns->size) +
 	    (b->batInserted > (b->batBuns->base + b->batBuns->free)));
