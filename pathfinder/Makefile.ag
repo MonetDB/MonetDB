@@ -25,8 +25,8 @@
 
 SUBDIRS = conf burg compiler loader runtime
 
-EXTRA_DIST = rules.mk RunMtest.in
-#EXTRA_DIST_DIR = NT
+EXTRA_DIST = rules.mk RunMtest.in RunMtest.bat.in
+EXTRA_DIST_DIR = NT
 
 EXTRA_HEADERS = pf_config.h
 
