@@ -2303,8 +2303,10 @@ mapi_extend_cache(Mapi mid)
 	if (incr > 200000)
 		incr = 20000;
 	newsize = oldsize + incr;
-	if (newsize > mid->cache.rowlimit && mid->cache.rowlimit > 0)
+	if (newsize > mid->cache.rowlimit && mid->cache.rowlimit > 0) {
 		newsize = mid->cache.rowlimit;
+		incr = newsize - oldsize;
+	}
 
 	mid->cache.rows = REALLOC(mid->cache.rows, newsize * sizeof(char **));
 	assert(mid->cache.rows);
