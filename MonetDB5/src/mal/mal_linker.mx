@@ -144,8 +144,43 @@ already loaded.
 @c
 #define MAXMODULES 256
 
-static str modulesLoaded[MAXMODULES];
-static void *handles[MAXMODULES];
+static str *moduleLoaded;
+static void **moduleHandle;
+static int maxmodules= 0;
+static int lastmodule= 0;
+
+static void initM5Loader(){
+	str *newModuleLoaded;
+	void **newModuleHandle;
+	int newsize= maxmodules+MAXMODULES;
+
+	/* assume a safe all environment */
+	if( moduleLoaded == NULL){
+		mal_set_lock(mal_contextLock, "loadModule");
+		if( moduleLoaded == NULL){
+			maxmodules= MAXMODULES;
+			moduleLoaded = (str*) GDKmalloc(maxmodules * sizeof(str));
+			moduleHandle = (void **) GDKmalloc(maxmodules * sizeof(void *));
+		}
+		mal_unset_lock(mal_contextLock, "loadModule");
+	} else if( lastmodule+2 == maxmodules){
+		/* guarantee at least one free slot */
+		mal_set_lock(mal_contextLock, "loadModule");
+		newModuleLoaded = (str*) GDKmalloc(newsize * sizeof(str));
+		newModuleHandle = (void **) GDKmalloc(newsize * sizeof(void *));
+		bzero((char*) newModuleLoaded, newsize * sizeof(str));
+		memcpy((char*) newModuleLoaded, (char*)moduleLoaded, 
+				maxmodules * sizeof(str*));
+		memcpy((char*) newModuleHandle, (char*)moduleHandle, 
+				maxmodules * sizeof(void **));
+		GDKfree(moduleLoaded);
+		GDKfree(moduleHandle);
+		moduleLoaded = newModuleLoaded;
+		moduleHandle = newModuleHandle;
+		maxmodules= newsize;
+		mal_unset_lock(mal_contextLock, "loadModule");
+	}
+}
 
 str loadModuleLibrary(str modnme){
     int mode = RTLD_NOW|RTLD_GLOBAL;
@@ -155,17 +190,15 @@ str loadModuleLibrary(str modnme){
     str fullname,s;
     int i = 0, idx;
 
-    for(idx=0;modulesLoaded[idx] && idx<MAXMODULES;idx++)
-        if( strcmp(modulesLoaded[idx],modnme)==0) {
+	initM5Loader();
+    for(idx=0;moduleLoaded[idx] && idx<maxmodules;idx++)
+        if( strcmp(moduleLoaded[idx],modnme)==0) {
 #ifdef DEBUG_MAL_LINKER
         stream_printf(GDKout,"already load:%s:%s\n",modnme,handle==NULL?
             (handle==NULL?errbuf:"failed"):"succeeded");
 #endif
 			return 0;
 		}
-    if( idx== MAXMODULES){
-        GDKfatal("too many modules\n");
-    }
 @-
 Use the search path provided in the configuration file
 @c
@@ -191,18 +224,22 @@ Use the search path provided in the configuration file
                 "loadModuleLibrary",modnme);
         }
         GDKfree(fullname);
-    } else
-		stream_printf(GDKout,"failed to bind:%s\n",nme);
+    } else {
+		GDKerror("Failed to bind module '%s' to library\n",modnme);
+		return (str) throwException("loaderException",
+			"loadModuleLibrary",modnme);
+	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
-    for(i=0;modulesLoaded[i] && i<127;i++);
-    if( i==MAXMODULES)
-        GDKerror("loadModule:too many modules loaded\n");
+    for(i=0;moduleLoaded[i] && i<=lastmodule;i++);
+    if( i==maxmodules)
+        GDKerror("loadModule:internal error, too many modules loaded\n");
     else {
-        modulesLoaded[i]= GDKstrdup(modnme);
-        handles[i]= handle;
+        moduleLoaded[i]= GDKstrdup(modnme);
+        moduleHandle[i]= handle;
+		lastmodule= i;
     }
-        mal_unset_lock(mal_contextLock, "loadModule");
+	mal_unset_lock(mal_contextLock, "loadModule");
     return 0;
 }
 @-
@@ -211,12 +248,15 @@ we exit the server
 @c
 void unloadModuleLibraries(){
     int i;
-    for(i=0;i<MAXMODULES;i++)
-    if( handles[i]) {
-        dlclose(handles[i]);
-        GDKfree(modulesLoaded[i]);
+	mal_set_lock(mal_contextLock, "loadModule");
+    for(i=0;i<maxmodules;i++)
+    if( moduleHandle[i]) {
+        dlclose(moduleHandle[i]);
+        GDKfree(moduleLoaded[i]);
     }
+	lastmodule=0;
     (void) clear_moddir();
+	mal_unset_lock(mal_contextLock, "loadModule");
 }
 @}
 @+ Static pre-loading
