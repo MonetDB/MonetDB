@@ -16,12 +16,27 @@ quit;
 
 Over..
 
-# 16:52:04 >  
-# 16:52:04 >  Mtimeout -timeout 210 sql_client --port=52771  < wisconsin-update.sql
-# 16:52:04 >  
+# 19:56:29 >  
+# 19:56:29 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=54321 --trace < wisconsin-update.sql
+# 19:56:29 >  
 
+SQL  connected to database mTests_src_benchmarks_wisconsin using schema sys
+#     1: 1 insert into tenk1 (unique1, unique2, two, four, ten, twenty, hundred, thousand, twothousand, fivethous, tenthous, odd, even,stringu1,stringu2, string4) values (10001, 74001, 0, 2, 0, 10, 50, 688, 1950, 4950, 9950, 1, 100, 'ron may choi','jae kwang choi', 'u. c. berkeley');
+#     2: 1 insert into tenk1 (unique1, unique2, two, four, ten, twenty, hundred, thousand, twothousand, fivethous, tenthous, odd, even,stringu1,stringu2, string4) values (19991, 60001, 0, 2, 0, 10, 50, 688, 1950, 4950, 9950, 1, 100, 'ron may choi','jae kwang choi', 'u. c. berkeley');
+#     3: 1 delete from tenk1 where tenk1.unique2 = 877;
+#     4: 1 delete from tenk1 where tenk1.unique2 = 876;
+#     5: 1 update tenk1 set unique2 = 10001 where tenk1.unique2 =1491;
+#     6: 1 update tenk1 set unique2 = 10023 where tenk1.unique2 =1480;
+#     7: 1 insert into tenk1 (unique1, unique2, two, four, ten, twenty, hundred, thousand, twothousand, fivethous, tenthous, odd, even, stringu1, stringu2, string4) values (20002, 70002, 0, 2, 0, 10, 50, 688, 1950, 4950, 9950, 1, 100, 'ron may choi', 'jae kwang choi', 'u. c. berkeley');
+#     8: 1 insert into tenk1 (unique1, unique2, two, four, ten, twenty, hundred, thousand, twothousand, fivethous, tenthous, odd, even, stringu1, stringu2, string4) values (50002, 40002, 0, 2, 0, 10, 50, 688, 1950, 4950, 9950, 1, 100, 'ron may choi', 'jae kwang choi', 'u. c. berkeley');
+#     9: 1 delete from tenk1 where tenk1.unique2 = 10001;
+#    10: 1 delete from tenk1 where tenk1.unique2 = 900;
+#    11: 1 update tenk1 set unique2 = 10088 where tenk1.unique2 =187;
+#    12: 1 update tenk1 set unique2 = 10003 where tenk1.unique2 =2000;
+#    13: 1 update tenk1 set unique2 = 10020 where tenk1.unique2 =1974;
+#    14: 1 update tenk1 set unique2 = 16001 where tenk1.unique2 =1140;
 
-# 16:52:04 >  
-# 16:52:04 >  Done.
-# 16:52:04 >  
+# 19:16:02 >  
+# 19:16:02 >  Done.
+# 19:16:02 >  
 

@@ -20,6 +20,14 @@ Over..
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     2: 1 create view example_view as select * from example;
+#     3: 1 insert into example values( 1, 'test', 0.1 );
+#     4: 1 insert into example values( 5, 'xtest', 0.9 );
+#     5: 1 insert into example values( 9, 'testx', 9.1 );
+#     6: 1 insert into example values( 0, 'texst', 99999.1 );
+#     7: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     8: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -29,6 +37,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     9: 0 
+#    10: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -38,12 +48,21 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    11: 0 
+#    12: 0 --- drop view example_view;
 
 # 15:05:38 >  
 # 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s01.sql
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 insert into example values( 1, 'test', 0.1 );
+#     3: 1 insert into example values( 5, 'xtest', 0.9 );
+#     4: 1 insert into example values( 9, 'testx', 9.1 );
+#     5: 1 insert into example values( 0, 'texst', 99999.1 );
+#     6: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     7: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -58,6 +77,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  10 Rows affected
+#     8: 0 
+#     9: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -78,6 +99,7 @@ SQL  10 Rows affected
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 select * from example where val1 >= 5;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -88,6 +110,7 @@ SQL  connected to database mTests_src_test using schema sys
 9	"testx"	9.1
 8	"texxst"	0.0001
 SQL  6 Rows affected
+#     2: 1 select * from example_view where val1 > 5;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -102,12 +125,23 @@ SQL  4 Rows affected
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:38 >  
 # 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s04.sql
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     2: 1 create view example_view as select * from example;
+#     3: 1 insert into example values( 1, 'test', 0.1 );
+#     4: 1 insert into example values( 5, 'xtest', 0.9 );
+#     5: 1 insert into example values( 9, 'testx', 9.1 );
+#     6: 1 insert into example values( 0, 'texst', 99999.1 );
+#     7: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     8: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -117,6 +151,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     9: 0 
+#    10: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -126,12 +162,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    11: 0 
+#    12: 0 --- drop view example_view;
 
 # 15:05:38 >  
 # 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s05.sql
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -141,6 +180,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     2: 1 delete from example where val1 >= 5;
+#     3: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -153,12 +194,23 @@ SQL  2 Rows affected
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:38 >  
 # 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s07.sql
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     2: 1 create view example_view as select * from example;
+#     3: 1 insert into example values( 1, 'test', 0.1 );
+#     4: 1 insert into example values( 5, 'xtest', 0.9 );
+#     5: 1 insert into example values( 9, 'testx', 9.1 );
+#     6: 1 insert into example values( 0, 'texst', 99999.1 );
+#     7: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     8: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -168,6 +220,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     9: 0 
+#    10: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -177,12 +231,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    11: 0 
+#    12: 0 --- drop view example_view;
 
 # 15:05:38 >  
 # 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s08.sql
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -192,6 +249,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     2: 1 delete from example where val1 = 5;
+#     3: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -200,6 +259,8 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  4 Rows affected
+#     4: 1 delete from example where val1 = 9;
+#     5: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -207,6 +268,8 @@ SQL  4 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  3 Rows affected
+#     6: 1 delete from example where val1 = 8;
+#     7: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -219,12 +282,23 @@ SQL  2 Rows affected
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:38 >  
 # 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s10.sql
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     2: 1 create view example_view as select * from example;
+#     3: 1 insert into example values( 1, 'test', 0.1 );
+#     4: 1 insert into example values( 5, 'xtest', 0.9 );
+#     5: 1 insert into example values( 9, 'testx', 9.1 );
+#     6: 1 insert into example values( 0, 'texst', 99999.1 );
+#     7: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     8: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -234,6 +308,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     9: 0 
+#    10: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -243,12 +319,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    11: 0 
+#    12: 0 --- drop view example_view;
 
 # 15:05:38 >  
 # 15:05:38 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s11.sql
 # 15:05:38 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -258,6 +337,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     2: 1 delete from example where val1 > 5;
+#     3: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -271,12 +352,23 @@ SQL  3 Rows affected
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s13.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     2: 1 create view example_view as select * from example;
+#     3: 1 insert into example values( 1, 'test', 0.1 );
+#     4: 1 insert into example values( 5, 'xtest', 0.9 );
+#     5: 1 insert into example values( 9, 'testx', 9.1 );
+#     6: 1 insert into example values( 0, 'texst', 99999.1 );
+#     7: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     8: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -286,6 +378,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     9: 0 
+#    10: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -295,12 +389,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    11: 0 
+#    12: 0 --- drop view example_view;
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s14.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -310,6 +407,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     2: 1 update example set val3=-1.0 where val1 >= 5;
+#     3: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -325,12 +424,23 @@ SQL  5 Rows affected
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s16.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     2: 1 create view example_view as select * from example;
+#     3: 1 insert into example values( 1, 'test', 0.1 );
+#     4: 1 insert into example values( 5, 'xtest', 0.9 );
+#     5: 1 insert into example values( 9, 'testx', 9.1 );
+#     6: 1 insert into example values( 0, 'texst', 99999.1 );
+#     7: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     8: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -340,6 +450,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     9: 0 
+#    10: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -349,12 +461,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    11: 0 
+#    12: 0 --- drop view example_view;
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s17.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -364,6 +479,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     2: 1 update example set val1 = -5 where val1 = 5;
+#     3: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -373,6 +490,8 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     4: 1 update example set val1 = -5 where val1 = 9;
+#     5: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -382,6 +501,8 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     6: 1 update example set val1 = -5 where val1 = 8;
+#     7: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -397,12 +518,23 @@ SQL  5 Rows affected
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s19.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     2: 1 create view example_view as select * from example;
+#     3: 1 insert into example values( 1, 'test', 0.1 );
+#     4: 1 insert into example values( 5, 'xtest', 0.9 );
+#     5: 1 insert into example values( 9, 'testx', 9.1 );
+#     6: 1 insert into example values( 0, 'texst', 99999.1 );
+#     7: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     8: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -412,6 +544,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     9: 0 
+#    10: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -421,12 +555,15 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    11: 0 
+#    12: 0 --- drop view example_view;
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s20.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -436,6 +573,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#     2: 1 update example set val2 = "updated" where val1 > 5;
+#     3: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -451,12 +590,27 @@ SQL  5 Rows affected
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s22.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 create table example ( val1 integer, val2 varchar, val3 float );
+#     3: 1 create view example_view as select * from example;
+#     4: 1 insert into example values( 1, 'test', 0.1 );
+#     5: 1 insert into example values( 5, 'xtest', 0.9 );
+#     6: 1 insert into example values( 9, 'testx', 9.1 );
+#     7: 1 insert into example values( 0, 'texst', 99999.1 );
+#     8: 1 insert into example values( 8, 'texxst', 0.0001 );
+#     9: 0 
+#    10: 1 COMMIT;
+#    11: 0 
+#    12: 1 select * from example;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -466,6 +620,8 @@ SQL  connected to database mTests_src_test using schema sys
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    13: 0 
+#    14: 1 select * from example_view;
 #----------------------
 #| val1 | val2 | val3 |
 #----------------------
@@ -475,12 +631,16 @@ SQL  5 Rows affected
 0	"texst"	99999.1
 8	"texxst"	0.0001
 SQL  5 Rows affected
+#    15: 0 
 
 # 15:05:39 >  
 # 15:05:39 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=55408 < big-example_s23.sql
 # 15:05:39 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
 # 15:05:40 >  
 # 15:05:40 >  Done.

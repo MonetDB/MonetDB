@@ -20,6 +20,23 @@ Over..
 # 20:07:32 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 ############################
+#     2: 0 
+#     3: 1 create table t1(id int, val int);
+#     4: 1 create table t2(id int, val int);
+#     5: 1 insert into t1 values(1,1);
+#     6: 1 insert into t1 values(2,2);
+#     7: 1 insert into t1 values(3,3);
+#     8: 1 insert into t1 values(4,4);
+#     9: 1 insert into t1 values(5,5);
+#    10: 1 insert into t2 values(1,3);
+#    11: 1 insert into t2 values(2,2);
+#    12: 1 insert into t2 values(3,1);
+#    13: 0 
+#    14: 0 #and now some strange queries and even stranger results
+#    15: 0 
+#    16: 0 #cartesian-product missing
+#    17: 1 select * from t1,t2;
 #-----------------------
 #| id | val | id | val |
 #-----------------------
@@ -39,6 +56,9 @@ SQL  connected to database mTests_src_test using schema sys
 4	4	3	1
 5	5	3	1
 SQL  15 Rows affected
+#    18: 0 
+#    19: 0 #These actually give good results (cartesian-product like):
+#    20: 1 select t1.id,t2.id from t1,t2 where t1.id<>t2.id;
 #-----------
 #| id | id |
 #-----------
@@ -55,6 +75,7 @@ SQL  15 Rows affected
 5	2
 5	3
 SQL  12 Rows affected
+#    21: 1 select t1.id,t2.id from t1,t2 where t1.id>t2.id;
 #-----------
 #| id | id |
 #-----------
@@ -68,6 +89,9 @@ SQL  12 Rows affected
 5	2
 5	3
 SQL  9 Rows affected
+#    22: 0 
+#    23: 0 #does not work (and should, assuming ids are unique)
+#    24: 1 select t1.id, (select t2.id from t2 where t1.id=t2.id) from t1;
 #-----------
 #| id | id |
 #-----------
@@ -77,6 +101,9 @@ SQL  9 Rows affected
 4	nil
 5	nil
 SQL  5 Rows affected
+#    25: 0 
+#    26: 0 # As the sub-select returns a single value (3), no error occures
+#    27: 1 select t1.id, (select t2.id from t2 where t2.id>2) from t1;
 #-----------
 #| id | id |
 #-----------
@@ -86,6 +113,9 @@ SQL  5 Rows affected
 4	3
 5	3
 SQL  5 Rows affected
+#    28: 0 
+#    29: 0 #Return only columns from first table
+#    30: 1 select * from t2,t1 where t1.id=t2.id;
 #-----------------------
 #| id | val | id | val |
 #-----------------------
@@ -93,6 +123,7 @@ SQL  5 Rows affected
 2	2	2	2
 3	1	3	3
 SQL  3 Rows affected
+#    31: 1 select * from t1,t2 where t1.id=t2.id;
 #-----------------------
 #| id | val | id | val |
 #-----------------------
@@ -100,6 +131,9 @@ SQL  3 Rows affected
 2	2	2	2
 3	3	3	1
 SQL  3 Rows affected
+#    32: 0 
+#    33: 0 #I'm not sure if t2.* is allowed but anyway it's strange
+#    34: 1 select * from t2;
 #------------
 #| id | val |
 #------------
@@ -107,6 +141,7 @@ SQL  3 Rows affected
 2	2
 3	1
 SQL  3 Rows affected
+#    35: 1 select t2.* from t2;
 #------------
 #| id | val |
 #------------
@@ -114,6 +149,9 @@ SQL  3 Rows affected
 2	2
 3	1
 SQL  3 Rows affected
+#    36: 0 
+#    37: 0 #wrong subsets
+#    38: 1 select * from t1 where id>2;
 #------------
 #| id | val |
 #------------
@@ -121,12 +159,16 @@ SQL  3 Rows affected
 3	3
 4	4
 SQL  3 Rows affected
+#    39: 1 select * from t1 where id>2 and id<2;
 #------------
 #| id | val |
 #------------
 SQL  no Rows affected
+#    40: 0 
+#    41: 1 drop table t1;
+#    42: 1 drop table t2;
 
-# 20:07:32 >  
-# 20:07:32 >  Done.
-# 20:07:32 >  
+# 19:16:12 >  
+# 19:16:12 >  Done.
+# 19:16:12 >  
 

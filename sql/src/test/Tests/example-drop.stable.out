@@ -20,8 +20,11 @@ Over..
 # 20:07:28 >  
 
 SQL  connected to database mTests_src_test using schema sys
+#     1: 0 
+#     2: 1 drop view example_view;
+#     3: 1 drop table example;
 
-# 20:07:28 >  
-# 20:07:28 >  Done.
-# 20:07:28 >  
+# 19:16:07 >  
+# 19:16:07 >  Done.
+# 19:16:07 >  
 

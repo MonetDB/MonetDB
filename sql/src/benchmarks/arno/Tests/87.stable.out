@@ -20,6 +20,7 @@ Over..
 # 22:12:25 >  
 
 SQL  connected to database mTests_src_benchmarks_arno using schema sys
+#     1: 1 SELECT MODEL306.is_mutagen, count(distinct MODEL306.model_id ) FROM MODEL MODEL306, ATOM T1008290441690  WHERE MODEL306.model_id=T1008290441690.model_id AND MODEL306.logp='0' group by MODEL306.is_mutagen;
 #-------------------------------
 #| is_mutagen | count_model_id |
 #-------------------------------

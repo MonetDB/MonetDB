@@ -20,6 +20,7 @@ Over..
 # 22:08:36 >  
 
 SQL  connected to database mTests_src_benchmarks_arno using schema sys
+#     1: 1 select * from model;
 #---------------------------------------
 #| model_id | is_mutagen | lumo | logp |
 #---------------------------------------
@@ -212,6 +213,7 @@ SQL  connected to database mTests_src_benchmarks_arno using schema sys
 187	"T"	-1	5
 188	"F"	-1	4
 SQL  188 Rows affected
+#     2: 1 select * from atom;
 #------------------------------------------------
 #| atom_id | model_id | element | type | charge |
 #------------------------------------------------
@@ -5109,6 +5111,7 @@ SQL  188 Rows affected
 "d188_23"	188	"o"	"40"	0
 "d188_24"	188	"o"	"40"	0
 SQL  4893 Rows affected
+#     3: 1 select * from bond;
 #---------------------------------------------
 #| bond_id | model_id | atom1 | atom2 | type |
 #---------------------------------------------

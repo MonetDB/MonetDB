@@ -2100,7 +2100,7 @@ def main(argv) :
         exe['Mdiff']       = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']      = CheckExec('python')       , 'python'
         exe['Mapi_Client'] = CheckExec(string.split(env['MAPICLIENT'])[0]), '%s "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
+        exe['SQL_client']  = CheckExec(string.split(env['SQLCLIENT'])[0]) , '%s -u monetdb -P monetdb --host=%s --port=%s --trace' % (env['SQLCLIENT'], HOST, env['SQLPORT'])
         if not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe

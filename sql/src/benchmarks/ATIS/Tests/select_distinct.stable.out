@@ -19,6 +19,11 @@ Over..
 # 13:49:03 >  Mtimeout -timeout 60 sql_client -u monetdb -P monetdb --host=stem --port=59463 < select_distinct.sql
 # 13:49:03 >  
 
+SQL  connected to database mTests_src_benchmarks_ATIS using schema sys
+#     1: 1 select distinct category from aircraft;
+#------------
+#| category |
+#------------
 "TURBOPROP"
 "JET"
 "HELICOPTER"
@@ -26,6 +31,10 @@ Over..
 "AMPHIBIAN"
 ""
 SQL  6 Rows affected
+#     2: 1 select distinct from_airport from flight;
+#----------------
+#| from_airport |
+#----------------
 "ATL"
 "BOS"
 "BWI"
@@ -36,6 +45,10 @@ SQL  6 Rows affected
 "PIT"
 "SFO"
 SQL  9 Rows affected
+#     3: 1 select distinct aircraft_code from flight;
+#-----------------
+#| aircraft_code |
+#-----------------
 "72S"
 "D9S"
 "757"
@@ -59,6 +72,10 @@ SQL  9 Rows affected
 "SWM"
 "J31"
 SQL  22 Rows affected
+#     4: 1 select distinct * from fare;
+#--------------------------------------------------------------------------------------------------------------------
+#| fare_code | from_airport | to_airport | fare_class | fare_airline | restrict_code | one_way_cost | rnd_trip_cost |
+#--------------------------------------------------------------------------------------------------------------------
 "7100001"	"ATL"	"BOS"	"F"	""	""	497	994
 "7100002"	"ATL"	"BOS"	"FN"	""	""	348	696
 "7100003"	"ATL"	"BOS"	"Y"	""	""	331	662
@@ -594,6 +611,10 @@ SQL  22 Rows affected
 "7100533"	"SFO"	"PIT"	"Y"	""	""	546	1092
 "7100534"	"SFO"	"PIT"	"Y"	""	"VU/1"	379	0
 SQL  534 Rows affected
+#     5: 1 select distinct flight_code from flight_fare;
+#---------------
+#| flight_code |
+#---------------
 101910
 101911
 101912
@@ -1174,6 +1195,10 @@ SQL  534 Rows affected
 144575
 144576
 SQL  579 Rows affected
+#     6: 1 select distinct flight.flight_code,aircraft.aircraft_type from flight,aircraft where flight.aircraft_code=aircraft.aircraft_code;
+#-------------------------------
+#| flight_code | aircraft_type |
+#-------------------------------
 137361	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"
 137357	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"
 107474	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"
@@ -1754,6 +1779,10 @@ SQL  579 Rows affected
 101911	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"
 101910	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"
 SQL  579 Rows affected
+#     7: 1 select distinct airline.airline_name,aircraft.aircraft_type from aircraft,airline,flight where flight.aircraft_code=aircraft.aircraft_code and flight.airline_code=airline.airline_code;
+#--------------------------------
+#| airline_name | aircraft_type |
+#--------------------------------
 "USAIR"	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"
 "UNITED AIRLINES"	"BOEING 727 PASSENGER (ALL SERIES)"
 "USAIR"	"BOEING 727-200 (ALL SERIES)"

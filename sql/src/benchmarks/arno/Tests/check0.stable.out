@@ -20,14 +20,17 @@ Over..
 # 22:08:10 >  
 
 SQL  connected to database mTests_src_benchmarks_arno using schema sys
+#     1: 1 select * from model;
 #---------------------------------------
 #| model_id | is_mutagen | lumo | logp |
 #---------------------------------------
 SQL  no Rows affected
+#     2: 1 select * from atom;
 #------------------------------------------------
 #| atom_id | model_id | element | type | charge |
 #------------------------------------------------
 SQL  no Rows affected
+#     3: 1 select * from bond;
 #---------------------------------------------
 #| bond_id | model_id | atom1 | atom2 | type |
 #---------------------------------------------

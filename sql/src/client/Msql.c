@@ -335,8 +335,8 @@ int parse_line( const unsigned char *line )
 	return cnt;
 }
 
-void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
-	int  i;
+void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
+	int  i, lineno = 0;
 	char *line = NULL;
 	char buf[BUFSIZ];
 
@@ -347,9 +347,10 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug ){
 		}
 		line = sql_readline(prompt);
 		if (!line) break;
+		lineno++;
 		cmdcnt = parse_line((unsigned char*)line);
-		if (debug)
-			printf("%d %s\n", cmdcnt, line);
+		if (debug || trace)
+			printf("# %5d: %d %s\n", lineno, cmdcnt, line);
 #ifdef HAVE_ICONV
 		if (to_utf){
 			char *converted = conv(line, to_utf);
@@ -726,7 +727,7 @@ main(int ac, char **av)
 	char buf[BUFSIZ];
 	char *prog = *av, *config = NULL, *passwd = NULL, *user = NULL;
 	char *login = NULL, *db = NULL, *schema = NULL;
-	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, dump = 0;
+	int i = 0, debug = 0, fd = 0, port = 0, setlen = 0, dump = 0, trace = 0;
 	opt 	*set = NULL;
 
 	static struct option long_options[] =
@@ -738,6 +739,7 @@ main(int ac, char **av)
                {"port", 1, 0, 'p'},
                {"passwd", 1, 0, 'P'},
                {"user", 1, 0, 'u'},
+               {"trace",0, 0, 0},
                {0, 0, 0, 0}
              };
 
@@ -755,7 +757,12 @@ main(int ac, char **av)
 
 		switch (c){
 		case 0:
-			/* all long options are mapped on their short version */
+			if (strcmp(long_options[option_index].name,
+						"trace") == 0) {
+				trace = 1;
+				break;
+			}
+			/* all other long options are mapped on their short version */
 			printf("option %s", long_options[option_index].name);
 			if (optarg)
 				printf( " with arg %s", optarg );
@@ -897,7 +904,7 @@ main(int ac, char **av)
 			if (S_ISCHR(st.st_mode))
 	   			is_chrsp = 1;
 #endif
-			clientAccept( ws, rs, prompt, debug );
+			clientAccept( ws, rs, prompt, debug, trace );
 		} else {
 			dump_tables( ws, rs, dump );
 		}

@@ -16,14 +16,15 @@ quit;
 
 Over..
 
-# 17:10:21 >  
-# 17:10:21 >  Mtimeout -timeout 60 sql_client --port=58875  < wisconsin-select.sql
-# 17:10:21 >  
+# 19:15:16 >  
+# 19:15:16 >  Mtimeout -timeout 120 Msql -u monetdb -P monetdb --host=draco --port=54321 --trace < wisconsin-select.sql
+# 19:15:16 >  
 
-= Stable Output only partly verified so far:
-= - number of output tuples ("rows affected") is correct
-= - further details (actual result data) not checked, yet
-
+SQL  connected to database mTests_src_benchmarks_wisconsin using schema sys
+#     1: 1 select *  from tenk1 where (unique2 > 301) and (unique2 < 402);
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 |
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
 954	302	0	2	4	14	54	954	954	954	954	108	109	"SKAAAA"	"QLAAAA"	"OOOOxx"
 3413	303	1	1	3	13	13	413	1413	3413	3413	26	27	"HBAAAA"	"RLAAAA"	"VVVVxx"
 9081	304	1	1	1	1	81	81	1081	4081	9081	162	163	"HLAAAA"	"SLAAAA"	"AAAAxx"
@@ -125,6 +126,10 @@ Over..
 2293	400	1	1	3	13	93	293	293	2293	2293	186	187	"FKAAAA"	"KPAAAA"	"AAAAxx"
 6125	401	1	1	5	5	25	125	125	1125	6125	50	51	"PBAAAA"	"LPAAAA"	"HHHHxx"
 SQL  100 Rows affected
+#     2: 1 select *  from tenk1 where (unique1 > 647) and (unique1 < 1648);
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 |
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
 1314	10	0	2	4	14	14	314	1314	1314	1314	28	29	"OYAAAA"	"KAAAAA"	"OOOOxx"
 1504	11	0	0	4	4	4	504	1504	1504	1504	8	9	"WFAAAA"	"LAAAAA"	"VVVVxx"
 923	45	1	3	3	3	23	923	923	923	923	46	47	"NJAAAA"	"TBAAAA"	"HHHHxx"
@@ -1126,8 +1131,16 @@ SQL  100 Rows affected
 1384	9986	0	0	4	4	84	384	1384	1384	1384	168	169	"GBAAAA"	"CUOAAA"	"OOOOxx"
 858	9988	0	2	8	18	58	858	858	858	858	116	117	"AHAAAA"	"EUOAAA"	"AAAAxx"
 SQL  1000 Rows affected
+#     3: 1 select * from tenk1 where unique2 = 2001;
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 |
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
 5513	2001	1	1	3	13	13	513	1513	513	5513	26	27	"BEAAAA"	"ZYCAAA"	"HHHHxx"
 SQL  1 Row affected
+#     4: 1 select * from tenk1 where (unique2 > 301) and (unique2 < 402);
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 |
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
 954	302	0	2	4	14	54	954	954	954	954	108	109	"SKAAAA"	"QLAAAA"	"OOOOxx"
 3413	303	1	1	3	13	13	413	1413	3413	3413	26	27	"HBAAAA"	"RLAAAA"	"VVVVxx"
 9081	304	1	1	1	1	81	81	1081	4081	9081	162	163	"HLAAAA"	"SLAAAA"	"AAAAxx"
@@ -1229,6 +1242,10 @@ SQL  1 Row affected
 2293	400	1	1	3	13	93	293	293	2293	2293	186	187	"FKAAAA"	"KPAAAA"	"AAAAxx"
 6125	401	1	1	5	5	25	125	125	1125	6125	50	51	"PBAAAA"	"LPAAAA"	"HHHHxx"
 SQL  100 Rows affected
+#     5: 1 select t1.*, t2.unique1 AS t2unique1, t2.unique2 AS t2unique2, t2.two AS t2two, t2.four AS t2four, t2.ten AS t2ten, t2.twenty AS t2twenty, t2.hundred AS t2hundred, t2.thousand AS t2thousand, t2.twothousand AS t2twothousand, t2.fivethous AS t2fivethous, t2.tenthous AS t2tenthous, t2.odd AS t2odd, t2.even AS t2even, t2.stringu1 AS t2stringu1, t2.stringu2 AS t2stringu2, t2.string4 AS t2string4  from tenk1 t1, tenk1 t2 where (t1.unique2 = t2.unique2) and (t2.unique2 < 1000);
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 | t2unique1 | t2unique2 | t2two | t2four | t2ten | t2twenty | t2hundred | t2thousand | t2twothousand | t2fivethous | t2tenthous | t2odd | t2even | t2stringu1 | t2stringu2 | t2string4 |
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 8800	0	0	0	0	0	0	800	800	3800	8800	0	1	"MAAAAA"	"AAAAAA"	"AAAAxx"	8800	0	0	0	0	0	0	800	800	3800	8800	0
 1891	1	1	3	1	11	91	891	1891	1891	1891	182	183	"TUAAAA"	"BAAAAA"	"HHHHxx"	1891	1	1	3	1	11	91	891	1891	1891	1891	182
 3420	2	0	0	0	0	20	420	1420	3420	3420	40	41	"OBAAAA"	"CAAAAA"	"OOOOxx"	3420	2	0	0	0	0	20	420	1420	3420	3420	40
@@ -2230,6 +2247,10 @@ SQL  100 Rows affected
 6643	998	1	3	3	3	43	643	643	1643	6643	86	87	"NVAAAA"	"KMBAAA"	"OOOOxx"	6643	998	1	3	3	3	43	643	643	1643	6643	86
 2238	999	0	2	8	18	38	238	238	2238	2238	76	77	"CIAAAA"	"LMBAAA"	"VVVVxx"	2238	999	0	2	8	18	38	238	238	2238	2238	76
 SQL  1000 Rows affected
+#     6: 1 select t.*,B.unique1 AS Bunique1,B.unique2 AS Bunique2,B.two AS Btwo,B.four AS Bfour,B.ten AS Bten,B.twenty AS Btwenty,B.hundred AS Bhundred,B.thousand AS Bthousand,B.twothousand AS Btwothousand,B.fivethous AS Bfivethous,B.tenthous AS Btenthous,B.odd AS Bodd,B.even AS Beven,B.stringu1 AS Bstringu1,B.stringu2 AS Bstringu2,B.string4 AS Bstring4  from tenk1 t, Bprime B where t.unique2 = B.unique2;
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 | bunique1 | bunique2 | btwo | bfour | bten | btwenty | bhundred | bthousand | btwothousand | bfivethous | btenthous | bodd | beven | bstringu1 | bstringu2 | bstring4 |
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 8800	0	0	0	0	0	0	800	800	3800	8800	0	1	"MAAAAA"	"AAAAAA"	"AAAAxx"	8800	0	0	0	0	0	0	800	800	3800	8800	0
 1891	1	1	3	1	11	91	891	1891	1891	1891	182	183	"TUAAAA"	"BAAAAA"	"HHHHxx"	1891	1	1	3	1	11	91	891	1891	1891	1891	182
 3420	2	0	0	0	0	20	420	1420	3420	3420	40	41	"OBAAAA"	"CAAAAA"	"OOOOxx"	3420	2	0	0	0	0	20	420	1420	3420	3420	40
@@ -3231,6 +3252,10 @@ SQL  1000 Rows affected
 6643	998	1	3	3	3	43	643	643	1643	6643	86	87	"NVAAAA"	"KMBAAA"	"OOOOxx"	6643	998	1	3	3	3	43	643	643	1643	6643	86
 2238	999	0	2	8	18	38	238	238	2238	2238	76	77	"CIAAAA"	"LMBAAA"	"VVVVxx"	2238	999	0	2	8	18	38	238	238	2238	2238	76
 SQL  1000 Rows affected
+#     7: 1 select t1.*,o.unique1 AS ounique1,o.unique2 AS ounique2,o.two AS otwo,o.four AS ofour,o.ten AS oten,o.twenty AS otwenty,o.hundred AS ohundred,o.thousand AS othousand,o.twothousand AS otwothousand,o.fivethous AS ofivethous,o.tenthous AS otenthous,o.odd AS oodd, o.even AS oeven,o.stringu1 AS ostringu1,o.stringu2 AS ostringu2,o.string4 AS ostring4  from onek o, tenk1 t1, tenk1 t2 where (o.unique2 = t1.unique2) and (t1.unique2 = t2.unique2) and (t1.unique2 < 1000) and (t2.unique2 < 1000);
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 | ounique1 | ounique2 | otwo | ofour | oten | otwenty | ohundred | othousand | otwothousand | ofivethous | otenthous | oodd | oeven | ostringu1 | ostringu2 | ostring4 |
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 8800	0	0	0	0	0	0	800	800	3800	8800	0	1	"MAAAAA"	"AAAAAA"	"AAAAxx"	147	0	1	3	7	7	7	47	147	147	147	14
 1891	1	1	3	1	11	91	891	1891	1891	1891	182	183	"TUAAAA"	"BAAAAA"	"HHHHxx"	931	1	1	3	1	11	1	31	131	431	931	2
 3420	2	0	0	0	0	20	420	1420	3420	3420	40	41	"OBAAAA"	"CAAAAA"	"OOOOxx"	714	2	0	2	4	14	4	14	114	214	714	8
@@ -4232,6 +4257,10 @@ SQL  1000 Rows affected
 6643	998	1	3	3	3	43	643	643	1643	6643	86	87	"NVAAAA"	"KMBAAA"	"OOOOxx"	0	998	0	0	0	0	0	0	0	0	0	0
 2238	999	0	2	8	18	38	238	238	2238	2238	76	77	"CIAAAA"	"LMBAAA"	"VVVVxx"	278	999	0	2	8	18	8	78	78	278	278	16
 SQL  1000 Rows affected
+#     8: 1 select two, four, ten, twenty, hundred, string4  from tenk1;
+#-------------------------------------------------
+#| two | four | ten | twenty | hundred | string4 |
+#-------------------------------------------------
 0	0	0	0	0	"AAAAxx"
 1	3	1	11	91	"HHHHxx"
 0	0	0	0	20	"OOOOxx"
@@ -14233,6 +14262,10 @@ SQL  1000 Rows affected
 0	0	0	0	0	"OOOOxx"
 0	0	8	8	68	"VVVVxx"
 SQL  10000 Rows affected
+#     9: 1 select *  from onek;
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
+#| unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 |
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
 147	0	1	3	7	7	7	47	147	147	147	14	15	"RFAAAA"	"AAAAAA"	"AAAAxx"
 931	1	1	3	1	11	1	31	131	431	931	2	3	"VJAAAA"	"BAAAAA"	"HHHHxx"
 714	2	0	2	4	14	4	14	114	214	714	8	9	"MBAAAA"	"CAAAAA"	"OOOOxx"
@@ -15234,6 +15267,10 @@ SQL  10000 Rows affected
 0	998	0	0	0	0	0	0	0	0	0	0	1	"AAAAAA"	"KMBAAA"	"OOOOxx"
 278	999	0	2	8	18	8	78	78	278	278	16	17	"SKAAAA"	"LMBAAA"	"VVVVxx"
 SQL  1000 Rows affected
+#    10: 1 select MIN(unique2) as x  from tenk1;
+#-----
+#| x |
+#-----
 0
 SQL  1 Row affected
 
