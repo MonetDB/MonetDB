@@ -219,6 +219,8 @@ if [ "${os}" = "Linux" ] ; then
 			fi
 		  elif [ "`hostname`" = "theo.sara.nl" ] ; then
 			# specific settings for Sara's Itanium system
+			binpath="/home/niels/soft/local/bin:${binpath}"
+			libpath="/home/niels/soft/local/lib:${libpath}"
 			if [ "${COMP}" = "ntv" ] ; then
 				binpath="/home/niels/opt/intel/compiler70/ia64/bin:${binpath}"
 				libpath="/home/niels/opt/intel/compiler70/ia64/lib:${libpath}"
@@ -244,14 +246,12 @@ if [ "${os}" = "SunOS" ] ; then
 		# libraries compiled with gcc may need the gcc libs, so
 		# at them to the LD_LIBRARY_PATH 
 		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
+		# some tools are not in ${soft64} on apps
+		binpath="${soft32}/bin:${binpath}"
 	fi
 	if [ "${COMP}${BITS}${LINK}" = "ntv32d" ] ; then
 		# propper/extended LD_LIBRARY_PATH for native 32bit shared libs on SunOS
 		libpath="/usr/ucblib:${libpath}"
-	fi
-	if [ "${COMP}${BITS}" = "GNU64" ] ; then
-		# our gcc/g++ on apps is in ${soft32} (also for 64 bit)
-		binpath="${soft32}/bin:${binpath}"
 	fi
 	if [ "${what}" = "SQL"  -a  "${COMP}" = "ntv" ] ; then
 		# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
