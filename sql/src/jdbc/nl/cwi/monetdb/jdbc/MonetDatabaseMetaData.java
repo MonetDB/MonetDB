@@ -52,7 +52,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		if (envs == null) {
 			// make the env map
 			envs = new HashMap();
-			ResultSet env = getStmt().executeQuery("SELECT * FROM \"sys\".\"env\"");
+			ResultSet env = getStmt().executeQuery("SELECT * FROM (SELECT \"name\", \"value\" FROM \"sys\".\"env\" UNION ALL SELECT \"name\", \"value\" FROM \"sys\".\"sessions\") AS \"env\"");
 			while (env.next()) {
 				envs.put(env.getString("name"), env.getString("value"));
 			}
@@ -103,7 +103,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 */
 	public String getUserName() throws SQLException {
 		Map env = getEnvMap();
-		return((String)env.get("sql_user"));
+		return((String)env.get("current_user"));
 	}
 
 	/**
