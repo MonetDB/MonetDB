@@ -74,7 +74,7 @@ This module contains a simple interface for internet connections.
 		"Read a string from <S> until a '\1' character.",
 		"mapi");
 
-	PROC stream_line(stream s) : str := RETURN stream_strip(s,sprintf("%c%c",13,10));
+	PROC stream_line(stream s) : str := RETURN stream_strip(s,sprintf("%c",chr(10)));
 	ADDHELP("stream_line", "windhouw", "June  22 2001",
 		"Read a string from <S> until a newline.",
 		"mapi");
