@@ -1,23 +1,19 @@
 stdout of test 'tst380` in directory 'src/mal` itself:
 
 
-# 08:01:19 >  
-# 08:01:19 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst380.mal </dev/null
-# 08:01:19 >  
+# 11:28:52 >  
+# 11:28:52 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=43122 --set sql_port=57578 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst380.mal </dev/null
+# 11:28:52 >  
 
-# Monet Database Server V4.99.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ##inspection of the runtime setting
-##it uses the dynamic type analysis scheme
-#
 ## type error when the type variable numbers are ignored
-##function get(br:bat[:any,:any],nme:str, title:str):bat;
-#function get(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 #	b:= bbp.nme();
 #	z:= join(br,b);
 #	setColumn(z,title);
@@ -30,10 +26,6 @@ function Admin.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	
     return z;	# 4  (z:bat[:any,:any])
 end get;	# 5  
 ## Note the type of the variables will be fixed during the first call
-## Thus, a better schould would be a term rewriter call, which
-## replaces an instruction
-##rule get(Y:bat,N:str)
-#function getInt(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 #	b:= bbp.nme();
 #	z:= join(br,b);
 #	setColumn(z,title);
@@ -119,27 +111,11 @@ function Admin.main():int;	# 0  (main:int)
     Admin.dir("simple");	# 7  ($12:void)<-($13:str)
 end main;	# 8  
 [ "Get first directory" ]
-#---------------------------------------------------------------------------------------------------------------------------------#
-# bbp	tmp_8			htype	ttype		count	heat	dirty		status	kind		refCount		  # name
-# int	str			str	str		lng	int	str		str	str		int		  # type
-#---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  31,	  151,	  "dirty",	  "load", "transient",	  1		  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "load", "transient",	  1		  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "load", "transient",	  1		  ]
-[ 4,	  "simplemind",		  "int",  "int",	  0,	  59,	  "dirty",	  "load", "transient",	  0		  ]
-[ "Get second directory" ]
-#-------------------------#
-# h	tmp_6		  # name
-# int	str		  # type
-#-------------------------#
-[ 4,	  "simplemind"	  ]
-#-----------------------------------------------------------------------------------------------------------------#
-# tmp_6	tmp_25		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
-# int	str		str	str	lng	int	str		str	str		int		  # type
-#-----------------------------------------------------------------------------------------------------------------#
-[ 4,	  "simplemind",	  "int",  "int",  0,	  231,	  "dirty",	  "load", "transient",	  0		  ]
+!WARNING: BATdescriptor: range error 16
+!ERROR: MALexception:io.table:could not access descriptor
+#
 
-# 08:01:19 >  
-# 08:01:19 >  Done.
-# 08:01:19 >  
+# 11:28:52 >  
+# 11:28:52 >  Done.
+# 11:28:52 >  
 

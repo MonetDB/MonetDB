@@ -49,9 +49,14 @@ end steal;
 
 	printf("call function\n");
 	d:= steal(b);
-	e:= steal(b);
 	i:= getLRefCount(b);
 	printf("return from function refcount =%d[2]\n",i);
+
+	printf("check self replacement\n");
+	i:= getLRefCount(b);
+	b:= steal(b);
+	j:= getLRefCount(b);
+	print(i); print(j);
 
 	z:= bbp.getRefCount();
 	zl:= bbp.getLRefCount();

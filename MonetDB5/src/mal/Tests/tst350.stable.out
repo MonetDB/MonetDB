@@ -1,20 +1,18 @@
 stdout of test 'tst350` in directory 'src/mal` itself:
 
 
-# 08:01:18 >  
-# 08:01:18 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst350.mal </dev/null
-# 08:01:18 >  
+# 11:28:52 >  
+# 11:28:52 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=43122 --set sql_port=57578 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst350.mal </dev/null
+# 11:28:52 >  
 
-# Monet Database Server V4.99.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ##inspection of the runtime setting
-##it uses the dynamic type analysis scheme
-#
 #function dir(b:bat[:int,:str]):void;
 #	atm:= inspect.getAtomNames();
 #	brev:= reverse(b);
@@ -128,8 +126,9 @@ end main;	# 7
 # int	str		str	str	lng	int	str		str		str		int	  # type
 #-----------------------------------------------------------------------------------------------------------------#
 [ 4,	  "simplemind",	  "int",  "int",  0,	  180,	  "dirty",	  "dirty",	  "transient",	  0	  ]
+#
 
-# 08:01:19 >  
-# 08:01:19 >  Done.
-# 08:01:19 >  
+# 11:28:52 >  
+# 11:28:52 >  Done.
+# 11:28:52 >  
 

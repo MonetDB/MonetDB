@@ -1,21 +1,21 @@
 stdout of test 'tst450` in directory 'src/mal` itself:
 
 
-# 08:01:20 >  
-# 08:01:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst450.mal </dev/null
-# 08:01:20 >  
+# 11:28:54 >  
+# 11:28:54 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=43122 --set sql_port=57578 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst450.mal </dev/null
+# 11:28:54 >  
 
-# Monet Database Server V4.99.19
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ##testing the inspect module for help information
-#
 #a:= inspect.getAtomNames();	print(a);
-#m:= inspect.getModules();	print(m);
+#m:= inspect.getModule();	mr:= reverse(m);
+#m1:= kunique(mr);               m1r:= reverse(m1); print(m1r);
 #stmt:= inspect.getDefinition("algebra","select");
 #sig:= inspect.getSignature("algebra","select");
 #
@@ -68,8 +68,8 @@ end main;	# 14
 [ 24,	  "bstream"	  ]
 [ 25,	  "enum"	  ]
 #---------------------------------#
-# view	scope			  # name
-# void	str			  # type
+# t	tmp_6			  # name
+# oid	str			  # type
 #---------------------------------#
 [ 0@0,	  "Admin"		  ]
 [ 2@0,	  "mil_sys_procs"	  ]
@@ -106,17 +106,17 @@ end main;	# 14
 [ 1430@0, "tzone"		  ]
 [ 1434@0, "rule"		  ]
 [ 1439@0, "mtime"		  ]
-[ 1509@0, "url"			  ]
-[ 1530@0, "str"			  ]
-[ 1555@0, "blob"		  ]
-[ 1569@0, "mmath"		  ]
-[ 1611@0, "alarm"		  ]
-[ 1620@0, "lock"		  ]
-[ 1626@0, "sema"		  ]
-[ 1630@0, "unix"		  ]
-[ 1632@0, "mdb"			  ]
-[ 1649@0, "crackers"		  ]
-[ 1662@0, "thread"		  ]
+[ 1510@0, "url"			  ]
+[ 1531@0, "str"			  ]
+[ 1556@0, "blob"		  ]
+[ 1570@0, "mmath"		  ]
+[ 1612@0, "alarm"		  ]
+[ 1621@0, "lock"		  ]
+[ 1627@0, "sema"		  ]
+[ 1631@0, "unix"		  ]
+[ 1633@0, "mdb"			  ]
+[ 1650@0, "crackers"		  ]
+[ 1663@0, "thread"		  ]
 #-------------------------#
 # help	Comment		  # name
 # str	str		  # type
@@ -125,8 +125,9 @@ end main;	# 14
 # view	fcn	  # name
 # int	str	  # type
 #-----------------#
+#
 
-# 08:01:21 >  
-# 08:01:21 >  Done.
-# 08:01:21 >  
+# 11:28:54 >  
+# 11:28:54 >  Done.
+# 11:28:54 >  
 
