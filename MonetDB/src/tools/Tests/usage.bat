@@ -1,6 +1,5 @@
-@echo off
-
-rem Mlog -x
+@echo on
+@prompt # $t $g  
 
 Mserver -?
 Mclient -help

@@ -5,6 +5,6 @@ server-single_2
 server
 client
 multiClientSeq
-# multiClientPar
+multiClientPar
 # dump
 mload

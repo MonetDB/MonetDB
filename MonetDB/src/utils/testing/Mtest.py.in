@@ -1059,6 +1059,8 @@ def main(argv) :
 	for v in vars:
 		if not env.has_key(v):
 			env[v] = eval(dft[v])
+			if v == "MONET_MOD_PATH"  and  env['MONETHOME'] != env['MONETDIST']:
+				env[v] =  eval(regsub.gsub("MONETDIST","MONETHOME",dft[v]))+os.pathsep+env[v]
 			#TODO:
 			# make sure, that PATHs ar absolute
 
@@ -1092,6 +1094,8 @@ def main(argv) :
 	STDOUT.flush()
 
 	bp = env['MONETDIST']+os.sep+"bin"
+	if env['MONETHOME'] != env['MONETDIST']:
+		bp = env['MONETHOME']+os.sep+"bin"+os.pathsep+bp
 	lp = env['MONET_MOD_PATH']
 	if os.name == "nt":
 		bp = bp+os.pathsep+lp

@@ -4,4 +4,5 @@ NAME="$1"
 PRELUDE="$2 $3"
 
 mserver="`echo $MSERVER' ' | sed 's| -d8 | |g'`"
-Mlog -x $mserver -db $TSTDB < Arjen_02.milM
+Mlog   "$mserver -db $TSTDB < Arjen_02.milM"
+        $mserver -db $TSTDB < Arjen_02.milM
