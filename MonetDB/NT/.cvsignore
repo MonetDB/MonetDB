@@ -2,11 +2,11 @@
 *.plg
 *.ncb
 *.opt
+Debug
+Release
 bin
 com
 conf
-config.h
-Debug
 doc
 etc
 include
@@ -15,7 +15,7 @@ lady.gif
 lib
 libexec
 man
-Release
+monetdb_config.h
 sbin
 scripts
 share
