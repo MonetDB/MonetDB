@@ -224,13 +224,15 @@ YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args, int *err )
 	if (args){
   		for (n=args->h; n; n = n->next){
 			atom *a = n->data;
+			YYSTREE arg;
+
 			if (atom_null(a)) {
 				if (a->data.vtype == TYPE_str && 
 				    a->data.val.sval == NULL) {
 					a->data.val.sval = GDKstrdup(str_nil);
 				}
 			}
-			YYSTREE arg = milnode2(TOK_CONSTANT, &a->data );
+			arg = milnode2(TOK_CONSTANT, &a->data );
        			argtree = Myyexpand(argtree, arg);
 		}
 	}
@@ -253,6 +255,7 @@ int backend_fastpath( Cntxt procstk, YYSTREE callnode, list *args )
 		ValPtr argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
 	  	for (i=1, n=args->h; n; i++, n = n->next){
 			atom *a = n->data;
+
 			if (atom_null(a)) {
 				int t = argv[i].vtype;
 				if (a->data.vtype != t) {
