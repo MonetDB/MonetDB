@@ -16,9 +16,9 @@ if [ "${uname}" = "Darwin"  -a  "${DYLD_LIBRARY_PATH}" ] ; then
 fi
 
 # enhance various paths to find our stuff
-PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients:$PATH"
-PYTHONPATH="${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common:${srcdir}/src/mapi/clients"
-libpath="${MOD_PATH}:${builddir}/src/common/.libs:${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs"
+PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients/C:${builddir}/src/mapi/clients/python:$PATH"
+PYTHONPATH="${builddir}/src/testing:${srcdir}/src/testing:${builddir}/src/common:${srcdir}/src/mapi/clients/python"
+libpath="${MOD_PATH}:${builddir}/src/common/.libs:${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/C/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs"
 LD_LIBRARY_PATH="${libpath}${LD_LIBRARY_PATH}"
 if [ "${uname}" = "Darwin" ] ; then
 	DYLD_LIBRARY_PATH="${libpath}${DYLD_LIBRARY_PATH}"
