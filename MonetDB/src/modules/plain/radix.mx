@@ -1117,7 +1117,7 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	BUN p, q;
 
 	if (*size < 0) {
-		GDKerror("BATuniform: size must not be negativ");
+		GDKerror("BATuniform: size must not be negative");
 		return GDK_FAIL;
 	}
 
@@ -1182,7 +1182,7 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	flt *ftab, tot = 0.0;
 
 	if (*size < 0) {
-		GDKerror("BATnormal: size must not be negativ");
+		GDKerror("BATnormal: size must not be negative");
 		return GDK_FAIL;
 	}
 
