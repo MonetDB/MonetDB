@@ -302,30 +302,46 @@ if test "x$have_hwcounters" != xno; then
 
   save_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $HWCOUNTERS_INCS"
-  case "$host_os" in
-   linux*)	AC_CHECK_HEADERS(libpperf.h);;
-   solaris*)	AC_CHECK_HEADERS(perfmon.h);;
-  esac
-  CFLAGS="$save_CFLAGS"
-
   save_LIBS="$LIBS"
   LIBS="$LIBS $HWCOUNTERS_LIBS"
   case "$host_os" in
-   linux*)	AC_CHECK_LIB(pperf, start_counters, 
-		[ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
-		  have_hwcounters=yes ]
-		, have_hwcounters=no, "" ) ;;
-   solaris*)	AC_CHECK_LIB(perfmon, clr_pic, 
-		[ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
-		  have_hwcounters=yes ]
-		, have_hwcounters=no, "" ) ;;
-   irix*)	AC_CHECK_LIB(perfex, start_counters, 
-		[ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex" 
-		  have_hwcounters=yes ]
-		, have_hwcounters=no, "" ) ;;
-   *)		have_hwcounters=no;;
+   linux*)
+	AC_CHECK_LIB(perfctr, vperfctr_open, 
+	 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfctr" 
+	   AC_CHECK_HEADERS(libperfctr.h)
+	   AC_DEFINE(HAVE_LIBPERFCTR)
+	   have_hwcounters=yes ] ,
+	 AC_CHECK_LIB(pperf, start_counters, 
+	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
+	    AC_CHECK_HEADERS(libpperf.h)
+	    AC_DEFINE(HAVE_LIBPPERF)
+	    have_hwcounters=yes ] ,
+	  have_hwcounters=no  
+	)) ;;
+   solaris*)
+	AC_CHECK_LIB(cpc, cpc_access, 
+	 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lcpc" 
+	   AC_CHECK_HEADERS(libcpc.h)
+	   AC_DEFINE(HAVE_LIBCPC)
+	   have_hwcounters=yes ] ,
+	 AC_CHECK_LIB(perfmon, clr_pic, 
+	  [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
+	    AC_CHECK_HEADERS(perfmon.h)
+	    AC_DEFINE(HAVE_LIBPERFMON)
+	    have_hwcounters=yes ] ,
+	  have_hwcounters=no
+  	)) ;;
+   irix*)
+	AC_CHECK_LIB(perfex, start_counters, 
+	 [ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex" 
+	   have_hwcounters=yes ] ,
+	 have_hwcounters=no
+ 	) ;;
+   *)
+	have_hwcounters=no ;;
   esac
   LIBS="$save_LIBS"
+  CFLAGS="$save_CFLAGS"
 
   if test "x$have_hwcounters" != xyes; then
     HWCOUNTERS_LIBS=""
