@@ -798,7 +798,7 @@ int ASCIIload_file( ascii *as, bstream *b ){
 
 	while(!b->eof && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
 		char *s, *end;
-		if (bstream_read(b, b->size - (b->len - b->pos)) < 0) {
+		if (bstream_read(b, b->size - (b->len - b->pos)) == 0) {
 			GDKerror("read error\n");
 			res = -1;
 			break;
@@ -838,7 +838,7 @@ int ASCIIload_file( ascii *as, bstream *b ){
 					if (b->pos == 0 || (b->len - b->pos >
 						b->size>>1) )
 						size <<= 4;
-					if (bstream_read(b, size) < 0) {
+					if (bstream_read(b, size) == 0) {
 						GDKerror("read error\n");
 						res = -1;
 						break;
@@ -958,8 +958,11 @@ ASCIIload( BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr )
 	stream *s = open_rastream( datafile );
 	bstream *b = NULL;
 
-	if (stream_errnr(s)){
+	if (s == NULL || stream_errnr(s)){
 		GDKerror("could not open file %s\n", datafile );
+		if (s) {
+			stream_destroy(s);
+		}
 		return NULL;
 	}
 	res = ASCIIinput( names, seps, types, b=bstream_create(s, SIZE), nr );
@@ -992,10 +995,10 @@ void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr ){
 	if (create_dumpformat( &as, names, seps, bats) != ~(size_t)0 && 
 	    ASCIIassign_BATs( &as, bats ) != ~(size_t)0){
 		stream *s = open_wastream( datafile );
-		if (!stream_errnr(s) && dump_file( &as, s ) >= 0){
+		if (s != NULL && !stream_errnr(s) && dump_file( &as, s ) >= 0){
 			stream_printf(GDKerr, "saved in %s\n", datafile );
 		}
-		if (stream_errnr(s)){
+		if (s == NULL || stream_errnr(s)){
 		 	GDKerror("could not open file %s\n", datafile );
 		} else {
 			stream_close(s);

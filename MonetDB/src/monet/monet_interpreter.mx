@@ -2115,7 +2115,8 @@ void onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, 
 	
 	log("%d ]\n",eventcounter);
 	eventcounter++;
-	if(eventstream) stream_flush(eventstream); 
+	if (eventstream && stream_flush(eventstream))
+		eventstream = 0; 
 	MT_unset_lock(profilerLock, "onlineProfilerEvent");
 }
 

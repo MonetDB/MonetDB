@@ -238,15 +238,15 @@ RETSIGTYPE BATSIGabort(int nr) {
 	GDKfatal("signal %d caught by thread %lx\n", nr, (size_t) MT_getpid()); 
 }
 
-#ifdef SIGPIPE
-RETSIGTYPE BATSIGpipe(int nr) {
+#ifdef SIGCHLD
+RETSIGTYPE BATSIGchild(int nr) {
 	int	status; 
 	(void) nr;
 
 	while (waitpid(-1, &status, WNOHANG) > 0)
 		;
-	PARDEBUG THRprintf(GDKerr, "BROKEN PIPE \n"); 
-	(void) signal(SIGPIPE, BATSIGpipe); 
+	PARDEBUG THRprintf(GDKerr, "CHILD EXITED \n"); 
+	(void) signal(SIGPIPE, BATSIGchild); 
 }
 #endif
 
@@ -266,8 +266,11 @@ int BATSIGinit(void) {
 	(void) signal(SIGBUS,  BATSIGcrash); 
 	(void) signal(SIGSEGV, BATSIGcrash); 
 */
+#ifdef SIGCHLD
+	(void) signal(SIGCHLD, BATSIGchild); 
+#endif
 #ifdef SIGPIPE
-	(void) signal(SIGPIPE, BATSIGpipe); 
+	(void) signal(SIGPIPE, SIG_IGN);
 #endif
 #ifdef SIGHUP
 	(void) signal(SIGHUP,  MT_exit_thread);
@@ -1739,13 +1742,15 @@ int THRprintf(stream *s, const char *format, ...) {
 	}
 	p += n;
 	
-	stream_write(s, bf, p-bf, 1 );
-	stream_flush(s);
+	n = 0;
+	if (stream_write(s, bf, p-bf, 1 ) != 1 ||
+	    stream_flush(s) != 0)
+		n = -1;
 	if (bf != THRprintbuf) free(bf);
 	if (MT_system_lock) {
 		MT_unset_lock(MT_system_lock, "THRprintf");
 	}
-        return 0;
+        return n;
 }
 
 @}

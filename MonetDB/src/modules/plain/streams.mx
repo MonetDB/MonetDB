@@ -224,35 +224,34 @@ int stream_socket_@1( Stream *S, int *socket, str name ){
 @c
 int stream_write_string( Stream *S, str data ){
 	stream *s = *(stream**)S;
-	stream_write( s, data, 1, strlen(data));
-	return GDK_SUCCEED;
+	return stream_write( s, data, 1, strlen(data)) < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
 int stream_writeInt_wrap( Stream *S, int *data ){
 	stream *s = *(stream**)S;
-	stream_writeInt( s, *data);
-	return GDK_SUCCEED;
+	return stream_writeInt( s, *data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int stream_readInt_wrap( int *data, Stream *S ){
 	stream *s = *(stream**)S;
-	stream_readInt( s, data);
-	return GDK_SUCCEED;
+	return stream_readInt( s, data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 #define CHUNK (64*1024)
 int stream_read_string( str *res, Stream *S ){
 	stream *s = *(stream**)S;
-	size_t len = 0;
+	ssize_t len = 0;
 	size_t size = CHUNK + 1;
 	char *buf = GDKmalloc(size), *start = buf;
 
-	while ((len = stream_read(s, start, 1, CHUNK)) == CHUNK){
-		size += CHUNK;
+	while ((len = stream_read(s, start, 1, CHUNK)) > 0){
+		size += len;
 		buf = GDKrealloc(buf, size); 
 		start = buf + size - CHUNK - 1;
 		*start = '\0';
 	}
+	if (len < 0)
+		return GDK_FAIL;
 	start += len;
 	*start = '\0';
 	*res = buf;
@@ -261,7 +260,8 @@ int stream_read_string( str *res, Stream *S ){
 
 int stream_flush_stream( Stream *S ){
 	stream *s = *(stream**)S;
-	stream_flush( s );
+	if (stream_flush( s ))
+		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
@@ -334,7 +334,7 @@ int io_fprintf(Stream *filepp, str format,  ...){
         if (ret == GDK_FAIL) {
                 return GDK_FAIL;
         }
-        if (stream_write(fp, s, ret, strlen(s)) == 0) {
+        if (stream_write(fp, s, ret, strlen(s)) <= 0) {
                 GDKsyserror("io_fprintf():");
                 GDKfree(s);
                 return GDK_FAIL;
@@ -354,21 +354,31 @@ int io_fprint(Stream *filepp, ...){
 	val = va_arg (ap,ptr);
         if(val){
 		type = va_arg(ap,int);
-		if (ATOMstorage(type) != TYPE_str)
-			stream_printf( fp, "%s(\"", ATOMname(type) );
+		if (ATOMstorage(type) != TYPE_str &&
+		    stream_printf( fp, "%s(\"", ATOMname(type) ) < 0)
+			return GDK_FAIL;
 		ATOMprint(type, val, fp);
-		if (ATOMstorage(type) != TYPE_str)
-			stream_printf( fp, "\")" );
+		if (stream_errnr(fp))
+			return GDK_FAIL;
+		if (ATOMstorage(type) != TYPE_str &&
+		    stream_printf( fp, "\")" ) < 0)
+			return GDK_FAIL;
 		val = va_arg (ap,ptr);
         	while(val){
 			type = va_arg(ap,int);
-			if (ATOMstorage(type) != TYPE_str)
-				stream_printf( fp, ", %s(\"", ATOMname(type) );
-			else
-				stream_printf( fp, ", ");
+			if (ATOMstorage(type) != TYPE_str) {
+				if (stream_printf( fp, ", %s(\"", ATOMname(type) ) < 0)
+					return GDK_FAIL;
+			} else {
+				if (stream_printf( fp, ", ") < 0)
+					return GDK_FAIL;
+			}
 			ATOMprint(type, val, fp);
-			if (ATOMstorage(type) != TYPE_str)
-				stream_printf( fp, "\")" );
+			if (stream_errnr(fp))
+				return GDK_FAIL;
+			if (ATOMstorage(type) != TYPE_str &&
+			    stream_printf( fp, "\")" ) < 0)
+				return GDK_FAIL;
 			val = va_arg (ap,ptr);
 		}
 	}
@@ -414,7 +424,7 @@ int io_fgetc(int *res, Stream *S){
 	} else {
 		*res = -1; /* EOF */
 	}
-	return GDK_SUCCEED;
+	return stream_errnr(s) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 int io_fgets(str *res, Stream *S){
@@ -422,15 +432,19 @@ int io_fgets(str *res, Stream *S){
 	size_t size, len = 123;
 	char *buf = (char*) GDKmalloc(1+len);
 
+	if (buf == NULL)
+		return GDK_FAIL;
 	for(size=0; stream_read(s, buf + size, 1, 1) > 0; size++){
 		if (buf[size] == 0 || buf[size] == '\n') break;
 		if (size+1 == len) {
-			buf = (char*) GDKrealloc(buf, 1+(len*=2)); 
+			buf = (char*) GDKrealloc(buf, 1+(len*=2));
+			if (buf == NULL)
+				return GDK_FAIL;
 		}
 	}
 	buf[size] = 0;
 	*res = buf;
-	return GDK_SUCCEED;
+	return stream_errnr(s) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 int io_fputc(int *c, stream *S){
@@ -438,14 +452,12 @@ int io_fputc(int *c, stream *S){
 	char data[2];
 	data[0] = (char) *c; 
 	data[1] = 0;
-	stream_write( s, data, 1, 1);
-	return GDK_SUCCEED;
+	return stream_write( s, data, 1, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int io_fwrite(Stream *S, str buf, int *nbytes ){
 	stream *s = *(stream**)S;
-	stream_write( s, buf, 1, *nbytes);
-	return(GDK_SUCCEED);
+	return stream_write( s, buf, 1, *nbytes) == *nbytes ? GDK_SUCCEED : GDK_FAIL;
 }
 @mil
 

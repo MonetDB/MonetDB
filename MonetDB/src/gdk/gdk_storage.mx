@@ -898,10 +898,22 @@ itself employs qsort() to order the Cartesian product on
 the matched tail values.
 @{
 @c
-#define LINE(s,	X)     { int n=X-1; stream_write(s, "#", 1, 1); while(n-->0)\
-                                stream_write(s, "-", 1, 1); \
-				stream_printf(s, "#\n"); }
-#define TABS(s,	X)     { int n=X; while(n-->0) stream_printf(s, "\t");  }
+#define LINE(s,	X)	do {						\
+				int n=X-1;				\
+				if (stream_write(s, "#", 1, 1) != 1)	\
+					break;				\
+				while(n-->0)				\
+					if (stream_write(s, "-", 1, 1) != 1) \
+						break;			\
+				if (!stream_errnr(s))			\
+					stream_write(s, "#\n", 2, 1);	\
+			} while (0)
+#define TABS(s,	X)	do {						\
+				int n=X;				\
+				while (n-->0)				\
+					if (stream_write(s, "\t", 1, 1) != 1) \
+						break;			\
+			} while (0)
 
 typedef int (*strFcn)(str* s, int* len, ptr val); 
 
@@ -959,23 +971,39 @@ int print_tabwidth(BAT *b, str title, col_format_t *c) {
 static 
 void print_line(stream* s, col_format_t** l) {
 	col_format_t *c = *(l++);
-        stream_write(s, "[ ", 2, 1);
+        if (stream_write(s, "[ ", 2, 1) != 1)
+		return;
         if (c->format) {
-                stream_write(s, c->buf, c->len, 1);
-                stream_write(s, ",", 1, 1);
+                if (stream_write(s, c->buf, c->len, 1) != 1)
+			return;
+                if (stream_write(s, ",", 1, 1) != 1)
+			return;
                 TABS(s, c->tabs-((c->len+3)/8));
-                if (c->tabs*8 >= c->len+3) stream_write(s, " ", 1, 1);
-                stream_write(s , " ", 1, 1);
+		if (stream_errnr(s))
+			return;
+                if (c->tabs*8 >= c->len+3 && stream_write(s, " ", 1, 1) != 1)
+			return;
+                if (stream_write(s , " ", 1, 1) != 1)
+			return;
         }
         for (c=*l; *(++l); c=*l) {
-                stream_write(s, c->buf, c->len, 1);
-                stream_write(s, ",", 1, 1);
+                if (stream_write(s, c->buf, c->len, 1) != 1)
+			return;
+                if (stream_write(s, ",", 1, 1) != 1)
+			return;
                 TABS(s, c->tabs-((c->len+3)/8));
-                if (c->tabs*8 >= c->len+3) stream_write(s, " ", 1, 1);
-                stream_write(s, " ", 1, 1);
+		if (stream_errnr(s))
+			return;
+                if (c->tabs*8 >= c->len+3 && stream_write(s, " ", 1, 1) != 1)
+			return;
+                if (stream_write(s, " ", 1, 1) != 1)
+			return;
         }
-        stream_write(s, c->buf, c->len, 1);
+        if (stream_write(s, c->buf, c->len, 1) != 1)
+		return;
         TABS(s, c->tabs-((c->len+2)/8));
+	if (stream_errnr(s))
+		return;
         stream_printf( s, "  ]\n");
 }
 
@@ -989,13 +1017,17 @@ void print_format(col_format_t *c, ptr v) {
 	str buf = @1?argv[@2].tpe:argv[@2].buf; /* contains column title */
 	int len = (int) strlen(buf);
 	/* if (@1) stream_write(s, "(", 1, 1);*/
-	stream_write(s, buf, len, 1);
+	if (stream_write(s, buf, len, 1) != 1)
+		return -1;
 	/*if (@1) stream_write(s, ")", 1, 1);*/
 	/*TABS(s, argv[@2].tabs-((2+@1+len)/8));*/
 	TABS(s, argv[@2].tabs-((@1+len-1)/8));
+	if (stream_errnr(s))
+		return -1;
 @= print_header
 	int k = 1; 
-	stream_write(s, "# ", 2, 1);
+	if (stream_write(s, "# ", 2, 1) != 1)
+		return -1;
 	if (argv[0].format) {
 		@:print_head(@1,0)@
 		/*stream_write(s, "  ", 2, 1);*/
@@ -1005,9 +1037,13 @@ void print_format(col_format_t *c, ptr v) {
 		if (k++ < argc); /* stream_write(s, "| ", 2, 1);*/
 		else break;
         } 
-	if(@1)
-		stream_printf(s, "  # type\n");
-	else 	stream_printf(s, "  # name\n");
+	if(@1) {
+		if (stream_printf(s, "  # type\n") < 0)
+			return -1;
+	} else {
+ 		if (stream_printf(s, "  # name\n") < 0)
+			return -1;
+	}
 @c
 static 
 int print_header(int argc, col_format_t* argv, stream* s) {
@@ -1062,7 +1098,7 @@ int BATmultiprintf(
 	col_format_t *c = (col_format_t*) alloca((unsigned)(argc*sizeof(col_format_t)));
 	col_format_t **cp = (col_format_t**) alloca((unsigned)((argc+1)*sizeof(void*)));
 	ColFcn *value_fcn = (ColFcn*) alloca((unsigned)(argc*sizeof(ColFcn)));
-	int ret, j, total = 0;
+	int ret = 0, j, total = 0;
 @-
 Init the column descriptor of the head column.
 @c
@@ -1092,16 +1128,24 @@ Init the column descriptors of the tail columns.
 @-
 Print the table header and then the multijoin.
 @c
+	ret = -1;
         LINE(s, total);
-	print_header(argc, c, s);
-        LINE(s, total);
-	if (argc == 1) {
+	if (stream_errnr(s))
+		goto cleanup;
+	if (print_header(argc, c, s) < 0)
+		goto cleanup;
+	LINE(s, total);
+	if (stream_errnr(s))
+		goto cleanup;
+	else if (argc == 1) {
 		BAT *b = argv[0];
 		BUN p,q;
 		BATloop(b,p,q) {
 			print_format(cp[0], BUNhead(b,p));
 			print_format(cp[1], BUNtail(b,p));
 			print_line(s, cp);
+			if (stream_errnr(s))
+				goto cleanup;
 		}
 		MULTIJOIN_LEAD(ret) = 1;
 		MULTIJOIN_SORTED(ret) = (BAThordered(b)&1);
@@ -1116,6 +1160,7 @@ Cleanup.
 @c
 	if (stream_flush(s) < 0)
 		ret = -1;
+cleanup:
         for(j=0; j <= argc; j++) {
 		if (c[j].buf) GDKfree(c[j].buf);
 	}

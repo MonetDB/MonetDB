@@ -821,13 +821,12 @@ int ATOMprint(int t, ptr p, stream* s) {
 	    } else {
 		str buf = 0;
 		int sz = 0, l = (*tostr)(&buf, &sz, p);
-		stream_write(s, buf, l, 1);
+		l = stream_write(s, buf, l, 1);
 		GDKfree(buf);
 		return l;
 	    }
 	} 
-	stream_write(s, "nil", 3, 1);
-	return 3;
+	return (int) stream_write(s, "nil", 1, 3);
 }
 
 
@@ -998,7 +997,7 @@ int chrToStr(str *dst, int *len, chr *src) {
 
 chr *chrRead( chr *a, stream *s, size_t cnt) {
 	stream_read(s, (char *) a, 1, cnt);
-	return a;
+	return stream_errnr(s) ? NULL : a;
 }
 
 void chrWrite( chr *a, stream *s, size_t cnt) {
@@ -1040,7 +1039,7 @@ int bitToStr(char **dst, int *len, bit *src) {
 
 bit *bitRead(bit *a, stream *s, size_t cnt) {
 	stream_read(s, (char *) a, 1, cnt );
-	return a;
+	return stream_errnr(s) ? NULL : a;
 }
 	
 void bitWrite( bit *a, stream *s, size_t cnt) {
@@ -1085,7 +1084,7 @@ int batToStr(char **dst, int *len, bat *src) {
 
 bat *batRead(bat *a, stream *s, size_t cnt) {
 	stream_readIntArray(s, (int*)a, cnt); /* bat==int */
-	return a;
+	return stream_errnr(s) ? NULL : a;
 }
 	
 void batWrite( bat *a, stream *s, size_t cnt) {
@@ -1128,7 +1127,7 @@ int @1FromStr(char* src, int * len, @1 **dst) {
 @= atom_io
  @1 * @1Read(@1 *a, stream *s, size_t cnt) {
 	stream_read@2Array(s, (@3*)a, cnt);
-	return a;
+	return stream_errnr(s) ? NULL : a;
 }
 void @1Write( @1 *a, stream *s, size_t cnt) {
 	stream_write@2Array(s, (@3*)a, cnt);
@@ -1750,9 +1749,14 @@ int strToStr(char** dst, int *len, char* src) {
 str strRead(str a, stream *s, size_t cnt) {
 	int len;
 	assert(cnt==1);
-	stream_readInt(s, &len);
-	a = GDKmalloc(len+1);
-	stream_read(s, a, len, 1);
+	if (!stream_readInt(s, &len))
+		return NULL;
+	if ((a = GDKmalloc(len + 1)) == NULL)
+		return NULL;
+	if (stream_read(s, a, len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
 	a[len] = 0;
 	return a;
 } 
@@ -1760,8 +1764,8 @@ str strRead(str a, stream *s, size_t cnt) {
 void strWrite(str a, stream *s, size_t cnt) {
 	size_t len = strlen(a);
 	assert(cnt==1);
-	stream_writeInt(s, (int) len);
-	stream_write(s, a, len, 1 );
+	if (stream_writeInt(s, (int) len) == 0)
+		stream_write(s, a, len, 1 );
 }
 
 @+ Unique OIDs
@@ -1829,7 +1833,8 @@ int OIDwrite(stream *s) {
 	if (GDKoid) {
 		GDKflushed = GDKoid;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
-		if (stream_write(s, " ", 1, 1) == 0) ret = -1;
+		if (stream_errnr(s) || stream_write(s, " ", 1, 1) <= 0)
+			ret = -1;
 	}
 	MT_unset_lock(MT_system_lock, "OIDwrite");
 	return ret;

@@ -1123,10 +1123,12 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 @c
 int CMDprint_val(ptr val, int tpe) {
         stream *fp = GDKout;
-        stream_write(fp, "[ ", 2, 1);
+	if (stream_write(fp, "[ ", 2, 1) != 1)
+		return GDK_FAIL;
         ATOMprint(tpe, val, fp);
-        stream_write(fp, " ]\n", 3, 1);
-        return GDK_SUCCEED;
+	if (stream_errnr(fp))
+		return GDK_FAIL;
+	return stream_write(fp, " ]\n", 3, 1) == 1 ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int CMDprint_bats(int argc, BAT *argv[], int order) {

@@ -279,7 +279,7 @@ Get the new information for the server socket and start listening.
 			assert(name);
 			memset(name,0,BLOCK);
 			if (fdin == 0 || stream_errnr(fdin) ){
-				GDKsyserror("CLIENTlisten:fdin problems\n");
+				GDKsyserror("MAPIlisten:fdin problems\n");
 				continue;
 			}
 			/* get user name */
@@ -289,7 +289,7 @@ Get the new information for the server socket and start listening.
 				stream_read(fdin, user, 1, 1);
 			}
 			if (stream_errnr(fdin)) {
-				GDKsyserror("CLIENTlisten: fdin problems\n");
+				GDKsyserror("MAPIlisten: fdin problems\n");
 				stream_close(fdin);
 				stream_destroy(fdin);
 				continue;
@@ -307,7 +307,7 @@ Get the new information for the server socket and start listening.
                                 fdout= socket_wastream(msgsock,"Mserver mapi write");
 
 			if (fdout == 0){
-				GDKsyserror("CLIENTlisten:fdout problems\n");
+				GDKsyserror("MAPIlisten:fdout problems\n");
 				continue;
 			}
 			*user = 0;
@@ -322,7 +322,7 @@ Get the new information for the server socket and start listening.
 			c = initClient(name, nmp, FALSE);
 			GDKfree(nmp);
 			if (c == 0) {
-				stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
+				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
 
 				/* Make sure that the read- (in-) stream is closed first,
@@ -346,8 +346,8 @@ Get the new information for the server socket and start listening.
 			(void)monetFork();
 			scheduleClient(c);
 			PARDEBUG THRprintf(GDKerr, 
-				"CLIENTlisten:client accepted %d\n", 
-					msgsock);
+					   "MAPIlisten:client accepted %d\n", 
+					   msgsock);
 		} else {
 			ValRecord res;
 			char buf[BUFSIZ];
@@ -654,13 +654,21 @@ Get the new information for the server socket and start listening.
 			memset(name,0,BLOCK);
 			if (fdin == 0 || stream_errnr(fdin) ){
 				GDKsyserror("MAPIlistenSSL:fdin problems\n");
+				if (fdin)
+					stream_destroy(fdin);
 				continue;
 			}
 			/* get user name */
 			stream_read(fdin, user, 1, 1);
-			for(i=0; i<BLOCK && *user != '\n'; i++){
+			for(i=0; i<BLOCK && *user != '\n' && !stream_errnr(fdin); i++){
 				user++;
 				stream_read(fdin, user, 1, 1);
+			}
+			if (stream_errnr(fdin)) {
+				GDKsyserror("MAPIlistenSSL: fdin problems\n");
+				stream_close(fdin);
+				stream_destroy(fdin);
+				continue;
 			}
 			*user = 0;
                         /* printf("mapi:Client accepted %s\n", name);fflush(stdout);*/
@@ -763,8 +771,8 @@ int stream_read_until(str *res, Stream *S , str stop)
 	char buf[BUFSIZ + 1], *start = buf;
 
 	while (stream_read(s, start, 1, 1) > 0){
-		if (((start-buf) >= (slen-1)) 
-			&& (strncmp((start-slen+1),stop,slen)==0)) {
+		if (start - buf >= slen - 1 &&
+		    strncmp(start - slen + 1, stop, slen) == 0) {
 /*
 				start = start-slen+1;
 */
@@ -773,6 +781,9 @@ int stream_read_until(str *res, Stream *S , str stop)
 		}
 		start++;
 	}
+
+	if (stream_errnr(s))
+		return GDK_FAIL;
 
 	len = start-buf;
 	if (len > 0){

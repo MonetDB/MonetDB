@@ -397,11 +397,17 @@ typedef struct {
 	int dim;
 	size_t i;
 	for(i=0;i<sz;i++){
-		stream_readInt(s,&dim);
+		if (!stream_readInt(s,&dim))
+			return NULL;
 	
-        	a = (@1s *)GDKmalloc(@1ssize(dim));
+        	if ((a = (@1s *)GDKmalloc(@1ssize(dim))) == NULL)
+			return NULL;
 		a->dimension = dim;
 		stream_read(s, (char*)a->data, 1, dim*sizeof(@1));
+		if (stream_errnr(s)) {
+			GDKfree(a);
+			return NULL;
+		}
 		if (stream_byteorder(s) != 1234){
 			int i;
 			for (i=0;i<dim;i++) 
@@ -414,8 +420,10 @@ typedef struct {
     void atom_@1s_write(@1s* a, stream *s, size_t sz) {
 	size_t i;
 	for(i=0;i<sz;i++){
-		stream_writeInt(s,a->dimension);
-		stream_write(s, (char*)a->data, 1, a->dimension*sizeof(@1));
+		if (!stream_writeInt(s,a->dimension))
+			return;
+		if (stream_write(s, (char*)a->data, 1, a->dimension*sizeof(@1)) < 0)
+			return;
 	}
     }
 
@@ -1230,6 +1238,8 @@ dblv.print;
     @1_vector@2 *atom_@1_vector@2_read(@1_vector@2* a, stream *s, size_t sz) {
 	a->dimension = @2;
 	stream_read(s, (char*)a->data, sz, @2*sizeof(@1));
+	if (stream_errnr(s))
+		return NULL;
 	
 	if (stream_byteorder(s) != 1234){
 		int i;

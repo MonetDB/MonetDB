@@ -238,6 +238,8 @@ fprintf(stderr,"[");
 fprintf(stderr,"%d\@0",arrayindex[offset]);
 #endif
           ATOMprint(type_id,BUNtail(val,p),st);
+	  if (stream_errnr(st))
+		  goto exit_err_full;
         }
         i = 0;
         while((++idxvector[i]) == lenvector[i]) {

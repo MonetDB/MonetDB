@@ -59,13 +59,13 @@ Can be used in scripts, but is insecure.
 @c
 #include <monet_options.h>	/* includes monetdb_config.h */
 #include "Mapi.h"
+#include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
 /* #include <signal.h> */
-#include <stream.h>
 
 #ifndef S_ISCHR
 #define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
@@ -89,7 +89,6 @@ Can be used in scripts, but is insecure.
 #	define	NO_LOCALE
 #endif
 
-stream *ws = NULL, *rs = NULL;
 int is_chrsp = 0;
 int exit_on_error =0;
 int blocked= 1;
@@ -800,7 +799,6 @@ int main(int ac, char **av)
 			usage(prog);
 	}
 
-	stream_init();
 	if(debug==0){
 		char *nme;
 		nme=mo_find_option(set, setlen, "mapi_debug");

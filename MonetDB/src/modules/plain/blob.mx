@@ -173,17 +173,22 @@ blob* blob_null(void)
 blob *blob_read(blob *a, stream *s, size_t cnt) {
 	int len;
 	assert(cnt==1);
-	stream_readInt(s, &len);
-	a = GDKmalloc(len);
-	stream_read(s, (char*)a, len, 1);
+	if (!stream_readInt(s, &len))
+		return NULL;
+	if ((a = GDKmalloc(len)) == NULL)
+		return NULL;
+	if (stream_read(s, (char*)a, len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
 	return a;
 } 
 
 void blob_write(blob *a, stream *s, size_t cnt) {
 	int len = blobsize(a->nitems);
 	assert(cnt==1);
-	stream_writeInt(s, (int) len);
-	stream_write(s, (char*)a, len, 1 );
+	if (stream_writeInt(s, (int) len))
+		stream_write(s, (char*)a, len, 1 );
 }
 
 void blob_convert( blob *b, int direction){

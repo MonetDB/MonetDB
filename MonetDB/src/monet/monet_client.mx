@@ -349,7 +349,7 @@ void freeClient(Client c)
 		}
 		monetSetChannel(t, bkin, bkout);
        		TBL_exitclient(c); /* module drops */
-		GDKlog("Mserver: %s session ends", c->user);	
+		/* GDKlog("Mserver: %s session ends", c->user); */
 		stream_close(c->fdin);
 		stream_destroy(c->fdin);
 		stream_close(c->fdout);
@@ -503,7 +503,8 @@ int readClient(Client c)
 			} else if (stream_write(fd, c->prompt, l, 1) != 1) {
 				return 0;
 			}
-			stream_flush(fd);
+			if (stream_flush(fd))
+				return 0;
 		}
 		if (blocked) {
 			/* read to end of block (recognized by an
@@ -529,8 +530,6 @@ int readClient(Client c)
 				if (c->limit - c->top <= 1)
 					enlargebuffer(c);
 				i = stream_read(c->fdin, c->top, 1, 1);
-				if (stream_errnr(c->fdin))
-					return 0;
 				if (i <= 0)
 					return 0;
 			} while (*c->top++ != '\n');
