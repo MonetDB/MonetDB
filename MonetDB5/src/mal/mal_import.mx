@@ -229,44 +229,45 @@ void runScript(Client c, str fname, int listing, MalStkPtr glb)
 }
 
 void callString(Client c, str s, int listing)
-{   
-    buffer b;
-    bstream *oldfdin = c->fdin;
-    int oldyycur = c->yycur;
-    int oldlisting= c->listing;
-    int oldmode = c->mode;
-    int oldblkmode = c->blkmode;
-    str oldprompt = c->prompt;
+{
+	buffer b;
+	
+	bstream *oldfdin = c->fdin;
+	int oldyycur = c->yycur;
+	int oldlisting= c->listing;
+	int oldmode = c->mode;
+	int oldblkmode = c->blkmode;
+	str oldprompt = c->prompt;
 
 	Scope oldnspace = c->nspace;
-    Symbol oldprg = c->curprg;
-    MalStkPtr oldglb = c->glb;
+	Symbol oldprg = c->curprg;
+	MalStkPtr oldglb = c->glb;
 
-    c->listing = listing;
-    c->blkmode = 0;
-    c->prompt = ""; /* do not produce visible prompts */
+	c->listing = listing;
+	c->blkmode = 0;
+	c->prompt = ""; /* do not produce visible prompts */
 
-    buffer_init(&b, s, strlen(s)+1); 
-    c->fdin = bstream_create( buffer_rastream(&b, "callString"), b.len );
-    c->yycur = 0;
-    
-    initClientPrg(c,"main");
-    runScenario(c);
+	buffer_init(&b, GDKstrdup(s), strlen(s)+1); 
+	c->fdin = bstream_create( buffer_rastream(&b, "callString"), b.len );
+	c->yycur = 0;
 
-    if (c->fdin){
-            (void) stream_close(c->fdin->s);
-            (void) stream_destroy(c->fdin->s);
-            (void) bstream_destroy(c->fdin);
-    }
+	initClientPrg(c,"main");
+	runScenario(c);
 
-    c->fdin = oldfdin;
-    c->yycur = oldyycur;
-    c->listing = oldlisting;
-    c->mode = oldmode;
-    c->blkmode = oldblkmode;
-    c->prompt = oldprompt;
-    c->glb = oldglb;
-    c->nspace = oldnspace;
-    c->curprg = oldprg;
+	if (c->fdin){
+		(void) stream_close(c->fdin->s);
+		(void) stream_destroy(c->fdin->s);
+		(void) bstream_destroy(c->fdin);
+	}
+
+	c->fdin = oldfdin;
+	c->yycur = oldyycur;
+	c->listing = oldlisting;
+	c->mode = oldmode;
+	c->blkmode = oldblkmode;
+	c->prompt = oldprompt;
+	c->glb = oldglb;
+	c->nspace = oldnspace;
+	c->curprg = oldprg;
 }
 @}
