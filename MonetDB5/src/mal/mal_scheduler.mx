@@ -245,15 +245,18 @@ step in and re-arrange the plan, which is ignored for now.
 @example
 function sql_cache.qry01(int A1, bit A2);
 	t1:= sql.bind("schema","tables",0,0);
+	...
 end qry01;
 
 function main();
 	scheduler.inline("sql_cache","qry01");
 	scheduler.sqlbind();
 	sql_cache.qry01(12,false);
-	showFunction();
 @end example
 
+Note, these scheduler interventions are called for by the SQL compiler.
+It may have flagged the cached version as a high potential for
+dynamic optimization, something that is not known at the MAL level.
 @c
 str 
 RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
