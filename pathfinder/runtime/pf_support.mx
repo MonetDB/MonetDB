@@ -150,40 +150,36 @@ proc fetch(bat[any::1,any::2] b, bat[void,any] sel) : bat[any::1,any::2] {
 }
 
 proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) : bat[oid,oid] {
-    var uniq := true;
-    if ((mode = GT) or (mode = GE)) {
-        if (l.sample(1000).kunique().count() < 900) {
-        	l := {max}(l);
-	} else {
-		uniq := false;
-	}
-        if (r.sample(1000).kunique().count() < 900) {
-        	r := {min}(r);
-	} else {
-		uniq := false;
-	}
-    } else if ((mode = LT) or (mode = LE)) {
-        if (l.sample(1000).kunique().count() < 900) {
-        	l := {min}(l);
-	} else {
-		uniq := false;
-	}
-        if (r.sample(1000).kunique().count() < 900) {
-        	r := {max}(r);
-	} else {
-		uniq := false;
-	}
-    } else {
-	uniq := false;
+    if (not(l.ordered()) or not(r.reverse().ordered())) {
+        ERROR("htordered_unique_thetajoin(): ordered l.head and r.tail columns (iters) expected.\n");
+    }
+    if (mode != EQ) {
+        # trick: as we eliminate double matches anyway, let's not generate them to start with
+        # pumps are efficient because merge-based
+        if ((mode = GT) or (mode = GE)) {
+            l := {max}(l);
+            r := {min}(r.reverse()).reverse();
+        } else {
+            l := {min}(l);
+            r := {max}(r.reverse()).reverse();
+        }
+        # now warm up r with a nice sequential scan.. investigating what is to come
+        var cnt := nlthetajoin(r.reverse(), l.sample(16).reverse(), mode, int(l).count());
+        cnt := int(cnt).count();
+        if (cnt > (int(r).count() / 16LL)) {
+            # a large intermediate result is better handled with nested loop
+           return nlthetajoin(l, r, mode, (cnt / 16LL)*int(l).count()); # no reordering necessary!!
+        }
     }
     var join_order := leftthetajoin(l, r, mode);
     var snd_iter := join_order.reverse().mark(0@0).reverse();
     var fst_iter := join_order.mark(0@0).reverse();
-    var sorting := fst_iter.CTrefine(snd_iter);
-    if (not(uniq)) {
-        sorting := sorting.reverse().kunique().reverse();
+    var sorting := fst_iter.CTrefine(snd_iter); # this may hurt
+    if (lng(max(sorting)) != int(sorting).count()) {
+        # the output of CTrefine allows to easily check if it is kunique
+        sorting := sorting.reverse().kunique().reverse(); # merge-based kunique
     }
-    return join_order.fetch(sorting);
+    return join_order.fetch(sorting); # this may hurt as well
 }
 
 
