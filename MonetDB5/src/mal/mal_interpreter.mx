@@ -213,7 +213,10 @@ being called.
 		stk->stksize= mb->vsize;
 		stk->blk= mb;
 		stk->cmd= cntxt->itrace; /* set debug mode */
-		@:safeguardStack@
+		if( env) {
+			stk->stkdepth= stk->stksize + env->stkdepth;
+			@:safeguardStack@
+		}
 	} 
 	if( stk->stktop>stk->stksize) GDKerror("Unexpected");
 
@@ -389,16 +392,16 @@ We do not want recursive programs crashing the server, so once in
 a while we check whether we are running dangerously low on available
 stack space.
 
+This situation can be detected by calling upon the GDK functionality
+of by limiting the depth of a function calls.
 @-
 @= safeguardStack
-/* Expensive? yes 1.5 sec for 1M calls another 
-   solution is needed.
-    if (THRhighwater()) {
+/* Expensive? 70 msec for 1M calls another solution is needed.*/
+    if (stk->stkdepth > (size_t) 100 * 1024 && THRhighwater()) {
         GDKerror("interpret: running out of "
 		 "physical stack space!\n");
-        goto MALevalExit;
+	return raiseException(mb,0,"Interpreter","Stack overflow");
     }
-*/
 
 @+ The interpreter loop
 The interpreter is geared towards execution a MAL procedure together

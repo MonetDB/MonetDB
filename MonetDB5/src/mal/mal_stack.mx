@@ -41,6 +41,11 @@ management)
 
 The variable names and types are kept in the stack to ease debugging.
 The underlying string value need not be garbage collected.
+
+The interpreter should be protected against physical stack overflow.
+The solution chosen is to maintain an incremental depth size.
+Once it exceeds a threshold, we call upon the kernel to
+ensure we are still within safe bounds.
 @{
 @h
 #ifndef _MAL_STACK_H_
@@ -56,6 +61,7 @@ The underlying string value need not be garbage collected.
 typedef struct MALSTK {
 	int 	stksize;
 	int	stktop;
+	long	stkdepth;	/* to protect against overflow*/
 	MT_Lock	stklock;	/* used for parallel processing */
 	int	shares;		/* number of processes on this stack */
 	int	childs[MAXSHARES];

@@ -289,7 +289,7 @@ know how many arguments may be needed upfront.
 [TODO, rather then breaking the original input into pieces,
 it would be worthwhile to keep track of location of the
 instruction in the source.]
-@-
+@- Call encapsulation
 The instruction records contain three optional pointers to functions:
 beforeCall, afterCall, and finalCall. They are bound to the result type.
 All expect a pointer to a VALrecord. The beforeCall is activated
@@ -490,6 +490,7 @@ mal_export int		newVariable(MalBlkPtr mb, str name,malType type);
 mal_export void		copyVariable(MalBlkPtr dst,MalBlkPtr src, VarPtr v);
 mal_export void 	removeVariable(MalBlkPtr mb, int varid);
 mal_export int		newTmpVariable(MalBlkPtr mb, malType type);
+mal_export int		newTmpSink(MalBlkPtr mb, malType type);
 mal_export int		newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void		delVariable(MalBlkPtr mb, int varid);
 mal_export void		freeVariable(MalBlkPtr mb, int varid);
@@ -1009,13 +1010,6 @@ is a priory known and not TYPE_any.
 int newTmpVariable(MalBlkPtr mb, malType type){
         int n;
         
-/*
-	if( type != TYPE_any){
-		n= findTmpVariable(mb,type);
-		if( n >= 0 )
-			return n;
-	}
-*/
 	@:makeVarSpace@
 	n = mb->vtop;
 	if( getVar(mb,n)== NULL)
@@ -1033,6 +1027,14 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 	mb->vtop++;
 	return n;
 } 
+int newTmpSink(MalBlkPtr mb, malType type){
+        int n;
+        
+	n= findTmpVariable(mb,type);
+	if( n >= 0 )
+		return n;
+	return newTmpVariable(mb,type);
+}
 int newTypeVariable(MalBlkPtr mb, malType type){
 	int n;
 	n= newTmpVariable(mb,type);
@@ -1101,13 +1103,13 @@ void freeVariable(MalBlkPtr mb, int varid){
 @}
 @- MAL constants
 Constants are stored in the symbol table and referenced
-by a variable identifier in the MAL sequence.
+by a variable identifier.
 This means that per MAL instruction, we may end up with
 MAXARG entries in the symbol table. This may lead to long
 searches for variables.
 An optimization strategy deployed in the current
 implementation is to look around for
-a similar (constant) definition and to reuse its name.
+a similar (constant) definition and to reuse its identifier.
 This avoids an exploding symbol table with a lot
 of temporary variables (as in tst400cHuge)
 
@@ -1121,11 +1123,6 @@ to indicate the number of symbol table entries to consider.
 Setting it to >= MAXARG will at least capture repeated use of a constant
 within a single function call or repeated use within a small block
 of code.
-
-Beware that the string representation does not elicit the precise
-basic type. In particular, integer constants appear in  several
-kinds. The most precise one should be defined to make type
-analysis work properly.
 
 The final step is to prepare a GDK value record, from which
 the internal representation can be obtained during
@@ -1168,8 +1165,8 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 		tonil= TRUE;
 	}
 	if( colon) *colon = 0;
-@}
 @-
+@}
 The current GDK layer does not perform a value range check.
 Since constants are dealt with only once, it is performed here
 as part of the parsing overhead.
