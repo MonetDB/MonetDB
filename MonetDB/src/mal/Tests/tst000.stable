@@ -8,4 +8,16 @@
 # monetrc:/ufs/mk/.monet.conf
 ##empty test file, used to check startup problems
 #
+function Admin.main():int;	#0:void (main:int)
+	const.open();	#1:oid ($1:void)
+	const.deposit("user","Admin");	#2:oid ($2:void)($3:str)($4:str)
+	const.deposit("database","demo");	#3:oid ($5:void)($6:str)($7:str)
+	const.deposit("dbfarm","/ufs/mk/monet_5-0/Linux/../dbfarm/demo");	#4:oid ($8:void)($9:str)($10:str)
+	const.deposit("distribution","/ufs/mk/monet_5-0/Linux");	#5:oid ($11:void)($12:str)($13:str)
+	const.deposit("monetrc","/ufs/mk/.monet.conf");	#6:oid ($14:void)($15:str)($16:str)
+	const.deposit("architecture","i686-pc-linux-gnu");	#7:oid ($17:void)($18:str)($19:str)
+	const.deposit("version","5.0");	#8:oid ($20:void)($21:str)($22:str)
+	const.deposit("environment","unknown yet");	#9:oid ($23:void)($24:str)($25:str)
+	const.deposit("pi",3.147);	#10:oid ($26:void)($27:str)($28:flt)
+end function;	#11:void 
 >

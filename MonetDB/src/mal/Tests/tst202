@@ -2,10 +2,10 @@
 # or ignoring.
 # a typical case is to try to rename an existing (persistent) bat
 
-	b:= new(int,int);
+	b:bat[int,int]:= new(int,int);
 	setName(b,"mybat");
 	#setPersistent(b);
-	setColumn(b,"first","second");
+	setRole(b,"first","second");
 	print(b);
 	c:= new(int,str);
 	setName(c,"mybat");

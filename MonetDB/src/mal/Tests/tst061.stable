@@ -1,0 +1,26 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## type coercion and creation
+#
+#o := oid("999@0");
+#os := str(o);
+#i := sht(1);
+#l := lng(2);
+#f := flt(3.4);
+#j := sht("1");
+#
+function Admin.main():int;	#0:void (main:int)
+	o := calc.oid("999@0");	#1:oid (o:oid)($2:str)
+	os := calc.str(o);	#2:str (os:str)(o:oid)
+	i := calc.sht(1);	#3:sht (i:sht)($5:int)
+	l := calc.lng(2);	#4:lng (l:lng)($7:int)
+	f := calc.flt(3.4);	#5:flt (f:flt)($9:flt)
+	j := calc.sht("1");	#6:sht (j:sht)($11:str)
+end function;	#7:void 
+>

@@ -1,0 +1,8 @@
+# type coercion and creation
+
+o := oid("999@0");
+os := str(o);
+i := sht(1);
+l := lng(2);
+f := flt(3.4);
+j := sht("1");

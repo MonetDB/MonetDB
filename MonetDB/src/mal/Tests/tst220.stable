@@ -97,7 +97,7 @@ function Admin.main():int;	#0:void (main:int)
 end function;	#28:void 
 refcount =1
 #-------------------------#
-# BAT:	  tmp_5		  #
+# BAT:	  tmp_1		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 1,	  "bat B"	  ]

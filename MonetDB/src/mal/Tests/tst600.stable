@@ -6,27 +6,32 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## garbage collection strins
+## checking box management
 #
-#	s0:= "hello";
-#	s0:= "world";
-#	b1:= s0 == "world";
-#	s1:= s0;
-#barrier b1;
-#	s2:= s1;
-#	s1:= "bye";
-#end 	b1;
-#	s1:= nil:str;
+#box.open("chest");
+#box.deposit("chest","pi",3.417:flt);
+#f:flt := box.take("chest","pi");
+#print(f);
+#f:= f+1.0:flt;
+#box.release("chest","pi",f);
+#g:flt := box.take("chest","pi");
+#print(g);
+#box.discard("chest","pi");
+#box.close("chest");
+#
 #
 function Admin.main():int;	#0:void (main:int)
-	s0 := "hello";	#1:str (s0:str)($2:str)
-	s0 := "world";	#2:str (s0:str)($3:str)
-	b1 := calc.==(s0,"world");	#3:bit (b1:bit)(s0:str)($3:str)
-	s1 := s0;	#4:str (s1:str)(s0:str)
-barrier	b1;	#5:bit (b1:bit)
-	s2 := s1;	#6:str (s2:str)(s1:str)
-	s1 := "bye";	#7:str (s1:str)($7:str)
-end	b1;	#8:bit (b1:bit)
-	s1 := "nil";	#9:str (s1:str)($8:str)
-end function;	#10:void 
+	box.open("chest");	#1:oid ($1:void)($2:str)
+	box.deposit("chest","pi",3.417);	#2:oid ($3:void)($2:str)($4:str)($5:flt)
+	f := box.take("chest","pi");	#3:flt (f:flt)($2:str)($4:str)
+	mal.print(f);	#4:int ($7:int)(f:flt)
+	f := calc.+(f,1.0);	#5:flt (f:flt)(f:flt)($8:flt)
+	box.release("chest","pi",f);	#6:oid ($9:void)($2:str)($4:str)(f:flt)
+	g := box.take("chest","pi");	#7:flt (g:flt)($2:str)($4:str)
+	mal.print(g);	#8:int ($11:int)(g:flt)
+	box.discard("chest","pi");	#9:oid ($12:void)($2:str)($4:str)
+	box.close("chest");	#10:oid ($13:void)($2:str)
+end function;	#11:void 
+[ 3.417 ]
+[ 3.417 ]
 >

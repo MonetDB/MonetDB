@@ -1,7 +1,7 @@
 # using spaces
 
-take(u:str,"user");
-print("User bound to %s\n",u);
+u:str:=const.take("user");
+printf("User bound to %s\n",u);
 
 v:int:= take("roomnumber");
 

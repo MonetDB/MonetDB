@@ -61,7 +61,7 @@ end function;	#20:void
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#
-# BAT:	  tmp_5	  #
+# BAT:	  tmp_1	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -76,7 +76,7 @@ end function;	#20:void
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #-----------------#
-# tmp_5	| tmp_5	  #
+# tmp_1	| tmp_1	  #
 #-----------------#
 [ 15,	  15	  ]
 [ 4,	  4	  ]

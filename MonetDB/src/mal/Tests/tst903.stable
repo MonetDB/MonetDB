@@ -19,7 +19,7 @@
 #x:= multiplex.script("+",b,c);
 #t1:= system.usec();
 #d0:= t1-t0;
-#printf("multiplex.+ %d\n",d0);
+##printf("multiplex.+ %d\n",d0);
 #
 function Admin.main():int;	#0:void (main:int)
 	b := mal.new(lng,lng);	#1:BAT (b:bat[lng,lng])(lng:lng)(lng:lng)
@@ -33,7 +33,5 @@ end	v;	#6:bit (v:bit)
 	x := multiplex.script("+",b,c);	#9:BAT (x:bat[lng,lng])($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
 	t1 := system.usec();	#10:lng (t1:lng)
 	d0 := calc.-(t1,t0);	#11:lng (d0:lng)(t1:lng)(t0:lng)
-	system.printf("multiplex.+ %d\n",d0);	#12:int ($15:int)($16:str)(d0:lng)
-end function;	#13:void 
-multiplex.+ 11931656
+end function;	#12:void 
 >

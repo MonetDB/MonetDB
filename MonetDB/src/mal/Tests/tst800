@@ -1,15 +1,18 @@
-# Testing global constants defined for all users
+# Testing global consts defined for all users
 # It should travers the nested spaces looking for the correct variable
 # take a local copy
-	v := take("version",str);
-	u := take("user", str);
-	db:= take("gdk_dbname",str);
-	df:= take("gdk_dbfarm");
-	dd:= take("gdk_dbdir");
-	bb := take("environment",bat[void,str]);
+	v:str := const.take("version");
+	u:str := const.take("user");
+	db:str:= const.take("database");
+	df:str:= const.take("dbfarm");
+	dd:str:= const.take("distribution");
+#	bb:bat[void,str] := const.take("environment");
 
 # how to obtain a copy of all objects in a space?
-barrier b:= space.iterator("mal_constants",-1:int,name:str,value:str);
-	printf("%s=",name);
-	printf("%s\n",value);
+#barrier (b,nme):= const.iterator();
+barrier b:= const.iterator(nme:str);
+	printf("%s=",nme);
+	val:str := const.toString(nme);
+	printf("%s\n",val);
+	redo b;
 end b;

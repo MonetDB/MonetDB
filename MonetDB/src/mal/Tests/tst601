@@ -1,8 +1,11 @@
-# type coercion and creation
+# Testing the box interfaces
+# open de const box and store a constant 
+# This operation should actually be limited to the system administrator
+# who can open any box.
 
-o := oid("999@0");
-os := str(o);
-i := sht(1);
-l := lng(2);
-f := flt(3.4);
-j := sht("1");
+const.open();
+const.deposit("pi",3.147:flt);
+pi:flt := const.take("pi");
+print(pi);
+const.close();	# save the content on persistent store
+print(pi);

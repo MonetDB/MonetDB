@@ -10,10 +10,10 @@
 ## or ignoring.
 ## a typical case is to try to rename an existing (persistent) bat
 #
-#	b:= new(int,int);
+#	b:bat[int,int]:= new(int,int);
 #	setName(b,"mybat");
 #	#setPersistent(b);
-#	setColumn(b,"first","second");
+#	setRole(b,"first","second");
 #	print(b);
 #	c:= new(int,str);
 #	setName(c,"mybat");
@@ -31,7 +31,7 @@
 function Admin.main():int;	#0:void (main:int)
 	b := mal.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
 	bat.setName(b,"mybat");	#2:void ($3:any)(b:bat[int,int])($4:str)
-	bat.setColumn(b,"first","second");	#3:BAT ($5:bat[int,int])(b:bat[int,int])($6:str)($7:str)
+	bat.setRole(b,"first","second");	#3:BAT ($5:bat[int,int])(b:bat[int,int])($6:str)($7:str)
 	mal.print(b);	#4:int ($8:int)(b:bat[int,int])
 	c := mal.new(int,str);	#5:BAT (c:bat[int,str])(int:int)(str:str)
 	bat.setName(c,"mybat");	#6:void ($11:any)(c:bat[int,str])($4:str)

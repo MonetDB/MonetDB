@@ -6,40 +6,45 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-## Testing global constants defined for all users
+## Testing global consts defined for all users
 ## It should travers the nested spaces looking for the correct variable
 ## take a local copy
-#	v := take("version",str);
-#	u := take("user", str);
-#	db:= take("gdk_dbname",str);
-#	df:= take("gdk_dbfarm");
-#	dd:= take("gdk_dbdir");
-#	bb := take("environment",bat[void,str]);
+#	v:str := const.take("version");
+#	u:str := const.take("user");
+#	db:str:= const.take("database");
+#	df:str:= const.take("dbfarm");
+#	dd:str:= const.take("distribution");
+##	bb:bat[void,str] := const.take("environment");
 #
 ## how to obtain a copy of all objects in a space?
-#barrier b:= space.iterator("mal_constants",-1:int,name:str,value:str);
-#	printf("%s=",name);
-#	printf("%s\n",value);
+##barrier (b,nme):= const.iterator();
+#barrier b:= const.iterator(nme:str);
+#	printf("%s=",nme);
+#	val:str := const.toString(nme);
+#	printf("%s\n",val);
+#	redo b;
 #end b;
 #
-!ERROR: 'take' undefined in Admin.main[6]
 function Admin.main():int;	#0:void (main:int)
-	v := space.take("version",str);	#1:bit (v:bit)($2:str)(str:str)
-	u := space.take("user",str);	#2:bit (u:bit)($5:str)(str:str)
-	db := space.take("gdk_dbname",str);	#3:bit (db:bit)($7:str)(str:str)
-	df := space.take("gdk_dbfarm");	#4:void (df:any)($9:str)
-	dd := space.take("gdk_dbdir");	#5:void (dd:any)($11:str)
-	bb := take("environment",bat[void,str]);	#6 unknown:void (bb:any)($13:str)(bat[void,str]:bat[void,str])
-barrier	b := space.iterator("mal_constants",-1,name,value);	#7:bit (b:bit)($16:str)($17:int)(name:str)(value:str)
-	system.printf("%s=",name);	#8:int ($20:int)($21:str)(name:str)
-	system.printf("%s\n",value);	#9:int ($22:int)($23:str)(value:str)
-end	b;	#10:bit (b:bit)
-end function;	#11:void 
-space_take not yet implemented
-space_take not yet implemented
-space_take not yet implemented
-space_takeAny not yet implemented
-space_takeAny not yet implemented
-!ERROR: MALexception:Admin.main[6]:Instruction type not fixed
-
+	v := const.take("version");	#1:str (v:str)($2:str)
+	u := const.take("user");	#2:str (u:str)($4:str)
+	db := const.take("database");	#3:str (db:str)($6:str)
+	df := const.take("dbfarm");	#4:str (df:str)($8:str)
+	dd := const.take("distribution");	#5:str (dd:str)($10:str)
+barrier	b := const.iterator(nme);	#6:lng (b:lng)(nme:str)
+	system.printf("%s=",nme);	#7:int ($13:int)($14:str)(nme:str)
+	val := const.toString(nme);	#8:str (val:str)(nme:str)
+	system.printf("%s\n",val);	#9:int ($16:int)($17:str)(val:str)
+	redo b ;	#10:lng (b:lng)
+end	b;	#11:lng (b:lng)
+end function;	#12:void 
+user=Admin
+database=demo
+dbfarm=/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+distribution=/ufs/mk/monet_5-0/Linux
+monetrc=/ufs/mk/.monet.conf
+architecture=i686-pc-linux-gnu
+version=5.0
+environment=unknown yet
+pi=nil
 >
