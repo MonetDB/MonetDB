@@ -1382,7 +1382,7 @@ sql_union(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 }
 
 static stmt *
-sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
+sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 {
 	node *n, *m;
 	list *stmts = create_stmt_list();
@@ -1414,6 +1414,8 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 			stmt_reljoin_fill(s, ls, rs);
 		}
 		c = tv1->columns->h->data;
+		if (!distinct)
+			s = stmt_reverse(stmt_unique(stmt_reverse(s), NULL));
 		s = stmt_diff( stmt_dup(c->s), s);
 		s = stmt_mark( stmt_reverse(s), 100);
 		/* project columns of left hand expression */
@@ -1435,7 +1437,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 }
 
 static stmt *
-sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
+sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 {
 	node *n, *m;
 	list *stmts = create_stmt_list();
@@ -1443,9 +1445,10 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 	if (!cols) {
 		/*
 		 * The multi column intersect is handled using a multi column
-		 * join and a semijoin on the base oids. 
+		 * join and a distinct on the base oids. 
 		 *
-		 * so A intersect B translates to project [A.*] (A join B)
+		 * so A intersect B translates to 
+		 * 		project [A.*] distinct((A join B)) 
 		 */
 		stmt *s = stmt_reljoin_init();
 
@@ -1465,7 +1468,9 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 			}
 			stmt_reljoin_fill(s, ls, rs);
 		}
-		s = stmt_mark( stmt_unique(stmt_reverse(s), NULL), 100 );
+		if (!distinct)
+			s = stmt_reverse(stmt_unique(stmt_reverse(s), NULL));
+		s = stmt_mark( stmt_reverse(s), 100);
 		/* project columns of left hand expression */
 		for (n = tv1->columns->h; n; n = n->next) {
 			cvar *lc = n->data;
@@ -1512,9 +1517,9 @@ sql_setop(mvc *sql, scope *scp, symbol *q)
 	if ( q->token == SQL_UNION)
 		res = sql_union(sql, tv1, tv2, corresponding );
 	if ( q->token == SQL_EXCEPT)
-		res = sql_except(sql, tv1, tv2, corresponding );
+		res = sql_except(sql, tv1, tv2, corresponding, dist );
 	if ( q->token == SQL_INTERSECT)
-		res = sql_intersect(sql, tv1, tv2, corresponding );
+		res = sql_intersect(sql, tv1, tv2, corresponding, dist );
 	if (res && dist) {
 		res = distinct(res);
 	}
@@ -1832,6 +1837,15 @@ sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f)
 
 			ls = rs;
 			rs = t;
+
+			if (type == cmp_lt) 
+				type = cmp_gt;
+			else if (type == cmp_gt) 
+				type = cmp_lt;
+			else if (type == cmp_lte) 
+				type = cmp_gte;
+			else if (type == cmp_gte) 
+				type = cmp_lte;
 		}
 		if (convert_types(sql, &ls, &rs, 1) < 0) {
 			if (ls)
