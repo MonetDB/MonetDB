@@ -89,17 +89,16 @@ A cracker partition is indicated by the index in the cidx
 table. It can be used to initialize a BATview to represent
 the partition during processing.
 @mal
-command firstPiece(b:bat[:int,:int])
+command newIterator(b:bat[:int,:int])
 	(a:int,x:bat[:int,:int])
-address CRKfirstPiece
+address CRKnewIterator
 comment "Retrieve the first piece of a cracked
 	BAT as a BAT view and also return the
 	identity of the next piece.";
 
-command nextPiece(b:bat[:int,:int],
-	crk:bat[:int,:int], piece:int)
-	:int
-address CRKnextPiece
+command hasMoreElements(b:bat[:int,:int])
+	(a:int,x:bat[:int,:int])
+address CRKhasMoreElements
 comment "Retrieve the next piece of a cracked
 	BAT by adjusting the BAT view descriptor.
 	It returns the next valid piece id.
@@ -577,7 +576,7 @@ int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
 	return pid+1;
 }
 
-str CRKfirstPiece(int *newpid, int *vid, int *bid) 
+str CRKnewIterator(lng *newpid, int *vid, int *bid) 
 {
 	BAT *b, *view;
 	int m,i,result=0;
@@ -598,32 +597,32 @@ str CRKfirstPiece(int *newpid, int *vid, int *bid)
 	}
 	return MAL_SUCCEED;
 }
-str CRKnextPiece(int *newpid, int *bid, int *vbid, int *pid) 
+str CRKhasMoreElements(lng *pid, int *vbid, int *bid) 
 {
 	BAT *b, *vid;
 	int m,i, result=0;
 
-        @:getBATdescriptor(&result,bid,b,nextPiece)@
-        @:getBATdescriptor(&result,vbid,vid,nextPiece)@
+        @:getBATdescriptor(&result,bid,b,hasMoreElements)@
+        @:getBATdescriptor(&result,vbid,vid,hasMoreElements)@
 	(void) result;
 	m= findCrackMap(*bid);
 
 	/* test validity of pid  [todo] */
 	if( *pid >crackMap[m].freepiece ){
-		*newpid= 0;
+		*pid= -1;
 		return MAL_SUCCEED;
 	}
 	if( *pid<=0 ){
-                return throwMessage("crackers.nextPiece",
+                return throwMessage("crackers.hasMoreElements",
 			"illegal piece");
 	}
 
 	for( i= *pid; i< crackMap[m].freepiece; i++)
 	if( crackMap[m].pieces[i].kind == LEAF) {
-		*newpid = CRKsetBounds(b,vid,m,i);
+		*pid = CRKsetBounds(b,vid,m,i);
 		return MAL_SUCCEED;
 	}
-	*newpid= 0;
+	*pid= -1;
 	return MAL_SUCCEED;
 }
 @-
@@ -632,12 +631,13 @@ Selectively retrieve the pieces from the jigsaw.
 str CRKgetPiece0(int *vbid, int *bid, int *piece) 
 {
 	BAT *b, *vid;
-	int  m, result=0;
+	int  m;
+	lng result = 0;
 
         @:getBATdescriptor(&result,bid,b,getPiece)@
-	CRKfirstPiece( &result, vbid, bid);
-        @:getBATdescriptor(&result,&result,vid,getPiece)@
-	(void) result;
+	CRKnewIterator( &result, vbid, bid);
+	m= result;
+        @:getBATdescriptor(&result,&m,vid,getPiece)@
 	m= findCrackMap(*vbid);
 	CRKsetBounds(b,vid,m,*piece);
 	return MAL_SUCCEED;

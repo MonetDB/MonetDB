@@ -47,9 +47,9 @@ function Admin.main():int;	# 0  (main:int)
     crackers.crack(b,9,25);	# 13 CRKcrackRange ($32:int)<-(b:bat[:int,:int])($20:int)($15:int)
     crackers.crack(b,80,195);	# 14 CRKcrackRange ($33:int)<-(b:bat[:int,:int])($34:int)($35:int)
     crackers.crack(b,2,2);	# 15 CRKcrackRange ($36:int)<-(b:bat[:int,:int])($9:int)($9:int)
-barrier (i,view):= crackers.firstPiece(b);	# 16 CRKfirstPiece (i:int)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 19
+barrier (i,view):= crackers.newIterator(b);	# 16 CRKnewIterator (i:int)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 19
     io.print(view);	# 17 IOprint_val ($39:int)<-(view:bat[:int,:int])
-    redo i := crackers.nextPiece(b,view,i);	# 18 CRKnextPiece (i:int)<-(b:bat[:int,:int])(view:bat[:int,:int])(i:int) jump 17
+    redo (i,view):= crackers.hasMoreElements(b);	# 18 CRKhasMoreElements (i:int)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 17
 exit i;	# 19  (i:int)
     crackers.drop(b);	# 20 CRKdropPiece ($41:void)<-(b:bat[:int,:int])
 end main;	# 21  

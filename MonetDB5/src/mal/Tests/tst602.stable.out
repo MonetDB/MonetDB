@@ -21,9 +21,9 @@ stdout of test 'tst602` in directory 'src/mal` itself:
 #
 function Admin.main():int;	# 0  (main:int)
     mil.open();	# 1 MILopen ($1:void)
-barrier v := mil.iterator(nme);	# 2 MILiterator (v:lng)<-(nme:str) jump 5
+barrier (v,nme):= mil.iterator();	# 2 MILnewIterator (v:lng)(nme:str) jump 5
     io.print(nme);	# 3 IOprint_val ($4:int)<-(nme:str)
-    redo v := mil.iterator(nme);	# 4 MILiterator (v:lng)<-(nme:str) jump 3
+    redo (v,nme):= mil.iterator();	# 4 MILnewIterator (v:lng)(nme:str) jump 3
 exit v;	# 5  (v:lng)
     mil.close();	# 6 MILclose ($5:void)
 end main;	# 7  

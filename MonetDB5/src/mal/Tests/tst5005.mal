@@ -16,9 +16,9 @@ crackers.crack(b,9,25);
 crackers.crack(b,80,195);
 crackers.crack(b,2,2);
 
-barrier (i,view):= crackers.firstPiece(b);
+barrier (i,view) := crackers.newIterator(b);
 	print(view);
-redo i:= crackers.nextPiece(b,view,i);
+	redo (i,view) := crackers.hasMoreElements(b);
 exit;
 
 crackers.drop(b);

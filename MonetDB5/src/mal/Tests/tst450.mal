@@ -6,5 +6,5 @@ stmt:= inspect.getDefinition("algebra","select");
 sig:= inspect.getSignature("algebra","select");
 tpe:= inspect.getType("algebra","select");
 
-n:= mal.help("algebra","insert"); print(n);
+n:= inspect.help("algebra","insert"); print(n);
 d:= inspect.getDefinition("inspect","dir"); print(d);

@@ -80,8 +80,11 @@ comment "Get the string representation
 pattern discard(name:any) :void 		
 address CSTdiscard
 comment "Release the const from the box";
-pattern iterator(nme:str) :lng 		
-address CSTiterator
+pattern newIterator()(:lng,:str)
+address CSTnewIterator
+comment "Locate next element in the box";
+pattern hasMoreElements()(:lng,:str)
+address CSThasMoreElements
 comment "Locate next element in the box";
 
 pattern prelude():void 
@@ -257,7 +260,19 @@ str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str CSTiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	(void)mb; /* fool compiler */
+	@:OpenBox(iterator)@
+	cursor= (lng*) getArgValue(stk,pci,0);
+	v= &stk->stk[pci->argv[1]];
+	nextBoxElement(box, cursor, v);
+	return MAL_SUCCEED;
+}
+str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	lng *cursor;
 	ValPtr v;

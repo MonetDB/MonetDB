@@ -37,11 +37,11 @@ function Admin.main():int;	# 0  (main:int)
     db := const.take(dbname);	# 3 CSTtake (db:str)<-(dbname:any)
     df := const.take(dbfarm);	# 4 CSTtake (df:str)<-(dbfarm:any)
     io.print("Contents of the 'const' box");	# 5 IOprint_val ($9:int)<-($10:str)
-barrier b := const.iterator(nme);	# 6 CSTiterator (b:lng)<-(nme:str) jump 11
+barrier (b,nme):= const.newIterator();	# 6 CSTnewIterator (b:lng)(nme:str) jump 11
     io.printf("# %s=",nme);	# 7 IOprint_formatted_str ($13:int)<-($14:str)(nme:str)
     val := const.toString(nme);	# 8 CSTtoString (val:str)<-(nme:str)
     io.printf("%s\n",val);	# 9 IOprint_formatted_str ($16:int)<-($17:str)(val:str)
-    redo b := const.iterator(nme);	# 10 CSTiterator (b:lng)<-(nme:str) jump 7
+    redo (b,nme):= const.hasMoreElements();	# 10 CSThasMoreElements (b:lng)(nme:str) jump 7
 exit b;	# 11  (b:lng)
 end main;	# 12  
 [ "Contents of the 'const' box" ]

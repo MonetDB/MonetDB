@@ -21,13 +21,13 @@ crackers.info(b);
 
 # testing creation of the portions
 print("Get the first piece");
-(i,view):= crackers.firstPiece(b);
+(i,view):= crackers.newIterator(b);
 print(view);
 print(i);
-i:= crackers.nextPiece(b,view,i);
+(i,view) := crackers.hasMoreElements(b);
 print(view);
 print(i);
-i:= crackers.nextPiece(b,view,i);
+(i,view) := crackers.hasMoreElements(b);
 print(view);
 print(i);
 #next one doesn;t exist anymore
