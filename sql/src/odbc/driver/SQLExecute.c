@@ -64,7 +64,7 @@ static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	}
 
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
-	if (status < 0) {
+	if (*type < 0 || status < 0) {
 		/* output error */
 		char buf[BLOCK+1];
 		int last = 0;
@@ -80,7 +80,7 @@ static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 	return status;
 }
 
-SQLRETURN Execute(SQLHSTMT hStmt)
+SQLRETURN SQLExecute(SQLHSTMT hStmt)
 {
 	ODBCStmt *	hstmt = (ODBCStmt *) hStmt;
 	ODBCDbc *	dbc = NULL;
@@ -319,9 +319,4 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 
 	hstmt->State = EXECUTED;
 	return SQL_SUCCESS;
-}
-
-SQLRETURN SQLExecute(SQLHSTMT hStmt)
-{
-	return Execute( hStmt );
 }

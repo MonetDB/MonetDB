@@ -40,7 +40,7 @@
 #include "ODBCError.h"
 
 
-SQLRETURN FreeHandle(
+SQLRETURN SQLFreeHandle(
 	SQLSMALLINT	handleType,
 	SQLHANDLE	handle )
 {
@@ -122,7 +122,7 @@ SQLRETURN FreeHandle(
 			/* check if statement is not active */
 			if (stmt->State == EXECUTED) {
 				/* should be closed first */
-				int res = FreeStmt(stmt, SQL_CLOSE);
+				int res = SQLFreeStmt(stmt, SQL_CLOSE);
 				if (res != SQL_SUCCESS)
 					return res;
 			}
@@ -142,11 +142,4 @@ SQLRETURN FreeHandle(
 	}
 
 	return SQL_INVALID_HANDLE;
-}
-
-SQLRETURN SQLFreeHandle(
-	SQLSMALLINT	handleType,
-	SQLHANDLE	handle )
-{
-	return FreeHandle( handleType, handle);
 }

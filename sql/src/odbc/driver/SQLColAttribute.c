@@ -36,7 +36,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN ColAttribute(
+SQLRETURN SQLColAttribute(
 	SQLHSTMT	hStmt,
 	SQLUSMALLINT	nCol,
 	SQLUSMALLINT	nFieldIdentifier,
@@ -208,17 +208,4 @@ SQLRETURN ColAttribute(
 		*(int*)pnValue = nValue;
 
 	return SQL_SUCCESS;
-}
-
-SQLRETURN SQLColAttribute(
-	SQLHSTMT	hStmt,
-	SQLUSMALLINT	nCol,
-	SQLUSMALLINT	nFieldIdentifier,
-	SQLPOINTER	pszValue,
-	SQLSMALLINT	nValueLengthMax,
-	SQLSMALLINT *	pnValueLength,
-	SQLPOINTER	pnValue )
-{
-	ColAttribute( hStmt, nCol, nFieldIdentifier, pszValue, nValueLengthMax,
-				pnValueLength, pnValue);
 }

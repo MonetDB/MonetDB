@@ -45,7 +45,7 @@
 
 static int odbc_init = 0; 
 
-SQLRETURN  AllocHandle(
+SQLRETURN  SQLAllocHandle(
 	SQLSMALLINT	nHandleType,	/* type to be allocated */
 	SQLHANDLE	nInputHandle,	/* type to be allocated */
 	SQLHANDLE *	pnOutputHandle )/* ptr for allocated handle struct */
@@ -159,12 +159,4 @@ SQLRETURN  AllocHandle(
 	}
 
 	return SQL_INVALID_HANDLE;
-}
-
-SQLRETURN  SQLAllocHandle(
-	SQLSMALLINT	nHandleType,	/* type to be allocated */
-	SQLHANDLE	nInputHandle,	/* type to be allocated */
-	SQLHANDLE *	pnOutputHandle )/* ptr for allocated handle struct */
-{
-	return AllocHandle( nHandleType, nInputHandle, pnOutputHandle );
 }

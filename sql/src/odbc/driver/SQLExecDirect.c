@@ -35,7 +35,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN ExecDirect(
+SQLRETURN SQLExecDirect(
 	SQLHSTMT	hStmt,
 	SQLCHAR *	szSqlStr,
 	SQLINTEGER	nSqlStr )
@@ -47,22 +47,14 @@ SQLRETURN ExecDirect(
 	}
 
 	/* prepare SQL command */
-	rc = Prepare(hStmt, szSqlStr, nSqlStr);
+	rc = SQLPrepare(hStmt, szSqlStr, nSqlStr);
 	if (rc == SQL_SUCCESS)
 	{
 		/* execute prepared statement */
-		rc = Execute(hStmt);
+		rc = SQLExecute(hStmt);
 	}
 
 	/* Do not set errors here, they are set in SQLPrepare() and/or SQLExecute() */
 
 	return rc;
-}
-
-SQLRETURN SQLExecDirect(
-	SQLHSTMT	hStmt,
-	SQLCHAR *	szSqlStr,
-	SQLINTEGER	nSqlStr )
-{
-	return ExecDirect( hStmt, szSqlStr, nSqlStr);
 }

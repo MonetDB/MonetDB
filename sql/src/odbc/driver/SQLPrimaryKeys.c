@@ -141,7 +141,7 @@ SQLRETURN SQLPrimaryKeys(
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
-	rc = ExecDirect(hStmt, query, SQL_NTS);
+	rc = SQLExecDirect(hStmt, query, SQL_NTS);
 
 	free(query);
 

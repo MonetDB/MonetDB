@@ -38,7 +38,7 @@
 #include "ODBCStmt.h"
 
 
-SQLRETURN FetchScroll(
+SQLRETURN SQLFetchScroll(
 	SQLHSTMT	hStmt,
 	SQLSMALLINT	nOrientation,
 	SQLINTEGER	nOffset )
@@ -89,13 +89,5 @@ SQLRETURN FetchScroll(
 		addStmtError(stmt, "IM001", NULL, 0);
 		return SQL_ERROR;
 	}
-	return Fetch(stmt);
-}
-
-SQLRETURN SQLFetchScroll(
-	SQLHSTMT	hStmt,
-	SQLSMALLINT	nOrientation,
-	SQLINTEGER	nOffset )
-{
-	return FetchScroll( hStmt, nOrientation, nOffset );
+	return SQLFetch(stmt);
 }

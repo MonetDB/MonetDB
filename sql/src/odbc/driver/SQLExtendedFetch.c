@@ -56,5 +56,5 @@ SQLRETURN SQLExtendedFetch(
 		return SQL_ERROR;
 	}
 
-	return FetchScroll(stmt, nOrientation, nOffset);
+	return SQLFetchScroll(stmt, nOrientation, nOffset);
 }

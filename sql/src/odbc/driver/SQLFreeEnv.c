@@ -34,5 +34,5 @@
 SQLRETURN SQLFreeEnv(SQLHENV hDrvEnv)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return FreeHandle(SQL_HANDLE_ENV, (SQLHANDLE)hDrvEnv);
+	return SQLFreeHandle(SQL_HANDLE_ENV, (SQLHANDLE)hDrvEnv);
 }

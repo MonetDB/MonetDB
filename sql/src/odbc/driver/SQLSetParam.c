@@ -46,7 +46,7 @@ SQLRETURN SQLSetParam(
 	SQLINTEGER *	StrLen_or_Ind )
 {
         /* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */
-	return BindParameter(
+	return SQLBindParameter(
 			hStmt,
 			ParameterNumber,
         		SQL_PARAM_INPUT_OUTPUT,

@@ -36,7 +36,7 @@
 #include "ODBCDbc.h"
 
 
-SQLRETURN SetConnectAttr(
+SQLRETURN SQLSetConnectAttr(
 	SQLHDBC		ConnectionHandle,
 	SQLINTEGER	Attribute,
 	SQLPOINTER	ValuePtr,
@@ -87,12 +87,4 @@ SQLRETURN SetConnectAttr(
 	}
 
 	return SQL_SUCCESS;
-}
-SQLRETURN SQLSetConnectAttr(
-	SQLHDBC		ConnectionHandle,
-	SQLINTEGER	Attribute,
-	SQLPOINTER	ValuePtr,
-	SQLINTEGER	StringLength )
-{
-	return SetConnectAttr( ConnectionHandle, Attribute, ValuePtr, StringLength);
 }

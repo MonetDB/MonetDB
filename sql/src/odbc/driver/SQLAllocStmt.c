@@ -38,5 +38,5 @@
 SQLRETURN SQLAllocStmt(SQLHDBC hDbc, SQLHSTMT * phStmt)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return AllocHandle(SQL_HANDLE_STMT, (SQLHANDLE)hDbc, (SQLHANDLE *)phStmt);
+	return SQLAllocHandle(SQL_HANDLE_STMT, (SQLHANDLE)hDbc, (SQLHANDLE *)phStmt);
 }

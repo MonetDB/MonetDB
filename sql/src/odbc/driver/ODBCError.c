@@ -40,7 +40,7 @@
 
 
 const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver 1.0]";
-const int ODBCErrorMsgPrefixLength = sizeof(ODBCErrorMsgPrefix);
+const int ODBCErrorMsgPrefixLength = sizeof(ODBCErrorMsgPrefix)-1;
 
 /* forward declaration of internal function */
 static char * getStandardSQLStateMsg(char * SQLState);

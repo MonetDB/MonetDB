@@ -34,5 +34,5 @@
 SQLRETURN SQLFreeConnect(SQLHDBC hDrvDbc)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return FreeHandle(SQL_HANDLE_DBC, (SQLHANDLE)hDrvDbc);
+	return SQLFreeHandle(SQL_HANDLE_DBC, (SQLHANDLE)hDrvDbc);
 }

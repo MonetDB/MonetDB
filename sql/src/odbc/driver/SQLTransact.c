@@ -43,8 +43,8 @@ SQLRETURN SQLTransact(
 	/* use mapping as described in ODBC 3 SDK Help */
 	if (hDbc != SQL_NULL_HDBC)
 	{
-		return EndTran(SQL_HANDLE_DBC, hDbc, fType);
+		return SQLEndTran(SQL_HANDLE_DBC, hDbc, fType);
 	} else {
-		return EndTran(SQL_HANDLE_ENV, hEnv, fType);
+		return SQLEndTran(SQL_HANDLE_ENV, hEnv, fType);
 	}
 }

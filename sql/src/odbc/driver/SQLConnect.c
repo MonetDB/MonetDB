@@ -36,7 +36,7 @@
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
 
-SQLRETURN Connect(
+SQLRETURN SQLConnect(
 	SQLHDBC		hDbc,
 	SQLCHAR *	szDataSource,
 	SQLSMALLINT	nDataSourceLength,
@@ -56,6 +56,7 @@ SQLRETURN Connect(
 	char * host = NULL;
 	int port = 0;
 	int debug = 0;
+	int trace = 0;
 	char buf[BUFSIZ + 1];
 #ifdef WIN32
 	char ODBC_INI[] = "ODBC.INI";
@@ -106,13 +107,15 @@ SQLRETURN Connect(
 	port = atoi(buf);
 	__SQLGetPrivateProfileString(dsn, "DEBUG", "0", buf, BUFSIZ, ODBC_INI);
 	debug = atoi(buf);
+	__SQLGetPrivateProfileString(dsn, "TRACE", "0", buf, BUFSIZ, ODBC_INI);
+	trace = atoi(buf);
 
 	/* Retrieved and checked the arguments.
 	   Now try to open a connection with the server */
 	fprintf(stderr, "SQLConnect %s %s %s %d\n", uid, database, host, port);
 	/* connect to a server on host via port */
 	socket_fd = client(host, port);
-	if (socket_fd > 0) {
+	if (socket_fd >= 0) {
 		stream * rs = NULL;
 		stream * ws = NULL;
 		int  chars_printed;
@@ -121,7 +124,7 @@ SQLRETURN Connect(
 		rs = block_stream(socket_rstream(socket_fd, "sql client read"));
 		ws = block_stream(socket_wstream(socket_fd, "sql client write"));
 
-		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d);\n", debug );
+		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n", debug, trace );
 		ws->write(ws, buf, chars_printed, 1);
 		ws->flush(ws);
 		/* read login. The returned login value is not used yet. */
@@ -207,15 +210,4 @@ SQLRETURN Connect(
 		free(host);
 	}
 	return rc;
-}
-SQLRETURN SQLConnect(
-	SQLHDBC		hDbc,
-	SQLCHAR *	szDataSource,
-	SQLSMALLINT	nDataSourceLength,
-	SQLCHAR *	szUID,
-	SQLSMALLINT	nUIDLength,
-	SQLCHAR *	szPWD,
-	SQLSMALLINT	nPWDLength )
-{
-	return Connect( hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength);
 }

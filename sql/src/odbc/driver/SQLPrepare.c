@@ -37,7 +37,7 @@
 #include "ODBCUtil.h"
 
 
-SQLRETURN Prepare(
+SQLRETURN SQLPrepare(
 	SQLHSTMT	hStmt,
 	SQLCHAR *	szSqlStr,
 	SQLINTEGER	nSqlStrLength )
@@ -111,12 +111,4 @@ SQLRETURN Prepare(
 	stmt->State = PREPARED;
 
 	return SQL_SUCCESS;
-}
-
-SQLRETURN SQLPrepare(
-	SQLHSTMT	hStmt,
-	SQLCHAR *	szSqlStr,
-	SQLINTEGER	nSqlStrLength )
-{
-	return Prepare( hStmt, szSqlStr, nSqlStrLength);
 }

@@ -24,35 +24,38 @@
  */
 
 /**********************************************************************
- * SQLError()
- * CLI Compliance: deprecated in ODBC 3.0 (replaced by SQLGetDiagRec())
- * Provided here for old (pre ODBC 3.0) applications and driver managers.
+ * SQLBindParam()
+ * CLI Compliance: ISO 92
  *
- * Author: Martin van Dinther
- * Date  : 30 aug 2002
+ * Author: Sjoerd Mullender
+ * Date  : 4 sep 2003
  *
  **********************************************************************/
 
 #include "ODBCGlobal.h"
+#include "ODBCStmt.h"
 
-SQLRETURN SQLError(
-	SQLHENV		hEnv,
-	SQLHDBC		hDbc,
-	SQLHSTMT	hStmt,
-	SQLCHAR *	szSqlState,
-	SQLINTEGER *	pfNativeError,
-	SQLCHAR *	szErrorMsg,
-	SQLSMALLINT	nErrorMsgMax,
-	SQLSMALLINT *	pcbErrorMsg )
+
+SQLRETURN SQLBindParam(
+	SQLHSTMT hStmt,
+	SQLUSMALLINT ParameterNumber,
+	SQLSMALLINT ValueType,
+	SQLSMALLINT ParameterType,
+	SQLULEN LengthPrecision,
+	SQLSMALLINT ParameterScale,
+	SQLPOINTER ParameterValue,
+	SQLLEN *StrLen_or_Ind)
 {
-	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLGetDiagRec(
-		((hStmt) ? SQL_HANDLE_STMT : ((hDbc) ? SQL_HANDLE_DBC : SQL_HANDLE_ENV)),
-		((hStmt) ? hStmt : ((hDbc) ? hDbc : hEnv)),
-		1,	/* first recNumber */
-		szSqlState,
-		pfNativeError,
-		szErrorMsg,
-		nErrorMsgMax,
-		pcbErrorMsg );
+	ODBCStmt * stmt = (ODBCStmt *) hStmt;
+
+	if (! isValidStmt(stmt))
+		return SQL_INVALID_HANDLE;
+
+	clearStmtErrors(stmt);
+
+	/* TODO: implement the requested behavior */
+
+	/* for now always return error: Driver does not support this function */
+	addStmtError(stmt, "IM001", NULL, 0);
+	return SQL_ERROR;
 }

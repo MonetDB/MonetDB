@@ -38,7 +38,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN FreeStmt(
+SQLRETURN SQLFreeStmt(
 	SQLHSTMT	handle,
 	SQLUSMALLINT	option )
 {
@@ -75,7 +75,7 @@ SQLRETURN FreeStmt(
 			break;
 		}
 		case SQL_DROP:
-			return FreeHandle(SQL_HANDLE_STMT, (SQLHANDLE)stmt);
+			return SQLFreeHandle(SQL_HANDLE_STMT, (SQLHANDLE)stmt);
 
 		case SQL_UNBIND:
 		{
@@ -95,10 +95,4 @@ SQLRETURN FreeStmt(
 	}
 
 	return SQL_SUCCESS;
-}
-SQLRETURN SQLFreeStmt(
-	SQLHSTMT	handle,
-	SQLUSMALLINT	option )
-{
-	return FreeStmt(handle, option);
 }

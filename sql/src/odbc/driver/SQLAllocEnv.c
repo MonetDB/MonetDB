@@ -38,5 +38,5 @@
 SQLRETURN SQLAllocEnv(SQLHENV * phEnv)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return AllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, (SQLHANDLE *)phEnv);
+	return SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, (SQLHANDLE *)phEnv);
 }

@@ -52,5 +52,5 @@ SQLRETURN  SQLCloseCursor(SQLHSTMT hStmt)
 		return SQL_ERROR;
 	}
 
-	return FreeStmt(hStmt, SQL_CLOSE);
+	return SQLFreeStmt(hStmt, SQL_CLOSE);
 }

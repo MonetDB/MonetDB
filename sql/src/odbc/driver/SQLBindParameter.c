@@ -40,7 +40,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-SQLRETURN BindParameter(
+SQLRETURN SQLBindParameter(
 	SQLHSTMT	hStmt,
      	SQLUSMALLINT	ParameterNumber,
      	SQLSMALLINT	InputOutputType,
@@ -113,28 +113,4 @@ SQLRETURN BindParameter(
 	addOdbcInArray(&(stmt->bindParams), inVar);
 
 	return SQL_SUCCESS;
-}
-SQLRETURN SQLBindParameter(
-	SQLHSTMT	hStmt,
-     	SQLUSMALLINT	ParameterNumber,
-     	SQLSMALLINT	InputOutputType,
-     	SQLSMALLINT	ValueType,
-     	SQLSMALLINT	ParameterType,
-     	SQLUINTEGER	ColumnSize,
-     	SQLSMALLINT	DecimalDigits,
-     	SQLPOINTER	ParameterValuePtr,
-     	SQLINTEGER	BufferLength,
-     	SQLINTEGER *	StrLen_or_IndPtr)
-{
-	return BindParameter(
-		hStmt,
-		ParameterNumber,
-		InputOutputType,
-		ValueType,
-		ParameterType,
-		ColumnSize,
-		DecimalDigits,
-		ParameterValuePtr,
-		BufferLength,
-		StrLen_or_IndPtr );
 }
