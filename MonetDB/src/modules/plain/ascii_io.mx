@@ -282,7 +282,7 @@ int check_BATs( ascii *as ){
 	int cnt = BATcount(fmt[0].c);
 	oid base = fmt[0].c->hseqbase;
 
-	if (base == oid_nil) return -1;
+	if (!BAThdense(fmt[0].c)) return -1;
 
 	for (i=0; i<as->nr_attrs; i++){
 		BAT *b = fmt[i].c;
@@ -691,7 +691,8 @@ int ASCIIoutput( BAT *order, BAT *seps, BAT *bats, stream *s ){
 	if (create_dumpformat( &as, NULL, seps, bats) >= 0 && 
 	    assign_BATs( &as, bats ) >=  0){
 		if ((base = check_BATs( &as )) >= 0 ){
-			if (order->hseqbase == base && BATcount(order) == as.nr)
+			if (BAThdense(order) && 
+ 			    order->hseqbase == base && BATcount(order) == as.nr)
 				output_file_dense( &as, s );
 			else
 				output_file_ordered( &as, order, s, base );
