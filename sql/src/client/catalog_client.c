@@ -2,7 +2,6 @@
 #include "catalog.h"
 #include "statement.h"
 #include "mem.h"
-#include "sql.h"
 
 #include "comm.h"
 #include <string.h>
@@ -13,19 +12,24 @@ typedef struct cc {
 	context *lc;
 } cc;
 
-extern statement *sqlexecute( context *lc, char *buf );
+extern stmt *sqlexecute( context *lc, char *buf );
 
-#define CHUNK (64*1024)
+static int key_cmp( key *k, long *id )
+{
+	if (k && id && k->id == *id)
+		return 0;
+	return 1;
+}
 
 static char *readblock( stream *s ){
 	int len = 0;
-	int size = CHUNK + 1;
+	int size = BLOCK + 1;
 	char *buf = NEW_ARRAY(char, size ), *start = buf;
 
-	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
-		size += CHUNK;
+	while ((len = s->read(s, start, 1, BLOCK)) == BLOCK){
+		size += BLOCK;
 		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - CHUNK - 1;
+		start = buf + size - BLOCK - 1;
 		*start = '\0';
 	}
 	start += len;
@@ -33,220 +37,219 @@ static char *readblock( stream *s ){
 	return buf;
 }
 
-static char *removeQuotes( char *v, char c ){
-	char *s = NEW_ARRAY(char, strlen(v)), *n = s;
-	while(*v && *v != c) v++;
-	v++; /* skip \' */
-	while(*v && *v != c) *n++ = *v++;
-	*n = '\0';
-	return s;	
-}
-
-static long oidrange( struct catalog *cat, int nr ){
-	cc *i = (cc*)cat->cc;
-	char buf[BUFSIZ], *e = NULL;
-	long res;
-	sprintf(buf, "oidrange(Output, %d);\n", nr ); 
-	i->out->write(i->out, buf, strlen(buf), 1);
-	i->out->flush(i->out);
-	e = readblock( i->in );
-	res  = strtol(e, (char **)NULL, 10);
-	_DELETE(e);
-	return res;
-}
-
-static void send_getfunctions( catalog *cat ){
+static void send_gettypes( catalog *cat ){
 	char buf[BUFSIZ];
 	cc *i = (cc*)cat->cc;
 
-	sprintf(buf, "ascii_export_functions(Output);\n" ); 
+	sprintf(buf, "types_export(Output);\n" ); 
 	i->out->write(i->out, buf, strlen(buf), 1);
 	i->out->flush(i->out);
 }
 
-static void send_getschema( catalog *cat, char *schema ){
+static void send_getschema( catalog *cat ){
 	char buf[BUFSIZ];
 	cc *i = (cc*)cat->cc;
 
-	sprintf(buf, "ascii_export_schema(Output, \"%s\");\n", schema ); 
+	sprintf(buf, "mvc_export_schema(myc, Output);\n");
 	i->out->write(i->out, buf, strlen(buf), 1);
 	i->out->flush(i->out);
 }
 
-void getfunctions( catalog *c ){
+
+void gettypes( catalog *c ){
 	stream *s = ((cc*)c->cc)->in;
 	int i, tcnt;
 	char *buf, *start, *n;
 
-	send_getfunctions( c );
+	send_gettypes( c );
 
 	buf = readblock(s);
 	n = start = buf;
 
 	tcnt = strtol(n,&n,10); 
-	c->types = list_create();
 	for(i=0;i<tcnt;i++){
 	    char *sqlname, *name, *cast;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    sqlname = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    sqlname = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    name = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    name = start;
 
 	    n = strchr(start = n+1, '\n'); *n = '\0';
-	    cast = removeQuotes(start, '"');
+	    cast = start;
 
-	    cat_create_type( c, sqlname, name, cast, i );
+	    sql_create_type( sqlname, name, cast );
 	}
 	/* TODO load proper type cast table */
 
 	tcnt = strtol(n+1,&n,10); 
-	c->aggrs = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname, *imp, *tpe, *res;
+	    char *tname, *imp, *intype, *result;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    tname = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    imp = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    imp = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tpe = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    intype = start;
 
 	    n = strchr(start = n+1, '\n'); *n = '\0';
-	    res = removeQuotes(start, '"');
+	    result = start;
 
-	    cat_create_aggr( c, tname, imp, tpe, res, i );
+	    sql_create_aggr( tname, imp, intype, result );
 	}
 
 	tcnt = strtol(n+1,&n,10); 
-	c->funcs = list_create();
 	for(i=0;i<tcnt;i++){
 	    char *tname, *imp, *tpe1, *tpe2, *tpe3, *res;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    tname = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    imp = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    imp = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tpe1 = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    tpe1 = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tpe2 = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    tpe2 = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tpe3 = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    tpe3 = start;
 
 	    n = strchr(start = n+1, '\n'); *n = '\0';
-	    res = removeQuotes(start, '"');
+	    res = start;
 
-	    cat_create_func( c, tname, imp, tpe1, tpe2, tpe3, res, i );
+	    sql_create_func( tname, imp, tpe1, tpe2, tpe3, res );
 	}
 	_DELETE(buf);
 }
 
 void getschema( catalog *c, char *schema, char *user ){
+	list *keys = list_create(NULL);
 	stream *s = ((cc*)c->cc)->in;
 	context *lc = ((cc*)c->cc)->lc;
-	int i, tcnt, schema_id;
+	int i, tcnt;
 	char *buf, *start, *n;
 
-	if (c->cur_schema) cat_destroy_schema( c );
-
-	send_getschema(c, schema);
+	send_getschema(c);
 
 	buf = readblock(s);
 	n = start = buf;
 
-	/* bats are void-aligned */
-	schema_id = strtol(n,&n,10);
-	c->schemas = list_create();
-	c->cur_schema = cat_create_schema( c, schema_id, schema, user );
-	list_append_string( c->schemas, (char*) c->cur_schema );
+	if (c->schemas) list_destroy( c->schemas );
+	c->schemas = list_create((fdestroy)&cat_drop_schema);
 
-	tcnt = strtol(n+1,&n,10); 
+	c->cur_schema = cat_create_schema( c, 0, schema, user );
+	list_append( c->schemas, c->cur_schema );
+
+	tcnt = strtol(n,&n,10); 
 	for(i=0;i<tcnt;i++){
 	    long id;
 	    char *tname;
-	    int temp;
+	    int cnr, knr;
+	    char *query;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
+	    n = strchr(start = n+1, ','); *n = '\0';
 	    id = strtol(start, (char**)NULL, 10);
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    tname = start;
+
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    cnr = atoi(start);
+
+	    n = strchr(start = n+1, ','); *n = '\0';
+	    query = start;
 
 	    n = strchr(start = n+1, '\n'); *n = '\0';
-	    temp = atoi(start);
+	    knr = atoi(start);
 
-	    (void)cat_create_table( c, id, c->cur_schema, tname, temp, NULL );
-	}
+	    if (cnr){
+		int j;
+	    	table *t = 
+		       cat_create_table( c, id, c->cur_schema, tname, 0, NULL);
 
-	tcnt = strtol(n+1,&n,10); 
-	for(i=0;i<tcnt;i++){
-            long id = 0;
-	    char *tname, *cname, *ctype, *def;
-	    int nll, seqnr;
-	    table *t;
+		for(j=0;j<cnr;j++){
+            		long id = 0;
+	    		char *cname, *ctype, *def;
+	    		int nll;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    id = strtol(start, (char**)NULL, 10);
+		    	n = strchr(start = n+1, ','); *n = '\0';
+	    		id = strtol(start, (char**)NULL, 10);
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
+	    		n = strchr(start = n+1, ','); *n = '\0';
+	    		cname = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    cname = removeQuotes(start, '"');
+	    		n = strchr(start = n+1, ','); *n = '\0';
+	    		ctype = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    ctype = removeQuotes(start, '"');
+	    		n = strchr(start = n+1, ','); *n = '\0';
+	    		def = start;
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    def = removeQuotes(start, '"');
+	    		n = strchr(start = n+1, '\n'); *n = '\0';
+	    		nll = atoi(start);
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    nll = atoi(start);
+	    		cat_create_column( c, id, t, cname, ctype, def, nll );
+		}
+	        if (knr){ /* keys */
+		    int j;
+		    for(j=0;j<knr;j++){
+			node *m = NULL;
+			key *k = NULL;
+            		long id = 0, rkid;
+			int ci, type = 0, cnr = 0;
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
-	    seqnr = atoi(start);
+		    	n = strchr(start = n+1, ','); *n = '\0';
+	    		id = strtol(start, (char**)NULL, 10);
 
-	    t = cat_bind_table(c, c->cur_schema, tname);
-	    cat_create_column( c, id, t, cname, ctype, def, nll, seqnr );
-	}
-	/* loop over all schema's call create_schema */
-	/* loop over all table's call create_table */
-	/* loop over all column's call create_column */
+		    	n = strchr(start = n+1, ','); *n = '\0';
+	    		type = atoi(start);
 
-	/* bats are void-aligned */
-	/* read views */
-	tcnt = strtol(n+1,&n,10); 
-	for(i=0;i<tcnt;i++){
-	    table *t;
-            long id = 0;
-	    char *tname, *query;
+		    	n = strchr(start = n+1, ','); *n = '\0';
+	    		cnr = atoi(start);
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    id = strtol(start, (char**)NULL, 10);
+	    		n = strchr(start = n+1, '\n'); *n = '\0';
+	    		rkid = strtol(start, (char**)NULL, 10);
 
-	    n = strchr(start = n+1, '\t'); *n = '\0';
-	    tname = removeQuotes(start, '"');
+			if (rkid)
+				m = list_find(keys, &rkid, (fcmp)&key_cmp);
 
-	    n = strchr(start = n+1, '\n'); *n = '\0';
-	    query = removeQuotes(start, '"');
+			if (m){
+	    			k = cat_table_add_key( t, type, m->data);
+	  			list_remove_node( keys, m); 
+			} else {
+	    			k = cat_table_add_key( t, type, NULL);
+				list_append( keys, k);
+			}
+			k->id = id;
+			for(ci = 0; ci<cnr; ci++){
+				char *colname;
+				column *col;
+		    		n = strchr(start = n+1, '\n'); *n = '\0';
+	    			colname = start;
+				
+				col = cat_bind_column(c, t, colname);
+				assert(col);
+				cat_key_add_column( k, col);
+			}
+		    }
+	        }
 
-	    sqlexecute(lc, query );
-	    /* fix id */
-	    t = cat_bind_table( c, c->cur_schema, tname );
-	    t->id = id;
+	    } else {
+	    	sqlexecute(lc, query );
+	    }
 	}
 	_DELETE(buf);
 }
 
 static void cc_destroy( catalog *c ){
+	types_exit();
+
 	_DELETE(c->cc);
 	c->cc = NULL;
 }
@@ -259,13 +262,10 @@ catalog *catalog_create_stream( stream *in, context *lc ){
 	CC->out = lc->out;
 	CC->lc = lc;
 	c->cc = (char*)CC;
-	c->cc_oidrange = &oidrange;
 	c->cc_getschema = &getschema;
 	c->cc_destroy = &cc_destroy;
 
-	catalog_initoid( c );
-	getfunctions( c );
+	types_init( lc->debug );
+	gettypes( c );
 	return c;
 }
-
-

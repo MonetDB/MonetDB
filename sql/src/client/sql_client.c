@@ -1,5 +1,4 @@
 
-
 #include <stdlib.h>
 #include <string.h>
 #include "mem.h"
@@ -8,7 +7,7 @@
 #include <sys/stat.h>
 #include <catalog.h>
 
-#ifdef HAVE_GETOPT_H 
+#ifdef HAVE_LIBGETOPT 
 #include <getopt.h>
 #endif
 
@@ -40,114 +39,37 @@ void usage( char *prog ){
 	exit(-1);
 }
 
-#define CHUNK (64*1024)
+void receive( stream *rs ){
+	int flag = 0;
+	if (rs->readInt(rs, &flag) && flag != COMM_DONE){
+		char buf[BLOCK+1], *n = buf;
+		int last = 0;
+		int nr = bs_read_next(rs,buf,&last);
+		int nRows = strtol(n,&n,10);
 
-static char *readblock( stream *s ){
-	int len = 0;
-	int size = CHUNK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
-
-	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
-		size += CHUNK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - CHUNK - 1;
-		*start = '\0';
-	}
-	start += len;
-	*start = '\0';
-	return buf;
-}
-
-void execute( context *lc, stream *rs, char *cmd ){
-	statement *res =  sqlexecute( lc, cmd );
-
-	if (res){
-	    int nr = 1;
-	    statement_dump( res, &nr, lc );
-
-	    lc->out->flush( lc->out );
-	}
-	if (res && (res->type == st_output) ){
-		int nRows = 0;
-		char *buf = readblock( rs ), *n = buf;
-		
-		nRows = strtol(n,&n,10);
-		n++;
-
-		printf("%s", n);
+		n++; /* skip newline */
+		fwrite( n, nr - (n - buf), 1, stdout );
+		while(!last){
+			int nr = bs_read_next(rs,buf,&last);
+			fwrite( buf, nr, 1, stdout );
+		}
 		if (nRows > 1)
 			printf("%d Rows affected\n", nRows );
 		else if (nRows == 1)
 			printf("1 Row affected\n" );
 		else 
 			printf("no Rows affected\n" );
-		_DELETE(buf);
+	} else if (flag != COMM_DONE){
+		printf("flag %d\n", flag);
 	}
-	if (res && res->type == st_commit){
-		char *buf = readblock( rs ), *n = buf;
-		int res = strtol(n,&n,10);
-		if (!res) printf("commit failed\n");
-		_DELETE(buf);
-	}
-	if (res) statement_destroy(res);
 }
+
 
 void clientAccept( context *lc, stream *rs ){
-	int	is_chrsp	= 0;
-	char *prompt = "> ";
-	char *line = NULL;
-	struct stat st;
-
-	fstat(fileno(stdin),&st);
-	if (S_ISCHR(st.st_mode))
-	   is_chrsp = 1;
-
-	while(!feof(stdin)){
-		if (line) {
-			free(line);
-		}
-#ifdef HAVE_LIBREADLINE
-		if (is_chrsp){
-	        	if ((line = (char *) readline(prompt)) == NULL) {
-	               		return;
-			}
-			add_history(line);				\
-		} else 
-#endif
-		{
-		   	char *buf =(char *)malloc(BUFSIZ);
-	        	if ((line =(char *)fgets(buf,BUFSIZ,stdin))==NULL) {
-			   	free(buf);
-	                	return;
-			}
-		}
-		if (strcmp(line, "quit;\n") == 0){
-			printf("quiting\n");
-			exit(1);
-		}
-		execute(lc, rs, line);
-	}
-}
-
-void client_commit( context *lc, stream *rs ){
-	char *n, *res, buf[BUFSIZ];
-	int cmmt;
-	
-	snprintf(buf, BUFSIZ, "client_commit(myc, Output);\n" );
-	ws->write( ws, buf, strlen(buf), 1 );
-	ws->flush( ws );
-
-	res = readblock( rs );
-       	n = res;
-	cmmt = strtol(n,&n,10);
-	if (!cmmt) printf("commit failed\n");
-	_DELETE(res);
-}
-
-void clientAccept_new( context *lc, stream *rs ){
 	int err = 0;
 	stream *in = file_rastream( stdin, "<stdin>" );
-	statement *s = NULL;
+	stmt *s = NULL;
+	char eot[1];
 
 	while(lc->cur != EOF ){
 		s = sqlnext(lc, in, &err);
@@ -155,40 +77,26 @@ void clientAccept_new( context *lc, stream *rs ){
 		if (s){
 	    		int nr = 1;
 			if (lc->debug&128){
-	    			statement2xml( s, &nr, lc );
-				statement_reset( s );
+	    			stmt2xml( s, &nr, lc );
+				stmt_reset( s );
 				nr= 1;
 			} 
-	    		statement_dump( s, &nr, lc );
+	    		stmt_dump( s, &nr, lc );
 
 	    		lc->out->flush( lc->out );
 		}
 		if (!(lc->debug&64) && s && s->type == st_output){
-			int nRows = 0;
-			char *buf = readblock( rs ), *n = buf;
-			
-			nRows = strtol(n,&n,10);
-			n++;
-	
-			printf("%s", n);
-			if (nRows > 1)
-				printf("%d Rows affected\n", nRows );
-			else if (nRows == 1)
-				printf("1 Row affected\n" );
-			else 
-				printf("no Rows affected\n" );
-			_DELETE(buf);
+			receive(rs);
 		}
-		if (!(lc->debug&64) && s && s->type == st_commit){
-			char *buf = readblock( rs ), *n = buf;
-			int res = strtol(n,&n,10);
-			if (!res) printf("commit failed\n");
-			_DELETE(buf);
-		}
-		if (s) statement_destroy(s);
+		if (s) stmt_destroy(s);
 	}
-}
+	in->destroy(in);
 
+	eot[0] = EOT;
+	ws->write( ws, eot, 1, 1 );
+	ws->flush( ws );
+	receive(rs);
+}
 
 /*
 When using alloca(3) in a shared library, Intel's "C++ Compiler for 32-bit
@@ -211,10 +119,10 @@ main(int ac, char **av)
 {
 	char buf[BUFSIZ];
 	char *schema = NULL;
-	char *user = NULL;
+	char *user = NULL, *passwd = "";
 	char *prog = *av, *host = "localhost";
 	int debug = 0, fd = 0, port = 45123;
-	int opt = SQL_FAST_INSERT;
+	int opt = SQL_FAST_INSERT, i = 0;
 	context lc;
 
 	static struct option long_options[] =
@@ -222,6 +130,7 @@ main(int ac, char **av)
                {"debug", 2, 0, 'd'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
+               {"passwd", 1, 0, 'P'},
                {"schema", 1, 0, 's'},
                {"user", 1, 0, 'u'},
                {"optimize", 1, 0, 'o'},
@@ -256,6 +165,9 @@ main(int ac, char **av)
 		case 'p':
 			port=strtol(optarg,NULL,10);
 			break;
+		case 'P':
+			passwd=strdup(optarg);
+			break;
 		case 's':
 			schema=_strdup(optarg);
 			break;
@@ -287,24 +199,48 @@ main(int ac, char **av)
 		fprintf(stderr, "sockets not opened correctly\n");
 		exit(1);
 	}
-	sql_init_context( &lc, ws, debug, default_catalog_create() );
-	lc.optimize = opt;
+	if (!schema) schema = _strdup("default-schema");
+	if (!user) user = _strdup("sqladmin");
 
-	snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug );
-	ws->write( ws, buf, strlen(buf), 1 );
+	i = snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", user, debug, opt);
+	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
 
+	i = snprintf(buf, BUFSIZ, "milsql();\n" );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+
+	/* following part needs a rework
+	 * first we need a connection (aka login(user,passwd));) (server should
+	 * wait for this command right after the api command )
+	 *
+	 * Then the mvc is created on the server side, and the client sends
+	 * a mvc_database command (selecting the apropriete db)
+	 *
+	 * */
+	i = snprintf(buf, BUFSIZ, "myc := mvc_create(%d);\n", debug );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+	if (debug&64) fprintf(stdout, buf );
+
+	i = snprintf(buf, BUFSIZ, "mvc_login(myc, \"%s\",\"%s\",\"%s\");\n", 
+				schema, user, passwd );
+	ws->write( ws, buf, i, 1 );
+	ws->flush( ws );
+	if (debug&64) fprintf(stdout, buf );
+
+	memset(&lc, 0, sizeof(lc));
+	sql_init_context( &lc, ws, debug, default_catalog_create() );
+	lc.optimize = opt;
 	catalog_create_stream( rs, &lc );
-	if (!schema) schema = _strdup("default-schema");
-	if (!user) user = _strdup("default-user");
+
 	lc.cat->cc_getschema( lc.cat, schema, user );
 	lc.cur = ' ';
 	if (debug&64){
 		ws = lc.out;
 		lc.out = file_wastream(stdout, "<stdout>" );
 	}
-	clientAccept_new( &lc, rs );
-	client_commit( &lc, rs );
+	clientAccept( &lc, rs );
 
 	if (rs){
 	       	rs->close(rs);

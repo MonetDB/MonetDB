@@ -14,10 +14,6 @@ typedef struct cc {
 
 extern statement *sqlexecute( context *lc, char *buf );
 
-static long oidrange( catalog *c, int nr ){
-	return OIDnew(nr);
-}
-
 ptr BUNfind_safe(BAT *b, oid *tid){
 	BUN p = BUNfnd(b,tid);
 	if (p) return BUNtail(b,p);
@@ -171,7 +167,6 @@ catalog *catalog_create( context *lc ){
 	
 	CC->lc = lc;
 	c->cc = (char*)CC;
-	c->cc_oidrange = &oidrange;
 	c->cc_getschema = &getschema;
 	c->cc_destroy = &cc_destroy;
 

@@ -3,6 +3,8 @@
 
 #include <stream.h>
 
+#define COMM_DONE 1
+
 int client(char *host, int port);
 
 #endif /*_COMM_H_*/

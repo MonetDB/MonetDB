@@ -1,13 +1,20 @@
 
 
-#include <stdlib.h>
-#include <string.h>
 #include "mem.h"
 #include <comm.h>
 #include <sys/stat.h>
 
-#ifdef HAVE_GETOPT_H 
+#ifdef HAVE_LIBGETOPT 
 #include <getopt.h>
+#endif
+
+#ifdef HAVE_LIBPTHREAD
+#include <pthread.h>
+#endif
+
+#ifdef HAVE_LIBREADLINE
+#include <readline/readline.h>
+#include <readline/history.h>
 #endif
 
 stream *ws = NULL, *rs = NULL;
@@ -18,54 +25,48 @@ void usage( char *prog ){
 	fprintf(stderr, "\t\t -d          | --debug=[level]\n"); 
 	fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
 	fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
-	fprintf(stderr, "\t\t -s schema   | --schema=schema  /* schema to use */\n");
 	fprintf(stderr, "\t\t -u user     | --user=user      /* user id */\n" );
 	fprintf(stderr, "\t\t -o level    | --optimize=level /* optimzation level */\n" );
+	fprintf(stderr, "\t\t -a api      | --api=api \n"); 
+	fprintf(stderr, " 	/* examples: python,sql(schema) */\n");
 	exit(-1);
 }
 
-#define CHUNK (64*1024)
-
-static char *readblock( stream *s ){
-	int len = 0;
-	int size = CHUNK + 1;
-	char *buf = NEW_ARRAY(char, size ), *start = buf;
-
-	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
-		size += CHUNK;
-		buf = RENEW_ARRAY(char, buf, size); 
-		start = buf + size - CHUNK - 1;
-		*start = '\0';
+void receiver( stream *rs ){
+	int cont = 1;
+	while(cont){
+		int flag = 0;
+		if (!rs->readInt(rs, &flag) || flag == COMM_DONE){
+			cont = 0;
+		} else {
+			char buf[BLOCK+1], *n = buf;
+			int last = 0;
+			int nr = bs_read_next(rs,buf,&last);
+			int nRows = strtol(n,&n,10);
+			n++; /* skip \n */
+	
+			fwrite( n, nr-(n-buf), 1, stdout );
+			while(!last){
+				nr = bs_read_next(rs,buf,&last);
+				fwrite( buf, nr, 1, stdout );
+			}
+			fflush(stdout);
+			if (nRows > 1)
+				fprintf(stdout, "%d Rows affected\n", nRows );
+			else if (nRows == 1)
+				fprintf(stdout, "1 Row affected\n" );
+			else 
+				fprintf(stdout, "no Rows affected\n" );
+		}
 	}
-	start += len;
-	*start = '\0';
-	return buf;
+	rs->close(rs);
+	rs->destroy(rs);
 }
 
-void execute( stream *ws, stream *rs, char *cmd ){
-	int nRows = 0;
-	char *buf, *n;
 
-	ws->write( ws, cmd, strlen(cmd), 1 );
-	ws->flush( ws );
-
-	buf = readblock( rs ); 
-	n = buf;
-		
-	nRows = strtol(n,&n,10);
-	n++;
-
-	printf("%s", n);
-	if (nRows > 1)
-		printf("%d Rows affected\n", nRows );
-	else if (nRows == 1)
-		printf("1 Row affected\n" );
-	else 
-		printf("no Rows affected\n" );
-	_DELETE(buf);
-}
-
-void clientAccept( stream *ws, stream *rs ){
+void *send_commands( void *Ws ){
+	char eot[1];
+	stream *ws = (stream*)Ws;
 	int	is_chrsp	= 0;
 	char *prompt = "> ";
 	char *line = NULL;
@@ -82,67 +83,61 @@ void clientAccept( stream *ws, stream *rs ){
 #ifdef HAVE_LIBREADLINE
 		if (is_chrsp){
 	        	if ((line = (char *) readline(prompt)) == NULL) {
-	               		return;
+	               		break;
 			}
-			add_history(line);				\
+			add_history(line);
 		} else 
 #endif
 		{
 		   	char *buf =(char *)malloc(BUFSIZ);
 	        	if ((line =(char *)fgets(buf,BUFSIZ,stdin))==NULL) {
 			   	free(buf);
-	                	return;
+	                	break;
 			}
 		}
-		if (strcmp(line, "quit;\n") == 0){
-			printf("quiting\n");
-			exit(1);
-		}
-		execute(ws, rs, line);
+		ws->write( ws, line, strlen(line), 1 );
+		ws->flush( ws );
 	}
+	
+	eot[0] = EOT;
+	ws->write( ws, eot, 1, 1 );
+	ws->flush( ws );
+	return NULL;
 }
 
-/*
-When using alloca(3) in a shared library, Intel's "C++ Compiler for 32-bit
-applications, Version 5.0.1 Beta Build 010528D0" seems to require another
-reference to alloca(3) in the file that contains the main(), otherwise it
-complains about an "undefined reference to `\_alloca\_probe' when linking
-the shared library to the executable.
-Hence, we define this FAKE\_ALLOCA\_CALL and call it in the respective
-main()s just before the final return.
-*/
-#if ( defined(__INTEL_COMPILER) && (!defined(STATIC)) )
-# include <alloca.h>
-# define FAKE_ALLOCA_CALL (void)alloca(0);
-#else
-# define FAKE_ALLOCA_CALL ;
-#endif
+void start_workers( stream *ws, stream *rs ){
+	pthread_t sender;
+
+	pthread_create( &sender, NULL, &send_commands, (void*)ws );
+
+	receiver(rs);
+}
 
 int
 main(int ac, char **av)
 {
 	char buf[BUFSIZ];
-	char *schema = NULL;
 	char *user = NULL;
 	char *prog = *av, *host = "localhost";
 	int debug = 0, fd = 0, port = 45123;
 	int opt = 1;
+	char *api = NULL;
 
 	static struct option long_options[] =
              {
                {"debug", 2, 0, 'd'},
                {"host", 1, 0, 'h'},
                {"port", 1, 0, 'p'},
-               {"schema", 1, 0, 's'},
                {"user", 1, 0, 'u'},
                {"optimize", 1, 0, 'o'},
+               {"api", 1, 0, 'a'},
                {0, 0, 0, 0}
              };
 
 	while(1){
 		int option_index = 0;
 
-		int c = getopt_long( ac, av, "dh:p:s:u:o:", 
+		int c = getopt_long( ac, av, "a:dh:p:u:o:", 
 				long_options, &option_index);
 
 		if (c == -1)
@@ -157,6 +152,9 @@ main(int ac, char **av)
 			printf("\n");
 			usage(prog);
 			break;
+		case 'a':
+			api=_strdup(optarg);
+			break;
 		case 'd':
 			debug=2;
 			if (optarg) debug=strtol(optarg,NULL,10);
@@ -166,9 +164,6 @@ main(int ac, char **av)
 			break;
 		case 'p':
 			port=strtol(optarg,NULL,10);
-			break;
-		case 's':
-			schema=_strdup(optarg);
 			break;
 		case 'u':
 			user=_strdup(optarg);
@@ -192,28 +187,29 @@ main(int ac, char **av)
 	}
 
 	fd = client( host, port);
-	rs = block_stream(socket_rstream( fd, "sql client read"));
-	ws = block_stream(socket_wstream( fd, "sql client write"));
+	rs = block_stream(socket_rstream( fd, "client read"));
+	ws = block_stream(socket_wstream( fd, "client write"));
 	if (rs->errnr || ws->errnr){
 		fprintf(stderr, "sockets not opened correctly\n");
 		exit(1);
 	}
-	if (!schema) schema = _strdup("default-schema");
 	if (!user) user = _strdup("default-user");
-	snprintf(buf, BUFSIZ, "module_sql(\"%s\",\"%s\", %d, %d);\n", 
-			schema, user, debug, opt );
+	snprintf(buf, BUFSIZ, "info(\"%s\", %d, %d);\n", user, debug, opt);
 	ws->write( ws, buf, strlen(buf), 1 );
 	ws->flush( ws );
-	clientAccept( ws, rs );
-	if (rs){
-	       	rs->close(rs);
-	       	rs->destroy(rs);
+	if (api){
+		snprintf(buf, BUFSIZ, "%s;\n", api ); 
+	} else {
+		/* default sql */
+		snprintf(buf, BUFSIZ, "sql;\n");
 	}
-	if (ws){
-	       	ws->close(ws);
-	       	ws->destroy(ws);
-	}
-	FAKE_ALLOCA_CALL; /* buggy Intel C/C++ compiler for Linux ... */
+	ws->write( ws, buf, strlen(buf), 1 );
+	ws->flush( ws );
+
+	start_workers( ws, rs );
+
+	ws->close(ws);
+	ws->destroy(ws);
 	return 0;
 } /* main */
 
