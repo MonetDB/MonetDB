@@ -1112,6 +1112,7 @@ void parseAssign(Client cntxt, int kind)
 			@:GETvariable@
 			type= typeId(cntxt);
 			if( type>0) setVarType(curBlk,varid,type);
+			setVarInitialized(curBlk,varid);
 			curInstr= pushArgument(curBlk,curInstr, varid);
 			z++;
 			curInstr->retc++;
@@ -1145,6 +1146,7 @@ void parseAssign(Client cntxt, int kind)
 				curInstr->argv[0]= varid;
 				type= typeId(cntxt);
 				if( type>0) setVarType(curBlk,varid,type);
+				setVarInitialized(curBlk,varid);
 				consumed =1;
 				v= cntxt->nxt;
 			}

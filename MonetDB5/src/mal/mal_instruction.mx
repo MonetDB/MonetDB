@@ -360,7 +360,8 @@ typedef struct{
         bit	isaconstant;	/* value cannot change */
         bit	isatypevar;	/* denotes a type variable */
         int	tmpindex;	/* temporary variable */
-	int	isused;	/* for stack copying scope */
+	short	isinit;	/* used once as destination */
+	short	isused;	/* for stack copying scope */
 	short   fixtype;/* the type has been fixed */
 	short	garbage;/* remove upon function return */
 	short	beginLifespan, endLifespan; /* for optimizers */
@@ -458,6 +459,7 @@ for separate name space management.
 #define isTypeVar(M,I)	((M)->var[I]->isatypevar)
 #define isTmpVar(M,I)	((M)->var[I]->tmpindex)
 #define isVarUsed(M,I) 		((M)->var[I]->isused)
+#define isVarInitialized(M,I) 	((M)->var[I]->isinit)
 #define isFixed(M,I)		((M)->var[I]->fixtype)
 #define setFixed(M,I)		((M)->var[I]->fixtype= 1)
 #define isVarGarbage(M,I)  	((M)->var[I]->garbage)
@@ -510,6 +512,7 @@ mal_export int		newConstant(MalBlkPtr mb, malType type, str val, int f);
 mal_export void		pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr	pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr 	pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
+mal_export void 	setVarInitialized(MalBlkPtr mb, int varid);
 mal_export void		delArgument(InstrPtr p, int varid);
 mal_export void		setVarType(MalBlkPtr mb, int i, int tpe);
 mal_export void		setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
@@ -522,6 +525,7 @@ mal_export void 	printSignature(stream *fd, Symbol s, int flg);
 mal_export str		instruction2str(MalBlkPtr mb,InstrPtr p,int hidden);
 mal_export str 		function2str(MalBlkPtr mb,int flg);
 mal_export void 	pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.c */
+mal_export void 	pushCatchDefault(MalBlkPtr mb,str nme);
 
 
 mal_export void strBeforeCall(ValPtr v,ValPtr bak);
@@ -980,6 +984,7 @@ The makes analyses of patterns like bat(int,str) easier.
 		getVarConstant(mb,n).vtype = TYPE_int;
 	}
 	isVarUsed(mb,n) = FALSE;
+	isVarInitialized(mb,n) = FALSE;
 	mb->vtop++;
 	return n;
 } 
@@ -1002,6 +1007,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 	isConstant(mb,n) = FALSE;
 	isVarGarbage(mb,n) = FALSE;
 	isVarUsed(mb,n) = FALSE;
+	isVarInitialized(mb,n) = FALSE;
 	mb->vtop++;
 	return n;
 } 
@@ -1032,6 +1038,7 @@ void	copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
         w->isatypevar = v->isatypevar;
         w->tmpindex = v->tmpindex;
         w->isused = v->isused;
+        w->isinit = v->isinit;
 	VALcopy(&w->value,&v->value);
 	dst->var[dst->vtop]= w;
 }
@@ -1124,7 +1131,8 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
 /* printf("new constant %d val %s %d\n",k,val,type);*/
 	getVarLiteral(mb,k)= val;
 	isConstant(mb,k) = 1;
-	isVarUsed(mb,k) = 0;
+	isVarUsed(mb,k) = FALSE;
+	isVarInitialized(mb,k) = FALSE;
 	vr = &getVarConstant(mb,k);
 @}
 @-
@@ -1302,6 +1310,9 @@ InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
 	isVarUsed(mb,varid) = TRUE;
 	return p;
 } 
+void setVarInitialized(MalBlkPtr mb, int varid){
+	isVarInitialized(mb,varid) = TRUE;
+}
 @-
 Store the information of a destination variable in the signature structure of
 each instruction. This code is largely equivalent to pushArgument,
@@ -1422,6 +1433,37 @@ void pushEndInstruction(MalBlkPtr mb){
 	getDestVar(p) = findVariable(mb,functionName(getInstrPtr(mb,0)));
 	p->argc =0;
 	p->retc = 0;
+	pushInstruction(mb,p);
+}
+@-
+Catching errors is a recurring situation. The block below 
+generates the default code block, ie catch it and print
+the error.
+@c
+void pushCatchDefault(MalBlkPtr mb, str nme){
+	InstrPtr p;
+	int i;
+
+	p= newInstruction(CATCHsymbol);
+	i= findVariable(mb,nme);
+	if( i< 0) i= newVariable(mb,GDKstrdup(nme),TYPE_str);
+	getDestVar(p) = i;
+	p->argc =1;
+	p->retc = 1;
+	p->barrier= CATCHsymbol;
+	pushInstruction(mb,p);
+
+	p= newInstruction(ASSIGNsymbol);
+	moduleId(p)= GDKstrdup("io");
+	functionId(p)= GDKstrdup("print");
+	pushArgumentId(mb, p, GDKstrdup(nme));
+	pushInstruction(mb,p);
+
+	p= newInstruction(EXITsymbol);
+	getDestVar(p) = findVariable(mb,GDKstrdup(nme));
+	p->argc =1;
+	p->retc = 1;
+	p->barrier= EXITsymbol;
 	pushInstruction(mb,p);
 }
 @}
@@ -1730,7 +1772,10 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 			else	sprintf(t,"%s%s", def, pstring);
 		} else {
 			if( isTmpVar(mb, getArg(p,i)) ) {
-				sprintf(t,"%s",pstring);
+				if( isVarInitialized(mb,getArg(p,i)) )
+				sprintf(t,"%c%d", TMPMARKER, getVarTmp(mb,getArg(p,i)));
+				advance(t);
+				sprintf(t,"%s", pstring);
 			} else 
 			sprintf(t,"%s%s", mb->var[getArg(p,i)]->name,pstring);
 		}

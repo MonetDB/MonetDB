@@ -207,6 +207,7 @@ mal_export void 	initClientThread(Client c);
 mal_export void		closeClient    (Client c);
 mal_export void		killClient     (Client c);
 mal_export void 	freeClient	(Client c);
+mal_export void 	appendInput(Client c, str msg);
 mal_export int 		readClient	(Client c, str prompt);
 mal_export void 	setClientTrace(Client c, int flag);
 mal_export str 		stopClient(Client c, str nme);
@@ -672,15 +673,14 @@ void traceAllClients(int flag){
 }
 @}
 @+ Client input
-The input is read from a (blocked) stream and stored in the client record
-input buffer. The storage area grows automatically upon need.
-The origin of the input stream depends on the connectivity mode.
-
-Most interactions should be regulated through the Mclient
-front-end. This will also take care of buffering a request before
-submission. This avoids a significant number of network interactions.
-
-@{
+Input to be processed is collected in a Client specific buffer.
+It is filled by reading information from a stream, or by scheduling
+strings constructed internally. The latter involves removing
+any escape character needed to manipulate the string within
+the kernel.
+The buffer space is automatically expanded to accommodate new 
+information and the read pointers are adjusted.
+@c
 @c
 static 
 void enlargebuffer(Client c, int newsize){
@@ -693,7 +693,37 @@ void enlargebuffer(Client c, int newsize){
 	c->limit = c->input+i;
 	c->nxt= c->input+ln;
 }
+void appendInput(Client c, str msg){
+	int i,len;
+	char *s;
 
+	len= strlen(msg);
+	i= c->limit - c->input- len;
+	if( i < 0 ){
+		enlargebuffer(c,len);
+	}
+	for(s = c->input+strlen(c->input); *msg; msg++){
+		if( *msg == '\\')
+			switch(*++msg){
+			case 't': *s++ = '\t'; break;
+			case 'n': *s++ = '\n'; break;
+			case 'r': *s++ = '\r'; break;
+			default: *s++ = *msg;
+			}
+		else *s++= *msg;
+	}
+	*s=0;
+}
+@-
+The input is read from a (blocked) stream and stored in the client record
+input buffer. The storage area grows automatically upon need.
+The origin of the input stream depends on the connectivity mode.
+
+Most interactions should be regulated through the Mclient
+front-end. This will also take care of buffering a request before
+submission. This avoids a significant number of network interactions.
+
+@{
 @-
 Each operation received from a front-end consists of at least one line.
 If it contains the text #bytes:%6d then it is assumed that a block
