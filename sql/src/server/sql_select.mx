@@ -524,6 +524,19 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 		if (!result)
 		 	result = sql_value_exp(sql, scp, opt_else, grp, subset, f);
 
+		tpe = tail_type(result);
+		if (tpe && restype) {
+			tpe = supertype(restype, tpe);
+			sql_subtype_destroy( restype );
+		}
+		restype = tpe;
+
+		if (!result || !(result = check_types(sql, restype, result))) {
+			list_destroy(conds);
+			list_destroy(results);
+			return NULL;
+		}
+
 		if (result->nrcols <= 0) {
 			res = stmt_const(res, result);
 		} else {
@@ -539,12 +552,6 @@ static stmt *sql_case(mvc * sql, scope * scp, int token, symbol *opt_cond, dlist
 	} else {
 		res = stmt_const(res, stmt_atom( atom_general( sql_dup_subtype(restype), NULL)));
 	}
-	tpe = tail_type(res);
-	if (tpe && restype) {
-		tpe = supertype(restype, tpe);
-		sql_subtype_destroy( restype );
-	}
-	restype = tpe;
 
 	for (n = conds->h, m = results->h; n && m;
 	     n = n->next, m = m->next) {
@@ -2152,7 +2159,7 @@ stmt *
 sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset, int f)
 {
 	stmt *s = sql_logical_exp_(sql, scp, sc, grp, subset, f);
-	if (s && s->nrcols == 0 && (f == sql_where || f == sql_search)) {
+	if (s && s->nrcols == 0 && f == sql_where) {
 		/* predicate */
 		sql_subtype *bt = sql_bind_localtype( "bit" );
 		stmt *t = NULL;
@@ -2168,6 +2175,11 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 		s = stmt_select(t, s, cmp_equal);
 		if (!found)
 			scope_add_alias( scp, stmt_dup(t), "row");
+
+	} else if (s && s->nrcols == 0 && f == sql_search && subset) {
+		stmt *t = subset->op1.lval->h->data;
+		t = stmt_const( stmt_dup(t), stmt_bool(1) ); 
+		return stmt_select(t, s, cmp_equal);
 	}
 	return s;
 }

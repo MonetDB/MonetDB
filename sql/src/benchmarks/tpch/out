@@ -1,101 +1,589 @@
-+ SQL=MapiClient -lsql -u monetdb -P monetdb -hpavo
-+ '[' 0 -eq 1 ']'
-+ echo loading
-loading
-+ ./load.sh 'MapiClient -lsql -u monetdb -P monetdb -hpavo'
 ++ pwd
-+ PWD=/ufs/niels/data/rc/sql/src/benchmarks/tpch
-+ echo /ufs/niels/data/rc/sql/src/benchmarks/tpch
-/ufs/niels/data/rc/sql/src/benchmarks/tpch
++ PWD=/ufs/niels/data/sql/src/benchmarks/tpch
++ echo /ufs/niels/data/sql/src/benchmarks/tpch
+/ufs/niels/data/sql/src/benchmarks/tpch
 + SQL=MapiClient -lsql -u monetdb -P monetdb
-+ '[' 1 -eq 1 ']'
-+ SQL=MapiClient -lsql -u monetdb -P monetdb -hpavo
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
++ '[' 0 -eq 1 ']'
++ MapiClient -lsql -u monetdb -P monetdb
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 6 # querytype
+#-
+# 7 # querytype
 + cat load.sql
-+ sed -e s+PWD+/ufs/niels/data/rc/sql/src/benchmarks/tpch/SF-0.01+
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-+ echo queries
-queries
-+ echo O1
-O1
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-# l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-# varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	mediumint # type
-# 4,	,	,	,	,	,	,	,	,	 # tuplecount
-# 0,	,	,	,	,	,	,	,	,	 # id
-[ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
-[ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
-[ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.454987834549879,	35691.129209074395,	0.049931119564099929,	29181	]
-[ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.597168165346933,	35874.006532680178,	0.049827539927526504,	14902	]
-+ echo O2
-O2
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-# s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
-# decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
-# 4,	,	,	,	,	,	,	 # tuplecount
-# 0,	,	,	,	,	,	,	 # id
-[ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
-[ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
-[ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
-[ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
-+ echo O3
-O3
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-# l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
-# int,	decimal,	date,	int # type
-# 10,	,	,	 # tuplecount
-# 0,	,	,	 # id
-[ 47714,	267010.5894,	1995-03-11,	0	]
-[ 22276,	266351.5562,	1995-01-29,	0	]
-[ 32965,	263768.3414,	1995-02-25,	0	]
-[ 21956,	254541.1285,	1995-02-02,	0	]
-[ 1637,	243512.7981,	1995-02-08,	0	]
-[ 10916,	241320.0814,	1995-03-11,	0	]
-[ 30497,	208566.6969,	1995-02-07,	0	]
-[ 450,	205447.4232,	1995-03-05,	0	]
-[ 47204,	204478.5213,	1995-03-13,	0	]
-[ 9696,	201502.2188,	1995-02-20,	0	]
-+ echo O4
-O4
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-# o_orderpriority,	order_count # name
-# varchar,	mediumint # type
-# 5,	 # tuplecount
-# 0,	 # id
-[ "1-URGENT",	93	]
-[ "2-HIGH",	103	]
-[ "3-MEDIUM",	109	]
-[ "4-NOT SPECIFIED",	102	]
-[ "5-LOW",	128	]
-+ echo O5
-O5
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-# n_name,	revenue # name
-# varchar,	decimal # type
-# 5,	 # tuplecount
-# 0,	 # id
-[ "VIETNAM",	1000926.6999	]
-[ "CHINA",	740210.7570	]
-[ "JAPAN",	660651.2425	]
-[ "INDONESIA",	566379.5276	]
-[ "INDIA",	422874.6844	]
-+ echo O6
-O6
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-# revenue # name
-# decimal # type
++ sed -e s+PWD+/ufs/niels/data/sql/src/benchmarks/tpch/SF-0.01+
++ MapiClient -lsql -u monetdb -P monetdb
+MAPI  = monetdb@localhost:45123
+ACTION= read_into_cache
+QUERY = --set explain='plan';
+ERROR = !ERROR: foreign key constraint lineitem.c1007878 violated
+MAPI  = monetdb@localhost:45123
+ACTION= read_into_cache
+QUERY = COMMIT;
+ERROR = !transaction commit failed
+        !ERROR: Cannot commit this transaction will abort instead
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
 # 1 # tuplecount
 # 0 # id
-[ 1193053.2253	]
-+ echo O7
-O7
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
-# supp_nation,	cust_nation,	l_year,	revenue # name
-# varchar,	varchar,	mediumint,	decimal # type
-# 4,	,	,	 # tuplecount
-# 0,	,	,	 # id
-[ "FRANCE",	"GERMANY",	1995,	268068.5774	]
-[ "FRANCE",	"GERMANY",	1996,	303862.2980	]
-[ "GERMANY",	"FRANCE",	1995,	621159.4882	]
-[ "GERMANY",	"FRANCE",	1996,	379095.8854	]
-+ MapiClient -lsql -u monetdb -P monetdb -hpavo
+[ 5	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ 25	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ 100	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
+[ 1500	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 4 # id
+[ 2000	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 5 # id
+[ 8000	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 6 # id
+[ 15000	]
+/ufs/niels/data/sql/src/benchmarks/tpch
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 0 # id
+[ 5	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ 25	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ 100	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
+[ 1500	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 4 # id
+[ 2000	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 5 # id
+[ 8000	]
+#-
+# 4 # querytype
+# affected # table_name
+# rows # name
+# mediumint # type
+# 0 # length
+# 1 # tuplecount
+# 6 # id
+[ 15000	]
+#-
+# 1 # querytype
+#-
+# 4 # querytype
+#  # table_name
+# statement # name
+# varchar # type
+# 95 # length
+# 404 # tuplecount
+# 7 # id
+[ "{"	]
+[ "var s8 := \"|\";"	]
+[ "var s9 := \"|\\n\";"	]
+[ "var s10 := \"/ufs/niels/data/sql/src/benchmarks/tpch/SF-0.01/lineitem.tbl\";"	]
+[ "var f10s := open_rastream(iconv(s10, \"UTF-8\", codeset()));"	]
+[ "var f10 := bstream_create(f10s, 1024*1024);"	]
+[ "var s7 := mvc_import_table( myc, f10, \"lineitem\", s8, s9, 70000);"	]
+[ "bstream_destroy(f10);"	]
+[ "stream_close(f10s);"	]
+[ "s8 := nil;"	]
+[ "s9 := nil;"	]
+[ "s10 := nil;"	]
+[ "var s11 := \"l_comment\";"	]
+[ "var s6 := find(s7, s11);"	]
+[ "s11 := nil;"	]
+[ "var s12 := str(nil);"	]
+[ "var s5 := s6.uselect(s12);"	]
+[ "s12 := nil;"	]
+[ "var s4 := s5.count();"	]
+[ "s5 := nil;"	]
+[ "var s13 := \"null constraint lineitem.l_comment violated\";"	]
+[ "if (bit(s4)){ ERROR(s13); }"	]
+[ "s4 := nil;"	]
+[ "s13 := nil;"	]
+[ "var s18 := \"l_shipmode\";"	]
+[ "var s17 := find(s7, s18);"	]
+[ "s18 := nil;"	]
+[ "var s19 := str(nil);"	]
+[ "var s16 := s17.uselect(s19);"	]
+[ "s19 := nil;"	]
+[ "var s15 := s16.count();"	]
+[ "s16 := nil;"	]
+[ "var s20 := \"null constraint lineitem.l_shipmode violated\";"	]
+[ "if (bit(s15)){ ERROR(s20); }"	]
+[ "s15 := nil;"	]
+[ "s20 := nil;"	]
+[ "var s25 := \"l_shipinstruct\";"	]
+[ "var s24 := find(s7, s25);"	]
+[ "s25 := nil;"	]
+[ "var s26 := str(nil);"	]
+[ "var s23 := s24.uselect(s26);"	]
+[ "s26 := nil;"	]
+[ "var s22 := s23.count();"	]
+[ "s23 := nil;"	]
+[ "var s27 := \"null constraint lineitem.l_shipinstruct violated\";"	]
+[ "if (bit(s22)){ ERROR(s27); }"	]
+[ "s22 := nil;"	]
+[ "s27 := nil;"	]
+[ "var s32 := \"l_receiptdate\";"	]
+[ "var s31 := find(s7, s32);"	]
+[ "s32 := nil;"	]
+[ "var s33 := date(nil);"	]
+[ "var s30 := s31.uselect(s33);"	]
+[ "s33 := nil;"	]
+[ "var s29 := s30.count();"	]
+[ "s30 := nil;"	]
+[ "var s34 := \"null constraint lineitem.l_receiptdate violated\";"	]
+[ "if (bit(s29)){ ERROR(s34); }"	]
+[ "s29 := nil;"	]
+[ "s34 := nil;"	]
+[ "var s39 := \"l_commitdate\";"	]
+[ "var s38 := find(s7, s39);"	]
+[ "s39 := nil;"	]
+[ "var s40 := date(nil);"	]
+[ "var s37 := s38.uselect(s40);"	]
+[ "s40 := nil;"	]
+[ "var s36 := s37.count();"	]
+[ "s37 := nil;"	]
+[ "var s41 := \"null constraint lineitem.l_commitdate violated\";"	]
+[ "if (bit(s36)){ ERROR(s41); }"	]
+[ "s36 := nil;"	]
+[ "s41 := nil;"	]
+[ "var s46 := \"l_shipdate\";"	]
+[ "var s45 := find(s7, s46);"	]
+[ "s46 := nil;"	]
+[ "var s47 := date(nil);"	]
+[ "var s44 := s45.uselect(s47);"	]
+[ "s47 := nil;"	]
+[ "var s43 := s44.count();"	]
+[ "s44 := nil;"	]
+[ "var s48 := \"null constraint lineitem.l_shipdate violated\";"	]
+[ "if (bit(s43)){ ERROR(s48); }"	]
+[ "s43 := nil;"	]
+[ "s48 := nil;"	]
+[ "var s53 := \"l_linestatus\";"	]
+[ "var s52 := find(s7, s53);"	]
+[ "s53 := nil;"	]
+[ "var s54 := str(nil);"	]
+[ "var s51 := s52.uselect(s54);"	]
+[ "s54 := nil;"	]
+[ "var s50 := s51.count();"	]
+[ "s51 := nil;"	]
+[ "var s55 := \"null constraint lineitem.l_linestatus violated\";"	]
+[ "if (bit(s50)){ ERROR(s55); }"	]
+[ "s50 := nil;"	]
+[ "s55 := nil;"	]
+[ "var s60 := \"l_returnflag\";"	]
+[ "var s59 := find(s7, s60);"	]
+[ "s60 := nil;"	]
+[ "var s61 := str(nil);"	]
+[ "var s58 := s59.uselect(s61);"	]
+[ "s61 := nil;"	]
+[ "var s57 := s58.count();"	]
+[ "s58 := nil;"	]
+[ "var s62 := \"null constraint lineitem.l_returnflag violated\";"	]
+[ "if (bit(s57)){ ERROR(s62); }"	]
+[ "s57 := nil;"	]
+[ "s62 := nil;"	]
+[ "var s67 := \"l_tax\";"	]
+[ "var s66 := find(s7, s67);"	]
+[ "s67 := nil;"	]
+[ "var s68 := lng(nil);"	]
+[ "var s65 := s66.uselect(s68);"	]
+[ "s68 := nil;"	]
+[ "var s64 := s65.count();"	]
+[ "s65 := nil;"	]
+[ "var s69 := \"null constraint lineitem.l_tax violated\";"	]
+[ "if (bit(s64)){ ERROR(s69); }"	]
+[ "s64 := nil;"	]
+[ "s69 := nil;"	]
+[ "var s74 := \"l_discount\";"	]
+[ "var s73 := find(s7, s74);"	]
+[ "s74 := nil;"	]
+[ "var s75 := lng(nil);"	]
+[ "var s72 := s73.uselect(s75);"	]
+[ "s75 := nil;"	]
+[ "var s71 := s72.count();"	]
+[ "s72 := nil;"	]
+[ "var s76 := \"null constraint lineitem.l_discount violated\";"	]
+[ "if (bit(s71)){ ERROR(s76); }"	]
+[ "s71 := nil;"	]
+[ "s76 := nil;"	]
+[ "var s81 := \"l_extendedprice\";"	]
+[ "var s80 := find(s7, s81);"	]
+[ "s81 := nil;"	]
+[ "var s82 := lng(nil);"	]
+[ "var s79 := s80.uselect(s82);"	]
+[ "s82 := nil;"	]
+[ "var s78 := s79.count();"	]
+[ "s79 := nil;"	]
+[ "var s83 := \"null constraint lineitem.l_extendedprice violated\";"	]
+[ "if (bit(s78)){ ERROR(s83); }"	]
+[ "s78 := nil;"	]
+[ "s83 := nil;"	]
+[ "var s88 := \"l_quantity\";"	]
+[ "var s87 := find(s7, s88);"	]
+[ "s88 := nil;"	]
+[ "var s89 := int(nil);"	]
+[ "var s86 := s87.uselect(s89);"	]
+[ "s89 := nil;"	]
+[ "var s85 := s86.count();"	]
+[ "s86 := nil;"	]
+[ "var s90 := \"null constraint lineitem.l_quantity violated\";"	]
+[ "if (bit(s85)){ ERROR(s90); }"	]
+[ "s85 := nil;"	]
+[ "s90 := nil;"	]
+[ "var s95 := \"l_linenumber\";"	]
+[ "var s94 := find(s7, s95);"	]
+[ "s95 := nil;"	]
+[ "var s96 := lng(nil);"	]
+[ "var s93 := s94.uselect(s96);"	]
+[ "s96 := nil;"	]
+[ "var s92 := s93.count();"	]
+[ "s93 := nil;"	]
+[ "var s97 := \"null constraint lineitem.l_linenumber violated\";"	]
+[ "if (bit(s92)){ ERROR(s97); }"	]
+[ "s92 := nil;"	]
+[ "s97 := nil;"	]
+[ "var s102 := \"l_suppkey\";"	]
+[ "var s101 := find(s7, s102);"	]
+[ "s102 := nil;"	]
+[ "var s103 := lng(nil);"	]
+[ "var s100 := s101.uselect(s103);"	]
+[ "s103 := nil;"	]
+[ "var s99 := s100.count();"	]
+[ "s100 := nil;"	]
+[ "var s104 := \"null constraint lineitem.l_suppkey violated\";"	]
+[ "if (bit(s99)){ ERROR(s104); }"	]
+[ "s99 := nil;"	]
+[ "s104 := nil;"	]
+[ "var s109 := \"l_partkey\";"	]
+[ "var s108 := find(s7, s109);"	]
+[ "s109 := nil;"	]
+[ "var s110 := lng(nil);"	]
+[ "var s107 := s108.uselect(s110);"	]
+[ "s110 := nil;"	]
+[ "var s106 := s107.count();"	]
+[ "s107 := nil;"	]
+[ "var s111 := \"null constraint lineitem.l_partkey violated\";"	]
+[ "if (bit(s106)){ ERROR(s111); }"	]
+[ "s106 := nil;"	]
+[ "s111 := nil;"	]
+[ "var s116 := \"l_orderkey\";"	]
+[ "var s115 := find(s7, s116);"	]
+[ "s7 := nil;"	]
+[ "s116 := nil;"	]
+[ "var s117 := lng(nil);"	]
+[ "var s114 := s115.uselect(s117);"	]
+[ "s117 := nil;"	]
+[ "var s113 := s114.count();"	]
+[ "s114 := nil;"	]
+[ "var s118 := \"null constraint lineitem.l_orderkey violated\";"	]
+[ "if (bit(s113)){ ERROR(s118); }"	]
+[ "s113 := nil;"	]
+[ "s118 := nil;"	]
+[ "var s126 := mvc_bind(myc, \"sys\", \"partsupp\", \"ps_partkey\", 0); #partsupp"	]
+[ "var s127 := mvc_bind(myc, \"sys\", \"partsupp\", \"ps_suppkey\", 0); #partsupp"	]
+[ "var s125 := ds_link( s108, s126, s101, s127 );"	]
+[ "var s124 := s125.reverse;"	]
+[ "s125 := nil;"	]
+[ "var s123 := s124.reverse().sort().reverse();"	]
+[ "s124 := nil;"	]
+[ "var s122 := s123.reverse;"	]
+[ "s123 := nil;"	]
+[ "var s121 := s122.count();"	]
+[ "var s128 := s115.count();"	]
+[ "var s120 := !=(s121,s128);"	]
+[ "s121 := nil;"	]
+[ "s128 := nil;"	]
+[ "var s129 := \"foreign key constraint lineitem.c1007878 violated\";"	]
+[ "if (bit(s120)){ ERROR(s129); }"	]
+[ "s120 := nil;"	]
+[ "s129 := nil;"	]
+[ "var s137 := mvc_bind(myc, \"sys\", \"supplier\", \"s_suppkey\", 0); #supplier"	]
+[ "var s136 := join(s101,reverse(s137));"	]
+[ "var s135 := s136.reverse;"	]
+[ "s136 := nil;"	]
+[ "var s134 := s135.reverse().sort().reverse();"	]
+[ "s135 := nil;"	]
+[ "var s133 := s134.reverse;"	]
+[ "s134 := nil;"	]
+[ "var s132 := s133.count();"	]
+[ "var s138 := s115.count();"	]
+[ "var s131 := !=(s132,s138);"	]
+[ "s132 := nil;"	]
+[ "s138 := nil;"	]
+[ "var s139 := \"foreign key constraint lineitem.c1007871 violated\";"	]
+[ "if (bit(s131)){ ERROR(s139); }"	]
+[ "s131 := nil;"	]
+[ "s139 := nil;"	]
+[ "var s147 := mvc_bind(myc, \"sys\", \"part\", \"p_partkey\", 0); #part"	]
+[ "var s146 := join(s108,reverse(s147));"	]
+[ "var s145 := s146.reverse;"	]
+[ "s146 := nil;"	]
+[ "var s144 := s145.reverse().sort().reverse();"	]
+[ "s145 := nil;"	]
+[ "var s143 := s144.reverse;"	]
+[ "s144 := nil;"	]
+[ "var s142 := s143.count();"	]
+[ "var s148 := s115.count();"	]
+[ "var s141 := !=(s142,s148);"	]
+[ "s142 := nil;"	]
+[ "s148 := nil;"	]
+[ "var s149 := \"foreign key constraint lineitem.c1007864 violated\";"	]
+[ "if (bit(s141)){ ERROR(s149); }"	]
+[ "s141 := nil;"	]
+[ "s149 := nil;"	]
+[ "var s157 := mvc_bind(myc, \"sys\", \"orders\", \"o_orderkey\", 0); #orders"	]
+[ "var s156 := join(s115,reverse(s157));"	]
+[ "var s155 := s156.reverse;"	]
+[ "s156 := nil;"	]
+[ "var s154 := s155.reverse().sort().reverse();"	]
+[ "s155 := nil;"	]
+[ "var s153 := s154.reverse;"	]
+[ "s154 := nil;"	]
+[ "var s152 := s153.count();"	]
+[ "var s158 := s115.count();"	]
+[ "var s151 := !=(s152,s158);"	]
+[ "s152 := nil;"	]
+[ "s158 := nil;"	]
+[ "var s159 := \"foreign key constraint lineitem.c1007857 violated\";"	]
+[ "if (bit(s151)){ ERROR(s159); }"	]
+[ "s151 := nil;"	]
+[ "s159 := nil;"	]
+[ "var s165 := mvc_bind_ibat(myc, \"sys\", \"lineitem\", \"c1007850\", 0);"	]
+[ "var s168 := int(\"0\");"	]
+[ "var s167 := [hash](s115,s168);"	]
+[ "s168 := nil;"	]
+[ "var s170 := int(\"8\");"	]
+[ "var s169 := [hash](s94,s170);"	]
+[ "s170 := nil;"	]
+[ "var s166 := [xor](s167,s169);"	]
+[ "s167 := nil;"	]
+[ "s169 := nil;"	]
+[ "var s171 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_orderkey\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s172 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_linenumber\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s164 := ds_link( s165, s166, s171, s115, s172, s94 );"	]
+[ "s165 := nil;"	]
+[ "var s163 := s164.count();"	]
+[ "s164 := nil;"	]
+[ "var s173 := int(\"0\");"	]
+[ "var s162 := !=(s163,s173);"	]
+[ "s163 := nil;"	]
+[ "s173 := nil;"	]
+[ "var s179 := s115.CTgroup;"	]
+[ "var s178 := CTgroup(s179, s94);"	]
+[ "s179 := nil;"	]
+[ "var s180 := s178.tunique.mirror;"	]
+[ "var s177 := {count}(s178, s178, s180);"	]
+[ "s178 := nil;"	]
+[ "s180 := nil;"	]
+[ "var s176 := s177.count();"	]
+[ "var s175 := lng(s176);"	]
+[ "s176 := nil;"	]
+[ "var s181 := s177.sum_lng();"	]
+[ "s177 := nil;"	]
+[ "var s174 := !=(s175,s181);"	]
+[ "s175 := nil;"	]
+[ "s181 := nil;"	]
+[ "var s161 := or(s162,s174);"	]
+[ "s162 := nil;"	]
+[ "s174 := nil;"	]
+[ "var s182 := \"key constraint lineitem.c1007850 violated\";"	]
+[ "if (bit(s161)){ ERROR(s182); }"	]
+[ "s161 := nil;"	]
+[ "s182 := nil;"	]
+[ "var s184 := mvc_bind_ibat(myc, \"sys\", \"lineitem\", \"c1007850\", 1).access(BAT_WRITE);"	]
+[ "var s183 := append(s184.access(BAT_WRITE),s166);"	]
+[ "s184 := nil;"	]
+[ "s166 := nil;"	]
+[ "var s186 := mvc_bind_ibat(myc, \"sys\", \"lineitem\", \"c1007857\", 1).access(BAT_WRITE);"	]
+[ "var s185 := append(s186.access(BAT_WRITE),s153);"	]
+[ "s186 := nil;"	]
+[ "s153 := nil;"	]
+[ "var s188 := mvc_bind_ibat(myc, \"sys\", \"lineitem\", \"c1007864\", 1).access(BAT_WRITE);"	]
+[ "var s187 := append(s188.access(BAT_WRITE),s143);"	]
+[ "s188 := nil;"	]
+[ "s143 := nil;"	]
+[ "var s190 := mvc_bind_ibat(myc, \"sys\", \"lineitem\", \"c1007871\", 1).access(BAT_WRITE);"	]
+[ "var s189 := append(s190.access(BAT_WRITE),s133);"	]
+[ "s190 := nil;"	]
+[ "s133 := nil;"	]
+[ "var s192 := mvc_bind_ibat(myc, \"sys\", \"lineitem\", \"c1007878\", 1).access(BAT_WRITE);"	]
+[ "var s191 := append(s192.access(BAT_WRITE),s122);"	]
+[ "s192 := nil;"	]
+[ "s122 := nil;"	]
+[ "var s193 := append(s171.access(BAT_WRITE),s115);"	]
+[ "s171 := nil;"	]
+[ "var s195 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_partkey\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s194 := append(s195.access(BAT_WRITE),s108);"	]
+[ "s195 := nil;"	]
+[ "s108 := nil;"	]
+[ "var s197 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_suppkey\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s196 := append(s197.access(BAT_WRITE),s101);"	]
+[ "s197 := nil;"	]
+[ "s101 := nil;"	]
+[ "var s198 := append(s172.access(BAT_WRITE),s94);"	]
+[ "s172 := nil;"	]
+[ "s94 := nil;"	]
+[ "var s200 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_quantity\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s199 := append(s200.access(BAT_WRITE),s87);"	]
+[ "s200 := nil;"	]
+[ "s87 := nil;"	]
+[ "var s202 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_extendedprice\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s201 := append(s202.access(BAT_WRITE),s80);"	]
+[ "s202 := nil;"	]
+[ "s80 := nil;"	]
+[ "var s204 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_discount\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s203 := append(s204.access(BAT_WRITE),s73);"	]
+[ "s204 := nil;"	]
+[ "s73 := nil;"	]
+[ "var s206 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_tax\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s205 := append(s206.access(BAT_WRITE),s66);"	]
+[ "s206 := nil;"	]
+[ "s66 := nil;"	]
+[ "var s208 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_returnflag\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s207 := append(s208.access(BAT_WRITE),s59);"	]
+[ "s208 := nil;"	]
+[ "s59 := nil;"	]
+[ "var s210 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_linestatus\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s209 := append(s210.access(BAT_WRITE),s52);"	]
+[ "s210 := nil;"	]
+[ "s52 := nil;"	]
+[ "var s212 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_shipdate\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s211 := append(s212.access(BAT_WRITE),s45);"	]
+[ "s212 := nil;"	]
+[ "s45 := nil;"	]
+[ "var s214 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_commitdate\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s213 := append(s214.access(BAT_WRITE),s38);"	]
+[ "s214 := nil;"	]
+[ "s38 := nil;"	]
+[ "var s216 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_receiptdate\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s215 := append(s216.access(BAT_WRITE),s31);"	]
+[ "s216 := nil;"	]
+[ "s31 := nil;"	]
+[ "var s218 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_shipinstruct\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s217 := append(s218.access(BAT_WRITE),s24);"	]
+[ "s218 := nil;"	]
+[ "s24 := nil;"	]
+[ "var s220 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_shipmode\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s219 := append(s220.access(BAT_WRITE),s17);"	]
+[ "s220 := nil;"	]
+[ "s17 := nil;"	]
+[ "var s222 := mvc_bind(myc, \"sys\", \"lineitem\", \"l_comment\", 1).access(BAT_WRITE); #lineitem"	]
+[ "var s221 := append(s222.access(BAT_WRITE),s6);"	]
+[ "s222 := nil;"	]
+[ "s6 := nil;"	]
+[ "var s226 := s115.count();"	]
+[ "s115 := nil;"	]
+[ "var s223 := mvc_result_table(myc, 1, s226);"	]
+[ "mvc_result_column(myc, \"affected\", \"rows\", \"mediumint\", 9, 0, s226);"	]
+[ "mvc_export_result(myc, Output, s223);"	]
+[ "mvc_export_table(myc, Output, s223, 0, 1000);"	]
+[ "}"	]
+#-
+# 7 # querytype
+#  # table_name
+# statement # name
+# varchar # type
+# 19 # length
+# 3 # tuplecount
+# 8 # id
+[ "{"	]
+[ "var none := \"none\";"	]
+[ "}"	]

@@ -56,7 +56,7 @@ sql_export stmt *sql_delete( mvc *sql, tvar *tv, sql_table *t, stmt *s, int all,
 
 static stmt *output_value(stmt *s )
 {
-	return stmt_output(stmt_list( list_append( create_stmt_list(), s)));
+	return stmt_output(stmt_list( list_append( create_stmt_list(), stmt_alias(s, "affected", "rows"))));
 }
 
 static stmt *insert_value(mvc * sql, scope * scp, sql_column * c, symbol * s)
