@@ -492,7 +492,12 @@ running min/max summaries for quickly reducing scan-select ranges on clustered b
 .COMMAND rmin_higher(BAT[any::1,oid] b, any::1 v) : oid = CMDrmin_higher;
 "find the lowest oid that may contain >= the passed value, in an rmax() summary."
 
-@m
+.COMMAND find_lower(BAT[any::1,void] b, any::1 v) : oid = CMDfind_lower;
+"find the value equal to or (of not exists) smaller than the searched value"
+
+.COMMAND find_higher(BAT[any::1,void] b, any::1 v) : oid = CMDfind_higher;
+"find the value equal to or (of not exists) greater than the searched value"
+
 .COMMAND merge(BAT[oid,oid] b) : BAT[lng,void] = CMDmerge;
 "Merge head and tail into a single value"
 
@@ -1635,12 +1640,41 @@ int CMDr@1_@2(oid* ret, BAT *b, ptr v) {
 	}
 	return GDK_SUCCEED;
 }
-@c
-@:find_bounds(min,higher,<,last,-)@
-@:find_bounds(max,lower,>,first,+)@
 
+int CMDfind_@2(oid *ret, BAT *b, ptr v) {
+	ssize_t idx = (ssize_t) oid_nil;
+	if ((BAThordered(b)&1) == 0) {
+		GDKerror("CMDfind_@2: %s should be sorted on head\n", BBP_logical(b->batCacheid));
+		return GDK_FAIL;
+	} else if (BATcount(b) > 0) {
+		BUN p = NULL;
 
+		switch(ATOMstorage(b->htype)) {
+		case TYPE_chr:	p = SORTfnd@4_chr(BATmirror(b),v); break;
+		case TYPE_sht:	p = SORTfnd@4_sht(BATmirror(b),v); break;
+		case TYPE_int:	p = SORTfnd@4_int(BATmirror(b),v); break;
+		case TYPE_lng:	p = SORTfnd@4_lng(BATmirror(b),v); break;
+		case TYPE_flt:	p = SORTfnd@4_flt(BATmirror(b),v); break;
+		case TYPE_dbl:	p = SORTfnd@4_dbl(BATmirror(b),v); break;
+		default: 
+			if (b->hvarsized ) {
+				p = SORTfnd@4_var(BATmirror(b),v); 
+			} else {
+				p = SORTfnd@4_loc(BATmirror(b),v); 
+			}
+		}
+		if (p) {
+			idx = *(ssize_t*) BUNtail(b,p);
+			@6;
+		}
+	} 
+	*ret = (oid) idx;
+	return GDK_SUCCEED;
+}
 @c
+@:find_bounds(min,higher,<,last,-,idx)@
+@:find_bounds(max,lower,>,first,+,if (idx && p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b,p))) idx--)@
+
 int CMDmerge(BAT** ret, BAT *b) {
 	int n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_lng, TYPE_void, n);
