@@ -136,6 +136,7 @@ SQLRETURN ODBCGetData(
 			}
 			break;
 		case SQL_C_LONG:
+		case SQL_C_SLONG:
 			*((int *)pTarget) = atoi(pSourceData);
 			if (pnLengthOrIndicator != NULL) {
 				*pnLengthOrIndicator = sizeof( int );
@@ -206,6 +207,7 @@ SQLRETURN ODBCGetData(
 			*((char *)pTarget) = '\0';
 			break;
 		case SQL_C_LONG:
+		case SQL_C_SLONG:
 			memset( pTarget, 0, sizeof(int) );
 			break;
 		case SQL_C_FLOAT:

@@ -35,10 +35,13 @@ odbc.SQLExecDirect(stmt, """CREATE TABLE model (
 )""")
 odbc.SQLFreeHandle(odbc.SQL_HANDLE_STMT, stmt)
 stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
+odbc.SQLExecDirect(stmt, "INSERT INTO model (model_id, is_mutagen, lumo, logp) VALUES (1, 'T', -1, 4)")
+stmt = odbc.SQLAllocHandle(odbc.SQL_HANDLE_STMT, dbc)[1]
 odbc.SQLExecDirect(stmt, "SELECT * FROM model")
 for i in range(odbc.SQLNumResultCols(stmt)[1]):
     odbc.SQLDescribeCol(stmt, i+1)
-
+odbc.SQLFetch(stmt)
+odbc.SQLGetData(stmt, 1, odbc.SQL_C_SLONG)
 
 
 Stuff missing (added to when found missing):
