@@ -185,7 +185,7 @@ for quick re-use. They are attached to the CT by means of a histolink.
      		return ct.CTgroup(b.semijoin(sel));
 
      PROC {count}(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] {
-		return {count}([sel?ct:].reverse, dom);
+		return sel.[ifthen](ct).reverse.{count}(dom);
 	}
 
      PROC {count}(BAT[void,bit] sel, BAT[void,oid] ct, BAT[oid,int] dom) : BAT[oid,int] 

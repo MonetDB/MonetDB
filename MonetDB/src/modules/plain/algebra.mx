@@ -648,7 +648,7 @@ that for the moment are defined as procs.
         if (idx = -1) {
             return b.uselect(pat);
         } else if (idx > 0) {
-            s := [[startsWith](b, pat.string(0, idx))?b:];
+            s := [startsWith](b, pat.string(0, idx)).[ifthen](b);
             b := s.[string](0, idx);
         }
         while((idx :+=1) < pat.length) {
@@ -656,7 +656,7 @@ that for the moment are defined as procs.
             idx := pat.search('%');
             if (idx < 0) {
                 if (pat.length > 0) {
-                    b := [b.[endsWith](pat)?b:];
+                    b := [endsWith](pat).[ifthen](b);
                 } break;
             }
             s := b.[search](pat.string(0, idx)).select(0,int(nil));
@@ -688,7 +688,7 @@ that for the moment are defined as procs.
             }
         }
         var bitvector := [*fcn](b,$(3..));
-        return [bitvector?b:];
+        return [ifthen](bitvector,b);
     }
 
     PROC mil_select(bat[any::1,any::2] b, str fcn, any::2 lo, any::2 hi) : bat[any::1,any::2] 
@@ -703,7 +703,7 @@ that for the moment are defined as procs.
             return b.select(lo,hi,FALSE,FALSE);
         }
         var bitvector := [*fcn](b,lo,hi);
-        return [bitvector?b:];
+        return [ifthen](bitvector,b);
     }
     ADDHELP("mil_select", "boncz", "Aug  6 1998",
             "Returns all BUNs where (*fcn)(tail,,..params..).", "algebra");
@@ -730,7 +730,7 @@ that for the moment are defined as procs.
             }
         }
         var bitvector := [*fcn](b,$(3..));
-        return [bitvector?:b];
+        return [ifelse](bitvector,b);
     }
     ADDHELP("neg_select", "boncz", "Aug  6 1998",
             "Returns all BUNs where not (*fcn)(tail,,..params..)", "algebra");

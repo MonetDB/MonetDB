@@ -453,9 +453,10 @@ void ll_init(void) {
 	ll_nocommand[(int)'.'] = 1; /* a . fcn(..) */
 	ll_nocommand[(int)'@'] = 1; /* a @ batloop() */
 	ll_nocommand[(int)'?'] = 1; /* a ? b : c */
+        ll_nocommand[(int)':'] = 1; /* b ? a : c ALSO a := ... */
+	ll_nocommand[(int)']'] = 1; /* b@batloop[ a ]() .. */
 
 	/* operator starter symbols (an operator cannot come after an operator) */
-        ll_nocommand[(int)':'] = 1; /* a := ..  / b ? a : c */
 	ll_nocommand[(int)'<'] = 1; /* a < .. */
 	ll_nocommand[(int)'>'] = 1; /* a > .. */
 	ll_nocommand[(int)'='] = 1; /* a = .. */
@@ -467,6 +468,7 @@ void ll_init(void) {
 
 	/* symbols not yet used that in the future may be first chars of operators */
 	ll_nocommand[(int)'|'] = 1; 
+	ll_nocommand[(int)'~'] = 1; 
 	ll_nocommand[(int)'!'] = 1;
 	ll_nocommand[(int)'^'] = 1;
 	ll_nocommand[(int)'&'] = 1;
@@ -566,7 +568,6 @@ m_export int        ll_templates;
 m_export int        ll_argc;
 m_export char       ll_nocommand[256];
 m_export int        ll_lastval;
-m_export char       ll_ifthenelse[], ll_ifelse[], ll_ifthen[], ll_project[], ll_reverse[];
 
 #define ll_emptychar(x)	((x == 0) || GDKisspace(x))
 
@@ -589,11 +590,6 @@ int        ll_modcmds = 0;        /* are "module" cmd or tokens? */
 int        ll_resolution = 1;     /* perform ident-->MIL resolution */
 YYSTREE    ll_firstnode,ll_sugarnode;/* for parsing OO sugar syntax XX.op(YY) */
 int        ll_argc = 0;           /* */
-char       ll_ifthenelse[] = "[ifthenelse]";
-char       ll_ifelse[] = "[ifelse]";
-char       ll_ifthen[] = "[ifthen]";
-char       ll_project[] = "project";
-char       ll_reverse[] = "reverse";
 
 @-
 The Monet interpreter language provides a sugar version to OO
@@ -1167,66 +1163,6 @@ constant_expression:
         {   $$ = $1;                                                          }
     |   TOK_STRING
         {   $$ = $1; $$->token = TOK_CONSTANT;                                }
-    | '[' multiplex_expression ']'
-	{   $$ = $2; 							      }
-    ;
-
-multiplex_comma: ',' |	'~' ;
-
-multiplex_expression:
-      expression multiplex_conditional
-	{   $$ = $2; $$->yysons[0] = $1;                                      }
-    | multiplex_reversed
-      expression multiplex_conditional
-        {   $$ = $2; $$->yysons[0] = $1;                                      }
-    | multiplex_reversed
-        {   $$ = yylognode(TOK_FUNCTION, TYPE_str);
-            $$->yyval.val.sval = GDKstrdup(ll_reverse);
-            $1->yyval.val.sval = GDKstrdup(ll_project); yyexpand($$,$1);      }
-    ;
-
-multiplex_reversed:
-        multiplex_comma expression
-	{   $$ = yylognode(TOK_FUNCTION, TYPE_str);
-	    $1 = yylognode(TOK_FUNCTION, TYPE_str);
-            $1->yyval.val.sval = GDKstrdup(ll_reverse);
-	    yyexpand($1, $2); yyexpand($$, $1);
-	    yyexpand($$, yylognode(TOK_CONSTANT,TYPE_void));}
-    |   TOK_CONST expression multiplex_comma expression
-	{   $$ = yylognode(TOK_FUNCTION, TYPE_str);
-	    $1 = yylognode(TOK_FUNCTION, TYPE_str);
-            $1->yyval.val.sval = GDKstrdup(ll_reverse);
- 	    yyexpand($1,$4); yyexpand($$,$1); yyexpand($$,$2);                }
-    ;
-
-multiplex_conditional:
-	multiplex_comma bat_expression
-	{   $$ = yylognode(TOK_FUNCTION, TYPE_str); $$->cnt = 1;
-	    $$->yyval.val.sval = GDKstrdup(ll_project);
-	    if ($2->token == 0) { $2->token = TOK_CONSTANT; }
-	    yyexpand($$, $2);                                                 }
-    |   '?' bat_expression ':' bat_expression
-        {    $$ = yylognode(TOK_FUNCTION, TYPE_str); $$->cnt = 1;
-	     $$->yyval.val.sval = ll_ifthenelse;
-	     if ($2->token) {
-                  yylogexpand($$, $2);
-	     } else {
-		  yylogfree($2);
-	          $$->yyval.val.sval = ll_ifelse;
-             }
-	     if ($4->token) {
-                  yylogexpand($$, $4);
-	     } else {
-		  yylogfree($4);
-	          $$->yyval.val.sval = ll_ifthen;
-             } $$->yyval.val.sval = GDKstrdup($$->yyval.val.sval);            }
-    ;
-
-bat_expression:
-     	param_expression
-        {   $$ = $1;                                                          }
-    |	/* empty */
-        {   $$ = yylognode(0,0);                                              }
     ;
 
 command_or_ident_expression:

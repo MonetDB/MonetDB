@@ -356,8 +356,8 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
     proc dir_leaks() : void {
 	var b0 := view_bbp_name().access(BAT_WRITE);
-	b0.replace([*](b0.reverse().select(int(nil),-1),-1).reverse());
-        var b1 := [[startsWith](b0,"tmp_")?b0:].access(BAT_WRITE);
+	b0.replace([*](b0.reverse.select(int(nil),-1),-1).reverse);
+        var b1 := [startsWith](b0,"tmp_").[ifthen](b0).access(BAT_WRITE);
         var b2 := like(view_var_value, "tmp_");
         var b3 := bat(int,str,b1.count());
         b1.delete(int(b0));

@@ -184,8 +184,8 @@ proc ds_hash(BAT[bat,any] keys) : BAT[oid,int] {
     [:rotate_xor_hash=](res, nbits, $h);
     [:or=](filter,[isnil]($h));
   }
-  res := [[isnil](res)?0:res]; # replace accidental hash-on-nil by 0
-  return [filter?int(nil):res]; # emit a nil for keys that contain a nil
+  res := [isnil](res).[ifthenelse](0,res); # replace accidental hash-on-nil by 0
+  return filter.[ifthenelse](int(nil),res); # emit a nil for keys that contain a nil
 }
 
 const JOIN_BULK_SIZE := INT_MAX;	# 5000000;
