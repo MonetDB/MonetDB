@@ -18,7 +18,7 @@ int main(int argc, char **argv){
 	dbh= mapi_connect(argv[1],atoi(argv[2]),"guest",0,argv[3]);
 	if(mapi_error(dbh)) die(dbh);
 
-	mapi_trace(dbh,1);
+	/* mapi_trace(dbh,1); */
 	if( strcmp(argv[3],"sql")==0 ){
 		if( mapi_query(dbh,"create table emp(name varchar,age int)")) 
 			die(dbh);
