@@ -581,7 +581,7 @@ instead.
 @- Include statement
 An include statement is immediately taken into effect. This
 calls for temporary switching the input for a particular client.
-The administration for this is handled by malImport.
+The administration for this is handled by malInclude.
 No listing is produced, because module sources are assumed to
 be debugged upfront already.
 @T
@@ -602,7 +602,7 @@ str parseInclude(Client cntxt)
 	if( modnme==0)
 		return parseError(cntxt,"<module path> expected\n");
 
-	malImport(cntxt,modnme,modnme, 0);
+	malInclude(cntxt,modnme,modnme, 0);
 	GDKfree(modnme);
 	skipToEnd(cntxt);
 	return "";

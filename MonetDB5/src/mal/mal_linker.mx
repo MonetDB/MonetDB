@@ -22,7 +22,7 @@ The server is bootstrapped by processing a MAL script with
 module definitions. For each module encountered, the object library 
 lib\_$<$modulename$>$.so is searched for in $...$/lib/MonetDB.
 The corresponding signature are defined 
-in $...$/lib/$<$modulepath$>$/$<$modulename$>$.mal.
+in $...$/lib/$<$modulename$>$.mal.
 @-
 The default bootstrap script is called $...$/lib/MonetDB/mal_init.mal
 and it is designated in the configuration file as the mal_init property.
@@ -35,7 +35,7 @@ The scheme also isolates the functionality embedded in modules from
 inadvertise use on non-compliant databases.
 [access control issue, how to limit what a user can do on a database?]
 @-
-Unlike previous versions of Monet, modules can not be unloaded. 
+Unlike previous versions of MonetDB, modules can not be unloaded. 
 Dynamic libraries are always global and, therefore, it
 is best to load them as part of the server initialization phase.
 @-

@@ -40,25 +40,24 @@ an exception raised can be dealt with. Any statement between the
 point where it is raised and the catch block is ignored.
 Moreover, the {\tt catch} ... {\tt exit} block is ignored when
 no errors have occurred in the preceeding dataflow structure.
+Within the catch block, the exception variable can be manipulated
+without constraints.
 
-Exceptions are linked with variables that it receives
-from functions being called. This way exceptions are bound
-to the data flow rather then the statement sequence.
-It provides more opportunities to move code around, while
-still precisely controlling the point where exceptions
-are dealt with.
+An exception message is linked with a exception name, a variable of
+type string. If it is defined in the receiving block,
+the exception message can be delivered. Otherwise, it
+implicitly raises the exception in the surrounding scope.
 
 After an exception has been dealt with you have
 an option to {\tt leave} the catch block at the normal {\tt exit} or
 attempt to redo the failed instruction call using a {\tt redo}.
-Both {\tt leave} and {\tt redo} are conditional flow of control modifiers.
+Both {\tt leave} and {\tt redo} are conditional flow of control modifiers,
+which trigger on a non-empty string.
 An exception raised within a catch-block terminates
 the function and returns control to the enclosing environment.
 
-The argument to the catch statement is a target list.
-Its variables are considered disjunctive, which means
-that all mentioned can be catched and open up the
-recovery block. 
+The argument to the catch statement is a target list,
+which holds the exception variables you are interested in.
 An expression evaluated with the catch statement is executed
 after the block has been entered only. It could be used to
 initialize the exception variables further.

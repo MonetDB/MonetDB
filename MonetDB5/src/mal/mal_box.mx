@@ -285,7 +285,7 @@ only.
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
 #include "mal_client.h"		/* for getClient() */
 #include "mal_debugger.h"	/* for printStack() */
-#include "mal_import.h"		/* for malImport() */
+#include "mal_import.h"		/* for malInclude() */
 
 #define MAXSPACES 64	/* >MAXCLIENTS+ max modules !! */
 Box box[MAXSPACES];
@@ -655,7 +655,7 @@ void loadBox(str name){
 	stream_printf(GDKout,"loadBox:start loading the file %s\n",boxfile);
 #endif
 	if( access(boxfile,R_OK)== 0){
-		malImport(getClient(),boxfile,0,0);
+		malInclude(getClient(),boxfile,0,0);
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout,"loadBox:loaded the file %s\n",boxfile);
 #endif

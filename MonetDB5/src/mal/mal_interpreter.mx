@@ -791,8 +791,11 @@ reaching end of function block.
 	/* skip to catch block or end */
 	for( ; stkpc<mb->stop; stkpc++){
 	InstrPtr l= getInstrPtr(mb,stkpc);
-	if( l->barrier == CATCHsymbol && getDestVar(l) == @1){
-		break;
+	if( l->barrier == CATCHsymbol ){
+		int j= -1;
+		for(j=0;j<l->retc; j++)
+		if( getArg(l,j) == @1) break;
+		if(j>=0) break;
 	} }
 	if( stkpc== mb->stop) {
 		@:endProfile@ 

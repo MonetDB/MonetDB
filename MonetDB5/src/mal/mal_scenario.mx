@@ -218,7 +218,7 @@ All other requests are silently ignored.
 After initialization, all state functions should have been set.
 Initialization includes searching for the scenario startup file in
 the etc/MonetDB directory. This creates a dependency, because the
-malImport also needs a scenario. To break this cycle, the system should
+malInclude also needs a scenario. To break this cycle, the system should
 call once the routine default scenario for each client first.
 @c
 str initScenario(Client c, Scenario s){
