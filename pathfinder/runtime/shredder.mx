@@ -1018,5 +1018,48 @@ int CMDpfquit() {
         return GDK_SUCCEED;
 }
 
+/**
+ * Utility function to convert a file to a string or read an EOF terminated 
+ * command from a prompted stdin
+ */
+
+#define CHUNKSIZE     4096
+
+int CMDpffile2string(str* res, str  prompt, str fileName) {
+        FILE* f;
+
+        (void)prompt;
+        if ( *fileName ) {
+                if ( !(f = fopen(fileName,"r")) ) {
+                    stream_printf(GDKerr,"CMDpffile2string: Unable to open inputfile \"%s\"\n",fileName);
+
+                    return GDK_FAIL;
+                }
+        } else
+                f = stdin;
+         if ( *prompt ) {
+           stream_printf(GDKout,prompt);
+           stream_flush(GDKout);
+        }
+        int  buffmax, i = 0;
+        char ch, *buff  = (char*)malloc( (buffmax=CHUNKSIZE) );
+        while( (ch = buff[i++] = fgetc(f)) != EOF) {
+                if ( *prompt && (ch == '\n') ) {
+                     stream_printf(GDKout,prompt);
+                     stream_flush(GDKout);
+                }
+                if ( i == buffmax ) {
+                     buff  = realloc(buff, (buffmax+=CHUNKSIZE) );
+                }
+        }
+        buff[i-1] = 0;
+
+        *res = buff;
+
+        if ( fileName )
+                fclose(f);
+        return GDK_SUCCEED;
+}
+
 @c
 /* vim:set shiftwidth=4 expandtab: */

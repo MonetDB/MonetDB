@@ -477,6 +477,8 @@ pf_compile_interface (FILE *pfin, FILE *pfout, char* mode)
         status->summer_branch = true;
         if ( strcmp(mode,"xml") == 0 ) {
                 status->genType = PF_GEN_XML;
+        } else if ( strcmp(mode,"dm") == 0 ) {
+                status->genType = PF_GEN_DM;
         } else if ( strcmp(mode,"sax") == 0 ) {
                 status->genType = PF_GEN_SAX;
         } else {

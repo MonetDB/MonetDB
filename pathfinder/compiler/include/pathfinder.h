@@ -74,7 +74,8 @@ typedef struct PFstate_t PFstate_t;
 
 #define PF_GEN_ORG      0
 #define PF_GEN_XML      1
-#define PF_GEN_SAX      2
+#define PF_GEN_DM       2
+#define PF_GEN_SAX      3
 
 /** componentes of global compiler state */
 struct PFstate_t {

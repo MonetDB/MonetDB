@@ -6867,6 +6867,9 @@ PFprintMILtemp (FILE *fp, PFcnode_t *c, PFstate_t *status)
      case PF_GEN_XML:
       milprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
+     case PF_GEN_DM:
+      milprintf(f, "print_result(\"dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      break;
      case PF_GEN_SAX:
       milprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
