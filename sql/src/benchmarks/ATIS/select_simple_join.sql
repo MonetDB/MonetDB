@@ -993,5 +993,4 @@ select flight.flight_code,aircraft.aircraft_type from flight,aircraft where flig
  select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code;
  select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code and day_name.day_code >= 4;
  select flight.flight_code,aircraft.aircraft_type from flight,aircraft where flight.aircraft_code=aircraft.aircraft_code;
-show open tables;
  -- Time for select_simple_join (500); 2 wallclock secs ( 0.91 usr  0.37 sys +  0.00 cusr  0.00 csys =  1.28 CPU);

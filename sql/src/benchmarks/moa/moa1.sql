@@ -1,4 +1,4 @@
- --show tables like '_t%';
+ -- show tables like '_t%';
  SELECT * FROM MOA_DD WHERE name='Video' AND type='match';
  SELECT * FROM MOA_DD WHERE name='Creation' AND type='match';
  SELECT * FROM MOA_DD WHERE name='CreationCreator' AND type='match';
