@@ -20,7 +20,5 @@ sbin
 scripts
 share
 src
-sys
 tests
-unistd.h
 var

@@ -125,7 +125,12 @@ This module contains a simple interface for internet connections.
 #include "mapi.h"
 #include <monet.h>
 #include  <sys/types.h> 
-#include  <sys/socket.h> 
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
 
 #define SOCKPTR struct sockaddr *
 

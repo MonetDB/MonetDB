@@ -146,7 +146,12 @@ extern int conn_find(str host, int port);
 @* Implementation
 @c
 #include <monet.h>
-#include <sys/socket.h>
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
 #include <sys/types.h>
 /*
 #if !(defined(LINUX) || defined(WIN32))

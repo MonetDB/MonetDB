@@ -80,7 +80,12 @@ TODO
 #include "logger.proto.h"
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
 
 #define LOG_INSERT 	1
 #define LOG_DELETE	2

@@ -104,7 +104,12 @@ in the head of the resulting table; the tail contains the matching IDs.
 @c
 #include <math.h>
 #include <gdk.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
+# include <io.h>
+#endif
 #include <uchr.h>
 #include <bitvector.proto.h>
 #include <stats.proto.h>

@@ -31,7 +31,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "difflib.h"
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
+# include <io.h>
+#endif
 #include <string.h>
 
 #include "monet_options.h"

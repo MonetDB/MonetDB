@@ -30,23 +30,10 @@ $(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
 	$(SRCDIR)\src\utils\autogen\msc.py
 	$(CD) $(SRCDIR) && $(PYTHON) src\utils\autogen\autogen.py
 
-all-msc: config.h unistd.h sys\socket.h
+all-msc: config.h
 
 config.h: winconfig.h
 	$(INSTALL) winconfig.h config.h
-
-unistd.h: 
-	$(ECHO) #ifndef UNISTD_H > unistd.h
-	$(ECHO) #define UNISTD_H >> unistd.h
-	$(ECHO) #include "io.h" >> unistd.h
-	$(ECHO) #endif >> unistd.h
-
-sys\socket.h: 
-	if not exist sys $(MKDIR) sys
-	$(ECHO) #ifndef SOCKET_H > sys\socket.h
-	$(ECHO) #define SOCKET_H >> sys\socket.h
-	$(ECHO) #include "winsock.h" >> sys\socket.h
-	$(ECHO) #endif >> sys\socket.h
 
 RunMtest.bat: $(SRCDIR)\RunMtest.bat.in
 	if exist $(SRCDIR)\RunMtest.bat.in $(CONFIGURE) $(SRCDIR)\RunMtest.bat.in > RunMtest.bat

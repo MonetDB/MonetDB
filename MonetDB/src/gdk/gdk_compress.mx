@@ -216,8 +216,11 @@ extern "C" {
 # include <utime.h>
 #endif
 #include <errno.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 # include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
+# include <io.h>
 #endif
 #include <stdio.h>
 #include <string.h>

@@ -270,6 +270,9 @@
 /* Define if you have the <getopt.h> header file.  */
 /* #undef HAVE_GETOPT_H */
 
+/* Define if you have the <io.h> header file.  */
+#define HAVE_IO_H 1
+
 /* Define if you have the <libcpc.h> header file.  */
 /* #undef HAVE_LIBCPC_H */
 
@@ -336,6 +339,9 @@
 /* Define if you have the <sys/resource.h> header file.  */
 /* #undef HAVE_SYS_RESOURCE_H */
 
+/* Define if you have the <sys/socket.h> header file.  */
+/* #undef HAVE_SYS_SOCKET_H */
+
 /* Define if you have the <sys/time.h> header file.  */
 /* #undef HAVE_SYS_TIME_H */
 
@@ -350,6 +356,9 @@
 
 /* Define if you have the <unistd.h> header file.  */
 /* #undef HAVE_UNISTD_H */
+
+/* Define if you have the <winsock.h> header file.  */
+#define HAVE_WINSOCK_H 1
 
 /* Name of package */
 #define PACKAGE "MonetDB"

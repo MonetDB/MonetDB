@@ -74,7 +74,12 @@ m_export int	monetSetChannel (Thread t, stream* in, stream* out);
 #endif /* _MONET_PROCESS_H_ */
 @c
 #include  <sys/types.h> 
-#include  <sys/socket.h> 
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
 #include "monet.h"
 
 @+ Monet Single Threaded

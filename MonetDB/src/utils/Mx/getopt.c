@@ -89,11 +89,16 @@
 
 /* This needs to come after some library #include
    to get __GNU_LIBRARY__ defined.  */
-#if defined(__GNU_LIBRARY__) || defined(_MSC_VER)
+#ifdef __GNU_LIBRARY__
 /* Don't include stdlib.h for non-GNU C libraries because some of them
    contain conflicting prototypes for getopt.  */
 # include <stdlib.h>
 # include <unistd.h>
+#else
+# ifdef _MSC_VER
+#  include <stdlib.h>
+#  include <io.h>
+# endif
 #endif	/* GNU C library.  */
 
 #ifdef VMS

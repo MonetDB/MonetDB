@@ -87,6 +87,33 @@ LIB32=link.exe -lib
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=.\winconfig.h
+
+!IF  "$(CFG)" == "config - Win32 Release"
+
+# Begin Custom Build
+InputPath=.\winconfig.h
+
+"config.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy winconfig.h config.h
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "config - Win32 Debug"
+
+# Begin Custom Build
+InputPath=.\winconfig.h
+
+"config.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy winconfig.h config.h
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
 # End Group
 # End Target
 # End Project
