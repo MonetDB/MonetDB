@@ -885,7 +885,8 @@ CTgroup_custom(
 	}
 	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
-	CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
+	build_hl(&bn->taccelerator, histo->batCacheid, BATmirror(bn));
+	BBPunfix(histo->batCacheid);
 	if (bn->taccelerator.base == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
@@ -1050,7 +1051,8 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 		if (b->hkey) BATkey(bn, TRUE);
 	}
 	if (histo) {
-		CTbuild_hl(&bn->taccelerator, &histo->batCacheid, BATmirror(bn));
+		build_hl(&bn->taccelerator, histo->batCacheid, BATmirror(bn));
+		BBPunfix(histo->batCacheid);
 		if (bn->taccelerator.base == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL;
