@@ -1,19 +1,18 @@
 #!/bin/sh
 
+cp=""
 if [ -f "$MONET_BUILD/src/mapi/clients/java/mapi.jar" ]; then
-
-java -cp "$MONET_BUILD/src/mapi/clients/java/mapi.jar" MapiClient localhost $MAPIPORT << EOMIL
-	print("\303\251\303\251n");
-EOMIL
-
+	cp="$MONET_BUILD/src/mapi/clients/java/mapi.jar"
 elif [ -f "$MONET_PREFIX/lib/MonetDB/java/mapi.jar" ]; then
+	cp="$MONET_PREFIX/lib/MonetDB/java/mapi.jar"
+else
+	echo "Neither $MONET_BUILD/src/mapi/clients/java/mapi.jar nor $MONET_PREFIX/lib/MonetDB/java/mapi.jar found"
+	exit 1
+fi
 
-LANG="en_US.UTF-8" java -cp "$MONET_PREFIX/lib/MonetDB/java/mapi.jar" MapiClient localhost $MAPIPORT << EOMIL
+LANG="en_US.UTF-8" 
+export LANG
+
+java -cp "$cp" MapiClient localhost $MAPIPORT << EOMIL
 	print("\303\251\303\251n");
 EOMIL
-
-else
-
-echo "Neither $MONET_BUILD/src/mapi/clients/java/mapi.jar nor $MONET_PREFIX/lib/MonetDB/java/mapi.jar found"
-
-fi
