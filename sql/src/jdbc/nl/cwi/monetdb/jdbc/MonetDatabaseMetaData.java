@@ -2538,7 +2538,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 				"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 				"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 				"CASE WHEN \"keys\".\"name\" IS NULL THEN true ELSE false END AS \"NON_UNIQUE\", " +
-				"CASE \"idxs\".\"type\" WHEN 0 THEN " + DatabaseMetaData. tableIndexHashed + " ELSE " + DatabaseMetaData. tableIndexOther + " END AS \"TYPE\", " +
+				"CASE \"idxs\".\"type\" WHEN 0 THEN " + DatabaseMetaData.tableIndexHashed + " ELSE " + DatabaseMetaData.tableIndexOther + " END AS \"TYPE\", " +
 				"\"keycolumns\".\"nr\" AS \"ORDINAL_POSITION\", " +
 				"\"columns\".\"name\" as \"COLUMN_NAME\", " +
 				"cast(null AS varchar) AS \"INDEX_QUALIFIER\", " +
