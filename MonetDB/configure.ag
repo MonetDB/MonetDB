@@ -111,9 +111,11 @@ if test "x$enable_optim" = xyes; then
       esac     
     else
       case "$host" in
-      *irix6.5*) CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
-		LDFLAGS="$LDFLAGS -IPA"
-		;;
+      *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
+                      LDFLAGS="$LDFLAGS -IPA"
+                      ;;
+      *-sun-solaris*) CFLAGS="$CFLAGS -xO5"
+                      ;;
       esac     
     fi
 	
