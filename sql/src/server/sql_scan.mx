@@ -539,9 +539,20 @@ scanner_getc_bs(struct scanner * lc)
 	int c;
 	int n, m, mask;
 
-	while (b->pos+lc->yycur >= b->len)
-		if (b->eof || bstream_next( b ) <= 0) 
+	while (b->pos+lc->yycur >= b->len) {
+		int more = 0;
+		if (b->eof) { /* query is not finished ask for more */
+			if (stream_write(lc->ws,PROMPT2,sizeof(PROMPT2)-1,1) == 1)
+				stream_flush(lc->ws);
+			b->eof = 0;
+			more = 1;
+		}
+		/* we need more query text */
+		if (bstream_next( b ) < 0 || 
+		    /* we asked for more data but didn't get any */
+		    (more && b->eof && b->pos+lc->yycur >= b->len))
 			return EOF;
+	}
 
 	s = (unsigned char*) b->buf + b->pos + lc->yycur++;
 	if (((c = *s) & 0x80) == 0) {
@@ -625,7 +636,6 @@ scanner_string_bs(mvc * c, int quote)
 			else 
 				escape = !escape;
 		}
-		fflush(stdout);
 		lc->yycur = pos - rs->pos;
 		assert(pos <= rs->len+1);
 		if (cur == quote && !escape) {

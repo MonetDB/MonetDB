@@ -176,14 +176,16 @@ void bat_decref( bat bid, bit flag)
 }
 
 
-static BAT *bm_create_bat( int ht, int tt, size_t size ){
+static BAT *
+bm_create_bat( int ht, int tt, size_t size ){
 	BAT *b = bat_new(ht, tt, size, "bm_create_bat");
 	/* Make persistent as only persistent bats keep delta information */
 	bat_incref(b->batCacheid, TRUE, "bm_create_bat");
 	return b;
 }
 
-static void bm_add_bat_intern(bm *bm, oid lbid, oid bid, char *name, int version, int mode)
+static void 
+bm_add_bat_intern(bm *bm, oid lbid, oid bid, char *name, int version, int mode)
 {
 	BUNins(bm->bat_name, &bm->vid, name );
 	BUNins(bm->bat_bid, &bm->vid, &bid);
@@ -197,7 +199,8 @@ static void bm_add_bat_intern(bm *bm, oid lbid, oid bid, char *name, int version
 		bm->version = version;
 }
 
-bm *bm_create(int debug )
+bm *
+bm_create(int debug )
 {
 	bm *bm = NEW(struct bm);
 	bm->debug = debug;
@@ -217,7 +220,8 @@ bm *bm_create(int debug )
 	return bm;
 }
 
-void bm_destroy( bm *bm )
+void 
+bm_destroy( bm *bm )
 {
 	BUN p,q;
 	BAT *b = bm->bat_bid;
@@ -249,7 +253,8 @@ void bm_destroy( bm *bm )
 	_DELETE(bm);
 }
 
-bm *bm_dup( bm *obm )
+bm *
+bm_dup( bm *obm )
 {
 	BUN p,q;
 	BAT *b = obm->bat_version;
