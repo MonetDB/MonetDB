@@ -24,7 +24,7 @@
 @f aggrX3
 @a S. Manegold 
 @v 1.0
-@+ Extended Aggregates Module
+@* Extended Aggregates Module
 
 This module contains some efficient aggregate functions that compute their 
 result in one scan, rather than in the iterative manner of the generic 
@@ -59,7 +59,8 @@ command sum(b:bat[:oid,:@1],e:bat[:oid,:any])
 address CMDaggrX3_sum_@1_@1
 	comment "grouped tail sum on @1";
 
-command prod(b:bat[:oid,:@1],e:bat[:oid,:any]) :bat[:oid,:@1] 
+command prod(b:bat[:oid,:@1],
+	e:bat[:oid,:any]) :bat[:oid,:@1] 
 address CMDaggrX3_prod_@1_@1
 	comment "grouped tail product on @1";
 command sum(b:bat[:oid,:@1], 
@@ -144,7 +145,8 @@ address CMDaggrX3_count
 comment "grouped count";
 command count(b:bat[:oid,:any], 
 	g:bat[:oid,:oid], 
-	e:bat[:oid,:any], nonils:bit) :bat[:oid,:int] 
+	e:bat[:oid,:any], 
+	nonils:bit) :bat[:oid,:int] 
 address CMDaggrX3_count3
 comment "grouped count";
 
@@ -154,17 +156,21 @@ address CMDaggrX3_size
 comment "grouped count of true values";
 command size(b:bat[:oid,:bit]) :int 
 address CMDsize
-comment "grouped count of true values in the tail";
+comment "grouped count of true values in 
+	the tail";
 command hasNil(b:bat[:any,:any]) :bit 
 address CMDhasNil
-comment "return if there is a nil value in the tail column";
+comment "return if there is a nil value in 
+	the tail column";
 command card(b:bat[:any,:any]) :lng 
 address CMDcard_unlimited
-comment "return the number of different values in a tail column";
+comment "return the number of different values 
+	in a tail column";
 command card(b:bat[:any,:any], 
 	maxelements:int) :lng 
 address CMDcard
-comment "as card(b), but returns nil if card(b) > maxelements";
+comment "as card(b), but returns nil if 
+	card(b) > maxelements";
 @{
 @-
 OLD STUFF, recast in MAL proc 

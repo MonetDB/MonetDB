@@ -23,7 +23,7 @@
 
 @a N.J. Nes, M.L. Kersten
 @v 1.1
-@+ The {\sc str} module
+@+ The String Module
 @T
 Strings can be created in many ways. Already in the built-in operations
 each atom can be cast to a string using the str(atom) mil command.
@@ -169,12 +169,12 @@ comment "Strip whitespaces from end of a string.";
 command substitute(s:str,src:str,dst:str,rep:bit):str 
 address STRSubstitute
 comment "Substitute first occurrence of substring
-	 'src' by 'dst'.  Iff repeated = true this 
-	 is repeated while 'src' can be found in 
-	 the result string. In order to prevent 
-	 recursion and result strings of unlimited 
-	 size, repeating is only done iff src is not 
-	 a substring of dst.";
+	'src' by 'dst'.  Iff repeated = true 
+	this is repeated while 'src' can be found 
+	in the result string. In order to prevent 
+	recursion and result strings of unlimited 
+	size, repeating is only done iff src is not 
+	a substring of dst.";
 
 command STRprelude()
 address STRPrelude;
@@ -329,11 +329,10 @@ a variable number of bytes (possibly > 1).
 One of the things that become more complex in unicode are uppercase/lowercase conversions. The 
 below tables are the simple one-to-one unicode case mappings. We do not support the special casing mappings 
 (e.g. from one to two letters).
-
-References:
+References for simple and complex casing:
 \begin{verbatim}
-simple casing:  http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
-complex casing: http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
+http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
+http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
 \end{verbatim}
 
 The unicode case conversion implementation in Monet fills a mapping BAT of int,int combinations, 

@@ -25,7 +25,7 @@
 @a Martin Kersten
 @v 0.1
 @* The generic box
-
+@T
 This module shows the behavior of a simple box of objects.
 Objects are stored into the box using {\sc deposit} and taken
 out with {\sc take}. Once you are done, elements can be

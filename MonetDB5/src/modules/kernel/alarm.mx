@@ -24,7 +24,7 @@
 @f alarm
 @a M.L. Kersten, P. Boncz
 
-@+ Timers and Timed Interrupts
+@* Timers and Timed Interrupts
 @T
 This module handles various signalling/timer functionalities.
 The Monet interface supports two timer commands: {\tt alarm} and {\tt sleep}.

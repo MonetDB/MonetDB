@@ -48,40 +48,66 @@ and we have to de-reference them before entering the gdk library.
 (Actual a design error in gdk to differentiate passing int/str)
 This calls for knowlegde on the underlying BAT typs`s
 @= derefStr
-	{ int _tpe= ATOMstorage(@1->@2type);
-	if( _tpe == TYPE_str || _tpe > TYPE_str )
-	{ if(@3== 0 || *(str*)@3==0) @3= str_nil; else @3 = *(str *)@3; }}
+{int _tpe= ATOMstorage(@1->@2type);
+ if( _tpe == TYPE_str || _tpe > TYPE_str )
+ { if(@3== 0 || *(str*)@3==0) @3= str_nil;
+   else @3 = *(str *)@3; 
+}}
 @-
 The code speaks for itself
 @mal
 
 module bat;
 
-command bat(ht:int, tt:int) :bat[:any,:any] = CMDnewBat
-comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
+command bat(ht:int, tt:int) :bat[:any,:any] 
+address CMDnewBat
+comment "Creates a new empty transient BAT with 
+	head- and tail-types as indicated.";
 
-command bat(ht:int, tt:int, size:int) :bat[:any,:any] = CMDnewBat2
-comment "Creates a new empty BAT, directly allocating for 'size' elements.";
+command bat(ht:int, tt:int, size:int) 
+		:bat[:any,:any] 
+address CMDnewBat2
+comment "Creates a new empty BAT, directly 
+	allocating for 'size' elements.";
 
-command bat(ht:int, tt:int, size:lng) :bat[:any,:any] = CMDnewBATlng
-comment "Creates a new empty BAT, directly allocating for 'size' elements.";
+command bat(ht:int, tt:int, size:lng) 
+	:bat[:any,:any] 
+address CMDnewBATlng
+comment "Creates a new empty BAT, directly 
+	allocating for 'size' elements.";
 
-command reverse(b:bat[:any$1,:any$2]) :bat[:any$2,:any$1] = CMDreverse
-comment "Returns the reverse view of a BAT (head is tail and tail is head).
-BEWARE  no copying is involved; input and output refer to the same object!";
+command reverse(b:bat[:any$1,:any$2]) 
+		:bat[:any$2,:any$1] 
+address CMDreverse
+comment "Returns the reverse view of a BAT (head 
+	is tail and tail is head). BEWARE  no 
+	copying is involved; input and output 
+	refer to the same object!";
 
-command mirror(b:bat[:any$1,:any]) :bat[:any$1,:any$1] = CMDmirror
-comment "Returns the head-mirror image of a BAT (two head columns).";
+command mirror(b:bat[:any$1,:any]) 
+		:bat[:any$1,:any$1] 
+address CMDmirror
+comment "Returns the head-mirror image of a BAT 
+	(two head columns).";
 
-command convert(b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] = CMDconvert
-comment "Convert the contents of a BAT from little-endian to big-endian and vice versa.
- THIS command SHOULD NOT BE USED FROM MAL! DANGEROUS! DEBUGGING PURPOSES ONLY!";
+command convert(b:bat[:any$1,:any$2] ) 
+	:bat[:any$1,:any$2] 
+address CMDconvert
+comment "Convert the contents of a BAT from 
+	little-endian to big-endian and vice versa.
+	 THIS command SHOULD NOT BE USED FROM MAL!
+	DANGEROUS! DEBUGGING PURPOSES ONLY!";
 
-command order(b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] = CMDorder
+command order(b:bat[:any$1,:any$2]) 
+		:bat[:any$1,:any$2] 
+address CMDorder
 comment "Sorts the BAT itself, in place. ";
 
-command revert(b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] = CMDrevert
-comment "Puts all BUNs in a BAT in reverse order. (Belongs to the BAT sequence module)";
+command revert(b:bat[:any$1,:any$2]) 
+		:bat[:any$1,:any$2] 
+address CMDrevert
+comment "Puts all BUNs in a BAT in reverse order.
+	(Belongs to the BAT sequence module)";
 
 @- BAT properties
 @T
@@ -140,7 +166,7 @@ accelerator, more heaps may be present (({\tt haccelerator} and {\tt taccelerato
 }
 
 Properties steer the algorithms that Monet uses to execute algebra command. For instance,
-the {\tt find(bat[:any\$1,:any\$2] b, :any\$1) :any\$2) that looks up a tail value by head,
+the {\tt find(bat[:any\$1,:any\$2] b, :any\$1) :any\$2} that looks up a tail value by head,
 uses binary search if and only if the head column is sorted (in other cases, hash-lookup
 and scan are execution options).
 
@@ -164,54 +190,77 @@ newly created BATs to be checked. You must realize that finding out that a colum
 By default, both bits in the {\tt debugmask} are off, which gives fastest performance.
 
 @mal
-command info ( b:bat[:any,:any]) :bat[:str,:str] = CMDinfo
-comment "Produce a BAT containing info about a BAT in [attribute,value] format.
- It contains all properties of the BAT record. See the BAT documentation in
- GDK for more information.";
+command info ( b:bat[:any,:any]) :bat[:str,:str] 
+address CMDinfo
+comment "Produce a BAT containing info about a BAT 
+	in [attribute,value] format. It contains 
+	all properties of the BAT record. See the 
+	BAT documentation in GDK for more information.";
 
-command getCapacity ( b:bat[:any,:any] ) :lng = CMDgetCapacity
-comment "Returns the current allocation size (in max number of elements) of a BAT.";
+command getCapacity(b:bat[:any,:any]):lng 
+address CMDgetCapacity
+comment "Returns the current allocation size (in 
+	max number of elements) of a BAT.";
 
-command getHeadType ( b:bat[:any,:any] ) :int = CMDgetHeadType
-comment "Returns the type of the head column of a BAT,
-as an integer type number.";
+command getHeadType(b:bat[:any,:any] ) :int 
+address CMDgetHeadType
+comment "Returns the type of the head column of 
+	a BAT, as an integer type number.";
 
-command getTailType( b:bat[:any,:any] ) :int = CMDgetTailType comment "Returns
-the type of the tail column of a BAT,
-as an integer type number.";
+command getTailType( b:bat[:any,:any] ) :int 
+address CMDgetTailType 
+comment "Returns the type of the tail column of 
+	a BAT, as an integer type number.";
 
-command getRole ( bid:bat[:any,:any] ) :str = CMDgetRole
-comment "Returns the rolename of the head column of a BAT.";
+command getRole ( bid:bat[:any,:any] ) :str 
+address CMDgetRole
+comment "Returns the rolename of the head column 
+	of a BAT.";
 
-command setKey( b:bat[:any$1,:any$2], mode:bit) :bat[:any$1,:any$2] = CMDsetkey
-comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode,
- the kernel will silently block insertions that cause a duplicate entries
- in the head column.
- KNOWN BUG:when 'key' is set to TRUE, this function does not automatically
- eliminate duplicates. Use b := b.kunique;";
+command setKey( b:bat[:any$1,:any$2], mode:bit) 
+		:bat[:any$1,:any$2] 
+address CMDsetkey
+comment "Sets the 'key' property of the head 
+	column to 'mode'. In 'key' mode, the kernel 
+	will silently block insertions that cause 
+	a duplicate entries in the head column.
+	 KNOWN BUG:when 'key' is set to TRUE, this 
+	function does not automatically eliminate 
+	duplicates. Use b := b.kunique;";
 
-command isaKey( b:bat[:any,:any]) :bit = CMDgetkey
-comment "return whether the head column of a BAT is unique (key).";
+command isaKey( b:bat[:any,:any]) :bit 
+address CMDgetkey
+comment "return whether the head column of a BAT 
+	is unique (key).";
 
-command setSet( b:bat[:any$1,:any$2], mode:bit) :bat[:any$1,:any$2] = CMDsetset
-comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel
- will silently block insertions that cause a duplicate BUN [head,tail] entries
- in the BAT.
- KNOWN BUG:when 'set' is set to TRUE, this function does not automatically
- eliminate duplicates. Use b := b.sunique;
- Returns the BAT itself.";
+command setSet( b:bat[:any$1,:any$2], mode:bit) 
+	:bat[:any$1,:any$2] 
+address CMDsetset
+comment "Sets the 'set' property on this BAT to 
+	'mode'. In 'set' mode, the kernel will 
+	silently block insertions that cause a 
+	duplicate BUN [head,tail] entries
+	in the BAT.
+	KNOWN BUG:when 'set' is set to TRUE, this 
+	function does not automatically
+	 eliminate duplicates. Use b := b.sunique;
+	 Returns the BAT itself.";
 
 command isaSet( b:bat[:any,:any]) :bit = CMDisaSet
 comment "return whether the BAT mode is set to unique.";
 
-command setAccess( b:bat[:any$1,:any$2], mode:str) :bat[:any$1,:any$2] = CMDsetAccess
-comment "Try to change the update access priviliges to this BAT. Mode:
- r[ead-only]      - allow only read access.
- a[append-only]   - allow reads and insertions of new elements.
- w[riteable]      - allow reads, insertions, and updates.
- BATs are updateable by default. On making a BAT readonly, all
- subsequent updates fail with an error message.
- Returns the BAT itself.";
+command setAccess( b:bat[:any$1,:any$2], mode:str) 
+	:bat[:any$1,:any$2] 
+address CMDsetAccess
+comment "Try to change the update access priviliges to 
+	this BAT. Mode:
+	 r[ead-only]      - allow only read access.
+	 a[append-only]   - allow reads and insertions.
+	 w[riteable]      - allow all operations.
+	BATs are updateable by default. On making 
+	a BAT readonly, all subsequent updates 
+	fail with an error message.Returns the 
+	BAT itself.";
 
 command setAppendMode( b:bat[:any$1,:any$2]):bat[:any$1,:any$2] =CMDsetAppendMode
 comment "Change access privilige of BAT to append only";

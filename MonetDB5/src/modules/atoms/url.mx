@@ -66,10 +66,10 @@ address URLgetContext
 comment "Get the path context of a URL ";
 command getDirectory(u:url) :bat[:int,:str]  
 address URLgetDirectory 
-comment "Extract the directory names from the URL";
+comment "Extract directory names from the URL";
 command getDomain(u:url) :str        
 address URLgetDomain 
-comment "Extract the Internet domain from the URL";
+comment "Extract Internet domain from the URL";
 command getExtension(u:url) :str        
 address URLgetExtension 
 comment "Extract the file extension of the URL";
@@ -78,7 +78,7 @@ address URLgetFile
 comment "Extract the last file name of the URL";
 command getHost(u:url)   :str        
 address URLgetHost 
-comment "Extract the server identity from the URL";
+comment "Extract the server name from the URL";
 command getPort(u:url) :str        
 address URLgetPort 
 comment "Extract the port id from the URL";
@@ -90,24 +90,25 @@ address URLgetQuery
 comment "Extract the query string from the URL";
 command getQueryArg(u:url) :bat[:str,:str]  
 address URLgetQueryArg 
-comment "Extract the argument mappings from the URL";
+comment "Extract argument mappings from the URL";
 command getUser(u:url) :str        
 address URLgetUser 
 comment "Extract the user identity from the URL";
 command getRobotURL(u:url) :str        
 address URLgetRobotURL 
-comment "Extract the location of the robot control file";
+comment "Extract the location of the robot 
+	control file";
 command isaURL(u:url)   :bit        
 address URLisaURL 
 comment "Check conformity of the URL syntax";
-command newurl(prot:str,host:str,port:int,fnme:str)   :url        
+command newurl(p:str,h:str,prt:int,f:str):url        
 address URLnew4 
-comment "Construct a URL from protocol, host,port,and file";
-command newurl(prot:str,host:str,fnme:str)   :url        
+comment "Construct URL from protocol, host,
+	port,and file";
+command newurl(prot:str,host:str,fnme:str):url
 address URLnew3 
-comment "Construct a URL from protocol, host,and file";
+comment "Construct URL from protocol, host,and file";
 
-# the remaining instructions replace the string equivalent versions
 command fromstr():url 
 address URLfromString
 	comment "Convert a string to an url. ";

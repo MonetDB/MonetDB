@@ -102,7 +102,7 @@ address CMDmanual2
 comment "Generate a synopsis of a module";
 command manual(file:str,mod:str,recursive:int)
 address CMDmanual
-comment "Generate a recursive synopsis of a module";
+comment "Generate a recursive module synopsis";
 command manual(mod:str)
 address CMDmanual1
 comment "Generate a synopsis of a module";

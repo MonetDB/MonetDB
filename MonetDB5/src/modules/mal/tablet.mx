@@ -41,7 +41,7 @@ BATS.
 {\small
 \begin{verbatim}
 [ "John Doe",		25,	'M',	"Parklane 5",	"25-12-1978" ]
-[ "Maril Streep",	23,	'F',	"Parklane 5",	"12-07-1980" ]
+[ "Maril Streep",	23,	'F',	"Church 5",	"12-07-1980" ]
 [ "Mr. Smith",		53,	'M',	"Church 1",	"03-01-1950" ]
 \end{verbatim}
 }
@@ -74,12 +74,12 @@ BAT name, e.g. B1_tail.
 @T
 {\small
 \begin{verbatim}
-#--------------------------------------------------------------------#
-# name,			age,    sex,	address,	dob	     #
-#--------------------------------------------------------------------#
-[ "John Doe",		25,	'M',	"Parklane 5",	"25-12-1978" ]
-[ "Maril Streep",	23,	'F',	"Parklane 5",	"12-07-1980" ]
-[ "Mr. Smith",		53,	'M',	"Church 1",	"03-01-1950" ]
+#------------------------------------------------------#
+# name,           age, sex, address,       dob         #
+#------------------------------------------------------#
+[ "John Doe",      25, 'M', "Parklane 5", "25-12-1978" ]
+[ "Maril Streep",  23, 'F', "Church 5",   "12-07-1980" ]
+[ "Mr. Smith",     53, 'M', "Church 1",   "03-01-1950" ]
 \end{verbatim}
 }
 @-
@@ -173,17 +173,17 @@ sorted, dense, key, base, min, max, card,....
 @T
 {\small
 \begin{verbatim}
-#---------------------------------------#
+#--------------------------------------#
 # B1,   B2,     B3,     B4,     B5     # BAT
 # str,  int,    chr,    str,    date   # type
-# true, false,  false,  false,	false  # sorted
+# true, false,  false,  false,  false  # sorted
 # true, true,   false,  false,  false  # key
-#     , 23,     'F',    ,              # min
-# ,     53,     'M',	,	       # max
+# ,     23,     'F',    ,              # min
+# ,     53,     'M',	,              # max
 # 4,     4,     4,      4,      4      # count
 # 4,i    3,     2,      2,      3      # card
-# name,	age,    sex,	address,dob# name
-#---------------------------------------#
+# name,	age,    sex,   address, dob    # name
+#--------------------------------------#
 \end{verbatim}
 }
 
@@ -262,27 +262,35 @@ to be dumped bats. These bats can be dumped with dump_data.
 # the major tablet shuffling routiens
 module tablet;
 
-command load( names:bat[:void,:str], seps:bat[:void,:str], types:bat[:void,:str],
-datafile:str, nr:int ) :bat[:str,:bat] 
+command load( names:bat[:void,:str], 
+		seps:bat[:void,:str], 
+		types:bat[:void,:str],
+		datafile:str, nr:int ) 
+	:bat[:str,:bat] 
 address CMDtablet_load
 comment "Load a bat using specific format.";
 
-command input( names:bat[:void,:str], seps:bat[:void,:str], types:bat[:void,:str],
-s:stream, nr:int ) :bat[:str,:bat] 
+command input( names:bat[:void,:str], 
+		seps:bat[:void,:str], 
+		types:bat[:void,:str],
+		s:stream, nr:int ) 
+	:bat[:str,:bat] 
 address CMDtablet_input
 comment "Load a bat using specific format.";
 
 command dump(names:bat[:void,:str], 
-	seps:bat[:void,:str], 
-	bats:bat[:void,:bat],
-	datafile:str, nr:int):void 
+		seps:bat[:void,:str], 
+		bats:bat[:void,:bat],
+		datafile:str, nr:int)
+	:void 
 address CMDtablet_dump 
 comment "Dump the bat in ascii format";
 
 command output(order:bat[:any,:any], 
-	seps:bat[:void,:str], 
-	bats:bat[:void,:bat],
-	s:stream):void 
+		seps:bat[:void,:str], 
+		bats:bat[:void,:bat],
+		s:stream)
+	:void 
 address CMDtablet_output 
 comment "Send the bat to an output stream.";
 
@@ -311,10 +319,11 @@ address TABsetFormat
 comment "Initialize a new reporting structure.\n");
 command finish():void 
 address TABfinishReport
-comment "Free the storage space of the report descriptor";
+comment "Free the storage space of the 
+	report descriptor";
 command setStream(s:stream):void 
 address TABsetStream
-comment "Redirect the output of the report to a stream.";
+comment "Redirect the output to a stream.";
 command setPivot(b:bat[:void,:oid]) :void
 address TABsetPivot
 comment "The pivot bat identifies the tuples 
@@ -337,11 +346,11 @@ comment "Format the brackets around a row";
 # Set the column properties 
 pattern setColumn(idx:int, v:any)
 address TABsetColumn
-comment "Bind the i-th output column to a variable";
+comment "Bind i-th output column to a variable";
 command setColumnName(idx:int, nme:str)
 address TABsetColumnName
 comment "Set the display name for a given column";
-command setColumnBracket(idx:int, lbrk:str,rbrk:str)
+command setColumnBracket(idx:int,lbrk:str,rbrk:str)
 address TABsetColumnBracket
 comment "Format the brackets around a field";
 command setColumnNull(idx:int, fmt:str)
@@ -359,7 +368,7 @@ address TABsetColumnPosition
 comment "Set the character position to use 
 	for this field when loading according to 
 	fixed (punch-card) layout.";
-command setColumnDecimal(idx:int, scale:int, precision:int)
+command setColumnDecimal(idx:int,s:int,p:int)
 address TABsetColumnDecimal
 comment "Set the scale and precision for 
 	numeric values";
