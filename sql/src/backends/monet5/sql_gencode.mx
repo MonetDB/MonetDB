@@ -1122,6 +1122,7 @@ void backend_dumpproc( backend *be, Client c, int id, stmt *s )
 	/* later we could use the id directly (as its unique) and
  	   just create a InstrPtr using newInstruction */
 	i = snprintf( fnme, BUFSIZ, "sql%d", id);
+	(void)i; /* pacify compilers */
 	
 	c->backup = c->curprg;
 
