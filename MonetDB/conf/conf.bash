@@ -216,6 +216,10 @@ if [ "${os}" = "Linux" ] ; then
 		# twig in Konstanz
 		binpath="/net/lin_local/twig:${binpath}"
 	fi
+	if [ -x /usr/lib/java/bin/javac  -a  -x /usr/lib/java/bin/jar ] ; then
+		# java in Konstanz
+		binpath="/usr/lib/java/bin:${binpath}"
+	fi
 fi
 
 if [ "${os}" = "Darwin" ] ; then
