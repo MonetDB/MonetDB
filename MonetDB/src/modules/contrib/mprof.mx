@@ -345,7 +345,7 @@ number of physical IOs.
 		printf("\n");
 		}
     }
-    PROC emptyMallinfo() : Mallinfo := {
+    PROC emptyMallinfo() : Mallinfo {
 	RETURN Mallinfo("(0,0,0,0,0,0,0,0)");
     }
 
@@ -1421,7 +1421,7 @@ join(b,c).print;
 \end{verbatim}
 
 @mil
-PROC test_mprof() : void := {   
+PROC test_mprof() : void {   
 	setoid(oid(20000000));
 
 	# A test for the performance analysis

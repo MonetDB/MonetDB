@@ -49,7 +49,7 @@ proc mel_test() : void {
 	m := 1;
 }
 
-PROC test_mel() : void := {   
+PROC test_mel() : void {   
 	setoid(oid(20000000));
 	var m:= overloadedstr("http://www.cwi.nl/~mk/Acoi/index.html");
 	# not checked bogus second var 
