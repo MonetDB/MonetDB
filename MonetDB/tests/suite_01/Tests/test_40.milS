@@ -15,10 +15,10 @@ b.insert(".",10);
 b.insert("",int(nil));
 b.insert(str(nil),int(nil));
 b.print;
-b.export("/tmp/monet2");
+b.export("monet2");
 b.clear;
 b.count.print;
-b.import("/tmp/monet2");
+b.import("monet2");
 b.print;
 
 b:= new(int,int);
@@ -34,10 +34,10 @@ b.insert(9,int(nil));
 b.insert(int(nil),int(nil));
 b.insert(int(nil),81);
 b.print;
-b.export("/tmp/monet1");
+b.export("monet1");
 b.clear;
 b.count.print;
-b.import("/tmp/monet1");
+b.import("monet1");
 b.print;
 commit;
 

@@ -27,8 +27,8 @@
 a := new(int,int);
 a.insert(1,1);
 a.print;
-a.export("/tmp/testt");
+a.export("testt");
 b := new(int,int);
-b.import("/tmp/testt");
+b.import("testt");
 b.print;
 quit;
