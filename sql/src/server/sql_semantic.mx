@@ -3218,6 +3218,7 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 	group *g = NULL;
 
 	sql_subtype *it = sql_bind_localtype( "int" );
+	sql_subtype *lt = sql_bind_localtype( "lng" );
 	sql_subaggr *cnt = sql_bind_aggr("count", NULL);
 	sql_subtype *bt = sql_bind_localtype( "bit" );
 
@@ -3268,8 +3269,8 @@ insert_check_ukey( mvc * sql, stmt **inserts, sql_key *k, stmt *idx_inserts )
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr("sum", tail_type(ss));
 			count_sum = stmt_binop( 
-				stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), 
-				check_types(sql, it, stmt_aggr(ss, NULL, sum)) , 
+				check_types(sql, lt, stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt))),
+				check_types(sql, lt, stmt_aggr(ss, NULL, sum)), 
 				sql_dup_func(ne));
 
 			/* combine results */
