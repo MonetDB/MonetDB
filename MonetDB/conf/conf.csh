@@ -4,12 +4,12 @@
 # While sourced, this script sets your (architecture dependent) environment
 # as required to compile Monet.
 #
-# By default, compilation will take place in BUILD=BASE/`uname` and Monet
-# will be installed in PREFIX=BUILD. You can change either directory by
-# setting the enviroment variables
-#	BUILD
+# By default, compilation will take place in MONET_BUILD=BASE/`uname` and
+# Monet will be installed in MONET_PREFIX=MONET_BUILD. You can change either
+# directory by setting the enviroment variables
+#	MONET_BUILD
 # and/or
-#	PREFIX
+#	MONET_PREFIX
 # appropiately before "sourcing" this script.
 #
 # To select your desired compiler ("GNU" or "ntv" (native)), your desired
@@ -35,19 +35,19 @@ if ( ! -x bootstrap ) then
 	set binpath = ""
 	set libpath = ""
 
-	# check for not set variables (BUILD, PREFIX, COMP, BITS, LINK)
+	# check for not set variables (MONET_BUILD, MONET_PREFIX, COMP, BITS, LINK)
 
-	if ( ! ${?BUILD} ) then
+	if ( ! ${?MONET_BUILD} ) then
 		echo ''
-		echo 'BUILD not set to specify desired compilation directory.'
-		echo 'Using BUILD="'${base}/${os}'" (default).'
-		set BUILD = "${base}/${os}"
+		echo 'MONET_BUILD not set to specify desired compilation directory.'
+		echo 'Using MONET_BUILD="'${base}/${os}'" (default).'
+		set MONET_BUILD = "${base}/${os}"
 	endif
-	if ( ! ${?PREFIX} ) then
+	if ( ! ${?MONET_PREFIX} ) then
 		echo ''
-		echo 'PREFIX not set to specify desired target directory.'
-		echo 'Using PREFIX="'${BUILD}'" (default).'
-		set PREFIX = "${BUILD}"
+		echo 'MONET_PREFIX not set to specify desired target directory.'
+		echo 'Using MONET_PREFIX="'${MONET_BUILD}'" (default).'
+		set MONET_PREFIX = "${MONET_BUILD}"
 	endif
 
 	if ( ! ${?COMP} ) then
@@ -75,7 +75,7 @@ if ( ! -x bootstrap ) then
 		endif
 	endif
 
-	# check for incorrectly set variables (BUILD, PREFIX, COMP, BITS, LINK)
+	# check for incorrectly set variables (MONET_BUILD, MONET_PREFIX, COMP, BITS, LINK)
 
 	if ( "${COMP}" != "GNU"  &&  "${COMP}" != "ntv" ) then
 		echo ''
@@ -254,7 +254,7 @@ if ( ! -x bootstrap ) then
 	endif
 
 	# prepend target bin-dir to PATH
-	set binpath = "${PREFIX}/bin:${binpath}"
+	set binpath = "${MONET_PREFIX}/bin:${binpath}"
 	# remove trailing ':'
 	set binpath = `echo "${binpath}" | sed 's|:$||'`
 	set libpath = `echo "${libpath}" | sed 's|:$||'`
@@ -297,25 +297,25 @@ if ( ! -x bootstrap ) then
 
 #	# we shouldn't need this
 #	if ( ${?LD_LIBRARY_PATH} ) then
-#		setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
-#	  else	setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
+#		setenv LD_LIBRARY_PATH "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
+#	  else	setenv LD_LIBRARY_PATH "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 #	endif
 
 #	# this nolonger needed for Monet
-#	setenv MONETDIST "${PREFIX}"
-#	setenv MONET_MOD_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
+#	setenv MONETDIST "${MONET_PREFIX}"
+#	setenv MONET_MOD_PATH "${MONET_PREFIX}/lib:${MONET_PREFIX}/lib/Monet"
 #	echo " MONET_MOD_PATH=${MONET_MOD_PATH}"
 
 	# for convenience: store the complete configure-call in CONFIGURE
-	setenv CONFIGURE "${base}/configure ${conf_opts} --prefix=${PREFIX}"
+	setenv CONFIGURE "${base}/configure ${conf_opts} --prefix=${MONET_PREFIX}"
 	echo " CONFIGURE=${CONFIGURE}"
 
-	mkdir -p ${BUILD}
+	mkdir -p ${MONET_BUILD}
 
 	echo ""
 	echo "To compile Monet, just execute:"
 	echo "\t./bootstrap"
-	echo "\tcd ${BUILD}"
+	echo "\tcd ${MONET_BUILD}"
 	echo "\t${CONFIGURE}"
 	echo "\tmake"
 	echo "\tmake install"
