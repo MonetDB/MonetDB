@@ -276,7 +276,7 @@ int main(int argc, char** av, char** envp) {
 		for (j = 0; j < strlen(av[i]); j++) {
 			if (!isprint((int)av[i][j])) {
 				/* non-printable char found! */
-				fprintf(stderr, "warning: discarding argument %d: it contains non-printable characters\n", i);
+				fprintf(stderr, "#warning: discarding argument %d: it contains non-printable characters\n", i);
 				memset(av[i], 0, strlen(av[i]));
 			}
 		}
@@ -366,7 +366,7 @@ faster system start.
 			if (strcmp(long_options[option_index].name, 
 						"dbinit") == 0){
 				if(dbinit)
-					fprintf(stderr, "warning: ignoring multiple --dbinit argument\n");
+					fprintf(stderr, "#warning: ignoring multiple --dbinit argument\n");
 				else
 					dbinit = optarg;
 				break;
@@ -404,7 +404,7 @@ faster system start.
 			}
 		 } break;
 		case 't': /* trace option, currently ignored */
-			fprintf(stderr, "warning: trace option not yet supported\n");
+			fprintf(stderr, "#warning: trace option not yet supported\n");
 			break;
 		case '?':
 			usage(prog);
