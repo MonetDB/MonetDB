@@ -5,9 +5,16 @@ module(str);
 module(alarm);
 module(unix);
 module(ddbench);
-module(aggr);
+module(aggrX3);
 module(mvc);
 module(monettime);
+
+proc {min}(val,grp, extent) := {
+	return {min}(grp.reverse.join(val), extent);
+}
+proc {max}(val,grp,extent) := {
+	return {max}(grp.reverse.join(val), extent);
+}
 
 proc default_val( myc, cid, val ) := {
 	return mvc_default( myc, cid, str(val));
@@ -27,6 +34,16 @@ proc date_sub_sec_interval( date d, int sec ) := {
 		return d.adddays( -1 * sec/86400);
 	}
 	return d;
+}
+
+proc date_add_sec_interval( date d, int sec ) := {
+	if (sec > 0){
+		return d.adddays(sec/86400);
+	}
+	return d;
+}
+proc date_sub_month_interval( date d, int months ) := {
+	return d.addmonths(months);
 }
 
 proc add(x, y):= return x + y;
@@ -120,7 +137,7 @@ proc ascii_export_functions(Output):= {
 	server_output( Output, sql_aggr_name, sql_aggr_name, sql_aggr_imp, sql_aggr_type, sql_aggr_result );
 		
 	output_count( sql_func_name, Output);
-	server_output( Output, sql_func_name, sql_func_name, sql_func_imp, sql_func_type1, sql_func_type2, sql_func_result );
+	server_output( Output, sql_func_name, sql_func_name, sql_func_imp, sql_func_type1, sql_func_type2, sql_func_type3, sql_func_result );
 
 	#output_count( schema_name, Output);
 	#server_output( Output, schema_id, schema_id, schema_name, schema_auth);

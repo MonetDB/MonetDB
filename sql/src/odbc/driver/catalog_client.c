@@ -75,7 +75,6 @@ void getfunctions( catalog *c ){
 	n = start = buf;
 
 	tcnt = strtol(n,&n,10); 
-	printf("types %d\n", tcnt );
 	c->types = list_create();
 	for(i=0;i<tcnt;i++){
 	    char *sqlname, *name, *cast;
@@ -94,7 +93,6 @@ void getfunctions( catalog *c ){
 	/* TODO load proper type cast table */
 
 	tcnt = strtol(n+1,&n,10); 
-	printf("aggr %d\n", tcnt );
 	c->aggrs = list_create();
 	for(i=0;i<tcnt;i++){
 	    char *tname, *imp, *tpe, *res;
@@ -117,7 +115,7 @@ void getfunctions( catalog *c ){
 	tcnt = strtol(n+1,&n,10); 
 	c->funcs = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname, *imp, *tpe1, *tpe2, *res;
+	    char *tname, *imp, *tpe1, *tpe2, *tpe3, *res;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tname = removeQuotes(start, '"');
@@ -131,10 +129,13 @@ void getfunctions( catalog *c ){
 	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tpe2 = removeQuotes(start, '"');
 
+	    n = strchr(start = n+1, '\t'); *n = '\0';
+	    tpe3 = removeQuotes(start, '"');
+
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    res = removeQuotes(start, '"');
 
-	    cat_create_func( c, tname, imp, tpe1, tpe2, res, i );
+	    cat_create_func( c, tname, imp, tpe1, tpe2, tpe3, res, i );
 	}
 	_DELETE(buf);
 }
@@ -159,7 +160,6 @@ void getschema( catalog *c, char *schema, char *user ){
 	list_append_string( c->schemas, (char*) c->cur_schema );
 
 	tcnt = strtol(n+1,&n,10); 
-	printf("tables %d\n", tcnt );
 	for(i=0;i<tcnt;i++){
 	    long id;
 	    char *tname;
@@ -178,7 +178,6 @@ void getschema( catalog *c, char *schema, char *user ){
 	}
 
 	tcnt = strtol(n+1,&n,10); 
-	printf("columns %d\n", tcnt );
 	for(i=0;i<tcnt;i++){
             long id = 0;
 	    char *tname, *cname, *ctype, *def;
@@ -216,7 +215,6 @@ void getschema( catalog *c, char *schema, char *user ){
 	/* bats are void-aligned */
 	/* read views */
 	tcnt = strtol(n+1,&n,10); 
-	printf("views %d\n", tcnt );
 	for(i=0;i<tcnt;i++){
 	    table *t;
             long id = 0;

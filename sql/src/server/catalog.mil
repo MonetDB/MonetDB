@@ -67,7 +67,15 @@ numerical.insert("FLOAT", "flt");
 numerical.insert("REAL", "flt");
 numerical.insert("DOUBLE", "dbl");
 
+var strings := new(str,str);
+strings.insert("VARCHAR(1)", "chr");
+strings.insert("CHARACTER", "str");
+strings.insert("VARCHAR", "str");
+strings.insert("STRING", "str");
+
 if (type_sql.count() <= 0){
+	new_type( "BOOL", "bit", "", "" );
+
 	new_type( "VARCHAR(1)", "chr", "", "" );
 	new_type( "CHARACTER", "str", "VARCHAR(1)", "" );
 	new_type( "VARCHAR", "str", "CHARACTER", "" );
@@ -109,7 +117,7 @@ if (sql_aggr_name.count() <= 0){
 	type_sql@batloop(){ new_aggr( "max", "max", "", $t, $t ); }
 	type_sql@batloop(){ new_aggr( "sum", "sum", "", $t, $t ); }
 	type_sql@batloop(){ new_aggr( "avg", "avg", "", $t, $t ); }
-	type_sql@batloop(){ new_aggr( "count", "count", "", $t, "INTEGER" ); }
+	new_aggr( "count", "count", "", "", "INTEGER" ); 
 }
 
 catalog_bat("sql_func_name", str);
@@ -117,41 +125,69 @@ catalog_bat("sql_func_imp", str);
 catalog_bat("sql_func_module", str);
 catalog_bat("sql_func_type1", str);
 catalog_bat("sql_func_type2", str);
+catalog_bat("sql_func_type3", str);
 catalog_bat("sql_func_result", str);
 
-proc new_func( str name, str imp, str mod, str tpe1, str tpe2, str outtype ):= {
+proc new_func( str name, str imp, str mod, str tpe1, str tpe2, str tpe3, str outtype ):= {
 	var id := oid(sql_func_name.count());
 	sql_func_name.insert(id, name);
 	sql_func_imp.insert(id, imp);
 	sql_func_module.insert(id, mod);
 	sql_func_type1.insert(id, tpe1);
 	sql_func_type2.insert(id, tpe2);
+	sql_func_type3.insert(id, tpe3);
 	sql_func_result.insert(id, outtype);
 }
 
 if (sql_func_name.count() <= 0){
-	numerical@batloop(){ new_func( "sub", "-", "", $h, $h, $h ); }
-	numerical@batloop(){ new_func( "add", "+", "", $h, $h, $h ); }
-	numerical@batloop(){ new_func( "mul", "*", "", $h, $h, $h ); }
-	numerical@batloop(){ new_func( "div", "/", "", $h, $h, $h ); }
+	numerical@batloop(){ new_func( "sub", "-", "", $h, $h, "", $h ); }
+	numerical@batloop(){ new_func( "add", "+", "", $h, $h, "", $h ); }
+	numerical@batloop(){ new_func( "mul", "*", "", $h, $h, "", $h ); }
+	numerical@batloop(){ new_func( "div", "/", "", $h, $h, "", $h ); }
 
-	numerical@batloop(){ new_func( "neg", "-", "", $h, "", $h ); }
-	numerical@batloop(){ new_func( "pos", "+", "", $h, "", $h ); }
+	numerical@batloop(){ new_func( "neg", "-", "", $h, "", "", $h ); }
+	numerical@batloop(){ new_func( "pos", "+", "", $h, "", "", $h ); }
 
 	numerical@batloop(){ 
 		var hd := $h; 
 		numerical@batloop(){ 
 			if ($h != hd){
-				new_func( "convert", $t, "", hd, "", $h );
+				new_func( "convert", $t, "", hd, "", "", $h );
 			}
 		}
 	}
 
-	var floats := numerical.select("dbl");
-	floats@batloop(){ new_func( "floor", "floor", "mmath", $h, "", $h ); }
+	strings@batloop(){ 
+		var hd := $h; 
+		strings@batloop(){ 
+			if ($h != hd){
+				new_func( "convert", $t, "", hd, "", "", $h );
+			}
+		}
+	}
 
-	new_func( "sub", "date_sub_sec_interval", "monettime", "DATE", "SEC_INTERVAL", "DATE");
-	new_func( "sub", "date_sub_month_interval", "monettime", "DATE", "MONTH_INTERVAL", "DATE");
+	var floats := numerical.select("dbl").union(numerical.select("flt"));
+	floats@batloop(){ 
+		new_func( "floor", "floor", "mmath", $h, "", "", $h ); 
+	}
+
+	new_func( "sub", "date_sub_sec_interval", "monettime", "DATE", "SEC_INTERVAL", "", "DATE");
+	new_func( "sub", "date_sub_month_interval", "monettime", "DATE", "MONTH_INTERVAL", "", "DATE");
+
+	new_func( "add", "date_add_sec_interval", "monettime", "DATE", "SEC_INTERVAL", "", "DATE");
+	new_func( "add", "addmonths", "monettime", "DATE", "MONTH_INTERVAL", "", "DATE");
+
+	new_func( ">", ">", "monettime", "DATE", "DATE", "", "BOOL");
+	new_func( "<", "<", "monettime", "DATE", "DATE", "", "BOOL");
+
+	new_func( "year", "year", "monetdate", "DATE", "", "", "INTEGER");
+	new_func( "month", "month", "monetdate", "DATE", "", "", "INTEGER");
+
+	new_func( "substring", "string", "", "STRING", "INTEGER", "INTEGER", "STRING");
+	new_func( "strconcat", "+", "", "STRING", "STRING", "", "STRING");
+	new_func( "substring", "string", "", "VARCHAR", "INTEGER", "INTEGER", "VARCHAR");
+	new_func( "strconcat", "+", "", "VARCHAR", "VARCHAR", "", "VARCHAR");
+
 }
 
 
