@@ -459,7 +459,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	bn->tsorted = 0;
 	if (bn->tkey)
 		BATkey(BATmirror(bn), FALSE);
-	BBPfix(bn->batCacheid);
+	BBPincref(bn->batCacheid, TRUE);
 	return GDK_SUCCEED;
 }
 @- Wrapping
@@ -619,7 +619,7 @@ str MKEYbulk_rotate_xor_hash(int *res, int *bnid, int *rotate, int *bid) {
     *res = bn->batCacheid;
     bn->tsorted = 0;
     if (bn->tkey) BATkey(BATmirror(bn), FALSE);
-    BBPfix(bn->batCacheid);
+    BBPincref(bn->batCacheid,TRUE);
     return MAL_SUCCEED;
 }
 @}

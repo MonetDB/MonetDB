@@ -351,7 +351,8 @@ str AL2@1join(int *ret, int *lid, int *rid ){
   	bn = (BAT*) BATmal@1join(left, right);
 	if( bn == NULL)
 		return throwMessage("@1join","failed");
-	*ret = bn->batCacheid;
+	BBPincref( *ret = bn->batCacheid,TRUE);
+	BBPunfix(*ret);
   return MAL_SUCCEED;
 }
 @c
@@ -374,7 +375,8 @@ str AL2leftthetajoin(int *ret, int *lid, int *rid, int *mode){
   	bn= BATleftthetajoin(l, r, *mode, MIN(BATcount(l),BATcount(r)));
 	if( bn == NULL)
 		return throwMessage("leftthetajoin","failed");
-	*ret = bn->batCacheid;
+	BBPincref( *ret = bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate) {
@@ -386,7 +388,8 @@ str AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate) {
 	bn= BATnlthetajoin(l, r, *mode, (size_t) *estimate);
 	if( bn == NULL)
 		return throwMessage("leftthetajoin","failed");
-	*ret = bn->batCacheid;
+	BBPincref( *ret = bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 
@@ -399,7 +402,8 @@ str AL2ord_@1select1(int *ret, int * bid, ptr *value) {
 	bn = BAT_select_(b, *value, 0, TRUE, TRUE, @2, TRUE);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
-	*ret = bn->batCacheid;
+	BBPincref( *ret = bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high) {
@@ -410,7 +414,8 @@ str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high) {
 	bn = BAT_select_(b, *low, *high, TRUE, TRUE, @2, TRUE);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
-	*ret = bn->batCacheid;
+	BBPincref( *ret = bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h_in){
@@ -433,7 +438,8 @@ str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h
 	bn = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
-	*ret = bn->batCacheid;
+	BBPincref( *ret = bn->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 @c

@@ -1954,7 +1954,8 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	@:getBATdescriptor(&result,bid,b,sum)@
 	@:getBATdescriptor(&result,eid,e,sum)@
 	if( CMDaggrX3_sum_@1_@3(&bn,b,e) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_sum.@4","GDKerror");
@@ -1970,7 +1971,8 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	@:getBATdescriptor(&result,bid,b,sum)@
 	@:getBATdescriptor(&result,eid,e,sum)@
 	if( CMDaggrX3_prod_@1_@3(&bn,b,e) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_sum.@4","GDKerror");
@@ -2002,7 +2004,8 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	@:getBATdescriptor(&result,bid,b,avg)@
 	@:getBATdescriptor(&result,eid,e,avg)@
 	if( CMDaggrX3_avg_@1(&bn,b,e) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_avg.@1","GDKerror");
@@ -2025,7 +2028,8 @@ str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	@:getBATdescriptor(&result,eid,e,@1)@
 
 	if( CMDaggrX3_@1(&bn,b,e) == GDK_SUCCEED){
-		*ret = bn->batCacheid;
+		BBPincref(*ret = bn->batCacheid,TRUE);
+		BBPunfix(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_@1","GDKerror");
@@ -2044,7 +2048,8 @@ str AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils){
 	@:getBATdescriptor(retid,eid,e,@1)@
 
 	if( CMDaggrX3_count(&bn,b,e,ignore_nils) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_count","GDKerror");
@@ -2059,7 +2064,8 @@ str AX3aggrX3_size(int *retid, int *bid, int *eid){
 	@:getBATdescriptor(retid,bid,b,@1)@
 	@:getBATdescriptor(retid,eid,e,@1)@
 	if( CMDaggrX3_size(&bn,b,e) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_size","GDKerror");
@@ -2075,7 +2081,8 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	@:getBATdescriptor(retid,eid,e,@1)@
 	@:getBATdescriptor(retid,gid,g,@1)@
 	if( CMDaggrX3_sum3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_sum3","GDKerror");
@@ -2090,7 +2097,8 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	@:getBATdescriptor(retid,eid,e,@1)@
 	@:getBATdescriptor(retid,gid,g,@1)@
 	if( CMDaggrX3_prod3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_prod3","GDKerror");
@@ -2120,7 +2128,8 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	@:getBATdescriptor(retid,eid,e,@1)@
 	@:getBATdescriptor(retid,gid,g,@1)@
 	if( CMDaggrX3_avg3_@1(&bn,b,g,e) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_prod3","GDKerror");
@@ -2144,7 +2153,8 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	@:getBATdescriptor(&result,gid,g,sum)@
 	@:getBATdescriptor(&result,eid,e,sum)@
 	if( CMDaggrX3_@13(&bn,b,g,e) == GDK_SUCCEED){
-		*ret = bn->batCacheid;
+		BBPincref(*ret = bn->batCacheid,TRUE);
+		BBPunfix(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_prod3","GDKerror");
@@ -2163,7 +2173,8 @@ str AX3aggrX3_count3(int *retid,int *bid, int *gid, int *eid, bit *ignore_nils){
 	@:getBATdescriptor(&ret,gid,g,sum)@
 	@:getBATdescriptor(&ret,eid,e,sum)@
 	if( CMDaggrX3_count3(&bn,b,g,e,ignore_nils) == GDK_SUCCEED){
-		*retid = bn->batCacheid;
+		BBPincref(*retid = bn->batCacheid,TRUE);
+		BBPunfix(*retid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("aggrX3_prod3","GDKerror");

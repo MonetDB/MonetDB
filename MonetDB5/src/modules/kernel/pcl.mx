@@ -440,7 +440,8 @@ str  CMDpclstop(int *ret, int *bid)
 	@:getBATdescriptor(ret,bid,result,PLCstop)@
 	@:getBATdescriptor(ret,eid,event,PLCstop)@
 	pcl_stop(&result,event);
-	*ret= result->batCacheid;
+	BBPincref(*ret= result->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str  CMDpclstop_rates(int *ret, int *bid, int *eid)
@@ -448,14 +449,16 @@ str  CMDpclstop_rates(int *ret, int *bid, int *eid)
 	@:getBATdescriptor(ret,bid,result,PLCstop_rates)@
 	@:getBATdescriptor(ret,eid,event,PLCstop_rates)@
 	pcl_stop_rates(&result,event);
-	*ret= result->batCacheid;
+	BBPincref(*ret= result->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str  CMDpclquery(int *ret, int *eid, int *mode)
 	BAT *result, *event;
 	@:getBATdescriptor(ret,eid,event,PLCpclquery)@
 	pcl_query(&result,event,mode);
-	*ret= result->batCacheid;
+	BBPincref(*ret= result->batCacheid,TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 str  CMDpcltry(int *ret, int *eid,int *mode)

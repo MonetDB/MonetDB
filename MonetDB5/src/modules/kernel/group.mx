@@ -1220,7 +1220,8 @@ str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize) {
         @:getBATdescriptor(ret,bid,b,GRPgroup0)@
         result = BATgroup(b, *start, *incr, *grpsize);
         if( result== 0) return throwMessage("GRPgroup0","Failed to group");
-        *ret= b->batCacheid;
+		BBPincref(*ret= result->batCacheid, TRUE);
+		BBPunfix(*ret);
         return MAL_SUCCEED;
 }
 str GRPgroup2(int *retbid, int *bid)
@@ -1228,9 +1229,10 @@ str GRPgroup2(int *retbid, int *bid)
 	BAT *b,*bn, *histo = NULL;
 	@:getBATdescriptor(retbid,bid,b,group)@
 	@:chkHeader(b,GRPgroup)@
-        CTgroup(&bn,&histo,b);
-	*retbid= bn->batCacheid;
-        return MAL_SUCCEED;
+	CTgroup(&bn,&histo,b);
+	BBPincref(*retbid= bn->batCacheid, TRUE);
+	BBPunfix(*retbid);
+	return MAL_SUCCEED;
 }
 
 str GRPgroup(int *rethisto, int *retbid, int *bid){
@@ -1239,8 +1241,9 @@ str GRPgroup(int *rethisto, int *retbid, int *bid){
 	@:getBATdescriptor(retbid,bid,b,group)@
 	@:chkHeader(b,GRPgroup)@
 	CTgroup(&bn, &histo, b);
-	*retbid= bn->batCacheid;
 	*rethisto= histo? histo->batCacheid:0;
+	BBPincref(*retbid=bn->batCacheid, TRUE);
+	BBPunfix(*retbid);
 	return MAL_SUCCEED;
 }
 
@@ -1249,8 +1252,9 @@ str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng){
 	@:getBATdescriptor(retbid,bid,b,group)@
 	@:chkHeader(b,GRPgroup)@
 	CTgroup_custom(&bn, &histo, b, N, rng);
-	*retbid= bn->batCacheid;
 	*rethisto= histo? histo->batCacheid:0;
+	BBPincref(*retbid=bn->batCacheid, TRUE);
+	BBPunfix(*retbid);
 	return MAL_SUCCEED;
 }
 
@@ -1263,7 +1267,8 @@ str GRPregroup(int* retid, int* ctid, int* bid) {
 	@:chkHeader(b,GRPregroup)@
 	/*CTregroup(&bn, &histo, ct, b);*/
 	regroup(&bn, &histo, ct, b, tailtype(b, TRUE), NULL);
-	*retid= bn->batCacheid;
+	BBPincref(*retid= bn->batCacheid, TRUE);
+	BBPunfix(*retid);
 	return MAL_SUCCEED;
 }
 
@@ -1275,7 +1280,8 @@ str GRPderive(int* mapid, int* retid, int  *ctid, int* bid) {
 	@:getBATdescriptor(retid,bid,b,derive)@
 	@:chkHeader(b,GRPderive)@
 	CTderive(&bn,ct, b);
-	*retid= bn->batCacheid;
+	BBPincref(*retid= bn->batCacheid, TRUE);
+	BBPunfix(*retid);
 	*mapid= 0; /* no map yet */
 	return MAL_SUCCEED;
 }
@@ -1293,7 +1299,8 @@ str GRPsubhisto(int *retid, int *selid, int *grpid, int *domid) {
 	@:chkHeader(grp,GRPsubhisto)@
 	@:getBATdescriptor(retid,domid,dom,subhisto)@
 	CTsubhisto(&bn,sel,grp,dom);
-    *retid= bn->batCacheid;
+	BBPincref(*retid= bn->batCacheid, TRUE);
+	BBPunfix(*retid);
     return MAL_SUCCEED;
 }
 
@@ -1307,7 +1314,8 @@ str GRPrefine(int *retid, int *bid, int *aid) {
     @:chkHeader(a,GRPrefine)@
 
     CTrefine(&bn, b, a);
-    *retid= bn->batCacheid;
+	BBPincref(*retid= bn->batCacheid, TRUE);
+	BBPunfix(*retid);
     return MAL_SUCCEED;
 }
 
@@ -1478,7 +1486,8 @@ str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
                 ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
                 @:small_aggr_sum(@1,@2)@
         }
-        *retval = bn->batCacheid;
+		BBPincref(*retval= bn->batCacheid, TRUE);
+		BBPunfix(*retval);
         return MAL_SUCCEED;
 }
 
@@ -1530,7 +1539,8 @@ str GRPavg_@1(int *retval, int *bid,int  *eid){
                 } yy++;
         }
         GDKfree(cnt);
-        *retval = bn->batCacheid;
+		BBPincref(*retval= bn->batCacheid, TRUE);
+		BBPunfix(*retval);
         return MAL_SUCCEED;
 }
 
@@ -1591,7 +1601,8 @@ str GRP@1(int *retval, int *bid,int  *eid){
         bn->tsorted = bn->hsorted = 0;
         ALIGNsetH(bn, e);
         GDKfree(extremes);
-        *retval = bn->batCacheid;
+		BBPincref(*retval= bn->batCacheid, TRUE);
+		BBPunfix(*retval);
         return MAL_SUCCEED;
 }
 @c
@@ -1697,7 +1708,8 @@ str GRPaggr_count(int *retval, int *bid,int  *eid, bit *ignore_nils){
 
         }
 
-	*retval= bn->batCacheid;
+	BBPincref(*retval= bn->batCacheid, TRUE);
+	BBPunfix(*retval);
 	return MAL_SUCCEED;
 }
 
@@ -1733,7 +1745,8 @@ str GRPsize(int *retval, int *bid,int  *eid){
                         }
                 }
         }
-	*retval= bn->batCacheid;
+	BBPincref(*retval= bn->batCacheid, TRUE);
+	BBPunfix(*retval);
 	return MAL_SUCCEED;
 }
 
