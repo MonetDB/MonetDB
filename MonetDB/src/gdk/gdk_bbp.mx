@@ -1053,7 +1053,7 @@ The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
 incremented with @%BBPfix@ and decremented with @%BBPunfix@.
 @c
-static
+static INLINE
 void BBPspin(bat i, str s, int event) {
 	if (BBPcheck(i,"BBPspin") && (BBP_status(i)&event)) {
 		lng spin = LL_CONSTANT(0);
@@ -1065,7 +1065,8 @@ void BBPspin(bat i, str s, int event) {
 	}
 }
 
-static int incref(bat i, int logical, int lock) {
+static INLINE
+int incref(bat i, int logical, int lock) {
 	int refs = 0;
 
 	if (i == bat_nil) {
@@ -1104,7 +1105,8 @@ int BBPincref(bat i, int logical) {
 	return incref(i, logical, BBP_getpid() != locked_by); 
 }
 
-static int decref(bat i, int logical, int lock) {
+static INLINE
+int decref(bat i, int logical, int lock) {
 	int refs = 0, swap = 0;
 	BAT *b;
 
@@ -1165,8 +1167,6 @@ int BBPdecref(bat i, int logical) {
 void BBPshare(bat parent) {
 	MT_Id pid = BBP_getpid();
 
-	if (parent < 0) 
-		parent = -parent;
 	if (pid != locked_by) 
         	MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPshare");
         if (++BBP_cache(parent)->batSharecnt == 1) 
@@ -1177,8 +1177,7 @@ void BBPshare(bat parent) {
 
 void BBPunshare(bat parent) {
 	MT_Id pid = BBP_getpid();
-	if (parent < 0) 
-		parent = -parent;
+
 	if (pid != locked_by) 
 		MT_set_lock(GDKswapLock[parent&BBPLOCKMASK], "BBPunshare");
         if (--BBP_cache(parent)->batSharecnt == 0) 

@@ -431,6 +431,8 @@ size_t GDKmem_heapinuse(void) {
 	return GDK_heap_estimate;
 }
 
+ 
+INLINE static 
 void GDKheapinc(size_t memdelta) {
 	GDK_heap_estimate += memdelta;
 #ifdef GDK_MEM_KEEPHISTO
@@ -445,7 +447,8 @@ void GDKheapinc(size_t memdelta) {
 	}
 #endif
 }
-
+ 
+INLINE static 
 void GDKheapdec(size_t memdelta) {
 	GDK_heap_estimate -= memdelta;
 #ifdef GDK_MEM_KEEPHISTO
@@ -460,6 +463,7 @@ void GDKheapdec(size_t memdelta) {
 #endif
 }
 
+INLINE static
 void GDKmeminc(size_t memdelta, size_t vmdelta) {
 	size_t segsize = (size_t) SEG_SIZE(vmdelta,MT_VMUNITLOG);
 
@@ -474,6 +478,7 @@ void GDKmeminc(size_t memdelta, size_t vmdelta) {
         if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKmeminc");
 }
 
+INLINE static
 void GDKmemdec(size_t memdelta, size_t vmdelta) {
 	size_t segsize = (size_t) SEG_SIZE(vmdelta,MT_VMUNITLOG);
 
