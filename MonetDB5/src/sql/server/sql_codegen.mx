@@ -66,15 +66,18 @@ macros
 
 @= newStmt
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= (@1)? GDKstrdup(@1): 0;
-	q->fcnname= (@2)? GDKstrdup(@2): 0;
+	moduleId(q)= (@1)? GDKstrdup(@1): 0;
+	functionId(q)= (@2)? GDKstrdup(@2): 0;
 	getDestVar(q)= newTmpVariable(mb,TYPE_any);
 	pushInstruction(mb,q);
 	s->nr= getDestVar(q);	/* might be dropped altogether */
+@= newAssignment
+	q= newInstruction(ASSIGNsymbol);
+	pushInstruction(mb,q);
 @= newStmtId
 	q= newInstruction(ASSIGNsymbol);
-	q->modname= (@2)? GDKstrdup(@2): 0;
-	q->fcnname= (@3)? GDKstrdup(@3): 0;
+	moduleId(q)= (@2)? GDKstrdup(@2): 0;
+	functionId(q)= (@3)? GDKstrdup(@3): 0;
 	getDestVar(q)= newVariable(mb,@1,TYPE_any);
 	pushInstruction(mb,q);
 @= pushInt
@@ -159,14 +162,14 @@ int constantAtom(MalBlkPtr mb, atom *a, context *sql){
 	int tp;
 
 	switch (a->type){
-	case int_value: snprintf(buf, BUFSIZ, "%d", a->data.ival); 
+	case int_value: snprintf(buf, BUFSIZ, "%lld", a->data.ival); 
 		tp= TYPE_int;
 		break;
 	case string_value: snprintf(buf, BUFSIZ, "%s", a->data.sval); 
 		tp= TYPE_str;
 		break;
 	case float_value: 
-		snprintf(buf, BUFSIZ, "%fLL", a->data.dval); 
+		snprintf(buf, BUFSIZ, "%E", a->data.dval); 
 			/* float/double requires string as 
 			 * else dbl(0.1), will first be a float and
 			 * then converted to dbl, which results in the
@@ -241,12 +244,13 @@ void dump_header(MalBlkPtr mb, stmt *s, list *l ){
                 s = n->data;
 		old= s->nr;	/* s is mis-used in next macro */
 		name= column_name(s);
-                sql_subtype *type = tail_type(s);
 
 		@:newStmt("sql","column")@
 		@:pushArg(old)@
-		@:pushStr((name)?name:"")@
-		@:pushStr((type)?type->type->sqlname:"")@
+		@:pushStr(name)@
+		@:pushStr(tail_type(s)->type->sqlname)@
+		@:pushInt(tail_type(s)->digits)@
+		@:pushInt(tail_type(s)->scale)@
 		s->nr= old;
         }
 }
@@ -299,6 +303,13 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 
 	switch(s->type){
 	case st_none: break;
+        case st_var: {
+                int val = sql2MAL(m,mb, s->op2.stval, sql);
+		@:newAssignment()@
+		@:pushArgId(s->op1.sval)@
+		@:pushArg(val)@
+        }       break;
+
 	case st_release: 
 		@:SQLprelude@
 		@:newStmt("sql","release")@
@@ -735,6 +746,19 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		@:pushArg(r)@
 		@:SQLpostlude@
 	} break;
+        case st_reljoin: {
+                node *ln = NULL, *rn = NULL;
+		printf("st_reljoin code needed\n");
+		@:SQLprelude@
+		@:newStmt("algebra","ds_link")@
+                for (ln = s->op1.lval->h, rn = s->op2.lval->h; ln && rn; ln = ln->next, rn = rn->next) {
+			int l = sql2MAL(m,mb, ln->data, sql);
+			int r = sql2MAL(m,mb, rn->data, sql);
+			@:pushArg(l)@
+			@:pushArg(r)@
+                }
+		@:SQLpostlude@
+        } break;
 	case st_outerjoin:
 	case st_join: {
 		int l = sql2MAL(m,mb, s->op1.stval, sql);
@@ -876,6 +900,13 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		@:pushArg(l)@
 		@:SQLpostlude@
 	} 	break;
+        case st_mirror: {
+                int l = sql2MAL(m,mb, s->op1.stval, sql);
+                @:SQLprelude@
+                @:newStmt("bat","mirror")@
+                @:pushArg(l)@
+                @:SQLpostlude@
+        }  
 	case st_count: {
 		int l = sql2MAL(m,mb, s->op1.stval, sql);
 		@:SQLprelude@
@@ -1051,7 +1082,7 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 	} 	break;
 	case st_op: {
 		@:SQLprelude@
-		@:newStmt(0,s->op4.funcval->imp)@
+		@:newStmt(0,s->op4.funcval->func->imp)@
 		@:SQLpostlude@
 		break;
 	}
@@ -1060,10 +1091,10 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 		@:SQLprelude@
 		if (s->op1.stval->nrcols){
 			@:newStmt("multiplex","tactics")@
-			@:pushStr(s->op4.funcval->imp)@
+			@:pushStr(s->op4.funcval->func->imp)@
 			@:pushArg(l)@
 		} else {
-			@:newStmt(0, s->op4.funcval->imp)@
+			@:newStmt(0, s->op4.funcval->func->imp)@
 			@:pushArg(l)@
 		}
 		@:SQLpostlude@
@@ -1087,58 +1118,56 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 				r = getDestVar(q);
 		  	}
 			@:newStmt("multiplex","tactics")@
-			@:pushStr(s->op4.funcval->imp)@
+			@:pushStr(s->op4.funcval->func->imp)@
 			@:pushArg(l)@
 			@:pushArg(r)@
 		} else  {
 			@:newStmt("multiplex", "tactics")@
-			@:pushStr(s->op4.funcval->imp)@
+			@:pushStr(s->op4.funcval->func->imp)@
 			@:pushArg(l)@
 			@:pushArg(r)@
 		}
 		@:SQLpostlude@
 	} 	break;
-	case st_triop: {
+	case st_Nop: {
+		int opslen=0,i;
+		int ops[MAXARG];
+		node *n;
+
 		stmt *op1 = s->op1.lval->h->data;
-		stmt *op2 = s->op1.lval->h->next->data;
-		stmt *op3 = s->op1.lval->h->next->next->data;
-		int r1 = sql2MAL(m,mb, op1, sql);
-		int r2 = sql2MAL(m,mb, op2, sql);
-		int r3 = sql2MAL(m,mb, op3, sql);
+		int l = sql2MAL(m,mb, op1, sql);
 		@:SQLprelude@
-		if (op1->nrcols || op2->nrcols || op3->nrcols){
-			int l = 0;
-			if (op1->nrcols) l = r1;
-			if (op2->nrcols) l = r2;
-			if (op3->nrcols) l = r3;
-		  	if (!op1->nrcols){
+		if (s->nrcols ){
+			stmt *h;
+			for (n=s->op1.stval->op1.lval->h, h=n->data; n; n=n->next){
+				stmt *op = n->data;
+				if (op->nrcols > h->nrcols)
+					h = op;
+			}
+
+                        for (n = s->op1.stval->op1.lval->h; n; n=n->next){
+                            stmt *op = n->data;
+                            int n = op->nr;
+                            if (!op->nrcols){
 				@:newStmt("batcalc","zipper")@
 				@:pushArg(l)@
-				@:pushArg(r1)@
-				r1= getDestVar(q);
-		  	}
-		  	if (!op2->nrcols){
-				@:newStmt("batcalc","zipper")@
-				@:pushArg(l)@
-				@:pushArg(r2)@
-				r2= getDestVar(q);
-		  	}
-		  	if (!op3->nrcols){
-				@:newStmt("batcalc","zipper")@
-				@:pushArg(l)@
-				@:pushArg(r3)@
-				r3= getDestVar(q);
-		  	}
+				@:pushArg(n)@
+				ops[opslen++]= getDestVar(q);
+                            }
+                        }
+
 			@:newStmt("multiplex","tactics")@
-			@:pushStr(s->op4.funcval->imp)@
-			@:pushArg(r1)@
-			@:pushArg(r2)@
-			@:pushArg(r3)@
+			@:pushStr(s->op4.funcval->func->imp)@
+			for(i=0;i<opslen;i++){
+				@:pushArg(ops[i])@
+			}
 		} else {
-			@:newStmt(0,s->op4.funcval->imp)@
-			@:pushArg(r1)@
-			@:pushArg(r2)@
-			@:pushArg(r3)@
+			@:newStmt(0,s->op4.funcval->func->imp)@
+			for (n = s->op1.stval->op1.lval->h; n; n=n->next){
+				stmt *op = n->data;
+				int n = op->nr;
+				@:pushArg(n)@
+			}
 		}
 		@:SQLpostlude@
 	} 	break;
@@ -1150,16 +1179,29 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 			int g = sql2MAL(m,mb, s->op3.gval->grp, sql);
 			int e = sql2MAL(m,mb, s->op3.gval->ext, sql);
 			@:newStmt("multiplex","group")@
-			@:pushStr(s->op4.aggrval->imp)@
+			@:pushStr(s->op4.aggrval->aggr->imp)@
 			@:pushArg(l)@
 			@:pushArg(g)@
 			@:pushArg(e)@
 		} else {
-			@:newStmt(0,s->op4.aggrval->imp)@
+			@:newStmt(0,s->op4.aggrval->aggr->imp)@
 			@:pushArg(l)@
 		}
 		@:SQLpostlude@
 	} 	break;
+	case st_temp: {
+		int l,r;
+		@:newStmt("calc","oid")@
+		@:pushInt(0)@
+		@:getReturn(r)@
+		@:newStmt("bat","new")@
+		@:pushArgId("void")@
+		@:pushArgId(s->op4.typeval->type->name)@
+		@:getReturn(l)@
+		@:newStmt("bat","seqbase")@
+		@:pushArg(l)@
+		@:pushArg(r)@
+	} break;
 	case st_atom: {
 		int k;
 		@:SQLprelude@
@@ -1233,36 +1275,59 @@ int sql2MAL(mvc *m, MalBlkPtr mb, stmt *s, context *sql){
 			}
 		}
 	} break;
-	case st_copyfrom: {
-		node *m = s->op2.lval->h;
-		char *tsep = m->data;
-		char *rsep = m->next->data;
-		int k;
-
-		@:SQLprelude@
-		@:newStmt("bbp","new")@
-		@:pushArgId("void")@
-		@:pushArgId("str")@
-		@:getReturn(k)@
-
-		if( s->op3.lval){
-			node *n;
-			for(n= s->op3.lval->h; n; n= n->next){
-				char *file= n->data;
-				@:newStmt("bat","insert")@
-				@:pushArg(k)@
-				@:pushNil@
-				@:pushStr(file)@
-			}
-		}
-		@:newStmt("sql","importTable")@
-		@:pushStr(s->op1.tval->name)@
-		@:pushArg(k)@
-		@:pushStr(tsep)@
-		@:pushStr(rsep)@
-		@:pushInt(s->flag)@
-		@:SQLpostlude@
+        case st_find: {
+                int b =  sql2MAL(m,mb, s->op1.stval, sql);
+                int v =  sql2MAL(m,mb, s->op2.stval, sql);
+		@:newStmt("bat","find")@
+		@:pushArg(b)@
+		@:pushArg(v)@
 	} break;
+       case st_bulkinsert: {
+                char *tname = s->op1.stval->op1.tval->name;
+                int sep =  sql2MAL(m,mb, s->op2.stval, sql);
+                int rsep = sql2MAL(m,mb, s->op3.stval, sql);
+
+                if (s->op4.stval){
+			int file = sql2MAL(m,mb, s->op4.stval, sql);
+			int codeset,iconv;
+			
+			@:newStmt("str","codeset")@
+			@:getReturn(codeset)@
+
+			@:newStmt("str","iconv")@
+			@:pushArg(file)@
+			@:pushStr("UTF-8")@
+			@:pushArg(codeset)@
+			@:getReturn(iconv)@
+
+			@:newStmt("io","open_rastream")@
+			@:getReturn(iconv)@
+
+			@:newStmt("sql","importTable")@
+			@:pushArg(file)@
+			@:pushStr(tname)@
+			@:pushArg(sep)@
+			@:pushArg(rsep)@
+			@:pushArg(s->flag)@
+
+			@:newStmt("io","stream_close")@
+			@:pushArg(file)@
+                } else {
+			@:newStmt("sql","importTable")@
+			@:pushArgId("Input")@
+			@:pushStr(tname)@
+			@:pushArg(sep)@
+			@:pushArg(rsep)@
+			@:pushArg(s->flag)@
+                }
+        } break;
+        case st_senddata: {
+		@:newStmt("sql","senddata")@
+		@:pushArgId("Output")@
+        } break;
+        case st_filter:
+                s->nr = -sql2MAL(m,mb, s->op1.stval, sql);
+                break;
 	case st_ordered: {
 		int l =  sql2MAL(m,mb, s->op1.stval, sql);
 		sql2MAL(m,mb, s->op2.stval,sql);

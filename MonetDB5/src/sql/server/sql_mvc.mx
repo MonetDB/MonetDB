@@ -37,12 +37,29 @@
 #include "sql_logger.h"
 #include <statement.h>
 #include <types.h>
+#include <bulk_io.h>
 #include <sqlexecute.h>
 
 #define ISO_READ_UNCOMMITED 1
 #define ISO_READ_COMMITED   2
 #define ISO_READ_REPEAT	    3
 #define ISO_SERIALIZABLE    4
+
+#ifndef QUERY_H
+#define QUERY_H
+
+typedef enum sql_query_t {
+        QEND = 0,
+        QPARSE = 1,
+        QRESULT = 2,
+        QTABLE = 3,
+        QUPDATE = 4,
+        QDATA = 5,
+        QCREATE = 6,
+        QDEBUG = 7
+} sql_query_t;
+
+#endif /* QUERY_H */
 
 typedef int sqlid;
 
@@ -160,6 +177,24 @@ typedef struct sql_trans {
 	struct sql_trans *parent; /* multilevel transaction support */
 } sql_trans;
 
+
+typedef struct res_col {
+        char *name;
+        sql_subtype *type;
+        bat b;
+        int mtype;
+        ptr *p;
+} res_col;
+
+typedef struct res_table {
+        int id;
+        int nr_cols;
+        int cur_col;
+        res_col *cols;
+        bat order;
+        struct res_table *next;
+} res_table;
+
 @-
 The state of the compilation phase is administered in a state vector.
 Given that declarations are never nested recursively, we can use an
@@ -189,6 +224,12 @@ typedef struct MVC {
 	char *role;
 	int btop;
 	mvcbinding binding[MAXBIND];
+
+        int type;
+        ssize_t status;
+        int result_id;
+        res_table *results;
+
 } mvc;
 
 
@@ -245,10 +286,17 @@ extern sql_key *mvc_create_key( mvc *m, char *sname,
                         BAT *columns, sql_key *fk );
 extern void mvc_drop_key( mvc *c, sql_table *t, char *kname );
 
-extern void mvc_export(stream *s, BAT *order, BAT *bats, char *sep, char *rsep);
-extern str mvc_export_schema( mvc *c, stream *s );
+extern int mvc_result_table( mvc *c, int nr_cols, BAT *order );
+extern int mvc_result_row( mvc *c, int nr_cols );
+extern int mvc_result_column( mvc *c, char *name, char *typename, int digits, int scale, BAT *b);
+extern int mvc_result_value( mvc *c, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
+
+extern int mvc_export_result( mvc *c, stream *s, int res_id );
+extern int mvc_export_table( mvc *c, stream *s, int res_id, int offset, int nr, char *sep, char *rsep);
 extern ssize_t mvc_import_table( mvc *c, stream *s, char *tname, char *sep, char *rsep, int nr);
 
+extern void mvc_export(stream * s, BAT * order, BAT * bats, char *sep,
+		char *rsep);
 #endif /*__MVC_H_*/
 @-
 The internal administration of the SQL compilation and execution state
@@ -293,19 +341,6 @@ getschemas(@1,lc,lc->cat, "default-schema", "default-user");
 @c
 #include "mal_scenario.h"
 #include "sql_mvc.h"
-
-str sql_type_wrap(str *sqlname, int *digits, int *scale, int *radix, str *name){
-	sql_create_type( *sqlname, *digits, *scale, *radix,*name);
-	return MAL_SUCCEED;
-}
-str sql_aggr_wrap(int *ret, str *name, str *imp, str *atp, str *rtp){
-	sql_create_aggr( *name, *imp, *atp, *rtp );
-	return MAL_SUCCEED;
-}
-str sql_func_wrap(int *ret, str *name, str *imp, str *tp1, str *tp2, str *tp3, str *rtp){
-	sql_create_func( *name, *imp, *tp1, *tp2, *tp3, *rtp );
-	return MAL_SUCCEED;
-}
 
 str mvc_create_wrap(int *ret, int *debug ){
 	mvc *res;
@@ -641,15 +676,6 @@ str mvc_create_key_wrap( int *ret, str *name, int *kt, int *bid, int *fk){
 	*ret =0;
         return MAL_SUCCEED;
 }
-@-
-OLD stuff
-str mvc_export_schema_wrap(int *ret, stream *s ){
-	mvc *c;
-	@:getContext(c,mvc)@
-	mvc_export_schema( c, *(stream**)s );
-	return MAL_SUCCEED;
-}
-@c
 
 str mvc_export_wrap(int *ret, stream *s, int *border, int *bids, str *sep, str *rsep ){
 	BAT *order, *bats;
@@ -764,7 +790,10 @@ static BAT *sys_bat( struct bm *bm, char *name ) {
 static BAT *col_bind( sql_trans * tr, oid lbid, sql_column *c, int access )
 {
 	BAT *b = bm_lbid2bat(tr->bm, lbid);
-	if (access && c->wtime == 0) {	/* first write ie. need to copy */
+	if (access && !bm_lbid2mode(tr->bm, lbid)) {	/* first write ie. need to copy */
+		if (mvc_debug)
+                        fprintf(stderr, "new bat for column %s.%s\n",
+                                c->t->name, c->name );
 		b = bat_lcopy(b);
 		c->wtime = c->t->wtime = c->t->s->wtime = tr->wtime = tr->stime;
 		bm_new_bat(tr->bm, lbid, b->batCacheid);
@@ -785,7 +814,7 @@ static BAT *bind_ubat( sql_trans *tr, sql_column *c, int access )
 static BAT *tab_bind( sql_trans * tr, oid lbid, sql_table *t, int access )
 {
 	BAT *b = bm_lbid2bat(tr->bm, lbid);
-	if (access && t->wtime == 0) {	/* first write ie. need to copy */
+	if (access && !bm_lbid2mode(tr->bm, lbid)) {	/* first write ie. need to copy */
 		b = bat_lcopy(b);
 		t->wtime = t->s->wtime = tr->wtime = tr->stime;
 		bm_new_bat(tr->bm, lbid, b->batCacheid);
@@ -1110,6 +1139,9 @@ static sql_column *load_column(sql_trans *tr, sql_table *t, BAT * columns, BUN j
 	snprintf(name, BUFSIZ, "U_%s_%s", t->name, c->name );
 	c->ubid = bm_find_bat(tr->bm, name);
 
+        if (mvc_debug)
+                fprintf(stderr, "\t\tload column %s\n", c->name);
+
 	if (c->bid && c->ubid){
 		BAT *ub = bm_lbid2bat(tr->bm, c->ubid);
 		BAT *db = bm_lbid2bat(tr->bm, t->dbid);
@@ -1179,6 +1211,9 @@ static sql_table *load_table(sql_trans *tr, sql_schema *s, BAT * tables, BUN j)
 	bat_destroy(cols);
 	cols = BATmirror(rcols);
 
+	if (mvc_debug)
+                fprintf(stderr, "\tload table %s\n", t->name);
+
 	if (t->type != tt_view) {
 		BATloop (cols,p,q)
 			list_append(t->columns, load_column(tr, t, cols, p));
@@ -1222,6 +1257,9 @@ static sql_schema *load_schema(sql_trans *tr, BAT * schemas, BUN j)
 	s->wtime = s->rtime = 0;
 	s->flag = TR_OLD;
 
+        if (mvc_debug)
+                fprintf(stderr, "load schema %s\n", s->name);
+
 	tables = BATselect(table_schema, (ptr) & s->id, (ptr) & s->id);
 	BATloop(tables,p,q)
 		list_append(s->tables, load_table(tr, s, tables, p));
@@ -1252,6 +1290,9 @@ static sql_trans *load_trans(struct bm *bm)
 	t->dschemas = NULL;
 	t->nschema = NULL;
 	t->keys = list_create(NULL);
+
+        if (mvc_debug)
+                fprintf(stderr, "load trans\n");
 
 	BATloop(schema_ids,p,q)
 		list_append(t->schemas, load_schema(t, schema_ids, p));
@@ -1450,11 +1491,20 @@ static BAT *mvc_bat( struct bm *bm, char *name, int type)
 		fprintf(stderr, "mvc_bat %s bid %d\n", name, id);
 
 	if (id == 0) {
+                if (mvc_debug)
+                        fprintf(stderr, "mvc_bat created %s bid %d\n", name,id);
 		b = BATnew( TYPE_void, type, BUFSIZ );
 		BATseqbase(b,0);
 		bm_add_bat(bm, b->batCacheid, name, 0 /* do not use a transaction id */);
 	} else {
-		b = bat_lcopy(bm_lbid2bat(bm, id));
+		if (mvc_debug)
+                        fprintf(stderr, "mvc_bat loaded %s bid %d\n", name, id);
+                b = bm_lbid2bat(bm, id);
+                if (!bm_lbid2mode(bm, id)){
+                        b = bat_lcopy(b);
+                        bm_new_bat(bm, id, b->batCacheid);
+  
+		}
 	}
 	return b;
 }
@@ -1696,7 +1746,7 @@ void mvc_init(int debug)
 
         parser_init(debug);
 
-        bm = bm_create();
+        bm = bm_create(debug);
         logger = logger_create(mvc_debug, logdir, dbname, bm);
 
 	mvc_init_schema(bm);
@@ -1915,25 +1965,29 @@ mvc *mvc_create(int debug)
 	m->privileges = 0;
 	m->trans = NULL;
 	m->trans = trans_dup(gtrans,NULL);
+        m->status = 0;
+        m->type = QPARSE;
+
+        m->result_id = 0;
+        m->results = NULL;
 
 	MT_unset_lock(mvc_lock, "mvc_create");
 	return m;
 }
 
-size_t mvc_status( mvc *c ){
-	sql_trans *t = c->trans;
-	int res = t->status;
+size_t mvc_status(  mvc *m ){
+        int res = m->status;
 
-	t->status = 0;
-	return res;
+        m->status = 0;
+        return res;
 }
 
-int mvc_type( mvc *c ){
-	sql_trans *t = c->trans;
-	int res = t->type;
 
-	t->type = 0;
-	return res;
+int mvc_type( mvc *m ){
+        int res = m->status;
+
+        m->status = 0;
+        return res;
 }
 
 static void create_key(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_key *gk )
@@ -1944,7 +1998,7 @@ static void create_key(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_key 
 
 	snprintf(bname, BUFSIZ, "%c_%s_%s", keychar, gt->name, gk->name );
 	gk->bid = log_bat_persists(logger, b, bname); 
-	BBPunfix(b->batCacheid);
+	bat_destroy(b);
 }
 
 static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_column *gc )
@@ -1958,11 +2012,11 @@ static void create_column(sql_trans * ctr, sql_schema * gs, sql_table *gt, sql_c
 
 	snprintf(bname, BUFSIZ, "%s_%s", gt->name, gc->name );
 	gc->bid = log_bat_persists(logger, b, bname); 
-	BBPunfix(b->batCacheid);
+	bat_destroy(b);
 
 	snprintf(bname, BUFSIZ, "U_%s_%s", gt->name, gc->name );
 	gc->ubid = log_bat_persists(logger, u, bname); 
-	BBPunfix(u->batCacheid);
+	bat_destroy(u);
 }
 
 static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
@@ -1976,107 +2030,64 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 	n = ct->columns->h;
 	m = gt->columns->h;
 	if (n && m) {
-		BAT *cdb = bm_lbid2bat( ctr->bm, ct->dbid );
-		BAT *cob = bm_lbid2bat( ctr->bm, ct->obid );
-
-		BAT *ds = BATalpha(cdb);
-		BAT *os = BATalpha(cob);
-
-		BBPunfix(cdb->batCacheid);
-		BBPunfix(cob->batCacheid);
+		BAT *db = bm_lbid2bat( ctr->bm, ct->dbid );
+		BAT *ob = bm_lbid2bat( ctr->bm, ct->obid );
 
                 gt->rtime = ct->rtime;
                 gt->wtime = ct->wtime;
 
-		do { /* TODO move the logic for keeping intersections
-			between I_,U_ and D_ empty into the sql2mil 
-			layer */
+		do { 
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
 
-			BAT *cb = bm_lbid2bat( ctr->bm, cc->bid);
-			BAT *cub = bm_lbid2bat( ctr->bm, cc->ubid);
-			BAT *ob = bind_bat(gtr, oc, 1);
-
-			BAT *ups = BATalpha(cub);
-			BAT *ins = BATalpha(cb);
-
-			BBPunfix(cb->batCacheid); cb = NULL;
-			BBPunfix(cub->batCacheid); cub = NULL;
+			BAT *ins = bm_lbid2bat( ctr->bm, cc->bid);
+			BAT *ups = bm_lbid2bat( ctr->bm, cc->ubid);
+			BAT *gob = bind_bat(gtr, oc, 1);
 
                 	oc->rtime = cc->rtime;
                 	oc->wtime = cc->wtime;
 
-				/* if inserted in this transaction
-				   	remove from ins,ups,ds */
-/*
-			if (BATcount(ds)) {
-				BAT *ins_del = BATsemijoin(ins,BATmirror(ds));
-				if (BATcount(ins_del)) {
-					BAT *nins = BATkdiff(ins,ins_del);
-					BAT *nds = BATmirror(BATkdiff(
-						BATmirror(ds),ins_del));
-					BAT *nups = BATkdiff(ups,ins_del);
-					BBPunfix(ins->batCacheid);
-					BBPunfix(nds->batCacheid);
-					BBPunfix(nups->batCacheid);
-					ins = nins;
-					ds = nds;
-					ups = nups;
-				}
-				BBPunfix(ins_del->batCacheid);
+			/* forward inserts */
+			if (ins->batInserted < BUNlast(ins)) {
+				void_insert_delta(gob, ins);
+				log_bat(logger, oc->bid, gob);
 			}
-*/
-			/* forward inserts  (not values directly deleted */
-			if (BATcount(ins)) {
+			bat_destroy(ins);
 
-/* for now keep both updates and inserts (needed for proper void handling
-				if (BATcount(ups)){
-					BAT *ups_ins = BATkdiff(ups,ins);
-					BBPunfix(ups->batCacheid);
-					ups = ups_ins;
-				}
-*/
-
-				void_insert_bat(ob, ins);
-				log_bat(logger, oc->bid, ob);
-			}
-			if (BATcount(ds)) {
-				BAT *nds = BATkdiff(BATmirror(ds), ins);
-				void_delete_bat(ob, BATmirror(nds));
-				BBPunfix(nds->batCacheid);
-			}
-			if (BATcount(ups)) {
+			if (ups->batInserted < BUNlast(ups)) {
 				BAT *oub = bind_ubat(gtr, oc, 1);
-				void_insert_bat(oub, ups);
-				void_replace_bat(ob, ups);
+				void_insert_delta(oub, ups);
+				void_replace_delta(gob, ups);
 				log_bat(logger, oc->ubid, oub);
-				BBPunfix(oub->batCacheid);
+				bat_destroy(oub);
 			}
 
-			BBPunfix(ob->batCacheid);
-			BBPunfix(ins->batCacheid);
-			BBPunfix(ups->batCacheid);
+			if (db->batInserted < BUNlast(db)) {
+				void_delete_bat(gob, db, 1);
+			}
+
+			bat_destroy(gob);
+			bat_destroy(ups);
 
 			n = n->next;
 			m = m->next;
 		} while (n && m);
 
-		if (BATcount(ds)) {
+		if (db->batInserted < BUNlast(db)) {
 			BAT *odb = bind_dbat(gtr, gt, 1);
-			void_insert_bat(odb, ds);
+			void_insert_delta(odb, db);
 			log_bat(logger, gt->dbid, odb);
-			BBPunfix(odb->batCacheid);
+			bat_destroy(odb);
 		}
-		if (BATcount(os)) {
-			BAT *oob = bind_obat(gtr, gt, 1);
-			void_insert_bat(oob, os);
-			log_bat(logger, gt->obid, oob);
-			BBPunfix(oob->batCacheid);
-		}
+		bat_destroy(db);
 
-		BBPunfix(ds->batCacheid);
-		BBPunfix(os->batCacheid);
+		if (ob->batInserted < BUNlast(ob)) {
+			BAT *oob = bind_obat(gtr, gt, 1);
+			void_insert_delta(oob, ob);
+			log_bat(logger, gt->obid, oob);
+			bat_destroy(oob);
+		}
+		bat_destroy(ob);
 	}
 	for(; n; n = n->next){
 		sql_column *c = n->data;
@@ -2091,7 +2102,6 @@ static void rollforward_table(sql_trans * ctr, sql_schema * gs, sql_table * ct)
 		}
 	}
 }
-
 static void create_keys(sql_trans * tr, sql_schema * s, sql_table * t)
 {
 	node *n;
@@ -2357,7 +2367,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		log_tend(logger);
 		if (m->debug)
 			fprintf(stderr, "done forwarding changes\n");
-		res = 0;
+		res = QPARSE;
 	}
 
 	MT_unset_lock(mvc_lock, "mvc_commit");
@@ -2371,7 +2381,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 
 	m->trans = trans_dup(tr,NULL);
 	m->trans->level = level;
-	m->trans->status = res;
+	m->type = res;
 	m->trans->schema = find_schema(m->trans, schema);
 	_DELETE(schema);
 	return res;
@@ -2396,7 +2406,7 @@ int mvc_rollback(mvc * m, int chain, char *name)
 		m->trans = trans_dup(tr,NULL);
 	}
 	m->trans->level = level;
-	m->trans->status = 0;
+	m->type = QPARSE;
 	return res;
 }
 
@@ -2405,34 +2415,75 @@ int mvc_rollback(mvc * m, int chain, char *name)
  * */
 int mvc_release(mvc * m, char *name)
 {
-	int res = 0;
-	sql_trans *tr = m->trans;
-	sql_trans *p = tr->parent;
+        int res = QPARSE;
+        sql_trans *tr = m->trans;
+        sql_trans *p = tr->parent;
 
-	while(p->name && strcmp(p->name, name) != 0)
-	   	p = trans_destroy(p);
+        while(p->name && strcmp(p->name, name) != 0)
+                p = trans_destroy(p);
 
-	tr->parent = p; 
-	m->trans = tr; /* restart at savepoint */
-	m->trans->status = res;
-	return res;
+        tr->parent = p;
+        m->trans = tr; /* restart at savepoint */
+        m->type = res;
+        return res;
 }
 
 int mvc_set_iso_level(mvc * m, int level)
 {
 	int res = mvc_commit(m,1,NULL);
 	m->trans->level = level;
-	m->trans->status = res;
+	m->type= res;
 	return res;
+}
+
+static void clean_table_result(res_table *t)
+{
+        int i;
+        for(i=0; i<t->nr_cols; i++){
+                res_col *c = t->cols+i;
+                if (c->b){
+                        BBPtransient(c->b, FALSE);
+                } else {
+                        _DELETE(c->p);
+                }
+                _DELETE(c->name);
+        }
+        if (t->order)
+                BBPtransient(t->order, FALSE);
+        _DELETE(t->cols);
+        _DELETE(t);
+}
+
+static void clean_result( mvc *m, res_table *t)
+{
+        res_table *r = m->results;
+        if (r == t){
+                m->results = t->next;
+        } else {
+                for( ; r; r = r->next){
+                        if (r->next == t){
+                                r->next = t->next;
+                                break;
+                        }
+                }
+        }
+        clean_table_result(t);
 }
 
 void mvc_destroy(mvc * m)
 {
 	sql_trans *tr;
 
-	tr = m->trans;
-	while(tr->parent) tr = trans_destroy(tr);
-	_DELETE(m);
+        if (m->results){
+                res_table *r = m->results, *t;
+                for(t=r; t; t=r){
+                        r = t->next;
+                        clean_table_result(t);
+                }
+        }
+        tr = m->trans;
+        while(tr->parent) tr = trans_destroy(tr);
+        _DELETE(m);
 }
 
 BAT *mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
@@ -2802,6 +2853,7 @@ sql_schema *mvc_create_schema(mvc * m, char *name, char *auth)
 	BUNins(b, (ptr) & rid, (ptr) s->auth); BBPunfix(b->batCacheid);
 
 	sysschema->wtime = s->wtime = tr->wtime = tr->stime;
+        m->type = QCREATE;
 	return s;
 }
 
@@ -2974,6 +3026,7 @@ sql_key *mvc_create_key( mvc * m, char *sname, char *tname, char *name, int kt, 
 	}
 
 	syskey->wtime = syskc->wtime = tr->stime;
+        m->type = QCREATE;
 	return nk;
 }
 
@@ -3092,6 +3145,7 @@ sql_table *mvc_create_table(mvc * m, sql_schema *s, char *name, int type)
 	}
 
 	t->wtime = s->wtime = tr->wtime = tr->stime;
+        m->type = QCREATE;
 	return t;
 }
 
@@ -3126,6 +3180,7 @@ sql_table *mvc_create_view(mvc * m, sql_schema *s, char *name, char *sql)
 	BUNins(b, (ptr)&rid, t->query ); BBPunfix(b->batCacheid);
 
 	systable->wtime = t->wtime = s->wtime = tr->wtime = tr->stime;
+        m->type = QCREATE;
 	return t;
 }
 
@@ -3270,6 +3325,7 @@ static sql_column *mvc_create_column_bat(mvc * m, sql_table *t, char *name,
 	BUNins(b, (ptr) & rid, (ptr) & col->colnr); BBPunfix(b->batCacheid);
 
 	syscolumn->wtime = tr->stime;
+        m->type = QCREATE;
 	return col;
 }
 
@@ -3335,14 +3391,14 @@ void mvc_drop_column(mvc * m, sql_table *t, char *name)
 	col->wtime = t->wtime = tr->wtime = tr->stime;
 }
 
-sql_column * mvc_null(mvc * m, sql_column * col, int flag)
+sql_column * mvc_null(mvc * m, sql_column * col, int isnull)
 {
 	sql_trans *tr = m->trans;
 
 	if (m->debug)
-		fprintf(stderr, "mvc_null %s %d\n", col->name, flag);
+		fprintf(stderr, "mvc_null %s %d\n", col->name, isnull);
 
-        if (col->null != flag){
+        if (col->null != isnull){
                 sql_table *syscolumn = find_table(find_schema(tr, "sys"), "columns");
                 BAT *b, *r;
                 oid rid = 0;
@@ -3353,15 +3409,15 @@ sql_column * mvc_null(mvc * m, sql_column * col, int flag)
                 rid = *(oid*)BUNtail(r, BUNfnd(r, (ptr) & col->id ));
                 BBPunfix(b->batCacheid);
                 b = bind_bat(tr, find_column(syscolumn, "null"), 1);
-                bun_inplace(b, rid, &flag);
+                bun_inplace(b, rid, &isnull);
                 BBPunfix(b->batCacheid);
 
                 if (col->flag != TR_NEW) {
                         b = bind_ubat(tr, find_column(syscolumn, "null"), 1);
-                        BUNins(b, (ptr) & rid, (ptr) & flag);
+                        BUNins(b, (ptr) & rid, (ptr) & isnull);
                         BBPunfix(b->batCacheid);
                 }
-                col->flag = flag;
+                col->flag = isnull;
                 col->wtime = tr->wtime = tr->stime;
         }
 
@@ -3417,6 +3473,7 @@ sql_role *mvc_create_role( mvc *m, sql_schema *s, char *name, int grantor )
 	list_append(s->roles, role);
 
 	s->wtime = tr->wtime = tr->stime;
+        m->type = QCREATE;
 	return role;
 }
 

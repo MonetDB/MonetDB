@@ -26,8 +26,8 @@ comment "Switch to processing SQL statements";
 
 command header(i:int) = SQLheader
 comment "Generate a table header for an SQL frontend";
-command column(i:any, v:str,t:str) = SQLcolumnsingle;
-command column(b:bat, v:str,t:str) = SQLcolumn
+command column(i:any, v:str,t:str,digits:int,scale:int) = SQLcolumnsingle;
+command column(b:bat, v:str,t:str,digits:int,scale:int) = SQLcolumn
 comment "Rename a table column";
 
 pattern output(a:any...)= SQLoutput;
@@ -41,17 +41,6 @@ version 5.  It is an adaptation of the original V4.3 code base.
 The original wrapper code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
-command sqlType(sqlname:str, digits:int, scale:int, radix:int, name:str):void 
-	= sql_type_wrap 
-comment "Add a new sql type";
-
-command sqlAggr(name:str, imp:str, atp:str, rtp:str):void = sql_aggr_wrap
-comment "Add a new sql aggregate function";
-
-command sqlFunc(name:str, imp:str, tp1:str, tp2:str, tp3:str, rtp:str):void
-		= sql_func_wrap
-comment "Add a new sql function";
-
 command createCatalog( debug:int ) : void = mvc_create_wrap
 comment "Create multi version catalog";
 
@@ -344,8 +333,8 @@ int SQLsetEnvironment(Client c){
 			InstrPtr q;
 			c->nxt+= 5;
 			q= newInstruction(ASSIGNsymbol);
-			q->modname= GDKstrdup("system");
-			q->fcnname= GDKstrdup("quit");
+			moduleId(q)= GDKstrdup("system");
+			functionId(q)= GDKstrdup("quit");
 			pushInstruction(c->curprg->def,q);
 			return 0;
 		} else
@@ -356,10 +345,10 @@ int SQLsetEnvironment(Client c){
 				InstrPtr q;
 				c->nxt+= 6;
 				q= newInstruction(ASSIGNsymbol);
-				q->fcnname= GDKstrdup("showFunction");
+				functionId(q)= GDKstrdup("showFunction");
 				pushInstruction(c->curprg->def,q);
 				q= newInstruction(ASSIGNsymbol);
-				q->fcnname= GDKstrdup("mdb");
+				functionId(q)= GDKstrdup("mdb");
 				q= pushArgument(c->curprg->def,q,
 					     newConstant(c->curprg->def,TYPE_bit,
 						       GDKstrdup("true"),0));
@@ -423,7 +412,7 @@ str SQLparser(Client c) {
 	if(debug){
 		InstrPtr q;
 		q= newInstruction(ASSIGNsymbol);
-		q->fcnname= GDKstrdup("mdb");
+		functionId(q)= GDKstrdup("mdb");
 		q= pushArgument(c->curprg->def,q,
 			     newConstant(c->curprg->def,TYPE_bit,
 				       GDKstrdup("false"),0));
@@ -474,11 +463,11 @@ str SQLheader(int *ret,int *i){
 	return MAL_SUCCEED;
 }
 
-str SQLcolumn(int *ret, int *bid, str *v, str *t){
+str SQLcolumn(int *ret, int *bid, str *v, str *t, int *digits, int *scale){
 	CMDsetRole(ret,bid,t,v);
 	return MAL_SUCCEED;
 }
-str SQLcolumnsingle(int *ret, int *cnr, str *v, str *t){
+str SQLcolumnsingle(int *ret, int *cnr, str *v, str *t, int *digits, int *scale){
 	/* do nothing for the time being, later, package it as a table */
 	return MAL_SUCCEED;
 }
