@@ -192,13 +192,16 @@ def msc_deps(fd,deps,objext, msc):
             fd.write( tf + ":" )
             _in = []
             for d in deplist:
-                dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d,msc)),msc)
+    	      if not os.path.isabs(d):
+               	dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d,msc)),msc)
                 if dep[-3:] == '.in':
                     if dep not in msc['_IN']:
                         _in.append((d[:-3],dep))
                     dep = d[:-3]
                 if (dep != t):
                     fd.write( " " + dep)
+	      else:
+		print("!WARNING: dropped absolute dependency " + d ) 
             fd.write("\n")
             for x,y in _in:
                 # TODO

@@ -166,7 +166,10 @@ def am_deps(fd,deps,objext, am):
                 fd.write( n + " " )
             fd.write( t + ":" )
             for d in deplist:
-                fd.write( " " + am_translate_dir(d,am) )
+    		if not os.path.isabs(d):
+                	fd.write( " " + am_translate_dir(d,am) )
+		else:
+			print("!WARNING: dropped absolute dependency " + d ) 
             fd.write("\n")
     am['DEPS'].append("DONE")
 

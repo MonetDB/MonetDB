@@ -412,9 +412,9 @@ def read_depsfile(incdirs, cwd, topdir):
         abs = 0
         if len(dirs) > 1:
             abs = 1
-            print ("!WARNING: "+i+" is bound to a list of paths!")
-            print ("!WARNING: this leads to the use of absolute paths in:")
-            print ("!WARNING: "+cwd+os.sep+"Makefile.am")
+            #print ("!WARNING: "+i+" is bound to a list of paths!")
+            #print ("!WARNING: this leads to the use of absolute paths in:")
+            #print ("!WARNING: "+cwd+os.sep+"Makefile.am")
 
         for dir in dirs:
             if abs > 0:
