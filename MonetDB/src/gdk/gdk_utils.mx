@@ -468,7 +468,7 @@ the memory consumption.
 #define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT		((int) (sizeof(long)<<3))
 
-#if (defined(WIN32) || defined(IRIX) || defined(AIX))
+#if (defined(WIN32) || defined(__sgi) || defined(_AIX))
 #define GDK_MEM_BIGSIZE	LL_CONSTANT(131072)     /* offload malloc fragmentation pressure */
 #else
 #define GDK_MEM_BIGSIZE	LL_CONSTANT(33554432)   /* robust malloc: use up till 32MB */ 

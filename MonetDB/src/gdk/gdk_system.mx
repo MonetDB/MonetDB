@@ -263,7 +263,9 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
         (void)sigfillset(&new_mask);
         (void)sigdelset(&new_mask, SIGINT);
         (void)sigdelset(&new_mask, SIGQUIT);
+#ifndef __sgi
         (void)sigdelset(&new_mask, SIGALRM); /* else sleep doesn't work */
+#endif
         (void)pthread_sigmask(SIG_SETMASK, &new_mask, &orig_mask);
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);

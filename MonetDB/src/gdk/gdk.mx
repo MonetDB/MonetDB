@@ -248,7 +248,7 @@ An error at this stage normally lead to an abort.
 #include <config.h>
 #endif
 
-#ifdef AIX
+#ifdef _AIX
 #ifndef _H_LOCALEDEF
 #define _H_LOCALEDEF
 #endif
