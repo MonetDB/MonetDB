@@ -551,11 +551,15 @@ that for the moment are defined as procs.
                 }
         }
 	var r := new(ht, tt, sz);
-	if ((tt == void) and (not(isnil(b.reverse.seqbase())))) {
-		r.reverse.seqbase( b.reverse.seqbase() );
+	if (tt = void) {
+		if (not(isnil(b.reverse.seqbase()))) {
+			r.reverse.seqbase( b.reverse.seqbase() );
+		}
 	}
-	if ((ht == void) and (not(isnil(a.seqbase())))) {
-		r.seqbase( a.seqbase() );
+	if (ht = void) {
+		if (not(isnil(a.seqbase()))) {
+			r.seqbase( a.seqbase() );
+		}
 	}
 	return r;
     }
@@ -741,10 +745,32 @@ that for the moment are defined as procs.
             "sorts a BAT according to its head (primary) and tail values (secondary).\
              (straight forward hack, not tuned for performance at all, just used for testing.)", "algebra");
 
-@= sumprodavg
+@= milsumprod
     proc sum( bat[any,@1] b ) : @1 { return sum_@1(b); }
     proc prod( bat[any,@1] b ) : @1 { return prod_@1(b); }
+@mil
+@:milsumprod(uchr)@
+@:milsumprod(sht)@
+@:milsumprod(int)@
+@:milsumprod(lng)@
+@:milsumprod(flt)@
+@:milsumprod(dbl)@
 
+@= avg2
+    proc avg(BAT[any, @1] b) : dbl {
+	var cnt := count(b);
+        if (cnt = 0) 
+	    return dbl(nil);
+	return dbl(sum_lng(b))/dbl(cnt);
+    }
+    ADDHELP("avg", "manegold", "May 14 2003",
+            "Gives the average of all tail values.", "algebra");
+@mil
+@:avg2(uchr)@
+@:avg2(sht)@
+@:avg2(int)@
+
+@= avg
     proc avg(BAT[any, @1] b) : dbl {
 	var cnt := count(b);
         if (cnt = 0) 
@@ -754,13 +780,11 @@ that for the moment are defined as procs.
     ADDHELP("avg", "manegold", "May 14 2003",
             "Gives the average of all tail values.", "algebra");
 @mil
-@:sumprodavg(uchr)@
-@:sumprodavg(sht)@
-@:sumprodavg(int)@
-@:sumprodavg(lng)@
-@:sumprodavg(flt)@
-@:sumprodavg(dbl)@
+@:avg(lng)@
+@:avg(flt)@
+@:avg(dbl)@
 
+@mil
     proc count_no_nil(BAT[any,any] b) : int {
 		return count(b,TRUE);
     }
