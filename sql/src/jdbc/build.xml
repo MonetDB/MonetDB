@@ -6,7 +6,7 @@
 
 -->
 
-<project name="monetdbJDBC" default="all" basedir=".">
+<project name="MonetJDBC" default="all" basedir=".">
 
   <!-- set global properties for this build -->
   <property name="srcdir"   value="." />
@@ -23,37 +23,57 @@
   </target>
 
 
-  <!-- create the jar file -->
-  <target name="jar" depends="compile,examples">
-    <jar jarfile="${jardir}/monetjdbc.jar">
-      <fileset dir="${builddir}">
-        <include name="${package}/**/*.class" />
-      </fileset>
-    </jar>
-
-    <jar jarfile="${jardir}/examples.jar">
+  <!-- create a distribution jar file -->
+  <target name="jar" depends="compile">
+    <!-- the driver + JdbcClient -->
+    <jar jarfile="${jardir}/MonetJDBC.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
         <include name="*.class" />
         <include name="${package}/**/*.class" />
       </fileset>
-	  <manifest>
-	    <attribute name="Main-Class" value="JdbcClient" />
-	  </manifest>
 	</jar>
+	<!-- we do not jar the examples, for that's useless -->
   </target>
 
   <target name="compile" depends="prepare,driver">
-    <echo message="Debug is ${debug}" />
-    <javac classpath="{$srcdir}" srcdir="${srcdir}" destdir="${builddir}" debug="${debug}">
-       <include name="${package}/*.java" />
-	   <!-- currently no more than this, in the future probably will -->
+    <echo message="Debug is ${debug}, optimize is ${optimize}" />
+	<echo message="Compiling JDBC driver" />
+    <javac
+		classpath="${srcdir}"
+		srcdir="${srcdir}"
+		destdir="${builddir}"
+		debug="${debug}"
+		optimize="${optimize}"
+	>
+       <include name="${package}/**/*.java" />
+    </javac>
+	<echo message="Compiling JdbcClient" />
+    <javac
+		classpath="${builddir}"
+		srcdir="${srcdir}/example"
+		destdir="${builddir}"
+		debug="${debug}"
+		optimize="${optimize}"
+	>
+       <include name="JdbcClient.java" />
+    </javac>
+	<echo message="Compiling examples" />
+    <javac
+		classpath="${builddir}"
+		srcdir="${srcdir}/example"
+		destdir="${builddir}/example"
+		debug="${debug}"
+		optimize="${optimize}"
+	>
+       <include name="*.java" />
+	   <exclude name="JdbcClient.java" />
     </javac>
   </target>
 
   <target name="check_driver">
-    <uptodate targetfile="${package}/Driver.java" property="driver.uptodate">
+    <uptodate targetfile="${package}/MonetDriver.java" property="driver.uptodate">
       <srcfiles dir=".">
-      <include name="${package}/Driver.java.in"/>
+      <include name="${package}/MonetDriver.java.in"/>
       <include name="build.properties"/>
       <include name="build.local.properties" />
       </srcfiles>
@@ -102,20 +122,23 @@
         <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
       </not>
     </condition>
+    <!-- use the enable_optimize option from configure -->
+    <condition property="optimize" value="true">
+      <and>
+        <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
+      </and>
+    </condition>
+    <condition property="optimize" value="false">
+      <not>
+        <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
+      </not>
+    </condition>
     <mkdir dir="${builddir}" />
+    <mkdir dir="${builddir}/example" />
     <mkdir dir="${jardir}" />
   </target>
 
-
-  <!-- This builds the examples -->
-  <target name="examples" depends="compile">
-    <javac classpath="{$builddir}" srcdir="${srcdir}" destdir="${builddir}" debug="${debug}">
-      <include name="example/*.java" />
-    </javac>
-  </target>
-
-
-  <!-- This target removes any class files from the build directory -->
+  <!-- This target removes the build and jar directory plus the generated MonetDriver.java -->
   <target name="clean">
     <delete quiet="true" dir="${builddir}" />
     <delete quiet="true" dir="${jardir}" />
