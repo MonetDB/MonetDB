@@ -16,7 +16,9 @@ STATIC_MODS = -L$(MONET_PREFIX)/lib/Monet \
 smallTOC_SHARED_MODS =	\
 	-l_mapi	\
 	-l_aggr	\
+	-l_aggrX3	\
 	-l_alarm	\
+	-l_bat_arith	\
 	-l_blob	\
 	-l_ddbench	\
 	-l_enum	\
