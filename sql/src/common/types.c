@@ -439,7 +439,7 @@ int sqltypeinit()
 	}
 
 	for(i=0; numerical[i].h; i++)
-		sql_func_cmd("sql_neg","-",numerical[i].t,",",",",numerical[i].t);
+		sql_func_cmd("sql_neg","-",numerical[i].t,"","",numerical[i].t);
 
 
 	for(i=0; numerical[i].h; i++)
