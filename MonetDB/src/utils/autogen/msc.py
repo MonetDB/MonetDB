@@ -223,8 +223,15 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc):
         elif l[0] == '$':
             add = add + ' %s' % l
         elif l[0] != "@":
-            add = add + ' "%s.lib"' % msc_translate_dir(l, msc)
-            deps = deps + ' "%s.lib"' % msc_translate_dir(l, msc)
+            lib = msc_translate_dir(l, msc) + '.lib'
+            # add quotes if space in name
+            # we can't always add quotes since for some weird reason
+            # in src\modules\plain you will then have a problem with
+            # lib_algebra.lib.
+            if ' ' in lib:
+                lib = '"%s"' % lib
+            add = add + ' %s' % lib
+            deps = deps + ' %s' % lib
     # this can probably be removed...
     for l in dlibs:
         if l == "@LIBOBJS@":
