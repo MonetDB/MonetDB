@@ -44,10 +44,11 @@ struct scanner {
 	int yyval;		/* current token */
 	int yycur;		/* next char in the queue */
 	char yybak;		/* sometimes its needed to write an EOS marker */
+	int as;			/* start of query part of view's etc */
 	int key;
 };
 
-#define QUERY(scanner) (scanner.rs)?scanner.rs->buf+scanner.rs->pos:scanner.buf
+#define QUERY(scanner) ((scanner.rs)?(scanner.rs->buf+scanner.rs->pos):scanner.buf)
 
 sql_export void scanner_init( struct scanner *s, bstream *rs, stream *ws );
 sql_export void scanner_reset( struct scanner *s, char *buf );

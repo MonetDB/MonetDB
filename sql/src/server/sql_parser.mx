@@ -1015,13 +1015,16 @@ like_table:
  ;
 
 view_def:
-    CREATE VIEW qname opt_column_commalist AS select_stmt opt_with_check_option
+    CREATE VIEW qname opt_column_commalist
+    AS			{ mvc *c = (mvc*)parm;
+			  c->scanner.as = c->scanner.yycur; }
+	select_stmt opt_with_check_option
 
 	{ dlist *l = dlist_create();
 	  dlist_append_list(l, $3);
 	  dlist_append_list(l, $4);
-	  dlist_append_symbol(l, $6);
-	  dlist_append_int(l, $7);
+	  dlist_append_symbol(l, $7);
+	  dlist_append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); }
     ;
 	
@@ -1073,13 +1076,15 @@ func_def:
     CREATE FUNCTION qname 
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    AS select_stmt
+    AS			{ mvc *c = (mvc*)parm;
+			  c->scanner.as = c->scanner.yycur; }
+    select_stmt
 			{ dlist *f = dlist_create();
 	  		  	dlist_append_list(f, $3);
 	  			dlist_append_list(f, $5);
 	  			dlist_append_type(f, $8);
 				dlist_append_string(f, NULL);
-				dlist_append_symbol(f, $10);
+				dlist_append_symbol(f, $11);
  			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  ;
 

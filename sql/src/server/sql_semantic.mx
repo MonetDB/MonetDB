@@ -2575,7 +2575,7 @@ static stmt *create_view(mvc * sql, stmt * ss,
 
 		stmt *stct = NULL;
 		stmt *sq = sql_subquery(sql, NULL, query);
-		char *subquery = strfnd(QUERY(sql->scanner), " as ");
+		char *subquery = QUERY(sql->scanner) + sql->scanner.as;
 		list *l;
 
 		if (!sq)
@@ -4721,7 +4721,7 @@ static stmt *create_func(mvc * sql, dlist * qname, dlist *params, sql_subtype *r
 				sql_dup_subtype(an->next->data.typeval)));
 	}
 	if (body){ /* sql func */
-		char *subquery = strfnd(QUERY(sql->scanner), " as ");
+		char *subquery = QUERY(sql->scanner) + sql->scanner.as;
 		stmt *b = NULL;
 		
 		for(n=params->h; n; n = n->next){ 
