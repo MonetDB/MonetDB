@@ -107,7 +107,6 @@ have changed since my proposal.
          MapiClient < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
-    Mshutdown.py
   * Mserver --dbname=TSTDB --set sql_port=$SQLPORT $SQL_PREFIX/lib/MonetDB/sqlserver.mil [TST.prologue] &
          Msql < TST[_(s|p)XX].sql
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
@@ -232,7 +231,6 @@ have changed since my proposal.
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR --set mapi_port=$MAPIPORT --set sql_port=$SQLPORT --set monet_prompt= --trace"
 	MAPI_CLIENT	"$MTIMEOUT $MAPICLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
-	MSHUTDOWN	"$MTIMEOUT Mshutdown.py --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
 	MDIFF		"$MTIMEOUT Mdiff"
 	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$SQLPORT --trace"
 	MAPIPORT	the MAPI port (random number between 40000 and 49999)

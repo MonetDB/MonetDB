@@ -1361,7 +1361,6 @@ def RunTest(env, TST, BusyPorts, COND) :
     #       "tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
     NotOnCYG = []
     #[ "tests/BugReports/no.147", "tests/by_Peter/recursion" ]
-    ReqMshdn = ["MAPI"]
 
     if   COND and not CONDITIONALS.has_key(COND):
         elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
@@ -1371,8 +1370,6 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
-    elif SERVER in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
-        elem = SkipTest(env, TST, EXT, "as Mshutdown is not available.")
     elif SERVER == "MAPI" and  not env['MAPI_MIL']:
         elem = SkipTest(env, TST, EXT, "as 'mapi.mil' is not available.")
         #elif SERVER == "MAPI" and  os.name == "nt":
@@ -1751,7 +1748,6 @@ def CheckSocket2(env,SERVER,SrvrErr) :
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
         env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
-        env['exe']['Mshutdown']     = env['exe']['Mshutdown'][0]     , env['exe']['Mshutdown'][1].replace(op, np)
         env['exe']['Mapi_Client']   = env['exe']['Mapi_Client'][0]   , env['exe']['Mapi_Client'][1].replace(op, np)
         env['exe']['SQL_client']    = env['exe']['SQL_client'][0]    , env['exe']['SQL_client'][1].replace(op, np)
         env['exe']['X100_Client']   = env['exe']['X100_Client'][0]   , env['exe']['X100_Client'][1].replace(op, np)
@@ -2063,23 +2059,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             SrvrOut.flush()
             EPILOGUE.close()
 
-        if SERVER == "MAPI":
-            Shwn = MTO+str(TOT)+" "+exe['Mshutdown'][1]
-            ShwnOutFile = TST+".shutdown.out"
-            ShwnErrFile = TST+".shutdown.err"
-            open(ShwnOutFile,"w").close()
-            open(ShwnErrFile,"w").close()
-            RunIt(Shwn, "", ShwnOutFile, ShwnErrFile)
-            time.sleep(1)             # give it time to actually shut down
-
         try:
-            if SERVER == "MAPI":
-                pSrvrIn.write("# All but the first (#) and the last (\\n) character of this line seem to get swallowed on/by Windows ... #\n")
-                pSrvrIn.write("# In case the previous line contains just a '#', all but the first and the last character got swallowed by someone ... #\n")
-                pSrvrIn.write("# In case the output ends after the following line, containing just a ';', Mshutdown might have been successful, #\n")
-                pSrvrIn.write("# but the Mserver's stdin was still open and got closed only after the first MIL command-end, i.e., ';'+'\\n' is reached ... #\n")
-                pSrvrIn.write(';\n')
-                pSrvrIn.write('printf("\\n! Mserver still running after Mshutdown. Quitting now. !\\n");\n')
             pSrvrIn.write('quit();\n')
             pSrvrIn.flush()
         except IOError:
@@ -2096,8 +2076,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             StopAt(ATJOB2,ME)
 
         if SERVER == "MAPI":
-            AllOut = [SrvrOut, ClntOutFile, ShwnOutFile]
-            AllErr = [SrvrErr, ClntErrFile, ShwnErrFile]
+            AllOut = [SrvrOut, ClntOutFile ]
+            AllErr = [SrvrErr, ClntErrFile ]
         else:
             AllOut = [SrvrOut, ClntOutFile]
             AllErr = [SrvrErr, ClntErrFile]
@@ -2735,7 +2715,6 @@ def main(argv) :
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set monet_prompt= --trace' % \
                                                            (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'])
-        exe['Mshutdown']     = CheckExec('Mshutdown.py') , 'Mshutdown.py "--config=%s" --host=%s --port=%s' % (opts.config, HOST, env['MAPIPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec('python')       , 'python'
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
