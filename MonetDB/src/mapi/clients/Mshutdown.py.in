@@ -26,13 +26,13 @@
 import sys
 import os
 
-if os.environ.has_key('MONET_PREFIX'):
-    sys.path.append(os.environ['MONET_PREFIX']+os.sep+'share'+os.sep+'MonetDB'+os.sep+'python')
-else:
-    sys.path.append('@Qprefix@'+os.sep+'share'+os.sep+'@PACKAGE@'+os.sep+'python')
+sys.path.append(os.path.join(os.environ.get('MONET_PREFIX','@Qprefix@'),
+                             'share',
+                             '@PACKAGE@',
+                             'python'))
 
 import monet_options
-import Mapi
+from Mapi import server
 
 
 def main(argv) :
@@ -48,7 +48,9 @@ def main(argv) :
         # error parsing options
         sys.exit(1)
 
-    s = Mapi.server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), "adm" )
+    s = server(opt.get("host", "localhost"),
+               int(opt.get("mapi_port", 50000)),
+               "adm")
 
     res = s.cmd_intern( "shutdown;\n" )
     s.disconnect()
