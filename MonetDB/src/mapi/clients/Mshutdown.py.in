@@ -12,7 +12,7 @@ from Mapi import *
 
 opt = parse_options(sys.argv[1:])
 
-s = server( ConfigOptions.get(opt,"host","localhost"), int(ConfigOptions.get(opt,"mapi_port")), "adm" )
+s = server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), "adm" )
 
 res = s.cmd_intern( "shutdown;\n" )
 s.disconnect()

@@ -14,8 +14,8 @@ import fileinput;
 
 opt = parse_options(sys.argv[1:])
 
-s = server( ConfigOptions.get(opt,"host","localhost"), int(ConfigOptions.get(opt,"mapi_port")), environ['USER'])
-print("#MapiClient (python) connected to %s:%d as %s" % (ConfigOptions.get(opt,"host","localhost"), int(ConfigOptions.get(opt,"mapi_port")), environ['USER']))
+s = server( opt.get("host","localhost"), int(opt.get("mapi_port",50000)), environ['USER'])
+print("#MapiClient (python) connected to %s:%d as %s" % (opt.get("host","localhost"), int(opt.get("mapi_port",50000)), environ['USER']))
 
 #fi = fileinput.FileInput()
 fi = sys.stdin
