@@ -1372,7 +1372,7 @@ void GDKaddbuf(const char *message)
 		} else {
 			/* no newline at end of buffer: print all the
 			   rest and add a newline */
-			doGDKaddbuf(prefix, p, (int) (q - p), "\n");
+			doGDKaddbuf(prefix, p, (int) strlen(p), "\n");
 			/* we're done since there were no more newlines */
 			break;
 		}
