@@ -109,6 +109,7 @@ It should be possible to turn off the feature at compile time.
 
 #define MAXBREAKS 32
 
+int MDBdelay; /* do not immediately react */
 typedef struct {
     MalBlkPtr   brkBlock[MAXBREAKS];
     int     brkVar[MAXBREAKS];
@@ -341,6 +342,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
 
+	if( MDBdelay ){
+		MDBdelay=0;
+		return;
+	}
     if( p != NULL){
         stream_printf(out,"#mdb ");
         printInstruction(out,mb,p,listing);
