@@ -1158,34 +1158,16 @@ retryConstant:
 				if(type== TYPE_sht) vr->vtype= TYPE_int;
 				vr->val.ival = sht_nil;
 			} else
-			if( l>255 || l<0) {
-				if( l< (2^31) && l> (-2^31) ){	
-/*
-				 *
-				 * 2^31 = 29 in C as ^ is XOR !
-				 *
-				 * Probabaly 1<<31 was meant, 
-				 * but   1<<31  = -2147483648 when using 32-bit signed (long) int,
-				 * and -(1<<31) =           0 when using 32-bit signed (long) int !
-				 * Actually, MIN_INT and MAX_INT should be used, here.
-				 * Sjoerd nicely solved all such issues in Monet 4.3...
-				 * Moreover, checking 31/32-bit limits with for a 15/16 bit
-				 * target type (sht = signed short int = 2 byte = 16 bit)
-				 * doesn't make much sense either...
-				 * This needs to be solved!
-				 * Stefan.
-				 *
-*/
-				if(type== TYPE_sht){
+			if( l>= (1<<16) || l< -(1<<16)) {
+				if( l< INT_MIN || l> INT_MAX ){	
+					if(type== TYPE_sht)
+						setVarType(mb, idx, TYPE_lng);
 					vr->vtype= TYPE_int;
-					setVarType(mb, idx, TYPE_int);
-				}
-				vr->val.ival = l;
+					vr->val.ival = l;
 				} else{
-					if(type== TYPE_sht){
-						vr->vtype= TYPE_lng;
-						setVarType(mb, idx, TYPE_lng) ;
-					}
+					if(type== TYPE_sht)
+						setVarType(mb, idx, TYPE_int);
+					vr->vtype= TYPE_lng;
 					vr->val.lval = l;
 				}
 			} else {
@@ -1199,11 +1181,10 @@ retryConstant:
 				if(type==TYPE_int) vr->vtype= TYPE_int;
 				vr->val.ival = int_nil;
 			} else
-			if( l>= (1<<15) || l <= (-1<<15)){
-				if(type==TYPE_int){
-					vr->vtype= TYPE_lng;
+			if( l> INT_MAX || l < INT_MIN){
+				if(type==TYPE_int)
 					setVarType(mb,idx, TYPE_lng);
-				}
+				vr->vtype= TYPE_lng;
 				vr->val.lval= l;
 			} else {
 				if(type==TYPE_int) vr->vtype= TYPE_int;
