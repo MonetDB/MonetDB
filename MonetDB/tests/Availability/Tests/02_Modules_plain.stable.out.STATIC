@@ -896,12 +896,15 @@ Module: "stats"
 
 Module: "streams"
 
-[ 32 ]
-[ 32 ]
+[ 35 ]
+[ 35 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature						| help									  #
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "block_stream",	  "COMMAND:   ",  "block_stream(Stream) : Stream",			  "open a block based stream"						  ]
+[ "bstream_create",	  "COMMAND:   ",  "bstream_create(Stream, int) : Bstream",		  "create a buffered stream"						  ]
+[ "bstream_destroy",	  "COMMAND:   ",  "bstream_destroy(Bstream) : void",			  "destroy bstream"							  ]
+[ "bstream_read",	  "COMMAND:   ",  "bstream_read(Bstream, int) : int",			  "read atleast size bytes into the buffer of s"			  ]
 [ "buffer_create",	  "COMMAND:   ",  "buffer_create(int) : Buffer",			  "create a buffer of the given size"					  ]
 [ "buffer_destroy",	  "COMMAND:   ",  "buffer_destroy(Buffer) : void",			  "destroy buffer"							  ]
 [ "buffer_rastream",	  "COMMAND:   ",  "buffer_rastream(Buffer, str) : Stream",		  "create a buffer read stream"						  ]
