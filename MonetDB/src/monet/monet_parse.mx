@@ -315,8 +315,9 @@ ll_getstr(int quote, int *len)
 				break;
 			if (c == '\n')
 				continue;
+			buf[i++] = '\\';
 		}
-		if (i == buflen)
+		if (i >= buflen)
 			buf = GDKrealloc(buf, (buflen += 128) + 2);
 		buf[i++] = c;
 	}
