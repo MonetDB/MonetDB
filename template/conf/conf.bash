@@ -107,6 +107,7 @@ conf_opts=""
 
 os="`uname | sed 's|_NT-.*$||'`"
 hw="`uname -m`"
+host="`hostname`"
 
 # check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, LINK)
 
@@ -208,14 +209,14 @@ if [ "${os}" = "Linux" ] ; then
 		fi
 	fi
 	if [ "${hw}" = "ia64" ] ; then
-		if [ "`hostname`" = "demo.ins.cwi.nl" ] ; then
-			# specific settings for our Itanium2 "demo" system
+		if [ "${host%.ins.cwi.nl}" = "titan" ] ; then
+			# specific settings for our Itanium2 "titan" system
 			binpath="/soft/python-2.3/bin:${binpath}"
 			if [ "${COMP}" = "GNU" ] ; then
 				binpath="/soft/gcc-3.3/bin:${binpath}"
 				libpath="/soft/gcc-3.3/lib:${libpath}"
 			fi
-		  elif [ "`hostname`" = "theo.sara.nl" ] ; then
+		  elif [ "${host%.sara.nl}" = "theo" ] ; then
 			# specific settings for Sara's Itanium system
 			binpath="/home/niels/soft/local/bin:${binpath}"
 			libpath="/home/niels/soft/local/lib:${libpath}"
