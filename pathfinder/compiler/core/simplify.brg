@@ -244,15 +244,15 @@ OrderSpecs:         orderspecs (CoreExpr, nil)                  =  52 (10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  53 (10);
 
 Atom:               var                                         =  54 (10);
-Atom:               LiteralValue                                =  55 (10);
+Atom:               empty                                       =  55 (10);
+Atom:               LiteralValue                                =  56 (10);
 
-LiteralValue:       lit_str                                     =  56 (10);
-LiteralValue:       lit_int                                     =  57 (10);
-LiteralValue:       lit_dec                                     =  58 (10);
-LiteralValue:       lit_dbl                                     =  59 (10);
-LiteralValue:       true_                                       =  60 (10);
-LiteralValue:       false_                                      =  61 (10);
-LiteralValue:       empty                                       =  62 (10);
+LiteralValue:       lit_str                                     =  57 (10);
+LiteralValue:       lit_int                                     =  58 (10);
+LiteralValue:       lit_dec                                     =  59 (10);
+LiteralValue:       lit_dbl                                     =  60 (10);
+LiteralValue:       true_                                       =  61 (10);
+LiteralValue:       false_                                      =  62 (10);
 
 FunctionDecls:      nil                                         =  63 (10);
 FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  64 (10);

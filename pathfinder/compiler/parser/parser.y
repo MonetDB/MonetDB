@@ -203,7 +203,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 }
 
 %token ancestor_colon_colon            "ancestor::"
-%token ancestor_or_self_colon_colon    "ancestor_or_self::"
+%token ancestor_or_self_colon_colon    "ancestor-or-self::"
 %token and                             "and"
 %token apos                            "'"
 %token as                              "as"
@@ -309,7 +309,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token pipe_                           "|"
 %token plus                            "+"
 %token preceding_colon_colon           "preceding::"
-%token preceding_sibling_colon_colon   "preceding_sibling::"
+%token preceding_sibling_colon_colon   "preceding-sibling::"
 %token question_mark                   "?"
 %token question_mark_gt                "?>"
 %token quot_                           "\""
