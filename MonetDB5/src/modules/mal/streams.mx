@@ -26,9 +26,7 @@ It encapsulates the corresponding library managed in
 .../stream.
 
 @mal
-atom stream :ptr;
-
-module streams;
+atom stream:ptr;
 
 command openReadBytes( filename:str ) :stream
 address stream_open_rstream

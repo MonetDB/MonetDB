@@ -191,7 +191,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	fcnname= getVarLiteral(mb,pci->argv[1]);
 	inplace = operatorModifier(name,fcnname);
 	setFunctionId(p, GDKstrdup(name));
-	k = newVariable(m, newTmpName(0),TYPE_any);
+	k = newVariable(m, newTmpName('M',0),TYPE_any);
 	p->argv[0]= k;
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug) 
@@ -232,7 +232,7 @@ join compatability
 	    } else {
 		tt= getArgType(mb,pci,i);
 	    }
-	    k= newVariable(m,newTmpName(i),tt);
+	    k= newVariable(m,newTmpName('M',i),tt);
 	    p= pushArgument(m,p,k);
 	}
 	pushInstruction(m,p);

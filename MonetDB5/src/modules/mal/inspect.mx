@@ -19,7 +19,7 @@
 @a Martin Kersten
 @v 1
 @* Runtime Inspection
-This module introduces a series of bats and commands that provide access
+This module introduces a series of commands that provide access
 to information stored within the interpreter data structures.
 In all cases, the pseudo BAT operation returns a transient BAT that
 should be garbage collected after being used.
@@ -69,32 +69,27 @@ comment "Map module and commands pairs";
 command getFunctions():bat[:str,:str] 
 address INSPECTfunctionNames
 comment "Map module and function pairs";
+command getFactories():bat[:str,:str] 
+address INSPECTfactoryNames
+comment "Map module and function pairs";
 
-pattern getCode():bat[:void,:str] 
+pattern getDefinition():bat[:void,:str] 
 address INSPECTcodeDump
 comment "Returns a string representation 
 	of the current function 
 	with typing information attached";
 
-pattern getDefinition():bat[:void,:str] 
-address INSPECTcurrSymbolDef
-comment "Returns a string representation 
-	of the current function";
 command getDefinition(mod:str,fcn:str)
 	:bat[:int,:str] 
-address INSPECTsymbolDef
+address INSPECTgetDefinition
 comment "Returns a string representation 
 	of a specific function";
 
 command getSignature(mod:str,fcn:str)
 	:bat[:str,:str] 
-address INSPECTsymbolSignature
+address INSPECTgetSignature
 comment "Returns the function signature(s)";
 
-command getType(mod:str,fcn:str)
-	:bat[:str,:str] 
-address INSPECTsymbolType
-comment "Get the return type for a function";
 pattern getType(v:any) :int 
 address INSPECTtype
 comment "Return the type of a variable (expression)";
@@ -102,9 +97,15 @@ command getTypeName(v:int):str
 address INSPECTtypename;
 
 
-command getAtoms():bat[:int,:str] 
+command getAtomNames():bat[:int,:str] 
 address INSPECTatom_names
 comment "Collect a BAT with the atom names";
+command getAtomSuperNames():bat[:int,:str] 
+address INSPECTatom_sup_names
+comment "Collect a BAT with the atom names";
+command getAtomSizes():bat[:int,:int] 
+address INSPECTatom_sizes
+comment "Collect a BAT with the atom sizes";
 
 @+ Display code
 A key tool for analysis of the MAL code is being able to dump
@@ -112,11 +113,11 @@ any routine, module. For queries, it is also illustrative to display
 the flow graph. [TODO]
 @mal
 pattern showFunction():void 
-address INSPECTshowFunction3
+address INSPECTshowFunction
 comment "Dump the current routine on standard out.";
-#pattern showFunction(M:any,F:any):void 
-#address INSPECTshowFunction3
-#comment "Dump the routine M.F on standard out.";
+pattern showFunction(M:any,F:any):void 
+address INSPECTshowFunction3
+comment "Dump the routine M.F on standard out.";
 
 @+ Online help system
 All procedural abstractions may contain a string with commentary text.
@@ -196,14 +197,19 @@ The variable information can be turned into a BAT for inspection as well.
 
 @c
 
-str INSPECTStkDepth(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
-{       int i=0, *ret= (int*) getArgReference(s,p,0);
-	(void)mb; /* fool compiler */
+static int getStkDepth( MalStkPtr s)
+{
+	int i = 0;
         while(s!= 0){
                 i++;
                 s= s->up;
         }
-        *ret= i;
+	return i;
+}
+str INSPECTStkDepth(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+{       int *ret= (int*) getArgReference(s,p,0);
+	(void)mb; /* fool compiler */
+        *ret= getStkDepth(s);
         return MAL_SUCCEED;
 }
 
@@ -233,8 +239,9 @@ str INSPECTStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	n= *(int*) getArgReference(s,p,1);
 	if(n<0) return throwMessage("inspect.stkFrame", "illegal depth.");
+	if(n>=getStkDepth(s)) return throwMessage("inspect.stkFrame", "illegal depth.");
 	@:Pseudo(stk,frame)@
-	return INSPECTgetFrame(b,m,s,n-1);
+	return INSPECTgetFrame(b,m,s,n);
 }
 str INSPECTStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
@@ -296,14 +303,16 @@ str INSPECTsymbolFind(int *ret,int kind)
 	@:Pseudo(symbol,name)@
 	return MAL_SUCCEED;
 }
+str INSPECTfactoryNames(int *ret){ return INSPECTsymbolFind(ret,FACTORYsymbol); }
 str INSPECTfunctionNames(int *ret){ return INSPECTsymbolFind(ret,FUNCTIONsymbol); }
 str INSPECTpatternNames(int *ret){ return INSPECTsymbolFind(ret,PATTERNsymbol); }
 str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); }
 
-str INSPECTsymbolDef(int *ret, str *nme, str *fcn)
+str INSPECTgetDefinition(int *ret, str *nme, str *fcn)
 {	Symbol s;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if(b == 0) return throwMessage("inspect.symbolDefinition", "failed to create BAT");
+        if(b == 0) return throwMessage("inspect.getDefinition", 
+					"failed to create BAT");
 	
 	s= findSymbol(*nme,*fcn);
 	while(s){
@@ -337,7 +346,8 @@ str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {	int i, *ret= (int*)getArgReference(stk,p,0);
 	str ps;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
-        if(b == 0) return throwMessage("inspect.symbolDefinition", "failed to create BAT");
+        if(b == 0) return throwMessage("inspect.currDefinition", 
+					"failed to create BAT");
 	
 	for(i=0;i<m->stop;i++){
 		ps= instruction2str(m, getInstrPtr(m,i),0);
@@ -347,33 +357,50 @@ str INSPECTcurrSymbolDef(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	@:Pseudo(fcn,stmt)@
 	return MAL_SUCCEED;
 }
-str INSPECTsymbolSignature(int *ret, str *mod, str *fcn)
+str INSPECTgetSignature(int *ret, str *mod, str *fcn)
 {	Symbol s;
-	str msg;
 	str ps;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-        if (b == 0) return throwMessage("inspect.symbolSignature", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.getSignature", 
+					"failed to create BAT");
 
 	s= findSymbol(*mod,*fcn);
+        if (s == 0) 
+		return throwMessage("inspect.getSignature", 
+			"failed to find <module>.<function>");
+
 	while(s!= NULL){
-		msg= s->def->help;
-		if( msg && idcmp(s->name,*fcn)==0) {
+		if( idcmp(s->name,*fcn)==0) {
+			char *i, *o;
 			ps= instruction2str(s->def, getSignature(s),0);
-			BUNins(b,s->name,ps);
+			i= strchr(ps,'(');
+			if(i == 0) continue;
+			*i=0; i++;
+			o= strchr(i,')');
+			if(o == 0) continue;
+			*o= 0; o++;
+			if(*o== '(') o++;
+			if(strchr(o,')')) *strchr(o,'(')= 0;
+			if(strchr(o,';')) *strchr(o,';')= 0;
+			BUNins(b,i,o);
 			GDKfree(ps);
 		}
 		s= s->peer;
 	}
 
-	@:Pseudo(fcn,sig)@
+	@:Pseudo(input,result)@
 	return MAL_SUCCEED;
 }
 str INSPECTsymbolType(int *ret, str *mod, str *fcn) 
 {	Symbol s;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) return throwMessage("inspect.symbolType", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.getType", 
+					"failed to create BAT");
 
 	s= findSymbol(*mod,*fcn);
+        if (s == 0) 
+		return throwMessage("inspect.getSignature", 
+			"failed to find <module>.<function>");
 	while(s!= NULL){
 		if( idcmp(s->name,*fcn)==0) {
 			str t=getTypeName(getDestType(s->def,getSignature(s)));
@@ -389,37 +416,63 @@ str INSPECTsymbolType(int *ret, str *mod, str *fcn)
 str INSPECTatom_names(int *ret)
 {	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("inspect.atomNames", "failed to create BAT");
+        if (b == 0) return throwMessage("inspect.getAtomNames", 
+					"failed to create BAT");
 
 	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(i));
 
 	@:Pseudo(atom,name)@
 	return MAL_SUCCEED;
 }
+str INSPECTatom_sup_names(int *ret)
+{	int i;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+        if (b == 0) return throwMessage("inspect.getAtomSuperNames", 
+			"failed to create BAT");
+
+	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(i));
+
+	@:Pseudo(atom,sup_name)@
+	return MAL_SUCCEED;
+}
+str INSPECTatom_sizes(int *ret)
+{	int i;
+	size_t s;
+	BAT *b = BATnew(TYPE_int, TYPE_int, 256);
+        if (b == 0) return throwMessage("inspect.getAtomSizes",
+		"failed to create BAT");
+
+	for(i=0;i<GDKatomcnt;i++) {
+		s= ATOMsize(i);
+		BUNins(b,&i,&s);
+	}
+
+	@:Pseudo(atom,size)@
+	return MAL_SUCCEED;
+}
 @+ Display routines
-@= getFunction
-str     modnme= getArgName(mb,p,1);
-str     fcnnme= getArgName(mb,p,2);
-Scope  scope=NULL;
-Symbol s= NULL;
-Client c= getClient();
-
-scope = findScope(c->nspace,modnme);
-if( scope)
-	s= findSymbolInScope(scope,fcnnme);
-
-if( s == NULL)
-	GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
-
 @c
-void INSPECTshowFunction(MalBlkPtr m, lng flg, stream *f) {
-	printFunction(f,m,flg);
+str INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client c= getClient();
+	(void) p; (void) stk;
+	printFunction(c->fdout,mb,LIST_INPUT);
+	return MAL_SUCCEED;
 }
 str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	@:getFunction(showFunction)@
-	else { 
-		INSPECTshowFunction(s->def,(lng) FALSE,GDKout);
-	}
+	str     modnme= getArgName(mb,p,1);
+	str     fcnnme= getArgName(mb,p,2);
+	Scope  scope=NULL;
+	Symbol s= NULL;
+	Client c= getClient();
+
+	scope = findScope(c->nspace,modnme);
+	if( scope)
+		s= findSymbolInScope(scope,fcnnme);
+
+	if( s == NULL)
+		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
+	else 
+		printFunction(c->fdout,s->def,LIST_INPUT);
 	(void) stk; /* fool compiler */
 	return NULL;
 }
