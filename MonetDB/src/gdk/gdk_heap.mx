@@ -376,7 +376,7 @@ int HEAPdelete(Heap* h, str o, str ext) {
                         /* truncate file, so OS does not try to flush dirty data in mmap to file that is deleted anyway */
                         int fd = GDKfdlocate(h->filename, "rb+", NULL);
                         IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
-                        ret = ftruncate(fd, 0LL);
+                        ret = ftruncate(fd, LL_CONSTANT(0));
                         IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) ftruncate(%d,0LL) = %d\n", h->filename, fd, ret);
                         ret = close(fd);
                         IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) close(%d) = %d\n", h->filename, fd, ret);
