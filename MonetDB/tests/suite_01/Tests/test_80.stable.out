@@ -18,7 +18,8 @@ bats@batloop() {
         var tmp := bats.select($2);
         tmp.print();
 }
-!WARNING: interpret: convert identifier 'bats' to string.
+!ERROR: interpret: unknown variable 'bats'.
+!ERROR: batloop(param 1): evaluation error.
 !ERROR: interpret_iterator: iterator should work on a BAT.
 
 quit();

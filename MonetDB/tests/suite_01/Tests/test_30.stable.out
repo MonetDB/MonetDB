@@ -16,9 +16,8 @@ unknown("hello");
 !ERROR: interpret: no matching MIL operator to 'unknown(str)'.
 
 #simple procedure with withdrawal
-proc c(){ clock.print();}
+proc c() : void { "clock".print();}
 c();
-!WARNING: interpret: convert identifier 'clock' to string.
 [ "clock" ]
 undef c;
 c();
@@ -27,12 +26,13 @@ c();
 # block administration
 
 # how about variables in a block
-{ i:=123; vars();}
+{ var i:=123; vars();}
 #-----------------------------------------------------------------------------------------#
 # tmp_31		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "i",			  "int",  "liquid",	  "changeable",	  "123"			  ]
 [ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -49,6 +49,29 @@ c();
 [ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
+[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
+[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
+[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
+[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
+[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
+[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
+[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
+[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
+[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
+[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
+[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
+[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
+[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
+[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
+[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
+[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
+[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
+[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
+[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
 [ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
 [ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
 [ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
@@ -58,7 +81,7 @@ c();
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
 [ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
@@ -69,7 +92,7 @@ c();
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<adm_fcntbl>"	  ]
 
 # and in a procedure
-proc xyz() {var j; j:=23; k:=234; vars();}
+proc xyz() : void {var j; j:=23; var k:=234; vars();}
 xyz();
 #-----------------------------------------------------------------------------------------#
 # tmp_33		| type	| type_status	| value_status	| value_value		  #
@@ -77,6 +100,7 @@ xyz();
 [ "k",			  "int",  "liquid",	  "changeable",	  "234"			  ]
 [ "j",			  "int",  "liquid",	  "changeable",	  "23"			  ]
 [ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -93,6 +117,29 @@ xyz();
 [ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
+[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
+[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
+[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
+[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
+[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
+[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
+[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
+[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
+[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
+[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
+[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
+[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
+[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
+[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
+[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
+[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
+[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
+[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
+[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
 [ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
 [ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
 [ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
@@ -102,7 +149,7 @@ xyz();
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
 [ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]
@@ -116,6 +163,7 @@ vars();
 # tmp_30		| type	| type_status	| value_status	| value_value		  #
 #-----------------------------------------------------------------------------------------#
 [ "BBPTRIM_ALL",	  "lng",  "frozen",	  "constant",	  "1073741824"		  ]
+[ "monet_environment",	  "BAT",  "frozen",	  "constant",	  "<monet_environment>"	  ]
 [ "GE",			  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "frozen",	  "constant",	  "-2"			  ]
@@ -132,6 +180,29 @@ vars();
 [ "STORE_COMPR",	  "int",  "frozen",	  "constant",	  "2"			  ]
 [ "STORE_MMAP",		  "int",  "frozen",	  "constant",	  "1"			  ]
 [ "STORE_MEM",		  "int",  "frozen",	  "constant",	  "0"			  ]
+[ "monet_mod_var",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_var>"	  ]
+[ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
+[ "monet_mod_proc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_proc>"	  ]
+[ "monet_mod_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_nme>"	  ]
+[ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
+[ "monet_mod_hdl",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_hdl>"	  ]
+[ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
+[ "monet_mod_dep",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_dep>"	  ]
+[ "monet_mod_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_cnt>"	  ]
+[ "monet_mod_atm",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_atm>"	  ]
+[ "monet_mod_acc",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_acc>"	  ]
+[ "monet_fcn_tpe",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_tpe>"	  ]
+[ "monet_fcn_sig",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_sig>"	  ]
+[ "monet_fcn_pro",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_pro>"	  ]
+[ "monet_fcn_nme",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_nme>"	  ]
+[ "monet_fcn_mid",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_mid>"	  ]
+[ "monet_fcn_imp",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_imp>"	  ]
+[ "monet_fcn_fcn",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_fcn>"	  ]
+[ "monet_fcn_dsc",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dsc>"	  ]
+[ "monet_fcn_dat",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_dat>"	  ]
+[ "monet_fcn_cnt",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_cnt>"	  ]
+[ "monet_fcn_aut",	  "BAT",  "frozen",	  "constant",	  "<monet_fcn_aut>"	  ]
+[ "monet_unicode_case",	  "BAT",  "frozen",	  "constant",	  "<monet_unicode_case>"  ]
 [ "LNG_MIN",		  "lng",  "frozen",	  "constant",	  "-9223372036854775807"  ]
 [ "LNG_MAX",		  "lng",  "frozen",	  "constant",	  "9223372036854775807"	  ]
 [ "INT_MIN",		  "int",  "frozen",	  "constant",	  "-2147483647"		  ]
@@ -141,7 +212,7 @@ vars();
 [ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "32767"		  ]
-[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "293"			  ]
+[ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "292"			  ]
 [ "TOK_ITERATOR",	  "int",  "frozen",	  "constant",	  "270"			  ]
 [ "TOK_COMMAND",	  "int",  "frozen",	  "constant",	  "285"			  ]
 [ "TOK_OPERATOR",	  "int",  "frozen",	  "constant",	  "286"			  ]

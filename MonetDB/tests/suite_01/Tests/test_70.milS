@@ -6,7 +6,7 @@ p:= flt("23");
 p.print();
 p:= bit(1);
 p.print();
-z:= int(p);
+var z:= int(p);
 z.print();
 p:= bit(0);
 p.print();

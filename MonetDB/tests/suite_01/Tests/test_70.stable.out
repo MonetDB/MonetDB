@@ -22,7 +22,7 @@ p.print();
 p:= bit(1);
 p.print();
 [ true ]
-z:= int(p);
+var z:= int(p);
 z.print();
 [ 1 ]
 p:= bit(0);

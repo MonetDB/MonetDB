@@ -5,7 +5,7 @@ setoid(oid(20000000));
 unknown("hello");
 
 #simple procedure with withdrawal
-proc c(){ clock.print();}
+proc c() : void { "clock".print();}
 c();
 undef c;
 c();
@@ -13,10 +13,10 @@ c();
 # block administration
 
 # how about variables in a block
-{ i:=123; vars();}
+{ var i:=123; vars();}
 
 # and in a procedure
-proc xyz() : void {var j; j:=23; k:=234; vars();}
+proc xyz() : void {var j; j:=23; var k:=234; vars();}
 xyz();
 vars();
 quit();

@@ -22,18 +22,18 @@ b.rename("tenk1_unique1");
 proc dummy() : int { return 1; }
 
 proc p(any B, any C) : any { 
-        local :=newid(B,C); 
+        var local :=newid(B,C); 
         vars(); 
 }
 
 proc s(int low, int high) : void {
 	vars(); 
-	var t := select(tenk1_unique1,low,high); 
+	var t := select(bat("tenk1_unique1"),low,high); 
         t.count().print();
 }
 
 #proc echo(any x,any y) : any { vars(); z=x; vars(); return(z); }
-proc echo(any x,any y) : any { vars(); z:=x; vars(); return(z); }
+proc echo(any x,any y) : any { vars(); var z:=x; vars(); return(z); }
 proc New(any N,any A,any Ahsh) : void {
         var Nh := newid(N,"_hsh"); 
         var A := new(int,int,1); 
