@@ -35,18 +35,31 @@ module clients;
 
 command setPrompt(s:str):void= CLTsetPrompt
         comment "Change the prompt for the current user.";
+
 command setListing(flg:int):void= CLTsetListing
         comment "Turn on/off echoing of MAL instructions";
+
 command setDebug(flg:int):void= CLTsetDebug
 	comment "Set the flag in the debugging bitset";
+
+command getScenario():str = CLTgetScenario
+	comment "Retrieve current scenario name";
+
+command setScenario(msg:str):str = CLTsetScenario
+	comment "Switch to other scenario handler, return previous one";
+
 command clearDebug(flg:int):void= CLTclearDebug
 	comment "Clear the flag in the debugging bitset";
+
 command login( ): bat[int,str] = CLTLogin
 	comment "Pseudo bat to map client identifiers to their login time";
+
 command info( ): bat[int,str] = CLTInfo
 	comment "Pseudo bat with client attributes ";
-@-
-@+ Implementation
+@+ Monet client data
+Portions of the client record can be directly obtained for
+backward compatibility. The routine clientInfo provides more
+detailed information.
 @h
 #ifndef _CLIENTS_H
 #define _CLIENTS_H
@@ -69,6 +82,7 @@ or the client himself
 
 @c
 #include "mal.h"
+#include "mal_scenario.h"
 #include "mal_client.h"
 
 int isAuthorized(str nme){
@@ -92,11 +106,22 @@ str CLTsetPrompt(int *ret, str *prompt) {
         return MAL_SUCCEED;
 }
 
-@+ Monet client data
-Portions of the client record can be directly obtained for
-backward compatibility. The routine clientInfo provides more
-detailed information.
-@c
+str CLTgetScenario(str *ret){
+        Client c = getClient();
+        if( c->scenario) *ret = GDKstrdup(c->scenario);
+        else *ret= GDKstrdup("nil");
+        return MAL_SUCCEED;
+}
+str CLTsetScenario(str *ret,str *nme){
+        Client c = getClient();
+        str msg= MAL_SUCCEED;
+
+        msg= setScenario(c,*nme);
+        *ret = 0;
+        if( msg== NULL) *ret= GDKstrdup(c->scenario);
+        return msg;
+}
+
 static char* local_itoa(int i){
         static char buf[32];
         sprintf(buf,"%d",i);

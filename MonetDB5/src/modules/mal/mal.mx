@@ -40,12 +40,6 @@ some bat operations here.
 
 module mal;
 
-command getScenario():str = CMDgetScenario
-comment "Retrieve current scenario name";
-
-command setScenario(msg:str):str = CMDsetScenario
-comment "Switch to other scenario handler, return previous one";
-
 command raise(msg:str) :str = CMDraise
 comment "Raise an exception labelled with a specific message.";
 
@@ -119,139 +113,21 @@ comment "Generate a synopsis of a module";
 command manual()= CMDmanual0
 comment "Produces a XML-formatted manual over all modules loaded.";
 
-@- Monet module code
-
-The time module provides a few abstractions that rely on
-knowledge of basic operators such as /(int,int), which
-are not known upon load time.
+@+ Macro expansion
+Running a script stored in a file is interpreted as
+It is typically used to initialize a context, therefore we need
+to provide the runtime context. For the call variants we have
+to determine an easy way to exchange the parameter/return values.
 @mal
-function timestamp(secs:lng):timestamp
-comment "Enhancement of timestamp atom definition";
-        d1:=epoch();
-        d2:= secs *1000:lng;
-        d3:= d1+d2;
-	d4:= timestamp(d3);
-        return d4;
-end timestamp;
-function epoch():timestamp
-comment "Enhancement of timestamp atom definition";
-        d0:= date(1970,1,1);
-        d1:=daytime(0,0,0,0);
-        d2:=tzone("GMT");
-        d4:=timestamp(d0,d1,d2);
-	return d4;
-end epoch;
-#inline
-function epoch(t:timestamp):lng
-comment "Enhancement of timestamp atom definition";
-        e := epoch();
-        t0:= lng(t);
-        e0:= lng(e);
-        d0:= t0/e0;
-        d1:= t0/1000:lng;
-        return d1;
-end epoch;
-# rule creation synonyms
-function ruleDef(m:int,d:int,w:int,h:int,min:int):rule;
-        d0:= h*60;
-        d1:= d0+min;
-        r:= rule(m,d,w,d1);
-        return r;
-end ruleDef;
-function ruleDef(m:int,d:str,w:int,h:int,min:int):rule;
-        dy:= daynum(d);
-        d0:= h*60:int;
-        d1:= d0+min;
-        r:= rule(m,dy,w,d1);
-        return r;
-end ruleDef;
-function ruleDef(m:int,d:str,w:int,min:int):rule;
-        dy:= daynum(d);
-        r:= rule(m,dy,w,min);
-        return r;
-end ruleDef;
-
-@-
-Some compiled old module load stuff from decimal:
-@mal
-function divide(b:bat[any::1,decimal], div:decimal, prec:int):bat[any::1,decimal]
-comment "Perform the divide operation over a bat of decimals";
-#proc divide(bat[any::1,decimal] b, decimal div, int prec) : bat[any::1,decimal] {
-	DECIMAL_ZERO:= decimal(0);
-	aa_a := =(div,DECIMAL_ZERO);
-	ba:= int(div);
-	ba_a := isnil(ba);
-	ca_a := isnil(prec);
-	da_a := or(ba_a,ca_a);
-barrier	ea_a:= or(aa_a,da_a);
-#        if ((div = DECIMAL_ZERO) or isnil(div) or isnil(prec)) {
-	DECIMAL_NIL:= decimal(nil);
-	fa_a := project(b,DECIMAL_NIL);
-	return fa_a;
-#                return project(b, DECIMAL_NIL);
-exit	ea_a;
-barrier	ga_a:= not(ea_a);
-barrier	ha_a:= istenfold(div);
-#        } else if (istenfold(div)) {
-	ia_a := getprecision(div);
-	ja_a := getscale(div);
-	ka_a := +(ia_a,ja_a);
-	dec:= -(1,ka_a);
-#                var dec := 1 - (getprecision(div) + getscale(div));
-	la_a := multiplex.tactics("addscale",b,dec);
-	ma_a := multiplex.tactics("setprecision",la_a,prec);
-	return ma_a;
-#                return [setprecision]([addscale](b,dec),prec);
-#        }
-exit	ha_a;
-exit	ga_a;
-	na_a := bulkdivide(b,div,prec);
-	return na_a;
-#        return bulkdivide(b, div, prec); 
-end divide;
-#    }
-# 
-function divide(b:bat[any::1,decimal], div:decimal):bat[any::1,decimal];
-#    proc divide(bat[any::1,decimal] b, decimal div) : bat[any::1,decimal] {
-	DECIMAL_ZERO:= decimal(0);
-	oa_a := =(div,DECIMAL_ZERO);
-	pa_a := isnil(div);
-barrier	qa_a:= or(oa_a,pa_a);
-#        if ((div = DECIMAL_ZERO) or isnil(div)) {
-	DECIMAL_NIL:= decimal(nil);
-	ra_a := project(b,DECIMAL_NIL);
-	return ra_a;
-#                return project(b, DECIMAL_NIL);
-exit	qa_a;
-barrier	sa_a:= not(qa_a);
-barrier	ta_a:= istenfold(div);
-#        } else if (istenfold(div)) {
-	ua_a := getprecision(div);
-	va_a := getscale(div);
-	wa_a := +(ua_a,va_a);
-	dec:= -(1,wa_a);
-#                var dec := 1 - (getprecision(div) + getscale(div));
-	xa_a := multiplex.tactics("addscale",b,dec);
-	ya_a := multiplex.tactics("setscale",xa_a,0);
-	return ya_a;
-#                return [setscale]([addscale](b,dec),0);
-#        } 
-exit	ta_a;
-exit	sa_a;
-	ab_a := bulkdivide(b,div);
-	return ab_a;
-#        return bulkdivide(b, div);
-end divide;
-#    }
-#
-
-@+ Session control
-Redirected script evaluations.
-@mal
-pattern eval(s:str):void= CMDevalString
-	comment "Evaluate a string representing a MAL program";
-pattern source(f:str):void= CMDevalFile
-	comment "Load and executed a (local) file";
+command call(s:str):void= CMDcallString
+	comment "Evaluate a string representing a program";
+pattern call(s:bat[any,str]):void= CMDcallBAT
+	comment "Evaluate a program stored in a BAT of instructions";
+command source(f:str):void= CMDevalFile
+	comment "Execute the program in a (local) file";
+pattern include(f:str):void= CMDincludeFile
+	comment "Merge the instructions stored in the file 
+		with the current program";
 @+ Dummy code 
 @h
 #ifndef _ITERATOR_H
@@ -276,25 +152,6 @@ pattern source(f:str):void= CMDevalFile
 #include "mal_client.h"
 #include "mal_function.h"
 
-@+ BAT declarations
-@c
-str CMDgetScenario(str *ret){
-	Client c = getClient();
-	if( c->scenario) *ret = GDKstrdup(c->scenario);
-	else *ret= GDKstrdup("nil");
-	return MAL_SUCCEED;
-}
-str CMDsetScenario(str *ret,str *nme){
-	Client c = getClient();
-	str msg= MAL_SUCCEED;
-
-	msg= setScenario(c,*nme);
-	*ret = 0;
-	if( msg== NULL) *ret= GDKstrdup(c->scenario);
-	return msg;
-}
-@+ Exception implementation
-@c
 str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
 	return GDKstrdup(*msg);
@@ -404,35 +261,31 @@ str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 @- Input redirectionrs
 @c
-str CMDevalString(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str s;
+str CMDcallString(int *ret, str *s){
 	Client c= getClient();
 	str src;
 	str buf=0;
 	int len =0;
 
-	s= (str) getArgValue(stk,p,1);
-	if(strlen(s)==0) return MAL_SUCCEED;
-	src= (str) GDKmalloc(len=strlen(s)+3);
+	if(strlen(*s)==0) return MAL_SUCCEED;
+	src= (str) GDKmalloc(len=strlen(*s)+3);
 	/* GDK_atom routine requires enclosing quotes */
 	strcpy(src,"\"");
-	strcat(src,s);
+	strcat(src,*s);
 	strcat(src,"\"");
 	strFromStr( src, &len, &buf);
 
-	stream_printf(GDKout,"Eval:%s\n",buf);
-	evalString(getClient(),buf,FALSE,stk);
+	callString(getClient(),buf,FALSE);
 	GDKfree(src);
 	GDKfree(buf);
 	return MAL_SUCCEED;
 }
-str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str s;
+str CMDevalFile(int *ret, str *fnme){
+	str s = *fnme;
 	FILE *fd;
 	Client c= getClient();
 	char buffer[1024];
 
-	s= (str) getArgValue(stk,p,1);
 	if( strlen(s)+strlen(c->cwd)+2>=1024){
 		return throwMessage("mal.setCwd","Evaluation buffer too small\n");
 	}
@@ -442,9 +295,14 @@ str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		strcat(buffer,"/");
 	}
 	strcat(buffer,s);
-	stream_printf(GDKout,"run:%s\n",buffer);
 	malImport(getClient(),buffer,0,FALSE);
 	return MAL_SUCCEED;
+}
+str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	return throwMessage("mal.call","Not yet implemented");
+}
+str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	return throwMessage("mal.include","Not yet implemented");
 }
 str CMDdebug(int *ret, int *flg){
 	*ret = GDKdebug;

@@ -184,11 +184,11 @@ str INSPECTStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int *ret= (int*) getArgReference(s,p,0);
 	int k=0;
 
-	msg= callString(s->blk, s, getPC(m,p));
+	msg= call2str(s->blk, s, getPC(m,p));
 	BUNins(b,&k, msg);
 	GDKfree(msg);
 	for(s=s->up,k++; s!= NULL; s= s->up, k++){
-		msg= callString(s->blk, s, s->pcup);
+		msg= call2str(s->blk, s, s->pcup);
 		BUNins(b,&k, msg);
 		GDKfree(msg);
 	}

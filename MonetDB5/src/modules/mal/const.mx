@@ -42,7 +42,12 @@ are encapsulated in the prelude routine called.
 Furthermore, it implements a simple authorization scheme, 
 prohibiting all updates unless issued by the system administrator.
 @mal
-module const;
+module const
+comment "The const module provides a box abstraction store for global constants.
+Between sessions the value of the constants is saved on disk in the form of a
+simple mal program, which is scanned and made available by opening the box.
+A future implementation should provide transaction support over the box, which
+would permit multiple clients to exchange (scalar) information easily.";
 
 pattern open():void= CONSTopen
 comment "Locate the constant box and open it";

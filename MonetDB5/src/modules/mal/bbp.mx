@@ -53,7 +53,10 @@ to a directory on the local file system.
 
 @+ The Box Interface
 @mal
-module bbp;
+module bbp
+comment "The bbp module implements the box abstraction over the Bat buffer pool.
+It should (future) provide an adequate transaction and versioning support.
+It provides a collection of views to inspect the buffer pool status.";
 
 command open():void= CMDbbpopen
 comment "Locate the bbp box and open it.";
@@ -97,7 +100,7 @@ making a local copy. No guarantees
 are given for consistent reads.";
 
 pattern getObjects(): bat[int,str] = CMDbbpGetObjects
-	comment "Pseudo bat to map a BAT id into its box name";
+	comment "View to map a BAT id into its box name";
 
 @+ BAT declarations
 A pattern block may be required to make the proper translation to
@@ -158,26 +161,26 @@ comment "return the BUN tail value using the cursor.";
 The following list of operations permits inspection of the
 buffer pool
 @mal
-command getHeadType():bat[int,str]= CMDbbpTailType
-        comment "BAT listing all head types");
+command getHeadType():bat[int,str]= CMDbbpHeadType
+	comment "View to map a BAT id into its head type";
 command getTailType():bat[int,str]= CMDbbpTailType
-        comment "BAT listing all head types");
+	comment "View to map a BAT id into its tail type";
 command getNames(): bat[int,str] = CMDbbpNames
-	comment "Map a BAT id into its name";
+	comment "View to map a BAT id into its bbp name";
 command getCount(): bat[int,lng] = CMDbbpCount
-	comment "Map a BAT id into its cardinality";
+	comment "View to map a BAT id into its cardinality";
 command getRefcnt(): bat[int,int] = CMDbbpRefcnt
-	comment "Map a BAT id into its reference count";
+	comment "View to map a BAT id into its reference count";
 command getLocation(): bat[int,str] = CMDbbpLocation
-	comment "Map a BAT id into its disk location";
+	comment "View to map a BAT id into its disk location";
 command getHeat(): bat[int,int] = CMDbbpHeat
-	comment "Map a BAT id into its name";
+	comment "View to map a BAT id into its heat";
 command getDirty(): bat[int,str] = CMDbbpDirty
-	comment "Map a BAT id into its dirty/diffs/clean status";
+	comment "View to map a BAT id into its dirty/diffs/clean status";
 command getStatus(): bat[int,str] = CMDbbpStatus
-	comment "Map a BAT id into its disk/load status";
+	comment "View to map a BAT id into its disk/load status";
 command getKind(): bat[int,str] = CMDbbpKind
-	comment "Map a BAT id into its type";
+	comment "View to map a BAT id into its persistency status";
 
 @+ Implementation section
 In most cases we pass a BAT identifier, which should be unified
