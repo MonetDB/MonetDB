@@ -67,7 +67,7 @@ On small joins we just assume 1-N joins with a limited (=3) hit rate.
                         }
                         BBPreclaim(l);
                 }
-                if (_div) @3 = (((lng) _tot) * ((lng) _lcount)) / (((lng) _div)*1000LL);
+                if (_div) @3 = (((lng) _tot) * ((lng) _lcount)) / (((lng) _div)*LL_CONSTANT(1000));
                 l = _tmp1;
         }
 }
