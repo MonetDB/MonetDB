@@ -400,8 +400,8 @@ print("done!");
 x := [oid](x.reverse.mark(oid(1))).reverse;
 y := [oid](y.reverse.mark(oid(1))).reverse;
 z := [oid](z.reverse.mark(oid(1))).reverse;
-y.access(BAT_WRITE);
-z.access(BAT_WRITE);
+y := y.access(BAT_WRITE);
+z := z.access(BAT_WRITE);
 y.insert(0@0,dbl(nil));
 z.insert(0@0,str(nil));
 y.delete(0@0);
@@ -920,7 +920,7 @@ CTmultigroup(
    BAT*         bm   /* pointer to BAT[BAT,any] record.*/
 )
 {		
-	int maxsize = 0, error, attrfix = FALSE, xx, t, tt=-1;
+	int maxsize = 0, error, xx, t, tt=-1;
 	size_t maxheap = 0;
 	char nme[128];
  	BAT *b, *bn, *ct;
@@ -928,19 +928,17 @@ CTmultigroup(
         BUN p,q;
 	bat bid;
 
-	if (bm->htype == TYPE_str) {
-		attrfix = TRUE;
-	} else if (bm->htype != TYPE_bat) {
+	if (bm->htype != TYPE_str && bm->htype != TYPE_bat) {
 		GDKerror("CTmultigroup: meta-bat %s should have BAT or str head column.\n", batsig(bm,nme)); 
 		return GDK_FAIL;
 	}
         BATloopFast(bm, p, q, xx) {
-		if (attrfix) {
+		if (bm->htype == TYPE_str) {
 			bid = BBPindex((str)BUNhead(bm,p));
-			BBPfix(bid);
 		} else {
 			bid = *(bat*)BUNhloc(bm,p);
 		}
+		BBPfix(bid);
 		b = BATdescriptor(bid);
 
 		error = (b == NULL || ATOMtype(b->htype) != TYPE_oid);
@@ -953,9 +951,7 @@ CTmultigroup(
 			maxheap = MAX(maxheap,b->theap.free);
 			error = (b->ttype != t);
 		}
-		if (attrfix) {
-			BBPunfix(bid);
-		}
+		BBPunfix(bid);
 		if (error) {
 			GDKerror("CTmultigroup: illegal param %d (%s)\n", 
 				1 + BUNindex(bm,p) - BUNindex(bm,BUNfirst(bm)), batsig(b,nme));
@@ -967,12 +963,12 @@ CTmultigroup(
 		m = map_multigroup(maxsize+1, maxheap, tt);
 	} 
         BATloopFast(bm, p, q, xx) {
-		if (attrfix) {
+		if (bm->htype == TYPE_str) {
 			bid = BBPindex((str)BUNhead(bm,p));
-			BBPfix(bid);
 		} else {
 			bid = *(bat*)BUNhloc(bm,p);
 		}
+		BBPfix(bid);
 		b = BATdescriptor(bid);
 		if (tt != ATOMstorage(TYPE_oid)) {
 			ct = BATnew(b->htype, TYPE_oid, BATcount(b));
@@ -995,9 +991,7 @@ CTmultigroup(
 		}
 		BUNins(bn, &ct->batCacheid, NULL);
 		BBPunfix(ct->batCacheid);
-		if (attrfix) {
-			BBPunfix(bid);
-		}
+		BBPunfix(bid);
 	}
 	if (tt != ATOMstorage(TYPE_oid)) {
 		map_free(m);
@@ -1130,12 +1124,12 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 }
 
 int regroup(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
+	BBPfix(ct->batCacheid);
 	*retval = BATsetaccess(ct, BAT_WRITE);
 	return derive(retval, ct, b, tt, m);
 }
 
 int CTregroup(BAT** retval, BAT* ct, BAT* b) {	
-	BBPfix(ct->batCacheid);
 	return regroup(retval, ct, b, tailtype(b, TRUE), NULL);
 }
 
@@ -1154,7 +1148,7 @@ int CTderive(BAT** retval, BAT* ct, BAT* b) {
 
 
 BAT *multiderive(BAT* bm, int overwrite) {
-	int error, ctfix = FALSE, attrfix = FALSE, ctready = TRUE;
+	int error, ctready = TRUE;
 	char nme1[128], nme2[128]; 
         int maxsize = 0, xx, yy, t, tt=-1;
 	size_t maxheap = 0;
@@ -1163,29 +1157,25 @@ BAT *multiderive(BAT* bm, int overwrite) {
         BUN p, q, r;
 	bat bid, cid;
 
-	if (bm->htype == TYPE_str) {
-		ctfix = TRUE;
-	} else if (bm->htype != TYPE_bat) {
+	if (bm->htype != TYPE_str && bm->htype != TYPE_bat) {
 		GDKerror("CTmultiderive: meta-bat %s should have BAT or str head column.\n", batsig(bm,nme1));
 	}
-	if (bm->ttype == TYPE_str) {
-		attrfix = TRUE;
-	} else if (bm->ttype != TYPE_bat) {
+	if (bm->ttype != TYPE_str && bm->ttype != TYPE_bat) {
 		GDKerror("CTmultiderive: meta-bat %s should have BAT or str tail column.\n", batsig(bm,nme1));
 	}
         BATloopFast(bm, p, q, xx) {
-		if (ctfix) {
+		if (bm->htype == TYPE_str) {
 			cid = BBPindex((str)BUNhead(bm,p));
-			BBPfix(cid);
 		} else {
 			cid = *(bat*)BUNhloc(bm,p);
 		}
-		if (attrfix) {
+		BBPfix(cid);
+		if (bm->ttype == TYPE_str) {
 			bid = BBPindex((str)BUNtail(bm,p));
-			BBPfix(bid);
 		} else {
 			bid = *(bat*)BUNtloc(bm,p);
 		}
+		BBPfix(bid);
 		ct = BATdescriptor(cid);
 		b = BATdescriptor(bid);
 
@@ -1203,12 +1193,8 @@ BAT *multiderive(BAT* bm, int overwrite) {
 			maxsize = MAX(maxsize, MIN(BATcount(b),BATcount(ct)));
 			maxheap = MAX(maxheap, b->theap.free);
 		}
-		if (attrfix) {
-			BBPunfix(bid);
-		}
-		if (ctfix) {
-			BBPunfix(cid);
-		}
+		BBPunfix(bid);
+		BBPunfix(cid);
 		if (error) {
 			GDKerror("CTmultiderive: illegal params %d (%s, %s)\n", 
 				1 + BUNindex(bm,p) - BUNindex(bm,BUNfirst(bm)), 
@@ -1232,29 +1218,25 @@ BAT *multiderive(BAT* bm, int overwrite) {
 
         BATloopFast(bm, p, q, xx) {
 		BAT *bn = NULL;
-		if (ctready && ctfix) {
+		if (ctready && bm->htype == TYPE_str) {
 			cid = BBPindex((str)BUNhead(bm,p));
-			BBPfix(cid);
 		} else {
 			cid = *(bat*)BUNhloc(tmp,r);
 		}
-		if (attrfix) {
+		BBPfix(cid);
+		if (bm->ttype == TYPE_str) {
 			bid = BBPindex((str)BUNtail(bm,p));
-			BBPfix(bid);
 		} else {
 			bid = *(bat*)BUNtloc(bm,p);
 		}
+		BBPfix(bid);
 		ct = BATdescriptor(cid);
 		b = BATdescriptor(bid);
 
 		error = !(overwrite?regroup(&bn, ct, b, tt, &m):
 			  	    derive(&bn, ct, b, tt, &m)); 
-		if (attrfix) {
-			BBPunfix(bid);
-		}
-		if (ctready && ctfix) {
-			BBPunfix(cid);
-		}
+		BBPunfix(bid);
+		BBPunfix(cid);
 		if (error) {
 			BBPreclaim(ret); 
 			ret = NULL; 
