@@ -94,6 +94,7 @@ typedef struct SCOPEDEF {
 
 mal_export Scope    mal_scope;  /* the start of the module list */
 
+mal_export void     setScopeJump(str nme, Scope cur);
 mal_export Scope    newScope(Scope scope, str nme);
 mal_export Scope    fixateScope(Scope scope, str nme, int len);
 mal_export void     freeScope(Scope cur);
@@ -155,6 +156,9 @@ table to find the correct one. This simple scheme safes about
 100ms/100K calls
 @c
 
+void setScopeJump(str nme, Scope cur){
+        scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur;
+}
 Scope newScope(Scope scope, str nme){
     Scope cur;
     @:newscope(newScope)@
@@ -162,7 +166,7 @@ Scope newScope(Scope scope, str nme){
     if( scope != NULL){
         cur->outer = scope->outer;
         scope->outer= cur;
-        scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur;
+        setScopeJump(nme,cur);
     } 
     return cur;
 }

@@ -148,6 +148,7 @@ void malInclude(Client c, str name, str libname, int listing){
     int oldlisting = c->listing;
     int oldblkmode = c->blkmode;
     Scope oldscope = c->nspace;
+
     Symbol oldprg = c->curprg;
     MalStkPtr oldstk = c->glb;
 
@@ -178,7 +179,7 @@ resolving addresses.
     c->input= oldinput;
     c->limit= oldlimit;
     c->nxt = oldnxt;
-    c->nspace= oldscope;
+    c->nspace= oldscope; 
     c->curprg = oldprg;
     c->blkmode = oldblkmode;
 }

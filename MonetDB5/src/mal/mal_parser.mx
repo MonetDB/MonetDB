@@ -632,6 +632,8 @@ str parseInclude(Client cntxt)
         return parseError(cntxt,"<module path> expected\n");
 
     malInclude(cntxt,modnme,modnme, 0);
+    /* re-establish starting point in jumptable */
+    setScopeJump(modnme,cntxt->nspace);
     GDKfree(modnme);
     skipSpace(cntxt);
     if( *(cntxt->nxt) != ';')
