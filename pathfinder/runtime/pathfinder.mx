@@ -115,345 +115,422 @@ preceding-sibling evaluation from the given context."
 
 @mil
 #############################################
-# docmgmt.mil : Document management functions
+# Document management functions
 #
-# Each XML-document is stored in a collection of BATs whose name starts
-# with the name of the document. During execution of an XQuery, the
-# 'working set' of documents is copied to a 'global document' represented
-# by the T* collection of BATs.
+# - import_doc
+# - delete_doc
+# - compress_properties
+# - doc_to_working_set
+#
+# Each imported XML-document is stored as a collection of persistent BATs 
+# whose name starts with the name of the BAT and ends with the document ID. 
+# The execution of an XQuery is not performed on the persistent BATs, but on 
+# the transient 'working set', a global document collection represented
+# by the T*-BATs.
 #
 # Each collection contains the following BATs:
-# - pre_size    : BAT[oid,int]  Pre-value of node / and its descendant size,
-# - pre_level   : BAT[oid,chr]  Pre-value of node / and its level,
-# - pre_prop    : BAT[oid,oid]  Pre-value of node / and Property ID,
-# - pre_kind    : BAT[oid,chr]  Pre-value of node / and Property ID,
+# - pre_size    : BAT[oid,int]  pre-value of node / and its descendant size,
+# - pre_level   : BAT[oid,chr]  pre-value of node / and its level,
+# - pre_prop    : BAT[oid,oid]  pre-value of node / and property ID,
+# - pre_kind    : BAT[oid,chr]  pre-value of node / and property ID,
 #
-# - prop_ns      : BAT[oid,str]  Property ID / and name space,
-# - prop_loc     : BAT[oid,str]  Property ID / and local name,
-# - prop_text    : BAT[oid,str]  Property ID / and text,
-# - prop_com     : BAT[oid,str]  Property ID / and comment,
-# - prop_ins     : BAT[oid,str]  Property ID / and processing instruction,
-# - prop_tgt     : BAT[oid,str]  Property ID / and processing instruction target,
+# - prop_ns      : BAT[oid,str]  property ID / and name space,
+# - prop_loc     : BAT[oid,str]  property ID / and local name,
+# - prop_text    : BAT[oid,str]  property ID / and text,
+# - prop_com     : BAT[oid,str]  property ID / and comment,
+# - prop_ins     : BAT[oid,str]  property ID / and processing instruction,
+# - prop_tgt     : BAT[oid,str]  property ID / and processing instruction target,
 #
-# - attr_ns   : BAT[oid,str]  Attribute ID/ and name space of attribute names
-# - attr_loc  : BAT[oid,str]  Attribute ID/ and local name of attribute names
-# - attr_val  : BAT[oid,str]  Attribute ID/ Value of attribute nodes
-# - attr_own  : BAT[oid,oid]  Attribute ID/ Pre-value of owner
-# These are stored in a doc BAT[str,bat] with the name (left) in the
-# head and the BAT (right) in the tail.
+# - attr_ns   : BAT[oid,str]  attribute ID / and name space of attribute names
+# - attr_loc  : BAT[oid,str]  attribute ID / and local name of attribute names
+# - attr_val  : BAT[oid,str]  attribute ID / value of attribute nodes
+# - attr_own  : BAT[oid,oid]  attribute ID / pre-value of owner
 #
-# Document information
-# - doc_name    : BAT[oid,str]  Document Id/Document name (incl XML)
-# - doc_doc     : BAT[oid,bat]  Document Id/Collection of doc bats
-# - doc_height  : BAT[oid,int]  Document Id/Height of document
-# - Troot_pre : BAT[oid,oid] Document Id/Pre-value of working document
-# - Theight : int  Max. height of docs in working set
+# Global information on persistent stored documents:
+# - doc_name    : BAT[oid,str]  document ID / document name
+# - doc_height  : BAT[oid,int]  document ID / height of document
+# 
+# Information on documents/fragments in the working set:
+# - Tdoc_pre : BAT[oid,oid] document ID / pre-value of document node in working set
+# - Tdoc_name : BAT[oid,str] document ID / name of document (only if name exists)
+# - Theight : int height of the working set
 
-var pre_base := 0@0;
-var attr_base := 1073741824@0; #2 * 2^29
+# DEFINITION of constants concerning the data model
+const DOC_BASE := 0@0;
+const PRE_BASE := 0@0;
+const ATTR_BASE := 1073741824@0; #2 * 2^29
+const ELEMENT := chr(0);
+const TEXT := chr(1);
+const COMMENT := chr(2);
+const PI := chr(3);
+const DOCUMENT := chr(4);
 
-var Tpre_size;
-var Tpre_level;
-var Tpre_prop;
-var Tpre_kind;
-var Tprop_ns;
-var Tprop_loc;
-var Tprop_text;
-var Tprop_com;
-var Tprop_ins;
-var Tprop_tgt;
-var Tattr_ns;
-var Tattr_loc;
-var Tattr_val;
-var Tattr_own;
-var Troot_pre;
-var Theight:=0;
+# INITIALIZATION of working set (T*-BATs)
+var Tpre_size := new(void,int).seqbase(PRE_BASE);
+var Tpre_level := new(void,chr).seqbase(PRE_BASE);
+var Tpre_prop := new(void,oid).seqbase(PRE_BASE);
+var Tpre_kind := new(void,chr).seqbase(PRE_BASE);
+var Tprop_ns := new(void,str).seqbase(PRE_BASE);
+var Tprop_loc := new(void,str).seqbase(PRE_BASE);
+var Tprop_text := new(void,str).seqbase(PRE_BASE);
+var Tprop_com := new(void,str).seqbase(PRE_BASE);
+var Tprop_ins := new(void,str).seqbase(PRE_BASE);
+var Tprop_tgt := new(void,str).seqbase(PRE_BASE);
+var Tattr_ns := new(void,str).seqbase(ATTR_BASE);
+var Tattr_loc := new(void,str).seqbase(ATTR_BASE);
+var Tattr_val := new(void,str).seqbase(ATTR_BASE);
+var Tattr_own := new(void,oid).seqbase(ATTR_BASE);
+var Tdoc_pre := new(void,oid).seqbase(DOC_BASE);
+var Tdoc_name := new(void,str).seqbase(DOC_BASE);
+var Theight := 0;
 
-PROC merge_properties(BAT[void,oid] pre_prop, BAT[oid,oid] pre_propnew,
-                      BAT[void,str] Tprop_value, str batname) : void :=
+# called by compress_properties
+PROC compress_val(BAT[oid,oid] pre_prop, BAT[oid,oid] pre_newprop,
+                  str batname) : void :=
 {
-        # get the actual property ID offset
-	var new_prop_base := oid(int(Tprop_value.seqbase) + Tprop_value.count);
-	
-	# get the <prop/value> BAT of the new document
-	var prop_value := doc.find(batname).copy;
-	
-	# search for already existing property values and replace the corresponding
-	# property IDs in the pre_prop table which will be imported later
-	var prop_propnew := prop_value.join(Tprop_value.reverse);
-	pre_propnew.insert(pre_prop.join(prop_propnew));
-        
-	# import all new property values and replace the corresponding
-	# property IDs as in the above case
-	prop_value := prop_value.kdiff(prop_propnew);
-	prop_propnew := prop_value.mirror.mark(new_prop_base);
-	pre_propnew.insert(pre_prop.join(prop_propnew));
-	Tprop_value.insert(prop_value.reverse.mark(new_prop_base).reverse);
+    prop_val := bat(batname);
+    
+    var cprval_newprop := prop_val.reverse.kunique.mark(PRE_BASE);
+    var prop_newprop := prop_val.join(cprval_newprop);
+    pre_newprop.insert(pre_prop.join(prop_newprop));
+
+    # replace persistent prop_val by the new compressed BAT
+    prop_val := nil;
+    bat(batname).persists(false).rename(batname + "_");
+    cprval_newprop.reverse.persists(true).bbpname(batname);
 }
 
-PROC merge_properties(BAT[void,oid] pre_prop, BAT[oid,oid] pre_propnew,
-                      BAT[void,str] Tprop_value, str batname,
-                      BAT[void,str] Tprop_value2, str batname2) : void :=
+# called by compress_properties
+PROC compress_val(BAT[oid,oid] pre_prop, BAT[oid,oid] pre_newprop,
+                  str batname1, str batname2) : void :=
 {
-        # get the actual property ID offset
-	var new_prop_base := oid(int(Tprop_value.seqbase) + Tprop_value.count);
-	
-	# get the <prop/value> BAT of the new document
-	var prop_value := doc.find(batname).copy;
-	var prop_value2 := doc.find(batname2).copy;
-	
-	# search for already existing property values and replace the corresponding
-	# property IDs in the pre_prop table which will be imported later
-	var prop_propnew := prop_value.join(Tprop_value.reverse);
-	
-	var tmp := prop_value2.semijoin(prop_propnew);
-	var prop_mark := tmp.mark(0@0);
-	var mark_value := tmp.reverse.mark(0@0).reverse;
-	var mark_Tvalue := Tprop_value2.semijoin(prop_propnew.reverse).reverse.mark(0@0).reverse;
-	var mark_sel := mark_value.[=](mark_Tvalue).select(TRUE);
-	prop_propnew.semijoin(prop_mark.join(mark_sel));
-	pre_propnew.insert(pre_prop.join(prop_propnew));
-        
-	# import all new property values and replace the corresponding
-	# property IDs as in the above case
-	prop_value := prop_value.kdiff(prop_propnew);
-	prop_value2 := prop_value2.kdiff(prop_propnew);
-	prop_propnew := prop_value.mirror.mark(new_prop_base);
-	pre_propnew.insert(pre_prop.join(prop_propnew));
-	Tprop_value.insert(prop_value.reverse.mark(new_prop_base).reverse);
-	Tprop_value2.insert(prop_value2.reverse.mark(new_prop_base).reverse);
+    prop_val1 := bat(batname1);
+    prop_val2 := bat(batname2);
+    
+    # ":" is added to distinguish between "foo:bar" and "fo:obar"
+    var prop_val12 := prop_val1.[+](":").[+](prop_val2);
+    var cprval12_prop := prop_val12.reverse.kunique;
+    var cprval12_newprop := cprval12_prop.mark(PRE_BASE);
+    
+    var prop_newprop := prop_val12.join(cprval12_newprop);
+    pre_newprop.insert(pre_prop.join(prop_newprop));
+    
+    var cprval1_prop := prop_val1.semijoin(cprval12_prop.reverse).reverse;
+    var cprval2_prop := prop_val2.semijoin(cprval12_prop.reverse).reverse;
+    
+    var cprval1_newprop := cprval1_prop.join(prop_newprop);
+    var cprval2_newprop := cprval2_prop.join(prop_newprop);
+    
+    # replace persistent prop_val1/2 by the new compressed BATs
+    prop_val1 := nil;
+    bat(batname1).persists(false).rename(batname1 + "_");
+    cprval1_newprop.reverse.persists(true).bbpname(batname1);
+    prop_val2 := nil;
+    bat(batname2).persists(false).rename(batname2 + "_");
+    cprval2_newprop.reverse.persists(true).bbpname(batname2);
 }
 
+PROC compress_properties(str name) : void :=
+{
+    if (not(doc_name.reverse.exist(name)))
+	ERROR("Document %s does not exist\n",name);
+    var docid := str(int(doc_name.reverse.find(name)));
+    
+    var batname := "pre_prop" + docid;
+    var pre_prop := bat(batname);
+    var pre_kind := bat("pre_kind" + docid);
+    var pre_newprop := new(oid,oid);
+   
+    # eliminate property duplicates in each BAT prop_*
+    # (in case of tag-names and PIs every unique combination of
+    #  ns:loc, (resp. tgt:ins) gets a property ID)
+    pre_newprop.insert(pre_prop.semijoin(pre_kind.select(DOCUMENT)));
+    var tmp := pre_prop.semijoin(pre_kind.select(ELEMENT));
+    compress_val(tmp, pre_newprop, ("prop_loc" + docid), ("prop_ns" + docid));
+    tmp := pre_prop.semijoin(pre_kind.select(TEXT));
+    compress_val(tmp, pre_newprop, ("prop_text" + docid));
+    tmp := pre_prop.semijoin(pre_kind.select(COMMENT));
+    compress_val(tmp, pre_newprop, ("prop_com" + docid));
+    tmp := pre_prop.semijoin(pre_kind.select(PI));
+    compress_val(tmp, pre_newprop, ("prop_ins" + docid), ("prop_tgt" + docid));
+    
+    # replace persistent pre_prop by the new BAT with compressed property IDs
+    pre_newprop := pre_newprop.sort.reverse.mark(PRE_BASE).reverse;
+    pre_prop := nil;
+    bat(batname).persists(false).rename(batname + "_");
+    pre_newprop.persists(true).bbpname(batname);
+    
+    commit;
+}
+ADDHELP("compress_properties", "rode", "Nov 2003",
+"PARAMETERS:\n\
+str document name\n\
+DESCRIPITON:\n\
+compression of property duplicates\n\
+(this function should be called if the loader was used without property compression)",
+"pathfinder");
+
+# called by "doc_to_working_set" when importing properties
+PROC add_properties(BAT[oid,oid] pre_prop, BAT[oid,oid] pre_newprop,
+                    BAT[void,str] Tprop_val, str batname) : oid :=
+{
+    # get the actual property ID offset
+    var new_prop_base := oid(int(Tprop_val.seqbase) + Tprop_val.count);
+
+    # get the <prop/val> BAT of the new document
+    var prop_val := bat(batname);
+
+    # import all new property values and replace the corresponding
+    # property IDs 
+    var prop_newprop := prop_val.mirror.mark(new_prop_base);
+    pre_newprop.insert(pre_prop.join(prop_newprop));
+    Tprop_val.insert(prop_val.reverse.mark(new_prop_base).reverse);
+
+    return new_prop_base;
+}
 
 PROC doc_to_working_set(str name) : void :=
 {
-	var docid := doc_name.reverse.find(name);
-	var doc := doc_doc.find(docid);
+    if (not(doc_name.reverse.exist(name)))
+	ERROR("Document %s does not exist\n",name);
+    var docid := doc_name.reverse.find(name);
 
-	var new_pre_base := oid(int(pre_base) + Tpre_size.count);
-        
-	Troot_pre.insert(docid, new_pre_base);
-	Theight := max(Theight, doc_height.find(docid));
+    var new_pre_base := oid(int(PRE_BASE) + Tpre_size.count);
+    
+    # create document entry for Tdoc_pre, Tdoc_name and update max-height;
+    Tdoc_pre.insert(nil, new_pre_base);
+    Tdoc_name.insert(nil, name);
+    Theight := max(Theight, doc_height.find(docid));
 
-        # append the size and level table to the respective T-BATs
-	Tpre_size.insert(doc.find("pre_size").seqbase(new_pre_base));
-	doc.find("pre_size").seqbase(pre_base);
-	Tpre_level.insert(doc.find("pre_level").seqbase(new_pre_base));
-	doc.find("pre_level").seqbase(pre_base);
-	Tpre_kind.insert(doc.find("pre_kind").seqbase(new_pre_base));
-	doc.find("pre_kind").seqbase(pre_base);
+    docid := str(int(docid));
 
-        # merge and append the property BATs
-        if (new_pre_base = pre_base)
-	{
-	   Tpre_prop.insert(doc.find("pre_prop"));
-	   Tprop_ns.insert(doc.find("prop_ns"));
-	   Tprop_loc.insert(doc.find("prop_loc"));
-	   Tprop_com.insert(doc.find("prop_com"));
-	   Tprop_text.insert(doc.find("prop_text"));
-	   Tprop_ins.insert(doc.find("prop_ins"));
-	   Tprop_tgt.insert(doc.find("prop_tgt"));
-	}
-	else
-	{
-	   pre_prop := doc.find("pre_prop").seqbase(new_pre_base);
-	   var pre_propnew := new(oid,oid);
-           merge_properties(pre_prop, pre_propnew, Tprop_loc, "prop_loc", Tprop_ns, "prop_ns");
-           merge_properties(pre_prop, pre_propnew, Tprop_text, "prop_text");
-           merge_properties(pre_prop, pre_propnew, Tprop_com, "prop_com");
-           merge_properties(pre_prop, pre_propnew, Tprop_ins, "prop_ins", Tprop_tgt, "prop_tgt");
-           pre_propnew := pre_propnew.sort.reverse.mark(new_pre_base).reverse;
-	   doc.find("pre_prop").seqbase(pre_base);
-	   Tpre_prop.insert(pre_propnew);
-	}
-	
-        # append the attribute tables to the respective T-BATs
-	var new_attr_base := oid(int(attr_base) + Tattr_own.count);
-	
-	Tattr_ns.insert(doc.find("attr_ns").seqbase(new_attr_base));
-	doc.find("attr_ns").seqbase(attr_base);
-	Tattr_loc.insert(doc.find("attr_loc").seqbase(new_attr_base));
-	doc.find("attr_loc").seqbase(attr_base);
-	Tattr_val.insert(doc.find("attr_val").seqbase(new_attr_base));
-	doc.find("attr_val").seqbase(attr_base);
+    # append the size and level table to the respective T-BATs
+    Tpre_size.insert(bat("pre_size" + docid).reverse.mark(new_pre_base).reverse);
+    Tpre_level.insert(bat("pre_level" + docid).reverse.mark(new_pre_base).reverse);
+    Tpre_kind.insert(bat("pre_kind" + docid).reverse.mark(new_pre_base).reverse);
 
-        # the debugmask instructions helps to pass the sorted property,
-	# which would be lost otherwise after the [+](int) instruction
-	var tmp := doc.find("attr_own").seqbase(new_attr_base);
-	tmp := tmp.[int];
-	var orgDebugMask := debugmask();
-	var newDebugMask := or(or(2,8),orgDebugMask);
-	debugmask(newDebugMask);
-	tmp := tmp.[+](int(new_pre_base) - int(pre_base));
-	debugmask(orgDebugMask);
-	tmp := tmp.[oid];
-	Tattr_own.insert(tmp);
-	doc.find("attr_own").seqbase(attr_base);
+    # append the property BATs
+    var pre_prop := bat("pre_prop" + docid).reverse.mark(new_pre_base).reverse;
+    var pre_newprop := new(oid,oid);
+    
+    pre_newprop.insert(pre_prop.semijoin(Tpre_kind.select(DOCUMENT)));
+    pre_newprop.print;
+    var tmp := pre_prop.semijoin(Tpre_kind.select(ELEMENT));
+    tmp_seqbase := add_properties(tmp, pre_newprop, Tprop_loc, "prop_loc" + docid);
+    Tprop_ns.insert(bat("prop_ns" + docid).reverse.mark(tmp_seqbase).reverse);
+    tmp := pre_prop.semijoin(Tpre_kind.select(TEXT));
+    add_properties(tmp, pre_newprop, Tprop_text, "prop_text" + docid);
+    tmp := pre_prop.semijoin(Tpre_kind.select(COMMENT));
+    add_properties(tmp, pre_newprop, Tprop_com, "prop_com" + docid);
+    tmp := pre_prop.semijoin(Tpre_kind.select(PI));
+    tmp_seqbase := add_properties(tmp, pre_newprop, Tprop_ins, "prop_ins" + docid);
+    Tprop_tgt.insert(bat("prop_tgt" + docid).reverse.mark(tmp_seqbase).reverse);
+    
+    pre_newprop := pre_newprop.sort.reverse.mark(new_pre_base).reverse;
+    Tpre_prop.insert(pre_newprop);
+
+    # append the attribute tables to the respective T-BATs
+    var new_attr_base := oid(int(ATTR_BASE) + Tattr_own.count);
+
+    Tattr_ns.insert(bat("attr_ns" + docid).reverse.mark(new_attr_base).reverse);
+    Tattr_loc.insert(bat("attr_loc" + docid).reverse.mark(new_attr_base).reverse);
+    Tattr_val.insert(bat("attr_val" + docid).reverse.mark(new_attr_base).reverse);
+
+    # the debugmask instructions helps to pass the sorted property,
+    # which would be lost otherwise after the [+](int) instruction
+    tmp := bat("attr_own" + docid).reverse.mark(new_attr_base).reverse;
+    tmp := tmp.[int];
+    var orgDebugMask := debugmask();
+    var newDebugMask := or(or(2,8),orgDebugMask);
+    debugmask(newDebugMask);
+    tmp := tmp.[+](int(new_pre_base) - int(PRE_BASE));
+    debugmask(orgDebugMask);
+    tmp := tmp.[oid];
+    Tattr_own.insert(tmp);
 }
-ADDHELP("doc_to_working_set", "keulen", "May 28, 2003",
-"Load persistent document into working set.",
+ADDHELP("doc_to_working_set", "rode", "Nov 2003",
+"PARAMETERS:\n\
+str document name\n\
+DESCRIPITON:\n\
+Load persistent document into working set (T-BATs).",
+"pathfinder");
+
+PROC delete_doc(str name) : void :=
+{
+    if (not(doc_name.reverse.exist(name)))
+	ERROR("Document %s does not exist\n",name);
+    var docid := doc_name.reverse.find(name);
+    
+    doc_name.delete(docid);
+    doc_height.delete(docid);
+    
+    docid := str(int(docid));
+    bat("pre_size" + docid).persists(false);
+    bat("pre_level" + docid).persists(false);
+    bat("pre_prop" + docid).persists(false);
+    bat("pre_kind" + docid).persists(false);
+    bat("prop_ns" + docid).persists(false);
+    bat("prop_loc" + docid).persists(false);
+    bat("prop_text" + docid).persists(false);
+    bat("prop_com" + docid).persists(false);
+    bat("prop_tgt" + docid).persists(false);
+    bat("prop_ins" + docid).persists(false);
+    bat("attr_ns" + docid).persists(false);
+    bat("attr_loc" + docid).persists(false);
+    bat("attr_val" + docid).persists(false);
+    bat("attr_own" + docid).persists(false);
+    
+    commit;
+}
+ADDHELP("delete_doc", "rode", "Nov 2003",
+"PARAMETERS:\n\
+str document name\n\
+DESCRIPITON:\n\
+delete the persistent BATS that store the document.",
 "pathfinder");
 
 PROC import_doc(str flnm, str name) : void :=
 {
-	printf(">>> Importing '%s' with name '%s'\n",flnm,name);
-	
-	if (doc_name.reverse.exist(name))
-	    ERROR("new_Pdoc: Document %s already exists\n",name);
+    # create doc_name table in case it does not exist
+    if (not(view_bbp_name.reverse.exist("doc_name")))
+    {    
+        new(oid,str).persists(true).bbpname("doc_name");
+        new(oid,int).persists(true).bbpname("doc_height");
+    }
+    
+    if (doc_name.reverse.exist(name))
+	ERROR("Document %s already exists\n",name);
 
-        # column/line separators (4 columns)
-        var seps4 := new (void, str);
-        seps4.insert (nil, ",");
-        seps4.insert (nil, ",");
-        seps4.insert (nil, ",");
-        seps4.insert (nil, "\n");
-        
-        # column/line separators (2 columns)
-        var seps2 := new (void, str);
-        seps2.insert (nil, ",");
-        seps2.insert (nil, "\n");
-        
-        # column/line separators (1 column)
-        var seps1 := new (void, str);
-        seps1.insert (nil, "\n");
+    module("ascii_io");
 
-        # ...............................................................
-        # table pre|size|level|prop|kind 
-        var pre := new (void, str);
-        pre.insert (nil, "size");
-        pre.insert (nil, "level");
-        pre.insert (nil, "prop");
-        pre.insert (nil, "kind");
-        
-        # column types
-        var pre_ty := new (void, str);
-        pre_ty.insert (nil, "int");
-        pre_ty.insert (nil, "sht");
-        pre_ty.insert (nil, "oid");
-        pre_ty.insert (nil, "sht");
-        
-        # ...............................................................
-        # table prop|ns|loc
-        var tag := new (void, str);
-        tag.insert (nil, "ns");
-        tag.insert (nil, "loc");
-        
-        # column types
-        var tag_ty := new (void, str);
-        tag_ty.insert (nil, "str");
-        tag_ty.insert (nil, "str");
-        
-        # ..............................................................
-        # table prop|text
-        var text := new (void, str);
-        text.insert (nil, "text");
-        
-        # column types
-        var text_ty := new (void, str);
-        text_ty.insert (nil, "str");
-        
-        # ..............................................................
-        # table prop|com
-        var com := new (void, str);
-        com.insert (nil, "com");
-        
-        # column types
-        var com_ty := new (void, str);
-        com_ty.insert (nil, "str");
-        
-        # ..............................................................
-        # table prop|tgt|ins
-        var pi := new (void, str);
-        pi.insert (nil, "tgt");
-        pi.insert (nil, "ins");
-        
-        # column types
-        var pi_ty := new (void, str);
-        pi_ty.insert (nil, "str");
-        pi_ty.insert (nil, "str");
-        
-        # ..............................................................
-        # table att|own|ns|loc|val
-        var att := new (void, str);
-        att.insert (nil, "own");
-        att.insert (nil, "ns");
-        att.insert (nil, "loc");
-        att.insert (nil, "val");
-        
-        # column types
-        var att_ty := new (void, str);
-        att_ty.insert (nil, "oid");
-        att_ty.insert (nil, "str");
-        att_ty.insert (nil, "str");
-        att_ty.insert (nil, "str");
-        
-        # ..............................................................
-        # initiate the load
-        var doc := new(str,BAT); 
-       
-        tmp := load(pre, seps4, pre_ty, flnm + ".pre", -1);
-	var h := tmp.find("level").max + 1;
-	doc.insert("pre_size", tmp.find("size"));
-	doc.insert("pre_level", tmp.find("level").[chr].copy);
-	doc.insert("pre_prop", tmp.find("prop"));
-	doc.insert("pre_kind", tmp.find("kind").[chr].copy);
+    printf(">>> Importing '%s' with name '%s'\n",flnm,name);
 
-        tmp := load(tag, seps2, tag_ty, flnm + ".tag", -1);
-	doc.insert("prop_ns", tmp.find("ns"));
-	doc.insert("prop_loc", tmp.find("loc"));
-	
-        tmp := load(text, seps1, text_ty, flnm + ".text", -1);
-	doc.insert("prop_text", tmp.find("text"));
-	
-        tmp := load(com, seps1, com_ty, flnm + ".com", -1);
-	doc.insert("prop_com", tmp.find("com"));
-	
-        tmp := load(pi, seps2, pi_ty, flnm + ".pi", -1);
-	doc.insert("prop_tgt", tmp.find("tgt"));
-	doc.insert("prop_ins", tmp.find("ins"));
-	
-        tmp := load(att, seps4, att_ty, flnm + ".@", -1);
-	doc.insert("attr_ns", tmp.find("ns").seqbase(attr_base));
-	doc.insert("attr_loc", tmp.find("loc").seqbase(attr_base));
-	doc.insert("attr_val", tmp.find("val").seqbase(attr_base));
-	doc.insert("attr_own", tmp.find("own").seqbase(attr_base));
-        
-	# persistent storage of the document
-	doc_name.insert(nil, name);
-	doc_doc.insert(nil, doc);
-	doc_height.insert(nil, h);
+    # column/line separators (4 columns)
+    var seps4 := new (void, str);
+    seps4.insert (nil, ",");
+    seps4.insert (nil, ",");
+    seps4.insert (nil, ",");
+    seps4.insert (nil, "\n");
+
+    # column/line separators (2 columns)
+    var seps2 := new (void, str);
+    seps2.insert (nil, ",");
+    seps2.insert (nil, "\n");
+
+    # column/line separators (1 column)
+    var seps1 := new (void, str);
+    seps1.insert (nil, "\n");
+
+    # table pre|size|level|prop|kind 
+    var pre := new (void, str);
+    pre.insert (nil, "size");
+    pre.insert (nil, "level");
+    pre.insert (nil, "prop");
+    pre.insert (nil, "kind");
+
+    # column types
+    var pre_ty := new (void, str);
+    pre_ty.insert (nil, "int");
+    pre_ty.insert (nil, "sht");
+    pre_ty.insert (nil, "oid");
+    pre_ty.insert (nil, "sht");
+
+    # table prop|ns|loc
+    var tag := new (void, str);
+    tag.insert (nil, "ns");
+    tag.insert (nil, "loc");
+
+    # column types
+    var tag_ty := new (void, str);
+    tag_ty.insert (nil, "str");
+    tag_ty.insert (nil, "str");
+
+    # table prop|text
+    var text := new (void, str);
+    text.insert (nil, "text");
+
+    # column types
+    var text_ty := new (void, str);
+    text_ty.insert (nil, "str");
+
+    # table prop|com
+    var com := new (void, str);
+    com.insert (nil, "com");
+
+    # column types
+    var com_ty := new (void, str);
+    com_ty.insert (nil, "str");
+
+    # table prop|tgt|ins
+    var pi := new (void, str);
+    pi.insert (nil, "tgt");
+    pi.insert (nil, "ins");
+
+    # column types
+    var pi_ty := new (void, str);
+    pi_ty.insert (nil, "str");
+    pi_ty.insert (nil, "str");
+
+    # table att|own|ns|loc|val
+    var att := new (void, str);
+    att.insert (nil, "own");
+    att.insert (nil, "ns");
+    att.insert (nil, "loc");
+    att.insert (nil, "val");
+
+    # column types
+    var att_ty := new (void, str);
+    att_ty.insert (nil, "oid");
+    att_ty.insert (nil, "str");
+    att_ty.insert (nil, "str");
+    att_ty.insert (nil, "str");
+
+    # load table pre|size|level|prop|kind 
+    tmp := load(pre, seps4, pre_ty, flnm + ".pre", -1);
+    
+    var docid := oid(int(doc_name.reverse.fetch(doc_name.count)) + 1);
+    doc_name.insert(nil, name);
+    doc_height.insert(nil, tmp.find("level").max + 1);
+    docid := str(int(docid));
+
+    tmp.find("size").persists(true).bbpname("pre_size" + docid);
+    tmp.find("level").[chr].copy.persists(true).bbpname("pre_level" + docid);
+    tmp.find("prop").persists(true).bbpname("pre_prop" + docid);
+    tmp.find("kind").[chr].copy.persists(true).bbpname("pre_kind" + docid);
+
+    # load table prop|ns|loc
+    tmp := load(tag, seps2, tag_ty, flnm + ".tag", -1);
+    tmp.find("ns").persists(true).bbpname("prop_ns" + docid);
+    tmp.find("loc").persists(true).bbpname("prop_loc" + docid);
+
+    # load table prop|text
+    tmp := load(text, seps1, text_ty, flnm + ".text", -1);
+    tmp.find("text").persists(true).bbpname("prop_text" + docid);
+
+    # load table prop|com
+    tmp := load(com, seps1, com_ty, flnm + ".com", -1);
+    tmp.find("com").persists(true).bbpname("prop_com" + docid);
+
+    # load table prop|tgt|ins
+    tmp := load(pi, seps2, pi_ty, flnm + ".pi", -1);
+    tmp.find("tgt").persists(true).bbpname("prop_tgt" + docid);
+    tmp.find("ins").persists(true).bbpname("prop_ins" + docid);
+
+    # load table att|own|ns|loc|val
+    tmp := load(att, seps4, att_ty, flnm + ".@", -1);
+    tmp.find("ns").persists(true).bbpname("attr_ns" + docid);
+    tmp.find("loc").persists(true).bbpname("attr_loc" + docid);
+    tmp.find("val").persists(true).bbpname("attr_val" + docid);
+    tmp.find("own").persists(true).bbpname("attr_own" + docid);
+
+    # save all persistent BATs
+    commit;
 }
-ADDHELP("import_doc", "keulen", "May 28, 2003",
-"Import files flnm.* generated by xml-loader as persistent document\nwith name.","pathfinder");
-
-PROC Pdoc_init() : void :=
-{
-	new(void,str).persists(true).seqbase(pre_base).bbpname("doc_name");
-	new(void,bat).persists(true).seqbase(pre_base).bbpname("doc_doc");
-	new(void,int).persists(true).seqbase(pre_base).bbpname("doc_height");
-}
-ADDHELP("Pdoc_init", "keulen", "May 28, 2003",
-"Initialize the BATs for storage of persistent documents.","pathfinder");
-
-PROC T_init() : void :=
-{
-	Tpre_size := new(void,int).seqbase(pre_base);
-	Tpre_level := new(void,chr).seqbase(pre_base);
-	Tpre_prop := new(void,oid).seqbase(pre_base);
-	Tpre_kind := new(void,chr).seqbase(pre_base);
-	Tprop_ns := new(void,str).seqbase(pre_base);
-	Tprop_loc := new(void,str).seqbase(pre_base);
-	Tprop_text := new(void,str).seqbase(pre_base);
-	Tprop_com := new(void,str).seqbase(pre_base);
-	Tprop_ins := new(void,str).seqbase(pre_base);
-	Tprop_tgt := new(void,str).seqbase(pre_base);
-	Tattr_ns := new(void,str).seqbase(attr_base);
-	Tattr_loc := new(void,str).seqbase(attr_base);
-	Tattr_val := new(void,str).seqbase(attr_base);
-	Tattr_own := new(void,oid).seqbase(attr_base);
-	Troot_pre := new(void,oid).seqbase(pre_base);
-}
-ADDHELP("T_init", "keulen", "May 28, 2003",
-"Initialize the BATs for storage of the working set of documents.",
+ADDHELP("import_doc", "rode", "Nov 2003",
+"PARAMETERS:\n\
+str file name (\"/anypath/foo.xml\" if loader output is located in \"/anypath/foo.xml.*\")\n\
+str document name in database\n\
+DESCRIPITON:\n\
+Import files generated by the loader as persistent document.",
 "pathfinder");
 
