@@ -48,7 +48,7 @@ Too many bugs.
 @:leftjoin(index)@
 
   .COMMAND leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) :
-                    BAT[any::1,any::3] = CMDlefthetajoin;
+                    BAT[any::1,any::3] = CMDleftthetajoin;
   "Hook directly into the 'leftthetajoin' implementation of the join.
    prefix 'left' means that left and right input are not swapped during processing,
    and hence, the order of the left input's head in maintained in the result."
