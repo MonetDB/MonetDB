@@ -557,38 +557,38 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
-#-------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#-------------------------------------------------------------------------------------------------#
-[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 2	  ]
-[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  555,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1574,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-#---------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#---------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#---------------------------------------------------------------------------------------------------------#
+[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
+[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  556,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1575,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_25",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_26",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+#-----------------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#-----------------------------------------------------------------------------------------#
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -1512,38 +1512,38 @@ Start of MIL script.
 [ "monet_fcn_tpe",	  "BAT"	  ]
 [ "monet_fcn_imp",	  "BAT"	  ]
 [ "monet_fcn_fcn",	  "BAT"	  ]
-#-------------------------------------------------------------------------------------------------#
-# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#-------------------------------------------------------------------------------------------------#
-[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 2	  ]
-[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  555,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  599,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1574,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  628,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-#---------------------------------------------------------------------------------#
-# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
-#---------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------#
+# name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#---------------------------------------------------------------------------------------------------------#
+[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
+[ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  556,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  600,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1575,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_fcntbl",	  "str",  "oid",  629,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_load",	  "oid",  "str",  6,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_23",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_25",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+[ "tmp_26",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
+#-----------------------------------------------------------------------------------------#
+# name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| plevel  #
+#-----------------------------------------------------------------------------------------#
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #

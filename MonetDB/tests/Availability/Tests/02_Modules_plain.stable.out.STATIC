@@ -76,7 +76,7 @@ Module: "aggr"
 [ "avg",	  "PROC: ",	  "avg(BAT[any,any::1]) : any::1",				  "not available"		  ]
 [ "card",	  "PROC: ",	  "card(BAT[any,any]) : int",					  "not available"		  ]
 [ "size",	  "PROC: ",	  "size(BAT[any,bit]) : int",					  "not available"		  ]
-[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[int,dbl], BAT[int,any]) : BAT[int,dbl]",		  "grouped tail average"	  ]
+[ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,dbl], BAT[oid,any]) : BAT[oid,dbl]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",		  "grouped tail average"	  ]
 [ "{avg}",	  "COMMAND: ",	  "{avg}(BAT[oid,lng], BAT[oid,any]) : BAT[oid,lng]",		  "grouped tail average"	  ]

@@ -70,8 +70,8 @@ Try: modules;                - for other modules.
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-[ 25 ]
-!WARNING: CMDsize: range error 25
+[ 26 ]
+!WARNING: CMDsize: range error 26
 [ nil ]
 
 # 15:35:25 >  
