@@ -1236,16 +1236,24 @@ drop_table(mvc * sql, dlist * qname, int drop_action)
 
 	if (!t) {
 		return sql_error(sql, 02, 
-			"Drop Table, table %s unknown", tname);
+			"DROP TABLE: unknown table: %s", tname);
 	} else if (t->keys.set){
 		node *n;
 		for (n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
-			if (k->type == ukey || k->type == pkey){
+			if (k->type == ukey || k->type == pkey) {
 				sql_ukey *uk = (sql_ukey*)k;
 				if (uk->keys && list_length(uk->keys)) {
-					return sql_error(sql, 02, 
-					"Cannot drop Table %s, foreign keys depend on it", tname);
+					node* l = uk->keys->h;
+					for (; l; l = l->next) {
+						k = l->data;
+						/* make sure it is not a self referencing key */
+						if (k->t != t) {
+							return sql_error(sql, 02, 
+							"DROP TABLE: foreign key %s depends on %s",
+							k->base.name, tname);
+						}
+					}
 				}
 			}
 		}
