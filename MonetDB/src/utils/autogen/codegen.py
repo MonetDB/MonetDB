@@ -83,8 +83,7 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'c': 	[ '.o' ],
 	    'i':	[ '_wrap.c' ],
 	    'glue.c': 	[ '.glue.o' ],
-	    'fgr':     [ '_engine.c', '_proto.h' ],
-	    'java':   [ '.class' ],
+	    'java':	[ '.class' ],
 	    'mx.in':	[ '.mx' ],
 	    'tex':	[ '.dvi' ],
 	    'dvi':	[ '.ps' ],
@@ -95,6 +94,10 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'java.in':	[ '.java' ],
 	    'mil.in':	[ '.mil' ],
 }
+
+lib_code_gen = { 'fgr':	[ '_proto.h', '_glue.c' ], }
+
+bin_code_gen = { 'fgr':	[ '_proto.h', '_engine.c' ], }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_\-]*\)[>\"]"
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+\([a-zA-Z0-9\.\_, ]*\);"
@@ -192,16 +195,16 @@ def do_code_extract(f,base,ext, targets, deps, cwd):
 #
 # The do_code_gen also tracks the input files for the code extraction
 # of these targets , ie. the dependencies.
-def do_code_gen(targets, deps):
+def do_code_gen(targets, deps, code_map):
   changes = 1
   while(changes):
     ntargets = []
     changes = 0
     for f in targets:
       base,ext = split_filename(f)
-      if (code_gen.has_key(ext)):
+      if (code_map.has_key(ext)):
 	changes = 1
-	for newext in code_gen[ext]:
+	for newext in code_map[ext]:
 	  newtarget = base + newext  
           ntargets.append(newtarget)
 	  if (deps.has_key(newtarget)):
@@ -431,7 +434,11 @@ def codegen(tree, cwd, topdir):
 	    for f in tree.value(i)["SOURCES"]:
 	      (base,ext) = split_filename(f)
 	      do_code_extract(f,base,ext, targets, deps, cwd)
-	    targets = do_code_gen(targets,deps)
+	    targets = do_code_gen(targets,deps,code_gen)
+	    if ( i[0:4] == "lib_" or i == "LIBS" ):
+		targets = do_code_gen(targets,deps,lib_code_gen)
+	    if ( i[0:4] == "bin_" or i == "BINS" ):
+		targets = do_code_gen(targets,deps,bin_code_gen)
 	    do_deps(targets,deps,includes,incmap,cwd)
 	    libs = do_libs(deps)
       	    tree.value(i)["TARGETS"] = targets
