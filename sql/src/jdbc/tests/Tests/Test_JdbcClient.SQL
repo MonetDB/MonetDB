@@ -2,8 +2,8 @@
 
 ARGS="-h${HOST} -p${SQLPORT} -umonetdb"
 
-if [ -f $SQL_BUILD/src/jdbc/MonetJDBC.jar ] ; then
-	MonetJDBC=$SQL_BUILD/src/jdbc/MonetJDBC.jar
+if [ -f $TSTBLDBASE/src/jdbc/MonetJDBC.jar ] ; then
+	MonetJDBC=$TSTBLDBASE/src/jdbc/MonetJDBC.jar
   else
 	MonetJDBC=$SQL_PREFIX/lib/MonetDB/java/MonetJDBC.jar
 fi
