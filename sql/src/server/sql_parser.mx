@@ -170,7 +170,7 @@ sql_export int sqlparse(void *);
 #ifdef yyerror
 #undef yyerror
 #endif
-#define yyerror(s) parse_error(YYLEX_PARAM, s)
+#define yyerror(s...) sql_error(YYLEX_PARAM, 4, s)
 
 #define FALSE 0
 #define TRUE 1
@@ -368,6 +368,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_sign
 	opt_index_type
 	intval
+	nonzero
 	opt_nr
 	opt_limit
 	opt_match
@@ -1605,7 +1606,7 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 			{ $$ = -1; }
- |  LIMIT intval 			{ $$ = $2; }
+ |  LIMIT nonzero 			{ $$ = $2; }
  ;
 
 ordering_spec_commalist:
@@ -1872,7 +1873,7 @@ datetime_funcs:
  ;
 
 string_funcs:
-    SUBSTRING '(' scalar_exp FROM intval FOR intval ')' 
+    SUBSTRING '(' scalar_exp FROM nonzero FOR intval ')' 
 				{ dlist *l = dlist_create();
 				  dlist *ops = dlist_create();
 				  sql_subtype *t = 
@@ -2242,31 +2243,66 @@ opt_else:
 
 		/* data types, more types to come */
 
+nonzero:
+	intval 	{ $$ = $1;
+		  if ($$ == 0) {
+			$$ = -1;
+			yyerror("Positive value expected");
+		  }
+		}
+
 data_type:
-    CHARACTER opt_var		{ $$ = sql_bind_subtype("CHARACTER", 0, 0); }
- |  CHARACTER  opt_var'(' intval ')'	
-				{ $$ = sql_bind_subtype("CHARACTER", $3, 0); }
- |  NUMERIC			{ $$ = sql_bind_subtype("NUMERIC", 0, 0); }
- |  NUMERIC '(' intval ')'	{ $$ = sql_bind_subtype("NUMERIC", $3, 0); }
+    CHARACTER opt_var	{ $$ = sql_bind_subtype("CHARACTER", 0, 0); }
+ |  CHARACTER  opt_var'(' nonzero ')'	
+			{ $$ = sql_bind_subtype("CHARACTER", $3, 0); }
+ |  NUMERIC		{ $$ = sql_bind_subtype("NUMERIC", 0, 0); }
+ |  NUMERIC '(' nonzero ')'	
+			{ $$ = sql_bind_subtype("NUMERIC", $3, 0); }
  |  NUMERIC '(' intval ',' intval ')' 
-				{ $$ = sql_bind_subtype("NUMERIC", $3, $5); }
- |  sqlDECIMAL			{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
- |  sqlDECIMAL '(' intval ')'	{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
+			{ if ($5 >= $3) {
+				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				$$ = NULL;
+			  } else {
+			        $$ = sql_bind_subtype("NUMERIC", $3, $5); 
+			  }
+			}
+ |  sqlDECIMAL		{ $$ = sql_bind_subtype("DECIMAL", 0, 0); }
+ |  sqlDECIMAL '(' nonzero ')'	
+			{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
  |  sqlDECIMAL '(' intval ',' intval ')' 
-				{ $$ = sql_bind_subtype("DECIMAL", $3, $5); }
- |  sqlFLOAT			{ $$ = sql_bind_subtype("FLOAT", 0, 0); }
- |  sqlFLOAT '(' intval ')'	{ $$ = sql_bind_subtype("FLOAT", $3, 0); }
+			{ if ($5 >= $3) {
+				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				$$ = NULL;
+			  } else {
+				$$ = sql_bind_subtype("DECIMAL", $3, $5); 
+			  }
+			}
+ |  sqlFLOAT		{ $$ = sql_bind_subtype("FLOAT", 0, 0); }
+ |  sqlFLOAT '(' nonzero ')'	
+			{ $$ = sql_bind_subtype("FLOAT", $3, 0); }
  |  sqlFLOAT '(' intval ',' intval ')'	
-				{ $$ = sql_bind_subtype("FLOAT", $3, $5); }
- |  REAL			{ $$ = sql_bind_subtype("REAL", 0, 0); }
- |  sqlDOUBLE 			{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
+			{ if ($5 >= $3) {
+				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				$$ = NULL;
+			  } else {
+				$$ = sql_bind_subtype("FLOAT", $3, $5); 
+			  }
+			}
+ |  REAL		{ $$ = sql_bind_subtype("REAL", 0, 0); }
+ |  sqlDOUBLE 		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  |  sqlDOUBLE '(' intval ',' intval ')' 	
-				{ $$ = sql_bind_subtype("DOUBLE", $3, $5); }
- |  sqlDOUBLE PRECISION		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
+			{ if ($5 >= $3) {
+				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				$$ = NULL;
+			  } else {
+				$$ = sql_bind_subtype("DOUBLE", $3, $5); 
+			  }
+			}
+ |  sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  | datetime_type
  | interval_type		
- | TYPE				{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
- | TYPE '(' intval ')'		{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
+ | TYPE			{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
+ | TYPE '(' nonzero ')'	{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
  ;
 
 opt_var:

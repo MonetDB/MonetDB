@@ -885,7 +885,6 @@ void sqltypeinit()
 	      	sql_create_func("convert", (*u)->name, *t, NULL, *u, SCALE_FIX );
 	  }
 	}
-	
 
 	/* convert string to numerical */
 	for(t=strings; t < numerical; t++){
@@ -947,8 +946,8 @@ void sqltypeinit()
  		sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), 
 	    sql_create_subtype(*t, 0, 0));
 
-
-	  sql_create_func( "strconcat", "+", *t, *t, *t, SCALE_FIX);
+	  sql_create_func( "trunc", "trunc", *t, INT, *t, SCALE_SUB);
+	  sql_create_func( "strconcat", "+", *t, *t, *t, SCALE_ADD);
 	  sql_create_func( "upper", "toUpper", *t, NULL, *t, SCALE_FIX);
 	  sql_create_func( "lower", "toLower", *t, NULL, *t, SCALE_FIX);
 	}
