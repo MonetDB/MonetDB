@@ -326,6 +326,8 @@ def msc_scripts(fd, var, scripts, msc):
 			continue
 	except:
 		continue
+	if (script, script, '', sd) in msc['INSTALL']:
+		continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(SRCDIR)\\%s.in' % script
             if inf not in msc['_IN']:
