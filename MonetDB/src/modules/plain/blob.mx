@@ -410,7 +410,7 @@ int sqlblob_fromstr(char *instr, int *l, blob **val)
    blob *result;
    char *s = instr;
 
-   /* since the string is build of (only) hexits the number of bytes
+   /* since the string is built of (only) hexits the number of bytes
     * required for it is the length of the string divided by two
 	*/
    i = strlen(instr);
