@@ -792,8 +792,6 @@ The (committed) bun is moved into the hole, and the first
 bun is moved to its old place. The "hole" pointer is incremented.
 @c
 	if (p < b->batInserted) {
-	    	ALGODEBUG THRprintf(GDKout, 
-				"BUNdelete_(b,p): Committed Delete (p < b->batInserted);\n");
 		l = DELTAhole(b); 
 		idx1 = BUNindex(b, p); 
 		@:hacc_update(del,head,p,idx1)@
@@ -827,9 +825,6 @@ last inserted bun (if present) is copied over it.
 @c
         	void (*hatmdel)(Heap*, int*) = BATatoms[b->htype].atomDel;
 		void (*tatmdel)(Heap*, int*) = BATatoms[b->ttype].atomDel;
-
-	    	ALGODEBUG THRprintf(GDKout, 
-				"BUNdelete_(b,p): Uncommitted Delete (p >= b->batInserted);\n");
 
 		if (hatmdel) {
 			(*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
@@ -869,14 +864,10 @@ BUN BUNdelete(BAT *b, BUN p) {
 		BUN last = BUNlast(b) - bs; 
 		if (p < b->batInserted || p != last  ) {
 			int i = BUNindex(b,p);
-		    	ALGODEBUG THRprintf(GDKout, 
-					"BUNdelete(b,p): b=BATmaterialize(b,BATcount(b));\n");
       			b = BATmaterialize(b, BATcount(b));
 			p = BUNptr(b,i);
 		}
 	}
-    	ALGODEBUG THRprintf(GDKout, 
-			"BUNdelete(b,p): BUNdelete_(b,p);\n");
 	return BUNdelete_(b,p);
 }
 

@@ -314,32 +314,24 @@ BAT *BATmaterialize(BAT *b, int size){
 	BUN p = BUNfirst(b), q = BUNlast(b);
 	
     	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d); [in: BAThdense(b)==%d]\n", b->batCacheid, size, BAThdense(b));
+			"BATmaterialize(%d,%d);\n", b->batCacheid, size);
 	if (BAThdense(b) && ht == TYPE_void) {
 		head = 1;
 		ht = TYPE_oid;
 	} else if (BATtdense(b) && tt == TYPE_void) {
 		tt = TYPE_oid;
 	} else { /* no voids */ 
-	    	ALGODEBUG THRprintf(GDKout, 
-				"BATmaterialize(%d,%d): return b; [out: BAThdense(b)==%d]\n", b->batCacheid, size, BAThdense(b));
 		return b;
 	}
-    	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d): %s: void -> oid\n", b->batCacheid, size, (head?"head":"tail"));
 
 	/* cleanup possible ACC's */
 	ACCunloadall(b);
-    	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d): ACCunloadall(b): BAThdense(b)==%d\n", b->batCacheid, size, BAThdense(b));
 
 	cnt = MAX(BATcount(b),size);
 	/* new types */
 	b->htype = ht; 
 	b->ttype = tt;
 	BATsetdims(b);
-    	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d): BATsetdims(b): BAThdense(b)==%d\n", b->batCacheid, size, BAThdense(b));
 
 	hole_padding = MAX(sizeof(int),b->dims.bunwidth)/b->dims.bunwidth;
 
@@ -348,8 +340,6 @@ BAT *BATmaterialize(BAT *b, int size){
 	ATOMheap(tt, &b->theap, cnt);
 
 	DELTAinit(b);
-    	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d): DELTAinit(b): BAThdense(b)==%d\n", b->batCacheid, size, BAThdense(b));
 	newbw = BUNsize(b);
 	if (head){
 		oid h = b->hseqbase;
@@ -386,8 +376,6 @@ BAT *BATmaterialize(BAT *b, int size){
 	bn->thash_heap = b->hhash_heap;
 	bn->hidx_heap = b->tidx_heap; 
 	bn->tidx_heap = b->hidx_heap;
-    	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d): before setting the correct dense info: BAThdense(b)==%d\n", b->batCacheid, size, BAThdense(b));
 	if (head){ /* set the correct dense info */
 		bn->tdense = b->hdense = TRUE;
 		bn->tseqbase = b->hseqbase = oid_nil;
@@ -396,8 +384,6 @@ BAT *BATmaterialize(BAT *b, int size){
 		bn->hseqbase = b->tseqbase = oid_nil;
 	}
 	
-    	ALGODEBUG THRprintf(GDKout, 
-			"BATmaterialize(%d,%d); [out: BAThdense(b)==%d]\n", b->batCacheid, size, BAThdense(b));
 	return b;
 }
 
