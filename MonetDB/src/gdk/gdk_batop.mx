@@ -248,7 +248,7 @@ BAT *BATmark(BAT *b, oid oid_base) {
  
 #define BUNnumber(bx,hx,tx)	BUNfastins(bx, hx, (ptr)&i); i++;
 BAT *BATnumber(BAT *b) {
-        int     cnt, i = 0;
+        int     i = 0;
         BAT     *bn;
  
         BATcheck(b, "BATnumber");
@@ -259,7 +259,7 @@ BAT *BATnumber(BAT *b) {
         }
 	ALIGNsetH(bn,b);
         @:updateloop(bn,b,BUNnumber)@
-	BATsetaggr(bn, GDK_AGGR_CARD, cnt);
+	BATsetaggr(bn, GDK_AGGR_CARD, i);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
         return bn;
