@@ -60,7 +60,7 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #-----------
 #| revenue |
 #-----------
-22923
+22923.0280
 SQL  1 Row affected
 
 # 19:37:14 >  

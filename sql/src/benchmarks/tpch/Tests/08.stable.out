@@ -62,8 +62,8 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #----------------------
 #| o_year | mkt_share |
 #----------------------
-1995	0
-1996	0
+1995	0.0000
+1996	0.0000
 SQL  2 Rows affected
 
 # 02:38:12 >  

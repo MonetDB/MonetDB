@@ -19,7 +19,7 @@ Over..
 # 16:41:36 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=db1 --port=58043 --trace < 17.sql
 # 16:41:36 >  
 
-#SQL  connected to database mTests_src_benchmarks_tpch using schema sys
+SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #     1: 0 
 #     2: 0 
 #     3: 0 select
@@ -42,7 +42,7 @@ Over..
 #--------------
 #| avg_yearly |
 #--------------
-0
+0.00
 SQL  1 Row affected
 
 # 16:41:37 >  

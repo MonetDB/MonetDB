@@ -56,7 +56,7 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #------------------------------------------------------------
 #| s_suppkey | s_name | s_address | s_phone | total_revenue |
 #------------------------------------------------------------
-21	"Supplier#000000021"	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs"	"12-253-590-5816"	1.1611e+06
+21	"Supplier#000000021"	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs"	"12-253-590-5816"	1161099.4636
 SQL  1 Row affected
 #    34: 0 
 #    35: 1 drop view revenue0;

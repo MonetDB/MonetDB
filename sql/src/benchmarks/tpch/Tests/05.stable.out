@@ -49,11 +49,11 @@ SQL  connected to database mTests_src_benchmarks_tpch using schema sys
 #--------------------
 #| n_name | revenue |
 #--------------------
-"VIETNAM"	1.00093e+06
-"CHINA"	740211
-"JAPAN"	660651
-"INDONESIA"	566380
-"INDIA"	422875
+"VIETNAM"	1000926.6999
+"CHINA"	740210.7570
+"JAPAN"	660651.2425
+"INDONESIA"	566379.5276
+"INDIA"	422874.6844
 SQL  5 Rows affected
 
 # 19:36:47 >  
