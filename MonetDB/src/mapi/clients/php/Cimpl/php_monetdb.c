@@ -21,6 +21,8 @@
 
 /* $Id$ */
 
+#include "monetdb_config.h"
+
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
@@ -440,13 +442,15 @@ PHP_FUNCTION(monetdb_query)
 	query = Z_STRVAL_PP(z_query);
 
 	if (!conn || !conn->mid) {
-		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection");
+		php_error(E_WARNING, "monetdb_query: Query on uninitialized/closed connection");
+		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE ;
 	}
 
 	handle = mapi_new_handle(conn->mid);
 	if (!handle) {
-		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection");
+		php_error(E_WARNING, "monetdb_query: Query on uninitialized/closed connection");
+		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE ;
 	}
 
@@ -454,8 +458,8 @@ PHP_FUNCTION(monetdb_query)
 
 	if ((error = mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
-		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, 
-			"MonetDB Error: %s", error);
+		php_error(E_WARNING, "monetdb_query: Error: %s", error);
+		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE ;
 	}
 
@@ -549,8 +553,8 @@ PHP_FUNCTION(monetdb_next_result)
 
 	if ((error = mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
-		php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, 
-			"MonetDB Error: %s", error);
+		php_error(E_WARNING, "monetdb_query: Error: %s", error);
+		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE ;
 	}
 
@@ -583,8 +587,8 @@ PHP_FUNCTION(monetdb_field_name)
 	/*~ printf("MON: _field_name: index=%d handle=%p\n", index, handle); */
 	
 	if (index >= mapi_get_field_count(handle)) {
-		php_error_docref("function.monetdb_field_name" TSRMLS_CC, E_WARNING, 
-			"Accessing field number #%ld, which is out of range", index);
+		php_error(E_WARNING, "monetdb_field_name: Accessing field number #%ld, which is out of range", index);
+		/* php_error_docref("function.monetdb_field_name" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
 		RETURN_FALSE ;
 	}
 	
@@ -622,8 +626,8 @@ PHP_FUNCTION(monetdb_field_type)
 	/*~ printf("MON: _field_type: index=%d handle=%p\n", index, handle); */
 	
 	if (index >= mapi_get_field_count(handle)) {
-		php_error_docref("function.monetdb_field_type" TSRMLS_CC, E_WARNING,
-			"Accessing field number #%ld, which is out of range", index);
+		php_error(E_WARNING, "monetdb_field_type: Accessing field number #%ld, which is out of range", index);
+		/* php_error_docref("function.monetdb_field_type" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
 		RETURN_FALSE ;
 	}
 	
@@ -721,8 +725,8 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type
 	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
 
 	if ((result_type & MONETDB_BOTH) == 0) {
-		php_error_docref(NULL TSRMLS_CC, E_CORE_ERROR, 
-			"php_monetdb_fetch_hash: result_type==%d is incorrect", result_type);
+		php_error(E_CORE_ERROR, "php_monetdb_fetch_hash: result_type==%d is incorrect", result_type);
+		/* php_error_docref(NULL TSRMLS_CC, E_CORE_ERROR, "php_monetdb_fetch_hash: result_type==%d is incorrect", result_type); */
 		RETURN_FALSE ;
 	}
 	
@@ -817,7 +821,7 @@ PHP_FUNCTION(monetdb_fetch_object)
 	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_ASSOC);
 
 	if (Z_TYPE_P(return_value) == IS_ARRAY) {
-		object_and_properties_init(return_value, ZEND_STANDARD_CLASS_DEF_PTR, Z_ARRVAL_P(return_value));
+		object_and_properties_init(return_value, &zend_standard_class_def, Z_ARRVAL_P(return_value));
 	}
 }
 /* }}} */
@@ -855,7 +859,8 @@ PHP_FUNCTION(monetdb_data_seek)
 
 	convert_to_long_ex(offset);
 	if (Z_LVAL_PP(offset)<0 || Z_LVAL_PP(offset)>=(int)mapi_get_row_count(handle)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Offset %ld is invalid for MonetDB result index %ld", Z_LVAL_PP(offset), Z_LVAL_PP(result));
+		php_error(E_WARNING, "monetdb_data_seek: Offset %ld is invalid for MonetDB result index %ld", Z_LVAL_PP(offset), Z_LVAL_PP(result));
+		/* php_error_docref(NULL TSRMLS_CC, E_WARNING, "Offset %ld is invalid for MonetDB result index %ld", Z_LVAL_PP(offset), Z_LVAL_PP(result)); */
 		RETURN_FALSE;
 	}
 	mapi_seek_row(handle, Z_LVAL_PP(offset), MAPI_SEEK_SET);
