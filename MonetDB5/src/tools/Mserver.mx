@@ -254,6 +254,19 @@ int main(int argc, char** av, char** envp) {
         int i,debug = 0, setlen = 0, listing=0;
 	str dbinit= NULL;
 
+	static struct option long_options[9] =
+             {
+               {"config", 1, 0, 'c'},
+               {"dbname", 1, 0, 0},
+               {"dbfarm", 1, 0, 0},
+               {"dbinit", 1, 0, 0},
+               {"debug", 2, 0, 'd'},
+               {"help", 0, 0, '?'},
+               {"set", 1, 0, 's'},
+               {"trace", 0, 0, 't'},
+               {0, 0, 0, 0}
+             };
+
 	/* clear all environment variables */
 	for (i = 0; envp[i] != 0; i++)
 		memset(envp[i], 0, strlen(envp[i]));
@@ -298,19 +311,6 @@ faster system start.
         }
 	malloc_init=0;
 @c
-
-	static struct option long_options[9] =
-             {
-               {"config", 1, 0, 'c'},
-               {"dbname", 1, 0, 0},
-               {"dbfarm", 1, 0, 0},
-               {"dbinit", 1, 0, 0},
-               {"debug", 2, 0, 'd'},
-               {"help", 0, 0, '?'},
-               {"set", 1, 0, 's'},
-               {"trace", 0, 0, 't'},
-               {0, 0, 0, 0}
-             };
 
 #ifdef NATIVE_WIN32
         set_terminate( Mserver_abort );
