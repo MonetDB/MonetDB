@@ -32,7 +32,7 @@ command Stop(port:int):bit = MAPIstop
 	comment "Terminate a listener owned by the client";
 
 # initialization code
-function init();
+function main();
 	vm1:= bat.new(int,str);
 	bat.setName(vm1,"view_mapi_owner");
 	bat.setRoles(vm1,"mapi","owner");
@@ -112,15 +112,22 @@ void MAPIlistenThread(int sock)
 		} else if (msgsock > 0) {
 			int i;
 			FILE *fdin= fdopen(msgsock,"r");
-			char name[BUFSIZ], *user = name;
-			/* char *name = (char*) alloca(BUFSIZ), *user = name;*/
+			char name[MAPIBLKSIZE], *user = name;
 
 			/* get user connection string */
-			for(i=0, *user=fgetc(fdin); i<BUFSIZ-1 && *user != '\n'; i++){
+			if( (i= fread(name,1,MAPIBLKSIZE,fdin)) != MAPIBLKSIZE){
+				GDKerror("Block size error in mapi.mx\n");
+				printf("%d bytes read\n",i);
+				fflush(stdout);
+				continue;
+			}
+/*
+			for(i=0, *user=fgetc(fdin); i<MAPIBLKSIZE-1 && *user != '\n'; i++){
 				user++;
 				*user = fgetc(fdin);
 			}
 			*user = 0;
+*/
 			if( DEBUG_MAPI) 
 				THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
 			scheduleClient(name, msgsock);

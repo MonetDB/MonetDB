@@ -49,7 +49,7 @@ Not to be confused with blob parsing and printing.
 @-
 The registration of the atom functions relies on the atom module rules.
 @mal
-function init();
+function mainTOBETESTED();
 	nme:= "blob";
 	Zstr:= atoms.tostr(nme);
 	Zblob:= atoms.fromstr(nme);
@@ -65,7 +65,7 @@ CATCH GDKerror;
 	RAISE GDKfatal := "Can not load 'blob' data type\n";
 END GDKerror;
 
-END FUNCTION;
+END function;
 @* Example MAL Script
 @mil
 import blob;

@@ -1260,7 +1260,8 @@ int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKerror("CMDprint_val:could not access descriptor\n");
 			return GDK_FAIL;
 		}
-		BATprint(b);
+		/* BATprint(b);*/
+		BATmultiprintf(GDKout,2,&b,TRUE,0);
 		return GDK_SUCCEED;
 	}
         fputs("[ ", fp);
@@ -1313,7 +1314,7 @@ Formatted print statements are to be broken down into its constituents.
 This avoids repeated type checking in most cases.
 @c
 int CMDprint_str(int *ret, str *s){
-	FILE *fd = getClient()->fdout;
+	FILE *fd = GDKout; /* getClient()->fdout;*/
 	str c;
 	if( strNil(*s)) *ret = fputs("nil",fd);
 	else {
