@@ -1,0 +1,22 @@
+INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/monet \
+	-I$(MONET_BUILD)/src/modules/plain/stream \
+	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
+MTSAFE
+
+LIBDIR = pkglib
+
+NO_OPTIMIZE_FILES = calib.mx calibrator.c
+
+LIBS = {
+	SEP = _
+	SOURCES = calib.mx 
+	HEADERS = h m
+	LIBS = ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	SCRIPTS = mil ""
+}
+
+BINS = {
+	SOURCES = calibrator.c
+	LIBS = -lm
+}
