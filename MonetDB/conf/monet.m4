@@ -264,7 +264,7 @@ if test "x$enable_optim" = xyes; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host" in
-      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -ffast-math -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
+      i*86-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
       *-sun-solaris*) CFLAGS="$CFLAGS -O2 -fomit-frame-pointer -finline-functions"
                       if test "$CC" = "gcc -m64" ; then
                         NO_INLINE_CFLAGS="-O1"
@@ -277,7 +277,7 @@ if test "x$enable_optim" = xyes; then
       esac
     else
       case "$host" in
-      i*86-*-*)       CFLAGS="$CFLAGS -O3 -tpp6 -axiMK -unroll -wp_ipo -ipo_obj";;
+      i*86-*-*)       CFLAGS="$CFLAGS -mp1 -O3 -tpp6 -axiMK -unroll -wp_ipo -ipo_obj";;
 #      *irix6.5*)      CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
       *irix6.5*)      CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
                       LDFLAGS="$LDFLAGS -IPA"
