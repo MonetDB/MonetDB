@@ -36,7 +36,7 @@ because each connection would lead to a thread awaiting input.
 Evidently, both threads may receive MIL requests, which should be
 synchronized. Although each thread could be given exclusive access, such
 a situation quickly leads to hard to handle raise conditions and
-detect deadlocks in the applications.
+detection of deadlocks in the application.
 </p>
 <p>
 The implementation is organized around two global variables, monet_embedded 
