@@ -1,9 +1,9 @@
 stdout of test 'test_01` in directory 'tests/suite_00` itself:
 
 
-# 12:53:55 >  
-# 12:53:55 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.30206/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_suite_00  < test_01.milS
-# 12:53:55 >  
+# 13:36:16 >  
+# 13:36:16 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/MonetDB/_PREFIX_d_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/MonetDB/_PREFIX_d_/lib/MonetDB" --dbfarm "/var/tmp/MonetDB/_PREFIX_d_/var/dbfarm" --set monet_prompt= "/var/tmp/MonetDB/_PREFIX_d_/Tests/trace.mil" --dbname=Tests_tests_suite_00  < test_01.milS
+# 13:36:16 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -28,7 +28,7 @@ b.insert("",int(nil));
 b.insert(str(nil),int(nil));
 b.print;
 #-------------------------#
-# BAT:		  tmp_24  #
+# BAT:		  tmp_26  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "the",	  1	  ]
@@ -64,7 +64,7 @@ b.delete("the",1);
 b.delete(".",10);
 b.print;
 #-------------------------#
-# BAT:		  tmp_24  #
+# BAT:		  tmp_26  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -86,7 +86,7 @@ b.count.print;
 # Lets cut out a few sections
 b.select(2,4).print;
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_25  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -94,16 +94,28 @@ b.select(2,4).print;
 [ "fox",	  4	  ]
 b.select(7,int(nil)).print;
 #-----------------#
-# BAT:	  tmp_23  #
+# BAT:	  tmp_25  #
 # (str)	  (int)	  #
 #-----------------#
 [ "lazy", 7	  ]
 [ "dog",  8	  ]
 [ nil,	  9	  ]
 [ ".",	  10	  ]
+b.select(int(nil),7).print;
+#-------------------------#
+# BAT:		  tmp_25  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "brown",	  3	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "fox",	  4	  ]
+[ "the",	  1	  ]
 b.select(int(nil),int(nil)).print;
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_25  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -117,10 +129,61 @@ b.select(int(nil),int(nil)).print;
 [ "the",	  1	  ]
 [ ".",		  10	  ]
 
+b.reverse.select("fox","quick").print;
+#-------------------------#
+# BAT:	  tmp_25	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 2,	  "quick"	  ]
+[ 5,	  "jumps"	  ]
+[ 6,	  "over"	  ]
+[ 7,	  "lazy"	  ]
+[ 4,	  "fox"		  ]
+b.reverse.select("fox",str(nil)).print;
+#-------------------------#
+# BAT:	  tmp_25	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 2,	  "quick"	  ]
+[ 5,	  "jumps"	  ]
+[ 6,	  "over"	  ]
+[ 7,	  "lazy"	  ]
+[ 4,	  "fox"		  ]
+[ 1,	  "the"		  ]
+b.reverse.select(str(nil),"quick").print;
+#-------------------------#
+# BAT:	  tmp_25	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ nil,	  ""		  ]
+[ 2,	  "quick"	  ]
+[ 3,	  "brown"	  ]
+[ 5,	  "jumps"	  ]
+[ 6,	  "over"	  ]
+[ 7,	  "lazy"	  ]
+[ 8,	  "dog"		  ]
+[ 4,	  "fox"		  ]
+[ 10,	  "."		  ]
+b.reverse.select(str(nil),str(nil)).print;
+#-------------------------#
+# BAT:	  tmp_25	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ nil,	  ""		  ]
+[ 2,	  "quick"	  ]
+[ 3,	  "brown"	  ]
+[ 5,	  "jumps"	  ]
+[ 6,	  "over"	  ]
+[ 7,	  "lazy"	  ]
+[ 8,	  "dog"		  ]
+[ 4,	  "fox"		  ]
+[ 1,	  "the"		  ]
+[ 10,	  "."		  ]
+
 # A 2-dimensional cut
 bn:=b.fragment("fox","quick",1,5);bn.print;
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_25  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -128,16 +191,63 @@ bn:=b.fragment("fox","quick",1,5);bn.print;
 [ "fox",	  4	  ]
 b.fragment("fox",str(nil),1,5).print;
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_27  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
+b.fragment(str(nil),"quick",1,5).print;
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "brown",	  3	  ]
+[ "jumps",	  5	  ]
+[ "fox",	  4	  ]
+b.fragment(str(nil),str(nil),1,5).print;
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "brown",	  3	  ]
+[ "jumps",	  5	  ]
+[ "fox",	  4	  ]
+[ "the",	  1	  ]
+b.fragment("fox","quick",1,int(nil)).print;
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "fox",	  4	  ]
+b.fragment("fox","quick",int(nil),5).print;
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "fox",	  4	  ]
+b.fragment("fox","quick",int(nil),int(nil)).print;
+#-------------------------#
+# BAT:		  tmp_27  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "fox",	  4	  ]
 b.fragment("fox",str(nil),int(nil),int(nil)).print;
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_27  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -148,7 +258,7 @@ b.fragment("fox",str(nil),int(nil),int(nil)).print;
 [ "the",	  1	  ]
 b.fragment(str(nil),"f",int(nil),int(nil)).print;
 #-------------------------#
-# BAT:		  tmp_25  #
+# BAT:		  tmp_27  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "",		  nil	  ]
@@ -159,7 +269,7 @@ b.fragment(str(nil),"f",int(nil),int(nil)).print;
 [ ".",		  10	  ]
 b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
 #-------------------------#
-# BAT:	  tmp_25	  #
+# BAT:	  tmp_27	  #
 # (int)	  (str)		  #
 #-------------------------#
 [ nil,	  ""		  ]
@@ -172,7 +282,7 @@ b.reverse.fragment(int(nil),int(nil),str(nil),"f").print;
 bn:= b.join(bn.reverse);
 bn.print;
 #---------------------------------#
-# BAT:		  tmp_25	  #
+# BAT:		  tmp_27	  #
 # (str)		  (str)		  #
 #---------------------------------#
 [ "quick",	  "quick"	  ]
@@ -182,7 +292,7 @@ bn.print;
 bn:= b.semijoin(bn.reverse);
 bn.print;
 #-------------------------#
-# BAT:		  tmp_23  #
+# BAT:		  tmp_25  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "quick",	  2	  ]
@@ -192,30 +302,30 @@ bn.print;
 # testing the like command
 b.reverse.like("ox").print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 b.reverse.like("fo").print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 b.reverse.like("fox").print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
 [ 4,	  "fox"	  ]
 b.reverse.like(" fox").print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_27  #
 # (int)	  (str)	  #
 #-----------------#
 quit;
 
-# 17:08:41 >  
-# 17:08:41 >  Done.
-# 17:08:41 >  
+# 13:36:16 >  
+# 13:36:16 >  Done.
+# 13:36:16 >  
 
