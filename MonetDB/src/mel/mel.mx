@@ -746,16 +746,22 @@ const char* get_signature(char* fcn){
 @Y
 %{
 #include "mel.h"
-#include <cstdio>
 #include <string.h>
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #ifdef HAVE_IOSTREAM
 #include <iostream>
-using namespace std;
 #else
 #include <iostream.h>
+#endif
+#ifdef HAVE_CSTDIO
+#include  <cstdio>
+#else
+#include <stdio.h>
+#endif
+#if defined(HAVE_IOSTREAM) || defined(HAVE_CSTDIO)
+using namespace std;
 #endif
 
 #include "FileInfo.h"
