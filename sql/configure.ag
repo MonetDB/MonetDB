@@ -3,6 +3,7 @@ AC_INIT(src/common/sql.h)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
+AH_TOP([#include "sysdefs.h"])
 
 dnl ----------------------
 AM_INIT_AUTOMAKE("sql", 2.0, [no-define])
