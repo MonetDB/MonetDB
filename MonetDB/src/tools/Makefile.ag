@@ -66,4 +66,13 @@ bin_Mserver = {
 	LIBS = ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONET_LIBS) ../common/libmutils
 }
 
-bin_SCRIPTS = monet-config monet-config.bat
+scripts_mcsh = {
+	DIR = bindir
+	SOURCES = monet-config.mx.in 
+}
+
+scripts_mcbat = {
+	DIR = bindir
+	SOURCES = monet-config.bat.in 
+}
+

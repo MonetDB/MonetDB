@@ -95,8 +95,22 @@ while test $# -gt 0; do
 	usage 0
 	;;
 
+    --includes)
+       	echo \
+		-I\${MONET_INCLUDEDIR} \
+		-I\${MONET_INCLUDEDIR}/common \
+		-I\${MONET_INCLUDEDIR}/gdk \
+	  	-I\${MONET_INCLUDEDIR}/monet \
+	  	-I\${MONET_INCLUDEDIR}/plain 
+       	;;
+
     --cflags)
-       	echo -I$prefix -I$prefix/include -I$prefix/include/common -I$prefix/include/gdk -I$prefix/include/monet -I$prefix/include/plain
+       	echo \
+		-I$includedir \
+		-I$includedir/common \
+		-I$includedir/gdk \
+		-I$includedir/monet \
+		-I$includedir/plain 
        	;;
 
     --libs)
