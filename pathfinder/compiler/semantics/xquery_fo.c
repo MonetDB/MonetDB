@@ -152,6 +152,10 @@
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
     .ret_ty = PFty_boolean (),                                           \
     .alg = PFbui_fn_empty }                                              \
+, /* fn:exists (item*) as boolean */                                     \
+  { .ns = PFns_fn, .loc = "exists",                                      \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_boolean () }                                          \
 , /* fn:not (boolean) as boolean  (F&O 7.3.1) */                         \
   { .ns = PFns_fn, .loc = "not",                                         \
     .arity = 1, .par_ty = { PFty_boolean () },                           \
@@ -979,6 +983,30 @@
     .arity = 1, .par_ty = { PFty_node () },                              \
     .ret_ty = PFty_string (),                                            \
     .alg = PFbui_pf_string_value }                                       \
+, /* fn:name (node) as string */                                         \
+  { .ns = PFns_fn, .loc = "name",                                        \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:name (node) as string */                                         \
+  { .ns = PFns_fn, .loc = "name",                                        \
+    .arity = 1, .par_ty = { PFty_opt (PFty_node ()) },                   \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:local-name (node) as string */                                   \
+  { .ns = PFns_fn, .loc = "local-name",                                  \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:local-name (node) as string */                                   \
+  { .ns = PFns_fn, .loc = "local-name",                                  \
+    .arity = 1, .par_ty = { PFty_opt (PFty_node ()) },                   \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:namespace-uri (node) as string */                                \
+  { .ns = PFns_fn, .loc = "namespace-uri",                               \
+    .arity = 0,                                                          \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:namespace-uri (node) as string */                                \
+  { .ns = PFns_fn, .loc = "namespace-uri",                               \
+    .arity = 1, .par_ty = { PFty_opt (PFty_node ()) },                   \
+    .ret_ty = PFty_string () }                                           \
 , /* fn:string () as string */                                           \
   { .ns = PFns_fn, .loc = "string",                                      \
     .arity = 0, .par_ty = { PFty_none () },                              \
@@ -1016,6 +1044,14 @@
   { .ns = PFns_fn, .loc = "normalize-space",                             \
     .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_string () }                                           \
+, /* fn:lower-case (string?) as string */                                \
+  { .ns = PFns_fn, .loc = "lower-case",                                  \
+    .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:upper-case (string?) as string */                                \
+  { .ns = PFns_fn, .loc = "upper-case",                                  \
+    .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_string () }                                           \
 , /* fn:substring (string?, double) as string */                         \
   { .ns = PFns_fn, .loc = "substring",                                   \
     .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
@@ -1026,6 +1062,16 @@
     .arity = 3, .par_ty = { PFty_opt (PFty_string ()),                   \
                             PFty_double (),                              \
                             PFty_double () },                            \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:substring-before (string?, string?) as string */                 \
+  { .ns = PFns_fn, .loc = "substring-before",                            \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_opt (PFty_string ()) },                 \
+    .ret_ty = PFty_string () }                                           \
+, /* fn:substring-after (string?, string?) as string */                  \
+  { .ns = PFns_fn, .loc = "substring-after",                             \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_string () }                                           \
 , /* fn:string-length () as integer */                                   \
   { .ns = PFns_fn, .loc = "string-length",                               \

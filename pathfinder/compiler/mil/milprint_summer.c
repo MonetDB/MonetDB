@@ -5372,8 +5372,8 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     deleteResult_ (f, counter, STR);
 }
 
-static void
-fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
+static int
+prep_str_funs (opt_t *f, int cur_level, int counter, PFcnode_t *c)
 {
     char *item_ext = kind_str(STR);
     int rc = translate2MIL (f, VALUES, cur_level, counter, L(c));
@@ -5387,6 +5387,38 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     if (!rc)
         milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
     add_empty_strings (f, STR, cur_level);
+
+    return counter;
+}
+
+static void
+return_str_funs (opt_t *f, int code, int cur_level, 
+                 char *item_ext, char *fn_name)
+{
+    if (code)
+        milprintf(f, "item%s := res;\n", item_ext);
+    else 
+        addValues (f, str_container(), "res", "item");
+
+    item_ext = (code)?item_ext:"";
+    milprintf(f,
+            "res := nil_oid_str;\n"
+            "item%s := item%s.reverse().mark(0@0).reverse();\n"
+            "iter := loop%03u;\n"
+            "pos := iter.project(1@0);\n"
+            "kind := iter.project(STR);\n"
+            "} # end of %s\n",
+            item_ext, item_ext,
+            cur_level,
+            fn_name);
+}
+
+static void
+fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
+{
+    char *item_ext = kind_str(STR);
+    counter = prep_str_funs (f, cur_level, counter, c);
+
     milprintf(f,
             "{ # fn:%s-with\n"
             "var strings := item%s%03u;\n"
@@ -5477,6 +5509,102 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
 
     deleteResult_ (f, counter, DBL);
     deleteResult_ (f, str_counter, STR);
+}
+
+static int
+fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *name)
+{
+    char *item_ext = kind_str(STR);
+    translate2MIL (f, NORMAL, cur_level, counter, L(c));
+    milprintf(f,
+            "{ # fn:%s\n"
+            "var map := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var elem := map.leftfetchjoin(item);\n"
+            "var elem_frag := map.leftfetchjoin(kind.get_fragment());\n"
+            "var elem_oid := map;\n"
+            "map := nil_oid_oid;\n"
+            "var elem_kind := mposjoin(elem, elem_frag, ws.fetch(PRE_KIND));\n"
+            "map := elem_kind.ord_uselect(ELEMENT).mark(0@0).reverse();\n"
+            "elem_kind := nil_oid_chr;\n"
+            "elem := map.leftfetchjoin(elem);\n"
+            "elem_frag := map.leftfetchjoin(elem_frag);\n"
+            "elem_oid  := map.leftfetchjoin(elem_oid);\n"
+            "map := nil_oid_oid;\n"
+            "elem := mposjoin(elem, elem_frag, ws.fetch(PRE_PROP));\n"
+
+            "map := kind.get_type(ATTR).mark(0@0).reverse();\n"
+            "var attr := map.leftfetchjoin(item);\n"
+            "var attr_frag := map.leftfetchjoin(kind.get_fragment());\n"
+            "var attr_oid := map;\n"
+            "map := nil_oid_oid;\n"
+            "attr := mposjoin(attr, attr_frag, ws.fetch(ATTR_QN));\n"
+            "var res_mu := merged_union(elem_oid, attr_oid, "
+                                       "elem, attr, "
+                                       "elem_frag, attr_frag);\n"
+            "elem := nil_oid_oid;\n"
+            "elem_frag := nil_oid_oid;\n"
+            "elem_oid := nil_oid_oid;\n"
+            "attr := nil_oid_oid;\n"
+            "attr_frag := nil_oid_oid;\n"
+            "attr_oid := nil_oid_oid;\n"
+            "var qname_oid  := res_mu.fetch(0);\n"
+            "var qname      := res_mu.fetch(1);\n"
+            "var qname_frag := res_mu.fetch(2);\n"
+            "res_mu := nil_oid_bat;\n",
+            name);
+
+    if (!strcmp(name,"local-name"))
+        milprintf(f,
+                "var res := mposjoin(qname, qname_frag, ws.fetch(QN_LOC));\n");
+    else if (!strcmp(name,"namespace-uri"))
+        milprintf(f, /* should be replaced by QN_URI */
+                "var res := mposjoin(qname, qname_frag, ws.fetch(QN_NS));\n");
+    else if (!strcmp(name,"name"))
+        milprintf(f, /* should be replaced by QN_PREFIX */
+                "var prefixes := mposjoin(qname, qname_frag, ws.fetch(QN_NS));\n"
+                "var prefix_bool := prefixes.[=](\"\");\n"
+                "var true_oid := prefix_bool.ord_uselect(true).mark(0@0).reverse();\n"
+                "var false_oid := prefix_bool.ord_uselect(false).mark(0@0).reverse();\n"
+                "prefix_bool := nil_oid_bit;\n"
+                "prefixes := false_oid.leftfetchjoin(prefixes).[+](\":\");\n"
+                "res_mu := merged_union(true_oid, false_oid, fake_project(\"\"), prefixes);\n"
+                "true_oid := nil_oid_oid;\n"
+                "false_oid := nil_oid_oid;\n"
+                "prefixes := nil_oid_str;\n"
+                "prefixes := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "var res := prefixes.[+](mposjoin(qname, qname_frag, ws.fetch(QN_LOC)));\n"
+                "prefixes := nil_oid_str;\n");
+    else
+        PFoops (OOPS_FATAL,
+                "milprint fn_name: doesn't know now what to do with '%s'",
+                name);
+
+    milprintf(f,
+            "qname := nil_oid_oid;\n"
+            "qname_frag := nil_oid_oid;\n"
+            "iter := qname_oid.leftfetchjoin(iter);\n"
+            "qname_oid := nil_oid_oid;\n");
+
+    if (code)
+        milprintf(f, "item%s := res;\n", item_ext);
+    else 
+        addValues (f, str_container(), "res", "item");
+ 
+    item_ext = (code)?item_ext:"";
+    milprintf(f,
+            "res := nil_oid_str;\n"
+            "item%s := item%s.reverse().mark(0@0).reverse();\n",
+            item_ext, item_ext);
+    add_empty_strings (f, (code)?STR:NORMAL, cur_level);
+    milprintf(f,
+            "iter := loop%03u;\n"
+            "pos := iter.project(1@0);\n"
+            "kind := iter.project(STR);\n"
+            "} # end of fn:%s\n",
+            cur_level,
+            name);
+    return (code)?STR:NORMAL;
 }
 
 /**
@@ -6464,6 +6592,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         return fn_string (f, code, cur_level, counter, L(args));
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"name")))
+    {
+        return fn_name (f, code, cur_level, counter, args, "name");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"local-name")))
+    {
+        return fn_name (f, code, cur_level, counter, args, "local-name");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"namespace-uri")))
+    {
+        return fn_name (f, code, cur_level, counter, args, "namespace-uri");
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-join")))
     {
         int rc2;
@@ -6651,6 +6791,42 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         fn_substring (f, code, cur_level, counter, fun, args);
         return (code)?STR:NORMAL;
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"substring-before")))
+    {
+        item_ext = kind_str(STR);
+        counter = prep_str_funs(f, cur_level, counter, args);
+        milprintf(f,
+                "{ # fn:substring-before\n"
+                "var res := [stringleft](item%s%03u, "
+                                        "[locate](item%s, "
+                                                 "item%s%03u).[-](1));\n",
+                item_ext, counter,
+                item_ext,
+                item_ext, counter);
+
+        return_str_funs (f, code, cur_level, item_ext, "fn:substring-before");
+        deleteResult_ (f, counter, STR);
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"substring-after")))
+    {
+        item_ext = kind_str(STR);
+        counter = prep_str_funs(f, cur_level, counter, args);
+        milprintf(f,
+                "{ # fn:substring-after\n"
+                "var res := [string](item%s%03u, "
+                                    "[+]([length](item%s), "
+                                        "[locate](item%s, "
+                                                 "item%s%03u).[-](1)));\n",
+                item_ext, counter,
+                item_ext,
+                item_ext,
+                item_ext, counter);
+                
+        return_str_funs (f, code, cur_level, item_ext, "fn:substring-after");
+        deleteResult_ (f, counter, STR);
+        return (code)?STR:NORMAL;
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"normalize-space")))
     {
         item_ext = kind_str(STR);
@@ -6658,28 +6834,45 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (!rc)
             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
         milprintf(f,
-                "{ # fn:normalize-string\n"
+                "{ # fn:normalize-space\n"
                 "item%s := item%s.[normSpace]();\n",
                 item_ext, item_ext);
         add_empty_strings (f, STR, cur_level);
         milprintf(f, "var res := item%s;\n", item_ext);
 
-        if (code)
-            milprintf(f, "item%s := res;\n", item_ext);
-        else 
-            addValues (f, str_container(), "res", "item");
-
-        item_ext = (code)?item_ext:"";
+        return_str_funs (f, code, cur_level, item_ext, "fn:normalize-space");
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"lower-case")))
+    {
+        item_ext = kind_str(STR);
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
         milprintf(f,
-                "res := nil_oid_str;\n"
-                "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "iter := loop%03u;\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
-                "} # end of fn:normalize-string\n",
-                item_ext, item_ext,
-                cur_level);
+                "{ # fn:lower-case\n"
+                "item%s := item%s.[toLower]();\n",
+                item_ext, item_ext);
+        add_empty_strings (f, STR, cur_level);
+        milprintf(f, "var res := item%s;\n", item_ext);
 
+        return_str_funs (f, code, cur_level, item_ext, "fn:lower-case");
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"upper-case")))
+    {
+        item_ext = kind_str(STR);
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+        milprintf(f,
+                "{ # fn:upper-case\n"
+                "item%s := item%s.[toUpper]();\n",
+                item_ext, item_ext);
+        add_empty_strings (f, STR, cur_level);
+        milprintf(f, "var res := item%s;\n", item_ext);
+
+        return_str_funs (f, code, cur_level, item_ext, "fn:upper-case");
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-length")))
@@ -7122,6 +7315,23 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "pos := iter.project(1@0);\n"
                 "kind := iter.project(BOOL);\n"
                 "} # end of translate fn:empty (item*) as boolean\n",
+                cur_level, cur_level);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"exists")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f,
+                "{ # translate fn:exists (item*) as boolean\n"
+                "var iter_count := {count}(iter.reverse(),loop%03u.reverse());\n"
+                "var iter_bool := iter_count.[!=](0).[oid]();\n"
+                "iter_count := nil_oid_int;\n"
+                "item := iter_bool.reverse().mark(0@0).reverse();\n"
+                "iter_bool := nil_oid_bit;\n"
+                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(BOOL);\n"
+                "} # end of translate fn:exists (item*) as boolean\n",
                 cur_level, cur_level);
         return NORMAL;
     }
