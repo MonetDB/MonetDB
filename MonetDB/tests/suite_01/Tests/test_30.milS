@@ -1,5 +1,5 @@
 setoid(oid(20000000));
-# definition and use of Monet procs.
+# definition and use of Monet procs and variables
 # Note that complex procs should normally be prepared in block mode.
 
 unknown("hello");
@@ -13,10 +13,9 @@ c();
 # block administration
 
 # how about variables in a block
-{ var i:=123; vars();}
+{ var i:=123; print(i);}
 
 # and in a procedure
 proc xyz() : void {var j; j:=23; var k:=234; vars();}
 xyz();
-vars();
 quit();

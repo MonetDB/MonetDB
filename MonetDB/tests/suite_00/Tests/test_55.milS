@@ -20,5 +20,4 @@ dir("tmp");
 h.find(0).rename("dummy");
 dir("dummy");
 dir("tmp");
-vars();
 quit();
