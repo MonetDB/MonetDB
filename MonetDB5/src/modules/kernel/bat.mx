@@ -44,13 +44,14 @@ Type parameters are represented by short integers. The MAL frontend
 defines constants to simplify the mapping from type identifier to value.
 
 All parameters to the modules are passed by reference.
-In particular, this means that
-string values are passed to the module layer as (str *)
+In particular, this means that string values are passed to the module 
+layer as (str *)
 and we have to de-reference them before entering the gdk library.
+(Actual a design error in gdk to differentiate passing int/str)
 This calls for knowlegde on the underlying BAT typs`s
 @= derefStr
-	if( ATOMstorage(@1->@2type)== TYPE_str ||	
-	    ATOMstorage(@1->@2type) >TYPE_str) @3 = *(str *)@3;
+	{ int _tpe= ATOMstorage(@1->@2type);
+	if( _tpe == TYPE_str || _tpe > TYPE_str ) @3 = *(str *)@3; }
 @-
 The code speaks for itself
 @mal

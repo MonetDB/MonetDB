@@ -256,12 +256,18 @@ command @1(x:bat[any::1,dbl],y:@2)  :bat[any::1,dbl] = CMDscience_@1;
 	@:scienceFcnBinary(atan2,dbl)@
 	@:scienceFcnBinary(pow,dbl)@
 @-
+An expensive operation is to match a pattern against a string.
+The regexp library permits a pre-compilation.
+@mal
+command match(b:bat[any::1,str], pat:str): bat[any::1,bit] = CMDmatchStr
+        comment "POSIX pattern matching against a string BAT";
 @- Implementation
 @h
 #include "gdk.h"
 #include "math.h"
 #include "mal_function.h"
 #include "mal_client.h"
+#include <regex.h>
 
 @-
 The accumulator operators are relatively straight forward,
@@ -1128,6 +1134,37 @@ str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
 	}
 	BBPfix( *ret= bn->batCacheid);
 	return MAL_SUCCEED;
+}
+str CMDmatchStr(int  *ret, int *bid, str *pat){
+        regex_t prg;
+        BAT *b, *bn;
+	int tpe,xx;
+	BUN p,q;
+	ptr nilptr;
+        int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
+        if( error<0)
+                return throwMessage("str.match","Compilation of regular expression failed");
+
+	@:getBATdescriptor(ret,bid,b,CMDmatchStr)@
+	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
+	@:tstBat(CMDmatchStr)@
+
+	tpe= BATttype(b);
+	nilptr= ATOMnilptr(tpe);
+	BATloopFast(b, p, q, xx) {
+		ptr h = BUNhead(b,p);
+		ptr t = BUNtail(b,p);
+		int idx = BUNindex(b,p);
+
+		if( ATOMcmp(tpe, t, nilptr)==0 ){
+			bunfastins(bn, h, t);
+		} else {
+			bit match=  regexec(&prg,t,0,0,0)==0;
+			bunfastins(bn, h, &match);
+		}
+	}
+	BBPfix( *ret= bn->batCacheid);
+        return MAL_SUCCEED;
 }
 
 @+ Test environment
