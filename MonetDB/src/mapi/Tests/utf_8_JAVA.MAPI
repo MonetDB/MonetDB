@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ -f "$MONET_BUILD/src/mapi/clients/java/mapi.jar" ]; then
+
+java -cp "$MONET_BUILD/src/mapi/clients/java/mapi.jar" MapiClient localhost $MAPIPORT << EOMIL
+	print("\303\251\303\251n");
+EOMIL
+
+else
+
+echo "$MONET_BUILD/src/mapi/clients/java/mapi.jar not found"
+
+fi
