@@ -1894,11 +1894,11 @@ int decimal_bulkdivide_default(BAT** ret, BAT* b, decimal *div) {
 
 @- power
 @c
-#define DEC_PRECISION(d,x) { d->scale += (d->precision - x); d->precision = x; }
+#define DEC_PRECISION(d,x) { int _x = MIN(x,d->precision); d->scale += (d->precision - _x); d->precision = _x; }
 
 /* Raises a decimal to some (integer) power. precision determines the maximum precision of the result. */
 int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
-	int x, y, z, nfactors=0, factor[32], raise = *i, precision = *p;
+	int x, dprec, dscal, z, nfactors=0, factor[32], raise = *i, precision = *p;
 	decimal *cache[32], *tmp, *tot = d;
 
 	/* handle special cases */
@@ -1928,7 +1928,8 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 	}
 
 	/* algorithm uses squaring of intermediates results; needs log2(n) multiplications */
-	y = *(int*) d; /* backup header of d */
+	dprec = d->precision;	/* backup header of d */
+	dscal = d->scale;
 
 	/* take the multiplication precision as end_precision/2 + 2 */
 	z = MIN(precision, (precision >> 1) + 2); 
@@ -1964,7 +1965,8 @@ int decimal_pow(decimal **ret, decimal *d, int *i, int *p) {
 	for(x=1; x <= raise; x++) {
 		if (cache[x] != tot) GDKfree(cache[x]);
 	}
-	*(int*) d = y; /* restore backup */
+	d->precision = dprec;	/* restore backup */
+	d->scale = dscal;
 	decimal_normalize(*ret = tot, tot, 0, precision, TRUE);
 	return GDK_SUCCEED;
 }
