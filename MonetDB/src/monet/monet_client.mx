@@ -481,6 +481,8 @@ int readClient(Client c)
 	int incomment = 0;
 	stream *fd = GDKout;
 	str  s;
+	int blocked;
+	size_t offset = 0;
  
 	PARSEDEBUG THRprintf(GDKerr, "accept client " PDFMT " input %s buffer:\n#%s\n", 
 			c-monet_clients, stream_name(c->fdin), c->top);
@@ -489,35 +491,62 @@ int readClient(Client c)
 
 	if (stream_errnr(fd) || stream_errnr(c->fdin))
 		return 0;
+	blocked = isa_block_stream(c->fdin);
 	do {
 		if (instring != '"') {
 			size_t l = strlen(c->prompt);
-		    	if (l > 0) {
-				if (stream_write(fd, c->prompt, l, 1) != 1)
-					return 0;
-				if (stream_flush(fd))
-					return 0;
+			if (c == monet_clients) {
+				for(s = c->prompt; *s; s++)
+					if (isprint((int) *s))
+						if (stream_write(fd, s, 1, 1) != 1)
+							return 0;
+			} else if (stream_write(fd, c->prompt, l, 1) != 1) {
+				return 0;
 			}
+			stream_flush(fd);
 		}
- 		s = c->top;
-		*s = 0;
-		while ((i = stream_read(c->fdin, c->top, 1, 1)) == 1) {
-			PARSEDEBUG THRprintf(GDKerr, "%c (" SZFMT ")", *c->top, i);
-			assert (!stream_errnr(fd) && !stream_errnr(c->fdin));
+		if (blocked) {
+			/* read to end of block (recognized by a
+			   partially fulfilled read request) */
+			ssize_t nsize;
+			do {
+				nsize = c->limit - c->top;
+				i = stream_read(c->fdin, c->top, 1, nsize);
+				if (stream_errnr(c->fdin))
+					return 0;
+				if (i <= 0)
+					return 0;
+				c->top += i;
+				if (i == nsize)
+					enlargebuffer(c);
+			} while (i == nsize);
+		} else {
+			/* read to end of line */
+			do {
 #ifdef WIN32
-			if (*c->top == 13) { /* filter out ^M */
-                                i--;
-                                c->top++;
-				continue;
-			}
+				/* filter out ^M */
+				if (c->top > c->input && c->top[-1] == '\r')
+					c->top--;
 #endif
-			if (*c->top == '\n') {
+				if (c->top >= c->limit-1)
+					enlargebuffer(c);
+				i = stream_read(c->fdin, c->top, 1, 1);
+				if (stream_errnr(c->fdin))
+					return 0;
+				if (i <= 0)
+					return 0;
+			} while (*c->top++ != '\n');
+		}
+		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input+offset);
+		for (s = c->input + offset; s < c->top; s++) {
+			switch (*s) {
+			case '\n':
 				incomment = 0;
-				if (c->top > c->input && c->top[-1] != '\\')
+				if (s > c->input && s[-1] != '\\')
 					instring = 0;
 				break;
-			}
-			switch (*c->top) {
+			case '\0':
+				return 0;
 			case '#':
 				if (!instring)
 					incomment++;
@@ -531,39 +560,32 @@ int readClient(Client c)
 			case '}':
 				if (!incomment && !instring) {
 					bracket--;
-					doflush=1;
+					if (bracket == 0)
+						doflush = 1;
 				}
 				break;
 			case '\'':
 			case '"':
 				if (!incomment && 
-				    (c->top <= c->input || c->top[-1] != '\\')) {
-					if (instring == *c->top)
+				    (s <= c->input || s[-1] != '\\')) {
+					if (instring == *s)
 						instring = 0;
 					else if (!instring)
-						instring = *c->top;
+						instring = *s;
 					doflush = 0;
 				}
 				break;
 			case ';':
 				if (!incomment && !instring)
-					doflush=1;
+					doflush = 1;
 				break;
 			default:
-				if (!incomment && !isspace((int) *c->top))
+				if (!incomment && !isspace((int) *s))
 					doflush = 0;
 				break;
 			}
-			if (!incomment) {
-				/* no need to pass comments to parser */
-				c->top++;
-				if (c->top >= c->limit-1)
-					enlargebuffer(c);
-			}
 		}
-		if (i <= 0)
-			return 0;
-		c->top++;
+		offset = c->top - c->input; /* where we left off checking */
 	} while (!doflush || bracket > 0);
 
 	*c->top = 0;
