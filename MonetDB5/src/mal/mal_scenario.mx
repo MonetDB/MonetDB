@@ -19,8 +19,8 @@
 @a M. Kersten
 @v 0.0
 @-
-@node Session management , Client administration , ,TOC
-@* Session scenarios
+@node Session management , ,MAL synopsis , MonetDB overview
+@* Sessions
 In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
 Such an assemblage of components is called a @emph{ scenario}
@@ -64,11 +64,13 @@ defined function, dataflow driven interpretation,
 or vectorized pipe-line execution by a dedicated engine.
 
 @menu
+* Session management::
 * Client administration::
 * Session scenarios::
+* MAL execution::
 @end menu
-@node Session scenarios, , Client administration, Session management, 
-@+ Scenario interpretation
+@node Session scenarios, MAL execution , Client administration, Session management, 
+@+ Scenario scenarios
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
 The first time a scenario is used, the system looks for a scenario
@@ -430,8 +432,10 @@ or alignment of the request with concurrent actions (e.g. transaction
 coordination).
 
 @menu
+* Session management::
 * Client administration::
 * Session scenarios::
+* MAL execution::
 @end menu
 @-
 @{
