@@ -1138,7 +1138,7 @@ int fleximatch(str s, str pat, int min) {
 
 static INLINE
 int parse_substr(int* ret, str s, int min, str list[], int size) {
-	int j, i = 0;
+	int j=0, i = 0;
 	*ret = int_nil;
 	while(++i <= size) {
 		if ((j = fleximatch(s, list[i], min)) > 0) {

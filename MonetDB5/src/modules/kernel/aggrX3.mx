@@ -1815,8 +1815,8 @@ str CMDaggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	/* insert the extreme values into the result */
 	BATloopFast(bn, r, q, xx) {
 		oid *h = (oid*)BUNh@4(bn,r);
-		(void) h; /*fool compiler */
 		ptr val = extremes[@8];
+		(void) h; /*fool compiler */
 		/* trick: using a void head-type, only the tail are (over)written */
 		ATOMput(bn->ttype, &bn->theap, BUNtloc(bn,r), val?val:nil);
 	} 
