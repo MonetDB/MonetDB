@@ -2683,7 +2683,7 @@ data_type:
 			  else
 				$$ = sql_bind_subtype("char", $4, 0); 
 			}
- |  TINYINT		{ $$ = sql_bind_subtype("smallint", 2, 0); }
+ |  TINYINT		{ $$ = sql_bind_subtype("smallint", 3, 0); }
  |  SMALLINT	{ $$ = sql_bind_subtype("smallint", 0, 0); }
  |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
  |  BIGINT		{ $$ = sql_bind_subtype("bigint", 0, 0); }
