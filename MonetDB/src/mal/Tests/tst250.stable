@@ -51,7 +51,7 @@ barrier	v := mal.bunStream(b,h,t);	#15:(v:lng)<-(b:bat[int,int])(h:int)(t:int)
 end	v;	#19:(v:lng)
 end function;	#20:
 #-----------------#
-# BAT:	  tmp_1	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]

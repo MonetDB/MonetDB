@@ -41,7 +41,6 @@
 #print(b,b,b);
 #profiler.stop();
 #
-!ERROR: WARNING:newConstant:int coerced to lng
 function Admin.main():int;	#0:(main:int)
 	profiler.setFilter("*","insert");	#1:($1:any)<-($2:str)($3:str)
 	profiler.setFilter("*","print");	#2:($4:any)<-($2:str)($5:str)
@@ -73,7 +72,7 @@ end function;	#25:
 #~EndVariableOutput~#
 # Start the performance monitor
 #-----------------#
-# BAT:	  tmp_1	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -88,7 +87,7 @@ end function;	#25:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #-----------------#
-# tmp_1	| tmp_1	  #
+# tmp_3	| tmp_3	  #
 #-----------------#
 [ 15,	  15	  ]
 [ 4,	  4	  ]

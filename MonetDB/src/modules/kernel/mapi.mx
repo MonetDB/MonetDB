@@ -30,6 +30,13 @@ command Listen(port:int, maxusers:int):int = MAPIlisten
 	comment "Start a Mapi server.";
 command Stop(port:int):bit = MAPIstop
 	comment "Terminate a listener owned by the client";
+command Stop(name:str):bit = MAPIstopClient
+	comment "Terminate a client";
+
+command Trace(nme:str, flag:bit):void = MAPItrace2
+	comment "Trace (on/off) receipt of all messages from a specific user";
+command Trace(flag:bit):void = MAPItrace
+	comment "Trace (on/off) receipt of messages for all users";
 
 # initialization code
 #function main():void;
@@ -94,6 +101,8 @@ command Stop(port:int):bit = MAPIstop
 
 #define SOCKPTR struct sockaddr *
 
+static int mapiSpy= 0;
+
 void MAPIlistenThread(int sock)
 {
 	int 	msgsock;
@@ -131,6 +140,7 @@ void MAPIlistenThread(int sock)
 			if( DEBUG_MAPI) 
 				THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
 			scheduleClient(name, msgsock);
+			if( mapiSpy) traceClient(name, mapiSpy);
 		}
 	} while (1);
 }
@@ -148,6 +158,8 @@ int MAPIlisten(int *ret, int *port, int *maxusers){
 	int 	msgsock;
 	int	i = 0;
 	pid_t	pid;
+	char 	msg[512];
+	char 	host[512];
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -191,6 +203,9 @@ Get the new information for the server socket and start listening.
 	}
 	if( DEBUG_MAPI)
 		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
+	gethostname(host,512);
+	snprintf(msg,512,"#Ready to accept connections on %s:%d\n",host,*port);
+	fprintf(GDKout,msg);
 	*ret = TRUE;
 	return GDK_SUCCEED;
 }
@@ -206,5 +221,27 @@ An internet connection may be terminated by the owner of the process only.
 int MAPIstop(int *ret, int *pid)
 {
 	printf("kill process %d\n",*pid);
+	return GDK_SUCCEED;
+}
+
+int MAPIstopClient(int *ret, str *nme)
+{
+	printf("kill process for client %s\n",*nme);
+	return GDK_SUCCEED;
+}
+@-
+It is advisable to trace the interactions of clients on the server
+side. At least as far as it concerns requests received.
+The kernel supports this 'spying' behavior with a file descriptor
+field in the client record.
+@c
+int MAPItrace2(str *nme,int *flg){
+	traceClient(*nme,*flg);
+	return GDK_SUCCEED;
+}
+
+int MAPItrace(int *flg){
+	traceAllClients(*flg);
+	mapiSpy = *flg;
 	return GDK_SUCCEED;
 }

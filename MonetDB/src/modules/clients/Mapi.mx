@@ -208,6 +208,8 @@ MMONETERR & Monet error.\\
 #define COUNT(M,X)	(M)->counts[X]++;
 #define MAXVARS		32
 #define MAXBIND		16
+#define PROMPT		'\001'	/* prompt bracket */
+
 typedef struct {
 	int  field;
 	void *ptr;
@@ -493,7 +495,7 @@ Msession Mconnect(char *host, int port, char *username, char *password) {
 	  }
           /* printf("awaiting response from server\n");
 	  fflush(stdout); */
-	  while( !(((c = getc(mid->from)) == 1) || (c == EOF)) ) ;
+	  while( !(((c = getc(mid->from)) == PROMPT) || (c == EOF)) ) ;
 	  if (c == EOF) {
 	    /* perror("! Mapi.Mconnect.connect: "); */
 	    mid->error = MMAPIERR;
@@ -516,8 +518,9 @@ void checkMid(Msession mid, char *nme) {
 	}
 }
 @-
-Once the start of the prompt has been recognized, the rest should
-be eaten away. It is stored in the prompt buffer for subsequent display.
+Once the start of the prompt string has been recognized, the rest should
+be eaten away. It is stored in the prompt buffer for possible
+subsequent display.
 @c
 void promptMonet(Msession mid) {
         int i;
@@ -526,7 +529,7 @@ void promptMonet(Msession mid) {
 	if( mid->trace) fprintf(stderr,"promptMonet.");
         for(i=0; mid->reply[i]; i++);
         for(  ; i<mid->replylength-2 &&
-		 (mid->reply[i] = getc(mid->from)) != 1; i++);
+		 (mid->reply[i] = getc(mid->from)) != PROMPT; i++);
         mid->reply[i++] = ' ';
         mid->reply[i] = '\0';
 	strcpy(mid->prompt,mid->reply);
@@ -985,7 +988,7 @@ char *Mgetreply(Msession mid) {
 	mid->error = MOK;
 	mid->reply[0]=0;
 
-        while ((ch = getc(mid->from)) != 1) {
+        while ((ch = getc(mid->from)) != PROMPT) {
                 if (ferror(mid->from)) break;
 		if( ch == '\n') break;
                 if (!isprint(ch) && !isspace(ch)) {
@@ -1021,6 +1024,7 @@ char *Mgetreply(Msession mid) {
                 return 0;
         }
 	if( ch == 1){
+		/* eat rest of prompt string away */
 		promptMonet(mid);
 		return 0;
 	}

@@ -2,6 +2,5 @@
 
 b:= new(lng,lng);
 x:= multiplex.+(b,b);
-d:= [+](b,c);
-print("another one\n");
+d:= [+](b,c) ;;# parser bug
 a:= b [+] b;

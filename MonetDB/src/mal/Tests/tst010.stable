@@ -41,15 +41,6 @@
 #barrier  unfinished:= 1;
 #	f:=1;
 #
-!ERROR: label 'Z' not in guarded block in main[2]
-!ERROR: label 'L' not in guarded block in main[5]
-!ERROR: label 'X' not in guarded block in main[6]
-!ERROR: label 'A' not in guarded block in main[7]
-!ERROR: label 'L' not in guarded block in main[9]
-!ERROR: label 'L' not in guarded block in main[11]
-!ERROR: end-label 'B' doesnot match 'A' in main[20]
-!ERROR: end-label 'F' without begin-label inmain[21]
-!ERROR: begin-label 'unfinished' without end-label in main
 function Admin.main():int;	#0:(main:int)
 barrier	L := 1;	#1:(L:int)<-($2:int)
 	leave Z;	#2:(Z:any)
@@ -82,6 +73,15 @@ end	A;	#28:(A:int)
 barrier	unfinished := 1;	#29:(unfinished:int)<-($2:int)
 	f := 1;	#30:(f:int)<-($2:int)
 end function;	#31:
+!ERROR: label 'Z' not in guarded block in main[2]
+!ERROR: label 'L' not in guarded block in main[5]
+!ERROR: label 'X' not in guarded block in main[6]
+!ERROR: label 'A' not in guarded block in main[7]
+!ERROR: label 'L' not in guarded block in main[9]
+!ERROR: label 'L' not in guarded block in main[11]
+!ERROR: end-label 'B' doesnot match 'A' in main[20]
+!ERROR: end-label 'F' without begin-label inmain[21]
+!ERROR: begin-label 'unfinished' without end-label in main
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 
 >

@@ -30,7 +30,7 @@ end	v;	#6:(v:bit)
 	mal.print(x);	#9:($12:int)<-(x:bat[lng,lng])
 end function;	#10:
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]

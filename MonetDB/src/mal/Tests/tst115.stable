@@ -42,7 +42,6 @@ end function;	#5:
 #c:= 3;
 #d:= doitTwice("wrong");
 #
-!ERROR: 'doitTwice' undefined in Admin.main[6]
 function Admin.main():int;	#0:(main:int)
 	a := 1;	#1:(a:int)<-($2:int)
 	b := Admin.doitOnce();	#2:(b:int)
@@ -51,6 +50,7 @@ function Admin.main():int;	#0:(main:int)
 	c := 3;	#5:(c:int)<-($7:int)
 	d := doitTwice("wrong");	#6 unknown:(d:int)<-($8:str)
 end function;	#7:
+!ERROR: 'doitTwice' undefined in Admin.main[6]
 !ERROR: MALexception:Admin.doitTwice[3]:address of function missing
 
 >

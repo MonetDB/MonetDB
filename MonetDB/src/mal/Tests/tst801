@@ -13,11 +13,11 @@ function main():void;
 	deposit("STORE_COMPR",2:int);
 end function;
 
-# takeing uses the 'root' versions.
+# take uses the 'root' versions.
 function take(v:str):any;
 	printf("looking for %s\n",v);
 	w:= take(v);
-	return w:
+	return w;
 end function;
 
 # release is overloaded for testing only

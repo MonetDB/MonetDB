@@ -1,0 +1,22 @@
+# the first of a series of BBP test cases
+
+print("Start test");
+bbp.open();
+b:= new(int,int);
+insert(b,1,2);
+bbp.deposit("myfirstbat",b);
+c:= bbp.take("myfirstbat");
+print(c);
+print("FIRST ROUND");
+bbp.close();
+# at the end of the session, the BBP should have discarded
+# the temporary bats of the user
+bbp.open();
+print("SECOND ROUND");
+v:= bbp.take("myfirstbat");
+print(v);
+x:= bbp.getName();
+print(x);
+y:=bbp.getObjects();
+print(y);
+bbp.close();

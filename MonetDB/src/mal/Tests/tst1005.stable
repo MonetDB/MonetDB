@@ -1,0 +1,50 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## the first of a series of BBP test cases
+## make sure you can bind to a BAT through the box
+#
+#bbp.open();
+#b:= new(int,int);
+#insert(b,1,2);
+#bbp.setName(b,"myfirstbat");
+#c:= bbp.bind("myfirstbat");
+#print(c);
+#bbp.close();
+## at the end of the session, the BBP should have discarded
+## the temporary bats of the user
+#bbp.open();
+#v:= bbp.take("myfirstbat");
+#print(v);
+#x:= bbp.getObjects();
+#print(x);
+#bbp.close();
+#
+function Admin.main():int;	#0:(main:int)
+	bbp.open();	#1:($1:void)
+	b := mal.new(int,int);	#2:(b:bat[int,int])<-(int:int)(int:int)
+	bat.insert(b,1,2);	#3:($4:bat[int,int])<-(b:bat[int,int])($5:int)($6:int)
+	bbp.setName(b,"myfirstbat");	#4:($7:void)<-(b:bat[int,int])($8:str)
+	c := bbp.bind("myfirstbat");	#5:(c:bat[any,any])<-($8:str)
+	mal.print(c);	#6:($10:int)<-(c:bat[any,any])
+	bbp.close();	#7:($11:void)
+	bbp.open();	#8:($12:void)
+	v := bbp.take("myfirstbat");	#9:(v:bat[any,any])<-($8:str)
+	mal.print(v);	#10:($14:int)<-(v:bat[any,any])
+	x := bbp.getObjects();	#11:(x:bat[int,str])
+	mal.print(x);	#12:($16:int)<-(x:bat[int,str])
+	bbp.close();	#13:($17:void)
+end function;	#14:
+#-------------------------#
+# BAT:	  myfirstbat	  #
+# (int)	  (int)		  #
+#-------------------------#
+[ 1,	  2		  ]
+!ERROR: bbpException:Admin.main[9]:myfirstbat:failed to take from box
+
+>

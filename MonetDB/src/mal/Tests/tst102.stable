@@ -14,11 +14,11 @@ command Admin.+(L:any::1,R:any::1):any::1 = addIntInt;	#0 polymorphic:(+:any::1)
 #a:=1+"hello";
 #b:=3.5+1;
 #
-!ERROR: '+' undefined in Admin.main[1]
 function Admin.main():int;	#0:(main:int)
 	a := +(1,"hello");	#1 unknown:(a:any)<-($2:int)($3:str)
 	b := calc.+(3.5,1);	#2:(b:flt)<-($5:flt)($2:int)
 end function;	#3:
+!ERROR: '+' undefined in Admin.main[1]
 !ERROR: MALexception:Admin.main[1]:Instruction type not fixed
 
 >

@@ -36,7 +36,6 @@
 #print(b);
 #print(b,b,b);
 #
-!ERROR: WARNING:newConstant:int coerced to lng
 function Admin.main():int;	#0:(main:int)
 	o := calc.oid(20000000);	#1:(o:oid)<-($2:int)
 	calc.setoid(o);	#2:($3:oid)<-(o:oid)
@@ -61,7 +60,7 @@ end function;	#20:
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#
-# BAT:	  tmp_1	  #
+# BAT:	  tmp_3	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -76,7 +75,7 @@ end function;	#20:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #-----------------#
-# tmp_1	| tmp_1	  #
+# tmp_3	| tmp_3	  #
 #-----------------#
 [ 15,	  15	  ]
 [ 4,	  4	  ]

@@ -14,7 +14,7 @@
 function Admin.swap(x:str,y:str):(a:str,b:str);	#0:(a:str)(b:str)<-(x:str)(y:str)
 	a := y;	#1:(a:str)<-(y:str)
 	b := x;	#2:(b:str)<-(x:str)
-	return a;	#3:(a:str)(b:str)
+	return (a,b);	#3:(a:str)(b:str)
 end function;	#4:
 #
 #(x,y):= swap("world","hello");

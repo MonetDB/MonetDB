@@ -10,19 +10,10 @@
 #
 #b:= new(lng,lng);
 #x:= multiplex.+(b,b);
-#d:= [+](b,c);
+#d:= [+](b,c) ;;# parser bug
 #a:= b [+] b;
-!ERROR: d:= [+](b,c);
+!ERROR: d:= [+](b,c) ;;# parser bug
 !           ^<identifier> or <unary operator> expected
 !ERROR: a:= b [+] b;
 !             ^operator expected
-!ERROR: multiplexType:string constant expected in main[2]
-function Admin.main():int;	#0:(main:int)
-	b := mal.new(lng,lng);	#1:(b:bat[lng,lng])<-(lng:lng)(lng:lng)
-	x := multiplex.+(b,b);	#2:(x:any)<-(b:bat[lng,lng])(b:bat[lng,lng])
-	d;	#3:(d:any)
-	a := b;	#4:(a:bat[lng,lng])<-(b:bat[lng,lng])
-end function;	#5:
-!ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
-
 >

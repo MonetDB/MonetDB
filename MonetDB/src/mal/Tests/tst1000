@@ -1,0 +1,9 @@
+#Access BATs through the bbp box.
+
+b:= new(int,int);
+insert(b,1,2);
+bbp.setName(b,"mybat");
+c:= bbp.bind("mybat");
+print(c);
+x:= bbp.getName();
+print(x);

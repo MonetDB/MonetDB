@@ -7,16 +7,15 @@
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
 ## parsing operations with multi-assignments
-#
-#(x,y):= point(z:int);
-#(initial:str,surname:str):= getName();
+#(c,d):= ("hello","world");
+#print(c);
+#print(d);
 #
 function Admin.main():int;	#0:(main:int)
-	(x,y):=point(z);	#1 unknown:(x:any)(y:any)<-(z:int)
-	(initial,surname):=getName();	#2 unknown:(initial:str)(surname:str)
-end function;	#3:
-!ERROR: 'point' undefined in Admin.main[1]
-!ERROR: 'getName' undefined in Admin.main[2]
-!ERROR: MALexception:Admin.main[1]:Instruction type not fixed
-
+	(c,d):=("hello","world");	#1:(c:str)(d:str)<-($3:str)($4:str)
+	mal.print(c);	#2:($5:int)<-(c:str)
+	mal.print(d);	#3:($6:int)<-(d:str)
+end function;	#4:
+[ "hello" ]
+[ "world" ]
 >

@@ -19,13 +19,6 @@
 #y:bat[str,int]:= new(int,int);
 #f:flt := "wrong";
 #
-!ERROR: MALresolve:Admin.main[5]:type mismatch sht := lng
-
-!ERROR: MALresolve:Admin.main[6]:type mismatch lng := sht
-
-!ERROR: 'new' undefined in Admin.main[7]
-!ERROR: MALresolve:Admin.main[8]:type mismatch flt := str
-
 function Admin.main():int;	#0:(main:int)
 	s := "hello";	#1:(s:str)<-($2:str)
 	i := 1;	#2:(i:sht)<-($4:sht)
@@ -36,6 +29,13 @@ function Admin.main():int;	#0:(main:int)
 	y := new(int,int);	#7 unknown:(y:bat[str,int])<-(int:int)(int:int)
 	f := "wrong";	#8 unknown:(f:flt)<-($14:str)
 end function;	#9:
+!ERROR: MALresolve:Admin.main[5]:type mismatch sht := lng
+
+!ERROR: MALresolve:Admin.main[6]:type mismatch lng := sht
+
+!ERROR: 'new' undefined in Admin.main[7]
+!ERROR: MALresolve:Admin.main[8]:type mismatch flt := str
+
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 
 >

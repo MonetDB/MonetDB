@@ -1,6 +1,7 @@
 # parsing operations with multi-assignments
 function swap(x:int,y:int):(a:int,b:int);
 	a:=y; b:=x;
+	return(a,b);
 end function;
 
 (x,y):= swap(1,2);
@@ -8,6 +9,3 @@ print(x);
 print(y);
 a:= swap(3,4);
 print(a);
-(c,d):= ("hello","world");
-print(c);
-print(d);

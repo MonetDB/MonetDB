@@ -6,6 +6,10 @@
 # gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
-##empty test file, used to check startup problems
+#i:=32;
+#printi;
+#print(i);
 #
+!ERROR: printi;
+!             ^'.' or '(' expected
 >

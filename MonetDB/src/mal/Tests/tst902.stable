@@ -49,7 +49,7 @@ end	w;	#17:(w:lng)
 	mal.print(d);	#18:($18:int)<-(d:bat[lng,lng])
 end function;	#19:
 #-----------------#
-# BAT:	  tmp_3	  #
+# BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #
 #-----------------#
 [ 0,	  0	  ]

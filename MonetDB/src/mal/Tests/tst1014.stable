@@ -1,0 +1,71 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## now within a function to assure that reference counting
+## takes care of releasing the variables.
+#
+#function test();
+#print("test");
+#bbp.open();
+#x:= bbp.getObjects();
+#print(x);
+#print("test");
+#b:= new(int,int);
+#insert(b,1,2);
+#bbp.deposit("myfirstbat",b);
+#c:= bbp.take("myfirstbat");
+#print(c);
+#bbp.close();
+## at the end of the call, the BBP should have discarded
+## the temporary bats of the user
+#end function;
+function Admin.test():any;	#0 polymorphic:(test:any)
+	mal.print("test");	#1:($1:int)<-($2:str)
+	bbp.open();	#2:($3:void)
+	x := bbp.getObjects();	#3:(x:bat[int,str])
+	mal.print(x);	#4:($5:int)<-(x:bat[int,str])
+	mal.print("test");	#5:($6:int)<-($2:str)
+	b := mal.new(int,int);	#6:(b:bat[int,int])<-(int:int)(int:int)
+	bat.insert(b,1,2);	#7:($9:bat[int,int])<-(b:bat[int,int])($10:int)($11:int)
+	bbp.deposit("myfirstbat",b);	#8:($12:void)<-($13:str)(b:bat[int,int])
+	c := bbp.take("myfirstbat");	#9:(c:bat[any,any])<-($13:str)
+	mal.print(c);	#10:($15:int)<-(c:bat[any,any])
+	bbp.close();	#11:($16:void)
+end function;	#12:
+#
+#test();
+#print("continue");
+#bbp.open();
+#v:= bbp.take("myfirstbat");
+#print(v);
+#bbp.close();
+#
+function Admin.main():int;	#0:(main:int)
+	Admin.test();	#1:($1:any)
+	mal.print("continue");	#2:($2:int)<-($3:str)
+	bbp.open();	#3:($4:void)
+	v := bbp.take("myfirstbat");	#4:(v:bat[any,any])<-($6:str)
+	mal.print(v);	#5:($7:int)<-(v:bat[any,any])
+	bbp.close();	#6:($8:void)
+end function;	#7:
+[ "test" ]
+#-------------------------#
+# BAT:	  objects	  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 3,	  "mysecondbat"	  ]
+[ "test" ]
+#-----------------#
+# BAT:	  tmp_5	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  2	  ]
+[ "continue" ]
+!ERROR: bbpException:Admin.main[4]:myfirstbat:failed to take from box
+
+>
