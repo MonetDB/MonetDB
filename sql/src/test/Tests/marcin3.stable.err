@@ -51,13 +51,13 @@ stderr of test 'marcin3` in directory 'src/test` itself:
 # 20:07:35 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin3.sql
 # 20:07:35 >  
 
-MAPI  = monetdb@stem:54523
+MAPI  = monetdb@pictor:55497
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
 ERROR = !Cannot use non group by column (val) in query result without aggregation
-MAPI  = monetdb@stem:54523
+MAPI  = monetdb@pictor:55497
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>2;
 ERROR = !Cannot use non group by column (val) in query result without aggregation
-MAPI  = monetdb@stem:54523
+MAPI  = monetdb@pictor:55497
 QUERY = select id, sum(val) AS valsum from nutki group by id having valsum>3;
 ERROR = !Identifier: valsum unknown or ambigious
 

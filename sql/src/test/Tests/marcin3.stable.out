@@ -23,18 +23,10 @@ Over..
 
 # 6 # querytype
 # 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
-# 1 # tuplecount
-# 0 # id
-[ 1	]
-# 4 # querytype
-#  # table_name
-# single_value # name
-# mediumint # type
-# 0 # length
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
 # 1 # tuplecount
 # 1 # id
 [ 1	]
@@ -53,6 +45,14 @@ Over..
 # 0 # length
 # 1 # tuplecount
 # 3 # id
+[ 1	]
+# 4 # querytype
+# affected # table_name
+# rows # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 4 # id
 [ 1	]
 # 7 # querytype
 # 3 # querytype
