@@ -303,6 +303,10 @@ void	CodeLine()
 	case XSL:
 	case Swig:
 	case BibTeX:
+	case Cyacc:
+	case Clex:
+	case CCyacc:
+	case CClex:
             break;
             
 	case Haskell:
@@ -310,12 +314,8 @@ void	CodeLine()
 		break;
 
 	case Prolog:
-	case Cyacc:
-	case Clex:
 	case Java:
 	case fGrammar:
-	case CCyacc:
-	case CClex:
 		ofile_printf("\n/* %s:%d */\n", mx_file, mx_line);
 		break;
 	case Tcl:
