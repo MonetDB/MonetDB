@@ -34,6 +34,10 @@ TODO
 @m
 .COMMAND backuphost(str host, int port) = logger_backuphost;
 	"Use the host,port to backup changes to"
+
+.COMMAND logger_listen(int port ) = logger_listen;
+	"listens for a client willing to backup to this port"
+
 .COMMAND backupfile(str log ) = logger_backupfile;
 	"Backup to the file log and write the log identifier to the file logid"
 
@@ -41,7 +45,7 @@ TODO
 	"commit on all BATs to the log"
 
 .COMMAND update() = logger_update;
-	"update the all BATs using the log"
+	"update the all BATs using the log, TODO only needed at initialisation"
 
 .COMMAND logger_debug( int level ) = logger_set_debug;
 	"Set the level of debuging"
@@ -54,6 +58,8 @@ TODO
 @c
 #include <gdk.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #define LOG_BLOCKBEGIN 	0
 #define LOG_BLOCKEND    1
@@ -63,22 +69,125 @@ TODO
 #define LOG_DESTROY	5
 #define LOG_RENAME	6
 
-int   logger_debug = 0;
+static int   logger_debug = 0;
 
-char *logger_host = NULL;
-int   logger_port = 0;
+static char *logger_host = NULL;
+static int   logger_port = 0;
+static int   logger_server = 0;
 
 static char *logger_log 	= NULL;
 static FILE *logger_fp 		= NULL;
 static int   logger_logid 	= 0;
 
 int logger_backuphost(str host, int *port){
+	struct sockaddr_in a;
+	struct hostent *hp;
+	struct sockaddr *addr = (struct sockaddr *) &a;
+ 	int fd, len = sizeof(a);
+
 	if (logger_debug&1)
 		fprintf(stderr, "logger_backuphost %s %d\n", host, *port );
 
 	logger_host = GDKstrdup(host);
 	logger_port = *port;
+
+	memset(&a, 0, sizeof(a));
+	a.sin_family = AF_INET;
+	a.sin_port = htons((unsigned short)(*port&0xFFFF));
+	if (!(hp = gethostbyname(host))){
+	    GDKsyserror("backuphost(%s:d): lookup error.\n", host, *port);
+	    return GDK_FAIL;
+	}
+	memcpy(&a.sin_addr, hp->h_addr, hp->h_length);
+	if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+	    GDKsyserror("backuphost(%s:%d): could not create socket.\n",host,*port);
+	} else if (connect(fd, addr, len)) {
+	    GDKsyserror("backuphost(%s:%d): could not connect with.\n", host,*port);
+	} else {
+	    logger_fp = fdopen(fd, "w");
+	}
 	return GDK_SUCCEED; 
+}
+
+/* server just reading in the request and does a true commit once 
+ * every ... time 
+ */
+#define SOCKPTR struct sockaddr *
+
+int logger_listen(int *port){
+	
+	struct sockaddr_in server;
+	int 	sock;
+#ifdef AIX
+	size_t 	length;
+#else
+	int 	length;
+#endif
+	int    	on = 1;
+	int 	msgsock;
+	int	i = 0;
+
+	logger_server = 1; /* resets commit back to TMcommit */
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) {
+		GDKsyserror("creation of stream socket failed\n");
+		return GDK_FAIL;
+	}
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port = htons((unsigned short)((*port)&0xFFFF));
+   	for (i=0;i<8;i++)
+	    server.sin_zero[i]=0;
+ 
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof on);
+
+	length = sizeof(server);
+	if (bind(sock, (SOCKPTR)&server, length) < 0) {
+		GDKsyserror("binding to stream socket (%s) failed\n", *port);
+		return GDK_FAIL;
+	}
+	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
+		GDKsyserror("getting socket name\n");
+		return GDK_FAIL;
+	}
+	listen(sock, 1); 
+
+	PARDEBUG {
+		THRprintf(GDKerr, "Internet started at %d\n", server.sin_port);
+	}
+	do {
+#ifdef AIX
+       		msgsock = accept(sock, 0, (size_t)0);
+#else
+       		msgsock = accept(sock, 0, (int *)0);
+#endif
+
+		if (msgsock == -1) {
+			if (MT_geterrno() != EINTR) {
+				GDKsyserror("monetServer: accept failed\n");
+	    		}
+		} else if (msgsock > 0) {
+			FILE *fdin = fdopen(msgsock, "r");
+			FILE *fdout = fdopen(msgsock, "w");
+
+			if (fdin == 0){
+				GDKsyserror("monetServer: fdin problems\n");
+				continue;
+			}
+			if (fdout == 0){
+				GDKsyserror("monetServer: fdout problems\n");
+				continue;
+			}
+			while(!feof(fdin)){
+				char buf[BUFSIZ];
+				int size = fread( buf, 1, BUFSIZ, fdin);
+				if (logger_debug)
+					printf("read %d\n", size );
+			}
+		}
+	} while (1);
+	return GDK_SUCCEED;
 }
 
 int logger_backupfile(str log){
@@ -235,6 +344,9 @@ int logger_update() {
 	if (logger_debug&1)
 		fprintf(stderr, "logger_update\n");
 
+	if (logger_server){
+		return TMcommit();
+	}
 	if (logger_fp) 
 		fclose(logger_fp);
 	logger_fp = fopen(logger_log,"r+"); 
@@ -265,12 +377,13 @@ int logger_update() {
 			printf("create bat %d %d %ld\n",
 				(l.nr>>16)&((1<<16)-1), l.nr&((1<<16)-1), l.id);
 			b = BATnew((l.nr>>16)&((1<<16)-1),l.nr&((1<<16)-1),l.id);
-			BATpersists(b);
+			BATmode(b,PERSISTENT);
 			break;
 		case LOG_DESTROY:
 			printf("destroy bat %ld\n", l.id);
 			b = BATdescriptor(l.id); 
-			BATtransient(b);
+			BATmode(b,TRANSIENT);
+			BBPreclaim(b);
 			break;
 		case LOG_RENAME:
 			s1 = strlen(p);
@@ -329,11 +442,15 @@ proc pbat(name, acc) := {
         return b;
 }
 
-proc logging() := {
+proc logging(bit file) := {
 	module("logger");
 
 	logger_debug(64);
-	backupfile("/tmp/logger.log");
+	if (file){
+		backupfile("/tmp/logger.log");
+	} else {
+		backuphost("odin.cwi.nl", 50123);
+	}
 }
 
 proc logger_create() := {
@@ -435,14 +552,14 @@ Mcreatedb -db logger -user $USER
 #EOF
 
 Mserver -db logger -prelude logger.mil << EOF
-logging();
+logging(false);
 logger_create();
 logger_insert();
 quit;
 EOF
 
 Mserver -db logger -prelude logger.mil << EOF
-logging();
+logging(true);
 logger_update;
 quit;
 EOF
