@@ -544,6 +544,12 @@ One day we should introduce the concept of locale, and hook here.
 		return lng(ms) + (lng(1000) * (lng(s) + (lng(60) * (lng(m) + 
                                     (lng(60) * (lng(h) + (lng(24) * lng(d))))))));
 
+	# some utilities for the SQL front-end
+proc current_timestamp() { return timestamp(epoch()); }
+proc current_date() { return date(current_timestamp()); }
+proc current_time() { return daytime(current_timestamp()); }
+
+
 @+ Test Script
 
 The below tests try to be exhaustive in trying all time functionality.

@@ -24,7 +24,11 @@
 @f stream
 @a Niels Nes
 @* An simple interface to streams 
-This interface can be used to open 'non compressed, gzipped, bz2zipped' 
+Processing files, streams, and sockets is quite different on Linux and Windows
+platforms. To improve portability between both, we advise to replace the stdio
+actions with the stream functionality provided here.
+
+This interface can also be used to open 'non compressed, gzipped, bz2zipped' 
 data files and sockets. Using this interface one could easily switch between
 the various underlying storage types.
 
@@ -218,6 +222,13 @@ The bstream_read will atleast read the next 'size' bytes. If the not read data
 it is resized. The spare byte is kept.
 
 @h
+
+typedef enum steam_errors {
+	NO__ERROR = 0,
+	OPEN_ERROR,
+	READ_ERROR, 
+	WRITE_ERROR
+}stream_errors;
 #endif /*_STREAM_H_*/
 @c
 #include <config.h>
@@ -258,13 +269,6 @@ typedef long ssize_t;
 #endif
 #define HAVE_SSIZE_T
 #endif
-
-typedef enum steam_errors {
-	NO__ERROR = 0,
-	OPEN_ERROR,
-	READ_ERROR, 
-	WRITE_ERROR
-}stream_errors;
 
 int stream_init(void){
 #ifdef NATIVE_WIN32

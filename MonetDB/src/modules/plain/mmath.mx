@@ -134,6 +134,22 @@ The constants defined in math.h are defined using the following mil code.
 	const M_SQRT2	:= 1.41421356237309504880LL;
 	const M_SQRT1_2	:= 0.70710678118654752440LL;
 
+proc floor(flt f):= return flt(floor(dbl(f)));
+proc ceil(flt f):= return flt(ceil(dbl(f)));
+proc sin(flt f):= return flt(sin(dbl(f)));
+proc cos(flt f):= return flt(cos(dbl(f)));
+proc tan(flt f):= return flt(tan(dbl(f)));
+proc asin(flt f):= return flt(asin(dbl(f)));
+proc acos(flt f):= return flt(acos(dbl(f)));
+proc atan(flt f):= return flt(atan(dbl(f)));
+proc sinh(flt f):= return flt(sinh(dbl(f)));
+proc cosh(flt f):= return flt(cosh(dbl(f)));
+proc tanh(flt f):= return flt(tanh(dbl(f)));
+proc sqrt(flt f):= return flt(sqrt(dbl(f)));
+proc exp(flt f):= return flt(exp(dbl(f)));
+proc log(flt f):= return flt(log(dbl(f)));
+proc log10(flt f):= return flt(log10(dbl(f)));
+
 @* Example Script
 @mil
 
