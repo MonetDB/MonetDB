@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # check1
 Mlog	"$SQL_CLIENT < $TSTSRCDIR/check0.sql"

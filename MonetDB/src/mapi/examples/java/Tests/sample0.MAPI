@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 if [ -f $MONET_BUILD/src/mapi/clients/java/mapi.jar ] ; then
 	export CLASSPATH=$MONET_BUILD/src/mapi/clients/java:$CLASSPATH

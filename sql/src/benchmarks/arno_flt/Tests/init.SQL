@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # create
 Mlog	"$SQL_CLIENT < $TSTSRCBASE/$TSTDIR/create_tables.flt.sql"

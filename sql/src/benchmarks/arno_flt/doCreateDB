@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # create
 MapiClient -lsql -u monetdb -P monetdb --port=$SQLPORT < create_tables.flt.sql

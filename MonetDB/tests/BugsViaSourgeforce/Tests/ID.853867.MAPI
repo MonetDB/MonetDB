@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # Bug report #853867 says:
 # "After running the script below for the 3rd time the server crashes in
