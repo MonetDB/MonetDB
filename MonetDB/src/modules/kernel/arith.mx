@@ -166,7 +166,7 @@ atomic types and a result type.
 	command *(left:@1, right:@2) : @3 = @1@2_binary_MUL;
 	command /(left:@1, right:@2) : @3 = @1@2_checkbinary_DIV;
 @-
-The coercions described below ensure that there is never an information loss.
+The coercions described below ensure that there is never any information loss.
 @mal
 
 	@:mal_arith_ops(flt,chr,flt)@
@@ -228,6 +228,7 @@ The coercions described below ensure that there is never an information loss.
 	@:mal_binary_ops(dbl,dbl)@
 
 @- unary operations { abs, inv }
+The unary operators include coercion routines for built-in types
 @= mal_unary_ops
    	command abs(x:@1) : @1 = @1_unary_ABS comment "absolute value";
    	command inv(x:@1) : @1 = @1_unary_INV comment "inverse value (1/x)";
@@ -240,6 +241,27 @@ The coercions described below ensure that there is never an information loss.
 	@:mal_unary_ops(sht)@
 	@:mal_unary_ops(int)@
 	@:mal_unary_ops(lng)@
+
+@-
+Coercion functions are typical used in multiplex calls.
+@= mal_coercion
+   	command @1(x:@2): @1 = @2_2_@1 comment "coercion @1 to @2";
+@mal
+	@:mal_coercion(lng,sht)@
+	@:mal_coercion(lng,int)@
+	@:mal_coercion(int,sht)@
+	@:mal_coercion(oid,lng)@
+	@:mal_coercion(oid,sht)@
+	@:mal_coercion(oid,int)@
+	@:mal_coercion(dbl,flt)@
+	@:mal_coercion(str,sht)@
+	@:mal_coercion(str,int)@
+	@:mal_coercion(str,lng)@
+	@:mal_coercion(str,flt)@
+	@:mal_coercion(str,dbl)@
+	@:mal_coercion(chr,sht)@
+	@:mal_coercion(chr,int)@
+	@:mal_coercion(chr,int)@
 
 @- boolean { or, xor, and, not }
 @mal
@@ -901,4 +923,37 @@ int @3_binary@1(@3 *res , @3 *a, @3 *b ) {
    return(GDK_SUCCEED);
 }
 @
+Coercions do not check on information loss
+@= mal_coercion_impl2
+int @2_2_@1(@1 *res, @2 *a)
+{
+	char buf[1024];
+	sprintf(buf,"%@3",*a);
+	*res = (@1) GDKstrdup(buf);
+	return GDK_SUCCEED;
+}
+@-
+@= mal_coercion_impl
+int @2_2_@1(@1 *res, @2 *a)
+{
+	*res= (@1) *a;
+	return GDK_SUCCEED;
+}
+@-
+@c
+	@:mal_coercion_impl(lng,sht)@
+	@:mal_coercion_impl(lng,int)@
+	@:mal_coercion_impl(int,sht)@
+	@:mal_coercion_impl(oid,lng)@
+	@:mal_coercion_impl(oid,sht)@
+	@:mal_coercion_impl(oid,int)@
+	@:mal_coercion_impl(dbl,flt)@
+	@:mal_coercion_impl(chr,sht)@
+	@:mal_coercion_impl(chr,int)@
+
+	@:mal_coercion_impl2(str,sht,d)@
+	@:mal_coercion_impl2(str,int,d)@
+	@:mal_coercion_impl2(str,lng,D)@
+	@:mal_coercion_impl2(str,flt,f)@
+	@:mal_coercion_impl2(str,dbl,f)@
 @}

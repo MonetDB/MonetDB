@@ -8,6 +8,7 @@ Additional modules can be selectively loaded later.
 
 @mal
 use "kernel/unix";
+use "kernel/mmath";
 use "kernel/bat";
 use "kernel/arith";
 use "kernel/atoms";
