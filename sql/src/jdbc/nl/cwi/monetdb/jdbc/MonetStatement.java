@@ -538,6 +538,13 @@ public class MonetStatement implements Statement {
 
 		/** Whether this CacheThread is still running, executing or waiting */
 		private int state = WAIT;
+		
+		/**
+		 * Default constructor that sets a name for this cache thread
+		 */
+		public CacheThread() {
+			super("MonetStatement CacheThread");
+		}
 
 		public void run() {
 			while(state != DEAD) {
