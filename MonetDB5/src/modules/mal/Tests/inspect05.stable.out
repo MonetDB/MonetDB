@@ -112,7 +112,7 @@ end main;	# 6
 [ 80@0,	  "command",	  "profiler",	  "setNone",			  "():void address CMDsetNoneProfiler;"											  ]
 [ 81@0,	  "command",	  "profiler",	  "setAll",			  "():void address CMDsetAllProfiler;"											  ]
 [ 82@0,	  "pattern",	  "mal",	  "call",			  "(s:bat[:any,:str]):void address CMDcallBAT;"										  ]
-[ 83@0,	  "command",	  "mal",	  "call",			  "(s:str):void address CMDcallString;"											  ]
+[ 83@0,	  "pattern",	  "mal",	  "call",		  "(s:str):void address CMDcallString;"												  ]
 [ 84@0,	  "command",	  "mal",	  "nextElement",		  "(step:dbl,last:dbl) ($3:bit,$4:dbl) address RNGnextElement_dbl;"							  ]
 [ 85@0,	  "command",	  "mal",	  "nextElement",		  "(step:flt,last:flt) ($3:bit,$4:flt) address RNGnextElement_flt;"							  ]
 [ 86@0,	  "command",	  "mal",	  "nextElement",		  "(step:lng,last:lng) ($3:bit,$4:lng) address RNGnextElement_lng;"							  ]
