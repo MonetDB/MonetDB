@@ -387,7 +387,7 @@ def expand_env(i):
 	return value + rest
     return None
 
-def expand_incdir(i):
+def expand_incdir(i,topdir):
     if i[0:2] == "-I":
       i = i[2:]
     incdir = expand_env(i)
@@ -413,8 +413,8 @@ def expand_includes(i,topdir):
         if (len(incs) > 1):
 	  return expand_incdirs(incs,topdir)
         else:
-	  return [(expand_incdir(incdir),i)]
-    dir = expand_incdir(i)
+	  return [(expand_incdir(incdir,topdir),i)]
+    dir = expand_incdir(i,topdir)
     return [(dir,i)]
 
 def expand_incdirs(incdirs,topdir):
