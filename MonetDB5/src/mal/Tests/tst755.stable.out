@@ -33,7 +33,7 @@ end test;	# 3
 !ERROR:     k := +(1,"wrong");	# 1  unknown (k:any)<-($4:int)($5:str)
 !ERROR:     io.print(k);	# 2 IOprint_val ($6:int)<-(k:any)
 !ERROR: end test;	# 3  
-
+!ERROR: 'test' undefined in Admin.main[2]
 function Admin.main():int;	# 0  (main:int)
     c := bbp.new(:int,:str);	# 1 CMDBATnew (c:bat[:int,:str])<-($2:int)($3:str)
     test(c,"hello");	# 2  unknown ($4:void)<-(c:bat[:int,:str])($5:str)

@@ -186,10 +186,13 @@ Once a target operation has been isolated for chopping it up
 into a loop, it becomes mandatory to find an optimal choice.
 This could be focussed on minimizing the number of loop steps
 up to minimizing the total footprint of its body.
+The latter seems identical to the knapsack problem and too
+expensive to consider in our setting. 
 
 The first rule to apply is to maximize the volume covered in each
 step, which means you find fragment size P and Q, such that 
-|r|x|s|/(PxQ) is minimized.
+|r|x|s|/(PxQ) is minimized and still fits the resources provided,
+e.g. the system cache.
 This under the global constraint to leave room for the body to work, which
 could be determined  calculating the maximum volume needed.
 (is a separate scheduler support routine)
@@ -327,4 +330,8 @@ str meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	meo_loop_optimizerImpl(mb, f,"join");
 	return MAL_SUCCEED;
 }
+@- Strawman Implementation
+The strawman implementation requires a few distinctive parts to be
+glued together.
+
 @}

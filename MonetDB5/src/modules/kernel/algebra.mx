@@ -180,7 +180,7 @@ command sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address ALGsort
 comment "Returns a BAT copy sorted on the head column.";
 command tsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
-address ALGsort_rev
+address ALGtsort
 comment "Returns a BAT copy sorted on the tail column.";
 command htsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGhtsort
@@ -441,18 +441,18 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 
 @- Marking tables
 @mal
-command markTail( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
-address ALGmarkTail_default
+command tmark( b:bat[:any$1,:any] ) :bat[:any$1,:void] 
+address ALGtmark_default
 comment "Produces a new BAT with fresh unique OIDs 
 	in the tail starting at 0@0.";
 
-command markTail( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
-address ALGmarkTail
+command tmark( b:bat[:any$1,:any], base:oid ) :bat[:any$1,:oid] 
+address ALGtmark
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
         the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 
-command markTail( b:bat[:any$1,:any], base:void ) :bat[:any$1,:oid] 
-address ALGmarkTail0
+command tmark( b:bat[:any$1,:any], base:void ) :bat[:any$1,:oid] 
+address ALGtmark0
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
         the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 
@@ -973,7 +973,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unaryint(count,BATcount)@
 @:unary(histogram,BAThistogram)@
 @:unary(sort,BATsort)@
-@:unary(sort_rev,BATsort_rev)@
+@:unary(tsort,BATsort_rev)@
 @:unary(number,BATnumber)@
 @:unary(copy,BATcopy)@
 @:unary(kunique,BATkunique)@
@@ -1811,7 +1811,7 @@ str ALG@1(int *result, int* bid, int *param) {
 @c
 @:ALGunary(histogram)@
 @:ALGunary(sort)@
-@:ALGunary(sort_rev)@
+@:ALGunary(tsort)@
 @:ALGunary(number)@
 @:ALGunary(copy)@
 @:ALGunary(kunique)@
@@ -1882,7 +1882,7 @@ str ALGcount_no_nil(lng *result, int *bid) {
 	return ALGcount_nil(result,bid,&ignore_nils);
 }
 
-str ALGmarkTail(int *result, int *bid, oid *base) {
+str ALGtmark(int *result, int *bid, oid *base) {
 	BAT *b,  *bn= NULL;
 	@:getBATdescriptor(result,bid,b,mark)@
 	if( CMDmark(&bn,b,base)== GDK_SUCCEED){
@@ -1893,12 +1893,12 @@ str ALGmarkTail(int *result, int *bid, oid *base) {
 	return throwMessage("algebra.mark", 
 		"marking group failed");
 }
-str ALGmarkTail0(int *result, int *bid, oid *base) {
+str ALGtmark0(int *result, int *bid, oid *base) {
 	oid o= oid_nil;
 	(void) base;
-	return ALGmarkTail(result,bid,&o);
+	return ALGtmark(result,bid,&o);
 }
-str ALGmarkTail_default(int *result, int *bid) {
+str ALGtmark_default(int *result, int *bid) {
 	BAT *b,  *bn= NULL;
 	@:getBATdescriptor(result,bid,b,mark)@
 	if( CMDmark_default(&bn,b)== GDK_SUCCEED){

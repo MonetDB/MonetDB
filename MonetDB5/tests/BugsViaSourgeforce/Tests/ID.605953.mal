@@ -26,7 +26,7 @@ include mil_scenario;
 	na_a := insert(t,ma_a,"g");
 	oa_a := oid(7);
 	pa_a := insert(t,oa_a,"h");
-	qa_a := markTail(t,nil);
+	qa_a := tmark(t,nil);
 	ra_a := print(t);
 	t2 := new(nil:void,nil:str);
 	sa_a := oid(0);
@@ -47,6 +47,6 @@ include mil_scenario;
 	ib_a := insert(t2,hb_a,"g");
 	jb_a := oid(7);
 	kb_a := insert(t2,jb_a,"h");
-	lb_a := markTail(t2,nil);
+	lb_a := tmark(t2,nil);
 	mb_a := print(lb_a);
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase'
