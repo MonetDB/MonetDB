@@ -81,13 +81,12 @@ gdk_export BAT* BATconvert     (BAT *b, int direction);
 @h
 @{
 typedef unsigned int normal_int;
-typedef size_t long_int;
 
 #define strcpy_COPY(x,y)	strcpy(x,y);
 #define short_int_COPY(x)	x
 #define normal_int_COPY(x)	x
 #define normal_bat_COPY(x)	x
-#define long_int_COPY(x)	x
+#define long_long_COPY(x)	x
 #define normal_oid_COPY(x)	x
 #define normal_sizet_COPY(x)	x
 #define normal_hasht_COPY(x)	x
@@ -95,11 +94,10 @@ typedef size_t long_int;
 
 #define strcpy_SWAP(x,y)	
 #define normal_bat_SWAP(x)	((bat) normal_int_SWAP((int) x))
-#define long_int_SWAP(x)	long_long_SWAP(x)
 #if SIZEOF_OID == SIZEOF_INT
 #define normal_oid_SWAP(x)	((oid) normal_int_SWAP((int)x))
 #else
-#define normal_oid_SWAP(x)	((oid) long_int_SWAP((long)x))
+#define normal_oid_SWAP(x)	((oid) long_long_SWAP((lng)x))
 #endif
 #if SIZEOF_SIZE_T == SIZEOF_INT
 #define normal_sizet_SWAP(x)	((size_t) normal_int_SWAP((int)x))
@@ -107,10 +105,10 @@ typedef size_t long_int;
 #define normal_hasht_SWAP(x)	((hash_t) normal_int_SWAP((int)x))
 #define normal_BUN_SWAP(x)	((BUN) normal_int_SWAP((int)x))
 #else
-#define normal_sizet_SWAP(x)	((size_t) long_int_SWAP((long)x))
-#define normal_vart_SWAP(x)	((var_t) long_int_SWAP((long)x))
-#define normal_hasht_SWAP(x)	((hash_t) long_int_SWAP((long)x))
-#define normal_BUN_SWAP(x)	((BUN) long_int_SWAP((long)x))
+#define normal_sizet_SWAP(x)	((size_t) long_long_SWAP((lng)x))
+#define normal_vart_SWAP(x)	((var_t) long_long_SWAP((lng)x))
+#define normal_hasht_SWAP(x)	((hash_t) long_long_SWAP((lng)x))
+#define normal_BUN_SWAP(x)	((BUN) long_long_SWAP((lng)x))
 #endif
 
 #endif /* _GDK_DESC_H_ */

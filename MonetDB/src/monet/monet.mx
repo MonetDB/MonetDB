@@ -811,7 +811,7 @@ Convert all parameter values to integers.
 		argv[i].val.dval = (dbl) argv[i].val.fval; 
 		tpe = TYPE_lng;
 	    }
-#if (SIZEOF_LONG==8) 
+#if (SIZEOF_SIZE_T==8) 
 	    /* 64-bits passing conversions */
 	    if (tpe == TYPE_int) {
 		argv[i].val.lval = (lng) argv[i].val.ival; 

@@ -1520,7 +1520,7 @@ ptr interpret_fcn(int ht, int tt, int parallel) {
 #endif
 	case TYPE_int:	
 	case TYPE_flt:	@:switch_ht(fival)@	break;
-#if SIZEOF_OID > SIZEOF_INT
+#if SIZEOF_OID == SIZEOF_LNG
 	case TYPE_void:
 #endif
 	case TYPE_lng: 
@@ -1537,7 +1537,7 @@ ptr interpret_fcn(int ht, int tt, int parallel) {
 #endif
 	case TYPE_int:	
 	case TYPE_flt: @:switch_tt(@1,fival)@	break;
-#if SIZEOF_OID > SIZEOF_INT
+#if SIZEOF_OID == SIZEOF_LNG
 	case TYPE_void:
 #endif
 	case TYPE_lng: 

@@ -286,7 +286,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
 	 	(int (*)(ptr, ptr)) intCmp,		
 		(hash_t (*)(ptr)) intHash,	(void (*)(ptr, int)) intConvert,	
-#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
   		TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &lng_nil,
 		(int (*)(str, int*, ptr*)) @`ptrFromStr@5,	(int (*)(str*, int*, ptr)) @`ptrToStr@5,
 		(void *(*)(void *, stream *, size_t)) ptrRead, (void (*)(void *, stream*, size_t)) ptrWrite,
@@ -612,7 +612,7 @@ gdk_export str		str_nil;
 #define bit_nil	((bit) chr_nil)
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define ptr_nil	((ptr) int_nil)
-#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
 #define ptr_nil	((ptr) lng_nil)
 #endif
 #define bat_nil	((bat) int_nil)
@@ -1131,7 +1131,7 @@ void @1Write( @1 *a, stream *s, size_t cnt) {
 @c 
 
 @:numfromstr(sht,5,32767)@
-@:atomtostr(sht,%hd,int)@
+@:atomtostr(sht,%hd,sht)@
 @:atom_io(sht,Sht,sht)@
 
 @:numfromstr(int,10,2147483647)@
@@ -1220,7 +1220,7 @@ int ptrFromStr(char* src, int * len, ptr **dst) {
 @:atomtostr(ptr,%lx,size_t)@
 #if SIZEOF_VOID_P == SIZEOF_INT
 @:atom_io(ptr,Int,int)@
-#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
 @:atom_io(ptr,Lng,lng)@
 #endif
 

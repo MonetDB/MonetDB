@@ -76,14 +76,6 @@ the various underlying storage types.
 #define ST_READ  0
 #define ST_WRITE 1
 
-#ifdef HAVE_LONG_LONG
-typedef long long	lng;
-#else
-#ifdef HAVE___INT64
-typedef __int64		lng;
-#endif
-#endif
-
 #define short_int_SWAP(s) (((0x00ff&(s))<<8) | ((0xff00&(s))>>8))
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
@@ -264,15 +256,6 @@ typedef enum stream_errors {
 #ifdef NATIVE_WIN32
 #include <winsock.h>
 #include <io.h>
-#endif
-
-#ifndef HAVE_SSIZE_T
-#if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ssize_t;
-#else
-typedef long ssize_t;
-#endif
-#define HAVE_SSIZE_T 1
 #endif
 
 #if !HAVE_DECL_STRDUP

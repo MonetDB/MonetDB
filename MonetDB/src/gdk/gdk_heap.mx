@@ -454,7 +454,7 @@ typedef struct {
 	int (*sizefcn)(ptr);
 } HEADER64;
 
-#if SIZEOF_LONG==8
+#if SIZEOF_SIZE_T==8
 typedef HEADER64 HEADER; 
 typedef HEADER32 HEADER_OTHER; 
 #else
@@ -888,7 +888,7 @@ void HEAP_checkformat(Heap *heap) {
    if (image.alignment == 4 || image.alignment == 8) {
 	/* it is the other format => correct to the desired format */
         HEADER *hheader = HEAP_index(heap,0,HEADER);
-#if SIZEOF_LONG==8
+#if SIZEOF_SIZE_T==8
 	size_t hasfcn = *(size_t*) &image.sizefcn;
 #else 
 	size_t hasfcn = (size_t) (image.sizefcn || image.dummy);

@@ -450,7 +450,7 @@ typedef signed char	bit;
 typedef signed char	chr; 		
 typedef short		sht;
 typedef size_t		oid; 		
-#define SIZEOF_OID	SIZEOF_LONG
+#define SIZEOF_OID	SIZEOF_SIZE_T
 typedef int		bat; 		/* Index into BBP */
 typedef void*		ptr; 		/* Internal coding of types */
 typedef float		flt; 		
@@ -2679,7 +2679,7 @@ speed) which already points at the current BUN (i.e. w == @%BUNptr(b,hb)@).
 @:hashloop(bat,int,simple,int,hloc)@
 #if SIZEOF_VOID_P == SIZEOF_INT
 @:hashloop(ptr,int,simple,int,hloc)@
-#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
 @:hashloop(ptr,lng,simple,lng,hloc)@
 #endif
 @:hashloop(flt,int,simple,int,hloc)@

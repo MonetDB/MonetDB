@@ -478,7 +478,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
 	        /* ensure use of ATOMput for TYPE_bat */
                 @1fetchjoin_@2_int(bn,l,r);
         } else if (ATOMstorage(rtt) == TYPE_lng || ATOMstorage(rtt) == TYPE_dbl
-#if SIZEOF_OID == SIZEOF_LONG
+#if SIZEOF_OID == SIZEOF_LNG 
 		   || ATOMstorage(lht) == TYPE_oid
 #endif
 ) {
@@ -502,7 +502,7 @@ void defaultfetchjoin_@1_@2( BAT *bn, BAT *l, BAT *r ){
                 /* ensure use of ATOMput for TYPE_bat */
                 @:fetchjoin_switch_rtt(@1,int)@
         } else if (ATOMstorage(lht) == TYPE_lng || ATOMstorage(lht) == TYPE_dbl
-#if SIZEOF_OID == SIZEOF_LONG
+#if SIZEOF_OID == SIZEOF_LNG
 		   || ATOMstorage(lht) == TYPE_oid
 #endif
 		   ) {

@@ -203,6 +203,8 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(void *)
 AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(__int64)
 
 AC_TRY_COMPILE([$ac_includes_default
 #include <malloc.h>], [struct mallinfo m;], AC_DEFINE(HAVE_STRUCT_MALLINFO, 1, [Define if you have struct mallinfo]))

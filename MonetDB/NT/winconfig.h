@@ -464,6 +464,9 @@
 /* The size of a `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 4
 
+/* The size of a `__int64', as computed by sizeof. */
+#define SIZEOF___INT64 8
+
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at run-time.

@@ -115,7 +115,7 @@ gdk_export hash_t	HASHlist     (Hash* h, size_t i) ;
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHfnd_ptr(x,y,z)	HASHfnd_int(x,y,z)
-#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
 #define HASHfnd_ptr(x,y,z)	HASHfnd_lng(x,y,z)
 #endif
 #define HASHfnd_bit(x,y,z)	HASHfnd_chr(x,y,z)
@@ -144,7 +144,7 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
-#else /* SIZEOF_VOID_P == SIZEOF_LONG */
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
 #define HASHins_ptr(h,i,v)	HASHins_lng(h,i,v)
 #endif
 #define HASHins_bit(h,i,v)	HASHins_chr(h,i,v)
