@@ -949,6 +949,8 @@ void sqltypeinit()
 
 
 	  sql_create_func( "strconcat", "+", *t, *t, *t, SCALE_FIX);
+	  sql_create_func( "upper", "toUpper", *t, NULL, *t, SCALE_FIX);
+	  sql_create_func( "lower", "toLower", *t, NULL, *t, SCALE_FIX);
 	}
 }
 
