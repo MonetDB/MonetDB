@@ -87,7 +87,10 @@ typedef enum tokens {
 	SQL_SELECT,
 	SQL_WHERE,
 	SQL_FROM,
+	SQL_UNIONJOIN,
 	SQL_UNION,
+	SQL_EXCEPT,
+	SQL_INTERSECT,
 	SQL_VALUES,
 	SQL_ASSIGN,
 	SQL_ORDERBY,
@@ -170,7 +173,7 @@ sql_export int sqlparse(void *);
 #ifdef yyerror
 #undef yyerror
 #endif
-#define yyerror(s...) sql_error(YYLEX_PARAM, 4, s)
+#define yyerror(s) parse_error(YYLEX_PARAM, s)
 
 #define FALSE 0
 #define TRUE 1
@@ -243,7 +246,9 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	select_stmt
 	select_with_parens
 	select_no_parens
-	select_clause
+	simple_select
+	complex_select
+	set_select
 	subquery
 	target
 	test_for_null
@@ -383,6 +388,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	opt_trans
 	opt_chain
 	opt_distinct
+	set_distinct
 	opt_with_check_option
 
 	opt_with_grant
@@ -1284,6 +1290,7 @@ insert_atom_commalist:
 
 insert_atom:
     scalar_exp	
+ |  NULLX		{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
 
 opt_distinct:
@@ -1344,7 +1351,7 @@ joined_table:
 	  dlist_append_int(l, 4);
 	  dlist_append_symbol(l, $4);
 	  dlist_append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_JOIN, l); }
+	  $$ = _symbol_create_list( SQL_UNIONJOIN, l); }
  |  table_ref JOIN table_ref join_spec 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
@@ -1402,15 +1409,21 @@ sql:
  ;
 
 select_stmt:
-    select_no_parens                    %prec UMINUS
+    simple_select 			%prec UMINUS
 	opt_order_by_clause opt_limit
 	{
-          SelectNode *sn = (SelectNode*)$1;
-	  sn->orderby = $2;
-	  sn->limit = $3;
-	  $$ = $1;
+	  if ($1->token == SQL_SELECT) {
+          	SelectNode *sn = (SelectNode*)$1;
+	  	sn->orderby = $2;
+	  	sn->limit = $3;
+	  	$$ = $1;
+	   } else {
+                $$ = NULL;
+		yyerror("order by and limit are not allowed with a select statement");
+	   }
  	}
- |  select_with_parens                    %prec UMINUS
+ |  set_select                    	%prec UMINUS
+ |  select_with_parens                  %prec UMINUS
  ;
 
 select_with_parens:
@@ -1418,12 +1431,7 @@ select_with_parens:
  |  '(' select_with_parens ')'  { $$ = $2; }
  ;
 
-select_clause:
-    select_no_parens
- |  select_with_parens
- ;
-
-select_no_parens:
+simple_select:
     SELECT opt_distinct selection opt_into table_exp 
 	{ $$ = newSelectNode( $2, $3, $4, 
 	  	$5->h->data.sym,
@@ -1434,33 +1442,52 @@ select_no_parens:
 	  dlist_destroy_keep_data($5);
 	}
 
- |  select_clause UNION opt_distinct opt_corresponding select_clause
+select_no_parens:
+    simple_select
+ |  set_select
 
-	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $1);
-	  dlist_append_int(l, $3);
-	  dlist_append_list(l, $4);
-	  dlist_append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_UNION, l); }
-
- |  select_clause EXCEPT opt_distinct opt_corresponding select_clause
-
-	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $1);
-	  dlist_append_int(l, $3);
-	  dlist_append_list(l, $4);
-	  dlist_append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_UNION, l); }
-
- |  select_clause INTERSECT opt_distinct opt_corresponding select_clause
-
-	{ dlist *l = dlist_create();
-	  dlist_append_symbol(l, $1);
-	  dlist_append_int(l, $3);
-	  dlist_append_list(l, $4);
-	  dlist_append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_UNION, l); }
+complex_select:
+    select_no_parens
+ |  select_with_parens
  ;
+
+set_select:
+
+    simple_select UNION 
+	set_distinct opt_corresponding complex_select
+
+	{ dlist *l = dlist_create();
+	  dlist_append_symbol(l, $1);
+	  dlist_append_int(l, $3);
+	  dlist_append_list(l, $4);
+	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_UNION, l); }
+
+ |  simple_select EXCEPT set_distinct opt_corresponding complex_select
+
+	{ dlist *l = dlist_create();
+	  dlist_append_symbol(l, $1);
+	  dlist_append_int(l, $3);
+	  dlist_append_list(l, $4);
+	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_EXCEPT, l); }
+
+ |  simple_select INTERSECT set_distinct opt_corresponding complex_select
+
+	{ dlist *l = dlist_create();
+	  dlist_append_symbol(l, $1);
+	  dlist_append_int(l, $3);
+	  dlist_append_list(l, $4);
+	  dlist_append_symbol(l, $5);
+	  $$ = _symbol_create_list( SQL_INTERSECT, l); }
+ ;
+
+set_distinct:
+    /* empty */ 	{ $$ = TRUE; }	
+ |  ALL			{ $$ = FALSE; }
+ |  DISTINCT		{ $$ = TRUE; }
+ ;
+
 
 opt_corresponding:
 	/* empty */	{ $$ = NULL; }
@@ -1829,7 +1856,6 @@ value_exp:
  |  string_funcs
  |  case_exp	
  |  cast_exp
- |  NULLX			{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
 
 func_ref:
@@ -1913,6 +1939,11 @@ column_exp:
  |  scalar_exp opt_alias_name
 		{ dlist *l = dlist_create();
   		  dlist_append_symbol(l, $1);
+  		  dlist_append_string(l, $2);
+  		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
+ |  NULLX opt_alias_name	
+		{ dlist *l = dlist_create();
+  		  dlist_append_symbol(l, _newAtomNode(NULL) );  
   		  dlist_append_string(l, $2);
   		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
  ;
@@ -2260,7 +2291,10 @@ data_type:
 			{ $$ = sql_bind_subtype("NUMERIC", $3, 0); }
  |  NUMERIC '(' intval ',' intval ')' 
 			{ if ($5 >= $3) {
-				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				char buf[BUFSIZ]; 
+
+				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				yyerror(buf);
 				$$ = NULL;
 			  } else {
 			        $$ = sql_bind_subtype("NUMERIC", $3, $5); 
@@ -2271,7 +2305,10 @@ data_type:
 			{ $$ = sql_bind_subtype("DECIMAL", $3, 0); }
  |  sqlDECIMAL '(' intval ',' intval ')' 
 			{ if ($5 >= $3) {
-				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				char buf[BUFSIZ]; 
+
+				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				yyerror(buf);
 				$$ = NULL;
 			  } else {
 				$$ = sql_bind_subtype("DECIMAL", $3, $5); 
@@ -2282,7 +2319,10 @@ data_type:
 			{ $$ = sql_bind_subtype("FLOAT", $3, 0); }
  |  sqlFLOAT '(' intval ',' intval ')'	
 			{ if ($5 >= $3) {
-				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				char buf[BUFSIZ]; 
+
+				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				yyerror(buf);
 				$$ = NULL;
 			  } else {
 				$$ = sql_bind_subtype("FLOAT", $3, $5); 
@@ -2292,7 +2332,10 @@ data_type:
  |  sqlDOUBLE 		{ $$ = sql_bind_subtype("DOUBLE", 0, 0); }
  |  sqlDOUBLE '(' intval ',' intval ')' 	
 			{ if ($5 >= $3) {
-				yyerror("Presision(%d) should be less than number of digits(%d)", $5, $3);
+				char buf[BUFSIZ]; 
+
+				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				yyerror(buf);
 				$$ = NULL;
 			  } else {
 				$$ = sql_bind_subtype("DOUBLE", $3, $5); 
@@ -2323,7 +2366,7 @@ ident:
  ;
 
 cident:
-     IDENT
+    IDENT
  |  TYPE	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  |  non_reserved_word		
@@ -2465,8 +2508,14 @@ char *token2string(int token)
 		return "Where";
 	case SQL_FROM:
 		return "From";
+	case SQL_UNIONJOIN:
+		return "Union Join";
 	case SQL_UNION:
 		return "Union";
+	case SQL_EXCEPT:
+		return "Except";
+	case SQL_INTERSECT:
+		return "Intersect";
 	case SQL_UPDATE:
 		return "Update";
 	case SQL_INSERT:
@@ -2549,8 +2598,6 @@ char *token2string(int token)
 		return "Copy From";
 	case SQL_COPYTO:
 		return "Copy To";
-	case SQL_EXPORT:
-		return "Export";
 	default:
 		return "unknown";
 	}

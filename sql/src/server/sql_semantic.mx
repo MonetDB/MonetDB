@@ -1161,7 +1161,12 @@ static stmt *sql_value_exp(mvc * sql, scope * scp, symbol * se, group * grp, stm
 		break;
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode*)se;
-		return stmt_atom(atom_dup(an->a));
+		if (!an || !an->a){
+			return stmt_atom(atom_general(sql_dup_subtype(
+				sql_bind_localtype("str")),NULL));
+		} else {
+			return stmt_atom(atom_dup(an->a));
+		}
 	}
 	case SQL_CAST:
 		return sql_cast(sql, scp, se, grp, subset);
@@ -1416,6 +1421,30 @@ static stmt *sql_join(mvc * sql, scope * scp, symbol * q)
 	return sql_join_(sql, scp, tab_ref1, natural, jointype, tab_ref2, joinspec);
 }
 
+stmt *distinct( stmt * s) 
+{
+	node *n;
+	group *grp = NULL;
+	list *rl = create_stmt_list();
+
+ 	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *t = n->data;
+		grp = grp_create(stmt_dup(t), grp);
+	}
+
+ 	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *t = n->data;
+		list_append(rl, stmt_join(stmt_dup(grp->ext), 
+				          stmt_dup(t), cmp_equal));
+	}
+
+	if (grp)
+		grp_destroy(grp);
+	stmt_destroy(s);
+	s = stmt_list(rl);
+	return s;
+}
+
 static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int all, dlist *cols, symbol *t2)
 {
 	stmt *res;
@@ -1447,10 +1476,10 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int all, dlist *cols, 
 	/* TODO cols length 0 see natural join
 	        cols length > 0 see union join, join on name */
 	}
-	if (!all) {
-		/* TODO double elimination */
-	}
 	res = stmt_list(unions);
+	if (!all) {
+		res = distinct(res);
+	}
 	scp = scope_close(nscp);
 	return res;
 }
@@ -1520,6 +1549,18 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 	tvar *res = NULL;
 
 	switch (q->token) {
+	case SQL_UNION:
+		{
+			scope *nscp = scope_open(scp);
+			stmt *tq = sql_union(sql, nscp, q);
+			if (!tq) {
+				printf("empty union result\n");
+				return NULL;
+			}
+			res = table_optname(sql, scp, tq, QUERY(sql->scanner), q->data.lval->t->data.sym);
+			scp = scope_close(nscp);
+			return res;
+		}
 	case SQL_JOIN:
 		{
 			scope *nscp = scope_open(scp);
@@ -1544,7 +1585,7 @@ static tvar *query_exp_optname(mvc * sql, scope * scp, symbol * q)
 			scp = scope_close(nscp);
 			return res;
 		}
-	case SQL_UNION:
+	case SQL_UNIONJOIN:
 		{
 			scope *nscp = scope_open(scp);
 			node *m;
@@ -2595,24 +2636,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	s = stmt_list(rl);
 
 	if (s && subset && sn->distinct){
-		node *n;
-		group *grp = NULL;
-
-		rl = create_stmt_list();
- 		for (n = s->op1.lval->h; n; n = n->next) {
-			stmt *t = n->data;
-			grp = grp_create(stmt_dup(t), grp);
-		}
- 		for (n = s->op1.lval->h; n; n = n->next) {
-			stmt *t = n->data;
-			list_append(rl, stmt_join(stmt_dup(grp->ext), 
-					          stmt_dup(t), cmp_equal));
-		}
-		if (grp)
-			grp_destroy(grp);
-
-		stmt_destroy(s);
-		s = stmt_list(rl);
+		s = distinct(s);
 	}
 
 	if (s && subset && sn->orderby) {
@@ -5136,6 +5160,20 @@ static stmt *sql_stmt(mvc * sql, symbol * s)
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:
+		ret = sql_union(sql, NULL, s);
+		/* add output stmt */
+		if (ret) 
+			ret = stmt_output(ret);
+		sql->type = Q_TABLE;
+		break;
+	case SQL_EXCEPT:
+		ret = sql_union(sql, NULL, s);
+		/* add output stmt */
+		if (ret) 
+			ret = stmt_output(ret);
+		sql->type = Q_TABLE;
+		break;
+	case SQL_INTERSECT:
 		ret = sql_union(sql, NULL, s);
 		/* add output stmt */
 		if (ret) 
