@@ -36,21 +36,21 @@ static void getschema( catalog *c, char *schema, char *user ){
 		if (!nt->view){
 			node *m;
 	      		table *t = cat_create_table( c, nt->id, c->cur_schema, nt->name, nt->temp, NULL );
-			printf("table %s\n", t->name );
 			for (m = nt->columns->h; m; m = m->next ){
 				sql_column *col = m->data;
 		  		column *cx = cat_create_column( c, col->id, t, col->name, 
 						col->type, col->def, col->null );
-				printf("\tcolumn %s\n", cx->name );
 			}	
 			if (nt->keys) for (m = nt->keys->h; m; m = m->next ){
 				node *p, *o = NULL;
 				key *nk = NULL;
-				key *k = m->data;
+				sql_key *k = m->data;
 
-				if (k->rkey)
-					o = list_find(keys, &k->rkey->id, 
+				if (k->type == fkey){
+					sql_fkey *fk = (sql_fkey*)k;
+					o = list_find(keys, &fk->rkey->k.id, 
 							(fcmp)&key_cmp);
+				}
 
 				if (o){
 	    				nk = cat_table_add_key( t, k->type, 
@@ -63,7 +63,7 @@ static void getschema( catalog *c, char *schema, char *user ){
 				}
 				nk->id = k->id;
 				for (o = k->columns->h; o; o = o->next){
-					column *col = o->data;
+					sql_column *col = o->data;
 					column *ncol = NULL;
 					ncol =cat_bind_column(c, t, col->name);
 					assert(ncol);
