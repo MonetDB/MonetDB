@@ -209,6 +209,11 @@ command sort( b:bat[:any$1,:any$2])
 address ALGsort
 comment "Returns a BAT copy sorted on 
 	the head column.";
+command sort_reverse( b:bat[:any$1,:any$2]) 
+	:bat[:any$1,:any$2] 
+address ALGsort_rev
+comment "Returns a BAT copy sorted on 
+	the head column.";
 
 #command sort_ht( b:bat[:any$1,:any$2]) 
 #		:bat[:any$1,:any$2] 
@@ -1821,6 +1826,7 @@ str ALG@1(int *result, int* bid, int *param) {
 @c
 @:ALGunary(histogram)@
 @:ALGunary(sort)@
+@:ALGunary(sort_rev)@
 @:ALGunary(number)@
 @:ALGunary(copy)@
 @:ALGunary(kunique)@
