@@ -1853,8 +1853,8 @@ str ALGhtsort(int *result, int *lid ) {
 		return throwMessage("algebra.htsort", "GDKerror");
 	bk= BATsort(BATkunique(b));
 	BATloop(bk,p,q){
-		bc= BATselect(b,p,p);
-		bc= BATsort(bc);
+		bc= BATselect(BATmirror(b),p,p);
+		bc= BATsort(BATmirror(bc));
 		BATins(bn,bc);
 	}
 	if( bn ) {
