@@ -124,12 +124,7 @@ public class MonetStatement implements Statement {
 			resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
 		}
 
-		if (resultSetType == ResultSet.TYPE_FORWARD_ONLY) {
-			setFetchSize(DEF_FETCHSIZE);
-		} else {
-			// use smaller blocks when doing scrollable resultsets
-			setFetchSize(DEF_FETCHSIZE / 2);
-		}
+		setFetchSize(DEF_FETCHSIZE);
 
 		closed = false;
 	}

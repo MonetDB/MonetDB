@@ -1361,6 +1361,8 @@ public class MonetConnection extends Thread implements Connection {
 				throw new SQLException("tuplecount " + tuplecount + " is not a number!");
 			}
 			isSet[2] = true;
+			// The server does not save results that are smaller than the
+			// reply size, so we don't have to attempt to clean it up also.
 			if (this.tuplecount > curReplySize) destroyOnClose = true;
 		}
 		
