@@ -471,7 +471,7 @@ void freeClient(Client c)
     if(c->scenario) GDKfree(c->scenario); c->scenario = NULL;
     if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
     if(c->cwd) GDKfree(c->cwd); c->cwd = NULL;
-    c->promptlength=0;
+    c->promptlength=-1;
     if(c->errbuf){
         GDKsetbuf(0);
         GDKfree(c->errbuf);
@@ -763,7 +763,7 @@ from terminal.
 The next statement block is to be read. Sent a prompt to warn
 the front-end to issue the request.
 @= sentPrompt
-    if(c->promptlength) { 
+    if(c->promptlength>=0) { 
         if(!isAdministrator(c))
             stream_printf(c->fdout,"\001");
         if( c->blkmode) 
