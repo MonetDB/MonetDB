@@ -844,14 +844,20 @@ Module: "pcl"
 
 Module: "profiler"
 
-[ 3 ]
-[ 3 ]
-#-----------------------------------------------------------------------------------------------------------------#
+[ 9 ]
+[ 9 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature			help					  # name
-#-----------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "fclose",		  "PROC:      ",  "fclose(Stream) : void",	  "not available"							  ]
+[ "fflush",		  "PROC:      ",  "fflush(Stream) : void",	  "not available"							  ]
+[ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",	  "not available"							  ]
+[ "fputs",		  "PROC:      ",  "fputs(str, Stream) : void",	  "not available"							  ]
 [ "setFilter",		  "COMMAND:   ",  "setFilter(str, str) : int",	  "Set the profile filter strings"	  ]
-[ "startProfiler",	  "COMMAND:   ",  "startProfiler() : int",	  "Start the event profiling stream"	  ]
+[ "startProfiler",	  "COMMAND:   ",  "startProfiler(Stream) : int",  "Start the event profiling stream; output is sent to Stream output"	  ]
+[ "startProfiler",	  "PROC:      ",  "startProfiler() : int",	  "Start the event profiling stream; output is sent to stdout"		  ]
 [ "stopProfiler",	  "COMMAND:   ",  "stopProfiler() : int",	  "Stop the event profiling stream"	  ]
+[ "test_streams",	  "PROC:      ",  "test_streams() : void",	  "not available"							  ]
 
 Module: "radix"
 

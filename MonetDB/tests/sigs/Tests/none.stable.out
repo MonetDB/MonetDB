@@ -695,6 +695,7 @@ others@batloop{
 [ "main",	  1		  ]
 [ "profiler",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "uchr",	  2		  ]
@@ -703,8 +704,12 @@ others@batloop{
 # str		void	  # type
 #-------------------------#
 [ "profiler",	  nil	  ]
+[ "streams",	  nil	  ]
 
 	dropping profiler
+
+
+	dropping streams
 
 #---------------------------------#
 # module	| usage_count	  #
