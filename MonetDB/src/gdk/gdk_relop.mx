@@ -134,8 +134,8 @@ found in r, it uses binary search. It also allows joining of an
 unsorted l with a sorted r; in that case it always uses binary search.
 
 @= mergejoin
-if ((BATtvoid(l) != 0 || l->tseqbase != oid_nil) && 
-    (BAThvoid(r) != 0 || r->hseqbase != oid_nil || nil_on_miss)) 
+if (((!BATtvoid(l)) || l->tseqbase != oid_nil) && 
+    ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) 
 { 
 	while(l_start < l_last) {
 	    ptr v2, v1 = BUNt@2(l,l_start);
