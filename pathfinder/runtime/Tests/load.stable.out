@@ -73,6 +73,7 @@ loading module 'pathfinder'
 [ "pathfinder",	  1		  ]
 [ "pf_support",	  1		  ]
 [ "str",	  1		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "xtables",	  1		  ]

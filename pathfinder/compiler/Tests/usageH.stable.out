@@ -20,6 +20,7 @@ Usage: pf [OPTION] [FILE]
 = -h, --help: print short help message
 = -H, --fullhelp: print this help message for advanced options
 = -q, --quiet: do not print informational messages to log file
+= -d[N]: print debug information (default level=1)
 = -A, --enable-algebra: turn on internal algebra code.
         Don't use this, it WILL break.
 = -M, --print-mil_summer: print MIL code (summer version) (default)
