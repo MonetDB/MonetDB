@@ -302,7 +302,7 @@ static bat build_hl(Heap* hp, bat histo, BAT *b) {
         }
         if (h == NULL) {
 		h = BATorder(BAThistogram(BATmirror(b)));
-		if (h == NULL) return created;
+		if (h == NULL) return 0;
                 created = histo = h->batCacheid;
         } else {
 		if (b->halign == 0) {
@@ -316,6 +316,7 @@ static bat build_hl(Heap* hp, bat histo, BAT *b) {
                 		ALIGNsetH(h,BATmirror(b));
         		}
 		} else if (BATorder(h) == NULL) {
+			BBPreclaim(h);
 			return created;
 		}
 	}
@@ -347,42 +348,42 @@ CTbuild_hl(
    bat*         param,  /* an extra parameter */
    BAT*         b       /* IN: BAT with head-column. */
 ){
-        bat created = build_hl(hp, param?*param:0, b);
+	bat created = build_hl(hp, param?*param:0, b);
         /* always retain
 	if (created) {
-                BBPunfix(created);
-        }
+		BBPunfix(created);
+	}
 	*/
 	if(param) *param= created;
 }
 
 static void destroy_hl(Heap* hp, BAT* b, bat histo) {
-        if (histo) {
-                BBPdecref(histo, TRUE);
-                BBPunfix(histo);
-        }
-        if (hp->base) {
-                HEAPfree(hp);
-                hp->base = NULL;
-        }
+	if (histo) {
+		BBPdecref(histo, TRUE);
+		BBPunfix(histo);
+	}
+	if (hp->base) {
+		HEAPfree(hp);
+		hp->base = NULL;
+	}
         b->hacctype = 0;
 }
 
 static bat check_hl(Heap* hp, BAT* b) {
         histolink *hl = (histolink*) hp->base;
-        bat histo = 0;
+	bat histo = 0;
 
         if (hl && hl->histogram && BBPfix(hl->histogram) > 0) {
-                b = BBPdescriptor(histo = hl->histogram);
-                if (b && hl->alignment == b->halign) {
-                        return hl->histogram;
-                }
-                GDKwarning("CTcheck_hl: histogram was changed!");
-        } else {
-                GDKwarning("CTcheck_hl: histogram disappeared!");
-        }
-        destroy_hl(hp, b, histo);
-        return 0;
+		b = BBPdescriptor(histo = hl->histogram);
+		if (b && hl->alignment == b->halign) {
+			return hl->histogram;
+		}
+		GDKwarning("CTcheck_hl: histogram was changed!");
+	} else {
+		GDKwarning("CTcheck_hl: histogram disappeared!");
+	}
+	destroy_hl(hp, b, histo);
+	return 0;
 }
 
 int
@@ -402,8 +403,8 @@ CTdestroy_hl(
    Heap*        hp,     /* INOUT: accelerator heap. */
    BAT*         b       /* IN: BAT with accelerated head column. */
 ){
-        bat histo = check_hl(hp, b);
-        destroy_hl(hp, b, histo);
+	bat histo = check_hl(hp, b);
+	destroy_hl(hp, b, histo);
 }
 
 void
@@ -422,25 +423,25 @@ CThistogram(
     BAT**	h, 
     BAT* 	b
 ){
-        bat histo = 0;
+	bat histo = 0;
 
-        if (b->tacctype && b->tacctype != ACC_histolink) {
-                /* another accelerator already exists; leave it */
-                *h = BAThistogram(b);
-                return *h?GDK_SUCCEED:GDK_FAIL;
-        }
-        if (b->tacctype == ACC_histolink) {
-                histo = check_hl(&b->taccelerator,b);
-        }
-        if (histo == 0) {
-                if (b->tacctype) {
-                        ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
-                }
-                histo = build_hl(&b->taccelerator, 0, BATmirror(b));
-                if (histo == 0) return GDK_FAIL;
-        }
-        *h = VIEWcreate(BBP_cache(histo));
-        BBPunfix(histo);
+	if (b->tacctype && b->tacctype != ACC_histolink) {
+		/* another accelerator already exists; leave it */
+		*h = BAThistogram(b);
+		return *h?GDK_SUCCEED:GDK_FAIL;
+	}
+	if (b->tacctype == ACC_histolink) {
+		histo = check_hl(&b->taccelerator,b);
+	}
+	if (histo == 0) {
+		if (b->tacctype) {
+			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
+		}
+		histo = build_hl(&b->taccelerator, 0, BATmirror(b));
+		if (histo == 0) return GDK_FAIL;
+	}
+	*h = VIEWcreate(BBP_cache(histo));
+	BBPunfix(histo);
 
 	return GDK_SUCCEED;
 }

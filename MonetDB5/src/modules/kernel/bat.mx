@@ -38,9 +38,6 @@ All commands needed for BAT updates, property management,
 search accelerator management, basic I/O, persistence, and storage options
 can be found in this module.
 
-Type parameters are represented by short integers. The MAL front-end
-defines constants to simplify the mapping from type identifier to value.
-
 All parameters to the modules are passed by reference.
 In particular, this means that string values are passed to the module
 layer as (str *)
