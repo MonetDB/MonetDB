@@ -137,6 +137,9 @@ def mFilter (FILE, IGNORE) :
                 il = il - 1
                 iw = iw - w
                 ic = ic - c
+                el = el - 1
+                ew = ew - w
+                ec = ec - c
                 ftmp[i] = "#~ " + ftmp[i]
         #TODO
         # properly solve this "hack" to make diff on NT ignore so-called
