@@ -808,7 +808,7 @@ hash join: the bread&butter join of monet
 }
 
 BAT *BATjoin(BAT *l, BAT *r, size_t estimate) {
-        BAT *b = batjoin(l, r, oid_nil);
+        BAT *b = batjoin(l, r, estimate);
         BATpropcheck(b, BATPROPS_ALL);
         return b;
 }
