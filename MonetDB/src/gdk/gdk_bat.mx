@@ -498,7 +498,7 @@ copy of the valid BUN sequence.
                         bn->batDirty = 1;
                         bn->batDirtybuns= 1;
                         bn->batDirtydesc = 1;
-                        bn->batBuns->free= b->batBuns->free;
+                        bn->batBuns->free += BUNsize(b)*BATcount(b);
                         bn->hseqbase = b->hseqbase;
                         bn->tseqbase = b->tseqbase;
 		} else {
