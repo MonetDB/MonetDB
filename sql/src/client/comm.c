@@ -45,12 +45,12 @@ int client(char *host, int port ){
     int sock;
 
     if ((sock = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
-      fprintf (stderr, "client: could not open socket");
+      fprintf (stderr, "client: could not open socket\n");
       return -2;
     }
 
     if (!(host_info = gethostbyname (host))) {
-      fprintf (stderr, "client: unknown host %s", host);
+      fprintf (stderr, "client: unknown host %s\n", host);
       return -3;
     }
 
@@ -61,7 +61,7 @@ int client(char *host, int port ){
     server.sin_port = htons (port);
 
     if (connect (sock, (struct sockaddr *) &server, sizeof server) < 0) {
-      fprintf (stderr, "client: could not connect to server");
+      fprintf (stderr, "client: could not connect to server\n");
       return -4;
     }
 

@@ -1842,6 +1842,7 @@ non_reserved_word:
 | TIMESTAMP	{ $$ = _strdup("timestamp"); }
 | PATH		{ $$ = _strdup("path"); }
 | ROLE		{ $$ = _strdup("role"); }
+| NULLX		{ $$ = _strdup("null"); }
 ;
 
 name_commalist:

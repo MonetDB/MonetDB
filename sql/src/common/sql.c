@@ -18,6 +18,13 @@
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 
  * a string representation.
+ *
+ *
+ * SQL ERROR <sqlerrno> : <details>
+ * SQL DEBUG  <details>
+ * SQL WARNING <details>
+ * SQL  <informative message, reserved for ...rows affected>
+ *
  */
 const char *token2string(int token)
 {

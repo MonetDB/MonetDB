@@ -368,7 +368,7 @@ int sqlserver_start(Cntxt stk, YYSTREE lt, ValPtr res){
 
   listen (sock, 5);
 
-  fprintf (stderr, "server listening on port %i\n", port);
+  fprintf (stderr, "# server listening on port %i\n", port);
 
   while (monet_running && server_run) {
     int retval;

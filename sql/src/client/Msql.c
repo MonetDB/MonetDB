@@ -85,11 +85,11 @@ void receive( stream *rs, stream *out ){
 		}
 		if (type == QTABLE || type == QUPDATE){
 			if (nRows > 1)
-				printf("%d Rows affected\n", nRows );
+				printf("SQL  %d Rows affected\n", nRows );
 			else if (nRows == 1)
-				printf("1 Row affected\n" );
+				printf("SQL  1 Row affected\n" );
 			else 
-				printf("no Rows affected\n" );
+				printf("SQL  no Rows affected\n" );
 		}
 		if (type == QDATA){
 			printf("forward data \n");
@@ -276,6 +276,9 @@ main(int ac, char **av)
 	debug = strtol(mo_find_option(set, setlen, "sql_debug"), NULL, 10);
 	port = strtol(mo_find_option(set, setlen, "sql_port"), NULL, 10);
 	fd = client( mo_find_option(set, setlen, "host"), port);
+	if (fd < 0)
+		return fd;
+
 	prompt = mo_find_option(set, setlen, "sql_prompt");
 	if (!prompt) prompt = strdup("Msql> ");
 
@@ -316,8 +319,10 @@ main(int ac, char **av)
 		if (s) *s = '\0';
 	}
 
-	if (strlen(schema) > 0)
+	if (strlen(schema) > 0){
+		fprintf(stdout, "SQL  connected to 'monet database' using schema %s\n", schema ); 
 		clientAccept( ws, rs, prompt );
+	}
 
 	if (schema) free(schema);
 	if (user) free(user);
