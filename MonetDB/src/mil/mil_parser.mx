@@ -706,7 +706,7 @@ mel_return:
         ':' mel_type
 	{ printf("):%s;\n",$2.val);}
     |   /* empty */ 
-	{ printf("):nil;\n");}
+	{ printf("):void;\n");}
 
 blk_expression:
         sequential_block

@@ -42,6 +42,8 @@ main(int argc,char ** argv)
         }
 
 	GDKinit(argc,argv);
+	/* move back to original location */
+	chdir(cwd);
 
         for (i = 1; i < argc; i++)
         if( argv[i][0]){
@@ -53,7 +55,8 @@ main(int argc,char ** argv)
 	    for(k=0;mal_script[k]!= 0; k++) ;
 
             if( k< MAXSCRIPT-1){
-		mal_script[k] = absolute_path(argv[i]);
+		/* mal_script[k] = absolute_path(argv[i]);*/
+		mal_script[k] = argv[i];
 		mal_script[k+1]=0;
             } else
             printf("argument list too long, too many script files \n");
