@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 	/* mapi_trace(dbh, 1); */
 	if (strcmp(argv[3], "sql") == 0) {
-		if ((hdl = mapi_query(dbh, "create table emp(name varchar, age int)")) == NULL) 
+		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL) 
 			die(dbh);
 		mapi_close_handle(hdl);
 		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL) 
