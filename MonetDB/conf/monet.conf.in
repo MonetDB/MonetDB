@@ -36,6 +36,7 @@ gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm	# origin of the databa
 gdk_dbname=demo			# default database to open
 gdk_debug=0			# debug
 gdk_mmap=33554432		# memory chucks of size >= 32M will be mmaped
+gdk_alloc_map=yes		# for 32 bit systems try claim 3G of 
 
 #gdk_oidseed=0			to generate oid@id (default=0 <= id <= 3)
 #gdk_debug=0		     1 = thread-specific debug output
