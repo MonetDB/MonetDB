@@ -143,10 +143,10 @@ if [ ! -x bootstrap ] ; then
 				libpath="${IA32ROOT}/lib:${libpath}"
 				binpath="${IA32ROOT}/bin:${binpath}"
 			  else
-				# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
-				# source /soft/IntelC++-5.0.1-beta/bin/iccvars.sh
-				export IA32ROOT=/soft/IntelC++-5.0.1-beta/ia32
-				export INTEL_FLEXLM_LICENSE=/soft/IntelC++-5.0.1-beta/licenses
+				# "ntv" on Linux means IntelC++-5.0.1 ("icc")
+				# source /soft/IntelC++-5.0.1/bin/iccvars.sh
+				export IA32ROOT=/soft/IntelC++-5.0.1
+				export INTEL_FLEXLM_LICENSE=/soft/IntelC++-5.0.1/licenses
 				libpath="${IA32ROOT}/lib:${libpath}"
 			fi
 			cc="icc"

@@ -173,10 +173,10 @@ if ( ! -x bootstrap ) then
 				set libpath = "${IA32ROOT}/lib:${libpath}"
 				set binpath = "${IA32ROOT}/bin:${binpath}"
 			  else
-				# "ntv" on Linux means IntelC++-5.0.1-beta ("icc")
-				# source /soft/IntelC++-5.0.1-beta/bin/iccvars.sh
-				setenv IA32ROOT /soft/IntelC++-5.0.1-beta/ia32
-				setenv INTEL_FLEXLM_LICENSE /soft/IntelC++-5.0.1-beta/licenses
+				# "ntv" on Linux means IntelC++-5.0.1 ("icc")
+				# source /soft/IntelC++-5.0.1/bin/iccvars.sh
+				setenv IA32ROOT /soft/IntelC++-5.0.1
+				setenv INTEL_FLEXLM_LICENSE /soft/IntelC++-5.0.1/licenses
 				set libpath = "${IA32ROOT}/lib:${libpath}"
 			endif
 			set cc = "icc"
