@@ -3,32 +3,45 @@ The following changes are necessary to obtain equivalent semantics
 
 Version 4.3		Version 5.		Comments
 ----------------------------------------------------------------
-col_name(bat,str)	setRole(bat,str)
-			getRole(bat)
-name(bat,str,str)	setRole(bat,str,str)
-			getName(bat)
-rename(bat,str)		setName(bat,str)
-bbpname(bat,str)	setName(bat,str)
-bbpname(bat)		getName(bat)
-persists(bat,bit)	setPersistent(bat)	when true
-			setTransient(bat)	when false
-key(bat,bit)		setKey(bat,bit)
-key(bat)		isaKey(bat)
-set(bat,bit)		setSet(bat,bit)
-			isaSet(bat)
-access(bat,chr)		setReadMode(bat)	when mode ='r'
-			setAppendMode(bat)	when mode = 'a'
-			setWriteMode(bat)	when mode = 'w'
-			setAccess(bat,chr)
-access(bat)		hasReadMode(bat)		when mode ='r'
-			hasAppendMode(bat)	when mode = 'a'
-			hasWriteMode(bat)	when mode = 'w'
-			getAccess(bat)
-ordered(bat)		isOrdered(bat)
-seqbase(bat,oid)	setSequenceBase(bat,oid)
-batsize(bat)		getSize(bat)
-htype(bat)		getType(bat)
-ttype(bat)		getType(reverse(bat))
+col_name(bat,str)	bbp.setRole(bat,str)
+			bbp.getRole(bat)
+name(bat,str,str)	bbp.setRole(bat,str,str)
+			bbp.getName(bat)
+rename(bat,str)		bbp.setName(bat,str)
+bbpname(bat,str)	bbp.setName(bat,str)
+bbpname(bat)		bbp.getName(bat)
+persists(bat,bit)	bbp.setPersistent(bat)	when true
+			bbp.isPersistent(bat)
+			bbp.setTransient(bat)	when false
+			bbp.isTransient(bat)
+			bbp.isCached(bat)
+cold(bat)		bbp.setCold(bat)
+hot(bat)		bbp.setHot(bat)
+view_bbp_name		bbp.getName()
+view_bbp_refcnt		bbp.getRefcnt()
+view_bbp_location	bbp.getLocation()
+view_bbp_heat		bbp.getHeat()
+view_bbp_dirty		bbp.getDirty()
+view_bbp_status		bbp.getStatus()
+view_bbp_kind		bbp.getKind()
+
+key(bat,bit)		bat.setKey(bat,bit)
+key(bat)		bat.isaKey(bat)
+set(bat,bit)		bat.setSet(bat,bit)
+			bat.isaSet(bat)
+access(bat,chr)		bat.setReadMode(bat)	when mode ='r'
+			bat.setAppendMode(bat)	when mode = 'a'
+			bat.setWriteMode(bat)	when mode = 'w'
+			bat.setAccess(bat,chr)
+access(bat)		bat.hasReadMode(bat)		when mode ='r'
+			bat.hasAppendMode(bat)	when mode = 'a'
+			bat.hasWriteMode(bat)	when mode = 'w'
+			bat.getAccess(bat)
+ordered(bat)		bat.isOrdered(bat)
+seqbase(bat,oid)	bat.setSequenceBase(bat,oid)
+batsize(bat)		bat.getSize(bat)
+htype(bat)		bat.getType(bat)
+ttype(bat)		bat.getType(reverse(bat))
 ---------------------------------------------------------
 			getBATrefcnt(bat)
 ---------------- Alignment with C -----------------------

@@ -384,7 +384,7 @@ int bindId(str nme){
 	for( i=0; typeNames[i]; i++)
 	if( strcmp(typeNames[i],nme)==0){ fnd++; break;}
 	if(fnd==0 &&  fndId(nme) == 0 && constantdeclaration==0)
-	printf("\t%s:= take(\"%s\");\n",nme,nme);
+	printf("\t%s:= bbp.bind(\"%s\");\n",nme,nme);
 }
 
 str multiplexOp[]={"+","-","/","*","%",">","<","<=",">=","=","and",
