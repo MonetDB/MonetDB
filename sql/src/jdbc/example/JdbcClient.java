@@ -961,13 +961,16 @@ public class JdbcClient {
 	 * @param table the (fully qualified) name of the table to dump
 	 * @throws SQLException if a database related error occurs
 	 */
-	public static void dumpTable(PrintWriter out, Statement stmt, String table)
-		throws SQLException
+	public static void dumpTable(
+		PrintWriter out,
+		Statement stmt,
+		Table table
+	) throws SQLException
 	{
 		// Simply select all from the given table
-		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
+		ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ());
 		ResultSetMetaData rsmd = rs.getMetaData();
-		String statement = "INSERT INTO " + table + " VALUES (";
+		String statement = "INSERT INTO " + table.getNameQ() + " VALUES (";
 		int cols = rsmd.getColumnCount();
 		int[] types = new int[cols];
 		for (int i = 0; i < cols; i++) {
@@ -1052,7 +1055,7 @@ public class JdbcClient {
 			dumpTable(
 				out,
 				stmt,
-				table.getNameQ()
+				table
 			);
 			out.println();
 		} else {
