@@ -493,18 +493,18 @@ minimum precision parameter).
 @c
 static INLINE
 void decimal_normalize(decimal* d, decimal *v, int offset, int fixed_precision, int del_trailing){
-	int x = offset, precision, first_nonzero=0, last_nonzero=v->precision;
+	int x = offset, precision, first_nonzero=0, last_nonzero=PREC(v);
 
-	DECIMAL_DEBUG(v, "decimal_normalize() input", 0);
+	DECIMAL_DEBUG(v, "decimal_normalize() input", 1);
 
 	/* find the first nonzero digit from the start */
-	for(first_nonzero=0; first_nonzero < v->precision; first_nonzero++) {
+	for(first_nonzero=0; first_nonzero < PREC(v); first_nonzero++) {
 		if (GETNUM(v,first_nonzero) != 0) break;
 	}
 
 	/* find the last nonzero digit from the end */
 	if (del_trailing)
-	for(x=first_nonzero; x < v->precision; x++) {
+	for(x=first_nonzero; x < PREC(v); x++) {
 		if (GETNUM(v,x) != 0) last_nonzero=x+1;
 	}
 
@@ -531,14 +531,14 @@ void decimal_normalize(decimal* d, decimal *v, int offset, int fixed_precision, 
 	} else { 
 		/* PREC(d) can be > precision; rest is then padded by 0s */
 		d->negative = v->negative;
-		d->scale = SCALE(v) + (v->precision - last_nonzero);
+		d->scale = SCALE(v) + (PREC(v) - last_nonzero);
 		d->precision = precision;
 		if (fixed_precision > precision && !del_trailing) {
 			d->scale -= fixed_precision - precision;
 			d->precision = fixed_precision;
 		}
 	}
-	DECIMAL_DEBUG(d, "decimal_normalize() result", 0);
+	DECIMAL_DEBUG(d, "decimal_normalize() result", 1);
 }
 
 @-
@@ -661,9 +661,9 @@ int decimal_fromstr(str buf, int *len, decimal **ret) {
 }
 
 int decimal_tostr(str *buf, int *len, decimal *v) {
-	if (*len < v->precision+7) {
+	if (*len < PREC(v)+7) {
 		if (*buf) GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = v->precision+7);
+		*buf = (str) GDKmalloc(*len = PREC(v)+7);
 	} 
 	if (ISNIL(v)) {
 		strcpy(*buf, "nil");
@@ -676,7 +676,7 @@ int decimal_tostr(str *buf, int *len, decimal *v) {
 		if (v->negative) {
 			*s++ =  '-';
 		}
-		for(x = 0; x < v->precision; x++, repeat++) {
+		for(x = 0; x < PREC(v); x++, repeat++) {
 			val = GETNUM(v,x) + '0';
 			if (val != lastval) {
 				if (repeat > decimal_minrepeat) {
@@ -841,8 +841,8 @@ hash_t decimal_hash(decimal *d) {
 }
 
 int decimal_compare(decimal *v1, decimal *v2) {
-	unsigned int d1 = v1->precision + SCALE(v1);
-	unsigned int d2 = v2->precision + SCALE(v2);
+	unsigned int d1 = PREC(v1) + SCALE(v1);
+	unsigned int d2 = PREC(v2) + SCALE(v2);
 	int res = 0;
 
 	if (v2->negative != v1->negative) {
@@ -852,8 +852,8 @@ int decimal_compare(decimal *v1, decimal *v2) {
 	} else {
 		unsigned int *p1 = v1->num;
 		unsigned int *p2 = v2->num; 
-		unsigned int *q1 = p1 + NUMLEN(v1->precision);
-		unsigned int *q2 = p2 + NUMLEN(v2->precision);
+		unsigned int *q1 = p1 + NUMLEN(PREC(v1));
+		unsigned int *q2 = p2 + NUMLEN(PREC(v2));
 	
 		while(p1 < q1 || p2 < q2) {
 			d1 = (p1 < q1)?*p1:0;
@@ -905,11 +905,19 @@ void decimal_del(Heap* h, var_t* index) {
 }
 
 var_t decimal_put(Heap* h, var_t* bun, decimal* val) {
-	int *dst, len = TOTLEN(PREC(val));
-	int *src = (int*) val;
-	int *end = (int*) (((char*) src) + len);
-	dst = (int*) (h->base + (*bun = HEAP_malloc(h, len)));
-	if (*bun) while(src < end) *dst++ = *src++;
+	decimal *dst;
+	int len = TOTLEN(PREC(val));
+	unsigned int *src = val->num;
+	unsigned int *end = (unsigned int*) (((char*) src) + len - sizeof(int));
+	DECIMAL_DEBUG(val, "decimal_put() input", 1);
+ 	*bun = HEAP_malloc(h, len);
+	dst = (decimal*)(h->base + *bun);
+	if (*bun) {
+		 unsigned int *d = dst->num;
+		 *dst = *val;
+		 while(src < end) *d++ = *src++;
+	}
+	DECIMAL_DEBUG((decimal*)dst, "decimal_put() result", 1);
 	return *bun;
 }
 
@@ -968,19 +976,19 @@ bat* decimal_prelude(void) {
 
 	/* create decimals representing the maximum and minimum values of scalar types */
 	decimal_fromstr("-2147483648", &y, &decimal_int_min);
-	decimal_int_max = decimal_copy(decimal_int_min, decimal_int_min->precision);
+	decimal_int_max = decimal_copy(decimal_int_min, PREC(decimal_int_min));
 	decimal_int_max->negative = 0;
 
 	decimal_fromstr("-3.402823466E+38F", &y, &decimal_flt_min);
-	decimal_flt_max = decimal_copy(decimal_flt_min, decimal_flt_min->precision);
+	decimal_flt_max = decimal_copy(decimal_flt_min, PREC(decimal_flt_min));
 	decimal_flt_max->negative = 0;
 
 	decimal_fromstr("-9223372036854775808", &y, &decimal_lng_min);
-	decimal_lng_max = decimal_copy(decimal_lng_min, decimal_lng_min->precision);
+	decimal_lng_max = decimal_copy(decimal_lng_min, PREC(decimal_lng_min));
 	decimal_lng_max->negative = 0;
 
 	decimal_fromstr("-1.7976931348623157E+308", &y, &decimal_dbl_min);
-	decimal_dbl_max = decimal_copy(decimal_dbl_min, decimal_dbl_min->precision);
+	decimal_dbl_max = decimal_copy(decimal_dbl_min, PREC(decimal_dbl_min));
 	decimal_dbl_max->negative = 0;
 
 	return NULL;
