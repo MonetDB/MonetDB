@@ -982,15 +982,35 @@ a single query for the engine.
 			size_t n, m_size = CHUNK_SIZE, m_index = 0;
 			message = malloc(CHUNK_SIZE);
 			if (mapi_is_blocked(mid)) {
+				char *rtrn;
+				MapiHdl hdl;
+
+				timerStart();
+				hdl = mapi_query_prep(mid);
 				/* just read the whole thing and submit it */
-				while ((n = fread(message+m_index, 1,
+				while ((n = fread(message, 1,
 						  CHUNK_SIZE, fp)) != 0) {
-					GROW_MESSAGE(n);
-					message[m_index] = 0;
+					mapi_query_part(hdl, message, n); 
+					/* echo to stdout 
+					fwrite(message, 1, n, stdout);
+					*/
 				}
-				/* echo to stdout */
-				fwrite(message, 1, strlen(message), stdout);
-				doRequest(mid, message);
+				mapi_query_done(hdl); 
+				if (mapi_error(mid)) {
+					mapi_explain_query(hdl, stdout);
+					mapi_close_handle(hdl);
+					return 0;
+				}
+				while ((rtrn = mapi_fetch_line(hdl)) != 0) {
+					fprintf(toConsole, "%s\n", rtrn);
+				}
+				timerEnd();
+				if (mapi_error(mid)) {
+					mapi_explain_query(hdl, stdout);
+					mapi_close_handle(hdl);
+					return 0;
+				}
+				mapi_close_handle(hdl);
 			} else {
 				/* send line by line */
 				while (fgets(message, m_size, fp) != NULL) {

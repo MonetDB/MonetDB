@@ -817,6 +817,9 @@ mapi_export MapiMsg mapi_prepare_handle(MapiHdl hdl, const char *cmd);
 mapi_export MapiHdl mapi_prepare_array(Mapi mid, const char *cmd, char **val);
 mapi_export MapiHdl mapi_query(Mapi mid, const char *cmd);
 mapi_export MapiMsg mapi_query_handle(MapiHdl hdl, const char *cmd);
+mapi_export MapiHdl mapi_query_prep(Mapi mid);
+mapi_export MapiMsg mapi_query_part(MapiHdl hdl, const char *cmd, size_t size);
+mapi_export MapiMsg mapi_query_done(MapiHdl hdl);
 mapi_export MapiHdl mapi_quick_query(Mapi mid, const char* cmd, FILE *fd);
 mapi_export MapiHdl mapi_query_array(Mapi mid, const char *cmd, char **val);
 mapi_export MapiHdl mapi_quick_query_array(Mapi mid, const char* cmd, char **val, FILE *fd);
@@ -2303,6 +2306,59 @@ mapi_query_array(Mapi mid, const char *cmd, char **val)
 	if (ret == MOK)
 		ret = answer_lookahead(hdl);
 	return hdl;
+}
+
+MapiHdl
+mapi_query_prep(Mapi mid) 
+{
+	int ret = MERROR;
+	MapiHdl hdl;
+
+	if (mid->languageId == LANG_SQL) {
+		/* indicate to server this is a SQL command */
+		stream_write(mid->to, "S", 1, 1);
+	}
+	hdl = prepareQuery(mapi_new_handle(mid), "large query");
+	ret = mid->error;
+	return hdl;
+}
+
+MapiMsg
+mapi_query_part(MapiHdl hdl, const char *query, size_t size )
+{
+	Mapi mid;
+
+	mapi_hdl_check(hdl, "mapi_execute");
+	mid = hdl->mid;
+	if (mid->trace) {
+		printf("mapi_query:" SZFMT ":%s\n", size, query);
+	}
+	stream_write(mid->to, (char*)query, 1, size);
+	check_stream(mid, mid->to, "write error on stream", "mapi_execute",
+		     mid->error);
+
+	check_stream(mid, mid->to, "write error on stream",
+		     "mapi_execute", mid->error);
+	return MOK;
+}
+
+MapiMsg
+mapi_query_done( MapiHdl hdl )
+{
+	int ret;
+	Mapi mid;
+
+	mapi_hdl_check(hdl, "mapi_execute");
+	mid = hdl->mid;
+	stream_flush(mid->to);
+	check_stream(mid, mid->to, "write error on stream",
+		     "mapi_execute", mid->error);
+	ret = mid->error;
+	if (ret == MOK)
+		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = answer_lookahead(hdl);
+	return ret;
 }
 
 @-
