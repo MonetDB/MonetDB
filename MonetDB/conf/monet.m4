@@ -152,13 +152,13 @@ case $CC-$CXX in
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		CXXFLAGS="$CXXFLAGS -D__EXTENSIONS__"
 		;;
-	arm-linux-gcc-*|gcc-*-irix*|gcc-*-cygwin*|gcc-*-darwin*|gcc-2.*-aix*|gcc-2.*)
+	gcc-*-irix*|gcc-*-cygwin*|gcc-*-darwin*|gcc-2.*-aix*|*gcc-2.*)
 		;;
-	gcc-3.3.*)	
+	*gcc-3.3*)	
 		CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
-	gcc-3.*)	
+	*gcc-3.*)	
 		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
@@ -513,6 +513,9 @@ if test "x$enable_optim" = xyes; then
                       LDFLAGS="$LDFLAGS -IPA"
                       ;;
       *-sun-solaris*) CFLAGS="$CFLAGS -xO5";;
+      *aix*)          CFLAGS="$CFLAGS -O3"
+                      NO_INLINE_CFLAGS="-qnooptimize"
+                      ;;
       esac   
     fi
   fi
