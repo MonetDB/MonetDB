@@ -1159,6 +1159,24 @@ int TBL_M_decref(Client client, int mid) {
   return i;
 }
 
+void TBL_inc_mod_use(Client client){
+	Client father = client;
+	BAT *modules_used;
+	BUN p,q;
+	int xx;
+
+	while (father->father != -1) {
+		father = monet_clients + father->father; 
+  	}
+	modules_used = BATselect(TBL_mod_use, &father, &father);
+	BATloopFast(modules_used, p, q, xx) { 
+	    oid mid = *(oid*) BUNhloc(modules_used,p); 
+	    TBL_M_incref(client, mid);
+	}
+
+	BBPreclaim(modules_used);
+}
+
 
 @- TBL_M_initscript 
 finds the possible load MIL script
@@ -1220,6 +1238,7 @@ oid TBL_loadmod(Client client, str module, int level, str *initstr) {
   TBLinstall inst;
   int loaded = 0;
   int cinstalled = 0;
+  int used = 0;
 
   /* handles
    */
@@ -1249,6 +1268,8 @@ Lets do the things in the right order, see above!
   dlFPRINTF(GDKerr, "  loaded = %d\n", loaded);
 
   cinstalled = TBL_M_cinstalled(client, mid);
+  if (cinstalled) 
+	used = 1;
 
   dlFPRINTF(GDKerr, "  installed = %d\n", cinstalled);
 
@@ -1269,7 +1290,7 @@ Lets do the things in the right order, see above!
 
   TBL_M_incref(client, mid);
 
-  if (loaded && cinstalled)
+  if (loaded && cinstalled && !used)
   	TBL_M_initscript(mid, initstr);
 
  xit:
@@ -2231,6 +2252,7 @@ void TBL_initclient(Client client) {
 		client->acctbl = TBL_lookup(client, "acctbl"); 
 		client->atomtbl = TBL_lookup(client, "atomtbl"); 
 		TBL_incproc(client); /* inc reference counts to functions */
+		TBL_inc_mod_use(client); /* inc mod use counters */
 	} else {
 		client->fcntbl = TBL_create(client, "fcntbl", 
 				    BATnew(TYPE_str, TYPE_oid, TBL_SIZE));
