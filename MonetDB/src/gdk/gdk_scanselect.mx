@@ -396,17 +396,18 @@ Expanding on input-tail-type for data read and comparison.
 Most is straight forward.
 Taking special care of equi selects on str when there are no doubles in the
 heap.
+Adding test for v != nil for types where nil != MIN.
 
 @= DEFseqscanTTget
-	@:DEFseqscanIF(chr,chr,tloc,simple,chr)@
-	@:DEFseqscanIF(sht,sht,tloc,simple,sht)@
-	@:DEFseqscanIF(int,int,tloc,simple,int)@
-	@:DEFseqscanIF(flt,int,tloc,simple,flt)@
-	@:DEFseqscanIF(dbl,lng,tloc,simple,dbl)@
-	@:DEFseqscanIF(lng,lng,tloc,simple,lng)@
+	@:DEFseqscanIF(chr,chr,tloc,simple,chr,)@
+	@:DEFseqscanIF(sht,sht,tloc,simple,sht,)@
+	@:DEFseqscanIF(int,int,tloc,simple,int,)@
+	@:DEFseqscanIF(flt,int,tloc,simple,flt,)@
+	@:DEFseqscanIF(dbl,lng,tloc,simple,dbl,)@
+	@:DEFseqscanIF(lng,lng,tloc,simple,lng,)@
 	@:DEFseqscanHTget(eq_str,any,tloc,if (*(int*)v == str_idx),tl)@
-	@:DEFseqscanIF(fix,any,tloc,atom,t)@
-	@:DEFseqscanIF(var,any,tvar,atom,t)@
+	@:DEFseqscanIF(fix,any,tloc,atom,t,&& !atom_EQ(nil,v,t))@
+	@:DEFseqscanIF(var,any,tvar,atom,t,&& !atom_EQ(nil,v,t))@
 @= seqscanTTget
 	if (AsTt == TYPE_chr) {
 			@:seqscanIF(chr,chr,tloc,simple,chr,)@
@@ -431,10 +432,10 @@ heap.
 			str_idx = strLocate(&b->theap, tl);
 			@:seqscanHTget(eq_str,any,tloc,if ((*(int*)v) == str_idx),tl)@
 		} else {
-			@:seqscanIF(var,any,tvar,atom,t,&& !atom_EQ(tl,v,t))@
+			@:seqscanIF(var,any,tvar,atom,t,&& !atom_EQ(nil,v,t))@
 		}
 	} else {
-			@:seqscanIF(fix,any,tloc,atom,t,&& !atom_EQ(tl,v,t))@
+			@:seqscanIF(fix,any,tloc,atom,t,&& !atom_EQ(nil,v,t))@
 	}
 @-
 
