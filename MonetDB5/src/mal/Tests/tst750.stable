@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## Polymorphic function tests
 ## Cloning two versions of a single function
 #function test(b:bat[:any,:any$2],c:any$2):int;
@@ -19,7 +20,7 @@ end test;	# 3
 #test(b,2);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     Admin.test(b,2);	# 2  ($4:int)<-(b:bat[:int,:int])($5:int)
 end main;	# 3  
 [ 3 ]

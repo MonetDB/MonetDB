@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## handling of correct header printing
 #
 #t:= new(:int,:str);
@@ -12,9 +13,9 @@
 #print(t,u);
 #
 function Admin.main():int;	# 0  (main:int)
-    t := bbp.new(int:,str:);	# 1 CMDBATnew (t:bat[:int,:str])<-($2:int)($3:str)
+    t := bbp.new(:int,:str);	# 1 CMDBATnew (t:bat[:int,:str])<-($2:int)($3:str)
     bat.setColumn(t,"first");	# 2 BKCsetColumn ($4:bat[:int,:str])<-(t:bat[:int,:str])($5:str)
-    u := bbp.new(int:,str:);	# 3 CMDBATnew (u:bat[:int,:str])<-($7:int)($8:str)
+    u := bbp.new(:int,:str);	# 3 CMDBATnew (u:bat[:int,:str])<-($7:int)($8:str)
     io.print(t,u);	# 4 IOtable ($9:int)<-(t:bat[:int,:str])(u:bat[:int,:str])
 end main;	# 5  
 #-------------------------#

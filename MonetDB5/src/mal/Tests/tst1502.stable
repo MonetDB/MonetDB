@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #	x := new(:oid,:chr);
 #	insert(x,1@0,'a');
 #	insert(x,2@0,'a');
@@ -46,7 +47,7 @@
 #
 #
 function Admin.main():int;	# 0  (main:int)
-    x := bbp.new(oid:,chr:);	# 1 CMDBATnew (x:bat[:oid,:chr])<-($2:oid)($3:chr)
+    x := bbp.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-($2:oid)($3:chr)
     bat.insert(x,1@0,'a');	# 2 BKCinsert_bun ($4:void)<-(x:bat[:oid,:chr])($5:oid)($6:chr)
     bat.insert(x,2@0,'a');	# 3 BKCinsert_bun ($7:void)<-(x:bat[:oid,:chr])($8:oid)($6:chr)
     bat.insert(x,3@0,'b');	# 4 BKCinsert_bun ($9:void)<-(x:bat[:oid,:chr])($10:oid)($11:chr)
@@ -55,7 +56,7 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(x,6@0,'b');	# 7 BKCinsert_bun ($16:void)<-(x:bat[:oid,:chr])($17:oid)($11:chr)
     bat.insert(x,7@0,'c');	# 8 BKCinsert_bun ($18:void)<-(x:bat[:oid,:chr])($19:oid)($20:chr)
     bat.insert(x,8@0,'c');	# 9 BKCinsert_bun ($21:void)<-(x:bat[:oid,:chr])($22:oid)($20:chr)
-    y := bbp.new(oid:,dbl:);	# 10 CMDBATnew (y:bat[:oid,:dbl])<-($24:oid)($25:dbl)
+    y := bbp.new(:oid,:dbl);	# 10 CMDBATnew (y:bat[:oid,:dbl])<-($24:oid)($25:dbl)
     le_a := calc.dbl(1.0);	# 11 CALCflt2dbl (le_a:dbl)<-($27:flt)
     bat.insert(y,1@0,le_a);	# 12 BKCinsert_bun ($28:void)<-(y:bat[:oid,:dbl])($5:oid)(le_a:dbl)
     ne_a := calc.dbl(2.0);	# 13 CALCflt2dbl (ne_a:dbl)<-($30:flt)
@@ -72,7 +73,7 @@ function Admin.main():int;	# 0  (main:int)
     bat.insert(y,7@0,xe_a);	# 24 BKCinsert_bun ($42:void)<-(y:bat[:oid,:dbl])($19:oid)(xe_a:dbl)
     af_a := calc.dbl(1.0);	# 25 CALCflt2dbl (af_a:dbl)<-($27:flt)
     bat.insert(y,8@0,af_a);	# 26 BKCinsert_bun ($44:void)<-(y:bat[:oid,:dbl])($22:oid)(af_a:dbl)
-    z := bbp.new(oid:,str:);	# 27 CMDBATnew (z:bat[:oid,:str])<-($46:oid)($47:str)
+    z := bbp.new(:oid,:str);	# 27 CMDBATnew (z:bat[:oid,:str])<-($46:oid)($47:str)
     bat.insert(z,1@0,"c");	# 28 BKCinsert_bun ($48:void)<-(z:bat[:oid,:str])($49:oid)($50:str)
     bat.insert(z,2@0,"a");	# 29 BKCinsert_bun ($51:void)<-(z:bat[:oid,:str])($52:oid)($53:str)
     bat.insert(z,3@0,"b");	# 30 BKCinsert_bun ($54:void)<-(z:bat[:oid,:str])($55:oid)($56:str)

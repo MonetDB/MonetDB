@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##test debugging of a recursive function
 #
 #function level():void;

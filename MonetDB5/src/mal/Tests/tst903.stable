@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## the multiplex code blocks.
 #
 #b:= new(:void,:lng);
@@ -121,7 +122,7 @@
 #printf("#multiplex.tactics(+) %d\n",d0);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(void:,lng:);	# 1 CMDBATnew (b:bat[:void,:lng])<-($2:void)($3:lng)
+    b := bbp.new(:void,:lng);	# 1 CMDBATnew (b:bat[:void,:lng])<-($2:void)($3:lng)
     i := -1;	# 2  (i:lng)<-($5:lng)
 barrier v := mal.nextElement(i,0,1000000);	# 3 lngForloop (v:bit)<-(i:lng)($7:lng)($8:lng) jump 8
     k := calc.rand();	# 4 CALCrandint (k:int)
@@ -232,17 +233,17 @@ exit v;	# 8  (v:bit)
     d0 := calc.-(t1,t0);	# 109 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#multiplex.tactics(+) %d\n",d0);	# 110 IOprint_formatted_lng ($78:int)<-($79:str)(d0:lng)
 end main;	# 111  
-#copy 24#count 1000000
-#select none 207135 count 0
-#select all 43149 count 1000000
-#select 0.05 26072 count 50004
-#select 0.1 27433 count 100016
-#select 0.2 30593 count 199929
-#select 0.4 35671 count 399791
-#select 0.6 39460 count 600237
-#select 0.8 41936 count 799837
-#select 1.0 42060 count 999999
-#tail sort 10 count 1000000
-#multiplex.script(+) 19346417
-#multiplex.tactics(+) 70654
+#copy 23#count 1000000
+#select none 274597 count 0
+#select all 42307 count 1000000
+#select 0.05 25894 count 50004
+#select 0.1 27545 count 100016
+#select 0.2 30331 count 199929
+#select 0.4 35625 count 399791
+#select 0.6 39466 count 600237
+#select 0.8 42626 count 799837
+#select 1.0 42145 count 999999
+#tail sort 9 count 1000000
+#multiplex.script(+) 19657046
+#multiplex.tactics(+) 70644
 >

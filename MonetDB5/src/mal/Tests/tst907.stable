@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #function one(base:int):int;
 #	print(base);
 #	return base;
@@ -51,7 +52,7 @@ function Admin.main():int;	# 0  (main:int)
     k := Admin.one(1);	# 1  (k:int)<-($2:int)
     l := Admin.three(1,2,3);	# 2  (l:int)<-($2:int)($4:int)($5:int)
     p := Admin.pow(1,2);	# 3  (p:int)<-($2:int)($4:int)
-    b := bbp.new(int:,int:);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
+    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     bat.insert(b,1,1);	# 5 BKCinsert_bun ($10:void)<-(b:bat[:int,:int])($2:int)($2:int)
     z := multiplex.script("three",b,2,3);	# 6  (z:bat[:int,:int])<-($12:str)(b:bat[:int,:int])($4:int)($5:int)
     z := multiplex.script("one",b);	# 7  (z:bat[:int,:int])<-($13:str)(b:bat[:int,:int])

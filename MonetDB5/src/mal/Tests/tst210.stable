@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## simple renaming of a bat;
 #
 #b:= new(:int,:int);
@@ -14,7 +15,7 @@
 #print(b);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(b,1,1);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($5:int)
     io.print(b);	# 3 IOprint_val ($6:int)<-(b:bat[:int,:int])
     bat.setName(b,"myhome");	# 4 BKCsetName ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:str)

@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## The series tst2?? is a patched version of suite_00
 ## The first and foremost BAT operations
 #
@@ -59,7 +60,7 @@
 #
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(b,1,15);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($6:int)
     bat.insert(b,2,4);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:int,:int])($8:int)($9:int)
     n0 := calc.int(nil);	# 4 CALCnil2int (n0:int)<-($11:void)
@@ -78,7 +79,7 @@ barrier v := chopper.bunStream(b,h,t);	# 15 CHPbunStream (v:lng)<-(b:bat[:int,:i
     io.printf("%d]\n",t);	# 17 IOprint_formatted_int ($39:int)<-($40:str)(t:int)
     redo v;	# 18  (v:lng) jump 15
 exit v;	# 19  (v:lng)
-    c := bbp.new(int:,str:);	# 20 CMDBATnew (c:bat[:int,:str])<-($42:int)($43:str)
+    c := bbp.new(:int,:str);	# 20 CMDBATnew (c:bat[:int,:str])<-($42:int)($43:str)
     bat.insert(c,1,"hello");	# 21 BKCinsert_bun ($44:void)<-(c:bat[:int,:str])($45:int)($46:str)
     bat.insert(c,2,"brave");	# 22 BKCinsert_bun ($47:void)<-(c:bat[:int,:str])($48:int)($49:str)
     bat.insert(c,3,"world");	# 23 BKCinsert_bun ($50:void)<-(c:bat[:int,:str])($51:int)($52:str)
@@ -92,7 +93,7 @@ barrier v := chopper.bunStream(c,h,ts);	# 29 CHPbunStream (v:lng)<-(c:bat[:int,:
     io.printf("%s]\n",ts);	# 31 IOprint_formatted_str ($67:int)<-($68:str)(ts:str)
     redo v;	# 32  (v:lng) jump 29
 exit v;	# 33  (v:lng)
-    d := bbp.new(str:,str:);	# 34 CMDBATnew (d:bat[:str,:str])<-($70:str)($71:str)
+    d := bbp.new(:str,:str);	# 34 CMDBATnew (d:bat[:str,:str])<-($70:str)($71:str)
     bat.insert(d,"one","red");	# 35 BKCinsert_bun ($72:void)<-(d:bat[:str,:str])($73:str)($74:str)
     bat.insert(d,"two","green");	# 36 BKCinsert_bun ($75:void)<-(d:bat[:str,:str])($76:str)($77:str)
     io.print(d);	# 37 IOprint_val ($78:int)<-(d:bat[:str,:str])

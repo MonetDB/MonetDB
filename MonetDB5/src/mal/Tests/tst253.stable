@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## testing void bats
 #
 #b:= new(:void,:str);
@@ -18,7 +19,7 @@
 #print(d);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(void:,str:);	# 1 CMDBATnew (b:bat[:void,:str])<-($2:void)($3:str)
+    b := bbp.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-($2:void)($3:str)
     bat.insert(b,"hello");	# 2 BKCinsert_void_bun ($4:void)<-(b:bat[:void,:str])($5:str)
     bat.insert(b,nil,"world");	# 3 BKCinsert_bun ($6:void)<-(b:bat[:void,:str])($7:void)($8:str)
     io.print(b);	# 4 IOprint_val ($9:int)<-(b:bat[:void,:str])

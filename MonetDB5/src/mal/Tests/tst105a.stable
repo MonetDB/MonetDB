@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## check classification of functions in the proper module
 #
 #module bat;
@@ -13,6 +14,6 @@ command Admin.new(h:any$1,t:any$2):bat[:any$1,:any$2] = GDKbatnew;	# 0  dynamic 
 #
 #b:= bat.new(:str,:int);
 function Admin.main():int;	# 0  unknown (main:int)
-    b := bat.new(str:,int:);	# 1  unknown (b:any)<-($2:str)($3:int)
+    b := bat.new(:str,:int);	# 1  unknown (b:any)<-($2:str)($3:int)
 end main;	# 2  unknown 
 >

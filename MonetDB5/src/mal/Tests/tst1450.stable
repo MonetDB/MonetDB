@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## Mil compiler Version 1.0)
 ## Copyright (c) 1993-2001, CWI. All rights reserved.
 #
@@ -262,7 +263,7 @@ barrier ba_a := algebra.exist(aa_a,"tpe");	# 3 ALGexist (ba_a:bit)<-(aa_a:bat[:s
     enum.destroy(tpe);	# 5 ENUMdestroy ($6:void)<-(tpe:bat[:any,:any])
     commit := bbp.bind("commit");	# 6 CMDbbpbind (commit:bat[:any,:any])<-($8:str)
 exit ba_a;	# 7  (ba_a:bit)
-    a := bbp.new(oid:,oid:);	# 8 CMDBATnew (a:bat[:oid,:oid])<-($10:oid)($11:oid)
+    a := bbp.new(:oid,:oid);	# 8 CMDBATnew (a:bat[:oid,:oid])<-($10:oid)($11:oid)
     bat.insert(a,2@0,nil);	# 9 BKCinsert_bun ($12:void)<-(a:bat[:oid,:oid])($13:oid)($14:oid)
     bat.insert(a,2@0,nil);	# 10 BKCinsert_bun ($15:void)<-(a:bat[:oid,:oid])($13:oid)($14:oid)
     bat.insert(a,2@0,nil);	# 11 BKCinsert_bun ($16:void)<-(a:bat[:oid,:oid])($13:oid)($14:oid)

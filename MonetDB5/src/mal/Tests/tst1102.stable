@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #	t:= new(:int, :url);
 #	cb_a := url("http://www.cwi.nl");
 #	db_a := insert(t,1,cb_a);
@@ -39,7 +40,7 @@
 #	print(rb);
 #
 function Admin.main():int;	# 0  (main:int)
-    t := bbp.new(int:,url:);	# 1 CMDBATnew (t:bat[:int,:url])<-($2:int)($3:url)
+    t := bbp.new(:int,:url);	# 1 CMDBATnew (t:bat[:int,:url])<-($2:int)($3:url)
     cb_a := url.url("http://www.cwi.nl");	# 2 URLnew (cb_a:url)<-($5:str)
     db_a := bat.insert(t,1,cb_a);	# 3 BKCinsert_bun (db_a:void)<-(t:bat[:int,:url])($7:int)(cb_a:url)
     eb_a := url.url("http://www.cwi.nl/~monet");	# 4 URLnew (eb_a:url)<-($9:str)
@@ -54,7 +55,7 @@ function Admin.main():int;	# 0  (main:int)
     nb_a := bat.insert(t,6,mb_a);	# 13 BKCinsert_bun (nb_a:void)<-(t:bat[:int,:url])($27:int)(mb_a:url)
     qb_a := io.print("build a table finished");	# 14 IOprint_val (qb_a:int)<-($29:str)
     io.print(t);	# 15 IOprint_val ($30:int)<-(t:bat[:int,:url])
-    rb := bbp.new(int:,url:);	# 16 CMDBATnew (rb:bat[:int,:url])<-($32:int)($33:url)
+    rb := bbp.new(:int,:url);	# 16 CMDBATnew (rb:bat[:int,:url])<-($32:int)($33:url)
     io.print("start loop");	# 17 IOprint_val ($34:int)<-($35:str)
 barrier mloop := chopper.bunStream(t,h,B2);	# 18 CHPbunStream (mloop:lng)<-(t:bat[:int,:url])(h:int)(B2:url) jump 23
     io.print(h);	# 19 IOprint_val ($39:int)<-(h:int)

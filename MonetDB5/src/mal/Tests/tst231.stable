@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## a test checking BAT reference counting under various situations
 #	b:= new(:int,:str);
 #	i:= getRefCount(b);
@@ -20,7 +21,7 @@
 #	printf("after mirror assignment refcount =%d\n",i);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,str:);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
+    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
     i := bbp.getRefCount(b);	# 2 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("refcount =%d\n",i);	# 3 IOprint_formatted_int ($5:int)<-($6:str)(i:int)
     bat.insert(b,1,"bat B");	# 4 BKCinsert_bun ($7:void)<-(b:bat[:int,:str])($8:int)($9:str)

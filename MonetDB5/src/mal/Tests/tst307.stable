@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##testing exceptions raised in the kernel
 #
 #b:= new(:int,:int);
@@ -14,7 +15,7 @@
 #exit MALexception;
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     z := algebra.find(b,0);	# 2 ALGfind (z:int)<-(b:bat[:int,:int])($5:int)
     io.print("should not come here anymore");	# 3 IOprint_val ($6:int)<-($7:str)
 catch MALexception;	# 4  (MALexception:str) jump 6

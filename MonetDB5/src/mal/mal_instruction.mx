@@ -821,13 +821,17 @@ wide and terminated by a null-byte.
 This means that we can speed up search when the variables
 differ in the first two characters
 Furthermore, temporary variables are already assigned to a specific
-position in the variable table.
+position in the variable table. This information can only be used
+under the assumption that the code base is not modified on the
+fly. Then the expensive search is started anyway.
 @c
 int findVariable(MalBlkPtr mb, str name){
 	int i;
 	if( isTmpName(name)){
 		i= atol(name+1);
-		return i>=mb->vtop? -1:i;
+		/* test validity*/
+		if( i< mb->vtop-1 && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
+			return i;
 	} 
 	for(i=mb->vtop-1; i>=0; i--)
 	if(!isTmpVar(mb,i) && idcmp(name, getVarName(mb,i) )==0)
@@ -1579,6 +1583,7 @@ str operatorName(InstrPtr p){
 	case LEAVEsymbol:	return "leave";
 	case EXITsymbol:	return "exit";
 	case RETURNsymbol:	return "return";
+	case YIELDsymbol:	return "yield";
 	case CATCHsymbol:	return "catch";
 	case DONEsymbol:	return "done";
 	case RAISEsymbol:	return "raise";
@@ -1589,7 +1594,7 @@ str operatorName(InstrPtr p){
 }
 str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	int i,len=0,tab=4;
-	str s,t,nme;
+	str def,s,t,nme;
 	int low,high;
 	char nmebuf[PATHLENGTH];
 	PropertySet ps=0;
@@ -1712,7 +1717,6 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 	} else if( p->retc>1) sprintf(t,"(");
 
 	for(i=low;i<high;i++){
-		str def;
 		ps= getVar(mb,getArg(p,i))->props;
 		pstring= propertySet2str(ps,0);
 		advance(t);
@@ -1726,13 +1730,13 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 			else	sprintf(t,"%s%s", def, pstring);
 		} else {
 			if( isTmpVar(mb, getArg(p,i)) ) {
-			   if( !isTypeVar(mb,getArg(p,i)) )
-				sprintf(t,"%c%d%s",TMPMARKER, 
-					getVarTmp(mb,getArg(p,i)),pstring);
+				sprintf(t,"%s",pstring);
 			} else 
-			if(!isTypeName(getArgName(mb,p,i)) )
 			sprintf(t,"%s%s", mb->var[getArg(p,i)]->name,pstring);
 		}
+@-
+Dump the type and value information.
+@c
 		advance(t);
 		if(!isTmpVar(mb,getArg(p,i)) &&
 		    idcmp("bat",getArgName(mb,p,i))==0 ){
@@ -1757,7 +1761,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 		} else
 		if(isTypeVar(mb,getArg(p,i)) ){
 			char *tnme= getTypeName(getArgType(mb,p,i));
-			sprintf(t,"%s:%s",tnme,pstring);
+			sprintf(t,":%s%s",tnme,(pstring==NULL?"":pstring));
 			GDKfree(tnme);
 			advance(t);
 		}

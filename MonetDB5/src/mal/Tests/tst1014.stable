@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## now within a function to assure that reference counting
 ## takes care of releasing the variables.
 #
@@ -28,7 +29,7 @@ function Admin.test():void;	# 0  (test:void)
     x := bbp.getObjects();	# 3 CMDbbpGetObjects (x:bat[:int,:str])
     io.print(x);	# 4 IOprint_val ($5:int)<-(x:bat[:int,:str])
     io.print("test");	# 5 IOprint_val ($6:int)<-($2:str)
-    b := bbp.new(int:,int:);	# 6 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
+    b := bbp.new(:int,:int);	# 6 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     bat.insert(b,1,2);	# 7 BKCinsert_bun ($10:void)<-(b:bat[:int,:int])($11:int)($12:int)
     bbp.deposit("myfirstbat",b);	# 8 CMDbbpdeposit ($13:void)<-($14:str)(b:bat[:int,:int])
     c := bbp.take("myfirstbat");	# 9 CMDbbptake (c:bat[:any,:any])<-($14:str)

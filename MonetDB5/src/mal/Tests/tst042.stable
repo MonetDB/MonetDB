@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #s := "hello";
 #i := 1;
 #f := 3.14;
@@ -34,7 +35,7 @@ function Admin.main():int;	# 0  (main:int)
     f := 3.14;	# 3  (f:flt)<-($6:flt)
     c := 'a';	# 4  (c:chr)<-($8:chr)
     b := true;	# 5  (b:bit)<-($10:bit)
-    bb := bbp.new(void:,str:);	# 6 CMDBATnew (bb:bat[:void,:str])<-($12:void)($13:str)
+    bb := bbp.new(:void,:str);	# 6 CMDBATnew (bb:bat[:void,:str])<-($12:void)($13:str)
     st := inspect.getType(s);	# 7 INSPECTtype (st:int)<-(s:str)
     io.printf("string %d\n",st);	# 8 IOprint_formatted_int ($15:int)<-($16:str)(st:int)
     it := inspect.getType(i);	# 9 INSPECTtype (it:int)<-(i:int)

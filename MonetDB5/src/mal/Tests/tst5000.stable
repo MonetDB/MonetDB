@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## Testing the cracker implementation
 #b:= new(:int,:int);
 #insert(b,10,100);
@@ -24,7 +25,7 @@
 #print(b);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     bat.insert(b,10,100);	# 2 BKCinsert_bun ($4:void)<-(b:bat[:int,:int])($5:int)($6:int)
     bat.insert(b,1,2);	# 3 BKCinsert_bun ($7:void)<-(b:bat[:int,:int])($8:int)($9:int)
     bat.insert(b,6,36);	# 4 BKCinsert_bun ($10:void)<-(b:bat[:int,:int])($11:int)($12:int)

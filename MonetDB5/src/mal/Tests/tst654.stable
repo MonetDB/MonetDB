@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## An extensive test for the new tablet layout
 #mdb('T');
 #tablet.display(2,"strong");
@@ -61,10 +62,10 @@ function Admin.main():int;	# 0  (main:int)
     tablet.setFormat(first,last);	# 7 TABsetFormat ($12:void)<-(first:int)(last:any)
     tablet.setProperties("name,type");	# 8 TABsetProperties ($13:int)<-($14:str)
     tablet.setColumnName(0,"Eerste");	# 9 TABsetColumnName ($15:void)<-($16:int)($17:str)
-    b1 := bbp.new(void:,int:);	# 10 CMDBATnew (b1:bat[:void,:int])<-($19:void)($20:int)
+    b1 := bbp.new(:void,:int);	# 10 CMDBATnew (b1:bat[:void,:int])<-($19:void)($20:int)
     bat.insert(b1,42);	# 11 BKCinsert_void_bun ($21:void)<-(b1:bat[:void,:int])($22:int)
     bat.insert(b1,49);	# 12 BKCinsert_void_bun ($23:void)<-(b1:bat[:void,:int])($24:int)
-    b2 := bbp.new(void:,str:);	# 13 CMDBATnew (b2:bat[:void,:str])<-($26:void)($27:str)
+    b2 := bbp.new(:void,:str);	# 13 CMDBATnew (b2:bat[:void,:str])<-($26:void)($27:str)
     bat.insert(b2,"hello world");	# 14 BKCinsert_void_bun ($28:void)<-(b2:bat[:void,:str])($29:str)
     bat.insert(b2,"goodbye world");	# 15 BKCinsert_void_bun ($30:void)<-(b2:bat[:void,:str])($31:str)
     tablet.setProperties("name,type,dense,sorted,key,min,max");	# 16 TABsetProperties ($32:int)<-($33:str)

@@ -76,6 +76,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define RAISEsymbol 	23
 #define CATCHsymbol 	24
 #define RETURNsymbol 	25
+#define YIELDsymbol 	44
 #define BARRIERsymbol	26
 #define REDOsymbol	27
 #define LEAVEsymbol	28

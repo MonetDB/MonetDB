@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##The MAL interpreter should initiate garbage collection correctly
 ## early version was too early
 #z:= "hello world"; print(z);
@@ -23,7 +24,7 @@ function Admin.main():int;	# 0  (main:int)
     z := z;	# 3  (z:str)<-(z:str)
     io.print(z);	# 4 IOprint_val ($4:int)<-(z:str)
     io.print("done");	# 5 IOprint_val ($5:int)<-($6:str)
-    b := bbp.new(int:,int:);	# 6 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
+    b := bbp.new(:int,:int);	# 6 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
     i := bbp.getRefCount(b);	# 7 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:int])
     io.print(i);	# 8 IOprint_val ($11:int)<-(i:int)
     b := b;	# 9  (b:bat[:int,:int])<-(b:bat[:int,:int])

@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##Parsing properties and keeping them around
 #function dummy(a:int{unsafe,sorted},b:int{sequence}):int{dense};
 #	return dummy;

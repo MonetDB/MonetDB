@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## determine basic costs for cracking a larger table.
 #b:= new(:int,:int);
 #i:= -1:int;
@@ -78,6 +79,17 @@
 #print(vrng);
 #
 ## Compare cracker with ordinary selection
+#t0:= alarm.usec();
+#i:= max(b);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("#max %d\n",d0);
+#t0:= alarm.usec();
+#i:= min(b);
+#t1:= alarm.usec();
+#d0:= t1-t0;
+#printf("#min %d\n",d0);
+#
 #l:= mi*2;
 #h:= mx/2;
 ##printf("select %d ",l);
@@ -119,7 +131,7 @@
 #printf("#select %d\n",d0);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     i := -1;	# 2  (i:int)<-($5:int)
 barrier v := mal.nextElement(i,0,1000000);	# 3 intForloop (v:bit)<-(i:int)($7:int)($8:int) jump 8
     k := calc.rand();	# 4 CALCrandint (k:int)
@@ -171,42 +183,52 @@ exit v;	# 8  (v:bit)
     io.printf("#crack %d\n",d0);	# 50 IOprint_formatted_lng ($36:int)<-($32:str)(d0:lng)
     io.print(cidx);	# 51 IOprint_val ($37:int)<-(cidx:bat[:int,:int])
     io.print(vrng);	# 52 IOprint_val ($38:int)<-(vrng:bat[:int,:int])
-    l := calc.*(mi,2);	# 53 CALCbinaryMULintint (l:int)<-(mi:int)($28:int)
-    h := calc./(mx,2);	# 54 CALCbinarycheckDIVintint (h:int)<-(mx:int)($28:int)
-    t0 := alarm.usec();	# 55 ALARMusec (t0:lng)
-    c := algebra.select(b,l,h);	# 56 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 57 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 58 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#select %d\n",d0);	# 59 IOprint_formatted_lng ($39:int)<-($40:str)(d0:lng)
-    l := calc.*(l,2);	# 60 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
-    h := calc./(h,2);	# 61 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
-    t0 := alarm.usec();	# 62 ALARMusec (t0:lng)
-    c := algebra.select(b,l,h);	# 63 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 64 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 65 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#select %d\n",d0);	# 66 IOprint_formatted_lng ($41:int)<-($40:str)(d0:lng)
-    l := calc.*(l,2);	# 67 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
-    h := calc./(h,2);	# 68 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
-    t0 := alarm.usec();	# 69 ALARMusec (t0:lng)
-    c := algebra.select(b,l,h);	# 70 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 71 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 72 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#select %d\n",d0);	# 73 IOprint_formatted_lng ($42:int)<-($40:str)(d0:lng)
-    l := calc.*(l,2);	# 74 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
-    h := calc./(h,2);	# 75 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
-    t0 := alarm.usec();	# 76 ALARMusec (t0:lng)
-    c := algebra.select(b,l,h);	# 77 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
-    t1 := alarm.usec();	# 78 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 79 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#select %d\n",d0);	# 80 IOprint_formatted_lng ($43:int)<-($40:str)(d0:lng)
-end main;	# 81  
+    t0 := alarm.usec();	# 53 ALARMusec (t0:lng)
+    i := algebra.max(b);	# 54 ALGmax_int (i:int)<-(b:bat[:int,:int])
+    t1 := alarm.usec();	# 55 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 56 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#max %d\n",d0);	# 57 IOprint_formatted_lng ($39:int)<-($40:str)(d0:lng)
+    t0 := alarm.usec();	# 58 ALARMusec (t0:lng)
+    i := algebra.min(b);	# 59 ALGmin_int (i:int)<-(b:bat[:int,:int])
+    t1 := alarm.usec();	# 60 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 61 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#min %d\n",d0);	# 62 IOprint_formatted_lng ($41:int)<-($42:str)(d0:lng)
+    l := calc.*(mi,2);	# 63 CALCbinaryMULintint (l:int)<-(mi:int)($28:int)
+    h := calc./(mx,2);	# 64 CALCbinarycheckDIVintint (h:int)<-(mx:int)($28:int)
+    t0 := alarm.usec();	# 65 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 66 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 67 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 68 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 69 IOprint_formatted_lng ($43:int)<-($44:str)(d0:lng)
+    l := calc.*(l,2);	# 70 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 71 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 72 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 73 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 74 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 75 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 76 IOprint_formatted_lng ($45:int)<-($44:str)(d0:lng)
+    l := calc.*(l,2);	# 77 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 78 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 79 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 80 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 81 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 82 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 83 IOprint_formatted_lng ($46:int)<-($44:str)(d0:lng)
+    l := calc.*(l,2);	# 84 CALCbinaryMULintint (l:int)<-(l:int)($28:int)
+    h := calc./(h,2);	# 85 CALCbinarycheckDIVintint (h:int)<-(h:int)($28:int)
+    t0 := alarm.usec();	# 86 ALARMusec (t0:lng)
+    c := algebra.select(b,l,h);	# 87 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(h:int)
+    t1 := alarm.usec();	# 88 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 89 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#select %d\n",d0);	# 90 IOprint_formatted_lng ($47:int)<-($44:str)(d0:lng)
+end main;	# 91  
 max 2147480021 min 1210
-#copy 22
-#crack init 35524
-#crack 65246
-#crack 32456
-#crack 16097
-#crack 7852
+#copy 23
+#crack init 35527
+#crack 49880
+#crack 24764
+#crack 12223
+#crack 5991
 #-------------------------#
 # h	tmp_5		  # name
 # int	int		  # type
@@ -233,8 +255,10 @@ max 2147480021 min 1210
 [ 268435003,	  536870005	  ]
 [ 19360,	  134217501	  ]
 [ 134217502,	  268435002	  ]
-#select 35846
-#select 27556
-#select 24792
-#select 23344
+#max 19289
+#min 18442
+#select 33845
+#select 27895
+#select 24886
+#select 23428
 >

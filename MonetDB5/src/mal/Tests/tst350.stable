@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##inspection of the runtime setting
 ##it uses the dynamic type analysis scheme
 #
@@ -94,7 +95,7 @@ end dir;	# 6
 #
 function Admin.main():int;	# 0  (main:int)
     io.print("start test");	# 1 IOprint_val ($1:int)<-($2:str)
-    b := bbp.new(int:,int:);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
     bat.setName(b,"simplemind");	# 3 BKCsetName ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:str)
     z := bbp.getNames();	# 4 CMDbbpNames (z:bat[:int,:str])
     Admin.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])

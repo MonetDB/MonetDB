@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #function test(s:str, b:bat[:any$1,:any$2]...);
 #	print(s);
 #end test;
@@ -15,8 +16,8 @@ end test;	# 2
 #test("hello",b,c);
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    c := bbp.new(int:,int:);	# 2 CMDBATnew (c:bat[:int,:int])<-($5:int)($6:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    c := bbp.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-($5:int)($6:int)
     Admin.test("hello",b,c);	# 3  ($7:void)<-($8:str)(b:bat[:int,:int])(c:bat[:int,:int])
 end main;	# 4  
 [ "hello" ]

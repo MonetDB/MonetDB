@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #command Admin.lookup(nme:str):bat[:str,:str] = CMDlookup; 
 !ERROR: address of 'CMDlookup' not found
 command Admin.lookup(nme:str):bat[:str,:str] = CMDlookup;	# 0  (lookup:bat[:str,:str])<-(nme:str)

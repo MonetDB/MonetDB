@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##The 2000 serie  is focussed on parallelism
 ##we start with a non-parallel version
 #
@@ -43,7 +44,7 @@ thread hdl;	# 1  (hdl:int) jump 5
 exit hdl;	# 5  (hdl:int)
     io.printf("Wait for child to exit too\n");	# 6 IOprint_str ($8:int)<-($9:str)
 end main;	# 7  
-#Start thread with id 1083476785
+#Start thread with id 1083886385
 start clock 
 tick
 Wait for child to exit too

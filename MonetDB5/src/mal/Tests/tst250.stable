@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## The series tst2?? is a patched version of suite_00
 ## The first and foremost BAT operations
 #
@@ -28,7 +29,7 @@
 #exit v;
 #
 function Admin.main():int;	# 0  (main:int)
-    b := bbp.new(int:,int:);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
     err := bat.insert(b,1,15);	# 2 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($5:int)($6:int)
     err := bat.insert(b,2,4);	# 3 BKCinsert_bun (err:void)<-(b:bat[:int,:int])($7:int)($8:int)
     n0 := calc.int(nil);	# 4 CALCnil2int (n0:int)<-($10:void)

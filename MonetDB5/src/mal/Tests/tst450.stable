@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##testing the inspect module for help information
 #
 #a:= inspect.getAtoms();	print(a);
@@ -65,6 +66,7 @@ end main;	# 12
 # void	str		  # type
 #-------------------------#
 [ nil,	  "Admin"	  ]
+[ nil,	  "sql"		  ]
 [ nil,	  "crackers"	  ]
 [ nil,	  "chopper"	  ]
 [ nil,	  "optimizer"	  ]

@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## partial definition of the object space for MIL
 ## it is subordinate to the MIL space dealing with persistent bats
 ## CONST STORE_MEM   := 0; 

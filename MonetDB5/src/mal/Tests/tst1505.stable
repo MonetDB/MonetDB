@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 #	y := new(:oid,:dbl);
 #	le_a := dbl(1.0);
 #	me_a := insert(y,1@0,le_a);
@@ -54,7 +55,7 @@
 #	x4:= or(x,A); print(x,A,x4);
 #
 function Admin.main():int;	# 0  (main:int)
-    y := bbp.new(oid:,dbl:);	# 1 CMDBATnew (y:bat[:oid,:dbl])<-($2:oid)($3:dbl)
+    y := bbp.new(:oid,:dbl);	# 1 CMDBATnew (y:bat[:oid,:dbl])<-($2:oid)($3:dbl)
     le_a := calc.dbl(1.0);	# 2 CALCflt2dbl (le_a:dbl)<-($5:flt)
     me_a := bat.insert(y,1@0,le_a);	# 3 BKCinsert_bun (me_a:void)<-(y:bat[:oid,:dbl])($7:oid)(le_a:dbl)
     ne_a := calc.dbl(2.0);	# 4 CALCflt2dbl (ne_a:dbl)<-($9:flt)
@@ -76,13 +77,13 @@ function Admin.main():int;	# 0  (main:int)
     c := algebra.count(z);	# 20 ALGcount_bat (c:lng)<-(z:bat[:oid,:bit])
     io.print("count");	# 21 IOprint_val ($35:int)<-($36:str)
     io.print(c);	# 22 IOprint_val ($37:int)<-(c:lng)
-    x := bbp.new(oid:,bit:);	# 23 CMDBATnew (x:bat[:oid,:bit])<-($39:oid)($40:bit)
+    x := bbp.new(:oid,:bit);	# 23 CMDBATnew (x:bat[:oid,:bit])<-($39:oid)($40:bit)
     bat.insert(x,1@0,true);	# 24 BKCinsert_bun ($41:void)<-(x:bat[:oid,:bit])($42:oid)($43:bit)
     bat.insert(x,2@0,false);	# 25 BKCinsert_bun ($44:void)<-(x:bat[:oid,:bit])($45:oid)($46:bit)
     bat.insert(x,3@0,true);	# 26 BKCinsert_bun ($47:void)<-(x:bat[:oid,:bit])($48:oid)($43:bit)
     bat.insert(x,4@0,false);	# 27 BKCinsert_bun ($49:void)<-(x:bat[:oid,:bit])($50:oid)($46:bit)
     io.print(x);	# 28 IOprint_val ($51:int)<-(x:bat[:oid,:bit])
-    A := bbp.new(oid:,bit:);	# 29 CMDBATnew (A:bat[:oid,:bit])<-($53:oid)($54:bit)
+    A := bbp.new(:oid,:bit);	# 29 CMDBATnew (A:bat[:oid,:bit])<-($53:oid)($54:bit)
     bat.insert(A,1@0,true);	# 30 BKCinsert_bun ($55:void)<-(A:bat[:oid,:bit])($42:oid)($43:bit)
     bat.insert(A,2@0,true);	# 31 BKCinsert_bun ($56:void)<-(A:bat[:oid,:bit])($45:oid)($43:bit)
     bat.insert(A,3@0,false);	# 32 BKCinsert_bun ($57:void)<-(A:bat[:oid,:bit])($48:oid)($46:bit)

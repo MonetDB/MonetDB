@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ## the first of a series of BBP test cases
 ## make sure you can bind to a BAT through the box
 #
@@ -34,7 +35,7 @@
 #
 function Admin.main():int;	# 0  (main:int)
     bbp.open();	# 1 CMDbbpopen ($1:void)
-    b := bbp.new(int:,int:);	# 2 CMDBATnew (b:bat[:int,:int])<-($3:int)($4:int)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($3:int)($4:int)
     bat.insert(b,1,2);	# 3 BKCinsert_bun ($5:void)<-(b:bat[:int,:int])($6:int)($7:int)
     bat.setName(b,"myfirstlocalbat");	# 4 BKCsetName ($8:bat[:int,:int])<-(b:bat[:int,:int])($9:str)
     c := bbp.bind("myfirstbat");	# 5 CMDbbpbind (c:bat[:any,:any])<-($11:str)

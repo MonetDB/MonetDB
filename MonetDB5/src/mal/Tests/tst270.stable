@@ -4,6 +4,7 @@
 # config:/ufs/mk/monet5/src/mal/Tests/tst.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # dbname:demo
+# Visit http://monetdb.cwi.nl for further information.
 ##Same as tst200, but includes testing of the profiler
 #
 ##profiler.setAll();
@@ -53,7 +54,7 @@ function Admin.main():int;	# 0  (main:int)
     profiler.openStream("/tmp/MonetEvents");	# 5 CMDsetProfilerStream ($10:void)<-($11:str)
     o := calc.oid(20000000);	# 6 CALCint2oid (o:oid)<-($13:int)
     calc.setoid(o);	# 7 CALCsetoidInc ($14:oid)<-(o:oid)
-    b := bbp.new(int:,int:);	# 8 CMDBATnew (b:bat[:int,:int])<-($16:int)($17:int)
+    b := bbp.new(:int,:int);	# 8 CMDBATnew (b:bat[:int,:int])<-($16:int)($17:int)
     io.printf("#~BeginVariableOutput~#\n");	# 9 IOprint_str ($18:int)<-($19:str)
     binfo := bat.info(b);	# 10 BKCinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
     io.print(binfo);	# 11 IOprint_val ($21:int)<-(binfo:bat[:str,:str])
