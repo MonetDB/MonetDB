@@ -424,7 +424,7 @@ sub fetch
 
 # next row has already been read, decode it and prepare for next.
 
-#print "called fetch:".$sth->{row}."\n";
+	print "called fetch:".$sth->{row}."\n";
 	my $line = $sth->{row};
 	return undef unless $line;
 
