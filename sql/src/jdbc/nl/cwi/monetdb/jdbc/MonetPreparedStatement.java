@@ -36,7 +36,6 @@ public class MonetPreparedStatement
 	 * to set up a socket to MonetDB and attempts to login.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
-	 * @param monet the connection to Mserver to use
 	 * @param connection the connection that created this Statement
 	 * @param resultSetType type of ResultSet to produce
 	 * @param resultSetConcurrency concurrency of ResultSet to produce
@@ -44,7 +43,6 @@ public class MonetPreparedStatement
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
 	MonetPreparedStatement(
-		MonetSocket monet,
 		MonetConnection connection,
 		int resultSetType,
 		int resultSetConcurrency,
@@ -52,7 +50,6 @@ public class MonetPreparedStatement
 		throws SQLException, IllegalArgumentException
 	{
 		super(
-			monet,
 			connection,
 			resultSetType,
 			resultSetConcurrency
@@ -795,8 +792,9 @@ public class MonetPreparedStatement
 		throws SQLException
 	{
 		cal.setTime(x);
+		String RFC822 = MonetConnection.mTimestampZ.format(cal.getTime());
 		setValue(parameterIndex, "'" +
-		    MonetConnection.mTimestamp.format(cal.getTime()) + "'");
+		   	RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
 	}
 
 	/**

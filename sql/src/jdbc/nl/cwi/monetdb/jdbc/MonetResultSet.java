@@ -1304,7 +1304,20 @@ public class MonetResultSet implements ResultSet {
 					cal.setTime(MonetConnection.mTime.parse(monetDate));
 				break;
 				case Types.TIMESTAMP:
-					cal.setTime(MonetConnection.mTimestamp.parse(monetDate));
+					if (monetDate.length() == 29) {
+						// RFC822: Sign TwoDigitHours Minutes
+						// MonetDB: Sign TwoDigitHours : Minutes
+						String tzRFC822 =
+							monetDate.substring(23, 26) +
+							monetDate.substring(27, 29);
+
+						return(MonetConnection.mTimestampZ.parse(monetDate.substring(0, 23) + tzRFC822));
+					} else if (monetDate.length() == 23) {
+						// if there is no time zone information in the database
+						// we have to use the given calendar to construct it
+						cal.setTime(MonetConnection.mTimestamp.parse(monetDate));
+						return(cal.getTime());
+					}
 				break;
 			}
 		} catch(java.text.ParseException e) {
