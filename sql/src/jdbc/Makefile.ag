@@ -27,7 +27,7 @@ SUBDIRS = tests
 
 EXTRA_DIST = manifest benchblockmode.tex jdbcmanual.tex
 
-jar_MonetJDBC = {
+jar_MonetDB_JDBC = {
 	DIR = libdir/MonetDB/java
 	SOURCES = nl/cwi/monetdb/jdbc/MonetConnection.java \
 	          nl/cwi/monetdb/jdbc/MonetDatabaseMetaData.java \
