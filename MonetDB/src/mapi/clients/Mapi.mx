@@ -1447,15 +1447,26 @@ char * mapi_fetch_line(Mapi mid){
 		n= s - mid->blk.buf;
 
 		if( mid->blk.lim-n < BLOCK){
-			len= mid->blk.lim+BLOCK; 
 			rest= n-mid->blk.nxt;
-			newbuf= (char *)malloc(len * sizeof(char));
-			if(rest) memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
-			if( mid->blk.buf) free(mid->blk.buf);
-			mid->blk.buf= newbuf;
-			mid->blk.nxt= 0;
-			mid->blk.lim= len;
-			n = rest;
+			if( mid->blk.nxt> BLOCK){
+				/* simply shuffle */
+				newbuf= (char *)malloc(mid->blk.lim +1);
+				memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
+				if( mid->blk.buf) free(mid->blk.buf);
+				mid->blk.buf= newbuf;
+				mid->blk.nxt= 0;
+				n = rest;
+			} else{
+				/* extend space */
+				len= mid->blk.lim+BLOCK; 
+				newbuf= (char *)malloc(len +1);
+				memcpy(newbuf, mid->blk.buf + mid->blk.nxt, rest+1);
+				if( mid->blk.buf) free(mid->blk.buf);
+				mid->blk.buf= newbuf;
+				mid->blk.nxt= 0;
+				mid->blk.lim= len;
+				n = rest;
+			}
 		}
 
                 if (mid->from->errnr) {
