@@ -29,7 +29,7 @@
 @* Introduction
 Monet support for blob. It is the generic form of a variable
 sized extension atom. Easy to derive from. Its memory layout 
-consists of first 4 bytes containing an the bytes-size of the 
+consists of first 4 bytes containing the bytes-size of the 
 blob (excluding the integer), and then just binary data.
 
 @* Module Definition
