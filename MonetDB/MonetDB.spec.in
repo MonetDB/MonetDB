@@ -114,6 +114,7 @@ rm -fr $RPM_BUILD_ROOT
 # fix should be install in script langs subdirs
 %{prefix}/share/%{name}/perl/* 
 %{prefix}/share/%{name}/python/* 
+%{prefix}/share/%{name}/php/*
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
 
