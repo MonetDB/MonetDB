@@ -261,7 +261,8 @@ we should first remove garbage.
 	} else {
 		lhs = &stk->stk[i];
 		lhs->vtype =getGDKtype(getVarType(mb,i));
-		lhs->val.ival =0; 
+		if(env == 0 && mbcaller==0)
+			lhs->val.ival =0; 
 	}
 	/* run the program */
 #ifdef STACKTRACE
