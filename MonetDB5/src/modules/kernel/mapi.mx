@@ -29,9 +29,8 @@
 This module contains a simple interface for setting up
 internet connections and to initialize a client session.
 Without loading this interface, Monet runs in administrator
-mode. The information about activitated listeners is stored in 
-a few tables view_mapi_owner, view_mapi_port, view_mapi_maxusers,
-and view_mapi_users.
+mode. The information about activitated listeners can be
+obtained with the 'inspect' module.
 
 Clients may initialize a private listener to implement
 specific services. For example, in an OLTP environment
@@ -53,39 +52,22 @@ command listen(port:lng):int  = MAPIlisten_port
 	comment "Start a Mapi server with the default settings.";
 command listen(port:int, maxusers:int):int = MAPIlisten
 	comment "Start a Mapi server.";
-command stop(port:int):bit = MAPIstop
-	comment "Terminate a listener owned by the client";
+command stop(id:int):bit = MAPIstop
+	comment "Terminate a specific client identified by index
+		in the client table.";
 command stop(name:str):bit = MAPIstopClient
-	comment "Terminate a client";
-
+	comment "Terminate all sessions held by a client";
+command suspend(sessionkey:lng,timeout:lng):void= MAPIsuspend
+	comment "Suspend a client interaction, but return a session key. 
+		The session is broken when the timer (in seconds) for the 
+		reconnect expires.";
+command resume(sessionkey:lng):void = MAPIresume
+	comment "resume the interaction with a specific thread";
 command trace(nme:str, flag:bit):void = MAPItrace2
 	comment "Trace (on/off) receipt of all messages from a specific user";
 command trace(flag:bit):void = MAPItrace
 	comment "Trace (on/off) receipt of messages for all users";
 
-# initialization code
-#function main():void;
-	#vm1:bat[int,int]:= bat(5:int,11:int);
-	#bat.setName(vm1,"view_mapi_owner");
-	#bat.setRoles(vm1,"mapi","owner");
-
-	#vm2:bat[int,int]:= bat(5:int,5:int);
-	#bat.setName(vm2,"view_mapi_port");
-	#bat.setRoles(vm2,"mapi","port");
-
-	#vm3:bat[int,int]:= bat(5:int,5:int);
-	#bat.setName(vm3,"view_mapi_maxusers");
-	#bat.setRoles(vm3,"mapi","maxusers");
-
-	#vm4:bat[int,int]:= bat(5:int,5:int);
-	#bat.setName(vm4,"view_mapi_users");
-	#bat.setRoles(vm4,"mapi","users");
-
-	#vm5:bat[int,int]:= bat(5:int,5:int);
-	#bat.setName(vm5,"view_mapi_timeout");
-	#bat.setRoles(vm5,"mapi","timeout");
-#end main;
-	
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -116,7 +98,7 @@ command trace(flag:bit):void = MAPItrace
 #define MAPIPORT	50000
 #define MAPIMAXUSERS 	5
 
-/* #define DEBUG_MAPI	1*/
+/*#define DEBUG_MAPI	1*/
 
 #endif /* MAPI_H */
 @c
@@ -150,20 +132,39 @@ void MAPIlistenThread(int sock)
 			int i;
 			stream *fdin= socket_rastream(msgsock,"Mserver mapi read");
 			stream *fdout= socket_wastream(msgsock,"Mserver mapi write");
-			char name[MAPIBLKSIZE], *user = name;
+			char command[MAPIBLKSIZE],*s;
+			char *user = command, *passwd= NULL, *scenario=NULL;
+			int skey=0;
 
 			/* get user connection string */
-			if( (i= fdin->read(fdin,name,1,MAPIBLKSIZE)) != MAPIBLKSIZE){
+			if( (i= fdin->read(fdin,command,1,MAPIBLKSIZE)) != MAPIBLKSIZE){
 				GDKerror("Block size error in mapi.mx\n");
-				printf("%d [%d] bytes read:%s\n",i,MAPIBLKSIZE,name);
+				printf("%d [%d] bytes read:%s\n",i,MAPIBLKSIZE,command);
 				fflush(stdout);
 				continue;
 			}
+@-
+The first line received from any client contains the string
+	name:passwd:scenario:sessionkey
+@c
 #ifdef DEBUG_MAPI
-			THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
+			THRprintf(GDKerr, "mapi:Client accepted %s\n", command);
 #endif
-			scheduleClient(GDKstrdup(name),0,0,msgsock,fdin,fdout);
-			/*if( mapiSpy)*/ traceClient(name, mapiSpy);
+			s= strchr(command,':');
+			if(s){
+			    *s= 0; s++; passwd=s;
+			    s= strchr(command,':');
+			    if(s){
+			        *s= 0; s++; scenario=s;
+			        s= strchr(command,':');
+			        if(s){
+			            *s= 0; s++;
+				    skey= strtol(s,NULL,10);
+				}
+			    }
+			}
+			scheduleClient(GDKstrdup(user),passwd,scenario,msgsock,fdin,fdout);
+			/*if( mapiSpy)*/ traceClient(user, mapiSpy);
 		}
 	} while (1);
 }
@@ -247,18 +248,21 @@ str MAPIlisten_port(int *ret, int *pid){
 	return MAPIlisten(ret, &port, &maxusers);
 }
 @-
-An internet connection may be terminated by the owner of the process only.
+An internet connection may be terminated from the server console.
+And killing the administrator this way is prohibited.
 @c
-str MAPIstop(int *ret, int *pid)
-{
-	printf("kill process %d\n",*pid);
-	return MAL_SUCCEED;
+str MAPIstop(int *ret, int *id) {
+	return stopClientIndex(getClient(), *id);
 }
 
-str MAPIstopClient(int *ret, str *nme)
-{
-	printf("kill process for client %s\n",*nme);
-	return MAL_SUCCEED;
+str MAPIstopClient(int *ret, str *nme) {
+	return stopClient(getClient(), *nme);
+}
+str MAPIsuspendClient(int *ret, int *skey, int *timeout) {
+	return suspendClient(getClient(), *skey, *timeout);
+}
+str MAPIresumeClient(int *ret, int *skey) {
+	return resumeClient(getClient(), *skey);
 }
 @-
 It is advisable to trace the interactions of clients on the server
@@ -274,5 +278,11 @@ str MAPItrace2(int *ret, str *nme,int *flg){
 str MAPItrace(int *res, int *flg){
 	traceAllClients(*flg);
 	mapiSpy = *flg;
+	return MAL_SUCCEED;
+}
+str MAPIsuspend(int *res, int *skey, int *timeout){
+	return MAL_SUCCEED;
+}
+str MAPIresume(int *res, int *skey){
 	return MAL_SUCCEED;
 }
