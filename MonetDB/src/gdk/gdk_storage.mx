@@ -600,6 +600,9 @@ BAT *BATload_intern(bat i) {
 	/* LOAD bun heap */
 	DELTAsave(b);
 	ret = HEAPload(b->batBuns, nme, "buns", b->batRestricted == BAT_READ);
+	if (ret < 0) {
+		return NULL;
+	}
 
 	/* LOAD head heap */
 	if (!ATOMvarsized(b->htype)) {

@@ -299,7 +299,8 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 			ret = stat(path, &st);
 		} else {
 			/* silently remove any previous .ext.priv file */
-			ret = unlink(path) || GDKmove(BATDIR, nme, ext, BATDIR, nme, priv); 
+			(void) unlink(path);
+			ret = GDKmove(BATDIR, nme, ext, BATDIR, nme, priv); 
 		}
 		ext = priv;
 	}
