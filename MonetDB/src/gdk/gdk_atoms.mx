@@ -719,7 +719,7 @@ int @1ToStr(char ** dst, int *len, @1 *src) {
 		strcpy(*dst, "nil");
 		return 3;
 	}
-	sprintf(*dst, "@2", (@3) *src);
+	snprintf(*dst, *len, "@2", (@3) *src);
 	return strlen(*dst);
 }
 @c
@@ -842,7 +842,7 @@ int batToStr(char **dst, int *len, bat *src) {
 	}
 	i = strlen(s)+4;
 	@:atommem(char,i)@
-	sprintf(*(dst), "<%s%s>", (*src<0)?"~":"", s);	
+	snprintf(*(dst), *len, "<%s%s>", (*src<0)?"~":"", s);	
 	return strlen(*dst);
 }
 
@@ -1487,7 +1487,7 @@ int OIDtoStr(char** dst, int *len, oid *src) {
 		return 3;
 	}
 	ui = *(oid*)src;
-	sprintf(*dst, "%u\@%d", ui&OIDnumber, (ui&OIDserver)>>SERVERBITS);
+	snprintf(*dst, *len, "%u\@%d", ui&OIDnumber, (ui&OIDserver)>>SERVERBITS);
 	return strlen(*dst);
 }
 @
