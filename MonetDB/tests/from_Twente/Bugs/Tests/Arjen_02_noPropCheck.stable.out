@@ -1,11 +1,11 @@
 stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
-#> Mtest:	other Arjen_02_noPropCheck
-#> Mtest:	Mtimeout -timeout 1800 ./Arjen_02_noPropCheck Arjen_02_noPropCheck
-#> Mlog:	Mtimeout -timeout 900 Mserver -modulesilent -yaccsilent -db tests_from_Twente_Bugs Arjen_02.milM
-# Monet Database Server V4.1
+#> Mtest (13:37:23):	other Arjen_02_noPropCheck 1200
+#> Mtest (13:37:23):	Mtimeout -timeout 1200 ./Arjen_02_noPropCheck Arjen_02_noPropCheck
+#> Mlog (13:37:23):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -db tests_from_Twente_Bugs Arjen_02.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Sun Feb  6 18:46:25 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:Arjen_02.milM
 
 loaded;
@@ -40,7 +40,7 @@ a.insert( nil, 1 );
 a.insert( nil, 2 );
 a.seqbase(0@0).print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_24  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  0	  ]
@@ -50,7 +50,7 @@ a.seqbase(0@0).print;
 A := 0;
 aA := [=]( a, A );   aA.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_23  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -58,7 +58,7 @@ aA := [=]( a, A );   aA.print;
 [ 2@0,	  false	  ]
 aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -110,8 +110,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "16",		  "7",		  "8"		  ]
-[ "batBuns.size",		  "224",	  "56",		  "224"		  ]
-[ "batBuns.maxsize",		  "224",	  "56",		  "224"		  ]
+[ "batBuns.size",		  "220",	  "55",		  "220"		  ]
+[ "batBuns.maxsize",		  "220",	  "55",		  "220"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0"		  ]
@@ -153,7 +153,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 A := 1;
 aA := [=]( a, A );   aA.print;
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_29  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -161,7 +161,7 @@ aA := [=]( a, A );   aA.print;
 [ 2@0,	  false	  ]
 aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
-# BAT:	  tmp_30  #
+# BAT:	  tmp_28  #
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
@@ -213,8 +213,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "16",		  "7",		  "8"		  ]
-[ "batBuns.size",		  "224",	  "56",		  "224"		  ]
-[ "batBuns.maxsize",		  "224",	  "56",		  "224"		  ]
+[ "batBuns.size",		  "220",	  "55",		  "220"		  ]
+[ "batBuns.maxsize",		  "220",	  "55",		  "220"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0"		  ]
@@ -258,7 +258,7 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 A := 2;
 aA := [=]( a, A );   aA.print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -266,7 +266,7 @@ aA := [=]( a, A );   aA.print;
 [ 2@0,	  true	  ]
 aA2 := uselect(aA, true).mark(0@0);   aA2.print;
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_29  #
 # (void)  (void)  #
 #-----------------#
 [ 2@0,	  0@0	  ]
@@ -318,8 +318,8 @@ print(a.info.access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info.col_
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "16",		  "7",		  "2"		  ]
-[ "batBuns.size",		  "224",	  "56",		  "2"		  ]
-[ "batBuns.maxsize",		  "224",	  "56",		  "2"		  ]
+[ "batBuns.size",		  "220",	  "55",		  "2"		  ]
+[ "batBuns.maxsize",		  "220",	  "55",		  "2"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0"		  ]

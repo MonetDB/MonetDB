@@ -1,11 +1,11 @@
 stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itself:
 
-#> Mtest:	other Arjen_01_noPropCheck
-#> Mtest:	Mtimeout -timeout 1200 ./Arjen_01_noPropCheck Arjen_01_noPropCheck
-#> Mlog:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -db tests_from_Twente_Bugs Arjen_01.milM
-# Monet Database Server V4.1
+#> Mtest (13:37:21):	other Arjen_01_noPropCheck 1200
+#> Mtest (13:37:21):	Mtimeout -timeout 1200 ./Arjen_01_noPropCheck Arjen_01_noPropCheck
+#> Mlog (13:37:21):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -db tests_from_Twente_Bugs Arjen_01.milM
+# Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Tue Feb  8 19:46:53 MET 2000.
+# compiled for i686-pc-linux-gnu/32bit.
 #script:Arjen_01.milM
 
 loaded;
@@ -52,7 +52,7 @@ indexA.seqbase(0@0);
 valuesA.seqbase(0@0);
 indexA.print;
 #-----------------#
-# BAT:	  tmp_26  #
+# BAT:	  tmp_24  #
 # (void)  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -61,7 +61,7 @@ indexA.print;
 [ 3@0,	  3@0	  ]
 valuesA.print;
 #-----------------#
-# BAT:	  tmp_25  #
+# BAT:	  tmp_23  #
 # (void)  (int)	  #
 #-----------------#
 [ 0@0,	  10	  ]
@@ -73,7 +73,7 @@ valuesA.print;
 
 _MMoper_2 := [>=](valuesA,20);   _MMoper_2.print;
 #-----------------#
-# BAT:	  tmp_27  #
+# BAT:	  tmp_25  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  false	  ]
@@ -82,7 +82,7 @@ _MMoper_2 := [>=](valuesA,20);   _MMoper_2.print;
 [ 3@0,	  true	  ]
 _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);   _MMuselect_3.print;
 #-----------------#
-# BAT:	  tmp_28  #
+# BAT:	  tmp_26  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
@@ -90,7 +90,7 @@ _MMuselect_3 := uselect(_MMoper_2,true).mark(0@0);   _MMuselect_3.print;
 [ 3@0,	  2@0	  ]
 _MMoper_4 := [<=](valuesA,30);   _MMoper_4.print;
 #-----------------#
-# BAT:	  tmp_29  #
+# BAT:	  tmp_27  #
 # (void)  (bit)	  #
 #-----------------#
 [ 0@0,	  true	  ]
@@ -99,7 +99,7 @@ _MMoper_4 := [<=](valuesA,30);   _MMoper_4.print;
 [ 3@0,	  false	  ]
 _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);   _MMuselect_5.print;
 #-----------------#
-# BAT:	  tmp_31  #
+# BAT:	  tmp_29  #
 # (oid)	  (void)  #
 #-----------------#
 [ 0@0,	  0@0	  ]
@@ -107,35 +107,35 @@ _MMuselect_5 := uselect(_MMoper_4,true).mark(0@0);   _MMuselect_5.print;
 [ 2@0,	  2@0	  ]
 _MMsemijoin_6 := semijoin(_MMuselect_3,_MMuselect_5);   _MMsemijoin_6.print;
 #-----------------#
-# BAT:	  tmp_32  #
+# BAT:	  tmp_30  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 _MMcastnil_7 := _MMsemijoin_6.mark(0@0);   _MMcastnil_7.print;
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_31  #
 # (void)  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 _MMjoin_8 := join(indexA,_MMcastnil_7);   _MMjoin_8.print;
 #-----------------#
-# BAT:	  tmp_34  #
+# BAT:	  tmp_32  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 1@0,	  0@0	  ]
 [ 2@0,	  1@0	  ]
 _MMreverse_9 := reverse(_MMcastnil_7);   _MMreverse_9.print;
 #-----------------#
-# BAT:	  tmp_33  #
+# BAT:	  tmp_31  #
 # (void)  (void)  #
 #-----------------#
 [ 0@0,	  1@0	  ]
 [ 1@0,	  2@0	  ]
 _MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print;
 #-----------------#
-# BAT:	  tmp_35  #
+# BAT:	  tmp_33  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 0@0,	  20	  ]
@@ -201,8 +201,8 @@ print(indexA.info.access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").de
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "batBuns.free",		  "20",		  "20",		  "8",		  "4",		  "8",		  "16",		  "3",		  "3",		  "24",		  "3",		  "24"		  ]
-[ "batBuns.size",		  "224",	  "224",	  "56",		  "4",		  "56",		  "224",	  "3",		  "3",		  "440",	  "3",		  "440"		  ]
-[ "batBuns.maxsize",		  "224",	  "224",	  "56",		  "4",		  "56",		  "224",	  "3",		  "3",		  "440",	  "3",		  "440"		  ]
+[ "batBuns.size",		  "220",	  "220",	  "55",		  "4",		  "55",		  "220",	  "3",		  "3",		  "440",	  "3",		  "440"		  ]
+[ "batBuns.maxsize",		  "220",	  "220",	  "55",		  "4",		  "55",		  "220",	  "3",		  "3",		  "440",	  "3",		  "440"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batBuns.filename",		  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
 [ "batBuns.offset",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
