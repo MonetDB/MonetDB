@@ -53,8 +53,7 @@ void	PrEnv(int env)
 		break;
 	case E_CODE:
 		if TEXMODE {
-			if(bodymode==0)
-				ofile_printf("\\end{verbatim}\\normalsize}\n");
+			ofile_printf("\\end{verbatim}\\normalsize}\n");
 		} else if WWWMODE ofile_printf("</font></pre>\n");
 		break;
 	case E_CMD:
@@ -68,8 +67,7 @@ void	PrEnv(int env)
 		break;
 	case E_CODE:
 		if TEXMODE {
-			if(bodymode==0)
-				ofile_printf("{\\codesize\\begin{verbatim}\n");
+			ofile_printf("{\\codesize\\begin{verbatim}\n");
 		} else if WWWMODE ofile_printf("<pre><font size=\"-1\" color=\"%s\">", code_color);
 		break;
 	case E_CMD:

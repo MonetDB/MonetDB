@@ -26,6 +26,7 @@
 #include	<monetdb_config.h>       
 #include	<stdio.h>
 #include	<stdlib.h>
+#include	<ctype.h>
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 
@@ -40,8 +41,14 @@ void	GenCode(void)
 	mx_line= d->d_line;
 again:  switch( d->d_dir ){
 	case Bfile:
-	case Ofile:
+	case Ofile:{ char *s;
 	    fname= d->d_cmd;
+	    for(s=fname; *s && !isspace(*s); s++);
+	    if( isspace(*s)) *s =0; 
+	    if( s==fname){
+			Error("File name missing. %s",d->d_line);
+	    }
+	    }
 	    break;
 	case Efile:
 	    UpdateFiles();
