@@ -442,6 +442,12 @@ The Monet V4 procs are converted into functions.
 command msecs(d:int,h:int,m:int,s:int,ms:int):lng= CMDmsecs
 	comment "convert date components to milliseconds";
 
+command daytime(h:int):daytime = CMDdaytime1
+comment "default time creation with zeroed components";
+command daytime(h:int,m:int):daytime = CMDdaytime2
+comment "default time creation with zeroed components";
+command daytime(h:int,m:int,s:int):daytime = CMDdaytime3
+comment "default time creation with zeroed components";
 @+ Prelude section
 Upon intialization of the monettime module, we have to
 initialize some variables, e.g. nils and the box with predefined
@@ -455,12 +461,6 @@ monettime.prelude();
 @-
 .LOAD	LEFT OVER FUNCTIONS TO BE INCLUDED
 	# default time creation with zeroed secs and msecs
-	proc "daytime" (int h) : daytime
-		return daytime(h, 0, 0, 0);
-	proc "daytime" (int h, int m) : daytime
-		return daytime(h, m, 0, 0);
-	proc "daytime" (int h, int m, int s) : daytime
-		return daytime(h, m, s, 0);
 
 	proc "[daytime]" (bat[any::1,int] h) : bat[any::1,daytime]
 		return [daytime](h, 0, 0, 0);
@@ -508,7 +508,6 @@ monettime.prelude();
 		return [int]([/]([diff](t, EPOCH), lng(1000)));
 
 
-.PRELUDE = date_prelude;
 @+ Test Script
 
 The below tests try to be exhaustive in trying all time functionality.
@@ -2168,4 +2167,16 @@ The utilities from Monet V4
 int CMDmsecs(lng *ret,int *d, int *h, int *m, int *s, int *ms){
 	*ret = ((lng)*ms) + 1000* (*s + 60 *(*m + 60 *(*h +  24 * *d)));
 	return GDK_SUCCEED;
+}
+int CMDdaytime1(daytime *ret, int *h){
+	int m=0, s=0, ms=0;
+	return daytime_create(ret, h, &m, &s, &ms);
+}
+int CMDdaytime2(daytime *ret, int *h, int *m){
+	int s=0, ms=0;
+	return daytime_create(ret, h, m, &s, &ms);
+}
+int CMDdaytime3(daytime *ret, int *h, int *m, int *s){
+	int ms=0;
+	return daytime_create(ret, h, m, s, &ms);
 }
