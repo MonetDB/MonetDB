@@ -71,15 +71,15 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		case cmp_equal:
 			if (s->op3.stval){
 			    int r2 = statement_dump( s->op3.stval, nr, sql );
-			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(s%d, s%d);\n", 
+			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d, s%d);\n", 
 					    *nr, l, r, r2 ); 
 			} else {
-			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(s%d);\n", *nr, l, r ); 
+			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d);\n", *nr, l, r ); 
 			}
 			s->nr = (*nr)++;
 			break;
 		case cmp_notequal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d);\n", *nr, l, r ); 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kdiff(s%d);\n", *nr+1, l, *nr );
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
@@ -89,7 +89,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			s->nr = (*nr)++;
 			break;
 		case cmp_lte:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(%s(nil), s%d);\n", 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(%s(nil), s%d);\n", 
 			  *nr, l, s->op1.stval->op1.cval->tpe->name, r ); 
 			s->nr = (*nr)++;
 			break;
@@ -99,7 +99,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 			s->nr = (*nr)++;
 			break;
 		case cmp_gte: 
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(s%d, %s(nil));\n", 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d, %s(nil));\n", 
 			  *nr, l, r, s->op1.stval->op1.cval->tpe->name ); 
 			s->nr = (*nr)++;
 			break;
