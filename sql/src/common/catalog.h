@@ -48,6 +48,9 @@ typedef struct aggr {
 typedef struct func {
 	char *name;
 	char *imp;
+	type *tpe1;
+	type *tpe2;
+	type *res;
 	int nr;
 } func;
 
@@ -94,8 +97,11 @@ extern	aggr *cat_bind_aggr( catalog *cat, char *name, char *type);
 extern	aggr *cat_create_aggr( catalog *cat, char *name, char *imp, 
 						char *tpe, char *res, int nr);
 
-extern	func *cat_bind_func( catalog *cat, char *name);
-extern	func *cat_create_func( catalog *cat, char *name, char *imp, int nr);
+extern	func *cat_bind_func( catalog *cat, char *name, char *tp1, char *tp2);
+extern	func *cat_bind_func_result( catalog *cat, char *name, 
+				char *tp1, char *tp2, char *res);
+extern	func *cat_create_func( catalog *cat, char *name, char *imp, 
+				char *tpe1, char *tpe2, char *res, int nr);
 
 extern void catalog_initoid( catalog *cat );
 extern long catalog_getoid( catalog *cat );

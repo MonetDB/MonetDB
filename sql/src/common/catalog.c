@@ -163,7 +163,6 @@ aggr *cat_create_aggr( catalog *cat, char *name, char *imp, char *tpe, char *res
 	t->tpe = cat_bind_type( cat, tpe );
 	t->res = cat_bind_type( cat, res );
 	t->nr = nr;
-	printf("aggr %s %s\n", name, tpe );
 	list_append_string(cat->aggrs, (char*)t );
 	return t;
 }
@@ -175,11 +174,18 @@ void aggr_destroy( aggr *t ){
 	_DELETE(t);
 }
 
-func *cat_create_func( catalog *cat, char *name, char *imp, int nr ){
+func *cat_create_func( catalog *cat, char *name, char *imp, char *tpe1, char *tpe2, char *res, int nr ){
 	func *t = NEW(func);
 
 	t->name = _strdup(name);
 	t->imp = _strdup(imp);
+	t->tpe1 = cat_bind_type( cat, tpe1 );
+	if (strlen(tpe2)){
+		t->tpe2 = cat_bind_type( cat, tpe2 );
+	} else {
+		t->tpe2 = NULL;
+	}
+	t->res = cat_bind_type( cat, res );
 	t->nr = nr;
 	list_append_string(cat->funcs, (char*)t );
 	return t;
@@ -248,16 +254,36 @@ aggr *cat_bind_aggr( catalog *cat, char *name, char *type){
 	return NULL;
 }
 
-func *cat_bind_func( catalog *cat, char *name){
+func *cat_bind_func( catalog *cat, char *name, char *tp1, char *tp2){
 	node *n = cat->funcs->h;
 	while(n){
 		func *t = (func*)n->data.sval;
-		if (strcmp(t->name, name) == 0)
+		if (strcmp(t->name, name) == 0 &&
+		    strcmp(t->tpe1->sqlname, tp1) == 0 &&
+		    ((tp2 && t->tpe2 && strcmp(t->tpe2->sqlname, tp2) == 0) ||
+		     (!tp2 && !t->tpe2)))
 			return t;
 		n = n->next;
 	}
 	return NULL;
 }
+
+func *cat_bind_func_result( catalog *cat, char *name, 
+				char *tp1, char *tp2, char *res){
+	node *n = cat->funcs->h;
+	while(n){
+		func *t = (func*)n->data.sval;
+		if (strcmp(t->name, name) == 0 &&
+		    strcmp(t->tpe1->sqlname, tp1) == 0 &&
+		    ((tp2 && t->tpe2 && strcmp(t->tpe2->sqlname, tp2) == 0) ||
+		     (!tp2 && !t->tpe2)) &&
+		    strcmp(t->res->sqlname, res) == 0)
+			return t;
+		n = n->next;
+	}
+	return NULL;
+}
+
 
 catalog *default_catalog_create(){
 	catalog *c = NEW(catalog);

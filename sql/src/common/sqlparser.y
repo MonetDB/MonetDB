@@ -5,6 +5,7 @@
 #include "symbol.h"
 #include <mem.h>
 #include <stdlib.h>
+#include <datetime.h>
 
 #define _symbol_create(t,d)         symbol_create( (context*)parm, t, d)
 #define _symbol_create_list(t,d)    symbol_create_list( (context*)parm, t, d)
@@ -31,7 +32,6 @@ extern int parse_error(void *lc, char *s);
  * COLLATION
  * TRANSLATION
  * REF/SCOPE
- * TIME/DATE stuff
  * UDT
  */
 
@@ -128,6 +128,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	user
 	name
 	data_type
+	datetime_type
+	interval_type
 	grantee
 	opt_name
 
@@ -161,24 +163,32 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	column_option_list
 	selection
 	insert_atom_commalist
+	start_field
+	end_field
+	single_datetime_field
+	interval_qualifier
 
 %type <ival>
 	drop_action 
 	opt_natural
 	opt_join_type
 	outer_join_type
+	time_persision
+	non_second_datetime_field
+	opt_sign
 
 %type <bval>
 	opt_distinct
 	opt_with_check_option
 	opt_with_grant_option
 	opt_asc_desc
+	tz
 
 %token <sval> 
 	NAME STRING AMMSC PARAMETER INT INTNUM APPROXNUM USER USING
 	ALL DISTINCT ANY SOME CHECK GLOBAL LOCAL CASCADE RESTRICT
 	CHARACTER NUMERIC DECIMAL INTEGER SMALLINT FLOAT REAL
-	DOUBLE PRECISION VARCHAR DATE DATETIME TIME
+	DOUBLE PRECISION VARCHAR 
 
 /*
 OPEN CLOSE FETCH 
@@ -221,6 +231,8 @@ UNDER WHENEVER
 %token PATH PARAMETER PRIMARY PRIVILEGES 
 %token<sval> PUBLIC REFERENCES SCHEMA SET
 %token ALTER ADD TABLE TO UNION UNIQUE USER VALUES VIEW WHERE WITH WORK
+%token<sval> DATE TIME TIMESTAMP INTERVAL
+%token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 
 %%
 
@@ -1108,11 +1120,97 @@ function_ref:
 		  $$ = _symbol_create_list( SQL_AMMSC, l ); }
  ;
 
+opt_sign:
+   '+'		{ $$ = 1; }
+ | '-' 		{ $$ = -1; }
+ | /* empty */	{ $$ = 1; }
+
+
+tz:
+	WITH TIME ZONE	{ $$ = 1; }
+ | /* empty */		{ $$ = 0; }
+ ;
+
+time_persision:
+	'(' INT ')' 	{ $$ = strtol($2,&$2,10); }
+ | /* empty */		{ $$ = 0; }
+ ;
+
+datetime_type:
+    DATE			{ $$ = "DATE"; }
+ |  TIME time_persision tz 	{ $$ = "TIME"; }
+ |  TIMESTAMP time_persision tz { $$ = "TIMESTAMP"; } 
+ ;
+
+non_second_datetime_field:
+    YEAR		{ $$ = iyear; }
+ |  MONTH		{ $$ = imonth; }
+ |  DAY			{ $$ = iday; }
+ |  HOUR		{ $$ = ihour; }
+ |  MINUTE		{ $$ = imin; }
+ ;
+
+start_field:
+    non_second_datetime_field time_persision
+		{ $$ = dlist_append_int( 
+			 	dlist_append_int( dlist_create(), $1), $2);  }
+ ;
+
+end_field:
+    non_second_datetime_field 	
+		{ $$ = dlist_append_int( 
+			 	dlist_append_int( dlist_create(), $1), 0);  }
+ |  SECOND time_persision	
+		{ $$ = dlist_append_int( 
+			 	dlist_append_int( dlist_create(), isec), $2);  }
+ ;
+
+single_datetime_field:
+    non_second_datetime_field time_persision 
+		{ $$ = dlist_append_int( 
+			 	dlist_append_int( dlist_create(), $1), $2);  }
+ |  SECOND time_persision	
+		{ $$ = dlist_append_int( 
+			 	dlist_append_int( dlist_create(), isec), $2);  }
+ ;
+
+interval_qualifier:
+    start_field TO end_field  
+	{ $$ =  dlist_append_list(
+			dlist_append_list( dlist_create(), $1), $3 ); }
+ |  single_datetime_field    
+	{ $$ =  dlist_append_list( dlist_create(), $1); }
+ ;
+
+interval_type:
+    INTERVAL interval_qualifier	{ $$ = "INTERVAL"; }
+ ;
+
 literal:
     STRING   { $$ = _symbol_create_atom( SQL_ATOM, atom_string($1) );}
  |  INT      { $$ = _symbol_create_atom( SQL_ATOM, atom_int(strtol($1,&$1,10)));}
  |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
  |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
+ |  DATE STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_date($2)); }
+ |  TIME STRING { $$ = _symbol_create_atom( SQL_ATOM, atom_time($2)); }
+ |  TIMESTAMP STRING 
+	{ $$ = _symbol_create_atom( SQL_ATOM, atom_timestamp($2)); }
+ |  INTERVAL opt_sign STRING interval_qualifier
+	{ context *lc = (context*)parm;
+	  int i,type;
+	  if ( (type = parse_interval( lc, $2, $3, $4, &i)) < 0 ){
+		yyerror("incorrect interval");
+		$$ = NULL;
+	  } else {
+		atom *a = NULL;
+		if (type == 0){
+	  		a = atom_month_interval(i);
+		} else {
+	  		a = atom_sec_interval(i);
+		}
+	  	$$ = _symbol_create_atom( SQL_ATOM, a);
+	  }
+	}
  ;
 
 	/* miscellaneous */
@@ -1162,9 +1260,8 @@ data_type:
  |  DOUBLE PRECISION		{ $$ = "DOUBLE"; }
  |  VARCHAR			{ $$ = "VARCHAR"; }
  |  VARCHAR '(' INT ')'		{ $$ = "VARCHAR"; }
- |  DATE			{ $$ = "DATE"; }
- |  DATETIME			{ $$ = "DATETIME"; }
- |  TIME			{ $$ = "TIME"; }
+ | datetime_type
+ | interval_type
  ;
 
 	/* the various things you can name */
@@ -1181,7 +1278,7 @@ name: NAME 	{ $$ = $1; } 		;
 
 
 non_reserved_word: CHARACTER | NUMERIC | DECIMAL | INTEGER | SMALLINT	
- | FLOAT | REAL | DOUBLE | PRECISION | VARCHAR | DATE | DATETIME | TIME ;
+ | FLOAT | REAL | DOUBLE | PRECISION | VARCHAR | DATE | TIME | TIMESTAMP;
 
 name_commalist:
     ident			{ $$ = dlist_append_string(dlist_create(), $1); }

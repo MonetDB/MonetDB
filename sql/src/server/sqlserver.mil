@@ -7,6 +7,7 @@ module(unix);
 module(ddbench);
 module(aggr);
 module(mvc);
+module(monettime);
 
 proc default_val( myc, cid, val ) := {
 	return mvc_default( myc, cid, str(val));
@@ -19,6 +20,13 @@ proc atom(val):= {
 proc avg(BAT b):= {
 	var s := b.sum();
 	return s/b.count();
+}
+
+proc date_sub_sec_interval( date d, int sec ) := {
+	if (sec > 0){
+		return d.adddays( -1 * sec/3600);
+	}
+	return d;
 }
 
 proc add(x, y):= return x + y;
@@ -111,7 +119,7 @@ proc ascii_export_functions(Output):= {
 	server_output( Output, sql_aggr_name, sql_aggr_name, sql_aggr_imp, sql_aggr_type, sql_aggr_result );
 		
 	output_count( sql_func_name, Output);
-	server_output( Output, sql_func_name, sql_func_name, sql_func_imp );
+	server_output( Output, sql_func_name, sql_func_name, sql_func_imp, sql_func_type1, sql_func_type2, sql_func_result );
 
 	#output_count( schema_name, Output);
 	#server_output( Output, schema_id, schema_id, schema_name, schema_auth);

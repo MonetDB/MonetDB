@@ -1,17 +1,17 @@
 #ifndef _ATOM_H_
 #define _ATOM_H_
 
-/* change to generic interface 
- * 
- * Need atom2str atom2typestring
- * Atom will be a wrapper around specific atom's like
- * intAtom, strAtom etc.
- */
+#define atom_prefix ""
 
 typedef	enum atomtype {
 	string_value,
 	int_value,
 	float_value,
+	date_value,
+	time_value,
+	timestamp_value,
+	month_interval_value,
+	sec_interval_value,
 } atomtype;
 
 typedef struct atom {
@@ -27,6 +27,13 @@ typedef struct atom {
 extern atom *atom_int( int val );
 extern atom *atom_string( char *val );
 extern atom *atom_float( double val );
+
+extern atom *atom_date( char *val );
+extern atom *atom_time( char *val );
+extern atom *atom_timestamp( char *val );
+extern atom *atom_month_interval( int val );
+extern atom *atom_sec_interval( int val );
+
 /* duplicate atom */
 extern atom *atom_dup( atom *a );
 

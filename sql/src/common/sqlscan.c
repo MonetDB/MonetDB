@@ -114,8 +114,6 @@ void init_keywords(){
 	keywords_insert("CURRENT", CURRENT );
 	keywords_insert("CURSOR", CURSOR );
 	*/
-	keywords_insert("DATE", DATE );
-	keywords_insert("DATETIME", DATETIME );
 	keywords_insert("DEC", 	DECIMAL );
 	keywords_insert("DECIMAL", DECIMAL );
 	/*
@@ -206,7 +204,6 @@ void init_keywords(){
 	keywords_insert("TABLE", TABLE );
 	keywords_insert("TEMPORARY", TEMPORARY );
 	keywords_insert("TEXT", VARCHAR );
-	keywords_insert("TIME", TIME );
 	keywords_insert("TO", TO );
 	/*
 	keywords_insert("UNDER", UNDER );
@@ -225,6 +222,18 @@ void init_keywords(){
 	keywords_insert("WHERE", WHERE );
 	keywords_insert("WITH", WITH );
 	keywords_insert("WORK", WORK );
+
+	keywords_insert("DATE", DATE );
+	keywords_insert("TIME", TIME );
+	keywords_insert("TIMESTAMP", TIMESTAMP );
+	keywords_insert("INTERVAL", INTERVAL );
+
+	keywords_insert("YEAR", YEAR );
+	keywords_insert("MONTH", MONTH );
+	keywords_insert("DAY", DAY );
+	keywords_insert("HOUR", HOUR );
+	keywords_insert("MINUTE", MINUTE );
+	keywords_insert("SECOND", SECOND );
 }
 
 void exit_keywords(){

@@ -300,32 +300,62 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, statement *group,
 	switch(se->token){
 	case SQL_BINOP: { 
 		dnode *l = se->data.lval->h;
-		func *f = cat_bind_func(sql->cat, l->data.sval);
+		statement *rs = scalar_exp( l->next->data.sym, 
+						sql, tables, group, subset);
+		statement *ls = scalar_exp( l->next->next->data.sym, 
+						sql, tables, group, subset);
+		func *f = NULL;
+		if (!rs || !ls) return NULL;
+		f = cat_bind_func(sql->cat, l->data.sval,
+				(char*)column_type(rs), (char*)column_type(ls));
 		if (f){
-			statement *rs = scalar_exp( l->next->data.sym, 
-						sql, tables, group, subset);
-			statement *ls = scalar_exp( l->next->next->data.sym, 
-						sql, tables, group, subset);
-			if (!rs || !ls) return NULL;
 			return statement_binop( rs, ls ,f );
 		} else {
-			snprintf(sql->errstr, ERRSIZE, 
-		  		_("Binary operator: %s unknown"), 
-					l->data.sval );
+			func *c = NULL;
+			int w = 0;
+			type *t1 = cat_bind_type(sql->cat, 
+						(char*)column_type(rs));
+			type *t2 = cat_bind_type(sql->cat, 
+						(char*)column_type(ls));
+			if (t1->nr > t2->nr){
+				type *s = t1;
+				t1 = t2;
+				t2 = s;
+				w = 1;
+			}
+			c = cat_bind_func_result(sql->cat, "convert",
+				t1->sqlname, NULL, t2->sqlname );
+			f = cat_bind_func(sql->cat, l->data.sval,
+				t2->sqlname, t2->sqlname );
+
+			if (f && c){
+				if (!w){
+					rs = statement_unop( rs, c );
+				} else {
+					ls = statement_unop( ls, c );
+				}
+				return statement_binop( rs, ls ,f );
+			} else { 
+				snprintf(sql->errstr, ERRSIZE, 
+		  		_("Binary operator: %s(%s,%s) unknown"), 
+				l->data.sval, column_type(rs), column_type(ls));
+			}
 		}
 	} break;
 	case SQL_UNOP: {
 		dnode *l = se->data.lval->h;
-		func *f = cat_bind_func(sql->cat, l->data.sval);
-		if (f){
-			statement *rs = scalar_exp( l->next->data.sym, 
+		func *f = NULL;
+		statement *rs = scalar_exp( l->next->data.sym, 
 						sql, tables, group, subset);
-			if (!rs) return NULL;
+		if (!rs) return NULL;
+		f = cat_bind_func(sql->cat, l->data.sval, 
+				(char*)column_type(rs), NULL);
+		if (f){
 			return statement_unop( rs, f );
 		} else {
 			snprintf(sql->errstr, ERRSIZE, 
-		  		_("Unary operator: %s unknown"), 
-					l->data.sval );
+		  		_("Unary operator: %s(%s) unknown"), 
+					l->data.sval, (char*)column_type(rs) );
 		}
 	} break;
 	case SQL_COLUMN: {
@@ -360,11 +390,13 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, statement *group,
 		    	s = scalar_exp( l->h->next->next->data.sym, 
 					sql, tables, group, subset);
 		}
+		if (!s) return NULL;
+
 		if (s && distinct) s = statement_unique(s);
-		if (s) 
-		  a = cat_bind_aggr(sql->cat, l->h->data.sval, 
+		if (!s) return NULL;
+		a = cat_bind_aggr(sql->cat, l->h->data.sval, 
 				  	(char*)column_type(s) );
-		if (s && a){
+		if (a){
 			if (group){
 			  	column *c = basecolumn(s);
 			  	statement *foundsubset = 
@@ -375,9 +407,10 @@ statement *scalar_exp( symbol *se, context *sql, list *tables, statement *group,
 			} else {
 			  return statement_aggr(s, a, NULL);
 			}
-		} else if (!a){
+		} else {
 			snprintf(sql->errstr, ERRSIZE, 
-		  		_("Aggregate: %s unknown"), l->h->data.sval );
+		  		_("Aggregate: %s(%s) unknown"), 
+				l->h->data.sval, column_type(s) );
 		}
 		return NULL;
 	} break;
@@ -527,13 +560,14 @@ list *query_and( catalog *cat, list *ands ){
 
 static
 statement *search_condition( symbol *sc, context *sql, list *tables ){
+	if (!sc) return NULL;
 	switch(sc->token){
 	case SQL_OR: {
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		statement *ls = search_condition( lo, sql, tables );
 		statement *rs = search_condition( ro, sql, tables );
-		if (!ls && !rs) return NULL;
+		if (!ls || !rs) return NULL;
 		if (ls->type != st_diamond && ls->type != st_pearl){
 			ls = statement_diamond( ls ); 
 		}
@@ -559,7 +593,7 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		statement *ls = search_condition( lo, sql, tables );
 		statement *rs = search_condition( ro, sql, tables );
-		if (!ls && !rs) return NULL;
+		if (!ls || !rs) return NULL;
 		if (ls->type != st_diamond && ls->type != st_pearl){
 			ls = statement_diamond( ls ); 
 		}
@@ -607,9 +641,11 @@ statement *search_condition( symbol *sc, context *sql, list *tables ){
 			rs = subquery(sql, ro);
 		}
 		if (!ls || !rs){
+			/*
 			snprintf(sql->errstr, ERRSIZE, 
 		  	_("Compare(%s) missing left or right handside"),
 			compare_op);
+			*/
 		       	return NULL;
 		}
 		if (ls->h == NULL && rs->h == NULL){
@@ -957,12 +993,8 @@ statement *pearl2pivot( context *sql, list *ll ){
 
 static
 statement *query_groupby( context *sql, list *tables, symbol *groupby, statement *st ){
-	/*
-	list *l = list_create();
-	*/
 	statement *cur = NULL;
 	dnode *o = groupby->data.lval->h;
-	node *p;
 	while(o){
 	    node *n = st->op1.lval->h;
 	    symbol *group = o->data.sym;
@@ -981,33 +1013,9 @@ statement *query_groupby( context *sql, list *tables, symbol *groupby, statement
 	    o = o->next;
 	}
 
-	/* no need to join the group ids */
-	/*
-	p = st->op1.lval->h;
-	cur = statement_reverse(cur);
-	while(p){
-		statement *s = p->data.stval;
-		list_append_statement(l, statement_join( cur, s, cmp_equal ));
-		p = p->next;
-	}
-	return statement_list(l);
-	*/
 	return cur;
 }
 
-
-static
-statement *group_join( context *sql, statement *group, statement *st ){
-	list *l = list_create();
-	node *p = st->op1.lval->h;
-	statement *cur = statement_reverse(statement_unique(group));
-	while(p){
-		statement *s = p->data.stval;
-		list_append_statement(l, statement_join( cur, s, cmp_equal ));
-		p = p->next;
-	}
-	return statement_list(l);
-}
 
 static
 statement *query_orderby( context *sql, list *tables, symbol *orderby, statement *st, statement *group ){
@@ -1071,7 +1079,7 @@ statement *query( context *sql, int distinct, dlist *selection, dlist *into,
   symbol *where = table_exp->h->next->data.sym;
   symbol *groupby = table_exp->h->next->next->data.sym;
   symbol *having = table_exp->h->next->next->next->data.sym;
-  statement *order = NULL, *group = NULL, *grouped = NULL;
+  statement *order = NULL, *group = NULL;
   (void)having;
 
   if (from){ 

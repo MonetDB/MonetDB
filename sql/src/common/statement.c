@@ -470,7 +470,7 @@ statement *statement_binop( statement *op1, statement *op2, func *op ){
 	s->op2.stval = op2; op2->refcnt++;
 	s->op3.funcval = op;
 	s->h = op1->h;
-	s->nrcols = op1->nrcols;
+	s->nrcols = (op1->nrcols >= op2->nrcols)?op1->nrcols:op2->nrcols;
 	return s;
 }
 statement *statement_aggr( statement *op1, aggr *op, statement *group ){
@@ -510,8 +510,9 @@ const char *head_type( statement *st ){
 	case st_select: return head_type(st->op1.stval);
 	case st_column: return NULL; /* oid */
 	case st_reverse: return column_type(st->op1.stval);
-	case st_unop: return column_type(st->op1.stval);
-	case st_binop: return column_type(st->op1.stval);
+	case st_aggr: return st->op2.aggrval->res->sqlname;
+	case st_unop: return st->op2.funcval->res->sqlname;
+	case st_binop: return st->op3.funcval->res->sqlname;
 	case st_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
 	case st_unique: return column_type(st->op1.stval);
@@ -527,9 +528,9 @@ const char *column_type( statement *st ){
 	case st_select: return column_type(st->op1.stval);
 	case st_column: return st->op1.cval->tpe->sqlname;
 	case st_reverse: return head_type(st->op1.stval);
-	case st_aggr: return column_type(st->op1.stval);
-	case st_unop: return column_type(st->op1.stval);
-	case st_binop: return column_type(st->op1.stval);
+	case st_aggr: return st->op2.aggrval->res->sqlname;
+	case st_unop: return st->op2.funcval->res->sqlname;
+	case st_binop: return st->op3.funcval->res->sqlname;
 	case st_atom: return atomtype2string(st->op1.aval);
 	case st_cast: return st->op1.sval;
 	case st_unique: return column_type(st->op1.stval);

@@ -12,6 +12,7 @@ lib_sql = {
 		sql.c sql.h \
 		catalog.c catalog.h \
 		list.c list.h symbol.c symbol.h sym.h \
-		statement.c statement.h atom.c atom.h mem.h
+		statement.c statement.h atom.c atom.h mem.h \
+		datetime.c datetime.h
 	HEADERS = h tab.h
 }
