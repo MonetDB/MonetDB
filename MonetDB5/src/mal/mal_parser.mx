@@ -1054,7 +1054,9 @@ help information.
         } else {
 			parseError(cntxt,"<string> expected\n");
 		}
-    } 
+    } else 
+    if (currChar(cntxt) != ';')
+        parseError(cntxt,"';' expected\n");
     skipToEnd(cntxt);
 @c
 MalBlkPtr parseCommandPattern(Client cntxt, int kind){
