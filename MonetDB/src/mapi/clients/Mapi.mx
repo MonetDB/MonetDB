@@ -414,7 +414,7 @@ MERROR  & Mapi internal error.\\
 @h
 
 /*#define MONET5*/
-/*#define BLOCKED*/ 		 /* currently not supported on V4.*/
+#define BLOCKED
 
 #include  <stdio.h>
 #include  <stream.h>
