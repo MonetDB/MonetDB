@@ -20,8 +20,9 @@
 @a Peter Boncz
 @* Lightweight Lock Module
 This module provides simple SMP lock and thread functionality
-as already present in the Monet system.
+as already present in the MonetDB system.
 
+@+ Locks
 @mal
 atom lock:ptr;
 
@@ -46,7 +47,7 @@ command tostr(l:lock)
 address lockToStr
 comment "Overloaded atom function";
 
-@- semaphores
+@+ semaphores
 @mal
 atom sema:ptr;
 
@@ -116,8 +117,7 @@ int destroy_sema(monet_sema *s){
 	MT_destroy_sema((MT_Sema) *s);
 	return GDK_SUCCEED;
 }
-@}
-@- Wrapping
+@-
 The old code base is wrapped to ease update propagation.
 @c
 #include "mal.h"

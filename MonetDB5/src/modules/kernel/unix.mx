@@ -29,7 +29,6 @@ The unix module is currently of rather limited size.
 It should include only those facilities that are UNIX
 specific, i.e. not portable to other platforms.
 Similar modules may be defined for Windows platforms.
-@-
 
 @mal
 module unix;

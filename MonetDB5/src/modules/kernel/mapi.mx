@@ -24,7 +24,7 @@
 @f mapi
 @a N.J. Nes P. Boncz, S. Mullender
 @v 1.1
-@+ Monets Internet Interface
+@+ MonetDB's Internet Interface
 This module contains a simple interface for setting up
 internet connections and to initialize a client session.
 Without loading this interface, Monet runs in administrator
@@ -55,15 +55,14 @@ module mapi;
 
 command listen():int
 address MAPIlisten_default
-comment "Start a Mapi server with
-         the default settings.";
+comment "Start a Mapi server with the default settings.";
 command listen(port:lng):int
 address MAPIlisten_port
-comment "Start a Mapi server with
-         the default settings.";
+comment "Start a Mapi server with the default settings.";
 command listen(port:int, maxusers:int):int
 address MAPIlisten
 comment "Start a Mapi server.";
+
 command listen(port:int, maxusers:int, cmd:str):int
 address MAPIlisten3
 comment "Start the Mapi listener on <port> for 
@@ -71,6 +70,7 @@ comment "Start the Mapi listener on <port> for
 	MAL procedure <cmd>(Stream s_in, Stream s_out)
 	is called.If no <cmd> is specified a new 
 	client thread is forked.";
+
 command listen_ssl(port:int, maxusers:int,
 	keyfile:str,certfile:str, cmd:str):int
 address MAPIlistenSSL
@@ -100,24 +100,21 @@ comment "Suspend a client interactiont using a
 
 command resume(sessionkey:lng):void
 address MAPIresume
-comment "Resume the interaction with a specific
-         client thread";
+comment "Resume the interaction with a specific client thread";
 
 command trace(nme:str, flag:bit):void
 address MAPItrace2
-comment "Trace (on/off) receipt of all messages
-         from a specific user";
+comment "Trace (on/off) receipt of all messages from a specific user";
 command trace(flag:bit):void
 address MAPItrace
-comment "Trace (on/off) receipt of messages
-         for all users";
+comment "Trace (on/off) receipt of messages for all users";
 
+@{
 command prelude()
 address mapi_prelude;
 command epilogue()
 address mapi_epilogue;
 
-@{
 @h
 #ifndef MAPI_H
 #define MAPI_H

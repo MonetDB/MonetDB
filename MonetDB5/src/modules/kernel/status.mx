@@ -50,27 +50,40 @@ command memMap() :void
 address SYSmemMap
 comment "Print a map of all memory that is in use";
 @-
-@T
-For each 64KB block in the first 3GB of the virtual memory {\tt mem\_printmap()} prints a character:
-\begin{verbatim}
-0-9 - thread stack space of thread <num>
-B - in use for a large BAT heap 
+
+For each 64KB block in the first 3GB of the virtual memory @emph{mem_printmap()} 
+prints a character:
+@multitable @columnfractions 0.05 0.7
+@item 0-9 
+@tab - thread stack space of thread <num>
+@item B 
+@tab - in use for a large BAT heap 
    (i.e. anonymous virtual memory).
-b - free (last usage was B)
-S - in use for a malloc block
-s - free (last usage was S)
-P - in use for the BBP array 
+@item b 
+@tab - free (last usage was B)
+@item S 
+@tab - in use for a malloc block
+@item s 
+@tab - free (last usage was S)
+@item P 
+@tab - in use for the BBP array 
    (i.e. anonymous virtual memory)
-p - free (last usage was P)
-M - in use as memory mapped region
-m - free (last usage was M)
-C - in use as MIL context buffer 
+@item p 
+@tab - free (last usage was P)
+@item M 
+@tab - in use as memory mapped region
+@item m 
+@tab - free (last usage was M)
+@item C 
+@tab - in use as MIL context buffer 
    (i.e. anonymous virtual memory)
-c - free (last usage was M)
-\end{verbatim}
-On Linux, the malloc library appears to be using anonymous virtual memory, which goes undetected.
-If you want to see all your memory in the map, lower the gdk\_mmap threshold in MonetDB5.conf to a
-low value (say 64KB).
+@item c 
+@tab - free (last usage was M)
+@end multitable
+
+On Linux, the malloc library appears to be using anonymous virtual memory, 
+which goes undetected.  If you want to see all your memory in the map, 
+lower the gdk_mmap threshold in MonetDB5.conf to a low value (say 64KB).
 @-
 @mal
 command vmUsage(minsize:lng) :bat[:str,:lng] 
@@ -82,46 +95,43 @@ address SYSmem_usage
 comment "Get a split-up of how much memory 
 	 blocks are in use.";
 @-
-@T
-Some explanation of what mem\_usage() and vm\_usage() display:
-{\small
-\begin{verbatim}
+Some explanation of what mem_usage() and vm_usage() display:
+@verbatim
 > mem_usage.print;
 #------------------------------#
 # BAT:                 tmp_42  #
 # (str)                (lng)   #
 #------------------------------#
-[ "buns/car\_category",  400012 ] 100.000 string offsets
-[ "buns/car\_town",      400012 ] idem
-[ "buns/car\_class",     400012 ] idem
-[ "tail/car\_category",  266244 ] string tail heap
-[ "tail/car\_town",      266244 ] idem
-[ "tail/car\_class",     266244 ] idem
-[ "\_tot/buns",         1322996 ] the three bun heaps
-[ "\_tot/tail",          967762 ] the three tail heaps
-[ "\_tot/head",           70984 ] negligable
-[ "\_tot/bbp",            98866 ] BBP metadata structure
-[ "\_tot/mil",           102400 ] MIL interpreter stack space
-[ "\_tot/found",        2590144 ] buns+head+tail+bbp+mil
-[ "\_tot/malloc\_heap",  2956048 ] in malloc heap
-[ "\_tot/malloc",       2956048 ] total consumed via malloc
-[ "\_tot/valloc",        201266 ] total consumed via virtualalloc
-[ "\_tot/mem",          3157314 ] total RAM+swap-file consumption
+[ "buns/car_category",  400012 ] 100.000 string offsets
+[ "buns/car_town",      400012 ] idem
+[ "buns/car_class",     400012 ] idem
+[ "tail/car_category",  266244 ] string tail heap
+[ "tail/car_town",      266244 ] idem
+[ "tail/car_class",     266244 ] idem
+[ "_tot/buns",         1322996 ] the three bun heaps
+[ "_tot/tail",          967762 ] the three tail heaps
+[ "_tot/head",           70984 ] negligable
+[ "_tot/bbp",            98866 ] BBP metadata structure
+[ "_tot/mil",           102400 ] MIL interpreter stack space
+[ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
+[ "_tot/malloc_heap",  2956048 ] in malloc heap
+[ "_tot/malloc",       2956048 ] total consumed via malloc
+[ "_tot/valloc",        201266 ] total consumed via virtualalloc
+[ "_tot/mem",          3157314 ] total RAM+swap-file consumption
 
 >
-> vm\_usage.print;
+> vm_usage.print;
 #------------------------------#
-# BAT:               tmp\_42    #
+# BAT:               tmp_42    #
 # (str)              (lng)     #
 #------------------------------#
-[ "\_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
-[ "\_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
-[ "\_tot/found",      67108864  ] bbp+mil
-[ "\_tot/vm",         71244560  ] total address space consumption
+[ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
+[ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
+[ "_tot/found",      67108864  ] bbp+mil
+[ "_tot/vm",         71244560  ] total address space consumption
 >
-\end{verbatim}
-}
-@- MAL runtime status 
+@end verbatim
+@+ MAL runtime status 
 @mal
 command gdkEnv( ):bat[:str,:str] 
 address SYSgdkEnv
@@ -132,28 +142,27 @@ comment "Pseudo bat to map thread to name";
 
 command mem_cursize() :lng 
 address SYSgetmem_cursize
-comment "the amount of physical swapspace 
-	 in KB that is currently in use";
+comment "the amount of physical swapspace in KB that is currently in use";
+
 command mem_maxsize() :lng 
 address SYSgetmem_maxsize
-comment "the maximum usable amount of physical 
-	 swapspace in KB (target only)";
+comment "the maximum usable amount of physical swapspace in KB (target only)";
+
 command mem_maxsize(v:lng) :void 
 address set_mem_maxsize
-comment "set the maximum usable amount of 
-	 physical swapspace in KB";
+comment "set the maximum usable amount of physical swapspace in KB";
+
 command vm_cursize() :lng 
 address SYSgetvm_cursize
-comment "the amount of logical VM space in 
-	 KB that is currently in use";
+comment "the amount of logical VM space in KB that is currently in use";
+
 command vm_maxsize() :lng 
 address SYSgetvm_maxsize
-comment "the maximum usable amount of logical 
-	 VM space in KB (target only)";
+comment "the maximum usable amount of logical VM space in KB (target only)";
+
 command vm_maxsize(v:lng) :void 
 address SYSsetvm_maxsize
- 	comment "set the maximum usable amount 
-	of physical swapspace in KB";
+comment "set the maximum usable amount of physical swapspace in KB";
 @{
 @* Implementation Code
 @h

@@ -24,61 +24,56 @@
 @f calc
 @a N.J. Nes, P. Boncz, M. Kersten, A. de Vries
 @v 2.0
-@* The Arithmetics Module
-@T
+@* Basic arithmetic 
 This module is an extended version of the V4 arithmetic module.
 It implements the arithmetic operations on the built-in types,
-{\tt chr}, {\tt sht}, {\tt int}, {\tt flt}, {\tt dbl} and {\tt lng}.
+@emph{chr}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
 All combinations are implemented. Limited combinations are implemented
-for {\tt bit}, {\tt oid} and {\tt str}. 
+for @emph{bit}, @emph{oid} and @emph{str}. 
 
-\begin{description}
-\item[binary operators]
+@table @code
+@item[binary operators]
 The implemented operators are first of all all comparison that return a 
-TRUE/FALSE value ({\tt bit} values), i.e. 
-{\tt $<=$}, {\tt $<$}, {\tt $==$}, {\tt $!=$}, {\tt $>=$}, and {\tt $>=$}.
+TRUE/FALSE value (@emph{bit} values), i.e. 
+@emph{<=}, @emph{<}, @emph{==}, @emph{!=}, @emph{>=}, and @emph{>=}.
 
-The module also implements the operators {\tt +}, {\tt -}, {\tt *} and {\tt /}. 
+The module also implements the operators @emph{+}, @emph{-}, @emph{*} and @emph{/}. 
 The rules for the return types operators is as follows.
+If one of the input types is a floating point the result will be a
+floating point.  The largest type of the input types is taken. 
 
-\begin{enumerate}
-\item If one of the input types is a floating point the result will be a
-floating point. 
-\item The largest type of the input types is taken. 
-\end{enumerate}
-
-The {\tt max} and {\tt min} functions return the maximum and minimum of 
+The @emph{max} and @emph{min} functions return the maximum and minimum of 
 the two input parameters.
 
-\item[unary operators]
-This module also implements the unary {\tt abs}() function, which calculates 
-the absolute value of the given input parameter, as well as the {\tt -} unary
+@item[unary operators]
+This module also implements the unary @emph{abs}() function, which calculates 
+the absolute value of the given input parameter, as well as the @emph{-} unary
 operator. 
 
-The {\tt inv} unary operation calculates the inverse of the input value. 
+The @emph{inv} unary operation calculates the inverse of the input value. 
 An error message is given when the input value is zero.
 
-\item[bitwise operators]
-For integers there are some additional operations. The {\tt \%} operator
-implements the congruent modulo operation. The {\tt $<$$<$} and {\tt $>$$>$} 
-are the left and right bit shift. The {\tt or}, {\tt and}, {\tt xor} and 
-{\tt not} for integers are implemented as bitwise boolean operations. 
+@item[bitwise operators]
+For integers there are some additional operations. The @emph{\%} operator
+implements the congruent modulo operation. The @emph{<<} and @emph{>>} 
+are the left and right bit shift. The @emph{or}, @emph{and}, @emph{xor} and 
+@emph{not} for integers are implemented as bitwise boolean operations. 
 
-\item[boolean operators]
-The {\tt or}, {\tt and}, {\tt xor} and {\tt not} for the bit atomic type 
+@item[boolean operators]
+The @emph{or}, @emph{and}, @emph{xor} and @emph{not} for the bit atomic type 
 in MIL (this corresponds to what is normally called boolean)
 are implemented as the logic operations.
 
-\item[random numbers]
-This module also contains the rand and srand functions. The {\tt srand}() 
+@item[random numbers]
+This module also contains the rand and srand functions. The @emph{srand}() 
 function initializes the random number generator using a seed value. The 
-subsequent calls to {\tt rand}() are pseudo random numbers (with the same 
+subsequent calls to @emph{rand}() are pseudo random numbers (with the same 
 seed the sequence can be repeated).
-\end{description}
+@end table
 
-{\bf The general interpretation for the NIL value is "unknown".
+The general interpretation for the NIL value is "unknown".
 This semantics mean that any operation that receives at least one NIL 
-value, will produce a NIL value in the output for sure.} 
+value, will produce a NIL value in the output for sure.
 
 The only exception to this rule are the "==" and "!=" equality 
 test routines (it would otherwise become rather difficult to test 
@@ -86,11 +81,11 @@ whether a value is nil).
 
 The collection of type conversion routines are included here as well.
 
-@* Module Definition
-Most of the primitives are defined here. 
-A heuristic is to organize the routines along the types 
-(int,lng,sht,bit,oid,flt,...) to reduce number of checks
-at function resoluton.
+The definitions shown are limited to the Mx macros.
+This should be sufficient to understand the functionality
+at the cost of precision.
+In most situations the macros are expanded using the
+built-in type set (int,lng,sht,bit,oid,flt,...) 
 @= mal_isnil
 	command isnil(v:@1) :bit 
 	address CALCisnil_@1
@@ -101,6 +96,7 @@ at function resoluton.
 @-
 [Mx bug, space required here]
 
+@{
 @mal
 module calc;
 
@@ -119,74 +115,71 @@ comment "is a value nil?";
 command isnotnil(v:void) :bit 
 address CALCisnotnil_void
 comment "is a value not equal to nil?";
-
-@- comparisons 
-@T 
-The {\tt mel\_comp\_ops} Mx macro implements the mel interface to the
-arithmetic operations. Note that comparison operators with unequal
-operands are already supported in the kernel, but are not nearly as fast,
+@}
+@+ Comparison operations
+The @emph{eq_ops} and @emph{cmp_ops} Mx macro implements the interface to the
+arithmetic comparisons. Note that comparison operators with different
+operand types are already supported in the kernel, but are not nearly as fast,
 (because they have to convert values on the fly).  
-A heuristic is to organize the routines along the types 
-(int,lng,sht,bit,oid,flt,...) to reduce number of checks
-at function resoluton. The least interesting one is pushed
-first onto the symbol table stack.
-Default case excluded for the time being
-@= mal_eq_ops
-command ==(left:@1, right:@2) :bit 
-address CALCcompEQ@1@2;
-command !=(left:@1, right:@2) :bit 
-address CALCcompNEQ@1@2;
-@= mal_comp_ops
-@:mal_eq_ops(@1,@2)@
-command <(left:@1, right:@2) :bit 
-address CALCcompLT@1@2;
-command <=(left:@1, right:@2) :bit 
-address CALCcompLE@1@2;
-command >=(left:@1, right:@2) :bit 
-address CALCcompGE@1@2;
-command >(left:@1, right:@2) :bit 
-address CALCcompGT@1@2;
-command between(val:@1, low:@1, high:@1) :bit 
-address CALCcompBetween@1;
+The code expansion is organized such that
+the least interesting one is pushed onto the symbol table stack first.
+
+@= eq_ops
+        command ==(left:@1, right:@2) :bit 
+        address CALCcompEQ@1@2;
+        command !=(left:@1, right:@2) :bit 
+        address CALCcompNEQ@1@2;
+@= cmp_ops
+        @:eq_ops(@1,@2)@
+
+        command <(left:@1, right:@2) :bit 
+        address CALCcompLT@1@2;
+        command <=(left:@1, right:@2) :bit 
+        address CALCcompLE@1@2;
+        command >=(left:@1, right:@2) :bit 
+        address CALCcompGE@1@2;
+        command >(left:@1, right:@2) :bit 
+        address CALCcompGT@1@2;
+        command between(val:@1, low:@1, high:@1) :bit 
+        address CALCcompBetween@1;
+@{
 @mal
 
-        @:mal_comp_ops(oid,oid)@
-        @:mal_comp_ops(flt,flt)@
-        @:mal_comp_ops(flt,dbl)@
-        @:mal_comp_ops(dbl,dbl)@
+        @:cmp_ops(oid,oid)@
+        @:cmp_ops(flt,flt)@
+        @:cmp_ops(flt,dbl)@
+        @:cmp_ops(dbl,dbl)@
 
-        @:mal_comp_ops(chr,chr)@
-        @:mal_comp_ops(chr,sht)@
-        @:mal_comp_ops(chr,int)@
-        @:mal_comp_ops(chr,lng)@
+        @:cmp_ops(chr,chr)@
+        @:cmp_ops(chr,sht)@
+        @:cmp_ops(chr,int)@
+        @:cmp_ops(chr,lng)@
 
-        @:mal_eq_ops(bit,chr)@
-        @:mal_eq_ops(bit,sht)@
-        @:mal_eq_ops(bit,int)@
-        @:mal_eq_ops(bit,lng)@
+        @:eq_ops(bit,chr)@
+        @:eq_ops(bit,sht)@
+        @:eq_ops(bit,int)@
+        @:eq_ops(bit,lng)@
 
-        @:mal_comp_ops(sht,chr)@
-        @:mal_comp_ops(sht,sht)@
-        @:mal_comp_ops(sht,int)@
-        @:mal_comp_ops(sht,lng)@
+        @:cmp_ops(sht,chr)@
+        @:cmp_ops(sht,sht)@
+        @:cmp_ops(sht,int)@
+        @:cmp_ops(sht,lng)@
 
-        @:mal_comp_ops(int,chr)@
-        @:mal_comp_ops(int,sht)@
-        @:mal_comp_ops(int,int)@
-        @:mal_comp_ops(int,lng)@
+        @:cmp_ops(int,chr)@
+        @:cmp_ops(int,sht)@
+        @:cmp_ops(int,int)@
+        @:cmp_ops(int,lng)@
 
-        @:mal_comp_ops(lng,chr)@
-        @:mal_comp_ops(lng,sht)@
-        @:mal_comp_ops(lng,int)@
-        @:mal_comp_ops(lng,lng)@
+        @:cmp_ops(lng,chr)@
+        @:cmp_ops(lng,sht)@
+        @:cmp_ops(lng,int)@
+        @:cmp_ops(lng,lng)@
 
-        @:mal_comp_ops(str,str)@
-
-@- computation of { +, -, *, /, % }
-@T 
-The {\tt mel\_calc\_ops} Mx macro implements the mel interface to the
-arithmetic operations.  The macro expects three parameters, two input
-atomic types and a result type. 
+        @:cmp_ops(str,str)@
+@}
+@+ Arithmetic computation 
+The operators @{ +, -, *, /, % @} are handled here.
+The macro expects three parameters, two input atomic types and a result type. 
 @mal
 command %(left:chr, right:int) :int 
 address CALCbinaryMODchrint;
@@ -203,14 +196,15 @@ address CALCbinaryMODintchr;
 command %(left:int, right:sht) :sht 
 address CALCbinaryMODintsht;
 @= mal_calc_ops
-command +(left:@1, right:@2) :@3 
-address CALCbinaryADD@1@2; 
-command -(left:@1, right:@2) :@3 
-address CALCbinarySUB@1@2;
-command *(left:@1, right:@2) :@3 
-address CALCbinaryMUL@1@2;
-command /(left:@1, right:@2) :@3 
-address CALCbinarycheckDIV@1@2;
+        command +(left:@1, right:@2) :@3 
+        address CALCbinaryADD@1@2; 
+        command -(left:@1, right:@2) :@3 
+        address CALCbinarySUB@1@2;
+        command *(left:@1, right:@2) :@3 
+        address CALCbinaryMUL@1@2;
+        command /(left:@1, right:@2) :@3 
+        address CALCbinarycheckDIV@1@2;
+@{
 @-
 The coercions described below ensure that there is never any information loss.
 @mal
@@ -258,13 +252,14 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_calc_ops(lng,lng,lng)@
 	@:mal_calc_ops(lng,flt,flt)@
 	@:mal_calc_ops(lng,dbl,dbl)@
-
-@- binary  operations { max, min, }
+@}
+@+ Binary  operations { max, min, }
 @= mal_binary_ops
-command max(l:@1, r:@1) :@1 
-address CALCbinaryMAX@2; 
-command min(l:@1, r:@1) :@1 
-address CALCbinaryMIN@2;
+        command max(l:@1, r:@1) :@1 
+        address CALCbinaryMAX@2; 
+        command min(l:@1, r:@1) :@1 
+        address CALCbinaryMIN@2;
+@{
 @-
 @mal
 	@:mal_binary_ops(chr,chr)@
@@ -274,19 +269,20 @@ address CALCbinaryMIN@2;
 	@:mal_binary_ops(flt,flt)@
 	@:mal_binary_ops(lng,lng)@
 	@:mal_binary_ops(dbl,dbl)@
-
-@- unary operations { abs, inv }
+@}
+@+ Unary operations { abs, inv }
 The unary operators include coercion routines for built-in types
 @= mal_unary_ops
-command abs(x:@1) :@1 
-address CALCunary@1ABS 
-comment "absolute value";
-command inv(x:@1) :@1 
-address CALCunarycheck@1INV 	
-comment "inverse value (1/x)";
-command -(x:@1) :@1 
-address CALCunary@1NEG 
-comment "negative value";
+        command abs(x:@1) :@1 
+        address CALCunary@1ABS 
+        comment "absolute value";
+        command inv(x:@1) :@1 
+        address CALCunarycheck@1INV 	
+        comment "inverse value (1/x)";
+        command -(x:@1) :@1 
+        address CALCunary@1NEG 
+        comment "negative value";
+@{
 @-
 @mal
 	@:mal_unary_ops(dbl)@
@@ -295,13 +291,14 @@ comment "negative value";
 	@:mal_unary_ops(sht)@
 	@:mal_unary_ops(int)@
 	@:mal_unary_ops(lng)@
-
+@}
 @-
 Coercion functions are typical used in multiplex calls.
 @= mal_coercion
-command @1(x:@2):@1 
-address CALC@22@1 
-comment "coercion @2 to @1";
+        command @1(x:@2):@1 
+        address CALC@22@1 
+        comment "coercion @2 to @1";
+@{
 @= scalar_coercion
 	@:mal_coercion(@1,oid)@
 	@:mal_coercion(@1,bit)@
@@ -353,8 +350,8 @@ comment "coercion @2 to @1";
 	@:mal_coercion(chr,lng)@
 
 	@:mal_coercion(ptr,lng)@
-
-@- boolean { or, xor, and, not }
+@}
+@+ Boolean operations { or, xor, and, not }
 @mal
 command or(left:bit, right:bit) :bit 
 address CALCbinaryORbit;
@@ -367,49 +364,43 @@ address CALCunarybitNOT ;
 command ifthenelse(b:bit,t:any$1,tpe:any$1,f:any$1):any$1 
 address CALCswitchbit;
 
-@- bitwise operations
-Cardinal numerical types (inclusing {\tt chr} can be regarded as a bit
+@+ Bitwise operations
+Cardinal numerical types (inclusing @emph{chr} can be regarded as a bit
 array. Specific operations work with this interpretation.
 @= mal_bitwise_ops
-command or(left:@1, right:@1) :@1 
-address CALCbinaryOR@1@1;
-command and(left:@1, right:@1) :@1 
-address CALCbinaryAND@1@1;
-command xor(left:@1, right:@1) :@1 
-address CALCbinaryXOR@1@1;
-command not(left:@1) :@1 
-address CALCunary@1NOT;
-command <<(left:@1,right:int) :@1 
-address CALCbinaryLSH@1int;
-command >>(left:@1, right:int) :@1 
-address CALCbinaryRSH@1int;
+        command or(left:@1, right:@1) :@1 
+        address CALCbinaryOR@1@1;
+        command and(left:@1, right:@1) :@1 
+        address CALCbinaryAND@1@1;
+        command xor(left:@1, right:@1) :@1 
+        address CALCbinaryXOR@1@1;
+        command not(left:@1) :@1 
+        address CALCunary@1NOT;
+        command <<(left:@1,right:int) :@1 
+        address CALCbinaryLSH@1int;
+        command >>(left:@1, right:int) :@1 
+        address CALCbinaryRSH@1int;
+@{
 @mal
 	@:mal_bitwise_ops(chr)@
 	@:mal_bitwise_ops(sht)@
 	@:mal_bitwise_ops(int)@
 	@:mal_bitwise_ops(lng)@
-
-@- random numbers
-@mal
-command rand () :int 
-address CALCrandint
-comment "return a random number";
-command srand(seed:int) :void 
-address CALCsrandint
-comment "initialize the rand() function with a seed";
+@}
 @+ Type coercions
 The Monet kernel contains a few built-in atomic types together
 with useful functions. 
 Those accessible at the MAL command level are introduced below.
 
 @= convertCmd
-command @1(v:str):@1 
-address CALCstr2@1;
-command str(v:@1):str 
-address CALC@12str;
-command @1(v:void) :@1 
-address CALCnil2@1;
+        command @1(v:str):@1 
+        address CALCstr2@1;
+        command str(v:@1):str 
+        address CALC@12str;
+        command @1(v:void) :@1 
+        address CALCnil2@1;
 
+@{
 @mal
 @:convertCmd(oid)@
 @:convertCmd(sht)@
@@ -433,7 +424,6 @@ address CALCnil2str;
 command str(v:str) :str 
 address CALCstr2str;
 
-
 command void(v:void) :void 
 address CALCnil2void;
 command void(v:int) :void 
@@ -449,6 +439,7 @@ command setoid(v:lng)
 address lngSetoidImpl;
 command setoid(v:oid)
 address oidSetoidImpl;
+@}
 @-
 We should also deal with superflous operations, such as int(v:int).
 This is a noop operation that should ideally be filtered out with
@@ -457,22 +448,19 @@ the code squeezer. [TODO]
 @mal
 command newoid() :oid 
 address CALCnewoidBase
-comment "Generate a new oid. Equivalent 
-	 to newoid(0,1)";
+comment "Generate a new oid. Equivalent to newoid(0,1)";
 
 command newoid(incr:lng) :oid 
 address CALCnewoidInclng;
 command newoid(incr:int) :oid 
 address CALCnewoidInc
-comment "Reserves a range of consecutive 
-	unique OIDs; returns the lowest in range.
-	equivalent to newoid(0,incr)";
+comment "Reserves a range of consecutive unique OIDs; returns the lowest 
+        in range.  equivalent to newoid(0,incr)";
 
 command setoid(base:oid) :oid 
 address CALCsetoidInc
-comment "Sets the oid range of consecutive 
-	unique OIDs; returns the 
-lowest in range.";
+comment "Sets the oid range of consecutive unique OIDs; returns the 
+        lowest in range.";
 
 command setoid() :oid 
 address CALCsetoidBase
@@ -597,9 +585,8 @@ not(bit2).print;
 srand( 1234 );
 rand().print;
 quit;
-
-@T
-The {\tt mil\_comp\_ops} implements the mil example script comparison 
+@-
+The @emph{comp_ops} implements the mil example script comparison 
 operations.  It gets two parameters which are the operants for the operations.
 
 @= mil_comp_ops
@@ -610,8 +597,7 @@ operations.  It gets two parameters which are the operants for the operations.
  (@1 > @2).print;  (@2 > @1).print;  (@1 > @1).print;
 @
 
-@T
-The {\tt mil\_calc\_ops} implements the mil example script arithmetic 
+The @emph{calc_ops} implements the mil example script arithmetic 
 operations.  It gets two parameters which are the operants for the operations.
 
 @= mil_calc_ops
@@ -834,18 +820,9 @@ str CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2) {
     return MAL_SUCCEED;
 }
 
-str CALCrandint( int *res ){
-    *res = rand();
-    return MAL_SUCCEED;
-}
 
-str CALCsrandint( int *seed ){
-    srand( *seed );
-    return MAL_SUCCEED;
-}
-
-@T
-The {\tt c\_comp} and {\tt c\_comp_ops} macros implement the mil comparison 
+@-
+The @emph{c_comp} and @emph{c_comp_ops} macros implement the mil comparison 
 operations.
 
 @= any_binary_minmax
@@ -1035,9 +1012,9 @@ str CALCcompBetween@1(bit *retval, @1 *v, @1 *low, @1 *high){
 	}
 	return MAL_SUCCEED;
 }
-@T
-The {\tt c\_calc\_ops} implement the arithmetic operations on the given type.
-The {\tt c\_calc\_ops} macro gets three arguments, two input types and a 
+@-
+The @emph{c_calc_ops} implement the arithmetic operations on the given type.
+The @emph{c_calc_ops} macro gets three arguments, two input types and a 
 result type. 
 
 @= c_calc_ops

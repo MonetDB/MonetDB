@@ -19,7 +19,6 @@
 @v 2.0
 @a Peter Boncz, M.L. Kersten
 @* Binary Association Tables
-@T
 This module contains the commands and patterns to manage Binary
 Association Tables (BATs). The relational operations you can execute
 on BATs have the form of a neat algebra, described in algebra.mx
@@ -38,6 +37,7 @@ layer as (str *)
 and we have to de-reference them before entering the gdk library.
 (Actual a design error in gdk to differentiate passing int/str)
 This calls for knowledge on the underlying BAT types`s
+@{
 @= derefStr
 {int _tpe= ATOMstorage(@1->@2type);
  if( _tpe == TYPE_str || _tpe > TYPE_str )
@@ -46,68 +46,55 @@ This calls for knowledge on the underlying BAT types`s
 }}
 @-
 The code speaks for itself
+@}
 @mal
 
 module bat;
 
 command bat(ht:int, tt:int) :bat[:any,:any] 
 address BKCnewBat
-comment "Creates a new empty transient BAT with 
-	head- and tail-types as indicated.";
+comment "Creates a new empty transient BAT with head- and tail-types 
+        as indicated.";
 
-command bat(ht:int, tt:int, size:int) 
-		:bat[:any,:any] 
+command bat(ht:int, tt:int, size:int) :bat[:any,:any] 
 address BKCnewBATint
-comment "Creates a new empty BAT, directly 
-	allocating for 'size' elements.";
+comment "Creates a new empty BAT, allocating 'size' elements.";
 
-command bat(ht:int, tt:int, size:lng) 
-	:bat[:any,:any] 
+command bat(ht:int, tt:int, size:lng) :bat[:any,:any] 
 address BKCnewBATlng
-comment "Creates a new empty BAT, directly 
-	allocating for 'size' elements.";
+comment "Creates a new empty BAT, allocating 'size' elements.";
 
-command reverse(b:bat[:any$1,:any$2]) 
-		:bat[:any$2,:any$1] 
+command reverse(b:bat[:any$1,:any$2]) :bat[:any$2,:any$1] 
 address BKCreverse
-comment "Returns the reverse view of a BAT (head 
-	is tail and tail is head). BEWARE  no 
-	copying is involved; input and output 
-	refer to the same object!";
+comment "Returns the reverse view of a BAT (head is tail and tail is head).
+        BEWARE  no copying is involved; input and output refer to the 
+        same object!";
 
-command mirror(b:bat[:any$1,:any]) 
-		:bat[:any$1,:any$1] 
+command mirror(b:bat[:any$1,:any]) :bat[:any$1,:any$1] 
 address BKCmirror
-comment "Returns the head-mirror image of a BAT 
-	(two head columns).";
+comment "Returns the head-mirror image of a BAT (two head columns).";
 
-command convert(b:bat[:any$1,:any$2] ) 
-	:bat[:any$1,:any$2] 
+command convert(b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 
 address BKCconvert
-comment "Convert the contents of a BAT from 
-	little-endian to big-endian and vice versa.
-	 THIS command SHOULD NOT BE USED FROM MAL!
+comment "Convert the contents of a BAT from little-endian to big-endian 
+        and vice versa. THIS command SHOULD NOT BE USED FROM MAL!
 	DANGEROUS! DEBUGGING PURPOSES ONLY!";
 
-command order(b:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] 
+command order(b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCorder
 comment "Sorts the BAT itself, in place. ";
 
-command revert(b:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] 
+command revert(b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCrevert
-comment "Puts all BUNs in a BAT in reverse order.
-	(Belongs to the BAT sequence module)";
+comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the 
+        BAT sequence module)";
 
 @+ BAT properties
-@T
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
-These properties can be inspected with the {\tt info(BAT[:any,:any]) :bat[str,str] } c
-command:
-{\small
-\begin{verbatim}
+These properties can be inspected with the 
+@emph{info(BAT[:any,:any]) :bat[str,str] } command:
+@verbatim
 > car_age.info.print;
 #---------------------------------#
 # BAT:               tmp_31       #
@@ -126,38 +113,33 @@ command:
 [ "batPlevel",       "1"          ] # logical refcount (persistent part)
 [ "batSet",          "0"          ] # [head,tail] combinations are unique
 [ "batCopiedtodisk", "1"          ] # has been saved or not
-\end{verbatim}
-}
+@end verbatim
 
 Per column, a number of properties are kept. We only show the head-properties; the tail properties
-have the first character of their named replaced by 't' ({\tt sorted}, {\tt tdense}, etc.):
-{\small
-\begin{verbatim}
+have the first character of their named replaced by 't' (@emph{sorted}, @emph{tdense}, etc.):
+@verbatim
 [ "hsorted",         "1"          ] # column is known to be sorted
 [ "hdense",          "1"          ] # column is known to be densely ascended
-[ "hseqbase",        "0@0"        ] # if densely ascending (i.e. 0@0, 1@0, @,0, ...):first value
+[ "hseqbase",        "0@0"        ] # if densely ascending first value
 [ "hacctype",        "null"       ] # name of user-defined accelerator
-[ "hindex",          "absent"     ] # name of built-in accelerator:hash or index (T-tree)
-\end{verbatim}
-}
+[ "hindex",          "absent"     ] # built-in accelerator:hash or index 
+@end verbatim
 
 As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
-BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
-is present always. For each column type that is {\em variable-sized} - like {\tt str} - another
-heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search
-accelerator, more heaps may be present (({\tt haccelerator} and {\tt taccelerator}).
+BATs store their data in one to five heaps, of which at least one called @emph{batBuns}
+is present always. For each column type that is @emph{variable-sized} - like @emph{str} - another
+heap might be present (@emph{hheap} and @emph{theap}). If a column has a user-defined search
+accelerator, more heaps may be present ((@emph{haccelerator} and @emph{taccelerator}).
 
-{\small
-\begin{verbatim}
+@verbatim
 [ "batBuns.free",    "400004"     ] # occupied size in bytes
 [ "batBuns.size",    "400012"     ] # allocated size in bytes
 [ "batBuns.maxsize", "400012"     ] # reserver virtual memory in bytes
 [ "batBuns.storage", "malloced"   ] # malloced/mmap/priv
-\end{verbatim}
-}
+@end verbatim
 
 Properties steer the algorithms that Monet uses to execute algebra command. For instance,
-the {\tt find(bat[:any\$1,:any\$2] b, :any\$1) :any\$2} that looks up a tail value by head,
+the @emph{find(bat[:any$1,:any$2] b, :any$1) :any$2} that looks up a tail value by head,
 uses binary search if and only if the head column is sorted (in other cases, hash-lookup
 and scan are execution options).
 
@@ -166,150 +148,105 @@ properties on produced BATs. You can imagine that later on, this leads to additi
 bugs, as e,g, the binary search algorithms will yield erroneous results on a non-sorted
 sequence.
 
-[OBSOLETE]
-To make problem detection easier, the MIL interpreter contains property checking code,
-that is set with via the  {\tt debugmask(int)} command:
-\begin{description}
-\item[2] {\tt debugmask(debugmask() and 2)} causes that all properties on
-newly created BATs to be checked. You must realize that finding out that a column is sorted
-({\tt hsorted/tsorted}) costs a full scan, and finding out that it contains unique values
-({\tt hkeyed/tkeyed}) costs a full scan plus the creation of a full hash index. 
-\item[8] {\tt debugmask(debugmask() and 8)} causes that all properties on
-{\bf all} BATs handled by the MIL interpreter to be checked. This will catch all property errors.
-\end{description}
-
-By default, both bits in the {\tt debugmask} are off, which gives fastest performance.
-
 @mal
 command info ( b:bat[:any,:any]) :bat[:str,:str] 
 address BKCinfo
-comment "Produce a BAT containing info about a BAT 
-	in [attribute,value] format. It contains 
-	all properties of the BAT record. See the 
-	BAT documentation in GDK for more information.";
+comment "Produce a BAT containing info about a BAT in [attribute,value] format. 
+        It contains all properties of the BAT record. See the BAT documentation 
+        in GDK for more information.";
 
 command getCapacity(b:bat[:any,:any]):lng 
 address BKCgetCapacity
-comment "Returns the current allocation size (in 
-	max number of elements) of a BAT.";
+comment "Returns the current allocation size (in max number of elements) of a BAT.";
 
 command getHeadType(b:bat[:any,:any] ) :str 
 address BKCgetHeadType
-comment "Returns the type of the head column of 
-	a BAT, as an integer type number.";
+comment "Returns the type of the head column of a BAT, as an integer type number.";
 
 command getTailType( b:bat[:any,:any] ) :str 
 address BKCgetTailType 
-comment "Returns the type of the tail column of 
-	a BAT, as an integer type number.";
+comment "Returns the type of the tail column of a BAT, as an integer type number.";
 
 command getRole ( bid:bat[:any,:any] ) :str 
 address BKCgetRole
-comment "Returns the rolename of the head column 
-	of a BAT.";
+comment "Returns the rolename of the head column of a BAT.";
 
-command setKey( b:bat[:any$1,:any$2], mode:bit) 
-		:bat[:any$1,:any$2] 
+command setKey( b:bat[:any$1,:any$2], mode:bit) :bat[:any$1,:any$2] 
 address BKCsetkey
-comment "Sets the 'key' property of the head 
-	column to 'mode'. In 'key' mode, the kernel 
-	will silently block insertions that cause 
-	a duplicate entries in the head column.
-	 KNOWN BUG:when 'key' is set to TRUE, this 
-	function does not automatically eliminate 
-	duplicates. Use b := b.kunique;";
+comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
+        the kernel will silently block insertions that cause a duplicate 
+        entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 
+	function does not automatically eliminate duplicates. 
+        Use b := b.kunique;";
 
 command isaKey( b:bat[:any,:any]) :bit 
 address BKCgetKey
-comment "return whether the head column of a BAT 
-	is unique (key).";
+comment "return whether the head column of a BAT is unique (key).";
 
-command setSet( b:bat[:any$1,:any$2], mode:bit) 
-	:bat[:any$1,:any$2] 
+command setSet( b:bat[:any$1,:any$2], mode:bit) :bat[:any$1,:any$2] 
 address BKCsetSet
-comment "Sets the 'set' property on this BAT to 
-	'mode'. In 'set' mode, the kernel will 
-	silently block insertions that cause a 
-	duplicate BUN [head,tail] entries
-	in the BAT.
-	KNOWN BUG:when 'set' is set to TRUE, this 
-	function does not automatically
-	 eliminate duplicates. Use b := b.sunique;
-	 Returns the BAT itself.";
+comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, 
+        the kernel will silently block insertions that cause a duplicate 
+        BUN [head,tail] entries in the BAT.  KNOWN BUG:when 'set' is set 
+        to TRUE, this function does not automatically eliminate duplicates. 
+        Use b := b.sunique; Returns the BAT itself.";
 
 command isaSet( b:bat[:any,:any]) :bit 
 address BKCisaSet
 comment "return whether the BAT mode is set to unique.";
 
-command setAccess( b:bat[:any$1,:any$2], mode:str) 
-	:void
+command setAccess( b:bat[:any$1,:any$2], mode:str) :void
 address BKCsetAccess
 comment "Try to change the update access priviliges 
 	to this BAT. Mode:
 	 r[ead-only]      - allow only read access.
 	 a[append-only]   - allow reads and update.
 	 w[riteable]      - allow all operations.
-	BATs are updatable by default. On making 
-	a BAT read-only, all subsequent updates 
-	fail with an error message.Returns the 
-	BAT itself.";
-command access( b:bat[:any$1,:any$2], mode:int) 
-	:void
+	BATs are updatable by default. On making a BAT read-only, 
+        all subsequent updates fail with an error message.Returns 
+        the BAT itself.";
+command access( b:bat[:any$1,:any$2], mode:int) :void
 address BKCaccess;
 
-command setAppendMode( b:bat[:any$1,:any$2])
-		:void
+command setAppendMode( b:bat[:any$1,:any$2]) :void
 address BKCsetAppendMode
-comment "Change access privilige of BAT to 
-	append only";
+comment "Change access privilige of BAT to append only";
 
-command setReadMode( b:bat[:any$1,:any$2]) 
-	:void
+command setReadMode( b:bat[:any$1,:any$2]) :void
 address BKCsetReadMode
-comment "Change access privilige of BAT to 
-	read only";
+comment "Change access privilige of BAT to read only";
 
-command setWriteMode( b:bat[:any$1,:any$2])
-	:void
+command setWriteMode( b:bat[:any$1,:any$2]) :void
 address BKCsetWriteMode
-comment "Change access privilige of BAT to 
-	read and write";
+comment "Change access privilige of BAT to read and write";
 
 command getAccess( b:bat[:any,:any]):chr 
 address BKCgetAccess
-comment "return the access mode attached to 
-	this BAT as a character.";
+comment "return the access mode attached to this BAT as a character.";
 
 command hasAppendMode( b:bat[:any,:any]):bit 
 address BKChasAppendMode
-comment "return true if to this BAT is 
-	append only.";
+comment "return true if to this BAT is append only.";
 
 command hasWriteMode( b:bat[:any,:any]):bit 
 address BKChasWriteMode
-comment "return true if to this BAT is read 
-	and write.";
+comment "return true if to this BAT is read and write.";
 
 command hasReadMode( b:bat[:any,:any]):bit 
 address BKChasReadMode
-comment "return true if to this BAT is 
-	read only.";
+comment "return true if to this BAT is read only.";
 
 
 command getSequenceBase( b:bat[:void,:any]):oid 
 address BKCgetSequenceBase
-comment "Get the sequence base for the void 
-	column of a BAT.";
+comment "Get the sequence base for the void column of a BAT.";
 command getSequenceBase( b:bat[:oid,:any]):oid 
 address BKCgetSequenceBase;
 
-command setSequenceBase( b:bat[:void,:any$1], 
-		seqbase:oid):any
+command setSequenceBase( b:bat[:void,:any$1], seqbase:oid):any
 address BKCsetSequenceBase
-comment "Set the sequence base for the void 
-	column of a BAT.";
-command setSequenceBase( b:bat[:oid,:any$1], 
-	seqbase:oid):any
+comment "Set the sequence base for the void column of a BAT.";
+command setSequenceBase( b:bat[:oid,:any$1], seqbase:oid):any
 address BKCsetSequenceBase;
 
 command setSorted(b:bat[:any,:any]) :bit 
@@ -327,102 +264,71 @@ command getBatSize(b:bat[:any,:any]) :str
 address BKCbatsize_str;
 command getBatSize(b:bat[:any,:any]) :int 
 address BKCbatsize
-comment "A version of BATsize that does 
-	not require loading the BAT.";
+comment "A version of BATsize that does not require loading the BAT.";
 
 @- BAT updates
 Update commands come in many disguises.  Note that we don;t return
 the BAT id, but merely a success/failure code.
 @mal
-command insert(b:bat[:any$1,:oid], 
-		src:bat[:any$1,:void])
-	:bat[:any$1,:any$2] 
+command insert(b:bat[:any$1,:oid], src:bat[:any$1,:void]) :bat[:any$1,:any$2] 
 address BKCinsert_bat
-comment "Insert all BUNs of the second BAT 
-	into the first. This case should be 
-	removed, because it is a hack for SQL";
+comment "Insert all BUNs of the second BAT into the first. This case 
+        should be removed, because it is a hack for SQL";
 
-command insert(b:bat[:any$1,:any$2], 
-		src:bat[:any$1,:any$2])
-		:void 
+command insert(b:bat[:any$1,:any$2], src:bat[:any$1,:any$2]) :void 
 address BKCinsert_bat
-comment "Insert all BUNs of the second BAT 
-	into the first.";
+comment "Insert all BUNs of the second BAT into the first.";
 
-command insert(b:bat[:any$1,:any$2], 
-		h:any$1, t:any$2) :void 
+command insert(b:bat[:any$1,:any$2], h:any$1, t:any$2) :void 
 address BKCinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
-command insert(b:bat[:void,:any$2], 
-		h:oid, t:any$2) :void 
+command insert(b:bat[:void,:any$2], h:oid, t:any$2) :void 
 address BKCinsert_bun;
 
-command insert(b:bat[:void,:any$1],
-		v:any$1):void 
+command insert(b:bat[:void,:any$1], v:any$1):void 
 address BKCinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
-command replace(b:bat[:any$1, :any$2], 
-		src:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2] 
+command replace(b:bat[:any$1, :any$2], src:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCreplace_bat
-comment "Perform replace for all BUNs of 
-	the second BAT into the first.";
+comment "Perform replace for all BUNs of the second BAT into the first.";
 
-command replace(b:bat[:any$1, :any$2], 
-		h:any$1, t:any$2) :void
+command replace(b:bat[:any$1, :any$2], h:any$1, t:any$2) :void
 address BKCreplace_bun
-comment "Replace the tail value of one BUN 
-	that has some head value.";
-command replace(b:bat[:void, :any$2], 
-		h:oid, t:any$2) :void
+comment "Replace the tail value of one BUN that has some head value.";
+command replace(b:bat[:void, :any$2], h:oid, t:any$2) :void
 address BKCreplace_bun;
 
 # The SQL append/replace commands
 
-command append( i:bat[:oid,:any$1],
-		u:bat[:oid,:any$1])
-	:bat[:oid,:any$1]
+command append( i:bat[:oid,:any$1], u:bat[:oid,:any$1]) :bat[:oid,:any$1]
 address BKCoid_bat_append_oid_bat_wrap
-comment "append the content of u to i 
-	(renumbers u-oids' to unique numbers)";
+comment "append the content of u to i (renumbers u-oids' to unique numbers)";
 
-command append(i:bat[:oid,:any$1], 
-		u:any$1):bat[:oid,:any$1]
+command append(i:bat[:oid,:any$1], u:any$1):bat[:oid,:any$1]
 address BKCoid_bat_append_val_wrap
 comment "append the value u to i";
 
-command append( i:bat[:void,:any$1], 
-		u:bat[:void,:any$1] )
-	:bat[:void,:any$1]
+command append( i:bat[:void,:any$1], u:bat[:void,:any$1] ) :bat[:void,:any$1]
 address BKCbat_append_void_bat_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any$1], 
-		u:bat[:oid,:any$1])
-	:bat[:void,:any$1]
+command append( i:bat[:void,:any$1], u:bat[:oid,:any$1]) :bat[:void,:any$1]
 address BKCbat_append_oid_bat_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any$1], 
-		u:any$1)
-	:bat[:void,:any$1]
+command append( i:bat[:void,:any$1], u:any$1) :bat[:void,:any$1]
 address BKCbat_append_val_wrap
 comment "append the value u to i";
 
-command append(i:bat[:oid,:void], 
-		u:bat[:oid,:void])
-	:bat[:oid,:void]
+command append(i:bat[:oid,:void], u:bat[:oid,:void]) :bat[:oid,:void]
 address BKCbat_append_oidvoid_bat_wrap
-comment "Special case append for empty bats,
-	 works around impossible void,void case";
+comment "Special case append for empty bats, works around impossible 
+        void,void case";
 
-command replace( o:bat[:void,:any$1], 
-		d:bat[:oid,:any$1])
-	:bat[:void,:any$1]
+command replace( o:bat[:void,:any$1], d:bat[:oid,:any$1]) :bat[:void,:any$1]
 address BKCbat_replace_oid_bat_wrap
-comment "inplace replace values on the 
-	given locations";
+comment "inplace replace values on the given locations";
 
 #end SQL enhancement
 @-
@@ -437,24 +343,18 @@ Therefore it is moved to the bbp module
 #command destroy(s:str,immediately:bit):void 
 #address BKCdestroy_bat
 #comment "Schedule bat for removal upon session 
-	#commit";
 
-command delete(b:bat[:any$1, :any$2], 
-		h:any$1, t:any$2) :void 
+command delete(b:bat[:any$1, :any$2], h:any$1, t:any$2) :void 
 address BKCdelete_bun
 comment "Delete one specific BUN.";
 
-command delete(b:bat[:void, :any$2], 
-		h:oid, t:any$2) :void 
+command delete(b:bat[:void, :any$2], h:oid, t:any$2) :void 
 address BKCdelete_bun;
 
-command delete(b:bat[:any$1, :any$2], 
-		h:any$1) :void 
+command delete(b:bat[:any$1, :any$2], h:any$1) :void 
 address BKCdelete_head
-comment "Delete all BUNs with a certain head 
-	value.";
-command delete(b:bat[:void, :any$2], 
-		h:oid) :void 
+comment "Delete all BUNs with a certain head value.";
+command delete(b:bat[:void, :any$2], h:oid) :void 
 address BKCdelete_head;
 
 command clear(b:bat[:any$1, :any$2]) :void 
@@ -465,40 +365,32 @@ command delete(b:bat[:any$1, :any$2]) :void
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
-command delete(b:bat[:any$1, :any$2], 
-		src:bat[:any$1,:any])
-	:void 
+command delete(b:bat[:any$1, :any$2], src:bat[:any$1,:any]) :void 
 address BKCdelete_bat_head
-comment "Delete from the first BAT all BUNs 
-	with a head value that is in the 
-	second.";
+comment "Delete from the first BAT all BUNs with a head value that 
+        is in the second.";
 
-command deleteBuns(b:bat[:any$1, :any$2], 
-		src:bat[:any$1,:any$2])
-	:void 
+command deleteBuns(b:bat[:any$1, :any$2], src:bat[:any$1,:any$2]) :void 
 address BKCdelete_bat_bun
-comment "Delete from the first BAT all BUNs 
-	with a corresponding BUN in the second.";
+comment "Delete from the first BAT all BUNs with a corresponding BUN 
+        in the second.";
 
-command getAlpha(b:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2] 
+command getAlpha(b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCgetAlpha
 comment "Obtain the list of BUNs added";
-command getDelta(b:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2] 
+command getDelta(b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCgetDelta
 comment "Obtain the list of BUNs deleted";
 @- BAT I/O, Persistency
-@T
 The BAT Buffer Pool (BBP) manages all known BATs. It administers
 their logical and physical names and a reference count. BATs can
-either be {\em persistent} or {\em transient}. The BBP also manages
+either be @emph{persistent} or @emph{transient}. The BBP also manages
 swapping on a BAT level:a BAT is either loaded entirely or not.
-MAL variables of type {\tt bat} can either be loaded or not. When
+MAL variables of type @emph{bat} can either be loaded or not. When
 the Monet server is started, all BATs are swapped out. If an unloaded
 bat-variable is used as an operand in a command, it is automatically
 loaded.  The BBP applies a simple but effective LRU based swapping
-algorithm. BATs have a {\em heat}, which drops over time, and is
+algorithm. BATs have a @emph{heat}, which drops over time, and is
 increased when a BAT is used by some command.  If the size of the
 allocated arena gets to be large, BATs may be swapped out.
 
@@ -506,8 +398,7 @@ Note, we should move old-fashioned mil operator definitions
 into a separate module.
 
 @mal
-command setName ( b:bat[:any$1,:any$2] , 
-		s:str) :void
+command setName ( b:bat[:any$1,:any$2] , s:str) :void
 address BKCsetName
 comment "Give a logical name to a BAT. ";
 
@@ -515,21 +406,15 @@ command getName ( b:bat[:any,:any]) :str
 address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
-command setRole( b:bat[:any$1,:any$2], 
-		h:str, t:str) :void
+command setRole( b:bat[:any$1,:any$2], h:str, t:str) :void
 address BKCsetRole
-comment "Give a logical name to the columns of 
-	a BAT.";
+comment "Give a logical name to the columns of a BAT.";
 
-command setColumn( b:bat[:any$1,:any$2],
-		t:str)
+command setColumn( b:bat[:any$1,:any$2], t:str)
 	:void
 address BKCsetColumn
-comment "Give a logical name to the tail column 
-	of a BAT.";
-command setColumn( b:bat[:any$1,:any$2],
-		h:str, t:str)
-	:void
+comment "Give a logical name to the tail column of a BAT.";
+command setColumn( b:bat[:any$1,:any$2], h:str, t:str) :void
 address BKCsetColumns
 comment "Give both columns of a BAT a new name.";
 
@@ -549,20 +434,17 @@ address BKCpersists
 comment "Backward compatibility";
 command setPersistent( b:bat[:any,:any]) :bit 
 address BKCsetPersistent
-comment "Make the BAT persistent.  Returns 
-	boolean which indicates if the
-BAT administration has indeed changed.";
+comment "Make the BAT persistent.  Returns boolean which indicates 
+        if the BAT administration has indeed changed.";
 
 command save(nme:bat[:any,:any]) :bit 
 address BKCsave2;
 
 command save(nme:str) :bit 
 address BKCsave
-comment "Save a BAT to storage, if it was 
-	loaded and dirty.  Returns whether 
-	IO was necessary.  Please realize that 
-	calling this function violates the 
-	atomic commit protocol!!";
+comment "Save a BAT to storage, if it was loaded and dirty.  
+        Returns whether IO was necessary.  Please realize that 
+	calling this function violates the atomic commit protocol!!";
 
 
 command load(name:str) :bat[:any,:any] 
@@ -571,9 +453,8 @@ comment "Load a particylar bat from disk";
 
 command unload(name:str) :bit 
 address BKCunload
-comment "Swapout a BAT to disk. Transient BATs 
-	can also be swapped out. Returns 
-	whether the unload indeed happened. ";
+comment "Swapout a BAT to disk. Transient BATs can also be swapped out.     
+        Returns whether the unload indeed happened. ";
 
 command isCached(b:bat[:any,:any]):bit 
 address BKCisCached
@@ -581,9 +462,8 @@ comment "Bat is stored in main memory.";
 
 command setHot(name:str) :void 
 address BKChot
-comment "Makes a BAT very hot for the BBP. The 
-	chance of being chosen for swapout is 
-	small, afterwards.  Returns the BAT itself.";
+comment "Makes a BAT very hot for the BBP. The chance of being chosen for 
+        swapout is small, afterwards.  Returns the BAT itself.";
 
 command heat(name:str) :lng 
 address BKCheat
@@ -591,9 +471,8 @@ comment "Return the current BBP heat (LRU stamp)";
 
 command setCold(nme:str) :void 
 address BKCcold
-comment "Makes a BAT very cold for the BBP. The 
-	chance of being choses for swapout is big,
-	afterwards.  Returns the BAT itself.";
+comment "Makes a BAT very cold for the BBP. The chance of being choses 
+        for swapout is big, afterwards.  Returns the BAT itself.";
 
 command setCold(b:bat[:any,:any]) :void 
 address BKCcoldBAT;
@@ -601,116 +480,94 @@ command setHot(b:bat[:any,:any]) :void
 address BKChotBAT;
 
 @- Heap Specific Commands
-@T
 BATs are stored in memory in a number of Heap objects. A heap is nothing
 more than a contiguous range of memory. Bats are saved to disk by just writing
 away their image. This approach without pointer swizzling makes it possible
-to either load an image into an alloced range of memory (STORE\_MEM), or
-memory-map (STORE\_MMAP) an image into virtual memory.
+to either load an image into an alloced range of memory (STORE_MEM), or
+memory-map (STORE_MMAP) an image into virtual memory.
 
-The heap images of a BAT are stored in the {\tt $MONETHOME/dbfarm/$DB/bat/}
+The heap images of a BAT are stored in the @emph{$MONETHOME/dbfarm/$DB/bat/}
 directory.  For each bat X, the following heaps are stored:
-\begin{description}
-\item[X.buns] an array with all the fixed-size parts of all BUNs.
-\item[X.hheap] if the head column contains a variable sized atoms (e.g. str),
+@table @code
+@item[X.buns] 
+    an array with all the fixed-size parts of all BUNs.
+@item[X.hheap] 
+    if the head column contains a variable sized atoms (e.g. str),
 then the fixed-size part of a BUN contains an integer byte-offset into
 the heap. String values themself are stored in this the X.hheap.
-\item[X.theap] similar to X.hheap, but for the tail column.
-\item[X.hacc]. On each column, you might create {\em persistent accelerator
+@item[X.theap] 
+    similar to X.hheap, but for the tail column.
+@item[X.hacc]. 
+    On each column, you might create @emph{persistent accelerator
 structures}. Monet has two built-in accelerators (index and hash), but they
 are normally constructed on the fly. They are transient. Only hash-tables
 you can be made persistent. User-defined accelerators are always persistent.
 Only one persistent accelerator can exist per head column. It is stored in
 the X.hacc heap.
-\item[X.tacc] similar to X.hacc, but for the tail column.
-\end{description}
+@item[X.tacc] 
+    similar to X.hacc, but for the tail column.
+@item[X.desc] 
+the BAT descriptor. Stores most of the properties of a BAT.
+@end table
 
-Each of these heaps can be {\bf compressed} using the Unix {\tt compress}
+Each of these heaps can be compressed using the Unix @emph{compress}
 utility forming a X.ext.Z file. Monet will automatically decompress it
 upon load. Compressed heaps cannot be memory mapped.
 
-A final file present for each t in the BAT directory is:
-\begin{description}
-\item[X.desc] the BAT descriptor. Stores most of the properties of a BAT.
-\end{description}
 @
 For more technical information on BATs, we refer to the
 @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
 documentation.
 @mal
-command mmap(b:bat[:any,:any], 
-		buns_mode:int, 
-		hheap_mode:int, 
-		theap_mode:int,
-		hacc_mode:int, 
-		tacc_mode:int) 
-	:bit 
+command mmap(b:bat[:any,:any], buns_mode:int, hheap_mode:int, 
+		theap_mode:int, hacc_mode:int, tacc_mode:int) :bit 
 address BKCmmap
-comment "For each individual heap, you can 
-	change the allocation mode to either 
-	STORE_MEM or STORE_MMAP. Passing an 
-	int(nil) means:no change.  Changing a 
-	dirty STORE_MEM heap into STORE_MMAP, 
-	will cause a BAT save (this has to 
-	happen before the heap can be mapped 
-	into virtual memory). These modes are 
-persistent. ";
+comment "For each individual heap, you can change the allocation mode 
+        to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:
+        no change.  Changing a dirty STORE_MEM heap into STORE_MMAP, 
+	will cause a BAT save (this has to happen before the heap can 
+        be mapped into virtual memory). These modes are persistent. ";
 
 command mmap(b:bat[:any,:any], mode:int):bit 
 address BKCmmap2
-comment "Alias for mmap(b,mode,mode,mode,
-	mode,mode)";
+comment "Alias for mmap(b,mode,mode,mode, mode,mode)";
 
-command madvise(b:bat[:any,:any], 
-		buns_mode:int, 
-		hheap_mode:int, 
-		theap_mode:int,
-		hacc_mode:int, 
-		tacc_mode:int) 
-	:bit 
+command madvise(b:bat[:any,:any], buns_mode:int, hheap_mode:int, 
+		theap_mode:int, hacc_mode:int, tacc_mode:int) :bit 
 address BKCmadvise
-comment "Modern Operating Systems allow users 
-	to influence the buffer management
-	policy of virtual memory. This is a 
-	crucial feature for database systems,
-	and eliminates the need to reimplement 
-	the OS in a database buffer manager.
-	The supported flags are BUF_NORMAL 
-	(the normal adaptive kernel algorithm),
+comment "Modern Operating Systems allow users to influence the buffer 
+        management policy of virtual memory. This is a crucial feature 
+        for database systems, and eliminates the need to reimplement 
+	the OS in a database buffer manager.  The supported flags are 
+        BUF_NORMAL (the normal adaptive kernel algorithm),
 	BUF_RANDOM (no page prefetching), 
 	BUF_SEQUENTIAL (prefetch and swapout),
 	BUF_WILLNEED (load everything with prefetch), 
 	BUF_DONTNEED (swapout).
-	These buffer management modes are not 
-	persistent. 
+	These buffer management modes are not persistent. 
 	Returns the BAT operated upon.";
 
-command madvise(b:bat[:any,:any], 
-		mode:int):bit 
+command madvise(b:bat[:any,:any], mode:int):bit 
 address BKCmadvise2
-comment "alias for madvise(b,mode,mode,mode,
-	mode,mode)";
+comment "alias for madvise(b,mode,mode,mode, mode,mode)";
 
 @- BAT Accelerators
-@T
 [WILL BECOME OBSOLETE]
 Search accelerators are datastructures that are used to speed up
 access to data in BATs. Monet comes with the builtin accelerators
-{\tt index}, meaning binary tree index, and {\tt hash} meaning
+@emph{index}, meaning binary tree index, and @emph{hash} meaning
 bucket-chained hash table. The extension facilities of Monet allow
-more accelerators to be defined by users. Exanples are the {\tt rtree}
-and {\tt datavector}.
+more accelerators to be defined by users. Exanples are the @emph{rtree}
+and @emph{datavector}.
 
-{\small
-\begin{verbatim}
+@verbatim
 >monet_acctbl.print;
 #-------------------------#
 # h             | t       #
 #-------------------------#
 [ "hash",         1       ]
 [ "index",        2       ]
-\end{verbatim}
-}
+@end verbatim
 @
 More info on how to write new search accelerators can be found in the
 @[<a href="../mel.html">MEL documentation</a>@.
@@ -727,20 +584,16 @@ address BKCaccbuild
 comment "like accbuild(bat[:any,:any] b, int acctype), but with a parameter that
  is provide to the specific accelerator build routine.";
 
-command accdestroy(b:bat[:any,:any], 
-	acctype:int) 
+command accdestroy(b:bat[:any,:any], acctype:int) 
 address BKCaccdestroy
-comment "Destroy the accelerator of type 
-	'acctype'  that is present on
+comment "Destroy the accelerator of type 'acctype'  that is present on
 	the head-type of b.";
 
 command accpresent(b:bat[:any,:any] ) :int 
 address BKCaccpresent
-comment "Returns the accelerator type of the 
-	*persistent* accelerator present on 
-	the head column of b. Note that index 
-	and hash accelerators are generally 
-	*not* persistent, and will not be 
+comment "Returns the accelerator type of the *persistent* accelerator 
+        present on the head column of b. Note that index and hash 
+        accelerators are generally *not* persistent, and will not be 
 	returned by this function!";
  
 command hasHash(b:bat[:any,:any]):bit 

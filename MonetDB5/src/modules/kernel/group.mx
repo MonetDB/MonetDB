@@ -19,7 +19,6 @@
 @a M.L. Kersten, P. Boncz, A.P. de Vries
 @v 2.3
 @* The group module
-@T
 This module contains the primitives to construct, derive, and
 perform statistical operations on BATs representing groups.
 The default scheme in Monet is to assume the head to represent
@@ -42,7 +41,7 @@ the sub-group mapping. They can be used for various optimization
 schemes at the MAL level.
 
 The prime limitation of the current implementation is that an
-underlying database of {oid->any} BATs is assumed.
+underlying database of @{oid->any@} BATs is assumed.
 This enables representation of each group using an oid,
 and the value representation of the group can be accordingly be
 retrieved easily. An optimized implementation in which we use positional
@@ -51,101 +50,85 @@ integer id's (as embodied by Monet's void type) is also available.
 This limitation on (v)oid-headers is marginal. The primitive GRPsplit
 produces for any BAT two copies with both a (v)oid header.
 @+ Algorithms
-@T
 There are several approaches to build a cross table. The one chosen here
 is aimed at incremental construction, such that re-use of intermediates
 becomes possible. Starting with the first dimension, a BAT is derived to
-represent the various groups, called a {\bf GRP BAT} or cross-table BAT.
+represent the various groups, called a @emph{GRP BAT} or cross-table BAT.
 
 @- Cross Table (GRP)
-@T
 A cross table is an <oid,oid> BAT where the first (head) denotes a tuple in
 the cross table and the second (tail) marks all identical lists.
-The tail-oids contain group identifiers; that is, {\em this value is equal
-{\bf iff} two tuples belong to the same group}. The group identifiers are
+The tail-oids contain group identifiers; that is, @emph{this value is equal
+@strong{iff} two tuples belong to the same group}. The group identifiers are
 chosen from the domain of the tuple-identifiers. This simplifies
 getting back to the original tuples, when talking about a group.
 If the tuple-oid of 'John' is chosen as a group-id, you might view this
 as saying that each member of the group is 'like John' with respect
 to the grouping-criterion.
 
-@- going deeper
-@T
+@- 
 Successively the subgroups can be identified by modifying the GRP BAT or
 to derive a new GRP BAT for the subgroups. After all groups have been
 identified this way, a BAT histogram operation can be used to obtain
 the counts of each data cube. Other aggregation operations using the MIL
-set aggregate construct \{X\}(bat) (see the
+set aggregate construct @{X@}(bat) (see the
 @[<a href="../mil.body.html#mod_3_2_0">MIL Reference Manual</a>@) 
-can be used as well; note for instance that histogram == \{count\}(b.reverse).
+can be used as well; note for instance that histogram == @{count@}(b.reverse()).
 
-@* Module Definition
 The Monet interface module specification is shown below.
 Ideally we should defined stronger type constraints, e.g.
-command group(attr:bat[{void,oid},:any$1]
+command group(attr:bat[@{void,oid@},:any$1]
 
 @mal
 module group;
 
-command group(b:bat[:any$1,:any], start:int, 
-	incr:int, grpsize:int):bat[:any$1,:int] 
+command group(b:bat[:any$1,:any], start:int, incr:int, grpsize:int)
+            :bat[:any$1,:int] 
 address GRPgroup0
-comment "Produces a new BAT with identical head 
-	 column, and in the tail column groups of
-	 equally valued integers within each group.
-	 Parameters: a start group value, group 
-	 number increment, group size.";
+comment "Produces a new BAT with identical head column, and in the tail 
+        column groups of equally valued integers within each group. 
+        Parameters: a start group -value, -number increment, -size.";
 
 
 command group(attr:bat[:any$2,:any$1] )
 	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) 
 address GRPgroup
-comment "Cross tabulation group initialization.
-         Returned head values are identical as 
-	 in 'attr'. Tail values are from the same 
-	 domain and indicate unique groups in 
-	 'attr' tail column.";
-command group(attr:bat[:any$2,:any$1] )
-	:bat[:any$2,:oid] 
+comment "Cross tabulation group initialization. Returned head values 
+        are identical as in 'attr'. Tail values are from the same 
+	domain and indicate unique groups in 'attr' tail column.";
+command group(attr:bat[:any$2,:any$1] ) :bat[:any$2,:oid] 
 address GRPgroup2;
 
 command group(attr:bat[:any$2,:any$1], N:int, rng:int)
 	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) 
 address GRPgroup_custom
-comment "Cross tabulation group initialization like 
-	 GRPgroup, but with user provided #bits in 
-	 hashmask and #distinct values in range.";
+comment "Cross tabulation group initialization like GRPgroup, but with 
+        user provided #bits in hashmask and #distinct values in range.";
 
 command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
 	(map:bat[:any$1,:oid],grp:bat[:any$2,:oid]) 
 address GRPderive
-comment "Cross tabulation group extension step.
-         Returned head values are identical as 
-	 in 'ct'. Tail values are from the same 
-	 domain and indicate further refinement 
-	 of the groups in 'ct', taking into account 
-	 also the tail-values in 'attr'.";
+comment "Cross tabulation group extension step.  Returned head values are 
+        identical as in 'ct'. Tail values are from the same domain and 
+        indicate further refinement of the groups in 'ct', taking into 
+        account also the tail-values in 'attr'.";
 command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
 	:bat[:any$2,:oid] 
 address GRPderive2;
 
-command regroup(ct:bat[:any$2,:oid],
-		attr:bat[:any$2,:any]) :bat[:any$2,:oid] 
+command regroup(ct:bat[:any$2,:oid], attr:bat[:any$2,:any]):bat[:any$2,:oid] 
 address GRPregroup
 comment "Performs a regrouping, modifying ct doing a group";
 
-command refine(b:bat[:any$2,:any], 
-		a:bat[:any$2,:any]) 
-	:bat[:any$2,:oid] 
+command refine(b:bat[:any$2,:any], a:bat[:any$2,:any]) :bat[:any$2,:oid] 
 address GRPrefine
-comment "refine the ordering of a tail-ordered 
-	 BAT by sub-ordering on the values of a 
-	 second bat 'a' (where the heads of a and 
-	 b match 1-1).  The effect of this is similar 
-	 to (hash-based) GRPderive, with the distinction 
-	 that the group ids respect the ordering 
-	 of the group values.";
+comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
+        values of a second bat 'a' (where the heads of a and b match 1-1).
+        The effect of this is similar to (hash-based) GRPderive, with the 
+        distinction that the group ids respect the ordering of the group 
+        values.";
 @-
+@{
 histogram support. during group computation we already compute histograms
 for quick re-use. They are attached to the GRP by means of a histolink.
 oldstuff
@@ -157,7 +140,7 @@ address GRPsubhisto
 comment "optimized sub-histogram for synced 
 	 grp[:void,:oid] and sel[:void,:bit]
          bats on a previously known domain ";
-
+@}
 @+ Group Aggregate operations
 
 This module also contains some efficient aggregate functions over
@@ -171,86 +154,58 @@ most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @mal
 
-command sum(b:bat[:any$2,:sht], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:sht] 
+command sum(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] 
 address GRPsum_sht
 comment "grouped tail sum";
-command sum(b:bat[:any$2,:int], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:int] 
+command sum(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] 
 address GRPsum_int
 comment "grouped tail sum";
-command sum(b:bat[:any$2,:lng], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:lng] 
+command sum(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] 
 address GRPsum_lng
 comment "grouped tail sum";
-command sum(b:bat[:any$2,:flt], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:flt] 
+command sum(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] 
 address GRPsum_flt
 comment "grouped tail sum";
-command sum(b:bat[:any$2,:dbl], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:dbl] 
+command sum(b:bat[:any$2,:dbl], e:bat[:any$2,:any]) :bat[:any$2,:dbl] 
 address GRPsum_dbl
 comment "grouped tail sum";
 
-command avg(b:bat[:any$2,:sht], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:sht] 
+command avg(b:bat[:any$2,:sht], e:bat[:any$2,:any]) :bat[:any$2,:sht] 
 address GRPavg_sht
 comment "grouped tail average";
-command avg(b:bat[:any$2,:int], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:int] 
+command avg(b:bat[:any$2,:int], e:bat[:any$2,:any]) :bat[:any$2,:int] 
 address GRPavg_int
 comment "grouped tail average";
-command avg(b:bat[:any$2,:lng], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:lng] 
+command avg(b:bat[:any$2,:lng], e:bat[:any$2,:any]) :bat[:any$2,:lng] 
 address GRPavg_lng
 comment "grouped tail average";
-command avg(b:bat[:any$2,:flt], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:flt] 
+command avg(b:bat[:any$2,:flt], e:bat[:any$2,:any]) :bat[:any$2,:flt] 
 address GRPavg_flt
 comment "grouped tail average";
-command avg(b:bat[:int,:dbl], 
-		e:bat[:int,:any]) 
-		:bat[:int,:dbl] 
+command avg(b:bat[:int,:dbl], e:bat[:int,:any]) :bat[:int,:dbl] 
 address GRPavg_dbl
 comment "grouped tail average";
 
-command min(b:bat[:any$2,:any$1], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:any$1] 
+command min(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] 
 address GRPmin
 comment "grouped tail minimum";
-command max(b:bat[:any$2,:any$1], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:any$1] 
+command max(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] 
 address GRPmax
 comment "grouped tail maximum";
 
-command count(b:bat[:any$2,:any], 
-		e:bat[:any$2,:any], 
-		nonils:bit) :bat[:any$2,:int] 
+command count(b:bat[:any$2,:any], e:bat[:any$2,:any], nonils:bit) :bat[:any$2,:int] 
 address GRPaggr_count
 comment "grouped count";
-command size(b:bat[:any$2,:bit], 
-		e:bat[:any$2,:any]) 
-		:bat[:any$2,:int] 
+command size(b:bat[:any$2,:bit], e:bat[:any$2,:any]) :bat[:any$2,:int] 
 address GRPsize
 comment "grouped count of true values";
 
 
+@{
 command prelude()
 address GRPprelude;
 prelude();
 @-
-@{
 @-
 old stuff
     proc size(bat[:any,bit] b) :int {
@@ -507,7 +462,6 @@ CTtunique(
 }
 
 @+ Core Grouping Algorithms
-@T
 We use hash-grouping all the way. This implementation employs
 a simple sequential scan through the operands, adding group
 values to a hash-table. This hash-table gives access to the group
@@ -516,7 +470,7 @@ identifiers, which are always OIDs.
 This strategy is also followed on binary groupings; here 
 we construct a special integer consisting of the XORed hashnumber 
 of both columns. In such a way, we can build a hash table on
-map\_entries (instead of simple atomic values -- the unary case).
+map_entries (instead of simple atomic values -- the unary case).
 
 In the unary group case, we optimized processing on 1-byte
 and 2-byte values by using direct mapping in an array instead of 
@@ -636,21 +590,24 @@ BAT *map2histo(BAT *map) {
 	return map;
 }
  
-@T
+@-
 The group macro is split along three dimensions:
-\begin{description}
-\item [type:] Type specific implementation for selecting the right
+@table
+@item [type:] 
+Type specific implementation for selecting the right
 hash function and data size etc.;
-\item [clustered:] The \{clustered and unclustered\} select the
+@item [clustered:] 
+The @{clustered and unclustered@} select the
 appropriate algorithm, i.e., with or without taking advantage of 
 an order of values in the parent groups;
-\item [physical properties:] Values \{standard and custom\}, 
+@item [physical properties:] 
+Values @{standard and custom@}, 
 choosing between a fixed predefined and a custom hashmask. Custom
 allows the user to determine the size of the hashmask (and indirectly 
 the estimated size of the result). The hashmask is $2^n - 1$ where $n$ 
 is given by the user, or 1023 otherwise, and the derived result
 size is $4 \cdot 2^n$.
-\end{description}
+@end table
 
 Further research should point out whether fitting a simple statistical 
 model (possibly a simple mixture model) can help choose these parameters 
