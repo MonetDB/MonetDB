@@ -1114,6 +1114,8 @@ int MT_alloc_register(void *addr, size_t size, char mode) {
                 for(i=0; i<=size; i++)
                         MT_alloc_map[base+i] = (MT_alloc_map[base+i]&128) | mode;
         }
+#else
+	(void) addr; (void) size; (void) mode;
 #endif
         return 0;
 }
