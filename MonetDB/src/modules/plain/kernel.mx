@@ -669,6 +669,7 @@ int CMDkill(Cntxt stk, YYSTREE lt, ValPtr res){
 
 int CMDfork(Cntxt stk, YYSTREE lt, ValPtr res){
 	Client c;
+
 	@:builtin_args(1)@;
 	if (monet_singlethreaded) {
 		GDKerror("fork: cannot execute in -single mode.\n");
@@ -683,7 +684,7 @@ to different clients.  Schedule the background request.
         res->vtype = TYPE_int;
         res->val.ival = c->stk;
         c->tree = lt->yysons[0];
-        QMwakeup(QMenqueue(c->stk,lt->yysons[0],0,(int)(c-monet_clients)));
+        QMwakeup(QMenqueue(c->stk,c->tree,0,(int)(c-monet_clients)));
         lt->yysons[0] = NULL;
  
         return 1;
