@@ -545,32 +545,32 @@ def output(tree, cwd, topdir):
     fd = open(cwd+os.sep+'Makefile.msc',"w")
 
     fd.write('''
-  ## Use: nmake -f makefile.msc install
+## Use: nmake -f makefile.msc install
 
-  # Change this to wherever you want to install the DLLs. This directory
-  # should be in your PATH.
-  BIN = C:\\bin
+# Change this to wherever you want to install the DLLs. This directory
+# should be in your PATH.
+BIN = C:\\bin
 
-  ################################################################
+################################################################
 
-  # Nothing much configurable below
+# Nothing much configurable below
 
-  # cl -? describes the options
-  CC = cl -GF -W3 -MD -nologo -Zi -G6
-  # optimize use -Ox
+# cl -? describes the options
+CC = cl -GF -W3 -MD -nologo -Zi -G6
+# optimize use -Ox
 
-  # No general LDFLAGS needed
-  LDFLAGS = /link
-  INSTALL = copy
-  MKDIR = mkdir
-  ECHO = echo
-  CD = cd
+# No general LDFLAGS needed
+LDFLAGS = /link
+INSTALL = copy
+MKDIR = mkdir
+ECHO = echo
+CD = cd
 
-  CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
 
-  CXXEXT = \\\"cxx\\\"
+CXXEXT = \\\"cxx\\\"
 
-  ''')
+''')
 
     msc = {}
     msc['BUILT_SOURCES'] = []
