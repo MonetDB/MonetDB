@@ -148,13 +148,19 @@ int CLKepilogue(){
 
 
 int CMDsleep(int *secs){
+
         if (*secs < 0) {
                 GDKerror("sleep: negative delay\n");
         	return GDK_FAIL;
         } else {
+		sleep(*secs);
+/*
 		MT_Sema s = CLKalarm(*secs+time(0), 0);
+		(void)CLKprelude();
                 MT_down_sema(s, "CLKsleep"); /* block on this */
+/*
 		MT_destroy_sema(s);
+*/
         }
         return GDK_SUCCEED;
 }
