@@ -99,6 +99,12 @@ command trace(flag:bit):void = MAPItrace
 extern void traceClient(str nme, int flag);
 
 #define SOCKPTR struct sockaddr *
+#if HAVE_SOCKLEN_T
+#define SOCKLEN socklen_t
+#else
+#define SOCKLEN int
+#endif
+
 
 static int mapiSpy= 1;
 
@@ -110,7 +116,7 @@ void MAPIlistenThread(int sock)
 		printf("wait for next connection\n");
 		fflush(stdout);
 #endif
-       		msgsock = accept(sock, (SOCKPTR) 0, (size_t *)0);
+       		msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *)0);
 		if (msgsock == -1) {
 			if (MT_geterrno() != EINTR) {
 				GDKsyserror("monetServer: accept failed\n");
@@ -207,7 +213,7 @@ Get the new information for the server socket and start listening.
 	listen(sock, *maxusers); 
 
 	if( MT_create_thread((MT_Id *)&pid, 
-		(void (*)(void *))MAPIlistenThread, (void*) sock) <0){
+		(void (*)(void *))MAPIlistenThread, & sock) <0){
 		return throwMessage("mapi.listen", "starting thread failed");
 	}
 #ifdef DEBUG_MAPI

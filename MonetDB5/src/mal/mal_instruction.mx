@@ -148,6 +148,9 @@ typedef struct{
 #define TYPE_BIND	        2
 #define TYPE_FIXED              4
 
+/* all functions return a string */
+typedef str (*MALfcn)();
+
 typedef struct {
 	short	token;		/* instruction type */
 	short	barrier;	/* Begin-end of block indicator*/
@@ -165,10 +168,10 @@ and the total time spent while executing the instruction.
 	long	counter;
 	long	ticks;		/* micro seconds spent */
 #endif
-	GDKfcn	fcn;		/* resolved function address */
-	GDKfcn  beforeCall;	/* do something with the target object */
-	GDKfcn  afterCall;	/* do something with the result object */
-	GDKfcn  finalCall;	/* garbage collect a value */
+	MALfcn	fcn;		/* resolved function address */
+	MALfcn  beforeCall;	/* do something with the target object */
+	MALfcn  afterCall;	/* do something with the result object */
+	MALfcn  finalCall;	/* garbage collect a value */
 	struct MALBLK *blk;	/* resolved MAL function address */
 	int	jump;		/* controlflow program counter */
 @-

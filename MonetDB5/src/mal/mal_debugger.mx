@@ -630,9 +630,9 @@ void printBatInfo(stream *f, VarPtr n, ValPtr v){
 	if(isaBatType(n->type) && v->val.ival){
 		int bid;
 		int ret;
-		GDKfcn fcn;
+		MALfcn fcn;
 
-		fcn = (GDKfcn) getAddress("CMDinfo");
+		fcn = (MALfcn) getAddress("CMDinfo");
 		if(fcn){
 			BAT *b;
 			bid = v->val.ival;

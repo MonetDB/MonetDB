@@ -119,15 +119,15 @@ into an exception and aborts the scenario.
 
 typedef struct SCENARIO{
 	str 	name;
-	str	initScenario;	GDKfcn initScenarioCmd;
-	str	exitScenario;	GDKfcn exitScenarioCmd;
-	str	initClient;	GDKfcn initClientCmd;
-	str	exitClient;	GDKfcn exitClientCmd;
-	str	reader;		GDKfcn readerCmd;	void *readerState;
-	str	parser;		GDKfcn parserCmd;	void *parserState;
-	str	optimizer;	GDKfcn optimizerCmd;	void *optimizerState;
-	str	tactics;	GDKfcn tacticsCmd;	void *tacticsState;
-	str	engine;		GDKfcn engineCmd;	void *engineState;
+	str	initScenario;	MALfcn initScenarioCmd;
+	str	exitScenario;	MALfcn exitScenarioCmd;
+	str	initClient;	MALfcn initClientCmd;
+	str	exitClient;	MALfcn exitClientCmd;
+	str	reader;		MALfcn readerCmd;	void *readerState;
+	str	parser;		MALfcn parserCmd;	void *parserState;
+	str	optimizer;	MALfcn optimizerCmd;	void *optimizerState;
+	str	tactics;	MALfcn tacticsCmd;	void *tacticsState;
+	str	engine;		MALfcn engineCmd;	void *engineState;
 	struct SCENARIO	*next;
 } *Scenario;
 
@@ -203,7 +203,7 @@ Scenario getFreeScenario(){
 @-
 @= initScen
 if( @1->@2){
-	if( @1->@2Cmd == 0) @1->@2Cmd = (GDKfcn)getAddress( @1->@2);
+	if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress( @1->@2);
 	if( @1->@2Cmd == 0) {
 	    return throwMessage("initScenario","@2 address not found\n"); }
 }
@@ -220,7 +220,7 @@ str initScenario(Client c, Scenario s){
 	if(s->initScenario && s->initScenarioCmd==0){
 		/* prepare for conclicts */
 		MT_set_lock(mal_contextLock,"Scenario");
-		s->initScenarioCmd= (GDKfcn)getAddress( s->initScenario);
+		s->initScenarioCmd= (MALfcn)getAddress( s->initScenario);
 		if(s->initScenarioCmd) (*s->initScenarioCmd)(c);
 		MT_unset_lock(mal_contextLock,"Scenario");
 	}

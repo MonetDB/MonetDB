@@ -66,6 +66,7 @@ html
 #include "mal_instruction.h"
 mal_export void malAtomDefinition(str name,int tpe);
 mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
+mal_export int malAtomPropertyInt(MalBlkPtr mb, InstrPtr pci);
 mal_export int malAtomArray(int tpe, int idx);
 mal_export int malAtomFixed(int size, int align);
 mal_export void showAtoms(stream *fd);	/* used in src/mal/mal_debugger.c */
@@ -104,6 +105,20 @@ else{
 	setAtomName(pci);
 	return 1;
 }
+@-
+
+@= setItemInt
+if( idcmp(@1,name) || pci->argc != 1)
+	return 0;
+else{
+#ifdef MAL_ATOM_DEBUG
+	stream_printf(GDKout,"set the atom property %s.%s\n",
+		moduleName(pci),functionName(pci));
+#endif
+	BATatoms[tpe].@2= (@4) (*pci->fcn)();
+	setAtomName(pci);
+	return 1;
+}
 @c
 #include "mal_atom.h"
 void setAtomName(InstrPtr pci){
@@ -122,7 +137,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	if( pci->fcn == 0)
 		GDKwarning("malAtomProperty:function not bound\n");
 	switch(name[0]){
-	case 'a': @:setItem("align",align,TYPE_sht,short)@ break;
+	case 'a': GDKwarning("illegal atom property"); break;
 	case 'd': @:chkItem("del",atomDel,void)@ break;
 	case 'c': @:chkItem("cmp",atomCmp,int)@ 
 		  @:chkItem("convert",atomConvert,void)@ break;
@@ -130,18 +145,37 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 		  @:chkItem("fix",atomFix,int)@ break;
 	case 'h': @:chkItem("heap",atomHeap,void)@ 
 		  @:chkItem("heapconvert",atomHeapConvert,void)@ 
+/* 64 bit issue
 		  @:chkItem("hash",atomHash,unsigned int)@ 
+*/
 		  @:chkItem("heapcheck",atomHeapCheck,int)@ break;
 	case 'l': @:chkItem("length",atomLen,int)@ 
-		  @:setItem("linear",linear,TYPE_sht,short)@ break;
-	case 'n': @:setItem("null",atomNull,TYPE_ptr,ptr)@ 
+	case 'n':
+/* 64 bit issue
+		  @:setItem("null",atomNull,TYPE_ptr,lng)@ 
+*/
 		  @:chkItem("nequal",atomCmp,int)@ break;
 	case 'p': @:chkItem("put",atomPut,void)@ break; 
-	case 's': @:setItem("size",size,TYPE_sht,short)@
-		  @:setItem("storage",storage,TYPE_int,int); break;
+	case 's': 
+		  @:setItem("storage",storage,TYPE_int,long); break;
 	case 't': @:chkItem("tostr",atomToStr,int)@ break;
 	case 'u': @:chkItem("unfix",atomUnfix,int)@ 
-	case 'v': @:setItem("varsized",varsized,TYPE_int,int)@ 
+	case 'v': @:setItem("varsized",varsized,TYPE_int,long)@ 
+	}
+	return 0;
+}
+int malAtomPropertyInt(MalBlkPtr mb, InstrPtr pci){
+	str name= functionName(pci);
+	int tpe = getTypeIndex(moduleName(pci));
+	mb=0;
+	if( tpe<0 || tpe>= GDKatomcnt)
+		GDKfatal("malAtomProperty:illegal type name");
+	if( pci->fcn == 0)
+		GDKwarning("malAtomProperty:function not bound\n");
+	switch(name[0]){
+	case 'a': @:setItemInt("align",align,TYPE_sht,long)@ break;
+	case 'l': @:setItemInt("linear",linear,TYPE_sht,long)@ break;
+	case 's': @:setItemInt("size",size,TYPE_sht,long)@ break;
 	}
 	return 0;
 }

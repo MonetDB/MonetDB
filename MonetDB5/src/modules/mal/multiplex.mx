@@ -259,7 +259,7 @@ Constants passed into the multiplex operator are a special case.
 #endif
 	/* findFunctionType(scope,mb,pci); Why ? pci has not been changed*/
 	pci->token= PATcall;
-	pci->fcn = (GDKfcn) CMDmultiplexScript;
+	pci->fcn = (MALfcn) CMDmultiplexScript;
 	setModuleId(pci, fcnname);
 	pci->typechk= p->typechk;
 #ifdef DEBUG_MULTIPLEX
@@ -361,7 +361,7 @@ int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci)
 
 	if( idcmp("debug",functionName(pci))==0){
 		if(moduleId(pci)==0) setModuleId(pci, GDKstrdup("multiplex"));
-		pci->fcn= (GDKfcn) CMDmultiplexDebug;
+		pci->fcn= (MALfcn) CMDmultiplexDebug;
 		pci->token = CMDcall;
 		i= 1;
 	}

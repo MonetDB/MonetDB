@@ -415,7 +415,8 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 The code to enhance thekernel
 @c
 str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-        int ht, tt, cap=0;
+        int ht, tt;
+	size_t cap=0;
         int *res;
 
         ht= getArgType(m,p,1);

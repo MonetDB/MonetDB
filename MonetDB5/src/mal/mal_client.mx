@@ -102,7 +102,7 @@ information should be dealt with separately.[TODO]
 @h
 	str	scenario, oldscenario;	/* scenario management */
 	void	*state[7], *oldstate[7];
-	GDKfcn	phase[7], oldphase[7];
+	MALfcn	phase[7], oldphase[7];
 	short	itrace;		/* trace execution using interactive mdb */
 	short 	debugoptimizer;
 	long	timer;		/* trace time in usec */
@@ -517,10 +517,6 @@ void killClient(Client c){
         Thread victim = c->mythread;
 	MT_Id pid= victim->pid;
 
-	if( victim == (Thread) THRgettid()){
-		GDKerror("killClient: attempt to perform process suicide.\n");
-		return;
-	}
 	GDKwarning("killClient:forcing client to stop ...\n");
 	/* the process may hang upon gaining access to the file descriptors */
 	c->mode= FINISHING;

@@ -103,7 +103,7 @@ request and each time we encounter EOL.
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_instruction.h"	/* for pushEndInstruction(), findVariableLength() */
 
-int parseError(Client cntxt, str msg);
+str parseError(Client cntxt, str msg);
 
 #define MAXERRORS 100
 #define FATALINPUT MAXERRORS+1
@@ -300,9 +300,9 @@ str lastline(Client cntxt){
 	if( NL(*s)) s++;
 	return s;
 }
-int position(Client cntxt)
+long position(Client cntxt)
 {	str s = lastline(cntxt);
-	return (int)(cntxt->nxt)- (int)s;
+	return (long)(cntxt->nxt)- (long)s;
 }
 void resetInput(Client cntxt) {
         *cntxt->nxt = 0;
@@ -514,7 +514,7 @@ An atom statement does not introduce a new module.
 	if( modname==0)
 		return parseError(cntxt,"<module path> expected\n");
 @c
-int parseModule(Client cntxt, int atomary)
+str parseModule(Client cntxt, int atomary)
 {	str modname=0;
 	int l,x,y,tpe;
 
@@ -528,7 +528,7 @@ int parseModule(Client cntxt, int atomary)
 			malAtomDefinition(modname,tpe);
 			GDKfree(modname);
 			@:helpInfo(cntxt->nspace->help)@
-			return 1;
+			return "";
 		} else 	
 		if(atomary) return parseError(cntxt,"'module' expected\n");
 		return 0;
@@ -555,7 +555,7 @@ Atom storage may be defined in terms of an existing type.
 	GDKfree(modname);
 	@:typeInfo@
 	@:helpInfo(cntxt->nspace->help)@
-	return 1;
+	return "";
 }
 @- Import statement
 An import statement is immediately taken into effect. This
@@ -565,7 +565,7 @@ The administration for this is handled by malImport.
 importStmt : USE identifier \\
 	   : USE string\\
 @c
-int parseImport(Client cntxt)
+str parseImport(Client cntxt)
 {
 	str modname=0;
 	int x,y;
@@ -577,7 +577,7 @@ int parseImport(Client cntxt)
 	malImport(cntxt,modname,modname, cntxt->listing);
 	GDKfree(modname);
 	skipToEnd(cntxt);
-	return 1;
+	return "";
 }
 @- Definition
 The definition statements share a lot in common, which calls for factoring
@@ -1448,7 +1448,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			  continue;
 		case 'A': case 'a':
 			  if( keyword(cntxt,"atom",4) &&
-			      parseModule(cntxt,TRUE)) break;
+			      parseModule(cntxt,TRUE)!=0) break;
 			  goto allLeft;
 		case 'b': case 'B':
 			  if( keyword(cntxt,"barrier",7)) {
@@ -1489,7 +1489,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				kind= LEAVEsymbol;
 			  goto allLeft;
 		case 'M': case 'm': 
-			  if( parseModule(cntxt, FALSE)) break;
+			  if( parseModule(cntxt, FALSE)!= 0) break;
 			  goto allLeft;
 		case 'P': case 'p': 
 			  if( keyword(cntxt,"pattern",7) ) {
@@ -1533,12 +1533,12 @@ An arrow and state number is printed at the "appropriate" place.
 If no lookahead character is a used and the next character is a newline,
 we should also copy the input.
 @c
-int parseError(Client cntxt, str msg)
+str parseError(Client cntxt, str msg)
 {	Symbol curPrg;
 	MalBlkPtr curBlk;
 	char buf[10*1024];
 	char *s=buf, *t, *l = lastline(cntxt);
-	int i;
+	long i;
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;

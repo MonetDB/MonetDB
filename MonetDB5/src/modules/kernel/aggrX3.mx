@@ -1233,7 +1233,7 @@ str CMDaggrX3_@1(int *ret, int *bid, int *eid){
 str CMDaggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils){
 	BAT *b, *e;
 	BAT *bn;
-	int zero = 0, *cnt;
+	size_t zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
 	size_t range;
@@ -1491,7 +1491,7 @@ str CMDaggrX3_size(int *retid, int *bid, int *eid){
 		for (i = 0; i < range; i++) sums[i] = zero;
 	}
 	if (@2) { (void) BATprepareHash(bn); }
-	cnt = (int*) GDKmalloc(slots*sizeof(int));
+	cnt = (size_t*) GDKmalloc(slots*sizeof(int));
 	memset(cnt, 0, slots*sizeof(int));
 	/* scan b & g, adding sums, and incrementing counts */
 	base = BUNindex(g, BUNfirst(g));

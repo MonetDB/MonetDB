@@ -183,7 +183,7 @@ upon failure, which shortcuts the execution.
 @c
 	if(moduleId(p) && scope->typeChecker &&
 		idcmp(moduleName(p),scope->name)==0 ){
-		if( (scope->typeChecker)(scope,mb,p)>=0)
+		if( (scope->typeChecker)(scope,mb,p)!=0)
 			return getArgType(mb,p,0);
 		return -3;
 	}
@@ -425,15 +425,15 @@ on a user-supplied function [todo].
 @c
 	if(isaBatType(s1)){
 		@:chkMultiple@
-		p->beforeCall= (GDKfcn) batBeforeCall;
-		p->afterCall= (GDKfcn) batAfterCall;
-		p->finalCall= (GDKfcn) batFinalCall;
+		p->beforeCall= (MALfcn) batBeforeCall;
+		p->afterCall= (MALfcn) batAfterCall;
+		p->finalCall= (MALfcn) batFinalCall;
 	}
 	else if( ATOMstorage(s1)== TYPE_str){
 		@:chkMultiple@
-		p->beforeCall= (GDKfcn)strBeforeCall;
-		p->afterCall= (GDKfcn) strAfterCall;
-		p->finalCall= (GDKfcn) strFinalCall;
+		p->beforeCall= (MALfcn)strBeforeCall;
+		p->afterCall= (MALfcn) strAfterCall;
+		p->finalCall= (MALfcn) strFinalCall;
 	} 
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {

@@ -125,7 +125,7 @@ int lockToStr(char **dst, int *len, ptr *src){
 		strcpy(*dst,"nil");
 		return 3;
 	}
-	sprintf(*dst,"%o", (int)*src);
+	sprintf(*dst,"%o", (lng)*src);
 	return strlen(*dst);
 }
 str SEMAcreate(monet_sema *s, int *init){

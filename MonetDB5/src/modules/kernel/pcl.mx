@@ -89,12 +89,13 @@ pcl.init();
 @+ Implementation
 @c
 #include "gdk.h"
+#include "mal.h"
 
 #ifndef HAVE_LIBPCL
 
 static BAT *pcl_events;
-static void PCLinsert(BAT *b,str nme, int v){
-	BUNins(pcl_events,,nme,&v);
+static void PCLinsert(str nme, int v){
+	BUNins(pcl_events,nme,&v);
 }
 
 str CMDpclinit(int *ret){

@@ -661,7 +661,7 @@ str STRIconv( str *res, str *o, str *fp, str *tp)
 #ifdef HAVE_ICONV
 	size_t len = strlen(org);
 	iconv_t cd = iconv_open( t, f);
-	int size = 4*len; 		/* make sure enough memory is claimed */
+	size_t size = 4*len; 		/* make sure enough memory is claimed */
 	char *r; 
 
 	if (!cd){

@@ -110,7 +110,7 @@ management)
 typedef struct SCOPEDEF {
         struct SCOPEDEF   *outer; /* outer level in the scope tree */
         str     name;
-	GDKfcn	typeChecker;	/* function address for type checker */
+	MALfcn	typeChecker;	/* function address for type checker */
         Symbol *subscope; /* type dispatcher table */
 	Box	box;	/* module related objects */
 	int	isAtomModule; /* atom module definition ? */

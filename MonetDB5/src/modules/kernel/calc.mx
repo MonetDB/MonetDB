@@ -314,7 +314,6 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(chr,int)@
 	@:mal_coercion(chr,lng)@
 
-	@:mal_coercion(ptr,int)@
 	@:mal_coercion(ptr,lng)@
 
 @- boolean { or, xor, and, not }
@@ -1080,7 +1079,6 @@ str CALC@22@1(@1 *res, @2 *a)
 	@:mal_coercion_impl(int,oid)@
 	@:mal_coercion_impl(int,bit)@
 	@:mal_coercion_impl(int,chr)@
-	@:mal_coercion_impl(int,ptr)@
 	@:mal_coercion_impl(int,sht)@
 	@:mal_coercion_impl(int,int)@
 	@:mal_coercion_impl(int,lng)@
@@ -1109,7 +1107,6 @@ str CALC@22@1(@1 *res, @2 *a)
 	@:mal_coercion_impl(chr,int)@
 	@:mal_coercion_impl(chr,lng)@
 
-	@:mal_coercion_impl(ptr,int)@
 
 str CALClng2ptr(ptr *res, lng *a)
 {

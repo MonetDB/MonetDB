@@ -63,7 +63,7 @@ extern const char *yylexname(int Y);
 extern void mil_parseError(str msg);
 extern void mil_flushbuffer();
 extern str mil_lastline();
-extern int mil_position();
+extern long mil_position();
 extern int mil_skipcomment();
 extern void mil_push(str s);	/* used in src/mil/M2m.c */
 extern int mil_getch();
@@ -295,9 +295,9 @@ str mil_lastline(){
 		return mil_stack->prevline;
 	return mil_stack->nxtline; 
 }
-int mil_position()
+long mil_position()
 {
-	return (int)(mil_stack->cptr)- (int)mil_stack->nxtline;
+	return (long)(mil_stack->cptr)- (long)mil_stack->nxtline;
 }
 @-
 Long strings are in this version easier to handle, because the input is
@@ -1014,7 +1014,7 @@ we should also copy the input .
 void mil_parseError(str msg){
         static char buf[1024];
         char *s=buf, *t, *l = mil_lastline();
-        int i = strlen(GDKERROR);
+        long i = strlen(GDKERROR);
 	strcpy(buf,GDKERROR); s+= i;
 
         mil_flushbuffer(); /* flush the lexer's buffer */
