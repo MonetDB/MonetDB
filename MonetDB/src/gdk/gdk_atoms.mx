@@ -1188,42 +1188,47 @@ extern float strtof(const char *, char **);
 
 int fltFromStr(char* src, int* len, flt **dst)
 {
-	char *p = src;
 #ifdef HAVE_STRTOF
-	float d;
-#else
-	double d;
+	char *p = src;
 #endif
+	int n = 0;
+	float f;
 
 	/* alloc memory */
 	@:atommem(flt,sizeof(flt))@
 
+#ifdef HAVE_STRTOF
 	/* on overflow, strtof returns HUGE_VALF and sets errno to
 	   ERANGE; on underflow, it returns 0 and also sets errno to
 	   ERANGE.  We accept 0, but not HUGE_VALF. */
 	errno = 0;
-#ifdef HAVE_STRTOF
-	d = strtof(src, &p);
-	if (p == src || (errno == ERANGE && d != 0)
+	f = strtof(src, &p);
+	n = (int) (p - src);
+	if (n == 0 || (errno == ERANGE && f != 0)
 #ifdef INFINITY
-	    || d == INFINITY
+	    || f == INFINITY
 #endif
 #ifdef NAN
-	    || d == NAN
+	    || f == NAN
 #endif
 		)
-#else
-	d = strtod(src, &p);
-	if (p == src || (errno == ERANGE && d != 0) ||
-	    d <= GDK_flt_min || d > GDK_flt_max)
+#else  /* no strtof, try sscanf */
+	if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
+#ifdef INFINITY
+	    || f == INFINITY
+#endif
+#ifdef NAN
+	    || f == NAN
+#endif
+		)
 #endif
 	{
 		**dst = flt_nil; /* default return value is nil */
-		p = src;
+		n = 0;
 	} else {
-		**dst = (flt) d;
+		**dst = (flt) f;
 	}
-	return (int) (p-src);
+	return n;
 }
 @:atomtostr(flt,%.9g,float)@
 @:atom_io(flt,Int,int)@
