@@ -43,5 +43,9 @@ SQLExecDirect_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 SQLRETURN
 SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLExecDirect\n");
+#endif
+
 	return SQLExecDirect_(hStmt, szSqlStr, nSqlStr);
 }

@@ -29,8 +29,10 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
-	(void) Attribute;	/* Stefan: unused!? */
-	(void) Value;		/* Stefan: unused!? */
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetEnvAttr %d\n", Attribute);
+#endif
+
 	(void) StringLength;	/* Stefan: unused!? */
 
 	if (!isValidEnv(env))
@@ -38,9 +40,28 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 
 	clearEnvErrors(env);
 
-	/* TODO: implement this function and corresponding behavior */
+	switch (Attribute) {
+	case SQL_ATTR_ODBC_VERSION:
+		switch ((SQLINTEGER) Value) {
+		case SQL_OV_ODBC3:
+			env->ODBCVersion = ODBC_3;
+			break;
+		case SQL_OV_ODBC2:
+			env->ODBCVersion = ODBC_2;
+			break;
+		default:
+			/* HY024: Invalid attribute value */
+			addEnvError(env, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		break;
+	default:
+		/* TODO: implement this function and corresponding behavior */
 
-	/* for now return error IM001: driver not capable */
-	addEnvError(env, "IM001", NULL, 0);
-	return SQL_ERROR;
+		/* for now return error IM001: driver not capable */
+		addEnvError(env, "IM001", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	return SQL_SUCCESS;
 }

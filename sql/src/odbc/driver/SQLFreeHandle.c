@@ -117,5 +117,9 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 SQLRETURN
 SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLFreeHandle\n");
+#endif
+
 	return SQLFreeHandle_(handleType, handle);
 }

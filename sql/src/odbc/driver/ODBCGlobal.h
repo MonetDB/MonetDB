@@ -27,7 +27,7 @@
 #define ODBCVER 0x0351		/* Important: this must be defined before include of sqlext.h */
 
 /* some general defines */
-#define MONETDB_ODBC_VER     "3.51"	/* must be synchrone with ODBCVER */
+#define MONETDB_ODBC_VER     "3.51"	/* must be synchronous with ODBCVER */
 #define MONETDB_DRIVER_NAME  "MonetDBODBClib"
 #define MONETDB_DRIVER_VER   "1.00"
 #define MONETDB_PRODUCT_NAME "MonetDB ODBC driver"
@@ -78,6 +78,10 @@ SQLRETURN SQLColAttribute_(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 			   SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue,
 			   SQLSMALLINT nValueLengthMax,
 			   SQLSMALLINT *pnValueLength, SQLPOINTER pnValue);
+SQLRETURN SQLConnect_(SQLHDBC hDbc,
+		      SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+		      SQLCHAR *szUID, SQLSMALLINT nUIDLength,
+		      SQLCHAR *szPWD, SQLSMALLINT nPWDLength);
 SQLRETURN SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 		      SQLSMALLINT nCompletionType);
 SQLRETURN SQLExecDirect_(SQLHSTMT hStmt, SQLCHAR *szSqlStr,
@@ -104,5 +108,20 @@ SQLRETURN SQLSetConnectAttr_(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 			     SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 SQLRETURN SQLSetStmtAttr_(SQLHSTMT hStmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
+
+/* #define ODBCDEBUG 1 */
+
+#ifdef ODBCDEBUG
+#define ODBCLOG(...)	do {						\
+				if (getenv("ODBCDEBUG")) {		\
+					FILE *f;			\
+					f = fopen("MonetODBC.log", "a"); \
+					if (f) {			\
+						fprintf(f, __VA_ARGS__); \
+						fclose(f);		\
+					}				\
+				}					\
+			} while (0)
+#endif
 
 #endif

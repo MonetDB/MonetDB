@@ -26,6 +26,10 @@ SQLRowCount(SQLHSTMT hStmt, SQLINTEGER *pnRowCount)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLRowCount\n");
+#endif
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 

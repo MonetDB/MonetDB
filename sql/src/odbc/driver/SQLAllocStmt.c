@@ -23,6 +23,10 @@
 SQLRETURN
 SQLAllocStmt(SQLHDBC hDbc, SQLHSTMT *phStmt)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLAllocStmt\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	return SQLAllocHandle_(SQL_HANDLE_STMT, (SQLHANDLE) hDbc,
 			       (SQLHANDLE *) phStmt);

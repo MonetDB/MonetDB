@@ -26,6 +26,10 @@ SQLBulkOperations(SQLHSTMT hStmt, SQLSMALLINT nOperation)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLBulkOperations\n");
+#endif
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 

@@ -19,6 +19,7 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
+#include "ODBCUtil.h"
 
 
 SQLRETURN
@@ -29,9 +30,11 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDriverConnect ");
+#endif
+
 	(void) hWnd;		/* Stefan: unused!? */
-	(void) szConnStrIn;	/* Stefan: unused!? */
-	(void) nConnStrIn;	/* Stefan: unused!? */
 	(void) szConnStrOut;	/* Stefan: unused!? */
 	(void) cbConnStrOutMax;	/* Stefan: unused!? */
 	(void) pnConnStrOut;	/* Stefan: unused!? */
@@ -49,6 +52,12 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	}
 	assert(dbc->Connected == 0);
 
+	fixODBCstring(szConnStrIn, nConnStrIn, addDbcError, dbc);
+
+#ifdef ODBCDEBUG
+	ODBCLOG("\"%.*s\" %d\n", nConnStrIn, szConnStrIn, nDriverCompletion);
+#endif
+
 	/* check input arguments */
 	switch (nDriverCompletion) {
 	case SQL_DRIVER_PROMPT:
@@ -65,6 +74,8 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 	/* TODO: finish implementation */
 
 	/* TODO: check szConnStrIn, parse it and retrieve the different settings */
+	/* ";"-separated list of (attribute-keyword "=" attribute-value) */
+
 	/* TODO: next call (an internal version of) SQLConnect() */
 
 

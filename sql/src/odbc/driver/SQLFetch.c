@@ -54,7 +54,7 @@ SQLFetch_(SQLHSTMT hStmt)
 		if (p->pTargetValue && p->pszTargetStr) {
 			strncpy(p->pTargetValue, p->pszTargetStr,
 				p->nTargetValueMax);
-			((char *) p->pTargetValue)[p->nTargetValueMax - 1] = '\0';
+			((char *) p->pTargetValue)[p->nTargetValueMax - 1] = 0;
 		}
 		if (p->pnLengthOrIndicator && p->pszTargetStr)
 			*p->pnLengthOrIndicator = strlen(p->pszTargetStr);
@@ -68,5 +68,9 @@ SQLFetch_(SQLHSTMT hStmt)
 SQLRETURN
 SQLFetch(SQLHSTMT hStmt)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLFetch\n");
+#endif
+
 	return SQLFetch_(hStmt);
 }

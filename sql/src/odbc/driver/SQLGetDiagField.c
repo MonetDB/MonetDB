@@ -27,8 +27,13 @@ SQLGetDiagField(SQLSMALLINT HandleType,	/* must contain a valid type */
 		SQLSMALLINT DiagIdentifier,	/* a valid identifier */
 		SQLPOINTER DiagInfo,	/* may be null */
 		SQLSMALLINT BufferLength,	/* must be >= 0 */
-		SQLSMALLINT *StringLength)
-{				/* may be null */
+		SQLSMALLINT *StringLength   /* may be null */
+	)
+{
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDiagField\n");
+#endif
+
 	(void) RecNumber;	/* Stefan: unused!? */
 	(void) DiagIdentifier;	/* Stefan: unused!? */
 	(void) DiagInfo;	/* Stefan: unused!? */

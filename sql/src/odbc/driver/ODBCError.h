@@ -93,7 +93,7 @@ ODBCError *getErrorRec(ODBCError *error, int recNumber);
  *
  * Precondition: both head and this must be valid (non NULL)
  */
-void appendODBCError(ODBCError *head, ODBCError *err);
+void appendODBCError(ODBCError **head, ODBCError *err);
 
 
 /*

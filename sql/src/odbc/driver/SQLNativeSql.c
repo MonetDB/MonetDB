@@ -29,6 +29,10 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLNativeSql\n");
+#endif
+
 	(void) szSqlStrIn;	/* Stefan: unused!? */
 	(void) cbSqlStrIn;	/* Stefan: unused!? */
 	(void) szSqlStr;	/* Stefan: unused!? */

@@ -30,8 +30,10 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
-	(void) Attribute;	/* Stefan: unused!? */
-	(void) Value;		/* Stefan: unused!? */
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetEnvAttr %d\n", Attribute);
+#endif
+
 	(void) BufferLength;	/* Stefan: unused!? */
 	(void) StringLength;	/* Stefan: unused!? */
 
@@ -40,9 +42,27 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 
 	clearEnvErrors(env);
 
-	/* TODO: implement this function and corresponding behavior */
+	switch (Attribute) {
+	case SQL_ATTR_ODBC_VERSION:
+		* (SQLINTEGER *) Value = env->ODBCVersion == ODBC_3 ? SQL_OV_ODBC3 : SQL_OV_ODBC2;
+		break;
+	case SQL_ATTR_OUTPUT_NTS:
+		* (SQLINTEGER *) Value = SQL_TRUE;
+		break;
+	case SQL_ATTR_CONNECTION_POOLING:
+		* (SQLUINTEGER *) Value = SQL_CP_OFF;
+		break;
+	case SQL_ATTR_CP_MATCH:
+		/* TODO: implement this function and corresponding behavior */
 
-	/* for now return error IM001: driver not capable */
-	addEnvError(env, "IM001", NULL, 0);
-	return SQL_ERROR;
+		/* for now return error IM001: driver not capable */
+		addEnvError(env, "IM001", NULL, 0);
+		return SQL_ERROR;
+	default:
+		/* HY092: Invalid attribute/option identifier */
+		addEnvError(env, "HY092", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	return SQL_SUCCESS;
 }

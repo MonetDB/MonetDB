@@ -24,6 +24,10 @@
 SQLRETURN
 SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetConnectOption\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption) {
 		/* connection attributes (ODBC 1 and 2 only) */

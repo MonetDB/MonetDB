@@ -21,6 +21,10 @@ SQLParamOptions(SQLHSTMT hStmt, SQLUINTEGER nRow, SQLUINTEGER *pnRow)
 {
 	RETCODE rc;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLParamOptions\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	rc = SQLSetStmtAttr_(hStmt, SQL_ATTR_PARAMSET_SIZE, &nRow, 0);
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {

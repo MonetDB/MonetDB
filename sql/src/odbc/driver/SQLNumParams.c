@@ -28,6 +28,10 @@ SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLNumParams\n");
+#endif
+
 	(void) pnParamCount;	/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))

@@ -29,6 +29,10 @@ SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDescribeParam\n");
+#endif
+
 	(void) nParmNumber;	/* Stefan: unused!? */
 	(void) pnDataType;	/* Stefan: unused!? */
 	(void) pnSize;		/* Stefan: unused!? */

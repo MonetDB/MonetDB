@@ -22,6 +22,10 @@ SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	      SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision,
 	      SQLSMALLINT *Scale, SQLSMALLINT *Nullable)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDescRec\n");
+#endif
+
 	(void) DescriptorHandle;	/* Stefan: unused!? */
 	(void) RecordNumber;	/* Stefan: unused!? */
 	(void) Name;		/* Stefan: unused!? */

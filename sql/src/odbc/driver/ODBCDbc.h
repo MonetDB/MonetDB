@@ -93,15 +93,6 @@ void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg,
 
 
 /*
- * Adds an error msg object to the end of the error list of
- * this ODBCDbc struct.
- *
- * Precondition: dbc and error must be valid.
- */
-void addDbcErrorObj(ODBCDbc *dbc, ODBCError *error);
-
-
-/*
  * Extracts an error object from the error list of this ODBCDbc struct.
  * The error object itself is removed from the error list.
  * The caller is now responsible for freeing the error object memory.

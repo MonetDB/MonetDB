@@ -23,6 +23,10 @@
 SQLRETURN
 SQLTransact(SQLHENV hEnv, SQLHDBC hDbc, UWORD fType)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLTransact\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help */
 	if (hDbc != SQL_NULL_HDBC)
 		return SQLEndTran_(SQL_HANDLE_DBC, hDbc, fType);

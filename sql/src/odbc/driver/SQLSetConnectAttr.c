@@ -77,6 +77,10 @@ SQLRETURN
 SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 		  SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetConnectAttr\n");
+#endif
+
 	return SQLSetConnectAttr_(ConnectionHandle, Attribute, ValuePtr,
 				  StringLength);
 }

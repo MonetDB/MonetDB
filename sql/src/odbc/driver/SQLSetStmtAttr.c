@@ -88,5 +88,9 @@ SQLRETURN
 SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	       SQLINTEGER StringLength)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetStmtAttr\n");
+#endif
+
 	return SQLSetStmtAttr_(hStmt, Attribute, Value, StringLength);
 }

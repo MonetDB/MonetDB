@@ -19,6 +19,10 @@
 SQLRETURN
 SQLFreeEnv(SQLHENV hDrvEnv)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLFreeEnv\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	return SQLFreeHandle_(SQL_HANDLE_ENV, (SQLHANDLE) hDrvEnv);
 }

@@ -26,6 +26,10 @@ SQLSetParam(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 	    SQLUINTEGER LengthPrecision, SQLSMALLINT ParameterScale,
 	    SQLPOINTER ParameterValue, SQLINTEGER *StrLen_or_Ind)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetParam\n");
+#endif
+
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */
 	return SQLBindParameter_(hStmt, ParameterNumber,
 				 SQL_PARAM_INPUT_OUTPUT, ValueType,

@@ -68,5 +68,9 @@ SQLFreeStmt_(SQLHSTMT handle, SQLUSMALLINT option)
 SQLRETURN
 SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLFreeStmt\n");
+#endif
+
 	return SQLFreeStmt_(handle, option);
 }

@@ -39,6 +39,10 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	char *query = NULL;
 	char *query_end = NULL;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSpecialColumns %d ", nIdentifierType);
+#endif
+
 	(void) szCatalogName;	/* Stefan: unused!? */
 	(void) nCatalogNameLength;	/* Stefan: unused!? */
 
@@ -46,6 +50,17 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		 return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
+
+	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
+
+#ifdef ODBCDEBUG
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %d %d\n",
+		nCatalogNameLength, szCatalogName,
+		nSchemaNameLength, szSchemaName, nTableNameLength, szTableName,
+		nScope, nNullable);
+#endif
 
 	/* check statement cursor state, no query should be prepared
 	   or executed */
@@ -90,7 +105,6 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	}
 
 	/* check if a valid (non null, not empty) table name is supplied */
-	fixODBCstring(szTableName, nTableNameLength);
 	if (szTableName == NULL) {
 		/* HY009 = Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
@@ -101,8 +115,6 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		addStmtError(stmt, "HY090", NULL, 0);
 		return SQL_ERROR;
 	}
-
-	fixODBCstring(szSchemaName, nSchemaNameLength);
 
 	/* first create a string buffer (1000 extra bytes is plenty */
 	query = malloc(1000 + nTableNameLength + nSchemaNameLength);

@@ -89,7 +89,7 @@ SQLGetDiagRec_(SQLSMALLINT handleType,	/* must contain a valid type */
 		 * the buffer and make it null terminated
 		 */
 		strncpy((char *) sqlState, state, SQL_SQLSTATE_SIZE);
-		sqlState[SQL_SQLSTATE_SIZE] = '\0';
+		sqlState[SQL_SQLSTATE_SIZE] = 0;
 	}
 
 	if (nativeErrorPtr)
@@ -101,7 +101,7 @@ SQLGetDiagRec_(SQLSMALLINT handleType,	/* must contain a valid type */
 
 	if (messageText && bufferLength > 0) {
 		bufferLength--;	       /* reserve space for term NULL byte */
-		messageText[bufferLength] = '\0';/* write it already */
+		messageText[bufferLength] = 0; /* write it already */
 
 		/* first write the error message prefix text:
 		 * [MonetDB][ODBC driver 1.0]; this is
@@ -150,6 +150,10 @@ SQLGetDiagRec(SQLSMALLINT handleType,	/* must contain a valid type */
 	      SQLSMALLINT bufferLength,	/* must be >= 0 */
 	      SQLSMALLINT *textLengthPtr)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDiagRec\n");
+#endif
+
 	return SQLGetDiagRec_(handleType, handle, recNumber, sqlState,
 			      nativeErrorPtr, messageText, bufferLength,
 			      textLengthPtr);

@@ -28,6 +28,10 @@ SQLPutData(SQLHSTMT hStmt, SQLPOINTER pData, SQLINTEGER nLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLPutData\n");
+#endif
+
 	(void) pData;		/* Stefan: unused!? */
 	(void) nLengthOrIndicator;	/* Stefan: unused!? */
 

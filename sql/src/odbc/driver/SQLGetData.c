@@ -34,6 +34,10 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DATA
 	char *strptr;
 	SQLRETURN ret = SQL_SUCCESS;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetData\n");
+#endif
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 

@@ -29,6 +29,10 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	int mapitype;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLBindCol\n");
+#endif
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 

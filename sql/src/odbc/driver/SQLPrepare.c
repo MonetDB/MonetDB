@@ -48,7 +48,7 @@ SQLPrepare_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szSqlStr, nSqlStrLength);
+	fixODBCstring(szSqlStr, nSqlStrLength, addStmtError, stmt);
 
 	/* TODO: check (parse) the Query on correctness */
 	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
@@ -75,5 +75,9 @@ SQLPrepare_(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 SQLRETURN
 SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLPrepare\n");
+#endif
+
 	return SQLPrepare_(hStmt, szSqlStr, nSqlStrLength);
 }

@@ -129,5 +129,9 @@ SQLRETURN
 SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	   SQLSMALLINT nCompletionType)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLEndTran\n");
+#endif
+
 	return SQLEndTran_(nHandleType, nHandle, nCompletionType);
 }

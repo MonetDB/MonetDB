@@ -26,6 +26,10 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLINTEGER nOffset,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLExtendedFetch\n");
+#endif
+
 	(void) pnRowCount;	/* Stefan: unused!? */
 	(void) pRowStatusArray;	/* Stefan: unused!? */
 

@@ -244,6 +244,10 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol,
 		SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength,
 		SQLPOINTER pnValue)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLColAttribute\n");
+#endif
+
 	return SQLColAttribute_(hStmt, nCol, nFieldIdentifier, pszValue,
 				nValueLengthMax, pnValueLength, pnValue);
 }

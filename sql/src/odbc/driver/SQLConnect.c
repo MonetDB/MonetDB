@@ -26,9 +26,9 @@
 #endif
 
 SQLRETURN
-SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
-	   SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
-	   SQLSMALLINT nPWDLength)
+SQLConnect_(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+	    SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
+	    SQLSMALLINT nPWDLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc = SQL_SUCCESS;
@@ -54,7 +54,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	assert(dbc->Connected == 0);
 
 	/* convert input string parameters to normal null terminated C strings */
-	fixODBCstring(szDataSource, nDataSourceLength);
+	fixODBCstring(szDataSource, nDataSourceLength, addDbcError, dbc);
 	if (nDataSourceLength == 0) {
 		szDataSource = (SQLCHAR*)"Default";
 		nDataSourceLength = strlen((char*)szDataSource);
@@ -67,13 +67,13 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szUID, nUIDLength);
+	fixODBCstring(szUID, nUIDLength, addDbcError, dbc);
 	if (nUIDLength == 0) {
 		uid = strdup(mo_find_option(NULL, 0, "sql_user"));
 	} else {
 		uid = dupODBCstring(szUID, nUIDLength);
 	}
-	fixODBCstring(szPWD, nPWDLength);
+	fixODBCstring(szPWD, nPWDLength, addDbcError, dbc);
 	if (nPWDLength == 0) {
 		pwd = mo_find_option(NULL, 0, "sql_passwd");
 		if (pwd == NULL)
@@ -127,4 +127,17 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	}
 
 	return rc;
+}
+
+SQLRETURN
+SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+	   SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
+	   SQLSMALLINT nPWDLength)
+{
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLConnect\n");
+#endif
+
+	return SQLConnect(hDbc, szDataSource, nDataSourceLength,
+			  szUID, nUIDLength, szPWD, nPWDLength);
 }

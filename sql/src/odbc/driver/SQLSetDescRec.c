@@ -21,6 +21,10 @@ SQLSetDescRec(SQLHDESC hDescriptorHandle, SQLSMALLINT nRecordNumber,
 	      SQLSMALLINT nPrecision, SQLSMALLINT nScale, SQLPOINTER pData,
 	      SQLINTEGER *pnStringLength, SQLINTEGER *pnIndicator)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetDescRec\n");
+#endif
+
 	(void) hDescriptorHandle;	/* Stefan: unused!? */
 	(void) nRecordNumber;	/* Stefan: unused!? */
 	(void) nType;		/* Stefan: unused!? */

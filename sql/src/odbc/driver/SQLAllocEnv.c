@@ -23,6 +23,10 @@
 SQLRETURN
 SQLAllocEnv(SQLHENV *phEnv)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLAllocEnv\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	return SQLAllocHandle_(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
 			       (SQLHANDLE *) phEnv);

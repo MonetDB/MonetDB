@@ -40,6 +40,10 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLForeignKeys\n");
+#endif
+
 	(void) szPKCatalogName;	/* Stefan: unused!? */
 	(void) nPKCatalogNameLength;	/* Stefan: unused!? */
 	(void) szFKCatalogName;	/* Stefan: unused!? */
@@ -58,10 +62,10 @@ SQLForeignKeys(SQLHSTMT hStmt,
 	}
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szPKSchemaName, nPKSchemaNameLength);
-	fixODBCstring(szPKTableName, nPKTableNameLength);
-	fixODBCstring(szFKSchemaName, nFKSchemaNameLength);
-	fixODBCstring(szFKTableName, nFKTableNameLength);
+	fixODBCstring(szPKSchemaName, nPKSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szPKTableName, nPKTableNameLength, addStmtError, stmt);
+	fixODBCstring(szFKSchemaName, nFKSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szFKTableName, nFKTableNameLength, addStmtError, stmt);
 
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */

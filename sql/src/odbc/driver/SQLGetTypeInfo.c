@@ -30,6 +30,10 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetTypeInfo %d\n", nSqlDataType);
+#endif
+
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -154,7 +158,7 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	 *      SMALLINT       DATA_TYPE NOT NULL
 	 *      INTEGER        COLUMN_SIZE
 	 *      VARCHAR(128)   LITERAL_PREFIX   (example 0x (binary data), 
-	 *      VARCHAR(128)   LITERAL_SUFFIX   "\'" (strings))
+	 *      VARCHAR(128)   LITERAL_SUFFIX   "'" (strings))
 	 *      VARCHAR(128)   CREATE_PARAMS    (example precision,scale or max length)
 	 *      SMALLINT       NULLABLE NOT NULL 
 	 *      SMALLINT       CASE_SENSITIVE NOT NULL
@@ -187,20 +191,24 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 	       "0 /*MIN_SCALE*/ AS MINIMUM_SCALE, "
 	       "SCALE /*MAX_SCALE*/ AS MAXIMUM_SCALE, "
 	       "0 /*SQL_TYPE*/ AS SQL_DATA_TYPE, "
-	       "NULL AS SQL_DATETIME_SUB, "
+	       "NULL AS SQL_DATETIME_SUB, " /* parser complains about NULL */
 	       "10 AS NUM_PREC_RADIX, "
 	       "0 /*INTERVAL_PREC*/ AS INTERVAL_PRECISION "
-	       "FROM SQL_DATATYPE");
+	       "FROM TYPES");
 
-/* TODO: SEARCHABLE should return an int iso str. Add a CASE SEARCHABLE WHEN ... to convert str to correct int values */
+/* TODO: SEARCHABLE should return an int iso str. Add a CASE
+   SEARCHABLE WHEN ... to convert str to correct int values */
 
+/* SQL_TYPE does not exist in table */
 	if (nSqlDataType != SQL_ALL_TYPES) {
-		/* add a selection when a specific SQL data type is requested */
+		/* add a selection when a specific SQL data type is
+		   requested */
 		char *tmp = query + strlen(query);
 
 		snprintf(tmp, 30, " WHERE SQL_TYPE = %d", nSqlDataType);
 	} else {
-		/* add the ordering (only needed when all types are selected) */
+		/* add the ordering (only needed when all types are
+		   selected) */
 		strcat(query, " ORDER BY SQL_TYPE");
 	}
 

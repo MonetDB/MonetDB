@@ -38,6 +38,10 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	char *query = NULL;
 	char *query_end = NULL;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLColumns\n");
+#endif
+
 	(void) szCatalogName;	/* Stefan: unused!? */
 	(void) nCatalogNameLength;	/* Stefan: unused!? */
 
@@ -53,9 +57,9 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szSchemaName, nSchemaNameLength);
-	fixODBCstring(szTableName, nTableNameLength);
-	fixODBCstring(szColumnName, nColumnNameLength);
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
+	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 	/* construct the query now */
 	query = malloc(1000 + nSchemaNameLength + nTableNameLength +

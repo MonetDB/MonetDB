@@ -32,6 +32,10 @@ SQLTablePrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLTablePrivileges\n");
+#endif
+
 	(void) szCatalogName;	/* Stefan: unused!? */
 	(void) nCatalogNameLength;	/* Stefan: unused!? */
 	(void) szSchemaName;	/* Stefan: unused!? */

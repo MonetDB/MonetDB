@@ -127,5 +127,9 @@ SQLExecute_(SQLHSTMT hStmt)
 SQLRETURN
 SQLExecute(SQLHSTMT hStmt)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLExecute\n");
+#endif
+
 	return SQLExecute_(hStmt);
 }

@@ -19,6 +19,10 @@
 SQLRETURN
 SQLCancel(SQLHSTMT hStmt)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLCancel\n");
+#endif
+
 	if (!isValidStmt(hStmt))
 		return SQL_INVALID_HANDLE;
 

@@ -37,6 +37,10 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLPrimaryKeys\n");
+#endif
+
 	(void) szCatalogName;	/* Stefan: unused!? */
 	(void) nCatalogNameLength;	/* Stefan: unused!? */
 
@@ -53,8 +57,8 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 	}
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
-	fixODBCstring(szSchemaName, nSchemaNameLength);
-	fixODBCstring(szTableName, nTableNameLength);
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
+	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 
 	/* check if a valid (non null, not empty) table name is supplied */
 	if (szTableName == NULL) {

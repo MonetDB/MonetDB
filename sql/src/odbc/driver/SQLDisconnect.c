@@ -25,6 +25,10 @@ SQLDisconnect(SQLHDBC hDbc)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDisconnect\n");
+#endif
+
 	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 

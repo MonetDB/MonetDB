@@ -78,6 +78,10 @@ newODBCStmt(ODBCDbc *dbc)
 int
 isValidStmt(ODBCStmt *stmt)
 {
+#ifdef ODBCDEBUG
+	if (!(stmt && stmt->Type == ODBC_STMT_MAGIC_NR))
+		ODBCLOG("not a valid statement handle\n");
+#endif
 	return stmt && stmt->Type == ODBC_STMT_MAGIC_NR;
 }
 
@@ -96,34 +100,16 @@ addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg,
 {
 	ODBCError *error = NULL;
 
+#ifdef ODBCDEBUG
+	extern const char * getStandardSQLStateMsg(const char *);
+	ODBCLOG("addStmtError %s %s %d\n", SQLState,
+		errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
+		nativeErrCode);
+#endif
 	assert(isValidStmt(stmt));
 
 	error = newODBCError(SQLState, errMsg, nativeErrCode);
-	if (stmt->Error == NULL)
-		stmt->Error = error;
-	else
-		appendODBCError(stmt->Error, error);
-}
-
-
-/*
- * Adds an error msg object to the end of the error list of
- * this ODBCStmt struct.
- *
- * Precondition: stmt and error must be valid.
- */
-void
-addStmtErrorObj(ODBCStmt *stmt, ODBCError *error)
-{
-	assert(isValidStmt(stmt));
-
-	assert(error);
-
-	if (stmt->Error == NULL) {
-		stmt->Error = error;
-	} else {
-		appendODBCError(stmt->Error, error);
-	}
+	appendODBCError(&stmt->Error, error);
 }
 
 

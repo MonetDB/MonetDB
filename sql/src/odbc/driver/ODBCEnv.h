@@ -35,6 +35,10 @@ typedef struct tODBCDRIVERENV {
 
 	/* Env children: list of ODBC Connection handles created in this Env */
 	void *FirstDbc;		/* first in list or NULL */
+	enum {
+		ODBC_2,
+		ODBC_3,
+	} ODBCVersion;
 } ODBCEnv;
 
 
@@ -70,15 +74,6 @@ int isValidEnv(ODBCEnv *env);
  */
 void addEnvError(ODBCEnv *env, const char *SQLState, const char *errMsg,
 		 int nativeErrCode);
-
-
-/*
- * Adds an error msg object to the end of the error list of
- * this ODBCEnv struct.
- *
- * Precondition: env and error must be valid.
- */
-void addEnvErrorObj(ODBCEnv *env, ODBCError *error);
 
 
 /*

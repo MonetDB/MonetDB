@@ -33,6 +33,10 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLProcedureColumns\n");
+#endif
+
 	(void) szCatalogName;	/* Stefan: unused!? */
 	(void) nCatalogNameLength;	/* Stefan: unused!? */
 	(void) szSchemaName;	/* Stefan: unused!? */

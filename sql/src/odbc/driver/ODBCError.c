@@ -79,6 +79,7 @@ static struct SQLStateMsg {
 	{"HY090", "Invalid string or buffer length"},
 	{"HY091", "Invalid descriptor field identifier"},
 	{"HY092", "Invalid attribute/option identifier"},
+	{"HY095", "Function type out of range"},
 	{"HY096", "Information type out of range"},
 	{"HY097", "Column type out of range"},
 	{"HY098", "Scope type out of range"},
@@ -93,7 +94,10 @@ static struct SQLStateMsg {
 	{0, 0},
 };
 
-static const char *
+#ifndef ODBCDEBUG
+static
+#endif
+const char *
 getStandardSQLStateMsg(const char *SQLState)
 {
 	struct SQLStateMsg *p;
@@ -228,19 +232,15 @@ getErrorRec(ODBCError *error, int recNumber)
  * Precondition: both head and this must be valid (non NULL)
  */
 void
-appendODBCError(ODBCError *head, ODBCError *this)
+appendODBCError(ODBCError **head, ODBCError *this)
 {
-	ODBCError *error = head;
-
 	assert(head);
-	assert(this);		/* if this could be NULL this function would do nothing */
+	assert(this);
 
-	/* search for the last ODBCError in the linked list */
-	while (error->next)
-		error = error->next;
-
-	/* add 'this' in the last ODBCError */
-	error->next = this;
+	while (*head)
+		head = &(*head)->next;
+	*head = this;
+	this->next = NULL;	/* just to be sure */
 }
 
 

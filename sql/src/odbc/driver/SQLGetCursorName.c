@@ -27,6 +27,10 @@ SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor,
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetCursorName\n");
+#endif
+
 	(void) szCursor;	/* Stefan: unused!? */
 	(void) nCursorMaxLength;	/* Stefan: unused!? */
 	(void) pnCursorLength;	/* Stefan: unused!? */

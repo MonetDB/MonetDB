@@ -25,6 +25,10 @@
 SQLRETURN
 SQLCopyDesc(SQLHDESC hSourceDescHandle, SQLHDESC hTargetDescHandle)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLCopyDesc\n");
+#endif
+
 	if (hSourceDescHandle == SQL_NULL_HANDLE)
 		return SQL_INVALID_HANDLE;
 

@@ -43,6 +43,7 @@ newODBCEnv(void)
 	env->RetrievedErrors = 0;
 	env->FirstDbc = NULL;
 	env->Type = ODBC_ENV_MAGIC_NR;
+	env->ODBCVersion = ODBC_3;
 
 	return env;
 }
@@ -60,6 +61,10 @@ newODBCEnv(void)
 int
 isValidEnv(ODBCEnv *env)
 {
+#ifdef ODBCDEBUG
+	if (!(env && env->Type == ODBC_ENV_MAGIC_NR))
+		ODBCLOG("not a valid environment handle\n");
+#endif
 	return env && env->Type == ODBC_ENV_MAGIC_NR;
 }
 
@@ -78,34 +83,16 @@ addEnvError(ODBCEnv *env, const char *SQLState, const char *errMsg,
 {
 	ODBCError *error = NULL;
 
+#ifdef ODBCDEBUG
+	extern const char * getStandardSQLStateMsg(const char *);
+	ODBCLOG("addEnvError %s %s %d\n", SQLState,
+		errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
+		nativeErrCode);
+#endif
 	assert(isValidEnv(env));
 
 	error = newODBCError(SQLState, errMsg, nativeErrCode);
-	if (env->Error == NULL) {
-		env->Error = error;
-	} else {
-		appendODBCError(env->Error, error);
-	}
-}
-
-
-/*
- * Adds an error msg object to the end of the error list of
- * this ODBCEnv struct.
- *
- * Precondition: env and error must be valid.
- */
-void
-addEnvErrorObj(ODBCEnv *env, ODBCError *error)
-{
-	assert(isValidEnv(env));
-	assert(error);
-
-	if (env->Error == NULL) {
-		env->Error = error;
-	} else {
-		appendODBCError(env->Error, error);
-	}
+	appendODBCError(&env->Error, error);
 }
 
 

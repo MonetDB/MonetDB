@@ -24,6 +24,10 @@ SQLRETURN
 SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation,
 	  SQLUSMALLINT nLockType)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetPos\n");
+#endif
+
 	(void) nRow;		/* Stefan: unused!? */
 
 	if (!isValidStmt(hStmt))

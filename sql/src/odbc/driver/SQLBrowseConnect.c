@@ -28,6 +28,10 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLBrowseConnect\n");
+#endif
+
 	(void) szConnStrIn;	/* Stefan: unused!? */
 	(void) cbConnStrIn;	/* Stefan: unused!? */
 	(void) szConnStrOut;	/* Stefan: unused!? */

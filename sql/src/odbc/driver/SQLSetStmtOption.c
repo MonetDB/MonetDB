@@ -24,6 +24,10 @@
 SQLRETURN
 SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLROWCOUNT vParam)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetStmtOption\n");
+#endif
+
 	switch (fOption) {
 		/* only the ODBC 1.0 and ODBC 2.0 options */
 	case SQL_QUERY_TIMEOUT:

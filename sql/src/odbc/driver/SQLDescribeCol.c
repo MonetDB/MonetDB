@@ -32,6 +32,9 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	char *colName = NULL;
 	int colNameLen = 0;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDescribeCol\n");
+#endif
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
@@ -66,7 +69,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	/* now copy the data */
 	if (szColName && colName) {
 		strncpy((char *) szColName, colName, nColNameMax - 1);
-		szColName[nColNameMax - 1] = '\0'; /* null terminate it */
+		szColName[nColNameMax - 1] = 0; /* null terminate it */
 	}
 	if (pnColNameLength)
 		*pnColNameLength = colName ? colNameLen : SQL_NULL_DATA;

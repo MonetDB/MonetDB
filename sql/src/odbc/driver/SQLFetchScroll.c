@@ -77,5 +77,9 @@ SQLFetchScroll_(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 SQLRETURN
 SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLFetchScroll\n");
+#endif
+
 	return SQLFetchScroll_(hStmt, nOrientation, nOffset);
 }

@@ -39,6 +39,10 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 	char *query = NULL;
 	char *query_end = NULL;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLStatistics\n");
+#endif
+
 	(void) szCatalogName;	/* Stefan: unused!? */
 	(void) nCatalogNameLength;	/* Stefan: unused!? */
 
@@ -79,7 +83,7 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 
 
 	/* check if a valid (non null, not empty) table name is supplied */
-	fixODBCstring(szTableName, nTableNameLength);
+	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 	if (szTableName == NULL) {
 		/* HY009 = Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
@@ -91,7 +95,7 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
-	fixODBCstring(szSchemaName, nSchemaNameLength);
+	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 
 	/* construct the query now */
 	query = malloc(1000 + nTableNameLength + nSchemaNameLength);

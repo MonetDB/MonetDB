@@ -26,6 +26,10 @@ SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetCursorName\n");
+#endif
+
 	(void) szCursor;	/* Stefan: unused!? */
 	(void) nCursorLength;	/* Stefan: unused!? */
 

@@ -19,6 +19,10 @@
 SQLRETURN
 SQLFreeConnect(SQLHDBC hDrvDbc)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLFreeConnect\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	return SQLFreeHandle_(SQL_HANDLE_DBC, (SQLHANDLE) hDrvDbc);
 }

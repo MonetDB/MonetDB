@@ -25,6 +25,10 @@ SQLRETURN
 SQLSetScrollOptions(SQLHSTMT hStmt, SQLUSMALLINT fConcurrency,
 		    SQLINTEGER crowKeyset, SQLUSMALLINT crowRowset)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLSetScrollOptions\n");
+#endif
+
 	(void) fConcurrency;	/* Stefan: unused!? */
 	(void) crowKeyset;	/* Stefan: unused!? */
 	(void) crowRowset;	/* Stefan: unused!? */

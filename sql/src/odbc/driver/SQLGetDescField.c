@@ -20,6 +20,10 @@ SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
 		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetDescField\n");
+#endif
+
 	(void) DescriptorHandle;	/* Stefan: unused!? */
 	(void) RecordNumber;	/* Stefan: unused!? */
 	(void) FieldIdentifier;	/* Stefan: unused!? */

@@ -42,20 +42,20 @@ char *dupODBCstring(SQLCHAR *inStr, SQLSMALLINT lenCode);
  * accordingly.  If str == NULL, set len to 0.
  * We can still make a distinction between str = "", len = 0 and str = NULL.
  */
-#define fixODBCstring(str, len)				\
-	do {						\
-		if (str == NULL)			\
-			len = 0;			\
-		switch (len) {				\
-		case SQL_NTS:				\
-			len = str ? strlen((char*)str) : 0;	\
-			break;				\
-		case SQL_NULL_DATA:			\
-			str = NULL;			\
-			len = 0;			\
-			break;				\
-		}					\
-		assert(len >= 0);			\
+#define fixODBCstring(str, len, errfunc, hdl)				\
+	do {								\
+		if (str == NULL)					\
+			len = 0;					\
+		if (len == SQL_NTS)					\
+			len = str ? strlen((char*)str) : 0;		\
+		else if (len == SQL_NULL_DATA) {			\
+			str = NULL;					\
+			len = 0;					\
+		} else if (len < 0) {					\
+			/* HY090: Invalid string or buffer length */	\
+			errfunc(hdl, "HY090", NULL, 0);			\
+			return SQL_ERROR;				\
+		}							\
 	} while (0)
 
 

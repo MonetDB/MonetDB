@@ -21,300 +21,123 @@
 #include "ODBCStmt.h"
 
 
+/* this table contains all functions for which SQLGetFunctions should
+   return SQL_TRUE */
+static UWORD FuncImplemented[] = {
+	SQL_API_SQLALLOCCONNECT,
+	SQL_API_SQLALLOCENV,
+#ifdef SQL_API_SQLALLOCHANDLE
+	SQL_API_SQLALLOCHANDLE,
+#endif
+	SQL_API_SQLALLOCSTMT,
+	SQL_API_SQLBINDCOL,
+	SQL_API_SQLBINDPARAMETER,
+	SQL_API_SQLCANCEL,
+#ifdef SQL_API_SQLCLOSECURSOR
+	SQL_API_SQLCLOSECURSOR,
+#endif
+#ifdef SQL_API_SQLCOLATTRIBUTE
+	SQL_API_SQLCOLATTRIBUTE, /* == SQL_API_SQLCOLATTRIBUTES */
+#endif
+	SQL_API_SQLCOLATTRIBUTES,
+	SQL_API_SQLCOLUMNS,
+	SQL_API_SQLCONNECT,
+	SQL_API_SQLDESCRIBECOL,
+	SQL_API_SQLDISCONNECT,
+#ifdef SQL_API_SQLENDTRAN
+	SQL_API_SQLENDTRAN,
+#endif
+	SQL_API_SQLERROR,
+	SQL_API_SQLEXECDIRECT,
+	SQL_API_SQLEXECUTE,
+	SQL_API_SQLEXTENDEDFETCH,
+	SQL_API_SQLFETCH,
+#ifdef SQL_API_SQLFETCHSCROLL
+	SQL_API_SQLFETCHSCROLL,
+#endif
+	SQL_API_SQLFOREIGNKEYS,
+	SQL_API_SQLFREECONNECT,
+	SQL_API_SQLFREEENV,
+#ifdef SQL_API_SQLFREEHANDLE
+	SQL_API_SQLFREEHANDLE,
+#endif
+	SQL_API_SQLFREESTMT,
+#ifdef SQL_API_SQLGETCONNECTATTR
+	SQL_API_SQLGETCONNECTATTR,
+#endif
+	SQL_API_SQLGETCONNECTOPTION,
+	SQL_API_SQLGETDATA,
+#ifdef SQL_API_SQLGETDIAGREC
+	SQL_API_SQLGETDIAGREC,
+#endif
+#ifdef SQL_API_SQLGETENVATTR
+	SQL_API_SQLGETENVATTR,
+#endif
+	SQL_API_SQLGETFUNCTIONS,
+	SQL_API_SQLGETINFO,
+	SQL_API_SQLGETSTMTOPTION,
+	SQL_API_SQLGETTYPEINFO,
+	SQL_API_SQLNUMRESULTCOLS,
+	SQL_API_SQLPARAMOPTIONS,
+	SQL_API_SQLPREPARE,
+	SQL_API_SQLPRIMARYKEYS,
+	SQL_API_SQLROWCOUNT,
+#ifdef SQL_API_SQLSETCONNECTATTR
+	SQL_API_SQLSETCONNECTATTR,
+#endif
+	SQL_API_SQLSETCONNECTOPTION,
+#ifdef SQL_API_SQLSETENVATTR
+	SQL_API_SQLSETENVATTR,
+#endif
+	SQL_API_SQLSETPARAM,
+	SQL_API_SQLSETSTMTOPTION,
+	SQL_API_SQLSPECIALCOLUMNS,
+	SQL_API_SQLSTATISTICS,
+	SQL_API_SQLTABLES,
+	SQL_API_SQLTRANSACT,
+};
+#define NFUNCIMPLEMENTED (sizeof(FuncImplemented)/sizeof(FuncImplemented[0]))
+/* this table is a bit map compatible with
+   SQL_API_ODBC3_ALL_FUNCTIONS, to be initialized from the table
+   above */
+static UWORD FuncExistMap[SQL_API_ODBC3_ALL_FUNCTIONS_SIZE];
+
 SQLRETURN
 SQLGetFunctions(SQLHDBC hDbc, SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetFunctions %d\n", FunctionId);
+#endif
 
 	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
 
 	clearDbcErrors(dbc);
 
-	switch (FunctionId) {
-	case SQL_API_SQLALLOCCONNECT:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLALLOCENV:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLALLOCHANDLE
-	case SQL_API_SQLALLOCHANDLE:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-#ifdef SQL_API_SQLALLOCHANDLESTD
-	case SQL_API_SQLALLOCHANDLESTD:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLALLOCSTMT:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLBINDCOL:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLBINDPARAM
-	case SQL_API_SQLBINDPARAM:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLBINDPARAMETER:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLBROWSECONNECT:
-		*Supported = SQL_FALSE;
-		break;
-#ifdef SQL_API_SQLBULKOPERATIONS
-	case SQL_API_SQLBULKOPERATIONS:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLCANCEL:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLCLOSECURSOR
-	case SQL_API_SQLCLOSECURSOR:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-#if defined(SQL_API_SQLCOLATTRIBUTE) && SQL_API_SQLCOLATTRIBUTE != SQL_API_SQLCOLATTRIBUTES
-	case SQL_API_SQLCOLATTRIBUTE:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-	case SQL_API_SQLCOLATTRIBUTES:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLCOLUMNPRIVILEGES:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLCOLUMNS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLCONNECT:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLCOPYDESC
-	case SQL_API_SQLCOPYDESC:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLDATASOURCES:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLDESCRIBECOL:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLDESCRIBEPARAM:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLDISCONNECT:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLDRIVERCONNECT:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLDRIVERS:
-		*Supported = SQL_FALSE;
-		break;
-#ifdef SQL_API_SQLENDTRAN
-	case SQL_API_SQLENDTRAN:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-	case SQL_API_SQLERROR:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLEXECDIRECT:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLEXECUTE:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLEXTENDEDFETCH:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLFETCH:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLFETCHSCROLL
-	case SQL_API_SQLFETCHSCROLL:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-	case SQL_API_SQLFOREIGNKEYS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLFREECONNECT:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLFREEENV:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLFREEHANDLE
-	case SQL_API_SQLFREEHANDLE:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-	case SQL_API_SQLFREESTMT:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLGETCONNECTATTR
-	case SQL_API_SQLGETCONNECTATTR:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-	case SQL_API_SQLGETCONNECTOPTION:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLGETCURSORNAME:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLGETDATA:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLGETDESCFIELD
-	case SQL_API_SQLGETDESCFIELD:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-#ifdef SQL_API_SQLGETDESCREC
-	case SQL_API_SQLGETDESCREC:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-#ifdef SQL_API_SQLGETDIAGFIELD
-	case SQL_API_SQLGETDIAGFIELD:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-#ifdef SQL_API_SQLGETDIAGREC
-	case SQL_API_SQLGETDIAGREC:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-#ifdef SQL_API_SQLGETENVATTR
-	case SQL_API_SQLGETENVATTR:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLGETFUNCTIONS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLGETINFO:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLGETSTMTATTR
-	case SQL_API_SQLGETSTMTATTR:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLGETSTMTOPTION:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLGETTYPEINFO:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLMORERESULTS:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLNATIVESQL:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLNUMPARAMS:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLNUMRESULTCOLS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLPARAMDATA:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLPARAMOPTIONS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLPREPARE:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLPRIMARYKEYS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLPROCEDURECOLUMNS:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLPROCEDURES:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLPUTDATA:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLROWCOUNT:
-		*Supported = SQL_TRUE;
-		break;
-#ifdef SQL_API_SQLSETCONNECTATTR
-	case SQL_API_SQLSETCONNECTATTR:
-		*Supported = SQL_TRUE;
-		break;
-#endif
-	case SQL_API_SQLSETCONNECTOPTION:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLSETCURSORNAME:
-		*Supported = SQL_FALSE;
-		break;
-#ifdef SQL_API_SQLSETDESCFIELD
-	case SQL_API_SQLSETDESCFIELD:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-#ifdef SQL_API_SQLSETDESCREC
-	case SQL_API_SQLSETDESCREC:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-#ifdef SQL_API_SQLSETENVATTR
-	case SQL_API_SQLSETENVATTR:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLSETPARAM:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLSETPOS:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLSETSCROLLOPTIONS:
-		*Supported = SQL_FALSE;
-		break;
-#ifdef SQL_API_SQLSETSTMTATTR
-	case SQL_API_SQLSETSTMTATTR:
-		*Supported = SQL_FALSE;
-		break;
-#endif
-	case SQL_API_SQLSETSTMTOPTION:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLSPECIALCOLUMNS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLSTATISTICS:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLTABLEPRIVILEGES:
-		*Supported = SQL_FALSE;
-		break;
-	case SQL_API_SQLTABLES:
-		*Supported = SQL_TRUE;
-		break;
-	case SQL_API_SQLTRANSACT:
-		*Supported = SQL_TRUE;
-		break;
-	default:
-		/* HY095: Function type out of range */
-		addDbcError(dbc, "HY095", NULL, 0);
-		return SQL_ERROR;
+	if (!SQL_FUNC_EXISTS(FuncExistMap, FuncImplemented[0])) {
+		/* not yet initialized, so do it now */
+		UWORD *p;
+
+		for (p = FuncImplemented;
+		     p < &FuncImplemented[NFUNCIMPLEMENTED];
+		     p++)
+			FuncExistMap[*p >> 4] |= 1 << (*p & 0xF);
 	}
 
-	return SQL_SUCCESS;
+	if (FunctionId == SQL_API_ODBC3_ALL_FUNCTIONS) {
+		memcpy(Supported, FuncExistMap,
+		       SQL_API_ODBC3_ALL_FUNCTIONS_SIZE * sizeof(FuncExistMap[0]));
+		return SQL_SUCCESS;
+	}
+
+	if (FunctionId < SQL_API_ODBC3_ALL_FUNCTIONS_SIZE * 16) {
+		*Supported = SQL_FUNC_EXISTS(FuncExistMap, FunctionId);
+		return SQL_SUCCESS;
+	}
+
+	/* HY095: Function type out of range */
+	addDbcError(dbc, "HY095", NULL, 0);
+	return SQL_ERROR;
 }

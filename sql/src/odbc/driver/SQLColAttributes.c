@@ -21,6 +21,10 @@ SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 		 SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
 		 SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLColAttributes\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	return SQLColAttribute_(hStmt, nCol, nDescType, pszDesc, nDescMax,
 				pcbDesc, pfDesc);

@@ -138,15 +138,6 @@ void addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg,
 
 
 /*
- * Adds an error msg object to the end of the error list of
- * this ODBCStmt struct.
- *
- * Precondition: stmt and error must be valid.
- */
-void addStmtErrorObj(ODBCStmt *stmt, ODBCError *error);
-
-
-/*
  * Extracts an error object from the error list of this ODBCStmt struct.
  * The error object itself is removed from the error list.
  * The caller is now responsible for freeing the error object memory.

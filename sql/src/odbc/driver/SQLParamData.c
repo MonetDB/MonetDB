@@ -28,6 +28,10 @@ SQLParamData(SQLHSTMT hStmt, SQLPOINTER *pValue)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLParamData\n");
+#endif
+
 	(void) pValue;		/* Stefan: unused!? */
 
 	if (!isValidStmt(stmt))

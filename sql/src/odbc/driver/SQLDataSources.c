@@ -29,6 +29,10 @@ SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLDataSources\n");
+#endif
+
 	(void) Direction;	/* Stefan: unused!? */
 	(void) ServerName;	/* Stefan: unused!? */
 	(void) BufferLength1;	/* Stefan: unused!? */

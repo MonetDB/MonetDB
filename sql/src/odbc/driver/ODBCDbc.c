@@ -87,6 +87,10 @@ newODBCDbc(ODBCEnv *env)
 int
 isValidDbc(ODBCDbc *dbc)
 {
+#ifdef ODBCDEBUG
+	if (!(dbc && dbc->Type == ODBC_DBC_MAGIC_NR))
+		ODBCLOG("not a valid connection handle\n");
+#endif
 	return dbc && dbc->Type == ODBC_DBC_MAGIC_NR;
 }
 
@@ -106,34 +110,16 @@ addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg,
 {
 	ODBCError *error = NULL;
 
+#ifdef ODBCDEBUG
+	extern const char * getStandardSQLStateMsg(const char *);
+	ODBCLOG("addDbcError %s %s %d\n", SQLState,
+		errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
+		nativeErrCode);
+#endif
 	assert(isValidDbc(dbc));
 
 	error = newODBCError(SQLState, errMsg, nativeErrCode);
-	if (dbc->Error == NULL) {
-		dbc->Error = error;
-	} else {
-		appendODBCError(dbc->Error, error);
-	}
-}
-
-
-/*
- * Adds an error msg object to the end of the error list of
- * this ODBCDbc struct.
- *
- * Precondition: dbc and error must be valid.
- */
-void
-addDbcErrorObj(ODBCDbc *dbc, ODBCError *error)
-{
-	assert(isValidDbc(dbc));
-	assert(error);
-
-	if (dbc->Error == NULL) {
-		dbc->Error = error;
-	} else {
-		appendODBCError(dbc->Error, error);
-	}
+	appendODBCError(&dbc->Error, error);
 }
 
 

@@ -28,6 +28,10 @@ SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
 	 SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg,
 	 SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLError\n");
+#endif
+
 	/* use mapping as described in ODBC 3 SDK Help file */
 	return SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT :
 			      (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),

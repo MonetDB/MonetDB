@@ -96,6 +96,10 @@ SQLRETURN
 SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 		  SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLGetConnectAttr\n");
+#endif
+
 	return SQLGetConnectAttr_(hDbc, Attribute, ValuePtr, BufferLength,
 				  StringLength);
 }

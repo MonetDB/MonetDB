@@ -114,5 +114,12 @@ SQLAllocHandle(SQLSMALLINT nHandleType,	/* type to be allocated */
 	       SQLHANDLE nInputHandle,	/* context for new handle */
 	       SQLHANDLE *pnOutputHandle) /* ptr for allocated handle struct */
 {
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLAllocHandle %s\n",
+		nHandleType == SQL_HANDLE_ENV ? "Env" :
+		nHandleType == SQL_HANDLE_DBC ? "Dbc" :
+		nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc");
+#endif
+
 	return SQLAllocHandle_(nHandleType, nInputHandle, pnOutputHandle);
 }
