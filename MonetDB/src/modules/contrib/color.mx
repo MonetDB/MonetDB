@@ -101,6 +101,7 @@ Type-mappers for convenience
 
 #endif
 @c
+#include <math.h>
 #include "color.h"
 
 @- Atom commands

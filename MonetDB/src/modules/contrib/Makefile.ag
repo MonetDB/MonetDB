@@ -32,7 +32,7 @@ LIBS = {
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
-		bat_mmath.mc bat_cast.mx array.mx color.mx
+		bat_mmath.mx bat_cast.mx array.mx color.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	WINLIBS = ../../common/libstream ../../gdk/libbat \
@@ -48,7 +48,7 @@ scripts_mil = {
 		bitset.mx bitvector.mx cluster.mx iterator.mx malalgebra.mx \
 		mel.mx mprof.mx oo7.mx qt.mx salgebra.mx tpcd.mx vector.mx \
 		wisc.mx ddbench.mx \
-		bat_mmath.mc bat_cast.mx array.mx color.mx
+		bat_mmath.mx bat_cast.mx array.mx color.mx
 }
 
 EXTRA_DIST_DIR = Tests

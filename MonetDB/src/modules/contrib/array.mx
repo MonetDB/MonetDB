@@ -20,6 +20,7 @@
 #define __array_h__
 
 #include <gdk.h>
+#include <algebra.h> /* to include BATmin and BATmax */
 
 #include "array.proto.h"
 
