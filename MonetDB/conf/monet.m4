@@ -1292,7 +1292,7 @@ AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for NetCDF io library (default /usr and /usr/local)
-have_netcdf=auto
+have_netcdf=no
 NETCDF_CFLAGS=""
 NETCDF_LIBS=""
 AC_ARG_WITH(netcdf,
