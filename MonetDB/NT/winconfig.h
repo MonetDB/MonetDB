@@ -27,7 +27,9 @@
 
 #include <process.h>
 
+#ifndef WIN32
 #define WIN32
+#endif
 #define NATIVE_WIN32
 
 #define DIR_SEP '\\'
