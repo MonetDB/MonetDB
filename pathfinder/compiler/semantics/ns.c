@@ -634,6 +634,8 @@ ns_resolve (PFpnode_t *n)
                                 "unknown namespace in qualified tag name %s",
                                 PFqname_str (n->child[0]->sem.qname));
         }
+        else 
+            ns_resolve (n->child[0]);
 
         /* NS resolution in element content c */
         assert (n->child[1]);
