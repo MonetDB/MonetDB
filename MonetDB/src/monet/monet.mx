@@ -442,6 +442,7 @@ Make constants for important language tokens
 	@:tokenvar(TOK_COMMAND)@
 	@:tokenvar(TOK_ITERATOR)@
 	@:tokenvar(TOK_OBJECT)@
+	moduleClient(c, "main", NULL);
 @-
 Install all link-in modules.
 @c

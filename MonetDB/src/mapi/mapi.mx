@@ -44,15 +44,11 @@ This module contains a simple interface for internet connections.
 	.COMMAND socket_dup( int s ) : int = socket_dup_wrap;
 		"duplicate a socket"
 
+.END mapi;
+
 @mil
-	VAR _params := nil;
-	IF (view_bbp_name.reverse.exist("mapi_params")){
-		_params := bat("mapi_params");
-	} ELSE {
-		_params := new(int,str);
-		_params.rename("mapi_params");
-	}
-	VAR mapi_params := _params;
+	VAR mapi_params := bat(int,str);
+	mapi_params.rename("mapi_params");
 
 	PROC listen(int port, int maxusers, str cmd) := {
 		mapi_params.insert(port,cmd);
@@ -60,32 +56,32 @@ This module contains a simple interface for internet connections.
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
-		"mapi");
+		mod);
 
 	PROC listen(int port, int maxusers) := listen(port,maxusers,"");
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.",
-		"mapi");
+		mod);
 
 	PROC listen(int port, str cmd) := listen(port,5,cmd);
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		"mapi");
+		mod);
 
 	PROC listen(int port) := listen(port,5,"");
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.",
-		"mapi");
+		mod);
 
 	PROC listen(str cmd) := listen(50000,5,cmd);
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		"mapi");
+		mod);
 
 	PROC listen() := listen(50000,5,"");
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.",
-		"mapi");
+		mod);
 
 	PROC stream_strip(Stream s,str stop) : str := {
 		VAR res := stream_until(s,stop);
@@ -97,21 +93,17 @@ This module contains a simple interface for internet connections.
 	}
 	ADDHELP("stream_strip", "windhouw", "June  22 2001",
 		"Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string.",
-		"mapi");
+		mod);
 
 	PROC mapi_stream_read(Stream s) : str := RETURN stream_strip(s,(""+chr(1)));
 	ADDHELP("mapi_stream_read", "windhouw", "June  22 2001",
 		"Read a string from <S> until a '\1' character.",
-		"mapi");
+		mod);
 
 	PROC stream_line(Stream s) : str := RETURN stream_strip(s,sprintf("%c",chr(10)));
 	ADDHELP("stream_line", "windhouw", "June  22 2001",
 		"Read a string from <S> until a newline.",
-		"mapi");
-@m
-
-.END mapi;
-
+		mod);
 @h
 #ifndef MAPI_H
 #define MAPI_H
@@ -386,7 +378,6 @@ proc mapi_server(int port, int nr) := {
 	quit;
 }
 
-@f mapiserver
-@mil
-module("mapi");
-fork(mapi_server(get_mapi_port(),5));
+if (mod = "main"){
+	fork(mapi_server(get_mapi_port(),5));
+}
