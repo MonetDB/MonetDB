@@ -55,8 +55,8 @@ end main;	# 12
 [ 18,	  "timestamp"	  ]
 [ 19,	  "tzone"	  ]
 [ 20,	  "rule"	  ]
-[ 21,	  "fixed_16_4"	  ]
-[ 22,	  "fixed_8_4"	  ]
+[ 21,	  "mapentry"	  ]
+[ 22,	  "idxentry"	  ]
 [ 23,	  "stream"	  ]
 [ 24,	  "enum"	  ]
 #---------------------------------#

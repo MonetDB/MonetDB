@@ -86,7 +86,7 @@ mal_export void malAtomDefinition(str name,int tpe);
 mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
 mal_export int malAtomPropertyInt(MalBlkPtr mb, InstrPtr pci);
 mal_export int malAtomArray(int tpe, int idx);
-mal_export int malAtomFixed(int size, int align);
+mal_export int malAtomFixed(int size, int align, char *name);
 mal_export void showAtoms(stream *fd);	/* used in src/mal/mal_debugger.c */
 
 #endif /*  _MAL_ATOM_H*/
@@ -310,14 +310,10 @@ void malAtomDefinition(str name, int tpe){
 User defined modules may introduce fixed sized types
 to store information in BATs.
 @c
-int malAtomFixed(int size, int align){
-	int i;
-	char buf[IDLENGTH], *name;
+int malAtomFixed(int size, int align, char *name)
+{
+	int i = 0;
 
-	snprintf(buf,IDLENGTH,"fixed_%d", size);
-	i= strlen(buf);
-	snprintf(buf+i,IDLENGTH-i,"_%d", align);
-	name= GDKstrdup(buf);
 	ATOMproperty(name,"",  (int (*)()) 0);
 	i= ATOMindex(name);
 	memcpy((char*)(BATatoms+i),
