@@ -22,9 +22,10 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 #
-# ! this file should be kept identical in         !
-# ! monet, sql, xml, acoi, template, playpen, gis !
+# ! this file should be kept identical in                                    !
+# ! MonetDB, sql, xml, acoi, gis, template, playpen, misq, times100, pruning !
 #
+
 # In the following, ${what} is one of monet, sql, xml, acoi. 
 # It is automatically derived from the current directory name.
 #

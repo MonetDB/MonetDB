@@ -22,8 +22,8 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 #
-# ! this file should be kept identical in !
-# ! monet, sql, xml, acoi, template       !
+# ! this file should be kept identical in                                            !
+# ! MonetDB, monet5, sql, xml, acoi, gis, template, playpen, misq, times100, pruning !
 #
 
 CP=cp
