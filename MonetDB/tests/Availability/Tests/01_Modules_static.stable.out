@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 673 ]
+[ 674 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 673 ]
+[ 674 ]
 
 var All:=0;
 
@@ -77,7 +77,7 @@ Static_mods@batloop() {
 
 Module: ""
 
-[ 59 ]
+[ 60 ]
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
@@ -139,6 +139,7 @@ Module: ""
 [ "test_str",	  "PROC:      ",  "test_str() : void",								  "not available"																																																													  ]
 [ "ttype",	  "PROC:      ",  "ttype(any) : int",										  "not available"																																																													  ]
 [ "tunique",	  "PROC:      ",  "tunique(BAT[any,any::1]) : BAT[any::1,void]",				  "not available"																																																													  ]
+[ "vars",		  "PROC:      ",  "vars(str) : void",									  "not available"																																			  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage() : BAT[str,lng]",							  "not available"																																																													  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage(int) : BAT[str,lng]",						  "not available"																																																													  ]
 
@@ -753,7 +754,7 @@ Module: "sys"
 [ "rename",		  "PROC:      ",  "rename(BAT[any::1,any::2], str) : BAT[any::1,any::2]",				  "try to name a BAT and fail if it is not possible."																																																									  ]
 [ "sigs",		  "PROC:      ",  "sigs(str) : void",									  "Show all signatures of the functions in a module."																																																									  ]
 [ "threads",		  "PROC:      ",  "threads() : void",									  "list all system threads and their function."																																																										  ]
-[ "vars",		  "PROC:      ",  "vars() : void",									  "list all Monet variables and their values."																																																										  ]
+[ "vars",		  "PROC:      ",  "vars() : void",										  "list all Monet variables and their values. Optionally filter on name with a certain substring"																																																																  ]
 [ "view_atom_align",	  "COMMAND:   ",  "view_atom_align() : BAT[int,int]",						  "Global type table alignment property"																																																										  ]
 [ "view_atom_name",	  "COMMAND:   ",  "view_atom_name() : BAT[int,str]",						  "Global type table names"																																																												  ]
 [ "view_atom_size",	  "COMMAND:   ",  "view_atom_size() : BAT[int,int]",						  "Global type table sizement property"																																																											  ]
@@ -808,7 +809,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 673 ]
+[ 674 ]
 
 quit();
 

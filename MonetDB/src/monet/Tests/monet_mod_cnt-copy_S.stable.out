@@ -35,8 +35,8 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 [ 10469@0,	  1		  ]
 [ 10594@0,	  1		  ]
 [ 10595@0,	  1		  ]
-[ 10678@0,	  1		  ]
 [ 10679@0,	  1		  ]
+[ 10680@0,	  1		  ]
 #-------------------------#
 # BAT:		  tmp_29  #
 # (oid)		  (int)	  #
@@ -54,24 +54,24 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 [ 10469@0,	  1	  ]
 [ 10594@0,	  1	  ]
 [ 10595@0,	  1	  ]
-[ 10678@0,	  1	  ]
 [ 10679@0,	  1	  ]
+[ 10680@0,	  1	  ]
 #---------------------------------------------------------#
 # BAT:			  count	| copy.count	| diff	  #
 # (str)			  (int)	| (int)		| (int)	  #
 #---------------------------------------------------------#
 [ "monet_environment",	  29,	  29,		  0	  ]
 [ "monet_fcn_fcn",	  573,	  573,		  0	  ]
-[ "monet_fcn_imp",	  673,	  673,		  0	  ]
-[ "monet_fcn_tpe",	  673,	  673,		  0	  ]
+[ "monet_fcn_imp",	  674,	  674,		  0	  ]
+[ "monet_fcn_tpe",	  674,	  674,		  0	  ]
 [ "monet_fcn_mid",	  614,	  614,		  0	  ]
 [ "monet_fcn_sig",	  39,	  39,		  0	  ]
 [ "monet_fcn_dsc",	  614,	  614,		  0	  ]
 [ "monet_fcn_aut",	  614,	  614,		  0	  ]
 [ "monet_fcn_dat",	  614,	  614,		  0	  ]
-[ "monet_fcn_nme",	  673,	  673,		  0	  ]
-[ "monet_fcn_pro",	  1670,	  1670,		  0	  ]
-[ "monet_fcn_cnt",	  673,	  673,		  0	  ]
+[ "monet_fcn_nme",	  674,	  674,		  0	  ]
+[ "monet_fcn_pro",	  1672,	  1672,		  0	  ]
+[ "monet_fcn_cnt",	  674,	  674,		  0	  ]
 [ "monet_mod_nme",	  15,	  15,		  0	  ]
 [ "monet_mod_cnt",	  15,	  15,		  0	  ]
 [ "monet_mod_atm",	  0,	  0,		  0	  ]
@@ -81,9 +81,9 @@ print(a.col_name("count"),b.col_name("copy.count"),c.col_name("diff"));
 [ "monet_mod_use",	  15,	  15,		  0	  ]
 [ "monet_mod_load",	  0,	  0,		  0	  ]
 [ "monet_mod_drop",	  0,	  0,		  0	  ]
-[ "monet_mod_proc",	  100,	  100,		  0	  ]
+[ "monet_mod_proc",	  101,	  101,		  0	  ]
 [ "monet_mod_var",	  50,	  50,		  0	  ]
-[ "adm_fcntbl",		  673,	  673,		  0	  ]
+[ "adm_fcntbl",		  674,	  674,		  0	  ]
 [ "adm_acctbl",		  2,	  2,		  0	  ]
 [ "adm_atomtbl",	  13,	  13,		  0	  ]
 [ "monet_unicode_case",	  732,	  732,		  0	  ]

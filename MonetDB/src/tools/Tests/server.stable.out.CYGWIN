@@ -135,6 +135,7 @@ Start of MIL prelude.
 [ "union(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
 [ "unique(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
 [ "vars() : void"									  ]
+[ "vars(str) : void"									  ]
 [ "vm_usage() : BAT[str,lng]"								  ]
 [ "vm_usage(int) : BAT[str,lng]"							  ]
 #-----------------------------------------------------------------------------------------#
@@ -585,7 +586,7 @@ Start of MIL prelude.
 [ "monet_mod_hdl",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_nme",	  "oid",  "str",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_proc",	  "str",  "oid",  100,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_mod_proc",	  "str",  "oid",  101,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_use",	  "oid",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_var",	  "str",  "ptr",  50,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -970,6 +971,7 @@ procs();
 [ "union(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]"			  ]
 [ "unique(BAT[any::1,any::2]) : BAT[any::1,any::2]"					  ]
 [ "vars() : void"									  ]
+[ "vars(str) : void"									  ]
 [ "vm_usage() : BAT[str,lng]"								  ]
 [ "vm_usage(int) : BAT[str,lng]"							  ]
 vars();
@@ -1432,7 +1434,7 @@ dir();
 [ "monet_mod_hdl",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_nme",	  "oid",  "str",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_proc",	  "str",  "oid",  100,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_mod_proc",	  "str",  "oid",  101,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_use",	  "oid",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_var",	  "str",  "ptr",  50,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]

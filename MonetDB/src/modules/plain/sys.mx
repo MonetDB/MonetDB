@@ -420,8 +420,12 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	table(view_var_name().kdiff([startsWith](view_var_name(), ".").uselect(true)), 
               view_var_type(), view_var_kind(), view_var_constant(), view_var_value());
     }
+    PROC vars(str substr) : void {
+	table(view_var_name().like(substr),
+              view_var_type(), view_var_kind(), view_var_constant(), view_var_value());
+    }
     ADDHELP("vars", "boncz", "Feb  6 1996", 
-        	"list all Monet variables and their values.", "sys"); 
+        	"list all Monet variables and their values. Optionally filter on name with a certain substring", "sys"); 
 
     PROC threads() : void { print(view_gdk_thread()); }
     ADDHELP("threads", "boncz", "Feb  6 1996", 
