@@ -1,7 +1,0 @@
-#!/bin/sh
-
-NAME="$1"
-PRELUDE="$2 $3"
-
-Mlog   "$MSERVER --dbname=$TSTDB $PRELUDE < $NAME.mil"
-eval    $MSERVER --dbname=$TSTDB $PRELUDE < $NAME.mil
