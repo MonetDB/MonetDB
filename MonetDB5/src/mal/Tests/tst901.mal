@@ -1,16 +1,15 @@
 # the multiplex code blocks.
 
-b:= new(:lng,:lng);
-i:= -1:lng;
-barrier (v,i):= newRange(0:lng);
+b:= new(:int,:int);
+barrier (v,i):= newRange(0:int);
 	insert(b,i,i);
-	redo (v,i):= nextElement(1:lng,10:lng);
+	redo (v,i):= nextElement(1:int,10:int);
 exit (v,i);
 c:= copy(b);
 print(c);
 x:= b+c;
 print(x);
-x:= b+1:lng;
+x:= b+1:int;
 print(x);
 x:= b*c;
 print(x);
