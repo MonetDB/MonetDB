@@ -70,6 +70,14 @@ ll_tokenize is a special version of [split](bat(void,str),bat(void,str)), which
 tokenizes a string using the aligned seperator string and adds a row for
 each substring, with the oid of the input head identifying the original boundaries."
 
+.COMMAND round_up(dbl x) : dbl = math_unary_up_ROUND;
+"PARAMETERS:
+dbl - the argument to round
+DESCRIPTION:
+round_up rounds to 0 digits after the point. The only difference to
+round(dbl, 0) is that negative numbers with .5 are rounded up 
+(e.g., round(-1.5) = -1.0)."
+
 .COMMAND normSpace(str string)
 		: str = CMDnormSpace;
 "PARAMETERS:
@@ -347,6 +355,7 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 @c
 #include "pf_support.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
+#include <math.h> /* needed for round_up */
 #if SIZEOF_OID == SIZEOF_INT
 #define oidoid_bunfastins(b,h,t) intint_bunfastins(b,h,t);
 #else
@@ -900,6 +909,23 @@ CMDnormSpace(str *res, str string)
         return GDK_SUCCEED;
 }
 
+int
+math_unary_up_ROUND(dbl *res, dbl *x)
+{
+        if (*x == dbl_nil) {
+                *res = dbl_nil;
+        } else {
+                double integral;
+                double tmp = modf(*x, &integral);
+
+                tmp = floor(tmp + 0.5);
+                tmp += integral;
+
+                *res = tmp;
+        }
+
+        return (GDK_SUCCEED);
+}
 
 
 

@@ -105,6 +105,7 @@ static int
 var_is_used (PFvar_t *v, PFcnode_t *e);
 
 /* tests type equality (not only structural like PFty_eq) */
+/* doesn't work with types along a hierarchy (e.g., decimal - decimal|integer) */
 #define TY_EQ(t1,t2) (PFty_subtype (t1,t2) && PFty_subtype (t2,t1))
 
 /**
@@ -5180,6 +5181,38 @@ translateAggregates (opt_t *f, int code, int rc,
     return (code)?rcode:NORMAL;
 }
 
+static void
+fn_abs (opt_t *f, int code, int rc, char *op)
+{
+    char *item_ext = kind_str(rc);
+    /* because functions are only allowed for dbl
+       we need to cast integers */
+    char *cast_dbl = (rc == INT)?".[dbl]()":"";
+    char *cast_int = (rc == INT)?".[int]()":"";
+    type_co t_co = kind_container(rc);
+
+    milprintf(f,
+            "if (iter.count() != 0) { # fn:%s\n"
+            "var res := item%s%s.[%s]()%s;\n",
+            op,
+            item_ext, cast_dbl, op, cast_int);
+
+    if (code)
+        milprintf(f, "item%s := res;\n", item_ext);
+    else 
+        addValues (f, t_co, "res", "item");
+
+    item_ext = (code)?item_ext:"";
+    milprintf(f,
+            "res := nil_oid_%s;\n"
+            "item%s := item%s.reverse().mark(0@0).reverse();\n"
+            "} # end of fn:%s\n",
+            t_co.mil_type,
+            item_ext, item_ext,
+            op);
+
+}
+
 /**
  * translateIntersect translates intersect and except
  *
@@ -6159,28 +6192,72 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         fn_id (f, "ref", cur_level, counter, args);
         return NORMAL;
     }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"true")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"root")))
     {
+        if (args->kind == c_nil)
+            PFoops (OOPS_WARNING, "fn:root should never be called without context.");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                "{\n"
-                "var itemID := 1@0;\n");
-        /* translateConst needs a bound variable itemID */
-        translateConst(f, cur_level, "BOOL");
-        milprintf(f, 
-                "itemID := nil_oid;\n"
-                "}\n");
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"false")))
-    {
-        milprintf(f,
-                "{\n"
-                "var itemID := 0@0;\n");
-        /* translateConst needs a bound variable itemID */
-        translateConst(f, cur_level, "BOOL");
-        milprintf(f, 
-                "itemID := nil_oid;\n"
-                "}\n");
+                "{ # fn:root ()\n"
+                "if (iter.tunique().count() != iter.count()) "
+                "{ ERROR (\"function fn:root expects "
+                "zero or one value per iteration\"); }\n"
+
+                "var frag := kind.get_fragment();\n"
+                /* get pre values for attributes */
+                "var attr := kind.get_type(ATTR).mark(0@0).reverse();\n"
+                "if (attr.count() != 0) {\n"
+                "var attr_frag := attr.leftfetchjoin(frag);\n"
+                "var attr_item := attr.leftfetchjoin(item);\n"
+                "var attr_iter := attr.leftfetchjoin(iter);\n"
+                "attr := nil_oid_oid;\n"
+                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PRE));\n"
+                "attr_item := nil_oid_oid;\n"
+                "attr_frag := nil_oid_oid;\n"
+                "var elem := kind.get_type(ELEM).mark(0@0).reverse();\n"
+                "var elem_item := elem.leftfetchjoin(item);\n"
+                "var elem_iter := elem.leftfetchjoin(iter);\n"
+                "elem := nil_oid_oid;\n"
+                "var res_mu := merged_union(elem_iter, attr_iter, elem_iter, attr_pre);\n"
+                "item := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "}\n"
+
+                "var transient_nodes := frag.ord_uselect(WS).mark(0@0).reverse();\n"
+                /* retrieve only transient nodes */
+                "if (transient_nodes.count() = iter.count()) {\n"
+                "item := leftthetajoin(item, "
+                                      "ws.fetch(WS_FRAG).reverse().mirror(), "
+                                      "GE).{max}();\n"
+                "item := item.reverse().mark(0@0).reverse();\n"
+                "}\n"
+                /* retrieve only document nodes */
+                "else { if (transient_nodes.count() = 0) {\n"
+                "item := item.project(0@0);\n"
+                "}\n"
+                /* retrieve transient and document nodes */
+                "else {\n"
+                "var t_item := transient_nodes.leftfetchjoin(item);\n"
+                "var t_iter := transient_nodes.leftfetchjoin(iter);\n"
+                "t_item := leftthetajoin(t_item, "
+                                        "ws.fetch(WS_FRAG).reverse().mirror(), "
+                                        "GE).{max}();\n"
+                "t_item := t_item.reverse().mark(0@0).reverse();\n"
+
+                "var doc_nodes := frag.ord_uselect(WS,nil,false,false).mark(0@0).reverse();\n"
+                "var d_iter := doc_nodes.leftfetchjoin(iter);\n"
+                "var d_kind := doc_nodes.leftfetchjoin(kind);\n"
+
+                "var res_mu := merged_union(d_iter, t_iter, "
+                                           "fake_project(0@0), t_item, "
+                                           "d_kind, fake_project(ELEM));\n"
+                "iter := res_mu.fetch(0);\n"
+                "pos := iter.project(0);\n"
+                "item := res_mu.fetch(1);\n"
+                "kind := res_mu.fetch(2);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} }\n"
+                "} # end of fn:root ()\n");
         return NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"exactly-one")))
@@ -6201,6 +6278,332 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ ERROR (\"function fn:zero-or-one expects "
                 "zero or one value per iteration\"); }\n");
         return rc;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"position")))
+    {
+        PFoops (OOPS_WARNING, "fn:position should never be called.");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"last")))
+    {
+        PFoops (OOPS_WARNING, "fn:last should never be called.");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        typed_value (f, code, "U_A", true);
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_pf,"item-sequence-to-untypedAtomic")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        fn_data (f);
+        translateCast2STR (f, STR, NORMAL, L(args)->type);
+        combine_strings (f, code, U_A);
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_pf,"item-sequence-to-node-sequence")) ||
+             !PFqname_eq(fnQname,
+                         PFqname (PFns_pf,"merge-adjacent-text-nodes")))
+    {
+        /* translate is2ns for node* separately */
+        if (code == NODE &&
+            PFty_subtype (TY(L(args)), PFty_star (PFty_node ())))
+        {
+            rc = translateElemContent (f, NODE, cur_level, counter, L(args));
+            if (!rc)
+                map2NODE_interface (f);
+            is2ns_node (f, counter);
+            return NODE;
+        }
+        else
+        {
+            translate2MIL (f, NORMAL, cur_level, counter, L(args));
+            is2ns (f, counter, L(args)->type);
+            return NORMAL;
+        }
+    }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_fn,"distinct-values")))
+    {
+        rc = translate2MIL (f, code, cur_level, counter, L(args));
+        item_ext = kind_str(rc);
+
+        milprintf(f,
+                "{ # translate fn:distinct-values (atomic*) as atomic*\n"
+                /*
+                "var sorting := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
+                "sorting := sorting.tunique().mark(0@0).reverse();\n"
+                "iter := sorting.leftfetchjoin(iter);\n"
+                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "item := sorting.leftfetchjoin(item);\n"
+                "kind := sorting.leftfetchjoin(kind);\n"
+                "sorting := nil_oid_oid;\n"
+                */
+                /* delete duplicates */
+                "var sorting := iter.reverse().sort().reverse();\n"
+                "sorting := sorting.CTrefine(kind);\n"
+                "sorting := sorting.CTrefine(item%s);\n"
+                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "iter := sorting.leftfetchjoin(iter);\n"
+                "pos := iter.mark(1@0);\n"
+                "item%s := sorting.leftfetchjoin(item%s);\n"
+                "kind := sorting.leftfetchjoin(kind);\n"
+                "sorting := nil_oid_oid;\n"
+                "} # end of translate fn:distinct-values (atomic*) as atomic*\n",
+                item_ext, item_ext, item_ext);
+        return rc;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"string-value")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        typed_value (f, code, "STR", false);
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"data")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+
+        if (PFty_subtype (TY(L(args)), PFty_star (PFty_node ())))
+        {
+            /* this branch is probably never evaluated
+               - optimization already applied in coreopt.brg */
+            typed_value (f, code, "U_A", false);
+            rc = (code)?STR:NORMAL;
+        }
+        else
+        {
+            fn_data (f);
+            rc = NORMAL;
+        }
+        return rc;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string")))
+    {
+        return fn_string (f, code, cur_level, counter, L(args));
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-join")))
+    {
+        int rc2;
+        char *item_str = kind_str(STR);
+        item_ext = (code)?item_str:"";
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+        {
+            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+        }
+
+        counter++;
+        saveResult_ (f, counter, STR);
+
+        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        if (!rc2)
+        {
+            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+        }
+
+        milprintf(f,
+                "{ # string-join (string*, string)\n "
+                "var iter_item_str := iter%03u.reverse()"
+                                             ".leftfetchjoin(item%s%03u)"
+                                             ".chk_order();\n"
+                "var iter_sep_str := iter.reverse().leftfetchjoin(item%s);\n"
+                "iter_item_str := string_join(iter_item_str, iter_sep_str);\n"
+                "iter_sep_str := nil_oid_str;\n"
+                "iter := iter_item_str.mark(0@0).reverse();\n"
+                "iter_item_str := iter_item_str.reverse().mark(0@0).reverse();\n",
+                counter, 
+                item_str, counter,
+                item_str);
+        if (code)
+        {
+            milprintf(f,"item%s := iter_item_str;\n", item_ext);
+        }
+        else
+        {
+            addValues(f, str_container(), "iter_item_str", "item");
+        }
+        milprintf(f,
+                "iter_item_str := nil_oid_str;\n"
+                "item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "} # end of string-join (string*, string)\n ",
+                item_ext, item_ext);
+        deleteResult_ (f, counter, STR);
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"contains")))
+    {
+        int rc2;
+        item_ext = kind_str(STR);
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+        }
+
+        counter++;
+        saveResult_ (f, counter, STR);
+
+        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        if (!rc2)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+        }
+
+        milprintf(f,
+                "{ # fn:contains (string?, string?) as boolean\n"
+                "var strings;\n"
+                "if (iter%03u.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter%03u, difference, item%s%03u, "
+                                           "fake_project(\"\"));\n"
+                "difference := nil_oid_oid;\n"
+                "strings := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} "
+                "else {\n"
+                "strings := item%s%03u;\n"
+                "}\n",
+                counter, cur_level, 
+                cur_level, counter,
+                counter, item_ext, counter,
+                item_ext, counter);
+        milprintf(f,
+                "var search_strs;\n"
+                "if (iter.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter, difference, item%s, "
+                                           "fake_project(\"\"));\n"
+                "difference := nil_oid_oid;\n"
+                "search_strs := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} "
+                "else {\n"
+                "search_strs := item%s;\n"
+                "}\n",
+                cur_level,
+                cur_level,
+                item_ext,
+                item_ext);
+        milprintf(f,
+                "item := strings.[search](search_strs).[!=](-1).[oid]();\n"
+                "strings := nil_oid_str;\n"
+                "search_strs := nil_oid_str;\n"
+                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(BOOL);\n"
+                "} # end of fn:contains (string?, string?) as boolean\n",
+                cur_level);
+        deleteResult_ (f, counter, STR);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"concat")))
+    {
+        int rc2;
+        char *item_str = kind_str(STR);
+        item_ext = (code)?item_str:"";
+
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
+        {
+            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+        }
+
+        counter++;
+        saveResult_ (f, counter, STR);
+
+        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        if (!rc2)
+        {
+            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+        }
+
+        milprintf(f,
+                "{ # concat (string, string)\n "
+                "var fst_iter_str := iter%03u.reverse().leftfetchjoin(item%s%03u);\n"
+                "var snd_iter_str := iter.reverse().leftfetchjoin(item%s);\n"
+                "fst_iter_str := fst_iter_str[+](snd_iter_str);\n"
+                "snd_iter_str := nil_oid_str;\n"
+                "iter := fst_iter_str.mark(0@0).reverse();\n"
+                "fst_iter_str := fst_iter_str.reverse().mark(0@0).reverse();\n",
+                counter, item_str, counter,
+                kind_str(STR));
+        if (code)
+        {
+            milprintf(f,"item%s := fst_iter_str;\n", item_ext);
+        }
+        else
+        {
+            addValues(f, str_container(), "fst_iter_str", "item");
+        }
+        milprintf(f,
+                "fst_iter_str := nil_oid_str;\n"
+                "item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n"
+                "} # end of concat (string, string)\n ",
+                item_ext, item_ext);
+        deleteResult_ (f, counter, STR);
+        return (code)?STR:NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"number")))
+    {
+        item_ext = (code)?kind_str(DBL):"";
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+
+        /* cast to dbl is inlined nil represents NaN value */
+        if (rc)
+            milprintf(f,
+                    "var cast_val := item%s.[dbl]();\n", kind_str(rc));
+        else if (PFty_subtype (TY(L(args)), PFty_boolean ()))
+            milprintf(f,
+                    "var cast_val := item.[dbl]();\n");
+        else
+            milprintf(f,
+                    "var cast_val := item%s.[dbl]();\n", kind_str(get_kind(TY(L(args)))));
+
+        milprintf(f,
+                "if (iter.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter, difference, cast_val, "
+                                           "fake_project(dbl(nil)));\n"
+                "difference := nil_oid_oid;\n"
+                "cast_val := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "}\n",
+                cur_level,
+                cur_level);
+
+        /* nil as NaN value doesn't work out, because nil disappears in joins */
+        milprintf(f,
+                "if (cast_val.ord_uselect(dbl(nil)).count() != 0)\n"
+                "{    ERROR (\"don't support NaN value\"); }\n");
+
+        if (!code)
+            addValues (f, dbl_container(), "cast_val", "item");
+        else
+            milprintf(f, "item%s := cast_val;\n", item_ext);
+
+        milprintf(f,
+                "cast_val := nil_oid_dbl;\n"
+                "iter := loop%03u;\n"
+                "pos := iter.project(1@0);\n"
+                "item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "kind := iter.project(DBL);\n",
+                cur_level, item_ext, item_ext);
+
+        return (code)?DBL:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"count")))
     {
@@ -6344,391 +6747,49 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, counter, rcode);
         return rcode;
     }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"empty")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"abs")))
     {
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        milprintf(f,
-                "{ # translate fn:empty (item*) as boolean\n"
-                "var iter_count := {count}(iter.reverse(),loop%03u.reverse());\n"
-                "var iter_bool := iter_count.[=](0).[oid]();\n"
-                "iter_count := nil_oid_int;\n"
-                "item := iter_bool.reverse().mark(0@0).reverse();\n"
-                "iter_bool := nil_oid_bit;\n"
-                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(BOOL);\n"
-                "} # end of translate fn:empty (item*) as boolean\n",
-                cur_level, cur_level);
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
-    {
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        milprintf(f,
-                "# translate fn:not (boolean) as boolean\n"
-                "item := item.leftfetchjoin(bool_not);\n"
-               );
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
-    {
-        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        fn_boolean (f, rc, cur_level, L(args)->type);
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"contains")))
-    {
-        int rc2;
-        item_ext = kind_str(STR);
-
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (!rc)
         {
-            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+            rc = get_kind(fun->ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
-
-        counter++;
-        saveResult_ (f, counter, STR);
-
-        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        if (!rc2)
-        {
-            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
-        }
-
-        milprintf(f,
-                "{ # fn:contains (string?, string?) as boolean\n"
-                "var strings;\n"
-                "if (iter%03u.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
-                "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter%03u, difference, item%s%03u, "
-                                           "fake_project(\"\"));\n"
-                "difference := nil_oid_oid;\n"
-                "strings := res_mu.fetch(1);\n"
-                "res_mu := nil_oid_bat;\n"
-                "} "
-                "else {\n"
-                "strings := item%s%03u;\n"
-                "}\n",
-                counter, cur_level, 
-                cur_level, counter,
-                counter, item_ext, counter,
-                item_ext, counter);
-        milprintf(f,
-                "var search_strs;\n"
-                "if (iter.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
-                "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, item%s, "
-                                           "fake_project(\"\"));\n"
-                "difference := nil_oid_oid;\n"
-                "search_strs := res_mu.fetch(1);\n"
-                "res_mu := nil_oid_bat;\n"
-                "} "
-                "else {\n"
-                "search_strs := item%s;\n"
-                "}\n",
-                cur_level,
-                cur_level,
-                item_ext,
-                item_ext);
-        milprintf(f,
-                "item := strings.[search](search_strs).[!=](-1).[oid]();\n"
-                "strings := nil_oid_str;\n"
-                "search_strs := nil_oid_str;\n"
-                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(BOOL);\n"
-                "} # end of fn:contains (string?, string?) as boolean\n",
-                cur_level);
-        deleteResult_ (f, counter, STR);
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"and")))
-    {
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f,
-                "item := item.[int]().[and](item%03u.[int]()).[oid]();\n", counter);
-        deleteResult (f, counter);
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"or")))
-    {
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f,
-                "item := item.[int]().[or](item%03u.[int]()).[oid]();\n", counter);
-        deleteResult (f, counter);
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"root")))
-    {
-        if (args->kind == c_nil)
-            PFoops (OOPS_WARNING, "fn:root should never be called without context.");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        milprintf(f,
-                "{ # fn:root ()\n"
-                "if (iter.tunique().count() != iter.count()) "
-                "{ ERROR (\"function fn:root expects "
-                "zero or one value per iteration\"); }\n"
-
-                "var frag := kind.get_fragment();\n"
-                /* get pre values for attributes */
-                "var attr := kind.get_type(ATTR).mark(0@0).reverse();\n"
-                "if (attr.count() != 0) {\n"
-                "var attr_frag := attr.leftfetchjoin(frag);\n"
-                "var attr_item := attr.leftfetchjoin(item);\n"
-                "var attr_iter := attr.leftfetchjoin(iter);\n"
-                "attr := nil_oid_oid;\n"
-                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PRE));\n"
-                "attr_item := nil_oid_oid;\n"
-                "attr_frag := nil_oid_oid;\n"
-                "var elem := kind.get_type(ELEM).mark(0@0).reverse();\n"
-                "var elem_item := elem.leftfetchjoin(item);\n"
-                "var elem_iter := elem.leftfetchjoin(iter);\n"
-                "elem := nil_oid_oid;\n"
-                "var res_mu := merged_union(elem_iter, attr_iter, elem_iter, attr_pre);\n"
-                "item := res_mu.fetch(1);\n"
-                "res_mu := nil_oid_bat;\n"
-                "}\n"
-
-                "var transient_nodes := frag.ord_uselect(WS).mark(0@0).reverse();\n"
-                /* retrieve only transient nodes */
-                "if (transient_nodes.count() = iter.count()) {\n"
-                "item := leftthetajoin(item, "
-                                      "ws.fetch(WS_FRAG).reverse().mirror(), "
-                                      "GE).{max}();\n"
-                "item := item.reverse().mark(0@0).reverse();\n"
-                "}\n"
-                /* retrieve only document nodes */
-                "else { if (transient_nodes.count() = 0) {\n"
-                "item := item.project(0@0);\n"
-                "}\n"
-                /* retrieve transient and document nodes */
-                "else {\n"
-                "var t_item := transient_nodes.leftfetchjoin(item);\n"
-                "var t_iter := transient_nodes.leftfetchjoin(iter);\n"
-                "t_item := leftthetajoin(t_item, "
-                                        "ws.fetch(WS_FRAG).reverse().mirror(), "
-                                        "GE).{max}();\n"
-                "t_item := t_item.reverse().mark(0@0).reverse();\n"
-
-                "var doc_nodes := frag.ord_uselect(WS,nil,false,false).mark(0@0).reverse();\n"
-                "var d_iter := doc_nodes.leftfetchjoin(iter);\n"
-                "var d_kind := doc_nodes.leftfetchjoin(kind);\n"
-
-                "var res_mu := merged_union(d_iter, t_iter, "
-                                           "fake_project(0@0), t_item, "
-                                           "d_kind, fake_project(ELEM));\n"
-                "iter := res_mu.fetch(0);\n"
-                "pos := iter.project(0);\n"
-                "item := res_mu.fetch(1);\n"
-                "kind := res_mu.fetch(2);\n"
-                "res_mu := nil_oid_bat;\n"
-                "} }\n"
-                "} # end of fn:root ()\n");
-        return NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"position")))
-    {
-        PFoops (OOPS_WARNING, "fn:position should never be called.");
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"last")))
-    {
-        PFoops (OOPS_WARNING, "fn:last should never be called.");
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
-    {
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        typed_value (f, code, "U_A", true);
-        return (code)?STR:NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"string-value")))
-    {
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        typed_value (f, code, "STR", false);
-        return (code)?STR:NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"data")))
-    {
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-
-        if (PFty_subtype (TY(L(args)), PFty_star (PFty_node ())))
-        {
-            /* this branch is probably never evaluated
-               - optimization already applied in coreopt.brg */
-            typed_value (f, code, "U_A", false);
-            rc = (code)?STR:NORMAL;
-        }
-        else
-        {
-            fn_data (f);
-            rc = NORMAL;
-        }
+        fn_abs (f, code, rc, "abs");
         return rc;
     }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"number")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"ceiling")))
     {
-        item_ext = (code)?kind_str(DBL):"";
-        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-
-        /* cast to dbl is inlined nil represents NaN value */
-        if (rc)
-            milprintf(f,
-                    "var cast_val := item%s.[dbl]();\n", kind_str(rc));
-        else if (PFty_subtype (TY(L(args)), PFty_boolean ()))
-            milprintf(f,
-                    "var cast_val := item.[dbl]();\n");
-        else
-            milprintf(f,
-                    "var cast_val := item%s.[dbl]();\n", kind_str(get_kind(TY(L(args)))));
-
-        milprintf(f,
-                "if (iter.count() != loop%03u.count())\n"
-                "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
-                "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, cast_val, "
-                                           "fake_project(dbl(nil)));\n"
-                "difference := nil_oid_oid;\n"
-                "cast_val := res_mu.fetch(1);\n"
-                "res_mu := nil_oid_bat;\n"
-                "}\n",
-                cur_level,
-                cur_level);
-
-        /* nil as NaN value doesn't work out, because nil disappears in joins */
-        milprintf(f,
-                "if (cast_val.ord_uselect(dbl(nil)).count() != 0)\n"
-                "{    ERROR (\"don't support NaN value\"); }\n");
-
-        if (!code)
-            addValues (f, dbl_container(), "cast_val", "item");
-        else
-            milprintf(f, "item%s := cast_val;\n", item_ext);
-
-        milprintf(f,
-                "cast_val := nil_oid_dbl;\n"
-                "iter := loop%03u;\n"
-                "pos := iter.project(1@0);\n"
-                "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := iter.project(DBL);\n",
-                cur_level, item_ext, item_ext);
-
-        return (code)?DBL:NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string")))
-    {
-        return fn_string (f, code, cur_level, counter, L(args));
-    }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-join")))
-    {
-        int rc2;
-        char *item_str = kind_str(STR);
-        item_ext = (code)?item_str:"";
-
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (!rc)
         {
-            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+            rc = get_kind(fun->ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
-
-        counter++;
-        saveResult_ (f, counter, STR);
-
-        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        if (!rc2)
-        {
-            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
-        }
-
-        milprintf(f,
-                "{ # string-join (string*, string)\n "
-                "var iter_item_str := iter%03u.reverse()"
-                                             ".leftfetchjoin(item%s%03u)"
-                                             ".chk_order();\n"
-                "var iter_sep_str := iter.reverse().leftfetchjoin(item%s);\n"
-                "iter_item_str := string_join(iter_item_str, iter_sep_str);\n"
-                "iter_sep_str := nil_oid_str;\n"
-                "iter := iter_item_str.mark(0@0).reverse();\n"
-                "iter_item_str := iter_item_str.reverse().mark(0@0).reverse();\n",
-                counter, 
-                item_str, counter,
-                item_str);
-        if (code)
-        {
-            milprintf(f,"item%s := iter_item_str;\n", item_ext);
-        }
-        else
-        {
-            addValues(f, str_container(), "iter_item_str", "item");
-        }
-        milprintf(f,
-                "iter_item_str := nil_oid_str;\n"
-                "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
-                "} # end of string-join (string*, string)\n ",
-                item_ext, item_ext);
-        deleteResult_ (f, counter, STR);
-        return (code)?STR:NORMAL;
+        fn_abs (f, code, rc, "ceil");
+        return rc;
     }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"concat")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"floor")))
     {
-        int rc2;
-        char *item_str = kind_str(STR);
-        item_ext = (code)?item_str:"";
-
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (!rc)
         {
-            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+            rc = get_kind(fun->ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
-
-        counter++;
-        saveResult_ (f, counter, STR);
-
-        rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        if (!rc2)
+        fn_abs (f, code, rc, "floor");
+        return rc;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"round")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (!rc)
         {
-            milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
+            rc = get_kind(fun->ret_ty);
+            milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
-
-        milprintf(f,
-                "{ # concat (string, string)\n "
-                "var fst_iter_str := iter%03u.reverse().leftfetchjoin(item%s%03u);\n"
-                "var snd_iter_str := iter.reverse().leftfetchjoin(item%s);\n"
-                "fst_iter_str := fst_iter_str[+](snd_iter_str);\n"
-                "snd_iter_str := nil_oid_str;\n"
-                "iter := fst_iter_str.mark(0@0).reverse();\n"
-                "fst_iter_str := fst_iter_str.reverse().mark(0@0).reverse();\n",
-                counter, item_str, counter,
-                kind_str(STR));
-        if (code)
-        {
-            milprintf(f,"item%s := fst_iter_str;\n", item_ext);
-        }
-        else
-        {
-            addValues(f, str_container(), "fst_iter_str", "item");
-        }
-        milprintf(f,
-                "fst_iter_str := nil_oid_str;\n"
-                "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
-                "} # end of concat (string, string)\n ",
-                item_ext, item_ext);
-        deleteResult_ (f, counter, STR);
-        return (code)?STR:NORMAL;
+        fn_abs (f, code, rc, "round_up");
+        return rc;
     }
     /* calculation functions just call an extra function with
        their operator argument to avoid code duplication */
@@ -6862,67 +6923,83 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult (f, counter);
         return NORMAL;
     }
-    else if (!PFqname_eq(fnQname,
-                         PFqname (PFns_pf,"item-sequence-to-untypedAtomic")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"true")))
+    {
+        milprintf(f,
+                "{\n"
+                "var itemID := 1@0;\n");
+        /* translateConst needs a bound variable itemID */
+        translateConst(f, cur_level, "BOOL");
+        milprintf(f, 
+                "itemID := nil_oid;\n"
+                "}\n");
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"false")))
+    {
+        milprintf(f,
+                "{\n"
+                "var itemID := 0@0;\n");
+        /* translateConst needs a bound variable itemID */
+        translateConst(f, cur_level, "BOOL");
+        milprintf(f, 
+                "itemID := nil_oid;\n"
+                "}\n");
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"empty")))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        fn_data (f);
-        translateCast2STR (f, STR, NORMAL, L(args)->type);
-        combine_strings (f, code, U_A);
-        return (code)?STR:NORMAL;
-    }
-    else if (!PFqname_eq(fnQname,
-                         PFqname (PFns_pf,"item-sequence-to-node-sequence")) ||
-             !PFqname_eq(fnQname,
-                         PFqname (PFns_pf,"merge-adjacent-text-nodes")))
-    {
-        /* translate is2ns for node* separately */
-        if (code == NODE &&
-            PFty_subtype (TY(L(args)), PFty_star (PFty_node ())))
-        {
-            rc = translateElemContent (f, NODE, cur_level, counter, L(args));
-            if (!rc)
-                map2NODE_interface (f);
-            is2ns_node (f, counter);
-            return NODE;
-        }
-        else
-        {
-            translate2MIL (f, NORMAL, cur_level, counter, L(args));
-            is2ns (f, counter, L(args)->type);
-            return NORMAL;
-        }
-    }
-    else if (!PFqname_eq(fnQname,
-                         PFqname (PFns_fn,"distinct-values")))
-    {
-        rc = translate2MIL (f, code, cur_level, counter, L(args));
-        item_ext = kind_str(rc);
-
         milprintf(f,
-                "{ # translate fn:distinct-values (atomic*) as atomic*\n"
-                /*
-                "var sorting := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
-                "sorting := sorting.tunique().mark(0@0).reverse();\n"
-                "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
-                "item := sorting.leftfetchjoin(item);\n"
-                "kind := sorting.leftfetchjoin(kind);\n"
-                "sorting := nil_oid_oid;\n"
-                */
-                /* delete duplicates */
-                "var sorting := iter.reverse().sort().reverse();\n"
-                "sorting := sorting.CTrefine(kind);\n"
-                "sorting := sorting.CTrefine(item%s);\n"
-                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
-                "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark(1@0);\n"
-                "item%s := sorting.leftfetchjoin(item%s);\n"
-                "kind := sorting.leftfetchjoin(kind);\n"
-                "sorting := nil_oid_oid;\n"
-                "} # end of translate fn:distinct-values (atomic*) as atomic*\n",
-                item_ext, item_ext, item_ext);
-        return rc;
+                "{ # translate fn:empty (item*) as boolean\n"
+                "var iter_count := {count}(iter.reverse(),loop%03u.reverse());\n"
+                "var iter_bool := iter_count.[=](0).[oid]();\n"
+                "iter_count := nil_oid_int;\n"
+                "item := iter_bool.reverse().mark(0@0).reverse();\n"
+                "iter_bool := nil_oid_bit;\n"
+                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(BOOL);\n"
+                "} # end of translate fn:empty (item*) as boolean\n",
+                cur_level, cur_level);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f,
+                "# translate fn:not (boolean) as boolean\n"
+                "item := item.leftfetchjoin(bool_not);\n"
+               );
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        fn_boolean (f, rc, cur_level, L(args)->type);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"and")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f,
+                "item := item.[int]().[and](item%03u.[int]()).[oid]();\n", counter);
+        deleteResult (f, counter);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_op,"or")))
+    {
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f,
+                "item := item.[int]().[or](item%03u.[int]()).[oid]();\n", counter);
+        deleteResult (f, counter);
+        return NORMAL;
     }
     else if (!PFqname_eq(fnQname,
                          PFqname (PFns_pf,"join")))

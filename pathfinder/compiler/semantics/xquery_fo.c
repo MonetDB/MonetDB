@@ -587,7 +587,7 @@
   { .ns = PFns_fn, .loc = "min",                                         \
     .arity = 1, .par_ty = { PFty_star (PFty_double ()) },                \
     .ret_ty = PFty_double () }                                           \
-, /* fn:sum (integer*) as double */                                      \
+, /* fn:sum (integer*) as integer */                                     \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 1, .par_ty = { PFty_star (PFty_integer ()) },               \
     .ret_ty = PFty_integer () }                                          \
@@ -599,7 +599,7 @@
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 1, .par_ty = { PFty_star (PFty_double ()) },                \
     .ret_ty = PFty_double () }                                           \
-, /* fn:sum (integer*, integer?) as double */                            \
+, /* fn:sum (integer*, integer?) as integer */                           \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 2, .par_ty = { PFty_star (PFty_integer ()),                 \
                             PFty_opt (PFty_integer ()) },                \
@@ -614,6 +614,54 @@
     .arity = 2, .par_ty = { PFty_star (PFty_double ()),                  \
                             PFty_opt (PFty_double ()) },                 \
     .ret_ty = PFty_double () }                                           \
+, /* fn:abs (integer?) as integer? */                                    \
+  { .ns = PFns_fn, .loc = "abs",                                         \
+    .arity = 1, .par_ty = { PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()) }                               \
+, /* fn:abs (decimal?) as decimal? */                                    \
+  { .ns = PFns_fn, .loc = "abs",                                         \
+    .arity = 1, .par_ty = { PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()) }                               \
+, /* fn:abs (double?) as double? */                                      \
+  { .ns = PFns_fn, .loc = "abs",                                         \
+    .arity = 1, .par_ty = { PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()) }                                \
+, /* fn:ceiling (integer?) as integer? */                                \
+  { .ns = PFns_fn, .loc = "ceiling",                                     \
+    .arity = 1, .par_ty = { PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()) }                               \
+, /* fn:ceiling (decimal?) as decimal? */                                \
+  { .ns = PFns_fn, .loc = "ceiling",                                     \
+    .arity = 1, .par_ty = { PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()) }                               \
+, /* fn:ceiling (double?) as double? */                                  \
+  { .ns = PFns_fn, .loc = "ceiling",                                     \
+    .arity = 1, .par_ty = { PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()) }                                \
+, /* fn:floor (integer?) as integer? */                                  \
+  { .ns = PFns_fn, .loc = "floor",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()) }                               \
+, /* fn:floor (decimal?) as decimal? */                                  \
+  { .ns = PFns_fn, .loc = "floor",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()) }                               \
+, /* fn:floor (double?) as double? */                                    \
+  { .ns = PFns_fn, .loc = "floor",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()) }                                \
+, /* fn:round (integer?) as integer? */                                  \
+  { .ns = PFns_fn, .loc = "round",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_integer ()) },                \
+    .ret_ty = PFty_opt (PFty_integer ()) }                               \
+, /* fn:round (decimal?) as decimal? */                                  \
+  { .ns = PFns_fn, .loc = "round",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_decimal ()) },                \
+    .ret_ty = PFty_opt (PFty_decimal ()) }                               \
+, /* fn:round (double?) as double? */                                    \
+  { .ns = PFns_fn, .loc = "round",                                       \
+    .arity = 1, .par_ty = { PFty_opt (PFty_double ()) },                 \
+    .ret_ty = PFty_opt (PFty_double ()) }                                \
 , /* op:plus (integer, integer) as integer */                            \
   { .ns = PFns_op, .loc = "plus",                                        \
     .arity = 2, .par_ty = { PFty_integer (),                             \

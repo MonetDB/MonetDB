@@ -106,6 +106,7 @@ bool4
 bool5
 bool6
 bool7
+ty_eq
 cast1
 cast2
 cast3
@@ -187,6 +188,10 @@ except2
 fn_avg
 fn_min
 fn_max
+fn_abs
+fn_ceiling
+fn_floor
+fn_round
 fn_sum
 fn_number
 fn_true_false
