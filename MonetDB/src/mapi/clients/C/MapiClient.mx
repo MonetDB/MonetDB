@@ -1377,6 +1377,9 @@ main(int argc, char **argv)
 
 	c = 0;
 
+	/* we're interactive iff explicit or if no files and no -s option */
+	interactive = interactive || (optind == argc && command == NULL);
+
 	/* doFile prefixes first query with command line arguments now */
 	if (optind < argc) {
 		/* execute from file(s) */
