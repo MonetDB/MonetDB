@@ -688,12 +688,13 @@ def RunTest(env, TST) :
 	os.chdir(TSTTRGDIR)
 
 	NotOnNT = \
-		["src/modules/plain/salgebra", "tests/by_Peter/tst_priv", "src/modules/plain/tcpip1", "src/modules/plain/tcpip2",	\
-		"scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2",	\
-		"tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
+		["src/modules/plain/salgebra", "tests/by_Peter/tst_priv", "src/modules/plain/tcpip1", "src/modules/plain/tcpip2"]
+	#,	\
+	#	"scripts/gold/tst100", "scripts/gold/tstvoid", "src/gdk/reload", "src/modules/plain/mprof", "src/modules/plain/mprof2",	\
+	#	"tests/Availability/00_Mserver", "tests/BugReports/no.073", "tests/BugReports/no.089"]
 	ReqMshdn = [".milC"]
 	if   os.name == "nt"  and  url(TSTDIR)+"/"+TST in NotOnNT:
-		SkipTest(env, TST, EXT, "as it currently crashes/hangs on NT.")
+		SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
 	elif EXT in ReqMshdn  and  not env['exe']['Mshutdown'][0]:
 		SkipTest(env, TST, EXT, "as Mshutdown is not available.")
 	elif EXT == ".milC" and  not env['exe']['MapiClient'][0]:
@@ -1211,7 +1212,7 @@ def main(argv) :
 				ErrXit("Accuracy for diff (-a) must be one of: 0=lines, 1=words, 2=chars !")
 			#TODO
 			if os.name == "nt"  and  a != 0:
-				Warn("Currently only '-a0` is supported on NT!")
+				Warn("Currently only '-a0` is supported on WindowsNT!")
 				a = 0
 			par['ACCURACY'] = a
 		elif o == "-t":
