@@ -1425,6 +1425,7 @@ should be the same. And they are not.. Sucker!
 		if (*s == 0) strcpy(s,"can't help you here, sorry.\n");
         }
 	GDKerror(buf);
+	ll_sugarnode = NULL;
 }
 @
 @}
