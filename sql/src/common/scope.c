@@ -9,7 +9,8 @@ static void destroy_vars( list *vars ){
 			var *v = (var*)n->data.sval;
 			if (v->type == type_statement)
 				statement_destroy(v->data.stval);
-			_DELETE(v->vname);
+			if (v->tname) _DELETE(v->tname);
+			if (v->cname) _DELETE(v->cname);
 			_DELETE(n->data.sval);
 	  	}
 	  	list_destroy(vars);
@@ -43,21 +44,23 @@ scope *scope_close( scope *s ){
 	return p;
 }
 
-var *scope_add_statement( scope *scp, statement *s, char *name ){
+var *scope_add_statement( scope *scp, statement *s, char *tname, char *cname ){
 	var *v = NEW(var);
 	v->type = type_statement;
 	v->data.stval = s; s->refcnt++;
-	v->vname = _strdup(name);
+	v->tname = (tname)?_strdup(tname):NULL;
+	v->cname = _strdup(cname);
 	v->nr = scp->nr++;
 	list_append_string( scp->vars, (char*)v);
 	return v;
 }
 
-var *scope_add_table( scope *scp, table *t, char *name ){
+var *scope_add_table( scope *scp, table *t, char *tname ){
 	var *v = NEW(var);
 	v->type = type_table;
 	v->data.tval = t;
-	v->vname = _strdup(name);
+	v->tname = (tname)?_strdup(tname):NULL;
+	v->cname = NULL;
 	v->nr = scp->nr++;
 	list_append_string( scp->vars, (char*)v);
 	return v;
@@ -115,8 +118,8 @@ var *scope_bind_table( scope *scp, char *name ){
 		node *n = scp->vars->h; 
 		for( ; n; n = n->next ){
 			var *v = (var*)n->data.sval;
-			if (v->type == type_table &&
-				strcmp( v->vname, name) == 0){
+			if (v->type == type_table && v->tname &&
+				strcmp( v->tname, name) == 0){
 				return v;	
 			}
 		}
@@ -164,7 +167,7 @@ column *scope_bind_table_column( scope *scp, char *tname, char *cname, var **b){
 	  for( ; n; n = n->next ){
 	    var *v = (var*)n->data.sval;
 	    if (v->type == type_table){
-	      if (strcmp(v->vname, tname) == 0)
+	      if (v->tname && strcmp(v->tname, tname) == 0)
 	       if ((c = bind_column(v->data.tval->columns, cname)) != NULL){
 		if (start != scp)
 		  scope_lift(start, c, v );
@@ -177,19 +180,35 @@ column *scope_bind_table_column( scope *scp, char *tname, char *cname, var **b){
 	return NULL;
 }
 
-statement *scope_bind_statement( scope *scp, char *name ){
+statement *scope_bind_statement( scope *scp, char *tname, char *cname ){
+    if (!tname){
 	for( ; scp; scp = scp->p ){
 	  node *n = scp->vars->h; 
 	  for( ; n; n = n->next ){
 	    var *v = (var*)n->data.sval;
 	    if (v->type == type_statement){
-	      if (strcmp(v->vname, name) == 0){
+	      if (v->cname && strcmp(v->cname, cname) == 0){
 		return v->data.stval;
 	      }
 	    }
 	  }
 	}
-	return NULL;
+    } else {
+
+	for( ; scp; scp = scp->p ){
+	  node *n = scp->vars->h; 
+	  for( ; n; n = n->next ){
+	    var *v = (var*)n->data.sval;
+	    if (v->type == type_statement){
+	      if (v->tname && strcmp(v->tname, tname) == 0 &&
+	          v->cname && strcmp(v->cname, cname) == 0){
+		return v->data.stval;
+	      }
+	    }
+	  }
+	}
+    }
+    return NULL;
 }
 
 statement *scope_first_column( scope *scp ){
@@ -232,9 +251,12 @@ void scope_dump( scope *scp ){
 	  for( ; n; n = n->next ){
 	    var *v = (var*)n->data.sval;
 	    if (v->type == type_statement){
-		    printf("statement %s ", v->vname );
+		    if (v->tname)
+		    	printf("statement %s %s ", v->tname, v->cname );
+		    else
+		    	printf("statement %s ", v->cname );
 	    } else if (v->type == type_table){
-		    printf("table %s ", v->vname );
+		    printf("table %s ", v->tname );
 	    }
 	  }
 	  printf("\n");

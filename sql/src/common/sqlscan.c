@@ -612,7 +612,14 @@ int sqllex( YYSTYPE *yylval, void *parm ){
 	if (token == NAME || token == COMPARISON || token == STRING ||
 		token == AMMSC || token == TYPE)
 		yylval->sval = _strdup(lc->yytext);
+
+	if (token == STRING)
+		sql_statement_add(lc, "'");
+
 	sql_statement_add(lc, lc->yytext);
+
+	if (token == STRING)
+		sql_statement_add(lc, "'");
 	return token;
 }
 

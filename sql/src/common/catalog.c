@@ -34,7 +34,7 @@ table *cat_create_table( catalog *cat, long id, schema *s, char *name,
 	table *t = NEW(table);
 	t->id = id;
 	if (id == 0) t->id = catalog_getoid( cat );
-	t->name = _strdup(name); 
+	t->name = (name)?_strdup(name):NULL; 
 	t->schema = s;
 	t->temp = temp; 
 	t->columns = list_create();
@@ -49,7 +49,7 @@ static
 int column_destroy( char *clientdata, int colnr, char *col ){
 	column *c = (column*)col;
 
-	_DELETE(c->name);
+	if (c->name) _DELETE(c->name);
 	_DELETE(c);
 	return 0;
 }
@@ -60,7 +60,7 @@ int table_destroy( char *clientdata, int tbnr, char *tbl ){
 
 	list_traverse(t->columns, &column_destroy, NULL);
 	list_destroy(t->columns); 
-	_DELETE(t->name);
+	if (t->name) _DELETE(t->name);
 	_DELETE(t);
 	return 0;
 }
@@ -84,7 +84,7 @@ void cat_destroy_table( catalog *cat, schema *s, char *name ){
 	node *n = s->tables->h;
 	while(n){
 		table *t = (table*)n->data.sval;
-		if (strcmp(t->name, name) == 0){
+		if (t->name && strcmp(t->name, name) == 0){
 			list_remove(s->tables, n);
 			break;
 		}
@@ -228,7 +228,7 @@ table *cat_bind_table( catalog *cat, schema *s, char *name ){
 	node *n = s->tables->h;
 	while(n){
 		table *t = (table*)n->data.sval;
-		if (strcmp(t->name, name) == 0)
+		if (t->name && strcmp(t->name, name) == 0)
 			return t;
 		n = n->next;
 	}

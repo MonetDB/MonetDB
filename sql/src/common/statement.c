@@ -636,25 +636,28 @@ type *head_type( statement *st ){
 	}
 }
 
-static 
 statement *_basecolumn( statement *st ){
 	switch(st->type){
 	case st_join: 
 	case st_derive: 
 	case st_intersect: return _basecolumn(st->op2.stval);
 
+	case st_mark: 
+	case st_unop: 
+	case st_binop: 
+
+	case st_like: 
 	case st_select: 
 	case st_select2: 
+	case st_semijoin: 
 	case st_atom: 
 	case st_name: 
 	case st_group: 
+	case st_union: 
 	case st_unique: return _basecolumn(st->op1.stval);
 
 	case st_column: return st; 
 
-	case st_mark: 
-	case st_unop: 
-	case st_binop: 
 	case st_reverse: return basecolumn(st->op1.stval);
 
 	case st_triop: return basecolumn(st->op1.lval->h->data.stval);
@@ -671,12 +674,15 @@ statement *basecolumn( statement *st ){
 	case st_atom: 
 	case st_mark: 
 	case st_name: 
+	case st_union: 
 	case st_unique: 
 	case st_aggr: 
 	case st_unop: 
 	case st_binop: 
 	case st_join: 
 	case st_intersect: 
+	case st_semijoin: 
+	case st_like: 
 	case st_select: 
 	case st_select2: return basecolumn(st->op1.stval);
 	case st_column: return st;

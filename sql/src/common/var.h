@@ -6,7 +6,8 @@
 typedef struct var {
 	symtype type;
 	symdata data;
-	char *vname;
+	char *tname;
+	char *cname;
 	int nr;
 } var;
 
