@@ -10,7 +10,7 @@ type BAT in GDK.
 For the time being we assume GDK to support at most 255 different
 atomic types. If this grows, then the encoding scheme presented
 below permits 2^15 different bat types at most
-Beware the malAnyType is a speudo type known within MAL only.
+Beware the TYPE_any is a speudo type known within MAL only.
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -40,8 +40,6 @@ html
 /* #define GDKerror printf*/
 
 typedef int malType;
-#define malVarType -2
-#define malAnyType 255	/* identical to TYPE_any */
 
 #define malVARG " malVARG"
 #define TMPMARKER '$'
@@ -49,7 +47,7 @@ typedef int malType;
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
 #define getHeadType(X)	((X>>8) & 0377 )
 #define getTailType(X)	((X) & 0377 )
-#define isaBatType(X) 	((X)!=malAnyType && (1<<16) & (X))
+#define isaBatType(X) 	((X)!=TYPE_any && (1<<16) & (X))
 @-
 Procedure type parameters may be qualified by a formal type term any::I ,
 where I is a small integer. 
@@ -117,15 +115,14 @@ str malTypeName(malType tpe)
 	printf("maltype: %d %d %d",tpe,getHeadType(tpe),getTailType(tpe));
 	printf("	: %d\n",isaBatType(tpe));
 #endif
-	if( tpe == malAnyType ) return GDKstrdup("any");
-	if( tpe == malVarType ) return GDKstrdup("var");
+	if( tpe == TYPE_any ) return GDKstrdup("any");
 	if( isaBatType(tpe)){
 		char buf[1024],*s;
 		int l=1024;
 		if( getHeadIndex(tpe) ){
 			snprintf(buf,l,"bat[any::%d,", getHeadIndex(tpe));
 		} else
-		if( getHeadType(tpe) == malAnyType) 
+		if( getHeadType(tpe) == TYPE_any) 
 			snprintf(buf,l,"bat[any,","");
 		else
 			snprintf(buf,l,"bat[%s,", ATOMname(getHeadType(tpe)));
@@ -134,7 +131,7 @@ str malTypeName(malType tpe)
 		if( getTailIndex(tpe) ){
 			snprintf(s,l,"any::%d]", getTailIndex(tpe));
 		} else
-		if( getTailType(tpe) == malAnyType) 
+		if( getTailType(tpe) == TYPE_any) 
 			snprintf(s,l,"any]","");
 		else
 			snprintf(s,l,"%s]", ATOMname(getTailType(tpe)));
@@ -249,21 +246,19 @@ int getTypeIndex(str nme){
 	int i;
 	i= ATOMindex(nme);
 	/*printf("getTypeIndex %s %d %d\n",nme,i, GDKatomcnt);*/
-	if( idcmp("any",nme)==0 ) return malAnyType;
+	if( idcmp("any",nme)==0 ) return TYPE_any;
 	if( idcmp("bat",nme)==0 ){
 /* printf("found a bat[any,any]\n");*/
 		i = newBatType(TYPE_any,TYPE_any);
 /* printf("isAnyexpression? %d\n", isAnyExpression(i));*/
 		return i;
 	}
-	if( i== -GDKatomcnt){
-		i = malAnyType;
-	}
+	if( i== -GDKatomcnt) i = TYPE_any;
 	return i;
 }
 int getGDKtype(int type){
 	if( isaBatType(type)) return TYPE_bat;
-	if( type == malAnyType) return TYPE_int;
+	if( type == TYPE_any) return TYPE_int;
 	return ATOMtype(type);
 }
 str newTmpName(int i){

@@ -135,6 +135,7 @@ point for the modules to be added later.
 #include "mal_scope.h"
 
 Scope mal_scope;	/* the root of the tree */
+Scope scopeJump[256];	/* to speedup accees to correct scope */
 
 void newSubScope(Scope cntxt){
 	int len = (MAXSCOPE)*sizeof(Scope);
@@ -145,6 +146,9 @@ void newSubScope(Scope cntxt){
 Definition of a new module scope may interfere with concurrent
 actions of multiple threads. This calls for a secure update 
 of the scope tree structure. 
+A jump table is mainted to provide a quick start in the module
+table to find the correct one. This simple scheme safes about
+100ms/100K calls
 @c
 
 Scope newScope(Scope cntxt, str nme){
@@ -154,6 +158,7 @@ Scope newScope(Scope cntxt, str nme){
 	if( cntxt != NULL){
 		cur->outer = cntxt->outer;
 		cntxt->outer= cur;
+		scopeJump[*nme]= cur;
 	} 
 	return cur;
 }
@@ -234,6 +239,7 @@ the start of a new module scope.
 Scope findScope(Scope cntxt, str name){
 	if( cntxt->name==NULL) return NULL;
 	if( name==NULL) return cntxt;
+	if( scopeJump[*name]) cntxt= scopeJump[*name];
         while(cntxt != NULL){
                 if( idcmp(name,cntxt->name)== 0 )
                         break;

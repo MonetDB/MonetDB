@@ -102,12 +102,14 @@ html
 #include "mal_function.h"
 
 #define DEBUG_MAL_RESOLVE
+#define MAXTYPEVAR	10
+
 mal_export void chkProgram(Scope s, MalBlkPtr mb);
 mal_export void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level);
 mal_export int resolveType(int dsttype, int srctype);
 mal_export int isPolymorphic(malType t);
-mal_export malType getPolyType(malType t, int polytype[2*MAXARG]);
-mal_export int updateTypeMap(int formal, int actual, int polytype[2*MAXARG]);
+mal_export malType getPolyType(malType t, int polytype[MAXTYPEVAR]);
+mal_export int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 mal_export int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe);
 
 extern str traceFcnName;
@@ -126,6 +128,11 @@ by setting the routine of interest.
 #include "mal_resolve.h"
 str traceFcnName= "___";
 int tracefcn;
+int polyVector[MAXTYPEVAR];
+void polyInit(){
+	int i;
+	for(i=0;i<MAXTYPEVAR;i++) polyVector[i]= TYPE_any;
+}
 @-
 A function may be characterised by its module, i.e. the location to
 start the search. Ommision of the module name implies searching from
@@ -137,7 +144,7 @@ malType findFunctionType(Scope scope, MalBlkPtr mb, InstrPtr p){
 	InstrPtr sig;
 	int i,j,k,l, polymorphic, unmatched = 0, s1;
 	int foundbutwrong=0;
-	int polytype[2*MAXARG];
+	int polytype[MAXTYPEVAR];
 	int returntype[MAXARG];
 
 @-
@@ -214,7 +221,8 @@ due to the limited type nesting permitted.
 		int formal = getArgType(s->def,sig,k);
 		if( sig->polymorphic ){
 			if( polymorphic==0){
-				for(l=0;l<2*p->argc;l++) polytype[l]= malAnyType;
+				if(polyVector[0]==0) polyInit();
+				memcpy(polytype,polyVector,sizeof(polyVector));
 				polymorphic++;
 			}
 			if( updateTypeMap(formal, actual, polytype)){
@@ -226,7 +234,7 @@ due to the limited type nesting permitted.
 
 			printf("mismatch %d,%d test %s poly %s\n",
 			i,k, malTypeName(actual),
-			malTypeName(getArgType(s->def,sig,k)));
+			malTypeName(formal));
 			}
 #endif
 				break;
@@ -238,7 +246,6 @@ due to the limited type nesting permitted.
 Any reference to the polytype table is removed. Possibly
 turning a contrainted type into 'any', which matches all types.
 @c
-		actual= getPolyType(actual,polytype);
 		if( resolveType( formal,actual)== -1 ){
 			unmatched= i;
 			break;
@@ -264,7 +271,7 @@ At a later stage we may automatically insert such coercion requests.
 			unmatched, polymorphic,p==sig);
 		if( polymorphic){
 			for(l=0;l<2*p->argc;l++) 
-			if( polytype[l] != malAnyType)
+			if( polytype[l] != TYPE_any)
 			printf("poly %d %s\n",l,malTypeName(polytype[l]));
 		}
 	}
@@ -284,9 +291,7 @@ the resulting type can not be determined.
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,i);
 
-		if(isPolymorphic(formal))
-			s1= getPolyType(formal, polytype);
-		else    s1= getArgType(s->def,sig,i);
+		s1= getPolyType(formal, polytype);
 
 		returntype[i]= resolveType(actual,s1);
 		if( returntype[i]== -1 ){
@@ -433,8 +438,8 @@ int resolveType(int dsttype, int srctype){
 	}
 #endif
 	if( dsttype == srctype) return dsttype;
-	if( dsttype == TYPE_any || dsttype== malAnyType) return srctype;
-	if( srctype == TYPE_any || srctype== malAnyType) return dsttype;
+	if( dsttype == TYPE_any) return srctype;
+	if( srctype == TYPE_any) return dsttype;
 	if( isaBatType(dsttype) && isaBatType(srctype) ){
 		h1= getHeadType(dsttype);
 		t1= getTailType(dsttype);
@@ -442,13 +447,13 @@ int resolveType(int dsttype, int srctype){
 		t2= getTailType(srctype);
 
 		h3= -1;
-		if( h1 == malAnyType || h1== TYPE_any) h3= h2;
-		if( h2 == malAnyType || h2== TYPE_any) h3= h1;
+		if( h1 == TYPE_any) h3= h2;
+		if( h2 == TYPE_any) h3= h1;
 		if( h1 == h2) h3= h1;
 		if(h3 == -1) goto noResolution;
 		t3= -1;
-		if( t1 == malAnyType) t3= t2;
-		if( t2 == malAnyType) t3= t1;
+		if( t1 == TYPE_any) t3= t2;
+		if( t2 == TYPE_any) t3= t1;
 		if( t1 == t2) t3= t1;
 		if(t3 == -1) goto noResolution;
 #ifdef DEBUG_MAL_RESOLVE
@@ -471,7 +476,7 @@ noResolution:
 
 int typeConformance(MalBlkPtr mb, InstrPtr p, int tpe){
 	if( getDestType(mb,p) == tpe) return tpe;
-	if( getDestType(mb,p) == malAnyType) {
+	if( getDestType(mb,p) == TYPE_any) {
 		setDestType(mb,p,tpe);
 		return tpe;
 	}
@@ -560,7 +565,7 @@ requires a call to a type-specific setToNil() function call.
 		int lhs = getArgType(mb,p,k);
 
 		if( p->argv[k]<0) {printf("ASSUMPTION VIOLATION\n");abort();}
-		if( lhs == malAnyType)
+		if( lhs == TYPE_any)
 			setVarType(mb,p->argv[k],rhs);
 		else
 		if( lhs != rhs ){
@@ -605,7 +610,7 @@ and should be checked.
 		tst= TRUE;
 		for(k=p->retc;tst && k<p->argc;k++){
 			int actual = getArgType(mb,p,k);
-			if(getArgType(mb,p,k)== malAnyType ||
+			if(getArgType(mb,p,k)== TYPE_any ||
 			isAnyExpression(actual)) tst= FALSE;
 		}
 		if(i==0 || tst) typeChecker(s,mb,p, kind);
@@ -652,7 +657,7 @@ to type check the function upon each call.
 @c
 int typeKind(MalBlkPtr mb, InstrPtr p, int i){
 	malType t= getArgType(mb,p,i);
-	if( isAnyExpression(t) || t == malAnyType) {
+	if( isAnyExpression(t) || t == TYPE_any) {
 		if( i < getArgCount(mb) )
 			return TYPE_POLYMORPHIC;
 		return TYPE_DYNAMIC;
@@ -661,7 +666,7 @@ int typeKind(MalBlkPtr mb, InstrPtr p, int i){
 }
 int isPolymorphic(malType t){
 	int ret =0;
-	if( t== malAnyType) ret= 1; else
+	if( t== TYPE_any) ret= 1; else
 	if( isAnyExpression(t)) ret= 1; else
 	if( isaBatType(t)){
 		if( getHeadType(t)==TYPE_any) ret= 1; else
@@ -674,11 +679,10 @@ For a polymorphic commands we do not generate a cloned version.
 It suffices to determine the actual return value taking into
 account the type variable constraints.
 @c
-malType getPolyType(malType t,int polytype[2*MAXARG]){
+malType getPolyType(malType t,int polytype[MAXTYPEVAR]){
 	int hi,ti,i;
 	int head= TYPE_any, tail = TYPE_any;
 
-	if( !isPolymorphic(t) ) return t;
 	hi = getHeadIndex(t);
 	ti = getTailIndex(t);
 	if( hi == 0)
@@ -701,7 +705,7 @@ it can match with all polymorphic types.
 The routine returns the instanciated formal type for subsequent
 type resolution.
 @c
-int updateTypeMap(int formal, int actual, int polytype[2*MAXARG])
+int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
 	int h,t;
 
@@ -723,7 +727,7 @@ int updateTypeMap(int formal, int actual, int polytype[2*MAXARG])
 		} else	t= getHeadType(actual);
 
 		if( (h=getHeadIndex(formal)) ){
-			if( polytype[h] == malAnyType) 
+			if( polytype[h] == TYPE_any) 
 				polytype[h]= t;
 			if( polytype[h] != t && t!= TYPE_any) return -1;
 		}
@@ -732,7 +736,7 @@ int updateTypeMap(int formal, int actual, int polytype[2*MAXARG])
 		t= getTailType(actual);
 		if( isAnyExpression(t)) t= TYPE_any;
 
-		if( polytype[h] == malAnyType ) polytype[h]=  t;
+		if( polytype[h] == TYPE_any ) polytype[h]=  t;
 		if( polytype[h] != t && t!= TYPE_any) return -1;
 	}
 	return 0;

@@ -500,7 +500,7 @@ malType getType(MalBlkPtr mb, str nme){
 	i= findVariable(mb,nme);
 	if( i< 0) return getTypeIndex(nme);
 	if( i>=0) return getVarType(mb,i);
-	return malVarType;
+	return TYPE_any;
 }
 @-
 All variables are implicitly declared upon their first
@@ -541,9 +541,9 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	n= findVariable(mb,name);
 	/* check for type names */
 	if( n>=0){
-		if( type != malAnyType){
+		if( type != TYPE_any){
 		    if( getVarType(mb,n) != type  &&
-		        getVarType(mb,n) != malAnyType)
+		        getVarType(mb,n) != TYPE_any)
 			GDKerror("'%s' type mismatch %d vs %d\n",
 				name, getVarType(mb,n),type);
 		}
@@ -555,9 +555,9 @@ If we encounter a Monet type name, it is added to the symbol table with
 proprietary type.
 The makes analyses of patterns like bat(int,str) easier.
 @c
-	if( *name == TMPMARKER) l= malAnyType; else l = getTypeIndex(name);
-	if( l>= 0 && l != malAnyType){
-		if( type != l && type != malAnyType){
+	if( *name == TMPMARKER) l= TYPE_any; else l = getTypeIndex(name);
+	if( l>= 0 && l != TYPE_any){
+		if( type != l && type != TYPE_any){
 			GDKerror("'%s' type mismatch with %d\n", name, type);
 			GDKfree(name);  
 			name = newTmpName(mb->vtop);
@@ -866,7 +866,7 @@ void delArgument(InstrPtr p, int idx){
 
 int getVarType(MalBlkPtr mb, int i) 
 {
-	if(i<0) return malAnyType;
+	if(i<0) return TYPE_any;
 	if( i >= mb->vsize) {
 		GDKwarning("setVarType:array bound error %d %d\n",i, mb->vtop);
 		return;
@@ -902,7 +902,7 @@ str getDestName(MalBlkPtr mb, InstrPtr p){
 }
 malType destinationType(MalBlkPtr mb, InstrPtr p){
 	if( p->argc>0) return getVarType(mb,p->argv[0]);
-	return malAnyType;
+	return TYPE_any;
 }
 
 @-

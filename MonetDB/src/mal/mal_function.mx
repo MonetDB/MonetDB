@@ -81,7 +81,7 @@ Symbol newFunction(str nme){
 	s = newSymbol(nme,FUNCTIONsymbol);
 	p = newInstruction(FUNCTIONsymbol);
 	p->fcnname = GDKstrdup(nme);
-	p->argv[0]= newVariable(s->def,GDKstrdup(nme),malAnyType);
+	p->argv[0]= newVariable(s->def,GDKstrdup(nme),TYPE_any);
 	pushInstruction(s->def,p);
 	return s;
 }
@@ -191,7 +191,7 @@ void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 {
 	chkCntrl(mb,pp);
 	if( pp->barrier == BARRIERsymbol)
-	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= malAnyType 
+	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= TYPE_any 
 	 && getArgType(mb,pp,0) != TYPE_sht && getArgType(mb,pp,0)!= TYPE_lng 
 	 && getArgType(mb,pp,0) != TYPE_int ){
 		GDKerror("barrier '%s' should be of type bit or number in %s[%d]\n",
@@ -282,11 +282,11 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, malType v, malType t){
 			tail = getTailType(x);
 			hx = getHeadIndex(x);
 			tx = getTailIndex(x);
-			if( hx == v && head == malAnyType){
+			if( hx == v && head == TYPE_any){
 				hx =0;
 				head =t;
 			}
-			if( tx == v && tail == malAnyType){
+			if( tx == v && tail == TYPE_any){
 				tx= 0;
 				tail = t;
 			}
@@ -420,7 +420,7 @@ assure that the type-constraints are obeyed. The resulting type
 is returned.
 @c
 malType  getCommandType(Symbol proc, MalBlkPtr mb, InstrPtr p){
-	return malAnyType;
+	return TYPE_any;
 }
 void printFunction(FILE *fd, MalBlkPtr mb){
 	int i;

@@ -365,7 +365,7 @@ table.
 int typeQualifier(Client cntxt)
 {	
 	str hd = 0, tl =0;
-	int i= malAnyType, ht,tt;
+	int i= TYPE_any, ht,tt;
 
 	if( *cntxt->nxt!=':') return -1;
 
@@ -631,7 +631,7 @@ during the final phase reshuffle the return values to the beginning (?)
 	skipBlanc2(cntxt);
 	if( currChar(cntxt) != ':') {
 		/* default */
-		setVarType(curBlk,0,malAnyType);
+		setVarType(curBlk,0,TYPE_any);
 	} else { 
 		if( *(cntxt->nxt+1) =='('){
 			int retc= curInstr->argc, i1,i2=0;
@@ -724,7 +724,7 @@ a column of a BAT.
 	}
 @= melElement
 	if( keyword(cntxt,"any",3)){
-		type = malAnyType;
+		type = TYPE_any;
 		if( keyphrase2(cntxt,"::")){
 			if( !isdigit(currChar(cntxt)) ){
 				parseError(cntxt,"[1-9] expected\n");
@@ -741,7 +741,7 @@ a column of a BAT.
 		x = cntxt->nxt[l];
 		cntxt->nxt[l]= 0;
 		type= getTypeIndex(cntxt->nxt);
-		if( type == malAnyType)
+		if( type == TYPE_any)
 			parseError(cntxt,"Type identifier expected\n");
 		cntxt->nxt[l]= x;
 		cntxt->nxt += l;
@@ -750,7 +750,7 @@ a column of a BAT.
 @-
 @c
 int melType(Client cntxt, InstrPtr curInstr){
-	int type= malAnyType;
+	int type= TYPE_any;
 	int l;
 
 	if( keyword(cntxt,"bat",3)){
@@ -759,7 +759,7 @@ int melType(Client cntxt, InstrPtr curInstr){
 			@:melElement@ ht = type;
 			if( nextChar(cntxt) !=','){
 				parseError(cntxt,"',' expected\n");
-				return malAnyType;
+				return TYPE_any;
 			}
 			skipBlanc2(cntxt);
 			@:melElement@ tt = type;
@@ -768,7 +768,7 @@ int melType(Client cntxt, InstrPtr curInstr){
 				parseError(cntxt,"']' expected\n");
 			}
 		} else {
-			type = malAnyBatType(malAnyType,malAnyType);
+			type = malAnyBatType(TYPE_any,TYPE_any);
 			curInstr->polymorphic = TRUE;
 		}
 	} else{
@@ -975,10 +975,10 @@ int parse@3(Client cntxt)
 }
 @c
 @:parseCntrl("catch", 5,CATCH, TYPE_str)@
-@:parseCntrl("redo", 4,REDO, malAnyType)@
-@:parseCntrl("raise", 5,RAISE, malAnyType)@
-@:parseCntrl("return", 6,RETURN, malAnyType)@
-@:parseCntrl("leave", 5,LEAVE, malAnyType)@
+@:parseCntrl("redo", 4,REDO, TYPE_any)@
+@:parseCntrl("raise", 5,RAISE, TYPE_any)@
+@:parseCntrl("return", 6,RETURN, TYPE_any)@
+@:parseCntrl("leave", 5,LEAVE, TYPE_any)@
 
 @-
 Most instructions are simple assignments, possibly
@@ -1033,7 +1033,7 @@ for bat[T1,T2] this is a little tricky to parse.
 		if( (idx=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 			v= idCopy(cntxt,i);
 			i= typeQualifier(cntxt);
-			i= i>=0?i: malAnyType;
+			i= i>=0?i: TYPE_any;
 			idx = newVariable(curBlk, v, i);
 		} else advance(cntxt,i);
 	} else { 
@@ -1076,7 +1076,7 @@ void parseAssign(Client cntxt, int kind)
 				return;
 			}
 			arg= idCopy(cntxt,i);
-			type = malAnyType;
+			type = TYPE_any;
 			if( *cntxt->nxt==':' ){
 				nextChar(cntxt);
 				type= melType(cntxt,curInstr);
@@ -1103,7 +1103,7 @@ void parseAssign(Client cntxt, int kind)
 @-
 Every target variable may be typed immediately.
 @c
-		type = malAnyType;
+		type = TYPE_any;
 		if( *cntxt->nxt==':' && *(cntxt->nxt+1)!='='){
 			nextChar(cntxt);
 			type= melType(cntxt,curInstr);
@@ -1116,11 +1116,11 @@ Every target variable may be typed immediately.
 		curInstr->argv[z]= newVariable(curBlk,arg,type);
 	} else {
 		if( curInstr->barrier) {
-			curInstr->argv[z]= newVariable(curBlk,arg,malAnyType);
+			curInstr->argv[z]= newVariable(curBlk,arg,TYPE_any);
 			curInstr->token= kind;
 			goto part3;
 		}
-		curInstr->argv[z]= newTmpVariable(curBlk,malAnyType);
+		curInstr->argv[z]= newTmpVariable(curBlk,TYPE_any);
 		if( currChar(cntxt) != '.' &&
 		    currChar(cntxt) != '(' ){
 				GDKfree(arg);
@@ -1255,7 +1255,7 @@ part2b:
 			/* test variable */
 			if( (k=findVariableLength(curBlk,cntxt->nxt,i)) == -1){
 				v= idCopy(cntxt,i);
-				k= newVariable(curBlk, v, malAnyType);
+				k= newVariable(curBlk, v, TYPE_any);
 			} else advance(cntxt,i);
 			pushArgument(curBlk,curInstr,k); 
 			goto part3;
