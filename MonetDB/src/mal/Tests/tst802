@@ -1,10 +1,11 @@
 # using spaces
 
-u:= bind(str,"user");
+take(u:str,"user");
 print("User bound to %s\n",u);
 
-v:= mil.bind("roomnumber");
+v:int:= take("roomnumber");
+
 v:= 123;
 v:= v+1;
-mil.release("roomnumber",v);
-mil.release("roomnumber",v); # failure? done twice or implicit bind?
+release("roomnumber",v);
+release("roomnumber",v); # failure? done twice or implicit take?

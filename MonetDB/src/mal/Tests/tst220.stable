@@ -1,0 +1,118 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## a test checking BAT reference counting under various situations
+#function steal(bb:bat[any::1,any::2]) :bat[any::1,any::2];
+#	i:= getBATrefcnt(bb);
+#	printf("enter function refcount =%d\n",i);
+#
+#	loc:= bb;
+#	i:= getBATrefcnt(b);
+#	printf("local in function refcount =%d\n",i);
+#
+#	return bb;
+#end function; 
+function Admin.steal(bb:bat[any::1,any::2]):bat[any::1,any::2];	#0 polymorphic:void (steal:bat[any::1,any::2])(bb:bat[any::1,any::2])
+	i := bat.getBATrefcnt(bb);	#1:int (i:int)(bb:bat[any::1,any::2])
+	system.printf("enter function refcount =%d\n",i);	#2:int ($3:int)($4:str)(i:int)
+	loc := bb;	#3 polymorphic:void (loc:any)(bb:bat[any::1,any::2])
+	i := getBATrefcnt(b);	#4 unknown:void (i:int)(b:any)
+	system.printf("local in function refcount =%d\n",i);	#5:int ($7:int)($8:str)(i:int)
+	return bb;	#6:BAT (bb:bat[any::1,any::2])
+end function;	#7:void 
+#
+#	b:= new(int,str);
+#	i:= getBATrefcnt(b);
+#	printf("refcount =%d\n",i);
+#
+#	insert(b,1,"bat B");
+#	print(b);
+#	i:= getBATrefcnt(b);
+#	printf("refcount =%d\n",i);
+#
+#	#handle an alias
+#	b2:= b;			
+#	i:= getBATrefcnt(b);
+#	printf("after assignment refcount =%d\n",i);
+#
+#	#re-use a bat variable
+#	b3:= b;			
+#	i:= getBATrefcnt(b);
+#	printf("after 2nd assignment refcount =%d\n",i);
+#
+#	#re-use a bat variable
+#	b3:= new(int,str);			
+#	i:= getBATrefcnt(b);
+#	printf("after 3rd assignment refcount =%d\n",i);
+#
+#	#re-use a bat variable
+#	b4:= select(b,"bat B","bat B");
+#	print(b4);
+#	i:= getBATrefcnt(b);
+#	printf("after 4rd assignment refcount =%d\n",i);
+#
+#	# remove by assignment
+#	b2:= b3;
+#	i:= getBATrefcnt(b);
+#	printf("after 5rd assignment refcount =%d\n",i);
+#
+#	printf("call function\n");
+#	d:= steal(b);
+#	i:= getBATrefcnt(b);
+#	printf("return from function refcount =%d\n",i);
+#
+function Admin.main():int;	#0:void (main:int)
+	b := bat.new(int,str);	#1:BAT (b:bat[int,str])(int:int)(str:str)
+	i := bat.getBATrefcnt(b);	#2:int (i:int)(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#3:int ($5:int)($6:str)(i:int)
+	bat.insert(b,1,"bat B");	#4:int ($7:int)(b:bat[int,str])($8:int)($9:str)
+	system.print(b);	#5:int ($10:int)(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#6:int (i:int)(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#7:int ($11:int)($6:str)(i:int)
+	b2 := b;	#8:BAT (b2:bat[int,str])(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#9:int (i:int)(b:bat[int,str])
+	system.printf("after assignment refcount =%d\n",i);	#10:int ($13:int)($14:str)(i:int)
+	b3 := b;	#11:BAT (b3:bat[int,str])(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#12:int (i:int)(b:bat[int,str])
+	system.printf("after 2nd assignment refcount =%d\n",i);	#13:int ($16:int)($17:str)(i:int)
+	b3 := bat.new(int,str);	#14:BAT (b3:bat[int,str])(int:int)(str:str)
+	i := bat.getBATrefcnt(b);	#15:int (i:int)(b:bat[int,str])
+	system.printf("after 3rd assignment refcount =%d\n",i);	#16:int ($18:int)($19:str)(i:int)
+	b4 := algebra.select(b,"bat B","bat B");	#17:BAT (b4:bat[int,str])(b:bat[int,str])($9:str)($9:str)
+	system.print(b4);	#18:int ($21:int)(b4:bat[int,str])
+	i := bat.getBATrefcnt(b);	#19:int (i:int)(b:bat[int,str])
+	system.printf("after 4rd assignment refcount =%d\n",i);	#20:int ($22:int)($23:str)(i:int)
+	b2 := b3;	#21:BAT (b2:bat[int,str])(b3:bat[int,str])
+	i := bat.getBATrefcnt(b);	#22:int (i:int)(b:bat[int,str])
+	system.printf("after 5rd assignment refcount =%d\n",i);	#23:int ($24:int)($25:str)(i:int)
+	system.printf("call function\n");	#24:int ($26:int)($27:str)
+	d := Admin.steal(b);	#25:BAT (d:bat[int,str])(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#26:int (i:int)(b:bat[int,str])
+	system.printf("return from function refcount =%d\n",i);	#27:int ($29:int)($30:str)(i:int)
+end function;	#28:void 
+refcount =1
+#-------------------------#
+# BAT:	  tmp_5		  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "bat B"	  ]
+refcount =1
+after assignment refcount =2
+after 2nd assignment refcount =3
+after 3rd assignment refcount =2
+#-------------------------#
+# BAT:	  tmp_3		  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "bat B"	  ]
+after 4rd assignment refcount =2
+after 5rd assignment refcount =1
+call function
+enter function refcount =2
+return from function refcount =1
+>

@@ -1,8 +1,15 @@
 # Testing global constants defined for all users
-	b:= mal.bind(str,"version");
-	u:= mal.bind(str,"user");
-	a:= mal.bind(str,"gdk_dbname");
-	a:= mal.bind(str,"gdk_dbfarm");
-	a:= mal.bind(str,"gdk_dbdir");
-	a:= mal.bind(str,"gdk_distr");
-	v:= mal.bind(bat[void,str],"environment");
+# It should travers the nested spaces looking for the correct variable
+# take a local copy
+	v := take("version",str);
+	u := take("user", str);
+	db:= take("gdk_dbname",str);
+	df:= take("gdk_dbfarm");
+	dd:= take("gdk_dbdir");
+	b := take("environment",bat[void,str]);
+
+# how to obtain a copy of all objects in a space?
+barrier b:= space.iterator("mal_constants",-1:int,name:str,value:str);
+	printf("%s=",name);
+	printf("%s\n",value);
+end b;

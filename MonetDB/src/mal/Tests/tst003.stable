@@ -11,8 +11,8 @@
 #a:=b;	#b not yet defined
 #b:=c;	#c undefined
 #
-function Admin.main():int;	#0:(main:int)
-	a := b;	#1 dynamic:(a:any)(b:any)
-	b := c;	#2 dynamic:(b:any)(c:any)
-end function;	#3:
+function Admin.main():int;	#0:void (main:int)
+	a := b;	#1 dynamic:void (a:any)(b:any)
+	b := c;	#2 dynamic:void (b:any)(c:any)
+end function;	#3:void 
 >

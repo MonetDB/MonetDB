@@ -19,16 +19,16 @@
 #end	t;
 #	i:= 0;
 #
-function Admin.main():int;	#0:(main:int)
-	i := 0;	#1:(i:int)($2:int)
-barrier	v := true;	#2:(v:bit)($4:bit)
-	leave v;	#3:(v:bit)
-	i := 1;	#4:(i:int)($5:int)
-end	v;	#5:(v:bit)
-barrier	t := arith.<(i,3);	#6:(t:bit)(i:int)($7:int)
-	i := arith.+(i,1);	#7:(i:int)(i:int)($5:int)
-	redo t ;	#8:(t:bit)
-end	t;	#9:(t:bit)
-	i := 0;	#10:(i:int)($2:int)
-end function;	#11:
+function Admin.main():int;	#0:void (main:int)
+	i := 0;	#1:int (i:int)($2:int)
+barrier	v := true;	#2:bit (v:bit)($4:bit)
+	leave v;	#3:bit (v:bit)
+	i := 1;	#4:int (i:int)($5:int)
+end	v;	#5:bit (v:bit)
+barrier	t := arith.<(i,3);	#6:bit (t:bit)(i:int)($7:int)
+	i := arith.+(i,1);	#7:int (i:int)(i:int)($5:int)
+	redo t ;	#8:bit (t:bit)
+end	t;	#9:bit (t:bit)
+	i := 0;	#10:int (i:int)($2:int)
+end function;	#11:void 
 >

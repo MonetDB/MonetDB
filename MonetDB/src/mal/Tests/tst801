@@ -4,21 +4,27 @@
 # CONST STORE_MMAP  := 1; 
 # CONST STORE_COMPR := 2; 
 
-space mil_constants(mil_bats);
-	STORE_MEM   := 0;
-	STORE_MMAP  := 1;
-	STORE_COMPR := 2;
+module constants;
 
-# binding uses the 'root' versions.
-function bind(v:str):any;
-	w:= lookup(v);
+#the variables introduced in main are retained as globals
+function main():void;
+	deposit("STORE_MEM",0:int);
+	deposit("STORE_MMAP",1:int);
+	deposit("STORE_COMPR",2:int);
+end function;
+
+# takeing uses the 'root' versions.
+function take(v:str):any;
+	printf("looking for %s\n",v);
+	w:= take(v);
 	return w:
 end function;
 
 # release is overloaded for testing only
 function release(v:any):void;
-	printf("releasing an object:");
-	printft(v);
-	root.release(v);	# pass on
+	raise "releasing a constant is forbidden";
 end function;
+
+# accept the definition of a new constant
+function deposit(v:any,name:str) = space_deposit;
 

@@ -1,0 +1,44 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## a test checking BAT reference counting under various situations
+#	b:= new(int,str);
+#	i:= getBATrefcnt(b);
+#	printf("refcount =%d\n",i);
+#
+#	insert(b,1,"bat B");
+#	print(b);
+#	i:= getBATrefcnt(b);
+#	printf("refcount =%d\n",i);
+#
+#	# referenceing through mirroring
+#	b6:= mirror(b);
+#	i:= getBATrefcnt(b);
+#	printf("after mirror assignment refcount =%d\n",i);
+#
+function Admin.main():int;	#0:void (main:int)
+	b := bat.new(int,str);	#1:BAT (b:bat[int,str])(int:int)(str:str)
+	i := bat.getBATrefcnt(b);	#2:int (i:int)(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#3:int ($5:int)($6:str)(i:int)
+	bat.insert(b,1,"bat B");	#4:int ($7:int)(b:bat[int,str])($8:int)($9:str)
+	system.print(b);	#5:int ($10:int)(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#6:int (i:int)(b:bat[int,str])
+	system.printf("refcount =%d\n",i);	#7:int ($11:int)($6:str)(i:int)
+	b6 := bat.mirror(b);	#8:BAT (b6:bat[str,int])(b:bat[int,str])
+	i := bat.getBATrefcnt(b);	#9:int (i:int)(b:bat[int,str])
+	system.printf("after mirror assignment refcount =%d\n",i);	#10:int ($13:int)($14:str)(i:int)
+end function;	#11:void 
+refcount =1
+#-------------------------#
+# BAT:	  tmp_5		  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "bat B"	  ]
+refcount =1
+after mirror assignment refcount =2
+>

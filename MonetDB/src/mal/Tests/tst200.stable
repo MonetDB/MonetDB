@@ -37,31 +37,31 @@
 #err := print(b);
 #err := print(b,b,b);
 #
-function Admin.main():int;	#0:(main:int)
-	o := atoms.oid(20000000);	#1:(o:oid)($2:int)
-	err := atoms.setoid(o);	#2:(err:int)(o:oid)
-	b := bat.new(int,int);	#3:(b:bat[int,int])(int:int)(int:int)
-	err := system.printf("#~BeginVariableOutput~#\n");	#4:(err:int)($6:str)
-	err := system.printf("#~EndVariableOutput~#\n");	#5:(err:int)($7:str)
-	err := bat.insert(b,1,15);	#6:(err:int)(b:bat[int,int])($8:int)($9:int)
-	err := bat.insert(b,2,4);	#7:(err:int)(b:bat[int,int])($10:int)($11:int)
-	n0 := atoms.int(nil);	#8:(n0:int)($13:void)
-	err := bat.insert(b,3,n0);	#9:(err:int)(b:bat[int,int])($14:int)(n0:int)
-	err := bat.insert(b,4,16);	#10:(err:int)(b:bat[int,int])($11:int)($15:int)
-	err := bat.insert(b,5,25);	#11:(err:int)(b:bat[int,int])($16:int)($17:int)
-	err := bat.insert(b,6,36);	#12:(err:int)(b:bat[int,int])($18:int)($19:int)
-	err := bat.insert(b,7,49);	#13:(err:int)(b:bat[int,int])($20:int)($21:int)
-	err := bat.insert(b,8,64);	#14:(err:int)(b:bat[int,int])($22:int)($23:int)
-	err := bat.insert(b,9,n0);	#15:(err:int)(b:bat[int,int])($24:int)(n0:int)
-	err := bat.insert(b,n0,n0);	#16:(err:int)(b:bat[int,int])(n0:int)(n0:int)
-	err := bat.insert(b,n0,81);	#17:(err:int)(b:bat[int,int])(n0:int)($25:int)
-	err := system.print(b);	#18:(err:int)(b:bat[int,int])
-	err := system.print(b,b,b);	#19:(err:int)(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
-end function;	#20:
+function Admin.main():int;	#0:void (main:int)
+	o := atoms.oid(20000000);	#1:oid (o:oid)($2:int)
+	err := atoms.setoid(o);	#2:void (err:int)(o:oid)
+	b := bat.new(int,int);	#3:BAT (b:bat[int,int])(int:int)(int:int)
+	err := system.printf("#~BeginVariableOutput~#\n");	#4:int (err:int)($6:str)
+	err := system.printf("#~EndVariableOutput~#\n");	#5:int (err:int)($7:str)
+	err := bat.insert(b,1,15);	#6:int (err:int)(b:bat[int,int])($8:int)($9:int)
+	err := bat.insert(b,2,4);	#7:int (err:int)(b:bat[int,int])($10:int)($11:int)
+	n0 := atoms.int(nil);	#8:int (n0:int)($13:void)
+	err := bat.insert(b,3,n0);	#9:int (err:int)(b:bat[int,int])($14:int)(n0:int)
+	err := bat.insert(b,4,16);	#10:int (err:int)(b:bat[int,int])($11:int)($15:int)
+	err := bat.insert(b,5,25);	#11:int (err:int)(b:bat[int,int])($16:int)($17:int)
+	err := bat.insert(b,6,36);	#12:int (err:int)(b:bat[int,int])($18:int)($19:int)
+	err := bat.insert(b,7,49);	#13:int (err:int)(b:bat[int,int])($20:int)($21:int)
+	err := bat.insert(b,8,64);	#14:int (err:int)(b:bat[int,int])($22:int)($23:int)
+	err := bat.insert(b,9,n0);	#15:int (err:int)(b:bat[int,int])($24:int)(n0:int)
+	err := bat.insert(b,n0,n0);	#16:int (err:int)(b:bat[int,int])(n0:int)(n0:int)
+	err := bat.insert(b,n0,81);	#17:int (err:int)(b:bat[int,int])(n0:int)($25:int)
+	err := system.print(b);	#18:int (err:int)(b:bat[int,int])
+	err := system.print(b,b,b);	#19:int (err:int)(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
+end function;	#20:void 
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#
-# BAT:	  tmp_6	  #
+# BAT:	  tmp_5	  #
 # (int)	  (int)	  #
 #-----------------#
 [ 1,	  15	  ]
@@ -76,7 +76,7 @@ end function;	#20:
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
 #-----------------#
-# tmp_6	| tmp_6	  #
+# tmp_5	| tmp_5	  #
 #-----------------#
 [ 15,	  15	  ]
 [ 4,	  4	  ]

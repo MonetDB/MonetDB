@@ -16,24 +16,24 @@
 #	redo l;
 #end l;
 #end function;
-function Admin.pl(i:str):int;	#0:(pl:int)(i:str)
-	L := "something";	#1:(L:str)($3:str)
-	r := 0;	#2:(r:int)($5:int)
-barrier	l := arith.=(r,0);	#3:(l:bit)(r:int)($5:int)
-	y := r;	#4:(y:int)(r:int)
-	r := arith.+(r,1);	#5:(r:int)(r:int)($8:int)
-	leave l;	#6:(l:bit)
-	redo l ;	#7:(l:bit)
-end	l;	#8:(l:bit)
-end function;	#9:
+function Admin.pl(i:str):int;	#0:void (pl:int)(i:str)
+	L := "something";	#1:str (L:str)($3:str)
+	r := 0;	#2:int (r:int)($5:int)
+barrier	l := arith.=(r,0);	#3:bit (l:bit)(r:int)($5:int)
+	y := r;	#4:int (y:int)(r:int)
+	r := arith.+(r,1);	#5:int (r:int)(r:int)($8:int)
+	leave l;	#6:bit (l:bit)
+	redo l ;	#7:bit (l:bit)
+end	l;	#8:bit (l:bit)
+end function;	#9:void 
 #a:= "hello";
 #z:= pl(a);
 #print("done");
 #
-function Admin.main():int;	#0:(main:int)
-	a := "hello";	#1:(a:str)($2:str)
-	z := Admin.pl(a);	#2:(z:int)(a:str)
-	system.print("done");	#3:($4:int)($5:str)
-end function;	#4:
+function Admin.main():int;	#0:void (main:int)
+	a := "hello";	#1:str (a:str)($2:str)
+	z := Admin.pl(a);	#2:int (z:int)(a:str)
+	system.print("done");	#3:int ($4:int)($5:str)
+end function;	#4:void 
 [ "done" ]
 >

@@ -14,13 +14,13 @@
 #	redo l;
 #end l;
 #
-function Admin.main():int;	#0:(main:int)
-	r := 0;	#1:(r:int)($2:int)
-	l := arith.<(r,1);	#2:(l:bit)(r:int)($4:int)
-barrier	l;	#3:(l:bit)
-	r := arith.+(r,1);	#4:(r:int)(r:int)($4:int)
-	l := false;	#5:(l:bit)($5:bit)
-	redo l ;	#6:(l:bit)
-end	l;	#7:(l:bit)
-end function;	#8:
+function Admin.main():int;	#0:void (main:int)
+	r := 0;	#1:int (r:int)($2:int)
+	l := arith.<(r,1);	#2:bit (l:bit)(r:int)($4:int)
+barrier	l;	#3:bit (l:bit)
+	r := arith.+(r,1);	#4:int (r:int)(r:int)($4:int)
+	l := false;	#5:bit (l:bit)($5:bit)
+	redo l ;	#6:bit (l:bit)
+end	l;	#7:bit (l:bit)
+end function;	#8:void 
 >

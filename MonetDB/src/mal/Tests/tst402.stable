@@ -14,11 +14,11 @@
 #	redo v1;
 #end	v1;
 #
-function Admin.main():int;	#0:(main:int)
-	i := ' ';	#1:(i:chr)($2:chr)
-barrier	v1 := mal.nextElement(i,'A','C');	#2:(v1:bit)(i:chr)($4:chr)($5:chr)
-	v := "do something";	#3:(v:str)($7:str)
-	redo v1 ;	#4:(v1:bit)
-end	v1;	#5:(v1:bit)
-end function;	#6:
+function Admin.main():int;	#0:void (main:int)
+	i := ' ';	#1:chr (i:chr)($2:chr)
+barrier	v1 := mal.nextElement(i,'A','C');	#2:bit (v1:bit)(i:chr)($4:chr)($5:chr)
+	v := "do something";	#3:str (v:str)($7:str)
+	redo v1 ;	#4:bit (v1:bit)
+end	v1;	#5:bit (v1:bit)
+end function;	#6:void 
 >
