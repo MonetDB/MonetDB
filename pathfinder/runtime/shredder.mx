@@ -251,7 +251,7 @@ static void printStat(shredCtx* ctx) {
                         dupl = sb->dupl;
                     else
                         dupl = ctx->nslocDUPL;
-                    stream_printf(GDKout,", dupl=%d(=%.f\%) ",dupl, ((dupl+sb->cnt)?100.0*(float)(sb->cnt)/(float)(dupl+sb->cnt):100.0));
+                    stream_printf(GDKout,", dupl=%d(=%.f%%) ",dupl, ((dupl+sb->cnt)?100.0*(float)(sb->cnt)/(float)(dupl+sb->cnt):100.0));
                 }
                 if ( i==PRE_SIZE )
                         stream_printf(GDKout,", eg. the number of document nodes");
