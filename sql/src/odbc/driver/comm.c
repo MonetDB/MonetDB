@@ -107,16 +107,14 @@ char *readblock( stream *in ){
 }
 
 int simple_receive( stream *in, stream *out, int debug ){
-	int flag = 0, res = 0;
+	int type = 0, res = 0;
 	int nRows;
 
-	if ((res = stream_readInt(in, &flag)) && flag != COMM_DONE){
+	if ((res = stream_readInt(in, &type)) && type != QEND){
 		char buf[BLOCK+1], *n = buf;
 		int last = 0;
-		int type;
 		int status;
 
-		stream_readInt(in, &type);
 		stream_readInt(in, &status);
 		if (status < 0){ /* output error */
 			/* skip rest */
@@ -135,8 +133,8 @@ int simple_receive( stream *in, stream *out, int debug ){
 				fwrite( buf, nr, 1, stdout );
 			}
 		}
-	} else if (flag != COMM_DONE){
-		return -flag;
+	} else if (type != QEND){
+		return -type;
 	}
 	return nRows;
 }

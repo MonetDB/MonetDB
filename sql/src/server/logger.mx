@@ -287,6 +287,9 @@ static void log_read_create(logger *logger, logformat *l, char *name )
 static void logger_commit( logger *logger ) {
 	int *kills;
 
+        if (logger->debug&1)
+		printf("logger_commit\n");
+
 	bm_commit(logger->bm, logger->tid);
  	kills = TMfakeCommit();
 	TMkill(kills);
@@ -294,6 +297,9 @@ static void logger_commit( logger *logger ) {
 
 static void logger_abort( logger *logger ) {
 	int *kills;
+
+        if (logger->debug&1)
+		printf("logger_abort\n");
 
 	bm_abort(logger->bm, logger->tid);
  	kills = TMfakeCommit();
@@ -436,6 +442,7 @@ logger *logger_new(int debug, char *logdir, char *dbname, struct bm *bm){
 			fprintf(stderr, "could not create file %s\n", filename);
 			exit(1);
 		}
+		fprintf(fp, "\n" );
 	}
 	logger->id++;
 	fprintf(fp, "%d\n", logger->id);

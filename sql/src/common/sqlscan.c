@@ -199,9 +199,7 @@ void init_keywords()
 	keywords_insert("PUBLIC", PUBLIC);
 	keywords_insert("CURRENT_USER", CURRENT_USER);
 	keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
-	/*
-	   keywords_insert("PROCEDURE", PROCEDURE );
-	 */
+
 	keywords_insert("REAL", REAL);
 	keywords_insert("RIGHT", RIGHT);
 	keywords_insert("SCHEMA", SCHEMA);
@@ -267,6 +265,11 @@ void init_keywords()
 	keywords_insert("ROWS", ROWS);
 	keywords_insert("NO", NO);
 
+	keywords_insert("PROCEDURE", PROCEDURE );
+	keywords_insert("FUNCTION", FUNCTION );
+	keywords_insert("RETURNS", RETURNS );
+	keywords_insert("EXTERNAL", EXTERNAL );
+	keywords_insert("NAME", sqlNAME );
 }
 
 void exit_keywords()
@@ -591,16 +594,16 @@ int number(context * lc, int len)
 				yytext = realloc(yytext, yysz << 1);
 				yysz = yysz << 1;
 			}
-			yytext[yylen++] = (char) cur;
+			yytext[yylen++] = 'E';
 			cur = lex_getc(lc);
-			if (lc->cur == '-' || lc->cur == '+') {
+			if (cur == '-' || cur == '+') {
 				token = 0;
 				if (yylen == yysz) {
 					yytext =
 					    realloc(yytext, yysz << 1);
 					yysz = yysz << 1;
 				}
-				yytext[yylen++] = (char) lex_getc(lc);
+				yytext[yylen++] = (char) cur;
 			}
 			while ((cur = lex_getc(lc)) != EOF && isdigit(cur)) {
 				token = APPROXNUM;

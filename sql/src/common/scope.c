@@ -44,9 +44,13 @@ static void var_destroy(var * v)
 scope *scope_open(scope * p)
 {
 	scope *s = NEW(scope);
+
+	s->ptable = stmt_ptable();
+	s->basetables = list_create( (fdestroy)&stmt_destroy );
+	s->outers = list_create( (fdestroy)&stmt_destroy );
+
 	s->tables = list_create((fdestroy)&tvar_destroy);
 	s->aliases = list_create((fdestroy)&var_destroy);
-	s->lifted = list_create((fdestroy)&tvar_destroy);
 	s->p = p;
 	return s;
 }
@@ -54,11 +58,57 @@ scope *scope_open(scope * p)
 scope *scope_close(scope * s)
 {
 	scope *p = s->p;
+
+	stmt_destroy(s->ptable);
+	list_destroy(s->basetables);
+	list_destroy(s->outers);
+
 	list_destroy(s->tables);
 	list_destroy(s->aliases);
-	list_destroy(s->lifted);
 	_DELETE(s);
 	return p;
+}
+
+static stmt *find_pivot( scope *scp, stmt *t )
+{
+	node *n;
+	for (n = ptable_ppivots(scp->ptable)->h; n; n = n->next)
+	{
+		stmt *p = n->data;
+		if (p->t == t)
+			return p;
+	}
+	assert(0);
+	return NULL;
+}
+
+
+stmt *scope_find_pivot(scope *scp, stmt *t){
+	stmt *p  = find_pivot(scp, t);
+	if (p) return stmt_dup(p);
+	assert(0);
+	return NULL;
+}
+stmt *scope_first_pivot(scope *scp){
+	node *n = ptable_ppivots(scp->ptable)->h;
+	if (n) return stmt_dup(n->data);
+	assert(0);
+	return NULL;
+}
+
+static int stmt_cmp(stmt *s1, stmt *s2)
+{
+	return (int)(s1-s2);
+}
+
+static void scope_add_table_(scope * scp, stmt *s, int outer ){
+	
+	list_append(scp->basetables, stmt_dup(s));
+	if (outer) {
+		if (list_find(scp->outers, s, (fcmp)&stmt_cmp) == NULL)
+			list_append(scp->outers, stmt_dup(s));
+	}
+	stmt_destroy(stmt_pivot(stmt_dup(s), scp->ptable));
 }
 
 cvar *table_add_column(tvar * t, stmt * s, 
@@ -84,6 +134,8 @@ tvar *scope_add_table(scope * scp, stmt *s, char *tname)
 	v->tname = (tname)?_strdup(tname):NULL;
 	v->refcnt = 1;
 	list_append(scp->tables, v);
+
+	scope_add_table_(scp, s, 0);
 	return v;
 }
 
@@ -97,24 +149,7 @@ var *scope_add_alias(scope * scp, stmt * s, char *name)
 	return v;
 }
 
-static void scope_lift(scope * s, cvar * v)
-{
-	node *n = s->lifted->h;
-	for (; n; n = n->next) {
-		tvar *o = n->data;
-		if (v->tname){
-			if (strcmp(o->tname, v->tname) == 0)
-				return;
-		} else {
-			if (v->table->tname && 
-				strcmp(o->tname, v->table->tname) == 0)
-				return;
-		}
-	}
-	list_append(s->lifted, v->table); v->table->refcnt++;
-}
-
-tvar *scope_bind_table(scope * scp, char *name)
+tvar *scope_bind_table(scope * scp, char *name )
 {
 	for (; scp; scp = scp->p) {
 		node *n = scp->tables->h;
@@ -153,7 +188,35 @@ static cvar *bind_table_column(list * columns, char *tname, char *cname)
 	return NULL;
 }
 
-cvar *scope_bind_column(scope * scp, char *tname, char *cname)
+cvar *scope_bind_column(scope * scp, char *tname, char *cname )
+{
+	cvar *cv = NULL;
+	if (!tname){
+		node *n = scp->tables->h;
+		for (; n; n = n->next) {
+			tvar *tv = n->data;
+			if ( (cv = bind_column(tv->columns, cname)) != NULL) {
+				return cv;
+			}
+		}
+	} else {
+		node *n = scp->tables->h;
+		for (; n; n = n->next) {
+			tvar *tv = n->data;
+			if (tv->tname && strcmp(tv->tname, tname) == 0 &&
+			   (cv = bind_column(tv->columns, cname)) != NULL) {
+				return cv;
+			} else if (!tv->tname &&
+			   (cv = bind_table_column(tv->columns, 
+						   tname, cname)) != NULL) {
+				return cv;
+			}
+		}
+	}
+	return NULL;
+}
+
+static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 {
 	scope *start = scp;
 	cvar *cv = NULL;
@@ -163,9 +226,14 @@ cvar *scope_bind_column(scope * scp, char *tname, char *cname)
 			for (; n; n = n->next) {
 				tvar *tv = n->data;
 				if ( (cv = bind_column(tv->columns, cname)) != NULL) {
-					if (start != scp)
-						scope_lift(start, cv);
-					return cv;
+					if (start != scp){
+						stmt *s = find_pivot(scp, tv->s);
+						/* add outer ref */
+						scope_add_table_(start, s, 1);
+						return stmt_ibat(stmt_join(stmt_dup(s),
+							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
+					}
+					return cv->s;
 				}
 			}
 		}
@@ -179,35 +247,32 @@ cvar *scope_bind_column(scope * scp, char *tname, char *cname)
 			tvar *tv = n->data;
 			if (tv->tname && strcmp(tv->tname, tname) == 0 &&
 			   (cv = bind_column(tv->columns, cname)) != NULL) {
-				if (start != scp)
-					scope_lift(start, cv);
-				return cv;
+				if (start != scp){
+					stmt *s = find_pivot(scp, tv->s);
+					/* add outer ref */
+					scope_add_table_(start, s, 1);
+					return stmt_ibat(stmt_join(stmt_dup(s),
+							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
+				}
+				return cv->s;
 			} else if (!tv->tname &&
 			   (cv = bind_table_column(tv->columns, 
 						   tname, cname)) != NULL) {
-				if (start != scp)
-					scope_lift(start, cv);
-				return cv;
-			}
-		}
-	}
-	/* tname != NULL */
-	for (; scp; scp = scp->p) {
-		node *n = scp->tables->h;
-		for (; n; n = n->next) {
-			tvar *tv = n->data;
-			if (tv->tname && strcmp(tv->tname, tname) == 0 &&
-			   (cv = bind_column(tv->columns, cname)) != NULL) {
-				if (start != scp)
-					scope_lift(start, cv);
-				return cv;
+				if (start != scp){
+					stmt *s = find_pivot(scp, tv->s);
+					/* add outer ref */
+					scope_add_table_(start, s, 1);
+					return stmt_ibat(stmt_join(stmt_dup(s),
+							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
+				}
+				return cv->s;
 			}
 		}
 	}
 	return NULL;
 }
 
-var *scope_bind_alias(scope * scp, char *name)
+static var *scope_bind_alias(scope * scp, char *name )
 {
 	for (; scp; scp = scp->p) {
 		node *n = scp->aliases->h;
@@ -220,15 +285,15 @@ var *scope_bind_alias(scope * scp, char *name)
 	return NULL;
 }
 
-stmt *scope_bind(scope * scp, char *tname, char *cname)
+stmt *scope_bind(scope * scp, char *tname, char *cname )
 {
-	cvar *c = scope_bind_column( scp, tname, cname );
-	if (!c && !tname){
+	stmt *s = scope_bind_column_( scp, tname, cname );
+	if (!s && !tname){
 		var *a = scope_bind_alias( scp, cname );
 		if (a) return stmt_dup(a->s);
 		return NULL;
 	}
-	if (c) return stmt_dup(c->s);
+	if (s) return stmt_dup(s);
 	return NULL;
 }
 

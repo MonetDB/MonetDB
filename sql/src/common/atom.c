@@ -7,14 +7,14 @@
 /* todo, be able to handle generic atom types */
 static int atom_debug = 0;
 
-atom *atom_int(sql_subtype * tpe, int val)
+atom *atom_int(sql_subtype * tpe, lng val)
 {
 	atom *a = NEW(atom);
 	a->tpe = tpe;
 	a->data.ival = val;
 	a->type = int_value;
 	if (atom_debug)
-		fprintf(stderr, "atom_int(%s,%d)\n", tpe->type->sqlname, val);
+		fprintf(stderr, "atom_int(%s,%ld)\n", tpe->type->sqlname, val);
 	return a;
 }
 

@@ -2,12 +2,14 @@
 #define QUERY_H
 
 typedef enum sql_query_t {
+	QEND = 0,
 	QPARSE = 1, 
-	QTABLE = 2,
-	QUPDATE = 3,
-	QDATA = 4, 
-	QHEADER = 5,
-	QDEBUG = 6
+	QRESULT = 2,
+	QTABLE = 3,
+	QUPDATE = 4,
+	QDATA = 5, 
+	QCREATE = 6,
+	QDEBUG = 7
 } sql_query_t;
 
 #endif /* QUERY_H */

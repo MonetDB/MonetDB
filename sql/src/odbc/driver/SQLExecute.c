@@ -56,14 +56,13 @@ static char *convert(char *str ){
 }
 
 static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
-	int flag, status;
-	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
+	int status;
+	if (!stream_readInt(rs, type) || *type == QEND) {
 		/* 08S01 = Communication link failure */
 		addStmtError(hstmt, "08S01", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	stream_readInt(rs, type);	/* read result type */
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 	if (status < 0) {
 		/* output error */
@@ -179,13 +178,15 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 	if (status == SQL_ERROR)
 		return status;
 
-	if (type == QHEADER && status > 0) { /* header info */
+	if (type == QRESULT && status > 0) { /* header info */
 		char *sc, *ec;
 		bstream *bs = bstream_create(rs, BLOCK);
 		int eof = 0;
 		int cur = 1;
+		int id = 0;
 		ColumnHeader *pCol = NULL;
 
+		stream_readInt(rs, &id);
 		nCols = status;
 
 		hstmt->nrCols = nCols;
@@ -252,6 +253,11 @@ SQLRETURN Execute(SQLHSTMT hStmt)
 		}
 		bstream_destroy(bs);
 
+		{ char buf[1024]; int i;
+		i = snprintf(buf, BLOCK, "mvc_export_table( myc, Output, %d, 0, -1, \"\\t\", \"\\n\");\n", id);
+		dbc->Mws->write(dbc->Mws, buf, i, 1);
+		dbc->Mws->flush(dbc->Mws);
+		}
 		status = next_result(rs, hstmt, &type);
 		if (status == SQL_ERROR)
 			return status;

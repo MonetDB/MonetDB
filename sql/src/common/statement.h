@@ -41,12 +41,14 @@ typedef enum stmt_type {
 	st_revoke,
 	st_grant_role,
 	st_revoke_role,
+	st_var,
 
 	st_commit,
 	st_rollback,
 	st_release,
 
 	st_reverse,
+	st_mirror,
 	st_atom,
 	st_join,
 	st_semijoin,
@@ -54,9 +56,12 @@ typedef enum stmt_type {
 	st_diff,
 	st_intersect,
 	st_union,
+	st_filter,
 	st_select,
 	st_select2,
-	st_copyfrom,
+	st_find,
+	st_bulkinsert,
+	st_senddata,
 	st_like,
 	st_append,
 	st_insert,
@@ -75,7 +80,7 @@ typedef enum stmt_type {
 	st_op,
 	st_unop,
 	st_binop,
-	st_triop,
+	st_Nop,
 	st_aggr,
 	st_limit,
 	st_column_alias,
@@ -84,6 +89,7 @@ typedef enum stmt_type {
 	st_sets,
 	st_ptable,
 	st_pivot,
+	st_partial_pivot,
 	/* used internally only */
 	st_list,
 	st_output /* return table */
@@ -123,6 +129,9 @@ typedef struct group {
 } group;
 
 extern const char * st_type2string(st_type type);
+
+extern stmt *stmt_none();
+extern stmt *stmt_var(char *varname, stmt *val);
 
 /* since Savepoints and transactions related the 
  * stmt commit function includes the savepoint creation.
@@ -166,13 +175,18 @@ extern stmt *stmt_basetable(table *t);
 #define isbasetable(s) (s->type == st_basetable)
 #define basetable_table(s) s->op1.tval 
 
+#define ptable_ppivots(s) 	((s)->op1.lval)
+#define ptable_pivots(s) 	((s)->op2.lval)
+#define ptable_statements(s) 	((s)->op3.stval)
+
 extern stmt *stmt_cbat(column * c, stmt * basetable, int access, int type);
 extern stmt *stmt_ibat(stmt * i, stmt * basetable );
 extern stmt *stmt_tbat(table * t, int access, int type);
 extern stmt *stmt_kbat(key *k, int access );
 
-extern stmt *stmt_temp(stmt * c );
+extern stmt *stmt_temp(sql_subtype * t );
 extern stmt *stmt_atom(atom * op1);
+extern stmt *stmt_filter(stmt * sel);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
 /* cmp 0 ==   l <= x <= h
        1 ==   l <  x <  h
@@ -193,11 +207,12 @@ extern stmt *stmt_union(stmt * op1, stmt * op2);
 extern stmt *stmt_list(list * l);
 extern stmt *stmt_set(stmt * s1);
 extern stmt *stmt_sets(list * s1);
-extern stmt *stmt_ptable(list * basetables, stmt *s);
+extern stmt *stmt_ptable();
 extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 
-extern stmt *stmt_copyfrom(table * t, list *files, char *tsep, char *rsep, int nr );
-sql_export list *stmt_copyfrom_files( stmt *s );
+extern stmt *stmt_find(stmt *b, stmt *v );
+extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
+extern stmt *stmt_senddata();
 
 extern stmt *stmt_append(stmt *c, stmt * values);
 extern stmt *stmt_insert(stmt *c, stmt * values);
@@ -211,6 +226,7 @@ extern stmt *stmt_const(stmt * s, stmt * val);
 extern stmt *stmt_mark(stmt * s, int id);
 extern stmt *stmt_remark(stmt * s, stmt * t, int id);
 extern stmt *stmt_reverse(stmt * s);
+extern stmt *stmt_mirror(stmt * s);
 extern stmt *stmt_unique(stmt * s, group * grp);
 
 extern stmt *stmt_limit(stmt * s, int limit);
@@ -218,11 +234,11 @@ extern stmt *stmt_order(stmt * s, int direction);
 extern stmt *stmt_reorder(stmt * s, stmt * t, int direction);
 extern stmt *stmt_ordered(stmt * order, stmt * res);
 
-extern stmt *stmt_op(sql_func * op);
-extern stmt *stmt_unop(stmt * op1, sql_func * op);
-extern stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op);
-extern stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op);
-extern stmt *stmt_aggr(stmt * op1, group * grp, sql_aggr * op );
+extern stmt *stmt_op(sql_subfunc * op);
+extern stmt *stmt_unop(stmt * op1, sql_subfunc * op);
+extern stmt *stmt_binop(stmt * op1, stmt * op2, sql_subfunc * op);
+extern stmt *stmt_Nop(stmt * ops, sql_subfunc * op);
+extern stmt *stmt_aggr(stmt * op1, group * grp, sql_subaggr * op );
 
 extern stmt *stmt_alias(stmt * op1, char *name);
 extern stmt *stmt_column(stmt * op1, stmt *t, char *tname, char *cname);
@@ -247,13 +263,5 @@ extern group *grp_create(stmt * s, group *og );
 extern group *grp_semijoin(group *og, stmt *s );
 extern void grp_destroy(group * g);
 extern group *grp_dup(group * g);
-
-extern int stmt_cmp_nrcols( stmt *s, int *nr );
-
-extern stmt *stmt_push_down_head(stmt * s, stmt * select);
-extern stmt *stmt_push_down_tail(stmt * s, stmt * select);
-extern stmt *stmt_push_join_head(stmt * s, stmt * join);
-extern stmt *stmt_push_join_tail(stmt * s, stmt * join);
-extern stmt *stmt_join2select(stmt * join);
 
 #endif				/* _STATEMENT_H_ */

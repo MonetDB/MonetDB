@@ -19,7 +19,6 @@ typedef struct list {
 
 
 typedef int (*traverse_func) (char *clientdata, int seqnr, void *data);
-typedef void *(*map_func) (char *clientdata, int seqnr, void *data);
 
 sql_export list *list_create(fdestroy destroy);
 
@@ -35,7 +34,6 @@ sql_export void list_move_data(list * l, list * d, void *data);
 
 
 extern int list_traverse(list * l, traverse_func f, char *clientdata);
-extern list *list_map(list * l, map_func f, char *clientdata);
 
 /* the compare function gets one element from the list and a key from the
  * as input from the find function 
@@ -44,11 +42,14 @@ extern list *list_map(list * l, map_func f, char *clientdata);
 typedef int (*fcmp)(void *data,void *key); 
 typedef void *(*fdup)(void *data); 
 typedef void *(*freduce)(void *v1, void *v2); 
+typedef void *(*fmap) (void *data, void *clientdata);
 
 sql_export node *list_find(list * l, void *key, fcmp cmp ); 
 extern list *list_select(list * l, void *key, fcmp cmp, fdup dup ); 
 extern list *list_distinct(list * l, fcmp cmp, fdup dup ); 
 extern void *list_reduce(list * l, freduce red, fdup dup );
+extern list *list_map(list * l, void *data, fmap f );
+extern int list_cmp(list *l1, list *l2, fcmp cmp);
 
 extern list *list_dup(list * l, fdup dup);
 extern list *list_merge(list * l, list * data, fdup dup);

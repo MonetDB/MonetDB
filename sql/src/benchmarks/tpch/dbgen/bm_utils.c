@@ -430,7 +430,7 @@ dsscasecmp(char *s1, char *s2)
     return ((tolower(*s1) < tolower(*s2)) ? -1 : 1);
 }
 
-#ifndef STDLIB_HAS_GETOPT
+#ifdef STDLIB_HAS_GETOPT
 int optind = 0;
 int opterr = 0;
 char *optarg = NULL;

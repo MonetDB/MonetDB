@@ -1,7 +1,7 @@
 #!/bin/sh
 PWD=`pwd`
 echo $PWD
-SQL='Msql -u monetdb -P monetdb'
+SQL='Msql -u monetdb -P monetdb --debug=10'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
@@ -17,7 +17,11 @@ fi
 #Bulk-Load into SQL server...
 
 $SQL < create.sql
+$SQL < count.sql
+
 cat load.sql | sed -e s+PWD+$PWD+ | $SQL 
+
+$SQL < count.sql
 
 $SQL < query_1.sql
 $SQL < query_2.sql

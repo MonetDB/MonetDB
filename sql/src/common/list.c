@@ -128,20 +128,6 @@ int list_traverse(list * l, traverse_func f, char *clientdata)
 	return res;
 }
 
-list *list_map(list * l, map_func f, char *clientdata)
-{
-	list *res = list_create(l->destroy);
-	int seqnr = 0;
-
-	node *n = l->h;
-	while (n) {
-		void *v = f(clientdata, seqnr++, n->data);
-		list_append(res, v);
-		n = n->next;
-	}
-	return res;
-}
-
 node *list_find(list * l, void *key, fcmp cmp)
 {
 	node *n = NULL;
@@ -153,6 +139,21 @@ node *list_find(list * l, void *key, fcmp cmp)
 		}
 	}
 	return NULL;
+}
+
+int list_cmp(list * l1, list *l2, fcmp cmp)
+{
+	node *n,*m;
+	int res = 0;
+
+	if (list_length(l1) != list_length(l2))
+		return -1;
+
+       	for ( n	= l1->h, m = l2->h; res==0 && n; n = n->next, m = m->next)
+	{
+		res = cmp(n->data,m->data);
+	}
+	return res;
 }
 
 list *list_select(list * l, void *key, fcmp cmp, fdup dup)
@@ -185,10 +186,25 @@ void *list_reduce(list * l, freduce red, fdup dup )
 {
 	void *res = NULL;
 	node *n = l->h;
-	if (n)
+	if (n){
 		res = dup(n->data);
-       	for ( n = n->next ; n; n = n->next){
-		res = red(res, dup(n->data));
+       		for ( n = n->next ; n; n = n->next){
+			res = red(res, dup(n->data));
+		}
+	}
+	return res;
+}
+
+list *list_map(list * l, void *data, fmap map)
+{
+	list *res = list_create(l->destroy);
+	int seqnr = 0;
+
+	node *n = l->h;
+	while (n) {
+		void *v = map(n->data, data);
+		list_append(res, v);
+		n = n->next;
 	}
 	return res;
 }

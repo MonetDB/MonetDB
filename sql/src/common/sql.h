@@ -16,12 +16,14 @@
 
 extern char *mkLower(char *v);
 extern char *toLower(const char *v);
+extern char *strip_extra_zeros(char *v);
 
 typedef enum tokens {
 	SQL_CREATE_SCHEMA,
 	SQL_CREATE_TABLE,
 	SQL_CREATE_VIEW,
 	SQL_CREATE_ROLE,
+	SQL_CREATE_FUNC,
 	SQL_DROP_SCHEMA,
 	SQL_DROP_TABLE,
 	SQL_DROP_VIEW,
@@ -29,7 +31,9 @@ typedef enum tokens {
 	SQL_DROP_COLUMN,
 	SQL_DROP_CONSTRAINT,
 	SQL_DROP_DEFAULT,
+	SQL_DROP_FUNC,
 	SQL_ALTER_TABLE,
+	SQL_SET,
 	SQL_NAME,
 	SQL_USER,
 	SQL_PATH,
@@ -76,7 +80,7 @@ typedef enum tokens {
 	SQL_OP,
 	SQL_UNOP,
 	SQL_BINOP,
-	SQL_TRIOP,
+	SQL_NOP,
 	SQL_BETWEEN,
 	SQL_NOT_BETWEEN,
 	SQL_LIKE,
@@ -90,6 +94,7 @@ typedef enum tokens {
 	SQL_PRIVILEGES,
 	SQL_ROLE,
 	SQL_PARAMETER,
+	SQL_FUNC,
 	SQL_AGGR,
 	SQL_COMPARE,
 	SQL_TEMP_LOCAL,
@@ -116,4 +121,5 @@ extern const char *token2string(int token);
 extern stmt *semantic( context * sql, symbol * sym);
 extern stmt *sql_error( context * sql, int error_code, char *format, ... );
 
+extern lng decimal_fromstr( char *dec );
 #endif /*_SQL_H_*/

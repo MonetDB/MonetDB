@@ -44,11 +44,19 @@ int connect_error(stream *in, stream *out, int sock)
 	return GDK_FAIL;
 }
 
+
+int senddata_wrap( Stream *Out ){
+	stream *out = *(stream**)Out;
+	stream_writeInt( out, QDATA );
+	stream_writeInt( out, 0 );
+	out->flush( out );
+	return GDK_SUCCEED;
+}
+
 int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	buffer *bbuf;
 	int debug = 0, l = 0, i, sock, *Sock;
-	stmt *s = NULL;
-	char *cmd = NULL, buf[BUFSIZ+1], *errbuf;
+	char buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema, *dbname;
 	Variable v;
 
@@ -134,8 +142,9 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	GDKsetbuf(errbuf);
 
 	while(TRUE){
+		stmt *s = NULL;
 		int size = BUFSIZ + 1, err = 0;
-		char *inbuf = NEW_ARRAY(char, size );
+		char *cmd = NULL, *inbuf = NEW_ARRAY(char, size );
 		int inlen = 0;
 		while ((inlen = in->read(in, inbuf, 1, BUFSIZ)) == BUFSIZ){
 			err = 1;
@@ -144,15 +153,24 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 
 		if (!inlen || inbuf[0] == EOT)
 			break;
-		if (!err)
-			s = sqlexecute(lc, inbuf, &err);
-		_DELETE(inbuf);
+		if (!err){
+			if (strncmp(inbuf,"mvc_export", 10) != 0){
+				s = sqlexecute(lc, inbuf, &err);
+			} else {
+				cmd = inbuf;
+			} 
+		}
+		if (cmd != inbuf)
+			_DELETE(inbuf);
 
 		if (err){ /* output error */
-			stream_writeInt( out, 0 );
-			stream_writeInt( out, 0 );
 			stream_writeInt( out, -1 );
+			stream_writeInt( out, err );
 			out->write( out, lc->errstr, strlen(lc->errstr), 1 );
+			out->flush( out );
+		} else if (s && s->type == st_none){
+			stream_writeInt( out, QUPDATE );
+			stream_writeInt( out, 0 );
 			out->flush( out );
 		} else if (s){
 	    		int nr = 1;
@@ -160,59 +178,48 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 
 			cmd = buffer_get_buf(bbuf);
 	    		lc->out->flush( lc->out );
+		}
 
+		if (cmd){
 			if (lc->debug&64){
-				stream_writeInt( out, 0 );
 				stream_writeInt( out, QDEBUG );
 				stream_writeInt( out, lc->debug );
 				out->write( out, cmd, strlen(cmd), 1 );
 				out->flush( out );
 			} else {
-
-			    if (s && s->type == st_copyfrom &&
-				!stmt_copyfrom_files(s)){
-				/*ask_for_data();*/
-				stream_writeInt( out, 0 );
-				stream_writeInt( out, QDATA );
-				stream_writeInt( out, 0 );
-				out->flush( out );
-			    }
-			
-			    {
-				int i;
 				ssize_t status;
         			res->vtype = TYPE_void; 
-				i = interpret_str( stk, cmd, res);
+				status = interpret_str( stk, cmd, res);
 
-				if (i < 0){
+				if (status < 0){
 					char *errstr = "Mil error";
 					char *buf = GDKerrbuf;
-					stream_writeInt( out, 0 );
 					stream_writeInt( out, mvc_type(m) );
-					stream_writeInt( out, i );
+					stream_writeInt( out, status );
 					out->write( out, errstr, strlen(errstr), 1 );
 					out->write( out, buf, strlen(buf), 1 );
 					buf[0] = 0; /* reset error buf */
 					out->flush( out );
 				} else if ((status=mvc_status(m)) < 0){
 					char *errstr = "Error in result";
-					stream_writeInt( out, 0 );
 					stream_writeInt( out, mvc_type(m) );
 					stream_writeInt( out, status );
 					out->write( out, errstr, strlen(errstr), 1 );
 					out->flush( out );
-				} else if (s->type != st_output) {
-					stream_writeInt( out, 0 );
+				} else if (s && s->type != st_output) {
 					stream_writeInt( out, mvc_type(m) );
 					stream_writeInt( out, status );
 					out->flush( out );
 				}
-			    }
-			} 
+			}
 			/* BEWARE to use free instead of _DELETE
  			 * as the stream library is build with out libbat 
  			 * ie. it cannot use GDKmalloc can be used */
-			if (cmd) free(cmd);
+			if (cmd == inbuf)
+				_DELETE(cmd);
+			else if (cmd) 
+				free(cmd);
+			cmd = NULL;
 		}
 		if (s) stmt_destroy(s);
 	}

@@ -1,7 +1,7 @@
 #!/bin/sh
 PWD=`pwd`
 #SQL="Msql -u monetdb -P monetdb --debug=64"
-SQL="Msql -u monetdb -P monetdb"
+SQL="Msql -u monetdb -P monetdb --host=norma"
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

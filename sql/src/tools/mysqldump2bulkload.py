@@ -9,6 +9,7 @@ CREATE = 1
 INSERT = 2
 
 write = sys.stdout.write
+part = -1
 
 def copy_line( line, write = write ):
 	m = re.search('(INSERT INTO ([A-Za-z0-9_]*) .*VALUES \()', line) 
@@ -40,13 +41,17 @@ def main(write = write):
 	status = 0
 	base = ""
 	l = 0
+	cnt = 0;
 	for line in fileinput.input():
 		if status == INSERT:
 			if (line[0:l] == base):
-				print line[l:line.rfind(')')]
+				if (part < 0 or cnt < part):
+					print line[l:line.rfind(')')]
+					cnt = cnt + 1
 			else:
 				print # empty line to end copy into
 				print "COMMIT;"
+				cnt = 0;
 				status = 0;
 
 		if status != INSERT and \

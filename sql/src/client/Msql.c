@@ -31,7 +31,7 @@
  * 	1 	continue in case of errors 
  * 	2	output on server additional time statements
  * 	4	output on server bat.info for statements involving bats
- * 	8	output code to stderr
+ * 	8	output mil code to stderr
  * 	16	output parsed SQL
  * 	32	execute but there is no output send to the client
  * 	64 	output mil code only, no excution on the server.
@@ -128,15 +128,14 @@ static char *sql_readline( char *prompt ){
 	return line;
 }
 
+static int receive( stream *rs, stream *out, int trace );
 
-static int receive( stream *rs, stream *out, int debug );
-
-static int forward_data(stream *out, int debug)
+static int forward_data(stream *out, int trace)
 	/* read from stdin */
 {
 	int done = 0;
 
-	if (debug)
+	if (trace)
 		printf("forward data\n");
 	while(!done){
 		char *s = sql_readline("");
@@ -148,14 +147,14 @@ static int forward_data(stream *out, int debug)
 
 		       	if (len <= 1){
 				out->write(out, "\n", 1, 1);
-				if (debug)
+				if (trace)
 					fwrite("\n", 1, 1, stdout);
 				done = 1;
 				break;
 			}
 			out->write(out, s, 1, len);
 			out->write(out, "\n", 1, 1 );
-			if (debug){
+			if (trace){
 				fwrite(s, 1, len, stdout);
 				fwrite("\n", 1, 1, stdout);
 				fflush(stdout);
@@ -164,10 +163,9 @@ static int forward_data(stream *out, int debug)
 		if (s) free(s);
 	}
 	out->flush(out);
-	if (debug) fflush(stdout);
+	if (trace) fflush(stdout);
 
-	return receive(rs, out, debug);
-		
+	return receive(rs, out, trace);
 }
 
 static int column_info( char *buf, int len, Msql_col *cols, int cur ){
@@ -197,14 +195,12 @@ static int column_info( char *buf, int len, Msql_col *cols, int cur ){
 	return cur;
 }
 
-static void header_data( stream *rs, stream *out, int nCols, int debug ){
+static void header_data( stream *rs, stream *out, int nCols, int trace ){
 	Msql_col *cols = (Msql_col*)malloc(sizeof(Msql_col) * nCols);
 	int cur = 0;
 	int i, len = 0;
 
 	memset(cols, 0, nCols*sizeof(Msql_col));
-	if (debug)
-		printf("read header data %d\n", nCols);
 
 	if (nCols > 0){ 
 		char buf[BLOCK+1];
@@ -240,23 +236,22 @@ static void header_data( stream *rs, stream *out, int nCols, int debug ){
 	free(cols);
 }
 
-int receive( stream *rs, stream *out, int debug ){
-	int status = 0, flag = 0, res = 0;
-	if ((res = stream_readInt(rs, &flag)) && flag != COMM_DONE){
+int receive( stream *rs, stream *out, int trace ){
+	int status = 0, type = 0, res = 0;
+	if ((res = stream_readInt(rs, &type)) && type != QEND){
 		char buf[BLOCK+1];
 		int last = 0;
-		int type;
 		int nRows;
 
-		stream_readInt(rs, &type);
 		stream_readInt(rs, &status);
-		if (status < 0){ /* output error */
+		if (type < 0 || status < 0){ /* output error */
 			int nr = bs_read_next(rs,buf,&last);
 			char *s;
 
-			fprintf( stdout, "SQL ERROR %d: ", status );
+			fprintf( stdout, "SQL ERROR %d %d: ", type, status );
 
 			buf[nr] = 0;
+			fwrite(buf, strlen(buf), 1, stdout);
 			s = conv(buf, from_utf);
 			fwrite( s, strlen(s), 1, stdout );
 			free(s);
@@ -268,8 +263,7 @@ int receive( stream *rs, stream *out, int debug ){
 				free(s);
 			}
 			fprintf( stdout, "\n");
-			if (exit_on_error)
-				return status;
+			return status;
 		}
 		nRows = status;
 		if ((type == QTABLE || type == QDEBUG) && nRows > 0){
@@ -288,11 +282,16 @@ int receive( stream *rs, stream *out, int debug ){
 				free(s);
 			}
 		}
-		if (type == QHEADER) {
-			header_data(rs, out, nRows, debug);
-			status = receive(rs, out, debug);
+		if (type == QRESULT) {
+			int i, id;
+			stream_readInt(rs, &id);
+			header_data(rs, out, nRows, trace);
+			i = snprintf(buf, BLOCK, "mvc_export_table( myc, Output, %d, 0, -1, \"\\t\", \"\\n\");\n", id);
+			out->write(out, buf, i, 1);
+			out->flush(out);
+			return receive(rs, out, trace);
 		} else if (type == QDATA) {
-			status = forward_data(out, debug);
+			status = forward_data(out, trace);
 		} else if (type == QTABLE || type == QUPDATE){
 			if (nRows > 1)
 				printf("SQL  %d Rows affected\n", nRows );
@@ -301,12 +300,11 @@ int receive( stream *rs, stream *out, int debug ){
 			else 
 				printf("SQL  no Rows affected\n" );
 		}
-	} else if (flag != COMM_DONE){
-		printf("flag %d, %d , %d\n", res, flag, rs->errnr);
+	} else if (type != QEND){
+		printf("type %d, %d , %d\n", res, type, rs->errnr);
 	}
 	fflush(stdout);
-
-	return 0;
+	return status;
 }
 
 static int ins = 0;
@@ -352,7 +350,7 @@ int parse_line( const unsigned char *line )
 	return cnt;
 }
 
-void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
+void clientAccept( stream *ws, stream *rs, char *prompt, int trace ){
 	int  i, lineno = 0;
 	char *line = NULL;
 	char buf[BUFSIZ];
@@ -368,16 +366,20 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
 		cmdcnt = parse_line((unsigned char*)line);
 		if (cmdcnt < 0)
 			break;
-		if (debug || trace)
+		if (trace)
 			printf("# %5d: %d %s\n", lineno, cmdcnt, line);
 #ifdef HAVE_ICONV
-		if (to_utf){
+		if (to_utf)
+		{
 			char *converted = conv(line, to_utf);
 			ws->write( ws, converted, strlen(converted), 1 );
 			free(converted);
-		} else 
+		} 
+		else 
 #endif
+		{
 			ws->write( ws, line, strlen(line), 1 );
+		}
 		ws->write( ws, "\n", 1, 1 );
 		if (cmdcnt){
 			ins = 0;
@@ -385,8 +387,8 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
 		}
 
 		for (; cmdcnt > 0; cmdcnt--) {
-			int status = receive(rs, ws, debug);
-			if (status < 0)
+			int status = receive(rs, ws, trace);
+			if (status < 0 && exit_on_error)
 				exit(status);
 		}
 	}
@@ -394,7 +396,7 @@ void clientAccept( stream *ws, stream *rs, char *prompt, int debug, int trace ){
 	i = snprintf(buf, BUFSIZ, "COMMIT;\n" );
 	ws->write( ws, buf, i, 1 );
 	ws->flush( ws );
-	receive(rs, ws, debug);
+	(void)receive(rs, ws, trace);
 
 	/* client waves goodbye */
 	buf[0] = EOT; 
@@ -472,28 +474,26 @@ int handle_result( stream *ws, stream *rs, int cnt, fptr f, int rlen, int dump, 
 
 static int execute( stream *ws, stream *rs, const char *query)
 {
-	int flag, type, status;
+	int type, status;
 
 	ws->write(ws, (char*)query, strlen(query), 1);
 	ws->flush(ws);
 
-	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
+	if (!stream_readInt(rs, &type) || type == QEND) {
 		return -1;
 	}
 
-	stream_readInt(rs, &type);	/* read result type */
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 
-	if (type != QHEADER)
+	if (type != QRESULT)
 		return -1;
 
 	skip_block(rs);
 
-	if (!stream_readInt(rs, &flag) || flag == COMM_DONE) {
+	if (!stream_readInt(rs, &type) || type == QEND) {
 		return -1;
 	}
 
-	stream_readInt(rs, &type);	/* read result type */
 	stream_readInt(rs, &status);	/* read result size (is < 0 on error) */
 
 	if (type != QTABLE)
@@ -933,7 +933,7 @@ main(int ac, char **av)
 			if (S_ISCHR(st.st_mode))
 	   			is_chrsp = 1;
 #endif
-			clientAccept( ws, rs, prompt, debug, trace );
+			clientAccept( ws, rs, prompt, trace );
 		} else {
 			dump_tables( ws, rs, dump );
 		}

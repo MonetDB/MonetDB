@@ -39,3 +39,15 @@ char *strconcat(const char *s1, const char *s2)
 	return new_s;
 }
 
+char *strip_extra_zeros( char *s ){
+	char *res = s;
+	for(;*s && *s == '0'; s++);
+	if (*s == '.') s--;
+	res = s;
+	for(;*s;s++); /* find end */
+	s--;
+	for(;*s && *s == '0';s--);
+	s++;
+	*s=0;
+	return res;
+}

@@ -22,15 +22,6 @@ SQL client and the corresponding MIL runtime startup.
 		sqlclient;
 		"parse the next sql command and convert this to mil code"
 
-	.COMMAND sql_type(str sqlname, int digits, int scale, int radix, str name ) = 
-		sql_type_wrap; "Add a new sql type"
-
-	.COMMAND sql_aggr(str name, str imp, str atp, str rtp) = 
-		sql_aggr_wrap; "Add a new sql aggregate function"
-
-	.COMMAND sql_func(str name, str imp, str tp1, str tp2, str tp3, str rtp)
-		= sql_func_wrap; "Add a new sql function"
-
 	.COMMAND mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
 
@@ -127,12 +118,22 @@ SQL client and the corresponding MIL runtime startup.
 
 	.COMMAND mvc_create_user( mvc m, str user, str pwd, str fullname, str dschema, int id) = mvc_create_user_wrap; "Create a user"
 
-	.COMMAND mvc_export(Stream s, BAT order, BAT bats, str sep, str rsep) =
-		mvc_export_wrap; "export a table (in order) to stream s with the given tuple and record seperators (sep/rsep)"
+	.COMMAND mvc_result_table( mvc m, int nr_cols, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
+
+	.COMMAND mvc_result_table( mvc m, int nr_cols, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
+
+	.COMMAND mvc_result_column( mvc m, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
+	.COMMAND mvc_result_column( mvc m, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
+
+	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
+		mvc_export_result_wrap; "export a result to stream s"
+
+	.COMMAND mvc_export_table(mvc m, Stream s, int result_id, int offset, int nr, str sep, str rsep) =
+		mvc_export_table_wrap; "export a result to stream s with the given tuple and record seperators (sep/rsep)"
 
 	.COMMAND mvc_import_table( mvc c, Stream s, str tname, 
 					str sep, str rsep, int nr) : 
-		int = mvc_import_table_wrap; 
+		BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
 @+ void bats
@@ -155,6 +156,13 @@ kernel libraries, e.g. bat.mx
 	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
 	.COMMAND hash( any::1 ) : int = hash_wrap; "calculate a hash value"
+
+@+
+	senddata requests the client to ship data to the server. This is
+	needed to be able to handle COPY FROM STDIN.
+@m
+	.COMMAND senddata( Stream out ) = senddata_wrap; "Request client to senddata"
+
 
 .END sqlserver;
 
@@ -184,19 +192,6 @@ int mvc_init_wrap( int* debug ){
 }
 int mvc_exit_wrap( ){
 	mvc_exit();
-	return GDK_SUCCEED;
-}
-
-int sql_type_wrap( str sqlname, int *digits, int *scale, int *radix, str name ){
-	(void)sql_create_type( sqlname, *digits, *scale, *radix, name );
-	return GDK_SUCCEED;
-}
-int sql_aggr_wrap( str name, str imp, str atp, str rtp){
-	(void)sql_create_aggr( name, imp, atp, rtp );
-	return GDK_SUCCEED;
-}
-int sql_func_wrap( str name, str imp, str tp1, str tp2, str tp3, str rtp){
-	(void)sql_create_func( name, imp, tp1, tp2, tp3, rtp );
 	return GDK_SUCCEED;
 }
 
@@ -376,15 +371,43 @@ int mvc_create_user_wrap( mvc *c, str user, str passwd, str fullname, str dschem
 	}
 }
 
-
-int mvc_export_wrap( Stream *s, BAT *order, BAT *bats, str sep, str rsep ){
-	mvc_export( *(stream**)s, order, bats, sep, rsep );
+int mvc_result_table_wrap( int *res_id, mvc *M, int *nr_cols, BAT *order ){
+	*res_id = mvc_result_table( *(mvc**)M, *nr_cols, order);
+	if (*res_id < 0)
+		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-
-int mvc_import_table_wrap( int *res, mvc *c, Stream *s, str tname , str sep, str rsep, int *sz ){
+int mvc_result_row_wrap( int *res_id, mvc *M, int *nr_cols, ptr p, int p_type ){
+	*res_id = mvc_result_row( *(mvc**)M, *nr_cols );
+	if (*res_id < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+int mvc_result_column_wrap( mvc *M, str name, str type, int *digits, int *scale, BAT *b ){
+	if (mvc_result_column( *(mvc**)M, name, type, *digits, *scale, b)) 
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+int mvc_result_value_wrap( mvc *M, str name, str type, int *digits, int *scale, ptr p, int mtype ){
+	if (mvc_result_value( *(mvc**)M, name, type, *digits, *scale, p, mtype)) 
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+int mvc_export_result_wrap( mvc *M, Stream *S, int *res_id){
+	if (mvc_export_result( *(mvc**)M, *(stream**)S, *res_id)) 
+		return GDK_FAIL;
+	
+	return GDK_SUCCEED;
+}
+int mvc_export_table_wrap( mvc *M, Stream *S, int *res_id, int *offset, int *nr, str sep, str rsep){
+	if (mvc_export_table( *(mvc**)M, *(stream**)S, *res_id, *offset, *nr, sep, rsep)) 
+		return GDK_FAIL;
+	
+	return GDK_SUCCEED;
+}
+int mvc_import_table_wrap( BAT **res, mvc *c, Stream *s, str tname , str sep, str rsep, int *sz ){
 	*res = mvc_import_table( *(mvc**)c, *(stream**)s, tname, sep, rsep, *sz );
-	if (*res < 0)
+	if (*res == NULL)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -473,13 +496,11 @@ int hash_wrap( int *res, ptr v, int tpe )
 }
 
 @mil
-
 module(alarm);
 module(xtables);
 module(aggrX3);
 module(monettime);
 module(mmath);
-module(decimal);
 module(mapi); # mapi_listen 
 
 # low memory usage for testing unloading
@@ -487,108 +508,6 @@ module(mapi); # mapi_listen
 #vm_maxsize(0LL);
 
 mvc_init(int(monet_environment.find("sql_debug")));
-
-proc cnt (bat b) : int {
-	n := (*monet_atomtbl.reverse.find(b.ttype))("nil");
-	return count(b.kdiff(b.uselect(n)));
-}
-proc {cnt} (bat v, bat e) {
-	var n := (*monet_atomtbl.reverse.find(v.ttype))("nil");
-	var c := {count}(v,e);
-	var nils := v.select(n);
-	var nc := {count}(nils,e);
-	return [-](c,nc);
-}
-proc {cnt} (bat v, bat g, bat e) {
-	var n := (*monet_atomtbl.reverse.find(v.ttype))("nil");
-	var c := {count}(v,g,e);
-	var nils := v.select(n);
-	var nc := {count}(g.reverse.join(nils),e);
-	return [-](c,nc);
-}
-
-const QPARSE := 1;
-const QTABLE := 2;
-const QUPDATE := 3;
-const QDATA := 4;
-const QHEADER := 5;
-const QDEBUG := 5;
-
-proc input( mvc myc, Stream Input, str tname, BAT fnames, str Sep, str rSep, int sz ):={
-	var s := Input;
-	if (fnames.count() > 0){
-		fnames@batloop(){
-			f := iconv($t, "UTF-8", codeset());
-			s := open_rastream(f);
-			
-			mvc_import_table( myc, s, tname, Sep, rSep, sz );
-			stream_close(s);
-		}
-	} else {
-		mvc_import_table( myc, s, tname, Sep, rSep, sz );
-	}
-}
-
-proc ascii_io_output( bat Order, bat bats, Stream Output, str Sep ) : int := {
-	var Max := bats.reverse.max();
-	var seps := [ bats ~ const Sep];
-	seps.access(BAT_WRITE);
-	seps.replace(Max, "\n");
-
-	seps := seps.reverse.mark(oid(0));
-	bats := bats.reverse.mark(oid(0));
-	return output( Order, seps.reverse, bats.reverse, Output );
-}
-
-proc output_header( Stream Output, int nrcols ) : void := {
-	stream_writeInt( Output, 0 ); # write not done.
-	stream_writeInt( Output, QHEADER ); # type TABLE.
-	stream_writeInt( Output, nrcols ); # NR columns.
-}
-
-proc output_column( Stream Output, str name, str tpe ) : void := {
-	var p := name + "," + tpe + "\n";
-	stream_write( Output, p);
-}
-
-proc server_output( Stream Output, any Order, any val, ..any.. ) : void := {
-	stream_writeInt( Output, 0 ); # write not done.
-	stream_writeInt( Output, QTABLE ); # type TABLE.
-	stream_writeInt( Output, 1 ); # NR records.
-
-	Cnt := $0;
-	var p := str(val);
-	if (type(val) = str)
-		p := "\"" + val + "\"";
-	var id := 3;
-	while(id < Cnt ){
-		if (type($(id+1)) != str)
- 			p := p + "\t" + str($(id+1));
-		else
- 			p := p + "\t\"" + str($(id+1)) + "\"";
-		id :+= 1;
-	}
- 	p := p + "\n"; 
-	stream_write( Output, p);
-	stream_flush( Output );
-}
-
-proc server_output( Stream Output, bat[oid,any] Order,  ..bat[oid,any]..) : void := {
-	var Cnt := Order.count();
-	stream_writeInt( Output, 0 ); # write not done.
-	stream_writeInt( Output, QTABLE ); # type TABLE.
-	stream_writeInt( Output, Cnt ); # NR records.
-	
-	Cnt := $0;
-	var bats := new(oid,bat);
-	var id := 0;
-	while((id + 2) < Cnt ){
-		bats.insert(oid(id), $(id+3));
-		id :+= 1;
-	}
-	ascii_io_output(Order, bats, Output, "\t");
-	stream_flush( Output );
-}
 
 # dirty hack for comments ask menzo
 PROC renameFUNC(str OLD,str NEW) : void := {
@@ -608,7 +527,6 @@ renameFUNC("new_quit", "quit");
 
 proc SQLclient( int sock ) := {
 	dsock := socket_dup(sock);
-	#printf("# [ %d %d ]\n",sock, dsock);
 	fork(sqlclient(dsock));
 }
 

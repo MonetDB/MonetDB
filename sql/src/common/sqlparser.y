@@ -56,6 +56,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	assignment
 	create
 	drop
+	set
 	sql
 	sqlstmt
 	schema
@@ -67,6 +68,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	table_def
 	view_def
 	role_def
+	func_def
 	all_or_any_predicate
 	atom_exp
 	between_predicate
@@ -108,6 +110,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	column_option
 	column_constraint
 	column_constraint_type 
+	like_table
 	domain_constraint_type
 	opt_order_by_clause
 	default
@@ -149,6 +152,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	non_reserved_word
 	ident
 	column
+	function_name
 	authid
 	grantee
 	opt_alias_name
@@ -194,6 +198,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	when_search_list
 	opt_seps
 	string_commalist
+	paramlist
+	opt_paramlist
 
 %type <ival>
 	drop_action 
@@ -294,6 +300,7 @@ UNDER WHENEVER
 %token TEMPORARY 
 %token<sval> AS ASC DESC AUTHORIZATION 
 %token CHECK CONSTRAINT CREATE 
+%token PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME
 %token DEFAULT DISTINCT DROP
 %token FOREIGN 
 %token GRANT REVOKE ROLE ADMIN HAVING INTO 
@@ -335,8 +342,16 @@ sqlstmt:
 
 
 	/* schema definition language */
-sql: schema | grant | revoke | create | drop ;
+sql: schema | grant | revoke | create | drop | set ;
 	
+
+set: 
+	SET ident '=' atom	{ dlist *l = dlist_create();
+				dlist_append_string(l, $2 );
+				dlist_append_symbol(l, $4 );
+				$$ = _symbol_create_list( SQL_SET, l); }
+	;
+
 schema:
     CREATE SCHEMA schema_name opt_schema_default_char_set
 	opt_schema_path	opt_schema_element_list	   
@@ -500,14 +515,15 @@ privileges:
  ;
 
 object_name:
-	opt_table ident			{ $$ = _symbol_create(SQL_TABLE, $2); }
+     opt_table ident			{ $$ = _symbol_create(SQL_TABLE, $2); }
+ |   function_name			{ $$ = _symbol_create(SQL_FUNC, $1); }
+
 /* | DOMAIN domain_name
    | CHARACTER SET char_set_name
    | COLLATION collation_name
    | TRANSLATION trans_name 
    | TYPE udt_name 
    | TYPE typed_table_name 
-   | function_name
 */
  ; 
 
@@ -551,7 +567,7 @@ grantee:
  ;
 
 /* DOMAIN, TABLE, VIEW, ASSERTION, CHARACTER SET, TRANSLATION, 
- * TRIGGER, PROCEDURE, FUNCTION, ROLE */ 
+ * TRIGGER, ROLE */ 
 
 alter: 
    ALTER TABLE qname ADD add_table_element 
@@ -601,7 +617,7 @@ opt_column:
  |   /* empty */ { $$ = 0; }
  ;
 
-create:	role_def | table_def | view_def ;
+create:	role_def | table_def | view_def | func_def;
 
 role_def:
     CREATE ROLE qname opt_grantor
@@ -643,7 +659,7 @@ table_element_list:
  ;
 
 add_table_element: column_def | table_constraint ;
-table_element: add_table_element | column_options ;
+table_element: add_table_element | column_options | like_table ;
 
 column_def:
     column data_type opt_column_def_opt_list
@@ -810,6 +826,10 @@ column_commalist:
  |  column_commalist ',' column  { $$ = dlist_append_string( $1, $3 ); }
  ;
 
+like_table:
+	LIKE qname 	{ $$ = _symbol_create_list(SQL_LIKE, $2 ); }
+ ;
+
 view_def:
     CREATE VIEW qname opt_column_commalist AS select_stmt opt_with_check_option
 
@@ -833,6 +853,38 @@ opt_column_commalist:
 
 column_commalist_parens:
    '(' column_commalist ')' 	{ $$ = $2; } 
+ ;
+
+func_def:
+    CREATE FUNCTION qname 
+	'(' opt_paramlist ')'
+    RETURNS data_type
+    EXTERNAL sqlNAME ident
+			{ dlist *f = dlist_create();
+	  		  	dlist_append_list(f, $3);
+	  			dlist_append_list(f, $5);
+	  			dlist_append_type(f, $8);
+				dlist_append_string(f, $11);
+ 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+ ;
+
+opt_paramlist:
+    paramlist		
+ |			{ $$ = NULL; }  
+ ;
+
+paramlist:
+    paramlist ',' ident data_type	
+			{ dlist *p = dlist_create();
+	  		  	dlist_append_string(p, $3);
+	  			dlist_append_type(p, $4);
+			  $$ = dlist_append_list($1, p); }
+ |  ident data_type			
+			{ dlist *l = dlist_create();
+			  dlist *p = dlist_create();
+	  		  	dlist_append_string(p, $1);
+	  			dlist_append_type(p, $2);
+			  $$ = dlist_append_list(l, p); }
  ;
 
 drop:
@@ -1515,13 +1567,11 @@ func_ref:
   	  dlist_append_symbol(l, $3);
   	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_BINOP, l ); }
-|   IDENT '(' scalar_exp ',' scalar_exp ',' scalar_exp ')'
+|   IDENT '(' scalar_exp_list ')'
 	{ dlist *l = dlist_create();
   	  dlist_append_string(l, _strdup($1));
-  	  dlist_append_symbol(l, $3);
-  	  dlist_append_symbol(l, $5);
-  	  dlist_append_symbol(l, $7);
-	  $$ = _symbol_create_list( SQL_TRIOP, l ); }
+  	  dlist_append_list(l, $3);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 
 datetime_funcs:
@@ -1548,15 +1598,19 @@ datetime_funcs:
 string_funcs:
     SUBSTRING '(' scalar_exp FROM intval FOR intval ')' 
 				{ dlist *l = dlist_create();
+				  dlist *ops = dlist_create();
 				  sql_subtype *t = 
 					sql_bind_subtype("MEDIUMINT", 0, 0);
-  		  		  dlist_append_string(l, _strdup("substring"));
-  		  		  dlist_append_symbol(l, $3);
-  		  		  dlist_append_symbol(l, _newAtomNode(
+
+				  dlist_append_symbol(ops, $3);
+  		  		  dlist_append_symbol(ops, _newAtomNode(
 					atom_int(t, $5 -1 )));
-  		  		  dlist_append_symbol(l, _newAtomNode(
+  		  		  dlist_append_symbol(ops, _newAtomNode(
 					atom_int(sql_dup_subtype(t), $7 )));
-		  		  $$ = _symbol_create_list( SQL_TRIOP, l ); }
+
+  		  		  dlist_append_string(l, _strdup("substring"));
+  		  		  dlist_append_list(l, ops);
+		  		  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  scalar_exp CONCATSTRING scalar_exp  
 				{ dlist *l = dlist_create();
   		  		  dlist_append_string(l, _strdup("concat"));
@@ -1708,11 +1762,17 @@ literal:
 		{ sql_subtype *t = sql_bind_subtype("MEDIUMINT", 0, 0 );
 		  $$ = _newAtomNode( atom_int(t, $1)); }
  |  INTNUM   
-		{ sql_subtype *t = sql_bind_subtype("DOUBLE", 51, 0 );
-		  $$ = _newAtomNode( atom_float(t, strtod($1,&$1))); }
+		{ char *s = strip_extra_zeros($1);
+		  char *dot = strchr(s, '.');
+		  int digits = strlen(s) - 1;
+		  int scale = digits - (dot-s);
+		  lng value = decimal_fromstr(s);
+		  sql_subtype *t = sql_bind_subtype("DECIMAL", digits, scale );
+		  $$ = _newAtomNode( atom_int(t, value)); }
  |  APPROXNUM
 		{ sql_subtype *t = sql_bind_subtype("DOUBLE", 51, 0 );
-		  $$ = _newAtomNode( atom_float(t, strtod($1,&$1))); }
+		  double val = strtod($1,NULL);
+		  $$ = _newAtomNode( atom_float(t, val)); }
  |  sqlDATE STRING 
 		{ sql_subtype *t = sql_bind_subtype("DATE", 0, 0 );
 		  $$ = _newAtomNode( atom_general(t, $2)); }
@@ -1871,6 +1931,7 @@ data_type:
  | TYPE '(' intval ')'		{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
  ;
 
+function_name: ident;
 column:	ident ;
 
 authid: 		ident ;
@@ -1904,6 +1965,7 @@ non_reserved_word:
 | MINUTE	{ $$ = _strdup("minute"); }
 | SECOND	{ $$ = _strdup("second"); }
 | ZONE		{ $$ = _strdup("zone"); }
+| sqlNAME	{ $$ = _strdup("name"); }
 ;
 
 name_commalist:

@@ -42,8 +42,8 @@ typedef union symdata {
 	struct table *tval;
 	struct schema *schema;
 	struct sql_subtype *typeval;
-	struct sql_aggr *aggrval;
-	struct sql_func *funcval;
+	struct sql_subaggr *aggrval;
+	struct sql_subfunc *funcval;
 } symdata;
 
 

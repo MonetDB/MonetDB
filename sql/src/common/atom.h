@@ -14,13 +14,13 @@ typedef struct atom {
 	sql_subtype *tpe;
 	atomtype type;
 	union {
-		int ival;
+		lng ival;
 		char *sval;
 		double dval;
 	} data;
 } atom;
 
-extern atom *atom_int(sql_subtype * tpe, int val);
+extern atom *atom_int(sql_subtype * tpe, lng val);
 extern atom *atom_string(sql_subtype * tpe, char *val);
 extern atom *atom_float(sql_subtype * tpe, double val);
 extern atom *atom_general(sql_subtype * tpe, char *val);

@@ -28,8 +28,6 @@
 
 #include <stream.h>
 
-#define COMM_DONE 1
-
 int client(char *host, int port);
 char *readblock( stream *s );
 
