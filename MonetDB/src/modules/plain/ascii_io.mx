@@ -318,6 +318,41 @@ static char *sep_dup( char *sep ){
 	return result;
 }
 
+
+char *str2monet ( char *src){
+	int l = strlen(src) + 1;
+	char *cur, *dst = GDKmalloc(l), *p = dst;
+	int escaped = 0;
+
+        /* copy it in, while performing the correct escapes */
+        for(cur = src; *cur; cur++) {
+                if (escaped) {
+                        if (*cur == 'n') {
+                                *p++ = '\n';
+                        } else if (*cur == 't') {
+                                *p++ = '\t';
+                        } else if ((cur[0] >= '0' && cur[0] <= '7') &&
+                                   (cur[1] >= '0' && cur[1] <= '7') &&
+                                   (cur[2] >= '0' && cur[2] <= '7'))
+                        {
+                                *p++ =  (cur[2] & 7)     |
+                                       ((cur[1] & 7) <<3)|
+                                       ((cur[0] & 7) <<6);
+                                cur += 2;
+                        } else {
+                                *p++ = *cur;
+                        }
+                        escaped = FALSE;
+                } else if (*cur == '\\') {
+                        escaped = TRUE;
+                } else {
+                        *p++ = *cur;
+                }
+        }
+        *p++ = 0;
+        return dst;
+}
+
 ptr *ASCIIadt_frStr( void *extra, int type, char *s){
         int l = 0;
         ptr *res = NULL;
@@ -326,7 +361,7 @@ ptr *ASCIIadt_frStr( void *extra, int type, char *s){
         	if (s == NULL || strcmp(s,"nil") == 0)
         		res = (ptr*)ATOMnil(TYPE_str);
         	else
-                	res = (ptr*)GDKstrdup(s);
+                	res = (ptr*)str2monet(s);
         } else
                 (void) (*BATatoms[type].atomFromStr)(s, &l, (ptr)&res);
         return res;
@@ -334,6 +369,7 @@ ptr *ASCIIadt_frStr( void *extra, int type, char *s){
 
 int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
 	(void) extra;
+/*
         if (type == TYPE_str){
 		char *dst, *src = a;
 		int l;
@@ -353,8 +389,9 @@ int ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
 		dst[l+2] = 0;
 		return l+2;
 	} else {
-        	return (*BATatoms[type].atomToStr)(buf, len, a);
 	}
+*/
+        	return (*BATatoms[type].atomToStr)(buf, len, a);
 }
 
 static
