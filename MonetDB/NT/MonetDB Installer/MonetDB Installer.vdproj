@@ -866,7 +866,7 @@
             "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_21F5E48E627D4F8B8E7249E66A1BE586"
             {
             "Name" = "8:odbcinstall.exe"
-            "Condition" = "8:"
+            "Condition" = "8:ODBCDRIVER"
             "Object" = "8:_9F3B9B983BD048919D9A6C1C9EB96D73"
             "FileType" = "3:2"
             "InstallAction" = "3:1"
@@ -880,7 +880,7 @@
             "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_C3C02C9CFE354440B96871B5D822B307"
             {
             "Name" = "8:odbcinstall.exe"
-            "Condition" = "8:"
+            "Condition" = "8:ODBCDRIVER"
             "Object" = "8:_9F3B9B983BD048919D9A6C1C9EB96D73"
             "FileType" = "3:2"
             "InstallAction" = "3:4"
