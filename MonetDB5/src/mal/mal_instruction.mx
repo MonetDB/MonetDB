@@ -283,7 +283,7 @@ it would be worthwhile to keep track of location of the
 instruction in the source.]
 @- Call encapsulation
 The instruction records contain three optional pointers to functions:
-beforeCall, afterCall, and finalCall. They are bound to the result type.
+beforeCall and afterCall. They are bound to the result type.
 All expect a pointer to a VALrecord. The beforeCall is activated
 just before you enter a routine and can be used to initialize
 the stack frame, perform debugging, etc.etc.
@@ -291,8 +291,6 @@ The afterCall is activated after a successful return and can be
 used to finalize the administration.
 Typical use of beforeCall and afterCall are handling of BAT references,
 but they can also be used to update a front-end.
-The finalCall is activated when the scope in which the object is
-used is terminated. This may require garbage collection actions.
 @-
 [Think, should beforeCall/afterCall also become part of the MAL functions?]
 @{
@@ -333,6 +331,7 @@ typedef struct SYMDEF {
 typedef struct VARRECORD{
 	str     name;	/* argname or lexical value repr */
 	malType	type;	/* internal type signature */
+	int	gdktype; /* for backend */
         bit	isaconstant;	/* value cannot change */
         bit	isatypevar;	/* denotes a type variable */
         int	tmpindex;	/* temporary variable */
@@ -378,8 +377,8 @@ and the total time spent while executing the instruction.
 	MALfcn	fcn;		/* resolved function address */
 	MALfcn  beforeCall;	/* do something with the target object */
 	MALfcn  afterCall;	/* do something with the result object */
-	MALfcn  finalCall;	/* garbage collect a value */
 	struct MALBLK *blk;	/* resolved MAL function address */
+	int	garbage;	/* control is needed */
 	int	jump;		/* controlflow program counter */
 @-
 The MAL instruction representation. The strings should be garbage collected
@@ -440,9 +439,10 @@ for separate name space management.
 #define isVarInitialized(M,I) 	((M)->var[I]->isinit)
 #define isFixed(M,I)		((M)->var[I]->fixtype)
 #define setFixed(M,I)		((M)->var[I]->fixtype= 1)
-#define isVarGarbage(M,I)  	((M)->var[I]->garbage)
+#define garbageControl(M,I)  	((M)->var[I]->garbage)
 #define getVarConstant(M,I) 	((M)->var[I]->value)
 #define getVarType(M,I)		((M)->var[I]->type)
+#define getVarGDKType(M,I)		((M)->var[I]->gdktype)
 #define copyVar(M,I,J)	freeVariable(M,I);(M)->var[I] = (M)->var[J];\
 		(M)->var[J]= NULL;
 
@@ -509,8 +509,6 @@ mal_export void 	pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser
 
 mal_export void strBeforeCall(ValPtr v,ValPtr bak);
 mal_export void strAfterCall(ValPtr v,ValPtr bak);
-mal_export void strFinalCall(ValPtr v);
-mal_export void batFinalCall(ValPtr v);
 mal_export void batBeforeCall(ValPtr v,ValPtr bak);
 mal_export void batAfterCall(ValPtr v,ValPtr bak);
 #endif /*  _MAL_INSTR_H*/
@@ -713,7 +711,7 @@ InstrPtr newInstruction(int kind){
 	setModuleId(p, NULL);
 	setFunctionId(p, NULL);
 	p->props= NULL;
-	p->beforeCall = p->afterCall = p->finalCall= 0;
+	p->beforeCall = p->afterCall = 0;
 	p->fcn= NULL;
 	p->blk= NULL;
 	p->polymorphic = 0;
@@ -751,6 +749,7 @@ with modifier
 	p->clk = 0;
 	p->ticks = 0;
 	p->trace= 0;
+	p->garbage=0;
 	p->jump=0;
 	p->counter= 0;
 #endif
@@ -952,6 +951,7 @@ cheap to perform a linear search to a variable or constant.
 		GDKfree((str)mb->var);
 		mb->vsize= s;
 		mb->var= new;
+		mb->var[mb->vtop-1]->gdktype= -1;
 	} else if (mb->vtop >mb->vsize)
 		GDKfatal("newVariable:variable administration\n");
 @c
@@ -996,7 +996,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	setVarType(mb,n,type);
 	getVarLiteral(mb,n)= NULL;
 	isConstant(mb,n) = FALSE;
-	isVarGarbage(mb,n) = FALSE;
+	garbageControl(mb,n) = FALSE;
 	isVarUsed(mb,n) = FALSE;
 	isVarInitialized(mb,n) = FALSE;
 	mb->vtop++;
@@ -1031,7 +1031,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 	setVarType(mb,n,type);
 	getVarLiteral(mb,n)= NULL;
 	isConstant(mb,n) = FALSE;
-	isVarGarbage(mb,n) = FALSE;
+	garbageControl(mb,n) = FALSE;
 	isVarUsed(mb,n) = FALSE;
 	isVarInitialized(mb,n) = FALSE;
 	mb->vtop++;
@@ -1065,6 +1065,7 @@ void	copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	bzero( (str) w , sizeof(VarRecord));
         w->name = v->name? GDKstrdup(v->name):0;
         w->type = v->type;
+        w->gdktype = v->gdktype;
         w->garbage = v->garbage;
         w->fixtype = v->fixtype;
         w->literal= v->literal? GDKstrdup(v->literal):NULL;
@@ -1409,6 +1410,7 @@ void setVarType(MalBlkPtr mb, int i, int tpe)
 	}
 */
 	mb->var[i]->type= tpe;
+	mb->var[i]->gdktype= getGDKtype(tpe);
 }
 void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
 {
@@ -1872,17 +1874,15 @@ void strBeforeCall(ValPtr v, ValPtr bak){
 	bak->len = v->len;
 }
 void strAfterCall(ValPtr v, ValPtr bak) {
-	if( v->val.sval != bak->val.sval)
-		strFinalCall(bak);
+	if( v->val.sval != bak->val.sval) {
+		if( bak->val.pval && bak->val.pval != str_nil) {
+			if(bak->len) GDKfree(bak->val.pval);
+			bak->len= 0;
+		}       
+		bak->val.pval= NULL;
+	}
 	v->len= 0;
 }
-void strFinalCall(ValPtr v){
-        if( v->val.pval && v->val.pval != str_nil) {
-                if(v->len) GDKfree(v->val.pval);
-                v->len= 0;
-        }       
-        v->val.pval= NULL;
-}       
 
 void batBeforeCall(ValPtr v, ValPtr bak){
 	if( v->vtype== TYPE_bat)
@@ -1914,28 +1914,5 @@ void batAfterCall(ValPtr v, ValPtr bak){
 	}
 	if( bak->val.bval)
 		BBPdecref(bak->val.bval,TRUE);
-}
-@- 
-When the logical reference count drops to zero
-we can decrement the physical refcount as well.
-@c
-void batFinalCall(ValPtr v){ 
-	int bid= ABS(v->val.bval);
-	/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
-		bid, BBP_lrefs(bid),BBP_refs(bid));*/
-	if(bid )
-	{       
-		/* logical references do not count from here*/
-		/* watch out for built-ins */
-		if( BBP_refs(bid))
-			BBPunfix(bid);
-		else 
-		if( BBP_lrefs(bid) )
-			BBPdecref(bid,TRUE);
-		v->val.bval =0;
-	}
-#ifdef DEBUG_MAL_INTERPRETER
-        else GDKerror("interpreter:bat '%d' disappeared\n",v->val.bval);
-#endif  
 }
 @}

@@ -353,6 +353,18 @@ of the symbol stack, it is easy to filter such errors.
 		} 
 	}
 @-
+Mark all variables that are subject to garbage control.
+@c
+/*
+	if( !polymorphic)
+	for(i=0;i<p->retc;i++) 
+	if( returntype[i] == TYPE_any ||
+	    returntype[i] == TYPE_str ||
+	    isaBatType(returntype[i]) ){
+		garbageControl(mb,getArg(p,i)) = TRUE;
+	}
+*/
+@-
 It may happen that an argument was still untyped and as a result of
 the polymorphism matching became strongly typed. This should be
 reflected in the symbol table. 
@@ -426,13 +438,13 @@ on a user-supplied function [todo].
 		@:chkMultiple@
 		p->beforeCall= (MALfcn) batBeforeCall;
 		p->afterCall= (MALfcn) batAfterCall;
-		p->finalCall= (MALfcn) batFinalCall;
+		garbageControl(mb,getArg(p,0)) = TRUE;
 	}
 	else if( s1 != TYPE_any && ATOMstorage(s1)== TYPE_str){
 		@:chkMultiple@
 		p->beforeCall= (MALfcn)strBeforeCall;
 		p->afterCall= (MALfcn) strAfterCall;
-		p->finalCall= (MALfcn) strFinalCall;
+		garbageControl(mb,getArg(p,0)) = TRUE;
 	} 
 @c
 	@:prepostProcess@

@@ -94,10 +94,14 @@ ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 	int j=0;
 	ValRecord *v;
 	ptr val = NULL;
+	int tpe ;
 
 	j = pci->argv[k];
 	v= &stk->stk[j];
-	switch(ATOMstorage(v->vtype)){
+	tpe = v->vtype;
+tstagain:
+	switch(tpe){
+	/* switch(ATOMstorage(v->vtype)){ */
 	case TYPE_void: val= (ptr) & v->val.ival; break;
 	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
 	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
@@ -111,8 +115,11 @@ ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
 	case TYPE_lng: val= (ptr) & v->val.lval; break;
 	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
 	default:
+		tpe= ATOMstorage(tpe);
+		goto tstagain;
+/*
 	val= (ptr) v->val.pval; 
-/*	GDKerror("evalParameters:unknown value type\n");*/
+	GDKerror("evalParameters:unknown value type\n");*/
 	}
 	return val;
 } 
@@ -234,7 +241,10 @@ of the return statement.
 		pp = getInstrPtr(mb, 0);
 		/* set return type */
 		lhs = &stk->stk[0];
-		lhs->vtype =getGDKtype(getVarType(mb,0));
+		/* lhs->vtype =getGDKtype(getVarType(mb,0)); */
+		lhs->vtype =getVarGDKType(mb,0);
+		if(lhs->vtype <0)
+			GDKerror("unexpected type error\n");
 		/* stream_printf(GDKout,"recursive MAL "
 				"function call %s[%d]\n",
 			functionName(pci),pcicaller); */
@@ -559,29 +569,14 @@ cause errors in multi-assignment statements.
 @-
 @= assignStmt
 {	
-	if( pci->beforeCall && pci->afterCall)
+	/*if( pci->beforeCall && pci->afterCall)*/
+	if( garbageControl(mb,getDestVar(pci)) )
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
 		lhs = &stk->stk[pci->argv[k]];
 		rhs = &stk->stk[pci->argv[i]];
 		(*pci->beforeCall)(lhs,&backup);
 		VALcopy(lhs,rhs);
 		(*pci->afterCall)(lhs,&backup);
-	}
-	else
-	if( pci->beforeCall )
-	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
-		lhs = &stk->stk[pci->argv[k]];
-		rhs = &stk->stk[pci->argv[i]];
-		(*pci->beforeCall)(&stk->stk[pci->argv[k]],&backup);
-		VALcopy(lhs,rhs);
-	}
-	else
-	if( pci->afterCall)
-	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
-		lhs = &stk->stk[pci->argv[k]];
-		rhs = &stk->stk[pci->argv[i]];
-		VALcopy(lhs,rhs);
-		(*pci->afterCall)(&stk->stk[pci->argv[k]],&backup);
 	}
 	else
 	for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
@@ -644,7 +639,8 @@ the bind(namespace,batname,mode) operation.[todo]
 @{
 @-
 @= commandcall
-	if(pci->beforeCall)
+	/* if(pci->beforeCall) */
+	if( garbageControl(mb,getDestVar(pci)) )
 		(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
 				   &backup);
 	/* improve performance with 20 ms/1M calls*/
@@ -696,7 +692,7 @@ the bind(namespace,batname,mode) operation.[todo]
 	if( pci->fcn== NULL)
 		ret= raiseException(mb,stkpc,MALexception,
 			"address of pattern missing\n");
-	else {
+	else {/* patterns should take care of garbage collection themselves? */
 		if( pci->beforeCall) 
 			(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
 					   &backup);
@@ -711,7 +707,8 @@ non-returned values.
 
 @-
 @= functioncall
-	if( pci->beforeCall) 
+	 /* if( pci->beforeCall) */
+	 if( garbageControl(mb,getDestVar(pci)) )
 		(*pci->beforeCall)(&stk->stk[getDestVar(pci)],
 				   &backup);
 	if( pci->blk== NULL)
@@ -732,6 +729,7 @@ and we have to do some housekeeping, such as string length adjustment.
 @= resultParameter
 	@:exceptionHndlr@
 	else if( pci->afterCall) 
+	/* if( garbageControl(mb,getDestVar(pci)) )*/
 		(*pci->afterCall)(&stk->stk[getDestVar(pci)],
 				  &backup);
 
@@ -846,7 +844,7 @@ threads should be accessible.
 @{
 @-
 @= waitForChildren
-waitForChildren(stk);
+if(stk->shares) waitForChildren(stk);
 @c
 void waitForChildren(MalStkPtr stk){
 	int i= stk->shares;
@@ -1148,9 +1146,33 @@ void garbageElement(ValPtr v)
 		stream_printf(GDKout,"NO GARBAGECOLLECT ");
 	return;
 #endif
-	if( ATOMstorage(v->vtype) == TYPE_str) 
-		strFinalCall(v);
-	if( v->vtype== TYPE_bat && v->val.bval) batFinalCall(v);
+	if( v->vtype == TYPE_str) {
+		if( v->val.pval && v->val.pval != str_nil) {
+			if(v->len) GDKfree(v->val.pval);
+			v->len= 0;
+		}
+		v->val.pval= NULL;
+	}
+	if( v->vtype== TYPE_bat && v->val.bval) {
+@-
+When the logical reference count drops to zero
+we can decrement the physical refcount as well.
+@c
+		int bid= ABS(v->val.bval);
+		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
+			bid, BBP_lrefs(bid),BBP_refs(bid));*/
+		/* logical references do not count from here*/
+		/* watch out for built-ins */
+		if( BBP_refs(bid))
+			BBPunfix(bid);
+			else
+		if( BBP_lrefs(bid) )
+			BBPdecref(bid,TRUE);
+		v->val.bval =0;
+#ifdef DEBUG_MAL_INTERPRETER
+		else GDKerror("interpreter:bat '%d' disappeared\n",v->val.bval);
+#endif
+	}
 }
 @-
 @}
