@@ -171,4 +171,4 @@ from
  on names.head = income.head
 ) as records
 where interests.tail = records.interest
-order by interests.tail
+order by interests.tail;

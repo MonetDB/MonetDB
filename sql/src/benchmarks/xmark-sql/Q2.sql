@@ -10,4 +10,4 @@ and    p1121.tail = p1122.head
 and    p1111.rank = (select min(rank)
                      from   hidx p1111a
 		     where  p1111a.tblid = 1111
-		     and    p1111a.head = p1111.head)
+		     and    p1111a.head = p1111.head);

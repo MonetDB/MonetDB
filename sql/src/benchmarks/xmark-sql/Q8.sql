@@ -11,4 +11,4 @@ and    p1252.tblid = 1252
 and    p1052.tail = p1053.head
 and    p1053.tail = p1054.head
 and    p1252.tail = p1051.tail
-group by p1051.head, p1054.tail
+group by p1051.head, p1054.tail;

@@ -28,4 +28,4 @@ and    p1111l.rank  = (select max(rank)
 		       from   hidx p1111b
 		       where  p1111b.tblid = 1111
 		       and    p1111b.head = p1111l.head)
-and    2 * cast(p1122f.tail as float) < cast(p1122l.tail as float)
+and    2 * cast(p1122f.tail as float) < cast(p1122l.tail as float);

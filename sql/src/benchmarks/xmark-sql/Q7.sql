@@ -12,4 +12,4 @@ select ((select count(*) from hidx where hidx.tblid = 17) +
         (select count(*) from hidx where hidx.tblid = 358) +
         (select count(*) from hidx where hidx.tblid = 504) +
         (select count(*) from hidx where hidx.tblid = 671) +
-	(select count(*) from hidx where hidx.tblid = 818))
+	(select count(*) from hidx where hidx.tblid = 818));

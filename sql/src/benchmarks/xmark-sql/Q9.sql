@@ -24,4 +24,4 @@ and    p475.head = p482.head
 and    p482.tail = p483.head
 and    p483.tail = p484.head
 and    p1252.tail = p1051.tail
-and    p475.tail = p1254.tail
+and    p475.tail = p1254.tail;

@@ -9,4 +9,4 @@ from   (select p1052.head, p1054.tail
        left outer join
        (select * from hidx p1061 where p1061.tblid = 1061) as home
 	on names.head = home.head
-where   home.tail is null
+where   home.tail is null;

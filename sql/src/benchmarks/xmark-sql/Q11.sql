@@ -19,4 +19,4 @@ from   (select p1051.tail as id, p1054.tail as name, cast (p1068.tail as float) 
         from attx p1107
         where p1107.tblid = 1107) as prices
        on person.income > 5000 * prices.value
-group by person.name, person.id
+group by person.name, person.id;

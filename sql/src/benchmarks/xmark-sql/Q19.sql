@@ -87,5 +87,5 @@ and    p790.tail = p791.head
 and    p791.tail = p792.head
 and    p796.tail = p797.head
 and    p797.tail = p798.head)
-order by name
+order by name;
 

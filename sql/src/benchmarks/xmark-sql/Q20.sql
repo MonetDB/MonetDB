@@ -19,4 +19,4 @@ select
 	on p1067.tail = p1068.head
  where	p1067.tblid = 1067
  and	p1068.tblid = 1068
- and	p1068.tail is null)
+ and	p1068.tail is null);

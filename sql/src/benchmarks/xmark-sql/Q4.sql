@@ -25,4 +25,4 @@ and    p1110.tblid = 1110
 and    p1108.tail = p1109.head
 and    p1109.tail = p1110.head
 and    p1108.head = p1111a.head
-and    p1111a.rank < p1111b.rank
+and    p1111a.rank < p1111b.rank;

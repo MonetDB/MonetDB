@@ -28,4 +28,4 @@ and    p1357.tail = p1358.head
 and    p1249.tblid = 1249
 and    p1250.tblid = 1250
 and    p1249.tail = p1250.head
-and    p1249.head = p1267.head
+and    p1249.head = p1267.head;
