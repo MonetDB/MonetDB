@@ -426,7 +426,15 @@ def msc_binary(fd, var, binmap, msc):
         binname = binmap['NAME'][0]
     else:
         binname = name
+
+    if binmap.has_key("DIR"):
+        bd = binmap["DIR"][0] # use first name given
+	fd.write("%sdir = %s\n" % (binname, msc_translate_dir(bd)) ); 
+    else:
+	fd.write("%sdir = $(bindir)\n" % (binname) ); 
+
     msc['BINS'].append(binname)
+
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
@@ -490,6 +498,13 @@ def msc_bins(fd, var, binsmap, msc):
         bin, ext = split_filename(binsrc)
         if ext not in automake_ext:
             msc['EXTRA_DIST'].append(binsrc)
+
+        if binsmap.has_key("DIR"):
+            bd = binsmap["DIR"][0] # use first name given
+	    fd.write("%sdir = %s\n" % (bin, msc_translate_dir(bd)) ); 
+        else:
+	    fd.write("%sdir = $(bindir)\n" % (bin) ); 
+
         msc['BINS'].append(bin)
 
         if binsmap.has_key(bin + "_LIBS"):
@@ -920,7 +935,7 @@ CXXEXT = \\\"cxx\\\"
     if len(msc['BINS']) > 0:
         for v in msc['BINS']:
             fd.write("install_bin_%s: %s.exe\n" % (v, v))
-            fd.write("\tif exist %s.exe $(INSTALL) %s.exe $(bindir)\n" % (v,v))
+            fd.write("\tif exist %s.exe $(INSTALL) %s.exe $(%sdir)\n" % (v,v,v))
     if len(msc['INSTALL']) > 0:
         for (dst, src, ext, dir) in msc['INSTALL']:
             fd.write("install_%s: %s%s %s\n" % (dst, src, ext, dir))
