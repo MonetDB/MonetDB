@@ -32,7 +32,7 @@ A rudimentatry authroization scheme should be  enforced.
 @mal
 module clients;
 
-command setListing(flg:int):void
+command setListing(flg:int):int
 address CLTsetListing
 comment "Turn on/off echo of MAL instructions";
 command setDebug(flg:int):void
@@ -103,6 +103,7 @@ str CLTsetListing(int *ret, int *flag) {
         Client c;
 	(void)ret; /*fool compiler */
         c= getClient();
+	*ret = c->listing;
         c->listing = *flag;
         return MAL_SUCCEED;
 }

@@ -98,16 +98,15 @@ comment "Generic processor for mutiplexed
 #include "mal_resolve.h"
 #include "mal_client.h"
 
-/* #define DEBUG_MULTIPLEX */
-/* #define TRACE_MULTIPLEX */
-
 mal_export int CMDmultiplexTypeCheck(Scope scope, MalBlkPtr mb, InstrPtr pci);
 mal_export str CMDmultiplexScript(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 
 #endif /* _MAL_MULTIPLEX_H_ */
 
 @- Static Type Checker
-The first step in handling multiplex operators is to provide 
+The first step in handling multiplex operators is to 
+assure there doesn;t exist a multiplex implementation
+for the operation at hand. If it fails, we provide 
 a hook for the type-resolver to determine the outcome of a
 multiplex call. This simply requires construction of the 
 implicit function call and to rely on the type-resolver
@@ -119,6 +118,9 @@ c tails and stores it in b. This case is detected by operatorModifier();
 @c
 #include "multiplex.h"
 #define REALLY_REALLY_BIG	2000000000
+
+/* #define DEBUG_MULTIPLEX */
+/* #define TRACE_MULTIPLEX  */
 static int multiplexDebug=0;
 
 static int batcalcTypeCheck(str operator, int type);
@@ -166,7 +168,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	MalBlkPtr m, InstrPtr p)
 {
 	int i, k, t, tpe= TYPE_void, tt;
-	int first = TRUE, inplace= FALSE;
+	int first = TRUE, firstbat=FALSE, inplace= FALSE;
 	str fcnname;
 	char name[1024];
 
@@ -174,8 +176,10 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	(void) inplace;
 
 #ifdef DEBUG_MULTIPLEX
-	printf("multiplexType on the instruction:\n");
-	if( multiplexDebug) printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+	if( multiplexDebug ){
+		printf("multiplexType on the instruction:\n");
+		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+	}
 #endif
 	if( !isConstant(mb,pci->argv[1]) || getArgType(mb,pci,1)!=TYPE_str){
 		GDKerror("multiplexType:string constant expected in %s[%d]\n",
@@ -201,11 +205,23 @@ Constants passed into the multiplex operator are a special case.
 	    t= getArgType(mb,pci,i);
 	    if( isaBatType(t) ){
 		if (first){
-			first= FALSE;
-			tpe= getHeadType(t);
+			firstbat= TRUE;
+			if( getHeadType(t) != TYPE_any) {
+				first= FALSE;
+				tpe= getHeadType(t);
+				if ( tpe== TYPE_void) tpe= TYPE_oid;
+			}
 		} else{
-			if( getHeadType(t) != tpe)
-			GDKerror("multiplexType:BAT head types differ\n");
+@-
+Beware, the BAT header types in this case could be a mix of oid and void.
+They are conformable in the current implementation with respect to
+join compatability
+@c
+			int t2= getHeadType(t);
+			if( t2 == TYPE_void) t2 = TYPE_oid;
+			if( t2 != tpe)
+			GDKerror("multiplexType:BAT head types differ in %s[%d]\n",
+				 functionName(pci), getPC(mb,pci));
 		}
 		tt = getTailType(t);
 	    } else {
@@ -217,8 +233,9 @@ Constants passed into the multiplex operator are a special case.
 	pushInstruction(m,p);
 
 	/* resolve the type of the derived function call */
-	if( first){
-		GDKerror("multiplexType:at least one BAT argument required\n");
+	if( !firstbat){
+		GDKerror("multiplexType:%s[%d]: at least one BAT argument required\n",
+				 functionName(pci), getPC(mb,pci));
 		return -1;
 	} 
 
@@ -326,7 +343,7 @@ int multiplexTactics(Scope scope, MalBlkPtr mb, InstrPtr pci){
 	olderr= mb->errors;
 	if( cntxt->errbuf) i= strlen(cntxt->errbuf); else i=0;
 @-
-Safe the old type of the destination because we may hae to restore it later on.
+Safe the old type of the destination because we may have to restore it later on.
 @c
 	oldtpe= getArgType(mb,pci,0);
 	typeChecker(cntxt->nspace,mb,p);
@@ -334,6 +351,7 @@ Safe the old type of the destination because we may hae to restore it later on.
 	if(multiplexDebug ){
 		printf("Tactics typeChecker instruction type\n");
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		printf("error= %s type=%d\n",cntxt->errbuf,p->typechk);
 	}
 #endif
 	if( cntxt->errbuf ) cntxt->errbuf[i] =0;
@@ -366,7 +384,8 @@ handled with a script.
 Check out type of the operands for use with batcalc
 @c
 	if( moduleId(p) && idcmp("batcalc",moduleName(p))==0 && 
-	   (i=batcalcTypeCheck(operator, getArgType(mb,p,0))) < 0){
+	   (i=batcalcTypeCheck(operator, 
+		getTailType(getArgType(mb,p,0))) ) < 0){
 		/* postpone fixation until datatype is fixed */
 		/* tobe done */
 		setFunctionId(pci, GDKstrdup("script"));
@@ -756,15 +775,24 @@ should be part of the batcalc module itself.
 @c
 int batcalcTypeCheck(str operator, int type){
 	int tt= getTailType(type);
+	int ret = -1;
+
 	switch(tt){
-	case TYPE_any: return -2;
+	case TYPE_any: ret= -2; break;
 	case TYPE_flt: 
-	case TYPE_dbl: if(idcmp("%",operator)==0) return -1;
+	case TYPE_dbl: if(idcmp("%",operator)==0) {ret= -1; break;}
+	case TYPE_str: 
+	case TYPE_bit: 
 	case TYPE_oid:
 	case TYPE_sht:
 	case TYPE_int:
-	case TYPE_lng: return type;
+	case TYPE_lng: ret= type; 
 	}
-	return -1;
+#ifdef DEBUG_MULTIPLEX
+	if( multiplexDebug){
+		printf("batcalc type checker %s %d\n", getTypeName(type),ret);
+	}
+#endif
+	return ret;
 }
 @}

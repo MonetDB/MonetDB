@@ -131,6 +131,9 @@ mil.deposit(BUF_SEQUENTIAL);
 mil.deposit(BUF_WILLNEED);
 mil.deposit(BUF_DONTNEED);
 mil.deposit(EBUSY);
+mil.deposit(BAT_READ);
+mil.deposit(BAT_APPEND);
+mil.deposit(BAT_WRITE);
 mil.deposit(M_E);
 mil.deposit(M_LOG2E);
 mil.deposit(M_LOG10E);
@@ -330,10 +333,12 @@ str MILiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str nme;
+	int len;
 	(void) mb; /* fool compiler */
 	nme = (str) getArgValue(stk,pci,1);
 	unquote(nme);
-	stream_printf(GDKout,"#%s\n",nme);
+	len=strlen(nme);
+	stream_printf(GDKout,"#%s%s",nme,(nme[len-1]=='\n'?"":"\n"));
         stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
