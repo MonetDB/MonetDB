@@ -1,6 +1,6 @@
 # checking box management
 
-box chest;
+box.open(chest);
 pi :=3.417;
 chest.deposit(pi);
 f:flt := chest.take(pi);

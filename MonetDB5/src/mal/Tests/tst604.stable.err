@@ -1,13 +1,13 @@
-stderr of test 'tst606` in directory 'src/mal` itself:
+stderr of test 'tst604` in directory 'src/mal` itself:
 
 
-# 19:49:17 >  
-# 19:49:17 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB/log" --set mapi_port=40188 --set sql_port=57061 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst606.mal </dev/null
-# 19:49:17 >  
+# 19:26:47 >  
+# 19:26:47 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB/log" --set mapi_port=49315 --set sql_port=56983 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst604.mal </dev/null
+# 19:26:47 >  
 
 # builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
 # builtin opt 	gdk_version = 5.0
-# builtin opt 	monet_pid = 31184
+# builtin opt 	monet_pid = 13701
 # builtin opt 	prefix = /ufs/mk/monet5/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -50,12 +50,12 @@ stderr of test 'tst606` in directory 'src/mal` itself:
 # cmdline opt 	monet_mod_path = /ufs/mk/monet5/Linux/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/mk/monet5/Linux/var/MonetDB/log
-# cmdline opt 	mapi_port = 40188
-# cmdline opt 	sql_port = 57061
+# cmdline opt 	mapi_port = 49315
+# cmdline opt 	sql_port = 56983
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_mal
 
-# 19:49:17 >  
-# 19:49:17 >  Done.
-# 19:49:17 >  
+# 19:26:48 >  
+# 19:26:48 >  Done.
+# 19:26:48 >  
 

@@ -1,4 +1,10 @@
-stdout of test 'tst801` in directory 'src/mal` itself:
+stdout of test 'tst606` in directory 'src/mal` itself:
+
+
+# 19:49:17 >  
+# 19:49:17 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB/log" --set mapi_port=40188 --set sql_port=57061 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst606.mal </dev/null
+# 19:49:17 >  
+
 # Monet Database Server V5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for 32biti686-pc-linux-gnu/32bit.
@@ -21,10 +27,13 @@ stdout of test 'tst801` in directory 'src/mal` itself:
 #	deposit("STORE_COMPR",2:int);
 #end main;
 function constants.main():void;	# 0  (main:void)
-    const.deposit("STORE_MEM",0);	# 1 CSTdeposit ($1:void)<-($2:str)($3:int)
-    const.deposit("STORE_MMAP",1);	# 2 CSTdeposit ($4:void)<-($5:str)($6:int)
-    const.deposit("STORE_COMPR",2);	# 3 CSTdeposit ($7:void)<-($8:str)($9:int)
-end main;	# 4  
+    STORE_MEM := 0;	# 1  (STORE_MEM:int)<-($2:int)
+    STORE_MMAP := 1;	# 2  (STORE_MMAP:int)<-($4:int)
+    STORE_COMPR := 2;	# 3  (STORE_COMPR:int)<-($6:int)
+    const.deposit(STORE_MEM);	# 4 CSTdeposit ($7:void)<-(STORE_MEM:int)
+    const.deposit(STORE_MMAP);	# 5 CSTdeposit ($8:void)<-(STORE_MMAP:int)
+    const.deposit(STORE_COMPR);	# 6 CSTdeposit ($9:void)<-(STORE_COMPR:int)
+end main;	# 7  
 #
 ## take uses the 'root' versions.
 #function take(v:str):any;

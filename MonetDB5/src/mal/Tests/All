@@ -121,11 +121,6 @@ tst307
 tst350
 tst380
 tst400
-tst400a
-tst400b
-tst400c
-tst400d
-tst400e
 tst401
 tst402
 tst450
@@ -187,6 +182,11 @@ tst908
 
 # performance tests
 
+#tst400a
+#tst400b
+#tst400c
+#tst400d
+#tst400e
 #tst400a2
 #tst400bHuge
 #tst400bHuge2

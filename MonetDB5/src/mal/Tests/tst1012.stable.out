@@ -54,10 +54,10 @@ function Admin.main():int;	# 0  (main:int)
     io.print("");	# 18 IOprint_val ($22:int)<-($18:str)
     bbp.close();	# 19 CMDbbpclose ($23:void)
     bbp.open();	# 20 CMDbbpopen ($24:void)
-    io.print(v);	# 21 IOprint_val ($25:int)<-(v:any)
-    bbp.close();	# 22 CMDbbpclose ($27:void)
-end main;	# 23  
-bbp.take not yet fully implemented
+    v := bbp.take("mysecondbat");	# 21 CMDbbptake (v:bat[:any,:any])<-($9:str)
+    io.print(v);	# 22 IOprint_val ($26:int)<-(v:bat[:any,:any])
+    bbp.close();	# 23 CMDbbpclose ($27:void)
+end main;	# 24  
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
@@ -69,5 +69,9 @@ bbp.take not yet fully implemented
 [ false ]
 [ true ]
 [ "" ]
-[ 0 ]
+#-----------------#
+# h	tmp_4	  # name
+# int	int	  # type
+#-----------------#
+[ 1,	  2	  ]
 >
