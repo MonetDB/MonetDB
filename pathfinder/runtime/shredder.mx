@@ -89,12 +89,6 @@ typedef int nat;
 /* support oid-s up to the 48 bits boundary => 13 decimal digits */
 #define OIDFMT "%13" NATFMT 
 
-/**
- * next node property IDs to assign
- */
-nat nnode_pre; /* next preorder rank to assign */
-nat nnode_attr;/* number of attributes counter */
-
 static char emptyString[1] = "";
 
 /*******
@@ -146,7 +140,7 @@ typedef struct shredBAT {
         shredBATdef     *def; /* pointer to static properties */
         nat             cnt;  /* current #of elements in the BAT */
         nat             dupl; /* the number of duplicate BUNins so far */
-        size_t          size; /* current maximum size of the BAT */
+        off_t           size; /* current maximum size of the BAT */
         BAT             *bat; /* the physical BAT */
         /* */
         union { /* cast to perform direct indexex insert in [void,any] BATs */
@@ -157,11 +151,46 @@ typedef struct shredBAT {
         } cast;
 } shredBAT;
 
+/**
+ * XML node stack maximum depth (use `-d' for deeper XML instances)
+ */
+#define XML_DEPTH_MAX 256
+nat xml_depth_max = XML_DEPTH_MAX;
+
+#define PUSH(SC,n) ((SC)->lifo[(SC)->sp++] = (n))
+#define POP(SC)    ((SC)->lifo[--(SC)->sp])
+#define TOP(SC)    ((SC)->lifo[(SC)->sp - 1])
+
+/**
+ * Node element of the XMD document interpretation stack
+ */
+typedef struct node_t node_t;
+struct node_t {
+    nat  pre;                   /**< preorder rank */
+    nat  size;                  /**< size of subtree below node */
+    int  level;                 /**< tree level of parent 
+                                     (0 if root, -1 if document node) */
+    nat  prop;                  /**< property ID */
+    nat  kind;                  /**< node kind */
+};
+
 /* the computing context environmentf the shredding process */
-typedef struct shredCtx {
+typedef struct shredCtxStruct {
         char*           name;           /* xml document name */
-        size_t          fileSize;       /* size of the input file */
-        size_t          estSize;        /* extimated number of pre nodes */
+	/* pre-level-depth administration */
+	nat		nnode_pre; 	/* next preorder rank to assign */
+	nat		nnode_attr;	/* number of attributes counter */
+	nat		level;		/* current level */
+	nat		depth;		/* current max depth */
+	/* the xml node stack */
+	node_t		*lifo;		/* the stack */
+	nat		sp;		/* the stackpointer */
+	/* buffer administration */
+	nat		content;	/* content ptr in char buff */
+	char		*content_buf;	/* character buffer */
+	/* */
+        off_t           fileSize;       /* size of the input file */
+        off_t           estSize;        /* extimated number of pre nodes */
         shredBAT        dstBAT[SHRED_BATS]; /* all the result BATs */
         BAT*            nslocBAT;       /* the BAT to compress NS and LOC */
         int             nslocDUPL;      /* the number of duplicates nslocs */
@@ -169,22 +198,18 @@ typedef struct shredCtx {
                                          * this is something the Tijah 
                                          * people were asking for
                                          */
-} shredCtx;
+} shredCtxStruct;
 
 /* the minimal incremental size of a BAT during estimation process */
 #define MINCHUNK        1024
 
-/* the global the describing the computing enviroment of the current shredding
- * process. This is note reentrant. But is it very convenient at the moment */
-static shredCtx* glb_ctx;
-
-static shredCtx *createShredCtx(char* name, size_t fileSize) {
+static shredCtxStruct *createShredCtx(char* name, off_t  fileSize) {
         int i;
 
-        shredCtx *res = (shredCtx*)malloc( sizeof(shredCtx) );
+        shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
         res->name     = name;
         res->fileSize = fileSize;
-        res->estSize  = MAX(MINCHUNK,fileSize/20);
+        res->estSize  = MIN(MAX(MINCHUNK,fileSize/20),INT_MAX);
         for(i=0; i<SHRED_BATS; i++) {
                 shredBAT* sb = &res->dstBAT[i];
 
@@ -228,23 +253,22 @@ static shredCtx *createShredCtx(char* name, size_t fileSize) {
         res->nslocDUPL= 0;
 #endif
         res->shredWords = 0; /* do not shred words by default */
-        glb_ctx = res;
         return res;
 }
 
 /* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
  * correct the batsize will always shrink!
  */
-static void setBATcapacity(shredCtx* ctx, int idx, int n) {
-        BAT* b = ctx->dstBAT[idx].bat;
+static void setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
+        BAT* b = shredCtx->dstBAT[idx].bat;
 
         void* top;
         
         int bottomTop = n+1;
-        ctx->dstBAT[idx].cnt = n;
-        switch( ctx->dstBAT[idx].def->tailType ) {
+        shredCtx->dstBAT[idx].cnt = n;
+        switch( shredCtx->dstBAT[idx].def->tailType ) {
          case TYPE_int :
-                top = &ctx->dstBAT[idx].cast.natCAST[bottomTop];
+                top = &shredCtx->dstBAT[idx].cast.natCAST[bottomTop];
                 break;
          case TYPE_chr: {
                 b->batBuns->free = n+(SIZEOF_VOID_P); /* incomplete, solves truncation bug */
@@ -252,7 +276,7 @@ static void setBATcapacity(shredCtx* ctx, int idx, int n) {
                 return;
                 }
          case TYPE_oid:
-                top = &ctx->dstBAT[idx].cast.oidCAST[bottomTop];
+                top = &shredCtx->dstBAT[idx].cast.oidCAST[bottomTop];
                 break;
          default:
                 stream_printf(GDKerr,"ERROR: setBATcapacity(): bad tailType\n");
@@ -262,13 +286,13 @@ static void setBATcapacity(shredCtx* ctx, int idx, int n) {
         b->tsorted = 0;
 }
 
-static void printStat(shredCtx* ctx) {
+static void printStat(shredCtxStruct* shredCtx) {
         int i;
 
         stream_printf(GDKout,"############\n");
-        stream_printf(GDKout,"# STATISTICS of shredding \"%s\":\n",ctx->name);
+        stream_printf(GDKout,"# STATISTICS of shredding \"%s\":\n",shredCtx->name);
         for(i=0; i<SHRED_BATS; i++) {
-                shredBAT* sb = &ctx->dstBAT[i];
+                shredBAT* sb = &shredCtx->dstBAT[i];
 
                 stream_printf(GDKout,"# [%9s, ",sb->def->name);
                 stream_printf(GDKout,"cnt=%d",sb->cnt);
@@ -278,7 +302,7 @@ static void printStat(shredCtx* ctx) {
                     if ( sb->def->compress )
                         dupl = sb->dupl;
                     else
-                        dupl = ctx->nslocDUPL;
+                        dupl = shredCtx->nslocDUPL;
                     stream_printf(GDKout,", dupl=%d(=%.f%%) ",dupl, ((dupl+sb->cnt)?100.0*(float)(sb->cnt)/(float)(dupl+sb->cnt):100.0));
                 }
                 if ( i==PRE_SIZE )
@@ -291,7 +315,7 @@ static void printStat(shredCtx* ctx) {
         }
 }
 
-static BAT* finalizeShredCtx(shredCtx* ctx) {
+static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         oid i;
 
         BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
@@ -300,19 +324,19 @@ static BAT* finalizeShredCtx(shredCtx* ctx) {
                 stream_printf(GDKerr,"finalizeShredCtx:resultBAT:create failed.\n");
                 return NULL;
         }
-        setBATcapacity(ctx,PRE_SIZE, nnode_pre);
-        setBATcapacity(ctx,PRE_LEVEL,nnode_pre);
-        setBATcapacity(ctx,PRE_PROP, nnode_pre);
-        setBATcapacity(ctx,PRE_KIND, nnode_pre);
+        setBATcapacity(shredCtx,PRE_SIZE, shredCtx->nnode_pre);
+        setBATcapacity(shredCtx,PRE_LEVEL,shredCtx->nnode_pre);
+        setBATcapacity(shredCtx,PRE_PROP, shredCtx->nnode_pre);
+        setBATcapacity(shredCtx,PRE_KIND, shredCtx->nnode_pre);
 
-        setBATcapacity(ctx,ATTR_OWN, nnode_attr);
-        setBATcapacity(ctx,ATTR_QN,  nnode_attr);
-        setBATcapacity(ctx,ATTR_PROP,nnode_attr);
+        setBATcapacity(shredCtx,ATTR_OWN, shredCtx->nnode_attr);
+        setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr);
+        setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr);
 
-        /* BATprintf(GDKout,ctx->dstBAT[PROP_TEXT].bat); */
+        /* BATprintf(GDKout,shredCtx->dstBAT[PROP_TEXT].bat); */
 
         for(i=0; i<SHRED_BATS; i++) {
-                shredBAT* sb = &ctx->dstBAT[i];
+                shredBAT* sb = &shredCtx->dstBAT[i];
 #ifdef USE_COMPRESSION
                 if ( sb->def->compress ) {
                         /* remove all accelerators from the BAT */
@@ -329,18 +353,18 @@ static BAT* finalizeShredCtx(shredCtx* ctx) {
                 BBPunfix( bbb );
         }
         if ( PRINT_STAT )
-                printStat(ctx);
+                printStat(shredCtx);
 #ifdef USE_COMPRESSION
-        BBPunfix( BBPcacheid( ctx->nslocBAT ) );
+        BBPunfix( BBPcacheid( shredCtx->nslocBAT ) );
 #endif
-        free( ctx );
+        free( shredCtx );
         return res;
 }
 
-static int mainSHREDDER(char* xmlFile);
+static int mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile);
 static char *timer_str (long elapsed);
 
-size_t fileSize(char* xmlFile) {
+off_t  fileSize(char* xmlFile) {
     /* buffer for file I/O status */
     struct stat statbuf;
 
@@ -348,7 +372,7 @@ size_t fileSize(char* xmlFile) {
         stream_printf(GDKerr,
                  "!ERROR: cannot stat `%s': %s\n",
                  xmlFile, strerror (errno));
-        return ~(size_t)0;
+        return ~(off_t)0;
     } else
         return statbuf.st_size;
 }
@@ -357,7 +381,7 @@ int
 CMDshred2bats(BAT **res2mil, str docname, str opt)
 {
     /* shred context */
-    shredCtx* ctx;
+    shredCtxStruct* shredCtx;
 
     /* timing */
     struct timeval now;
@@ -367,19 +391,19 @@ CMDshred2bats(BAT **res2mil, str docname, str opt)
     (void) gettimeofday (&now, 0);
     start = now.tv_sec * 1000000 + now.tv_usec;
     
-    size_t xmlFileSize;
+    off_t xmlFileSize;
 
-    if ( (xmlFileSize = fileSize(docname)) == ~(size_t)0 )
+    if ( (xmlFileSize = fileSize(docname)) == ~(off_t)0 )
         return GDK_FAIL;
 
-    if ( !(ctx = createShredCtx(docname, xmlFileSize)) )
+    if ( !(shredCtx = createShredCtx(docname, xmlFileSize)) )
         return GDK_FAIL;
-    ctx->shredWords = (strcmp(opt,"tijah")==0);
+    shredCtx->shredWords = (strcmp(opt,"tijah")==0);
 
-    if ( mainSHREDDER(docname) < 0 )
+    if ( mainSHREDDER(shredCtx, docname) < 0 )
         return GDK_FAIL;
 
-    if ( !(*res2mil = finalizeShredCtx( ctx )) )
+    if ( !(*res2mil = finalizeShredCtx( shredCtx )) )
         return GDK_FAIL;
 
     /* read elapsed time */
@@ -389,16 +413,28 @@ CMDshred2bats(BAT **res2mil, str docname, str opt)
     if ( PRINT_STAT ) {
             stream_printf(GDKout,"# Elapsed time = %s [%s/node]\n",
                         timer_str (abs (stop - start)),
-                        timer_str (abs (stop - start) / nnode_pre));
+                        timer_str (abs (stop - start) / shredCtx->nnode_pre));
     }
     return GDK_SUCCEED;
 }
 
-#define CHECK_BAT_SIZE(SB,I)    if ( ((size_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return NIL; 
+#define CHECK_BAT_SIZE(SB,I)    if ( ((off_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return NIL; 
 
 static int incrBATsize(shredBAT* sb, nat i) {
-    size_t newsize = MAX(sb->size+MAX(MINCHUNK,sb->size/4),(size_t)i);
+    off_t newsize = MAX(sb->size+MAX(MINCHUNK,sb->size/4),(off_t)i);
 
+    /* first check if the number of BUN's < INT_MAX. If this was the case
+     * and the previous time INT_MAX was returned this means the BAT cannot
+     * grow any longer.
+     */
+    if ( newsize > INT_MAX ) {
+    	newsize = INT_MAX;
+
+	if ( sb->size == INT_MAX ) {
+        	stream_printf(GDKerr,"BATextend[\"%s\"](size>INT_MAX) fails\n",sb->def->name);
+		return -1;
+	}
+    }
     sb->size= newsize;
     if ( !(sb->bat = BATextend(sb->bat,newsize)) ) {
         stream_printf(GDKerr,"BATextend[\"%s\"](%d to %d) fails\n",sb->def->name,sb->size,newsize);
@@ -410,8 +446,8 @@ static int incrBATsize(shredBAT* sb, nat i) {
     return 1;
 }
 
-static INLINE nat direct_nat2bat(shredCtx* ctx, int idx, nat i, nat v) {
-        shredBAT* sb = & ctx->dstBAT[idx];
+static INLINE nat direct_nat2bat(shredCtxStruct* shredCtx, int idx, nat i, nat v) {
+        shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
         stream_printf(GDKout,"DIRECT[%s](%d) = %d\n",sb->def->name,i,v);
 #endif
@@ -420,8 +456,8 @@ static INLINE nat direct_nat2bat(shredCtx* ctx, int idx, nat i, nat v) {
         return i;
 }
 
-static INLINE nat direct_oid2bat(shredCtx* ctx, int idx, nat i, oid v) {
-        shredBAT* sb = & ctx->dstBAT[idx];
+static INLINE nat direct_oid2bat(shredCtxStruct* shredCtx, int idx, nat i, oid v) {
+        shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
         stream_printf(GDKout,"DIRECT[%s](%d) = %d@0\n",sb->def->name,i,v);
 #endif
@@ -430,8 +466,8 @@ static INLINE nat direct_oid2bat(shredCtx* ctx, int idx, nat i, oid v) {
         return i;
 }
 
-static INLINE nat direct_chr2bat(shredCtx* ctx, int idx, nat i, chr v) {
-        shredBAT* sb = & ctx->dstBAT[idx];
+static INLINE nat direct_chr2bat(shredCtxStruct* shredCtx, int idx, nat i, chr v) {
+        shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
         stream_printf(GDKout,"DIRECT[%s](%d) = chr(%d)\n",sb->def->name,i,v);
 #endif
@@ -440,10 +476,10 @@ static INLINE nat direct_chr2bat(shredCtx* ctx, int idx, nat i, chr v) {
         return i;
 }
 
-static INLINE nat append_str2bat(shredCtx* ctx, int idx, str v) {
+static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
         oid my_oid_nil = oid_nil;
 
-        shredBAT* sb = & ctx->dstBAT[idx];
+        shredBAT* sb = & shredCtx->dstBAT[idx];
 
 #ifdef USE_COMPRESSION
         if ( sb->def->compress ) {
@@ -494,48 +530,9 @@ static INLINE nat append_str2bat(shredCtx* ctx, int idx, str v) {
 #define PFSHRED_BUFLEN (1 << 10)
 
 /**
- * current node level
- */
-nat level;
-nat depth;
-
-/**
- * number of text content bytes buffered,
- * the content buffer itself
- */
-nat content;
-char *content_buf;
-
-/**
  * XML node
  */
 #define XML_TAG_MAX PFSHRED_STRLEN_MAX
-
-/**
- * Node element of the XMD document interpretation stack
- */
-typedef struct node_t node_t;
-struct node_t {
-    nat  pre;                   /**< preorder rank */
-    nat  size;                  /**< size of subtree below node */
-    int  level;                 /**< tree level of parent 
-                                     (0 if root, -1 if document node) */
-    nat  prop;                  /**< property ID */
-    nat  kind;                  /**< node kind */
-};
-
-
-/**
- * XML node stack maximum depth (use `-d' for deeper XML instances)
- */
-#define XML_DEPTH_MAX 256
-nat xml_depth_max = XML_DEPTH_MAX;
-node_t *lifo;
-
-nat sp = 0;
-#define PUSH(n) (lifo[sp++] = (n))
-#define POP()   (lifo[--sp])
-#define TOP()   (lifo[sp - 1])
 
 /**
  * convert ms timing value into string
@@ -576,13 +573,13 @@ timer_str (long elapsed)
  * enter new XML node into pre|size|level|prop|kind relation
  */
 static int
-emitnode (node_t node)
+emitnode (shredCtxStruct* shredCtx, node_t node)
 {
     if (
-       direct_nat2bat(glb_ctx,PRE_SIZE, node.pre,node.size)  == NIL ||
-       direct_chr2bat(glb_ctx,PRE_LEVEL,node.pre,node.level) == NIL ||
-       direct_oid2bat(glb_ctx,PRE_PROP, node.pre,node.prop)  == NIL ||
-       direct_chr2bat(glb_ctx,PRE_KIND, node.pre,node.kind)  == NIL 
+       direct_nat2bat(shredCtx,PRE_SIZE, node.pre,node.size)  == NIL ||
+       direct_chr2bat(shredCtx,PRE_LEVEL,node.pre,node.level) == NIL ||
+       direct_oid2bat(shredCtx,PRE_PROP, node.pre,node.prop)  == NIL ||
+       direct_chr2bat(shredCtx,PRE_KIND, node.pre,node.kind)  == NIL 
     )
         return -1;
     else
@@ -595,61 +592,62 @@ emitnode (node_t node)
  */
 #define NEXT_PRE(P)     if ( (P++) == INT_MAX ) { stream_printf(GDKerr,"FATAL_ERROR: NEXT_PRE(): pre >INT_MAX. Use 64bit oid!\n"); exit(0); }
 
-void 
-shred_start_document (void *ctx)
-{
-    (void) ctx;
+#define SHREDCTX(X)   ((shredCtxStruct*)((xmlParserCtxtPtr)X)->_private)
 
-    nnode_pre  = 0;   /* next ``node ID'' */
-    nnode_attr = 0;   /* attribute value property ID */
-    level      = 0;
-    depth      = 0;
-    content    = 0;
+void 
+shred_start_document (void *xmlCtx)
+{
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
+
+    shredCtx->nnode_pre  = 0;   /* next ``node ID'' */
+    shredCtx->nnode_attr = 0;   /* attribute value property ID */
+    shredCtx->level      = 0;
+    shredCtx->depth      = 0;
+    shredCtx->content    = 0;
 
     /* push document node */
-    PUSH (((node_t) { .pre   = 0, 
+    PUSH (shredCtx,((node_t) { .pre   = 0, 
                       .size  = 0, 
                       .level = -1,
                       .prop  = NIL,
                       .kind  = DOCUMENT
                     }));
-    NEXT_PRE(nnode_pre);
+    NEXT_PRE(shredCtx->nnode_pre);
 }
 
 
 void 
-shred_end_document (void *ctx)
+shred_end_document (void *xmlCtx)
 {
-    (void) ctx;
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
     /* pop document node and enter into pre|size|level|prop|kind relation */
-    if ( emitnode (POP ()) < 0 )
-        xmlStopParser(ctx);
+    if ( emitnode (shredCtx,POP(shredCtx)) < 0 )
+        xmlStopParser(xmlCtx);
 }
 
 /**
  * write buffered text content (if any) to prop|text relation
  */
 static int 
-emitString(shredCtx* ctx, char* s)
+emitString(shredCtxStruct* shredCtx, char* s)
 {
     node_t node;
 
-    (void)ctx;
     /* fill the node */
-    node.pre   = nnode_pre;
-    NEXT_PRE(nnode_pre);
+    node.pre   = shredCtx->nnode_pre;
+    NEXT_PRE(shredCtx->nnode_pre);
     node.size  = 0;
-    node.level = level;
+    node.level = shredCtx->level;
     node.kind  = TEXT;
-    if ( (node.prop=append_str2bat(glb_ctx,PROP_TEXT,s)) == NIL)
+    if ( (node.prop=append_str2bat(shredCtx,PROP_TEXT,s)) == NIL)
             return -1;
 
     /* this text node contributes to the size of its parent */
-    TOP ().size++;
+    TOP(shredCtx).size++;
 
     /* enter text node into pre|size|level|prop|kind relation */
-    if ( emitnode (node) < 0 )
+    if ( emitnode (shredCtx,node) < 0 )
         return -1;
     return 1;
 }
@@ -657,43 +655,43 @@ emitString(shredCtx* ctx, char* s)
 const char* del = " \t\n\r";
 
 static int 
-emitShreddedString(shredCtx* ctx, char* s)
+emitShreddedString(shredCtxStruct* shredCtx, char* s)
 {
     char *t;
 
     if ( (t = strtok(s,del)) ) do {
-        if ( emitString(ctx,t) < 0 )
+        if ( emitString(shredCtx,t) < 0 )
              return -1;
     } while ( (t=strtok(NULL,del)) );
     return 1;
 }
 
 static int 
-handleXmlCharacters (shredCtx* ctx)
+handleXmlCharacters (shredCtxStruct* shredCtx)
 {
     /* is there any buffered text content? */
-    if (content) {
-        content_buf[content] = 0; /* properly terminate string content_buf */
+    if (shredCtx->content) {
+        shredCtx->content_buf[shredCtx->content] = 0; /* properly terminate string content_buf */
 
-        if ( !ctx->shredWords ) {
-            if ( emitString(ctx,content_buf) < 0 )
+        if ( !shredCtx->shredWords ) {
+            if ( emitString(shredCtx,shredCtx->content_buf) < 0 )
                 return -1;
         } else {
             /* do the Tijah support thing */
-            if ( emitShreddedString(ctx,content_buf) < 0 )
+            if ( emitShreddedString(shredCtx,shredCtx->content_buf) < 0 )
                 return -1;
         }
     }
-    content = 0;
+    shredCtx->content = 0;
     return 1;
 }
 
-static nat store_NsLoc(char* nsloc) {
+static nat store_NsLoc(shredCtxStruct* shredCtx, char* nsloc) {
 #ifdef USE_COMPRESSION
         BUN bun;
-        if ( (bun = BUNfnd(glb_ctx->nslocBAT,nsloc)) ) {
-                glb_ctx->nslocDUPL++;
-                return (nat)*(oid*)BUNtail(glb_ctx->nslocBAT,bun);
+        if ( (bun = BUNfnd(shredCtx->nslocBAT,nsloc)) ) {
+                shredCtx->nslocDUPL++;
+                return (nat)*(oid*)BUNtail(shredCtx->nslocBAT,bun);
         }
 	oid res_oid;
 #endif
@@ -709,15 +707,15 @@ static nat store_NsLoc(char* nsloc) {
             nsStr  = emptyString;
             locStr = nsloc; 
         }
-        if ( (res=append_str2bat(glb_ctx,QN_NS,nsStr))==NIL)
+        if ( (res=append_str2bat(shredCtx,QN_NS,nsStr))==NIL)
                 return NIL;
-        if ( res != append_str2bat(glb_ctx,QN_LOC,locStr) ) {
+        if ( res != append_str2bat(shredCtx,QN_LOC,locStr) ) {
                 stream_printf(GDKerr,"store_NsLoc:NS-LOC sync error");
                 return NIL;
         }
 #ifdef USE_COMPRESSION
 	res_oid = (oid)res;
-        if ( !BUNins(glb_ctx->nslocBAT,nsloc,&res_oid) ) {
+        if ( !BUNins(shredCtx->nslocBAT,nsloc,&res_oid) ) {
                 stream_printf(GDKerr,"Error:store_NsLoc:compression table insert fails\n");
                 return NIL;
         }
@@ -729,56 +727,56 @@ static nat store_NsLoc(char* nsloc) {
  * SAX callback, invoked whenever `<t ...>' is seen
  */
 void 
-shred_start_element (void *ctx, 
+shred_start_element (void *xmlCtx, 
                      const xmlChar *t, const xmlChar **atts)
 {
-    (void) ctx;
     node_t node;
     nat qn_id, val_id;
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
-    if ( handleXmlCharacters (glb_ctx) < 0 ) {
-        xmlStopParser(ctx);
+    if ( handleXmlCharacters (shredCtx) < 0 ) {
+        xmlStopParser(xmlCtx);
         return;
     }
     /* (1) assign preorder rank (document order), size, level, and kind */
-    node.pre   = nnode_pre;
-    NEXT_PRE(nnode_pre);
+    node.pre   = shredCtx->nnode_pre;
+    NEXT_PRE(shredCtx->nnode_pre);
     node.size  = 0;
-    node.level = level;
+    node.level = shredCtx->level;
     node.kind  = ELEMENT;
 
     /* descend one level */
-    level++;
+    shredCtx->level++;
 
     /* keep track of document depth */
-    if (level > depth)
-        depth = level;
+    if (shredCtx->level > shredCtx->depth)
+        shredCtx->depth = shredCtx->level;
 
-    if ( (node.prop = store_NsLoc( (char*) t)) == NIL ) {
-        xmlStopParser(ctx);
+    if ( (node.prop = store_NsLoc(shredCtx, (char*) t)) == NIL ) {
+        xmlStopParser(xmlCtx);
         return;
     }
 
     /* push node onto node stack: size to be determined later */
-    PUSH (node);
+    PUSH (shredCtx,node);
 
     /* (2) process the element's attribute(s), if any */
     if (atts)
         while (*atts) {            
-            qn_id  = store_NsLoc( (char*) *atts);
-            val_id = append_str2bat(glb_ctx,PROP_VAL,(char*)*(atts + 1));
+            qn_id  = store_NsLoc(shredCtx, (char*) *atts);
+            val_id = append_str2bat(shredCtx,PROP_VAL,(char*)*(atts + 1));
             /* */
             if ( 
                qn_id  == NIL ||
                val_id == NIL ||
-               direct_oid2bat(glb_ctx,ATTR_OWN ,nnode_attr, node.pre) == NIL ||
-               direct_oid2bat(glb_ctx,ATTR_QN  ,nnode_attr, qn_id)    == NIL ||
-               direct_oid2bat(glb_ctx,ATTR_PROP,nnode_attr, val_id)   == NIL
+               direct_oid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NIL ||
+               direct_oid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
+               direct_oid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
             ) {
-                xmlStopParser(ctx);
+                xmlStopParser(xmlCtx);
                 return;
             }
-            nnode_attr++;
+            shredCtx->nnode_attr++;
 
             /* process next attribute */
             atts += 2;
@@ -789,31 +787,31 @@ shred_start_element (void *ctx,
  * SAX callback invoked whenever `</t>' is seen
  */
 void 
-shred_end_element (void *ctx, const xmlChar *tag)
+shred_end_element (void *xmlCtx, const xmlChar *tag)
 {
     node_t node;
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
-    (void) ctx;
     (void) tag;
 
-    if ( handleXmlCharacters (glb_ctx) < 0 ) {
-        xmlStopParser(ctx);
+    if ( handleXmlCharacters (shredCtx) < 0 ) {
+        xmlStopParser(xmlCtx);
         return;
     }
 
-    node = POP ();
+    node = POP(shredCtx);
 
     /* ascend up one level */
-    level--;
+    shredCtx->level--;
 
     /* the size of the subtree below this element and the element
      * itself contributes to the size of its parent
      */
-    TOP ().size += node.size + 1;
+    TOP(shredCtx).size += node.size + 1;
 
     /* enter element node into pre|size|level|prop|kind relation */
-    if ( emitnode (node) < 0 )
-        xmlStopParser(ctx);
+    if ( emitnode (shredCtx,node) < 0 )
+        xmlStopParser(xmlCtx);
 }
 
 /**
@@ -821,14 +819,16 @@ shred_end_element (void *ctx, const xmlChar *tag)
  * simply buffer the content here
  */
 void 
-shred_characters (void *ctx, const xmlChar *cs, int n)
+shred_characters (void *xmlCtx, const xmlChar *cs, int n)
 {
-    int l = MIN (PFSHRED_STRLEN_MAX - (int) content, n);
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
-    (void) ctx;
+    int l = MIN (PFSHRED_STRLEN_MAX - (int) shredCtx->content, n);
 
-    memcpy (&(content_buf[content]), cs, l);
-    content += l;
+    (void) xmlCtx;
+
+    memcpy (&(shredCtx->content_buf[shredCtx->content]), cs, l);
+    shredCtx->content += l;
 
     if (l < n)
         stream_printf(GDKerr,
@@ -841,78 +841,76 @@ shred_characters (void *ctx, const xmlChar *cs, int n)
  * SAX callback invoked whenever `<![CDATA[...]]>' is seenx
  */
 void 
-shred_cdata (void *ctx, const xmlChar *cdata, int n)
+shred_cdata (void *xmlCtx, const xmlChar *cdata, int n)
 {
-    shred_characters (ctx, cdata, n);
+    shred_characters (xmlCtx, cdata, n);
 }
 
 /** 
  * SAX callback invoked whenever `<?target ins?>' is seen
  */
 void 
-shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
+shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
 {
     /*
      * incomplete, do not compress tgt ins properties yet. Should do
      * it analog to nsloc with an extra BAT
      */
     node_t node;
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
-    (void) ctx;
-
-    if ( handleXmlCharacters (glb_ctx) < 0 ) {
-        xmlStopParser(ctx);
+    if ( handleXmlCharacters (shredCtx) < 0 ) {
+        xmlStopParser(xmlCtx);
         return;
     }
 
-    node.pre   = nnode_pre;
-    NEXT_PRE(nnode_pre);
+    node.pre   = shredCtx->nnode_pre;
+    NEXT_PRE(shredCtx->nnode_pre);
     node.size  = 0;
-    node.level = level;
+    node.level = shredCtx->level;
     node.kind  = PI;
 
     /* this comment p-i contributes to the size of its parent */
-    TOP ().size++;
+    TOP(shredCtx).size++;
         
-    node.prop = append_str2bat(glb_ctx,PROP_TGT,(char*)tgt);
-    if ( node.prop != append_str2bat(glb_ctx,PROP_INS,(char*)ins) )
+    node.prop = append_str2bat(shredCtx,PROP_TGT,(char*)tgt);
+    if ( node.prop != append_str2bat(shredCtx,PROP_INS,(char*)ins) )
         stream_printf(GDKerr,"shredder.mx:shred_pi: tgt-ins sync error\n");
     
     /* enter p-i node into pre|size|level|prop|kind relation */
-    if ( emitnode (node) < 0 )
-        xmlStopParser(ctx);
+    if ( emitnode (shredCtx,node) < 0 )
+        xmlStopParser(xmlCtx);
 }
 
 void 
-shred_comment (void *ctx, const xmlChar *c)
+shred_comment (void *xmlCtx, const xmlChar *c)
 {
     node_t node;
+    shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
-    (void) ctx;
-
-    if ( handleXmlCharacters (glb_ctx) < 0 ) {
-        xmlStopParser(ctx);
+    if ( handleXmlCharacters (shredCtx) < 0 ) {
+        xmlStopParser(xmlCtx);
         return;
     }
 
-    node.pre   = nnode_pre;
-    NEXT_PRE(nnode_pre);
+    node.pre   = shredCtx->nnode_pre;
+    NEXT_PRE(shredCtx->nnode_pre);
     node.size  = 0;
-    node.level = level;
+    node.level = shredCtx->level;
     node.kind  = COMMENT;
 
     /* this comment node contributes to the size of its parent */
-    TOP ().size++;
+    TOP(shredCtx).size++;
 
-    node.prop = append_str2bat(glb_ctx,PROP_COM,(char*)c);
+    node.prop = append_str2bat(shredCtx,PROP_COM,(char*)c);
 
     /* enter comment node into pre|size|level|prop|kind relation */
-    if ( emitnode (node) < 0 )
-        xmlStopParser(ctx);
+    if ( emitnode (shredCtx,node) < 0 )
+        xmlStopParser(xmlCtx);
 }
 
 void 
-error (void *ctx, const char *msg, ...)
+error (void *xmlCtx, const char *msg, ...)
 {
     va_list msgs;
     char errmsg[PFSHRED_BUFLEN];
@@ -923,7 +921,7 @@ error (void *ctx, const char *msg, ...)
     vsnprintf (errmsg, PFSHRED_BUFLEN, msg, msgs);
     va_end (msgs);
 
-    xmlParserError (ctx, errmsg);
+    xmlParserError (xmlCtx, errmsg);
 }
 
 /**
@@ -964,7 +962,7 @@ xmlSAXHandler shredder = {
  * Main shredder driver handling the libxml2 and buffer stuff
  */
 static int 
-mainSHREDDER(char* xmlFile)
+mainSHREDDER(shredCtxStruct* shredCtx, char* xmlFile)
 {
     xmlParserCtxtPtr xmlCtx;
 
@@ -972,30 +970,32 @@ mainSHREDDER(char* xmlFile)
     assert (sizeof (char) == sizeof (xmlChar));
 
     /* allocate a buffer for TEXT nodes */
-    content_buf = (char*) malloc(PFSHRED_STRLEN_MAX);
-    assert(content_buf);
+    shredCtx->content_buf = (char*) malloc(PFSHRED_STRLEN_MAX);
+    assert(shredCtx->content_buf);
 
     /* allocate XML node stack */
-    if (! (lifo = (node_t *) malloc (xml_depth_max * sizeof (node_t)))) {
+    if (! (shredCtx->lifo = (node_t *) malloc (xml_depth_max * sizeof (node_t)))) {
         stream_printf(GDKerr,
                  "!ERROR: cannot allocate XML node stack: %s\n",
                  strerror (errno));
 
         return -1;
     }
+    shredCtx->sp = 0; /* initialize stackpointer */
 
     /* parse XML input (receive SAX events) */
     if ( !(xmlCtx = xmlCreateFileParserCtxt (xmlFile)) ) {
         stream_printf(GDKerr,"shred:xmlCreateFileParserCtxt(\"%s\") failed\n",xmlFile); 
         return -1;
     }
-    xmlCtx->sax = &shredder;
+    xmlCtx->sax      = &shredder;
+    xmlCtx->_private = shredCtx; /* set the SHREDCTX() value */
     xmlSwitchEncoding (xmlCtx, XML_CHAR_ENCODING_UTF8);
     
     (void) xmlParseDocument (xmlCtx);
 
     /* free the TEXT buffer */
-    free(content_buf);
+    free(shredCtx->content_buf);
 
     /* incomplete, check if something has gone wrong durin shred */
     if (! xmlCtx->wellFormed) {
