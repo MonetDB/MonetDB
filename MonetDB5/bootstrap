@@ -243,6 +243,25 @@ EOF
 fi # [ "$_AM_VERSION" -lt "$_NEW_AM_VERSION" ]
 
 
+# patch aclocal.m4 to get linking of lib_sql_server working on MacOS X/Darwin:
+# Without this patch, libtool makes libsqlserver occur twice when linking lib_sql_server,
+# and hence, the linker complains about multiply defined symbols.
+# (There might be a better solution, but I haven't found it, yet.)
+cat << "EOF" | patch aclocal.m4
+--- aclocal.m4~	Thu Jan  8 14:09:41 2004
++++ aclocal.m4	Thu Jan  8 14:26:01 2004
+@@ -3472,7 +3472,7 @@
+     #archive_expsym_cmds="$archive_cmds"' && strip -s $export_symbols'
+     hardcode_direct=yes
+     hardcode_shlibpath_var=no
+-    whole_archive_flag_spec='-all_load $convenience'
++    whole_archive_flag_spec='-all_load'
+     ;;
+ 
+   freebsd1*)
+EOF
+
+
 autoheader
 automake -a -c
 
