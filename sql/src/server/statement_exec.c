@@ -504,6 +504,26 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} break;
+	case st_kbat: {
+		len = snprintf( buf, BUFSIZ, 
+		  	"s%d := mvc_bind_kbat(myc, \"%s\", \"%s\", \"%s\", %d)",
+			  -s->nr, 
+			  s->op1.kval->t->schema->name, 
+			  s->op1.kval->t->name, 
+			  s->op1.kval->name,
+			  s->flag);
+
+		if (s->flag > RDONLY){
+			len += snprintf( buf+len, BUFSIZ-len, 
+		  		".access(BAT_WRITE)"); 
+		}
+		len += snprintf( buf+len, BUFSIZ-len, ";\n" ); 
+		if (sql->debug&4){
+			len += snprintf( buf+len, BUFSIZ-len, 
+			"s%d.info.print();\n", -s->nr);
+		}
+		dump(sql,buf,len,-s->nr);
+	} break;
 	case st_reverse: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		len = snprintf( buf, BUFSIZ, 
@@ -699,33 +719,11 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		}
 		dump(sql,buf,len,-s->nr);
 	} 	break;
-	case st_exists: {
-		int l = stmt_dump( s->op1.stval, nr, sql );
-		int r = 1;
-
-		n = s->op2.lval->h;
-		write_head(sql,-s->nr);
-		if (n){
-		  	char *a = (char*)atom_type(n->data)->type->name;
-			len = snprintf( buf, BUFSIZ, 
-				"s%db := new(%s,oid);\n", -s->nr, a );
-			write_part(sql,buf,len);
-		}
-		while(n){
-			len = snprintf( buf, BUFSIZ, "s%dv := ", -s->nr);
-			write_part(sql,buf,len);
-			atom_dump(n->data, sql);
-			len = snprintf( buf, BUFSIZ, 
-				";\ns%db.insert(s%dv, oid(%d));\n", 
-					-s->nr, -s->nr, r++);
-			write_part(sql,buf,len);
-			n = n->next;
-		}
-		len = snprintf( buf, BUFSIZ, "s%d := s%d.join(s%db);\n", 
-				-s->nr, l, -s->nr);
-		write_part(sql,buf,len);
-		write_tail(sql,-s->nr);
-	} 	break;
+	case st_temp: 
+		len = snprintf( buf, BUFSIZ, "s%d := new(oid,%s);\n", 
+			-s->nr, basecolumn(s->op1.stval)->tpe->type->name );
+		dump(sql,buf,len,-s->nr);
+		break;
 	case st_atom: {
 		write_head(sql,-s->nr);
 		len = snprintf( buf, BUFSIZ, "s%d := ", -s->nr);
@@ -766,6 +764,13 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 		  "s%d := replace(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		dump(sql,buf,len,-s->nr);
 	} break;
+	case st_exception: {
+		int l = stmt_dump( s->op1.stval, nr, sql );
+		int r = stmt_dump( s->op2.stval, nr, sql );
+		len += snprintf( buf+len, BUFSIZ-len, 
+		  "if (bit(s%d)){ ERROR(s%d); }\n", l, r);
+		dump(sql,buf,len,-s->nr);
+	}
 	case st_alias: 
 	case st_column_alias: 
 		s->nr = - stmt_dump( s->op1.stval, nr, sql );

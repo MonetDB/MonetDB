@@ -46,7 +46,7 @@ scope *scope_open(scope * p)
 	scope *s = NEW(scope);
 	s->tables = list_create((fdestroy)&tvar_destroy);
 	s->aliases = list_create((fdestroy)&var_destroy);
-	s->lifted = list_create((fdestroy)&cvar_destroy);
+	s->lifted = list_create((fdestroy)&tvar_destroy);
 	s->p = p;
 	return s;
 }
@@ -81,8 +81,7 @@ tvar *scope_add_table(scope * scp, stmt *s, char *tname)
 	tvar *v = NEW(tvar);
 	v->s = s; 
 	v->columns = list_create((fdestroy)&cvar_destroy);
-	assert((!tname || strlen(tname)));
-	v->tname = _strdup(tname);
+	v->tname = (tname)?_strdup(tname):NULL;
 	v->refcnt = 1;
 	list_append(scp->tables, v);
 	return v;
@@ -102,37 +101,17 @@ static void scope_lift(scope * s, cvar * v)
 {
 	node *n = s->lifted->h;
 	for (; n; n = n->next) {
-		cvar *o = n->data;
-		if (strcmp(o->cname, v->cname) == 0)
-			return;
-	}
-	list_append(s->lifted, v); v->refcnt++;
-}
-
-/* returns a list of tables */
-list *scope_unique_lifted_vars(scope * s)
-{
-	list *r = list_create(NULL);
-	node *n = s->lifted->h;
-	for (; n; n = n->next) {
-		cvar *cv = n->data;
-		node *m = r->h;
-		int found = 0;
-		for (; m && !found; m = m->next) {
-			tvar *tv = m->data;
-			if (cv->table == tv)
-				found = 1;
+		tvar *o = n->data;
+		if (v->tname){
+			if (strcmp(o->tname, v->tname) == 0)
+				return;
+		} else {
+			if (v->table->tname && 
+				strcmp(o->tname, v->table->tname) == 0)
+				return;
 		}
-		if (!found) 
-			list_append(r, cv->table);
 	}
-	return r;
-}
-
-/* returns a list of vars */
-int scope_count_tables(scope * s)
-{
-	return list_length(s->tables);
+	list_append(s->lifted, v->table); v->table->refcnt++;
 }
 
 tvar *scope_bind_table(scope * scp, char *name)
@@ -255,7 +234,7 @@ stmt *scope_bind(scope * scp, char *tname, char *cname)
 
 cvar *scope_first_column(scope * scp)
 {
-	if (scope_count_tables(scp)) {
+	if (scp->tables && list_length(scp->tables)) {
 		node *n = scp->tables->h;
 		tvar *tv = n->data;
 		if (list_length(tv->columns)){

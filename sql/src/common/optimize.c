@@ -117,6 +117,7 @@ static list *push_selects_down(list * con){
 	/* todo join order rewrites */
 	for( n = djoins->h; n; n = n->next){
 		list *ejoins = list_select(joins, n->data, (fcmp)&stmt_cmp_head_tail, (fdup)&stmt_dup );
+		/* TODO change to [].().select(TRUE) */
 		stmt *join = (stmt*)list_reduce(ejoins, (freduce)&stmt_intersect, (fdup)&stmt_dup );
 
 		/* todo check for foreign key joins */
@@ -214,7 +215,6 @@ static list *merge_pivot_sets(list *pivotsets, list *joins)
 		list_append(pivotsets,pivots);
 	}
 }
-*/
 
 static list *pivot_sets(list *joins, int *Markid)
 {
@@ -238,6 +238,7 @@ static list *pivot_sets(list *joins, int *Markid)
 	*Markid = markid;
 	return psets;
 }
+*/
 
 static stmt *set2pivot(list * l)
 {
@@ -395,6 +396,7 @@ static stmt *find_pivot(stmt * subset, stmt * t)
 				return stmt_dup(s);
 		}
 	}
+	assert(0);
 	return NULL;
 }
 
@@ -415,12 +417,18 @@ stmt *optimize( context *c, stmt *s ){
 	case st_create_column: case st_null: case st_default: 
 	case st_create_key: 
 	case st_create_role: case st_drop_role: 
-	case st_grant_role: case st_revoke_role: case st_grant: case st_revoke:
+	case st_grant_role: case st_revoke_role: 
+	case st_grant: case st_revoke:
 
-	case st_dbat: case st_obat: case st_basetable: 
+	case st_dbat: case st_obat: case st_basetable: case st_kbat:
 
+	case st_atom: 
+	case st_copyfrom: 
+
+		s->optimized = 1;
 		return stmt_dup(s);
 
+	case st_temp:
 	case st_select: case st_select2: case st_like: case st_semijoin: 
 	case st_diff: case st_intersect: case st_union: case st_outerjoin:
 	case st_join: 
@@ -432,9 +440,13 @@ stmt *optimize( context *c, stmt *s ){
 	case st_ibat: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 
+	case st_exception:
 
 	case st_count: case st_aggr: 
 	case st_op: case st_unop: case st_binop: case st_triop: 
+
+		if (s->optimized) 
+			return stmt_dup(s);
 
 		if (s->op1.stval){
 			stmt *os = s->op1.stval;
@@ -454,40 +466,50 @@ stmt *optimize( context *c, stmt *s ){
 			s->op3.stval = ns;
 			stmt_destroy(os);
 		}
-		return stmt_dup(s);
-
-	case st_exists: 
-	case st_atom: 
-	case st_copyfrom: 
+		s->optimized = 1;
 		return stmt_dup(s);
 
 	case st_list: {
+		stmt *res = NULL;
 		node *n;
 		list *l = s->op1.lval;
-		list *nl = create_stmt_list();
+		list *nl = NULL;
+
+		if (s->optimized) 
+			return stmt_dup(s);
+
+		nl = create_stmt_list();
 		for(n = l->h; n; n = n->next ){
 			stmt *ns = optimize(c, n->data);
 			list_append(nl, ns);
 		}
-		return stmt_list(nl);
+		res = stmt_list(nl);
+		res->optimized = 1;
+		return res;
 	} 
 
 	case st_bat: case st_ubat: 
+		if (s->optimized) 
+			return stmt_dup(s);
 		if (s->op1.cval->table->type == tt_view){
 			return optimize(c, s->op1.cval->s);
 		} else {
+			s->optimized = 1;
 			return stmt_dup(s);
 		}
 
 	case st_pivot: {
-		stmt *ns = optimize(c, s->op2.stval);
+		stmt *ns = optimize(c, s->op2.stval); /* optimize ptable */
 		stmt *np = find_pivot(ns, s->op1.stval->h);
 		stmt_destroy(ns);
 		return np;
 	}
 	case st_ptable:
 		if (!s->op3.stval){ /* use op3 to store the new ptable */
-			s->op3.stval = stmt2pivot(stmt_dup(s->op2.stval));
+			stmt *pivots = stmt2pivot(stmt_dup(s->op2.stval));
+			/* also optimize the pivots */
+			s->op3.stval = optimize(c, pivots);
+			stmt_destroy(pivots);
 		}
 		return stmt_dup(s->op3.stval);
 	case st_set: case st_sets: 

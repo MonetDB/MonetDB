@@ -80,6 +80,10 @@ SQL client and the corresponding MIL runtime startup.
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
 		"Bind the table deletes bat, tname.deletes"
 
+	.COMMAND mvc_bind_kbat( mvc c, str sname, str tname, str kname, int access ) : 
+		BAT[any::1,any::2] = mvc_bind_kbat_wrap; 
+		"Bind the key constraint table"
+
 	.COMMAND mvc_bind_schema( mvc c, str sname ) : sql_schema = 
 		mvc_bind_schema_wrap; "Bind schema, sname"
 
@@ -134,8 +138,10 @@ SQL client and the corresponding MIL runtime startup.
 @+ void bats
 To prevent void bats to convert to oid bats we need overloaded insert and
 replace commands. 
- 	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
 @m
+ 	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
+
+ 	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
 
  	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
 
@@ -143,7 +149,11 @@ replace commands.
 
  	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
 
+ 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
+
 	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
+
+	.COMMAND hash( any::1 ) : int = hash_wrap; "calculate a hash value"
 
 .END sqlserver;
 
@@ -160,11 +170,12 @@ replace commands.
 
 @c
 #include "sqlserver.h"
+#include "privileges.h"
 #include <statement.h>
 #include <sqlexecute.h>
 #include <mem.h>
 #include <context.h>
-#include <kernel.h>
+#include <algebra.h>
 
 int mvc_init_wrap( int* debug ){
 	mvc_init(*debug );
@@ -262,6 +273,14 @@ int mvc_bind_obat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
 
 int mvc_bind_dbat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
 	*res = mvc_bind_dbat( *(mvc**)c, sname, tname, *access );
+	if (*res){
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int mvc_bind_kbat_wrap( BAT** res, mvc* c, str sname, str tname, str kname, int *access ){
+	*res = mvc_bind_kbat( *(mvc**)c, sname, tname, kname, *access );
 	if (*res){
 		return GDK_SUCCEED;
 	}
@@ -385,6 +404,14 @@ int bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 	return GDK_SUCCEED;
 }
 
+int bat_append_oidvoid_bat_wrap( BAT **res, BAT *i, BAT *u )
+{
+	*res = i;
+	assert(BATcount(i)==0 && BATcount(u) == 0);
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
 int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 {
 	BUN r,s;
@@ -392,6 +419,7 @@ int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 	
 	assert(i->htype == TYPE_oid && u->htype == TYPE_oid);
 	BATmax(BATmirror(i),&o);
+	o++;
 	BATloop(u, r, s){
 		oid h = *(oid*)BUNhead(u,r) + o;
 		BUNins(i, &h,  BUNtail(u,r));
@@ -400,6 +428,20 @@ int oid_bat_append_oid_bat_wrap( BAT **res, BAT *i, BAT *u )
 	BBPfix(i->batCacheid);
 	return GDK_SUCCEED;
 }
+
+int oid_bat_append_val_wrap( BAT **res, BAT *i, ptr u )
+{
+        oid o;
+
+	assert(i->htype == TYPE_oid);
+	BATmax(BATmirror(i),&o);
+	o++;
+	*res = i;
+	BUNins( i, (ptr) & o, u );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
 
 int bat_append_val_wrap( BAT **res, BAT *i, ptr u )
 {
@@ -418,11 +460,14 @@ int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
 	return GDK_SUCCEED;
 }
 
+int hash_wrap( int *res, ptr v, int tpe )
+{
+	*res = ATOMhash(tpe,v);
+	return GDK_SUCCEED;
+}
 
 @mil
 
-module(str);
-module(uchr);
 module(alarm);
 module(xtables);
 module(aggrX3);
@@ -539,3 +584,6 @@ proc SQLclient( int sock ) := {
 }
 
 mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
+# start a default mapi client for debugging, this should go once
+# MonetDB SQL gets stable.
+mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();

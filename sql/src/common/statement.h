@@ -11,6 +11,8 @@
 #define DEL 2
 #define UPD 3
 
+#define create_stmt_list() list_create((fdestroy)&stmt_destroy)
+
 typedef enum stmt_type {
 	st_none,
 	st_schema,
@@ -18,11 +20,13 @@ typedef enum stmt_type {
 	st_column,
 	st_key,
 	st_basetable,
+	st_temp,	/* temporal bat */
 	st_bat,
 	st_ubat,
 	st_ibat,	/* intermediate table result */
 	st_obat,
 	st_dbat,
+	st_kbat,
 	st_drop_schema,
 	st_create_schema,
 	st_drop_table,
@@ -57,6 +61,7 @@ typedef enum stmt_type {
 	st_append,
 	st_insert,
 	st_replace,
+	st_exception,
 	st_count,
 	st_const,
 	st_mark,
@@ -72,7 +77,6 @@ typedef enum stmt_type {
 	st_binop,
 	st_triop,
 	st_aggr,
-	st_exists,
 	st_limit,
 	st_column_alias,
 	st_alias,
@@ -82,7 +86,7 @@ typedef enum stmt_type {
 	st_pivot,
 	/* used internally only */
 	st_list,
-	st_output, /* return table */
+	st_output /* return table */
 } st_type;
 
 typedef enum comp_type {
@@ -109,6 +113,7 @@ typedef struct stmt {
 	struct stmt *h;
 	struct stmt *t;
 	int refcnt;
+	int optimized;
 } stmt;
 
 typedef struct group {
@@ -139,7 +144,7 @@ extern stmt *stmt_create_column(stmt *t, column * c);
 extern stmt *stmt_null(stmt * col, int flag);
 extern stmt *stmt_default(stmt * col, stmt * def);
 
-extern stmt *stmt_key(key *k, stmt *rk );  
+extern stmt *stmt_create_key(key *k, stmt *rk );  
 
 extern stmt *stmt_create_role(char *name, int admin);
 extern stmt *stmt_drop_role(char *name );
@@ -162,7 +167,9 @@ extern stmt *stmt_basetable(table *t);
 extern stmt *stmt_cbat(column * c, stmt * basetable, int access, int type);
 extern stmt *stmt_ibat(stmt * i, stmt * basetable );
 extern stmt *stmt_tbat(table * t, int access, int type);
+extern stmt *stmt_kbat(key *k, int access );
 
+extern stmt *stmt_temp(stmt * c );
 extern stmt *stmt_atom(atom * op1);
 extern stmt *stmt_select(stmt * op1, stmt * op2, comp_type cmptype);
 /* cmp 0 ==   l <= x <= h
@@ -194,6 +201,9 @@ extern stmt *stmt_append(stmt *c, stmt * values);
 extern stmt *stmt_insert(stmt *c, stmt * values);
 extern stmt *stmt_replace(stmt * c, stmt * values);
 
+/* raise exception incase the condition (cond) holds */
+extern stmt *stmt_exception(stmt * cond, char *errstr); 
+
 extern stmt *stmt_count(stmt * s);
 extern stmt *stmt_const(stmt * s, stmt * val);
 extern stmt *stmt_mark(stmt * s, int id);
@@ -211,8 +221,6 @@ extern stmt *stmt_unop(stmt * op1, sql_func * op);
 extern stmt *stmt_binop(stmt * op1, stmt * op2, sql_func * op);
 extern stmt *stmt_triop(stmt * op1, stmt * op2, stmt * op3, sql_func * op);
 extern stmt *stmt_aggr(stmt * op1, group * grp, sql_aggr * op );
-
-extern stmt *stmt_exists(stmt * op1, list * l);
 
 extern stmt *stmt_alias(stmt * op1, char *name);
 extern stmt *stmt_column(stmt * op1, stmt *t, char *tname, char *cname);

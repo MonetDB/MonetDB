@@ -30,7 +30,9 @@ extern int sql_drop_user(mvc *m,  str user);
 @c
 #include <gdk.h>
 #include <monet_context.h>
-#include <privileges.h>
+#include "privileges.h"
+#include "bm.h"
+#include <algebra.h>
 
 static BAT *desc(char *bname)
 {
@@ -109,7 +111,6 @@ The code below provides abstractions to manage the priviliges.
 @c
 int sql_create_role(mvc *m,  str auth, int grantor ) 
 { BAT *auth_id, *auth_name, *auth_grantor, *auth_priv;
-  bit ret;
   int zero = 0;
   oid onil =oid_nil;
   ptr p;
@@ -141,7 +142,6 @@ int sql_create_role(mvc *m,  str auth, int grantor )
 } 
 int sql_drop_role( mvc *m, str auth )
 { BAT *auth_id, *auth_name, *auth_grantor, *auth_priv, *D_auth;
-  bit ret;
   ptr id, p;
   oid onil =oid_nil;
 	auth_id = mvc_bind( m, "sys", "auths", "id", 1);
@@ -167,7 +167,6 @@ int sql_drop_role( mvc *m, str auth )
 } 
 int sql_grant_role( mvc *m, str grantee, str auth )
 { BAT *auth_ids, *auth_name, *login_id, *role_id;
-  bit ret;
   ptr auth_id, grantee_id, p;
   oid onil = oid_nil;
 	auth_ids = mvc_bind( m, "sys", "auths", "id", 1);
@@ -195,7 +194,6 @@ int sql_revoke_role( mvc *m, str grantee, str auth )
 /* grantee no longer belongs the role (auth) */ 
 { BAT *auth_ids, *auth_name, *login_id, *role_id, *D_user_role;
   BAT *role, *logins;
-  bit ret;
   ptr id, auth_id, grantee_id, p;
   oid onil =oid_nil;
 	auth_ids = mvc_bind( m, "sys", "auths", "id", 1);
@@ -263,7 +261,6 @@ int sql_create_user( mvc *m, str user, str passwd, str fullname, str schema_name
 
 int sql_drop_user(mvc *m,  str user) 
 { BAT *user_name, *user_passwd, *user_fullname, *user_dschema, *D_user;
-  bit ret;
   ptr id, p;
   oid onil = oid_nil;
 	user_name = mvc_bind( m, "sys", "users", "name", 1);
@@ -273,9 +270,8 @@ int sql_drop_user(mvc *m,  str user)
 	D_user = mvc_bind_dbat( m, "sys", "users", 1);
 
 	p = BUNfnd(BATmirror(user_name), user);
-	if (!p){
-		return;
-	}
+	if (!p)
+		return FALSE;
 	sql_drop_role( m, user );
 
 	id = bun_find(BATmirror(user_name),user);

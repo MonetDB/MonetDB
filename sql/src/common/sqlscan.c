@@ -396,16 +396,16 @@ static int lex_getc(context * lc)
 	ch[4] = 0;
 	if (lc->in) {
 		*(int*)ch = 0;
-		if (lc->in->read(lc->in, ch, 1, 1) == 1) {
+		if (lc->in->read(lc->in, (char*)ch, 1, 1) == 1) {
 			len = utf8_charlen(ch[0]) - 1;
-			if (len && lc->in->read(lc->in, ch+1, len, 1) != 1) {
+			if (len && lc->in->read(lc->in, (char*)ch+1, len, 1) != 1) {
 				fprintf(stderr, "couldn't read len %d\n", len);
 			}
 			c = utf8_getchar(ch);
 		}
 	} else if (lc->buf && *lc->buf) {
 		len = utf8_charlen(lc->buf[0]);
-		c = utf8_getchar(lc->buf);
+		c = utf8_getchar((unsigned char*)lc->buf);
 		lc->buf += len;
 	}
 	if (c == '\n')
@@ -423,7 +423,7 @@ void lex_append(context *lc, int ch)
 		lc->yytext = realloc(lc->yytext, lc->yysize << 1);
 		lc->yysize = lc->yysize << 1;
 	}
-	utf8_putchar(ch, lc->yytext+lc->yylen);
+	utf8_putchar(ch, (unsigned char *)lc->yytext+lc->yylen);
 	lc->yylen += len;
 	lc->yytext[lc->yylen] = 0;
 }

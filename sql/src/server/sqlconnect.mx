@@ -50,7 +50,6 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res){
 	stmt *s = NULL;
 	char *cmd = NULL, buf[BUFSIZ+1], *errbuf;
 	char *user, *passwd, *schema, *dbname;
-        Client  c; 
 	Variable v;
 
 	mvc *m;

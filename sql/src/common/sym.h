@@ -25,7 +25,7 @@ typedef enum symtype {
 	type_schema,
 	type_type,
 	type_aggr,
-	type_func,
+	type_func
 } symtype;
 
 typedef union symdata {

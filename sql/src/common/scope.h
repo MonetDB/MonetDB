@@ -56,10 +56,6 @@ extern stmt *scope_bind( scope *scp, char *tname, char *cname );
 extern cvar *scope_first_column(scope * scp);
 extern tvar *scope_first_table(scope * scp);
 
-/* returns a list of tvar (one per base table) */
-extern list *scope_unique_lifted_vars(scope * s);
-extern int scope_count_tables(scope * s);
-
 extern void scope_dump(scope * s);
 
 extern void tvar_destroy(tvar *t);

@@ -12,6 +12,8 @@ list *types = NULL;
 static list *aggrs = NULL;
 static list *funcs = NULL;
 
+static void sqltypeinit();
+
 sql_subtype *sql_create_subtype( sql_type *t, int digits, int scale )
 {
 	sql_subtype *res = NEW(sql_subtype);
@@ -279,18 +281,18 @@ typedef struct{
 		char * h,  *t;
 } pair;
 
-sql_type_cmd(str sqlname, int digits, int scale, int radix, str name){
+void sql_type_cmd(str sqlname, int digits, int scale, int radix, str name){
 	(void)sql_create_type( sqlname, digits, scale, radix, name );
 }
-sql_func_cmd(str name, str imp, str tp1, str tp2, str tp3, str rtp){
+void sql_func_cmd(str name, str imp, str tp1, str tp2, str tp3, str rtp){
 	(void)sql_create_func( name, imp, tp1, tp2, tp3, rtp );
 }
-sql_aggr_cmd( str name, str imp, str atp, str rtp){
+void sql_aggr_cmd( str name, str imp, str atp, str rtp){
 	(void)sql_create_aggr( name, imp, atp, rtp );
 }
 
 
-int sqltypeinit()
+void sqltypeinit()
 {	int i,j;
 	pair strings[]= {
 		{"CHAR",	"chr"}, 
@@ -311,6 +313,7 @@ int sqltypeinit()
 		{"dbl",	"dbl"}, 
 		{  0,	0}
 	};
+	/*
 	pair dates[]= {
 		{"MONTH_INTERVAL",	"int"}, 
 		{"SEC_INTERVAL",	"int"}, 
@@ -319,6 +322,7 @@ int sqltypeinit()
 		{"TIMESTAMP",		"timestamp"}, 
 		{  0,	0}
 	};
+	*/
 	/* packing strings,numerical,dates */
 	pair sql_types []= {
 		{"CHAR",	"chr"}, 
@@ -414,6 +418,13 @@ int sqltypeinit()
 
 
 	for(i=0; sql_types[i].h; i++)
+		sql_func_cmd("hash","hash",sql_types[i].t,"","","int");
+	for(i=0; sql_types[i].h; i++)
+		sql_func_cmd("=","=",sql_types[i].t,sql_types[i].t,"","bit");
+	for(i=0; sql_types[i].h; i++)
+		sql_func_cmd("<>","!=",sql_types[i].t,sql_types[i].t,"","bit");
+
+	for(i=0; sql_types[i].h; i++)
 		sql_aggr_cmd("min","min",sql_types[i].t,sql_types[i].t);
 	for(i=0; sql_types[i].h; i++)
 		sql_aggr_cmd("max","max",sql_types[i].t,sql_types[i].t);
@@ -436,6 +447,9 @@ int sqltypeinit()
 	sql_func_cmd("sql_div","/",numerical[i].t,numerical[i].t,"",numerical[i].t);
 	sql_func_cmd("sql_max","max",numerical[i].t,numerical[i].t,"",numerical[i].t);
 	sql_func_cmd("sql_min","min",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("and","and",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("or","or",numerical[i].t,numerical[i].t,"",numerical[i].t);
+	sql_func_cmd("xor","xor",numerical[i].t,numerical[i].t,"",numerical[i].t);
 	}
 
 	for(i=0; numerical[i].h; i++)
