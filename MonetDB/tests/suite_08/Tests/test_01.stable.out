@@ -1,16 +1,9 @@
 stdout of test 'test_01` in directory 'tests/suite_08` itself:
 
 
-# 01:26:55 >  
-# 01:26:55 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_suite_08  < test_01.milM
-# 01:26:55 >  
-
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# dbfarm:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm
-# dbname:Tests_tests_suite_08
-# dbdir:/export/scratch1/monet/tmp/manegold.GNU_32-d.6561/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/dbfarm/Tests_tests_suite_08
+# 12:06:04 >  
+# 12:06:04 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_tests_suite_08  < test_01.milM
+# 12:06:04 >  
 
 #---------------------------------#
 # BAT:	  name			  #
@@ -212,22 +205,31 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 [ "view_atom_name" ]
 [ "view_gdk_env" ]
 #~BeginVariableOutput~#
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_tests_suite_08"									  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_tests_suite_08"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/tests/suite_08"		  ]
-[ "monet_pid",		  "21628"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10143866"									  ]
+[ "gdk_dbname",		  "Tests_tests_suite_08"							  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
 #~EndVariableOutput~#
 [ "view_gdk_thread" ]
 #~BeginVariableOutput~#
@@ -235,7 +237,7 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #-----------------#
 # BAT:	  name	  #
@@ -247,7 +249,7 @@ stdout of test 'test_01` in directory 'tests/suite_08` itself:
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Jan 19 17:47:30 2001"	  ]
+[ 0,	  "Sat Jun 29 12:06:05 2002"	  ]
 #~EndVariableOutput~#
 #-----------------------------------------#
 # BAT:	  tree				  #

@@ -6,16 +6,9 @@ stdout of test 'server-single_2` in directory 'src/tools` itself:
 # 06:03:31 >  
 
 
-# 06:03:31 >  
-# 06:03:31 >  Mtimeout -timeout 432 Mserver -monetrc /var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/share/Monet/monet.Mtest.conf -db Tests_src_tools server-single_2.prelude < server-single_2.mil
-# 06:03:31 >  
-
-# Monet Database Server V4.3.3
-# Copyright (c) 1993-2001, CWI. All rights reserved.
-# compiled for sparc-sun-solaris2.8/64bit; dynamically linked.
-# dbfarm:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm
-# dbname:Tests_src_tools
-# dbdir:/var/tmp/monet.GNU_64-d.2203/monet/.GNU_64-d/SunOS5.8/dbfarm/Tests_src_tools
+# 11:56:32 >  
+# 11:56:32 >  Mtimeout -timeout 60 Mserver --config=/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/etc/monet.conf --debug=10 --set monet_prompt= --dbname=Tests_src_tools server-single_2.prelude < server-single_2.mil
+# 11:56:32 >  
 
 Start of MIL prelude.
 [ 1 ]
@@ -514,7 +507,7 @@ Start of MIL prelude.
 #---------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_environment",	  "str",  "str",  12,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
+[ "monet_environment",	  "str",  "str",  21,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
@@ -578,86 +571,104 @@ unknown(0)#"                   ]
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Fri Jan 19 18:06:36 2001",	  ""		  ]
-[ "adm",  "Fri Jan 19 18:06:36 2001",	  "clients()"	  ]
+[ "adm",  "Sat Jun 29 11:56:32 2002",	  ""		  ]
+[ "adm",  "Sat Jun 29 11:56:32 2002",	  "clients()"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  1110	  ]
+[ "user",	  310	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  13440	  ]
+[ "system",	  80	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"										  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19361"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"										  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19361"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10132590"									  ]
+[ "gdk_dbname",		  "Tests_src_tools"								  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10132590"									  ]
+[ "gdk_dbname",		  "Tests_src_tools"								  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1568	  ]
-[ "minflt",	  161	  ]
+[ "maxrss",	  2016	  ]
+[ "minflt",	  253	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  15144	  ]
-[ "ninvcsw",	  83	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  15	  ]
 #---------------------------------#
 # BAT:		  mem		  #
 # (str)		  (int)		  #
 #---------------------------------#
-[ "memincr",	  1220608	  ]
-[ "arena",	  1253360	  ]
-[ "ordblks",	  4594		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  30968		  ]
-[ "fsmblks",	  12232		  ]
-[ "uordblks",	  928560	  ]
-[ "fordblks",	  280960	  ]
+[ "memincr",	  1499136	  ]
+[ "arena",	  0		  ]
+[ "ordblks",	  0		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  0		  ]
+[ "fordblks",	  0		  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Jan 19 18:06:36 2001"	  ]
-[ 1,	  "Fri Jan 19 18:06:36 2001"	  ]
+[ 0,	  "Sat Jun 29 11:56:32 2002"	  ]
+[ 1,	  "Sat Jun 29 11:56:32 2002"	  ]
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -669,57 +680,66 @@ unknown(0)#"                   ]
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  1120	  ]
+[ "user",	  320	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  13440	  ]
+[ "system",	  80	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"										  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19361"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10132590"									  ]
+[ "gdk_dbname",		  "Tests_src_tools"								  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1584	  ]
-[ "minflt",	  161	  ]
+[ "maxrss",	  2016	  ]
+[ "minflt",	  253	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  15144	  ]
-[ "ninvcsw",	  83	  ]
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1261552	  ]
-[ "ordblks",	  4648		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  31024		  ]
-[ "fsmblks",	  12176		  ]
-[ "uordblks",	  939320	  ]
-[ "fordblks",	  278392	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  16	  ]
+#-------------------------#
+# BAT:		  mem	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "memincr",	  8192	  ]
+[ "arena",	  0	  ]
+[ "ordblks",	  0	  ]
+[ "smblks",	  0	  ]
+[ "hblkhd",	  0	  ]
+[ "hblks",	  0	  ]
+[ "usmblks",	  0	  ]
+[ "fsmblks",	  0	  ]
+[ "uordblks",	  0	  ]
+[ "fordblks",	  0	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 End of MIL prelude.
 setoid(oid(20000000));
@@ -1242,7 +1262,7 @@ dir();
 #---------------------------------------------------------------------------------------------------------#
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
-[ "monet_environment",	  "str",  "str",  12,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
+[ "monet_environment",	  "str",  "str",  21,	  0,	  "dirty",	  "load", "tran", 2,	  0	  ]
 [ "monet_fcn_aut",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_cnt",	  "oid",  "int",  570,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
 [ "monet_fcn_dat",	  "oid",  "str",  542,	  0,	  "dirty",	  "load", "tran", 1,	  0	  ]
@@ -1315,91 +1335,109 @@ clients();
 #---------------------------------------------------------#
 # name	| login				| mil		  #
 #---------------------------------------------------------#
-[ "adm",  "Fri Jan 19 18:06:36 2001",	  "clients()"	  ]
+[ "adm",  "Sat Jun 29 11:56:32 2002",	  "clients()"	  ]
 cpu().print();
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  1180	  ]
-[ "elapuser",	  60	  ]
-[ "system",	  13450	  ]
+[ "elapsed",	  0	  ]
+[ "user",	  390	  ]
+[ "elapuser",	  70	  ]
+[ "system",	  90	  ]
 [ "elapsystem",	  10	  ]
 env();
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"										  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19361"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10132590"									  ]
+[ "gdk_dbname",		  "Tests_src_tools"								  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
 environment().print();
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"										  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19361"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10132590"									  ]
+[ "gdk_dbname",		  "Tests_src_tools"								  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
 io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1648	  ]
-[ "minflt",	  161	  ]
+[ "maxrss",	  2032	  ]
+[ "minflt",	  253	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  15144	  ]
-[ "ninvcsw",	  83	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  20	  ]
 memory().print();
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  73728		  ]
-[ "arena",	  1335280	  ]
-[ "ordblks",	  4683		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  31104		  ]
-[ "fsmblks",	  12096		  ]
-[ "uordblks",	  936512	  ]
-[ "fordblks",	  354928	  ]
+#-------------------------#
+# BAT:		  mem	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "memincr",	  0	  ]
+[ "arena",	  0	  ]
+[ "ordblks",	  0	  ]
+[ "smblks",	  0	  ]
+[ "hblkhd",	  0	  ]
+[ "hblks",	  0	  ]
+[ "usmblks",	  0	  ]
+[ "fsmblks",	  0	  ]
+[ "uordblks",	  0	  ]
+[ "fordblks",	  0	  ]
 threads();
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
 view_client_login().print();
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Fri Jan 19 18:06:36 2001"	  ]
+[ 0,	  "Sat Jun 29 11:56:32 2002"	  ]
 view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
@@ -1411,62 +1449,71 @@ view_gdk_cpu().print();
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  1180	  ]
+[ "elapsed",	  0	  ]
+[ "user",	  390	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  13450	  ]
+[ "system",	  90	  ]
 [ "elapsystem",	  0	  ]
 view_gdk_env().print();
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"										  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/src/tools"			  ]
-[ "monet_pid",		  "19361"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10132590"									  ]
+[ "gdk_dbname",		  "Tests_src_tools"								  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
 view_gdk_io().print();
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "maxrss",	  1648	  ]
-[ "minflt",	  161	  ]
+[ "maxrss",	  2032	  ]
+[ "minflt",	  253	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
-[ "oublock",	  1	  ]
-[ "nvcsw",	  15144	  ]
-[ "ninvcsw",	  83	  ]
+[ "oublock",	  0	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  21	  ]
 view_gdk_memory().print();
-#---------------------------------#
-# BAT:		  mem		  #
-# (str)		  (int)		  #
-#---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  1335280	  ]
-[ "ordblks",	  4677		  ]
-[ "smblks",	  2000		  ]
-[ "hblkhd",	  640		  ]
-[ "hblks",	  20		  ]
-[ "usmblks",	  31080		  ]
-[ "fsmblks",	  12120		  ]
-[ "uordblks",	  935416	  ]
-[ "fordblks",	  356024	  ]
+#-------------------------#
+# BAT:		  mem	  #
+# (str)		  (int)	  #
+#-------------------------#
+[ "memincr",	  0	  ]
+[ "arena",	  0	  ]
+[ "ordblks",	  0	  ]
+[ "smblks",	  0	  ]
+[ "hblkhd",	  0	  ]
+[ "hblks",	  0	  ]
+[ "usmblks",	  0	  ]
+[ "fsmblks",	  0	  ]
+[ "uordblks",	  0	  ]
+[ "fordblks",	  0	  ]
 view_gdk_thread().print();
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
 
 printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#

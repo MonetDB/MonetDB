@@ -15,9 +15,9 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  180	  ]
+[ "user",	  270	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  390	  ]
+[ "system",	  80	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 [ 10000 ]
@@ -31,10 +31,10 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  220	  ]
-[ "elapuser",	  40	  ]
-[ "system",	  390	  ]
-[ "elapsystem",	  0	  ]
+[ "user",	  330	  ]
+[ "elapuser",	  60	  ]
+[ "system",	  90	  ]
+[ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 ##------------------------------------------------------------------------#
@@ -85,9 +85,9 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  220	  ]
+[ "user",	  330	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  390	  ]
+[ "system",	  90	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
@@ -119,29 +119,38 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 # BAT:	  thread	  #
 # (int)	  (str)		  #
 #-------------------------#
-[ 1,	  "Interpreter"	  ]
-[ 2,	  "Interpreter"	  ]
-[ 3,	  "Interpreter"	  ]
-[ 4,	  "Interpreter"	  ]
-[ 5,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
+[ 0,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-#-------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env												  #
-# (str)			  (str)												  #
-#-------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_tests_suite_02"									  ]
-[ "gdk_distr",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp"					  ]
-[ "gdk_monetrc",	  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/dbfarm/Tests_tests_suite_02"	  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"									  ]
-[ "gdk_version",	  "4.3"												  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32.31102/monet/.GNU_32/Linux2.2.14-12smp/Tests/tests/suite_02"		  ]
-[ "monet_pid",		  "21543"											  ]
-[ "monet_welcome",	  "yes"												  ]
-[ "monet_deamon",	  "yes"												  ]
-[ "monet_prompt",	  "\001\001"											  ]
+#---------------------------------------------------------------------------------------------------------#
+# BAT:			  monet_environment								  #
+# (str)			  (str)										  #
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitmips-sgi-irix6.5"							  ]
+[ "gdk_version",	  "4.3.5"									  ]
+[ "monet_pid",		  "10079469"									  ]
+[ "gdk_dbname",		  "Tests_tests_suite_02"							  ]
+[ "gdk_dbfarm",		  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/var/dbfarm"	  ]
+[ "gdk_debug",		  "10"										  ]
+[ "gdk_mmap",		  "33554432"									  ]
+[ "monet_admin",	  "adm"										  ]
+[ "monet_prompt",	  ""										  ]
+[ "monet_welcome",	  "yes"										  ]
+[ "monet_mod_path",	  "/var/tmp/manegold.GNU_64-d.32205/monet/.GNU_64-d/IRIX646.5/lib/MonetDB"	  ]
+[ "monet_deamon",	  "no"										  ]
+[ "host",		  "localhost"									  ]
+[ "mapi_port",		  "50000"									  ]
+[ "mapi_noheaders",	  "no"										  ]
+[ "mapi_debug",		  "0"										  ]
+[ "sql_port",		  "45123"									  ]
+[ "sql_debug",		  "0"										  ]
+[ "sql_api",		  "sql"										  ]
+[ "sql_user",		  "sqladmin"									  ]
+[ "sql_schema",		  "default-schema"								  ]
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 #-------------------------#
@@ -149,8 +158,13 @@ stdout of test 'test_95` in directory 'tests/suite_02` itself:
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  250	  ]
-[ "elapuser",	  30	  ]
-[ "system",	  390	  ]
+[ "user",	  400	  ]
+[ "elapuser",	  70	  ]
+[ "system",	  90	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
+
+# 12:05:59 >  
+# 12:05:59 >  Done.
+# 12:05:59 >  
+
