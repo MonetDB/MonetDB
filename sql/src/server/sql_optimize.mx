@@ -531,12 +531,12 @@ static list *push_selects_down(list * con){
 		}
 
 		/* look for multi-att equi-join candidates */
-		eqjoins = list_select(ejoins, (void*)1, (fcmp)&join_cmp_eq, (fdup)&stmt_dup );
+		eqjoins = list_select(ejoins, (void*)1L, (fcmp)&join_cmp_eq, (fdup)&stmt_dup );
 		if (list_length(eqjoins) > 1) {
 			/* rewrite conjuction of equi-join into multi-att equi-join */
 			reljoin = stmt_reljoin1(eqjoins);
 			/* collect the remaining non-equi joins */
-			nqjoins = list_select(ejoins, (void*)1, (fcmp)&join_cmp_neq, (fdup)&stmt_dup );
+			nqjoins = list_select(ejoins, (void*)1L, (fcmp)&join_cmp_neq, (fdup)&stmt_dup );
 			list_destroy(ejoins);
 		} else {
 			/* no multi-att equi-join found; theat all joins equally */
@@ -824,7 +824,7 @@ static stmt *op_stmt2filter(stmt *s)
 	} else {
 		list *l = s->op1.lval;
 		list *filters = 
-			list_select(l, (void*)1, (fcmp)&stmt_cmp_filter, (fdup)&stmt_dup);
+			list_select(l, (void*)1L, (fcmp)&stmt_cmp_filter, (fdup)&stmt_dup);
 		s = list_reduce(filters, (freduce)&stmt_semijoin, (fdup)&stmt_dup);
 		list_destroy(filters);
 		return s;

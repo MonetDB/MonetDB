@@ -118,7 +118,7 @@ SQLRETURN SQLEndTran(
 	{
 		ODBCStmt * stmt = (ODBCStmt *)hStmt;
 		rc = SQLExecDirect(stmt,
-			(nCompletionType == SQL_COMMIT) ? "COMMIT" : "ROLLBACK",
+			(SQLCHAR *)((nCompletionType == SQL_COMMIT) ? "COMMIT" : "ROLLBACK"),
 			SQL_NTS);
 		if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
 		{
@@ -131,7 +131,10 @@ SQLRETURN SQLEndTran(
 			rc2 = SQLGetDiagRec(SQL_HANDLE_STMT, stmt, 1,
 					    sqlState, &nativeErrCode, msgText,
 					    SQL_MAX_MESSAGE_LENGTH, NULL);
-			addDbcError(dbc, sqlState, (char*)msgText, nativeErrCode);
+
+			(void) rc2;	/* Stefan: unused!? */
+
+			addDbcError(dbc, (const char *)sqlState, (char*)msgText, nativeErrCode);
 		}
 		/* clean up the statement handle */
 		SQLFreeStmt(stmt, SQL_CLOSE);

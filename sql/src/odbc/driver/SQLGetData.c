@@ -32,6 +32,8 @@
  *
  **********************************************************************/
 
+#include <stdlib.h>	/* for strtoll() & strtoull() on SunOS; doesn't work yet */
+
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 

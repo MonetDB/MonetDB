@@ -14,6 +14,9 @@
 #endif
 
 #include <string.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>	/* for strcasecmp() */
+#endif
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
@@ -109,7 +112,7 @@ char *conv( char *org, iconv_t cd)
 		size_t size = len * 4;
 		char *buf = malloc(size);
 		char *to = buf;
-		char *from = org;
+		ICONV_CONST char *from = org;
 
 		if (iconv(cd, &from, &len, &to, &size ) == (size_t)-1){
 			perror("conv ");
@@ -149,6 +152,8 @@ static char *sql_readline( char *prompt ){
 			add_history(line);
 		}
 	} else 
+#else
+	(void) prompt; /* Stefan: unused!? */
 #endif
 	{
 		int len;

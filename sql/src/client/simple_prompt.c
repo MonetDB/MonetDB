@@ -10,6 +10,11 @@
 #include <termios.h>
 #endif
 
+#include <stdlib.h>	/* for malloc() on Darwin */
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+
 char *
 simple_prompt(const char *prompt, int maxlen, int echo)
 {

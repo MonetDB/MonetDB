@@ -130,7 +130,7 @@ Cntxt backend_newstack( Cntxt stk )
 
 void backend_freestack( backend_stack stk )
 {
-	Cntxt procstk = (Cntxt)stk;
+	Cntxt procstk = (Cntxt)(ptrdiff_t)stk;
 
 	monet_cntxt[procstk].reuse = FALSE;
 	CNTXTfree1(procstk);
@@ -177,6 +177,9 @@ YYSTREE backend_interpret( Cntxt procstk, char *name, list *args )
 	yyexpand(procnode, argtree);
 	yyexpand(procnode, yynode(0,TYPE_int));
 	err = interpret( procstk, procnode, &v);
+
+	(void) err;	/* Stefan: unused!? */
+
 	return procnode;
 }
 
@@ -321,13 +324,13 @@ int sqlexecute(context * c, stream *out, Cntxt stk )
 
 		if (!err){
 			q->code = (backend_code)procnode;
-			q->stk = (backend_stack)procstk;
+			q->stk = (backend_stack)(ptrdiff_t)procstk;
 		} else {
-			backend_freestack( (backend_stack)procstk );
+			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
 		}
 	} else {
 		c->mvc->type = q->type;
-		err = backend_fastpath( (Cntxt)q->stk, (YYSTREE)q->code, c->args);
+		err = backend_fastpath( (Cntxt)(ptrdiff_t)q->stk, (YYSTREE)q->code, c->args);
 	}
 	if (c->mvc->type == Q_TRANS){
 		if (c->qc) qc_destroy(c->qc); 

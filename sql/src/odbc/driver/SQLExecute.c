@@ -68,10 +68,10 @@ static int next_result(stream *rs,  ODBCStmt *	hstmt, int *type ){
 		/* output error */
 		char buf[BLOCK+1];
 		int last = 0;
-		int nr = bs_read_next(rs, buf, &last);
+		(void) bs_read_next(rs, buf, &last);
 		/* read result string (not used) */
 		while (!last) {
-			nr = bs_read_next(rs, buf, &last);
+			(void) bs_read_next(rs, buf, &last);
 		}
 		/* HY000 = General Error */
 		addStmtError(hstmt, "HY000", "No result available (status < 0)", 0);

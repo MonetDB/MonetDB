@@ -429,9 +429,7 @@ static int utf8_intlen(int ch)
 static int lex_getc(context * lc)
 {
 	int len = 0;
-	unsigned char ch[5];
 	int c = EOF;
-	ch[4] = 0;
 	assert(lc->buf);
 	if (*lc->buf) {
 		len = utf8_charlen(lc->buf[0]);

@@ -215,8 +215,8 @@ list *shrink_select_ranges(list *oldsels)
 
 	/* some statments (e.g., st_kbat when checking key constraints during inserts)
 	   don't seem to have a basecolumn, hence, we skip them, here */
-	haveNoBasecol = list_select( oldsels, (void*)1, (fcmp)&cmp_sel_hasNoBasecol, (fdup)&stmt_dup );
-	haveBasecol   = list_select( oldsels, (void*)1, (fcmp)&cmp_sel_hasBasecol,   (fdup)&stmt_dup );  
+	haveNoBasecol = list_select( oldsels, (void*)1L, (fcmp)&cmp_sel_hasNoBasecol, (fdup)&stmt_dup );
+	haveBasecol   = list_select( oldsels, (void*)1L, (fcmp)&cmp_sel_hasBasecol,   (fdup)&stmt_dup );  
 	list_destroy(oldsels);
 
 	basecols = list_distinct( haveBasecol, (fcmp)&cmp_sel_basecol, (fdup)&stmt_dup );
@@ -242,7 +242,7 @@ list *shrink_select_ranges(list *oldsels)
 				list_destroy(l);
 			}
 			/* separate all double-sided range selects */
-			sels2 = list_select( colsels, (void*)1, (fcmp)&cmp_sel2, (fdup)&stmt_dup );
+			sels2 = list_select( colsels, (void*)1L, (fcmp)&cmp_sel2, (fdup)&stmt_dup );
 			len += list_length(sels2);
 
 			/* make sure we didn't miss anything */

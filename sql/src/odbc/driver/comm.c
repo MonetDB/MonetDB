@@ -118,6 +118,8 @@ int simple_receive( stream *in, stream *out, int debug ){
 		char buf[BLOCK+1];
 		int last = 0;
 		int status;
+		
+		(void) res;	/* Stefan: unused!? */
 
 		stream_readInt(in, &status);
 		if (status < 0){ /* output error */

@@ -3340,7 +3340,7 @@ sql_role *mvc_drop_role( mvc *m, sql_schema *s, char *name)
 @= dec_tostr
 	char buf[32];
 	@1 v = *(@1*)a;
-	int scale = (int)(long)extra, cur = 31, neg = (v<0)?1:0, i, done = 0;
+	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0;
 	int l;
 
 	if (v<0) v = -v;
@@ -3620,7 +3620,7 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 		if (c->type->type->scale == SCALE_FIX){
 			char *buf = NULL;
 			int len = 0;
-			int l = dec_tostr((void*)c->type->scale, &buf, &len,
+			int l = dec_tostr((void*)(ptrdiff_t)c->type->scale, &buf, &len,
 					c->mtype, c->p);
 			s->write(s, buf, l, 1);
 			_DELETE(buf);
@@ -3704,7 +3704,7 @@ int mvc_export_table( mvc *m, stream *s, int res_id, int offset, int nr )
 		if (c->type->type->scale == SCALE_FIX){
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
-			fmt[i].extra = (void*)c->type->scale;
+			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;
 		}
 	}
 	if (i == t->nr_cols){

@@ -280,7 +280,8 @@ static stmt *sql_subquery(context * sql, scope * scp, symbol * sq)
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
 		dnode *n = NULL;
-		tvar *fnd = (tvar *) 1;
+		tvar *fnd = (tvar *) 1L; /* 1L to keep 64-bit compilers from complaining *
+		                          * about different sizes of int and pointer     */
 
 		if (toplevel)
 			scp = scope_open(scp);
@@ -3494,7 +3495,7 @@ static stmt *sql_bulkinsert(context * sql, sql_table *t, char *tsep, char *rsep,
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
 	
-	scope *scp = scope_open(scp);
+	scope *scp = scope_open(NULL);
 	tvar *tv  = scope_add_table_columns(sql, scp, t, t->name);
 
 	bats = stmt_bulkinsert(stmt_basetable(t), tsep, rsep, fname, nr);

@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#ifdef HAVE_STRINGS_H 
 #include <strings.h>	/* for strcasecmp() */
+#endif
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -72,6 +74,9 @@ static int find_section(FILE * ini, const char *section)
 	char *r;
 
 	while (!found && (r = fgets(buf, 1024, ini)) != NULL) {
+
+		(void) r;	/* Stefan: unused!? */
+
 		/* find first meaningful char */
 		pos = 0;
 		while (buf[pos] == ' ' || buf[pos] == '\t') {
@@ -115,6 +120,9 @@ static char *find_key(FILE * ini, const char *key)
 	static const char *skipchars = ";#=\r\n";
 
 	while (!value && (r = fgets(buf, 1024, ini)) != NULL) {
+
+		(void) r;	/* Stefan: unused!? */
+
 		pos = 0;
 
 		/* skip crap at beginning */

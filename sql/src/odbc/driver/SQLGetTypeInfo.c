@@ -208,7 +208,7 @@ SQLRETURN SQLGetTypeInfo(
 
 	/* query the MonetDb data dictionary tables */
 	assert(query);
-	rc = SQLExecDirect(hStmt, query, SQL_NTS);
+	rc = SQLExecDirect(hStmt, (SQLCHAR *)query, SQL_NTS);
 
 	free(query);
 

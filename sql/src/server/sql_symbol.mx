@@ -562,4 +562,5 @@ int symbol_cmp( symbol *s1, symbol *s2)
 			}
 		default: assert(0);
 	}
+	return 0; /* never reached, just to pacify compilers */
 }

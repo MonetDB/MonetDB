@@ -73,13 +73,13 @@ qc *qc_create()
 
 void qc_destroy( qc *cache /*, Cntxt stk */ )
 {
+	cq *q, *n;
 /* see comment below.
 	char buf[BUFSIZ];
-*/
-	cq *q, *n;
 	ValRecord v;
 
 	v.vtype = TYPE_void;
+*/
 	for (q = cache->q; q; q = n){
 		n = q->next;
 		
