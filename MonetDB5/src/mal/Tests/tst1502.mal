@@ -35,11 +35,11 @@
 	hf_a := insert(z,6@0,"a");
 	insert(z,7@0,"c");
 	insert(z,8@0,"a");
-	print("sort x"); 
-	xs:=sort(x); 
+	print("hsort x"); 
+	xs:=hsort(x); 
 	print(xs);
-	print("sort xrev"); 
+	print("hsort xrev"); 
 	xrev:=reverse(x);
-	xsrev:=sort(xrev); 
+	xsrev:=hsort(xrev); 
 	print(xsrev);
 

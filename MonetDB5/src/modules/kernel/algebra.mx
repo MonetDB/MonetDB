@@ -176,8 +176,8 @@ address ALGcopy
 comment "Returns physical copy of a BAT.";
 @- Sorted copy
 @mal
-command sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
-address ALGsort
+command hsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
 command tsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGtsort
@@ -185,6 +185,9 @@ comment "Returns a BAT copy sorted on the tail column.";
 command htsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address ALGhtsort
 comment "Returns a lexicographically sorted copy.";
+command thsort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+address ALGthsort
+comment "Returns a reverse lexicographically sorted copy.";
 
 @+ Set operations
 Sets in Monet can be viewed in two ways:
@@ -1810,8 +1813,6 @@ str ALG@1(int *result, int* bid, int *param) {
 }
 @c
 @:ALGunary(histogram)@
-@:ALGunary(sort)@
-@:ALGunary(tsort)@
 @:ALGunary(number)@
 @:ALGunary(copy)@
 @:ALGunary(kunique)@
@@ -1840,6 +1841,28 @@ str ALGtunique(int *result, int *bid) {
 	}
 	return throwMessage("algebra.tunique", "GDKerror");
 }
+str ALGtsort(int *result, int *bid) {
+	BAT *b,*bn;
+	@:getBATdescriptor(result,bid,b,tsort)@
+	CMDsort(&bn,BATmirror(b));
+	if( bn ) {
+		bn= BATsetaccess(BATmirror(bn),1);
+		BBPfix(*result = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.tunique", "GDKerror");
+}
+str ALGhsort(int *result, int *bid) {
+	BAT *b,*bn;
+	@:getBATdescriptor(result,bid,b,hsort)@
+	CMDsort(&bn,b);
+	if( bn ) {
+		bn= BATsetaccess(bn,1);
+		BBPfix(*result = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.tunique", "GDKerror");
+}
 
 str ALGhtsort(int *result, int *lid ) {
 	BAT *b, *bc, *bk, *bn= NULL;
@@ -1856,6 +1879,29 @@ str ALGhtsort(int *result, int *lid ) {
 		bc= BATselect(BATreverse(b),p,p);
 		bc= BATsort(bc);
 		BATreverse(bc);
+		BATins(bn,bc);
+	}
+	if( bn ) {
+		bn= BATsetaccess(bn,1);
+		BBPfix(*result = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.htsort", "GDKerror");
+}
+str ALGthsort(int *result, int *lid ) {
+	BAT *b, *bc, *bk, *bn= NULL;
+	size_t cnt;
+	ptr p,q;
+
+	@:getBATdescriptor(result,lid,b,htsort)@
+	cnt= BATcount(b);
+	bn= BATnew( b->htype, b->ttype, cnt);
+	if( bn ==0)
+		return throwMessage("algebra.thsort", "GDKerror");
+	bk= BATsort(BATkunique(BATreverse(b)));
+	BATloop(bk,p,q){
+		bc= BATselect(b,p,p);
+		bc= BATsort(bc);
 		BATins(bn,bc);
 	}
 	if( bn ) {

@@ -1,6 +1,7 @@
 # Monet Mil to Mal compiler
 include mil;
 include mil_scenario;
+include mil_sys_procs;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment

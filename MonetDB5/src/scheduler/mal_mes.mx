@@ -157,23 +157,8 @@ barrier z:= count(p);
 	...
 @end example
 
-The last statement is replaced by 
-@example
-	pcount:= 0:lng;
-barrier (b1,rf):= chopper.newChunkIterator(r,1024);
-barrier (b2,sf):= chopper.newChunkIterator(s,1024);
-	p:= prod(rf,sf);
-	c:= count(p);
-	pcount:= pcount+c;
-redo (b2,sf):= chopper.hasMoreChunks(s,1024);
-redo (b1,rf):= chopper.hasMoreChunks(r,1024);
-barrier z:= pcount
-	...
-@end example
-
-and may have to be re-evaluated within the barrier block if p
-is changed. (We ignore the semantic optimization step to replace p with
-a simple multiplication expression over the counts of the operands.)
+The last statement should also be replaced, because
+it uses a large intermediate result as well.
 
 Since the operation v:=sum(w) could be anywhere in the
 plan, we should guarantee that the repeated execution of
@@ -181,6 +166,14 @@ the iterator still produces the same result. This simply
 calls for making a readonly copy of the operands going into the
 product operation.
 
+Second case.
+@example
+	p:= prod(r,s);
+	c:= count(p);
+	print(c);
+	t:= select(p,X,Y);
+	c:= count(t);
+@end example
 @+ Optimization issues
 Once a target operation has been isolated for chopping it up
 into a loop, it becomes mandatory to find an optimal choice.
@@ -266,7 +259,6 @@ str meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name ){
 		printf("meo_loop_optimizer attempt\n");
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
-		/* look ahead to determine scope of the block */
 
 	/* craft the new code block */
 		lb = newTmpVariable(mb, TYPE_bit);
