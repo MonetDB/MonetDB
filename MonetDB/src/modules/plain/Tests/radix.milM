@@ -1,3 +1,0 @@
-module("radix");
-test_radix();
-quit();

@@ -1,9 +1,0 @@
-
-printf("%5d\n", int(nil) );
-printf("%d\n", int(nil) );
-printf("%s\n", str(nil) );
-printf("%lf\n",dbl(nil) );
-
-printf("%+5.4f and %s\n", flt(nil), str(nil) );
-
-quit();
