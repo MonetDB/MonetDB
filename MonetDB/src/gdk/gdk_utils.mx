@@ -368,19 +368,11 @@ size_t GDKmem_heapsize(void) {
 	return (size_t) SEG_SIZE(heapsize,MT_VMUNITLOG);
 }
 
-#ifdef GDK_MEM_SIMPLE
-size_t GDKmem_heapinuse(void) {
-	/* we do not keep statistics ourselves; so we ask mallinfo */
-	struct mallinfo m = MT_mallinfo();
-        return (size_t) (m.usmblks + m.uordblks);
-}
-#else 
 size_t	GDK_heap_inuse = 0;
 
 size_t GDKmem_heapinuse(void) {
 	return GDK_heap_inuse;
 }
-#endif
 
 static int GDK_vm_allocs = 0;
 static int GDK_mem_allocs = 0;
@@ -677,10 +669,11 @@ calls. Where possible, we want to use the -lmalloc library on Unix systems,
 because it allows to influence the memory allocation strategy. This can prevent
 fragmentation and greatly help enhance performance.
 
-The only "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the standard OS
+The "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the standard OS
 primitives is that the GDK versions try to do recovery from failure to malloc by 
-initiating a BBPtrim (to unload BAts and make space in the memory). This basic 
-behaviour is obtained by defining GDK\_MEM\_SIMPLE. 
+initiating a BBPtrim. Also, big requests are redirected to anonymous virtual 
+memory. Finally, additional information on block sizes is kept (helping efficient 
+reallocations) as well as some debugging that guards against duplicate frees.
 
 A number of different strategies are available using different switches, however:
 \begin{description}
@@ -693,11 +686,6 @@ This can be overridden with  GDK\_MEM\_NULLALLOWED.
 Many malloc interfaces lack a routine that tells the size of a blobk
 by the pointer. We need this information for correct malloc statistics.
 
-Some systems (like cygnus) already store the blocksize in front of
-the pointer (and do not have alignment problemes described below). In
-that case, we save the overhead of redoing this ourselves by defining 
-GDK\_MEM\_QUERYSIZE.
-
 \item[outstanding block histograms]
 In order to solve the problem, we allocate extra memory in front of the 
 returned block. With te resource tracking in place, we keep a total of 
@@ -709,8 +697,8 @@ memory blocks; define GDK\_VM\_KEEPHISTO).
 While doing the resource tracking, we can in one go solve the problem
 of 32-bit systems that return non-8 bytes algigned pointers. This is
 encoded by storing a size + 1 (we always normalize sizes to multiples of 
-8, so this is easily recognized). This check is done automatically when
-GDK\_MEM\_SIMPLE is {\bf not} enabled.
+8, so this is easily recognized). This check only done if 
+GDK\_MEM\_MISALIGN is {\bf not} enabled.
 
 \item[redirection to anonymous VM]
 Sometimes, fragmentation problems arise on mallocs that are not tuneable.
@@ -721,12 +709,6 @@ pointer (as well as the VM maxsize), so the malloc primitives can recognize
 these redirected blocks.This behavior is enabled by defining GDK\_MEM\_VMREDIRECT.
 \end{description}
 @c
-#ifdef GDK_MEM_QUERYSIZE
-#define GDK_MEM_BLKSIZE(p) GDK_MEM_QUERYSIZE(p)
-#else
-#define GDK_MEM_BLKSIZE(p) ((ssize_t*) (p))[-1]
-#endif
-
 static 
 void GDKmemdump(void) {
 	struct mallinfo m = MT_mallinfo();
@@ -789,28 +771,38 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
         if (GDKthreadLock) MT_unset_lock(GDKthreadLock, "GDKmemfail");
 }
 
+/* the blocksize is stored in the ssize_t before it. Negative size <=> VM memory */
+#define GDK_MEM_BLKSIZE(p) ((ssize_t*) (p))[-1]
 
-#if defined(GDK_MEM_QUERYSIZE) || defined(GDK_MEM_SIMPLE)
-#define GDKmalloc_prefixsize(s,size) 					\
-	s = (ssize_t*) malloc(size)
+#ifndef GDK_MEM_MISALIGN
+
+/* allocate 8 bytes extra (so it stays 8-bytes aligned) and put realsize in front */
+#define GDKmalloc_prefixsize(s,size) {					\
+	s = (ssize_t *) malloc(size + 8);					\
+	if (s != NULL) {						\
+		assert((((size_t) s)&4) == 0); /* no MISALIGN */	\
+		s = (ssize_t*) ((char*) s + 8);				\
+		s[-1] = (ssize_t) (size + 8);				\
+	}								\
+}
+
 #else
-#define GDKmalloc_prefixsize(s, size) {					\
-	/* round up to multiple of 4 and add 8: */			\
-	size_t realsize = ((size) + 11) & ~3;				\
-	char *p = (char *) malloc(realsize);				\
-	if (p == NULL) {						\
-		s = NULL;						\
-	} else if (((size_t) p) & 4) { /* misaligned */			\
-		s = (ssize_t*) (p + 4); /* place 4 bytes before it */	\
-		s[-1] = (ssize_t) (realsize + 1);  /* 1 is a marker */	\
-	} else {							\
-		s = (ssize_t*) (p + 8); /* place 8 bytes before it */	\
-		s[-1] = (ssize_t) realsize;				\
+/* work around old stupid libc mallocs that give 4-byte aligned pointers */
+#define GDKmalloc_prefixsize(s,size) {					\
+	s = (ssize_t *) malloc(size+8);					\
+	if (((size_t) s) & 4) { /* misaligned */			\
+		assert(sizeof(size_t) == 4); /* not on 64-bits */ 	\
+		s = (ssize_t*) ((char*) s + 4);				\
+		s[-1] = (ssize_t) (size + 9);  /* 1-bit is a marker */	\
+	} else if (s != NULL) {						\
+		s = (ssize_t*) ((char*) s + 8);				\
+		s[-1] = (ssize_t) (size + 8);				\
 	}								\
 }
 #endif
 
 
+INLINE
 void* GDKmallocmax(size_t size, size_t *maxsize) {
 	ssize_t *s;
 
@@ -821,8 +813,7 @@ void* GDKmallocmax(size_t size, size_t *maxsize) {
 		GDKfatal("GDKmalloc called with size " SZFMT "", size);
 #endif
 	}
-	CHKMEM(size,0);
-
+	size = (size+3) & ~3; /* round up to a multiple of four */
 	if (size > GDK_mem_bigsize) {
 		size_t newsize = size + sizeof(size_t)+sizeof(size_t);
 		size_t newmax = MAX(*maxsize, newsize);
@@ -832,9 +823,10 @@ void* GDKmallocmax(size_t size, size_t *maxsize) {
 		s[-2] = (ssize_t) newmax;
 		s[-1] = -((ssize_t) size);
 		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
-	} else { 
-		GDKmalloc_prefixsize(s, size);
-	}
+        	return (void*) s;
+	} 
+	CHKMEM(size,0);
+	GDKmalloc_prefixsize(s, size);
        	if (s == NULL) {
 		GDKmemfail("GDKmalloc", size, BBPTRIM_ALL, 0);
 		GDKmalloc_prefixsize(s, size);
@@ -846,23 +838,21 @@ void* GDKmallocmax(size_t size, size_t *maxsize) {
 		}
 	}
 	*maxsize = size;
-#ifndef GDK_MEM_SIMPLE
-{	ssize_t realsize = GDK_MEM_BLKSIZE(s);
-	if (realsize > 0) {	
+	size = GDK_MEM_BLKSIZE(s);
+	if (size > 0) {	
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
-		GDKmallidx(idx, realsize);
+		GDKmallidx(idx, size);
 		GDK_nmallocs[idx]++; 
 #endif
-		GDK_heap_inuse += realsize;
+		GDK_heap_inuse += size;
 #ifdef GDK_MEM_TRACE
 		if(mtrace) {
 			int idx = add_stack(stackBat);
 			add_mem(memBat,s,idx);
 		}
 #endif
-	}}
-#endif
+	}
         return (void*) s;
 }
 
@@ -873,67 +863,64 @@ void* GDKmalloc(size_t size) {
  
 void GDKfree (void *blk) {
 	ssize_t size, *s = (ssize_t*) blk;
-
         if (s == NULL) return;
+
 	size = GDK_MEM_BLKSIZE(s);
 
-	if (size > 0) {
-#ifdef GDK_MEM_KEEPHISTO
-		int idx;
-
-#if !(defined(GDK_MEM_QUERYSIZE) || defined(GDK_MEM_SIMPLE))
-	/* wdk: add check for double deletes */
-        assert((size&2) == 0);
+	/* check against duplicate free */
+	assert((size&2) == 0);
         s[-1] |= 2;
-#endif
 
-		GDKmallidx(idx,size);
-		GDK_nmallocs[idx]--;
-#endif
-		GDK_heap_inuse -= size; 
-#ifdef GDK_MEM_TRACE
-		if(mtrace)
-			del_mem(memBat,blk);
-#endif
-	}
 	if (size < 0) {
 		size_t maxsize = (size_t) s[-2];
 		size = -size;
 		MT_alloc_register((char*) (s-2), maxsize, 's');
 		GDKvmfree((char*) (s-2), (size_t) size, maxsize);
-	} else
-#ifndef GDK_MEM_QUERYSIZE
-	if (size&1) {
-		free(((char*) s) - 4);
 	} else {
+#ifdef GDK_MEM_KEEPHISTO
+		int idx;
+		GDKmallidx(idx,size);
+		GDK_nmallocs[idx]--;
+#endif
+#ifdef GDK_MEM_TRACE
+		if(mtrace)
+			del_mem(memBat,blk);
+#endif
+		GDK_heap_inuse -= size; 
+#ifdef GDK_MEM_MISALIGN
+		if (size&1) free(((char*) s) - 4);
+		else
+#endif
 		free(((char*) s) - 8);
 	}
-#else
-	free(blk);
-#endif
 }
 
+INLINE
 ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize) {
-        if (blk == NULL) {
-		return GDKmalloc(size);
+	ssize_t oldsize, *s = (ssize_t*) blk;
+
+        if (s == NULL) {
+		return GDKmallocmax(size, maxsize);
 	}
 #ifdef GDK_MEM_NULLALLOWED
         if (size == 0) {
 		GDKfree(blk);
+		*maxsize = 0;
 		return NULL;
 	}
 #endif
         if (size <= 0) {
                 GDKfatal("GDKrealloc called with size %u", size);
         }
-#ifdef GDK_MEM_SIMPLE
-        CHKMEM(size,0);
-        blk = realloc(blk, size);
-#else
-{       size_t cpysize, *s = (size_t*) blk;
-        ssize_t oldsize = GDK_MEM_BLKSIZE(s);
+	/* round up to a multiple of four */
+	size = (size+3) & ~3; 
+	oldsize = GDK_MEM_BLKSIZE(s);
+
+	/* check against duplicate free */
+        assert((oldsize&2) == 0);
+        s[-1] |= 2; 
+
 	if (oldsize < 0) {
-		ssize_t *s = (ssize_t*) blk;
 		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
 		size_t oldmax = (size_t) s[-2];
 		size_t newmax = MAX(*maxsize,newsize);
@@ -943,24 +930,49 @@ ptr GDKreallocmax(void* blk, size_t size, size_t *maxsize) {
 		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
 		return (ptr) (s+2);
 	} 
-#ifdef GDK_MEM_QUERYSIZE
-	cpysize = MIN(size, (size_t) oldsize);
-#else
-	if (oldsize&1) {
-		cpysize = MIN(size, (size_t) oldsize - 5);
-	} else {
-		cpysize = MIN(size, (size_t) oldsize - 8);
+#ifndef GDK_MEM_MISALIGN
+	if (size <= GDK_mem_bigsize) {
+		blk = realloc(((char*) blk) - 8, size + 8);
+       		if (blk != NULL) {
+			/* adapt statistics */
+#ifdef GDK_MEM_KEEPHISTO
+			int idx;
+			GDKmallidx(idx,oldsize);
+			GDK_nmallocs[idx]--;
+			GDKmallidx(idx,size);
+			GDK_nmallocs[idx]++;
+#endif
+			GDK_heap_inuse -= oldsize; 
+			GDK_heap_inuse += size; 
+
+			/* place 8 bytes before it */
+			assert((((size_t) blk)&4) == 0);
+			blk = ((char*) blk) + 8; 
+			((ssize_t*) blk)[-1] = (ssize_t) (size + 8);
+#ifdef GDK_MEM_TRACE
+			if(mtrace) {
+				int i = add_stack(stackBat);
+				add_mem(memBat,s,i);
+				del_mem(memBat,blk);
+			}
+#endif
+			*maxsize = size;
+			return blk;
+		}
 	}
+	/* alloc&copy due too failed realloc (may be very big heap that needs vm) */
+#else
+	/* alloc&copy because we cannot trust realloc due to misalignment */
+	/* must alloc and copy due to misalignment problems */
+	if (oldsize&1)
+		oldsize = MIN(size, (size_t) oldsize - 5);
+	else
 #endif
-	/* the bad news is that the alignment problems on 32-bit systems prevent us from using realloc 
-         * the good news is that we know our block sizes; so we can at least copy it to the new location
-         */
+	oldsize = MIN(size, (size_t) oldsize - 8);
         blk = (void* ) GDKmallocmax(size, maxsize);
-        memcpy(blk, s, cpysize);
+        memcpy(blk, s, oldsize);
         GDKfree(s);
-}
-#endif
-        return blk;
+        return (void*) blk;
 }
 
 ptr GDKrealloc(void* blk, size_t size) {

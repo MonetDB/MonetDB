@@ -211,8 +211,6 @@ gdk_export void rewinddir (DIR *dir);
 gdk_export int closedir (DIR *dir);
 #endif
 
-#define GDK_MEM_QUERYSIZE(p) _msize(p)
-
 #endif 
 
 #endif /* GDK_POSIX_H */
