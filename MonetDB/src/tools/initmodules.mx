@@ -37,9 +37,7 @@ load the dynamic libraries before we load and run the scripts.
 
 @= install_load_module
 {
-#ifdef STATIC
 	@:install_module(@1)@
-#endif
 	@:load_module(@1)@
 }
 @h
