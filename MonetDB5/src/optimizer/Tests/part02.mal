@@ -14,12 +14,12 @@ b3:= new(:void,:int);
 setSequenceBase(b3,20@0);
 
 barrier (go,i):= newRange(0);
-	insert(a1,nil,i);
-	insert(a2,nil,i);
-	insert(a3,nil,i);
-	insert(b1,nil,i);
-	insert(b2,nil,i);
-	insert(b3,nil,i);
+	bat.insert(a1,nil,i);
+	bat.insert(a2,nil,i);
+	bat.insert(a3,nil,i);
+	bat.insert(b1,nil,i);
+	bat.insert(b2,nil,i);
+	bat.insert(b3,nil,i);
 	redo (go,i):= nextElement(1,10);
 exit (go,i);
 #print(a1);
