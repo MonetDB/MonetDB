@@ -64,6 +64,7 @@ test = (
                 "|" r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$"
                 "|" r"^Mcreatedb: database .* has been initialized succesfully!$"
                 "|" r"^[Uu]sage: (/.*/)?(lt-)?(Mserver|MapiClient)( \[ options \])?$"
+                "|" r"^!WARNING: GDKlockHome: created directory .*$"
                 "|" r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$"
                 "|" r"^!WARNING: BBPdir: initializing BBP.$"
                 "|" r"^connection= .*:[0-9]*$"
