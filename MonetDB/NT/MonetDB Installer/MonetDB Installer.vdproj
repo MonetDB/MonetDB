@@ -3397,8 +3397,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_F13FCE20C989438796F4BCACB0E85F01"
             {
-            "SourcePath" = "8:..\\etc\\monet.conf"
-            "TargetName" = "8:monet.conf"
+            "SourcePath" = "8:..\\etc\\MonetDB.conf"
+            "TargetName" = "8:MonetDB.conf"
             "Tag" = "8:"
             "Folder" = "8:_B5DFB5D13EE441F8B42616036AACB603"
             "Condition" = "8:"

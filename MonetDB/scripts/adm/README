@@ -11,7 +11,7 @@ on old databases, and before using the new
 Monet with those old databases.
 
 The script expects as parameter the location
-of your databases, like gdk_dbfarm in monet.conf.
+of your databases, like gdk_dbfarm in MonetDB.conf.
 
 (NOTE: Applying the script to a newly created bat
 in a new monet will make it un-destroyable - 

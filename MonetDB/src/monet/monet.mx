@@ -284,7 +284,7 @@ A dataset within the database server can be selected with the {\tt
 \item
 \end{itemize}
 The input file for commands is standard input.
-See the monet.conf file for additional system variable settings
+See the MonetDB.conf file for additional system variable settings
 @
 @h
 #include "monet_process.h"

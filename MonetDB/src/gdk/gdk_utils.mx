@@ -90,8 +90,8 @@ BAT 	*GDKenv = NULL;
 #endif
 
 @- Monet configuration file
-Parse a possible monet.conf file (either in the default location
-<prefix>/etc/monet.conf, or as specified by either an enviroment variable
+Parse a possible MonetDB.conf file (either in the default location
+<prefix>/etc/MonetDB.conf, or as specified by either an enviroment variable
 $MONET_CONFIG, or by command line option -c/--config) 
 to extract pre-settings of system variables.
 Un-recognized parameters are simply skipped, because they  may be
@@ -101,7 +101,7 @@ may be unnoticed for a long time.
 Syntax errors are immediately flagged, though.
 
 Since the GDK kernel moves into the database directory, we need
-to keep the absolute path to the monet.conf file for top-levels
+to keep the absolute path to the MonetDB.conf file for top-levels
 to access its information.
 @c
 
@@ -110,7 +110,7 @@ void GDKusage(){
 	fprintf(stderr,"<program>\tprogram using the GDK library\n");
 	fprintf(stderr,"<db-name>\tdatabase to open\n");
 	fprintf(stderr,"<file>\t\tsystem variable settings\n");
-	fprintf(stderr,"\t\tdefault: monet.conf in <prefix>/etc\n");
+	fprintf(stderr,"\t\tdefault: MonetDB.conf in <prefix>/etc\n");
 	fprintf(stderr,"Other arguments are dealt with in the application startup routine\n");
 }
 
