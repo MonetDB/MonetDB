@@ -3,7 +3,7 @@ PROC check_cap(BAT _b) : void := {
 	VAR deleted := count(delta(_b));
 	VAR cap := capacity(_b);
 	VAR overflow := (inserted + deleted) - cap;
-	IF (overflow > 0) {
+	IF (overflow > lng(0)) {
 		printf("!ERROR: wrote %d BUNs beyond capacity\n",overflow);
 	}
 }
@@ -22,14 +22,14 @@ WHILE (i > 0) {
 
 commit;
 
-VAR i := cap * 2;
+i := cap * 2;
 WHILE (i > 0) {
         b.delete(oid(i));
         i := i - 1;
 }
 
 VAR c := new(oid,oid);
-VAR i := cap * 2;
+i := cap * 2;
 WHILE (i > 0) {
 	c.insert(oid(i),oid(i));
 	i := i - 1;
