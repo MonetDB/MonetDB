@@ -29,9 +29,9 @@ align the BATs on their head value. In particular, it permits
 replacing a hash-join by a merge-join, which is significantly faster
 on large tables. Especially if the BATs involved cause page activity
 or when you can not afford the large hash structures to speed-up processing.
-@
+@-
 For orthogonality, we support aligment between arbitrary columns (head or tail).
-@
+@-
 All standard GDK set-calls update the alignment info in their respective 
 ways. For example, the routine @%BUNclustercopy@ shuffles the first argument, 
 such that the BUNs are in the same order as those in the second argument. 
@@ -43,9 +43,6 @@ as synced with the head of the original @%BAT@, and for instance
 @
 Each alignment sequence is given a unique identifier, so as to easily
 detect this situation. It is retained in the @%BAT descriptor@.
-@c
-#include "gdk.h"
-
 @+ Alignment Design Considerations
 @T
 Alignment primitives require the right hooks to be inserted in 
@@ -83,8 +80,10 @@ might also have TYPE_void head columns (a virtual column).
 In such a case, the tail values correspond to the head values
 that would have been there in a non-virtual column, contining
 the same head-sequence as the other BATs in the sync gourp.
-
+@{
 @c
+#include "gdk.h"
+
 int ALIGNcommit(BAT *b) {
 	BATcheck(b,"ALIGNcommit: bat required");
 	if (!b->halign) {
@@ -580,3 +579,4 @@ void VIEWdestroy(BAT *v) {
 		BBP_cache(-b->batCacheid) = NULL;
 	}
 }
+@}
