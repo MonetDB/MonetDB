@@ -2385,11 +2385,12 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    if (value >= -32768 && value < 32768)
+		    if (value >= GDK_sht_min && value <= GDK_sht_max)
 		  	  t = sql_bind_subtype("smallint", digits, 0 );
-		    else if (value >= -2147483648 && value < 2147483648)
+		    else if (value >= GDK_int_min && value <= GDK_int_max)
 		  	  t = sql_bind_subtype("int", digits, 0 );
-		    else if (digits <= 19)
+		    else if ((digits <= 19) &&
+				(value >= GDK_lng_min && value <= GDK_lng_max))
 		  	  t = sql_bind_subtype("bigint", digits, 0 );
 		    else 
 			  err = 1;
@@ -2687,14 +2688,14 @@ data_type:
  |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
  |  BIGINT		{ $$ = sql_bind_subtype("bigint", 0, 0); }
  
- |  sqlDECIMAL	{ $$ = sql_bind_subtype("decimal", 0, 0); }
- |  sqlDECIMAL '(' nonzero ')'	
+ |  sqlDECIMAL	{ $$ = sql_bind_subtype("decimal", 1, 0); }
+ |  sqlDECIMAL '(' nonzero ')'
 				{ $$ = sql_bind_subtype("decimal", $3, 0); }
- |  sqlDECIMAL '(' intval ',' intval ')' 
+ |  sqlDECIMAL '(' nonzero ',' posint ')' 
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ]; 
 
-				snprintf(buf, BUFSIZ, "Presision(%d) should be less than number of digits(%d)", $5, $3);
+				snprintf(buf, BUFSIZ, "Scale (%d) should be less than precision (%d)", $5, $3);
 				yyerror(buf);
 				$$ = NULL;
 				YYABORT;
@@ -2703,7 +2704,7 @@ data_type:
 			  }
 			}
  |  sqlFLOAT		{ $$ = sql_bind_subtype("double", 0, 0); }
- |  sqlFLOAT '(' nonzero ')'	
+ |  sqlFLOAT '(' nonzero ')'
 			{ if ($3 > 0 && $3 <= 24) {
 				$$ = sql_bind_subtype("real", $3, 0);
 			  } else if ($3 > 24 && $3 <= 53) {
