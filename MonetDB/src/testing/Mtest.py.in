@@ -357,9 +357,15 @@ def ErrXit(TEXT) :
 ### ErrXit(TEXT) #
 
 def Warn(TEXT) :
-    STDOUT.flush()
-    STDERR.write("\n"+THISFILE+"  Warning:  %s\n\n" % TEXT)
-    STDERR.flush()
+    try:
+        STDOUT.flush()
+    except IOError:
+        pass
+    try:
+        STDERR.write("\n"+THISFILE+"  Warning:  %s\n\n" % TEXT)
+        STDERR.flush()
+    except IOError:
+        pass
 ### Warn(TEXT) #
 
 def startswith(str,pre) :
