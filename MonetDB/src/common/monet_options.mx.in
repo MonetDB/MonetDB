@@ -213,7 +213,7 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_arch");
 	set[i].value = (char*)malloc(BUFSIZ);
-        snprintf(set[i].value,BUFSIZ, "%dbit%s", sizeof(char*)*8, HOST);
+        snprintf(set[i].value,BUFSIZ, "%dbit%s", (int)sizeof(char*)*8, HOST);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_version");
@@ -228,12 +228,12 @@ int mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("prefix");
 	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@prefix@", DIR_SEP);
+	snprintf(set[i].value,BUFSIZ,"@prefix@" );
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("exec_prefix");
 	set[i].value = (char*)malloc(BUFSIZ);
-	snprintf(set[i].value,BUFSIZ,"@exec_prefix@", DIR_SEP);
+	snprintf(set[i].value,BUFSIZ,"@exec_prefix@" );
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_dbname");
