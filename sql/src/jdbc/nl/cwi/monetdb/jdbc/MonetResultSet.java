@@ -234,7 +234,7 @@ public class MonetResultSet implements ResultSet {
 			} else 	if (result[i].startsWith("\"") && result[i].endsWith("\"")) {
 				result[i] = result[i].substring(1, result[i].length() - 1);
 				// now unescape (see Monet source src/gdk/gdk_atoms.mx (strFromStr))
-				result[i] = result[i].replaceAll("\\\\\"", "\\\"");		// \
+				result[i] = result[i].replaceAll("\\\\\"", "\\\"");		// "
 				result[i] = result[i].replaceAll("\\\\n", "\\n");		// \n
 				result[i] = result[i].replaceAll("\\\\t", "\\t");		// \t
 				result[i] = result[i].replaceAll("\\\\([0-3][0-7]{2})", "\\0\\1");	// \377 octal
