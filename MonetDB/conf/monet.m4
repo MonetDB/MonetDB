@@ -136,29 +136,30 @@ dnl  switches that disable selected warnings that haven't been sorted out,
 dnl  yet, we set X_CFLAGS & X_CXXFLAGS, which are added to the standard
 dnl  CFLAGS & CXXFLAGS once configure/autoconf are done with their job,
 dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
-dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc) are done so far.
+dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 X_CFLAGS=''
 X_CXXFLAGS=''
-case $CC-$CXX in
-*gcc-*g++*)
+case $GCC-$host_os in
+yes-*)
+	dnl  GNU (gcc/g++)
 	gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
 	dnl  We need more features than the C89 standard offers, but not all
 	dnl  (if any at all) C/C++ compilers implements the complete C99
 	dnl  standard.  Moreover, there seems to be no standard for the
 	dnl  defines that enable the features beyond C89 in the various
 	dnl  platforms.  Here's what we found working so far...
-	case "$CC-$gcc_ver-$host_os" in
-	gcc-*-solaris*)
+	case "$gcc_ver-$host_os" in
+	*-solaris*)
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		CXXFLAGS="$CXXFLAGS -D__EXTENSIONS__"
 		;;
-	gcc-*-irix*|gcc-*-cygwin*|gcc-*-darwin*|gcc-2.*-aix*|*gcc-2.*)
+	*-irix*|*-cygwin*|*-darwin*|2.*-*)
 		;;
-	*gcc-3.3*)	
+	3.3*-*)	
 		CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
-	*gcc-3.*)	
+	3.*-*)	
 		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
@@ -189,14 +190,14 @@ case $CC-$CXX in
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused"
 		;;
 	esac
-	case $CC-$gcc_ver-$host_os in
-	gcc-*-solaris*|gcc-*-darwin*|gcc-*-aix*)
+	case $gcc_ver-$host_os in
+	*-solaris*|*-darwin*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
 		;;
-	*gcc-3.3*)
+	3.3*-*)
 		dnl  gcc 3.3* --- at least on Linux64 (Red Hat Enterprise
 		dnl  Linux release 2.9.5AS (Taroon)) and the cross-compiler
 		dnl  for arm-linux --- seem to require this to avoid
@@ -205,7 +206,8 @@ case $CC-$CXX in
 		;;
 	esac
 	;;
-icc-icpc|ecc-ecpc)
+-linux*)
+	dnl  Intel ([ie]cc/[ie]cpc on Linux)
  	LDFLAGS="$LDFLAGS -i_dynamic"
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
@@ -585,12 +587,14 @@ AC_ARG_ENABLE(warning,
 if test "x$enable_warning" = xyes; then
   dnl  Basically, we disable/overule X_C[XX]FLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
-  case $CC-$CXX in
-  *gcc-*g++*)
+  case $GCC-$host_os in
+  yes-*)
+	dnl  GNU (gcc/g++)
 	X_CFLAGS="-pedantic -Wno-long-long"
 	X_CXXFLAGS="-pedantic -Wno-long-long"
 	;;
-  icc-icpc|ecc-ecpc)
+  -linux*)
+	dnl  Intel ([ie]cc/[ie]cpc on Linux)
 	X_CFLAGS=""
 	X_CXXFLAGS=""
 	;;
