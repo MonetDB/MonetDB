@@ -17,4 +17,4 @@
 
 MTSAFE
 
-SUBDIRS = HAVE_PHP?Cimpl
+SUBDIRS = Cimpl
