@@ -173,15 +173,20 @@ public class JdbcClient {
 		// make sure the driver is loaded
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 
-		if (blockmode != null) {
-			nl.cwi.monetdb.jdbc.MonetDriver.setBlockMode((Boolean.valueOf(blockmode)).booleanValue());
-		}
-		if (debug) nl.cwi.monetdb.jdbc.MonetConnection.setDebug(true);
+		String attr = "?";
+		if (blockmode != null) attr += "blockmode=" + blockmode + "&";
+		if (debug) attr += "debug=" + debug + "&";
 
 		// request a connection suitable for Monet from the driver manager
 		// note that the database specifier is currently not implemented, for
 		// Monet itself can't access multiple databases.
-		Connection con = DriverManager.getConnection("jdbc:monetdb://" + host + "/" + database, user, pass);
+		Connection con = null;
+		try {
+			con = DriverManager.getConnection("jdbc:monetdb://" + host + "/" + database + attr, user, pass);
+		} catch (SQLException e) {
+			System.err.println(e.getMessage());
+			System.exit(-1);
+		}
 		DatabaseMetaData dbmd = con.getMetaData();
 		Statement stmt = con.createStatement();
 

@@ -2,6 +2,7 @@ package nl.cwi.monetdb.jdbc;
 
 import java.sql.*;
 import java.util.Properties;
+import java.net.*;
 
 /**
  * A Driver suitable for the Monet database
@@ -39,7 +40,10 @@ public class MonetDriver implements Driver {
 	private static final boolean MONETJDBCCOMPLIANT = false;
 
 	/** Monet default port to connect to */
-	private static final int PORT = @JDBC_DEF_PORT@;
+	private static final String PORT = "@JDBC_DEF_PORT@";
+
+	/** Do we connect with blockmode by default or not */
+	private static final String BLOCKMODE = "@JDBC_DEF_BLOCKMODE@";
 
 	// Monet prompts
 	/** MAPI PROMPT1 */
@@ -47,8 +51,6 @@ public class MonetDriver implements Driver {
 	/** MAPI PROMPT2 */
 	final static String prompt2 = "" + (char)1 + (char)2;
 
-	/** Do we connect with blockmode by default or not */
-	private static boolean blockMode = @JDBC_DEF_BLOCKMODE@;
 
 	// initialize this class: register it at the DriverManager
 	// Chapter 9.2 from Sun JDBC 3.0 specification
@@ -98,38 +100,50 @@ public class MonetDriver implements Driver {
 	public Connection connect(String url, Properties info)
 		throws SQLException
 	{
+		int tmp;
+		Properties props = new Properties();
+		// set the optional properties and their defaults here
+		props.put("port", PORT);
+		props.put("blockmode", BLOCKMODE);
+		props.put("debug", "false");
+		props.put("language", "sql");	// mil, mal, sql, xquery, whatever
+
+		props.putAll(info);
+		info = props;
+
+		// url should be of style jdbc:monetdb://<host>/<database>
+		if (!acceptsURL(url)) return(null);
+		// remove "jdbc:" so the rest is a valid hierarchical URI
+		URI uri;
 		try {
-			int tmp;
+			uri = new URI(url.substring("jdbc:".length()));
+		} catch (URISyntaxException e) {
+			throw new SQLException(e.toString());
+		}
 
-			// url should be of style jdbc:monetdb://<host>/<database>
-			if (!acceptsURL(url)) return(null);
-			// remove jdbc:monetdb:// part of url
-			url = url.substring(MONETURL.length());
-			// fetch hostname and database
-			tmp = url.indexOf("/");
-			// don't accept a hostless or host-only url
-			if (tmp <= 0) return(null);
-			String host = url.substring(0, tmp);
-			String db = url.substring(tmp + 1);
-			// find port in host
-			int port = PORT;
-			tmp = host.indexOf(":");
-			if (tmp != -1) {
-				port = Integer.parseInt(host.substring(tmp + 1));
-				host = host.substring(0, tmp);
+		info.put("host", uri.getHost());
+		if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
+
+		// check the database
+		if (uri.getPath() == null ||
+			uri.getPath().substring(1).trim().equals(""))
+			throw new SQLException("Invalid URL: A database is required");
+		info.put("database", uri.getPath().substring(1));
+
+		if (uri.getQuery() != null) {
+			// handle additional arguments
+			String args[] = uri.getQuery().split("&");
+			for (int i = 0; i < args.length; i++) {
+				tmp = args[i].indexOf("=");
+				if (tmp > 0) info.put(args[i].substring(0, tmp), args[i].substring(tmp + 1));
 			}
+		}
 
-			// convenience: temporarily store user and pass
-			String user = info.getProperty("user");
-			String pass = info.getProperty("password");
-
-			// finally return the Connection as requested
-			return(new MonetConnection(host, port, blockMode, db, user, pass));
-		} catch (SQLException e) {
-			// This is probably an authentication error
-			throw e;
-		} catch (Throwable t) {	// catch also errors! (like index out of bounds)
-			throw new SQLException("Could not parse URL: " + t.toString());
+		// finally return the Connection as requested
+		try {
+			return(new MonetConnection(info));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException(e.getMessage());
 		}
 	}
 
@@ -179,6 +193,18 @@ public class MonetDriver implements Driver {
 		dpi[1] = new DriverPropertyInfo("password", info.getProperty("password"));
 		dpi[1].required = true;
 		dpi[1].description = "The password to use when authenticating on the database";
+
+		dpi[2] = new DriverPropertyInfo("debug", "false");
+		dpi[2].required = false;
+		dpi[2].description = "Whether or not to create a log file for debugging purposes";
+
+		dpi[3] = new DriverPropertyInfo("blockmode", "true");
+		dpi[3].required = false;
+		dpi[3].description = "Whether blockmode should be used, when false, linemode is used instead";
+
+		dpi[4] = new DriverPropertyInfo("language", "sql");
+		dpi[4].required = false;
+		dpi[4].description = "What language to use for MonetDB conversations (SQL/MIL/MAL/XQuery/etc.) (not yet implemented)";
 
 		return(dpi);
 	}
@@ -270,14 +296,5 @@ public class MonetDriver implements Driver {
 	 */
 	static String getDriverVersion() {
 		return("" + DRIVERMAJOR + "." + DRIVERMINOR + " " + DRIVERVERSIONSUFFIX);
-	}
-
-	/**
-	 * Enables or disables the use of block mode while talking to the server
-	 *
-	 * @param enable true to enable block mode, false to disable it
-	 */
-	public static void setBlockMode(boolean enable) {
-		blockMode = enable;
 	}
 }

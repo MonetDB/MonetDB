@@ -31,7 +31,7 @@ import java.nio.ByteOrder;
  */
 public class MonetConnection implements Connection {
 	/** The hostname to connect to */
-	private final String host;
+	private final String hostname;
 	/** The port to connect on the host to */
 	private final int port;
 	/** The database to use (currently not used) */
@@ -43,8 +43,6 @@ public class MonetConnection implements Connection {
 	/** A connection to Mserver using a TCP socket */
 	private final MonetSocket monet;
 
-	/** Whether or not debugging is enabled or not */
-	private static boolean debug;
 	/** Whether this Connection is closed (and cannot be used anymore) */
 	private boolean closed;
 
@@ -67,39 +65,43 @@ public class MonetConnection implements Connection {
 	 * username and password for later use by the createStatement() call.
 	 * This constructor is only accessible to classes from the jdbc package.
 	 *
-	 * @param hostname the hostname to connect to
-	 * @param port the port to connect on the host to
-	 * @param database the database to use then connected
-	 * @param username the username to use to identify
-	 * @param password the password to use to identify
+	 * @param props a Property hashtable holding the properties needed for
+	 *              connecting
 	 * @throws SQLException if a database error occurs
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
 	MonetConnection(
-		String hostname,
-		int port,
-		boolean blockMode,
-		String database,
-		String username,
-		String password)
+		Properties props)
 		throws SQLException, IllegalArgumentException
 	{
-		// check arguments
-		if (!(hostname != null && !hostname.trim().equals("")))
+		this.hostname = props.getProperty("host");
+		int port;
+		try {
+			port = Integer.parseInt(props.getProperty("port"));
+		} catch (NumberFormatException e) {
+			port = 0;
+		}
+		this.port = port;
+		this.database = props.getProperty("database");
+		this.username = props.getProperty("user");
+		this.password = props.getProperty("password");
+
+		// check input arguments
+		if (hostname == null || hostname.trim().equals(""))
 			throw new IllegalArgumentException("hostname should not be null or empty");
 		if (port == 0)
 			throw new IllegalArgumentException("port should not be 0");
-		if (!(username != null && !username.trim().equals("")))
+		if (database == null || database.trim().equals(""))
+			throw new IllegalArgumentException("database should not be null or empty");
+		if (username == null || username.trim().equals(""))
 			throw new IllegalArgumentException("user should not be null or empty");
-		if (!(password != null && !password.trim().equals("")))
-			throw new IllegalArgumentException("host should not be null or empty");
+		if (password == null || password.trim().equals(""))
+			throw new IllegalArgumentException("password should not be null or empty");
 		/** check and use the database name here... */
 
-		this.host = hostname;
-		this.port = port;
-		this.database = database;
-		this.username = username;
-		this.password = password;
+		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
+		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
+		/** language ?!? */
 
 		try {
 			// make connection to Monet
@@ -115,7 +117,7 @@ public class MonetConnection implements Connection {
 				// we're debugging here... uhm, should be off in real life
 				if (debug)
 					monet.debug("monet_" +
-						(new java.util.Date()).getTime()+".log");
+						(new java.util.Date()).getTime() + ".log");
 
 				// log in
 				if (blockMode) {
@@ -175,21 +177,11 @@ public class MonetConnection implements Connection {
 				// we're logged in and ready for commands!
 			}
 		} catch (IOException e) {
-			throw new SQLException("IO Exception: " + e.getMessage());
+			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage());
 		}
 
 		setAutoCommit(true);
 		closed = false;
-	}
-
-	/**
-	 * Sets whether Connections should produce debug information.<br />
-	 * Call this method before creating a new Connection!
-	 *
-	 * @param dbug a boolean flag indicating wether to debug or not
-	 */
-	public static void setDebug(boolean dbug) {
-		debug = dbug;
 	}
 
 	//== methods of interface Connection
