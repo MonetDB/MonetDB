@@ -274,6 +274,13 @@
 /* Define to 1 if you have the <perfmon/pfmlib.h> header file. */
 /* #undef HAVE_PERFMON_PFMLIB_H */
 
+/* Define to 1 if you have the `pipe' function. */
+/* #undef HAVE_PIPE */
+/* this might also work (untested):
+#define HAVE_PIPE 1
+#define pipe(p)		_pipe(p, 4096, O_BINARY)
+*/
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #define HAVE_PTHREAD_H 1
 

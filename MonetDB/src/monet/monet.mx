@@ -441,7 +441,7 @@ void protectMonetClient(){
 	if (GDKprotected) return;
 	monet_needshared++;
 	while(!GDKprotected) {
-		sleep(1);
+		MT_sleep_ms(1000);
 	}
 }
 

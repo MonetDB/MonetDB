@@ -2224,6 +2224,7 @@ bstream_destroy(bstream *s)
 	free(s);
 }
 
+#ifdef HAVE_PIPE
 static ssize_t
 pipe_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
@@ -2304,3 +2305,13 @@ rendezvous_streams(stream **in, stream **out, const char *name)
 	*out = sout;
 	return 1;
 }
+#else
+int
+rendezvous_streams(stream **in, stream **out, const char *name)
+{
+	(void) in;
+	(void) out;
+	(void) name;
+	return 0;
+}
+#endif /* HAVE_PIPE */
