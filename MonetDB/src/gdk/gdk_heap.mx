@@ -89,7 +89,7 @@ static char* decompose_filename(str nme) {
 }
 
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
-        char nme[PATHLENGTH], *ext;
+        char nme[PATHLENGTH], *ext = NULL;
 	if (h->filename) {
 		strcpy(nme, h->filename);
 		ext = decompose_filename(nme);
@@ -132,7 +132,7 @@ The routine heap extend can be used to create a larger storage space.
 Note that you should pass the requested new size.
 @c
 int HEAPextend(Heap *h, size_t size) {
-        char nme[PATHLENGTH], *ext;
+        char nme[PATHLENGTH], *ext = NULL;
 	if (h->filename) {
 		strcpy(nme, h->filename);
 		ext = decompose_filename(nme);
