@@ -561,12 +561,12 @@ these 'sync' OIDs with their own propagation rules.
 #include "bat.proto.h"
 
 int CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap){
-	*ret = BATnew(*ht, *tt, *cap);
+	*ret = BATnew(*ht, *tt, (size_t) *cap);
 	return (*ret)?GDK_SUCCEED:GDK_FAIL;
 }
 
 int CMDnew(BAT **ret, int *ht, int *tt, int *cap){
-	*ret = BATnew(*ht, *tt, *cap);
+	*ret = BATnew(*ht, *tt, (size_t) *cap);
 	return (*ret)?GDK_SUCCEED:GDK_FAIL;
 }
 
@@ -792,7 +792,7 @@ static char* local_itoa(long i){
 }
 
 #define COLLISION 6
-extern int HASHlist (Hash* h, int i);
+gdk_export int HASHlist (Hash* h, int i);
 
 void HASHinfo(BAT *bn, Hash *h, str s){
 	unsigned int i;
@@ -1299,7 +1299,7 @@ int CMDhashloop(BAT* b, ptr *handle, ptr v){
 }
 
 @= batlooparg
-	if (*@1 < 0 || (*@1 > BATcount(b))) {
+	if (*@1 < 0 || ((size_t) *@1 > BATcount(b))) {
 		GDKerror("CMDbatloop: @1 parameter out of range.\n");
 		return GDK_FAIL;
 	}

@@ -751,7 +751,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 	}
 	TMcommit();
 	if (c == monet_clients) {
-		int i,status = 0, *statusp = &status;
+		int status = 0, *statusp = &status;
         	if (lt->cnt > 0) { 
 			@:builtin_operand(0, TYPE_int, statusp)@
         	}

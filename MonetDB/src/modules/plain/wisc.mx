@@ -214,7 +214,6 @@ WISCgenerator(
 {
 	int	u1, u2, tmp;
 	int	i;
-	char	name[4];
 	BAT 	*b[16];
 
 	count = *cnt;

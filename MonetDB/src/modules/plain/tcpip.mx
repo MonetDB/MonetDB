@@ -164,7 +164,7 @@ extern int conn_find(str host, int port);
 #endif
 #include "tcpip.h"
 
-extern BAT* BATcreatedesc();
+gdk_export BAT* BATcreatedesc();
 #include <string.h>
 
 @+ Auxiliary Functions

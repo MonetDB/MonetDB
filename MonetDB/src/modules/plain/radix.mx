@@ -890,7 +890,7 @@ t := time; res_a1 := radix_decluster(b, borders_smaller, 16);print(time - t);
 @c
 
 int BATuniform(BAT** bn, oid *base, int *size, int *domain) {
-        unsigned int n=*size, i, j = 0, r=0;
+        int n = *size, i, j = 0, r = 0;
         BAT *b = BATnew(TYPE_oid, TYPE_int, n);
         int *buf = ((int*) BUNfirst(b));
         oid bs = *base;
@@ -934,8 +934,8 @@ int BATnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mea
                 ftab[i] = (flt) tmp;
 		tot += ftab[i];
         }
-        for(tot = 1.0/tot, i=0; i<d; i++) {
-		itab[i] = n*(ftab[i]*tot);
+        for(tot = (flt) (1.0/tot), i=0; i<d; i++) {
+		itab[i] = (int) (n*(ftab[i]*tot));
 		r -= itab[i];
 	}
 	itab[m] += r;

@@ -89,7 +89,7 @@ Too many bugs.
 
 /* nothing much */
 
-extern BAT* BAThashjoin(BAT* l, BAT* r);
+gdk_export BAT* BAThashjoin(BAT* l, BAT* r);
 
 #endif /* __MALALGEBRA_H__ */
 
@@ -108,7 +108,7 @@ BATmalfetchjoin(BAT *l, BAT *r) {
     return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l)));
   }
   GDKerror( "Cannot perform fetchjoin.\n");
-  return GDK_FAIL;
+  return NULL;
 }
 
 BAT*

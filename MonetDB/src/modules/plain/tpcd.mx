@@ -670,7 +670,7 @@ DVIbuild(
    int*		param,	/* an extra parameter */
    BAT*		b	/* IN: BAT with head-column. */
 ){
-	BAT *bn, *extent = BATdescriptor((int)param);	
+	BAT *extent = BATdescriptor((int)param);	
 	oid *first, *cur;
 	int xx, yy=0;
 	vectoridx *vi;

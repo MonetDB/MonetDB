@@ -1515,7 +1515,6 @@ this does not mean that they are sorted in reverse order!
 #define 		GDK_SORTED	65 /* 65 = (32 bits radix_clustered)<<1 + 1 */
 
 gdk_export BAT*		BATsort          (BAT *b); 
-gdk_export BAT*		BATsort_insert   (BAT *r, BAT *b);
 gdk_export BAT*		BATorder         (BAT *b); 
 gdk_export BAT*		BATrevert        (BAT *b); 
 gdk_export int		BATordered       (BAT *b); 

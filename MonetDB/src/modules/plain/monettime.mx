@@ -1950,8 +1950,8 @@ int date_diff(int *ret, date* v1, date *v2) {
 /* returns the timestamp that comes 'milliseconds' after 'value'. */
 int timestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
 	if (!ts_isnil(*v) && *msecs != lng_nil) {
-		int days = *msecs / (24*60*60*1000);
-		ret->msecs = v->msecs + (*msecs - ((lng) days) * (24*60*60*1000));
+		int days = (int) (*msecs / (24*60*60*1000));
+		ret->msecs = (int) (v->msecs + (*msecs - ((lng) days) * (24*60*60*1000)));
 		ret->days = v->days;
 		if (ret->msecs >= (24*60*60*1000)) {
 			days++; ret->msecs -= (24*60*60*1000);
