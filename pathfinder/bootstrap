@@ -178,7 +178,7 @@ cat acout.in  >> configure.in
 echo ")" >> configure.in
 
 
-test -f conf/ltmain.sh || $LIBTOOLIZE -c -f; 
+$LIBTOOLIZE -c -f
 
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
