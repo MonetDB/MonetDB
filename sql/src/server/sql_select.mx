@@ -1835,11 +1835,18 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 		if (ls->nrcols == 0 || f == sql_sel) {
 			sql_subtype *bt = sql_bind_localtype( "bit" );
 			sql_subtype *s = sql_bind_localtype( "str" );
-			char *l = (sc->token == SQL_LIKE ? 
-					"like" : "not_like");
+			char *l = (sc->token == SQL_LIKE || (f == sql_sel && ls->nrcols) ? "like" : "not_like");
 			sql_subfunc *like = sql_bind_func_result( l, s, s, bt);
-
+	
 			res = stmt_binop(ls, a, like);
+			if (f == sql_sel && ls->nrcols) {
+				sql_subfunc *isnull = sql_bind_func_result("isnull", s, NULL, bt);
+				res = stmt_unop(stmt_outerjoin(ls, stmt_reverse(stmt_dup(res)), cmp_equal), isnull);
+				if (sc->token == SQL_LIKE) {
+					sql_subfunc *not = sql_bind_func_result("not", bt, NULL, bt);
+					res = stmt_unop(stmt_dup(res), not);
+				}
+			}
 		} else {
 			comp_type cmp = (sc->token == SQL_LIKE ? 
 					cmp_like : cmp_notlike);
@@ -1880,7 +1887,7 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 				}
 				if (sc->token == SQL_IN){
 					/* predicate case ? */
-					if (ls->nrcols == 0 || f == sql_sel) {
+					if (ls->nrcols == 0) {
 						sql_subtype *bt = 
 						    sql_bind_localtype( "bit" );
 						sql_subtype *tp = tail_type(ls);
@@ -1891,6 +1898,14 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 							"exist", tp, tp, bt);
 						temp = stmt_reverse(temp);
 						return stmt_binop(temp,ls,exist);
+					} else if (f == sql_sel) {
+						sql_subtype *bt = 
+						    sql_bind_localtype( "bit" );
+						sql_subtype *tp = tail_type(ls);
+						sql_subfunc *isnul, *not;
+						isnul = sql_bind_func_result("isnull", tp, NULL, bt);
+						not = sql_bind_func_result("not", bt, NULL, bt);
+						return stmt_unop(stmt_unop(stmt_outerjoin(ls, stmt_reverse(temp), cmp_equal), isnul), not);
 					} else { /* normal subquery */
 						return stmt_reverse(
 							stmt_semijoin(
@@ -1899,7 +1914,7 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 					}
 				} else { /* SQL_NOT_IN */
 					/* predicate case ? */
-					if (ls->nrcols == 0 || f == sql_sel) {
+					if (ls->nrcols == 0) {
 						sql_subtype *bt = 
 						    sql_bind_localtype( "bit" );
 						sql_subtype *tp = tail_type(ls);
@@ -1912,6 +1927,13 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 						       "not_exist", tp, tp, bt);
 						temp = stmt_reverse(temp);
 						return stmt_binop(temp,ls,nexist);
+					} else if (f == sql_sel) {
+						sql_subtype *bt = 
+						    sql_bind_localtype( "bit" );
+						sql_subtype *tp = tail_type(ls);
+						sql_subfunc *isnul;
+						isnul = sql_bind_func_result("isnull", tp, NULL, bt);
+						return stmt_unop(stmt_outerjoin(ls, stmt_reverse(temp), cmp_equal), isnul);
 					} else { /* normal subquery */
 						return stmt_diff(
 							stmt_dup(ls), 
@@ -1932,21 +1954,35 @@ sql_logical_exp(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset,
 					stmt_destroy(sq);
 					return sql_error(sql, 02, "Subquery result wrong");
 				}
+
 				if (list_length(sq->op1.lval) == 1) {
 					stmt *rs = stmt_dup(sq->op1.lval->h->data);
 					stmt_destroy(sq);
-					if (sc->token == SQL_IN){
-					  return
-					    stmt_reverse
-					    (stmt_semijoin
-					     (stmt_reverse(ls),
-					      stmt_reverse(rs)));
-					} else { /* SQL_NOT_IN */
-					  return
-					    stmt_reverse
-					    (stmt_diff
-					     (stmt_reverse(ls),
-					      stmt_reverse(rs)));
+					if (f != sql_sel) {
+						if (sc->token == SQL_IN){
+						  return
+						    stmt_reverse
+						    (stmt_semijoin
+						     (stmt_reverse(ls),
+						      stmt_reverse(rs)));
+						} else { /* SQL_NOT_IN */
+						  return
+						    stmt_reverse
+						    (stmt_diff
+						     (stmt_reverse(ls),
+						      stmt_reverse(rs)));
+						}
+					} else { /* FIXME: SELECT name [not] in (select 'a') FROM tables gaat nog fout */
+						 /* Ook: select 'env' in (select ...) */
+						sql_subtype *bt = sql_bind_localtype( "bit" );
+						sql_subtype *tp = tail_type(ls);
+						sql_subfunc *isnul;
+						isnul = sql_bind_func_result("isnull", tp, NULL, bt);
+						if (sc->token == SQL_IN) {
+							sql_subfunc *not = sql_bind_func_result("not", bt, NULL, bt);
+							return stmt_unop(stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul), not);
+						} else 
+							return stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul);
 					}
 				} else {	
 					/* TODO fix this broken impl ! */
