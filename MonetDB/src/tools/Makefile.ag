@@ -1,11 +1,11 @@
 
 MTSAFE
-INCLUDES = ../gdk ../monet $(PTHREAD_INCS) 
+INCLUDES = ../gdk ../monet $(PTHREAD_INCS) $(GETOPT_INCS)
 
 CXXFLAGS = $(CFLAGS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
-MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS)
+MONET_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) $(GETOPT_LIBS)
 
 STATIC_MODS = \
 	../modules/plain/lib_kernel ../modules/plain/lib_arith \
