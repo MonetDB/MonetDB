@@ -792,7 +792,7 @@ def GetBitsAndModsAndStatic(env) :
                 env['TST_BITS'] = bs.group(1)
                 os.environ['TST_BITS'] = env['TST_BITS']
                 if bs.group(2) == "statically":
-                    env['TST_STATIC'] = "1"
+                    env['TST_STATIC'] = "STATIC"
                     os.environ['TST_STATIC'] = env['TST_STATIC']
             m = tm.match(l)
             if m:
@@ -907,10 +907,9 @@ def StopAt(ATJOB,ME) :
 
 def StableOutErr(env,par,TST,OS,RELEASE) :
     BITS = env['TST_BITS']
-    if env['TST_STATIC']:
+    STATIC = env['TST_STATIC']
+    if STATIC:
         STATIC = "(\.STATIC)?"
-    else:
-        STATIC = ""
     dir,file = os.path.split(TST)
     outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?%s$' % (re.escape(OS), re.escape(RELEASE), BITS, STATIC))
     bestout = besterr = ''
