@@ -14,16 +14,9 @@
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2004 CWI.
 @' All Rights Reserved.
-@'
-@' Contributor(s):
-@'              Martin Kersten <Martin.Kersten@cwi.nl>
-@'              Peter Boncz <Peter.Boncz@cwi.nl>
-@'              Niels Nes <Niels.Nes@cwi.nl>
-@'              Stefan Manegold  <Stefan.Manegold@cwi.nl>
-@'              Sjoerd Mullender  <Sjoerd.Mullender@cwi.nl>
 
 @a M. Kersten
-@v 0.0
+@v 1.0
 @* Monet Assembler Language
 The primary textual interface to the Monet kernel
 is a simple, assembler-like language, called MAL. 
@@ -51,17 +44,19 @@ description. (See functions)
 
 @+ MAL instructions
 MAL instructions have a simple format. 
-Each instruction should fit on a single line and 
-is either a dataflow assignment, a controlled assigment,
-or a signature. We discuss each of them.
-
-A dataflow assignments forms the core of a MAL program.
+Each instruction denotes a dataflow statement.
 It is syntactially represented by an assignment, where
-expression (function call) delivers results to target variables. 
+an expression (function call) delivers results to target variables. 
+Input variables changed in the process should also appear in
+the target list. This greatly simplifies future optimization
+decisions.
+
 Ommission of target variables is allowed. Then the compiler
-merely assigns a temporary variable to hold the result of
-the expression. Using it, however, in the remainder then is
-prohibited.
+merely assigns temporary variables to hold the result of
+the expression. They act as data sinks in the flow graph.
+
+For parsing simplifity, each instruction fits on a single line.
+Comment starts with a sharp '#' and continues to the end of the line.
 
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
@@ -87,31 +82,33 @@ Each operator is defined in a (user-defined) module.
 Knowing its name simplifies the implementation of the binding, but its use is optional.
 Ommission of the module name initiates a search for a possible
 matching definition in a hierarchical ordered scope
-structure. (See modules)
+structure. (See modules inheritance)
 
 Variables and literal constants can be tagged with a type
 qualifier. The literal value should fit the domain of the
 type identified, e.g. 4:lng is valid, but "1":int raises an
 error. [todo]
 
-Experience with SQL shows that often the output
-of a query processor based on an algebraic model
-produces a long sequence of MAL instructions.
-They form a condense representation of the flow dependencies
-where all operators are known to be side-effect free.
+Query languages like SQL are commonly mapped to an algebraic 
+operator model. In our case, even simple SQL queries generate
+a long sequence of MAL instructions.
+They form a condense representation of 
+both the administrative actions to ensure binding and transaction
+control, the flow dependencies to produce the query result,
+and the steps needed to prepare the result set for delivery to
+the front-end.
 
 Only when the algebraic structure is too limited (e.g. updates),
 or the database back-end lacks feasible bulk operators,
-one has to rely on more flow of control primitives.
+one has to rely on more detailed flow of control primitives.
 But even in that case, the basic blocks to be processed
 by a MAL backend are considered large, e.g. tens of simple
 bulk assignment instructions.
 
 @- Flow of control
 @T
-Flow of control can be changed using a control modifier,
-receiving an exception, and explicit interprocess communication.
-
+A assignment statement is turned into a flow of control statement
+by tagging it with a control modifier.
 The primary control flow modifiers are {\tt return}, {\tt yield},
 and {\tt end}.
 They mark the end of a function call and return one or more results
@@ -127,7 +124,7 @@ tagging an assignment with either
 {\tt barrier}, {\tt leave}, {\tt redo}, or {\tt exit}.
 The {\tt barrier} and {\tt exit} mark a block
 to be interpreted when the barrier can be taken.
-All four control modifiers should use the same
+All four control modifiers are labelled by the same
 target variable set.
 
 The {\tt barrier}, {\tt leave} and {\tt redo} are conditional 
@@ -141,7 +138,8 @@ true or when the integer value $>$=0.
 Once inside the barrier you have an option to prematurely
 {\tt leave} it at the exit statement
 or to {\tt redo} interpretation just after the corresponding
-barrier statement. (like 'break' and 'continue')
+barrier statement. Much like 'break' and 'continue' statements 
+in C.
 
 The {\tt exit} marks the exit for a block. Its assignment
 can be used to re-initialize the barrier control variables
@@ -177,34 +175,55 @@ Translation of the statement {\em if(i$<$1) print("ok"); else print("wrong");}
 becomes:
 \begin{verbatim}
     i:=1; 
-barrier b:= i<1;
+barrier ifpart:= i<1;
     print("ok");
-exit b;
-barrier b:= not b;
+exit ifpart;
+barrier elsepart:= not b;
     print("wrong");
-exit b;
+exit elsepart;
 \end{verbatim}
+Note that both guarded blocks can be interchanged without
+affecting the outcome.
 
 Beware that {\tt redo} is a flow modifier attached to an instruction.
-The following snippet illustrates how an infinite loop appears, due
-to stable control variable.
-\begin{verbatim}
-barrier i:= startIterator();
-    print("found one");
-    redo i;
-exit b;
-\end{verbatim}
 The generic form of an iterator looks like
 \begin{verbatim}
-barrier i:= startIterator(T);
+barrier i:= newIterator(T);
     elm:= getElement(T,i);
-    print("found one");
+    ...
+    leave i:= noMoreElements(T);
+    ...
     redo i:= hasMoreElements(T);
-exit b;
+exit i:= exitIterator(T);
 \end{verbatim}
+The semantics obeyed by the implementations should be as follows.
+The redo expression updates the target variable {\em i} and control
+proceeds at the first statement after the barrier when the
+barried is opened by {\em i}. If the barrier could not be
+re-opened, execution proceeds with the first statement after
+the redo.
+Likewise, the leave control statement skips to the exit
+when the control variable {\em i} shows a closed barrier block.
+Otherwise, it continues with the next instruction.
+Note, in both failed cases the control variable is 
+possibly changed.
 
+A recurring situation is to iterate over the elements in
+a BAT. This is supported by iterator implementation in
+the bbp module as follows:
+\begin{verbatim}
+barrier (idx,hd,tl):= newIterator(B);
+    ...
+    redo (idx,hd,tl):= hasMoreElements(B);
+exit i;
+\end{verbatim}
+Where idx is an integer to denote the row in the BAT,
+hd and tl denote values of the current element.
+This scheme is more efficient 
+@{
 @+ Parallel processing
 @T
+[rethink as factory]
 The MAL interpreter supports spawning parallel workers,
 who share a common stack frame. They are considered
 cooperative and no low level transaction support
@@ -233,7 +252,9 @@ exit    hdl;
 
 [show thread inspection routines]
 
-@+ MAL datastructure
+@-
+@}
+@+ MAL datastructures
 The datastructure to represent a MAL block is kept simple.
 Each descriptor carries a sequence of MAL statements 
 and a local symbol table.
@@ -931,8 +952,6 @@ int isReserved(str nme){
 	case 'A': case 'a': if( idcmp("atom",nme)==0) return 1;
 		  break;
 	case 'B': case 'b': if( idcmp("barrier",nme)==0) return 1;
-		  break;
-	case 'D': case 'd': if( idcmp("done",nme)==0) return 1;
 		  break;
 	case 'C': case 'c': if( idcmp("command",nme)==0) return 1;
 		  break;
