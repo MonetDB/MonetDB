@@ -1,0 +1,18 @@
+#!/bin/sh
+PWD=`pwd`
+echo $PWD
+SQL=sql_client
+if [ $# -eq 1 ]; then
+	SQL=$1
+fi
+
+#Bulk-Load into SQL server...
+
+$SQL < hsum1.sql
+$SQL < hsum5.sql
+$SQL < hsum25.sql
+$SQL < hsum50.sql
+$SQL < hsum100.sql
+$SQL < hsum150.sql
+$SQL < hsum200.sql
+$SQL < hsum256.sql

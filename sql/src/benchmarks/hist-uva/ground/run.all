@@ -1,0 +1,15 @@
+#!/bin/sh
+PWD=`pwd`
+echo $PWD
+SQL=sql_client
+if [ $# -eq 1 ]; then
+	SQL=$1
+fi
+
+#Bulk-Load into SQL server...
+
+$SQL < create.sql
+cat load.sql | sed -e s+PWD+$PWD+ | $SQL 
+
+exit
+
