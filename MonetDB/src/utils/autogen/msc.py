@@ -525,9 +525,9 @@ def msc_library(fd, var, libmap, msc):
         dlib = libmap[libname+"_DLIBS"]
     liblist = []
     if libmap.has_key("WINLIBS"):
-        liblist += libmap["WINLIBS"]
+        liblist = liblist + libmap["WINLIBS"]
     if libmap.has_key("LIBS"):
-        liblist += libmap["LIBS"]
+        liblist = liblist + libmap["LIBS"]
     if liblist:
         fd.write(msc_additional_libs(fd, libname, sep, "LIB", liblist, dlib, msc))
 
@@ -608,9 +608,9 @@ def msc_libs(fd, var, libsmap, msc):
         else:
             libslist = []
             if libsmap.has_key("WINLIBS"):
-                libslist += libsmap["WINLIBS"]
+                libslist = libslist + libsmap["WINLIBS"]
             if libsmap.has_key("LIBS"):
-                libslist += libsmap["LIBS"]
+                libslist = libslist + libsmap["LIBS"]
             if libslist:
                 fd.write(msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc))
 
