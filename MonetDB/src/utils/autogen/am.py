@@ -681,6 +681,54 @@ def am_jar(fd, var, jar, am):
 
     am_find_ins(am, jar)
 
+def am_java(fd, var, java, am):
+
+    name = var[5:]
+
+    jd = "JAVADIR"
+    if java.has_key("DIR"):
+        jd = java["DIR"][0] # use first name given
+    jd = am_translate_dir(jd, am)
+
+    for src in java['SOURCES']:
+        am['EXTRA_DIST'].append(src)
+
+    fd.write("\nif HAVE_JAVA\n")
+
+    if java.has_key("EXTRA"):
+        fd.write("\n%s_extra_files= %s\n" % (name, am_list2string(java['EXTRA'], " ", "")))
+    else:
+        fd.write("\n%s_extra_files= \n" % name)
+
+    fd.write("\n%s_java_files= %s\n" % (name, am_list2string(java['TARGETS'], " ", "")))
+    fd.write("%s_class_files= $(patsubst %%.java,%%.class,$(%s_java_files))\n" % (name, name))
+
+    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
+    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $^\n")
+
+    fd.write("\ninstall-exec-local-%s_class: %s.class\n" % (name, name))
+    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
+    fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.class\n" % (jd, name))
+
+    fd.write("\nuninstall-exec-local-%s_class:\n" % name)
+    fd.write("\t$(RM) $(DESTDIR)%s/%s.class\n" % (jd, name))
+
+    fd.write("\nall-local-%s_class: %s.class\n" % (name, name))
+    am['ALL'].append(name+"_class")
+
+    fd.write("\nelse\n")
+
+    fd.write("\ninstall-exec-local-%s_class:\n" % name)
+    fd.write("\nuninstall-exec-local-%s_class:\n" % name)
+    fd.write("\nall-local-%s_class:\n" % name)
+
+    fd.write("\nendif #HAVE_JAVA\n")
+
+    am['INSTALL'].append(name+"_class")
+    am['InstallList'].append("\t"+jd+"/"+name+".class\n")
+
+    am_find_ins(am, java)
+
 def am_add_srcdir(path, am, prefix =""):
     dir = path
     if dir[0] == '$':
@@ -739,6 +787,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
                 'JAR': am_jar,
+                'JAVA': am_java,
                 }
 
 def output(tree, cwd, topdir, automake):

@@ -25,8 +25,7 @@ MTSAFE
 
 CLASSPATH = ../../clients/java
 
-jar_sample0 = {
-	EXTRA = $(srcdir)/manifest.mf
+java_sample0 = {
 	DIR = pkglibdir/Tests
 	SOURCES = sample0.java
 }
