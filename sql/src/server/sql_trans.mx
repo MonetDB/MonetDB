@@ -109,7 +109,7 @@ transactions(mvc * sql, symbol * s)
 			 "transaction unknown Symbol(%ld)->token = %s",
 			 (long) s, token2string(s->token));
 	}
-	/* any transaction statement switches of autocommit */
+	/* any transaction statement switches off autocommit */
 	if (sql->trans)
 		sql_set_var_value( sql, "auto_commit", "false");
 	else 
