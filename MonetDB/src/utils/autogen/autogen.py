@@ -128,10 +128,14 @@ def expand_subdirs(subdirs):
 
 # incdirsmap is a map between srcdir and install-include-dir
 def main(cwd, topdir, automake, incdirsmap):
+    if not os.path.exists(os.path.join(cwd, 'Makefile.ag')):
+        OutList = map(lambda x: os.path.join(cwd, x)[len(topdir) + 1:-3],
+                      filter(lambda x: x[-3:] == '.in', os.listdir(cwd)))
+        return [], OutList
     p = parser()
     read_makefile(p, cwd)
     codegen(p.curvar, cwd, topdir, incdirsmap)
-    (InstallList, DocList, OutList) = am.output(p.curvar, cwd, topdir, automake)
+    (InstallList, OutList) = am.output(p.curvar, cwd, topdir, automake)
     msc.output(p.curvar, cwd, topdir)
     if p.curvar.has_key('SUBDIRS'):
         subdirs = expand_subdirs(p.curvar['SUBDIRS'])
@@ -140,22 +144,18 @@ def main(cwd, topdir, automake, incdirsmap):
             if os.path.exists(d):
                 incdirsmap.append((d, os.path.join('includedir', dir)))
                 print(d)
-                (deltaInstallList, deltaDocList, deltaOutList) = \
+                (deltaInstallList, deltaOutList) = \
                                    main(d, topdir, automake, incdirsmap)
                 InstallList = InstallList + deltaInstallList
-                DocList = DocList + deltaDocList
                 OutList = OutList + deltaOutList
                 #cmd = "cd " + dir + "; " + sys.argv[0] + " " + topdir
                 #os.system (cmd)
-    return InstallList, DocList, OutList
+    return InstallList, OutList
 
 InstallListFd = open("install.lst", "w")
-DocListFd = open("doc.lst", "w")
-(InstallList, DocList, OutList) = main(topdir, topdir, automake, [])
+(InstallList, OutList) = main(topdir, topdir, automake, [])
 InstallListFd.writelines(InstallList)
 InstallListFd.close()
-DocListFd.writelines(DocList)
-DocListFd.close()
 
 skip = ["conf/stamp-h", "conf/config.h"]
 prev = ''

@@ -26,7 +26,7 @@ import os
 from codegen import find_org
 
 #automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
-automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
+automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '']
 script_ext = ['mil']
 am_assign = "+="
 
@@ -67,7 +67,7 @@ def cond_subdir(fd, dir, i):
 
 def am_sort_libs(libs, tree):
     res = []
-    for (pref,lib,sep) in libs:
+    for (lib,sep) in libs:
         after = -1
         # does lib depend on a other library 
         if tree.has_key('lib_'+ lib):
@@ -90,7 +90,7 @@ def am_sort_libs(libs, tree):
                         pos = res.index(l)
                         if pos > after:
                             after = pos 
-        res.insert(after + 1, (pref, lib, sep))
+        res.insert(after + 1, (lib, sep))
     return res
 
 def am_subdirs(fd, var, values, am):
@@ -208,11 +208,11 @@ def am_additional_flags(name, sep, type, list, am):
         add = add + " " + l
     return add + "\n"
 
-def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
+def am_additional_libs(name, sep, type, list, am):
     if type == "BIN":
         add = am_normalize(name)+"_LDADD ="
     elif type == "LIB":
-        add = pref+sep+name+"_la_LIBADD ="
+        add = "lib"+sep+name+"_la_LIBADD ="
     else:
         add = name + " ="
     for l in list:
@@ -291,7 +291,6 @@ def am_scripts(fd, var, scripts, am):
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
         am['INSTALL'].append(script)
-        am['UNINSTALL'].append(script)
         am['InstallList'].append("\t"+sd+"/"+script+"\n")
 
     am_find_ins(am, scripts)
@@ -316,7 +315,6 @@ def am_headers(fd, var, headers, am):
             fd.write("uninstall-local-%s: \n" % header)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, header))
             am['INSTALL'].append(header)
-            am['UNINSTALL'].append(header)
             am['InstallList'].append("\t"+sd+"/"+header+"\n")
 
     am_find_ins(am, headers)
@@ -325,40 +323,26 @@ def am_headers(fd, var, headers, am):
             am['EXTRA_DIST'].append(src)
 
 def am_doc(fd, var, docmap, am):
-    docdir = "pkgdatadir"
-    if docmap.has_key("DIR"):
-    	docdir = docmap["DIR"][0] # use first name given
-    docdir = am_translate_dir(docdir, am)
 
     name = var[4:]
-    if name[0] == "_":
-        name = name[1:]
 
-    doc_ext = ['pdf', 'ps', 'bdy.tex', 'bdy.html', 'html']
+    doc_ext = ['pdf', 'ps']
 
     srcs = name+"_DOCS ="
     for target in docmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in doc_ext:
+            #srcs = srcs + " " + am_find_srcs(target, docmap['DEPS'], am)
+            # am_find_srcs returns nothing; IMHO we can simply add target, here ...
             srcs = srcs + " " + target
-            am['DocList'].append("\t"+docdir+"/"+target+"\n")
     fd.write(srcs + "\n")
 
     fd.write("if DOCTOOLS\n")
     fd.write("all-local-%s: $(%s_DOCS)\n" % (name, name))
-    fd.write("install-data-local-%s: $(%s_DOCS)\n" % (name, name))
-    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % docdir)
-    fd.write("\t$(INSTALL) $(%s_DOCS) $(DESTDIR)%s\n" % (name, docdir))
-    fd.write("uninstall-local-%s: \n" % name)
-    fd.write("\tcd $(DESTDIR)%s; $(RM) $(%s_DOCS)\n" % (docdir, name))
     fd.write("else\n")
     fd.write("all-local-%s: \n" % name)
-    fd.write("install-data-local-%s: \n" % name)
-    fd.write("uninstall-local-%s: \n" % name)
     fd.write("endif\n")
     am['ALL'].append(name)
-    am['DATA_INSTALL'].append(name)
-    am['UNINSTALL'].append(name)
 
     am_find_ins(am, docmap)
     am_deps(fd, docmap['DEPS'], "\.o", am)
@@ -375,7 +359,6 @@ def am_binary(fd, var, binmap, am):
                 if script not in am['BIN_SCRIPTS']:
                     am['BIN_SCRIPTS'].append(script)
             am['INSTALL'].append(name)
-            am['UNINSTALL'].append(name)
             am['ALL'].append(name)
             for i in binmap:
                 am['InstallList'].append("\t$(bindir)/"+i+"\n")
@@ -388,7 +371,6 @@ def am_binary(fd, var, binmap, am):
             fd.write("uninstall-local-%s: \n" % name)
             fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % name)
             am['INSTALL'].append(name)
-            am['UNINSTALL'].append(name)
             am['InstallList'].append("\t$(bindir)/"+name+"\n")
 
             fd.write("all-local-%s: %s\n" % (name, src))
@@ -542,17 +524,10 @@ def am_mods_to_libs(fd, var, modmap, am):
 def am_library(fd, var, libmap, am):
     name = var[4:]
     sep = ""
-    pref = 'lib'
     if libmap.has_key("NAME"):
         libname = libmap['NAME'][0]
     else:
         libname = name
-
-    if libmap.has_key("PREFIX"):
-        if libmap['PREFIX']:
-            pref = libmap['PREFIX'][0]
-        else:
-            pref = ''
 
     if libname[0] == "_":
         sep = "_"
@@ -570,17 +545,17 @@ def am_library(fd, var, libmap, am):
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
     if libmap.has_key('NOINST'):
-        am['NLIBS'].append((pref, libname, sep))
+        am['NLIBS'].append((libname, sep))
     else:
-        am['LIBS'].append((pref, libname, sep))
-        am['InstallList'].append("\t%s/%s%s%s.so\n" % (ld, pref, sep, libname))
+        am['LIBS'].append((libname, sep))
+        am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
         fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if libmap.has_key("LIBS"):
-        fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am, pref))
+        fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am))
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
     if libmap.has_key("LDFLAGS"):
@@ -591,8 +566,8 @@ def am_library(fd, var, libmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    nsrcs = "nodist_"+pref+sep+libname+"_la_SOURCES ="
-    srcs = "dist_"+pref+sep+libname+"_la_SOURCES ="
+    nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
+    srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -683,7 +658,7 @@ def am_libs(fd, var, libsmap, am):
 
         ld = am_translate_dir(ld, am)
         fd.write("%sdir = %s\n" % (libname, ld))
-        am['LIBS'].append(('lib', libname, sep))
+        am['LIBS'].append((libname, sep))
         am['InstallList'].append("\t"+ld+"/lib"+sep+libname+".so\n")
 
     if libsmap.has_key('HEADERS'):
@@ -755,7 +730,6 @@ def am_jar(fd, var, jar, am):
     fd.write("\nendif #HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_jar")
-    am['UNINSTALL'].append(name+"_jar")
     am['InstallList'].append("\t"+jd+"/"+name+".jar\n")
 
     am_find_ins(am, jar)
@@ -801,7 +775,6 @@ def am_java(fd, var, java, am):
     fd.write("\nendif #HAVE_JAVA\n\n")
 
     am['INSTALL'].append(name+"_class")
-    am['UNINSTALL'].append(name+"_class")
     am['InstallList'].append("\t"+jd+"/"+name+".class\n")
 
     am_find_ins(am, java)
@@ -817,11 +790,12 @@ def am_add_srcdir(path, am, prefix =""):
     return prefix+dir
 
 def am_translate_dir(path, am):
+    path = string.replace(path, '/', os.sep)
     dir = path
     rest = ""
-    if string.find(path, '/') >= 0:
-        dir, rest = string.split(path, '/', 1)
-        rest = '/' + rest
+    if string.find(path, os.sep) >= 0:
+        dir, rest = string.split(path, os.sep, 1)
+        rest = os.sep + rest
 
     if dir in ('bindir', 'builddir', 'datadir', 'includedir', 'infodir',
                'libdir', 'libexecdir', 'localstatedir', 'mandir',
@@ -831,7 +805,7 @@ def am_translate_dir(path, am):
                'top_srcdir'):
         dir = "$("+dir+")"
     dir = dir + rest
-    return dir
+    return string.replace(dir, os.sep, '/')
 
 def am_includes(fd, var, values, am):
     incs = "-I$(srcdir)"
@@ -902,8 +876,7 @@ CXXEXT = \\\"cc\\\"
     am['TOPDIR'] = topdir
     am['CWD'] = ''
     if cwd != topdir:
-        # in case we happen to be running this on Windows, replace dir seps
-        am['CWD'] = cwd[len(topdir)+1:].replace('\\', '/')+'/'
+        am['CWD'] = cwd[len(topdir)+1:]+'/'
     am['BUILT_SOURCES'] = []
     am['EXTRA_DIST'] = []
     am['LIBS'] = []     # all libraries (am_libs and am_library)
@@ -911,16 +884,12 @@ CXXEXT = \\\"cc\\\"
     am['BINS'] = []
     am['BIN_SCRIPTS'] = []
     am['INSTALL'] = []
-    am['DATA_INSTALL'] = []
-    am['UNINSTALL'] = []
     am['HDRS'] = []
     am['LIBDIR'] = "libdir"
     am['ALL'] = []
     am['DEPS'] = []
     am['InstallList'] = []
     am['InstallList'].append(am['CWD']+"\n")
-    am['DocList'] = []
-    am['DocList'].append(am['CWD']+"\n")
     am['OutList'] = [am['CWD'] + 'Makefile']
 
     for i, v in tree.items():
@@ -941,7 +910,7 @@ CXXEXT = \\\"cc\\\"
     fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
 
-    if am['LIBS']:
+    if len(am['LIBS']) > 0:
         lib = 'lib'
         ld = am['LIBDIR']
         ld = am_translate_dir(ld, am)
@@ -951,12 +920,12 @@ CXXEXT = \\\"cc\\\"
 
         libs = am_sort_libs(am['LIBS'], tree)
         s = ""
-        for (pref, lib, sep) in am['LIBS']:
-            fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+        for (lib, sep) in am['LIBS']:
+            fd.write("%s_LTLIBRARIES = lib%s%s.la\n" % (lib, sep, lib))
 
-    if am['NLIBS']:
-        for (pref, lib, sep) in am['NLIBS']:
-            fd.write("noinst_LTLIBRARIES = %s%s%s.la\n" % (pref, sep, lib))
+    if len(am['NLIBS']) > 0:
+        for (lib, sep) in am['NLIBS']:
+            fd.write("noinst_LTLIBRARIES = lib%s%s.la\n" % (sep, lib))
 
     if len(am['BINS']) > 0:
         fd.write("bin_PROGRAMS =%s\n" % am_list2string(am['BINS'], " ", ""))
@@ -969,17 +938,11 @@ CXXEXT = \\\"cc\\\"
         fd.write("install-exec-local-SCRIPTS: \n")
         fd.write("all-local-SCRIPTS: $(bin_SCRIPTS)\n")
 
-    if len(am['UNINSTALL']) > 0:
-        fd.write("uninstall-local:%s\n" % \
-            am_list2string(am['UNINSTALL'], " uninstall-local-", ""))
-
     if len(am['INSTALL']) > 0:
         fd.write("install-exec-local:%s\n" % \
             am_list2string(am['INSTALL'], " install-exec-local-", ""))
-
-    if len(am['DATA_INSTALL']) > 0:
-        fd.write("install-data-local:%s\n" % \
-            am_list2string(am['DATA_INSTALL'], " install-data-local-", ""))
+        fd.write("uninstall-local:%s\n" % \
+            am_list2string(am['INSTALL'], " uninstall-local-", ""))
 
     if len(am['ALL']) > 0:
         fd.write("all-local:%s\n" % \
@@ -1003,4 +966,4 @@ include $(top_srcdir)/*.mk
 ''')
     fd.close()
 
-    return am['InstallList'], am['DocList'], am['OutList']
+    return am['InstallList'], am['OutList']

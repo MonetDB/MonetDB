@@ -50,7 +50,7 @@ mx2swig = re.compile("^@swig[ \t\r\n]+", re.MULTILINE)
 mx2java = re.compile("^@java[ \t\r\n]+", re.MULTILINE)
 mx2xsl = re.compile("^@xsl[ \t\r\n]+", re.MULTILINE)
 mx2sh = re.compile("^@sh[ \t\r\n]+", re.MULTILINE)
-mx2tex = re.compile("^@T|-|\+|\*[ \t\r\n]+", re.MULTILINE)
+mx2tex = re.compile("^@T[ \t\r\n]+", re.MULTILINE)
 mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
 
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
@@ -74,9 +74,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2xsl, '.xsl'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
-                  (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'), 
-                  (mx2tex, '.bdy.html'), ],
+                  (mx2html, '.html'), ],
                 'mx.in': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
@@ -96,9 +94,7 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2xsl, '.xsl'),
                   (mx2sh, ''),
                   (mx2tex, '.tex'),
-                  (mx2tex, '.bdy.tex'),
-                  (mx2html, '.html'), 
-                  (mx2tex, '.bdy.html'), ]
+                  (mx2html, '.html'), ]
 }
 end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 
@@ -116,13 +112,13 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'mt':       [ '.symbols.h', '.c' ],
             'cc':       [ '.o' ],
             'c':        [ '.o' ],
-            'py.i':     [ '.py.c', '.py' ],
-            'pm.i':     [ '.pm.c', '.pm' ],
+            'py.i':     [ '_wrap.c', '.py' ],
+            'pm.i':     [ '_wrap.c', '.pm' ],
             'glue.c':   [ '.glue.o' ],
 #            'java':     [ '.class' ],
             'tmpmil':   [ '.mil' ],
             'mx.in':    [ '.mx' ],
-            'tex':      [ '.html', '.dvi', '.pdf' ],
+            'tex':      [ '.dvi' ],
             'dvi':      [ '.ps' ],
             'fig':      [ '.eps' ],
             'feps':     [ '.eps' ],
@@ -205,7 +201,7 @@ def readfilepart(f,ext):
                     m = res.start(0)
                     eres = epat.search(buf,res.end(0))
                     if eres is not None:
-                        n = eres.start(0)
+                        n = eres.end(0)
                         buf2 = buf2 + buf[m:n]
                         res = pat.search(buf,n)
                     else:
@@ -266,26 +262,18 @@ class java_parser:
     def __init__(self):
         self.status = None
         self.count = 0
-        self.ncount = 0
         self.classes = []
-        self.pclass = []
-        self.pcount = []
+        self.pclass = None
         self.package = None
         self.anonnr = 1
-	self.member = 0
 
     def ptoken(self, type, token, (srow, scol), (erow, ecol), line): 
+
         if token == '{':
             self.count = self.count + 1
-            self.ncount = self.ncount + 1
         if token == '}':
             self.count = self.count - 1
-            self.ncount = self.ncount - 1
-            # handle end of class
-            if len(self.pclass) > 0 and self.count == self.pcount[len(self.pcount)-1]:
-                del self.pclass[len(self.pclass)-1]
-                del self.pcount[len(self.pcount)-1]
-        # handle packages 
+        # handle packeges 
         if self.status == 'package':
             if token == ';':
                 self.status = None
@@ -303,26 +291,23 @@ class java_parser:
             self.status = 'new('
         if self.status == 'new(' and token == ')':
             self.status = 'new()'
-            self.ncount = 0             # reset
-        if self.status == 'new()' and token == '{' and self.ncount == 0:
-            self.classes.append(self.pclass[len(self.pclass)-1] + "$$%d" % self.anonnr)
+        if self.status == 'new()' and token == '{':
+            self.classes.append(self.pclass + "$$%d" % self.anonnr)
             self.anonnr = self.anonnr + 1
             self.status = None
         if (self.status == 'new' or self.status == 'new(' or self.status == 'new()') \
                and token == ';':
             self.status = None
-        # handle real classes 
+        # handle reall classes 
         if self.status == 'class':
             if self.count > 0:
-                # handle inner class
-                pclass = self.pclass[len(self.pclass)-1] + '$$' + token
+                tmp = self.pclass + '$$' + token
+                self.classes.append(tmp)
             else:
-                pclass = token
-            self.classes.append(pclass)
-            self.pclass.append(pclass)
-            self.pcount.append(self.count)
+                self.pclass = token
+                self.classes.append(self.pclass)
             self.status = None
-        if self.status == None and token == 'class' and self.member != 1:
+        if self.status == None and token == 'class':
             self.status = 'class'
         # handle simple comments
         if self.status == None and token == '//':
@@ -344,13 +329,7 @@ class java_parser:
             self.status = 'comment'
         if self.status == 'comment' and (token == '*' or token == '**'):
             self.status = 'end comment'
-        # help detecting the usage of class member, i.e. <class>.class
-        if token == '.':
-            self.member = 1
-        else:
-            self.member = 0
         #print(self.status,type,token)
-        #print(self.package,self.pclass,self.classes,self.member)
 
     def parse(self, f):
         try:

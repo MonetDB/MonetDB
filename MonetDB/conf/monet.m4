@@ -183,22 +183,17 @@ yes-*-*)
 	dnl  platforms.  Here's what we found working so far...
 	case "$gcc_ver-$host_os" in
 	*-solaris*)
-		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flags])
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
+		CXXFLAGS="$CXXFLAGS -D__EXTENSIONS__"
 		;;
 	*-irix*|*-cygwin*|*-darwin*|2.*-*)
 		;;
-	3.3*-*)
-		AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		CFLAGS="$CFLAGS -std=c99"
+	3.3*-*)	
+		CFLAGS="$CFLAGS -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	3.*-*)	
-		AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
-		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
-		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		CFLAGS="$CFLAGS -ansi -std=c99"
+		CFLAGS="$CFLAGS -ansi -std=c99 -D_POSIX_SOURCE -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=600"
 		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	esac
@@ -553,27 +548,6 @@ AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
-AC_ARG_WITH(python,
-	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	PYTHON="$withval",
-	PYTHON=python)
-if test "x$PYTHON" != xno; then
-  case "$PYTHON" in
-  yes|auto)
-    PYTHON=python;;
-  esac
-  case `"$PYTHON" -c 'import sys; print sys.version[[:3]]'` in
-  2.*) ;;
-  *) PYTHON=no;;
-  esac
-fi
-if test "x$PYTHON" != xno; then
-  PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()'`
-  AC_SUBST(PYTHONINC)
-fi
-AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
-
 AC_ARG_WITH(swig,
 	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
 	SWIG="$withval",
@@ -583,20 +557,27 @@ if test "x$SWIG" != xno; then
   yes|auto)
     SWIG=swig;;
   esac
-  # we want the right version...
   case `$SWIG -version 2>&1` in
-  *Version\ 1.3.2*)
-    # ...and it must support -outdir
-    case `$SWIG -help 2>&1` in
-    *-outdir*) ;;
-    *) SWIG=no;;
-    esac ;;
+  *Version\ 1.3*)
+    ;;
   *) SWIG=no;;
   esac
 fi
 AC_SUBST(SWIG)
-dnl SWIG is useless without Python
-AM_CONDITIONAL(HAVE_SWIG, test "x$SWIG" != xno -a "x$PYTHON" != xno)
+AM_CONDITIONAL(HAVE_SWIG, test $SWIG != no)
+
+AC_ARG_WITH(python,
+	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
+	PYTHON="$withval",
+	PYTHON=python)
+if test "x$PYTHON" != xno; then
+  case "$PYTHON" in
+  yes|auto)
+    PYTHON=python;;
+  esac
+fi
+AC_SUBST(PYTHON)
+AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
@@ -648,7 +629,7 @@ AC_ARG_ENABLE(assert,
 	enable_assert=$enableval,
 	enable_assert=yes)
 if test "x$enable_assert" = xno; then
-  AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
+  CPPFLAGS="$CPPFLAGS -DNDEBUG"
 fi
 
 dnl --enable-optimize
@@ -784,7 +765,7 @@ if test "x$enable_prof" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-profile is not (yet?) possible.])
   else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
+    CFLAGS="$CFLAGS -DPROFILE"
     need_profiling=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -pg"
@@ -804,7 +785,7 @@ if test "x$enable_instrument" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_ERROR([combining --enable-optimize and --enable-instrument is not (yet?) possible.])
   else
-    AC_DEFINE(PROFILE, 1, [Compiler flag])
+    CFLAGS="$CFLAGS -DPROFILE"
     need_instrument=yes
     if test "x$GCC" = xyes; then
       CFLAGS="$CFLAGS -finstrument-functions -g"
@@ -1243,7 +1224,6 @@ size_t iconv();
 fi
 AC_SUBST(ICONV_LIBS)   
 
-AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
 AC_CHECK_PROG(LATEX,latex,latex)
 AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
 AC_CHECK_PROG(DVIPS,dvips,dvips)
