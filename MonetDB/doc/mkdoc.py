@@ -167,8 +167,8 @@ copyfile(os.path.join(srcdir, 'HowToStart-Win32.txt'),
              os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Windows', 'index.html'))
 
 os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc'))
-copyfile(os.path.join(blddir, 'conf', 'monet.conf'),
-             os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc', 'monet.conf'))
+copyfile(os.path.join(blddir, 'conf', 'MonetDB.conf'),
+             os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc', 'MonetDB.conf'))
 os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'share', 'MonetDB', 'docs', 'gdk'))
 copyfile(os.path.join(blddir, 'src', 'gdk', 'gdk_atoms.html'),
              os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'share', 'MonetDB', 'docs', 'gdk', 'gdk_atoms.html'))
