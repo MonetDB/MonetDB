@@ -227,7 +227,7 @@ end main; #94
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "1"		  ]
 [ "halign",			  "0"		  ]
-[ "halignflushed",		  "1000064"	  ]
+[ "halignflushed",		  "1000066"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -235,8 +235,8 @@ end main; #94
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "0"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000065"	  ]
-[ "talignflushed",		  "1000065"	  ]
+[ "talign",			  "1000067"	  ]
+[ "talignflushed",		  "1000067"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
@@ -248,8 +248,8 @@ end main; #94
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "8"		  ]
 [ "batBuns.size",		  "8000024"	  ]
-[ "batBuns.maxsize",		  "8000024"	  ]
-[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.maxsize",		  "8069120"	  ]
+[ "batBuns.storage",		  "anonymous vm"  ]
 [ "batBuns.filename",		  "no file"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
@@ -286,10 +286,10 @@ end main; #94
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 379 ms
-count 1000000 = 289 ms
-count 1000000 = 289 ms
-count 1000000 = 288 ms
+count 1000000 = 390 ms
+count 1000000 = 294 ms
+count 1000000 = 295 ms
+count 1000000 = 294 ms
 #-------------------------------------------------#
 # BAT:				  tmp_6		  #
 # (str)				  (str)		  #
@@ -315,8 +315,8 @@ count 1000000 = 288 ms
 [ "hkey",			  "0"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000122"	  ]
-[ "halignflushed",		  "1000122"	  ]
+[ "halign",			  "1000124"	  ]
+[ "halignflushed",		  "1000124"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -324,8 +324,8 @@ count 1000000 = 288 ms
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000123"	  ]
-[ "talignflushed",		  "1000123"	  ]
+[ "talign",			  "1000125"	  ]
+[ "talignflushed",		  "1000125"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
@@ -337,8 +337,8 @@ count 1000000 = 288 ms
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "8000008"	  ]
 [ "batBuns.size",		  "8400024"	  ]
-[ "batBuns.maxsize",		  "8400024"	  ]
-[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.maxsize",		  "8466432"	  ]
+[ "batBuns.storage",		  "anonymous vm"  ]
 [ "batBuns.filename",		  "no file"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
@@ -375,10 +375,10 @@ count 1000000 = 288 ms
 [ "taccelerator.offset",	  "0"		  ]
 [ "head_index",			  "absent"	  ]
 [ "tail_index",			  "absent"	  ]
-count 1000000 = 319 ms
-count 1000000 = 215 ms
-count 1000000 = 215 ms
-count 1000000 = 215 ms
+count 1000000 = 312 ms
+count 1000000 = 205 ms
+count 1000000 = 208 ms
+count 1000000 = 205 ms
 #-------------------------------------------------#
 # BAT:				  tmp_8		  #
 # (str)				  (str)		  #
@@ -404,8 +404,8 @@ count 1000000 = 215 ms
 [ "hkey",			  "0"		  ]
 [ "hloc",			  "0"		  ]
 [ "hvarsized",			  "0"		  ]
-[ "halign",			  "1000182"	  ]
-[ "halignflushed",		  "1000182"	  ]
+[ "halign",			  "1000184"	  ]
+[ "halignflushed",		  "1000184"	  ]
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "nil"		  ]
@@ -413,8 +413,8 @@ count 1000000 = 215 ms
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "8"		  ]
 [ "tvarsized",			  "0"		  ]
-[ "talign",			  "1000183"	  ]
-[ "talignflushed",		  "1000183"	  ]
+[ "talign",			  "1000185"	  ]
+[ "talignflushed",		  "1000185"	  ]
 [ "batInserted",		  "1"		  ]
 [ "batDeleted",			  "0"		  ]
 [ "batHole",			  "0"		  ]
@@ -426,8 +426,8 @@ count 1000000 = 215 ms
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",		  "16000016"	  ]
 [ "batBuns.size",		  "16800048"	  ]
-[ "batBuns.maxsize",		  "16800048"	  ]
-[ "batBuns.storage",		  "malloced"	  ]
+[ "batBuns.maxsize",		  "16867328"	  ]
+[ "batBuns.storage",		  "anonymous vm"  ]
 [ "batBuns.filename",		  "no file"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
