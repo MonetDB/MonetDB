@@ -31,7 +31,7 @@ import java.util.regex.*;
  * independent from what the client requests (pre-fetching strategy).
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.6
+ * @version 0.7
  */
 public class MonetConnection extends Thread implements Connection {
 	/** The hostname to connect to */
@@ -177,9 +177,7 @@ public class MonetConnection extends Thread implements Connection {
 					// mind the newline at the end
 					blkmon.write(username + ":" + password + ":blocked\n");
 					// We need to send the server our byte order.  Java by itself
-					// uses network order, however for performance reasons it
-					// is nice when we can use native byte buffers.  Therefore
-					// we send the machine native byte-order to the server here.
+					// uses network order.
 					// A short with value 1234 will be sent to indicate our
 					// byte-order.
 					/*
@@ -188,15 +186,7 @@ public class MonetConnection extends Thread implements Connection {
 					byte low = (byte)x;				// = 0xD2
 					*/
 					final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
-					final byte[] littleEndian = {(byte)0xD2, (byte)0x04};
-					ByteOrder nativeOrder = ByteOrder.nativeOrder();
-					if (nativeOrder == ByteOrder.BIG_ENDIAN) {
-						blkmon.write(bigEndian);
-					} else if (nativeOrder == ByteOrder.LITTLE_ENDIAN) {
-						blkmon.write(littleEndian);
-					} else {
-						throw new AssertionError("Machine byte-order unknown!!!");
-					}
+					blkmon.write(bigEndian);
 					blkmon.flush();
 
 					// now read the byte-order of the server
@@ -1236,7 +1226,7 @@ public class MonetConnection extends Thread implements Connection {
 	 * # 28,    # tuplecount
 	 * # 1,     # id
 	 * </pre>
-	 *
+	 * .
 	 * This class does not check all arguments for null, size, etc. for
 	 * performance sake!
 	 */
@@ -1277,6 +1267,9 @@ public class MonetConnection extends Thread implements Connection {
 		/** A local copy of resultSetConcurrency, so its protected from changes
 		 *  made by the Statement parent */
 		private int rsconcur;
+		/** Whether we should send an Xclose command to the server if we close this
+		 *  Header */
+		 private boolean destroyOnClose;
 
 		/** a regular expression that we often use to split
 		 *  the headers into an array (compile them once) */
@@ -1301,6 +1294,7 @@ public class MonetConnection extends Thread implements Connection {
 			rstype = rst;
 			rsconcur = rsc;
 			closed = false;
+			destroyOnClose = false;
 		}
 
 		/**
@@ -1379,8 +1373,9 @@ public class MonetConnection extends Thread implements Connection {
 				throw new SQLException("tuplecount " + tuplecount + " is not a number!");
 			}
 			isSet[2] = true;
+			if (this.tuplecount > curReplySize) destroyOnClose = true;
 		}
-
+		
 		/**
 		 * Sets the id header and updates the bitmask
 		 *
@@ -1636,9 +1631,9 @@ public class MonetConnection extends Thread implements Connection {
 			if (closed) return;
 			try {
 				// send command to server indicating we're done with this
-				// result only if we had an ID in the header... Currently
-				// on updates, inserts and deletes there is no header at all
-				if (isSet[3]) {
+				// result only if we had an ID in the header and this result
+				// was larger than the reply size
+				if (destroyOnClose) {
 					// since it is not really critical `when' this command is
 					// executed, we put it on the CacheThread's queue. If we
 					// would want to do it ourselves here, a deadlock situation
