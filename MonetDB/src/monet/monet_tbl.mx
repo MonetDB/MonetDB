@@ -1992,7 +1992,6 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int naccs, int *a
 int
 TBL_unloadmod(Client client, str module, int level)
 {
-	Client father = client;
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
 	BAT *b, *fcntbl = BATmirror(client->fcntbl);
 	char s[80], *nme, *r;
@@ -2008,18 +2007,18 @@ TBL_unloadmod(Client client, str module, int level)
 
 	/* identify as father
 	 */
-	while (father->father != -1) {
-		father = monet_clients + father->father;
+	while (client->father != -1) {
+		client = monet_clients + client->father;
 	}
 
 	if (level == 0)
-		TBL_M_lock(father);
+		TBL_M_lock(client);
 @-
 Look up the module.
 @c
 	mid = TBL_module_lookup(module);
 	if (mid == 0) {
-		int cid = father - monet_clients;
+		int cid = client - monet_clients;
 
 		snprintf(s, 80, "_%s", module);
 		mid = TBL_module_lookup(s);
@@ -2028,22 +2027,22 @@ Look up the module.
 		else
 			GDKerror("TBL_unloadmod: module %s does not exist.\n", module);
 
-		return unloadmod_exit(0, level ? NULL : father, accs, tpes);
+		return unloadmod_exit(0, level ? NULL : client, accs, tpes);
 	}
 @-
 Check if it is in use already.
 @c
 	if (level == 0) {
-		int cid = father - monet_clients;
+		int cid = client - monet_clients;
 
 		r = BUNlocate(TBL_mod_use, &mid, &cid);
 		if (r == NULL) {
 			GDKerror("TBL_unloadmod: %s was not loaded.\n", module);
-			return unloadmod_exit(0, father, accs, tpes);
+			return unloadmod_exit(0, client, accs, tpes);
 		}
-		if (!TBL_M_directloaded(father, mid, module)) {
+		if (!TBL_M_directloaded(client, mid, module)) {
 			GDKerror("TBL_unloadmod: others need %s.\n", module);
-			return unloadmod_exit(0, father, accs, tpes);
+			return unloadmod_exit(0, client, accs, tpes);
 		}
 	}
 @-
@@ -2057,9 +2056,9 @@ preparation phase (only meaningful for C-modules) */
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
 		s[j] = 0;
-		r = (char *) BUNfnd(father->atomtbl, s);
+		r = (char *) BUNfnd(client->atomtbl, s);
 		assert(r);
-		tpes[ntpes++] = *(int *) BUNtloc(father->atomtbl, r);
+		tpes[ntpes++] = *(int *) BUNtloc(client->atomtbl, r);
 		if (ntpes == mtpes)
 			tpes = (int *) GDKrealloc(tpes, (mtpes *= 2) * sizeof(int));
 	}
@@ -2070,9 +2069,9 @@ preparation phase (only meaningful for C-modules) */
 		for (j = 0; nme[j] && nme[j] != '='; j++)
 			s[j] = nme[j];
 		s[j] = 0;
-		r = (char *) BUNfnd(father->acctbl, s);
+		r = (char *) BUNfnd(client->acctbl, s);
 		assert(r);
-		accs[naccs++] = *(int *) BUNtloc(father->acctbl, r);
+		accs[naccs++] = *(int *) BUNtloc(client->acctbl, r);
 		if (naccs == maccs)
 			accs = (int *) GDKrealloc(accs, (maccs *= 2) * sizeof(int));
 	}
@@ -2080,12 +2079,12 @@ preparation phase (only meaningful for C-modules) */
 check if the C-module is physically dropped that none of its atoms or accelerators is in use
 @c
 	if (TBL_M_countref(mid) == 1 && unloadmod_check_use(mid, module, ntpes, tpes, naccs, accs)) {
-		return unloadmod_exit(level, level ? NULL : father, accs, tpes);	/* NO GO */
+		return unloadmod_exit(level, level ? NULL : client, accs, tpes);	/* NO GO */
 	}
 @-
 decrease the refount of the module. we are ready if it isn't zero (LOGICAL DROP).
 @c
-	refcnt = TBL_M_decref(father, mid);
+	refcnt = TBL_M_decref(client, mid);
 @-
 drop will go through;
 @c
@@ -2107,10 +2106,10 @@ drop will go through;
 		} else {
 			/* delete all the C-modules's atoms, accelerators and functions */
 			for (j = 0; j < ntpes; j++)
-				if (BUNdelHead(BATmirror(father->atomtbl), tpes + j) == NULL)
+				if (BUNdelHead(BATmirror(client->atomtbl), tpes + j) == NULL)
 					assert(0);
 			for (j = 0; j < naccs; j++)
-				if (BUNdelHead(BATmirror(father->acctbl), accs + j) == NULL)
+				if (BUNdelHead(BATmirror(client->acctbl), accs + j) == NULL)
 					assert(0);
 
 			if (BATprepareHash(fcn_mid))
@@ -2190,7 +2189,7 @@ drop will go through;
 	BBPreclaim(b);
 
 	/* drop succeeded */
-	return unloadmod_exit(1, level ? NULL : father, accs, tpes);
+	return unloadmod_exit(1, level ? NULL : client, accs, tpes);
 }
 
 @+ Function Resolution

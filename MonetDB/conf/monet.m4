@@ -206,7 +206,7 @@ AC_PROG_CPP()
 AC_PROG_GCC_TRADITIONAL()
 
 case $GCC-$host_os in
-yes-*)	gcc_ver="`$CC --version | head -n1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`";;
+yes-*)	gcc_ver="`$CC -dumpversion 2>/dev/null`";;
 esac
 
 dnl  Set compiler switches.

@@ -503,7 +503,7 @@ typedef signed char bit;
 typedef signed char chr;
 typedef short sht;
 #ifdef MONET_OID32
-#define SIZEOF_OID	4
+#define SIZEOF_OID	SIZEOF_INT
 typedef unsigned int oid;
 #else
 #define SIZEOF_OID	SIZEOF_SIZE_T

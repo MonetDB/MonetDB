@@ -465,7 +465,7 @@ prepare_backup(void)
 	return ret;
 }
 
-
+#define CONTINUE_IF_NO_SIZES_IN_BBP 1 /* provide backward compatibility */
 void
 BBPinit(void)
 {
@@ -520,13 +520,36 @@ BBPinit(void)
 	/* scan the BBP.dir to obtain its current size */
 	BBPlimit = BBPINIT;
 	BBPsize = 1;
-	if ((c = fgets(buffer, 3000, fp)) != NULL) {
-		BBPoid = OIDread(c);
-		if ((c = strstr(c, "BBPsize")) != NULL) {
-			sscanf(c, "BBPsize=%d", &i);
-			i = (int) (i * BATMARGIN);
-			if (i > BBPlimit)
-				BBPlimit = i;
+	if ((c = fgets(buffer, sizeof(buffer), fp)) != NULL) {
+		int ptrsize, oidsize;
+		if (sscanf(c, "%d %d", &ptrsize, &oidsize) != 2) {
+#ifdef CONTINUE_IF_NO_SIZES_IN_BBP
+			GDKwarning("old BBP without size indications: assuming compatible with current server");
+			GDKwarning("if this assumption is not correct, quit() immediately!");
+			GDKwarning("otherwise, first commit() to write a new BBP");
+			ptrsize = SIZEOF_SIZE_T;
+			oidsize = SIZEOF_OID;
+#else
+			GDKerror("old BBP without size indications");
+			GDKerror("add a line to the top of the BBP file with two numbers:");
+			GDKerror("the size (in bytes) of pointers and the size (in bytes) of OIDs\nfor the server the BBP was created with");
+			exit(1);
+#endif
+		} else {
+			c = fgets(buffer, sizeof(buffer), fp);
+		}
+		if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
+			GDKerror("database created with incompatibel Mserver");
+			exit(1);
+		}
+		if (c != NULL) {
+			BBPoid = OIDread(c);
+			if ((c = strstr(c, "BBPsize")) != NULL) {
+				sscanf(c, "BBPsize=%d", &i);
+				i = (int) (i * BATMARGIN);
+				if (i > BBPlimit)
+					BBPlimit = i;
+			}
 		}
 	}
 
@@ -553,7 +576,7 @@ BBPinit(void)
 	MT_mmap_pin(BBP, BBPlimit * sizeof(BBPrec));
 
 	/* scan the BBP.dir, and insert the BATs into the BBP */
-	while ((c = fgets(buffer, 3000, fp)) != NULL) {
+	while ((c = fgets(buffer, sizeof(buffer), fp)) != NULL) {
 		int j = 0;
 
 		while (*c != '[')
@@ -730,7 +753,10 @@ BBPdir(void)
 	fp = (FILE *) GDKfilelocate("BBP", "wb", "dir");
 	if (fp)
 		s = file_wastream(fp, "BBP.dir");
-	if (s == NULL || OIDwrite(s) || stream_printf(s, " BBPsize=%d\n", (int) BBPsize) < 0)
+	if (s == NULL ||
+	    stream_printf(s, "%d %d\n", SIZEOF_SIZE_T, SIZEOF_OID) < 0 ||
+	    OIDwrite(s) ||
+	    stream_printf(s, " BBPsize=%d\n", (int) BBPsize) < 0)
 		goto error;
 
 	for (i = 1; i < BBPsize; i++)
@@ -745,7 +771,8 @@ BBPdir(void)
 	IODEBUG THRprintf(GDKerr, "BBPdir end\n");
 
 	return 0;
-      error:GDKsyserror("BBPdir failed:\n");
+  error:
+	GDKsyserror("BBPdir failed:\n");
 	return -1;
 }
 
