@@ -1,0 +1,28 @@
+stdout of test 'ID.1049942` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 17:14:28 >  
+# 17:14:28 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/build/conf/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/build/log" --set mapi_port=47640 --set sql_port=56735 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce  < ID.1049942.milS
+# 17:14:28 >  
+
+# Monet Database Server V4.4.1
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module(tcpip,radix);
+proc f(): bat[void,dbl] {
+    var a := uniform(100000).[dbl]().copy();
+    printf("done...\n");
+    RETURN a;
+}
+fork(listen());
+
+VAR id := open("localhost");
+VAR result := id.rpc("f();");
+done...
+[ 100000 ]
+
+# 17:14:30 >  
+# 17:14:30 >  Done.
+# 17:14:30 >  
+

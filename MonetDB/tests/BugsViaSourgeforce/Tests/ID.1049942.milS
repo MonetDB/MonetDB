@@ -1,0 +1,11 @@
+module(tcpip,radix);
+proc f(): bat[void,dbl] {
+    var a := uniform(100000).[dbl]().copy();
+    printf("done...\n");
+    RETURN a;
+}
+fork(listen());
+
+VAR id := open("localhost");
+VAR result := id.rpc("f();");
+result.count().print();
