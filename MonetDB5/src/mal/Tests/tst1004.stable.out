@@ -64,7 +64,6 @@ exit MALexception;	# 20  (MALexception:any)
     bbp.close();	# 25 CMDbbpclose ($31:void)
 end main;	# 26  
 [ "Start test" ]
-bbp.take not yet fully implemented
 [ "FIRST ROUND" ]
 #-----------------#
 # h	tmp_4	  # name
@@ -77,7 +76,6 @@ bbp.take not yet fully implemented
 # int	str		  # type
 #-------------------------#
 [ 4,	  "myfirstbat"	  ]
-bbp.take not yet fully implemented
 [ "got myfirstbat?" ]
 #-----------------#
 # h	tmp_4	  # name

@@ -2,6 +2,8 @@
 
 u:str:=const.take(user);
 printf("User bound to %s\n",u);
+roomnumber:= 321;
+const.deposit(roomnumber);
 
 v:int:= const.take(roomnumber);
 print(v);

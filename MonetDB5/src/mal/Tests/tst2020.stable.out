@@ -19,17 +19,21 @@ stdout of test 'tst2020` in directory 'src/mal` itself:
 #	printf("end of program, wait for child\n");
 #
 function Admin.main():int;	# 0  (main:int)
-thread b1 := 0;	# 1  (b1:int)<-($2:int) jump 8
-    io.printf("start thread\n");	# 2 IOprint_str ($3:int)<-($4:str)
-barrier yy;	# 3  (yy:any) jump 6
-    leave yy;	# 4  (yy:any) jump 6
-    redo yy;	# 5  (yy:any) jump 4
-exit yy;	# 6  (yy:any)
-    io.printf("finish thread\n");	# 7 IOprint_str ($6:int)<-($7:str)
-exit b1;	# 8  (b1:int)
-    io.printf("end of program, wait for child\n");	# 9 IOprint_str ($8:int)<-($9:str)
-end main;	# 10  
-start thread
-finish thread
-end of program, wait for child
+thread b1 := 0;	# 1  (b1:int)<-($2:int) jump 10
+    io.printf("#start thread\n");	# 2 IOprint_str ($3:int)<-($4:str)
+barrier yy;	# 3  (yy:any) jump 7
+    io.print("leave barrier");	# 4 IOprint_val ($6:int)<-($7:str)
+    leave yy;	# 5  (yy:any) jump 7
+    redo yy;	# 6  (yy:any) jump 4
+exit yy;	# 7  (yy:any)
+    io.printf("#finish thread\n");	# 8 IOprint_str ($8:int)<-($9:str)
+    io.printf("#finish thread2\n");	# 9 IOprint_str ($10:int)<-($11:str)
+exit b1;	# 10  (b1:int)
+    io.printf("#end of program, wait for child\n");	# 11 IOprint_str ($12:int)<-($13:str)
+end main;	# 12  
+#start thread
+[ "leave barrier" ]
+#finish thread
+#finish thread2
+#end of program, wait for child
 >
