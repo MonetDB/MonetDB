@@ -892,16 +892,16 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	
 	m->type = Q_RESULT;
 	
-	stream_write(s, "# ", strlen("# "), 1);
+	stream_write(s, "# ", 2, 1);
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols+i;
 		stream_write(s, c->name, strlen(c->name), 1);
 		if(i+1< t->nr_cols)
 			stream_write(s, ",\t", 2, 1);
 	}
-	stream_write(s, " # name\n", strlen(" # name\n"), 1);
+	stream_write(s, " # name\n", 8, 1);
 
-	stream_write(s, "# ", strlen("# "), 1);
+	stream_write(s, "# ", 2, 1);
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols+i;
 		stream_write(s, c->type->type->sqlname, 
@@ -909,7 +909,26 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 		if(i+1< t->nr_cols)
 			stream_write(s, ",\t", 2, 1);
 	}
-	stream_write(s, " # type\n", strlen(" # type\n"), 1);
+	stream_write(s, " # type\n", 8, 1);
+
+	{
+		size_t count;
+		if (t->order) {
+			BAT *order = BATdescriptor(t->order);
+			count = BATcount(order);
+			BBPunfix(order->batCacheid);
+		} else
+			count = 1;
+		stream_printf(s, "# " SZFMT, count);
+		for (i = 2; i < t->nr_cols; i++)
+			stream_write(s, ",\t", 2, 1);
+		stream_write(s, " # tuplecount\n", 14, 1);
+	}
+
+	stream_printf(s, "# %d", t->id);
+	for (i = 2; i < t->nr_cols; i++)
+		stream_write(s, ",\t", 2, 1);
+	stream_write(s, " # id\n", 6, 1);
 
 	stream_flush(s);
 	return 0;
