@@ -2242,6 +2242,7 @@ gdk_export MT_Lock		GDKidxLock[BBPLOCKMASK+1];
 gdk_export MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 gdk_export MT_Lock		GDKcacheLock; 
 gdk_export MT_Lock		GDKtrimLock; 
+gdk_export MT_Lock		GDKtmLock; 
 
 #define CHECKDEBUG      if (GDKdebug&2)
 #define MEMDEBUG        if (GDKdebug&4)

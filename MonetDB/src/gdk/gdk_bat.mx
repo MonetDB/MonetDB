@@ -1273,6 +1273,7 @@ BAT *BATroles(BAT *b, str hnme,str tnme) {
 BAT *BATmode(BAT *b, int mode) {
 	BATcheck(b, "BATmode"); 
 
+	MT_set_lock(GDKtmLock, "BATmode"); 
 	if (mode != b->batPersistence) {
 		BBPdirty(1);
 		if (mode&PERSISTENT) {
@@ -1285,6 +1286,7 @@ BAT *BATmode(BAT *b, int mode) {
 		}
 		b->batPersistence = mode;
 	}
+	MT_unset_lock(GDKtmLock, "BATmode"); 
 	return b; 
 }
 

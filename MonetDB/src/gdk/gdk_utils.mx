@@ -961,6 +961,7 @@ int GDKinit(int argc, char** argv) {
 	}
 	GDKcacheLock = MT_create_lock(); 
 	GDKtrimLock = MT_create_lock(); 
+	GDKtmLock = MT_create_lock(); 
 
 	/* Mserver intends to rob 85% of all memory as a default */
  	GDK_mem_maxsize = ((lng) MT_npages()) * ((lng) MT_pagesize())*0.85; 
@@ -1032,6 +1033,7 @@ MT_Lock		GDKswapLock[BBPLOCKMASK+1];
 MT_Lock		GDKidxLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKhashLock[BBPLOCKMASK+1]; 
 MT_Lock		GDKcacheLock, GDKtrimLock; 
+MT_Lock		GDKtmLock; 
 
 @+ Concurrency control
 Concurrency control requires actions at several levels of the system.
