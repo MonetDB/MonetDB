@@ -38,16 +38,21 @@
 @m
 .MODULE pathfinder;
 
-@:scj_cmd(_descorself,Result includes nodes exactly on the boundary.)@
-@:scj_cmd(_desc,Result excludes nodes exactly on the boundary.)@
-@:scj_cmd(_ancorself,Result excludes nodes exactly on the boundary.)@
-@:scj_cmd(_anc,Result excludes nodes exactly on the boundary.)@
+@:scj_cmd(descorself,Result includes nodes exactly on the boundary.)@
+@:scj_cmd(desc,Result excludes nodes exactly on the boundary.)@
+@:scj_cmd(ancorself,Result excludes nodes exactly on the boundary.)@
+@:scj_cmd(anc,Result excludes nodes exactly on the boundary.)@
+
+@:lev_cmd(child,child)@
+@:lev_cmd(parent,parent)@
+@:lev_cmd(fs,following-sibling)@
+@:lev_cmd(ps,preceding-sibling)@
 
 @= scj_cmd
-.COMMAND scj@1_void(BAT[void,int] doc,
-                    BAT[oid,any] context,
-                    int height,
-                    int upperbound): BAT[oid,void] = PFscj@1_void;
+.COMMAND scj_@1(BAT[void,int] doc,
+                BAT[oid,any] context,
+                int height,
+                int upperbound): BAT[oid,void] = PFscj_@1_void;
 "PARAMETERS
   doc: document BAT (preorder rank, postorder rank)
   context: context node sequence (preorder rank, postorder rank)
@@ -63,56 +68,20 @@ right edge of the xy-plane in case there is no next), and an y-coordinate
 smaller than the y-coordinate of the boundary node. context effectively
 represents a boundary in the xy-plane of doc for which staircasejoin
 uselects the nodes in the bottom-right part. @2"
+
+@= lev_cmd
+.COMMAND lev_@1(BAT[void,chr] doc_level,
+                BAT[oid,any] context,
+		int estimation,
+                int height) : BAT[oid,void] = PFlev_@1;
+"PARAMETERS
+  doc_level: the complete level BAT (preorder rank, level)
+  context: context node sequence (preorder rank, *)
+  height: document height
+  upperbound: upperbound for size of result context node sequence
+DESCRIPTION
+axis step evaluation on the @2 axis from the given context."
 @m
-
-.COMMAND child_lev(BAT[void,chr] doc_level,
-                   BAT[oid,any] context,
-		   int estimation,
-                   int height) : BAT[oid,void] = PFchild_lev;
-"PARAMETERS
-  doc_level: the complete level BAT (preorder rank, level)
-  context: context node sequence (preorder rank, *)
-  height: document height
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-child step evaluation from the given context."
-
-.COMMAND parent_lev(BAT[void,chr] doc_level,
-                   BAT[oid,any] context,
-		   int estimation,
-                   int height) : BAT[oid,void] = PFparent_lev;
-"PARAMETERS
-  doc_level: the complete level BAT (preorder rank, level)
-  context: context node sequence (preorder rank, *)
-  height: document height
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-parent step evaluation from the given context."
-
-.COMMAND followingsibling_lev(BAT[void,chr] doc_level,
-                   BAT[oid,any] context,
-		   int estimation,
-                   int height) : BAT[oid,void] = PFfollowingsibling_lev;
-"PARAMETERS
-  doc_level: the complete level BAT (preorder rank, level)
-  context: context node sequence (preorder rank, *)
-  height: document height
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-following-sibling evaluation from the given context."
-
-.COMMAND precedingsibling_lev(BAT[void,chr] doc_level,
-                   BAT[oid,any] context,
-		   int estimation,
-                   int height) : BAT[oid,void] = PFprecedingsibling_lev;
-"PARAMETERS
-  doc_level: the complete level BAT (preorder rank, level)
-  context: context node sequence (preorder rank, *)
-  height: document height
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-preceding-sibling evaluation from the given context."
-
 .END pathfinder;
 
 @mil
@@ -719,7 +688,7 @@ Print XML-document with the specified name.",
 
 PROC descendant(BAT[oid,any] ctx) : BAT[oid,void] :=
 {
-    return scj_desc_void(Tpre_size, ctx, Theight, Tpre_size.count);
+    return scj_desc(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("descendant", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -730,7 +699,7 @@ returns all nodes on the descendant axis of the ctx-nodes.",
 
 PROC descendant_or_self(BAT[oid,any] ctx) : BAT[oid,void] :=
 {
-    return scj_descorself_void(Tpre_size, ctx, Theight, Tpre_size.count);
+    return scj_descorself(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("descendant_or_self", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -741,7 +710,7 @@ returns all nodes on the descendant-or-self axis of the ctx-nodes.",
 
 PROC ancestor(BAT[oid,any] ctx) : BAT[oid,void] :=
 {
-    return scj_anc_void(Tpre_size, ctx, Theight, Tpre_size.count);
+    return scj_anc(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("ancestor", "rode", "Jan 2004",
 "PARAMETERS:\n\
@@ -752,12 +721,56 @@ returns all nodes on the ancestor axis of the ctx-nodes.",
 
 PROC ancestor_or_self(BAT[oid,any] ctx) : BAT[oid,void] :=
 {
-    return scj_ancorself_void(Tpre_size, ctx, Theight, Tpre_size.count);
+    return scj_ancorself(Tpre_size, ctx, Theight, Tpre_size.count);
 }
 ADDHELP("ancestor_or_self", "rode", "Jan 2004",
 "PARAMETERS:\n\
 BAT[oid,any] ctx context set\n\
 DESCRIPITON:\n\
 returns all nodes on the ancestor-or-self axis of the ctx-nodes.",
+"pathfinder");
+
+PROC child(BAT[oid,any] ctx) : BAT[oid,void] :=
+{
+    return lev_child(Tpre_level, ctx, Theight, Tpre_level.count);
+}
+ADDHELP("child", "rode", "Jan 2004",
+"PARAMETERS:\n\
+BAT[oid,any] ctx context set\n\
+DESCRIPITON:\n\
+returns all nodes on the child axis of the ctx-nodes.",
+"pathfinder");
+
+PROC parent(BAT[oid,any] ctx) : BAT[oid,void] :=
+{
+    return lev_parent(Tpre_level, ctx, Theight, Tpre_level.count);
+}
+ADDHELP("parent", "rode", "Jan 2004",
+"PARAMETERS:\n\
+BAT[oid,any] ctx context set\n\
+DESCRIPITON:\n\
+returns all nodes on the parent axis of the ctx-nodes.",
+"pathfinder");
+
+PROC following_sibling(BAT[oid,any] ctx) : BAT[oid,void] :=
+{
+    return lev_fs(Tpre_level, ctx, Theight, Tpre_level.count);
+}
+ADDHELP("following_sibling", "rode", "Jan 2004",
+"PARAMETERS:\n\
+BAT[oid,any] ctx context set\n\
+DESCRIPITON:\n\
+returns all nodes on the following-sibling axis of the ctx-nodes.",
+"pathfinder");
+
+PROC preceding_sibling(BAT[oid,any] ctx) : BAT[oid,void] :=
+{
+    return lev_ps(Tpre_level, ctx, Theight, Tpre_level.count);
+}
+ADDHELP("preceding_sibling", "rode", "Jan 2004",
+"PARAMETERS:\n\
+BAT[oid,any] ctx context set\n\
+DESCRIPITON:\n\
+returns all nodes on the preceding-sibling axis of the ctx-nodes.",
 "pathfinder");
 

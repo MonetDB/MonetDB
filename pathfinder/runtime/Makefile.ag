@@ -29,7 +29,7 @@ lib__pathfinder = {
 	SOURCES = \
 		pathfinder.mx \
 		staircasejoin.mx \
-		levelsteps.c
+		levelsteps.mx
 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io -l_algebra
 	LIBS = $(MONET_LIBS)

@@ -72,12 +72,10 @@ const int PF_SOFTWARE_PREFETCH = 128;
 /* DESCENDANT-OR-SELF STEP */
 @:scj_head(_descorself)
     int max_post;
-    
 @:scj_specialcases
 
 @:scj_init
     max_post = -1;
-    
 @:scj_desc()
 
 @:scj_end
@@ -87,12 +85,10 @@ const int PF_SOFTWARE_PREFETCH = 128;
 /* ANCESTOR STEP */
 @:scj_head(_anc)
     oid ctx_pre, post;
-    
 @:scj_specialcases
 
 @:scj_init
     pre_cur = *(oid*)BUNhead(pre_size, BUNfirst(pre_size));
-
 @:scj_anc(<)
 
 @:scj_end
