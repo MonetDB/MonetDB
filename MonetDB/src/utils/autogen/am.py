@@ -39,8 +39,6 @@ def cond_subdir(fd, dir, i):
       fd.write("else\n")
       fd.write("%s_%d_SUBDIR = \n" % (parts[0],i) )
     fd.write("endif\n")
-    #res = sprint("$(%s_%d_SUBDIR)" % (parts[0],i) )
-    #res = sprintf("$(%s_%d_SUBDIR)",parts[0],i)
     res = "$(" + parts[0] + "_" + str(i) + "_SUBDIR)"
   return res
 	
