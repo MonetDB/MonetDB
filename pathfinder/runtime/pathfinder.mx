@@ -1351,15 +1351,27 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= kind
 @:comma@chr kind
 @
+@= kind_name
+@:comma@kind
+@
 # tagname argument
 @= tagname_ns
 @:comma@str ns
 @
+@= ns_name
+@:comma@ns
+@
 @= tagname_loc
 @:comma@str loc
 @
+@= loc_name
+@:comma@loc
+@
 @= tagname_nsloc
 @:comma@str ns@:comma@ str loc
+@
+@= nsloc_name
+@:comma@ns@:comma@loc
 @
 # code for variable initialisation
 @= ns_loc_vars
@@ -1443,16 +1455,20 @@ var pre_kind;
 
 # expanding the scj for the different tests
 @= loop_lifted_scj_step1
-@:loop_lifted_scj_step2(@1,,,,,)@
-@:loop_lifted_scj_step2(@1,_with_kind_test,@:kind@,@:kind_vars@,@:kind_code(,firstFrag)@,@:kind_code(_part,$h))@
-@:loop_lifted_scj_step2(@1,_with_ns_test,@:tagname_ns@,@:ns_vars@,@:ns_code(,firstFrag)@,@:ns_code(_part,$h))@
-@:loop_lifted_scj_step2(@1,_with_loc_test,@:tagname_loc@,@:loc_vars@,@:loc_code(,firstFrag)@,@:loc_code(_part,$h))@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:tagname_nsloc@,@:ns_loc_vars@,@:ns_loc_code(,firstFrag)@,@:ns_loc_code(_part,$h))@
+@:loop_lifted_scj_step2(@1,,,,,,)@
+@:loop_lifted_scj_step2(@1,_with_kind_test,@:kind@,@:kind_vars@,@:kind_code(,firstFrag)@,@:kind_code(_part,$h)@,@:kind_name@)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,@:tagname_ns@,@:ns_vars@,@:ns_code(,firstFrag)@,@:ns_code(_part,$h)@,@:ns_name@)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,@:tagname_loc@,@:loc_vars@,@:loc_code(,firstFrag)@,@:loc_code(_part,$h)@,@:loc_name@)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,@:tagname_nsloc@,@:ns_loc_vars@,@:ns_loc_code(,firstFrag)@,@:ns_loc_code(_part,$h)@,@:nsloc_name@)@
 @
 #==================================================================
 # actual definition of the scj proc
 @= loop_lifted_scj_step2
 proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws@3) : bat[void,bat]
+{
+     return loop_lifted_@1_step@2 (iter, item, frag, ws, 0@7);
+}
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws, int order@3) : bat[void,bat]
 {
     # handle empty results correctly
     if (iter.count() = 0) {

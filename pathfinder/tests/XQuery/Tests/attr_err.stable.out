@@ -9,10 +9,10 @@ stdout of test 'attr_err` in directory 'tests/XQuery` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-!ERROR: attributes are not unique in element construction of 'foo' within each iter
+!ERROR: attributes are not unique in element construction of 'foo' within each iteration
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<foo/>
+<XQueryResult foo="bar" foo2="bar">
+
 </XQueryResult>
 
 # 23:34:43 >  

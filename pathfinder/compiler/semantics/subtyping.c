@@ -1893,6 +1893,59 @@ PFty_data_on (PFty_t t)
         return data_on (t);
 }
 
+/**
+ * Replaces all atomic types by text()
+ *  - is2ns (t1 , t2) = is2ns (t1) , is2ns (t2)
+ *  - is2ns (t1 | t2) = is2ns (t1) | is2ns (t2)
+ *  - is2ns (t1 & t2) = is2ns (t1) | is2ns (t2)
+ *  - is2ns (t1?)     = is2ns (t1)?
+ *  - is2ns (t1*)     = is2ns (t1)*
+ *  - is2ns (t1+)     = is2ns (t1)+
+ *  - is2ns (named n) = none
+ *  - is2ns (t)       = text()         if t <: atomic
+ *  - is2ns (t)       = t              else
+ */
+PFty_t
+PFty_is2ns (PFty_t t)
+{
+    switch (t.type) {
+
+        case ty_seq:
+            {
+                PFty_t c = PFty_seq (PFty_is2ns (*(t.child[0])),
+                                     PFty_is2ns (*(t.child[1])));
+                return *right_deep (ty_seq, &c);
+            }
+        case ty_choice:
+        case ty_all:
+            {
+                PFty_t c = PFty_choice (PFty_is2ns (*(t.child[0])),
+                                        PFty_is2ns (*(t.child[1])));
+                return *right_deep (ty_choice, &c);
+            }
+    
+        case ty_opt:
+            return PFty_opt (PFty_is2ns (*(t.child[0])));
+        case ty_star:
+            return PFty_star (PFty_is2ns (*(t.child[0])));
+
+        case ty_plus:
+            return PFty_plus (PFty_is2ns (*(t.child[0])));
+
+        case ty_named:
+            /* this must be the occurrence of a recursive type
+             * reference, so nothing new can be learned from
+             * looking at the referenced type
+             */
+            return PFty_none ();
+
+        default:
+            if (PFty_subtype (t, PFty_atomic ()))
+                return PFty_text();
+            else
+                return t;
+    }
+}
 
 enum quantifier {
     none = 0      /**<  0  */

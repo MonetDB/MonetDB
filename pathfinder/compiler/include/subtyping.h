@@ -69,6 +69,9 @@ PFty_t PFty_prime (PFty_t);
 /** The `data on' judgement as in W3C Formal Semantics 6.2.3. */
 PFty_t PFty_data_on (PFty_t t);
 
+/** The `is2ns' replaces all atomic types by text() */
+PFty_t PFty_is2ns (PFty_t t);
+
 /** 
  * The quantifier of a given type (apply #PFty_defn () first!). 
  * This returns a (pointer to a) function @a q representing the quantifier:
