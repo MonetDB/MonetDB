@@ -59,20 +59,30 @@
 #if (SIZEOF_VOID_P==4)
 
 /* 32 bits systems */
-typedef unsigned int nat;
+typedef int nat;
 #define NIL ((nat) INT_MIN)
 #define NATFMT "u"
 
 #else
 
 /* 64 bits systems */
-typedef unsigned long long nat;
-#define NIL ((nat) LLONG_MIN)
-#ifdef HAVE___INT64
-#define NATFMT "I64u" /* windoze */
-#else
-#define NATFMT "llu"
-#endif
+typedef int nat;
+#define NIL ((nat) INT_MIN)
+#define NATFMT "u"
+
+/* The old definitions.
+ * When 64 bit integers are implemented for Pathfinder we need to change the
+ * nat definitions accordingly. Very important is that the [void,TYPE] and 
+ * 'typedef TYPE nat;' are synchronous. Any size difference will lead to errors
+ * because of the direct BAT memory access used by this program. 
+ */
+/* typedef unsigned long long nat; */
+/* #define NIL ((nat) LLONG_MIN) */
+/* #ifdef HAVE___INT64 */
+/* #define NATFMT "I64u" */
+/* #else */
+/* #define NATFMT "llu" */
+/* #endif */
 
 #endif
 
@@ -141,7 +151,7 @@ typedef struct shredBAT {
         /* */
         union { /* cast to perform direct indexex insert in [void,any] BATs */
             void* voidCAST; /* the basecast */
-            int*  intCAST;  /* cast for [void,int] BAT */
+            nat*  natCAST;  /* cast for [void,int] BAT */
             chr*  chrCAST;  /* cast for [void,chr] BAT */
             oid*  oidCAST;  /* cast for [void,oid] BAT */
         } cast;
@@ -234,7 +244,7 @@ static void setBATcapacity(shredCtx* ctx, int idx, int n) {
         ctx->dstBAT[idx].cnt = n;
         switch( ctx->dstBAT[idx].def->tailType ) {
          case TYPE_int :
-                top = &ctx->dstBAT[idx].cast.intCAST[bottomTop];
+                top = &ctx->dstBAT[idx].cast.natCAST[bottomTop];
                 break;
          case TYPE_chr: {
                 b->batBuns->free = n+(SIZEOF_VOID_P); /* incomplete, solves truncation bug */
@@ -400,13 +410,13 @@ static int incrBATsize(shredBAT* sb, nat i) {
     return 1;
 }
 
-static INLINE nat direct_int2bat(shredCtx* ctx, int idx, nat i, int v) {
+static INLINE nat direct_nat2bat(shredCtx* ctx, int idx, nat i, nat v) {
         shredBAT* sb = & ctx->dstBAT[idx];
 #ifdef VERBOSE
         stream_printf(GDKout,"DIRECT[%s](%d) = %d\n",sb->def->name,i,v);
 #endif
         CHECK_BAT_SIZE(sb,i);
-        sb->cast.intCAST[i] = v;
+        sb->cast.natCAST[i] = v;
         return i;
 }
 
@@ -569,7 +579,7 @@ static int
 emitnode (node_t node)
 {
     if (
-       direct_int2bat(glb_ctx,PRE_SIZE, node.pre,node.size)  == NIL ||
+       direct_nat2bat(glb_ctx,PRE_SIZE, node.pre,node.size)  == NIL ||
        direct_chr2bat(glb_ctx,PRE_LEVEL,node.pre,node.level) == NIL ||
        direct_oid2bat(glb_ctx,PRE_PROP, node.pre,node.prop)  == NIL ||
        direct_chr2bat(glb_ctx,PRE_KIND, node.pre,node.kind)  == NIL 
@@ -579,7 +589,11 @@ emitnode (node_t node)
         return 1;
 }
 
-#define NEXT_PRE(P)     if ( ! ++P ) { stream_printf(GDKerr,"FATAL_ERROR: NEXT_PRE(): pre too big, use 64bit oid!\n"); exit(0); }
+/* This method checks for a maximum of INT_MAX for the pre number because it
+ * must be stored in an [void,int] BAT. When the BAT will store unsigned int's
+ * the maximum will become UINT_MAX.
+ */
+#define NEXT_PRE(P)     if ( (P++) == INT_MAX ) { stream_printf(GDKerr,"FATAL_ERROR: NEXT_PRE(): pre >INT_MAX. Use 64bit oid!\n"); exit(0); }
 
 void 
 shred_start_document (void *ctx)
