@@ -55,7 +55,7 @@ print(bat("d"));
 #-----------------#
 c:=nil;
 print(bat("c"));
-
+!ERROR: interpret_params: print(param 1): invalid BAT.
 quit();   
 
 # 20:15:02 >  
