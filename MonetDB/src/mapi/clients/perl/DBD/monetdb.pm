@@ -207,18 +207,25 @@ sub _count_param {
     return $num;
 }
 
-sub prepare {
-    my $dbh = shift;
-    my ($statement, @attribs) = @_;
 
-    my $sth = DBI::_new_sth($dbh, {
-				   Statement => $statement,
-				  });
-    $sth->STORE(monetdb_handle => $dbh->FETCH('monetdb_connection'));
-    $sth->STORE(monetdb_params => []);
+sub prepare {
+    my ($dbh, $statement, $attr) = @_;
+
+    my $mapi = $dbh->{monetdb_connection};
+    my $hdl = MapiLib::mapi_new_handle($mapi);
+    my $err = MapiLib::mapi_error($mapi);
+    return $dbh->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
+
+    my ($outer, $sth) = DBI::_new_sth($dbh, { Statement => $statement });
+
+    $sth->STORE('NUM_OF_PARAMS', _count_param($statement));
+
+    $sth->{monetdb_hdl} = $hdl;
+    $sth->{monetdb_params} = [];
+    $sth->{monetdb_types} = [];
     $sth->{monetdb_rows} = -1;
-    $sth->STORE(NUM_OF_PARAMS => _count_param($statement));
-    $sth;
+
+    return $outer;
 }
 
 
@@ -375,13 +382,12 @@ sub execute {
 	my $quoted_param = $dbh->quote($params->[$i]);
 	$statement =~ s/\?/$quoted_param/;
     }
-    my $hdl = MapiLib::mapi_query($mapi, $statement);
+    my $hdl = $sth->{monetdb_hdl};
+    MapiLib::mapi_query_handle($hdl, $statement);
     my $err = MapiLib::mapi_error($mapi);
     return $sth->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
     my $result_error = MapiLib::mapi_result_error($hdl);
     return $sth->set_err(-1, $result_error) if $result_error;
-
-    $sth->{monetdb_hdl} = $hdl;
 
     my $rows = MapiLib::mapi_rows_affected($hdl);
 
