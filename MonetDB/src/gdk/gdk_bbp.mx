@@ -1248,7 +1248,7 @@ BAT *BBPdescriptor(bat i) {
 	bat j = ABS(i);
 	BAT *b = NULL;
 
-        if (BBPcheck(i, "BBPdescriptor")) {
+        if (!BBPcheck(i, "BBPdescriptor")) {
 		return NULL;
 	}
 	if (BBP_cache(i) == NULL) {
@@ -2089,6 +2089,9 @@ void BBPrecover(void) {
 		str q = strchr(dent->d_name,'.');
 		if (q == dent->d_name) {
 			int j;
+			if (strcmp(dent->d_name, ".") == 0 ||
+			    strcmp(dent->d_name, "..") == 0)
+				continue;
 			GDKfilepath(path, BAKDIR, dent->d_name, NULL); 
 			j = unlink(path);
 			IODEBUG THRprintf(GDKerr, "unlink %s = %d\n", path, j);
@@ -2184,7 +2187,8 @@ lng BBPdiskscan_r(str parent) {
 		return LL_CONSTANT(-1); /* nothing to do */
 	}
 	while(*src) *dst++ = *src++;
-	*dst++ = DIR_SEP;
+	if (dst[-1] != DIR_SEP)
+		*dst++ = DIR_SEP;
 
 	while((dent = readdir(dirp)) != NULL) {
 		str p = strchr(dent->d_name, '.');
@@ -2193,13 +2197,13 @@ lng BBPdiskscan_r(str parent) {
 		off_t filesize;
 		struct stat st;
 
+		if (dent->d_name[0] == '.')
+			continue; /* ignore .dot files and directories (. ..) */
 		if (parent == NULL && strncmp(dent->d_name, "BBP.", 4) == 0) {
 			continue;
 		}
 		strcpy(dst, dent->d_name);
-		if (dent->d_name[0] == '.') {
-			continue; /* ignore .dot files and directories (. ..) */
-		} else if (p == NULL) {
+		if (p == NULL) {
 			ret = BBPdiskscan_r(fullname);
 			if (ret >= 0) {
 				tot += ret; /* it was a directory; add subtotal */
