@@ -552,16 +552,14 @@ int readClient(Client c)
 			case '#':
 				if (!instring)
 					incomment++;
-				else
-					*p++ = *s;
+				*p++ = *s;
 				break;
 			case '{':
 				if (!incomment && !instring) {
 					bracket++;
 					doflush = 0;
 				}
-				if (!incomment)
-					*p++ = *s;
+				*p++ = *s;
 				break;
 			case '}':
 				if (!incomment && !instring) {
@@ -569,8 +567,7 @@ int readClient(Client c)
 					if (bracket == 0)
 						doflush = 1;
 				}
-				if (!incomment)
-					*p++ = *s;
+				*p++ = *s;
 				break;
 			case '\'':
 			case '"':
@@ -582,20 +579,17 @@ int readClient(Client c)
 						instring = *s;
 					doflush = 0;
 				}
-				if (!incomment)
-					*p++ = *s;
+				*p++ = *s;
 				break;
 			case ';':
 				if (!incomment && !instring)
 					doflush = 1;
-				if (!incomment)
-					*p++ = *s;
+				*p++ = *s;
 				break;
 			default:
 				if (!incomment && !isspace((int) *s))
 					doflush = 0;
-				if (!incomment)
-					*p++ = *s;
+				*p++ = *s;
 				break;
 			}
 		}
