@@ -32,7 +32,7 @@ barrier always := true;	# 2  (always:bit)<-($4:bit) jump 7
     redo always;	# 6  (always:bit) jump 3
 exit always;	# 7  (always:bit)
 end random;	# 8  
-!ERROR: SYNTAX ERROR: yield misplaced
+!ERROR: yield misplaced
 !
 #
 #r1:= random(0);
