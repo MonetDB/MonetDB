@@ -31,6 +31,7 @@
 @:install_module(sys)@
 @:install_module(trans)@
 #ifdef STATIC
+@:install_module(streams)@
 /* mapi */
 @:install_module(mapi)@
 /* calibrator */
@@ -44,9 +45,10 @@
 @:install_module(bitvector)@
 @:install_module(blob)@
 @:install_module(cluster)@
+@:install_module(enum)@
+@:install_module(xtables)@
 @:install_module(ddbench)@
 @:install_module(decimal)@
-@:install_module(enum)@
 @:install_module(lock)@
 @:install_module(malalgebra)@
 @:install_module(mmath)@
@@ -62,10 +64,8 @@
 @:install_module(unix)@
 @:install_module(url)@
 @:install_module(wisc)@
-@:install_module(xtables)@
 @:install_module(logger)@
 @:install_module(ascii_io)@
-@:install_module(streams)@
 
 @:install_module(qt)@
 #ifndef smallTOC
