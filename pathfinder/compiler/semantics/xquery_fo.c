@@ -147,28 +147,28 @@
     .arity = 2, .par_ty = { PFty_opt (PFty_node ()),                     \
                             PFty_opt (PFty_node())},                     \
     .ret_ty = PFty_opt (PFty_node ()) }                                  \
-, /* op:union (item*, item*) as item* */                                 \
+, /* op:union (node*, node*) as node* */                                 \
   { .ns = PFns_op, .loc = "union",                                       \
-    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
-                            PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_star (PFty_item ()) }                                 \
-, /* op:intersect (item*, item*) as item* */                             \
+    .arity = 2, .par_ty = { PFty_star (PFty_node ()),                    \
+                            PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+, /* op:intersect (node*, node*) as node* */                             \
   { .ns = PFns_op, .loc = "intersect",                                   \
-    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
-                            PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_star (PFty_item ()) }                                 \
-, /* op:except (item*, item*) as item* */                                \
+    .arity = 2, .par_ty = { PFty_star (PFty_node ()),                    \
+                            PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+, /* op:except (node*, node*) as node* */                                \
   { .ns = PFns_op, .loc = "except",                                      \
-    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
-                            PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_star (PFty_item ()) }                                 \
+    .arity = 2, .par_ty = { PFty_star (PFty_node ()),                    \
+                            PFty_star (PFty_node ()) },                  \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+, /* op:to (integer, integer) as integer* */                             \
+  { .ns = PFns_op, .loc = "to",                                          \
+    .arity = 2, .par_ty = { PFty_integer (), PFty_integer () },          \
+    .ret_ty = PFty_star (PFty_integer ()) }                              \
 , /* dm:typed-value (node) as atomic */                                  \
   { .ns = PFns_pf, .loc = "typed-value",                                 \
     .arity = 1, .par_ty = { PFty_node () },                              \
-    .ret_ty = PFty_atomic () }                                           \
-, /* pf:range (atomic, atomic) as atomic */                              \
-  { .ns = PFns_pf, .loc = "range",                                       \
-    .arity = 2, .par_ty = { PFty_atomic (), PFty_atomic () },            \
     .ret_ty = PFty_atomic () }                                           \
 , /* pf:distinct-doc-order (node *) as node* */                          \
   { .ns = PFns_pf, .loc = "distinct-doc-order",                          \
