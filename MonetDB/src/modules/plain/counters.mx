@@ -1463,7 +1463,9 @@ int compare_counter(counter *c1, counter* c2) {
 
 
 int start_count(counter *retval, int *event0, int *event1) {
+#ifdef HWCOUNTERS
     int e0 = *event0, e1 = *event1, ee = NoEvent;
+#endif
 
     /* create the resulting counter object */
     memset(retval, 0, sizeof(counter));
@@ -1899,7 +1901,9 @@ int counter2bat(BAT **ret, counter *c) {
 
 
 int show_native_events(BAT **ret) {
+#ifdef HWCOUNTERS
     int i = 0;
+#endif
     
     *ret = BATnew(TYPE_int, TYPE_str, NumEvents);
 #if defined(HWCOUNTERS)
@@ -1913,7 +1917,9 @@ int show_native_events(BAT **ret) {
 
 
 int show_unified_events(BAT **ret) {
+#ifdef HWCOUNTERS
     int i = 0;
+#endif
     
     *ret = BATnew(TYPE_int, TYPE_str, NumEvents);
 #if defined(HWCOUNTERS)

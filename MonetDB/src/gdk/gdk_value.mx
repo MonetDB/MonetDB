@@ -160,10 +160,10 @@ up with an ILLEGALVALUE.
 @= valconvert
 	switch (src_tpe) {
 	case TYPE_bit:
-		@1 = @:valcheck(t->val.cval[0],@2)@;
+		@1 = (@2) t->val.cval[0]; /* always fits */
 		break;
 	case TYPE_chr:
-		@1 = @:valcheck(t->val.cval[0],@2)@;
+		@1 = (@2) t->val.cval[0]; /* always fits */
 		break;
 	case TYPE_sht:
 		@1 = @:valcheck(t->val.shval,@2)@;
