@@ -33,6 +33,12 @@ The routines below are linked with the kernel by default
 
 MODULE optimizer;
 
+command optimizer_init()
+address optimizer_init
+comment "Initialize the optimizer";
+
+optimizer_init();
+
 pattern optimize(mod:any, fcn:any)
 address QOToptimize
 comment "Optimize a specific operation";
@@ -120,7 +126,7 @@ pattern algebra.joinPath(b:bat[:any$1,:any$2],
 address QOTjoinPath
 comment "Evaluate a join path.";
 @{
-@include prelude.mx
+@include ../modules/mal/prelude.mx
 @+ Dummy code 
 @h
 #ifndef _OPTIMIZER_H
@@ -131,6 +137,16 @@ comment "Evaluate a join path.";
 #include "optimizer.h"
 #include "mal_interpreter.h"
 #include "mal_optimizer.h"
+#include "mal_scenario.h"
+
+str optimizer_init()
+{
+	Scenario s = findScenario("mal");
+
+	s->optimizerCmd = (MALfcn)MALoptimizer;
+	return MAL_SUCCEED;
+}
+
 
 str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	debugOptimizers(mb,stk,pci);

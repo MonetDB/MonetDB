@@ -1,15 +1,13 @@
 INCLUDES = $(MONETDB_INCS) \
-	-I../modules/atoms \
 	-I../mal $(Z_CFLAGS) $(BZ_CFLAGS) $(PCL_FLAGS) $(PCRE_CFLAGS)
 
 
 MTSAFE
 
-LIBS = {
+lib_optimizer = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = \
-	costmodel.mx mal_costmodel.mx mal_optimizer.mx optimizer.mx 
+	SOURCES = mal_optimizer.mx optimizer.mx 
 
 	HEADERS = h 
 	SCRIPTS = mal
@@ -17,11 +15,23 @@ LIBS = {
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
+lib_costmodel = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = mal_costmodel.mx costmodel.mx
+
+	HEADERS = h 
+	SCRIPTS = mal
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
 #doc_ml = {
 #	DIR = pkgdatadir/docs/mal
 #	SOURCES = \
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = costmodel.mx mal_costmodel.mx mal_optimizer.mx optimizer.mx
+	SOURCES = costmodel.mx optimizer.mx
 }
