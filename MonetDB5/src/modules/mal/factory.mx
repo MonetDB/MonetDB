@@ -26,12 +26,12 @@ module factory;
 command getPlants():bat[:str,:str]
 address FCTgetPlants 
 comment "Retrieve the factory plant description
-	for all operational factories";
+        for all operational factories";
 
 command getCaller():int
 address FCTgetCaller
 comment "Retrieve the unique identity
-	of the factory caller";
+        of the factory caller";
 
 command getOwners():bat[:int,:str]
 address FCTgetOwners
@@ -40,21 +40,25 @@ comment "Retrieve the factory owners table";
 command getTimeStampIn():time
 address FCTgetTimeStampIn
 comment "Retrieve the time stamp it was
-	received by the factory";
+        received by the factory";
 
 command getTimeStampOut():time
 address FCTgetTimeStampOut
 comment "Retrieve the time stamp the answer
-	was returned to the client";
+        was returned to the client";
 
 command setLocation(uri:str):void
 address FCTsetLocation
 comment "Set the location of the plant
-	manager.";
+        manager.";
 command getLocations():bat[:int,:str]
 address FCTgetLocations
-comment "Retrieve the locaion of all
-	known plants";
+comment "Retrieve the location of all
+        known plants";
+
+command shutdown(m:str, f:str):void
+address FCTshutdown
+comment "Close a factory";
 @-
 @{
 @+ Implementation code 
@@ -81,46 +85,56 @@ comment "Retrieve the locaion of all
 @c
 str FCTgetPlants(int *ret)
 {
-	BAT *b ;
-	b= BATnew(TYPE_str,TYPE_str,256);
-	@:Pseudo(name,plant)@
-	return MAL_SUCCEED;
+    BAT *b ;
+    b= BATnew(TYPE_str,TYPE_str,256);
+    @:Pseudo(name,plant)@
+    return MAL_SUCCEED;
 }
 str FCTgetCaller(int *ret)
 {
-	(void) ret; 
-	return throwMessage("factory.getCaller","not yet implemented");
+    (void) ret; 
+    return throwMessage("factory.getCaller","not yet implemented");
 }
 str FCTgetOwners(int *ret)
 {
-	BAT *b ;
-	(void) ret; 
-	b= BATnew(TYPE_int,TYPE_str,256);
-	@:Pseudo(plantid,location)@
-	return throwMessage("factory.getOwner","not yet implemented");
+    BAT *b ;
+    (void) ret; 
+    b= BATnew(TYPE_int,TYPE_str,256);
+    @:Pseudo(plantid,location)@
+    return throwMessage("factory.getOwner","not yet implemented");
 }
 str FCTgetTimeStampIn(int *ret)
 {
-	(void) ret; 
-	return throwMessage("factory.getTimeStampIn","not yet implemented");
+    (void) ret; 
+    return throwMessage("factory.getTimeStampIn","not yet implemented");
 }
 str FCTgetTimeStampOut(int *ret)
 {
-	(void) ret; 
-	return throwMessage("factory.getTimeStampOut","not yet implemented");
+    (void) ret; 
+    return throwMessage("factory.getTimeStampOut","not yet implemented");
 }
 str FCTsetLocation(int *ret, str *loc)
 {
-	(void) ret; (void) loc;
-	return throwMessage("factory.setLocation","not yet implemented");
+    (void) ret; (void) loc;
+    return throwMessage("factory.setLocation","not yet implemented");
 }
 str FCTgetLocations(int *ret)
 {
-	BAT *b ;
-	(void) ret; 
-	b= BATnew(TYPE_int,TYPE_str,256);
-	@:Pseudo(plantid,location)@
-	return MAL_SUCCEED;
+    BAT *b ;
+    (void) ret; 
+    b= BATnew(TYPE_int,TYPE_str,256);
+    @:Pseudo(plantid,location)@
+    return MAL_SUCCEED;
+}
+str FCTshutdown(int *ret, str *mod, str *fcn)
+{
+    Symbol s;
+    (void) ret;
+    s= findSymbol(*mod,*fcn);
+    if( s == NULL) 
+        return throwMessage("factory.shutdown","Factory not found");
+    shutdownFactory(s->def);
+    return MAL_SUCCEED;
 }
 @-
 @}
