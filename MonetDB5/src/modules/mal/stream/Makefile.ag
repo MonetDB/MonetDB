@@ -1,8 +1,4 @@
 
-# temporary disable "-Werror" to get modules compiled
-X_CFLAGS =
-X_CXXFLAGS =
-
 INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/monet \
 	$(Z_CFLAGS) $(BZ_CFLAGS)
 MTSAFE
