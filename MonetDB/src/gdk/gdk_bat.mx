@@ -477,7 +477,7 @@ BAT *batcopy(BAT *b, int ht, int tt, int writeable) {
 	BATcheck(b, "batcopy");
 
 	/* optimization: return a view (itself) on a readonly bat */
-        if (BATrestricted(b) && !writeable) {
+        if (BATrestricted(b) == BAT_READ && !writeable) {
 		return VIEWcreate(b);
 	} else {
 		int xx, yy;

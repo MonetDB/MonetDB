@@ -195,7 +195,7 @@ only if it is dead sure the parent BAT is read-only.
 This because they cannot physically share the batBuns heap
 with the parent, as they need a modified version.
 @c
-BAT *VIEWcreate_(BAT* b, int stable) {
+BAT *VIEWcreate_(BAT* b, int slice_view) {
         BAT *bn = BATcreatedesc(b->htype, b->ttype);
 	bat parent = VIEWparent(b);
 	
@@ -214,8 +214,10 @@ a void. Take care to zero the accelerator data, though.
 	bn->dims = b->dims;
         *bn->H = *b->H;
         *bn->T = *b->T;
-	bn->hhash.link = bn->thash.link = NULL;
+	*bn->U = *b->U;
 	bn->hidx.base = bn->tidx.base = NULL;
+	bn->hhash_heap = bn->thash_heap = NULL;
+	bn->hidx_heap = bn->tidx_heap = NULL;
 	bn->haccelerator.base = bn->taccelerator.base = NULL;
 @-
 The b->P structure cannot be shared and must be copied individually.
@@ -231,13 +233,10 @@ want to take a horizontal fragment (stable=false), this cannot
 be done, and we need to put different information in U (so we can't 
 use a copy.
 @c
-	if (stable) {
-		*bn->U = *b->U;
+	if (slice_view) {
 		bn->hacctype = bn->tacctype = 0; /* no accelerators */
 	} else {
-		/* everything shared, accelerators inclusive */
-		bn->batBuns = b->batBuns; 
-        	bn->U = b->U;
+		/* views may use accelerators already created on their parents */
 		bn->hhash_heap = b->hhash_heap; 
 		bn->thash_heap = b->thash_heap; 
 		bn->hidx_heap = b->hidx_heap; 
@@ -248,7 +247,7 @@ use a copy.
 }
 
 BAT *VIEWcreate(BAT *b) { 
-	return VIEWcreate_(b, (BATrestricted(b) == BAT_READ)); 
+	return VIEWcreate_(b, FALSE);
 } 
 
 @-
