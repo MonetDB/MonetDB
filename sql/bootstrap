@@ -16,7 +16,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 		MONET_PREFIX=$MONETDIST
 	fi
 	if [ "$MONET_PREFIX" = "" ]; then
-		which monet-config > /dev/null 2>&1
+		type -p monet-config > /dev/null 2>&1
 		ERROR=$?
 		if [ $ERROR -eq 0 ]; then
 			MONET_PREFIX=`monet-config --prefix`
