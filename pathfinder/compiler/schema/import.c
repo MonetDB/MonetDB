@@ -699,6 +699,9 @@ attr_occurs (PFarray_t *atts, PFty_t partial_type)
             PFoops (OOPS_SCHEMAIMPORT,
                     "use should be `required', `prohibited' or `optional'");
     }
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return PFty_empty ();
 }
 
 /**

@@ -532,6 +532,9 @@ duplicate (db_id_t db, char *buf, nat len, nat *prop_id)
         
         exit (EXIT_FAILURE);
     }        
+
+    /* just to pacify picky compilers; never reached due to "exit" in PFoops */
+    return 0;
 }
 
 #else
