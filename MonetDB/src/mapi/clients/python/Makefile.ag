@@ -21,7 +21,7 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = HAVE_SWIG?Cimpl
+SUBDIRS = HAVE_PYTHON_SWIG?Cimpl
 
 MTSAFE
 

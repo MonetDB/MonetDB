@@ -606,6 +606,35 @@ AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
+AC_ARG_WITH(swig,
+	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+	SWIG="$withval",
+	SWIG=swig)
+AC_MSG_CHECKING([for swig >= 1.3.20])
+if test "x$SWIG" != xno; then
+  case "$SWIG" in
+  yes|auto)
+    SWIG=swig;;
+  esac
+  # we want the right version...
+  case `$SWIG -version 2>&1` in
+  *Version\ 1.3.2*)
+    # ...and it must support -outdir
+    case `$SWIG -help 2>&1` in
+    *-outdir*) ;;
+    *) SWIG=no;;
+    esac ;;
+  *) SWIG=no;;
+  esac
+fi
+have_swig=no
+if test x"$SWIG" != xno; then
+	have_swig=yes
+fi
+AC_MSG_RESULT($have_swig)
+AC_SUBST(SWIG)
+AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
+
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
 	python="$withval",
@@ -620,8 +649,9 @@ no)
   python=yes
   ;;
 esac
+AC_MSG_CHECKING([for python >= 2.0])
 if test "x$python" != xno; then
-  case `"$PYTHON" -c 'import sys; print sys.version[[:3]]'` in
+  case `"$PYTHON" -c 'import sys; print sys.version[[:3]]' 2>/dev/null` in
   2.*) ;;
   '')
      case "$python" in
@@ -639,7 +669,7 @@ if test "x$python" != xno; then
   esac
 fi
 if test "x$python" != xno; then
-  PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()'`
+  PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()' 2>/dev/null`
   if test ! "$PYTHONINC"; then
     case "$python" in
     auto)
@@ -660,9 +690,14 @@ if test "x$python" != xno; then
     python=no
   fi
 fi
+if test x"$python" != xno; then
+	python=yes
+fi
+AC_MSG_RESULT($python)
 AC_SUBST(PYTHONINC)
 AC_SUBST(PYTHON)
 AM_CONDITIONAL(HAVE_PYTHON, test x"$python" != xno)
+AM_CONDITIONAL(HAVE_PYTHON_SWIG, test x"$python" != xno -a x"$SWIG" != xno)
 
 AC_ARG_WITH(perl,
 	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
@@ -678,6 +713,7 @@ no)
   perl=yes
   ;;
 esac
+AC_MSG_CHECKING([for perl])
 if test "x$perl" != xno; then
   PERLINC=`"$PERL" -MConfig -e 'print "$Config{archlibexp}/CORE"'`
   if test ! "$PERLINC"; then
@@ -700,33 +736,14 @@ if test "x$perl" != xno; then
     perl=no
   fi
 fi
+if test x"$perl" != xno; then
+	perl=yes
+fi
+AC_MSG_RESULT($perl)
 AC_SUBST(PERLINC)
 AC_SUBST(PERL)
 AM_CONDITIONAL(HAVE_PERL, test x"$perl" != xno)
-
-AC_ARG_WITH(swig,
-	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
-	SWIG="$withval",
-	SWIG=swig)
-if test "x$SWIG" != xno; then
-  case "$SWIG" in
-  yes|auto)
-    SWIG=swig;;
-  esac
-  # we want the right version...
-  case `$SWIG -version 2>&1` in
-  *Version\ 1.3.2*)
-    # ...and it must support -outdir
-    case `$SWIG -help 2>&1` in
-    *-outdir*) ;;
-    *) SWIG=no;;
-    esac ;;
-  *) SWIG=no;;
-  esac
-fi
-AC_SUBST(SWIG)
-dnl SWIG is useless without Python
-AM_CONDITIONAL(HAVE_SWIG, test "x$SWIG" != xno -a "x$PYTHON" != xno)
+AM_CONDITIONAL(HAVE_PERL_SWIG, test x"$perl" != xno -a x"$SWIG" != xno)
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
