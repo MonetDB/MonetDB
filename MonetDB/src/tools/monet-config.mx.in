@@ -29,7 +29,6 @@ Usage: monet-config [OPTION]
 
 Known values for OPTION are:
 
-  --prefix[=DIR]	print/change monet prefix [default $prefix]
   --build		print monet build directory
   --source		print monet source directory
   --libs		print Monet module linking information
@@ -62,12 +61,13 @@ while test $# -gt 0; do
     esac
 
     case "$1" in
-    --prefix=*)
-	prefix=$optarg
-	;;
 
     --prefix)
 	echo $prefix
+	;;
+
+    --exec-prefix)
+	echo $exec-prefix
 	;;
 
     --build)
