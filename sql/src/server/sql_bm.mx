@@ -319,7 +319,8 @@ void bm_save( bm *bm, FILE *fp )
 			if (bm->debug & 1 )
 				printf("bm_save %s %ld\n", name_version, BATcount(b) );
 
-	    		BATrename(b, name_version);
+			if (strlen(name_version) < (IDLENGTH-1))
+	    			BATrename(b, name_version);
 	    		BATmode(b, PERSISTENT);
 			BATkey(b, o->hkey);
 			BATkey(BATmirror(b), o->tkey);
@@ -503,7 +504,8 @@ static void bat_rename(bat bid, char *name, int version, int mode)
 				name, 
 				(mode==BM_WRITE)?'W':'R', 	
 				version);
-   	BATrename(b, buf);
+	if (strlen(buf) < (IDLENGTH-1))
+   		BATrename(b, buf);
 	bat_destroy(b);
 }
 
