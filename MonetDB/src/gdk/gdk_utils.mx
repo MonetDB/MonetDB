@@ -105,12 +105,14 @@ to access its information.
 
 str expandFile(str fname){
 	static char name[PATHLENGTH];
+	char buffer[PATHLENGTH];
 
-	SLASH_2_DIR_SEP(fname);
-	if( strncmp("...",fname,3)==0 && fname[3]==DIR_SEP ) {
-		sprintf(name,"%s%s",GDKdistrStr,fname+3);
-		return GDKstrdup(name);
-	} else return fname;
+	strcpy(name,fname);
+	SLASH_2_DIR_SEP(name);
+	if( strncmp("...",name,3)==0 && name[3]==DIR_SEP ) {
+		sprintf(buffer,"%s%s",GDKdistrStr,name+3);
+		return GDKstrdup(buffer);
+	} else return GDKstrdup(name);
 }
 void GDKusage(){
 	fprintf(stderr,"usage: <program> [-db <db_name>] [-monetrc <file>]\n");
@@ -196,9 +198,11 @@ void GDKenvironment(str db, str monetrc)
 		if( strcmp(s,"gdk_mmap")==0)
 			GDK_mem_bigsize =((lng) atoi(val)) << 10;
 		else
-		if( strcmp(s,"gdk_dbfarm")==0)
-			strcpy(GDKdbfarmStr, expandFile(val));
-		else
+		if( strcmp(s,"gdk_dbfarm")==0){
+			str f= expandFile(val);
+			strcpy(GDKdbfarmStr, f);
+			GDKfree(f);
+		} else
 		if( strcmp(s,"gdk_dbname")==0)
 			strcpy(GDKdbnameStr, val);
 		else
