@@ -249,26 +249,25 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
         os.unlink(installincsfile)
     installincs = shelve.open( installincsfile, "c")
     for k,vals in incs.items():
-	nvals = []
-	for i in vals:
-		if (os.path.isabs(i)):
-			nvals.append(i)
-		else:
-			inc = os.path.normpath(os.path.join(cwd,i))
-			mlen = 0;
-			subsrc = ''
-			subins = ''
-			for src,install in incdirsmap:
-				m = re.match(src,inc)
-				if (m and m.end() > mlen):
-					mlen = m.end()
-					subsrc = src
-					subins = install
-					
-			if mlen > 0:
-				inc = re.sub(subsrc,\
-					re.sub('includedir','..',subins),inc)
-			nvals.append(inc)
+        nvals = []
+        for i in vals:
+            if os.path.isabs(i):
+                nvals.append(i)
+            else:
+                inc = os.path.normpath(os.path.join(cwd,i))
+                mlen = 0;
+                subsrc = ''
+                subins = ''
+                for src,install in incdirsmap:
+                    m = re.match(src,inc)
+                    if m and m.end() > mlen:
+                        mlen = m.end()
+                        subsrc = src
+                        subins = install
+                                        
+                if mlen > 0:
+                    inc = re.sub(subsrc, re.sub('includedir','..',subins),inc)
+                nvals.append(inc)
         installincs[k] = nvals
     installincs.close()
 
@@ -468,12 +467,12 @@ def collect_includes(incdirs, cwd, topdir):
     for dir,org in dirs:
             if os.path.isabs(dir):
                 f = os.path.join(dir, ".incs.ag")
-            	if not os.path.exists(f):
-                	f = os.path.join(dir, ".incs.in")
+                if not os.path.exists(f):
+                    f = os.path.join(dir, ".incs.in")
             else:
                 f = os.path.join(cwd, dir, ".incs.ag")
-            	if not os.path.exists(f):
-                	f = os.path.join(cwd, dir, ".incs.in")
+                if not os.path.exists(f):
+                    f = os.path.join(cwd, dir, ".incs.in")
 
             if os.path.exists(f):
                 incs = shelve.open(f)
