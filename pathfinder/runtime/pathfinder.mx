@@ -650,7 +650,7 @@ PROC import_doc(str flnm, str name) : void :=
         bat("prop_text" + docid).count))
     {
         printf("The properties of the file '%s' are propably not compressed!\n", flnm);
-	printf("You can compress it with: 'compress_properties(\"%s\");'\n", name);
+	printf("You can compress the loaded instance '%s' with: 'compress_properties(\"%s\");'\n", name, name);
     }
 }
 ADDHELP("import_doc", "rode", "Nov 2003",
@@ -1331,10 +1331,14 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
    var uniqueIter_count := {count}(iter.reverse, iter.tunique);
    
    printf("order: uniqueIter_count %i, iter %i\n", uniqueIter_count.chk_order(false), iter.chk_order(false));
-   
-   if ((uniqueIter_count.chk_order(false) >= 4) or 
+
+   if ((and(uniqueIter_count.chk_order(false),4) = 4) or 
        (iter.chk_order(false) >= 4))
+   {
+       uniqueIter_count.print;
+       iter.print;
        ERROR ("ordering is wrong in scj (concept with slices doesn't work)");
+   }	
 
    uniqueIter_count := uniqueIter_count.[-](1);
 
@@ -1386,3 +1390,32 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
    return result_scj;
 }
 @
+
+@mil
+
+PROC combine_string (BAT[any,str] strings) : str :=
+{
+    if (strings.count = 0)
+	return "";
+
+    var result := strings.fetch(0);
+    strings.slice(1,strings.count - 1)@batloop () {
+	result :+= " " + $t;
+    }
+    return result;
+}
+ADDHELP("combine_string", "tsheyar", "Aug 2004",
+"PARAMETERS:\n\
+BAT[any,str] list of strings\n\
+DESCRIPITON:\n\
+concatenates all strings from the bat to one string with a single space between each string.",
+"pathfinder");
+
+PROC combine_strings (BAT[oid,str] strings) : BAT[oid,str] :=
+{
+    return {combine_string}(strings);
+}
+ADDHELP("combine_strings", "tsheyar", "Aug 2004",
+"DESCRIPITON:\n\
+pseudonym for {combine_string}(BAT[oid,str])",
+"pathfinder");
