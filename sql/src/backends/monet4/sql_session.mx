@@ -539,7 +539,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out,
 	in->eof = 1;		/* force prompt on first iteration */
 	while(go){
 		/* fprintf(stdout,"mapisqlclient:ready to accept next query\n");*/
-		while (in->pos < in->len && isspace(in->buf[in->pos]))
+		while (in->pos < in->len && isspace((int)(in->buf[in->pos])))
 			in->pos++;
 
 		if (in->pos >= in->len) {
