@@ -6,6 +6,9 @@ import os
 automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h' ]
 script_ext = [ 'mil' ]
 
+def msc_dummy(fd, var, values, msc ):
+  res = fd
+ 
 def msc_list2string(l,pre,post):
   res = ""
   for i in l:
@@ -394,6 +397,7 @@ def msc_library(fd, var, libmap, msc ):
 
 def msc_libs(fd, var, libsmap, msc ):
 
+  sep = ""
   if (libsmap.has_key('SEP')):
   	sep = libsmap['SEP'][0]
 
@@ -472,6 +476,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'LIB' : msc_library,
 		 'BINS' : msc_bins,
 		 'BIN' : msc_binary,
+		 'SCRIPTS' : msc_dummy,
  		 'INCLUDES' : msc_includes,
 		 'MTSAFE' : msc_mtsafe,
 		 'CFLAGS' : msc_cflags,
@@ -544,7 +549,10 @@ CXXEXT = \\\"cxx\\\"
      fd.write("install: install-msc\n")
 	 
   for i in tree.keys():
-    j = string.upper(i[0:3])
+    j = i
+    if (string.find(i,'_') >= 0):
+    	k,j = string.split(i,'_',1)
+    	j = string.upper(k)
     if (type(tree.value(i)) == type([])):	
       if (output_funcs.has_key(i)):
 	output_funcs[i](fd,i,tree.value(i),msc)
@@ -554,7 +562,10 @@ CXXEXT = \\\"cxx\\\"
 	msc_assignment(fd,i,tree.value(i),msc)
 
   for i in tree.keys():
-    j = string.upper(i[0:3])
+    j = i
+    if (string.find(i,'_') >= 0):
+    	k,j = string.split(i,'_',1)
+    	j = string.upper(k)
     if (type(tree.value(i)) == type({})):	
       if (output_funcs.has_key(i)):
 	output_funcs[i](fd,i,tree.value(i),msc)

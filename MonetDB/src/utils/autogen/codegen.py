@@ -6,16 +6,21 @@ import os
 import shelve
 from var import *
 
-mx2mil = "^@mil[ \t]*"
-mx2mel = "^@m[ \t]*"
-mx2h = "^@h[ \t]*"
-mx2c = "^@c[ \t]*"
-mx2y = "^@y[ \t]*"
-mx2l = "^@l[ \t]*"
-mx2cc = "^@C[ \t]*"
-mx2yy = "^@Y[ \t]*"
-mx2ll = "^@L[ \t]*"
-mx2odl = "^@odl[ \t]*"
+mx2mil = "^@mil[ \t\r\n]+"
+mx2mel = "^@m[ \t\r\n]+"
+mx2h = "^@h[ \t\r\n]+"
+mx2c = "^@c[ \t\r\n]+"
+mx2y = "^@y[ \t\r\n]+"
+mx2l = "^@l[ \t\r\n]+"
+mx2cc = "^@C[ \t\r\n]+"
+mx2yy = "^@Y[ \t\r\n]+"
+mx2ll = "^@L[ \t\r\n]+"
+mx2odl = "^@odl[ \t\r\n]+"
+mx2fgr = "^@fgr[ \t\r\n]+"
+mx2tcl = "^@tcl[ \t\r\n]+"
+mx2java = "^@java[ \t\r\n]+"
+mx2xsl = "^@xsl[ \t\r\n]+"
+mx2sh = "^@sh[ \t\r\n]+"
 
 e_mx = regex.compile('^@[^\{\}]')
 
@@ -28,7 +33,12 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
 		  (mx2l, '.l'), 
 		  (mx2yy, '.yy'), 
 		  (mx2ll, '.ll'), 
-		  (mx2odl, '.odl') ]  
+		  (mx2odl, '.odl'),
+		  (mx2fgr, '.fgr'), 
+		  (mx2tcl, '.tcl'), 
+		  (mx2java, '.java'), 
+		  (mx2xsl, '.xsl'), 
+		  (mx2sh, ''), ]  
 }
 end_code_extract = { 'mx': e_mx }
 
@@ -44,16 +54,20 @@ code_gen = { 'm': 	[ '.proto.h', '.glue.c' ],
 	    'yy.cc': 	[ '.yy.o' ],
 	    'cc': 	[ '.o' ],
 	    'c': 	[ '.o' ],
-	    'glue.c': 	[ '.glue.o' ]
+	    'glue.c': 	[ '.glue.o' ],
+	    '.fgr':     [ '_engine.c', '_template.c', '_schema.mil' ],
+	    '.class':   [ '.java' ],
 }
 
 c_inc = "^[ \t]*#[ \t]*include[ \t]*[<\"]\([a-zA-Z0-9\.\_]*\)[>\"]"
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+\([a-zA-Z0-9\.\_, ]*\);"
 m_sep = "[ \t]*,[ \t*]"
+xsl_inc = "^[ \t]*<xsl:{include|import}[ \t]*href=['\"]\([a-zA-Z0-9\.\_]*\)['\"]"
 
 c_inc = regex.compile(c_inc)
 m_use = regex.compile(m_use)
 m_sep = regex.compile(m_sep)
+xsl_inc = regex.compile(xsl_inc)
 
 scan_map = { 'c': [ c_inc, None, '' ], 
 	 'cc': [ c_inc, None, '' ], 
@@ -62,7 +76,8 @@ scan_map = { 'c': [ c_inc, None, '' ],
 	 'yy': [ c_inc, None, '' ], 
 	 'l': [ c_inc, None, '' ], 
 	 'll': [ c_inc, None, '' ], 
-	 'm': [ m_use, m_sep, '.m' ]
+	 'm': [ m_use, m_sep, '.m' ],
+	 'xsl': [ xsl_inc, None, '' ], 
 }
 
 dep_map = { 'glue.c': [ '.proto.h' ],
@@ -75,6 +90,14 @@ dep_rules = { 'glue.c': [ 'm', '.proto.h' ] ,
 
 lib_map = [ 'glue.c', 'm' ]
 
+def split_filename(f): 
+	base = f
+	ext = ""
+	if (string.find(f,".") >= 0):
+		return string.split(f,".", 1)
+	return (base,ext)
+	
+
 def readfile(f):
     src = open(f, 'rb')
     buf = src.read()
@@ -83,7 +106,7 @@ def readfile(f):
 
 def readfilepart(f,ext):
     dir,file = os.path.split(f)
-    fn,fext = string.split(file,".", 1)
+    fn,fext = split_filename(file)
     src = open(f, 'rb')
     buf = src.read()
     src.close()
@@ -105,24 +128,28 @@ def readfilepart(f,ext):
     return buf2
 
 def do_code_extract(f,base,ext, targets, deps, cwd):
-	b = readfile(cwd+os.sep+f)
-	if (code_extract.has_key(ext)):
-	  for pat,newext in code_extract[ext]:
-	    p = regex.compile(pat)
-	    if (p.search(b) >= 0 ):
-	      extracted = base + newext
-	      targets.append( extracted )
-	      deps[extracted] = [ f ]
+        file = cwd+os.sep+f
+    	if os.path.exists(file):
+	  b = readfile(file)
+	  if (code_extract.has_key(ext)):
+	    for pat,newext in code_extract[ext]:
+	      p = regex.compile(pat)
+	      if (p.search(b) >= 0 ):
+	        extracted = base + newext
+	        targets.append( extracted )
+	        deps[extracted] = [ f ]
+ 	  else:
+	    targets.append(f)
  	else:
 	  targets.append(f)
-
+  
 def do_code_gen(targets, deps):
   changes = 1
   while(changes):
     ntargets = []
     changes = 0
     for f in targets:
-      base,ext = string.split(f,".", 1)
+      base,ext = split_filename(f)
       if (code_gen.has_key(ext)):
 	changes = 1
 	for newext in code_gen[ext]:
@@ -177,20 +204,20 @@ def do_dep_combine(deps,includes,cwd,cache):
 
 def do_dep_rules(deps,cwd,cache):
   for target in deps.keys():
-    tf,te = string.split(target,".",1)
+    tf,te = split_filename(target)
     if (dep_rules.has_key(te)):
       (dep,new) = dep_rules[te]
       if (cache.has_key(tf+"."+dep)):
         if (tf+new not in cache[target]):
       	  cache[target].append(tf+new)
 	for d in cache[tf+"."+dep]:
-          df,de = string.split(d,".",1)
+          df,de = split_filename(d)
 	  if (de == dep and df+new not in cache[target]):
       	    cache[target].append(df+new)
 
 def do_scan(targets,deps,incmap,cwd,cache):
   for target,depfiles in deps.items():
-      base,ext = string.split(target,".", 1)
+      base,ext = split_filename(target)
       if (not cache.has_key(target)):
         inc_files = []
         if (scan_map.has_key(ext)):
@@ -230,12 +257,12 @@ def do_scan(targets,deps,incmap,cwd,cache):
 
 def do_lib(lib,deps):
   true_deps = []
-  base,ext = string.split(lib,".", 1)
+  base,ext = split_filename(lib)
   if (ext in lib_map):
     if (deps.has_key(lib)):
       lib_deps = deps[lib]
       for d in lib_deps:
-      	b,ext = string.split(d,".", 1)
+      	b,ext = split_filename(d)
 	if (base != b):
       	  if (ext in lib_map):
 	    if (b not in true_deps):
@@ -253,7 +280,7 @@ def do_libs(deps):
     while(1):
       true_deps = do_lib(lib,deps)
       if (len(true_deps) > 0):
-        base,ext = string.split(lib,".", 1)
+        base,ext = split_filename(lib)
 	libs[base+"_LIBS"] = true_deps
       if (deps.has_key(lib)):
         lib = deps[lib][0]
@@ -299,12 +326,12 @@ def codegen(tree, cwd, topdir):
  
   deps = {}
   for i in tree.keys():  
-    if ( i[0:4] == "lib_" or i[0:4] == "bin_" or i[0:4] == "mod_" or \
-	 i == "LIBS" or i == "BINS" or i == "MODS" ):
+    if ( i[0:4] == "lib_" or i[0:4] == "bin_" or  \
+         i == "LIBS" or i == "BINS" or i[0:8] == "scripts_" ):
 	  targets = []
  	  if (type(tree.value(i)) == type({}) ):
 	    for f in tree.value(i)["SOURCES"]:
-	      (base,ext) = string.split(f,".", 1)
+	      (base,ext) = split_filename(f)
 	      do_code_extract(f,base,ext, targets, deps, cwd)
 	    targets = do_code_gen(targets,deps)
 	    do_deps(targets,deps,includes,incmap,cwd)

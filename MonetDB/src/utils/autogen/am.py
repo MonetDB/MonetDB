@@ -96,13 +96,21 @@ def am_deps(fd,deps,objext, am):
 
 # list of scripts to install
 def am_scripts(fd, var, scripts, am):
-  for name in scripts:
-      fd.write("install-exec-local-%s: %s\n" % (name,name))
-      fd.write("\t$(RM) $(DESTDIR)$(SCRIPTDIR)/%s\n" % (name))
-      fd.write("\t$(INSTALL) %s $(DESTDIR)/$(SCRIPTDIR)/%s\n\n" % (name,name))
-      fd.write("uninstall-exec-local-%s: \n" % (name))
-      fd.write("\t$(RM) $(DESTDIR)$(SCRIPTDIR)/%s\n\n" % (name))
-      am['INSTALL'].append(name)
+
+  sd = "SCRIPTSDIR"
+  if (scripts.has_key("DIR")):
+    sd = scripts["DIR"][0] # use first name given
+  sd = am_translate_dir(sd,am)
+  
+  for script in scripts['TARGETS']:
+      fd.write("install-exec-local-%s: %s\n" % (script,script))
+      fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
+      fd.write("\t$(INSTALL) %s $(DESTDIR)%s/%s\n\n" % (script,sd,script))
+      fd.write("uninstall-exec-local-%s: \n" % (script))
+      fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,script))
+      am['INSTALL'].append(script)
+
+  am_deps(fd,scripts['DEPS'],"\.o",am);
 
 def am_binary(fd, var, binmap, am ):
   
@@ -428,7 +436,10 @@ CXXEXT = \\\"cc\\\"
   am['LIBDIR'] = "lib"
   am['ALL'] = []
   for i in tree.keys():
-    j = string.upper(i[0:3])
+    j = i
+    if (string.find(i,'_') >= 0):
+    	k,j = string.split(i,'_',1)
+    	j = string.upper(k)
     if (output_funcs.has_key(i)):
 	output_funcs[i](fd,i,tree.value(i),am)
     elif (output_funcs.has_key(j)):
