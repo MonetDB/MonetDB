@@ -519,9 +519,9 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         TSTDIR = os.curdir
     else:
         TSTDIR = testdir[len(TSTSRCBASE+os.sep):]
-    TSTSRCDIR = os.path.join(testdir,TSTSUFF)
-    TSTBLDDIR = os.path.join(env['TSTBLDBASE'],TSTDIR+TSTSUFF)
-    TSTTRGDIR = os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR)
+    TSTSRCDIR = os.path.normpath(os.path.join(testdir,TSTSUFF))
+    TSTBLDDIR = os.path.normpath(os.path.join(env['TSTBLDBASE'],TSTDIR,TSTSUFF))
+    TSTTRGDIR = os.path.normpath(os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR))
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         TSTDB = TSTPREF+"_"+string.replace(TSTDIR, os.sep, '_')
@@ -1815,6 +1815,10 @@ def main(argv) :
     #       ErrXit("Illegal MONET_BUILD: directory '"+a"` does not exist!")
     #if not os.path.indir(MONET_PREFIX):
     #       ErrXit("Illegal MONET_PREFIX: directory '"+a"` does not exist!")
+
+    # ensure consistent TSTSRCBASE
+    if os.path.basename(env['TSTSRCBASE']) == TSTSUFF  and  os.path.isfile(os.path.join(env['TSTSRCBASE'],"All")):
+        ErrXit('TSTSRCBASE itself must not be a test-directory, i.e., called "%s" and contain an "All" file!' % TSTSUFF)
 
     # make TSTxxxBASE absolute physical paths
     BACK = os.getcwd()
