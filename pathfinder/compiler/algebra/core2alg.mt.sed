@@ -122,8 +122,6 @@ node  var_
       error
       root_
       empty_
-
-      int_eq
 ;
 
 label Query
@@ -140,7 +138,6 @@ label Query
       LocationSteps
       NodeTest
       KindTest
-      ComparExpr
       Atom
       NonAtom
       FunctionAppl
@@ -164,7 +161,6 @@ NonAtom:         error;
 NonAtom:         ConditionalExpr;
 NonAtom:         SequenceExpr;
 NonAtom:         PathExpr;
-NonAtom:         ComparExpr;
 NonAtom:         FunctionAppl;
 NonAtom:         BuiltIns;
 NonAtom:         ConstructorExpr;
@@ -774,8 +770,6 @@ ConstructorExpr: pi (lit_str);
 
 TagName:         tag;
 TagName:         CoreExpr;
-
-ComparExpr:      int_eq (Atom, Atom);
 
 FunctionAppl:    apply (FunctionArgs)
     =

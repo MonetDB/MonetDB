@@ -481,25 +481,6 @@ PFcore_ifthenelse (PFcnode_t *p, PFcnode_t *e1, PFcnode_t *e2)
 }
 
 /**
- * @bug This is a hack and should go away a.s.a.p
- *      (replace by core equivalent for integer equality)
- *
- * Create core tree node representing integer equality
- *
- * @param e1 first expression to compare
- * @param e2 second expression to compare
- * @return core tree node representing integer equality
- */
-PFcnode_t *
-PFcore_int_eq (PFcnode_t *e1, PFcnode_t *e2)
-{
-    assert (e1 && e2);
-    assert (IS_ATOM (e1) && IS_ATOM (e2));
-
-    return PFcore_wire2 (c_int_eq, e1, e2);
-}
-
-/**
  * Create a core tree node representing a for binding:
  *
  *     for v at p in e1 return e2

@@ -69,7 +69,6 @@
 #undef case_      
 #undef cases      
 #undef ifthenelse 
-#undef int_eq     
 #undef for_       
 #undef let        
 #undef seq        
@@ -108,7 +107,6 @@
 #define case_(e1,e2)          PFcore_case ((e1), (e2))
 #define cases(e1,e2)          PFcore_cases ((e1),(e2))
 #define ifthenelse(e1,e2,e3)  PFcore_ifthenelse ((e1), (e2), (e3))
-#define int_eq(e1,e2)         PFcore_int_eq ((e1), (e2))
 #define for_(e1,e2,e3,e4)     PFcore_for ((e1), (e2), (e3), (e4))
 #define let(e1,e2,e3)         PFcore_let ((e1), (e2), (e3))
 #define seq(e1,e2)            PFcore_seq ((e1), (e2))

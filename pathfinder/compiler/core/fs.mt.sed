@@ -1657,8 +1657,13 @@ StepExpr:               pred (PathExpr, Expr)
         PFvar_t *v3 = new_var (0);
         PFvar_t *v4 = new_var (0);
         PFvar_t *v5 = new_var (0);
+        PFvar_t *v6 = new_var (0);
         PFvar_t *dot = new_var ("dot");
         PFvar_t *fs_position = new_var ("pos");
+
+        PFfun_t *fn_eq = function (PFqname (PFns_op, "eq"));
+        /* need to subtract '- 1' because fs_position starts with '0' */
+        PFfun_t *minus = function (PFqname (PFns_op, "minus"));
 
         tDO ($%1$);
 
@@ -1668,9 +1673,6 @@ StepExpr:               pred (PathExpr, Expr)
 
         tDO ($%2$);
 
-        /* FIXME: replace int_eq () with core equivalent for
-         * integer equality
-         */
         [[ $$ ]] = 
         let (var (v1), [[ $1$ ]],
              let (var (v5), seq (var (v1), empty ()),
@@ -1679,10 +1681,17 @@ StepExpr:               pred (PathExpr, Expr)
                              let (var (v3), 
                                   typeswitch (var (v2),
                                       cases (case_ (seqtype (PFty_numeric ()),
-                                                    let (var (v4),
-                                                         int_eq (var (v2), 
-                                                                 var (fs_position)),
-                                                         var (v4))),
+                                                    let (var (v6),
+                                                         apply (minus,
+                                                                arg (var (v2),
+                                                                     arg (num(1),
+                                                                          nil ()))),
+                                                         let (var (v4),
+                                                              apply (fn_eq,
+                                                                     arg (var (v6),
+                                                                          arg (var (fs_position),
+                                                                               nil ()))),
+                                                              var (v4)))),
                                              nil ()),
                                       ebv (var (v2))),
                                   ifthenelse (var (v3), 

@@ -129,8 +129,6 @@ char *c_id[]  = {
   , [c_error]               "error"
   , [c_root]                "root"
   , [c_empty]               "empty"
-
-  , [c_int_eq]              "int-eq"
 };
 
 /** Current node id */

@@ -142,8 +142,6 @@ enum PFctype_t {
   , c_error                   /**< built-in function `error' */
   , c_root                    /**< built-in function `root' */
   , c_empty                   /**< built-in function `empty' */
-
-  , c_int_eq                  /**< equal operator for integers */
 };
 
 /** Semantic node content of core tree node */
@@ -227,8 +225,6 @@ PFcnode_t *PFcore_case (PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_cases (PFcnode_t *, PFcnode_t *);
 
 PFcnode_t *PFcore_ifthenelse (PFcnode_t *, PFcnode_t *, PFcnode_t *);
-
-PFcnode_t *PFcore_int_eq (PFcnode_t *, PFcnode_t *);
 
 PFcnode_t *PFcore_for (PFcnode_t *, PFcnode_t *, PFcnode_t *, PFcnode_t *);
 PFcnode_t *PFcore_let (PFcnode_t *, PFcnode_t *, PFcnode_t *);

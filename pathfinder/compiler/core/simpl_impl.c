@@ -133,8 +133,6 @@ static int TWIG_ID[] = {
     , [c_error]        error      /**< Built-in function 'error' */
     , [c_root]         root_      /**< Built-in function 'root' */
     , [c_empty]        empty_     /**< Built-in function 'empty' */
-
-    , [c_int_eq]       int_eq     /**< Comparison funct. for integers */
 };
 
 /** twig: setup twig */
@@ -191,7 +189,6 @@ static int TWIG_ID[] = {
 #undef error  
 #undef root_  
 #undef empty_ 
-#undef int_eq 
 
 /**
  * Walk core tree @a e and replace occurrences of variable @a v

@@ -2235,9 +2235,6 @@ core2mil (assgn_fn_t assgn_fn, PFvar_t * v, PFcnode_t * c)
 
         case c_error:                   /* Built-in function 'error' */
 
-        case c_int_eq:                  /* Equal operator for integers */
-
-
             assert (!"Not implemented yet!");
     }
 
