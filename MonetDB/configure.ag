@@ -35,6 +35,8 @@ AH_BOTTOM([#include "stddef.h"])
 dnl ----------------------
 AM_INIT_AUTOMAKE("MonetDB", 4.3.15)
 AM_CONFIG_HEADER(monetdb_config.h:conf/config.h.in)
+CONFIG_H=monetdb_config.h
+AC_SUBST(CONFIG_H)
 
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])

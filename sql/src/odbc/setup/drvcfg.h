@@ -12,7 +12,6 @@
 #ifndef _ODBCINST_H
 #define _ODBCINST_H
 
-#include <monetdb_config.h>
 #include <sql_config.h>
 
 #include <unistd.h>

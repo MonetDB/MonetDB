@@ -30,7 +30,6 @@ Vector.h.
 
 @+ Implementation Code for example module. 
 @c
-#include <config.h>
 #include <template_config.h>
 
 #include "example.h"
