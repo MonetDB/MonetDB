@@ -33,6 +33,7 @@ MonetDB $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforg
 pathfinder $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-checkins@lists.sourceforge.net
 sql $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-sql-checkins@lists.sourceforge.net
 template $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-templ-chkins@lists.sourceforge.net
+xml $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-xml-checkins@lists.sourceforge.net
 
 # catch all
 DEFAULT $CVSROOT/CVSROOT/syncmail -q -u %{sVv} sjoerd@users.sourceforge.net
