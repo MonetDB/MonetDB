@@ -205,9 +205,9 @@ typedef struct bstream {
 	int eof;
 } bstream;
 
-bstream *bstream_create( stream *rs, int chunk_size );
-void bstream_destroy( bstream *s );
-int bstream_read( bstream *s, int size );
+stream_export bstream *bstream_create( stream *rs, int chunk_size );
+stream_export void bstream_destroy( bstream *s );
+stream_export int bstream_read( bstream *s, int size );
 
 @+ bstream functions
 The bstream_create gets a read stream (rs) as input and the initial chunk size
