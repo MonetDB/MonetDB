@@ -15,7 +15,7 @@ printf("\nReady.\n");
 Ready.
 
 
-quit;
+quit();
 
 Over..
 

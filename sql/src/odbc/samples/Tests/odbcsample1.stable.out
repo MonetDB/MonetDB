@@ -12,7 +12,7 @@ stdout of test 'odbcsample1` in directory 'src/odbc/samples` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

@@ -11,7 +11,7 @@ stdout of test 'moa_ordered` in directory 'src/benchmarks/moa` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

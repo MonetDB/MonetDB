@@ -11,7 +11,7 @@ stdout of test '88` in directory 'src/benchmarks/arno` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

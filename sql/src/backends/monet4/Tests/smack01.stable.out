@@ -11,7 +11,7 @@ stdout of test 'smack01` in directory 'src/backends/monet4` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

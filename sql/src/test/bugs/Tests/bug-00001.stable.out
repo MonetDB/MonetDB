@@ -13,7 +13,7 @@ stdout of test 'bug-00001` in directory 'src/test/bugs` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

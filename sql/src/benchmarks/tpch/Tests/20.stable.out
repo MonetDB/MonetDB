@@ -12,7 +12,7 @@ printf("\nReady.\n");
 
 Ready.
 #TODO stmt_intersect (1)
-quit;
+quit();
 
 Over..
 

@@ -12,7 +12,7 @@ stdout of test 'count` in directory 'src/test` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

@@ -11,7 +11,7 @@ stdout of test 'example-queries` in directory 'src/test` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

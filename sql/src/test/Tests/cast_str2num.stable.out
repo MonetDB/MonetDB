@@ -11,7 +11,7 @@ stdout of test 'cast_str2num` in directory 'src/test` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

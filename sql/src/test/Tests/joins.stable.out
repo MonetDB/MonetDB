@@ -12,7 +12,7 @@ stdout of test 'joins` in directory 'src/test` itself:
 printf("\nReady.\n");
 
 Ready.
-quit;
+quit();
 
 Over..
 

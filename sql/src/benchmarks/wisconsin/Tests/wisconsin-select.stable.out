@@ -12,7 +12,7 @@ printf("\nReady.\n");
 
 Ready.
 # [ 10 11 ]
-quit;
+quit();
 
 Over..
 
