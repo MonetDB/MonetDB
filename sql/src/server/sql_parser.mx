@@ -317,6 +317,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_to_savepoint
 	opt_using
 	string
+	type_alias
 
 %type <l>
 	object_privileges
@@ -409,7 +410,7 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval> 
 	IDENT aMODULE aTYPE ALIAS AGGR sqlINT INTNUM APPROXNUM USING
-	ALL DISTINCT ANY SOME CHECK GLOBAL CAST
+	ALL DISTINCT ANY EVERY SOME CHECK GLOBAL CAST
 	CHARACTER VARYING sqlDECIMAL sqlFLOAT 
 	sqlDOUBLE PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE 
@@ -2223,6 +2224,22 @@ literal:
 		  }
 	  	  _DELETE($1); 
 		}
+ |  type_alias string 
+		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
+		  atom *a = atom_general(t, $2);
+		  $$ = NULL;
+	          if (a) 
+			$$ = _newAtomNode(a); 
+		  if (!$$) {
+			char buf[BUFSIZ]; 
+
+			snprintf(buf, BUFSIZ, "incorrect %s %s", $1, $2);
+			yyerror(buf);
+			if (a) 
+				atom_destroy(a);
+			YYABORT;
+		  }
+		}
  ;
 
 	/* miscellaneous */
@@ -2395,6 +2412,9 @@ data_type:
  | interval_type		
  | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); _DELETE($1); }
  | aTYPE '(' nonzero ')'{ $$ = sql_bind_subtype($1, $3, 0); _DELETE($1); }
+ | type_alias		{ $$ = sql_bind_subtype($1, 0, 0); }
+ | type_alias '(' nonzero ')'
+			{ $$ = sql_bind_subtype($1, $3, 0); }
  | IDENT		{ mvc *m = (mvc*)parm;
 			  sql_type *t = mvc_bind_type(m, $1); 
 			  if (!t) {
@@ -2402,6 +2422,7 @@ data_type:
 
 				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
 				yyerror(buf);
+				_DELETE($1); 
 				$$ = NULL;
 				YYABORT;
 			  } else {
@@ -2417,6 +2438,7 @@ data_type:
 
 				snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
 				yyerror(buf);
+				_DELETE($1); 
 				$$ = NULL;
 				YYABORT;
 			  } else {
@@ -2425,6 +2447,23 @@ data_type:
 			  _DELETE($1); 
 			}
 		
+ ;
+
+type_alias:
+ ALIAS
+	{ 	char *t = sql_bind_alias($1);
+	  	if (!t) {
+			char buf[BUFSIZ]; 
+
+			snprintf(buf, BUFSIZ, "Type (%s) unknown", $1);
+			yyerror(buf);
+			_DELETE($1); 
+			$$ = NULL;
+			YYABORT;
+		}
+		_DELETE($1); 
+		$$ = t; 
+	}
  ;
 
 opt_var:
@@ -2439,6 +2478,7 @@ authid: 		ident ;
 ident: 
     IDENT	{ $$ = $1; }	
  |  aTYPE	{ $$ = $1; }
+ |  ALIAS	{ $$ = $1; }
  |  aMODULE	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
  |  non_reserved_word		
