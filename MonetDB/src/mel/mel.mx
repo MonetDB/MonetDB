@@ -403,7 +403,7 @@ int main(int argc, char *argv[] ){
 	return 0;
 }
 
-@l 
+@L 
 %{
 #include "mel.h"
 #include "mel_tab.h"
@@ -713,7 +713,7 @@ char* get_signature(char* fcn){
 	script[script_nr] = 0;
 	return script;
 }
-@y
+@Y
 %{
 #include "mel.h"
 #include <stdio.h>

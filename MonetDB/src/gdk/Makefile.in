@@ -65,6 +65,7 @@ AS = @AS@
 AWK = @AWK@
 BASH = @BASH@
 CC = @CC@
+CFLAGS = @CFLAGS@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -95,46 +96,17 @@ YACC = @YACC@
 install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
 
-#AUTOMAKE_OPTIONS = no-dependencies
 
 
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
-gdkincludedir = $(includedir)/gdk
-
-gdkinclude_HEADERS = \
-	gdk.h gdk_align.h gdk_atoms.h gdk_bat.h gdk_batop.h \
-	gdk_bbp.h gdk_compress.h gdk_delta.h gdk_desc.h gdk_heap.h \
-	gdk_relop.h gdk_search.h gdk_setop.h gdk_storage.h gdk_tm.h \
-	gdk_utils.h gdk_system.h 
-
-
-GDK_SOURCES = \
-	$(gdkinclude_HEADERS) \
-	gdk_align.c gdk_atoms.c gdk_bat.c gdk_batop.c gdk_bbp.c \
-	gdk_compress.c gdk_delta.c gdk_desc.c gdk_heap.c gdk_qsort.c \
-	gdk_relop.c gdk_search.c gdk_setop.c gdk_storage.c gdk_tm.c \
-	gdk_utils.c gdk_system.c
-
-
-BUILT_SOURCES = $(GDK_SOURCES) 
-
-INCLUDES = 
-
-CFLAGS = @CFLAGS@ $(thread_safe_flag_spec)
-
-# Build a libtool library for installation in libdir.
+libbat_la_SOURCES = gdk.h gdk_batop.c gdk_batop.h gdk_desc.c gdk_desc.h gdk_search.c gdk_search.h gdk_tm.c gdk_tm.h gdk_align.c gdk_align.h gdk_bbp.c gdk_bbp.h gdk_heap.c gdk_heap.h gdk_setop.c gdk_setop.h gdk_utils.c gdk_utils.h gdk_atoms.c gdk_atoms.h gdk_compress.c gdk_compress.h gdk_qsort.c gdk_storage.c gdk_storage.h gdk_bat.c gdk_bat.h gdk_delta.c gdk_delta.h gdk_relop.c gdk_relop.h gdk_system.c gdk_system.h
+MTSAFE = 
+BUILT_SOURCES = gdk.h gdk_batop.c gdk_batop.h gdk_desc.c gdk_desc.h gdk_search.c gdk_search.h gdk_tm.c gdk_tm.h gdk_align.c gdk_align.h gdk_bbp.c gdk_bbp.h gdk_heap.c gdk_heap.h gdk_setop.c gdk_setop.h gdk_utils.c gdk_utils.h gdk_atoms.c gdk_atoms.h gdk_compress.c gdk_compress.h gdk_qsort.c gdk_storage.c gdk_storage.h gdk_bat.c gdk_bat.h gdk_delta.c gdk_delta.h gdk_relop.c gdk_relop.h gdk_system.c gdk_system.h
+EXTRA_DIST = Makefile.ag Makefile.msc gdk.mx gdk_batop.mx gdk_desc.mx gdk_search.mx gdk_tm.mx gdk_align.mx gdk_bbp.mx gdk_heap.mx gdk_setop.mx gdk_utils.mx gdk_atoms.mx gdk_compress.mx gdk_qsort.mx gdk_storage.mx gdk_bat.mx gdk_delta.mx gdk_relop.mx gdk_system.mx
 lib_LTLIBRARIES = libbat.la
-
-EXTRA_DIST = \
-	bat.eps gdk_atoms.mx gdk_delta.mx    gdk_relop.mx    gdk_utils.mx \
-	bat1.eps gdk_bat.mx gdk_desc.mx     gdk_search.mx  \
-	bat2.eps gdk_batop.mx gdk_heap.mx     gdk_setop.mx \
-	gdk.mx        gdk_bbp.mx       gdk_system.mx  gdk_storage.mx \
-	gdk_align.mx  gdk_compress.mx  gdk_qsort.mx    gdk_tm.mx
-
-
-libbat_la_LDFLAGS = 
-libbat_la_SOURCES = $(GDK_SOURCES)
+gdkincludedir = $(includedir)/gdk
+gdkinclude_HEADERS = gdk.h gdk_batop.h gdk_desc.h gdk_search.h gdk_tm.h gdk_align.h gdk_bbp.h gdk_heap.h gdk_setop.h gdk_utils.h gdk_atoms.h gdk_compress.h gdk_storage.h gdk_bat.h gdk_delta.h gdk_relop.h gdk_system.h
 
 MEL = $(top_builddir)/src/mel/mel
 MX = $(top_builddir)/src/utils/Mx/Mx
@@ -152,11 +124,12 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I../..
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
+libbat_la_LDFLAGS = 
 libbat_la_LIBADD = 
-am_libbat_la_OBJECTS =  gdk_align.lo gdk_atoms.lo gdk_bat.lo \
-gdk_batop.lo gdk_bbp.lo gdk_compress.lo gdk_delta.lo gdk_desc.lo \
-gdk_heap.lo gdk_qsort.lo gdk_relop.lo gdk_search.lo gdk_setop.lo \
-gdk_storage.lo gdk_tm.lo gdk_utils.lo gdk_system.lo
+am_libbat_la_OBJECTS =  gdk_batop.lo gdk_desc.lo gdk_search.lo gdk_tm.lo \
+gdk_align.lo gdk_bbp.lo gdk_heap.lo gdk_setop.lo gdk_utils.lo \
+gdk_atoms.lo gdk_compress.lo gdk_qsort.lo gdk_storage.lo gdk_bat.lo \
+gdk_delta.lo gdk_relop.lo gdk_system.lo
 libbat_la_OBJECTS =  $(am_libbat_la_OBJECTS)
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -165,15 +138,8 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDF
 DIST_SOURCES =  $(libbat_la_SOURCES)
 HEADERS =  $(gdkinclude_HEADERS)
 
-depcomp = $(SHELL) $(top_srcdir)/conf/depcomp
-DEP_FILES =  @AMDEP@ $(DEPDIR)/gdk_align.Plo $(DEPDIR)/gdk_atoms.Plo \
-$(DEPDIR)/gdk_bat.Plo $(DEPDIR)/gdk_batop.Plo $(DEPDIR)/gdk_bbp.Plo \
-$(DEPDIR)/gdk_compress.Plo $(DEPDIR)/gdk_delta.Plo \
-$(DEPDIR)/gdk_desc.Plo $(DEPDIR)/gdk_heap.Plo $(DEPDIR)/gdk_qsort.Plo \
-$(DEPDIR)/gdk_relop.Plo $(DEPDIR)/gdk_search.Plo \
-$(DEPDIR)/gdk_setop.Plo $(DEPDIR)/gdk_storage.Plo \
-$(DEPDIR)/gdk_system.Plo $(DEPDIR)/gdk_tm.Plo $(DEPDIR)/gdk_utils.Plo
-DIST_COMMON =  $(gdkinclude_HEADERS) Makefile.am Makefile.in compile
+depcomp = 
+DIST_COMMON =  $(gdkinclude_HEADERS) Makefile.am Makefile.in
 
 
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -186,7 +152,7 @@ all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .c .h .lo .m .mil .mx .o .obj .proto.h
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/gdk/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/gdk/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -242,6 +208,12 @@ maintainer-clean-libtool:
 
 libbat.la: $(libbat_la_OBJECTS) $(libbat_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libbat_la_LDFLAGS) $(libbat_la_OBJECTS) $(libbat_la_LIBADD) $(LIBS)
+.c.o:
+	$(COMPILE) -c $<
+.c.obj:
+	$(COMPILE) -c `cygpath -w $<`
+.c.lo:
+	$(LTCOMPILE) -c -o $@ $<
 
 install-gdkincludeHEADERS: $(gdkinclude_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -294,54 +266,6 @@ distclean-tags:
 
 maintainer-clean-tags:
 
-@AMDEP@include $(DEPDIR)/gdk_align.Plo
-@AMDEP@include $(DEPDIR)/gdk_atoms.Plo
-@AMDEP@include $(DEPDIR)/gdk_bat.Plo
-@AMDEP@include $(DEPDIR)/gdk_batop.Plo
-@AMDEP@include $(DEPDIR)/gdk_bbp.Plo
-@AMDEP@include $(DEPDIR)/gdk_compress.Plo
-@AMDEP@include $(DEPDIR)/gdk_delta.Plo
-@AMDEP@include $(DEPDIR)/gdk_desc.Plo
-@AMDEP@include $(DEPDIR)/gdk_heap.Plo
-@AMDEP@include $(DEPDIR)/gdk_qsort.Plo
-@AMDEP@include $(DEPDIR)/gdk_relop.Plo
-@AMDEP@include $(DEPDIR)/gdk_search.Plo
-@AMDEP@include $(DEPDIR)/gdk_setop.Plo
-@AMDEP@include $(DEPDIR)/gdk_storage.Plo
-@AMDEP@include $(DEPDIR)/gdk_system.Plo
-@AMDEP@include $(DEPDIR)/gdk_tm.Plo
-@AMDEP@include $(DEPDIR)/gdk_utils.Plo
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-	-rm -rf $(DEPDIR)
-
-maintainer-clean-depend:
-
-@AMDEP@CCDEPMODE = @CCDEPMODE@
-
-.c.o:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.lo:
-@AMDEP@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LTCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.obj:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `cygpath -w $<`
-
-
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 distdir: $(DISTFILES)
@@ -376,7 +300,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-libLTLIBRARIES uninstall-gdkincludeHEADERS
 uninstall: uninstall-am
-all-am: Makefile $(BUILT_SOURCES) $(LTLIBRARIES) $(HEADERS) all-local
+all-am: Makefile $(LTLIBRARIES) $(HEADERS) all-local
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
@@ -396,27 +320,27 @@ maintainer-clean-generic:
 	-rm -f Makefile.in
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-libLTLIBRARIES mostlyclean-compile \
-		mostlyclean-libtool mostlyclean-tags mostlyclean-depend \
+		mostlyclean-libtool mostlyclean-tags \
 		mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
 clean-am:  clean-libLTLIBRARIES clean-compile clean-libtool clean-tags \
-		clean-depend clean-generic mostlyclean-am
+		clean-generic mostlyclean-am
 
 clean: clean-am
 
 distclean-am:  distclean-libLTLIBRARIES distclean-compile \
-		distclean-libtool distclean-tags distclean-depend \
-		distclean-generic clean-am
+		distclean-libtool distclean-tags distclean-generic \
+		clean-am
 	-rm -f libtool
 
 distclean: distclean-am
 
 maintainer-clean-am:  maintainer-clean-libLTLIBRARIES \
 		maintainer-clean-compile maintainer-clean-libtool \
-		maintainer-clean-tags maintainer-clean-depend \
-		maintainer-clean-generic distclean-am
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -429,49 +353,92 @@ distclean-compile clean-compile maintainer-clean-compile \
 mostlyclean-libtool distclean-libtool clean-libtool \
 maintainer-clean-libtool uninstall-gdkincludeHEADERS \
 install-gdkincludeHEADERS tags mostlyclean-tags distclean-tags \
-clean-tags maintainer-clean-tags mostlyclean-depend distclean-depend \
-clean-depend maintainer-clean-depend distdir info-am info dvi-am dvi \
-check check-am installcheck-am installcheck install-exec-am \
-install-exec install-data-am install-data install-am install \
-uninstall-am uninstall all-local all-redirect all-am all install-strip \
-installdirs mostlyclean-generic distclean-generic clean-generic \
+clean-tags maintainer-clean-tags distdir info-am info dvi-am dvi check \
+check-am installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-local all-redirect all-am all install-strip installdirs \
+mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-
-%_tab.y: %.y
-	$(MV) $^ $@
-
-%_tab.yy: %.yy
-	$(MV) $^ $@
-
-%_yy.l: %.l
-	$(MV) $^ $@
-
-%_yy.ll: %.ll
-	$(MV) $^ $@
-
-%.cc: %.mx
-	$(MX) $(MXFLAGS) -x C $<
-
-%.c: %.mx
-	$(MX) $(MXFLAGS) -x c $<
+gdk_system.h: gdk_system.mx
+gdk_system.lo: gdk_system.c gdk_system.h
+gdk_bat.lo: gdk_bat.c gdk.h gdk_bat.h gdk_delta.h gdk_atoms.h gdk_bbp.h gdk_search.h gdk_utils.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_desc.lo: gdk_desc.c gdk.h gdk_desc.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_heap.c: gdk_heap.mx
+gdk_desc.h: gdk_desc.mx
+gdk_heap.lo: gdk_heap.c gdk.h gdk_heap.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_desc.c: gdk_desc.mx
+gdk_heap.h: gdk_heap.mx
+gdk.h: gdk.mx
+gdk_setop.c: gdk_setop.mx
+gdk_search.lo: gdk_search.c gdk.h gdk_search.h gdk_bat.h gdk_atoms.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_batop.c: gdk_batop.mx
+gdk_system.c: gdk_system.mx
+gdk_batop.lo: gdk_batop.c gdk.h gdk_batop.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_setop.h: gdk_setop.mx
+gdk_search.h: gdk_search.mx
+gdk_setop.lo: gdk_setop.c gdk.h gdk_setop.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_batop.h: gdk_batop.mx
+gdk_search.c: gdk_search.mx
+gdk_storage.h: gdk_storage.mx
+gdk_storage.lo: gdk_storage.c gdk.h gdk_bat.h gdk_delta.h gdk_atoms.h gdk_bbp.h gdk_search.h gdk_utils.h gdk_storage.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_storage.c: gdk_storage.mx
+gdk_compress.h: gdk_compress.mx
+gdk_atoms.h: gdk_atoms.mx
+gdk_atoms.lo: gdk_atoms.c gdk.h gdk_atoms.h gdk_bat.h gdk_desc.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_bbp.c: gdk_bbp.mx
+gdk_compress.lo: gdk_compress.c gdk_compress.h
+gdk_atoms.c: gdk_atoms.mx
+gdk_compress.c: gdk_compress.mx
+gdk_bbp.h: gdk_bbp.mx
+gdk_utils.h: gdk_utils.mx
+gdk_bbp.lo: gdk_bbp.c gdk.h gdk_bbp.h gdk_bat.h gdk_utils.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_align.c: gdk_align.mx
+gdk_utils.c: gdk_utils.mx
+gdk_align.lo: gdk_align.c gdk.h gdk_align.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_align.h: gdk_align.mx
+gdk_relop.c: gdk_relop.mx
+gdk_tm.h: gdk_tm.mx
+gdk_tm.lo: gdk_tm.c gdk.h gdk_tm.h gdk_bbp.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_tm.c: gdk_tm.mx
+gdk_relop.h: gdk_relop.mx
+gdk_relop.lo: gdk_relop.c gdk.h gdk_relop.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_delta.h: gdk_delta.mx
+gdk_qsort.c: gdk_qsort.mx
+gdk_delta.lo: gdk_delta.c gdk.h gdk_delta.h gdk_bat.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_bat.c: gdk_bat.mx
+gdk_qsort.lo: gdk_qsort.c gdk.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_delta.c: gdk_delta.mx
+gdk_utils.lo: gdk_utils.c gdk.h gdk_utils.h gdk_system.h gdk_desc.h gdk_heap.h
+gdk_bat.h: gdk_bat.mx
+dist-hook:
+	mkdir $(distdir)/Tests
+	cd $(srcdir)/Tests; cp -r [^C]* $(distdir)/Tests
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
 
-%.y: %.mx
-	$(MX) $(MXFLAGS) -x y $< 
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
 
-%.yy: %.mx
+%_tab.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
 	$(MV) $*.y $@
 
-%.l: %.mx
+%_yy.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 
-
-%.ll: %.mx
-	$(MX) $(MXFLAGS) -x l $<
 	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
@@ -486,10 +453,6 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
 all-local: $(BUILT_SOURCES)
-
-dist-hook:
-	mkdir $(distdir)/Tests
-	cd $(srcdir)/Tests; cp [^C]* $(distdir)/Tests
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

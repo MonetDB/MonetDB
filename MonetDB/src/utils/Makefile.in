@@ -97,12 +97,23 @@ install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
 
 
+
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
+
 SUBDIRS = Mx rewrite testing
+EXTRA_DIST = Makefile.ag Makefile.msc
+
+MEL = $(top_builddir)/src/mel/mel
+MX = $(top_builddir)/src/utils/Mx/Mx
+
+SUFFIXES = .m .mx .proto.h .mil
+PRECIOUS = .m 
 subdir = src/utils
 mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
 CONFIG_HEADER = ../../config.h
 CONFIG_CLEAN_FILES = 
 DIST_SOURCES = 
+depcomp = 
 DIST_COMMON =  Makefile.am Makefile.in
 
 
@@ -111,8 +122,9 @@ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 GZIP_ENV = --best
 all: all-redirect
 .SUFFIXES:
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/utils/Makefile
+.SUFFIXES: .m .mil .mx .proto.h
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/utils/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -252,7 +264,7 @@ install-am: all-am
 install: install-recursive
 uninstall-am:
 uninstall: uninstall-recursive
-all-am: Makefile
+all-am: Makefile all-local
 all-redirect: all-recursive
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
@@ -299,11 +311,50 @@ maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
 distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
 dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
 install-exec install-data-am install-data install-am install \
-uninstall-am uninstall all-redirect all-am all install-strip \
+uninstall-am uninstall all-local all-redirect all-am all install-strip \
 installdirs-am installdirs mostlyclean-generic distclean-generic \
 clean-generic maintainer-clean-generic clean mostlyclean distclean \
 maintainer-clean
 
+
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
+
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
+
+%_tab.y: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+	$(MV) $*.y $@
+
+%_yy.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
+
+%.m: %.mx
+	$(MX) $(MXFLAGS) -x m $<
+
+%.mil: %.mx
+	$(MX) $(MXFLAGS) -x mil $<
+
+%.proto.h: %.m
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+%_glue.c: %.m
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+all-local: $(BUILT_SOURCES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

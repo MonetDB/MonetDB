@@ -54,7 +54,7 @@
 @ifdef ODL
 
 @+ ODL definition
-@odl
+#@odl
 
 module bitset {
 

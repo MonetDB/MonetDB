@@ -95,43 +95,29 @@ YACC = @YACC@
 install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
 
-#AUTOMAKE_OPTIONS = no-dependencies
 
 
-BUILT_SOURCES = 
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
-CFLAGS = @CFLAGS@ -DUNIX -DMX_CXX_SUFFIX=\"cc\"
+prefixMxFile_SOURCES = prefixMxFile.c disclaimer.c disclaimer.h
+CFLAGS = -DUNIX -DMX_CXX_SUFFIX=\"cc\"
+idxmx_SOURCES = idxmx.c
+epsffit_SOURCES = epsffit.c
+Mx_SOURCES = Mx.c Index.c Def.c Form.c Tok.c Code.c Display.c Print.c Io.c Sys.c disclaimer.c Tex2Html.c Mx.h MxFcnDef.h
+EXTRA_DIST = Makefile.ag Makefile.msc warning.gif epstogif
+bin_PROGRAMS = prefixMxFile idxmx epsffit Mx
 
-EXTRA_DIST = warning.gif epstogif
+MEL = $(top_builddir)/src/mel/mel
+MX = $(top_builddir)/src/utils/Mx/Mx
 
-#-version-info $(LT_VERSION)
-bin_PROGRAMS = Mx prefixMxFile idxmx epsffit
-
-Mx_LDADD = 
-
-Mx_SOURCES = \
-	Mx.c Index.c Def.c Form.c Tok.c Code.c Display.c Print.c Io.c Sys.c \
-	disclaimer.c  Tex2Html.c    \
-	Mx.h  MxFcnDef.h  
-
-
-prefixMxFile_SOURCES = \
-	prefixMxFile.c disclaimer.c disclaimer.h
-
-
-idxmx_SOURCES = \
-        idxmx.c 
-
-
-epsffit_SOURCES = \
-	epsffit.c 
-
+SUFFIXES = .m .mx .proto.h .mil
+PRECIOUS = .m 
 subdir = src/utils/Mx
 mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
 CONFIG_HEADER = ../../../config.h
 CONFIG_CLEAN_FILES = 
-bin_PROGRAMS =  Mx$(EXEEXT) prefixMxFile$(EXEEXT) idxmx$(EXEEXT) \
-epsffit$(EXEEXT)
+bin_PROGRAMS =  prefixMxFile$(EXEEXT) idxmx$(EXEEXT) epsffit$(EXEEXT) \
+Mx$(EXEEXT)
 PROGRAMS =  $(bin_PROGRAMS)
 
 
@@ -144,6 +130,7 @@ Form.$(OBJEXT) Tok.$(OBJEXT) Code.$(OBJEXT) Display.$(OBJEXT) \
 Print.$(OBJEXT) Io.$(OBJEXT) Sys.$(OBJEXT) disclaimer.$(OBJEXT) \
 Tex2Html.$(OBJEXT)
 Mx_OBJECTS =  $(am_Mx_OBJECTS)
+Mx_LDADD = $(LDADD)
 Mx_DEPENDENCIES = 
 Mx_LDFLAGS = 
 am_epsffit_OBJECTS =  epsffit.$(OBJEXT)
@@ -167,12 +154,7 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES =  $(Mx_SOURCES) $(epsffit_SOURCES) $(idxmx_SOURCES) \
 $(prefixMxFile_SOURCES)
-depcomp = $(SHELL) $(top_srcdir)/conf/depcomp
-DEP_FILES =  @AMDEP@ $(DEPDIR)/Code.Po $(DEPDIR)/Def.Po \
-$(DEPDIR)/Display.Po $(DEPDIR)/Form.Po $(DEPDIR)/Index.Po \
-$(DEPDIR)/Io.Po $(DEPDIR)/Mx.Po $(DEPDIR)/Print.Po $(DEPDIR)/Sys.Po \
-$(DEPDIR)/Tex2Html.Po $(DEPDIR)/Tok.Po $(DEPDIR)/disclaimer.Po \
-$(DEPDIR)/epsffit.Po $(DEPDIR)/idxmx.Po $(DEPDIR)/prefixMxFile.Po
+depcomp = 
 DIST_COMMON =  Makefile.am Makefile.in
 
 
@@ -184,9 +166,9 @@ OBJECTS = $(am_Mx_OBJECTS) $(am_epsffit_OBJECTS) $(am_idxmx_OBJECTS) $(am_prefix
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .c .h .lo .o .obj
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/utils/Mx/Makefile
+.SUFFIXES: .c .h .lo .m .mil .mx .o .obj .proto.h
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/utils/Mx/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -257,6 +239,12 @@ idxmx$(EXEEXT): $(idxmx_OBJECTS) $(idxmx_DEPENDENCIES)
 prefixMxFile$(EXEEXT): $(prefixMxFile_OBJECTS) $(prefixMxFile_DEPENDENCIES)
 	@rm -f prefixMxFile$(EXEEXT)
 	$(LINK) $(prefixMxFile_LDFLAGS) $(prefixMxFile_OBJECTS) $(prefixMxFile_LDADD) $(LIBS)
+.c.o:
+	$(COMPILE) -c $<
+.c.obj:
+	$(COMPILE) -c `cygpath -w $<`
+.c.lo:
+	$(LTCOMPILE) -c -o $@ $<
 
 tags: TAGS
 
@@ -291,52 +279,6 @@ distclean-tags:
 
 maintainer-clean-tags:
 
-@AMDEP@include $(DEPDIR)/Code.Po
-@AMDEP@include $(DEPDIR)/Def.Po
-@AMDEP@include $(DEPDIR)/Display.Po
-@AMDEP@include $(DEPDIR)/Form.Po
-@AMDEP@include $(DEPDIR)/Index.Po
-@AMDEP@include $(DEPDIR)/Io.Po
-@AMDEP@include $(DEPDIR)/Mx.Po
-@AMDEP@include $(DEPDIR)/Print.Po
-@AMDEP@include $(DEPDIR)/Sys.Po
-@AMDEP@include $(DEPDIR)/Tex2Html.Po
-@AMDEP@include $(DEPDIR)/Tok.Po
-@AMDEP@include $(DEPDIR)/disclaimer.Po
-@AMDEP@include $(DEPDIR)/epsffit.Po
-@AMDEP@include $(DEPDIR)/idxmx.Po
-@AMDEP@include $(DEPDIR)/prefixMxFile.Po
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-	-rm -rf $(DEPDIR)
-
-maintainer-clean-depend:
-
-@AMDEP@CCDEPMODE = @CCDEPMODE@
-
-.c.o:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.lo:
-@AMDEP@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LTCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.obj:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `cygpath -w $<`
-
-
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 distdir: $(DISTFILES)
@@ -370,7 +312,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-binPROGRAMS
 uninstall: uninstall-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) all-local
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
@@ -388,29 +330,27 @@ distclean-generic:
 
 maintainer-clean-generic:
 	-rm -f Makefile.in
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-binPROGRAMS mostlyclean-compile \
-		mostlyclean-libtool mostlyclean-tags mostlyclean-depend \
+		mostlyclean-libtool mostlyclean-tags \
 		mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
 clean-am:  clean-binPROGRAMS clean-compile clean-libtool clean-tags \
-		clean-depend clean-generic mostlyclean-am
+		clean-generic mostlyclean-am
 
 clean: clean-am
 
 distclean-am:  distclean-binPROGRAMS distclean-compile distclean-libtool \
-		distclean-tags distclean-depend distclean-generic \
-		clean-am
+		distclean-tags distclean-generic clean-am
 	-rm -f libtool
 
 distclean: distclean-am
 
 maintainer-clean-am:  maintainer-clean-binPROGRAMS \
 		maintainer-clean-compile maintainer-clean-libtool \
-		maintainer-clean-tags maintainer-clean-depend \
-		maintainer-clean-generic distclean-am
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -421,14 +361,68 @@ maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
 mostlyclean-compile distclean-compile clean-compile \
 maintainer-clean-compile mostlyclean-libtool distclean-libtool \
 clean-libtool maintainer-clean-libtool tags mostlyclean-tags \
-distclean-tags clean-tags maintainer-clean-tags mostlyclean-depend \
-distclean-depend clean-depend maintainer-clean-depend distdir info-am \
-info dvi-am dvi check check-am installcheck-am installcheck \
-install-exec-am install-exec install-data-am install-data install-am \
-install uninstall-am uninstall all-redirect all-am all install-strip \
+distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
+dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
+install-exec install-data-am install-data install-am install \
+uninstall-am uninstall all-local all-redirect all-am all install-strip \
 installdirs mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
+prefixMxFile.o: prefixMxFile.c
+disclaimer.o: disclaimer.c
+epsffit.o: epsffit.c
+idxmx.o: idxmx.c
+Io.o: Io.c
+Tex2Html.o: Tex2Html.c
+Code.o: Code.c
+Mx.o: Mx.c
+Form.o: Form.c
+disclaimer.o: disclaimer.c
+Sys.o: Sys.c
+Index.o: Index.c
+Display.o: Display.c
+Print.o: Print.c
+Tok.o: Tok.c
+Def.o: Def.c
+
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
+
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
+
+%_tab.y: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+	$(MV) $*.y $@
+
+%_yy.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
+
+%.m: %.mx
+	$(MX) $(MXFLAGS) -x m $<
+
+%.mil: %.mx
+	$(MX) $(MXFLAGS) -x mil $<
+
+%.proto.h: %.m
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+%_glue.c: %.m
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+all-local: $(BUILT_SOURCES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

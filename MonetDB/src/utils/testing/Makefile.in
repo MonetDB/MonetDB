@@ -65,6 +65,7 @@ AS = @AS@
 AWK = @AWK@
 BASH = @BASH@
 CC = @CC@
+CFLAGS = @CFLAGS@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -95,26 +96,22 @@ YACC = @YACC@
 install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
 
-#AUTOMAKE_OPTIONS = no-dependencies
 
 
-BUILT_SOURCES = 
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
-CFLAGS = @CFLAGS@ -DUNIX -DMX_CXX_SUFFIX=\"$(CXXSFX)\"
+Mdiff_SOURCES = difflib.c helpers.c Mdiff.c difflib.h helpers.h
+Mtimeout_SOURCES = Mtimeout.c
 
-EXTRA_DIST = Mtest.in Mlog.in Mfilter.in MkillUsers.in Mlimit.c
-
-#-version-info $(LT_VERSION)
-bin_PROGRAMS = Mdiff Mtimeout 
 bin_SCRIPTS = Mtest Mlog Mfilter MkillUsers
+EXTRA_DIST = Makefile.ag Makefile.msc Mtest.in Mlog.in Mfilter.in MkillUsers.in Mlimit.c
+bin_PROGRAMS = Mdiff Mtimeout
 
-Mdiff_SOURCES = \
-	difflib.c helpers.c Mdiff.c difflib.h  helpers.h
+MEL = $(top_builddir)/src/mel/mel
+MX = $(top_builddir)/src/utils/Mx/Mx
 
-
-Mtimeout_SOURCES = \
-	Mtimeout.c
-
+SUFFIXES = .m .mx .proto.h .mil
+PRECIOUS = .m 
 subdir = src/utils/testing
 mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
 CONFIG_HEADER = ../../../config.h
@@ -144,9 +141,7 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES =  $(Mdiff_SOURCES) $(Mtimeout_SOURCES)
-depcomp = $(SHELL) $(top_srcdir)/conf/depcomp
-DEP_FILES =  @AMDEP@ $(DEPDIR)/Mdiff.Po $(DEPDIR)/Mtimeout.Po \
-$(DEPDIR)/difflib.Po $(DEPDIR)/helpers.Po
+depcomp = 
 DIST_COMMON =  README Makefile.am Makefile.in Mfilter.in MkillUsers.in \
 Mlog.in Mtest.in
 
@@ -159,9 +154,9 @@ OBJECTS = $(am_Mdiff_OBJECTS) $(am_Mtimeout_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .c .h .lo .o .obj
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/utils/testing/Makefile
+.SUFFIXES: .c .h .lo .m .mil .mx .o .obj .proto.h
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/utils/testing/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -254,6 +249,12 @@ uninstall-binSCRIPTS:
 	  echo " rm -f $(DESTDIR)$(bindir)/$$f"; \
 	  rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
+.c.o:
+	$(COMPILE) -c $<
+.c.obj:
+	$(COMPILE) -c `cygpath -w $<`
+.c.lo:
+	$(LTCOMPILE) -c -o $@ $<
 
 tags: TAGS
 
@@ -288,41 +289,6 @@ distclean-tags:
 
 maintainer-clean-tags:
 
-@AMDEP@include $(DEPDIR)/Mdiff.Po
-@AMDEP@include $(DEPDIR)/Mtimeout.Po
-@AMDEP@include $(DEPDIR)/difflib.Po
-@AMDEP@include $(DEPDIR)/helpers.Po
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-	-rm -rf $(DEPDIR)
-
-maintainer-clean-depend:
-
-@AMDEP@CCDEPMODE = @CCDEPMODE@
-
-.c.o:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.lo:
-@AMDEP@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LTCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.obj:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `cygpath -w $<`
-
-
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 distdir: $(DISTFILES)
@@ -345,7 +311,8 @@ check-am: all-am
 check: check-am
 installcheck-am:
 installcheck: installcheck-am
-install-exec-am: install-binPROGRAMS install-binSCRIPTS
+install-exec-am: install-binPROGRAMS install-binSCRIPTS \
+		install-exec-local
 install-exec: install-exec-am
 
 install-data-am:
@@ -356,7 +323,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS
 uninstall: uninstall-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS)
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) all-local
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
@@ -374,29 +341,27 @@ distclean-generic:
 
 maintainer-clean-generic:
 	-rm -f Makefile.in
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-binPROGRAMS mostlyclean-compile \
-		mostlyclean-libtool mostlyclean-tags mostlyclean-depend \
+		mostlyclean-libtool mostlyclean-tags \
 		mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
 clean-am:  clean-binPROGRAMS clean-compile clean-libtool clean-tags \
-		clean-depend clean-generic mostlyclean-am
+		clean-generic mostlyclean-am
 
 clean: clean-am
 
 distclean-am:  distclean-binPROGRAMS distclean-compile distclean-libtool \
-		distclean-tags distclean-depend distclean-generic \
-		clean-am
+		distclean-tags distclean-generic clean-am
 	-rm -f libtool
 
 distclean: distclean-am
 
 maintainer-clean-am:  maintainer-clean-binPROGRAMS \
 		maintainer-clean-compile maintainer-clean-libtool \
-		maintainer-clean-tags maintainer-clean-depend \
-		maintainer-clean-generic distclean-am
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -408,21 +373,68 @@ mostlyclean-compile distclean-compile clean-compile \
 maintainer-clean-compile mostlyclean-libtool distclean-libtool \
 clean-libtool maintainer-clean-libtool uninstall-binSCRIPTS \
 install-binSCRIPTS tags mostlyclean-tags distclean-tags clean-tags \
-maintainer-clean-tags mostlyclean-depend distclean-depend clean-depend \
-maintainer-clean-depend distdir info-am info dvi-am dvi check check-am \
-installcheck-am installcheck install-exec-am install-exec \
-install-data-am install-data install-am install uninstall-am uninstall \
-all-redirect all-am all install-strip installdirs mostlyclean-generic \
-distclean-generic clean-generic maintainer-clean-generic clean \
-mostlyclean distclean maintainer-clean
+maintainer-clean-tags distdir info-am info dvi-am dvi check check-am \
+installcheck-am installcheck install-exec-local install-exec-am \
+install-exec install-data-am install-data install-am install \
+uninstall-am uninstall all-local all-redirect all-am all install-strip \
+installdirs mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-
-install:
-	$(RM) $(DESTDIR)$(bindir)/Mapprove 
+helpers.o: helpers.c
+difflib.o: difflib.c
+Mdiff.o: Mdiff.c
+Mtimeout.o: Mtimeout.c
+install-exec-local-Mapprove: Mtest
+	$(RM) $(DESTDIR)$(bindir)/Mapprove
 	$(LN_S) $(DESTDIR)$(bindir)/Mtest $(DESTDIR)$(bindir)/Mapprove
 
-uninstall:
-	$(RM) $(bindir)/Mapprove 
+uninstall-exec-local-Mapprove: 
+	$(RM) $(DESTDIR)$(bindir)/Mapprove
+
+all-local-Mapprove: Mtest
+	$(RM) Mapprove
+	$(LN_S) Mtest Mapprove
+install-exec-local: install-exec-local-Mapprove
+all-local: all-local-Mapprove
+
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
+
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
+
+%_tab.y: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+	$(MV) $*.y $@
+
+%_yy.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
+
+%.m: %.mx
+	$(MX) $(MXFLAGS) -x m $<
+
+%.mil: %.mx
+	$(MX) $(MXFLAGS) -x mil $<
+
+%.proto.h: %.m
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+%_glue.c: %.m
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+all-local: $(BUILT_SOURCES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

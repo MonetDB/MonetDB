@@ -10,3 +10,5 @@ lib_gdk = {
 		gdk_bat.mx gdk_delta.mx gdk_relop.mx gdk_system.mx
 	HEADERS = h
 }
+
+EXTRA_DIST_DIR = Tests

@@ -18,11 +18,6 @@ lib_Mapi = {
 	SOURCES = Mapi.mx
 }
 
-bin_Mclient = {
-	SOURCES = Mclient.mx
-	LIBS = $(READLINE_LIBS) $(SOCKET_LIBS)
-}
-	
 bin_Mserver = {
 	SOURCES = Mserver.mx initmodules.mx
 	LIBS = ../monet/libmonet STATIC_MODS ../gdk/libbat $(MONET_LIBS)
@@ -39,6 +34,7 @@ bin_Mcreatedb = {
 }
 
 BINS = {
-	SOURCES = Mdump.mx Mshutdown.mx Mrecover.mx Mcgi.mx
+	SOURCES = Mdump.mx Mshutdown.mx Mrecover.mx Mcgi.mx Mclient.mx
 	LIBS = libMapi ../gdk/libbat $(MAPI_LIBS)
+	Mclient_LIBS = $(READLINE_LIBS) $(SOCKET_LIBS)
 }

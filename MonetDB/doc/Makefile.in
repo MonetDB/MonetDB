@@ -97,23 +97,22 @@ install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
 
 
-AUTOMAKE_OPTIONS = 1.4 foreign
 
-SUBDIRS = 
-# TODO doc tests
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
-EXTRA_DIST = mel.fig mel.eps mel.mx mil.mx monet.mx monet.eps  \
-	odmg.fig odmg_odl.eps odmg.eps  odmg_meta.fig  \
-	Example.mx        model.eps  odmg_app.eps      odmg_odl.fig \
-	JavaImages.tar.Z  meta.mx  model.fig  odmg_app.fig    odmg_stdlib.eps \
-	odmg_example.eps  odmg_stdlib.fig app.mx          odmg_example.fig \
-	arch.eps          odl.mx     odmg_meta.eps     stdlib.mx
+EXTRA_DIST = Makefile.ag Makefile.msc mel.fig mel.eps mel.mx mil.mx monet.mx monet.eps odmg.fig odmg_odl.eps odmg.eps odmg_meta.fig Example.mx model.eps odmg_app.eps odmg_odl.fig JavaImages.tar.Z meta.mx model.fig odmg_app.fig odmg_stdlib.eps odmg_example.eps odmg_stdlib.fig app.mx odmg_example.fig arch.eps odl.mx odmg_meta.eps stdlib.mx
 
+MEL = $(top_builddir)/src/mel/mel
+MX = $(top_builddir)/src/utils/Mx/Mx
+
+SUFFIXES = .m .mx .proto.h .mil
+PRECIOUS = .m 
 subdir = doc
 mkinstalldirs = $(SHELL) $(top_srcdir)/conf/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
 DIST_SOURCES = 
+depcomp = 
 DIST_COMMON =  Makefile.am Makefile.in
 
 
@@ -122,104 +121,17 @@ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 GZIP_ENV = --best
 all: all-redirect
 .SUFFIXES:
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+.SUFFIXES: .m .mil .mx .proto.h
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
 	cd $(top_srcdir) && $(AUTOMAKE) --foreign doc/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-
-all-recursive install-data-recursive install-exec-recursive \
-installdirs-recursive install-recursive uninstall-recursive  \
-check-recursive installcheck-recursive info-recursive dvi-recursive:
-	@set fnord $(MAKEFLAGS); amf=$$2; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
-
-mostlyclean-recursive clean-recursive distclean-recursive \
-maintainer-clean-recursive:
-	@set fnord $(MAKEFLAGS); amf=$$2; \
-	dot_seen=no; \
-	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
-	  rev="$$subdir $$rev"; \
-	  if test "$$subdir" = "."; then dot_seen=yes; else :; fi; \
-	done; \
-	test "$$dot_seen" = "no" && rev=". $$rev"; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-
 tags: TAGS
+TAGS:
 
-ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
-	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	mkid -fID $$unique $(LISP)
-
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
-		$(TAGS_FILES) $(LISP)
-	tags=; \
-	here=`pwd`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-   if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
-   fi; \
-	done; \
-	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
-	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
-	  done | \
-	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
-	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
-
-mostlyclean-tags:
-
-clean-tags:
-
-distclean-tags:
-	-rm -f TAGS ID
-
-maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
@@ -235,41 +147,30 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	for subdir in $(SUBDIRS); do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d $(distdir)/$$subdir \
-	    || mkdir $(distdir)/$$subdir \
-	    || exit 1; \
-	    (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(top_distdir) distdir=../$(distdir)/$$subdir distdir) \
-	      || exit 1; \
-	  fi; \
-	done
-	$(MAKE) $(AM_MAKEFLAGS) top_distdir="$(top_distdir)" distdir="$(distdir)" dist-hook
 info-am:
-info: info-recursive
+info: info-am
 dvi-am:
-dvi: dvi-recursive
+dvi: dvi-am
 check-am: all-am
-check: check-recursive
+check: check-am
 installcheck-am:
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-exec-am:
-install-exec: install-exec-recursive
+install-exec: install-exec-am
 
 install-data-am:
-install-data: install-data-recursive
+install-data: install-data-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
-install: install-recursive
+install: install-am
 uninstall-am:
-uninstall: uninstall-recursive
-all-am: Makefile
-all-redirect: all-recursive
+uninstall: uninstall-am
+all-am: Makefile all-local
+all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
-installdirs: installdirs-recursive
-installdirs-am:
+installdirs:
 
 
 mostlyclean-generic:
@@ -282,44 +183,71 @@ distclean-generic:
 
 maintainer-clean-generic:
 	-rm -f Makefile.in
-mostlyclean-am:  mostlyclean-tags mostlyclean-generic
+mostlyclean-am:  mostlyclean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-clean-am:  clean-tags clean-generic mostlyclean-am
+clean-am:  clean-generic mostlyclean-am
 
-clean: clean-recursive
+clean: clean-am
 
-distclean-am:  distclean-tags distclean-generic clean-am
+distclean-am:  distclean-generic clean-am
 	-rm -f libtool
 
-distclean: distclean-recursive
+distclean: distclean-am
 
-maintainer-clean-am:  maintainer-clean-tags maintainer-clean-generic \
-		distclean-am
+maintainer-clean-am:  maintainer-clean-generic distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
 
-.PHONY: install-recursive uninstall-recursive install-data-recursive \
-uninstall-data-recursive install-exec-recursive \
-uninstall-exec-recursive installdirs-recursive uninstalldirs-recursive \
-all-recursive check-recursive installcheck-recursive info-recursive \
-dvi-recursive mostlyclean-recursive distclean-recursive clean-recursive \
-maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
-distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
-dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
-install-exec install-data-am install-data install-am install \
-uninstall-am uninstall all-redirect all-am all install-strip \
-installdirs-am installdirs mostlyclean-generic distclean-generic \
-clean-generic maintainer-clean-generic clean mostlyclean distclean \
-maintainer-clean
+.PHONY: tags distdir info-am info dvi-am dvi check check-am \
+installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-local all-redirect all-am all install-strip installdirs \
+mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 
-dist-hook:
-	mkdir $(distdir)/papers
-	cd $(srcdir)/papers; cp [^C]* $(distdir)/papers
+%.h: %.mx
+	$(MX) $(MXFLAGS) -x h $<
+
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
+
+%_tab.y: %.mx
+	$(MX) $(MXFLAGS) -x y $< 
+	$(MV) $*.y $@
+
+%_yy.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
+
+%.m: %.mx
+	$(MX) $(MXFLAGS) -x m $<
+
+%.mil: %.mx
+	$(MX) $(MXFLAGS) -x mil $<
+
+%.proto.h: %.m
+	$(MEL) $(INCLUDES) -o $@ -proto $<
+
+%_glue.c: %.m
+	$(MEL) $(INCLUDES) -o $@ -glue $<
+
+all-local: $(BUILT_SOURCES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -96,45 +96,15 @@ YACC = @YACC@
 install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
 
-#AUTOMAKE_OPTIONS = no-dependencies
 
 
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
-BUILT_SOURCES = \
-	mel_tab.yy mel_yy.ll \
-	FileInfo.cc acc.cc accops.cc any_arg.cc atom.cc atom_arg.cc atomops.cc \
-	bat_arg.cc builtin.cc command.cc debug.cc depend.cc dependency.cc \
-	drop.cc epilogue.cc glue.cc html.cc iterator.cc link.cc load.cc mel.cc \
-	module.cc object.cc operator.cc ops.cc prelude.cc \
-	proto.cc symbol.cc symtable.cc type_arg.cc use.cc var_arg.cc \
-	FileInfo.h ListIterator.h acc.h accops.h any_arg.h atom.h atom_arg.h \
-	atomops.h bat_arg.h builtin.h command.h debug.h depend.h dependency.h \
-	drop.h epilogue.h glue.h html.h iterator.h language.h link.h list.h \
-	load.h mel.h module.h object.h operator.h ops.h prelude.h \
-	proto.h symbol.h symtable.h type_arg.h use.h var_arg.h 
-
-
-INCLUDES = 
-
-# interface:implementation:age
-LT_VERSION = 0:1:0
-
-EXTRA_DIST = \
-	FileInfo.mx      atomops.mx     drop.mx      list.mx      prelude.mx \
-	ListIterator.mx  bat_arg.mx     epilogue.mx  load.mx      proto.mx \
-	acc.mx           builtin.mx     glue.mx      mel.mx       symbol.mx \
-	accops.mx        command.mx     html.mx      module.mx    symtable.mx \
-	any_arg.mx       debug.mx       iterator.mx  object.mx    type_arg.mx \
-	atom.mx          depend.mx      language.mx  operator.mx  use.mx \
-	atom_arg.mx      dependency.mx  link.mx      ops.mx       var_arg.mx
-
-
-#-version-info $(LT_VERSION)
-bin_PROGRAMS = mel
-
+mel_SOURCES = FileInfo.cc FileInfo.h atomops.cc atomops.h drop.cc drop.h list.h prelude.cc prelude.h ListIterator.h bat_arg.cc bat_arg.h epilogue.cc epilogue.h load.cc load.h proto.cc proto.h acc.cc acc.h builtin.cc builtin.h glue.cc glue.h mel.cc mel.h mel_tab.yy mel_tab.h mel_yy.ll symbol.cc symbol.h accops.cc accops.h command.cc command.h html.cc html.h module.cc module.h symtable.cc symtable.h any_arg.cc any_arg.h debug.cc debug.h iterator.cc iterator.h object.cc object.h type_arg.cc type_arg.h atom.cc atom.h depend.cc depend.h language.h operator.cc operator.h use.cc use.h atom_arg.cc atom_arg.h dependency.cc dependency.h link.cc link.h ops.cc ops.h var_arg.cc var_arg.h
 YFLAGS = -d
-
-mel_SOURCES = $(BUILT_SOURCES) mel_tab.h 
+BUILT_SOURCES = FileInfo.cc FileInfo.h atomops.cc atomops.h drop.cc drop.h list.h prelude.cc prelude.h ListIterator.h bat_arg.cc bat_arg.h epilogue.cc epilogue.h load.cc load.h proto.cc proto.h acc.cc acc.h builtin.cc builtin.h glue.cc glue.h mel.cc mel.h mel_tab.yy mel_tab.h mel_yy.ll symbol.cc symbol.h accops.cc accops.h command.cc command.h html.cc html.h module.cc module.h symtable.cc symtable.h any_arg.cc any_arg.h debug.cc debug.h iterator.cc iterator.h object.cc object.h type_arg.cc type_arg.h atom.cc atom.h depend.cc depend.h language.h operator.cc operator.h use.cc use.h atom_arg.cc atom_arg.h dependency.cc dependency.h link.cc link.h ops.cc ops.h var_arg.cc var_arg.h
+EXTRA_DIST = Makefile.ag Makefile.msc FileInfo.mx atomops.mx drop.mx list.mx prelude.mx ListIterator.mx bat_arg.mx epilogue.mx load.mx proto.mx acc.mx builtin.mx glue.mx mel.mx symbol.mx accops.mx command.mx html.mx module.mx symtable.mx any_arg.mx debug.mx iterator.mx object.mx type_arg.mx atom.mx depend.mx language.mx operator.mx use.mx atom_arg.mx dependency.mx link.mx ops.mx var_arg.mx
+bin_PROGRAMS = mel
 
 MEL = $(top_builddir)/src/mel/mel
 MX = $(top_builddir)/src/utils/Mx/Mx
@@ -153,15 +123,15 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I../..
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-am_mel_OBJECTS =  mel_tab.$(OBJEXT) mel_yy.$(OBJEXT) FileInfo.$(OBJEXT) \
-acc.$(OBJEXT) accops.$(OBJEXT) any_arg.$(OBJEXT) atom.$(OBJEXT) \
-atom_arg.$(OBJEXT) atomops.$(OBJEXT) bat_arg.$(OBJEXT) \
-builtin.$(OBJEXT) command.$(OBJEXT) debug.$(OBJEXT) depend.$(OBJEXT) \
-dependency.$(OBJEXT) drop.$(OBJEXT) epilogue.$(OBJEXT) glue.$(OBJEXT) \
-html.$(OBJEXT) iterator.$(OBJEXT) link.$(OBJEXT) load.$(OBJEXT) \
-mel.$(OBJEXT) module.$(OBJEXT) object.$(OBJEXT) operator.$(OBJEXT) \
-ops.$(OBJEXT) prelude.$(OBJEXT) proto.$(OBJEXT) symbol.$(OBJEXT) \
-symtable.$(OBJEXT) type_arg.$(OBJEXT) use.$(OBJEXT) var_arg.$(OBJEXT)
+am_mel_OBJECTS =  FileInfo.$(OBJEXT) atomops.$(OBJEXT) drop.$(OBJEXT) \
+prelude.$(OBJEXT) bat_arg.$(OBJEXT) epilogue.$(OBJEXT) load.$(OBJEXT) \
+proto.$(OBJEXT) acc.$(OBJEXT) builtin.$(OBJEXT) glue.$(OBJEXT) \
+mel.$(OBJEXT) mel_tab.$(OBJEXT) mel_yy.$(OBJEXT) symbol.$(OBJEXT) \
+accops.$(OBJEXT) command.$(OBJEXT) html.$(OBJEXT) module.$(OBJEXT) \
+symtable.$(OBJEXT) any_arg.$(OBJEXT) debug.$(OBJEXT) iterator.$(OBJEXT) \
+object.$(OBJEXT) type_arg.$(OBJEXT) atom.$(OBJEXT) depend.$(OBJEXT) \
+operator.$(OBJEXT) use.$(OBJEXT) atom_arg.$(OBJEXT) \
+dependency.$(OBJEXT) link.$(OBJEXT) ops.$(OBJEXT) var_arg.$(OBJEXT)
 mel_OBJECTS =  $(am_mel_OBJECTS)
 mel_LDADD = $(LDADD)
 mel_DEPENDENCIES = 
@@ -177,19 +147,7 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES =  $(mel_SOURCES)
-depcomp = $(SHELL) $(top_srcdir)/conf/depcomp
-DEP_FILES =  @AMDEP@ $(DEPDIR)/FileInfo.Po $(DEPDIR)/acc.Po \
-$(DEPDIR)/accops.Po $(DEPDIR)/any_arg.Po $(DEPDIR)/atom.Po \
-$(DEPDIR)/atom_arg.Po $(DEPDIR)/atomops.Po $(DEPDIR)/bat_arg.Po \
-$(DEPDIR)/builtin.Po $(DEPDIR)/command.Po $(DEPDIR)/debug.Po \
-$(DEPDIR)/depend.Po $(DEPDIR)/dependency.Po $(DEPDIR)/drop.Po \
-$(DEPDIR)/epilogue.Po $(DEPDIR)/glue.Po $(DEPDIR)/html.Po \
-$(DEPDIR)/iterator.Po $(DEPDIR)/link.Po $(DEPDIR)/load.Po \
-$(DEPDIR)/mel.Po $(DEPDIR)/mel_tab.Po $(DEPDIR)/mel_yy.Po \
-$(DEPDIR)/module.Po $(DEPDIR)/object.Po $(DEPDIR)/operator.Po \
-$(DEPDIR)/ops.Po $(DEPDIR)/prelude.Po $(DEPDIR)/proto.Po \
-$(DEPDIR)/symbol.Po $(DEPDIR)/symtable.Po $(DEPDIR)/type_arg.Po \
-$(DEPDIR)/use.Po $(DEPDIR)/var_arg.Po
+depcomp = 
 DIST_COMMON =  Makefile.am Makefile.in compile mel_tab.cc mel_tab.h \
 mel_yy.cc
 
@@ -204,7 +162,7 @@ all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .c .cc .h .ll .lo .m .mil .mx .o .obj .proto.h .yy
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/mel/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/mel/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -263,6 +221,12 @@ maintainer-clean-libtool:
 mel$(EXEEXT): $(mel_OBJECTS) $(mel_DEPENDENCIES)
 	@rm -f mel$(EXEEXT)
 	$(CXXLINK) $(mel_LDFLAGS) $(mel_OBJECTS) $(mel_LDADD) $(LIBS)
+.cc.o:
+	$(CXXCOMPILE) -c -o $@ $<
+.cc.obj:
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+.cc.lo:
+	$(LTCXXCOMPILE) -c -o $@ $<
 .ll.cc:
 	$(LEX) $(AM_LFLAGS) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@
 .yy.cc:
@@ -306,71 +270,6 @@ distclean-tags:
 
 maintainer-clean-tags:
 
-@AMDEP@include $(DEPDIR)/FileInfo.Po
-@AMDEP@include $(DEPDIR)/acc.Po
-@AMDEP@include $(DEPDIR)/accops.Po
-@AMDEP@include $(DEPDIR)/any_arg.Po
-@AMDEP@include $(DEPDIR)/atom.Po
-@AMDEP@include $(DEPDIR)/atom_arg.Po
-@AMDEP@include $(DEPDIR)/atomops.Po
-@AMDEP@include $(DEPDIR)/bat_arg.Po
-@AMDEP@include $(DEPDIR)/builtin.Po
-@AMDEP@include $(DEPDIR)/command.Po
-@AMDEP@include $(DEPDIR)/debug.Po
-@AMDEP@include $(DEPDIR)/depend.Po
-@AMDEP@include $(DEPDIR)/dependency.Po
-@AMDEP@include $(DEPDIR)/drop.Po
-@AMDEP@include $(DEPDIR)/epilogue.Po
-@AMDEP@include $(DEPDIR)/glue.Po
-@AMDEP@include $(DEPDIR)/html.Po
-@AMDEP@include $(DEPDIR)/iterator.Po
-@AMDEP@include $(DEPDIR)/link.Po
-@AMDEP@include $(DEPDIR)/load.Po
-@AMDEP@include $(DEPDIR)/mel.Po
-@AMDEP@include $(DEPDIR)/mel_tab.Po
-@AMDEP@include $(DEPDIR)/mel_yy.Po
-@AMDEP@include $(DEPDIR)/module.Po
-@AMDEP@include $(DEPDIR)/object.Po
-@AMDEP@include $(DEPDIR)/operator.Po
-@AMDEP@include $(DEPDIR)/ops.Po
-@AMDEP@include $(DEPDIR)/prelude.Po
-@AMDEP@include $(DEPDIR)/proto.Po
-@AMDEP@include $(DEPDIR)/symbol.Po
-@AMDEP@include $(DEPDIR)/symtable.Po
-@AMDEP@include $(DEPDIR)/type_arg.Po
-@AMDEP@include $(DEPDIR)/use.Po
-@AMDEP@include $(DEPDIR)/var_arg.Po
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-	-rm -rf $(DEPDIR)
-
-maintainer-clean-depend:
-
-@AMDEP@CXXDEPMODE = @CXXDEPMODE@
-
-.cc.o:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.cc.lo:
-@AMDEP@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LTCXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.cc.obj:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
-
-
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 distdir: $(DISTFILES)
@@ -404,7 +303,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-binPROGRAMS
 uninstall: uninstall-am
-all-am: Makefile $(BUILT_SOURCES) $(PROGRAMS) all-local
+all-am: Makefile $(PROGRAMS) all-local
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
@@ -424,27 +323,26 @@ maintainer-clean-generic:
 	-rm -f Makefile.in
 	-test -z "mel_yy.ccmel_tab.hmel_tab.cc$(BUILT_SOURCES)" || rm -f mel_yy.cc mel_tab.h mel_tab.cc $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-binPROGRAMS mostlyclean-compile \
-		mostlyclean-libtool mostlyclean-tags mostlyclean-depend \
+		mostlyclean-libtool mostlyclean-tags \
 		mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
 clean-am:  clean-binPROGRAMS clean-compile clean-libtool clean-tags \
-		clean-depend clean-generic mostlyclean-am
+		clean-generic mostlyclean-am
 
 clean: clean-am
 
 distclean-am:  distclean-binPROGRAMS distclean-compile distclean-libtool \
-		distclean-tags distclean-depend distclean-generic \
-		clean-am
+		distclean-tags distclean-generic clean-am
 	-rm -f libtool
 
 distclean: distclean-am
 
 maintainer-clean-am:  maintainer-clean-binPROGRAMS \
 		maintainer-clean-compile maintainer-clean-libtool \
-		maintainer-clean-tags maintainer-clean-depend \
-		maintainer-clean-generic distclean-am
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -455,50 +353,144 @@ maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
 mostlyclean-compile distclean-compile clean-compile \
 maintainer-clean-compile mostlyclean-libtool distclean-libtool \
 clean-libtool maintainer-clean-libtool tags mostlyclean-tags \
-distclean-tags clean-tags maintainer-clean-tags mostlyclean-depend \
-distclean-depend clean-depend maintainer-clean-depend distdir info-am \
-info dvi-am dvi check check-am installcheck-am installcheck \
-install-exec-am install-exec install-data-am install-data install-am \
-install uninstall-am uninstall all-local all-redirect all-am all \
-install-strip installdirs mostlyclean-generic distclean-generic \
-clean-generic maintainer-clean-generic clean mostlyclean distclean \
-maintainer-clean
+distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
+dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
+install-exec install-data-am install-data install-am install \
+uninstall-am uninstall all-local all-redirect all-am all install-strip \
+installdirs mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-
-%_tab.y: %.y
-	$(MV) $^ $@
-
-%_tab.yy: %.yy
-	$(MV) $^ $@
-
-%_yy.l: %.l
-	$(MV) $^ $@
-
-%_yy.ll: %.ll
-	$(MV) $^ $@
-
-%.cc: %.mx
-	$(MX) $(MXFLAGS) -x C $<
-
-%.c: %.mx
-	$(MX) $(MXFLAGS) -x c $<
+acc.o: acc.cc ops.h list.h acc.h ListIterator.h language.h symbol.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+dependency.o: dependency.cc symbol.h list.h dependency.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+dependency.h: dependency.mx
+acc.h: acc.mx
+builtin.o: builtin.cc symbol.h list.h builtin.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+prelude.cc: prelude.mx
+builtin.h: builtin.mx
+iterator.h: iterator.mx
+atom.o: atom.cc ops.h list.h type_arg.h atom.h language.h symbol.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+atom.h: atom.mx
+module.cc: module.mx
+iterator.cc: iterator.mx
+mel_yy.ll: mel.mx
+var_arg.cc: var_arg.mx
+any_arg.cc: any_arg.mx
+iterator.o: iterator.cc command.h iterator.h ListIterator.h language.h mel_tab.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel_tab.h
+command.h: command.mx
+link.cc: link.mx
+type_arg.o: type_arg.cc symbol.h list.h type_arg.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+mel_yy.cc: mel_yy.ll
+type_arg.h: type_arg.mx
+accops.h: accops.mx
+module.o: module.cc symbol.h list.h module.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+mel_tab.cc: mel_tab.yy
+module.h: module.mx
+operator.o: operator.cc command.h list.h operator.h language.h mel_tab.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel_tab.h
+mel.h: mel.mx
+mel.cc: mel.mx
+object.h: object.mx
+mel.o: mel.cc symtable.h symbol.h list.h FileInfo.h ops.h atomops.h accops.h type_arg.h mel.h mel_tab.h use.h link.h depend.h proto.h html.h glue.h module.h dependency.h atom.h acc.h command.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel.h symbol.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+builtin.cc: builtin.mx
+operator.h: operator.mx
+proto.h: proto.mx
+list.h: list.mx
+object.o: object.cc symbol.h list.h object.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+proto.o: proto.cc language.h proto.h ListIterator.h mel_tab.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel_tab.h
+FileInfo.o: FileInfo.cc list.h FileInfo.h mel.h ListIterator.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+bat_arg.o: bat_arg.cc symbol.h list.h type_arg.h bat_arg.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+load.cc: load.mx
+symtable.h: symtable.mx
+var_arg.o: var_arg.cc symbol.h list.h type_arg.h var_arg.h iterator.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+symtable.o: symtable.cc symbol.h symtable.h mel.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+html.cc: html.mx
+proto.cc: proto.mx
+load.o: load.cc symbol.h load.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+use.o: use.cc language.h use.h ListIterator.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel_tab.h
+use.h: use.mx
+load.h: load.mx
+mel_tab.o: mel_tab.cc symtable.h symbol.h list.h FileInfo.h ops.h atomops.h accops.h type_arg.h mel.h mel_tab.h use.h link.h depend.h proto.h html.h glue.h module.h dependency.h atom.h acc.h command.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel.h symbol.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+type_arg.cc: type_arg.mx
+ops.cc: ops.mx
+command.cc: command.mx
+link.h: link.mx
+link.o: link.cc language.h list.h link.h ListIterator.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel_tab.h
+any_arg.o: any_arg.cc symbol.h list.h type_arg.h any_arg.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+atom_arg.cc: atom_arg.mx
+FileInfo.h: FileInfo.mx
+FileInfo.cc: FileInfo.mx
+any_arg.h: any_arg.mx
+mel_yy.o: mel_yy.cc symtable.h symbol.h list.h FileInfo.h ops.h atomops.h accops.h type_arg.h mel.h mel_tab.h use.h link.h depend.h proto.h html.h glue.h module.h dependency.h atom.h acc.h command.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel.h symbol.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+debug.h: debug.mx
+debug.o: debug.cc language.h debug.h ListIterator.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+ListIterator.h: ListIterator.mx
+epilogue.h: epilogue.mx
+prelude.h: prelude.mx
+prelude.o: prelude.cc symbol.h prelude.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+accops.cc: accops.mx
+atom.cc: atom.mx
+debug.cc: debug.mx
+bat_arg.cc: bat_arg.mx
+html.h: html.mx
+language.h: language.mx
+mel_tab.h: mel_tab.yy
+mel_tab.yy: mel.mx
+ops.h: ops.mx
+glue.cc: glue.mx
+html.o: html.cc language.h html.h ListIterator.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel_tab.h
+drop.h: drop.mx
+ops.o: ops.cc symbol.h list.h ops.h language.h mel.h symbol.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+object.cc: object.mx
+drop.o: drop.cc symbol.h drop.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+depend.o: depend.cc language.h depend.h ListIterator.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel_tab.h
+symbol.h: symbol.mx
+drop.cc: drop.mx
+symbol.o: symbol.cc list.h symbol.h mel.h language.h mel.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+depend.h: depend.mx
+glue.h: glue.mx
+glue.o: glue.cc language.h glue.h ListIterator.h mel.h mel_tab.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+bat_arg.h: bat_arg.mx
+atomops.o: atomops.cc ops.h list.h atomops.h language.h symbol.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+atomops.h: atomops.mx
+accops.o: accops.cc ops.h list.h accops.h language.h symbol.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h mel.h mel_tab.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h
+var_arg.h: var_arg.mx
+depend.cc: depend.mx
+symtable.cc: symtable.mx
+epilogue.cc: epilogue.mx
+atom_arg.h: atom_arg.mx
+use.cc: use.mx
+dependency.cc: dependency.mx
+epilogue.o: epilogue.cc symbol.h epilogue.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+atom_arg.o: atom_arg.cc symbol.h atom.h list.h atom_arg.h language.h mel.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+symbol.cc: symbol.mx
+atomops.cc: atomops.mx
+command.o: command.cc symbol.h list.h mel_tab.h command.h ListIterator.h language.h any_arg.h bat_arg.h mel.h mel_tab.h symtable.h module.h dependency.h atom.h atomops.h accops.h command.h operator.h builtin.h iterator.h object.h atom_arg.h type_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h load.h drop.h FileInfo.h use.h link.h depend.h proto.h html.h glue.h mel_tab.h
+acc.cc: acc.mx
+operator.cc: operator.mx
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
 
-%.y: %.mx
-	$(MX) $(MXFLAGS) -x y $< 
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
 
-%.yy: %.mx
+%_tab.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
 	$(MV) $*.y $@
 
-%.l: %.mx
+%_yy.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 
-
-%.ll: %.mx
-	$(MX) $(MXFLAGS) -x l $<
 	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<

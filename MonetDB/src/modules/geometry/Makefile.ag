@@ -4,7 +4,7 @@ MTSAFE
 INCLUDES = top_builddir/src/gdk top_builddir/src/monet \
 	   top_builddir/src/modules/plain
 
-mod_gis = {
+lib__gis = {
 	SOURCES = \
 		geometry.mx baserelate.mx precision.mx reader.mx direction.mx \
 		interval.mx point.mx box.mx segment.mx triangle.mx circle.mx \
@@ -17,7 +17,7 @@ mod_gis = {
 	SCRIPTS = mil
 }
 
-mod_opengis = {
+lib__opengis = {
 	SOURCES = \
 		writer.mx opengiswriter.mx Geometry.mx opengisreader.mx \
 		MultiLineString.mx MultiPolygon.mx GeometryCollection.mx \
@@ -31,7 +31,7 @@ mod_opengis = {
 	SCRIPTS = mil
 }
 
-mod_gisbulk = {
+lib__gisbulk = {
 	SOURCES = \
 		split.mx rtree.mx rtree_box.mx rtree_point.mx \
 		rtree_segment.mx rtree_polyline.mx rtree_polygon.mx \
@@ -41,7 +41,9 @@ mod_gisbulk = {
 	SCRIPTS = mil
 }
 
-MODS = {
+LIBS = {
+	NAME = geometry
+	SEP = _
 	SOURCES = blg.mx opengisbulk.mx gdkmem.mx
 	HEADERS = h m
 	SCRIPTS = mil

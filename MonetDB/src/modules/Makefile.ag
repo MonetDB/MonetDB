@@ -1,2 +1,3 @@
 
-SUBDIRS = plain geometry 
+SUBDIRS = plain 
+#geometry 

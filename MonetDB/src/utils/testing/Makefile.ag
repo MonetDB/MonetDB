@@ -5,7 +5,7 @@ bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
 }
 
-Mtimeout = {
+bin_Mtimeout = {
 	SOURCES = Mtimeout.c
 }
 

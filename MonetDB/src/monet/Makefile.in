@@ -65,6 +65,7 @@ AS = @AS@
 AWK = @AWK@
 BASH = @BASH@
 CC = @CC@
+CFLAGS = @CFLAGS@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -95,47 +96,19 @@ YACC = @YACC@
 install_sh = @install_sh@
 thread_safe_flag_spec = @thread_safe_flag_spec@
 
-#AUTOMAKE_OPTIONS = no-dependencies
 
 
-
-monetincludedir = $(includedir)/monet
-
-monet_headers = \
-	monet.h monet_client.h monet_context.h monet_deparse.h \
-	monet_interpreter.h monet_multiplex.h monet_parse.h \
-	monet_process.h monet_queue.h monet_tbl.h searchpath.h yytree.h 
-
-
-monetinclude_HEADERS = $(monet_headers) monet_parse_tab.h
-
-BUILT_SOURCES = \
-	$(monet_headers) \
-	monet_parse_tab.y monet_parse_yy.l \
-	monet.c monet_client.c monet_context.c monet_deparse.c \
-	monet_interpreter.c monet_multiplex.c monet_parse.c \
-	monet_process.c monet_queue.c monet_tbl.c searchpath.c yytree.c 
-
+AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
 INCLUDES = -I$(top_builddir)/src/gdk
-CFLAGS = @CFLAGS@ $(thread_safe_flag_spec)
-
-# interface:implementation:age
-LT_VERSION = 0:1:0
-
-EXTRA_DIST = \
-	monet.mx          monet_interpreter.mx  monet_queue.mx  yytree.mx \
-	monet_client.mx   monet_multiplex.mx    monet_tbl.mx \
-	monet_context.mx  monet_parse.mx        monet_tem.mx \
-	monet_deparse.mx  monet_process.mx      searchpath.mx
-
-
-#-version-info $(LT_VERSION)
-lib_LTLIBRARIES = libmonet.la
-
+MTSAFE = 
+libmonet_la_SOURCES = monet.c monet.h monet_interpreter.c monet_interpreter.h monet_queue.c monet_queue.h yytree.c yytree.h monet_client.c monet_client.h monet_multiplex.c monet_multiplex.h monet_tbl.c monet_tbl.h monet_context.c monet_context.h monet_parse.c monet_parse.h monet_parse_tab.y monet_parse_tab.h monet_parse_yy.l monet_deparse.c monet_deparse.h monet_process.c monet_process.h searchpath.c searchpath.h
 YFLAGS = -d
-
-libmonet_la_SOURCES = $(BUILT_SOURCES) monet_parse_tab.h
+BUILT_SOURCES = monet.c monet.h monet_interpreter.c monet_interpreter.h monet_queue.c monet_queue.h yytree.c yytree.h monet_client.c monet_client.h monet_multiplex.c monet_multiplex.h monet_tbl.c monet_tbl.h monet_context.c monet_context.h monet_parse.c monet_parse.h monet_parse_tab.y monet_parse_tab.h monet_parse_yy.l monet_deparse.c monet_deparse.h monet_process.c monet_process.h searchpath.c searchpath.h
+EXTRA_DIST = Makefile.ag Makefile.msc monet_tem.mx monet.mx monet_interpreter.mx monet_queue.mx yytree.mx monet_client.mx monet_multiplex.mx monet_tbl.mx monet_context.mx monet_parse.mx monet_deparse.mx monet_process.mx searchpath.mx
+lib_LTLIBRARIES = libmonet.la
+monetincludedir = $(includedir)/monet
+monetinclude_HEADERS = monet.h monet_interpreter.h monet_queue.h yytree.h monet_client.h monet_multiplex.h monet_tbl.h monet_context.h monet_parse.h monet_parse_tab.h monet_deparse.h monet_process.h searchpath.h
 
 MEL = $(top_builddir)/src/mel/mel
 MX = $(top_builddir)/src/utils/Mx/Mx
@@ -155,10 +128,10 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libmonet_la_LDFLAGS = 
 libmonet_la_LIBADD = 
-am_libmonet_la_OBJECTS =  monet_parse_tab.lo monet_parse_yy.lo monet.lo \
-monet_client.lo monet_context.lo monet_deparse.lo monet_interpreter.lo \
-monet_multiplex.lo monet_parse.lo monet_process.lo monet_queue.lo \
-monet_tbl.lo searchpath.lo yytree.lo
+am_libmonet_la_OBJECTS =  monet.lo monet_interpreter.lo monet_queue.lo \
+yytree.lo monet_client.lo monet_multiplex.lo monet_tbl.lo \
+monet_context.lo monet_parse.lo monet_parse_tab.lo monet_parse_yy.lo \
+monet_deparse.lo monet_process.lo searchpath.lo
 libmonet_la_OBJECTS =  $(am_libmonet_la_OBJECTS)
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -169,15 +142,8 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDF
 DIST_SOURCES =  $(libmonet_la_SOURCES)
 HEADERS =  $(monetinclude_HEADERS)
 
-depcomp = $(SHELL) $(top_srcdir)/conf/depcomp
-DEP_FILES =  @AMDEP@ $(DEPDIR)/monet.Plo $(DEPDIR)/monet_client.Plo \
-$(DEPDIR)/monet_context.Plo $(DEPDIR)/monet_deparse.Plo \
-$(DEPDIR)/monet_interpreter.Plo $(DEPDIR)/monet_multiplex.Plo \
-$(DEPDIR)/monet_parse.Plo $(DEPDIR)/monet_parse_tab.Plo \
-$(DEPDIR)/monet_parse_yy.Plo $(DEPDIR)/monet_process.Plo \
-$(DEPDIR)/monet_queue.Plo $(DEPDIR)/monet_tbl.Plo \
-$(DEPDIR)/searchpath.Plo $(DEPDIR)/yytree.Plo
-DIST_COMMON =  $(monetinclude_HEADERS) Makefile.am Makefile.in compile \
+depcomp = 
+DIST_COMMON =  $(monetinclude_HEADERS) Makefile.am Makefile.in \
 monet_parse_tab.c monet_parse_tab.h monet_parse_yy.c
 
 
@@ -191,7 +157,7 @@ all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .c .h .l .lo .m .mil .mx .o .obj .proto.h .y
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) $(top_srcdir)/rules.mk
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/monet/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/monet/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -247,6 +213,12 @@ maintainer-clean-libtool:
 
 libmonet.la: $(libmonet_la_OBJECTS) $(libmonet_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libmonet_la_LDFLAGS) $(libmonet_la_OBJECTS) $(libmonet_la_LIBADD) $(LIBS)
+.c.o:
+	$(COMPILE) -c $<
+.c.obj:
+	$(COMPILE) -c `cygpath -w $<`
+.c.lo:
+	$(LTCOMPILE) -c -o $@ $<
 .l.c:
 	$(LEX) $(AM_LFLAGS) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@
 .y.c:
@@ -308,51 +280,6 @@ distclean-tags:
 
 maintainer-clean-tags:
 
-@AMDEP@include $(DEPDIR)/monet.Plo
-@AMDEP@include $(DEPDIR)/monet_client.Plo
-@AMDEP@include $(DEPDIR)/monet_context.Plo
-@AMDEP@include $(DEPDIR)/monet_deparse.Plo
-@AMDEP@include $(DEPDIR)/monet_interpreter.Plo
-@AMDEP@include $(DEPDIR)/monet_multiplex.Plo
-@AMDEP@include $(DEPDIR)/monet_parse.Plo
-@AMDEP@include $(DEPDIR)/monet_parse_tab.Plo
-@AMDEP@include $(DEPDIR)/monet_parse_yy.Plo
-@AMDEP@include $(DEPDIR)/monet_process.Plo
-@AMDEP@include $(DEPDIR)/monet_queue.Plo
-@AMDEP@include $(DEPDIR)/monet_tbl.Plo
-@AMDEP@include $(DEPDIR)/searchpath.Plo
-@AMDEP@include $(DEPDIR)/yytree.Plo
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-	-rm -rf $(DEPDIR)
-
-maintainer-clean-depend:
-
-@AMDEP@CCDEPMODE = @CCDEPMODE@
-
-.c.o:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.lo:
-@AMDEP@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LTCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-
-.c.obj:
-@AMDEP@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(COMPILE) -c -o $@ `cygpath -w $<`
-
-
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 distdir: $(DISTFILES)
@@ -367,7 +294,6 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	$(MAKE) $(AM_MAKEFLAGS) top_distdir="$(top_distdir)" distdir="$(distdir)" dist-hook
 info-am:
 info: info-am
 dvi-am:
@@ -387,7 +313,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-libLTLIBRARIES uninstall-monetincludeHEADERS
 uninstall: uninstall-am
-all-am: Makefile $(BUILT_SOURCES) $(LTLIBRARIES) $(HEADERS) all-local
+all-am: Makefile $(LTLIBRARIES) $(HEADERS) all-local
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
@@ -407,27 +333,27 @@ maintainer-clean-generic:
 	-rm -f Makefile.in
 	-test -z "monet_parse_yy.cmonet_parse_tab.hmonet_parse_tab.c$(BUILT_SOURCES)" || rm -f monet_parse_yy.c monet_parse_tab.h monet_parse_tab.c $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-libLTLIBRARIES mostlyclean-compile \
-		mostlyclean-libtool mostlyclean-tags mostlyclean-depend \
+		mostlyclean-libtool mostlyclean-tags \
 		mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
 clean-am:  clean-libLTLIBRARIES clean-compile clean-libtool clean-tags \
-		clean-depend clean-generic mostlyclean-am
+		clean-generic mostlyclean-am
 
 clean: clean-am
 
 distclean-am:  distclean-libLTLIBRARIES distclean-compile \
-		distclean-libtool distclean-tags distclean-depend \
-		distclean-generic clean-am
+		distclean-libtool distclean-tags distclean-generic \
+		clean-am
 	-rm -f libtool
 
 distclean: distclean-am
 
 maintainer-clean-am:  maintainer-clean-libLTLIBRARIES \
 		maintainer-clean-compile maintainer-clean-libtool \
-		maintainer-clean-tags maintainer-clean-depend \
-		maintainer-clean-generic distclean-am
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -440,49 +366,81 @@ distclean-compile clean-compile maintainer-clean-compile \
 mostlyclean-libtool distclean-libtool clean-libtool \
 maintainer-clean-libtool uninstall-monetincludeHEADERS \
 install-monetincludeHEADERS tags mostlyclean-tags distclean-tags \
-clean-tags maintainer-clean-tags mostlyclean-depend distclean-depend \
-clean-depend maintainer-clean-depend distdir info-am info dvi-am dvi \
-check check-am installcheck-am installcheck install-exec-am \
-install-exec install-data-am install-data install-am install \
-uninstall-am uninstall all-local all-redirect all-am all install-strip \
-installdirs mostlyclean-generic distclean-generic clean-generic \
+clean-tags maintainer-clean-tags distdir info-am info dvi-am dvi check \
+check-am installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-local all-redirect all-am all install-strip installdirs \
+mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-
-%_tab.y: %.y
-	$(MV) $^ $@
-
-%_tab.yy: %.yy
-	$(MV) $^ $@
-
-%_yy.l: %.l
-	$(MV) $^ $@
-
-%_yy.ll: %.ll
-	$(MV) $^ $@
-
-%.cc: %.mx
-	$(MX) $(MXFLAGS) -x C $<
-
-%.c: %.mx
-	$(MX) $(MXFLAGS) -x c $<
+monet_interpreter.h: monet_interpreter.mx
+monet_deparse.lo: monet_deparse.c monet.h monet_deparse.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_client.c: monet_client.mx
+monet_interpreter.lo: monet_interpreter.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_client.lo: monet_client.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_interpreter.c: monet_interpreter.mx
+monet.h: monet.mx
+monet_client.h: monet_client.mx
+monet.lo: monet.c monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet.h monet_parse.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_queue.lo: monet_queue.c monet.h monet_deparse.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+yytree.h: yytree.mx
+yytree.lo: yytree.c monet.h yytree.h monet_parse.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_queue.h: monet_queue.mx
+monet_parse.c: monet_parse.mx
+monet_deparse.c: monet_deparse.mx
+yytree.c: yytree.mx
+monet_parse.lo: monet_parse.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet.c: monet.mx
+monet_deparse.h: monet_deparse.mx
+monet_parse.h: monet_parse.mx
+monet_queue.c: monet_queue.mx
+monet_parse_yy.lo: monet_parse_yy.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_parse_tab.h: monet_parse_tab.y
+searchpath.lo: searchpath.c monet.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+searchpath.h: searchpath.mx
+monet_parse_tab.lo: monet_parse_tab.c monet_tbl.h monet_parse.h monet.h monet_client.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_tbl.c: monet_tbl.mx
+monet_parse_tab.c: monet_parse_tab.y
+monet_tbl.lo: monet_tbl.c monet.h searchpath.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_tbl.h: monet_tbl.mx
+monet_parse_yy.c: monet_parse_yy.l
+searchpath.c: searchpath.mx
+monet_parse_tab.y: monet_parse.mx
+monet_context.h: monet_context.mx
+monet_context.lo: monet_context.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_process.c: monet_process.mx
+monet_multiplex.c: monet_multiplex.mx
+monet_context.c: monet_context.mx
+monet_process.lo: monet_process.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_multiplex.lo: monet_multiplex.c monet.h monet_parse_tab.h yytree.h monet_process.h monet_client.h monet_context.h monet_interpreter.h monet_tbl.h monet_multiplex.h monet_queue.h monet_parse.h searchpath.h
+monet_multiplex.h: monet_multiplex.mx
+monet_process.h: monet_process.mx
+monet_parse_yy.l: monet_parse.mx
 
 %.h: %.mx
 	$(MX) $(MXFLAGS) -x h $<
 
-%.y: %.mx
-	$(MX) $(MXFLAGS) -x y $< 
+%.c: %.mx
+	$(MX) $(MXFLAGS) -x c $<
 
-%.yy: %.mx
+%_tab.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
 	$(MV) $*.y $@
 
-%.l: %.mx
+%_yy.l: %.mx
 	$(MX) $(MXFLAGS) -x l $< 
-
-%.ll: %.mx
-	$(MX) $(MXFLAGS) -x l $<
 	$(MV) $*.l $@
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%_tab.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+	$(MV) $*.yy $@
+
+%_yy.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
+	$(MV) $*.ll $@
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
@@ -497,10 +455,6 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
 all-local: $(BUILT_SOURCES)
-
-dist-hook:
-	mkdir $(distdir)/Tests
-	cd $(srcdir)/Tests; cp [^C]* $(distdir)/Tests
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

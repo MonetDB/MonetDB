@@ -2,7 +2,9 @@
 INCLUDES = top_builddir/src/gdk top_builddir/src/monet
 MTSAFE
 
-MODS = {
+LIBS = {
+	NAME = plain
+	SEP = _
 	SOURCES = \
 		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
 		bitvector.mx blob.mx cluster.mx counters.mx ddbench.mx \
