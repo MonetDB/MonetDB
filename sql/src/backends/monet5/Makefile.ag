@@ -1,3 +1,19 @@
 
 INCLUDES = ../../common ../../server $(MONET_INCS)
 
+lib__sql = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		sql.mx \
+		sql_scenario.mx \
+		sql_gencode.mx \
+		sql_server.mx
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io 
+	LIBS = ../../server/libsqlserver $(MONET_LIBS)
+	LDFLAGS = -module
+}
+
+scripts_mal = {
+	DIR = libdir/MonetDB
+	SOURCES = sql.mx sql_scenario.mx sql_server.mx
+}

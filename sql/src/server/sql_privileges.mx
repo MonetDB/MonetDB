@@ -52,10 +52,10 @@ extern int sql_drop_user(mvc *m,  str user);
 #endif /*_SQL_PRIV_H_ */
 @c
 #include <gdk.h>
-#include <monet_context.h>
+//#include <monet_context.h>
 #include "sql_privileges.h"
 #include "sql_bm.h"
-#include <algebra.h>
+//#include <algebra.h>
 
 /** broken !!, need to use the sys_* versions from mvc */
 static BAT *desc(char *bname)
@@ -148,7 +148,7 @@ int sql_create_role(mvc *m,  str auth, int grantor )
 	}
 	if (BATcount(auth_id) > 0) {
 		int ma;
-		BATmax(auth_id,&ma);
+		/*BATmax(auth_id,&ma);*/
 		ma++;
 		BUNins(auth_id, &onil, &ma);
 	} else {

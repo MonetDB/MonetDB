@@ -83,6 +83,9 @@ void qc_destroy( qc *cache /*, Cntxt stk */ )
 	for (q = cache->q; q; q = n){
 		n = q->next;
 		
+		if (q->s)
+			symbol_destroy(q->s);
+
 		if (q->params)
 			list_destroy(q->params);
 

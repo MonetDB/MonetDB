@@ -34,6 +34,7 @@
 #include <sql_mem.h>
 #include <stream.h>
 #include "sql_statement.h"
+#include "sql_qc.h"
 #include "sql_mvc.h"
 
 #define ERRSIZE 1024
@@ -47,7 +48,6 @@ typedef struct context {
 	int yylen;
 	int yysize;
 	int debug;
-	int trace;
 	int cnt;
 
 	char *sql;
@@ -55,13 +55,10 @@ typedef struct context {
 	int sqlsize;
 	int key;
 
-	int lineno;
-	char *buf;
-	buffer *outbuf;
-	stream *out;
-	int	reply_size;
+	int 	lineno;
+	char*	buf;
 
-	char errstr[ERRSIZE];
+	char 	errstr[ERRSIZE];
 	struct  mvc *mvc;
 	struct  qc  *qc;
 
@@ -73,8 +70,8 @@ typedef struct context {
 	struct symbol *sym;
 } context;
 
-sql_export void sql_init_context(context * c, int debug, int trace, int reply_size, mvc *m);
-sql_export void sql_exit_context(context * c);
+sql_export context *sql_create_context(int debug, mvc *m);
+sql_export void sql_destroy_context(context * c);
 
 sql_export void cmd_init(context * c);
 sql_export void cmd_add_token(context * c, char *token);
@@ -82,7 +79,7 @@ sql_export void cmd_add_string(context * c, char *str);
 
 sql_export struct stmt *sql_symbol2stmt( context *c );
 
-sql_export int sqlcleanup( context *c, char *cmd, int err);			/* used in src/backends/monet4/sql_session.c */
+sql_export int sqlcleanup( context *c, char *cmd, int err);
 
 
 #endif	/* _SQL_CONTEXT_H_ */
@@ -115,7 +112,7 @@ int sqlcleanup( context *c, char *cmd, int err)
 	sql_destroy_args(c);
 	if (cmd){
 		/* beware to use free instead of _DELETE
- 	 	 * as the stream library is build with out 
+ 	 	 * as the stream library is build without 
 	 	 * libbat ie. it cannot use gdkmalloc 
 	 	 * can be used */
 	        free(cmd);
@@ -127,21 +124,20 @@ int sqlcleanup( context *c, char *cmd, int err)
 	return err;
 }
 
-void sql_init_context(context * c, int debug, int trace, int reply_size, mvc * mvc)
+context *sql_create_context(int debug, mvc * mvc)
 {
+	context *c = NEW(context); 
+
 	memset(c, 0, sizeof(context));
 	c->cur = ' ';
 	c->buf = NULL;
- 	c->outbuf = buffer_create( BUFSIZ );
-	c->out = buffer_wastream( c->outbuf, "SQLserver" );
-	c->reply_size = reply_size;
 
 	c->debug = debug;
-	c->trace = trace;
+
 	c->cnt = 0;
 	c->lineno = 1;
 	c->sym = NULL;
-	c->qc = NULL;
+	c->qc = qc_create();
 	c->mvc = mvc;
 	c->errstr[0] = '\0';
 
@@ -158,20 +154,21 @@ void sql_init_context(context * c, int debug, int trace, int reply_size, mvc * m
 	c->sql[0] = '\0';
 
 	cmd_init(c);
+	return c;
 }
 
-void sql_exit_context(context * c)
+void sql_destroy_context(context * c)
 {
-	if (c->out){
-		stream_close(c->out);
-		stream_destroy(c->out);
-	}
 	c->mvc = NULL;
+
+	if (c->qc) qc_destroy(c->qc); 
+	c->qc = NULL;
 
 	if (c->sql != NULL)
 		_DELETE(c->sql);
 	c->sql = NULL;
 	_DELETE(c->yytext);
+	_DELETE(c);
 }
 
 void cmd_init(context * c)

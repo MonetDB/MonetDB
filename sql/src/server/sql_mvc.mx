@@ -303,7 +303,6 @@ sql_export void mvc_clean_result( mvc *m, res_table *t);
  */
 
 #include <gdk.h>
-#include <ascii_io.h>
 
 #include "sql_mvc.h"
 #include "sql_logger.h"
@@ -1808,6 +1807,8 @@ int mvc_set_user( mvc *m, char *user )
 		m->user = _strdup(user);
 		m->privileges = priv;
 		res = 1;
+		bat_destroy(auth_id);
+		bat_destroy(auth_priv);
 	}
 	bat_destroy(auth_name);
 	return res;
@@ -2480,8 +2481,11 @@ mvc_destroy(mvc * m)
 			clean_table_result(t);
 		}
 	}
+
 	tr = m->trans;
 	while(tr->parent) tr = trans_destroy(tr);
+	if (m->user) _DELETE(m->user);
+	if (m->role) _DELETE(m->role);
 	_DELETE(m);
 }
 

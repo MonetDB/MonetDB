@@ -1,0 +1,1225 @@
+@f sql
+@t SQL Scenario implementation
+@a M Kersten 
+@v 0
+@* SQL Scenario implementation
+The SQL scenario imlementation is a derivative of the MAL session scenario.
+In particular, the end of the SQL statement to be executed is recognized
+by receiving a semicolon directly followed by an empty line. 
+
+It is also the first version that uses state records.
+They are initialized as part of the initialization phase of 
+the scenario. The routines to be used are explicitly named.
+
+The main issues to deal after parsing it to clean out the
+Admin.main function from any information added erroneously.
+Ideally this involves resetting the state of the client
+'main' function, i.e. the symbol table is reset and any
+instruction added should be cleaned. Beware that the instruction
+table may have grown in size.
+
+@mal
+module sql;
+
+command sql():void = SQLlanguage
+comment "Switch to processing SQL statements";
+
+command header(i:int) = SQLheader
+comment "Generate a table header for an SQL frontend";
+command column(i:any, v:str,t:str,digits:int,scale:int) = SQLcolumnsingle;
+command column(b:bat, v:str,t:str,digits:int,scale:int) = SQLcolumn
+comment "Rename a table column";
+
+pattern output(a:any...)= SQLoutput;
+pattern output(a:bat[any,any]...)= SQLoutputBats
+comment "Overloading of the core print routines to obtain proper layout";
+
+@- The SQL multi-version catalog
+This module also contains the definitions for managing an SQL database schema in
+version 5.  It is an adaptation of the original V4.3 code base. 
+
+The original wrapper code is retained, because it makes it
+easier to later re-use part of the catalog code in a separately.
+@mal
+command createCatalog( debug:int ) : void = mvc_create_wrap
+comment "Create multi version catalog";
+
+command destroyCatalog() = mvc_destroy_wrap
+comment "Destroy multi version catalog";
+
+command login( user:str, passwd:str ):str= mvc_login_wrap
+comment "Database login";
+
+command status( ) : int = mvc_status_wrap
+comment "Return the status of the last mvc operation";
+
+#command type( ) : int = mvc_type_wrap
+#comment "return the type of the last mvc operation";
+
+command commit( chain:int, name:str ) : int = mvc_commit_wrap
+comment "Commit transaction/savepoint and chain";
+
+command rollback( chain:int, name:str ) : int = mvc_rollback_wrap
+comment "Rollback transaction/savepoint and chain";
+
+command release( name:str ) : int = mvc_release_wrap
+comment "Release the savepoint";
+
+command setISOlevel( level:int ) : int = mvc_set_iso_level_wrap
+comment "Change the isolation level";
+
+command bindSchema( sname:str ) :  void = mvc_bind_schema_wrap
+comment "Locate the schema and make it the current one";
+
+command bindTable(tname:str ) = mvc_bind_table_wrap
+comment "Locate the table in the current schema and make it the focus";
+
+command bindColumn( cname:str ) = mvc_bind_column_wrap
+comment "Locate the column in the current table and make it the focus";
+
+command bindKey(s:str, kname:str ):ptr = mvc_bind_key_wrap
+comment "Locate the key with kname";
+
+command bindIndex(s:str, iname:str ):ptr = mvc_bind_idx_wrap
+comment "Locate the index with iname";
+
+command bindUbat(sname:str, tname:str, cname:str, access:int ) : 
+		BAT[any::1,any::2] = mvc_bind_ubat_wrapREAD
+comment "Bind bat with the updates to tname.cname with specific access mode";
+
+command bindDbat(sname:str, tname:str, access:int) : 
+		BAT[any::1,any::2] = mvc_bind_dbat_wrap
+comment "Bind the table deletes bat, tname.delete with specific access modes";
+
+command bind(sname:str, tname:str, cname:str, access:int ):BAT[any::1,any::2] 
+	= mvc_bind_wrap
+comment "Bind the bat tname.cname into the focus with specific access mode";
+
+command dropSchema( name:str ) = mvc_drop_schema_wrap
+comment "Drop schema";
+
+command createSchema( name:str, auth:str) : void = mvc_create_schema_wrap 
+comment "Create schema";
+
+command dropTable(name:str,  cascade:bit ) = mvc_drop_table_wrap 
+comment "Drop table from a schema";
+
+command createTable(name:str, temp:int):void = mvc_create_table_wrap
+comment "Create table in current schema";
+
+command createView( name:str, sql:str) = mvc_create_view_wrap 
+comment "Create view within the current schema";
+
+command dropColumn( name:str ) = mvc_drop_column_wrap 
+comment "Drop column from a table in a schema";
+
+command createColumn( name:str, type:str,digits:int,scale:int ) :int
+	= mvc_create_column_wrap
+comment "Create column within the current table";
+
+command setNotNull(flg:int) = mvc_null_wrap
+comment "Set current column (not) null";
+
+command default(val:str ) = mvc_default_wrap
+comment "Set current column default value";
+
+command createKey(name:str,kt:int):int = mvc_create_key_wrap
+comment "Create a (compound) table key";
+
+#command createForeignKey( nme:str, kt:str) 
+		#= mvc_create_fkey_wrap
+#comment "Create a table key";
+
+#command keyAddColumn( s:str, t:str, k:sql_key, c:sql_column ) = mvc_key_add_column_wrap
+#comment "Key add column";
+
+command exportTable(s:stream, res_id:int, offset:int, nr:int ) =
+		mvc_export_table
+comment "Export a table (in order) to stream s with the 
+given tuple and record seperators (sep/rsep)";
+
+command exportResult(s:stream, res_id:int ) =
+		mvc_export_result
+comment "Export a table (in order) to stream s with the 
+given tuple and record seperators (sep/rsep)";
+
+command importTable( s:stream, tname:str, 
+	sep:str, rsep:str, nr:int) : BAT[str,BAT] = mvc_import_table_wrap
+comment "Import a table from stream s with the given 
+tuple and record seperators (sep/rsep)";
+
+#command renumber(b1:bat[oid,any::1],o:oid):bat[oid,any::1] = CMDrenumber
+#comment "renumber the bat using the offset o.";
+
+#command insert(b:bat[void,any::1],u:bat[void,any::1]):bat[void,any::1] =
+	#CMDbatappendoidbat 
+#comment "append the contents of u to b.";
+#command replace(b:bat[void,any::1],u:bat[void,any::1]):bat[void,any::1] =
+	#CMDbatreplaceoidbat 
+#comment "inplace replace values on the give locations.";
+@h
+/*
+ * The contents of this file are subject to the MonetDB Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at 
+ * http://monetdb.cwi.nl/Legal/MonetDBPL-1.0.html
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Monet Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
+ * All Rights Reserved.
+ * 
+ * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
+ */
+#ifndef _SQL_H
+#define _SQL_H
+
+#include <sql_mem.h>
+
+#ifdef _MSC_VER
+#ifndef LIBSQL
+#define sql_export extern __declspec(dllimport)
+#else
+#define sql_export extern __declspec(dllexport)
+#endif
+#else
+#define sql_export extern
+#endif
+
+#include <mal_session.h>
+#include <sql_context.h>
+#include <sql_mvc.h>
+
+/* #define _SQL_SCENARIO_DEBUG  */
+sql_export str SQLexitClient(Client c);
+sql_export str SQLinitClient(Client c);
+sql_export str SQLexit(Client c);
+sql_export str SQLinit(Client c);
+
+sql_export str SQLparser(Client c);
+sql_export str SQLengine(Client c);
+
+
+typedef struct backend {
+	int 	debug;
+	int 	trace;
+	int	reply_size;
+	context *context;
+	sql_schema *currSchema;
+	sql_table *currTable;
+	sql_column *currColumn;
+	sql_key *currKey;
+	sql_idx *currIndex;
+} backend;
+
+#endif /* _SQL_H */
+
+@c
+#include "sql.h"
+#include <gdk.h>
+#include <gdk_system.h>
+#include <mal_function.h>
+#include <mal_stack.h>
+#include <mal_interpreter.h>
+#include <mal_session.h>
+#include <sql_context.h>
+#include <sql_qc.h>
+#include <sql_statement.h>
+#include <sql_semantic.h>
+#include "sql_gencode.h"
+#include <bat.h>
+#include <io.h>
+
+static backend *backend_create( context *c )
+{
+	backend *b = NEW(backend);
+
+	b->debug = c->debug;
+	b->context = c;
+	b->currSchema = NULL;
+	b->currTable = NULL;
+	b->currColumn = NULL;
+	b->currKey = NULL;
+	b->currIndex = NULL;
+	return b;
+}
+
+static void backend_destroy( backend *b )
+{
+	_DELETE(b);
+}
+	
+@+ Scenario routines
+Consume input and concatenate it until you find a ';<nl>' combination.
+@c
+str SQLinit(Client c){
+	(void)c; /* not used */
+	mvc_init(0);
+	return MAL_SUCCEED;
+}
+str SQLexit(Client c){
+	(void)c; /* not used */
+	mvc_exit();
+	return MAL_SUCCEED;
+}
+str SQLinitClient(Client c){
+	backend *be;
+	mvc *m;
+	str schema;
+
+	be = c->state[PARSER];
+	if( be == 0){
+		context *sql;
+		m = mvc_create(0);
+		/* replace user name with client record setting later on */
+		schema = mvc_login(m, "monetdb", "monetdb");
+		if( !schema){
+			return throwMessage("SQLparser","No schema defined\n");
+		} else {
+			_DELETE(schema);
+		}
+		sql = sql_create_context(0/*debug*/, m);
+		be = backend_create( sql );
+
+		c->state[PARSER] = be;
+		c->state[OPTIMIZE] = m;
+	} else {
+		m = c->state[OPTIMIZE];
+	}
+	
+	return MAL_SUCCEED;
+}
+str SQLexitClient(Client c){
+	mvc *m;
+	backend *be;
+
+	be = c->state[PARSER];
+	m = (mvc *) c->state[OPTIMIZE];
+	if(be && m){
+		mvc_destroy(m);
+
+		sql_destroy_context(be->context); 
+		backend_destroy(be);
+		/* files are already closed */
+		
+	}
+	clrScenario(c);
+	return MAL_SUCCEED;
+}
+str SQLlanguage(str *ret){
+        str msg= MAL_SUCCEED;
+        stream_printf(GDKout,"#Continue as SQL session\n");
+        msg= setScenario(getClient(),"sql");
+        *ret = 0;
+        return msg;
+}
+str SQLreader(Client c){
+	int cnt, oldcnt,eof;
+#ifdef _SQL_SCENARIO_DEBUG
+	printf("SQLparser: start reading SQL block\n");
+#endif
+	if( c->mode <= FINISHING)
+		return throwMessage("SQLreader","end of SQL input\n");
+	c->prompt= GDKstrdup("sql>");
+	c->promptlength= strlen(c->prompt);
+	c->nxt=c->input;
+	oldcnt= cnt=0;
+	while( c->mode > FINISHING && (eof=readClient(c,c->prompt))){
+		cnt +=strlen(c->input+oldcnt);
+		if( cnt==oldcnt ) break;
+		if( c->input[cnt-1]==';') break;
+		/* add the newline before reading the next part */
+		c->input[cnt]= '\n';
+		c->input[cnt+1]= 0;
+		c->nxt= c->input+cnt;
+		oldcnt=cnt;
+	}
+	c->input[cnt]= '\n';
+	c->input[cnt+1]= 0;
+	c->nxt=c->input;
+
+#ifdef _SQL_SCENARIO_DEBUG
+	printf("SQL blk:%s\n",c->input);
+#endif
+	if(eof==0) {
+		c->mode= FINISHING;
+		return throwMessage("SQLreader","end of SQL input\n");
+	}
+	return 0;
+}
+@-
+The SQL block is stored in the client input buffer, from which it
+can be parsed by the SQL parser. The client structure contains
+a small table of bounded tables. This should be reset before we
+parse a new statement sequence.
+@-
+Before we parse the sql statement, we look for any variable settings
+for specific commands.
+The most important one is to prepare code to be handled by the debugger.
+The current analysis is simple and fulfills our short-term needs.
+A future version may analyse the parameter settings in more detail.
+@c
+
+#define skip() while(*c->nxt && isspace(*c->nxt) ) c->nxt++;
+#define tst(X) (strncmp(c->nxt,(X),strlen(X))==0 && isspace(c->nxt[strlen(X)]))
+
+int SQLsetEnvironment(Client c){
+	do{
+		skip();
+		if( tst("quit") || tst("exit")){
+			mvc_exit();
+			InstrPtr q;
+			c->nxt+= 5;
+			q= newInstruction(ASSIGNsymbol);
+			moduleId(q)= GDKstrdup("system");
+			functionId(q)= GDKstrdup("quit");
+			pushInstruction(c->curprg->def,q);
+			return 0;
+		} else
+		if( tst("set")|| tst("SET") ){
+			c->nxt += 3;
+			skip();
+			if(tst("debug") ){
+				InstrPtr q;
+				c->nxt+= 6;
+				q= newInstruction(ASSIGNsymbol);
+				functionId(q)= GDKstrdup("showFunction");
+				pushInstruction(c->curprg->def,q);
+				q= newInstruction(ASSIGNsymbol);
+				functionId(q)= GDKstrdup("mdb");
+				q= pushArgument(c->curprg->def,q,
+					     newConstant(c->curprg->def,TYPE_bit,
+						       GDKstrdup("true"),0));
+				pushInstruction(c->curprg->def,q);
+				return 1;
+			}
+			if(tst("trace") ){
+				c->listing = (c->listing & LIST_INPUT) | LIST_MAL_INSTR;
+				c->nxt+=6;
+				return 0;
+			}
+			if(tst("explain") ){
+				c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
+				c->nxt+=8;
+				return 0;
+			}
+			if(tst("notrace") ){
+				c->listing &= LIST_INPUT;
+				c->nxt+=6;
+				return 0;
+			}
+		} else break;
+	} while(1);
+	return 0;
+}
+
+int sqlexecute(backend * be, MalBlkPtr mb, char *cmd)
+{
+	context *c = be->context;
+	char *s;
+	int err = 0;
+	cq *q = NULL;
+
+	cmd_init(c);
+
+	s = c->buf = cmd;
+	c->mvc->type = Q_PARSE;
+	c->mvc->status = 0;
+
+	if ((err = sqlparse(c)) || c->mvc->status || !c->sym) {
+		if (!err)
+			err = c->mvc->status;
+		return sqlcleanup(c, cmd, err);
+	}
+	
+	if (be->trace){
+		printf("currently no tracing implemented\n");
+	}
+
+	if ( !(q = qc_find(c->qc, c->sym, c->params, c->key)) ){
+		stmt *s = sql_symbol2stmt(c);
+
+		if (!s && c->mvc->status){
+			err = c->mvc->status;
+			return sqlcleanup(c, cmd, err);
+		}
+
+		backend_dumpproc( be, mb, c->qc->id, s );
+		stmt_destroy(s);
+	
+		//q = qc_insert(c->qc, c->sym, c->params, c->key, c->mvc->type );
+
+		c->sym = NULL;
+		c->params = NULL;
+
+		/* beware to use free instead of _DELETE
+ 	 	 * as the stream library is build with out 
+	 	 * libbat ie. it cannot use gdkmalloc 
+	 	 * can be used */
+	        free(cmd); 
+		cmd = NULL;
+
+		if (err)
+			return sqlcleanup(c, cmd, err);
+	}
+	/* 
+ 	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * and on schema changes 
+	 */
+	if (c->mvc->type == Q_TRANS || c->mvc->type == Q_SCHEMA){
+		if (c->qc) qc_destroy(c->qc);
+		c->qc = qc_create();
+	}
+	return sqlcleanup(c, cmd, err);
+}
+
+
+str SQLparser(Client c) {
+	str msg=0;
+	int debug=0, err=0;
+	backend *be;
+	MalBlkRecord oldstate;
+
+	oldstate= *c->curprg->def;
+#ifdef _SQL_SCENARIO_DEBUG
+	printf("SQL start compilation \n");
+#endif
+	debug= SQLsetEnvironment(c);
+	be = ((backend*)c->state[PARSER]);
+	while ( !(err = sqlexecute(be, c->curprg->def, c->nxt)) ){
+#ifdef _SQL_SCENARIO_DEBUG
+		printf("continue parser from:%s", w);
+#endif
+	}
+	stream_printf(c->fdout,"#%s\n", be->context->errstr);
+	*be->context->errstr=0;
+	msg= throwMessage("SQLparser","Parser errors\n");
+
+	/* turn off debugger */
+	if(debug){
+		InstrPtr q;
+		q= newInstruction(ASSIGNsymbol);
+		functionId(q)= GDKstrdup("mdb");
+		q= pushArgument(c->curprg->def,q,
+			     newConstant(c->curprg->def,TYPE_bit,
+				       GDKstrdup("false"),0));
+		pushInstruction(c->curprg->def,q);
+	}
+	pushEndInstruction(c->curprg->def);
+	chkProgram(c->nspace, c->curprg->def);
+	if( c->curprg->def->errors){
+		showErrors(c);
+		/* restore the state */
+		if( c->listing)
+			printFunction(c->fdout,c->curprg->def, c->listing);
+		resetInstructions(c->curprg->def,oldstate.stop);
+		resetVariables(c->curprg->def, c->glb, oldstate.vtop);
+		c->curprg->def->errors=0;
+		msg= throwMessage("SQLparser","Semantic errors\n");
+	}
+#ifdef _SQL_SCENARIO_DEBUG
+	if(msg) printf("SQL finished:%s\n",msg);
+#endif
+	stream_flush(c->fdout);
+		
+	return msg;
+}
+@-
+Execution of the SQL program is delegated to the MALengine.
+@c
+str SQLengine(Client c) {
+	str msg =MAL_SUCCEED;
+	MalStkPtr oldglb= c->glb;
+
+	if( c->curprg->def->errors)
+		return throwMessage("SQLengine","Program contains errors\n");
+#ifdef _SQL_SCENARIO_DEBUG
+	printf("Ready to execute SQL statement\n");
+#endif
+	c->glb= 0;
+	msg= MALengine(c);
+	c->glb= oldglb;
+	return msg;
+}
+@-
+The SQL front-end required some IO utilities, that may go beyond the
+primitives avaiable in the io.mx module.
+@c
+str SQLheader(int *ret,int *i){
+	/*return throwMessage("SQLheader","Not yet defined\n");*/
+	(void)ret; (void)i; /* unused */
+	return MAL_SUCCEED;
+}
+
+str SQLcolumn(int *ret, int *bid, str *v, str *t, int *digits, int *scale){
+	(void)digits; (void)scale; /* unused */
+	CMDsetRole(ret,bid,t,v);
+	return MAL_SUCCEED;
+}
+str SQLcolumnsingle(int *ret, int *cnr, str *v, str *t, int *digits, int *scale){
+	(void)ret; (void)cnr; (void)v; (void)t; (void)digits; (void)scale;
+	/* do nothing for the time being, later, package it as a table */
+	return MAL_SUCCEED;
+}
+
+str SQLoutput(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int i;
+	if( p->argc==2)
+		CMDprintBoth(mb,stk,p,1,"[ "," ]\n");
+	else {
+		CMDprintBoth(mb,stk,p,1,"[ ",0);
+		for(i=2; i<p->argc-2;i++)
+			CMDprintBoth(mb,stk,p,i,", ",0);
+		CMDprintBoth(mb,stk,p,i,", ", "]\n");
+	}
+	return MAL_SUCCEED;
+}
+str SQLoutputBats(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+        CMDtableAll(GDKout,mb,stk,p,1,0,FALSE);
+	return MAL_SUCCEED;
+}
+
+@-
+The internal administration of the SQL compilation and execution state
+is administered by a state descriptor accessible in each phase.
+Failure to find the state descriptor aborts the session.
+
+@= getContext
+{	Client _client = getClient();
+	if(_client == NULL ){
+		return throwMessage("mvc","Can not access client record");
+	} 
+	if( _client->state[PARSER] == NULL){
+		return throwMessage("mvc","PARSER not initialized\n");
+	}
+	if( _client->state[OPTIMIZE] == NULL){
+		str schema;
+		backend *be = _client->state[PARSER];
+
+		(void)be;
+printf("Re-establish context for client not expected\n");
+		_client->state[OPTIMIZE] == mvc_create(0);
+		schema = mvc_login( _client->state[OPTIMIZE], 
+				"monetdb", "monetdb" );
+		if( !schema)
+			return throwMessage("getContext","unknown schema for monetdb\n");
+		else
+			_DELETE(schema);
+	}
+	@1= ((mvc *) _client ->state[OPTIMIZE]);
+}
+@= setContext
+{	Client _client = getClient();
+	if(_client == NULL || _client ->state[OPTIMIZE]== 0 ){
+		return throwMessage("mvc","Can not get access to @2 state");
+	} 
+	((mvc *) _client ->state[OPTIMIZE])= @1;
+}
+@= getBackend
+{	Client _client= getClient();
+	if(_client == NULL ){
+		return throwMessage("be","Can not access client record");
+	} 
+	if( _client->state[PARSER] == NULL){
+		return throwMessage("be","PARSER not initialized\n");
+	}
+	@1= ((backend*) _client->state[PARSER]);
+}
+@c
+
+str mvc_create_wrap(int *ret, int *debug ){
+	mvc *res = mvc_create( *debug );
+	@:setContext(res,mvc)@
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_destroy_wrap(int *ret ){
+	mvc *c;
+	@:getContext(c,mvc)@
+	mvc_destroy( c );
+	@:setContext(NULL,mvc)@
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_login_wrap(str *r, str *user, str *passwd  ){
+	mvc *c;
+	@:getContext(c,mvc)@
+	*r = mvc_login( c, *user, *passwd );
+	if (*r != 0)
+		return throwException(MALEXCEPTION,"mvc_login_wrap","error");
+	return MAL_SUCCEED;
+}
+
+str mvc_status_wrap(int* res ){
+	mvc *c;
+	@:getContext(c,mvc)@
+	*res = mvc_status( c );
+	return MAL_SUCCEED;
+}
+
+str mvc_type_wrap(int *res ){
+	mvc *m;
+	@:getContext(m,mvc)@
+	*res = mvc_type( m );
+	return MAL_SUCCEED;
+}
+
+str mvc_commit_wrap(int* res, int* chain, str *name){
+	mvc *m;
+	@:getContext(m,mvc)@
+	*res = mvc_commit( m, *chain, *name );
+	return MAL_SUCCEED;
+}
+
+str mvc_rollback_wrap(int *res, int *chain, str *name ){
+	mvc *m;
+	@:getContext(m,mvc)@
+	*res = mvc_rollback( m, *chain, *name );
+	return MAL_SUCCEED;
+}
+
+str mvc_release_wrap(int *res, str *name ){
+	mvc *m;
+	@:getContext(m,mvc)@
+	*res = mvc_release( m, *name );
+	return MAL_SUCCEED;
+}
+
+str mvc_set_iso_level_wrap(int *res, int *level ){
+	mvc *m;
+	@:getContext(m,mvc)@
+	*res = mvc_set_iso_level( m, *level );
+	return MAL_SUCCEED;
+}
+
+str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access){
+	mvc *c;
+	BAT *b;
+	@:getContext(c,mvc)@
+
+	b= mvc_bind( c, *sname, *tname, *cname, *access );
+	if (b){
+		*bid= b->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwException(MALEXCEPTION,"mvc_bind_wrap","error");
+}
+
+str mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access ){
+	mvc *c;
+	BAT *b;
+	@:getContext(c,mvc)@
+	b = mvc_bind_ubat( c, *sname, *tname, *cname, *access );
+	if (b){
+		*ret= b->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwException(MALEXCEPTION,"mvc_bind_ubat_wrap","error");
+}
+str mvc_bind_ubat_wrapWRITE(int *bid, str *sname, str *tname, str *cname){
+	int i=1;
+	return mvc_bind_ubat_wrap(bid, sname, tname, cname, &i);
+}
+str mvc_bind_ubat_wrapREAD(int *bid, str *sname, str *tname, str *cname){
+	int i=0;
+	return mvc_bind_ubat_wrap(bid, sname, tname, cname, &i);
+}
+
+str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
+	mvc *c;
+	BAT *b;
+	@:getContext(c,mvc)@
+	b = mvc_bind_dbat( c, *sname, *tname, *access );
+	if (b){
+		*ret= b->batCacheid;
+		return MAL_SUCCEED;
+	}
+	return throwException(MALEXCEPTION,"mvc_bind_dbat_wrap","error");
+}
+
+str mvc_bind_schema_wrap(int *ret, str *sname){
+	backend *be;
+	mvc *c;
+	@:getBackend(be)@
+	@:getContext(c)@
+	be->currSchema = mvc_bind_schema( c, *sname );
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_bind_table_wrap(int *ret, str *tname){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+	if( be->currSchema == NULL) 
+		return throwMessage("bindTable","Schema not in focus");
+	be->currTable = mvc_bind_table( c, be->currSchema, *tname);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_bind_column_wrap(int *ret, str *col){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+	if( be->currTable == NULL) 
+		return throwMessage("bindColumn","Table focus not found");
+	be->currColumn = mvc_bind_column(c, be->currTable, *col);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_bind_key_wrap(int *ret, str *kname){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if( be->currSchema == NULL) 
+		return throwMessage("bindKey","Schema not found");
+
+	be->currKey = mvc_bind_key( c, be->currSchema, *kname);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_bind_idx_wrap(int *ret, str *iname){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if( be->currSchema == NULL) 
+		return throwMessage("bindIndex","Schema not found");
+
+	be->currIndex = mvc_bind_idx( c, be->currSchema, *iname);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+
+str mvc_create_schema_wrap(int *ret, str *name, str *auth){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	be->currSchema = mvc_create_schema( c, *name, *auth );
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_drop_schema_wrap(int *ret, str *name){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+	mvc_drop_schema( c, *name );
+	be->currSchema = NULL;
+	be->currTable = NULL;
+	be->currColumn = NULL;
+	be->currKey = NULL;
+	be->currIndex = NULL;
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_create_table_wrap(int *ret, str *name, bit* temp){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if( be->currSchema == NULL) 
+		return throwMessage("createTable","Schema not found");
+
+	be->currTable = mvc_create_table( c, be->currSchema, *name, *temp );
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_create_view_wrap(int *ret, str *name, str *sql){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c,mvc)@
+
+	if( be->currSchema == NULL) 
+		return throwMessage("createView","Schema not found");
+
+	be->currTable = mvc_create_view( c, be->currSchema, *name, *sql );
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_drop_table_wrap(int *ret, str *name, bit* cascade){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if( be->currSchema == NULL) 
+		return throwMessage("dropTable","Schema not found");
+
+	mvc_drop_table( c, be->currSchema, *name, *cascade );
+	be->currTable = NULL;
+	be->currColumn = NULL;
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+
+str mvc_create_column_wrap(int *ret, str *name, str *type, int *digits, int *scale ){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if( be->currTable == NULL) 
+		return throwMessage("createColumn","Table not found");
+
+	be->currColumn = mvc_create_column( c, be->currTable, *name, *type, *digits, *scale );
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_drop_column_wrap(int *ret, str *name){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if( be->currTable == NULL) 
+		return throwMessage("createColumn","Table not found");
+
+	mvc_drop_column( c, be->currTable, *name );
+	be->currColumn = NULL;
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_null_wrap(int *ret, int *flg){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if (be->currColumn == NULL) 
+		return throwMessage("notNull","Column not found");
+
+	mvc_null( c, be->currColumn, *flg);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str mvc_default_wrap(int *ret, str *val){
+	backend *be;
+	mvc *c;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	if (be->currColumn == NULL) 
+		return throwMessage("notNull","Column not found");
+
+	mvc_default( c, be->currColumn, *val );
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+@-
+The recurring structure to handle bat descriptors
+@= getBATdescriptor
+        if( BBPcheck(*@2,"@4")==0)
+                return throwMessage("algebra.@4", "cannot access bat @2 in bbp");
+        @3= (BAT*) BBPgetdesc(*@2);
+        if( @3 == NULL) { *@1 = 0;
+                return throwMessage("algebra.@4", "cannot access descriptor @2");
+        }
+        if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
+@-
+@c
+str mvc_create_key_wrap( int *ret, str *name, int *kt){
+	mvc *c;
+	backend *be;
+	sql_schema *s;
+	sql_table *t;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	s = be->currSchema;
+	if( s == NULL) return throwMessage("notNull","Schema not found");
+	t = be->currTable;
+	if( t == NULL) return throwMessage("notNull","Table not found");
+
+        be->currKey = mvc_create_key(c, t, *name, *kt, NULL);
+	*ret =0;
+        return MAL_SUCCEED;
+}
+str mvc_create_fkey_wrap( int *ret, str *name, int *kt){
+	mvc *c;
+	backend *be;
+	sql_schema *s;
+	sql_table *t;
+	sql_key *fk;
+
+	@:getBackend(be)@
+	@:getContext(c)@
+
+	s = be->currSchema;
+	if( s == NULL) return throwMessage("notNull","Schema not found");
+	t = be->currTable;
+	if( t == NULL) return throwMessage("notNull","Table not found");
+	fk = be->currKey;
+	if( fk == NULL) return throwMessage("notNull","Key not found");
+
+        be->currKey = mvc_create_key(c, t, *name, *kt, fk);
+	*ret =0;
+        return MAL_SUCCEED;
+}
+
+
+@= dec_tostr
+	char buf[32];
+	@1 v = *(@1*)a;
+	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0;
+	int l;
+
+	if (v<0) v = -v;
+
+	buf[cur--] = 0;
+	if (scale){
+		for(i=0; i<scale; i++){
+			buf[cur--] = (v%10) + '0';
+			v /= 10;
+		}
+		buf[cur--] = '.';
+	}
+	while(v){
+		buf[cur--] = (v%10) + '0';
+		v /= 10;
+		done = 1;
+	}
+	if (!done)
+		buf[cur--] = '0';
+	if (neg)
+		buf[cur--] = '-';
+	l = (32-cur-1);
+	if (*len < l){
+		if (*Buf) GDKfree(*Buf);
+		*len = l+1;
+		*Buf = GDKmalloc(*len);
+	}
+	strcpy(*Buf, buf+cur+1);
+	return l-1;
+@c
+
+int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a){
+	/* support dec map to sht, int and lng */
+	if (type == TYPE_sht){
+		@:dec_tostr(sht)@
+	} else if (type == TYPE_int){
+		@:dec_tostr(int)@
+	} else if (type == TYPE_lng){
+		@:dec_tostr(lng)@
+	} else {
+		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
+	}
+	return 0;
+}
+
+@= dec_frstr
+	sql_subtype *t = (sql_subtype*)extra;
+
+	int i, neg = 0;
+	char *p = s;
+	@1 *r;
+	@1 res = 0;
+	if (*s == '-'){
+		neg = 1;
+		s++;
+	} else if (*s == '+'){ 
+		neg = 0;
+		s++;
+	}
+	for( i = 0; i < (t->digits-t->scale) && *s != '.'; i++, s++){
+		if (!*s || *s < '0' || *s > '9' ){
+			GDKerror("decimal wrong format (%s)", p);
+			return NULL;
+		}
+		res *= 10;
+		res += (*s-'0');
+	}
+	if (*s){
+		if (*s != '.'){
+			GDKerror("decimal wrong format (%s)", p);
+			return NULL;
+		}
+		s++;
+		for( i = 0; *s && i < t->scale; i++, s++){
+			if (*s < '0' || *s > '9' ){
+				GDKerror("decimal wrong format (%s)", p);
+				return NULL;
+			}
+			res *= 10;
+			res += (*s-'0');
+		}
+	}
+	if (*s){
+		GDKerror("decimal wrong format (%s)", p);
+		return NULL;
+	}
+ 	r = (@1*)GDKmalloc(sizeof(@1));
+	if (neg)
+		*r = -res;
+	else
+		*r = res;
+	return (ptr*)r;
+@c
+
+ptr *dec_frstr( void *extra, int type, char *s){
+	/* support dec map to sht, int and lng */
+	if (type == TYPE_sht){
+		@:dec_frstr(sht)@
+	} else if (type == TYPE_int){
+		@:dec_frstr(int)@
+	} else if (type == TYPE_lng){
+		@:dec_frstr(lng)@
+	} else {
+		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
+	}
+	return NULL;
+}
+
+str mvc_import_table_wrap( BAT **res, stream *s, char *tname, 
+		char *sep, char *rsep, int sz)
+{
+	mvc *c;
+	int cnt = 0;
+	sql_trans *tr;
+	sql_table *t;
+
+	@:getContext(c)@
+	tr = c->trans;
+ 	t = mvc_bind_table(c, tr->schema, tname);
+	(void)s; (void)sep; (void)rsep; (void)sz; (void)t; (void)res;
+
+	c->type = Q_UPDATE;
+	c->status = cnt;
+	return 0;
+}
+
+static res_table *find_export_table( mvc *m, int res_id ){
+	res_table *r = m->results;
+
+	for( ; r; r = r->next){
+		if (r->id == res_id)
+			return r;
+	}
+	return NULL;
+}
+
+str mvc_export_result( stream *s, int res_id )
+{
+	mvc *c;
+	int i;
+	res_table *t;
+	
+	@:getContext(c)@
+ 	t = find_export_table(c, res_id);
+	c->type = Q_RESULT;
+
+	stream_writeInt( s, Q_RESULT );
+	stream_writeInt( s, t->nr_cols );
+	stream_writeInt( s, t->id );
+	
+	for (i = 0; i < t->nr_cols; i++) 
+	{
+		res_col *c = t->cols+i;
+		stream_write(s, c->name, strlen(c->name), 1);
+		stream_write(s, ",", 1, 1);
+		stream_write(s, c->type->type->sqlname, 
+				strlen(c->type->type->sqlname), 1);
+		stream_write(s, "\n", 1, 1);
+	}
+	stream_flush(s);
+	return NULL;
+}
+
+static int mvc_export_row( mvc *m, stream *s, res_table *t ) 
+{
+	char *sep = "\t";
+	char *rsep = "\n";
+
+	int i;
+
+	m->type = Q_RESULT;
+	stream_writeInt( s, Q_TABLE );
+	stream_writeInt( s, 1 );
+
+	for (i = 0; i < t->nr_cols; i++) 
+	{
+		res_col *c = t->cols+i;
+		if (i != 0)
+			stream_write(s, sep, strlen(sep), 1);
+
+		if (c->type->type->scale == SCALE_FIX){
+			char *buf = NULL;
+			int len = 0;
+			int l = dec_tostr((void*)(ptrdiff_t)c->type->scale, &buf, &len,
+					c->mtype, c->p);
+			stream_write(s, buf, l, 1);
+			_DELETE(buf);
+		} else { 
+			char *buf = NULL;
+			int len = 0;
+			int l = (*BATatoms[c->mtype].atomToStr)(&buf, &len, c->p);
+			stream_write(s, buf, l, 1);
+			_DELETE(buf);
+		}
+	}
+	mvc_clean_result(m, t);
+	stream_write(s, rsep, strlen(rsep), 1);
+	stream_flush(s);
+	return 0;
+}
+
+str mvc_export_table( stream *s, int res_id, int offset, int nr )
+{
+	mvc *c;
+	char *sep = "\t";
+	char *rsep = "\n";
+	int clean = 0;
+	res_table *t;
+
+	@:getContext(c)@
+ 	t = find_export_table(c, res_id);
+	(void)s; (void)offset; (void)nr;
+	(void)sep; (void)rsep;
+	if (clean)
+		mvc_clean_result(c, t);
+	return NULL;
+}

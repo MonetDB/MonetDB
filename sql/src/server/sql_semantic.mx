@@ -181,21 +181,19 @@ static tvar *scope_add_table_columns(context * sql, scope * scp, sql_table * t, 
 	tvar *tv = NULL;
 
 	if (t->type == tt_view){
-		context c;
 		stmt *sq; 
 
 		if (!t->st){
-			sql_init_context( &c, 0, 0, -1, sql->mvc);
-			c.buf = t->query;
-			c.cur = ' ';
+			context *c = sql_create_context( 0, sql->mvc);
+			c->buf = t->query;
+			c->cur = ' ';
 		
-			(void)sqlparse(&c); /* blindly ignore errors */
-			
-			sq = sql_subquery(sql, NULL, c.sym);
+			(void)sqlparse(c); /* blindly ignore errors */
+			sq = sql_subquery(sql, NULL, c->sym);
 			t -> st = sq;
 
-			symbol_destroy(c.sym);
-			sql_exit_context(&c);
+			symbol_destroy(c->sym);
+			sql_destroy_context(c);
 
 			for ( n = t->columns.set->h, m = sq->op1.lval->h;
 					n && m; n = n->next, m = m->next) {
@@ -981,19 +979,19 @@ static stmt *sql_unop(context * sql, scope * scp, symbol * se, group * grp, stmt
 		if (f->func->imp) {
 			return stmt_unop(rs, f);
 		} else {
-			context c;
+			context *c;
 			stmt *sq = NULL;
 
 			sql_arg *a = f->func->ops->h->data;
 			sql_add_param(sql, _strdup(a->name), rs );
 
-			sql_init_context( &c, 0, 0, -1, sql->mvc);
-			c.buf = f->func->imp;
-			c.cur = ' ';
-			(void)sqlparse(&c); /* blindly ignore errors */
-			sq = sql_subquery(sql, NULL, c.sym);
-			symbol_destroy(c.sym);
-			sql_exit_context(&c);
+			c = sql_create_context( 0, sql->mvc);
+			c->buf = f->func->imp;
+			c->cur = ' ';
+			(void)sqlparse(c); /* blindly ignore errors */
+			sq = sql_subquery(sql, NULL, c->sym);
+			symbol_destroy(c->sym);
+			sql_destroy_context(c);
 
 			return sq;
 		}

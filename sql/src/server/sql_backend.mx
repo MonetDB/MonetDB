@@ -29,9 +29,7 @@
 #ifndef _SQL_BACKEND_H_
 #define _SQL_BACKEND_H_
 
-#include <sql_context.h>
-#include <sql_statement.h>
-#include <stream.h>
+#include "sql_mem.h"
 
 typedef void *backend_code;
 typedef void *backend_stack;
