@@ -1,3 +1,56 @@
+dnl VERSION_TO_NUMBER macro (copied from libxslt)
+AC_DEFUN(MONET_VERSION_TO_NUMBER,
+[`$1 | awk 'BEGIN { FS = "."; } { printf "%d", ([$]1 * 1000 + [$]2) * 1000 + [$]3;}'`])
+
+AC_DEFUN(AM_MONET,
+[
+
+dnl check for monet
+have_monet=auto
+MONET_CFLAGS=""
+MONET_LIBS=""
+MONET_MOD_PATH=""
+MONET_PREFIX="."
+if test "x$1" = "x"; then
+  MONET_REQUIRED_VERSION="4.3.5"
+else
+  MONET_REQUIRED_VERSION="$1"
+fi
+AC_ARG_WITH(monet,
+[  --with-monet=DIR     monet is installed in DIR], have_monet="$withval")
+if test "x$have_monet" != xno; then
+  AC_PATH_PROG(MONET_CONFIG,monet-config,,$withval/bin:$PATH)
+
+  if test "x$MONET_CONFIG" != x; then
+    AC_MSG_CHECKING(for Monet >= $MONET_REQUIRED_VERSION) 
+    MONETVERS=`$MONET_CONFIG --version`
+    if test MONET_VERSION_TO_NUMBER(echo $MONETVERS) -ge MONET_VERSION_TO_NUMBER(echo $MONET_REQUIRED_VERSION); then
+      have_monet=yes
+    else
+      have_monet=no
+    fi
+    AC_MSG_RESULT($have_monet -> $MONETVERS found)
+  fi
+
+  if test "x$have_monet" != xyes; then
+    MONET_CFLAGS=""
+    MONET_LIBS=""
+    MONET_MOD_PATH=""
+    MONET_PREFIX=""
+  else
+    MONET_CFLAGS=`$MONET_CONFIG --cflags`
+    MONET_LIBS=`$MONET_CONFIG --libs`
+    MONET_MOD_PATH=`$MONET_CONFIG --modpath`
+    MONET_PREFIX=`$MONET_CONFIG --prefix`
+  fi
+fi
+AC_SUBST(MONET_CFLAGS)
+AC_SUBST(MONET_LIBS)
+AC_SUBST(MONET_MOD_PATH)
+AC_SUBST(MONET_PREFIX)
+AM_CONDITIONAL(HAVE_MONET,test x$have_monet = xyes)
+])
+
 AC_DEFUN(AM_MONET_OPTIONS,
 [
 dnl --enable-debug
