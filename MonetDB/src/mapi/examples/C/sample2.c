@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 		if ((hdl = mapi_query(dbh, "create table emp(name varchar, age int)")) == NULL) 
 			die(dbh);
 		mapi_close_handle(hdl);
-		if ((hdl = mapi_query_array(dbh, "insert into emp values(\"?\", ?)", parm)) == NULL) 
+		if ((hdl = mapi_query_array(dbh, "insert into emp values('?', ?)", parm)) == NULL) 
 			die(dbh);
 		mapi_close_handle(hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL)

@@ -51,10 +51,10 @@ int main(int argc, char **argv)
 		if ((hdl = mapi_query(dbh, "create table emp(name varchar, age int)")) == NULL) 
 			die(dbh);
 		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "insert into emp values(\"John\", 23)")) == NULL) 
+		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL) 
 			die(dbh);
 		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "insert into emp values(\"Mary\", 22)")) == NULL)
+		if ((hdl = mapi_query(dbh, "insert into emp values('Mary', 22)")) == NULL)
 			die(dbh);
 		mapi_close_handle(hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL)
