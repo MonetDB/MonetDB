@@ -130,7 +130,7 @@ static int mapiSpy= 1;
 
 void MAPIlistenThread(int sock)
 {
-	int 	msgsock;
+	int 	msgsock= -1;
 	do {
 		if(DEBUG_MAPI)
 		printf("wait for next connection\n");
@@ -161,7 +161,7 @@ void MAPIlistenThread(int sock)
 			if( DEBUG_MAPI) 
 			THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
 			scheduleClient(GDKstrdup(name),0,0,msgsock,fdin,fdout);
-			if( mapiSpy) traceClient(name, mapiSpy);
+			/*if( mapiSpy)*/ traceClient(name, mapiSpy);
 		}
 	} while (1);
 }
