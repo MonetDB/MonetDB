@@ -83,12 +83,6 @@ typedef size_t long_int;
 				 (0xFFFFFFFF&normal_int_SWAP(x>>32)))
 
 #define long_int_SWAP(x)	long_long_SWAP(x)
-/*
-#if SIZEOF_LONG==8
-#else
-#define long_int_SWAP(x)	normal_int_SWAP(x)
-#endif
-*/
 
 #endif /* _GDK_DESC_H_ */
 @}
