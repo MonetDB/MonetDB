@@ -9,7 +9,7 @@ PTHREAD = D:\Pthreads
 PTHREAD_LIBS = $(PTHREAD)\pthread.lib
 PTHREAD_INCS = -I$(PTHREAD) 
 
-pkg = Monet
+pkg = MonetDB
 libdir = $(TOPDIR)\lib
 bindir = $(TOPDIR)\bin
 datadir = $(TOPDIR)\share

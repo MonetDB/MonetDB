@@ -235,7 +235,7 @@
 #undef HAVE_UNISTD_H 
 
 /* Name of package */
-#define PACKAGE "Monet"
+#define PACKAGE "MonetDB"
 
 /* Version number of package */
 #define VERSION "4.3.5"
