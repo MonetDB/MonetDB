@@ -130,7 +130,8 @@ get a working program (on Linux and V5).
 \begin{verbatim}
 cc sample.c  -DHAVE_CONF_H -I$MONET_PREFIX \
         -I$MONET_PREFIX/include/common -I$MONET_PREFIX/include/mapi  \
-	-Wl,$MONET_PREFIX/lib/MonetDB/libMapi.so \
+	-Wl,$MONET_PREFIX/lib/libMapi.so \
+	-Wl,$MONET_PREFIX/lib/libutils.so \
 	-Wl,$MONET_PREFIX/lib/libstream.so \
 	-Wl,--rpath -Wl,$MONET_PREFIX/lib/MonetDB:$MONET_PREFIX/lib \
 	-o sample
@@ -1050,7 +1051,7 @@ mapi_close_handle(MapiHdl hdl)
 		stream_flush(hdl->mid->to);
 		hdl->tableid = -1;
 		mapi_finish_internal(hdl);
-	}
+	} 
 	if (hdl->fields)
 		free(hdl->fields);
 	hdl->fields = NULL;
@@ -3379,6 +3380,10 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 	mapi_check0(hdl->mid, "mapi_fetch_field");
 	cr = hdl->cache.reader;
 
+	if(hdl->cache.fldcnt == 0) {
+		mapi_setError(hdl->mid, "Assertion error", "mapi_fetch_field");
+		return 0;
+	}
 	if (fnr >= 0) {
 		/* slice if needed */
 		if (hdl->cache.fldcnt[cr] == 0)
@@ -3396,6 +3401,10 @@ mapi_fetch_field_array(MapiHdl hdl)
 	int cr;
 
 	mapi_check0(hdl->mid, "mapi_fetch_field_array");
+	if(hdl->cache.fldcnt == 0){
+		mapi_setError(hdl->mid, "Assertion error", "mapi_fetch_field_array");
+		return 0;
+	}
 	cr = hdl->cache.reader;
 	if (hdl->cache.fldcnt[cr] == 0)
 		mapi_slice_row(hdl);
