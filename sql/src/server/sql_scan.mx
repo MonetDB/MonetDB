@@ -445,7 +445,7 @@ utf8_getchar_bstream(bstream *b)
 		if (b->eof || bstream_next( b ) <= 0) 
 			return EOF;
 
-	s = b->buf + b->pos++;
+	s = (unsigned char*) b->buf + b->pos++;
 	if (((c = *s) & 0x80) == 0) {
 		/* 7-bit char */
 		return c;
