@@ -988,23 +988,26 @@ void print_format(col_format_t *c, ptr v) {
 @= print_head
 	str buf = @1?argv[@2].tpe:argv[@2].buf; /* contains column title */
 	int len = (int) strlen(buf);
-	if (@1) stream_write(s, "(", 1, 1);
+	/* if (@1) stream_write(s, "(", 1, 1);*/
 	stream_write(s, buf, len, 1);
-	if (@1) stream_write(s, ")", 1, 1);
-	TABS(s, argv[@2].tabs-((2+@1+len)/8));
+	/*if (@1) stream_write(s, ")", 1, 1);*/
+	/*TABS(s, argv[@2].tabs-((2+@1+len)/8));*/
+	TABS(s, argv[@2].tabs-((@1+len-1)/8));
 @= print_header
 	int k = 1; 
 	stream_write(s, "# ", 2, 1);
 	if (argv[0].format) {
 		@:print_head(@1,0)@
-		stream_write(s, "  ", 2, 1);
+		/*stream_write(s, "  ", 2, 1);*/
 	}
 	for (;;) {
 		@:print_head(@1,k)@
-		if (k++ < argc) stream_write(s, "| ", 2, 1);
+		if (k++ < argc); /* stream_write(s, "| ", 2, 1);*/
 		else break;
         } 
-	stream_printf(s, "  #\n");
+	if(@1)
+		stream_printf(s, "  # type\n");
+	else 	stream_printf(s, "  # name\n");
 @c
 static 
 int print_header(int argc, col_format_t* argv, stream* s) {
@@ -1072,7 +1075,8 @@ Init the column descriptors of the tail columns.
         value_fcn[0] = (ColFcn) print_format;
         if (printhead) {
 	    BAT *b = BATmirror(argv[0]);
-            total = c[0].tabs = print_tabwidth(b, "BAT:", c+0);
+            /*total = c[0].tabs = print_tabwidth(b, "BAT:", c+0); */
+            total = c[0].tabs = print_tabwidth(b, b->tident, c+0);
             c[0].format = printfcn(b);
         }
         for(j=0; j < argc; j++, total += c[j].tabs) {
