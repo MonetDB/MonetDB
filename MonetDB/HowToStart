@@ -2,10 +2,8 @@
 0) Preliminaries
 ================
 
-Thanks to configure and for convenient handling of the common source base,
-temporary (architecture-specific) stuff during compilation, and the final
-architecture-dependent binary distibution, Monet now involves three major
-directory structures:
+Compiling Monet from its sources now involves three major directory
+structures:
 
 	BASE	where the common source base has been checked out from the
 		cvs repository.
@@ -17,73 +15,110 @@ directory structures:
 	PREFIX	where "make install" finally puts the binaries, libraries,
 		include files, etc.
 
-in priciple, BASE, BUILD, and PREFIX might be identical, but in many cases,
+in principle, BASE, BUILD, and PREFIX might be identical, but in many cases,
 it's convenient if they make-up separate directory trees. Then, one can
 easily "rm -rf" BUILD, in order to rebuild the whole stuff from scratch, or
 "rm -rf" BASE and BUILD, once everything is compiled an properly installed
 in PREFIX.
 
 In the remainder, we will just refer to BASE, BUILD, and PREFIX. You can
-(have to ;-) decide for yourself, whether they should be all identical,
-all different, or maybe BASE == BUILD != PREFIX, or BASE != BUILD ==
-PREFIX.
+(have to ;-) decide for yourself, whether they should be all identical, all
+different, or maybe BASE == BUILD != PREFIX, or BASE != BUILD == PREFIX. In
+any case, BASE, BUILD, & PREFIX should always be given as absolute paths.
 
 
 1) Preparing your environment
 =============================
 
-To compile Monet-4.2, you first need to set your (architecture dependent)
-environment to be able to compile Monet-4.2. The easiest way to do so, is to
+First, set the environment variables  BUILD  and  PREFIX  to select your
+desired build and target directory as described above. If not set,
 
-	source conf/conf.bash	(for [ba]sh users)
+	BUILD=BASE/`uname`
+	PREFIX=BUILD
+
+are used as default.
+
+Then, you need to specify your desired compiler ("GNU" or "ntv" (native))
+and your desired binary type (32bit or 64bit). You can do this by setting
+the following environment variables:
+
+	COMP="GNU"	or	COMP="ntv"
+	BITS="32"	or	BITS="64"
+
+If not or wrongly set,  "GNU32"  is used as default.
+
+After that, you need to set your (architecture dependent) environment to be
+able to compile Monet-4.2. The easiest way to do so, is to
+
+	source  conf/conf.bash	(for [ba]sh users)
 or
-	source conf/conf.csh	(for [t]csh users)
+	source  conf/conf.csh	(for [t]csh users)
 
-in BASE. These scripts look for the some preset environvariables to adopt to
-you preferences. Here are the details:
+in BASE. These scripts look for the preset environment variables to adopt to
+you preferences.
 
-	To select your desired compiler ("GNU" or "ntv" (native)) and your
-	desired binary type (32bit or 64bit), set the following environment
-	variables before "sourcing" the conf-script:
-		COMP="GNU"	or	COMP="ntv"
-		BITS="32"	or	BITS="64"
-	If not or wrongly set, "GNU32" is used as default.
-
-	Further, you can set the environment variables BUILD and PREFIX to
-	select your desired build and target directory as described above.
-	If not set,
-		BUILD=BASE/`uname`
-		PREFIX=BUILD
-	are used as default.
-
-Depending on the architecture your currenly working on, and depending on
+Depending on the architecture your currently working on, and depending on
 your settings for COMP, BITS, BUILD, and PREFIX, conf/conf.{ba,c}sh setup
 the environment as needed by configure. Among others, these script take care
 of 
- - setting the propper PATH & LD_LIBRARY_PATH,
- - choosing the propper C/C++ compiler calls (i.e., setting command name and
-   flags in CC & CXX),
- - and setting MONETDIST & MONET_MOD_PATH.
+ - setting the proper PATH & LD_LIBRARY_PATH,
+ - choosing the proper C/C++ compiler calls (i.e., setting command name and
+   flags in CC & CXX).
 For details, have a look at the scripts; they're not too weird ... ;-)
 Finally, these scripts tell you how to go on, and which flags to use with
 configure.
 
 
-2) Bootstrap, Configure, Make, & Make Install
-=============================================
+2) Bootstrap & Configure
+========================
 
-Once you setup your environment properly (see above), you just need to
-execute the following in BASE:
+Once you setup your environment properly (see above), you need to execute
+the following in BASE:
 
 	./bootstrap
-
 	cd ${BUILD}
-
 	${BASE}/configure --prefix=${PREFIX}
 
+Unless you (or a cvs update) modify any "Makefile.ag"-file, or delete any of
+the files created by bootstrap or configure, you need to execute them only
+once after a cvs checkout. 
+
+NOTE: Never edit any of the files created by bootstrap or configure. Here,
+it becomes most convenient, if you use BASE != BUILD: configure puts all its
+output to BUILD and keep BASE "clean"; bootstrap create its output in BASE,
+but actually only "Makefile.{am,msc,in}"-file. So, never touch any on these,
+and never touch anything in BUILD. If you need some changes to one those
+files, you must look for its origin in BASE (i.e., checked out from the cvs
+tree) and modify this. Unless it is a "Makefile.ag"-file, you do not even have
+to re-run bootstrap or configure. Configure takes care of the dependencies
+between the original source file (and the bootstrap output) in BASE and the
+configure output in BUILD. You only have to edit (your) original source file
+in BASE and the call "make" in BUILD (see below).
+
+
+2) Make & Make Install
+======================
+
+Once bootstrap-ed and configure-d, you can compile Monet,by simply calling
+
 	make
+
+in BUILD. This compiles everything, and leave the results in BUILD.
+
+To finally move the results to your favorite destination (i.e., PREFIX),
+just call
+
 	make install
 
+in BUILD. Of course, this only works properly when make was successful...
+Well, a simple "make install" without a "make" before should also work; make
+install also checks the dependencies back to the original sources, and just
+do a make first, if necessary.
 
-Have fun with Monet-4.2!
+As already mentioned above, during "normal development", you will just edit
+(your) sources in BASE and then call make / make install in BUILD. Very
+convenient ...
 
+Have fun with Monet!
+
+	Stefan Manegold
