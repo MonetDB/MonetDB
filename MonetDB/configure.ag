@@ -53,11 +53,19 @@ AC_SUBST(MONET_SOURCE)
 QMONET_SOURCE="$MONET_SOURCE"
 AC_SUBST(QMONET_SOURCE)
 
-Qprefix="$prefix"
+# if no --prefix option, we must set Qprefix to the default value
+# the problem is that prefix is set very late in the process if it
+# wasn't set by --prefix
+[ if [ "${prefix}x" = "NONEx" ]; then
+	Qprefix="${ac_default_prefix}"
+  else
+	Qprefix="${prefix}"
+  fi
+]
 AC_SUBST(Qprefix)
 # exec_prefix is created very late, so let make do the expansion
 [ if [ "${exec_prefix}x" = "NONEx" ]; then
-	Qexec_prefix="${prefix}"
+	Qexec_prefix='${prefix}'
   else
 	Qexec_prefix="${exec_prefix}"
   fi
