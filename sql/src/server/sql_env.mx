@@ -220,14 +220,14 @@ set_var( mvc *sql, char *name, symbol *val, char *typename )
 		return NULL;
 	}
 	st = sql_compare(sql, scope_bind(scp, NULL, "name"), 
-			 stmt_atom_string(name),"=", sql_where );
+			 stmt_atom_string(_strdup(name)),"=", sql_where );
 	st = stmt_const(st, v);
 	/* TODO, need general intermediate code for updates! */
 	st = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), st);
 	scp = scope_close(scp);
 	l = create_stmt_list();
 	list_append(l, st );
-	list_append(l, stmt_update_var(name) );
+	list_append(l, stmt_update_var(_strdup(name)) );
 	list_append(l, output_value( stmt_atom_int(1) ));
 	return stmt_list(l);
 }

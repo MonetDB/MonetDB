@@ -347,7 +347,7 @@ const char * st_type2string(st_type type) {
 /* #TODO make proper traversal operations */
 stmt *stmt_atom_string( char * S )
 {
-	char *s = sql2str(_strdup(S));
+	char *s = sql2str(S);
 	sql_subtype *t = sql_bind_subtype("varchar", strlen(s), 0);
 	return stmt_atom( atom_string(t, s) );
 }

@@ -52,18 +52,25 @@ res_col_create( sql_trans *tr, res_table *t, char *tn, char *name, char *typenam
 	return c;
 }
 
+void res_col_destroy( res_col *c ) 
+{
+	if (c->b){
+		bat_decref(c->b, TRUE);
+	} else {
+		_DELETE(c->p);
+	}
+	_DELETE(c->name);
+	_DELETE(c->tn);
+	sql_subtype_destroy(c->type);
+}
+
+
 void res_table_destroy(res_table *t)
 {
 	int i;
 	for(i=0; i<t->nr_cols; i++){
 		res_col *c = t->cols+i;
-		if (c->b){
-			bat_decref(c->b, TRUE);
-		} else {
-			_DELETE(c->p);
-		}
-		_DELETE(c->name);
-		sql_subtype_destroy(c->type);
+		res_col_destroy(c);
 	}
 	if (t->order)
 		bat_decref(t->order, TRUE);

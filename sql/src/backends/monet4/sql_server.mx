@@ -72,10 +72,6 @@ access after being logged in.
 
 	.COMMAND mvc_update_var( mvc m, str varname ) = mvc_update_var_wrap;
 		"update a session variable in the mvc structure"
-
-	.COMMAND mvc_login( mvc m, str user, str passwd ) : str 
-		= mvc_login_wrap; "database login"
-
 @-
 The updates against the relational tables are collected in separate
 BATs until transaction commit. 
@@ -322,14 +318,6 @@ int mvc_sql_wrap( mvc *c, str cmd ){
 
 int mvc_update_var_wrap( mvc *c, str varname ){
 	return sql_update_var( *(mvc**)c, varname );
-}
-
-
-int mvc_login_wrap( str *r, mvc *c, str user, str passwd  ){
-	*r = mvc_login( *(mvc**)c, user, passwd );
-	if (*r == NULL)
-		*r = _strdup("");
-	return GDK_SUCCEED;
 }
 
 static BAT *

@@ -150,8 +150,7 @@ int sql_revoke_role( mvc *m, str grantee, str auth )
 		return FALSE;
 	auth_id = column_find_value( m->trans, auths_id, rid);
 
-	rid = column_find_row( m->trans, 
-				login_id, grantee_id, 
+	rid = column_find_row( m->trans, login_id, grantee_id, 
 				role_id, auth_id, NULL );
 	table_delete( m->trans, roles, rid );
 	return TRUE;
@@ -439,20 +438,18 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 		char *pwd = column_find_value( m->trans, users_passwd, rid);
 		
 		if (pwd && strcmp(passwd, pwd) == 0){
-			sql_column *users_schema = 
-					find_column( users, "default_schema");
-			unsigned int schema_id = *(unsigned int*)column_find_value( m->trans, users_schema, rid);
+			sql_column *users_schema = find_column( users, "default_schema");
+			unsigned int schema_id = *(unsigned int*)
+				column_find_value( m->trans, users_schema, rid);
 			sql_table *schemas = find_table(sys, "schemas");
 			sql_column*schemas_name = find_column(schemas, "name");
 			sql_column*schemas_id = find_column(schemas, "id");
 
 			if ((rid = column_find_row( m->trans, 
 					schemas_id, &schema_id, NULL)) >= 0) 
-				schema = column_find_value( m->trans, 
-					schemas_name, rid ); 
-			if (schema && mvc_set_user(m, user)){ 
-				schema = _strdup(schema);
-			} else { /* only set schema if user is found */
+				schema = column_find_value( m->trans, schemas_name, rid ); 
+			/* only set schema if user is found */
+			if (!mvc_set_user(m, user)){ 
 				schema = NULL;
 			}
 		}
@@ -462,7 +459,6 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 		return NULL;
 
 	if (!mvc_set_schema( m, schema)) {
-		_DELETE(schema);
 		if (m->trans)
 			mvc_rollback(m, 0, NULL);
 		return NULL;

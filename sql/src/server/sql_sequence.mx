@@ -88,7 +88,7 @@ sql_create_seq(mvc * sql, sql_schema *ss, dlist *qname, sql_subtype *tpe,
 			"insert into sys.sequences values " 
 			"('%s', %d, %d, %d, %d, %s);",
 			name, start, inc, min, max, cycle?"true":"false");
-	return stmt_sql(buf);
+	return stmt_sql(_strdup(buf));
 }
 
 static stmt *
@@ -108,7 +108,7 @@ sql_drop_seq(mvc * sql, sql_schema *ss, dlist *qname)
 	}
 	snprintf(buf, BUFSIZ, 
 		"delete from sys.sequences where name = '%s';", name);
-	return stmt_sql(buf);
+	return stmt_sql(_strdup(buf));
 }
 
 stmt *sequences(mvc * sql, symbol * s)

@@ -2391,7 +2391,7 @@ literal:
 		  	  t = sql_bind_subtype("smallint", digits, 0 );
 		    else if (value >= GDK_int_min && value <= GDK_int_max)
 		  	  t = sql_bind_subtype("int", digits, 0 );
-		    else if ((digits <= 19) &&
+		    else if ((digits <= 64) &&
 				(value >= GDK_lng_min && value <= GDK_lng_max))
 		  	  t = sql_bind_subtype("bigint", digits, 0 );
 		    else 
@@ -2851,13 +2851,13 @@ ident:
  ;
 
 non_reserved_word: 
-  CHARACTER 	{ $$ = _strdup("character"); }
+  CHARACTER { $$ = _strdup("character"); }
 | OBJECT	{ $$ = _strdup("object"); }
 | LARGE		{ $$ = _strdup("large"); }
-| sqlDECIMAL 	{ $$ = _strdup("decimal"); }
+| sqlDECIMAL{ $$ = _strdup("decimal"); }
 | sqlFLOAT 	{ $$ = _strdup("float"); }
-| sqlDOUBLE 	{ $$ = _strdup("double"); }
-| PRECISION 	{ $$ = _strdup("precision"); }
+| sqlDOUBLE { $$ = _strdup("double"); }
+| PRECISION { $$ = _strdup("precision"); }
 | sqlDATE 	{ $$ = _strdup("date"); }
 | TIME 		{ $$ = _strdup("time"); }
 | TIMESTAMP	{ $$ = _strdup("timestamp"); }
@@ -2874,13 +2874,13 @@ non_reserved_word:
 | sqlNAME	{ $$ = _strdup("name"); }
 | TYPE		{ $$ = _strdup("type"); }
 | MODULE	{ $$ = _strdup("module"); }
-| PRIVILEGES	{ $$ = _strdup("privileges"); }
+| PRIVILEGES{ $$ = _strdup("privileges"); }
 | START		{ $$ = _strdup("start"); }
 | VALUE		{ $$ = _strdup("value"); }
 ;
 
 name_commalist:
-    ident		{ $$ = dlist_append_string(dlist_create(), $1); }
+    ident	{ $$ = dlist_append_string(dlist_create(), $1); }
  |  name_commalist ',' ident  	
 			{ $$ = dlist_append_string($1, $3); } 
  ;

@@ -313,13 +313,13 @@ int mvc_commit(mvc * m, int chain, char *name)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_commit %s\n", (name)?name:"");
 
-	schema = _strdup(m->trans->schema->base.name);
 	if (m->status < 0) {
 		GDKerror("COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
 
+	schema = _strdup(m->trans->schema->base.name);
 	/* savepoint then simply make a copy of the current transaction */
 	if (name && name[0] != '\0'){
 		if (mvc_debug)
@@ -341,6 +341,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 	if (ok != SQL_OK) {
 		GDKerror("COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
+		_DELETE(schema);
 		return -1;
 	}
 
@@ -369,6 +370,7 @@ int mvc_commit(mvc * m, int chain, char *name)
 		store_unlock();
 		GDKerror("COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
+		_DELETE(schema);
 		return -1;
 	}
 	store_unlock();

@@ -823,11 +823,11 @@ tokenize@1(mvc * c, int cur)
 
 int valid_ident(const char *s)
 {
-	if (*s != '_' && !isalpha((int)*s))
+	if (*s != '_' && !isalpha((int)*s) && *s != ' ')
 		return 0;
 	s++;
 	while(*s != '"'){
-		if (*s != '_' && !isalnum((int)*s))
+		if (*s != '_' && !isalnum((int)*s) && *s != ' ')
 			return 0;
 		s++;
 	}

@@ -189,6 +189,7 @@ stmt *flat_subquery(mvc * sql, symbol * sq)
 			      ), 1))
 			    );
 		}
+		stmt_destroy(s);
 		s = stmt_list(l);
 	}
 	return s;
@@ -310,7 +311,8 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 		     d && m; 
 		     d = d->next, m = m->next) {
 			stmt *st = m->data;
-			stmt *sc = stmt_column(stmt_alias(stmt_dup(st), tname, d->data.sval), stmt_dup(sq));
+			stmt *sc = stmt_column(stmt_alias(stmt_dup(st), 
+						_strdup(tname), _strdup(d->data.sval)), stmt_dup(sq));
 
 			table_add_column(tv, sc, tname, d->data.sval);
 		}
@@ -321,9 +323,8 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 			char *cname = column_name(st);
 			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq));
 
-			sc = stmt_alias(sc, tname, cname);
+			sc = stmt_alias(sc, _strdup(tname), cname);
 			table_add_column(tv, sc, tname, cname);
-			_DELETE(cname);
 		}
 	} else {
 		/* foreach column add full basetable,column name */
@@ -362,10 +363,11 @@ static tvar *sql_subquery_optname(mvc * sql, scope * scp,
 		for( n = sq->op1.lval->h; n; n = n->next ) {
 			stmt *nsq = stmt_dup( n->data );
 			char *cname = column_name(nsq);
-	        	stmt *temp = stmt_temp( sql_dup_subtype(tail_type(nsq) ));
-                	nsq = stmt_append(temp, nsq);
+			stmt *temp = stmt_temp( sql_dup_subtype(tail_type(nsq) ));
+
+			nsq = stmt_append(temp, nsq);
 			if (tname)
-				nsq = stmt_alias(nsq, tname, cname);
+				nsq = stmt_alias(nsq, _strdup(tname), cname);
 			else
 				nsq = stmt_alias(nsq, table_name(nsq), cname);
 			list_append(l, nsq);
@@ -1348,7 +1350,7 @@ static stmt *sql_union_(mvc *sql, scope *scp, symbol *t1, int dist, dlist *cols,
 				}
 				ls = stmt_append(ls, stmt_dup(rc->s));
 				/* the alias keeps the column name around */
-				ls = stmt_alias(ls, NULL, lc->cname);
+				ls = stmt_alias(ls, NULL, _strdup(lc->cname));
 				list_append(unions, ls );
 		}
 	/* TODO cols length 0 see natural join
@@ -1579,7 +1581,8 @@ column_exp( mvc * sql, scope * scp, symbol * column_e, group * grp,
 		return NULL;
 	/* AS name */
 	if (s && l->h->next->data.sval) {
-		s = stmt_alias(s, table_name(s), l->h->next->data.sval);
+
+		s = stmt_alias(s, table_name(s), _strdup(l->h->next->data.sval));
 		scope_add_alias(scp, stmt_dup(s), l->h->next->data.sval);
 	}
 	return s;
@@ -2004,7 +2007,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 		}
 		if (dlist_length(ro->data.lval) == 2) { 
 			es = ro->data.lval->h->next->data.sval;
-			e = stmt_atom_string(es);
+			e = stmt_atom_string(_strdup(es));
 		}
 		if ((a = check_types(sql, st, a, type_equal)) == NULL){
 			return sql_error(sql, 02, 
@@ -2137,17 +2140,27 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 					stmt_destroy(sq);
 					if (f != sql_sel) {
 						if (sc->token == SQL_IN){
-						  return
-						    stmt_reverse
-						    (stmt_semijoin
-						     (stmt_reverse(ls),
-						      stmt_reverse(rs)));
+						  	if (rs->nrcols) { /* set in (select set) */
+						  		return stmt_reverse (stmt_semijoin
+						     		(stmt_reverse(ls), stmt_reverse(rs)));
+						  	} else {
+								/* v1 in (select v2)
+								 * and
+								 * set in (select value) 
+								 */
+							    return sql_compare(sql, ls, rs, "=", f);
+							}
 						} else { /* SQL_NOT_IN */
-						  return
-						    stmt_reverse
-						    (stmt_diff
-						     (stmt_reverse(ls),
-						      stmt_reverse(rs)));
+						  	if (rs->nrcols) { /* set not in (select set) */
+						  		return stmt_reverse (stmt_diff
+						     		(stmt_reverse(ls), stmt_reverse(rs)));
+						  	} else {
+								/* v1 not in (select v2) 
+								 * and
+								 * set not in (select v1) 
+								 */
+							    return sql_compare(sql, ls, rs, "<>", f);
+							}
 						}
 					} else { /* FIXME: SELECT name [not] in (select 'a') FROM tables gaat nog fout */
 						 /* Ook: select 'env' in (select ...) */
@@ -2247,8 +2260,7 @@ sql_logical_exp_(mvc * sql, scope * scp, symbol * sc, group * grp, stmt * subset
 				if (sc->token == SQL_NULL) {
 					res = stmt_uselect(res, a, cmp_equal);
 				} else {
-					res = stmt_uselect(res, a,
-							cmp_notequal);
+					res = stmt_uselect(res, a, cmp_notequal);
 				}
 			}
 			return res;
