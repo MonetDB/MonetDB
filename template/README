@@ -47,4 +47,5 @@ Check the script manually, or just do it :)
   . /tmp/t.sh
 If you had a Makefile.ag pre-existing in the src target dir, then it may be overwritten;
 yet a copy is made thanks to the --backup flag used on cp, so do not worry!
-
+Note that the AC_INIT clause in configure.ag needs to be edited to point to a file
+unique to your module.
