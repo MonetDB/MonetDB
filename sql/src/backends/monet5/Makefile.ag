@@ -8,7 +8,7 @@ lib__sql = {
 		sql_scenario.mx \
 		sql_gencode.mx \
 		sql_server.mx
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_kernel -l_ascii_io 
+	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io 
 	LIBS = ../../server/libsqlserver $(MONET_LIBS)
 }
 
