@@ -47,9 +47,9 @@ stack depth 2
 #---------------------------------------------------------#
 # stk	trace						  # name
 # int	str						  # type
-#-------------------------------------------------#
-[ 0,	  "mdb.getStackTrace(); at #3 in tst"	  ]
-[ 1,	  "Admin.tst(); at #1 in main"			  ]
+#---------------------------------------------------------#
+[ 0,	  "t := mdb.getStackTrace(); at #3 in tst"	  ]
+[ 1,	  "$1 := Admin.tst(); at #1 in main"		  ]
 #-----------------------------------------#
 # stk	frame				  # name
 # str	str				  # type
