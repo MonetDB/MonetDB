@@ -526,7 +526,9 @@ static void socket_close( stream *s ){
 }
 static
 stream *socket_open( int socket, char *name ){
+#ifndef NATIVE_WIN32
 	int fl = fcntl(socket, F_GETFL);
+#endif
 	stream *s = create_stream(name);
 	s->read  = &socket_read;
 	s->write = &socket_write;
@@ -551,8 +553,10 @@ stream *socket_open( int socket, char *name ){
     	setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay,
 		                         sizeof(nodelay)); }
 #endif
+#ifndef NATIVE_WIN32
 	fl &= ~O_NONBLOCK;
 	fcntl(socket, F_SETFL, fl ); 
+#endif
 
 	return s;
 }
