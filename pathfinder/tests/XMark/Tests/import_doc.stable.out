@@ -12,13 +12,10 @@ stdout of test 'import_doc` in directory 'tests/XMark` itself:
 module("pathfinder");
 module("unix");
 
-var TSTTRGDIR := getenv("TSTTRGDIR");
+var TSTSRCDIR := getenv("TSTSRCDIR");
 
-import_doc(TSTTRGDIR + "/" + "auctionG.xml", "auctionG.xml");
-# ">>> Importing '/var/tmp/_4.4.0_PREFIX_PATHFINDER_GNU_32_d_--enable-debug_/mTests/tests/XMark/auctionG.xml' with name 'auctionG.xml'"
-[ "Document successfully imported" ]
-# "The properties of the file '/var/tmp/_4.4.0_PREFIX_PATHFINDER_GNU_32_d_--enable-debug_/mTests/tests/XMark/auctionG.xml' are propably not compressed!"
-# "You can compress the loaded instance 'auctionG.xml' with: 'compress_properties("auctionG.xml");'"
+shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
+# Shredded XML doc("auctionG.xml"), total time after commit=0.65s
 
 commit();
 quit();
