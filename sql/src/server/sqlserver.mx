@@ -378,7 +378,7 @@ proc sqlexecute( str cmd, stream Output ):= {
 }
 
 proc SQLclient( int sock ) := {
-	print(sock);
+	printf("# [ %d ]\n",sock);
 	SQLclient_thread(sock).fork();
 }
 
