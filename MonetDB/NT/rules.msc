@@ -67,7 +67,7 @@ CONFIGURE=$(PYTHON) "$(TOPDIR)\configure.py" "$(TOPDIR)" "$(prefix)"
 CFLAGS = $(CFLAGS) -DNDEBUG
 !ELSE
 # default in case neither NDEBUG nor DEBUG are defined
-CFLAGS = $(CFLAGS) -DNDEBUG
+CFLAGS = $(CFLAGS)
 !ENDIF
 !ENDIF
 
