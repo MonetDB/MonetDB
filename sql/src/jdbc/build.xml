@@ -25,7 +25,7 @@
 
   <!-- create the jar file -->
   <target name="jar" depends="compile,examples">
-    <jar jarfile="${jardir}/monetdb.jar">
+    <jar jarfile="${jardir}/monetjdbc.jar">
       <fileset dir="${builddir}">
         <include name="${package}/**/*.class" />
       </fileset>
