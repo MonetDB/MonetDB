@@ -12,7 +12,7 @@ dnl
 dnl The Original Code is the Monet Database System.
 dnl
 dnl The Initial Developer of the Original Code is CWI.
-dnl Portions created by CWI are Copyright (C) 1997-2004 CWI.
+dnl Portions created by CWI are Copyright (C) 1997-2005 CWI.
 dnl All Rights Reserved.
 
 dnl AC_DEFUN([AC_SYS_LARGEFILE],
