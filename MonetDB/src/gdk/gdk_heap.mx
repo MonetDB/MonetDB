@@ -77,48 +77,72 @@ The below is the interface to uniformly create, extend and delete heaps of all k
 @c
 #include "gdk.h"
 
+static char* decompose_filename(str nme) {
+	char *ext, *priv;
+        ext = strchr(nme, '.'); /* extract base and ext from heap file name */
+        if (ext) {
+		*ext++ = 0;
+		priv = strchr(ext, '.');
+		if (priv) *priv = 0;
+	}
+	return ext;
+}
+
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize) {
+        char nme[PATHLENGTH], *ext;
+	if (h->filename) {
+		strcpy(nme, h->filename);
+		ext = decompose_filename(nme);
+		strcat(ext, ".priv");
+	}
         h->base = NULL;
         h->size = MAX(1,nitems)*itemsize;
         h->offset = h->free = 0;
-	h->base = h->filename = NULL;
-	if (h->size > GDKmem_bigsize()) {
-		size_t sz = h->size + MT_VMUNITSIZE;
-        	h->storage = STORE_MMAP;
-                h->base = (char *) GDKvmalloc(h->size, &sz);
-		MT_alloc_register(h->base, sz, 'B');
-		if (h->base) h->maxsize = sz;
-	}
-	if (h->base == NULL) {
+
+	if (h->filename == NULL || (h->size*4 < GDK_mem_maxsize)) {
+		size_t maxsize = h->size;
         	h->storage = STORE_MEM;
         	h->maxsize = h->size;
-                h->base = (char *) GDKmalloc(h->size);
+		if (h->size > GDK_mem_bigsize) {
+			/* maxsize is a multiple of 65536, andhas 20% free space */
+ 			maxsize = (maxsize * BATMARGIN) - 1;
+			maxsize = (1 + (maxsize >> 16)) << 16;
+		}
+                h->base = (char *) GDKmallocmax(h->size, maxsize);
 	}
-	return TRUE;
+	if (h->filename && h->base == NULL) {
+		long_str path;
+		int fd;
+		GDKfree(h->filename);
+		h->filename = (str) GDKmalloc(strlen(nme)+strlen(ext)+2);
+		sprintf(h->filename, "%s.%s", nme, ext);
+	        GDKfilepath(path,BATDIR,h->filename,NULL);
+		fd = open(path, O_RDWR|O_CREAT, 0644);  
+		if (fd >= 0) {
+			close(fd);
+			/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
+        		h->storage = STORE_MMAP;
+			HEAPload(h, nme, ext, FALSE);
+		}
+	}
+	return (h->base != NULL);
 }
 @-
 The routine heap extend can be used to create a larger storage space.
 Note that you should pass the requested new size.
 @c
 int HEAPextend(Heap *h, size_t size) {
-        char nme[PATHLENGTH], nwext[IDLENGTH], *ext = NULL, *priv = NULL;
-
-	if (h->filename) { 
-		/* extract base and ext from heap file name */
-        	strcpy(nme, h->filename);
-        	ext = strchr(nme, '.');
-        	if (ext) {
-			*ext++ = 0;
-			strcpy(nwext, ext);
-			priv = strchr(nwext, '.');
-			if (priv) *priv = 0;
-		}
+        char nme[PATHLENGTH], *ext;
+	if (h->filename) {
+		strcpy(nme, h->filename);
+		ext = decompose_filename(nme);
 	}
-
-	if (size <= h->size) {
+	if (size <= h->size) 
 		return 0;
+
 #ifndef NOEXTEND_PRIVMAP
-	} else if (h->storage == STORE_PRIV && size <= h->maxsize) { 
+	if (h->storage == STORE_PRIV && size <= h->maxsize) { 
+		/* try to get memory pages allocated just after the mapped region */
 		long_str path;
 		FILE *fp = (FILE*) GDKfilelocate(h->filename, "rb+", NULL);
 		size_t totsize = MT_pagesize()*(1+(h->offset+size-1)/MT_pagesize()); 
@@ -126,52 +150,37 @@ int HEAPextend(Heap *h, size_t size) {
 		char *b;
 
 		if (fp == NULL || fstat(fileno(fp), &st)) {
-			GDKsyserror("HEAPextend: failed to open '%s'.\n",
-					h->filename); goto error;
+			GDKsyserror("HEAPextend: failed to open '%s'.\n", h->filename); 
 		}
 
 		if (totsize > st.st_size) {
                 	fseek(fp, totsize, SEEK_SET);
                 	fputc('\n',fp), fflush(fp);
 		}
-@-
-We cannot release and remap, as then our changes will be lost, so we map 
-the next chunk to exactly the right address. Normally MAP_FIXED is very
-dangerous, as it destroys all other mappings that you might have, even
-if it is a piece of shared library code that is PROT_EXEC!
-As we know that size < maxsize, we know that we have this range
-PROT_NONE, so we can do it.
-@c
 		totsize -=  h->offset + h->size;
 		fclose(fp);
 	        GDKfilepath(path,BATDIR,h->filename,NULL);
-		b = GDKmmap(path, MMAP_COPY, (off_t) (h->offset+h->size), totsize, 
-			    h->base+h->offset+h->size);
+		b = GDKmmap(path, MMAP_COPY, (off_t) (h->offset+h->size), totsize, h->base+h->offset+h->size);
 		if ((b == (char*) -1L)) {
-			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n",
-					h->filename); goto error;
+			GDKsyserror("HEAPmmap: mmap failed to extend '%s'.\n", h->filename); 
 		}
 		h->maxsize = h->size = size;
+		return 1;
+	} 
 #endif
-	} else if (h->storage != STORE_MMAP) { /* realloc into STORE_MEM */
+	if (h->storage & STORE_MMAP) {
+		/* memory mapped files extend: save and remap */
+		if (HEAPsave(h, nme, ext) < 0) return 0;
+		HEAPfree(h);
+                if (HEAPload(h, nme, ext, FALSE) < 0) return 0;
+	} else {
+		/* malloced: alloc new and copy */
 		Heap nw;
-error:		HEAPalloc(&nw, size, 1);
+		nw.filename = h->filename?GDKstrdup(h->filename):NULL;
+		HEAPalloc(&nw, size, 1);
 		memcpy(nw.base, h->base, nw.free=h->free);
 		HEAPfree(h); 
 		*h = nw;
-	} else if (h->filename) { /* mapped file */ 
-                HEAPfree(h);
-                h->maxsize = h->size = size;
-                HEAPload(h, h->filename=nme, ext, FALSE);
-                if ( h->base == NULL ) {
-                        return 0;
-                }
-	} else { /* anonymous virtual memory */
-		char *p = (char*) GDKvmrealloc(h->base, h->size, size, h->maxsize, &h->maxsize);
-		if (p == NULL) goto error;
-		MT_alloc_register(h->base, h->maxsize, 'B');
-		h->base = p;
-		h->size = size;
 	}
 	return 1;
 }
@@ -188,123 +197,49 @@ void HEAPcopy(Heap* dst, Heap* src){
 	}
 }
 
-
-@-
-This function may only be called when the heap is STORE_PRIV, OR: it is
-STORE_MMAP but the BAT is read or append-only! The problem is that changes 
-STORE_MMAP are visible in STORE_PRIV heaps derived from it. So we must make 
-sure that the base STORE_MMAP does not change.
-@-
-Hence we now that a heap that is already STORE_PRIV, was derived from a 
-stable STORE_MMAP and can always map through. We've got to
-obtain though the offset from the base of the original heap. 
-@-
-As we cannot start a new mapping at a random adress, but rather need to align
-it to a block boundary, the region is enlarged somewhat downwards,
-and the extra byte-offset is given back for the information of the caller.
-@c
-size_t HEAPsubcopy(Heap* dst, Heap* src, size_t size, size_t offset) {
-#ifndef WIN32
-	if ((src->storage&STORE_MMAP) && src->filename) {
-	    long_str path;
-	    FILE *fp = GDKfilelocate(src->filename, "mrb+", NULL);
-
-	    if (fp != NULL) {
-		size_t newoffset = (src->storage == STORE_PRIV)?
-					offset+src->offset:offset;
-		char *b = NULL;
-		size_t shiftback = newoffset%MT_pagesize(); /*block align*/
-		newoffset -= shiftback; 
-		dst->free = size + shiftback;
-		dst->size = MT_pagesize()*(1 + (dst->free-1)/MT_pagesize()); 
-		if (dst->size > src->size - newoffset) {
-			dst->size = src->size - newoffset; 
-		}
-		dst->maxsize = MIN(newoffset+4*dst->size,src->offset+src->size-newoffset);
-		dst->maxsize = MT_pagesize()*(1 + (dst->maxsize-1)/MT_pagesize()); 
-		dst->storage = STORE_PRIV;
-		dst->filename = GDKstrdup(src->filename);
-		dst->offset = newoffset;
-@-
-make a writeable copy of the src heap without effort (copy-on-write) by 
-using mmap and MAP_PRIVATE 
-
-Some OSs do not allow you to extend this mapping later. In that case, we
-grab everything we can now.
-@c
-		fclose(fp);
-	        GDKfilepath(path,BATDIR,src->filename,NULL);
-#ifdef NOEXTEND_PRIVMAP
-		dst->size = dst->maxsize; /* take it all, now */
-
-#else
-		b = (char *) GDKmmap(path, MMAP_COPY, (off_t) newoffset, dst->maxsize, NULL);	
-		if (b == (char*) -1L) b = 0;
-#endif
-		dst->base = (char *) GDKmmap(path, MMAP_COPY, (off_t) newoffset, dst->size, b);	
-
-		if (dst->base == (char*) -1L) {
-			shiftback = 0;
-			GDKsyserror("HEAPsubcopy: mmap private on %s failed.\n",
-				   dst->filename);
-		}  else {
-			dst->copied = 1;
-			return shiftback;
-		}
-	    }
-	}
-#endif
-@-
-If something fails, we use standard alloc & copy to do the job.
-@c
-	dst->filename = 0;
-	HEAPalloc(dst, src->size, 1);
-	memcpy(dst->base+offset, src->base+offset, size);
-	dst->free = size;
-	return 0;
-}
-
 int HEAPfree(Heap* h) {
-	if  (h->base == NULL) {
-		return 0;
-	}
-        if (h->storage == STORE_MEM) { /* plain memory */
-                GDKfree(h->base);
-        } else if (h->filename) { /* mapped file, or STORE_PRIV */
-                int ret = GDKmunmap(h->base, h->maxsize);
-                if (ret < 0) {
-                        GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
-                }
-                IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", 
-				(void *) h->base, h->maxsize, ret);
-		if (h->storage == STORE_PRIV) {
-			/* may need to move back the file from X.priv to X */
-			size_t len = strlen(h->filename);
-                	if (len < 5 || strcmp(h->filename+len-5, ".priv")) {
-				GDKerror("HEAPfree: priv-heap has unexpected name %s\n", h->filename);
-			} else {
-				struct stat st;
-                        	long_str path, dst;
-                        	strcpy(dst, h->filename);
-                        	dst[len-5] = 0; /* cut off the .priv bit */
+	if  (h->base) {
+        	if (h->storage == STORE_MEM) { /* plain memory */
+                	GDKfree(h->base);
+        	} else { /* mapped file, or STORE_PRIV */
+        		char nme[PATHLENGTH], *ext;
+                        long_str path, dst;
+                	int ret = GDKmunmap(h->base, h->maxsize);
+                	if (ret < 0) {
+				GDKsyserror("HEAPfree: %s was not mapped\n",  h->filename);
+                	}
+			strcpy(nme, h->filename);
+			ext = decompose_filename(nme);
+                	IODEBUG THRprintf(GDKerr, "munmap(base=" PTRFMT ", size=" SZFMT ") = %d\n", 
+					(void *) h->base, h->maxsize, ret);
+			if (h->storage == STORE_PRIV) {
+				/* may need to move back the file from X.priv to X */
+				size_t len = strlen(h->filename);
+                		if (len < 5 || strcmp(h->filename+len-5, ".priv")) {
+					GDKerror("HEAPfree: priv-heap has unexpected name %s\n", h->filename);
+				} else {
+					struct stat st;
+                        		strcpy(dst, h->filename);
+                        		dst[len-5] = 0; /* cut off the .priv bit */
 
-				GDKfilepath(path, BATDIR, dst, NULL);
-				/* dst may already exist (a newer version) */
-				if (stat(path, &st)) GDKmove(BATDIR, h->filename, NULL, BATDIR, dst, NULL); 
+					GDKfilepath(path, BATDIR, dst, NULL);
+					/* dst may already exist (a newer version) */
+					if (stat(path, &st)) GDKmove(BATDIR, h->filename, NULL, BATDIR, dst, NULL); 
 
-				/* remove may fail */
-				GDKfilepath(path, BATDIR, h->filename, NULL);
-				ret = unlink(path); 
-				IODEBUG THRprintf(GDKerr, "HEAPfree: unlink %s = %d\n", path, ret);
+				}
 			}
-                }
-                GDKfree(h->filename);
-        } else { /* anonymous virtual memory */
-		MT_alloc_register(h->base, h->maxsize, 'b');
-                GDKvmfree(h->base, h->size, h->maxsize);
-        } 
+			/* always remove priv files */
+			strcat(ext, ".priv");
+			GDKfilepath(path, BATDIR, nme, ext);
+			ret = unlink(path); 
+			IODEBUG THRprintf(GDKerr, "HEAPfree: unlink %s = %d\n", path, ret);
+        	} 
+        	h->base = NULL;
+	}
+	if (h->filename) {
+		GDKfree(h->filename);
+	}
         h->filename = NULL;
-        h->base = NULL;
         return 0;
 }
 
@@ -368,7 +303,7 @@ int HEAPload(Heap* h, str nme, str ext, int trunc) {
 	if (h->base == NULL) {
 		return -1; /* file could  not be read satisfactorily */
 	}
-	if (h->storage&STORE_MMAP) {
+	if (h->filename == NULL) {
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 		sprintf(h->filename, "%s.%s", nme, ext);
 	}
@@ -381,10 +316,11 @@ int HEAPsave(Heap* h, str nme, str ext) {
 
 	if (h->base == NULL) {
 		return -1;
-	} if (store == STORE_PRIV || p == NULL) {
+	} 
+	if (p == NULL || strstr(p, ".priv")) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM; 
-	} else if (strlen(p) > 2 && strcmp(p+strlen(p)-2,".Z")==0) {
+	} else if (strstr(p, ".Z")) {
 		/* compressed storage is not administered properly */
 		store = STORE_COMPR; 
 	}

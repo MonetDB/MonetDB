@@ -806,7 +806,7 @@ void GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget) {
 #endif
 
 
-void* GDKmalloc(size_t size) {
+void* GDKmallocmax(size_t size, size_t maxsize) {
 	ssize_t *s;
 
         if (size == 0) {
@@ -819,10 +819,11 @@ void* GDKmalloc(size_t size) {
 	CHKMEM(size,0);
 
 	if (size > GDK_mem_bigsize) {
-		size_t maxsize = (size += 16);
-		char *p = (char*) GDKvmalloc(size, &maxsize);
-		MT_alloc_register(p, maxsize, 'S');
-		s = (ssize_t*) (p + 16);
+		size += 16;
+		maxsize = MAX(maxsize, size);
+		s = (ssize_t*) GDKvmalloc(size, &maxsize);
+		MT_alloc_register(s, maxsize, 'S');
+		s += 2;
 		s[-2] = (ssize_t) maxsize;
 		s[-1] = -((ssize_t) size);
 	} else { 
@@ -857,6 +858,11 @@ void* GDKmalloc(size_t size) {
 #endif
         return (void*) s;
 }
+
+void* GDKmalloc(size_t size) {
+	return GDKmallocmax(size, size);
+}
+	
  
 void GDKfree (void *blk) {
 	ssize_t size, *s = (ssize_t*) blk;
@@ -876,9 +882,6 @@ void GDKfree (void *blk) {
 
 		GDKmallidx(idx,size);
 		GDK_nmallocs[idx]--;
-/*		if (GDK_mallocs[idx]-- <= 0) {
-			GDKwarning("free(%p): unused pointer\n", blk);
-		} else */
 #endif
 		GDK_heap_inuse -= size; 
 #ifdef GDK_MEM_TRACE
@@ -923,8 +926,14 @@ ptr GDKrealloc(void* blk, size_t size) {
 {       size_t cpysize, *s = (size_t*) blk;
         ssize_t oldsize = GDK_MEM_BLKSIZE(s);
 	if (oldsize < 0) {
-		cpysize = MIN(size, (size_t) (-oldsize - 16));
-	} else 
+		ssize_t *s = (ssize_t*) blk;
+		size_t oldmax = (size_t) s[-2];
+		size_t newmax = MAX(size+16,oldmax);
+		s = (ssize_t*) GDKvmrealloc((ptr) (s-2), (size_t) -oldsize, size+16, oldmax, &newmax);
+		s[0] = newmax;
+		s[1] = -((ssize_t) size);
+		return (ptr) (s+2);
+	} 
 #ifdef GDK_MEM_QUERYSIZE
 	cpysize = MIN(size, (size_t) oldsize);
 #else

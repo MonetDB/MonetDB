@@ -140,39 +140,51 @@ void BATsetdims(BAT *b) {
 	b->tvarsized = BATatoms[b->ttype].varsized;
 }
 
+@- BAT allocation 
+@T
+Allocate BUN heap and variable-size atomheaps (see e.g. strHeap).
+We now initialize new BATs with their heapname such that the modified
+HEAPalloc/HEAPextend primitives can possibly use memory mapped files
+as temporary heap storage.
 
-BAT *BATnewstorage(int ht, int tt, size_t cap) {
- 	BAT *bn = BATcreatedesc(ht, tt); 
-	int hole_padding;
-@-
-Dimension info needs to be filled in. 
-@c
-	BATsetdims(bn);
-@-
+In case of huge bats, we want HEAPalloc to write a file to disk, and memory map
+it. To make this possible, we must provide it with filenames.
+
 The hole is normally one tuple that is left free at the start of the heap. However, some 
 modules take advantage of the first bun pointer of a bat being int-aligned (ddbench).
 This is especially relevant in [void,chr] and [void,sht] combinations. Therefore, in such 
 cases, we pad the hole with some extra elements (see also DELTAinit). 
 @c
+BAT *BATnewstorage(int ht, int tt, size_t cap) {
+	int hole_padding;
+ 	BAT *bn = BATcreatedesc(ht, tt); 
+	str nme;
+
+	/* add the bat to the BBP */
+	BATsetdims(bn);
+	BBPinsert(bn);
+
+	/* fill in the standard heap names */	
+	nme = BBP_physical(bn->batCacheid);
+	bn->batBuns->filename = (str) GDKmalloc(strlen(nme)+12);
+	bn->hheap.filename = (str) GDKmalloc(strlen(nme)+12);
+	bn->theap.filename = (str) GDKmalloc(strlen(nme)+12);
+	sprintf(bn->batBuns->filename, "%s.buns", nme);
+	sprintf(bn->theap.filename, "%s.theap", nme);
+	sprintf(bn->hheap.filename, "%s.hheap", nme);
+
+	/* alloc the main heaps */
 	hole_padding = MAX((int)sizeof(int),bn->dims.bunwidth)/bn->dims.bunwidth;
-@- 
-A heap comes with integer offsets to address elements. This way
-we do not encounter unexpected results when we use mmap to (un)load
-the store.
-@c
-	HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth);	
+	HEAPalloc(bn->batBuns, cap+hole_padding, bn->dims.bunwidth);
 	ATOMheap(ht,&bn->hheap, cap);
 	ATOMheap(tt,&bn->theap, cap);
-@-
-The BAT is now given a 'unique' name and stored in the cache.
-@c
+
 	DELTAinit(bn);
-	BBPcacheit(bn);
 	bn->batDirty = TRUE;
+	BBPcacheit(bn);
 
 	return bn; 
 }
-
 
 @- 
 The routine BATcreate merely calculates the expected size and performs 
@@ -442,16 +454,9 @@ int BATfree(BAT *b) {
 	BATreset(b);
 	ACCunloadall(b);
         DELTAsave(b); /* convert to disk format */
-
-	if (b->batBuns->base) {
-		HEAPfree(b->batBuns);
-	}
-	if (b->theap.base) {
-		HEAPfree(&b->theap);
-	}
-	if (b->hheap.base) {
-		HEAPfree(&b->hheap);
-	}
+	HEAPfree(b->batBuns);
+	HEAPfree(&b->theap);
+	HEAPfree(&b->hheap);
 	GDKfree(BATmirror(b));
 	BBP_cache(-b->batCacheid) = NULL;
 
@@ -1730,7 +1735,11 @@ for determining which algebra commands set properties sub-optimally.
 	    q = BUNptr(b, yy+lim);
             if(p < q) {
                 BAT *bv = VIEWcreate(b);
-                Heap *hp = HASHnew(&bv->hhash, tpe, yy+lim, HASHmask(lim));
+                Heap *hp = (Heap*) GDKmalloc(sizeof(Heap));
+		str nme = BBP_physical(bv->batCacheid);
+                hp->filename = GDKmalloc(strlen(nme)+12);
+                sprintf(hp->filename, "%s.%chash", nme, b->batCacheid>0?'h':'t');
+		HASHnew(&bv->hhash, hp, tpe, yy+lim, HASHmask(lim));
                 bv->hhash_heap = BATmirror(bv)->thash_heap = hp;
 
                 switch(ATOMstorage(tpe)) {

@@ -567,35 +567,8 @@ BAT *BATslice(BAT *b, size_t l, size_t h) {
         l += BUNindex(b, BUNfirst(b));
         h += BUNindex(b, BUNfirst(b));
 
-@- optimization
-If a BAT is memory mapped it, a slice can be taken without copying.
-The @%HEAPsubcopy@ uses the mmap_private for obtaining a second and 
-independent view on the virtual memory.
-@c
-#if 0 && defined(NOEXTEND_PRIVMAP)
-	/* commented out because when the access  mode of b is changed later, this bn is
-         * not detactable and will suffer side effects from updates in b.
-	 * besides, for most query evaulation pruposes, the horizontal view creation
-         * below is suffiecient. Peter/dec99
-	 */
-	if (i < h && (BATrestricted(b) != BAT_WRITE && b->batBuns->storage == STORE_MMAP)) {
-		BUN start = BUNptr(b,l-1);
-		BUN end = BUNptr(b,h);
-		size_t add;
-	        bn = BATcreatedesc(b->htype, b->ttype);
-		bn->dims = b->dims;
-		add = HEAPsubcopy(bn->batBuns, b->batBuns, end-start, start-b->batBuns->base);
-		if (b->hheap.base)
-			HEAPsubcopy(&bn->hheap, &b->hheap, b->hheap.free, 0);
-		if (b->theap.base)
-			HEAPsubcopy(&bn->theap, &b->theap, b->theap.free, 0);
-                bn->batHole = bn->batDeleted = BUNptr(bn, 0) + add;  
-                bn->batInserted = BUNptr(bn, 1) + add;  
-        	BBPcacheit(bn,TRUE);
-	} else 
-#endif
 @-
-Alternatively, if the source BAT is readonly, then we can obtain a VIEW
+If the source BAT is readonly, then we can obtain a VIEW
 that just reuses the memory of the source. 
 @c
 	if (BATrestricted(b) == BAT_READ) {
