@@ -817,6 +817,33 @@ PROC test_monettime() : void := {
 	[dst](timestamp_eur,TIMEZONE("West/Europe")).col_name("dst"),
 	timestamp_bra.col_name("Andes/Brazil"),
 	[dst](timestamp_bra,TIMEZONE("Andes/Brazil")).col_name("dst"));
+
+@- nil casts
+@mil
+	print(timestamp(nil));
+	print(isnil(timestamp(nil)));
+	print(tzone(nil));
+	print(isnil(tzone(nil)));
+	                                                                                                                             
+	print(timestamp(int(nil)));
+	print(isnil(timestamp(int(nil))));
+	print(tzone(int(nil)));
+	print(isnil(tzone(int(nil))));
+	                                                                                                                             
+	print(timestamp(lng(nil)));
+	print(isnil(timestamp(lng(nil))));
+	print(tzone(lng(nil)));
+	print(isnil(tzone(lng(nil))));
+	                                                                                                                             
+	print(timestamp(str(nil)));
+	print(isnil(timestamp(str(nil))));
+	print(tzone(str(nil)));
+	print(isnil(tzone(str(nil))));
+	                                                                                                                             
+	print(timestamp(dbl(nil)));
+	print(isnil(timestamp(dbl(nil))));
+	print(tzone(dbl(nil)));
+	print(isnil(tzone(dbl(nil))));
 }
 
 @{
