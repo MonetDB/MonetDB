@@ -151,7 +151,7 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         }
     }
     chkFlow(mb);
-	chkDeclarations(mb);
+	chkDeclarations(mb,TRUE);
     return msg;
 }
 str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -181,7 +181,7 @@ str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         }
     }
     chkFlow(mb);
-	chkDeclarations(mb);
+	chkDeclarations(mb,TRUE);
     return msg;
 }
 str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -209,7 +209,7 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     }
     (void) stk; 
     chkFlow(mb);
-	chkDeclarations(mb);
+	chkDeclarations(mb,TRUE);
     return msg;
 }
 @c
@@ -533,7 +533,7 @@ mal_export str MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
         }
     }
     chkFlow(mb);
-	chkDeclarations(mb);
+	chkDeclarations(mb,TRUE);
     return msg;
 }
 @}

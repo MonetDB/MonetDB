@@ -48,7 +48,7 @@ mal_export Symbol cloneFunction(Scope scope, Symbol proc, MalBlkPtr mb, InstrPtr
 
 mal_export Symbol   getFunctionSymbol(Scope scope, InstrPtr p);
 mal_export void chkFlow(MalBlkPtr mb);
-mal_export void chkDeclarations(MalBlkPtr mb);
+mal_export void chkDeclarations(MalBlkPtr mb,int reset);
 mal_export int getBarrierEnvelop(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
@@ -339,15 +339,20 @@ errors in the declarations as well.
 Since in interactive mode each statement is handled separately,
 we have to remember the scope assigned to a variable.
 @c
-
-void chkDeclarations(MalBlkPtr mb){
+void chkDeclarations(MalBlkPtr mb,int reset){
     int pc,i, k;
+    int fnd,s;
     InstrPtr p;
     int blks[MAXDEPTH], top= 0,blk=1;
     str nme;
 
     blks[top] = 1;
     blks[++top]= 0;
+    if( reset) 
+    for(i=0; i<mb->vtop; i++){
+        getVarDepth(mb,i)=0;
+        getVarScope(mb,i)=0;
+    }
 
     /* all signature variables are declared */
     p= getInstrPtr(mb,0);
@@ -357,28 +362,33 @@ void chkDeclarations(MalBlkPtr mb){
     k= findVariable(mb,functionName(p));
     getVarScope(mb,k) = 1;
     nme= functionName(p);
+    /* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
     for(pc=0;pc<mb->stop; pc++){
         p= getInstrPtr(mb,pc);
         for(k=p->retc;k<p->argc; k++){
-                for( i=0; i< top; i++)
-                if( blks[i] == getVarScope(mb,getArg(p,k)) ) break;
-                if( (blks[i]!= getVarScope(mb,getArg(p,k)) || blks[i] == 0)  &&
-                    !isTmpVar(mb, p->argv[k])){
+                fnd=0;
+                s= getVarScope(mb,getArg(p,k)); 
+                for( i=0; i< top; i++){
+                    if( blks[i] == s) { fnd++; break;}
+                }
+                if( (getVarDepth(mb,getArg(p,k)) >top  || fnd == 0)  &&
+                    !isTmpVar(mb, p->argv[k])  ){
                     GDKerror("'%s' may be used before being set in %s[%d]\n",
                         getVarName(mb,getArg(p,k)), nme,pc);
                     mb->errors++;
                 }
         }
         for(k=0; k<p->retc; k++){
-            if( getVarScope(mb, p->argv[k]) == 0)
-                getVarScope(mb,p->argv[k]) = blks[top-1];
-            else {
+            if( getVarScope(mb, getArg(p,k)) == 0){
+                getVarScope(mb, getArg(p,k)) = blks[top-1];
+                getVarDepth(mb, getArg(p,k)) = top-1;
+            } else {
                 /* is the block still active ? */
                 for( i=0; i< top; i++)
                 if( blks[i] == getVarScope(mb,getArg(p,k)) ) break;
                 if( blks[i]!= getVarScope(mb,getArg(p,k)) && 
-                    !isTmpVar(mb, p->argv[k])){
+                    !isTmpVar(mb, getArg(p,k))){
 /*
     printf("blk %d defs %d [",i,defs[p->argv[k]]);
     for(z=0;z<top; z++) printf(" %d",blks[z]);
