@@ -278,6 +278,12 @@ char *	name;
 	case Ofile:
 	    if (allTrue()){
 		d= NwDef(dir, mod, sec, lino);
+		/* specially for Windows: replace all /'s with DIR_SEP's */
+		if (DIR_SEP != '/') {
+		    char *tmp = cmd;
+		    while ((tmp = strchr(tmp, '/')) != NULL)
+			*tmp++ = DIR_SEP;
+		}
 		d->d_cmd= cmd;
 		lastdir = Continue;
 	    }
