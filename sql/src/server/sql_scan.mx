@@ -330,6 +330,19 @@ init_keywords()
 	keywords_insert("PRESERVE", PRESERVE);
 	keywords_insert("ROWS", ROWS);
 	keywords_insert("NO", NO);
+	keywords_insert("START", START);
+	keywords_insert("TRANSACTION", TRANSACTION);
+	keywords_insert("READ", READ);
+	keywords_insert("WRITE", WRITE);
+	keywords_insert("ONLY", ONLY);
+	keywords_insert("ISOLATION", ISOLATION);
+	keywords_insert("LEVEL", LEVEL);
+	keywords_insert("UNCOMMITTED", UNCOMMITTED);
+	keywords_insert("COMMITTED", COMMITTED);
+	keywords_insert("REPEATABLE", REPEATABLE);
+	keywords_insert("SERIALIZABLE", SERIALIZABLE);
+	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
+	keywords_insert("SIZE", SIZE);
 
 	keywords_insert("MODULE", MODULE );
 	keywords_insert("TYPE", sqlTYPE );

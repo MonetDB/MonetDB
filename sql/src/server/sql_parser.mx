@@ -30,6 +30,7 @@
 #define _SQL_PARSER_H_
 
 #include "sql_statement.h"
+#include "sql_trans.h"
 
 typedef enum tokens {
 	SQL_CREATE_SCHEMA,
@@ -75,10 +76,12 @@ typedef enum tokens {
 	SQL_PRIMARY_KEY,
 	SQL_FOREIGN_KEY,
 	SQL_BEGIN,
-	SQL_COMMIT,
-	SQL_ROLLBACK,
-	SQL_SAVEPOINT,
-	SQL_RELEASE,
+	TR_COMMIT,
+	TR_ROLLBACK,
+	TR_SAVEPOINT,
+	TR_RELEASE,
+	TR_START,
+	TR_MODE,
 	SQL_INSERT,
 	SQL_DELETE,
 	SQL_UPDATE,
@@ -381,6 +384,9 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 	opt_from_grantor
 	opt_column
 	grantor
+	transaction_mode
+	transaction_mode_list
+	_transaction_mode_list
 
 %type <bval>
 	opt_trans
@@ -414,6 +420,8 @@ extern int sqllex( YYSTYPE *yylval, void *m );
 %token <sval> sqlDELETE UPDATE SELECT INSERT
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER 
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
+%token <sval> START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
+%token <sval> UNCOMMITTED COMMITTED REPEATABLE SERIALIZABLE DIAGNOSTICS SIZE
 	
 %token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX 
@@ -1145,15 +1153,51 @@ transaction_stmt:
 
 _transaction_stmt:
     COMMIT opt_trans opt_chain 	
-		{ $$ = _symbol_create_int( SQL_COMMIT, $3);  }
+		{ $$ = _symbol_create_int( TR_COMMIT, $3);  }
  |  SAVEPOINT ident 		
-		{ $$ = _symbol_create( SQL_SAVEPOINT, $2); }
+		{ $$ = _symbol_create( TR_SAVEPOINT, $2); }
  |  RELEASE SAVEPOINT ident 	
-		{ $$ = _symbol_create( SQL_RELEASE, $3); }
+		{ $$ = _symbol_create( TR_RELEASE, $3); }
  |  ROLLBACK opt_trans opt_chain opt_to_savepoint
-		{ $$ = _symbol_create_list( SQL_ROLLBACK, 
+		{ $$ = _symbol_create_list( TR_ROLLBACK, 
 		   dlist_append_string(
 		   	dlist_append_int(dlist_create(), $3), $4 )); }
+ |  START TRANSACTION transaction_mode_list
+		{ $$ = _symbol_create_int( TR_START, $3); }
+ |  SET local TRANSACTION transaction_mode_list
+		{ $$ = _symbol_create_int( TR_MODE, $4); }
+ ;
+
+local:
+  /* empty */
+ | 	LOCAL
+ ;
+
+transaction_mode_list:
+	/* empty */		{ $$ = tr_none; }
+ | 	_transaction_mode_list
+ ;
+
+_transaction_mode_list:
+   	transaction_mode
+    		{ $$ = $1; }
+ | 	_transaction_mode_list ',' transaction_mode
+		{ $$ = ($1 | $3); } 
+ ;
+
+
+transaction_mode:
+	READ ONLY			{ $$ = tr_readonly; }
+ |	READ WRITE			{ $$ = tr_writable; }
+ | 	ISOLATION LEVEL iso_level	{ $$ = tr_serializable; }
+ | 	DIAGNOSTICS SIZE intval		{ $$ = tr_none; /* not supported */ }	
+ ;
+
+iso_level:
+	READ UNCOMMITTED	
+ | 	READ COMMITTED	
+ | 	REPEATABLE READ	
+ | 	SERIALIZABLE	
  ;
 
 opt_trans: /* pure syntax sugar */
@@ -2476,10 +2520,18 @@ char *token2string(int token)
 		return "Primary Key";
 	case SQL_FOREIGN_KEY:
 		return "Foreign Key";
-	case SQL_COMMIT:
+	case TR_COMMIT:
 		return "Commit";
-	case SQL_ROLLBACK:
+	case TR_ROLLBACK:
 		return "Rollback";
+	case TR_SAVEPOINT:
+		return "Savepoint";
+	case TR_RELEASE:
+		return "Release";
+	case TR_START:
+		return "Start";
+	case TR_MODE:
+		return "Mode";
 	case SQL_SET:
 		return "Set";
 	case SQL_SELECT:

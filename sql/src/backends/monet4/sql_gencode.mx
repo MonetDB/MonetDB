@@ -63,7 +63,6 @@ void stmt_reset( stmt *s )
 		case st_aggr:
 		case st_op: case st_unop: case st_binop: case st_Nop:
 
-		case st_release: case st_commit: case st_rollback:
 		case st_schema: case st_table: case st_column: case st_key:
 		case st_idx:
 		case st_create_module: case st_drop_module:
@@ -376,9 +375,13 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		s->nr = -(*nr)++;
 
 	switch(s->type){
-	case st_none: 
-		dump(sql,"var none := \"none\";\n",-1,-s->nr);
-		break;
+	case st_none: {
+		int buflen = 64;
+		buf = NEW_ARRAY(char, buflen+1);
+		strcpy(buf, "var none := \"none\";\n");
+		dump(sql,buf,-1,-s->nr);
+		_DELETE(buf);
+	} 	break;
 	case st_sql: 
 		mvc_dump_1( sql, s, "sql", nr  ); 
 		break;
@@ -421,15 +424,6 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		_DELETE(buf);
 		break;
 	}
-	case st_release: 
-		mvc_dump_1( sql, s, "release", nr  ); 
-		break;
-	case st_commit: 
-		mvc_dump_2( sql, s, "commit", nr  ); 
-		break;
-	case st_rollback: 
-		mvc_dump_2( sql, s, "rollback", nr  ); 
-		break;
 	case st_schema: 
 		mvc_dump_1( sql, s, "bind_schema", nr );
 	 	break;

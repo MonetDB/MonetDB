@@ -391,6 +391,8 @@ int sqlexecute(backend * be, stream *out )
 			return sqlcleanup(c, err);
 		}
 		assert(s);
+		/* the SET statement may changed the explain value.
+		   without this we can never return form explain='bla' */
 		if (s->type == st_assign)
 			explain = ex_none;
 

@@ -51,6 +51,7 @@ sql_export void sql_destroy_args( mvc *sql );			/* used in backend */
 #include "sql_statement.h"
 #include "sql_scope.h"
 #include "sql_semantic.h"
+#include "sql_trans.h"
 #include "sql_privileges.h"
 
 #include <unistd.h>
@@ -4971,26 +4972,15 @@ static stmt *sql_stmt(mvc * sql, symbol * s)
 	sql_schema *cur = cur_schema(sql);
 	stmt *ret = NULL;
 	switch (s->token) {
+	case TR_COMMIT: case TR_SAVEPOINT: 
+	case TR_RELEASE: case TR_ROLLBACK:
+	case TR_START: case TR_MODE:
+		return transaction(sql, s);
 
-	case SQL_RELEASE:{
-			ret = stmt_release(s->data.sval);
-		}
-		break;
-	case SQL_COMMIT:{
-			ret = stmt_commit(s->data.ival, NULL);
-		}
-		break;
-	case SQL_SAVEPOINT:{
-			ret = stmt_commit(0, s->data.sval);
-		}
-		break;
-	case SQL_ROLLBACK:{
-			dlist *l = s->data.lval;
-			ret = stmt_rollback(l->h->data.ival,
-					    l->h->next->data.sval);
-		}
-		break;
-
+	/* all schema changes will change to
+	   direct execution only and move into their own file
+	   sql_schema !
+ 	 */
 	case SQL_CREATE_SCHEMA:
 		{
 			dlist *l = s->data.lval;

@@ -46,9 +46,6 @@ typedef enum stmt_type {
 	st_sql,		/* sometimes a query rewrite is easier */
 	st_var,		/* still needs work */
 	st_assign,		/* still needs work */
-	st_commit,
-	st_rollback,
-	st_release,
 	st_schema,
 	st_table,
 	st_column,
@@ -196,15 +193,6 @@ extern stmt *stmt_none();
 extern stmt *stmt_sql( char *query );
 extern stmt *stmt_assign( char *varname, stmt *val);
 extern stmt *stmt_var( char *varname, sql_subtype *t);
-
-/* since Savepoints and transactions related the 
- * stmt commit function includes the savepoint creation.
- * And rollbacks can be eigther full or until a given savepoint. 
- * The special stmt_release can be used to release savepoints. 
- */
-extern stmt *stmt_commit( int chain, char *name);
-extern stmt *stmt_rollback( int chain, char *name);
-extern stmt *stmt_release( char *name);
 
 extern stmt *stmt_bind_schema( char *name );
 extern stmt *stmt_bind_table ( stmt *schema, char *name );
@@ -361,9 +349,6 @@ const char * st_type2string(st_type type) {
 	switch (type) {
 	case st_none:	return "st_none";
 	case st_sql:	return "st_sql";
-	case st_commit:		return "st_commit";
-	case st_rollback:	return "st_rollback";
-	case st_release:	return "st_release";
 	case st_schema:	return "st_schema";
 	case st_table:	return "st_table";
 	case st_column:	return "st_column";
@@ -657,7 +642,6 @@ void stmt_destroy(stmt * s)
 			break;
 
 		/* simple case of statements of only statements */
-		case st_release: case st_commit: case st_rollback:
 		case st_schema: case st_table: case st_column: case st_key:
 		case st_idx:
 		case st_create_module: case st_drop_module:
@@ -729,33 +713,6 @@ stmt *stmt_var(char *varname, sql_subtype *t){
 	s->op1.sval = varname;
 	s->op2.typeval = t;
 	s->key = 1;
-	return s;
-}
-
-stmt *stmt_release(char *name)
-{
-	stmt *s = stmt_create(st_release);
-	if (!name) name = "";
-	s->op1.stval = stmt_atom_string(name);
-	return s;
-}
-
-stmt *stmt_commit(int chain, char *name)
-{
-	stmt *s = stmt_create(st_commit);
-	if (!name) name = "";
-	s->op1.stval = stmt_atom_int(chain);
-	s->op2.stval = stmt_atom_string(name);
-	return s;
-}
-
-stmt *stmt_rollback(int chain, char *name)
-{
-	stmt *s = stmt_create(st_rollback);
-
-	if (!name) name = "";
-	s->op1.stval = stmt_atom_int(chain);
-	s->op2.stval = stmt_atom_string(name);
 	return s;
 }
 

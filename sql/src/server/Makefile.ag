@@ -15,6 +15,7 @@ lib_sqlserver = {
 		sql_scope.mx \
 		sql_types.mx \
 		sql_statement.mx \
+		sql_trans.mx \
 		sql_semantic.mx \
 		sql_optimize.mx \ 
 		sql_rel2bin.mx \

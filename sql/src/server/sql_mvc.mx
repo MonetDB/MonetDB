@@ -265,15 +265,14 @@ sql_export char *mvc_login( mvc *c, char *user, char *passwd );
 sql_export ssize_t mvc_status( mvc *c );
 sql_export int mvc_type( mvc *c );
 
-/* since Savepoints and transactions related the 
- * statement commit function includes the savepoint creation.
- * And rollbacks can be eigther full or until a given savepoint. 
- * The special statement_release can be used to release savepoints. 
+/* since Savepoints and transactions are related the 
+ * commit function includes the savepoint creation.
+ * Rollbacks can be eigther full or until a given savepoint. 
+ * The special mvc_release can be used to release savepoints. 
  */
 sql_export int mvc_commit( mvc *c, int chain, char *name );
 sql_export int mvc_rollback( mvc *c, int chain, char *name );
 sql_export int mvc_release( mvc *c, char *name );
-sql_export int mvc_set_iso_level(mvc * m, int level);
 
 sql_export BAT *mvc_bind( mvc *c, char *sname, char *tname, char *cname, int access );
 sql_export BAT *mvc_bind_ubat( mvc *c, char *sname, char *tname, char *cname, int access );
@@ -2597,15 +2596,6 @@ mvc_release(mvc * m, char *name)
 
 	tr->parent = p; 
 	m->trans = tr; /* restart at savepoint */
-	m->type = res;
-	return res;
-}
-
-int 
-mvc_set_iso_level(mvc * m, int level)
-{
-	int res = mvc_commit(m,1,NULL);
-	m->trans->level = level;
 	m->type = res;
 	return res;
 }

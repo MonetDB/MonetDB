@@ -473,7 +473,6 @@ stmt *rel2bin( mvc *c, stmt *s )
 	 */
 	case st_none: 
 	case st_sql: 
-	case st_release: case st_commit: case st_rollback: 
 	case st_schema: case st_table: case st_column: case st_key: 
 	case st_create_module: case st_drop_module: 
 	case st_create_type: case st_drop_type: 

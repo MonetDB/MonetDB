@@ -92,18 +92,6 @@ for the time being.
 	.COMMAND mvc_type( mvc m ) : int 
 		= mvc_type_wrap; "return the type of the last mvc operation"
 
-	.COMMAND mvc_commit( mvc m, int chain, str name ) : int = 
-		mvc_commit_wrap; "Commit transaction/savepoint and chain"
-
-	.COMMAND mvc_rollback( mvc m, int chain, str name ) : int = 
-		mvc_rollback_wrap; "Rollback transaction/savepoint and chain"
-
-	.COMMAND mvc_release( mvc m, str name ) : int = 
-		mvc_release_wrap; "Release the savepoint"
-
-	.COMMAND mvc_set_iso_level( mvc m, int level ) : int = 
-		mvc_set_iso_level_wrap; "Change the isolation level"
-
 	.COMMAND mvc_bind( mvc c, str sname, str tname, str cname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
@@ -385,27 +373,6 @@ int mvc_status_wrap( int* res, mvc* m ){
 
 int mvc_type_wrap( int* res, mvc* m ){
 	*res = mvc_type( *(mvc**)m );
-	return GDK_SUCCEED;
-}
-
-
-int mvc_commit_wrap( int* res, mvc* m, int* chain, str name){
-	*res = mvc_commit( *(mvc**)m, *chain, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_rollback_wrap( int *res, mvc *m, int *chain, str name ){
-	*res = mvc_rollback( *(mvc**)m, *chain, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_release_wrap( int *res, mvc *m, str name ){
-	*res = mvc_release( *(mvc**)m, name );
-	return GDK_SUCCEED;
-}
-
-int mvc_set_iso_level_wrap( int *res, mvc *m, int *level ){
-	*res = mvc_set_iso_level( *(mvc**)m, *level );
 	return GDK_SUCCEED;
 }
 
