@@ -109,7 +109,7 @@ public class JdbcClient {
 		((ArrayList)(arg.get("Xbatching"))).add(null);
 		((ArrayList)(arg.get("-help"))).add(null);
 		((ArrayList)(arg.get("e"))).add(null);
-		((ArrayList)(arg.get("b"))).add("demo");
+		((ArrayList)(arg.get("b"))).add(null);
 
 		// we cannot put password in the arg map, since it would be accessable
 		// from the command line by then.
@@ -334,6 +334,11 @@ public class JdbcClient {
 		// databases.
 		con = null;
 		String database = (String)(((ArrayList)(arg.get("b"))).get(1));
+		if (database != null) {
+			attr += "&protocolversion=5";
+		} else {
+			database = "notused";
+		}
 		try {
 			con = DriverManager.getConnection(
 					"jdbc:monetdb://" + host + "/" + database + attr,

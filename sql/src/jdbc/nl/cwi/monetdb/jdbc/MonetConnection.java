@@ -151,10 +151,15 @@ public class MonetConnection extends Thread implements Connection {
 			language = "sql";
 			addWarning("No language given, defaulting to 'sql'");
 		}
-		/** check and use the database name here... */
 
 		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
+		int protover;
+		try {
+			protover = Integer.parseInt(props.getProperty("protocolversion"));
+		} catch (NumberFormatException e) {
+			protover = 4;	// be on the save side!
+		}
 
 		try {
 			// make connection to MonetDB
@@ -198,10 +203,51 @@ public class MonetConnection extends Thread implements Connection {
 			if (blockMode) {
 				// convenience cast shortcut
 				MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
+				String response;
 
+				if (protover >= 5) {
+					// read the challenge from the server
+					byte[] chal = new byte[2];
+					blkmon.read(chal);
+					int len = 0;
+					try {
+						len = Integer.parseInt(new String(chal, "UTF-8"));
+					} catch (NumberFormatException e) {
+						throw new SQLException("Server challenge length unparsable");
+					}
+					// read the challenge string
+					chal = new byte[len];
+					blkmon.read(chal);
+					
+					// parse the challenge string, split it on ':'
+					String[] chaltok = (new String(chal, "UTF-8")).split(":");
+					if (chaltok.length != 4) throw
+						new SQLException("Server challenge string unusable!");
+					String challenge = chaltok[1]; // challenge string
+					// chaltok[2]; // server type, not needed yet
+					try {
+						// bad reuse of len variable
+						len = Integer.parseInt(chaltok[3].trim());	// protocol version
+					} catch (NumberFormatException e) {
+						throw new SQLException("Protocol version unparseable: " + chaltok[3]);
+					}
+
+					response = username + ":" + password + ":";
+					// act on version
+					if (len < 5) {
+						// don't use database
+						addWarning("database specifier not supported on this server (" + chaltok[2] + "), protocol version " + chaltok[3]);
+					} else {
+						response += database + ":";
+					}
+					response += language + ":blocked";
+				} else {
+					response = username + ":" + password + ":" + 
+						language + ":blocked";
+				}
+				
 				// mind the newline at the end
-				blkmon.write(username + ":" + password + ":" +
-					language + ":blocked\n");
+				blkmon.write(response + "\n");
 				// We need to send the server our byte order.  Java by itself
 				// uses network order.
 				// A short with value 1234 will be sent to indicate our
@@ -227,6 +273,9 @@ public class MonetConnection extends Thread implements Connection {
 					blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 				}
 			} else {
+				// non block-mode only works with older protocol variants
+				// don't expect a challenge.
+				if (protover >= 5) addWarning("Protocol versions 5 and up don't have line mode support, assuming protocol version <= 4");
 				monet.writeln(username + ":" + password + ":" + language);
 			}
 			// read monet response till prompt
