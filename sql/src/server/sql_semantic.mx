@@ -434,7 +434,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 		     d && m; 
 		     d = d->next, m = m->next) {
 			stmt *st = m->data;
-			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
+			stmt *sc = stmt_ibat(stmt_alias(stmt_dup(st), d->data.sval), stmt_dup(sq));
 
 			table_add_column(tv, sc, tname, d->data.sval);
 		}
@@ -2158,36 +2158,60 @@ static group *query_groupby_outers(mvc * sql, scope * scp, stmt * subset)
 	return cur;
 }
 
-static stmt *query_orderby(mvc * sql, scope * scp, symbol * orderby, stmt * st, stmt * subset, group * grp)
+/*
+   select column_1, column_2 from x order by column_1, column_2;
+
+   As SQL-3 drop support for order by number (column position in result table)
+   so we also do not support it. Unfortunately SQL-3 added new crap,
+   order by 'expression', where expresion should match a result column 
+   expresion. We also do not support this (just use as bla and order by bla!).
+   SQL-3 supports ordering on columns not in the result table, but again we
+   don't.
+ */
+static stmt *
+orderby_column_ref(mvc * sql, symbol * column_r, stmt *s)
+{
+	dlist *l = column_r->data.lval;
+
+	assert(column_r->token == SQL_COLUMN
+	       && column_r->type == type_list);
+
+	if (dlist_length(l) == 1) {
+		char *name = l->h->data.sval;
+		node *n;
+
+ 		for (n = s->op1.lval->h; n; n = n->next) {
+			stmt *t = n->data;
+			char *cn = column_name(t);
+
+			if (strcmp(cn, name) == 0){
+				_DELETE(cn);
+				return stmt_dup(t);
+			}
+			_DELETE(cn);
+		}
+		return sql_error( sql, 02, "Unknown column name (%s) in order by", name );
+	}
+	return sql_error( sql, 02, "Only single column names supported in order by" );
+}
+
+static stmt *query_orderby(mvc * sql, symbol * orderby, stmt * s )
 {
 	stmt *cur = NULL;
 	dnode *o = orderby->data.lval->h;
-	(void) st; /* Stefan: unused!? */
 
 	while (o) {
 		symbol *order = o->data.sym;
 		if (order->token == SQL_COLUMN) {
 			symbol *col = order->data.lval->h->data.sym;
-			int direction =
-			    order->data.lval->h->next->data.ival;
-			stmt *sc = sql_column_ref(sql, scp, col);
+			int direction = order->data.lval->h->next->data.ival;
+			stmt *sc = orderby_column_ref(sql, col, s);
+
 			if (sc) {
-				stmt *j = NULL;
-				if (sc->type == st_bat || sc->type == st_ibat) {
-					j = find_pivot(subset, sc->h);
-					if (!j) {
-						return sql_error(sql, 02, "subset not found for orderby column\n");
-					}
-					if (grp)
-						j = stmt_join(stmt_dup(grp->ext), j, cmp_equal);
-					j = stmt_join(j, sc, cmp_equal);
-				} else {
-					j = sc;
-				}
 				if (cur)
-					cur = stmt_reorder(cur, j, direction);
+					cur = stmt_reorder(cur, sc, direction);
 				else
-					cur = stmt_order(j, direction);
+					cur = stmt_order(sc, direction);
 			} else {
 				return NULL;
 			}
@@ -2504,6 +2528,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 	if (s && subset && sn->distinct){
 		node *n;
 		group *grp = NULL;
+
 		rl = create_stmt_list();
  		for (n = s->op1.lval->h; n; n = n->next) {
 			stmt *t = n->data;
@@ -2514,15 +2539,15 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 			list_append(rl, stmt_join(stmt_dup(grp->ext), 
 					          stmt_dup(t), cmp_equal));
 		}
-		grp_destroy(grp);
+		if (grp)
+			grp_destroy(grp);
 
 		stmt_destroy(s);
 		s = stmt_list(rl);
 	}
 
-
 	if (s && subset && sn->orderby) {
-		order = query_orderby(sql, scp, sn->orderby, s, subset, grp);
+		order = query_orderby(sql, sn->orderby, s);
 		if (!order) {
 			sql_select_cleanup(sql, s, subset, grp);
 			return sql_error( sql, 02, "Subquery result missing");
