@@ -241,8 +241,8 @@ function tunique ( b:bat[:any$1,:any$2] )
 		:bat[:any$1,:any$2];
 	r:= bat.reverse(b);
 	u:= kunique(r);
-	r:= bat.reverse(u);
-	return r;
+	k:= bat.reverse(u);
+	return k;
 end tunique;
 
 @- Bun-intersecting elements
