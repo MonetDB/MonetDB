@@ -1758,6 +1758,16 @@ sql_or(mvc * sql, scope *scp, stmt * ls, stmt * rs, int f)
 	if (f >= sql_search) 
 		return stmt_union(ls, rs);
 
+	/* optimization 
+		(x = 'a' or x = 'b') ==> union(select(x,'a'),select(x,'b'))
+		should also handle the recusive case!
+	 */
+	if (ls->type != st_set && ls->type != st_sets &&
+	    rs->type != st_set && rs->type != st_sets) {
+		if (ls->h == rs->h && ls->nrcols == 1 && rs->nrcols == 1)  
+			return stmt_union(ls,rs);
+	}
+
 	if (ls->type != st_set && ls->type != st_sets) {
 		ls = stmt_set(ls);
 	}
@@ -2609,7 +2619,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 					list_destroy(rl);
 					sql_select_cleanup(sql, s, subset, grp);
 					return sql_error( sql, 02, "single value in column expression");
-				} else if (!cs->aggr && nrcols != 0) {
+				} else if (!cs->aggr && subset->nrcols) {
 					stmt *ss = first_subset(subset);
 					cs = stmt_const(ss,stmt_dup(cs));
 					list_append(rl, cs);
