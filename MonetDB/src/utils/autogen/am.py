@@ -141,6 +141,9 @@ def am_scripts(fd, var, scripts, am):
   sd = am_translate_dir(sd,am)
   
   for script in scripts['TARGETS']:
+      s,ext = rsplit_filename(script)
+      if (ext == 'in'):
+        script = s
       fd.write("install-exec-local-%s: %s\n" % (script,script))
       fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
       fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
