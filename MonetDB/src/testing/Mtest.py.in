@@ -1288,11 +1288,14 @@ def RunTest(env, TST, BusyPorts) :
             #       signal.alarm(0)
             #       ACCURACY = ACCURACY - 1
             MDIFF = MDIFF1
+            diff_html = open('%s.out.diff.html' % TST,"w")
+            diff_html.write('<!--MajorDiffs-->\n')
+            diff_html.close()
             timedout = 1
             while timedout and ACCURACYout >= 0:
                 if ACCURACYout == 0:
                     MDIFF = MDIFF0
-                timedout = os.system(MDIFF+' -I"'+par['IGNORE']+'" '+par['CONTEXT']+' -A'+str(ACCURACYout)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
+                timedout = os.system('%s -I"%s" %s -A%d -r"%s" %s%s.FILTERED %s.test.out.FILTERED %s.out.diff.html' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYout, REVe, TST, STABLEout, TST, TST))
                 ACCURACYout = ACCURACYout - 1
 
             #TODO:
@@ -1307,6 +1310,9 @@ def RunTest(env, TST, BusyPorts) :
             #       signal.alarm(0)
             #       ACCURACY = ACCURACY - 1
             MDIFF = MDIFF1
+            diff_html = open('%s.err.diff.html' % TST,"w")
+            diff_html.write('<!--MajorDiffs-->\n')
+            diff_html.close()
             timedout = 1
             while timedout and ACCURACYerr >= 0:
                 if ACCURACYerr == 0:
@@ -2060,7 +2066,7 @@ def main(argv) :
         par['IGNORE'] = opts.get('ignore', dftIGNORE)
         par['CONTEXT'] = '-C%d' % int(opts.get('context', 1))
         a = int(opts.get('accuracy', (os.name != 'nt' and 1) or 0))
-        if a not in (0,1,2):
+        if a not in (-1,0,1,2):
             ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
         if os.name == "nt" and a != 0:
             Warn("Currently only '-A0` is supported on WindowsNT!")
