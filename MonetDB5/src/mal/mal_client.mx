@@ -52,7 +52,7 @@ are located in mal_startup.
 #define _MAL_CLIENT_H_
 #define bitset int
 
-/* #define MAL_CLIENT_DEBUG_2*/
+/* #define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
 #include "mal.h"
@@ -643,22 +643,35 @@ prompts structures. [think, can we avoid acks]
 
 @c
 int readClient(Client c,str prompt){
-	if( isAdministrator(c)) return streamClient(c,prompt);
-	return bstreamClient(c);
+	if( isa_block_stream(c->fdin)) return bstreamClient(c,prompt);
+	return streamClient(c,prompt);
 }
 @-
 The default action is to read information from an ascii-stream
 one line at a time. This is the preferred mode for reading
 from terminal.
-@c
-int streamClient(Client c, str prompt){
-	int i,free;
-	str  s;
- 
 @-
 The next statement block is to be read. Sent a prompt to warn
 the front-end to issue the request.
+@= sentPrompt
+	if(c->promptlength) { 
+		if(!isAdministrator(c))
+			stream_printf(c->fdout,"\001");
+		if( c->blkmode) 
+			stream_printf(c->fdout,"+%s",
+					(prompt?prompt:c->prompt));
+		else stream_printf(c->fdout,"%s",
+					(prompt?prompt:c->prompt));
+		if(!isAdministrator(c))
+			stream_printf(c->fdout,"\002\n");
+		c->fdout->flush(c->fdout);
+	}
 @c
+int streamClient(Client c, str prompt){
+	int i,free,ln;
+	str  s;
+ 
+	ln= c->nxt - c->input; /* left over bytes */
 	s = c->nxt; *s = 0;
 	@:makespace@
 
@@ -668,13 +681,15 @@ the front-end to issue the request.
 	free= c->limit - s-1;	/* reserve null byte */
 	free= free>BLOCK?BLOCK:free;
 
-	if(c->promptlength) { 
-		if( c->blkmode) 
-			stream_printf(c->fdout,"+%s",(prompt?prompt:c->prompt));
-		else stream_printf(c->fdout,"%s",(prompt?prompt:c->prompt));
-		c->fdout->flush(c->fdout);
-	}
+	@:sentPrompt@
+#ifdef MAL_CLIENT_DEBUG
+	printf("# simple stream received:");
+#endif
 	while( (i= c->fdin->read(c->fdin,s,1,1)) == 1){
+#ifdef MAL_CLIENT_DEBUG
+		printf("%c",*s);
+		fflush(stdout);
+#endif
 		if(*s== 13) continue; /* WIN32 */
 		if(*s== 0 || *s== '\n') { *s=0; break;}
 		s++;
@@ -684,8 +699,10 @@ the front-end to issue the request.
 		/* end of stream reached */
 		return 0;
 	}
+	*s=0;
+	c->nxt= c->input+ln;
 #ifdef MAL_CLIENT_DEBUG
-	printf("# received %s\n",c->input);
+	printf("#finished\n");
 #endif
 	@:sysTrace(c->input)@
 	return 1;
@@ -696,38 +713,32 @@ from the stream until we have encountered the last one.
 @c
 int bstreamClient(Client c, str prompt){
 	str  s;
-        int len = 0, size = 0;
+        int len = 0, ln=0, size = 0;
 
 	s = c->nxt; *s = 0;
+	ln= c->nxt - c->input; /* left over bytes */
 	if( (c->limit-c->input) < BLOCK+1){
 		@:makespace@
 	}
-	if(c->promptlength) { 
-		if( c->blkmode) 
-			stream_printf(c->fdout,"\001+%s\002\n",
-					(prompt?prompt:c->prompt));
-		else stream_printf(c->fdout,"\001%s\002\n",
-					(prompt?prompt:c->prompt));
-		c->fdout->flush(c->fdout);
-	}
-#ifdef MAL_CLIENT_DEBUG_2
+	@:sentPrompt@
+#ifdef MAL_CLIENT_DEBUG
 printf("bstreamClient:read block\n"); fflush(stdout);
 #endif
 
         while ((len = c->fdin->read(c->fdin, s, 1, BLOCK)) == BLOCK){
                 size += len;
 		s[len]=0;
-#ifdef MAL_CLIENT_DEBUG_2
-printf("size %d\n",size); fflush(stdout);
-#endif
 		if( (c->limit-c->input) - size < BLOCK+1){
 			@:makespace@
 		}
                 s= c->input+len;
         }
 	s[len]=0;
-#ifdef MAL_CLIENT_DEBUG_2
-	printf("# received [%d] %s\n",size,c->input);
+	c->nxt= c->input+ln;
+	s= strrchr(c->nxt,'\n');
+	if(s) *s=0;
+#ifdef MAL_CLIENT_DEBUG
+	printf("# block receive [%d] %s\n",size,c->input);
 #endif
 	@:sysTrace(c->input)@
 	return len != 0;

@@ -227,6 +227,21 @@ Note, each function returns at least one value.
 		for(k=i=p->retc;i<p->argc;i++){
 			int actual = getArgType(mb,p,i);
 			int formal = getArgType(s->def,sig,k);
+@-
+Take care of variable argument lists. They are allowed as the last in the
+signature only.
+Furthermore, for patterns if the formal type is 'any' then all remaining arguments 
+are acceptable and type analysis becomes part of the pattern implementation.
+In all other cases the type should apply to all remaining arguments.
+@c
+			if( k+1 == sig->argc){
+				if(sig->varargs ){
+					if( sig->token == PATTERNsymbol &&
+					    formal== TYPE_any)
+						continue;
+				}
+			} else k++;
+
 			if( updateTypeMap(formal, actual, polytype)){
 				unmatched= i; 
 				break;
@@ -240,11 +255,6 @@ turning a contrainted type into 'any', which matches all types.
 				unmatched= i;
 				break;
 			}
-@-
-Take care of variable argument lists.
-@c
-			k++;
-			if(sig->varargs && k == sig->argc ) k--; 
 		}
 	} else {
 		for(i=p->retc;i<p->argc;i++){
@@ -294,6 +304,15 @@ the resulting type can not be determined.
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,k);
 
+		if( k+1 == sig->argc){
+			if(sig->varargs ){
+				if( sig->token == PATTERNsymbol &&
+				    formal== TYPE_any){
+					returntype[i]= TYPE_any;
+					continue;
+				}
+			}
+		} else k++;
 		s1= getPolyType(formal, polytype);
 
 		returntype[i]= resolveType(actual,s1);
@@ -303,8 +322,6 @@ the resulting type can not be determined.
 			s1= -1;
 			break;
 		}
-		k++;
-		if( sig->varargs && k== sig->argc) k--;
 	}
 	if(s1<0 ){
 		if(getSignature(s)->token !=PATTERNsymbol) foundbutwrong++;
@@ -593,7 +610,7 @@ requires a call to a type-specific setToNil() function call.
 }
 @-
 Typechecking instructions can be delegated to runtime. In particular, 
-MAL allows module and function names to represented by string variables.
+MAL allows module and function names to be represented by string variables.
 The dynamic type checker uses these names and calls for a strong type
 check. 
 Since the typechecker has side-effects on the symbol table, 
