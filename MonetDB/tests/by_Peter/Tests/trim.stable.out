@@ -1,11 +1,11 @@
 stdout of test 'trim` in directory 'tests/by_Peter` itself:
 
 
-# 17:41:21 >  
-# 17:41:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/src/MonetDB/monet-merge/build/conf/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/monet-merge/build/src/mapi/.libs" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/monet-merge/build/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/monet-merge/build/log" --set mapi_port=51972 --set sql_port=57382 --set monet_prompt= --trace --dbname=mTests_tests_by_Peter  < trim.milM
-# 17:41:21 >  
+# 00:48:13 >  
+# 00:48:13 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/monet.GNU_32-d.6359/monet/Linux2.4.20-20.9perfctrsmp/conf/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/monet.GNU_32-d.6359/monet/Linux2.4.20-20.9perfctrsmp/src/modules/plain/.libs:/var/tmp/monet.GNU_32-d.6359/monet/Linux2.4.20-20.9perfctrsmp/src/modules/contrib/.libs:/var/tmp/monet.GNU_32-d.6359/monet/Linux2.4.20-20.9perfctrsmp/src/modules/calibrator/.libs:/var/tmp/monet.GNU_32-d.6359/monet/Linux2.4.20-20.9perfctrsmp/src/mapi/.libs" --set "gdk_dbfarm=/var/tmp/monet.GNU_32-d.6359/monet/Linux2.4.20-20.9perfctrsmp/dbfarm" --set "sql_logdir=/var/tmp/monet.GNU_32-d.6359/monet/Linux2.4.20-20.9perfctrsmp/log" --set mapi_port=51895 --set sql_port=55856 --set monet_prompt= --trace --dbname=mTests_tests_by_Peter  < trim.milM
+# 00:48:13 >  
 
-# Monet Database Server V4.3.11
+# Monet Database Server V4.3.13
 # Copyright (c) 1993-2003, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 var k1 := new(void,int,1000);
@@ -27,8 +27,8 @@ dir("tmp");
 #-----------------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "tmp_28",	  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_29",	  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_28",	  "oid",  "int",  1000000,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_29",	  "void", "int",  1000,		  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 
 i := 0;
 mem_maxsize(lng(10*1024*1024));
@@ -184,7 +184,7 @@ dir("b_");
 
 quit;
 
-# 17:41:22 >  
-# 17:41:22 >  Done.
-# 17:41:22 >  
+# 00:48:14 >  
+# 00:48:14 >  Done.
+# 00:48:14 >  
 
