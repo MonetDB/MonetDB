@@ -49,7 +49,7 @@ gdk_version=@VERSION@
 # Monet Section
 #==============
 monet_admin=adm			#administrator user name 
-monet_prompt=monet>		#prompt 
+#monet_prompt=monet>
 monet_welcome=yes		#Version and copyright information
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 monet_daemon=no			# default yes
@@ -74,6 +74,7 @@ mal_listing = 15                # echoing the input
 
 # SQL Interface Section
 #====================================
+sql_prompt=sql>
 #sql_port=45123				#default place to sent the SQL query
 #sql_debug=0				#default place to sent the SQL query
 sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log #default place to store 
