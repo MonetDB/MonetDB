@@ -311,5 +311,5 @@ and MonetDB/SQL, call
 Then, in a second shell, set up the same environment and start the
 MonetDB SQL front end by calling
 
- Msql -umonetdb -Pmonetdb
+ MapiClient -lsql -umonetdb -Pmonetdb
 

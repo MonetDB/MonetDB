@@ -17,6 +17,6 @@ Start Mserver, and do:
   const MONET_PREFIX := environment.find("exec_prefix");
   source ( MONET_PREFIX + "/lib/MonetDB/sql_server.mil" );
 
-then use Msql for issueing SQL commands:
-  Msql --user=monetdb --passwd=monetdb
+then use MapiClient for issueing SQL commands:
+  MapiClient --language=sql --user=monetdb --passwd=monetdb
 

@@ -32,10 +32,11 @@ the HowtoStart-SQL document, which contains step-by-step instructions.
 
 3) How to run a SQL batch program?
 
-Collect the SQL statements in a file and make sure you have installed the the SQL 
-front-end Msql. Then simply type: 
+Make sure that you have MonetDB's SQL frontend installed and the sql_server module
+loaded in your running Mserver.
+Collect the SQL statements in a file. Then simply type: 
 
-Msql < batchfile
+MapiClient -lsql < batchfile
 
 ================================================================================
 
