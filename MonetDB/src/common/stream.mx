@@ -1669,6 +1669,10 @@ buffer_wastream(buffer *b, const char *name)
 	return s;
 }
 
+/* A buffered stream consists of a sequence of blocks.  Each block
+   consists of a count followed by the data in the block.  A flush is
+   indicated by an empty block (i.e. just a count of 0).
+ */
 typedef struct bs {
 	stream *s;		/* underlying stream */
 	unsigned nr;		/* how far we got in buf */
@@ -1692,6 +1696,13 @@ bs_create(stream *s)
 
 /* Collect data until the internal buffer is filled, then write the
    filled buffer to the underlying stream.
+   Struct field usage:
+   s - the underlying stream;
+   buf - the buffer in which data is collected;
+   nr - how much of buf is already filled (if nr == sizeof(buf) the
+        data is written to the underlying stream, so upon entry nr <
+        sizeof(buf));
+   itotal - unused.
  */
 static ssize_t
 bs_write(stream *ss, void *buf, size_t elmsize, size_t cnt)
@@ -1752,7 +1763,17 @@ bs_flush(stream *ss)
 }
 
 /* Read buffered data and return the number of items read.  At the
-   flush boundary we will return 0 to indicate the end of a block. */
+   flush boundary we will return 0 to indicate the end of a block.
+
+   Structure field usage:
+   s - the underlying stream;
+   buf - the buffer in which data is collected;
+   itotal - the amount of data in the current block that hasn't yet
+            been returned (this includes data in buf that hasn't yet
+            been returned and the data from the underlying stream that
+            hasn't yet been read);
+   nr - the amount of data in buf that has been returned.
+ */
 static ssize_t
 bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 {
@@ -1763,29 +1784,35 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	assert(ss->access == ST_READ);
 	assert(s->nr <= sizeof(s->buf));
 
-	if (s->itotal == 0 && s->nr == sizeof(s->buf)) {
-		/* We read the 0 count of the closing block but hadn't
-		   returned that yet.  Return it now, and note that we
-		   did by setting s->nr to 0. */
-		s->nr = 0;
-		return 0;
-	}
-
 	if (s->itotal == 0) {
 		/* The internal buffer is empty and there is
 		   nothing more to read in the current block,
 		   so read the count for the next block */
 		int nr;
+
+		if (s->nr == sizeof(s->buf)) {
+			/* We read the 0 count of the closing block
+			   but hadn't returned that yet.  Return it
+			   now, and note that we did by setting s->nr
+			   to 0. */
+			s->nr = 0;
+			return 0;
+		}
+
+		assert(s->nr == 0);
+
 		if (!stream_readInt(s->s, &nr) || nr < 0) {
 			ss->errnr = READ_ERROR;
 			return -1;
 		}
-		s->itotal = (unsigned) nr;
+		s->itotal = (unsigned) nr; /* amount readable */
+		/* indicate that we need to start reading data */
 		s->nr = sizeof(s->buf);
 		if (nr == 0) {
-			/* We read the count for the closing
-			   empty block.  Stop reading and
-			   return what we have.  Note that
+			/* We read the count for the closing empty
+			   block.  This means that the other side did
+			   a flush after writing no data since the
+			   previous flush, but that's ok.  Note that
 			   s->nr == sizeof(s->buf).  That is
 			   important for the next call to this
 			   function. */
