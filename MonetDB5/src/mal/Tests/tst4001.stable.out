@@ -44,18 +44,7 @@ end qry;	# 7
 #showFunction(Admin,qry);
 #
 #CXoptimizer Admin.qry
-function Admin.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
-    i := 1.0:dbl;	# 1  (i:dbl)<-($2:dbl)
-    z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
-    l := calc.+(z,1.0:dbl);	# 3 CALCbinaryADDdbldbl (l:dbl)<-(z:dbl)($2:dbl)
-    return z;	# 4  (z:dbl)
-end qry;	# 5  
 #ARoptimizer Admin.qry
-function Admin.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
-    z := mmath.sin(1.0:dbl);	# 1 MATHunary_SINdbl (z:dbl)<-($2:dbl)
-    l := calc.+(z,1.0:dbl);	# 2 CALCbinaryADDdbldbl (l:dbl)<-(z:dbl)($2:dbl)
-    return z;	# 3  (z:dbl)
-end qry;	# 4  
 function Admin.main():int;	# 0  (main:int)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
     t1 := alarm.usec();	# 2 ALARMusec (t1:lng)
