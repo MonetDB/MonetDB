@@ -411,7 +411,7 @@ if [ "${cxx}" ] ; then
 	conf_opts="${conf_opts} --with-gxx='${cxx}'"
 fi
 if [ "${BITS}" = "64" ] ; then
-	conf_opts="${conf_opts} --with-bits=${BITS}"
+	conf_opts="${conf_opts} --enable-bits=${BITS}"
 fi
 
 if [ "${DEBUG}" ] ; then
