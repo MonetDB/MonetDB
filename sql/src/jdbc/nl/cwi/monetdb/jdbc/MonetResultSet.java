@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.regex.*;
 import java.math.*;
 import java.net.*;
+import java.text.SimpleDateFormat;
 
 /**
  * A ResultSet suitable for the Monet database
@@ -496,10 +497,6 @@ public class MonetResultSet implements ResultSet {
 	public Clob 	getClob(String colName) { return(null); }
 	public int 	getConcurrency() { return(-1); }
 	public String 	getCursorName() { return(null); }
-	public java.sql.Date 	getDate(int columnIndex) { return(null); }
-	public java.sql.Date 	getDate(int columnIndex, Calendar cal) { return(null); }
-	public java.sql.Date 	getDate(String columnName) { return(null); }
-	public java.sql.Date 	getDate(String columnName, Calendar cal) { return(null); }
 
 	/**
 	 * Retrieves the value of the designated column in the current row of this
@@ -969,14 +966,246 @@ public class MonetResultSet implements ResultSet {
 		return(getString(findColumn(columnName)));
 	}
 
-	public Time 	getTime(int columnIndex) { return(null); }
-	public Time 	getTime(int columnIndex, Calendar cal) { return(null); }
-	public Time 	getTime(String columnName) { return(null); }
-	public Time 	getTime(String columnName, Calendar cal) { return(null); }
-	public Timestamp 	getTimestamp(int columnIndex) { return(null); }
-	public Timestamp 	getTimestamp(int columnIndex, Calendar cal) { return(null); }
-	public Timestamp 	getTimestamp(String columnName) { return(null); }
-	public Timestamp 	getTimestamp(String columnName, Calendar cal) { return(null); }
+	/* only parse the date pattern once, use it multiple times */
+	private final static SimpleDateFormat mTimestamp = 
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	private final static SimpleDateFormat mTime = 
+		new SimpleDateFormat("HH:mm:ss.SSS");
+	private final static SimpleDateFormat mDate = 
+		new SimpleDateFormat("yyyy-MM-dd");
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Date object in the Java programming
+	 * language.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public java.sql.Date getDate(int columnIndex) throws SQLException {
+		return(getDate(columnIndex, Calendar.getInstance()));
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Date object in the Java programming
+	 * language. This method uses the given calendar to construct an appropriate
+	 * millisecond value for the date if the underlying database does not store
+	 * timezone information.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @param cal the java.util.Calendar object to use in constructing the date
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public java.sql.Date getDate(int columnIndex, Calendar cal)
+		throws SQLException
+	{
+		String monetDate;
+		if ((monetDate = getString(columnIndex)) == null) return(null);
+		
+		mDate.setCalendar(cal);
+		try {
+			return(new java.sql.Date(mDate.parse(monetDate).getTime()));
+		} catch(java.text.ParseException e) {
+			return(new java.sql.Date(0L));
+		}
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Date object in the Java programming
+	 * language.
+	 *
+	 * @param columnName the SQL name of the column from which to retrieve the
+	 *        value
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public java.sql.Date getDate(String columnName) throws SQLException {
+		return(getDate(columnName, Calendar.getInstance()));
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Date object in the Java programming
+	 * language. This method uses the given calendar to construct an appropriate
+	 * millisecond value for the date if the underlying database does not store
+	 * timezone information.
+	 *
+	 * @param columnName the SQL name of the column from which to retrieve the
+	 *        value
+	 * @param cal the java.util.Calendar object to use in constructing the date
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public java.sql.Date getDate(String columnName, Calendar cal)
+		throws SQLException
+	{
+		return(getDate(findColumn(columnName), cal));
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Time object in the Java programming
+	 * language.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Time getTime(int columnIndex) throws SQLException {
+		return(getTime(columnIndex, Calendar.getInstance()));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of
+	 * this ResultSet object as a java.sql.Time object in the Java programming
+	 * language. This method uses the given calendar to construct an appropriate
+	 * millisecond value for the time if the underlying database does not store
+	 * timezone information.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @param cal the java.util.Calendar object to use in constructing the
+	 *        timestamp
+	 * @return the column value as a java.sql.Timestamp object; if the value is
+	 *         SQL NULL, the value returned is null in the Java programming
+	 *         language
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Time getTime(int columnIndex, Calendar cal)
+		throws SQLException
+	{
+		String monetDate;
+		if ((monetDate = getString(columnIndex)) == null) return(null);
+		
+		mDate.setCalendar(cal);
+		try {
+			return(new Time(mTime.parse(monetDate).getTime()));
+		} catch(java.text.ParseException e) {
+			return(new Time(0L));
+		}
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Time object in the Java programming
+	 * language.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Time getTime(String columnName) throws SQLException {
+		return(getTime(columnName, Calendar.getInstance()));
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of
+	 * this ResultSet object as a java.sql.Time object in the Java programming
+	 * language. This method uses the given calendar to construct an appropriate
+	 * millisecond value for the time if the underlying database does not store
+	 * timezone information.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @param cal the java.util.Calendar object to use in constructing the
+	 *        timestamp
+	 * @return the column value as a java.sql.Timestamp object; if the value is
+	 *         SQL NULL, the value returned is null in the Java programming
+	 *         language
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Time getTime(String columnName, Calendar cal) 
+		throws SQLException
+	{
+		return(getTime(findColumn(columnName), cal));
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Timestamp object in the Java programming
+	 * language.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Timestamp getTimestamp(int columnIndex) throws SQLException {
+		return(getTimestamp(columnIndex, Calendar.getInstance()));
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Timestamp object in the Java programming
+	 * language. This method uses the given calendar to construct an appropriate
+	 * millisecond value for the timestamp if the underlying database does not
+	 * store timezone information.
+	 *
+	 * @param columnIndex the first column is 1, the second is 2, ...
+	 * @param cal the java.util.Calendar object to use in constructing the
+	 *        timestamp
+	 * @return the column value as a java.sql.Timestamp object; if the value is
+	 *         SQL NULL, the value returned is null in the Java programming
+	 *         language
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Timestamp getTimestamp(int columnIndex, Calendar cal)
+		throws SQLException
+	{
+		String monetDate;
+		if ((monetDate = getString(columnIndex)) == null) return(null);
+		
+		mDate.setCalendar(cal);
+		try {
+			return(new Timestamp(mTimestamp.parse(monetDate).getTime()));
+		} catch(java.text.ParseException e) {
+			return(new Timestamp(0L));
+		}
+	}
+	
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Timestamp object in the Java programming
+	 * language.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @return the column value; if the value is SQL NULL, the value returned
+	 *         is null
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Timestamp getTimestamp(String columnName) throws SQLException {
+		return(getTimestamp(columnName, Calendar.getInstance()));
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row of this
+	 * ResultSet object as a java.sql.Timestamp object in the Java programming
+	 * language. This method uses the given calendar to construct an appropriate
+	 * millisecond value for the timestamp if the underlying database does not
+	 * store timezone information.
+	 *
+	 * @param columnName the SQL name of the column
+	 * @param cal the java.util.Calendar object to use in constructing the
+	 *        timestamp
+	 * @return the column value as a java.sql.Timestamp object; if the value is
+	 *         SQL NULL, the value returned is null in the Java programming
+	 *         language
+	 * @throws SQLException if a database access error occurs
+	 */
+	public Timestamp getTimestamp(String columnName, Calendar cal) 
+		throws SQLException
+	{
+		return(getTimestamp(findColumn(columnName), cal));
+	}
+	
 	public int 	getType() { return(-1); }
 	public InputStream 	getUnicodeStream(int columnIndex) { return(null); }
 	public InputStream 	getUnicodeStream(String columnName) { return(null); }

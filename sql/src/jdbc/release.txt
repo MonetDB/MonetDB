@@ -4,7 +4,7 @@ Fabian Groffen <Fabian.Groffen@cwi.nl>
 
 Release date: 2004-03-30
 
-This JDBC driver for MonetDB is a second working implementation of a JDBC driver
+This JDBC driver for MonetDB is a thirth implementation of a JDBC driver
 for the Monet Main Memory Database. See http://monetdb.cwi.nl/ for more info
 regarding this database.
 
@@ -60,6 +60,10 @@ this driver.
 	. first()
     . getBoolean(int columnIndex)
     . getBoolean(java.lang.String columnName)
+	. getDate(columnIndex)
+	. getDate(columnName)
+	. getDate(columnIndex, cal)
+	. getDate(columnName, cal)
     . getDouble(int columnIndex)
     . getDouble(java.lang.String columnName)
     . getFetchSize()
@@ -79,6 +83,14 @@ this driver.
     . getStatement()
     . getString(int columnIndex)
     . getString(java.lang.String columnName)
+	. getTime(columnIndex)
+	. getTime(columnName)
+	. getTime(columnIndex, cal)
+	. getTime(columnName, cal)
+	. getTimestamp(columnIndex)
+	. getTimestamp(columnName)
+	. getTimestamp(columnIndex, cal)
+	. getTimestamp(columnName, cal)
 	. isAfterLast()
 	. isBeforeFirst()
 	. isFirst()
