@@ -1,9 +1,0 @@
-
-INCLUDES = top_builddir/src/gdk 
-
-YFLAGS = -d
-
-bin_mil = {
-	SOURCES = M2M.mx  mil_parser.mx
-	LIBS = ../gdk/libbat $(PTHREAD_LIBS) $(MALLOC_LIBS) 
-}

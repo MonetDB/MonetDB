@@ -123,7 +123,7 @@ extern void ASCIIdump( BAT *names, BAT *seps, BAT *bats, char *datafile, int nr 
 #include <string.h>
 #include <ctype.h>
 
-#define MAXATTR 256
+#define MAXATTR 1024
 
 typedef struct ascii_io_t {
 	char *name;
