@@ -1881,7 +1881,7 @@ rollforward_create_idx( sql_trans *tr, sql_idx *i )
 		if (tr->parent == gtrans && ok == SQL_OK) 
 			ok = log_bat_persists(logger, u, i->bat.ubid, bname); 
 		bat_destroy(u);
-	} else {
+	} else if (i->key != NULL) {
 		sql_kc *c = i->columns->h->data;
 		BAT *b = bind_bat(tr->parent, c->c, RDONLY);
 		BATkey(BATmirror(b), BOUND2BTRUE);
