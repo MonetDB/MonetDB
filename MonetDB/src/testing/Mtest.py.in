@@ -783,7 +783,7 @@ def CheckBATs(env, TST, TSTDB) :
     pOut,pIn,pErr = popen2.popen3('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTDB))
     pIn.write('''\
         {
-            # print a list of all persisten BATs
+            # print a list of all persistent BATs
             # "BATs: bat1, bat2, ..."
             BATs := view_bbp_name;
             printf("\\nBATs: ");
@@ -1519,7 +1519,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             EPILOGUE = open(TST+".epilogue",'r')
             EpiFailed = ""
             try:
-                pSrvrIn.writelines(EPILOGUE.readlines())
+                pSrvrIn.write(EPILOGUE.read())
                 pSrvrIn.flush()
                 pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
                 pSrvrIn.flush()
