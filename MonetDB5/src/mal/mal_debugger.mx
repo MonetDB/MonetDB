@@ -396,7 +396,10 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	stk->cmd= 'q';/* return from this debugger */
         	cntxt->itrace= 0;
         	MDBstatus(0);
-        	break;
+			cntxt->fdin= oldin;
+			cntxt->prompt = oldprompt;
+			cntxt->promptlength = oldpromptlength;
+			return;
     	case 'f': /* finish */
     	case 'n': /* next */
     	case 's': /* step */
