@@ -75,6 +75,7 @@ typedef struct {
 @c
 #include "alarm.h"
 #include "alarm.proto.h"
+#include <time.h>
 
 static monet_timer_t            timer[MAXtimer]; 
 static int                      timerTop = 0; 
@@ -130,6 +131,11 @@ Once a timer interrupt occurs, we should inspect the timer queue and
 emit a notify signal.
 @c
 #ifdef SIGALRM
+/* HACK to pacify compiler */
+#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
+#undef  SIG_ERR /*((__sighandler_t)-1 )*/
+#define SIG_ERR   ((__sighandler_t)-1L)
+#endif
 static RETSIGTYPE CLKsignal(int nr){
 	int restype;
 	int k=timerTop;
@@ -170,6 +176,11 @@ bat* CLKprelude(void){
 void CLKepilogue(void){
 	int k;
 #ifdef SIGALRM
+/* HACK to pacify compiler */
+#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
+#undef  SIG_IGN /*((__sighandler_t)1 )*/
+#define SIG_IGN   ((__sighandler_t)1L)
+#endif
 #if !(defined(LINUX) || defined(WIN32) || defined(CYGWIN32) || defined(__MACH__))
 	(void) signal(SIGALRM, SIG_IGN);
 #endif
