@@ -2264,6 +2264,7 @@ gdk_export int		GDKnrofthreads;
 gdk_export int		GDKdebug; 
 gdk_export int		GDKembedded; 
 gdk_export int		GDKprotected; 
+gdk_export void		GDKprotect();
 @-
 The GDKembedded variable is a property set in the configuration file
 to indicate that the kernel is only allowed to run as a single process.
