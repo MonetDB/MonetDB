@@ -12,6 +12,12 @@ The key research issue is to realize the first just-in-time multi-query
 optimizer.
 
 This module contains a small footprint MAL parser for Monet Version 5.
+The parser (and its target language) are designed for speed of analysis.
+For, parsing is a dominant cost-factor in applications interfering with
+Monet. For the language design it means that loop-ahead and ambiguity
+should be avoided where possible. At the same time the language should
+remain 'readable' to enable ease of debugging.
+
 This parser assumes availability of a complete MAL block upfront
 as a string to be parsed and executed. 
 Unike Monet V4, no module management operations are allowed within the
@@ -490,7 +496,7 @@ importStmt:
 	{ Symbol    oldScope= curScope,oldPrg=curPrg;
 	  MalBlkPtr oldBlk=curBlk;
 	  InstrPtr oldInstr=curInstr;
-	  (void) malImport(curScope,$2.val,$2.val,getListing());
+	  (void) malImport(curScope,$2.val,getListing(),0);
 	  yyclearin; yyerrok;
 	  curScope = oldScope;
 	  curPrg = oldPrg;
@@ -582,7 +588,21 @@ stmt: assign  expression
 	{ int i;
 	  if( (i=findVariable(curBlk,$1.val)) == -1){
 		i= newVariable(curBlk, $1.val,malAnyType);
-	  } else GDKfree($1.val);
+	  } else{
+		if( isVarConstant(curBlk,i)){
+			char buf[1024];
+			sprintf(buf,"ERROR:assignment to constant '%s' not allowed\n",$1.val);
+			GDKerror(buf);
+			curBlk->errors++;
+		}
+		if( getTypeIndex($1.val) != malAnyType){
+			char buf[1024];
+			sprintf(buf,"ERROR:type identifier '%s' cannot be set\n",$1.val);
+			GDKerror(buf);
+			curBlk->errors++;
+		}
+		GDKfree($1.val);
+	   }
 	  curInstr->argv[0]= i;
 	}
     |	cntrl TOK_IDENT
@@ -860,11 +880,15 @@ fcnArg : '(' ')'
 
 fcnNameId: TOK_IDENT | TOK_OPERATOR
 
+argument: factor
+	{ int v;
+	  pushArgumentId(curInstr, $1.val);
+	}
 varList:
-     	factor
-	{ pushArgumentId(curInstr, $1.val);}
-    |	varList ',' factor
-	{ pushArgumentId(curInstr, $3.val); }
+     	argument
+	{}
+    |	varList ',' argument
+	{}
     |   TOK_IDENT '[' TOK_IDENT ',' TOK_IDENT ']'
 	{ if( idcmp($1.val,"bat") != 0 && idcmp($1.val,"BAT")!=0 ){
 		mal_parserror("bat[X,Y] expected\n");

@@ -106,7 +106,7 @@ mal_export int		getSubScope(MalBlkPtr mb, InstrPtr sig);
 mal_export Symbol	fixateScope(Symbol cntxt, str nme);
 mal_export Symbol 	findSymbol(str mod, str fcn);
 mal_export int	 	displaySymbol(FILE *f, str mod, str fcn);
-mal_export void 	debugScope();
+mal_export void 	debugScope(str nme);
 
 mal_export Symbol 	newSymbolDefinition(str nme, int kind);
 mal_export Symbol	newSymbol(str nme, int kind, Symbol outer);
@@ -258,7 +258,7 @@ Symbol fixateScope(Symbol cntxt, str nme){
 	return newScope(cntxt, GDKstrdup(nme));
 }
 
-void  printScope(Symbol cntxt, int tab)
+void  printScope(Symbol cntxt, int tab, int outer)
 {
 	int i,j;
 	Symbol s=cntxt,t;
@@ -269,16 +269,30 @@ void  printScope(Symbol cntxt, int tab)
 		for(j=0;j<MAXSCOPE;j++)
 		if(s->subscope[j]){
 			printf("[%d]",j);
-			for(t= s->subscope[j];t!=NULL;t=t->peer)
-			printf(" %s",t->name);
+			for(t= s->subscope[j];t!=NULL;t=t->peer) {
+				printf(" %s",t->name);
+				if( getSignature(t)==NULL ||
+				    getSignature(t)->fcn==0) printf("(?)");
+			}
 			printf("\n");
 		}
 			printf("\n");
 		s= s->peer;
 	}
-	if( cntxt->outer) printScope(cntxt->outer,tab+1);
+	if(outer && cntxt->outer) printScope(cntxt->outer,tab+1, outer);
 }
-void debugScope(){ printScope(MAL_scope,0);}
+void debugScope(str nme){
+	Symbol m;
+	if( nme==0 || *nme ==0) printScope(MAL_scope,0,TRUE);
+	else{
+		char *s;
+		for(s=nme;*s && !isspace(*s);s++);
+		*s = 0;
+		m= findScope(MAL_scope,nme);
+		if( m== NULL) printf("Scope name '%s' not found\n",nme);
+		else printScope(m,0,FALSE);
+	}
+}
 @-
 The freeSymbol operation throws away a symbol without
 concerns on it whereabouts in the scope structure.

@@ -178,7 +178,9 @@ char gdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, char cmd){
 	case 's': /* next */
 		return buf[0];
 	case 'S': /* display symbol table */
-		debugScope();
+		skipWord(b);
+		skipBlanc(b);
+		debugScope(b);
 		break;
 	case 't': /* trace breakpoint */
 	case 'b':

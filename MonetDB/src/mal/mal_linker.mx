@@ -75,9 +75,10 @@ html
 #ifndef _MAL_LINKER_H
 /* #include "monet.h"*/
 #include "mal_instruction.h"
+#include "mal_symbol.h"
 #include <dlfcn.h>
 
-/* #define DEBUG_MAL_LINKER*/
+/*#define DEBUG_MAL_LINKER */
 #define MONET64 1
 mal_export void 	*getAddress(str fcnname);
 mal_export void 	*loadModuleLibrary(str modname);
@@ -191,28 +192,21 @@ void *loadModuleLibrary(str modname){
 #endif
 	return handle;
 }
-@+ Environment loading
+@+ Static loading
 Upon system restart a few system libraries are loaded before
 the first user-specific script is interpreted. These form the
 system kernel and its functionaltiy is needed to setup
 server-speciific administration tables.
 
 @= systemLoad
-	if( loadModuleLibrary("@1") == NULL )
-	{
-		GDKerror("failure to load libbat.so\n"); 
-		return 1;
-	}
+	malImport(mal_scope,@1,0,1);
 @c
 int initLibraries(str dbname) {
-	dbname= LIBPATH;
-	@:systemLoad(bat)@
-	@:systemLoad(monet)@
-	@:systemLoad(bat)@
-	@:systemLoad(algebra)@
-	@:systemLoad(sys)@
-	@:systemLoad(kernel)@
-	@:systemLoad(trans)@
+	@:systemLoad("kernel/arith")@
+	@:systemLoad("kernel/bat")@
+	@:systemLoad("kernel/atoms")@
+	@:systemLoad("kernel/algebra")@
+	@:systemLoad("kernel/system")@
 	return 0;
 }
 

@@ -79,6 +79,7 @@ Symbol newFunction(Symbol scope, str nme){
 	Symbol s;
 	InstrPtr c;
 	MalBlkPtr mb;
+	int i,j;
 
 	s = newSymbolDefinition(nme,FUNCTIONsymbol);
 	s->scope = scope;
@@ -91,6 +92,17 @@ Symbol newFunction(Symbol scope, str nme){
 	c->pc= mb->stop;
 	mb->stmt[c->pc] = ((char *) c)-((char*)mb->code);
         mb->stop++;
+@-
+Each function symbol table is initialized by system constants.
+Although this increases somewhat the space, it is much cheaper
+than testing at any other occassion 
+@c
+	for(i=0;i<GDKatomcnt; i++){
+		j= newVariable(mb, GDKstrdup(ATOMname(i)), i);
+		isVarConstant(mb,j) = TRUE;
+		getVarConstant(mb,j).val.ival = i;
+		getVarConstant(mb,j).vtype= TYPE_int; 
+	}
 	return s;
 }
 InstrPtr newCall(MalBlkPtr m, str modname, str fcnname, int kind){

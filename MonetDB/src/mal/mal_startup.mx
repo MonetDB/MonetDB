@@ -101,7 +101,7 @@ Symbol malStartupGlobal(str dbname,int listing){
 		
 	} else fclose(fd);
 
-	if( malImport(scope,"MAL",buf,0) == NULL){
+	if( malImport(scope,buf,0,0) == NULL){
 		return NULL;
 	}
 	MAL_scope = scope;

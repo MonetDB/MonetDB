@@ -33,7 +33,7 @@ html
 
 #include "mal_symbol.h"
 
-mal_export Symbol malImport(Symbol cntxt, str nme, str fname,int listing);
+mal_export Symbol malImport(Symbol cntxt, str fname,int listing,int loaded);
 #endif /*  _MAL_IMPORT_H*/
 @-
 The import context is located. If it already exists, we should silently skip
@@ -48,17 +48,17 @@ Make sure it is loaded as well.
 @c
 #include "mal_import.h"
 
-Symbol malImport(Symbol cntxt, str nme, str fname,int listing){
+Symbol malImport(Symbol cntxt, str fname,int listing,int loaded){
 	FILE *fd;
 	long i,len;
 	char *buf;
 	Symbol	prg;
 	char path[PATHLENGTH];
 
-	sprintf(path, "%s.mal",fname);
         SLASH_2_DIR_SEP(fname);
 	if ((fd = fopen(fname, "r")) == 0) {
 
+	    sprintf(path, "%s.mal",fname);
             if (fname[0] == DIR_SEP) {
                 strcpy(path, fname);
                 fd = fopen(path, "r");
@@ -97,7 +97,7 @@ Symbol malImport(Symbol cntxt, str nme, str fname,int listing){
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
-	(void) loadModuleLibrary(fname);
+	if(loaded == 0) (void) loadModuleLibrary(fname);
 
 	prg= mal_parse(cntxt,buf,listing);
 	/* execute main procedure of module */

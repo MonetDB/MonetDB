@@ -376,9 +376,7 @@ malType getType(MalBlkPtr mb, str nme){
 }
 @-
 All variables are implicitly declared upon their first
-assignment. A variable may be identical to a type name,
-which implies a value of similar type as well. This way
-we can easily pass type parameters to PATTERNs.
+assignment. 
 COMMANDS can FUNCTIONS should pass the types as strings and
 convert them later on to the internal representation.
 
@@ -411,17 +409,6 @@ int newVariable(MalBlkPtr mb, str name, malType type){
 	}
 	n= findVariable(mb,name);
 	/* check for type names */
-	l= ATOMindex(name);
-	/* printf("type name %s?%d type %d\n",name,l,type);*/
-	if(l != -GDKatomcnt){
-		if( type== malAnyType) type= l; else
-		if( type != l) {
-			char buf[1024];
-			sprintf(buf,"ERROR:'%s' type variable mismatch %d\n",
-				name, type);
-			GDKerror(buf);
-		}
-	}
 	if( n>=0){
 		if( getVarType(mb,n) != malAnyType &&
 		    getVarType(mb,n) != type){
@@ -504,6 +491,7 @@ str newConstant(MalBlkPtr mb, malType type, str val){
 		 }
 	}
 	k= newVariable(mb, s=newTmpName(mb->vtop), type);
+/* printf("new constant %d val %s\n",k,val);*/
 	getVarValue(mb,k)= val;
 	isVarConstant(mb,k) = 1;
 	getVarAccess(mb,k) = 0;
@@ -699,12 +687,12 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s ){
 
 	t=s;
 	if( p->token== FUNCTIONsymbol)
-		sprintf(t,"FUNCTION "); 
+		sprintf(t,"function "); 
 	else if( p->token == COMMANDsymbol)
-	 	sprintf(t,"COMMAND ");
+	 	sprintf(t,"command ");
 	else if( p->token == PATTERNsymbol)
-		sprintf(t,"PATTERN ");
-	else sprintf(t,"RULER ");
+		sprintf(t,"pattern ");
+	else sprintf(t,"ruler ");
 
 	advance(t);
 	if( p->modname) sprintf(t,"%s.",p->modname);
@@ -751,9 +739,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	advance(t);
 	if( p->barrier){
 		if( p->barrier== BARRIERsymbol)
-			sprintf(t,"BARRIER"); 
+			sprintf(t,"barrier"); 
 		else if( p->barrier == RAISEsymbol)
-			sprintf(t,"RAISE");
+			sprintf(t,"raise");
 	}
 	advance(t);
 	switch( p->token){
@@ -764,23 +752,23 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 		case ASSIGNsymbol:
 			sprintf(t,"\t%s := ",nme); break;
 		case REDOsymbol:
-			sprintf(t,"\tREDO %s ",nme); break;
+			sprintf(t,"\tredo %s ",nme); break;
 		case LEAVEsymbol:
-			sprintf(t,"\tLEAVE %s",nme); break;
+			sprintf(t,"\tleave %s",nme); break;
 		case RETURNsymbol:
-			sprintf(t,"\tRETURN %s",nme); break;
+			sprintf(t,"\treturn %s",nme); break;
 		case CATCHsymbol:
-			sprintf(t,"CATCH\t%s",nme); break;
+			sprintf(t,"catch\t%s",nme); break;
 		case ENDDEFsymbol:
 			switch(getInstrPtr(mb,0)->token){
-			case FUNCTIONsymbol: nme = "FUNCTION"; break;
-			case RULERsymbol: nme = "RULER"; break;
+			case FUNCTIONsymbol: nme = "function"; break;
+			case RULERsymbol: nme = "ruler"; break;
 			default: nme = "unknown";
 			}
-			sprintf(t,"END %s",nme);
+			sprintf(t,"end %s",nme);
 			break;
 		case ENDsymbol:
-			sprintf(t,"END\t%s",nme); break;
+			sprintf(t,"end\t%s",nme); break;
 		case RULERsymbol:
 		case COMMANDsymbol:
 		case FUNCTIONsymbol:
@@ -799,7 +787,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p){
 	if( p->fcnname) sprintf(t,"%s(",p->fcnname);
 	for(i=1;i<p->argc;i++){
 		advance(t);
-		if( isVARG(mb,p,i)) {sprintf(t,"...");break;}
+		if( i+1<p->argc && isVARG(mb,p,i+1)) {sprintf(t,"...");break;}
 		if( getArgDefault(mb,p,i) != NULL){
 			if( getArgType(mb,p,i)== TYPE_str)
 				sprintf(t,"\"%s\"", getArgDefault(mb,p,i));

@@ -327,7 +327,7 @@ the bind(namespace,batname,mode) operation.[todo]
 	retval=  &stk->stk[pci->argv[0]];
 	retval->vtype = getGDKtype(mb->var[pci->argv[0]].type);
 	for(k=0;k<pci->argc; k++){
-		argv[k] =(ptr) getArgValue(mb,stk,pci,k);
+		argv[k] =(ptr) getArgReference(mb,stk,pci,k);
 	} 
 	@:clearResult(retval)@
 }
@@ -513,7 +513,13 @@ before a function call is made.
 @= clearResult
 {	
 	if( ATOMstorage(@1->vtype) == TYPE_str){
-		if( @1->val.pval) GDKfree(@1->val.pval);
+		if( @1->val.pval && @1->val.pval != str_nil) {
+		/* printf("clearing nil? %d ",@1->val.pval==str_nil);
+		   printf("%d ",@1->val.pval);
+		   printf("%s\n",@1->val.pval);
+		*/
+			GDKfree(@1->val.pval);
+		}
 		@1->val.pval= NULL;
 	}
 }
