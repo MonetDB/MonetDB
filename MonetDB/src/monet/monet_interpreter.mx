@@ -1608,12 +1608,15 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 		YYSTREE t;
 		int i;
 
-		@:par_interpret(handle)@
-		for(t = handle->tree, i = handle->parcap; t; 
-		    t = t->overflow, i -= YYMAXSONS) 
+		// limit tree size to handle->parcnt
+		for(t = handle->tree, i=handle->parcnt; t; 
+			t = t->overflow, i-= YYMAXSONS)
 		{
-			t->cnt = MAX(0, MIN(YYMAXSONS, i));
+			t->cnt = MAX(0, MIN(YYMAXSONS,i));
 		}
+		
+		@:par_interpret(handle)@
+
 		i = handle->status;
 	}
 
