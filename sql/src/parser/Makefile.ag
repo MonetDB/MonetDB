@@ -9,7 +9,7 @@ INCLUDES = \
 	-I$(MONETDIST)/include/gdk \
 	-I$(MONETDIST)/include/monet \
 	-I$(MONETDIST)/include/plain \
-	-I$(MONETDIST)/include/plain/stream \
+	-I$(MONETDIST)/include/stream \
 	$(GETOPT_INCS)
 
 lib_sql = {
