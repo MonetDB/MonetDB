@@ -196,7 +196,11 @@ case $CC-$CXX in
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
 		;;
-	arm-linux-gcc-3.*)
+	*gcc-3.3*)
+		dnl  gcc 3.3* --- at least on Linux64 (Red Hat Enterprise
+		dnl  Linux release 2.9.5AS (Taroon)) and the cross-compiler
+		dnl  for arm-linux --- seem to require this to avoid
+		dnl  "warning: dereferencing type-punned pointer will break strict-aliasing rules"
 		X_CFLAGS="$X_CFLAGS -Wno-strict-aliasing"
 		;;
 	esac
