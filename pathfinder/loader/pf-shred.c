@@ -79,16 +79,31 @@
 #include <limits.h>
 
 /**
- * Monet's representation of oid(nil) 
- *
+ * take care of 32/64-bits differences 
  */
-#if (SIZEOF_VOID_P==8)
-typedef unsigned long long nat;
-#define NIL ((nat) LLONG_MIN)
-#else
+#if (SIZEOF_VOID_P==4)
+
+/* 32 bits systems */
 typedef unsigned int nat;
 #define NIL INT_MIN
+#define NATFMT "u"
+
+#else
+
+/* 64 bits systems */
+typedef unsigned long long nat;
+#define NIL ((nat) LLONG_MIN)
+#ifdef HAVE___INT64
+#define NATFMT "I64u" /* windoze */
+#else
+#define NATFMT "llu"
 #endif
+
+#endif
+
+/* support oid-s up to the 48 bits boundary => 13 decimal digits */
+#define OIDFMT "%13" NATFMT 
+
 
 /**
  * next preorder rank to assign
@@ -325,10 +340,12 @@ rel_t rels[] = {
 /**
  * format and size of a pre|size|level|prop|kind tuple 
  *
- *               size  level prop  kind  
- *                  |    |   |      |         */
-#define PRETUPLE   "%10u,%5d,%10u@0,%5u\n"
-#define POSTUPLE   "%10u@51,%10u,%5d,%10u@0,%5u\n"
+ *                  size    level    prop      kind  
+ *                   |        |       |         |         */
+#define PRETUPLE    OIDFMT ",%5d,"  OIDFMT "@0,%5u\n"
+#define PRETUPLENIL OIDFMT ",%5d,            nil,%5u\n"
+#define POSTUPLE    OIDFMT "@0," PRETUPLE
+#define POSTUPLENIL OIDFMT "@0," PRETUPLENIL
 
 /**
  * Wrapper for fwrite(3). Check return value and exit on error.
@@ -604,7 +621,7 @@ content2rel (rel_id_t rel, char *buf, nat len)
     if (len > PFSHRED_STRLEN_MAX) {
         len = PFSHRED_STRLEN_MAX;
         fprintf (stderr,
-                 "!WARNING: truncated document content > %u characters (starts with `%.16s...')\n",
+                 "!WARNING: truncated document content > %" NATFMT " characters (starts with `%.16s...')\n",
                  PFSHRED_STRLEN_MAX,
                  buf);
     }
@@ -632,25 +649,27 @@ node2rel (node_t node)
     char tuple[4096];
     int  tuples;
    
-
     if (prop_postorder) { 
         /* write pre|size|level|prop|kind relation in post-order
          */
-        tuples = snprintf (tuple, sizeof (tuple), POSTUPLE,
-                       node.pre, 
-                       node.size, 
-                       node.level, 
-                       node.prop, 
-                       node.kind);
+        if (node.prop != NIL) {
+                tuples = snprintf (tuple, sizeof (tuple), POSTUPLE,
+                       node.pre, node.size, node.level, node.prop, node.kind);
+        } else {
+                tuples = snprintf (tuple, sizeof (tuple), POSTUPLENIL,
+                       node.pre, node.size, node.level, node.kind);
+        }
     } else {
         /* write pre|size|level|prop|kind relation in document order: 
          * seek to offset determined by pre
          */
-        tuples = snprintf (tuple, sizeof (tuple), PRETUPLE,
-                       node.size, 
-                       node.level, 
-                       node.prop, 
-                       node.kind);
+        if (node.prop != NIL) {
+                tuples = snprintf (tuple, sizeof (tuple), PRETUPLE,
+                       node.size, node.level, node.prop, node.kind);
+        } else {
+                tuples = snprintf (tuple, sizeof (tuple), PRETUPLENIL,
+                       node.size, node.level, node.kind);
+        }
         fseek (rels[presizelevelpropkind].fp, PRETUPLEOFFS (node.pre), SEEK_SET);
     }
     assert ((nat) tuples == pretuples);
@@ -872,9 +891,10 @@ shred_start_element (void *ctx,
             }
 
             /* add attribute to @|own|qn|val BAT */
-            tuples = snprintf (tuple, sizeof (tuple), 
-                               "%10u@0,%10u@0,%10u@0\n", 
-                               node.pre, qn_id, val_id);
+            tuples = snprintf (tuple, sizeof (tuple), OIDFMT "@0," OIDFMT "@0," OIDFMT "@0\n", 
+                                node.pre, 
+                                qn_id, 
+                                val_id);
             checked_fwrite (tuple, 1, tuples, rels[attownqnprop].fp);
 
             encoded += rels[attownqnprop].bytes;
@@ -927,7 +947,7 @@ shred_characters (void *ctx, const xmlChar *cs, int n)
 
     if (l < n)
         fprintf (stderr,
-                 "!WARNING: truncated text node > %u characters (starts with `%.16s...')\n",
+                 "!WARNING: truncated text node > %" NATFMT " characters (starts with `%.16s...')\n",
                  PFSHRED_STRLEN_MAX,
                  cs);
 }
@@ -1325,9 +1345,9 @@ main (int argc, char *argv[])
      * (we seek in the relation file)
      */
     if (prop_postorder) {
-        pretuples = snprintf (0, 0, POSTUPLE, 0, 0, 0, 0, 0);
+        pretuples = snprintf (0, 0, POSTUPLE, (nat) 0, (nat) 0, 0, (nat) 0, 0);
     } else {
-        pretuples = snprintf (0, 0, PRETUPLE, 0, 0, 0, 0);
+        pretuples = snprintf (0, 0, PRETUPLE, (nat) 0, 0, (nat) 0, 0);
     }
 
     /* start timer */
@@ -1347,9 +1367,8 @@ main (int argc, char *argv[])
         nodes = elem_nodes + attr_nodes + text_nodes + com_nodes + pi_nodes
             + 1;
 
-        printf ("document size (serialized)     %lu byte(s)\n", 
-                statbuf.st_size);
-        printf ("document size (encoded)        %u byte(s)", encoded);
+        printf ("document size (serialized)     %" NATFMT " byte(s)\n", statbuf.st_size);
+        printf ("document size (encoded)        %" NATFMT " byte(s)", encoded);
 
         if (statbuf.st_size) {
             double grow;
@@ -1363,34 +1382,34 @@ main (int argc, char *argv[])
         else
             putchar ('\n');
 
-        printf ("document depth                 %u\n" , depth);
+        printf ("document depth                 %" NATFMT "\n" , depth);
         printf ("  document nodes               1\n");
-        printf ("+ element nodes                %u" , elem_nodes);
+        printf ("+ element nodes                %" NATFMT, elem_nodes);
         if (prop_dup)
             putchar ('\n');
         else
-            printf (" [%u unique ns:loc pair(s)]\n", nsloc_id);
-        printf ("+ attribute nodes              %u" , attr_nodes);
+            printf (" [%" NATFMT " unique ns:loc pair(s)]\n", nsloc_id);
+        printf ("+ attribute nodes              %" NATFMT, attr_nodes);
         if (prop_dup)
             putchar ('\n');
         else
-            printf (" [%u unique attribute value(s)]\n", attval_id);
-        printf ("+ text nodes                   %u" , text_nodes);
+            printf (" [%" NATFMT " unique attribute value(s)]\n", attval_id);
+        printf ("+ text nodes                   %" NATFMT, text_nodes);
         if (prop_dup)
             putchar ('\n');
         else
-            printf (" [%u unique text content(s)]\n", text_id);
-        printf ("+ comment nodes                %u" , com_nodes);
+            printf (" [%" NATFMT " unique text content(s)]\n", text_id);
+        printf ("+ comment nodes                %" NATFMT, com_nodes);
         if (prop_dup)
             putchar ('\n');
         else
-            printf (" [%u unique comment content(s)]\n", com_id);
-        printf ("+ processing instruction nodes %u" , pi_nodes);
+            printf (" [%" NATFMT " unique comment content(s)]\n", com_id);
+        printf ("+ processing instruction nodes %" NATFMT, pi_nodes);
         if (prop_dup)
             putchar ('\n');
         else
-            printf (" [%u unique target/instruction pair(s)]\n", tgtins_id);
-        printf ("= nodes                        %u\n" , nodes);
+            printf (" [%" NATFMT " unique target/instruction pair(s)]\n", tgtins_id);
+        printf ("= nodes                        %" NATFMT "\n" , nodes);
         if (nodes)
             printf ("encoding time                  %s [%s/node]\n\n",
                     timer_str (abs (stop - start)),
