@@ -19,6 +19,8 @@ gdk_export int  GDKms        ();
 gdk_export int  GDKcsec      ();
 gdk_export int  GDKsec       ();
 
+gdk_export int GDKhomeScan(str usr, str db, str home);
+
 #endif /* _GDK_UTILS_H_ */
 @c
 #ifndef GDK_NOLINK
