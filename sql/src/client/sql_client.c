@@ -109,6 +109,41 @@ void clientAccept( context *lc, stream *rs ){
 	}
 }
 
+void clientAccept_new( context *lc, stream *rs ){
+	int err = 0;
+	stream *in = file_rastream( stdin, "<stdin>" );
+	statement *s = NULL;
+
+	while(lc->cur != EOF ){
+		s = sqlnext(lc, in, &err);
+		if (err) break;
+		if (s){
+	    		int nr = 1;
+	    		statement_dump( s, &nr, lc );
+
+	    		lc->out->flush( lc->out );
+		}
+		if (s && s->type == st_output){
+			int nRows = 0;
+			char *buf = readblock( rs ), *n = buf;
+			
+			nRows = strtol(n,&n,10);
+			n++;
+	
+			printf("%s", n);
+			if (nRows > 1)
+				printf("%d Rows affected\n", nRows );
+			else if (nRows == 1)
+				printf("1 Row affected\n" );
+			else 
+				printf("no Rows affected\n" );
+			_DELETE(buf);
+		}
+		if (s) statement_destroy(s);
+	}
+}
+
+
 /*
 When using alloca(3) in a shared library, Intel's "C++ Compiler for 32-bit
 applications, Version 5.0.1 Beta Build 010528D0" seems to require another
@@ -211,7 +246,8 @@ main(int ac, char **av)
 	if (!schema) schema = _strdup("default-schema");
 	if (!user) user = _strdup("default-user");
 	lc.cat->cc_getschema( lc.cat, schema, user );
-	clientAccept( &lc, rs );
+	lc.cur = ' ';
+	clientAccept_new( &lc, rs );
 	if (rs){
 	       	rs->close(rs);
 	       	rs->destroy(rs);

@@ -1,8 +1,8 @@
 
-#include "mem.h"
 #include "sql.h"
 #include "symbol.h"
 #include "context.h"
+#include "mem.h"
 
 int symbol_debug = 0;
 
@@ -66,7 +66,7 @@ symbol *symbol_create_atom( context *lc, int token, atom *data){
 }
 
 void symbol_destroy( symbol *s ){
-	if (s->data.sval){
+	if (s && s->data.sval){
 		switch (s->type){
 		case type_atom: atom_destroy( s->data.aval ); break;
 		case type_symbol: symbol_destroy( s->data.sym ); break;

@@ -7,6 +7,7 @@
 #include "catalog.h"
 #include "context.h"
 #include "symbol.h"
+#include "statement.h"
 
 #define _(String) (String)
 #define N_(String) (String)
@@ -55,14 +56,15 @@ typedef enum tokens {
 	SQL_ASSIGN,
 	SQL_ORDERBY,
 	SQL_GROUPBY,
-	SQL_HAVING,
 	SQL_DESC,
 	SQL_AND,
 	SQL_OR,
 	SQL_NOT,
 	SQL_EXISTS,
+	SQL_NOT_EXISTS,
 	SQL_UNOP,
 	SQL_BINOP,
+	SQL_TRIOP,
 	SQL_BETWEEN,
 	SQL_NOT_BETWEEN,
 	SQL_LIKE,
@@ -71,7 +73,7 @@ typedef enum tokens {
 	SQL_NOT_IN,
 	SQL_GRANT,
 	SQL_PARAMETER,
-	SQL_AMMSC,
+	SQL_AGGR,
 	SQL_COMPARE,
 	SQL_TEMP_LOCAL,
 	SQL_TEMP_GLOBAL,
@@ -83,6 +85,6 @@ typedef enum tokens {
 
 extern char *token2string( int token );
 
-extern list *semantic( context *sql, dlist *sqllist );
+extern statement *semantic( context *sql, symbol *sym );
 
 #endif /*_SQL_H_*/

@@ -17,16 +17,18 @@ atom *atom_int( type *tpe, int val ){
 		fprintf(stderr, "atom_int(%s,%d)\n", tpe->sqlname, val );
 	return a;
 }
-atom *atom_string( char *val ){
+atom *atom_string( type *tpe, char *val ){
 	atom *a = NEW(atom);
+	a->tpe = tpe;
 	a->data.sval = val;
 	a->type = string_value;
 	if(atom_debug)
 		fprintf(stderr, "atom_string(%s)\n", val );
 	return a;
 }
-atom *atom_float( double val ){
+atom *atom_float( type *tpe, double val ){
 	atom *a = NEW(atom);
+	a->tpe = tpe;
 	a->data.dval = val;
 	a->type = float_value;
 	if(atom_debug)
@@ -66,14 +68,8 @@ char *atom2string( atom *a){
 	return _strdup(buf);
 }
 
-const char *atomtype2string( atom *a){
-	switch (a->type){
-	case string_value: return ("STRING");
-	case int_value: return a->tpe->sqlname;
-	case float_value: return ("DOUBLE");
-	case general_value: return a->tpe->sqlname;
-	}
-	return ("");
+type *atom_type(atom *a){
+	return a->tpe;
 }
 
 atom *atom_dup( atom *a ){

@@ -40,6 +40,7 @@ typedef struct keyword {
 static int keywords_init_done = 0;
 static keyword *keywords[HASH_SIZE];
 
+static
 int keyword_key(char *k, int *l){
 	char *s = k;
 	int h = 0;
@@ -55,22 +56,11 @@ void keywords_insert( char *k, int token){
 	keyword *kw = NEW(keyword);
 	int len = 0;
 	int bucket = keyword_key(k,&len)&HASH_MASK;
-	kw->keyword = _strdup(k);
+	kw->keyword = toLower(_strdup(k));
 	kw->len = len;
 	kw->token = token;
 	kw->next = keywords[bucket];
 	keywords[bucket] = kw;
-	if (isupper(*k)){
-		int i;
-		char *s = NEW_ARRAY(char, kw->len+1);
-
-		for(i=0; i<kw->len; i++)
-			s[i] = tolower(k[i]);
-		s[i] = '\0';
-
-		keywords_insert( s, token );
-		_DELETE(s);
-	}
 }
 
 void init_keywords(){
@@ -95,6 +85,8 @@ void init_keywords(){
 	keywords_insert("ASC", ASC );
 	keywords_insert("AUTHORIZATION", AUTHORIZATION );
 	keywords_insert("BETWEEN", BETWEEN );
+	keywords_insert("SYMMETRIC", SYMMETRIC );
+	keywords_insert("ASYMMETRIC", ASYMMETRIC );
 	keywords_insert("BY", BY );
 	keywords_insert("CASCADE", CASCADE );
 	keywords_insert("CHAR", CHARACTER );
@@ -127,13 +119,12 @@ void init_keywords(){
 	keywords_insert("DROP", DROP );
 	keywords_insert("ESCAPE", ESCAPE );
 	keywords_insert("EXISTS", EXISTS );
+	keywords_insert("EXTRACT", EXTRACT );
 	/*
 	keywords_insert("FETCH", FETCH );
 	*/
 	keywords_insert("FLOAT", FLOAT );
-	/*
 	keywords_insert("FOR", FOR );
-	*/
 	keywords_insert("FOREIGN", FOREIGN );
 	/*
 	keywords_insert("FOUND", FOUND );
@@ -234,6 +225,8 @@ void init_keywords(){
 	keywords_insert("HOUR", HOUR );
 	keywords_insert("MINUTE", MINUTE );
 	keywords_insert("SECOND", SECOND );
+
+	keywords_insert("SUBSTRING", SUBSTRING );
 }
 
 void exit_keywords(){
@@ -255,7 +248,7 @@ void exit_keywords(){
 
 keyword *find_keyword( char *yytext ){
 	int len = 0;
-	int bucket = keyword_key(yytext, &len)&HASH_MASK;
+	int bucket = keyword_key(toLower(yytext), &len)&HASH_MASK;
 	keyword *k = keywords[bucket];
 	while(k){
 		if (len == k->len){
@@ -388,6 +381,15 @@ int context_yychar(context *lc, int yychar ){
 	return lc->yyval;
 }
 
+int context_yy2char(context *lc, int yychar, int yyval ){
+	lc->yytext[0] = (char)yychar;
+	lc->yytext[1] = (char)yychar;
+	lc->yytext[2] = 0;
+	lc->yyval = yyval;
+	lc->yylen = 2;
+	return lc->yyval;
+}
+
 int context_comparison(context *lc, char *yychar ){
 	int len = strlen(yychar);
 	strncpy(lc->yytext, yychar, len);
@@ -485,6 +487,11 @@ int lex_symbol(context *lc){
 			} else {
 				lc->cur = lex_getc(lc);
 				return context_comparison(lc, ">=");
+			}
+		case '|':
+			lc->cur = lex_getc(lc);
+			if (lc->cur == '|'){
+				return context_yy2char(lc, cur, CONCATSTRING);
 			}
 	}
 	snprintf(lc->errstr, ERRSIZE, _("Unknown symbol %c"), lc->cur);

@@ -31,7 +31,7 @@ typedef struct context {
 	char errstr[ERRSIZE];
 	struct catalog *cat;
 
-	struct dlist *l;
+	struct symbol *sym;
 } context;
 
 #endif /* _CONTEXT_H_ */

@@ -52,5 +52,6 @@ extern symbol *symbol_create_list( struct context *c, int token, dlist *data);
 extern symbol *symbol_create_int( struct context *c, int token, int data);
 extern symbol *symbol_create_symbol( struct context *c, int token, symbol *data);
 extern symbol *symbol_create_atom( struct context *c, int token, atom *data);
+extern void symbol_destroy(symbol *sym);
 
 #endif /*SYMBOL_H*/

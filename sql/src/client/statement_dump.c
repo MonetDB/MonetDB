@@ -71,41 +71,65 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		case cmp_equal:
 			if (s->op3.stval){
 			    int r2 = statement_dump( s->op3.stval, nr, sql );
-			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d, s%d);\n", 
+			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d, s%d).access(BAT_READ);\n", 
 					    *nr, l, r, r2 ); 
 			} else {
-			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d);\n", *nr, l, r ); 
+			    len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d).access(BAT_READ);\n", *nr, l, r ); 
 			}
 			s->nr = (*nr)++;
 			break;
 		case cmp_notequal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d).access(BAT_READ);\n", *nr, l, r ); 
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kdiff(s%d);\n", *nr+1, l, *nr );
 			(void)(*nr)++; s->nr = (*nr)++;
 			break;
 		case cmp_lt:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d);\n", 
-			  *nr, l, s->op1.stval->op1.cval->tpe->name, r ); 
+			/*len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", %s(nil), s%d).access(BAT_READ);\n", 
+			  */
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(%s(nil), s%d).access(BAT_READ);\n", 
+			  *nr, l, tail_type(s)->name, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_lte:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(%s(nil), s%d);\n", 
-			  *nr, l, s->op1.stval->op1.cval->tpe->name, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(%s(nil), s%d).access(BAT_READ);\n", 
+			  *nr, l, tail_type(s)->name, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_gt:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil));\n", 
-			  *nr, l, r, s->op1.stval->op1.cval->tpe->name ); 
+			/*
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.mil_select(\"<in>\", s%d, %s(nil)).access(BAT_READ);\n", 
+			*/
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.select(s%d, %s(nil)).access(BAT_READ);\n", 
+			  *nr, l, r, tail_type(s)->name ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_gte: 
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d, %s(nil));\n", 
-			  *nr, l, r, s->op1.stval->op1.cval->tpe->name ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.uselect(s%d, %s(nil)).access(BAT_READ);\n", 
+			  *nr, l, r, tail_type(s)->name ); 
 			s->nr = (*nr)++;
 			break;
 		default:
 			len += snprintf( buf+len, BUFSIZ, "error impossible\n");
 	  	} 
+	} break;
+	case st_select2: {
+		int l = statement_dump( s->op1.stval, nr, sql );
+		int r1 = statement_dump( s->op2.stval, nr, sql );
+		int r2 = statement_dump( s->op3.stval, nr, sql );
+		switch(s->flag){
+		case cmp_equal: len += snprintf( buf+len, BUFSIZ, 
+					"s%d := s%d.select(s%d, s%d).access(BAT_READ);\n", 
+				    	*nr, l, r1, r2 ); 
+			s->nr = (*nr)++;
+			break;
+		case cmp_notequal: 
+			len += snprintf( buf+len, BUFSIZ,
+			  "s%d := s%d.select(s%d, s%d).access(BAT_READ);\n", *nr, l, r1, r2 ); 
+			len += snprintf( buf+len, BUFSIZ, 
+			  "s%d := s%d.diff(s%d);\n", *nr+1, l, *nr );
+			(void)(*nr)++; s->nr = (*nr)++;
+			break;
+		}
 	} break;
 	case st_like: {
 		int l = statement_dump( s->op1.stval, nr, sql );
@@ -116,13 +140,19 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_semijoin: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.semijoin(s%d);\n", *nr, l, r ); 
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.semijoin(s%d).access(BAT_READ);\n", *nr, l, r ); 
+		s->nr = (*nr)++;
+	} break;
+	case st_diff: {
+		int l = statement_dump( s->op1.stval, nr, sql );
+		int r = statement_dump( s->op2.stval, nr, sql );
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.diff(s%d).access(BAT_READ);\n", *nr, l, r ); 
 		s->nr = (*nr)++;
 	} break;
 	case st_intersect: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.intersect(s%d);\n", *nr, l, r ); 
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.sintersect(s%d).access(BAT_READ);\n", *nr, l, r ); 
 		s->nr = (*nr)++;
 	} break;
 	case st_join: {
@@ -130,28 +160,27 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int r = statement_dump( s->op2.stval, nr, sql );
 		switch(s->flag){
 		case cmp_equal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d).access(BAT_READ);\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_notequal:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d);\n", *nr, l, r ); 
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.kdiff(s%d);\n", *nr+1, l, *nr );
-			(void)(*nr)++; s->nr = (*nr)++;
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<>\").access(BAT_READ);\n", *nr, l, r ); 
+			s->nr = (*nr)++;
 			break;
 		case cmp_lt:
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<\");\n", *nr, l, r ); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<\").access(BAT_READ);\n", *nr, l, r ); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_lte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<=\");\n", *nr, l, r );
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \"<=\").access(BAT_READ);\n", *nr, l, r );
 			s->nr = (*nr)++;
 			break;
 		case cmp_gt: 
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">\" );\n", *nr, l, r); 
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">\" ).access(BAT_READ);\n", *nr, l, r); 
 			s->nr = (*nr)++;
 			break;
 		case cmp_gte: /* broken */
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">=\" );\n", *nr, l, r);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.join(s%d, \">=\" ).access(BAT_READ);\n", *nr, l, r);
 			s->nr = (*nr)++;
 			break;
 		default:
@@ -192,26 +221,26 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int l = statement_dump( s->op1.stval, nr, sql );
 		if (s->op2.stval){
 			int r = statement_dump( s->op2.stval, nr, sql );
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().access(BAT_READ).mark(oid(s%d)).reverse();\n", *nr, l, r);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().mark(oid(s%d)).reverse();\n", *nr, l, r);
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().access(BAT_READ).mark(oid(%d)).reverse();\n", *nr, l, s->flag);
+			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().mark(oid(%d)).reverse();\n", *nr, l, s->flag);
 		}
 		s->nr = (*nr)++;
 	} 	break;
 	case st_group: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.group();\n", *nr, l);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.group().access(BAT_READ);\n", *nr, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_derive: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.group(s%d);\n", *nr, l, r);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.group(s%d).access(BAT_READ);\n", *nr, l, r);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.reverse().kunique().reverse();\n", *nr, l);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().reverse();\n", *nr, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_order: {
@@ -246,22 +275,87 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	case st_binop: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		int r = statement_dump( s->op2.stval, nr, sql );
-		if (s->op1.stval->nrcols || s->op2.stval->nrcols )
+		if (s->op1.stval->nrcols || s->op2.stval->nrcols ){
+		  	if (!s->op1.stval->nrcols){
+				int n = (*nr)++; 
+		  		len += snprintf( buf+len, BUFSIZ, 
+		    		"s%d := [s%d ~ s%d];\n", n, r, l ); 
+				l = n;
+		  	}
+		  	if (!s->op2.stval->nrcols){
+				int n = (*nr)++; 
+		  		len += snprintf( buf+len, BUFSIZ, 
+		    		"s%d := [s%d ~ s%d];\n", n, l, r ); 
+				r = n;
+		  	}
+		  	len += snprintf( buf+len, BUFSIZ, 
+		    	"s%d := [%s](s%d,s%d);\n", 
+			*nr, s->op3.funcval->imp, l, r );
+		} else  {
+		  	len += snprintf( buf+len, BUFSIZ, 
+		    	"s%d := %s(s%d,s%d);\n", 
+			*nr, s->op3.funcval->imp, l,r );
+		}
+		s->nr = (*nr)++;
+	} 	break;
+	case st_triop: {
+		statement *op1 = s->op1.lval->h->data.stval;
+		statement *op2 = s->op1.lval->h->next->data.stval;
+		statement *op3 = s->op1.lval->h->next->next->data.stval;
+		int r1 = statement_dump( op1, nr, sql );
+		int r2 = statement_dump( op2, nr, sql );
+		int r3 = statement_dump( op3, nr, sql );
+		if (op1->nrcols || op2->nrcols || op3->nrcols){
+			int l = 0;
+			if (op1->nrcols) l = r1;
+			if (op2->nrcols) l = r2;
+			if (op3->nrcols) l = r3;
+		  	if (!op1->nrcols){
+				int n = (*nr)++; 
+		  		len += snprintf( buf+len, BUFSIZ, 
+		    		"s%d := [ s%d ~ s%d];\n", n, l, r1 ); 
+				r1 = n;
+		  	}
+		  	if (!op2->nrcols){
+				int n = (*nr)++; 
+		  		len += snprintf( buf+len, BUFSIZ, 
+		    		"s%d := [ s%d ~ s%d];\n", n, l, r2 ); 
+				r2 = n;
+		  	}
+		  	if (!op3->nrcols){
+				int n = (*nr)++; 
+		  		len += snprintf( buf+len, BUFSIZ, 
+		    		"s%d := [ s%d ~ s%d];\n", n, l, r3 ); 
+				r3 = n;
+		  	}
+		  	len += snprintf( buf+len, BUFSIZ, 
+		    	"s%d := [%s](s%d,s%d,s%d);\n", 
+			*nr, s->op2.funcval->imp, r1, r2, r3 );
+		} else {
 		  len += snprintf( buf+len, BUFSIZ, 
-		    "s%d := [%s](s%d,s%d);\n", *nr, s->op3.funcval->imp, l,r );
-		else 
-		  len += snprintf( buf+len, BUFSIZ, 
-		    "s%d := %s(s%d,s%d);\n", *nr, s->op3.funcval->imp, l,r );
-
+		    "s%d := %s(s%d,s%d,s%d);\n", *nr, s->op2.funcval->imp, 
+		    	r1, r2, r3 );
+		}
 		s->nr = (*nr)++;
 	} 	break;
 	case st_aggr: {
 		int l = statement_dump( s->op1.stval, nr, sql );
 		if (s->op3.stval){
 			int r = statement_dump( s->op3.stval, nr, sql );
-			len += snprintf( buf+len, BUFSIZ, 
-					"s%d := {%s}(s%d.reverse().join(s%d),s%d.reverse().kunique());\n", 
-					*nr, s->op2.aggrval->imp, r, l, r);
+
+			if (s->op1.stval == s->op3.stval){
+				len += snprintf( buf+len, BUFSIZ, 
+				"s%d := {%s}(s%d, s%d.tunique());\n", 
+				*nr, s->op2.aggrval->imp, l, r);
+			} else if (s->op1.stval->type == st_column){
+				len += snprintf( buf+len, BUFSIZ, 
+				"s%d := {%s}(s%d, s%d, s%d.tunique());\n", 
+				*nr, s->op2.aggrval->imp, l, r, r);
+			} else {
+				len += snprintf( buf+len, BUFSIZ, 
+				"s%d := {%s}(s%d.reverse().join(s%d),s%d.tunique());\n",
+			        *nr, s->op2.aggrval->imp, r, l, r);
+			}
 		} else {
 			len += snprintf( buf+len, BUFSIZ, "s%d := s%d.%s();\n", 
 					*nr, l, s->op2.aggrval->imp );
@@ -277,16 +371,17 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		int l = statement_dump( s->op1.stval, nr, sql );
 		node *n = s->op2.lval->h;
 		int k = *nr;
+		int r = 1;
 		if (n){
-			char *tpe = (char*)atomtype2string(n->data.aval );
-			type *t = cat_bind_type( sql->cat, s->op1.sval );
-			len += snprintf( buf+len, BUFSIZ, "s%d := new(oid,%s);\n", *nr, t->name );
+		  	char *a = (char*)atom_type(n->data.aval )->name;
+			len += snprintf( buf+len, BUFSIZ, 
+					"s%d := new(oid,%s);\n", *nr, a );
 		}
 		k++;
 		while(n){
-			len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", k++, 
+			len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", k, 
 					atom2string(n->data.aval) );
-			len += snprintf( buf+len, BUFSIZ, "insert(oid(s%d), s%d);\n", *nr, k);
+			len += snprintf( buf+len, BUFSIZ, "s%d.insert(oid(%d), s%d);\n", *nr, r++, k++);
 			n = n->next;
 		}
 		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.semijoin(s%d);\n", k, l, *nr);
@@ -295,11 +390,6 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_atom: {
 		len += snprintf( buf+len, BUFSIZ, "s%d := %s;\n", *nr, atom2string(s->op1.aval));
-		s->nr = (*nr)++;
-	} break;
-	case st_cast: {
-		int l = statement_dump( s->op2.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := %s(s%d);\n", *nr, s->op1.sval, l);
 		s->nr = (*nr)++;
 	} break;
 	case st_insert_column: {
@@ -382,8 +472,8 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				if (r->op3.stval){
 					char *s = NULL;
 					statement *a = r->op3.stval;
-					while(a->type == st_cast){
-						a = a->op2.stval;
+					while(a->type == st_unop){ /* cast */
+						a = a->op1.stval;
 					}
 					len += snprintf( buf+len, BUFSIZ, "%s,",
 					   	s = atom2string(a->op1.aval) );

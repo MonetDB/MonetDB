@@ -74,3 +74,13 @@ int parse_interval( context *sql,
 }
 
 
+const char *datetime_field( itype f ){
+	switch(f){
+	case iyear:  return "year";
+	case imonth: return "month";
+	case iday:   return "day";
+	case ihour:  return "hour";
+	case imin:   return "min";
+	case isec:   return "sec";
+	}
+}

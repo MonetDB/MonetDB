@@ -7,7 +7,7 @@
 #include "statement.h"
 #include "sql.h"
 
-extern int sql_execute( context *lc, stream *in );
+extern statement *sqlnext( context *lc, stream *in, int *err );
 extern statement *sqlexecute( context *lc, char *statement );
 
 extern void sql_init_context(context *lc, stream *out, int debug, catalog *cat);

@@ -115,7 +115,7 @@ void getfunctions( catalog *c ){
 	tcnt = strtol(n+1,&n,10); 
 	c->funcs = list_create();
 	for(i=0;i<tcnt;i++){
-	    char *tname, *imp, *tpe1, *tpe2, *res;
+	    char *tname, *imp, *tpe1, *tpe2, *tpe3, *res;
 
 	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tname = removeQuotes(start, '"');
@@ -129,10 +129,13 @@ void getfunctions( catalog *c ){
 	    n = strchr(start = n+1, '\t'); *n = '\0';
 	    tpe2 = removeQuotes(start, '"');
 
+	    n = strchr(start = n+1, '\t'); *n = '\0';
+	    tpe3 = removeQuotes(start, '"');
+
 	    n = strchr(start = n+1, '\n'); *n = '\0';
 	    res = removeQuotes(start, '"');
 
-	    cat_create_func( c, tname, imp, tpe1, tpe2, res, i );
+	    cat_create_func( c, tname, imp, tpe1, tpe2, tpe3, res, i );
 	}
 	_DELETE(buf);
 }

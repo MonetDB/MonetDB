@@ -20,6 +20,57 @@ statement *statement_create(){
 	return s;
 }
 
+#define cr(c,v) case c: return v
+
+const char *statement2string( statement *s ){
+	if (!s) return "NULL";
+	switch(s->type){
+		cr(st_create_schema,"create_schema");
+		cr(st_drop_schema,"drop_schema");
+		cr(st_create_table,"create_table");
+		cr(st_drop_table,"drop_table");
+		cr(st_create_column,"create_column");
+		cr(st_not_null,"not_null");
+		cr(st_default,"default");
+		cr(st_column,"column");
+		cr(st_reverse,"reverse");
+		cr(st_atom,"atom");
+		cr(st_join,"join");
+		cr(st_semijoin,"semijoin");
+		cr(st_diff,"diff");
+		cr(st_intersect,"intersect");
+		cr(st_union,"union");
+		cr(st_select,"select");
+		cr(st_select2,"select2");
+		cr(st_insert,"insert");
+		cr(st_insert_column,"insert_column");
+		cr(st_like,"like");
+		cr(st_update,"update");
+		cr(st_delete,"delete");
+		cr(st_count,"count");
+		cr(st_const,"const");
+		cr(st_mark,"mark");
+		cr(st_group,"group");
+		cr(st_derive,"derive");
+		cr(st_unique,"unique");
+		cr(st_ordered,"ordered");
+		cr(st_order,"order");
+		cr(st_reorder,"reorder");
+		cr(st_unop,"unop");
+		cr(st_binop,"binop");
+		cr(st_triop,"triop");
+		cr(st_aggr,"aggr");
+		cr(st_exists,"exists");
+		cr(st_name,"name");
+		cr(st_diamond,"diamond");
+		cr(st_pearl,"pearl");
+		cr(st_list,"list");
+		cr(st_insert_list,"insert_list");
+		cr(st_output,"output");
+	}
+	return "unknown";
+}
+
 void statement_destroy( statement *s ){
 	if (--s->refcnt <= 0){
 		switch(s->type){
@@ -47,7 +98,9 @@ void statement_destroy( statement *s ){
 		case st_default: 
 		case st_like: 
 		case st_semijoin: 
+		case st_diff: 
 		case st_intersect: 
+		case st_union: 
 		case st_join: 
 		case st_const: 
 		case st_derive: 
@@ -73,6 +126,7 @@ void statement_destroy( statement *s ){
 				statement_destroy( s->op2.stval );
 			break;
 		case st_select: 
+		case st_select2: 
 			statement_destroy( s->op1.stval );
 			statement_destroy( s->op2.stval );
 			if (s->op3.stval)
@@ -86,6 +140,7 @@ void statement_destroy( statement *s ){
 		case st_diamond: 
 		case st_list: 
 		case st_insert_list: 
+		case st_triop: 
 			list_destroy( s->op1.lval );
 			break;
 		case st_pearl: {
@@ -97,10 +152,6 @@ void statement_destroy( statement *s ){
 		}	break;
 		case st_atom: 
 			atom_destroy( s->op1.aval );
-			break;
-		case st_cast: 
-			_DELETE(s->op1.sval);
-			statement_destroy( s->op2.stval );
 			break;
 
 		case st_create_schema: 
@@ -169,12 +220,12 @@ statement *statement_default( statement *col, statement *def ){
 	return s;
 }
 
-statement *statement_column( column *op1 ){
+statement *statement_column( column *op1, var *basetable ){
 	statement *s = statement_create();
 	s->type = st_column;
 	s->op1.cval = op1;
 	s->nrcols = 1;
-	s->h = op1->table;
+	s->h = basetable;
 	return s;
 }
 
@@ -294,26 +345,11 @@ statement *statement_atom( atom *op1 ){
 	return s;
 }
 
-statement *statement_cast( char *cast, statement *val ){
-	statement *s = statement_create();
-	s->type = st_cast;
-	s->op1.sval = _strdup(cast);
-	s->op2.stval = val; val->refcnt++;
-	return s;
-}
-
 statement *statement_select( statement *op1, statement *op2, comp_type cmptype){
 	statement *s = statement_create();
 	s->type = st_select;
-	if (op1 && op1->type == st_column){
-		s->op1.stval = op1; 
-		s->op2.stval = op2; 
-	} else {
-		s->op1.stval = op2; 
-		s->op2.stval = op1; 
-	}
-	op1->refcnt++;
-	op2->refcnt++;
+	s->op1.stval = op1; op1->refcnt++;
+	s->op2.stval = op2; op2->refcnt++;
 	assert(cmptype >= cmp_equal && cmptype <= cmp_gte );
 	s->flag = cmptype;
 	s->nrcols = 1;
@@ -321,13 +357,14 @@ statement *statement_select( statement *op1, statement *op2, comp_type cmptype){
 	return s;
 }
 
-statement *statement_select2( statement *op1, statement *op2, statement *op3){
+statement *statement_select2( statement *op1, statement *op2, 
+			      statement *op3, int cmp ){
 	statement *s = statement_create();
-	s->type = st_select;
+	s->type = st_select2;
 	s->op1.stval = op1; op1->refcnt++;
 	s->op2.stval = op2; op2->refcnt++;
 	s->op3.stval = op3; op3->refcnt++;
-	s->flag = cmp_equal;
+	s->flag = cmp;
 	s->nrcols = 1;
 	s->h = s->op1.stval->h;
 	return s;
@@ -366,10 +403,31 @@ statement *statement_semijoin( statement *op1, statement *op2 ){
 	s->t = op1->t;
 	return s;
 }
+statement *statement_diff( statement *op1, statement *op2 ){
+	statement *s = statement_create();
+	s->type = st_diff;
+	s->op1.stval = op1; op1->refcnt++;
+	s->op2.stval = op2; op2->refcnt++;
+	s->nrcols = op1->nrcols; 
+	s->h = op1->h;
+	s->t = op1->t;
+	return s;
+}
 
 statement *statement_intersect( statement *op1, statement *op2 ){
 	statement *s = statement_create();
 	s->type = st_intersect;
+	s->op1.stval = op1; op1->refcnt++;
+	s->op2.stval = op2; op2->refcnt++;
+	s->nrcols = op1->nrcols; 
+	s->h = op1->h;
+	s->t = op1->t;
+	return s;
+}
+
+statement *statement_union( statement *op1, statement *op2 ){
+	statement *s = statement_create();
+	s->type = st_union;
 	s->op1.stval = op1; op1->refcnt++;
 	s->op2.stval = op2; op2->refcnt++;
 	s->nrcols = op1->nrcols; 
@@ -420,7 +478,6 @@ statement *statement_insert( column *c, statement *id, statement *v){
 	if (v){
 		s->op3.stval = v; v->refcnt++;
 	}
-	s->h = c->table;
 	return s;
 }
 
@@ -439,7 +496,6 @@ statement *statement_update( column *c, statement *b ){
 	s->type = st_update;
 	s->op1.cval = c;
 	s->op2.stval = b; b->refcnt++;
-	s->h = c->table;
 	return s;
 }
 
@@ -448,7 +504,6 @@ statement *statement_delete( column *c, statement *where ){
 	s->type = st_delete;
 	s->op1.cval = c;
 	s->op2.stval = where; where->refcnt++;
-	s->h = c->table;
 	return s;
 }
 
@@ -472,6 +527,18 @@ statement *statement_binop( statement *op1, statement *op2, func *op ){
 	s->nrcols = (op1->nrcols >= op2->nrcols)?op1->nrcols:op2->nrcols;
 	return s;
 }
+statement *statement_triop( statement *op1, statement *op2, statement *op3, func *op ){
+	statement *s = statement_create();
+	s->type = st_triop;
+	s->op1.lval = list_create();
+	list_append_statement(s->op1.lval, op1);
+	list_append_statement(s->op1.lval, op2);
+	list_append_statement(s->op1.lval, op3);
+	s->op2.funcval = op;
+	s->h = op1->h;
+	s->nrcols = (op1->nrcols >= op2->nrcols)?op1->nrcols:op2->nrcols;
+	return s;
+}
 statement *statement_aggr( statement *op1, aggr *op, statement *group ){
 	statement *s = statement_create();
 	s->type = st_aggr;
@@ -479,9 +546,13 @@ statement *statement_aggr( statement *op1, aggr *op, statement *group ){
 	s->op2.aggrval = op;
 	if (group){
 		s->op3.stval = group; group->refcnt++;
+		s->nrcols = 1;
+		s->h = group->h;
+	} else {
+		s->nrcols = 1; /* aggr's again lead to tables, 
+				  	with a single value */
+		s->h = op1->h;
 	}
-	s->h = op1->h;
-	s->nrcols = op1->nrcols;
 	return s;
 }
 statement *statement_exists( statement *op1, list *l ){
@@ -504,76 +575,94 @@ statement *statement_name( statement *op1, char *name ){
 	return s;
 }
 
-static 
-const char *head_type( statement *st ){
+type *tail_type( statement *st ){
 	switch(st->type){
-	case st_join: return head_type(st->op1.stval);
-	case st_select: return head_type(st->op1.stval);
-	case st_column: return NULL; /* oid */
-	case st_reverse: return column_type(st->op1.stval);
-	case st_aggr: return st->op2.aggrval->res->sqlname;
-	case st_unop: return st->op2.funcval->res->sqlname;
-	case st_binop: return st->op3.funcval->res->sqlname;
-	case st_atom: return atomtype2string(st->op1.aval);
-	case st_cast: return st->op1.sval;
-	case st_unique: return column_type(st->op1.stval);
-	default:
-		fprintf( stderr, "missing head type %d\n", st->type);
-		return NULL;
-	}
-}
+	case st_join: return tail_type(st->op2.stval);
+	case st_select: 
+	case st_select2: 
+	case st_unique: 
+	case st_name: return tail_type(st->op1.stval);
 
-const char *column_type( statement *st ){
-	switch(st->type){
-	case st_join: return column_type(st->op2.stval);
-	case st_select: return column_type(st->op1.stval);
-	case st_column: return st->op1.cval->tpe->sqlname;
+	case st_column: return st->op1.cval->tpe; 
 	case st_reverse: return head_type(st->op1.stval);
-	case st_aggr: return st->op2.aggrval->res->sqlname;
-	case st_unop: return st->op2.funcval->res->sqlname;
-	case st_binop: return st->op3.funcval->res->sqlname;
-	case st_atom: return atomtype2string(st->op1.aval);
-	case st_cast: return st->op1.sval;
-	case st_unique: return column_type(st->op1.stval);
+
+	case st_aggr: return st->op2.aggrval->res;
+	case st_unop: return st->op2.funcval->res;
+	case st_binop: return st->op3.funcval->res;
+	case st_triop: return st->op2.funcval->res;
+	case st_atom: return atom_type(st->op1.aval);
+
 	default:
-		fprintf( stderr, "missing type %d\n", st->type);
+		fprintf( stderr, "missing tail type %d %s\n", 
+				st->type, statement2string(st));
+		return NULL;
+	}
+}
+
+type *head_type( statement *st ){
+	switch(st->type){
+	case st_aggr:
+	case st_unop: 
+	case st_binop:
+	case st_triop: 
+	case st_unique:
+	case st_name: 
+	case st_join: 
+	case st_select: 
+	case st_select2: 
+			return head_type(st->op1.stval);
+
+	case st_column: return NULL; /* oid */
+	case st_reverse: return tail_type(st->op1.stval);
+	case st_atom: return atom_type(st->op1.aval);
+	default:
+		fprintf( stderr, "missing head type %d %s\n", 
+				st->type, statement2string(st));
 		return NULL;
 	}
 }
 
 static 
-column *_basecolumn( statement *st ){
+statement *_basecolumn( statement *st ){
 	switch(st->type){
-	case st_join: return _basecolumn(st->op1.stval);
+	case st_join: 
+	case st_intersect: return _basecolumn(st->op2.stval);
 	case st_select: return _basecolumn(st->op1.stval);
-	case st_column: return NULL; /* oid */
+	case st_select2: return _basecolumn(st->op1.stval);
+	case st_column: return st; 
 	case st_reverse: return basecolumn(st->op1.stval);
 	case st_unop: return basecolumn(st->op1.stval);
 	case st_binop: return basecolumn(st->op1.stval);
+	case st_triop: return basecolumn(st->op1.lval->h->data.stval);
 	case st_atom: 
-	case st_cast: return NULL;
 	case st_name: return _basecolumn(st->op1.stval);
 	case st_unique: return _basecolumn(st->op1.stval);
+	case st_mark: return basecolumn(st->op1.stval);
 	default:
+		assert(0);
 		fprintf( stderr, "missing base column type %d\n", st->type);
 		return NULL;
 	}
 }
 
-column *basecolumn( statement *st ){
+statement *basecolumn( statement *st ){
 	switch(st->type){
-	case st_join: return basecolumn(st->op2.stval);
+	case st_join: 
+	case st_intersect: return basecolumn(st->op1.stval);
 	case st_select: return basecolumn(st->op1.stval);
-	case st_column: return st->op1.cval;
+	case st_select2: return basecolumn(st->op1.stval);
+	case st_column: return st;
 	case st_reverse: return _basecolumn(st->op1.stval);
 	case st_aggr: return basecolumn(st->op1.stval);
 	case st_unop: return basecolumn(st->op1.stval);
 	case st_binop: return basecolumn(st->op1.stval);
+	case st_triop: return basecolumn(st->op1.lval->h->data.stval);
 	case st_atom: 
-	case st_cast: return NULL;
 	case st_name: return basecolumn(st->op1.stval);
 	case st_unique: return basecolumn(st->op1.stval);
+	case st_mark: return basecolumn(st->op1.stval);
 	default:
+		assert(0);
 		fprintf( stderr, "missing base column %d\n", st->type);
 		return NULL;
 	}
@@ -597,6 +686,7 @@ char *column_name( statement *st ){
 	switch(st->type){
 	case st_join: return column_name(st->op2.stval);
 	case st_select: return column_name(st->op1.stval);
+	case st_select2: return column_name(st->op1.stval);
 	case st_column: return st->op1.cval->name;
 	case st_aggr: return aggr_name( st->op2.aggrval->name, 
 				column_name( st->op1.stval ));

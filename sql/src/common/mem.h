@@ -20,6 +20,6 @@ extern char*	GDKstrdup  (char *s);
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 #define NEWADT( size ) (adt*)GDKmalloc(size)
 #define _DELETE( ptr )	GDKfree(ptr)
-#define _strdup( ptr )	GDKstrdup(ptr)
+#define _strdup( ptr )	GDKstrdup((char*)ptr)
 
 #endif /*_MEM_H_*/

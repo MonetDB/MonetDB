@@ -41,6 +41,7 @@ static void getfunctions( catalog *c ){
 	BAT *sql_func_imp = BATdescriptor(BBPindex("sql_func_imp"));
 	BAT *sql_func_tpe1 = BATdescriptor(BBPindex("sql_func_type1"));
 	BAT *sql_func_tpe2 = BATdescriptor(BBPindex("sql_func_type2"));
+	BAT *sql_func_tpe3 = BATdescriptor(BBPindex("sql_func_type3"));
 	BAT *sql_func_result = BATdescriptor(BBPindex("sql_func_result"));
 	 
 	c->types = list_create();
@@ -70,8 +71,9 @@ static void getfunctions( catalog *c ){
 	    char *imp = (char*)BUNfind(sql_func_imp, &tnr);
 	    char *tpe1 = (char*)BUNfind(sql_func_tpe1, &tnr);
 	    char *tpe2 = (char*)BUNfind(sql_func_tpe2, &tnr);
+	    char *tpe3 = (char*)BUNfind(sql_func_tpe3, &tnr);
 	    char *res = (char*)BUNfind(sql_func_result, &tnr);
-	    cat_create_func( c, tname, imp, tpe1, tpe2, res, tnr );
+	    cat_create_func( c, tname, imp, tpe1, tpe2, tpe3, res, tnr );
 	}
 }
 

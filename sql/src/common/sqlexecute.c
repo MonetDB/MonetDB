@@ -6,6 +6,7 @@
 #include "symbol.h"
 #include "sqlexecute.h"
 #include "sqlscan.h"
+#include "symbol.h"
 #include <string.h>
 #include <stream.h>
 #include <statement.h>
@@ -16,7 +17,6 @@ void sql_init_context( context *lc , stream *out, int debug, catalog *cat ){
 	init_keywords();
 
 	memset(lc,0,sizeof(context));
-
         lc->cur = ' ';
         lc->filename = NULL;
         lc->buf = NULL;
@@ -25,7 +25,7 @@ void sql_init_context( context *lc , stream *out, int debug, catalog *cat ){
         lc->debug = debug;
         lc->optimize = SQL_FAST_INSERT;
         lc->lineno = 1;
-        lc->l = NULL;
+        lc->sym = NULL;
         lc->cat = cat;
         lc->errstr[0] = '\0';
 
@@ -54,36 +54,25 @@ void sql_exit_context( context *lc ){
 	_DELETE(lc->yytext);
 }
 
+statement *sqlnext( context *lc, stream *in, int *err ){
+        statement *res = NULL;
 
-int sql_execute( context *lc, stream *in ){
-
-	lc->filename = _strdup(in->filename);
+	lc->filename = in->filename;
 	lc->in = in;
 
-	if(sqlparse(lc)){
-		fprintf(stderr, "%s\n", lc->errstr );
-		fprintf(stderr, "Embedded SQL parse failed\n");
-		return -1;
-        } else {
-                list *sl = semantic(lc, lc->l);
-		dlist_destroy(lc->l); lc->l = NULL;
-                if (sl){
-                        node *n = sl->h;
-                        while(n){
-                        	int nr = 1;
-                                statement_dump( n->data.stval, &nr, lc );
-                                n = n -> next;
-                        }
-			lc->out->flush( lc->out );
-			list_destroy(sl);
-			fprintf(stderr, "Embedded SQL parse worked\n");
-                } else {
-			fprintf(stderr, "Embedded SQL parse failed\n");
-			fflush(stderr);
-			return -1;
-                }
+	sql_statement_init(lc);
+
+	if(lc->cur != EOF && !(*err=sqlparse(lc))){
+                res = semantic(lc, lc->sym);
         }
-	return 0;
+	if (lc->sym){
+		symbol_destroy(lc->sym); 
+		lc->sym = NULL;
+	}
+	if (*err){
+		fprintf(stderr, "%s\n", lc->errstr );
+	}
+	return res;
 } 
 
 statement *sqlexecute( context *lc, char *buf ){
@@ -95,24 +84,15 @@ statement *sqlexecute( context *lc, char *buf ){
 
 	sql_statement_init(lc);
 
-	if (lc->l){
-		dlist_destroy(lc->l);
-		lc->l = NULL; 
-	}
-
-        if(!sqlparse(lc )){
-                list *l = semantic(lc, lc->l);
-		dlist_destroy(lc->l); lc->l = NULL;
-                if (l){ 
-			if (list_length(l)){
-				res = l->h->data.stval; res->refcnt++;
-			}
-			list_destroy(l);
-		}
+        if(!sqlparse(lc)){
+                res = semantic(lc, lc->sym);
         } else {
 		fprintf(stderr, "%s\n", lc->errstr );
 	}
-
+	if (lc->sym){
+		symbol_destroy(lc->sym); 
+		lc->sym = NULL;
+	}
         return res;
 }
 

@@ -24,15 +24,15 @@ typedef struct atom {
 
 
 extern atom *atom_int( type *tpe, int val );
-extern atom *atom_string( char *val );
-extern atom *atom_float( double val );
+extern atom *atom_string( type *tpe, char *val );
+extern atom *atom_float( type *tpe, double val );
 extern atom *atom_general( type *tpe, char *val );
 
 /* duplicate atom */
 extern atom *atom_dup( atom *a );
 
 extern char *atom2string(atom *a);
-extern const char *atomtype2string(atom *a);
+extern type *atom_type(atom *a);
 
 extern void atom_destroy( atom *a );
 #endif /* _ATOM_H_ */

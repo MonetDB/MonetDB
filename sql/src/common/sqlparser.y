@@ -108,6 +108,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	default
 	default_value
 	function_ref
+	datetime_funcs
+	string_funcs
 	scalar_exp
 	column_exp
 	atom
@@ -135,7 +137,6 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 
 %type <l>
 	schema_name
-	sql_list 
 	assignment_commalist
 	opt_column_commalist
 	column_commalist
@@ -175,6 +176,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	outer_join_type
 	time_persision
 	non_second_datetime_field
+	datetime_field
+	opt_bounds
 	opt_sign
 	intval
 
@@ -198,9 +201,14 @@ OPEN CLOSE FETCH
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 	
 %token <operation> '+' '-' '*' '/'
-%token <sval> LIKE BETWEEN ORDER BY
+%token <sval> LIKE BETWEEN ASYMMETRIC SYMMETRIC ORDER BY
 %token <operation> IN EXISTS ESCAPE HAVING GROUP NULLX 
-%token <operation> FROM
+%token <operation> FROM FOR
+
+/* datetime operations */
+%token <operation> EXTRACT
+/* string operations */
+%token <operation> SUBSTRING CONCATSTRING
 
 	/* operators */
 
@@ -217,7 +225,7 @@ OPEN CLOSE FETCH
 	/* literal keyword tokens */
 
 /*
-CONTINUE CURRENT CURSOR DECLARE FOR FOUND GOTO GO
+CONTINUE CURRENT CURSOR DECLARE FOUND GOTO GO
 LANGUAGE OF PROCEDURE
 SQLCODE SQLERROR 
 UNDER WHENEVER 
@@ -237,6 +245,7 @@ UNDER WHENEVER
 
 %%
 
+/*
 sql_list:
     sqlstatement 	{ context *lc = (context*)parm;
 			  lc->l = $$ = dlist_append_symbol(dlist_create(), $1 );
@@ -245,10 +254,13 @@ sql_list:
 			  lc->l = $$ = dlist_append_symbol($1, $2); 
 			  sql_statement_init(lc); }
  ;
+*/
 
 sqlstatement:
-   sql ';' 		
- | /*empty*/		{ $$ = NULL; }
+   sql ';' 		{ context *lc = (context*)parm; 
+			  lc->sym = $$ = $1; YYACCEPT; }
+ | /*empty*/		{ context *lc = (context*)parm; 
+			  lc->sym = $$ = NULL; YYACCEPT; }
 
 
 	/* schema definition language */
@@ -297,7 +309,7 @@ opt_schema_path:
  ;
 
 opt_schema_element_list:
-    /* empty */			{ $$ = NULL; }
+    /* empty */			{ $$ = dlist_create(); }
  |  schema_element_list 	
  ;
 
@@ -436,7 +448,9 @@ default:
 /* TODO add auto increment */
 default_value:
     literal 
- |  USER 	{ $$ = _symbol_create_atom( SQL_ATOM, atom_string($1)); }
+ |  USER     { context *lc = (context*)parm;
+	       $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
+			cat_bind_type(lc->cat, "STRING" ), $1)); }
  |  NULLX 	{ $$ = _symbol_create_atom( SQL_ATOM, NULL);  }
  ;
 	
@@ -804,7 +818,8 @@ table_ref:
 		  		  dlist_append_list(l, $1);  
 		  	  	  dlist_append_string(l, $2);  
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- | subquery
+ | subquery opt_name		{ $$ = $1; 
+				  dlist_append_string($$->data.lval, $2); }
  ;
 
 opt_group_by_clause:
@@ -821,10 +836,12 @@ column_ref_commalist:
 
 opt_having_clause:
     /* empty */ 		 { $$ = NULL; }
- |  HAVING search_condition	 { $$ = _symbol_create(SQL_HAVING, (char*)$2); }
+ |  HAVING search_condition	 { $$ = $2; }
  ;
 
-	/* search conditions */
+	/* search conditions 
+ |  NOT search_condition    	{ $$ = _symbol_create_symbol(SQL_NOT, $2); }
+*/
 
 search_condition:
     search_condition OR search_condition  	
@@ -837,7 +854,6 @@ search_condition:
 		  dlist_append_symbol(l, $1); 
 		  dlist_append_symbol(l, $3); 
 		  $$ = _symbol_create_list(SQL_AND, l ); }
- |  NOT search_condition    	{ $$ = _symbol_create_symbol(SQL_NOT, $2); }
  |  '(' search_condition ')'	{ $$ = $2; }
  |  predicate			
  ;
@@ -905,19 +921,26 @@ comparison_predicate:
  ;
 
 between_predicate:
-    scalar_exp NOT BETWEEN scalar_exp AND scalar_exp
+    scalar_exp NOT BETWEEN opt_bounds scalar_exp AND scalar_exp
 		{ dlist *l = dlist_create();
 		  dlist_append_symbol(l, $1); 
+		  dlist_append_int(l, $4); 
+		  dlist_append_symbol(l, $5); 
+		  dlist_append_symbol(l, $7); 
+		  $$ = _symbol_create_list(SQL_NOT_BETWEEN, l ); }
+ |  scalar_exp BETWEEN opt_bounds scalar_exp AND scalar_exp
+		{ dlist *l = dlist_create();
+		  dlist_append_symbol(l, $1); 
+		  dlist_append_int(l, $3); 
 		  dlist_append_symbol(l, $4); 
 		  dlist_append_symbol(l, $6); 
-		  $$ = _symbol_create_list(SQL_NOT_BETWEEN, l ); }
- |  scalar_exp BETWEEN scalar_exp AND scalar_exp
-		{ dlist *l = dlist_create();
-		  dlist_append_symbol(l, $1); 
-		  dlist_append_symbol(l, $3); 
-		  dlist_append_symbol(l, $5); 
 		  $$ = _symbol_create_list(SQL_BETWEEN, l ); }
  ;
+
+opt_bounds:
+   /* empty */ 	{ $$ = 0; }
+ | ASYMMETRIC 	{ $$ = 0; }
+ | SYMMETRIC 	{ $$ = 1; }
 
 like_predicate:
     scalar_exp NOT LIKE atom_exp
@@ -994,6 +1017,7 @@ any_all_some:
 
 existence_test:
     EXISTS subquery 	{ $$ = _symbol_create_symbol( SQL_EXISTS, $2 ); }
+ |  NOT EXISTS subquery { $$ = _symbol_create_symbol( SQL_NOT_EXISTS, $3 ); }
  ;
 
 subquery:
@@ -1046,11 +1070,43 @@ scalar_exp:
  |  atom
  |  column_ref 			{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  function_ref 
+ |  datetime_funcs
+ |  string_funcs
  |  '(' scalar_exp ')' 		{ $$ = $2; }
  ;
 
+
+datetime_funcs:
+    EXTRACT '(' datetime_field FROM scalar_exp ')' 
+				{ dlist *l = dlist_create();
+				  const char *name = datetime_field($3);
+  		  		  dlist_append_string(l, _strdup(name));
+  		  		  dlist_append_symbol(l, $5);
+		  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
+ ;
+
+string_funcs:
+    SUBSTRING '(' scalar_exp FROM intval FOR intval ')' 
+				{ context *lc = (context*)parm;
+				  dlist *l = dlist_create();
+				  type *t = cat_bind_type(lc->cat, "INTEGER");
+  		  		  dlist_append_string(l, _strdup("substring"));
+  		  		  dlist_append_symbol(l, $3);
+  		  		  dlist_append_symbol(l, _symbol_create_atom(
+					SQL_ATOM, atom_int(t, $5)));
+  		  		  dlist_append_symbol(l, _symbol_create_atom(
+					SQL_ATOM, atom_int(t, $7)));
+		  		  $$ = _symbol_create_list( SQL_TRIOP, l ); }
+ |  scalar_exp CONCATSTRING scalar_exp  
+				{ dlist *l = dlist_create();
+  		  		  dlist_append_string(l, _strdup("concat"));
+  		  		  dlist_append_symbol(l, $1);
+  		  		  dlist_append_symbol(l, $3);
+		  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ ;
+
 column_exp_commalist:
-    column_exp 			{ $$ = dlist_append_symbol(dlist_create(), $1 ); }
+    column_exp 		{ $$ = dlist_append_symbol(dlist_create(), $1 ); }
  |  column_exp_commalist ',' column_exp  { $$ = dlist_append_symbol( $1, $3 ); }
  ;
 
@@ -1075,7 +1131,9 @@ opt_name:
 atom:
     parameter_ref	
  |  literal 	
- |  USER 	{ $$ = _symbol_create_atom( SQL_ATOM, atom_string($1)); }
+ |  USER     { context *lc = (context*)parm;
+	       $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
+			cat_bind_type(lc->cat, "STRING" ), $1)); }
  ;
 
 parameter_ref:
@@ -1101,25 +1159,25 @@ function_ref:
   		  dlist_append_string(l, toLower($1));
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, NULL);
-		  $$ = _symbol_create_list( SQL_AMMSC, l ); }
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AMMSC '(' DISTINCT column_ref ')' 
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, toLower($1));
   		  dlist_append_int(l, TRUE);
   		  dlist_append_symbol(l, _symbol_create_list(SQL_COLUMN, $4));
-		  $$ = _symbol_create_list( SQL_AMMSC, l ); }
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AMMSC '(' ALL scalar_exp ')'
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, toLower($1));
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, $4);
-		  $$ = _symbol_create_list( SQL_AMMSC, l ); }
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AMMSC '(' scalar_exp ')'
 		{ dlist *l = dlist_create();
   		  dlist_append_string(l, toLower($1));
   		  dlist_append_int(l, FALSE);
   		  dlist_append_symbol(l, $3);
-		  $$ = _symbol_create_list( SQL_AMMSC, l ); }
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  ;
 
 opt_sign:
@@ -1153,6 +1211,11 @@ non_second_datetime_field:
  |  DAY			{ $$ = iday; }
  |  HOUR		{ $$ = ihour; }
  |  MINUTE		{ $$ = imin; }
+ ;
+
+datetime_field:
+    non_second_datetime_field
+ |  SECOND		{ $$ = isec; }
  ;
 
 start_field:
@@ -1192,12 +1255,18 @@ interval_type:
  ;
 
 literal:
-    STRING   { $$ = _symbol_create_atom( SQL_ATOM, atom_string($1) );}
+    STRING   { context *lc = (context*)parm;
+	       $$ = _symbol_create_atom( SQL_ATOM, atom_string( 
+			cat_bind_type(lc->cat, "STRING" ), $1)); }
  |  intval   { context *lc = (context*)parm;
 	       $$ = _symbol_create_atom( SQL_ATOM, atom_int( 
 			cat_bind_type(lc->cat, "INTEGER" ), $1)); }
- |  INTNUM   { $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
- |  APPROXNUM{ $$ = _symbol_create_atom( SQL_ATOM, atom_float(strtod($1,&$1)));}
+ |  INTNUM   { context *lc = (context*)parm;
+	       $$ = _symbol_create_atom( SQL_ATOM, atom_float(
+			cat_bind_type(lc->cat, "FLOAT" ), strtod($1,&$1))); }
+ |  APPROXNUM{ context *lc = (context*)parm;
+	       $$ = _symbol_create_atom( SQL_ATOM, atom_float(
+			cat_bind_type(lc->cat, "DOUBLE" ), strtod($1,&$1))); }
  |  DATE STRING { context *lc = (context*)parm;
  	  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
 			cat_bind_type(lc->cat, "DATE" ),$2));  }
@@ -1225,7 +1294,6 @@ literal:
 	}
  |  TYPE STRING 
 	{ context *lc = (context*)parm;
-	  type *t = cat_bind_type(lc->cat, $1);
  	  $$ = _symbol_create_atom( SQL_ATOM, atom_general(
 			cat_bind_type(lc->cat, $1 ),$2)); 
 	  _DELETE($1); }
