@@ -3,10 +3,8 @@ The following changes are necessary to obtain equivalent semantics
 
 Version 4.3		Version 5.		Comments
 ----------------------------------------------------------------
-col_name(bat,str)	bbp.setRole(bat,str)
-			bbp.getRole(bat)
+col_name(bat,str)	bbp.setColumn(bat,str)
 name(bat,str,str)	bbp.setRole(bat,str,str)
-			bbp.getName(bat)
 rename(bat,str)		bbp.setName(bat,str)
 bbpname(bat,str)	bbp.setName(bat,str)
 bbpname(bat)		bbp.getName(bat)

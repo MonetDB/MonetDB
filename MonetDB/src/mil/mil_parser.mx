@@ -381,7 +381,7 @@ except for the built-in types, which are expected to exist.
 @c
 str typeNames[]={"void","bit","chr","sht","bat","int","oid","ptr",
 	"flt","dbl","lng","str","url","lock","sema","blob","fstream",
-	"bipipe",0};
+	"bipipe","tzone","date","daytime","rule","timestamp",0};
 
 int bindId(str nme){
 	int i, fnd= 0;
