@@ -1,8 +1,10 @@
-@rem figure out the folder name
-@set MONETDB=%~dp0
+@echo off
 
-@rem remove the final backslash from the path
-@set MONETDB=%MONETDB:~0,-1%
+rem figure out the folder name
+set MONETDB=%~dp0
 
-@rem start the real server
-@"%MONETDB%\Mserver.bat" --dbinit="module(sql_server); sql_server_start();" %*
+rem remove the final backslash from the path
+set MONETDB=%MONETDB:~0,-1%
+
+rem start the real server
+"%MONETDB%\Mserver.bat" --dbinit="module(sql_server); sql_server_start();" %*

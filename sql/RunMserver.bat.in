@@ -5,7 +5,7 @@ setlocal
 set monetdbdir=@MONETDB_PREFIX@
 set sqldir=@SQL_BUILD@
 
-set MOD_PATH=%sqldir%\src\backends\monet4\.libs;%monetdbdir%\lib\MonetDB
+set MOD_PATH=%sqldir%\src\backends\monet4;%monetdbdir%\lib\MonetDB
 
 set PATH=%MOD_PATH%;%monetdbdir%\bin;%PATH%
 
