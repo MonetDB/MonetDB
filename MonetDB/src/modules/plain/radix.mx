@@ -2495,17 +2495,17 @@ bunins_failed:
     GDKfree(cnk);
 
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_var && ATOMstorage(b->ttype) == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+        if (HEAPcopy(&bn->theap, &b->theap) < 0) {
 	    *res = NULL;
 	} else {
-            bm->ttype = bn->htype = tpe;
-            bm->tvarsized = bn->hvarsized = 1;
-            strcpy(bn->hatom, ATOMname(tpe));
+            bm->htype = bn->ttype = b->ttype;
+            bm->hvarsized = bn->tvarsized = 1;
+            strcpy(bn->tatom, ATOMname(b->ttype));
 	}
     }
-    if (*res) {
+    if (*res == NULL) {
 	BBPreclaim(bn);
 	return GDK_FAIL;
     }
@@ -2741,17 +2741,17 @@ bunins_failed:
     GDKfree(cnk);
 
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+        if (HEAPcopy(&bn->theap, &a->theap) < 0) {
 	    *res = NULL;
 	} else {
-            bm->ttype = bn->htype = tpe;
-            bm->tvarsized = bn->hvarsized = 1;
-            strcpy(bn->hatom, ATOMname(tpe));
+            bm->htype = bn->ttype = a->ttype;
+            bm->hvarsized = bn->tvarsized = 1;
+            strcpy(bn->tatom, ATOMname(a->ttype));
 	}
     }
-    if (*res) {
+    if (*res == NULL) {
 	BBPreclaim(bn);
 	return GDK_FAIL;
     }
@@ -2856,17 +2856,17 @@ bunins_failed:
     GDKfree(cnk);
 
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+        if (HEAPcopy(&bn->theap, &a->theap) < 0) {
 	    *res = NULL;
 	} else {
-            bm->ttype = bn->htype = tpe;
-            bm->tvarsized = bn->hvarsized = 1;
-            strcpy(bn->hatom, ATOMname(tpe));
+            bm->htype = bn->ttype = a->ttype;
+            bm->hvarsized = bn->tvarsized = 1;
+            strcpy(bn->tatom, ATOMname(a->ttype));
  	}
     }
-    if (*res) {
+    if (*res == NULL) {
 	BBPreclaim(bn);
 	return GDK_FAIL;
     }
@@ -2956,17 +2956,17 @@ bunins_failed:
     GDKfree(cnk);
 
     /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && b->ttype == TYPE_str) {
+    if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
 	BAT *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->hheap, &b->theap) < 0) {
+        if (HEAPcopy(&bn->theap, &a->theap) < 0) {
 	    *res = NULL;
 	} else {
-            bm->ttype = bn->htype = tpe;
-            bm->tvarsized = bn->hvarsized = 1;
-            strcpy(bn->hatom, ATOMname(tpe));
+            bm->htype = bn->ttype = a->ttype;
+            bm->hvarsized = bn->tvarsized = 1;
+            strcpy(bn->tatom, ATOMname(a->ttype));
 	}
     }
-    if (*res) {
+    if (*res == NULL) {
 	BBPreclaim(bn);
 	return GDK_FAIL;
     }
