@@ -58,7 +58,7 @@ proc handle_args { argc argv } {
 				usage
 				exit 0
 			}
-			"^--?\?$" {
+			{^--?\?$} {
 				usage
 				exit 0
 			}
