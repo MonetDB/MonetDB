@@ -927,7 +927,7 @@ typedef __int64 mapi_int64;
 			return (e);				\
 		}						\
 	} while (0)
-#define REALLOC(p,s)	((p) = ((p) ? realloc((p),(s)) : malloc((s))))
+#define REALLOC(p,c)	((p) = ((p) ? realloc((p),(c)*sizeof(*(p))) : malloc((c)*sizeof(*(p)))))
 
 @+ Blocking
 The server side code works with a common/stream package, a fast buffered IO scheme.
@@ -1023,7 +1023,7 @@ mapi_new_handle(Mapi mid)
 	if (mid == NULL)
 		return NULL;
 
-	hdl = malloc(sizeof(MapiStatement));
+	hdl = malloc(sizeof(*hdl));
 	assert(hdl);
 	if (hdl == NULL) {
 		mapi_setError(mid, "Memory allocation failure",
@@ -1120,13 +1120,13 @@ static Mapi
 mapi_new(void)
 {
 	Mapi m;
-	m = malloc(sizeof(MapiStruct));
+	m = malloc(sizeof(*m));
 	if (m == NULL)
 		return NULL;
 	assert(m);
 
 	/* initialize everything to 0 */
-	memset(m, 0, sizeof(MapiStruct));
+	memset(m, 0, sizeof(*m));
 
 	/* then fill in some details */
 	m->next = m;		/* the shortest circular list possible */
@@ -1701,7 +1701,7 @@ MapiMsg
 mapi_clear_bindings(MapiHdl hdl)
 {
 	if (hdl->fields)
-		memset(hdl->fields, 0, hdl->maxfields * sizeof(MapiField));
+		memset(hdl->fields, 0, hdl->maxfields * sizeof(*hdl->fields));
 	return MOK;
 }
 
@@ -1755,7 +1755,7 @@ MapiMsg
 mapi_clear_params(MapiHdl hdl)
 {
 	if (hdl->params)
-		memset(hdl->params, 0, hdl->maxparams * sizeof(MapiParam));
+		memset(hdl->params, 0, hdl->maxparams * sizeof(*hdl->params));
 	return MOK;
 }
 
@@ -2361,7 +2361,7 @@ mapi_cache_reset(MapiHdl hdl)
 		for (i = 0; i < hdl->cache.writer; i++)
 			hdl->cache.tupleindex[i] = -1;
 	if (hdl->cache.tuplerev)
-		for (i = 0; i < hdl->cache.writer; i++)
+		for (i = 0; i <= hdl->cache.writer; i++)
 			hdl->cache.tuplerev[i] = -1;
 	hdl->cache.tuplecount = 0;
 	hdl->cache.reader = -1;
@@ -2369,7 +2369,7 @@ mapi_cache_reset(MapiHdl hdl)
 	hdl->cache.first = 0;
 	assert(hdl->cache.limit == 0 || hdl->cache.fldcnt != NULL);
 	if (hdl->cache.fldcnt)
-		memset(hdl->cache.fldcnt, 0, sizeof(int) * hdl->cache.limit);
+		memset(hdl->cache.fldcnt, 0, sizeof(*hdl->cache.fldcnt) * hdl->cache.limit);
 }
 
 MapiMsg
@@ -2539,27 +2539,27 @@ mapi_extend_cache(MapiHdl hdl)
 		}
 	}
 
-	REALLOC(hdl->cache.rows, newsize * sizeof(char **));
+	REALLOC(hdl->cache.rows, newsize);
 	assert(hdl->cache.rows);
-	memset(hdl->cache.rows + oldsize, 0, incr * sizeof(char **));
+	memset(hdl->cache.rows + oldsize, 0, incr * sizeof(*hdl->cache.rows));
 
-	REALLOC(hdl->cache.tupleindex, newsize * sizeof(int));
+	REALLOC(hdl->cache.tupleindex, newsize);
 	assert(hdl->cache.tupleindex);
 	for (i = oldsize; i < newsize; i++)
 		hdl->cache.tupleindex[i] = -1;
 
-	REALLOC(hdl->cache.tuplerev, newsize * sizeof(int));
+	REALLOC(hdl->cache.tuplerev, newsize + 1);
 	assert(hdl->cache.tuplerev);
-	for (i = oldsize; i < newsize; i++)
+	for (i = oldsize; i <= newsize; i++)
 		hdl->cache.tuplerev[i] = -1;
 
-	REALLOC(hdl->cache.anchors, newsize * sizeof(char **));
+	REALLOC(hdl->cache.anchors, newsize);
 	assert(hdl->cache.anchors);
-	memset(hdl->cache.anchors + oldsize, 0, incr * sizeof(char **));
+	memset(hdl->cache.anchors + oldsize, 0, incr * sizeof(*hdl->cache.anchors));
 
-	REALLOC(hdl->cache.fldcnt, newsize * sizeof(int));
+	REALLOC(hdl->cache.fldcnt, newsize);
 	assert(hdl->cache.fldcnt);
-	memset(hdl->cache.fldcnt + oldsize, 0, incr * sizeof(int));
+	memset(hdl->cache.fldcnt + oldsize, 0, incr * sizeof(*hdl->cache.fldcnt));
 
 	hdl->cache.limit = newsize;
 }
@@ -3137,16 +3137,16 @@ mapi_extend_@1(MapiHdl hdl, int min@1)
 
 	if (nm <= min@1)
 		 nm = min@1 + 32;
-	hdl->@1 = hdl->@1 ? realloc(hdl->@1, nm * sizeof(@2)) : malloc(nm * sizeof(@2));
+	REALLOC(hdl->@1, nm);
 	assert(hdl->@1);
 	/* clear new entries */
-	memset(hdl->@1 + hdl->max@1, 0, (nm - hdl->max@1) * sizeof(@2));
+	memset(hdl->@1 + hdl->max@1, 0, (nm - hdl->max@1) * sizeof(*hdl->@1));
 	hdl->max@1 = nm;
 	return MOK;
 }
 @c
-@:extend(fields,MapiField)@
-@:extend(params,MapiParam)@
+@:extend(fields)@
+@:extend(params)@
 
 static void
 mapi_extend_anchor(MapiHdl hdl)
@@ -3155,12 +3155,12 @@ mapi_extend_anchor(MapiHdl hdl)
 	char **ac = hdl->cache.anchors[cr];
 
 	if (ac == 0 || hdl->maxfields > hdl->cache.fldcnt[cr]) {
-		REALLOC(hdl->cache.anchors[cr], sizeof(char *) * hdl->maxfields);
+		REALLOC(hdl->cache.anchors[cr], hdl->maxfields);
 		if (ac) {
 			/* implies hdl->maxfields > hdl->cache.fldcnt[cr] */
 			memset(hdl->cache.anchors[cr] + hdl->cache.fldcnt[cr],
 			       0,
-			       sizeof(char *) * (hdl->maxfields - hdl->cache.fldcnt[cr]));
+			       sizeof(*hdl->cache.anchors[cr]) * (hdl->maxfields - hdl->cache.fldcnt[cr]));
 		}
 	}
 }
