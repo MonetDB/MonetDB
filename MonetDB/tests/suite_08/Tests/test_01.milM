@@ -23,18 +23,15 @@ view_bbp_status().print();
 # Pseudo bat to map a BAT id into its type
 view_bbp_kind().print();
 
-# Pseudo bat with statistics on the use of BAT buffer pool
-"view_bbp_info"().print();
-
 # Pseudo bat to map an atom type id into its name
-"view_atom_name"().print();
+view_atom_name().print();
 
 # Pseudo bat with variable settings for GDK
-"view_gdk_env"().print();
+"view_gdk_env".print();
 printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariableOutput~#\n");
 
 # Pseudo bat to map thread to name
-"view_gdk_thread"().print();
+"view_gdk_thread".print();
 printf("#~BeginVariableOutput~#\n"); view_gdk_thread().print(); printf("#~EndVariableOutput~#\n");
 
 # Pseudo bat to map client identifier to its name
@@ -53,12 +50,12 @@ view_client_tree().print();
 #view_queue_action().print();
 
 # Pseudo bat to gain access to all visible variables
-var view_var_type = view_var_type(); 
+view_var_type() = view_var_type(); 
 
 # Pseudo bat to map variable name to frozen/liquid
-view_var_kind = view_var_kind; 
+view_var_kind() = view_var_kind(); 
 
 # Pseudo bat to map variable name to constant/changeable
-view_var_constant = view_var_constant; 
+view_var_constant() = view_var_constant(); 
 
 quit;

@@ -13,7 +13,7 @@ setoid(oid(20000000));
 module(sys);
 
 # Pseudo bat to map a BAT id into its name
-view_bbp_name.print;
+view_bbp_name().print();
 #---------------------------------#
 # BAT:	  name			  #
 # (int)	  (str)			  #
@@ -47,7 +47,7 @@ view_bbp_name.print;
 [ 27,	  "monet_unicode_case"	  ]
 
 # Pseudo bat to map a BAT id into its refcnt
-view_bbp_refcnt.print;
+view_bbp_refcnt().print();
 #-----------------#
 # BAT:	  refcnt  #
 # (int)	  (int)	  #
@@ -81,7 +81,7 @@ view_bbp_refcnt.print;
 [ 27,	  1	  ]
 
 # Pseudo bat to map a BAT id into its disk location
-view_bbp_location.print;
+view_bbp_location().print();
 #-------------------------#
 # BAT:	  location	  #
 # (int)	  (str)		  #
@@ -115,7 +115,7 @@ view_bbp_location.print;
 [ 27,	  "27"		  ]
 
 # Pseudo bat to map a BAT id into its heat
-view_bbp_heat.print;
+view_bbp_heat().print();
 #-----------------#
 # BAT:	  heat	  #
 # (int)	  (int)	  #
@@ -149,7 +149,7 @@ view_bbp_heat.print;
 [ 27,	  0	  ]
 
 # Pseudo bat to map a BAT id into its dirty status
-view_bbp_dirty.print;
+view_bbp_dirty().print();
 #-------------------------#
 # BAT:	  dirty		  #
 # (int)	  (str)		  #
@@ -183,7 +183,7 @@ view_bbp_dirty.print;
 [ 27,	  "dirty"	  ]
 
 # Pseudo bat to map a BAT id into its disk/loaded/dirty status
-view_bbp_status.print;
+view_bbp_status().print();
 #-----------------#
 # BAT:	  status  #
 # (int)	  (str)	  #
@@ -217,7 +217,7 @@ view_bbp_status.print;
 [ 27,	  "load"  ]
 
 # Pseudo bat to map a BAT id into its type
-view_bbp_kind.print;
+view_bbp_kind().print();
 #-----------------#
 # BAT:	  kind	  #
 # (int)	  (str)	  #
@@ -250,30 +250,42 @@ view_bbp_kind.print;
 [ 26,	  "tran"  ]
 [ 27,	  "tran"  ]
 
-# Pseudo bat with statistics on the use of BAT buffer pool
-"view_bbp_info".print;
-[ "view_bbp_info" ]
-
 # Pseudo bat to map an atom type id into its name
-"view_atom_name".print;
-[ "view_atom_name" ]
+view_atom_name().print();
+#-----------------#
+# atom	name	  # name
+# int	str	  # type
+#-----------------#
+[ 0,	  "void"  ]
+[ 1,	  "bit"	  ]
+[ 2,	  "chr"	  ]
+[ 3,	  "sht"	  ]
+[ 4,	  "BAT"	  ]
+[ 5,	  "int"	  ]
+[ 6,	  "oid"	  ]
+[ 7,	  "ptr"	  ]
+[ 8,	  "flt"	  ]
+[ 9,	  "dbl"	  ]
+[ 10,	  "lng"	  ]
+[ 11,	  "str"	  ]
+[ 12,	  "uchr"  ]
 
 # Pseudo bat with variable settings for GDK
-"view_gdk_env".print;
+"view_gdk_env".print();
 [ "view_gdk_env" ]
-printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#---------------------------------------------------------------------------------#
-# BAT:			  monet_environment					  #
-# (str)			  (str)							  #
-#---------------------------------------------------------------------------------#
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"				  ]
-[ "gdk_version",	  "4.3.13"																																										  ]
-[ "monet_pid",		  "19079"																																											  ]
-[ "prefix",		  "/var/tmp/monet.GNU_32-d.13635/monet/.GNU_32-d/Linux2.4.20-20.9perfctrsmp"																																			  ]
-[ "exec_prefix",	  "/var/tmp/monet.GNU_32-d.13635/monet/.GNU_32-d/Linux2.4.20-20.9perfctrsmp"																																			  ]
+#---------------------------------------------------------------------------------------------------------#
+# h			monet_environment								  # name
+# str			str										  # type
+#---------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "32biti686-redhat-linux-gnu"							  ]
+[ "gdk_version",	  "4.3.19"									  ]
+[ "monet_pid",		  "12510"									  ]
+[ "prefix",		  "/ufs/niels/data/Linux-i686"							  ]
+[ "exec_prefix",	  "/ufs/niels/data/Linux-i686"							  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/dbfarm"																																			  ]
+[ "gdk_dbfarm",		  "/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm"				  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "33554432"																											  ]
 [ "gdk_vm_minsize",	  "134217728"																											  ]
@@ -281,26 +293,26 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOu
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/modules/plain/.libs:/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/modules/contrib/.libs:/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/modules/calibrator/.libs:/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/src/mapi/.libs"	  ]
+[ "monet_mod_path",	  "/ufs/niels/data/Linux-i686/lib/MonetDB"					  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "56710"																																											  ]
+[ "mapi_port",		  "44678"									  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "57336"																																											  ]
+[ "sql_port",		  "51491"									  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_api",		  "sql(default-schema)"					  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "default-schema"					  ]
-[ "sql_logdir",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/log"																																				  ]
-[ "gdk_config",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/conf/monet.conf"																																		  ]
-[ "monet_cwd",		  "/var/tmp/monet.GNU_32-d.13635/monet/Linux2.4.20-20.9perfctrsmp/mTests/tests/suite_08"																																	  ]
+[ "sql_logdir",		  "/ufs/niels/data/Linux-i686/var/MonetDB/log"					  ]
+[ "gdk_config",		  "/ufs/niels/data/Linux-i686/etc/monet.conf"					  ]
+[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/mTests/tests/suite_08"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
-"view_gdk_thread".print;
+"view_gdk_thread".print();
 [ "view_gdk_thread" ]
-printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); view_gdk_thread().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-------------------------#
 # BAT:	  thread	  #
@@ -310,7 +322,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariabl
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its name
-view_client_name.print;
+view_client_name().print();
 #-----------------#
 # BAT:	  name	  #
 # (int)	  (str)	  #
@@ -318,17 +330,17 @@ view_client_name.print;
 [ 0,	  "adm"	  ]
 
 # Pseudo bat to map client identifier to its login time
-printf("#~BeginVariableOutput~#\n"); view_client_login.print; printf("#~EndVariableOutput~#\n");
+printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
 #-----------------------------------------#
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Thu Aug 14 00:40:06 2003"	  ]
+[ 0,	  "Fri Aug 20 14:40:51 2004"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
-view_client_tree.print;
+view_client_tree().print();
 #-----------------------------------------#
 # BAT:	  tree				  #
 # (int)	  (str)				  #
@@ -342,13 +354,13 @@ view_client_tree.print;
 #view_queue_action.print;
 
 # Pseudo bat to gain access to all visible variables
-view_var_type = view_var_type; 
+view_var_type() = view_var_type(); 
 
 # Pseudo bat to map variable name to frozen/liquid
-view_var_kind = view_var_kind; 
+view_var_kind() = view_var_kind(); 
 
 # Pseudo bat to map variable name to constant/changeable
-view_var_constant = view_var_constant; 
+view_var_constant() = view_var_constant(); 
 
 quit;
 
