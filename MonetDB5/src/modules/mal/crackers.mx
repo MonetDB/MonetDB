@@ -112,7 +112,7 @@ address CRKselectPieces
 comment "Retrieve identities of all pieces
 	that qualify the selection criterion.";
 
-command dropPiece(b:bat[:int,:int])
+command drop(b:bat[:int,:int])
 address CRKdropPiece
 comment	"Garbage collect the piece representation";
 @{
@@ -130,8 +130,8 @@ BATs to exploits the cracker features lated in query processing.
         if( @3 == NULL) { *@1 = 0;
                 return throwMessage("crackers.@4","cannot access descriptor @2");
         }
-        if( *@2 <0) @3= BATmirror(@3);
-
+        /* reverse descriptor should be loaded */
+        if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
 @-
 The relationships between a table and its cracker index
 is locally maintained. 
@@ -139,6 +139,7 @@ is locally maintained.
 #ifndef _CRACKERS_H_
 #define _CRACKERS_H_
 
+/*#define DEBUG_CRACKERS */
 
 #define LEAF 'L'
 #define PHI  'P'		/* broken using a select */
@@ -279,14 +280,14 @@ according to the tail value;
 }
 @-
 @= exchange
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 	printf("exchange %d %d\n",BUNindex(b,@1),BUNindex(b,@2));
 #endif
 	memcpy(buf, @1, BUNsize(b));
 	memcpy(@1, @2, BUNsize(b));
 	memcpy(@2, buf, BUNsize(b));
 @= exchange2
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 	printf("exchange %d %d %d\n",BUNindex(b,@1),
 		BUNindex(b,@2),BUNindex(b,@3));
 #endif
@@ -346,7 +347,7 @@ Inspect the value range table to only further crack qualifying fragments.
 @c
 	
 	lim= crackMap[m].freepiece;
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 	printf("search range %d %d [lim=%d]\n",*(int*)low, *(int*) hgh,lim);
 #endif
 	for(i=0; i< lim; i++){
@@ -355,7 +356,7 @@ Inspect the value range table to only further crack qualifying fragments.
 		if( crackMap[m].pieces[i].rng_min > *(int*) hgh) continue;
 		if( *(int*) low <=  crackMap[m].pieces[i].rng_min &&
 		    *(int*) hgh >=  crackMap[m].pieces[i].rng_max) {
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 			printf("skip range %d-%d\n",
 				crackMap[m].pieces[i].rng_min,
 				crackMap[m].pieces[i].rng_max);
@@ -410,7 +411,7 @@ and update the administration BATs.
 
 		if(piece->idx_first == l){
 			if( h< piece->idx_last){
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 		printf("left split [%d] %d-%d \n",i,l,h);
 #endif
 				piece->kind = PHI;
@@ -433,7 +434,7 @@ and update the administration BATs.
 		} else
 		if( piece->idx_last == h){
 			if( l>piece->idx_first){
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 		printf("right split [%d] %d-%d \n",i,l,h);
 #endif
 				/* falls at high end */
@@ -456,7 +457,7 @@ and update the administration BATs.
                                 npiece->parent=i;
 			}
 		} else {
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 		printf("middle split [%d] %d-%d \n",i,l,h);
 #endif
 				piece->kind= PHI;
@@ -488,6 +489,9 @@ and update the administration BATs.
 If this was the first cracking operation it makes sense to administer
 the ranges of the outer partitions as well.
 @c
+#ifdef DEBUG_CRACKERS
+	printf("pid returned %d\n",pid);
+#endif
 	*partid= pid;
 	return MAL_SUCCEED;
 }
@@ -503,7 +507,7 @@ int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
 
 	low= l= crackMap[mid].pieces[pid].idx_first;
 	h= crackMap[mid].pieces[pid].idx_last;
-#ifdef DEBUG
+#ifdef DEBUG_CRACKERS
 	printf("set view to new dimension[%d,%d]: %d-%d\n",mid, pid,l,h);
 #endif
 	view->batBuns->base = BUNptr(b, l-1);

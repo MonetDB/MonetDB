@@ -1562,7 +1562,8 @@ with a BAT descriptor. Upon failure we can simply abort the function.
                 return throwMessage("bat.@4", 
 			"cannot access descriptor @2");
 	}
-	if(*@2 <0) @3 = BATmirror(@3);
+        /* reverse descriptor should be loaded */
+        if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
 @-
 
 @c

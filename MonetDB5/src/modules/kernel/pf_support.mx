@@ -54,9 +54,9 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
                 return throwMessage("bat.@4",
                         "cannot access descriptor @2");
         }
-        if(*@2 <0) @3 = BATmirror(@3);
-
-
+        /* reverse descriptor should be loaded */
+        if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
+@-
 @* Module Implementation
 @h
 #ifndef PF_SUPPORT_H

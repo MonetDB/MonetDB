@@ -431,7 +431,8 @@ The code below wraps around the V4 code base
         if( @3 == NULL) { *@1 = 0;
                 return throwMessage("bat.@4", "cannot access descriptor @2");
         }
-        if(*@2 <0) @3 = BATmirror(@3);
+        /* reverse descriptor should be loaded */
+        if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
 @c
 #include "mal.h"
 #include "mal_exception.h"

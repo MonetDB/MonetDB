@@ -1343,7 +1343,8 @@ account while resolving them.
         if( @3 == NULL) { *@1 = 0;
                 return throwMessage("algebra.@4", "cannot access descriptor @2");
 	}
-	if( *@2 <0){ /* BAT reverse */ @3 = BATmirror(@3); }
+	/* reverse descriptor should be loaded */
+	if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
 @+ BAT sum operation
 The sum aggregate only works for int and float fields.
 The routines below assumes that the caller knows what type

@@ -173,8 +173,8 @@ comment "Map a BAT into its tail type";
 command getNames() :bat[:int,:str] 	
 address CMDbbpNames
 comment "Map a BAT into its bbp name";
-command getPNames() :bat[:int,:str] 	
-address CMDbbpPNames
+command getRNames() :bat[:int,:str] 	
+address CMDbbpRNames
 comment "Map a BAT into its bbp physical name";
 command getCount() :bat[:int,:lng] 	
 address CMDbbpCount
@@ -220,7 +220,8 @@ with a BAT descriptor. Upon failure we can simply abort the function.
         if( @3 == NULL) { *@1 = 0;  
 		return throwMessage("bbp.@4","cannot access descriptor @2");
         }
-	if( *@2 <0) @3= BATmirror(@3);
+        /* reverse descriptor should be loaded */
+        if( *@2 <0){ BBPcacheit(@3); @3= BATmirror(@3); }
 @= chkIdentifier
 	/* generate exception if string is not an identifier */
         if( isIdentifier(@1))
@@ -619,19 +620,22 @@ str CMDbbpNames( int *ret){
 	@:Pseudo(bbp,name)@
         return MAL_SUCCEED;
 }
-str CMDbbpPNames( int *ret){       
+str CMDbbpRNames( int *ret){       
 	BAT*    b;
         int     i;
 
         b= BATnew(TYPE_int,TYPE_str,BBPsize);
-        if (b == 0) return throwMessage("bbp.getPNames", "failed to create BAT");
+        if (b == 0) return throwMessage("bbp.getRNames", "failed to create BAT");
 
-	BBPlock("CMDbbpPNames");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-		BUNins(b, &i, BBP_physical(i));
+	BBPlock("CMDbbpRNames");
+        for(i=1; i < BBPsize; i++) 
+	if (i != b->batCacheid && BBP_logical(i)) { 
+		if( BBP_logical(-i)){
+			BUNins(b, &i, BBP_logical(-i));
+		} else 	BUNins(b, &i, BBP_logical(i));
 	}
-	BBPunlock("CMDbbpPNames");
-	@:Pseudo(bbp,pname)@
+	BBPunlock("CMDbbpRNames");
+	@:Pseudo(bbp,revname)@
         return MAL_SUCCEED;
 }
 str CMDbbpCount( int *ret){       
