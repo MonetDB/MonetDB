@@ -388,6 +388,9 @@ comment "Add months to a date";
 #command lng(d:tzone):lng = MTIMEtzone_2lng;
 #command int(d:rule):int = MTIMErule_2int;
 
+command date(:date):date
+address MTIMEdate2date
+comment "generate the nil date";
 command date(:void):date
 address MTIMEnil2date
 comment "generate the nil date";
@@ -2437,6 +2440,11 @@ str MTIME@1_2@2(@2 *ret,@1 *src){
 str MTIMEnil2date(date *ret,int *src){
     (void) src;
     *ret= date_nil;
+    return MAL_SUCCEED;
+}
+str MTIMEdate2date(date *ret,date *src){
+    (void) src;
+    *ret= *src;
     return MAL_SUCCEED;
 }
 @-
