@@ -38,7 +38,7 @@ html
 #include "mal_instruction.h"
 /*#define MAL_ATOM_DEBUG*/
 
-mal_export void malAtomDef(str name);
+mal_export void malAtomDef(str name,int tpe);
 
 #endif /*  _MAL_ATOM_H*/
 @+
@@ -69,20 +69,36 @@ int isAtomCandidate(str name){
 }
 @-
 Atoms are constructed incrementally in the kernel using the
-ATOMproperty function.
+ATOMproperty function. It takes an existing type as a base
+to derive a new one.
 The most tedisous work is to check the signature types of the functions
 acceptable for the kernel.
 @c
 
-void malAtomDef(str name){
+void malAtomDef(str name, int tpe){
+	int i;
+
+	if(strlen(name) >= IDLENGTH){
+		GDKerror("Atom name '%s' too long\n", name);
+		return;
+	}
 	if( ATOMindex(name)>=0){
 		GDKerror("Redefinition of atom '%s'\n", name);
 		return;
 	}
+	if( tpe<0 || tpe >=GDKatomcnt){
+		GDKerror("Undefined atom inheritance '%s'\n", name);
+		return;
+	}
 #ifdef MAL_ATOM_DEBUG
 	printf("introduce a new atom type '%s' in the kernel\n",name);
-	/* ATOMproperty(name,GDKstrdup(""),0); */
 #endif
+	
+	ATOMproperty(name,"",  (int (*)()) 0);
+	i= ATOMindex(name);
+	memcpy((char*)(BATatoms+i),
+		(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
+	strcpy(BATatoms[i].name, name);
 }
 void defAtomCommand(InstrPtr p){
 #ifdef MAL_ATOM_DEBUG

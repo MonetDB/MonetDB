@@ -441,12 +441,11 @@ modname    : identifier | string \\
 	if( modname==0)
 		return parseError(cntxt,"<module path> expected\n");
 @c
-int parseModule(Client cntxt)
-{	int atomary;
+int parseModule(Client cntxt, int atomary)
+{	
 	str modname=0;
-	int x,y;
+	int x,y,tpe;
 
-	atomary = keyword(cntxt,"atom",4);
 	if( ! keyword(cntxt,"module",6) ){
 		if( atomary) return parseError(cntxt,"'module' expected\n");
 		return 0;
@@ -454,7 +453,15 @@ int parseModule(Client cntxt)
 
 	@:parsePath@
 
-	if( atomary ) malAtomDef(modname);
+@-
+Atom storage may be defined in terms of an existing type.
+@c
+	if( atomary ) {
+		if( currChar(cntxt)==':') {
+			tpe= typeMarker(cntxt);
+		} else tpe= TYPE_int;
+		malAtomDef(modname,tpe);
+	}
 	if( findScope(cntxt->nspace,modname) != NULL){
 		GDKerror("duplicate module '%s'\n",modname);
 		cntxt->curprg->def->errors  = FATALINPUT;
@@ -693,7 +700,7 @@ help information.
 	} 
 	skipToEnd(cntxt);
 @-
-Module components may include functions overruling
+Module components may include a function reference overruling
 the built-in type resolver.
 @= typeInfo
 	skipBlanc2(cntxt);
@@ -1083,7 +1090,7 @@ int parseMal(Client cntxt){
 			  continue;
 		case 'A': case 'a':
 			  if( keyword(cntxt,"atom",4) &&
-			      parseModule(cntxt)) break;
+			      parseModule(cntxt,TRUE)) break;
 			  goto allLeft;
 		case 'b': case 'B':
 			  if( keyword(cntxt,"barrier",7)) 
@@ -1109,7 +1116,7 @@ int parseMal(Client cntxt){
 		case 'l': if( parseLEAVE(cntxt)) break;
 			  goto allLeft;
 		case 'M': case 'm': 
-			  if( parseModule(cntxt)) break;
+			  if( parseModule(cntxt, FALSE)) break;
 			  goto allLeft;
 		case 'P': case 'p': 
 			  if( keyword(cntxt,"pattern",7) ) {

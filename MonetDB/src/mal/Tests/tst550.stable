@@ -1,0 +1,23 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## use of the lock module
+#l:= lock.create();
+#lock.set(l);
+#i:=lock.try(l);
+#lock.unset(l);
+#lock.destroy(l);
+#
+function Admin.main():int;	#0:void (main:int)
+	l := lock.create();	#1:lock (l:lock)
+	lock.set(l);	#2:void ($2:any)(l:lock)
+	i := lock.try(l);	#3:int (i:int)(l:lock)
+	lock.unset(l);	#4:void ($4:any)(l:lock)
+	lock.destroy(l);	#5:void ($5:any)(l:lock)
+end function;	#6:void 
+>

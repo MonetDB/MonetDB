@@ -6,7 +6,7 @@
 	db:= take("gdk_dbname",str);
 	df:= take("gdk_dbfarm");
 	dd:= take("gdk_dbdir");
-	b := take("environment",bat[void,str]);
+	bb := take("environment",bat[void,str]);
 
 # how to obtain a copy of all objects in a space?
 barrier b:= space.iterator("mal_constants",-1:int,name:str,value:str);

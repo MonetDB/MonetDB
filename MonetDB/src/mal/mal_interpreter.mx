@@ -443,7 +443,7 @@ by faking an exception.
 		break;
 	} }
 @-
-You can skip to a catch blcok block by searching for the corresponding 'lab'
+You can skip to a catch block by searching for the corresponding 'lab'
 The return value should be set to pass the error automatically upon
 reaching end of function block.
 @= skipToCatch
