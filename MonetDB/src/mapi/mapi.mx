@@ -292,7 +292,6 @@ Get the new information for the server socket and start listening.
 			if (c == 0) {
 				stream_printf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 				GDKfree(name);
-				fdout->flush(fdout);
 
 				fdout->close(fdout);
 				fdout->destroy(fdout);

@@ -40,7 +40,6 @@ gdk_export int  GDKgetHome   (void);
 gdk_export lng  GDKusec      (void);
 gdk_export int  GDKms        (void);
 gdk_export int  GDKcsec      (void);
-gdk_export int  GDKsec       (void);
 
 gdk_export BAT *GDKenv;
 
@@ -1480,21 +1479,6 @@ int GDKcsec(void) {
 	struct timeb tb;
 	ftime(&tb);
 	return (tb.time-GDKtime_startsec)*100 + tb.millitm/10;
-#endif
-#endif
-}
-
-
-int GDKsec(void) {
-#ifdef HAVE_GETTIMEOFDAY
-	struct timeval tp;
-	gettimeofday(&tp, NULL);
-	return tp.tv_sec - GDKtime_startsec;
-#else
-#ifdef HAVE_FTIME
-	struct timeb tb;
-	ftime(&tb);
-	return tb.time - GDKtime_startsec;
 #endif
 #endif
 }

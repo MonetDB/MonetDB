@@ -185,7 +185,9 @@ only be in one state.
 @c
 int GDKunlink(str dir, str nme, str ext) {
 	char path[MAXPATHLEN];
-	int err, t0 = GDKms();
+	int err, t0;
+
+	IODEBUG t0 = GDKms();
 
 	if ((nme == NULL) || (*nme == 0) ) {
 		return -1; 
@@ -209,7 +211,9 @@ A move routine is overloaded to deal with extensions.
 int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext2) {
 	char	path1[PATHLENGTH]; 
 	char	path2[PATHLENGTH]; 
-	int	ret, t0 = GDKms();
+	int	ret, t0;
+
+	IODEBUG t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0) ) {
 		return -1; 
@@ -1116,7 +1120,7 @@ Print the table header and then the multijoin.
 @-
 Cleanup.
 @c
-	(void) s->flush(s);
+	s->flush(s);
         for(j=0; j <= argc; j++) {
 		if (c[j].buf) GDKfree(c[j].buf);
 	}

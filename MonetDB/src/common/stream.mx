@@ -347,7 +347,6 @@ static size_t stream_read( stream *s, char *buf, size_t elmsize, size_t cnt ){
 
 static size_t stream_write( stream *s, char *buf, size_t elmsize, size_t cnt ){
 	size_t res = fwrite( buf, elmsize, cnt, (FILE*)s->stream_data);
-	fflush( (FILE*)s->stream_data );
 	return res;
 }
 
@@ -794,7 +793,6 @@ stream *file_wstream( FILE *fp, char *name ){
 		if (s->errnr == NO__ERROR){
 	   		fwrite( (char*)&s->byteorder, sizeof(short), 
 						1, (FILE*)s->stream_data);
-			fflush( (FILE*)s->stream_data );
 		}
 		return s;
 	}
