@@ -1018,9 +1018,10 @@ def RunTest(env, TST) :
 			REVo=" (r"+REVo+")"
 			REVe=" (r"+REVe+")"
 
-			MDIFF = env['exe']['Mdiff'][1]
+			MDIFF0 = env['exe']['Mdiff'][1]
+			MDIFF1 = MDIFF0
 			if env['exe']['Mtimeout'][0]:
-				MDIFF = env['exe']['Mtimeout'][1]+' '+MDIFF
+				MDIFF1 = env['exe']['Mtimeout'][1]+' '+MDIFF0
 
 			#TODO:
 			#timedout = 1
@@ -1033,8 +1034,11 @@ def RunTest(env, TST) :
 			#		timedout = 1
 			#	signal.alarm(0)
 			#	ACCURACY = ACCURACY - 1
+			MDIFF = MDIFF1
 			timedout = 1
 			while timedout and ACCURACYout >= 0:
+				if ACCURACYout == 0:
+					MDIFF = MDIFF0
 				timedout = os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACYout)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
 				ACCURACYout = ACCURACYout - 1
 
@@ -1049,8 +1053,11 @@ def RunTest(env, TST) :
 			#		timedout = 1
 			#	signal.alarm(0)
 			#	ACCURACY = ACCURACY - 1
+			MDIFF = MDIFF1
 			timedout = 1
 			while timedout and ACCURACYerr >= 0:
+				if ACCURACYerr == 0:
+					MDIFF = MDIFF0
 				timedout = os.system(MDIFF+' '+par['IGNORE']+' '+par['CONTEXT']+' -a'+str(ACCURACYerr)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
 				ACCURACYerr = ACCURACYerr - 1
 
