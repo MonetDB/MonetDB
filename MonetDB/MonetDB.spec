@@ -65,6 +65,9 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/lib/libMapi.so 
 %{prefix}/lib/libstream.so 
 
+%{prefix}/share/MonetDB/site_perl/* 
+%{prefix}/share/MonetDB/python/* 
+
 %files server
 %defattr(-,monet,monet) 
 %{prefix}/bin/Mserver 
@@ -76,9 +79,17 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/lib/libbat.so 
 %{prefix}/lib/libmonet.so
 %{prefix}/lib/MonetDB/*.so 
+%{prefix}/share/MonetDB/monet.conf 
+%{prefix}/share/MonetDB/general.mil 
+%{prefix}/share/MonetDB/mapi.mil 
+%{prefix}/share/MonetDB/quit.mil 
+%{prefix}/share/MonetDB/tools/* 
+
 
 %files devel
 %defattr(-,monet,monet) 
+%{prefix}/share/MonetDB/conf/monet.m4 
+
 %{prefix}/include/*.h
 %{prefix}/include/*/*.[hcm]
 
@@ -89,6 +100,10 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/bin/idxmx 
 %{prefix}/bin/epsffit 
 
+%{prefix}/share/MonetDB/monet.Mprofile.conf 
+%{prefix}/share/MonetDB/Mprofile-commands.lst 
+%{prefix}/share/MonetDB/monet.Mtest.conf 
+
 %{prefix}/bin/prof.py
 %{prefix}/bin/Mtest.py
 %{prefix}/bin/Mapprove.py
@@ -98,6 +113,8 @@ perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
 %{prefix}/bin/Mdiff
 %{prefix}/bin/Mtimeout
 %{prefix}/bin/MkillUsers
+
+%{prefix}/lib/autogen/* 
 
 %pre server
 adduser monet
