@@ -168,6 +168,9 @@
 	.COMMAND mvc_export_schemas( mvc c, Stream s ) = mvc_export_schemas_wrap; 
 		"Export the schema info of the current transaction"
 
+	.COMMAND renumber( BAT[oid,any::1] b1, oid o ) : BAT[oid,any::1] = bat_renumber;
+		"renumber the bat using the offset o"
+
 	.LOAD
 		# dirty hack for comments ask menzo
 		PROC renameFUNC(str OLD,str NEW) : void := {
@@ -611,6 +614,23 @@ int mvc_export_schemas_wrap( mvc *c, Stream *s ){
 	mvc_export_schemas( *(mvc**)c, *(stream**)s );
 	return GDK_SUCCEED;
 }
+
+int bat_renumber( BAT **r, BAT *in, oid *O )
+{
+	oid o = *O;
+	if (BAThdense(in)){
+		BATseqbase(in, in->hseqbase + o);
+	} else {
+		oid *n = (oid*)BUNhead(in,BUNfirst(in)), *e = n + BATcount(in);
+		while(n<e){
+			*n += o;
+		}
+	}
+	BBPfix(in->batCacheid);
+	*r = in;
+	return GDK_SUCCEED;
+}
+
 @mil
 #module(MILsqueezer);
 
@@ -982,6 +1002,11 @@ proc load_seps( BAT[void,BAT] bats, str Sep, str Rsep ) : BAT[void,str] := {
 		id += 1;
 	}
 	return seps;
+}
+
+proc oid_insert( b1, b2 ) := {
+	var o := b1.reverse.max();
+	return b1.insert(renumber(b2,o));
 }
 
 proc bat_name(b):= return str(b);

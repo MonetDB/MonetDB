@@ -823,12 +823,13 @@ stmt *stmt_sets(list * l1)
 	return s;
 }
 
-stmt *stmt_insert(stmt * c, stmt * a)
+stmt *stmt_insert(stmt * c, stmt * a, int unique_oids)
 {
 	stmt *s = stmt_create();
 	s->type = st_insert;
 	s->op1.stval = c;
 	s->op2.stval = a;
+	s->flag = unique_oids;
 	s->h = stmt_dup(c->h);
 	s->t = stmt_dup(c->t);
 	return s;

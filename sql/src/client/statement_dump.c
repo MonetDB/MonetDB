@@ -701,9 +701,12 @@ int stmt_dump( stmt *s, int *nr, context *sql ){
 	case st_insert: {
 		int l = stmt_dump( s->op1.stval, nr, sql );
 		int r = stmt_dump( s->op2.stval, nr, sql );
-		if (s->op2.stval->nrcols){
+		if (s->flag){ 
 			len = snprintf( buf, BUFSIZ, 
-		  	"s%d := insert(s%d,s%d);\n", -s->nr, l, r);
+		  	"s%d := oid_insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+		} else if (s->op2.stval->nrcols){
+			len = snprintf( buf, BUFSIZ, 
+		  	"s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 		} else {
 			len = snprintf( buf, BUFSIZ, 
 		  	"s%d := insert(s%d,oid(nil),s%d);\n", -s->nr, l, r);

@@ -1235,71 +1235,68 @@ static stmt *set2pivot(context * sql, list * l)
 	return stmt_list(pivots);
 }
 
-/* reason for the group stuff 
+/* The group code is needed for double elimination.
  * if a value is selected twice once on the left hand of the
- * or and once on the right hand of the or it will be in the
+ * 'OR' and once on the right hand of the 'OR' it will be in the
  * result twice.
  *
  * current version is broken, unique also remove normal doubles.
  */
 static stmt *sets2pivot(context * sql, list * ll)
 {
+	int markid = 1000;
 	node *n = ll->h;
 	if (n) {
 		stmt *pivots = set2pivot(sql, n->data);
 		n = n->next;
-		/*
-		   stmt *g = NULL;
-		 */
 		while (n) {
 			stmt *npivots = set2pivot(sql, n->data);
 			list *l = npivots->op1.lval;
 			list *inserts = create_stmt_list();
 
-			node *m = l->h;
+			node *m, *c;
 
-			while (m) {
-				node *c = pivots->op1.lval->h;
-				while (c) {
+			/* we use a special bat insert to garantee unique head 
+			 * oids 
+			 */
+			for (m = l->h ; m; m = m->next) {
+				for (c = pivots->op1.lval->h; c; c = c->next){
 					stmt *cd = c->data;
 					stmt *md = m->data;
 					if (cd->t == md->t) {
-						list_append (inserts, stmt_insert (stmt_dup(cd), stmt_dup(md)));
+						list_append (inserts, stmt_insert (stmt_dup(cd), stmt_dup(md), 1));
 						break;
 					}
-					c = c->next;
 				}
-				m = m->next;
 			}
 			stmt_destroy(pivots);
 			stmt_destroy(npivots);
 			pivots = stmt_list(inserts);
 			n = n->next;
 		}
-		/* no double elimination jet 
+		{
+		   group *g = NULL;
+		   stmt *u;
+		   node *m;
 		   list *inserts = create_stmt_list();
-		   m = pivots->op1.lval->h;
-		   while(m){
-		   	if (g){
-		   		g = stmt_derive(m->data, g);
-		   	} else {
-		   		g = stmt_group(m->data);
-		   	}
-		   	m = m->next;
-		   }
-		   g = stmt_reverse( stmt_unique( stmt_reverse( g ), NULL));
-		   m = inserts->h;
 
-		   while(m){
-		   	list_append( inserts, stmt_semijoin( stmt_dup(m->data), 
-				stmt_dup(g)));
-		   	m = m->next;
+		   for( m = pivots->op1.lval->h; m; m = m->next){
+		   	g = grp_create(stmt_dup(m->data), g);
 		   }
-		   stmt_destroy(g);
+		   u = stmt_reverse( stmt_unique( stmt_reverse( stmt_dup(g->ext) ), NULL));
+		   grp_destroy(g);
+
+		   for( m = pivots->op1.lval->h; m; m = m->next){
+		   	list_append( inserts, 
+				stmt_semijoin( stmt_dup(m->data), stmt_dup(u)));
+		   }
+		   stmt_destroy(u);
 		   stmt_destroy(pivots);
 		   return stmt_list(inserts);
-		 */
+		}
+		/* no double elimination jet 
 		return pivots;
+		 */
 	}
 	return NULL;
 }
@@ -1419,8 +1416,7 @@ static stmt *sql_join_
 			stmt *ls = stmt_dup(m->data);
 			stmt *rs = stmt_dup(m->next->data);
 
-			rs = check_types(sql, tail_type(ls),
-					 stmt_reverse(rs));
+			rs = check_types(sql, tail_type(ls), stmt_reverse(rs));
 			if (!rs) {
 				if (ls)
 					stmt_destroy(ls);
@@ -3305,7 +3301,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 					return NULL;
 				}
 					
-				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins );
+				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins, 0 );
 			}
 
 		}
@@ -3330,7 +3326,7 @@ static stmt *insert_into(context * sql, dlist * qname,
 			for (n = s->op1.lval->h, m = collist->h;
 			     n && m; n = n->next, m = m->next) {
 				column *c = m->data;
-				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_dup(n->data));
+				inserts[c->colnr] = stmt_insert( stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_dup(n->data), 0);
 			}
 		}
 		if (s) 
@@ -3415,7 +3411,7 @@ static stmt *sql_update(context * sql, dlist * qname,
 			}
 
 			list_append(l, stmt_replace( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_bat), v));
-			list_append(l, stmt_insert( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v)));
+			list_append(l, stmt_insert( stmt_cbat(basecolumn(cl->s), stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v), 0));
 			n = n->next;
 		}
 		if (s) stmt_destroy(s);
@@ -3457,7 +3453,7 @@ static stmt *delete_searched(context * sql, dlist * qname, symbol * opt_where)
 		assert (tv->s->type == st_basetable);
 		list_append(l, stmt_insert(
 				stmt_tbat(tv->s->op1.tval, INS, st_dbat ), 
-				stmt_reverse( v )));
+				stmt_reverse( v ), 0));
 		list_append(l, stmt_replace(
 				stmt_tbat(tv->s->op1.tval, DEL, st_obat), stmt_dup(v)));
 		for(n = t->columns->h; n; n = n->next){

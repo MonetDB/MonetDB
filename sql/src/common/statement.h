@@ -180,7 +180,7 @@ extern stmt *stmt_sets(list * s1);
 extern stmt *stmt_copyfrom(table * t, char *file, char *tsep, char *rsep, int nr );
 extern char *stmt_copyfrom_file( stmt *s );
 
-extern stmt *stmt_insert(stmt *c, stmt * values);
+extern stmt *stmt_insert(stmt *c, stmt * values, int unique_oids);
 extern stmt *stmt_replace(stmt * c, stmt * values);
 extern stmt *stmt_delete(table * t, stmt * where);
 
