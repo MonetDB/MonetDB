@@ -249,6 +249,8 @@ else
 	MEL="mel"
 	MX="Mx"
 fi
+MEL="$MEL$EXEEXT"
+MX="$MX$EXEEXT"
 AC_SUBST(MEL)
 AC_SUBST(MX)
 
