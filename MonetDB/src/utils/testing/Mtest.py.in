@@ -119,8 +119,8 @@ Usage:  %s  [options] ( [<dir>] [<tests>] | [<dirs>] )
         print '''\
  --MAPICLIENT=<mapi-client program call>
  --SQLCLIENT=<sql-client program call>
- --MAPIPORT=<host-name:port-no.>
- --SQLPORT=<portno.>
+ --MAPIPORT=<port-no.>
+ --SQLPORT=<port-no.>
          : overrule defaults:
 		MAPICLIENT=%s
 		SQLCLIENT=%s
@@ -1171,11 +1171,7 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
     wait = 61
     repeat = 5
     host = ''
-    port = 0
-    if SERVER == "MAPI":
-        port = int(string.splitfields(env['MAPIPORT'],':')[1])
-    if SERVER == "SQL":
-        port = int(env['SQLPORT'])
+    port = int(env[SERVER+'PORT'])
     rpt = 0
     while rpt < repeat:
         busy, Serrno, Serrstr = CheckPort(host,port)
@@ -1257,6 +1253,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
             PROLOGUE = " "+TST+".prologue"
 
         Srvr = MTO+str(STO)+" "+exe['Mserver'][1]+" --dbname="+TSTDB
+        Srvr = Srvr+" --set "+string.lower(SERVER)+"_port="+env[SERVER+'PORT']
         if SERVER == "MAPI":
             Srvr = Srvr+" "+env['MONET_PREFIX']+path("/share/MonetDB/mapi.mil")
         else:
@@ -1603,10 +1600,10 @@ def main(argv) :
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['MONET_CONF']     = "FindMonetConf(env)"
         #dft['MONET_MOD_PATH'] = "''"   #"env['MONET_PREFIX']+os.sep+'lib'+os.pathsep+env['MONET_PREFIX']+os.sep+'lib'+os.sep+'MonetDB'"
-        dft['MAPIPORT']       = "HOST+':'+str(randomPort(50000,59999))"
+        dft['MAPIPORT']       = "str(randomPort(50000,59999))"
         dft['SQLPORT']        = "str(randomPort(50000,59999))"
         dft['SQLCLIENT']      = "'sql_client --port='+env['SQLPORT']"
-        dft['MAPICLIENT']     = "'MapiClient -everything'"
+        dft['MAPICLIENT']     = "'MapiClient --port='+env['MAPIPORT']"
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
     env = {}
@@ -1953,16 +1950,12 @@ def main(argv) :
         STDOUT.flush()
 
         host = ''
-        port = int(string.splitfields(env['MAPIPORT'],':')[1])
-        busy, Serrno, Serrstr = CheckPort(host,port)
-        if busy == 1:
-            Warn("Skipping MAPI tests as MAPIPORT=%s is not available (Error #%d: '%s')!" % (env['MAPIPORT'],Serrno,Serrstr))
-            BusyPorts.append('MAPI')
-        port = int(env['SQLPORT'])
-        busy, Serrno, Serrstr = CheckPort(host,port)
-        if busy == 1:
-            Warn("Skipping SQL tests as SQLPORT=%s is not available (Error #%d: '%s')!" % (env['SQLPORT'],Serrno,Serrstr))
-            BusyPorts.append('SQL')
+	for S in 'MAPI', 'SQL':
+            port = int(env[S+'PORT'])
+            busy, Serrno, Serrstr = CheckPort(host,port)
+            if busy == 1:
+                Warn("Skipping %s tests as %sPORT=%s is not available (Error #%d: '%s')!" % (S,S,env[S+'PORT'],Serrno,Serrstr))
+                BusyPorts.append(S)
 
     STDERR.flush()
     t_ = 0

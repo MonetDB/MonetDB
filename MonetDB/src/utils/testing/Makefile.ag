@@ -2,8 +2,11 @@
 EXTRA_DIST =  Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in MkillUsers.in Mlimit.c \
 		prof.py Mprofile-commands.lst
 
+INCLUDES = top_srcdir/src/common ../../common
+
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
+	LIBS = ../../common/libmutils
 }
 
 bin_Mtimeout = {

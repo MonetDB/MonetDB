@@ -9,20 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <string.h>
-
-#ifdef __CYGWIN32__
-char *optarg;
-int optind;
-#endif
-
-#ifdef HAVE_GETOPT_H
-# include <getopt.h>
-#else
-#ifndef HAVE_GETOPT
-# include <getopt.c>
-#endif
-#endif
+#include "monet_options.h"
 
 void showUsage(char *name)
 {

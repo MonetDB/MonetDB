@@ -103,12 +103,12 @@ have changed since my proposal.
   * TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
   * Mserver --dbname=TSTDB [TST.prelude] < TST.mil(M|S)
-  * Mserver --dbname=TSTDB $MONET_PREFIX/share/MonetDB/mapi.mil [TST.prologue] -background &
+  * Mserver --dbname=TSTDB --set mapi_port=$MAPIPORT $MONET_PREFIX/share/MonetDB/mapi.mil [TST.prologue] &
          MapiClient [-prelude TST.prelude] < TST[_(s|p)XX].milC
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
     Mshutdown
-  * Mserver --dbname=TSTDB $SQL_PREFIX/share/sql/catalog.mil $SQL_PREFIX/share/sql/sqlserver.mil [TST.prologue] -background &
+  * Mserver --dbname=TSTDB --set sql_port=$SQLPORT $SQL_PREFIX/share/sql/catalog.mil $SQL_PREFIX/share/sql/sqlserver.mil [TST.prologue] &
          sql_client < TST[_(s|p)XX].sql
      or  TST[.exe|.com|.bat|.cmd] TST [TST.prelude]
      or  python TST.py [TST.prelude]
@@ -123,10 +123,10 @@ have changed since my proposal.
    processes that Mtimeout cannot reach any more.)
 
   (Mserver is called with "--config=$MONET_CONF --debug=$GDK_DEBUG --set monet_prompt=".
-   See below and "Mserver -help" for details.)
+   See below and "Mserver --help" for details.)
 
-  (MapiClient is called with "-everything".
-   See "MapiClient -help" for details.)
+  (MapiClient is called with "--port=$MAPIPORT".
+   See "MapiClient --help" for details.)
 
   (sql_client is called with "--port=$SQLPORT".)
 
@@ -206,9 +206,9 @@ have changed since my proposal.
 	TSTSRCBASE	$MONET_SOURCE				base of test source tree
 	TSTBLDBASE	$MONET_BUILD				base of extracted test tree
 	TSTTRGBASE	$MONET_PREFIX				base for test output
-	MAPICLIENT	MapiClient -everything			mapi-client program call
+	MAPICLIENT	MapiClient --port=$MAPIPORT		mapi-client program call
 	SQLCLIENT	sql_client --port=$SQLPORT		sql-client program call
-	MAPIPORT	$HOST:<random-port-number>		the MAPI port
+	MAPIPORT	<random-port-number>			the MAPI port
 	SQLPORT		<random-port-number>			the SQL port
 
     The following variables are currently still used legacy, but they will disappear soon...
