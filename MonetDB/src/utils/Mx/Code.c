@@ -69,7 +69,7 @@ again:  switch( d->d_dir ){
 	case CCyacc:
 	case CClex:
             if(!extract(d->d_dir)) break;
-	    WriteFile(fname, d->d_dir);
+	    IoWriteFile(fname, d->d_dir);
 	    mode=d->d_dir;
 	    CodeBlk(d->d_blk);
 	    break;

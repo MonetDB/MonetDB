@@ -82,7 +82,7 @@ char *	name;
     int		i, mod= 0, sec= 0, lino;
     CmdCode 	lastdir = Continue;
 
-    ReadFile(name);
+    IoReadFile(name);
     d= NwDef(Bfile, mod, sec, 0);
     d->d_cmd= name;
 

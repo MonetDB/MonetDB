@@ -158,7 +158,7 @@ char *mode;
 
 char 	fname[1024];
 
-void	WriteFile(s, m)
+void	IoWriteFile(s, m)
 char *	s;
 CmdCode	m;
 {
@@ -171,12 +171,12 @@ CmdCode	m;
     if( (f->f_mode & m) == m ){
 	ofile= fmustopen(f->f_tmp, "a");
 	if(ofile==NULL)
-	    Fatal("WriteFile","can't append to:%s",f->f_tmp);
+	    Fatal("IoWriteFile","can't append to:%s",f->f_tmp);
     } else {
 	f->f_mode |= m;
 	ofile= fmustopen(f->f_tmp, "w");
 	if(ofile==NULL)
-	    Fatal("WriteFile","can't create:%s",f->f_tmp);
+	    Fatal("IoWriteFile","can't create:%s",f->f_tmp);
         if (disclaimer) insertDisclaimer(ofile,f->f_tmp);
     }
 }
@@ -280,15 +280,15 @@ void UpdateFiles()
     nfile = 0;
 }
 
-void	ReadFile(name)
+void	IoReadFile(name)
 char *	name;
 {
 	char *p;
 
 	if( !HasSuffix(name, ".mx") )
-		Fatal("ReadFile", "Not a mx-file:%s", name);
+		Fatal("IoReadFile", "Not a mx-file:%s", name);
 	if( (ifile= fopen(name, "r")) == 0 ) 
-		Fatal("ReadFile", "Can't process %s", name);
+		Fatal("IoReadFile", "Can't process %s", name);
 	p = (inputdir = strdup(name)) + strlen(name);
 	while(--p >= inputdir && *p != DIR_SEP);
 	p[1] = 0;

@@ -50,7 +50,7 @@ again:  switch( d->d_dir ){
 	case Date:
 	    break;
 	case Bfile:
-	    WriteFile(d->d_cmd, d->d_dir);
+	    IoWriteFile(d->d_cmd, d->d_dir);
 	    PrPrelude(d->d_cmd);
 	    sprintf(filename,"%s",d->d_cmd);
 	    FormTitle();
