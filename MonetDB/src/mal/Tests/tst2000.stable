@@ -1,0 +1,36 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+##The 2000 serie  is focussed on parallelism
+##we start with a non-parallel version
+#
+#function clkticks(n:int):void;
+#barrier	b:= n>0;
+#	printf("clock tick\n");
+#	alarm.sleep(2);
+#	n:= n-1;
+#redo	b;
+#end	b;
+#end clkticks;
+function Admin.clkticks(n:int):void; #0:(clkticks:void)<-(n:int)
+barrier b := calc.>(n,0); #1:(b:bit)<-(n:int)($3:int) jump 7
+    system.printf("clock tick\n"); #2:($4:int)<-($5:str)
+    alarm.sleep(2); #3:($6:void)<-($7:int)
+    n := calc.-(n,1); #4:(n:int)<-(n:int)($8:int)
+    redo b ; #5:(b:bit) jump 1
+end b; #6:(b:bit)
+end clkticks; #7:
+#
+#clkticks(2);
+#
+function Admin.main():int; #0:(main:int)
+    Admin.clkticks(2); #1:($1:void)<-($2:int)
+end main; #2:
+clock tick
+clock tick
+>

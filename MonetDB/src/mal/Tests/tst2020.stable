@@ -1,0 +1,31 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2002, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## parallel syntax checks
+#
+#barrier xx;
+#
+#fork b1;
+#barrier yy;
+#	leave yy;
+#	redo yy;	
+#end	yy;
+#end b1;
+#end xx;
+#
+function Admin.main():int; #0:(main:int)
+barrier xx; #1:(xx:any) jump 9
+fork b1 ; #2:(b1:any) jump 8
+barrier yy; #3:(yy:any) jump 7
+    leave yy; #4:(yy:any) jump 7
+    redo yy ; #5:(yy:any) jump 3
+end yy; #6:(yy:any)
+end b1; #7:(b1:any)
+end xx; #8:(xx:any)
+end main; #9:
+>

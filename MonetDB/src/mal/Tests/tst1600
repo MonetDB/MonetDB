@@ -387,8 +387,8 @@ function int(i:int):int;
 end int;
 #proc int(int i) : int return i;
 #
-function arith_perftest(b:bat[any::1,any::2], div:any::2, s:str#proc arith_perftest(bat[any::1,any::2] b, any::2 div, str s) {
-):void;
+function arith_perftest(b:bat[any::1,any::2], div:any::2, s:str):void;
+#proc arith_perftest(bat[any::1,any::2] b, any::2 div, str s) {
 	t:= alarm.time();
 	reduce:= multiplex.tactics("/",b,div);
 #  var t := time, reduce := [/](b,div); 
@@ -504,8 +504,8 @@ end	ci_a;
 end arith_perftest;
 #}
 #
-function arith_perftest(b:bat[any::1,decimal], div:decimal, s:str#proc arith_perftest(bat[any::1,decimal] b, decimal div, str s) {
-):void;
+function arith_perftest(b:bat[any::1,decimal], div:decimal, s:str):void;
+#proc arith_perftest(bat[any::1,decimal] b, decimal div, str s) {
 print("DECIMAL variant");
 	t:= alarm.time();
 	reduce:= decimal.bulkdivide(b,div);

@@ -8,8 +8,6 @@ is based on a simple, assembler-like language called MAL.
 The language reflects the virtual machine architecture around the
 gdk library and has been designed for speed of interpretation,
 ease of analysis, and ease of compilation by applications.
-The key research issue is to realize the first just-in-time multi-query
-optimizer.
 
 This module contains a small footprint MAL parser for Monet Version 5.
 The parser (and its target language) are designed for speed of analysis.
@@ -24,13 +22,12 @@ Unike Monet V4, no module management operations are allowed within the
 context of a procedure. They are considered global commands.
 
 The syntax layout of a MAL program consists of a module name,
-a list of import commands, a list of function/ruler/agent
+a list of import commands, a list of function/ruler/handler
 definitions and concludes with the statements to be executed as
 the main body of the program.  All components are optional.
+A commentary may appear anywhere a statement is expected.
 
-The parser can also parse the MEL signature files to built a knowledge
-base of externally known functions.
-Futhermore, the parser produced is intended to be thread safe.[todo]
+The parser produced is intended to be thread safe.
 
 The stand-alone version of this parser (Mal) can be used 
 to check any MAL procedure for syntactic errors in a front-end.
@@ -40,8 +37,6 @@ The implementation of the lexical analyzer is straightforward:
 the input is taken from a client input buffer. It is assumed that
 this buffer contains the complete MIL structure to be parsed.
 
-Note, the separator collection deals with the ^M for Microsoft's Windows
-environments. TODO
 @h
 /*
  * The contents of this file are subject to the Monet Public
@@ -58,7 +53,7 @@ html
  * The Original Code is the Monet Database System.
  * 
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2001 CWI.  
+ * Portions created by CWI are Copyright (C) 1997-2002 CWI.  
  * All Rights Reserved.
  * 
  * Contributor(s): Martin Kersten <Martin.Kersten@cwi.nl>
@@ -89,21 +84,17 @@ request and each time we encounter EOL.
 int echoInput(Client cntxt){
 	if (cntxt->listing) { 
 		char *c= cntxt->nxt;
-		fputs("#",GDKout);
+		fputs("#",cntxt->fdout);
 		while(*c && !NL(*c)){
-			fputc(*c++,GDKout);
+			fputc(*c++,cntxt->fdout);
 		}
-		fputc('\n', GDKout);
-		fflush(GDKout);
+		fputc('\n', cntxt->fdout);
+		fflush(cntxt->fdout);
 	}
 }
 #define nextChar(X)  (*(X)->nxt?*(X)->nxt++:0)
 #define currChar(X)	*(X)->nxt
 
-int prevChar(Client cntxt) {
-	if( cntxt->nxt > cntxt->input) cntxt->nxt--;
-	return *cntxt->nxt;
-}
 INLINE
 void skipComment(Client cntxt) { 
 	char c; 
@@ -114,22 +105,15 @@ void skipComment(Client cntxt) {
 		cntxt->nxt++;
 	}
 }
-#define skipBlanc(X) {char c; while ((c = *(X)->nxt) && isblank(c))(X)->nxt++;\
-	if( c == '#') skipComment(cntxt);}
 INLINE
-void skipBlanc2(Client cntxt){
+void skipSpace(Client cntxt){
 	char c; 
 	while ((c= *cntxt->nxt) && isspace(c))cntxt->nxt++;
-	if( c == '#') {
-		skipComment(cntxt);
-		skipBlanc2(cntxt);
-	}
 }
 INLINE
 void advance(Client cntxt, int length){
-	char c; 
 	cntxt->nxt += length;
-	while ((c = *cntxt->nxt) && isspace(c)) cntxt->nxt++;
+	skipSpace(cntxt);
 }
 @-
 The most recurring situation is to recognize identifiers.
@@ -171,8 +155,7 @@ str idCopy(Client cntxt, int length){
 	if( s== 0) GDKfatal("FATAL:idCopy:");
 	strncpy(s,cntxt->nxt,length);
 	s[length]=0;
-	cntxt->nxt += length;
-	skipBlanc(cntxt);
+	advance(cntxt,length);
 	return s;
 }
 int keyword(Client cntxt, str kw, int length){
@@ -200,7 +183,6 @@ inline macros.
 int keyphrase(Client cntxt, str kw, int length){
 	if( strncmp(cntxt->nxt,kw,length)==0 ){
 		advance(cntxt,length);
-		skipBlanc(cntxt);
 		return 1;
 	}
 	return 0;
@@ -244,8 +226,7 @@ str strCopy(Client cntxt, int length){
 	if( s== 0) GDKfatal("FATAL:strCopy:");
 	strncpy(s,cntxt->nxt+1,length-2);
 	s[length-2] = 0;
-	cntxt->nxt += length;
-	skipBlanc(cntxt);
+	advance(cntxt,length);
 	return s;
 }
 @-
@@ -294,7 +275,7 @@ void skipToEnd(Client cntxt){
 }
 void parseEndStmt(Client cntxt){
 	char c;
-	skipBlanc(cntxt);
+	skipSpace(cntxt);
 	if( *cntxt->nxt != ';')
 		parseError(cntxt,"';' expected\n");
 	skipToEnd(cntxt);
@@ -311,17 +292,14 @@ int cstLength(Client cntxt, int *type)
 
 	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum(*(s+5)) ){
 		*type = TYPE_bit;
-		skipBlanc(cntxt);
 		return 5;
 	}
 	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum(*(s+4)) ){
 		*type = TYPE_bit;
-		skipBlanc(cntxt);
 		return 4;
 	}
 	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum(*(s+3)) ){
 		*type = TYPE_void;
-		skipBlanc(cntxt);
 		return 3;
 	}
 	*type = TYPE_int;
@@ -368,7 +346,7 @@ int typeQualifier(Client cntxt)
 	if( *cntxt->nxt!=':') return -1;
 
 	cntxt->nxt++;
-	skipBlanc(cntxt);
+	skipSpace(cntxt);
 	switch(*cntxt->nxt){
 	case 'b': if( keyphrase(cntxt,"bit",3) ) return TYPE_bit;
 		if( strncmp(cntxt->nxt,"bat[",4)==0){
@@ -393,7 +371,6 @@ int typeQualifier(Client cntxt)
 			ht= getTypeIndex(hd);
 			if( hd) GDKfree(hd);
 			/* parse the array bound */
-			skipBlanc2(cntxt);
 			if( currChar(cntxt)=='['){
 				int cl,tpe,size;
 				str v;
@@ -577,14 +554,14 @@ the function definition in a particular module instead of the current one.
 		if( l == 0) return (MalBlkPtr) parseError(cntxt,
 					"<identifier> |<operator> expected\n");
 		fnme = idCopy(cntxt,l);
-		parseError(cntxt,"module redirection nyi\n");
+		/*parseError(cntxt,"module redirection nyi\n");*/
 	}
 	if( nextChar(cntxt) != '(') {
 		GDKfree(fnme);
 		return (MalBlkPtr)parseError(cntxt,
 			"function header '(' expected\n");
 	}
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 	/* curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk,0); */
@@ -598,7 +575,6 @@ the function definition in a particular module instead of the current one.
 	curInstr = getInstrPtr(curBlk,0);
 	if( curInstr->modname) GDKfree(curInstr->modname);
 	curInstr->modname = modnme== 0? GDKstrdup(cntxt->nspace->name):modnme;
-	/* insertSymbol(findScope(cntxt->nspace,modnme),curPrg);*/
 
 	/* get calling parameters */
 	ch= currChar(cntxt);
@@ -606,18 +582,18 @@ the function definition in a particular module instead of the current one.
 		str arg;
 		@:binding@
 		pushArgument(curBlk,curInstr, newVariable(curBlk,arg,type));
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		/* the last argument may be variable length */
 		if( keyphrase(cntxt,"...",3) ){
 			curInstr->varargs++;
 			break;
 		}
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		if( (ch=currChar(cntxt)) != ',') {
 			if( ch==')') break;
 			return (MalBlkPtr) parseError(cntxt,"',' expected\n");
 		} else nextChar(cntxt); 
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		ch = currChar(cntxt);
 	}
 	@:closingBracket@
@@ -626,7 +602,7 @@ The return type is either a single type or multiple return type structure.
 We simply keep track of the number of arguments added and
 during the final phase reshuffle the return values to the beginning (?)
 */
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 	if( currChar(cntxt) != ':') {
 		/* default */
 		setVarType(curBlk,0,TYPE_any);
@@ -634,22 +610,22 @@ during the final phase reshuffle the return values to the beginning (?)
 		if( *(cntxt->nxt+1) =='('){
 			int retc= curInstr->argc, i1,i2=0;
 			int newarg[MAXARG];
-			nextChar(cntxt); skipBlanc2(cntxt);
+			nextChar(cntxt); 
 			/* parse multi-target result */
-			nextChar(cntxt);skipBlanc2(cntxt);
+			nextChar(cntxt);skipSpace(cntxt);
 			ch= currChar(cntxt);
 			while( ch !=')' && ch && !NL(ch)){
 				str arg;
 				@:binding@
 				pushArgument(curBlk,curInstr, 
 					newVariable(curBlk,arg,type));
-				skipBlanc2(cntxt);
+				skipSpace(cntxt);
 				if( (ch=currChar(cntxt)) != ',') {
 					if( ch==')') break;
 					return (MalBlkPtr) parseError(cntxt,
 							"',' expected\n");
 				} else nextChar(cntxt); 
-				skipBlanc2(cntxt);
+				skipSpace(cntxt);
 				ch = currChar(cntxt);
 			}
 			/* re-arrange the parameters, results first*/
@@ -664,7 +640,7 @@ during the final phase reshuffle the return values to the beginning (?)
 				curInstr->argv[i1] = newarg[i1];
 			@:closingBracket@
 		} else {
-			nextChar(cntxt); skipBlanc2(cntxt);
+			nextChar(cntxt); skipSpace(cntxt);
 			type= melType(cntxt,curInstr);
 			@:propList@
 			setVarType(curBlk,0,type);
@@ -681,7 +657,7 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 	arg = idCopy(cntxt,l);
 	if( nextChar(cntxt) != ':')
 		return (MalBlkPtr) parseError(cntxt,"':' expected\n");
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 	type= melType(cntxt,curInstr);
 	@:propList@
 @-
@@ -711,14 +687,12 @@ a column of a BAT.
 	if( keyphrase1(cntxt,"{")) {
 		do{
 			l = idLength(cntxt);
-			/* ignore so far */
-			cntxt->nxt += l;
-			skipBlanc(cntxt);
+			advance(cntxt,l);
 		} while( keyphrase1(cntxt,","));
 		if( !keyphrase1(cntxt,"}") )
 			/* return (MalBlkPtr) */
 			parseError(cntxt,"'}' expected\n");
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 	}
 @= melElement
 	if( keyword(cntxt,"any",3)){
@@ -734,7 +708,7 @@ a column of a BAT.
 		curInstr->polymorphic = TRUE;
 	} else {
 		char x;
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		l = idLength(cntxt);
 		x = cntxt->nxt[l];
 		cntxt->nxt[l]= 0;
@@ -744,7 +718,7 @@ a column of a BAT.
 		cntxt->nxt[l]= x;
 		cntxt->nxt += l;
 	}
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 @-
 @c
 int melType(Client cntxt, InstrPtr curInstr){
@@ -759,7 +733,7 @@ int melType(Client cntxt, InstrPtr curInstr){
 				parseError(cntxt,"',' expected\n");
 				return TYPE_any;
 			}
-			skipBlanc2(cntxt);
+			skipSpace(cntxt);
 			@:melElement@ tt = type;
 			type = malAnyBatType(ht,tt);
 			if( !keyphrase1(cntxt,"]")){
@@ -772,7 +746,7 @@ int melType(Client cntxt, InstrPtr curInstr){
 	} else{
 		@:melElement@
 	}
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 	return type;
 }
 @-
@@ -782,7 +756,7 @@ Most functions are (dynamically) linked with the kernel.
 	if( keyphrase1(cntxt,"=")){
 		str nme;
 		int i;
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		i = idLength(cntxt);
 		if( i==0){
 			parseError(cntxt,"<identifier> expected\n");
@@ -810,9 +784,9 @@ The external commands and rules come with a short
 help information.
 
 @= helpInfo
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 	if( keyphrase(cntxt,"comment",7)){
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		if( l= stringLength(cntxt)){
 			curBlk->help = strCopy(cntxt,l);
 		} else parseError(cntxt,"<string> expected\n");
@@ -823,14 +797,14 @@ Module components may include a function reference overruling
 the built-in type resolver. The user-defined type resolver is called
 instead.
 @= typeInfo
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 	if( keyphrase(cntxt,"check",5)){
 		int l;
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		if( keyphrase(cntxt,"=",1)==0){
 			parseError(cntxt,"'=' expected\n");
 		} else{
-			skipBlanc2(cntxt);
+			skipSpace(cntxt);
 			if( l= idLength(cntxt)){
 				str nme = idCopy(cntxt,l);
 				cntxt->nspace->typeChecker = getAddress(nme);
@@ -855,8 +829,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	trimMalBlk(curBlk);
 	chkProgram(cntxt->nspace,curBlk);
 	resetClientPrg(cntxt);
-	/* closeClientPrg(cntxt, FALSE);*/
-	skipBlanc2(cntxt);
+	skipSpace(cntxt);
 	@:externalFcn@
 	@:helpInfo@
 	showErrors(cntxt);
@@ -951,7 +924,7 @@ int parse@3(Client cntxt)
 			parseError(cntxt,"'(' or 'identifier' expected\n");
 			@:endparseCntrl@
 		}
-		nextChar(cntxt); skipBlanc(cntxt);
+		nextChar(cntxt); skipSpace(cntxt);
 		z++; /* parse multiple return arguments */
 		@:parseArguments@
 		curInstr->retc= curInstr->argc;
@@ -964,7 +937,7 @@ int parse@3(Client cntxt)
 	} else advance(cntxt,l); 
 	curInstr->argv[0]= i;
 	if(@3symbol== CATCHsymbol) curInstr->barrier= CATCHsymbol;
-	if(@3symbol== FORKsymbol) curInstr->barrier= FORKsymbol;
+	if(@3symbol== THREADsymbol) curInstr->barrier= THREADsymbol;
 	@:endparseCntrl@
 }
 @c
@@ -973,7 +946,7 @@ int parse@3(Client cntxt)
 @:parseCntrl("raise", 5,RAISE, TYPE_any)@
 @:parseCntrl("return", 6,RETURN, TYPE_any)@
 @:parseCntrl("leave", 5,LEAVE, TYPE_any)@
-@:parseCntrl("fork", 4,FORK, TYPE_any)@
+@:parseCntrl("thread", 6,THREAD, TYPE_any)@
 
 @-
 Most instructions are simple assignments, possibly
@@ -1057,10 +1030,13 @@ void parseAssign(Client cntxt, int kind)
 	curBlk = curPrg->def;
 	curInstr = newInstruction(ASSIGNsymbol);
 
-	curInstr->barrier = kind==BARRIERsymbol? kind :0 ;
+	if( kind== BARRIERsymbol || kind==THREADsymbol)
+		curInstr->barrier = kind;
+	if( kind==THREADsymbol)
+		curInstr->token = kind;
 	if( *cntxt->nxt=='('){
 		/* parsing multi-assignment */
-		nextChar(cntxt); skipBlanc(cntxt);
+		nextChar(cntxt); skipSpace(cntxt);
 		curInstr->argc=0; /*reset to handle pushArg correctly !! */
 		curInstr->retc=0;
 		while(*cntxt->nxt  != ')' && *cntxt->nxt){
@@ -1082,10 +1058,10 @@ void parseAssign(Client cntxt, int kind)
 			curInstr->retc++;
 			if( *cntxt->nxt == ')') break;
 			if( currChar(cntxt)==',') keyphrase1(cntxt,",");
-			skipBlanc(cntxt);
+			skipSpace(cntxt);
 		}
 		curInstr->argc++; /* advance to make pushArgument work */
-		nextChar(cntxt); skipBlanc(cntxt);
+		nextChar(cntxt); skipSpace(cntxt);
 
 	}else{ /* assignment to single variable */
 		i= idLength(cntxt);
@@ -1174,7 +1150,7 @@ Get arguments for a call, assume a single result.
 	if( idLength(cntxt)==0 && operatorLength(cntxt)==0) {
 		if( currChar(cntxt)== '('){
 			nextChar(cntxt);
-			skipBlanc2(cntxt);
+			skipSpace(cntxt);
 			@:parseArguments@
 		} else
 		parseError(cntxt,"<identifier> or <unary operator> expected\n");
@@ -1182,7 +1158,6 @@ Get arguments for a call, assume a single result.
 	}
 	if( (i=operatorLength(cntxt))) {
 		arg = idCopy(cntxt,i);
-		/*skipBlanc2(cntxt);*/
 		if( currChar(cntxt) == '('){
 			nextChar(cntxt);
 			curInstr->fcnname = arg;
@@ -1190,7 +1165,7 @@ Get arguments for a call, assume a single result.
 		}
 		if( currChar(cntxt) != '.' &&
 		    currChar(cntxt) != '(') {
-			skipBlanc2(cntxt);
+			skipSpace(cntxt);
 			curInstr->fcnname = arg;
 			goto part2b;
 		}
@@ -1210,7 +1185,7 @@ opseen:
 		/* continue with parseing a function/operator call */
 		if( currChar(cntxt) == '.'){
 			nextChar(cntxt);
-			skipBlanc2(cntxt);
+			skipSpace(cntxt);
 			curInstr->modname = arg;
 			i = idLength(cntxt);
 			if( i==0) i= operatorLength(cntxt);
@@ -1227,7 +1202,7 @@ opseen:
 				return;
 			}
 getarguments:
-			skipBlanc2(cntxt);
+			skipSpace(cntxt);
 		} else if(currChar(cntxt) != '(')
 		{
 			parseError(cntxt,"'(' expected\n");
@@ -1260,7 +1235,7 @@ part2b:
 		pushInstruction(curBlk,curInstr);
 		return;
 	} else  {
-		skipBlanc2(cntxt);
+		skipSpace(cntxt);
 		if( *cntxt->nxt != ';' && *cntxt->nxt!='#')
 		parseError(cntxt,"operator expected\n");
 	}
@@ -1275,7 +1250,6 @@ int parseMal(Client cntxt){
 
 	echoInput(cntxt);
 	/* here the work takes place */
-	skipBlanc(cntxt);
 	while( currChar(cntxt) && curPrg->def->errors<MAXERRORS){
 		switch( currChar(cntxt)){
 		case '\n': case '\r': case '\f': 
@@ -1306,7 +1280,6 @@ int parseMal(Client cntxt){
 			  if( parseEnd(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
-			  if( parseFORK(cntxt)) break;
 			  if( parseFunction(cntxt)) break;
 			  goto allLeft;
 		case 'H': case 'h':
@@ -1332,7 +1305,10 @@ int parseMal(Client cntxt){
 				parseCommandPattern(cntxt, RULEsymbol);
 				break;
 			  }
-
+			  goto allLeft;
+		case 't':
+			  if( keyword(cntxt,"thread",6)) 
+				kind = THREADsymbol; 
 			  goto allLeft;
 		case 'u': if( parseImport(cntxt)) continue;
 		default: allLeft:

@@ -1,4 +1,3 @@
-
 	y := new(oid,dbl);
 	le_a := dbl(1.0);
 	me_a := insert(y,1@0,le_a);

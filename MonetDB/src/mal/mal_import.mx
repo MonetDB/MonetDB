@@ -225,7 +225,7 @@ void processString(Client c,MalStkPtr glb)
 	pushEndInstruction(mb);
 	chkProgram(c->nspace, c->curprg->def);
 	if( mb->errors == 0){
-		msg= (str) runMAL(c,mb,0,0,glb);
+		msg= (str) runMAL(c,mb,0,glb,0);
 		if( msg ){
 			GDKerror(msg);
 			if( !c->listing) 

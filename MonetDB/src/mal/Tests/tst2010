@@ -10,11 +10,10 @@ barrier	b:= n>0;
 end	b;
 end clkticks;
 
-fork 	hdl;
+thread 	hdl:bat[int,str];
 	clkticks(2);
+	printf("About to exit child\n");
 end	hdl;
-	printf("wait for child to exit\n");
-	ret:= join(hdl);
-	printf("child exit with %d\n",ret);
-	ret:= join(hdl);
-	printf("child exit with %d\n",ret);
+	printf("Wait for child to exit too\n");
+	#wait hdl;
+	#printf("child has finished\n");

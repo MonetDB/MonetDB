@@ -44,10 +44,28 @@ html
 #include "mal_client.h"
 #include "mal_profiler.h"
 
+@-
+Activation of a thread requires construction of the argument list
+to be passed by a handle.
+@h
+typedef struct{
+	Client cntxt; 
+	MalBlkPtr mb; 
+	MalStkPtr stk; 
+	int startpc; 
+	MalStkPtr env;
+	InstrPtr pcicaller;
+	InstrPtr pci;
+} malTask;
+
 /*#define DEBUG_MAL_INTERPRETER */
+/* #define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
 mal_export void showErrors(Client cntxt);
-mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, InstrPtr pcicaller, MalStkPtr env);
+mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, 
+		MalStkPtr env, InstrPtr pcicaller);
+mal_export str runMALsequence( malTask *task);
+mal_export void runMALtask(malTask *task);
 mal_export str setDynamicType(MalBlkPtr mb, MalStkPtr stk, VarPtr v, int tpe,int pc);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall);
@@ -66,19 +84,14 @@ void showErrors(Client cntxt){
 	}
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, InstrPtr pcicaller, MalStkPtr env){
+str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller){
 	MalStkPtr stk= NULL;
 	int i,k,firstNewElement=0;
-	ValPtr retval, lhs,rhs,v;
-	ValRecord backup[MAXARG], *bak = backup;
+	ValPtr lhs,rhs;
 	InstrPtr pci=0, altpci=0; 
-	int stkpc, stkexception, stop=0;
-	str ret=0;
-	ptr argv[MAXARG];
-	static MalStkPtr oldstk;	/* experiment */
-	static int oldspace;
 	long timer;
-	@:performanceVariables@
+	malTask	task;
+	str ret;
 
 	if( mb->errors){
 		char buf[1024];
@@ -132,7 +145,7 @@ of the return statement.
 			if( k== pp->argc-1) k--; /* variable args */
 			rhs = &env->stk[pci->argv[i]];
 			VALcopy(lhs,rhs);
-			@:BATfix(rhs)@
+			@:BATfix(rhs,0)@
 		}
 		stk->up = env;
 		env->down = stk;
@@ -165,13 +178,60 @@ we should first remove garbage.
 	printf("--->stack before interpreter loop\n");
 	printStack(stdout,mb,stk); fflush(stdout);
 #endif
+
+
+	task.cntxt= cntxt; 
+	task.mb= mb; 
+	task.stk=stk; 
+	task.startpc=1; 
+	task.env=env;
+	task.pcicaller=pcicaller;
+	task.pci= 0;
+
+	ret= runMALsequence(&task);
+
+	@:waitForChildren@
+	/* pass the debug mode */
+	if(env && stk->cmd!='f') env->cmd = stk->cmd; 
+#ifdef STACKTRACE
+	printf("--->stack after interpreter loop\n");
+	printStack(stdout,mb,stk); fflush(stdout);
+#endif
+	garbageCollector(mb,stk,env != stk);
+	return ret;
+}
+@-
+The core of the interpreter is presented next. It takes the context information
+and starts the interpretation at the designated instruction.
+Note that the stack frame is aligned and initialized in the enclosing routine.
+This way we prepare the route for running parallel threads.
+@c
+str runMALsequence( malTask *task)
+{	
+	Client cntxt= task->cntxt; 
+	MalBlkPtr mb= task->mb; 
+	MalStkPtr stk= task->stk;
+	int startpc= task->startpc; 
+	MalStkPtr env= task->env;
+	InstrPtr pcicaller= task->pcicaller;
+	int childProcess= task->pci? task->pci->argv[0]: 0;
+
+	ValPtr lhs,rhs,v;
+	int stkpc,i,k; 
+	InstrPtr pci=0, altpci=0; 
+	int stkexception, stop=0;
+	str ret=0;
+	ptr argv[MAXARG];
+	ValRecord backup[MAXARG], *bak = backup;
+	@:performanceVariables@
+
 MALrestart:
-	stkpc =1;		/* skip signature instruction */
+	stkpc = startpc;
 	stkexception = -1;
 	stop = mb->stop;
 	while(stkpc < stop ){
 		pci = getInstrPtr(mb,stkpc);
-		@:exceptionTest@
+		@:exceptionTypeTest@
 		if( stk->cmd  ) {
 			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'q') goto MALevalExit;
@@ -184,10 +244,7 @@ MALrestart:
 		@:MALinterpret@
 	}
 MALevalExit:
-	@:garbageTypeCheck@
-	/* pass the debug mode */
-	if(env && stk->cmd!='f') env->cmd = stk->cmd; 
-	/* garbage collect and return */
+	@:finishChild@
 	if( stkexception >= 0) {
 		str nme= MALexception, msg;
 		if(stk->stk[stkexception].vtype== TYPE_str)
@@ -195,14 +252,20 @@ MALevalExit:
 		else { nme= getVarName(mb,stkexception);
 			msg= 0;
 		}
-		ret=appendException(mb,stop-1,nme, " propagated", msg);
+		ret=appendException(mb,mb->stop-1,nme, " propagated", msg);
 	}
-#ifdef STACKTRACE
-	printf("--->stack after interpreter loop\n");
-	printStack(stdout,mb,stk); fflush(stdout);
-#endif
-	/* if( env != stk ) */ garbageCollector(mb,stk,env != stk);
 	return ret;
+}
+void runMALtask(malTask *task){
+#ifdef DEBUG_MAL_PARALLEL
+	printf("create childs in stk %d %d\n",
+		task->stk->shares, &task->stk->shares);
+	if( task->pci)
+	printf("childs sets return action %d %s\n",
+		task->pci->argv[0],
+		getVarName(task->mb,task->pci->argv[0]));
+#endif
+	runMALsequence(task);
 }
 @+ Safeguarding
 The physical stack for each thread is an operating system parameter.
@@ -244,9 +307,10 @@ elements in the value stack.
 		@:redoControl@ break;
 	case BARRIERsymbol:
 		@:barrierControl@ stkpc++;break;
-	case FORKsymbol:
-		printf("Forking not yet implemented\n");
-		stkpc++; break;
+	case THREADsymbol:
+		printf("create the child %d\n", pci->argv[0]);
+		@:createChild@
+		break;
 	case RLRcall:
 	case PATcall:
 		@:patterncall@ stkpc++; break;
@@ -255,6 +319,7 @@ elements in the value stack.
 	case FCNcall:
 		@:functioncall@ stkpc++; break;
 	case ENDsymbol:
+		@:finishChild@
 	case RULEsymbol:
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
@@ -270,7 +335,7 @@ elements in the value stack.
 		stkexception = -1;
 		stkpc++; break;
 	case RETURNsymbol:
-		if( env != NULL && mbcaller != NULL){
+		if( env != NULL && pcicaller != NULL){
 			InstrPtr pp=pci;
 			@:endProfile@
 			pci= pcicaller;
@@ -278,8 +343,9 @@ elements in the value stack.
 				rhs = &stk->stk[pp->argv[i]];
 				lhs = &env->stk[pci->argv[i]];
 				VALcopy(lhs,rhs);
-				@:BATfix(lhs)@
+				@:BATfix(lhs,stkpc)@
 			}
+			@:garbageTypeCheck@
 			goto MALevalExit;
 		}
 	case ENDDEFsymbol: 
@@ -396,7 +462,7 @@ non-returned values.
 	if( pci->blk== NULL)
 		ret= raiseException(mb,stkpc,MALexception,
 			"reference to MAL function missing\n");
-	else ret= runMAL(cntxt,pci->blk,mb,pci,stk);
+	else ret= runMAL(cntxt,pci->blk,mb,stk,pci);
 	@:resultParameter@
 @-
 All dynamically linked routines are called with references to their
@@ -515,19 +581,88 @@ the beginning or ensure that during chkProgram the barrier/redo/leave/catch
 jumps are re-established.
 
 @= redoControl
-/* change to jump
-	for( stkpc--; stkpc>=0; stkpc--){
-	InstrPtr p= getInstrPtr(mb,stkpc);
-	if( p->barrier == BARRIERsymbol && p->argv[0]== pci->argv[0]){
-		break;
-	} }
-*/
 	stkpc = pci->jump;
 	@:endProfile@
 	/* semantic validity of redo stmt has been checked already */
 	/* continue re-execution of the barrier statement */
 	continue;
+@+ Parallel processing
+The MAL interpreter can be cloned to obtain parallel running threads.
+Such threads share the stackframe of the caller as a means to easily
+communicate.
+The consequence is that a thread may only terminate when it is
+not the parent of one or more children.
+The number of children active is administered on the stack-frame variable.
+The process identifiers are kept in the array childs.
+@-
+Wait for all children to end. Using a timer to control malicious
+children does not work in general, because you don;t know
+what default will work. Instead, the list of children 
+threads should be accessible.
+@= waitForChildren
+i= stk->shares;
+while(i>0 ) { 
+		MT_set_lock(stk->stklock,"finishChild");
+		i= stk->shares;
+		MT_unset_lock(stk->stklock,"finishChild");
+#ifdef DEBUG_MAL_PARALLEL
+	printf("%d awaiting %d childs\n",MT_getpid(),stk->shares);
+	printf("wait for childs in stk %d %d\n",i, &stk->shares);
+#endif
+sleep(1); }
+@-
+Joining a process thread is controlled with a lock part of the stack frame
+@= createChild
+{	MT_Id pid;
+	malTask task;
 
+	if(stk->stklock== 0) stk->stklock= MT_create_lock();
+	MT_set_lock(stk->stklock,"createChild");
+	if( stk->shares == MAXSHARES){
+		ret= raiseException(mb,stkpc,MALexception,"too many threads\n");
+		stkexception= findVariable(mb,"MALexception");
+		break; /* out of instruction switch */
+	} 
+	stk->childs[stk->shares]= pci->argv[0];
+	stk->shares++;
+#ifdef DEBUG_MAL_PARALLEL
+	printf("start parallel thread, shares %d\n",stk->shares);
+#endif
+	MT_unset_lock(stk->stklock,"createChild");
+	task.cntxt= cntxt; 
+	task.mb= mb; 
+	task.stk=stk; 
+	task.startpc=stkpc+1; 
+	task.env=env;
+	task.pcicaller=pcicaller;
+	task.pci= pci;
+
+	/* child */
+	MT_create_thread(&pid, runMALtask, (void*) &task);
+	/* parent */
+	stkpc= pci->jump; /* search end of parallel block */
+	break; /* out of instruction switch */
+}
+@= finishChild
+	if( childProcess){
+		int j,k,lim;
+		MT_set_lock(stk->stklock,"finishChild");
+#ifdef DEBUG_MAL_PARALLEL
+	printf("finish the child %d %s\n",childProcess, 
+			getVarName(mb,childProcess));
+#endif
+		lim= stk->shares;
+		for(k=j=0;j<lim;j++)
+		if( stk->childs[j]!= childProcess)
+			stk->childs[k++]= stk->childs[j];
+		else	stk->shares--;
+		childProcess=0;
+		MT_unset_lock(stk->stklock,"finishChild");
+#ifdef DEBUG_MAL_PARALLEL
+	printf("finished childs in stk %d %d\n",stk->shares, &stk->shares);
+#endif
+		goto MALevalExit;
+	}
 @+ Exception handling
 Calling a built-in or user-defined routine may lead to an error, 
 which in Monet 4.x leads to a message on the user's console,
@@ -550,14 +685,14 @@ For the time being we have ignored cascaded/stacked exceptions.
 The policy is to pass the first recognized exception to a context
 in which it can be handled.
 
-@= exceptionTest
+@= exceptionTypeTest
 if( pci->typechk== TYPE_UNKNOWN){
 	@:dynamicTypeCheck@
 	if( pci->typechk== TYPE_UNKNOWN) {
-		@:garbageTypeCheck@
 		ret= raiseException(mb,stkpc,MALexception,
 				    "Instruction type not fixed\n");
 		@:endProfile@
+		@:garbageTypeCheck@
 		goto MALevalExit;
 	}
 }
@@ -716,7 +851,7 @@ if(@1->vtype == TYPE_bat)
 	b= (BAT*) BBPgetdesc(@1->val.bval);
 	if( b ) {
 		BBPfix(b->batCacheid);
-	} else raiseException(mb,stkpc,"interpreter",
+	} else raiseException(mb,@2,"interpreter",
 		"Can not find bat, internal error\n");
 }
 

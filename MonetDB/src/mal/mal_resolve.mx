@@ -600,7 +600,7 @@ requires a call to a type-specific setToNil() function call.
 @-
 After the parser finishes, we have to look for semantic errors,
 such as flow of control problems and possible typeing conflicts.
-The nesting of BARRIER and CATCH statements with their associated
+The nesting of BARRIER, THREAD and CATCH statements with their associated
 flow of control primitives LEAVE and RETRY should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.
@@ -661,13 +661,13 @@ and should be checked.
 			chkEnd(mb,p); break;
 		case CATCHsymbol:
 			chkCatch(mb,p); break;
-		case FORKsymbol:
-			chkFork(mb,p); break;
+		case THREADsymbol:
+			chkThread(mb,p); break;
 		case LEAVEsymbol:
 		case REDOsymbol:
 			chkLabel(mb,p);
 		}
-		if( p->barrier == BARRIERsymbol )
+		if( p->barrier == BARRIERsymbol || p->barrier == THREADsymbol )
 			chkBarrier(mb,p);
 	}
 	if( signature == FALSE){

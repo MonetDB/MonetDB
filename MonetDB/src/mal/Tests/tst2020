@@ -1,0 +1,11 @@
+# parallel syntax checks
+
+barrier xx;
+
+thread b1;
+barrier yy;
+	leave yy;
+	redo yy;	
+end	yy;
+end b1;
+end xx;

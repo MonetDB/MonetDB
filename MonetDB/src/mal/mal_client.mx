@@ -585,33 +585,37 @@ submission. This avoids a significant number of network interactions.
 		snprintf(s,MAPIBLKSIZE,"quit;","");
 		return 1;
 	} 
-	if( c->blkmode==0 && fgets(s,bytes,c->fdin) == NULL){
-		if (feof(c->fdin)
+@-
+The common approach is to read just one line from the user
+@c
+	if( c->blkmode==0 ){
+		if(fgets(s,bytes,c->fdin) == NULL){
+			if (feof(c->fdin)
 #ifndef WIN32
-		    || (i < 0 && MT_geterrno() != EAGAIN) 
+			    || (i < 0 && MT_geterrno() != EAGAIN) 
 #endif
-		) {
-			return 0;
+			) {
+				return 0;
+			}
+			MT_seterrno(0);
+			goto readAgain;
 		}
-		MT_seterrno(0);
-		goto readAgain;
-	}
-	for(i=0;s[i];i++){
-#ifdef WIN32
-		if (s[i] == 13) continue; /* filter out ^M */
-#endif
-	}
-	if (i >= bytes-1) {
-		int len = c->limit-c->input;
-		enlargebuffer(c, BLOCKSIZE);
-		s= c->input+len;
-		bytes= BLOCKSIZE;
-		goto readAgain;
-	}
+		for(i=0; s[i] ;i++) if(s[i]=='\n'){ s[i]=0; break;}
+@-
+We might have filled the complete buffer and still not found a new-line.
+Then extend the buffer space and retry.
+@c
+		if (i >= bytes-1 ) {
+			int len = c->limit-c->input;
+			enlargebuffer(c, BLOCKSIZE);
+			s= c->input+len;
+			bytes= BLOCKSIZE;
+			goto readAgain;
+	}	 }
 
 @-
 Check to see if this involves a blocked message. If so, read
-the complete block in one blow. Turn the ^M into a space afterwards.
+the complete block in one blow. 
 The alternative is to read the next line;
 @c
 	if( *last != '#') goto readCompleted;
@@ -629,17 +633,18 @@ The alternative is to read the next line;
 			GDKerror("readClient:unable to read all bytes\n");
 			return 0;
 		}
-#ifdef WIN32
-		for(s=last;*s;s++) if( *s == 13) *s = ' ';
-#endif
 		last=s;
 	}
 readCompleted:
 	/* trim the spaces at the end of the string */
-	for(s=c->input; *s; s++) 
-	if( isspace(*s)){
-		if(lspace == 0) lspace= s; 
-	} else lspace =0;
+	for(s=c->input; *s; s++) {
+		if( isspace(*s)){
+			if(lspace == 0) lspace= s; 
+		} else lspace =0;
+#ifdef WIN32
+		if (s[i] == 13) s[i]=' '; /* filter out ^M */
+#endif
+	}
 	if( lspace ) *lspace=0;
 	@:sysTrace(c->input)@
 	return 1;

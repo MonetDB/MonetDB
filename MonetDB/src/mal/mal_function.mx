@@ -121,14 +121,21 @@ int getPC(MalBlkPtr mb, InstrPtr p)
 	if( getInstrPtr(mb,i)==p) return i;
 	return -1;
 }
+@-
+Redo and leave instructions may not appear within a parallel
+block, because the process parent already proceeded 
+@= checkPar
+if(lastFork!= -1) GDKerror("@1 illegal in parallel block\n");
+@c
 int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 {	int i,j, v, endBlk= -1; 
+	int lastFork = -1;
 
 	v = pp->argv[0];
 	for(i= begBlk+1; i<mb->stop; i++){
 		InstrPtr p= getInstrPtr(mb,i);
 		if( p->barrier==BARRIERsymbol || p->barrier==CATCHsymbol ||
-		    p->token== FORKsymbol) {
+		    p->barrier== THREADsymbol) {
 			if( p->argv[0] != v){
 				i= chkBrackets(mb,p,i);
 				continue;
@@ -141,15 +148,25 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 			if( p->argv[0] == v) {
 				pp->jump = i+1;
 				/* retrofit LEAVE/REDO instructions */
+				/* and check their illegal use in THREAD block*/
 				for(j=begBlk+1; j<i; j++){
 					InstrPtr p1= getInstrPtr(mb,j);
+					if( p1->barrier == THREADsymbol) 
+						lastFork = j;
+					if( p1->token== ENDsymbol && 
+					    p1->argv[0]== lastFork)  
+						lastFork = -1;
 					if( p1->token == REDOsymbol && 
-						p1->argv[0]==v ) 
+						p1->argv[0]==v ) {
 						p1->jump= begBlk;
+						@:checkPar(REDO)@
+					}
 
 					if(p1->token== LEAVEsymbol &&
-					   p1->argv[0]==v)
+					   p1->argv[0]==v){
 						p1->jump= i+1;
+						@:checkPar(LEAVE)@
+					}
 				}
 				return i;
 			}
@@ -167,7 +184,7 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 			}
 			if( p->token== LEAVEsymbol) continue;
 			if( pp->token== CATCHsymbol) continue;
-			if( pp->token== FORKsymbol) continue;
+			if( pp->barrier== THREADsymbol) continue;
 			GDKerror("label '%s' is readonly in %s[%d]\n",
 				getVarName(mb,v), getFcnName(mb),getPC(mb,p));
 			mb->errors++;
@@ -193,7 +210,7 @@ void chkCntrl(MalBlkPtr mb, InstrPtr pp)
 void chkBarrier(MalBlkPtr mb, InstrPtr pp)
 {
 	chkCntrl(mb,pp);
-	if( pp->barrier == BARRIERsymbol)
+	if( pp->barrier == BARRIERsymbol || pp->barrier == THREADsymbol)
 	if( getArgType(mb,pp,0) != TYPE_bit && getArgType(mb,pp,0)!= TYPE_any 
 	 && getArgType(mb,pp,0) != TYPE_sht && getArgType(mb,pp,0)!= TYPE_lng 
 	 && getArgType(mb,pp,0) != TYPE_int ){
@@ -206,7 +223,7 @@ void chkCatch(MalBlkPtr mb, InstrPtr pp)
 {
 	chkCntrl(mb,pp);
 }
-void chkFork(MalBlkPtr mb, InstrPtr pp)
+void chkThread(MalBlkPtr mb, InstrPtr pp)
 {
 	chkCntrl(mb,pp);
 }
@@ -223,7 +240,7 @@ void chkEnd(MalBlkPtr mb, InstrPtr pp)
 		p= getInstrPtr(mb,i);
 		if( (p->barrier == BARRIERsymbol ||
 		     p->barrier == CATCHsymbol ||
-		     p->token == FORKsymbol) &&
+		     p->barrier == THREADsymbol) &&
 		     p->argv[0] == v){
 			return;
 		} 
@@ -243,7 +260,9 @@ void chkLabel(MalBlkPtr mb, InstrPtr pp)
 	n = getPC(mb,pp);
 	for(i=0; i<mb->stop;i++){
 		InstrPtr p= getInstrPtr(mb,i);
-		if( p->barrier == BARRIERsymbol && p->argv[0]==k){
+		if( p->argv[0]==k && 
+		   (p->barrier == BARRIERsymbol ||
+		    p->barrier== THREADsymbol)){
 			begBlk = i;
 		}
 		if( p->token == ENDsymbol && p->argv[0]==k) {

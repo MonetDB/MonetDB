@@ -43,10 +43,16 @@ html
 #define _MAL_STACK_H_
 #include "mal.h"
 
+#define STACKINCR	128
+#define MAXGLOBALS	4 * STACKINCR
+#define MAXSHARES	16
+
 typedef struct MALSTK {
 	int 	stksize;
 	int	stktop;
 	MT_Lock	stklock;	/* used for parallel processing */
+	int	shares;		/* number of processes on this stack */
+	int	childs[MAXSHARES];
 	char	cmd;		/* debugger communication */
 	struct MALSTK *up;	/* stack trace list */
 	struct MALSTK *down;	/* stack trace list */
@@ -54,13 +60,15 @@ typedef struct MALSTK {
 	ValRecord stk[1];
 }MalStack, *MalStkPtr;
 
-#define STACKINCR	128
-#define MAXGLOBALS	4 * STACKINCR
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT)	S= (MalStkPtr) alloca(stackSize(CNT));\
 			bzero((char *) S, stackSize(CNT));\
 			(S)->stksize=CNT;
-/*#define newStack(S,CNT)	S= (MalStkPtr) GDKmalloc(stackSize(CNT));\ */
+/*
+#define newStack(S,CNT)	S= (MalStkPtr) GDKmalloc(stackSize(CNT));\
+			bzero((char *) S, stackSize(CNT));\
+			(S)->stksize=CNT;
+*/
 	
 #define newFrame(S,Ssize,Top,Cnt) S= reallocStack(S,&(Ssize),Top,Cnt)
 

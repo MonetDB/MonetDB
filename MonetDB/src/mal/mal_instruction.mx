@@ -1071,6 +1071,10 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 		if( p->barrier== BARRIERsymbol){
 			sprintf(t,"barrier"); 
 			tab=1;
+		} else
+		if( p->barrier== THREADsymbol){
+			sprintf(t,"thread"); 
+			tab=1;
 		}
 	}
 	advance(t);
@@ -1118,8 +1122,6 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 		case ENDDEFsymbol:
 			sprintf(t,"end %s",getVarName(mb,p->argv[0]));
 			break;
-		case FORKsymbol:
-			sprintf(t,"fork %s ",nme); break;
 		case ENDsymbol:
 			sprintf(t,"end %s",nme); break;
 		case RULEsymbol:
@@ -1130,6 +1132,11 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int hidden){
 		case RAISEsymbol:
 			@:tabulate@
 			sprintf(t,"raise %s",nme);
+			break;
+		case THREADsymbol:
+			@:tabulate@
+			sprintf(t,"%s",nme);
+			if( p->argc>1) { advance(t); sprintf(t,":=");}
 			break;
 		case BARRIERsymbol:
 			@:tabulate@

@@ -219,8 +219,17 @@ int getSubScope(str nme) {
 void insertSymbol(Scope cntxt, Symbol prg){
         InstrPtr sig;
         int t;
+	Scope c;
 
         sig = getSignature(prg);
+	if(sig->modname && idcmp(sig->modname,cntxt->name) != 0){
+		/* move the definition to the proper place */
+		c= findScope(cntxt,sig->modname);
+		if(c == NULL){
+			GDKwarning("insertSymbol:undefined module\n");
+printf("module %s symbol %s. %s\n",cntxt->name, sig->modname,sig->fcnname);
+		} else cntxt = c;
+	}
         t = getSubScope(sig->fcnname);
         if( cntxt->subscope == NULL){
 		newSubScope(cntxt);
