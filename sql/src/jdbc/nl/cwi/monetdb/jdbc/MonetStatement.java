@@ -659,6 +659,14 @@ public class MonetStatement implements Statement {
 		 * @param hdrl a HeaderList which contains the query to execute
 		 */
 		private void processQuery(HeaderList hdrl) {
+			// copy a few vars, so we are sure they don't change for this query
+			/** A local copy of fetchSize, so its protected from changes made by
+			*  the Statement parent */
+			int cacheSize = fetchSize;
+			/** A local copy of resultSetType, so its protected from changes made
+			*  by the Statement parent */
+			int rstype = resultSetType;
+
 			synchronized (monet) {
 				try {
 					// make sure we're ready to send query; read data till we have the
@@ -667,12 +675,11 @@ public class MonetStatement implements Statement {
 					// previous result sets.
 					monet.waitForPrompt();
 
-					Header hdr = new Header(this);
 					// set the reply size for this query. If it is set to 0 we get a
 					// prompt after the server sent it's header
 					try {
 						((MonetConnection)connection).setReplySize(
-							maxRows != 0 ? Math.min(maxRows, hdr.getCacheSize()) : hdr.getCacheSize());
+							maxRows != 0 ? Math.min(maxRows, cacheSize) : cacheSize);
 					} catch (SQLException e) {
 						hdrl.addError(e.getMessage());
 						hdrl.setComplete();
@@ -684,6 +691,7 @@ public class MonetStatement implements Statement {
 
 					// go for new results
 					String tmpLine;
+					Header hdr = null;
 					RawResults rawr = null;
 					int lastState = MonetSocket.EMPTY;
 					do {
@@ -693,7 +701,7 @@ public class MonetStatement implements Statement {
 							hdrl.addError(tmpLine.substring(1));
 						} else if (monet.getLineType() == MonetSocket.HEADER) {
 							if (hdr == null) {
-								hdr = new Header(this);
+								hdr = new Header(this, cacheSize, rstype);
 								rawr = null;
 							}
 							hdr.addHeader(tmpLine);
@@ -701,7 +709,7 @@ public class MonetStatement implements Statement {
 							// complete the header info and add to list
 							if (lastState == MonetSocket.HEADER) {
 								hdr.complete();
-								rawr = new RawResults(Math.min(hdr.getCacheSize(), hdr.getTupleCount()), null);
+								rawr = new RawResults(Math.min(cacheSize, hdr.getTupleCount()), null);
 								hdr.addRawResults(0, rawr);
 								// a RawResults must be in hdr at this point!!!
 								hdrl.addHeader(hdr);
@@ -713,6 +721,11 @@ public class MonetStatement implements Statement {
 							hdrl.addError("Unexpected end of stream, Mserver still alive?");
 						}
 					} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
+					// catch resultless headers
+					if (hdr != null) {
+						hdr.complete();
+						hdrl.addHeader(hdr);
+					}
 				} catch (SQLException e) {
 					hdrl.addError(e.getMessage());
 					// if Monet sent us an incomplete or malformed header, we have
@@ -938,10 +951,10 @@ public class MonetStatement implements Statement {
 		// copy a few vars, so we are sure they don't change for this object
 		/** A local copy of fetchSize, so its protected from changes made by
 		 *  the Statement parent */
-		private int cacheSize = fetchSize;
+		private int cacheSize;
 		/** A local copy of resultSetType, so its protected from changes made
 		 *  by the Statement parent */
-		private int rstype = resultSetType;
+		private int rstype;
 
 		/** a regular expression that we often use to split
 		 *  the headers into an array (compile them once) */
@@ -952,11 +965,15 @@ public class MonetStatement implements Statement {
 		 *
 		 * @param parent the CacheThread that created this Header and will
 		 *               supply new result blocks
+		 * @param cs the cache size to use
+		 * @param rst the ResultSet type to use
 		 */
-		public Header(CacheThread parent) {
+		public Header(CacheThread parent, int cs, int rst) {
 			isSet = new boolean[4];
 			resultBlocks = new HashMap();
 			cachethread = parent;
+			cacheSize = cs;
+			rstype = rst;
 			closed = false;
 		}
 

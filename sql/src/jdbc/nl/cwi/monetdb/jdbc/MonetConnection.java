@@ -106,7 +106,13 @@ public class MonetConnection implements Connection {
 		try {
 			// make connection to Monet
 			if (blockMode) {
-				monet = new MonetSocketBlockMode(hostname, port);
+				int blocksize;
+				try {
+					blocksize = Integer.parseInt(props.getProperty("blockmode_blocksize"));
+				} catch (NumberFormatException e) {
+					blocksize = 0;
+				}
+				monet = new MonetSocketBlockMode(hostname, port, blocksize);
 			} else {
 				monet = new MonetSocket(hostname, port);
 			}

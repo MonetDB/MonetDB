@@ -44,9 +44,9 @@ class MonetSocketBlockMode extends MonetSocket {
 	private ByteBuffer outputBuffer;
 
 	/** The maximum size of the chunks we fetch data from the stream with */
-	private final static int capacity = 2048;
+	private final int capacity;
 
-	MonetSocketBlockMode(String host, int port) throws IOException {
+	MonetSocketBlockMode(String host, int port, int blocksize) throws IOException {
 		super(new Socket(host, port));
 
 		fromMonetRaw = new BufferedInputStream(con.getInputStream());
@@ -60,6 +60,9 @@ class MonetSocketBlockMode extends MonetSocket {
 		// leave the buffer byte-order as is, it can be modified later
 		// by using setByteOrder()
 		readBuffer = new StringBuffer();
+
+		// set the blocksize, use hardcoded default on 0 or negative
+		capacity = blocksize <= 0 ? 2048 : blocksize;
 	}
 
 	/**

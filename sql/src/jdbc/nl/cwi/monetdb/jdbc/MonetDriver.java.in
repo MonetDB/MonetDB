@@ -1,7 +1,7 @@
 package nl.cwi.monetdb.jdbc;
 
 import java.sql.*;
-import java.util.Properties;
+import java.util.*;
 import java.net.*;
 
 /**
@@ -185,28 +185,41 @@ public class MonetDriver implements Driver {
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
 		if (!acceptsURL(url)) return(null);
 
-		DriverPropertyInfo[] dpi = new DriverPropertyInfo[5];
-		dpi[0] = new DriverPropertyInfo("user", info.getProperty("user"));
-		dpi[0].required = true;
-		dpi[0].description = "The username to use when authenticating on the database";
+		ArrayList props = new ArrayList();
+		DriverPropertyInfo prop;
 
-		dpi[1] = new DriverPropertyInfo("password", info.getProperty("password"));
-		dpi[1].required = true;
-		dpi[1].description = "The password to use when authenticating on the database";
+		prop = new DriverPropertyInfo("user", info.getProperty("user"));
+		prop.required = true;
+		prop.description = "The username to use when authenticating on the database";
+		props.add(prop);
 
-		dpi[2] = new DriverPropertyInfo("debug", "false");
-		dpi[2].required = false;
-		dpi[2].description = "Whether or not to create a log file for debugging purposes";
+		prop = new DriverPropertyInfo("password", info.getProperty("password"));
+		prop.required = true;
+		prop.description = "The password to use when authenticating on the database";
+		props.add(prop);
 
-		dpi[3] = new DriverPropertyInfo("blockmode", "true");
-		dpi[3].required = false;
-		dpi[3].description = "Whether blockmode should be used, when false, linemode is used instead";
+		prop = new DriverPropertyInfo("debug", "false");
+		prop.required = false;
+		prop.description = "Whether or not to create a log file for debugging purposes";
+		props.add(prop);
 
-		dpi[4] = new DriverPropertyInfo("language", "sql");
-		dpi[4].required = false;
-		dpi[4].description = "What language to use for MonetDB conversations (SQL/MIL/MAL/XQuery/etc.) (not yet implemented)";
+		prop = new DriverPropertyInfo("blockmode", "true");
+		prop.required = false;
+		prop.description = "Whether blockmode should be used, when false, linemode is used instead";
+		props.add(prop);
 
-		return(dpi);
+		prop = new DriverPropertyInfo("language", "sql");
+		prop.required = false;
+		prop.description = "What language to use for MonetDB conversations (SQL/MIL/MAL/XQuery/etc.) (not yet implemented)";
+		props.add(prop);
+
+		prop = new DriverPropertyInfo("blockmode_blocksize", "2048");
+		prop.required = false;
+		prop.description = "The maximum size of blocks read from the socket when using blockmode protocol";
+		props.add(prop);
+
+		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];
+		return((DriverPropertyInfo[])props.toArray(dpi));
 	}
 
 	/**

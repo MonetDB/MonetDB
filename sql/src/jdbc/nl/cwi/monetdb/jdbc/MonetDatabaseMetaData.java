@@ -64,10 +64,14 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	/**
 	 * What is the URL for this database?
 	 *
-	 * @return null because it cannot be generated a.t.m.
+	 * @return a reconstructed connection string
+	 * @throws SQLException if a database access error occurs
 	 */
-	public String getURL() {
-		return(null);
+	public String getURL() throws SQLException {
+		Map env = getEnvMap();
+		return("jdbc:monetdb://" + (String)env.get("host") +
+			":" + (String)env.get("sql_port") + "/" +
+			(String)env.get("gdk_dbname"));
 	}
 
 	/**
@@ -3001,6 +3005,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
  */
 class MonetVirtualResultSet extends MonetResultSet {
 	private String results[][];
+	private boolean closed;
 
 	MonetVirtualResultSet(
 		String[] columns,
@@ -3011,6 +3016,7 @@ class MonetVirtualResultSet extends MonetResultSet {
 		super(columns, types, results.length, stmt);
 
 		this.results = results;
+		closed = false;
 	}
 
 	/**
