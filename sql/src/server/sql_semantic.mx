@@ -446,17 +446,21 @@ inplace_convert( mvc *sql, sql_subtype * ct, stmt * s )
 	sql_subtype *st = tail_type(s);
 
 	if (s->type != st_var || s->ref.refcnt > 1 || ct->scale)
-		return NULL;
+		return s;
 
 	if (ct->digits == 0 || (ct->digits > 0 && st->digits < ct->digits)) {
-		stmt *r = NULL;
+		stmt *r = s;
 		if (ct->type->localtype == st->type->localtype) {
 			if (ct->type->localtype == TYPE_lng ||
 			    ct->type->localtype == TYPE_int ||
-			    ct->type->localtype == TYPE_sht ||
-			    ct->type->localtype == TYPE_str) {
+			    ct->type->localtype == TYPE_sht) {
 				r = stmt_varnr(s->flag, sql_dup_subtype(ct));
 				sql_convert_arg(sql, s->flag, ct);
+			} else if (ct->type->localtype == TYPE_str) {
+				sql_subtype *nt = sql_create_subtype(
+					st->type, ct->digits, ct->scale);
+				r = stmt_varnr(s->flag, nt);
+				sql_convert_arg(sql, s->flag, nt);
 			}
 		} else if (st->type->localtype == TYPE_str) {
 			atom *a = sql_bind_arg(sql, s->flag);
@@ -466,9 +470,11 @@ inplace_convert( mvc *sql, sql_subtype * ct, stmt * s )
 				sql_convert_arg(sql, s->flag, ct);
 			}
 		}
+		if (r != s)
+			stmt_destroy(s);
 		return r;
 	}
-	return NULL;
+	return s;
 }
 
 static stmt *
@@ -495,15 +501,11 @@ dyncheck_types(mvc * sql, sql_subtype * ct, stmt * s )
 	sql_subtype *st = tail_type(s);
 
 	if (st) {
-		stmt *r = NULL;
 		sql_subtype *t = st;
 
 		/* first try cheap internal (inplace) convertions ! */
-		if ( (r = inplace_convert(sql, ct, s)) != NULL) {
-			stmt_destroy(s);
-			return fix_scale(sql, ct, r, 1,
-				(st->type->scale == SCALE_FIX));
-		}
+		s = inplace_convert(sql, ct, s); 
+ 		t = st = tail_type(s);
 
 		/* check if the types are the same */
 		if (t && subtype_cmp(t, ct) != 0) {
@@ -563,15 +565,11 @@ check_types(mvc * sql, sql_subtype * ct, stmt * s, check_type tpe )
 		return dyncheck_types(sql, ct, s);
 
 	if (st) {
-		stmt *r = NULL;
-		sql_subtype *t = st;
+		sql_subtype *t;
 
 		/* first try cheap internal (inplace) convertions ! */
-		if ( (r = inplace_convert(sql, ct, s)) != NULL) {
-			stmt_destroy(s);
-			return fix_scale(sql, ct, r, 1,
-				(st->type->scale == SCALE_FIX));
-		}
+		s = inplace_convert(sql, ct, s); 
+ 		t = st = tail_type(s);
 
 		/* check if the types are the same */
 		if (t && subtype_cmp(t, ct) != 0) {
