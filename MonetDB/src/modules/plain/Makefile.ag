@@ -15,7 +15,7 @@ LIBS = {
 		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
 		perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx \
 		sys.mx tcpip.mx temporal.mx tpcd.mx trans.mx uchr.mx \
-		unix.mx url.mx vector.mx wisc.mx xtables.mx mapi.mx logger.mx
+		unix.mx url.mx vector.mx wisc.mx xtables.mx logger.mx
 	HEADERS = h proto.h m
 	SCRIPTS = mil ""
 	LIBS = ../../gdk/libbat ../../monet/libmonet \
@@ -29,11 +29,6 @@ lib__ascii_io = {
 	LIBS = ../../gdk/libbat ../../monet/libmonet \
 		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(Z_LIBS) $(BZ_LIBS)
-}
-
-scripts_mil = {
-	DIR = pkgdatadir
-	SOURCES = mapi.mil
 }
 
 EXTRA_DIST_DIR = Tests
