@@ -165,6 +165,12 @@ comment "Return the slice with the BUNs at
 	position x till y.";
 @- Select and project
 @mal
+command uselect(b:bat[:any$1,:any$2], low:any$2, 
+	high:any$2, li:bit, hi:bit) :bat[:any$1,:any$2] 
+address ALGuselectInclusive
+comment "See select() but limited to head values";
+
+
 command uselect(b:bat[:any$1,:any$2], 
 		low:any$2, high:any$2) 
 	:bat[:any$1,:void] 
