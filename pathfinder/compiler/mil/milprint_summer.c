@@ -40,6 +40,10 @@
 #include "oops.h"
 #include "subtyping.h"
 
+/* add some timing results for the code */
+#define TIMINGS 0
+#define WITH_SCRIPT 0
+
 static void
 translate2MIL (FILE *f, int act_level, int counter, PFcnode_t *c);
 
@@ -159,11 +163,11 @@ init (FILE *f)
             "# init ()\n"
             /* pathfinder functions (scj, doc handling) are made visible
                in the server */
-            "# module(\"pathfinder\");\n"
-            "# module(\"pf_support\");\n"
-            "# module(\"aggrX3\");\n"
-            "# module(\"xtables\");\n"
-            "# module(\"malalgebra\");\n"
+            "module(\"pathfinder\");\n"
+            "module(\"pf_support\");\n"
+            "module(\"aggrX3\");\n"
+            "module(\"xtables\");\n"
+            "module(\"malalgebra\");\n"
 
             /* a new working set is created */
             "var ws := create_ws();\n"
@@ -972,11 +976,15 @@ loop_liftedSCJ (FILE *f, char *axis, char *kind, char *ns, char *loc)
         fprintf(f,
             "{ # attribute axis\n"
             /* get all unique iter|item combinations */
+            "var sorting := iter.reverse().sort().reverse();\n"
+            "sorting := sorting.CTrefine(kind);"
+            "sorting := sorting.CTrefine(item);"
+            "var unq := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+            "sorting := nil_oid_oid;\n"
+
+            /* the above code should do the same without a hash table               
             "var unq := CTgroup(iter).CTgroup(item)"
                        ".CTgroup(kind).tunique().mark(0@0).reverse();\n"
-            /* if unique destroys the order a sort is needed */
-            /*
-            "iter_item := iter_item.sort();\n"
             */
             "var oid_iter := unq.leftfetchjoin(iter);\n"
             "var oid_item := unq.leftfetchjoin(item);\n"
@@ -1750,10 +1758,17 @@ loop_liftedElemConstr (FILE *f, int i)
     fprintf(f,
             "{ # create attribute root entries\n"
             /* use iter, qn and frag to find unique combinations */
+            "var sorting := attr_iter.reverse().sort().reverse();\n"
+            "sorting := sorting.CTrefine(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN)));"
+            "sorting := sorting.CTrefine(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG)));"
+            "var unq_attrs := sorting.tunique();\n"
+            "sorting := nil_oid_oid;\n"
+            /* 
             "var unq_attrs := CTgroup(attr_iter)"
                              ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN)))"
                              ".CTgroup(mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG)))"
                              ".tunique();\n"
+            */
             /* test uniqueness */
             "if (unq_attrs.count() != attr_iter.count())\n"
             "{\n"
@@ -3003,7 +3018,8 @@ typed_value (FILE *f, bool tv)
                 "frag := nil_oid_oid;\n"
                 /* for the result of the scj join with the string values */
                 "var iter_item := pruned_input.leftfetchjoin(item_str);\n"
-                "item_str := nil_oid_str;\n");
+                "item_str := nil_oid_str;\n"
+                "iter_item.chk_order(false);\n");
     if (!tv)
         fprintf(f,"iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
 
@@ -3084,8 +3100,8 @@ typed_value (FILE *f, bool tv)
                     "res_mu := nil_oid_bat;\n"
                     "iter_item := iter.reverse().leftfetchjoin(item_str);\n"
                     "iter := nil_oid_oid;\n"
-                    "item_str := nil_oid_str;\n");
-
+                    "item_str := nil_oid_str;\n"
+                    "iter_item.chk_order(false);\n");
     if (!tv)
         fprintf(f,  "iter_item := iter_item.string_join(iter_item.reverse().tunique().project(\"\"));\n");
 
@@ -3362,17 +3378,24 @@ translateFunction (FILE *f, int act_level, int counter,
                 "if (kind.count() != kind.get_type(ELEM).count()) "
                 "{ ERROR (\"function pf:distinct-doc-order expects only nodes\"); }\n"
                 /* delete duplicates */
+                "var sorting := iter.reverse().sort().reverse();\n"
+                "sorting := sorting.CTrefine(kind);"
+                "sorting := sorting.CTrefine(item);"
+                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                /*
                 "var temp_ddo := CTgroup(iter).CTgroup(kind).CTgroup(item);\n"
                 "temp_ddo := temp_ddo.tunique().mark(0@0).reverse();\n"
+                
                 "iter := temp_ddo.leftfetchjoin(iter);\n"
                 "item := temp_ddo.leftfetchjoin(item);\n"
                 "kind := temp_ddo.leftfetchjoin(kind);\n"
                 "temp_ddo := nil_oid_oid;\n"
-                /* sort by iter, frag, pre */
+                / * sort by iter, frag, pre * /
                 "var sorting := iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind);"
                 "sorting := sorting.CTrefine(item);"
                 "sorting := sorting.mark(0@0).reverse();\n"
+                */
                 "iter := sorting.leftfetchjoin(iter);\n"
                 "pos := iter.mark(1@0);\n"
                 "item := sorting.leftfetchjoin(item);\n"
@@ -3604,6 +3627,7 @@ translateFunction (FILE *f, int act_level, int counter,
                 "var iter_sep := iter.reverse().leftfetchjoin(item);\n"
                 "var iter_sep_str := iter_sep.leftfetchjoin(str_values);\n"
                 "iter_sep := nil_oid_oid;\n"
+                "iter_item_str.chk_order(false);\n"
                 "iter_item_str := string_join(iter_item_str, iter_sep_str);\n"
                 "iter_sep_str := nil_oid_str;\n"
                 "iter := iter_item_str.mark(0@0).reverse();\n"
@@ -3799,10 +3823,22 @@ translateFunction (FILE *f, int act_level, int counter,
         translate2MIL (f, act_level, counter, args->child[0]);
         fprintf(f,
                 "{ # translate fn:distinct-values (atomic*) as atomic*\n"
+                /*
                 "var sorting := CTgroup(iter).CTgroup(item).CTgroup(kind);\n"
                 "sorting := sorting.tunique().mark(0@0).reverse();\n"
                 "iter := sorting.leftfetchjoin(iter);\n"
                 "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "item := sorting.leftfetchjoin(item);\n"
+                "kind := sorting.leftfetchjoin(kind);\n"
+                "sorting := nil_oid_oid;\n"
+                */
+                /* delete duplicates */
+                "var sorting := iter.reverse().sort().reverse();\n"
+                "sorting := sorting.CTrefine(kind);"
+                "sorting := sorting.CTrefine(item);"
+                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "iter := sorting.leftfetchjoin(iter);\n"
+                "pos := iter.mark(1@0);\n"
                 "item := sorting.leftfetchjoin(item);\n"
                 "kind := sorting.leftfetchjoin(kind);\n"
                 "sorting := nil_oid_oid;\n"
@@ -4179,6 +4215,15 @@ noConstructor (PFcnode_t *c)
     return 1;
 }
 
+/**
+ * noForBetween tests wether between the declaration of a variable and
+ * its usage is a for loop, which stops a bound element construction 
+ * from expanding.
+ * 
+ * @param v the variable which is tested
+ * @param c the subtree of the variable binding
+ * @return 0 if for-node is between (> 1 else)
+ */
 static int
 noForBetween (PFvar_t *v, PFcnode_t *c)
 {
@@ -4200,6 +4245,14 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
     return 2;
 }
 
+/**
+ * expandable tests wether a variable can be expanded without causing 
+ * any problems and returns the result of the functions noConstructor and
+ * noForBetween
+ * 
+ * @param c the let-node which is tested
+ * @return 1 if expandable; 0 otherwise
+ */
 static int
 expandable (PFcnode_t *c)
 {
@@ -4754,11 +4807,15 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
        code which is not needed (e.g. casts, let-bindings) */
     simplifyCoreTree (c);
 
-#define TIMINGS 1
+#if WITH_SCRIPT
+#else
+    fprintf(f, "var tries := 3;\n");
+#endif
+
 #if TIMINGS
     fprintf(f,
             "module(alarm);\n"
-            "var tries := 3;\n"
+            "var times := bat(int,int);\n"
             "var rep := 0;\n"
             "var timings := \"\\n\";\n"
             "while (rep < tries) {\n"
@@ -4799,6 +4856,7 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
 #if TIMINGS
     fprintf(f,
             "timer := time() - timer;\n"
+            "times.insert(rep,timer);\n"
             "timings :+= \"### time for run \" + str(int(rep)) + \": \" + str(timer) + \" msec\\n\";\n"
             "timer := nil_int;\n"
             "if (rep = tries)\n"
@@ -4810,13 +4868,20 @@ PFprintMILtemp (FILE *f, PFcnode_t *c)
             "timings :+= \"### time for serialization: \" + str(timer) + \" msec\\n\";\n"
             "}\n"
             "}\n"
-            "fprintf(stderr, \"%%s\", timings);\n"
+            "printf(\"%%s\", timings);\n"
             "rep := nil; # nil_int is not declared here\n"
             "tries := nil; # nil_int is not declared here\n");
 #else
+    fprintf(f, "xml_print(ws, item, kind, int_values, dbl_values, dec_values, str_values);\n");
+
     /* print result in iter|pos|item representation */
+/*
     print_output (f);
     fprintf(f, "print(\"mil-programm without crash finished :)\");\n");
+*/
+#endif
+#if WITH_SCRIPT
+    fprintf(f, "test_results.insert(test_number,times);\n");
 #endif
 }
 /* vim:set shiftwidth=4 expandtab: */

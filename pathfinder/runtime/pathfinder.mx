@@ -966,7 +966,7 @@ PROC xml_print(BAT[void,bat] ws,
 	       BAT[void,dbl] dec_values,
 	       BAT[void,str] str_values) : void
 {
-    if (item.count() = 0) { return; }
+    if (item.count() = 0) { printf("()\n"); return; }
     
     # line feed
     printf("\n");
@@ -1352,7 +1352,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     # variable initialisation for tests
     @4 
 
-    var uniqueFrag := frag.tunique();
+    var uniqueFrag := frag.tunique().sort();
     if (uniqueFrag.count() = 1) {
 	iter.chk_order(FALSE);
 	item.chk_order(FALSE);
@@ -1363,19 +1363,19 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 	# test
 	@5
     } else {
-        var result_part_frag := frag.ord_uselect(frag.fetch(0)).mark(0@0).reverse();
+        var result_part_frag := frag.ord_uselect(uniqueFrag.reverse().fetch(0)).mark(0@0).reverse();
         var result_part_iter := result_part_frag.leftfetchjoin(iter);
         var result_part_item := result_part_frag.leftfetchjoin(item);
 	result_part_iter.chk_order(FALSE);
 	result_part_item.chk_order(FALSE);
-        var result := @1 (result_part_iter, result_part_item, frag.fetch(0), ws);
+        var result := @1 (result_part_iter, result_part_item, uniqueFrag.reverse().fetch(0), ws);
         result_part_iter := nil;
         result_part_item := nil;
         result_part_frag := nil;
 
 	result_iter := result.mark(0@0).reverse();
 	result_item := result.reverse().mark(0@0).reverse();
-	result_frag := result_iter.project(frag.fetch(0));
+	result_frag := result_iter.project(uniqueFrag.reverse().fetch(0));
 	# test
 	@5
 
