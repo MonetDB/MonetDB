@@ -16,33 +16,26 @@ set os = "`uname`"
 set base = "${PWD}"
 set conf_opts = "--enable-shared --disable-static"
 
-
 if ( ! -x bootstrap ) then
 	echo ''
 	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out Monet source tree.'
 	echo ''
   else
-	if ( ${?PATH} ) then
-		set binpath = ":${PATH}"
-	  else	set binpath = ""
-	endif
-	if ( ${?LD_LIBRARY_PATH} ) then
-		set libpath = ":${LD_LIBRARY_PATH}"
-	  else	set libpath = ""
-	endif
+	set binpath = ""
+	set libpath = ""
 
 	if ( ! ${?BUILD} ) then
 		echo ''
 		echo 'BUILD not set to specify desired compilation directory.'
 		echo 'Using BUILD="'${base}/${os}'" (default).'
-		BUILD="${base}/${os}"
-	fi
+		set BUILD = "${base}/${os}"
+	endif
 	if ( ! ${?PREFIX} ) then
 		echo ''
 		echo 'PREFIX not set to specify desired target directory.'
 		echo 'Using PREFIX="'${BUILD}'" (default).'
-		PREFIX="${BUILD}"
-	fi
+		set PREFIX = "${BUILD}"
+	endif
 	if ( ! ${?COMP} ) then
 		echo ''
 		echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
@@ -77,7 +70,7 @@ if ( ! -x bootstrap ) then
 		endif
 		if ( "${BITS}" == "64" ) then
 			echo ''
-			echo 'Linux doesn'\''t support 64 bit, yep; hence, using BITS=32.'
+			echo 'Linux doesn'\''t support 64 bit, yet; hence, using BITS=32.'
 			set BITS = "32"
 		endif
 	endif
@@ -92,10 +85,10 @@ if ( ! -x bootstrap ) then
 	endif
 
 	if ( "${os}" == "SunOS" ) then
-		set binpath = ":/var/tmp/local/bin:/opt/SUNWspro/bin:/usr/local/bin${binpath}"
-		set libpath = ":/usr/local/lib${libpath}"
+		set binpath = "/var/tmp/local/bin:/opt/SUNWspro/bin:/usr/local/bin:${binpath}"
+		set libpath = "/usr/local/lib:${libpath}"
 		if ( "${BITS}" == "64" ) then
-			set libpath = ":/usr/lib/sparcv9:/usr/ucblib/sparcv9${libpath}"
+			set libpath = "/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
 		endif
 		if ( "${COMP}" == "GNU" ) then
 			set cc = "${cc} -m$BITS"
@@ -105,16 +98,16 @@ if ( ! -x bootstrap ) then
 			set cc = "${cc} -xarch=v9"
 			set cxx = "${cxx} -xarch=v9"
 		endif
-		set libpath = ":/var/tmp/local/lib${libpath}"
+		set libpath = "/var/tmp/local/lib:${libpath}"
 	endif
 
 	if ( "${os}" == "IRIX64" ) then
-		set binpath = ":/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
+		set binpath = "/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin:${binpath}"
 		if ( "${COMP}${BITS}" == "GNU32" ) then
-			set libpath = ":/soft/local/lib${libpath}"
+			set libpath = "/soft/local/lib:${libpath}"
 		endif
 		if ( "${COMP}${BITS}" == "GNU64" ) then
-			set libpath = ":/soft/local/lib/mabi=64${libpath}"
+			set libpath = "/soft/local/lib/mabi=64:${libpath}"
 			set cc = "${cc} -mabi=64"
 			set cxx = "${cxx} -mabi=64"
 		endif
@@ -125,11 +118,35 @@ if ( ! -x bootstrap ) then
 		set conf_opts = "${conf_opts} --with-readline=/ufs/monet"
 	endif
 
+	set binpath = "${PREFIX}/bin:${binpath}"
+	set binpath = `echo "${binpath}" | sed 's|:$||'`
+	set libpath = `echo "${libpath}" | sed 's|:$||'`
+
+	echo ""
+	echo "Setting..."
 	setenv CC "${cc}"
+	echo " CC=${CC}"
 	setenv CXX "${cxx}"
-	setenv PATH "${PREFIX}/bin${binpath}"
-	if ( ${?libpath} ) then
-		setenv LD_LIBRARY_PATH "${libpath}"
+	echo " CXX=${CXX}"
+	if ( ${%binpath} ) then
+		if ( ${?PATH} ) then
+			if ( "`echo ':${PATH}:' | sed 's|:${binpath}:|:|'`" == ":${PATH}:" ) then
+				setenv PATH "${binpath}:${PATH}"
+			endif
+		  else
+			setenv PATH "${binpath}"
+		endif
+		echo " PATH=${PATH}"
+	endif
+	if ( ${%libpath} ) then
+		if ( ${?LD_LIBRARY_PATH} ) then
+			if ( "`echo ':${LD_LIBRARY_PATH}:' | sed 's|:${libpath}:|:|'`" == ":${LD_LIBRARY_PATH}:" ) then
+				setenv LD_LIBRARY_PATH "${libpath}:${LD_LIBRARY_PATH}"
+			endif
+		  else
+			setenv LD_LIBRARY_PATH "${libpath}"
+		endif
+		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 	endif
 #	if ( ${?LD_LIBRARY_PATH} ) then
 #		setenv LD_LIBRARY_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
@@ -140,15 +157,16 @@ if ( ! -x bootstrap ) then
 #	setenv MONET_MOD_PATH "${PREFIX}/lib:${PREFIX}/lib/Monet"
 
 	setenv CONFIGURE "${base}/configure ${conf_opts} --prefix=${PREFIX}"
+	echo " CONFIGURE=${CONFIGURE}"
 
 	mkdir -p ${BUILD}
 
 	echo ""
 	echo "To compile Monet, just execute:"
-	echo -e "\t./bootstrap"
-	echo -e "\tcd ${BUILD}"
-	echo -e "\t${CONFIGURE}"
-	echo -e "\tmake"
-	echo -e "\tmake install"
+	echo "\t./bootstrap"
+	echo "\tcd ${BUILD}"
+	echo "\t${CONFIGURE}"
+	echo "\tmake"
+	echo "\tmake install"
 	echo ""
 endif

@@ -21,14 +21,8 @@ if [ ! -x bootstrap ] ; then
 	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out Monet source tree.'
 	echo ''
   else
-	if [ "${PATH}" ] ; then
-		binpath=":${PATH}"
-	  else	binpath=""
-	fi
-	if [ "${LD_LIBRARY_PATH}" ] ; then
-		libpath=":${LD_LIBRARY_PATH}"
-	  else	libpath=""
-	fi
+	binpath=""
+	libpath=""
 
 	if [ ! "${BUILD}" ] ; then
 		echo ''
@@ -42,6 +36,7 @@ if [ ! -x bootstrap ] ; then
 		echo 'Using PREFIX="'${BUILD}'" (default).'
 		PREFIX="${BUILD}"
 	fi
+
 	if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv" ] ; then
 		echo ''
 		echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
@@ -63,7 +58,7 @@ if [ ! -x bootstrap ] ; then
 		fi
 		if [ "${BITS}" = "64" ] ; then
 			echo ''
-			echo 'Linux doesn'\''t support 64 bit, yep; hence, using BITS=32.'
+			echo 'Linux doesn'\''t support 64 bit, yet; hence, using BITS=32.'
 			BITS="32"
 		fi
 	fi
@@ -78,10 +73,10 @@ if [ ! -x bootstrap ] ; then
 	fi
 
 	if [ "${os}" = "SunOS" ] ; then
-		binpath=":/var/tmp/local/bin:/opt/SUNWspro/bin:/usr/local/bin${binpath}"
-		libpath=":/usr/local/lib${libpath}"
+		binpath="/var/tmp/local/bin:/opt/SUNWspro/bin:/usr/local/bin:${binpath}"
+		libpath="/usr/local/lib:${libpath}"
 		if [ "${BITS}" = "64" ] ; then
-			libpath=":/usr/lib/sparcv9:/usr/ucblib/sparcv9${libpath}"
+			libpath="/usr/lib/sparcv9:/usr/ucblib/sparcv9:${libpath}"
 		fi
 		if [ "${COMP}" = "GNU" ] ; then
 			cc="${cc} -m$BITS"
@@ -91,16 +86,16 @@ if [ ! -x bootstrap ] ; then
 			cc="${cc} -xarch=v9"
 			cxx="${cxx} -xarch=v9"
 		fi
-		libpath=":/var/tmp/local/lib${libpath}"
+		libpath="/var/tmp/local/lib:${libpath}"
 	fi
 
 	if [ "${os}" = "IRIX64" ] ; then
-		binpath=":/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin${binpath}"
+		binpath="/soft64/local/bin:/soft/local/bin:/usr/local/egcs/bin:/usr/local/gnu/bin:/usr/local/bin:/usr/java/bin:${binpath}"
 		if [ "${COMP}${BITS}" = "GNU32" ] ; then
-			libpath=":/soft/local/lib${libpath}"
+			libpath="/soft/local/lib:${libpath}"
 		fi
 		if [ "${COMP}${BITS}" = "GNU64" ] ; then
-			libpath=":/soft/local/lib/mabi=64${libpath}"
+			libpath="/soft/local/lib/mabi=64:${libpath}"
 			cc="${cc} -mabi=64"
 			cxx="${cxx} -mabi=64"
 		fi
@@ -111,11 +106,35 @@ if [ ! -x bootstrap ] ; then
 		conf_opts="${conf_opts} --with-readline=/ufs/monet"
 	fi
 
+	binpath="${PREFIX}/bin:${binpath}"
+	binpath=`echo "${binpath}" | sed 's|:$||'`
+	libpath=`echo "${libpath}" | sed 's|:$||'`
+
+	echo ""
+	echo "Setting..."
 	export CC="${cc}"
+	echo " CC=${CC}"
 	export CXX="${cxx}"
-	export PATH="${PREFIX}/bin${binpath}"
+	echo " CXX=${CXX}"
+	if [ "${binpath}" ] ; then
+		if [ "${PATH}" ] ; then
+			if [ "`echo ":${PATH}:" | sed "s|:${binpath}:|:|"`" = ":${PATH}:" ] ; then
+				export PATH="${binpath}:${PATH}"
+			fi
+		  else
+			export PATH="${binpath}"
+		fi
+		echo " PATH=${PATH}"
+	fi
 	if [ "${libpath}" ] ; then
-		export LD_LIBRARY_PATH="${libpath}"
+		if [ "${LD_LIBRARY_PATH}" ] ; then
+			if [ "`echo ":${LD_LIBRARY_PATH}:" | sed "s|:${libpath}:|:|"`" = ":${LD_LIBRARY_PATH}:" ] ; then
+				export LD_LIBRARY_PATH="${libpath}:${LD_LIBRARY_PATH}"
+			fi
+		  else
+			export LD_LIBRARY_PATH="${libpath}"
+		fi
+		echo " LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 	fi
 #	if [ "${LD_LIBRARY_PATH}" ] ; then
 #		export LD_LIBRARY_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet:${LD_LIBRARY_PATH}"
@@ -126,6 +145,7 @@ if [ ! -x bootstrap ] ; then
 #	export MONET_MOD_PATH="${PREFIX}/lib:${PREFIX}/lib/Monet"
 
 	export CONFIGURE="${base}/configure ${conf_opts} --prefix=${PREFIX}"
+	echo " CONFIGURE=${CONFIGURE}"
 
 	mkdir -p ${BUILD}
 
