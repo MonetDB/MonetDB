@@ -327,7 +327,7 @@ public class MonetConnection extends Thread implements Connection {
 		}
 		if (version < 5) {
 			// don't use database
-			addWarning("database specifier not supported on this server (" + chaltok[2] + "), protocol version " + chaltok[3]);
+			addWarning("database specifier not supported on this server (" + chaltok[2].trim() + "), protocol version " + chaltok[3].trim());
 		} else {
 			response += ":" + database;
 		}

@@ -344,6 +344,13 @@ public class JdbcClient {
 					user,
 					pass
 			);
+			SQLWarning warn = con.getWarnings();
+			while (warn != null) {
+				System.err.println("Connection warning: " +
+					warn.getMessage());
+				warn = warn.getNextWarning();
+			}
+			con.clearWarnings();
 		} catch (SQLException e) {
 			System.err.println("Database connect failed: " + e.getMessage());
 			System.exit(-1);
@@ -756,15 +763,15 @@ public class JdbcClient {
 								System.err.println("Statement warning: " +
 									warn.getMessage());
 								warn = warn.getNextWarning();
-								stmt.clearWarnings();
 							}
+							stmt.clearWarnings();
 							warn = con.getWarnings();
 							while (warn != null) {
 								System.err.println("Connection warning: " +
 									warn.getMessage());
 								warn = warn.getNextWarning();
-								con.clearWarnings();
 							}
+							con.clearWarnings();
 						} catch (SQLException e) {
 							if (hasFile) {
 								System.err.println("Error on line " + i + ": " + e.getMessage());
