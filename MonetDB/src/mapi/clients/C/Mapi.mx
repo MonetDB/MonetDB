@@ -675,8 +675,10 @@ extern "C" {
 #endif
 
 /* three structures used for communicating date/time information */
+/* these structs are deliberately compatible with the ODBC versions
+  SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
 typedef struct {		/* used by MAPI_DATE */
-	int year;
+	short year;
 	unsigned short month;
 	unsigned short day;
 } MapiDate;
@@ -684,12 +686,17 @@ typedef struct {		/* used by MAPI_DATE */
 typedef struct {		/* used by MAPI_TIME */
 	unsigned short hour;
 	unsigned short minute;
-	double second;
+	unsigned short second;
 } MapiTime;
 
 typedef struct {		/* used by MAPI_DATETIME */
-	MapiDate date;
-	MapiTime time;
+	short year;
+	unsigned short month;
+	unsigned short day;
+	unsigned short hour;
+	unsigned short minute;
+	unsigned short second;
+	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
 } MapiDateTime;
 
 mapi_export MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) ;
@@ -1582,27 +1589,29 @@ static void mapi_param_store(Mapi mid)
 				break;
 			case MAPI_DATE:
 				@:checkSpace(40)@
-				sprintf(mid->query+k, "%d-%u-%u",
+				sprintf(mid->query+k, "%04d-%02u-%02u",
 					((MapiDate *) src)->year,
 					((MapiDate *) src)->month,
 					((MapiDate *) src)->day);
 				break;
 			case MAPI_TIME:
 				@:checkSpace(50)@
-				sprintf(mid->query+k, "%u:%u:%.17g",
+				sprintf(mid->query+k, "%02u:%02u:%02u",
 					((MapiTime *) src)->hour,
 					((MapiTime *) src)->minute,
 					((MapiTime *) src)->second);
 				break;
 			case MAPI_DATETIME:
 				@:checkSpace(90)@
-				sprintf(mid->query+k, "%d-%u-%u %u:%u:%.17g",
-					((MapiDateTime *) src)->date.year,
-					((MapiDateTime *) src)->date.month,
-					((MapiDateTime *) src)->date.day,
-					((MapiDateTime *) src)->time.hour,
-					((MapiDateTime *) src)->time.minute,
-					((MapiDateTime *) src)->time.second);
+				sprintf(mid->query+k,
+					"%04d-%02u-%02u %02u:%02u:%02u.%09u",
+					((MapiDateTime *) src)->year,
+					((MapiDateTime *) src)->month,
+					((MapiDateTime *) src)->day,
+					((MapiDateTime *) src)->hour,
+					((MapiDateTime *) src)->minute,
+					((MapiDateTime *) src)->second,
+					((MapiDateTime *) src)->fraction);
 				break;
 			case MAPI_CHAR:
 				buf[0] =*(char*)src;
@@ -2531,26 +2540,39 @@ void mapi_store_bind(Mapi mid)
 				break;
 #endif
 			case MAPI_DATE:
-				sscanf(val, "%d-%hu-%hu",
+				sscanf(val, "%hd-%hu-%hu",
 				       &((MapiDate *) dst)->year,
 				       &((MapiDate *) dst)->month,
 				       &((MapiDate *) dst)->day);
 				break;
 			case MAPI_TIME:
-				sscanf(val, "%hu:%hu:%lf",
+				sscanf(val, "%hu:%hu:%hu",
 				       &((MapiTime *) dst)->hour,
 				       &((MapiTime *) dst)->minute,
 				       &((MapiTime *) dst)->second);
 				break;
-			case MAPI_DATETIME:
-				sscanf(val, "%d-%hu-%hu %hu:%hu:%lf",
-				       &((MapiDateTime *) dst)->date.year,
-				       &((MapiDateTime *) dst)->date.month,
-				       &((MapiDateTime *) dst)->date.day,
-				       &((MapiDateTime *) dst)->time.hour,
-				       &((MapiDateTime *) dst)->time.minute,
-				       &((MapiDateTime *) dst)->time.second);
+			case MAPI_DATETIME: {
+				int n;
+				((MapiDateTime *) dst)->fraction = 0;
+				sscanf(val, "%hd-%hu-%hu %hu:%hu:%hu%n",
+				       &((MapiDateTime *) dst)->year,
+				       &((MapiDateTime *) dst)->month,
+				       &((MapiDateTime *) dst)->day,
+				       &((MapiDateTime *) dst)->hour,
+				       &((MapiDateTime *) dst)->minute,
+				       &((MapiDateTime *) dst)->second,
+				       &n);
+				if (val[n] == '.') {
+					unsigned int fac = 1000000000;
+					unsigned int nsec = 0;
+					for (n++; isdigit(val[n]); n++) {
+						fac /= 10;
+						nsec += (val[n] - '0') * fac;
+					}
+					((MapiDateTime *) dst)->fraction = nsec;
+				}
 				break;
+			}
 			case MAPI_AUTO:
 			case MAPI_VARCHAR:
 			default:
