@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * This program acts like an extended client program for MonetDB. It's look
  * and feel is very much like PostgreSQL's interactive terminal program.
- * Although it looks like this client is designed for MonetDB, it shows
+ * Although it looks like this client is designed for MonetDB, it demonstrates
  * the power of the JDBC interface since it built on top of JDBC only.
  * Every database which has a JDBC driver should work with this client.
  *
