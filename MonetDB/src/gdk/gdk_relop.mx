@@ -1189,7 +1189,7 @@ BAT *BATleftindexjoin(BAT *l, BAT *r, size_t estimate) {
 }
 
 /* nested loop join; finally MonetDB can enjoy the virtues of this algorithm as well! */
-BAT *nlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
+BAT *BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
         BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate);
         int (*cmp)(ptr,ptr) = BATatoms[l->ttype].atomCmp;
         ptr nil = ATOMnilptr(l->ttype);
