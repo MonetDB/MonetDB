@@ -306,7 +306,8 @@ BAT *BATalpha(BAT *b) {
 	BUN	p; 
 	BAT	*bn; 
 	
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b)); 
+	bn = BATnew(BAThtype(b), BATttype(b), 
+		    BATcapacity(b)-BUNindex(b,b->batInserted)+2); 
 	if (bn == NULL) {
 		return bn; 
 	}
@@ -320,7 +321,8 @@ BAT *BATdelta(BAT *b) {
 	BUN	p; 
 	BAT	*bn; 
 	
-	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b)); 
+	bn = BATnew(BAThtype(b), BATttype(b), 
+		    BUNindex(b,b->batHole)-BUNindex(b,b->batDeleted)+2); 
 	if (bn == NULL) {
 		return bn; 
 	}
