@@ -174,9 +174,9 @@ case $CC-$CXX in
 	X_CFLAGS="$X_CFLAGS -Wno-format -Wno-sign-compare"
 	X_CXXFLAGS="$X_CXXFLAGS -Wno-format -Wno-sign-compare"
 	dnl  ... and some are beyond our control:
-	dnl  In some cases, there is a (possible) uninitialized variable in bison.simple ... |-(
+	dnl  In some cases, there is a (possibly) uninitialized variable in bison.simple ... |-(
 	case $CC-$host_os in
-	gcc-solaris*)
+	gcc-solaris*|gcc-darwin*)
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
 		;;
