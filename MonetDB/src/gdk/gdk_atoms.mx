@@ -881,10 +881,10 @@ int @1ToStr(char ** dst, int *len, @1 *src) {
 @c
 #define num08(x)	((x) >= '0' && (x) <= '7')
 #define num10(x)	GDKisdigit(x)
-#define num16(x)	(GDKisdigit(x) || ((x)  >= 'a' && (x)  <= 'z') || ((x)  >= 'A' && (x)  <= 'Z'))
+#define num16(x)	(GDKisdigit(x) || ((x)  >= 'a' && (x)  <= 'f') || ((x)  >= 'A' && (x)  <= 'F'))
 #define base10(x)	((x) - '0')
 #define base08(x)	((x) - '0')
-#define base16(x)	(((x) >= 'a')?((x) - 'a'):((x) >= 'A')?((x) - 'A'):(x)-'0')
+#define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
 #define mult08(x)	((x) << 3)
 #define mult16(x)	((x) << 4)
 #define mult10(x)	((x) + (x) + ((x) << 3))
