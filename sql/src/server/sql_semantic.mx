@@ -301,7 +301,7 @@ tvar *scope_add_table_columns(mvc * sql, scope * scp, sql_table * t, char *tname
 			stmt *sc = stmt_dup(m->data);
 
 			sc = stmt_alias(sc, tname, c->base.name);
-			sc = stmt_ibat(sc, stmt_dup(sq));
+			sc = stmt_column(sc, stmt_dup(sq));
 			table_add_column(tv, sc, NULL, c->base.name);
 		}
 	} else {

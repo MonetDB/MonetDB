@@ -1272,8 +1272,7 @@ static stmt *delete_table(mvc * sql, dlist * qname, symbol * opt_where)
 			}
 		} else { /* delete all */
 			cvar *c = tv->columns->h->data;
-			s = stmt2pivot(scp, stmt_diff(stmt_dup(c->s),
-				stmt_reverse( stmt_tbat(t, RDONLY ))));
+			s = stmt2pivot(scp, stmt_dup(c->s));
 			all = 1;
 		}
 

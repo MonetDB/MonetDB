@@ -45,7 +45,7 @@ typedef enum stmt_type {
 	st_temp,	/* temporal bat */
 	st_bat,
 	st_ubat,
-	st_ibat,	/* intermediate table result */
+	st_column,	/* relational column result */
 	st_dbat,
 	st_idxbat,
 	st_const,
@@ -169,7 +169,7 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define ptable_statements(s) 	((s)->op3.stval)
 
 extern stmt *stmt_cbat(sql_column * c, stmt * basetable, int access, st_type type);
-extern stmt *stmt_ibat(stmt * i, stmt * basetable );
+extern stmt *stmt_column(stmt * i, stmt * basetable );	/* relational column */
 extern stmt *stmt_tbat(sql_table * t, int access );
 extern stmt *stmt_idxbat(sql_idx *i, int access );
 
@@ -281,7 +281,7 @@ const char * st_type2string(st_type type) {
 	ST(temp);
 	ST(bat);
 	ST(ubat);
-	ST(ibat);
+	ST(column);
 	ST(dbat);
 	ST(idxbat);
 
@@ -580,7 +580,7 @@ void stmt_destroy(stmt * s)
 		case st_limit: case st_order: case st_reorder:
 		case st_ordered: case st_output: case st_offset:
 
-		case st_ibat:
+		case st_column:
 		case st_group: case st_group_ext:
 
 		case st_filter:
@@ -683,9 +683,9 @@ stmt *stmt_temp(sql_subtype * t)
 	return s;
 }
 
-stmt *stmt_ibat(stmt * op1, stmt * basetable )
+stmt *stmt_column(stmt * op1, stmt * basetable )
 {
-	stmt *s = stmt_create(st_ibat);
+	stmt *s = stmt_create(st_column);
 	s->op1.stval = op1;
 	/* if not single value, its a single column ! */
 	if (op1->nrcols > 0)
@@ -1077,7 +1077,10 @@ stmt *stmt_intersect(stmt * op1, stmt * op2)
 	if (op1->h != op2->h){
 		reverse = 1;
 	}
-	assert ((op1->type == st_join || op1->type == st_reljoin) && (op2->type == st_join || op2->type == st_reljoin));
+	assert ((op1->type == st_join || op1->type == st_reljoin) && 
+		    (op2->type == st_join || op2->type == st_reljoin));
+
+	/* only keep the join, ie forget about the cross product */
 	if (op1->type == st_join && op1->flag == cmp_all){
 		stmt_destroy(op1);
 		return op2;
@@ -1086,67 +1089,37 @@ stmt *stmt_intersect(stmt * op1, stmt * op2)
 		return op1;
 	}
 
-	/* this case should have been transformed into a proper multi-att join ("st_reljoin") by push_selects_down() */
+	/* this case should have been transformed into a proper 
+	   multi-att join ("st_reljoin") by push_selects_down() 
+	 */
 	assert (!(op1->flag == cmp_equal && op2->flag == cmp_equal));
 	
-	if (op1->type == st_reljoin || op2->type == st_reljoin) {
-#ifndef NDEBUG
-printf("= TODO stmt_intersect (1)\n");
-#endif
-		/* 
-		 * could/should we do a similar rewrite here as we do below?
-		 */
-		res = stmt_create(st_intersect);
-		res->op1.stval = op1;
-		if (reverse){
-			res->op2.stval = stmt_reverse(op2);
-		} else {
-			res->op2.stval = op2;
-		}
-		res->nrcols = op1->nrcols;
-		res->key = op1->key;
-		res->aggr = op1->aggr;
-		res->h = stmt_dup(op1->h);
-		res->t = stmt_dup(op1->t);
-	} else {
-#ifndef NDEBUG
-printf("= TODO stmt_intersect (2)\n");
-#endif
-		/*
-	         * need to add the mark trick as [].select(true) on tables 
-		 * without unique head identifiers + semijoin is wrong
-		 */
-		if (!reverse){
-			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-			stmt *mr = stmt_mark(stmt_dup(op1), 50);
-			stmt *l = stmt_join(stmt_dup(ml), 
-				stmt_dup(op2->op1.stval), cmp_equal ); 
-			stmt *r = stmt_join(stmt_dup(mr), 
-				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_uselect( l, r, (comp_type)op2->flag);
-			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
-		} else { /* reverse */
-			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-			stmt *mr = stmt_mark(stmt_dup(op1), 50);
-			stmt *l = stmt_join(stmt_dup(mr), 
-				stmt_dup(op2->op1.stval), cmp_equal ); 
-			stmt *r = stmt_join(stmt_dup(ml), 
-				stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_uselect( l, r, (comp_type)op2->flag);
-			res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
-		}
-
-/*
-		if (!reverse){
-	 		res = stmt_semijoin( stmt_dup(op1), stmt_uselect( stmt_join(op1, stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal ), stmt_dup(op2->op1.stval), (comp_type)op2->flag));
-		} else {
-	 		res = stmt_semijoin( stmt_dup(op1), stmt_uselect( stmt_join(op1, stmt_dup(op2->op1.stval), cmp_equal ), stmt_reverse(stmt_dup(op2->op2.stval)), (comp_type)op2->flag));
-		}
-		stmt_destroy(op2);
-*/
-		stmt_destroy(op1);
-		stmt_destroy(op2);
+	/*
+	 * need to add the mark trick as [].select(true) on tables 
+	 * without unique head identifiers + semijoin is wrong
+	 */
+	if (!reverse){
+		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+		stmt *mr = stmt_mark(stmt_dup(op1), 50);
+		stmt *l = stmt_join(stmt_dup(ml), 
+			stmt_dup(op2->op1.stval), cmp_equal ); 
+		stmt *r = stmt_join(stmt_dup(mr), 
+			stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+		stmt *v = stmt_uselect( l, r, (comp_type)op2->flag);
+		res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
+	} else { /* reverse */
+		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+		stmt *mr = stmt_mark(stmt_dup(op1), 50);
+		stmt *l = stmt_join(stmt_dup(mr), 
+			stmt_dup(op2->op1.stval), cmp_equal );
+		stmt *r = stmt_join(stmt_dup(ml), 
+			stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
+		stmt *v = stmt_uselect( l, r, (comp_type)op2->flag);
+		res = stmt_join(stmt_reverse(stmt_semijoin(ml,v)), mr, cmp_equal);
 	}
+
+	stmt_destroy(op1);
+	stmt_destroy(op2);
 	return res;
 }
 
@@ -1473,7 +1446,7 @@ sql_subtype *tail_type(stmt * st)
 	case st_append:
 	case st_replace:
 	case st_alias:
-	case st_ibat:
+	case st_column:
 	case st_pivot:
 	case st_group:
 	case st_group_ext:
@@ -1536,7 +1509,7 @@ sql_subtype *head_type(stmt * st)
 	case st_select2:
 	case st_uselect:
 	case st_uselect2:
-	case st_ibat:
+	case st_column:
 	case st_append:
 	case st_insert:
 	case st_replace:
@@ -1620,7 +1593,7 @@ char *column_name(stmt * st)
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
-	case st_ibat:
+	case st_column:
 	case st_union:
 	case st_append:
 	case st_mark:
@@ -1691,7 +1664,7 @@ char *table_name(stmt * st)
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
-	case st_ibat:
+	case st_column:
 	case st_union:
 	case st_append:
 	case st_mark:

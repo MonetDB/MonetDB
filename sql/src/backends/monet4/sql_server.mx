@@ -95,8 +95,8 @@ the updates to the persistent versions.
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
 		"Bind the table deletes bat, tname.deletes"
 
-	.COMMAND mvc_bind_ibat( mvc c, str sname, str tname, str iname, int access ) : 
-		BAT[any::1,any::2] = mvc_bind_ibat_wrap; 
+	.COMMAND mvc_bind_idxbat( mvc c, str sname, str tname, str iname, int access ) : 
+		BAT[any::1,any::2] = mvc_bind_idxbat_wrap; 
 		"Bind the idx table"
 @-
 The results of the SQL queries are assembled in result sets, which
@@ -342,8 +342,8 @@ int mvc_bind_dbat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
 	return GDK_FAIL;
 }
 
-int mvc_bind_ibat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, int *access ){
-	*res = mvc_bind_ibat( *(mvc**)c, sname, tname, iname, *access );
+int mvc_bind_idxbat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, int *access ){
+	*res = mvc_bind_idxbat( *(mvc**)c, sname, tname, iname, *access );
 	if (*res){
 		return GDK_SUCCEED;
 	}

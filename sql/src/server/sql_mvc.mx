@@ -247,6 +247,9 @@ typedef struct mvc {
 } mvc;
 
 
+#define isNew(x) 	(x->base.flag == TR_NEW)
+#define isTemp(x) 	(isNew(x)||!x->t->persists||x->t->clear)
+
 sql_export int cs_size( changeset * cs );
 
 sql_export sql_schema *find_schema(sql_trans *t, char *sname);
@@ -281,7 +284,7 @@ sql_export BAT *mvc_bind( mvc *c, char *sname, char *tname, char *cname, int acc
 sql_export BAT *mvc_bind_ubat( mvc *c, char *sname, char *tname, char *cname, int access );
 sql_export BAT *mvc_bind_dbat( mvc *c, char *sname, char *tname, int access );
 
-sql_export BAT *mvc_bind_ibat(  mvc *c, char *sname, char *tname, char *idx, int access );
+sql_export BAT *mvc_bind_idxbat(  mvc *c, char *sname, char *tname, char *idx, int access );
 
 sql_export sql_module *mvc_bind_module( mvc *c, char *mname );
 sql_export sql_type *trans_bind_type(sql_trans *tr, char *name );
@@ -3240,7 +3243,7 @@ mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 }
 
 BAT *
-mvc_bind_ibat(mvc * m, char *sname, char *tname, char *iname, int access )
+mvc_bind_idxbat(mvc * m, char *sname, char *tname, char *iname, int access )
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -3249,7 +3252,7 @@ mvc_bind_ibat(mvc * m, char *sname, char *tname, char *iname, int access )
 	sql_idx *i = find_idx(t, iname);
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_bind_ibat %s.%s\n", tname, iname );
+		fprintf(stderr, "mvc_bind_idxbat %s.%s\n", tname, iname );
 
 	/* TODO check for access */
 
@@ -4455,12 +4458,10 @@ mvc_create_column(mvc * m, sql_table *t, char *name, sql_subtype *tpe)
 	sql_column *res = NULL;
 	int type; 
 	BAT *u, *b;
-	char *typename;
 
 	if (!tpe) return NULL;
 
- 	typename = tpe->type->base.name;
- 	type = ATOMindex(typename);
+ 	type = tpe->type->localtype;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_column %s %s %s\n", t->base.name,

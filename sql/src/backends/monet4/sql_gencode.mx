@@ -341,7 +341,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 		_DELETE(buf);
 		break;
 	}
-	case st_ibat: 
+	case st_column: 
 		s->nr = -backend_dumpstmt_( s->op1.stval, nr, sql );
 		backend_dec_nr2(s->op1.stval);
 		break;
@@ -411,7 +411,7 @@ int backend_dumpstmt_( stmt *s, int *nr, backend *sql ){
 			strlen(s->op1.idxval->base.name);
 		buf = NEW_ARRAY(char, buflen+1);
 		len = snprintf( buf, buflen, 
-		  "var s%d := mvc_bind_ibat(myc, \"%s\", \"%s\", \"%s\", %d)",
+		  "var s%d := mvc_bind_idxbat(myc, \"%s\", \"%s\", \"%s\", %d)",
 			  -s->nr, 
 			  s->op1.idxval->t->s->base.name, 
 			  s->op1.idxval->t->base.name, 

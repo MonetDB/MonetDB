@@ -241,7 +241,7 @@ stmt_push_down_head(stmt * join, stmt * select)
 		stmt_destroy(select);
 		stmt_destroy(join);
 		return stmt_relselect(l);
-	} else if (join->type == st_bat || join->type == st_ibat){
+	} else if (join->type == st_bat || join->type == st_column){
 		return stmt_semijoin(join, select);
 #ifndef NDEBUG
 	} else {
@@ -979,7 +979,7 @@ stmt *optimize( mvc *c, stmt *s ){
 	case st_limit: case st_order: case st_reorder: case st_ordered: 
 	case st_offset:
 
-	case st_ibat: case st_alias: 
+	case st_column: case st_alias: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 
 	case st_exception: 
@@ -989,21 +989,21 @@ stmt *optimize( mvc *c, stmt *s ){
 
 		if (s->op1.stval){
 			stmt *os = s->op1.stval;
-		       	stmt *ns = optimize(c, os);
+			stmt *ns = optimize(c, os);
 			assert(ns != s);
 			s->op1.stval = ns;
 			stmt_destroy(os);
 		}
 		if (s->op2.stval){
 			stmt *os = s->op2.stval;
-		       	stmt *ns = optimize(c, os);
+			stmt *ns = optimize(c, os);
 			assert(ns != s);
 			s->op2.stval = ns;
 			stmt_destroy(os);
 		}
 		if (s->op3.stval){
 			stmt *os = s->op3.stval;
-		       	stmt *ns = optimize(c, os);
+			stmt *ns = optimize(c, os);
 			assert(ns != s);
 			s->op3.stval = ns;
 			stmt_destroy(os);

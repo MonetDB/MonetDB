@@ -317,7 +317,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		q= pushArgument(mb,q,r);
 		s->nr = getDestVar(q);
 	} break;
-	case st_ibat: 
+	case st_column: 
 		s->nr = backend_dumpstmt(sql,mb, s->op1.stval);
 		break;
 	case st_bat:
@@ -372,7 +372,7 @@ int backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s){
 		int k,tt;
 
 		@:SQLprelude@
-		q= newStmt(mb,"sql","bind_ibat");
+		q= newStmt(mb,"sql","bind_idxbat");
                 tt= getTypeIndex(tail_type(s)->type->base.name,
                         strlen(tail_type(s)->type->base.name), TYPE_any);
                 setVarType(mb,getArg(q,0),newBatType(TYPE_void,tt));

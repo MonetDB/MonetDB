@@ -96,9 +96,9 @@ address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
 	with specific access modes";
 
-command bind_ibat(sname:str, tname:str, iname:str, access:int)
+command bind_idxbat(sname:str, tname:str, iname:str, access:int)
 		:bat[:any$1,:any$2] 
-address mvc_bind_ibat_wrap
+address mvc_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
 	with specific accsess modes";
 
@@ -422,16 +422,16 @@ str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
 	return throwException(MALEXCEPTION,"mvc_bind_dbat_wrap","error");
 }
 
-str mvc_bind_ibat_wrap(int *ret, str *sname, str *tname, str *iname, int *access ){
+str mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access ){
 	mvc *m;
 	BAT *b;
 	@:getContext(m)@
-	b = mvc_bind_ibat( m, *sname, *tname, *iname, *access );
+	b = mvc_bind_idxbat( m, *sname, *tname, *iname, *access );
 	if (b){
 		*ret= b->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION,"mvc_bind_ibat_wrap","error");
+	return throwException(MALEXCEPTION,"mvc_bind_idxbat_wrap","error");
 }
 
 @-

@@ -79,7 +79,7 @@ static stmt *tail_column(stmt * st)
 
 		return tail_column(st->op1.stval);
 
-	case st_ibat:
+	case st_column:
 	case st_bat:
 		return st;
 
@@ -157,7 +157,7 @@ static stmt *head_column(stmt * st)
 	case st_reljoin:
 		return head_column(st->op1.lval->h->data);
 
-	case st_ibat:
+	case st_column:
 	case st_bat:
 		return st;
 
@@ -224,8 +224,8 @@ static sql_column *basecolumn(stmt * st)
 	case st_bat:
 		return st->op1.cval;
 
-	/* intermediate bat (result of view etc) has no direct base column */
-	case st_ibat:
+	/* relational column (result of view etc) has no direct base column */
+	case st_column:
 		return NULL;
 
 	default:
@@ -780,7 +780,7 @@ stmt *rel2bin( mvc *c, stmt *s )
 	case st_offset:
 
 	case st_alias: 
-	case st_ibat: 
+	case st_column: 
 	case st_output: 
 	case st_append: case st_insert: case st_replace: 
 	case st_exception: 
@@ -833,10 +833,19 @@ stmt *rel2bin( mvc *c, stmt *s )
 		return res;
 	} 
 
-	case st_bat: case st_ubat: 
-
+	case st_bat: 
+		if (s->flag == RDONLY) {
+			return 
+					stmt_diff(
+						stmt_dup(s),
+						stmt_reverse(stmt_tbat(s->op1.cval->t, RDONLY)));
+		}
+		/* fall through */
+	case st_ubat: 
 		s->optimized = 2;
 		return stmt_dup(s);
+
+	
 
 	case st_pivot: 
 	case st_ptable:

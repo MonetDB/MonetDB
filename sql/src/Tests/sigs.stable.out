@@ -45,7 +45,7 @@ module 'sql_server'
 [ "lng(str, int) : lng"							  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"			  ]
-[ "mvc_bind_ibat(mvc, str, str, str, int) : BAT[any::1,any::2]"		  ]
+[ "mvc_bind_idxbat(mvc, str, str, str, int) : BAT[any::1,any::2]"	  ]
 [ "mvc_bind_ubat(mvc, str, str, str, int) : BAT[any::1,any::2]"			  ]
 [ "mvc_destroy(mvc, int) : void"					  ]
 [ "mvc_export_result(mvc, Stream, int) : void"					  ]

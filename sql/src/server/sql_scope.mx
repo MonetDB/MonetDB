@@ -410,7 +410,7 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 						stmt *s = find_pivot(scp, tv->s);
 						/* add outer ref */
 						scope_add_table_(start, s, 1);
-						return stmt_ibat(stmt_join(stmt_dup(s),
+						return stmt_column(stmt_join(stmt_dup(s),
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 					}
 					return stmt_dup(cv->s);
@@ -431,7 +431,7 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 					stmt *s = find_pivot(scp, tv->s);
 					/* add outer ref */
 					scope_add_table_(start, s, 1);
-					return stmt_ibat(stmt_join(stmt_dup(s),
+					return stmt_column(stmt_join(stmt_dup(s),
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 				}
 				return stmt_dup(cv->s);
@@ -442,7 +442,7 @@ static stmt *scope_bind_column_(scope * scp, char *tname, char *cname )
 					stmt *s = find_pivot(scp, tv->s);
 					/* add outer ref */
 					scope_add_table_(start, s, 1);
-					return stmt_ibat(stmt_join(stmt_dup(s),
+					return stmt_column(stmt_join(stmt_dup(s),
 							stmt_dup(cv->s), cmp_equal), stmt_dup(s));
 				}
 				return stmt_dup(cv->s);

@@ -310,7 +310,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 		     d && m; 
 		     d = d->next, m = m->next) {
 			stmt *st = m->data;
-			stmt *sc = stmt_ibat(stmt_alias(stmt_dup(st), tname, d->data.sval), stmt_dup(sq));
+			stmt *sc = stmt_column(stmt_alias(stmt_dup(st), tname, d->data.sval), stmt_dup(sq));
 
 			table_add_column(tv, sc, tname, d->data.sval);
 		}
@@ -319,7 +319,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 		for ( m = sq->op1.lval->h; m; m = m->next) {
 			stmt *st = m->data;
 			char *cname = column_name(st);
-			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
+			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq));
 
 			sc = stmt_alias(sc, tname, cname);
 			table_add_column(tv, sc, tname, cname);
@@ -331,7 +331,7 @@ static tvar *table_optname(mvc * sql, scope * scp, stmt * sq,
 			stmt *st = m->data;
 			char *cname = column_name(st);
 			char *tname = table_name(st);
-			stmt *sc = stmt_ibat(stmt_dup(st), stmt_dup(sq));
+			stmt *sc = stmt_column(stmt_dup(st), stmt_dup(sq));
 
 			table_add_column(tv, sc, tname, cname);
 			_DELETE(tname);
@@ -2563,12 +2563,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 			cvar *cv = tv->columns->h->data;
 			stmt *tmp = stmt_dup(cv -> s);
 			if (!cur) {
-				if (isbasetable(tv->s)){
-					cur = stmt_diff(tmp, stmt_reverse(
-					   stmt_tbat(basetable_table(tv->s), RDONLY )));
-				} else {
-					cur = tmp;
-				}
+				cur = tmp;
 			} else {
 				tmp = stmt_join(stmt_dup(cur), 
 						stmt_reverse(tmp), cmp_all);
