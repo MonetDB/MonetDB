@@ -647,9 +647,14 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int mil )
 
 				/* auto_commit on end of statement */
 				if (m->auto_commit && m->trans) {
+	   				if (m->cache && 
+					   (m->type == Q_TRANS || 
+					    m->type == Q_SCHEMA || 
+					    m->qc->id > 100)) {
+						if (m->qc) qc_destroy(m->qc);
+						m->qc = qc_create();
+					}
 					mvc_commit(m, 0, NULL);
-					if (m->qc) qc_destroy(m->qc);
-					m->qc = qc_create();
 				}
 
 			}
