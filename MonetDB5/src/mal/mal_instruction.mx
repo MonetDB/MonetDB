@@ -1236,13 +1236,13 @@ beginning of each line.
 @c
 str fcnClass(InstrPtr p){
 	if( p->token== FUNCTIONsymbol)
-		return "function "; 
+		return "function"; 
 	if( p->token== STREAMsymbol)
-		return "stream "; 
+		return "stream"; 
 	if( p->token == COMMANDsymbol)
-	 	return "command ";
+	 	return "command";
 	if( p->token == PATTERNsymbol)
-		return "pattern ";
+		return "pattern";
 	return "handler ";
 }
 str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
@@ -1252,7 +1252,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 
 	t=s;
 	@:performanceData@
-	sprintf(t,fcnClass(p));
+	sprintf(t,"%s ",fcnClass(p));
 
 	advance(t);
 	if( p->modname) sprintf(t,"%s.",p->modname);

@@ -107,7 +107,7 @@ mal_export Symbol 	findSymbol(str mod, str fcn);
 mal_export int	 	displayScope(stream *f, Scope v, str fcn);
 mal_export int 		showScopes(stream *f, Scope s);
 mal_export void 	debugScope(stream *f, Scope v, str nme);
-mal_export void 	dumpManual(stream *f, Scope v);
+mal_export void 	dumpManual(stream *f, Scope v, int recursive);
 
 #define getSubScope(N)	(*(N))
 
@@ -354,33 +354,102 @@ void debugScope(stream *f, Scope start, str nme){
 	}
 }
 @-
-The commands and operators come with a short description. The dumpManual() command
-produces a single XML file for post processing and producing a system manual.
+The commands and operators come with a short description. 
+The dumpManual() command produces a single XML file for post 
+processing and producing a system manual.
 @c
-void dumpManual(stream *f, Scope s){
+void dumpManualHeader(stream *f){
+	stream_printf(f,"<?xml version=\"1.0\"?>\n");
+	stream_printf(f,"<manual>\n");
+}
+void dumpManualFooter(stream *f){
+	stream_printf(f,"</manual>\n");
+}
+char *xmlChr(str s){
+	static char buf[BUFSIZ+5];
+	char *c=buf, *lim=buf+BUFSIZ;
+	while(s && c<lim && *s){
+		switch(*s){
+		case '_': sprintf(c,"\\_"); c+=2;break;
+		case '$': sprintf(c,"\\$"); c+=2;break;
+		case '%': sprintf(c,"\\%%"); c+= 4; break;
+		case '<': sprintf(c,"$&lt;$"); c+= 6; break;
+		case '>': sprintf(c,"$&gt;$"); c+= 6; break;
+		case '&': sprintf(c,"&amp;"); c+= 5; break;
+		default:
+			*c++= *s;
+		}
+		s++;
+	}
+	*c=0;
+	return buf;
+}
+int cmpModName(Scope f, Scope l){
+	return strcmp(f->name,l->name);
+}
+void dumpManual(stream *f, Scope s, int recursive){
 	int i,j;
 	Symbol t;
-	str ps;
+	str ps, lnk, hlp=0, op=0, endtag=0;
 	InstrPtr sig;
+	Scope list[256]; int k, top=0;
 
+
+	if(s==NULL || f==NULL){
+		return;
+	}
+	list[top++]=s;
+	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
+
+/*
+	if(top>1) qsort(list, top, sizeof(Scope), 
+		(int(*)(const void *, const void *))cmpModName);
+*/
+
+	for(k=0;k<top;k++){
+	s= list[k];
 	stream_printf(f,"<%smodule name=\"%s\">\n", 
-		(s->isAtomModule?"atom ":""),s->name);
+		(s->isAtomModule?"atom":""),xmlChr(s->name));
 	if( s->subscope)
 	for(j=0;j<MAXSCOPE;j++)
 	if(s->subscope[j]){
 		for(t= s->subscope[j];t!=NULL;t=t->peer) {
 			sig= getSignature(t);
-			stream_printf(f,"<%s>",fcnClass(sig));
-			stream_printf(f,"  <name>%s</name>",t->name);
-			ps= instruction2str(sig->blk,sig,0);
-			stream_printf(f,"  <signature>%s</signature>",ps);
+
+			if(op==0 || strcmp(op,t->name)){
+				if(endtag) stream_printf(f,"  </%s>\n",endtag);
+				stream_printf(f,"  <%s",fcnClass(sig));
+				op = t->name;
+				stream_printf(f,"  name=\"%s\">\n",xmlChr(op));
+				if(t->def->help)
+				stream_printf(f,"    <comment>%s</comment>\n",
+					xmlChr(t->def->help));
+				op= t->name;
+				endtag= fcnClass(sig);
+			}
+
+			ps= instruction2str(t->def,sig,0);
+			lnk= strrchr(ps,'=');
+			if(lnk && *(lnk+1)!='(') *lnk=0;
+
+			stream_printf(f,"  <instantiation>\n");
+			stream_printf(f,"    <signature>%s</signature>\n",
+				xmlChr(strchr(ps,'(')));
+			if(lnk)
+			stream_printf(f,"    <implementation>%s</implementation>\n",xmlChr(lnk+1));
 			GDKfree(ps);
-			stream_printf(f,"  <comment>%s</comment>",sig->blk->help);
-			stream_printf(f,"</%s>",fcnClass(sig));
+			if(t->def->help){
+				if(hlp && strcmp(hlp,t->def->help))
+				stream_printf(f,"    <comment>%s</comment>\n",
+					xmlChr(t->def->help));
+			}
+			stream_printf(f,"  </instantiation>\n");
 		}
 	}
-	stream_printf(f,"</%smodule>\n", (s->isAtomModule?"atom ":""));
-	if(s->outer) dumpManual(f,s->outer);
+	if(endtag) stream_printf(f,"  </%s>\n",endtag);
+	stream_printf(f,"</%smodule>\n", (s->isAtomModule?"atom":""));
+	endtag=0;
+	}
 }
 @-
 Summarize the type resolution table.

@@ -202,11 +202,6 @@ void	resetVariables(MalBlkPtr mb, MalStkPtr glb, int start){
 	}
 	mb->vtop = j;
 }
-void    resetMalBlk(MalBlkPtr mb, MalStkPtr glb){
-	resetInstructions(mb,1);
-	resetVariables(mb,glb,0);
-	mb->errors = 0;
-}
 @-
 Here we start the first client. We need to initialize
 the corresponding thread and allocate space for the 
@@ -329,7 +324,9 @@ str MALengine(Client c){
 			printFunction(c->fdout,c->curprg->def, c->listing);
 		showErrors(c);
 	}
-	resetMalBlk(prg->def,c->glb);
+	resetInstructions(prg->def,1);
+	resetVariables(prg->def,c->glb,0);
+	prg->def->errors = 0;
 	if( c->glb) c->glb->cmd= c->itrace?'n':0;
 	return msg;
 }

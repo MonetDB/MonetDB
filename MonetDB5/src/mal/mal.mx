@@ -98,7 +98,6 @@ See the monet.conf file for additional system variable settings
 m_export void monet_hello();
 
 m_export char            monet_cwd[PATHLENGTH];
-m_export char            *monet_prompt;
 m_export int             monet_welcome; 
 m_export str             *monet_script;
 m_export str             monet_mod_path;
@@ -107,7 +106,6 @@ m_export str             monet_mal_path;
 #include "gdk.h"
 
 char            monet_cwd[PATHLENGTH]={0};
-char            *monet_prompt="\1>\1";
 int             monet_welcome=1; 
 str             *monet_script;
 str             monet_mod_path;
