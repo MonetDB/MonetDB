@@ -52,7 +52,7 @@ static int TWIG_ID[] = {
     , [aop_cross]        = cross      /**< cross product (Cartesian product) */
     , [aop_eqjoin]       = eqjoin     /**< cross product (Cartesian product) */
     , [aop_project]      = project    /**< projection and renaming operator */
-    , [aop_select]       = select     /**< select by attribute = true */
+    , [aop_select]       = select_    /**< select by attribute = true */
     , [aop_rownum]       = rownum     /**< consecutive number generation */
 
     , [aop_serialize]    = serialize  /**< serialize algebra expression below
@@ -83,7 +83,7 @@ static int TWIG_ID[] = {
 #undef cross
 #undef eqjoin
 #undef project
-#undef select
+#undef select_
 #undef rownum
 #undef serialize
 #undef num_add

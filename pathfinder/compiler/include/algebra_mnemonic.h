@@ -59,7 +59,7 @@
 #define rownum(a,b,c,d) PFalg_rownum ((a),(b),(c),(d))
 
 /* selection operator */
-#define select(a,b)     PFalg_select ((a),(b))
+#define select_(a,b)    PFalg_select ((a),(b))
 
 /** type test operator */
 #define type(a,b,c,d)   PFalg_type ((a),(b),(c),(d))

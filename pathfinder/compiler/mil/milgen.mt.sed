@@ -94,7 +94,7 @@ node  lit_tbl      /* literal table */
       cross        /* cross product (Cartesian product) */
       eqjoin       /* equi-join */
       project      /* algebra projection and renaming operator */
-      select       /* select tuples with a certain attribute value = true */
+      select_      /* select tuples with a certain attribute value = true */
       rownum       /* consecutive number generation */
       serialize    /* result serialization */
 
@@ -1303,7 +1303,7 @@ AlgExpr:  not (AlgExpr)
     }
     ;
 
-AlgExpr:  select (AlgExpr)
+AlgExpr:  select_ (AlgExpr)
     =
     {
         /*
@@ -1331,7 +1331,7 @@ AlgExpr:  select (AlgExpr)
         execute (
             /* tmp := <R>_a_bln.select (true); */
             reassgn (var ("tmp"),
-                     select (var (bat ($1$->bat_prefix,
+                     select_ (var (bat ($1$->bat_prefix,
                                        $$->sem.select.att,
                                        aat_bln)),
                              lit_bit (true))),

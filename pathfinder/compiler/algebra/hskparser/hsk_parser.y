@@ -337,7 +337,7 @@ unaryop :   LSQBR NOT item COLON LBRACK item RBRACK operator RSQBR
 select  :   LSQBR SEL LBRACK item RBRACK operator RSQBR
             {
               /* [SEL (attr) operator] */
-              $$=select ($6, $4);
+              $$ = select_ ($6, $4);
             }
         ;
 

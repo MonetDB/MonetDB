@@ -411,7 +411,7 @@ TypeswitchExpr:  typesw (CoreExpr,
         old_loop = loop;
 
         /* create loop2 operator */
-        loop = project (select (stm, "type"), proj ("iter", "iter"));
+        loop = project (select_ (stm, "type"), proj ("iter", "iter"));
 
         /* save old environment */
         old_env = env;
@@ -437,7 +437,7 @@ TypeswitchExpr:  typesw (CoreExpr,
         tDO($%2$);
 
         /* create loop3 operator */
-        loop = project (select (not ( stm, "type", "res"), "res"),
+        loop = project (select_ (not ( stm, "type", "res"), "res"),
                         proj ("iter", "iter"));
 
         /* update the environment for translation of e3 */
@@ -519,7 +519,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
         old_loop = loop;
 
         /* create loop2 operator */
-        loop = project (select ([[ $1$ ]], "item"), proj ("iter", "iter"));
+        loop = project (select_ ([[ $1$ ]], "item"), proj ("iter", "iter"));
 
         /* save old environment */
         old_env = env;
@@ -545,7 +545,7 @@ ConditionalExpr: ifthenelse (CoreExpr, CoreExpr, CoreExpr)
         tDO($%2$);
 
         /* create loop3 operator */
-        loop = project (select (not ([[ $1$ ]],
+        loop = project (select_ (not ([[ $1$ ]],
                                      "item",
                                      "res"),
                                 "res"),
@@ -832,12 +832,14 @@ FunctionAppl:    apply (FunctionArgs)
          *   p := cast (p, "item", implementation type for this parameter)
          *
          */
+        /*
         for (i = 0; i < PFarray_last ([[ $1$ ]]->sem.builtin.args); i++)
             *((PFalg_op_t **) PFarray_at ([[ $1$ ]]->sem.builtin.args, i))
                 = cast (*((PFalg_op_t **)
                             PFarray_at ([[ $1$ ]]->sem.builtin.args, i)),
                         "item",
                         implty ($$->sem.fun->par_ty[i]));
+        */
 
         [[ $$ ]] = $$->sem.fun->alg (loop, &delta, 
                                      [[ $1$ ]]->sem.builtin.args->base);

@@ -83,7 +83,7 @@
 #define order(a) PFmil_order((a))
 
 /** select() operator */
-#define select(a,b) PFmil_select((a), (b))
+#define select_(a,b) PFmil_select((a), (b))
 
 /** project() operator */
 #define project(a,b) PFmil_project((a), (b))
