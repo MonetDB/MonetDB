@@ -40,40 +40,41 @@ a regular table. An example of a mini
 application below illustrates the main operations.
 @T
 \begin{verbatim}
-#include <monet_utils.h>
-#include <stream.h>
 #include <Mapi.h>
 #include <stdio.h>
 
-#define die(X) {mapi_explain(X,stdout); exit(-1); }
+#define die(X) (mapi_explain(X, stdout), exit(-1))
 
-main(int argc, char *argv)
+int main(int argc, char **argv)
 {
-	Mapi	dbh;
+	Mapi dbh;
+	MapiHdl hdl;
 
 	dbh = mapi_connect("localhost", 50001, "guest", 0, "sql");
 	if (mapi_error(dbh))
 		die(dbh);
 
-	if (mapi_query(dbh, "create table emp(name varchar, age int)"))
+	if ((hdl = mapi_query(dbh, "create table emp(name varchar, age int)")) == NULL) 
+		die(dbh);
+	mapi_close_handle(hdl);
+	if ((hdl = mapi_query(dbh, "insert into emp values(\"John\", 23)")) == NULL) 
+		die(dbh);
+	mapi_close_handle(hdl);
+	if ((hdl = mapi_query(dbh, "insert into emp values(\"Mary\", 22)")) == NULL)
+		die(dbh);
+	mapi_close_handle(hdl);
+	if ((hdl = mapi_query(dbh, "select * from emp")) == NULL)
 		die(dbh);
 
-	if (mapi_query(dbh, "insert into emp values(\"John\", 23)"))
-		die(dbh);
-
-	if (mapi_query(dbh, "insert into emp values(\"Mary\", 22)"))
-		die(dbh);
-
-	if (mapi_query("select * from emp"))
-		die(stmt);
-
-	while (mapi_fetch_row(dbh)) {
-		char *nme = mapi_fetch_field(dbh, 0);
-		char *age = mapi_fetch_field(dbh, 1);
+	while (mapi_fetch_row(hdl)) {
+		char *nme = mapi_fetch_field(hdl, 0);
+		char *age = mapi_fetch_field(hdl, 1);
 		printf("%s is %s\n", nme, age);
 	}
-
+	mapi_close_handle(hdl);
 	mapi_disconnect(dbh);
+
+	return 0;
 }
 \end{verbatim}
 
@@ -149,6 +150,7 @@ mapi_cache_shuffle()	& Set shuffle fraction for cache refreshment\\
 mapi_cache_freeup()	& Forcefully shuffle fraction for cache refreshment\\
 mapi_clear_bindings()	& Clear all field bindings\\
 mapi_clear_params()	& Clear all parameter bindings\\
+mapi_close_handle()	&	Close query handle and free resources\\
 mapi_connect()	&	Connect to a Mserver \\
 mapi_connect_ssl()	& Connect to a Mserver using SSL [TODO]\\
 mapi_destroy()	&	Free resources\\
@@ -156,6 +158,7 @@ mapi_disconnect()	& Disconnect from server\\
 mapi_dup()	&	Duplicate the connection structure\\
 mapi_error()	&	Test for error occurrence\\
 mapi_explain()	&	Display error message and context on stream\\
+mapi_explain_query()	&	Display error message and context on stream\\
 mapi_execute()	&	Execute a query\\
 mapi_execute_array()	&Execute a query using string arguments\\
 mapi_fetch_field()	&Fetch a field from the current row\\
@@ -178,6 +181,7 @@ mapi_ping()	&	Test server for accessibility\\
 mapi_prepare()	&	Prepare a query for execution\\
 mapi_prepare_array()	&	Prepare a query for execution using arguments\\
 mapi_query()	&	Send a query for execution\\
+mapi_query_handle()	&	Send a query for execution\\
 mapi_query_array()	& Send a query for execution with arguments\\
 mapi_quick_query()	&	Send a query for execution\\
 mapi_quick_query_array()	& Send a query for execution with arguments\\
@@ -213,7 +217,7 @@ returned by the API point directly into the administrative structures of Mapi.
 This means that they are valid only for a short period, mostly between
 successive mapi_fetch_row commands.
 A defensive programming style is advised.
-Upon an error, the routine mapi_explain gives information about the context of
+Upon an error, the routines mapi_explain and mapi_explain_query give information about the context of
 the failed call, including the expression shipped and any response received.
 The side-effect is clearing the error status.
 
@@ -241,27 +245,34 @@ of the channel represented by this descriptor leads to a failure.
 Close the current channel and re-establish a fresh connection. This
 will remove all global session variables.
 
-\item[MapiMsg mapi_query(Mapi mid, char *Command)]:
+\item[MapiHdl mapi_query(Mapi mid, char *Command)]:
 This routine sends the Command to the database server represented by mid.
 It is one of the most common operations.
 If Command is zero it takes the last query string kept around.
 It returns zero upon success, otherwise it indicates a failure of the request.
 The command response is buffered for consumption, e.g. mapi_fetch_row().
 
-\item[MapiMsg mapi_query_array(Mapi mid, char *Command, char **argv)]:
+\item[MapiMsg mapi_query_handle(MapiHdl hdl, char *Command)]:
+This routine sends the Command to the database server represented by mid.
+It is one of the most common operations.
+If Command is zero it takes the last query string kept around.
+It returns zero upon success, otherwise it indicates a failure of the request.
+The command response is buffered for consumption, e.g. mapi_fetch_row().
+
+\item[MapiHdl mapi_query_array(Mapi mid, char *Command, char **argv)]:
 This routine sends the Command to the database server replacing
 the placeholders by the string arguments presented. The default placeholder
 is the question mark (?).
 
-\item[MapiMsg mapi_quick_query(Mapi mid, char *Command, FILE *fd)]:
+\item[MapiHdl mapi_quick_query(Mapi mid, char *Command, FILE *fd)]:
 Similar to mapi_query, except that the response of the server is
 not analyzed, but shipped immediately to the file indicated.
 
-\item[MapiMsg mapi_quick_query_array(Mapi mid, char *Command, char **argv, FILE *fd)]:
+\item[MapiHdl mapi_quick_query_array(Mapi mid, char *Command, char **argv, FILE *fd)]:
 Similar to mapi_query, except that the response of the server is
 not analyzed, but shipped immediately to the file indicated.
 
-\item[MapiMsg mapi_stream_query(Mapi mid, char *Command, int windowsize)]:
+\item[MapiHdl mapi_stream_query(Mapi mid, char *Command, int windowsize)]:
 Sent the request for processing and fetch a limited number of
 tuples (determined by the window size) to assess any erroneous situation.
 Thereafter, prepare for continual reading of tuples from the stream, until
@@ -274,12 +285,12 @@ Return the number of fields in the current row.
 Return the number of rows in the last select call. [ no guarantee given]
 A -1 is returned if this information is not available.
 
-\item[int mapi_rows_affected(Mapi mid)]:
+\item[int mapi_rows_affected(MapiHdl hdl)]:
 Called after a database update (INSERT/DELETE/REPLACE)
 to determine the number of rows affected
 by the command.
 
-\item[int mapi_fetch_row(Mapi mid)]:
+\item[int mapi_fetch_row(MapiHdl hdl)]:
 This routine retrieves a row from the server.
 The text retrieved is kept around in a buffer linked with the session
 descriptor from which selective fields can be extracted.
@@ -287,55 +298,55 @@ It returns the number of fields recognized.
 A zero is returned upon encountering end of sequence
 or error. This can be analyzed in using mapi_error().
 
-\item[int mapi_fetch_all_rows(Mapi mid)]:
+\item[int mapi_fetch_all_rows(MapiHdl hdl)]:
 All rows are cached at the client side first. Subsequent calls
 to either mapi_fetch_row() will take
 the row from the cache. The number or rows cached
 is returned.
 
-\item[int mapi_quick_response(Mapi mid, FILE *fd)]:
+\item[int mapi_quick_response(MapiHdl hdl, FILE *fd)]:
 Read the answer to a query and pass the results verbatim
 to a stream. The result is not analyzed, nor cached.
 
-\item[MapiMsg mapi_seek_row(Mapi mid, int rownr, int whence)]:
+\item[MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)]:
 Reset the row pointer to the requested row number.
 If whence is MAPI_SEEK_SET (0), rownr is the absolute row number (0 being the first row);
 if whence is MAPI_SEEK_CUR (1), rownr is relative to the current row;
 if whence is MAPI_SEEK_END (2), rownr is relative to the last row.
 Comments lines are ignored.
 
-\item[MapiMsg mapi_fetch_reset(Mapi mid)]:
+\item[MapiMsg mapi_fetch_reset(MapiHdl hdl)]:
 Reset the row pointer to the first line in the cache.
 This need not be a tuple.
 This is mostly used in combination with fetching all tuples at once.
 
-\item[char **mapi_fetch_array(Mapi mid)]:
+\item[char **mapi_fetch_array(MapiHdl hdl)]:
 Returns an array of string pointers to the individual fields.
 A zero is returned upon encountering end of sequence
 or error. This can be analyzed in using mapi_error().
 
-\item[char *mapi_fetch_field(Mapi mid, int fnr)]:
+\item[char *mapi_fetch_field(MapiHdl hdl, int fnr)]:
 Returns a pointer a C-string representation of the value returned.
 A zero is returned upon encountering an error.
 This can be analyzed in using mapi_error().
 
-\item[MapiMsg mapi_prepare(Mapi mid, char *Command)]:
+\item[MapiHdl mapi_prepare(Mapi mid, char *Command)]:
 Move the query to the connection structure. Possibly interact with the
 back-end to prepare the query for execution.
 
-\item[int mapi_execute(Mapi mid)]:
+\item[int mapi_execute(MapiHdl hdl)]:
 The command is shipped to the backend for execution. A single answer
 is pre-fetched to detect any runtime error. MOK is returned upon success.
 
-\item[int mapi_execute_array(Mapi mid, char **argv)]:
+\item[int mapi_execute_array(MapiHdl hdl, char **argv)]:
 Similar to mapi_execute but replacing the placeholders for the
 string values provided.
 
-\item[MapiMsg mapi_bind(Mapi mid, int fldnr, char **val)]:
+\item[MapiMsg mapi_bind(MapiHdl hdl, int fldnr, char **val)]:
 Bind a string variable with a field in the return table.
 Returns an error if the field identified does not exist.
 
-\item[MapiMsg mapi_bind_var(Mapi mid, int fldnr, int type, void *val)]:
+\item[MapiMsg mapi_bind_var(MapiHdl hdl, int fldnr, int type, void *val)]:
 Describe the type and location of the next parameter in a query template.
 The types recognized are {MAPI_TINY, MAPI_UTINY, MAPI_SHORT, MAPI_USHORT,
 MAPI_INT, MAPI_UINT, MAPI_LONG, MAPI_ULONG, MAPI_LONGLONG, MAPI_ULONGLONG,
@@ -346,30 +357,30 @@ Subsequently all rows being fetched also involve delivery of the field
 values in the C-variables using proper conversion. For variable length
 strings a pointer is set into the cache.
 
-\item[MapiMsg mapi_bind_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
+\item[MapiMsg mapi_bind_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)]:
 Bind to a numeric variable, internally represented by MAPI_INT
 Describe the location of a numeric parameter in a query template.
 
-\item[MapiMsg mapi_clear_bindings(Mapi mid)]:
+\item[MapiMsg mapi_clear_bindings(MapiHdl hdl)]:
 Clear all field bindings.
 
-\item[MapiMsg mapi_param(Mapi mid, int fldnr, char **val)]:
+\item[MapiMsg mapi_param(MapiHdl hdl, int fldnr, char **val)]:
 Bind a string variable with the n-th placeholder in the query
 template.
 No conversion takes place.
 
-\item[MapiMsg mapi_param_type(Mapi mid, int fldnr, int ctype, int sqltype, void *val)]:
+\item[MapiMsg mapi_param_type(MapiHdl hdl, int fldnr, int ctype, int sqltype, void *val)]:
 Similar to mapi_bind_var(), but now binds a parameter.
 
-\item[MapiMsg mapi_param_numeric(Mapi mid, int fldnr, int scale, int precision, void *val)]:
+\item[MapiMsg mapi_param_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)]:
 Bind to a numeric variable, internally represented by MAPI_INT.
 
-\item[MapiMsg mapi_param_string(Mapi mid, int fldnr, int sqltype, char *val, int *sizeptr)]:
+\item[MapiMsg mapi_param_string(MapiHdl hdl, int fldnr, int sqltype, char *val, int *sizeptr)]:
 Bind to a string variable, internally represented by MAPI_VARCHAR.  The 
 sizeptr parameter points to the length of the string pointed to by val.
 If sizeptr == NULL or *sizeptr == -1, the string is NULL-terminated.
 
-\item[MapiMsg mapi_clear_params(Mapi mid)]:
+\item[MapiMsg mapi_clear_params(MapiHdl hdl)]:
 Clear all parameter bindings.
 
 \item[MapiMsg mapi_cache_limit(Mapi mid, int maxrows)]:
@@ -380,7 +391,7 @@ a number of tuples are shuffled to make room for new ones,
 but taking into account non-read elements.
 Filling the cache quicker than reading leads to an error.
 
-\item[MapiMsg mapi_cache_shuffle(Mapi mid, int percentage)]:
+\item[MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage)]:
 It is sometimes handy to make room in the cache. For example,
 when your application is stream-based and you process each tuple
 as it arrives and still need a limited look-back.
@@ -389,11 +400,11 @@ Making shuffle= 100% (default) leads to paging behaviour,
 while shuffle==1 leads to a sliding window over a tuple stream
 with 1% refreshing.
 
-\item[MapiMsg mapi_cache_freeup(Mapi mid, int percentage)]:
+\item[MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage)]:
 Forcefully shuffle the cache making room for new rows.
 It ignores the read counter, so rows may be lost.
 
-\item[MapiMsg mapi_finish(Mapi mid)]:
+\item[MapiMsg mapi_finish(MapiHdl hdl)]:
 This routine is used in the rare cases that consumption of the
 tuple stream produced should be prematurely terminated. It is automatically
 called when a new query is shipped to the database.
@@ -424,9 +435,9 @@ The remaining operations are wrappers around the data structures
 maintained. Note that column properties are derived from the
 table output returned from the server.
 \begin{description}
-\item[ char *mapi_get_name(Mapi mid, int fnr)]:
-\item[ char *mapi_get_type(Mapi mid, int fnr)]:
-\item[ char *mapi_get_table(Mapi mid, int fnr)]:
+\item[ char *mapi_get_name(MapiHdl hdl, int fnr)]:
+\item[ char *mapi_get_type(MapiHdl hdl, int fnr)]:
+\item[ char *mapi_get_table(MapiHdl hdl, int fnr)]:
 \item[ int mapi_get_len(Mapi mid, int fnr)]:
 
 \item[ char *mapi_get_dbname(Mapi mid)]:
@@ -443,6 +454,9 @@ Returns the last error code or 0 if there is no error.
 Returns a pointer to the last error message.
 
 \item[MapiMsg mapi_explain(Mapi mid, FILE *fd)]:
+Writes the error message obtained from Monet to a file.
+
+\item[MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd)]:
 Writes the error message obtained from Monet to a file.
 
 %\item[int mapi_timeout(Mapi mid, int timeout)]:
@@ -590,7 +604,7 @@ typedef struct {
 	int outtype;		/* type of value */
 	int precision;
 	int scale;
-} MapiBinding;
+} MapiParam;
 
 @-
 The row cache contains a string representation of each (non-error) line
@@ -649,25 +663,32 @@ typedef struct MapiStruct {
 	BlockCache blk;
 	int connected;
 	int active;		/* set when not all rows have been received */
-	char *template;		/* keep parameterized query text around */
-	char *query;
-	int tableid;		/* SQL id of current result set */
 
-	int fieldcnt;		/* the table report section */
-	int rows_affected;	/* mostly unknown */
-	int maxfields;
-	MapiField *fields;
-	int maxbindings;
-	MapiBinding *bindings;
-	MapiRowBuf cache;
 	Mapi next;		/* circular list of Mapi's sharing streams */
+
+	int cachelimit;		/* default maximum number of rows to cache */
 
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
 } MapiStruct;
 
+typedef struct MapiStatement {
+	MapiStruct *mid;
+	char *template;		/* keep parameterized query text around */
+	char *query;
+	int tableid;		/* SQL id of current result set */
+	int fieldcnt;		/* the table report section */
+	int rows_affected;	/* mostly unknown */
+	int maxfields;
+	MapiField *fields;
+	int maxparams;
+	MapiParam *params;
+	MapiRowBuf cache;
+} MapiStatement;
+
 @h
 typedef struct MapiStruct *Mapi;
+typedef struct MapiStatement *MapiHdl;
 
 @-
 All external calls to the library should pass the mapi-check
@@ -732,17 +753,17 @@ typedef struct {		/* used by MAPI_DATETIME */
 	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
 } MapiDateTime;
 
-mapi_export MapiMsg mapi_bind(Mapi mid, int fnr, char **ptr) ;
-mapi_export MapiMsg mapi_bind_var(Mapi mid, int fnr, int type, void *ptr) ;
-mapi_export MapiMsg mapi_bind_numeric(Mapi mid, int fnr, int scale,
+mapi_export MapiMsg mapi_bind(MapiHdl hdl, int fnr, char **ptr) ;
+mapi_export MapiMsg mapi_bind_var(MapiHdl hdl, int fnr, int type, void *ptr) ;
+mapi_export MapiMsg mapi_bind_numeric(MapiHdl hdl, int fnr, int scale,
 	int precision, void *ptr) ;
-mapi_export MapiMsg mapi_clear_bindings(Mapi mid);
-mapi_export MapiMsg mapi_param(Mapi mid, int fnr, char **ptr);
-mapi_export MapiMsg mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr);
-mapi_export MapiMsg mapi_param_numeric(Mapi mid, int fnr, int scale,
+mapi_export MapiMsg mapi_clear_bindings(MapiHdl hdl);
+mapi_export MapiMsg mapi_param(MapiHdl hdl, int fnr, char **ptr);
+mapi_export MapiMsg mapi_param_type(MapiHdl hdl, int fnr, int ctype, int sqltype, void *ptr);
+mapi_export MapiMsg mapi_param_numeric(MapiHdl hdl, int fnr, int scale,
 	int precision, void *ptr);
-mapi_export MapiMsg mapi_param_string(Mapi mid, int fnr, int sqltype, char *ptr, int *sizeptr);
-mapi_export MapiMsg mapi_clear_params(Mapi mid);
+mapi_export MapiMsg mapi_param_string(MapiHdl hdl, int fnr, int sqltype, char *ptr, int *sizeptr);
+mapi_export MapiMsg mapi_clear_params(MapiHdl hdl);
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username,
 	const char *password, const char *lang);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username,
@@ -751,42 +772,47 @@ mapi_export Mapi mapi_connect_ssl(const char *host, int port, const char *userna
 	const char *password, const char *lang);
 mapi_export Mapi mapi_dup(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
+mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
 mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export char *mapi_error_str(Mapi mid);
-mapi_export MapiMsg mapi_finish(Mapi mid);
-mapi_export MapiMsg mapi_fetch_reset(Mapi mid);
+mapi_export MapiMsg mapi_finish(MapiHdl hdl);
+mapi_export MapiMsg mapi_fetch_reset(MapiHdl hdl);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
-mapi_export MapiMsg mapi_execute(Mapi mid) ;
-mapi_export MapiMsg mapi_execute_array(Mapi mid, char **val) ;
+mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
+mapi_export MapiHdl mapi_new_handle(Mapi mid);
+mapi_export MapiMsg mapi_execute(MapiHdl hdl) ;
+mapi_export MapiMsg mapi_execute_array(MapiHdl hdl, char **val) ;
 mapi_export MapiMsg mapi_ping(Mapi mid);
-mapi_export MapiMsg mapi_prepare(Mapi mid, const char *cmd);
-mapi_export MapiMsg mapi_prepare_array(Mapi mid, const char *cmd, char **val);
-mapi_export MapiMsg mapi_query(Mapi mid, const char *cmd);
-mapi_export MapiMsg mapi_quick_query(Mapi mid, const char* cmd, FILE *fd);
-mapi_export MapiMsg mapi_query_array(Mapi mid, const char *cmd, char **val);
-mapi_export MapiMsg mapi_quick_query_array(Mapi mid, const char* cmd, char **val, FILE *fd);
-mapi_export MapiMsg mapi_stream_query(Mapi mid, const char* cmd, int windowsize);
+mapi_export MapiHdl mapi_prepare(Mapi mid, const char *cmd);
+mapi_export MapiMsg mapi_prepare_handle(MapiHdl hdl, const char *cmd);
+mapi_export MapiHdl mapi_prepare_array(Mapi mid, const char *cmd, char **val);
+mapi_export MapiHdl mapi_query(Mapi mid, const char *cmd);
+mapi_export MapiMsg mapi_query_handle(MapiHdl hdl, const char *cmd);
+mapi_export MapiHdl mapi_quick_query(Mapi mid, const char* cmd, FILE *fd);
+mapi_export MapiHdl mapi_query_array(Mapi mid, const char *cmd, char **val);
+mapi_export MapiHdl mapi_quick_query_array(Mapi mid, const char* cmd, char **val, FILE *fd);
+mapi_export MapiHdl mapi_stream_query(Mapi mid, const char* cmd, int windowsize);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid,int limit);
-mapi_export MapiMsg mapi_cache_shuffle(Mapi mid,int percentage);
-mapi_export MapiMsg mapi_cache_freeup(Mapi mid,int percentage);
-mapi_export MapiMsg mapi_quick_response(Mapi mid, FILE *fd);
-mapi_export MapiMsg mapi_seek_row(Mapi mid, int rowne, int whence);
+mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl,int percentage);
+mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl,int percentage);
+mapi_export MapiMsg mapi_quick_response(MapiHdl hdl, FILE *fd);
+mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int rowne, int whence);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 
 mapi_export int mapi_timeout(Mapi mid, int time);
-mapi_export int mapi_fetch_row(Mapi mid);
-mapi_export int mapi_fetch_all_rows(Mapi mid);
-mapi_export int mapi_get_field_count(Mapi mid);
-mapi_export int mapi_get_row_count(Mapi mid);
-mapi_export int mapi_rows_affected(Mapi mid);
+mapi_export int mapi_fetch_row(MapiHdl hdl);
+mapi_export int mapi_fetch_all_rows(MapiHdl hdl);
+mapi_export int mapi_get_field_count(MapiHdl hdl);
+mapi_export int mapi_get_row_count(MapiHdl hdl);
+mapi_export int mapi_rows_affected(MapiHdl hdl);
 
-mapi_export char *mapi_fetch_field(Mapi mid, int fnr);
-mapi_export MapiMsg mapi_store_field(Mapi mid, int fnr, int outtype, void *outparam);
-mapi_export char **mapi_fetch_field_array(Mapi mid);
-mapi_export char * mapi_fetch_line(Mapi mid);
+mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
+mapi_export MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam);
+mapi_export char **mapi_fetch_field_array(MapiHdl hdl);
+mapi_export char *mapi_fetch_line(MapiHdl hdl);
 mapi_export char *mapi_get_lang(Mapi mid);
 mapi_export char *mapi_get_dbname(Mapi mid);
 mapi_export char *mapi_get_host(Mapi mid);
@@ -794,9 +820,9 @@ mapi_export char *mapi_get_user(Mapi mid);
 mapi_export char *mapi_get_mapi_version(Mapi mid);
 mapi_export char *mapi_get_monet_version(Mapi mid);
 mapi_export int mapi_get_monet_versionId(Mapi mid);
-mapi_export char *mapi_get_table(Mapi mid,int fnr);
-mapi_export char *mapi_get_name(Mapi mid,int fnr);
-mapi_export char *mapi_get_type(Mapi mid,int fnr);
+mapi_export char *mapi_get_table(MapiHdl hdl,int fnr);
+mapi_export char *mapi_get_name(MapiHdl hdl,int fnr);
+mapi_export char *mapi_get_type(MapiHdl hdl,int fnr);
 mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 
@@ -813,17 +839,17 @@ They have been developed to ease interaction.
 
 @c
 static void promptMonet(Mapi mid);
-static void mapi_cache_reset(Mapi mid);
+static void mapi_cache_reset(MapiHdl hdl);
 static Mapi mapi_new(void);
-static void mapi_check_query(Mapi mid);
-static void mapi_extend_cache(Mapi mid);
-static MapiMsg mapi_get_row(Mapi mid);
-static int mapi_extend_fields(Mapi mid, int minfields);
-static int mapi_extend_bindings(Mapi mid, int minbindings);
-static int mapi_slice_row(Mapi mid);
+static void mapi_check_query(MapiHdl hdl);
+static void mapi_extend_cache(MapiHdl hdl);
+static MapiMsg mapi_get_row(MapiHdl hdl);
+static int mapi_extend_fields(MapiHdl hdl, int minfields);
+static int mapi_extend_params(MapiHdl hdl, int minparams);
+static int mapi_slice_row(MapiHdl hdl);
 static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action);
-static char *mapi_fetch_line_internal(Mapi mid);
-static MapiMsg mapi_finish_internal(Mapi mid);
+static char *mapi_fetch_line_internal(MapiHdl hdl);
+static MapiMsg mapi_finish_internal(MapiHdl hdl);
 static void mapi_lost_connection(Mapi mid);
 
 #ifndef HAVE_GETLOGIN
@@ -971,6 +997,107 @@ mapi_setError(Mapi mid, const char *msg, const char *action)
 	return mid->error;
 }
 
+MapiHdl
+mapi_new_handle(Mapi mid)
+{
+	MapiHdl hdl;
+
+	if (mid == NULL)
+		return NULL;
+
+	hdl = malloc(sizeof(MapiStatement));
+	assert(hdl);
+	if (hdl == NULL) {
+		mapi_setError(mid, "Memory allocation failure",
+			      "mapi_new_handle");
+		return NULL;
+	}
+	hdl->mid = mid;
+
+	hdl->template = NULL;
+	hdl->query = NULL;
+	hdl->tableid = -1;
+
+	hdl->rows_affected = 0;
+
+	hdl->fieldcnt = 0;
+	hdl->maxfields = 0;
+	hdl->fields = NULL;
+
+	hdl->maxparams = 0;
+	hdl->params = NULL;
+
+	hdl->cache.rowlimit = mid->cachelimit;
+	hdl->cache.shuffle = 100;
+	hdl->cache.limit = 0;
+	hdl->cache.writer = 0;
+	hdl->cache.reader = -1;
+	hdl->cache.first = 0;
+	hdl->cache.rows = NULL;
+	hdl->cache.tuplecount = 0;
+	hdl->cache.tupleindex = NULL;
+	hdl->cache.tuplerev = NULL;
+	hdl->cache.anchors = NULL;
+	hdl->cache.fldcnt = NULL;
+
+	return hdl;
+}
+
+MapiMsg
+mapi_close_handle(MapiHdl hdl)
+{
+	if (hdl->tableid >= 0) {
+		hdl->mid->active = 1;
+		stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid);
+		stream_flush(hdl->mid->to);
+		hdl->tableid = -1;
+		mapi_finish_internal(hdl);
+	}
+	if (hdl->fields)
+		free(hdl->fields);
+	hdl->fields = NULL;
+	hdl->maxfields = hdl->fieldcnt = 0;
+	if (hdl->params)
+		free(hdl->params);
+	hdl->params = NULL;
+	hdl->maxparams = 0;
+	if (hdl->query)
+		free(hdl->query);
+	hdl->query = NULL;
+	if (hdl->template)
+		free(hdl->template);
+	hdl->template = NULL;
+	if (hdl->cache.rows) {
+		int i;
+
+		for (i = 0; i < hdl->cache.writer; i++)
+			if (hdl->cache.rows[i])
+				free(hdl->cache.rows[i]);
+		free(hdl->cache.rows);
+		hdl->cache.rows = NULL;
+		if (hdl->cache.tupleindex)
+			free(hdl->cache.tupleindex);
+		hdl->cache.tupleindex = NULL;
+		if (hdl->cache.tuplerev)
+			free(hdl->cache.tuplerev);
+		hdl->cache.tuplerev = NULL;
+	}
+	if (hdl->cache.anchors) {
+		int i;
+
+		for (i = 0; i < hdl->cache.writer; i++)
+			if (hdl->cache.anchors[i])
+				free(hdl->cache.anchors[i]);
+		free(hdl->cache.anchors);
+		hdl->cache.anchors = NULL;
+	}
+	if (hdl->cache.fldcnt)
+		free(hdl->cache.fldcnt);
+	hdl->cache.fldcnt = NULL;
+	free(hdl);
+	return MOK;
+}
+
 static Mapi
 mapi_new(void)
 {
@@ -1003,26 +1130,7 @@ mapi_new(void)
 	/* default prompt */
 	strcpy(m->prompt, ">");
 
-	m->maxfields = 64;
-	m->fields = malloc(m->maxfields * sizeof(MapiField));
-	assert(m->fields);
-	memset(m->fields, 0, m->maxfields * sizeof(MapiField));
-	m->maxbindings = 64;
-	m->bindings = malloc(m->maxbindings * sizeof(MapiBinding));
-	assert(m->bindings);
-	memset(m->bindings, 0, m->maxbindings * sizeof(MapiBinding));
-	m->cache.rowlimit = 10000;
-	m->cache.shuffle = 100;
-	m->cache.limit = 0;
-	m->cache.writer = 0;
-	m->cache.reader = -1;
-	m->cache.first = 0;
-	m->cache.rows = NULL;
-	m->cache.tuplecount = 0;
-	m->cache.tupleindex = NULL;
-	m->cache.tuplerev = NULL;
-	m->cache.anchors = NULL;
-	m->cache.fldcnt = NULL;
+	m->cachelimit = 1000;
 	m->tracelog = NULL;
 	m->blk.eos = 0;
 	m->blk.buf = malloc(BLOCK + 1);
@@ -1038,41 +1146,10 @@ mapi_destroy(Mapi mid)
 {
 	if (mid->connected)
 		(void) mapi_disconnect(mid);
-	if (mid->fields)
-		free(mid->fields);
 	if (mid->blk.buf)
 		free(mid->blk.buf);
 	if (mid->errorstr)
 		free(mid->errorstr);
-	if (mid->query)
-		free(mid->query);
-	if (mid->template)
-		free(mid->template);
-	if (mid->cache.rows) {
-		int i;
-
-		for (i = 0; i < mid->cache.writer; i++)
-			if (mid->cache.rows[i])
-				free(mid->cache.rows[i]);
-		free(mid->cache.rows);
-		if (mid->cache.tupleindex)
-			free(mid->cache.tupleindex);
-		mid->cache.tupleindex = NULL;
-		if (mid->cache.tuplerev)
-			free(mid->cache.tuplerev);
-		mid->cache.tuplerev = NULL;
-	}
-	if (mid->cache.anchors) {
-		int i;
-
-		for (i = 0; i < mid->cache.writer; i++)
-			if (mid->cache.anchors[i])
-				free(mid->cache.anchors[i]);
-		free(mid->cache.anchors);
-	}
-	if (mid->cache.fldcnt)
-		free(mid->cache.fldcnt);
-	mid->cache.fldcnt = NULL;
 	free(mid);
 	return MOK;
 }
@@ -1272,31 +1349,7 @@ mapi_lost_connection(Mapi mid)
 MapiMsg
 mapi_disconnect(Mapi mid)
 {
-	int i;
-
 	mapi_check(mid, "mapi_disconnect");
-	for (i = 0; i < mid->cache.writer; i++) {
-		if (mid->cache.rows[i])
-			free(mid->cache.rows[i]);
-		if (mid->cache.anchors[i])
-			free(mid->cache.anchors[i]);
-	}
-	if (mid->cache.fldcnt)
-		(void) free(mid->cache.fldcnt);
-	mid->cache.fldcnt = NULL;
-	if (mid->cache.anchors)
-		(void) free(mid->cache.anchors);
-	mid->cache.anchors = NULL;
-	if (mid->cache.rows)
-		(void) free(mid->cache.rows);
-	mid->cache.rows = NULL;
-	if (mid->cache.tupleindex)
-		free(mid->cache.tupleindex);
-	mid->cache.tupleindex = NULL;
-	if (mid->cache.tuplerev)
-		free(mid->cache.tuplerev);
-	mid->cache.tuplerev = NULL;
-	mid->cache.tuplecount = 0;
 	/* only close streams if we're not in a linked list of Mapi's
 	   sharing the streams */
 	if (mid->next == mid) {
@@ -1381,6 +1434,7 @@ mapi_reconnect(Mapi mid)
 	int s;
 	char buf[BLOCK];
 	size_t len;
+	MapiHdl hdl;
 
 #ifdef HAVE_OPENSSL
 	SSL *ssl = NULL;
@@ -1533,15 +1587,17 @@ mapi_reconnect(Mapi mid)
 		     "mapi_reconnect", mid->error);
 
 	/* consume the welcome message from the server */
+	hdl = mapi_new_handle(mid);
 	while (mid->error == MOK && mid->active) {
-		mapi_get_row(mid);
+		mapi_get_row(hdl);
 		if (mapi_error(mid)) {
 			mapi_explain(mid, stdout);
 			break;
 		}
-		if (mid->cache.rows)
-			mid->versionId = strcmp("Mserver 5.0", mid->cache.rows[0]) == 0 ? 5 : 4;
+		if (hdl->cache.rows)
+			mid->versionId = strcmp("Mserver 5.0", hdl->cache.rows[0]) == 0 ? 5 : 4;
 	}
+	mapi_close_handle(hdl);
 
 	if (mid->trace)
 		printf("connection established\n");
@@ -1564,122 +1620,125 @@ mapi_reconnect(Mapi mid)
 Binding placeholders and column names provide some convenience
 for bulk interacting with a server.
 @c
-#define testField(retval,funcname)					\
+#define testField(hdl,fnr,funcname)					\
 	do {								\
-		mapi_check(mid, funcname);				\
+		mapi_check(hdl->mid, funcname);				\
 		if (fnr < 0) {						\
-			mapi_setError(mid, "Illegal field number", funcname); \
-			return retval;					\
+			return mapi_setError(hdl->mid,			\
+					     "Illegal field number",	\
+					     funcname);			\
 		}							\
 		/* make sure there is enough space */			\
-		if (fnr >= mid->maxfields)				\
-			mapi_extend_fields(mid, fnr);			\
+		if (fnr >= hdl->maxfields)				\
+			mapi_extend_fields(hdl, fnr);			\
 		/* record how much we've actually used */		\
-		if (fnr >= mid->fieldcnt)				\
-			mid->fieldcnt = fnr + 1;			\
+		if (fnr >= hdl->fieldcnt)				\
+			hdl->fieldcnt = fnr + 1;			\
 	} while (0)
 
-#define testBinding(retval, funcname)					\
+#define testParam(hdl, fnr, funcname)					\
 	do {								\
-		mapi_check(mid, funcname);				\
+		mapi_check(hdl->mid, funcname);				\
 		if (fnr < 0) {						\
-			mapi_setError(mid, "Illegal binding number",	\
-				      funcname);			\
-			return retval;					\
+			return mapi_setError(hdl->mid,			\
+					     "Illegal param number",	\
+					     funcname);			\
 		}							\
-		if (fnr >= mid->maxbindings)				\
-			mapi_extend_bindings(mid, fnr);			\
+		if (fnr >= hdl->maxparams)				\
+			mapi_extend_params(hdl, fnr);			\
 	} while (0)
 
 MapiMsg
-mapi_bind(Mapi mid, int fnr, char **ptr)
+mapi_bind(MapiHdl hdl, int fnr, char **ptr)
 {
-	testField(mid->error, "mapi_bind");
-	mid->fields[fnr].outparam = ptr;
-	mid->fields[fnr].outtype = MAPI_AUTO;
+	testField(hdl, fnr, "mapi_bind");
+	hdl->fields[fnr].outparam = ptr;
+	hdl->fields[fnr].outtype = MAPI_AUTO;
 	return MOK;
 }
 
 MapiMsg
-mapi_bind_var(Mapi mid, int fnr, int type, void *ptr)
+mapi_bind_var(MapiHdl hdl, int fnr, int type, void *ptr)
 {
-	testField(mid->error, "mapi_bind_var");
-	mid->fields[fnr].outparam = ptr;
+	testField(hdl, fnr, "mapi_bind_var");
+	hdl->fields[fnr].outparam = ptr;
 	if (type >= 0 && type < MAPI_NUMERIC)
-		mid->fields[fnr].outtype = type;
+		hdl->fields[fnr].outtype = type;
 	else
-		return mapi_setError(mid, "Illegal SQL type identifier",
+		return mapi_setError(hdl->mid, "Illegal SQL type identifier",
 				     "mapi_bind_var");
 	return MOK;
 }
 
 MapiMsg
-mapi_bind_numeric(Mapi mid, int fnr, int scale, int prec, void *ptr)
+mapi_bind_numeric(MapiHdl hdl, int fnr, int scale, int prec, void *ptr)
 {
-	if (mapi_bind_var(mid, fnr, MAPI_NUMERIC, ptr))
-		 return mid->error;
-	mid->fields[fnr].scale = scale;
-	mid->fields[fnr].precision = prec;
+	if (mapi_bind_var(hdl, fnr, MAPI_NUMERIC, ptr))
+		 return hdl->mid->error;
+	hdl->fields[fnr].scale = scale;
+	hdl->fields[fnr].precision = prec;
 	return MOK;
 }
 
 MapiMsg
-mapi_clear_bindings(Mapi mid)
+mapi_clear_bindings(MapiHdl hdl)
 {
-	memset(mid->fields, 0, mid->maxfields * sizeof(MapiField));
+	if (hdl->fields)
+		memset(hdl->fields, 0, hdl->maxfields * sizeof(MapiField));
 	return MOK;
 }
 
 MapiMsg
-mapi_param_type(Mapi mid, int fnr, int ctype, int sqltype, void *ptr)
+mapi_param_type(MapiHdl hdl, int fnr, int ctype, int sqltype, void *ptr)
 {
-	testBinding(mid->error, "mapi_param_type");
-	mid->bindings[fnr].inparam = ptr;
+	testParam(hdl, fnr, "mapi_param_type");
+	hdl->params[fnr].inparam = ptr;
 	if (ctype >= 0 && ctype < MAPI_NUMERIC)
-		mid->bindings[fnr].intype = ctype;
+		hdl->params[fnr].intype = ctype;
 	else
-		return mapi_setError(mid, "Illegal SQL type identifier",
+		return mapi_setError(hdl->mid, "Illegal SQL type identifier",
 				     "mapi_param_type");
-	mid->bindings[fnr].sizeptr = NULL;
-	mid->bindings[fnr].outtype = sqltype;
-	mid->bindings[fnr].scale = 0;
-	mid->bindings[fnr].precision = 0;
+	hdl->params[fnr].sizeptr = NULL;
+	hdl->params[fnr].outtype = sqltype;
+	hdl->params[fnr].scale = 0;
+	hdl->params[fnr].precision = 0;
 	return MOK;
 }
 
 MapiMsg
-mapi_param_string(Mapi mid, int fnr, int sqltype, char *ptr, int *sizeptr)
+mapi_param_string(MapiHdl hdl, int fnr, int sqltype, char *ptr, int *sizeptr)
 {
-	testBinding(mid->error, "mapi_param_type");
-	mid->bindings[fnr].inparam = (void *) ptr;
-	mid->bindings[fnr].intype = MAPI_VARCHAR;
-	mid->bindings[fnr].sizeptr = sizeptr;
-	mid->bindings[fnr].outtype = sqltype;
-	mid->bindings[fnr].scale = 0;
-	mid->bindings[fnr].precision = 0;
+	testParam(hdl, fnr, "mapi_param_type");
+	hdl->params[fnr].inparam = (void *) ptr;
+	hdl->params[fnr].intype = MAPI_VARCHAR;
+	hdl->params[fnr].sizeptr = sizeptr;
+	hdl->params[fnr].outtype = sqltype;
+	hdl->params[fnr].scale = 0;
+	hdl->params[fnr].precision = 0;
 	return MOK;
 }
 
 MapiMsg
-mapi_param(Mapi mid, int fnr, char **ptr)
+mapi_param(MapiHdl hdl, int fnr, char **ptr)
 {
-	return mapi_param_type(mid, fnr, MAPI_AUTO, MAPI_AUTO, ptr);
+	return mapi_param_type(hdl, fnr, MAPI_AUTO, MAPI_AUTO, ptr);
 }
 
 MapiMsg
-mapi_param_numeric(Mapi mid, int fnr, int scale, int prec, void *ptr)
+mapi_param_numeric(MapiHdl hdl, int fnr, int scale, int prec, void *ptr)
 {
-	if (mapi_param_type(mid, fnr, MAPI_NUMERIC, MAPI_NUMERIC, ptr))
-		 return mid->error;
-	mid->bindings[fnr].scale = scale;
-	mid->bindings[fnr].precision = prec;
+	if (mapi_param_type(hdl, fnr, MAPI_NUMERIC, MAPI_NUMERIC, ptr))
+		 return hdl->mid->error;
+	hdl->params[fnr].scale = scale;
+	hdl->params[fnr].precision = prec;
 	return MOK;
 }
 
 MapiMsg
-mapi_clear_params(Mapi mid)
+mapi_clear_params(MapiHdl hdl)
 {
-	memset(mid->bindings, 0, mid->maxbindings * sizeof(MapiBinding));
+	if (hdl->params)
+		memset(hdl->params, 0, hdl->maxparams * sizeof(MapiParam));
 	return MOK;
 }
 
@@ -1693,12 +1752,12 @@ Likewise for all end of line commentaries, provided '#' is not
 part of a string literal.
 @c
 static void
-mapi_check_query(Mapi mid)
+mapi_check_query(MapiHdl hdl)
 {
 	char *c, bracket = 0, *comm = 0;
 
-	assert(mid->query);
-	for (c = mid->query; *c; c++) {
+	assert(hdl->query);
+	for (c = hdl->query; *c; c++) {
 		if (*c == '\'' || *c == '"') {
 			if (bracket == *c)
 				bracket = 0;
@@ -1710,8 +1769,8 @@ mapi_check_query(Mapi mid)
 			while (*c && *c != '\n')
 				c++;
 		}
-		if (*c == '\n' && !mid->blocked) {
-			mapi_setError(mid,
+		if (*c == '\n' && !hdl->mid->blocked) {
+			mapi_setError(hdl->mid,
 				      "Newline in query string not allowed",
 				      "mapi_check_query");
 			*c = ' ';
@@ -1719,7 +1778,7 @@ mapi_check_query(Mapi mid)
 	}
 	if (comm) {
 		/* remove comment and white space before comment start */
-		while (--comm >= mid->query && isspace((int) *comm))
+		while (--comm >= hdl->query && isspace((int) *comm))
 			;
 		*++comm = 0;
 	}
@@ -1746,11 +1805,51 @@ mapi_explain(Mapi mid, FILE *fd)
 		mid->port);
 	if (mid->action)
 		fprintf(fd, "ACTION= %s\n", mid->action);
-	if (mid->query) {
-		if (strchr(mid->query, '\n'))
-			fprintf(fd, "QUERY = %s", mid->query);
+	if (mid->error) {
+		/* for multiline error messages, indent all subsequent
+		   lines with the space it takes to print "ERROR = " */
+		char *s, *p, *q;
+
+		s = "ERROR = ";
+		p = mid->errorstr;
+		while (p && *p) {
+			fprintf(fd, "%s", s);
+			s = "        ";
+			q = strchr(p, '\n');
+			if (q) {
+				q++;	/* also print the newline */
+				fprintf(fd, "%.*s", (int) (q - p), p);
+			} else {
+				/* print bit after last newline,
+				   adding one ourselves */
+				fprintf(fd, "%s\n", p);
+				break;	/* nothing more to do */
+			}
+			p = q;
+		}
+	}
+	fflush(fd);
+	mapi_clrError(mid);
+	return MOK;
+}
+
+MapiMsg
+mapi_explain_query(MapiHdl hdl, FILE *fd)
+{
+	Mapi mid;
+
+	assert(hdl);
+	mid = hdl->mid;
+	assert(mid);
+	fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname,
+		mid->port);
+	if (mid->action)
+		fprintf(fd, "ACTION= %s\n", mid->action);
+	if (hdl->query) {
+		if (strchr(hdl->query, '\n'))
+			fprintf(fd, "QUERY = %s", hdl->query);
 		else
-			fprintf(fd, "QUERY = %s\n", mid->query);
+			fprintf(fd, "QUERY = %s\n", hdl->query);
 	}
 	if (mid->error) {
 		/* for multiline error messages, indent all subsequent
@@ -1787,67 +1886,73 @@ It sends a complete Monet statement for execution
 Interaction with the server is sped up using block based interaction.
 The query is retained in the Mapi structure to repeat shipping.
 @c
-static MapiMsg
-prepareQuery(Mapi mid, const char *cmd)
+static MapiHdl
+prepareQuery(MapiHdl hdl, const char *cmd)
 {
 	if (cmd) {
 		size_t len = strlen(cmd);
 
-		/* first get rid of previous bindings */
-		memset(mid->fields, 0, mid->maxfields * sizeof(MapiField));
-		memset(mid->bindings, 0,
-		       mid->maxbindings * sizeof(MapiBinding));
-
-		if (mid->template) {
-			free(mid->template);
-			mid->template = 0;
-		}
-		if (mid->query)
-			free(mid->query);
-		mid->query = malloc(len + 1);
-		assert(mid->query);
-		strcpy(mid->query, cmd);
+		hdl->query = malloc(len + 1);
+		assert(hdl->query);
+		strcpy(hdl->query, cmd);
 		if (strchr(cmd, PLACEHOLDER)) {
-			mid->template = malloc(len + 1);
-			assert(mid->template);
-			strcpy(mid->template, cmd);
+			hdl->template = malloc(len + 1);
+			assert(hdl->template);
+			strcpy(hdl->template, cmd);
 		}
+		mapi_check_query(hdl);
 	}
-	mapi_check_query(mid);
-	return mid->error;
+	return hdl;
+}
+
+MapiHdl
+mapi_prepare(Mapi mid, const char *cmd)
+{
+	mapi_check0(mid, "mapi_prepare");
+	return prepareQuery(mapi_new_handle(mid), cmd);
 }
 
 MapiMsg
-mapi_prepare(Mapi mid, const char *cmd)
+mapi_prepare_handle(MapiHdl hdl, const char *cmd)
 {
-	mapi_check(mid, "mapi_prepare");
-	return prepareQuery(mid, cmd);
+	mapi_check(hdl->mid, "mapi_prepare");
+	if (hdl->tableid >= 0) {
+		hdl->mid->active = 1;
+		stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid);
+		stream_flush(hdl->mid->to);
+		hdl->tableid = -1;
+		mapi_finish_internal(hdl);
+	}
+	prepareQuery(hdl, cmd);
+	return hdl->mid->error;
 }
 
 static MapiMsg
-mapi_prepare_array_internal(Mapi mid, const char *cmd, char **val)
+mapi_prepare_array_internal(MapiHdl hdl, char **val)
 {
-	int i, ret;
+	int i;
 
-	ret = prepareQuery(mid, cmd);
 	for (i = 0; val[i]; i++) {
-		if (i >= mid->maxbindings)
-			mapi_extend_bindings(mid, i + 1);
-		mid->bindings[i].inparam = val[i];
-		mid->bindings[i].intype = MAPI_AUTO;
-		mid->bindings[i].outtype = MAPI_AUTO;
-		mid->bindings[i].sizeptr = NULL;
-		mid->bindings[i].scale = 0;
-		mid->bindings[i].precision = 0;
+		if (i >= hdl->maxparams)
+			mapi_extend_params(hdl, i + 1);
+		hdl->params[i].inparam = val[i];
+		hdl->params[i].intype = MAPI_AUTO;
+		hdl->params[i].outtype = MAPI_AUTO;
+		hdl->params[i].sizeptr = NULL;
+		hdl->params[i].scale = 0;
+		hdl->params[i].precision = 0;
 	}
-	return ret;
+	return MOK;
 }
 
-MapiMsg
+MapiHdl
 mapi_prepare_array(Mapi mid, const char *cmd, char **val)
 {
-	mapi_check(mid, "mapi_prepare_array");
-	return mapi_prepare_array_internal(mid, cmd, val);
+	MapiHdl hdl;
+	mapi_check0(mid, "mapi_prepare_array");
+	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	mapi_prepare_array_internal(hdl, val);
+	return hdl;
 }
 
 @-
@@ -1856,128 +1961,128 @@ some care not overfloating the space allocated.
 @c
 #define checkSpace(len)						\
 	do {							\
-		/* note: k==strlen(mid->query) */		\
+		/* note: k==strlen(hdl->query) */		\
 		if( k+len >= lim){				\
 			lim = k + len + MAPIBLKSIZE;		\
-			mid->query= realloc(mid->query, lim);	\
-			assert(mid->query);			\
+			hdl->query= realloc(hdl->query, lim);	\
+			assert(hdl->query);			\
 		}						\
 	} while (0)
 
 static void
-mapi_param_store(Mapi mid)
+mapi_param_store(MapiHdl hdl)
 {
 	char *val, buf[MAPIBLKSIZE];
-	char *p = mid->template, *q;
+	char *p = hdl->template, *q;
 	int i;
 	size_t k;
 	size_t lim;
 
-	if (mid->template == 0)
+	if (hdl->template == 0)
 		return;
-	if (mid->query)
-		free(mid->query);
+	if (hdl->query)
+		free(hdl->query);
 
-	lim = strlen(mid->template) + MAPIBLKSIZE;
-	mid->query = malloc(lim);
-	assert(mid->query);
-	mid->query[0] = 0;
+	lim = strlen(hdl->template) + MAPIBLKSIZE;
+	hdl->query = malloc(lim);
+	assert(hdl->query);
+	hdl->query[0] = 0;
 	k = 0;
 
-	q = strchr(mid->template, PLACEHOLDER);
+	q = strchr(hdl->template, PLACEHOLDER);
 	i = 0;
-	/* loop invariant: k == strlen(mid->query) */
-	while (q && i < mid->maxbindings) {
+	/* loop invariant: k == strlen(hdl->query) */
+	while (q && i < hdl->maxparams) {
 		if (q > p && *(q - 1) == '\\') {
 			q = strchr(q + 1, PLACEHOLDER);
 			continue;
 		}
 
-		strncpy(mid->query + k, p, q - p);
+		strncpy(hdl->query + k, p, q - p);
 		k += q - p;
-		mid->query[k] = 0;
+		hdl->query[k] = 0;
 
-		if (mid->bindings[i].inparam == 0) {
-			mid->query[k++] = PLACEHOLDER;
-			mid->query[k] = 0;
+		if (hdl->params[i].inparam == 0) {
+			hdl->query[k++] = PLACEHOLDER;
+			hdl->query[k] = 0;
 		} else {
-			void *src = mid->bindings[i].inparam;	/* abbrev */
+			void *src = hdl->params[i].inparam;	/* abbrev */
 
-			switch (mid->bindings[i].intype) {
+			switch (hdl->params[i].intype) {
 			case MAPI_TINY:
 				checkSpace(5);
-				sprintf(mid->query + k, "%d",
+				sprintf(hdl->query + k, "%d",
 					*(signed char *) src);
 				break;
 			case MAPI_UTINY:
 				checkSpace(5);
-				sprintf(mid->query + k, "%u",
+				sprintf(hdl->query + k, "%u",
 					*(unsigned char *) src);
 				break;
 			case MAPI_SHORT:
 				checkSpace(10);
-				sprintf(mid->query + k, "%d", *(short *) src);
+				sprintf(hdl->query + k, "%d", *(short *) src);
 				break;
 			case MAPI_USHORT:
 				checkSpace(10);
-				sprintf(mid->query + k, "%u",
+				sprintf(hdl->query + k, "%u",
 					*(unsigned short *) src);
 				break;
 			case MAPI_INT:
 				checkSpace(20);
-				sprintf(mid->query + k, "%d", *(int *) src);
+				sprintf(hdl->query + k, "%d", *(int *) src);
 				break;
 			case MAPI_UINT:
 				checkSpace(20);
-				sprintf(mid->query + k, "%u",
+				sprintf(hdl->query + k, "%u",
 					*(unsigned int *) src);
 				break;
 			case MAPI_LONG:
 				checkSpace(20);
-				sprintf(mid->query + k, "%ld", *(long *) src);
+				sprintf(hdl->query + k, "%ld", *(long *) src);
 				break;
 			case MAPI_ULONG:
 				checkSpace(20);
-				sprintf(mid->query + k, "%lu",
+				sprintf(hdl->query + k, "%lu",
 					*(unsigned long *) src);
 				break;
 			case MAPI_LONGLONG:
 				checkSpace(30);
-				sprintf(mid->query + k, LLFMT,
+				sprintf(hdl->query + k, LLFMT,
 					*(mapi_int64 *) src);
 				break;
 			case MAPI_ULONGLONG:
 				checkSpace(30);
-				sprintf(mid->query + k, ULLFMT,
+				sprintf(hdl->query + k, ULLFMT,
 					*(mapi_uint64 *) src);
 				break;
 			case MAPI_FLOAT:
 				checkSpace(30);
-				sprintf(mid->query + k, "%.9g",
+				sprintf(hdl->query + k, "%.9g",
 					*(float *) src);
 				break;
 			case MAPI_DOUBLE:
 				checkSpace(20);
-				sprintf(mid->query + k, "%.17g",
+				sprintf(hdl->query + k, "%.17g",
 					*(double *) src);
 				break;
 			case MAPI_DATE:
 				checkSpace(50);
-				sprintf(mid->query + k, "DATE '%04d-%02u-%02u'",
+				sprintf(hdl->query + k, "DATE '%04d-%02u-%02u'",
 					((MapiDate *) src)->year,
 					((MapiDate *) src)->month,
 					((MapiDate *) src)->day);
 				break;
 			case MAPI_TIME:
 				checkSpace(60);
-				sprintf(mid->query + k, "TIME '%02u:%02u:%02u'",
+				sprintf(hdl->query + k, "TIME '%02u:%02u:%02u'",
 					((MapiTime *) src)->hour,
 					((MapiTime *) src)->minute,
 					((MapiTime *) src)->second);
 				break;
 			case MAPI_DATETIME:
 				checkSpace(110);
-				sprintf(mid->query + k,
+				sprintf(hdl->query + k,
 					"TIMESTAMP '%04d-%02u-%02u %02u:%02u:%02u.%09u'",
 					((MapiDateTime *) src)->year,
 					((MapiDateTime *) src)->month,
@@ -1992,20 +2097,20 @@ mapi_param_store(Mapi mid)
 				buf[1] = 0;
 				val = mapi_quote(buf, 1);
 				checkSpace(strlen(val));
-				sprintf(mid->query + k, "'%s'", val);
+				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;
 			case MAPI_VARCHAR:
-				val = mapi_quote((char *) src, mid->bindings[i].sizeptr ? *mid->bindings[i].sizeptr : -1);
+				val = mapi_quote((char *) src, hdl->params[i].sizeptr ? *hdl->params[i].sizeptr : -1);
 				checkSpace(strlen(val));
-				sprintf(mid->query + k, "'%s'", val);
+				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;
 			default:
-				strcpy(mid->query + k, src);
+				strcpy(hdl->query + k, src);
 				break;
 			}
-			k += strlen(mid->query + k);
+			k += strlen(hdl->query + k);
 		}
 
 		i++;
@@ -2013,40 +2118,41 @@ mapi_param_store(Mapi mid)
 		q = strchr(p, PLACEHOLDER);
 	}
 	checkSpace(strlen(p));
-	strcpy(mid->query + k, p);
-	if (mid->trace)
-		printf("param_store: result=%s\n", mid->query);
+	strcpy(hdl->query + k, p);
+	if (hdl->mid->trace)
+		printf("param_store: result=%s\n", hdl->query);
 	return;
 }
 
 static MapiMsg
-answer_lookahead(Mapi mid)
+answer_lookahead(MapiHdl hdl)
 {
 	/* look ahead to detect errors */
-	int oldrd = mid->cache.reader;
+	int oldrd = hdl->cache.reader;
 
 	do {
-		mapi_get_row(mid);
-	} while (mid->error == MOK && mid->active &&
-		 mid->cache.writer + 1 < mid->cache.limit);
-	mid->cache.reader = oldrd;
-	if (mid->trace)
-		printf("mapi_query return:%d\n", mid->error);
-	return mid->error;
+		mapi_get_row(hdl);
+	} while (hdl->mid->error == MOK && hdl->mid->active &&
+		 hdl->cache.writer + 1 < hdl->cache.limit);
+	hdl->cache.reader = oldrd;
+	if (hdl->mid->trace)
+		printf("mapi_query return:%d\n", hdl->mid->error);
+	return hdl->mid->error;
 }
 
 static MapiMsg
-mapi_execute_internal(Mapi mid)
+mapi_execute_internal(MapiHdl hdl)
 {
 	size_t size;
 	char *cmd;
+	Mapi mid = hdl->mid;
 
 	mapi_check(mid, "mapi_execute");
-	mapi_param_store(mid);
-	cmd = mid->query;
+	mapi_param_store(hdl);
+	cmd = hdl->query;
 	size = strlen(cmd) /* null byte */ ;
 
-	mapi_cache_reset(mid);
+	mapi_cache_reset(hdl);
 	if (mid->trace) {
 		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
 	}
@@ -2060,7 +2166,7 @@ mapi_execute_internal(Mapi mid)
 	/* all SQL statements should end with a semicolon */
 	/* for the other languages it is assumed that the statements are correct */
 	if (mid->languageId == LANG_SQL &&
-	    (size == 0 || mid->query[size - 1] != ';')) {
+	    (size == 0 || hdl->query[size - 1] != ';')) {
 		stream_write(mid->to, ";", 1, 1);
 		check_stream(mid, mid->to, "write error on stream",
 			     "mapi_execute", mid->error);
@@ -2075,53 +2181,78 @@ mapi_execute_internal(Mapi mid)
 }
 
 MapiMsg
-mapi_execute(Mapi mid)
+mapi_execute(MapiHdl hdl)
 {
 	int ret;
 
-	mapi_check(mid, "mapi_execute");
-	ret = mapi_execute_internal(mid);
+	mapi_check(hdl->mid, "mapi_execute");
+	ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
-		ret = answer_lookahead(mid);
+		ret = answer_lookahead(hdl);
 	return ret;
 }
 
 MapiMsg
-mapi_execute_array(Mapi mid, char **val)
+mapi_execute_array(MapiHdl hdl, char **val)
 {
 	int ret;
-	char *cmd;
 
-	mapi_check(mid, "mapi_execute_array");
-	cmd = mid->query;
-	ret = mapi_prepare_array_internal(mid, cmd, val);
-	return ret ? ret : mapi_execute_internal(mid);
+	mapi_check(hdl->mid, "mapi_execute_array");
+	ret = mapi_prepare_array_internal(hdl, val);
+	return ret ? ret : mapi_execute_internal(hdl);
 }
 
-MapiMsg
+MapiHdl
 mapi_query(Mapi mid, const char *cmd)
 {
-	int ret;
+	int ret = MERROR;
+	MapiHdl hdl;
 
-	ret = prepareQuery(mid, cmd);
+	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	ret = hdl->mid->error;
 	if (ret == MOK)
-		ret = mapi_execute_internal(mid);
+		ret = mapi_execute_internal(hdl);
 	if (ret == MOK)
-		ret = answer_lookahead(mid);
-	return ret;
+		ret = answer_lookahead(hdl);
+	return hdl;
 }
 
 MapiMsg
+mapi_query_handle(MapiHdl hdl, const char *cmd)
+{
+	int ret = MERROR;
+
+	if (hdl->tableid >= 0) {
+		hdl->mid->active = 1;
+		stream_printf(hdl->mid->to, "X" "close %d\n", hdl->tableid);
+		stream_flush(hdl->mid->to);
+		hdl->tableid = -1;
+		mapi_finish_internal(hdl);
+	}
+	prepareQuery(hdl, cmd);
+	ret = hdl->mid->error;
+	if (ret == MOK)
+		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = answer_lookahead(hdl);
+	return ret;
+}
+
+MapiHdl
 mapi_query_array(Mapi mid, const char *cmd, char **val)
 {
-	int ret;
+	int ret = MERROR;
+	MapiHdl hdl;
 
-	ret = mapi_prepare_array_internal(mid, cmd, val);
+	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	ret = hdl->mid->error;
 	if (ret == MOK)
-		ret = mapi_execute_internal(mid);
+		ret = mapi_prepare_array_internal(hdl, val);
 	if (ret == MOK)
-		ret = answer_lookahead(mid);
-	return ret;
+		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = answer_lookahead(hdl);
+	return hdl;
 }
 
 @-
@@ -2131,41 +2262,44 @@ They will not analyse the result for errors or
 header information, but simply through the output
 received from the server to the stream indicated.
 @c
-MapiMsg
+MapiHdl
 mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 {
-	int ret;
+	int ret = MERROR;
+	MapiHdl hdl;
 
-	mapi_check(mid, "mapi_quick_query");
-	ret = prepareQuery(mid, cmd);
+	mapi_check0(mid, "mapi_quick_query");
+	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	ret = hdl->mid->error;
 	if (ret == MOK)
-		ret = mapi_execute_internal(mid);
-	if (ret == MOK) {
-		mapi_quick_response(mid, fd);
-		ret = mid->error;
-	}
+		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
+		ret = mapi_quick_response(hdl, fd);
 	if (mid->trace)
 		printf("mapi_quick_query return:%d\n", ret);
-	return ret;
+	return hdl;
 }
 
-MapiMsg
+MapiHdl
 mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 {
-	int ret;
+	int ret = MERROR;
+	MapiHdl hdl;
 
-	mapi_check(mid, "mapi_quick_query_array");
-	ret = mapi_prepare_array_internal(mid, cmd, val);
+	mapi_check0(mid, "mapi_quick_query_array");
+	hdl = prepareQuery(mapi_new_handle(mid), cmd);
+	ret = hdl->mid->error;
 	if (ret == MOK)
-		ret = mapi_execute_internal(mid);
+		ret = mapi_prepare_array_internal(hdl, val);
+	if (ret == MOK)
+		ret = mapi_execute_internal(hdl);
 	if (ret == MOK) {
 		/* look ahead to detect errors */
-		mapi_quick_response(mid, fd);
-		ret = mid->error;
+		ret = mapi_quick_response(hdl, fd);
 	}
 	if (mid->trace)
 		printf("mapi_quick_query return:%d\n", ret);
-	return ret;
+	return hdl;
 }
 
 @-
@@ -2176,42 +2310,44 @@ A stream query can not rely on upfront caching.
 The stream query also ensures that the cache contains a window
 over the stream by shuffling tuples once it is filled.
 @c
-MapiMsg
+MapiHdl
 mapi_stream_query(Mapi mid, const char *cmd, int windowsize)
 {
-	mapi_check(mid, "mapi_stream_query");
+	MapiHdl hdl;
 
-	mapi_query(mid, cmd);
-	if (mid->error)
-		return MERROR;
-	mapi_cache_reset(mid);
-	mapi_cache_limit(mid, windowsize);
-	mapi_cache_shuffle(mid, 100);
-	return MOK;
+	mapi_check0(mid, "mapi_stream_query");
+
+	hdl = mapi_query(mid, cmd);
+	if (hdl != NULL) {
+		mapi_cache_reset(hdl);
+		mapi_cache_limit(hdl->mid, windowsize);
+		mapi_cache_shuffle(hdl, 100);
+	}
+	return hdl;
 }
 static void
-mapi_cache_reset(Mapi mid)
+mapi_cache_reset(MapiHdl hdl)
 {
 	int i;
 
-	mapi_finish_internal(mid);
-	mid->rows_affected = 0;
-	mid->active = 1;
-	for (i = 0; i < mid->cache.writer; i++)
-		if (mid->cache.rows[i])
-			mid->cache.rows[i][0] = 0;
-	if (mid->cache.tupleindex)
-		for (i = 0; i < mid->cache.writer; i++)
-			mid->cache.tupleindex[i] = -1;
-	if (mid->cache.tuplerev)
-		for (i = 0; i < mid->cache.writer; i++)
-			mid->cache.tuplerev[i] = -1;
-	mid->cache.tuplecount = 0;
-	mid->cache.reader = -1;
-	mid->cache.writer = 0;
-	mid->cache.first = 0;
-	mid->fieldcnt = 0;
-	memset(mid->cache.fldcnt, 0, sizeof(int) * mid->cache.limit);
+	mapi_finish_internal(hdl);
+	hdl->rows_affected = 0;
+	hdl->fieldcnt = 0;
+	hdl->mid->active = 1;
+	for (i = 0; i < hdl->cache.writer; i++)
+		if (hdl->cache.rows[i])
+			hdl->cache.rows[i][0] = 0;
+	if (hdl->cache.tupleindex)
+		for (i = 0; i < hdl->cache.writer; i++)
+			hdl->cache.tupleindex[i] = -1;
+	if (hdl->cache.tuplerev)
+		for (i = 0; i < hdl->cache.writer; i++)
+			hdl->cache.tuplerev[i] = -1;
+	hdl->cache.tuplecount = 0;
+	hdl->cache.reader = -1;
+	hdl->cache.writer = 0;
+	hdl->cache.first = 0;
+	memset(hdl->cache.fldcnt, 0, sizeof(int) * hdl->cache.limit);
 }
 
 MapiMsg
@@ -2219,224 +2355,208 @@ mapi_cache_limit(Mapi mid, int limit)
 {
 	/* clean out superflous space TODO */
 	mapi_check(mid, "mapi_cache_limit");
-	mid->cache.rowlimit = limit;
-	if (mid->cache.rowlimit < mid->cache.limit) {
+	mid->cachelimit = limit;
+/* 	if (hdl->cache.rowlimit < hdl->cache.limit) { */
 		/* TODO: decide what to do here */
-		mid->cache.limit = mid->cache.rowlimit; /* arbitrarily throw away cache lines */
-		if (mid->cache.writer > mid->cache.limit) {
-			mid->cache.writer = mid->cache.limit;
-			if (mid->cache.reader > mid->cache.writer)
-				mid->cache.reader = mid->cache.writer;
-		}
-	}
+/* 		hdl->cache.limit = hdl->cache.rowlimit; *//* arbitrarily throw away cache lines */
+/* 		if (hdl->cache.writer > hdl->cache.limit) { */
+/* 			hdl->cache.writer = hdl->cache.limit; */
+/* 			if (hdl->cache.reader > hdl->cache.writer) */
+/* 				hdl->cache.reader = hdl->cache.writer; */
+/* 		} */
+/* 	} */
 	if (mid->languageId == LANG_SQL) {
+		MapiHdl hdl = mapi_new_handle(mid);
 		stream_printf(mid->to, "X" "reply_size %d\n", limit);
 		stream_flush(mid->to);
 		mid->active = 1;
-		mapi_finish_internal(mid);
+		mapi_finish_internal(hdl);
+		mapi_close_handle(hdl);
 	}
 	return MOK;
 }
 
 MapiMsg
-mapi_cache_shuffle(Mapi mid, int percentage)
+mapi_cache_shuffle(MapiHdl hdl, int percentage)
 {
 	/* clean out superflous space TODO */
-	mapi_check(mid, "mapi_cache_shuffle");
+	mapi_check(hdl->mid, "mapi_cache_shuffle");
 	if (percentage < 0 || percentage > 100) {
-		return mapi_setError(mid, "Illegal percentage",
+		return mapi_setError(hdl->mid, "Illegal percentage",
 				     "mapi_cache_shuffle");
 	}
-	mid->cache.shuffle = percentage;
+	hdl->cache.shuffle = percentage;
 	return MOK;
 }
 
 MapiMsg
-mapi_fetch_reset(Mapi mid)
+mapi_fetch_reset(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_fetch_reset");
-	mid->cache.reader = -1;
+	mapi_check(hdl->mid, "mapi_fetch_reset");
+	hdl->cache.reader = -1;
 	return MOK;
 }
 
 MapiMsg
-mapi_seek_row(Mapi mid, int rownr, int whence)
+mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 {
-	mapi_check(mid, "mapi_seek_row");
+	mapi_check(hdl->mid, "mapi_seek_row");
 	switch (whence) {
 	case MAPI_SEEK_SET:
 		break;
 	case MAPI_SEEK_CUR:
-		rownr += mid->cache.tuplerev[mid->cache.reader + 1];
+		rownr += hdl->cache.tuplerev[hdl->cache.reader + 1];
 		break;
 	case MAPI_SEEK_END:
-		rownr += mid->rows_affected;
+		rownr += hdl->rows_affected;
 		break;
 	default:
-		return mapi_setError(mid, "Illegal whence value",
+		return mapi_setError(hdl->mid, "Illegal whence value",
 				     "mapi_seek_row");
 	}
-	if (rownr < 0 || rownr > mid->rows_affected)
-		return mapi_setError(mid, "Illegal row number",
+	if (rownr < 0 || rownr > hdl->rows_affected)
+		return mapi_setError(hdl->mid, "Illegal row number",
 				     "mapi_seek_row");
-	if (mid->cache.first <= rownr &&
-	    rownr < mid->cache.first + mid->cache.tuplecount) {
+	if (hdl->cache.first <= rownr &&
+	    rownr < hdl->cache.first + hdl->cache.tuplecount) {
 		/* we've got the requested tuple in the cache */
-		mid->cache.reader = mid->cache.tupleindex[rownr - mid->cache.first] - 1;
+		hdl->cache.reader = hdl->cache.tupleindex[rownr - hdl->cache.first] - 1;
 	} else {
 		/* we don't have the requested tuple in the cache
 		   reset the cache and at the next fetch we'll get the data */
-		if (mapi_cache_freeup(mid, 100) == MOK) {
-			mid->cache.first = rownr;
+		if (mapi_cache_freeup(hdl, 100) == MOK) {
+			hdl->cache.first = rownr;
 		}
 	}
 	/* mapi_seek_row als fetches the seeked-to row */
-	if (!mid->error)
-		(void) mapi_fetch_row(mid);
+	if (!hdl->mid->error)
+		(void) mapi_fetch_row(hdl);
 
-	return mid->error;
+	return hdl->mid->error;
 }
 
-#define REALLOC(p,s)	((p) ? realloc((p),(s)) : malloc((s)))
+static MapiMsg
+mapi_cache_freeup_internal(MapiHdl hdl, int k)
+{
+	int i;			/* just a counter */
+	int n = 0;		/* # of tuples being deleted from front */
+
+	hdl->cache.tuplecount = 0;
+	for (i = 0; i < hdl->cache.writer - k; i++) {
+		if (hdl->cache.rows[i]) {
+			if (hdl->cache.rows[i][0] == '[')
+				n++;
+			free(hdl->cache.rows[i]);
+		}
+		hdl->cache.rows[i] = hdl->cache.rows[i + k];
+		hdl->cache.rows[i + k] = 0;
+		if (hdl->cache.anchors[i])
+			free(hdl->cache.anchors[i]);
+		hdl->cache.anchors[i] = hdl->cache.anchors[i + k];
+		hdl->cache.anchors[i + k] = 0;
+		hdl->cache.fldcnt[i] = hdl->cache.fldcnt[i + k];
+		if (hdl->cache.rows[i] && hdl->cache.rows[i][0] == '[') {
+			hdl->cache.tuplerev[i] = hdl->cache.tuplecount;
+			hdl->cache.tupleindex[hdl->cache.tuplecount++] = i;
+		}
+	}
+	/* after the previous loop, i == hdl->cache.writer - k, and
+	   the last (hdl->cache.writer - k) cache entries have been
+	   cleared already , so we don't need to go the Full Monty
+	   here */
+	for (/*i = hdl->cache.writer - k*/; i < k /*hdl->cache.writer*/; i++) {
+		if (hdl->cache.rows[i]) {
+			if (hdl->cache.rows[i][0] == '[')
+				n++;
+			free(hdl->cache.rows[i]);
+		}
+		hdl->cache.rows[i] = 0;
+		if (hdl->cache.anchors[i])
+			free(hdl->cache.anchors[i]);
+		hdl->cache.anchors[i] = 0;
+		hdl->cache.fldcnt[i] = 0;
+	}
+	hdl->cache.reader -= k;
+	if (hdl->cache.reader < 0)
+		hdl->cache.reader = -1;
+	hdl->cache.writer -= k;
+	if (hdl->cache.writer < 0) /* "cannot happen" */
+		hdl->cache.writer = 0;
+	hdl->cache.first += n;
+
+	return MOK;
+}
+
+#define REALLOC(p,s)	((p) = ((p) ? realloc((p),(s)) : malloc((s))))
 
 static void
-mapi_extend_cache(Mapi mid)
+mapi_extend_cache(MapiHdl hdl)
 {
-	int incr, newsize, oldsize = mid->cache.limit, i;
+	int incr, newsize, oldsize = hdl->cache.limit, i;
 
 	/* extend row cache */
 	if (oldsize == 0)
-		incr = 10000;
+		incr = 1000;
 	else
 		incr = oldsize * 2;
 	if (incr > 200000)
 		incr = 20000;
 	newsize = oldsize + incr;
-	if (mid->cache.rowlimit > 0 && newsize > mid->cache.rowlimit) {
-		newsize = mid->cache.rowlimit;
+	if (hdl->cache.rowlimit > 0 && newsize > hdl->cache.rowlimit) {
+		newsize = hdl->cache.rowlimit;
 		incr = newsize - oldsize;
 		if (incr <= 0) {
-			mapi_setError(mid, "Row cache limit reached",
-				      "mapi_extend_cache");
+			if (hdl->cache.reader >= 0) {
+				/* flush all read entries */
+				mapi_cache_freeup_internal(hdl, hdl->cache.reader + 1);
+			} else {
+				/* increase limit */
+				hdl->cache.rowlimit += 100;
+			}
+			mapi_extend_cache(hdl);	/* try again */
 			return;
 		}
 	}
 
-	mid->cache.rows = REALLOC(mid->cache.rows, newsize * sizeof(char **));
-	assert(mid->cache.rows);
-	memset(mid->cache.rows + oldsize, 0, incr * sizeof(char **));
+	REALLOC(hdl->cache.rows, newsize * sizeof(char **));
+	assert(hdl->cache.rows);
+	memset(hdl->cache.rows + oldsize, 0, incr * sizeof(char **));
 
-	mid->cache.tupleindex = REALLOC(mid->cache.tupleindex,
-					newsize * sizeof(int));
-	assert(mid->cache.tupleindex);
+	REALLOC(hdl->cache.tupleindex, newsize * sizeof(int));
+	assert(hdl->cache.tupleindex);
 	for (i = oldsize; i < newsize; i++)
-		mid->cache.tupleindex[i] = -1;
+		hdl->cache.tupleindex[i] = -1;
 
-	mid->cache.tuplerev = REALLOC(mid->cache.tuplerev,
-				      newsize * sizeof(int));
-	assert(mid->cache.tuplerev);
+	REALLOC(hdl->cache.tuplerev, newsize * sizeof(int));
+	assert(hdl->cache.tuplerev);
 	for (i = oldsize; i < newsize; i++)
-		mid->cache.tuplerev[i] = -1;
+		hdl->cache.tuplerev[i] = -1;
 
-	mid->cache.anchors = REALLOC(mid->cache.anchors,
-				     newsize * sizeof(char **));
-	assert(mid->cache.anchors);
-	memset(mid->cache.anchors + oldsize, 0, incr * sizeof(char **));
+	REALLOC(hdl->cache.anchors, newsize * sizeof(char **));
+	assert(hdl->cache.anchors);
+	memset(hdl->cache.anchors + oldsize, 0, incr * sizeof(char **));
 
-	mid->cache.fldcnt = REALLOC(mid->cache.fldcnt, newsize * sizeof(int));
-	assert(mid->cache.fldcnt);
-	memset(mid->cache.fldcnt + oldsize, 0, incr * sizeof(int));
+	REALLOC(hdl->cache.fldcnt, newsize * sizeof(int));
+	assert(hdl->cache.fldcnt);
+	memset(hdl->cache.fldcnt + oldsize, 0, incr * sizeof(int));
 
-	mid->cache.limit = newsize;
+	hdl->cache.limit = newsize;
 }
 
 /* Make space in the cache for new tuples, ignore the read pointer */
 MapiMsg
-mapi_cache_freeup(Mapi mid, int percentage)
+mapi_cache_freeup(MapiHdl hdl, int percentage)
 {
-	int i;			/* just a counter */
 	int k;			/* # of cache lines to be deleted from front */
-	int n = 0;		/* # of tuples being deleted from front */
 
-	if (mid->cache.writer == 0 && mid->cache.reader == -1)
+	if (hdl->cache.writer == 0 && hdl->cache.reader == -1)
 		return MOK;
 	if (percentage < 0 || percentage > 100)
 		percentage = 100;
-	k = (mid->cache.writer * percentage) / 100;
+	k = (hdl->cache.writer * percentage) / 100;
 	if (k < 1)
 		k = 1;
-	mid->cache.tuplecount = 0;
-	for (i = 0; i < mid->cache.writer - k; i++) {
-		if (mid->cache.rows[i]) {
-			if (mid->cache.rows[i][0] == '[')
-				n++;
-			free(mid->cache.rows[i]);
-		}
-		mid->cache.rows[i] = mid->cache.rows[i + k];
-		mid->cache.rows[i + k] = 0;
-		if (mid->cache.anchors[i])
-			free(mid->cache.anchors[i]);
-		mid->cache.anchors[i] = mid->cache.anchors[i + k];
-		mid->cache.anchors[i + k] = 0;
-		mid->cache.fldcnt[i] = mid->cache.fldcnt[i + k];
-		if (mid->cache.rows[i] && mid->cache.rows[i][0] == '[') {
-			mid->cache.tuplerev[i] = mid->cache.tuplecount;
-			mid->cache.tupleindex[mid->cache.tuplecount++] = i;
-		}
-	}
-	/* after the previous loop, i == mid->cache.writer - k, and
-	   the last (mid->cache.writer - k) cache entries have been
-	   cleared already , so we don't need to go the Full Monty
-	   here */
-	for (/*i = mid->cache.writer - k*/; i < k /*mid->cache.writer*/; i++) {
-		if (mid->cache.rows[i]) {
-			if (mid->cache.rows[i][0] == '[')
-				n++;
-			free(mid->cache.rows[i]);
-		}
-		mid->cache.rows[i] = 0;
-		if (mid->cache.anchors[i])
-			free(mid->cache.anchors[i]);
-		mid->cache.anchors[i] = 0;
-		mid->cache.fldcnt[i] = 0;
-	}
-	mid->cache.reader -= k;
-	if (mid->cache.reader < 0)
-		mid->cache.reader = -1;
-	mid->cache.writer -= k;
-	if (mid->cache.writer < 0) /* "cannot happen" */
-		mid->cache.writer = 0;
-	mid->cache.first += n;
-
-	return MOK;
-}
-
-static MapiMsg
-mapi_clear_cache(Mapi mid)
-{
-	int i;
-
-	if (mid->cache.rowlimit < 0)
-		return MOK;
-	if (mid->cache.reader + 2 < mid->cache.writer)
-		return mapi_setError(mid, "Cache reset with non-read lines",
-				     "mapi_clear");
-	for (i = 0; i < mid->cache.writer; i++) {
-		if (mid->cache.anchors[i])
-			free(mid->cache.anchors[i]);
-		mid->cache.anchors[i] = 0;
-		if (mid->cache.rows[i])
-			free(mid->cache.rows[i]);
-		mid->cache.rows[i] = 0;
-	}
-	for (i = 0; i < mid->cache.writer; i++) {
-		mid->cache.tupleindex[i] = -1;
-		mid->cache.tuplerev[i] = -1;
-	}
-	mid->cache.reader = -1;
-	mid->cache.writer = 0;
-	memset(mid->cache.fldcnt, 0, mid->cache.limit * sizeof(int));
-	return MOK;
+	return mapi_cache_freeup_internal(hdl, k);
 }
 
 @-
@@ -2448,20 +2568,22 @@ The content received is analysed further by mapi_getRow()
 
 @c
 char *
-mapi_fetch_line_internal(Mapi mid)
+mapi_fetch_line_internal(MapiHdl hdl)
 {
 	char *reply, *s;
 	ssize_t k;
+	Mapi mid;
 
-	if (mid->cache.writer > 0 && mid->cache.reader + 1 < mid->cache.writer)
-		return mid->cache.rows[++mid->cache.reader];
+	if (hdl->cache.writer > 0 && hdl->cache.reader + 1 < hdl->cache.writer)
+		return hdl->cache.rows[++hdl->cache.reader];
 
+	mid = hdl->mid;
 	if (!mid->active)
 		return 0;
 	/* get rid of old buffer space */
-	if (mid->cache.rowlimit > 0 &&
-	    mid->cache.writer >= mid->cache.rowlimit && mapi_clear_cache(mid))
-		return 0;
+	if (hdl->cache.rowlimit > 0 &&
+	    hdl->cache.writer >= hdl->cache.rowlimit)
+		mapi_extend_cache(hdl);
 
 	/* check if you need to read more blocks to get a new line */
 	mid->blk.eos = 0;
@@ -2542,38 +2664,38 @@ mapi_fetch_line_internal(Mapi mid)
 	mid->blk.nxt += k;
 
 	/* manage the row cache space first */
-	if (mid->cache.writer >= mid->cache.limit)
-		mapi_extend_cache(mid);
+	if (hdl->cache.writer >= hdl->cache.limit)
+		mapi_extend_cache(hdl);
 
-	mid->cache.rows[mid->cache.writer] = reply;
-	mid->cache.tuplerev[mid->cache.writer] = mid->cache.tuplecount;
-	mid->cache.tuplerev[mid->cache.writer + 1] = mid->cache.tuplecount + 1;
+	hdl->cache.rows[hdl->cache.writer] = reply;
+	hdl->cache.tuplerev[hdl->cache.writer] = hdl->cache.tuplecount;
+	hdl->cache.tuplerev[hdl->cache.writer + 1] = hdl->cache.tuplecount + 1;
 	if (*reply == '[') {
-		mid->cache.tupleindex[mid->cache.tuplecount++] = mid->cache.writer;
-		if (mid->rows_affected < mid->cache.first + mid->cache.tuplecount)
-			mid->rows_affected = mid->cache.first + mid->cache.tuplecount;
+		hdl->cache.tupleindex[hdl->cache.tuplecount++] = hdl->cache.writer;
+		if (hdl->rows_affected < hdl->cache.first + hdl->cache.tuplecount)
+			hdl->rows_affected = hdl->cache.first + hdl->cache.tuplecount;
 	}
-	mid->cache.writer++;
+	hdl->cache.writer++;
 	if (mid->trace)
 		printf("mapi_fetch_line:%s\n", reply);
-	return mid->cache.rows[++mid->cache.reader];
+	return hdl->cache.rows[++hdl->cache.reader];
 }
 
 char *
-mapi_fetch_line(Mapi mid)
+mapi_fetch_line(MapiHdl hdl)
 {
 	char *reply;
 
-	mapi_check0(mid, "mapi_fetch_line");
-	reply = mapi_fetch_line_internal(mid);
-	if (reply == NULL && mid->languageId == LANG_SQL &&
-	    !mid->active && mid->rows_affected > 0 &&
-	    mid->cache.first + mid->cache.tuplecount < mid->rows_affected) {
-		mid->active = 1;
-		stream_printf(mid->to, "X" "export %d %d\n", mid->tableid,
-			      mid->cache.first + mid->cache.tuplecount);
-		stream_flush(mid->to);
-		reply = mapi_fetch_line_internal(mid);
+	mapi_check0(hdl->mid, "mapi_fetch_line");
+	reply = mapi_fetch_line_internal(hdl);
+	if (reply == NULL && hdl->mid->languageId == LANG_SQL &&
+	    !hdl->mid->active && hdl->rows_affected > 0 &&
+	    hdl->cache.first + hdl->cache.tuplecount < hdl->rows_affected) {
+		hdl->mid->active = 1;
+		stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid,
+			      hdl->cache.first + hdl->cache.tuplecount);
+		stream_flush(hdl->mid->to);
+		reply = mapi_fetch_line_internal(hdl);
 	}
 	return reply;
 }
@@ -2583,20 +2705,20 @@ To synchronize on a prompt, the low level routine mapi_finish can be used.
 It disgards all output received.
 @c
 MapiMsg
-mapi_finish_internal(Mapi mid)
+mapi_finish_internal(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_finish");
-	if (mid->active)
-		while (mapi_fetch_line_internal(mid) != (char *) 0)
+	mapi_check(hdl->mid, "mapi_finish");
+	if (hdl->mid->active)
+		while (mapi_fetch_line_internal(hdl) != (char *) 0)
 			;
-	return mid->error;
+	return hdl->mid->error;
 }
 
 MapiMsg
-mapi_finish(Mapi mid)
+mapi_finish(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_finish");
-	return mapi_finish_internal(mid);
+	mapi_check(hdl->mid, "mapi_finish");
+	return mapi_finish_internal(hdl);
 }
 
 @-
@@ -2628,20 +2750,22 @@ empy the row cache.
 	} while (0)
 
 MapiMsg
-mapi_quick_response(Mapi mid, FILE *fd)
+mapi_quick_response(MapiHdl hdl, FILE *fd)
 {
 	char *s;
 	int i;
 	ssize_t k;
+	Mapi mid;
 
+	mid = hdl->mid;
 	mapi_check(mid, "mapi_quick_response");
 	if (fd == 0)
 		return mapi_setError(mid, "Destination file missing",
 				     "mapi.response");
 
 	/* any left over rows in the cache? */
-	for (i = mid->cache.reader + 1; i < mid->cache.writer; i++)
-		fprintf(fd, "%s\n", mid->cache.rows[i]);
+	for (i = hdl->cache.reader + 1; i < hdl->cache.writer; i++)
+		fprintf(fd, "%s\n", hdl->cache.rows[i]);
 	if (mid->active == 0)
 		return 0;
 
@@ -2687,7 +2811,7 @@ mapi_quick_response(Mapi mid, FILE *fd)
 	if (k > 0) {
 		handlePart(k);
 	}
-	mapi_fetch_line_internal(mid);	/* get rid of prompt possibly */
+	mapi_fetch_line_internal(hdl);	/* get rid of prompt possibly */
 	return mid->error;
 }
 
@@ -2702,13 +2826,13 @@ is reached.
 TODO, header line does not appear in cache, reuse of old line is erroneous
 @c
 static void
-mapi_header(Mapi mid, char *line)
+mapi_header(MapiHdl hdl, char *line)
 {
 	char *tag = "", *c, *etag;
 	char *buf;
-	int i, cr = mid->cache.reader;
+	int i, cr = hdl->cache.reader;
 
-	if (mid->trace)
+	if (hdl->mid->trace)
 		printf("mapi_header:%s\n", line);
 	etag = c = strrchr(line, '#');
 	if (c == 0 || c == line)
@@ -2720,28 +2844,28 @@ because the client may wish to perform a mapi_fetch_line();
 @c
 #define keepProp(name, attr)						\
 	do {								\
-		if (strcmp(name, tag) == 0) {			\
+		if (strcmp(name, tag) == 0) {				\
 			char *fld;					\
 									\
 			i = 0;						\
-			while ((fld = mapi_fetch_field(mid, i)) != NULL) { \
-				strncpy(mid->fields[i].attr, fld,	\
-					sizeof(mid->fields[i].attr) - 1); \
-				mid->fields[i].attr[sizeof(mid->fields[i].attr) - 1] = 0; \
-				if (mid->trace)				\
+			while ((fld = mapi_fetch_field(hdl, i)) != NULL) { \
+				strncpy(hdl->fields[i].attr, fld,	\
+					sizeof(hdl->fields[i].attr) - 1); \
+				hdl->fields[i].attr[sizeof(hdl->fields[i].attr) - 1] = 0; \
+				if (hdl->mid->trace)			\
 					printf("got %s %s\n", name, fld); \
 				i++;					\
 			}						\
-			mapi_clrError(mid);				\
-			if (mid->cache.fldcnt[mid->cache.reader] < i)	\
-				mid->cache.fldcnt[mid->cache.reader] = i; \
-			if (mid->fieldcnt < i)				\
-				mid->fieldcnt = i;			\
+			mapi_clrError(hdl->mid);			\
+			if (hdl->cache.fldcnt[hdl->cache.reader] < i)	\
+				hdl->cache.fldcnt[hdl->cache.reader] = i; \
+			if (hdl->fieldcnt < i)				\
+				hdl->fieldcnt = i;			\
 		}							\
 	} while (0)
 
-	buf = strdup(mid->cache.rows[cr]);
-	mapi_slice_row(mid);
+	buf = strdup(hdl->cache.rows[cr]);
+	mapi_slice_row(hdl);
 
 	*line = '[';		/* fake a value row */
 	*c = ']';
@@ -2756,48 +2880,49 @@ because the client may wish to perform a mapi_fetch_line();
 	if (strcmp("tuplecount", tag) == 0) {
 		char *fld;
 
-		if ((fld = mapi_fetch_field(mid, 0)) != NULL) {
-			mid->rows_affected = atoi(fld);
-			if (mid->trace)
+		if ((fld = mapi_fetch_field(hdl, 0)) != NULL) {
+			hdl->rows_affected = atoi(fld);
+			if (hdl->mid->trace)
 				printf("got tuplecount %d\n",
-				       mid->rows_affected);
+				       hdl->rows_affected);
 		}
-		mapi_clrError(mid);
+		mapi_clrError(hdl->mid);
 	}
 	if (strcmp("id", tag) == 0) {
 		char *fld;
 
-		if ((fld = mapi_fetch_field(mid, 0)) != NULL) {
-			mid->tableid = atoi(fld);
-			if (mid->trace)
-				printf("got id %d\n", mid->tableid);
+		if ((fld = mapi_fetch_field(hdl, 0)) != NULL) {
+			hdl->tableid = atoi(fld);
+			if (hdl->mid->trace)
+				printf("got id %d\n", hdl->tableid);
 		}
-		mapi_clrError(mid);
+		mapi_clrError(hdl->mid);
 	}
 	/* restore the markers */
 	*line = '#';
 	*etag = '#';
-	strcpy(mid->cache.rows[cr], buf);
-	for (i = 0; i < mid->cache.fldcnt[mid->cache.reader]; i++)
-		mid->cache.anchors[cr][i] = 0;
-	mid->cache.fldcnt[cr] = 0;
+	strcpy(hdl->cache.rows[cr], buf);
+	for (i = 0; i < hdl->cache.fldcnt[hdl->cache.reader]; i++)
+		hdl->cache.anchors[cr][i] = 0;
+	hdl->cache.fldcnt[cr] = 0;
 	free(buf);
 }
 
 static MapiMsg
-mapi_get_row(Mapi mid)
+mapi_get_row(MapiHdl hdl)
 {
 	char *reply = 0;
+	Mapi mid = hdl->mid;
 
-	while (mid->active || mid->cache.reader + 1 < mid->cache.writer) {
-		reply = mapi_fetch_line_internal(mid);
+	while (mid->active || hdl->cache.reader + 1 < hdl->cache.writer) {
+		reply = mapi_fetch_line_internal(hdl);
 		if (reply == 0)
 			return MERROR;
 
 		switch (reply[0]) {
 		case '#':
 			if (!(mid->languageId >= LANG_SQL && reply[1] == '(')) {
-				mapi_header(mid, reply);
+				mapi_header(hdl, reply);
 				break;
 			}
 		case '!':
@@ -2992,37 +3117,38 @@ It also silently extends the field descriptor table.
 @c
 @= extend
 static int
-mapi_extend_@1(Mapi mid, int min@1)
+mapi_extend_@1(MapiHdl hdl, int min@1)
 {
-	/* extend the field table */
-	int nm = mid->max@1 + 32;
+	/* extend the @1 table */
+	int nm = hdl->max@1 + 32;
 
 	if (nm <= min@1)
 		 nm = min@1 + 32;
-	mid->@1 = realloc(mid->@1, nm * sizeof(@2));
+	hdl->@1 = hdl->@1 ? realloc(hdl->@1, nm * sizeof(@2)) : malloc(nm * sizeof(@2));
+	assert(hdl->@1);
 	/* clear new entries */
-	memset(mid->@1 + mid->max@1, 0, (nm - mid->max@1) * sizeof(@2));
-	mid->max@1 = nm;
+	memset(hdl->@1 + hdl->max@1, 0, (nm - hdl->max@1) * sizeof(@2));
+	hdl->max@1 = nm;
 	return MOK;
 }
 @c
 @:extend(fields,MapiField)@
-@:extend(bindings,MapiBinding)@
+@:extend(params,MapiParam)@
 
 static void
-mapi_extend_anchor(Mapi mid)
+mapi_extend_anchor(MapiHdl hdl)
 {
-	int cr = mid->cache.reader;
-	char **ac = mid->cache.anchors[cr], **acnew = 0;
+	int cr = hdl->cache.reader;
+	char **ac = hdl->cache.anchors[cr], **acnew = 0;
 
-	if (ac == 0 || mid->maxfields > mid->cache.fldcnt[cr]) {
-		acnew = malloc(sizeof(char *) * mid->maxfields);
+	if (ac == 0 || hdl->maxfields > hdl->cache.fldcnt[cr]) {
+		acnew = malloc(sizeof(char *) * hdl->maxfields);
 		assert(acnew);
-		memset(acnew, 0, sizeof(char *) * mid->maxfields);
-		mid->cache.anchors[cr] = acnew;
+		memset(acnew, 0, sizeof(char *) * hdl->maxfields);
+		hdl->cache.anchors[cr] = acnew;
 		if (ac) {
 			memcpy(acnew, ac,
-			       sizeof(char *) * mid->cache.fldcnt[cr]);
+			       sizeof(char *) * hdl->cache.fldcnt[cr]);
 			free(ac);
 		}
 	}
@@ -3037,28 +3163,28 @@ extern float strtof(const char *, char **);
 #endif
 
 MapiMsg
-mapi_store_field(Mapi mid, int fnr, int outtype, void *dst)
+mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *dst)
 {
 	int cr;
 	char *val;
 
-	mapi_check(mid, "mapi_store_field");
+	mapi_check(hdl->mid, "mapi_store_field");
 
-	if (fnr < 0 || fnr >= mid->fieldcnt) {
-		return mapi_setError(mid, "Illegal field number",
+	if (fnr < 0 || fnr >= hdl->fieldcnt) {
+		return mapi_setError(hdl->mid, "Illegal field number",
 				     "mapi_store_field");
 	}
 
-	cr = mid->cache.reader;
-	val = mid->cache.anchors[cr][fnr];
+	cr = hdl->cache.reader;
+	val = hdl->cache.anchors[cr][fnr];
 
 	if (val == 0) {
-		return mapi_setError(mid, "Field value undefined",
+		return mapi_setError(hdl->mid, "Field value undefined",
 				     "mapi_store_field");
 	}
 
 	if (strcmp(val, "nil") == 0)
-		return mapi_setError(mid, "Field value is nil",
+		return mapi_setError(hdl->mid, "Field value is nil",
 				     "mapi_store_field");
 
 	/* auto convert to C-type */
@@ -3156,39 +3282,39 @@ mapi_store_field(Mapi mid, int fnr, int outtype, void *dst)
 }
 
 static void
-mapi_store_bind(Mapi mid)
+mapi_store_bind(MapiHdl hdl)
 {
 	int i;
 
-	for (i = 0; i < mid->fieldcnt; i++)
-		if (mid->fields[i].outparam)
-			mapi_store_field(mid, i, mid->fields[i].outtype,
-					 mid->fields[i].outparam);
+	for (i = 0; i < hdl->fieldcnt; i++)
+		if (hdl->fields[i].outparam)
+			mapi_store_field(hdl, i, hdl->fields[i].outtype,
+					 hdl->fields[i].outparam);
 }
 
 static int
-mapi_slice_row(Mapi mid)
+mapi_slice_row(MapiHdl hdl)
 {
 	char *start;
 	char *p;
-	int i = 0, cr = mid->cache.reader;
+	int i = 0, cr = hdl->cache.reader;
 
-	p = mid->cache.rows[cr];
+	p = hdl->cache.rows[cr];
 	if (p == NULL)
-		return mapi_setError(mid, "Current row missing",
+		return mapi_setError(hdl->mid, "Current row missing",
 				     "mapi_slice_row");
-	if (mid->cache.fldcnt[cr]) {
-		mapi_store_bind(mid);
-		return mid->cache.fldcnt[cr];	/* already sliced */
+	if (hdl->cache.fldcnt[cr]) {
+		mapi_store_bind(hdl);
+		return hdl->cache.fldcnt[cr];	/* already sliced */
 	}
-	mapi_extend_anchor(mid);
+	mapi_extend_anchor(hdl);
 	if (*p != '[') {
-		if (i == mid->maxfields) {
-			if (mapi_extend_fields(mid, i))
-				return mid->error;
-			mapi_extend_anchor(mid);
+		if (i == hdl->maxfields) {
+			if (mapi_extend_fields(hdl, i))
+				return hdl->mid->error;
+			mapi_extend_anchor(hdl);
 		}
-		mid->cache.anchors[cr][0] = p;
+		hdl->cache.anchors[cr][0] = p;
 		/* count fields by counting type columns in the header
 		   each type looks like "(str)\t", so only count \t if
 		   preceded by ). */
@@ -3197,27 +3323,27 @@ mapi_slice_row(Mapi mid)
 			if (p[-1] == ')')
 				i++;
 		}
-		if (mid->fieldcnt < i)
-			mid->fieldcnt = i;
+		if (hdl->fieldcnt < i)
+			hdl->fieldcnt = i;
 		return 1;
 	}
 	p++;
 	i = 0;
 	do {
-		if (i == mid->maxfields) {
-			if (mapi_extend_fields(mid, i))
-				return mid->error;
-			mapi_extend_anchor(mid);
+		if (i == hdl->maxfields) {
+			if (mapi_extend_fields(hdl, i))
+				return hdl->mid->error;
+			mapi_extend_anchor(hdl);
 		}
 		unquote(p, &start, &p);
-		mid->cache.anchors[cr][i++] = start;
+		hdl->cache.anchors[cr][i++] = start;
 		while (*p && isspace((int) *p))
 			p++;
 	} while (*p && *p != ']');
-	if (mid->fieldcnt < i)
-		mid->fieldcnt = i;
-	mid->cache.fldcnt[cr] = i;
-	mapi_store_bind(mid);
+	if (hdl->fieldcnt < i)
+		hdl->fieldcnt = i;
+	hdl->cache.fldcnt[cr] = i;
+	mapi_store_bind(hdl);
 	return i;
 }
 
@@ -3226,20 +3352,20 @@ The rows presented are broken down into pieces to
 simplify access later on.
 @c
 int
-mapi_fetch_row(Mapi mid)
+mapi_fetch_row(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_fetch_row");
-	if (mapi_get_row(mid) == MOK)
-		return mapi_slice_row(mid);
-	if (mid->languageId == LANG_SQL && !mid->active &&
-	    mid->rows_affected > 0 &&
-	    mid->cache.first + mid->cache.tuplecount < mid->rows_affected) {
-		mid->active = 1;
-		stream_printf(mid->to, "X" "export %d %d\n", mid->tableid,
-			      mid->cache.first + mid->cache.tuplecount);
-		stream_flush(mid->to);
-		if (mapi_get_row(mid) == MOK)
-			return mapi_slice_row(mid);
+	mapi_check(hdl->mid, "mapi_fetch_row");
+	if (mapi_get_row(hdl) == MOK)
+		return mapi_slice_row(hdl);
+	if (hdl->mid->languageId == LANG_SQL && !hdl->mid->active &&
+	    hdl->rows_affected > 0 &&
+	    hdl->cache.first + hdl->cache.tuplecount < hdl->rows_affected) {
+		hdl->mid->active = 1;
+		stream_printf(hdl->mid->to, "X" "export %d %d\n", hdl->tableid,
+			      hdl->cache.first + hdl->cache.tuplecount);
+		stream_flush(hdl->mid->to);
+		if (mapi_get_row(hdl) == MOK)
+			return mapi_slice_row(hdl);
 	}
 	return 0;
 }
@@ -3248,109 +3374,109 @@ mapi_fetch_row(Mapi mid)
 All rows can be cached first as well.
 @c
 int
-mapi_fetch_all_rows(Mapi mid)
+mapi_fetch_all_rows(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_fetch_all_rows");
-	mid->cache.rowlimit = -1;
-	while (mapi_fetch_row(mid) > 0)
+	mapi_check(hdl->mid, "mapi_fetch_all_rows");
+	hdl->cache.rowlimit = -1;
+	while (mapi_fetch_row(hdl) > 0)
 		;
-	mid->cache.reader = -1;
-	return mid->cache.tuplecount;
+	hdl->cache.reader = -1;
+	return hdl->cache.tuplecount;
 }
 
 char *
-mapi_fetch_field(Mapi mid, int fnr)
+mapi_fetch_field(MapiHdl hdl, int fnr)
 {
 	int cr;
 
-	mapi_check0(mid, "mapi_fetch_field");
-	cr = mid->cache.reader;
+	mapi_check0(hdl->mid, "mapi_fetch_field");
+	cr = hdl->cache.reader;
 
 	if (fnr >= 0) {
 		/* slice if needed */
-		if (mid->cache.fldcnt[cr] == 0)
-			mapi_slice_row(mid);
-		if (fnr < mid->cache.fldcnt[cr])
-			return mid->cache.anchors[cr][fnr];
+		if (hdl->cache.fldcnt[cr] == 0)
+			mapi_slice_row(hdl);
+		if (fnr < hdl->cache.fldcnt[cr])
+			return hdl->cache.anchors[cr][fnr];
 	}
-	mapi_setError(mid, "Illegal field number", "mapi_fetch_field");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_fetch_field");
 	return 0;
 }
 
 char **
-mapi_fetch_field_array(Mapi mid)
+mapi_fetch_field_array(MapiHdl hdl)
 {
 	int cr;
 
-	mapi_check0(mid, "mapi_fetch_field_array");
-	cr = mid->cache.reader;
-	if (mid->cache.fldcnt[cr] == 0)
-		mapi_slice_row(mid);
-	return mid->cache.anchors[cr];
+	mapi_check0(hdl->mid, "mapi_fetch_field_array");
+	cr = hdl->cache.reader;
+	if (hdl->cache.fldcnt[cr] == 0)
+		mapi_slice_row(hdl);
+	return hdl->cache.anchors[cr];
 }
 
 int
-mapi_get_field_count(Mapi mid)
+mapi_get_field_count(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_get_field_count");
-	return mid->fieldcnt;
+	mapi_check(hdl->mid, "mapi_get_field_count");
+	return hdl->fieldcnt;
 }
 
 int
-mapi_get_row_count(Mapi mid)
+mapi_get_row_count(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_get_row_count");
-	return mid->rows_affected;
+	mapi_check(hdl->mid, "mapi_get_row_count");
+	return hdl->rows_affected;
 }
 
 char *
-mapi_get_name(Mapi mid, int fnr)
+mapi_get_name(MapiHdl hdl, int fnr)
 {
-	mapi_check0(mid, "mapi_get_name");
-	if (fnr >= 0 && fnr < mid->fieldcnt) {
-		if (mid->fields[fnr].columnname[0] == 0)
-			snprintf(mid->fields[fnr].columnname,
-				 sizeof(mid->fields[fnr].columnname),
+	mapi_check0(hdl->mid, "mapi_get_name");
+	if (fnr >= 0 && fnr < hdl->fieldcnt) {
+		if (hdl->fields[fnr].columnname[0] == 0)
+			snprintf(hdl->fields[fnr].columnname,
+				 sizeof(hdl->fields[fnr].columnname),
 				 "column_%d", fnr);
-		return mid->fields[fnr].columnname;
+		return hdl->fields[fnr].columnname;
 	}
-	mapi_setError(mid, "Illegal field number", "mapi_get_name");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_name");
 	return 0;
 }
 
 char *
-mapi_get_type(Mapi mid, int fnr)
+mapi_get_type(MapiHdl hdl, int fnr)
 {
-	mapi_check0(mid, "mapi_get_type");
-	if (fnr >= 0 && fnr < mid->fieldcnt) {
-		if (mid->fields[fnr].columntype[0] == 0)
+	mapi_check0(hdl->mid, "mapi_get_type");
+	if (fnr >= 0 && fnr < hdl->fieldcnt) {
+		if (hdl->fields[fnr].columntype[0] == 0)
 			return "unknown";
-		return mid->fields[fnr].columntype;
+		return hdl->fields[fnr].columntype;
 	}
-	mapi_setError(mid, "Illegal field number", "mapi_get_type");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_type");
 	return 0;
 }
 
 char *
-mapi_get_table(Mapi mid, int fnr)
+mapi_get_table(MapiHdl hdl, int fnr)
 {
-	mapi_check0(mid, "mapi_get_table");
-	if (fnr >= 0 && fnr < mid->fieldcnt) {
-		if (mid->fields[fnr].tablename[0] == 0)
-			snprintf(mid->fields[fnr].tablename,
-				 sizeof(mid->fields[fnr].tablename),
+	mapi_check0(hdl->mid, "mapi_get_table");
+	if (fnr >= 0 && fnr < hdl->fieldcnt) {
+		if (hdl->fields[fnr].tablename[0] == 0)
+			snprintf(hdl->fields[fnr].tablename,
+				 sizeof(hdl->fields[fnr].tablename),
 				 "table_%d", fnr);
-		return mid->fields[fnr].tablename;
+		return hdl->fields[fnr].tablename;
 	}
-	mapi_setError(mid, "Illegal field number", "mapi_get_table");
+	mapi_setError(hdl->mid, "Illegal field number", "mapi_get_table");
 	return 0;
 }
 
 int
-mapi_rows_affected(Mapi mid)
+mapi_rows_affected(MapiHdl hdl)
 {
-	mapi_check(mid, "mapi_rows_affected");
-	return mid->rows_affected;
+	mapi_check(hdl->mid, "mapi_rows_affected");
+	return hdl->rows_affected;
 }
 
 char *
@@ -3402,47 +3528,4 @@ mapi_get_monet_versionId(Mapi mid)
 	return mid->versionId;
 }
 
-@-
-#define testField1(retval, funcname)					\
-	do {								\
-		mapi_check(mid, retval);				\
-		if (fnr < 0 || fnr >= mid->fieldcnt) {			\
-			mapi_setError(mid, "Illegal field number", funcname); \
-			return retval;					\
-		}							\
-	} while (0)
-
-int
-mapi_get_type(Mapi mid, int fnr)
-{
-	testField1(0,"mapi_get_type");
-	return mid->fields[fnr].outtype;
-}
-
-int
-mapi_get_scale(Mapi mid, int fnr)
-{
-	testField1(0,"mapi_get_scale");
-	return mid->fields[fnr].scale;
-}
-
-int
-mapi_get_precision(Mapi mid, int fnr)
-{
-	testField1(0,"mapi_get_precision");
-	return mid->fields[fnr].precision;
-}
-
-int
-mapi_get_len(Mapi mid, int fnr)
-{
-	testField(0,"mapi_get_len");
-	return mid->fields[fnr].colwidth;
-}
-
-char **
-mapi_get_fields(Mapi mid, int fnr)
-{
-	return mid->fields[fnr].outtype;
-}
 @}

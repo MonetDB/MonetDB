@@ -221,6 +221,7 @@ char*	sentinel 	= "MapiClient~sentinel";
 int doRequest(Mapi mid, char *buf )
 {
 	char *rtrn;
+	MapiHdl hdl;
 
 /*
 	if (mapi_quick_query(mid, buf,toConsole) != MOK){
@@ -229,16 +230,17 @@ int doRequest(Mapi mid, char *buf )
 	}
 	fflush(toConsole);
 */
-	if (mapi_query(mid, buf) != MOK){
+	if ((hdl = mapi_query(mid, buf)) == NULL){
 		mapi_explain(mid,stdout);
 		return 0;
 	}
-	while ((rtrn = mapi_fetch_line(mid)) != 0) {
+	while ((rtrn = mapi_fetch_line(hdl)) != 0) {
 		fprintf(toConsole, "%s\n",rtrn);
 	}
 	if (mapi_error(mid)) {
-		mapi_explain(mid,stdout);
+		mapi_explain_query(hdl,stdout);
 	}
+	mapi_close_handle(hdl);
 	return 0;
 }
 @-

@@ -20,7 +20,7 @@ Over..
 
 # Start mil test on draco.ins
 John is 23
-Mary is 23
+Mary is 22
 
 # 22:20:45 >  
 # 22:20:45 >  Mtimeout -timeout 60 Mshutdown.py "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --host=draco --port=49241

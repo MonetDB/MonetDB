@@ -47,7 +47,9 @@ sub new {
 	}
 	bless($mapi,"Mapi");
 	$mapi->doCmd("$user:$passwd\n");
-	print "logged on:$user:$passwd\n";
+	if ($mapi->{trace}) {
+	  print "logged on:$user:$passwd\n";
+	}
 # 	print "switch to $language scenario\n";
 # 	if( $language eq 'sql'){
 # 		$mapi->doCmd("sql();");
