@@ -501,9 +501,7 @@ static int AtomNodeCmp( AtomNode *a1, AtomNode *a2 )
 	if (!a1 || !a2)
 		return -1;
 
-	assert(0);
-	/*return atom_cmp(a1->a, a2->a);*/
-	return 0;
+	return -1;
 }
 
 static int SelectNodeCmp( SelectNode *s1, SelectNode *s2 )
