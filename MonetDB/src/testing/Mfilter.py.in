@@ -182,7 +182,7 @@ def mFilter (FILE, IGNORE) :
         if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
             ig = 1
             n = 0
-        if ig  and  ( len(iline) == 0  or  iline[0] != "!" ):
+        if ig  and  ( len(iline) == 0  or  iline[0] != "!"  or  iline[:9] != "ERROR = !" ):
             # ignore differences in "VariableOutput" or "ProfilingOutput"
             oline = "#~ " + iline
             n = n + 1
