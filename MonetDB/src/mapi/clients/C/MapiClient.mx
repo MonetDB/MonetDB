@@ -132,7 +132,7 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark )
-		fprintf(toConsole, "%s %d usec %s\n", 
+		fprintf(toConsole, "%s %d usec %s\n",
 			mark, t1 - t0, mark2?mark2:"");
 }
 
@@ -491,14 +491,14 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 
 static const char *column_format = "select name,type,type_digits,type_scale,"
 	"null,default,number from columns c,tables t "
-	"where c.table_id = t.id and '%s' = t.name order by number;\n"; 
+	"where c.table_id = t.id and '%s' = t.name order by number;\n";
 #define COLUMN 6
 #define C_NAME 0
 #define C_TYPE 1
 #define C_TYPE_DIGITS 2
 #define C_TYPE_SCALE 3
 
-static int 
+static int
 dump_table(Mapi mid, char *tname)
 {
 	int cnt = 0, i;
@@ -586,7 +586,7 @@ dump_table(Mapi mid, char *tname)
 	string = malloc(sizeof(int)*cnt);
 	for (i = 0; i < cnt; i++) {
 		string[i] = 0;
-		if (strcmp(mapi_get_type(hdl, i), "char") == 0) 
+		if (strcmp(mapi_get_type(hdl, i), "char") == 0)
 			string[i] = 1;
 	}
 	while (mapi_fetch_row(hdl)) {
@@ -616,7 +616,7 @@ dump_table(Mapi mid, char *tname)
 static int
 dump_tables(Mapi mid)
 {
-	const char *tables = "select name from tables where type=0"; 
+	const char *tables = "SELECT name FROM tables WHERE type = 0 AND name NOT LIKE 'history'";
 	const char *views = "select name,query from tables where type=2";
 	MapiHdl hdl;
 	int rc = 0;
