@@ -55,8 +55,6 @@ end main;	# 5
 [ 24,	  "pcre",	  "int",	  4	  ]
 [ 25,	  "mapentry",	  "mapentry",	  16	  ]
 [ 26,	  "idxentry",	  "idxentry",	  8	  ]
-[ 27,	  "enum",	  "int",	  4	  ]
-#
 
 # 22:47:41 >  
 # 22:47:41 >  Done.
