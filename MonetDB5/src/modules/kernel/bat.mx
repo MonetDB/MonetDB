@@ -1793,12 +1793,12 @@ Open the file. Memory map it to minimize buffering problems.
 	return throwException(MALEXCEPTION,"bat.import",
 		"could not open file %s",fnme);
 	else {
-		int fn,fs;
+		int fn;
 	    	struct stat st;
                 if ((fn=fileno(fp)) <= 0) {
                         return throwMessage("CMDimport","fileno fails\n");
                 }
-                if ((fs=fstat(fn, &st)) != 0) {
+                if (fstat(fn, &st) != 0) {
                         return throwMessage("CMDimports","fstat fails\n");
                 }
 

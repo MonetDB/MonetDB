@@ -904,6 +904,7 @@ BAT* aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT * b, BAT *g, BAT *e, size
 	size_t base, end, w;
 	ssize_t offset;
 
+	(void) end; /* fool compiler */
         ALGODEBUG THRprintf(GDKout, "aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=%lu,min=%lu,max=%lu);\n",
 	                             bn->batId,b->batId,g->batId,e->batId,(unsigned long)range,(unsigned long)min,(unsigned long)max);
 	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb; bhsb++,@1,&prods[(*(oid*)h)-min],,@2)@
@@ -1051,6 +1052,7 @@ str aggrX3_@1_@3_@4(int *retid, int *bid, int *eid){
 	oid min=oid_nil, max=oid_nil;
 	oid bhsb;
 
+	(void) zero; /* fool compiler */
 	@:getBATdescriptor(retid,bid,b,@1)@
 	@:getBATdescriptor(retid,eid,e,@1)@
 
@@ -1567,6 +1569,7 @@ BAT* aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid ra
 	oid bhsb;
 	size_t base, end, w;
 	ssize_t offset;
+	(void) end; /* fool compiler */
 
         ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_@2_EarrayBvoidGvoid[@2](bn=%s,b=%s,g=%s,e=%s,range=%d,min=%lu,max=%lu);\n",
 	                             bn->batId,b->batId,g->batId,e->batId, (unsigned long) range,(unsigned long) min,(unsigned long) max);
@@ -2295,7 +2298,7 @@ str CMDcard(int *result, int *bid, unsigned int* maxelements) {
 	BAT *b;
 
 	@:getBATdescriptor(result,bid,b,count)@
-	unsigned int cursize = BATcount(b); 
+	size_t cursize = BATcount(b); 
 
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		cursize = 1; 
@@ -2338,7 +2341,7 @@ str CMDcard(int *result, int *bid, unsigned int* maxelements) {
 str CMDcard_unlimited(int *result, int *bid){
 	BAT *b;
 	@:getBATdescriptor(result,bid,b,card_unlimited)@
-	int limit = BATcount(b);
+	size_t limit = BATcount(b);
 	CMDcard(result, bid, &limit);
 	return MAL_SUCCEED;
 }

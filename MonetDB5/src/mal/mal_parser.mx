@@ -698,8 +698,8 @@ during the final phase reshuffle the return values to the beginning (?)
 			GDKfree(newarg);
 			@:closingBracket@
 		} else {
-			type= melType(cntxt,curBlk,curInstr,curInstr->argv[0]);
-			/* setVarType(curBlk,0,type);*/
+			melType(cntxt,curBlk,curInstr,curInstr->argv[0]);
+			/* setVarType(curBlk,0,meltype);*/
 			@:propList(curInstr->argv[0])@
 		}
 	}
@@ -717,7 +717,7 @@ functionHdr: fcnName '(' [ binding \{',' binding\}] ')' ':' type\\
 	skipSpace(cntxt);
 	varid= newVariable(curBlk,arg,TYPE_any);
 	curInstr= pushArgument(curBlk,curInstr, varid);
-	type= melType(cntxt,curBlk,curInstr,varid);
+	/*type=*/ melType(cntxt,curBlk,curInstr,varid);
 	skipSpace(cntxt);
 @-
 MAL variables are statically/dynamically typed.
@@ -921,7 +921,6 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	int l;
 	str fnme=0, modnme=0;
 	char ch;
-	int type;
 
 	@:fcnHeader@
 	getInstrPtr(curBlk,0)->token= kind;
@@ -949,7 +948,6 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 	int l;
 	str fnme=0, modnme=0;
 	char ch;
-	int type;
 
 	@:fcnHeader@
 	/* block is terminated at the END statement */

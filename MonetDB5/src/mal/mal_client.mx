@@ -643,9 +643,8 @@ submission. This avoids a significant number of network interactions.
 static 
 void enlargebuffer(Client c, int newsize){
 	int i;
-	int l,ln;
+	int ln;
 
-	l = strlen(c->input);
 	ln = c->nxt-c->input;
 	i = c->limit - c->input + newsize;
 	c->input = (char *) GDKrealloc(c->input,i);

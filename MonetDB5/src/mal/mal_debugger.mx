@@ -396,14 +396,13 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc){
 		}
 		continue;
 	case 'i':
-	{	int i; int size;
+	{	int i; 
 		char *t;
 		
 		skipWord(b);
 		t=b;
 		skipNonBlanc(t);
 		*t = 0;
-		size= atol(t+1);
 		/* search the symbol */
 		i = findVariable(mb,b);
 		if( i<0){
@@ -632,7 +631,7 @@ void printBatInfo(stream *f, VarPtr n, ValPtr v){
 		int ret;
 		MALfcn fcn;
 
-		fcn = (MALfcn) getAddress("CMDinfo");
+		fcn = getAddress("CMDinfo");
 		if(fcn){
 			BAT *b;
 			bid = v->val.ival;

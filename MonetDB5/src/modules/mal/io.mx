@@ -606,6 +606,7 @@ str CMDfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	fp= *(stream **) getArgReference(stk,pci,1);
 	order = *(int*) getArgReference(stk,pci,2);
+	(void) order; /* fool compiler */
 	return CMDtableAll(fp,mb,stk,pci,3,1,TRUE);
 }
 
@@ -620,6 +621,7 @@ str CMDttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CMDtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int order;
 	order = *(int*) getArgReference(stk,pci,1);
+	(void) order; /* fool compiler */
 	return CMDtableAll(GDKout,mb,stk,pci,1,0,FALSE);
 }
 

@@ -185,7 +185,7 @@ void scheduleClient( str command, stream *fin, stream *fout)
 		stream_printf(c->fdout,"%s\n", GDKgetenv("gdk_version"));
 
 	GDKfree(command);
-	if( (i= MT_create_thread(&p, serveClient, (void *)c)) < 0) {
+	if( MT_create_thread(&p, serveClient, (void *)c) < 0) {
 		GDKerror("initClient: can not fork new client\n");
 		return;
 	} 

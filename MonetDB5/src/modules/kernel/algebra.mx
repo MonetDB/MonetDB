@@ -734,6 +734,7 @@ extern ptr BATmax(BAT *b, ptr aggr);
 str CMDmin_@1(@1* res, int *bid) {
         BAT *b;
 	int result;
+	(void) result; /* fool compiler */
 
 	*res = @1_nil;
         @:getBATdescriptor(&result,bid,b,min)@
@@ -743,6 +744,7 @@ str CMDmin_@1(@1* res, int *bid) {
 str CMDmax_@1(@1* res, int *bid) {
         BAT *b;
 	int result;
+	(void) result; /* fool compiler */
 	*res = @1_nil;
         @:getBATdescriptor(&result,bid,b,max)@
         if( BATmax(b, res)) return  MAL_SUCCEED;
@@ -759,6 +761,7 @@ str CMDmax_@1(@1* res, int *bid) {
 str CMDminany(ptr result, int *bid) {
         BAT *b;
 	int res;
+	(void) res; /* fool compiler */
         @:getBATdescriptor(&res,bid,b,minany)@
         if (!ATOMlinear(b->ttype))
             return throwMessage("CMDminANY","atom cannot be ordered linearly\n");
@@ -776,6 +779,7 @@ str CMDminany(ptr result, int *bid) {
 str CMDmaxany(ptr result, int *bid) {
         BAT *b;
 	int res;
+	(void) res; /* fool compiler */
         @:getBATdescriptor(&res,bid,b,maxany)@
         if (!ATOMlinear(b->ttype))
             return throwMessage("CMDminANY","atom cannot be ordered linearly\n");
@@ -962,6 +966,7 @@ str CMDthetajoin(int *result, int *lid, int *rid, str *opname) {
 str CMDtheta(int *iid, int *oi, int *lid, int *rid, str *opname) {
 	BAT *inner,*outer, *left, *right;
 	int result, opc= operatorCode(*opname);
+	(void) result; /* fool compiler */
 	@:getBATdescriptor(&result,iid,inner,theta)@
 	@:getBATdescriptor(&result,oi,outer,theta)@
 	@:getBATdescriptor(&result,lid,left,theta)@
@@ -1418,6 +1423,7 @@ str CMDfetchoid(int * ret, int *bid, oid *pos){
 str CMDfetch(ptr ret, int *bid, lng *pos){
 	BAT *b;
 	int result;
+	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,fetch);
 	return doCMDfetch(ret,b,pos);
@@ -1426,6 +1432,7 @@ str CMDexist(bit *ret, int *bid, ptr val){
 	BAT *b;
 	BUN q;
 	int result;
+	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,exist);
 	@:derefStr(b,h,val)@
@@ -1437,6 +1444,7 @@ str CMDexistBUN(bit *ret, int *bid, ptr val, ptr tval){
 	BAT *b;
 	BUN q;
 	int result;
+	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,exist);
 	@:derefStr(b,h,val)@
@@ -1450,6 +1458,7 @@ str CMDfind(ptr ret, int *bid, ptr val){
 	BAT *b;
 	BUN q;
 	int result;
+	(void) result; /* fool compiler */
 
 	@:getBATdescriptor(&result,bid,b,find);
 	@:derefStr(b,h,val)@

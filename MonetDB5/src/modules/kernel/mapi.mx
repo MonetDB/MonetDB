@@ -111,6 +111,7 @@ static int mapiSpy= 1;
 void MAPIlistenThread(int sock)
 {
 	int 	msgsock= -1;
+	(void) mapiSpy; /* fool compilers */
 	do {
 #ifdef DEBUG_MAPI
 		printf("wait for next connection\n");
@@ -207,7 +208,7 @@ The port id is obtained from the Monet configuration file.
 @-
 Get the new information for the server socket and start listening.
 @c
-	if (getsockname(sock, (SOCKPTR)&server, &length) < 0) {
+	if (getsockname(sock, (SOCKPTR)&server,(SOCKLEN *) &length) < 0) {
 		return throwMessage("mapi.listen", "error getting socket name");
 	}
 	listen(sock, *maxusers); 

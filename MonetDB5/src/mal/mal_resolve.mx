@@ -473,8 +473,8 @@ type for subsequent use.
 @c
 int resolveType(int dsttype, int srctype){  
 	int h1,t1,h2,t2,h3,t3;
-	int i1,i2;
 #ifdef DEBUG_MAL_RESOLVE
+	int i1,i2;
 	if( tracefcn){
 		stream_printf((GDKout,"resolveType dst %s (%d) %s(%d)\n",
 			getTypeName(dsttype), dsttype,
@@ -485,8 +485,10 @@ int resolveType(int dsttype, int srctype){
 	if( dsttype == TYPE_any) return srctype;
 	if( srctype == TYPE_any) return dsttype;
 	if( isaBatType(dsttype) && isaBatType(srctype) ){
+#ifdef DEBUG_MAL_RESOLVE
 		i1= getHeadIndex(dsttype);
 		i2= getTailIndex(dsttype);
+#endif
 		h1= getHeadType(dsttype);
 		t1= getTailType(dsttype);
 		h2= getHeadType(srctype);

@@ -752,6 +752,7 @@ int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
 	if( q->fcn==0 || functionId(q)== 0) return FALSE;
 	c= getClient();
 	if( c ) s= getSymbol(c->nspace,q);
+	(void) s; /* simulated some action */
 	/* check arguments for 'unsafe' property */
 	return FALSE;
 }
@@ -775,7 +776,7 @@ changed in the instruction sequence identified by the range [pcf,pcl].
 @c
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
 {
-	mb=0; pcf=0;pcl=0;varid=0;
+	(void) mb; (void)pcf; (void) pcl; (void) varid; /*fool compiler */
 	return TRUE;
 }
 @-
@@ -1139,6 +1140,7 @@ int SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
 	InstrPtr p,q;
 	p= getInstrPtr(mb,pc1);
 	q= getInstrPtr(mb,pc2);
+	(void) p; (void) q; /* do something useful later on */
 	return 0;
 }
 str SPoptimizer(Client cntxt, MalBlkPtr mb, int pc)
@@ -1349,5 +1351,5 @@ The routines for this aspect are available from in mal_instruction.mx
 void moveConstantsFirst(MalBlkPtr mb){
 	/* move all expression dealing with constants to the beginning */
 	/* could be used to shortcut stack initialization */
-	mb=0;
+	(void) mb; /*fool compilers */
 }

@@ -1555,6 +1555,7 @@ static str bindVariable(Table *t, unsigned int anr, str nme, int tpe, ptr val, i
 	if(tpe == TYPE_bat){
 		BAT *b;
 		int ret,bid= *(int*)val;
+		(void) ret; /* fool compiler */
 		@:getBATdescriptor(&ret,&bid,b,bindVariable)@
 		c->bval=b;
 		/* the first column should take care of leader text size*/
@@ -1686,7 +1687,7 @@ break;
 	else stream_write(t->fd, t->tbotbrk,1,strlen(t->tbotbrk));
 }
 void TABshowRow(Table *t){
-	unsigned int i, m=0;
+	unsigned int i=0, m=0;
 	char *buf=0;
 	Column *c= t->columns+i;
 	unsigned int len;

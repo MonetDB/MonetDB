@@ -629,6 +629,7 @@ str ENUMtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str tname;
 
 	tpe= *(int*) getArgReference(stk,pci,1);
+	(void) tpe; /* fool user */
 	retval= (int*) getArgReference(stk,pci,0);
 
 	tname= getTypeName(getArgType(mb,pci,1));
@@ -656,6 +657,7 @@ str ENUMsethisto( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str tname;
 
 	tpe= *(int*) getArgReference(stk,pci,1);
+	(void) tpe; /* fool compiler */
 	bid= *(int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
 
@@ -680,6 +682,7 @@ str ENUMishisto(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str tname;
 
 	tpe= *(int*) getArgReference(stk,pci,1);
+	(void) tpe; /* fool compiler */
 	bid= (int*) getArgReference(stk,pci,2);
 	retval= (int*) getArgReference(stk,pci,0);
 

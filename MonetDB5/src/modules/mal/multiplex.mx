@@ -162,6 +162,7 @@ int multiplexType(Scope scope, MalBlkPtr mb, InstrPtr pci,
 	char name[1024];
 
 	(void) scope; /* still unused */
+	(void) inplace;
 
 #ifdef DEBUG_MULTIPLEX
 	printf("multiplexType on the instruction:\n");
@@ -421,6 +422,7 @@ str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr retval;
 
 
+	(void) nilVar; /* fool compiler */
 	m1 = newMalBlk(MAXVARS,MAXSTMTS);
 	p = newInstruction(ASSIGNsymbol);
 	/* perform type analysis  and function resolution */
@@ -545,13 +547,12 @@ find the actule arguments at the proper place of the callee.
 	/* $1:= bat.find(Ai,h) or constant */
 	for(i=2;i<pci->argc;i++)
 	if( isaBatType(l= getArgType(mb,pci,i)) && i!= rIndex){
-		int z,zv;
 		q= newInstruction(ASSIGNsymbol);
 		sprintf(name,"B%d",i);
-		z= q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
+		q->argv[0]= newVariable(m, GDKstrdup(name), getTailType(l));
 		setModuleId(q, GDKstrdup("algebra"));
 		sprintf(name,"A%d",i);
-		zv= q->argv[1]= newVariable(m,GDKstrdup(name),l);
+		q->argv[1]= newVariable(m,GDKstrdup(name),l);
 /*
 		if( nilVar){
 			setFunctionId(q, GDKstrdup("fetch"));

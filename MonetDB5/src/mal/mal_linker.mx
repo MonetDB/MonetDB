@@ -100,7 +100,7 @@ For the time being we assume that all commands are statically linked.
 
 /*#define DEBUG_MAL_LINKER  */
 #define MONET64 1
-mal_export void *getAddress(str fcnname);
+mal_export MALfcn getAddress(str fcnname);
 mal_export str loadModuleLibrary(str modname);
 mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
@@ -121,9 +121,9 @@ the consistency of this counter.
 
 static int noDlopen;
 
-void *getAddress(str fcnname){
+MALfcn getAddress(str fcnname){
 	void *dl;
-	void (*adr)();
+	MALfcn adr;
 
 #ifdef DEBUG_MAL_LINKER2
         stream_printf(GDKout,"addres of %s ?\n", fcnname);
@@ -170,7 +170,6 @@ str loadModuleLibrary(str modname){
 	char buf[MAXPATHLEN];
 	char nme[MAXPATHLEN];
 	void *handle = NULL;
-	str path ="";
 	str library=0;
 	int i = 0, idx;
 
@@ -183,7 +182,6 @@ str loadModuleLibrary(str modname){
 	if( (library=strrchr(nme,DIR_SEP))  != NULL){
 		*library=0;
 		library++;
-		path = nme;
 	} else library= nme;
 
 #ifdef DEBUG_MAL_LINKER
