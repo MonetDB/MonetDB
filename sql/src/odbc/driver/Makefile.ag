@@ -23,7 +23,7 @@
 
 INCLUDES = \
 	../include \
-	$(MONET_INCS) 
+	$(MONETDB_INCS) 
 
 DEFS = @DEFS@
 
@@ -120,5 +120,5 @@ lib_MonetODBC = {
 	driver.rc \
 	ODBC.def
 	WINLIBS = $(SOCKET_LIBS)
-	LIBS = $(MONET_LIBS) -lMapi -lstream -lmutils $(ICONV_LIBS)
+	LIBS = $(MONETDB_LIBS) -lMapi -lstream -lmutils $(ICONV_LIBS)
 }

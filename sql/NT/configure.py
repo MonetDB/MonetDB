@@ -63,13 +63,13 @@ subs = [
     ('@VERSION@',           "2.0.19"),
     ('@DIRSEP@',            "\\"),
     ('@prefix@',            prefix),
-    ('@MONET_BUILD@',       build),
-    ('@MONET_SOURCE@',      source),
-    ('@MONET_PREFIX@',      os.getenv('MONET_PREFIX')),
+    ('@MONETDB_BUILD@',       build),
+    ('@MONETDB_SOURCE@',      source),
+    ('@MONETDB_PREFIX@',      os.getenv('MONETDB_PREFIX')),
     ('@QDIRSEP@',           "\\\\"),
     ('@Qprefix@',           Qprefix),
-    ('@QMONET_BUILD@',      Qbuild),
-    ('@QMONET_SOURCE@',     Qsource),
+    ('@QMONETDB_BUILD@',      Qbuild),
+    ('@QMONETDB_SOURCE@',     Qsource),
     ('@SQL_BACKEND@',       "monet4"),
 # values needed for the JDBC driver;
 # keep in sync with src/jdbc/build.properties and configure.ag !

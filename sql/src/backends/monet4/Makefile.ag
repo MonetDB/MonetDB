@@ -1,5 +1,5 @@
 
-INCLUDES = ../../common ../../server $(MONET_INCS)
+INCLUDES = ../../common ../../server $(MONETDB_INCS)
 
 lib__sql_server = {
 	DIR = libdir/MonetDB
@@ -8,7 +8,7 @@ lib__sql_server = {
 		sql_session.mx \
 		sql_gencode.mx 
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io -l_algebra -l_str -l_monettime
-	LIBS = ../../server/libsqlserver $(MONET_LIBS)
+	LIBS = ../../server/libsqlserver $(MONETDB_LIBS)
 }
 
 scripts_mil = {

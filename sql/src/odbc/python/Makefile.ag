@@ -21,10 +21,10 @@
 #		Niels Nes <Niels.Nes@cwi.nl>
 #		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SWIGFLAGS = -DHAVE_LONG_LONG -I@srcdir@/../include
+SWIGFLAGS = -DHAVE_LONG_LONG srcdir/../include
 INCLUDES = \
 	../include \
-	-I@PYTHONINC@ 
+	-I$(PYTHONINC) 
 
 _odbc_la_LDFLAGS = -module
 X_CFLAGS =

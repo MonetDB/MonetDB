@@ -50,7 +50,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 			addDbcError(dbc, "HY001", NULL, 0);
 			return SQL_ERROR;
 		}
-		if ((cfg = getenv("MONET_CONFIG")) != NULL)
+		if ((cfg = getenv("MONETDB_CONFIG")) != NULL)
 			setlen = mo_add_option(&set, setlen, opt_cmdline,
 					       "config", cfg);
 		mo_system_config(&set, setlen);

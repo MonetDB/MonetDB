@@ -9,7 +9,7 @@ lib__sql = {
 		sql_gencode.mx \
 		sql_server.mx
 	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel -l_ascii_io
-	LIBS = ../../server/libsqlserver $(MONET_LIBS) -lbat -lmal -lstream $(MONET5_LIBS)
+	LIBS = ../../server/libsqlserver $(MONETDB_LIBS) -lbat -lmal -lstream $(MONET5_LIBS)
 }
 
 scripts_mal = {

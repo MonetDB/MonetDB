@@ -15,12 +15,12 @@ CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
-AM_MONET_COMPILER()
-AM_MONET_TOOLS()
-AM_MONET_OPTIONS()
-AM_MONET_LIBS()
+AM_MONETDB_COMPILER()
+AM_MONETDB_TOOLS()
+AM_MONETDB_OPTIONS()
+AM_MONETDB_LIBS()
 req_monetdb_ver='4.3.19'
-AM_MONET_CLIENT($req_monetdb_ver)
+AM_MONETDB_CLIENT($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETVERS was found.])
 fi

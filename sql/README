@@ -1,4 +1,4 @@
-MONET SQL FRONTEND
+MONETDB SQL FRONTEND
 
 Installation
 ------------
@@ -14,8 +14,8 @@ Usage
 -----
 
 Start Mserver, and do:
-  const MONET_PREFIX := environment.find("exec_prefix");
-  source ( MONET_PREFIX + "/lib/MonetDB/sql_server.mil" );
+  const MONETDB_PREFIX := environment.find("exec_prefix");
+  source ( MONETDB_PREFIX + "/lib/MonetDB/sql_server.mil" );
 
 then use MapiClient for issueing SQL commands:
   MapiClient --language=sql --user=monetdb --passwd=monetdb

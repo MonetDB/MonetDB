@@ -2,7 +2,7 @@
 
 PWD=`pwd`
 Mserver -db sql \
-	$MONET_PREFIX/lib/MonetDB/mapi.mil \
+	$MONETDB_PREFIX/lib/MonetDB/mapi.mil \
 	$SQL_PREFIX/lib/MonetDB/sql_server.mil << EOF
 
 proc input( str tab, str filename ) := {

@@ -3,7 +3,7 @@ INCLUDES = \
 	../include \
 	../driver \
 	../../client \
-	$(MONET_INCS)
+	$(MONETDB_INCS)
 
 DEFS = @DEFS@
 ODBCLIBS = odbc32.lib odbccp32.lib version.lib shlwapi.lib user32.lib
