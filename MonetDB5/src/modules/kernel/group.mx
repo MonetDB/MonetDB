@@ -1061,7 +1061,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 
 @= arithpump
 str CTsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
-	BAT *b, *e;
+	BAT *b = NULL, *e = NULL;
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	@1 zero = (@1) 0, *sums;
 	BUN p, q, r;
@@ -1106,7 +1106,7 @@ str CTsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
 }
 
 str CTavg_@1(int *retval, int *bid,int  *eid){
-	BAT *b, *e;
+	BAT *b = NULL, *e = NULL;
 	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));	
 	int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
 	int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int)); 
@@ -1165,7 +1165,7 @@ str CTavg_@1(int *retval, int *bid,int  *eid){
 
 @= extreme
 str CT@1(int *retval, int *bid,int  *eid){
-	BAT *b, *e;
+	BAT *b = NULL, *e = NULL;
 	BAT *bn;
 	int (*cmp)(ptr,ptr);
 	ptr nil;
@@ -1260,7 +1260,7 @@ str CT@1(int *retval, int *bid,int  *eid){
 @c
 
 str CMDaggr_count(int *retval, int *bid,int  *eid, bit *ignore_nils){
-	BAT *b, *e;
+	BAT *b = NULL, *e = NULL;
 	BAT *bn ;
 	int zero = 0, *cnt;
 	BUN p, q, r;
@@ -1324,7 +1324,7 @@ str CMDaggr_count(int *retval, int *bid,int  *eid, bit *ignore_nils){
 }
 
 str CTsize(int *retval, int *bid,int  *eid){
-	BAT *b, *e;
+	BAT *b = NULL, *e = NULL;
 	BAT *bn;
 	int zero = 0;
 	BUN p, q, r;

@@ -356,7 +356,7 @@ str ENUMload(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 str ENUMdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
-	int xx;
+	int xx = 0;
 	int tpe;
 
 	(void) stk; /* fool compiler */
@@ -651,7 +651,7 @@ str isEnum(bit *ret, int *bid){
 
 str ENUMsethisto( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b,*column;
-	int xx, *retval;
+	int xx = 0, *retval;
 	int tpe,bid;
 	str tname;
 

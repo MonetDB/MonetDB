@@ -575,7 +575,7 @@ error.
 str CMDbunStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
-	bit *ret;
+	bit *ret = NULL;
 	int *bid;
 	int limit,tp;
 	BUN p;

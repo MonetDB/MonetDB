@@ -691,6 +691,7 @@ int CMDprod_@1_@2(@2* res, BAT *b) {
 #define ALGEBRA_H
 
 #include <gdk.h>
+#include <gdk_bat.h>	/* for BATtopN() */
 #include "../atoms/uchr.h"
 #include "mal_function.h"
 #endif
