@@ -1,5 +1,10 @@
-MEL=$(MONET_PREFIX)/bin/mel
-MX=$(MONET_PREFIX)/bin/Mx
+#
+# ! this file should be kept identical in !
+# ! monet, sql, xml, acoi, template       !
+#
+
+CP=cp
+MV=mv
 MXFLAGS= -notouch
 
 %.h: %.mx
@@ -10,6 +15,32 @@ MXFLAGS= -notouch
 
 %.y: %.mx
 	$(MX) $(MXFLAGS) -x y $< 
+
+%.l: %.mx
+	$(MX) $(MXFLAGS) -x l $< 
+
+%.yy.c: %.l
+	$(LEX) $(LFLAGS) $<
+	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
+	if [ -f lex.$(PARSERNAME).c ]; then $(MV) lex.$(PARSERNAME).c $*.yy.c ; fi
+
+%.cc: %.mx
+	$(MX) $(MXFLAGS) -x C $<
+
+%.yy: %.mx
+	$(MX) $(MXFLAGS) -x Y $< 
+
+%.tab.cc: %.yy
+	$(LOCKFILE) waiting
+	$(YACC) $(YFLAGS) $<
+	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.cc ; fi
+	rm -f waiting
+
+%.tab.h: %.yy
+	$(LOCKFILE) waiting
+	$(YACC) $(YFLAGS) $<
+	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
+	rm -f waiting
 
 %.tab.c: %.y
 	$(LOCKFILE) waiting
@@ -23,15 +54,12 @@ MXFLAGS= -notouch
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
 	rm -f waiting
 
-%.l: %.mx
-	$(MX) $(MXFLAGS) -x l $< 
+%.ll: %.mx
+	$(MX) $(MXFLAGS) -x L $<
 
-%.yy.c: %.l
-	$(LEX) $(LFLAGS) $*.l
-	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
-
-%.cc: %.mx
-	$(MX) $(MXFLAGS) -x C $<
+%.yy.cc: %.ll
+	$(LEX) $(LFLAGS) $<
+	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.cc ; fi
 
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
@@ -39,26 +67,9 @@ MXFLAGS= -notouch
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 
-%.java: %.mx
-	$(MX) $(MXFLAGS) -x java $<
-
-%.tcl: %.mx
-	$(MX) $(MXFLAGS) -x tcl $<
-
-%.xsl: %.mx
-	$(MX) $(MXFLAGS) -x xsl $<
-
 %: %.mx
 	$(MX) $(MXFLAGS) -x sh $<
-
-%.i: %.mx
-	$(MX) $(MXFLAGS) -x swig $<
-
-%_wrap.c: %.i
-	$(SWIG) -tcl8 -o $@ $<
-
-%.fgr: %.mx
-	$(MX) $(MXFLAGS) -x fgr $<
+	chmod a+x $@
 
 %.proto.h: %.m
 	$(MEL) $(INCLUDES) -o $@ -proto $<
@@ -66,10 +77,34 @@ MXFLAGS= -notouch
 %.glue.c: %.m
 	$(MEL) $(INCLUDES) -o $@ -glue $<
 
-pkgIndex.tcl: $(TCLFILES)
-	@echo "pkg_mkIndex . *.tcl;exit;" | $(TCLSH)	
+%.tex: %.mx
+	cat $< > /tmp/doc.mx
+	$(MX) -1 -H$(HIDE) -t /tmp/doc.mx 
+	$(MV) doc.tex $@
+	$(RM) /tmp/doc.mx
 
-SUFFIXES = .m .mx .proto.h .mil .glue.c
-PRECIOUS = .m 
+%.pdf: %.tex
+	$(PDFLATEX) $< 
 
-all-local: $(BUILT_SOURCES)
+%.dvi: %.tex
+	$(LATEX) $< 
+
+%.ps: %.dvi
+	$(DVIPS) $< -o $@
+
+%.eps: %.fig
+	$(FIG2DEV) -L$(FIG2DEV_EPS) -e $< > $@
+
+%.eps: %.feps
+	$(CP) $< $@
+
+$(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
+
+$(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
+	$(LIBTOOL) --mode=compile $(COMPILE) -O0 -c $<
+
+$(patsubst %.c,%.o,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.o: %.c
+	$(COMPILE) -O0 -c $<
+
+SUFFIXES-local: $(BUILT_SOURCES)

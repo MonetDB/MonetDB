@@ -10,35 +10,7 @@ AC_CANONICAL_HOST
 HOST=[$host]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
 
-AM_MONET
-
-AM_MONET_COMPILER
-
-dnl Checks for programs.
-AC_PROG_INSTALL
-AM_PROG_LEX
-AC_PROG_YACC
-AC_DISABLE_STATIC
-AC_ENABLE_SHARED
-AM_PROG_LIBTOOL
-dnl AC_PROG_CC_STDC
-
-AC_PROG_LN_S
-AC_CHECK_PROG(RM,rm,rm -f)
-AC_CHECK_PROG(MV,mv,mv -f)
-AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
-
-dnl to shut up automake (.m files are used for mel not for objc)
-AC_CHECK_TOOL(OBJC,objc)
-
-#AM_DEPENDENCIES(CC)
-#AM_DEPENDENCIES(CXX)
-
-dnl Checks for header files.
-AC_HEADER_STDC
-
-AM_MONET_OPTIONS
-AM_MONET_LIBS
+AM_MONET_CLIENT()
 
 dnl libodbc
 have_odbc=auto
