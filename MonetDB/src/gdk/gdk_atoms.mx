@@ -871,12 +871,12 @@ int chrFromStr(char *src, int *len, chr **dst) {
 @:atomtostr(chr,'%c',chr)@
 
 chr *chrRead( chr *a, stream *s) {
-	s->read(s, a, 1, 1);
+	s->read(s, (char *) a, 1, 1);
 	return a;
 }
 
 void chrWrite( chr *a, stream *s) {
-	s->write(s, a, 1, 1);
+	s->write(s, (char *) a, 1, 1);
 }
 
 int bitFromStr(str src, int *len, bit **dst) {
@@ -913,12 +913,12 @@ int bitToStr(char **dst, int *len, bit *src) {
 }
 
 bit *bitRead(bit *a, stream *s) {
-	s->read(s, a, 1, 1 );
+	s->read(s, (char *) a, 1, 1 );
 	return a;
 }
 	
 void bitWrite( bit *a, stream *s) {
-	s->write(s, a, 1, 1);
+	s->write(s, (char *) a, 1, 1);
 }
 
 int batFromStr(char *src, int *len, bat **dst) {
