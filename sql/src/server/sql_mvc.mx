@@ -2202,12 +2202,12 @@ mvc_logmanager()
 {
  	int res = SQL_OK;
 
-	if (!logger || log_changes(logger) < 100)
-		return;
-
 	MT_set_lock(mvc_lock, "mvc_commit");
-	if (!logger)
+	if (!logger || log_changes(logger) == 1000) {
+		MT_unset_lock(mvc_lock, "mvc_commit");
 		return;
+	}
+
 	res = logger_restart(logger);
 	cleanup = 1;
 	MT_unset_lock(mvc_lock, "mvc_commit");
@@ -2614,10 +2614,10 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 		}
 
 		do { 
-			int replace = 1;
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
-			BAT *ins, *ups;
+			BAT *ins, *ups, *cur;
+			int renewed = 0, inserted = 0;
 
 			if (!cc->base.wtime){
 				n = n->next;
@@ -2631,41 +2631,49 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 
                 	oc->base.rtime = cc->base.rtime;
                 	oc->base.wtime = cc->base.wtime;
-			
-			if (cc->bat.ibid) {
-				BAT *cur = bm_lbid2bat( 
-					ttr->bm, oc->bat.bid);
 
-				if (BATcount(cur)){
-					replace = 0;
+
+			cur = ins;
+			if (cc->bat.ibid) {
+				BAT *ocur = bm_lbid2bat( ttr->bm, oc->bat.bid);
+
+				if (BATcount(ocur)){
+					/* void union ? */
+					cur = bat_lcopy(ocur, "rollforward");
 					void_append_bat(cur, ins);
 					assert(cur->htype == TYPE_void);
-				} 
-				bat_destroy(cur);
+					bat_destroy(ins);
+				} else {
+					bat_destroy(ocur);
+				}
 			}
-			if (replace && (BUNlast(ins) > ins->batInserted)) {
-				bm_new_bat( ttr->bm, oc->bat.bid, ins);
-			} else if (db) {
-				BAT *cur = bm_lbid2bat( 
-					ttr->bm, oc->bat.bid);
-
+			if (BUNlast(cur) > cur->batInserted) {
+				renewed = 1;
+				inserted = 1;
+			} 
+			if (ok == SQL_OK && ttr == gtrans && inserted)
+				ok = log_bat(logger, oc->bat.bid, cur);
+			if (db) {
+				if (!renewed) {
+					cur = bat_lcopy(cur, "rollforward");
+					renewed = 1;
+				}
 				void_delete_bat(cur, db, 1);
-				bat_destroy(cur);
 			}
-			if (ok == SQL_OK && ttr == gtrans)
-				ok = log_bat(logger, oc->bat.bid, ins);
-			bat_destroy(ins);
 			if (BUNlast(ups) > ups->batInserted) {
-				BAT *cur = bm_lbid2bat( 
-					ttr->bm, oc->bat.bid);
-
+				if (!renewed) {
+					cur = bat_lcopy(cur, "rollforward");
+					renewed = 1;
+				}
 				bm_new_bat( ttr->bm, oc->bat.ubid, ups);
 				void_replace_bat(cur, ups);
-				bat_destroy(cur);
 				if (ok == SQL_OK && ttr == gtrans) 
 					ok = log_bat(logger, oc->bat.ubid, ups);
 			}
 			bat_destroy(ups);
+			if (renewed)
+				bm_new_bat( ttr->bm, oc->bat.bid, cur);
+			bat_destroy(cur);
 
 			n = n->next;
 			m = m->next;
@@ -2694,8 +2702,10 @@ rollforward_update_table( sql_trans *tr, sql_table *ft, sql_table *tt)
 				} else if (db) {
 					BAT *cur = bm_lbid2bat( 
 						ttr->bm, oi->bat.bid);
+					cur = bat_lcopy(cur, "rollforward");
 
 					void_delete_bat(cur, db, 1);
+					bm_new_bat( ttr->bm, oi->bat.bid, cur);
 					bat_destroy(cur);
 				}
 				bat_destroy(ins);

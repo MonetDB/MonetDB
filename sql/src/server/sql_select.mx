@@ -2426,6 +2426,7 @@ static stmt *query_orderby(mvc * sql, symbol * orderby, stmt * s )
 
 static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * selection)
 {
+	stmt *subset = NULL;
 	stmt *s = NULL;
 	list *rl;
 	dnode *n = selection->h;
@@ -2437,7 +2438,7 @@ static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * se
 		if (s->type != st_set && s->type != st_sets) {
 			s = stmt_set(s);
 		}
-		s = stmt2pivot(scp, s);
+		subset = s; /*stmt2pivot(scp, s);*/
 	}	
  	rl = create_stmt_list();
 	while (n) {
@@ -2459,15 +2460,18 @@ static stmt *sql_simple_select(mvc * sql, scope * scp, symbol *where, dlist * se
 				stmt_destroy(cs);
 				return sql_error( sql, 02, "Subquery should return a single value");
 			}
-		/*
-		} else if (cs->nrcols == 0){
+		} else if (!cs->aggr && subset) { 
+			stmt *ss = stmt_dup(subset->op1.lval->h->data);
+			cs = stmt_const(ss,stmt_dup(cs));
 			list_append(rl, cs);
-		*/
 		} else {
 			list_append(rl, cs);
 		}
 		n = n->next;
 	}
+	if (subset)
+		stmt_destroy(subset);
+
 	s = stmt_list(rl);
 
 	if (!s)
@@ -2623,7 +2627,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 		list *sl = create_stmt_list();
 		dnode *n;
 		node *m;
-		int nrcols = 0;
+		int nrcols = 0, aggr = 0;
 
 		for (n = sn->selection->h; n; n = n->next ){
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym, grp, subset, sql_sel);
@@ -2637,6 +2641,7 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 			list_append(sl, cs);
 			if (nrcols < cs->nrcols)
 				nrcols = cs->nrcols;
+			aggr |= cs->aggr;
 		}
 
 		for (m = sl->h, n = sn->selection->h; 
@@ -2672,7 +2677,10 @@ static stmt *sql_select(mvc * sql, scope * scp, SelectNode *sn, int toplevel )
 					list_destroy(rl);
 					sql_select_cleanup(sql, s, subset, grp);
 					return sql_error( sql, 02, "single value in column expression");
-				} else if (!cs->aggr && nrcols) {
+				/*} else if (!cs->aggr && nrcols) { */
+
+				/* properly handle select '' from x */
+				} else if (!cs->aggr && !aggr) { 
 					stmt *ss = first_subset(subset);
 					cs = stmt_const(ss,stmt_dup(cs));
 					list_append(rl, cs);
