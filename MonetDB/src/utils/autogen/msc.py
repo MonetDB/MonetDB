@@ -276,7 +276,7 @@ def msc_library(fd, var, libmap, msc ):
     if (ext not in automake_ext):
       msc['EXTRA_DIST'].append(src)
 	
-  srcs = libname+"_OBJS ="
+  srcs = "lib" + sep + libname + "_OBJS ="
   for target in libmap['TARGETS']:
     t,ext = string.split(target,".",1)
     if (ext == "o"):
@@ -289,8 +289,14 @@ def msc_library(fd, var, libmap, msc ):
       if (target not in SCRIPTS):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
-  fd.write( "lib"+sep+libname + ".dll: $(" + libname + "_OBJS)\n" )
-  fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(lib%s_LIBS) $(LDFLAGS) /def:lib%s%s.def\n\n" % (libname,sep,libname,libname,sep,libname))
+  ln = "lib" + sep + libname
+  fd.write( ln + ".dll: " + ln + ".def $(" + ln + "_OBJS) \n" )
+  fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (ln,ln,ln,ln))
+
+  fd.write( ln + ".def: \n" )
+  fd.write( "\t$(ECHO) EXPORTS > $@\n" )
+  fd.write( "\t$(ECHO) 	%s_Module_Install >> $@\n" % libname )
+  fd.write( "\t$(ECHO) 	%s_Module_Delete >> $@\n" % libname )
 
   if (len(SCRIPTS) > 0):
     fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -339,8 +345,14 @@ def msc_libs(fd, var, libsmap, msc ):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
-    fd.write( "lib"+sep+lib + ".dll: $(lib"+sep+lib+"_OBJS)\n" )
-    fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(lib%s%s_OBJS) $(lib%s%s_LIBS) $(LDFLAGS) /def:lib%s%s.def \n\n" % (sep,lib,sep,lib,sep,lib,sep,lib))
+    ln = "lib" + sep + lib
+    fd.write( ln + ".dll: " + ln + ".def $(" + ln + "_OBJS) \n" )
+    fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) /def:%s.def\n\n" % (ln,ln,ln,ln))
+
+    fd.write( ln + ".def: \n" )
+    fd.write( "\t$(ECHO) EXPORTS > $@\n" )
+    fd.write( "\t$(ECHO) 	%s_Module_Install >> $@\n" % lib )
+    fd.write( "\t$(ECHO) 	s_Module_Delete >> $@\n" % lib )
 
   if (len(SCRIPTS) > 0):
     fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))

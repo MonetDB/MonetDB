@@ -137,6 +137,8 @@ EXPORTS
 	TBL_loadmod
 	TBL_unloadmod
 	TBL_Install_Functions
+	TBL_Install_LoadMIL
+	TBL_Install_Info
 	CNTXTinit
 	CNTXTnew
 	CNTXTreserve
