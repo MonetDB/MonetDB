@@ -767,6 +767,284 @@ statement *scalar_exp( context *sql, scope *scp, symbol *se, statement *group,
 	return NULL;
 }
 
+static
+list *query_and( catalog *cat, list *ands ){
+	list *l = NULL;
+	node *n = ands->h;
+	int len = list_length(ands), changed = 0;
+
+	while(n && (len > 0)){ 
+		/* the first in the list changes every interation */
+	    	statement *s = n->data.stval;
+		node *m = n->next;
+	    	l = list_create();
+		while(m){
+			statement *olds = s;
+			statement *t = m->data.stval;
+			if (s->nrcols == 1){
+				var *sv = s->h;
+
+				if (t->nrcols == 1 && sv == t->h){
+					s = statement_semijoin(s,t);
+				}
+				if (t->nrcols == 2){ 
+				  if( sv == t->h ){
+					s = statement_semijoin(t,s);
+				  } else if( sv == t->t ){
+					statement *r = statement_reverse(t);
+					s = statement_semijoin(r,s);
+				  }
+				}
+			} else if (s->nrcols == 2){
+				var *sv = s->h;
+				if (t->nrcols == 1){ 
+				  if( sv == t->h ){
+					s = statement_semijoin(s,t);
+				  } else if( s->t == t->h){
+					s = statement_reverse(s);
+					s = statement_semijoin(s,t);
+				  } 
+				} else if (t->nrcols == 2){ 
+			          if (sv == t->h && 
+				      s->t == t->t){
+					  s = statement_intersect(s,t);
+				  } else 
+			          if (sv == t->t &&  
+				      s->t == t->h){
+					  s = statement_reverse(s);
+					  s = statement_intersect(s,t);
+				  }
+				}
+			}
+			/* if s changed t is used so no need to store */
+			if (s == olds){ 
+				list_append_statement(l, t);
+			} else {
+				changed++;
+				len--;
+			}
+			m = m->next;
+		}
+		if (s) list_append_statement(l, s);
+	    	n = l->h;
+		len--;
+	}
+	return l;
+}
+
+static 
+statement *diamond2pivot( context *sql, list *l ){
+	list *pivots = list_create();
+	node *n;
+	l = query_and( sql->cat, l );
+       	n = l->h;
+	if (n){
+		int len = 0;
+		int markid = 0;
+		statement *st = n->data.stval;
+		if (st->nrcols == 1){
+			list_append_statement(pivots, statement_mark(
+				statement_reverse(st), markid++));
+		} 
+		if (st->nrcols == 2){
+			list_append_statement(pivots, 
+				statement_mark( statement_reverse(st), markid));
+			list_append_statement(pivots, 
+				statement_mark( st,markid++));
+		} 
+		n = list_remove( l, n );
+		len = list_length(l) + 1;
+		while(list_length(l) > 0 && len > 0){
+		    len--;
+		    n = l->h;
+		    while(n){
+			statement *st = n->data.stval;
+			list *npivots = list_create();
+			node *p = pivots->h;
+			while(p){
+				var *tv = p->data.stval->t;
+				if (tv == st->h){
+				  statement *m = statement_mark(
+					 statement_reverse(st), markid);
+				  statement *m1 = statement_mark(st, markid++);
+				  statement *j = statement_join( p->data.stval, 
+				    statement_reverse(m),
+				      cmp_equal ); 
+				  statement *pnl = statement_mark( j, markid );
+				  statement *pnr = statement_mark( 
+					   statement_reverse(j), markid++ );
+				  list_append_statement( npivots,
+				      statement_join( pnl, m1, cmp_equal));
+
+				  p = pivots->h;
+				  while(p){
+				    list_append_statement( npivots,
+				      statement_join( pnr, p->data.stval, 
+						    cmp_equal));
+					  p = p->next;
+				  }
+				  list_destroy(pivots);
+				  pivots = npivots;
+				  n = list_remove( l, n );
+				  break;
+				} else
+				if (tv == st->t){
+				  statement *m1 = statement_mark(
+					 statement_reverse(st), markid);
+				  statement *m = statement_mark( st, markid++ );
+				  statement *j = statement_join( p->data.stval, 
+				    statement_reverse(m),
+				      cmp_equal); 
+				  statement *pnl = statement_mark( j, markid );
+				  statement *pnr = statement_mark( 
+					   statement_reverse(j), markid++ );
+				  list_append_statement( npivots,
+				      statement_join( pnl, m1, cmp_equal));
+
+				  p = pivots->h;
+				  while(p){
+				    list_append_statement( npivots,
+				      statement_join( pnr, 
+					    p->data.stval, cmp_equal));
+					  p = p->next;
+				  }
+				  list_destroy(pivots);
+				  pivots = npivots;
+				  n = list_remove( l, n );
+				  break;
+				}
+				p = p->next;
+			 }
+			 if (n) n = n->next;
+		    }
+		}
+		if (!len){
+			assert(0);
+			snprintf(sql->errstr, ERRSIZE, 
+		  	  _("Semantically incorrect query, unrelated tables"));
+			return NULL;
+		}
+	}
+	list_destroy(l);
+	return statement_list(pivots);
+}
+
+/* reason for the group stuff 
+ * if a value is selected twice once on the left hand of the
+ * or and once on the right hand of the or it will be in the
+ * result twice.
+ *
+ * current version is broken, unique also remove normal doubles.
+ */
+static 
+statement *pearl2pivot( context *sql, list *ll ){
+	node *n = ll->h;
+	if(n){
+		statement *pivots = diamond2pivot(sql, n->data.lval);
+		list *cur = pivots->op1.lval;
+		n = n->next;
+		/*
+		statement *g = NULL;
+		*/
+		while(n){
+			statement *npivots = diamond2pivot(sql, n->data.lval);
+			list *l = npivots->op1.lval;
+			list *inserts = list_create();
+
+			node *m = l->h;
+
+			while(m){
+				node *c = cur->h;
+				while(c){
+				    	if (c->data.stval->t == 
+					    m->data.stval->t){
+					    list_append_statement( inserts,
+					      statement_insert_column(
+					       c->data.stval, m->data.stval ));
+				    	}
+				    	c = c->next;
+				}
+				m = m->next;
+			}
+			/* TODO: cleanup the old cur(rent) and npivots */
+			cur = inserts;
+			n = n->next;
+		}
+		/* no double elimination jet 
+		m = inserts->h;
+		while(m){
+			if (g){
+				g = statement_derive(m->data.stval, g);
+			} else {
+				g = statement_group(m->data.stval);
+			}
+			m = m->next;
+		}
+		g = statement_reverse( statement_unique( 
+			statement_reverse( g ), NULL));
+		m = inserts->h;
+		cur = list_create();
+		while(m){
+			list_append_statement( cur, 
+			  statement_semijoin( m->data.stval, g));
+			m = m->next;
+		}
+		*/
+		return statement_list(cur);
+	}
+	return NULL;
+}
+
+static 
+statement *sql_search_condition2pivot( context *sql, statement *s ){
+	if (s->type != st_diamond && s->type != st_pearl){
+		s = statement_diamond(s);
+	}
+	if (s->type == st_pearl){
+		statement *ns = pearl2pivot(sql, s->op1.lval);
+		statement_destroy(s);
+		s = ns;
+	} else {
+	  	statement *ns = diamond2pivot(sql, s->op1.lval);
+		statement_destroy(s);
+		s = ns;
+	}
+	return s;
+}
+
+
+static 
+statement *find_on_column_name( context *sql, scope *scp, var *t, char *name ){
+	node *m;
+
+	for(m = t->data.tval->columns->h; m; m = m->next){
+		column *rc = m->data.cval;
+		if (strcmp(name,rc->name) == 0 ){
+			return statement_column(rc,t);
+		}
+	}
+	return NULL;
+}
+
+static 
+list *join_on_column_name( context *sql, scope *scp, var *l, var *r, int all){
+	list *res = list_create();
+	node *n;
+	for(n = l->data.tval->columns->h; n; n = n->next){
+		column *lc = n->data.cval;
+		statement *rs = find_on_column_name( sql, scp, r, lc->name);
+		if (rs){
+			list_append_statement(res,statement_column(lc,l));
+			list_append_statement(res,rs);
+		} else if (all){
+			list_destroy(res);
+			return NULL;
+		}
+	}
+	return res;
+}
+
+
 static statement *sql_join_
 ( 
 	context *sql, 
@@ -786,27 +1064,75 @@ static statement *sql_join_
 	if (!tv1 || !tv2)
 	       	return NULL;
 
+	if (js && natural){
+	 	snprintf(sql->errstr, ERRSIZE, "Cannot have a NATURAL JOIN with a join specification (ON or USING);\n");
+		return NULL;
+	}
+	if (!js && !natural){
+	 	snprintf(sql->errstr, ERRSIZE, "Must have NATURAL JOIN or a JOIN with a specification (ON or USING);\n");
+		return NULL;
+	}
+
 	if (js && js->token != SQL_USING){ /* On search_condition */
 		s = search_condition(sql, scp, js, NULL, NULL);
 	} else if (js){ /* using */
-		printf("using not implemented jet\n");
-	} else { /* ! js */
-		printf("! js\n");
+		dnode *n = js->data.lval->h;
+
+		for(;n; n = n->next){
+			char *nm = n->data.sval;
+			statement *j;
+			statement *ls = find_on_column_name( sql, scp, tv1, nm);
+			statement *rs = find_on_column_name( sql, scp, tv2, nm);
+			if (!ls || !rs){
+	  			snprintf(sql->errstr, ERRSIZE, "Tables %s and %s do have a matching column %s\n", tv1->tname, tv2->tname, nm );
+				if (s) statement_destroy(s);
+				return NULL;
+			}
+			rs = check_types( sql, tail_type(ls), 
+						statement_reverse(rs));
+			if (!rs){ 
+				if (s) statement_destroy(s);
+				return NULL;
+			}
+			j = statement_join(ls, rs, cmp_equal);
+			if (s)
+				s = statement_intersect(s,j);
+			else 
+				s = j;
+		}
+	} else { /* ! js -> natural join */
+		list *matching_columns;
+		node *m;
+
+	        matching_columns = join_on_column_name( sql, scp, tv1, tv2, 0);
+
+		if (!matching_columns || list_length(matching_columns) == 0){
+	  		snprintf(sql->errstr, ERRSIZE, "No attributes of tables %s and %s match\n", tv1->tname, tv2->tname );
+			return NULL;
+		}
+
+		for(m = matching_columns->h; m; m = m->next->next){
+			statement *j;
+			statement *ls = m->data.stval;
+			statement *rs = m->next->data.stval;
+
+			rs = check_types( sql, tail_type(ls), 
+						statement_reverse(rs));
+			if (!rs){ 
+				if (s) statement_destroy(s);
+				return NULL;
+			}
+			j = statement_join(ls, rs, cmp_equal);
+			if (s)
+				s = statement_intersect(s,j);
+			else 
+				s = j;
+		}
+		list_destroy(matching_columns);
 	}
 
   	if (s){
-		if (s->type != st_diamond && s->type != st_pearl){
-			s = statement_diamond(s);
-		}
-		if (s->type == st_pearl){
-			statement *ns = pearl2pivot(sql, s->op1.lval);
-			statement_destroy(s);
-			s = ns;
-		} else {
-		  	statement *ns = diamond2pivot(sql, s->op1.lval);
-			statement_destroy(s);
-			s = ns;
-		}
+		s = sql_search_condition2pivot(sql, s);
 		if (list_length(scp->lifted) > 0){
 			/* possibly lift references */
 	  		snprintf(sql->errstr, ERRSIZE, 
@@ -935,30 +1261,6 @@ statement *sql_join( context *sql, scope *scp, symbol *q ){
 }
 
 static 
-list *join_on_column_name( context *sql, scope *scp, table *l, table *r){
-	list *res = list_create();
-	node *n,*m;
-	for(n=l->columns->h; n; n = n->next){
-		column *lc = n->data.cval;
-		int found = 0;
-		for(m=r->columns->h; m; m = m->next){
-			column *rc = m->data.cval;
-			if (strcmp(lc->name,rc->name) == 0 ){
-				list_append_statement(res,lc->s);
-				list_append_statement(res,rc->s);
-				found = 1;
-				break;
-			}
-		}
-		if (!found){
-			list_destroy(res);
-			return NULL;
-		}
-	}
-	return res;
-}
-
-static 
 var *query_exp_optname( context *sql, scope *scp, symbol *q ){
 	var *res = NULL;
 
@@ -982,14 +1284,10 @@ var *query_exp_optname( context *sql, scope *scp, symbol *q ){
 		var *lv = table_ref( sql, nscp, n->data.sym );
 		int all = n->next->data.ival;
 		var *rv = table_ref( sql, nscp, n->next->next->data.sym );
-		table *lt, *rt;
 		list *unions, *matching_columns;
 
 		if (!lv || !rv)
 			return NULL;
-
-	       	lt = lv->data.tval;
-		rt = rv->data.tval;
 
 		/* find the matching columns (all should match?)
 		 * union these 
@@ -997,7 +1295,7 @@ var *query_exp_optname( context *sql, scope *scp, symbol *q ){
 		 */
 		/* join all result columns ie join(lh,rh) on column_name */
 
-	        matching_columns = join_on_column_name(sql, nscp, lt,rt);
+	        matching_columns = join_on_column_name(sql, nscp, lv, rv, 1);
 
 		if (!matching_columns)
 			return NULL;
@@ -1010,6 +1308,7 @@ var *query_exp_optname( context *sql, scope *scp, symbol *q ){
 		}
 		res = table_optname( sql, scp, statement_list(unions), 
 				q->sql, q->data.lval->t->data.sym);
+		list_destroy(matching_columns);
 		scp = scope_close(nscp);
 		return res;
 	}
@@ -1090,71 +1389,6 @@ list *list_map_merge( list *l2, int seqnr, list *l1 ){
 }
 list *list_map_append_list( list *l2, int seqnr, list *l1 ){
 	return list_append_list(l1, l2 );
-}
-
-static
-list *query_and( catalog *cat, list *ands ){
-	list *l = NULL;
-	node *n = ands->h;
-	int len = list_length(ands), changed = 0;
-
-	while(n && (len > 0)){ 
-		/* the first in the list changes every interation */
-	    	statement *s = n->data.stval;
-		node *m = n->next;
-	    	l = list_create();
-		while(m){
-			statement *olds = s;
-			statement *t = m->data.stval;
-			if (s->nrcols == 1){
-				var *sv = s->h;
-
-				if (t->nrcols == 1 && sv == t->h){
-					s = statement_semijoin(s,t);
-				}
-				if (t->nrcols == 2){ 
-				  if( sv == t->h ){
-					s = statement_semijoin(t,s);
-				  } else if( sv == t->t ){
-					statement *r = statement_reverse(t);
-					s = statement_semijoin(r,s);
-				  }
-				}
-			} else if (s->nrcols == 2){
-				var *sv = s->h;
-				if (t->nrcols == 1){ 
-				  if( sv == t->h ){
-					s = statement_semijoin(s,t);
-				  } else if( s->t == t->h){
-					s = statement_reverse(s);
-					s = statement_semijoin(s,t);
-				  } 
-				} else if (t->nrcols == 2){ 
-			          if (sv == t->h && 
-				      s->t == t->t){
-					  s = statement_intersect(s,t);
-				  } else 
-			          if (sv == t->t &&  
-				      s->t == t->h){
-					  s = statement_reverse(s);
-					  s = statement_intersect(s,t);
-				  }
-				}
-			}
-			/* if s changed t is used so no need to store */
-			if (s == olds){ 
-				list_append_statement(l, t);
-			} else {
-				changed++;
-				len--;
-			}
-			m = m->next;
-		}
-		if (s) list_append_statement(l, s);
-	    	n = l->h;
-		len--;
-	}
-	return l;
 }
 
 static
@@ -1644,169 +1878,6 @@ statement *having_condition( context *sql, scope *scp, symbol *sc,
 }
 
 
-static 
-statement *diamond2pivot( context *sql, list *l ){
-	list *pivots = list_create();
-	node *n;
-	l = query_and( sql->cat, l );
-       	n = l->h;
-	if (n){
-		int len = 0;
-		int markid = 0;
-		statement *st = n->data.stval;
-		if (st->nrcols == 1){
-			list_append_statement(pivots, statement_mark(
-				statement_reverse(st), markid++));
-		} 
-		if (st->nrcols == 2){
-			list_append_statement(pivots, 
-				statement_mark( statement_reverse(st), markid));
-			list_append_statement(pivots, 
-				statement_mark( st,markid++));
-		} 
-		n = list_remove( l, n );
-		len = list_length(l) + 1;
-		while(list_length(l) > 0 && len > 0){
-		    len--;
-		    n = l->h;
-		    while(n){
-			statement *st = n->data.stval;
-			list *npivots = list_create();
-			node *p = pivots->h;
-			while(p){
-				var *tv = p->data.stval->t;
-				if (tv == st->h){
-				  statement *m = statement_mark(
-					 statement_reverse(st), markid);
-				  statement *m1 = statement_mark(st, markid++);
-				  statement *j = statement_join( p->data.stval, 
-				    statement_reverse(m),
-				      cmp_equal ); 
-				  statement *pnl = statement_mark( j, markid );
-				  statement *pnr = statement_mark( 
-					   statement_reverse(j), markid++ );
-				  list_append_statement( npivots,
-				      statement_join( pnl, m1, cmp_equal));
-
-				  p = pivots->h;
-				  while(p){
-				    list_append_statement( npivots,
-				      statement_join( pnr, p->data.stval, 
-						    cmp_equal));
-					  p = p->next;
-				  }
-				  list_destroy(pivots);
-				  pivots = npivots;
-				  n = list_remove( l, n );
-				  break;
-				} else
-				if (tv == st->t){
-				  statement *m1 = statement_mark(
-					 statement_reverse(st), markid);
-				  statement *m = statement_mark( st, markid++ );
-				  statement *j = statement_join( p->data.stval, 
-				    statement_reverse(m),
-				      cmp_equal); 
-				  statement *pnl = statement_mark( j, markid );
-				  statement *pnr = statement_mark( 
-					   statement_reverse(j), markid++ );
-				  list_append_statement( npivots,
-				      statement_join( pnl, m1, cmp_equal));
-
-				  p = pivots->h;
-				  while(p){
-				    list_append_statement( npivots,
-				      statement_join( pnr, 
-					    p->data.stval, cmp_equal));
-					  p = p->next;
-				  }
-				  list_destroy(pivots);
-				  pivots = npivots;
-				  n = list_remove( l, n );
-				  break;
-				}
-				p = p->next;
-			 }
-			 if (n) n = n->next;
-		    }
-		}
-		if (!len){
-			assert(0);
-			snprintf(sql->errstr, ERRSIZE, 
-		  	  _("Semantically incorrect query, unrelated tables"));
-			return NULL;
-		}
-	}
-	list_destroy(l);
-	return statement_list(pivots);
-}
-
-/* reason for the group stuff 
- * if a value is selected twice once on the left hand of the
- * or and once on the right hand of the or it will be in the
- * result twice.
- *
- * current version is broken, unique also remove normal doubles.
- */
-static 
-statement *pearl2pivot( context *sql, list *ll ){
-	node *n = ll->h;
-	if(n){
-		statement *pivots = diamond2pivot(sql, n->data.lval);
-		list *cur = pivots->op1.lval;
-		n = n->next;
-		/*
-		statement *g = NULL;
-		*/
-		while(n){
-			statement *npivots = diamond2pivot(sql, n->data.lval);
-			list *l = npivots->op1.lval;
-			list *inserts = list_create();
-
-			node *m = l->h;
-
-			while(m){
-				node *c = cur->h;
-				while(c){
-				    	if (c->data.stval->t == 
-					    m->data.stval->t){
-					    list_append_statement( inserts,
-					      statement_insert_column(
-					       c->data.stval, m->data.stval ));
-				    	}
-				    	c = c->next;
-				}
-				m = m->next;
-			}
-			/* TODO: cleanup the old cur(rent) and npivots */
-			cur = inserts;
-			n = n->next;
-		}
-		/* no double elimination jet 
-		m = inserts->h;
-		while(m){
-			if (g){
-				g = statement_derive(m->data.stval, g);
-			} else {
-				g = statement_group(m->data.stval);
-			}
-			m = m->next;
-		}
-		g = statement_reverse( statement_unique( 
-			statement_reverse( g ), NULL));
-		m = inserts->h;
-		cur = list_create();
-		while(m){
-			list_append_statement( cur, 
-			  statement_semijoin( m->data.stval, g));
-			m = m->next;
-		}
-		*/
-		return statement_list(cur);
-	}
-	return NULL;
-}
-
 statement *query_groupby_inner( context *sql, scope *scp, statement *c,
 				statement *st, statement *cur ){
 	node *n = st->op1.lval->h;
@@ -1946,23 +2017,6 @@ statement *sql_simple_select
   if (!s && sql->errstr[0] == '\0')
 	  snprintf(sql->errstr, ERRSIZE, _("Subquery result missing")); 
   return s;
-}
-
-static 
-statement *sql_search_condition2pivot( context *sql, statement *s ){
-	if (s->type != st_diamond && s->type != st_pearl){
-		s = statement_diamond(s);
-	}
-	if (s->type == st_pearl){
-		statement *ns = pearl2pivot(sql, s->op1.lval);
-		statement_destroy(s);
-		s = ns;
-	} else {
-	  	statement *ns = diamond2pivot(sql, s->op1.lval);
-		statement_destroy(s);
-		s = ns;
-	}
-	return s;
 }
 
 static

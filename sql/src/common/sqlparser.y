@@ -3,7 +3,6 @@
  * add TRANSACTION support
  * use table/column constrains (such as not null)
  * use primary/foreign keys
- * join expressions
  */
 #include <unistd.h>
 #include "sql.h"

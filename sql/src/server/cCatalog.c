@@ -8,7 +8,7 @@ ptr *ADTfromStr( int type, char *s){
         int l = 0;
         ptr *res = NULL;
         if (type == TYPE_str) {
-		if (*s == '"') {
+		if (*s == '\'') {
 			int len = strlen(s);
 			char *r = GDKstrdup( s+1 );
 			r[len-2] = '\0';
