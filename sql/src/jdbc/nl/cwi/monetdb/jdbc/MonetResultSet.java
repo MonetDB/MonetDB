@@ -917,7 +917,7 @@ public class MonetResultSet implements ResultSet {
 							ret = 12;	// "hh:mm:ss.SSS".length();
 						break;
 						case Types.TIMESTAMP:
-							ret = 29;	// date + space + time + zone
+							ret = 23;	// date + space + time
 						break;
 					}
 				}
@@ -1329,7 +1329,7 @@ public class MonetResultSet implements ResultSet {
 
 						synchronized (MonetConnection.mTimeZ) {
 							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
-							return(MonetConnection.mTimeZ.parse(monetDate.substring(0, 23) + tzRFC822));
+							return(MonetConnection.mTimeZ.parse(monetDate.substring(0, 12) + tzRFC822));
 						}
 					} else if (monetDate.length() == 12) { // "HH:mm:ss.SSS".length()
 						// if there is no time zone information in the database
