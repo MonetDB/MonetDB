@@ -32,6 +32,7 @@
 #include <sql_list.h>
 #include <sql_types.h>
 #include <sql_backend.h>
+#include <sql_catalog.h>
 #include <stream.h>
 
 /* version 01.02.00 of catalog */
@@ -41,127 +42,6 @@
 #define ISO_READ_COMMITED   2
 #define ISO_READ_REPEAT	    3
 #define ISO_SERIALIZABLE    4
-
-#define TR_OLD 0
-#define TR_NEW 1
-
-/*
- * name bats using schema_table_column etc.
- * 
- * support multiple db's using multiple servers, requires a shallow connection setup
- * server, which communicates using shmem or pipes. 
- */
-
-#define cur_user 1
-#define cur_role 2
-
-/* TODO keep a single list of sql_bats with each table 
- * also change D_* to use the sql_bat
- */
-typedef struct sql_bat {
-	oid bid;
-	oid ibid;	/* insert bat ! */
-	oid ubid;     	/* bat with updates */
-} sql_bat;
-
-typedef enum key_type {
-	pkey,
-	ukey,
-	fkey
-} key_type;
-
-typedef struct sql_kc {
-	struct sql_column *c;
-	int trunc; /* 0 not truncated, >0 colum is truncated */
-} sql_kc;
-
-typedef enum idx_type {
-	unique,
-	join_idx,
-	new_idx_types
-} idx_type;
-
-typedef struct sql_idx { 
-	sql_base base;
-	idx_type type; 		/* unique */
-	struct list *columns; 	/* list of sql_kc */
-	struct sql_table *t;
-	sql_bat bat;
-	struct sql_key *key; 		/* key */
-} sql_idx;
-
-/* fkey consists of two of these */
-typedef struct sql_key { /* pkey, ukey, fkey */
-	sql_base base;
-	key_type type; 		/* pkey, ukey, fkey */
-	sql_idx	*idx;		/* idx to accelerate key check */
-
-	struct list *columns; 	/* list of sql_kc */
-	struct sql_table *t;
-} sql_key;
-
-typedef struct sql_ukey { /* pkey, ukey */
-	sql_key k;
-	list *keys;
-} sql_ukey;
-
-typedef struct sql_fkey { /* fkey */
-	sql_key k;
-	struct sql_ukey *rkey; /* only set for fkey and rkey */
-} sql_fkey;
-
-typedef struct sql_column {
-	sql_base base;
-	sql_subtype *type;
-	int colnr;
-	bit null;
-	char *def;
-
-	struct sql_table *t;
-	sql_bat bat;
-
-} sql_column;
-
-typedef struct changeset {
-	fdestroy destroy;
-	struct list *set;
-	struct list *dset;
-	node *nelm;
-} changeset;
-
-typedef struct sql_table {
-	sql_base base;
-	bit 	 table; 	/* table or view */
-	bit	 system;	/* system or user table */
-	bit	 persists;	/* persistent or temporary table */
-	bit	 clear;		/* clear on transaction boundaries ? */
-				/* clear on a temp table == session table! */
-	char*    query;
-	int      sz;
-
-	changeset columns;
-	changeset idxs;
-	changeset keys;
-	sql_ukey *pkey;
-
-	oid dbid;     	 /* bat with deletes */
-
-	struct sql_schema *s;
-} sql_table;
-
-typedef struct sql_schema {
-	sql_base base;
-	int auth_id;
-
-	changeset tables;
-	list *keys; 	/* the names for keys and idxs are global, but */	
-	list *idxs;	/* these objects are only useful within a table */
-} sql_schema;
-
-typedef struct sql_module {
-	sql_base base;
-	changeset types;
-} sql_module;
 
 typedef struct sql_trans {
 	char *name;
@@ -181,25 +61,6 @@ typedef struct sql_trans {
 
 	struct sql_trans *parent; /* multilevel transaction support */
 } sql_trans;
-
-typedef struct res_col {
-	char *tn;
-	char *name;
-	sql_subtype *type;
-	bat b;
-	int mtype;
-	ptr *p;
-} res_col;
-
-typedef struct res_table {
-	int id; 
-	int query_type;
-	int nr_cols; 
-	int cur_col;
-	res_col *cols;
-	bat order;
-	struct res_table *next;
-} res_table;
 
 #define ERRSIZE 1024
 
@@ -245,7 +106,6 @@ typedef struct mvc {
 	int result_id;
 	res_table *results;
 } mvc;
-
 
 #define isNew(x) 	(x->base.flag == TR_NEW)
 #define isTemp(x) 	(isNew(x)||!x->t->persists||x->t->clear)

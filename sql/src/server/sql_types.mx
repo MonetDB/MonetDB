@@ -32,118 +32,14 @@ easy to find something akin you intend to enter.
 
 #include <sql_mem.h>
 #include <sql_list.h>
+#include <sql_catalog.h>
 #include <stream.h>
 
 sql_export list *types;
 
-#define SCALE_NONE	0
-#define SCALE_FIX	1
-#define SCALE_NOFIX	2
-#define SCALE_ADD	3
-#define SCALE_SUB	4
-#define DIGITS_ADD	5
-#define INOUT		6 	/* output type equals input type */
-
-#define sql_max(i1,i2) ((i1)<(i2))?(i2):(i1)
-
-typedef int sqlid;
-
-typedef struct sql_base {
-	int wtime;
-	int rtime;
-	int flag;
-	sqlid id;
-	char *name;
-} sql_base;
-
 sql_export void base_init( sql_base *b, sqlid id, int flag, char *name );
 sql_export void base_set_name( sql_base *b, char *name );
 sql_export void base_destroy( sql_base *b );
-
-typedef struct sql_type {
-	sql_base base;
-
-	char *sqlname;
-	unsigned int digits;
-	unsigned int scale; /* indicates how scale is used in functions */
-	int localtype; 	/* localtype, need for coersions */
-	unsigned char radix;
-	unsigned char fixed;
-} sql_type;
-
-typedef struct sql_alias {
-	char *name;
-	char *alias;
-} sql_alias;
-
-typedef struct sql_subtype {
-	sql_ref ref;
-
-	sql_type *type;
-	unsigned int digits;
-	unsigned int scale;
-	unsigned char fixed;
-} sql_subtype;
-
-typedef struct sql_aggr {
-	sql_ref ref;
-
-	char *name;
-	char *imp;
-	sql_subtype *tpe;
-	sql_subtype *res;
-	int nr;
-} sql_aggr;
-
-typedef struct sql_subaggr {
-	sql_ref ref;
-
-	sql_aggr *aggr;
-	sql_subtype *res;
-} sql_subaggr;
-
-/* sql_func need type transform rules
- * types are equal if underlying types are equal +
-	scale is equal
- * if types do not mach we try type conversions
- * 	which means for simple 1 arg functions
- *
- *
- */
-
-typedef struct sql_arg {
-	char *name;
-	sql_subtype *type;
-} sql_arg;
-
-typedef struct sql_func {
-	sql_ref ref;
-
-	char *name;
-	char *imp;
-	list *ops; /* param list */
-	sql_subtype *res;
-		   /* res->scale
-		      SCALE_NOFIX/SCALE_NONE => nothing
-		      SCALE_FIX => input scale fixing,
-		      SCALE_ADD => leave inputs as is and do add scales
-					example numerical multiplication
-		      SCALE_SUB => first input scale, fix with second scale
-				   result scale is equal to first input
-					example numerical division
-		      DIGITS_ADD => result digits, sum of args
-					example string concat
-		    */
-	int nr;
-	int sql; /* simple sql or native implementation */
-} sql_func;
-
-typedef struct sql_subfunc {
-	sql_ref ref;
-
-	sql_func *func;
-	sql_subtype *res;
-} sql_subfunc;
 
 sql_export char *sql_bind_alias( char *alias );
 sql_export sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale );
