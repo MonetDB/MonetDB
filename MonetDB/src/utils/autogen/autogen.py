@@ -57,6 +57,8 @@ class parser:
 			self.cnt = self.cnt - 1
 			self.state = "defs"
 		elif (self.state == "=" and isName(token)):
+			if token == '""':
+				token = ""
 			if (self.top._values.has_key(token)):
 				for i in self.top.value(token):
 					self.curvar.append(i)

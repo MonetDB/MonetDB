@@ -3,7 +3,7 @@ import os
 import regsub
 
 #automake_ext = [ 'c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c' ]
-automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h' ]
+automake_ext = [ 'c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', '' ]
 script_ext = [ 'mil' ]
 
 def split_filename(f): 
@@ -313,7 +313,7 @@ def am_libs(fd, var, values, am ):
 
   scripts_ext = []
   if (values.has_key('SCRIPTS')):
-    scripts_ext = values['SCRIPTS']
+	scripts_ext = values['SCRIPTS']
 
   if (values.has_key('MTSAFE')):
     fd.write("CFLAGS+=$(thread_safe_flag_spec)\n")
