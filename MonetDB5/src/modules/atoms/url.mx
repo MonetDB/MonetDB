@@ -852,7 +852,7 @@ str URLgetContext(str *retval, str *val){
 str URLgetDirectory(int *ret, str *tv){
 	(void) ret; (void) tv;
 	return throwMessage("url.getDirectory","not yet available");
-/*
+/* this operation requres a BAT context, should be defined elsewhere
 	url_getDirectory(ret, *tv);
 */
 	return MAL_SUCCEED;
