@@ -1266,7 +1266,7 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
 	stream_printf(f,"\"];\n");
 	GDKfree(msg);
 }
-void showFlow(MalBlkPtr mb, MalStkPtr stk, str fname){
+void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
 	stream *f;
 	InstrPtr p;
 	int i,j,k;
