@@ -11,5 +11,5 @@ stdout of test 'A1` in directory 'tests/XPathMark` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<!-- This example shows the use of namespaces, comments, processing instructions, and language attribute. The example has been adapted from Example 4-4 in Elliotte Rusty Harold and W. Scott Means, XML in a Nutshell, 2nd Edition, O'Reilly. --><!-- This is a processing instruction to tell search-engines whether and how they should index this page. --><!-- A namespace for XML Linking Language with prefix xlink and the attribute declaring the English language. --><!-- This is the last comment. -->
+<!-- This is a processing instruction to tell search-engines whether and how they should index this page. --><!-- A namespace for XML Linking Language with prefix xlink and the attribute declaring the English language. --><!-- This is the last comment. -->
 </XQueryResult>

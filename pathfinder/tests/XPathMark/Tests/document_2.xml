@@ -1,4 +1,3 @@
-<!-- This example shows the use of namespaces, comments, processing instructions, and language attribute. The example has been adapted from Example 4-4 in Elliotte Rusty Harold and W. Scott Means, XML in a Nutshell, 2nd Edition, O'Reilly. -->
 <!-- This is a processing instruction to tell search-engines whether and how they should index this page. -->
 <?robots index="yes" follow ="no"?>
 <!-- A namespace for XML Linking Language with prefix xlink and the attribute declaring the English language. -->
