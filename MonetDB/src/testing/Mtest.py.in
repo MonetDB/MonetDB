@@ -1043,7 +1043,7 @@ def RunTest(env, TST, BusyPorts) :
         ME = ""
         ATJOB1 = ""
         MkillUsers = ""
-        if os.name != "nt":
+        if os.name != "nt" and sys.platform != 'cygwin':
             for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
                     os.remove(f)
@@ -1079,7 +1079,7 @@ def RunTest(env, TST, BusyPorts) :
         TX = t1 - t0
         STDOUT.write(" %7.3fs " % TX)
 
-        if os.name != "nt":
+        if os.name != "nt" and sys.platform != 'cygwin':
             StopAt(ATJOB1,ME)
         else:
             while os.path.exists(os.path.join(TSTTRGBASE,".KILLED.lck")):
@@ -1518,7 +1518,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if os.name != "nt":
             ATJOB2 = StartAt(MkillUsers)
         CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
-        if os.name != "nt":
+        if os.name != "nt" and sys.platform != 'cygwin':
             StopAt(ATJOB2,ME)
 
         if SERVER == "MAPI":
