@@ -12,7 +12,7 @@ var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 
-loaded;
+loaded();
 #---------------------------------#
 # module	| usage_count	  #
 #---------------------------------#
@@ -24,13 +24,13 @@ loaded;
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-mods@batloop{
+mods@batloop(){
 	printf("loading module '%s'\n",$t);
 	module($t);
-	loaded;
+	loaded();
 	printf("dropping module '%s'\n",$t);
 	drop($t);
-	loaded;
+	loaded();
 }
 loading module 'pf_support'
 #---------------------------------#
@@ -87,7 +87,7 @@ dropping module 'pathfinder'
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 
-quit;
+quit();
 
 # 20:09:24 >  
 # 20:09:24 >  Done.

@@ -208,7 +208,7 @@ PROC serialize (str prefix,
         var curr_oid := $h;
 
         values@batloop {
-            $t.reverse().select (curr_oid).reverse@batloop {
+            $t.reverse().select (curr_oid).reverse()@batloop {
                 print ($t);
             }
         }

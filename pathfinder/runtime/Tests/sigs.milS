@@ -2,11 +2,11 @@ var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
 
-mods@batloop{
+mods@batloop(){
 	printf("module '%s'\n",$t);
 	module($t);
 	sigs($t);
 	drop($t);
 }
 
-quit;
+quit();
