@@ -38,11 +38,11 @@ CONFIG_H=template_config.h
 AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
-AM_MONET_COMPILER()
-AM_MONET_TOOLS()
-AM_MONET_OPTIONS()
-AM_MONET_LIBS()
-AM_MONET_CLIENT(4.3.19)
+AM_MONETDB_COMPILER()
+AM_MONETDB_TOOLS()
+AM_MONETDB_OPTIONS()
+AM_MONETDB_LIBS()
+AM_MONETDB_CLIENT(4.3.19)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR(Monet is not found.)
 fi
