@@ -500,3 +500,6 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+/*#define HAVE_GLOBALMEMORYSTATUSEX only on >= NT 5 */
+#define HAVE_GLOBALMEMORYSTATUS

@@ -151,7 +151,7 @@ will even be the case for long 64-bit integers.
 	     int xx;\
 	     for(xx=0; xx<MAX_ENUM; xx++)\
 		if (enum_tpe[xx] == x) break;\
-	     if ((xx>=MAX_ENUM) || ((b=BATdescriptor(enum_map[xx])) == NULL)) {\
+	     if ((xx>=MAX_ENUM) || ((b=BBPdescriptor(enum_map[xx])) == NULL)) {\
 	 	GDKerror("%s: illegal enum type.\n",y);\
 		return GDK_FAIL; \
 	     }
@@ -210,7 +210,7 @@ struct {
 	@:template(@1,chr,char)@ @:template(@1,sht,short)@
 @= template
 static int tostr@1@2(char** dst, int* len, ptr src){
-	BAT *b = BATdescriptor(enum_map[@1]);
+	BAT *b = BBPdescriptor(enum_map[@1]);
 	int l; ptr v; 
 
 	if (*(@2*)src == @2_nil) {
@@ -232,7 +232,7 @@ static int tostr@1@2(char** dst, int* len, ptr src){
 	return (l-1); /* return string length excluding eos */
 }
 static int fromstr@1@2(str src, int* len, ptr* dst){
-	BAT *b = BATdescriptor(enum_map[@1]);
+	BAT *b = BBPdescriptor(enum_map[@1]);
 	int r, l = 0;
 	BUN p; ptr v;
 

@@ -153,6 +153,7 @@ m_export int interpret_batcast   (str atom, int argc, ValPtr val, ValPtr res);
 	}
 @= pack_type
 {	int _tpe = @1, _log, _base;
+	if (_tpe < 0) _tpe = TYPE_void;
 	for(_log=0, _base=_tpe; _base; _log++) _base >>= 1;
 	@:pack_bits(4,_log)@
 	@:pack_bits(_log,_tpe)@ }
@@ -163,12 +164,18 @@ static INLINE void monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv) {
 	monetsig_argc(s) = argc-1;
 	for(*wordptr=0; i<argc; i++) {
 		BAT *b;
-		if (argv[i].vtype==TYPE_bat && (b=BBP_cache(argv[i].val.ival))) {
-			int batbits = (argv[i].len==int_nil)?
+		if (argv[i].vtype==TYPE_bat){
+                        bat bid = argv[i].val.bval;
+			BBPfix(bid);
+			b = BBPquickdesc(ABS(bid),FALSE);
+			if (b) {
+				int batbits = (argv[i].len==int_nil)?
 					MONETSIG_BATCONST:MONETSIG_BAT;
-			@:pack_bits(4,batbits)@
-			@:pack_type(b->htype)@
-			@:pack_type(b->ttype)@
+				@:pack_bits(4,batbits)@
+				@:pack_type((bid>0)?b->htype:b->ttype)@
+				@:pack_type((bid>0)?b->ttype:b->htype)@
+			}
+			BBPunfix(bid);
 		} else {
 			@:pack_type(argv[i].vtype);
 		}
@@ -291,7 +298,6 @@ BAT *interpret_pin(batrec *r, str s) {
 	BAT *b;
 	BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) on bat(%d) refcnt = %d\n",
 				s, r->id, BBPrefs(r->id)+1);
-	BBPfix(r->id);
 	b = BATdescriptor(r->id);
 	if (b == NULL) { 
 		return NULL;
@@ -327,7 +333,7 @@ void interpret_unpin(batrec *r, str s) {
 	    if (b->batStamp != r->stamp) {
 		GDKerror("interpret_unpin(%s) bat=%d,stamp=%d OVERWRITTEN\n", s, r->id, r->stamp);
 	    } else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
-		BAT *_b = BATdescriptor(ABS(r->id));
+		BAT *_b = BBPdescriptor(ABS(r->id));
 		MT_set_lock(monet_voidLock, "unpin");
 		if (--(_b->void_cnt) == 0) {
 			BATDEBUG THRprintf(GDKerr, "interpret_unpin(%s) => kill %d[%d,%d]\n", 
@@ -548,7 +554,10 @@ primitives CATCH* look after garbage collecting these results.
     		res->val.oval = void_nil;
 		stamp = BBPcurstamp();	
 		i = (*imp)(stk, lt, res); 
-		CATCHVAL(stk,lt,res,TRUE);
+		if (i >= 0 ){
+			int x = -TOK_RETURN;
+			CATCHRET(stk,lt,res,x);
+		}
 		CATCHERR(stk,lt,res,i,((YYSTREE) imp)); break; }
 #ifdef MKMODS
         case TOK_TRG:
@@ -813,10 +822,16 @@ exec:	stamp = BBPcurstamp();
 		CATCHERR(stk,opcache,res,i,((YYSTREE) sig->pack_fcn)); 
 	} else if (sig->token == TOK_CAST) {
 		i = interpret_cast(sig->fcn_nme,argc,argv+1,res);
-		CATCHVAL(stk,opcache,res,TRUE);
+		if (i >= 0){
+			int x = -TOK_RETURN;
+			CATCHRET(stk,opcache,res,x);
+		}
 	} else if (sig->token == TOK_BATCAST) {
 		i = interpret_batcast(sig->fcn_nme,argc,argv+1,res);
-		CATCHVAL(stk,opcache,res,TRUE);
+		if (i >= 0 ){
+			int x = -TOK_RETURN;
+			CATCHRET(stk,opcache,res,x);
+		}
 	} else {
                 /* multiplex and set aggregate can execute procs in a loop!  
                  * we must indicate this to the garbage collector. It will 
@@ -924,6 +939,7 @@ int interpret_ident(int	stk, YYSTREE lt, ValPtr res){
 			lt->yyval.val.sval);
 		return interpret(stk, lt, res);
        	}
+	BBPunfix(b->batCacheid);
 	/* LOAD FIX: pin the bat and register for unpinning */
 	GDKfree(lt->yyval.val.sval);
 	lt->yyval.vtype = TYPE_bat;
@@ -1048,13 +1064,7 @@ int interpret_cast(str atom, int argc, ValPtr val, ValPtr res) {
 			return -1;
 		}
 	}
-	if (res->vtype == TYPE_bat) {
-		/* subsequent garbage collection assumes a BAT* image present */
-		BBPfix(res->val.bval);
-		(void) BATdescriptor(res->val.bval); /* make sure it gets loaded */
-	} else {
-		ATOMfix(res->vtype, VALptr(res));
-	}
+	ATOMfix(res->vtype, VALptr(res));
 	return 0;
 }
 
@@ -1069,6 +1079,7 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 	    bn = BATrcopy(b); /* we do not want smart oid->void conversion */
 	    b->T->dense = dense_bak; 	
 	    bn->ttype = BATmirror(bn)->htype = tpe;
+	    strcpy(bn->tatom, ATOMname(tpe));
 	} else {
 	    int reduce = 0;
 	    bn = BATnew(b->htype, tpe, BATcount(b));
@@ -1184,6 +1195,8 @@ int interpret_batcast(str atom, int argc, ValPtr val, ValPtr res) {
 	res->vtype = TYPE_bat;
 	res->val.bval = bn->batCacheid;
 	res->len = 0;
+	BBPpersistent(bn->batCacheid,FALSE);
+	BBPunfix(bn->batCacheid);
 	return 0;
 }
 
@@ -1277,7 +1290,7 @@ int interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope){
 	} 
 	for( ; lt; lt = lt->overflow) {  
 		for(i = 0; i < lt->cnt; i++) 
-		if (lt->yysons[i]) { 
+		if (lt->yysons[i]) {
 			r = interpret(stk, lt->yysons[i], res); 
 			CLEANUP(lt->yysons[i]);
 			if (r<0) goto xit;

@@ -178,7 +178,7 @@ Saves a whole lot of problems later on (glue.mx).
 void set_batarg_name(Symbol *s, int i, char c){
 	if (s && s->Token() == MEL_ANY) {
 	   AnyArg *a = (AnyArg*) s;
-	   sprintf(a->typestr, "BATdescriptor(argv[%d].val.bval)->%ctype",i,c);
+	   sprintf(a->typestr, "BBPdescriptor(argv[%d].val.bval)->%ctype",i,c);
 	}
 }
 

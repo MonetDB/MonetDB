@@ -835,7 +835,7 @@ ostream &unpack_setresult::gen_bat_arg( ostream &o, const BatArg & ){
 
 ostream &unpack_call::gen_bat_arg( ostream &o, const BatArg & ){
 	if (arg_nr > 0)
-		o << "     BATdescriptor(argv[" << arg_nr << "].val.bval)";
+		o << "     BBPdescriptor(argv[" << arg_nr << "].val.bval)";
 	else 
 	   	o << "     (BAT**)&argv[0].val.pval";
 	return o;
@@ -852,7 +852,7 @@ void gen_resultbat_chk( ostream &o, const Symbol* d, int head, char* fcn){
 	if (d) {
 	    d->print(&bt, o);
 	} else {
-	    o << "TYPEcastable(BATdescriptor(argv[0].val.bval)->";
+	    o << "TYPEcastable(BBPdescriptor(argv[0].val.bval)->";
 	    o << (head?"h":"t") << "type, TYPE_void)\n";
 	}
 	o << "   ){\n     GDKerror(\"%s: returned BAT has unexpected ";
@@ -880,7 +880,7 @@ ostream &gen_unpack_any_arg( ostream &o, int arg_nr, int varargs, int* bound){
 	if (varargs)
 		o << "      (argc <= " << arg_nr << ")?0:\n";
 	o << "       (argv["<<n<<"].vtype == TYPE_bat)?\n";
-	o << "         (ptr)BATdescriptor(argv["<<n<<"].val.bval):\n";
+	o << "         (ptr)BBPdescriptor(argv["<<n<<"].val.bval):\n";
 	o << "         VALptr(argv+"<<n<<")";
 	if (!bound) {
 		o << ", ";
@@ -1546,7 +1546,7 @@ ostream &gen_bat_typecheck_arg( ostream &o, const char* prefix,
 				const char *name, int head, int arg_nr)
 {
 	if (arg_nr) o << "\t&& "; //hack
- 	o << "TYPEequal(BATdescriptor(argv[" <<arg_nr<< "].";
+ 	o << "TYPEequal(BBPdescriptor(argv[" <<arg_nr<< "].";
 	if (head)
 		o << "val.bval)->htype";
 	else 

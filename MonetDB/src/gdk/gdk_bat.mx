@@ -498,9 +498,6 @@ copy of the valid BUN sequence.
                         memcpy( (char*)BUNfirst(bn),
                                 (char*)BUNfirst(b),
                                 BATcount(b)* BUNsize(b) );
-                        bn->batDirty = 1;
-                        bn->batDirtybuns= 1;
-                        bn->batDirtydesc = 1;
                         bn->batBuns->free += BUNsize(b)*BATcount(b);
                         bn->hseqbase = b->hseqbase;
                         bn->tseqbase = b->tseqbase;
@@ -514,6 +511,9 @@ copy of the valid BUN sequence.
 				r += yy;
 			}
 		}
+                bn->batDirty = 1;
+                bn->batDirtybuns= 1;
+                bn->batDirtydesc = 1;
 		bn->hsorted = BAThordered(b);
 		bn->tsorted = BATtordered(b);
 		ALIGNset(bn,b);

@@ -12,12 +12,12 @@ all: $(SRCDIR)\Makefile.msc all-msc unistd.h
 	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc all
 
 check: $(SRCDIR)\Makefile.msc RunMtest.bat
-	$(MAKE) /nologo /k /i /f $(SRCDIR)\Makefile.msc check
+	$(MAKE) /nologo /i /f $(SRCDIR)\Makefile.msc check
 	call RunMtest.bat
 
-install: targetdirs config.h
+install: targetdirs config.h all
 	$(INSTALL) config.h $(includedir)
-	$(MAKE) /nologo /k /f $(SRCDIR)\Makefile.msc install
+	$(MAKE) /nologo /f $(SRCDIR)\Makefile.msc install
 
 $(SRCDIR)\Makefile.msc: $(SRCDIR)\src\utils\autogen\autogen.py \
 	$(SRCDIR)\src\utils\autogen\codegen.py \

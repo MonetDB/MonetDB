@@ -330,6 +330,8 @@ void destroy_format( ascii *as ){
 	ascii_io *fmt = as->format;
 
 	for (p=0; p<as->nr_attrs; p++){
+		if (fmt[p].c) 
+			BBPunfix(fmt[p].c->batCacheid);
 		GDKfree( fmt[p].sep );
 	}
 	GDKfree(fmt);
@@ -393,7 +395,6 @@ BAT *collect_bats( ascii *as ){
 		        GDKerror("Error: counts are not equal\n");
 			return NULL;
 		}
-		BBPunfix( fmt[i].c->batCacheid );
 	}
 	return bats;
 }

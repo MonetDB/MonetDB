@@ -1690,7 +1690,6 @@ int radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
     va_list ap;
 
     if (limitid) {
-	BBPfix(limitid);
 	limits = BATdescriptor(limitid);
     }
     if (limits && 

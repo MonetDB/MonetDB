@@ -1375,7 +1375,6 @@ static int doCMDfetch(ptr ret, BAT *b, size_t i){
 	    } else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat*) BUNtloc(b, @1);
 		*(BAT**) ret = BATdescriptor(bid);
-		BBPfix(bid);
 	    } else if (_s == 4) {
 		*(int*) ret = *(int*) BUNtail(b, @1);
 	    } else if (_s == 1) {

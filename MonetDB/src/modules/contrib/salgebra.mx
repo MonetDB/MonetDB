@@ -420,7 +420,7 @@ str
 clusterhashName( int batId ) {
   BUN bun;
   str result;
-  BAT *namecache = BATdescriptor( salgebra_namecache );
+  BAT *namecache = BBPdescriptor( salgebra_namecache );
   /* find ch in dictionary */
   MT_set_lock(salgebra_cacheLock, "clusterhashName");
   if (! ( bun = BUNfnd( namecache, &batId )) ) {
@@ -458,8 +458,8 @@ clusterhashByName( clusterhash *res, char *chname  ) {
   BUN bun;
   int batId;
   clusterhash *ch = NULL;
-  BAT *cache = BATdescriptor( salgebra_cache );
-  BAT *namecache = BATdescriptor( salgebra_namecache );
+  BAT *cache = BBPdescriptor( salgebra_cache );
+  BAT *namecache = BBPdescriptor( salgebra_namecache );
   BAT *ncrev = BATmirror( namecache );
   /* find ch in dictionary */
   MT_set_lock(salgebra_cacheLock, "clusterhashByName");
@@ -579,9 +579,9 @@ salgebra_@1It( clusterhash* ch ) {
   int refCnt = 0;
   char *name = NULL;
   int bid = ABS( ch->b );
-  BAT *cache = BATdescriptor( salgebra_cache );
-  BAT *namecache = BATdescriptor( salgebra_namecache );
-  BAT *refcnt = BATdescriptor( salgebra_refcnt );
+  BAT *cache = BBPdescriptor( salgebra_cache );
+  BAT *namecache = BBPdescriptor( salgebra_namecache );
+  BAT *refcnt = BBPdescriptor( salgebra_refcnt );
 @c
 @:cacheManHeader(cache)@
   name = salgebra_CHadmin( ch );
@@ -607,7 +607,7 @@ salgebra_@1It( clusterhash* ch ) {
 int
 salgebra_isCached( int batId ) {
   int bid = ABS( batId );
-  BAT *cache = BATdescriptor( salgebra_cache );
+  BAT *cache = BBPdescriptor( salgebra_cache );
   BUN chbun = BUNfnd( cache, &bid );
   return chbun?TRUE:FALSE;
 }
@@ -619,7 +619,7 @@ salgebra_@1RefCnt( clusterhash *ch ) {
   int refCnt = 0;
   int batId = ABS( ch->b );
   BUN chbun = NULL;
-  BAT *refcnts = BATdescriptor( salgebra_refcnt );
+  BAT *refcnts = BBPdescriptor( salgebra_refcnt );
   MT_set_lock( salgebra_refcntLock, "@1RefCnt" );
   chbun = BUNfnd( refcnts, &batId );
   ERRORcheck( !chbun, "Inconsistency in clusterhash repository...\n" );
@@ -773,7 +773,7 @@ salgebra_mergesort_matches( oid *res, oid *a, int na, oid *b, int nb ) {
 
 int 
 salgebra_collect_matches_imperfect( oid* res, clusterhash* ch, int bucket, ptr v) {
-  BAT *hv = BATdescriptor( ch->hv ), *tv = BATdescriptor( ch->tv );
+  BAT *hv = BBPdescriptor( ch->hv ), *tv = BBPdescriptor( ch->tv );
   oid *hvs = (oid*) BUNfirst( hv );
   int i = 0, j = DICTentry(ch,bucket).s, n = DICTentry(ch,bucket).e - j + 1, nres = 0;
 #ifdef DEBUG
@@ -793,7 +793,7 @@ printf( "cm_imperfect: ch[%d]=<%d,%d>\n", bucket, DICTentry(ch,bucket).s, DICTen
 
 int 
 salgebra_collect_matches_perfect( oid* res, clusterhash* ch, int bucket) {
-  BAT *hv = BATdescriptor( ch->hv );
+  BAT *hv = BBPdescriptor( ch->hv );
   oid *hvs = (oid*) BUNfirst( hv );
   int i = 0, j = DICTentry(ch,bucket).s, n = DICTentry(ch,bucket).e - j + 1;
 #ifdef DEBUG
@@ -845,7 +845,7 @@ salgebra_CMDclusterhash( clusterhash* res, BAT* b) {
     return ret;
   }
   /* retrieve ch from the dictionary */
-  cache = BATdescriptor( salgebra_cache );
+  cache = BBPdescriptor( salgebra_cache );
   MT_set_lock(salgebra_cacheLock, "CMDclusterhash");
   ch = (clusterhash*) BUNtail( cache, BUNfnd( cache, &batId ) );
   memcpy( res, ch, clusterhash_size() );
@@ -862,10 +862,6 @@ salgebra_CMDgetBAT( BAT** res, clusterhash* ch ) {
     GDKerror( "Bat %s is no longer valid.\n", ch->bname );
     return GDK_FAIL;
   }
-  /* now keep it into the cache, 
-     until the user disregards it */
-  BBPfix( ch->b );
-
   return GDK_SUCCEED;
 }
 
@@ -896,7 +892,7 @@ salgebra_CMDrename( clusterhash* ch, str name ) {
   @:CHECKnil(error,FAIL)@
 
   MT_set_lock(salgebra_cacheLock, "rename");
-  namecache = BATdescriptor( salgebra_namecache );
+  namecache = BBPdescriptor( salgebra_namecache );
   ncrev = BATmirror( namecache );
   if ( (bun = BUNfnd( ncrev, name )) ) {
     GDKerror( "A clusterhash with name %s already exists.\n", name );

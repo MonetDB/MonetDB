@@ -204,6 +204,7 @@ tail heaps, so we must conceal the fact that they exist.
 	    }
 	    bf->hheap.base = bf->theap.base = 0;
 	    BATsort_insert(b, bf);
+	    BBPunfix(bm->batCacheid);
 	}
 	BBPreclaim(bn); 
 @-
@@ -282,7 +283,7 @@ int CMDheapclustercopy(BAT *b, BAT* order){
 	}
 	HEAPfree(&b->theap);
 	b->theap = hn;
-	b->batDirtydesc = b->theapdirty = TRUE;
+	b->batDirtybuns = b->batDirtydesc = b->theapdirty = TRUE;
 	return GDK_SUCCEED;
 }
 @}

@@ -209,7 +209,7 @@ void BBP_delete(bat i) {
 other globals
 @c
 int		BBP_curstamp = 0; 	/* unique stamp for creation of a bat */
-MT_Id		BBP_notrim = (MT_Id) 1;	/* avoids BBPtrim when we really do not want it */
+MT_Id		BBP_notrim = (MT_Id) 0;	/* avoids BBPtrim when we really do not want it */
 int		BBP_dirty = 0;		/* BBP structures modified? */
 int		BBPin = 0;		/* bats loaded statistic */
 int		BBPout = 0;		/* bats saved statistic */
@@ -832,13 +832,22 @@ int BBPtransient(bat i, int trans) {
 		}
 		if (pid != locked_by)
 	        	MT_unset_lock(GDKswapLock[i&BBPLOCKMASK], "BBPtransient"); 
-	    	if (!(BBP_status(i)&BBPPERSISTENT) && BBP_lrefs(i) == 0 && BBP_refs(i) == 0)
+	    	if (!(BBP_status(i)&BBPPERSISTENT) && 
+		    !(BBP_status(i)&BBPDELETED) && 
+		    BBP_lrefs(i) == 0 && 
+		    BBP_refs(i) == 0)
 		{
-			BAT *b = (BAT*) BBPquickdesc(i, TRUE);
-			if (BBP_cache(i)) {
+			BAT *b = NULL;
+			if ((b = BBP_cache(i)) != NULL) {
 				if (b->batPersistence != SESSION) BBPfree(b);
-			} else if (b) {
+			} else {
+			    BBP_refs(i)++; /* make sure its not trimmed */
+			    if ((b = (BAT*) BBPquickdesc(i, TRUE)) != NULL) {
+				bat bid = b->batCacheid;
+				BBPclean(b);
 				BATdelete(b); /* was swapped out to disk; remove files */
+				BBPclear(bid); /* de-register from BBP */
+			    }
 			}
 		} 
 	}
@@ -1005,7 +1014,7 @@ Other suffixes are only supported in order just for backward compatibility with
 old repositories (you won't see them anymore in new repositories).
 @c
 int BBPrename(bat bid, str nme) {
-	BAT *b = BATdescriptor(bid);
+	BAT *b = BBPdescriptor(bid);
 	long_str dirname;
 	bat tmpid=0,i;
 
@@ -1063,10 +1072,12 @@ We should keep track of dirty unloaded BATs. They may have to be committed
 later on, which may include reading them in again.
 @
 BBPswappable: may this bat be unloaded?
+Only real bats without memory references can be unloaded. 
 @c
-#define BBPswappable(b) ((b) && BBP_refs((b)->batCacheid) == 0)
-#define BBPtrimmable(b) (BBPswappable(b) && VIEWparent(b) == 0 &&\
-				(BBP_status((b)->batCacheid)&BBPWAITING) == 0)
+#define BBPswappable(b) ((b) && BBP_refs((b)->batCacheid) == 0 &&\
+			VIEWparent(b) == 0 &&\
+			(b)->htype != TYPE_ptr && (b)->ttype != TYPE_ptr &&\
+			(BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 @- 
 The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
@@ -1123,7 +1134,8 @@ int BBPunfix(bat i) {
 			b->batLastused = sec;
 		} 
 		/* unload directly iff bat not in use (but not session bats; they only go in BBPtrim) */
-		if (BBPswappable(b) && !(BBP_lrefs(i)) && b->batPersistence != SESSION) {
+		if (!(BBP_refs(i)) && !(BBP_lrefs(i)) && 
+			b->batPersistence != SESSION) {
 			BBP_status_on(i, BBPUNLOADING, "BBPunfix");
 			swap = i;
 		}
@@ -1249,8 +1261,11 @@ BBPdescriptor checks whether BAT needs loading and does so if necessary.
 @c
 BAT *BBPdescriptor(bat i) {
 	MT_Id pid = MT_getpid_();
+
 	if (BBPcheck(i, "BBPdescriptor")) {
 		BAT *b = BBP_cache(i);
+
+		assert( BBP_refs(i) );
 
 		if (b == NULL) {
 			bat j = ABS(i);
@@ -1259,7 +1274,7 @@ BAT *BBPdescriptor(bat i) {
 			if (BBP_status(j) & BBPLOADING) { /* wait for bat to be loaded by other thread */
 				if (pid != locked_by)
 					MT_unset_lock(GDKswapLock[j&BBPLOCKMASK], "BBPdescriptor"); 
-				BBPspin(j, "BATdescriptor", BBPWAITING);
+				BBPspin(j, "BBPdescriptor", BBPWAITING);
 				b = BBP_cache(i);
 			} else {
 				BBP_status_on(j, BBPLOADING, "BBPdescriptor");
@@ -1268,10 +1283,10 @@ BAT *BBPdescriptor(bat i) {
 
 				b = BATload_intern(i); 
 				BBP_status_off(j, BBPLOADING, "BBPdescriptor");
+				BBPin++;
 			}
 		}
 		if (b) {
-			BBPin++;
 			IODEBUG THRprintf(GDKerr, "load %s\n", BBPname(b->batCacheid)); 
 		}
 		return b;
@@ -1479,7 +1494,8 @@ int BBPfree(BAT *b) {
 	int destroy = (BBP_lrefs(bid)) == 0 && 
 		      (BBP_status(bid)&BBPDELETED) == 0;
 
-	if (!BBPswappable(b)) {
+	if (!b || BBP_refs(bid)) {
+		assert (b && BBP_refs(bid)); 
 		return 0;
 	}
 	if (BBP_lrefs(bid) > 0) {
@@ -1565,7 +1581,7 @@ static bat BBPtrim_scan(int mem, int vm, bat bbppos) {
 	MEMDEBUG THRprintf(GDKerr, "TRIMSCAN: start from scratch\n");
 	for (bbptrimmax = BBPMAXTRIM; bbppos < BBPsize; bbppos++) if (BBP_logical(bbppos)) {
 		BAT *b = BBP_cache(bbppos);
-		if (BBPtrimmable(b) && ((mem && BATmemsize(b,FALSE)) || (vm && BATvmsize(b,FALSE)))) 
+		if (BBPswappable(b) && ((mem && BATmemsize(b,FALSE)) || (vm && BATvmsize(b,FALSE)))) 
 		{
 			bbptrim[bbptrimlast].lastused = b->batLastused;
 			/* treat small BATs with a little preference over big ones (3 secs ahead).
@@ -1616,7 +1632,7 @@ void BBPtrim_select(size_t *memtarget, size_t *vmtarget, int dirty) {
 					VIEWparent(b), b->batLastused, bbptrim[cur].lastused);
 		}
 		/* recheck if conditions encountered by trimscan in the past still hold */
-		if (BBPtrimmable(b) && b->batLastused <= bbptrim[cur].lastused) {
+		if (BBPswappable(b) && b->batLastused <= bbptrim[cur].lastused) {
 			size_t memdelta = BATmemsize(b,FALSE);
 			size_t vmdelta  = BATvmsize(b,FALSE);
 			size_t memdirty = BATmemsize(b,TRUE);
@@ -1684,7 +1700,7 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 	int i, scan;
 	bat start = 1;
 
-	if (BBP_notrim == THRgettid()) return; /* avoid deadlock by one thread going here twice */
+	if (BBP_notrim == THRgettid() || !BBP) return; /* avoid deadlock by one thread going here twice */
 
 	MT_set_lock(GDKtrimLock, "BBPtrim"); 
 	BBP_notrim = THRgettid();
@@ -1835,6 +1851,7 @@ BAT *BBPquickdesc(bat bid, int delaccess) {
                       || b->tacctype || (delaccess && complexatom(b->tatom)))
 	{
                 b = BATload_intern(bid);
+		BBPin++;
         }
         return b;
 }

@@ -806,7 +806,7 @@ Create a new BAT, which will contain the data vector.
 Important! Check whether Santa Claus left the vector under the chimney.
 @c
 	if ((v->vector = BBPindex(v->vector_name)) != 0) {
-	    bn = BATdescriptor(v->vector);
+	    bn = BBPdescriptor(v->vector);
 	    if (!ALIGNsynced(bn, extent)) {
 		GDKwarning("DVbuild: aligning %s and %s..\n", 
 			extent->batId, bn->batId); 
@@ -871,7 +871,7 @@ DVdestroy(
 	if (v == NULL) {
 	    GDKerror("DVdestroy: null vector reference.\n");
 	    return;
-	} else if (BATdescriptor(v->vector) == 0) {
+	} else if (BBPdescriptor(v->vector) == 0) {
 	    GDKerror("DVdestroy: invalid reference %d to vector %s\n",
 		v->vector, v->vector_name);
 	} else {
@@ -932,8 +932,8 @@ DVrepair(
 	    extent_name && *extent_name &&
 	    strcmp(vector_name,v->vector_name) == 0 &&
 	    strcmp(extent_name,v->extent_name) == 0 &&
-	    ALIGNsynced(BATdescriptor(v->vector),
-	    		BATdescriptor(v->extent))) 
+	    ALIGNsynced(BBPdescriptor(v->vector),
+	    		BBPdescriptor(v->extent))) 
 	{
 		return GDK_SUCCEED;	
 	}
@@ -951,7 +951,7 @@ DVextent(
     if (b->tacctype == ACC_datavector) {
 	datavector *v = (datavector*) b->taccelerator.base;
 	BAT *extent;
-	if (v==NULL || v->extent==0 || !(extent=BATdescriptor(v->extent))) {
+	if (v==NULL || v->extent==0 || !(extent=BBPdescriptor(v->extent))) {
 		GDKerror("DVextent: illegal datavector.\n");
 		return GDK_FAIL;
 	}

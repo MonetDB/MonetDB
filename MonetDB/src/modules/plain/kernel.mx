@@ -498,12 +498,11 @@ int CMDbatcast(Cntxt stk, YYSTREE lt, ValPtr res){
         	return -1;
         }
         i = interpret(stk, lt->yysons[0], argv+1);
-	if (i < 0 || argv[1].vtype != TYPE_bat || !BATdescriptor(argv[1].val.bval)) {
+	if (i < 0 || argv[1].vtype != TYPE_bat || !BATdescriptor(bid = argv[1].val.bval)) {
         	GDKerror("[batcast]: first parameter should be a valid bat.\n");
 		return -1;
 	}
-	BBPfix(bid = argv[1].val.bval);
-	i =  interpret_batcast(ATOMname(argv[0].val.ival), 2, argv, res);
+	i = interpret_batcast(ATOMname(argv[0].val.ival), 2, argv, res);
 	BBPunfix(bid);
 	return i;
 }
@@ -1053,8 +1052,8 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 	@:builtin_operand(0, TYPE_str, p)@
 	v = *res;
 	@:builtin_operand(1, TYPE_bat, q)@
+	bid = *(bat*)q;
 
-	BBPfix(bid = *(bat*) q);
 	b = BATdescriptor(bid);
 	if (b == NULL) {
 		GDKerror("CMDcall: wrong BAT parameter %s.\n", b->batId); 
@@ -1077,9 +1076,6 @@ int CMDcall(Cntxt stk, YYSTREE lt, ValPtr res){
 			if (i < 0) {
 				GDKerror("CMDcall: wrong value %s(%s).\n", BUNhvar(b,p), BUNtvar(b,p));
 				break;
-			}
-			if (res->vtype == TYPE_bat) {
-				BBP_refs(res->val.bval)--; /* undo the cast fix */
 			}
 		} else {
 			v.vtype = BATttype(b);

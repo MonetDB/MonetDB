@@ -515,15 +515,18 @@ if trees are more than 2-deep.
 #define GARBAGE(x)\
 if (x->dealloc) {\
     if (x->dealloc == TYPE_bat) {\
+      if (x->free.batref.id != bat_nil){\
 	BAT* _b = BATdescriptor(x->free.batref.id);\
         if (_b == NULL) {\
 		GDKerror("yyclean: BAT %d GONE\n", x->free.batref.id);\
 	} else if (ABS(x->free.batref.stamp) != ABS(_b->batStamp)) {\
 		GDKerror("yyclean: BAT %d OVERWRITTEN (stamp %d != %d)\n", x->free.batref.id,\
-			BATdescriptor(x->free.batref.id)->batStamp, x->free.batref.stamp);\
+			BBPdescriptor(x->free.batref.id)->batStamp, x->free.batref.stamp);\
 	} else {\
 		ATOMunfix(x->dealloc, &x->free.batref.id);\
 	}\
+	BBPunfix(x->free.batref.id); \
+      }\
     } else {\
 	ATOMunfix(x->dealloc, x->free.atmref);\
 	if (ATOMextern(x->dealloc)) GDKfree(x->free.atmref);\
@@ -557,7 +560,8 @@ if (x->dealloc) {\
 		lt->dealloc = res->vtype;\
 		lt->free.atmref = res->val.pval;\
 	} else if (res->vtype == TYPE_bat) {\
-		BAT* _b = BATdescriptor(res->val.bval);\
+		bat bid = res->val.bval; \
+		BAT* _b = BBPdescriptor(res->val.bval);\
 		if (_b != NULL) {\
 			int _newbat = (_b->batStamp > stamp);\
 			if (_newbat == FALSE) {\
@@ -577,6 +581,7 @@ if (x->dealloc) {\
 					 _b->batCacheid, _b->batStamp);\
 			}\
 		}\
+		assert((BBP_refs(bid) + BBP_lrefs(bid)) >= 1); \
 		BBPpersistent(res->val.bval, FALSE); \
 		BBPunfix(res->val.bval); \
 	}
@@ -587,6 +592,7 @@ if (x->dealloc) {\
 		if (res->vtype == TYPE_bat) {\
 		    BAT* _b = BATdescriptor(res->val.bval);\
 		    if (_b) lt->free.batref.stamp = _b->batStamp;\
+		    BBPunfix(res->val.bval); \
 		}\
 		x = 0;\
 	}

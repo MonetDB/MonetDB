@@ -1586,8 +1586,8 @@ obtained using @%BBPcacheid@.
 The @%BBPindex@ routine checkes if a BAT with a certain name is
 registered in the buffer pools. If so, it returns its BAT id.
 The @%BATdescriptor@ routine has a  BAT id parameter, and returns 
-a pointer to the corresponding BAT record.
-The BAT will be loaded into memory, if necessary.
+a pointer to the corresponding BAT record (after incrementing the reference 
+count). The BAT will be loaded into memory, if necessary.
 @
 @{
 The structure of the BBP file obeys the tuple format for GDK. 
@@ -2264,7 +2264,9 @@ static INLINE bat BBPcheck(REGISTER bat x, REGISTER str y) {
 
 static INLINE BAT* BATdescriptor(REGISTER bat i) {
 	REGISTER BAT *b = NULL;
+
 	if (BBPcheck(i,"BATdescriptor")) {
+		BBPfix(i);
 		b = BBP_cache(i);
 		if (b == NULL) b = BBPdescriptor(i);
 	}

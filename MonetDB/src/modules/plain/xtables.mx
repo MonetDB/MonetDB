@@ -258,6 +258,7 @@ The cross tables are checked using the scripts defined below.
 #	 major test script on xtable functionality
 
 proc xtable_print := {
+    i := 0;
     printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
                 $2, $3.count, $1.count, $3.batsize);
     table($1.col_name("count"), $(4..));
@@ -455,7 +456,7 @@ CTbuild_hl(
         BAT *h = NULL;
  
         if (histo) {
-                h = BATdescriptor(histo);
+                h = BBPdescriptor(histo);
         }
         if (h == NULL) {
                 h = BAThistogram(BATmirror(b));
@@ -469,7 +470,7 @@ CTbuild_hl(
         	h->hsorted = BAThordered(b);
         	h->tsorted = 0;
         	if (BATcount(h) == BATcount(b)) {
-                	ALIGNsetH(h,b);
+                	ALIGNsetH(h,BATmirror(b));
         	}
 	}
 	if (strncmp(BBPname(histo), "tmp_", 4) == 0) {
@@ -502,7 +503,7 @@ CTcheck_hl(
 
         if (hl == 0 || hl->histogram == 0 || ABS(hl->histogram) >= BBPsize ||
 		BBP_logical(ABS(hl->histogram)) == NULL || 
-		(h=BATdescriptor(hl->histogram)) == NULL) 
+		(h=BBPdescriptor(hl->histogram)) == NULL) 
 	{
 		GDKwarning("CTcheck_hl: histogram disappeared!");
 		return GDK_FAIL;
@@ -547,10 +548,11 @@ CThistogram(
 		return GDK_SUCCEED;
 	} 
 	if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
-		ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
+		if (b->tacctype) 
+			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
 		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
 	}
-	*h = VIEWcreate(BATdescriptor(((histolink*) b->taccelerator.base)->histogram));
+	*h = VIEWcreate(BBPdescriptor(((histolink*) b->taccelerator.base)->histogram));
 	return GDK_SUCCEED;
 }
 
@@ -567,10 +569,12 @@ CTtunique(
 		return GDK_SUCCEED;
 	} 
         if (b->tacctype != ACC_histolink || CTcheck_hl(&b->taccelerator,b) == GDK_FAIL) {
-		ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
+
+		if (b->tacctype) 
+			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
 		CTbuild_hl(&b->taccelerator, NULL, BATmirror(b));
 	}
-	*h = VIEWhead(BATdescriptor(((histolink*) b->taccelerator.base)->histogram));
+	*h = VIEWhead(BBPdescriptor(((histolink*) b->taccelerator.base)->histogram));
 
         return GDK_SUCCEED;
 }
@@ -951,7 +955,6 @@ CTmultigroup(
 		} else {
 			bid = *(bat*)BUNhloc(bm,p);
 		}
-		BBPfix(bid);
 		b = BATdescriptor(bid);
 
 		error = (b == NULL || ATOMtype(b->htype) != TYPE_oid);
@@ -981,7 +984,6 @@ CTmultigroup(
 		} else {
 			bid = *(bat*)BUNhloc(bm,p);
 		}
-		BBPfix(bid);
 		b = BATdescriptor(bid);
 		if (tt != ATOMstorage(TYPE_oid)) {
 			ct = BATnew(b->htype, TYPE_oid, BATcount(b));
@@ -1148,6 +1150,9 @@ int derive(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 int regroup(BAT** retval, BAT* ct, BAT* b, int tt, map_T *m) {
 	BBPfix(ct->batCacheid);
 	*retval = BATsetaccess(ct, BAT_WRITE);
+	(*retval)->batDirty = 1;
+        (*retval)->batDirtybuns = 1;
+        (*retval)->batDirtydesc = 1;
 	return derive(retval, ct, b, tt, m);
 }
 
@@ -1192,13 +1197,11 @@ BAT *multiderive(BAT* bm, int overwrite) {
 		} else {
 			cid = *(bat*)BUNhloc(bm,p);
 		}
-		BBPfix(cid);
 		if (bm->ttype == TYPE_str) {
 			bid = BBPindex((str)BUNtail(bm,p));
 		} else {
 			bid = *(bat*)BUNtloc(bm,p);
 		}
-		BBPfix(bid);
 		ct = BATdescriptor(cid);
 		b = BATdescriptor(bid);
 
@@ -1246,13 +1249,11 @@ BAT *multiderive(BAT* bm, int overwrite) {
 		} else {
 			cid = *(bat*)BUNhloc(tmp,r);
 		}
-		BBPfix(cid);
 		if (bm->ttype == TYPE_str) {
 			bid = BBPindex((str)BUNtail(bm,p));
 		} else {
 			bid = *(bat*)BUNtloc(bm,p);
 		}
-		BBPfix(bid);
 		ct = BATdescriptor(cid);
 		b = BATdescriptor(bid);
 
@@ -1364,8 +1365,8 @@ int CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom) {
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	strcpy(bn->hatom, "oid");
-	/* assert(offsetof(idxentry_t,hcur) == 0); */
-	ALIGNsetH(bn, dom);
+	/* assert(offsetof(idxentry_t,hcur) == 0); 
+	ALIGNsetH(bn, dom); */
 
         /* add the counts for this selection using the hash table */
 	zz = BUNsize(sel);
