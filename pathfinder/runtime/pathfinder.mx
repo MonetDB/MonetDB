@@ -592,12 +592,12 @@ PROC compress_val(str batname) : bat[void,oid]
 {
     var bat1 := bat(batname);
     bat1.access(BAT_WRITE); # to avoid bat view for 'bat1'
-    var gro := CTgroup(bat1).CTmap();
-    var unq := gro.tunique().mark(0@0).reverse();
+    var gro := CTgroup(bat1);
+    var unq := gro.CTextend().mark(0@0).reverse();
 
     { var tmp := unq.join(bat1); bat1.delete().insert(tmp).access(BAT_READ); }
 
-    return gro.join(unq.reverse());
+    return gro.CTmap().join(unq.reverse());
 }
 
 # called by compress_properties
@@ -607,13 +607,13 @@ PROC compress_val(str batname1, str batname2) : bat[void,oid]
     var bat2 := bat(batname2);
     bat1.access(BAT_WRITE); # to avoid bat view for 'bat1'
     bat2.access(BAT_WRITE); # to avoid bat view for 'bat2'
-    var gro := CTgroup(bat1).CTmap().CTgroup(bat2).CTmap();
-    var unq := gro.tunique().mark(0@0).reverse(); # void,new-oid 
+    var gro := CTgroup(bat1).CTmap().CTgroup(bat2);
+    var unq := gro.CTextend().mark(0@0).reverse(); # void,new-oid 
 
     { var tmp := unq.join(bat1); bat1.delete().insert(tmp).access(BAT_READ); }
     { var tmp := unq.join(bat2); bat2.delete().insert(tmp).access(BAT_READ); }
  
-    return gro.leftjoin(unq.reverse());
+    return gro.CTmap().leftjoin(unq.reverse());
 }
 
 PROC compress_properties(str name) : void
