@@ -15,7 +15,7 @@ extern catalog *catalog_create_stream( stream *s, context *lc );
 void usage( char *prog ){
 	fprintf(stderr, "sql_client\n");
 	fprintf(stderr, "\toptions:\n");
-	fprintf(stderr, "\t\t -d [level]  | --debug=level\n"); 
+	fprintf(stderr, "\t\t -d          | --debug=[level]\n"); 
 	fprintf(stderr, "\t\t -h hostname | --host=hostname  /* host to connect to */\n");
 	fprintf(stderr, "\t\t -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, "\t\t -s schema   | --schema=schema  /* schema to use */\n");
