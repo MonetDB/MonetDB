@@ -40,7 +40,7 @@ stdout of test 'no.150` in directory 'tests/BugReports` itself:
 
 setoid(oid(20000000));
 module("jabberwocky");
-!ERROR: DL_open: No such file or directory.
+!ERROR: DL_open: library not found.
 !ERROR: TBL_loadmod: module load jabberwocky cancelled.
 !ERROR: module(jabberwocky): load error.
 quit;
