@@ -729,6 +729,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_DBB80DFCB34F4739B5741D85C065A818"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_DC6087F4323C49E9B6214D05D45978F5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -863,6 +869,34 @@
     {
         "CustomAction"
         {
+            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_61D845779C7A4434AD6503D8B80B6959"
+            {
+            "Name" = "8:install.exe"
+            "Condition" = "8:"
+            "Object" = "8:_DBB80DFCB34F4739B5741D85C065A818"
+            "FileType" = "3:2"
+            "InstallAction" = "3:1"
+            "Arguments" = "8:/Install"
+            "EntryPoint" = "8:"
+            "Sequence" = "3:1"
+            "Identifier" = "8:_B77DB523_BB84_4EC0_9269_74096102D783"
+            "InstallerClass" = "11:FALSE"
+            "CustomActionData" = "8:"
+            }
+            "{0C9D821E-95BB-411F-BE03-2864360EBF94}:_A91AB27964B4442A80611A52D3F749F9"
+            {
+            "Name" = "8:install.exe"
+            "Condition" = "8:"
+            "Object" = "8:_DBB80DFCB34F4739B5741D85C065A818"
+            "FileType" = "3:2"
+            "InstallAction" = "3:4"
+            "Arguments" = "8:/Uninstall"
+            "EntryPoint" = "8:"
+            "Sequence" = "3:1"
+            "Identifier" = "8:_73DDF92A_C84C_488A_9D37_284DBBF3D611"
+            "InstallerClass" = "11:FALSE"
+            "CustomActionData" = "8:"
+            }
         }
         "DefaultFeature"
         {
@@ -3241,6 +3275,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_DBB80DFCB34F4739B5741D85C065A818"
+            {
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\src\\odbc\\setup\\install.exe"
+            "TargetName" = "8:install.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_DC6087F4323C49E9B6214D05D45978F5"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_mapi.dll"
@@ -3736,23 +3790,23 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:MonetDB Installer"
-        "ProductCode" = "8:{1B4BCA1E-ADC5-42F2-A994-935BB08CF00D}"
-        "PackageCode" = "8:{162AD155-E73C-499D-BA1C-B3C2078709A2}"
+        "ProductName" = "8:MonetDB"
+        "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
+        "PackageCode" = "8:{7598D7C5-D11E-4709-B426-BC66403EEEA3}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:4.3.19"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
-        "ARPHELPLINK" = "8:"
-        "Title" = "8:MonetDB Installer"
+        "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
+        "Title" = "8:MonetDB"
         "Subject" = "8:"
         "ARPCONTACT" = "8:CWI"
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:"
-        "ARPURLINFOABOUT" = "8:"
+        "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl"
         "ARPPRODUCTICON" = "8:"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
