@@ -223,7 +223,7 @@ query has been successfully executed.
 extern backend *backend_create( int trace, mvc *c );
 extern void backend_destroy( backend *b );
 
-extern int sqlcleanup( mvc *c, int err, int cache);
+extern int sqlcleanup( mvc *c, int err );
 extern stmt *sql_symbol2stmt( mvc *c );
 #endif /* _SQL_H */
 
@@ -280,13 +280,12 @@ After the SQL statement has been executed, its data structures
 should be garbage collected. For successful actions we have to finish
 the transaction as well, e.g. commit or rollback.
 @c
-int sqlcleanup( mvc *c, int err, int cache)
+int sqlcleanup( mvc *c, int err )
 {
         sql_destroy_params(c);
         sql_destroy_args(c);
 
         /* some statements dynamically disable caching */
-        c->cache = cache;
         if (c->sym) {
                 symbol_destroy(c->sym);
                 c->sym = NULL;

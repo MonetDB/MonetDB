@@ -89,37 +89,35 @@ Over..
 # 7 # id
 [ 15	]
 # 3 # querytype
-# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
-# id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
-# mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean,	decimal # type
-# 0,	10,	0,	125,	0,	0,	0,	0 # length
-# 24,	,	,	,	,	,	,	 # tuplecount
-# 9,	,	,	,	,	,	,	 # id
-[ 1005868,	"modules",	1005858,	"",	true,	true,	false,	0	]
-[ 1005919,	"schemas",	1005858,	"",	true,	true,	false,	0	]
-[ 1005923,	"ptables",	1005858,	"",	true,	true,	false,	0	]
-[ 1005931,	"pcolumns",	1005858,	"",	true,	true,	false,	0	]
-[ 1005941,	"keys",	1005858,	"",	true,	true,	false,	0	]
-[ 1005947,	"idxs",	1005858,	"",	true,	true,	false,	0	]
-[ 1005952,	"keycolumns",	1005858,	"",	true,	true,	false,	0	]
-[ 1005957,	"types",	1005858,	"",	true,	true,	false,	0	]
-[ 1005965,	"ttables",	1005858,	"",	true,	true,	true,	0	]
-[ 1006003,	"tcolumns",	1005858,	"",	true,	true,	true,	0	]
-[ 1006051,	"db_users",	1005858,	"",	true,	true,	false,	0	]
-[ 1006074,	"user_role",	1005858,	"",	true,	true,	false,	0	]
-[ 1006097,	"auths",	1005858,	"",	true,	true,	false,	0	]
-[ 1006115,	"privileges",	1005858,	"",	true,	true,	false,	0	]
-[ 1006143,	"history",	1005858,	"",	true,	true,	false,	0	]
-[ 1006181,	"sessions",	1005858,	"",	true,	true,	true,	0	]
-[ 1006204,	"env",	1005858,	"",	true,	true,	false,	0	]
-[ 1006217,	"tables",	1005858,	"select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;",	false,	true,	false,	0	]
-[ 1006226,	"columns",	1005858,	"select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;",	false,	true,	false,	0	]
-[ 1006236,	"users",	1005858,	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false,	0	]
-[ 1009330,	"foo",	1005858,	"",	true,	false,	false,	0	]
-[ 1009468,	"ff",	1005858,	"",	true,	false,	false,	0	]
-[ 1009605,	"c1009604",	1005858,	"",	true,	false,	false,	1	]
-[ 1009649,	"c1009648",	1005858,	"",	true,	false,	false,	1	]
-[ 1009692,	"tables",	1005858,	"",	true,	false,	false,	1	]
+# ptables,	ptables,	ptables,	ptables,	ptables # table_name
+# name,	query,	istable,	system,	clear # name
+# varchar,	varchar,	boolean,	boolean,	boolean # type
+# 10,	133,	0,	0,	0 # length
+# 23,	,	,	,	 # tuplecount
+# 9,	,	,	,	 # id
+[ "modules",	NULL,	true,	true,	false	]
+[ "schemas",	NULL,	true,	true,	false	]
+[ "ptables",	NULL,	true,	true,	false	]
+[ "pcolumns",	NULL,	true,	true,	false	]
+[ "keys",	NULL,	true,	true,	false	]
+[ "idxs",	NULL,	true,	true,	false	]
+[ "keycolumns",	NULL,	true,	true,	false	]
+[ "types",	NULL,	true,	true,	false	]
+[ "ttables",	NULL,	true,	true,	true	]
+[ "tcolumns",	NULL,	true,	true,	true	]
+[ "db_users",	NULL,	true,	true,	false	]
+[ "user_role",	NULL,	true,	true,	false	]
+[ "auths",	NULL,	true,	true,	false	]
+[ "privileges",	NULL,	true,	true,	false	]
+[ "history",	NULL,	true,	true,	false	]
+[ "sessions",	NULL,	true,	true,	true	]
+[ "env",	NULL,	true,	true,	false	]
+[ "sequences",	NULL,	true,	true,	false	]
+[ "tables",	"select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;",	false,	true,	false	]
+[ "columns",	"select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;",	false,	true,	false	]
+[ "users",	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false	]
+[ "foo",	NULL,	true,	false,	false	]
+[ "ff",	NULL,	true,	false,	false	]
 # 6 # querytype
 # 7 # querytype
 # 6 # querytype
@@ -167,38 +165,36 @@ Over..
 # 7 # querytype
 # 7 # querytype
 # 3 # querytype
-# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
-# id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
-# mediumint,	varchar,	mediumint,	varchar,	boolean,	boolean,	boolean,	decimal # type
-# 0,	10,	0,	125,	0,	0,	0,	0 # length
-# 25,	,	,	,	,	,	,	 # tuplecount
-# 15,	,	,	,	,	,	,	 # id
-[ 1005868,	"modules",	1005858,	"",	true,	true,	false,	0	]
-[ 1005919,	"schemas",	1005858,	"",	true,	true,	false,	0	]
-[ 1005923,	"ptables",	1005858,	"",	true,	true,	false,	0	]
-[ 1005931,	"pcolumns",	1005858,	"",	true,	true,	false,	0	]
-[ 1005941,	"keys",	1005858,	"",	true,	true,	false,	0	]
-[ 1005947,	"idxs",	1005858,	"",	true,	true,	false,	0	]
-[ 1005952,	"keycolumns",	1005858,	"",	true,	true,	false,	0	]
-[ 1005957,	"types",	1005858,	"",	true,	true,	false,	0	]
-[ 1005965,	"ttables",	1005858,	"",	true,	true,	true,	0	]
-[ 1006003,	"tcolumns",	1005858,	"",	true,	true,	true,	0	]
-[ 1006051,	"db_users",	1005858,	"",	true,	true,	false,	0	]
-[ 1006074,	"user_role",	1005858,	"",	true,	true,	false,	0	]
-[ 1006097,	"auths",	1005858,	"",	true,	true,	false,	0	]
-[ 1006115,	"privileges",	1005858,	"",	true,	true,	false,	0	]
-[ 1006143,	"history",	1005858,	"",	true,	true,	false,	0	]
-[ 1006181,	"sessions",	1005858,	"",	true,	true,	true,	0	]
-[ 1006204,	"env",	1005858,	"",	true,	true,	false,	0	]
-[ 1006217,	"tables",	1005858,	"select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;",	false,	true,	false,	0	]
-[ 1006226,	"columns",	1005858,	"select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;",	false,	true,	false,	0	]
-[ 1006236,	"users",	1005858,	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false,	0	]
-[ 1009330,	"foo",	1005858,	"",	true,	false,	false,	0	]
-[ 1009468,	"ff",	1005858,	"",	true,	false,	false,	0	]
-[ 1009946,	"s4",	1005858,	"",	true,	false,	false,	0	]
-[ 1010687,	"c1010686",	1005858,	"",	true,	false,	false,	1	]
-[ 1010731,	"c1010730",	1005858,	"",	true,	false,	false,	1	]
-[ 1010774,	"tables",	1005858,	"",	true,	false,	false,	1	]
+# ptables,	ptables,	ptables,	ptables,	ptables # table_name
+# name,	query,	istable,	system,	clear # name
+# varchar,	varchar,	boolean,	boolean,	boolean # type
+# 10,	133,	0,	0,	0 # length
+# 24,	,	,	,	 # tuplecount
+# 15,	,	,	,	 # id
+[ "modules",	NULL,	true,	true,	false	]
+[ "schemas",	NULL,	true,	true,	false	]
+[ "ptables",	NULL,	true,	true,	false	]
+[ "pcolumns",	NULL,	true,	true,	false	]
+[ "keys",	NULL,	true,	true,	false	]
+[ "idxs",	NULL,	true,	true,	false	]
+[ "keycolumns",	NULL,	true,	true,	false	]
+[ "types",	NULL,	true,	true,	false	]
+[ "ttables",	NULL,	true,	true,	true	]
+[ "tcolumns",	NULL,	true,	true,	true	]
+[ "db_users",	NULL,	true,	true,	false	]
+[ "user_role",	NULL,	true,	true,	false	]
+[ "auths",	NULL,	true,	true,	false	]
+[ "privileges",	NULL,	true,	true,	false	]
+[ "history",	NULL,	true,	true,	false	]
+[ "sessions",	NULL,	true,	true,	true	]
+[ "env",	NULL,	true,	true,	false	]
+[ "sequences",	NULL,	true,	true,	false	]
+[ "tables",	"select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;",	false,	true,	false	]
+[ "columns",	"select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;",	false,	true,	false	]
+[ "users",	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false	]
+[ "foo",	NULL,	true,	false,	false	]
+[ "ff",	NULL,	true,	false,	false	]
+[ "s4",	NULL,	true,	false,	false	]
 # 6 # querytype
 # 4 # querytype
 #  # table_name
@@ -288,6 +284,7 @@ Over..
 [ "history",	1,	2,	3	]
 [ "sessions",	1,	2,	3	]
 [ "env",	1,	2,	3	]
+[ "sequences",	1,	2,	3	]
 [ "tables",	1,	2,	3	]
 [ "columns",	1,	2,	3	]
 [ "users",	1,	2,	3	]
@@ -295,9 +292,6 @@ Over..
 [ "ff",	1,	2,	3	]
 [ "s4",	1,	2,	3	]
 [ "r",	1,	2,	3	]
-[ "c1012650",	1,	2,	3	]
-[ "c1012694",	1,	2,	3	]
-[ "tables",	1,	2,	3	]
 
 # 16:14:57 >  
 # 16:14:57 >  Done.

@@ -284,7 +284,7 @@ prepare the intermediate code.
 @c
 str SQLparser(Client c) {
 	str msg=0;
-	int debug=0, err=0,cache= 0,len;
+	int debug=0, err=0,len;
 	backend *be;
 	mvc *m;
 	MalBlkRecord oldstate;
@@ -303,8 +303,6 @@ str SQLparser(Client c) {
 
         m->type = Q_PARSE;
 
-        cache = m->cache;
-
         if (!m->trans)
                 mvc_trans(m);
 
@@ -319,9 +317,8 @@ str SQLparser(Client c) {
 		stream_printf(c->fdout,"#%s\n", m->errstr);
 		*m->errstr=0;
 		msg= throwMessage("SQLparser","Parser errors\n");
-                sqlcleanup(m, err, cache);
+                sqlcleanup(m, err);
         }
-	/*len= strlen(m->scanner.buf);*/
 	len = m->scanner.yycur;
 	c->nxt += len;
 @-
@@ -336,7 +333,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
                 if (!s && (err = mvc_status(m)) ){
 			stream_printf(c->fdout,"#%s\n", m->errstr);
 			*m->errstr=0;
-                        sqlcleanup(m, err, cache);
+                        sqlcleanup(m, err);
 			msg= throwMessage("SQLparser","Semantic errors\n");
 			goto finalize;
                 }
@@ -361,12 +358,8 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 #ifdef _SQL_PARSER_DEBUG
 	else stream_printf(GDKout,"parse result %d\n",err);
 #endif
-	if( be->q ) {
-		char name[BUFSIZ];
-
-		(void)snprintf( name, BUFSIZ, "sql%d", be->q->id);
-		backend_call(be, c, name, m->args );
-	}
+	if( be->q ) 
+		backend_call(be, c, be->q->id, m->args );
 @-
 In the final phase we add any debugging control
 @c
@@ -380,7 +373,7 @@ In the final phase we add any debugging control
 		pushInstruction(c->curprg->def,q);
 	}
 
-        sqlcleanup(m, err, cache);
+        sqlcleanup(m, err);
 @-
 During the execution of the query exceptions can be raised.
 The default action is to print them out at the end of the
