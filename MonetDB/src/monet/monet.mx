@@ -258,13 +258,11 @@ static void getoptions(int argc, char **argv){
 The client threads are already killed upon closing their input file.
 The server process interpreter is directly killed.
 @c
-void monet_exit() {
-        PARDEBUG THRprintf(GDKerr, "exit from main process\n");
-        GDKexit();
-}
 
 @- Monet Init
 Startup the monet server by preparing the argument list for the GDK kernel.
+Subsequently initialize the administrator client and process the
+command line initialization files.
 
 @c
 void monet_init(int argc, char **argv ){
@@ -285,18 +283,10 @@ void monet_init(int argc, char **argv ){
         monet_hello();
 	if( mal_init()) return;
 
-        for(i=0; monet_script[i]; i++)
-                prg = malImport(monet_script[i],mal_listing,0);
-	closeClientMain(getClient());
-	if( mal_listing )
-		printFunction(stdout,getClient()->mainprg->def);
-
-        if( prg ) {
-                str msg= runMAL(getClient(),prg->def,0);
-		if( msg && msg != (str) GDK_SUCCEED) printf(msg);
-        }
-	mal_exit(getClient());
-        freeAllSymbols();
+        for(i=0; monet_script[i]; i++) {
+                malImport(monet_script[i],mal_listing,0);
+	}
+	serveClient(mal_clients);
 }
 
 @* Example Monet Library Application 
@@ -318,7 +308,6 @@ main(int argc, char** argv){
     monet_init(argc, argv);
  /*   monet_eval(mil_string,&restype);*/
     mal_exit();
-    monet_exit();
 }
 #endif
 @
