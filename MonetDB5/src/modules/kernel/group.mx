@@ -115,7 +115,9 @@ command regroup(ct:bat[:any$2,:oid],
 address CTregroup
 comment "Performs a regrouping, modifying ct doing a group";
 
-command refine(b:bat[:any$2,:any], a:bat[:any$2,:any]) :bat[:any$2,:oid] 
+command refine(b:bat[:any$2,:any], 
+		a:bat[:any$2,:any]) 
+	:bat[:any$2,:oid] 
 address CTrefine
 comment "refine the ordering of a tail-ordered 
 	 BAT by sub-ordering on the values of a 

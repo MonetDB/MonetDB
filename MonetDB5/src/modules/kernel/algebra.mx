@@ -68,90 +68,80 @@ comment "Returns the tail value 't' for which
 	some [h,t] BUN exists in b.  If no such
 	BUN exists, an error occurs." ;
 
-command position(b:bat[:any$1,:any],val:any$1):int
+command position(b:bat[:any$1,:any],
+		v:any$1):int
 address CMDposition
-comment "Returns BAT position [0.. b.count $>$
-	of a 'val' in the head column of b. 
-	Returns an error if 'val' does not exist.";
+comment "Returns BAT position [0.. b.count]
+	of 'v' in the head column of b. It
+	Return an error if 'v' does not exist.";
 
 command position(b:bat[:any$1,:any$2], 
 		val:any$1, tval:any$2) :int 
 address CMDpositionBUN
-comment "Returns the BAT position e [0..b.count$>$
-	 of a 'val' in the head column of b.  It 
-	returns an error if 'val' does not exist.";
+comment "Returns the position of the value pair
+	 It returns an error if 'val' does not 
+	exist.";
 
 command fetch(b:bat[:any,:any$1], x:oid) :any$1 
 address CMDfetchoid
-comment "Returns the tail value of the BUN at the 
+comment "Returns the tail value of the BUN at 
 	 x-th position with 0 <= x < b.count";
 command fetch(b:bat[:any,:any$1], x:lng) :any$1 
 address CMDfetch
 comment "Returns the tail value of the BUN at 
-	 the x-th position with 0 <= x < b.count";
+	 x-th position with 0 <= x < b.count";
 
 @+ BAT Selections
 @- positional select
 @mal
-command fetch(b:bat[:any$1,:any$2], s:bat[:int,:any])
+command fetch(b:bat[:any$1,:any$2], 
+		s:bat[:int,:any])
 	:bat[:any$1,:any$2] 
 address CMDfetchbat
-comment "Returns a positional selection of b by the 
-	 integer head values of s";
-command fetch(b:bat[:any$1,:any$2],s:bat[:lng,:any] ) 
+comment "Returns a positional selection of b 
+	by the integer head values of s";
+command fetch(b:bat[:any$1,:any$2],
+		s:bat[:lng,:any] ) 
 	:bat[:any$1,:any$2] 
 address CMDfetchbat
-comment "Returns a positional selection of b by the 
-	integer head values of s";
-command fetch(b:bat[:any$1,:any$2],s:bat[:oid,:any]) 
+comment "Returns a positional selection of b 
+	by the integer head values of s";
+command fetch(b:bat[:any$1,:any$2],
+		s:bat[:oid,:any]) 
 	:bat[:any$1,:any$2] 
 address CMDfetchbat
-comment "Returns a positional selection of b by the 
-	oid head values of s";
-@- range select
+comment "Returns a positional selection of b 
+	by the oid head values of s";
+@- Range selections
 @mal
 command select (b:bat[:any$1,:any$2], low:any$2, 
 	high:any$2) :bat[:any$1,:any$2] 
 address CMDselect
-comment "Select all BUNs of a BAT that have tail 
+comment "Select all BUNs that have tail 
 	values: {v| low <= v <= high}.
 NIL boundary values have a special meaning.
 + low  == nil means: no lower bound
 + high == nil means: no upper bound.
 
-NOTE 1: you should cast the nil to the appropriate 
-	type, e.g. int(nil) in order to cirumvent 
-	type clashes.
-NOTE 2: as the 'nil' element has no clear place in 
-	the ordered domain of values, tuples with 
-	'nil' values are NEVER returned by the
-        range select.";
-@- unary range select
-@mal
-command uselect (b:bat[:any$1,:any$2], low:any$2, 
-	high:any$2) :bat[:any$1,:void] 
-address CMDuselect
-comment "Select on tail, returning only the head 
-	values. SEE ALSO: select(bat,low,high).";
-@- value select
-@mal
-command select ( b:bat[:any$1,:any$2], value:any$2)
+NOTE 1: you should cast the nil to the 
+	appropriate type, e.g. int(nil) in 
+	order to cirumvent type clashes.
+NOTE 2: as the 'nil' element has no clear place 
+	in the ordered domain of values, tuples 
+	with 'nil' values are NEVER returned by 
+	the range select.";
+command select(b:bat[:any$1,:any$2],value:any$2)
 		:bat[:any$1,:any$2] 
 address CMDselect1
 comment "Select all BUNs of a BAT with a certain 
-	tail value. Selection on NIL is also possible 
-	(it should be properly casted, e.g.:int(nil)).";
-@- unary value select
-@mal
-command uselect ( b:bat[:any$1,:any$2], 
-		value:any$2) :bat[:any$1,:void] 
-address CMDuselect1
-comment "Value select, but returning only the 
-	head values. SEE ALSO:select(bat,val)";
-@mal
+	tail value. Selection on NIL is also 
+	possible (it should be properly casted, 
+	e.g.:int(nil)).";
+
 command fragment ( b:bat[:any$1,:any$2],
-	hlow:any$1, hhigh:any$1,
-	tlow:any$2, thigh:any$2 ) :bat[:any$1,:any$2] 
+		hlow:any$1, hhigh:any$1,
+		tlow:any$2, thigh:any$2 ) 
+	:bat[:any$1,:any$2] 
 address CMDfragment
 comment "Select both on head and tail range.";
 command slice(b:bat[:any$1,:any$2], 
@@ -159,30 +149,46 @@ command slice(b:bat[:any$1,:any$2],
 address CMDslice
 comment "Return the slice with the BUNs at 
 	position x till y.";
-@- random selection
+@- Select and project
+@mal
+command uselect(b:bat[:any$1,:any$2], 
+		low:any$2, high:any$2) 
+	:bat[:any$1,:void] 
+address CMDuselect
+comment "Select on tail, returning only the head 
+	values. SEE ALSO: select(bat,low,high).";
+command uselect(b:bat[:any$1,:any$2], 
+	value:any$2) :bat[:any$1,:void] 
+address CMDuselect1
+comment "Value select, but returning only the 
+	head values. SEE ALSO:select(bat,val)";
+@- Random sampling
 @mal
 command sample ( b:bat[:any$1,:any$2], num:int ) 
 		:bat[:any$1,:any$2] 
 address CMDsample
 comment "Produce a random selection of size 'num' 
 	from the input BAT.";
-@- substring select
+@- Substring selection
 @mal
-command like ( b:bat[:any$1,:str], substr:str) 
+command like(b:bat[:any$1,:str], substr:str) 
 	:bat[:any$1,:str] 
 address CMDlike
-comment "Selects all elements from the input BAT 
-	that have 'substr' as substring in the tail.";
+comment "Selects all elements that have 
+	'substr' as in the tail.";
 @+ BAT copying
 @mal
-command copy( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command copy( b:bat[:any$1,:any$2]) 
+	:bat[:any$1,:any$2] 
 address CMDcopy
 comment "Returns physical copy of a BAT.";
 @- sorted copy
 @mal
-command sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command sort( b:bat[:any$1,:any$2]) 
+	:bat[:any$1,:any$2] 
 address CMDsort
-comment "Returns a BAT copy sorted on the head column.";
+comment "Returns a BAT copy sorted on 
+	the head column.";
 
 #command sort_ht( b:bat[:any$1,:any$2]) 
 #		:bat[:any$1,:any$2] 
@@ -280,11 +286,12 @@ command sintersect ( left:bat[:any$1,:any$2],
 		right:bat[:any$1,:any$2]) 
 		:bat[:any$1,:any$2] 
 address CMDsintersect
-comment "Returns the intersection taken over *both*
-	columns of two BATs. Results in all BUNs 
-	of 'left' that are also in 'right'. Does 
-	*not* do double-elimination over the 'left' 
-	BUNs, If you want this, use:
+comment "Returns the intersection taken over 
+	*both* columns of two BATs. Results in 
+	all BUNs of 'left' that are also in 
+	'right'. Does *not* do double-elimination 
+	over the 'left' BUNs, If you want this, 
+	use:
 	 'sintersect(left.sunique,right.sunique)' 
 	or: 'sintersect(left,right).sunique'.";
 
@@ -306,7 +313,7 @@ command semijoin( left:bat[:void,:any$2],
 		  right:bat[:oid,:any] ) 
 		:bat[:oid,:any$2] 
 address CMDsemijoin
-comment "patch to enable semijoin over void/oid columns";
+comment "Patch to enable semijoin over void/oid columns";
 
 command kintersect( left:bat[:any$1,:any$2], 
 		     right:bat[:any$1,:any] ) 
@@ -333,8 +340,9 @@ comment "Returns the difference taken over
 	*both* columns of two BATs. Results in 
 	all BUNs of 'left' that are *not* in 
 	'right'. Does *not* do double-elimination 
-	over the 'left' BUNs, If you want this, use:
-	'sdiff(left.sunique,right.sunique)' 
+	over the 'left' BUNs, If you want this, 
+	use:
+	     'sdiff(left.sunique,right.sunique)' 
 	or: 'sdiff(left,right).sunique'.";
 @- head-differing elements
 @mal

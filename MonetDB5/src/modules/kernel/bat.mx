@@ -109,7 +109,7 @@ address CMDrevert
 comment "Puts all BUNs in a BAT in reverse order.
 	(Belongs to the BAT sequence module)";
 
-@- BAT properties
+@+ BAT properties
 @T
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
@@ -252,151 +252,232 @@ comment "return whether the BAT mode is set to unique.";
 command setAccess( b:bat[:any$1,:any$2], mode:str) 
 	:bat[:any$1,:any$2] 
 address CMDsetAccess
-comment "Try to change the update access priviliges to 
-	this BAT. Mode:
+comment "Try to change the update access priviliges 
+	to this BAT. Mode:
 	 r[ead-only]      - allow only read access.
-	 a[append-only]   - allow reads and insertions.
+	 a[append-only]   - allow reads and update.
 	 w[riteable]      - allow all operations.
 	BATs are updateable by default. On making 
 	a BAT readonly, all subsequent updates 
 	fail with an error message.Returns the 
 	BAT itself.";
 
-command setAppendMode( b:bat[:any$1,:any$2]):bat[:any$1,:any$2] =CMDsetAppendMode
-comment "Change access privilige of BAT to append only";
+command setAppendMode( b:bat[:any$1,:any$2])
+		:bat[:any$1,:any$2] 
+address CMDsetAppendMode
+comment "Change access privilige of BAT to 
+	append only";
 
-command setReadMode( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] = CMDsetReadMode
-comment "Change access privilige of BAT to read only";
+command setReadMode( b:bat[:any$1,:any$2]) 
+	:bat[:any$1,:any$2] 
+address CMDsetReadMode
+comment "Change access privilige of BAT to 
+	read only";
 
-command setWriteMode( b:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDsetWriteMode
-comment "Change access privilige of BAT to read and write";
+command setWriteMode( b:bat[:any$1,:any$2])
+	:bat[:any$1,:any$2] 
+address CMDsetWriteMode
+comment "Change access privilige of BAT to 
+	read and write";
 
-command getAccess( b:bat[:any,:any]):chr = CMDgetAccess
-comment "return the access mode attached to this BAT as a character.";
+command getAccess( b:bat[:any,:any]):chr 
+address CMDgetAccess
+comment "return the access mode attached to 
+	this BAT as a character.";
 
-command hasAppendMode( b:bat[:any,:any]):bit = CMDhasAppendMode
-comment "return true if to this BAT is append only.";
+command hasAppendMode( b:bat[:any,:any]):bit 
+address CMDhasAppendMode
+comment "return true if to this BAT is 
+	append only.";
 
-command hasWriteMode( b:bat[:any,:any]):bit = CMDhasWriteMode
-comment "return true if to this BAT is read and write.";
+command hasWriteMode( b:bat[:any,:any]):bit 
+address CMDhasWriteMode
+comment "return true if to this BAT is read 
+	and write.";
 
-command hasReadMode( b:bat[:any,:any]):bit = CMDhasReadMode
-comment "return true if to this BAT is read only.";
+command hasReadMode( b:bat[:any,:any]):bit 
+address CMDhasReadMode
+comment "return true if to this BAT is 
+	read only.";
 
 
-command getSequenceBase( b:bat[:void,:any]):oid = CMDgetSequenceBase
-comment "Get the sequence base for the void column of a BAT.";
-command getSequenceBase( b:bat[:oid,:any]):oid = CMDgetSequenceBase;
+command getSequenceBase( b:bat[:void,:any]):oid 
+address CMDgetSequenceBase
+comment "Get the sequence base for the void 
+	column of a BAT.";
+command getSequenceBase( b:bat[:oid,:any]):oid 
+address CMDgetSequenceBase;
 
-command setSequenceBase( b:bat[:void,:any$1], seqbase:oid):int
-			= CMDsetSequenceBase
-comment "Set the sequence base for the void column of a BAT.";
-command setSequenceBase( b:bat[:oid,:any$1], seqbase:oid):int
-			= CMDsetSequenceBase;
+command setSequenceBase( b:bat[:void,:any$1], 
+		seqbase:oid):int
+address CMDsetSequenceBase
+comment "Set the sequence base for the void 
+	column of a BAT.";
+command setSequenceBase( b:bat[:oid,:any$1], 
+	seqbase:oid):int
+address CMDsetSequenceBase;
 
-command setSorted(b:bat[:any,:any]) :bit = CMDsetSorted
+command setSorted(b:bat[:any,:any]) :bit 
+address CMDsetSorted
 comment "Assure BAT is ordered on head.";
 
-command isSorted(b:bat[:any,:any]) :bit = CMDisSorted
+command isSorted(b:bat[:any,:any]) :bit 
+address CMDisSorted
 comment "Returns whether a BAT is ordered on head or not.";
 
-command getBatSize(b:bat[:any,:any]) :str = CMDbatsize_str;
-command getBatSize(b:bat[:any,:any]) :int = CMDbatsize
-comment "A version of BATsize that does not require loading the BAT.";
+command getBatSize(b:bat[:any,:any]) :str 
+address CMDbatsize_str;
+command getBatSize(b:bat[:any,:any]) :int 
+address CMDbatsize
+comment "A version of BATsize that does 
+	not require loading the BAT.";
 
 
-command getBATrefcnt(b:bat[:any,:any]) :int = getBATrefcnt
+command getBATrefcnt(b:bat[:any,:any]) :int 
+address getBATrefcnt
 comment "Utility for debugging MAL interpreter";
 
 @- BAT updates
 Update commands come in many disguises.  Note that we don;t return
 the BAT id, but merely a success/failure code.
 @mal
-command insert(b:bat[:any$1,:oid], src:bat[:any$1,:void])
-				:bat[:any$1,:any$2] = CMDinsert_bat
-comment "Insert all BUNs of the second BAT into the first. This
-case should be removed, because it is a hack for SQL";
+command insert(b:bat[:any$1,:oid], 
+		src:bat[:any$1,:void])
+	:bat[:any$1,:any$2] 
+address CMDinsert_bat
+comment "Insert all BUNs of the second BAT 
+	into the first. This case should be 
+	removed, because it is a hack for SQL";
 
-command insert(b:bat[:any$1,:any$2], src:bat[:any$1,:any$2])
-				:void = CMDinsert_bat
-comment "Insert all BUNs of the second BAT into the first.";
+command insert(b:bat[:any$1,:any$2], 
+		src:bat[:any$1,:any$2])
+		:void 
+address CMDinsert_bat
+comment "Insert all BUNs of the second BAT 
+	into the first.";
 
-command insert(b:bat[:any$1,:any$2], h:any$1, t:any$2)
-				:void = CMDinsert_bun
+command insert(b:bat[:any$1,:any$2], 
+		h:any$1, t:any$2)
+	:void 
+address CMDinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
 
-command insert(b:bat[:void,:any$1],v:any$1):void = CMDinsert_void_bun
+command insert(b:bat[:void,:any$1],
+		v:any$1):void 
+address CMDinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
-command replace(b:bat[:any$1, :any$2], src:bat[:any$1,:any$2])
-				:bat[:any$1,:any$2] = CMDreplace_bat
-comment "Perform replace for all BUNs of the second BAT into the first.";
+command replace(b:bat[:any$1, :any$2], 
+		src:bat[:any$1,:any$2])
+	:bat[:any$1,:any$2] 
+address CMDreplace_bat
+comment "Perform replace for all BUNs of 
+	the second BAT into the first.";
 
-command replace(b:bat[:any$1, :any$2], h:any$1, t:any$2)
-				:bat[:any$1,:any$2] = CMDreplace_bun
-comment "Replace the tail value of one BUN that has some head value.";
+command replace(b:bat[:any$1, :any$2], 
+		h:any$1, t:any$2)
+	:bat[:any$1,:any$2] 
+address CMDreplace_bun
+comment "Replace the tail value of one BUN 
+	that has some head value.";
 
 # The SQL append/replace commands
 
-command append( i:bat[:oid,:any$1],u:bat[:oid,:any$1] ):bat[:oid,:any$1]
-	= CMDoid_bat_append_oid_bat_wrap
-comment "append the content of u to i (renumbers u-oids' to unique numbers)";
+command append( i:bat[:oid,:any$1],
+		u:bat[:oid,:any$1])
+	:bat[:oid,:any$1]
+address CMDoid_bat_append_oid_bat_wrap
+comment "append the content of u to i 
+	(renumbers u-oids' to unique numbers)";
 
 command append(i:bat[:oid,:any$1], u:any$1):bat[:oid,:any$1]
-	= CMDoid_bat_append_val_wrap
+address CMDoid_bat_append_val_wrap
 comment "append the value u to i";
 
-command append( i:bat[:void,:any$1], u:bat[:void,:any$1] ):bat[:void,:any$1]
-	= CMDbat_append_void_bat_wrap
+command append( i:bat[:void,:any$1], 
+		u:bat[:void,:any$1] )
+	:bat[:void,:any$1]
+address CMDbat_append_void_bat_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any$1], u:bat[:oid,:any$1]):bat[:void,:any$1]
-	= CMDbat_append_oid_bat_wrap
+command append( i:bat[:void,:any$1], 
+		u:bat[:oid,:any$1])
+	:bat[:void,:any$1]
+address CMDbat_append_oid_bat_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any$1], u:any$1):bat[:void,:any$1]
-	= CMDbat_append_val_wrap
+command append( i:bat[:void,:any$1], 
+		u:any$1)
+	:bat[:void,:any$1]
+address CMDbat_append_val_wrap
 comment "append the value u to i";
 
-command append(i:bat[:oid,:void], u:bat[:oid,:void]):bat[:oid,:void]
-	= CMDbat_append_oidvoid_bat_wrap
-comment "Special case append for empty bats, works around impossible void,void case";
+command append(i:bat[:oid,:void], 
+		u:bat[:oid,:void])
+	:bat[:oid,:void]
+address CMDbat_append_oidvoid_bat_wrap
+comment "Special case append for empty bats,
+	 works around impossible void,void case";
 
-command replace( o:bat[:void,:any$1], d:bat[:oid,:any$1]):bat[:void,:any$1]
-	= CMDbat_replace_oid_bat_wrap
-comment "inplace replace values on the given locations";
+command replace( o:bat[:void,:any$1], 
+		d:bat[:oid,:any$1])
+	:bat[:void,:any$1]
+address CMDbat_replace_oid_bat_wrap
+comment "inplace replace values on the 
+	given locations";
 
 #end SQL enhancement
 
-command destroy(b:bat[:any,:any]):void= CMDdestroy;
-command destroy(s:str,immediately:bit):void = CMDdestroy_bat
-comment "Schedule bat for removal upon session commit";
+command destroy(b:bat[:any,:any]):void
+address CMDdestroy;
+command destroy(s:str,immediately:bit):void 
+address CMDdestroy_bat
+comment "Schedule bat for removal upon session 
+	commit";
 
-command delete(b:bat[:any$1, :any$2], h:any$1, t:any$2)
-				:void = CMDdelete_bun
+command delete(b:bat[:any$1, :any$2], 
+		h:any$1, t:any$2)
+	:void 
+address CMDdelete_bun
 comment "Delete one specific BUN.";
 
-command delete(b:bat[:any$1, :any$2], h:any$1)
-				:void = CMDdelete_head
-comment "Delete all BUNs with a certain head value.";
+command delete(b:bat[:any$1, :any$2], 
+		h:any$1)
+	:void 
+address CMDdelete_head
+comment "Delete all BUNs with a certain head 
+	value.";
 
-command clear(b:bat[:any$1, :any$2]) :void = CMDdelete_all
+command clear(b:bat[:any$1, :any$2]) :void 
+address CMDdelete_all
 comment "Delete all BUNs in a BAT.";
 
-command delete(b:bat[:any$1, :any$2]) :void = CMDdelete_all
+command delete(b:bat[:any$1, :any$2]) :void 
+address CMDdelete_all
 comment "Delete all BUNs in a BAT.";
 
-command delete(b:bat[:any$1, :any$2], src:bat[:any$1,:any])
-				:void = CMDdelete_bat_head
-comment "Delete from the first BAT all BUNs with a head value that is in the second.";
+command delete(b:bat[:any$1, :any$2], 
+		src:bat[:any$1,:any])
+	:void 
+address CMDdelete_bat_head
+comment "Delete from the first BAT all BUNs 
+	with a head value that is in the 
+	second.";
 
-command deleteBuns(b:bat[:any$1, :any$2], src:bat[:any$1,:any$2])
-				:void = CMDdelete_bat_bun
-comment "Delete from the first BAT all BUNs with a corresponding BUN in the second.";
+command deleteBuns(b:bat[:any$1, :any$2], 
+		src:bat[:any$1,:any$2])
+	:void 
+address CMDdelete_bat_bun
+comment "Delete from the first BAT all BUNs 
+	with a corresponding BUN in the second.";
 
-command getAlpha(b:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDgetAlpha
+command getAlpha(b:bat[:any$1,:any$2])
+	:bat[:any$1,:any$2] 
+address CMDgetAlpha
 comment "Obtain the list of BUNs added";
-command getDelta(b:bat[:any$1,:any$2]):bat[:any$1,:any$2] = CMDgetDelta
+command getDelta(b:bat[:any$1,:any$2])
+	:bat[:any$1,:any$2] 
+address CMDgetDelta
 comment "Obtain the list of BUNs deleted";
 @- BAT I/O, Persistency
 @T
@@ -416,65 +497,98 @@ Note, we should move old-fashioned mil operator definitions
 into a separate module.
 
 @mal
-command setName ( b:bat[:any$1,:any$2] , s:str) :bat[:any$1,:any$2] = CMDsetName
+command setName ( b:bat[:any$1,:any$2] , 
+		s:str) 
+	:bat[:any$1,:any$2] 
+address CMDsetName
 comment "Give a logical name to a BAT. ";
 
-command getName ( b:bat[:any,:any]) :str = CMDbbpname
+command getName ( b:bat[:any,:any]) :str 
+address CMDbbpname
 comment "Gives back the logical name of a BAT.";
 
-command setRole( b:bat[:any$1,:any$2] , h:str, t:str):bat[:any$1,:any$2]
-	= CMDsetRole
-comment "Give a logical name to the columns of a BAT.";
+command setRole( b:bat[:any$1,:any$2], 
+		h:str, t:str)
+	:bat[:any$1,:any$2]
+address CMDsetRole
+comment "Give a logical name to the columns of 
+	a BAT.";
 
-command setColumn( b:bat[:any$1,:any$2],t:str):bat[:any$1,:any$2] = CMDsetColumn
-comment "Give a logical name to the tail column of a BAT.";
-command setColumn( b:bat[:any$1,:any$2] , h:str, t:str):bat[:any$1,:any$2]
-        = CMDsetColumns
+command setColumn( b:bat[:any$1,:any$2],
+		t:str)
+	:bat[:any$1,:any$2] 
+address CMDsetColumn
+comment "Give a logical name to the tail column 
+	of a BAT.";
+command setColumn( b:bat[:any$1,:any$2],
+		h:str, t:str)
+	:bat[:any$1,:any$2]
+address CMDsetColumns
 comment "Give both columns of a BAT a new name.";
 
 
-command isTransient( b:bat[:any,:any]) :bit = CMDisTransient;
-command setTransient( b:bat[:any,:any]) :bit = CMDsetTransient
-comment "Make the BAT transient.  Returns boolean which indicates if the
+command isTransient( b:bat[:any,:any]) :bit 
+address CMDisTransient;
+command setTransient( b:bat[:any,:any]) :bit 
+address CMDsetTransient
+comment "Make the BAT transient.  Returns 
+	boolean which indicates if the
 BAT administration has indeed changed.";
 
-command isPersistent( b:bat[:any,:any]) :bit = CMDisPersistent;
-command setPersistent( b:bat[:any,:any]) :bit = CMDsetPersistent
-comment "Make the BAT persistent.  Returns boolean which indicates if the
+command isPersistent( b:bat[:any,:any]) :bit 
+address CMDisPersistent;
+command setPersistent( b:bat[:any,:any]) :bit 
+address CMDsetPersistent
+comment "Make the BAT persistent.  Returns 
+	boolean which indicates if the
 BAT administration has indeed changed.";
 
-command save(nme:bat[:any,:any]) :bit = CMDsave2;
+command save(nme:bat[:any,:any]) :bit 
+address CMDsave2;
 
-command save(nme:str) :bit = CMDsave
-comment "Save a BAT to storage, if it was loaded and dirty.
-Returns whether IO was necessary.
-Please realize that calling this function violates
-the atomic commit protocol!!";
+command save(nme:str) :bit 
+address CMDsave
+comment "Save a BAT to storage, if it was 
+	loaded and dirty.  Returns whether 
+	IO was necessary.  Please realize that 
+	calling this function violates the 
+	atomic commit protocol!!";
 
 
-command load(name:str) :bat[:any,:any] = CMDload
+command load(name:str) :bat[:any,:any] 
+address CMDload
 comment "Load a particylar bat from disk";
 
-command unload(name:str) :bit = CMDunload
-comment "Swapout a BAT to disk. Transient BATs can also be swapped out.
- Returns whether the unload indeed happened. ";
+command unload(name:str) :bit 
+address CMDunload
+comment "Swapout a BAT to disk. Transient BATs 
+	can also be swapped out. Returns 
+	whether the unload indeed happened. ";
 
-command isCached(b:bat[:any,:any]):bit = CMDisCached
+command isCached(b:bat[:any,:any]):bit 
+address CMDisCached
 comment "Bat is stored in main memory.";
 
-command setHot(name:str) :void = CMDhot
-comment "Makes a BAT very hot for the BBP. The chance of being chosen
-for swapout is small, afterwards.  Returns the BAT itself.";
+command setHot(name:str) :void 
+address CMDhot
+comment "Makes a BAT very hot for the BBP. The 
+	chance of being chosen for swapout is 
+	small, afterwards.  Returns the BAT itself.";
 
-command heat(name:str) :lng = CMDheat
+command heat(name:str) :lng 
+address CMDheat
 comment "Return the current BBP heat (LRU stamp)";
 
-command setCold(nme:str) :void = CMDcold
-comment "Makes a BAT very cold for the BBP. The chance of being choses
-for swapout is big, afterwards.  Returns the BAT itself.";
+command setCold(nme:str) :void 
+address CMDcold
+comment "Makes a BAT very cold for the BBP. The 
+	chance of being choses for swapout is big,
+	afterwards.  Returns the BAT itself.";
 
-command setCold(b:bat[:any,:any]) :void = CMDcoldBAT;
-command setHot(b:bat[:any,:any]) :void = CMDhotBAT;
+command setCold(b:bat[:any,:any]) :void 
+address CMDcoldBAT;
+command setHot(b:bat[:any,:any]) :void 
+address CMDhotBAT;
 
 @- Heap Specific Commands
 @T
@@ -514,30 +628,58 @@ For more technical information on BATs, we refer to the
 @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
 documentation.
 @mal
-command mmap(b:bat[:any,:any], buns_mode:int, hheap_mode:int, theap_mode:int,
-		hacc_mode:int, tacc_mode:int) :bit = CMDmmap
-comment "For each individual heap, you can change the allocation mode to
- either STORE_MEM or STORE_MMAP. Passing an int(nil) means:no change.
- Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save
- (this has to happen before the heap can be mapped into virtual memory).
- These modes are persistent. ";
+command mmap(b:bat[:any,:any], 
+		buns_mode:int, 
+		hheap_mode:int, 
+		theap_mode:int,
+		hacc_mode:int, 
+		tacc_mode:int) 
+	:bit 
+address CMDmmap
+comment "For each individual heap, you can 
+	change the allocation mode to either 
+	STORE_MEM or STORE_MMAP. Passing an 
+	int(nil) means:no change.  Changing a 
+	dirty STORE_MEM heap into STORE_MMAP, 
+	will cause a BAT save (this has to 
+	happen before the heap can be mapped 
+	into virtual memory). These modes are 
+persistent. ";
 
-command mmap(b:bat[:any,:any], mode:int):bit = CMDmmap2
-comment "Alias for mmap(b,mode,mode,mode,mode,mode)";
+command mmap(b:bat[:any,:any], mode:int):bit 
+address CMDmmap2
+comment "Alias for mmap(b,mode,mode,mode,
+	mode,mode)";
 
-command madvise(b:bat[:any,:any], buns_mode:int, hheap_mode:int, theap_mode:int,
-		hacc_mode:int, tacc_mode:int) :bit = CMDmadvise
-comment "Modern Operating Systems allow users to influence the buffer management
- policy of virtual memory. This is a crucial feature for database systems,
- and eliminates the need to reimplement the OS in a database buffer manager.
- The supported flags are BUF_NORMAL (the normal adaptive kernel algorithm),
- BUF_RANDOM (no page prefetching), BUF_SEQUENTIAL (prefetch and swapout),
- BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).
- These buffer management modes are not persistent.
- Returns the BAT operated upon.";
+command madvise(b:bat[:any,:any], 
+		buns_mode:int, 
+		hheap_mode:int, 
+		theap_mode:int,
+		hacc_mode:int, 
+		tacc_mode:int) 
+	:bit 
+address CMDmadvise
+comment "Modern Operating Systems allow users 
+	to influence the buffer management
+	policy of virtual memory. This is a 
+	crucial feature for database systems,
+	and eliminates the need to reimplement 
+	the OS in a database buffer manager.
+	The supported flags are BUF_NORMAL 
+	(the normal adaptive kernel algorithm),
+	BUF_RANDOM (no page prefetching), 
+	BUF_SEQUENTIAL (prefetch and swapout),
+	BUF_WILLNEED (load everything with prefetch), 
+	BUF_DONTNEED (swapout).
+	These buffer management modes are not 
+	persistent. 
+	Returns the BAT operated upon.";
 
-command madvise(b:bat[:any,:any], mode:int):bit = CMDmadvise2
-comment "alias for madvise(b,mode,mode,mode,mode,mode)";
+command madvise(b:bat[:any,:any], 
+		mode:int):bit 
+address CMDmadvise2
+comment "alias for madvise(b,mode,mode,mode,
+	mode,mode)";
 
 @- ASCII import, export
 The below commands load and save a BAT from/to an ASCII dump. These
@@ -564,6 +706,7 @@ bucket-chained hash table. The extension facilities of Monet allow
 more accelerators to be defined by users. Exanples are the {\tt rtree}
 and {\tt datavector}.
 
+{\small
 \begin{verbatim}
 >monet_acctbl.print;
 #-------------------------#
@@ -572,33 +715,47 @@ and {\tt datavector}.
 [ "hash",         1       ]
 [ "index",        2       ]
 \end{verbatim}
+}
 @
 More info on how to write new search accelerators can be found in the
 @[<a href="../mel.html">MEL documentation</a>@.
 @mal
-command accbuild(b:bat[:any,:any], acctype:int):bit = CMDaccbuild_std
+command accbuild(b:bat[:any,:any], acctype:int):bit 
+address CMDaccbuild_std
 comment "Build an accelerator on the head column of b. The builtin accelerator
  types index and hash will be created as transient accelerators. They
  will not be saved on disk. User-defined accelerators must always be
  persistent." ;
 
-command accbuild(b:bat[:any,:any], acctype:int, param:ptr):int = CMDaccbuild
+command accbuild(b:bat[:any,:any], acctype:int, param:ptr):int 
+address CMDaccbuild
 comment "like accbuild(bat[:any,:any] b, int acctype), but with a parameter that
  is provide to the specific accelerator build routine.";
 
-command accdestroy(b:bat[:any,:any], acctype:int) = CMDaccdestroy
-comment "Destroy the accelerator of type 'acctype'  that is present on
- the head-type of b.";
+command accdestroy(b:bat[:any,:any], 
+	acctype:int) 
+address CMDaccdestroy
+comment "Destroy the accelerator of type 
+	'acctype'  that is present on
+	the head-type of b.";
 
-command accpresent(b:bat[:any,:any] ) :int = CMDaccpresent
-comment "Returns the accelerator type of the *persistent* accelerator present
- on the head column of b. Note that index and hash accelerators are
- generally *not* persistent, and will not be returned by this function!";
+command accpresent(b:bat[:any,:any] ) :int 
+address CMDaccpresent
+comment "Returns the accelerator type of the 
+	*persistent* accelerator present on 
+	the head column of b. Note that index 
+	and hash accelerators are generally 
+	*not* persistent, and will not be 
+	returned by this function!";
  
-command hasHash(b:bat[:any,:any]):bit = CMDhasHash;
-command setHash(b:bat[:any,:any],prop:bit):bit = CMDsetHash;
-command hasIndex(b:bat[:any,:any]):bit = CMDhasIndex;
-command setIndex(b:bat[:any,:any],prop:bit):bit = CMDsetIndex;
+command hasHash(b:bat[:any,:any]):bit 
+address CMDhasHash;
+command setHash(b:bat[:any,:any],prop:bit):bit 
+address CMDsetHash;
+command hasIndex(b:bat[:any,:any]):bit 
+address CMDhasIndex;
+command setIndex(b:bat[:any,:any],prop:bit):bit 
+address CMDsetIndex;
 
 @- Synced BATs
 The binary model of Monet has important advantages when working in

@@ -31,33 +31,54 @@ sides and then join these keys.
 Example :
 @T
 \begin{verbatim}
-orders                  customer                link
-====================    =====================   ===========
-        zipcode h\_nr            zipcode h\_nr    oid     cid
-o1      13      9       c1      11      10      o1      c5
-o2      11      10      c2      11      11      o2      c1
-o3      11      11      c3      12      2       o3      c2
-o4      12      5       c4      12      1       o4      nil
-o5      11      10      c5      13      9       o5      c1
-o6      12      2       c6      14      7       o6      c3
-o7      13      9                               o7      c5
-o8      12      1                               o8      c4
-o9      13      9                               o9      c5
-                                                nil     c6
+orders                  
+====================   
+        zipcode h\_nr 
+o1      13      9    
+o2      11      10  
+o3      11      11  
+o4      12      5  
+o5      11      10 
+o6      12      2  
+o7      13      9  
+o8      12      1  
+o9      13      9  
+customer                
+=====================   
+        zipcode h\_nr  
+c1      11      10      
+c2      11      11      
+c3      12      2       
+c4      12      1       
+c5      13      9       
+c6      14      7       
+link
+===========
+        oid     cid
+o1      c5
+o2      c1
+o3      c2
+o4      nil
+o5      c1
+o6      c3
+o7      c5
+o8      c4
+o9      c5
+nil     c6
 \end{verbatim}
 Mil code :
 
-opcd := new(oid,int).insert(1@0,13).insert(2@0,11).insert(3@0,11).insert(4@0,12);
-opcd.insert(5@0,11).insert(6@0,12).insert(7@0,13).insert(8@0,12).insert(9@0,13);
+opcd := new(oid,int). insert(1@0,13). insert(2@0,11). insert(3@0,11). insert(4@0,12);
+opcd.   insert(5@0,11). insert(6@0,12). insert(7@0,13). insert(8@0,12). insert(9@0,13);
 
-ohnr := new(oid,int).insert(1@0,9).insert(2@0,10).insert(3@0,11).insert(4@0,5);
-ohnr.insert(5@0,10).insert(6@0,2).insert(7@0,9).insert(8@0,1).insert(9@0,9);
+ohnr := new(oid,int). insert(1@0,9). insert(2@0,10). insert(3@0,11). insert(4@0,5);
+ohnr. insert(5@0,10). insert(6@0,2). insert(7@0,9). insert(8@0,1). insert(9@0,9);
 
-cpcd := new(oid,int).insert(1@0,11).insert(2@0,11);
-cpcd.insert(3@0,12).insert(4@0,12).insert(5@0,13).insert(6@0,14);
+cpcd := new(oid,int). insert(1@0,11). insert(2@0,11);
+cpcd. insert(3@0,12). insert(4@0,12). insert(5@0,13). insert(6@0,14);
 
-chnr := new(oid,int).insert(1@0,10).insert(2@0,11);
-chnr.insert(3@0,2).insert(4@0,1).insert(5@0,9).insert(6@0,7);
+chnr := new(oid,int). insert(1@0,10). insert(2@0,11);
+chnr. insert(3@0,2). insert(4@0,1). insert(5@0,9). insert(6@0,7);
 
 @- Solution
 
