@@ -393,6 +393,16 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     return @1;
 @c
 
+/* ============================== Tools =================================== */
+
+#define PFll_check_BAT_capacity(b,grow) \
+        size_t _bunsize = BUNsize((b));\
+        if ((b)->batBuns->free + ((grow) * _bunsize) > (b)->batBuns->size) {\
+            if (BATextend((b), MAX((grow),BATgrows((b)))) == NULL) {\
+                goto bunins_failed;\
+            }\
+        }
+
 /* ============================== Step implementations ==================== */
 
 /* ------------------------------ Child ----------------------------------- */
@@ -511,13 +521,24 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
        (either descendant ctx node or end of scope) and prunes
        all subtree which can't hold any matches */
     for (; pre <= @1; pre += size[pre] + 1) {
+        size_t grow = ((stack[stack_top-1].last - stack[stack_top-1].first) / iter_bunsize) + 1;
+        BUN dst = NULL;
+        size_t bunsize = BUNsize(res);
+
+        /* check, if result buffer is big enough; otherwise extend it */
+        PFll_check_BAT_capacity(res, grow);
         /* creates a row for every iter, whose ctx node produced
            a match */
+        dst = BUNlast(res);
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
              cur_bun += iter_bunsize) {
             bunfastins(res,  (oid*)BUNtail(iter_bat,cur_bun), &pre);
+            *(oid*)BUNhloc(res, dst) = *(oid*)BUNtail(iter_bat,cur_bun);
+            *(oid*)BUNtloc(res, dst) = pre;
+            dst += bunsize;
         }
+        res->batBuns->free = dst - res->batBuns->base;
     }
 @
 @c
@@ -712,17 +733,30 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     }
 @
 @= inner_loop_descendant
-    /* iterate over all descendants until the next limit is reached
-       (either descendant ctx node or end of scope) */
-    for ( ; pre <= @1; pre++ ) {
-        oid iter, idx;
-        /* create a row for every iter, whose ctx node produced a match */
-        for (iter = fst_iter, idx = 0 ; iter <= lst_iter && idx < num_iters ; iter++, idx++ ) {
-            if (onstack_get(idx)) {
-                bunfastins(tmp_res[idx ], &iter, &pre);
-            }
+{
+    int s = 0;
+    /* loop over all iters on the stack */
+    for ( s = 0 ; s < stack_top ; s++ ) {
+        oid idx = stack[s].iter_idx;
+        oid iter = idx + fst_iter;
+        oid p = pre;
+        size_t grow = (@1 - pre) + 1;
+        BUN dst = NULL;
+        size_t bunsize = BUNsize(tmp_res[idx]);
+
+        /* check, if result buffer is big enough; otherwise extend it */
+        PFll_check_BAT_capacity(tmp_res[idx], grow);
+        /* iterate over all descendants until the next limit is reached
+           (either descendant ctx node or end of scope)
+           and insert their pre value into the results */
+        for ( p = pre , dst = BUNlast(tmp_res[idx]) ; p <= @1 ; p++ , dst += bunsize ) {
+            *(oid*)BUNhloc(tmp_res[idx], dst) = iter;
+            *(oid*)BUNtloc(tmp_res[idx], dst) = p;
         }
+        tmp_res[idx]->batBuns->free = dst - tmp_res[idx]->batBuns->base;
     }
+    pre = @1 + 1;
+}
 @
 @c
 
