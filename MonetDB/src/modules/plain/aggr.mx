@@ -193,9 +193,12 @@ test scripts were added.
     }
 
     proc variance(BAT[any,any::1] b) : any::1 {
+	var c := dbl(b.count);
+	if (c = 0.0LL) {
+		return 0.cast(b.ttype);
+	}
 	var s := [*](b,b).sum;
-	var c := b.count.cast(s.type);
-	var a := b.avg.cast(s.type);
+	var a := b.avg;
 	return ((s / c) - (a * a)).cast(b.ttype); 
     }
 
