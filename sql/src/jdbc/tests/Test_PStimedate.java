@@ -77,10 +77,13 @@ public class Test_PStimedate {
 					java.util.Date x = (java.util.Date)(rs.getObject(j));
 					boolean matches = false;
 					if (x instanceof Time) {
+						System.out.print(" (Time)");
 						matches = (new Time(d.getTime())).toString().equals(x.toString());
 					} else if (x instanceof Date) {
+						System.out.print(" (Date)");
 						matches = (new Date(d.getTime())).toString().equals(x.toString());
 					} else if (x instanceof Timestamp) {
+						System.out.print(" (Timestamp)");
 						matches = (new Timestamp(d.getTime())).toString().equals(x.toString());
 					}
 					if (matches) {

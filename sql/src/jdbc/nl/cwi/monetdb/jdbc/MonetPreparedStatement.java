@@ -494,7 +494,7 @@ public class MonetPreparedStatement
 	{
 		synchronized (MonetConnection.mDate) {
 			MonetConnection.mDate.setTimeZone(cal.getTimeZone());
-			setValue(parameterIndex, "'" + MonetConnection.mDate.format(x));
+			setValue(parameterIndex, "'" + MonetConnection.mDate.format(x) + "'");
 		}
 	}
 
@@ -793,7 +793,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x)
 		throws SQLException
 	{
-		setTimestamp(parameterIndex, x, Calendar.getInstance());
+		setValue(parameterIndex, "'" + x.toString() + "'");
 	}
 
     /**
@@ -814,6 +814,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
 		throws SQLException
 	{
+		if (cal == null) cal = Calendar.getInstance();
 		synchronized (MonetConnection.mTimestampZ) {
 			MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
 			String RFC822 = MonetConnection.mTimestampZ.format(x);

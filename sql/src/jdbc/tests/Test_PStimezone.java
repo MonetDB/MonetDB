@@ -39,21 +39,24 @@ public class Test_PStimezone {
 			System.out.print("2. inserting a records...");
 			
 			Calendar c = Calendar.getInstance();
-			c.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
 			c.setTime(new java.util.Date(0L));
 			
 			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()));
 			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()));
 			pstmt.executeUpdate();
 			
-			c.setTimeZone(TimeZone.getTimeZone("PST"));
 			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()), c);
+			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()), c);
+			pstmt.executeUpdate();
+			
+			c.setTimeZone(TimeZone.getTimeZone("PST"));
+			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()));
 			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()), c);
 			pstmt.executeUpdate();
 			
 			c.setTimeZone(TimeZone.getTimeZone("GMT+04:15"));
 			pstmt.setTimestamp(1, new java.sql.Timestamp(c.getTime().getTime()), c);
-			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()), c);
+			pstmt.setTimestamp(2, new java.sql.Timestamp(c.getTime().getTime()));
 			pstmt.executeUpdate();
 			
 			System.out.println(" passed :)");
@@ -68,7 +71,6 @@ public class Test_PStimezone {
 
 			while (rs.next()) {
 				System.out.println(rs.getString("ts") + "\t" + rs.getString("tz"));
-				c.setTimeZone(TimeZone.getDefault());
 				System.out.println(rs.getTimestamp("ts") + "\t" + rs.getTimestamp("tz"));
 				c.setTimeZone(TimeZone.getTimeZone("PST"));
 				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tz", c));
