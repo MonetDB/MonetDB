@@ -575,12 +575,12 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname.replace('-','_')))
-    is_cxx = False
+    is_cxx = None
     if not msc['DEPS']:
         for tar, deplist in binmap['DEPS'].items():
             b, ext = split_filename(tar)
             if ext in ('cc', 'cxx'):
-                is_cxx = True
+                is_cxx = 1
                 break
     if is_cxx:
         fd.write('\t$(CXX) $(CXXFLAGS)')
