@@ -126,8 +126,9 @@ static void
 timerEnd(void)
 {
 	t1 = gettime();
-	if (mark)
-		fprintf(toConsole, "%s %d usec %s\n", mark, t1 - t0, mark2);
+	if (mark )
+		fprintf(toConsole, "%s %d usec %s\n", 
+			mark, t1 - t0, mark2?mark2:"");
 }
 
 static int
@@ -186,6 +187,7 @@ doFile(Mapi mid, const char *file)
 		fprintf(stderr, "%s: cannot open\n", file);
 		return 1;
 	}
+	timerStart();
 
 	rc = 0;
 	if ((hdl = mapi_query_prep(mid)) == NULL) {
@@ -219,6 +221,7 @@ doFile(Mapi mid, const char *file)
 		mapi_explain_query(hdl, stderr);
 		rc = 1;
 	}
+	timerEnd();
 	mapi_close_handle(hdl);
 	fclose(fp);
 	return rc;
@@ -435,7 +438,6 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 
 			while ((rtrn = mapi_fetch_line(hdl)) != 0)
 				fprintf(toConsole, "%s\n", rtrn);
-			timerEnd();
 
 			switch (mapi_error(mid)) {
 			case MOK:
@@ -455,6 +457,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 				return 1;
 			}
 
+			timerEnd();
 			mapi_close_handle(hdl);
 			hdl = NULL;
 		}
