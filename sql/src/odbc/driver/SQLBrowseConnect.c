@@ -35,10 +35,6 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 	int port;
 	SQLSMALLINT len = 0;
 
-	(void) szConnStrOut;	/* Stefan: unused!? */
-	(void) cbConnStrOutMax;	/* Stefan: unused!? */
-	(void) pcbConnStrOut;	/* Stefan: unused!? */
-
 	fixODBCstring(szConnStrIn, cbConnStrIn, addDbcError, dbc);
 
 #ifdef ODBCDEBUG
@@ -76,41 +72,47 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 	}
 
 	if (dsn != NULL && uid != NULL && pwd != NULL) {
-		return SQLConnect_(dbc, dsn, SQL_NTS, uid, SQL_NTS,
-				   pwd, SQL_NTS, host, port);
+		return SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS,
+				   (SQLCHAR *) uid, SQL_NTS,
+				   (SQLCHAR *) pwd, SQL_NTS, host, port);
 	}
 
 	if (dsn == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy(szConnStrOut, "DSN={MonetDB};", cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "DSN={MonetDB};",
+				cbConnStrOutMax);
 		len += 14;
 		szConnStrOut += 14;
 		cbConnStrOutMax -= 14;
 	}
 	if (uid == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy(szConnStrOut, "UID:Login ID=?;", cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "UID:Login ID=?;",
+				cbConnStrOutMax);
 		len += 15;
 		szConnStrOut += 15;
 		cbConnStrOutMax -= 15;
 	}
 	if (pwd == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy(szConnStrOut, "PWD:Password=?;", cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "PWD:Password=?;",
+				cbConnStrOutMax);
 		len += 15;
 		szConnStrOut += 15;
 		cbConnStrOutMax -= 15;
 	}
 	if (host == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy(szConnStrOut, "*HOST:Server=?;", cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "*HOST:Server=?;",
+				cbConnStrOutMax);
 		len += 15;
 		szConnStrOut += 15;
 		cbConnStrOutMax -= 15;
 	}
 	if (port == 0) {
 		if (cbConnStrOutMax > 0)
-			strncpy(szConnStrOut, "*PORT:Port=?;", cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "*PORT:Port=?;",
+				cbConnStrOutMax);
 		len += 13;
 		szConnStrOut += 13;
 		cbConnStrOutMax -= 13;
