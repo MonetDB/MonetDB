@@ -5,7 +5,7 @@
 This document will help you execute the first SQL query on a MonetDB
 database backend.
 It assumes that you have compiled and installed both the
-Monet back-end and SQL front-end according to the 'HowToStart' descriptions.
+MonetDB back-end and SQL front-end according to the 'HowToStart' descriptions.
 Furthermore, the sanity test checks included in the distribution
 did do not produce fatal errors.
 </p>
@@ -15,7 +15,7 @@ You should have a basic understanding of SQL syntax.
 In particular, the SQL front-end is based on SQL-3
 standard.
 Furthermore, you should be able 
-to start/stop de Monet database server on
+to start/stop de MonetDB database server on
 a given database. 
 </p>
 <p>
@@ -26,12 +26,12 @@ to the binaries. Likewise, make sure the database directory exists and you
 have proper file access permissions.
 </p>
 <p>
-The Monet server does not contain hardwired knowledge on its SQL frontend.
+The MonetDB server does not contain hardwired knowledge on its SQL frontend.
 It must be initialized and told to accept SQL sessions. In a separate window
 start the server for a new SQL database (named VOC);
 </p>
 <pre>
-$ mkdir -p $PREFIX/var/dbfarm/VOC
+$ mkdir -p $PREFIX/var/MonetDB/dbfarm/VOC
 $ Mserver --dbname=VOC 
 # Monet Database Server V4.3.14
 # Copyright (c) 1993-2002, CWI. All rights reserved.
@@ -40,12 +40,28 @@ monet>module(sql_server);
 monet>
 </pre>
 <p>
-Here $PREFIX denotes the path where Monet has been installed.
-All databases are kept in $PREFIX/var/dbfarm unless this location
+Here $PREFIX denotes the path where MonetDB has been installed.
+All databases are kept in $PREFIX/var/MonetDB/dbfarm unless this location
 has been changed in the monet.conf file.
 <br>
 The server is initialized by loading the SQL module. It will listen
 to a default port for requests.
+<br>
+In case loading the SQL module ("sql_server") fails, this might be caused by
+the fact, that Mserver fails to find the module. There are two possible
+reasons for this:
+<ol>
+<li>The SQL frontend it not installed. Since the SQL frontend comes from a separate source repository,
+it needs to be installed separately (unless you did install the binary package on Windows).
+<li>The SQL frontend is installed, but in a difference place, i.e., with a different PREFIX, than MonetDB.
+In this case, you need to tell the Mserver, where to find the sql_server module. You can do this by 
+adding the following commandline switch when starting the Mserver:
+<pre>
+$ Mserver --dbname=VOC --set monet_mod_path=$MONET_PREFIX/lib/MonetDB:$SQL_PREFIX/lib/MonetDB
+</pre>
+$MONET_PREFIX & $SQL_PREFIX denote the pathes where MonetDB respectively SQL have been installed.
+Alternatively, you can add $SQL_PREFIX/lib/MonetDB to the monet_mod_path in your monet.conf file.
+<br>
 If you get an error message, e.g. 'port already in use', you might have 
 obsolete Mserver processes hanging around which should be killed first.
 </p>
@@ -53,9 +69,9 @@ obsolete Mserver processes hanging around which should be killed first.
 <p><i>SQL Frontends</i><br>
 The distribution comes with a simple textual interface with
 command-line history features, called MapiClient.
-The alternative, graphical interface is called Mcockpit and
+The alternative, graphical interface is called Mknife and
 described elsewhere.<br>
-To connect to the running Monet SQL server using the
+To connect to the running MonetDB SQL server using the
 default authorization information, type:
 </p>
 <pre>
@@ -182,7 +198,7 @@ The result of a query can be saved in a new table as follows:
 To avoid cluttering the database, we remove all the tuples in R
 (or simply drop the table).
 It expects each tuple to be represented on a separate line and
-conforms to the Monet tuple format lexical structure.
+conforms to the MonetDB tuple format lexical structure.
 You can specify the column value separator. The defaults is
 </p>
 
@@ -191,7 +207,7 @@ The current SQL implementation can be characterised as SQL-92++.
 It is based on the syntax and semantics of SQL-3, but does not
 implement the complete language. In particular, it does not yet
 support ADTs, modules, and triggers. Likewise, some of the functionality
-of extended datatypes (e.g. blobs) are not included in the Monet
+of extended datatypes (e.g. blobs) are not included in the MonetDB
 server libraries.
 </p>
 <p><i>Documentation</i><br> <br>
