@@ -234,7 +234,9 @@ void advice(){
 	for(i=0; hlp[i]; i++) printf("#%s\n",hlp[i]);
 }
 char *code[]={
-"#use the \"mil_schema\" for additional support routines",
+"include mil",
+"include mil_system_procs;",
+"include mil_algebra_procs",
 0
 };
 void mil_code_prelude(){
