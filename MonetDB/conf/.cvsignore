@@ -1,0 +1,6 @@
+config.guess
+config.h.in
+config.sub
+install-sh
+ltmain.sh
+mkinstalldirs

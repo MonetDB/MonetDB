@@ -1,2 +1,7 @@
 *.pyc
 *.pyo
+.incs.ag
+.incs.in
+Makefile.am
+Makefile.in
+Makefile.msc
