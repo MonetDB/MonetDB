@@ -450,8 +450,9 @@ void lex_append(context *lc, int ch)
 	int len = utf8_intlen(ch);
 
 	if (lc->yylen+len >= lc->yysize) { /* keep space for EOS */
-		lc->yytext = realloc(lc->yytext, lc->yysize << 1);
-		lc->yysize = lc->yysize << 1;
+		lc->yysize *= 4;
+		lc->yytext = RENEW_ARRAY(char, lc->yytext, lc->yysize);
+		assert (lc->yytext);
 	}
 	utf8_putchar(ch, (unsigned char *)lc->yytext+lc->yylen);
 	lc->yylen += len;
@@ -597,7 +598,7 @@ int number(context * lc, int len)
 
 	while ((cur = lex_getc(lc)) != EOF && isdigit(cur)) {
 		if (yylen == yysz) {
-			yytext = realloc(yytext, yysz << 1);
+			yytext = RENEW_ARRAY(char, yytext, yysz << 1);
 			yysz = yysz << 1;
 		}
 		yytext[yylen++] = (char) cur;
@@ -605,13 +606,13 @@ int number(context * lc, int len)
 	if (cur == '.') {
 		token = INTNUM;
 		if (yylen == yysz) {
-			yytext = realloc(yytext, yysz << 1);
+			yytext = RENEW_ARRAY(char, yytext, yysz << 1);
 			yysz = yysz << 1;
 		}
 		yytext[yylen++] = (char) cur;
 		while ((cur = lex_getc(lc)) != EOF && isdigit(cur)) {
 			if (yylen == yysz) {
-				yytext = realloc(yytext, yysz << 1);
+				yytext = RENEW_ARRAY(char, yytext, yysz << 1);
 				yysz = yysz << 1;
 			}
 			yytext[yylen++] = (char) cur;
@@ -619,7 +620,7 @@ int number(context * lc, int len)
 		if (cur == 'e' || cur == 'E') {
 			token = APPROXNUM;
 			if (yylen == yysz) {
-				yytext = realloc(yytext, yysz << 1);
+				yytext = RENEW_ARRAY(char, yytext, yysz << 1);
 				yysz = yysz << 1;
 			}
 			yytext[yylen++] = 'E';
@@ -628,7 +629,7 @@ int number(context * lc, int len)
 				token = 0;
 				if (yylen == yysz) {
 					yytext =
-					    realloc(yytext, yysz << 1);
+					    RENEW_ARRAY(char, yytext, yysz<<1);
 					yysz = yysz << 1;
 				}
 				yytext[yylen++] = (char) cur;
@@ -637,7 +638,7 @@ int number(context * lc, int len)
 				token = APPROXNUM;
 				if (yylen == yysz) {
 					yytext =
-					    realloc(yytext, yysz << 1);
+					    RENEW_ARRAY(char, yytext, yysz<<1);
 					yysz = yysz << 1;
 				}
 				yytext[yylen++] = (char) cur;
