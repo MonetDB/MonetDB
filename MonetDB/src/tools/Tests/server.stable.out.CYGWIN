@@ -153,7 +153,7 @@ Start of MIL prelude.
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "?"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
@@ -482,7 +482,7 @@ Start of MIL prelude.
 [ "monet_mod_proc",	  "str",  "oid",  89,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_use",	  "oid",  "ptr",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  26,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "monet_unicode_case",	  "int",  "int",  730,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 #-------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-------------------------------------------------------------------------------------------------#
@@ -874,7 +874,7 @@ vars();
 [ "INT_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "SHT_MIN",		  "sht",  "frozen",	  "constant",	  "-32767"		  ]
 [ "SHT_MAX",		  "sht",  "frozen",	  "constant",	  "32767"		  ]
-[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  ""			  ]
+[ "CHR_MIN",		  "chr",  "frozen",	  "constant",	  "?"			  ]
 [ "CHR_MAX",		  "chr",  "frozen",	  "constant",	  ""			  ]
 [ "RAND_MAX",		  "int",  "frozen",	  "constant",	  "2147483647"		  ]
 [ "TOK_OBJECT",		  "int",  "frozen",	  "constant",	  "294"			  ]
@@ -1214,7 +1214,7 @@ dir();
 [ "monet_mod_proc",	  "str",  "oid",  89,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_use",	  "oid",  "ptr",  19,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 [ "monet_mod_var",	  "str",  "ptr",  26,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
-[ "monet_unicode_case",	  "int",  "int",  730,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
+[ "monet_unicode_case",	  "int",  "int",  732,	  0,	  "dirty",	  "load", "tran", 1,	  0		  ]
 ls();
 #-------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
