@@ -41,7 +41,7 @@ dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 dnl values needed for the JDBC driver;
 dnl keep in sync with src/jdbc/build.properties!
 JDBC_MAJOR=0
-JDBC_MINOR=3
+JDBC_MINOR=4
 JDBC_VER_SUFFIX="beta release"
 JDBC_DEF_PORT=45123
 JDBC_DEF_BLOCKMODE=false
