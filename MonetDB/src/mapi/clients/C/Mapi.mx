@@ -745,7 +745,9 @@ mapi_export char *mapi_get_lang(Mapi mid);
 mapi_export char *mapi_get_dbname(Mapi mid);
 mapi_export char *mapi_get_host(Mapi mid);
 mapi_export char *mapi_get_user(Mapi mid);
-mapi_export char *mapi_get_version(Mapi mid);
+mapi_export char *mapi_get_mapi_version(Mapi mid);
+mapi_export char *mapi_get_monet_version(Mapi mid);
+mapi_export int mapi_get_monet_versionId(Mapi mid);
 mapi_export char *mapi_get_table(Mapi mid,int fnr);
 mapi_export char *mapi_get_name(Mapi mid,int fnr);
 mapi_export char *mapi_quote(char *msg);
@@ -2714,6 +2716,7 @@ char *mapi_get_monet_version(Mapi mid)
 }
 int mapi_get_monet_versionId(Mapi mid)
 {
+	mapi_check0(mid,"mapi_get_monet_versionId");
 	return mid->versionId;
 }
 @c
