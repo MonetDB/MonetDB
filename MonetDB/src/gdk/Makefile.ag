@@ -16,4 +16,3 @@ lib_gdk = {
 
 EXTRA_DIST = libbat.def index.html bat.eps bat1.eps bat2.eps
 EXTRA_DIST_DIR = Tests
-CFLAGS = -DLIBBAT

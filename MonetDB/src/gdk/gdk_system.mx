@@ -14,7 +14,7 @@ functions.
 #include <config.h>
 
 #ifdef _MSC_VER
-#ifndef LIBBAT
+#ifndef LIBGDK
 #define gdk_export extern __declspec(dllimport) 
 #else
 #define gdk_export extern __declspec(dllexport) 
