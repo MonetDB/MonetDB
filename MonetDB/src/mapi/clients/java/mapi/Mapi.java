@@ -122,7 +122,6 @@ import java.applet.Applet;
 import java.applet.*;
 import java.io.*;
 import java.net.Socket;
-import java.util.regex.*;
 
 public class Mapi 
 {
@@ -200,9 +199,6 @@ public class Mapi
 	private BufferedReader fromMonet;
 	private PrintStream traceLog = System.err;
 	
-	/* Monet 4.3 header type info regexp */
-	private static Pattern p = Pattern.compile("^.*?\\((.+?)\\).*$");
-
 private void check(String action){
 	if( !connected) setError("Connection lost",action);
 	clrError();
