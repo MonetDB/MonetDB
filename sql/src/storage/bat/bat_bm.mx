@@ -53,9 +53,9 @@ extern struct bm *bm_dup(struct bm *bm);
  * The previous persistent versions should be removed (after the
  * file writen by bm_save saved), using the bm_cleanup.
  */
-extern void bm_save(struct bm *bm, FILE *fp);
+extern int bm_save(struct bm *bm, FILE *fp);
+extern int bm_load(struct bm *bm, FILE *fp);
 extern void bm_cleanup(struct bm *bm);
-extern void bm_load(struct bm *bm, FILE *fp);
 
 /* fake commits as real commits are handled by a log manager */
 extern void bm_commit(struct bm *bm, int tid);
@@ -290,7 +290,7 @@ bm_dup(bm *obm)
 	return nbm;
 }
 
-void
+int
 bm_save(bm *bm, FILE *fp)
 		/* keep the bat id's, schema_table_* can become too long! */
 {
@@ -342,7 +342,8 @@ bm_save(bm *bm, FILE *fp)
 		BUNins(pbat, &id, &pbid);
 
 		fprintf(fp, "%s,%d,%d\n", name, version, pbid);
-		assert(BBP_status(pbid) & BBPPERSISTENT);
+		if (!(BBP_status(pbid)&BBPPERSISTENT)) 
+			return -1;
 	}
 	assert(!bm->bat_opbid);
 
@@ -353,6 +354,7 @@ bm_save(bm *bm, FILE *fp)
 	if (bm->bat_oversion)
 		bat_destroy(bm->bat_oversion);
 	bm->bat_oversion = bat_copy(bm->bat_version, "bm_cleanup");
+	return 0;
 }
 
 void
@@ -386,7 +388,7 @@ bm_cleanup(bm *bm)
 	bm->bat_opbid = NULL;
 }
 
-void
+int
 bm_load(bm *bm, FILE *fp)
 {
 	BAT *pbid = bm_create_bat(TYPE_oid, TYPE_oid, BUFSIZ);
@@ -404,14 +406,19 @@ bm_load(bm *bm, FILE *fp)
 			*s++ = 0;
 			version = strtol(s, NULL, 10);
 			s = strchr(s, ',');
-			if (!s)
-				GDKfatal("wrong bm format, please do a dump/restore!\n");
+			if (!s) {
+				GDKwarning("wrong bm format, please do a dump/restore!\n");
+				return -1;
+			}
 			s++;	/* skip , */
 			bid = strtol(s, NULL, 10);
 
 			if ((s = strchr(s, '\n')) != NULL)
 				*s = 0;
 			vid = bm_add_bat_intern(bm, bm->lbid++, bid, line, version, BM_WRITE);
+
+			if (!(BBP_status(bid)&BBPPERSISTENT)) 
+				return -1;
 
 			BUNins(pbid, &vid, &bid);
 
@@ -427,6 +434,7 @@ bm_load(bm *bm, FILE *fp)
 	BATfakeCommit(bm->bat_lbid);
 	BATfakeCommit(bm->bat_mode);
 	bm->bat_pbid = pbid;
+	return 0;
 }
 
 void

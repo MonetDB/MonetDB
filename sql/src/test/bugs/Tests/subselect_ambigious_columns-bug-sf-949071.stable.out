@@ -38,14 +38,14 @@ Over..
 [ "types"	]
 [ "ttables"	]
 [ "tcolumns"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
 [ "history"	]
 [ "sessions"	]
 [ "env"	]
 [ "sequences"	]
+[ "db_users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
 # 3 # querytype
 # tables # table_name
 # name # name
@@ -63,14 +63,14 @@ Over..
 [ "types"	]
 [ "ttables"	]
 [ "tcolumns"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
 [ "history"	]
 [ "sessions"	]
 [ "env"	]
 [ "sequences"	]
+[ "db_users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
 
 # 11:47:40 >  
 # 11:47:40 >  Done.
