@@ -1,8 +1,0 @@
-# this file should be ran after a M2m compile
-echo "patch test_40"
-echo "reason: ascii_io  -> io"
-ex - test_40.mal <<!EOF
-g/ascii_io/s//io/
-w test_40.mal
-q
-!EOF
