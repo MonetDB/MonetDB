@@ -1,10 +1,16 @@
 @t Conformance
 @a M Kersten
-@* Introduction
-The Mil-2-Mal compiler assures conversion of identifiers.
+@+ MIL version 4 conformance
+@T
+
+The MIL-2-MAL compiler converts of identifiers.
 Since there may be conflicts with user defined identifiers,
 we produce a warning listing at the end of each program with
 the identifier mappings performed.
+
+We also have to avoid module identifiers to be used
+as variables. It could produce problems when
+compiling, e.g. bbp.setRole(ll)
 
 Note that not all identifiers can be mapped automatically.
 In particuler the following list indicates those requireing
@@ -26,23 +32,23 @@ struct{
 	int used;
 } idmap[]={
 {"synced",		"isSynced",0},
-{"col_name",		"bbp.setColumn",0},
-{"name",		"bbp.setRole",0},
-{"rename",		"bat.setName",0},
+{"col_name",		"bat.setColumn",0},
+{"name",		"bat.setRole",0},
+{"rename",		"bat.setName",0}, 
 {"cold",		"bbp.setCold",0},
 {"hot",			"bbp.setHot",0},
-{"view_bbp_name",	"catalog.bbpNames",0},
-{"view_bbp_refcnt",	"catalog.bbpRefcnt",0},
-{"view_bbp_location",	"catalog.bbpLocation",0},
-{"view_bbp_heat",	"catalog.bbpHeat",0},
-{"view_bbp_dirty",	"catalog.bbpDirty",0},
-{"view_bbp_status",	"catalog.bbpStatus",0},
-{"view_bbp_kind",	"catalog.bbpKind",0},
+{"view_bbp_name",	"bbp.getNames",0},
+{"view_bbp_refcnt",	"bbp.getRefCount",0},
+{"view_bbp_location",	"bbp.getLocation",0},
+{"view_bbp_heat",	"bbp.getHeat",0},
+{"view_bbp_dirty",	"bbp.getDirty",0},
+{"view_bbp_status",	"bbp.getStatus",0},
+{"view_bbp_kind",	"bbp.getKind",0},
 {"key",			"bat.setKey,isaKey",0},
 {"set",			"bat.setSet,isaSet",0},
 {"ordered",		"bat.isSorted",0},
 {"seqbase",		"bat.setSequenceBase",0},
-{"pesists",		"bat.setPersistent",0},
+{"capacity",		"bat.getCapacity",0},
 {"batsize",		"bat.bbpBatSize",0},
 {"bbpname",		"getName",0},
 {"htype",		"getHeadType",0},

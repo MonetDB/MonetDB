@@ -2,26 +2,34 @@
 @v 2.0
 @+ Monet Interface Language 
 @T
-Monet 4 comes with a well-established programming language, called MIL
+MonetDB comes with a well-established programming language, called MIL
 (Monet Interface Language). A large collection of MIL programs exists,
-which ideally should run without problems on the Monet 5 Kernel.
+which ideally should run without problems on the MonetDB version 5 Kernel.
 Unfortunately, life isn;t that easy. 
 MIL was designed as a half-backed scripting language with
-dynamic typing, little support for debugging, and loose syntax.
-Furthermore, naming of the modules and their operators where
-rather ad-hoc. Some of it is being rectified in Monet 5.
+dynamic typing, variable re-use with different types,
+little support for debugging, and permissive syntax.
+The MonetDB version 4 compiler was intimately bound with the
+runtime system, e.g. an identifier was immediately resolved
+against the modules being loaded and variables being known.
+This was necessary to resolve their context dependent interpretation.
 
-This module contains a minimalistic compiler, which produces
+In version 5.0 a cleanup of MIL has taken place which strikes
+a balance between forcing users to use MAL and
+to continue using their MIL code base. 
+It is realized with a minimalistic compiler, which produces
 MAL code for a large fragment of the MIL language. It is implemented
 as an off-line compiler; there is no information on the runtime
 status. In particular, it means there is no knowledge on
 pre-existing variables, type names, procedures, etc..
 
-With a little care, however, most MIL programs can be compiled
-and run against the new kernel. The Monet version 4 test suites
-and predefined MIL proc's
+@+ MIL4 migration path
+With a little care  most MIL programs can be compiled
+and run against the new kernel. 
+The Monet version 4 test suites and predefined MIL proc's
 have been used to define the language boundaries to be supported
-by the compiler.
+by the compiler. The test suite contains both MIL versions.
+
 In writing MIL code, the following rules should be kept obeyed:
 \begin{verbatim}
 \item clearly mark all MIL procedure calls with a parameterlist
@@ -33,12 +41,17 @@ behavior, i.e. c:= copy(b) -> c:= copy(bat("b"));
 \item make the type of a 'nil' value explicity, e.g.  nil -> int(nil).
 \item {\sc while},  {\sc for}, and {\sc if} use sequential blocks
 and no single statements, e.g. if(A)B ->if(A)\{B\}.
+\item the body of a MIL proc is a sequential block.
 \end{verbatim}
+
+Aside from syntax restrictions imposed, MIL version 5
+uses function names available in the new kernel.
+They have to translated by hand, a detailed list is given below.
 
 The compiler is complemented by MIL support module,
 which implements the MAL scenario routines.
 
-@- Implementation notes
+@+ Implementation notes
 The parser produced is not thread safe, which means that parsing
 is encapsulated in a critical section. On single cpu systems this
 does not cause too much performance degration, on multi-cpu systems
@@ -52,9 +65,30 @@ silently replace them with a type identifier. Likewise, an procedure
 identifier mapping table is used to ease migration to the new setting.
 
 The compiler can be used in both offline mode and as part of the
-MIL scenario. Defining the macrp M2Moffline produces MAL code
+MIL scenario. Defining the macro M2Moffline produces MAL code
 on standard output. Otherwise, the MAL code is directly produced
 in memory for direct optimization and execution.
+
+@+ Manual changes
+@T
+The naming for MIL 4 built-in functions has been cleaned up at
+several places.  They are translated by the compiler leaving
+a message in the code generated to check for unforeseen side
+effects.
+
+The signatures of several key algorithms has also changed.
+In particular, the BAT update routines do not return
+their target variable. This means you can not cascade a series
+of calls. For example, the MIL 4 statement
+\begin{verbatim}
+ a.select(1,2).access(BAT_WRITE).rename("C");
+ b.insert(0,1).insert(1,2);
+\end{verbatim}
+should be split into multiple steps as follows:
+\begin{verbatim}
+ a.select(1,2); a.access(BAT_WRITE); a.rename("C");
+ b.insert(0,1); b.insert(1,2);
+\end{verbatim}
 @{
 @- The lexical analyzer
 The lexical analyzer is generated using Flex, the preferred tool in Monet.
@@ -129,6 +163,8 @@ extern str getLastIterator();
 extern char *bindFcn(str nme);
 extern char *bindId(str nme);
 
+#define rem	if(comment){printf("#%s\n",comment);comment=0;}
+extern char *comment;
 #endif /* _MIL_PARSER_H */
 @l
 /*
@@ -206,6 +242,9 @@ needed for tracing the parser.
 ("{"{OPER}"}")	|
 ("{"{IDENT}"}")	| 
 ({IDENT})	      { yytext[yyleng]=0; Vector(TOK_IDENT, TYPE_str, yytext,yyleng);	      }
+":"[-+*%^|&/]"="	{
+			Vector(TOK_OPERATOR3, TYPE_str, yytext,yyleng); 
+		}
 [-+*%^|&/]"="	{
 			Vector(TOK_OPERATOR2, TYPE_str, yytext,yyleng); 
 		}
@@ -231,16 +270,17 @@ needed for tracing the parser.
 ("-")?{D}+{E}         { Vector(TOK_CONSTANT, TYPE_flt,  yytext, yyleng);         }
 "'"\\0{O}({O})?({O})?"'" {Vector(TOK_CONSTANT, TYPE_chr, yytext, yyleng);        }
 \"[^\n"]*\"		{
-                        if (yytext[yyleng-1] != '\\') {
-				yytext[yyleng]=0;
+                        if ( yytext[yyleng-2] != '\\') {
                                 Vector(TOK_CONSTANT, TYPE_str, yytext, yyleng);
                         } else {
+				unput('"');
 				yymore(); 
 			}					                     }
-\'[^\n\']*\'            { 
-                        if (yytext[yyleng-1] != '\\') {
+\'[^\n']*\'            { 
+                        if (yytext[yyleng-2] != '\\') {
                                 Vector(TOK_CONSTANT, TYPE_chr, yytext, yyleng);
                         } else {
+				unput('\'');
                                 yymore(); 
                         }                                                     }
 "@"                   { Symbol(TOK_ITERATION);                                }
@@ -315,8 +355,8 @@ the parse.
 char *comment;
 int mil_getch() {
         char ch, *s = NULL;
-	ch = *mil_stack->cptr;
 	int i=0;
+	ch = *mil_stack->cptr;
 
         if (ch == '\n' || (ch && mil_stack->cptr == mil_stack->buf) ){
                 if (mil_stack->listing) { 
@@ -510,7 +550,7 @@ str bindId(str nme){
 	if( (nme[4]=='T' || nme[4]=='H') && nme[2]=='_') return nme;
 	if( strcmp(nme,"quit") ==0){ 
 #ifdef M2Moffline
-		printf("\tquit();\n"); 
+		rem; printf("\tquit();\n"); 
 #else
 	TODO
 #endif
@@ -519,7 +559,7 @@ str bindId(str nme){
 
 	if(fnd==0 &&  fndId(nme) == 0 && constantdeclaration==0){
 #ifdef M2Moffline
-		printf("\t%s:= mil.take(%s);\n",nme,nme);
+		rem printf("\t%s := mil.take(%s);\n",nme,nme);
 #else
 	TODO
 #endif
@@ -567,7 +607,7 @@ char *emitExpr(char *msg){
 	if(*msg !='\'' && *msg!='"' && strchr(msg,'(') ){
 		char *nme= newName();
 #ifdef M2Moffline
-		printf("\t%s := %s;\n",nme,msg);
+		rem;printf("\t%s := %s;\n",nme,msg);
 #else
 	TODO
 #endif
@@ -587,7 +627,7 @@ char *emitExpr0(char *msg){
 	if(*msg !='\'' && *msg!='"' && strchr(msg,'(') ){
 		char *nme= newName();
 #ifdef M2Moffline
-		printf("\t%s := %s;\n",nme,msg);
+		rem;printf("\t%s := %s;\n",nme,msg);
 #else
 	TODO
 #endif
@@ -627,7 +667,7 @@ extern char *comment;
 %token TOK_PAREND TOK_IDENT TOK_IF TOK_WHILE
 %token TOK_BREAK TOK_RETURN TOK_VAR 
 %token TOK_CONST TOK_BAT
-%token TOK_OPERATOR TOK_OPERATOR2
+%token TOK_OPERATOR TOK_OPERATOR2 TOK_OPERATOR3
 %token TOK_SETOP TOK_SETAGGR TOK_PROCDEF
 %token TOK_STRING TOK_ITERATION TOK_ITERATION_PAR TOK_ELSE
 %token TOK_MODULE 
@@ -675,8 +715,7 @@ stmt: ';'
 	  $2.val= newName();
 	  pushIterator($2.val);
 #ifdef M2Moffline
-	rem;
-	  printf("barrier\t%s:= bunStream(%s,%sH,%sT);\n",
+	rem; printf("barrier\t%s := bunStream(%s,%sH,%sT);\n",
 		$2.val,$4.val,$2.val,$2.val);
 #else
 	TODO
@@ -699,8 +738,7 @@ stmt: ';'
 	  $2.val= newName();
 	  pushIterator($2.val);
 #ifdef M2Moffline
-	rem;
-	  printf("barrier\t%s:= bunStream(%s,%sH,%sT);\n",
+	rem; printf("barrier\t%s := bunStream(%s,%sH,%sT);\n",
 		$2.val,$1.val,$2.val,$2.val);
 #else
 	TODO
@@ -722,8 +760,7 @@ stmt: ';'
     |   TOK_RETURN ret_value ';'
 	{
 #ifdef M2Moffline
-	rem;
-		printf("\treturn %s:=%s;\n",newName(), $2.val);
+	rem; printf("\treturn %s :=%s;\n",newName(), $2.val);
 #else
 	TODO
 #endif
@@ -732,8 +769,7 @@ stmt: ';'
     |   whilestmt '(' 
 	{ $2.val= newName();
 #ifdef M2Moffline
-	rem;
-	  printf("barrier\t%s:= true;\n",$1.val);
+	rem; printf("barrier\t%s := true;\n",$1.val);
 #else
 	TODO
 #endif
@@ -742,8 +778,7 @@ stmt: ';'
 	 term ')' 
 	{
 #ifdef M2Moffline
-	rem;
-	 printf("barrier\t%s:= %s;\n",$2.val,$4.val); 
+	rem; printf("barrier\t%s := %s;\n",$2.val,$4.val); 
 #else
 	TODO
 #endif
@@ -790,8 +825,7 @@ stmt: ';'
 	  $3.val= newName();
 	  pushBlock($3.val);
 #ifdef M2Moffline
-	rem;
-	  printf("barrier\t%s:= not(%s);\n",$3.val,$1.val);
+	rem; printf("barrier\t%s := not(%s);\n",$3.val,$1.val);
 #else
 	TODO
 #endif
@@ -813,8 +847,7 @@ stmt: ';'
 ifhead: TOK_IF '(' term ')'
 	{ $1.val = newName();
 #ifdef M2Moffline
-	rem;
-	   printf("barrier\t%s:= %s;\n",$1.val,$3.val);
+	rem; printf("barrier\t%s := %s;\n",$1.val,$3.val);
 #else
 	TODO
 #endif
@@ -971,7 +1004,8 @@ proc_name:
 	$$=$1;} ;
 
 proc_header:
-         mel_header ret_type;
+         mel_header ret_type
+	| ret_type;
 	
 ret_type: ')' ':' mel_type
 	{ 
@@ -1095,8 +1129,7 @@ expression:
     |   constant template TOK_ASSIGNMENT term
 	{ newId($2.val); 
 #ifdef M2Moffline
-	rem;
-	  printf("\t%s := %s;\n", $2.val, $4.val); 
+	rem; printf("\t%s := %s;\n", $2.val, $4.val); 
 #else
 	TODO
 #endif
@@ -1104,8 +1137,7 @@ expression:
     |   constant tok_ident TOK_ASSIGNMENT term
 	{ newId($2.val); 
 #ifdef M2Moffline
-	rem;
-	  printf("\t%s := %s;\n", $2.val, $4.val); 
+	rem; printf("\t%s := %s;\n", $2.val, $4.val); 
 #else
 	TODO
 #endif
@@ -1123,6 +1155,13 @@ term :
 	  $1.val = emitExpr($1.val);
 	  $3.val = emitExpr($3.val);
 	  sprintf(stmt,"%c(%s,%s)", $2.val[0],$1.val,$3.val);
+	  $$.val=GDKstrdup($1.val);
+	}
+    |	factor1 TOK_OPERATOR3 term	/* deal with :+= and friends */
+	{ char stmt[1024];
+	  $1.val = emitExpr($1.val);
+	  $3.val = emitExpr($3.val);
+	  sprintf(stmt,"%c(%s,%s)", $2.val[1],$1.val,$3.val);
 	  $$.val=GDKstrdup($1.val);
 	}
     |	factor1 TOK_OPERATOR term
@@ -1157,8 +1196,7 @@ template:
     |   TOK_VARTEMP expression ')'
 	{ char *nme= newName();
 #ifdef M2Moffline
-	rem;
-	  printf("\t%s := mil.getVarTemp(%s);\n",nme,$2.val);
+	rem; printf("\t%s := mil.getVarTemp(%s);\n",nme,$2.val);
 #else
 	TODO
 #endif
@@ -1167,8 +1205,7 @@ template:
     |   TOK_VARTEMP expression TOK_RANGETEMP ')'
 	{ char *nme= newName();
 #ifdef M2Moffline
-	rem;
-	  printf("\t%s := mil.getVarTempRange(%s);\n",nme,$2.val);
+	rem; printf("\t%s := mil.getVarTempRange(%s);\n",nme,$2.val);
 #else
 	TODO
 #endif
@@ -1200,8 +1237,7 @@ multiplex_expression:
       multiplex_term multiplex_comma multiplex_term
 	{ $$.val= newName();
 #ifdef M2Moffline
-	rem;
-	printf("\t%s:= zipper(%s,%s);\n", $$.val, $1.val, $3.val);
+	rem; printf("\t%s := zipper(%s,%s);\n", $$.val, $1.val, $3.val);
 #else
 	TODO
 #endif
@@ -1209,8 +1245,7 @@ multiplex_expression:
     | multiplex_term
 	/* { $$.val= newName();
 #ifdef M2Moffline
-	rem;
-	printf("\t%s:= M2m.batconstruct1(%s);\n", $$.val, $1.val);
+	rem; printf("\t%s := M2m.batconstruct1(%s);\n", $$.val, $1.val);
 #else
 	TODO
 #endif
@@ -1222,8 +1257,7 @@ multiplex_term:
     |   expression '?' bat_expression ':' 
 	{$$.val = newName();
 #ifdef M2Moffline
-	rem;
-	 printf("\t%s := ifthen(%s,%s);\n",$$.val, $1.val,$3.val);
+	rem; printf("\t%s := ifthen(%s,%s);\n",$$.val, $1.val,$3.val);
 #else
 	TODO
 #endif
@@ -1231,8 +1265,7 @@ multiplex_term:
     |   expression '?' bat_expression ':' expression
 	{$$.val = newName();
 #ifdef M2Moffline
-	rem;
-	 printf("\t%s := ifthenelse(%s,%s,%s);\n",$$.val,
+	rem; printf("\t%s := ifthenelse(%s,%s,%s);\n",$$.val,
 		$1.val,$3.val,$5.val);
 #else
 	TODO
@@ -1245,8 +1278,7 @@ bat_expression:
      |   /* empty */
 	{ $$.val =newName();
 #ifdef M2Moffline
-	rem;
-	  printf("\t%s:= 0@0:oid;\n",$$.val);
+	rem; printf("\t%s := 0@0:oid;\n",$$.val);
 #else
 	TODO
 #endif
@@ -1258,7 +1290,8 @@ fcn_call:
 	{ char stmt[1024];
 	  $1.val= emitExpr($1.val);
 	  sprintf(stmt,"%s%s)", bindFcn($3.val),$1.val);
-	  $$.val = GDKstrdup(stmt);}
+	  $$.val = GDKstrdup(stmt);
+	}
     |	fcn_call '.' fcn_call_B
 	{ char stmt[1024], *s;
 	  /* move the result of the function into the second call */
@@ -1356,15 +1389,14 @@ ident_decl:
     |   tok_ident TOK_ASSIGNMENT term
  	{newId($1.val); 
 #ifdef M2Moffline
-	rem;
-	  printf("\t%s:= %s;\n",$1.val,$3.val); 
+	rem; printf("\t%s := %s;\n",$1.val,$3.val); 
 #else
 	TODO
 #endif
 	}
 	;
 tok_ident: TOK_IDENT
-	{ $$.val= mapid($1.val); }
+	  { $$.val= mapid($1.val); }
     ;
 %%
 
