@@ -1,14 +1,14 @@
 stdout of test 'bug-sf-936386` in directory 'src/test/bugs` itself:
 
 
-# 21:33:32 >  
-# 21:33:32 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=41737 --set sql_port=53937 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 21:33:32 >  
+# 13:20:43 >  
+# 13:20:43 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=42732 --set sql_port=58979 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 13:20:43 >  
 
-# Monet Database Server V4.3.17
+# Monet Database Server V4.5.0
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
 
@@ -17,21 +17,24 @@ quit();
 
 Over..
 
-# 21:33:32 >  
-# 21:33:32 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53937  < bug-sf-936386.sql
-# 21:33:32 >  
+# 13:20:44 >  
+# 13:20:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=58979  < bug-sf-936386.sql
+# 13:20:44 >  
 
-# single_value # name
-# character # type
+# 3 # querytype
+# tables # table_name
+# table_cat # name
+# char # type
+# 1 # length
 # 5 # tuplecount
-# 0 # id
+# 1 # id
 [ "a"	]
 [ "a"	]
 [ "a"	]
 [ "a"	]
 [ "a"	]
 
-# 21:33:32 >  
-# 21:33:32 >  Done.
-# 21:33:32 >  
+# 13:20:44 >  
+# 13:20:44 >  Done.
+# 13:20:44 >  
 
