@@ -198,6 +198,9 @@ struct PFalg_pair_t PFbui_fn_doc (PFalg_op_t *loop,
 struct PFalg_pair_t PFbui_fn_empty (PFalg_op_t *loop,
                                     struct PFalg_pair_t *args);
 
+struct PFalg_pair_t PFbui_pf_string_value (PFalg_op_t *loop,
+                                           struct PFalg_pair_t *args);
+
 #endif   /* BUITLINS_H */
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -151,6 +151,8 @@
 /* constructor for pf:merge-adjacent-text-nodes() functionality */
 #define merge_adjacent(a,b) PFalg_pf_merge_adjacent_text_nodes ((a),(b))
 
+#define string_value(a,b) PFalg_string_value ((a), (b))
+
 #define cast_item(o)      PFalg_cast_item ((o))
 
 /** serialization */

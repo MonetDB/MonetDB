@@ -144,7 +144,7 @@ PFns_t PFns_pf  = { .ns  = "#pf",
  * Wildcard namespace.
  * Used in QNames of the form *:loc.
  */
-PFns_t PFns_wild = { .ns = NULL, .uri = NULL };
+PFns_t PFns_wild = { .ns = "*", .uri = "*" };
 
 /**
  * XQuery default element NS.  Intially the default element NS is
@@ -677,6 +677,7 @@ PFns_resolve (PFpnode_t *root)
     ns_add (PFns_xs);
     ns_add (PFns_xsi);
     ns_add (PFns_pf);
+    ns_add (PFns_wild);
 
     /* bring the function and operator NS into scope
      * and make fn:... the default function NS

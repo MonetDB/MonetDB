@@ -87,6 +87,7 @@ char *a_id[]  = {
     , [aop_processi]         = "PI"               /* lawn green */
     , [aop_concat]           = "strconcat"
     , [aop_merge_adjacent]   = "merge-adjacent-text-nodes"
+    , [aop_string_val]       = "string-value"
     , [aop_seqty1]           = "SEQTY1"
     , [aop_all]              = "ALL"
     , [aop_roots]            = "ROOTS"
@@ -163,6 +164,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         , [aop_processi]       = "lawngreen"
         , [aop_concat]         = "grey"
         , [aop_merge_adjacent] = "grey"
+        , [aop_string_val]     = "grey"
         , [aop_seqty1]         = "grey"
         , [aop_all]            = "grey"
         , [aop_roots]          = "grey"
@@ -444,6 +446,7 @@ alg_dot (PFarray_t *dot, PFalg_op_t *n, char *node)
         case aop_processi:
         case aop_concat:
         case aop_merge_adjacent:
+        case aop_string_val:
         case aop_roots:
         case aop_fragment:
         case aop_frag_union:
@@ -671,6 +674,7 @@ alg_pretty (PFalg_op_t *n)
         case aop_processi:
         case aop_concat:
         case aop_merge_adjacent:
+        case aop_string_val:
         case aop_roots:
         case aop_fragment:
         case aop_frag_union:

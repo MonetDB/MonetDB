@@ -310,13 +310,13 @@ alg_op_leaf (PFalg_op_kind_t kind)
  * Similar to #alg_op_leaf(), but additionally wires one child.
  */
 static PFalg_op_t *
-alg_op_wire1 (PFalg_op_kind_t kind, PFalg_op_t *n)
+alg_op_wire1 (PFalg_op_kind_t kind, const PFalg_op_t *n)
 {
     PFalg_op_t *ret = alg_op_leaf (kind);
 
     assert (n);
 
-    ret->child[0] = n;
+    ret->child[0] = (PFalg_op_t *) n;
 
     return ret;
 }
@@ -326,13 +326,13 @@ alg_op_wire1 (PFalg_op_kind_t kind, PFalg_op_t *n)
  * Similar to #alg_op_wire1(), but additionally wires another child.
  */
 static PFalg_op_t *
-alg_op_wire2 (PFalg_op_kind_t kind, PFalg_op_t *n1, PFalg_op_t *n2)
+alg_op_wire2 (PFalg_op_kind_t kind, const PFalg_op_t *n1, const PFalg_op_t *n2)
 {
     PFalg_op_t *ret = alg_op_wire1 (kind, n1);
 
     assert (n2);
 
-    ret->child[1] = n2;
+    ret->child[1] = (PFalg_op_t *) n2;
 
     return ret;
 }
@@ -1928,6 +1928,26 @@ PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc, PFalg_op_t *n)
 
     return ret;
 }
+
+PFalg_op_t *
+PFalg_string_value (const PFalg_op_t *doc, const PFalg_op_t *n)
+{
+    PFalg_op_t *ret = alg_op_wire2 (aop_string_val, doc, n);
+
+    ret->schema.count = 3;
+    ret->schema.items
+        = PFmalloc (sizeof (*ret->schema.items) * ret->schema.count);
+
+    ret->schema.items[0]
+        = (struct PFalg_schm_item_t) { .type = aat_nat, .name = "iter" };
+    ret->schema.items[1]
+        = (struct PFalg_schm_item_t) { .type = aat_nat, .name = "pos" };
+    ret->schema.items[2]
+        = (struct PFalg_schm_item_t) { .type = aat_str, .name = "item" };
+
+    return ret;
+}
+
 
 /**
  * Access to (persistently stored) XML documents, the fn:doc()

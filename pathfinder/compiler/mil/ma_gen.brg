@@ -62,6 +62,7 @@ typedef struct PFalg_op_t *NODEPTR_TYPE;
 /*
  * Node identifiers.
  * Keep them aligned with the node kinds in include/algebra.h!
+ * FIXME: This is broken!
  */
 %term lit_tbl        =  1
 %term disjunion      =  2

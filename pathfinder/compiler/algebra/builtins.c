@@ -1126,6 +1126,18 @@ PFbui_fn_doc (PFalg_op_t *loop __attribute__((unused)),
 }
 
 /**
+ * Built-in functin <code>pf:typed-value</code>.
+ */
+struct PFalg_pair_t
+PFbui_pf_string_value (PFalg_op_t *loop __attribute__((unused)),
+                       struct PFalg_pair_t *args)
+{
+    return (struct PFalg_pair_t) {
+        .rel  = string_value (PFalg_set_to_alg (args[0].frag), args[0].rel),
+        .frag = PFalg_empty_set () };
+}
+
+/**
  * Build up operator tree for built-in function 'fn:typed-value'.
  */
 struct PFalg_pair_t

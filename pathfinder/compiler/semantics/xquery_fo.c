@@ -977,7 +977,8 @@
 , /* pf:string-value (node) as string */                                 \
   { .ns = PFns_pf, .loc = "string-value",                                \
     .arity = 1, .par_ty = { PFty_node () },                              \
-    .ret_ty = PFty_string () }                                           \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_pf_string_value }                                       \
 , /* fn:string () as string */                                           \
   { .ns = PFns_fn, .loc = "string",                                      \
     .arity = 0, .par_ty = { PFty_none () },                              \

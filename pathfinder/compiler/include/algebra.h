@@ -237,18 +237,19 @@ enum PFalg_op_kind_t {
                                    builtin function */
     , aop_merge_adjacent = 37 /**< operator for pf:merge-adjacent-text-nodes
                                    builtin function */
-    , aop_seqty1         = 38 /**< test for exactly one type occurrence in one
+    , aop_string_val     = 38 /**< operator to access string value of nodes */
+    , aop_seqty1         = 39 /**< test for exactly one type occurrence in one
                                    iteration (Pathfinder extension) */
-    , aop_all            = 39 /**< test if all items in an iteration are true */
-    , aop_roots          = 40 /**< algebraic repres. of the roots of newly
+    , aop_all            = 40 /**< test if all items in an iteration are true */
+    , aop_roots          = 41 /**< algebraic repres. of the roots of newly
 			           created xml nodes (e.g. element());
 			           schema: iter | pos | item */
     /* all operators below represent xml node fragments with no schema */
-    , aop_fragment       = 41 /**< representation of a node fragment */
-    , aop_frag_union     = 42 /**< special node type used to form an algebraic
+    , aop_fragment       = 42 /**< representation of a node fragment */
+    , aop_frag_union     = 43 /**< special node type used to form an algebraic
 			        union of fragments */
-    , aop_empty_frag     = 43 /**< representation of an empty fragment */
-    , aop_doc_tbl        = 44 /**< document relation (is also a fragment) */
+    , aop_empty_frag     = 44 /**< representation of an empty fragment */
+    , aop_doc_tbl        = 45 /**< document relation (is also a fragment) */
 
     , aop_dummy               /**< dummy node during compilation */
 };
@@ -707,6 +708,7 @@ PFalg_op_t * PFalg_strconcat (PFalg_op_t *n);
 PFalg_op_t * PFalg_pf_merge_adjacent_text_nodes (PFalg_op_t *doc,
 						 PFalg_op_t *n);
 
+PFalg_op_t * PFalg_string_value (const PFalg_op_t *doc, const PFalg_op_t *n);
 
 /**
  * Access to (persistently stored) XML documents, the fn:doc()

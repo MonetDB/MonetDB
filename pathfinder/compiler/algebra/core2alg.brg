@@ -872,7 +872,7 @@ reduce (PFcnode_t * p, int goalnt)
              * `seqcast' nodes are only introduced for static typing.
              * They are not meant to be executed.
              */
-            A(p) = A(L(p));
+            A(p) = A(R(p));
             break;
 
         /* CoreExpr:           locsteps (LocationStep, CoreExpr) */
@@ -1263,6 +1263,9 @@ reduce (PFcnode_t * p, int goalnt)
                     break;
                 }
             }
+
+            assert (A(p).rel); assert (A(p).frag);
+
         } break;
 
         /* Atom:               LiteralValue */
