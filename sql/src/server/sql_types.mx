@@ -208,7 +208,7 @@ sql_subtype *sql_dup_subtype( sql_subtype *res )
 sql_subtype *sql_bind_subtype( char *name, unsigned int digits, unsigned int scale )
 	/* todo add approximate info 
 	 * if digits/scale == 0 and no approximate with digits/scale == 0
-	 * exits we could return the type with largest digits 
+	 * exists we could return the type with largest digits 
 	 *
 	 * returning the largest when no exact match is found is now the
 	 * (wrong?) default
