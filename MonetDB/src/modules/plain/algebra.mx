@@ -638,30 +638,144 @@ that for the moment are defined as procs.
     ADDHELP("join", "boncz", "Aug  6 1998",
             "Returns [left.head,right.tail] where (*fcn)(left.tail,right.head,..params..)", "algebra");
 
-    # SQL like functionality, vectorized MIL implementation
-    # TODO: escaped percents
+    # SQL LIKE functionality, vectorized MIL implementation
     PROC likeselect(bat[any::1,str] b, str pat) : bat[any::1,oid]  {
-        var s, idx := pat.search('%');
+        var s;
+		var idxper;
+		var idxund;
+		var isper;
+		var idx;
+		var didMatch;
+		
+		idxper := find_unescaped_occurrence(pat, '%');
+		idxund := find_unescaped_occurrence(pat, '_');
 
-        if (idx = -1) {
+        if ((idxper = -1) and (idxund = -1)) {
+			# no % or _ found at all, return simple selection on the given
+			# string with no hassle of fancy wildcard characters
             return b.uselect(pat);
-        } else if (idx > 0) {
-            s := [startsWith](b, pat.string(0, idx)).[ifthen](b);
-            b := s.[string](0, idx);
-        }
-        while((idx :+=1) < pat.length()) {
+		} else if (idxper = -1) {
+			idx := idxund;
+			isper := false;
+		} else if (idxund = -1) {
+			idx := idxper;
+			isper := true;
+		} else {
+			# idxper can never be equal to idxund at this point
+			if (idxper < idxund) {
+				idx := idxper;
+				isper := true;
+			} else {
+				idx := idxund;
+				isper := false;
+			}
+		}
+
+		if (idx > 0) {
+			s := b.[search](pat.string(0, idx)).select(0);
+			if (isper) {
+				b := b.[string](s, [-](b.semijoin(s).[length](), s));
+			} else {
+				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
+			}
+			didMatch := true;
+		} else {
+			didMatch := false;
+		}
+
+		while ((idx :+= 1) < pat.length()) {
+			# remove from the search pattern what we have matched so far
             pat := pat.string(idx, pat.length()-idx);
-            idx := pat.search('%');
-            if (idx < 0) {
-                if (pat.length() > 0) {
-                    b := [endsWith](b,pat).[ifthen](b);
-                } break;
-            }
-            s := b.[search](pat.string(0, idx)).select(0,int(nil));
-            b := b.[string](s, [-](b.semijoin(s).[length](), s));
-        }
+
+			# find next match for the last matching char (% or _)
+			if (didMatch and isper) {
+				idxper := find_unescaped_occurrence(pat, '%');
+				# correct value of other index
+				if (idxund > 0) idxund :-= idx;
+			} else if (didMatch) {
+				idxund := find_unescaped_occurrence(pat, '_');
+				# correct value of other index
+				if (idxper > 0) idxper :-= idx;
+			} else {
+				didMatch := true;
+			}
+				
+			if ((idxper = -1) and (idxund = -1)) {
+				idx := -1;
+			} else if (idxper = -1) {
+				idx := idxund;
+				isper := false;
+			} else if (idxund = -1) {
+				idx := idxper;
+				isper := true;
+			} else {
+				# idxper can never be equal to idxund at this point
+				if (idxper < idxund) {
+					idx := idxper;
+					isper := true;
+				} else {
+					idx := idxund;
+					isper := false;
+				}
+			}
+		
+			# is idx is smaller than 0 at this point, then both idxper and
+			# idxund are -1
+			if (idx < 0) {
+				if (pat.length() > 0) {
+					b := [endsWith](b,pat).[ifthen](b);
+				}
+				break;
+			}
+			
+			s := b.[search](pat.string(0, idx)).select(0, int(nil));
+			if (isper) {
+				b := b.[string](s, [-](b.semijoin(s).[length](), s));
+			} else {
+				b := b.[string](s, [+]([-](b.semijoin(s).[length](), s), 1));
+			}
+		}
+
         return b.mark(nil);
     }
+    ADDHELP("likeselect", "groffen", "Sep 26 2004",
+    "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
+    
+	proc find_unescaped_occurrence(str b, chr c) : int {
+		var idx := b.search(c);
+		var tmp;
+		
+		while (idx > 0) {
+			# check if this char was escaped
+			tmp := idx;
+			while ((tmp :-=1) >= 0) {
+				if ("\\" != b.string(tmp, 1)) {
+					tmp :+= 1;
+					break;
+				}
+			}
+			if (((idx - tmp) % 2) = 1) {
+				# this was an escaped char, go looking for the next one
+				tmp := b.string(idx, b.length() - idx).search(c);
+				# if not found, keep it like that, otherwise correct the
+				# index with an offset
+				if (tmp >= 0) {
+					idx := tmp + idx;
+				} else {
+					idx := tmp;
+					# we will not find anything more, break out
+					break;
+				}
+			} else {
+				# we found a valid one, break out of the loop!
+				break;
+			}
+		}
+		return(idx);
+    }
+    ADDHELP("find_unescaped_occurrence", "groffen", "Sep 26 2004",
+    "finds the first occurrence of c that is not escaped by a \\", "algebra");
+
 
     PROC mil_select(bat[any::1,any::2] b, str fcn, ..any..) : bat[any::1,any::2] 
     {
