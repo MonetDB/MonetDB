@@ -51,8 +51,7 @@ stdout of test 'q13` in directory 'tests/XPath` itself:
 <watch open_auction="open_auction0"/>
 <watch open_auction="open_auction9"/>
 </watches>
-</person>
-<person id="person11">
+</person><person id="person11">
 <name>Saul Schaap</name>
 <emailaddress>mailto:Schaap@forth.gr</emailaddress>
 <phone>+0 (255) 85051213</phone>
