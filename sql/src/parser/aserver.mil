@@ -114,7 +114,7 @@ proc ascii_export_schema(Output, schema):= {
 	write_output ( Output, str(int(sid)) );
 	
 	var tables := table_name.semijoin(table_schema.select(sid));
-	tables := tables.diff( table_query );
+	tables := tables.kdiff( table_query );
 	output_count( tables, Output);
 	server_output( Output, table_id.semijoin(tables), tables, table_temp.semijoin(tables) );
 
