@@ -789,20 +789,21 @@ public class JdbcClient {
 			return;
 		}
 
-		String comment = null;
 		int i;
 		out.print("CREATE "); out.print(table.getType()); out.print(" ");
 		out.print(fq ? table.getFqnameQ() : table.getNameQ()); out.println(" (");
 		// put all columns with their type in place
 		ResultSet cols = dbmd.getColumns(table.getCat(), table.getSchem(), table.getName(), null);
 		ResultSetMetaData rsmd = cols.getMetaData();
-		int width = rsmd.getColumnDisplaySize(cols.findColumn("COLUMN_NAME"));
+		int colwidth = rsmd.getColumnDisplaySize(cols.findColumn("COLUMN_NAME"));
+		int typewidth = rsmd.getColumnDisplaySize(cols.findColumn("TYPE_NAME"));
 		for (i = 0; cols.next(); i++) {
 			int type = cols.getInt("DATA_TYPE");
 			if (i > 0) out.println(",");
 			out.print("\t\""); out.print(cols.getString("COLUMN_NAME"));
-			out.print("\""); out.print(repeat(' ', width - cols.getString("COLUMN_NAME").length()));
+			out.print("\""); out.print(repeat(' ', colwidth - cols.getString("COLUMN_NAME").length()));
 		 	out.print(" "); out.print(cols.getString("TYPE_NAME"));
+			out.print(repeat(' ', typewidth - cols.getString("TYPE_NAME").length()));
 			int size = cols.getInt("COLUMN_SIZE");
 			int digits = cols.getInt("DECIMAL_DIGITS");
 		 	if (type == Types.FLOAT ||
@@ -840,14 +841,15 @@ public class JdbcClient {
 		for (i = 0; cols.next(); i++) {
 			if (i == 0) {
 				out.println(","); out.println();
-				out.print("\tPRIMARY KEY (\"");
+				out.print("\tCONSTRAINT \"");
+				out.print(cols.getString("PK_NAME"));
+				out.print("\" PRIMARY KEY (\"");
 			}
 			if (i > 0) out.print("\", \"");
 			out.print(cols.getString("COLUMN_NAME"));
 		}
 		if (i != 0) {
 			out.print("\")");
-			comment = cols.getString("PK_NAME");
 		}
 		cols.close();
 
@@ -855,16 +857,14 @@ public class JdbcClient {
 		cols = dbmd.getIndexInfo(table.getCat(), table.getSchem(), table.getName(), true, true);
 		while (cols.next()) {
 			out.print(",");
-			if (comment != null) {
-				out.print(" -- "); out.print(comment);
-			}
+			String idxname = cols.getString("INDEX_NAME");
 			out.println();
-			out.print("\tUNIQUE (\""); out.print(cols.getString("COLUMN_NAME"));
-			comment = cols.getString("INDEX_NAME");
+			out.print("\tCONSTRAINT \""); out.print(idxname);
+			out.print("\" UNIQUE (\""); out.print(cols.getString("COLUMN_NAME"));
 
 			boolean next;
-			while ((next = cols.next()) && comment != null &&
-				comment.equals(cols.getString("INDEX_NAME")))
+			while ((next = cols.next()) && idxname != null &&
+				idxname.equals(cols.getString("INDEX_NAME")))
 			{
 				out.print("\", \""); out.print(cols.getString("COLUMN_NAME"));
 			}
@@ -879,12 +879,10 @@ public class JdbcClient {
 		cols = dbmd.getImportedKeys(table.getCat(), table.getSchem(), table.getName());
 		while (cols.next()) {
 			out.print(",");
-			if (comment != null) {
-				out.print(" -- "); out.print(comment);
-			}
+			String fkname = cols.getString("FK_NAME");
 			out.println();
-			out.print("\tFOREIGN KEY (");
-			comment = cols.getString("FK_NAME");
+			out.print("\tCONSTRAINT \""); out.print(fkname);
+			out.print("\" FOREIGN KEY (");
 
 			boolean next;
 			Set fk = new LinkedHashSet();
@@ -892,8 +890,8 @@ public class JdbcClient {
 			Set pk = new LinkedHashSet();
 			pk.add(cols.getString("PKCOLUMN_NAME").intern());
 
-			while ((next = cols.next()) && comment != null &&
-				comment.equals(cols.getString("FK_NAME")))
+			while ((next = cols.next()) && fkname != null &&
+				fkname.equals(cols.getString("FK_NAME")))
 			{
 				fk.add(cols.getString("FKCOLUMN_NAME").intern());
 				pk.add(cols.getString("PKCOLUMN_NAME").intern());
@@ -923,31 +921,26 @@ public class JdbcClient {
 		 	out.print(")");
 		}
 		cols.close();
-		// if a comment needs to be added, do it now
-		if (comment != null) {
-			out.print(" -- "); out.print(comment);
-		}
 		out.println();
 		// end the create statement
 		out.println(");");
 
 		// create indexes
 		cols = dbmd.getIndexInfo(table.getCat(), table.getSchem(), table.getName(), false, true);
-		comment = null;
 		while (cols.next()) {
 			if (!cols.getBoolean("NON_UNIQUE")) {
 				// we already covered this one as UNIQUE
 				continue;
 			} else {
+				String idxname = cols.getString("INDEX_NAME");
 				out.print("CREATE INDEX \"");
-				out.print(cols.getString("INDEX_NAME"));
+				out.print(idxname);
 				out.print("\" ON \""); out.print(cols.getString("TABLE_NAME"));
 				out.print("\" (\""); out.print(cols.getString("COLUMN_NAME"));
-				comment = cols.getString("INDEX_NAME");
 
 				boolean next;
-				while ((next = cols.next()) && comment != null &&
-					comment.equals(cols.getString("INDEX_NAME")))
+				while ((next = cols.next()) && idxname != null &&
+					idxname.equals(cols.getString("INDEX_NAME")))
 				{
 					out.print("\", \""); out.print(cols.getString("COLUMN_NAME"));
 				}
