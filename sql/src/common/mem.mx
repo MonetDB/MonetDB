@@ -38,10 +38,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#ifdef HAVE_MALLOC_H 
-#include <malloc.h>
-#endif
-
 #ifdef _MSC_VER
 #ifndef LIBSQL
 #define sql_export extern __declspec(dllimport)
@@ -51,11 +47,6 @@
 #else
 #define sql_export extern
 #endif
-
-sql_export void* 	GDKmalloc  (size_t size);
-sql_export void* 	GDKrealloc (void* pold, size_t size);
-sql_export void		GDKfree    (void* blk); 
-sql_export char*	GDKstrdup  (char *s);
 
 #define NEW( type ) (type*)GDKmalloc(sizeof(type) )
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))

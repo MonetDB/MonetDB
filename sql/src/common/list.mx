@@ -228,7 +228,10 @@ int list_cmp(list * l1, list *l2, fcmp cmp)
 	node *n,*m;
 	int res = 0;
 
-	if (list_length(l1) != list_length(l2))
+	if (l1 == l2)
+		return 0;
+
+	if (!l1 || !l2 || list_length(l1) != list_length(l2))
 		return -1;
 
        	for ( n	= l1->h, m = l2->h; res==0 && n; n = n->next, m = m->next)

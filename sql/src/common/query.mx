@@ -37,7 +37,8 @@ typedef enum sql_query_t {
 	Q_UPDATE = 4,
 	Q_DATA = 5, 
 	Q_CREATE = 6,
-	Q_DEBUG = 7
+	Q_DEBUG = 7,
+	Q_DEBUGP = 8
 } sql_query_t;
 
 #endif /* QUERY_H */
