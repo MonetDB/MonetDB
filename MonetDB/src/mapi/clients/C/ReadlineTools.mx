@@ -42,7 +42,7 @@ init_readline(Mapi mid, const char *language, int save_history)
 	if (strcmp(language, "sql")==0) {
 		rl_attempted_completion_function = sql_completion;
 	} else {
-		// FIXME: mil completion
+		/* FIXME: mil completion */
 	}
 
 	if (save_history) {
@@ -117,7 +117,7 @@ char *sql_tablename_generator (const char *text, int state) {
 	return NULL;
 }
 
-// SQL commands (at start of line)
+/* SQL commands (at start of line) */
 char *sql_command_generator (const char *text, int state) {
 
 	static int index, len;
