@@ -223,7 +223,7 @@ void dump_header(MalBlkPtr mb, stmt *s, list *l ){
 }
 @-
 Some utility routines to generate code
-The equality opertor in MAL is '==' instead of '='.
+The equality operator in MAL is '==' instead of '='.
 @c
 str convertOperator(str op){
 	if(strcmp(op,"=")==0) return "==";
