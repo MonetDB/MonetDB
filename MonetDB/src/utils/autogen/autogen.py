@@ -78,7 +78,7 @@ def read_makefile(p,cwd):
             p.parse("\n", lineno,line)
         lineno = lineno + 1
 
-automake="100400"
+automake="1004000"
 if len(sys.argv) > 1:
     topdir = sys.argv[1]
     if len(sys.argv) > 2:
