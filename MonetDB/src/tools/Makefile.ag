@@ -19,7 +19,6 @@ SHARED_MODS =	\
 	../modules/plain/lib_bitvector	\
 	../modules/plain/lib_blob	\
 	../modules/plain/lib_cluster	\
-	../modules/plain/lib_counters	\
 	../modules/plain/lib_ddbench	\
 	../modules/plain/lib_decimal	\
 	../modules/plain/lib_enum	\
@@ -41,13 +40,16 @@ SHARED_MODS =	\
 	../modules/plain/lib_wisc	\
 	../modules/plain/lib_xtables	\
 	../modules/plain/lib_logger	\
-	../modules/plain/lib_ascii_io
-
-CONFLICT_MODS = \
-	../modules/plain/lib_iterator	\
-	../modules/plain/lib_perfex	\
+	../modules/plain/lib_ascii_io	\
+	\
 	../modules/plain/lib_qt	\
 	../modules/plain/lib_vector
+
+CONFLICT_MODS = \
+	../modules/plain/lib_counters	\
+	\
+	../modules/plain/lib_iterator	\
+	../modules/plain/lib_perfex
 
 EXTRA_DIST = static_modules.mx monet-config.mx.in
 

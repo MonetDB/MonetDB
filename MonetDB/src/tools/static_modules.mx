@@ -17,7 +17,6 @@
 @:install_module(bitvector)@
 @:install_module(blob)@
 @:install_module(cluster)@
-@:install_module(counters)@
 @:install_module(ddbench)@
 @:install_module(decimal)@
 @:install_module(enum)@
@@ -40,11 +39,14 @@
 @:install_module(xtables)@
 @:install_module(logger)@
 @:install_module(ascii_io)@
-/* conflicts */
-/*
-@:install_module(iterator)@
-@:install_module(perfex)@
+
 @:install_module(qt)@
 @:install_module(vector)@
+/* conflicts */
+/*
+@:install_module(counters)@
+
+@:install_module(iterator)@
+@:install_module(perfex)@
 */
 #endif
