@@ -202,7 +202,7 @@ have changed since my proposal.
 
 
 - Environment variables:
-  + Mtest.pydoesn't need any special environment variables to be set.
+  + Mtest.py doesn't need any special environment variables to be set.
   + However, the following environment variables can be set to overrule the
     default settings:
 	name		default					description
@@ -214,15 +214,22 @@ have changed since my proposal.
 	TSTBLDBASE	$MONET_BUILD				base of extracted test tree
 	TSTTRGBASE	$MONET_PREFIX				base for test output
 	MONETRC		(see obove)				location of .monet.Mtest.conf
+	MAPICLIENT	MapiClient				name of mapi-client program
+								(needs to accept '-everything' option)
+	SQLCLIENT	sql_client				name of sql-client program
+								(needs to accept '--port=<port-no.>' option)
 	MAPIPORT	$HOST:<random-port-number>		the MAPI port
 	SQLPORT		<random-port-number>			the SQL port
 
-    the following variables are currently still used legacy, but they will disappear soon...
+    The following variables are currently still used legacy, but they will disappear soon...
 	MONET_MOD_PATH	$MONET_PREFIX/lib;MONET_PREFIX/lib/Monet
 
-  NOTE: 
-  All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
-  above).
+    The setting of all these environment variables maybe overruled
+    by commandline options with the same names, e.g., "--SQLPORT=12345".
+
+    NOTE: 
+    All paths must be given as ABSOLUTE PHYSICAL PATHS (see "IMPORTANT NOTE"
+    above).
 
   + Further environment variables that Mtest.py exports (to be used in test
     scripts) are:
