@@ -178,7 +178,7 @@ public class MonetPreparedStatement
 		super.addBatch(transform());
 	}
 
-	/** override the execute from the Statement to throw an SQLException */
+	/** override the addBatch from the Statement to throw an SQLException */
 	public void addBatch(String q) throws SQLException {
 		throw new SQLException("This method is not available in a PreparedStatement!");
 	}
