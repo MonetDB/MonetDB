@@ -127,7 +127,7 @@ next@2@3@5:;
 		}
 	}
 @= elim
-{	int xx, (*cmp)() = BATatoms[b->ttype].atomCmp;
+{	int xx, (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
 	size_t zz;
 	BUN p, q, r; 
 	if (BAThordered(b)&1) {
@@ -152,7 +152,7 @@ next@2@3@5:;
 	case TYPE_dbl:	@:elim(@1,loc,_dbl,simple_CMP(h,BUNhloc(b,r),dbl))@
 	case TYPE_lng:	@:elim(@1,loc,_lng,simple_CMP(h,BUNhloc(b,r),lng))@
 	default: 
-	    {	int (*merge)()= BATatoms[b->htype].atomCmp;
+	    {	int (*merge)(ptr, ptr)= BATatoms[b->htype].atomCmp;
 		if (b->hvarsized) {
 			@:elim(@1,var,var,((*merge)(h,BUNhvar(b,r))))@
 		} else {
@@ -410,7 +410,7 @@ end@2@3:;
 #define diff_size(l,r) BATcount(l)
 
 int BATins_@1@2(BAT *bn, BAT *l, BAT *r) {
-	int (*cmp)(), (*merge)()=0;
+	int (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
 
 	/* determine how to do the intersect */
 	if (BAThordered(l)&BAThordered(r)&1) {

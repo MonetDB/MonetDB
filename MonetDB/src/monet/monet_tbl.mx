@@ -1079,7 +1079,7 @@ oid TBL_M_load(TBLinstall *inst, Client client, str module) {
   return mid;
 }
 
-int TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript)
+oid TBL_load_script(TBLinstall *inst, Client client, str module, str *initscript)
 {
   oid mid = 0;
   char *fullname;

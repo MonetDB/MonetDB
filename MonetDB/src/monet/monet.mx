@@ -485,7 +485,7 @@ Read the entire file, realloc if necessary.
 	p = buf + i;
 
 	if (mod){
-	     int l = strlen(mpop);
+	     int l = (int) strlen(mpop);
 	     if ((i + l + 1) > totlen){
                 p = GDKmalloc(i + l + 1);
                 memcpy(p, buf, i);

@@ -120,8 +120,8 @@ replacing their generic versions there.
 @h
 @= T_BUNfastins
 #define @1@4_bunfastins_nocheck_noinc(b, p, h, t) {\
-            @2put(@3, &(b)->hheap, (int*) BUNhloc(b, p), h);\
-            @5put(@6, &(b)->theap, (int*) BUNtloc(b, p), t);\
+            @2put(@3, &(b)->hheap, BUNhloc(b, p), h);\
+            @5put(@6, &(b)->theap, BUNtloc(b, p), t);\
 	}
 #define @1@4_bunfastins_nocheck(b, p, h, t, s) {\
             (b)->batBuns->free += s;\

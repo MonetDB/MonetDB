@@ -56,6 +56,7 @@ extern void DESCclean(BAT*);
 #include "gdk.h"
 #include <stdlib.h>
 #include "gdk_storage.h"
+#include "gdk_compress.h"
 @}
 
 @
@@ -233,9 +234,6 @@ The mode is either STORE_COMPR, STORE_MMAP, or STORE_MEM.
 The mode indicates the disk-layout and the intended mapping.
 The primary concern here is to handle STORE_MMAP and STORE_MEM.
 @c
-extern int compress   (str buf, str end, FILE* fp);
-extern int decompress (FILE* fp, str dst);
-
 int GDKsave(str nme, str ext, void *buf, size_t size, int mode) { 
 	int fd = -1, err = 0;
 	FILE *fp = NULL; 
@@ -261,7 +259,7 @@ at commit-time.
 		char extension[PATHLENGTH];
         	sprintf(extension, "%s.Z", ext); 
 		if ((fp = GDKfilelocate(nme, "wb", extension)) != NULL) {
-	                if (compress((char *) buf, ((char *) buf) + size, fp) <  0) { 
+	                if (compress((char_type *) buf, (char_type *) buf + size, fp) <  0) { 
 				err = -1;
 			}
 			if (err) GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", 
@@ -363,7 +361,7 @@ char *GDKload(str nme, str ext, size_t size, size_t chunk, int mode){
 	if ((n = (ssize_t) n_expected) != 0 && fd < 0 && fp == NULL) { 
 	if ((fp = GDKfilelocate(nme, "rb", extension)) != NULL) {
 	    buf = (char *) GDKmalloc(chunk); 
-	    n = (ssize_t) (size - decompress(fp, buf)); 
+	    n = (ssize_t) (size - decompress(fp, (char_type *) buf));
 	} else {
        	    GDKsyserror("GDKload: cannot access: name=%s, extension=%s\n", nme,extension);
 	    return 0; 
@@ -715,7 +713,7 @@ BAT *BATload_intern(bat i) {
 
 BAT *BATload(str nme) {
 	str s = strrchr(nme,DIR_SEP);
-	int i = BBPindex(s?s+1:nme);
+	bat i = BBPindex(s?s+1:nme);
 	BAT *b = BBP_cache(i);
 
 	if (i==0 || b != NULL) {

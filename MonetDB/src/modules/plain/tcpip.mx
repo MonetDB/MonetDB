@@ -301,16 +301,11 @@ str atom_name(int tpe) {
 #define SOCKPTR void *
 #define SOCKLEN int
 #else
-#ifdef NATIVE_WIN32
 #define SOCKPTR struct sockaddr *
-#define SOCKLEN int
-#else
-#define SOCKPTR struct sockaddr *
-#ifdef HAVE_SOCKLEN_T
+#if HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
 #endif
 #endif
 #endif

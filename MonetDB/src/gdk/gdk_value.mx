@@ -185,7 +185,7 @@ up with an ILLEGALVALUE.
 	} else if (dst_tpe == TYPE_sht) {
 		t->val.shval = (short) @1; 
 	} else if (dst_tpe == TYPE_bat) {
-		int bid = (int) @1;
+		bat bid = (bat) @1;
 		if (ABS(bid) > BBPsize || BBP_logical(bid) == NULL) {
 			bid = 0;
 			p = ILLEGALVALUE;

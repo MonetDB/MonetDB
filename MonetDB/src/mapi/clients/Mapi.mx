@@ -603,15 +603,20 @@ int Msend(Msession mid, char *format, ...) {
 	int i=0;
 	void *ptr;
 
+	checkMid(mid,"MSend");
+
 	va_start(ap,format);
 	for(;;){
 		ptr= va_arg(ap,void*);
 		if( ptr==0) break;
+		if (i == MAXBIND) {
+			fprintf(stderr,"Mapi Msend called with too many arguments\n");
+			exit(0);
+		}
 		mid->ptrs[i++]= ptr;
 	}
 	va_end(ap);
 
-	checkMid(mid,"MSend");
 	COUNT(mid,3);
 	if( mid->trace) fprintf(stderr,"Msend.");
 	mid->error= MOK;
@@ -653,7 +658,7 @@ int Mbatch(Msession mid, char *format, ...) {
 	checkMid(mid,"Mbatch");
 	COUNT(mid,7);
 	mid->error= MOK;
-	if ( ((int) strlen(format)) >= QRYLEN){
+	if ( strlen(format) >= QRYLEN){
 		mid->error= MMAPIERR;
 		sprintf(mid->errortext,"Query format too long\n");
 		return mid->error;

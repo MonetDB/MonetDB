@@ -318,7 +318,7 @@ to convert a little endian BAT to big endian (or vice versa).
 { @2 *_p = (@2*) @3, _i=*_p; *_p = @1_SWAP(_i); }
 @c
 static int batswap(BAT* b,int direction){
-	void (*fcn)() = BATatoms[b->htype].atomConvert;
+	void (*fcn)(ptr, int) = BATatoms[b->htype].atomConvert;
         BUN p,q; 
 	int xx;
  
@@ -343,11 +343,13 @@ static int batswap(BAT* b,int direction){
 	default:ATOMheapConvert(b->htype,&b->hheap,direction);
 		DELloop(b,p,q,xx) {
 			@:swap(normal_int,int,BUNhloc(b,p))@
-     			if (fcn != NULL) (*fcn)(BUNhead(b,p));
+     			if (fcn != NULL)
+				(*fcn)(BUNhead(b,p), direction);
 		}
 	        BATloopFast(b,p,q,xx) {
 			@:swap(normal_int,int,BUNhloc(b,p))@
-     			if (fcn != NULL) (*fcn)(BUNhead(b,p));
+     			if (fcn != NULL)
+				(*fcn)(BUNhead(b,p), direction);
 		}
 	}
 	return TRUE;

@@ -699,7 +699,7 @@ Recursive BATs are a special case. You should modify their reference count.
 	} else if (t_ == TYPE_bat) {			\
 		BBPtransient(*(bat*) (P3), TRUE);	\
 		BBPpersistent(*(bat*) (P4), TRUE);	\
-		*(int *) (P3) = *(int *) (P4); 		\
+		*(bat *) (P3) = *(bat *) (P4); 		\
 	}						\
   } else {						\
 	if (t_ <= TYPE_flt) {				\
@@ -1667,10 +1667,10 @@ String conversion routines.
 int OIDfromStr(char *src, int *len, oid **dst) {
 #if SIZEOF_OID == SIZEOF_INT
 	int ui, *uip = &ui;
-	int l = sizeof(int);
+	int l = (int) sizeof(int);
 #else
 	lng ui, *uip = &ui;
-	int l = sizeof(lng);
+	int l = (int) sizeof(lng);
 #endif
 	int pos = 0;
 	str p = src;

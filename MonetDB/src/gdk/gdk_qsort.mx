@@ -84,7 +84,7 @@ Record containing all data-specific info.
 Introduced to reduce number of qsort parameters 
 @c
 typedef struct {
-	int		(*cmp)();	/* routine that compares two atoms */
+	int		(*cmp)(ptr, ptr); /* routine that compares two atoms */
 	char*		offst;		/* NULL or start of varsized heap */ 
 	int		loc;		/* byte-offset of sort atom in record */
 	int 		shift;		/* log2 if width is a power of two, else -1 */ 

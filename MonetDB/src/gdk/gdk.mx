@@ -267,8 +267,42 @@ An error at this stage normally lead to an abort.
 #ifndef _GDK_H_
 #define _GDK_H_
 
-#ifdef HAVE_CONFIG_H 
-#include <config.h>
+#include <config.h>		/* we always have this */
+
+/* standard includes upon which all configure tests depend */
+#include <stdio.h>
+#if HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#if HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#if STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#else
+# if HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+#if HAVE_STRING_H
+# if !STDC_HEADERS && HAVE_MEMORY_H
+#  include <memory.h>
+# endif
+# include <string.h>
+#endif
+#if HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#if HAVE_INTTYPES_H
+# include <inttypes.h>
+#else
+# if HAVE_STDINT_H
+#  include <stdint.h>
+# endif
+#endif
+#if HAVE_UNISTD_H
+# include <unistd.h>
 #endif
 
 #ifdef _AIX
@@ -277,23 +311,8 @@ An error at this stage normally lead to an abort.
 #endif
 #endif
 
-#if defined (__GNUC__) && defined (__STDC__)
-#define INLINE	inline
-#else
-#define INLINE
-#endif
-
-#define REGISTER	register
-
-#ifdef __cplusplus
-extern "C" { 
-#endif
-
 #include <ctype.h>      /* isspace etc. */
-#include <string.h>     /* strcmp, index etc. */
-#include <memory.h>     /* memcpy */
 
-#include <sys/types.h>
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
 #endif
@@ -318,19 +337,50 @@ extern "C" {
 # endif
 #endif
 
+#if HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
+
+#include <assert.h>     
+
+
+#if defined (__GNUC__) && defined (__STDC__)
+#define INLINE	inline
+#else
+#define INLINE
+#endif
+
+#define REGISTER	register
+
+#ifndef HAVE_SSIZE_T
+#if SIZEOF_SIZE_T == SIZEOF_INT
+typedef int ssize_t;
+#else
+typedef long ssize_t;
+#endif
+#endif
+
+#ifndef HAVE_PTRDIFF_T
+#if SIZEOF_SIZE_T == SIZEOF_INT
+typedef int ptrdiff_t;
+#else
+typedef long ptrdiff_t;
+#endif
+#endif
+
+#ifdef __cplusplus
+extern "C" { 
+#endif
 
 #include "gdk_posix.h"	
 #include "gdk_system.h"	
 #include <stream.h>	
-
-#include <assert.h>     
-
-#undef BUS_OBJERR
-#include <sys/stat.h>
-
-#ifdef HAVE_SYS_WAIT_H
-# include <sys/wait.h> 
-#endif
 
 #undef MIN
 #undef MAX
@@ -1556,11 +1606,11 @@ typedef struct {
         volatile int status;	/* always available bat info */
 } BBPrec;
 
-gdk_export int 		BBPmaxsize;
-gdk_export int 		BBPlimit;
-gdk_export int		BBP_free;
+gdk_export bat 		BBPmaxsize;
+gdk_export bat 		BBPlimit;
+gdk_export bat		BBP_free;
 gdk_export int		BBP_dirty;	/* BBP table dirty? */
-gdk_export int		BBPsize;	/* current size of BBP tables */
+gdk_export bat		BBPsize;	/* current size of BBP tables */
 gdk_export BBPrec*       	BBP;
 
 /* fast defines without checks; internal use only  */
@@ -2546,7 +2596,7 @@ If so, we can just compare integer index numbers instead of strings:
 @h
 #define HASHloop_fstr(b, h, hb, idx, v) \
         for (hb = h.hash[strHash(v)&h.mask], idx = strLocate(&(b)->hheap,v);\
-	     hb; hb = h.link[hb]) if (*(int*) BUNhloc(b, BUNptr(b, hb)) == idx)
+	     hb; hb = h.link[hb]) if (*(var_t*) BUNhloc(b, BUNptr(b, hb)) == idx)
 @
 The following example shows how the hashloop is used:
 @T

@@ -248,7 +248,7 @@ char *MSP_locate_module(char *mod_name) {
 #define MIL_EXT ".mil"
 
 char *MSP_locate_script(char *mod_name) {
-    int MIL_EXT_LEN = strlen(MIL_EXT);
+    int MIL_EXT_LEN = (int) strlen(MIL_EXT);
     char *name = GDKstrdup(mod_name); 
     size_t len = strlen(name);
     size_t fulllen = 0;
@@ -263,8 +263,6 @@ char *MSP_locate_script(char *mod_name) {
 		 next_module[fulllen-len-1] == DIR_SEP &&
 		 !strcmp(&next_module[fulllen-len],name))
                 {
-		    if (!MIL_EXT_LEN)
-			MIL_EXT_LEN = strlen(MIL_EXT);
                     fullname=(char *)GDKmalloc(fulllen+MIL_EXT_LEN+1);
                     sprintf(fullname,"%s%s",next_module, MIL_EXT);
                     GDKfree(next_module);

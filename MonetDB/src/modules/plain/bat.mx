@@ -1131,7 +1131,7 @@ The import command reads a single BAT from an ascii file. It assumes
 a layout compatible with that produced by print or export.
 @c
 int CMDimport(BAT **ret, BAT *b, str fnme) {
-	int	(*hconvert)(), (*tconvert)();
+	int	(*hconvert)(str, int*, ptr*), (*tconvert)(str, int*, ptr*);
 	size_t	bufsize = 2048; /* NIELS: tmp change used to be 1024 */
 	char	*base, *cur, *end;
 	char	*buf = (char *) GDKmalloc(bufsize);
@@ -1214,8 +1214,8 @@ Parse the line, and insert a BUN.
        		}
        		p += @1(p, @3, @4);			
 @c
-		@:parsevalue(hconvert, '[', &lh, &h)@
-		@:parsevalue(tconvert, 44, &lt, &t)@
+		@:parsevalue(hconvert, '[', &lh, (ptr *) &h)@
+		@:parsevalue(tconvert, 44, &lt, (ptr *) &t)@
 		BUNins(b, h, t);
 		
 @-
@@ -1259,7 +1259,7 @@ int CMDaccdestroy(BAT *b, int *acc) {
 int CMDaccpresent(int *retval, BAT* b) {
 	*retval = 0;
 	if (b->hacctype) {
-	    int (*check)() = BATaccelerators[b->hacctype].accRepair;
+	    int (*check)(Heap*, BAT*) = BATaccelerators[b->hacctype].accRepair;
 	    if (check == NULL || (*check)(&b->haccelerator,b) == GDK_SUCCEED) {
 		*retval = b->hacctype;
  	    }

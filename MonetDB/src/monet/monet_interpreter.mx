@@ -544,7 +544,7 @@ They are able to produce new values in the process. The deallocation
 primitives CATCH* look after garbage collecting these results.
 @c
 	case TOK_BUILTIN:
-	{	int (*imp)() = (int (*)()) lt->yyval.val.pval;
+	{	int (*imp)(Cntxt, YYSTREE, ValPtr) = (int (*)(Cntxt, YYSTREE, ValPtr)) lt->yyval.val.pval;
 		res->vtype = TYPE_void;
     		res->val.oval = void_nil;
 		stamp = BBPcurstamp();	
@@ -1515,7 +1515,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 	ITrecord *handle;
 	YYSTREE	params = lt->yysons[1];
 	YYSTREE	body = lt->yysons[0];
-	int	argc, i, ht, tt, (*cmd)();
+	int	argc, i, ht, tt, (*cmd)(int, ValRecord *);
 
 	/* Deeper contexts get reused across iterations.
 	 */
@@ -1541,7 +1541,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 	 */
 		char *name = lt->yyval.val.sval;
 		/* Try all iterators by that name.  */	
-		if (!(cmd = (int (*)()) TBL_iterator(stk, name, argc+1, argv))) {
+		if (!(cmd = (int (*)(int, ValRecord *)) TBL_iterator(stk, name, argc+1, argv))) {
 			char *signatures = (char*) alloca(8192);
 			if (name) TBL_printsigs(signatures, stk, name);
 			monet_sigerror("iterator", name?name:"name unknown",  
@@ -1563,7 +1563,7 @@ int interpret_iterator(Cntxt stk, YYSTREE lt, ValPtr res, int parallel) {
 		handle->parmax = handle->parcap = 0;
 	} else {
 		handle = (Iteration) lt->yysons[1]->yyval.val.pval;
-		cmd = (int(*)()) lt->yyval.val.pval;
+		cmd = (int(*)(int, ValRecord *)) lt->yyval.val.pval;
 	}
 
 	/* Fill in handle according to current circumstances 

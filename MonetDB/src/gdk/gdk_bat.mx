@@ -954,8 +954,8 @@ BAT *BUNinplace(BAT *b, BUN p, ptr h, ptr t) {
 	if (p>=b->batInserted){
   		/* uncommitted BUN elements */
 		BUN last = BUNlast(b) - BUNsize(b);
-		void (*taccins)() = BATaccelerators[b->tacctype].accInsert;
-		void (*taccdel)() = BATaccelerators[b->tacctype].accDelete;
+		void (*taccins)(Heap*, size_t, BAT*, ptr) = BATaccelerators[b->tacctype].accInsert;
+		void (*taccdel)(Heap*, size_t, BAT*, ptr) = BATaccelerators[b->tacctype].accDelete;
 		BAT *bm = BBP_cache(-b->batCacheid);
 		size_t pit = BUNindex(b, p); 
 

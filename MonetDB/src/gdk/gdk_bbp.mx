@@ -166,11 +166,9 @@ initially. New slots in the BBP are found at O(1) by keeping a freelist
 that uses the 'next' field in the BBPrec records.
 @c
 BBPrec*		BBP = NULL;		/* fixed base VM address of BBP array */
-/* the following variables are of type "int"; the values must be
-   compatible with the type "bat" */
-int 		BBPmaxsize=BBPMAXSIZE;  /* size of non-commited VM BBP array */ 
-int 		BBPlimit = 0;		/* current committed VM BBP array */
-int		BBPsize = 0;		/* current used size of BBP array */ 
+bat 		BBPmaxsize=BBPMAXSIZE;  /* size of non-commited VM BBP array */ 
+bat 		BBPlimit = 0;		/* current committed VM BBP array */
+bat		BBPsize = 0;		/* current used size of BBP array */ 
 bat		BBP_free = 0;		/* first free slot in BBP array */
 
 @- BBP hash index on name
@@ -542,7 +540,7 @@ it may lead to interference in a parallel session.
 
 void BBPexit(void)
 {
-	int  i;
+	bat  i;
 
 	if (!BBP) return; /* AARGH */
 
@@ -1753,8 +1751,8 @@ void BBPtrim(size_t memtarget, size_t vmtarget) {
 	}
 	/* done trimming */
 	MEMDEBUG {
-		THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=%u,vmsize=%u\n", 
-			(unsigned int) GDKmem_inuse(), (unsigned int) GDKvm_cursize());
+		THRprintf(GDKerr, "BBPTRIM_EXIT: memsize=%lu,vmsize=%lu\n", 
+			(unsigned long) GDKmem_inuse(), (unsigned long) GDKvm_cursize());
 	}
 	BBP_notrim = 0;
 	MT_unset_lock(GDKtrimLock, "BBPtrim"); 

@@ -231,17 +231,17 @@ It should be extended to cope with the specifics of the interrupt
 received.
 @c
 #include <signal.h>
-void BATSIGignore(int nr) {
+RETSIGTYPE BATSIGignore(int nr) {
 	GDKsyserror("! ERROR signal %d caught by thread %ld\n", 
 		nr, (long) MT_getpid()); 
 }
 
-void BATSIGabort(int nr) {
+RETSIGTYPE BATSIGabort(int nr) {
 	GDKfatal("signal %d caught by thread %ld\n", nr, (long) MT_getpid()); 
 }
 
 #ifdef SIGPIPE
-void BATSIGpipe(int nr) {
+RETSIGTYPE BATSIGpipe(int nr) {
 	int	status; 
 
 	while (waitpid(-1, &status, WNOHANG) > 0)
@@ -252,7 +252,7 @@ void BATSIGpipe(int nr) {
 #endif
 
 
-void BATSIGcrash(int nr) {
+RETSIGTYPE BATSIGcrash(int nr) {
 	static int crash = 0;
 	if (!crash++) {
 		GDKlog(GDKCRASH);
@@ -341,15 +341,19 @@ volatile size_t	GDK_mem_cursize = 0;
 volatile size_t	GDK_vm_cursize = 0;
 	 size_t	GDK_vm_minsize = 131072;
 	 size_t	GDK_vm_maxsize = GDK_VM_MAXSIZE;
+struct malloc_hist {
+	lng	xxx;
+	int	yyy;
+};
 #ifdef GDK_VM_KEEPHISTO
 	 BAT*	GDK_vm_histo = NULL;
-volatile int GDK_vm_nallocbuf[MAX_BIT<<2] = { 0 };
-volatile int* GDK_vm_nallocs = GDK_vm_nallocbuf;
+volatile struct malloc_hist GDK_vm_nallocbuf[MAX_BIT] = { { 0 } };
+volatile struct malloc_hist* GDK_vm_nallocs = GDK_vm_nallocbuf;
 #endif
 #ifdef GDK_MEM_KEEPHISTO
 	 BAT*	GDK_mem_histo = NULL;
-volatile int	GDK_nmallocbuf[MAX_BIT<<2] = { 0 };
-volatile int*	GDK_nmallocs = GDK_nmallocbuf;
+volatile struct malloc_hist	GDK_nmallocbuf[MAX_BIT] = { { 0 } };
+volatile struct malloc_hist*	GDK_nmallocs = GDK_nmallocbuf;
 #endif
 
 size_t GDKvm_heapsize(void) {
@@ -399,7 +403,6 @@ static int GDK_mem_allocs = 0;
         if (_mask&size) break;\
         _mask >>=1;\
   }\
-  idx <<= 2;\
 }
 
 /* at least each 50M of memory increase, BBPtrim is run */
@@ -413,9 +416,9 @@ void GDKmemchk(int memchk, int vmchk) {
 	size_t memtarget = GDKmem_inuse();
 	size_t vmtarget = GDKvm_cursize();
 	MEMDEBUG {
-		THRprintf(GDKerr, "GDKmemchk (memcur=%u,memmax=%u) (vmcur=%u,vmmax=%u)\n",
-			(unsigned int) memtarget, (unsigned int) GDK_mem_maxsize, 
-			(unsigned int) GDK_vm_cursize, (unsigned int) GDK_vm_maxsize);
+		THRprintf(GDKerr, "GDKmemchk (memcur=%lu,memmax=%lu) (vmcur=%lu,vmmax=%lu)\n",
+			(unsigned long) memtarget, (unsigned long) GDK_mem_maxsize, 
+			(unsigned long) GDK_vm_cursize, (unsigned long) GDK_vm_maxsize);
 	}
 	memtarget = (memchk && memtarget > GDK_mem_maxsize) ? memtarget - GDK_mem_maxsize : 0;
 	vmtarget = (vmchk && vmtarget > GDK_vm_maxsize) ? vmtarget - GDK_vm_maxsize : 0;
@@ -432,7 +435,7 @@ void GDKmeminc(size_t memdelta, size_t vmdelta) {
 #ifdef GDK_VM_KEEPHISTO
 {	int idx;
         GDKmallidx(idx, segsize);
-        GDK_vm_nallocs[idx]++; }
+        GDK_vm_nallocs[idx].yyy++; }
 #endif
         GDK_vm_cursize += segsize;
 	CHKMEM(memdelta,vmdelta);
@@ -445,7 +448,7 @@ void GDKmemdec(size_t memdelta, size_t vmdelta) {
 #ifdef GDK_VM_KEEPHISTO
 {	int idx;
         GDKmallidx(idx, segsize);
-        GDK_vm_nallocs[idx]--; }
+        GDK_vm_nallocs[idx].yyy--; }
 #endif
         GDK_vm_cursize -= segsize;
 }
@@ -525,8 +528,8 @@ void GDKmemdump(void) {
 		BUN p,q;
 		THRprintf(GDKerr, "!memory histogram\n");
 		BATloop(GDK_mem_histo, p, q) {
-			THRprintf(GDKerr, "! %d %d\n", 
-				*(int*) BUNhloc(GDK_mem_histo,p), 
+			THRprintf(GDKerr, "! %ld %d\n", 
+				(long) *(lng*) BUNhloc(GDK_mem_histo,p), 
 				*(int*) BUNtloc(GDK_mem_histo,p));
 		}
 	}
@@ -536,8 +539,8 @@ void GDKmemdump(void) {
 		BUN p,q;
 		THRprintf(GDKerr, "\n!virtual memory histogram\n");
 		BATloop(GDK_vm_histo, p, q) {
-			THRprintf(GDKerr, "! %d %d\n", 
-				*(int*) BUNhloc(GDK_vm_histo,p), 
+			THRprintf(GDKerr, "! %ld %d\n", 
+				(long) *(lng*) BUNhloc(GDK_vm_histo,p), 
 				*(int*) BUNtloc(GDK_vm_histo,p));
 		}
 	}
@@ -637,7 +640,7 @@ void* GDKmalloc(size_t size) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
 		GDKmallidx(idx, realsize);
-		GDK_nmallocs[idx]++; 
+		GDK_nmallocs[idx].yyy++; 
 #endif
 		GDK_heap_inuse += realsize;
 	}}
@@ -654,7 +657,7 @@ void GDKfree (void *blk) {
 #ifdef GDK_MEM_KEEPHISTO
 		int idx;
 		GDKmallidx(idx,size);
-		GDK_nmallocs[idx]--;
+		GDK_nmallocs[idx].yyy--;
 /*		if (GDK_mallocs[idx]-- <= 0) {
 			GDKwarning("free(%p): unused pointer\n", blk);
 		} else */
@@ -884,16 +887,16 @@ int GDKinit(char *dbname, char *dbfarm) {
 	BATmode(GDK_mem_histo, TRANSIENT);
 	for(i=3; i<22; i++) {
 		lng j = 1<<i;
-		BUNins(GDK_mem_histo, (ptr)&j, (ptr)(GDK_nmallocs+(4*i)));
+		BUNins(GDK_mem_histo, (ptr)&j, (ptr)&GDK_nmallocs.yyy[i]);
 	}
         BATfakeCommit(GDK_mem_histo);
-	GDK_nmallocs = ((int*) GDK_mem_histo->batBuns->base) - 6;
+	GDK_nmallocs = ((struct malloc_hist*) GDK_mem_histo->batBuns->base) - 2;
 #endif
 #ifdef GDK_VM_KEEPHISTO
 #ifdef WIN32
 #ifndef NATIVE_WIN32
 	GDKmallidx(i, 67108864);
-	GDK_vm_nallocs[i]++; 
+	GDK_vm_nallocs[i].yyy++; 
 #endif
 #endif
 	GDK_vm_histo = BATnew(TYPE_lng,TYPE_int,MAX_BIT);
@@ -901,10 +904,10 @@ int GDKinit(char *dbname, char *dbfarm) {
 	BATmode(GDK_vm_histo, TRANSIENT);
 	for(i=12; i<31; i++) {
 		lng j = 1<<i;
-		BUNins(GDK_vm_histo, &j, GDK_vm_nallocs+(4*i));
+		BUNins(GDK_vm_histo, &j, &GDK_vm_nallocs[i].yyy);
 	}
 	BATfakeCommit(GDK_vm_histo);
-	GDK_vm_nallocs = ((int*) GDK_vm_histo->batBuns->base) - 42; 
+	GDK_vm_nallocs = ((struct malloc_hist*) GDK_vm_histo->batBuns->base) - 8; 
 #endif
 
 	GDKenv = BATnew(TYPE_str,TYPE_str,100);
@@ -1414,7 +1417,7 @@ int THRprintf(stream *s, char *format, ...) {
 	p = bf;
 	*p++ = c;
 	if (GDKdebug&1) {
-		sprintf(p, "%02d ", (int) (long) THRgettid());
+		sprintf(p, "%02ld ", (long) THRgettid());
 		while(*p) p++;
 	}
 	m = p-bf;

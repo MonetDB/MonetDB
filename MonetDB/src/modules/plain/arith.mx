@@ -642,7 +642,7 @@ operations.
 
 @= any_binary_minmax
 int any_binary_@1(ptr ret, ptr v1, int t, ptr v2){
-	int (*cmp)() = BATatoms[t].atomCmp;
+	int (*cmp)(ptr, ptr) = BATatoms[t].atomCmp;
 	ptr src, nil = ATOMnilptr(t);
 	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
 		src = nil;
@@ -685,7 +685,7 @@ int str_comp_@2(bit *retval, str s1, str s2){
 	return GDK_SUCCEED;
 }
 int any_comp_@2(bit *retval, ptr v1, int tpe, ptr v2){
-	int (*cmp)() = BATatoms[tpe].atomCmp;
+	int (*cmp)(ptr, ptr) = BATatoms[tpe].atomCmp;
 	ptr nil = ATOMnilptr(tpe);
 
 	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
@@ -720,7 +720,7 @@ int str_comp_between(bit *retval, str val, str low, str high){
 	return GDK_SUCCEED;
 }
 int any_comp_between(bit *retval, ptr val, int tpe, ptr low, ptr high){
-	int (*cmp)() = BATatoms[tpe].atomCmp;
+	int (*cmp)(ptr, ptr) = BATatoms[tpe].atomCmp;
 	ptr nilptr = ATOMnilptr(tpe);
 	int val_nil = ((*cmp)(val,nilptr) == 0);
 	int low_nil = ((*cmp)(low,nilptr) == 0);

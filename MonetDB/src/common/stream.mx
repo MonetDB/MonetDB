@@ -223,7 +223,7 @@ it is resized. The spare byte is kept.
 
 @h
 
-typedef enum steam_errors {
+typedef enum stream_errors {
 	NO__ERROR = 0,
 	OPEN_ERROR,
 	READ_ERROR, 
@@ -262,12 +262,12 @@ typedef enum steam_errors {
 #endif
 
 #ifndef HAVE_SSIZE_T
-#if SIZEOF_OID == SIZEOF_INT
+#if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ssize_t;
 #else
 typedef long ssize_t;
 #endif
-#define HAVE_SSIZE_T
+#define HAVE_SSIZE_T 1
 #endif
 
 int stream_init(void){
