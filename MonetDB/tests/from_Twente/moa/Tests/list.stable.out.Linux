@@ -1861,14 +1861,14 @@ reverse(copy_order(reverse(sort(reverse(orderA))),reverse(indexA))).print;
 [ 3@0,	  3@0		  ]
 [ 2@0,	  2@0		  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),4@0))))).print;
-#-----------------#
-# BAT:	  tmp_64  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 4@0,	  401@0	  ]
-[ 4@0,	  402@0	  ]
-[ 4@0,	  403@0	  ]
-[ 4@0,	  404@0	  ]
+#-------------------------#
+# BAT:	  tmp_210	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 4@0,	  401@0		  ]
+[ 4@0,	  402@0		  ]
+[ 4@0,	  403@0		  ]
+[ 4@0,	  404@0		  ]
 valuesB.find(401@0).print;
 [ 1000 ]
 valuesB.find(402@0).print;
@@ -1894,14 +1894,14 @@ reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(
 valuesB.find(409@0).print;
 [ 9000 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),3@0))))).print;
-#-----------------#
-# BAT:	  tmp_66  #
-# (oid)	  (oid)	  #
-#-----------------#
-reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),2@0))))).print;
 #-------------------------#
 # BAT:	  tmp_161	  #
 # (oid)	  (oid)		  #
+#-------------------------#
+reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexB)))),2@0))))).print;
+#-------------------------#
+# BAT:	  tmp_216	  #
+# (oid)	  (void)	  #
 #-------------------------#
 [ 2@0,	  405@0		  ]
 [ 2@0,	  406@0		  ]
@@ -1991,11 +1991,11 @@ valuesList1.find(101@0).print;
 valuesList2.find(101@0).print;
 [ 22 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_last_4))),reverse(indexList2)))),12@0))))).print;
-#-----------------#
-# BAT:	  tmp_63  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 12@0,	  103@0	  ]
+#-------------------------#
+# BAT:	  tmp_201	  #
+# (oid)	  (oid)		  #
+#-------------------------#
+[ 12@0,	  103@0		  ]
 valuesList1.find(103@0).print;
 [ 11 ]
 valuesList2.find(103@0).print;
@@ -2425,11 +2425,11 @@ reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(rev
 _MMjoin_27.find(1@0).print;
 [ 2000 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_29))),reverse(_MMjoin_24)))),3@0))))).print;
-#-----------------#
-# BAT:	  tmp_95  #
-# (void)  (oid)	  #
-#-----------------#
-[ 3@0,	  8@0	  ]
+#-------------------------#
+# BAT:	  tmp_255	  #
+# (void)  (oid)		  #
+#-------------------------#
+[ 3@0,	  8@0		  ]
 _MMjoin_27.find(0@0).print;
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
@@ -2845,18 +2845,18 @@ reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reve
 _MMjoin_6.find(1@0).print;
 [ 30 ]
 reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),1@0))))).print;
-#-------------------------#
-# BAT:	  tmp_172	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 1@0,	  0@0		  ]
-_MMjoin_6.find(0@0).print;
-[ 20 ]
-reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
 #-----------------#
 # BAT:	  tmp_52  #
 # (oid)	  (oid)	  #
 #-----------------#
+[ 1@0,	  0@0	  ]
+_MMjoin_6.find(0@0).print;
+[ 20 ]
+reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMjoin_8))),reverse(_MMjoin_4)))),0@0))))).print;
+#-------------------------#
+# BAT:	  tmp_289	  #
+# (oid)	  (oid)		  #
+#-------------------------#
 # {[ 50 ], [ 40 ], [ 30 ], [ 20 ], []}
 
 _MMoper_2 := [>=](valuesA,20);

@@ -46,9 +46,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  130	  ]
+[ "user",	  1070	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  20	  ]
+[ "system",	  7110	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 join(t1,s1.reverse).count.print;
@@ -68,10 +68,10 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
-[ "elapuser",	  60	  ]
-[ "system",	  20	  ]
-[ "elapsystem",	  0	  ]
+[ "user",	  1120	  ]
+[ "elapuser",	  50	  ]
+[ "system",	  7120	  ]
+[ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 var i1,i2,i3,i4,i5;
 printf("#~BeginVariableOutput~#\n"); qstat; printf("#~EndVariableOutput~#\n");
@@ -126,9 +126,9 @@ threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariab
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  20	  ]
+[ "user",	  1130	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  7120	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 {|	
@@ -181,22 +181,23 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_thread.print; printf("#~EndVariabl
 [ 2,	  "Interpreter"	  ]
 [ 3,	  "Interpreter"	  ]
 [ 4,	  "Interpreter"	  ]
+[ 5,	  "Interpreter"	  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); view_gdk_env.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-#-------------------------------------------------------------------------#
-# BAT:		  env							  #
-# (str)		  (str)							  #
-#-------------------------------------------------------------------------#
-[ "dbname",	  "tests_suite_02"					  ]
-[ "server",	  "apollo-hrn0146.multiweb.net"				  ]
-[ "port",	  "50072"						  ]
-[ "directory",	  "/home/niels/data/monet/Linux/dbfarm/tests_suite_02"	  ]
-[ "owner",	  "niels"						  ]
-[ "prefix",	  "32biti686-pc-linux-gnu"				  ]
-[ "processid",	  "19265"						  ]
-[ "home",	  "/home/niels/data/monet/Linux"			  ]
-[ "version",	  "4.2"							  ]
+#-------------------------------------------------------------------------------------------------#
+# BAT:		  env										  #
+# (str)		  (str)										  #
+#-------------------------------------------------------------------------------------------------#
+[ "dbname",	  "tests_suite_02"								  ]
+[ "server",	  "medusa"									  ]
+[ "port",	  "22915"									  ]
+[ "directory",	  "/var/tmp/monet.GNU_32.28092/monet/.GNU_32/IRIX646.5/dbfarm/tests_suite_02"	  ]
+[ "owner",	  "monet"									  ]
+[ "prefix",	  "32bitmips-sgi-irix6.5"							  ]
+[ "processid",	  "13765139"									  ]
+[ "home",	  "/var/tmp/monet.GNU_32.28092/monet/.GNU_32/IRIX646.5"				  ]
+[ "version",	  "4.2"										  ]
 #~EndVariableOutput~#
 printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -205,9 +206,9 @@ printf("#~BeginVariableOutput~#\n"); cpu.print; printf("#~EndVariableOutput~#\n"
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  240	  ]
+[ "user",	  1180	  ]
 [ "elapuser",	  50	  ]
-[ "system",	  20	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  7130	  ]
+[ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 quit;

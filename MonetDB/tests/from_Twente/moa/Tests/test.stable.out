@@ -2271,13 +2271,13 @@ _MMnilcast_8 := _MMreverse_7.reverse.mark(0@0).reverse;
 _MMnilcast_9 := _MMjoin_3.reverse.mark(0@0).reverse;
 _MMjoin_10 := join(_MMnilcast_9,valuesC);
 _MMnilcast_8.print;
-#-----------------#
-# BAT:	  tmp_74  #
-# (void)  (oid)	  #
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 2@0,	  2@0	  ]
+#-------------------------#
+# BAT:	  tmp_100	  #
+# (void)  (void)	  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
+[ 1@0,	  1@0		  ]
+[ 2@0,	  2@0		  ]
 _MMjoin_6.find(0@0).print;
 [ 10 ]
 _MMjoin_10.find(0@0).print;
@@ -2310,12 +2310,12 @@ indexA.print;
 valuesA.find(0@0).print;
 [ 10 ]
 reverse(select(reverse(_MMcastnil_4),0@0)).print;
-#-----------------#
-# BAT:	  tmp_51  #
-# (oid)	  (void)  #
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 0@0,	  1@0	  ]
+#-------------------------#
+# BAT:	  tmp_101	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
+[ 0@0,	  1@0		  ]
 _MMjoin_6.find(0@0).print;
 [ 10 ]
 _MMjoin_6.find(1@0).print;
@@ -2330,11 +2330,11 @@ reverse(select(reverse(_MMcastnil_4),1@0)).print;
 valuesA.find(2@0).print;
 [ 30 ]
 reverse(select(reverse(_MMcastnil_4),2@0)).print;
-#-----------------#
-# BAT:	  tmp_51  #
-# (oid)	  (void)  #
-#-----------------#
-[ 2@0,	  2@0	  ]
+#-------------------------#
+# BAT:	  tmp_101	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 2@0,	  2@0		  ]
 _MMjoin_6.find(2@0).print;
 [ 30 ]
 valuesA.find(3@0).print;
@@ -2374,12 +2374,12 @@ _MMmirror_6 := mirror(_MMreverse_5);
 _MMjoin_7 := join(indexA,_MMmirror_6);
 _MMjoin_8 := join(_MMmirror_6,valuesA);
 _MMjoin_7.print;
-#-----------------#
-# BAT:	  tmp_68  #
-# (oid)	  (oid)	  #
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 2@0,	  2@0	  ]
+#-------------------------#
+# BAT:	  tmp_102	  #
+# (oid)	  (oid)		  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
+[ 2@0,	  2@0		  ]
 _MMjoin_8.find(0@0).print;
 [ 10 ]
 _MMjoin_8.find(2@0).print;
@@ -2444,12 +2444,12 @@ valuesA.find(0@0).print;
 valuesD.find(0@0).print;
 [ 20 ]
 reverse(select(reverse(_MMcastnil_4),0@0)).print;
-#-----------------#
-# BAT:	  tmp_85  #
-# (oid)	  (void)  #
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 0@0,	  1@0	  ]
+#-------------------------#
+# BAT:	  tmp_106	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
+[ 0@0,	  1@0		  ]
 _MMjoin_6.find(0@0).print;
 [ 10 ]
 _MMjoin_6.find(1@0).print;
@@ -2468,11 +2468,11 @@ valuesA.find(2@0).print;
 valuesD.find(2@0).print;
 [ 40 ]
 reverse(select(reverse(_MMcastnil_4),2@0)).print;
-#-----------------#
-# BAT:	  tmp_85  #
-# (oid)	  (void)  #
-#-----------------#
-[ 2@0,	  2@0	  ]
+#-------------------------#
+# BAT:	  tmp_106	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 2@0,	  2@0		  ]
 _MMjoin_6.find(2@0).print;
 [ 30 ]
 valuesA.find(3@0).print;
@@ -2543,11 +2543,11 @@ _MMjoin_10.find(0@0).print;
 _MMjoin_13.find(0@0).print;
 [ 20 ]
 reverse(select(reverse(_MMcastnil_16),0@0)).print;
-#-----------------#
-# BAT:	  tmp_97  #
-# (oid)	  (void)  #
-#-----------------#
-[ 0@0,	  0@0	  ]
+#-------------------------#
+# BAT:	  tmp_113	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
 _MMjoin_18.find(0@0).print;
 [ 9000 ]
 _MMjoin_10.find(1@0).print;
@@ -2555,11 +2555,11 @@ _MMjoin_10.find(1@0).print;
 _MMjoin_13.find(1@0).print;
 [ 20 ]
 reverse(select(reverse(_MMcastnil_16),1@0)).print;
-#-----------------#
-# BAT:	  tmp_97  #
-# (oid)	  (void)  #
-#-----------------#
-[ 1@0,	  1@0	  ]
+#-------------------------#
+# BAT:	  tmp_113	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 1@0,	  1@0		  ]
 _MMjoin_18.find(1@0).print;
 [ 8000 ]
 _MMjoin_10.find(2@0).print;
@@ -2567,13 +2567,13 @@ _MMjoin_10.find(2@0).print;
 _MMjoin_13.find(2@0).print;
 [ 40 ]
 reverse(select(reverse(_MMcastnil_16),2@0)).print;
-#-----------------#
-# BAT:	  tmp_97  #
-# (oid)	  (void)  #
-#-----------------#
-[ 2@0,	  2@0	  ]
-[ 2@0,	  3@0	  ]
-[ 2@0,	  4@0	  ]
+#-------------------------#
+# BAT:	  tmp_113	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 2@0,	  2@0		  ]
+[ 2@0,	  3@0		  ]
+[ 2@0,	  4@0		  ]
 _MMjoin_18.find(2@0).print;
 [ 7000 ]
 _MMjoin_18.find(3@0).print;
@@ -2585,14 +2585,14 @@ _MMjoin_10.find(3@0).print;
 _MMjoin_13.find(3@0).print;
 [ 10 ]
 reverse(select(reverse(_MMcastnil_16),3@0)).print;
-#-----------------#
-# BAT:	  tmp_97  #
-# (oid)	  (void)  #
-#-----------------#
-[ 3@0,	  5@0	  ]
-[ 3@0,	  6@0	  ]
-[ 3@0,	  7@0	  ]
-[ 3@0,	  8@0	  ]
+#-------------------------#
+# BAT:	  tmp_113	  #
+# (oid)	  (void)	  #
+#-------------------------#
+[ 3@0,	  5@0		  ]
+[ 3@0,	  6@0		  ]
+[ 3@0,	  7@0		  ]
+[ 3@0,	  8@0		  ]
 _MMjoin_18.find(5@0).print;
 [ 4000 ]
 _MMjoin_18.find(6@0).print;
@@ -2640,13 +2640,13 @@ _MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
 _MMnilcast_10 := _MMjoin_4.reverse.mark(0@0).reverse;
 _MMjoin_11 := join(_MMnilcast_10,_MMoper_2);
 _MMnilcast_9.print;
-#-----------------#
-# BAT:	  tmp_98  #
-# (void)  (oid)	  #
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 2@0,	  2@0	  ]
+#-------------------------#
+# BAT:	  tmp_115	  #
+# (void)  (void)	  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
+[ 1@0,	  1@0		  ]
+[ 2@0,	  2@0		  ]
 _MMjoin_7.find(0@0).print;
 [ 20 ]
 _MMjoin_11.find(0@0).print;
@@ -2672,13 +2672,13 @@ _MMnilcast_9 := _MMreverse_8.reverse.mark(0@0).reverse;
 _MMnilcast_10 := _MMjoin_4.reverse.mark(0@0).reverse;
 _MMjoin_11 := join(_MMnilcast_10,_MMoper_2);
 _MMnilcast_9.print;
-#-----------------#
-# BAT:	  tmp_98  #
-# (void)  (oid)	  #
-#-----------------#
-[ 0@0,	  0@0	  ]
-[ 1@0,	  1@0	  ]
-[ 2@0,	  2@0	  ]
+#-------------------------#
+# BAT:	  tmp_120	  #
+# (void)  (void)	  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
+[ 1@0,	  1@0		  ]
+[ 2@0,	  2@0		  ]
 _MMjoin_7.find(0@0).print;
 [ 20 ]
 _MMjoin_11.find(0@0).print;
@@ -2705,11 +2705,11 @@ _MMnilcast_10 := _MMreverse_9.reverse.mark(0@0).reverse;
 _MMnilcast_11 := _MMjoin_5.reverse.mark(0@0).reverse;
 _MMjoin_12 := join(_MMnilcast_11,_MMoper_2);
 _MMnilcast_10.print;
-#-----------------#
-# BAT:	  tmp_68  #
-# (void)  (void)  #
-#-----------------#
-[ 0@0,	  0@0	  ]
+#-------------------------#
+# BAT:	  tmp_102	  #
+# (void)  (void)	  #
+#-------------------------#
+[ 0@0,	  0@0		  ]
 _MMjoin_8.find(0@0).print;
 [ 40 ]
 _MMjoin_12.find(0@0).print;

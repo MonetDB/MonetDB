@@ -46,7 +46,7 @@ a.info.reverse.select("theap.storage").reverse.print;
 # BAT:			  tmp_30	  #
 # (str)			  (str)		  #
 #-----------------------------------------#
-[ "theap.storage",	  "private map"	  ]
+[ "theap.storage",	  "malloced"	  ]
 
 [int](a.mirror);
 e := [str]([int](a.mirror));
