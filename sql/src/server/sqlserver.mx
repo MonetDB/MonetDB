@@ -671,6 +671,7 @@ module(alarm);
 module(ddbench);
 module(aggrX3);
 module(monettime);
+module(ascii_io); # HACK: should not be necessary...
 module(sqlserver);
 module(mmath);
 module(decimal);
