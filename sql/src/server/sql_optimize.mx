@@ -590,7 +590,16 @@ static list *push_selects_down(list * con){
 			list_destroy(res);
 			return rsel;
 		} else {
-			printf("error: more then one selected but no joins\n");
+			/* add implicit cross products */
+			node *n;
+
+			for(n = rsel->h; n && n->next; n = n->next) {
+				list_append(res, 
+					stmt_join(stmt_dup(n->data), 
+						  stmt_reverse(
+						      stmt_dup(n->next->data)), 
+					      	  cmp_all) );
+			}
 		}
 	}
 	list_destroy(rsel);
