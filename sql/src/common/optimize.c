@@ -129,7 +129,16 @@ static int data_cmp( void *d, void *k )
 static stmt *stmt_push_down_tail(stmt * join, stmt * select);
 static stmt *stmt_push_down_head(stmt * join, stmt * select){
 	stmt *res = NULL;
-	if (join->type == st_join){
+	if (join->type == st_reljoin){
+		list *l1 = create_stmt_list();
+		list *l2 = list_dup(join->op2.lval, (fdup)&stmt_dup);
+		node *n;
+		for (n = join->op1.lval->h; n; n = n->next) {
+			l1 = list_append(l1, stmt_push_down_head(stmt_dup(n->data), select));
+		}
+		stmt_destroy(join);
+		return stmt_reljoin2(l1,l2);
+	} else if (join->type == st_join){
 		res = stmt_join(
 			stmt_push_down_head( stmt_dup(join->op1.stval), select),
 			stmt_dup(join->op2.stval), 
@@ -183,7 +192,16 @@ static stmt *stmt_push_down_head(stmt * join, stmt * select){
 /* push select (idx, val) through join(idy,idx) */
 static stmt *stmt_push_down_tail(stmt * join, stmt * select){
 	stmt *res;
-	if (join->type == st_join){
+	if (join->type == st_reljoin){
+		list *l1 = list_dup(join->op2.lval, (fdup)&stmt_dup);
+		list *l2 = create_stmt_list();
+		node *n;
+		for (n = join->op2.lval->h; n; n = n->next) {
+			l2 = list_append(l2, stmt_push_down_head(stmt_dup(n->data), select));
+		}
+		stmt_destroy(join);
+		return stmt_reljoin2(l1,l2);
+	} else if (join->type == st_join){
 		res = stmt_join(
 			stmt_dup(join->op1.stval), 
 			stmt_push_down_tail( stmt_dup(join->op2.stval), select),
