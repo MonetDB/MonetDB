@@ -69,7 +69,6 @@ include language;
 include profiler;
 include const; 
 
-include mil; 
 include bbp;
 include box; 
 include inspect;
@@ -77,13 +76,11 @@ include costmodel;
 include optimizer;
 include chopper;
 include transaction;
-include mil_scenario;
+#include mil_scenario;
 #include sql;
-include mil_schema;
 @-
 In practice, we have to introduce different startup for each
 client group or database.
 @c
-
 
 @-
