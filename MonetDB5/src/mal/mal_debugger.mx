@@ -327,7 +327,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
     do {
 		if (cntxt->phase[READER]) {
- 			if (*cntxt->phase[READER])(cntxt) ) 
+ 			if(  (*cntxt->phase[READER])(cntxt) ) 
         		    break;
 		} else if (readClient(cntxt, cntxt -> prompt) <= 0) {
         	break;
