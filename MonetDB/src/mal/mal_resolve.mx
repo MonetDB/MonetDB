@@ -496,7 +496,7 @@ because they may be resolved as part of the calling sequence.
 void typeChecker(Scope scope, MalBlkPtr mb, InstrPtr p, int level){
 	int s1= -1, i,k;
 	char buf[1024];
-	Scope m;
+	Scope m=0;
 @-
 A function search should inspect all modules unless a specific module
 is given. Preference is given to the lower scopes.
@@ -608,10 +608,10 @@ However, the first instruction is always a signature
 and should be checked.
 @c
 		tst= TRUE;
-		for(k=p->retc;tst && k<p->argc;k++){
+		for(k=p->retc;k<p->argc;k++){
 			int actual = getArgType(mb,p,k);
-			if(getArgType(mb,p,k)== TYPE_any ||
-			isAnyExpression(actual)) tst= FALSE;
+			if(actual == TYPE_any ||
+			   isAnyExpression(actual)) tst= FALSE;
 		}
 		if(i==0 || tst) typeChecker(s,mb,p, kind);
 		switch(p->token){

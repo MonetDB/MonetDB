@@ -165,7 +165,7 @@ we should first remove garbage.
 	printStack(stdout,mb,stk); fflush(stdout);
 #endif
 MALrestart:
-	stk->pc =0;
+	stk->pc =1;		/* skip signature instruction */
 	stk->exception = -1;
 	stop = mb->stop;
 	while(stk->pc < stop ){
