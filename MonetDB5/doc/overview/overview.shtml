@@ -26,5 +26,6 @@
 <!--#include virtual="docs/mal/mal_xml.html" -->
 <!--#include virtual="docs/mal/mal_debugger.html" -->
 <!--#include virtual="docs/mal/mal_profiler.html" -->
+<!--#include virtual="docs/mal/mal_syntax.html" -->
 </body>
 </html>
