@@ -102,7 +102,6 @@ void	PrCont()
 {
 Itable *it;
 Ientry *ie;
-int 	first=1;
 	extern int opt_column;
 
 	it= itable + ICONT;

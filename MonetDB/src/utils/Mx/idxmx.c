@@ -383,7 +383,6 @@ char *
 do_identifier(fp)
 FILE	*fp; 				/* pointer into Mx file. */
 {
-    int		star_seen = 0; 		/* was last read char a '*'? */
     int		pos	  = ftell(fp); 	/* initial file position. */
     char	c; 			/* current char. */
 
