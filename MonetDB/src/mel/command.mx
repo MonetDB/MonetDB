@@ -53,12 +53,15 @@ class Command : public Symbol {
 #include "language.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 extern int id_rand();
+/*
 extern "C" {
      extern long rand();
      extern void srand( unsigned seed);
 }
+*/
 
 Command::Command( int t, char *n, char *fcn, int type, Symbol *result, 
 		List<Symbol> *args, char *hlp ) 
