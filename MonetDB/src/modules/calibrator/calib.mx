@@ -141,10 +141,10 @@ int CMDcalib_info(BAT **retval)
 		sprintf(fld, "TLB %d pagesize", l+1);
 		val=TLB->pagesize[l+1];
 		b=BUNins(b, fld, &val);
-		sprintf(fld, "TLB %d miss-latency ns");
+		sprintf(fld, "TLB %d miss-latency ns", l+1);
 		val=NSperIt(TLB->latency2[l+1] - TLB->latency2[l]);
 		b=BUNins(b, fld, &val);
-		sprintf(fld, "TLB %d miss-latency cc");
+		sprintf(fld, "TLB %d miss-latency cc", l+1);
 		val=round(CYperIt(TLB->latency2[l+1] - TLB->latency2[l]));
 		b=BUNins(b, fld, &val);
 	}
