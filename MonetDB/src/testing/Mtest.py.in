@@ -1163,7 +1163,7 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "MAPI":
-        for m in "mapi":
+        for m in "streams", "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
