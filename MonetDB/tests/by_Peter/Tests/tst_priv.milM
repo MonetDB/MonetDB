@@ -8,7 +8,7 @@ a.seqbase(0@0).insert(d);
 
 i := 0;
 while(i < 100) {
-    a.insert(d);
+    a.insert(d.seqbase(oid(a.count())));
     i :+= 1;
 }
 

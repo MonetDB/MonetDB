@@ -1829,7 +1829,6 @@ gdk_export ptr  ATOMdup	  (int id, ptr val);
 {\tt \begin{tabular}{|lll|}\hline
 oid  &  OIDseed & (oid seed);\\ 
 oid  &  OIDnew  & (int inc);\\
-oid  &  OIDnewdb  & (int inc, int db\_id);\\
 \hline\end{tabular}}
 
 OIDs are special kinds of unsigned integers because the system
@@ -1837,47 +1836,19 @@ guarantees unicity. For system simplicity and performance, OIDs
 are now represented as (signed) integers; however this is hidden 
 in the system internals and shouldn't affect semantics. 
 \\ 
-GDK is able to distinguish between multiple sets of OIDs by looking 
-the first SERVERBITS bits of an OID. Here, a database-unique ID is
-placed. GDK programs at different sites can generate cross-site unique
-OIDs by having different database IDs.
-@
-The current database ID of the running GDK is placed in the
-@%GDKdb@ variable. You should not modify this by hand. 
-Use the @%OIDseed(seed)@ function instead. To modify the current
-dtabase-id, you shoould put the new id in the highest SERVERBITS
-bits of 'id'. 
-@
 @
 The @%OIDnew(N)@ claims a range of N contiguous unique,
-unused OIDs with the current database ID, and returns the starting value 
-of this range.
+unused OIDs, and returns the starting value of this range.
 @
-@
-The @%OIDnewdb(N,db)@ claims a range of N contiguous unique,
-unused OIDs in a specifically named database ID, and returns the 
-starting value of this range. The current database ID stays the same!
-
 @- highest OIDBITS designate site. 
 Derived from that: 
 @{
 @h
-#define OIDBITS		2	
-#define SERVERBITS	(sizeof(oid)*8-OIDBITS)	
-#define GDKMAXDB	(1	<< OIDBITS)	
-#define OIDserver	(((unsigned	int) (GDKMAXDB-1)) << SERVERBITS)
-#define OIDnumber	(((unsigned	int) 1 << SERVERBITS) - 1)
-
-gdk_export oid		GDKoid[GDKMAXDB];
-gdk_export int		GDKdb;
-gdk_export int		OIDflushdelta;
-
 gdk_export int      	OIDinit  ();
-gdk_export oid		OIDrand  (int db);
+gdk_export oid		OIDrand  ();
 gdk_export oid      	OIDbase  (oid base);
 gdk_export oid      	OIDseed  (unsigned int seed);
 gdk_export oid      	OIDnew   (int inc);
-gdk_export oid      	OIDnewdb (int inc, int db);
 gdk_export int      	OIDread  (str buf);
 gdk_export int      	OIDwrite (stream *fp);
 gdk_export int      	OIDdirty ();
@@ -2793,9 +2764,9 @@ We use {\bf output->halign = NOID\_AGGR(input->halign)} for the
 the fetch. 
 @h
 #define AGGR_MAGIC	111
-#define NOID(x)	((oid) ((GDKdb<<SERVERBITS) | (OIDnumber&(oid)(x))))
+#define NOID(x)		((oid)(x))
 #define NOID_AGGR(x)	NOID_MULT(AGGR_MAGIC,x)
-#define NOID_MULT(x,y)	NOID(((lng) (OIDnumber&(y))) * ((lng) (OIDnumber&(x))))
+#define NOID_MULT(x,y)	NOID( (lng)(y)*(lng)(x) )
 @
 @- BAT inline routines
 The following inline routines are (were) used  heavily in the

@@ -1397,30 +1397,27 @@ The basic type OID represents unique values. Refinements should be
 considered to link oids in time order.
 @c
 @{
-oid	GDKoid[GDKMAXDB], GDKflushed[GDKMAXDB];
-int	GDKdb;
+oid	GDKoid, GDKflushed;
 @-
 Init the shared array of oid bases.
 @c
 int OIDinit(){
-        int i = GDKMAXDB;
-        while(i--) GDKflushed[i] = GDKoid[i] = 0;
+        GDKflushed = GDKoid = 0;
 	return 0;
 }
 
 @-
 Make up some new OID for a specified database, based on the current time.
 @c
-oid OIDrand(int db) { 
-	return (db << SERVERBITS) + (OIDnumber & 1000000);
+oid OIDrand() { 
+	return 1000000;
 } 
 @-
 Initialize the current OID number to be starting at 'o'. 
 @c
 oid OIDbase(oid o){
 	MT_set_lock(MT_system_lock, "OIDbase");
-	GDKdb = (OIDserver & o) >> SERVERBITS;	
-	GDKoid[GDKdb] = o;
+	GDKoid = o;
 	MT_unset_lock(MT_system_lock, "OIDbase");
 	return (oid) o;
 }
@@ -1429,11 +1426,9 @@ oid OIDseed(unsigned int o) {
 	oid t, *p = (oid*) GDKoid;
 
 	MT_set_lock(MT_system_lock, "OIDseed");
-	GDKdb = (OIDserver & o) >> SERVERBITS;	
- 	t = OIDrand(GDKdb);
+ 	t = OIDrand();
 	if (o > t) t = o;
-	if (p[GDKdb] >= t) t = p[GDKdb];
-	else p[GDKdb] = t; 
+	if ((oid)p >= t) t = (oid)p;
 	MT_unset_lock(MT_system_lock, "OIDseed");
 	return (oid) t;
 }
@@ -1456,71 +1451,56 @@ int OIDread(str s) {
 @-
 Write the current sequence of OID seeds to a file in string format.
 @c
-int OIDflushdelta = 100000;
-
 int OIDwrite(stream *s) {
-	int i, ret = 0;
+	int ret = 0;
 	MT_set_lock(MT_system_lock, "OIDwrite");
-	for(i=0; i < GDKMAXDB; i++) { 
-		if (GDKoid[i]) {
-			GDKflushed[i] = GDKoid[i] + OIDflushdelta;
-			ATOMprint(TYPE_oid, GDKflushed+i, s);
-			if (s->write(s, " ", 1, 1) < 0) ret = -1;
-		}
+	if (GDKoid) {
+		GDKflushed = GDKoid;
+		ATOMprint(TYPE_oid, &GDKflushed, s);
+		if (s->write(s, " ", 1, 1) < 0) ret = -1;
 	}
 	MT_unset_lock(MT_system_lock, "OIDwrite");
 	return ret;
 }
 
 int OIDdirty() {
-	int i;
-	for(i=0; i < GDKMAXDB; i++) { 
-		if (GDKoid[i] && GDKoid[i] > GDKflushed[i]) {
-			return TRUE;
-		}
+	if (GDKoid && GDKoid > GDKflushed) {
+		return TRUE;
 	}
 	return FALSE;
 }
 @-
-Reserve a range of unique OIDs for a specified database.
-@c
-oid OIDnewdb(int inc, int db) {
-	oid ret;
-	MT_set_lock(MT_system_lock, "OIDnewdb");
-	if (!GDKoid[db]) GDKoid[db] = OIDrand(db);
-	ret = GDKoid[db]; 
-	GDKoid[db] += inc; 
-	MT_unset_lock(MT_system_lock, "OIDnewdb");
-	return ret; 
-}
-@-
-Reserve a range of unique OIDs for the current database.
+Reserve a range of unique OIDs 
 @c
 oid OIDnew(int inc) {
-	return OIDnewdb(inc, GDKdb);
+	oid ret;
+	MT_set_lock(MT_system_lock, "OIDnew");
+	if (!GDKoid) GDKoid = OIDrand();
+	ret = GDKoid; 
+	GDKoid += inc; 
+	MT_unset_lock(MT_system_lock, "OIDnew");
+	return ret; 
 }
 @-
 String conversion routines. 
 @c
 int OIDfromStr(char *src, int *len, oid **dst) {
-	int ui, *uip = &ui, db=0, *dbp = &db, l=sizeof(int), pos = 0;
+	int ui, *uip = &ui, l=sizeof(int), pos = 0;
 	str p = src;
 
 	@:atommem(oid,sizeof(oid))@
 	**dst = oid_nil;
 	while(GDKisspace(*p)) p++;
 	if (GDKisdigit(*p)) {
-		pos = intFromStr(p,&l,&uip); p += pos;
-		if (pos > 0 && p[0] == '@') {
-			if (!GDKisdigit(p[1])) pos = 0;
-			else pos = intFromStr(++p,&l,&dbp); 
-			p += pos;
+		pos = intFromStr(p,&l,&uip); 
+		if (pos > 0 && p[pos] == '@') {
+			while (GDKisdigit(p[pos])) pos++;
 		}
-		if (pos > 0 && ui >= 0 && ui < (1<<SERVERBITS) && db >= 0 && db < 4) {
-		 	**dst = ui | (db<<SERVERBITS);
+		if (pos > 0 && ui >= 0) {
+		 	**dst = ui;
 		}
+		p += pos;
 	} 
-	if (pos <= 0) p = src;
 	return p - src;
 }
 
@@ -1532,7 +1512,7 @@ int OIDtoStr(char** dst, int *len, oid *src) {
 		return 3;
 	}
 	ui = *(oid*)src;
-	snprintf(*dst, *len, "%u\@%d", ui&OIDnumber, (ui&OIDserver)>>SERVERBITS);
+	snprintf(*dst, *len, "%u\@0", ui);
 	return strlen(*dst);
 }
 @

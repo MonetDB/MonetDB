@@ -376,6 +376,13 @@ BAT *BATmaterialize(BAT *b, int size){
 	bn->thash_heap = b->hhash_heap;
 	bn->hidx_heap = b->tidx_heap; 
 	bn->tidx_heap = b->hidx_heap;
+	if (head){ /* set the correct dense info */
+		bn->tdense = b->hdense = TRUE;
+		bn->tseqbase = b->hseqbase = oid_nil;
+	} else {
+		bn->hdense = b->tdense = TRUE;
+		bn->hseqbase = b->tseqbase = oid_nil;
+	}
 	
 	return b;
 }

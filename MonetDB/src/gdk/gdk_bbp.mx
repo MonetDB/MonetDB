@@ -506,7 +506,7 @@ void BBPinit() {
 	BBP_notrim = NULL;
 
 	if (BBPoid == 0) {
-		OIDseed(OIDrand(GDKdb=0)); /* if not yet done, init oid */
+		OIDseed(OIDrand()); /* if not yet done, init oid */
 	}
 	if (recover) {
 		closedir(recover);
@@ -535,20 +535,20 @@ it may lead to interference in a parallel session.
 
 void BBPexit()
 {
-	if (!BBP) return; /* AARGH */
-#if 0
 	int  i;
 
+	if (!BBP) return; /* AARGH */
+
+#if 0
 	/* atomically save all bats to disk */
-	OIDflushddelta = 0;
 	BBPsync(FALSE); 
+#endif
 
 	/* free all memory */
 	for(i=0; i<BBPsize; i++) {
 		BAT *b = BBP_cache(i);
 		if (b) BBPfree(b);
 	}
-#endif
 }
 
 @-

@@ -1,13 +1,13 @@
 stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 17:49:28 >  
-# 17:49:28 >  Mtimeout -timeout 60 Mserver --config=/db2/niels/monet/ntv64debug/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_from_Twente_Bugs  < Arjen_02.milM
-# 17:49:28 >  
+# 13:54:25 >  
+# 13:54:25 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --dbname=Tests_tests_from_Twente_Bugs  < Arjen_02.milM
+# 13:54:25 >  
 
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for mips-sgi-irix6.5/64bit; dynamically linked.
+# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 #-----------------#
 # BAT:	  tmp_26  #
 # (void)  (int)	  #
@@ -67,8 +67,8 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-138",	  "-139",	  "-142"	  ]
-[ "curStamp",			  "143",	  "148",	  "151"		  ]
+[ "batStamp",			  "-139",	  "-140",	  "-143"	  ]
+[ "curStamp",			  "144",	  "149",	  "152"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -164,8 +164,8 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-138",	  "-154",	  "-157"	  ]
-[ "curStamp",			  "158",	  "163",	  "166"		  ]
+[ "batStamp",			  "-139",	  "-155",	  "-158"	  ]
+[ "curStamp",			  "159",	  "164",	  "167"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -261,8 +261,8 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ "batDeleted",			  "0",		  "3",		  "0"		  ]
 [ "batHole",			  "0",		  "3",		  "0"		  ]
 [ "top",			  "4",		  "7",		  "2"		  ]
-[ "batStamp",			  "-138",	  "-169",	  "-172"	  ]
-[ "curStamp",			  "173",	  "178",	  "181"		  ]
+[ "batStamp",			  "-139",	  "-170",	  "-173"	  ]
+[ "curStamp",			  "174",	  "179",	  "182"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
@@ -307,7 +307,7 @@ stdout of test 'Arjen_02` in directory 'tests/from_Twente/Bugs` itself:
 [ "head_index",			  "absent",	  "absent",	  "absent"	  ]
 [ "tail_index",			  "absent",	  "absent",	  "absent"	  ]
 
-# 17:49:28 >  
-# 17:49:28 >  Done.
-# 17:49:28 >  
+# 13:54:26 >  
+# 13:54:26 >  Done.
+# 13:54:26 >  
 

@@ -2,7 +2,7 @@ setaggr_exist
 refcnt
 bat_nil
 printf
-printf_dbl
+#printf_dbl switched off as the double cannot hold the data
 printf_nil
 const
 modrefcnt1

@@ -331,13 +331,9 @@ int CMDnewoid(Cntxt stk, YYSTREE lt, ValPtr res){
         if (lt->cnt <= 0) {
             res->val.oval = OIDnew(1);
         } else {
-            int *inc, db = 0;
+            int *inc;
             @:builtin_operand(0, TYPE_int, inc)@
-	    if (lt->cnt >= 2) {
-		db = *inc;
-            	@:builtin_operand(1, TYPE_int, inc)@
-	    }
-            res->val.oval = OIDnewdb(*inc, db);
+            res->val.oval = OIDnew(*inc);
         }
         res->vtype = TYPE_oid;
         return 1;
@@ -753,7 +749,6 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 	while (c->father >= 0) {
 		c = monet_clients + c->father;
 	}
-	OIDflushdelta = 0;
 	TMcommit();
 	if (c == monet_clients) {
 		int i,status = 0, *statusp = &status;

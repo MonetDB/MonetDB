@@ -1005,7 +1005,7 @@ Since the BBP will no longer store these tables only creation is needed
 	
 @- Look up the module table.  
 @c
-        @:TBL_create(mod,nme,oid,str,40,BOUND2BTRUE,TRUE)@
+        @:TBL_create(mod,nme,oid,str,40,BOUND2BTRUE,BOUND2BTRUE)@
         @:TBL_create(mod,cnt,oid,int,40,BOUND2BTRUE,FALSE)@
         @:TBL_create(mod,atm,oid,str,40,FALSE,FALSE)@
         @:TBL_create(mod,acc,oid,str,40,FALSE,FALSE)@
@@ -2297,12 +2297,15 @@ void TBL_initclient(Client client) {
 	} else {
 		client->fcntbl = TBL_create(client, "fcntbl", 
 				    BATnew(TYPE_str, TYPE_oid, TBL_SIZE));
+   		BATkey(BATmirror(client->fcntbl),BOUND2BTRUE);
 
 		/* Create the client acc-table, and fill it 
 	 	 * with the standard types.
 	 	 */
 		client->acctbl = TBL_create(client, "acctbl", 
 			     	    BATnew(TYPE_str, TYPE_int, TBL_SIZE));
+   		BATkey(client->acctbl,BOUND2BTRUE); /* unique acc names */
+   		BATkey(BATmirror(client->acctbl),BOUND2BTRUE);
 		i = ACC_hash; BUNins(client->acctbl, "hash", &i);
 		i = ACC_index;BUNins(client->acctbl, "index", &i);
 
@@ -2311,6 +2314,7 @@ void TBL_initclient(Client client) {
 	 	 */
 		client->atomtbl = TBL_create(client, "atomtbl", 
 				     BATnew(TYPE_str, TYPE_int, TBL_SIZE));
+   		BATkey(client->atomtbl,BOUND2BTRUE);/* unique type names */
 		i = TYPE_void;BUNins(client->atomtbl, "void", &i);
 		i = TYPE_bit; BUNins(client->atomtbl, "bit", &i);
 		i = TYPE_chr; BUNins(client->atomtbl, "chr", &i);

@@ -1461,17 +1461,17 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 	}
 	if (yy+1 >= xx) {
 		if (ATOMlinear(tpe) && !(b->hsorted&1)) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d typles is (h)sorted!\n",
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d tuples is (h)sorted!\n",
 						b->batId,b->batCacheid,BATcount(b));
 			b->hsorted = b->batDirtydesc = TRUE;
 		}
 		if (yy > xx && !b->hkey) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d typles is (h)key!\n",
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) with %d tuples is (h)key!\n",
 						b->batId,b->batCacheid,BATcount(b));
 			BATkey(b,TRUE);
 		}
 		if (yy > xx && tpe == TYPE_oid && !BAThdense(b)) {
-			XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d) with %d typles is (h)dense!\n",
+			XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d) with %d tuples is (h)dense!\n",
 						b->batId,b->batCacheid,BATcount(b));
 			b->hdense = b->batDirtydesc = TRUE; 
 			BATseqbase(b, *(oid*) BUNhloc(b,BUNfirst(b)));
