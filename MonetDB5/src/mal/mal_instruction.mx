@@ -666,7 +666,7 @@ They have preference over variable names.
 malType getType(MalBlkPtr mb, str nme){
 	int i;
 	i= findVariable(mb,nme);
-	if( i< 0) return getTypeIndex(nme);
+	if( i< 0) return getTypeIndex(nme,strlen(nme));
 	if( i>=0) return getVarType(mb,i);
 	return TYPE_any;
 }
@@ -760,7 +760,7 @@ proprietary type.
 The makes analyses of patterns like bat(int,str) easier.
 @c
 /*
-	if( isTmpName(name) ) l= TYPE_any; else l = getTypeIndex(name);
+	if( isTmpName(name) ) l= TYPE_any; else l = getTypeIndex(name,strlen(name));
 	if( l>= 0 && l != TYPE_any){
 		if( type != l && type != TYPE_any){
 			GDKerror("'%s' type mismatch with %d\n", name, type);
@@ -1141,7 +1141,7 @@ InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p,str name){
         int v;
 
 	v= findVariable(mb,name);
-	if( v<0) v= newVariable(mb,name,getTypeIndex(name));
+	if( v<0) v= newVariable(mb,name,getTypeIndex(name,strlen(name)));
 	else GDKfree(name);
 	return pushArgument(mb,p,v);
 }

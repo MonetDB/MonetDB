@@ -148,7 +148,7 @@ void setAtomName(InstrPtr pci){
 
 int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	str name= functionName(pci);
-	int tpe = getTypeIndex(moduleName(pci));
+	int tpe = getTypeIndex(moduleName(pci), strlen(moduleName(pci)));
 	(void) mb; /* fool compilers */
 	if( tpe<0 || tpe>= GDKatomcnt)
 		GDKfatal("malAtomProperty:illegal type name");
@@ -255,7 +255,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 }
 int malAtomPropertyInt(MalBlkPtr mb, InstrPtr pci){
 	str name= functionName(pci);
-	int tpe = getTypeIndex(moduleName(pci));
+	int tpe = getTypeIndex(moduleName(pci),strlen(moduleName(pci)));
 	(void) mb; /* fool compiler */
 	if( tpe<0 || tpe>= GDKatomcnt)
 		GDKfatal("malAtomProperty:illegal type name");

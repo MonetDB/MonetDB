@@ -29,17 +29,106 @@
  
 @* Introduction
 
-MonetDB version 5 is a major departure from the previous MonetDB
-versions. The most notable difference is the new interface language,
-which turns the backend into an abstract database machine with its
-associated assembler language (MAL).
-This interface is designed for ease of interpretation, versatility and 
+Monet Version 5 is a major departure from the previous Monet database
+kernel versions. The most notable differences are its
+improved software stack and a new interface language,
+which turns the database server backend into an
+abstract database machine with its associated assembler language (MAL).
+
+The architecture is designed to accomodate a wide-spectrum 
+of query language front-ends (SQL,RAM,MIL,XQUERY),
+a variety of query transformation schemes, and
+different execution platforms (interpreted MAL, x100, and
+dynamic compilation).
+
+The system expands upon the software infrastructure and distributed
+in the open source community. In particular, it supports backward
+compatability of interfaces, tools, and source sharing where
+feasible within the limited scope of resources available.
+
+In the remainder of this section we shortly introduce the
+MonetDB product familiy, the design considerations and
+a quick overview of the Monet Version 5 architecture.
+
+This interface is designed for ease of interpretation, versatility and
 flexible to accommodate system debugging and application tool development.
-Although a textual interface potentially leads to a performance degradation, 
-our experience with earlier systems, 
+Although a textual interface potentially leads to a performance degradation,
+our experience with earlier systems,
 showed that the overhead can be kept within acceptable limits.
 Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
+
+@+ MonetDB product family
+@T
+The MonetDB product family consists of a large number of components
+developed within out group over the last decade. Some components have
+already been shipped to happy customers, some are still in the making,
+and others have found a resting place in the attic.
+
+In de the development of Monet V5 the requirements of the
+following components are taken into account.
+\begin{itemize}
+\item {\em SQL front-end}
+\item {\em GDK back-end}
+\item {\em Plain modules}, the key extensions to the GDK kernel
+described in user defined modules.
+\end{itemize}
+@+ Design considerations
+@T
+Redesign of the Monet software stack was driven by the need to
+reduce the Total Execution Cost (TEC) for query execution.
+The TEC is what an end-user of application program will
+notice. The TEC is composed on several cost factors:
+\begin{itemize}
+\item - Messaging with the API
+\item - Parsing
+\item - Optimization and code generation
+\item - Data access to the operands
+\item - Execution of the query term,
+\item - Result construction
+\item - Answer delivery to the application
+\end{itemize}
+
+Choosing an architecture for processing database operations pre-supposes an
+intuition on where and how the cost will be distributed. In an OLTP
+setting you expect most of the cost to be in PO, while in OLAP it will
+be DERA. In a distributed setting the components ODE are dominant.
+Web-applications would focus on AE.
+
+However, such a simple first characterization ignores the wide-spread
+differences that can be experienced at each level. To illustrate,
+in D and R it makes a big difference whether the data is already in the
+cache of still on disk. Within E it makes a big difference whether you
+are comparing 2 integers, performing an math function such as Log, or
+a regular expression evaluation on a string.
+As a result, intense optimization in one area may become completely invisible
+due to other cost factors.
+
+The Monet V5 infrastructure is designed to ease addressing each
+of these cost factors in a well-defined way, while retaining an
+option to combine the components needed for a particular situation.
+
+@+ Architecture overview
+The software stack for Monet V5 is shown in @T\figure{architecture.gif}@
+The top layer consists of the query language processors and their
+strategic optimizers. Moreover, each language comes with its language
+oriented catalog, which may, but need not be stored in the Monet V5
+kernel.
+@-
+@- MAL
+The target language for Monet V5 is an assembler-like language,
+derived as a subset of the Monet Interface Language introduced
+previously. This language provides the textual interface to
+the back-end, the communication between (independent) family component,
+and the API.
+@+ Functional improvements
+The design and implementation of Monet V5 takes the functionality a 
+significant step further. To name a few:
+\begin{itemize}
+\item {\em strong typing}, to better deal with compile time errors
+\item {\em function style expressions}, 
+\item {\em triggers and stream functions}
+\end{itemize}
 
 @{
 @+ Critical sections and semaphores
