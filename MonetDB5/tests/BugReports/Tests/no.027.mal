@@ -36,9 +36,9 @@
 	mil.line("b.insert(1,2);");
 	aa_a := insert(b,1,2);
 	mil.line("b@batloop(){$h.print();}");
-barrier	ba_a := bunStream(b,ba_aH,ba_aT);
+barrier	(ba_a,ba_aH,ba_aT) := newIterator(b);
 	ca_a := print(ba_aH);
-redo	ba_a := bunStream(b,ba_aH,ba_aT);
-exit	ba_a;
+redo	(ba_a,ba_aH,ba_aT) := hasMoreElements(b);
+exit	(ba_a,ba_aH,ba_aT) ;
 	mil.line("quit();");
 	da_a := quit();

@@ -7,22 +7,50 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 
 # Monet Database Server V4.3.16_rc05
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-PROC crash() : void
-{
-	print($t);
-}
-
-crash();
-!ERROR: interpret: unresolved reference.
-!ERROR: interpret_params: print(param 1): evaluation error.
-quit();
-
-
-
-
-# 22:18:31 >  
-# 22:18:31 >  Done.
-# 22:18:31 >  
+# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
+# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugsViaSourgeforce
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
+#	mil.line("PROC crash() : void");
+#function crash():void;
+#
+##ERROR: no iterator 'T' on stack
+#
+##ERROR: no iterator 'T' on stack
+#	mil.line("\tprint($t);");
+#	unknown:= mil.take("unknown");
+#	aa_a := print(unknown);
+#end crash;
+function Admin.crash():void;	# 0  (crash:void)
+    mil.line("\tprint($t);");	# 1 MILline ($1:void)<-($2:str)
+    unknown := mil.take("unknown");	# 2 MILtake (unknown:any)<-($4:str)
+    aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:int)<-(unknown:any)
+end crash;	# 4  
+#	mil.line("crash();");
+#	ba_a := crash();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("PROC crash() : void");	# 1 MILline ($1:void)<-($2:str)
+    mil.line("crash();");	# 2 MILline ($3:void)<-($4:str)
+    ba_a := Admin.crash();	# 3  (ba_a:void)
+end main;	# 4  
+#PROC crash() : void
+#crash();
+#\tprint($t);
+!ERROR: MALexception:mil.take:failed to take 'unknown' from box
+>
+# 16:42:00 >  
+# 16:42:00 >  Done.
+# 16:42:00 >  
 

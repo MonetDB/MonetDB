@@ -11,7 +11,7 @@
 	mil.line("setoid(oid(20000000));");
 	aa_a := oid(20000000);
 	ba_a := setoid(aa_a);
-	mil.line("# definition and use of Monet procs.\n");
+	mil.line("# definition and use of Monet procs and variables\n");
 	mil.line("# Note that complex procs should normally be prepared in block mode.\n");
 	mil.line("unknown(\"hello\");");
 	ca_a := unknown("hello");

@@ -18,7 +18,7 @@
 	da_a := persists(t,true);
 #t.import(sprintf("%s/test_00.k10_unique1",getenv("TSTTRGDIR")));
 	ea_a := getenv("TSTTRGDIR");
-	fa_a := sprintf("%s/test_00.k10_unique1",ea_a);
+	fa_a := ea_a+"/test_00.k10_unique1";
 	ga_a := import(t,fa_a);
 #t.count().print();
 	ha_a := count(t,);
@@ -31,7 +31,7 @@
 	ka_a := persists(z,true);
 #z.import(sprintf("%s/test_00.k10_unique2",getenv("TSTTRGDIR")));
 	la_a := getenv("TSTTRGDIR");
-	ma_a := sprintf("%s/test_00.k10_unique2",la_a);
+	ma_a := la_a+"/test_00.k10_unique2";
 	na_a := import(z,ma_a);
 #z.count().print();
 	oa_a := count(z,);
@@ -44,7 +44,7 @@
 	ra_a := persists(w,true);
 #w.import(sprintf("%s/test_00.k100_unique1",getenv("TSTTRGDIR")));
 	sa_a := getenv("TSTTRGDIR");
-	ta_a := sprintf("%s/test_00.k100_unique1",sa_a);
+	ta_a := sa_a+"/test_00.k100_unique1";
 	ua_a := import(w,ta_a);
 #w.count().print();
 	va_a := count(w,);

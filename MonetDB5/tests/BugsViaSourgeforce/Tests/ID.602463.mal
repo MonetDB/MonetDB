@@ -47,7 +47,8 @@
 	pa_a := printf("Result (should be empty):\n");
 	mil.line("printf(\"Result (should be empty):\\n\");");
 	qa_a := reverse(t1);
-	ra_a := mirror(qa_a);
+	mil.line("t1.reverse();");
+	ra_a := mirror(t1);
 	sa_a := join(ra_a,t2);
 	ta_a := print(sa_a);
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase'

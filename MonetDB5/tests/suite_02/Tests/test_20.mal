@@ -2,23 +2,23 @@
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
-#The compiler can not guarantee an accurate compilatioStatisticsn,
+#The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#use the "mil_schema" for additioStatisticsnal support routines
+#use the "mil_schema" for additional support routines
 	mil.line("setoid(oid(2000000));");
 	aa_a := oid(2000000);
 	ba_a := setoid(aa_a);
-	mil.line("# analyse selectioStatisticsn using indexing\n");
+	mil.line("# analyse selection using indexing\n");
 	k10_unique1 := new("k10_unique1");
 	mil.line("print(count(k10_unique1));");
 	ca_a := count(k10_unique1);
 	da_a := print(ca_a);
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ea_a := printf("#~BeginVariableOutput~#\n");
-	fa_a := cpuStatistics();
+	fa_a := cpuStatistics;
 	ga_a := print(fa_a);
 	ha_a := printf("#~EndVariableOutput~#\n");
 	mil.line("var t:=fragment(k10_unique1,0,10,int(nil),int(nil));");
@@ -45,26 +45,26 @@
 	sa_a := int(nil);
 	ta_a := int(nil);
 	t := fragment(k10_unique1,0,10,sa_a,ta_a);
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ua_a := printf("#~BeginVariableOutput~#\n");
-	va_a := cpuStatistics();
+	va_a := cpuStatistics;
 	wa_a := print(va_a);
 	xa_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ya_a := printf("#~BeginVariableOutput~#\n");
-	ab_a := status.memStatisticsStatistics();
+	ab_a := status.memStatistics();
 	bb_a := print(ab_a);
 	cb_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); io.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	db_a := printf("#~BeginVariableOutput~#\n");
-	eb_a := ioStatistics();
+	eb_a := io;
 	fb_a := print(eb_a);
 	gb_a := printf("#~EndVariableOutput~#\n");
-	mil.line("#Index first to speed-up selectioStatisticsn\n");
+	mil.line("#Index first to speed-up selection\n");
 	hb_a := accbuild(k10_unique1,"index");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ib_a := printf("#~BeginVariableOutput~#\n");
-	jb_a := cpuStatistics();
+	jb_a := cpuStatistics;
 	kb_a := print(jb_a);
 	lb_a := printf("#~EndVariableOutput~#\n");
 	mil.line("t:=fragment(k10_unique1,0,10,int(nil),int(nil));");
@@ -91,19 +91,19 @@
 	wb_a := int(nil);
 	xb_a := int(nil);
 	t := fragment(k10_unique1,0,10,wb_a,xb_a);
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	yb_a := printf("#~BeginVariableOutput~#\n");
-	ac_a := cpuStatistics();
+	ac_a := cpuStatistics;
 	bc_a := print(ac_a);
 	cc_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	dc_a := printf("#~BeginVariableOutput~#\n");
-	ec_a := status.memStatisticsStatistics();
+	ec_a := status.memStatistics();
 	fc_a := print(ec_a);
 	gc_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); io.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	hc_a := printf("#~BeginVariableOutput~#\n");
-	ic_a := ioStatistics();
+	ic_a := io;
 	jc_a := print(ic_a);
 	kc_a := printf("#~EndVariableOutput~#\n");
 	mil.line("t:=fragment(k10_unique1,int(nil),int(nil),0,10);");
@@ -130,27 +130,27 @@
 	vc_a := int(nil);
 	wc_a := int(nil);
 	t := fragment(k10_unique1,vc_a,wc_a,0,10);
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	xc_a := printf("#~BeginVariableOutput~#\n");
-	yc_a := cpuStatistics();
+	yc_a := cpuStatistics;
 	ad_a := print(yc_a);
 	bd_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	cd_a := printf("#~BeginVariableOutput~#\n");
-	dd_a := status.memStatisticsStatistics();
+	dd_a := status.memStatistics();
 	ed_a := print(dd_a);
 	fd_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); io.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	gd_a := printf("#~BeginVariableOutput~#\n");
-	hd_a := ioStatistics();
+	hd_a := io;
 	id_a := print(hd_a);
 	jd_a := printf("#~EndVariableOutput~#\n");
 	mil.line("#index the tail\n");
 	kd_a := reverse(k10_unique1);
 	ld_a := accbuild(kd_a,"index");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	md_a := printf("#~BeginVariableOutput~#\n");
-	nd_a := cpuStatistics();
+	nd_a := cpuStatistics;
 	od_a := print(nd_a);
 	pd_a := printf("#~EndVariableOutput~#\n");
 	mil.line("t:=fragment(k10_unique1,int(nil),int(nil),0,10);");
@@ -177,21 +177,21 @@
 	be_a := int(nil);
 	ce_a := int(nil);
 	t := fragment(k10_unique1,be_a,ce_a,0,10);
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); cpuStatistics.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	de_a := printf("#~BeginVariableOutput~#\n");
-	ee_a := cpuStatistics();
+	ee_a := cpuStatistics;
 	fe_a := print(ee_a);
 	ge_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatisticsory().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	he_a := printf("#~BeginVariableOutput~#\n");
-	ie_a := status.memStatisticsStatistics();
+	ie_a := status.memStatistics();
 	je_a := print(ie_a);
 	ke_a := printf("#~EndVariableOutput~#\n");
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); io.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	le_a := printf("#~BeginVariableOutput~#\n");
-	me_a := ioStatistics();
+	me_a := io;
 	ne_a := print(me_a);
 	oe_a := printf("#~EndVariableOutput~#\n");
 	mil.line("quit();");
 	pe_a := quit();
-#Identifer 'memStatisticsory' mapped to 'status.memStatistics'
+#Identifer 'memStatistics' mapped to 'status.memStatistics'

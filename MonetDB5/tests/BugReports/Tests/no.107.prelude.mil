@@ -83,5 +83,5 @@ module("unix","ascii_io");
 # w.bat is een text dump formaat ( oid, str ),
 # bevattende docid, term
 var w := new( oid, str );
-w.import( sprintf("%s/no.107.w.bat",getenv("TSTTRGDIR")) );
+w.import( getenv("TSTTRGDIR")+"/no.107.w.bat") );
 w.print();

@@ -30,12 +30,12 @@
 	mil.line("# > b@batloop(){ printf(\"%s\\n\",$t);}\n");
 	mil.line("# !ERROR: interpret: no matching iterator to 'batloop(bat[int,str], ptr)'.\n");
 	mil.line("var b:= view_bbp_name();");
-	b := bbp.getNames();
+	b := bbp.getNames());
 	mil.line("b@batloop(){ printf(\"%s\\n\",$t);}");
-barrier	aa_a := bunStream(b,aa_aH,aa_aT);
+barrier	(aa_a,aa_aH,aa_aT) := newIterator(b);
 	ba_a := printf("%s\n",aa_aT);
-redo	aa_a := bunStream(b,aa_aH,aa_aT);
-exit	aa_a;
+redo	(aa_a,aa_aH,aa_aT) := hasMoreElements(b);
+exit	(aa_a,aa_aH,aa_aT) ;
 	mil.line("quit();");
 	ca_a := quit();
-#Identifer 'view_bbp_name' mapped to 'bbp.getNames'
+#Identifer 'view_bbp_name' mapped to 'bbp.getNames()'

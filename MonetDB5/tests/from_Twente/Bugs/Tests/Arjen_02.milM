@@ -30,7 +30,10 @@ A := 2;
 aA := [=]( a, A );   aA.print();
 aA2 := uselect(aA, true).mark(0@0);   aA2.print();
 
-print(a.info().access(BAT_WRITE).delete("batBuns.base").col_name("a"),aA.info().col_name("aA"),aA2.info().col_name("aA2"));
+var i:=a.info();
+i.access(BAT_WRITE);
+i.delete("batBuns.base");
+print(i,,aA.info(),aA2.info());
 
 # interesting...
 

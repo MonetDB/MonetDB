@@ -1,28 +1,30 @@
 # Monet Mil to Mal compiler
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
-# Predefined code segment
+#Predefined code segment
 #The compiler can not guarantee an accurate compilation,
 #because MIL unlike MAL is a dynamically typed language.
 #A few guidelines to maximize usefullness.
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
-#var b := bat(int,int);
-	b := new(:int,:int);
-#b.insert(1,1);
+#use the "mil_schema" for additional support routines
+	mil.line("var b := bat(int,int);");
+	b := new(nil:int,nil:int);
+	mil.line("b.insert(1,1);");
 	aa_a := insert(b,1,1);
-#b.insert(9,2); # in same hash list (default hash-mask=7, 1&7=9&7=1)
+	mil.line("b.insert(9,2); # in same hash list (default hash-mask=7, 1&7=9&7=1)");
 	ba_a := insert(b,9,2);
-#b.accbuild("hash");
+	mil.line("# in same hash list (default hash-mask=7, 1&7=9&7=1)\n");
 	ca_a := accbuild(b,"hash");
-#b.commit();
-	da_a := commit(b,);
-#b.delete(9); # triggers move (1,1) over (9,2); hash corrupt
+	mil.line("b.commit();");
+	da_a := commit(b);
+	mil.line("b.delete(9); # triggers move (1,1) over (9,2); hash corrupt");
 	ea_a := delete(b,9);
-#b.delete(); # delete (1,1) without hash-lookup
-	fa_a := delete(b,);
-#b.find(1).print(); # still finds (1,1) !
+	mil.line("# triggers move (1,1) over (9,2); hash corrupt\n");
+	fa_a := delete(b);
+	mil.line("# delete (1,1) without hash-lookup\n");
 	ga_a := find(b,1);
-	ha_a := print(ga_a,);
-#quit(); 
+	ha_a := print(ga_a);
+	mil.line("# still finds (1,1) !\n");
+	mil.line("quit(); ");
 	ia_a := quit();

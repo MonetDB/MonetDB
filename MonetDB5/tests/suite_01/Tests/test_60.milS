@@ -23,23 +23,25 @@ proc dummy() : int { return 1; }
 
 proc p(any B, any C) : any { 
         var local :=newid(B,C); 
-        vars(); 
+	print(local);
 }
 
 proc s(int low, int high) : void {
-	vars(); 
 	var t := select(bat("tenk1_unique1"),low,high); 
         t.count().print();
 }
 
-#proc echo(any x,any y) : any { vars(); z=x; vars(); return(z); }
-proc echo(any x,any y) : any { vars(); var z:=x; vars(); return(z); }
+proc echo(any x,any y) : any { 
+	var z:=x; 
+	return(z); 
+}
 proc New(any N,any A,any Ahsh) : void {
         var Nh := newid(N,"_hsh"); 
         var A := new(int,int,1); 
         rename(A,N); 
         var Ahsh := new(oid,int,1); 
-        rename(Ahsh,Nh); vars();
+        rename(Ahsh,Nh); 
+	print(bat(Nh));
 }
 
 p("b","1");
@@ -48,8 +50,6 @@ p("b","1");
 var a:=35;
 echo(a,"hello").print();
 New("r","C","Ch");
-vars();
-
 
 s(0,10);
 s(0,11);

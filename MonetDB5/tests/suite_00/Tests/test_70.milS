@@ -30,8 +30,8 @@ insert(s,5,"eello");
 insert(s,6,"fello");
 insert(s,7,"fello");
 insert(s,8,"fello");
-t:= s.histogram();
-t.print();
+var t2:= s.histogram();
+t2.print();
 
 #It requires a few additional routines
 var c:= new(int,int);

@@ -20,4 +20,5 @@ t1.reverse().mirror().print();
 printf("RHS:\n");
 t2.print();
 printf("Result (should be empty):\n");
-join(t1.reverse().mirror(),t2).print();
+t1.reverse();
+join(t1.mirror(),t2).print();

@@ -7,18 +7,65 @@ stdout of test 'ID.1023816` in directory 'tests/BugsViaSourgeforce` itself:
 
 # Monet Database Server V4.3.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-var x:=new(void,int);
-x.insert(void(nil),2);
-x.insert(void(nil),4);
-x:=x.reverse().mark(0@0).reverse();
-table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
-!ERROR: print_table_default: too many arguments.
-!ERROR: print_table_default: operation failed.
-quit();
-
-# 21:54:00 >  
-# 21:54:00 >  Done.
-# 21:54:00 >  
+# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
+# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugsViaSourgeforce
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
+#	mil.line("var x:=new(void,int);");
+#	x := new(nil:void,nil:int);
+#	mil.line("x.insert(void(nil),2);");
+#	aa_a := void(nil);
+#	ba_a := insert(x,aa_a,2);
+#	mil.line("x.insert(void(nil),4);");
+#	ca_a := void(nil);
+#	da_a := insert(x,ca_a,4);
+#	mil.line("x:=x.reverse().mark(0@0).reverse();");
+#	ea_a := reverse(x);
+#	fa_a := mark(ea_a,0@0);
+#	x := reverse(fa_a);
+#	mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);");
+#	ga_a := table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("var x:=new(void,int);");	# 1 MILline ($1:void)<-($2:str)
+    x := bbp.new(nil,nil);	# 2 CMDBATnew (x:bat[:void,:int])<-($4:void)($5:int)
+    mil.line("x.insert(void(nil),2);");	# 3 MILline ($6:void)<-($7:str)
+    aa_a := calc.void(nil);	# 4 CALCnil2void (aa_a:void)<-($4:void)
+    ba_a := bat.insert(x,aa_a,2);	# 5 BKCinsert_bun (ba_a:void)<-(x:bat[:void,:int])(aa_a:void)($10:int)
+    mil.line("x.insert(void(nil),4);");	# 6 MILline ($11:void)<-($12:str)
+    ca_a := calc.void(nil);	# 7 CALCnil2void (ca_a:void)<-($4:void)
+    da_a := bat.insert(x,ca_a,4);	# 8 BKCinsert_bun (da_a:void)<-(x:bat[:void,:int])(ca_a:void)($15:int)
+    mil.line("x:=x.reverse().mark(0@0).reverse();");	# 9 MILline ($16:void)<-($17:str)
+    ea_a := bat.reverse(x);	# 10 BKCreverse (ea_a:bat[:int,:void])<-(x:bat[:void,:int])
+    fa_a := algebra.mark(ea_a,0@0);	# 11 ALGmark (fa_a:bat[:int,:oid])<-(ea_a:bat[:int,:void])($20:oid)
+    x := bat.reverse(fa_a);	# 12 BKCreverse (x:bat[:void,:int])<-(fa_a:bat[:int,:oid])
+    mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);");	# 13 MILline ($21:void)<-($22:str)
+    ga_a := io.table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);	# 14 IOttable (ga_a:int)<-(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])
+end main;	# 15  
+#var x:=new(void,int);
+#x.insert(void(nil),2);
+#x.insert(void(nil),4);
+#x:=x.reverse().mark(0@0).reverse();
+#table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
+#---------------------------------------------------------------------------------------------------------------------------------#
+# tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	  # name
+# int	int	int	int	int	int	int	int	int	int	int	int	int	int	int	int	  # type
+#---------------------------------------------------------------------------------------------------------------------------------#
+[ 2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2	  ]
+[ 4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4	  ]
+>
+# 15:21:07 >  
+# 15:21:07 >  Done.
+# 15:21:07 >  
 

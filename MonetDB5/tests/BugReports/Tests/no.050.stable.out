@@ -8,47 +8,164 @@ stdout of test 'no.050` in directory 'tests/BugReports` itself:
 #script:no.050.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# >Number:         50
-# >Category:       MIL
-# >Synopsis:       select on index problem
-# >Confidential:   no
-# >Severity:       critical
-# >Priority:       high
-# >Responsible:    boncz
-# >State:          closed
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Wed Oct 15 10:23:33 1997
-# >Originator:     niels
-# >Organization:
-# >Release:        971007
-# >Environment:
-# SunOS5.5.1
-# >Description:
-# Select on a indexed bat does not work correct. 
-# a := new (oid,int);
-# a.insert( oid(1), 100 );
-# a.insert( oid(2), 1000 );
-# a.insert( oid(4), 10 );
-# a.insert( oid(5), 15 );
-# a.reverse.accbuild(index);
-# a.select( 94, 110 ).print;
-# #output
-# #-----------------#
-# # oid   | tmp_27  #
-# #-----------------#
-# [ 1@0,    100     ]
-# [ 2@0,    1000    ]
-
-var a := new (oid,int);
-a.insert( oid(1), 100 );
-a.insert( oid(2), 1000 );
-a.insert( oid(4), 10 );
-a.insert( oid(5), 15 );
-a.print();
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
+# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugReports
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
+#	mil.line("# >Number:         50\n");
+#	mil.line("# >Category:       MIL\n");
+#	mil.line("# >Confidential:   no\n");
+#	mil.line("# >Severity:       critical\n");
+#	mil.line("# >Priority:       high\n");
+#	mil.line("# >Responsible:    boncz\n");
+#	mil.line("# >State:          closed\n");
+#	mil.line("# >Class:          sw-bug\n");
+#	mil.line("# >Submitter-Id:   unknown\n");
+#	mil.line("# >Arrival-Date:   Wed Oct 15 10:23:33 1997\n");
+#	mil.line("# >Originator:     niels\n");
+#	mil.line("# >Organization:\n");
+#	mil.line("# >Release:        971007\n");
+#	mil.line("# >Environment:\n");
+#	mil.line("# SunOS5.5.1\n");
+#	mil.line("# >Description:\n");
+#	mil.line("# a := new (oid,int);\n");
+#	mil.line("# a.insert( oid(1), 100 );\n");
+#	mil.line("# a.insert( oid(2), 1000 );\n");
+#	mil.line("# a.insert( oid(4), 10 );\n");
+#	mil.line("# a.insert( oid(5), 15 );\n");
+#	mil.line("# a.select( 94, 110 ).print;\n");
+#	mil.line("# #output\n");
+#	mil.line("# #-----------------#\n");
+#	mil.line("# # oid   | tmp_27  #\n");
+#	mil.line("# #-----------------#\n");
+#	mil.line("# [ 1@0,    100     ]\n");
+#	mil.line("# [ 2@0,    1000    ]\n");
+#	mil.line("var a := new (oid,int);");
+#	a := new(nil:oid,nil:int);
+#	mil.line("a.insert( oid(1), 100 );");
+#	aa_a := oid(1);
+#	ba_a := insert(a,aa_a,100);
+#	mil.line("a.insert( oid(2), 1000 );");
+#	ca_a := oid(2);
+#	da_a := insert(a,ca_a,1000);
+#	mil.line("a.insert( oid(4), 10 );");
+#	ea_a := oid(4);
+#	fa_a := insert(a,ea_a,10);
+#	mil.line("a.insert( oid(5), 15 );");
+#	ga_a := oid(5);
+#	ha_a := insert(a,ga_a,15);
+#	mil.line("a.print();");
+#	ia_a := print(a);
+#	ja_a := reverse(a);
+#	mil.line("a.print();");
+#	la_a := print(a);
+#	mil.line("a.select( 94, 110 ).print();");
+#	ma_a := select(a,94,110);
+#	na_a := print(ma_a);
+#	mil.line("quit();");
+#	oa_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("# >Number:         50\n");	# 1 MILline ($1:void)<-($2:str)
+    mil.line("# >Category:       MIL\n");	# 2 MILline ($3:void)<-($4:str)
+    mil.line("# >Confidential:   no\n");	# 3 MILline ($5:void)<-($6:str)
+    mil.line("# >Severity:       critical\n");	# 4 MILline ($7:void)<-($8:str)
+    mil.line("# >Priority:       high\n");	# 5 MILline ($9:void)<-($10:str)
+    mil.line("# >Responsible:    boncz\n");	# 6 MILline ($11:void)<-($12:str)
+    mil.line("# >State:          closed\n");	# 7 MILline ($13:void)<-($14:str)
+    mil.line("# >Class:          sw-bug\n");	# 8 MILline ($15:void)<-($16:str)
+    mil.line("# >Submitter-Id:   unknown\n");	# 9 MILline ($17:void)<-($18:str)
+    mil.line("# >Arrival-Date:   Wed Oct 15 10:23:33 1997\n");	# 10 MILline ($19:void)<-($20:str)
+    mil.line("# >Originator:     niels\n");	# 11 MILline ($21:void)<-($22:str)
+    mil.line("# >Organization:\n");	# 12 MILline ($23:void)<-($24:str)
+    mil.line("# >Release:        971007\n");	# 13 MILline ($25:void)<-($26:str)
+    mil.line("# >Environment:\n");	# 14 MILline ($27:void)<-($28:str)
+    mil.line("# SunOS5.5.1\n");	# 15 MILline ($29:void)<-($30:str)
+    mil.line("# >Description:\n");	# 16 MILline ($31:void)<-($32:str)
+    mil.line("# a := new (oid,int);\n");	# 17 MILline ($33:void)<-($34:str)
+    mil.line("# a.insert( oid(1), 100 );\n");	# 18 MILline ($35:void)<-($36:str)
+    mil.line("# a.insert( oid(2), 1000 );\n");	# 19 MILline ($37:void)<-($38:str)
+    mil.line("# a.insert( oid(4), 10 );\n");	# 20 MILline ($39:void)<-($40:str)
+    mil.line("# a.insert( oid(5), 15 );\n");	# 21 MILline ($41:void)<-($42:str)
+    mil.line("# a.select( 94, 110 ).print;\n");	# 22 MILline ($43:void)<-($44:str)
+    mil.line("# #output\n");	# 23 MILline ($45:void)<-($46:str)
+    mil.line("# #-----------------#\n");	# 24 MILline ($47:void)<-($48:str)
+    mil.line("# # oid   | tmp_27  #\n");	# 25 MILline ($49:void)<-($50:str)
+    mil.line("# #-----------------#\n");	# 26 MILline ($51:void)<-($48:str)
+    mil.line("# [ 1@0,    100     ]\n");	# 27 MILline ($52:void)<-($53:str)
+    mil.line("# [ 2@0,    1000    ]\n");	# 28 MILline ($54:void)<-($55:str)
+    mil.line("var a := new (oid,int);");	# 29 MILline ($56:void)<-($57:str)
+    a := bbp.new(nil,nil);	# 30 CMDBATnew (a:bat[:oid,:int])<-($59:oid)($60:int)
+    mil.line("a.insert( oid(1), 100 );");	# 31 MILline ($61:void)<-($62:str)
+    aa_a := calc.oid(1);	# 32 CALCint2oid (aa_a:oid)<-($64:int)
+    ba_a := bat.insert(a,aa_a,100);	# 33 BKCinsert_bun (ba_a:void)<-(a:bat[:oid,:int])(aa_a:oid)($66:int)
+    mil.line("a.insert( oid(2), 1000 );");	# 34 MILline ($67:void)<-($68:str)
+    ca_a := calc.oid(2);	# 35 CALCint2oid (ca_a:oid)<-($70:int)
+    da_a := bat.insert(a,ca_a,1000);	# 36 BKCinsert_bun (da_a:void)<-(a:bat[:oid,:int])(ca_a:oid)($72:int)
+    mil.line("a.insert( oid(4), 10 );");	# 37 MILline ($73:void)<-($74:str)
+    ea_a := calc.oid(4);	# 38 CALCint2oid (ea_a:oid)<-($76:int)
+    fa_a := bat.insert(a,ea_a,10);	# 39 BKCinsert_bun (fa_a:void)<-(a:bat[:oid,:int])(ea_a:oid)($78:int)
+    mil.line("a.insert( oid(5), 15 );");	# 40 MILline ($79:void)<-($80:str)
+    ga_a := calc.oid(5);	# 41 CALCint2oid (ga_a:oid)<-($82:int)
+    ha_a := bat.insert(a,ga_a,15);	# 42 BKCinsert_bun (ha_a:void)<-(a:bat[:oid,:int])(ga_a:oid)($84:int)
+    mil.line("a.print();");	# 43 MILline ($85:void)<-($86:str)
+    ia_a := io.print(a);	# 44 IOprint_val (ia_a:int)<-(a:bat[:oid,:int])
+    ja_a := bat.reverse(a);	# 45 BKCreverse (ja_a:bat[:int,:oid])<-(a:bat[:oid,:int])
+    mil.line("a.print();");	# 46 MILline ($89:void)<-($86:str)
+    la_a := io.print(a);	# 47 IOprint_val (la_a:int)<-(a:bat[:oid,:int])
+    mil.line("a.select( 94, 110 ).print();");	# 48 MILline ($91:void)<-($92:str)
+    ma_a := algebra.select(a,94,110);	# 49 ALGselect (ma_a:bat[:oid,:int])<-(a:bat[:oid,:int])($94:int)($95:int)
+    na_a := io.print(ma_a);	# 50 IOprint_val (na_a:int)<-(ma_a:bat[:oid,:int])
+    mil.line("quit();");	# 51 MILline ($97:void)<-($98:str)
+    oa_a := clients.quit();	# 52 CLTquit (oa_a:void)
+end main;	# 53  
+## >Number:         50
+## >Category:       MIL
+## >Confidential:   no
+## >Severity:       critical
+## >Priority:       high
+## >Responsible:    boncz
+## >State:          closed
+## >Class:          sw-bug
+## >Submitter-Id:   unknown
+## >Arrival-Date:   Wed Oct 15 10:23:33 1997
+## >Originator:     niels
+## >Organization:
+## >Release:        971007
+## >Environment:
+## SunOS5.5.1
+## >Description:
+## a := new (oid,int);
+## a.insert( oid(1), 100 );
+## a.insert( oid(2), 1000 );
+## a.insert( oid(4), 10 );
+## a.insert( oid(5), 15 );
+## a.select( 94, 110 ).print;
+## #output
+## #-----------------#
+## # oid   | tmp_27  #
+## #-----------------#
+## [ 1@0,    100     ]
+## [ 2@0,    1000    ]
+#var a := new (oid,int);
+#a.insert( oid(1), 100 );
+#a.insert( oid(2), 1000 );
+#a.insert( oid(4), 10 );
+#a.insert( oid(5), 15 );
+#a.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (int)	  #
@@ -57,8 +174,7 @@ a.print();
 [ 2@0,	  1000	  ]
 [ 4@0,	  10	  ]
 [ 5@0,	  15	  ]
-a.reverse().accbuild("index");
-a.print();
+#a.print();
 #-----------------#
 # BAT:	  tmp_25  #
 # (oid)	  (int)	  #
@@ -67,13 +183,13 @@ a.print();
 [ 2@0,	  1000	  ]
 [ 4@0,	  10	  ]
 [ 5@0,	  15	  ]
-a.select( 94, 110 ).print();
+#a.select( 94, 110 ).print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (oid)	  (int)	  #
 #-----------------#
 [ 1@0,	  100	  ]
-quit();
+#quit();
 
 # 17:06:48 >  
 # 17:06:48 >  Done.

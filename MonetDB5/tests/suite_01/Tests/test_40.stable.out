@@ -8,27 +8,228 @@ stdout of test 'test_40` in directory 'tests/suite_01` itself:
 #script:test_40.milS
 
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-setoid(oid(20000000));
-#test ascii export/import facility.
-module("ascii_io");
-
-var b:= new(str,int);
-b.insert("the",1);
-b.insert("quick",2);
-b.insert("brown",3);
-b.insert("fox",4);
-b.insert("jumps",5);
-b.insert("over",6);
-b.insert("lazy",7);
-b.insert("dog",8);
-b.insert(str(nil),9);
-b.insert(".",10);
-b.insert("",int(nil));
-b.insert(str(nil),int(nil));
-b.print();
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
+# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_suite_01
+# Visit http://monetdb.cwi.nl for further information.
+## Monet Mil to Mal compiler
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
+#	mil.line("setoid(oid(20000000));");
+#	aa_a := oid(20000000);
+#	ba_a := setoid(aa_a);
+#	mil.line("#test ascii export/import facility.\n");
+#	mil.line("var b:= new(str,int);");
+#	b := new(nil:str,nil:int);
+#	mil.line("b.insert(\"the\",1);");
+#	ca_a := insert(b,"the",1);
+#	mil.line("b.insert(\"quick\",2);");
+#	da_a := insert(b,"quick",2);
+#	mil.line("b.insert(\"brown\",3);");
+#	ea_a := insert(b,"brown",3);
+#	mil.line("b.insert(\"fox\",4);");
+#	fa_a := insert(b,"fox",4);
+#	mil.line("b.insert(\"jumps\",5);");
+#	ga_a := insert(b,"jumps",5);
+#	mil.line("b.insert(\"over\",6);");
+#	ha_a := insert(b,"over",6);
+#	mil.line("b.insert(\"lazy\",7);");
+#	ia_a := insert(b,"lazy",7);
+#	mil.line("b.insert(\"dog\",8);");
+#	ja_a := insert(b,"dog",8);
+#	mil.line("b.insert(str(nil),9);");
+#	ka_a := str(nil);
+#	la_a := insert(b,ka_a,9);
+#	mil.line("b.insert(\".\",10);");
+#	ma_a := insert(b,".",10);
+#	mil.line("b.insert(\"\",int(nil));");
+#	na_a := int(nil);
+#	oa_a := insert(b,"",na_a);
+#	mil.line("b.insert(str(nil),int(nil));");
+#	pa_a := str(nil);
+#	qa_a := int(nil);
+#	ra_a := insert(b,pa_a,qa_a);
+#	mil.line("b.print();");
+#	sa_a := print(b);
+#	mil.line("b.export(\"monet2\");");
+#	ta_a := export(b,"monet2");
+#	mil.line("b.clear();");
+#	ua_a := clear(b);
+#	mil.line("b.count().print();");
+#	va_a := count(b);
+#	wa_a := print(va_a);
+#	mil.line("b.import(\"monet2\");");
+#	xa_a := import(b,"monet2");
+#	mil.line("b.print();");
+#	ya_a := print(b);
+#	mil.line("var cb:= new(int,int);");
+#	cb := new(nil:int,nil:int);
+#	mil.line("cb.insert(1,15);");
+#	ab_a := insert(cb,1,15);
+#	mil.line("cb.insert(2,4);");
+#	bb_a := insert(cb,2,4);
+#	mil.line("cb.insert(3,int(nil));");
+#	cb_a := int(nil);
+#	db_a := insert(cb,3,cb_a);
+#	mil.line("cb.insert(4,16);");
+#	eb_a := insert(cb,4,16);
+#	mil.line("cb.insert(5,25);");
+#	fb_a := insert(cb,5,25);
+#	mil.line("cb.insert(6,36);");
+#	gb_a := insert(cb,6,36);
+#	mil.line("cb.insert(7,49);");
+#	hb_a := insert(cb,7,49);
+#	mil.line("cb.insert(8,64);");
+#	ib_a := insert(cb,8,64);
+#	mil.line("cb.insert(9,int(nil));");
+#	jb_a := int(nil);
+#	kb_a := insert(cb,9,jb_a);
+#	mil.line("cb.insert(int(nil),int(nil));");
+#	lb_a := int(nil);
+#	mb_a := int(nil);
+#	nb_a := insert(cb,lb_a,mb_a);
+#	mil.line("cb.insert(int(nil),81);");
+#	ob_a := int(nil);
+#	pb_a := insert(cb,ob_a,81);
+#	mil.line("cb.print();");
+#	qb_a := print(cb);
+#	mil.line("cb.export(\"monet1\");");
+#	rb_a := export(cb,"monet1");
+#	mil.line("cb.clear();");
+#	sb_a := clear(cb);
+#	mil.line("cb.count().print();");
+#	tb_a := count(cb);
+#	ub_a := print(tb_a);
+#	mil.line("cb.import(\"monet1\");");
+#	vb_a := import(cb,"monet1");
+#	mil.line("cb.print();");
+#	wb_a := print(cb);
+#	mil.line("commit();");
+#	xb_a := commit();
+#	mil.line("quit();");
+#	yb_a := quit();
+#
+function Admin.main():int;	# 0  (main:int)
+    mil.line("setoid(oid(20000000));");	# 1 MILline ($1:void)<-($2:str)
+    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
+    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("#test ascii export/import facility.\n");	# 4 MILline ($6:void)<-($7:str)
+    mil.line("var b:= new(str,int);");	# 5 MILline ($8:void)<-($9:str)
+    b := bbp.new("nil",nil);	# 6 CMDBATnew (b:bat[:str,:int])<-($11:str)($12:int)
+    mil.line("b.insert(\"the\",1);");	# 7 MILline ($13:void)<-($14:str)
+    ca_a := bat.insert(b,"the",1);	# 8 BKCinsert_bun (ca_a:void)<-(b:bat[:str,:int])($16:str)($17:int)
+    mil.line("b.insert(\"quick\",2);");	# 9 MILline ($18:void)<-($19:str)
+    da_a := bat.insert(b,"quick",2);	# 10 BKCinsert_bun (da_a:void)<-(b:bat[:str,:int])($21:str)($22:int)
+    mil.line("b.insert(\"brown\",3);");	# 11 MILline ($23:void)<-($24:str)
+    ea_a := bat.insert(b,"brown",3);	# 12 BKCinsert_bun (ea_a:void)<-(b:bat[:str,:int])($26:str)($27:int)
+    mil.line("b.insert(\"fox\",4);");	# 13 MILline ($28:void)<-($29:str)
+    fa_a := bat.insert(b,"fox",4);	# 14 BKCinsert_bun (fa_a:void)<-(b:bat[:str,:int])($31:str)($32:int)
+    mil.line("b.insert(\"jumps\",5);");	# 15 MILline ($33:void)<-($34:str)
+    ga_a := bat.insert(b,"jumps",5);	# 16 BKCinsert_bun (ga_a:void)<-(b:bat[:str,:int])($36:str)($37:int)
+    mil.line("b.insert(\"over\",6);");	# 17 MILline ($38:void)<-($39:str)
+    ha_a := bat.insert(b,"over",6);	# 18 BKCinsert_bun (ha_a:void)<-(b:bat[:str,:int])($41:str)($42:int)
+    mil.line("b.insert(\"lazy\",7);");	# 19 MILline ($43:void)<-($44:str)
+    ia_a := bat.insert(b,"lazy",7);	# 20 BKCinsert_bun (ia_a:void)<-(b:bat[:str,:int])($46:str)($47:int)
+    mil.line("b.insert(\"dog\",8);");	# 21 MILline ($48:void)<-($49:str)
+    ja_a := bat.insert(b,"dog",8);	# 22 BKCinsert_bun (ja_a:void)<-(b:bat[:str,:int])($51:str)($52:int)
+    mil.line("b.insert(str(nil),9);");	# 23 MILline ($53:void)<-($54:str)
+    ka_a := calc.str(nil);	# 24 CALCnil2str (ka_a:str)<-($56:void)
+    la_a := bat.insert(b,ka_a,9);	# 25 BKCinsert_bun (la_a:void)<-(b:bat[:str,:int])(ka_a:str)($58:int)
+    mil.line("b.insert(\".\",10);");	# 26 MILline ($59:void)<-($60:str)
+    ma_a := bat.insert(b,".",10);	# 27 BKCinsert_bun (ma_a:void)<-(b:bat[:str,:int])($62:str)($63:int)
+    mil.line("b.insert(\"\",int(nil));");	# 28 MILline ($64:void)<-($65:str)
+    na_a := calc.int(nil);	# 29 CALCnil2int (na_a:int)<-($56:void)
+    oa_a := bat.insert(b,"",na_a);	# 30 BKCinsert_bun (oa_a:void)<-(b:bat[:str,:int])($68:str)(na_a:int)
+    mil.line("b.insert(str(nil),int(nil));");	# 31 MILline ($69:void)<-($70:str)
+    pa_a := calc.str(nil);	# 32 CALCnil2str (pa_a:str)<-($56:void)
+    qa_a := calc.int(nil);	# 33 CALCnil2int (qa_a:int)<-($56:void)
+    ra_a := bat.insert(b,pa_a,qa_a);	# 34 BKCinsert_bun (ra_a:void)<-(b:bat[:str,:int])(pa_a:str)(qa_a:int)
+    mil.line("b.print();");	# 35 MILline ($74:void)<-($75:str)
+    sa_a := io.print(b);	# 36 IOprint_val (sa_a:int)<-(b:bat[:str,:int])
+    mil.line("b.export(\"monet2\");");	# 37 MILline ($77:void)<-($78:str)
+    ta_a := io.export(b,"monet2");	# 38 IOexport (ta_a:bit)<-(b:bat[:str,:int])($80:str)
+    mil.line("b.clear();");	# 39 MILline ($81:void)<-($82:str)
+    ua_a := mil_algebra_procs.clear(b);	# 40  (ua_a:bat[:str,:int])<-(b:bat[:str,:int])
+    mil.line("b.count().print();");	# 41 MILline ($84:void)<-($85:str)
+    va_a := algebra.count(b);	# 42 ALGcount_bat (va_a:lng)<-(b:bat[:str,:int])
+    wa_a := io.print(va_a);	# 43 IOprint_val (wa_a:int)<-(va_a:lng)
+    mil.line("b.import(\"monet2\");");	# 44 MILline ($88:void)<-($89:str)
+    xa_a := io.import(b,"monet2");	# 45 IOimport (xa_a:bit)<-(b:bat[:str,:int])($80:str)
+    mil.line("b.print();");	# 46 MILline ($91:void)<-($75:str)
+    ya_a := io.print(b);	# 47 IOprint_val (ya_a:int)<-(b:bat[:str,:int])
+    mil.line("var cb:= new(int,int);");	# 48 MILline ($93:void)<-($94:str)
+    cb := bbp.new(nil,nil);	# 49 CMDBATnew (cb:bat[:int,:int])<-($96:int)($96:int)
+    mil.line("cb.insert(1,15);");	# 50 MILline ($97:void)<-($98:str)
+    ab_a := bat.insert(cb,1,15);	# 51 BKCinsert_bun (ab_a:void)<-(cb:bat[:int,:int])($100:int)($101:int)
+    mil.line("cb.insert(2,4);");	# 52 MILline ($102:void)<-($103:str)
+    bb_a := bat.insert(cb,2,4);	# 53 BKCinsert_bun (bb_a:void)<-(cb:bat[:int,:int])($105:int)($106:int)
+    mil.line("cb.insert(3,int(nil));");	# 54 MILline ($107:void)<-($108:str)
+    cb_a := calc.int(nil);	# 55 CALCnil2int (cb_a:int)<-($110:void)
+    db_a := bat.insert(cb,3,cb_a);	# 56 BKCinsert_bun (db_a:void)<-(cb:bat[:int,:int])($112:int)(cb_a:int)
+    mil.line("cb.insert(4,16);");	# 57 MILline ($113:void)<-($114:str)
+    eb_a := bat.insert(cb,4,16);	# 58 BKCinsert_bun (eb_a:void)<-(cb:bat[:int,:int])($106:int)($116:int)
+    mil.line("cb.insert(5,25);");	# 59 MILline ($117:void)<-($118:str)
+    fb_a := bat.insert(cb,5,25);	# 60 BKCinsert_bun (fb_a:void)<-(cb:bat[:int,:int])($120:int)($121:int)
+    mil.line("cb.insert(6,36);");	# 61 MILline ($122:void)<-($123:str)
+    gb_a := bat.insert(cb,6,36);	# 62 BKCinsert_bun (gb_a:void)<-(cb:bat[:int,:int])($125:int)($126:int)
+    mil.line("cb.insert(7,49);");	# 63 MILline ($127:void)<-($128:str)
+    hb_a := bat.insert(cb,7,49);	# 64 BKCinsert_bun (hb_a:void)<-(cb:bat[:int,:int])($130:int)($131:int)
+    mil.line("cb.insert(8,64);");	# 65 MILline ($132:void)<-($133:str)
+    ib_a := bat.insert(cb,8,64);	# 66 BKCinsert_bun (ib_a:void)<-(cb:bat[:int,:int])($135:int)($136:int)
+    mil.line("cb.insert(9,int(nil));");	# 67 MILline ($137:void)<-($138:str)
+    jb_a := calc.int(nil);	# 68 CALCnil2int (jb_a:int)<-($110:void)
+    kb_a := bat.insert(cb,9,jb_a);	# 69 BKCinsert_bun (kb_a:void)<-(cb:bat[:int,:int])($141:int)(jb_a:int)
+    mil.line("cb.insert(int(nil),int(nil));");	# 70 MILline ($142:void)<-($143:str)
+    lb_a := calc.int(nil);	# 71 CALCnil2int (lb_a:int)<-($145:void)
+    mb_a := calc.int(nil);	# 72 CALCnil2int (mb_a:int)<-($145:void)
+    nb_a := bat.insert(cb,lb_a,mb_a);	# 73 BKCinsert_bun (nb_a:void)<-(cb:bat[:int,:int])(lb_a:int)(mb_a:int)
+    mil.line("cb.insert(int(nil),81);");	# 74 MILline ($148:void)<-($149:str)
+    ob_a := calc.int(nil);	# 75 CALCnil2int (ob_a:int)<-($145:void)
+    pb_a := bat.insert(cb,ob_a,81);	# 76 BKCinsert_bun (pb_a:void)<-(cb:bat[:int,:int])(ob_a:int)($152:int)
+    mil.line("cb.print();");	# 77 MILline ($153:void)<-($154:str)
+    qb_a := io.print(cb);	# 78 IOprint_val (qb_a:int)<-(cb:bat[:int,:int])
+    mil.line("cb.export(\"monet1\");");	# 79 MILline ($156:void)<-($157:str)
+    rb_a := io.export(cb,"monet1");	# 80 IOexport (rb_a:bit)<-(cb:bat[:int,:int])($159:str)
+    mil.line("cb.clear();");	# 81 MILline ($160:void)<-($161:str)
+    sb_a := mil_algebra_procs.clear(cb);	# 82  (sb_a:bat[:int,:int])<-(cb:bat[:int,:int])
+    mil.line("cb.count().print();");	# 83 MILline ($163:void)<-($164:str)
+    tb_a := algebra.count(cb);	# 84 ALGcount_bat (tb_a:lng)<-(cb:bat[:int,:int])
+    ub_a := io.print(tb_a);	# 85 IOprint_val (ub_a:int)<-(tb_a:lng)
+    mil.line("cb.import(\"monet1\");");	# 86 MILline ($167:void)<-($168:str)
+    vb_a := io.import(cb,"monet1");	# 87 IOimport (vb_a:bit)<-(cb:bat[:int,:int])($159:str)
+    mil.line("cb.print();");	# 88 MILline ($170:void)<-($154:str)
+    wb_a := io.print(cb);	# 89 IOprint_val (wb_a:int)<-(cb:bat[:int,:int])
+    mil.line("commit();");	# 90 MILline ($172:void)<-($173:str)
+    xb_a := transaction.commit();	# 91 TRNglobal_commit (xb_a:void)
+    mil.line("quit();");	# 92 MILline ($175:void)<-($176:str)
+    yb_a := clients.quit();	# 93 CLTquit (yb_a:void)
+end main;	# 94  
+#setoid(oid(20000000));
+##test ascii export/import facility.
+#var b:= new(str,int);
+#b.insert("the",1);
+#b.insert("quick",2);
+#b.insert("brown",3);
+#b.insert("fox",4);
+#b.insert("jumps",5);
+#b.insert("over",6);
+#b.insert("lazy",7);
+#b.insert("dog",8);
+#b.insert(str(nil),9);
+#b.insert(".",10);
+#b.insert("",int(nil));
+#b.insert(str(nil),int(nil));
+#b.print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -45,13 +246,12 @@ b.print();
 [ ".",		  10	  ]
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
-b.export("monet2");
-saved in monet2
-b.clear();
-b.count().print();
+#b.export("monet2");
+#b.clear();
+#b.count().print();
 [ 0 ]
-b.import("monet2");
-b.print();
+#b.import("monet2");
+#b.print();
 #-------------------------#
 # BAT:		  tmp_25  #
 # (str)		  (int)	  #
@@ -68,20 +268,19 @@ b.print();
 [ ".",		  10	  ]
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
-
-b:= new(int,int);
-b.insert(1,15);
-b.insert(2,4);
-b.insert(3,int(nil));
-b.insert(4,16);
-b.insert(5,25);
-b.insert(6,36);
-b.insert(7,49);
-b.insert(8,64);
-b.insert(9,int(nil));
-b.insert(int(nil),int(nil));
-b.insert(int(nil),81);
-b.print();
+#var cb:= new(int,int);
+#cb.insert(1,15);
+#cb.insert(2,4);
+#cb.insert(3,int(nil));
+#cb.insert(4,16);
+#cb.insert(5,25);
+#cb.insert(6,36);
+#cb.insert(7,49);
+#cb.insert(8,64);
+#cb.insert(9,int(nil));
+#cb.insert(int(nil),int(nil));
+#cb.insert(int(nil),81);
+#cb.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -97,13 +296,12 @@ b.print();
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-b.export("monet1");
-saved in monet1
-b.clear();
-b.count().print();
+#cb.export("monet1");
+#cb.clear();
+#cb.count().print();
 [ 0 ]
-b.import("monet1");
-b.print();
+#cb.import("monet1");
+#cb.print();
 #-----------------#
 # BAT:	  tmp_26  #
 # (int)	  (int)	  #
@@ -119,9 +317,8 @@ b.print();
 [ 9,	  nil	  ]
 [ nil,	  nil	  ]
 [ nil,	  81	  ]
-commit();
-
-quit();
+#commit();
+#quit();
 
 # 17:08:59 >  
 # 17:08:59 >  Done.

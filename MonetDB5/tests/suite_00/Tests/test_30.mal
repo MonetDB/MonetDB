@@ -74,9 +74,9 @@
 	eb_a := insert(d,2,2);
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); time.print(); var z:=d.subgraph(c); time.print(); printf(\"#~EndVariableOutput~#\\n\");");
 	fb_a := printf("#~BeginVariableOutput~#\n");
-	gb_a := print(alarm.time);
+_t:= alarm.time();	gb_a := print(_t);
 	z := subgraph(d,c);
-	hb_a := print(alarm.time);
+_t:= alarm.time();	hb_a := print(alarm.time);
 	ib_a := printf("#~EndVariableOutput~#\n");
 	mil.line("z.print();");
 	jb_a := print(z);

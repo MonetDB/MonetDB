@@ -2,9 +2,7 @@
 echo "patch test_90"
 echo "reason: rename cpu()"
 ex - test_90.mal <<!EOF
-g/cpu/s//cpuStatistics/
-g/mem/s//memStatistics/
-g/io/s//ioStatistics/
+g/memory/s//memStatistics/
 w test_90.mal
 q
 !EOF

@@ -55,8 +55,6 @@
 	xa_a := dir("dummy");
 	mil.line("dir(\"tmp\");");
 	ya_a := dir("tmp");
-	mil.line("vars();");
-	ab_a := vars();
 	mil.line("quit();");
 	bb_a := quit();
 #Identifer 'rename' mapped to 'bat.setName'

@@ -9,7 +9,7 @@
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 	mil.line("debugmask(2);");
-	aa_a := debugmask(2);
+	aa_a := setDebug(2);
 	mil.line("var a20 := bat(oid,oid).insert(2@0,1@0).insert(1@0,2@0).insert(0@0,0@0);");
 	ba_a := new(nil:oid,nil:oid);
 	ca_a := insert(ba_a,2@0,1@0);
@@ -53,7 +53,7 @@
 	mil.line("b21.print();");
 	oa_a := print(b21);
 	mil.line("debugmask(0);");
-	pa_a := debugmask(0);
+	pa_a := setDebug(0);
 	mil.line("var a00 := bat(oid,oid).insert(2@0,1@0).insert(1@0,2@0).insert(0@0,0@0);");
 	qa_a := new(nil:oid,nil:oid);
 	ra_a := insert(qa_a,2@0,1@0);
@@ -96,3 +96,4 @@
 	b01 := multiplex.tactics("int",db_a);
 	mil.line("b01.print();");
 	eb_a := print(b01);
+#Identifer 'debugmask' mapped to 'setDebug'

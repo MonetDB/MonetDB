@@ -12,9 +12,10 @@
 	mil.line("# bat got the BBPUNLOADING status but can only be done\n");
 	mil.line("# with refs()==0 and lrefs()==0 \n");
 	mil.line("");
-	aa_a := new(nil:int,nil:int);
-	abat := persists(aa_a,true);
-	mil.line("var abat := bat(int,int).persists(true);");
+	abat := new(nil:int,nil:int);
+	mil.line("var abat := bat(int,int);");
+	aa_a := persists(abat,true);
+	mil.line("abat.persists(true);");
 	ba_a := commit();
 	mil.line("# met of zonder 'abat := nil;'\n");
 	mil.line("");

@@ -10,7 +10,6 @@
 #use the "mil_schema" for additional support routines
 	mil.line("# >Number:         50\n");
 	mil.line("# >Category:       MIL\n");
-	mil.line("# >Synopsis:       select on index problem\n");
 	mil.line("# >Confidential:   no\n");
 	mil.line("# >Severity:       critical\n");
 	mil.line("# >Priority:       high\n");
@@ -25,13 +24,11 @@
 	mil.line("# >Environment:\n");
 	mil.line("# SunOS5.5.1\n");
 	mil.line("# >Description:\n");
-	mil.line("# Select on a indexed bat does not work correct. \n");
 	mil.line("# a := new (oid,int);\n");
 	mil.line("# a.insert( oid(1), 100 );\n");
 	mil.line("# a.insert( oid(2), 1000 );\n");
 	mil.line("# a.insert( oid(4), 10 );\n");
 	mil.line("# a.insert( oid(5), 15 );\n");
-	mil.line("# a.reverse.accbuild(index);\n");
 	mil.line("# a.select( 94, 110 ).print;\n");
 	mil.line("# #output\n");
 	mil.line("# #-----------------#\n");
@@ -55,9 +52,7 @@
 	ha_a := insert(a,ga_a,15);
 	mil.line("a.print();");
 	ia_a := print(a);
-	mil.line("a.reverse().accbuild(\"index\");");
 	ja_a := reverse(a);
-	ka_a := accbuild(ja_a,"index");
 	mil.line("a.print();");
 	la_a := print(a);
 	mil.line("a.select( 94, 110 ).print();");

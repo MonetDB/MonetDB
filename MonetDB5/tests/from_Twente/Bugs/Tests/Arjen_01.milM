@@ -40,16 +40,22 @@ var _MMjoin_10 := join(_MMreverse_9,valuesA);   _MMjoin_10.print();
 # This gives <0,10>,<1,20> instead of <0,20>,<0,30>
 # The cause is that _MMjoin_8 has 0,1 instead of 1,2:
 
-print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("void_cnt").delete("void_tid").col_name("indexA"),
-      valuesA.info().col_name("valuesA"),
-      _MMoper_2.info().col_name("MMoper_2"),
-      _MMuselect_3.info().col_name("MMuselect_3"),
-      _MMoper_4.info().col_name("MMoper_4"),
-      _MMuselect_5.info().col_name("MMuselect_5"),
-      _MMsemijoin_6.info().col_name("MMsemijoin_6"),
-      _MMcastnil_7.info().col_name("MMcastnil_7"),
-      _MMjoin_8.info().col_name("MMjoin_8"),
-      _MMreverse_9.info().col_name("MMreverse_9"),
-      _MMjoin_10.info().col_name("MMjoin_10"));
+var i:= indexA.info();
+i.access(BAT_WRITE);
+i.delete("batBuns.base");
+i.delete("void_cnt");
+i.delete("void_tid");
+
+print(i,
+      valuesA.info(),
+      _MMoper_2.info(),
+      _MMuselect_3.info(),
+      _MMoper_4.info(),
+      _MMuselect_5.info(),
+      _MMsemijoin_6.info(),
+      _MMcastnil_7.info(),
+      _MMjoin_8.info(),
+      _MMreverse_9.info(),
+      _MMjoin_10.info());
 
 quit();

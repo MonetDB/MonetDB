@@ -3,7 +3,8 @@
 # bat got the BBPUNLOADING status but can only be done
 # with refs()==0 and lrefs()==0 
 
-var abat := bat(int,int).persists(true);
+var abat := bat(int,int);
+abat.persists(true);
 commit();
 
 # met of zonder 'abat := nil;'

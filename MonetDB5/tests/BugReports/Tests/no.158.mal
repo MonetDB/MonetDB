@@ -14,9 +14,9 @@
 	mil.line("test1.print();");
 	test1:= mil.take("test1");
 	ca_a := print(test1);
-	mil.line("source(sprintf(\"%s/no.158.source.mil\",getenv(\"TSTTRGDIR\")));");
+	mil.line("source(getenv(\"TSTTRGDIR\")+\"/no.158.source.mil\");");
 	da_a := getenv("TSTTRGDIR");
-	ea_a := sprintf("%s/no.158.source.mil",da_a);
+	ea_a := +(da_a,"/no.158.source.mil");
 	fa_a := source(ea_a);
 	mil.line("test2.print();");
 	test2:= mil.take("test2");

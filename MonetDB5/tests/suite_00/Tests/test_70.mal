@@ -65,10 +65,10 @@
 	ab_a := insert(s,7,"fello");
 	mil.line("insert(s,8,\"fello\");");
 	bb_a := insert(s,8,"fello");
-	mil.line("t:= s.histogram();");
-	t := histogram(s);
-	mil.line("t.print();");
-	cb_a := print(t);
+	mil.line("var t2:= s.histogram();");
+	t2 := histogram(s);
+	mil.line("t2.print();");
+	cb_a := print(t2);
 	mil.line("#It requires a few additional routines\n");
 	c := new(nil:int,nil:int);
 	mil.line("c.insert(1,15);");

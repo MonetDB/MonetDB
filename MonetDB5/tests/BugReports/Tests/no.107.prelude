@@ -14,7 +14,7 @@
 	w := new(:oid,:str);
 #w.import( sprintf("%s/no.107.w.bat",getenv("TSTTRGDIR")) );
 	ca_a := getenv("TSTTRGDIR");
-	da_a := sprintf("%s/no.107.w.bat",ca_a);
+	da_a := ca_a+"/no.107.w.bat";
 	ea_a := import(w,da_a);
 #w.print();
 	fa_a := print(w,);

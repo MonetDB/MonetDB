@@ -39,10 +39,10 @@
 	ka_a := mark(ja_a,0@0);
 	w := reverse(ka_a);
 	mil.line("var d:=debugmask();");
-	d := debugmask();
+	d := setDebug();
 	mil.line("debugmask(or(d,131072));");
 	la_a := or(d,131072);
-	ma_a := debugmask(la_a);
+	ma_a := setDebug(la_a);
 	mil.line("y.print();");
 	na_a := print(y);
 	mil.line("{min}(y).print();");
@@ -63,3 +63,4 @@
 	mil.line("{min}(z).print();");
 	xa_a := group.min(z);
 	ya_a := print(xa_a);
+#Identifer 'debugmask' mapped to 'setDebug'

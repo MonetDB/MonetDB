@@ -16,21 +16,22 @@
 	Lj := 1000;
 	mil.line("#1000;\n");
 	mil.line("");
-	aa_a := reverse(bbp.getNames);
-	ba_a := exist(aa_a,"a");
-barrier	ca_a := not(ba_a);
+	aa_a := bbp.getNames();
+	ba_a := reverse(aa_a);
+	ca_a := exist(ba_a,"a");
+barrier	da_a := not(ca_a);
 	mil.line("if (not(view_bbp_name.reverse().exist(\"a\"))) {");
-	da_a := commit();
+	ea_a := commit();
 	mil.line("\tcommit();");
-	ea_a := new(nil:void,nil:dbl,N);
-	a := bat.setName(ea_a,"a");
+	fa_a := new(nil:void,nil:dbl,N);
+	a := bat.setName(fa_a,"a");
 	mil.line("\tvar a := bat(void,dbl,N).rename(\"a\");");
 	i := 0;
 	mil.line("\tvar i := 0;");
-barrier	fa_a := true;
-barrier	ga_a := <(i,N);
+barrier	ga_a := true;
+barrier	ha_a := <(i,N);
 !ERROR: "	var i := 0;"
 !        																													^
 ! syntax error, unexpected TOK_IDENT, expecting '{'.
 #Identifer 'rename' mapped to 'bat.setName'
-#Identifer 'view_bbp_name' mapped to 'bbp.getNames'
+#Identifer 'view_bbp_name' mapped to 'bbp.getNames()'

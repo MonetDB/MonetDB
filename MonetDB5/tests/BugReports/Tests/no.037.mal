@@ -52,8 +52,6 @@
 	mil.line("ls();");
 	aa_a := ls();
 	mil.line("mem.print();");
-	mem:= mil.take("mem");
-	ba_a := print(mem);
 	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ca_a := printf("#~BeginVariableOutput~#\n");
 	da_a := status.memStatistics();

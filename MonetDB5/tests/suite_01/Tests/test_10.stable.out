@@ -45,17 +45,16 @@ function Admin.main():int;	# 0  (main:int)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
     mil.line("# long string problems in the Monet parser\n");	# 4 MILline ($6:void)<-($7:str)
-    mil.line("var a:=\"asdfdsfasdfadfadfa\";");	# 5 MILline ($8:void)<-($9:str)
-    a := "asdfdsfasdfadfadfa";	# 6  (a:str)<-($11:str)
-    mil.line("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";");	# 7 MILline ($12:void)<-($13:str)
-    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";	# 8  (b:str)<-($15:str)
-    mil.line("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";");	# 9 MILline ($16:void)<-($17:str)
-    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";	# 10  (c:str)<-($19:str)
-    mil.line("c.print();");	# 11 MILline ($20:void)<-($21:str)
-    ca_a := io.print(c);	# 12 IOprint_val (ca_a:int)<-(c:str)
-    mil.line("quit();");	# 13 MILline ($23:void)<-($24:str)
-    da_a := clients.quit();	# 14 CLTquit (da_a:void)
-end main;	# 15  
+    a := "asdfdsfasdfadfadfa";	# 5  (a:str)<-($9:str)
+    mil.line("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";");	# 6 MILline ($10:void)<-($11:str)
+    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";	# 7  (b:str)<-($13:str)
+    mil.line("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";");	# 8 MILline ($14:void)<-($15:str)
+    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";	# 9  (c:str)<-($17:str)
+    mil.line("c.print();");	# 10 MILline ($18:void)<-($19:str)
+    ca_a := io.print(c);	# 11 IOprint_val (ca_a:int)<-(c:str)
+    mil.line("quit();");	# 12 MILline ($21:void)<-($22:str)
+    da_a := clients.quit();	# 13 CLTquit (da_a:void)
+end main;	# 14  
 #setoid(oid(20000000));
 ## long string problems in the Monet parser
 #var a:="asdfdsfasdfadfadfa";
