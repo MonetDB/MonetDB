@@ -272,4 +272,54 @@ AC_SUBST(GETOPT_INCS)
 AM_CONDITIONAL(HAVE_GETOPT,test x$have_getopt = xyes)
 
 
+dnl hwcounters
+have_hwcounters=auto
+HWCOUNTERS_LIBS=""
+HWCOUNTERS_INCS=""
+AC_ARG_WITH(hwcounters,
+[  --with-hwcounters=DIR     hwcounters library is installed in DIR], 
+	[have_hwcounters="$withval"])
+if test "x$have_hwcounters" != xno; then
+  if test "x$have_hwcounters" != xauto; then
+    HWCOUNTERS_LIBS="-L$withval/lib"
+    HWCOUNTERS_INCS="-I$withval/include"
+  fi
+
+  save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $HWCOUNTERS_INCS"
+  case "$host_os" in
+   linux*)	AC_CHECK_HEADERS(libpperf.h);;
+   solaris*)	AC_CHECK_HEADERS(perfmon.h);;
+  esac
+  CFLAGS="$save_CFLAGS"
+
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $HWCOUNTERS_LIBS"
+  case "$host_os" in
+   linux*)	AC_CHECK_LIB(pperf, start_counters, 
+		[ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lpperf" 
+		  have_hwcounters=yes ]
+		, have_hwcounters=no, "" ) ;;
+   solaris*)	AC_CHECK_LIB(perfmon, clr_pic, 
+		[ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfmon" 
+		  have_hwcounters=yes ]
+		, have_hwcounters=no, "" ) ;;
+   irix*)	AC_CHECK_LIB(perfex, start_counters, 
+		[ HWCOUNTERS_LIBS="$HWCOUNTERS_LIBS -lperfex" 
+		  have_hwcounters=yes ]
+		, have_hwcounters=no, "" ) ;;
+   *)		have_hwcounters=no;;
+  esac
+  LIBS="$save_LIBS"
+
+  if test "x$have_hwcounters" != xyes; then
+    HWCOUNTERS_LIBS=""
+    HWCOUNTERS_INCS=""
+   else
+    CFLAGS="$CFLAGS -DHWCOUNTERS -DHW_`uname -s` -DHW_`uname -m`"
+  fi
+fi
+AC_SUBST(HWCOUNTERS_LIBS)
+AC_SUBST(HWCOUNTERS_INCS)
+
 ])

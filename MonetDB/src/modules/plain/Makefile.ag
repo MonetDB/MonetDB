@@ -1,6 +1,6 @@
 
 INCLUDES = -I$(MONET_BUILD)/src/gdk -I$(MONET_BUILD)/src/monet \
-	$(Z_CFLAGS) $(BZ_CFLAGS)
+	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS)
 MTSAFE
 
 # install these libs in the pkglib
@@ -10,7 +10,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		aggr.mx alarm.mx algebra.mx arith.mx bat.mx bitset.mx \
-		bitvector.mx blob.mx cluster.mx counters.mx ddbench.mx \
+		bitvector.mx blob.mx cluster.mx  ddbench.mx \
 		decimal.mx enum.mx io.mx iterator.mx kernel.mx lock.mx \
 		malalgebra.mx mmath.mx monettime.mx mprof.mx oo7.mx \
 		perfex.mx qt.mx radix.mx salgebra.mx stats.mx str.mx \
@@ -34,7 +34,7 @@ lib__streams = {
 	SOURCES = streams.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet libstream \
+	LIBS = ../../gdk/libbat ../../monet/libmonet ./libstream \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
@@ -42,7 +42,15 @@ lib__ascii_io = {
 	SOURCES = ascii_io.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
-	LIBS = ../../gdk/libbat ../../monet/libmonet libstream lib_streams
+	LIBS = ../../gdk/libbat ../../monet/libmonet ./libstream ./lib_streams
+}
+
+lib__counters = {
+	SOURCES = counters.mx
+	HEADERS = h proto.h m
+	SCRIPTS = mil ""
+	LIBS = ../../gdk/libbat ../../monet/libmonet \
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(HWCOUNTERS_LIBS)
 }
 
 

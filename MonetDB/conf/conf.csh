@@ -39,6 +39,7 @@ if ( ! -x bootstrap ) then
 		echo 'Using PREFIX="'${BUILD}'" (default).'
 		set PREFIX = "${BUILD}"
 	endif
+
 	if ( ! ${?COMP} ) then
 		echo ''
 		echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
@@ -51,6 +52,7 @@ if ( ! -x bootstrap ) then
 		echo 'Using BITS="32" (default).'
 		set BITS = "32"
 	endif
+
 	if ( ! ${?LINK} ) then
 		echo ''
 		echo 'LINK not set to either "dynamic" or "static" to select the desired way of linking.'
@@ -98,11 +100,6 @@ if ( ! -x bootstrap ) then
 			echo 'Linux doesn'\''t support 64 bit, yet; hence, using BITS="32".'
 			set BITS = "32"
 		endif
-		if ( "${COMP}" = "ntv" && "${LINK}" == "d" ) then
-			echo ''
-			echo 'Intel compiler on Linux doesn'\''t support dynamic linking, yet; hence, using LINK="static".'
-			set LINK = "s"
-		endif
 	endif
 
 	# set default compilers & configure options
@@ -117,7 +114,6 @@ if ( ! -x bootstrap ) then
 		set cc = "cc"
 		set cxx = "CC"
 	endif
-
 	if ( "${LINK}" == "d"   ) then
 		# dynamic/shared linking
 		set conf_opts = "--enable-shared --disable-static"
@@ -136,6 +132,11 @@ if ( ! -x bootstrap ) then
 			set libpath = "/soft/IntelC++-5.0.1-beta/ia32/lib"
 			set cc = "icc"
 			set cxx = "icc"
+			set conf_opts = "${conf_opts} --with-hwcounters=/soft/local"
+			if ( "${LINK}" == "d" ) then
+				# otherwise, Mserver crashes due to the "alloca(3)"-problem
+				set conf_opts = "${conf_opts} --enable-debug"
+			endif
 		endif
 	endif
 
@@ -163,7 +164,6 @@ if ( ! -x bootstrap ) then
 		# our "fake" /soft/local/bin on apps
 		set binpath = "/var/tmp/local/bin:${binpath}"
 		set libpath = "/var/tmp/local/lib:${libpath}"
-
 		if ( "${BITS}" == "64" ) then
 			set conf_opts = "${conf_opts} --with-readline=/var/tmp/soft64/local"
 			set conf_opts = "${conf_opts} --with-getopt=/var/tmp/soft64/local"

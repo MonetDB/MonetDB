@@ -91,7 +91,7 @@ int NumEvents = 0, NoEvent = 0;
  	int id1;	/* event id for counter 1 */
  	str unified;	/* unified event name */
  	str native;	/* native event name */
- #if ( defined(SOLARIS) && defined(CPU_sun4u) )
+ #if ( defined(HW_SunOS) && defined(HW_sun4u) )
  	int bits;	/* event code */
  #endif
  } event_t;
@@ -99,7 +99,7 @@ int NumEvents = 0, NoEvent = 0;
  event_t NO_event[1] = { { 00 , 00 , (str) &chr_nil , (str) &chr_nil } };
  event_t *event = NO_event;
 
- #if ( defined(LINUX) && ( defined(CPU_i568) || defined(CPU_i686) ) )
+ #if ( defined(HW_Linux) && ( defined(HW_i568) || defined(HW_i686) ) )
 
   #include <libpperf.h>
   #define CPL 2
@@ -288,7 +288,7 @@ int NumEvents = 0, NoEvent = 0;
     { 54 , 54 , (str) &chr_nil   , "brk_pnt_DR3" } ,
     { 00 , 54 , (str) &chr_nil   , (str) &chr_nil } };
 
- #elif ( defined(IRIX) && defined(CPU_IP27) ) /* R10k, R12k */
+ #elif ( defined(HW_IRIX64) && defined(HW_IP27) ) /* R10k, R12k */
 
   #define X_NUMEVENTS 32
   event_t X_event[X_NUMEVENTS+1] = {
@@ -326,7 +326,7 @@ int NumEvents = 0, NoEvent = 0;
    { -1 , 31 , (str) &chr_nil   , "L2_shared_excl" } ,
    { 00 , 31 , (str) &chr_nil   , (str) &chr_nil } };
 
- #elif ( defined(SOLARIS) && defined(CPU_sun4u) ) /* UltraSparc */
+ #elif ( defined(HW_SunOS) && defined(HW_sun4u) ) /* UltraSparc */
 
   #include <sys/types.h>
   #include <sys/processor.h>
@@ -382,11 +382,11 @@ int check_cpu() {
     NumEvents = NoEvent = 0;
 #if ( defined(HWCOUNTERS) )
     event = NO_event;
- #if ( defined(LINUX) )
-  #if ( defined(CPU_i586) )
+ #if ( defined(HW_Linux) )
+  #if ( defined(HW_i586) )
     NumEvents = NoEvent = P5_NUMEVENTS;
     event = P5_event;
-  #elif ( defined(CPU_i686) )
+  #elif ( defined(HW_i686) )
     if ( (fp = fopen("/proc/cpuinfo","r")) == NULL ) {
         if (!monet_modulesilent)
             GDKwarning("check_cpu: Cannot open /proc/cpuinfo to determine CPU.\n");
@@ -444,7 +444,7 @@ int compare_counter(counter *c1, counter* c2) {
 
 int create_counter_number(counter *retval, int *event0, int *event1) {
     int generation = -1, e0 = *event0, e1 = *event1, ee = NoEvent;
-#if ( defined(HWCOUNTERS) && defined(SOLARIS) )
+#if ( defined(HWCOUNTERS) && defined(HW_SunOS) )
     int rtrn = -1;
     unsigned long long set = 0, val = 0;
 #endif
@@ -463,7 +463,7 @@ int create_counter_number(counter *retval, int *event0, int *event1) {
     if (event[e0].id0 < 0)  e0 = NoEvent; 
     if (event[e1].id1 < 0)  e1 = NoEvent;
     if ((e0 != NoEvent) || (e1 != NoEvent)) {
- #if defined(LINUX)
+ #if defined(HW_Linux)
         if ((generation = start_counters(event[e0].id0,CPL,event[e1].id1,CPL)) != 0) {
             GDKerror("create_counter: start_counters failed with return value %d, errno %d.\n", 
                      generation,errno);
@@ -471,14 +471,14 @@ int create_counter_number(counter *retval, int *event0, int *event1) {
             perror("! create_counter/start_counters");
             return GDK_FAIL;
         }
- #elif defined(IRIX)
+ #elif defined(HW_IRIX64)
         if ((generation = start_counters(event[e0].id0,event[e1].id1)) < 0) {
             GDKerror("create_counter: start_counters failed with return value %d, errno %d\n", 
                      generation,errno);
             perror("! create_counter/start_counters");
             return GDK_FAIL;
         }    
- #elif defined(SOLARIS)
+ #elif defined(HW_SunOS)
         if ((rtrn = processor_bind(P_PID, P_MYID, 0, NULL)) < 0) {
             GDKerror("create_counter: processor_bind failed with return value %d, errno %d\n", 
                      rtrn,errno);
@@ -510,12 +510,12 @@ int create_counter_number(counter *retval, int *event0, int *event1) {
     retval->event0 = (lng)(e0);
     retval->event1 = (lng)(e1);
     retval->usec = GDKusec();
-#if ( defined(HWCOUNTERS) && defined(SOLARIS) )
+#if ( defined(HWCOUNTERS) && defined(HW_SunOS) )
     retval->count0 = (lng)(val & 0xffffffff);
     retval->count1 = (lng)(val >> 32);
     retval->clocks = (lng)get_tick();
 #endif
-#if ( defined(HWCOUNTERS) && defined(LINUX) )
+#if ( defined(HWCOUNTERS) && defined(HW_Linux) )
     retval->clocks = rdtsc();
 #endif
     return GDK_SUCCEED;
@@ -542,9 +542,9 @@ int create_counter_name(counter *retval, str event0, str event1) {
 
 
 int get_counter(counter *retval, counter *c) {
-#if ( defined(HWCOUNTERS) && defined(LINUX) )
+#if ( defined(HWCOUNTERS) && defined(HW_Linux) )
     lng clocks = rdtsc() - c->clocks;
-#elif ( defined(HWCOUNTERS) && defined(SOLARIS) )
+#elif ( defined(HWCOUNTERS) && defined(HW_SunOS) )
     lng clocks = (lng)get_tick() - c->clocks;
     unsigned long long val = 0;
 #else
@@ -561,7 +561,7 @@ int get_counter(counter *retval, counter *c) {
     }
 #if defined(HWCOUNTERS)
     if ((c->event0 != NoEvent) || (c->event1 != NoEvent)) {
- #if defined(LINUX)
+ #if defined(HW_Linux)
         if ((generation = read_counters(&count0,&count1,&notimer,&noclocks)) != 0) {
             GDKerror("get_counter: read_counters failed with return value %d, errno %d.\n", 
                      generation,errno);
@@ -569,7 +569,7 @@ int get_counter(counter *retval, counter *c) {
             perror("! get_counter/read_counters");
             return GDK_FAIL;
         }
- #elif defined(IRIX)
+ #elif defined(HW_IRIX64)
         if ((generation = read_counters((int)(event[c->event0].id0),&count0,
                                         (int)(event[c->event1].id1),&count1)) < 0) {
             GDKerror("get_counter: read_counters failed with return value %d, errno %d\n", 
@@ -583,7 +583,7 @@ int get_counter(counter *retval, counter *c) {
         }
         if (event[c->event0].id0 ==  0)  clocks = count0;
         if (event[c->event1].id1 == 16)  clocks = count1;
- #elif defined(SOLARIS)
+ #elif defined(HW_SunOS)
         cpu_sync();
         val = get_pic();
         count0 = (lng)(val & 0xffffffff) - c->count0;
