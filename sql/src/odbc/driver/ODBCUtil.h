@@ -89,11 +89,8 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
 	} while (0)
 
 #ifdef WITH_WCHAR
-extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length,
-			       char **errmsg);
-extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
-			    SQLWCHAR *buf, SQLINTEGER buflen,
-			    SQLSMALLINT *buflenout);
+extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR * s, SQLINTEGER length, char **errmsg);
+extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER buflen, SQLSMALLINT *buflenout);
 
 #define fixWcharIn(ws, wsl, s, errfunc, hdl, exit)	\
 	do {						\
@@ -124,7 +121,7 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
 		}							\
 		free(s);						\
 	} while (0)
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */
 
 /* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and
    SQL_DESC_TYPE are interdependent and setting one affects the other.

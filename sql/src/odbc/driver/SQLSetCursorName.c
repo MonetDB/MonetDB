@@ -34,6 +34,7 @@ SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 	if (stmt->State >= EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -73,8 +74,7 @@ SQLSetCursorNameA(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 }
 
 SQLRETURN SQL_API
-SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
-		  SQLSMALLINT nCursorLength)
+SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR * szCursor, SQLSMALLINT nCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;
@@ -98,4 +98,4 @@ SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR *szCursor,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

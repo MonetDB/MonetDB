@@ -44,5 +44,6 @@ SQLPutData(SQLHSTMT hStmt, SQLPOINTER pData, SQLINTEGER nLengthOrIndicator)
 
 	/* Function sequence error */
 	addStmtError(stmt, "HY010", NULL, 0);
+
 	return SQL_ERROR;
 }

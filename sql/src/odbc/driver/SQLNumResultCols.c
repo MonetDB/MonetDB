@@ -39,6 +39,7 @@ SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 	if (stmt->State == INITED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -46,6 +47,7 @@ SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 	if (pnColumnCount == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -55,9 +57,8 @@ SQLNumResultCols(SQLHSTMT hStmt, SQLSMALLINT *pnColumnCount)
 	/* we only have a correct nrCols value when the query is executed */
 	if (stmt->State < EXECUTED0) {
 		/* General error */
-		addStmtError(stmt, "HY000",
-			     "Cannot return the number of output columns. Query must be executed first",
-			     0);
+		addStmtError(stmt, "HY000", "Cannot return the number of output columns. Query must be executed first", 0);
+
 		return SQL_ERROR;
 	}
 

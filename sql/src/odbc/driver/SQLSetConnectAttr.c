@@ -23,8 +23,7 @@
 
 
 SQLRETURN
-SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
-		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
 	(void) StringLength;	/* Stefan: unused!? */
 
@@ -74,12 +73,10 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
 }
 
 SQLRETURN SQL_API
-SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
-		  SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttr " PTRFMT " %d\n",
-		PTRFMTCAST ConnectionHandle, Attribute);
+	ODBCLOG("SQLSetConnectAttr " PTRFMT " %d\n", PTRFMTCAST ConnectionHandle, Attribute);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -87,22 +84,18 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 
 	clearDbcErrors((ODBCDbc *) ConnectionHandle);
 
-	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle, Attribute,
-				  ValuePtr, StringLength);
+	return SQLSetConnectAttr_((ODBCDbc *) ConnectionHandle, Attribute, ValuePtr, StringLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetConnectAttrA(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
-		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttrA(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
-	return SQLSetConnectAttr(ConnectionHandle, Attribute,
-				 ValuePtr, StringLength);
+	return SQLSetConnectAttr(ConnectionHandle, Attribute, ValuePtr, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
-		   SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLPOINTER ptr;
@@ -110,8 +103,7 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectAttrW " PTRFMT " %d\n",
-		PTRFMTCAST ConnectionHandle, Attribute);
+	ODBCLOG("SQLSetConnectAttrW " PTRFMT " %d\n", PTRFMTCAST ConnectionHandle, Attribute);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -123,22 +115,24 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute,
 	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
-		if (StringLength > 0) /* convert from bytes to characters */
+		if (StringLength > 0)	/* convert from bytes to characters */
 			StringLength /= 2;
 		fixWcharIn(ValuePtr, StringLength, ptr, addDbcError, dbc, return SQL_ERROR);
+
 		n = SQL_NTS;
 		break;
 	default:
 		ptr = ValuePtr;
+
 		n = StringLength;
 		break;
 	}
 
 	rc = SQLSetConnectAttr_(dbc, Attribute, ptr, n);
 
-	if (ptr && ptr != ValuePtr)
+	if (ptr &&ptr !=ValuePtr)
 		free(ptr);
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -10,23 +10,24 @@
 
 #include <stdio.h>
 
-int main() {
-    int x,y,z;
-    int val = 0;
+int
+main()
+{
+	int x, y, z;
+	int val = 0;
 
-    FILE *file = fopen("tomo.tab","wt");
+	FILE *file = fopen("tomo.tab", "wt");
 
-    for(x=0;x<256;x++) {
-        for(y=0;y<256;y++) {
-            for(z=0;z<154;z++) {
-                val = (val+1) & 0xFF;
-                fprintf(file,"%4d,%4d,%4d,%4d\n",x,y,z,val);
-            }
-        }
-    }
+	for (x = 0; x < 256; x++) {
+		for (y = 0; y < 256; y++) {
+			for (z = 0; z < 154; z++) {
+				val = (val + 1) & 0xFF;
+				fprintf(file, "%4d,%4d,%4d,%4d\n", x, y, z, val);
+			}
+		}
+	}
 
-    fclose(file);
+	fclose(file);
 
-    return 0;
+	return 0;
 }
-

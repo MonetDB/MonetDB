@@ -62,8 +62,7 @@ SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOption " PTRFMT " %d %lx\n",
-		PTRFMTCAST hDbc, nOption, (unsigned long) vParam);
+	ODBCLOG("SQLSetConnectOption " PTRFMT " %d %lx\n", PTRFMTCAST hDbc, nOption, (unsigned long) vParam);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -90,8 +89,7 @@ SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %d %lx\n",
-		PTRFMTCAST hDbc, nOption, (unsigned long) vParam);
+	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %d %lx\n", PTRFMTCAST hDbc, nOption, (unsigned long) vParam);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -105,6 +103,7 @@ SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	case SQL_ATTR_TRANSLATE_LIB:
 		fixWcharIn((SQLPOINTER) (size_t) vParam, SQL_NTS, ptr, addDbcError, dbc, return SQL_ERROR);
 		p = (SQLULEN) (size_t) ptr;
+
 		break;
 	default:
 		p = vParam;
@@ -113,9 +112,9 @@ SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 
 	rc = SQLSetConnectOption_(dbc, nOption, p);
 
-	if (ptr && p != vParam)
+	if (ptr &&p != vParam)
 		free(ptr);
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

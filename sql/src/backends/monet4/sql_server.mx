@@ -216,8 +216,8 @@ handles and returns proper error messages upon failure.
 #include "sql_mvc.h"
 #include "sql_server.proto.h"
 
-extern int mvc_result_table( mvc *m, int nr_cols, BAT *order );
-extern int mvc_result_column( mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
+extern int mvc_result_table(mvc *m, int nr_cols, BAT *order);
+extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
 
 #endif /*_SQL_SERVER_H_*/
 
@@ -240,16 +240,20 @@ both program representation (YYSTREE), runtime stack (Cntxt),
 and the MIL interpreter. Details can be found in the src/monet
 directory.
 @c
-static int builtin_operand( Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int type, ValPtr res)
-{ 
-	int k = interpret( stk, arg(lt, arg_nr), res);
-	if (k < 0) return k;
-        *Res = VALconvert(type, res);
-        if ((res == ILLEGALVALUE)  || (type == TYPE_bat && res)) {
-                return handle_paramerror(res,arg_nr, res->vtype, type);
-        }
+static int
+builtin_operand(Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int type, ValPtr res)
+{
+	int k = interpret(stk, arg(lt, arg_nr), res);
+
+	if (k < 0)
+		return k;
+	*Res = VALconvert(type, res);
+	if ((res == ILLEGALVALUE) || (type == TYPE_bat && res)) {
+		return handle_paramerror(res, arg_nr, res->vtype, type);
+	}
 	return 0;
 }
+
 @-
 The bootstrap method for accessing an SQL database is hardwired.
 An alternative scheme is to collect these statements in an SQL boot file.
@@ -257,52 +261,58 @@ An alternative scheme is to collect these statements in an SQL boot file.
 ??Where and how is the catalog defined??
 ?? Why not make the grants part of it??
 @c
-int mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
-{ 
+int
+mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
+{
 	int ret, *Debug = NULL, **D = &Debug;
-  	if (lt->cnt != 1) {
-        	return handle_argerror(res, lt->cnt, 1);
-  	}
-	builtin_operand( stk, lt, 0, (ptr*)D, TYPE_int, res);
-	backend_init( &monet4_freestack, &monet4_freecode, &monet4_parse );
-	if ( (ret = mvc_init(*Debug, (backend_stack)stk )) > 0 ){
-		#define S(q) sqlstatement(q,stk)
+
+	if (lt->cnt != 1) {
+		return handle_argerror(res, lt->cnt, 1);
+	}
+	builtin_operand(stk, lt, 0, (ptr *) D, TYPE_int, res);
+	backend_init(&monet4_freestack, &monet4_freecode, &monet4_parse);
+	if ((ret = mvc_init(*Debug, (backend_stack) stk)) > 0) {
+#define S(q) sqlstatement(q,stk)
 		/* PUBLIC can only select on these tables! 
-		S("GRANT ALL on modules to PUBLIC with grant option;" );
-		S("GRANT ALL on schemas to PUBLIC with grant option;" );
-		S("GRANT ALL on tables to PUBLIC with grant option;" );
-		S("GRANT ALL on columns to PUBLIC with grant option;" );
-		S("GRANT ALL on keys to PUBLIC with grant option;" );
-		S("GRANT ALL on idxs to PUBLIC with grant option;" );
-		S("GRANT ALL on keycolumns to PUBLIC with grant option;" );
-		S("GRANT ALL on types to PUBLIC with grant option;" );
-		S("GRANT ALL on user_role to PUBLIC with grant option;" );
-		S("GRANT ALL on auths to PUBLIC with grant option;" );
-		S("GRANT ALL on privileges to PUBLIC with grant option;" );
-		S("GRANT ALL on users to PUBLIC with grant option;" );
-		S("GRANT ALL on sessions to PUBLIC with grant option;" );
-		S("GRANT ALL on history to PUBLIC with grant option;" );
-		S("GRANT ALL on env to PUBLIC with grant option;" );
-		*/
+		   S("GRANT ALL on modules to PUBLIC with grant option;" );
+		   S("GRANT ALL on schemas to PUBLIC with grant option;" );
+		   S("GRANT ALL on tables to PUBLIC with grant option;" );
+		   S("GRANT ALL on columns to PUBLIC with grant option;" );
+		   S("GRANT ALL on keys to PUBLIC with grant option;" );
+		   S("GRANT ALL on idxs to PUBLIC with grant option;" );
+		   S("GRANT ALL on keycolumns to PUBLIC with grant option;" );
+		   S("GRANT ALL on types to PUBLIC with grant option;" );
+		   S("GRANT ALL on user_role to PUBLIC with grant option;" );
+		   S("GRANT ALL on auths to PUBLIC with grant option;" );
+		   S("GRANT ALL on privileges to PUBLIC with grant option;" );
+		   S("GRANT ALL on users to PUBLIC with grant option;" );
+		   S("GRANT ALL on sessions to PUBLIC with grant option;" );
+		   S("GRANT ALL on history to PUBLIC with grant option;" );
+		   S("GRANT ALL on env to PUBLIC with grant option;" );
+		 */
 	} else if (ret < 0) {
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
 
-int sqllogmanager() {
+int
+sqllogmanager()
+{
 	/* try log cleanup every minute */
-	while(1) {
-		MT_sleep_ms(60000); 
+	while (1) {
+		MT_sleep_ms(60000);
 		mvc_logmanager();
 	}
 	return GDK_SUCCEED;	/* or GDK_FAIL since it is not supposed to end/return? */
 }
 
-int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){ 
+int
+mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
+{
 	Client c;
 
-        CNTXTclient(stk, &c);
+	CNTXTclient(stk, &c);
 	while (c->father >= 0) {
 		c = monet_clients + c->father;
 	}
@@ -313,16 +323,20 @@ int mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res){
 	return CMDquit(stk, lt, res);
 }
 
-int mvc_sql_wrap( mvc *c, str cmd ){
-	return mvc_sql( *(mvc**)c, cmd );
+int
+mvc_sql_wrap(mvc *c, str cmd)
+{
+	return mvc_sql(*(mvc **) c, cmd);
 }
 
-int mvc_update_var_wrap( mvc *c, str varname ){
-	return sql_update_var( *(mvc**)c, varname );
+int
+mvc_update_var_wrap(mvc *c, str varname)
+{
+	return sql_update_var(*(mvc **) c, varname);
 }
 
 static BAT *
-mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
+mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -336,7 +350,7 @@ mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
 
 
 static BAT *
-mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
+mvc_bind_ubat(mvc *m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -349,7 +363,7 @@ mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
 }
 
 static BAT *
-mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
+mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -361,68 +375,80 @@ mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 }
 
 static BAT *
-mvc_bind_idxbat(mvc * m, char *sname, char *tname, char *iname, int access )
+mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
-	(void)tname;
+	(void) tname;
 	b = bind_idx(tr, i, access);
 	return b;
 }
 
 
-int mvc_bind_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int *access){
-	*res = mvc_bind( *(mvc**)c, sname, tname, cname, *access );
-	if (*res){
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int mvc_bind_ubat_wrap( BAT** res, mvc* c, str sname, str tname, str cname, int *access ){
-	*res = mvc_bind_ubat( *(mvc**)c, sname, tname, cname, *access );
-	if (*res){
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int mvc_bind_dbat_wrap( BAT** res, mvc* c, str sname, str tname, int *access ){
-	*res = mvc_bind_dbat( *(mvc**)c, sname, tname, *access );
-	if (*res){
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int mvc_bind_idxbat_wrap( BAT** res, mvc* c, str sname, str tname, str iname, int *access ){
-	*res = mvc_bind_idxbat( *(mvc**)c, sname, tname, iname, *access );
-	if (*res){
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int mvc_clear_table_wrap( lng *res, mvc *c, str sname, str tname ) 
+int
+mvc_bind_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access)
 {
-	mvc *m = *(mvc**)c;
+	*res = mvc_bind(*(mvc **) c, sname, tname, cname, *access);
+	if (*res) {
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int
+mvc_bind_ubat_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access)
+{
+	*res = mvc_bind_ubat(*(mvc **) c, sname, tname, cname, *access);
+	if (*res) {
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int
+mvc_bind_dbat_wrap(BAT **res, mvc *c, str sname, str tname, int *access)
+{
+	*res = mvc_bind_dbat(*(mvc **) c, sname, tname, *access);
+	if (*res) {
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int
+mvc_bind_idxbat_wrap(BAT **res, mvc *c, str sname, str tname, str iname, int *access)
+{
+	*res = mvc_bind_idxbat(*(mvc **) c, sname, tname, iname, *access);
+	if (*res) {
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+int
+mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname)
+{
+	mvc *m = *(mvc **) c;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
-	*res = mvc_clear_table( m, t );
+
+	*res = mvc_clear_table(m, t);
 	return GDK_SUCCEED;
 }
 
-static int mvc_result_row( mvc *m, int nr_cols )
+static int
+mvc_result_row(mvc *m, int nr_cols)
 {
 	m->results = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
 	return m->results->id;
 }
 
 
-int mvc_result_table( mvc *m, int nr_cols, BAT *order )
+int
+mvc_result_table(mvc *m, int nr_cols, BAT *order)
 {
 	res_table *t = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
 
@@ -433,69 +459,97 @@ int mvc_result_table( mvc *m, int nr_cols, BAT *order )
 }
 
 
-int mvc_result_column( mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b){
-	res_col *c = res_col_create( m->trans, m->results, tn, name, typename, digits, scale);
+int
+mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
+{
+	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
+
 	c->b = b->batCacheid;
 	bat_incref(c->b, TRUE, "mvc_result_column");
 	return 0;
 }
 
-static int mvc_result_value( mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype){
-	res_col *c = res_col_create( m->trans, m->results, tn, name, typename, digits, scale);
+static int
+mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
+{
+	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
 
 	c->mtype = mtype;
-	c->p = ATOMdup(mtype,p); 
+	c->p = ATOMdup(mtype, p);
 	return 0;
 }
 
-int mvc_result_table_wrap( int *res_id, mvc *M, int *nr_cols, BAT *order ){
-	*res_id = mvc_result_table( *(mvc**)M, *nr_cols, order);
+int
+mvc_result_table_wrap(int *res_id, mvc *M, int *nr_cols, BAT *order)
+{
+	*res_id = mvc_result_table(*(mvc **) M, *nr_cols, order);
 	if (*res_id < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-int mvc_result_row_wrap( int *res_id, mvc *M, int *nr_cols, ptr p, int p_type ){
-	(void) p; (void) p_type; /* Stefan: unused!? */
 
-	*res_id = mvc_result_row( *(mvc**)M, *nr_cols );
+int
+mvc_result_row_wrap(int *res_id, mvc *M, int *nr_cols, ptr p, int p_type)
+{
+	(void) p;
+	(void) p_type;		/* Stefan: unused!? */
+
+	*res_id = mvc_result_row(*(mvc **) M, *nr_cols);
 	if (*res_id < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-int mvc_result_column_wrap( mvc *M, str tn, str name, str type, int *digits, int *scale, BAT *b ){
-	if (mvc_result_column( *(mvc**)M, tn, name, type, *digits, *scale, b)) 
+
+int
+mvc_result_column_wrap(mvc *M, str tn, str name, str type, int *digits, int *scale, BAT *b)
+{
+	if (mvc_result_column(*(mvc **) M, tn, name, type, *digits, *scale, b))
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-int mvc_result_value_wrap( mvc *M, str tn, str name, str type, int *digits, int *scale, ptr p, int mtype ){
-	if (mvc_result_value( *(mvc**)M, tn, name, type, *digits, *scale, p, mtype)) 
+
+int
+mvc_result_value_wrap(mvc *M, str tn, str name, str type, int *digits, int *scale, ptr p, int mtype)
+{
+	if (mvc_result_value(*(mvc **) M, tn, name, type, *digits, *scale, p, mtype))
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-int mvc_export_result_wrap( mvc *M, Stream *S, int *res_id){
-	if (mvc_export_result( *(mvc**)M, *(stream**)S, *res_id)) 
+
+int
+mvc_export_result_wrap(mvc *M, Stream *S, int *res_id)
+{
+	if (mvc_export_result(*(mvc **) M, *(stream **) S, *res_id))
 		return GDK_FAIL;
-	
+
 	return GDK_SUCCEED;
 }
-int mvc_export_table_wrap( mvc *M, Stream *S, int *res_id, int *offset, int *nr){
-	if (mvc_export_table( *(mvc**)M, *(stream**)S, *res_id, *offset, *nr)) 
+
+int
+mvc_export_table_wrap(mvc *M, Stream *S, int *res_id, int *offset, int *nr)
+{
+	if (mvc_export_table(*(mvc **) M, *(stream **) S, *res_id, *offset, *nr))
 		return GDK_FAIL;
-	
+
 	return GDK_SUCCEED;
 }
-int mvc_import_table_wrap( BAT **res, mvc *c, Bstream *s, str tname , str sep, str rsep, int *sz ){
-	*res = mvc_import_table( *(mvc**)c, *(bstream**)s, tname, sep, rsep, *sz );
+
+int
+mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, int *sz)
+{
+	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, *sz);
 	if (*res == NULL)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
-int hash_wrap( int *res, ptr v, int tpe, int *sh )
+int
+hash_wrap(int *res, ptr v, int tpe, int *sh)
 {
-	*res = (ATOMhash(tpe,v)<<(*sh))&0xEFFFFFFF;
+	*res = (ATOMhash(tpe, v) << (*sh)) & 0xEFFFFFFF;
 	return GDK_SUCCEED;
 }
+
 @-
 The core modules of Monet provide just a limited set of
 mathematical operators. The extensions required to support
@@ -640,12 +694,14 @@ int cast2@1( @1 *res, str val )
 @:cast(flt)@
 @:cast(dbl)@
 
-int str_cast( str *res, ptr v, int tpe, int *len ){
+int
+str_cast(str *res, ptr v, int tpe, int *len)
+{
 	int sz = *len + 1;
 	char *r = GDKmalloc(sz);
 
 	if (tpe != TYPE_str) {
-		sz = BATatoms[tpe].atomToStr(&r, &sz, v); 
+		sz = BATatoms[tpe].atomToStr(&r, &sz, v);
 	} else {
 		sz = strlen(v);
 		if (sz <= *len) {
@@ -653,10 +709,10 @@ int str_cast( str *res, ptr v, int tpe, int *len ){
 			r[sz] = 0;
 		}
 	}
-	if (sz > *len){
+	if (sz > *len) {
 		GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
-			GDKerror("str_cast: value to long for type (var)char(%d)\n",*len);
+			GDKerror("str_cast: value to long for type (var)char(%d)\n", *len);
 			return GDK_FAIL;
 		} else {
 			*res = GDKstrdup(str_nil);
@@ -722,6 +778,7 @@ int @2_2_@1( @1 *res, @2 *v, int *len ){
 @:numcastup(lng,sht)@
 @:numcastup(lng,int)@
 @:numcastup(lng,lng)@
+
 @= numcastdown
 int @2_2_@1( @1 *res, @2 *v, int *len ){
 	int p = *len, inlen = 1;

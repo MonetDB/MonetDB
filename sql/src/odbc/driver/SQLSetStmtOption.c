@@ -27,8 +27,7 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLULEN vParam)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetStmtOption " PTRFMT " %d %lx\n", PTRFMTCAST hStmt,
-		fOption, (unsigned long) vParam);
+	ODBCLOG("SQLSetStmtOption " PTRFMT " %d %lx\n", PTRFMTCAST hStmt, fOption, (unsigned long) vParam);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -54,8 +53,7 @@ SQLSetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLULEN vParam)
 	case SQL_RETRIEVE_DATA:
 	case SQL_USE_BOOKMARKS:
 		/* use mapping as described in ODBC 3.0 SDK Help */
-		return SQLSetStmtAttr_(stmt, fOption,
-				       (SQLPOINTER) (size_t) vParam, SQL_NTS);
+		return SQLSetStmtAttr_(stmt, fOption, (SQLPOINTER)(size_t) vParam, SQL_NTS);
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);

@@ -28,6 +28,5 @@ SQLAllocConnect(SQLHENV hEnv, SQLHDBC *phDbc)
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLAllocHandle_(SQL_HANDLE_DBC, (SQLHANDLE) hEnv,
-			       (SQLHANDLE *) phDbc);
+	return SQLAllocHandle_(SQL_HANDLE_DBC, (SQLHANDLE) hEnv, (SQLHANDLE *) phDbc);
 }

@@ -22,16 +22,13 @@
 
 
 SQLRETURN SQL_API
-SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
-	   SQLPOINTER pTargetValue, SQLINTEGER nTargetValueMax,
-	   SQLINTEGER *pnLengthOrIndicator)
+SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType, SQLPOINTER pTargetValue, SQLINTEGER nTargetValueMax, SQLINTEGER *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ODBCDesc *desc;		/* Application Row Descriptor */
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindCol " PTRFMT " %d %d %d\n", PTRFMTCAST hStmt,
-		nCol, nTargetType, nTargetValueMax);
+	ODBCLOG("SQLBindCol " PTRFMT " %d %d %d\n", PTRFMTCAST hStmt, nCol, nTargetType, nTargetValueMax);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -44,8 +41,7 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	/* check input parameters */
 	/* column number 0 (Bookmark column) is not supported */
 	if (nCol == 0) {
-		if (nTargetType == SQL_C_BOOKMARK ||
-		    nTargetType == SQL_C_VARBOOKMARK) {
+		if (nTargetType == SQL_C_BOOKMARK || nTargetType == SQL_C_VARBOOKMARK) {
 			/* Optional feature not implemented */
 			addStmtError(stmt, "HYC00", NULL, 0);
 		} else {
@@ -54,19 +50,18 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		}
 		return SQL_ERROR;
 	}
-	if (stmt->State >= EXECUTED1 &&
-	    nCol > stmt->ImplRowDescr->sql_desc_count) {
+	if (stmt->State >= EXECUTED1 && nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
 	/* For safety: limit the maximum number of columns to bind */
 	if (nCol > MONETDB_MAX_BIND_COLS) {
 		/* General error */
-		addStmtError(stmt, "HY000",
-			     "Maximum number of bind columns (8192) exceeded",
-			     0);
+		addStmtError(stmt, "HY000", "Maximum number of bind columns (8192) exceeded", 0);
+
 		return SQL_ERROR;
 	}
 
@@ -113,16 +108,19 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	default:
 		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
 	if (nTargetValueMax < 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
 	desc = stmt->ApplRowDescr;
+
 	if (pTargetValue == NULL && nCol == desc->sql_desc_count) {
 		int i = desc->sql_desc_count - 1;
 
@@ -135,8 +133,7 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 
 		if (nCol > desc->sql_desc_count)
 			setODBCDescRecCount(desc, nCol);
-		rc = SQLSetDescField_(desc, nCol, SQL_DESC_CONCISE_TYPE,
-				      (SQLPOINTER) (ssize_t) nTargetType, 0);
+		rc = SQLSetDescField_(desc, nCol, SQL_DESC_CONCISE_TYPE, (SQLPOINTER) (ssize_t) nTargetType, 0);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
 		rec = &desc->descRec[nCol];

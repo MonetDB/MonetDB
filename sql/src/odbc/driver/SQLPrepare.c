@@ -27,6 +27,7 @@ ODBCResetStmt(ODBCStmt *stmt)
 {
 	SQLFreeStmt_(stmt, SQL_CLOSE);
 	setODBCDescRecCount(stmt->ImplParamDescr, 0);
+
 	if (stmt->query)
 		free(stmt->query);
 	stmt->query = NULL;
@@ -39,10 +40,10 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	char *query;
 	MapiMsg ret;
 
-	if (stmt->State >= EXECUTED1 ||
-	    (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -50,6 +51,7 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	if (szSqlStr == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -71,15 +73,17 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 #endif
 
 	ret = mapi_prepare_handle(stmt->hdl, query);
+
 	if (ret != MOK) {
 		/* General error */
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+
 		return SQL_ERROR;
 	}
 
 	/* update the internal state */
 	stmt->query = query;
-	stmt->State = PREPARED1; /* XXX or PREPARED0, depending on query */
+	stmt->State = PREPARED1;	/* XXX or PREPARED0, depending on query */
 
 	return SQL_SUCCESS;
 }
@@ -92,7 +96,7 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors((ODBCStmt *) hStmt);
 
@@ -107,7 +111,7 @@ SQLPrepareA(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 }
 
 SQLRETURN SQL_API
-SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR * szSqlStr, SQLINTEGER nSqlStrLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLCHAR *sql;
@@ -131,4 +135,4 @@ SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

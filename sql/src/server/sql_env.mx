@@ -67,15 +67,15 @@ called 'sessions'.
 #include "sql_statement.h"
 #include "sql_mvc.h"
 
-sql_export int mvc_debug_on( mvc *m, int flag);
+sql_export int mvc_debug_on(mvc *m, int flag);
 
-sql_export stmt *env(mvc * sql, symbol * s); 
+sql_export stmt *env(mvc *sql, symbol *s);
 
-sql_export int sql_update_var(mvc *sql, char *name );
-sql_export int sql_set_var_value(mvc *sql, char *name, char *value );
+sql_export int sql_update_var(mvc *sql, char *name);
+sql_export int sql_set_var_value(mvc *sql, char *name, char *value);
 
-sql_export char * sql_get_var( mvc *sql, char *name );
-sql_export char * sql_get_type( mvc *sql, char *name );
+sql_export char *sql_get_var(mvc *sql, char *name);
+sql_export char *sql_get_type(mvc *sql, char *name);
 
 sql_export int sql_create_sessions(mvc *sql, sql_schema *s);
 sql_export int sql_create_history(mvc *sql, sql_schema *s);
@@ -93,117 +93,122 @@ sql_export int sql_session(mvc *sql);
 #define SESSION_RW 0
 #define SESSION_RO 1
 
-int mvc_debug_on( mvc *m, int flg)
+int
+mvc_debug_on(mvc *m, int flg)
 {
-	
-	if (m->debug&flg)
+
+	if (m->debug & flg)
 		return 1;
 
 	return 0;
 }
 
-char * 
-sql_get_var( mvc *m, char *name )
+char *
+sql_get_var(mvc *m, char *name)
 {
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
 	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
-	ssize_t rid = column_find_row( tr, s_name, name, NULL );
+	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 	char *val = NULL;
 
 	if (rid >= 0) {
 		sql_column *s_value = mvc_bind_column(m, sessions, "value");
-		val = column_find_value( tr, s_value, rid);
+
+		val = column_find_value(tr, s_value, rid);
 	}
 	return val;
 }
 
-char * 
-sql_get_type( mvc *m, char *name )
+char *
+sql_get_type(mvc *m, char *name)
 {
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
 	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
-	ssize_t rid = column_find_row( tr, s_name, name, NULL );
+	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 	char *type = NULL;
 
 	if (rid >= 0) {
 		sql_column *s_type = mvc_bind_column(m, sessions, "type");
-		type = column_find_value( tr, s_type, rid);
+
+		type = column_find_value(tr, s_type, rid);
 	}
 	return type;
 }
 
-int  
-sql_get_access( mvc *m, char *name )
+int
+sql_get_access(mvc *m, char *name)
 {
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
 	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
-	ssize_t rid = column_find_row( tr, s_name, name, NULL );
+	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 	int access = -1;
 
 	if (rid >= 0) {
 		sql_column *s_access = mvc_bind_column(m, sessions, "access");
-		int *a = (int*)column_find_value( tr, s_access, rid);
+		int *a = (int *) column_find_value(tr, s_access, rid);
+
 		if (a)
 			access = *a;
 	}
 	return access;
 }
 
-int 
-sql_get_bit_var( mvc *sql, char *name )
+int
+sql_get_bit_var(mvc *sql, char *name)
 {
 	char *val = sql_get_var(sql, name);
+
 	if (val && strcmp(val, "true") == 0)
 		return TRUE;
 	return FALSE;
 }
 
-static int 
-sql_get_int_var( mvc *sql, char *name ) 
+static int
+sql_get_int_var(mvc *sql, char *name)
 {
 	char *val = sql_get_var(sql, name);
+
 	if (val)
 		return strtol(val, &val, 10);
 	return 0;
 }
 
 static char *
-sql_get_str_var( mvc *sql, char *name ) 
+sql_get_str_var(mvc *sql, char *name)
 {
 	char *val = sql_get_var(sql, name);
+
 	if (val)
-		return (char*)val;
+		return (char *) val;
 	assert(0);
 	return NULL;
 }
 
-int 
-inttype( sql_subtype *itype, sql_subtype *rtype ) 
+int
+inttype(sql_subtype *itype, sql_subtype *rtype)
 {
 	if (strcmp(rtype->type->base.name, "int") == 0) {
-		if (strcmp(itype->type->base.name, "sht") == 0 ||
-		    strcmp(itype->type->base.name, "int") == 0 ||
-		    strcmp(itype->type->base.name, "lng") == 0) 
-		return 1;
+		if (strcmp(itype->type->base.name, "sht") == 0 || strcmp(itype->type->base.name, "int") == 0 || strcmp(itype->type->base.name, "lng") == 0)
+			return 1;
 	}
 	return 0;
 }
 
 static stmt *
-set_var( mvc *sql, char *name, symbol *val, char *typename )
+set_var(mvc *sql, char *name, symbol *val, char *typename)
 {
 	sql_subtype *ctype;
 	scope *scp = scope_open(NULL);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_table *sessions = mvc_bind_table(sql, sys, "sessions");
 	tvar *tv = scope_add_table_columns(sql, scp, sessions, sessions->base.name);
-	stmt *st, *v = sql_value_exp( sql, scp, val, NULL, NULL, sql_sel);
+	stmt *st, *v = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
 	sql_column *c = mvc_bind_column(sql, sessions, "value");
 	list *l;
 
@@ -213,27 +218,26 @@ set_var( mvc *sql, char *name, symbol *val, char *typename )
 	}
 
 	/* find variable */
- 	ctype = sql_bind_subtype(typename, 0, 0);
+	ctype = sql_bind_subtype(typename, 0, 0);
 	v = check_types(sql, ctype, v, type_equal);
 	sql_subtype_destroy(ctype);
 	if (!v || (v = check_types(sql, c->type, v, type_equal)) == NULL) {
 		return NULL;
 	}
-	st = sql_compare(sql, scope_bind(scp, NULL, "name"), 
-			 stmt_atom_string(_strdup(name)),"=", sql_where );
+	st = sql_compare(sql, scope_bind(scp, NULL, "name"), stmt_atom_string(_strdup(name)), "=", sql_where);
 	st = stmt_const(st, v);
 	/* TODO, need general intermediate code for updates! */
-	st = stmt_replace( stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), st);
+	st = stmt_replace(stmt_cbat(c, stmt_dup(tv->s), UPD, st_bat), st);
 	scp = scope_close(scp);
 	l = create_stmt_list();
-	list_append(l, st );
-	list_append(l, stmt_update_var(_strdup(name)) );
-	list_append(l, output_value( stmt_atom_int(1) ));
+	list_append(l, st);
+	list_append(l, stmt_update_var(_strdup(name)));
+	list_append(l, output_value(stmt_atom_int(1)));
 	return stmt_list(l);
 }
 
 static stmt *
-sql_set_var( mvc *sql, symbol *s )
+sql_set_var(mvc *sql, symbol *s)
 {
 	if (s->token == SQL_SET) {
 		dlist *dl = s->data.lval;
@@ -242,44 +246,41 @@ sql_set_var( mvc *sql, symbol *s )
 		int access = sql_get_access(sql, name);
 
 		if (access < 0) {
-			return sql_error(sql, 02, 
-				"Unknown session variable %s\n",
-				name);
+			return sql_error(sql, 02, "Unknown session variable %s\n", name);
 		} else if (access == SESSION_RO) {
-			return sql_error(sql, 02, 
-				"You have no permissions to change the session variable %s\n",
-				name);
+			return sql_error(sql, 02, "You have no permissions to change the session variable %s\n", name);
 		}
-		return set_var(sql, name, val, sql_get_type(sql, name) );
+		return set_var(sql, name, val, sql_get_type(sql, name));
 	}
 	return NULL;
 }
 
 int
-sql_set_var_value( mvc *m, char *name, char *value )
+sql_set_var_value(mvc *m, char *name, char *value)
 {
 	int res = -1;
-	
+
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
 	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
-	ssize_t rid = column_find_row( tr, s_name, name, NULL );
-	
+	ssize_t rid = column_find_row(tr, s_name, name, NULL);
+
 	if (rid >= 0) {
 		sql_column *s_access = mvc_bind_column(m, sessions, "access");
-		int access = *(int*)column_find_value( tr, s_access, rid );
+		int access = *(int *) column_find_value(tr, s_access, rid);
 
 		if (access == SESSION_RW) {
-			sql_column *s_value = 
-					mvc_bind_column(m, sessions, "value");
-			return column_update_value( tr, s_value, rid, value);
+			sql_column *s_value = mvc_bind_column(m, sessions, "value");
+
+			return column_update_value(tr, s_value, rid, value);
 		}
 	}
 	return res;
 }
 
-int sql_update_var(mvc *m, char *name )
+int
+sql_update_var(mvc *m, char *name)
 {
 	if (strcmp(name, "debug") == 0) {
 		m->debug = sql_get_int_var(m, "debug");
@@ -293,28 +294,27 @@ int sql_update_var(mvc *m, char *name )
 	} else if (strcmp(name, "current_schema") == 0) {
 		char *schema = sql_get_str_var(m, "current_schema");
 
-		if (!mvc_set_schema(m, schema)){
+		if (!mvc_set_schema(m, schema)) {
 			GDKwarning("Schema (%s) missing\n", schema);
 			return GDK_FAIL;
 		}
 	} else if (strcmp(name, "current_role") == 0) {
 		char *role = sql_get_str_var(m, "current_role");
 
-		if (!mvc_set_role(m, role)){
+		if (!mvc_set_role(m, role)) {
 			GDKwarning("Role (%s) missing\n", role);
 			return GDK_FAIL;
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
-		m->timezone = sql_get_int_var(m, "current_timezone")/60;
+		m->timezone = sql_get_int_var(m, "current_timezone") / 60;
 	} else if (strcmp(name, "explain") == 0) {
 		char *explain = sql_get_str_var(m, "explain");
 
-		if (m->explain)  
+		if (m->explain)
 			_DELETE(m->explain);
 		if (!explain || strcmp(explain, "") == 0)
 			m->explain = NULL;
-		else if (strcmp(explain, "plan") == 0 ||
-			 strcmp(explain, "performance") == 0)
+		else if (strcmp(explain, "plan") == 0 || strcmp(explain, "performance") == 0)
 			m->explain = _strdup(explain);
 		else {
 			GDKwarning("Session variable explain can only be set to 'plan', 'performance' or to the empty string\n");
@@ -330,7 +330,7 @@ int sql_update_var(mvc *m, char *name )
 
 
 stmt *
-sql_declare_var( mvc *m, symbol *s ) 
+sql_declare_var(mvc *m, symbol *s)
 {
 	if (s->token == SQL_DECLARE) {
 		int rw = SESSION_RW;
@@ -347,13 +347,10 @@ sql_declare_var( mvc *m, symbol *s )
 Any user defined variable should be added to the table.
 They don't survive session boundaries
 @c
-			return sql_error(m, 02, 
-				"Allready used session variable, %s\n",
-				name);
+			return sql_error(m, 02, "Allready used session variable, %s\n", name);
 		}
 
-		table_insert( tr, sessions, name, "NULL", 
-				ctype->type->sqlname, &rw, NULL);
+		table_insert(tr, sessions, name, "NULL", ctype->type->sqlname, &rw, NULL);
 		return stmt_none();
 	}
 	return NULL;
@@ -363,7 +360,7 @@ They don't survive session boundaries
 Handling of SQL variables is straightforward.
 @c
 int
-sql_session( mvc *m ) 
+sql_session(mvc *m)
 {
 	char buf[BUFSIZ];
 	sql_trans *tr = m->trans;
@@ -371,75 +368,76 @@ sql_session( mvc *m )
 	sql_table *s = mvc_bind_table(m, sys, "sessions");
 	int rw = SESSION_RW, ro = SESSION_RO;
 
-	snprintf(buf, BUFSIZ, "%d", m->debug );
-	table_insert( tr, s, "debug", buf, "int", &rw, NULL);
+	snprintf(buf, BUFSIZ, "%d", m->debug);
+	table_insert(tr, s, "debug", buf, "int", &rw, NULL);
 
-	snprintf(buf, BUFSIZ, "%d", m->reply_size );
-	table_insert( tr, s, "reply_size", buf, "int", &rw, NULL);
+	snprintf(buf, BUFSIZ, "%d", m->reply_size);
+	table_insert(tr, s, "reply_size", buf, "int", &rw, NULL);
 
 	buf[0] = 0;
 	if (m->explain)
-		snprintf(buf, BUFSIZ, "%s", m->explain );
-	table_insert( tr, s, "explain", buf, "varchar", &rw, NULL);
+		snprintf(buf, BUFSIZ, "%s", m->explain);
+	table_insert(tr, s, "explain", buf, "varchar", &rw, NULL);
 
 	if (m->auto_commit)
-		table_insert( tr, s, "auto_commit", "true", "boolean", &rw, NULL);
+		table_insert(tr, s, "auto_commit", "true", "boolean", &rw, NULL);
 	else
-		table_insert( tr, s, "auto_commit", "false", "boolean", &rw, NULL);
+		table_insert(tr, s, "auto_commit", "false", "boolean", &rw, NULL);
 
-	table_insert( tr, s, "current_schema", m->schema, "varchar", &ro, NULL);
+	table_insert(tr, s, "current_schema", m->schema, "varchar", &ro, NULL);
 
 	/* MonetDB/SQL user/current_user/session_user (authorization id) */
-	table_insert( tr, s, "current_user", m->user, "varchar", &ro, NULL);
+	table_insert(tr, s, "current_user", m->user, "varchar", &ro, NULL);
 
 	/* MonetDB/SQL role/current_role/session_role */
-	table_insert( tr, s, "current_role", m->role, "varchar", &rw, NULL);
+	table_insert(tr, s, "current_role", m->role, "varchar", &rw, NULL);
 
-	snprintf(buf, BUFSIZ, "%d", m->timezone*60 );
-	table_insert( tr, s, "current_timezone", buf, "sec_interval", &rw, NULL);
+	snprintf(buf, BUFSIZ, "%d", m->timezone * 60);
+	table_insert(tr, s, "current_timezone", buf, "sec_interval", &rw, NULL);
 
 	if (m->cache)
-		table_insert( tr, s, "cache", "true", "boolean", &rw, NULL);
+		table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
 	else
-		table_insert( tr, s, "cache", "true", "boolean", &rw, NULL);
+		table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
 
 	if (m->factory)
-		table_insert( tr, s, "factory", "true", "boolean", &rw, NULL);
+		table_insert(tr, s, "factory", "true", "boolean", &rw, NULL);
 	else
-		table_insert( tr, s, "factory", "false", "boolean", &rw, NULL);
+		table_insert(tr, s, "factory", "false", "boolean", &rw, NULL);
 	return 0;
 }
 
 int
-sql_create_sessions( mvc *m, sql_schema *s ) 
+sql_create_sessions(mvc *m, sql_schema *s)
 {
-	BUN p,q;
+	BUN p, q;
 	sql_table *t;
 
-	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1 );
+	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1);
 	mvc_create_column_(m, t, "name", "varchar", 0);
 	mvc_create_column_(m, t, "value", "varchar", 0);
 	mvc_create_column_(m, t, "type", "varchar", 0);
 	mvc_create_column_(m, t, "access", "int", 9);
-	/* access 0 	read/write
-		  1	via sql_privileges (role/user) 	
-				ie set session authorization bla
-				   set role bla
-		  2	read only
+	/* access 0     read/write
+	   1    via sql_privileges (role/user)  
+	   ie set session authorization bla
+	   set role bla
+	   2    read only
 	 */
 
-	t = mvc_create_table(m, s, "env", 1, 1, 0, -1 );
+	t = mvc_create_table(m, s, "env", 1, 1, 0, -1);
 	mvc_create_column_(m, t, "name", "varchar", 0);
 	mvc_create_column_(m, t, "value", "varchar", 0);
 
-	BATloop(GDKenv,p,q) {
-		char *name = BUNhead(GDKenv,p);
-		char *val = BUNtail(GDKenv,p);
+	BATloop(GDKenv, p, q) {
+		char *name = BUNhead(GDKenv, p);
+		char *val = BUNtail(GDKenv, p);
 
-		table_insert( m->trans, t, name, val, NULL);
+		table_insert(m->trans, t, name, val, NULL);
 	}
 	return 0;
 }
+
 @-
 The history table contains information on the parsing, optimization,
 and execution time. More detailed information should be obtained using
@@ -447,9 +445,9 @@ the MonetDB kernel profiler, e.g. using Mknife
 @c
 
 int
-sql_create_history( mvc *m, sql_schema *s ) 
+sql_create_history(mvc *m, sql_schema *s)
 {
-	sql_table *t = mvc_create_table(m, s, "history", 1, 1, 0, -1 );
+	sql_table *t = mvc_create_table(m, s, "history", 1, 1, 0, -1);
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
 	mvc_create_column_(m, t, "query", "varchar", 0);
@@ -461,6 +459,7 @@ sql_create_history( mvc *m, sql_schema *s )
 
 	return 0;
 }
+
 @}
 
 stmt *

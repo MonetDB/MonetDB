@@ -26,7 +26,7 @@
 #include "sql_mem.h"
 #include <gdk.h>
 
-sql_export lng decimal_from_str( char *dec );
+sql_export lng decimal_from_str(char *dec);
 
 #endif /* _SQL_DECIMAL_H */
 
@@ -34,17 +34,20 @@ sql_export lng decimal_from_str( char *dec );
 
 #include "sql_decimal.h"
 
-lng decimal_from_str( char *dec ){
+lng
+decimal_from_str(char *dec)
+{
 	lng res = 0;
 	int neg = 0;
-	if (*dec == '-'){
+
+	if (*dec == '-') {
 		neg = 1;
-		dec ++;
+		dec++;
 	}
-	for(;*dec; dec++){
-		if (*dec != '.'){
+	for (; *dec; dec++) {
+		if (*dec != '.') {
 			res *= 10;
-			res += *dec -'0';
+			res += *dec - '0';
 		}
 	}
 	if (neg)

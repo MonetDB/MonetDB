@@ -45,12 +45,12 @@
 
 #ifdef _MSC_VER
 #ifndef LIBMONETODBC
-#define odbc_export extern __declspec(dllimport) 
+#define odbc_export extern __declspec(dllimport)
 #else
-#define odbc_export extern __declspec(dllexport) 
+#define odbc_export extern __declspec(dllexport)
 #endif
 #else
-#define odbc_export extern 
+#define odbc_export extern
 #endif
 
 /* standard ODBC driver include files */
@@ -74,10 +74,12 @@
 #ifndef HAVE_SSIZE_T
 #if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ssize_t;
+
 #define HAVE_SSIZE_T 1
 #else
 #if SIZEOF_SIZE_T == SIZEOF_LONG
 typedef long ssize_t;
+
 #define HAVE_SSIZE_T 1
 #endif
 #endif
@@ -86,7 +88,7 @@ typedef long ssize_t;
 /* define printf format for printing pointer values */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define PTRFMT		"%p"
-#define PTRFMTCAST	/* no cast needed */
+#define PTRFMTCAST		/* no cast needed */
 #elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT		"%x"
 #define PTRFMTCAST	(unsigned int)
@@ -104,15 +106,10 @@ typedef long ssize_t;
 #endif
 
 /* these functions are called from within the library */
-SQLRETURN SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle,
-			  SQLHANDLE *pnOutputHandle);
-SQLRETURN SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
-		      SQLSMALLINT nCompletionType);
+SQLRETURN SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle, SQLHANDLE *pnOutputHandle);
+SQLRETURN SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionType);
 SQLRETURN SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle);
-SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle,
-			 SQLSMALLINT recNumber, SQLCHAR *sqlState,
-			 SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText,
-			 SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
+SQLRETURN SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
 
 #ifdef ODBCDEBUG
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901

@@ -19,9 +19,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLColAttributes_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
-		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
-		  SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributes_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
 {
 	SQLRETURN rc;
 	SQLINTEGER value;
@@ -38,8 +36,7 @@ SQLColAttributes_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 		nDescType = SQL_DESC_COUNT;
 		break;
 	}
-	rc = SQLColAttribute_(stmt, nCol, nDescType, pszDesc,
-			      nDescMax, pcbDesc, &value);
+	rc = SQLColAttribute_(stmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, &value);
 
 	/* TODO: implement specials semantics for nDescTypes: SQL_COLUMN_TYPE,
 	   SQL_COLUMN_NAME, SQL_COLUMN_NULLABLE and SQL_COLUMN_COUNT.
@@ -56,15 +53,12 @@ SQLColAttributes_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 }
 
 SQLRETURN SQL_API
-SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
-		 SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
-		 SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributes " PTRFMT " %d %d\n", PTRFMTCAST hStmt,
-		nCol, nDescType);
+	ODBCLOG("SQLColAttributes " PTRFMT " %d %d\n", PTRFMTCAST hStmt, nCol, nDescType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -72,24 +66,18 @@ SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 
 	clearStmtErrors(stmt);
 
-	return SQLColAttributes_(stmt, nCol, nDescType, pszDesc, nDescMax,
-				 pcbDesc, pfDesc);
+	return SQLColAttributes_(stmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, pfDesc);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLColAttributesA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
-		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
-		  SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributesA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
 {
-	return SQLColAttributes(hStmt, nCol, nDescType, pszDesc, nDescMax,
-				pcbDesc, pfDesc);
+	return SQLColAttributes(hStmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, pfDesc);
 }
 
 SQLRETURN SQL_API
-SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
-		  SQLPOINTER pszDesc, SQLSMALLINT nDescMax,
-		  SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLPOINTER ptr;
@@ -97,8 +85,7 @@ SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributesW " PTRFMT " %d %d\n", PTRFMTCAST hStmt,
-		nCol, nDescType);
+	ODBCLOG("SQLColAttributesW " PTRFMT " %d %d\n", PTRFMTCAST hStmt, nCol, nDescType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -107,34 +94,37 @@ SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType,
 	clearStmtErrors(stmt);
 
 	switch (nDescType) {
-	/* all string atributes */
+		/* all string atributes */
 	case SQL_DESC_BASE_COLUMN_NAME:
 	case SQL_DESC_BASE_TABLE_NAME:
-	case SQL_DESC_CATALOG_NAME: /* SQL_COLUMN_QUALIFIER_NAME */
+	case SQL_DESC_CATALOG_NAME:	/* SQL_COLUMN_QUALIFIER_NAME */
 	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
 	case SQL_DESC_LITERAL_PREFIX:
 	case SQL_DESC_LITERAL_SUFFIX:
 	case SQL_DESC_LOCAL_TYPE_NAME:
 	case SQL_DESC_NAME:
-	case SQL_DESC_SCHEMA_NAME: /* SQL_COLUMN_OWNER_NAME */
-	case SQL_DESC_TABLE_NAME: /* SQL_COLUMN_TABLE_NAME */
-	case SQL_DESC_TYPE_NAME: /* SQL_COLUMN_TYPE_NAME */
+	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
+	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
+	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
 		n = nDescMax * 4;
 		ptr = (SQLPOINTER) malloc(n);
+
 		break;
 	default:
 		n = nDescMax;
 		ptr = pszDesc;
+
 		break;
 	}
 
 	rc = SQLColAttributes_(stmt, nCol, nDescType, ptr, n, &n, pfDesc);
-	
-	if (ptr != pszDesc)
+
+	if (ptr !=pszDesc)
 		fixWcharOut(rc, ptr, n, pszDesc, nDescMax, pcbDesc, 2, addStmtError, stmt);
+
 	else if (pcbDesc)
 		*pcbDesc = n;
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -18,9 +18,7 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
-		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		 SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 	ODBCDescRec *rec;
 
@@ -42,29 +40,29 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 	/* header fields ignore RecordNumber */
 	switch (FieldIdentifier) {
 	case SQL_DESC_ALLOC_TYPE:
-		* (SQLSMALLINT *) Value = desc->sql_desc_alloc_type;
+		*(SQLSMALLINT *) Value = desc->sql_desc_alloc_type;
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_SIZE:
 		if (isAD(desc))
-			* (SQLUINTEGER *) Value = desc->sql_desc_array_size;
+			*(SQLUINTEGER *) Value = desc->sql_desc_array_size;
 		return SQL_SUCCESS;
 	case SQL_DESC_ARRAY_STATUS_PTR:
-		* (SQLUSMALLINT **) Value = desc->sql_desc_array_status_ptr;
+		*(SQLUSMALLINT **) Value = desc->sql_desc_array_status_ptr;
 		return SQL_SUCCESS;
 	case SQL_DESC_BIND_OFFSET_PTR:
 		if (isAD(desc))
-			* (SQLINTEGER **) Value = desc->sql_desc_bind_offset_ptr;
+			*(SQLINTEGER **) Value = desc->sql_desc_bind_offset_ptr;
 		return SQL_SUCCESS;
 	case SQL_DESC_BIND_TYPE:
 		if (isAD(desc))
-			* (SQLUINTEGER *) Value = desc->sql_desc_bind_type;
+			*(SQLUINTEGER *) Value = desc->sql_desc_bind_type;
 		return SQL_SUCCESS;
 	case SQL_DESC_COUNT:
-		* (SQLSMALLINT *) Value = desc->sql_desc_count;
+		*(SQLSMALLINT *) Value = desc->sql_desc_count;
 		return SQL_SUCCESS;
 	case SQL_DESC_ROWS_PROCESSED_PTR:
 		if (desc->Stmt)
-			* (SQLUINTEGER **) Value = desc->sql_desc_rows_processed_ptr;
+			*(SQLUINTEGER **) Value = desc->sql_desc_rows_processed_ptr;
 		return SQL_SUCCESS;
 	}
 
@@ -81,152 +79,130 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 	switch (FieldIdentifier) {
 	case SQL_DESC_AUTO_UNIQUE_VALUE:
 		if (isIRD(desc))
-			* (SQLINTEGER *) Value = rec->sql_desc_auto_unique_value;
+			*(SQLINTEGER *) Value = rec->sql_desc_auto_unique_value;
 		return SQL_SUCCESS;
 	case SQL_DESC_BASE_COLUMN_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_base_column_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_base_column_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_BASE_TABLE_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_base_table_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_base_table_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_CASE_SENSITIVE:
 		if (isID(desc))
-			* (SQLINTEGER *) Value = rec->sql_desc_case_sensitive;
+			*(SQLINTEGER *) Value = rec->sql_desc_case_sensitive;
 		return SQL_SUCCESS;
 	case SQL_DESC_CATALOG_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_catalog_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_catalog_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_CONCISE_TYPE:
-		* (SQLSMALLINT *) Value = rec->sql_desc_concise_type;
+		*(SQLSMALLINT *) Value = rec->sql_desc_concise_type;
 		return SQL_SUCCESS;
 	case SQL_DESC_DATA_PTR:
 		if (!isIRD(desc))
-			* (SQLPOINTER *) Value = rec->sql_desc_data_ptr;
+			*(SQLPOINTER *) Value = rec->sql_desc_data_ptr;
 		return SQL_SUCCESS;
 	case SQL_DESC_DATETIME_INTERVAL_CODE:
-		* (SQLSMALLINT *) Value = rec->sql_desc_datetime_interval_code;
+		*(SQLSMALLINT *) Value = rec->sql_desc_datetime_interval_code;
 		return SQL_SUCCESS;
 	case SQL_DESC_DATETIME_INTERVAL_PRECISION:
-		* (SQLINTEGER *) Value = rec->sql_desc_datetime_interval_precision;
+		*(SQLINTEGER *) Value = rec->sql_desc_datetime_interval_precision;
 		return SQL_SUCCESS;
 	case SQL_DESC_DISPLAY_SIZE:
 		if (isIRD(desc))
-			* (SQLINTEGER *) Value = rec->sql_desc_display_size;
+			*(SQLINTEGER *) Value = rec->sql_desc_display_size;
 		return SQL_SUCCESS;
 	case SQL_DESC_FIXED_PREC_SCALE:
 		if (isID(desc))
-			* (SQLSMALLINT *) Value = rec->sql_desc_fixed_prec_scale;
+			*(SQLSMALLINT *) Value = rec->sql_desc_fixed_prec_scale;
 		return SQL_SUCCESS;
 	case SQL_DESC_INDICATOR_PTR:
 		if (isAD(desc))
-			* (SQLINTEGER **) Value = rec->sql_desc_indicator_ptr;
+			*(SQLINTEGER **) Value = rec->sql_desc_indicator_ptr;
 		return SQL_SUCCESS;
 	case SQL_DESC_LABEL:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_label,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_label, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LENGTH:
-		* (SQLUINTEGER *) Value = rec->sql_desc_length;
+		*(SQLUINTEGER *) Value = rec->sql_desc_length;
 		return SQL_SUCCESS;
 	case SQL_DESC_LITERAL_PREFIX:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_literal_prefix,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_literal_prefix, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LITERAL_SUFFIX:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_literal_suffix,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_literal_suffix, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LOCAL_TYPE_NAME:
 		if (isID(desc))
-			copyString(rec->sql_desc_local_type_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_local_type_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_NAME:
 		if (isID(desc))
-			copyString(rec->sql_desc_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_NULLABLE:
 		if (isID(desc))
-			* (SQLSMALLINT *) Value = rec->sql_desc_nullable;
+			*(SQLSMALLINT *) Value = rec->sql_desc_nullable;
 		return SQL_SUCCESS;
 	case SQL_DESC_NUM_PREC_RADIX:
-		* (SQLINTEGER *) Value = rec->sql_desc_num_prec_radix;
+		*(SQLINTEGER *) Value = rec->sql_desc_num_prec_radix;
 		return SQL_SUCCESS;
 	case SQL_DESC_OCTET_LENGTH:
-		* (SQLINTEGER *) Value = rec->sql_desc_octet_length;
+		*(SQLINTEGER *) Value = rec->sql_desc_octet_length;
 		return SQL_SUCCESS;
 	case SQL_DESC_OCTET_LENGTH_PTR:
 		if (isAD(desc))
-			* (SQLINTEGER **) Value = rec->sql_desc_octet_length_ptr;
+			*(SQLINTEGER **) Value = rec->sql_desc_octet_length_ptr;
 		return SQL_SUCCESS;
 	case SQL_DESC_PARAMETER_TYPE:
 		if (isIPD(desc))
-			* (SQLINTEGER *) Value = rec->sql_desc_parameter_type;
+			*(SQLINTEGER *) Value = rec->sql_desc_parameter_type;
 		return SQL_SUCCESS;
 	case SQL_DESC_PRECISION:
-		* (SQLSMALLINT *) Value = rec->sql_desc_precision;
+		*(SQLSMALLINT *) Value = rec->sql_desc_precision;
 		return SQL_SUCCESS;
 	case SQL_DESC_ROWVER:
 		if (isID(desc))
-			* (SQLSMALLINT *) Value = rec->sql_desc_rowver;
+			*(SQLSMALLINT *) Value = rec->sql_desc_rowver;
 		return SQL_SUCCESS;
 	case SQL_DESC_SCALE:
-		* (SQLSMALLINT *) Value = rec->sql_desc_scale;
+		*(SQLSMALLINT *) Value = rec->sql_desc_scale;
 		return SQL_SUCCESS;
 	case SQL_DESC_SCHEMA_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_schema_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_schema_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_SEARCHABLE:
 		if (isIRD(desc))
-			* (SQLSMALLINT *) Value = rec->sql_desc_searchable;
+			*(SQLSMALLINT *) Value = rec->sql_desc_searchable;
 		return SQL_SUCCESS;
 	case SQL_DESC_TABLE_NAME:
 		if (isIRD(desc))
-			copyString(rec->sql_desc_table_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_table_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_TYPE:
-		* (SQLSMALLINT *) Value = rec->sql_desc_type;
+		*(SQLSMALLINT *) Value = rec->sql_desc_type;
 		return SQL_SUCCESS;
 	case SQL_DESC_TYPE_NAME:
 		if (isID(desc))
-			copyString(rec->sql_desc_type_name,
-				   Value, BufferLength, StringLength,
-				   addDescError, desc);
+			copyString(rec->sql_desc_type_name, Value, BufferLength, StringLength, addDescError, desc);
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_UNNAMED:
 		if (isID(desc))
-			* (SQLSMALLINT *) Value = rec->sql_desc_unnamed;
+			*(SQLSMALLINT *) Value = rec->sql_desc_unnamed;
 		return SQL_SUCCESS;
 	case SQL_DESC_UNSIGNED:
 		if (isID(desc))
-			* (SQLSMALLINT *) Value = rec->sql_desc_unsigned;
+			*(SQLSMALLINT *) Value = rec->sql_desc_unsigned;
 		return SQL_SUCCESS;
 	case SQL_DESC_UPDATABLE:
 		if (isIRD(desc))
-			* (SQLSMALLINT *) Value = rec->sql_desc_updatable;
+			*(SQLSMALLINT *) Value = rec->sql_desc_updatable;
 		return SQL_SUCCESS;
 	}
 
@@ -236,38 +212,28 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 }
 
 SQLRETURN SQL_API
-SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
-		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescField " PTRFMT " %d %d\n",
-		PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
+	ODBCLOG("SQLGetDescField " PTRFMT " %d %d\n", PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
 #endif
 
 	if (!isValidDesc((ODBCDesc *) DescriptorHandle))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 	clearDescErrors((ODBCDesc *) DescriptorHandle);
 
-	return SQLGetDescField_((ODBCDesc *) DescriptorHandle, RecordNumber,
-				FieldIdentifier, Value, BufferLength,
-				StringLength);
+	return SQLGetDescField_((ODBCDesc *) DescriptorHandle, RecordNumber, FieldIdentifier, Value, BufferLength, StringLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
-		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		 SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
-	return SQLGetDescField(DescriptorHandle, RecordNumber, FieldIdentifier,
-			       Value, BufferLength, StringLength);
+	return SQLGetDescField(DescriptorHandle, RecordNumber, FieldIdentifier, Value, BufferLength, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
-		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 	SQLRETURN rc;
@@ -275,16 +241,15 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescFieldW " PTRFMT " %d %d\n",
-		PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
+	ODBCLOG("SQLGetDescFieldW " PTRFMT " %d %d\n", PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
 #endif
 
 	if (!isValidDesc(desc))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 	clearDescErrors(desc);
 
 	switch (FieldIdentifier) {
-	/* all string attributes */
+		/* all string attributes */
 	case SQL_DESC_BASE_COLUMN_NAME:
 	case SQL_DESC_BASE_TABLE_NAME:
 	case SQL_DESC_CATALOG_NAME:
@@ -298,16 +263,18 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	case SQL_DESC_TYPE_NAME:
 		n = BufferLength * 4;
 		ptr = (SQLPOINTER) malloc(n);
+
 		break;
 	default:
 		n = BufferLength;
 		ptr = Value;
+
 		break;
 	}
 
 	rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
 
-	if (ptr != Value) {
+	if (ptr !=Value) {
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
 		fixWcharOut(rc, ptr, nn, Value, BufferLength, StringLength, 2, addDescError, desc);
@@ -316,4 +283,4 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -84,10 +84,7 @@ ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 }
 
 static SQLRETURN
-SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
-		  SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
-		  SQLUSMALLINT nDriverCompletion)
+SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
 {
 	char *key, *attr;
 	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0;
@@ -145,10 +142,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		addDbcError(dbc, "IM010", NULL, 0);
 		rc = SQL_ERROR;
 	} else {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS,
-				 (SQLCHAR *) uid, SQL_NTS,
-				 (SQLCHAR *) pwd, SQL_NTS,
-				 host, port);
+		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port);
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
@@ -157,12 +151,10 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		if (szConnStrOut == NULL)
 			cbConnStrOutMax = -1;
 		if (cbConnStrOutMax > 0) {
-			n = snprintf((char *) szConnStrOut, 
-				cbConnStrOutMax, "DSN=%s;",
-				dsn ? dsn : "DEFAULT");
+			n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "DSN=%s;", dsn ? dsn : "DEFAULT");
 			/* some snprintf's return -1 if buffer too small */
 			if (n < 0)
-				n = cbConnStrOutMax + 1; /* make sure it becomes < 0 */
+				n = cbConnStrOutMax + 1;	/* make sure it becomes < 0 */
 			cbConnStrOutMax -= n;
 			szConnStrOut += n;
 		} else {
@@ -170,9 +162,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		}
 		if (uid) {
 			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, 
-					     cbConnStrOutMax,
-					     "UID=%s;", uid);
+				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "UID=%s;", uid);
 				if (n < 0)
 					n = cbConnStrOutMax + 1;
 				cbConnStrOutMax -= n;
@@ -183,9 +173,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		}
 		if (pwd) {
 			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, 
-					     cbConnStrOutMax,
-					     "PWD=%s;", pwd);
+				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "PWD=%s;", pwd);
 				if (n < 0)
 					n = cbConnStrOutMax + 1;
 				cbConnStrOutMax -= n;
@@ -196,9 +184,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 		}
 		if (host) {
 			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, 
-					     cbConnStrOutMax,
-					     "HOST=%s;", host);
+				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "HOST=%s;", host);
 				if (n < 0)
 					n = cbConnStrOutMax + 1;
 				cbConnStrOutMax -= n;
@@ -211,9 +197,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 			char portbuf[10];
 
 			if (cbConnStrOutMax > 0) {
-				n = snprintf((char *) szConnStrOut, 
-					     cbConnStrOutMax,
-					     "PORT=%d;", port);
+				n = snprintf((char *) szConnStrOut, cbConnStrOutMax, "PORT=%d;", port);
 				if (n < 0)
 					n = cbConnStrOutMax + 1;
 				cbConnStrOutMax -= n;
@@ -226,12 +210,8 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 
 		/* calculate how much space was needed */
 		if (pnConnStrOut)
-			*pnConnStrOut = strlen(dsn ? dsn : "DEFAULT") 
-				+ 5 +
-				(uid ? strlen(uid) + 5 : 0) +
-				(pwd ? strlen(pwd) + 5 : 0) +
-				(host ? strlen(host) + 6 : 0) +
-				(port ? port + 6 : 0);
+			*pnConnStrOut = strlen(dsn ? dsn : "DEFAULT")
+			    + 5 + (uid ? strlen(uid) + 5 : 0) + (pwd ? strlen(pwd) + 5 : 0) + (host ? strlen(host) + 6 : 0) + (port ? port + 6 : 0);
 
 		/* if it didn't fit, say so */
 		if (cbConnStrOutMax < 0) {
@@ -252,10 +232,7 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 }
 
 SQLRETURN SQL_API
-SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
-		 SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
-		 SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
-		 SQLUSMALLINT nDriverCompletion)
+SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -268,29 +245,18 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
 
 	clearDbcErrors(dbc);
 
-	return SQLDriverConnect_(dbc, hWnd, szConnStrIn, nConnStrIn,
-				 szConnStrOut, cbConnStrOutMax, pnConnStrOut,
-				 nDriverCompletion);
+	return SQLDriverConnect_(dbc, hWnd, szConnStrIn, nConnStrIn, szConnStrOut, cbConnStrOutMax, pnConnStrOut, nDriverCompletion);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDriverConnectA(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn,
-		  SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
-		  SQLUSMALLINT nDriverCompletion)
+SQLDriverConnectA(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
 {
-	return SQLDriverConnect(hDbc, hWnd,
-				szConnStrIn, nConnStrIn,
-				szConnStrOut, cbConnStrOutMax, pnConnStrOut,
-				nDriverCompletion);
+	return SQLDriverConnect(hDbc, hWnd, szConnStrIn, nConnStrIn, szConnStrOut, cbConnStrOutMax, pnConnStrOut, nDriverCompletion);
 }
 
 SQLRETURN SQL_API
-SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
-		  SQLSMALLINT nConnStrIn, SQLWCHAR *szConnStrOut,
-		  SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut,
-		  SQLUSMALLINT nDriverCompletion)
+SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR * szConnStrIn, SQLSMALLINT nConnStrIn, SQLWCHAR * szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLCHAR *in = NULL, *out;
@@ -309,12 +275,11 @@ SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR *szConnStrIn,
 	fixWcharIn(szConnStrIn, nConnStrIn, in, addDbcError, dbc, return SQL_ERROR);
 	prepWcharOut(out, cbConnStrOutMax);
 
-	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, out,
-			       cbConnStrOutMax * 4, &n, nDriverCompletion);
+	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, out, cbConnStrOutMax * 4, &n, nDriverCompletion);
 
 	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pnConnStrOut, 1, addDbcError, dbc);
 	if (in)
 		free(in);
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -6,14 +6,14 @@
 
 #include "sql_catalog.h"
 
-sqlbat_export res_table *res_table_create( sql_trans *tr, int res_id, int nr_cols, int querytype, res_table *next );
-sqlbat_export res_col * res_col_create( sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale );
+sqlbat_export res_table *res_table_create(sql_trans *tr, int res_id, int nr_cols, int querytype, res_table *next);
+sqlbat_export res_col *res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale);
 
 sqlbat_export void res_table_destroy(res_table *t);
 
-sqlbat_export res_table *res_tables_remove( res_table *results, res_table *t);
+sqlbat_export res_table *res_tables_remove(res_table *results, res_table *t);
 sqlbat_export void res_tables_destroy(res_table *results);
-sqlbat_export res_table *res_tables_find( res_table *results, int res_id);
+sqlbat_export res_table *res_tables_find(res_table *results, int res_id);
 
 #endif /* RES_TABLE_H */
 @c
@@ -22,29 +22,32 @@ sqlbat_export res_table *res_tables_find( res_table *results, int res_id);
 #include "sql_types.h"
 #include "bat_bm.h"
 
-res_table *res_table_create( sql_trans *tr, int res_id, int nr_cols, int type, res_table *next )
+res_table *
+res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *next)
 {
 	res_table *t = NEW(res_table);
-	(void)tr;
+
+	(void) tr;
 	t->id = res_id;
+
 	t->query_type = type;
 	t->nr_cols = nr_cols;
 	t->cur_col = 0;
-	t->cols = NEW_ARRAY(res_col,nr_cols);
+	t->cols = NEW_ARRAY(res_col, nr_cols);
+
 	t->order = 0;
 	t->next = next;
 	return t;
 }
 
 res_col *
-res_col_create( sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale )
+res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale)
 {
 	sql_subtype *tpe = sql_bind_subtype(typename, digits, scale);
-	res_col *c = t->cols+t->cur_col;
+	res_col *c = t->cols + t->cur_col;
 
 	if (!tpe)
-		tpe = sql_create_subtype(
-			sql_trans_bind_type(tr, typename), digits, scale);
+		tpe = sql_create_subtype(sql_trans_bind_type(tr, typename), digits, scale);
 	c->tn = _strdup(tn);
 	c->name = _strdup(name);
 	c->type = tpe;
@@ -55,9 +58,10 @@ res_col_create( sql_trans *tr, res_table *t, char *tn, char *name, char *typenam
 	return c;
 }
 
-void res_col_destroy( res_col *c ) 
+void
+res_col_destroy(res_col *c)
 {
-	if (c->b){
+	if (c->b) {
 		bat_decref(c->b, TRUE);
 	} else {
 		_DELETE(c->p);
@@ -68,11 +72,14 @@ void res_col_destroy( res_col *c )
 }
 
 
-void res_table_destroy(res_table *t)
+void
+res_table_destroy(res_table *t)
 {
 	int i;
-	for(i=0; i<t->nr_cols; i++){
-		res_col *c = t->cols+i;
+
+	for (i = 0; i < t->nr_cols; i++) {
+		res_col *c = t->cols + i;
+
 		res_col_destroy(c);
 	}
 	if (t->order)
@@ -81,15 +88,16 @@ void res_table_destroy(res_table *t)
 	_DELETE(t);
 }
 
-res_table *res_tables_remove( res_table *results, res_table *t)
+res_table *
+res_tables_remove(res_table *results, res_table *t)
 {
 	res_table *r = results;
 
-	if (r == t){
+	if (r == t) {
 		results = t->next;
 	} else {
-		for( ; r; r = r->next){
-			if (r->next == t){
+		for (; r; r = r->next) {
+			if (r->next == t) {
 				r->next = t->next;
 				break;
 			}
@@ -99,22 +107,25 @@ res_table *res_tables_remove( res_table *results, res_table *t)
 	return results;
 }
 
-void res_tables_destroy(res_table *tab)
+void
+res_tables_destroy(res_table *tab)
 {
-	if (tab){
+	if (tab) {
 		res_table *r = tab, *t;
-		for(t=r; t; t=r){ 
+
+		for (t = r; t; t = r) {
 			r = t->next;
 			res_table_destroy(t);
 		}
 	}
 }
 
-res_table *res_tables_find( res_table *results, int res_id)
+res_table *
+res_tables_find(res_table *results, int res_id)
 {
 	res_table *r = results;
 
-	for( ; r; r = r->next){
+	for (; r; r = r->next) {
 		if (r->id == res_id)
 			return r;
 	}

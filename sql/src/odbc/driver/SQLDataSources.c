@@ -23,10 +23,7 @@
 
 
 static SQLRETURN
-SQLDataSources_(ODBCEnv *env, SQLUSMALLINT Direction,
-		SQLCHAR *ServerName, SQLSMALLINT BufferLength1,
-		SQLSMALLINT *NameLength1, SQLCHAR *Description,
-		SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSources_(ODBCEnv *env, SQLUSMALLINT Direction, SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
 {
 	(void) Direction;	/* Stefan: unused!? */
 	(void) ServerName;	/* Stefan: unused!? */
@@ -50,16 +47,12 @@ SQLDataSources_(ODBCEnv *env, SQLUSMALLINT Direction,
 }
 
 SQLRETURN SQL_API
-SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
-	       SQLCHAR *ServerName, SQLSMALLINT BufferLength1,
-	       SQLSMALLINT *NameLength1, SQLCHAR *Description,
-	       SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction, SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSources " PTRFMT " %d\n",
-		PTRFMTCAST EnvironmentHandle, Direction);
+	ODBCLOG("SQLDataSources " PTRFMT " %d\n", PTRFMTCAST EnvironmentHandle, Direction);
 #endif
 
 	if (!isValidEnv(env))
@@ -67,28 +60,18 @@ SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
 
 	clearEnvErrors(env);
 
-	return SQLDataSources_(env, Direction,
-			       ServerName, BufferLength1, NameLength1,
-			       Description, BufferLength2, NameLength2);
+	return SQLDataSources_(env, Direction, ServerName, BufferLength1, NameLength1, Description, BufferLength2, NameLength2);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDataSourcesA(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
-		SQLCHAR *ServerName, SQLSMALLINT BufferLength1,
-		SQLSMALLINT *NameLength1, SQLCHAR *Description,
-		SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSourcesA(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction, SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
 {
-	return SQLDataSources(EnvironmentHandle, Direction,
-			      ServerName, BufferLength1, NameLength1,
-			      Description, BufferLength2, NameLength2);
+	return SQLDataSources(EnvironmentHandle, Direction, ServerName, BufferLength1, NameLength1, Description, BufferLength2, NameLength2);
 }
 
 SQLRETURN SQL_API
-SQLDataSourcesW(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
-		SQLWCHAR *ServerName, SQLSMALLINT BufferLength1,
-		SQLSMALLINT *NameLength1, SQLWCHAR *Description,
-		SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSourcesW(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction, SQLWCHAR * ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLWCHAR * Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 	SQLRETURN rc;
@@ -96,8 +79,7 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
 	SQLSMALLINT length1, length2;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSourcesW " PTRFMT " %d\n",
-		PTRFMTCAST EnvironmentHandle, Direction);
+	ODBCLOG("SQLDataSourcesW " PTRFMT " %d\n", PTRFMTCAST EnvironmentHandle, Direction);
 #endif
 
 	if (!isValidEnv(env))
@@ -108,13 +90,11 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction,
 	prepWcharOut(server, BufferLength1);
 	prepWcharOut(descr, BufferLength2);
 
-	rc = SQLDataSources_(env, Direction,
-			     server, BufferLength1 * 4, &length1,
-			     descr, BufferLength2 * 4, &length2);
+	rc = SQLDataSources_(env, Direction, server, BufferLength1 * 4, &length1, descr, BufferLength2 * 4, &length2);
 
 	fixWcharOut(rc, server, length1, ServerName, BufferLength1, NameLength1, 1, addEnvError, env);
 	fixWcharOut(rc, descr, length2, Description, BufferLength2, NameLength2, 1, addEnvError, env);
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

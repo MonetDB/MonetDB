@@ -39,6 +39,7 @@ SQLCloseCursor(SQLHSTMT hStmt)
 	if (stmt->State < EXECUTED1) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 

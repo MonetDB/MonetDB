@@ -21,16 +21,14 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset,
-		 SQLULEN *pnRowCount, SQLUSMALLINT *pRowStatusArray)
+SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset, SQLULEN * pnRowCount, SQLUSMALLINT *pRowStatusArray)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLUSMALLINT *array_status_ptr;
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %d %d\n", PTRFMTCAST hStmt,
-		nOrientation, nOffset);
+	ODBCLOG("SQLExtendedFetch " PTRFMT " %d %d\n", PTRFMTCAST hStmt, nOrientation, nOffset);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -42,11 +40,13 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset,
 	if (stmt->State < EXECUTED0 || stmt->State == FETCHED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (stmt->State == EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 

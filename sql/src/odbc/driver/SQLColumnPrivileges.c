@@ -22,11 +22,7 @@
 
 
 static SQLRETURN
-SQLColumnPrivileges_(ODBCStmt *stmt,
-		     SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		     SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		     SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumnPrivileges_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
@@ -34,27 +30,23 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nCatalogNameLength, szCatalogName,
-		nSchemaNameLength, szSchemaName,
-		nTableNameLength, szTableName,
-		nColumnNameLength, szColumnName);
+	ODBCLOG(" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName, nColumnNameLength, szColumnName);
 #endif
 
 	/* SQLColumnPrivileges returns a table with the following columns:
-	   VARCHAR	table_cat
-	   VARCHAR	table_schem
-	   VARCHAR	table_name NOT NULL
-	   VARCHAR	column_name NOT NULL
-	   VARCHAR	grantor
-	   VARCHAR	grantee NOT NULL
-	   VARCHAR	privilege NOT NULL
-	   VARCHAR	is_grantable
-	*/
+	   VARCHAR      table_cat
+	   VARCHAR      table_schem
+	   VARCHAR      table_name NOT NULL
+	   VARCHAR      column_name NOT NULL
+	   VARCHAR      grantor
+	   VARCHAR      grantee NOT NULL
+	   VARCHAR      privilege NOT NULL
+	   VARCHAR      is_grantable
+	 */
 
 	/* for now return dummy result set */
-	return SQLExecDirect_(stmt,
-			      (SQLCHAR *) "select "
+	return SQLExecDirect_(stmt, (SQLCHAR *)
+			      "select "
 			      "cast('' as varchar(1)) as table_cat, "
 			      "cast('' as varchar(1)) as table_schem, "
 			      "cast('' as varchar(1)) as table_name, "
@@ -67,11 +59,7 @@ SQLColumnPrivileges_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLColumnPrivileges(SQLHSTMT hStmt,
-		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		    SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		    SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumnPrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -84,32 +72,19 @@ SQLColumnPrivileges(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLColumnPrivileges_(stmt, szCatalogName, nCatalogNameLength,
-				    szSchemaName, nSchemaNameLength,
-				    szTableName, nTableNameLength,
-				    szColumnName, nColumnNameLength);
+	return SQLColumnPrivileges_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, szColumnName, nColumnNameLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLColumnPrivilegesA(SQLHSTMT hStmt,
-		     SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		     SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		     SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumnPrivilegesA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
-	return SQLColumnPrivileges(hStmt, szCatalogName, nCatalogNameLength,
-				   szSchemaName, nSchemaNameLength,
-				   szTableName, nTableNameLength,
-				   szColumnName, nColumnNameLength);
+	return SQLColumnPrivileges(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, szColumnName, nColumnNameLength);
 }
 
 SQLRETURN SQL_API
-SQLColumnPrivilegesW(SQLHSTMT hStmt,
-		     SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		     SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		     SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		     SQLWCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumnPrivilegesW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength, SQLWCHAR * szColumnName,
+		     SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *column = NULL;
@@ -129,9 +104,9 @@ SQLColumnPrivilegesW(SQLHSTMT hStmt,
 	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
 	fixWcharIn(szColumnName, nColumnNameLength, column, addStmtError, stmt, goto exit);
 
-	rc = SQLColumnPrivileges_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
-				  table, SQL_NTS, column, SQL_NTS);
-  exit:
+	rc = SQLColumnPrivileges_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS, column, SQL_NTS);
+
+      exit:
 	if (catalog)
 		free(catalog);
 	if (schema)
@@ -142,4 +117,4 @@ SQLColumnPrivilegesW(SQLHSTMT hStmt,
 		free(column);
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

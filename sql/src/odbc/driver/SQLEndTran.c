@@ -28,8 +28,7 @@
 
 
 SQLRETURN
-SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
-	    SQLSMALLINT nCompletionType)
+SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionType)
 {
 	ODBCEnv *env = NULL;
 	ODBCDbc *dbc = NULL;
@@ -101,8 +100,7 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 			rc = SQLEndTran_(SQL_HANDLE_DBC, dbc, nCompletionType);
 			if (rc == SQL_ERROR)
 				rc1 = SQL_ERROR;
-			else if (rc == SQL_SUCCESS_WITH_INFO &&
-				 rc1 != SQL_ERROR)
+			else if (rc == SQL_SUCCESS_WITH_INFO && rc1 != SQL_ERROR)
 				rc1 = rc;
 		}
 		return rc1;
@@ -119,24 +117,17 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 	rc = SQLAllocStmt_(dbc, &hStmt);
 	if (SQL_SUCCEEDED(rc)) {
 		ODBCStmt *stmt = (ODBCStmt *) hStmt;
-		rc = SQLExecDirect_(stmt,
-				    nCompletionType == SQL_COMMIT ?
-					(SQLCHAR *) "commit" :
-					(SQLCHAR *) "rollback",
-				    SQL_NTS);
+		rc = SQLExecDirect_(stmt, nCompletionType == SQL_COMMIT ? (SQLCHAR *) "commit" : (SQLCHAR *) "rollback", SQL_NTS);
+
 		if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO) {
 			/* get the error/warning and post in on the dbc handle */
 			SQLCHAR sqlState[SQL_SQLSTATE_SIZE + 1];
 			SQLINTEGER nativeErrCode;
 			SQLCHAR msgText[SQL_MAX_MESSAGE_LENGTH + 1];
 
-			(void) SQLGetDiagRec_(SQL_HANDLE_STMT, stmt, 1,
-					      sqlState, &nativeErrCode,
-					      msgText, sizeof(msgText), NULL);
+			(void) SQLGetDiagRec_(SQL_HANDLE_STMT, stmt, 1, sqlState, &nativeErrCode, msgText, sizeof(msgText), NULL);
 
-			addDbcError(dbc, (char *) sqlState,
-				    (char *) msgText + ODBCErrorMsgPrefixLength,
-				    nativeErrCode);
+			addDbcError(dbc, (char *) sqlState, (char *) msgText + ODBCErrorMsgPrefixLength, nativeErrCode);
 		}
 		/* clean up the statement handle */
 		SQLFreeStmt_(stmt, SQL_CLOSE);
@@ -155,15 +146,10 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
 }
 
 SQLRETURN SQL_API
-SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle,
-	   SQLSMALLINT nCompletionType)
+SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionType)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLEndTran %s " PTRFMT " %d\n",
-		nHandleType == SQL_HANDLE_ENV ? "Env" :
-		nHandleType == SQL_HANDLE_DBC ? "Dbc" :
-		nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST nHandle, nCompletionType);
+	ODBCLOG("SQLEndTran %s " PTRFMT " %d\n", nHandleType == SQL_HANDLE_ENV ? "Env" : nHandleType == SQL_HANDLE_DBC ? "Dbc" : nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST nHandle, nCompletionType);
 #endif
 
 	return SQLEndTran_(nHandleType, nHandle, nCompletionType);

@@ -27,10 +27,10 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	MapiMsg ret;
 	char *query;
 
-	if (stmt->State >= EXECUTED1 ||
-	    (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -38,6 +38,7 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	if (szSqlStr == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -50,10 +51,12 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	ODBCLOG("SQLExecDirect: \"%s\"\n", query);
 #endif
 	ret = mapi_query_handle(stmt->hdl, query);
+
 	free(query);
 	if (ret != MOK) {
 		/* General error */
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+
 		return SQL_ERROR;
 	}
 	return ODBCInitResult(stmt);
@@ -67,7 +70,7 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors((ODBCStmt *) hStmt);
 
@@ -82,7 +85,7 @@ SQLExecDirectA(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 }
 
 SQLRETURN SQL_API
-SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStr)
+SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR * szSqlStr, SQLINTEGER nSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;
@@ -106,4 +109,4 @@ SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR *szSqlStr, SQLINTEGER nSqlStr)
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -23,19 +23,14 @@
 
 
 static SQLRETURN
-SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
-	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {
 	int nValue = 0;
 	const char *sValue = NULL;	/* iff non-NULL, return string value */
 	int len = 0;
 
 	/* For some info types an active connection is needed */
-	if ((nInfoType == SQL_DATA_SOURCE_NAME ||
-	     nInfoType == SQL_SERVER_NAME ||
-	     nInfoType == SQL_DATABASE_NAME ||
-	     nInfoType == SQL_USER_NAME) &&
-	    !dbc->Connected) {
+	if ((nInfoType == SQL_DATA_SOURCE_NAME || nInfoType == SQL_SERVER_NAME || nInfoType == SQL_DATABASE_NAME || nInfoType == SQL_USER_NAME) && !dbc->Connected) {
 		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
@@ -53,8 +48,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_AGGREGATE_FUNCTIONS:
-		nValue = SQL_AF_ALL | SQL_AF_AVG | SQL_AF_COUNT |
-			SQL_AF_DISTINCT | SQL_AF_MAX | SQL_AF_MIN | SQL_AF_SUM;
+		nValue = SQL_AF_ALL | SQL_AF_AVG | SQL_AF_COUNT | SQL_AF_DISTINCT | SQL_AF_MAX | SQL_AF_MIN | SQL_AF_SUM;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_ALTER_DOMAIN:
@@ -71,14 +65,9 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_ALTER_TABLE:
-		nValue = SQL_AT_ADD_COLUMN_DEFAULT |
-			SQL_AT_ADD_COLUMN_SINGLE |
-			SQL_AT_ADD_CONSTRAINT |
-			SQL_AT_ADD_TABLE_CONSTRAINT |
-			SQL_AT_CONSTRAINT_NAME_DEFINITION |
-			SQL_AT_DROP_COLUMN_RESTRICT |
-			SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
-			SQL_AT_SET_COLUMN_DEFAULT;
+		nValue =
+		    SQL_AT_ADD_COLUMN_DEFAULT | SQL_AT_ADD_COLUMN_SINGLE | SQL_AT_ADD_CONSTRAINT | SQL_AT_ADD_TABLE_CONSTRAINT | SQL_AT_CONSTRAINT_NAME_DEFINITION | SQL_AT_DROP_COLUMN_RESTRICT | SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT |
+		    SQL_AT_SET_COLUMN_DEFAULT;
 		/* SQL_AT_ADD_COLUMN_SINGLE |
 		   SQL_AT_ADD_COLUMN_COLLATION |
 		   SQL_AT_ADD_COLUMN_DEFAULT |
@@ -176,27 +165,9 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_CONVERT_TINYINT:
 	case SQL_CONVERT_VARBINARY:
 	case SQL_CONVERT_VARCHAR:
-		nValue = SQL_CVT_BIGINT |
-			SQL_CVT_BINARY |
-			SQL_CVT_BIT |
-			SQL_CVT_CHAR |
-			SQL_CVT_DATE |
-			SQL_CVT_DECIMAL |
-			SQL_CVT_DOUBLE |
-			SQL_CVT_FLOAT |
-			SQL_CVT_INTEGER |
-			SQL_CVT_INTERVAL_DAY_TIME |
-			SQL_CVT_INTERVAL_YEAR_MONTH |
-			SQL_CVT_LONGVARBINARY |
-			SQL_CVT_LONGVARCHAR |
-			SQL_CVT_NUMERIC |
-			SQL_CVT_REAL |
-			SQL_CVT_SMALLINT |
-			SQL_CVT_TIME |
-			SQL_CVT_TIMESTAMP |
-			SQL_CVT_TINYINT |
-			SQL_CVT_VARBINARY |
-			SQL_CVT_VARCHAR;
+		nValue =
+		    SQL_CVT_BIGINT | SQL_CVT_BINARY | SQL_CVT_BIT | SQL_CVT_CHAR | SQL_CVT_DATE | SQL_CVT_DECIMAL | SQL_CVT_DOUBLE | SQL_CVT_FLOAT | SQL_CVT_INTEGER | SQL_CVT_INTERVAL_DAY_TIME | SQL_CVT_INTERVAL_YEAR_MONTH | SQL_CVT_LONGVARBINARY |
+		    SQL_CVT_LONGVARCHAR | SQL_CVT_NUMERIC | SQL_CVT_REAL | SQL_CVT_SMALLINT | SQL_CVT_TIME | SQL_CVT_TIMESTAMP | SQL_CVT_TINYINT | SQL_CVT_VARBINARY | SQL_CVT_VARCHAR;
 		/* SQL_CVT_GUID */
 		len = sizeof(SQLUINTEGER);
 		break;
@@ -243,14 +214,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_CREATE_TABLE:
-		nValue = SQL_CT_COLUMN_CONSTRAINT |
-			SQL_CT_COLUMN_DEFAULT |
-			SQL_CT_COMMIT_PRESERVE |
-			SQL_CT_CONSTRAINT_NAME_DEFINITION |
-			SQL_CT_CREATE_TABLE |
-			SQL_CT_GLOBAL_TEMPORARY |
-			SQL_CT_LOCAL_TEMPORARY |
-			SQL_CT_TABLE_CONSTRAINT;
+		nValue = SQL_CT_COLUMN_CONSTRAINT | SQL_CT_COLUMN_DEFAULT | SQL_CT_COMMIT_PRESERVE | SQL_CT_CONSTRAINT_NAME_DEFINITION | SQL_CT_CREATE_TABLE | SQL_CT_GLOBAL_TEMPORARY | SQL_CT_LOCAL_TEMPORARY | SQL_CT_TABLE_CONSTRAINT;
 		/* SQL_CT_COLUMN_COLLATION |
 		   SQL_CT_COMMIT_DELETE |
 		   SQL_CT_CONSTRAINT_DEFERRABLE |
@@ -304,7 +268,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		nValue = 0;
 		len = sizeof(SQLUINTEGER);
 		break;
-	/* the above values have been checked */
+		/* the above values have been checked */
 
 	case SQL_STATIC_CURSOR_ATTRIBUTES1:
 		/* SQL_CA1_BOOKMARK |
@@ -320,11 +284,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		   SQL_CA1_POS_REFRESH |
 		   SQL_CA1_POS_UPDATE |
 		   SQL_CA1_SELECT_FOR_UPDATE */
-		nValue = SQL_CA1_ABSOLUTE |
-			SQL_CA1_LOCK_NO_CHANGE |
-			SQL_CA1_NEXT |
-			SQL_CA1_POS_POSITION |
-			SQL_CA1_RELATIVE;
+		nValue = SQL_CA1_ABSOLUTE | SQL_CA1_LOCK_NO_CHANGE | SQL_CA1_NEXT | SQL_CA1_POS_POSITION | SQL_CA1_RELATIVE;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_STATIC_CURSOR_ATTRIBUTES2:
@@ -353,11 +313,11 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_MAX_DRIVER_CONNECTIONS:
-		nValue = 0;			/* 0 = No specified limit */
+		nValue = 0;	/* 0 = No specified limit */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_CONCURRENT_ACTIVITIES:
-		nValue = 0;			/* 0 = No specified limit */
+		nValue = 0;	/* 0 = No specified limit */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_DRIVER_NAME:
@@ -389,7 +349,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		sValue = MONETDB_SERVER_NAME;
 		break;
 	case SQL_SEARCH_PATTERN_ESCAPE:
-		sValue = "";		/* No search-char. escape char. */
+		sValue = "";	/* No search-char. escape char. */
 		break;
 	case SQL_ODBC_SQL_CONFORMANCE:
 		nValue = SQL_OSC_CORE;
@@ -416,7 +376,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_IDENTIFIER_QUOTE_CHAR:
-		sValue = "\"";			/* the " (double quote) */
+		sValue = "\"";	/* the " (double quote) */
 		break;
 	case SQL_MAX_COLUMN_NAME_LEN:
 	case SQL_MAX_TABLE_NAME_LEN:
@@ -463,43 +423,25 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		sValue = dbc->uid ? dbc->uid : "";
 		break;
 	case SQL_NUMERIC_FUNCTIONS:
-		nValue = SQL_FN_NUM_ABS | SQL_FN_NUM_ACOS | SQL_FN_NUM_ASIN |
-			SQL_FN_NUM_ATAN | SQL_FN_NUM_ATAN2 |
-			SQL_FN_NUM_CEILING | SQL_FN_NUM_COS | SQL_FN_NUM_COT |
-			SQL_FN_NUM_DEGREES | SQL_FN_NUM_EXP |
-			SQL_FN_NUM_FLOOR | SQL_FN_NUM_LOG | SQL_FN_NUM_LOG10 |
-			SQL_FN_NUM_MOD | SQL_FN_NUM_PI | SQL_FN_NUM_POWER |
-			SQL_FN_NUM_RADIANS | SQL_FN_NUM_RAND |
-			SQL_FN_NUM_ROUND | SQL_FN_NUM_SIGN | SQL_FN_NUM_SIN |
-			SQL_FN_NUM_SQRT | SQL_FN_NUM_TRUNCATE | SQL_FN_NUM_TAN;
+		nValue =
+		    SQL_FN_NUM_ABS | SQL_FN_NUM_ACOS | SQL_FN_NUM_ASIN | SQL_FN_NUM_ATAN | SQL_FN_NUM_ATAN2 | SQL_FN_NUM_CEILING | SQL_FN_NUM_COS | SQL_FN_NUM_COT | SQL_FN_NUM_DEGREES | SQL_FN_NUM_EXP | SQL_FN_NUM_FLOOR | SQL_FN_NUM_LOG | SQL_FN_NUM_LOG10
+		    | SQL_FN_NUM_MOD | SQL_FN_NUM_PI | SQL_FN_NUM_POWER | SQL_FN_NUM_RADIANS | SQL_FN_NUM_RAND | SQL_FN_NUM_ROUND | SQL_FN_NUM_SIGN | SQL_FN_NUM_SIN | SQL_FN_NUM_SQRT | SQL_FN_NUM_TRUNCATE | SQL_FN_NUM_TAN;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_STRING_FUNCTIONS:
-		nValue = SQL_FN_STR_ASCII | SQL_FN_STR_CHAR |
-			SQL_FN_STR_CONCAT | SQL_FN_STR_DIFFERENCE |
-			SQL_FN_STR_INSERT | SQL_FN_STR_LCASE |
-			SQL_FN_STR_LEFT | SQL_FN_STR_LENGTH |
-			SQL_FN_STR_LOCATE | SQL_FN_STR_LTRIM |
-			SQL_FN_STR_REPEAT | SQL_FN_STR_REPLACE |
-			SQL_FN_STR_RIGHT | SQL_FN_STR_RTRIM |
-			SQL_FN_STR_SOUNDEX | SQL_FN_STR_SPACE |
-			SQL_FN_STR_SUBSTRING | SQL_FN_STR_UCASE;
+		nValue =
+		    SQL_FN_STR_ASCII | SQL_FN_STR_CHAR | SQL_FN_STR_CONCAT | SQL_FN_STR_DIFFERENCE | SQL_FN_STR_INSERT | SQL_FN_STR_LCASE | SQL_FN_STR_LEFT | SQL_FN_STR_LENGTH | SQL_FN_STR_LOCATE | SQL_FN_STR_LTRIM | SQL_FN_STR_REPEAT | SQL_FN_STR_REPLACE
+		    | SQL_FN_STR_RIGHT | SQL_FN_STR_RTRIM | SQL_FN_STR_SOUNDEX | SQL_FN_STR_SPACE | SQL_FN_STR_SUBSTRING | SQL_FN_STR_UCASE;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_SYSTEM_FUNCTIONS:
-		nValue = SQL_FN_SYS_DBNAME | SQL_FN_SYS_USERNAME |
-			SQL_FN_SYS_IFNULL;
+		nValue = SQL_FN_SYS_DBNAME | SQL_FN_SYS_USERNAME | SQL_FN_SYS_IFNULL;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_TIMEDATE_FUNCTIONS:
-		nValue = SQL_FN_TD_CURDATE | SQL_FN_TD_CURTIME |
-			SQL_FN_TD_DAYNAME | SQL_FN_TD_DAYOFMONTH |
-			SQL_FN_TD_DAYOFWEEK | SQL_FN_TD_DAYOFYEAR |
-			SQL_FN_TD_HOUR | SQL_FN_TD_MINUTE | SQL_FN_TD_MONTH |
-			SQL_FN_TD_MONTHNAME | SQL_FN_TD_NOW |
-			SQL_FN_TD_QUARTER | SQL_FN_TD_SECOND |
-			SQL_FN_TD_TIMESTAMPADD | SQL_FN_TD_TIMESTAMPDIFF |
-			SQL_FN_TD_WEEK | SQL_FN_TD_YEAR;
+		nValue =
+		    SQL_FN_TD_CURDATE | SQL_FN_TD_CURTIME | SQL_FN_TD_DAYNAME | SQL_FN_TD_DAYOFMONTH | SQL_FN_TD_DAYOFWEEK | SQL_FN_TD_DAYOFYEAR | SQL_FN_TD_HOUR | SQL_FN_TD_MINUTE | SQL_FN_TD_MONTH | SQL_FN_TD_MONTHNAME | SQL_FN_TD_NOW |
+		    SQL_FN_TD_QUARTER | SQL_FN_TD_SECOND | SQL_FN_TD_TIMESTAMPADD | SQL_FN_TD_TIMESTAMPDIFF | SQL_FN_TD_WEEK | SQL_FN_TD_YEAR;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_TXN_ISOLATION_OPTION:
@@ -518,10 +460,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_GETDATA_EXTENSIONS:
-		nValue = SQL_GD_ANY_COLUMN |
-			SQL_GD_ANY_ORDER |
-			SQL_GD_BLOCK |
-			SQL_GD_BOUND;
+		nValue = SQL_GD_ANY_COLUMN | SQL_GD_ANY_ORDER | SQL_GD_BLOCK | SQL_GD_BOUND;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_FILE_USAGE:
@@ -536,7 +475,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		nValue = SQL_GB_NO_RELATION;
 		len = sizeof(SQLUSMALLINT);
 		break;
-	case SQL_KEYWORDS: {
+	case SQL_KEYWORDS:{
 		/* Returns the MonetDB keywords which are not listed
 		 * as ODBC keyword in the #define SQL_ODBC_KEYWORDS
 		 * in sql.h
@@ -552,12 +491,10 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_SPECIAL_CHARACTERS:
-		sValue = "`!#$;:'<>";		/* allowed table name chars */
+		sValue = "`!#$;:'<>";	/* allowed table name chars */
 		break;
 	case SQL_SUBQUERIES:
-		nValue =
-		    SQL_SQ_COMPARISON | SQL_SQ_EXISTS | SQL_SQ_IN |
-		    SQL_SQ_CORRELATED_SUBQUERIES;
+		nValue = SQL_SQ_COMPARISON | SQL_SQ_EXISTS | SQL_SQ_IN | SQL_SQ_CORRELATED_SUBQUERIES;
 		len = sizeof(SQLUINTEGER);
 		break;
 	case SQL_UNION:
@@ -607,7 +544,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 		len = sizeof(SQLINTEGER);
 		break;
 
-	/* return default values */
+		/* return default values */
 	case SQL_DATETIME_LITERALS:
 	case SQL_DDL_INDEX:
 	case SQL_DRIVER_HDESC:
@@ -653,13 +590,12 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 
 	/* copy the data to the supplied output parameters */
 	if (sValue) {
-		copyString(sValue, pInfoValue, nInfoValueMax, pnLength,
-			   addDbcError, dbc);
+		copyString(sValue, pInfoValue, nInfoValueMax, pnLength, addDbcError, dbc);
 	} else if (pInfoValue) {
 		if (len == sizeof(SQLUINTEGER))
-			* (SQLUINTEGER *) pInfoValue = (SQLUINTEGER) nValue;
+			*(SQLUINTEGER *) pInfoValue = (SQLUINTEGER) nValue;
 		else if (len == sizeof(SQLUSMALLINT))
-			* (SQLUSMALLINT *) pInfoValue = (SQLUSMALLINT) nValue;
+			*(SQLUSMALLINT *) pInfoValue = (SQLUSMALLINT) nValue;
 		if (pnLength)
 			*pnLength = len;
 	}
@@ -668,8 +604,7 @@ SQLGetInfo_(ODBCDbc *dbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 }
 
 SQLRETURN SQL_API
-SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
-	   SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -682,22 +617,18 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 
 	clearDbcErrors(dbc);
 
-	return SQLGetInfo_(dbc, nInfoType, pInfoValue, nInfoValueMax,
-			   pnLength);
+	return SQLGetInfo_(dbc, nInfoType, pInfoValue, nInfoValueMax, pnLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetInfoA(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
-	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+SQLGetInfoA(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {
-	return SQLGetInfo(hDbc, nInfoType,
-			  pInfoValue, nInfoValueMax, pnLength);
+	return SQLGetInfo(hDbc, nInfoType, pInfoValue, nInfoValueMax, pnLength);
 }
 
 SQLRETURN SQL_API
-SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
-	    SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc;
@@ -714,7 +645,7 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	clearDbcErrors(dbc);
 
 	switch (nInfoType) {
-	/* all string attributes */
+		/* all string attributes */
 	case SQL_ACCESSIBLE_PROCEDURES:
 	case SQL_ACCESSIBLE_TABLES:
 	case SQL_CATALOG_NAME:
@@ -756,20 +687,23 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue,
 	case SQL_XOPEN_CLI_YEAR:
 		n = nInfoValueMax * 4;
 		ptr = (SQLPOINTER) malloc(n);
+
 		break;
 	default:
 		n = nInfoValueMax;
 		ptr = pInfoValue;
+
 		break;
 	}
 
 	rc = SQLGetInfo_(dbc, nInfoType, ptr, n, &n);
 
-	if (ptr != pInfoValue)
+	if (ptr !=pInfoValue)
 		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, 2, addDbcError, dbc);
+
 	else if (pnLength)
 		*pnLength = n;
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

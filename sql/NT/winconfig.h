@@ -487,4 +487,3 @@ typedef int ssize_t;
 /* #undef size_t */
 
 #define ALLREADY_HAVE_WINDOWS_TYPE
-

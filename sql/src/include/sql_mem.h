@@ -1,5 +1,5 @@
-#ifndef _MEM_H_ 
-#define _MEM_H_ 
+#ifndef _MEM_H_
+#define _MEM_H_
 
 /*#ifdef _MSC_VER*/
 #include <sql_config.h>
@@ -36,7 +36,7 @@
 
 #define NEW( type ) (type*)GDKmalloc(sizeof(type) )
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
-#define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type)) 
+#define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 
 #define NEWADT( size ) (adt*)GDKmalloc(size)
 #define _DELETE( ptr )	{ GDKfree(ptr); ptr = NULL; }
@@ -46,8 +46,8 @@ typedef struct sql_ref {
 	int refcnt;
 } sql_ref;
 
-sqlcommon_export sql_ref *sql_ref_init( sql_ref *r );
-sqlcommon_export int sql_ref_inc( sql_ref *r );
-sqlcommon_export int sql_ref_dec( sql_ref *r );
+sqlcommon_export sql_ref *sql_ref_init(sql_ref *r);
+sqlcommon_export int sql_ref_inc(sql_ref *r);
+sqlcommon_export int sql_ref_dec(sql_ref *r);
 
 #endif /*_MEM_H_*/

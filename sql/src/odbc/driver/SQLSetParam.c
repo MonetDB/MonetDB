@@ -22,21 +22,12 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetParam(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
-	    SQLSMALLINT ValueType, SQLSMALLINT ParameterType,
-	    SQLUINTEGER LengthPrecision, SQLSMALLINT ParameterScale,
-	    SQLPOINTER ParameterValue, SQLINTEGER *StrLen_or_Ind)
+SQLSetParam(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT ValueType, SQLSMALLINT ParameterType, SQLUINTEGER LengthPrecision, SQLSMALLINT ParameterScale, SQLPOINTER ParameterValue, SQLINTEGER *StrLen_or_Ind)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetParam " PTRFMT " %d %d %d %d %d\n", PTRFMTCAST hStmt,
-		ParameterNumber, ValueType, ParameterType,
-		LengthPrecision, ParameterScale);
+	ODBCLOG("SQLSetParam " PTRFMT " %d %d %d %d %d\n", PTRFMTCAST hStmt, ParameterNumber, ValueType, ParameterType, LengthPrecision, ParameterScale);
 #endif
 
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */
-	return SQLBindParameter_((ODBCStmt *) hStmt, ParameterNumber,
-				 SQL_PARAM_INPUT_OUTPUT, ValueType,
-				 ParameterType, LengthPrecision,
-				 ParameterScale, ParameterValue,
-				 SQL_SETPARAM_VALUE_MAX, StrLen_or_Ind);
+	return SQLBindParameter_((ODBCStmt *) hStmt, ParameterNumber, SQL_PARAM_INPUT_OUTPUT, ValueType, ParameterType, LengthPrecision, ParameterScale, ParameterValue, SQL_SETPARAM_VALUE_MAX, StrLen_or_Ind);
 }

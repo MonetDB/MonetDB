@@ -25,27 +25,29 @@ static struct msql_types {
 	char *name;
 	int concise_type;
 } msql_types[] = {
-	{"bigint", SQL_BIGINT},
-	{"blob", SQL_BINARY},
-	{"boolean", SQL_BIT},
-	{"char", SQL_CHAR},
-	{"clob", SQL_CHAR},
-	{"date", SQL_TYPE_DATE},
-	{"decimal", SQL_DECIMAL},
-	{"double", SQL_DOUBLE},
-	{"int", SQL_INTEGER},
-	{"month_interval", SQL_INTERVAL_MONTH},
-	{"oid", SQL_GUID},
-	{"real", SQL_REAL},
-	{"sec_interval", SQL_INTERVAL_SECOND},
-	{"smallint", SQL_SMALLINT},
-	{"table", 0},
-	{"time", SQL_TYPE_TIME},
-	{"timestamp", SQL_TYPE_TIMESTAMP},
+	{
+	"bigint", SQL_BIGINT}, {
+	"blob", SQL_BINARY}, {
+	"boolean", SQL_BIT}, {
+	"char", SQL_CHAR}, {
+	"clob", SQL_CHAR}, {
+	"date", SQL_TYPE_DATE}, {
+	"decimal", SQL_DECIMAL}, {
+	"double", SQL_DOUBLE}, {
+	"int", SQL_INTEGER}, {
+	"month_interval", SQL_INTERVAL_MONTH}, {
+	"oid", SQL_GUID}, {
+	"real", SQL_REAL}, {
+	"sec_interval", SQL_INTERVAL_SECOND}, {
+	"smallint", SQL_SMALLINT}, {
+	"table", 0}, {
+	"time", SQL_TYPE_TIME}, {
+	"timestamp", SQL_TYPE_TIMESTAMP},
 /* 	{"tinyint", SQL_TINYINT}, */
 /* 	{"ubyte", SQL_TINYINT}, */
-	{"varchar", SQL_VARCHAR},
-	{0, 0},			/* sentinel */
+	{
+	"varchar", SQL_VARCHAR}, {
+	0, 0},			/* sentinel */
 };
 
 int
@@ -69,63 +71,71 @@ ODBCInitResult(ODBCStmt *stmt)
 	char *errstr;
 
 	hdl = stmt->hdl;
+
 	/* initialize the Result meta data values */
 	stmt->currentRow = 0;
 	stmt->startRow = 0;
 	stmt->rowSetSize = 0;
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
-  repeat:
+
+      repeat:
 	errstr = mapi_result_error(hdl);
 	if (errstr) {
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
 		addStmtError(stmt, "42000", errstr, 0);
+
 		return SQL_ERROR;
 	}
 	nrCols = mapi_get_field_count(hdl);
 	stmt->querytype = mapi_get_querytype(hdl);
 	stmt->rowcount = (unsigned int) mapi_rows_affected(hdl);
+
 #ifdef ODBCDEBUG
 	ODBCLOG("ODBCInitResult: querytype %d\n", stmt->querytype);
 #endif
 
 	switch (stmt->querytype) {
-	case 3:			/* Q_TABLE */
+	case 3:		/* Q_TABLE */
 		/* result set generating query */
 		assert(nrCols > 0);
 		stmt->State = EXECUTED1;
+
 		break;
-	case 4:			/* Q_UPDATE */
+	case 4:		/* Q_UPDATE */
 		/* result count generating query */
 		assert(nrCols == 1);
 		nrCols = 0;
 		stmt->State = EXECUTED0;
+
 		break;
 	default:
 		/* resultless query */
-		if (mapi_result_error(hdl) == NULL &&
-		    mapi_next_result(hdl) == 1)
+		if (mapi_result_error(hdl) == NULL && mapi_next_result(hdl) == 1)
 			goto repeat;
 		stmt->State = EXECUTED0;
 		stmt->rowcount = 0;
+
 		nrCols = 0;
 		break;
 	}
 
 	setODBCDescRecCount(stmt->ImplRowDescr, nrCols);
+
 	if (nrCols == 0)
 		return SQL_SUCCESS;
 	if (stmt->ImplRowDescr->descRec == NULL) {
-		stmt->State = stmt->query ?
-			(stmt->State == EXECUTED0 ? PREPARED0 : PREPARED1) :
-			INITED;
+		stmt->State = stmt->query ? (stmt->State == EXECUTED0 ? PREPARED0 : PREPARED1) : INITED;
+
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
 	rec = stmt->ImplRowDescr->descRec + 1;
+
 	for (i = 0; i < nrCols; i++) {
 		struct sql_types *tp;
 		int concise_type;
@@ -172,8 +182,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec->sql_desc_num_prec_radix = tp->radix;
 		rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
 
-		if (rec->sql_desc_concise_type == SQL_CHAR ||
-		    rec->sql_desc_concise_type == SQL_VARCHAR)
+		if (rec->sql_desc_concise_type == SQL_CHAR || rec->sql_desc_concise_type == SQL_VARCHAR)
 			rec->sql_desc_case_sensitive = SQL_TRUE;
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
@@ -215,16 +224,16 @@ SQLExecute_(ODBCStmt *stmt)
 	MapiMsg msg;
 
 	/* check statement cursor state, query should be prepared */
-	if (stmt->State == INITED ||
-	    (stmt->State >= EXECUTED0 && stmt->query == NULL)) {
+	if (stmt->State == INITED || (stmt->State >= EXECUTED0 && stmt->query == NULL)) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
-	if (stmt->State >= EXECUTED1 ||
-	    (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -234,6 +243,7 @@ SQLExecute_(ODBCStmt *stmt)
 	assert(stmt->Dbc);
 	assert(stmt->Dbc->mid);
 	hdl = stmt->hdl;
+
 	assert(hdl);
 
 	/* Have the server execute the query */
@@ -244,10 +254,12 @@ SQLExecute_(ODBCStmt *stmt)
 	case MTIMEOUT:
 		/* Communication link failure */
 		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+
 		return SQL_ERROR;
 	default:
 		/* General error */
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+
 		return SQL_ERROR;
 	}
 

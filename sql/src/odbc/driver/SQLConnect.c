@@ -26,9 +26,7 @@
 #endif
 
 SQLRETURN
-SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
-	    SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
-	    SQLSMALLINT nPWDLength, char *host, int port)
+SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
@@ -50,8 +48,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 			return SQL_ERROR;
 		}
 		if ((cfg = getenv("MONETDB_CONFIG")) != NULL)
-			setlen = mo_add_option(&set, setlen, opt_cmdline,
-					       "config", cfg);
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", cfg);
 		mo_system_config(&set, setlen);
 	}
 
@@ -111,8 +108,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		host = mo_find_option(set, setlen, "host");
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d\n",
-		dsn, uid, pwd, host, port);
+	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d\n", dsn, uid, pwd, host, port);
 #endif
 
 	/* connect to a server on host via port */
@@ -156,9 +152,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 }
 
 SQLRETURN SQL_API
-SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
-	   SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
-	   SQLSMALLINT nPWDLength)
+SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLConnect " PTRFMT "\n", PTRFMTCAST hDbc);
@@ -169,25 +163,18 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 
 	clearDbcErrors((ODBCDbc *) hDbc);
 
-	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength,
-			   szUID, nUIDLength, szPWD, nPWDLength, NULL, 0);
+	return SQLConnect_((ODBCDbc *) hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength, NULL, 0);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLConnectA(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
-	    SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD,
-	    SQLSMALLINT nPWDLength)
+SQLConnectA(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength)
 {
-	return SQLConnect(hDbc, szDataSource, nDataSourceLength,
-			  szUID, nUIDLength, szPWD, nPWDLength);
+	return SQLConnect(hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength);
 }
 
 SQLRETURN SQL_API
-SQLConnectW(SQLHDBC hDbc,
-	    SQLWCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
-	    SQLWCHAR *szUID, SQLSMALLINT nUIDLength,
-	    SQLWCHAR *szPWD, SQLSMALLINT nPWDLength)
+SQLConnectW(SQLHDBC hDbc, SQLWCHAR * szDataSource, SQLSMALLINT nDataSourceLength, SQLWCHAR * szUID, SQLSMALLINT nUIDLength, SQLWCHAR * szPWD, SQLSMALLINT nPWDLength)
 {
 	SQLCHAR *ds = NULL, *uid = NULL, *pwd = NULL;
 	SQLRETURN rc = SQL_ERROR;
@@ -208,7 +195,7 @@ SQLConnectW(SQLHDBC hDbc,
 
 	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS, NULL, 0);
 
-  exit:
+      exit:
 	if (ds)
 		free(ds);
 	if (uid)
@@ -217,4 +204,4 @@ SQLConnectW(SQLHDBC hDbc,
 		free(pwd);
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

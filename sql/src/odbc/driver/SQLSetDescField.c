@@ -18,9 +18,7 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
-		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		 SQLINTEGER BufferLength)
+SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
 {
 	ODBCDescRec *rec;
 	struct sql_types *tp;
@@ -151,8 +149,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		return SQL_SUCCESS;
 	case SQL_DESC_DATETIME_INTERVAL_CODE:
 		while (tp->concise_type != 0) {
-			if (tp->code == (SQLSMALLINT) (ssize_t) Value &&
-			    tp->type == rec->sql_desc_type) {
+			if (tp->code == (SQLSMALLINT) (ssize_t) Value && tp->type == rec->sql_desc_type) {
 				rec->sql_desc_concise_type = tp->concise_type;
 				rec->sql_desc_type = tp->type;
 				rec->sql_desc_datetime_interval_code = tp->code;
@@ -227,10 +224,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 		return SQL_SUCCESS;
 	case SQL_DESC_TYPE:
 		while (tp->concise_type != 0) {
-			if (tp->type == (SQLSMALLINT) (ssize_t) Value &&
-			    (((SQLSMALLINT) (ssize_t) Value != SQL_DATETIME &&
-			      (SQLSMALLINT) (ssize_t) Value != SQL_INTERVAL) ||
-			     tp->code == rec->sql_desc_datetime_interval_code)) {
+			if (tp->type == (SQLSMALLINT) (ssize_t) Value && (((SQLSMALLINT) (ssize_t) Value != SQL_DATETIME && (SQLSMALLINT) (ssize_t) Value != SQL_INTERVAL) || tp->code == rec->sql_desc_datetime_interval_code)) {
 				rec->sql_desc_concise_type = tp->concise_type;
 				rec->sql_desc_type = tp->type;
 				rec->sql_desc_datetime_interval_code = tp->code;
@@ -256,8 +250,7 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 			/* Invalid descriptor field identifier */
 			addDescError(desc, "HY091", NULL, 0);
 			return SQL_ERROR;
-		} else if ((SQLSMALLINT) (ssize_t) Value == SQL_UNNAMED &&
-			   isIPD(desc)) {
+		} else if ((SQLSMALLINT) (ssize_t) Value == SQL_UNNAMED && isIPD(desc)) {
 			rec->sql_desc_unnamed = SQL_UNNAMED;
 			if (rec->sql_desc_name)
 				free(rec->sql_desc_name);
@@ -275,38 +268,29 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
 }
 
 SQLRETURN SQL_API
-SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
-		SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		SQLINTEGER BufferLength)
+SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescField " PTRFMT " %d %d\n",
-		PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
+	ODBCLOG("SQLSetDescField " PTRFMT " %d %d\n", PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
 #endif
 
 	if (!isValidDesc((ODBCDesc *) DescriptorHandle))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearDescErrors((ODBCDesc *) DescriptorHandle);
 
-	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecordNumber,
-				FieldIdentifier, Value, BufferLength);
+	return SQLSetDescField_((ODBCDesc *) DescriptorHandle, RecordNumber, FieldIdentifier, Value, BufferLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
-		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		 SQLINTEGER BufferLength)
+SQLSetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
 {
-	return SQLSetDescField(DescriptorHandle, RecordNumber, FieldIdentifier,
-			       Value, BufferLength);
+	return SQLSetDescField(DescriptorHandle, RecordNumber, FieldIdentifier, Value, BufferLength);
 }
 
 SQLRETURN SQL_API
-SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
-		 SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-		 SQLINTEGER BufferLength)
+SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
 {
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 	SQLRETURN rc;
@@ -314,33 +298,34 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescFieldW " PTRFMT " %d %d\n",
-		PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
+	ODBCLOG("SQLSetDescFieldW " PTRFMT " %d %d\n", PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
 #endif
 
 	if (!isValidDesc(desc))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearDescErrors(desc);
 
 	switch (FieldIdentifier) {
 	case SQL_DESC_NAME:
-		if (BufferLength > 0) /* convert from bytes to characters */
+		if (BufferLength > 0)	/* convert from bytes to characters */
 			BufferLength /= 2;
 		fixWcharIn(Value, BufferLength, ptr, addDescError, desc, return SQL_ERROR);
+
 		n = SQL_NTS;
 		break;
 	default:
 		ptr = Value;
+
 		n = BufferLength;
 		break;
 	}
 
 	rc = SQLSetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n);
 
-	if (ptr && ptr != Value)
+	if (ptr &&ptr !=Value)
 		free(ptr);
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

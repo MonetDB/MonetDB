@@ -55,7 +55,7 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 
 	assert(tmp);
 	strncpy(tmp, (char *) inStr, length);
-	tmp[length] = '\0';   /* make it null terminated */
+	tmp[length] = '\0';	/* make it null terminated */
 	return tmp;
 }
 
@@ -69,6 +69,7 @@ static int utf8chkmsk[] = {
 	0x03e00000,
 	0x7c000000
 };
+
 #define LEAD_OFFSET		(0xD800 - (0x10000 >> 10))
 #define SURROGATE_OFFSET	(0x10000 - (0xD800 << 10) - 0xDC00)
 
@@ -80,7 +81,7 @@ static int utf8chkmsk[] = {
    ODBC fashion.
 */
 SQLCHAR *
-ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
+ODBCwchar2utf8(const SQLWCHAR * s, SQLINTEGER length, char **errmsg)
 {
 	const SQLWCHAR *s1;
 	unsigned long c;
@@ -109,7 +110,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 			/* high surrogate, must be followed by low surrogate */
 			s1++;
 			i++;
-			if (i >= length || *s1 < 0xDC00|| *s1 > 0xDFFF) {
+			if (i >= length || *s1 < 0xDC00 || *s1 > 0xDFFF) {
 				if (errmsg)
 					*errmsg = "High surrogate not followed by low surrogate";
 				return NULL;
@@ -156,8 +157,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
    first two arguments describe the input, the last three arguments
    describe the output, both in the normal ODBC fashion. */
 char *
-ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
-	       SQLWCHAR *buf, SQLINTEGER buflen, SQLSMALLINT *buflenout)
+ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER buflen, SQLSMALLINT *buflenout)
 {
 	SQLWCHAR *p;
 	int i, m, n;
@@ -178,8 +178,7 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
 	for (p = buf, i = 0; i < length; i++) {
 		c = *s++;
 		if ((c & 0x80) != 0) {
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				;
+			for (n = 0, m = 0x40; c & m; n++, m >>= 1) ;
 			/* n now is number of 10xxxxxx bytes that
 			 * should follow */
 			c &= ~(0xFFC0) >> n;
@@ -216,7 +215,7 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length,
 	*p = 0;
 	return NULL;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */
 
 /*
  * Translate an ODBC-compatible query to one that the SQL server
@@ -269,7 +268,7 @@ struct sql_types ODBC_sql_types[] = {
 	{SQL_INTERVAL_HOUR_TO_MINUTE, SQL_INTERVAL, SQL_CODE_HOUR_TO_MINUTE, 0, 2, UNAFFECTED, UNAFFECTED, 0, SQL_FALSE},
 	{SQL_INTERVAL_HOUR_TO_SECOND, SQL_INTERVAL, SQL_CODE_HOUR_TO_SECOND, 6, 2, UNAFFECTED, UNAFFECTED, 0, SQL_FALSE},
 	{SQL_INTERVAL_MINUTE_TO_SECOND, SQL_INTERVAL, SQL_CODE_MINUTE_TO_SECOND, 6, 2, UNAFFECTED, UNAFFECTED, 0, SQL_FALSE},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0}, /* sentinel */
+	{0, 0, 0, 0, 0, 0, 0, 0, 0},	/* sentinel */
 };
 
 struct sql_types ODBC_c_types[] = {
@@ -309,7 +308,7 @@ struct sql_types ODBC_c_types[] = {
 	{SQL_C_INTERVAL_MINUTE_TO_SECOND, SQL_INTERVAL, SQL_CODE_MINUTE_TO_SECOND, UNAFFECTED, 6, UNAFFECTED, UNAFFECTED, 0, SQL_FALSE},
 	{SQL_C_GUID, SQL_C_GUID, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, SQL_FALSE},
 	{SQL_C_DEFAULT, SQL_C_DEFAULT, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, SQL_FALSE},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0}, /* sentinel */
+	{0, 0, 0, 0, 0, 0, 0, 0, 0},	/* sentinel */
 };
 
 #ifdef ODBCDEBUG

@@ -32,7 +32,7 @@ typedef union symbdata {
 	struct dlist *lval;
 	struct symbol *sym;
 	struct sql_subtype *typeval;
-	void *symv; /* temp version of symbol which can be easily casted */
+	void *symv;		/* temp version of symbol which can be easily casted */
 } symbdata;
 
 typedef struct dnode {
@@ -48,16 +48,16 @@ typedef struct dlist {
 } dlist;
 
 extern dlist *dlist_create();
-extern void dlist_destroy(dlist * l);
-extern void dlist_destroy_keep_data(dlist * l);
-extern void dlist_remove_node( dlist *l, dnode *d );
-extern int dlist_length(dlist * l);
+extern void dlist_destroy(dlist *l);
+extern void dlist_destroy_keep_data(dlist *l);
+extern void dlist_remove_node(dlist *l, dnode *d);
+extern int dlist_length(dlist *l);
 
-extern dlist *dlist_append_string(dlist * l, char *data);
-extern dlist *dlist_append_list(dlist * l, dlist * data);
-extern dlist *dlist_append_int(dlist * l, int data);
-extern dlist *dlist_append_symbol(dlist * l, struct symbol *data);
-extern dlist *dlist_append_type(dlist * l, struct sql_subtype *data);
+extern dlist *dlist_append_string(dlist *l, char *data);
+extern dlist *dlist_append_list(dlist *l, dlist *data);
+extern dlist *dlist_append_int(dlist *l, int data);
+extern dlist *dlist_append_symbol(dlist *l, struct symbol *data);
+extern dlist *dlist_append_type(dlist *l, struct sql_subtype *data);
 
 typedef struct symbol {
 	int token;
@@ -78,34 +78,34 @@ typedef struct SelectNode {
 	int offset;
 	int distinct;
 	struct dlist *selection;
-	struct dlist *into; /* ?? */
-	symbol * from;
-	symbol * where;
-	symbol * groupby;
-	symbol * having;
-	symbol * orderby;
-	symbol * name;
+	struct dlist *into;	/* ?? */
+	symbol *from;
+	symbol *where;
+	symbol *groupby;
+	symbol *having;
+	symbol *orderby;
+	symbol *name;
 } SelectNode;
 
 typedef struct AtomNode {
 	symbol s;
-	struct atom  *a;
+	struct atom *a;
 } AtomNode;
 
-extern symbol *symbol_create(int token, char *data );
-extern symbol *symbol_create_list(int token, dlist * data );
-extern symbol *symbol_create_int(int token, int data );
-extern symbol *symbol_create_symbol(int token, symbol * data );
+extern symbol *symbol_create(int token, char *data);
+extern symbol *symbol_create_list(int token, dlist *data);
+extern symbol *symbol_create_int(int token, int data);
+extern symbol *symbol_create_symbol(int token, symbol *data);
 
-sql_export void symbol_destroy(symbol * sym);
-extern int symbol_cmp( symbol *s1, symbol *s2);
+sql_export void symbol_destroy(symbol *sym);
+extern int symbol_cmp(symbol *s1, symbol *s2);
 
-extern symbol *newSelectNode( int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset );
+extern symbol *newSelectNode(int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset);
 
-extern symbol *newAtomNode( atom *a );
+extern symbol *newAtomNode(atom *a);
 
 
-#endif	/* SQL_SYMBOL_H */
+#endif /* SQL_SYMBOL_H */
 
 @c
 #include <sql_mem.h>
@@ -117,7 +117,8 @@ static void AtomNode_destroy(AtomNode *a);
 
 int symbol_debug = 0;
 
-symbol *symbol_init(symbol *s, int token )
+symbol *
+symbol_init(symbol *s, int token)
 {
 	s->token = token;
 	s->type = type_symbol;
@@ -125,70 +126,72 @@ symbol *symbol_init(symbol *s, int token )
 	return s;
 }
 
-symbol *symbol_create(int token, char *data )
+symbol *
+symbol_create(int token, char *data)
 {
 	symbol *s = NEW(symbol);
+
 	symbol_init(s, token);
 	s->data.sval = data;
 	s->type = type_string;
 	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_string(%s,%s)\n",
-			(long) s, token2string(s->token), s->data.sval);
+		fprintf(stderr, "%ld = symbol_create_string(%s,%s)\n", (long) s, token2string(s->token), s->data.sval);
 	return s;
 }
 
-symbol *symbol_create_list(int token, dlist * data)
+symbol *
+symbol_create_list(int token, dlist *data)
 {
 	symbol *s = NEW(symbol);
+
 	symbol_init(s, token);
 	s->data.lval = data;
 	s->type = type_list;
 	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_list(%s,%ld)\n",
-			(long) s, token2string(s->token),
-			(long) s->data.lval);
+		fprintf(stderr, "%ld = symbol_create_list(%s,%ld)\n", (long) s, token2string(s->token), (long) s->data.lval);
 	return s;
 }
 
-symbol *symbol_create_int(int token, int data)
+symbol *
+symbol_create_int(int token, int data)
 {
 	symbol *s = NEW(symbol);
+
 	symbol_init(s, token);
 	s->data.ival = data;
 	s->type = type_int;
 	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_int(%s,%d)\n",
-			(long) s, token2string(s->token), data);
+		fprintf(stderr, "%ld = symbol_create_int(%s,%d)\n", (long) s, token2string(s->token), data);
 	return s;
 }
 
-symbol *symbol_create_symbol(int token, symbol * data)
+symbol *
+symbol_create_symbol(int token, symbol *data)
 {
 	symbol *s = NEW(symbol);
+
 	symbol_init(s, token);
 	s->data.sym = data;
 	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_symbol(%s,%s)\n",
-			(long) s, token2string(s->token),
-			token2string(data->token));
+		fprintf(stderr, "%ld = symbol_create_symbol(%s,%s)\n", (long) s, token2string(s->token), token2string(data->token));
 	return s;
 }
 
-void symbol_destroy(symbol * s)
+void
+symbol_destroy(symbol *s)
 {
 	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_destroy(%s)\n",
-			(long) s, token2string(s->token) );
+		fprintf(stderr, "%ld = symbol_destroy(%s)\n", (long) s, token2string(s->token));
 
 	if (s) {
 		switch (s->type) {
 		case type_symbol:
-			switch(s->token){
+			switch (s->token) {
 			case SQL_SELECT:
-				SelectNode_destroy((SelectNode*)s);
+				SelectNode_destroy((SelectNode *) s);
 				break;
 			case SQL_ATOM:
-				AtomNode_destroy((AtomNode*)s);
+				AtomNode_destroy((AtomNode *) s);
 				break;
 			default:
 				if (s->data.sym)
@@ -196,15 +199,16 @@ void symbol_destroy(symbol * s)
 			}
 			break;
 		case type_list:
-			if (s->data.lval) 
+			if (s->data.lval)
 				dlist_destroy(s->data.lval);
 			break;
 		case type_type:
-			if (s->data.typeval) 
+			if (s->data.typeval)
 				sql_subtype_destroy(s->data.typeval);
 			break;
 		case type_string:
-			if (s->data.sval) _DELETE(s->data.sval);
+			if (s->data.sval)
+				_DELETE(s->data.sval);
 			break;
 		case type_int:
 			/* not used types */
@@ -222,7 +226,8 @@ void symbol_destroy(symbol * s)
 	}
 }
 
-void dnode_destroy(dnode * s)
+void
+dnode_destroy(dnode *s)
 {
 	if (s->data.sval) {
 		switch (s->type) {
@@ -254,66 +259,83 @@ void dnode_destroy(dnode * s)
 	_DELETE(s);
 }
 
-static dnode *dnode_create()
+static dnode *
+dnode_create()
 {
 	dnode *n = NEW(dnode);
+
 	n->next = NULL;
 	n->data.sval = NULL;
 	n->type = type_symbol;
 	return n;
 }
 
-static dnode *dnode_create_string(char *data)
+static dnode *
+dnode_create_string(char *data)
 {
 	dnode *n = dnode_create();
+
 	n->data.sval = data;
 	n->type = type_string;
 	return n;
 }
-static dnode *dnode_create_list(dlist * data)
+static dnode *
+dnode_create_list(dlist *data)
 {
 	dnode *n = dnode_create();
+
 	n->data.lval = data;
 	n->type = type_list;
 	return n;
 }
-static dnode *dnode_create_int(int data)
+static dnode *
+dnode_create_int(int data)
 {
 	dnode *n = dnode_create();
+
 	n->data.ival = data;
 	n->type = type_int;
 	return n;
 }
-static dnode *dnode_create_symbol(symbol * data)
+static dnode *
+dnode_create_symbol(symbol *data)
 {
 	dnode *n = dnode_create();
+
 	n->data.sym = data;
 	n->type = type_symbol;
 	return n;
 }
 
-static dnode *dnode_create_type(sql_subtype * data)
+static dnode *
+dnode_create_type(sql_subtype *data)
 {
 	dnode *n = dnode_create();
+
 	n->data.typeval = data;
 	n->type = type_type;
 	return n;
 }
 
-dlist *dlist_create()
+dlist *
+dlist_create()
 {
 	dlist *l = NEW(dlist);
+
 	l->h = l->t = NULL;
 	l->cnt = 0;
 	return l;
 }
 
-void dlist_destroy(dlist * l)
+void
+dlist_destroy(dlist *l)
 {
 	if (l) {
 		dnode *n = l->h;
+
 		while (n) {
 			dnode *t = n;
+
 			n = n->next;
 			dnode_destroy(t);
 		}
@@ -321,9 +343,11 @@ void dlist_destroy(dlist * l)
 	}
 }
 
-void dlist_remove_node( dlist *l, dnode *n )
+void
+dlist_remove_node(dlist *l, dnode *n)
 {
 	dnode *p = l->h;
+
 	if (p != n)
 		while (p && p->next != n)
 			p = p->next;
@@ -335,17 +359,20 @@ void dlist_remove_node( dlist *l, dnode *n )
 	}
 	if (n == l->t)
 		l->t = p;
-	n->data.sval = NULL; /* do not remove data */
+	n->data.sval = NULL;	/* do not remove data */
 	dnode_destroy(n);
 	l->cnt--;
 }
 
-void dlist_destroy_keep_data(dlist * l)
+void
+dlist_destroy_keep_data(dlist *l)
 {
 	if (l) {
 		dnode *n = l->h;
+
 		while (n) {
 			dnode *t = n;
+
 			n = n->next;
 			_DELETE(t);
 		}
@@ -353,12 +380,14 @@ void dlist_destroy_keep_data(dlist * l)
 	}
 }
 
-int dlist_length(dlist * l)
+int
+dlist_length(dlist *l)
 {
 	return l->cnt;
 }
 
-dlist *dlist_append_default(dlist * l, dnode * n)
+dlist *
+dlist_append_default(dlist *l, dnode *n)
 {
 	if (l->cnt) {
 		l->t->next = n;
@@ -370,51 +399,51 @@ dlist *dlist_append_default(dlist * l, dnode * n)
 	return l;
 }
 
-dlist *dlist_append_string(dlist * l, char *data)
+dlist *
+dlist_append_string(dlist *l, char *data)
 {
 	dnode *n = dnode_create_string(data);
+
 	return dlist_append_default(l, n);
 }
 
-dlist *dlist_append_list(dlist * l, dlist * data)
+dlist *
+dlist_append_list(dlist *l, dlist *data)
 {
 	dnode *n = dnode_create_list(data);
+
 	return dlist_append_default(l, n);
 }
 
-dlist *dlist_append_int(dlist * l, int data)
+dlist *
+dlist_append_int(dlist *l, int data)
 {
 	dnode *n = dnode_create_int(data);
+
 	return dlist_append_default(l, n);
 }
 
-dlist *dlist_append_symbol(dlist * l, symbol * data)
+dlist *
+dlist_append_symbol(dlist *l, symbol *data)
 {
 	dnode *n = dnode_create_symbol(data);
+
 	return dlist_append_default(l, n);
 }
 
-dlist *dlist_append_type(dlist * l, sql_subtype * data)
+dlist *
+dlist_append_type(dlist *l, sql_subtype *data)
 {
 	dnode *n = dnode_create_type(data);
+
 	return dlist_append_default(l, n);
 }
 
-symbol *newSelectNode( 
-	int distinct, 
-	struct dlist *selection, 
-	struct dlist *into, 
-	symbol *from, 
-	symbol *where, 
-	symbol *groupby, 
-	symbol *having, 
-	symbol *orderby, 
-	symbol *name,
-	int limit,
-	int offset)
+symbol *
+newSelectNode(int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, int limit, int offset)
 {
 	SelectNode *sn = NEW(SelectNode);
-	symbol *s = (symbol*)sn;
+	symbol *s = (symbol *) sn;
 
 	symbol_init(s, SQL_SELECT);
 	sn->distinct = distinct;
@@ -431,37 +460,49 @@ symbol *newSelectNode(
 	return s;
 }
 
-static void SelectNode_destroy(SelectNode *s)
+static void
+SelectNode_destroy(SelectNode *s)
 {
-	if (s->selection) dlist_destroy(s->selection);
-	if (s->into) dlist_destroy(s->into);
-	if (s->from) symbol_destroy(s->from);
-	if (s->where) symbol_destroy(s->where);
-	if (s->groupby) symbol_destroy(s->groupby);
-	if (s->having) symbol_destroy(s->having);
-	if (s->orderby) symbol_destroy(s->orderby);
-	if (s->name) _DELETE(s->name);
+	if (s->selection)
+		dlist_destroy(s->selection);
+	if (s->into)
+		dlist_destroy(s->into);
+	if (s->from)
+		symbol_destroy(s->from);
+	if (s->where)
+		symbol_destroy(s->where);
+	if (s->groupby)
+		symbol_destroy(s->groupby);
+	if (s->having)
+		symbol_destroy(s->having);
+	if (s->orderby)
+		symbol_destroy(s->orderby);
+	if (s->name)
+		_DELETE(s->name);
 }
 
-symbol *newAtomNode(atom * data)
+symbol *
+newAtomNode(atom *data)
 {
 	AtomNode *an = NEW(AtomNode);
-	symbol *s = (symbol*)an;
+	symbol *s = (symbol *) an;
 
 	symbol_init(s, SQL_ATOM);
 	an->a = data;
 	return s;
 }
 
-static void AtomNode_destroy(AtomNode *a)
+static void
+AtomNode_destroy(AtomNode *a)
 {
 	if (a->a)
 		atom_destroy(a->a);
 }
 
-static int dlist_cmp( dlist *l1, dlist *l2 );
+static int dlist_cmp(dlist *l1, dlist *l2);
 
-static int dnode_cmp( dnode *d1, dnode *d2 )
+static int
+dnode_cmp(dnode *d1, dnode *d2)
 {
 	if (d1 == d2)
 		return 0;
@@ -469,29 +510,31 @@ static int dnode_cmp( dnode *d1, dnode *d2 )
 	if (!d1 || !d2)
 		return -1;
 
-	if (d1->type == d2->type){
-		switch (d1->type){
-		case type_int: 		
-			return (d1->data.ival - d2->data.ival);	
-		case type_string: 	
-			if (d1 ->data.sval == d2->data.sval)
+	if (d1->type == d2->type) {
+		switch (d1->type) {
+		case type_int:
+			return (d1->data.ival - d2->data.ival);
+		case type_string:
+			if (d1->data.sval == d2->data.sval)
 				return 0;
-			if (!d1 ->data.sval || !d2 ->data.sval )
+			if (!d1->data.sval || !d2->data.sval)
 				return -1;
 			return strcmp(d1->data.sval, d2->data.sval);
-		case type_list:		
-			return dlist_cmp(d1->data.lval,d2->data.lval);
-		case type_symbol: 	
+		case type_list:
+			return dlist_cmp(d1->data.lval, d2->data.lval);
+		case type_symbol:
 			return symbol_cmp(d1->data.sym, d2->data.sym);
-		case type_type: 	
+		case type_type:
 			return subtype_cmp(d1->data.typeval, d2->data.typeval);
-		default: assert(0);
+		default:
+			assert(0);
 		}
 	}
 	return -1;
 }
 
-static int dlist_cmp( dlist *l1, dlist *l2 )
+static int
+dlist_cmp(dlist *l1, dlist *l2)
 {
 	int res = 0;
 	dnode *d1, *d2;
@@ -499,16 +542,17 @@ static int dlist_cmp( dlist *l1, dlist *l2 )
 	if (l1 == l2)
 		return 0;
 
-	if (!l1 || !l2 || dlist_length(l1) != dlist_length(l2)) 
+	if (!l1 || !l2 || dlist_length(l1) != dlist_length(l2))
 		return -1;
 
-	for(d1 = l1->h, d2 = l2->h; !res && d1; d1 = d1->next, d2 = d2->next){
-		res = dnode_cmp(d1,d2); 
+	for (d1 = l1->h, d2 = l2->h; !res && d1; d1 = d1->next, d2 = d2->next) {
+		res = dnode_cmp(d1, d2);
 	}
 	return res;
 }
 
-static int AtomNodeCmp( AtomNode *a1, AtomNode *a2 )
+static int
+AtomNodeCmp(AtomNode *a1, AtomNode *a2)
 {
 	if (a1 == a2)
 		return 0;
@@ -518,64 +562,55 @@ static int AtomNodeCmp( AtomNode *a1, AtomNode *a2 )
 	return -1;
 }
 
-static int SelectNodeCmp( SelectNode *s1, SelectNode *s2 )
+static int
+SelectNodeCmp(SelectNode *s1, SelectNode *s2)
 {
 	if (s1 == s2)
 		return 0;
 	if (!s1 || !s2)
 		return -1;
 
-	if (s1->limit == s2 ->limit &&
-	    s1->offset == s2 ->offset &&
-	    s1->distinct == s2 ->distinct &&
-	    symbol_cmp(s1->name, s2->name) == 0 &&
-	    symbol_cmp(s1->orderby, s2->orderby) == 0 &&
-	    symbol_cmp(s1->having, s2->having) == 0 &&
-	    symbol_cmp(s1->groupby, s2->groupby) == 0 &&
-	    symbol_cmp(s1->where, s2->where) == 0 &&
-	    symbol_cmp(s1->from, s2->from) == 0 &&
-	    dlist_cmp(s1->selection, s2->selection) == 0)
+	if (s1->limit == s2->limit && s1->offset == s2->offset && s1->distinct == s2->distinct && symbol_cmp(s1->name, s2->name) == 0 && symbol_cmp(s1->orderby, s2->orderby) == 0 && symbol_cmp(s1->having, s2->having) == 0 &&
+	    symbol_cmp(s1->groupby, s2->groupby) == 0 && symbol_cmp(s1->where, s2->where) == 0 && symbol_cmp(s1->from, s2->from) == 0 && dlist_cmp(s1->selection, s2->selection) == 0)
 		return 0;
 	return -1;
 }
 
 
-int symbol_cmp( symbol *s1, symbol *s2)
+int
+symbol_cmp(symbol *s1, symbol *s2)
 {
 	if (s1 == s2)
 		return 0;
 	if (!s1 || !s2)
 		return -1;
 
-	if (s1->token != s2->token || s1->type != s2->type){
+	if (s1->token != s2->token || s1->type != s2->type) {
 		return -1;
 	}
-	switch(s1->type){
-		case type_int: 		
-			return (s1->data.ival - s2->data.ival);	
-		case type_string: 	
-			if (s1->data.sval == s2->data.sval)
-				return 0;
-			if (!s1->data.sval || !s2->data.sval )
-				return -1;
-			return strcmp(s1->data.sval, s2->data.sval);	
-		case type_list:		
-			return dlist_cmp(s1->data.lval,s2->data.lval);
-		case type_type:		
-			return subtype_cmp(s1->data.typeval, s2->data.typeval);
-		case type_symbol:	
-			if (s1->token == SQL_SELECT){
-				return SelectNodeCmp(
-						(SelectNode*)s1, 
-						(SelectNode*)s2);
-			} else if (s1->token != SQL_ATOM){
-				return symbol_cmp(s1->data.sym,s2->data.sym);
-			} else {
-				return AtomNodeCmp(
-						(AtomNode*)s1, 
-						(AtomNode*)s2);
-			}
-		default: assert(0);
+	switch (s1->type) {
+	case type_int:
+		return (s1->data.ival - s2->data.ival);
+	case type_string:
+		if (s1->data.sval == s2->data.sval)
+			return 0;
+		if (!s1->data.sval || !s2->data.sval)
+			return -1;
+		return strcmp(s1->data.sval, s2->data.sval);
+	case type_list:
+		return dlist_cmp(s1->data.lval, s2->data.lval);
+	case type_type:
+		return subtype_cmp(s1->data.typeval, s2->data.typeval);
+	case type_symbol:
+		if (s1->token == SQL_SELECT) {
+			return SelectNodeCmp((SelectNode *) s1, (SelectNode *) s2);
+		} else if (s1->token != SQL_ATOM) {
+			return symbol_cmp(s1->data.sym, s2->data.sym);
+		} else {
+			return AtomNodeCmp((AtomNode *) s1, (AtomNode *) s2);
+		}
+	default:
+		assert(0);
 	}
-	return 0; /* never reached, just to pacify compilers */
+	return 0;		/* never reached, just to pacify compilers */
 }

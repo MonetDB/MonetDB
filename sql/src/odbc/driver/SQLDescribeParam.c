@@ -23,16 +23,13 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber,
-		 SQLSMALLINT *pnDataType, SQLUINTEGER *pnSize,
-		 SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber, SQLSMALLINT *pnDataType, SQLUINTEGER *pnSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ODBCDescRec *rec;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeParam " PTRFMT " %d\n", PTRFMTCAST hStmt,
-		nParmNumber);
+	ODBCLOG("SQLDescribeParam " PTRFMT " %d\n", PTRFMTCAST hStmt, nParmNumber);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -44,13 +41,14 @@ SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber,
 	if (stmt->State == INITED || stmt->State >= EXECUTED0) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
-	if (nParmNumber < 1 ||
-	    nParmNumber > stmt->ImplRowDescr->sql_desc_count) {
+	if (nParmNumber < 1 || nParmNumber > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 

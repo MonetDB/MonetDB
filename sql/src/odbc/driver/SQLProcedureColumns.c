@@ -26,11 +26,7 @@
 
 
 static SQLRETURN
-SQLProcedureColumns_(ODBCStmt *stmt,
-		     SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		     SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		     SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
-		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLProcedureColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName, SQLSMALLINT nProcNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
@@ -38,34 +34,30 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 	fixODBCstring(szColumnName, nColumnNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nCatalogNameLength, szCatalogName,
-		nSchemaNameLength, szSchemaName,
-		nProcNameLength, szProcName,
-		nColumnNameLength, szColumnName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nProcNameLength, szProcName, nColumnNameLength, szColumnName);
 #endif
 
 	/* SQLProcedureColumns returns a table with the following columns:
-	   VARCHAR	procedure_cat
-	   VARCHAR	procedure_schem
-	   VARCHAR	procedure_name NOT NULL
-	   VARCHAR	column_name NOT NULL
-	   SMALLINT	column_type NOT NULL
-	   SMALLINT	data_type NOT NULL
-	   VARCHAR	type_name NOT NULL
-	   INTEGER	column_size
-	   INTEGER	buffer_length
-	   SMALLINT	decimal_digits
-	   SMALLINT	num_prec_radix
-	   SMALLINT	nullable NOT NULL
-	   VARCHAR	remarks
-	   VARCHAR	column_def
-	   SMALLINT	sql_data_type NOT NULL
-	   SMALLINT	sql_datetime_sub
-	   INTEGER	char_octet_length
-	   INTEGER	ordinal_position NOT NULL
-	   VARCHAR	is_nullable
-	*/
+	   VARCHAR      procedure_cat
+	   VARCHAR      procedure_schem
+	   VARCHAR      procedure_name NOT NULL
+	   VARCHAR      column_name NOT NULL
+	   SMALLINT     column_type NOT NULL
+	   SMALLINT     data_type NOT NULL
+	   VARCHAR      type_name NOT NULL
+	   INTEGER      column_size
+	   INTEGER      buffer_length
+	   SMALLINT     decimal_digits
+	   SMALLINT     num_prec_radix
+	   SMALLINT     nullable NOT NULL
+	   VARCHAR      remarks
+	   VARCHAR      column_def
+	   SMALLINT     sql_data_type NOT NULL
+	   SMALLINT     sql_datetime_sub
+	   INTEGER      char_octet_length
+	   INTEGER      ordinal_position NOT NULL
+	   VARCHAR      is_nullable
+	 */
 
 	/* Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
@@ -74,11 +66,7 @@ SQLProcedureColumns_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLProcedureColumns(SQLHSTMT hStmt,
-		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		    SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
-		    SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLProcedureColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName, SQLSMALLINT nProcNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -91,34 +79,19 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLProcedureColumns_(stmt,
-				    szCatalogName, nCatalogNameLength,
-				    szSchemaName, nSchemaNameLength,
-				    szProcName, nProcNameLength,
-				    szColumnName, nColumnNameLength);
+	return SQLProcedureColumns_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szProcName, nProcNameLength, szColumnName, nColumnNameLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLProcedureColumnsA(SQLHSTMT hStmt,
-		     SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		     SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		     SQLCHAR *szProcName, SQLSMALLINT nProcNameLength,
-		     SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLProcedureColumnsA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szProcName, SQLSMALLINT nProcNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
 {
-	return SQLProcedureColumns(hStmt,
-				   szCatalogName, nCatalogNameLength,
-				   szSchemaName, nSchemaNameLength,
-				   szProcName, nProcNameLength,
-				   szColumnName, nColumnNameLength);
+	return SQLProcedureColumns(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szProcName, nProcNameLength, szColumnName, nColumnNameLength);
 }
 
 SQLRETURN SQL_API
-SQLProcedureColumnsW(SQLHSTMT hStmt,
-		     SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		     SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		     SQLWCHAR *szProcName, SQLSMALLINT nProcNameLength,
-		     SQLWCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLProcedureColumnsW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szProcName, SQLSMALLINT nProcNameLength, SQLWCHAR * szColumnName,
+		     SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;
@@ -138,10 +111,9 @@ SQLProcedureColumnsW(SQLHSTMT hStmt,
 	fixWcharIn(szProcName, nProcNameLength, proc, addStmtError, stmt, goto exit);
 	fixWcharIn(szColumnName, nColumnNameLength, column, addStmtError, stmt, goto exit);
 
-	rc = SQLProcedureColumns_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
-				  proc, SQL_NTS, column, SQL_NTS);
+	rc = SQLProcedureColumns_(stmt, catalog, SQL_NTS, schema, SQL_NTS, proc, SQL_NTS, column, SQL_NTS);
 
-  exit:
+      exit:
 	if (catalog)
 		free(catalog);
 	if (schema)
@@ -153,4 +125,4 @@ SQLProcedureColumnsW(SQLHSTMT hStmt,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

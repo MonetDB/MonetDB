@@ -225,21 +225,21 @@ access to operations defined in the back-end, in particular for
 freeing the stack and code segment.
 @-
 @h
-typedef struct backend{
+typedef struct backend {
 	int console;
 	int debug;
 	int trace;
-	char language;	/* 'S' or 's' or 'X' */
-	mvc	*mvc;
-	buffer 	*outbuf;
-	stream 	*out;
+	char language;		/* 'S' or 's' or 'X' */
+	mvc *mvc;
+	buffer *outbuf;
+	stream *out;
 	sql_schema *currSchema;
 	sql_table *currTable;
 	sql_column *currColumn;
 	sql_key *currKey;
 	sql_idx *currIndex;
 	MalBlkPtr code;
-	cq *q;	/* pointer to the cached query */
+	cq *q;			/* pointer to the cached query */
 @-
 Some statistics are gathered during the execution of a query
 and added to the SQL history table for post analysis when the
@@ -249,18 +249,18 @@ query has been successfully executed.
 	str qry;
 } backend;
 
-extern backend *backend_create( int trace, mvc *m, Client c );
-extern void backend_destroy( backend *b );
+extern backend *backend_create(int trace, mvc *m, Client c);
+extern void backend_destroy(backend *b);
 
-extern int sqlcleanup( mvc *c, int err );
-extern stmt *sql_symbol2stmt( mvc *c );
+extern int sqlcleanup(mvc *c, int err);
+extern stmt *sql_symbol2stmt(mvc *c);
 
-extern BAT * mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access);
-extern BAT * mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access );
-extern BAT * mvc_bind_dbat(mvc * m, char *sname, char *tname, int access );
-extern BAT * mvc_bind_idxbat(mvc * m, char *sname, char *tname, char *iname, int access );
+extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
+extern BAT *mvc_bind_ubat(mvc *m, char *sname, char *tname, char *cname, int access);
+extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
+extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
-extern int mvc_export_result( mvc *c, stream *s, int res_id );
+extern int mvc_export_result(mvc *c, stream *s, int res_id);
 
 #endif /* _SQL_H */
 
@@ -273,30 +273,33 @@ First introduce the routines to be called by the front-end.
 #include "bat/bat_store.h"
 #include "bat/res_table.h"
 
-backend *backend_create( int trace, mvc *m, Client c )
+backend *
+backend_create(int trace, mvc *m, Client c)
 {
 	backend *b = NEW(backend);
 
 	b->console = isAdministrator(c);
-	b->debug=0;
-	b->outbuf= NULL;
-	b->out= NULL;
+	b->debug = 0;
+	b->outbuf = NULL;
+	b->out = NULL;
 	b->trace = trace;
 	b->language = 0;
 	b->mvc = m;
+
 	b->currSchema = NULL;
 	b->currTable = NULL;
 	b->currColumn = NULL;
 	b->currKey = NULL;
 	b->currIndex = NULL;
-	b->code= NULL;
-	b->Tread= b->Tparse= b->Toptimize= b->Tschedule = b->Texec = 0;
+	b->code = NULL;
+	b->Tread = b->Tparse = b->Toptimize = b->Tschedule = b->Texec = 0;
 	b->qry = NULL;
 	b->q = NULL;
 	return b;
 }
 
-void backend_destroy( backend *b )
+void
+backend_destroy(backend *b)
 {
 	_DELETE(b);
 }
@@ -307,22 +310,28 @@ Lookup the statement associated with a specific identifier
 from the statement cache. Compile and optimize it for later
 consumption, e.g. display
 @c
-stmt *sql_symbol2stmt( mvc *c ){
-        stmt *s = semantic(c, c->sym);
-        if (s){
-                stmt *opt = optimize(c, s);
-                stmt_destroy(s);
-                s = rel2bin(c, opt);
-                stmt_destroy(opt);
-        }
-        return s;
+stmt *
+sql_symbol2stmt(mvc *c)
+{
+	stmt *s = semantic(c, c->sym);
+
+	if (s) {
+		stmt *opt = optimize(c, s);
+
+		stmt_destroy(s);
+		s = rel2bin(c, opt);
+		stmt_destroy(opt);
+	}
+	return s;
 }
+
 @-
 After the SQL statement has been executed, its data structures
 should be garbage collected. For successful actions we have to finish
 the transaction as well, e.g. commit or rollback.
 @c
-int sqlcleanup( mvc *c, int err )
+int
+sqlcleanup(mvc *c, int err)
 {
 	sql_destroy_params(c);
 	sql_destroy_args(c);
@@ -386,36 +395,45 @@ printf("Re-establish context for client not expected\n");
 }
 @c
 
-str mvc_create_wrap(int *ret, int *debug ){
-	mvc *res = mvc_create( *debug,0, NULL,GDKout );
-        (void) ret;
+str
+mvc_create_wrap(int *ret, int *debug)
+{
+	mvc *res = mvc_create(*debug, 0, NULL, GDKout);
+
+	(void) ret;
 	@:setContext(res,mvc)@
+
 	return MAL_SUCCEED;
 }
 
-str mvc_destroy_wrap(int *ret ){
+str
+mvc_destroy_wrap(int *ret)
+{
 	mvc *m;
 
 	(void) ret;
 	@:getContext(m)@
-	mvc_destroy( m );
+	mvc_destroy(m);
 	@:setContext(NULL,mvc)@
+
 	return MAL_SUCCEED;
 }
 
-str mvc_update_var_wrap( int *ret, str *varname ){
+str
+mvc_update_var_wrap(int *ret, str *varname)
+{
 	mvc *m;
 
 	(void) ret;
 	@:getContext(m)@
-	if ( sql_update_var( m, *varname ) != GDK_SUCCEED)
-		return throwException(MALEXCEPTION,"mvc_update_var","error");
+	if (sql_update_var(m, *varname) != GDK_SUCCEED)
+		return throwException(MALEXCEPTION, "mvc_update_var", "error");
 	return MAL_SUCCEED;
 }
 
 
 BAT *
-mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
+mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -429,7 +447,7 @@ mvc_bind(mvc * m, char *sname, char *tname, char *cname, int access)
 
 
 BAT *
-mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
+mvc_bind_ubat(mvc *m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -442,7 +460,7 @@ mvc_bind_ubat(mvc * m, char *sname, char *tname, char *cname, int access )
 }
 
 BAT *
-mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
+mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -454,29 +472,34 @@ mvc_bind_dbat(mvc * m, char *sname, char *tname, int access )
 }
 
 BAT *
-mvc_bind_idxbat(mvc * m, char *sname, char *tname, char *iname, int access )
+mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
-	(void)tname;
+	(void) tname;
 	b = bind_idx(tr, i, access);
 	return b;
 }
-str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access){
+
+str
+mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
+{
 	mvc *m;
 	BAT *b;
+
 	@:getContext(m)@
 
-	b= mvc_bind( m, *sname, *tname, *cname, *access );
-	if (b){
-		*bid= b->batCacheid;
+	b = mvc_bind(m, *sname, *tname, *cname, *access);
+	if (b) {
+		*bid = b->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION,"mvc_bind_wrap","error");
+	return throwException(MALEXCEPTION, "mvc_bind_wrap", "error");
 }
+
 @-
 Monet 5 extension 
 @-
@@ -508,58 +531,70 @@ access the BAT descriptor.
 
 @c
 
-str mvc_bind_single_wrap(int *ret, int *bid, str *name){
-	BAT *b,*bn;
-	int r,res;
+str
+mvc_bind_single_wrap(int *ret, int *bid, str *name)
+{
+	BAT *b, *bn;
+	int r, res;
 	ptr p;
 
 	@:getBATdescriptor(&res,bid,bn,sql.bind)@
 
-	p=  BUNfnd(bn,*name);
-	r= *(int*) BUNtail(bn,p);
+	p = BUNfnd(bn, *name);
+	r = *(int *) BUNtail(bn, p);
 	@:getBATdescriptor(&res,&r,b,sql.bind)@
-	(void)res;
+	(void) res;
 	*ret = b->batCacheid;
 	return MAL_SUCCEED;
 }
 
-str mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access ){
+str
+mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access)
+{
 	mvc *m;
 	BAT *b;
+
 	@:getContext(m)@
-	b = mvc_bind_ubat( m, *sname, *tname, *cname, *access );
-	if (b){
-		*ret= b->batCacheid;
+	b = mvc_bind_ubat(m, *sname, *tname, *cname, *access);
+	if (b) {
+		*ret = b->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION,"mvc_bind_ubat_wrap","error");
+	return throwException(MALEXCEPTION, "mvc_bind_ubat_wrap", "error");
 }
 
-str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access ){
+str
+mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access)
+{
 	mvc *m;
 	BAT *b;
+
 	@:getContext(m)@
-	b = mvc_bind_dbat( m, *sname, *tname, *access );
-	if (b){
-		*ret= b->batCacheid;
+	b = mvc_bind_dbat(m, *sname, *tname, *access);
+	if (b) {
+		*ret = b->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION,"mvc_bind_dbat_wrap","error");
+	return throwException(MALEXCEPTION, "mvc_bind_dbat_wrap", "error");
 }
 
-str mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access ){
+str
+mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
+{
 	mvc *m;
 	BAT *b;
+
 	@:getContext(m)@
-	b = mvc_bind_idxbat( m, *sname, *tname, *iname, *access );
-	if (b){
-		*ret= b->batCacheid;
+	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
+	if (b) {
+		*ret = b->batCacheid;
 		return MAL_SUCCEED;
 	}
-	return throwException(MALEXCEPTION,"mvc_bind_idxbat_wrap","error");
+	return throwException(MALEXCEPTION, "mvc_bind_idxbat_wrap", "error");
 }
 
-str mvc_clear_table_wrap( lng *res, str sname, str tname ) 
+str
+mvc_clear_table_wrap(lng *res, str sname, str tname)
 {
 	mvc *m;
 	sql_schema *s;
@@ -568,52 +603,56 @@ str mvc_clear_table_wrap( lng *res, str sname, str tname )
 	@:getContext(m)@
 	s = mvc_bind_schema(m, sname);
 	t = mvc_bind_table(m, s, tname);
-	*res = mvc_clear_table( m, t );
+	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }
 
-str mvc_import_table_wrap( int *res, stream **s, str *tname, 
-		str *sep, str *rsep, int *sz)
+str
+mvc_import_table_wrap(int *res, stream **s, str *tname, str *sep, str *rsep, int *sz)
 {
 	mvc *m;
 	BAT *b;
 
 	@:getContext(m)@
-	
-	b= mvc_import_table(m, bstream_create(*s,1024*1024), *tname,*sep,*rsep,*sz);
-	if( b== 0)
-		return throwMessage("sql.importTable","failed");
-	*res= b->batCacheid;
+
+	b = mvc_import_table(m, bstream_create(*s, 1024 * 1024), *tname, *sep, *rsep, *sz);
+	if (b == 0)
+		return throwMessage("sql.importTable", "failed");
+	*res = b->batCacheid;
 	return MAL_SUCCEED;
 }
 
-str mvc_export_result_wrap( stream *s, int *res_id )
+str
+mvc_export_result_wrap(stream *s, int *res_id)
 {
 	mvc *c;
-	
+
 	@:getContext(c)@
-	if (mvc_export_result( c, *(stream**)s, *res_id)) {
-		return throwMessage("sql.exportResult","failed");
+	if (mvc_export_result(c, *(stream **) s, *res_id)) {
+		return throwMessage("sql.exportResult", "failed");
 	}
 	return NULL;
 }
 
-str mvc_export_table_wrap( stream *s, int *res_id, int *offset, int *nr )
+str
+mvc_export_table_wrap(stream *s, int *res_id, int *offset, int *nr)
 {
 	mvc *c;
 
 	@:getContext(c)@
-	if (mvc_export_table(c, *(stream**)s, *res_id, *offset, *nr)) {
-		return throwMessage("sql.exportTable","failed");
-	} 
+	if (mvc_export_table(c, *(stream **) s, *res_id, *offset, *nr)) {
+		return throwMessage("sql.exportTable", "failed");
+	}
 	return NULL;
 }
 
-str hash_wrap( int *res, ptr v, int tpe, int *sh )
+str
+hash_wrap(int *res, ptr v, int tpe, int *sh)
 {
-	*res = (ATOMhash(tpe,v)<<(*sh))&0xEFFFFFFF;
+	*res = (ATOMhash(tpe, v) << (*sh)) & 0xEFFFFFFF;
 	return NULL;
 }
+
 @-
 The core modules of Monet provide just a limited set of
 mathematical operators. The extensions required to support
@@ -762,12 +801,14 @@ str cast2@1( @1 *res, str val )
 @:cast(flt)@
 @:cast(dbl)@
 
-str str_cast( str *res, ptr v, int tpe, int *len ){
+str
+str_cast(str *res, ptr v, int tpe, int *len)
+{
 	int sz = *len + 1;
 	char *r = GDKmalloc(sz);
 
 	if (tpe != TYPE_str) {
-		sz = BATatoms[tpe].atomToStr(&r, &sz, v); 
+		sz = BATatoms[tpe].atomToStr(&r, &sz, v);
 	} else {
 		sz = strlen(v);
 		if (sz <= *len) {
@@ -775,11 +816,10 @@ str str_cast( str *res, ptr v, int tpe, int *len ){
 			r[sz] = 0;
 		}
 	}
-	if (sz > *len){
+	if (sz > *len) {
 		GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
-			return throwException(MALEXCEPTION, "str_cast", 
-				"value to long for type (var)char(%d)\n",*len);
+			return throwException(MALEXCEPTION, "str_cast", "value to long for type (var)char(%d)\n", *len);
 		} else {
 			*res = GDKstrdup(str_nil);
 			return MAL_SUCCEED;
@@ -813,8 +853,7 @@ str str2@1( @1 *res, str v, int *len ){
 @:str_cast(int)@
 @:str_cast(lng)@
 
-static lng max_values[20] =
-{
+static lng max_values[20] = {
 	LL_CONSTANT(0),
 	LL_CONSTANT(1),
 	LL_CONSTANT(10),

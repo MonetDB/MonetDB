@@ -28,7 +28,8 @@ operators.
 #include "bat_store.h"
 #include <bat.h>
 
-ssize_t column_find_row( sql_trans *tr, sql_column *c, void *value, ... )
+ssize_t
+column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 {
 	va_list va;
 	BUN p;
@@ -38,17 +39,18 @@ ssize_t column_find_row( sql_trans *tr, sql_column *c, void *value, ... )
 	void *nv;
 
 	va_start(va, value);
-	while ( (nc = va_arg(va, sql_column*)) != NULL ) {
-		nv = va_arg(va, void*);
+	while ((nc = va_arg(va, sql_column *)) != NULL) {
+		nv = va_arg(va, void *);
 
 		b = bind_bat(tr, c, RDONLY);
 		if (cur) {
 			BAT *nb = BATsemijoin(b, cur);
+
 			bat_destroy(cur);
 			bat_destroy(b);
 			b = nb;
-		} 
-		cur = BATselect(b, value, value );
+		}
+		cur = BATselect(b, value, value);
 		c = nc;
 		value = nv;
 		bat_destroy(b);
@@ -57,61 +59,65 @@ ssize_t column_find_row( sql_trans *tr, sql_column *c, void *value, ... )
 	b = bind_bat(tr, c, RDONLY);
 	if (cur) {
 		BAT *nb = BATsemijoin(b, cur);
+
 		bat_destroy(cur);
 		bat_destroy(b);
 		b = nb;
-	} 
+	}
 
 	/* should check 
-		1) updates
-		2) inserted-deleted
-		3) base-deleted
+	   1) updates
+	   2) inserted-deleted
+	   3) base-deleted
 	 */
 	r = BATmirror(b);
-	p = BUNfnd(r, value );
-	if (p) 
-		rid = *(oid*)BUNtail(r, p);
+	p = BUNfnd(r, value);
+	if (p)
+		rid = *(oid *) BUNtail(r, p);
 	bat_destroy(b);
 	return rid;
 }
 
-void* column_find_value( sql_trans *tr, sql_column *c, oid rid )
+void *
+column_find_value(sql_trans *tr, sql_column *c, oid rid)
 {
 	BUN p;
 	BAT *b;
 	void *res = NULL;
-	
+
 	b = bind_bat(tr, c, RDONLY);
 	/* should check 
-		1) updates
-		2) inserted-deleted
-		3) base-deleted
+	   1) updates
+	   2) inserted-deleted
+	   3) base-deleted
 	 */
-	p = BUNfnd(b, (ptr) & rid );
-	if (p) 
+	p = BUNfnd(b, (ptr) &rid);
+	if (p)
 		res = BUNtail(b, p);
 	bat_destroy(b);
 	return res;
 }
 
-int column_update_value( sql_trans *tr, sql_column *c, oid rid, void *value )
+int
+column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
 	BAT *b = bind_bat(tr, c, UPD);
 	oid oldcnt = b->hseqbase + (b->batInserted - BUNfirst(b));
 
-	void_inplace(b, rid, value); 
+	void_inplace(b, rid, value);
 	bat_destroy(b);
 
 	/* needs fixing, only put value in the ubat if we update old values */
 	if (rid < oldcnt) {
 		b = bind_ubat(tr, c, UPD);
-		BUNins(b, (ptr) & rid, value); 
+		BUNins(b, (ptr) &rid, value);
 		bat_destroy(b);
 	}
 	return 0;
 }
 
-int table_insert( sql_trans *tr, sql_table *t, ... )
+int
+table_insert(sql_trans *tr, sql_table *t, ...)
 {
 	va_list va;
 	node *n = cs_first_node(&t->columns);
@@ -124,13 +130,12 @@ int table_insert( sql_trans *tr, sql_table *t, ... )
 	bat_destroy(b);
 	va_start(va, t);
 
-	for ( val = va_arg(va, void*); n && val; 
-		n = n->next, val = va_arg(va, void*)) {
+	for (val = va_arg(va, void *); n && val; n = n->next, val = va_arg(va, void *)) {
 
 		cnt++;
 		c = n->data;
 		b = bind_bat(tr, c, UPD);
-		BUNins(b, (ptr) & rid, val); 
+		BUNins(b, (ptr) &rid, val);
 		bat_destroy(b);
 	}
 	if (n) {
@@ -140,24 +145,24 @@ int table_insert( sql_trans *tr, sql_table *t, ... )
 	return 0;
 }
 
-int table_delete( sql_trans *tr, sql_table *t, oid rid )
+int
+table_delete(sql_trans *tr, sql_table *t, oid rid)
 {
 	node *n = cs_first_node(&t->columns);
 	BAT *b = bind_dbat(tr, t, INS);
 
-	BUNins(b, ATOMnilptr(TYPE_void), (ptr) & rid); 
+	BUNins(b, ATOMnilptr(TYPE_void), (ptr) &rid);
 	bat_destroy(b);
 
-	/* if rid in base we cannot nil it */ 
-	/* only if rid in inserts we nil it */ 
-	for ( ; n; n = n->next ) {
+	/* if rid in base we cannot nil it */
+	/* only if rid in inserts we nil it */
+	for (; n; n = n->next) {
 		sql_column *c = n->data;
 
 		b = bind_bat(tr, c, DEL);
-		void_inplace(b, rid, ATOMnilptr(b->ttype)); 
+		void_inplace(b, rid, ATOMnilptr(b->ttype));
 		bat_destroy(b);
 	}
-	/* if rid in updates remove */ 
+	/* if rid in updates remove */
 	return 0;
 }
-

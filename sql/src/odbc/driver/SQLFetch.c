@@ -40,7 +40,7 @@
 # define ULLFMT			"%I64u"
 #endif
 
-#define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161) /* (2**64-1)/10 */
+#define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161)	/* (2**64-1)/10 */
 #define MAXBIGNUMLAST	'5'	/* (2**64-1)%10 */
 
 #define space(c)	((c) == ' ' || (c) == '\t')
@@ -79,7 +79,7 @@ strncasecmp(const char *s1, const char *s2, size_t n)
    0 is returned if the string is not a number, or if scale doesn't fit.
 */
 static int
-parseint(const char *data, bignum_t *nval)
+parseint(const char *data, bignum_t * nval)
 {
 	int fraction = 0;	/* inside the fractional part */
 	int scale = 0;
@@ -102,9 +102,7 @@ parseint(const char *data, bignum_t *nval)
 		if (*data == '.')
 			fraction = 1;
 		else if ('0' <= *data && *data <= '9') {
-			if (overflow ||
-			    nval->val > MAXBIGNUM10 ||
-			    (nval->val == MAXBIGNUM10 && *data > MAXBIGNUMLAST)) {
+			if (overflow || nval->val > MAXBIGNUM10 || (nval->val == MAXBIGNUM10 && *data > MAXBIGNUMLAST)) {
 				overflow = 1;
 				if (!fraction)
 					scale--;
@@ -116,7 +114,7 @@ parseint(const char *data, bignum_t *nval)
 				nval->val += *data - '0';
 			}
 		} else
-			  return 0;
+			return 0;
 		data++;
 	}
 	/* normalize scale */
@@ -153,7 +151,7 @@ parseint(const char *data, bignum_t *nval)
 }
 
 static int
-parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
+parsesecondinterval(bignum_t * nval, SQL_INTERVAL_STRUCT * ival)
 {
 	unsigned int f = 1;
 	int ivalscale = 0;
@@ -186,7 +184,7 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
 }
 
 static void
-parsemonthinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
+parsemonthinterval(bignum_t * nval, SQL_INTERVAL_STRUCT * ival)
 {
 	while (nval->scale > 0) {
 		/* ignore fraction */
@@ -218,18 +216,15 @@ static short monthlengths[] = {
 #define isLeap(y)	((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
 
 static int
-parsedate(const char *data, DATE_STRUCT *dval)
+parsedate(const char *data, DATE_STRUCT * dval)
 {
 	int n;
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "%hd-%hu-%hu%n",
-		   &dval->year, &dval->month, &dval->day, &n) < 3)
+	if (sscanf(data, "%hd-%hu-%hu%n", &dval->year, &dval->month, &dval->day, &n) < 3)
 		return 0;
-	if (dval->month == 0 || dval->month > 12 ||
-	    dval->day == 0 || dval->day > monthlengths[dval->month] ||
-	    (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
+	if (dval->month == 0 || dval->month > 12 || dval->day == 0 || dval->day > monthlengths[dval->month] || (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
 		return 0;
 	data += n;
 	while (space(*data))
@@ -240,14 +235,13 @@ parsedate(const char *data, DATE_STRUCT *dval)
 }
 
 static int
-parsetime(const char *data, TIME_STRUCT *tval)
+parsetime(const char *data, TIME_STRUCT * tval)
 {
 	int n;
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "%hu:%hu:%hu%n",
-		   &tval->hour, &tval->minute, &tval->second, &n) < 3)
+	if (sscanf(data, "%hu:%hu:%hu%n", &tval->hour, &tval->minute, &tval->second, &n) < 3)
 		return 0;
 	/* seconds can go up to 61(!) because of leap seconds */
 	if (tval->hour > 23 || tval->minute > 59 || tval->second > 61)
@@ -255,8 +249,7 @@ parsetime(const char *data, TIME_STRUCT *tval)
 	data += n;
 	n = 1;			/* tentative return value */
 	if (*data == '.') {
-		while (*++data && '0' <= *data && *data <= '9')
-			;
+		while (*++data && '0' <= *data && *data <= '9') ;
 		n = 2;		/* indicate loss of precision */
 	}
 	while (space(*data))
@@ -267,20 +260,15 @@ parsetime(const char *data, TIME_STRUCT *tval)
 }
 
 static int
-parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
+parsetimestamp(const char *data, TIMESTAMP_STRUCT * tsval)
 {
 	int n;
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n",
-		   &tsval->year, &tsval->month, &tsval->day,
-		   &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
+	if (sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
 		return 0;
-	if (tsval->month == 0 || tsval->month > 12 ||
-	    tsval->day == 0 || tsval->day > monthlengths[tsval->month] ||
-	    (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) ||
-	    tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
+	if (tsval->month == 0 || tsval->month > 12 || tsval->day == 0 || tsval->day > monthlengths[tsval->month] || (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) || tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
 		return 0;
 	tsval->fraction = 0;
 	data += n;
@@ -319,10 +307,7 @@ parsedouble(const char *data, double *fval)
 }
 
 SQLRETURN
-ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
-	  SQLPOINTER ptr, SQLINTEGER buflen, SQLINTEGER *lenp,
-	  SQLINTEGER *nullp, SQLSMALLINT precision, SQLSMALLINT scale,
-	  SQLINTEGER datetime_interval_precision, SQLINTEGER offset, int row)
+ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQLINTEGER buflen, SQLINTEGER *lenp, SQLINTEGER *nullp, SQLSMALLINT precision, SQLSMALLINT scale, SQLINTEGER datetime_interval_precision, SQLINTEGER offset, int row)
 {
 	char *data;
 	SQLSMALLINT sql_type;
@@ -342,9 +327,11 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 
 	ird = stmt->ImplRowDescr;
 	ard = stmt->ApplRowDescr;
+
 	if (col == 0 || col > ird->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	bind_type = ard->sql_desc_bind_type;
@@ -352,8 +339,9 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	ardrec = col <= ard->sql_desc_count ? &ard->descRec[col] : NULL;
 	sql_type = irdrec->sql_desc_concise_type;
 
-	if (ptr && offset)
-		ptr = (SQLPOINTER) ((char *) ptr + offset);
+	if (ptr &&offset)
+		ptr = (SQLPOINTER) ((char *) ptr +offset);
+
 	if (lenp && offset)
 		lenp = (SQLINTEGER *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 	if (nullp && offset)
@@ -460,8 +448,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		}
 	}
 
-	if (precision == UNAFFECTED || scale == UNAFFECTED ||
-	    datetime_interval_precision == UNAFFECTED) {
+	if (precision == UNAFFECTED || scale == UNAFFECTED || datetime_interval_precision == UNAFFECTED) {
 		if (ardrec) {
 			if (precision == UNAFFECTED)
 				precision = ardrec->sql_desc_precision;
@@ -487,6 +474,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	if (mapi_error(stmt->Dbc->mid)) {
 		/* General error */
 		addStmtError(stmt, "HY000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (nullp)
@@ -497,6 +485,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (nullp == NULL) {
 			/* Indicator variable required but not supplied */
 			addStmtError(stmt, "22002", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		return SQL_SUCCESS;
@@ -521,6 +510,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			   type, but in reality it wasn't. */
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+
 			return SQL_ERROR;
 		}
 
@@ -536,6 +526,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (!parsedouble(data, &fval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
@@ -554,6 +545,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		} else {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		while (space(*data))
@@ -561,6 +553,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (*data) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
@@ -568,6 +561,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (!parsedate(data, &dval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
@@ -575,6 +569,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (!parsetime(data, &tval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
@@ -582,6 +577,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (!parsetimestamp(data, &tsval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
@@ -594,7 +590,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 
 	switch (type) {
 	case SQL_C_CHAR:
-	case SQL_C_WCHAR: {
+	case SQL_C_WCHAR:{
 		SQLPOINTER origptr;
 		SQLINTEGER origbuflen;
 		SQLINTEGER *origlenp;
@@ -602,19 +598,23 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (buflen < 0) {
 			/* Invalid string or buffer length */
 			addStmtError(stmt, "HY090", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
+
 		/* if SQL_C_WCHAR is requested, first convert to UTF-8
 		 * (SQL_C_CHAR), and at the end convert to UTF-16 */
 		origptr = ptr;
+
 		origbuflen = buflen;
 		origlenp = lenp;
 		if (type == SQL_C_WCHAR) {
 			/* allocate temporary space */
 			buflen *= 4;
 			ptr = malloc(buflen + 1);
+
 			lenp = NULL;
 		}
 		switch (sql_type) {
@@ -622,28 +622,29 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 
 		default:
 		case SQL_CHAR:
-			copyString(data, ptr, buflen, lenp,
-				   addStmtError, stmt);
+			copyString(data, ptr, buflen, lenp, addStmtError, stmt);
+
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-		case SQL_BIT: {
+		case SQL_BIT:{
 			int f, n;
 
 			data = (char *) ptr;
+
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			sz = snprintf(data, buflen, "%s" ULLFMT,
-				      nval.sign ? "" : "-",
-				      nval.val / f);
+			sz = snprintf(data, buflen, "%s" ULLFMT, nval.sign ? "" : "-", nval.val / f);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -654,9 +655,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				if (lenp)
 					*lenp += nval.scale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u",
-						      nval.scale,
-						      nval.val % f);
+					sz = snprintf(data, buflen, ".%0*u", nval.scale, nval.val % f);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -666,9 +665,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		}
 		case SQL_DOUBLE:
-		case SQL_REAL: {
+		case SQL_REAL:{
 			int i;
 			data = (char *) ptr;
+
 			for (i = 0; i < 18; i++) {
 				sz = snprintf(data, buflen, "%.*g", i, fval);
 				if (sz < 0 || sz >= buflen) {
@@ -676,16 +676,16 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 					if (i == 0) {
 						/* Numeric value out
 						   of range */
-						addStmtError(stmt, "22003",
-							     NULL, 0);
+						addStmtError(stmt, "22003", NULL, 0);
+
 						if (type == SQL_C_WCHAR)
 							free(ptr);
+
 						return SQL_ERROR;
 					}
 					/* current precision (i) doesn't fit,
 					   but previous did, so use that */
-					snprintf(data, buflen, "%.*g", i - 1,
-						 fval);
+					snprintf(data, buflen, "%.*g", i - 1, fval);
 					/* max space that would have
 					   been needed */
 					sz = strlen(data) + 17 - i;
@@ -704,13 +704,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (buflen < 11) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
-			sz = snprintf(data, buflen, "%04u-%02u-%02u",
-				      dval.year, dval.month, dval.day);
+
+			sz = snprintf(data, buflen, "%04u-%02u-%02u", dval.year, dval.month, dval.day);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -723,13 +725,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (buflen < 9) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
-			sz = snprintf(data, buflen, "%02u:%02u:%02u",
-				      tval.hour, tval.minute, tval.second);
+
+			sz = snprintf(data, buflen, "%02u:%02u:%02u", tval.hour, tval.minute, tval.second);
 			if (sz < 0 || sz >= buflen) {
 				data[buflen - 1] = 0;
 				/* String data, right-truncated */
@@ -740,15 +744,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_TYPE_TIMESTAMP:
 			data = (char *) ptr;
-			sz = snprintf(data, buflen,
-				      "%04u-%02u-%02u %02u:%02u:%02u",
-				      tsval.year, tsval.month, tsval.day,
-				      tsval.hour, tsval.minute, tsval.second);
+
+			sz = snprintf(data, buflen, "%04u-%02u-%02u %02u:%02u:%02u", tsval.year, tsval.month, tsval.day, tsval.hour, tsval.minute, tsval.second);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -765,8 +769,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				if (lenp)
 					*lenp += scale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u",
-						      scale, tsval.fraction);
+					sz = snprintf(data, buflen, ".%0*u", scale, tsval.fraction);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -775,15 +778,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			}
 			break;
 		case SQL_INTERVAL_MONTH:
-			sz = snprintf((char *) ptr, buflen, "%s%04u-%02u",
-				      ival.interval_sign ? "-" : "",
-				      ival.intval.year_month.year,
-				      ival.intval.year_month.month);
+			sz = snprintf((char *) ptr, buflen, "%s%04u-%02u", ival.interval_sign ? "-" : "", ival.intval.year_month.year, ival.intval.year_month.month);
+
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -791,17 +794,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			break;
 		case SQL_INTERVAL_SECOND:
 			data = (char *) ptr;
-			sz = snprintf(data, buflen, "%s%u %02u:%02u:%02u",
-				      ival.interval_sign ? "-" : "",
-				      ival.intval.day_second.day,
-				      ival.intval.day_second.hour,
-				      ival.intval.day_second.minute,
-				      ival.intval.day_second.second);
+
+			sz = snprintf(data, buflen, "%s%u %02u:%02u:%02u", ival.interval_sign ? "-" : "", ival.intval.day_second.day, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -812,8 +813,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				if (lenp)
 					*lenp += i + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u", i,
-						      ival.intval.day_second.fraction);
+					sz = snprintf(data, buflen, ".%0*u", i, ival.intval.day_second.fraction);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -825,11 +825,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
 
-			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
-				       (SQLWCHAR *) origptr, origbuflen,
-				       &n);
+			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
+
 			if (origlenp)
-				*origlenp = n * 2; /* # of bytes, not chars */
+				*origlenp = n * 2;	/* # of bytes, not chars */
 			free(ptr);
 		}
 		break;
@@ -838,10 +837,12 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		if (buflen < 0) {
 			/* Invalid string or buffer length */
 			addStmtError(stmt, "HY090", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
+
 		switch (sql_type) {
 		case SQL_CHAR:
 		case SQL_DECIMAL:
@@ -860,12 +861,14 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
 	case SQL_C_BIT:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
+
 		if (lenp)
 			*lenp = 1;
 		switch (sql_type) {
@@ -874,6 +877,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			/* fall through */
@@ -882,20 +886,23 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (fval < 0 || fval >= 2) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				return SQL_ERROR;
 			}
-			* (unsigned char *) ptr = fval >= 1;
+			*(unsigned char *) ptr = fval >= 1;
+
 			if (fval != 0 && fval != 1)
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-		case SQL_BIT: {
+		case SQL_BIT:{
 			int truncated = nval.scale > 0;
 
 			while (nval.scale > 0) {
@@ -903,22 +910,24 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				nval.scale--;
 			}
 			/* -0 is ok, but -1 or -0.5 isn't */
-			if (nval.val > 1 ||
-			    (!nval.sign &&
-			     (nval.val == 1 || truncated))) {
+			if (nval.val > 1 || (!nval.sign && (nval.val == 1 || truncated))) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				return SQL_ERROR;
 			}
-			* (unsigned char *) ptr = (unsigned char) nval.val;
+			*(unsigned char *) ptr = (unsigned char) nval.val;
+
 			if (truncated)
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
+
 			break;
 		}
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
@@ -928,7 +937,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	case SQL_C_SHORT:
 	case SQL_C_SLONG:
 	case SQL_C_LONG:
-	case SQL_C_SBIGINT: {
+	case SQL_C_SBIGINT:{
 		SQLUBIGINT maxval = 1;
 
 		switch (type) {
@@ -938,7 +947,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (lenp)
 				*lenp = sizeof(signed char);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(signed char) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(signed char) : bind_type));
+
 			break;
 		case SQL_C_SSHORT:
 		case SQL_C_SHORT:
@@ -946,7 +956,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (lenp)
 				*lenp = sizeof(short);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(short) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(short) : bind_type));
+
 			break;
 		case SQL_C_SLONG:
 		case SQL_C_LONG:
@@ -954,14 +965,16 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (lenp)
 				*lenp = sizeof(long);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(long) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(long) : bind_type));
+
 			break;
 		case SQL_C_SBIGINT:
 			maxval <<= 63;
 			if (lenp)
 				*lenp = sizeof(SQLBIGINT);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLBIGINT) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLBIGINT) : bind_type));
+
 			break;
 		}
 		switch (sql_type) {
@@ -973,6 +986,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			/* fall through */
@@ -981,7 +995,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-		case SQL_BIT: {
+		case SQL_BIT:{
 			int truncated = nval.scale > 0;
 
 			/* scale is normalized, so if negative, number
@@ -990,31 +1004,35 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				nval.val /= 10;
 				nval.scale--;
 			}
-			if (nval.scale < 0 ||
-			    nval.val > maxval ||
-			    (nval.val == maxval && nval.sign)) {
+			if (nval.scale < 0 || nval.val > maxval || (nval.val == maxval && nval.sign)) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			if (truncated)
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
+
 			switch (type) {
 			case SQL_C_STINYINT:
 			case SQL_C_TINYINT:
-				* (signed char *) ptr = nval.sign ? (signed char) nval.val : - (signed char) nval.val;
+				*(signed char *) ptr = nval.sign ? (signed char) nval.val : -(signed char) nval.val;
+
 				break;
 			case SQL_C_SSHORT:
 			case SQL_C_SHORT:
-				* (short *) ptr = nval.sign ? (short) nval.val : - (short) nval.val;
+				*(short *) ptr = nval.sign ? (short) nval.val : -(short) nval.val;
+
 				break;
 			case SQL_C_SLONG:
 			case SQL_C_LONG:
-				* (long *) ptr = nval.sign ? (long) nval.val : - (long) nval.val;
+				*(long *) ptr = nval.sign ? (long) nval.val : -(long) nval.val;
+
 				break;
 			case SQL_C_SBIGINT:
-				* (SQLBIGINT *) ptr = nval.sign ? (SQLBIGINT) nval.val : - (SQLBIGINT) nval.val;
+				*(SQLBIGINT *) ptr = nval.sign ? (SQLBIGINT) nval.val : -(SQLBIGINT) nval.val;
+
 				break;
 			}
 			break;
@@ -1022,6 +1040,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
@@ -1029,7 +1048,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	case SQL_C_UTINYINT:
 	case SQL_C_USHORT:
 	case SQL_C_ULONG:
-	case SQL_C_UBIGINT: {
+	case SQL_C_UBIGINT:{
 		SQLUBIGINT maxval = 1;
 
 		switch (type) {
@@ -1038,27 +1057,31 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if (lenp)
 				*lenp = sizeof(unsigned char);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
+
 			break;
 		case SQL_C_USHORT:
 			maxval <<= 16;
 			if (lenp)
 				*lenp = sizeof(unsigned short);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned short) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned short) : bind_type));
+
 			break;
 		case SQL_C_ULONG:
 			maxval <<= 32;
 			if (lenp)
 				*lenp = sizeof(unsigned long);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned long) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned long) : bind_type));
+
 			break;
 		case SQL_C_UBIGINT:
 			if (lenp)
 				*lenp = sizeof(SQLUBIGINT);
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLUBIGINT) : bind_type));
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLUBIGINT) : bind_type));
+
 			break;
 		}
 		maxval--;
@@ -1071,6 +1094,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			/* fall through */
@@ -1079,7 +1103,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-		case SQL_BIT: {
+		case SQL_BIT:{
 			int truncated = nval.scale > 0;
 
 			/* scale is normalized, so if negative, number
@@ -1088,27 +1112,32 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				nval.val /= 10;
 				nval.scale--;
 			}
-			if (nval.scale < 0 || !nval.sign ||
-			    (maxval != 0 && nval.val >= maxval)) {
+			if (nval.scale < 0 || !nval.sign || (maxval != 0 && nval.val >= maxval)) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			if (truncated)
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
+
 			switch (type) {
 			case SQL_C_UTINYINT:
-				* (unsigned char *) ptr = (unsigned char) nval.val;
+				*(unsigned char *) ptr = (unsigned char) nval.val;
+
 				break;
 			case SQL_C_USHORT:
-				* (unsigned short *) ptr = (unsigned short) nval.val;
+				*(unsigned short *) ptr = (unsigned short) nval.val;
+
 				break;
 			case SQL_C_ULONG:
-				* (unsigned long *) ptr = (unsigned long) nval.val;
+				*(unsigned long *) ptr = (unsigned long) nval.val;
+
 				break;
 			case SQL_C_UBIGINT:
-				* (SQLUBIGINT *) ptr = (SQLUBIGINT) nval.val;
+				*(SQLUBIGINT *) ptr = (SQLUBIGINT) nval.val;
+
 				break;
 			}
 			break;
@@ -1116,13 +1145,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		break;
 	}
 	case SQL_C_NUMERIC:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_NUMERIC_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_NUMERIC_STRUCT) : bind_type));
+
 		switch (sql_type) {
 		case SQL_CHAR:
 		case SQL_DOUBLE:
@@ -1132,11 +1163,13 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			if (i == 2)
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
+
 			/* fall through */
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
@@ -1169,6 +1202,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1182,6 +1216,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			break;
@@ -1213,39 +1248,43 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		if (type == SQL_C_FLOAT) {
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
-			* (float *) ptr = (float) fval;
-			if ((double) * (float *) ptr != fval) {
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
+			*(float *) ptr = (float) fval;
+
+			if ((double) *(float *) ptr !=fval) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			if (lenp)
 				*lenp = sizeof(float);
 		} else {
 			if (ardrec && row > 0)
-				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(double) : bind_type));
-			* (double *) ptr = fval;
+				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(double) : bind_type));
+			*(double *) ptr = fval;
+
 			if (lenp)
 				*lenp = sizeof(double);
 		}
 		break;
 	case SQL_C_TYPE_DATE:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(DATE_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(DATE_STRUCT) : bind_type));
+
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
 			i = parsetimestamp(data, &tsval);
 			/* fall through */
-		case SQL_TYPE_TIMESTAMP: /* note i==1 unless we fell through */
+		case SQL_TYPE_TIMESTAMP:	/* note i==1 unless we fell through */
 			if (i) {
-				if (tsval.hour || tsval.minute ||
-				    tsval.second || tsval.fraction || i == 2) {
+				if (tsval.hour || tsval.minute || tsval.second || tsval.fraction || i == 2) {
 					/* Fractional truncation */
 					addStmtError(stmt, "01S07", NULL, 0);
 				}
@@ -1256,15 +1295,18 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			/* fall through */
 		case SQL_TYPE_DATE:
-			* (DATE_STRUCT *) ptr = dval;
+			*(DATE_STRUCT *) ptr = dval;
+
 			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1272,13 +1314,14 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		break;
 	case SQL_C_TYPE_TIME:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIME_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIME_STRUCT) : bind_type));
+
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
 			i = parsetimestamp(data, &tsval);
 			/* fall through */
-		case SQL_TYPE_TIMESTAMP: /* note i==1 unless we fell through */
+		case SQL_TYPE_TIMESTAMP:	/* note i==1 unless we fell through */
 			if (i) {
 				if (tsval.fraction || i == 2) {
 					/* Fractional truncation */
@@ -1291,15 +1334,18 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			/* fall through */
 		case SQL_TYPE_TIME:
-			* (TIME_STRUCT *) ptr = tval;
+			*(TIME_STRUCT *) ptr = tval;
+
 			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1307,7 +1353,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIMESTAMP_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(TIMESTAMP_STRUCT) : bind_type));
+
 		i = 1;
 		switch (sql_type) {
 		case SQL_CHAR:
@@ -1347,19 +1394,21 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 						/* Invalid character
 						   value for cast
 						   specification */
-						addStmtError(stmt, "22018",
-							     NULL, 0);
+						addStmtError(stmt, "22018", NULL, 0);
+
 						return SQL_ERROR;
 					}
 				}
 			}
 			/* fall through */
-		case SQL_TYPE_TIMESTAMP: /* note i==1 unless we fell through */
-			* (TIMESTAMP_STRUCT *) ptr = tsval;
+		case SQL_TYPE_TIMESTAMP:	/* note i==1 unless we fell through */
+			*(TIMESTAMP_STRUCT *) ptr = tsval;
+
 			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1369,18 +1418,19 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	case SQL_C_INTERVAL_MONTH:
 	case SQL_C_INTERVAL_YEAR_TO_MONTH:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
+
 		switch (sql_type) {
-		case SQL_CHAR: {
+		case SQL_CHAR:{
 			int n;
 
 			ival.interval_type = SQL_IS_YEAR_TO_MONTH;
 			ival.interval_sign = SQL_TRUE;
-			if (sscanf(data, "%d-%u%n", &i,
-				   &ival.intval.year_month.month, &n) < 2) {
+			if (sscanf(data, "%d-%u%n", &i, &ival.intval.year_month.month, &n) < 2) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			data += n;
@@ -1390,6 +1440,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			if (i < 0) {
@@ -1411,6 +1462,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 #define p ((SQL_INTERVAL_STRUCT *) ptr)	/* abbrev. */
@@ -1423,6 +1475,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			if (ival.intval.year_month.month) {
@@ -1435,6 +1488,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.year_month.month = ival.intval.year_month.month + 12 * ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			break;
@@ -1443,6 +1497,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.year_month.month = ival.intval.year_month.month;
@@ -1463,20 +1518,19 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	case SQL_C_INTERVAL_HOUR_TO_SECOND:
 	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
 		if (ardrec && row > 0)
-			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
+			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
+
 		switch (sql_type) {
-		case SQL_CHAR: {
+		case SQL_CHAR:{
 			int n;
 
 			ival.interval_type = SQL_IS_DAY_TO_SECOND;
 			ival.interval_sign = SQL_TRUE;
-			if (sscanf(data, "%d %u:%u:%u%n", &i,
-				   &ival.intval.day_second.hour,
-				   &ival.intval.day_second.minute,
-				   &ival.intval.day_second.second, &n) < 4) {
+			if (sscanf(data, "%d %u:%u:%u%n", &i, &ival.intval.day_second.hour, &ival.intval.day_second.minute, &ival.intval.day_second.second, &n) < 4) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			if (i < 0) {
@@ -1504,6 +1558,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			break;
@@ -1520,6 +1575,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
+
 			return SQL_ERROR;
 		}
 #define p ((SQL_INTERVAL_STRUCT *) ptr)	/* abbrev. */
@@ -1535,12 +1591,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
-			if (ival.intval.day_second.hour ||
-			    ival.intval.day_second.minute ||
-			    ival.intval.day_second.second ||
-			    ival.intval.day_second.fraction) {
+			if (ival.intval.day_second.hour || ival.intval.day_second.minute || ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
@@ -1550,11 +1604,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
-			if (ival.intval.day_second.minute ||
-			    ival.intval.day_second.second ||
-			    ival.intval.day_second.fraction) {
+			if (ival.intval.day_second.minute || ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
@@ -1564,10 +1617,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
-			if (ival.intval.day_second.second ||
-			    ival.intval.day_second.fraction) {
+			if (ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
@@ -1577,6 +1630,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.second = ival.intval.day_second.second + 60 * (ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day))) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.day_second.fraction = ival.intval.day_second.fraction;
@@ -1586,12 +1640,11 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.day_second.hour = ival.intval.day_second.hour;
-			if (ival.intval.day_second.minute ||
-			    ival.intval.day_second.second ||
-			    ival.intval.day_second.fraction) {
+			if (ival.intval.day_second.minute || ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
@@ -1601,12 +1654,12 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.day_second.hour = ival.intval.day_second.hour;
 			p->intval.day_second.minute = ival.intval.day_second.minute;
-			if (ival.intval.day_second.second ||
-			    ival.intval.day_second.fraction) {
+			if (ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
@@ -1616,6 +1669,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.day_second.hour = ival.intval.day_second.hour;
@@ -1628,11 +1682,11 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.day_second.minute = ival.intval.day_second.minute;
-			if (ival.intval.day_second.second ||
-			    ival.intval.day_second.fraction) {
+			if (ival.intval.day_second.second || ival.intval.day_second.fraction) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
 			}
@@ -1642,6 +1696,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.day_second.minute = ival.intval.day_second.minute;
@@ -1653,6 +1708,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
+
 				return SQL_ERROR;
 			}
 			p->intval.day_second.second = ival.intval.day_second.second;
@@ -1676,6 +1732,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 	default:
 		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
@@ -1702,6 +1759,7 @@ SQLFetch_(ODBCStmt *stmt)
 	if (mapi_seek_row(stmt->hdl, stmt->startRow, MAPI_SEEK_SET) != MOK) {
 		/* Row value out of range */
 		addStmtError(stmt, "HY107", mapi_error_str(stmt->Dbc->mid), 0);
+
 		return SQL_ERROR;
 	}
 
@@ -1713,10 +1771,13 @@ SQLFetch_(ODBCStmt *stmt)
 		/* don't really retrieve the data, just do as if,
 		   updating the SQL_DESC_ARRAY_STATUS_PTR */
 		stmt->rowSetSize = desc->sql_desc_array_size;
+
 		if (stmt->startRow + stmt->rowSetSize > stmt->rowcount)
 			stmt->rowSetSize = stmt->rowcount - stmt->startRow;
+
 		if (stmt->rowSetSize <= 0) {
 			stmt->rowSetSize = 0;
+
 			return SQL_NO_DATA;
 		}
 		if (statusp) {
@@ -1741,17 +1802,15 @@ SQLFetch_(ODBCStmt *stmt)
 				if (statusp)
 					*statusp = SQL_ROW_ERROR;
 				/* Communication link failure */
-				addStmtError(stmt, "08S01",
-					     mapi_error_str(stmt->Dbc->mid),
-					     0);
+				addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+
 				return SQL_ERROR;
 			default:
 				if (statusp)
 					*statusp = SQL_ROW_ERROR;
 				/* General error */
-				addStmtError(stmt, "HY000",
-					     mapi_error_str(stmt->Dbc->mid),
-					     0);
+				addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+
 				return SQL_ERROR;
 			}
 			break;
@@ -1770,17 +1829,9 @@ SQLFetch_(ODBCStmt *stmt)
 			if (rec->sql_desc_data_ptr == NULL)
 				continue;
 			stmt->retrieved = 0;
-			if (ODBCFetch(stmt, i,
-				      rec->sql_desc_concise_type,
-				      rec->sql_desc_data_ptr,
-				      rec->sql_desc_octet_length,
-				      rec->sql_desc_octet_length_ptr,
-				      rec->sql_desc_indicator_ptr,
-				      rec->sql_desc_precision,
-				      rec->sql_desc_scale,
-				      rec->sql_desc_datetime_interval_precision,
-				      offset,
-				      row) == SQL_ERROR) {
+			if (ODBCFetch
+			    (stmt, i, rec->sql_desc_concise_type, rec->sql_desc_data_ptr, rec->sql_desc_octet_length, rec->sql_desc_octet_length_ptr, rec->sql_desc_indicator_ptr, rec->sql_desc_precision, rec->sql_desc_scale,
+			     rec->sql_desc_datetime_interval_precision, offset, row) == SQL_ERROR) {
 				if (statusp)
 					*statusp = SQL_ROW_SUCCESS_WITH_INFO;
 			}
@@ -1790,6 +1841,7 @@ SQLFetch_(ODBCStmt *stmt)
 	}
 	if (desc->sql_desc_rows_processed_ptr)
 		*desc->sql_desc_rows_processed_ptr = stmt->rowSetSize;
+
 	if (statusp)
 		while (row++ < desc->sql_desc_array_size)
 			*statusp++ = SQL_ROW_NOROW;
@@ -1822,11 +1874,13 @@ SQLFetch(SQLHSTMT hStmt)
 	if (stmt->State < EXECUTED0 || stmt->State == EXTENDEDFETCHED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (stmt->State == EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 

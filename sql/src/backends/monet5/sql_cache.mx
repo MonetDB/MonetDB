@@ -78,66 +78,74 @@ sql_export str SQLCacheRemove(int *ret, str *nme);
 #include "mal_interpreter.h"
 #include "inspect.h"
 
-str SQLCacheExists(bit *res, str *nme){
+str
+SQLCacheExists(bit *res, str *nme)
+{
 	Scope scope;
 	Symbol s;
 	Client c = getClient();
 
-	scope= findModule(c->nspace,"sql_cache");
-	if( scope == NULL)
-		return throwMessage("sql_cache.exists",
-			"internal error, sql_cache missing\n");
-	s= findSymbolInModule(scope,*nme);
+	scope = findModule(c->nspace, "sql_cache");
+
+	if (scope == NULL)
+		return throwMessage("sql_cache.exists", "internal error, sql_cache missing\n");
+	s = findSymbolInModule(scope, *nme);
 	*res = s != NULL;
 	return MAL_SUCCEED;
 }
-str SQLCacheGetDefinition(int *ret, str *nme){
+
+str
+SQLCacheGetDefinition(int *ret, str *nme)
+{
 	Scope scope;
 	Symbol s;
-	Client c= getClient();
+	Client c = getClient();
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
-	if(b == 0) 
+	if (b == 0)
 		return throwMessage("sql_cache.getDefinition", "failed to create BAT");
-	
-        scope= findModule(c->nspace,"sql_cache");
-        if( scope == NULL)
-                return throwMessage("sql_cache.getDefinition",
-                        "internal error, sql_cache missing\n");
-        s= findSymbolInModule(scope,*nme);
 
-	if(s){
+	scope = findModule(c->nspace, "sql_cache");
+
+	if (scope == NULL)
+		return throwMessage("sql_cache.getDefinition", "internal error, sql_cache missing\n");
+	s = findSymbolInModule(scope, *nme);
+
+	if (s) {
 		int i;
 		str ps;
-		for(i=0;i<s->def->stop;i++){
-			ps= instruction2str(s->def, getInstrPtr(s->def,i),0);
-			BUNins(b,&i,ps+1);
+
+		for (i = 0; i < s->def->stop; i++) {
+			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
+			BUNins(b, &i, ps + 1);
 			GDKfree(ps);
 		}
 	}
-        BATmode(b,TRANSIENT);
-        BATfakeCommit(b);
-        *ret = b->batCacheid;
+	BATmode(b, TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
 	return MAL_SUCCEED;
 }
-str SQLCacheRemove(int *ret, str *nme){
+
+str
+SQLCacheRemove(int *ret, str *nme)
+{
 	Scope scope;
 	Symbol s;
-   	Client c = getClient();
+	Client c = getClient();
 
 	(void) ret;
 #ifdef _SQL_CACHE_DEBUG
-	stream_printf(GDKout,"SQLCacheRemove %s\n", *nme);
+	stream_printf(GDKout, "SQLCacheRemove %s\n", *nme);
 #endif
-	scope= findModule(c->nspace,"sql_cache");
-	if( scope == NULL)
-		return throwMessage("sql_cache.remove",
-			"internal error, sql_cache missing\n");
-	s= findSymbolInModule(scope,*nme);
-	if( s == NULL)
-		return throwMessage("sql_cache.remove",
-			"internal error, sql_cache entry missing\n");
-        shutdownFactory(s->def);
-	deleteSymbol(scope,s);
+	scope = findModule(c->nspace, "sql_cache");
+
+	if (scope == NULL)
+		return throwMessage("sql_cache.remove", "internal error, sql_cache missing\n");
+	s = findSymbolInModule(scope, *nme);
+	if (s == NULL)
+		return throwMessage("sql_cache.remove", "internal error, sql_cache entry missing\n");
+	shutdownFactory(s->def);
+	deleteSymbol(scope, s);
 	return MAL_SUCCEED;
 }

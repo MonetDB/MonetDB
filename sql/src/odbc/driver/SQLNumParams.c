@@ -43,6 +43,7 @@ SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 	if (stmt->State == INITED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 

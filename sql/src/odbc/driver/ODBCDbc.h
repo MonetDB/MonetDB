@@ -56,7 +56,7 @@ typedef struct tODBCDRIVERDBC {
 	   this Connection */
 	/* can't use ODBCStmt *FirstStmt here because of ordering of
 	   include files */
-	struct tODBCDRIVERSTMT *FirstStmt; /* first in list or NULL */
+	struct tODBCDRIVERSTMT *FirstStmt;	/* first in list or NULL */
 } ODBCDbc;
 
 
@@ -90,8 +90,7 @@ int isValidDbc(ODBCDbc *dbc);
  *
  * Precondition: dbc must be valid. SQLState and errMsg may be NULL.
  */
-void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg,
-		 int nativeErrCode);
+void addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nativeErrCode);
 
 
 /*
@@ -125,19 +124,11 @@ ODBCError *getDbcError(ODBCDbc *dbc);
 void destroyODBCDbc(ODBCDbc *dbc);
 
 SQLRETURN ODBCFreeDbc_(ODBCDbc *dbc);
-int ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn,
-		   char **key, char **attr);
+int ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr);
 SQLRETURN SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
 SQLRETURN SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
-SQLRETURN SQLConnect_(ODBCDbc *dbc,
-		      SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
-		      SQLCHAR *szUID, SQLSMALLINT nUIDLength,
-		      SQLCHAR *szPWD, SQLSMALLINT nPWDLength,
-		      char *host, int port);
-SQLRETURN SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
-			     SQLPOINTER ValuePtr, SQLINTEGER BufferLength,
-			     SQLINTEGER *StringLength);
-SQLRETURN SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute,
-			     SQLPOINTER ValuePtr, SQLINTEGER StringLength);
+SQLRETURN SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port);
+SQLRETURN SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
+SQLRETURN SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 
 #endif

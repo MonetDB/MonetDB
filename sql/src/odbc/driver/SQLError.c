@@ -25,40 +25,26 @@
 #include "ODBCUtil.h"
 
 SQLRETURN SQL_API
-SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
-	 SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg,
-	 SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState, SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg, SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLError " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
+	ODBCLOG("SQLError " PTRFMT " " PTRFMT " " PTRFMT "\n", PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	return SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT :
-			      (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
-			      hStmt ? hStmt : (hDbc ? hDbc : hEnv),
-			      (hStmt ? ++((ODBCStmt *)hStmt)->RetrievedErrors :
-			      (hDbc ? ++((ODBCDbc *)hDbc)->RetrievedErrors :
-			       ++((ODBCEnv *)hEnv)->RetrievedErrors)),
-			      szSqlState, pfNativeError, szErrorMsg,
-			      nErrorMsgMax, pcbErrorMsg);
+	return SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT : (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV), hStmt ? hStmt : (hDbc ? hDbc : hEnv),
+			      (hStmt ? ++((ODBCStmt *) hStmt)->RetrievedErrors : (hDbc ? ++((ODBCDbc *) hDbc)->RetrievedErrors : ++((ODBCEnv *) hEnv)->RetrievedErrors)), szSqlState, pfNativeError, szErrorMsg, nErrorMsgMax, pcbErrorMsg);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLErrorA(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState,
-	  SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg,
-	  SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+SQLErrorA(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState, SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg, SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
 {
-	return SQLError(hEnv, hDbc, hStmt, szSqlState, pfNativeError,
-			szErrorMsg, nErrorMsgMax, pcbErrorMsg);
+	return SQLError(hEnv, hDbc, hStmt, szSqlState, pfNativeError, szErrorMsg, nErrorMsgMax, pcbErrorMsg);
 }
 
 SQLRETURN SQL_API
-SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
-	  SQLINTEGER *pfNativeError, SQLWCHAR *szErrorMsg,
-	  SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR * szSqlState, SQLINTEGER *pfNativeError, SQLWCHAR * szErrorMsg, SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
 {
 	SQLCHAR state[6];
 	SQLRETURN rc;
@@ -66,30 +52,25 @@ SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
 	SQLCHAR *errmsg;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLErrorW " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
+	ODBCLOG("SQLErrorW " PTRFMT " " PTRFMT " " PTRFMT "\n", PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
 #endif
 
 	errmsg = (SQLCHAR *) malloc(nErrorMsgMax * 4);
 
 	/* use mapping as described in ODBC 3 SDK Help file */
-	rc = SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT :
-			    (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
-			    hStmt ? hStmt : (hDbc ? hDbc : hEnv),
-			    (hStmt ? ++((ODBCStmt *)hStmt)->RetrievedErrors :
-			     (hDbc ? ++((ODBCDbc *)hDbc)->RetrievedErrors :
-			      ++((ODBCEnv *)hEnv)->RetrievedErrors)),
-			    state, pfNativeError, errmsg,
-			    nErrorMsgMax * 4, &n);
+	rc = SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT : (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV), hStmt ? hStmt : (hDbc ? hDbc : hEnv),
+			    (hStmt ? ++((ODBCStmt *) hStmt)->RetrievedErrors : (hDbc ? ++((ODBCDbc *) hDbc)->RetrievedErrors : ++((ODBCEnv *) hEnv)->RetrievedErrors)), state, pfNativeError, errmsg, nErrorMsgMax * 4, &n);
 
 	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(state, 5, szSqlState, 6, NULL);
+
 		if (e)
 			rc = SQL_ERROR;
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(errmsg, n, szErrorMsg, nErrorMsgMax, &n);
+
 		if (e)
 			rc = SQL_ERROR;
 		if (pcbErrorMsg)
@@ -99,4 +80,4 @@ SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR *szSqlState,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -23,8 +23,7 @@
 
 
 SQLRETURN
-SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
-		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 	/* check input parameters */
 	if (ValuePtr == NULL) {
@@ -35,41 +34,40 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
 	switch (Attribute) {
 	case SQL_ATTR_ACCESS_MODE:
-		* (SQLUINTEGER *) ValuePtr = SQL_MODE_READ_WRITE;
+		*(SQLUINTEGER *) ValuePtr = SQL_MODE_READ_WRITE;
 		break;
 	case SQL_ATTR_ASYNC_ENABLE:
-		* (SQLUINTEGER *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
+		*(SQLUINTEGER *) ValuePtr = SQL_ASYNC_ENABLE_OFF;
 		break;
 	case SQL_ATTR_AUTO_IPD:
 		/* TODO implement automatic filling of IPD
 		   See also SQLSetStmtAttr.c for SQL_ATTR_ENABLE_AUTO_IPD
-		*/
-		* (SQLUINTEGER *) ValuePtr = SQL_FALSE;
+		 */
+		*(SQLUINTEGER *) ValuePtr = SQL_FALSE;
 		break;
 	case SQL_ATTR_AUTOCOMMIT:
-		* (SQLUINTEGER *) ValuePtr = dbc->sql_attr_autocommit;
+		*(SQLUINTEGER *) ValuePtr = dbc->sql_attr_autocommit;
 		break;
 	case SQL_ATTR_CONNECTION_DEAD:
-		* (SQLUINTEGER *) ValuePtr = dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE;
+		*(SQLUINTEGER *) ValuePtr = dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE;
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:
-		* (SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
+		*(SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
 		break;
 	case SQL_ATTR_LOGIN_TIMEOUT:
-		* (SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
+		*(SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
 		break;
 	case SQL_ATTR_METADATA_ID:
-		* (SQLUINTEGER *) ValuePtr = SQL_FALSE;
+		*(SQLUINTEGER *) ValuePtr = SQL_FALSE;
 		break;
 	case SQL_ATTR_ODBC_CURSORS:
-		* (SQLUINTEGER *) ValuePtr = SQL_CUR_USE_IF_NEEDED;
+		*(SQLUINTEGER *) ValuePtr = SQL_CUR_USE_IF_NEEDED;
 		break;
 	case SQL_ATTR_TRACE:
-		* (SQLUINTEGER *) ValuePtr = SQL_OPT_TRACE_OFF;
+		*(SQLUINTEGER *) ValuePtr = SQL_OPT_TRACE_OFF;
 		break;
 	case SQL_ATTR_CURRENT_CATALOG:
-		copyString(dbc->DBNAME, ValuePtr, BufferLength, StringLength,
-			   addDbcError, dbc);
+		copyString(dbc->DBNAME, ValuePtr, BufferLength, StringLength, addDbcError, dbc);
 		break;
 
 /* TODO: implement all the other Connection Attributes */
@@ -95,12 +93,10 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 }
 
 SQLRETURN SQL_API
-SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
-		  SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttr " PTRFMT " %d\n", PTRFMTCAST hDbc,
-		Attribute);
+	ODBCLOG("SQLGetConnectAttr " PTRFMT " %d\n", PTRFMTCAST hDbc, Attribute);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) hDbc))
@@ -108,31 +104,26 @@ SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
 	clearDbcErrors((ODBCDbc *) hDbc);
 
-	return SQLGetConnectAttr_((ODBCDbc *) hDbc, Attribute, ValuePtr,
-				  BufferLength, StringLength);
+	return SQLGetConnectAttr_((ODBCDbc *) hDbc, Attribute, ValuePtr, BufferLength, StringLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetConnectAttrA(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
-		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttrA(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
-	return SQLGetConnectAttr(hDbc, Attribute, ValuePtr,
-				 BufferLength, StringLength);
+	return SQLGetConnectAttr(hDbc, Attribute, ValuePtr, BufferLength, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
-		   SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
-	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc;
 	SQLPOINTER ptr;
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttrW " PTRFMT " %d\n", PTRFMTCAST hDbc,
-		Attribute);
+	ODBCLOG("SQLGetConnectAttrW " PTRFMT " %d\n", PTRFMTCAST hDbc, Attribute);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -141,20 +132,22 @@ SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 	clearDbcErrors(dbc);
 
 	switch (Attribute) {
-	/* all string attributes */
+		/* all string attributes */
 	case SQL_ATTR_CURRENT_CATALOG:
 		n = BufferLength * 4;
 		ptr = (SQLPOINTER) malloc(n);
+
 		break;
 	default:
 		n = BufferLength;
 		ptr = ValuePtr;
+
 		break;
 	}
 
 	rc = SQLGetConnectAttr_(dbc, Attribute, ptr, n, &n);
 
-	if (ptr != ValuePtr) {
+	if (ptr !=ValuePtr) {
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
 		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength, StringLength, 2, addDbcError, dbc);
@@ -163,4 +156,4 @@ SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

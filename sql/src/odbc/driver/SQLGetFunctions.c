@@ -38,7 +38,7 @@ static UWORD FuncImplemented[] = {
 	SQL_API_SQLCLOSECURSOR,
 #endif
 #ifdef SQL_API_SQLCOLATTRIBUTE
-	SQL_API_SQLCOLATTRIBUTE, /* == SQL_API_SQLCOLATTRIBUTES */
+	SQL_API_SQLCOLATTRIBUTE,	/* == SQL_API_SQLCOLATTRIBUTES */
 #endif
 	SQL_API_SQLCOLATTRIBUTES,
 	SQL_API_SQLCOLUMNS,
@@ -150,6 +150,7 @@ static UWORD FuncImplemented[] = {
 	SQL_API_SQLTABLEPRIVILEGES,
 #endif /* not yet implemented */
 };
+
 #define NFUNCIMPLEMENTED (sizeof(FuncImplemented)/sizeof(FuncImplemented[0]))
 
 /* this table is a bit map compatible with
@@ -163,8 +164,7 @@ SQLGetFunctions(SQLHDBC hDbc, SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported)
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetFunctions " PTRFMT " %d\n",
-		PTRFMTCAST hDbc, FunctionId);
+	ODBCLOG("SQLGetFunctions " PTRFMT " %d\n", PTRFMTCAST hDbc, FunctionId);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -176,15 +176,12 @@ SQLGetFunctions(SQLHDBC hDbc, SQLUSMALLINT FunctionId, SQLUSMALLINT *Supported)
 		/* not yet initialized, so do it now */
 		UWORD *p;
 
-		for (p = FuncImplemented;
-		     p < &FuncImplemented[NFUNCIMPLEMENTED];
-		     p++)
+		for (p = FuncImplemented; p < &FuncImplemented[NFUNCIMPLEMENTED]; p++)
 			FuncExistMap[*p >> 4] |= 1 << (*p & 0xF);
 	}
 
 	if (FunctionId == SQL_API_ODBC3_ALL_FUNCTIONS) {
-		memcpy(Supported, FuncExistMap,
-		       SQL_API_ODBC3_ALL_FUNCTIONS_SIZE * sizeof(FuncExistMap[0]));
+		memcpy(Supported, FuncExistMap, SQL_API_ODBC3_ALL_FUNCTIONS_SIZE * sizeof(FuncExistMap[0]));
 		return SQL_SUCCESS;
 	}
 

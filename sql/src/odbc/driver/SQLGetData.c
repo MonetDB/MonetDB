@@ -22,15 +22,12 @@
 #include "ODBCUtil.h"
 
 SQLRETURN SQL_API
-SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
-	   SQLPOINTER pTarget, SQLINTEGER nTargetLength,
-	   SQLINTEGER *pnLengthOrIndicator)
+SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType, SQLPOINTER pTarget, SQLINTEGER nTargetLength, SQLINTEGER *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetData " PTRFMT " %d %d\n", PTRFMTCAST hStmt,
-		nCol, nTargetType);
+	ODBCLOG("SQLGetData " PTRFMT " %d %d\n", PTRFMTCAST hStmt, nCol, nTargetType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -46,28 +43,32 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	if (stmt->State < EXECUTED0) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (stmt->State <= EXECUTED1) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (stmt->rowSetSize == 0) {
 		/* SQLFetch failed */
 		/* General error */
 		addStmtError(stmt, "HY000", NULL, 0);
+
 		return SQL_ERROR;
 	}
-	if (stmt->rowSetSize > 1 &&
-	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
+	if (stmt->rowSetSize > 1 && stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* Invalid cursor position */
 		addStmtError(stmt, "HY109", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (nCol <= 0 || nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -81,11 +82,10 @@ SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		if (nCol > desc->sql_desc_count) {
 			/* Invalid descriptor index */
 			addStmtError(stmt, "07009", NULL, 0);
+
 			return SQL_ERROR;
 		}
 		nTargetType = desc->descRec[nCol].sql_desc_concise_type;
 	}
-	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength,
-			 pnLengthOrIndicator, pnLengthOrIndicator,
-			 UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, 0);
+	return ODBCFetch(stmt, nCol, nTargetType, pTarget, nTargetLength, pnLengthOrIndicator, pnLengthOrIndicator, UNAFFECTED, UNAFFECTED, UNAFFECTED, 0, 0);
 }

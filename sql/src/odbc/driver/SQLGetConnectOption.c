@@ -39,8 +39,7 @@ SQLGetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		/* null terminated string argument */
-		return SQLGetConnectAttr_(dbc, nOption, pvParam,
-					  SQL_MAX_OPTION_STRING_LENGTH, NULL);
+		return SQLGetConnectAttr_(dbc, nOption, pvParam, SQL_MAX_OPTION_STRING_LENGTH, NULL);
 	default:
 		/* Invalid attribute/option identifier */
 		addDbcError(dbc, "HY092", NULL, 0);
@@ -56,8 +55,7 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOption " PTRFMT " %d\n", PTRFMTCAST hDbc,
-		nOption);
+	ODBCLOG("SQLGetConnectOption " PTRFMT " %d\n", PTRFMTCAST hDbc, nOption);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -77,13 +75,12 @@ SQLGetConnectOptionA(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 SQLRETURN SQL_API
 SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 {
-	ODBCDbc * dbc = (ODBCDbc *) hDbc;
+	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc;
 	SQLPOINTER ptr;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %d\n", PTRFMTCAST hDbc,
-		nOption);
+	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %d\n", PTRFMTCAST hDbc, nOption);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -92,20 +89,22 @@ SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 	clearDbcErrors(dbc);
 
 	switch (nOption) {
-	/* all string attributes */
+		/* all string attributes */
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:
 		ptr = (SQLPOINTER) malloc(SQL_MAX_OPTION_STRING_LENGTH);
+
 		break;
 	default:
 		ptr = pvParam;
+
 		break;
 	}
 
 	rc = SQLGetConnectOption_(dbc, nOption, ptr);
 
-	if (ptr != pvParam) {
+	if (ptr !=pvParam) {
 		SQLSMALLINT n = strlen((char *) ptr);
 		SQLSMALLINT *nullp = NULL;
 
@@ -114,4 +113,4 @@ SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

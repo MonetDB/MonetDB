@@ -24,15 +24,12 @@
 
 
 SQLRETURN SQL_API
-SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
-	      SQLPOINTER Value, SQLINTEGER BufferLength,
-	      SQLINTEGER *StringLength)
+SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetEnvAttr " PTRFMT " %d\n",
-		PTRFMTCAST EnvironmentHandle, Attribute);
+	ODBCLOG("SQLGetEnvAttr " PTRFMT " %d\n", PTRFMTCAST EnvironmentHandle, Attribute);
 #endif
 
 	(void) BufferLength;	/* Stefan: unused!? */
@@ -45,13 +42,13 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
 
 	switch (Attribute) {
 	case SQL_ATTR_ODBC_VERSION:
-		* (SQLINTEGER *) Value = env->sql_attr_odbc_version;
+		*(SQLINTEGER *) Value = env->sql_attr_odbc_version;
 		break;
 	case SQL_ATTR_OUTPUT_NTS:
-		* (SQLINTEGER *) Value = SQL_TRUE;
+		*(SQLINTEGER *) Value = SQL_TRUE;
 		break;
 	case SQL_ATTR_CONNECTION_POOLING:
-		* (SQLUINTEGER *) Value = SQL_CP_OFF;
+		*(SQLUINTEGER *) Value = SQL_CP_OFF;
 		break;
 	case SQL_ATTR_CP_MATCH:
 		/* TODO: implement this function and corresponding behavior */

@@ -25,10 +25,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLPrimaryKeys_(ODBCStmt *stmt,
-		SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeys_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
 	RETCODE rc;
 
@@ -45,14 +42,11 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	if (szTableName == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
+
 		return SQL_ERROR;
 	}
-
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nCatalogNameLength, szCatalogName,
-		nSchemaNameLength, szSchemaName,
-		nTableNameLength, szTableName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName);
 #endif
 
 	/* construct the query */
@@ -61,12 +55,12 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	query_end = query;
 
 	/* SQLPrimaryKeys returns a table with the following columns:
-	   VARCHAR	table_cat
-	   VARCHAR	table_schem
-	   VARCHAR	table_name NOT NULL
-	   VARCHAR	column_name NOT NULL
-	   SMALLINT	key_seq NOT NULL
-	   VARCHAR	pk_name
+	   VARCHAR      table_cat
+	   VARCHAR      table_schem
+	   VARCHAR      table_name NOT NULL
+	   VARCHAR      column_name NOT NULL
+	   SMALLINT     key_seq NOT NULL
+	   VARCHAR      pk_name
 	 */
 	strcpy(query_end,
 	       "select "
@@ -86,15 +80,13 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 
 	/* Construct the selection condition query part */
 	/* search pattern is not allowed for table name so use = and not LIKE */
-	sprintf(query_end, " and t.\"name\" = '%.*s'",
-		nTableNameLength, szTableName);
+	sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, szTableName);
 	query_end += strlen(query_end);
 
 	if (szSchemaName != NULL) {
 		/* filtering requested on schema name */
 		/* search pattern is not allowed so use = and not LIKE */
-		sprintf(query_end, " and s.\"name\" = '%.*s'",
-			nSchemaNameLength, szSchemaName);
+		sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, szSchemaName);
 		query_end += strlen(query_end);
 	}
 
@@ -104,8 +96,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 	assert(query_end - query < 1000 + nTableNameLength + nSchemaNameLength);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
-			    (SQLINTEGER) (query_end - query));
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -113,10 +104,7 @@ SQLPrimaryKeys_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLPrimaryKeys(SQLHSTMT hStmt,
-	       SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-	       SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-	       SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeys(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -129,29 +117,18 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLPrimaryKeys_(stmt, szCatalogName, nCatalogNameLength,
-			       szSchemaName, nSchemaNameLength,
-			       szTableName, nTableNameLength);
+	return SQLPrimaryKeys_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLPrimaryKeysA(SQLHSTMT hStmt,
-		SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeysA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
-	return SQLPrimaryKeys(hStmt,
-			      szCatalogName, nCatalogNameLength,
-			      szSchemaName, nSchemaNameLength,
-			      szTableName, nTableNameLength);
+	return SQLPrimaryKeys(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
 }
 
 SQLRETURN SQL_API
-SQLPrimaryKeysW(SQLHSTMT hStmt,
-		SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeysW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;
@@ -170,10 +147,9 @@ SQLPrimaryKeysW(SQLHSTMT hStmt,
 	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
 	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
 
-	rc = SQLPrimaryKeys_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
-			     table, SQL_NTS);
+	rc = SQLPrimaryKeys_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS);
 
-  exit:
+      exit:
 	if (catalog)
 		free(catalog);
 	if (schema)
@@ -183,4 +159,4 @@ SQLPrimaryKeysW(SQLHSTMT hStmt,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

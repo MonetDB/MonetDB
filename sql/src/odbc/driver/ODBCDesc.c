@@ -1,7 +1,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
-#define ODBC_DESC_MAGIC_NR	21845 /* for internal sanity check only */
+#define ODBC_DESC_MAGIC_NR	21845	/* for internal sanity check only */
 
 /*
  * Creates a new allocated ODBCDesc object and initializes it.
@@ -37,7 +37,7 @@ newODBCDesc(ODBCDbc *dbc)
 	desc->sql_desc_count = 0;
 	desc->sql_desc_rows_processed_ptr = NULL;
 
-	desc->Type = ODBC_DESC_MAGIC_NR; /* set it valid */
+	desc->Type = ODBC_DESC_MAGIC_NR;	/* set it valid */
 	return desc;
 }
 
@@ -56,8 +56,7 @@ isValidDesc(ODBCDesc *desc)
 {
 #ifdef ODBCDEBUG
 	if (!(desc && desc->Type == ODBC_DESC_MAGIC_NR))
-		ODBCLOG("desc " PTRFMT "not a valid descriptor handle\n",
-			PTRFMTCAST desc);
+		ODBCLOG("desc " PTRFMT "not a valid descriptor handle\n", PTRFMTCAST desc);
 #endif
 	return desc && desc->Type == ODBC_DESC_MAGIC_NR;
 }
@@ -71,16 +70,14 @@ isValidDesc(ODBCDesc *desc)
  * Precondition: desc must be valid. SQLState and errMsg may be NULL.
  */
 void
-addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg,
-	     int nativeErrCode)
+addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg, int nativeErrCode)
 {
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	extern const char * getStandardSQLStateMsg(const char *);
-	ODBCLOG("addDescError " PTRFMT " %s %s %d\n", PTRFMTCAST desc,
-		SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
-		nativeErrCode);
+	extern const char *getStandardSQLStateMsg(const char *);
+
+	ODBCLOG("addDescError " PTRFMT " %s %s %d\n", PTRFMTCAST desc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidDesc(desc));
 
@@ -164,13 +161,12 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 		desc->descRec = (ODBCDescRec *) malloc((count + 1) * sizeof(*desc->descRec));
 	} else {
 		assert(desc->sql_desc_count > 0);
-		desc->descRec = (ODBCDescRec *) realloc(desc->descRec,
-					(count + 1) * sizeof(*desc->descRec));
+		desc->descRec = (ODBCDescRec *) realloc(desc->descRec, (count + 1) * sizeof(*desc->descRec));
 	}
 	if (count > desc->sql_desc_count) {
 		int i;
-		memset(desc->descRec + desc->sql_desc_count + 1, 0,
-		       (count - desc->sql_desc_count) * sizeof(*desc->descRec));
+
+		memset(desc->descRec + desc->sql_desc_count + 1, 0, (count - desc->sql_desc_count) * sizeof(*desc->descRec));
 		if (isAD(desc)) {
 			for (i = desc->sql_desc_count + 1; i <= count; i++) {
 				desc->descRec[i].sql_desc_concise_type = SQL_C_DEFAULT;

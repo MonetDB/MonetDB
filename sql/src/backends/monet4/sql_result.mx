@@ -27,10 +27,10 @@
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 
-extern int mvc_export_default( mvc *m, stream *s ); 
-extern int mvc_export_result( mvc *c, stream *s, int res_id );
-extern int mvc_export_table( mvc *c, stream *s, int res_id, unsigned int offset, unsigned int nr);
-extern BAT *mvc_import_table( mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
+extern int mvc_export_default(mvc *m, stream *s);
+extern int mvc_export_result(mvc *c, stream *s, int res_id);
+extern int mvc_export_table(mvc *c, stream *s, int res_id, unsigned int offset, unsigned int nr);
+extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
 
 #endif /* sql_result_H */
 @c
@@ -85,14 +85,15 @@ extern BAT *mvc_import_table( mvc *c, bstream *s, char *tname, char *sep, char *
 	return l-1;
 @c
 
-int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a)
+int
+dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
 {
 	/* support dec map to sht, int and lng */
-	if (type == TYPE_sht){
+	if (type == TYPE_sht) {
 		@:dec_tostr(sht)@
-	} else if (type == TYPE_int){
+	} else if (type == TYPE_int) {
 		@:dec_tostr(int)@
-	} else if (type == TYPE_lng){
+	} else if (type == TYPE_lng) {
 		@:dec_tostr(lng)@
 	} else {
 		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
@@ -100,60 +101,69 @@ int dec_tostr( void *extra, char **Buf, int *len, int type, ptr a)
 	return 0;
 }
 
-int sql_time_tostr( void *M, char **buf, int *len, int type, ptr A)
+int
+sql_time_tostr(void *M, char **buf, int *len, int type, ptr A)
 {
 	mvc *m = M;
-	int len1, big=128;
+	int len1, big = 128;
 	char buf1[128], *s1 = buf1, *s;
-	lng val, timezone = m->timezone * 60*1000;
+	lng val, timezone = m->timezone * 60 * 1000;
 	daytime tmp, *a = A;
-        daytime mtime = 24*60*60*1000;
+	daytime mtime = 24 * 60 * 60 * 1000;
 
-	(void)type;
-	if (*(int*)a == int_nil) {
-		if( *len <5){
-			if (*buf) GDKfree(*buf);
+	(void) type;
+	if (*(int *) a == int_nil) {
+		if (*len < 5) {
+			if (*buf)
+				GDKfree(*buf);
 			*buf = (str) GDKmalloc(*len = 16);
-		} s= *buf;
+		}
+		s = *buf;
 		strcpy(s, "nil");
 		return 3;
 	}
 
 	val = *a + timezone;
 	if (val < 0)
-                val = mtime + val;
-        if (val > mtime)
-                val = val - mtime;
-	tmp = (daytime)val;
+		val = mtime + val;
+	if (val > mtime)
+		val = val - mtime;
+	tmp = (daytime) val;
 
 	len1 = daytime_tostr(&s1, &big, &tmp);
 
-	if (*len < len1+ 8) {
-		if (*buf) GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1+8);
-	} s = *buf;
-	strcpy(s, buf1); s += len1;
+	if (*len < len1 + 8) {
+		if (*buf)
+			GDKfree(*buf);
+		*buf = (str) GDKmalloc(*len = len1 + 8);
+	}
+	s = *buf;
+	strcpy(s, buf1);
+	s += len1;
 
-	*s++ = (m->timezone>=0)?'+':'-';
-	sprintf(s, "%02d:%02d", ABS(m->timezone)/60, ABS(m->timezone)%60); 
+	*s++ = (m->timezone >= 0) ? '+' : '-';
+	sprintf(s, "%02d:%02d", ABS(m->timezone) / 60, ABS(m->timezone) % 60);
 	s += 5;
 	return (int) (s - *buf);
 }
 
-int sql_timestamp_tostr( void *M, char **buf, int *len, int type, ptr A)
+int
+sql_timestamp_tostr(void *M, char **buf, int *len, int type, ptr A)
 {
 	mvc *m = M;
-	int len1, len2, big=128;
-	char buf1[128], buf2[128], *s, *s1=buf1, *s2=buf2;
+	int len1, len2, big = 128;
+	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp, *a = A;
-	lng timezone = m->timezone * 60*1000;
+	lng timezone = m->timezone * 60 * 1000;
 
-	(void)type;
-	if (*(lng*)a == lng_nil) {
-		if( *len <5){
-			if (*buf) GDKfree(*buf);
+	(void) type;
+	if (*(lng *) a == lng_nil) {
+		if (*len < 5) {
+			if (*buf)
+				GDKfree(*buf);
 			*buf = (str) GDKmalloc(*len = 16);
-		} s= *buf;
+		}
+		s = *buf;
 		strcpy(s, "nil");
 		return 3;
 	}
@@ -162,28 +172,34 @@ int sql_timestamp_tostr( void *M, char **buf, int *len, int type, ptr A)
 	len1 = date_tostr(&s1, &big, &tmp.days);
 	len2 = daytime_tostr(&s2, &big, &tmp.msecs);
 
-	if (*len < len1+len2 + 8) {
-		if (*buf) GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1+len2+8);
-	} s = *buf;
-	strcpy(s, buf1); s += len1;
-	*s++ = ' '; 
-	strcpy(s, buf2); s += len2;
+	if (*len < len1 + len2 + 8) {
+		if (*buf)
+			GDKfree(*buf);
+		*buf = (str) GDKmalloc(*len = len1 + len2 + 8);
+	}
+	s = *buf;
+	strcpy(s, buf1);
+	s += len1;
+	*s++ = ' ';
+	strcpy(s, buf2);
+	s += len2;
 
-	*s++ = (m->timezone>=0)?'+':'-';
-	sprintf(s, "%02d:%02d", ABS(m->timezone)/60, ABS(m->timezone)%60); 
+	*s++ = (m->timezone >= 0) ? '+' : '-';
+	sprintf(s, "%02d:%02d", ABS(m->timezone) / 60, ABS(m->timezone) % 60);
 	s += 5;
 	return (int) (s - *buf);
 }
 
-static int bat_max_length( BAT *b ) 
+static int
+bat_max_length(BAT *b)
 {
 	BUN p, q;
 	int max = 0;
 
-	BATloop(b, p, q){
-		char *s = BUNtail(b,p);
+	BATloop(b, p, q) {
+		char *s = BUNtail(b, p);
 		int l = strlen(s);
+
 		if (l > max)
 			max = l;
 	}
@@ -243,16 +259,17 @@ static int bat_max_length( BAT *b )
 	return (ptr*)r;
 @c
 
-ptr *dec_frstr( void *extra, int type, char *s, char *e, char quote)
+ptr *
+dec_frstr(void *extra, int type, char *s, char *e, char quote)
 {
 	/* support dec map to sht, int and lng */
-	(void)e;
-	(void)quote;
-	if (type == TYPE_sht){
+	(void) e;
+	(void) quote;
+	if (type == TYPE_sht) {
 		@:dec_frstr(sht)@
-	} else if (type == TYPE_int){
+	} else if (type == TYPE_int) {
 		@:dec_frstr(int)@
-	} else if (type == TYPE_lng){
+	} else if (type == TYPE_lng) {
 		@:dec_frstr(lng)@
 	} else {
 		GDKwarning("Decimal cannot be parsed from %s\n", ATOMname(type));
@@ -260,45 +277,50 @@ ptr *dec_frstr( void *extra, int type, char *s, char *e, char quote)
 	return NULL;
 }
 
-ptr *_ASCIIadt_frStr( void *extra, int type, char *s, char *e, char quote){
-        int l = 0;
-        ptr *res = NULL;
+ptr *
+_ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
+{
+	int l = 0;
+	ptr *res = NULL;
+
 	(void) extra;
 	if (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0) {
-		res = (ptr*)ATOMnil(type);
+		res = (ptr *) ATOMnil(type);
 	} else if (type == TYPE_str) {
-		return ASCIIstrFrStr( s, e );
+		return ASCIIstrFrStr(s, e);
 	} else {
-                (void) (*BATatoms[type].atomFromStr)(s, &l, (ptr)&res);
+		(void) (*BATatoms[type].atomFromStr) (s, &l, (ptr) &res);
 	}
-        return res;
+	return res;
 }
 
 
-static int _ASCIIadt_toStr( void *extra, char **buf, int *len, int type, ptr a){
+static int
+_ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
+{
 
 	(void) extra;
-	if (!a || ATOMcmp(type, ATOMnilptr(type),a) == 0){
+	if (!a || ATOMcmp(type, ATOMnilptr(type), a) == 0) {
 		char *dst;
 		const char src[] = "NULL";
 		int l = sizeof(src) - 1;
 
-		if (l+1 > *len) {
+		if (l + 1 > *len) {
 			GDKfree(buf);
-			*len = l+1;
-			*buf = GDKmalloc( *len );
+			*len = l + 1;
+			*buf = GDKmalloc(*len);
 		}
 		dst = *buf;
 		strncpy(dst, src, l);
 		dst[l] = 0;
 		return l;
 	} else {
-        	return (*BATatoms[type].atomToStr)(buf, len, a);
+		return (*BATatoms[type].atomToStr) (buf, len, a);
 	}
 }
 
-BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
-		char *sep, char *rsep, int sz)
+BAT *
+mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz)
 {
 	int i = 0;
 	sql_trans *tr = m->trans;
@@ -306,52 +328,52 @@ BAT *mvc_import_table( mvc *m, bstream *bs, char *tname,
 	node *n;
 	BAT *bats = NULL;
 	ascii as;
-        ascii_io *fmt;
+	ascii_io *fmt;
 
-	if (!t){
-		GDKerror("table %s not found\n", tname );
+	if (!t) {
+		GDKerror("table %s not found\n", tname);
 		m->type = -1;
 		return NULL;
 	}
-	if (!bs || stream_errnr(bs->s)){
+	if (!bs ||stream_errnr(bs->s)) {
 		GDKerror("stream not open %d\n", stream_errnr(bs->s));
+
 		m->type = -1;
-		return  NULL;
+		return NULL;
 	}
 
-	if (t->columns.set){
+	if (t->columns.set) {
 		stream *out = m->scanner.ws;
+
 		as.nr_attrs = list_length(t->columns.set);
 		as.nr = sz;
-		fmt = as.format =
-                    (ascii_io*)GDKmalloc(sizeof(ascii_io) * (as.nr_attrs + 1) );
+		fmt = as.format = (ascii_io *) GDKmalloc(sizeof(ascii_io) * (as.nr_attrs + 1));
 
 		if (!isa_block_stream(bs->s))
-			out = NULL;
+			 out = NULL;
 
-		for (n = t->columns.set->h, i=0; n; n = n->next, i++)
-		{
+		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
 
 			fmt[i].name = _strdup(col->base.name);
-                	fmt[i].sep = (n->next)?_strdup(sep):_strdup(rsep);
-                	fmt[i].seplen = (int) strlen( fmt[i].sep );
-                	fmt[i].type = _strdup(col->type->type->base.name);
-                	fmt[i].adt = ATOMindex( fmt[i].type );
-                	fmt[i].tostr = &_ASCIIadt_toStr;
-                	fmt[i].frstr = &_ASCIIadt_frStr;
-                	fmt[i].extra = NULL;
-			if (strcmp(col->type->type->sqlname, "decimal")==0){
+			fmt[i].sep = (n->next) ? _strdup(sep) : _strdup(rsep);
+			fmt[i].seplen = (int) strlen(fmt[i].sep);
+			fmt[i].type = _strdup(col->type->type->base.name);
+			fmt[i].adt = ATOMindex(fmt[i].type);
+			fmt[i].tostr = &_ASCIIadt_toStr;
+			fmt[i].frstr = &_ASCIIadt_frStr;
+			fmt[i].extra = NULL;
+			if (strcmp(col->type->type->sqlname, "decimal") == 0) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
 				fmt[i].extra = col->type;
 			}
 		}
-        	if (ASCIIcreate_bats( &as ) >= 0){
-                	if (ASCIIload_file( &as, bs, out )>=0)
-                        	bats = ASCIIcollect_bats( &as );
-        	}
-        	ASCIIdestroy_format( &as );
+		if (ASCIIcreate_bats(&as) >= 0) {
+			if (ASCIIload_file(&as, bs, out) >= 0)
+				 bats = ASCIIcollect_bats(&as);
+		}
+		ASCIIdestroy_format(&as);
 	}
 
 	m->type = Q_UPDATE;
@@ -363,20 +385,25 @@ mvc_export_result dumps the sql header information
 It should be produced in Monet format to enable mapi
 to work with it.
 @c
-int mvc_export_default( mvc *m, stream *s ) 
+int
+mvc_export_default(mvc *m, stream *s)
 {
 	int ok = 1;
+
 	if (s) {
 		/* indicate to client that a new SQL command starts here */
-		ok = (stream_write(s, "#-\n", 3, 1) == 1); 
+		ok = (stream_write(s, "#-\n", 3, 1) == 1);
 
-		if (ok) ok = (stream_printf(s, "# " SZFMT, m->type) >= 0);
-		if (ok) ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
+		if (ok)
+			ok = (stream_printf(s, "# " SZFMT, m->type) >= 0);
+		if (ok)
+			ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
 	}
-	return (ok)?0:-1;
+	return (ok) ? 0 : -1;
 }
 
-int mvc_export_result( mvc *m, stream *s, int res_id )
+int
+mvc_export_result(mvc *m, stream *s, int res_id)
 {
 	int i, ok = 1, count;
 	res_table *t = res_tables_find(m->results, res_id);
@@ -384,50 +411,61 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 	if (!s)
 		return 0;
 	/* indicate to client that a new SQL command starts here */
-	ok = (stream_write(s, "#-\n", 3, 1) == 1); 
+	ok = (stream_write(s, "#-\n", 3, 1) == 1);
 
-	if (ok) ok = (stream_printf(s, "# " SZFMT, t->query_type) >= 0);
-	if (ok) ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
+	if (ok)
+		ok = (stream_printf(s, "# " SZFMT, t->query_type) >= 0);
+	if (ok)
+		ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
 
-	if (ok && t->query_type == Q_UPDATE) return 0;
-	
+	if (ok && t->query_type == Q_UPDATE)
+		return 0;
+
 	if (!ok)
 		return -1;
 	m->type = Q_RESULT;
 
 	ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
-		res_col *c = t->cols+i;
+		res_col *c = t->cols + i;
 		int len = strlen(c->tn);
+
 		if (len)
 			ok = (stream_write(s, c->tn, len, 1) == 1);
-		if(i+1< t->nr_cols && ok)
+		if (i + 1 < t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
-	if (ok) ok = (stream_write(s, " # table_name\n", 14, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, " # table_name\n", 14, 1) == 1);
 
-	if (ok) ok = (stream_write(s, "# ", 2, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
-		res_col *c = t->cols+i;
+		res_col *c = t->cols + i;
+
 		ok = (stream_write(s, c->name, strlen(c->name), 1) == 1);
-		if(i+1< t->nr_cols && ok)
+		if (i + 1 < t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
-	if (ok) ok = (stream_write(s, " # name\n", 8, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, " # name\n", 8, 1) == 1);
 
-	if (ok) ok = (stream_write(s, "# ", 2, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
-		res_col *c = t->cols+i;
-		ok = (stream_write(s, c->type->type->sqlname,
-				strlen(c->type->type->sqlname), 1) == 1);
-		if(i+1< t->nr_cols && ok)
+		res_col *c = t->cols + i;
+
+		ok = (stream_write(s, c->type->type->sqlname, strlen(c->type->type->sqlname), 1) == 1);
+		if (i + 1 < t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
-	if (ok) ok = (stream_write(s, " # type\n", 8, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, " # type\n", 8, 1) == 1);
 
-	if (ok) ok = (stream_write(s, "# ", 2, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
-		res_col *c = t->cols+i;
+		res_col *c = t->cols + i;
 
 		if (c->type->type->localtype == TYPE_str) {
 			if (strcmp(c->type->type->sqlname, "char") == 0) {
@@ -436,18 +474,18 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 				count = 0;
 				if (c->b) {
 					BAT *b = BATdescriptor(c->b);
-				
+
 					count = bat_max_length(b);
 					BBPunfix(b->batCacheid);
 				} else {
-					count = strlen((char*)c->p);
+					count = strlen((char *) c->p);
 				}
 				ok = (stream_printf(s, SZFMT, count) >= 0);
 			}
-		/* the following three could be done once by taking the
-		   max value and calculating the number of digits from that
-		   value, instead of the maximum values taken now, which
-		   include the optional sign */
+			/* the following three could be done once by taking the
+			   max value and calculating the number of digits from that
+			   value, instead of the maximum values taken now, which
+			   include the optional sign */
 		} else if (strcmp(c->type->type->sqlname, "smallint") == 0) {
 			count = 1;
 			count += c->type->digits ? c->type->digits : 5;
@@ -468,55 +506,65 @@ int mvc_export_result( mvc *m, stream *s, int res_id )
 			ok = (stream_printf(s, SZFMT, 22) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "decimal") == 0) {
 			count = 1 + c->type->digits;
-			if (c->type->scale > 0) count += 1;
+			if (c->type->scale > 0)
+				count += 1;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "date") == 0) {
 			ok = (stream_write(s, "10", 2, 1) == 1);
 		} else if (strcmp(c->type->type->sqlname, "time") == 0) {
 			count = 8;
-			if (c->type->scale) /* time zone */
-				count += 6; /* +03:30 */
-			if (c->type->digits) /* fractional seconds precision */
+			if (c->type->scale)	/* time zone */
+				count += 6;	/* +03:30 */
+			if (c->type->digits)	/* fractional seconds precision */
 				count += 1 + c->type->digits;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else if (strcmp(c->type->type->sqlname, "timestamp") == 0) {
 			count = 10 + 1 + 8;
-			if (c->type->scale) /* time zone */
-				count += 6; /* +03:30 */
-			if (c->type->digits) /* fractional seconds precision */
+			if (c->type->scale)	/* time zone */
+				count += 6;	/* +03:30 */
+			if (c->type->digits)	/* fractional seconds precision */
 				count += 1 + c->type->digits;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
 		} else {
 			ok = (stream_write(s, "0", 1, 1) == 1);
 		}
-		if(i+1< t->nr_cols && ok)
+		if (i + 1 < t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
-	if (ok) ok = (stream_write(s, " # length\n", 10, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, " # length\n", 10, 1) == 1);
 
 	{
 		size_t count;
+
 		if (t->order) {
 			BAT *order = BATdescriptor(t->order);
+
 			count = BATcount(order);
 			BBPunfix(order->batCacheid);
 		} else
 			count = 1;
-		if (ok) ok = (stream_printf(s, "# " SZFMT, count) >= 0);
+		if (ok)
+			ok = (stream_printf(s, "# " SZFMT, count) >= 0);
 		for (i = 1; i < t->nr_cols && ok; i++)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
-		if (ok) ok = (stream_write(s, " # tuplecount\n", 14, 1) == 1);
+		if (ok)
+			ok = (stream_write(s, " # tuplecount\n", 14, 1) == 1);
 	}
 
-	if (ok) ok = (stream_printf(s, "# %d", t->id) >= 0);
+	if (ok)
+		ok = (stream_printf(s, "# %d", t->id) >= 0);
+
 	for (i = 1; i < t->nr_cols && ok; i++)
 		ok = (stream_write(s, ",\t", 2, 1) == 1);
-	if (ok) ok = (stream_write(s, " # id\n", 6, 1) == 1);
+	if (ok)
+		ok = (stream_write(s, " # id\n", 6, 1) == 1);
 
-	return (ok)?0:-1;
+	return (ok) ? 0 : -1;
 }
 
-static int mvc_export_row( mvc *m, stream *s, res_table *t )
+static int
+mvc_export_row(mvc *m, stream *s, res_table *t)
 {
 	char *sep = ",\t";
 	char *rsep = "\t]\n";
@@ -528,62 +576,64 @@ static int mvc_export_row( mvc *m, stream *s, res_table *t )
 		return 0;
 
 	ok = (stream_write(s, "[ ", strlen("[ "), 1) == 1);
-	for (i = 0; i < t->nr_cols && ok; i++)
-	{
-		res_col *c = t->cols+i;
+	for (i = 0; i < t->nr_cols && ok; i++) {
+		res_col *c = t->cols + i;
+
 		if (i != 0) {
 			ok = (stream_write(s, sep, strlen(sep), 1) == 1);
-			if (!ok) 
+			if (!ok)
 				break;
 		}
 
-		if (c->type->type->scale == SCALE_FIX &&
-	            strcmp(c->type->type->sqlname, "decimal")==0){
+		if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "decimal") == 0) {
 			char *buf = NULL;
 			int len = 0;
-			int l = dec_tostr((void*)(ptrdiff_t)c->type->scale, &buf, &len,
-					c->mtype, c->p);
+			int l = dec_tostr((void *) (ptrdiff_t) c->type->scale, &buf, &len,
+					  c->mtype, c->p);
+
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
-		} else if (c->type->scale == SCALE_FIX &&
-	            strcmp(c->type->type->sqlname, "time")==0){
+		} else if (c->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "time") == 0) {
 			char *buf = NULL;
 			int len = 0;
-			int l = sql_time_tostr((void*)m, &buf, &len,
-					c->mtype, c->p);
+			int l = sql_time_tostr((void *) m, &buf, &len,
+					       c->mtype, c->p);
+
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
-		} else if (c->type->scale == SCALE_FIX &&
-	            strcmp(c->type->type->sqlname, "timestamp")==0){
+		} else if (c->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timestamp") == 0) {
 			char *buf = NULL;
 			int len = 0;
-			int l = sql_timestamp_tostr((void*)m, &buf, &len,
-					c->mtype, c->p);
+			int l = sql_timestamp_tostr((void *) m, &buf, &len,
+						    c->mtype, c->p);
+
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
-		} else if (!c->p ||
-			ATOMcmp(c->mtype, ATOMnilptr(c->mtype),c->p) == 0){
-			ok = (stream_write(s, "NULL", sizeof("NULL")-1, 1) ==1);
+		} else if (!c->p || ATOMcmp(c->mtype, ATOMnilptr(c->mtype), c->p) == 0) {
+			ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
 		} else {
 			char *buf = NULL;
 			int len = 0;
-			int l = (*BATatoms[c->mtype].atomToStr)(&buf, &len, c->p);
+			int l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
+
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
 		}
 	}
-	m->results = res_tables_remove( m->results, t);
-	if (ok) ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
-	return (ok)?0:-1;
+	m->results = res_tables_remove(m->results, t);
+	if (ok)
+		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
+	return (ok) ? 0 : -1;
 }
 
-int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr )
+int
+mvc_export_table(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr)
 {
 	char *sep = ",\t";
 	char *rsep = "\t]\n";
 
 	ascii as;
-        ascii_io *fmt;
+	ascii_io *fmt;
 	res_table *t = res_tables_find(m->results, res_id);
 	ssize_t i;
 	size_t cnt;
@@ -596,86 +646,79 @@ int mvc_export_table( mvc *m, stream *s, int res_id, unsigned int offset, unsign
 		return 0;
 
 	if (!t->order)
-		return mvc_export_row(m, s, t );
+		return mvc_export_row(m, s, t);
 
 	m->type = Q_RESULT;
 	order = BATdescriptor(t->order);
 	cnt = nr;
-	if (cnt == 0){
- 		cnt = BATcount(order);
+	if (cnt == 0) {
+		cnt = BATcount(order);
 		clean = 1;
 	}
 	if (offset >= BATcount(order))
 		cnt = 0;
-	if (offset + cnt > BATcount(order)){
-		cnt = BATcount(order)-offset;
+	if (offset + cnt > BATcount(order)) {
+		cnt = BATcount(order) - offset;
 		clean = 1;
 	}
 
-	if (cnt == 0){
+	if (cnt == 0) {
 		if (clean || !BATcount(order)) {
 			BBPunfix(order->batCacheid);
-			m->results = res_tables_remove( m->results, t);
+			m->results = res_tables_remove(m->results, t);
 		}
 		if (stream_errnr(s))
 			return -1;
 		return 0;
 	}
-	as.nr_attrs = t->nr_cols +1; /* for the leader */
+	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = cnt;
 	as.offset = offset;
-	fmt = as.format =
-                (ascii_io*)GDKmalloc(sizeof(ascii_io) * (as.nr_attrs+1));
+	fmt = as.format = (ascii_io *) GDKmalloc(sizeof(ascii_io) * (as.nr_attrs + 1));
 
-	memset(fmt, 0, (as.nr_attrs+1)*sizeof(ascii_io));
+	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(ascii_io));
 
-        fmt[0].c= NULL;
-        fmt[0].sep = _strdup("[ ");
-        fmt[0].seplen = (int) strlen( fmt[0].sep );
+	fmt[0].c = NULL;
+	fmt[0].sep = _strdup("[ ");
+	fmt[0].seplen = (int) strlen(fmt[0].sep);
 
-	for (i = 1; i <= t->nr_cols; i++)
-	{
-		res_col *c = t->cols+(i-1);
+	for (i = 1; i <= t->nr_cols; i++) {
+		res_col *c = t->cols + (i - 1);
+
 		if (!c->b)
 			break;
 
 		fmt[i].c = BATdescriptor(c->b);
 		fmt[i].name = NULL;
-                fmt[i].sep = ((i-1)<(t->nr_cols-1))?_strdup(sep):_strdup(rsep);
-                fmt[i].seplen = (int) strlen( fmt[i].sep );
+		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _strdup(sep) : _strdup(rsep);
+		fmt[i].seplen = (int) strlen(fmt[i].sep);
 		fmt[i].type = ATOMname(fmt[i].c->ttype);
 		fmt[i].adt = fmt[i].c->ttype;
-                fmt[i].tostr = &_ASCIIadt_toStr;
-                fmt[i].frstr = &_ASCIIadt_frStr;
-                fmt[i].extra = NULL;
-		if (c->type->type->scale == SCALE_FIX && 
-		    strcmp(c->type->type->sqlname, "decimal") == 0){
+		fmt[i].tostr = &_ASCIIadt_toStr;
+		fmt[i].frstr = &_ASCIIadt_frStr;
+		fmt[i].extra = NULL;
+		if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "decimal") == 0) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
-			fmt[i].extra = (void*)(ptrdiff_t)c->type->scale;
-		} else 
-		if (c->type->scale == SCALE_FIX && 
-	            strcmp(c->type->type->sqlname, "timestamp")==0){
+			fmt[i].extra = (void *) (ptrdiff_t) c->type->scale;
+		} else if (c->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timestamp") == 0) {
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
-		} else 
-		if (c->type->scale == SCALE_FIX && 
-	            strcmp(c->type->type->sqlname, "time")==0){
+		} else if (c->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "time") == 0) {
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
 		}
 	}
-	if (i == t->nr_cols+1){
+	if (i == t->nr_cols + 1) {
 		ASCIIoutput_file(&as, order, s);
 	}
 	BBPunfix(order->batCacheid);
-	ASCIIdestroy_format( &as );
+	ASCIIdestroy_format(&as);
 	if (clean)
-		m->results = res_tables_remove( m->results, t);
-	if (stream_errnr(s)) 
+		m->results = res_tables_remove(m->results, t);
+	if (stream_errnr(s))
 		return -1;
 	return 0;
 }
-

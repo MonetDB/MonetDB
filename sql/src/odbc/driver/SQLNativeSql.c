@@ -23,8 +23,7 @@
 
 
 static SQLRETURN
-SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
-	      SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
 {
 	char *query;
 
@@ -33,24 +32,22 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	if (szSqlStrIn == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
+
 		return SQL_ERROR;
 	}
-
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\"\n", cbSqlStrIn, szSqlStrIn);
 #endif
 
 	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn);
-	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr,
-		   addStmtError, stmt);
+	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr, addStmtError, stmt);
 	free(query);
 
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
 SQLRETURN SQL_API
-SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
-	     SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -63,23 +60,18 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 
 	clearStmtErrors(stmt);
 
-	return SQLNativeSql_(stmt, szSqlStrIn, cbSqlStrIn, szSqlStr,
-			     cbSqlStrMax, pcbSqlStr);
+	return SQLNativeSql_(stmt, szSqlStrIn, cbSqlStrIn, szSqlStr, cbSqlStrMax, pcbSqlStr);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLNativeSqlA(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
-	      SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+SQLNativeSqlA(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
 {
-	return SQLNativeSql(hStmt, szSqlStrIn, cbSqlStrIn,
-			    szSqlStr, cbSqlStrMax, pcbSqlStr);
+	return SQLNativeSql(hStmt, szSqlStrIn, cbSqlStrIn, szSqlStr, cbSqlStrMax, pcbSqlStr);
 }
 
 SQLRETURN SQL_API
-SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
-	      SQLWCHAR *szSqlStr, SQLINTEGER cbSqlStrMax,
-	      SQLINTEGER *pcbSqlStr)
+SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR * szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLWCHAR * szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;
@@ -97,6 +89,7 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 	clearStmtErrors(stmt);
 
 	fixWcharIn(szSqlStrIn, cbSqlStrIn, sqlin, addStmtError, stmt, return SQL_ERROR);
+
 	prepWcharOut(sqlout, cbSqlStrMax);
 
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, cbSqlStrMax * 4, &n);
@@ -106,4 +99,4 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

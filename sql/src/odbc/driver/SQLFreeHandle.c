@@ -103,6 +103,7 @@ ODBCFreeDesc_(ODBCDesc *desc)
 	for (stmt = desc->Dbc->FirstStmt; stmt; stmt = stmt->next) {
 		if (desc == stmt->ApplRowDescr)
 			stmt->ApplRowDescr = stmt->AutoApplRowDescr;
+
 		if (desc == stmt->ApplParamDescr)
 			stmt->ApplParamDescr = stmt->AutoApplParamDescr;
 	}
@@ -153,7 +154,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 
 		/* check it's validity */
 		if (!isValidStmt(stmt))
-			return SQL_INVALID_HANDLE;
+			 return SQL_INVALID_HANDLE;
 
 		clearStmtErrors(stmt);
 
@@ -182,11 +183,7 @@ SQLRETURN SQL_API
 SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n",
-		handleType == SQL_HANDLE_ENV ? "Env" :
-		handleType == SQL_HANDLE_DBC ? "Dbc" :
-		handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST handle);
+	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle);
 #endif
 
 	return SQLFreeHandle_(handleType, handle);

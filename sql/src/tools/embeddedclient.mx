@@ -71,8 +71,7 @@ Monet_init(opt *set, int setlen)
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 
-	if (n == NULL || dbname == NULL || dbfarmval == NULL ||
-	    alloc_map == NULL) {
+	if (n == NULL || dbname == NULL || dbfarmval == NULL || alloc_map == NULL) {
 		if (n != NULL)
 			GDKfree(n);
 		return NULL;
@@ -81,7 +80,7 @@ Monet_init(opt *set, int setlen)
 	strncpy(dbfarm, dbfarmval, sizeof(dbfarm));
 	mo_substitute(set, setlen, dbfarm);
 
-        /* determine Monet's kernel settings. */
+	/* determine Monet's kernel settings. */
 	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map, "yes") == 0)) {
 		GDKfree(n);
 		return NULL;
@@ -92,7 +91,7 @@ Monet_init(opt *set, int setlen)
 
 		for (j = 0; j < nlen; j++) {
 			if (strcmp(n[j].name, set[i].name) == 0) {
-			    	if (n[j].kind < set[i].kind)
+				if (n[j].kind < set[i].kind)
 					n[j] = set[i];
 				done = 1;
 				break;
@@ -119,16 +118,16 @@ Monet_init(opt *set, int setlen)
 		GDK_mem_bigsize = strtol(p, NULL, 10);
 	if ((p = GDKgetenv("gdk_vm_minsize")) != NULL)
 		GDK_vm_minsize = strtol(p, NULL, 10);
-        if (GDKgetenv_isyes("gdk_embedded")){
-                GDKembedded = 1;
-        }
+	if (GDKgetenv_isyes("gdk_embedded")) {
+		GDKembedded = 1;
+	}
 
 	if (GDKgetenv_isyes("monet_daemon"))
-		monet_daemon=1;
-        if (GDKgetenv_isyes("monet_embedded")){
-                monet_daemon = 1;
-                GDKembedded = 1;
-        }
+		monet_daemon = 1;
+	if (GDKgetenv_isyes("monet_embedded")) {
+		monet_daemon = 1;
+		GDKembedded = 1;
+	}
 
 
 	return monet_init();
@@ -158,9 +157,7 @@ start_sql_server(void *arg)
 	in = ((stream **) arg)[0];
 	out = ((stream **) arg)[1];
 	free(arg);
-	snprintf(buf, sizeof(buf),
-		 "SQLclient(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));",
-		 PTRFMTCAST in, PTRFMTCAST out);
+	snprintf(buf, sizeof(buf), "SQLclient(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
 	monet_exec("module(sql_server);");
 	monet_exec("mvc_init(int(monet_environment.find(\"sql_debug\")));");
 	monet_exec(buf);

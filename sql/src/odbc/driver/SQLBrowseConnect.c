@@ -26,9 +26,7 @@
 
 
 static SQLRETURN
-SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
-		  SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
 {
 	char *key, *attr;
 	char *dsn, *uid, *pwd, *host;
@@ -72,47 +70,40 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 	}
 
 	if (dsn != NULL && uid != NULL && pwd != NULL) {
-		return SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS,
-				   (SQLCHAR *) uid, SQL_NTS,
-				   (SQLCHAR *) pwd, SQL_NTS, host, port);
+		return SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port);
 	}
 
 	if (dsn == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "DSN={MonetDB};",
-				cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "DSN={MonetDB};", cbConnStrOutMax);
 		len += 14;
 		szConnStrOut += 14;
 		cbConnStrOutMax -= 14;
 	}
 	if (uid == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "UID:Login ID=?;",
-				cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "UID:Login ID=?;", cbConnStrOutMax);
 		len += 15;
 		szConnStrOut += 15;
 		cbConnStrOutMax -= 15;
 	}
 	if (pwd == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "PWD:Password=?;",
-				cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "PWD:Password=?;", cbConnStrOutMax);
 		len += 15;
 		szConnStrOut += 15;
 		cbConnStrOutMax -= 15;
 	}
 	if (host == NULL) {
 		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "*HOST:Server=?;",
-				cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "*HOST:Server=?;", cbConnStrOutMax);
 		len += 15;
 		szConnStrOut += 15;
 		cbConnStrOutMax -= 15;
 	}
 	if (port == 0) {
 		if (cbConnStrOutMax > 0)
-			strncpy((char *) szConnStrOut, "*PORT:Port=?;",
-				cbConnStrOutMax);
+			strncpy((char *) szConnStrOut, "*PORT:Port=?;", cbConnStrOutMax);
 		len += 13;
 		szConnStrOut += 13;
 		cbConnStrOutMax -= 13;
@@ -125,9 +116,7 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 }
 
 SQLRETURN SQL_API
-SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
-		 SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
-		 SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -140,24 +129,18 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 
 	clearDbcErrors(dbc);
 
-	return SQLBrowseConnect_(dbc, szConnStrIn, cbConnStrIn, szConnStrOut,
-				 cbConnStrOutMax, pcbConnStrOut);
+	return SQLBrowseConnect_(dbc, szConnStrIn, cbConnStrIn, szConnStrOut, cbConnStrOutMax, pcbConnStrOut);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLBrowseConnectA(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
-		  SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnectA(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
 {
-	return SQLBrowseConnect(hDbc, szConnStrIn, cbConnStrIn, szConnStrOut,
-				cbConnStrOutMax, pcbConnStrOut);
+	return SQLBrowseConnect(hDbc, szConnStrIn, cbConnStrIn, szConnStrOut, cbConnStrOutMax, pcbConnStrOut);
 }
 
 SQLRETURN SQL_API
-SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
-		  SQLWCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax,
-		  SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR * szConnStrIn, SQLSMALLINT cbConnStrIn, SQLWCHAR * szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLCHAR *in = NULL, *out;
@@ -181,4 +164,4 @@ SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn,
 		free(in);
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -146,8 +146,8 @@ typedef enum jt {
 } jt;
 
 sql_export char *token2string(int token);
-sql_export stmt *sql_error( mvc * sql, int error_code, char *format, ... );
-sql_export int parse_error( mvc * sql, char *s);
+sql_export stmt *sql_error(mvc *sql, int error_code, char *format, ...);
+sql_export int parse_error(mvc *sql, char *s);
 sql_export int sqlparse(void *);
 
 #endif /*_SQL_PARSER_H_*/

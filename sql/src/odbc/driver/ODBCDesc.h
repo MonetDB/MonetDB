@@ -47,7 +47,7 @@ typedef struct {
 	ODBCError *Error;
 	int RetrievedErrors;
 	ODBCDbc *Dbc;
-	struct tODBCDRIVERSTMT *Stmt; /* associated statement for impl descr */
+	struct tODBCDRIVERSTMT *Stmt;	/* associated statement for impl descr */
 
 	ODBCDescRec *descRec;
 
@@ -67,9 +67,9 @@ typedef struct {
 
 ODBCDesc *newODBCDesc(ODBCDbc *dbc);
 int isValidDesc(ODBCDesc *desc);
-void addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg,
-		  int nativeErrCode);
+void addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg, int nativeErrCode);
 ODBCError *getDescError(ODBCDesc *desc);
+
 #define clearDescErrors(desc) do {					\
 				assert(desc);				\
 				if ((desc)->Error) {			\
@@ -83,11 +83,7 @@ ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
 SQLUINTEGER ODBCDisplaySize(ODBCDescRec *rec);
 
 SQLRETURN ODBCFreeDesc_(ODBCDesc *desc);
-SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
-			   SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-			   SQLINTEGER BufferLength, SQLINTEGER *StringLength);
-SQLRETURN SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber,
-			   SQLSMALLINT FieldIdentifier, SQLPOINTER Value,
-			   SQLINTEGER BufferLength);
+SQLRETURN SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
+SQLRETURN SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);
 
 #endif

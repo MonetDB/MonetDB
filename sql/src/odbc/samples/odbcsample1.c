@@ -40,31 +40,22 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 
 	switch (SQLGetDiagRec(tpe, hnd, 1, state, &errnr, msg, sizeof(msg), &msglen)) {
 	case SQL_SUCCESS_WITH_INFO:
-		if (msglen >= (signed int)sizeof(msg))
+		if (msglen >= (signed int) sizeof(msg))
 			fprintf(stderr, "(message truncated)\n");
 	case SQL_SUCCESS:
-		fprintf(stderr,
-			"%s: %s: SQLstate %s, Errnr %d, Message %s\n",
-			func, pref, state, errnr, msg);
+		fprintf(stderr, "%s: %s: SQLstate %s, Errnr %d, Message %s\n", func, pref, state, errnr, msg);
 		break;
 	case SQL_INVALID_HANDLE:
-		fprintf(stderr,
-			"%s: %s, invalid handle passed to error function\n",
-			func, pref);
+		fprintf(stderr, "%s: %s, invalid handle passed to error function\n", func, pref);
 		break;
 	case SQL_ERROR:
-		fprintf(stderr,
-			"%s: %s, unexpected error from SQLGetDiagRec\n",
-			func, pref);
+		fprintf(stderr, "%s: %s, unexpected error from SQLGetDiagRec\n", func, pref);
 		break;
 	case SQL_NO_DATA:
-		fprintf(stderr, "%s: %s, no error message from driver\n",
-			func, pref);
+		fprintf(stderr, "%s: %s, no error message from driver\n", func, pref);
 		break;
 	default:
-		fprintf(stderr,
-			"%s: %s, weird return value from SQLGetDiagRec\n",
-			func, pref);
+		fprintf(stderr, "%s: %s, weird return value from SQLGetDiagRec\n", func, pref);
 		break;
 	}
 }
@@ -114,8 +105,7 @@ main(int argc, char **argv)
 	if (argc > 3)
 		pass = argv[3];
 	if (argc > 4 || *dsn == '-') {
-		fprintf(stderr, "Usage: %s [datasource [user [password]]]\n",
-			argv[0]);
+		fprintf(stderr, "Usage: %s [datasource [user [password]]]\n", argv[0]);
 		exit(1);
 	}
 
@@ -124,26 +114,24 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION,
-			    (SQLPOINTER) (size_t) SQL_OV_ODBC3, 0);
+	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (size_t) SQL_OV_ODBC3, 0);
 	check(ret, SQL_HANDLE_ENV, env, "SQLSetEnvAttr");
 
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle 1");
 
-	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS,
-			 (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
+	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 
-	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
-				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0);
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
 
 	/* create a test table to be filled with values */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 2");
 
-	ret = SQLExecDirect(stmt, (SQLCHAR*)
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
 			    "CREATE TABLE test (\n"
 			    "   i INT DEFAULT '0' NOT NULL,\n"
 			    "   s VARCHAR(200),\n"
@@ -157,27 +145,21 @@ main(int argc, char **argv)
 	/* we use a single statement with parameters whose values vary */
 
 	/* bind a bunch of parameters before preparing the statement */
-	ret = SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_SSHORT,
-			       SQL_INTEGER, 0, 0, &f1, sizeof(f1), NULL);
+	ret = SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_SSHORT, SQL_INTEGER, 0, 0, &f1, sizeof(f1), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 1");
-	ret = SQLBindParameter(stmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR,
-			       SQL_VARCHAR, 0, 0, &f2, sizeof(f2), NULL);
+	ret = SQLBindParameter(stmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, 0, 0, &f2, sizeof(f2), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 2");
-	ret = SQLBindParameter(stmt, 3, SQL_PARAM_INPUT, SQL_C_DOUBLE,
-			       SQL_FLOAT, 0, 0, &f3, sizeof(f3), NULL);
+	ret = SQLBindParameter(stmt, 3, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_FLOAT, 0, 0, &f3, sizeof(f3), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 3");
 
-	ret = SQLPrepare(stmt, (SQLCHAR*)
-			 "INSERT INTO test VALUES (?, ?, ?, ?, ?)",
-			 SQL_NTS);
+	ret = SQLPrepare(stmt, (SQLCHAR *)
+			 "INSERT INTO test VALUES (?, ?, ?, ?, ?)", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare 1");
 
 	/* bind the rest of the parameters after preparing the statement */
-	ret = SQLBindParameter(stmt, 4, SQL_PARAM_INPUT, SQL_C_TYPE_DATE,
-			       SQL_TYPE_DATE, 0, 0, &f4, sizeof(f4), NULL);
+	ret = SQLBindParameter(stmt, 4, SQL_PARAM_INPUT, SQL_C_TYPE_DATE, SQL_TYPE_DATE, 0, 0, &f4, sizeof(f4), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 4");
-	ret = SQLBindParameter(stmt, 5, SQL_PARAM_INPUT, SQL_C_TYPE_TIME,
-			       SQL_TYPE_TIME, 0, 0, &f5, sizeof(f5), NULL);
+	ret = SQLBindParameter(stmt, 5, SQL_PARAM_INPUT, SQL_C_TYPE_TIME, SQL_TYPE_TIME, 0, 0, &f5, sizeof(f5), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 5");
 
 	/* do the actual filling of the test table */
@@ -192,10 +174,7 @@ main(int argc, char **argv)
 		snprintf(f2, sizeof(f2), "value %d", i);
 		f3 = i * 1.5;
 		f4.day++;
-		if ((f4.day == 29 && f4.month == 2) ||
-		    (f4.day == 31 && (f4.month == 4 || f4.month == 6 ||
-				      f4.month == 9 || f4.month == 11)) ||
-		    f4.day == 32) {
+		if ((f4.day == 29 && f4.month == 2) || (f4.day == 31 && (f4.month == 4 || f4.month == 6 || f4.month == 9 || f4.month == 11)) || f4.day == 32) {
 			f4.day = 1;
 			f4.month++;
 			if (f4.month == 13) {
@@ -221,8 +200,7 @@ main(int argc, char **argv)
 	ret = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_COMMIT);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLEndTran");
 
-	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
-				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_ON, 0);
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER) (size_t) SQL_AUTOCOMMIT_ON, 0);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
 
 	/* Now we are going to read back the values from the test table.
@@ -244,7 +222,7 @@ main(int argc, char **argv)
 	ret = SQLBindCol(stmt, 5, SQL_C_TYPE_TIME, &f5, sizeof(f5), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 5");
 
-	ret = SQLPrepare(stmt, (SQLCHAR*)"SELECT * FROM test WHERE 2*(i/2) = i", SQL_NTS);
+	ret = SQLPrepare(stmt, (SQLCHAR *) "SELECT * FROM test WHERE 2*(i/2) = i", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare 2");
 
 	ret = SQLExecute(stmt);
@@ -254,7 +232,7 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt2);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 3");
 
-	ret = SQLPrepare(stmt2, (SQLCHAR*)"SELECT * FROM test WHERE 2*(i/2) <> i", SQL_NTS);
+	ret = SQLPrepare(stmt2, (SQLCHAR *) "SELECT * FROM test WHERE 2*(i/2) <> i", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLPrepare 3");
 
 	/* bind the columns after preparing the statement */
@@ -277,22 +255,19 @@ main(int argc, char **argv)
 		   end result should be that we get all entries in the
 		   correct order. */
 		ret = SQLFetch(stmt);
+
 		if (ret == SQL_NO_DATA)
 			break;
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch 1");
 
-		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n",
-		       f1, f2, f3, f4.year, f4.month, f4.day,
-		       f5.hour, f5.minute, f5.second);
+		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n", f1, f2, f3, f4.year, f4.month, f4.day, f5.hour, f5.minute, f5.second);
 
 		ret = SQLFetch(stmt2);
 		if (ret == SQL_NO_DATA)
 			break;
 		check(ret, SQL_HANDLE_STMT, stmt2, "SQLFetch 2");
 
-		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n",
-		       f1, f2, f3, f4.year, f4.month, f4.day,
-		       f5.hour, f5.minute, f5.second);
+		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n", f1, f2, f3, f4.year, f4.month, f4.day, f5.hour, f5.minute, f5.second);
 	}
 
 	ret = SQLCloseCursor(stmt);
@@ -303,7 +278,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle 1");
 
 	/* drop the test table */
-	ret = SQLExecDirect(stmt, (SQLCHAR*) "DROP TABLE test", SQL_NTS);
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "DROP TABLE test", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 2");
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);

@@ -8,11 +8,12 @@
 int keywords_init_done = 0;
 keyword *keywords[HASH_SIZE];
 
-int 
+int
 keyword_key(char *k, int *l)
 {
 	char *s = k;
 	int h = 1;
+
 	while (*k) {
 		h *= (*k - 'a');
 		k++;
@@ -21,14 +22,15 @@ keyword_key(char *k, int *l)
 	return (h < 0) ? -h : h;
 }
 
-void 
+void
 keywords_insert(char *k, int token)
 {
 	keyword *kw = NEW(keyword);
 	int len = 0;
-	int bucket = keyword_key(k=toLower(k), &len) & HASH_MASK;
+	int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
 
 	kw->keyword = k;
+
 	kw->len = len;
 	kw->token = token;
 	kw->next = keywords[bucket];
@@ -41,18 +43,20 @@ find_keyword(char *text)
 	int len = 0;
 	int bucket = keyword_key(mkLower(text), &len) & HASH_MASK;
 	keyword *k = keywords[bucket];
+
 	while (k) {
 		if (len == k->len && strcmp(k->keyword, text) == 0)
 			return k;
+
 		k = k->next;
 	}
 	return NULL;
 }
 
-int 
+int
 keyword_exists(char *text)
 {
-	if (find_keyword(text)){
+	if (find_keyword(text)) {
 		return 1;
 	}
 	return 0;
@@ -71,7 +75,7 @@ keyword_init()
 		keywords[i] = NULL;
 }
 
-void 
+void
 keyword_exit()
 {
 	int i;
@@ -82,10 +86,13 @@ keyword_exit()
 
 	for (i = 0; i < HASH_SIZE; i++) {
 		keyword *k = keywords[i];
+
 		while (k) {
 			keyword *l = k;
+
 			k = k->next;
 			_DELETE(l->keyword);
+
 			_DELETE(l);
 		}
 	}

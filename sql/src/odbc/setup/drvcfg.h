@@ -134,10 +134,10 @@
 #define INI_MAX_PROPERTY_VALUE		INI_MAX_LINE
 
 typedef struct tODBCINSTPROPERTY {
-	struct tODBCINSTPROPERTY *pNext; /* linked list */
+	struct tODBCINSTPROPERTY *pNext;	/* linked list */
 
 	char szName[INI_MAX_PROPERTY_NAME + 1];	/* property name */
-	char szValue[INI_MAX_PROPERTY_VALUE + 1]; /* property value */
+	char szValue[INI_MAX_PROPERTY_VALUE + 1];	/* property value */
 	int nPromptType;	/* PROMPTTYPE_TEXTEDIT, PROMPTTYPE_LISTBOX,
 				   PROMPTTYPE_COMBOBOX, PROMPTTYPE_FILENAME */
 	char **aPromptData;	/* array of pointers terminated with a
@@ -158,7 +158,7 @@ extern "C" {
 #endif
 
 /* ONLY IMPLEMENTED IN DRIVER SETUP (not in ODBCINST) */
-odbc_export int ODBCINSTGetProperties(HODBCINSTPROPERTY hFirstProperty);
+	odbc_export int ODBCINSTGetProperties(HODBCINSTPROPERTY hFirstProperty);
 
 #if defined(__cplusplus)
 }

@@ -23,10 +23,7 @@
 
 
 static SQLRETURN
-SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
-		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
-		SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
-		SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
 	ODBCDescRec *rec = NULL;
 
@@ -34,31 +31,33 @@ SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	if (stmt->State == INITED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (stmt->State == PREPARED0) {
 		/* Prepared statement not a cursor-specification */
 		addStmtError(stmt, "07005", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (stmt->State == EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
 	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
 	rec = stmt->ImplRowDescr->descRec + nCol;
 
 	/* now copy the data */
-	copyString(rec->sql_desc_name,
-		   szColName, nColNameMax, pnColNameLength,
-		   addStmtError, stmt);
+	copyString(rec->sql_desc_name, szColName, nColNameMax, pnColNameLength, addStmtError, stmt);
 
 	if (pnSQLDataType)
 		*pnSQLDataType = rec->sql_desc_concise_type;
@@ -99,10 +98,7 @@ SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 }
 
 SQLRETURN SQL_API
-SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
-	       SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
-	       SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
-	       SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -115,29 +111,18 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 
 	clearStmtErrors(stmt);
 
-	return SQLDescribeCol_(stmt, nCol, szColName, nColNameMax,
-			       pnColNameLength, pnSQLDataType, pnColSize,
-			       pnDecDigits, pnNullable);
+	return SQLDescribeCol_(stmt, nCol, szColName, nColNameMax, pnColNameLength, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDescribeColA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
-		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
-		SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
-		SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeColA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
-	return SQLDescribeCol(hStmt, nCol,
-			      szColName, nColNameMax, pnColNameLength,
-			      pnSQLDataType, pnColSize, pnDecDigits,
-			      pnNullable);
+	return SQLDescribeCol(hStmt, nCol, szColName, nColNameMax, pnColNameLength, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
 }
 
 SQLRETURN SQL_API
-SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
-		SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength,
-		SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize,
-		SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR * szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLCHAR *colname;
@@ -155,12 +140,10 @@ SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR *szColName,
 
 	prepWcharOut(colname, nColNameMax);
 
-	rc = SQLDescribeCol_(stmt, nCol, colname, nColNameMax * 4,
-			     &n, pnSQLDataType, pnColSize,
-			     pnDecDigits, pnNullable);
+	rc = SQLDescribeCol_(stmt, nCol, colname, nColNameMax * 4, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
 
 	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, 1, addStmtError, stmt);
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

@@ -17,7 +17,7 @@
 #define SQLTables_TABLE_TYPE 4
 #define SQLTables_REMARKS 5
 
-/* COLUMNS IN SQLColumns() RESULT SET */                     
+/* COLUMNS IN SQLColumns() RESULT SET */
 #define SQLColumns_TABLE_CAT 1
 #define SQLColumns_TABLE_SCHEM 2
 #define SQLColumns_TABLE_NAME 3
@@ -42,12 +42,12 @@
 #include "sql.h"
 
 #ifdef __cplusplus
-extern "C" {                         /* Assume C declarations for C++ */
+extern "C" {			/* Assume C declarations for C++ */
 #endif
 
 /* generally useful constants */
-#define SQL_SPEC_MAJOR     3     	/* Major version of specification  */
-#define SQL_SPEC_MINOR	   52     	/* Minor version of specification  */
+#define SQL_SPEC_MAJOR     3	/* Major version of specification  */
+#define SQL_SPEC_MINOR	   52	/* Minor version of specification  */
 #define SQL_SPEC_STRING   "03.52"	/* String constant for version */
 
 #define SQL_SQLSTATE_SIZE	5	/* size of SQLSTATE */
@@ -65,7 +65,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 /* an end handle type */
 #if (ODBCVER >= 0x0300)
 #define	SQL_HANDLE_SENV		5
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* env attribute */
 #if (ODBCVER >= 0x0300)
@@ -77,7 +77,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_ATTR_UNIXODBC_SYSPATH           65001
 #define SQL_ATTR_UNIXODBC_VERSION           65002
 #define SQL_ATTR_UNIXODBC_ENVATTR           65003
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 #if (ODBCVER >= 0x0300)
 /* values for SQL_ATTR_CONNECTION_POOLING */
@@ -89,12 +89,12 @@ extern "C" {                         /* Assume C declarations for C++ */
 /* values for SQL_ATTR_CP_MATCH */
 #define SQL_CP_STRICT_MATCH					0UL
 #define SQL_CP_RELAXED_MATCH				1UL
-#define SQL_CP_MATCH_DEFAULT				SQL_CP_STRICT_MATCH		
+#define SQL_CP_MATCH_DEFAULT				SQL_CP_STRICT_MATCH
 
 /* values for SQL_ATTR_ODBC_VERSION */
 #define SQL_OV_ODBC2						2UL
 #define	SQL_OV_ODBC3						3UL
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* connection attributes */
 #define SQL_ACCESS_MODE                 101
@@ -128,7 +128,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_ATTR_TRANSLATE_LIB		SQL_TRANSLATE_DLL
 #define SQL_ATTR_TRANSLATE_OPTION	SQL_TRANSLATE_OPTION
 #define SQL_ATTR_TXN_ISOLATION		SQL_TXN_ISOLATION
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 #define SQL_ATTR_CONNECTION_DEAD	1209	/* GetConnectAttr only */
 
@@ -151,12 +151,12 @@ extern "C" {                         /* Assume C declarations for C++ */
 /* SQL_CONNECT_OPT_DRVR_START is not meaningful for 3.0 driver */
 #if (ODBCVER < 0x0300)
 #define SQL_CONNECT_OPT_DRVR_START      1000
-#endif  /* ODBCVER < 0x0300 */
+#endif				/* ODBCVER < 0x0300 */
 
 #if (ODBCVER < 0x0300)
 #define SQL_CONN_OPT_MAX                SQL_PACKET_SIZE
 #define SQL_CONN_OPT_MIN                SQL_ACCESS_MODE
-#endif /* ODBCVER < 0x0300 */
+#endif				/* ODBCVER < 0x0300 */
 
 /* SQL_ACCESS_MODE options */
 #define SQL_MODE_READ_WRITE             0UL
@@ -191,11 +191,11 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 /* values for SQL_ATTR_ENLIST_IN_DTC */
 #define SQL_DTC_DONE					0L
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* values for SQL_ATTR_CONNECTION_DEAD */
-#define SQL_CD_TRUE					1L		/* Connection is closed/dead */
-#define SQL_CD_FALSE				0L		/* Connection is open/available */
+#define SQL_CD_TRUE					1L	/* Connection is closed/dead */
+#define SQL_CD_FALSE				0L	/* Connection is open/available */
 
 /* values for SQL_ATTR_ANSI_APP */
 #if (ODBCVER >= 0x0351)
@@ -208,7 +208,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_MAX_ROWS			1
 #define SQL_NOSCAN				2
 #define SQL_MAX_LENGTH			3
-#define SQL_ASYNC_ENABLE		4	/* same as SQL_ATTR_ASYNC_ENABLE */	
+#define SQL_ASYNC_ENABLE		4	/* same as SQL_ATTR_ASYNC_ENABLE */
 #define SQL_BIND_TYPE			5
 #define SQL_CURSOR_TYPE			6
 #define SQL_CONCURRENCY			7
@@ -217,8 +217,8 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_SIMULATE_CURSOR		10
 #define SQL_RETRIEVE_DATA		11
 #define SQL_USE_BOOKMARKS		12
-#define SQL_GET_BOOKMARK		13      /*      GetStmtOption Only */
-#define SQL_ROW_NUMBER			14      /*      GetStmtOption Only */
+#define SQL_GET_BOOKMARK		13	/*      GetStmtOption Only */
+#define SQL_ROW_NUMBER			14	/*      GetStmtOption Only */
 
 /* statement attributes for ODBC 3.0 */
 #if (ODBCVER >= 0x0300)
@@ -241,27 +241,27 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_ATTR_RETRIEVE_DATA				SQL_RETRIEVE_DATA
 #define SQL_ATTR_ROW_BIND_OFFSET_PTR		23
 #define	SQL_ATTR_ROW_BIND_TYPE				SQL_BIND_TYPE
-#define SQL_ATTR_ROW_NUMBER					SQL_ROW_NUMBER	  	/*GetStmtAttr*/
+#define SQL_ATTR_ROW_NUMBER					SQL_ROW_NUMBER	/*GetStmtAttr */
 #define SQL_ATTR_ROW_OPERATION_PTR			24
 #define	SQL_ATTR_ROW_STATUS_PTR				25
 #define	SQL_ATTR_ROWS_FETCHED_PTR			26
-#define SQL_ATTR_ROW_ARRAY_SIZE				27	
+#define SQL_ATTR_ROW_ARRAY_SIZE				27
 #define SQL_ATTR_SIMULATE_CURSOR			SQL_SIMULATE_CURSOR
-#define SQL_ATTR_USE_BOOKMARKS				SQL_USE_BOOKMARKS	
+#define SQL_ATTR_USE_BOOKMARKS				SQL_USE_BOOKMARKS
 
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 #if (ODBCVER < 0x0300)
 #define SQL_STMT_OPT_MAX                SQL_ROW_NUMBER
 #define SQL_STMT_OPT_MIN	SQL_QUERY_TIMEOUT
-#endif    	/* ODBCVER < 0x0300 */
+#endif				/* ODBCVER < 0x0300 */
 
 /* New defines for SEARCHABLE column in SQLGetTypeInfo */
 
 #if (ODBCVER >= 0x0300)
 #define	SQL_COL_PRED_CHAR		SQL_LIKE_ONLY
 #define	SQL_COL_PRED_BASIC		SQL_ALL_EXCEPT_LIKE
-#endif /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 
 
@@ -272,13 +272,13 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_IS_INTEGER							(-6)
 #define SQL_IS_USMALLINT						(-7)
 #define SQL_IS_SMALLINT							(-8)
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* the value of SQL_ATTR_PARAM_BIND_TYPE */
 #if (ODBCVER >= 0x0300)
 #define SQL_PARAM_BIND_BY_COLUMN			0UL
 #define SQL_PARAM_BIND_TYPE_DEFAULT			SQL_PARAM_BIND_BY_COLUMN
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_QUERY_TIMEOUT options */
 #define SQL_QUERY_TIMEOUT_DEFAULT       0UL
@@ -287,8 +287,8 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_MAX_ROWS_DEFAULT            0UL
 
 /* SQL_NOSCAN options */
-#define SQL_NOSCAN_OFF                  0UL     /*      1.0 FALSE */
-#define SQL_NOSCAN_ON                   1UL     /*      1.0 TRUE */
+#define SQL_NOSCAN_OFF                  0UL	/*      1.0 FALSE */
+#define SQL_NOSCAN_ON                   1UL	/*      1.0 TRUE */
 #define SQL_NOSCAN_DEFAULT              SQL_NOSCAN_OFF
 
 /* SQL_MAX_LENGTH options */
@@ -301,21 +301,21 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 /* SQL_BIND_TYPE options */
 #define SQL_BIND_BY_COLUMN              0UL
-#define SQL_BIND_TYPE_DEFAULT           SQL_BIND_BY_COLUMN  /* Default value */
+#define SQL_BIND_TYPE_DEFAULT           SQL_BIND_BY_COLUMN	/* Default value */
 
 /* SQL_CONCURRENCY options */
 #define SQL_CONCUR_READ_ONLY            1
 #define SQL_CONCUR_LOCK                 2
 #define SQL_CONCUR_ROWVER               3
 #define SQL_CONCUR_VALUES               4
-#define SQL_CONCUR_DEFAULT              SQL_CONCUR_READ_ONLY /* Default value */
+#define SQL_CONCUR_DEFAULT              SQL_CONCUR_READ_ONLY	/* Default value */
 
 /* SQL_CURSOR_TYPE options */
 #define SQL_CURSOR_FORWARD_ONLY         0UL
 #define SQL_CURSOR_KEYSET_DRIVEN        1UL
 #define SQL_CURSOR_DYNAMIC              2UL
 #define SQL_CURSOR_STATIC               3UL
-#define SQL_CURSOR_TYPE_DEFAULT         SQL_CURSOR_FORWARD_ONLY /* Default value */
+#define SQL_CURSOR_TYPE_DEFAULT         SQL_CURSOR_FORWARD_ONLY	/* Default value */
 
 /* SQL_ROWSET_SIZE options */
 #define SQL_ROWSET_SIZE_DEFAULT         1UL
@@ -342,7 +342,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #if (ODBCVER >= 0x0300)
 #define SQL_UB_FIXED					SQL_UB_ON
 #define SQL_UB_VARIABLE					2UL
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* extended descriptor field */
 #if (ODBCVER >= 0x0300)
@@ -370,28 +370,28 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_DESC_ROWS_PROCESSED_PTR				34
 #if (ODBCVER >= 0x0350)
 #define SQL_DESC_ROWVER							35
-#endif /* ODBCVER >= 0x0350 */
+#endif				/* ODBCVER >= 0x0350 */
 #define SQL_DESC_SCHEMA_NAME					SQL_COLUMN_OWNER_NAME
 #define SQL_DESC_SEARCHABLE						SQL_COLUMN_SEARCHABLE
 #define SQL_DESC_TYPE_NAME						SQL_COLUMN_TYPE_NAME
 #define SQL_DESC_TABLE_NAME						SQL_COLUMN_TABLE_NAME
 #define SQL_DESC_UNSIGNED						SQL_COLUMN_UNSIGNED
 #define SQL_DESC_UPDATABLE						SQL_COLUMN_UPDATABLE
-#endif /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 
 /* defines for diagnostics fields */
 #if (ODBCVER >= 0x0300)
 #define SQL_DIAG_CURSOR_ROW_COUNT			(-1249)
 #define SQL_DIAG_ROW_NUMBER					(-1248)
-#define SQL_DIAG_COLUMN_NUMBER				(-1247)	
-#endif /* ODBCVER >= 0x0300 */
+#define SQL_DIAG_COLUMN_NUMBER				(-1247)
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL extended datatypes */
 #define SQL_DATE                                9
 #if (ODBCVER >= 0x0300)
 #define SQL_INTERVAL							10
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 #define SQL_TIME                                10
 #define SQL_TIMESTAMP                           11
 #define SQL_LONGVARCHAR                         (-1)
@@ -403,7 +403,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_BIT                                 (-7)
 #if (ODBCVER >= 0x0350)
 #define SQL_GUID				(-11)
-#endif  /* ODBCVER >= 0x0350 */
+#endif				/* ODBCVER >= 0x0350 */
 
 #if (ODBCVER >= 0x0300)
 /* interval code */
@@ -449,7 +449,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_INTERVAL_HOUR_TO_MINUTE             (-90)
 #define SQL_INTERVAL_HOUR_TO_SECOND             (-91)
 #define SQL_INTERVAL_MINUTE_TO_SECOND           (-92)
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 
 #if (ODBCVER <= 0x0300)
@@ -469,18 +469,18 @@ extern "C" {                         /* Assume C declarations for C++ */
 #if (ODBCVER < 0x0300)
 #define SQL_TYPE_DRIVER_START                   SQL_INTERVAL_YEAR
 #define SQL_TYPE_DRIVER_END                     SQL_UNICODE_LONGVARCHAR
-#endif  /* ODBCVER < 0x0300 */
+#endif				/* ODBCVER < 0x0300 */
 
 /* C datatype to SQL datatype mapping      SQL types
                                            ------------------- */
-#define SQL_C_CHAR    SQL_CHAR             /* CHAR, VARCHAR, DECIMAL, NUMERIC */
-#define SQL_C_LONG    SQL_INTEGER          /* INTEGER                      */
-#define SQL_C_SHORT   SQL_SMALLINT         /* SMALLINT                     */
-#define SQL_C_FLOAT   SQL_REAL             /* REAL                         */
-#define SQL_C_DOUBLE  SQL_DOUBLE           /* FLOAT, DOUBLE                */
+#define SQL_C_CHAR    SQL_CHAR	/* CHAR, VARCHAR, DECIMAL, NUMERIC */
+#define SQL_C_LONG    SQL_INTEGER	/* INTEGER                      */
+#define SQL_C_SHORT   SQL_SMALLINT	/* SMALLINT                     */
+#define SQL_C_FLOAT   SQL_REAL	/* REAL                         */
+#define SQL_C_DOUBLE  SQL_DOUBLE	/* FLOAT, DOUBLE                */
 #if (ODBCVER >= 0x0300)
 #define	SQL_C_NUMERIC		SQL_NUMERIC
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 #define SQL_C_DEFAULT 99
 
 #define SQL_SIGNED_OFFSET       (-20)
@@ -507,38 +507,38 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_C_INTERVAL_HOUR_TO_MINUTE	SQL_INTERVAL_HOUR_TO_MINUTE
 #define SQL_C_INTERVAL_HOUR_TO_SECOND	SQL_INTERVAL_HOUR_TO_SECOND
 #define SQL_C_INTERVAL_MINUTE_TO_SECOND	SQL_INTERVAL_MINUTE_TO_SECOND
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 #define SQL_C_BINARY     SQL_BINARY
 #define SQL_C_BIT        SQL_BIT
 #if (ODBCVER >= 0x0300)
-#define SQL_C_SBIGINT	(SQL_BIGINT+SQL_SIGNED_OFFSET)	   /* SIGNED BIGINT */
-#define SQL_C_UBIGINT	(SQL_BIGINT+SQL_UNSIGNED_OFFSET)   /* UNSIGNED BIGINT */
-#endif  /* ODBCVER >= 0x0300 */
+#define SQL_C_SBIGINT	(SQL_BIGINT+SQL_SIGNED_OFFSET)	/* SIGNED BIGINT */
+#define SQL_C_UBIGINT	(SQL_BIGINT+SQL_UNSIGNED_OFFSET)	/* UNSIGNED BIGINT */
+#endif				/* ODBCVER >= 0x0300 */
 #define SQL_C_TINYINT    SQL_TINYINT
-#define SQL_C_SLONG      (SQL_C_LONG+SQL_SIGNED_OFFSET)    /* SIGNED INTEGER  */
-#define SQL_C_SSHORT     (SQL_C_SHORT+SQL_SIGNED_OFFSET)   /* SIGNED SMALLINT */
-#define SQL_C_STINYINT   (SQL_TINYINT+SQL_SIGNED_OFFSET)   /* SIGNED TINYINT  */
-#define SQL_C_ULONG      (SQL_C_LONG+SQL_UNSIGNED_OFFSET)  /* UNSIGNED INTEGER*/
-#define SQL_C_USHORT     (SQL_C_SHORT+SQL_UNSIGNED_OFFSET) /* UNSIGNED SMALLINT*/
-#define SQL_C_UTINYINT   (SQL_TINYINT+SQL_UNSIGNED_OFFSET) /* UNSIGNED TINYINT*/
+#define SQL_C_SLONG      (SQL_C_LONG+SQL_SIGNED_OFFSET)	/* SIGNED INTEGER  */
+#define SQL_C_SSHORT     (SQL_C_SHORT+SQL_SIGNED_OFFSET)	/* SIGNED SMALLINT */
+#define SQL_C_STINYINT   (SQL_TINYINT+SQL_SIGNED_OFFSET)	/* SIGNED TINYINT  */
+#define SQL_C_ULONG      (SQL_C_LONG+SQL_UNSIGNED_OFFSET)	/* UNSIGNED INTEGER */
+#define SQL_C_USHORT     (SQL_C_SHORT+SQL_UNSIGNED_OFFSET)	/* UNSIGNED SMALLINT */
+#define SQL_C_UTINYINT   (SQL_TINYINT+SQL_UNSIGNED_OFFSET)	/* UNSIGNED TINYINT */
 
 #if (ODBCVER >= 0x0300)
-#define SQL_C_BOOKMARK   SQL_C_ULONG                       /* BOOKMARK        */
+#define SQL_C_BOOKMARK   SQL_C_ULONG	/* BOOKMARK        */
 #else
 #if (SIZEOF_LONG == 8)
 #ifndef DO_YOU_KNOW_WHAT_YOUR_ARE_DOING
-#define SQL_C_BOOKMARK   SQL_C_ULONG                       /* BOOKMARK        */
+#define SQL_C_BOOKMARK   SQL_C_ULONG	/* BOOKMARK        */
 #else
-#define SQL_C_BOOKMARK   SQL_C_UBIGINT                     /* BOOKMARK        */
+#define SQL_C_BOOKMARK   SQL_C_UBIGINT	/* BOOKMARK        */
 #endif
 #else
-#define SQL_C_BOOKMARK   SQL_C_ULONG                       /* BOOKMARK        */
+#define SQL_C_BOOKMARK   SQL_C_ULONG	/* BOOKMARK        */
 #endif
 #endif
 
 #if (ODBCVER >= 0x0350)
 #define SQL_C_GUID	SQL_GUID
-#endif  /* ODBCVER >= 0x0350 */
+#endif				/* ODBCVER >= 0x0350 */
 
 #define SQL_TYPE_NULL                   0
 #if (ODBCVER < 0x0300)
@@ -548,7 +548,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 #if (ODBCVER >= 0x0300)
 #define SQL_C_VARBOOKMARK		SQL_C_BINARY
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* define for SQL_DIAG_ROW_NUMBER and SQL_DIAG_COLUMN_NUMBER */
 #if (ODBCVER >= 0x0300)
@@ -563,7 +563,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_IGNORE                   (-6)
 #if (ODBCVER >= 0x0300)
 #define SQL_COLUMN_IGNORE			SQL_IGNORE
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 #define SQL_LEN_DATA_AT_EXEC_OFFSET  (-100)
 #define SQL_LEN_DATA_AT_EXEC(length) (-(length)+SQL_LEN_DATA_AT_EXEC_OFFSET)
 
@@ -599,7 +599,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_COLATT_OPT_MAX              SQL_COLUMN_LABEL
 #if (ODBCVER < 0x0300)
 #define SQL_COLUMN_DRIVER_START         1000
-#endif  /* ODBCVER < 0x0300 */
+#endif				/* ODBCVER < 0x0300 */
 
 #define SQL_COLATT_OPT_MIN              SQL_COLUMN_COUNT
 
@@ -629,7 +629,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #if (ODBCVER >= 0x0300)
 #define SQL_API_SQLALLOCHANDLESTD	73
 #define SQL_API_SQLBULKOPERATIONS	24
-#endif /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 #define SQL_API_SQLBINDPARAMETER    72
 #define SQL_API_SQLBROWSECONNECT    55
 #define SQL_API_SQLCOLATTRIBUTES    6
@@ -675,7 +675,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 /* method -- SQL_API_ODBC3_ALL_FUNCTIONS      */
 /*--------------------------------------------*/
 
-#define SQL_API_ALL_FUNCTIONS       0		/* See CAUTION above */
+#define SQL_API_ALL_FUNCTIONS       0	/* See CAUTION above */
 
 /*----------------------------------------------*/
 /* 2.X drivers export a dummy function with  	*/
@@ -686,7 +686,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 /* for 3.0 and above drivers.			*/
 /*----------------------------------------------*/
 
-#define SQL_API_LOADBYORDINAL       199		/* See CAUTION above */	
+#define SQL_API_LOADBYORDINAL       199	/* See CAUTION above */
 
 /*----------------------------------------------*/
 /* SQL_API_ODBC3_ALL_FUNCTIONS                  */
@@ -699,12 +699,12 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 #if (ODBCVER >= 0x0300)
 #define SQL_API_ODBC3_ALL_FUNCTIONS	999
-#define	SQL_API_ODBC3_ALL_FUNCTIONS_SIZE	250		/* array of 250 words */
+#define	SQL_API_ODBC3_ALL_FUNCTIONS_SIZE	250	/* array of 250 words */
 
 
 #define SQL_FUNC_EXISTS(pfExists, uwAPI) ((*(((UWORD*) (pfExists)) + ((uwAPI) >> 4)) & (1 << ((uwAPI) & 0x000F)) ) ? SQL_TRUE : SQL_FALSE )
 
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 
 /************************************************/
@@ -716,7 +716,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 /* in the X/Open spec              */
 /*---------------------------------*/
 
-#define SQL_INFO_FIRST                       0		
+#define SQL_INFO_FIRST                       0
 #define SQL_ACTIVE_CONNECTIONS               0	/* MAX_DRIVER_CONNECTIONS */
 #define SQL_ACTIVE_STATEMENTS                1	/* MAX_CONCURRENT_ACTIVITIES */
 #define SQL_DRIVER_HDBC                      3
@@ -769,7 +769,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_CONVERT_VARBINARY               69
 #define SQL_CONVERT_VARCHAR                 70
 #define SQL_CONVERT_LONGVARBINARY           71
-#define SQL_ODBC_SQL_OPT_IEF                73		/* SQL_INTEGRITY */
+#define SQL_ODBC_SQL_OPT_IEF                73	/* SQL_INTEGRITY */
 #define SQL_CORRELATION_NAME                74
 #define SQL_NON_NULLABLE_COLUMNS            75
 #define SQL_DRIVER_HLIB                     76
@@ -799,9 +799,9 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 #if (ODBCVER >= 0x0201 && ODBCVER < 0x0300)
 #ifndef SQL_OJ_CAPABILITIES
-#define SQL_OJ_CAPABILITIES         65003  /* Temp value until ODBC 3.0 */
+#define SQL_OJ_CAPABILITIES         65003	/* Temp value until ODBC 3.0 */
 #endif
-#endif  /* ODBCVER >= 0x0201 && ODBCVER < 0x0300 */
+#endif				/* ODBCVER >= 0x0201 && ODBCVER < 0x0300 */
 
 /*----------------------------------------------*/
 /* SQL_INFO_LAST and SQL_INFO_DRIVER_START are  */
@@ -814,7 +814,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #if (ODBCVER < 0x0300)
 #define SQL_INFO_LAST						SQL_QUALIFIER_LOCATION
 #define SQL_INFO_DRIVER_START				1000
-#endif /* ODBCVER < 0x0300 */
+#endif				/* ODBCVER < 0x0300 */
 
 /*-----------------------------------------------*/
 /* ODBC 3.0 SQLGetInfo values that are not part  */
@@ -860,7 +860,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define	SQL_DROP_VIEW							143
 #define SQL_DYNAMIC_CURSOR_ATTRIBUTES1			144
 #define SQL_DYNAMIC_CURSOR_ATTRIBUTES2			145
-#define SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1		146		
+#define SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1		146
 #define SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2		147
 #define SQL_INDEX_KEYWORDS						148
 #define SQL_INFO_SCHEMA_VIEWS					149
@@ -873,8 +873,8 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_SCHEMA_TERM							SQL_OWNER_TERM
 #define SQL_SCHEMA_USAGE						SQL_OWNER_USAGE
 #define SQL_SQL92_DATETIME_FUNCTIONS			155
-#define SQL_SQL92_FOREIGN_KEY_DELETE_RULE		156		
-#define SQL_SQL92_FOREIGN_KEY_UPDATE_RULE		157		
+#define SQL_SQL92_FOREIGN_KEY_DELETE_RULE		156
+#define SQL_SQL92_FOREIGN_KEY_UPDATE_RULE		157
 #define SQL_SQL92_GRANT							158
 #define SQL_SQL92_NUMERIC_VALUE_FUNCTIONS		159
 #define SQL_SQL92_PREDICATES					160
@@ -884,7 +884,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_SQL92_STRING_FUNCTIONS				164
 #define SQL_SQL92_VALUE_EXPRESSIONS				165
 #define SQL_STANDARD_CLI_CONFORMANCE			166
-#define SQL_STATIC_CURSOR_ATTRIBUTES1			167	
+#define SQL_STATIC_CURSOR_ATTRIBUTES1			167
 #define SQL_STATIC_CURSOR_ATTRIBUTES2			168
 
 #define SQL_AGGREGATE_FUNCTIONS					169
@@ -892,7 +892,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_DM_VER								171
 #define SQL_INSERT_STATEMENT					172
 #define SQL_UNION_STATEMENT						SQL_UNION
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 #define	SQL_DTC_TRANSITION_COST					1750
 
@@ -903,22 +903,22 @@ extern "C" {                         /* Assume C declarations for C++ */
 *#define SQL_AT_DROP_COLUMN                  	0x00000002L
 *#define SQL_AT_ADD_CONSTRAINT               	0x00000008L
 */
-#define	SQL_AT_ADD_COLUMN_SINGLE				0x00000020L	
+#define	SQL_AT_ADD_COLUMN_SINGLE				0x00000020L
 #define	SQL_AT_ADD_COLUMN_DEFAULT				0x00000040L
 #define	SQL_AT_ADD_COLUMN_COLLATION				0x00000080L
 #define	SQL_AT_SET_COLUMN_DEFAULT				0x00000100L
 #define	SQL_AT_DROP_COLUMN_DEFAULT				0x00000200L
 #define	SQL_AT_DROP_COLUMN_CASCADE				0x00000400L
 #define	SQL_AT_DROP_COLUMN_RESTRICT				0x00000800L
-#define SQL_AT_ADD_TABLE_CONSTRAINT				0x00001000L		
-#define SQL_AT_DROP_TABLE_CONSTRAINT_CASCADE	0x00002000L		
-#define SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT	0x00004000L		
+#define SQL_AT_ADD_TABLE_CONSTRAINT				0x00001000L
+#define SQL_AT_DROP_TABLE_CONSTRAINT_CASCADE	0x00002000L
+#define SQL_AT_DROP_TABLE_CONSTRAINT_RESTRICT	0x00004000L
 #define SQL_AT_CONSTRAINT_NAME_DEFINITION		0x00008000L
 #define SQL_AT_CONSTRAINT_INITIALLY_DEFERRED	0x00010000L
 #define SQL_AT_CONSTRAINT_INITIALLY_IMMEDIATE	0x00020000L
 #define SQL_AT_CONSTRAINT_DEFERRABLE			0x00040000L
 #define SQL_AT_CONSTRAINT_NON_DEFERRABLE		0x00080000L
-#endif	/* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_CONVERT_*  return value bitmasks */
 
@@ -948,14 +948,14 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define	SQL_CVT_WLONGVARCHAR				0x00400000L
 #define	SQL_CVT_WVARCHAR					0x00800000L
 
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 
 /* SQL_CONVERT_FUNCTIONS functions */
 #define SQL_FN_CVT_CONVERT                  0x00000001L
 #if (ODBCVER >= 0x0300)
 #define SQL_FN_CVT_CAST						0x00000002L
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 
 /* SQL_STRING_FUNCTIONS functions */
@@ -985,11 +985,11 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_FN_STR_CHARACTER_LENGTH			0x00200000L
 #define SQL_FN_STR_OCTET_LENGTH				0x00400000L
 #define SQL_FN_STR_POSITION					0x00800000L
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_SQL92_STRING_FUNCTIONS */
 #if (ODBCVER >= 0x0300)
-#define SQL_SSF_CONVERT						0x00000001L	
+#define SQL_SSF_CONVERT						0x00000001L
 #define SQL_SSF_LOWER						0x00000002L
 #define SQL_SSF_UPPER						0x00000004L
 #define SQL_SSF_SUBSTRING					0x00000008L
@@ -997,7 +997,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_SSF_TRIM_BOTH					0x00000020L
 #define SQL_SSF_TRIM_LEADING				0x00000040L
 #define SQL_SSF_TRIM_TRAILING				0x00000080L
-#endif /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_NUMERIC_FUNCTIONS functions */
 
@@ -1034,7 +1034,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_SNVF_EXTRACT					0x00000008L
 #define SQL_SNVF_OCTET_LENGTH				0x00000010L
 #define SQL_SNVF_POSITION					0x00000020L
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_TIMEDATE_FUNCTIONS functions */
 
@@ -1060,14 +1060,14 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_FN_TD_CURRENT_TIME				0x00040000L
 #define SQL_FN_TD_CURRENT_TIMESTAMP			0x00080000L
 #define SQL_FN_TD_EXTRACT					0x00100000L
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_SQL92_DATETIME_FUNCTIONS */
 #if (ODBCVER >= 0x0300)
 #define SQL_SDF_CURRENT_DATE				0x00000001L
 #define SQL_SDF_CURRENT_TIME				0x00000002L
 #define SQL_SDF_CURRENT_TIMESTAMP			0x00000004L
-#endif /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_SYSTEM_FUNCTIONS functions */
 
@@ -1119,7 +1119,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_CA1_BULK_UPDATE_BY_BOOKMARK		0x00020000L
 #define SQL_CA1_BULK_DELETE_BY_BOOKMARK		0x00040000L
 #define SQL_CA1_BULK_FETCH_BY_BOOKMARK		0x00080000L
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* bitmasks for SQL_DYNAMIC_CURSOR_ATTRIBUTES2,
  * SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2,
@@ -1153,7 +1153,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_CA2_SIMULATE_NON_UNIQUE			0x00004000L
 #define SQL_CA2_SIMULATE_TRY_UNIQUE			0x00008000L
 #define SQL_CA2_SIMULATE_UNIQUE				0x00010000L
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_ODBC_API_CONFORMANCE values */
 
@@ -1242,7 +1242,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #if (ODBCVER >= 0x0300)
 #define	SQL_GB_COLLATE						0x0004
 
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_OWNER_USAGE masks */
 
@@ -1259,7 +1259,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_SU_TABLE_DEFINITION			SQL_OU_TABLE_DEFINITION
 #define SQL_SU_INDEX_DEFINITION			SQL_OU_INDEX_DEFINITION
 #define SQL_SU_PRIVILEGE_DEFINITION		SQL_OU_PRIVILEGE_DEFINITION
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_QUALIFIER_USAGE masks */
 
@@ -1276,7 +1276,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_CU_TABLE_DEFINITION			SQL_QU_TABLE_DEFINITION
 #define SQL_CU_INDEX_DEFINITION			SQL_QU_INDEX_DEFINITION
 #define SQL_CU_PRIVILEGE_DEFINITION		SQL_QU_PRIVILEGE_DEFINITION
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_SUBQUERIES masks */
 
@@ -1389,7 +1389,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 /* values for SQL_PARAM_ARRAY_SELECTS */
 #define SQL_PAS_BATCH				1
-#define SQL_PAS_NO_BATCH			2		
+#define SQL_PAS_NO_BATCH			2
 #define SQL_PAS_NO_SELECT			3
 
 /* Bitmasks for SQL_INDEX_KEYWORDS */
@@ -1431,7 +1431,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define	SQL_AM_STATEMENT	2
 
 /* Bitmasks for SQL_ALTER_DOMAIN */
-#define SQL_AD_CONSTRAINT_NAME_DEFINITION			0x00000001L	
+#define SQL_AD_CONSTRAINT_NAME_DEFINITION			0x00000001L
 #define	SQL_AD_ADD_DOMAIN_CONSTRAINT	 			0x00000002L
 #define	SQL_AD_DROP_DOMAIN_CONSTRAINT	 			0x00000004L
 #define	SQL_AD_ADD_DOMAIN_DEFAULT   	 			0x00000008L
@@ -1563,7 +1563,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_SG_REFERENCES_COLUMN				0x00000200L
 #define SQL_SG_SELECT_TABLE						0x00000400L
 #define SQL_SG_UPDATE_TABLE						0x00000800L
-#define SQL_SG_UPDATE_COLUMN					0x00001000L	
+#define SQL_SG_UPDATE_COLUMN					0x00001000L
 
 /* SQL_SQL92_PREDICATES bitmasks */
 #define SQL_SP_EXISTS							0x00000001L
@@ -1630,7 +1630,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_US_UNION							SQL_U_UNION
 #define SQL_US_UNION_ALL						SQL_U_UNION_ALL
 
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* SQL_DTC_TRANSITION_COST bitmasks */
 #define SQL_DTC_ENLIST_EXPENSIVE				0x00000001L
@@ -1640,15 +1640,15 @@ extern "C" {                         /* Assume C declarations for C++ */
 #if (ODBCVER >= 0x0300)
 #define SQL_FETCH_FIRST_USER				31
 #define SQL_FETCH_FIRST_SYSTEM				32
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 
 /* Defines for SQLSetPos */
 #define SQL_ENTIRE_ROWSET            0
 
 /* Operations in SQLSetPos */
-#define SQL_POSITION                 0               /*      1.0 FALSE */
-#define SQL_REFRESH                  1               /*      1.0 TRUE */
+#define SQL_POSITION                 0	/*      1.0 FALSE */
+#define SQL_REFRESH                  1	/*      1.0 TRUE */
 #define SQL_UPDATE                   2
 #define SQL_DELETE                   3
 
@@ -1660,11 +1660,11 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_DELETE_BY_BOOKMARK		 6
 #define	SQL_FETCH_BY_BOOKMARK		 7
 
-#endif /*  ODBCVER >= 0x0300 */
+#endif				/*  ODBCVER >= 0x0300 */
 
 /* Lock options in SQLSetPos */
-#define SQL_LOCK_NO_CHANGE           0               /*      1.0 FALSE */
-#define SQL_LOCK_EXCLUSIVE           1               /*      1.0 TRUE */
+#define SQL_LOCK_NO_CHANGE           0	/*      1.0 FALSE */
+#define SQL_LOCK_EXCLUSIVE           1	/*      1.0 TRUE */
 #define SQL_LOCK_UNLOCK              2
 
 #define	SQL_SETPOS_MAX_LOCK_VALUE		SQL_LOCK_UNLOCK
@@ -1700,7 +1700,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_ALL_CATALOGS				"%"
 #define SQL_ALL_SCHEMAS					"%"
 #define SQL_ALL_TABLE_TYPES				"%"
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* Options for SQLDriverConnect */
 #define SQL_DRIVER_NOPROMPT             0
@@ -1708,15 +1708,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_DRIVER_PROMPT               2
 #define SQL_DRIVER_COMPLETE_REQUIRED    3
 
-odbc_export SQLRETURN SQL_API SQLDriverConnect(
-    SQLHDBC            hdbc,
-    SQLHWND            hwnd,
-    SQLCHAR 		  *szConnStrIn,
-    SQLSMALLINT        cbConnStrIn,
-    SQLCHAR           *szConnStrOut,
-    SQLSMALLINT        cbConnStrOutMax,
-    SQLSMALLINT 	  *pcbConnStrOut,
-    SQLUSMALLINT       fDriverCompletion);
+	odbc_export SQLRETURN SQL_API SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut, SQLUSMALLINT fDriverCompletion);
 
 /* Level 2 Functions                             */
 
@@ -1746,7 +1738,7 @@ odbc_export SQLRETURN SQL_API SQLDriverConnect(
 
 #define SQL_PARAM_PROCEED				0
 #define SQL_PARAM_IGNORE				1
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* Defines for SQLForeignKeys (UPDATE_RULE and DELETE_RULE) */
 #define SQL_CASCADE                      0
@@ -1755,7 +1747,7 @@ odbc_export SQLRETURN SQL_API SQLDriverConnect(
 #if (ODBCVER >= 0x0250)
 #define SQL_NO_ACTION			 3
 #define SQL_SET_DEFAULT			 4
-#endif  /* ODBCVER >= 0x0250 */
+#endif				/* ODBCVER >= 0x0250 */
 
 #if (ODBCVER >= 0x0300)
 /* Note that the following are in a different column of SQLForeignKeys than */
@@ -1765,7 +1757,7 @@ odbc_export SQLRETURN SQL_API SQLDriverConnect(
 #define SQL_INITIALLY_IMMEDIATE			6
 #define SQL_NOT_DEFERRABLE			7
 
-#endif  /* ODBCVER >= 0x0300 */
+#endif				/* ODBCVER >= 0x0300 */
 
 /* Defines for SQLBindParameter and
                            SQLProcedureColumns (returned in the result set) */
@@ -1815,155 +1807,46 @@ odbc_export SQLRETURN SQL_API SQLDriverConnect(
 "VALUE,VALUES,VARCHAR,VARYING,VIEW,WHEN,WHENEVER,WHERE,WITH,WORK,WRITE,"\
 "YEAR,ZONE"
 
-odbc_export SQLRETURN SQL_API SQLBrowseConnect(
-    SQLHDBC            hdbc,
-    SQLCHAR 		  *szConnStrIn,
-    SQLSMALLINT        cbConnStrIn,
-    SQLCHAR 		  *szConnStrOut,
-    SQLSMALLINT        cbConnStrOutMax,
-    SQLSMALLINT       *pcbConnStrOut);
+	odbc_export SQLRETURN SQL_API SQLBrowseConnect(SQLHDBC hdbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut);
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN SQL_API SQLBulkOperations(
-	SQLHSTMT			StatementHandle,
-	SQLSMALLINT			Operation);
-#endif  /* ODBCVER >= 0x0300 */
+	odbc_export SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT StatementHandle, SQLSMALLINT Operation);
+#endif				/* ODBCVER >= 0x0300 */
 
-odbc_export SQLRETURN SQL_API SQLColAttributes(
-    SQLHSTMT           hstmt,
-    SQLUSMALLINT       icol,
-    SQLUSMALLINT       fDescType,
-    SQLPOINTER         rgbDesc,
-    SQLSMALLINT        cbDescMax,
-    SQLSMALLINT 	  *pcbDesc,
-    SQLLEN 		      *pfDesc);
+	odbc_export SQLRETURN SQL_API SQLColAttributes(SQLHSTMT hstmt, SQLUSMALLINT icol, SQLUSMALLINT fDescType, SQLPOINTER rgbDesc, SQLSMALLINT cbDescMax, SQLSMALLINT *pcbDesc, SQLLEN * pfDesc);
 
-odbc_export SQLRETURN SQL_API SQLColumnPrivileges(
-    SQLHSTMT           hstmt,
-    SQLCHAR 		  *szCatalogName,
-    SQLSMALLINT        cbCatalogName,
-    SQLCHAR 		  *szSchemaName,
-    SQLSMALLINT        cbSchemaName,
-    SQLCHAR 		  *szTableName,
-    SQLSMALLINT        cbTableName,
-    SQLCHAR 		  *szColumnName,
-    SQLSMALLINT        cbColumnName);
+	odbc_export SQLRETURN SQL_API SQLColumnPrivileges(SQLHSTMT hstmt, SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName, SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName, SQLCHAR *szTableName, SQLSMALLINT cbTableName, SQLCHAR *szColumnName,
+							  SQLSMALLINT cbColumnName);
 
-odbc_export SQLRETURN SQL_API SQLDescribeParam(
-    SQLHSTMT           hstmt,
-    SQLUSMALLINT       ipar,
-    SQLSMALLINT 	  *pfSqlType,
-    SQLULEN 	      *pcbParamDef,
-    SQLSMALLINT 	  *pibScale,
-    SQLSMALLINT 	  *pfNullable);
+	odbc_export SQLRETURN SQL_API SQLDescribeParam(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT *pfSqlType, SQLULEN * pcbParamDef, SQLSMALLINT *pibScale, SQLSMALLINT *pfNullable);
 
-odbc_export SQLRETURN SQL_API SQLExtendedFetch(
-    SQLHSTMT           hstmt,
-    SQLUSMALLINT       fFetchType,
-    SQLLEN             irow,
-    SQLULEN 	      *pcrow,
-    SQLUSMALLINT 	  *rgfRowStatus);
+	odbc_export SQLRETURN SQL_API SQLExtendedFetch(SQLHSTMT hstmt, SQLUSMALLINT fFetchType, SQLLEN irow, SQLULEN * pcrow, SQLUSMALLINT *rgfRowStatus);
 
-odbc_export SQLRETURN SQL_API SQLForeignKeys(
-    SQLHSTMT           hstmt,
-    SQLCHAR 		  *szPkCatalogName,
-    SQLSMALLINT        cbPkCatalogName,
-    SQLCHAR 		  *szPkSchemaName,
-    SQLSMALLINT        cbPkSchemaName,
-    SQLCHAR 		  *szPkTableName,
-    SQLSMALLINT        cbPkTableName,
-    SQLCHAR 		  *szFkCatalogName,
-    SQLSMALLINT        cbFkCatalogName,
-    SQLCHAR 		  *szFkSchemaName,
-    SQLSMALLINT        cbFkSchemaName,
-    SQLCHAR 		  *szFkTableName,
-    SQLSMALLINT        cbFkTableName);
+	odbc_export SQLRETURN SQL_API SQLForeignKeys(SQLHSTMT hstmt, SQLCHAR *szPkCatalogName, SQLSMALLINT cbPkCatalogName, SQLCHAR *szPkSchemaName, SQLSMALLINT cbPkSchemaName, SQLCHAR *szPkTableName, SQLSMALLINT cbPkTableName, SQLCHAR *szFkCatalogName,
+						     SQLSMALLINT cbFkCatalogName, SQLCHAR *szFkSchemaName, SQLSMALLINT cbFkSchemaName, SQLCHAR *szFkTableName, SQLSMALLINT cbFkTableName);
 
-odbc_export SQLRETURN SQL_API SQLMoreResults(
-    SQLHSTMT           hstmt);
+	odbc_export SQLRETURN SQL_API SQLMoreResults(SQLHSTMT hstmt);
 
-odbc_export SQLRETURN SQL_API SQLNativeSql(
-    SQLHDBC            hdbc,
-    SQLCHAR 		  *szSqlStrIn,
-    SQLINTEGER         cbSqlStrIn,
-    SQLCHAR 		  *szSqlStr,
-    SQLINTEGER         cbSqlStrMax,
-    SQLINTEGER 		  *pcbSqlStr);
+	odbc_export SQLRETURN SQL_API SQLNativeSql(SQLHDBC hdbc, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr);
 
-odbc_export SQLRETURN SQL_API SQLNumParams(
-    SQLHSTMT           hstmt,
-    SQLSMALLINT 	  *pcpar);
+	odbc_export SQLRETURN SQL_API SQLNumParams(SQLHSTMT hstmt, SQLSMALLINT *pcpar);
 
-odbc_export SQLRETURN SQL_API SQLParamOptions(
-    SQLHSTMT           hstmt,
-    SQLUINTEGER        crow,
-    SQLUINTEGER 	  *pirow);
+	odbc_export SQLRETURN SQL_API SQLParamOptions(SQLHSTMT hstmt, SQLUINTEGER crow, SQLUINTEGER *pirow);
 
-odbc_export SQLRETURN SQL_API SQLPrimaryKeys(
-    SQLHSTMT           hstmt,
-    SQLCHAR 		  *szCatalogName,
-    SQLSMALLINT        cbCatalogName,
-    SQLCHAR 		  *szSchemaName,
-    SQLSMALLINT        cbSchemaName,
-    SQLCHAR 		  *szTableName,
-    SQLSMALLINT        cbTableName);
+	odbc_export SQLRETURN SQL_API SQLPrimaryKeys(SQLHSTMT hstmt, SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName, SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName, SQLCHAR *szTableName, SQLSMALLINT cbTableName);
 
-odbc_export SQLRETURN SQL_API SQLProcedureColumns(
-    SQLHSTMT           hstmt,
-    SQLCHAR 		  *szCatalogName,
-    SQLSMALLINT        cbCatalogName,
-    SQLCHAR 		  *szSchemaName,
-    SQLSMALLINT        cbSchemaName,
-    SQLCHAR 		  *szProcName,
-    SQLSMALLINT        cbProcName,
-    SQLCHAR 		  *szColumnName,
-    SQLSMALLINT        cbColumnName);
+	odbc_export SQLRETURN SQL_API SQLProcedureColumns(SQLHSTMT hstmt, SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName, SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName, SQLCHAR *szProcName, SQLSMALLINT cbProcName, SQLCHAR *szColumnName,
+							  SQLSMALLINT cbColumnName);
 
-odbc_export SQLRETURN SQL_API SQLProcedures(
-    SQLHSTMT           hstmt,
-    SQLCHAR 		  *szCatalogName,
-    SQLSMALLINT        cbCatalogName,
-    SQLCHAR 		  *szSchemaName,
-    SQLSMALLINT        cbSchemaName,
-    SQLCHAR 		  *szProcName,
-    SQLSMALLINT        cbProcName);
+	odbc_export SQLRETURN SQL_API SQLProcedures(SQLHSTMT hstmt, SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName, SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName, SQLCHAR *szProcName, SQLSMALLINT cbProcName);
 
-odbc_export SQLRETURN SQL_API SQLSetPos(
-    SQLHSTMT           hstmt,
-    SQLSETPOSIROW      irow,
-    SQLUSMALLINT       fOption,
-    SQLUSMALLINT       fLock);
+	odbc_export SQLRETURN SQL_API SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow, SQLUSMALLINT fOption, SQLUSMALLINT fLock);
 
-odbc_export SQLRETURN SQL_API SQLTablePrivileges(
-    SQLHSTMT           hstmt,
-    SQLCHAR 		  *szCatalogName,
-    SQLSMALLINT        cbCatalogName,
-    SQLCHAR 		  *szSchemaName,
-    SQLSMALLINT        cbSchemaName,
-    SQLCHAR 		  *szTableName,
-    SQLSMALLINT        cbTableName);
+	odbc_export SQLRETURN SQL_API SQLTablePrivileges(SQLHSTMT hstmt, SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName, SQLCHAR *szSchemaName, SQLSMALLINT cbSchemaName, SQLCHAR *szTableName, SQLSMALLINT cbTableName);
 
-odbc_export SQLRETURN SQL_API SQLDrivers(
-    SQLHENV            henv,
-    SQLUSMALLINT       fDirection,
-    SQLCHAR 		  *szDriverDesc,
-    SQLSMALLINT        cbDriverDescMax,
-    SQLSMALLINT 	  *pcbDriverDesc,
-    SQLCHAR 		  *szDriverAttributes,
-    SQLSMALLINT        cbDrvrAttrMax,
-    SQLSMALLINT 	  *pcbDrvrAttr);
+	odbc_export SQLRETURN SQL_API SQLDrivers(SQLHENV henv, SQLUSMALLINT fDirection, SQLCHAR *szDriverDesc, SQLSMALLINT cbDriverDescMax, SQLSMALLINT *pcbDriverDesc, SQLCHAR *szDriverAttributes, SQLSMALLINT cbDrvrAttrMax, SQLSMALLINT *pcbDrvrAttr);
 
-odbc_export SQLRETURN SQL_API SQLBindParameter(
-    SQLHSTMT           hstmt,
-    SQLUSMALLINT       ipar,
-    SQLSMALLINT        fParamType,
-    SQLSMALLINT        fCType,
-    SQLSMALLINT        fSqlType,
-    SQLULEN            cbColDef,
-    SQLSMALLINT        ibScale,
-    SQLPOINTER         rgbValue,
-    SQLLEN             cbValueMax,
-    SQLLEN 		      *pcbValue);
+	odbc_export SQLRETURN SQL_API SQLBindParameter(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT fParamType, SQLSMALLINT fCType, SQLSMALLINT fSqlType, SQLULEN cbColDef, SQLSMALLINT ibScale, SQLPOINTER rgbValue, SQLLEN cbValueMax, SQLLEN * pcbValue);
 
 /*---------------------------------------------------------*/
 /* SQLAllocHandleStd is implemented to make SQLAllocHandle */
@@ -1980,25 +1863,22 @@ odbc_export SQLRETURN SQL_API SQLBindParameter(
 #define SQL_DAY							SQL_CODE_DAY
 #define SQL_HOUR						SQL_CODE_HOUR
 #define SQL_MINUTE						SQL_CODE_MINUTE
-#define SQL_SECOND						SQL_CODE_SECOND	
+#define SQL_SECOND						SQL_CODE_SECOND
 #define SQL_YEAR_TO_MONTH				SQL_CODE_YEAR_TO_MONTH
 #define SQL_DAY_TO_HOUR					SQL_CODE_DAY_TO_HOUR
 #define SQL_DAY_TO_MINUTE				SQL_CODE_DAY_TO_MINUTE
 #define SQL_DAY_TO_SECOND				SQL_CODE_DAY_TO_SECOND
-#define SQL_HOUR_TO_MINUTE				SQL_CODE_HOUR_TO_MINUTE	
+#define SQL_HOUR_TO_MINUTE				SQL_CODE_HOUR_TO_MINUTE
 #define SQL_HOUR_TO_SECOND				SQL_CODE_HOUR_TO_SECOND
 #define SQL_MINUTE_TO_SECOND			SQL_CODE_MINUTE_TO_SECOND
-#endif /* ODBC_STD */
+#endif				/* ODBC_STD */
 
 #if (ODBCVER >= 0x0300)
-odbc_export SQLRETURN SQL_API SQLAllocHandleStd(
-	SQLSMALLINT		fHandleType,
-	SQLHANDLE		hInput,
-	SQLHANDLE	   *phOutput);
+	odbc_export SQLRETURN SQL_API SQLAllocHandleStd(SQLSMALLINT fHandleType, SQLHANDLE hInput, SQLHANDLE *phOutput);
 #endif
 
 /*      Deprecated defines from prior versions of ODBC */
-#define SQL_DATABASE_NAME               16    /* Use SQLGetConnectOption/SQL_CURRENT_QUALIFIER */
+#define SQL_DATABASE_NAME               16	/* Use SQLGetConnectOption/SQL_CURRENT_QUALIFIER */
 #define SQL_FD_FETCH_PREV               SQL_FD_FETCH_PRIOR
 #define SQL_FETCH_PREV                  SQL_FETCH_PRIOR
 #define SQL_CONCUR_TIMESTAMP            SQL_CONCUR_ROWVER
@@ -2018,37 +1898,34 @@ odbc_export SQLRETURN SQL_API SQLAllocHandleStd(
 #define SQL_SCROLL_STATIC               (-3L) /*-SQL_CURSOR_STATIC */
 
 /*      Deprecated functions from prior versions of ODBC */
-odbc_export SQLRETURN SQL_API SQLSetScrollOptions(    /*      Use SQLSetStmtOptions */
-    SQLHSTMT           hstmt,
-    SQLUSMALLINT       fConcurrency,
-    SQLLEN             crowKeyset,
-    SQLUSMALLINT       crowRowset);
+	odbc_export SQLRETURN SQL_API SQLSetScrollOptions(	/*      Use SQLSetStmtOptions */
+								 SQLHSTMT hstmt, SQLUSMALLINT fConcurrency, SQLLEN crowKeyset, SQLUSMALLINT crowRowset);
 
 /* Tracing section */
 
-#define		TRACE_VERSION	1000		/* Version of trace API */
+#define		TRACE_VERSION	1000	/* Version of trace API */
 
 #ifdef UNICODE
-RETCODE	 TraceOpenLogFile(LPWSTR,LPWSTR,DWORD); 	/* open a trace log file				*/
+	RETCODE TraceOpenLogFile(LPWSTR, LPWSTR, DWORD);	/* open a trace log file                                */
 #endif
 #ifdef __cplusplus
-RETCODE	 TraceCloseLogFile();					    /* Request to close a trace log			*/
+	RETCODE TraceCloseLogFile();	/* Request to close a trace log                     */
 #else
-RETCODE	 TraceCloseLogFile(VOID);				    /* Request to close a trace log			*/
+	RETCODE TraceCloseLogFile(VOID);	/* Request to close a trace log                     */
 #endif
-VOID	 TraceReturn(RETCODE,RETCODE);			/* Processes trace after FN is called	*/
+	VOID TraceReturn(RETCODE, RETCODE);	/* Processes trace after FN is called   */
 #ifdef __cplusplus
-DWORD	 TraceVersion();							/* Returns trace API version			*/
+	DWORD TraceVersion();	/* Returns trace API version                    */
 #else
-DWORD	 TraceVersion(VOID);							/* Returns trace API version			*/
+	DWORD TraceVersion(VOID);	/* Returns trace API version                    */
 #endif
 
 /* Functions for Visual Studio Analyzer*/
 /* to turn on/off tracing or VS events, call TraceVSControl by setting or clearing the following bits  */
 #define TRACE_ON			0x00000001L
-#define TRACE_VS_EVENT_ON	0x00000002L	
+#define TRACE_VS_EVENT_ON	0x00000002L
 
-RETCODE	TraceVSControl(DWORD);			
+	RETCODE TraceVSControl(DWORD);
 
 /* the flags in ODBC_VS_ARGS */
 #define ODBC_VS_FLAG_UNICODE_ARG	0x00000001L	/* the argument is unicode */
@@ -2056,33 +1933,31 @@ RETCODE	TraceVSControl(DWORD);
 #define ODBC_VS_FLAG_RETCODE		0x00000004L	/* RetCode field is set */
 #define ODBC_VS_FLAG_STOP		0x00000008L	/* Stop firing visual studio analyzer events */
 
-typedef struct tagODBC_VS_ARGS {
+	typedef struct tagODBC_VS_ARGS {
 #ifdef GUID_DEFINED
-	const GUID	*pguidEvent;	/* the GUID for event */
+		const GUID *pguidEvent;	/* the GUID for event */
 #else
-	const void	*pguidEvent;	/* the GUID for event */
+		const void *pguidEvent;	/* the GUID for event */
 #endif
-	DWORD	dwFlags;		/* flags for the call */
-	union {
-		WCHAR	*wszArg;	
-		CHAR	*szArg;
-	}u1;
-	union {
-		WCHAR	*wszCorrelation;
-		CHAR	*szCorrelation;
-	}u2;				
-	RETCODE	RetCode;
-} ODBC_VS_ARGS, *PODBC_VS_ARGS;
+		DWORD dwFlags;	/* flags for the call */
+		union {
+			WCHAR *wszArg;
+			CHAR *szArg;
+		} u1;
+		union {
+			WCHAR *wszCorrelation;
+			CHAR *szCorrelation;
+		} u2;
+		RETCODE RetCode;
+	} ODBC_VS_ARGS, *PODBC_VS_ARGS;
 
-VOID	FireVSDebugEvent(PODBC_VS_ARGS);
+	VOID FireVSDebugEvent(PODBC_VS_ARGS);
 
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif
-
 /*
  * Local Variables:
  * tab-width:4

@@ -21,19 +21,16 @@
 
 #include "ODBCGlobal.h"
 #include "ODBCEnv.h"
-#include <sys/types.h> /* for ssize_t on Darwin */
+#include <sys/types.h>		/* for ssize_t on Darwin */
 
 
 SQLRETURN SQL_API
-SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute,
-	      SQLPOINTER Value, SQLINTEGER StringLength)
+SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetEnvAttr " PTRFMT " %d %lx\n",
-		PTRFMTCAST EnvironmentHandle,
-		Attribute, (unsigned long) (size_t) Value);
+	ODBCLOG("SQLSetEnvAttr " PTRFMT " %d %lx\n", PTRFMTCAST EnvironmentHandle, Attribute, (unsigned long) (size_t) Value);
 #endif
 
 	(void) StringLength;	/* Stefan: unused!? */

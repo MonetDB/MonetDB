@@ -26,11 +26,8 @@
 
 
 static SQLRETURN
-SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
-		   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		   SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+		   SQLUSMALLINT nNullable)
 {
 	RETCODE rc;
 
@@ -43,10 +40,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %d %d\n",
-		nCatalogNameLength, szCatalogName,
-		nSchemaNameLength, szSchemaName, nTableNameLength, szTableName,
-		nScope, nNullable);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %d %d\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName, nScope, nNullable);
 #endif
 
 	/* check for valid IdentifierType argument */
@@ -57,6 +51,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	default:
 		/* Column type out of range */
 		addStmtError(stmt, "HY097", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -69,6 +64,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	default:
 		/* Scope type out of range */
 		addStmtError(stmt, "HY098", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -80,6 +76,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	default:
 		/* Nullable type out of range */
 		addStmtError(stmt, "HY099", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -87,11 +84,13 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	if (szTableName == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (nTableNameLength == 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -101,14 +100,14 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	query_end = query;
 
 	/* SQLSpecialColumns returns a table with the following columns:
-	   SMALLINT	scope
-	   VARCHAR	column_name NOT NULL
-	   SMALLINT	data_type NOT NULL
-	   VARCHAR	type_name NOT NULL
-	   INTEGER	column_size
-	   INTEGER	buffer_length
-	   SMALLINT	decimal_digits
-	   SMALLINT	pseudo_column
+	   SMALLINT     scope
+	   VARCHAR      column_name NOT NULL
+	   SMALLINT     data_type NOT NULL
+	   VARCHAR      type_name NOT NULL
+	   INTEGER      column_size
+	   INTEGER      buffer_length
+	   SMALLINT     decimal_digits
+	   SMALLINT     pseudo_column
 	 */
 	if (nIdentifierType == SQL_BEST_ROWID) {
 		/* Select from the key table the (smallest) primary/unique key */
@@ -147,15 +146,13 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 
 		/* add the selection condition */
 		/* search pattern is not allowed for table name so use = and not LIKE */
-		sprintf(query_end, " and t.\"name\" = '%.*s'",
-			nTableNameLength, szTableName);
+		sprintf(query_end, " and t.\"name\" = '%.*s'", nTableNameLength, szTableName);
 		query_end += strlen(query_end);
 
 		if (szSchemaName != NULL && nSchemaNameLength > 0) {
 			/* filtering requested on schema name */
 			/* search pattern is not allowed so use = and not LIKE */
-			sprintf(query_end, " and s.\"name\" = '%.*s'",
-				nSchemaNameLength, szSchemaName);
+			sprintf(query_end, " and s.\"name\" = '%.*s'", nSchemaNameLength, szSchemaName);
 			query_end += strlen(query_end);
 		}
 
@@ -187,8 +184,7 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 	assert(query_end - query < 1000 + nTableNameLength + nSchemaNameLength);
 
 	/* query the MonetDB data dictionary tables */
-	rc = SQLExecDirect_(stmt, (SQLCHAR *) query,
-			    (SQLINTEGER) (query_end - query));
+	rc = SQLExecDirect_(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -196,17 +192,13 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType,
 }
 
 SQLRETURN SQL_API
-SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
-		  SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		  SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		  SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		  SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+		  SQLUSMALLINT nNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumns " PTRFMT " %d ", PTRFMTCAST hStmt,
-		nIdentifierType);
+	ODBCLOG("SQLSpecialColumns " PTRFMT " %d ", PTRFMTCAST hStmt, nIdentifierType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -214,42 +206,27 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 
 	clearStmtErrors(stmt);
 
-	return SQLSpecialColumns_(stmt, nIdentifierType,
-				  szCatalogName, nCatalogNameLength,
-				  szSchemaName, nSchemaNameLength,
-				  szTableName, nTableNameLength,
-				  nScope, nNullable);
+	return SQLSpecialColumns_(stmt, nIdentifierType, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, nScope, nNullable);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSpecialColumnsA(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
-		   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		   SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+SQLSpecialColumnsA(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+		   SQLUSMALLINT nNullable)
 {
-	return SQLSpecialColumns(hStmt, nIdentifierType,
-				 szCatalogName, nCatalogNameLength,
-				 szSchemaName, nSchemaNameLength,
-				 szTableName, nTableNameLength,
-				 nScope, nNullable);
+	return SQLSpecialColumns(hStmt, nIdentifierType, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, nScope, nNullable);
 }
 
 SQLRETURN SQL_API
-SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
-		   SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		   SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		   SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength,
-		   SQLUSMALLINT nScope, SQLUSMALLINT nNullable)
+SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+		   SQLUSMALLINT nNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %d ", PTRFMTCAST hStmt,
-		nIdentifierType);
+	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %d ", PTRFMTCAST hStmt, nIdentifierType);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -261,11 +238,9 @@ SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
 	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
 
-	rc = SQLSpecialColumns_(stmt, nIdentifierType, catalog, SQL_NTS,
-				schema, SQL_NTS, table, SQL_NTS,
-				nScope, nNullable);
+	rc = SQLSpecialColumns_(stmt, nIdentifierType, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS, nScope, nNullable);
 
-  exit:
+      exit:
 	if (catalog)
 		free(catalog);
 	if (schema)
@@ -275,4 +250,4 @@ SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

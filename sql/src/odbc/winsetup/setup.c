@@ -53,8 +53,7 @@ ODBCLOG(const char *fmt, ...)
 }
 
 BOOL
-ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
-	     WORD msgmax, WORD *msgout)
+ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WORD msgmax, WORD * msgout)
 {
 	ODBCLOG("ConfigDriver %d %s %s\n", request, driver ? driver : "(null)", args ? args : "(null)");
 
@@ -69,13 +68,11 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg,
 	case ODBC_CONFIG_DRIVER:
 		break;
 	default:
-		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE,
-				      "Invalid request");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE, "Invalid request");
 		return FALSE;
 	}
 	if (strcmp(driver, DriverName) != 0) {
-		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
-				      "Invalid driver name");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
 		return FALSE;
 	}
 	return TRUE;
@@ -87,8 +84,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	ODBCLOG("ConfigDSN %d %s %s\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)");
 
 	if (strcmp(driver, DriverName) != 0) {
-		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
-				      "Invalid driver name");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
 		return FALSE;
 	}
 	switch (request) {
@@ -101,11 +97,10 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		SQLRemoveDSNFromIni(DataSourceName);
 		break;
 	default:
-		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE,
-				      "Invalid request");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE, "Invalid request");
 		return FALSE;
 	}
-	
+
 	return TRUE;
 }
 

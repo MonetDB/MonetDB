@@ -30,21 +30,23 @@
 
 #include <sql_mem.h>
 
-sql_ref *sql_ref_init (sql_ref *r)
+sql_ref *
+sql_ref_init(sql_ref *r)
 {
 	r->refcnt = 1;
 	return r;
 }
 
-int sql_ref_inc(sql_ref *r)
+int
+sql_ref_inc(sql_ref *r)
 {
 	assert(r->refcnt > 0);
 	return (++r->refcnt);
 }
 
-int sql_ref_dec(sql_ref *r)
+int
+sql_ref_dec(sql_ref *r)
 {
 	assert(r->refcnt > 0);
 	return (--r->refcnt);
 }
-

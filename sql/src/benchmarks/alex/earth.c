@@ -16,62 +16,72 @@
 
 #include <stdio.h>
 
-void output_default_array(FILE *file,int id) {
-    int x,y;
-    int num_249_cnt = id;
-    for(x=0;x<800;x++) {
-        for(y=0;y<800;y++) {
-            num_249_cnt = (num_249_cnt + 1) % 250;    
-            fprintf(file,"%4d,%4d,%4d,%4d\n",id,x,y,num_249_cnt);
-        }
-    }
+void
+output_default_array(FILE *file, int id)
+{
+	int x, y;
+	int num_249_cnt = id;
+
+	for (x = 0; x < 800; x++) {
+		for (y = 0; y < 800; y++) {
+			num_249_cnt = (num_249_cnt + 1) % 250;
+			fprintf(file, "%4d,%4d,%4d,%4d\n", id, x, y, num_249_cnt);
+		}
+	}
 }
 
-void output_oneval_array(FILE *file,int id,int oneval) {
-    int x,y;
-    int num_249_cnt = id;
-    for(x=0;x<800;x++) {
-        for(y=0;y<800;y++) {
-            if(x==id*50 && y==id*40) {
-                fprintf(file,"%4d,%4d,%4d,%4d\n",id,x,y,oneval);
-            } else {
-                num_249_cnt = (num_249_cnt + 1) % 250;    
-                fprintf(file,"%4d,%4d,%4d,%4d\n",id,x,y,num_249_cnt);
-            }
-        }
-    }
+void
+output_oneval_array(FILE *file, int id, int oneval)
+{
+	int x, y;
+	int num_249_cnt = id;
+
+	for (x = 0; x < 800; x++) {
+		for (y = 0; y < 800; y++) {
+			if (x == id *50 && y == id *40) {
+				fprintf(file, "%4d,%4d,%4d,%4d\n", id, x, y, oneval);
+			} else {
+				num_249_cnt = (num_249_cnt + 1) % 250;
+				fprintf(file, "%4d,%4d,%4d,%4d\n", id, x, y, num_249_cnt);
+			}
+		}
+	}
 }
 
-void output_const_array(FILE *file,int id,int val) {
-    int x,y;
-    for(x=0;x<800;x++) {
-        for(y=0;y<800;y++) {
-            fprintf(file,"%4d,%4d,%4d,%4d\n",id,x,y,val);
-        }
-    }
+void
+output_const_array(FILE *file, int id, int val)
+{
+	int x, y;
+
+	for (x = 0; x < 800; x++) {
+		for (y = 0; y < 800; y++) {
+			fprintf(file, "%4d,%4d,%4d,%4d\n", id, x, y, val);
+		}
+	}
 }
 
-int main() {
-    FILE *file = fopen("earth.tab","wt");
+int
+main()
+{
+	FILE *file = fopen("earth.tab", "wt");
 
-    output_default_array(file, 0);
-    output_const_array  (file, 1,254);
-    output_default_array(file, 2);
-    output_default_array(file, 3);
-    output_oneval_array (file, 4,251);
-    output_default_array(file, 5);
-    output_oneval_array (file, 6,250);
-    output_default_array(file, 7);
-    output_const_array  (file, 8,253);
-    output_default_array(file, 9);
-    output_default_array(file,10);
-    output_const_array  (file,11,255);
-    output_default_array(file,12);
-    output_oneval_array (file,13,252);
-    output_default_array(file,14);
+	output_default_array(file, 0);
+	output_const_array(file, 1, 254);
+	output_default_array(file, 2);
+	output_default_array(file, 3);
+	output_oneval_array(file, 4, 251);
+	output_default_array(file, 5);
+	output_oneval_array(file, 6, 250);
+	output_default_array(file, 7);
+	output_const_array(file, 8, 253);
+	output_default_array(file, 9);
+	output_default_array(file, 10);
+	output_const_array(file, 11, 255);
+	output_default_array(file, 12);
+	output_oneval_array(file, 13, 252);
+	output_default_array(file, 14);
 
-    fclose(file);
+	fclose(file);
 
-    return 0;
+	return 0;
 }
-

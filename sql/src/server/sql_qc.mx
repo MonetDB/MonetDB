@@ -53,14 +53,14 @@ a cache entry.
 
 typedef struct cq {
 	struct cq *next;	/* link them into a queue */
-	int	type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,..*/
-	symbol 	*s;		/* the SQL parse tree */
-	list 	*params;	/* list of parameter types */
-	backend_stack	stk;	/* V4 state information */
-	backend_code 	code;	/* V4 state information */
-	int 	id;		/* cache identity */
-	int 	key;		/* the hash key for the query text */
-	char 	*codestring;	/* keep code in string form to aid debugging */
+	int type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */
+	symbol *s;		/* the SQL parse tree */
+	list *params;		/* list of parameter types */
+	backend_stack stk;	/* V4 state information */
+	backend_code code;	/* V4 state information */
+	int id;			/* cache identity */
+	int key;		/* the hash key for the query text */
+	char *codestring;	/* keep code in string form to aid debugging */
 } cq;
 
 typedef struct qc {
@@ -69,12 +69,12 @@ typedef struct qc {
 } qc;
 
 sql_export qc *qc_create();
-sql_export void qc_destroy( qc *cache );
-sql_export cq *qc_find( qc *cache, int id );
-sql_export cq *qc_match( qc *cache, symbol *s, list *params, int key );
-sql_export cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type, char *codedstr);
-sql_export void qc_delete( qc *cache, cq *q);
-sql_export int qc_size( qc *cache );
+sql_export void qc_destroy(qc *cache);
+sql_export cq *qc_find(qc *cache, int id);
+sql_export cq *qc_match(qc *cache, symbol *s, list *params, int key);
+sql_export cq *qc_insert(qc *cache, symbol *s, list *params, int key, int type, char *codedstr);
+sql_export void qc_delete(qc *cache, cq *q);
+sql_export int qc_size(qc *cache);
 
 #endif /*_SQL_QC_H_*/
 
@@ -83,15 +83,18 @@ sql_export int qc_size( qc *cache );
 #include "sql_qc.h"
 #include "sql_scope.h"
 
-qc *qc_create()
+qc *
+qc_create()
 {
 	qc *r = NEW(qc);
 	r->id = 0;
+
 	r->q = NULL;
 	return r;
 }
 
-static void cq_delete(cq *q)
+static void
+cq_delete(cq *q)
 {
 	if (q->s)
 		symbol_destroy(q->s);
@@ -100,127 +103,135 @@ static void cq_delete(cq *q)
 		list_destroy(q->params);
 
 	if (q->code)
-		backend_freecode( q->code, q->stk, q->id );
+		backend_freecode(q->code, q->stk, q->id);
 
 	if (q->stk)
-		backend_freestack( q->stk );
+		backend_freestack(q->stk);
 	_DELETE(q->codestring);
 	_DELETE(q);
 }
 
-void qc_delete( qc *cache, cq *q) 
+void
+qc_delete(qc *cache, cq *q)
 {
 	cq *n, *p = NULL;
-	for (n = cache->q; n; p = n, n = n->next){
-			if (n == q) {
-				if (p) {
-					p -> next = q->next;
-				} else {
-					cache->q = q->next;
-				}
-				cq_delete(q);
+
+	for (n = cache->q; n; p = n, n = n->next) {
+		if (n == q) {
+			if (p) {
+				p->next = q->next;
+			} else {
+				cache->q = q->next;
 			}
+			cq_delete(q);
+		}
 	}
 }
 
-void qc_destroy( qc *cache )
+void
+qc_destroy(qc *cache)
 {
 	cq *q, *n;
 
-	for (q = cache->q; q; q = n){
+	for (q = cache->q; q; q = n) {
 		n = q->next;
-		
+
 		cq_delete(q);
 	}
 	_DELETE(cache);
 }
 
-int param_cmp( sql_subtype *t1, sql_subtype *t2 )
+int
+param_cmp(sql_subtype *t1, sql_subtype *t2)
 {
 	int res;
 
 	if (t1->scale != t2->scale)
 		return -1;
-        res = subtype_cmp(t1,t2);
+	res = subtype_cmp(t1, t2);
 	if (res)
 		return -1;
-        if ((t1->digits > 0 && t1->scale == 0 && t1->digits < t2->digits) ||
-            (t1->scale > 0 && t1->digits > 0 && 
-	     t1->digits-t1->scale < t2->digits-t2->scale)) {
+	if ((t1->digits > 0 && t1->scale == 0 && t1->digits < t2->digits) || (t1->scale > 0 && t1->digits > 0 && t1->digits - t1->scale < t2->digits - t2->scale)) {
 		return -1;
 	}
 	return 0;
 }
 
-int param_list_cmp( list *typelist, list *atomlist )
+int
+param_list_cmp(list *typelist, list *atomlist)
 {
 	node *n1, *n2;
 
-	if (typelist == atomlist) 
+	if (typelist == atomlist)
 		return 0;
-	if (!typelist || !atomlist || 
-	     list_length(typelist) != list_length(atomlist))
+	if (!typelist || !atomlist || list_length(typelist) != list_length(atomlist))
 		return -1;
-	for (n1 = typelist->h, n2 = atomlist->h; n1; 
-		n1 = n1->next, n2 = n2->next ){
+	for (n1 = typelist->h, n2 = atomlist->h; n1; n1 = n1->next, n2 = n2->next) {
 		sql_subtype *t1 = n1->data;
 		atom *a2 = n2->data;
+
 		/* NULL values match any type */
-		if (!atom_null(a2) && param_cmp(t1,a2->tpe) != 0)
+		if (!atom_null(a2) && param_cmp(t1, a2->tpe) != 0)
 			return -1;
 	}
 	return 0;
 }
 
-cq *qc_find( qc *cache, int id )
+cq *
+qc_find(qc *cache, int id)
 {
 	cq *q;
 
-	for (q = cache->q; q; q = q->next ){
+	for (q = cache->q; q; q = q->next) {
 		if (q->id == id)
 			return q;
 	}
 	return NULL;
 }
 
-cq *qc_match( qc *cache, symbol *s, list *params, int key )
+cq *
+qc_match(qc *cache, symbol *s, list *params, int key)
 {
 	cq *q;
 
-	for (q = cache->q; q; q = q->next ){
-	    	if (q->key == key){
-			if (param_list_cmp(q->params, params) == 0 
-				 && symbol_cmp(q->s, s) == 0){
+	for (q = cache->q; q; q = q->next) {
+		if (q->key == key) {
+			if (param_list_cmp(q->params, params) == 0 && symbol_cmp(q->s, s) == 0) {
 				return q;
 			}
-	    	}
+		}
 	}
 	return NULL;
 }
 
-cq *qc_insert( qc *cache, symbol *s, list *params, int key, int type, char *cmd)
+cq *
+qc_insert(qc *cache, symbol *s, list *params, int key, int type, char *cmd)
 {
 	node *m;
 	cq *n = NEW(cq);
-	n->id = cache->id++;
+	n->id = cache->id ++;
+
 	n->s = s;
-	
-	n->params = list_create((fdestroy)&sql_subtype_destroy);
-	if (params) for (m = params->h; m; m = m->next) {
-		atom *a = m->data;
-		list_append(n->params, sql_dup_subtype(a->tpe));
-	}
+
+	n->params = list_create((fdestroy) &sql_subtype_destroy);
+	if (params)
+		for (m = params->h; m; m = m->next) {
+			atom *a = m->data;
+
+			list_append(n->params, sql_dup_subtype(a->tpe));
+		}
 	n->next = cache->q;
 	n->stk = 0;
 	n->code = NULL;
 	n->type = type;
 	n->key = key;
 	n->codestring = cmd;
-	cache -> q = n;
+	cache->q = n;
 	return n;
 }
 
-int qc_size( qc *cache )
+int
+qc_size(qc *cache)
 {
 	return cache->id;
 }

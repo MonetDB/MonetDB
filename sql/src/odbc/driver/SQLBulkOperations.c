@@ -27,8 +27,7 @@ SQLBulkOperations(SQLHSTMT hStmt, SQLSMALLINT nOperation)
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBulkOperations " PTRFMT " %d\n", PTRFMTCAST hStmt,
-		nOperation);
+	ODBCLOG("SQLBulkOperations " PTRFMT " %d\n", PTRFMTCAST hStmt, nOperation);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -39,11 +38,13 @@ SQLBulkOperations(SQLHSTMT hStmt, SQLSMALLINT nOperation)
 	if (stmt->State < EXECUTED0 || stmt->State == EXTENDEDFETCHED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
+
 		return SQL_ERROR;
 	}
 	if (stmt->State == EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -57,6 +58,7 @@ SQLBulkOperations(SQLHSTMT hStmt, SQLSMALLINT nOperation)
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
+
 		return SQL_ERROR;
 	}
 

@@ -22,107 +22,91 @@
 
 
 SQLRETURN
-SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
-		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 	/* TODO: check parameters: Value, BufferLength and StringLength */
 
 	switch (Attribute) {
 	case SQL_ATTR_APP_PARAM_DESC:
-		* (SQLHANDLE *) Value = stmt->ApplParamDescr;
+		*(SQLHANDLE *) Value = stmt->ApplParamDescr;
+
 		return SQL_SUCCESS;
 	case SQL_ATTR_APP_ROW_DESC:
-		* (SQLHANDLE *) Value = stmt->ApplRowDescr;
+		*(SQLHANDLE *) Value = stmt->ApplRowDescr;
+
 		return SQL_SUCCESS;
 	case SQL_ATTR_ASYNC_ENABLE:
-		* (SQLUINTEGER *) Value = SQL_ASYNC_ENABLE_OFF;
+		*(SQLUINTEGER *) Value = SQL_ASYNC_ENABLE_OFF;
 		break;
 	case SQL_ATTR_CONCURRENCY:
-		* (SQLUINTEGER *) Value = SQL_CONCUR_READ_ONLY;
+		*(SQLUINTEGER *) Value = SQL_CONCUR_READ_ONLY;
 		break;
 	case SQL_ATTR_CURSOR_SCROLLABLE:
-		* (SQLUINTEGER *) Value = stmt->cursorScrollable;
+		*(SQLUINTEGER *) Value = stmt->cursorScrollable;
+
 		break;
 	case SQL_ATTR_CURSOR_SENSITIVITY:
-		* (SQLUINTEGER *) Value = SQL_INSENSITIVE;
+		*(SQLUINTEGER *) Value = SQL_INSENSITIVE;
 		break;
 	case SQL_ATTR_CURSOR_TYPE:
-		* (SQLUINTEGER *) Value = stmt->cursorType;
+		*(SQLUINTEGER *) Value = stmt->cursorType;
+
 		break;
 	case SQL_ATTR_IMP_PARAM_DESC:
-		* (SQLHANDLE *) Value = stmt->ImplParamDescr;
+		*(SQLHANDLE *) Value = stmt->ImplParamDescr;
+
 		return SQL_SUCCESS;
 	case SQL_ATTR_IMP_ROW_DESC:
-		* (SQLHANDLE *) Value = stmt->ImplRowDescr;
+		*(SQLHANDLE *) Value = stmt->ImplRowDescr;
+
 		return SQL_SUCCESS;
 	case SQL_ATTR_MAX_LENGTH:
-		* (SQLUINTEGER *) Value = 0;
+		*(SQLUINTEGER *) Value = 0;
 		break;
 	case SQL_ATTR_MAX_ROWS:
-		* (SQLUINTEGER *) Value = 0;
+		*(SQLUINTEGER *) Value = 0;
 		break;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
-					SQL_DESC_BIND_OFFSET_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_BIND_OFFSET_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_PARAM_BIND_TYPE:
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
-					SQL_DESC_BIND_TYPE,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_BIND_TYPE, Value, BufferLength, StringLength);
 	case SQL_ATTR_PARAM_OPERATION_PTR:
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
-					SQL_DESC_ARRAY_STATUS_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_ARRAY_STATUS_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_PARAM_STATUS_PTR:
-		return SQLGetDescField_(stmt->ImplParamDescr, 0,
-					SQL_DESC_ARRAY_STATUS_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ImplParamDescr, 0, SQL_DESC_ARRAY_STATUS_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_PARAMS_PROCESSED_PTR:
-		return SQLGetDescField_(stmt->ImplParamDescr, 0,
-					SQL_DESC_ROWS_PROCESSED_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ImplParamDescr, 0, SQL_DESC_ROWS_PROCESSED_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_PARAMSET_SIZE:
-		return SQLGetDescField_(stmt->ApplParamDescr, 0,
-					SQL_DESC_ARRAY_SIZE,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_ARRAY_SIZE, Value, BufferLength, StringLength);
 	case SQL_ATTR_RETRIEVE_DATA:
-		* (SQLUINTEGER *) Value = stmt->retrieveData;
+		*(SQLUINTEGER *) Value = stmt->retrieveData;
+
 		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:
 	case SQL_ROWSET_SIZE:
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
-					SQL_DESC_ARRAY_SIZE,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplRowDescr, 0, SQL_DESC_ARRAY_SIZE, Value, BufferLength, StringLength);
 	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
-					SQL_DESC_BIND_OFFSET_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplRowDescr, 0, SQL_DESC_BIND_OFFSET_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_ROW_BIND_TYPE:
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
-					SQL_DESC_BIND_TYPE,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplRowDescr, 0, SQL_DESC_BIND_TYPE, Value, BufferLength, StringLength);
 	case SQL_ATTR_ROW_NUMBER:
 		if (stmt->State <= EXECUTED1) {
 			/* Invalid cursor state */
 			addStmtError(stmt, "24000", NULL, 0);
+
 			return SQL_ERROR;
 		}
-		* (SQLUINTEGER *) Value = stmt->currentRow;
+		*(SQLUINTEGER *) Value = stmt->currentRow;
+
 		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:
-		return SQLGetDescField_(stmt->ApplRowDescr, 0,
-					SQL_DESC_ARRAY_STATUS_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ApplRowDescr, 0, SQL_DESC_ARRAY_STATUS_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_ROW_STATUS_PTR:
-		return SQLGetDescField_(stmt->ImplRowDescr, 0,
-					SQL_DESC_ARRAY_STATUS_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ImplRowDescr, 0, SQL_DESC_ARRAY_STATUS_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_ROWS_FETCHED_PTR:
-		return SQLGetDescField_(stmt->ImplRowDescr, 0,
-					SQL_DESC_ROWS_PROCESSED_PTR,
-					Value, BufferLength, StringLength);
+		return SQLGetDescField_(stmt->ImplRowDescr, 0, SQL_DESC_ROWS_PROCESSED_PTR, Value, BufferLength, StringLength);
 
-	/* TODO: implement requested behavior */
+		/* TODO: implement requested behavior */
 	case SQL_ATTR_ENABLE_AUTO_IPD:
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:
 	case SQL_ATTR_KEYSET_SIZE:
@@ -133,10 +117,12 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
+
 		return SQL_ERROR;
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
+
 		return SQL_ERROR;
 	}
 
@@ -144,48 +130,41 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value,
 }
 
 SQLRETURN SQL_API
-SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
-	       SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtAttr " PTRFMT " %d\n", PTRFMTCAST hStmt, Attribute);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors((ODBCStmt *) hStmt);
 
-	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value,
-			       BufferLength, StringLength);
+	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value, BufferLength, StringLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetStmtAttrA(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
-		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttrA(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
-	return SQLGetStmtAttr(hStmt, Attribute,
-			      Value, BufferLength, StringLength);
+	return SQLGetStmtAttr(hStmt, Attribute, Value, BufferLength, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value,
-		SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %d\n",
-		PTRFMTCAST hStmt, Attribute);
+	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %d\n", PTRFMTCAST hStmt, Attribute);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) hStmt))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors((ODBCStmt *) hStmt);
 
 	/* there are no string-valued attributes */
 
-	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value,
-			       BufferLength, StringLength);
+	return SQLGetStmtAttr_((ODBCStmt *) hStmt, Attribute, Value, BufferLength, StringLength);
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */

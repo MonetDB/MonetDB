@@ -35,9 +35,9 @@ This code strongly depends on the front-end/back-end setup.
 #include <str.h>
 
 typedef struct backend {
-	int 	console;
-	int 	trace;
-	mvc 	*mvc;
+	int console;
+	int trace;
+	mvc *mvc;
 
 	buffer *outbuf;
 	stream *out;
@@ -45,12 +45,12 @@ typedef struct backend {
 
 extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
 
-extern void monet4_freestack( backend_stack stk );
-extern void monet4_freecode( backend_code code, backend_stack stk, int nr );
-extern void monet4_parse( backend_stack stk, char *code );
+extern void monet4_freestack(backend_stack stk);
+extern void monet4_freecode(backend_code code, backend_stack stk, int nr);
+extern void monet4_parse(backend_stack stk, char *code);
 
-extern int sqlstatement(char *cmd, Cntxt stk );
-extern int mvc_sql( mvc *c, str query );
+extern int sqlstatement(char *cmd, Cntxt stk);
+extern int mvc_sql(mvc *c, str query);
 
 #endif /*_SQL_SESSION_H_*/
 @c
@@ -81,65 +81,74 @@ extern int mvc_sql( mvc *c, str query );
 }
 @c
 
-static backend *backend_create( int trace, mvc *c, int console )
+static backend *
+backend_create(int trace, mvc *c, int console)
 {
 	backend *b = NEW(backend);
 
 	b->mvc = c;
 
- 	b->outbuf = buffer_create( BUFSIZ );
-	b->out = buffer_wastream( b->outbuf, "SQLserver" );
+	b->outbuf = buffer_create(BUFSIZ);
+	b->out = buffer_wastream(b->outbuf, "SQLserver");
 	b->trace = trace;
 	b->console = console;
 	return b;
 }
 
-static void backend_destroy( backend *b )
+static void
+backend_destroy(backend *b)
 {
-	if (b->out){
-		buffer_destroy( b->outbuf );
-		stream_close( b->out );
-		stream_destroy( b->out );
+	if (b->out) {
+		buffer_destroy(b->outbuf);
+		stream_close(b->out);
+		stream_destroy(b->out);
 	}
 	_DELETE(b);
 }
 
-static YYSTREE milnode(int tok, int tpe, ptr valp)
+static YYSTREE
+milnode(int tok, int tpe, ptr valp)
 {
-        YYSTREE res = Myynode(tok, tpe);
-        VALset(&res->yyval, tpe, valp);
-        return res;
+	YYSTREE res = Myynode(tok, tpe);
+
+	VALset(&res->yyval, tpe, valp);
+	return res;
 }
 
-static YYSTREE milnode2(int tok, ValPtr valp)
+static YYSTREE
+milnode2(int tok, ValPtr valp)
 {
-        YYSTREE res = Myynode(tok, valp->vtype);
+	YYSTREE res = Myynode(tok, valp->vtype);
+
 	res->yyval = *valp;
 	res->dealloc = 0;
-        return res;
+	return res;
 }
 
-static int backend_parse( Cntxt stack, char *cmd )
+static int
+backend_parse(Cntxt stack, char *cmd)
 {
 	int err = 0;
 
-	if (cmd){
+	if (cmd) {
 		ValRecord v;
 
 		v.vtype = TYPE_void;
 
-		err = interpret_str( stack, cmd, &v);
+		err = interpret_str(stack, cmd, &v);
 	}
 	return err;
 }
 
-void monet4_parse( backend_stack stack, char *cmd )
+void
+monet4_parse(backend_stack stack, char *cmd)
 {
-	backend_parse( (Cntxt)stack, cmd );
+	backend_parse((Cntxt) stack, cmd);
 }
 
 
-Cntxt backend_newstack( Cntxt stk )
+Cntxt
+backend_newstack(Cntxt stk)
 {
 	Cntxt procstk;
 
@@ -150,9 +159,10 @@ Cntxt backend_newstack( Cntxt stk )
 	return procstk;
 }
 
-void monet4_freestack( backend_stack stk )
+void
+monet4_freestack(backend_stack stk)
 {
-	Cntxt procstk = (Cntxt)(ptrdiff_t)stk;
+	Cntxt procstk = (Cntxt) (ptrdiff_t) stk;
 
 	monet_cntxt[procstk].reuse = FALSE;
 	CNTXTclear(procstk);
@@ -161,11 +171,12 @@ void monet4_freestack( backend_stack stk )
 }
 
 static void
-reset_arg_tree( YYSTREE args )
+reset_arg_tree(YYSTREE args)
 {
-	while(args){
+	while (args) {
 		unsigned i;
-		for (i=0; i< args->cnt; i++){
+
+		for (i = 0; i < args->cnt; i++) {
 			if (args->yysons[i])
 				reset_arg_tree(args->yysons[i]);
 
@@ -177,11 +188,12 @@ reset_arg_tree( YYSTREE args )
 	}
 }
 
-void monet4_freecode( backend_code code, backend_stack stk, int nr)
+void
+monet4_freecode(backend_code code, backend_stack stk, int nr)
 {
-	YYSTREE callnode = (YYSTREE)code;
+	YYSTREE callnode = (YYSTREE) code;
 
-	if (code){
+	if (code) {
 		Client client;
 		char name[BUFSIZ];
 		int i;
@@ -189,12 +201,12 @@ void monet4_freecode( backend_code code, backend_stack stk, int nr)
 		ValPtr argv;
 
 		/* clear default arguments */
-		reset_arg_tree( callnode->yysons[0] );
+		reset_arg_tree(callnode->yysons[0]);
 
 		/* clear fastpath arguments */
 		if (callnode->yysons[1]) {
- 			argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
-			for (i=1; i<l; i++){
+			argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
+			for (i = 1; i < l; i++) {
 				argv[i].vtype = TYPE_void;
 				argv[i].len = 0;
 			}
@@ -204,12 +216,13 @@ void monet4_freecode( backend_code code, backend_stack stk, int nr)
 		Myyfree(callnode);
 
 		snprintf(name, BUFSIZ, "sql%d", nr);
-		CNTXTclient( (Cntxt)(ptrdiff_t)stk, &client);
+		CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
 		TBL_delproc(client, name);
 	}
 }
 
-YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args, int *err )
+YYSTREE
+monet4_interpret(Cntxt procstk, char *name, list *args, int *err)
 {
 	YYSTREE callnode;
 	YYSTREE argtree;
@@ -217,66 +230,71 @@ YYSTREE monet4_interpret( Cntxt procstk, char *name, list *args, int *err )
 
 	v.vtype = TYPE_void;
 	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name));
- 	argtree = Myynode(0,0);
-	if (args){
+	argtree = Myynode(0, 0);
+	if (args) {
 		node *n;
-  		for (n=args->h; n; n = n->next){
+
+		for (n = args->h; n; n = n->next) {
 			atom *a = n->data;
 			YYSTREE arg;
 
 			if (atom_null(a)) {
-				if (a->data.vtype == TYPE_str && 
-				    a->data.val.sval == NULL) {
+				if (a->data.vtype == TYPE_str && a->data.val.sval == NULL) {
 					a->data.val.sval = GDKstrdup(str_nil);
 				}
 			}
-			arg = milnode2(TOK_CONSTANT, &a->data );
-       			argtree = Myyexpand(argtree, arg);
+			arg = milnode2(TOK_CONSTANT, &a->data);
+			argtree = Myyexpand(argtree, arg);
 		}
 	}
 	Myyexpand(callnode, argtree);
-	Myyexpand(callnode, Myynode(0,TYPE_int));
-	*err = interpret( procstk, callnode, &v);
+	Myyexpand(callnode, Myynode(0, TYPE_int));
+	*err = interpret(procstk, callnode, &v);
 
 	return callnode;
 }
 
-int backend_fastpath( Cntxt procstk, YYSTREE callnode, list *args )
+int
+backend_fastpath(Cntxt procstk, YYSTREE callnode, list *args)
 {
 	ValRecord v;
 	node *n;
 
 	v.vtype = TYPE_void;
-	if (args){
+	if (args) {
 		int i;
 
 		ValPtr argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
-	  	for (i=1, n=args->h; n; i++, n = n->next){
+
+		for (i = 1, n = args->h; n; i++, n = n->next) {
 			atom *a = n->data;
 
 			if (atom_null(a)) {
 				int t = argv[i].vtype;
+
 				if (a->data.vtype != t) {
 					a->data.vtype = t;
-					if (ATOMstorage(t) < TYPE_str){
+					if (ATOMstorage(t) < TYPE_str) {
 						ptr p = ATOMnilptr(t);
+
 						VALset(&a->data, t, p);
 					} else {
-						a->data.val.pval = NULL; 
+						a->data.val.pval = NULL;
 					}
 				}
 			}
 			argv[i] = a->data;
 		}
 	}
-	return interpret( procstk, callnode->yysons[1]->yysons[0], &v);
+	return interpret(procstk, callnode->yysons[1]->yysons[0], &v);
 }
 
 @-
 A connection error means that not only the channels to the database should
 be reset, but also this client should be terminated immediately.
 @c
-int connect_error(stream *in, stream *out)
+int
+connect_error(stream *in, stream *out)
 {
 	/* Make sure that the write- (out-) stream is closed first,
 	 * as the related read- (in-) stream closes the shared
@@ -305,23 +323,23 @@ error(stream *out, char *str)
 		return -1;
 	while ((p = strchr(str, '\n')) != NULL) {
 		p++;		/* include newline */
-		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
 			return -1;
 		if (stream_write(out, str, p - str, 1) != 1)
-			return -1;
+			 return -1;
 		str = p;
 	}
-	if (str && *str) {
-		if (*str != '!' && stream_write(out, "!", 1, 1) != 1)
+	if (str &&*str) {
+		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
 			return -1;
-		if (stream_write(out, str, strlen(str), 1) != 1 ||
-		    stream_write(out, "\n", 1, 1) != 1)
-			return -1;
+		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
+			 return -1;
 	}
 	return 0;
 }
 
-int explain_cmd( mvc *c, char *cmd, stream *out )
+int
+explain_cmd(mvc *c, char *cmd, stream *out)
 {
 	int t_id;
 	BAT *b;
@@ -330,17 +348,20 @@ int explain_cmd( mvc *c, char *cmd, stream *out )
 		return 0;
 	strSplit(&b, cmd, "\n");
 	BATseqbase(b, 0);
- 	t_id = mvc_result_table( c, 1, b);
-	mvc_result_column( c, "", "statement", "varchar", -1,-1, b);
+	t_id = mvc_result_table(c, 1, b);
+	mvc_result_column(c, "", "statement", "varchar", -1, -1, b);
 	BBPunfix(b->batCacheid);
-	return mvc_export_result( c, out, t_id ) ||
-		mvc_export_table( c, out, t_id, 0, -1 );
+	return mvc_export_result(c, out, t_id) || mvc_export_table(c, out, t_id, 0, -1);
 }
 
-stmt *sql_symbol2stmt( mvc *c ){
+stmt *
+sql_symbol2stmt(mvc *c)
+{
 	stmt *s = semantic(c, c->sym);
-	if (s){
+
+	if (s) {
 		stmt *opt = optimize(c, s);
+
 		stmt_destroy(s);
 		s = rel2bin(c, opt);
 		stmt_destroy(opt);
@@ -348,7 +369,8 @@ stmt *sql_symbol2stmt( mvc *c ){
 	return s;
 }
 
-int sqlcleanup( mvc *c, int err )
+int
+sqlcleanup(mvc *c, int err)
 {
 	sql_destroy_params(c);
 	sql_destroy_args(c);
@@ -362,8 +384,8 @@ int sqlcleanup( mvc *c, int err )
 	return err;
 }
 
-static int 
-output_prepare( stream *out, cq *q )
+static int
+output_prepare(stream *out, cq *q)
 {
 	int i;
 	node *n;
@@ -376,20 +398,21 @@ output_prepare( stream *out, cq *q )
 		return -1;
 	}
 
-	i = snprintf( buf, BUFSIZ, "%d\n%d\n", q->id, q->params?list_length(q->params):0);
+	i = snprintf(buf, BUFSIZ, "%d\n%d\n", q->id, q->params ? list_length(q->params) : 0);
 	if (stream_write(out, buf, i, 1) != 1) {
 		return -1;
 	}
-	if (q->params) for (n = q->params->h; n; n = n->next) {
-		sql_subtype *t = n->data;
-		if (t) {
-			i = snprintf( buf, BUFSIZ, "%s(%d,%d)\n", 
-				t->type->sqlname, t->digits, t->scale);
-			if (stream_write(out, buf, i, 1) != 1) {
-				return -1;
+	if (q->params)
+		for (n = q->params->h; n; n = n->next) {
+			sql_subtype *t = n->data;
+
+			if (t) {
+				i = snprintf(buf, BUFSIZ, "%s(%d,%d)\n", t->type->sqlname, t->digits, t->scale);
+				if (stream_write(out, buf, i, 1) != 1) {
+					return -1;
+				}
 			}
 		}
-	}
 	return 0;
 }
 
@@ -399,7 +422,8 @@ enum ex_t {
 	ex_performance
 };
 
-int sqlexecute(backend * be, stream *out )
+int
+sqlexecute(backend *be, stream *out)
 {
 	char *query = NULL;
 	lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0, T1 = 0;
@@ -413,12 +437,11 @@ int sqlexecute(backend * be, stream *out )
 	if (!c->trans)
 		mvc_trans(c);
 
-	if (c->explain)
-	{
+	if (c->explain) {
 		if (strcmp(c->explain, "plan") == 0)
-		explain = ex_plan;
+			explain = ex_plan;
 		else if (strcmp(c->explain, "performance") == 0)
-		explain = ex_performance;
+			explain = ex_performance;
 	}
 
 	if (explain == ex_performance)
@@ -441,56 +464,53 @@ int sqlexecute(backend * be, stream *out )
 	if (c->mode == m_execute) {
 		node *a, *p;
 		int id = c->sym->data.lval->h->data.ival;
-		q = qc_find( c->qc, id);
+		q = qc_find(c->qc, id);
 
 		if (!q) {
 			error(out, "Error: no prepared statement with the given query id\n");
 			err = -1;
-		} else if ((c->args != q->params && (!c->args || !q->params)) 
-		       || (c->args && q->params && 
-			  list_length(q->params) != list_length(c->args))) {
+		} else if ((c->args != q->params && (!c->args || !q->params))
+			   || (c->args && q->params && list_length(q->params) != list_length(c->args))) {
 			error(out, "Error: wrong number of arguments for prepared statement\n");
 			err = -1;
 			q = NULL;
 		} else {
-			if (c->args) for ( a = c->args->h, p = q->params->h; 
-			      a && p; 
-			      a = a->next, p = p->next){
-				atom *arg = a->data;
-				sql_subtype *pt = p->data;
-	
-				if (subtype_cmp(pt, arg->tpe) != 0) {
-					char buf[BUFSIZ];
+			if (c->args)
+				for (a = c->args->h, p = q->params->h; a && p; a = a->next, p = p->next) {
+					atom *arg = a->data;
+					sql_subtype *pt = p->data;
 
-					snprintf( buf, BUFSIZ, "Error: wrong argument for prepared statement (%s,%s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
-					error(out, buf);
-					err = -1;
-					q = NULL;
+					if (subtype_cmp(pt, arg->tpe) != 0) {
+						char buf[BUFSIZ];
+
+						snprintf(buf, BUFSIZ, "Error: wrong argument for prepared statement (%s,%s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+						error(out, buf);
+						err = -1;
+						q = NULL;
+					}
 				}
-			}
 		}
-	} else if (explain == ex_plan || !c->cache ||
-		!(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
+	} else if (explain == ex_plan || !c->cache || !(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
 		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
 
-		if (!s && (err = mvc_status(c)) )
+		if (!s && (err = mvc_status(c)))
 			return sqlcleanup(c, err);
 		assert(s);
 
 		if (explain == ex_plan) {
 			/* insert mil statements into a bat */
-			if (c->args){
+			if (c->args) {
 				int i = 0;
 				node *n;
 
-	  			for (n=c->args->h; n; n = n->next, i++){
+				for (n = c->args->h; n; n = n->next, i++) {
 					int len;
 					atom *a = n->data;
 					char buf[BUFSIZ];
 
 					stream_write(be->out, "var ", 4, 1);
-					len=snprintf(buf,BUFSIZ,"A%d", i);
+					len = snprintf(buf, BUFSIZ, "A%d", i);
 					stream_write(be->out, buf, len, 1);
 					stream_write(be->out, " := ", 4, 1);
 					atom_dump(a, be->out);
@@ -502,32 +522,31 @@ int sqlexecute(backend * be, stream *out )
 		if (explain == ex_plan || !c->cache) {
 			int nr = 1;
 
-			backend_dumpstmt( s, &nr, be );
+			backend_dumpstmt(s, &nr, be);
 		} else {
-			backend_dumpproc( be, c->qc->id, s );
+			backend_dumpproc(be, c->qc->id, s);
 		}
 		cmd = buffer_get_buf(be->outbuf);
-		stream_flush( be->out );
+		stream_flush(be->out);
 		stmt_destroy(s);
 
 		if (explain == ex_plan) {
-			err = explain_cmd( c, cmd, out);
+			err = explain_cmd(c, cmd, out);
 		} else {
-			err = backend_parse( c->stk, cmd );
+			err = backend_parse(c->stk, cmd);
 			if (c->cache) {
-				q = qc_insert(c->qc, c->sym, c->args,
-						c->scanner.key, c->type, 
-						GDKstrdup(cmd) );
+				q = qc_insert(c->qc, c->sym, c->args, c->scanner.key, c->type, GDKstrdup(cmd));
+
 				c->sym = NULL;
 			}
 		}
 
 		/* beware to use free instead of _DELETE
- 	 	 * as the stream library is built without
-	 	 * libbat i.e. it cannot use gdkmalloc */
-	        free(cmd);
+		 * as the stream library is built without
+		 * libbat i.e. it cannot use gdkmalloc */
+		free(cmd);
 
-		if (err) 
+		if (err)
 			return sqlcleanup(c, err);
 	}
 
@@ -539,7 +558,7 @@ int sqlexecute(backend * be, stream *out )
 	scanner_query_processed(&(c->scanner));
 
 	if (q && c->mode == m_prepare) {
-		if ( (err = output_prepare( out, q )) ) {
+		if ((err = output_prepare(out, q))) {
 			return sqlcleanup(c, err);
 		}
 	} else if (q && !q->code) {
@@ -548,35 +567,35 @@ int sqlexecute(backend * be, stream *out )
 		Cntxt procstk = backend_newstack(c->stk);
 		YYSTREE callnode;
 
-		snprintf( buf, BUFSIZ, "sql%d", q->id);
+		snprintf(buf, BUFSIZ, "sql%d", q->id);
 
 		c->type = q->type;
-		callnode = monet4_interpret( procstk, buf, c->args, &err);
+		callnode = monet4_interpret(procstk, buf, c->args, &err);
 
-		if (!err){
-			q->code = (backend_code)callnode;
-			q->stk = (backend_stack)(ptrdiff_t)procstk;
+		if (!err) {
+			q->code = (backend_code) callnode;
+			q->stk = (backend_stack) (ptrdiff_t) procstk;
 		} else {
 			c->status = err;
-			monet4_freecode( callnode, (backend_stack)(ptrdiff_t)procstk, q->id);
-			backend_freestack( (backend_stack)(ptrdiff_t)procstk );
+			monet4_freecode(callnode, (backend_stack) (ptrdiff_t) procstk, q->id);
+
+			backend_freestack((backend_stack) (ptrdiff_t) procstk);
 			qc_delete(c->qc, q);
 		}
 	} else if (q) {
 		c->type = q->type;
-		err = backend_fastpath( (Cntxt)(ptrdiff_t)q->stk, (YYSTREE)q->code, c->args);
+		err = backend_fastpath((Cntxt) (ptrdiff_t) q->stk, (YYSTREE) q->code, c->args);
 	}
 	if (explain == ex_performance)
 		Texec = GDKusec();
 
 	/*
- 	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * clear query cache after Transaction boundaries (commit/rollback)
 	 * and on schema changes
 	 */
-	if (c->cache &&
-	   ( c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id > 100))
-	{
-		if (c->qc) qc_destroy(c->qc);
+	if (c->cache && (c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id >100)) {
+		if (c->qc)
+			qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
 
@@ -586,25 +605,21 @@ int sqlexecute(backend * be, stream *out )
 
 		T1 = GDKusec();
 		/* TODO use sql_prepare/execute */
-		snprintf(buf, BUFSIZ, 
-			"insert into sys.history "
-			"values(now,'%s',%lld,%lld,%lld,%lld,USER);\n", 
-			query, Tparse-T0, Tmil-Tparse, Texec-Tmil, T1-T0);
+		snprintf(buf, BUFSIZ, "insert into sys.history "
+			 "values(now,'%s',%lld,%lld,%lld,%lld,USER);\n",
+			 query, Tparse - T0, Tmil - Tparse, Texec - Tmil, T1 - T0);
 		_DELETE(query);
 		/* switch of explain to prevent recursion */
 		c->explain = NULL;
-		(void)mvc_sql( c, buf);
+		(void) mvc_sql(c, buf);
 		c->explain = e;
 	}
 
 	if (!err && explain != ex_plan) {
 		if (mvc_status(c) < 0) {
 			error(out, "Error in result");
-		} else if (c->cache && 
-			c->type != Q_RESULT && 
-			c->type != Q_UPDATE)
-		{
-			err = mvc_export_default( c, out ); 
+		} else if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE) {
+			err = mvc_export_default(c, out);
 		}
 	}
 	return sqlcleanup(c, err);
@@ -614,27 +629,30 @@ int sqlexecute(backend * be, stream *out )
 Sidestepping SQL to directly executed a single MIL statement
 in the same context.
 @c
-void sidestepMil(Cntxt stk, char *cmd){
+void
+sidestepMil(Cntxt stk, char *cmd)
+{
 	ValRecord res;
-	res.vtype= TYPE_void;
+
+	res.vtype = TYPE_void;
 	interpret_str(stk, cmd, &res);
 }
 
 #define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
 
-int handle_error(mvc *m, stream *out, int pstatus) 
+int
+handle_error(mvc *m, stream *out, int pstatus)
 {
 	int go = 1;
 	char *buf = GDKerrbuf;
 
 	/* transaction already broken */
-	if (m->type != Q_TRANS && pstatus < 0) { 
-		if (stream_write( out, TRANS_ABORTED, sizeof(TRANS_ABORTED)-1, 1 ) != 1 ){
+	if (m->type != Q_TRANS && pstatus < 0) {
+		if (stream_write(out, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1) != 1) {
 			go = !go;
 		}
 	} else {
-		if (error(out, m->errstr) < 0 || 
-		    (buf && buf[0] && error( out, buf) < 0)) {
+		if (error(out, m->errstr) < 0 || (buf && buf[0] && error(out, buf) < 0)) {
 			go = !go;
 		}
 	}
@@ -646,7 +664,7 @@ int handle_error(mvc *m, stream *out, int pstatus)
 
 @c
 int
-sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
+sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
 {
 	int go = TRUE;
 	char *errbuf;
@@ -657,7 +675,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 	int language = 'S';
 	prot oldmode;
 
-	sql = backend_create( trace, m, console );
+	sql = backend_create(trace, m, console);
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
@@ -672,44 +690,40 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 	v->binding.vtype = TYPE_Bstream;
 	v->binding.val.pval = in;
 
- 	errbuf = GDKmalloc(GDKMAXERRLEN);
+	errbuf = GDKmalloc(GDKMAXERRLEN);
 	errbuf[0] = '\0';
 	GDKsetbuf(errbuf);
 
 	in->eof = 1;		/* force prompt on first iteration */
-	while(go){
+	while (go) {
 		int pstatus = 0;
-		while (in->pos < in->len &&
-			(isspace((int)(in->buf[in->pos])) ||
-			in->buf[in->pos] == ';' ))
+
+		while (in->pos < in->len && (isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
 			in->pos++;
 
 		if (in->pos >= in->len) {
 			ssize_t rd;
+
 			assert(in->pos == in->len);
 
 			if (in->eof || !isa_block_stream(in->s)) {
-				language = (sql->console)?'S':0;
+				language = (sql->console) ? 'S' : 0;
 
 				/* auto_commit on end of statement */
 				if (m->auto_commit && m->trans) {
-	   				if (m->cache && 
-					   (m->type == Q_TRANS || 
-					    m->type == Q_SCHEMA || 
-					    m->qc->id > 100)) {
-						if (m->qc) qc_destroy(m->qc);
+					if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
+						if (m->qc)
+							qc_destroy(m->qc);
 						m->qc = qc_create();
 					}
 					if (mvc_commit(m, 0, NULL) < 0) {
 						go = handle_error(m, out, pstatus);
-						if (!go) 
+						if (!go)
 							break;
 					}
 				}
 
-				if (stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) != 1 ||
-				    stream_flush(out))
-				{
+				if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1 || stream_flush(out)) {
 					go = FALSE;
 					break;
 				}
@@ -727,8 +741,8 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console )
 			if (go && !sql->console && language == 0)
 				language = in->buf[in->pos++];
 		}
-		if (sql->console && strncmp(in->buf+in->pos,"quit",4) == 0) {
-			in->pos = in->len; /* HACK: should use parsed lenght */
+		if (sql->console && strncmp(in->buf + in->pos, "quit", 4) == 0) {
+			in->pos = in->len;	/* HACK: should use parsed lenght */
 			go = FALSE;
 			break;
 		}
@@ -756,23 +770,27 @@ query string with "M".
 		if (language == 'X') {
 			int n, id, off, len;
 
-			n = sscanf(in->buf+in->pos, "export %d %d %d", &id, &off, &len);
+			n = sscanf(in->buf + in->pos, "export %d %d %d", &id, &off, &len);
+
 			if (n == 2 || n == 3) {
 				mvc_export_table(m, out, id, off, n == 3 ? len : m->reply_size);
-				in->pos = in->len; /* HACK: should use parsed lenght */
+
+				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;
 			}
-			if (sscanf(in->buf+in->pos, "close %d", &id) == 1) {
+			if (sscanf(in->buf + in->pos, "close %d", &id) == 1) {
 				res_table *t = res_tables_find(m->results, id);
-				if (t) m->results = res_tables_remove( m->results, t);
-				in->pos = in->len; /* HACK: should use parsed lenght */
+
+				if (t)
+					m->results = res_tables_remove(m->results, t);
+				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;
 			}
 			error(out, "!ERROR: Unrecognized X command");
 			break;
 		}
 
-		if (m->trans) 
+		if (m->trans)
 			pstatus = m->status;
 
 		/* no transaction, reset status */
@@ -784,12 +802,13 @@ query string with "M".
 		err = sqlexecute(sql, out);
 		m->scanner.mode = oldmode;
 
-		if (err){ /* output error */
+		if (err) {	/* output error */
 			if (m->auto_commit && m->trans) {
 				/* rollback and skip rest */
 				mvc_rollback(m, 0, NULL);
 				in->pos = in->len;
-				if (m->qc) qc_destroy(m->qc);
+				if (m->qc)
+					qc_destroy(m->qc);
 				m->qc = qc_create();
 			}
 			go = handle_error(m, out, pstatus);
@@ -798,36 +817,36 @@ query string with "M".
 
 	_DELETE(errbuf);
 	GDKsetbuf(NULL);
-	backend_destroy( sql );
+	backend_destroy(sql);
 	return GDK_SUCCEED;
 }
 
 int
-sqlstatement(char *cmd, Cntxt stk )
+sqlstatement(char *cmd, Cntxt stk)
 {
 	int err = 0;
 	mvc *m;
 	backend *sql;
 	Variable v;
 
-	m = mvc_create(0, (backend_stack)stk, NULL, GDKout );
-	mvc_trans(m); /* start transaction */
+	m = mvc_create(0, (backend_stack) stk, NULL, GDKout);
+	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
-	sql = backend_create( 0, m, 1 );
+	sql = backend_create(0, m, 1);
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
 	v->binding.vtype = TYPE_mvc;
 	v->binding.val.pval = m;
 
-	scanner_reset(&m->scanner, cmd = _strdup(cmd) );
+	scanner_reset(&m->scanner, cmd = _strdup(cmd));
 
 	err = sqlexecute(sql, GDKout);
-	if (err) 
+	if (err)
 		GDKerror(m->errstr);
-	backend_destroy( sql );
+	backend_destroy(sql);
 	GDKfree(cmd);
 	mvc_commit(m, 0, NULL);
 	res_tables_destroy(m->results);
@@ -840,16 +859,16 @@ sqlstatement(char *cmd, Cntxt stk )
 }
 
 int
-mvc_sql(mvc *m, char *cmd )
+mvc_sql(mvc *m, char *cmd)
 {
-	Cntxt stk = (Cntxt)m->stk;
+	Cntxt stk = (Cntxt) m->stk;
 	mvc o = *m;
 
 	int err = 0;
 	backend *sql;
 	Variable v;
 
-	sql = backend_create( 0, m, 1 );
+	sql = backend_create(0, m, 1);
 
 	/* add myc and Output */
 	v = VARnew(stk, "myc");
@@ -861,17 +880,19 @@ mvc_sql(mvc *m, char *cmd )
 	v->binding.val.pval = NULL;
 
 	m->qc = NULL;
+
 	m->cache = 0;
-	scanner_reset(&m->scanner, cmd );
+	scanner_reset(&m->scanner, cmd);
 
 	m->params = NULL;
 	m->args = NULL;
 	m->sym = NULL;
 	m->auto_commit = 0;
 
-	err = sqlexecute(sql, NULL );
-	backend_destroy( sql );
-	assert (m->qc == NULL);
+	err = sqlexecute(sql, NULL);
+	backend_destroy(sql);
+	assert(m->qc == NULL);
+
 	*m = o;
 	VARdel(stk, v);
 	if (err)
@@ -939,13 +960,14 @@ sendProperty(stream *out, char *name, char *value)
 	return 1;
 }
 
-int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
+int
+sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	int trace = 0, ret = GDK_SUCCEED;
-	ssize_t i=0;
-	char buf[BUFSIZ+1];
+	ssize_t i = 0;
+	char buf[BUFSIZ + 1];
 	char *user, *passwd, *schema;
-	int blocked=0;
+	int blocked = 0;
 
 	mvc *m;
 	stream **In, **Out;
@@ -956,73 +978,73 @@ int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	Thread sqlthread = THRget(THRgettid());
 	Client client;
 
-	CNTXTclient( (Cntxt)(ptrdiff_t)stk, &client);
+	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
 
-  	if (lt->cnt != 2) {
-        	return handle_argerror(res, lt->cnt, 2);
-  	}
-  	@:builtin_operand(0,TYPE_Stream,In)@
+	if (lt->cnt != 2) {
+		return handle_argerror(res, lt->cnt, 2);
+	}
+	@:builtin_operand(0,TYPE_Stream,In)@
 	in = *In;
-  	@:builtin_operand(1,TYPE_Stream,Out)@
+	@:builtin_operand(1,TYPE_Stream,Out)@
 	out = *Out;
 
 	/* Time to adjust the thread IO channels */
-	bkin = client -> fdin;
-	bkout = client -> fdout;
-	monetSetChannel(sqlthread,in,out);
+	bkin = client->fdin;
+	bkout = client->fdout;
+	monetSetChannel(sqlthread, in, out);
 @-
 Start analysis using the mapi-client protocol.
 Use default setting for trace.
 @c
-	if (in == 0){
+	if (in == 0) {
 		GDKsyserror("mapisqlclient:stream-r problems\n");
 		return connect_error(in, out);
 	}
-	if (out == 0){
+	if (out == 0) {
 		GDKsyserror("mapisqlclient:stream-w problems\n");
 		return connect_error(in, out);
 	}
 	/* get user name */
-	memset(buf,0,BUFSIZ);
-	user= buf;
-	if( stream_read(in, user, 1, 1) <0)
+	memset(buf, 0, BUFSIZ);
+	user = buf;
+	if (stream_read(in, user, 1, 1) < 0)
 		return connect_error(in, out);
-	for(i=0; i<BUFSIZ && *user != '\n'; i++){
+	for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
 		user++;
-		if( stream_read(in, user, 1, 1) <0)
+		if (stream_read(in, user, 1, 1) < 0)
 			return connect_error(in, out);
 	}
-	*user=0;
-	user= buf;
-	passwd= strrchr(user,':');
-	if(passwd && strncmp(passwd,":blocked",8)==0){
+	*user = 0;
+	user = buf;
+	passwd = strrchr(user, ':');
+	if (passwd && strncmp(passwd, ":blocked", 8) == 0) {
 		blocked = 1;
-		*passwd=0;
+		*passwd = 0;
 	}
-	passwd= strrchr(user,':');
-	if(passwd && strncasecmp(passwd,":sql",4)==0){
+	passwd = strrchr(user, ':');
+	if (passwd && strncasecmp(passwd, ":sql", 4) == 0) {
 		/* skip :sql only used for M5 */
-		*passwd=0;
+		*passwd = 0;
 	}
 
-	passwd= strchr(user,':');
-	if( passwd){
-		*passwd= 0;
+	passwd = strchr(user, ':');
+	if (passwd) {
+		*passwd = 0;
 		passwd++;
-		user= _strdup(buf);
-		passwd= _strdup(passwd);
+		user = _strdup(buf);
+		passwd = _strdup(passwd);
 	} else {
 		return connect_error(in, out);
 	}
 
-	if (blocked){
-		in= block_stream(stream_rstream(in));
-		out= block_stream(stream_wstream(out));
+	if (blocked) {
+		in = block_stream(stream_rstream(in));
+		out = block_stream(stream_wstream(out));
 
-		monetSetChannel(sqlthread,in,out);
+		monetSetChannel(sqlthread, in, out);
 	}
 
-	if (out == 0){
+	if (out == 0) {
 		GDKsyserror("mapisqlclient:stream-w problems\n");
 		GDKfree(user);
 		GDKfree(passwd);
@@ -1034,34 +1056,29 @@ These lines should be eaten away into the prompt is encountered.
 @c
 
 	rs = bstream_create(in, isa_block_stream(in) ? (128 * BLOCK) : 0);
-	m = mvc_create(1, (backend_stack)stk, rs, out );
+	m = mvc_create(1, (backend_stack) stk, rs, out);
 	if (blocked)
 		m->scanner.mode = BLOCKED;
-	schema = mvc_login( m, user, passwd );
+	schema = mvc_login(m, user, passwd);
 	GDKfree(user);
 	GDKfree(passwd);
 
-	if (!schema){
+	if (!schema) {
 		/* close the connection to the Monet server */
-		if( error(out, "!ERROR: Schema authorization error") == 0 &&
-		    stream_write(out,PROMPT1,sizeof(PROMPT1)-1,1) >=0 )
+		if (error(out, "!ERROR: Schema authorization error") == 0 && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) >= 0)
 			stream_flush(out);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
-	/* Send the profile to the client for inspection*/
-	if (!sendProperty(out, "version", "4") ||
-	    !sendProperty(out, "language", "sql") ||
-	    !sendProperty(out, "schema", schema) ||
-	    stream_flush(out) < 0)
-	{
+	/* Send the profile to the client for inspection */
+	if (!sendProperty(out, "version", "4") || !sendProperty(out, "language", "sql") || !sendProperty(out, "schema", schema) || stream_flush(out) < 0) {
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		return connect_error(in, out);
 	}
-		
-	ret = sqlclient2(m, stk, rs, out, trace, 0 );
+
+	ret = sqlclient2(m, stk, rs, out, trace, 0);
 	res_tables_destroy(m->results);
 	mvc_destroy(m);
 	/* Make sure that the write- (out-) stream is closed first,
@@ -1071,11 +1088,12 @@ These lines should be eaten away into the prompt is encountered.
 	bstream_destroy(rs);
 	close_stream(out);
 	close_stream(in);
-	monetSetChannel(sqlthread,bkin,bkout);
+	monetSetChannel(sqlthread, bkin, bkout);
 	return ret;
 }
 
-int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
+int
+sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	int ret = GDK_SUCCEED;
 	char *schema;
@@ -1084,18 +1102,18 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	bstream *rs;
 	mvc *m;
 
-  	if (lt->cnt != 0)
-        	return handle_argerror(res, lt->cnt, 0);
+	if (lt->cnt != 0)
+		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(1, (backend_stack)stk, rs, out );
+	m = mvc_create(1, (backend_stack) stk, rs, out);
 	if (!m) {
 		GDKerror("Couldn't start sqlconsole");
 		return GDK_FAIL;
 	}
-	schema = mvc_login( m, "monetdb", "monetdb" );
+	schema = mvc_login(m, "monetdb", "monetdb");
 
-	if (!schema){
+	if (!schema) {
 		stream_printf(out, "!ERROR: Schema authorization error");
 		stream_flush(out);
 		res_tables_destroy(m->results);
@@ -1107,43 +1125,44 @@ int sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	sendProperty(out, "schema", schema);
 	stream_flush(out);
 
-	ret = sqlclient2(m, stk, rs, out, 0, 1 );
+	ret = sqlclient2(m, stk, rs, out, 0, 1);
 	res_tables_destroy(m->results);
 	mvc_destroy(m);
 	bstream_destroy(rs);
 	return ret;
 }
 
-int mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
+int
+mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	stream *in = GDKin, *out = GDKout;
 	bstream *rs;
 	mvc *m;
 
-  	if (lt->cnt != 0)
-        	return handle_argerror(res, lt->cnt, 0);
+	if (lt->cnt != 0)
+		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(1, (backend_stack)stk, rs, out );
+	m = mvc_create(1, (backend_stack) stk, rs, out);
 
-	mvc_trans(m); /* start transaction */
+	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;
 	m->user = _strdup("monetdb");
 	m->trans->schema = mvc_bind_schema(m, "sys");
 
 	res->vtype = TYPE_mvc;
-	res->val.pval = (ptr)m;
+	res->val.pval = (ptr) m;
 	return GDK_SUCCEED;
 }
 
-int mvc_destroy_wrap(mvc *m, int *commit )
+int
+mvc_destroy_wrap(mvc *m, int *commit)
 {
 	if (*commit)
-		mvc_commit(*(mvc**)m, 0, NULL);
+		mvc_commit(*(mvc **) m, 0, NULL);
 	else
-		mvc_rollback(*(mvc**)m, 0, NULL);
+		mvc_rollback(*(mvc **) m, 0, NULL);
 	res_tables_destroy(m->results);
-	mvc_destroy(*(mvc**)m);
+	mvc_destroy(*(mvc **) m);
 	return GDK_SUCCEED;
 }
-

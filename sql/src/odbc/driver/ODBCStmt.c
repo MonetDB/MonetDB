@@ -76,11 +76,10 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->ImplParamDescr = newODBCDesc(dbc);
 	stmt->AutoApplRowDescr = stmt->ApplRowDescr;
 	stmt->AutoApplParamDescr = stmt->ApplParamDescr;
-	if (stmt->ApplRowDescr == NULL ||
-	    stmt->ApplParamDescr == NULL ||
-	    stmt->ImplRowDescr == NULL ||
-	    stmt->ImplParamDescr == NULL) {
+
+	if (stmt->ApplRowDescr == NULL || stmt->ApplParamDescr == NULL || stmt->ImplRowDescr == NULL || stmt->ImplParamDescr == NULL) {
 		destroyODBCStmt(stmt);
+
 		return NULL;
 	}
 
@@ -110,11 +109,10 @@ int
 isValidStmt(ODBCStmt *stmt)
 {
 #ifdef ODBCDEBUG
-	if (!(stmt && stmt->Type == ODBC_STMT_MAGIC_NR))
-		ODBCLOG("stmt " PTRFMT " not a valid statement handle\n",
-			PTRFMTCAST stmt);
+	if (!(stmt &&stmt->Type == ODBC_STMT_MAGIC_NR))
+		ODBCLOG("stmt " PTRFMT " not a valid statement handle\n", PTRFMTCAST stmt);
 #endif
-	return stmt && stmt->Type == ODBC_STMT_MAGIC_NR;
+	return stmt &&stmt->Type == ODBC_STMT_MAGIC_NR;
 }
 
 
@@ -127,16 +125,13 @@ isValidStmt(ODBCStmt *stmt)
  * Precondition: stmt must be valid. SQLState and errMsg may be NULL.
  */
 void
-addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg,
-	     int nativeErrCode)
+addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int nativeErrCode)
 {
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	extern const char * getStandardSQLStateMsg(const char *);
-	ODBCLOG("addStmtError " PTRFMT " %s %s %d\n", PTRFMTCAST stmt,
-		SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState),
-		nativeErrCode);
+	extern const char *getStandardSQLStateMsg(const char *);
+	ODBCLOG("addStmtError " PTRFMT " %s %s %d\n", PTRFMTCAST stmt, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidStmt(stmt));
 
@@ -185,11 +180,12 @@ destroyODBCStmt(ODBCStmt *stmt)
 
 	/* search for stmt in linked list */
 	stmtp = &stmt->Dbc->FirstStmt;
+
 	while (*stmtp && *stmtp != stmt)
 		stmtp = &(*stmtp)->next;
 	/* stmtp points to location in list where stmt is found */
 
-	assert(*stmtp == stmt);/* we must have found it */
+	assert(*stmtp == stmt);	/* we must have found it */
 
 	/* now remove it from the linked list */
 	*stmtp = stmt->next;

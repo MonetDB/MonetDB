@@ -26,30 +26,24 @@
 
 
 static SQLRETURN
-SQLTablePrivileges_(ODBCStmt *stmt,
-		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		    SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivileges_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
 	fixODBCstring(szCatalogName, nCatalogNameLength, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, addStmtError, stmt);
 	fixODBCstring(szTableName, nTableNameLength, addStmtError, stmt);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
-		nCatalogNameLength, szCatalogName,
-		nSchemaNameLength, szSchemaName,
-		nTableNameLength, szTableName);
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n", nCatalogNameLength, szCatalogName, nSchemaNameLength, szSchemaName, nTableNameLength, szTableName);
 #endif
 
 	/* SQLTablePrivileges returns a table with the following columns:
-	   VARCHAR	table_cat
-	   VARCHAR	table_schem
-	   VARCHAR	table_name NOT NULL
-	   VARCHAR	grantor
-	   VARCHAR	grantee NOT NULL
-	   VARCHAR	privilege NOT NULL
-	   VARCHAR	is_grantable
+	   VARCHAR      table_cat
+	   VARCHAR      table_schem
+	   VARCHAR      table_name NOT NULL
+	   VARCHAR      grantor
+	   VARCHAR      grantee NOT NULL
+	   VARCHAR      privilege NOT NULL
+	   VARCHAR      is_grantable
 	 */
 
 	/* Driver does not support this function */
@@ -59,10 +53,7 @@ SQLTablePrivileges_(ODBCStmt *stmt,
 }
 
 SQLRETURN SQL_API
-SQLTablePrivileges(SQLHSTMT hStmt,
-		   SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		   SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		   SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -75,29 +66,18 @@ SQLTablePrivileges(SQLHSTMT hStmt,
 
 	clearStmtErrors(stmt);
 
-	return SQLTablePrivileges_(stmt, szCatalogName, nCatalogNameLength,
-				   szSchemaName, nSchemaNameLength,
-				   szTableName, nTableNameLength);
+	return SQLTablePrivileges_(stmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
 }
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLTablePrivilegesA(SQLHSTMT hStmt,
-		    SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		    SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		    SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivilegesA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
 {
-	return SQLTablePrivileges(hStmt,
-				  szCatalogName, nCatalogNameLength,
-				  szSchemaName, nSchemaNameLength,
-				  szTableName, nTableNameLength);
+	return SQLTablePrivileges(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
 }
 
 SQLRETURN SQL_API
-SQLTablePrivilegesW(SQLHSTMT hStmt,
-		    SQLWCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength,
-		    SQLWCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength,
-		    SQLWCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivilegesW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;
@@ -116,10 +96,9 @@ SQLTablePrivilegesW(SQLHSTMT hStmt,
 	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
 	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
 
-	rc = SQLTablePrivileges_(stmt, catalog, SQL_NTS, schema, SQL_NTS,
-				 table, SQL_NTS);
+	rc = SQLTablePrivileges_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS);
 
-  exit:
+      exit:
 	if (catalog)
 		free(catalog);
 	if (schema)
@@ -129,4 +108,4 @@ SQLTablePrivilegesW(SQLHSTMT hStmt,
 
 	return rc;
 }
-#endif	/* WITH_WCHAR */
+#endif /* WITH_WCHAR */
