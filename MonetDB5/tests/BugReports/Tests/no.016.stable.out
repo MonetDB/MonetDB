@@ -14,6 +14,8 @@ stdout of test 'no.016` in directory 'tests/BugReports` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -60,7 +62,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("# >a.sample(1).print;\n");	# 19 MILline ($37:void)<-($38:str)
     mil.line("# !FATAL GDKmalloc called with size 0\n");	# 20 MILline ($39:void)<-($40:str)
     mil.line("var a := new(int, int);");	# 21 MILline ($41:void)<-($42:str)
-    a := bbp.new(nil,nil);	# 22 CMDBATnew (a:bat[:int,:int])<-($44:int)($44:int)
+    a := bbp.new(nil:int,nil:int);	# 22 CMDBATnew (a:bat[:int,:int])<-($44:int)($44:int)
     mil.line("a.sample(1).print();");	# 23 MILline ($45:void)<-($46:str)
     aa_a := algebra.sample(a,1);	# 24 ALGsample (aa_a:bat[:int,:int])<-(a:bat[:int,:int])($48:int)
     ba_a := io.print(aa_a);	# 25 IOprint_val (ba_a:int)<-(aa_a:bat[:int,:int])

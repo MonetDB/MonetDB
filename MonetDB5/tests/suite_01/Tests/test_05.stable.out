@@ -11,6 +11,8 @@ stdout of test 'test_05` in directory 'tests/suite_01` itself:
 # 15:18:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux//var/MonetDB5/log" --set mapi_port=49586 --set sql_port=58498 --set monet_prompt= --trace --dbname=mTests_tests_suite_01  test_05.mal </dev/null
 # 15:18:43 >  
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -125,7 +127,7 @@ function Admin.main():int;	# 0  (main:int)
     c2 := "\\";	# 33  (c2:str)<-($55:str)
     ma_a := io.print(c2);	# 34 IOprint_val (ma_a:int)<-(c2:str)
     mil.line("var s:=new(int,str,100);");	# 35 MILline ($57:void)<-($58:str)
-    s := bbp.new(nil,"nil",100);	# 36 CMDBATnewint (s:bat[:int,:str])<-($60:int)($61:str)($62:int)
+    s := bbp.new(nil:int,"nil:str",100);	# 36 CMDBATnewint (s:bat[:int,:str])<-($60:int)($61:str)($62:int)
     mil.line("s.insert(2,\" single quote \\' got it\");");	# 37 MILline ($63:void)<-($64:str)
     na_a := bat.insert(s,2," single quote \' got it");	# 38 BKCinsert_bun (na_a:void)<-(s:bat[:int,:str])($66:int)($67:str)
     mil.line("s.insert(4,\" backslash  \\\\ \");");	# 39 MILline ($68:void)<-($69:str)

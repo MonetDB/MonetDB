@@ -13,6 +13,8 @@ stdout of test 'test_00` in directory 'tests/suite_00` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
@@ -184,7 +186,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("#focussed on integers\n");	# 5 MILline ($8:void)<-($9:str)
     mil.line("#it includes insertions,deletions,selections, and joins.\n");	# 6 MILline ($10:void)<-($11:str)
     mil.line("var b:= new(int,int);");	# 7 MILline ($12:void)<-($13:str)
-    b := bbp.new(nil,nil);	# 8 CMDBATnew (b:bat[:int,:int])<-($15:int)($15:int)
+    b := bbp.new(nil:int,nil:int);	# 8 CMDBATnew (b:bat[:int,:int])<-($15:int)($15:int)
     mil.line("#b.roles(\"head\",\"tail\"); roles was removed from the kernel ops\n");	# 9 MILline ($16:void)<-($17:str)
     ca_a := io.printf("#~BeginVariableOutput~#\n");	# 10 IOprint_str (ca_a:int)<-($19:str)
     da_a := bat.info(b);	# 11 BKCinfo (da_a:bat[:str,:str])<-(b:bat[:int,:int])

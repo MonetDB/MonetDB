@@ -79,7 +79,7 @@ function Admin.main():int;	# 0  (main:int)
     aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($4:int)
     ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
     mil.line("var s:= new(str,int);");	# 4 MILline ($6:void)<-($7:str)
-    s := bbp.new("nil",nil);	# 5 CMDBATnew (s:bat[:str,:int])<-($9:str)($10:int)
+    s := bbp.new("nil:str",nil:int);	# 5 CMDBATnew (s:bat[:str,:int])<-($9:str)($10:int)
     mil.line("insert(s,\"hello\",1);");	# 6 MILline ($11:void)<-($12:str)
     ca_a := bat.insert(s,"hello",1);	# 7 BKCinsert_bun (ca_a:void)<-(s:bat[:str,:int])($14:str)($15:int)
     mil.line("print(find(s,\"hello\"));");	# 8 MILline ($16:void)<-($17:str)
@@ -175,7 +175,7 @@ end main;	# 53
 [ "tseqbase",			  "0@0"		  ]
 [ "tsorted",			  "1"		  ]
 [ "tkey",			  "1"		  ]
-[ "tloc",			  "4"		  ]
+[ "tloc",			  "8"		  ]
 [ "tvarsized",			  "0"		  ]
 [ "talign",			  "0"		  ]
 [ "talignflushed",		  "20000001"	  ]
@@ -190,16 +190,16 @@ end main;	# 53
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]
-[ "batBuns.free",		  "72"		  ]
-[ "batBuns.size",		  "424"		  ]
-[ "batBuns.maxsize",		  "424"		  ]
+[ "batBuns.free",		  "144"		  ]
+[ "batBuns.size",		  "848"		  ]
+[ "batBuns.maxsize",		  "848"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
 [ "batBuns.filename",		  "4.buns"	  ]
 [ "batBuns.offset",		  "0"		  ]
 [ "hheapdirty",			  "clean"	  ]
-[ "hheap.free",			  "4180"	  ]
-[ "hheap.size",			  "4724"	  ]
-[ "hheap.maxsize",		  "4724"	  ]
+[ "hheap.free",			  "8304"	  ]
+[ "hheap.size",			  "8824"	  ]
+[ "hheap.maxsize",		  "8824"	  ]
 [ "hheap.storage",		  "malloced"	  ]
 [ "hheap.filename",		  "4.hheap"	  ]
 [ "hheap.offset",		  "0"		  ]

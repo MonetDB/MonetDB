@@ -13,6 +13,8 @@ stdout of test 'test_01` in directory 'tests/suite_06` itself:
 
 
 
+
+
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -77,7 +79,7 @@ function Admin.main():int;	# 0  (main:int)
     mil.line("#check out arithmatic against using Multi-cast operator\n");	# 4 MILline ($6:void)<-($7:str)
     mil.line("");	# 5 MILline ($8:void)<-($9:str)
     mil.line("var t:= new(int, int);");	# 6 MILline ($10:void)<-($11:str)
-    t := bbp.new(nil,nil);	# 7 CMDBATnew (t:bat[:int,:int])<-($13:int)($13:int)
+    t := bbp.new(nil:int,nil:int);	# 7 CMDBATnew (t:bat[:int,:int])<-($13:int)($13:int)
     mil.line("t.insert(1,2);");	# 8 MILline ($14:void)<-($15:str)
     ca_a := bat.insert(t,1,2);	# 9 BKCinsert_bun (ca_a:void)<-(t:bat[:int,:int])($17:int)($18:int)
     mil.line("t.insert(3,6);");	# 10 MILline ($19:void)<-($20:str)
