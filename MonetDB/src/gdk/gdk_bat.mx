@@ -110,6 +110,9 @@ add to BBP
 @-
 fill in heap names, so HEAPallocs can resort to disk for very large writes.
 @c
+	bn->batBuns->filename = NULL;
+	bn->hheap.filename = NULL;
+	bn->theap.filename = NULL;
 	if (heapnames) {
 		str nme = BBP_physical(bn->batCacheid);
 		bn->batBuns->filename = (str) GDKmalloc(strlen(nme)+12);
@@ -118,16 +121,12 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 		if (ATOMneedheap(ht)) {
 			bn->hheap.filename = (str) GDKmalloc(strlen(nme)+12);
 			sprintf(bn->hheap.filename, "%s.hheap", nme);
-		}
+		} 
 
 		if (ATOMneedheap(tt)) {
 			bn->theap.filename = (str) GDKmalloc(strlen(nme)+12);
 			sprintf(bn->theap.filename, "%s.theap", nme);
 		}
-	} else {
-		bn->batBuns->filename = NULL;
-		bn->hheap.filename = NULL;
-		bn->theap.filename = NULL;
 	}
 	bn->haccelerator.filename = NULL;
 	bn->taccelerator.filename = NULL;
