@@ -725,7 +725,7 @@
 /* #undef size_t */
 
 /*#define HAVE_GLOBALMEMORYSTATUSEX only on >= NT 5 */
-#define HAVE_GLOBALMEMORYSTATUS
+#define HAVE_GLOBALMEMORYSTATUS 1
 
 #else
 
@@ -1026,7 +1026,7 @@
 #define HAVE_SETLOCALE 1
 
 /* Define to 1 if you have the `shutdown' function. */
-/* #undef HAVE_SHUTDOWN */
+#define HAVE_SHUTDOWN 1
 
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
@@ -1369,5 +1369,8 @@
 /* #undef size_t */
 
 #define fdopen	_fdopen
+
+/*#define HAVE_GLOBALMEMORYSTATUSEX only on >= NT 5 */
+#define HAVE_GLOBALMEMORYSTATUS 1
 
 #endif /* __MINGW32__ */
