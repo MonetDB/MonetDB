@@ -724,6 +724,7 @@ struct MapiResultSet {
 	int rows_affected;
 	int fieldcnt;
 	int maxfields;
+	char *errorstr;		/* error from server */
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
 };
@@ -830,10 +831,12 @@ mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export char *mapi_error_str(Mapi mid);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
+mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
 mapi_export MapiMsg mapi_trace_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_ping(Mapi mid);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
+mapi_export char *mapi_result_error(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export int mapi_more_results(MapiHdl hdl);
 mapi_export MapiHdl mapi_new_handle(Mapi mid);
@@ -1112,6 +1115,30 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 }
 
 MapiMsg
+mapi_explain_result(MapiHdl hdl, FILE *fd)
+{
+	Mapi mid;
+
+	if (hdl == NULL || hdl->result == NULL ||
+	    hdl->result->errorstr == NULL)
+		return MOK;
+	assert(hdl);
+	assert(hdl->result);
+	assert(hdl->result->errorstr);
+	mid = hdl->mid;
+	assert(mid);
+	fprintf(fd, "MAPI  = %s\@%s:%d\n", mid->username, mid->hostname,
+		mid->port);
+	if (mid->action)
+		fprintf(fd, "ACTION= %s\n", mid->action);
+	if (hdl->query)
+		indented_print(hdl->query, "QUERY = ", fd);
+	indented_print(hdl->result->errorstr, "ERROR = ", fd);
+	fflush(fd);
+	return MOK;
+}
+
+MapiMsg
 mapi_trace(Mapi mid, int flag)
 {
 	mapi_clrError(mid);
@@ -1199,6 +1226,7 @@ new_result(MapiHdl hdl)
 	result->hdl = hdl;
 	result->tableid = -1;
 	result->querytype = -1;
+	result->errorstr = NULL;
 
 	result->rows_affected = 0;
 
@@ -1291,11 +1319,31 @@ close_result(struct MapiResultSet **presult)
 	if (result->cache.fldcnt)
 		free(result->cache.fldcnt);
 	result->cache.fldcnt = NULL;
+	if (result->errorstr)
+		free(result->errorstr);
+	result->errorstr = NULL;
 	result->hdl = NULL;
 	*presult = result->next;
 	result->next = NULL;
 	free(result);
 	return MOK;
+}
+
+static void
+add_error(struct MapiResultSet *result, char *error)
+{
+	/* concatenate the error messages */
+	size_t size = result->errorstr ? strlen(result->errorstr) : 0;
+
+	REALLOC(result->errorstr, size + strlen(error) + 2);
+	strcpy(result->errorstr + size, error);
+	strcat(result->errorstr + size, "\n");
+}
+
+char *
+mapi_result_error(MapiHdl hdl)
+{
+	return hdl->result ? hdl->result->errorstr : NULL;
 }
 
 /* Go to the next result set, if any, and close the current result
@@ -1312,7 +1360,8 @@ mapi_next_result(MapiHdl hdl)
 		if (hdl->result &&
 		    (hdl->result->querytype == -1 ||
 		     hdl->result->querytype == 3 ||
-		     hdl->result->querytype == 4))
+		     hdl->result->querytype == 4 ||
+		     hdl->result->errorstr != NULL))
 			return 1;
 	}
 	return MOK;
@@ -1338,7 +1387,8 @@ mapi_more_results(MapiHdl hdl)
 		result = result->next;
 		if (result->querytype == -1 ||
 		    result->querytype == 3 ||
-		    result->querytype == 4)
+		    result->querytype == 4 ||
+		    result->errorstr != NULL)
 			return 1;
 	}
 	/* no more results */
@@ -2345,19 +2395,6 @@ mapi_param_store(MapiHdl hdl)
 	return;
 }
 
-static void
-add_error(Mapi mid, char *error, char *func)
-{
-	/* concatenate the error messages */
-	size_t size = mid->errorstr ? strlen(mid->errorstr) : 0;
-
-	mid->error = MERROR;
-	mid->action = func;
-	REALLOC(mid->errorstr, size + strlen(error) + 2);
-	strcpy(mid->errorstr + size, error);
-	strcat(mid->errorstr + size, "\n");
-}
-
 /* Read one more line from the input stream and return it.  This
    returns a pointer into the input buffer, so the data needs to be
    copied if it is to be retained. */
@@ -2741,7 +2778,11 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				return MMORE;
 			return mid->error;
 		case '!':
-			add_error(mid, line, "read_into_cache");
+			if (result == NULL) {
+				result = new_result(hdl);
+				hdl->active = result;
+			}
+			add_error(result, line);
 			break;
 		case '#':
 			if (lookahead < 0)
@@ -3258,6 +3299,8 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 
 	mapi_hdl_check(hdl, "mapi_quick_response");
 	do {
+		if ((line = mapi_result_error(hdl)) != NULL)
+			mapi_explain_result(hdl, fd);
 		while ((line = mapi_fetch_line(hdl)) != NULL)
 			fprintf(fd, "%s\n", line);
 	} while (mapi_next_result(hdl) == 1);
