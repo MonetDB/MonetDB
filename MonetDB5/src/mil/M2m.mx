@@ -177,7 +177,7 @@ int main(int argc,char ** av)
         strcpy(dbfarm, dbfarmval );
         mo_substitute(set, setlen, dbfarm);
 
-	if (!GDKinit(dbname, dbfarm,0)) return 1; /* ERROR? */
+	/* not needed? if (!GDKinit(dbname, dbfarm,0)) return 1;  ERROR? */
 @-
 The files are processed as one big program
 @c
