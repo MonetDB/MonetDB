@@ -135,7 +135,7 @@ ADDHELP("start_count", "manegold", "Mar 16 2002",
 	"start counters for two events specified by name",
 	"counters");
 
-PROC profile (str cmd, event0, event1) : counter {
+PROC profile (str cmd, str event0, str event1) : counter {
 	VAR cntr0, cntr1;
 	VAR e0 := str(event_number(event0));
 	VAR e1 := str(event_number(event1));
