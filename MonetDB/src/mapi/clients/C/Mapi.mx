@@ -2551,7 +2551,7 @@ mapi_cache_limit(Mapi mid, int limit)
 
 		if (mid->active && read_until_prompt(mid->active) != MOK)
 			return MERROR;
-		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
+		if (stream_printf(mid->to, "s" "set reply_size=%d;\n", limit) < 0 ||
 		    stream_flush(mid->to))
 			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", mid->error);
 		mid->active = hdl;
