@@ -113,12 +113,12 @@ exit (go,i);	# 21  (go:bit)(i:int)
     Admin.qry(a1,b1);	# 31  ($53:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
 end main;	# 32  
 ptop=6 plimit=1024
-[0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-2147483648
-[1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-2147483648
-[2] bid=13 pid=15 f=20, l=30 prv=1 nxt=-1 cap=-2147483648
-[3] bid=16 pid=16 f=0, l=10 prv=-1 nxt=4 cap=-2147483648
-[4] bid=16 pid=17 f=10, l=20 prv=3 nxt=5 cap=-2147483648
-[5] bid=16 pid=18 f=20, l=30 prv=4 nxt=-1 cap=-2147483648
+[0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
+[1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-1
+[2] bid=13 pid=15 f=20, l=30 prv=1 nxt=-1 cap=-1
+[3] bid=16 pid=16 f=0, l=10 prv=-1 nxt=4 cap=-1
+[4] bid=16 pid=17 f=10, l=20 prv=3 nxt=5 cap=-1
+[5] bid=16 pid=18 f=20, l=30 prv=4 nxt=-1 cap=-1
 function Admin.qry(a:bat[:void,:any],b:bat[:void,:any]):void;
     io.print("experiment 3");
 barrier ($7,$8):= partitions.newIterator(a);
