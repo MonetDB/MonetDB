@@ -81,16 +81,16 @@ typedef unsigned int nat;
 /**
  * next preorder rank to assign
  */
-nat pre;
+static nat pre;
 
 /**
  * next node property IDs to assign
  */
-nat nsloc_id;
-nat text_id;
-nat com_id;
-nat tgtins_id;
-nat attval_id;
+static nat nsloc_id;
+static nat text_id;
+static nat com_id;
+static nat tgtins_id;
+static nat attval_id;
 
 /**
  * Monet's representation of oid(nil) on a 32-bit Monet host
@@ -167,7 +167,7 @@ typedef enum {
  , tgtins_db
  , attval_db } db_id_t;
 
-db_t dbs[] = {
+static db_t dbs[] = {
     /* db id  handle file name  */
     [nsloc_db]  { 0, "" }
   , [text_db]   { 0, "" }
@@ -181,7 +181,7 @@ db_t dbs[] = {
 /**
  * do we allow duplicate node properties (default: yes)? 
  */
-int prop_dup = 1;
+static int prop_dup = 1;
 
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 
@@ -195,7 +195,7 @@ int prop_dup = 1;
 /**
  * current node level
  */
-nat level;
+static nat level;
 
 /**
  * statistics:
@@ -209,22 +209,22 @@ nat level;
  * - number of comment nodes
  * - number of processing instruction nodes
  */
-nat encoded;
-nat depth;
+static nat encoded;
+static nat depth;
 
-nat nodes;
-nat elem_nodes;
-nat attr_nodes;
-nat text_nodes;
-nat com_nodes;
-nat pi_nodes;
+static nat nodes;
+static nat elem_nodes;
+static nat attr_nodes;
+static nat text_nodes;
+static nat com_nodes;
+static nat pi_nodes;
 
 /**
  * number of text content bytes buffered,
  * the content buffer itself
  */
-nat content;
-char content_buf[MONET_STRLEN_MAX];
+static nat content;
+static char content_buf[MONET_STRLEN_MAX];
 
 /**
  * XML node
@@ -246,10 +246,10 @@ struct node_t {
  * XML node stack maximum depth (use `-d' for deeper XML instances)
  */
 #define XML_DEPTH_MAX 256
-nat xml_depth_max;
-node_t *lifo;
+static nat xml_depth_max;
+static node_t *lifo;
 
-nat sp = 0;
+static nat sp = 0;
 #define PUSH(n) (lifo[sp++] = (n))
 #define POP()   (lifo[--sp])
 #define TOP()   (lifo[sp - 1])
@@ -284,7 +284,7 @@ typedef enum {
 #define _chr  1
 #define _var  4
 
-rel_t rels[] = {
+static rel_t rels[] = {
     [presizelevelpropkind] 
     /*               pre|size      pre|level       pre|prop       pre|kind */
     { 0, "pre",   _void + _int + _void + _chr + _void + _oid + _void + _chr }
@@ -315,7 +315,7 @@ rel_t rels[] = {
  *                  |    |   |      |         */
 #define PRETUPLE   "%10u,%5d,%10u@0,%5u\n"
  
-nat pretuples;
+static nat pretuples;
 
 /** 
  * seek into pre|size|level|prop|kind relation
@@ -323,9 +323,22 @@ nat pretuples;
 #define PRETUPLEOFFS(n) (pretuples * (n))
 
 /**
+ * Wrapper for write(2). Check return value and exit on error.
+ */
+static void
+checked_write (int fd, const void *buf, size_t count)
+{
+    if (write (fd, buf, count) < 0) {
+        fprintf (stderr,
+                 "!ERROR: Error writing to file: %s\n", strerror (errno));
+        exit (EXIT_FAILURE);
+    }
+}
+
+/**
  * convert ms timing value into string
  */
-char *
+static char *
 timer_str (long elapsed)
 {
     char *tm, *str;
@@ -361,7 +374,7 @@ timer_str (long elapsed)
  * extract namespace prefix ns from QName ns:loc
  * (returns "" if QName is of the form loc)
  */
-char 
+static char 
 *only_ns (char *qn)
 {
     char *ns;
@@ -381,7 +394,7 @@ char
 /**
  * extract local part loc from QName ns:loc
  */
-char 
+static char 
 *only_loc (char *qn)
 {
     char *colon;
@@ -398,7 +411,7 @@ char
  * closing a relation identified by relation id
  * (halt on error if err != 0)
  */
-void 
+static void 
 close_rel (rel_id_t rel, int err)
 {
     if (close (rels[rel].fd) < 0 && err) {
@@ -413,7 +426,7 @@ close_rel (rel_id_t rel, int err)
 /**
  * opening a relation identified by relation id
  */
-void 
+static void 
 open_rel (const char *out, rel_id_t rel)
 {
     char fn[FILENAME_MAX];
@@ -433,7 +446,7 @@ open_rel (const char *out, rel_id_t rel)
 /**
  * create and open a BTree-organized DB identified by DB id
  */
-void 
+static void 
 open_db (db_id_t db)
 {
     int err;
@@ -477,7 +490,7 @@ open_db (db_id_t db)
  * close a DB identified by DB id
  * (and emit warning(s) if warn != 0)
  */
-void 
+static void 
 close_db (db_id_t db, int warn)
 {
     int err;
@@ -500,7 +513,7 @@ close_db (db_id_t db, int warn)
  * duplicate found:    return 1, nothing entered in DB, prop_id
  *                     modified
  */
-int 
+static int 
 duplicate (db_id_t db, char *buf, nat len, nat *prop_id)
 {
     DBT key, data;
@@ -564,7 +577,7 @@ duplicate (db_id_t db, char *buf, nat len, nat *prop_id)
  * via \xxx; writes a maximum of MONET_STRLEN_MAX characters; returns
  * actual number of characters written.
  */
-nat 
+static nat 
 content2rel (rel_id_t rel, char *buf, nat len)
 {   
     nat p;
@@ -586,10 +599,10 @@ content2rel (rel_id_t rel, char *buf, nat len)
                 oct[1] = ((c >> 6) & 7) | '0';
                 oct[2] = ((c >> 3) & 7) | '0';
                 oct[3] = (c        & 7) | '0';
-                write (rels[rel].fd, oct, 4);
+                checked_write (rels[rel].fd, oct, 4);
             }
             else
-                write (rels[rel].fd, &c, sizeof (char));
+                checked_write (rels[rel].fd, &c, sizeof (char));
         else
             fprintf (stderr, 
                      "!WARNING: skipping non-UTF-8 character with code %u\n",
@@ -601,7 +614,7 @@ content2rel (rel_id_t rel, char *buf, nat len)
 /**
  * enter new XML node into pre|size|level|prop|kind relation
  */
-void
+static void
 node2rel (node_t node)
 {
     char tuple[MONET_STRLEN_MAX];
@@ -618,13 +631,18 @@ node2rel (node_t node)
      */
     assert ((nat) tuples == pretuples);
     
-    lseek (rels[presizelevelpropkind].fd, 
-           PRETUPLEOFFS (node.pre), SEEK_SET);
-    write (rels[presizelevelpropkind].fd, tuple, tuples);
+    if (lseek (rels[presizelevelpropkind].fd, 
+           PRETUPLEOFFS (node.pre), SEEK_SET) < 0) {
+        fprintf (stderr,
+                 "!ERROR: Error seeking in file: %s\n",
+                 strerror (errno));
+        exit (EXIT_FAILURE);
+    }
+    checked_write (rels[presizelevelpropkind].fd, tuple, tuples);
     encoded += rels[presizelevelpropkind].bytes;        
 }
 
-void 
+static void 
 shred_start_document (void *ctx)
 {
     (void) ctx;
@@ -660,7 +678,7 @@ shred_start_document (void *ctx)
 }
 
 
-void 
+static void 
 shred_end_document (void *ctx)
 {
     (void) ctx;
@@ -672,8 +690,8 @@ shred_end_document (void *ctx)
 /**
  * write buffered text content (if any) to prop|text relation
  */
-void 
-text2rel ()
+static void 
+text2rel (void)
 {
     node_t node;
 
@@ -700,9 +718,9 @@ text2rel ()
         if (! dup) {
             text_id++;
             
-            write (rels[proptext].fd, "\"", sizeof ("\"") - 1);
+            checked_write (rels[proptext].fd, "\"", sizeof ("\"") - 1);
             content = content2rel (proptext, content_buf, content);        
-            write (rels[proptext].fd, "\"\n", sizeof ("\"\n") - 1);
+            checked_write (rels[proptext].fd, "\"\n", sizeof ("\"\n") - 1);
 
             encoded += rels[proptext].bytes + content;
         }
@@ -717,7 +735,7 @@ text2rel ()
 /**
  * SAX callback, invoked whenever `<t ...>' is seen
  */
-void 
+static void 
 shred_start_element (void *ctx, 
                      const xmlChar *t, const xmlChar **atts)
 {
@@ -769,11 +787,11 @@ shred_start_element (void *ctx,
         ns  = only_ns ((char *)t);
         loc = only_loc ((char *)t);
         
-        write (rels[propnsloc].fd, "\"", sizeof ("\"") - 1);
+        checked_write (rels[propnsloc].fd, "\"", sizeof ("\"") - 1);
         len =  content2rel (propnsloc, ns, strlen (ns));        
-        write (rels[propnsloc].fd, "\",\"", sizeof ("\",\"") - 1);
+        checked_write (rels[propnsloc].fd, "\",\"", sizeof ("\",\"") - 1);
         len += content2rel (propnsloc, loc, strlen (loc));        
-        write (rels[propnsloc].fd, "\"\n", sizeof ("\"\n") - 1);
+        checked_write (rels[propnsloc].fd, "\"\n", sizeof ("\"\n") - 1);
 
         encoded += rels[propnsloc].bytes + len;
 
@@ -803,11 +821,11 @@ shred_start_element (void *ctx,
                 ns  = only_ns ((char *) *atts);
                 loc = only_loc ((char *) *atts);
 
-                write (rels[propnsloc].fd, "\"", sizeof ("\"") - 1);
+                checked_write (rels[propnsloc].fd, "\"", sizeof ("\"") - 1);
                 len =  content2rel (propnsloc, ns, strlen (ns));        
-                write (rels[propnsloc].fd, "\",\"", sizeof ("\",\"") - 1);
+                checked_write (rels[propnsloc].fd, "\",\"", sizeof ("\",\"") - 1);
                 len += content2rel (propnsloc, loc, strlen (loc));        
-                write (rels[propnsloc].fd, "\"\n", sizeof ("\"\n") - 1);
+                checked_write (rels[propnsloc].fd, "\"\n", sizeof ("\"\n") - 1);
                 
                 encoded += rels[propnsloc].bytes + len;
                 
@@ -827,11 +845,11 @@ shred_start_element (void *ctx,
                 attval_id++;
 
                 /* add attribute value to prop|val BAT */
-                write (rels[propval].fd, "\"", sizeof ("\"") - 1);
+                checked_write (rels[propval].fd, "\"", sizeof ("\"") - 1);
                 len = content2rel (propval, 
                                    (char *) *(atts + 1),
                                    strlen ((char *) *(atts + 1)));
-                write (rels[propval].fd, "\"\n", sizeof ("\"\n") - 1);
+                checked_write (rels[propval].fd, "\"\n", sizeof ("\"\n") - 1);
 
                 encoded += rels[propval].bytes + len;
             }
@@ -840,7 +858,7 @@ shred_start_element (void *ctx,
             tuples = snprintf (tuple, sizeof (tuple), 
                                "%10u@0,%10u@0,%10u@0\n", 
                                node.pre, qn_id, val_id);
-            write (rels[attownqnprop].fd, tuple, tuples);
+            checked_write (rels[attownqnprop].fd, tuple, tuples);
 
             encoded += rels[attownqnprop].bytes;
 
@@ -852,7 +870,7 @@ shred_start_element (void *ctx,
 /** 
  * SAX callback invoked whenever `</t>' is seen
  */
-void 
+static void 
 shred_end_element (void *ctx, const xmlChar *tag)
 {
     node_t node;
@@ -880,7 +898,7 @@ shred_end_element (void *ctx, const xmlChar *tag)
  * SAX callback invoked whenever text node content is seen,
  * simply buffer the content here
  */
-void 
+static void 
 shred_characters (void *ctx, const xmlChar *cs, int n)
 {
     int l = MIN (MONET_STRLEN_MAX - (int) content, n);
@@ -900,7 +918,7 @@ shred_characters (void *ctx, const xmlChar *cs, int n)
 /**
  * SAX callback invoked whenever `<![CDATA[...]]>' is seenx
  */
-void 
+static void 
 shred_cdata (void *ctx, const xmlChar *cdata, int n)
 {
     shred_characters (ctx, cdata, n);
@@ -909,7 +927,7 @@ shred_cdata (void *ctx, const xmlChar *cdata, int n)
 /** 
  * SAX callback invoked whenever `<?target ins?>' is seen
  */
-void 
+static void 
 shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
 {
     node_t node;
@@ -956,11 +974,11 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
     if (! dup) {
             tgtins_id++;
        
-            write (rels[proptgtins].fd, "\"", sizeof ("\"") - 1);
+            checked_write (rels[proptgtins].fd, "\"", sizeof ("\"") - 1);
             len = content2rel (proptgtins, (char *) tgt, strlen ((char *) tgt));
-            write (rels[proptgtins].fd, "\",\"", sizeof ("\",\"") - 1);
+            checked_write (rels[proptgtins].fd, "\",\"", sizeof ("\",\"") - 1);
             len += content2rel (proptgtins, (char *) ins, strlen ((char*) ins));
-            write (rels[proptgtins].fd, "\"\n", sizeof ("\"\n") - 1);
+            checked_write (rels[proptgtins].fd, "\"\n", sizeof ("\"\n") - 1);
 
             encoded += rels[proptgtins].bytes + len;
     }
@@ -969,7 +987,7 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
     node2rel (node);
 }
 
-void 
+static void 
 shred_comment (void *ctx, const xmlChar *c)
 {
     node_t node;
@@ -1003,9 +1021,9 @@ shred_comment (void *ctx, const xmlChar *c)
     if (! dup) {
         com_id++;
 
-        write (rels[propcom].fd, "\"", sizeof ("\"") - 1);
+        checked_write (rels[propcom].fd, "\"", sizeof ("\"") - 1);
         len = content2rel (propcom, (char *) c, strlen ((char *) c));        
-        write (rels[propcom].fd, "\"\n", sizeof ("\"\n") - 1);
+        checked_write (rels[propcom].fd, "\"\n", sizeof ("\"\n") - 1);
 
         encoded += rels[propcom].bytes + len;
     }
@@ -1015,7 +1033,7 @@ shred_comment (void *ctx, const xmlChar *c)
 }
 
 
-void 
+static void 
 error (void *ctx, const char *msg, ...)
 {
     va_list msgs;
@@ -1070,7 +1088,7 @@ xmlSAXHandler shredder = {
  * handle interruption (SIGINT) of this process:
  * close relation files and remove Berkeley DB garbage
  */
-void 
+static void 
 interrupt (int sig)
 {
     (void) sig;
@@ -1096,7 +1114,7 @@ interrupt (int sig)
     exit (EXIT_FAILURE);
 }
 
-void 
+static void 
 shred (const char *in, const char *out)
 {
     xmlParserCtxtPtr ctx;
