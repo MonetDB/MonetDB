@@ -1,0 +1,22 @@
+MTSAFE
+LIBS = {
+        DIR = pkglibdir
+        SEP = _
+        SOURCES = mil_prelude.mx mil_algebra_procs.mx
+
+        HEADERS = h 
+        SCRIPTS = mal mil ""
+}
+
+
+doc_mal = {
+	DIR = pkgdatadir/docs/modules/mil
+	SOURCES = mil_prelude.mx mil_algebra_procs.mx
+}
+
+scripts_mal = {
+	DIR = pkglibdir
+	SOURCES = mil_prelude.mx  mil_algebra_procs.mx
+}
+
+#EXTRA_DIST_DIR = Tests

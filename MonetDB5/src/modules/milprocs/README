@@ -1,0 +1,8 @@
+This directory contains MIL scripts taken over from the MonetDB 4 line
+and necessary to support backward functionality to the MIL language layer.
+
+They are considered second priority wrt to maintenance and development.
+
+
+The actions to prepare the MAL versions is considered a local
+activity.
