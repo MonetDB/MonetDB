@@ -1,4 +1,4 @@
-stderr of test 'bug-sf-953545` in directory 'src/test/bugs` itself:
+stderr of test 'autocommit_illegal_statements-bug-sf-953545` in directory 'src/test/bugs` itself:
 
 
 # 15:22:34 >  
@@ -53,7 +53,7 @@ stderr of test 'bug-sf-953545` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 15:22:34 >  
-# 15:22:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53599  < bug-sf-953545.sql
+# 15:22:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53599  < autocommit_illegal_statements-bug-sf-953545.sql
 # 15:22:34 >  
 
 MAPI  = monetdb@stem:57632

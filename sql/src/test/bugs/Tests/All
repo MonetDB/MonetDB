@@ -16,7 +16,7 @@ bug-sf-951206
 bug-sf-951800
 bug-sf-952755
 bug-sf-952758
-bug-sf-953545
+autocommit_illegal_statements-bug-sf-953545
 savepoint_release-bug-sf-953560
 date_parsing-bug-sf-960166
 innerjoin_between-bug-sf-960672
