@@ -17,15 +17,18 @@ function LOG2x () { LOG2 $* ; "$@" ; }
 #	MAIN
 
 ACTION=LOG2
-while [ "$1" != "${1#-}" ] ; do
-	if     [ "$1" = "-1"                                  ] ; then  ACTION=LOG1
-	  elif [ "$1" = "-1x" -o "$1" = "-x1"                 ] ; then  ACTION=LOG1x
-	  elif [ "$1" = "-x"  -o "$1" = "-2x" -o "$1" = "-x2" ] ; then  ACTION=LOG2x
-	fi
+while :; do
+	case "$1" in
+	-1)		ACTION=LOG1;;
+	-1x | -x1)	ACTION=LOG1x;;
+	-x | -2x | -x2)	ACTION=LOG2x;;
+	-*)		;;
+	*)		break;;
+	esac
 	shift
 done
 
-$ACTION "$@"
+eval $ACTION "$@"
 
 #	END
 #############################################################################
