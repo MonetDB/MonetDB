@@ -1120,33 +1120,33 @@ main (int argc, char *argv[])
             /* fall through */
 
         case 'h':
-            fprintf (stderr,
-"Usage: %s [-h] [-v]"
+            printf ("Pathfinder XML Shredder ($Revision$, $Date$)\n"
+                    "(c) University of Konstanz, DBIS group\n\n"
+                    "Usage: %s [-h] [-v]"
 #if HAVE_LIBDB
-" [-c]" 
+                    " [-c]" 
 #endif
-" [-d <n>] [-o OUTPUT] [FILE]\n"
-"     processes FILE (if present) or stdin\n"
-"     -v: be verbose\n" 
+                    " [-d <n>] [-o OUTPUT] [FILE]\n\n"
+                    "     Reads from standard input if FILE is omitted.\n\n"
+                    "     -v: be verbose\n" 
 #if HAVE_LIBDB
-"     -c: compress node properties (40%% encoding speed)\n"
+                    "     -c: compress node properties (40%% encoding speed)\n"
 #endif
-"     -d: set XML node stack depth to <n> (default %d)\n"
-"     -o: write relations to OUTPUT.<rel> instead of FILE.<rel>\n"
-"         (mandatory if we read from stdin)\n"
-"         <rel> = { pre,tag,text,com,pi,@ }\n"
-"\n",
-                     argv[0], XML_DEPTH_MAX);
+                    "     -d: set XML node stack depth to <n> (default %d)\n"
+                    "     -o: write relations to OUTPUT.<rel> instead of FILE.<rel>\n"
+                    "         (mandatory if we read from stdin)\n"
+                    "         <rel> = { pre,tag,text,com,pi,@ }\n\n",
+                    argv[0], XML_DEPTH_MAX);
 
             exit (EXIT_FAILURE);
         }
     }
 
-    /* [<XML input>] parameter present? */
+    /* [FILE] parameter present? */
     if (argv[optind]) {
         strncpy (in, argv[optind], FILENAME_MAX);
 
-        /* if -o not seen, use <XML input> also as <output> */
+        /* if -o not seen, use FILE also as OUTPUT */
         if (!o) {
             strncpy (out, in, FILENAME_MAX);
             o = 1;
@@ -1158,12 +1158,12 @@ main (int argc, char *argv[])
     /* -o seen if we read from stdin? */
     if (!o) {
         fprintf (stderr, 
-                 "!ERROR: need `-o <output>' if XML input comes from stdin\n");
+                 "!ERROR: need `-o OUTPUT' if XML input comes from stdin\n");
 
         exit (EXIT_FAILURE);
     }
 
-    /* is <XML input> readable? */
+    /* is FILE readable? */
     if (stat (in, &statbuf) < 0) {
         fprintf (stderr,
                  "!ERROR: cannot stat `%s': %s\n",
@@ -1216,6 +1216,8 @@ main (int argc, char *argv[])
             else
                 printf (", ~ %.2gx smaller\n", 1 / grow);
         }
+        else
+            putchar ('\n');
 
         printf ("document depth                 %u\n" , depth);
         printf ("  document nodes               1\n");
