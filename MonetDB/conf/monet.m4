@@ -381,6 +381,7 @@ if test "x$have_pthread" != xno; then
           	AC_DEFINE(HAVE_LIBPTHREAD) 
 	  	have_pthread=yes ] , [ have_pthread=no], "-lposix4" )
 	] )
+  AC_CHECK_LIB(pthread, pthread_sigmask, AC_DEFINE(HAVE_PTHREAD_SIGMASK))
   LDFLAGS="$save_LDFLAGS"
 
   if test "x$have_pthread" != xyes; then

@@ -63,9 +63,7 @@ The top contains the next timer event to go off.
 The timer is disabled when no timer events are outstanding.
 @h
 #include <monet.h> 
-#ifdef HAVE_SYS_SIGNAL_H
-# include <sys/signal.h> 
-#endif
+# include <signal.h> 
 #define MAXtimer                200
 
 typedef struct {

@@ -65,6 +65,13 @@ functions.
 #endif
 
 #ifdef HAVE_PTHREAD_H
+/* don't re-include config.h; on Windows, don't redefine pid_t in an
+   incompatible way 
+ */
+#undef HAVE_CONFIG_H
+#ifdef pid_t
+#undef pid_t
+#endif
 # include <pthread.h>
 #endif
 
@@ -112,7 +119,9 @@ gdk_export void 	MT_init ();
 @-
 Set which signals should be blocked, ignores  SIGINT, SIGQUIT, SIGALRM
 @h
+#ifdef HAVE_PTHREAD_SIGMASK
 gdk_export void MT_thread_sigmask( sigset_t *new_mask, sigset_t *orig_mask );
+#endif
 
 @-
 Create a new thread executing 'function' with single parameter 'arg'. 
@@ -281,20 +290,26 @@ void MT_init() {
 	MT_system_lock = (MT_Lock) &l;
 }
 
+#ifdef HAVE_PTHREAD_SIGMASK
 void 	MT_thread_sigmask( sigset_t *new_mask, sigset_t *orig_mask ){
         (void)sigdelset(new_mask, SIGINT);
         (void)sigdelset(new_mask, SIGQUIT);
         (void)sigdelset(new_mask, SIGALRM); /* else sleep doesn't work */
         (void)pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
 }
+#endif
 
 int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
+#ifdef HAVE_PTHREAD_SIGMASK
 	sigset_t new_mask, orig_mask;
+#endif
 	pthread_attr_t attr;
 	int  ret;
 
+#ifdef HAVE_PTHREAD_SIGMASK
         (void)sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
+#endif
 	pthread_attr_init(&attr);
 #ifdef PTHREAD_CREATE_DETACHED
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -302,7 +317,9 @@ int	MT_create_thread (MT_Id *t, void (*f)(void *), void *arg) {
         pthread_attr_setstacksize(&attr, 1024*1024);
 	ret = pthread_create((pthread_t*)t, &attr, (void*(*)(void*))f, arg);
         if (ret == 0) (*(int*)t)++; /* use pthread-id + 1 */
+#ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
+#endif
 	return ret;
 }
 

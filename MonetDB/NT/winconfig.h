@@ -283,6 +283,9 @@
 /* Define if you have the <pthread.h> header file.  */
 #define HAVE_PTHREAD_H 1
 
+/* Define this if you have the pthread_sigmask function */
+/* #undef HAVE_PTHREAD_SIGMASK */
+
 /* Define if you have the <pwd.h> header file.  */
 /* #undef HAVE_PWD_H */
 
@@ -315,9 +318,6 @@
 
 /* Define if you have the <sys/resource.h> header file.  */
 /* #undef HAVE_SYS_RESOURCE_H */
-
-/* Define if you have the <sys/signal.h> header file.  */
-/* #undef HAVE_SYS_SIGNAL_H */
 
 /* Define if you have the <sys/time.h> header file.  */
 /* #undef HAVE_SYS_TIME_H */
