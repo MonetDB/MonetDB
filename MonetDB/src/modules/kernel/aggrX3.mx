@@ -168,6 +168,7 @@ structure to compute a group of common aggregates.
  */
 
 #include <monet.h>
+#include "mal_function.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 /* 
 with group OIDs spanning a range of less than SMALL_AGGR_MAX (the actual
@@ -187,10 +188,10 @@ HASHfnd_int for void- and hash-lookups, respectively
 @- Result initialization
 @= getBATdescriptor
         if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("aggrX3.@4:cannot access bat @2 in bbp");
+		return throwMessage("aggrX3.@4","cannot access bat @2 in bbp");
         @3= (BAT*) BBPgetdesc(*@2);
         if( @3 == NULL) { *@1 = 0; 
-		return throwMessage("aggrX3.@4:cannot access descriptor @2");
+		return throwMessage("aggrX3.@4","cannot access descriptor @2");
 	}
 	if(*@2 < 0) @3 = BATmirror(@3);
 
