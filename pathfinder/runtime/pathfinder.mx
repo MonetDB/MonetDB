@@ -168,8 +168,8 @@ tuple will be in the result for this group."
 # load modules used in pathfinder.mx
 module(alarm);
 module(aggrX3);
-module(xtables);
 module(malalgebra);
+module(pf_support);
 module(mmath);
 module(mapi);
 
@@ -2305,6 +2305,7 @@ CMDxquery(char *mode, char* xquery) {
     }
     MT_unset_lock(pathfinder_lock, "CMDxquery");
 
+
     if (err) {
     	stream_write(GDKout, err, len, 1);
     } else if (prologue && query && epilogue &&
@@ -2316,9 +2317,9 @@ CMDxquery(char *mode, char* xquery) {
     }
 #ifdef HAVE_GC
     /* what comes out of PF is alloced differently */
-    if (prologue) free(prologue);
-    if (query) free(query);
-    if (epilogue) free(epilogue);
+    if (prologue) GC_FREE(prologue);
+    if (query) GC_FREE(query);
+    if (epilogue) GC_FREE(epilogue);
 #endif
     return ret;
 }

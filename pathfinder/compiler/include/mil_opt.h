@@ -51,7 +51,7 @@
 #define OPT_SEC_EPILOGUE 2
 
 typedef struct {
-        char *mil, *cleanup; /* buffered line of MIL */
+        char *mil; /* buffered line of MIL */
         unsigned int stmt_nr:30,sec:2; /* absolute statement number in MIL input */
         unsigned int used:16,inactive:1,delchar:7,nilassign:1,refs:7; 
         /* used:      becomes true if this variable was used */ 
