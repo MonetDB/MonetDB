@@ -1013,20 +1013,29 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
         milprintf(f,
             "{ # attribute axis\n"
             /* get all unique iter|item combinations */
+            /* as long as ddo is used instead of only
+               sorting the duplicate elimination is not needed */
+            /*
             "var sorting := iter.reverse().sort().reverse();\n"
-            "sorting := sorting.CTrefine(kind);"
-            "sorting := sorting.CTrefine(item);"
+            "sorting := sorting.CTrefine(kind);\n"
+            "sorting := sorting.CTrefine(item);\n"
             "var unq := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
             "sorting := nil_oid_oid;\n"
+	    */
 
             /* the above code should do the same without a hash table               
             "var unq := CTgroup(iter).CTgroup(item)"
                        ".CTgroup(kind).tunique().mark(0@0).reverse();\n"
             */
+            "var oid_iter := iter;\n"
+            "var oid_item := item;\n"
+            "var oid_frag := kind.get_fragment();\n"
+            /*
             "var oid_iter := unq.leftfetchjoin(iter);\n"
             "var oid_item := unq.leftfetchjoin(item);\n"
             "var oid_frag := unq.leftfetchjoin(kind.get_fragment());\n"
             "unq := nil_oid_oid;\n"
+	    */
             /* get the attribute ids from the pre values */
             "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_item := nil_oid_oid;\n"
@@ -1086,20 +1095,29 @@ loop_liftedSCJ (opt_t *f, char *axis, char *kind, char *ns, char *loc)
         milprintf(f,
             "{ # self axis\n"
             /* get all unique iter|item combinations */
+            /* as long as ddo is used instead of only
+               sorting the duplicate elimination is not needed */
+            /*
             "var sorting := iter.reverse().sort().reverse();\n"
-            "sorting := sorting.CTrefine(kind);"
-            "sorting := sorting.CTrefine(item);"
+            "sorting := sorting.CTrefine(kind);\n"
+            "sorting := sorting.CTrefine(item);\n"
             "var unq := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
             "sorting := nil_oid_oid;\n"
+            */
 
             /* the above code should do the same without a hash table               
             "var unq := CTgroup(iter).CTgroup(item)"
                        ".CTgroup(kind).tunique().mark(0@0).reverse();\n"
             */
+            "var oid_iter := iter;\n"
+            "var oid_item := item;\n"
+            "var oid_frag := kind.get_fragment();\n"
+            /*
             "var oid_iter := unq.leftfetchjoin(iter);\n"
             "var oid_item := unq.leftfetchjoin(item);\n"
             "var oid_frag := unq.leftfetchjoin(kind.get_fragment());\n"
             "unq := nil_oid_oid;\n"
+            */
            );
 
         if (kind)
@@ -4285,8 +4303,8 @@ translateFunction (opt_t *f, int act_level, int counter,
                 "{ ERROR (\"function pf:distinct-doc-order expects only nodes\"); }\n"
                 /* delete duplicates */
                 "var sorting := iter.reverse().sort().reverse();\n"
-                "sorting := sorting.CTrefine(kind);"
-                "sorting := sorting.CTrefine(item);"
+                "sorting := sorting.CTrefine(kind);\n"
+                "sorting := sorting.CTrefine(item);\n"
                 "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
                 /*
                 "var temp_ddo := CTgroup(iter).CTgroup(kind).CTgroup(item);\n"
@@ -4793,8 +4811,8 @@ translateFunction (opt_t *f, int act_level, int counter,
                 */
                 /* delete duplicates */
                 "var sorting := iter.reverse().sort().reverse();\n"
-                "sorting := sorting.CTrefine(kind);"
-                "sorting := sorting.CTrefine(item);"
+                "sorting := sorting.CTrefine(kind);\n"
+                "sorting := sorting.CTrefine(item);\n"
                 "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
                 "iter := sorting.leftfetchjoin(iter);\n"
                 "pos := iter.mark(1@0);\n"
