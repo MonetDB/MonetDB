@@ -44,6 +44,9 @@ data files.
 .COMMAND stream_write( stream s, str data ) = stream_write_string;
 	"write data on the stream"
 
+.COMMAND stream_read( stream s ) : str = stream_read_string;
+	"read data from the stream"
+
 .COMMAND stream_flush( stream s ) = stream_flush;
 	"flush the stream"
 
@@ -157,6 +160,25 @@ int stream_write_string( stream *S, str data ){
 	return GDK_SUCCEED;
 }
 
+#define CHUNK (64*1024)
+int stream_read_string( str *res, stream *S ){
+	stream *s = *(stream**)S;
+	int len = 0;
+	int size = CHUNK + 1;
+	char *buf = GDKmalloc(size), *start = buf;
+
+	while ((len = s->read(s, start, 1, CHUNK)) == CHUNK){
+		size += CHUNK;
+		buf = GDKrealloc(buf, size); 
+		start = buf + size - CHUNK - 1;
+		*start = '\0';
+	}
+	start += len;
+	*start = '\0';
+	*res = buf;
+	return GDK_SUCCEED;
+}
+
 int stream_flush( stream *S ){
 	stream *s = *(stream**)S;
 	s->flush( s );
@@ -177,3 +199,17 @@ int open_block_stream( stream *S, stream *is ){
 		return GDK_SUCCEED;
 	}
 }
+@mil
+
+module(streams);
+
+s := open_wastream( "test.mil" );
+stream_write( s, "test\n" );
+stream_close( s );
+
+s := open_rastream( "test.mil" );
+st := stream_read( s );
+stream_close( s );
+print(st);
+quit;
+
