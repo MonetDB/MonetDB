@@ -28,6 +28,11 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
+
+Over..
 
 # 01:08:12 >  
 # 01:08:12 >  Mtimeout -timeout 360 ./manyMapiClients.MAPI manyMapiClients 

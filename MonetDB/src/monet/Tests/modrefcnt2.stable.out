@@ -49,6 +49,11 @@ Try: modules;                - for other modules.
 # (int)	  (lock)  #
 #-----------------#
 [ 0 ]
+printf("\nReady.\n");
+
+Ready.
+
+Over..
 
 # 15:14:11 >  
 # 15:14:11 >  Mtimeout -timeout 600 MapiClient -everything  < modrefcnt2_s00.milC

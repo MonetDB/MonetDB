@@ -28,6 +28,11 @@ Try: modules;                - for other modules.
      ls;                     - for persistent bat listing.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
+printf("\nReady.\n");
+
+Ready.
+
+Over..
 
 # 15:15:26 >  
 # 15:15:26 >  Mtimeout -timeout 600 MapiClient -everything -prelude client.prelude < client.milC
@@ -332,7 +337,7 @@ Start of MIL server prelude.
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  ""				  ]
+[ 0,	  "printf(\"\\nReady.\\n\")"	  ]
 [ 1,	  "print(view_client_tree())"	  ]
 [ 2,	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
@@ -1078,7 +1083,7 @@ Start of MIL script.
 # BAT:	  tree				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  ""				  ]
+[ 0,	  "printf(\"\\nReady.\\n\")"	  ]
 [ 1,	  "print(view_client_tree())"	  ]
 [ 2,	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#

@@ -656,7 +656,7 @@ def CheckMods(env, TST, SERVER) :
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	if SERVER == "SQL":
-		for m in "str", "xtables",  "sqlserver", "ascii_io", "alarm", "unix":
+		for m in "str", "xtables",  "sqlserver", "ascii_io", "alarm", "unix", "mvc":
 			if m not in env['TST_MODS']:
 				missing.append(m)
 	return missing
@@ -1074,14 +1074,23 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIME
 			Srvr = Srvr+" "+env['TSTSRCBASE']+path("/src/server/sqlserver.mil")
 		Srvr = Srvr+PROLOGUE
 		#-background"
+		if os.name == "nt":
+			Srvr = Srvr+' & echo. & '
+		else:
+			Srvr = Srvr+' ; echo  ; '
+		Srvr = Srvr+'echo Over..'
 
 		SrvrOut = open(TST+".server.out","w")
 		SrvrErr = open(TST+".server.err","w")
 		ClntOut = open(TST+".client.out","w")
 		ClntErr = open(TST+".client.err","w")
 
-		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, "", SrvrOut, SrvrErr)
-		time.sleep(9)
+		pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, 'printf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
+		ln=""
+		while ( not ( pSrvrIn.closed or pSrvrOut.closed or pSrvrErr.closed ) ) and ( len(ln) < 6 or ln[:6] not in  ['Ready.','Over..'] ):
+			ln=pSrvrOut.readline()
+			SrvrOut.write(ln)
+			SrvrOut.flush()
 	else:
 		ClntOut = TestOut
 		ClntErr = TestErr
@@ -1442,6 +1451,12 @@ def main(argv) :
 	STDOUT.flush()
 	#env['par'] = par
 
+	if env.has_key('MONET_PREFIX'):
+		bp = env['MONET_PREFIX']+os.sep+"bin"
+		if os.environ.has_key('PATH'):
+			bp = bp+os.pathsep+os.environ['PATH']
+		os.environ['PATH'] = bp
+
 	# tidy-up and fall-back to defaults where necessary
 	for v in vars:
 		if not env.has_key(v):
@@ -1501,20 +1516,29 @@ def main(argv) :
 	STDOUT.flush()
 
 	# set/extend PATH & LD_LIBRARY_PATH
-	bp = env['MONET_PREFIX']+os.sep+"bin"
+	bp = ""	#env['MONET_PREFIX']+os.sep+"bin"
 	if THISFILE in ["Mtest.py", "Mprofile.py"]:
 		lp = env['MONET_MOD_PATH']
 	else: # THISFILE == "Mapprove.py"
 		lp = ""
-	if os.name == "nt":
-		bp = bp+os.pathsep+lp
+	if os.name == "nt"  and  lp:
+		if bp:
+			bp = bp+os.pathsep+lp
+		else:
+			bp = lp
 	if os.environ.has_key('PATH'):
-		bp = bp+os.pathsep+os.environ['PATH']
+		if bp:
+			bp = bp+os.pathsep+os.environ['PATH']
+		else:
+			bp = os.environ['PATH']
 	os.environ['PATH'] = bp
 	print("PATH = "+bp)
 	if os.name == "posix":
 		if os.environ.has_key('LD_LIBRARY_PATH'):
-			lp = lp+os.pathsep+os.environ['LD_LIBRARY_PATH']
+			if lp:
+				lp = lp+os.pathsep+os.environ['LD_LIBRARY_PATH']
+			else:
+				lp = os.environ['LD_LIBRARY_PATH']
 		os.environ['LD_LIBRARY_PATH'] = lp
 		print("LD_LIBRARY_PATH = "+lp)
 
