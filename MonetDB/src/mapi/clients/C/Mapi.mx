@@ -2879,7 +2879,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 			return mid->error;
 		case '!':
-			if (result == NULL) {
+			/* start a new result set if we don't have one
+			   yet (obviously), or if we've already seen
+			   normal output for the current one */
+			if (result == NULL || result->cache.writer > 0) {
 				result = new_result(hdl);
 				hdl->active = result;
 			}
