@@ -90,6 +90,9 @@ MXFLAGS= -notouch
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 
+%.mal: %.mx
+	$(MX) $(MXFLAGS) -x mal $<
+
 %: %.mx
 	$(MX) $(MXFLAGS) -x sh $<
 	chmod a+x $@

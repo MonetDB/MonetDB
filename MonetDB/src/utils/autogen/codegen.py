@@ -28,6 +28,7 @@ import os
 import shelve
 from var import *
 
+mx2mal = re.compile("^@mal[ \t\r\n]+", re.MULTILINE)
 mx2mil = re.compile("^@mil[ \t\r\n]+", re.MULTILINE)
 mx2mel = re.compile("^@m[ \t\r\n]+", re.MULTILINE)
 mx2h = re.compile("^@h[ \t\r\n]+", re.MULTILINE)
@@ -51,6 +52,7 @@ mx2html = re.compile("^@w[ \t\r\n]+", re.MULTILINE)
 e_mx = re.compile('^@[^{}]', re.MULTILINE)
 
 code_extract = { 'mx': [ (mx2mil, '.mil'),
+                  (mx2mal, '.mal'),
                   (mx2mel, '.m'),
                   (mx2cc, '.cc'),
                   (mx2c, '.c'),
@@ -70,6 +72,7 @@ code_extract = { 'mx': [ (mx2mil, '.mil'),
                   (mx2tex, '.tex'),
                   (mx2html, '.html'), ],
                 'mx.in': [ (mx2mil, '.mil'),
+                  (mx2mal, '.mal'),
                   (mx2mel, '.m'),
                   (mx2cc, '.cc'),
                   (mx2c, '.c'),
@@ -115,6 +118,7 @@ code_gen = { 'm':       [ '.proto.h', '.glue.c' ],
             'cfg.in':   [ '.cfg' ],
             'java.in':  [ '.java' ],
             'mil.in':   [ '.mil' ],
+            'mal.in':   [ '.mal' ],
             'py.in':    [ '.py' ],
             'bat.in':    [ '.bat' ],
 }
