@@ -150,7 +150,7 @@ void MAPIlistenThread(int sock)
 				fdout= block_stream(socket_wstream(msgsock,"Mserver mapi write"));
 			}else
 				fdout= socket_wastream(msgsock,"Mserver mapi write");
-			scheduleClient(command,msgsock,fdin,fdout);
+			scheduleClient(command,fdin,fdout);
 		}
 	} while (1);
 }
