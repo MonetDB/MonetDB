@@ -178,7 +178,7 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
         # add a blank line
         addblank = True
         line = f.readline()
-    if '-*-' in line:
+    if line.find('-*-') >= 0:
         # if file starts with an Emacs mode specification, keep the line there
         g.write(line)
         # add a blank line
@@ -245,7 +245,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
         line = f.readline()
         if line and line == '\n':
             line = f.readline()
-    if '-*-' in line:
+    if line.find('-*-'):
         g.write(line)
         line = f.readline()
         if line and line == '\n':
