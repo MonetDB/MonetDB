@@ -638,7 +638,7 @@ that for the moment are defined as procs.
     ADDHELP("join", "boncz", "Aug  6 1998",
             "Returns [left.head,right.tail] where (*fcn)(left.tail,right.head,..params..)", "algebra");
 
-	proc find_unescaped_occurrence(str b, chr c, chr esc) : int {
+	proc find_unescaped_occurrence(str b, str c, str esc) : int {
 		var idx := b.search(c);
 		var tmp;
 		
@@ -674,7 +674,7 @@ that for the moment are defined as procs.
     "finds the first occurrence of c that is not escaped by esc", "algebra");
 
     # SQL LIKE functionality, vectorized MIL implementation
-    PROC like_uselect(bat[any::1,str] b, str pat, chr esc) : bat[any::1,void]  {
+    PROC like_uselect(bat[any::1,str] b, str pat, str esc) : bat[any::1,void]  {
         var s;
 		var idxper;
 		var idxund;
@@ -695,8 +695,8 @@ that for the moment are defined as procs.
 		pat := substitute(pat, "%_", "_%", true);
 		pat := substitute(pat, "%%", "%", true);
 		
-		idxper := find_unescaped_occurrence(pat, '%', esc);
-		idxund := find_unescaped_occurrence(pat, '_', esc);
+		idxper := find_unescaped_occurrence(pat, "%", esc);
+		idxund := find_unescaped_occurrence(pat, "_", esc);
 
 		# force matching without position freedom for the first part
 		wasper := false;
@@ -772,11 +772,11 @@ that for the moment are defined as procs.
 
 			# find next match for the last matching char (% or _)
 			if (isper) {
-				idxper := find_unescaped_occurrence(pat, '%', esc);
+				idxper := find_unescaped_occurrence(pat, "%", esc);
 				# correct value of other index
 				if (idxund > 0) idxund :-= idx;
 			} else {
-				idxund := find_unescaped_occurrence(pat, '_', esc);
+				idxund := find_unescaped_occurrence(pat, "_", esc);
 				# correct value of other index
 				if (idxper > 0) idxper :-= idx;
 			}
@@ -807,7 +807,7 @@ that for the moment are defined as procs.
     "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");
     
     # SQL LIKE functionality, PCRE implementation
-	PROC sql2pcre(str pat, chr esc) : int {
+	PROC sql2pcre(str pat, str esc) : int {
 		# change the SQL wilcards into PCRE wildcards
 		var i, len;
 		var c;
@@ -816,22 +816,22 @@ that for the moment are defined as procs.
 		var escaped := false;
 
 		# the escape character can be a char which is special in a PCRE
-		# if the user used the '+' char as escape and has "++" in
+		# if the user used the "+" char as escape and has "++" in
 		# its pattern, then replacing this with "+" is not correct
 		# in the PCRE pattern
 		# we use pesc here so we can replace with the correct
 		# replacement: "\+"
 		if (
-			(str(esc) = ".") or
-			(str(esc) = "+") or
-			(str(esc) = "*") or
-			(str(esc) = "(") or
-			(str(esc) = ")") or
-			(str(esc) = "[") or
-			(str(esc) = "]") or
-			(str(esc) = "\\")
+			(esc = ".") or
+			(esc = "+") or
+			(esc = "*") or
+			(esc = "(") or
+			(esc = ")") or
+			(esc = "[") or
+			(esc = "]") or
+			(esc = "\\")
 		) {
-			pesc := "\\" + str(esc);
+			pesc := "\\" + esc;
 		} else {
 			pesc := esc;
 		}
@@ -887,7 +887,7 @@ that for the moment are defined as procs.
     ADDHELP("sql2pcre", "groffen", "Dec 20 2004",
     "converts SQL LIKE to PCRE pattern", "algebra");
 		
-    PROC like(str s, str pat, chr esc) : bit  {
+    PROC like(str s, str pat, str esc) : bit  {
 		var ppat := sql2pcre(pat, esc);
 		return(pcre_match(pcre_compile(ppat), s));
     }
@@ -895,13 +895,13 @@ that for the moment are defined as procs.
     "does SQL LIKE expression with use of PCRE", "algebra");
 
     PROC like(str s, str pat) : bit  {
-		var ppat := sql2pcre(pat, chr("\\"));
+		var ppat := sql2pcre(pat, "\\");
 		return(pcre_match(pcre_compile(ppat), s));
     }
     ADDHELP("like", "nes", "Dec 20 2004",
     "does SQL LIKE expression with use of PCRE", "algebra");
 
-    PROC like_uselect_pcre(bat[any::1,str] b, str pat, chr esc) : bat[any::1,void]  {
+    PROC like_uselect_pcre(bat[any::1,str] b, str pat, str esc) : bat[any::1,void]  {
 		var ppat := sql2pcre(pat, esc);
 		return(pcre_uselect(ppat, b));
     }
