@@ -6,8 +6,7 @@ EXTRA_DIST = getopt.h
 
 lib_mutils = { 
 	NAME = mutils
-	SOURCES = \
-		monet_options.mx.in
+	SOURCES = monet_utils.mx monet_options.mx.in
 	HEADERS = h
 	LIBS = @LIBOBJS@
 }
