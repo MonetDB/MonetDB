@@ -115,19 +115,19 @@ decimal columns is their use as foreign key on tables imported from another DBMS
      "Formats a decimal in a fixed-width string (truncated, if necessary).
       format = [ '+' ] ( N1 | ( N1 '.' N2 ) | ( '.' N2 ) ) [ 'E' N3 ]
        with: Nx = a number of the form [0-9]+ (possibly starting with 0)
-      where: N1 = is the number of digits before the comma (default = 0)
-             N2 = is the number of digits after the comma (default = 1)
+      where: N1 = is the number of digits before the decimal point (default = 0)
+             N2 = is the number of digits after the decimal point (default = 1)
              N3 = the number of digits to use for the scale (default = 2)
       A zero will be printed with only one zero digit (left space-padded), unless N1 has a 
       leading zero, in which case a zero-padded number of width N1 is produced. 
       If the plus at start is specified, positive numbers start with a plus. "
 
 @- arithmetic
-All operators return a result decimal whose value is exactly the value of the operator, 
+All operators return a result decimal whose value is exactly the value of the operation, 
 when applied to the value of both decimal arguments. Only for division this is not possible; 
 as an infinite precision would in some cases be needed to describe an exact result. division
 therefore truncates the result to a precision specified by the caller.
-The result of all operator are always normalized by deleting all leading and trailing zeros 
+The result of all operations are always normalized by deleting all leading and trailing zeros 
 (and adapting the scale correspondingly).
 @m
 .OPERATOR (decimal val1) "+" (decimal val2) : decimal = decimal_plus;
@@ -148,7 +148,7 @@ The result of all operator are always normalized by deleting all leading and tra
 .OPERATOR (decimal val1) "/" (decimal val2) : decimal = decimal_divide_default;
      "Returns a decimal whose value is val1 DIV val2, (scale=0) like in C integer division. 
       This operator can implement MOD as MOD(x,y) = x - y*DIV(d,y). 
-      Use the tertiary divide(dum,div,prec) command for dividing with arbitrary precision. 
+      Use the tertiary divide(num,div,prec) command for dividing with arbitrary precision. 
       Division by zero returns decimal(nil)."
 
 .COMMAND divide(decimal val1, decimal val2, int precision) : decimal = decimal_divide;
@@ -176,7 +176,7 @@ The result of all operator are always normalized by deleting all leading and tra
 
 .COMMAND setscale(decimal value, int scale) : decimal  = decimal_set_scale;
      "Normalize the number of a decimal by setting the scale to a fixed value.
-      This is compensated by making the number shorted (by truncation) or by enlarging
+      This is compensated by making the number shorter (by truncation) or by enlarging
       it with trailing zeros (!DS2.2)."
 
 .COMMAND addscale(decimal value, int delta) : decimal = decimal_movedot;
