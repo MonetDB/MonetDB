@@ -240,11 +240,10 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	join_spec
 	search_condition
 	update_stmt
-	select_clause
 	select_stmt
 	select_with_parens
 	select_no_parens
-	simple_select
+	select_clause
 	subquery
 	target
 	test_for_null
@@ -288,9 +287,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	when_search
 	opt_else
 	table_name
-	opt_ref_action
-	opt_ref_delete
-	opt_ref_update
+	ref_on
 	object_name
 
 %type <type>
@@ -304,6 +301,8 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	any_all_some
 	non_reserved_word
 	ident
+	cident		/* special ident where strings and non-keywords 
+			  are excluded, to solve many parser conflicts */
 	column
 	authid
 	grantee
@@ -355,6 +354,7 @@ extern int sqllex( YYSTYPE *yylval, void *lc );
 	string_commalist
 	paramlist
 	opt_paramlist
+	opt_ref_action
 
 %type <ival>
 	drop_action 
@@ -932,19 +932,16 @@ ref_action:
  | 	SET DEFAULT		{ $$ = 4; }
  ;
 
-opt_ref_delete:
-    /* empty */			{ $$ = NULL; }
+ref_on:
+   ON UPDATE ref_action		{ $$ = _symbol_create_int(SQL_UPDATE, $3); }
  | ON sqlDELETE ref_action	{ $$ = _symbol_create_int(SQL_DELETE, $3); }
  ;
 
-opt_ref_update:
-    /* empty */			{ $$ = NULL; }
- | ON UPDATE ref_action		{ $$ = _symbol_create_int(SQL_UPDATE, $3); }
- ;
-
 opt_ref_action:
- 	opt_ref_delete opt_ref_update
- |	opt_ref_update opt_ref_delete
+	/* empty */	{ $$ = NULL; }
+ | ref_on		{ $$ = dlist_append_symbol(dlist_create(), $1); }
+ | ref_on ref_on	{ $$ = dlist_append_symbol(dlist_create(), $1);
+ 			  dlist_append_symbol($$, $2); 			}
  ;
 
 opt_match_type:
@@ -970,7 +967,7 @@ column_constraint_type:
 			  dlist_append_list(l, $2 );
 			  dlist_append_list(l, $4 );
 			  dlist_append_int(l, $6 );
-			  dlist_append_symbol(l, $7 );
+			  dlist_append_list(l, $7 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
  | domain_constraint_type
  ;
@@ -981,25 +978,14 @@ table_constraint_type:
  |  PRIMARY KEY column_commalist_parens 
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
  |  FOREIGN KEY column_commalist_parens 
-    REFERENCES qname opt_match opt_ref_action
-
-			{ dlist *l = dlist_create();
-			  dlist_append_list(l, $5 );
-			  dlist_append_list(l, $3 );
-			  dlist_append_list(l, NULL );
-			  dlist_append_int(l, $6 );
-			  dlist_append_symbol(l, $7 );
-			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
-
- |  FOREIGN KEY column_commalist_parens 
-    REFERENCES qname column_commalist_parens opt_match opt_ref_action
+    REFERENCES qname opt_column_commalist opt_match opt_ref_action
 
 			{ dlist *l = dlist_create();
 			  dlist_append_list(l, $5 );
 			  dlist_append_list(l, $3 );
 			  dlist_append_list(l, $6 );
 			  dlist_append_int(l, $7 );
-			  dlist_append_symbol(l, $8 );
+			  dlist_append_list(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
 
  |  domain_constraint_type
@@ -1154,20 +1140,6 @@ drop_action:
  |  CASCADE	  	{ $$ = 1; }
  ;
 
-	/* cursor definition */
-/*
-sql: cursor_def ;
-cursor_def: DECLARE cursor CURSOR FOR select_stmt opt_order_by_clause ;
-sql: close_stmt | open_stmt |	fetch_stmt | delete_stmt_positioned ;
-close_stmt: CLOSE cursor		;
-open_stmt: OPEN cursor		;
-delete_stmt_positioned: sqlDELETE FROM qname WHERE CURRENT OF cursor ;
-fetch_stmt: FETCH cursor INTO target_commalist ;
-update_stmt: UPDATE qname SET assignment_commalist CURRENT OF cursor ;
-cursor:	ident ;
-*/
-
-
 	/* data manipulative stmts */
 
 sql: 
@@ -1311,7 +1283,6 @@ insert_atom_commalist:
 
 insert_atom:
     scalar_exp	
- |  NULLX		{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
 
 opt_distinct:
@@ -1335,12 +1306,6 @@ assignment:
 	  dlist_append_string(l, $1); 
 	  dlist_append_symbol(l, $3); 
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
-
- |  column '=' NULLX 
-	{ dlist *l = dlist_create();
-	  dlist_append_string(l, $1); 
-	  dlist_append_symbol(l, NULL); 
-	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
  ;
 
 target_commalist:
@@ -1362,8 +1327,6 @@ opt_where_clause:
 
 	/* query expressions */
 
-/* sql: select_stmt | IF '(' predicate ')' sql ; */
-
 joined_table:
    '(' joined_table ')' 	
 	{ $$ = $2; }
@@ -1373,13 +1336,13 @@ joined_table:
 	  dlist_append_symbol(l, $1);
 	  dlist_append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_CROSS, l); }
- |  table_ref /*UNION*/ JOIN table_ref join_spec 
+ |  table_ref UNION JOIN table_ref join_spec 
 	{ dlist *l = dlist_create();
 	  dlist_append_symbol(l, $1);
 	  dlist_append_int(l, 0);
 	  dlist_append_int(l, 4);
-	  dlist_append_symbol(l, $3);
 	  dlist_append_symbol(l, $4);
+	  dlist_append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_JOIN, l); }
  |  table_ref JOIN table_ref join_spec 
 	{ dlist *l = dlist_create();
@@ -1437,8 +1400,15 @@ sql:
     select_stmt 
  ;
 
-select_stmt: 
+select_stmt:
     select_no_parens                    %prec UMINUS
+	opt_order_by_clause opt_limit
+	{
+          SelectNode *sn = (SelectNode*)$1;
+	  sn->orderby = $2;
+	  sn->limit = $3;
+	  $$ = $1;
+ 	}
  |  select_with_parens                    %prec UMINUS
  ;
 
@@ -1447,25 +1417,19 @@ select_with_parens:
  |  '(' select_with_parens ')'  { $$ = $2; }
  ;
 
-select_no_parens:
-    simple_select  			
+select_clause:
+    select_no_parens
+ |  select_with_parens
  ;
 
-select_clause:
-    simple_select  			
- |  select_with_parens
- ; 
-
-simple_select:
-    SELECT opt_distinct selection opt_into
-           table_exp opt_order_by_clause opt_limit
-
+select_no_parens:
+    SELECT opt_distinct selection opt_into table_exp 
 	{ $$ = newSelectNode( $2, $3, $4, 
 	  	$5->h->data.sym,
 	  	$5->h->next->data.sym,
 	  	$5->h->next->next->data.sym,
 	  	$5->h->next->next->next->data.sym,
-	  	$6, NULL, $7);
+	  	NULL, NULL, -1);
 	  dlist_destroy_keep_data($5);
 	}
 
@@ -1559,6 +1523,11 @@ table_ref:
 				{ SelectNode *sn = (SelectNode*)$1;
 				  $$ = $1; 
 				  sn->name = $2; }
+ |  select_with_parens error	
+				{ $$ = NULL;
+				  symbol_destroy($1);
+				  yyerror("Subquery table reference needs alias");
+				}
  |  joined_table 		{ $$ = $1; 
 				  dlist_append_symbol($1->data.lval, NULL); }
  |  '(' joined_table ')' table_name	
@@ -1859,6 +1828,7 @@ value_exp:
  |  string_funcs
  |  case_exp	
  |  cast_exp
+ |  NULLX			{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
 
 func_ref:
@@ -2179,7 +2149,7 @@ qname:
  ;
 
 column_ref:
-    ident		{ $$ = dlist_append_string(
+    cident		{ $$ = dlist_append_string(
 				dlist_create(), $1); }
 
  |  ident '.' ident	{ $$ = dlist_append_string(
@@ -2311,9 +2281,16 @@ authid: 		ident ;
 ident: 
     IDENT	{ $$ = $1; }	
  |  TYPE	{ $$ = $1; }
- |  AGGR	{ $$ = $1; }
- |  string	
- |  non_reserved_word
+ |  AGGR	{ $$ = $1; } 	/* without '(' */
+ |  string			
+ |  non_reserved_word		
+ ;
+
+cident:
+     IDENT
+ |  TYPE	{ $$ = $1; }
+ |  AGGR	{ $$ = $1; } 	/* without '(' */
+ |  non_reserved_word		
  ;
 
 non_reserved_word: 
@@ -2329,7 +2306,6 @@ non_reserved_word:
 | TIMESTAMP	{ $$ = _strdup("timestamp"); }
 | PATH		{ $$ = _strdup("path"); }
 | ROLE		{ $$ = _strdup("role"); }
-| NULLX		{ $$ = _strdup("null"); }
 | DEFAULT	{ $$ = _strdup("default"); }
 | YEAR		{ $$ = _strdup("year"); }
 | MONTH		{ $$ = _strdup("month"); }

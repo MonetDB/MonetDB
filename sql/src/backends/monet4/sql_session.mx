@@ -603,7 +603,6 @@ requires the same client context. This means that we should
 have an escape from the sql parser and directly address the
 MIL interpreter. This is accomplished with a prepend of the
 query string with "M".
-
 @c
 		if (mil && language == 'M') {
 			sidestepMil(stk, in->buf+in->pos);
