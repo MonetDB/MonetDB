@@ -155,7 +155,7 @@ kernel libraries, e.g. bat.mx
 
 	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
-	.COMMAND hash( any::1 ) : int = hash_wrap; "calculate a hash value"
+	.COMMAND hash( any::1 v, int sh ) : int = hash_wrap; "calculate a hash value and shift left"
 
 @+
 	senddata requests the client to ship data to the server. This is
@@ -489,9 +489,9 @@ int bat_replace_oid_bat_wrap( BAT **res, BAT *o, BAT *d )
 	return GDK_SUCCEED;
 }
 
-int hash_wrap( int *res, ptr v, int tpe )
+int hash_wrap( int *res, ptr v, int tpe, int *sh )
 {
-	*res = ATOMhash(tpe,v);
+	*res = (ATOMhash(tpe,v)<<(*sh))&0xEFFFFFFF;
 	return GDK_SUCCEED;
 }
 
