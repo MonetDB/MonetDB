@@ -73,11 +73,16 @@ extern "C" {
 extern void		static_module_init(Client c, char buf[]); 
 }
 
-void *operator new( size_t size ) {
+#include <new> 
+void *operator new( size_t size ) 
+throw(std::bad_alloc) 
+{
         void *ptr = GDKmalloc( size );
         return(ptr);
 }
-void operator delete( void *ptr ) {
+void operator delete( void *ptr ) 
+throw() 
+{
         GDKfree( ptr );
 }
 #if defined(__GNUC__) && defined(__cplusplus)
@@ -388,7 +393,7 @@ for all processes to terminate properly.
 @-
 Peter: for the time being avoid difficult things like dropping everything 
 @C
-	monet_exit();
+	monet_exit(0);
 	MT_global_exit(0);  
 	return 0;
 } /* main */
