@@ -1194,9 +1194,11 @@ int date_fromstr(str buf, int *len, date **d) {
 int date_tostr(str* buf, int* len, date* val) {
 	int day, month, year;
 	fromdate(*(int*) val, &day, &month, &year);
-	if (*len < 14) {
+	/* longest possible string: "-5867411-01-01" i.e. 14 chars
+	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
+	if (*len < 15) {
 		if (*buf) GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 14);
+		*buf = (str) GDKmalloc(*len = 15);
 	}
 	if (*(int*) val == int_nil || !DATE(day,month,year)) {
 		strcpy(*buf, "nil");
