@@ -12,7 +12,7 @@ f = open("load.sql","w")
 for i in fileinput.input(os.path.join(SRCDIR,"load.sql")):
     x = string.split(i,"PWD/")
     if len(x) == 2:
-        f.write(x[0]+DATADIR+os.sep+x[1])
+        f.write(string.replace(x[0]+DATADIR+os.sep+x[1], '\\', '\\\\'))
     if len(x) == 1:
         f.write(x[0])
 f.close()
