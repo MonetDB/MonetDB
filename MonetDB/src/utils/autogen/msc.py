@@ -171,11 +171,22 @@ def msc_deps(fd,deps,objext, msc):
             b,ext = split_filename(t)
             tf = msc_translate_file(t,msc)
             fd.write( tf + ":" )
+            _in = []
             for d in deplist:
                 dep = msc_translate_dir(msc_translate_ext(msc_translate_file(d,msc)),msc)
+                if dep[-3:] == '.in':
+                    if dep not in msc['_IN']:
+                        _in.append((d[:-3],dep))
+                    dep = d[:-3]
                 if (dep != t):
                     fd.write( " " + dep)
             fd.write("\n")
+            for x,y in _in:
+                # TODO
+                # replace this hack by something like configure ...
+                fd.write("%s: %s\n" % (x,y))
+                fd.write("\tif exist %s $(CONFIGURE) %s %s\n" % (y,y,x)) 
+                msc['_IN'].append(y)
             if (ext == "tab.h"):
                 x,de = split_filename(deplist[0])
                 if (de == 'y'):
@@ -264,12 +275,14 @@ def msc_binary(fd, var, binmap, msc ):
         name = var[4:]
         if (name == 'SCRIPTS'):
             for i in binmap:
-                # TODO
-                # replace this hack by something like configure ...
-                fd.write("%s: $(SRCDIR)\\%s\n" % (i,i))
-                fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (i,i,i) )
-                fd.write("$(SRCDIR)\\%s: $(SRCDIR)\\%s.in\n" % (i,i))
-                fd.write("\tif exist $(SRCDIR)\\%s.in $(INSTALL) $(SRCDIR)\\%s.in $(SRCDIR)\\%s\n" % (i,i,i) )
+                if os.path.isfile(os.path.join(msc['cwd'],i+'.in')):
+                    # TODO
+                    # replace this hack by something like configure ...
+                    fd.write("%s: $(SRCDIR)\\%s.in\n" % (i,i))
+                    fd.write("\tif exist $(SRCDIR)\\%s.in $(CONFIGURE) $(SRCDIR)\\%s.in %s\n" % (i,i,i) )
+                else:
+                    fd.write("%s: $(SRCDIR)\\%s\n" % (i,i))
+                    fd.write("\tif exist $(SRCDIR)\\%s $(INSTALL) $(SRCDIR)\\%s %s\n" % (i,i,i) )
                 msc['INSTALL'].append((i,i,'','$(bindir)'))
         else: # link
             src = binmap[0][4:]
@@ -583,6 +596,9 @@ CC = cl -GF -W3 -MD -nologo -Zi -G6
 # No general LDFLAGS needed
 LDFLAGS = /link
 INSTALL = copy
+# TODO
+# replace this hack by something like configure ...
+CONFIGURE = copy
 MKDIR = mkdir
 ECHO = echo
 CD = cd
@@ -605,6 +621,7 @@ CXXEXT = \\\"cxx\\\"
     msc['TREE'] = tree
     msc['cwd'] = cwd
     msc['DEPS'] = []
+    msc['_IN'] = []
 
     fd.write("CFLAGS = $(CFLAGS) $(INCLUDES)\n" )
     fd.write("CXXFLAGS = $(CFLAGS)\n" )
