@@ -245,6 +245,13 @@ int mo_config_file(opt **Set, int setlen, char *file )
 		*s = 0;
 		setlen++;
         }
+	/* Enter the configuration file name as a property as well */
+	set = (opt*)realloc(set,(setlen+1)*sizeof(opt));
+	set[setlen].kind = opt_config;
+	set[setlen].name = strdup("gdk_config");
+	set[setlen].value = strdup(file);
+	setlen++;
+
         (void) fclose(fd);
 	*Set = set;
 	return setlen;
