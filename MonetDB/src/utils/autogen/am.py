@@ -266,7 +266,9 @@ def am_doc(fd, var, docmap, am ):
     for target in docmap['TARGETS']:
         t,ext = split_filename(target)
         if (ext in doc_ext):
-            srcs = srcs + " " + am_find_srcs(target,docmap['DEPS'], am)
+            #srcs = srcs + " " + am_find_srcs(target,docmap['DEPS'], am)
+            # am_find_srcs returns nothing; IMHO we can simply add target, here ...
+            srcs = srcs + " " + target
     fd.write(srcs + "\n")
 
     fd.write("if DOCTOOLS\n")
