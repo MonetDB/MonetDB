@@ -319,24 +319,22 @@ void tstAligned()
 	ValRecord v;
 	ptr val, base;
 	base = (ptr) & v.val.ival; 
-	val= (ptr) & v.val.ival; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.bval; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.cval[0]; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.shval; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.br.id; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.ival; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.oval; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.pval; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.fval; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.dval; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.lval; if(val != base){allAligned = -1; return;}
-	val= (ptr) & v.val.sval; if(val != base){allAligned = -1; return;}
-	allAligned = 1;
+	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.cval[0]; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.br.id; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
 #ifdef STRUCT_ALIGNED
 	if(allAligned<0)
 		GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
 #else
-	if(allAligned>0)
+	if(allAligned==0)
 		GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
 #endif
 }

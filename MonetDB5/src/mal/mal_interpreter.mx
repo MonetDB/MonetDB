@@ -461,7 +461,7 @@ possible change in the control flow.
 		/* skip to end of barrier, depending on the type */
 		switch(v->vtype){
 		case TYPE_bit:
-			if( v->val.cval[0] &&  v->val.cval[0]!= bit_nil )
+			if( v->val.cval[0] == TRUE && v->val.cval[0] != bit_nil)
 				stkpc= pci->jump; 
 			else stkpc++;
 			break;
@@ -476,7 +476,7 @@ possible change in the control flow.
 			else stkpc++;
 			break;
 		case TYPE_int:
-			if( v->val.ival >= 0 && v->val.ival!= sht_nil )
+			if( v->val.ival >= 0 && v->val.ival!= int_nil )
 				stkpc= pci->jump; 
 			else stkpc++;
 			break;

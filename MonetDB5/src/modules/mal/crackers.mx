@@ -90,14 +90,14 @@ table. It can be used to initialize a BATview to represent
 the partition during processing.
 @mal
 command newIterator(b:bat[:int,:int])
-	(a:int,x:bat[:int,:int])
+	(a:lng,x:bat[:int,:int])
 address CRKnewIterator
 comment "Retrieve the first piece of a cracked
 	BAT as a BAT view and also return the
 	identity of the next piece.";
 
 command hasMoreElements(b:bat[:int,:int])
-	(a:int,x:bat[:int,:int])
+	(a:lng,x:bat[:int,:int])
 address CRKhasMoreElements
 comment "Retrieve the next piece of a cracked
 	BAT by adjusting the BAT view descriptor.

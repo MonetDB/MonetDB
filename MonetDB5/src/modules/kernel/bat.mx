@@ -1031,22 +1031,6 @@ static void unlock_desc(bat bid) {
 	BBPunfix(bid);
 }
 
-int CMDcount_bat(lng *res, int *bid) {
-	if (BBPcheck((bat) *bid, "CMDcount_bat")) {
-		BAT *b = lock_desc((bat) *bid);
-		if (b == NULL) {
-			*res = lng_nil;
-		} else if (BBP_cache((bat) *bid)) {
-			*res = (lng) BATcount(b);  
-		} else {
-			/* BAT not loaded */
-			*res = (lng) ((b->batBuns->free - (b->batHole - b->batBuns->base))/BUNsize(b) - 1);
-		}
-		unlock_desc(*bid);
-	}
-	return GDK_SUCCEED;
-}
-
 int CMDcapacity(lng *res, int *bid) {
 	if (BBPcheck((bat) *bid, "CMDcapacity")) {
 		BAT *b = lock_desc((bat) *bid);
@@ -2083,7 +2067,7 @@ str BKCgetKey(bit *ret, int *bid) {
 	return MAL_SUCCEED;
 }
 
-str BKCpersists(int *res, int *bid, int *flg) {
+str BKCpersists(bit *res, int *bid, int *flg) {
 	BAT *b, *bn= NULL;
 	bit param = *flg;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
@@ -2091,7 +2075,7 @@ str BKCpersists(int *res, int *bid, int *flg) {
 	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
-str BKCsetPersistent(int *res, int *bid) {
+str BKCsetPersistent(bit *res, int *bid) {
 	BAT *b, *bn= NULL;
 	bit param= 1;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
@@ -2100,13 +2084,13 @@ str BKCsetPersistent(int *res, int *bid) {
 	*res = TRUE;
         return MAL_SUCCEED;
 }
-str BKCisPersistent(int *res, int *bid) {
+str BKCisPersistent(bit *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setPersistence)@
 	*res= (b->batPersistence == PERSISTENT)? TRUE:FALSE;
         return MAL_SUCCEED;
 }
-str BKCsetTransient(int *res, int *bid) {
+str BKCsetTransient(bit *res, int *bid) {
 	BAT *b;
 	@:getBATdescriptor(res,bid,b,setTransient)@
 	BATmode(b, TRANSIENT);

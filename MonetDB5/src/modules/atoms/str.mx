@@ -1189,13 +1189,13 @@ Here you find the wrappers around the version 4 library code
 @c
 #include "mal_exception.h"
 
-str strMatch(int  *ret, str *val, str *pat){
+str strMatch(bit  *ret, str *val, str *pat){
 	regex_t prg;
 	int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
 	if( error<0)
 		return throwMessage("str.match","Compilation of regular expression failed");
 	error= regexec(&prg,*val,0,0,0);
-	*ret= error == 0;
+	*ret= (error == 0);
 	return MAL_SUCCEED;
 }
 
@@ -1246,7 +1246,7 @@ str STRChrAt( chr *res, str *arg1, int *at ){
 	strChrAt(res,*arg1,at);
 	return MAL_SUCCEED;
 }
-str STRMatch(int  *ret, str *val, str *pat){
+str STRMatch(bit  *ret, str *val, str *pat){
 	strMatch(ret,val,pat);
 	return MAL_SUCCEED;
 }

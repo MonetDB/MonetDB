@@ -626,13 +626,13 @@ address ALGcount_bat
 comment "Return the current size (in number of 
 	elements) in a BAT.";
 command count ( b:bat[:any,:any], ignore_nils:bit )
-	:int 
+	:lng 
 address ALGcount_nil
 comment "Return the number of elements currently 
 	in a BAT ignores BUNs with nil-tail iff 
 	ignore_nils==TRUE.";
 command count_no_nil ( b:bat[:any,:any])
-	:int 
+	:lng 
 address ALGcount_no_nil
 comment "Return the number of elements currently 
 	in a BAT ignoring BUNs with nil-tail";
@@ -1086,11 +1086,11 @@ int CMD@1(BAT **result, BAT* b, int *param) {
 @:binary(kdiff, BATkdiff)@
 @:binaryint(sample, BATsample)@
 
-int CMDcount_nil(int *result, BAT *b, bit *ignore_nils) {
+int CMDcount_nil(lng *result, BAT *b, bit *ignore_nils) {
 	if (*ignore_nils)
-		*result = (int) BATcount_no_nil(b);
+		*result = (lng) BATcount_no_nil(b);
 	else
-		*result = (int) BATcount(b);
+		*result = (lng) BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -1570,7 +1570,7 @@ str ALGtopN(int *res, int *bid, lng *top) {
         return MAL_SUCCEED;
 }
 
-str ALGcard(int *result, lng *bid) {
+str ALGcard(lng *result, int *bid) {
 	BAT *b,*bn;
 	@:getBATdescriptor(result,bid,b,card)@
 	bn = (BAT*) BATkunique(BATreverse(b));
@@ -1818,20 +1818,20 @@ str ALG@1(int *result, int* bid, int *param) {
 @:ALGbinary(kdiff)@
 @:ALGbinaryint(sample)@
 
-str ALGcount_bat(int *result, int *bid) {
+str ALGcount_bat(lng *result, int *bid) {
 	BAT *b;
 	bit ignore_nils= FALSE;
 	@:getBATdescriptor(result,bid,b,count_nil)@
 	CMDcount_nil(result,b,&ignore_nils);
 	return MAL_SUCCEED;
 }
-str ALGcount_nil(int *result, int *bid, bit *ignore_nils) {
+str ALGcount_nil(lng *result, int *bid, bit *ignore_nils) {
 	BAT *b;
 	@:getBATdescriptor(result,bid,b,count_nil)@
 	CMDcount_nil(result,b,ignore_nils);
 	return MAL_SUCCEED;
 }
-str ALGcount_no_nil(int *result, int *bid) {
+str ALGcount_no_nil(lng *result, int *bid) {
 	bit ignore_nils= 1;
 	return ALGcount_nil(result,bid,&ignore_nils);
 }

@@ -316,6 +316,7 @@ str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
 str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 	@1 v = *i;
 	v = v + *step;
+printf("step %d\n", (char)*step);
 	*i = v;
 	*res = v < *last;
 	return MAL_SUCCEED;

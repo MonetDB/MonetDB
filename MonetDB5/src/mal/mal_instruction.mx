@@ -1179,11 +1179,12 @@ to make the user aware of this situation.
 	 /*switch( BATatoms[type].storage){*/
 retryConstant:
 	switch( parsetype){ 
-	case TYPE_bit: { int x;
-			 x= val[0]=='t' || val[0]=='T';
+	case TYPE_bit: { int x = (val[0]=='t' || val[0]=='T')?TRUE:FALSE;
 			 vr->vtype= TYPE_bit;
-			 if( tonil) vr->val.ival = bit_nil; 
-			 else vr->val.ival= x;
+			 vr->val.cval[0]= (tonil)?bit_nil:x; 
+			 vr->val.cval[1]= 0;
+			 vr->val.cval[2]= 0;
+			 vr->val.cval[3]= 0;
 			 break;
 			}
 	case TYPE_chr: 
@@ -1194,22 +1195,22 @@ retryConstant:
 			vr->val.cval[3]= 0;
 			if( tonil) vr->val.cval[0] = chr_nil; 
 			break;
-	case TYPE_sht: {long l;
+	case TYPE_sht: {lng l;
 			vr->vtype = type;
 			if( tonil){ 
-				vr->val.ival = sht_nil;
+				vr->val.shval = sht_nil;
 				break;
 			} 
 			l = strtol(val,NULL,0);
 			if( l>= (1<<16) || l< -(1<<16)) {
 				if( l< INT_MIN || l> INT_MAX ){	
 					if(type== TYPE_sht)
-						setVarType(mb, idx, TYPE_lng);
+						setVarType(mb, idx, TYPE_int);
 					vr->vtype= TYPE_int;
 					vr->val.ival = l;
-				} else{
+				} else {
 					if(type== TYPE_sht)
-						setVarType(mb, idx, TYPE_int);
+						setVarType(mb, idx, TYPE_lng);
 					vr->vtype= TYPE_lng;
 					vr->val.lval = l;
 				}
@@ -1218,7 +1219,7 @@ retryConstant:
 				vr->val.shval= l;
 			}
 			break; }
-	case TYPE_int: {long l;
+	case TYPE_int: {lng l;
 			vr->vtype = type;
 			if( tonil){ 
 				vr->val.ival = int_nil;
@@ -1253,7 +1254,7 @@ retryConstant:
 			else vr->val.dval= d;
 			vr->vtype= type;
 			break;}
-	case TYPE_lng: {long l= strtol(val,NULL,0);
+	case TYPE_lng: {lng l= strtoll(val,NULL,0);
 			if( tonil) vr->val.lval = lng_nil; 
 			else vr->val.lval= l;
 			vr->vtype= type;
