@@ -1,2 +1,11 @@
-ls();
+# simplified version of ls(): we don't want all columns
+var nme := view_bbp_name();
+var prs := nme.semijoin(view_bbp_kind().select("pers"));
+var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
+prs.access(BAT_WRITE); prs.col_name("name"); prs.replace(rev);
+
+table(1, prs.reverse().sort().reverse().col_name("name"),
+      view_bbp_htype().semijoin(prs.join(nme.reverse())).col_name("htype"),
+      view_bbp_ttype().semijoin(prs.join(nme.reverse())).col_name("ttype"),
+      view_bbp_count().semijoin(prs.mirror()).col_name("count"));
 quit();
