@@ -544,7 +544,7 @@ BAT administration has indeed changed.";
 
 command isPersistent( b:bat[:any,:any]) :bit 
 address BKCisPersistent;
-command persists( b:bat[:any,:any],f:boolean) :bit 
+command persists( b:bat[:any,:any],f:bit) :bit 
 address BKCpersists
 comment "Backward compatibility";
 command setPersistent( b:bat[:any,:any]) :bit 

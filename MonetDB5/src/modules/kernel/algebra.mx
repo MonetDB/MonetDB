@@ -414,7 +414,7 @@ The join collection provided by the GDK kernel.
 Note that joins over void columns are handled as if they are oids.
 @mal
 command cross(left:bat[:any$1,:any$2],
-	right:bat[:$any3,:$any4])
+	right:bat[:any$3,:any$4])
 	:bat[:any$1,:any$4]
 address ALGcross
 comment "Returns the cross product";

@@ -37,12 +37,12 @@ command getOwners():bat[:int,:str]
 address FCTgetOwners
 comment "Retrieve the factory owners table";
 
-command getTimeStampIn():time
+command getTimeStampIn():date
 address FCTgetTimeStampIn
 comment "Retrieve the time stamp it was
         received by the factory";
 
-command getTimeStampOut():time
+command getTimeStampOut():date
 address FCTgetTimeStampOut
 comment "Retrieve the time stamp the answer
         was returned to the client";

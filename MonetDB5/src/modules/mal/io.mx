@@ -49,7 +49,7 @@ comment "BATs are printed with '#' for legend
 	print() performs an implicit natural 
 	join, producing a multiattribute table.";
 
-pattern ftable( filep:fstream, 
+pattern ftable( filep:stream, 
 		b1:bat[:any$1,:any],
 		b:bat[:any$1,:any]... ):int
 address IOftable 
@@ -72,7 +72,7 @@ pattern table(order:int, b1:bat[:any$1,:any],
 		b2:bat[:any$1,:any]...):int 
 address IOtotable
 comment "Print an n-ary table.";
-pattern ftable(fp:fstream, order:int,
+pattern ftable(fp:stream, order:int,
 	b1:bat[:any$1,:any], 
 	b:bat[:any$1,:any]...)
 address IOfotable 
