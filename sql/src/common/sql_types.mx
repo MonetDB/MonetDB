@@ -827,7 +827,7 @@ void sqltypeinit()
 	sql_type *ts[100];
 	sql_type **misc, **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *INT, *LNG, *OID, *BIT, *DBL, *T;
+	sql_type *INT, *LNG, *OID, *BIT, *DBL;
 	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP; 
 
 	lock = MT_create_lock();
@@ -840,9 +840,9 @@ void sqltypeinit()
 	/**t++ = sql_create_type("UBYTE", 2, 0, 2, 1,		"uchr");*/
 
 	strings = t;
-	T = *t++ = sql_create_type("CHAR",	 	0, 0, 0, 1, 	"str");
-	T = *t++ = sql_create_type("VARCHAR", 	0, 0, 0, 0, 	"str");
-	T = *t++ = sql_create_type("CLOB",		0, 0, 0, 0, 	"str");
+	*t++ = sql_create_type("CHAR",	 	0, 0, 0, 1, 	"str");
+	*t++ = sql_create_type("VARCHAR", 	0, 0, 0, 0, 	"str");
+	*t++ = sql_create_type("CLOB",		0, 0, 0, 0, 	"str");
 
 	/* Following types are translated by the parser
 	   INT(n) n <= 2 <- TINYINT
@@ -874,7 +874,7 @@ void sqltypeinit()
 	/* this requires a type definition */
 
 	floats = t;
-	T   = *t++ = sql_create_type("REAL",   24, SCALE_NOFIX, 2, 1,   "flt");
+	      *t++ = sql_create_type("REAL",   24, SCALE_NOFIX, 2, 1,   "flt");
 	DBL = *t++ = sql_create_type("DOUBLE", 53, SCALE_NOFIX, 2, 1,   "dbl");
 
 
