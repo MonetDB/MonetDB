@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-# ! this file should be kept identical in                         !
-# ! monet, sql, xml, acoi, gis, template, playpen, misq, times100 !
+# ! this file should be kept identical in                                  !
+# ! monet, sql, xml, acoi, gis, template, playpen, misq, times100, pruning !
 
 # helps bootstrapping Monet, when checked out from CVS
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
+
 
 if [ -x src/utils/autogen/autogen.py ] ; then
 	AUTOGEN=src/utils/autogen/autogen.py 
@@ -43,62 +44,50 @@ if [ "`uname`" = Darwin  -a  "`type -p glibtool 2>/dev/null`"  -a  "`type -p gli
 	LIBTOOLIZE=libtoolize
 fi
 
-find . -name .incs.\* \-exec rm {} \;
-rm -rf autom4te-*.cache
 
-NEW_AM_VERSION="1.7"
+find . -name .incs.\* \-exec rm {} \;
+rm -rf autom4*.cache
+
+
 REQ_AM_VERSION="1.4"
+NEW_AM_VERSION="1.7"
 AM_VERSION=`automake --version 2>/dev/null | sed -n -e '/^automake/{s/.* //g;s/-.*//g;p;q;}'`
 _AM_VERSION=`echo $AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_AM_VERSION=`echo $REQ_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _NEW_AM_VERSION=`echo $NEW_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
-if [ $_AM_VERSION -gt $_REQ_AM_VERSION ]; then
-	echo "automake $AM_VERSION is newer than $REQ_AM_VERSION"
+if [ $_AM_VERSION -ge $_REQ_AM_VERSION ]; then
+	echo "automake $AM_VERSION is $REQ_AM_VERSION or newer. Good."
 elif [ $_AM_VERSION -lt $_REQ_AM_VERSION ]; then
-	echo "automake $AM_VERSION is older than $REQ_AM_VERSION"
+	echo "automake $AM_VERSION is older than $REQ_AM_VERSION."
+	echo "We require (at least) automake $REQ_AM_VERSION."
+	echo "Please get a newer version (cf. http://www.gnu.org/software/automake/)."
+	exit 1
 fi
 
-$AUTOGEN `pwd` $_AM_VERSION
 
-NEW_AC_VERSION="2.53"
+REQ_AC_VERSION="2.53"
 AC_VERSION=`autoconf --version 2>/dev/null | sed -n -e '/^[Aa]utoconf/{s/.* //g;s/-.*//g;p;q;}'`
 _AC_VERSION=`echo $AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
-_NEW_AC_VERSION=`echo $NEW_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+_REQ_AC_VERSION=`echo $REQ_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
-if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
-	# Old autoconf, we need to work around a few incompatibilities.
-	# This removes AH_TOP, AH_BOTTOM and AC_SYS_LARGEFILE and adds
-	# definitions for AC_LIBOBJ and AC_CHECK_TYPES (the latter in a
-	# very restricted version: only one type)
-	sed '/AH_TOP/s/.*/AC_SUBST(LIBOBJS)\
-AC_DEFUN(AC_LIBOBJ,[LIBOBJS="$LIBOBJS $1.$ac_objext"])\
-AC_DEFUN(AC_CHECK_TYPES,[AC_TRY_COMPILE([$ac_includes_default],[$1 x=0;],[x=`echo $1|tr "abcdefghijklmnopqrstuvwxyz *" "ABCDEFGHIJKLMNOPQRSTUVWXYZ_P"`;AC_DEFINE_UNQUOTED(HAVE_$x)])])/;s/^AH_BOTTOM/dnl &/;s/^AC_SYS_LARGEFILE/dnl &/g' configure.ag > configure.in
-	cat > acconfig.h <<EOF
-#include "sysdefs.h"
-@TOP@
-@BOTTOM@
-#include "stddef.h"
-EOF
-	# the replacement for AC_CHECK_TYPES above does not add
-	# entries to config.h.in, so add them to acconfig.h
-	sed -n 's/AC_CHECK_TYPES(\([^)]*\))/\1/p' configure.ag | tr 'abcdefghijklmnopqrstuvwxyz *' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_P' | while read line; do echo "#undef HAVE_$line"; done >> acconfig.h
-else
-	rm -f acconfig.h
-	cp configure.ag configure.in
+if [ $_AC_VERSION -ge $_REQ_AC_VERSION ]; then
+	echo "autoconf $AC_VERSION is $REQ_AC_VERSION or newer. Good."
+elif [ $_AC_VERSION -lt $_REQ_AC_VERSION ]; then
+	echo "autoconf $AC_VERSION is older than $REQ_AC_VERSION."
+	echo "We require (at least) autoconf $REQ_AC_VERSION."
+	echo "Please get a newer version (cf. http://www.gnu.org/software/autoconf/)."
+	exit 1
 fi
 
-echo "AC_OUTPUT(" >> configure.in
-cat acout.in  >> configure.in
-echo ")" >> configure.in
 
 REQ_LT_VERSION="1.4"
 LT_VERSION=`$LIBTOOL --version 2>/dev/null | sed -n '/^ltmain\.sh/{s/([^)]*)//g;s/ltmain.sh//g;s/ //g;p;q;}'`
 _LT_VERSION=`echo $LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 _REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 
-if [ $_LT_VERSION -gt $_REQ_LT_VERSION ]; then
-	echo "libtool $LT_VERSION is newer than $REQ_LT_VERSION"
+if [ $_LT_VERSION -ge $_REQ_LT_VERSION ]; then
+	echo "libtool $LT_VERSION is $REQ_LT_VERSION or newer. Good."
 elif [ $_LT_VERSION -lt $_REQ_LT_VERSION ]; then
 	echo "libtool $LT_VERSION is older than $REQ_LT_VERSION"
 	echo "using conf/*.1.4"
@@ -107,26 +96,37 @@ elif [ $_LT_VERSION -lt $_REQ_LT_VERSION ]; then
 	done
 fi
 
-test -f conf/ltmain.sh || $LIBTOOLIZE -c -f; 
 
-#if [ ! "`grep \"CC=\$arg\" conf/ltmain.sh 2>/dev/null`" ]; then
-#  perl -i.bak -p -e  's/link \| relink\)/link \| relink\)\n    CC=\$arg/g' conf/ltmain.sh
-#fi
+$AUTOGEN `pwd` $_AM_VERSION
+
+rm -f acconfig.h
+cp configure.ag configure.in
+
+echo "AC_OUTPUT(" >> configure.in
+cat acout.in  >> configure.in
+echo ")" >> configure.in
+
+
+test -f conf/ltmain.sh || $LIBTOOLIZE -c -f; 
 
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
-test -f conf/ltconfig && perl -i.bak -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+test -f conf/ltconfig && perl -i -p -e  's/&& deplibs_check_method=unknown/&& deplibs_check_method=pass_all/g' conf/ltconfig
+
 
 aclocal -I . -I conf $CONFDIR
 
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
-perl -i.bak -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
+perl -i -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
+
 
 # older versions of automake/aclocal don't know about the
 # Intel compiler on Linux (icc/ecc), yet...
 if [ $_AM_VERSION -lt $_NEW_AM_VERSION ]; then
-echo "automake/aclocal $AM_VERSION is older than $NEW_AM_VERSION"
+
+echo "automake/aclocal $AM_VERSION is older than $NEW_AM_VERSION."
+echo "Patching aclocal.m4 for Intel compiler on Linux (icc/ecc)."
 
 # patch aclocal.m4: 
 # set some correct switches for Intel compiler on Linux (icc/ecc)
@@ -157,7 +157,7 @@ EOF
 
 # patch aclocal.m4: 
 # fix checks "if icc/ecc supports -c -o file.{o,lo}"
-# and "wehther -lc should be explicitly linked in"
+# and "whether -lc should be explicitly linked in"
 cat << "EOF" | patch aclocal.m4
 --- aclocal.m4.OK	Thu Jul  4 17:51:11 2002
 +++ aclocal.m4	Thu Jul  4 17:58:21 2002
@@ -195,121 +195,13 @@ EOF
 
 fi # [ $_AM_VERSION -lt $_NEW_AM_VERSION ]
 
+
 autoheader
 automake -a -c
-
-# dirty hack, needed because automake 1.4 generates the wrong dependency
-#test -f src/mel/Makefile.in && echo "mel_tab.h: mel_tab.cc" >> src/mel/Makefile.in
-#test -f src/mel/Makefile.in && perl -i.bak -p -e 's/tab\.hh/tab.h/g' src/mel/Makefile.in
 
 #autoupdate
 autoconf
 
-# patch configure to cope with Intel's C/C++ compiler for Linux ("icc"/"ecc")
-if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
-echo "autoconf $AC_VERSION is older than $NEW_AC_VERSION"
-grep 'ac_cv_prog_cc_g=yes' configure >/dev/null && cat << "EOF" | patch configure
---- configure~	Wed May 23 20:46:51 2001
-+++ configure	Wed May 23 20:49:57 2001
-@@ -1075,7 +1075,7 @@
-   echo $ac_n "(cached) $ac_c" 1>&6
- else
-   echo 'void f(){}' > conftest.c
--if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
-+if test -z "`${CC-cc} -g -c conftest.c 2>&1 | grep -v '^conftest.c$'`"; then
-   ac_cv_prog_cc_g=yes
- else
-   ac_cv_prog_cc_g=no
-EOF
-grep 'ac_cv_prog_cxx_g=yes' configure >/dev/null && cat << "EOF" | patch configure
---- configure~	Wed May 23 20:46:51 2001
-+++ configure	Wed May 23 20:49:57 2001
-@@ -1218,7 +1218,7 @@
-   echo $ac_n "(cached) $ac_c" 1>&6
- else
-   echo 'void f(){}' > conftest.cc
--if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
-+if test -z "`${CXX-g++} -g -c conftest.cc 2>&1 | grep -v '^conftest.cc$'`"; then
-   ac_cv_prog_cxx_g=yes
- else
-   ac_cv_prog_cxx_g=no
-EOF
-fi # $_AC_VERSION -lt $_NEW_AC_VERSION
-
-# patch configure to remove config.cache when bootstrap was executed
-if [ $_AC_VERSION -lt $_NEW_AC_VERSION ]; then
-echo "autoconf $AC_VERSION is older than $NEW_AC_VERSION"
-grep 'when bootstrap was executed' configure >/dev/null || cat << "EOF" | patch configure
---- configure	Fri Oct  4 11:38:50 2002
-+++ configure.new	Fri Oct  4 11:38:40 2002
-@@ -7,6 +7,12 @@
- # This configure script is free software; the Free Software Foundation
- # gives unlimited permission to copy, distribute and modify it.
- 
-+# when bootstrap was executed, we must remove config.cache
-+if /usr/bin/test $0 -nt config.cache; then
-+  echo removing config.cache
-+  rm config.cache
-+fi
-+
- # Defaults:
- ac_help=
- ac_default_prefix=/usr/local
-EOF
-else # $_AC_VERSION -ge $_NEW_AC_VERSION
-echo "autoconf $AC_VERSION is $NEW_AC_VERSION or newer"
-# autoconf 2.53 (and newer?) doens't use a config.cache anymore
-fi # $_AC_VERSION -ge $_NEW_AC_VERSION
-
-# patch configure to run also gcc/gxx with only -g (i.e., w/o -O2) by default
-grep 'CFLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
---- configure	Fri Oct  4 11:38:50 2002
-+++ configure.new	Fri Oct  4 11:38:40 2002
-@@ -1293,17 +1299,9 @@
- if test "$ac_test_CFLAGS" = set; then
-   CFLAGS="$ac_save_CFLAGS"
- elif test $ac_cv_prog_cc_g = yes; then
--  if test "$GCC" = yes; then
--    CFLAGS="-g -O2"
--  else
--    CFLAGS="-g"
--  fi
-+  CFLAGS="-g"
- else
--  if test "$GCC" = yes; then
--    CFLAGS="-O2"
--  else
--    CFLAGS=
--  fi
-+  CFLAGS=
- fi
- 
- for ac_prog in $CCC c++ g++ gcc CC cxx cc++ cl
-EOF
-grep 'CXXFLAGS="-g -O2"' configure >/dev/null && cat << "EOF" | patch configure
---- configure	Fri Oct  4 11:38:50 2002
-+++ configure.new	Fri Oct  4 11:38:40 2002
-@@ -1436,17 +1434,9 @@
- if test "$ac_test_CXXFLAGS" = set; then
-   CXXFLAGS="$ac_save_CXXFLAGS"
- elif test $ac_cv_prog_cxx_g = yes; then
--  if test "$GXX" = yes; then
--    CXXFLAGS="-g -O2"
--  else
--    CXXFLAGS="-g"
--  fi
-+  CXXFLAGS="-g"
- else
--  if test "$GXX" = yes; then
--    CXXFLAGS="-O2"
--  else
--    CXXFLAGS=
--  fi
-+  CXXFLAGS=
- fi
- 
- for ac_declaration in \
-EOF
 
 # patch conf/ltmain.sh to get linking of dependent modules working on MacOS X/Darwin
 test -f conf/ltmain.sh && { grep 'fix_hardcode_direct' conf/ltmain.sh >/dev/null || cat << "EOF" | patch conf/ltmain.sh ; }
@@ -329,5 +221,6 @@ test -f conf/ltmain.sh && { grep 'fix_hardcode_direct' conf/ltmain.sh >/dev/null
  	      elif test "$hardcode_minus_L" = no; then
  		case $host in
 EOF
+
 
 exit 0
