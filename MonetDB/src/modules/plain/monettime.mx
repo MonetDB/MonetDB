@@ -472,6 +472,8 @@ One day we should introduce the concept of locale, and hook here.
 .COMMAND oldduration(str format) : int = oldduration;
         "parse the old duration format and return an (estimated) number of days."
 
+.PRELUDE = monettime_prelude;
+
 .END monettime;
 
 @mil
@@ -1592,7 +1594,7 @@ int tzone_tostr(str* buf, int* len, tzone *z) {
 
 @+ operator implementations
 @c
-static void date_prelude(void) {
+void monettime_prelude(void) {
 	MONTHS[0] = str_nil;
 	DAYS[0] = str_nil;
 	NODAYS[0] = int_nil; 
