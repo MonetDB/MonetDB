@@ -109,7 +109,7 @@ static struct suffixes {
 	{"mil","","# ","",},
 	{"m","","# ","",},
 	{"mx","","@' ",""},
-	{0,},			/* sentinel */
+	{0,0,0,0},		/* sentinel */
 };
 #define DISC_SUFFIXES  (sizeof(suffixes)/sizeof(siffixes[0]))
 
