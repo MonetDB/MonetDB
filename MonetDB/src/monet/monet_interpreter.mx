@@ -558,18 +558,6 @@ No new ones are created. Nothing really happens in the GDK world of BATs.
 		if (lt->yysons[0]) {
        		    i = interpret(stk, arg(lt, 0), res);
 		    if (i < 0) return i;
-/*
-		    if (res->vtype == TYPE_bat) {
-			BAT *b = BBP_cache(res->val.bval);
-			if (b) {
-			    BBPfix(b->batCacheid);
-			} else {
-			    GDKwarning("interpret: return bat(%d) GONE\n", res->val.bval); 
-			}
-		    } else {
-			ATOMfix(res->vtype, VALptr(res));
-		    }
-*/
 			ATOMfix(res->vtype, VALptr(res));
 		    VALcopy(res,res);
 		}

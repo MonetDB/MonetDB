@@ -247,7 +247,7 @@ use a copy.
 		bn->hidx_heap = b->hidx_heap; 
 		bn->tidx_heap = b->tidx_heap; 
 	}
-        BBPcacheit(bn, TRUE);
+        BBPcacheit(bn);
 	return bn;
 }
 

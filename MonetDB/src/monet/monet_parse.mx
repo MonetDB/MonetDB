@@ -126,6 +126,7 @@ void ll_flushbuffer() {
 %p 3400
 %a 2300
 %e 2000
+%pointer
 %%
 "#"                   { return ll_skipcomment();                              }
 ("nil"|"NIL")         { Vector(TOK_CONSTANT, TYPE_void, ival, void_nil, 0);   }

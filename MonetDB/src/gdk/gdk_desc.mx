@@ -274,6 +274,8 @@ have an extension type in their other column.
 #endif
 		ret = GDKsave(nme, "desc", (str)dst, (int) sizeof(*dst),STORE_MEM);
         }
+	/* a saved bat could still be used so reset the delta status */
+	DELTAload(b);
 	return ret;
 }
 

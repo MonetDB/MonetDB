@@ -266,10 +266,8 @@ Client forkClient(Cntxt stk, int thread){
 		 */
 		father = monet_clients + father->father;
 	}
-	if (father && thread){
-		nstk = CNTXTcopy( stk );
-	}
-	if (father && (son=initClient(father->user, father->prompt, thread))) {
+
+	if (father && (son=initClient(father->user, father->prompt, FALSE))) {
 	        /* reuse all crucial table information from father */
 		son->fdin = father->fdin;
 		son->fdout = father->fdout;
@@ -282,6 +280,7 @@ Client forkClient(Cntxt stk, int thread){
         	son->father = father->stk;
 		/* also reuse father's stack */
 		if (thread){
+			nstk = CNTXTcopy( stk );
 			monet_cntxt[son->stk].outer = nstk;
 			TBL_initclient(son);
 		} else {
@@ -291,6 +290,9 @@ Client forkClient(Cntxt stk, int thread){
 		MT_set_lock(monet_contextLock, "forkClient");
 		father->children++;
 		MT_unset_lock(monet_contextLock, "forkClient");
+
+		if (thread)
+			if ((int)monetFork() < 0) return 0;
 	}
         return son;
 }

@@ -1623,6 +1623,7 @@ typedef struct {
         str     path;		/* dir + basename for storage */ 
         int     refs;		/* number of batrefs */
 	int	plevel;		/* number of times the bat is made persistent */
+	int	lrefs;		/* logical reference count */
         volatile int status;	/* always available bat info */
 } BBPrec;
 
@@ -1641,6 +1642,7 @@ gdk_export BBPrec*       	BBP;
 #define BBP_desc(i)	BBP[ABS(i)].cache
 #define BBP_refs(i)     BBP[ABS(i)].refs
 #define BBP_plevel(i)   BBP[ABS(i)].plevel
+#define BBP_lrefs(i)    BBP[ABS(i)].lrefs
 #define BBP_status(i)   BBP[ABS(i)].status
 
 /* macros that nicely check parameters */

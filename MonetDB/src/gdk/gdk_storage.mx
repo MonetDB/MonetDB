@@ -691,7 +691,7 @@ BAT *BATload_intern(bat i) {
 	}
 
 	/* load succeeded; register it in BBP */
-	BBPcacheit(b, FALSE);
+	BBPcacheit(b);
 
 	if (b->batConvert) {
 		BATconvert(b,CONV_HTON);

@@ -725,7 +725,7 @@ fail:		    GDKerror("conn_waiter: illegal %s[%s,%s].\n",nm,line,ht,tt);
 		b->hsorted = hordered;
 		b->tsorted = tordered;
 		DELTAinit(b);
-		BBPcacheit(b, TRUE);
+		BBPcacheit(b);
 		dst = (ptr) b->batCacheid;
 @-
 Read the data for its heaps. A BAT at least consists of a BUN heap.

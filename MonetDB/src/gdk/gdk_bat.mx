@@ -168,7 +168,7 @@ the store.
 The BAT is now given a 'unique' name and stored in the cache.
 @c
 	DELTAinit(bn);
-	BBPcacheit(bn, TRUE);
+	BBPcacheit(bn);
 	bn->batDirty = TRUE;
 
 	return bn; 
@@ -434,25 +434,6 @@ BAT *BATclear(BAT *b) {
 
 int BATfree(BAT *b) {
 	/* deallocate all memory for a bat */
-	int bs=BUNsize(b);
-	BUN p, q;
-
-	/* we must dispose of all inserted atoms */
-	if (BBP_plevel(b->batCacheid) <= 0 &&
- 	    (BATatoms[b->htype].atomDel != NULL || 
-	    BATatoms[b->ttype].atomDel != NULL))
-	{
-		/* do heap-delete of all inserted atoms */
-		void (*hatmdel)(Heap*,int*) = BATatoms[b->htype].atomDel;
-		void (*tatmdel)(Heap*,int*) = BATatoms[b->ttype].atomDel;
-
-		if (hatmdel || tatmdel) 
-		for(p=b->batInserted, q=BUNlast(b); p < q; p += bs) {
-			if (hatmdel) (*hatmdel)(&b->hheap, (int*) BUNhloc(b,p));
-			if (tatmdel) (*tatmdel)(&b->theap, (int*) BUNtloc(b,p));
-		}
-	}
-
 	BATreset(b);
 	ACCunloadall(b);
         DELTAsave(b); /* convert to disk format */

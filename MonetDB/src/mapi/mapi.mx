@@ -260,7 +260,7 @@ Get the new information for the server socket and start listening.
 				strncpy(nmp+1,mp,mpl);
 				nmp[mpl+1] = '\1';
 				nmp[mpl+2] = '\0';
-				c = initClient(GDKstrdup(name), nmp, TRUE);
+				c = initClient(GDKstrdup(name), nmp, FALSE);
 				if (c == 0) {
 					fprintf(fdout, "CLIENTlisten:Failed to init client for user %s\n", name );
 					GDKfree(name);
@@ -283,6 +283,7 @@ changed setbuf to setbuffer to avoid unintentional buffer overflow.
 				c->mode = BLOCKMODE;
 				monet_cntxt[c->stk].outer = CNTXTcopy(stk);
 				TBL_initclient(c);
+				(void)monetFork();
 				scheduleClient(c);
 				PARDEBUG THRprintf(GDKerr, "CLIENTlisten:client accepted %d %d\n", 
 					fileno(c->fdin), fileno(c->fdout));

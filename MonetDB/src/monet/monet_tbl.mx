@@ -1346,7 +1346,7 @@ static void purge_dependent_bats(int ntpes, int *tpes, int naccs, int *accs) {
                     if ((b->tacctype == accs[i]) || (b->hacctype == accs[i]))
                         goto doswap;
                 continue;
-doswap:         if (BBP_plevel(b->batCacheid)) {
+doswap:         if (BBP_lrefs(b->batCacheid)) {
                         BBPfree(b);
                 } else {
 			bats[nbats++] = ABS(b->batCacheid);
@@ -1358,6 +1358,21 @@ doswap:         if (BBP_plevel(b->batCacheid)) {
 	GDKfree(bats);
 }
 
+void TBL_drop(Client client, str module, int level) {
+	Client father = client;
+	char *p;
+	oid mid = TBL_module_lookup(module);
+
+	/* Go ahead with module drop: first execute the MIL exit script
+         */
+	BUNfndOID(p,TBL_mod_drop, &mid);
+	if (p != NULL) {
+		ValRecord v;
+	   	TBL_M_unlock(father);
+		interpret_str(client->maxstk, BUNtvar(TBL_mod_drop,p), &v);
+	   	TBL_M_lock(father);
+	}
+}
 
 int TBL_unloadmod(Client client, str module, int level) {
 	Client father = client;
@@ -1400,6 +1415,10 @@ Check if it is in use already.
 			goto xit;
 		}
 	}
+
+  	if (TBL_M_countref(mid) == 1)
+		TBL_drop(client, module, level);
+
 	if ((refcnt = TBL_M_decref(father, mid)) > 0 )
 		goto xit;
 
@@ -1494,22 +1513,6 @@ xit:	if (level==0) {
 	GDKfree(accs);
 	GDKfree(tpes);
 	return ret;
-}
-
-void TBL_drop(Client client, str module, int level) {
-	Client father = client;
-	char *p;
-	oid mid = TBL_module_lookup(module);
-
-	/* Go ahead with module drop: first execute the MIL exit script
-         */
-	BUNfndOID(p,TBL_mod_drop, &mid);
-	if (p != NULL) {
-		ValRecord v;
-	   	TBL_M_unlock(father);
-		interpret_str(client->maxstk, BUNtvar(TBL_mod_drop,p), &v);
-	   	TBL_M_lock(father);
-	}
 }
 
 @+ Function Resolution

@@ -84,6 +84,8 @@ that you might well find very useful.
 	"Pseudo bat to map a BAT id into its reference count"
 .COMMAND view_bbp_persistlevel(): BAT[int,int] = view_bbp_persistlevel; 
 	"Pseudo bat to map a BAT id into its persistency level"
+.COMMAND view_bbp_lrefcnt(): BAT[int,int] = view_bbp_lrefcnt; 
+	"Pseudo bat to map a BAT id into its logical reference count"
 .COMMAND view_bbp_location(): BAT[int,str] = view_bbp_location; 
 	"Pseudo bat to map a BAT id into its disk location"
 .COMMAND view_bbp_heat(): BAT[int,int] = view_bbp_heat; 
@@ -264,6 +266,7 @@ that you might well find very useful.
 		view_bbp_status.col_name("status"),
 		view_bbp_kind.col_name("kind"), 
 		view_bbp_refcnt.col_name("refcnt"),
+		view_bbp_lrefcnt.col_name("lrefcnt"),
 		view_bbp_persistlevel.col_name("plevel"));
     }
 
@@ -643,6 +646,27 @@ view_bbp_persistlevel(
 		BUNins(b, &i, &plevel);
 	}}
 	BBPunlock("view_bbp_persistlevel");
+	@:Pseudo(bbp,plevel)@
+        return GDK_SUCCEED;
+}
+
+int
+view_bbp_lrefcnt(
+   BAT**        retval  /* put pointer to BAT[int,str] record here. */
+){       
+	BAT	 *b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_int,BBPsize);
+        if (b == 0) return GDK_FAIL;
+
+	BBPlock("view_bbp_lrefcnt");
+        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
+	if (BBP_logical(i)) {
+		int lrefcnt = BBP_lrefs(i);
+		BUNins(b, &i, &lrefcnt);
+	}}
+	BBPunlock("view_bbp_lrefcnt");
 	@:Pseudo(bbp,plevel)@
         return GDK_SUCCEED;
 }
