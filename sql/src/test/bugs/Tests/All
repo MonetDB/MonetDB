@@ -30,7 +30,7 @@ view_join-bug-sf-990096
 bug-sf-1000576
 bug-sf-1006469
 bug-sf-1019506
-bug-sf-1019529
+select_constant_from_where_1=1-bug-sf-1019529
 case_parenthesis-bug-sf-1023056
 view_case-bug-sf-1023058
 trimtest-bug-sf-1023588
