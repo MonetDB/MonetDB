@@ -606,7 +606,7 @@ def isexecutable(TST) :
 def GetBitsAndModsAndStatic(env) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTPREF)
 	pIn.write('''\
-printf("\\nModules: ");x:="";sunion([~monet_mod_nme],[~view_modules]).reverse.kunique@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
+MODs:=sunion([~monet_mod_nme],[~view_modules]).reverse.kunique;printf("\\nModules: ");x:="";MODs@batloop{printf("%s'%s'",x,$h);x:=",";}printf("\\n");quit;
 ''')
 	##module("NoModule");
 	pIn.close()
@@ -667,7 +667,7 @@ def CheckMods(env, TST, SERVER) :
 def CheckBATs(env, TST, TSTDB) :
 	pOut,pIn,pErr = popen2.popen3(env['exe']['Mtimeout'][1]+env['exe']['Mserver'][1]+" -db "+TSTDB)
 	pIn.write('''\
-printf("\\nBATs: ");x:="";view_bbp_name@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
+BATs:=view_bbp_name;printf("\\nBATs: ");x:="";BATs@batloop{printf("%s'%s'",x,$t);x:=",";}printf("\\n");quit;
 ''')
 	pIn.close()
 	qOut = pOut.readlines()
@@ -1234,7 +1234,7 @@ def Check(command, input) :
 	if not rOutErr:
 		for l in qOut+qErr:
 			if l[0] == "!":
-				if len(l) < 24  or  l[:24] != "!WARNING: BATpropcheck: ":
+				if ( len(l) < 26  or  ( l[:24] != "!WARNING: BATpropcheck: " and l[:26] != "!WARNING: monet_checkbat: " ) ) :
 					rOutErr = 1
 	if rOutErr:
 		ErrMsg("'"+command+"` failed:")
