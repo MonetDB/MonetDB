@@ -224,22 +224,22 @@ void createDB(char *home) {
 }
 #ifdef WIN32
 #define RM "del"
-#define QUIT "echo quit;"
 #else
 #define RM "rm -f"
-#define QUIT "echo 'quit;'"
 #endif
 void initDB(char *db) {	
         char buffer[2048];
         int ret;
-        printf("Mcreatedb: calling 'Mserver -db %s -monetrc %s' for the first time..\n",db,GDKmonetrcStr);
-        sprintf(buffer,"%s | Mserver -db %s -monetrc %s 2>.Merr 1>.Mout\n", 
-			QUIT, db, GDKmonetrcStr);
+        printf("Mcreatedb: calling 'Mserver -initonly -db %s -monetrc %s' for the first time..\n",db,GDKmonetrcStr);
+        sprintf(buffer,"Mserver -initonly -db %s -monetrc %s 2>.Merr 1>.Mout\n", 
+			db, GDKmonetrcStr);
         ret = system(buffer);
 #ifndef WIN32
-        if (ret)
+        if (ret) {
             printf("Mcreatedb: database '%s' crashed!\n",db);
-        else
+            sprintf(buffer, "cat .Mout .Merr");
+	    (void)system(buffer);
+        } else
 #endif
             printf("Mcreatedb: database '%s' has been initialized succesfully!\n",db);
 	sprintf(buffer, "%s .Mout .Merr", RM );

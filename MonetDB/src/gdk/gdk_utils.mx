@@ -44,6 +44,11 @@ char	GDKdbnameStr[PATHLENGTH] = { 0 };
 char	GDKdirStr[PATHLENGTH] = { 0 };
 char	GDKdistrStr[PATHLENGTH] = MONET_PREFIX;
 char	GDKmonetrcStr[PATHLENGTH] = { 0 };
+@-
+Was Mserver called with -initonly, 
+i.e., by Mcreatedb just to initialize the database?
+@c
+int	GDKinitonly = 0;
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -137,10 +142,20 @@ void GDKenvironment(str db, str monetrc)
 		}
 	}
 
-	if( db != NULL && strchr(db,DIR_SEP) ) {
-		strcpy(GDKdbnameStr,db);
-		strcpy(GDKdirStr,db);
-		return;
+@-
+If Mserver is called with -initonly and an absolute path for -db,
+i.e., by Mcreatedb just to initialize the database,
+we don't need to parse the monetrc file.
+@c
+	if ( GDKinitonly ) {
+		if( db != NULL && MT_path_absolute(db) ) {
+			strcpy(GDKdbnameStr,db);
+			strcpy(GDKdirStr,db);
+			return;
+		} else {
+			GDKerror("GDKenvironment: -initonly requires a -db with an absolute path.\n");
+			exit(-1);
+		}
 	}
 
 	if( monetrc) {
@@ -206,9 +221,11 @@ void GDKenvironment(str db, str monetrc)
 	}
 	if( db != NULL) strcpy(GDKdbnameStr,db);
 
-	if( GDKdbfarmStr[0]){
+	if( GDKdbfarmStr[0] && !MT_path_absolute(GDKdbnameStr) ){
 		sprintf(GDKdirStr,"%s%c%s",GDKdbfarmStr,DIR_SEP,GDKdbnameStr);
-	} else	strcpy(GDKdirStr,GDKdbnameStr);
+	} else {
+		strcpy(GDKdirStr,GDKdbnameStr);
+	}
 	/* handle monetrc */
 
 	if( MT_path_absolute(GDKmonetrcStr)) return; /* absolute path */
@@ -901,6 +918,11 @@ int GDKinit(int argc, char** argv) {
 			break; 
 		case 'r': if (strcmp("-recover", argv[i]) == 0){
 				GDKrecovery = 1; 
+				clr(i);
+			  }
+			break;
+		case 'i': if (strcmp("-initonly", argv[i]) == 0){
+				GDKinitonly = 1; 
 				clr(i);
 			  }
 			break;

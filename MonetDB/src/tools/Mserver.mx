@@ -153,6 +153,16 @@ A grain size of 128 bytes is used to keep overhead low.
 	@:mallopt@
 #endif
 	c = (Client) monet_init(argc,argv);
+@-
+If Mserver is called (with -initonly) by Mcreatedb, 
+i.e., just to initialize the database,
+we can quit immediately.
+@C
+	if ( GDKinitonly ) {
+		MT_global_exit(0);
+		return 0;
+	}
+
 	static_module_init(c,buf);
 	monet_hello();
 @-

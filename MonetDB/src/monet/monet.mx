@@ -419,7 +419,15 @@ void MILenvironment()
 	char buf[2*PATHLENGTH];
 	FILE *fd= NULL;
 
-	if( GDKmonetrcStr[0]==0) return;
+@-
+If Mserver is called (with -initonly) by Mcreatedb, 
+i.e., just to initialize the database,
+we don't need to parse the monetrc file.
+Actually, we don't even want to use any other that the default
+monet\_general.mil and we don't want to risc getting a "monet_deamon = yes".
+@c
+	if( GDKinitonly ) return;
+
 	fd= fopen(GDKmonetrcStr ,"r");
 	while(fd!=NULL && fgets(buf,2*PATHLENGTH,fd) != NULL){
 		str s,t, val;

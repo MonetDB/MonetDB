@@ -380,6 +380,11 @@ gdk_export char 	GDKdbfarmStr[PATHLENGTH];
 gdk_export char 	GDKdirStr[PATHLENGTH];
 gdk_export char 	GDKdistrStr[PATHLENGTH];
 gdk_export char 	GDKmonetrcStr[PATHLENGTH];
+@-
+Was Mserver called with -initonly, 
+i.e., by Mcreatedb just to initialize the database?
+@h
+gdk_export int		GDKinitonly;
 
 @
 @}
