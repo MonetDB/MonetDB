@@ -5,7 +5,7 @@ AC_INIT(src/utils/Mx/Mx.h)
 AC_CONFIG_AUX_DIR(conf)
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("Monet", 4.3.4)
+AM_INIT_AUTOMAKE("MonetDB", 4.3.4)
 AM_CONFIG_HEADER(config.h:conf/config.h.in)
 AC_CANONICAL_HOST
 
@@ -84,21 +84,6 @@ dnl AC_PROG_CC_STDC
 AC_PROG_LN_S
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
-AC_CHECK_PROG(LATEX,latex,latex)
-AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
-AC_CHECK_PROG(DVIPS,dvips,dvips)
-AC_CHECK_PROG(FIG2DEV,fig2dev,fig2dev)
-FIG2DEV_EPS=eps
-AC_MSG_CHECKING([$FIG2DEV postscript option])
-[ if [ "$FIG2DEV" ]; then
-        echo "" > $FIG2DEV -L$FIG2DEV_EPS 2>/dev/null
-        if [ $? -ne 0 ]; then
-                FIG2DEV_EPS=ps
-        fi
-fi ]
-AC_MSG_RESULT($FIG2DEV_EPS)
-AC_SUBST(FIG2DEV_EPS)
-AM_CONDITIONAL(DOCTOOLS, test -n "$LATEX" -a -n "$FIG2DEV" -a -n "$DVIPS") 
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH:/bin:/usr/bin:/usr/local/bin)
 AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 
