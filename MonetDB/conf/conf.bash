@@ -263,7 +263,7 @@ fi
 if [ "${os}" = "Darwin" ] ; then
 	# "our" autoconf on sap & monet
 	mypath=""
-	for d in "/Users/manegold/soft/local/bin" "/Users/monet/soft/local/bin" "/usr/local/bin" "/usr/bin" "/sw/bin" ; do
+	for d in "/Users/manegold/soft/local/bin" "/Users/monet/soft/local/bin" "/usr/local/bin" "/sw/bin" "/usr/bin" ; do
 		if [ -d ${d} ] ; then
 			mypath="${mypath}${d}:"
 		fi
