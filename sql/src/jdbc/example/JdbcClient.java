@@ -125,24 +125,31 @@ public class JdbcClient {
 						break;
 					} else if (qp.getQuery().startsWith("\\d")) {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
-						String[] types = {"TABLE", "VIEW"};
-						ResultSet tbl = dbmd.getTables(null, null, null, types);
+						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
+						ResultSet tbl;
 						if (!object.equals("")) {
+							tbl = dbmd.getTables(null, null, null, null);
 							// we have an object, see is we can describe it
 							boolean found = false;
 							while (tbl.next()) {
 								if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
 									(tbl.getString("TABLE_SCHEM") + "." + tbl.getString("TABLE_NAME")).equalsIgnoreCase(object)) {
 									// we found it, describe it
-									System.out.println(createTable(dbmd, tbl.getString("TABLE_CAT"),
-										tbl.getString("TABLE_SCHEM"), tbl.getString("TABLE_NAME"),
-										tbl.getString("TABLE_TYPE")));
+									if (tbl.getString("TABLE_TYPE").equals("VIEW")) {
+										System.out.println("CREATE VIEW " + tbl.getString("TABLE_NAME") + " AS " + tbl.getString("REMARKS").trim());
+									} else {
+										System.out.println(createTable(dbmd, tbl.getString("TABLE_CAT"),
+											tbl.getString("TABLE_SCHEM"), tbl.getString("TABLE_NAME"),
+											tbl.getString("TABLE_TYPE")));
+									}
 									found = true;
 									break;
 								}
 							}
 							if (!found) System.out.println("Unknown table or view: " + object);
 						} else {
+							String[] types = {"TABLE", "VIEW"};
+							tbl = dbmd.getTables(null, null, null, types);
 							// give us a list with tables
 							while (tbl.next()) {
 								System.out.println(tbl.getString("TABLE_TYPE") + "\t" +
@@ -248,7 +255,7 @@ public class JdbcClient {
 			ret += "\t" + cols.getString("COLUMN_NAME") +
 				"\t" + cols.getString("TYPE_NAME") + "(" +
 				cols.getString("COLUMN_SIZE") +
-				(cols.getInt("DATA_TYPE") == Types.NUMERIC ? "," + cols.getString("DECIMAL_DIGITS") : "") +
+				(cols.getInt("DATA_TYPE") == Types.DECIMAL ? "," + cols.getString("DECIMAL_DIGITS") : "") +
 				")" + (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls ? "\tNOT NULL" : "") +
 				",\n";
 		}
