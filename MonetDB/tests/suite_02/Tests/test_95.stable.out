@@ -31,9 +31,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  340	  ]
+[ "user",	  350	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1440	  ]
+[ "system",	  1540	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 join(t1,s1.reverse()).count().print();
@@ -53,10 +53,10 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  360	  ]
+[ "user",	  370	  ]
 [ "elapuser",	  20	  ]
-[ "system",	  1450	  ]
-[ "elapsystem",	  10	  ]
+[ "system",	  1540	  ]
+[ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 var i1,i2,i3,i4,i5;
 printf("#~BeginVariableOutput~#\n"); qstat(); printf("#~EndVariableOutput~#\n");
@@ -111,10 +111,10 @@ threadcnt(4);printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVa
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  360	  ]
+[ "user",	  370	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  1450	  ]
-[ "elapsystem",	  0	  ]
+[ "system",	  1550	  ]
+[ "elapsystem",	  10	  ]
 #~EndVariableOutput~#
 {|	
 	i1:=join(t1,s1.reverse()).count();
@@ -177,7 +177,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"		  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "10869"							  ]
+[ "monet_pid",		  "14310"							  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"				  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"				  ]
 [ "gdk_dbname",		  "mTests_tests_suite_02"																																									  ]
@@ -193,14 +193,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"																																												  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "47829"							  ]
+[ "mapi_port",		  "46715"							  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "53677"							  ]
+[ "sql_port",		  "59349"							  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"		  ]
+[ "gdk_embedded",	  "no"								  ]
 [ "monet_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/tests/suite_02"	  ]
 #~EndVariableOutput~#
@@ -211,9 +212,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  370	  ]
+[ "user",	  380	  ]
 [ "elapuser",	  10	  ]
-[ "system",	  1450	  ]
+[ "system",	  1550	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 quit();

@@ -281,7 +281,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "config",		  "/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf"		  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"					  ]
 [ "gdk_version",	  "4.4.1"						  ]
-[ "monet_pid",		  "11141"							  ]
+[ "monet_pid",		  "14585"							  ]
 [ "prefix",		  "/ufs/mk/opensource/MonetDB/Linux"				  ]
 [ "exec_prefix",	  "/ufs/mk/opensource/MonetDB/Linux"				  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
@@ -297,14 +297,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_mod_path",	  "/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB"		  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "47829"							  ]
+[ "mapi_port",		  "46715"							  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "53677"							  ]
+[ "sql_port",		  "59349"							  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log"		  ]
+[ "gdk_embedded",	  "no"								  ]
 [ "monet_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/ufs/mk/opensource/MonetDB/Linux/mTests/tests/suite_08"	  ]
 #~EndVariableOutput~#
@@ -336,7 +337,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Sun Oct 17 11:56:36 2004"	  ]
+[ 0,	  "Sun Oct 17 17:15:29 2004"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
