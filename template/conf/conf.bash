@@ -183,16 +183,6 @@ if [ "${os}" = "SunOS" ] ; then
 		binpath="${soft32}/bin:${binpath}"
 		libpath="${soft32}/lib/sparcv9:${soft32}/lib:${libpath}"
 	fi
-	if [ "${COMP}" = "GNU" ] ; then
-		# required GNU gcc/g++ options for 32 & 64 bit
-		cc="${cc} -m${BITS}"
-		cxx="${cxx} -m${BITS}"
-	fi
-	if [ "${COMP}${BITS}" = "ntv64" ] ; then
-		# required SUNWspro cc/CC options for 64bit
-		cc="${cc} -xarch=v9"
-		cxx="${cxx} -xarch=v9"
-	fi
 	if [ "${what}" = "SQL"  -a  "${COMP}" = "ntv" ] ; then
 		# to find ltdl.h included by src/odbc/setup/drvcfg.c via odbcinstext.h
 		cc="${cc} -I/usr/local/include"
@@ -209,14 +199,6 @@ if [ "${os}" = "IRIX64" ] ; then
 	if [ "${COMP}${BITS}" = "GNU64" ] ; then
 		# our gcc/g++ on medusa is in ${soft32} (also for 64 bit)
 		libpath="${soft32}/lib/mabi=64:${libpath}"
-		# required GNU gcc/g++ options for 64bit
-		cc="${cc} -mabi=64"
-		cxx="${cxx} -mabi=64"
-	fi
-	if [ "${COMP}${BITS}" = "ntv64" ] ; then
-		# required MIPSpro cc/CC options for 64bit
-		cc="${cc} -64"
-		cxx="${cxx} -64"
 	fi
 fi
 
@@ -322,12 +304,15 @@ if [ "${what}" = "ACOI"  -a  "`domainname`" = "cwi.nl" ]; then
 	conf_opts="${conf_opts} --with-tomcat=/ufs/windhouw/java/jakarta-tomcat"
 fi
 
-# tell configure about chosen compiler
+# tell configure about chosen compiler and bits
 if [ "${cc}" != "gcc" ] ; then
 	conf_opts="${conf_opts} --with-gcc='${cc}'"
 fi
 if [ "${cxx}" != "g++" ] ; then
 	conf_opts="${conf_opts} --with-gxx='${cxx}'"
+fi
+if [ "${BITS}" = "64" ] ; then
+	conf_opts="${conf_opts} --with-bits=${BITS}"
 fi
 
 if [ "${what}" != "MONET" ] ; then
