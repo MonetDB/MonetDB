@@ -15,7 +15,7 @@
 
 #include "driver.h"
 
-SQLRETURN SQLFreeConnect( SQLHDBC hDrvDbc )
+SQLRETURN _FreeConnect( SQLHDBC hDrvDbc )
 {
 	HDRVDBC	hDbc	= (HDRVDBC)hDrvDbc;
 	int		nReturn;
@@ -45,4 +45,8 @@ SQLRETURN SQLFreeConnect( SQLHDBC hDrvDbc )
 
 }
 
+SQLRETURN SQLFreeConnect( SQLHDBC hDrvDbc )
+{
+    return _FreeConnect( hDrvDbc );
+}
 
