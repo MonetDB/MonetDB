@@ -1106,54 +1106,19 @@ PFcore_apply_ (PFfun_t *fn, ...)
     return core;
 }
 
-/**
- * Worker to implement the formal semantics function fs:convert-operand,
- * expanded as a core expression.
- *
- * @note You should not need to call this function from outside.
- *       Use one of the two variants PFcore_fs_convert_op_by_type()
- *       or PFcore_fs_convert_op_by_expr() instead.
- *
- * @param n The core expression on which the typeswitch is called
- * @param t The type to which n is casted if it is untyped.
- *          This may be a node either of kind @c seqtype or @c stattype.
- * @return A core expression with the expanded function
- */
-static PFcnode_t *
-PFcore_fs_convert_op (PFcnode_t *n, PFcnode_t *t)
-{
-    PFvar_t *v1 = PFcore_new_var (0);
-    PFvar_t *v2 = PFcore_new_var (0);
-    assert (n /*&& cast_type*/);
-    assert (t && (t->kind == c_seqtype || t->kind == c_stattype));
-    
-    return PFcore_let 
-              (PFcore_var (v1), n,
-               PFcore_for
-                   (PFcore_var (v2), PFcore_nil (), PFcore_var (v1),
-                    PFcore_typeswitch 
-                       (PFcore_var (v2),
-                        PFcore_cases 
-                            (PFcore_case 
-                                 (PFcore_seqtype 
-                                      (PFty_xdt_untypedAtomic ()),
-                       /*return*/ PFcore_seqcast (t, PFcore_var (v2))
-                                  ),
-                             PFcore_nil ()
-                             ),
-                        PFcore_var (v2))
-                   )
-               );                        
-}
 
 /**
  * Represent the formal semantics function fs:convert-operand
- * as an equivalent core expression. The expression @a e is
- * casted to the type @a t if it is untyped. In contrast to
- * the W3C specification this function expects a @b type as
- * its second argument. If you want an @b expression as the
- * second argument (as in the specs), use PFcore_fs_convert_op_by_expr()
- * below.
+ * as an equivalent core expression. If @a e is untyped and the
+ * type @a t is @b not @c untypedAtomic then @a e is casted
+ * to the type @a t. If @a e is untyped and the type @a t @b is
+ * @c untypedAtomic then @a e is casted to <code>xs:string</code>.
+ * Otherwise @a e is returned as is.
+ *
+ * In contrast to the W3C function fs:convert-operand this function
+ * expects a @b type as its second argument. If you want an
+ * @b expression as the second argument (as in the specs), use
+ * PFcore_fs_convert_op_by_expr() below.
  *
  * @param e The core expression on which the typeswitch is called
  * @param t The type to which n is casted if it is untyped.
@@ -1162,13 +1127,59 @@ PFcore_fs_convert_op (PFcnode_t *n, PFcnode_t *t)
 PFcnode_t *
 PFcore_fs_convert_op_by_type (PFcnode_t *e, PFty_t t)
 {
-    return PFcore_fs_convert_op (e, PFcore_seqtype (t));
+    PFty_t target;
+    PFvar_t *v1 = PFcore_new_var (0);
+    PFvar_t *v2 = PFcore_new_var (0);
+
+    assert (e);
+
+    /*
+     * `untypedAtomic' as the second argument means a cast to
+     * `string'. Otherwise, we cast to the type given as the
+     * second argument.
+     */
+    if (PFty_subtype (t, PFty_xdt_untypedAtomic()))
+        target = PFty_xs_string ();
+    else
+        target = t;
+
+    /*
+     * let $v1 := [[ e ]] return
+     *   for $v2 in $v2 return
+     *     typeswitch ($v2)
+     *       case xdt:untypedAtomic return cast $v2 to <target type>
+     *       default return $v2
+     *
+     * where <target type> has been determined above to xs:string
+     * if t is xdt:untypedAtomic or to t otherwise.
+     */
+    return PFcore_let 
+              (PFcore_var (v1), e,
+               PFcore_for
+                   (PFcore_var (v2), PFcore_nil (), PFcore_var (v1),
+                    PFcore_typeswitch 
+                       (PFcore_var (v2),
+                        PFcore_cases 
+                            (PFcore_case 
+                                 (PFcore_seqtype (PFty_xdt_untypedAtomic ()),
+                       /*return*/ PFcore_seqcast (PFcore_seqtype (target),
+                                                  PFcore_var (v2))
+                                  ),
+                             PFcore_nil ()
+                             ),
+                        PFcore_var (v2))
+                   )
+               );
 }
 
 /**
  * Represent the formal semantics function fs:convert-operand
- * as an equivalent core expression. The expression @a e1 is
- * casted to the type of expression @a e2 if it is untyped.
+ * as an equivalent core expression. If both, @a e1 and @a e2
+ * have type @c untypedAtomic then @a e1 is casted to type string.
+ * If @a e1 has type @c untypedAtomic (but not @a e2) then @a e1
+ * is casted to the type of @a e2. Otherwise @a e1 is returned as
+ * is.
+ *
  * If you already know the type of @a e2 while writing your
  * code, please use PFcore_fs_convert_op_by_type() above, as
  * it makes your code more readable.
@@ -1183,7 +1194,53 @@ PFcore_fs_convert_op_by_type (PFcnode_t *e, PFty_t t)
 PFcnode_t *
 PFcore_fs_convert_op_by_expr (PFcnode_t *e1, PFcnode_t *e2)
 {
-    return PFcore_fs_convert_op (e1, PFcore_stattype (e2));
+    PFvar_t *v1 = PFcore_new_var (0);
+    PFvar_t *v2 = PFcore_new_var (0);
+    PFvar_t *v3 = PFcore_new_var (0);
+
+    /*
+     * let $v1 := [[ e1 ]] return
+     *   let $v2 := [[ e2 ]] return
+     *     for $v3 in $v1 return
+     *       typeswitch ($v3)                  // $v3 is from e1
+     *         case xdt:untypedAtomic return
+     *           typeswitch ($v2)              // $v2 is e2
+     *             case xdt:untypedAtomic return cast $v3 as xs:string
+     *             default return cast $v3 as <type of $v2>
+     *         default return $v3
+     *
+     * <type of $v2> is inserted into the core tree by means of a
+     * stattype node (the static type of $v2). stattype nodes are
+     * replaced by seqtype nodes (actual types) as soon as the
+     * type information is available during type checking.
+     */
+    return PFcore_let 
+              (PFcore_var (v1), e1,
+               PFcore_let
+                  (PFcore_var (v2), e2,
+                   PFcore_for
+                      (PFcore_var (v3), PFcore_nil (), PFcore_var (v1),
+                       PFcore_typeswitch
+                          (PFcore_var (v3),
+                           PFcore_cases
+                               (PFcore_case
+                                   (PFcore_seqtype (PFty_xdt_untypedAtomic ()),
+                                    PFcore_typeswitch
+                                       (PFcore_var (v2),
+                                        PFcore_cases
+                                           (PFcore_case
+                                               (PFcore_seqtype
+                                                   (PFty_xdt_untypedAtomic ()),
+                                                PFcore_seqcast
+                                                   (PFcore_seqtype
+                                                       (PFty_xs_string ()),
+                                                    PFcore_var (v3))),
+                                           PFcore_nil ()),
+                                           PFcore_seqcast
+                                              (PFcore_stattype (PFcore_var(v2)),
+                                               PFcore_var (v3)))),
+                                PFcore_nil ()),
+                           PFcore_var (v3)))));
 }
 
 /**
