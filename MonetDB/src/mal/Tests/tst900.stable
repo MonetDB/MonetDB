@@ -1,0 +1,52 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## the multiplex code blocks.
+#
+#b:= new(lng,lng);
+#t0:= system.usec();
+#i:= -1:lng;
+#barrier v:= nextElement(i,0:lng,1000000:lng);
+#	insert(b,i,i);
+#	redo v;
+#end v;
+#t1:= system.usec();
+#tz:= t1-t0;
+#print(tz);
+#t0:= system.usec();
+#c:= copy(b);
+#t1:= system.usec();
+#tz:= t1-t0;
+#print(tz);
+#x:= multiplex.+(b,b);
+#a:= b [+] b;
+!ERROR: a:= b [+] b;
+!             ^operator expected
+multiplex against operator +
+	arith.+($1,$2);	#-1:lng ($0:lng)($1:lng)($2:lng)
+function Admin.main():int;	#0:void (main:int)
+	b := bat.new(lng,lng);	#1:BAT (b:bat[lng,lng])(lng:lng)(lng:lng)
+	t0 := system.usec();	#2:lng (t0:lng)
+	i := -1;	#3:lng (i:lng)($5:lng)
+barrier	v := mal.nextElement(i,0,1000000);	#4:bit (v:bit)(i:lng)($7:lng)($8:lng)
+	bat.insert(b,i,i);	#5:int ($9:int)(b:bat[lng,lng])(i:lng)(i:lng)
+	redo v ;	#6:bit (v:bit)
+end	v;	#7:bit (v:bit)
+	t1 := system.usec();	#8:lng (t1:lng)
+	tz := arith.-(t1,t0);	#9:lng (tz:lng)(t1:lng)(t0:lng)
+	system.print(tz);	#10:int ($12:int)(tz:lng)
+	t0 := system.usec();	#11:lng (t0:lng)
+	c := algebra.copy(b);	#12:BAT (c:bat[lng,lng])(b:bat[lng,lng])
+	t1 := system.usec();	#13:lng (t1:lng)
+	tz := arith.-(t1,t0);	#14:lng (tz:lng)(t1:lng)(t0:lng)
+	system.print(tz);	#15:int ($14:int)(tz:lng)
+	x := multiplex.+(b,b);	#16:void (x:bat[lng,lng])(b:bat[lng,lng])(b:bat[lng,lng])
+	a := b;	#17:BAT (a:bat[lng,lng])(b:bat[lng,lng])
+end function;	#18:void 
+!ERROR: SyntaxError::'Admin.main' contains errors
+>

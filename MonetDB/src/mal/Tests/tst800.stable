@@ -1,0 +1,44 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## Testing global constants defined for all users
+## It should travers the nested spaces looking for the correct variable
+## take a local copy
+#	v := take("version",str);
+#	u := take("user", str);
+#	db:= take("gdk_dbname",str);
+#	df:= take("gdk_dbfarm");
+#	dd:= take("gdk_dbdir");
+#	b := take("environment",bat[void,str]);
+#
+## how to obtain a copy of all objects in a space?
+#barrier b:= space.iterator("mal_constants",-1:int,name:str,value:str);
+#	printf("%s=",name);
+#	printf("%s\n",value);
+#end b;
+#
+!ERROR: 'take' undefined in Admin.main[6]
+function Admin.main():int;	#0:void (main:int)
+	v := Admin.take("version",str);	#1:bit (v:bit)($2:str)(str:str)
+	u := Admin.take("user",str);	#2:bit (u:bit)($5:str)(str:str)
+	db := Admin.take("gdk_dbname",str);	#3:bit (db:bit)($7:str)(str:str)
+	df := Admin.take("gdk_dbfarm");	#4:void (df:any)($9:str)
+	dd := Admin.take("gdk_dbdir");	#5:void (dd:any)($11:str)
+	b := take("environment",bat[void,str]);	#6 unknown:void (b:bit)($13:str)(bat[void,str]:bat[void,str])
+barrier	b := Admin.iterator("mal_constants",-1,name,value);	#7:bit (b:bit)($15:str)($16:int)(name:str)(value:str)
+	system.printf("%s=",name);	#8:int ($19:int)($20:str)(name:str)
+	system.printf("%s\n",value);	#9:int ($21:int)($22:str)(value:str)
+end	b;	#10:bit (b:bit)
+end function;	#11:void 
+space_take not yet implemented
+space_take not yet implemented
+space_take not yet implemented
+space_takeAny not yet implemented
+space_takeAny not yet implemented
+!ERROR: MALexception:Admin.main[6]:Instruction type not fixed
+>

@@ -49,7 +49,7 @@
 #barrier	FTE:= booleanexpr;
 #	# thenpart
 #end	FTE;
-#barrier FS:= not FTE;
+#barrier FS:= not(FTE);
 #	#elsepart
 #end	FS;
 #
@@ -79,7 +79,7 @@ barrier	FT := booleanexpr;	#20 dynamic:void (FT:any)(booleanexpr:any)
 end	FT;	#21:void (FT:any)
 barrier	FTE := booleanexpr;	#22 dynamic:void (FTE:any)(booleanexpr:any)
 end	FTE;	#23:void (FTE:any)
-barrier	FS := not;	#24 dynamic:void (FS:any)(not:any)
+barrier	FS := not(FTE);	#24 unknown:void (FS:any)(FTE:any)
 end	FS;	#25:void (FS:any)
 end function;	#26:void 
 !ERROR: MALexception:Admin.main[5]:Instruction type not fixed

@@ -1,0 +1,31 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## using spaces
+#
+#take(u:str,"user");
+#print("User bound to %s\n",u);
+#
+#v:int:= take("roomnumber");
+!ERROR: v:int:= take("roomnumber");
+!        ^'.' or '(' expected
+#v:= v+1;
+#release("roomnumber",v);
+#release("roomnumber",v); # failure? done twice or implicit take?
+#
+!ERROR: 'print' undefined in Admin.main[2]
+function Admin.main():int;	#0:void (main:int)
+	Admin.take(u,"user");	#1:bit ($1:bit)(u:str)($3:str)
+	print("User bound to %s\n",u);	#2 unknown:void ($4:any)($5:str)(u:str)
+	$6;	#3:void ($6:any)
+	v := +(v,1);	#4 unknown:void (v:any)(v:any)($8:int)
+	release("roomnumber",v);	#5 unknown:void ($9:any)($10:str)(v:any)
+	release("roomnumber",v);	#6 unknown:void ($11:any)($10:str)(v:any)
+end function;	#7:void 
+!ERROR: SyntaxError::'Admin.main' contains errors
+>

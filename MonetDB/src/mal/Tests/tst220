@@ -4,7 +4,7 @@ function steal(bb:bat[any::1,any::2]) :bat[any::1,any::2];
 	printf("enter function refcount =%d\n",i);
 
 	loc:= bb;
-	i:= getBATrefcnt(b);
+	i:= getBATrefcnt(bb);
 	printf("local in function refcount =%d\n",i);
 
 	return bb;

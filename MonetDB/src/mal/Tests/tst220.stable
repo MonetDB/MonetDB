@@ -12,7 +12,7 @@
 #	printf("enter function refcount =%d\n",i);
 #
 #	loc:= bb;
-#	i:= getBATrefcnt(b);
+#	i:= getBATrefcnt(bb);
 #	printf("local in function refcount =%d\n",i);
 #
 #	return bb;
@@ -21,8 +21,8 @@ function Admin.steal(bb:bat[any::1,any::2]):bat[any::1,any::2];	#0 polymorphic:v
 	i := bat.getBATrefcnt(bb);	#1:int (i:int)(bb:bat[any::1,any::2])
 	system.printf("enter function refcount =%d\n",i);	#2:int ($3:int)($4:str)(i:int)
 	loc := bb;	#3 polymorphic:void (loc:any)(bb:bat[any::1,any::2])
-	i := getBATrefcnt(b);	#4 unknown:void (i:int)(b:any)
-	system.printf("local in function refcount =%d\n",i);	#5:int ($7:int)($8:str)(i:int)
+	i := bat.getBATrefcnt(bb);	#4:int (i:int)(bb:bat[any::1,any::2])
+	system.printf("local in function refcount =%d\n",i);	#5:int ($6:int)($7:str)(i:int)
 	return bb;	#6:BAT (bb:bat[any::1,any::2])
 end function;	#7:void 
 #
@@ -114,5 +114,6 @@ after 4rd assignment refcount =2
 after 5rd assignment refcount =1
 call function
 enter function refcount =2
-return from function refcount =1
+local in function refcount =3
+return from function refcount =2
 >

@@ -1,0 +1,141 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## The series tst2?? is a patched version of suite_00
+## The first and foremost BAT operations
+#
+#b:= new(int,int);
+#err := insert(b,1,15);
+#err := insert(b,2,4);
+#n0  := int(nil);
+#err := insert(b,3,n0);
+#err := insert(b,4,16);
+#err := insert(b,5,25);
+#err := insert(b,6,36);
+#err := insert(b,7,49);
+#err := insert(b,8,64);
+#err := insert(b,9,n0);
+#err := insert(b,n0,n0);
+#err := insert(b,n0,81);
+#err := print(b);
+#i := -1:int;
+#h:= 0:int;
+#t:= 0:int;
+#barrier v:= batloop(i,b,h,t);
+#	printf("[%d,",i);
+#	printf("%d,",h);
+#	printf("%d]\n",t);
+#redo v;
+#end v;
+#
+#
+## String stuff
+#c:= new(int,str);
+#err:= insert(c,1,"hello");
+#err:= insert(c,2,"brave");
+#err:= insert(c,3,"world");
+#err:= insert(c,4,"");
+#x:= str(nil);
+#err:= insert(c,5,x);
+#err:= insert(c,6,"!");
+#print(c);
+#i := -1:int;
+#ts:= "";
+#barrier v:= batloop(i,c,h,ts);
+#	printf("[%d,",i);
+#	printf("%d,",h);
+#	printf("%s]\n",ts);
+#	redo v;
+#end v;
+#
+#
+function Admin.main():int;	#0:void (main:int)
+	b := bat.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
+	err := bat.insert(b,1,15);	#2:int (err:int)(b:bat[int,int])($4:int)($5:int)
+	err := bat.insert(b,2,4);	#3:int (err:int)(b:bat[int,int])($6:int)($7:int)
+	n0 := atoms.int(nil);	#4:int (n0:int)($9:void)
+	err := bat.insert(b,3,n0);	#5:int (err:int)(b:bat[int,int])($10:int)(n0:int)
+	err := bat.insert(b,4,16);	#6:int (err:int)(b:bat[int,int])($7:int)($11:int)
+	err := bat.insert(b,5,25);	#7:int (err:int)(b:bat[int,int])($12:int)($13:int)
+	err := bat.insert(b,6,36);	#8:int (err:int)(b:bat[int,int])($14:int)($15:int)
+	err := bat.insert(b,7,49);	#9:int (err:int)(b:bat[int,int])($16:int)($17:int)
+	err := bat.insert(b,8,64);	#10:int (err:int)(b:bat[int,int])($18:int)($19:int)
+	err := bat.insert(b,9,n0);	#11:int (err:int)(b:bat[int,int])($20:int)(n0:int)
+	err := bat.insert(b,n0,n0);	#12:int (err:int)(b:bat[int,int])(n0:int)(n0:int)
+	err := bat.insert(b,n0,81);	#13:int (err:int)(b:bat[int,int])(n0:int)($21:int)
+	err := system.print(b);	#14:int (err:int)(b:bat[int,int])
+	i := -1;	#15:int (i:int)($23:int)
+	h := 0;	#16:int (h:int)($25:int)
+	t := 0;	#17:int (t:int)($25:int)
+barrier	v := mal.batloop(i,b,h,t);	#18:bit (v:bit)(i:int)(b:bat[int,int])(h:int)(t:int)
+	system.printf("[%d,",i);	#19:int ($28:int)($29:str)(i:int)
+	system.printf("%d,",h);	#20:int ($30:int)($31:str)(h:int)
+	system.printf("%d]\n",t);	#21:int ($32:int)($33:str)(t:int)
+	redo v ;	#22:bit (v:bit)
+end	v;	#23:bit (v:bit)
+	c := bat.new(int,str);	#24:BAT (c:bat[int,str])(int:int)(str:str)
+	err := bat.insert(c,1,"hello");	#25:int (err:int)(c:bat[int,str])($4:int)($36:str)
+	err := bat.insert(c,2,"brave");	#26:int (err:int)(c:bat[int,str])($6:int)($37:str)
+	err := bat.insert(c,3,"world");	#27:int (err:int)(c:bat[int,str])($10:int)($38:str)
+	err := bat.insert(c,4,"");	#28:int (err:int)(c:bat[int,str])($7:int)($39:str)
+	x := atoms.str(nil);	#29:str (x:str)($9:void)
+	err := bat.insert(c,5,x);	#30:int (err:int)(c:bat[int,str])($12:int)(x:str)
+	err := bat.insert(c,6,"!");	#31:int (err:int)(c:bat[int,str])($14:int)($41:str)
+	system.print(c);	#32:int ($42:int)(c:bat[int,str])
+	i := -1;	#33:int (i:int)($23:int)
+	ts := "";	#34:str (ts:str)($39:str)
+barrier	v := mal.batloop(i,c,h,ts);	#35:bit (v:bit)(i:int)(c:bat[int,str])(h:int)(ts:str)
+	system.printf("[%d,",i);	#36:int ($44:int)($29:str)(i:int)
+	system.printf("%d,",h);	#37:int ($45:int)($31:str)(h:int)
+	system.printf("%s]\n",ts);	#38:int ($46:int)($47:str)(ts:str)
+	redo v ;	#39:bit (v:bit)
+end	v;	#40:bit (v:bit)
+end function;	#41:void 
+#-----------------#
+# BAT:	  tmp_5	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  15	  ]
+[ 2,	  4	  ]
+[ 3,	  nil	  ]
+[ 4,	  16	  ]
+[ 5,	  25	  ]
+[ 6,	  36	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 9,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+[1,1,15]
+[2,2,4]
+[3,3,nil]
+[4,4,16]
+[5,5,25]
+[6,6,36]
+[7,7,49]
+[8,8,64]
+[9,9,nil]
+[10,nil,nil]
+[11,nil,81]
+#-------------------------#
+# BAT:	  tmp_4		  #
+# (int)	  (str)		  #
+#-------------------------#
+[ 1,	  "hello"	  ]
+[ 2,	  "brave"	  ]
+[ 3,	  "world"	  ]
+[ 4,	  ""		  ]
+[ 5,	  nil		  ]
+[ 6,	  "!"		  ]
+[1,1,hello]
+[2,2,brave]
+[3,3,world]
+[4,4,]
+[5,5,nil]
+[6,6,!]
+>

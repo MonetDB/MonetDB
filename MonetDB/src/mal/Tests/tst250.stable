@@ -1,0 +1,79 @@
+# Monet Database Server V5.0
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+# compiled for i686-pc-linux-gnu/32bit.
+# gdk_dbfarm:/ufs/mk/monet_5-0/Linux/../dbfarm
+# gdk_dbname:demo
+# gdk_dbdir:/ufs/mk/monet_5-0/Linux/../dbfarm/demo
+# gdk_distr:/ufs/mk/monet_5-0/Linux
+# monetrc:/ufs/mk/.monet.conf
+## The series tst2?? is a patched version of suite_00
+## The first and foremost BAT operations
+#
+#b:= new(int,int);
+#err := insert(b,1,15);
+#err := insert(b,2,4);
+#n0  := int(nil);
+#err := insert(b,3,n0);
+#err := insert(b,4,16);
+#err := insert(b,5,25);
+#err := insert(b,6,36);
+#err := insert(b,7,49);
+#err := insert(b,8,64);
+#err := insert(b,9,n0);
+#err := insert(b,n0,n0);
+#err := insert(b,n0,81);
+#err := print(b);
+#i := -1:int;
+#barrier v:= batloop(i,b);
+#	print(i);
+#redo v;
+#end v;
+#
+function Admin.main():int;	#0:void (main:int)
+	b := bat.new(int,int);	#1:BAT (b:bat[int,int])(int:int)(int:int)
+	err := bat.insert(b,1,15);	#2:int (err:int)(b:bat[int,int])($4:int)($5:int)
+	err := bat.insert(b,2,4);	#3:int (err:int)(b:bat[int,int])($6:int)($7:int)
+	n0 := atoms.int(nil);	#4:int (n0:int)($9:void)
+	err := bat.insert(b,3,n0);	#5:int (err:int)(b:bat[int,int])($10:int)(n0:int)
+	err := bat.insert(b,4,16);	#6:int (err:int)(b:bat[int,int])($7:int)($11:int)
+	err := bat.insert(b,5,25);	#7:int (err:int)(b:bat[int,int])($12:int)($13:int)
+	err := bat.insert(b,6,36);	#8:int (err:int)(b:bat[int,int])($14:int)($15:int)
+	err := bat.insert(b,7,49);	#9:int (err:int)(b:bat[int,int])($16:int)($17:int)
+	err := bat.insert(b,8,64);	#10:int (err:int)(b:bat[int,int])($18:int)($19:int)
+	err := bat.insert(b,9,n0);	#11:int (err:int)(b:bat[int,int])($20:int)(n0:int)
+	err := bat.insert(b,n0,n0);	#12:int (err:int)(b:bat[int,int])(n0:int)(n0:int)
+	err := bat.insert(b,n0,81);	#13:int (err:int)(b:bat[int,int])(n0:int)($21:int)
+	err := system.print(b);	#14:int (err:int)(b:bat[int,int])
+	i := -1;	#15:int (i:int)($23:int)
+barrier	v := mal.batloop(i,b);	#16:bit (v:bit)(i:int)(b:bat[int,int])
+	system.print(i);	#17:int ($25:int)(i:int)
+	redo v ;	#18:bit (v:bit)
+end	v;	#19:bit (v:bit)
+end function;	#20:void 
+#-----------------#
+# BAT:	  tmp_5	  #
+# (int)	  (int)	  #
+#-----------------#
+[ 1,	  15	  ]
+[ 2,	  4	  ]
+[ 3,	  nil	  ]
+[ 4,	  16	  ]
+[ 5,	  25	  ]
+[ 6,	  36	  ]
+[ 7,	  49	  ]
+[ 8,	  64	  ]
+[ 9,	  nil	  ]
+[ nil,	  nil	  ]
+[ nil,	  81	  ]
+[ 1 ]
+[ 2 ]
+[ 3 ]
+[ 4 ]
+[ 5 ]
+[ 6 ]
+[ 7 ]
+[ 8 ]
+[ 9 ]
+[ 10 ]
+[ 11 ]
+>
