@@ -105,7 +105,6 @@ in the head of the resulting table; the tail contains the matching IDs.
 #include <math.h>
 #include <gdk.h>
 #include <unistd.h>
-#include <io.h>
 #include <uchr.h>
 #include <bitvector.proto.h>
 #include <stats.proto.h>
