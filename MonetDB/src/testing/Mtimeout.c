@@ -73,7 +73,7 @@ alarm_handler(int sig)
 {
     (void) sig;
     exec_timeout = 1;
-#if defined(LINUX)
+#if defined(__linux__)
     kill(-exec_pid, SIGINT);
     sleep(11);
 #endif
