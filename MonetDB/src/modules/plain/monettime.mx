@@ -187,7 +187,7 @@ and the lexicographical string ordering of this representation respects the
 actual date ordering.
 
 Other print formats can be achieved by writing a customized MIL procedure
-that extract year, month and day from a date as integers and formats those
+that extracts year, month and day from a date as integers and formats those
 in a string.
 @m
 .ATOM date = int;
