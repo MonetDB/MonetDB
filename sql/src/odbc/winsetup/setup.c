@@ -38,7 +38,6 @@ ODBCLOG(const char *fmt, ...)
 	va_list ap;
 	char *s = getenv("ODBCDEBUG");
 
-	s = "C:\\Documents and Settings\\sjoerd\\My Documents\\odbc.log";
 	va_start(ap, fmt);
 	if (s && *s) {
 		FILE *f;
