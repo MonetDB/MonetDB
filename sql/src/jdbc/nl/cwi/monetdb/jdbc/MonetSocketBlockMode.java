@@ -195,12 +195,12 @@ class MonetSocketBlockMode extends MonetSocket {
 				todo -= blocksize;
 			}
 
-			// the server wants an empty int as termination
+			// the server wants an empty block as termination (flush)
 			toMonetRaw.write(BLK_TERMINATOR);
 			flush();
 
 			if (debug) {
-				log.write("<< zero block\n");
+				log.write("<< zero block (flush)\n");
 				log.flush();
 			}
 
@@ -248,6 +248,23 @@ class MonetSocketBlockMode extends MonetSocket {
 		synchronized (fromMonetRaw) {
 			String line;
 			int nl;
+
+			/*
+			 * The blocked stream protocol consists of first an int indicating
+			 * the length of the block, then the block, followed by another
+			 * length + block or a block with length 0 which indicates a
+			 * user flush.
+			 * In this implementation we do not detect or use the user flush
+			 * as it is not needed to detect for us since the higher level
+			 * MAPI protocol defines a prompt which is used for syncronisation.
+			 * We simply fetch blocks here as soon as they are needed to
+			 * process them line-based.  A side effect of not acting upon the
+			 * user flush is that the zero block that is sent, is only read
+			 * upon a next retrieval of a block instead of directly after a
+			 * block.  This does not harm (since it is empty), but shows up
+			 * when viewing the debug log as a zero block right after each
+			 * query, since then the next block is fetched.
+			 */
 			while ((nl = readBuffer.indexOf("\n")) == -1) {
 				// not found, fetch us some more data
 				// start reading a new block of data if appropriate
