@@ -127,6 +127,8 @@ this facilitates the use of the string module in bulk operations.
          Iff repeated = true this is repeated while 'src' can be found in the result string.
  	 In order to prevent recursion and result strings of unlimited size, repeating
          is only done iff src is not a substring of dst."
+.COMMAND split( str s, str sep ) : BAT[void,str] = strSplit;
+	"Split the string s based on the seperator sep"
 
 .PRELUDE  = strPrelude;
 .EPILOGUE = strEpilogue;
@@ -861,6 +863,27 @@ int strSubstitute(str *res, str s, str src, str dst, bit *g) {
 		fnd += ldst; 
 	} while(repeat);
 
+	return GDK_SUCCEED;
+}
+int strSplit(BAT **Res, str s, str sep) {
+	size_t seplen = strlen(sep);
+	char *d = GDKstrdup(s);
+	BAT *res = BATnew(TYPE_void,TYPE_str, BUFSIZ);
+	oid n = oid_nil;
+	
+	while(d){
+		char *e = strstr(d, sep);
+		if (!e) break;
+
+		*e = 0;
+		BUNins(res, (ptr)&n, d);
+		d = e+seplen;
+	}
+	
+	if (d && *d)
+		BUNins(res, (ptr)&n, d);
+	
+	*Res = res;
 	return GDK_SUCCEED;
 }
 @
