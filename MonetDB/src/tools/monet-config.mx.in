@@ -15,10 +15,15 @@ Usage: monet-config [OPTION]
 Known values for OPTION are:
 
   --prefix=DIR		change monet prefix [default $prefix]
-  --libs		print library linking information
-  --cflags		print pre-processor and compiler flags
+  --libs		print Mapi library linking information
+  --cflags		print Mapi pre-processor and compiler flags
+  --gdklibs		print gdk linking information
+  --gdkcflags		print gdk pre-processor and compiler flags
   --help		display this help and exit
   --version		output version information
+
+NOTE: --gdklibs and --gdkcflags are not to link the gdk library into
+      your application, but are internally used
 EOF
 
     exit $1
@@ -61,6 +66,14 @@ while test $# -gt 0; do
 
     --libs)
        	echo -L @libdir@ -lMapi
+       	;;
+
+    --gdkcflags)
+       	echo @PTHREAD_INCS@
+       	;;
+
+    --gdklibs)
+       	echo @SOCKET_LIBS@ @MALLOC_LIBS@ @PTHREAD_LIBS@
        	;;
 
     *)
