@@ -65,6 +65,7 @@ Can be used in scripts, but is insecure.
 #include <errno.h>
 #include <string.h>
 /* #include <signal.h> */
+#include <stream.h>
 
 #define _strdup( ptr )		strdup((char*)ptr)
 
@@ -282,7 +283,7 @@ void showCommands(void)
 	fprintf(toConsole,"\\q\t- terminate session\n");
 }
 
-void terminalInput( Mapi mid)
+void terminalInput( Mapi mid, char *prompt)
 {
 	FILE	*fp;
 	char 	*line=0, *start_cmd, *end_cmd;
@@ -297,7 +298,7 @@ void terminalInput( Mapi mid)
 		}
 #ifdef HAVE_LIBREADLINE
 		if (is_chrsp){
-			if ((line = (char *) readline(mid->prompt)) == NULL) {
+			if ((line = (char *) readline(prompt)) == NULL) {
 				return;
 			}
 		} else
@@ -630,7 +631,7 @@ int main(int ac, char **av)
 	toConsole = stdout;
 	snprintf(buf,sizeof(buf),"%s:%d",host,port);
 	mid = mapi_connect(buf, user, passwd,0);
-	mid->trace = trace;
+	mapi_trace(mid, trace);
 	if (mapi_error(mid)) {
 		mapi_explain(mid,toConsole);
 		fflush(toConsole);
@@ -648,7 +649,7 @@ int main(int ac, char **av)
 	if (command) {
 		doRequest(mid, command );
 	} else {
-		terminalInput(mid);
+		terminalInput(mid, prompt);
 	}
 	return 0;
 }

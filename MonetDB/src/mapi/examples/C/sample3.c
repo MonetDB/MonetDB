@@ -2,6 +2,7 @@
 #include <stream.h>
 #include <Mapi.h>
 #include <stdio.h>
+#include <string.h>
 
 #define die(X) {mapi_explain(X,stdout); exit(-1); }
 
