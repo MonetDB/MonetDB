@@ -126,7 +126,7 @@ def am_scripts(fd, var, scripts, am):
   for script in scripts['TARGETS']:
       fd.write("install-exec-local-%s: %s\n" % (script,script))
       fd.write("\t-mkdir -p $(DESTDIR)%s\n" % (sd))
-      fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
+      fd.write("\t-$(RM) $(DESTDIR)%s/%s\n" % (sd,script))
       fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n\n" % (sd,script))
       fd.write("uninstall-exec-local-%s: \n" % (script))
       fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd,script))
@@ -166,14 +166,14 @@ def am_binary(fd, var, binmap, am ):
     else: # link
       src = binmap[0][4:]
       fd.write("install-exec-local-%s: %s\n" % (name,src))
-      fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n" % (name))
+      fd.write("\t-$(RM) $(DESTDIR)$(bindir)/%s\n" % (name))
       fd.write("\tcd $(DESTDIR)$(bindir); $(LN_S) %s %s\n\n" % (src,name))
       fd.write("uninstall-exec-local-%s: \n" % (name))
       fd.write("\t$(RM) $(DESTDIR)$(bindir)/%s\n\n" % (name))
       am['INSTALL'].append(name)
 
       fd.write("all-local-%s: %s\n" % (name,src))
-      fd.write("\t$(RM) %s\n" % (name))
+      fd.write("\t-$(RM) %s\n" % (name))
       fd.write("\t$(LN_S) %s %s\n\n" % (src,name))
       am['ALL'].append(name)
     return
