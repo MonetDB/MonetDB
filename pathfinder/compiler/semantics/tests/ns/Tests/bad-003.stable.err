@@ -7,7 +7,6 @@ stderr of test 'bad-003` in directory 'compiler/semantics/tests/ns` itself:
 
 bad usage of XML namespaces: at (6,7-6,13): unknown namespace in qualified name foo:bar
 
-
 # 12:43:03 >  
 # 12:43:03 >  Done.
 # 12:43:03 >  
