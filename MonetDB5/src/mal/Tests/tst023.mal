@@ -1,0 +1,8 @@
+#test addition of a function to a known module
+function transaction.help();
+	print("added function to specific module");
+	b:= inspect.getDefinition("transaction","help");
+	print(b);
+end help
+comment "this is a commentary";
+transaction.help();

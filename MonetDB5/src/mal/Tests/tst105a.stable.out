@@ -11,7 +11,7 @@ stdout of test 'tst105a` in directory 'src/mal` itself:
 #module bat;
 #command new(h:any$1,t:any$2):bat[:any$1,:any$2]= GDKbatnew;
 !ERROR: address of 'GDKbatnew' not found
-command Admin.new(h:any$1,t:any$2):bat[:any$1,:any$2] = GDKbatnew;	# 0  dynamic (new:bat[:any$1,:any$2])<-(h:any$1)(t:any$2)
+command Admin.new(h:any$1,t:any$2):bat[:any$1,:any$2] address GDKbatnew;	# 0  dynamic (new:bat[:any$1,:any$2])<-(h:any$1)(t:any$2)
 #
 #b:= bat.new(:str,:int);
 function Admin.main():int;	# 0  unknown (main:int)

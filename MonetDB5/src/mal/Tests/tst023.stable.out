@@ -1,0 +1,45 @@
+stdout of test 'tst023` in directory 'src/mal` itself:
+
+
+# 19:53:40 >  
+# 19:53:40 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45432 --set sql_port=52027 --set monet_prompt= --trace "--config=/home/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst023.mal </dev/null
+# 19:53:40 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
+# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl for further information.
+##test addition of a function to a known module
+#function transaction.help();
+#	print("added function to specific module");
+#	b:= inspect.getDefinition("transaction","help");
+#	print(b);
+#end help
+function transaction.help():void;	# 0  (help:void)
+    io.print("added function to specific module");	# 1 IOprint_val ($1:int)<-($2:str)
+    b := inspect.getDefinition("transaction","help");	# 2 INSPECTsymbolDef (b:bat[:int,:str])<-($4:str)($5:str)
+    io.print(b);	# 3 IOprint_val ($6:int)<-(b:bat[:int,:str])
+end help;	# 4  
+#transaction.help();
+#
+function Admin.main():int;	# 0  (main:int)
+    transaction.help();	# 1  ($1:void)
+end main;	# 2  
+[ "added function to specific module" ]
+#-------------------------------------------------------------------------#
+# fcn	stmt								  # name
+# int	str								  # type
+#-------------------------------------------------------------------------#
+[ 0,	  "function transaction.help():void;"				  ]
+[ 1,	  "    io.print(\"added function to specific module\");"	  ]
+[ 2,	  "    b := inspect.getDefinition(\"transaction\",\"help\");"	  ]
+[ 3,	  "    io.print(b);"						  ]
+[ 4,	  "end help;"							  ]
+>
+# 19:53:41 >  
+# 19:53:41 >  Done.
+# 19:53:41 >  
+

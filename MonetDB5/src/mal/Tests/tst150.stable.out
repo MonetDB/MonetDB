@@ -8,7 +8,7 @@ stdout of test 'tst150` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl for further information.
 #command Admin.lookup(nme:str):bat[:str,:str] = CMDlookup; 
 !ERROR: address of 'CMDlookup' not found
-command Admin.lookup(nme:str):bat[:str,:str] = CMDlookup;	# 0  (lookup:bat[:str,:str])<-(nme:str)
+command Admin.lookup(nme:str):bat[:str,:str] address CMDlookup;	# 0  (lookup:bat[:str,:str])<-(nme:str)
 #function sample(nme:str, val:any):bit;
 #   b := lookup(nme); #find a bat
 #   h := select(b,val,val);

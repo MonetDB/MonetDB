@@ -1,5 +1,6 @@
 # the calls are wrong, they violate the type constraint
-command + (L:any$1, R:any$1):any$1 = addIntInt
+command + (L:any$1, R:any$1):any$1 
+address addIntInt
 comment "unknown function";
 
 a:=1+"hello";
