@@ -20,6 +20,11 @@ lib_Mapi = {
 	HEADERS = h
 }
 
+jar_mapi = {
+	DIR = pkglibdir
+	SOURCES = mapi/MapiException.java mapi/Mapi.java MapiClient.java
+}
+
 BINS = {
 	SOURCES = MapiClient.mx
 	LIBS = libMapi ../../common/libmutils $(MAPI_LIBS)
