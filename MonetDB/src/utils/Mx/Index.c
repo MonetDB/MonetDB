@@ -145,16 +145,16 @@ Ientry *ie;
 		PrCmd("</tr>\n");
 		for(i=0; i<n; i++) {
 			ie = it->it_entrys + i;
-			PrCmd("<tr><td>\n<font size=\"-1\">\n<a href=");
+			PrCmd("<tr><td>\n<font size=\"-1\">\n<a href=\"");
 			PrCmd(file); PrCmd("#mod_"); 
 			if (ie->ie_sec == 0 ) {
-				PrNum(++m1); PrCmd("_0_0 target=a>"); 
+				PrNum(++m1); PrCmd("_0_0\" target=\"a\">"); 
 				PrNum(m1);
 				s1 = 0;
 				PrCmd(" <b>");PrText(ie->ie_name);PrCmd("</b>");
 			} else {
 				PrNum(m1); PrCmd("_"); 
-				PrNum(++s1); PrCmd("_0 target=a>"); 
+				PrNum(++s1); PrCmd("_0\" target=\"a\">"); 
 				PrNum(m1); PrChr('.'); PrNum(s1); PrChr(' ');
 				PrText(ie->ie_name);
 			}
@@ -165,16 +165,16 @@ Ientry *ie;
 				continue;
 			}
 			ie += n;
-			PrCmd("<a href=");  PrCmd(file); PrCmd("#mod_"); 
+			PrCmd("<a href=\"");  PrCmd(file); PrCmd("#mod_"); 
 			if (ie->ie_sec == 0) {
 				PrNum(++m2); 
-				PrCmd("_0_0 target=a>"); 
+				PrCmd("_0_0\" target=\"a\">"); 
 				PrNum(m2);
 				s2 = 0;
 				PrCmd(" <b>");PrText(ie->ie_name);PrCmd("</b>");
 			} else {
 				PrNum(m2); PrCmd("_"); 
-				PrNum(++s2); PrCmd("_0 target=a>"); 
+				PrNum(++s2); PrCmd("_0\" target=\"a\">"); 
 				PrNum(m2); PrChr('.'); PrNum(s2); PrChr(' ');
 				PrText(ie->ie_name);
 			}
@@ -185,15 +185,15 @@ Ientry *ie;
 				continue;
 			}
 			ie += n;
-			PrCmd("<a href=");  PrCmd(file); PrCmd("#mod_"); 
+			PrCmd("<a href=\"");  PrCmd(file); PrCmd("#mod_"); 
 			if (ie->ie_sec == 0) {
-				PrNum(++m3); PrCmd("_0_0 target=a>"); 
+				PrNum(++m3); PrCmd("_0_0\" target=\"a\">"); 
 				PrNum(m3);
 				s3 = 0;
 				PrCmd(" <b>");PrText(ie->ie_name);PrCmd("</b>");
 			} else {
 				PrNum(m3); PrCmd("_"); 
-				PrNum(++s3); PrCmd("_0 target=a>"); 
+				PrNum(++s3); PrCmd("_0\" target=\"a\">"); 
 				PrNum(m3); PrChr('.'); PrNum(s3); PrChr(' ');
 				PrText(ie->ie_name);
 			}

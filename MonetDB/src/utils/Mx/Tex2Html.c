@@ -652,7 +652,7 @@ mathon:				math=1; ofile_puts("<i>");
 				strcpy(p4-1, ".bib");
 				strcpy(bibtexfile,str);
                         } else if (i == TYPE_LABEL) {
-                                ofile_printf("<a name=\"%s\">&#60;%s&#62;",
+                                ofile_printf("<a name=\"%s\"></a>&#60;%s&#62;",
 					str,str);
                         } else if (i == TYPE_REF) {
                                 ofile_printf(

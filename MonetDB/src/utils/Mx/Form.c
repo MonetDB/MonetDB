@@ -138,7 +138,7 @@ again:  switch( d->d_dir ){
 	    PrEnv(E_TEXT); PrRule(0);
 	    if(WWWMODE){
 		int env = pr_env;
-		PrCmd("<a name=\""); PrCmd(d->d_cmd); PrCmd("\"><b>");
+		PrCmd("<a name=\""); PrCmd(d->d_cmd); PrCmd("\"></a><b>");
 		PrCmd(d->d_cmd);PrCmd(" ::=</b>");
 		PrEnv(env);
 	    }
@@ -423,7 +423,7 @@ void	FormMod(char *str, int mod)
 		PrCmd("\\section{"); 
 	} else if WWWMODE {
 		if( bodymode==0) PrCmd("<hr size=1 noshade><hr size=1 noshade><br><br>");
-		PrCmd("<a name=mod_"); PrNum(wwwmod=mod); PrCmd("_0_0>\n<h2>"); 
+		PrCmd("<a name=\"mod_"); PrNum(wwwmod=mod); PrCmd("_0_0\"></a>\n<h2>"); 
 		if(bodymode==0) { 
 			PrNum(mod); 
 			PrChr(' ');  
@@ -448,9 +448,9 @@ void	FormSec(char *str, int mod, int sec)
 		PrCmd("\\subsection{");
 	} else if WWWMODE {
                 if( bodymode==0) PrCmd("<hr size=1 noshade>");
-                PrCmd("<br><a name=mod_");
+                PrCmd("<br><a name=\"mod_");
 		PrNum(wwwmod=mod);PrChr('_');
-		PrNum(wwwsec=sec);PrCmd("_0>\n<h4>"); wwwpar = 1;
+		PrNum(wwwsec=sec);PrCmd("_0\"></a>\n<h4>"); wwwpar = 1;
 		if( bodymode==0){
 			PrNum(mod);PrChr('.'); PrNum(sec);PrChr(' ');
 		}
@@ -473,11 +473,11 @@ void	FormSubSec(char *str)
 		if TEXMODE {
 			PrCmd("\\subsubsection{");
 		} else if WWWMODE {
-			PrCmd("<br><a name=mod_");
+			PrCmd("<br><a name=\"mod_");
 			PrNum(wwwmod);PrChr('_');
 			PrNum(wwwsec);PrChr('_');
 			PrNum(wwwpar);
-			PrCmd(">\n<h5><b>");
+			PrCmd("\"></a>\n<h5><b>");
 			if(bodymode==0){
 				PrNum(wwwmod);PrChr('.');
 				PrNum(wwwsec);PrChr('.');
