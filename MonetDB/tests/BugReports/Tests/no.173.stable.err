@@ -1,0 +1,49 @@
+stderr of test 'no.173` in directory 'tests/BugReports` itself:
+
+
+# 09:40:10 >  
+# 09:40:10 >  Mtimeout -timeout 60 Mserver --config=/ufs/alexb/local/Monet/soft/etc/monet.conf --debug=10   --set monet_prompt= --dbname=Tests_tests_BugReports  < no.173.milS
+# 09:40:10 >  
+
+# builtin opt 	gdk_arch = 32biti686-pc-linux-gnu
+# builtin opt 	gdk_version = 4.3.5
+# builtin opt 	monet_pid = 24180
+# builtin opt 	prefix = /ufs/alexb/local/Monet/soft
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mmap = 32M
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_deamon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_api = sql
+# builtin opt 	sql_user = sqladmin
+# builtin opt 	sql_schema = default-schema
+# config opt 	prefix = /ufs/alexb/local/Monet/soft
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_debug = 0
+# config opt 	gdk_mmap = 33554432
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = monet>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# config opt 	monet_deamon = no
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = Tests_tests_BugReports
+
+# 09:40:11 >  
+# 09:40:11 >  Done.
+# 09:40:11 >  
+
