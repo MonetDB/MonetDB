@@ -367,17 +367,18 @@ char monet_arch[PATHLENGTH] = HOST;
 char monet_version[PATHLENGTH] = VERSION;
 
 void monet_hello() {
+#ifdef STATIC
+    char *linkinfo = "statically";
+#else
+    char *linkinfo = "dynamically";
+#endif
+
     if (monet_welcome) {
         printf("# Monet Database Server V%s\n", monet_version);
         printf("# Copyright (c) 1993-2001, CWI. ");
         printf("All rights reserved.\n");
         printf("# compiled for %s/%dbit; %s linked.\n", 
-			monet_arch, sizeof(ptr)*8, 
-#ifdef STATIC
-			"statically" );
-#else
-			"dynamically" );
-#endif
+			monet_arch, sizeof(ptr)*8, linkinfo );
 	printf("# dbfarm:%s\n",GDKdbfarmStr);
 	printf("# dbname:%s\n",GDKdbnameStr);
 	printf("# dbdir:%s\n",GDKdirStr);
