@@ -184,13 +184,13 @@ int MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res){
 	if (lt->cnt != 3) {
 		return handle_argerror(res,lt->cnt,3);
 	}
-
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
 	@:builtin_operand(1,TYPE_int,Maxusers)@
 	maxusers = *Maxusers;
 	@:builtin_operand(2,TYPE_str,Cmd)@
 	cmd = GDKstrdup(Cmd);
+	res->val.vtype = TYPE_void;
 
 	port = (port?port:MAPIPORT);
 	maxusers = (maxusers?maxusers:MAPIMAXUSERS);
