@@ -39,7 +39,7 @@ the function resolution scheme.
 use "thread";
 use "crackers";
 use "kernel_init";
-#use "x100/x100core";
+#use "x100core";
 use "clients";
 use "streams";
 use "tablet";
@@ -55,8 +55,8 @@ use "inspect";
 use "optimizer";
 use "chopper";
 use "transaction";
-use "sql_server";
-use "sql";
+#use "sql_server";
+#use "sql";
 @-
 In practice, we have to introduce different startup for each
 client group or database.
