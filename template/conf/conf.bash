@@ -253,9 +253,10 @@ if [ "${os}" = "Linux" ] ; then
 		# libgc in Konstanz
 		conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
 	fi
-	if [ "${what}" = "PATHFINDER"  -a  -d /soft/64/gc-6.2  -a  "${hw}" = "x86_64"  -a  "${BITS}" = "64" ] ; then
-		# 64-bit libgc on spin
-		conf_opts="${conf_opts} --with-gc=/soft/64/gc-6.2"
+	gc="`ls -d /soft/${BITS}/gc-[0-9]*/ 2>/dev/null | tail -n1`"
+	if [ "${what}" = "PATHFINDER"  -a  "${gc}"  -a  -d "${gc}"  -a  "${hw}" = "x86_64" ] ; then
+		# libgc on spin & db2/sn-1
+		conf_opts="${conf_opts} --with-gc=${gc}"
 	fi
 	if [ -x /usr/local/bin/swig ]; then
 		conf_opts="${conf_opts} --with-swig=/usr/local/bin/swig"
