@@ -345,11 +345,12 @@ void freeClient(Client c) {
 		if (c->socket){
 			(void) close(c->socket);
 		}
-		GDKfree(c->user); 
-		GDKfree(c->prompt); 
 	}
 	GDKfree(c->input);
 	GDKfree(c->output);
+	GDKfree(c->user); 
+	GDKfree(c->prompt); 
+
 	c->input = c->output = NULL;
 	c->user = c->prompt = NULL;
 	c->children = 0;

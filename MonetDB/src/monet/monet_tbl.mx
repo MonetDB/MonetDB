@@ -53,13 +53,12 @@ m_export void  TBL_init(void);
 m_export void  TBL_initclient(Client c, Client father);
 m_export void  TBL_exitclient(Client c);
 
-            
-m_export void  TBL_newproc(Client c, str nme, str mod,
-			 YYSTREE body, YYSTREE sig, YYSTREE ret);
-m_export void  TBL_delproc(Client client, str nme, str mod, oid pid, int lock);
+m_export void  TBL_newproc(Client c, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE ret);
+m_export void  TBL_undefproc(Client client, str nme);
+m_export void  TBL_delproc(Client client, oid pid, int lock);
 
-m_export int TBL_M_client_install(Client client, oid mid);
-m_export int TBL_M_incref(Client client, oid mid);
+m_export int   TBL_M_client_install(Client client, oid mid);
+m_export int   TBL_M_incref(Client client, oid mid);
 
 /* old info functions */
 m_export ptr   TBL_unpacked(ptr imp);
@@ -1591,8 +1590,7 @@ drop will go through; delete all the C-modules's atoms, accelerators and functio
 		HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
 			fid = * (oid *) BUNtail(fcn_mid, r);
 			BUNfndOID(r,fcntbl, &fid);
-			assert(r);
-			BUNdelete(fcntbl, r);
+			if (r) BUNdelete(fcntbl, r);
 		}
 	}
 	b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE);
@@ -1600,10 +1598,15 @@ drop will go through; delete all the C-modules's atoms, accelerators and functio
 		/* PHYSICAL DROP */
 		if (*module != '_') {
 			/* MIL-modules drop the procs they introduced as well as the load-script variables */	
-			BATloop(TBL_mod_proc, p, q) {
-				oid pid = *(oid*) BUNtloc(TBL_mod_proc,p);
-				r = BUNfnd(TBL_fcn_nme, &pid);
-				if (r) TBL_delproc(client, BUNtvar(TBL_fcn_nme,r), module, pid, 0);
+			BATprepareHash(TBL_mod_proc);
+			HASHloop_str(TBL_mod_proc, TBL_mod_proc->hhash, j, module) {
+				oid pid = *(oid*) BUNtloc(TBL_mod_proc,BUNptr(TBL_mod_proc, j));
+				if ((r = BUNfnd(TBL_fcn_nme, &pid)) != NULL) {
+					int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
+					if (cnt != 1) GDKwarning("drop(%s): MIL proc '%s' has %d dangling references.\n", 
+								module, BUNtail(TBL_fcn_nme,r), cnt-1);
+					TBL_delproc(client, pid, FALSE);
+				}
 			} 
 			BATprepareHash(TBL_mod_var);
 			HASHloop_str(TBL_mod_var, TBL_mod_var->hhash, j, module) {
@@ -1801,7 +1804,7 @@ int TBL_multiplex_resolve(str name, int argc, ValPtr argv,
         lng swap[1+MAXPARAMS];
         BAT *assignbat = NULL;
  
-        if (argc <= 1) {
+        if (argc <= 1 || argc >= MAXPARAMS) {
                 GDKerror("interpret: 0 param multiplex operator.\n");
 		return TBL_RESOLVE_NOFCN;
         }
@@ -2158,109 +2161,114 @@ int format_type(YYSTREE t, str *p) {
 void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE ret) {
 	int i, j, tpe = TOK_PROC;
 	oid pid = TBL_oid++;
-        int zero = 1;
 
 	TBL_M_lock(NULL);
 	TBL_fcn_pro_size++;
 	if (body == sig) {
-	    /* forward definitions will never actually match */
-	    BUNins(TBL_fcn_pro, &pid, "<predefinition>");  
+		/* forward definitions will never actually match */
+		BUNins(TBL_fcn_pro, &pid, "<predefinition>");  
 	} else { 
-	    sht anynum, *any1 = NULL, *any2 = NULL;
-	    char returntpe[128];
+		sht anynum, *any1 = NULL, *any2 = NULL;
+		char returntpe[128];
 
-	    PROC_TYPE1(body) = PROC_TYPE2(body) = 0;
-	    if (ret) {
-		char *p=returntpe;
-		format_type(ret, &p); 
+		PROC_TYPE1(body) = PROC_TYPE2(body) = 0;
+		if (ret) {
+			char *p=returntpe;
+			format_type(ret, &p); 
 
-		/* analyze the return type specification */
-		if (ret->token==TOK_ATOM) {
-		    PROC_TYPE1(body) = ATOMindex(ret->yyval.val.sval); 
-		    if (PROC_TYPE1(body) == TYPE_bat) {
-			*(p++) = '[';
-			format_type(ret->yysons[0], &p);
-			*(p++) = ',';
-			format_type(ret->yysons[1], &p);
-			*(p++) = ']'; *(p++) = 0;
-		        if (ret->yysons[0]->token == TOK_ATOM) {
-			    PROC_TYPE1(body) += 8192 + ATOMindex(ret->yysons[0]->yyval.val.sval);
+			/* analyze the return type specification */
+			if (ret->token==TOK_ATOM) {
+				PROC_TYPE1(body) = ATOMindex(ret->yyval.val.sval); 
+				if (PROC_TYPE1(body) == TYPE_bat) {
+					*(p++) = '[';
+					format_type(ret->yysons[0], &p);
+					*(p++) = ',';
+					format_type(ret->yysons[1], &p);
+					*(p++) = ']'; *(p++) = 0;
+					if (ret->yysons[0]->token == TOK_ATOM) {
+						PROC_TYPE1(body) += 8192 + ATOMindex(ret->yysons[0]->yyval.val.sval);
+					} else { /* TOK_ANY */
+						PROC_TYPE1(body) = ret->yysons[0]->yyval.val.ival;
+						any1 = &PROC_TYPE1(body);
+					}
+					if (ret->yysons[1]->token == TOK_ATOM) {
+						PROC_TYPE2(body) += 8192 + ATOMindex(ret->yysons[1]->yyval.val.sval);
+					} else { /* TOK_ANY */
+						PROC_TYPE1(body) = ret->yysons[1]->yyval.val.ival;
+						any2 = &PROC_TYPE1(body);
+					}
+				} else { /* simple atom */
+					PROC_TYPE1(body) += 8192;
+				}
 			} else { /* TOK_ANY */
-			    PROC_TYPE1(body) = ret->yysons[0]->yyval.val.ival;
-			    any1 = &PROC_TYPE1(body);
+				PROC_TYPE1(body) = ret->yyval.val.ival; 
+				any1 = &PROC_TYPE1(body);
 			}
-		        if (ret->yysons[1]->token == TOK_ATOM) {
-			    PROC_TYPE2(body) += 8192 + ATOMindex(ret->yysons[1]->yyval.val.sval);
-			} else { /* TOK_ANY */
-			    PROC_TYPE1(body) = ret->yysons[1]->yyval.val.ival;
-			    any2 = &PROC_TYPE1(body);
-			}
-		    } else { /* simple atom */
-			PROC_TYPE1(body) += 8192;
-		    }
-		} else { /* TOK_ANY */
-		    PROC_TYPE1(body) = ret->yyval.val.ival; 
-		    any1 = &PROC_TYPE1(body);
-		}
-	    } else {
-	        strcpy(returntpe, "any");
-	    } 
+	    
+		} else {
+			strcpy(returntpe, "any");
+		} 
 
-	    /* insert a signature in TBL_fcn_pro */
-	    if (sig == NULL) {
-		BUNins(TBL_fcn_pro, &pid, "*any"); 
-	    } else {
-	        YYSTREE cur=sig; 
-		for(j=1; cur; cur=cur->overflow) {
-		    for(i=0; i<cur->cnt; i++,j++) {
-			char tpenme[512], *p=tpenme;
-			YYSTREE t = cur->yysons[i];
+		/* insert a signature in TBL_fcn_pro */
+		if (sig == NULL) {
+			BUNins(TBL_fcn_pro, &pid, "*any"); 
+		} else {
+			YYSTREE cur=sig; 
+			for(j=1; cur; cur=cur->overflow) {
+				for(i=0; i<cur->cnt; i++,j++) {
+					char tpenme[512], *p=tpenme;
+					YYSTREE t = cur->yysons[i];
 
-			if (t->token == TOK_RANGETEMP) {
-			    *(p++) = '*';
-			    t = t->yysons[0];
-			} 
-			/* the any stuff resolves any::X expressions in
-                           the return type specification, when we encounter
-                           the any::X in the signature */
-			anynum = format_type(t, &p);
-			if (t->token==TOK_ATOM && strcmp(t->yyval.val.sval, "BAT")==0) {
-                            *(p++) = '[';
-			    anynum = format_type(t->yysons[0], &p);
-			    if (any1 && *any1==anynum) *any1 = 2048+j;
-			    if (any2 && *any2==anynum) *any2 = 2048+j;
-			    *(p++) = ',';
-			    anynum = format_type(t->yysons[1], &p);
-			    if (any1 && *any1==anynum) *any1 = 1024+j;
-			    if (any2 && *any2==anynum) *any2 = 1024+j;
-			    *(p++) = ']'; *(p++) = 0; 
-			} else {
-			    if (any1 && *any1==anynum) *any1 = 4096+j;
-			    if (any2 && *any2==anynum) *any2 = 4096+j;
-			    if (t->cnt > 0) t = t->yysons[0];
-			    if (t->token == TOK_STRING) {
-				*(p++) = '('; 
-				strcpy(p, t->yyval.val.sval); 
-				p += strlen(p);
-				*(p++) = ')'; *(p++) = 0; 
-			    }
+					if (t->token == TOK_RANGETEMP) {
+						*(p++) = '*';
+						t = t->yysons[0];
+					} 
+			
+					/* the any stuff resolves any::X expressions in
+					   the return type specification, when we encounter
+					   the any::X in the signature */
+					anynum = format_type(t, &p);
+					if (t->token==TOK_ATOM && strcmp(t->yyval.val.sval, "BAT")==0) {
+						*(p++) = '[';
+						anynum = format_type(t->yysons[0], &p);
+						if (any1 && *any1==anynum) *any1 = 2048+j;
+						if (any2 && *any2==anynum) *any2 = 2048+j;
+						*(p++) = ',';
+						anynum = format_type(t->yysons[1], &p);
+						if (any1 && *any1==anynum) *any1 = 1024+j;
+						if (any2 && *any2==anynum) *any2 = 1024+j;
+						*(p++) = ']'; *(p++) = 0; 
+					} else {
+						if (any1 && *any1==anynum) *any1 = 4096+j;
+						if (any2 && *any2==anynum) *any2 = 4096+j;
+						if (t->cnt > 0) t = t->yysons[0];
+						if (t->token == TOK_STRING) {
+							*(p++) = '('; 
+							strcpy(p, t->yyval.val.sval); 
+							p += strlen(p);
+							*(p++) = ')'; *(p++) = 0; 
+						}
+					}
+					BUNins(TBL_fcn_pro, &pid, tpenme); 
+				}
 			}
-			BUNins(TBL_fcn_pro, &pid, tpenme); 
- 	    	    }
+		} 
+		if ((any1 && *any1 < 1024) || (any2 && *any2 < 1024)) {
+			if (any1 && *any1 < 1024) PROC_TYPE1(body) = 4096;
+			if (any2 && *any2 < 1024) PROC_TYPE2(body) = 4096;
 		}
- 	    } 
-	    if ((any1 && *any1 < 1024) || (any2 && *any2 < 1024)) {
-	        if (any1 && *any1 < 1024) PROC_TYPE1(body) = 4096;
-	        if (any2 && *any2 < 1024) PROC_TYPE2(body) = 4096;
-	    }
-	    BUNins(TBL_fcn_pro, &pid, returntpe); 
+		BUNins(TBL_fcn_pro, &pid, returntpe); 
 	}
-	BUNins(client->fcntbl, nme, &pid);
+	i = 1; /* initial reference count */
+	if (mod) {
+		BUNins(TBL_mod_proc, mod, &pid);
+		i++; /* extra reference if it belongs to a module */
+	}
+	BUNins(TBL_fcn_cnt, &pid, &i);
 	BUNins(TBL_fcn_nme, &pid, nme);
 	BUNins(TBL_fcn_imp, &pid, &body);
 	BUNins(TBL_fcn_tpe, &pid, &tpe);
-	BUNins(TBL_fcn_cnt, &pid, &zero);
-	if (mod) BUNins(TBL_mod_proc, mod, &pid);
+	BUNins(client->fcntbl, nme, &pid);
 
 	/* use this space only once, so disguise name str as a ptr */
 	body->yyval.vtype = TYPE_ptr; 
@@ -2269,6 +2277,18 @@ void TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYS
 	TBL_M_unlock(client);
 }
 
+@- MIL Proc Ref counting
+
+While MIL procs are typically introduced by MIL modules, they can be typed in at anytime 
+in a MIL session (not belonging to any specific module). They are represented as parsed
+MIL trees, with their root in TBL_fcn_imp. As a consequence, we must do indiviual refcounting
+for them. The following rules apply:
+- when a proc is defined, it gets a reference count
+- each client sharing a reference to the proc increments this count (via TBL_incproc)
+- when a module introduces a proc, it gives one extra reference count
+- each time a client disconnects, it decreases the reference count of its procs
+- when a module is physically dropped, it removes the final reference count
+@c
 void TBL_incproc(Client client) {
    	int xx, yy = TOK_PROC;
         BAT *tb, *bb, *cb = BATmirror(client->fcntbl);
@@ -2282,79 +2302,49 @@ void TBL_incproc(Client client) {
 
 	BATloopFast(bb, p, q, xx) {
 	    	oid pid = *(oid*) BUNhloc(bb, p);
-	    	int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
-
+	    	int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 		cnt++;
   		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 	}
 	BBPreclaim(bb);
-
 	TBL_M_unlock(client);
 }
 
-@- TBL_delproc
-deletes a MIL procedure. If pid is nil all procs with the 
-given name are deleted.
-@c
-void TBL_delproc(Client client, str nme, str mod, oid pid, int lock) {
-	BAT *cb = BATmirror(client->fcntbl);
-   	int xx, yy = TOK_PROC;
-	BUN p,q;
-  
+void TBL_delproc(Client client, oid pid, int lock) {
 	if (lock) TBL_M_lock(client);
-
-	if (pid == oid_nil) {
-          BAT *sb, *tb, *bb;
-	  sb = BATuselect(cb, nme, nme);
-          tb = BATsemijoin(TBL_fcn_tpe, sb);
-	  BBPreclaim(sb);
-          bb = BATuselect(tb, &yy, &yy);
-	  BBPreclaim(tb);
-
-	  BATloopFast(bb, p, q, xx) {
-	    int cnt;
-	    pid = *(oid*) BUNhloc(bb, p);
-	    cnt = *(int*)BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
-
-	    if (cnt == 1){
-		YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
-
-		if (x && *x) {
-	    		/* free disguised name */
-	    		GDKfree((*x)->yyval.val.pval); 
-	    		yyfree((*x));
+	if (*(int*) BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid)) == TOK_PROC) {
+		int cnt = *(int*) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
+		if (cnt == 1){
+			YYSTREE *x = (YYSTREE*) BUNtloc(TBL_fcn_imp, BUNfnd(TBL_fcn_imp, &pid));
+			if (x && *x) {
+	    			GDKfree((*x)->yyval.val.pval); /* free disguised name */
+	    			yyfree((*x));
+			}
+	    		TBL_Deinstall_Function(pid);
+		} else {
+			cnt--;
+			BUNreplace(TBL_fcn_cnt, &pid, &cnt);
 		}
-	    	BUNdelete(cb, BUNfnd(cb, &pid));
-		if (mod) BUNdel(TBL_mod_proc, mod, &pid);
-	    	TBL_Deinstall_Function(pid);
-	    } else {
-		cnt--;
-  		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
-	    }
- 	  }
-	  BBPreclaim(bb);
-	} else {
-	  int type = *(int*)BUNtail(TBL_fcn_tpe, BUNfnd(TBL_fcn_tpe, &pid));
-	  if (type == TOK_PROC){
-	    int cnt = *(int*)BUNtail(TBL_fcn_cnt,BUNfnd(TBL_fcn_cnt, &pid));
-	    if (cnt == 1){
-		YYSTREE *x = (YYSTREE*)
-			BUNtloc(TBL_fcn_imp,BUNfnd(TBL_fcn_imp,&pid));
-
-		if (x && *x) {
-	    		/* free disguised name */
-	    		GDKfree((*x)->yyval.val.pval); 
-	    		yyfree((*x));
-		}
-	    	BUNdelete(cb, BUNfnd(cb, &pid));
-	    	TBL_Deinstall_Function(pid);
-	    } else {
-		cnt--;
-  		BUNreplace(TBL_fcn_cnt, &pid, &cnt);
-	    }
-	  }
+		/* remove from user's function table. MIL will not recognize it anymore */
+		BUNdelHead(BATmirror(client->fcntbl), &pid);
 	}
 	if (lock) TBL_M_unlock(client);
+}
+
+void TBL_undefproc(Client client, str nme) {
+   	int xx, yy = TOK_PROC;
+	BAT *sb = BATuselect(BATmirror(client->fcntbl), nme, nme);
+        BAT *tb = BATsemijoin(TBL_fcn_tpe, sb);
+        BAT *bb = BATuselect(tb, &yy, &yy);
+	BUN p,q;
+
+	BBPreclaim(sb);
+	BBPreclaim(tb);
+
+	BATloopFast(bb, p, q, xx) {
+		TBL_delproc(client, *(oid*) BUNhead(bb,p), TRUE);
+	}
+	BBPreclaim(bb);
 }
 
 @- TBL_procreturn
@@ -2486,9 +2476,9 @@ delete all procs, and finally we drop the modules (with level=1). Due to the lev
 it will not execute the drop scripts again. 
 @c
 void TBL_exitclient(Client client) {
-	BAT	*b, *bn, *procs, *fcns;
+	BAT	*b, *bn, *tmp = BATcopy(client->fcntbl);
 	BUN 	p, q, r;
-	int	xx, proc=TOK_PROC;
+	int	xx;
 
 #ifdef MKMODS
 	TEM_exitclient(client);
@@ -2496,20 +2486,15 @@ void TBL_exitclient(Client client) {
 	TBL_M_lock(client);
 
 	/* Check for procs in your fcn table.  */
-	procs = BAT_select(TBL_fcn_tpe, &proc, &proc, FALSE);
-	fcns = BATsemijoin(BATmirror(client->fcntbl), procs);
-
-	BATloopFast(fcns, p, q, xx) {
-		TBL_delproc(client, (str) BUNtvar(fcns, p), NULL,
-			*(oid*) BUNhloc(fcns, p), FALSE);
+	BATloopFast(tmp, p, q, xx) {
+		TBL_delproc(client, *(oid*) BUNtloc(tmp, p), FALSE);
 	}
-	BBPreclaim(procs);
-	BBPreclaim(fcns);
+	BBPreclaim(tmp);
 
 	/* Unload all loaded modules in reverse loading order. */
 	bn = BATselect(TBL_mod_use, &client, &client);
-	b = BATsort(bn); 
-	b = BATrevert(procs=BATsetaccess(b, BAT_WRITE));
+	tmp = BATsetaccess(BATsort(bn), BAT_WRITE);
+	b = BATrevert(tmp);
 	BATloopFast(b, p, q, xx) { 
 	    oid mid = *(oid*) BUNhloc(b,p); 
 	    if (BUNlocate(TBL_mod_use, BUNhloc(b,p), &client)) {
