@@ -260,10 +260,8 @@ sql_export mvc *mvc_create( int cache, backend_stack stk,
 			    bstream *rs, stream *ws );
 sql_export void mvc_destroy( mvc *c );
 
+sql_export int mvc_set_schema( mvc *m, char *schema );
 sql_export char *mvc_login( mvc *c, char *user, char *passwd );
-/* later a change_schema and a change_database could be added 
-	connect to ...
-*/
 
 sql_export ssize_t mvc_status( mvc *c );
 sql_export int mvc_type( mvc *c );
@@ -2102,7 +2100,7 @@ int mvc_init(int debug, backend_stack stk)
 		sql_create_history(m, s);
 		sql_create_env(m, s);
 
-		t = mvc_create_view(m, s, "tables", "select * from ( select p.*, 0 as \"temporary\" from ptables p union all select t.*, 1 as \"temporary\" from ttables t) as tables;", 1, 1);
+		t = mvc_create_view(m, s, "tables", "select * from ( select p.*, 0 as \"temporary\" from sys.ptables p union all select t.*, 1 as \"temporary\" from sys.ttables t) as tables;", 1, 1);
 		mvc_create_column_(m, t, "id", "MEDIUMINT");
 		mvc_create_column_(m, t, "name", "VARCHAR");
 		mvc_create_column_(m, t, "schema_id", "MEDIUMINT");
@@ -2112,7 +2110,7 @@ int mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "clear", "BOOLEAN");
 		mvc_create_column_(m, t, "temporary", "SMALLINT" );
 
-		t = mvc_create_view(m, s, "columns", "select * from ( select p.* from pcolumns p union all select t.* from tcolumns t) as columns;", 1, 1);
+		t = mvc_create_view(m, s, "columns", "select * from ( select p.* from sys.pcolumns p union all select t.* from sys.tcolumns t) as columns;", 1, 1);
 		mvc_create_column_(m, t, "id", "MEDIUMINT" );
 		mvc_create_column_(m, t, "name", "VARCHAR" );
 		mvc_create_column_(m, t, "type", "VARCHAR" );
@@ -2157,6 +2155,19 @@ int mvc_set_user( mvc *m, char *user )
 	return res;
 }
 
+int mvc_set_schema( mvc *m, char *schema )
+{
+	int ret = 0;
+
+	m->trans->schema = find_schema(m->trans, schema);
+	if (m->trans->schema) {
+		m->schema = _strdup(schema);
+		mvc_rollback(m, 0, NULL);
+		ret = 1;
+	}
+	return ret;
+}
+
 char *mvc_login(mvc *m, char *user, char *passwd)
 {
 	char *schema = NULL;
@@ -2196,13 +2207,10 @@ char *mvc_login(mvc *m, char *user, char *passwd)
 	if (!schema)
 		return NULL;
 
-	m->trans->schema = find_schema(m->trans, schema);
-	if (!m->trans->schema) {
+	if (!mvc_set_schema( m, schema)) {
 		_DELETE(schema);
 		return NULL;
 	}
-	m->schema = _strdup(schema);
-	mvc_rollback(m, 0, NULL);
 	return schema;
 }
 

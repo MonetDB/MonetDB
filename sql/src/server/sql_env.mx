@@ -202,7 +202,8 @@ set_var( mvc *sql, char *name, symbol *val, char *typename )
 {
 	sql_subtype *ctype;
 	scope *scp = scope_open(NULL);
-	sql_table *sessions = mvc_bind_table(sql, cur_schema(sql), "sessions");
+	sql_schema *sys = mvc_bind_schema(sql, "sys");
+	sql_table *sessions = mvc_bind_table(sql, sys, "sessions");
 	tvar *tv = scope_add_table_columns(sql, scp, sessions, sessions->base.name);
 	stmt *st, *v = sql_value_exp( sql, scp, val, NULL, NULL, sql_sel);
 	sql_column *c = mvc_bind_column(sql, sessions, "value");
@@ -287,6 +288,13 @@ int sql_update_var(mvc *m, char *name )
 		m->auto_commit = sql_get_bit_var(m, "auto_commit");
 	} else if (strcmp(name, "reply_size") == 0) {
 		m->reply_size = sql_get_int_var(m, "reply_size");
+	} else if (strcmp(name, "current_schema") == 0) {
+		char *schema = sql_get_str_var(m, "current_schema");
+
+		if (!mvc_set_schema(m, schema)){
+			GDKwarning("Schema (%s) missing\n", schema);
+			return GDK_FAIL;
+		}
 	} else if (strcmp(name, "current_timezone") == 0) {
 		m->timezone = sql_get_int_var(m, "current_timezone")/60;
 	} else if (strcmp(name, "explain") == 0) {
@@ -401,7 +409,7 @@ sql_session( mvc *m )
 	BUNins(n, (ptr) &h, "current_schema" );
 	BUNins(v, (ptr) &h, m->schema);
 	BUNins(T, (ptr) &h, "varchar");
-	BUNins(a, (ptr) &h, &ro);
+	BUNins(a, (ptr) &h, &rw);
 	h++;
 
 	/* MonetDB/SQL user/current_user/session_user (authorization id) */
