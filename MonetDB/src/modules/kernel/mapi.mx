@@ -32,27 +32,27 @@ command Stop(port:int):bit = MAPIstop
 	comment "Terminate a listener owned by the client";
 
 # initialization code
-function main():void;
-	vm1:= bat(5:int,11:int);
-	bat.setName(vm1,"view_mapi_owner");
-	bat.setColumn(vm1,"mapi","owner");
+#function main():void;
+	#vm1:bat[int,int]:= bat(5:int,11:int);
+	#bat.setName(vm1,"view_mapi_owner");
+	#bat.setRole(vm1,"mapi","owner");
 
-	vm2:= bat(5:int,5:int);
-	bat.setName(vm2,"view_mapi_port");
-	bat.setColumn(vm2,"mapi","port");
+	#vm2:bat[int,int]:= bat(5:int,5:int);
+	#bat.setName(vm2,"view_mapi_port");
+	#bat.setRole(vm2,"mapi","port");
 
-	vm3:= bat(5:int,5:int);
-	bat.setName(vm3,"view_mapi_maxusers");
-	bat.setColumn(vm3,"mapi","maxusers");
+	#vm3:bat[int,int]:= bat(5:int,5:int);
+	#bat.setName(vm3,"view_mapi_maxusers");
+	#bat.setRole(vm3,"mapi","maxusers");
 
-	vm4:= bat(5:int,5:int);
-	bat.setName(vm4,"view_mapi_users");
-	bat.setColumn(vm4,"mapi","users");
+	#vm4:bat[int,int]:= bat(5:int,5:int);
+	#bat.setName(vm4,"view_mapi_users");
+	#bat.setRole(vm4,"mapi","users");
 
-	vm5:= bat(5:int,5:int);
-	bat.setName(vm5,"view_mapi_timeout");
-	bat.setColumn(vm5,"mapi","timeout");
-end function;
+	#vm5:bat[int,int]:= bat(5:int,5:int);
+	#bat.setName(vm5,"view_mapi_timeout");
+	#bat.setRole(vm5,"mapi","timeout");
+#end function;
 	
 @h
 /*

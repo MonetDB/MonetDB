@@ -70,6 +70,7 @@ found in the same directory.
 ./dbfarm/$DB/                # default database directory
 ./dbfarm/$DB/lib/            # database specific modules
 ./dbfarm/$DB/scripts/        # database specific scripts
+./dbfarm/$DB/boxes/          # database specific object spaces
 ./dbfarm/$DB/bat/            # database tables directory
 ./dbfarm/$DB/bat/BBP.dir     # database BAT directory
 \end{verbatim}
@@ -256,6 +257,7 @@ void createDB(char *home) {
 	localmkdir("bin");
 	localmkdir("include");
 	localmkdir("lib");
+	localmkdir("boxes");
 	localmkdir("mal");
 	copyfile("startup.mal","startup.mal");
 	localmkdir("mil");
@@ -340,4 +342,5 @@ void dbargs(int argc,char **argv) {
 		exit(-1);
 	}
 }
+
 @}
