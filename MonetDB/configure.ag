@@ -146,6 +146,19 @@ if test "x$enable_prof" = xyes; then
 fi
 AM_CONDITIONAL(PROFILING,test "x$need_profiling" = xyes)
 
+dnl --enable-instrument
+need_instrument=no
+AC_ARG_ENABLE(instrument,
+[  --enable-instrument        enable instrument [default=off]],
+  enable_instrument=$enableval, enable_instrument=no)
+if test "x$enable_instrument" = xyes; then
+  CFLAGS="$CFLAGS -DPROFILE"
+  need_instrument=yes
+  if test "x$GCC" = xyes; then
+    CFLAGS="$CFLAGS -finstrument-fucntions -g"
+  fi
+fi
+
 dnl systems checks
 AC_AIX
 
