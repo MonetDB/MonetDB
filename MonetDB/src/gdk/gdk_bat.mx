@@ -61,6 +61,7 @@ called atomHeap.
 #include "gdk.h"
 
 gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
+gdk_export size_t BATtopN(BAT *b, size_t topN);		/* used in monet5/src/modules/kernel/algebra.mx */
 
 #endif /* _GDK_BAT_H_ */
 @c
