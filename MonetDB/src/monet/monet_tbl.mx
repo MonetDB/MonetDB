@@ -83,7 +83,6 @@ m_export BAT *TBL_mod_nme;
 m_export BAT *TBL_mod_cnt;
 m_export BAT *TBL_mod_hdl;
 m_export BAT *TBL_mod_atm;
-m_export BAT *TBL_mod_acc;
 m_export BAT *TBL_mod_dep;
 m_export BAT *TBL_mod_use;
 m_export BAT *TBL_mod_load;
@@ -114,8 +113,6 @@ m_export oid TBL_Install_Info(TBLinstall *i, /* Passed on from "module"_Install 
 
 m_export void TBL_Install_Atom(oid mid, str name, int size, /* 0 == not fixed size */
 			       int align);	/* 0 == not fixed size */
-
-m_export void TBL_Install_Accelerator(oid mid, str name);
 
 m_export void TBL_Install_DropRefs(oid mid, bat *batrefs);
 
@@ -199,7 +196,6 @@ BAT *TBL_mod_nme = NULL;	/* BAT(oid, str): (MID, module name). */
 BAT *TBL_mod_cnt = NULL;	/* BAT(oid, int): (MID, reference count). */
 BAT *TBL_mod_hdl = NULL;	/* BAT(oid, ptr): (MID, OS dynlink handle). */
 BAT *TBL_mod_atm = NULL;	/* BAT(oid, str): (MID, atom name). */
-BAT *TBL_mod_acc = NULL;	/* BAT(oid, str): (MID, accelerator name). */
 BAT *TBL_mod_dep = NULL;	/* BAT(oid, str): (MID, depends-of module name). */
 BAT *TBL_mod_use = NULL;	/* BAT(oid, int): (which clients use a mod). */
 BAT *TBL_mod_load = NULL;	/* BAT(oid, str): (MID, mil-script). */
@@ -646,17 +642,14 @@ TBL_M_lock(Client c)
 	BATfakeAbort(TBL_mod_cnt);
 	BATfakeAbort(TBL_mod_hdl);
 	BATfakeAbort(TBL_mod_atm);
-	BATfakeAbort(TBL_mod_acc);
 	BATfakeAbort(TBL_mod_dep);
 	BATfakeAbort(TBL_mod_use);
 	BATfakeAbort(TBL_mod_load);
 	BATfakeAbort(TBL_mod_drop);
 	BATfakeAbort(TBL_mod_proc);
 	BATfakeAbort(TBL_mod_var);
-	if (c != NULL) {
-		BATfakeAbort(c->acctbl);
+	if (c != NULL) 
 		BATfakeAbort(c->atomtbl);
-	}
 	dlPRINT("  <--TBL_M_lock\n");
 	return 1;
 }
@@ -680,7 +673,6 @@ TBL_M_unlock(Client c)
 	BATfakeCommit(TBL_mod_cnt);
 	BATfakeCommit(TBL_mod_hdl);
 	BATfakeCommit(TBL_mod_atm);
-	BATfakeCommit(TBL_mod_acc);
 	BATfakeCommit(TBL_mod_dep);
 	BATfakeCommit(TBL_mod_use);
 	BATfakeCommit(TBL_mod_load);
@@ -698,7 +690,6 @@ TBL_M_unlock(Client c)
 				assert(0);
 			BATfakeCommit(c->fcntbl);
 		}
-		BATfakeCommit(c->acctbl);
 		BATfakeCommit(c->atomtbl);
 	}
 	TBL_unset_writelock();
@@ -1505,7 +1496,6 @@ Since the BBP will no longer store these tables only creation is needed
 	@:TBL_create(mod,nme,oid,str,40,BOUND2BTRUE,BOUND2BTRUE)@
 	@:TBL_create(mod,cnt,oid,int,40,BOUND2BTRUE,FALSE)@
 	@:TBL_create(mod,atm,oid,str,40,FALSE,FALSE)@
-	@:TBL_create(mod,acc,oid,str,40,FALSE,FALSE)@
 	@:TBL_create(mod,hdl,oid,ptr,40,BOUND2BTRUE,TRUE)@
 	@:TBL_create(mod,dep,oid,str,40,FALSE,FALSE)@
 	@:TBL_create(mod,use,oid,int,40,FALSE,FALSE)@
@@ -1610,23 +1600,6 @@ TBL_M_client_install(Client client, oid mid)
 			GDKerror("TBL_M_client_install: atom '%s' unknown.\n", s);
 		} else {
 			if (BUNins(client->atomtbl, s, &aid) == NULL)
-				assert(0);
-		}
-	}
-
-	/* Install all accelerators in user acctble
-	 */
-	if (BATprepareHash(TBL_mod_acc))
-		assert(0);
-	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, midp, r) {
-		nme = (char *) BUNtail(TBL_mod_acc, r);
-		for (j = 0; nme[j] && nme[j] != '='; j++)
-			s[j] = nme[j];
-		s[j] = 0;
-		if ((aid = ACCindex(s)) < 0) {
-			GDKerror("TBL_M_client_instal: accelerator '%s' unknown.\n", s);
-		} else {
-			if (BUNins(client->acctbl, s, &aid) == NULL)
 				assert(0);
 		}
 	}
@@ -1839,7 +1812,7 @@ Lets do the things in the right order, see above!
 		}
 		loaded = (mid != 0);
 	} else {
-		/* load the (already known) dependency modules, just to add fcns, atoms and accelerators to the parsing tables */
+		/* load the (already known) dependency modules, just to add fcns and atoms to the parsing tables */
 		BAT *b = BAT_select(BATmirror(TBL_mod_dep), &mid, &mid, FALSE);
 		BUN p, q;
 
@@ -1875,15 +1848,14 @@ Lets do the things in the right order, see above!
 @- TBL_unloadmod
 
 We now check before unloading that there are no MIL variables or loaded BATs of object
-types (atoms, accelerators) introduced by the module-to-be-dropped. If there are any, the drop fails.
+types atoms introduced by the module-to-be-dropped. If there are any, the drop fails.
 @c
 static int
-unloadmod_exit(int ret, Client father, int *tpes, int *accs)
+unloadmod_exit(int ret, Client father, int *tpes)
 {
 	if (father)
 		TBL_M_unlock(father);
 	GDKfree(tpes);
-	GDKfree(accs);
 	return ret;
 }
 
@@ -1906,13 +1878,13 @@ unloadmod_bat(BAT *b, oid mid)
 }
 
 static int
-unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int naccs, int *accs)
+unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 {
 	int i, j;
 	BUN p, q;
 	str foundvar;
 
-	if (ntpes == 0 && naccs == 0)
+	if (ntpes == 0)
 		return 0;
 
 	/* look in all MIL variable contexts for values of soon obsolete types */
@@ -1926,7 +1898,7 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int naccs, int *a
 		return -1;	/* will not be able to drop module */
 	}
 
-	/* Go through the entire BBP, looking for soon obsolete types and accelerators */
+	/* Go through the entire BBP, looking for soon obsolete types */
 	BBPlock("drop");	/* wait for all unloads to finish and block all trims and BAT load decisions */
 	for (i = 1; i < BBPsize; i++) {
 		if (BBP_logical(i)) {
@@ -1953,29 +1925,11 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int naccs, int *a
 			}
 			if (j != ntpes)
 				continue;
-			for (j = 0; j < naccs; j++) {
-				if (b->hacctype == accs[j] || b->tacctype == accs[j]) {
-					int cnt = unloadmod_bat(b, mid);
-
-					if (cnt == 0) {
-						break;
-					} else if (cnt > 0) {
-						GDKerror("unloadmod_check_use: drop(%s) failed: %s with %s accelerator has %d reference%s.\n", module, BBP_logical(i), ACCname(accs[j]), cnt, cnt > 1 ? "s" : "");
-					} else {
-						GDKerror("unloadmod_check_use: drop(%s) failed: %s with %s accelerator could not be unloaded due to write errors.\n", module, BBP_logical(i), ACCname(accs[j]));
-					}
-					BBPunlock("drop");
-					return -1;	/* will not be able to drop module */
-				}
-			}
 		}
 	}
 	/* OK: drop can go through. */
 	for (i = 0; i < ntpes; i++)
 		BATatoms[tpes[i]].deleting = 1;	/* block BAT loads of these atoms */
-	for (i = 0; i < naccs; i++)
-		BATaccelerators[accs[i]].deleting = 1;	/* block BAT loads of these accs */
-
 	/* start unload for all prologue bats such that they cannot receive new refcounts */
 	BATloop(TBL_mod_drop, p, q) {
 		if (*(oid *) BUNhloc(TBL_mod_drop, p) == mid) {
@@ -2000,8 +1954,7 @@ TBL_unloadmod(Client client, str module, int level)
 	int refcnt = 0;
 	oid fid, *fidp = &fid, mid, *midp = &mid;
 	hash_t i;
-	int j, maccs = 80, mtpes = 80, naccs = 0, ntpes = 0;
-	int *accs = (int *) GDKmalloc(maccs * sizeof(int));
+	int j, mtpes = 80, ntpes = 0;
 	int *tpes = (int *) GDKmalloc(mtpes * sizeof(int));
 	int (*addr) (void);
 	ptr hdl = NULL;
@@ -2029,7 +1982,7 @@ Look up the module.
 		else
 			GDKerror("TBL_unloadmod: module %s does not exist.\n", module);
 
-		return unloadmod_exit(0, level ? NULL : client, accs, tpes);
+		return unloadmod_exit(0, level ? NULL : client, tpes);
 	}
 @-
 Check if it is in use already.
@@ -2040,17 +1993,17 @@ Check if it is in use already.
 		r = BUNlocate(TBL_mod_use, &mid, &cid);
 		if (r == NULL) {
 			GDKerror("TBL_unloadmod: %s was not loaded.\n", module);
-			return unloadmod_exit(0, client, accs, tpes);
+			return unloadmod_exit(0, client, tpes);
 		}
 		if (!TBL_M_directloaded(client, mid, module)) {
 			GDKerror("TBL_unloadmod: others need %s.\n", module);
-			return unloadmod_exit(0, client, accs, tpes);
+			return unloadmod_exit(0, client, tpes);
 		}
 	}
 @-
 preparation phase (only meaningful for C-modules) */
 @c
-	/* find out which atoms and accelerators belong to it */
+	/* find out which atoms belong to it */
 	if (BATprepareHash(TBL_mod_atm))
 		assert(0);
 	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, midp, r) {
@@ -2064,24 +2017,11 @@ preparation phase (only meaningful for C-modules) */
 		if (ntpes == mtpes)
 			tpes = (int *) GDKrealloc(tpes, (mtpes *= 2) * sizeof(int));
 	}
-	if (BATprepareHash(TBL_mod_acc))
-		assert(0);
-	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, midp, r) {
-		nme = (char *) BUNtail(TBL_mod_acc, r);
-		for (j = 0; nme[j] && nme[j] != '='; j++)
-			s[j] = nme[j];
-		s[j] = 0;
-		r = (char *) BUNfnd(client->acctbl, s);
-		assert(r);
-		accs[naccs++] = *(int *) BUNtloc(client->acctbl, r);
-		if (naccs == maccs)
-			accs = (int *) GDKrealloc(accs, (maccs *= 2) * sizeof(int));
-	}
 @-
-check if the C-module is physically dropped that none of its atoms or accelerators is in use
+check if the C-module is physically dropped that none of its atoms is in use
 @c
-	if (TBL_M_countref(mid) == 1 && unloadmod_check_use(mid, module, ntpes, tpes, naccs, accs)) {
-		return unloadmod_exit(level, level ? NULL : client, accs, tpes);	/* NO GO */
+	if (TBL_M_countref(mid) == 1 && unloadmod_check_use(mid, module, ntpes, tpes )) {
+		return unloadmod_exit(level, level ? NULL : client, tpes);	/* NO GO */
 	}
 @-
 decrease the refount of the module. we are ready if it isn't zero (LOGICAL DROP).
@@ -2106,14 +2046,10 @@ drop will go through;
 				}
 			}
 		} else {
-			/* delete all the C-modules's atoms, accelerators and functions */
+			/* delete all the C-modules's atoms and functions */
 			for (j = 0; j < ntpes; j++)
 				if (BUNdelHead(BATmirror(client->atomtbl), tpes + j) == NULL)
 					assert(0);
-			for (j = 0; j < naccs; j++)
-				if (BUNdelHead(BATmirror(client->acctbl), accs + j) == NULL)
-					assert(0);
-
 			if (BATprepareHash(fcn_mid))
 				assert(0);
 			HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
@@ -2191,7 +2127,7 @@ drop will go through;
 	BBPreclaim(b);
 
 	/* drop succeeded */
-	return unloadmod_exit(1, level ? NULL : client, accs, tpes);
+	return unloadmod_exit(1, level ? NULL : client, tpes);
 }
 
 @+ Function Resolution
@@ -2786,7 +2722,7 @@ TBL_procreturn(int argc, ValPtr argv, ValPtr res, YYSTREE t)
 
 @+ Client Managament
 @-
-Each user gets a private function, atom, and accelerator table. They are
+Each user gets a private function and atom table. They are
 initialized with the built-in functions and atomary types. They are extended
 later on when the user loads a module.
 
@@ -2804,7 +2740,6 @@ TBL_initclient(Client client, Client father)
 	TBL_M_lock(client);
 	if (monet_clients != client) {
 		client->fcntbl = TBL_fathercopy(client, father, "fcntbl");
-		client->acctbl = TBL_fathercopy(client, father, "acctbl");
 		client->atomtbl = TBL_fathercopy(client, father, "atomtbl");
 
 		/* for all procs in the client fcntbl, increment their refcnt */
@@ -2819,14 +2754,6 @@ TBL_initclient(Client client, Client father)
 			TBL_inc_mod_use(client, father);	/* inc mod use counters */
 	} else {
 		client->fcntbl = TBL_create(client, "fcntbl", TBL_SIZE, TYPE_str, TYPE_oid, 0, BOUND2BTRUE);
-
-		/* Create the client acc-table, and fill it
-		 * with the standard types.
-		 */
-		client->acctbl = TBL_create(client, "acctbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, BOUND2BTRUE);
-		i = ACC_hash;
-		if (BUNins(client->acctbl, "hash", &i) == NULL)
-			assert(0);
 
 		/* Create the client atom-table, and fill it
 		 * with the standard types.
@@ -2935,8 +2862,7 @@ TBL_exitclient(Client client)
 	/* Clean up all client parser BATs */
 	BBPunfix(client->fcntbl->batCacheid);
 	BBPunfix(client->atomtbl->batCacheid);
-	BBPunfix(client->acctbl->batCacheid);
-	client->fcntbl = client->atomtbl = client->acctbl = 0;
+	client->fcntbl = client->atomtbl = 0;
 	TBL_M_unlock(NULL);
 }
 
@@ -2986,16 +2912,6 @@ TBL_Install_Atom(oid mid, str name, int size,	/* 0 == not fixed size */
 			assert(0);
 	}
 	GDKfree(extended);
-}
-
-@- TBL_Install_Accelerator
-@c
-void
-TBL_Install_Accelerator(oid mid, str name)
-{
-	dlFPRINTF(GDKerr, "  TBL_Install_Accelerator(%s)\n", name);
-	if (BUNins(TBL_mod_acc, &mid, name) == NULL)
-		assert(0);
 }
 
 @- TBL_Install_Functions

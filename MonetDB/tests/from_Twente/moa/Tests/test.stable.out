@@ -799,15 +799,15 @@ _MMmergecast_7.find(3@0).print();
 # { 0 ,  0 ,  0 ,  2 }
 
 _MMoper_2 := [=](valuesA,30);
-var _MMCTgroup_3 := [oid](CTgroup(_MMoper_2));
-var _MMtunique_4 := tunique(_MMCTgroup_3).mark(0@0);
-_MMreverse_5 := reverse(_MMtunique_4);
+var _MMCTgroup_3 := CTgroup(_MMoper_2);
+var _MMextend_4 := _MMCTgroup_3.extend().mark(0@0);
+_MMreverse_5 := reverse(_MMextend_4);
 _MMnilcast_6 := _MMreverse_5.reverse().mark(0@0).reverse();
 _MMjoin_7 := join(_MMnilcast_6,_MMoper_2);
 _MMreverse_8 := reverse(_MMjoin_7);
 var _MMnilcast_9 := _MMreverse_8.reverse().mark(0@0).reverse();
 var _MMreverse_10 := reverse(_MMnilcast_6);
-var _MMjoin_11 := join(_MMCTgroup_3,_MMreverse_10);
+var _MMjoin_11 := join(_MMCTgroup_3.map(),_MMreverse_10);
 var _MMreverse_12 := reverse(_MMjoin_11);
 var _MMreverse_13 := reverse(_MMnilcast_9);
 _MMnilcast_9.print();

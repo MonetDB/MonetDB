@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@a M.L. Kersten, P. Boncz, A.P. de Vries -- $Id$
+@a M.L. Kersten, P. Boncz, A.P. de Vries, N.J. Nes -- $Id$
 @f xtables
 @t Cross Table Module
 @v 2.2
@@ -30,6 +30,8 @@ without permission of the copyright owner. }
 @{
 @+ Document control
 @T
+(Mar 2005:) Niels removed the histolink accelerator and changed to the grp atom
+
 (June 2001:) Arjen made the size of the hashtable parametric, which is needed
 for text corpora (many different clusters (>30000), widely varying size (Zipfian)).
 (May 2001:) Arjen added some minor changes to better handle `clustered' groups;
@@ -96,31 +98,41 @@ The Monet interface module specification is shown below.
 .END;
 .ATOM idxentry[16,8];
 .END;
+.ATOM grp[8,8];
+.FIX   = grp_fix; 
+.UNFIX = grp_unfix;
+.END;
 
 @-
 basic multi-attribute group operations, that take the incremental approach.
 CT[re]group and CTderive implement GROUPBY, CTrefine implements ORDERBY.
 @m
-.COMMAND CTgroup(BAT[oid,any] attr) : BAT[oid,oid] = CTgroup;
+.COMMAND CTmap(grp g) : BAT[oid,oid] = CTmap;
+"Return the group map."
+
+.COMMAND CTextend(grp g) : BAT[oid,any] = CTextend;
+"Return the group extend."
+
+.COMMAND CThistogram(grp g) : BAT[any,int] = CThistogram;
+"Return the groups histogram."
+
+.COMMAND CTgroup(BAT[oid,any] attr) : grp = CTgroup;
 "Cross tabulation group initialization.
 Returned head values are identical as in 'attr'. Tail values are from
 the same domain and indicate unique groups in 'attr' tail column."
 
-.COMMAND _CTgroup(BAT[oid,any] attr, int N, int rng) : BAT[oid,oid] = CTgroup_custom;
+.COMMAND _CTgroup(BAT[oid,any] attr, int N, int rng) : grp = CTgroup_custom;
 "Cross tabulation group initialization like CTgroup, but with user
 provided #bits in hashmask and #distinct values in range."
 
-.COMMAND CTderive(BAT[oid,any] ct, BAT[oid,any] attr) : BAT[oid,oid] = CTderive;
+.COMMAND CTderive(BAT[oid,any] ct, BAT[oid,any] attr) : grp = CTderive;
 "Cross tabulation group extension step.
 Returned head values are identical as in 'ct'. Tail values are from
 the same domain and indicate further refinement of the groups in 'ct',
 taking into account also the tail-values in 'attr'."
 
-.COMMAND CTgroup(BAT[oid,any] ct, BAT[oid,any] attr) : BAT[oid,oid] = CTderive;
+.COMMAND CTgroup(BAT[oid,any] ct, BAT[oid,any] attr) : grp = CTderive;
 "binary grouping; a synonym for CTderive(ct,attr)"
-
-.COMMAND CTregroup(BAT[oid,oid] ct, BAT[oid,any] attr) : BAT[oid,oid]
-		= CTregroup; "modifies ct and returns it doing a group"
 
 .COMMAND CTrefine(BAT[oid,any] b, BAT[oid,any] a) : BAT[oid,oid] = CTrefine;
 "refine the ordering of a tail-ordered BAT by sub-ordering on the
@@ -130,24 +142,6 @@ distinction that the group ids respect the ordering of the group values."
 
 .COMMAND CTrefine_rev(BAT[oid,any] b, BAT[oid,any] a) : BAT[oid,oid] = CTrefine_rev;
 "reverse sorting version of CTrefine"
-@-
-histogram support. during group computation we already compute histograms
-for quick re-use. They are attached to the CT by means of a histolink.
-@m
-.ACCELERATOR histolink(any);
-      .BUILD	 = CTbuild_hl;
-      .DESTROY	 = CTdestroy_hl;
-      .INSERT	 = CTupdate_hl;
-      .DELETE	 = CTupdate_hl;
-.END;
-
-.COMMAND histogram(BAT[oid,any::1]) : BAT[any::1,int] = CThistogram;
-"compute a histogram on the tail. Optimized for retrieving the
-already present histogram on a cross-table computed by CTgroup."
-
-.COMMAND tunique(BAT[oid,any::1]) : BAT[any::1,void] = CTtunique;
-"get all unique tail values. Optimized for getting all unique
-oids from a cross-table computed by CTgroup."
 
 .COMMAND CTsubhisto(BAT[void,bit] sel, BAT[void,oid] grp, BAT[oid,any] domain)
 : BAT[oid,int] = CTsubhisto;
@@ -157,6 +151,7 @@ bats on a previously known domain "
 .COMMAND CThistosum(BAT[oid,oid] ct, BAT[oid,int] histo) : BAT[oid,int] = CThistosum;
 "Produce sum over old histogram table"
 
+@m
 .END xtables;
 
 @mil
@@ -177,6 +172,18 @@ bats on a previously known domain "
 
      PROC CTsubgroup(BAT[oid,oid] ct, BAT[oid,any] b, BAT[oid,any] sel) : BAT[oid,oid] {
 		return ct.CTgroup(b.semijoin(sel));
+	}
+
+     PROC map( grp g ) : BAT[oid,oid] {
+		return g.CTmap();
+	}
+
+     PROC extend( grp g ) : BAT[any,int] {
+		return g.CTextend();
+	}
+
+     PROC histogram( grp g ) : BAT[any,int] {
+		return g.CThistogram();
 	}
 
      PROC {count}(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] {
@@ -220,233 +227,90 @@ bats on a previously known domain "
 	     orderby_table("print", $(1..));
      }
 
-@- Histogram reuse
-@T
-An accelerator structure is used to establish a link between a BAT
-column, and a histogram on it. In this way, already computed histograms
-can be reused.
-
-All CT grouping operations, CTgroup(attr), CTgroup(ct,attr) and
-CTsubgroup(ct,attr,sel), let their internally generated histogram on
-the group-ids of the newly computed CT BAT behind using
-the {\tt histolink} accelerator, so the overloaded histogram(ct)
-will be able to pick it up without computation.
-
 @{
 @* Implementation Code
+
+@+ groups
+
 @c
 #include "algebra.h"
+
+typedef struct grp_t {
+	bat map;
+	bat histo;
+} grp;
+
 #include "xtables.proto.h"
-
-@+ HistoLink
-The histolink accelerator establishes a link between a BAT column and a
-histogram on it. In this way, once computed, a histogram can be reused.
-@c
-typedef struct {
-	bat histogram;
-	oid alignment;
-} histolink;
-
 
 @- Implementation
 @c
-int hl_stamp = 0;
-
-static bat
-build_hl(Heap *hp, bat histo, BAT *b)
-{
-	histolink *hl;
-	BAT *h = NULL;
-	bat created = 0;
-
-	if (histo) {
-		h = BBP_cache(histo);
-	}
-	if (h == NULL) {
-		h = BATorder(BAThistogram(BATmirror(b)));
-		if (h == NULL)
-			return 0;
-		created = histo = h->batCacheid;
-	} else {
-		if (b->halign == 0) {
-			b->halign = OIDnew(1);
-		}
-		h->halign = NOID_AGGR(b->halign);
-		BATkey(h, TRUE);
-		h->tsorted = 0;
-		if ((h->hsorted = BAThordered(b)) & 1) {
-			if (BATcount(h) == BATcount(b)) {
-				ALIGNsetH(h, BATmirror(b));
-			}
-		} else if (BATorder(h) == NULL) {
-			BBPreclaim(h);
-			return 0;
-		}
-	}
-	if (strncmp(BBPname(histo), "tmp_", 4) == 0) {
-		char buf[256], *p = buf + 4;
-		int l = 256;
-
-		l = batToStr(&p, &l, &b->batCacheid);
-		buf[0] = 'h';
-		buf[1] = 'i';
-		buf[2] = 's';
-		buf[3] = 't';
-		buf[4] = 'o';
-		if (buf[5] == '~')
-			buf[5] = '_';
-		p[l - 1] = 0;
-		BBPrename(histo, buf);
-	}
-	h->batStamp = hl_stamp++;
-	if (HEAPalloc(hp, sizeof(histolink), 1) >= 0) {
-		hl = (histolink *) hp->base;
-		hl->histogram = histo;
-		if (h->halign == 0)
-			h->halign = OIDnew(1);
-		hl->alignment = h->halign;
-		b->hacctype = ACC_histolink;
-		BBPincref(histo, TRUE);
-	}
-	return created;
-}
-
-void
-CTbuild_hl(Heap *hp,		/* INOUT: vector accelerator heap */
-	   bat *param,		/* an extra parameter */
-	   BAT *b		/* IN: BAT with head-column. */
-    )
-{
-	bat created = build_hl(hp, param ? *param : 0, b);
-
-	if (created) {
-		BBPunfix(created);
-	}
-}
-
-static void
-destroy_hl(Heap *hp, BAT *b, bat histo)
-{
-	if (histo) {
-		BBPdecref(histo, TRUE);
-		BBPunfix(histo);
-	}
-	if (hp->base) {
-		HEAPfree(hp);
-		hp->base = NULL;
-	}
-	b->hacctype = 0;
-}
-
-static bat
-check_hl(Heap *hp, BAT *b)
-{
-	histolink *hl = (histolink *) hp->base;
-	bat histo = 0;
-
-	if (hl && hl->histogram && BBPfix(hl->histogram) > 0) {
-		b = BBPdescriptor(histo = hl->histogram);
-		if (b && hl->alignment == b->halign) {
-			return hl->histogram;
-		}
-		GDKwarning("CTcheck_hl: histogram was changed!");
-	} else {
-		GDKwarning("CTcheck_hl: histogram disappeared!");
-	}
-	destroy_hl(hp, b, histo);
-	return 0;
-}
 
 int
-CTcheck_hl(Heap *hp,		/* put return BAT[oid,any] here. */
-	   BAT *b		/* pointer to BAT[oid,any] record. */
-    )
+CTmap(BAT **b, grp *g ) 
 {
-	bat histo = check_hl(hp, b);
-
-	if (histo) {
-		BBPunfix(histo);
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-void
-CTdestroy_hl(Heap *hp,		/* INOUT: accelerator heap. */
-	     BAT *b		/* IN: BAT with accelerated head column. */
-    )
-{
-	bat histo = check_hl(hp, b);
-
-	destroy_hl(hp, b, histo);
-}
-
-void
-CTupdate_hl(Heap *hp,		/* INOUT: accelerator heap. */
-	    var_t idx, BAT *b,	/* IN: BAT with accelerated head column. */
-	    ptr val)
-{
-	(void) idx;
-	(void) val;
-	CTdestroy_hl(hp, b);
-}
-
-int
-CThistogram(BAT **h, BAT *b)
-{
-	bat histo = 0;
-
-	if (b->tacctype && b->tacctype != ACC_histolink) {
-		/* another accelerator already exists; leave it */
-		*h = BAThistogram(b);
-		return *h ? GDK_SUCCEED : GDK_FAIL;
-	}
-	if (b->tacctype == ACC_histolink) {
-		histo = check_hl(&b->taccelerator, b);
-	}
-	if (histo == 0) {
-		if (b->tacctype) {
-			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
-		}
-		histo = build_hl(&b->taccelerator, 0, BATmirror(b));
-		if (histo == 0)
-			return GDK_FAIL;
-	}
-	*h = VIEWcreate(BBP_cache(histo));
-	BBPunfix(histo);
-
+	*b = BATdescriptor(g->map); 
 	return GDK_SUCCEED;
 }
 
 int
-CTtunique(BAT **h, BAT *b)
+CTextend(BAT **b, grp *g ) 
 {
-	bat histo = 0;
+	BAT *h = BATdescriptor(g->histo); 
+	*b = VIEWhead(h);
+	BBPunfix(g->histo);
+	return GDK_SUCCEED;
+}
 
-	if (b->tacctype && b->tacctype != ACC_histolink) {
-		/* another accelerator already exists; leave it */
-		BAT *v = VIEWhead(BATmirror(b));
+int
+CThistogram(BAT **b, grp *g ) 
+{
+	*b = BATdescriptor(g->histo); 
+	return GDK_SUCCEED;
+}
 
-		*h = BATorder(BATkunique(v));
-		BBPreclaim(v);
-		return *h ? GDK_SUCCEED : GDK_FAIL;
-	}
-	if (b->tacctype == ACC_histolink) {
-		histo = check_hl(&b->taccelerator, b);
-	}
-	if (histo == 0) {
-		if (b->tacctype) {
-			ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
-		}
-		histo = build_hl(&b->taccelerator, 0, BATmirror(b));
-		if (histo == 0)
-			return GDK_FAIL;
+int 
+grp_new( grp *g, BAT *b, BAT *h ) 
+{
+	g->map = b->batCacheid;
+	BBPincref(b->batCacheid, TRUE );
+	BBPunfix(b->batCacheid);
+
+	g->histo = 0;
+	if (h) {
+                BATkey(h, TRUE);
+                h->tsorted = 0;
+                if ((h->hsorted = BAThordered(b)) & 1) {
+                        if (BATcount(h) == BATcount(b)) {
+                                ALIGNsetH(h, BATmirror(b));
+                        }
+                } else if (BATorder(h) == NULL) {
+                        BBPreclaim(h);
+                        return GDK_FAIL;
+                }
+		g->histo = h->batCacheid; 
+		BBPincref(h->batCacheid, TRUE );
+		BBPunfix(h->batCacheid);
 	} else {
-		histo = ((histolink *) b->taccelerator.base)->histogram;
+		assert(h);
 	}
-	*h = VIEWhead(BBP_cache(histo));
-	BBPunfix(histo);
+	return GDK_SUCCEED;
+}
 
+int 
+grp_fix( grp *g ) 
+{
+	BBPincref(g->map, TRUE);
+	if (g->histo)
+		BBPincref(g->histo, TRUE);
+	return GDK_SUCCEED;
+}
+
+int 
+grp_unfix( grp *g ) 
+{
+	BBPdecref(g->map, TRUE);
+	if (g->histo)
+		BBPdecref(g->histo, TRUE);
 	return GDK_SUCCEED;
 }
 
@@ -707,7 +571,7 @@ tailtype(BAT *b, int str_trick)
 #define declare_mask_CUSTOM	hash_t mask = (1 << *N) - 1;
 
 int
-CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
+CTgroup(grp *g,			/* put pointer to grp record here. */
 	BAT *b			/* pointer to BAT[oid,oid] record. */
     )
 {
@@ -715,7 +579,7 @@ CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
 }
 
 int
-CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
+CTgroup_custom(grp *g,		/* put pointer to grp record here. */
 	       BAT *b,		/* pointer to BAT[oid,oid] record. */
 	       int *N,		/* number of bits for hashmask */
 	       int *rng		/* expected number of entries in map */
@@ -742,14 +606,8 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 	}
 	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
-	build_hl(&bn->taccelerator, histo->batCacheid, BATmirror(bn));
-	BBPunfix(histo->batCacheid);
-	if (bn->taccelerator.base == NULL) {
-		BBPreclaim(bn);
-		return GDK_FAIL;
-	}
-	*retval = bn;
-	return GDK_SUCCEED;
+	
+	return grp_new(g, bn, histo);
 
 @= choosegroupSTANDARD
 	/* Choose appropriate @4 CTgroup implementation */
@@ -893,21 +751,17 @@ bunins_failed:
 	}
 @c
 int
-derive(BAT **retval, BAT *ct, BAT *b, int tt, map_T *m)
+derive(grp *g, BAT *ct, BAT *b, int tt, map_T *m)
 {
-	BAT *histo = NULL, *bn = *retval;
+	BAT *histo = NULL, *bn = NULL; 
 	int synced = ALIGNsynced(ct, b);
 
-	/* preprocess/create the result bat 'bn' */
-	if (bn) {
-		ACCremoveall(bn);
-	} else {
-		int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
+	/* create the result bat 'bn' */
+	int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
 
-		bn = BATnew(ht, TYPE_oid, BATcount(b));
-		if (bn == NULL) {
-			return GDK_FAIL;
-		}
+	bn = BATnew(ht, TYPE_oid, BATcount(b));
+	if (bn == NULL) {
+		return GDK_FAIL;
 	}
 
 	/* CTderive with correct lookup method (hash,synced) and type */
@@ -925,6 +779,7 @@ derive(BAT **retval, BAT *ct, BAT *b, int tt, map_T *m)
 		}
 	}
 	if (histo == NULL) {
+		assert(histo);
 		BBPunfix(bn->batCacheid);
 	}
 
@@ -937,50 +792,26 @@ derive(BAT **retval, BAT *ct, BAT *b, int tt, map_T *m)
 		if (b->hkey)
 			BATkey(bn, TRUE);
 	}
-	if (histo) {
-		build_hl(&bn->taccelerator, histo->batCacheid, BATmirror(bn));
-		BBPunfix(histo->batCacheid);
-		if (bn->taccelerator.base == NULL) {
-			BBPreclaim(bn);
-			return GDK_FAIL;
-		}
-	}
-	*retval = bn;
-	return GDK_SUCCEED;
+
+	return grp_new(g, bn, histo);
 }
 
 int
-regroup(BAT **retval, BAT *ct, BAT *b, int tt, map_T *m)
+CTderive(grp *g, BAT *ct, BAT *b)
 {
-	BBPfix(ct->batCacheid);
-	*retval = BATsetaccess(ct, BAT_WRITE);
-	(*retval)->batDirty = 1;
-	(*retval)->batDirtybuns = 1;
-	(*retval)->batDirtydesc = 1;
-	return derive(retval, ct, b, tt, m);
-}
-
-int
-CTregroup(BAT **retval, BAT *ct, BAT *b)
-{
-	return regroup(retval, ct, b, tailtype(b, TRUE), NULL);
-}
-
-int
-CTderive(BAT **retval, BAT *ct, BAT *b)
-{
-	BAT *bn = NULL;
+	BAT *bn = ct;
 	int ret;
 
 	if (tailtype(ct, TRUE) != TYPE_int) {
-		if (!CTgroup(&bn, ct))
+		if (!CTgroup(g, ct))
 			return GDK_FAIL;
-		ct = bn;
+		ct = BATdescriptor(g->map);
 	}
-	*retval = NULL;
-	ret = derive(retval, ct, b, tailtype(b, TRUE), NULL);
-	if (bn)
-		BBPreclaim(bn);
+	g->map = 0;
+	g->histo = 0;
+	ret = derive(g, ct, b, tailtype(b, TRUE), NULL);
+	if (bn != ct)
+		BBPunfix(ct->batCacheid);
 	return ret;
 }
 

@@ -50,7 +50,7 @@
 # > tid := [~w];
 # > docid.seqbase( 1000@0 );
 # > tid.seqbase( 1000@0 );
-# > CTgroup( docid, tid ).print;
+# > CTgroup( docid, tid ).map().print;
 # 
 # BTW, adding copy does not help, only if instead of := I use a
 # docid.insert( [w~].reverse ), then I get what I expect to get.

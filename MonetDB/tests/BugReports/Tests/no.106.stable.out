@@ -118,7 +118,7 @@ tid.print();
 [ 1013@0, "this"		  ]
 [ 1014@0, "database"		  ]
 module("xtables");
-CTgroup( docid, tid ).print();
+CTgroup( docid, tid ).map().print();
 #-----------------#
 # BAT:	  tmp_27  #
 # (void)  (oid)	  #

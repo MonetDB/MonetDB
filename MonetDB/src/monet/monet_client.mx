@@ -71,7 +71,6 @@ typedef struct CLIENT {
 	int stk;		/* lowest context stack */
 	BAT *fcntbl;		/* BAT(str, FID) */
 	BAT *atomtbl;		/* BAT(str, type-id) */
-	BAT *acctbl;		/* BAT(str, type-id) */
 	BAT *triggers;		/* BAT(str, type-id) */
 	BAT *events;		/* BAT(str, type-id) */
 	modstack *m_stack;	/* module stack */
@@ -269,7 +268,6 @@ forkClient(Cntxt stk, int thread)
 		son->fdout = father->fdout;
 		son->fcntbl = father->fcntbl;
 		son->atomtbl = father->atomtbl;
-		son->acctbl = father->acctbl;
 		son->triggers = father->triggers;
 		son->events = father->events;
 		son->login = father->login;

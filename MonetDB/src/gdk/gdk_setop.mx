@@ -755,7 +755,7 @@ BAT@1union(BAT *l, BAT *r)
 	}
 	if (b)
 		BBPreclaim(b);
-	ACCremoveall(bn);
+	HASHdestroy(bn);
 
 	/* set alignment info */
 	if (!bnhdense)

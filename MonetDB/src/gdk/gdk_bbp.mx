@@ -832,13 +832,6 @@ BBPgetdesc(bat i)
 				if (strcmp(ATOMname(b->ttype), b->tatom) && (t = ATOMindex(b->tatom)) >= 0) {
 					b->ttype = t;
 				}
-				if (strcmp(ACCname(b->hacctype), b->haccname) && (t = ACCindex(b->haccname)) > 0) {
-					b->hacctype = t;
-					ACCindex(b->haccname);
-				}
-				if (strcmp(ACCname(b->tacctype), b->taccname) && (t = ACCindex(b->taccname)) > 0) {
-					b->tacctype = t;
-				}
 			}
 		}
 		if (b == NULL && nme) {
@@ -1563,18 +1556,8 @@ backup_bat(BAT *b)
 		if (ret & 1)
 			return -1;
 	}
-	if ((b->batDirty || b->haccdirty) && b->haccCopiedtodisk) {
-		ret |= heap_move(&b->haccelerator, srcdir, BAKDIR, nme, "hacc");
-		if (ret & 1)
-			return -1;
-	}
-	if ((b->batDirty || b->taccdirty) && b->taccCopiedtodisk) {
-		ret |= heap_move(&b->taccelerator, srcdir, BAKDIR, nme, "tacc");
-		if (ret & 1)
-			return -1;
-	}
 	if (ret) {
-		b->batCopiedtodisk = b->haccCopiedtodisk = b->taccCopiedtodisk = 0;
+		b->batCopiedtodisk = 0;
 	}
 	return 0;
 }
@@ -2112,8 +2095,9 @@ BBPquickdesc(bat bid, int delaccess)
 		return b;	/* already cached */
 	}
 	b = (BAT *) BBPgetdesc(bid);
-	if (b == NULL || b->hacctype || (complexatom(b->hatom, delaccess))
-	    || b->tacctype || (complexatom(b->tatom, delaccess))) {
+	if (b == NULL || 
+	   complexatom(b->hatom, delaccess) || 
+	   complexatom(b->tatom, delaccess)) {
 		b = BATload_intern(bid);
 		BBPin++;
 	}
@@ -2458,7 +2442,7 @@ BBPrecover(void)
 @}
 @- The diskscan
 The BBPdiskscan routine walks through the BAT dir, cleans up leftovers, and measures disk occupancy. 
-Leftovers are files that cannot belong to a BAT. in order to establish this for [ht]heap and [ht]acc files, 
+Leftovers are files that cannot belong to a BAT. in order to establish this for [ht]heap files, 
 the BAT descriptor is loaded in order to determine whether these files are still required. 
 
 The routine gathers all bat sizes in a bat that contains bat-ids and bytesizes. The return value is
@@ -2474,20 +2458,6 @@ persistent_bat(bat bid)
 		if (b == NULL || b->batCopiedtodisk) {
 			return TRUE;
 		}
-	}
-	return FALSE;
-}
-
-static int
-transient_acc(str nme)
-{
-	/* in the future we should just use b->[ht]accCopiedtodisk, but due to a bug these 
-	 * fields might be FALSE while they should be TRUE, hence can't use them now (DS2.2.7)
-	 */
-	int acctype = ACCindex(nme);
-
-	if (acctype > 0) {
-		return (BATaccelerators[acctype].accSave == NULL);
 	}
 	return FALSE;
 }
@@ -2568,14 +2538,6 @@ BBPdiskscan_r(str parent)
 			BAT *b = getdesc(bid);
 
 			delete = (b == NULL || b->theap.size == 0) || (b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "hacc", 4) == 0) {
-			BAT *b = getdesc(bid);
-
-			delete = (b == NULL || b->hacctype == 0) || transient_acc(b->haccname);
-		} else if (strncmp(p + 1, "tacc", 4) == 0) {
-			BAT *b = getdesc(bid);
-
-			delete = (b == NULL || b->tacctype == 0) || transient_acc(b->taccname);
 		} else if (strncmp(p + 1, "hhash", 5) == 0) {
 			BAT *b = getdesc(bid);
 
@@ -2651,11 +2613,11 @@ BBPreplace(BAT *b, BAT *bn)
 		int dirtyb = b->batDirty, dirtybn = bn->batDirty;
 		int ok = TRUE, newmode = b->batPersistence, oldmode = bn->batPersistence;
 		int persistentb = (BBP_status(bid) & (BBPPERSISTENT | BBPDELETED));
-		int hugebn = bn->batBuns->storage | bn->hheap.storage | bn->theap.storage | bn->haccelerator.storage | bn->taccelerator.storage | STORE_MMAP;
+		int hugebn = bn->batBuns->storage | bn->hheap.storage | bn->theap.storage | STORE_MMAP;
 
 		strcpy(oldId, bn->batId);
 		BATsetaccess(bn, b->batRestricted);
-		BATmmap(bn, b->batBuns->storage, b->hheap.storage, b->theap.storage, b->haccelerator.storage, b->taccelerator.storage);
+		BATmmap(bn, b->batBuns->storage, b->hheap.storage, b->theap.storage);
 
 		if (persistentb) {
 			/* start a mini-global-commit: back up any persistent b */

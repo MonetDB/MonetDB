@@ -89,7 +89,7 @@ BATins(BAT *b, BAT *n)
 				return NULL;
 		}
 	}
-	if (b->thash_heap == NULL && b->hacctype == 0 && b->tacctype == 0 && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash_heap == NULL || ATOMstorage(b->htype) == TYPE_int)) {
+	if (b->thash_heap == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash_heap == NULL || ATOMstorage(b->htype) == TYPE_int)) {
 		if ((b->hkey & BOUND2BTRUE)) {
 			tmp = n = BATkdiff(n, b);
 			if (n == NULL)
@@ -1303,7 +1303,7 @@ BATorder@3(BAT *b)
 		return b;
 	}
 	GDKqsort@3(BUNfirst(b), b->hheap.base, BATcount(b), BUNsize(b), b->htype, b->hloc);
-	ACCremoveall(b);
+	HASHdestroy(b);
 	ALIGNdel(b, "BATorder@3");
 	b->hsorted = (bit) GDK_SORTED@2;
 	b->tsorted = FALSE;
@@ -1337,7 +1337,7 @@ BATrevert(BAT *b)
 		memcpy(p, q, xx);
 		memcpy(q, buf, xx);
 	}
-	ACCremoveall(b);
+	HASHdestroy(b);
 	b->hsorted = b->tsorted = FALSE;
 	GDKfree(buf);
 	return b;

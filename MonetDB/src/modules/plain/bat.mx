@@ -28,8 +28,7 @@ But a database system needs more that just this algebra, since often it
 is crucial to do table-updates (this would not be permitted in a strict
 algebra).
 
-All commands needed for BAT updates, property management,
-search accelerator management, I/O, persistency, and storage options
+All commands needed for BAT updates, property management, I/O, persistency, and storage options
 can be found in this module.
 
 @* Module Definition
@@ -172,15 +171,12 @@ have the first character of their named replaced by 't' ({\tt sorted}, {\tt tden
 [ "hsorted",	     "1"	  ] # column is known to be sorted
 [ "hdense",	     "1"	  ] # column is known to be densely ascended
 [ "hseqbase",	     "0@0"	  ] # if densely ascending (i.e. 0@0, 1@0, @,0, ...): first value
-[ "hacctype",	     "null"	  ] # name of user-defined accelerator
-[ "hindex",	     "absent"	  ] # name of built-in accelerator: hash or index (T-tree)
 \end{verbatim}
 
 As described in the @[<a href="../../gdk/index.html#mod_1_3_0">GDK Technical Reference</a>@,
 BATs store their data in one to five heaps, of which at least one called {\tt batBuns}
 is present always. For each column type that is {\em variable-sized} - like {\tt str} - another
-heap might be present ({\tt hheap} and {\tt theap}). If a column has a user-defined search
-accelerator, more heaps may be present (({\tt haccelerator} and {\tt taccelerator}).
+heap might be present ({\tt hheap} and {\tt theap}). 
 
 \begin{verbatim}
 [ "batBuns.free",    "400004"	  ] # occupied size in bytes
@@ -376,13 +372,8 @@ directory.  For each bat X, the following heaps are stored:
 then the fixed-size part of a BUN contains an integer byte-offset into
 the heap. String values themselves are stored in this the X.hheap.
 \item[X.theap] similar to X.hheap, but for the tail column.
-\item[X.hacc]. On each column, you might create {\em persistent accelerator
-structures}. Monet has two built-in accelerators (index and hash), but they
-are normally constructed on the fly. They are transient. Only hash-tables
-you can be made persistent. User-defined accelerators are always persistent.
-Only one persistent accelerator can exist per head column. It is stored in
-the X.hacc heap.
-\item[X.tacc] similar to X.hacc, but for the tail column.
+\item[X.hacc]. On each column, you might create {\em persistent hash accelerator
+structure}. 
 \end{description}
 
 Each of these heaps can be {\bf compressed} using the Unix {\tt compress}
@@ -398,17 +389,14 @@ For more technical information on BATs, we refer to the
 @[<a href="../../gdk/index.html">GDK</a>@
 documentation.
 @m
-.COMMAND mmap(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode,
-	     int hacc_mode, int tacc_mode) : BAT[any::1,any::2] = CMDmmap;
+.COMMAND mmap(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode) : BAT[any::1,any::2] = CMDmmap;
 "For each individual heap, you can change the allocation mode to
  either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.
  Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save
  (this has to happen before the heap can be mapped into virtual memory).
  These modes are persistent. "
 
-.COMMAND madvise(BAT[any::1,any::2], int buns_mode, int hheap_mode,
-		int theap_mode, int hacc_mode, int tacc_mode)
-					: BAT[any::1,any::2] = CMDmadvise;
+.COMMAND madvise(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode) : BAT[any::1,any::2] = CMDmadvise;
 "Modern Operating Systems allow users to influence the buffer management
  policy of virtual memory. This is a crucial feature for database systems,
  and eliminates the need to reimplement the OS in a database buffer manager.
@@ -419,47 +407,12 @@ documentation.
  Returns the BAT operated upon."
 
 @- BAT Accelerators
-@T
-Search accelerators are data structures that are used to speed up
-access to data in BATs. Monet comes with the built-in accelerators
-{\tt index}, meaning binary tree index, and {\tt hash} meaning
-bucket-chained hash table. The extension facilities of Monet allow
-more accelerators to be defined by users. Examples are the {\tt rtree}
-and {\tt datavector}. The system variable {\tt monet\_acctbl} contains
-a list of all currently known accelerator types.
-
-\begin{verbatim}
->monet_acctbl.print();
-#-------------------------#
-# h		| t	  #
-#-------------------------#
-[ "hash",	  1	  ]
-[ "index",	  2	  ]
-[ "datavector",	  3	  ]
-\end{verbatim}
-@
-More info on how to write new search accelerators can be found in the
-@[<a href="../../mel/index.html">MEL documentation</a>@.
 @m
-.COMMAND accbuild(BAT[any,any] b, str acctype) = CMDaccbuild_std;
+.COMMAND accbuild(BAT[any,any] b, str acctype) = CMDaccbuild;
 "Build an accelerator on the head column of b. The builtin accelerator
  types index and hash will be created as transient accelerators. They
  will not be saved on disk. User-defined accelerators must always be
  persistent."
-
-.COMMAND accbuild(BAT[any,any] b, str acctype, any param) = CMDaccbuild;
-"like accbuild(BAT[any,any] b, int acctype), but with a parameter that
- is provide to the specific accelerator build routine."
-
-.COMMAND accdestroy(BAT[any,any] b, str acctype) = CMDaccdestroy;
-"Destroy the accelerator of type 'acctype'  that is present on
- the head-type of b."
-
-.COMMAND accpresent(BAT[any,any] b ) : str = CMDaccpresent;
-"Returns the accelerator type of the *persistent* accelerator present
- on the head column of b. Note that index and hash accelerators are
- generally *not* persistent, and will not be returned by this function!"
-
 
 @- Synced BATs
 The binary model of Monet has important advantages when working in
@@ -515,12 +468,12 @@ these 'sync' OIDs with their own propagation rules.
     CONST STORE_COMPR := 2;	# currently not implemented this way
 
     PROC mmap(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-	return mmap(b, memmode, memmode, memmode, memmode, memmode);
+	return mmap(b, memmode, memmode, memmode );
     }
 
     # overload madvise to pass the same memory mode for all heaps
     PROC madvise(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-	return madvise(b, memmode, memmode, memmode, memmode, memmode);
+	return madvise(b, memmode, memmode, memmode );
     }
 
 @- constants for madvise()
@@ -1337,16 +1290,6 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "theapdirty", b->theapdirty ? "dirty" : "clean");
 	infoHeap(bn, &b->theap, "theap.");
 
-	BUNins(bn, "hacctype", ACCname(b->hacctype));
-	BUNins(bn, "haccdirty", b->haccdirty ? "dirty" : "clean");
-	BUNins(bn, "haccCopiedtodisk", local_itoa(b->haccCopiedtodisk));
-	infoHeap(bn, &b->haccelerator, "haccelerator.");
-
-	BUNins(bn, "tacctype", ACCname(b->tacctype));
-	BUNins(bn, "taccdirty", b->taccdirty ? "dirty" : "clean");
-	BUNins(bn, "taccCopiedtodisk", local_itoa(b->taccCopiedtodisk));
-	infoHeap(bn, &b->taccelerator, "taccelerator.");
-
 	/* dump index information */
 	if (b->hhash_heap) {
 		HASHinfo(bn, &b->hhash, "hhash->");
@@ -1373,10 +1316,6 @@ CMDbatsize(int *tot, BAT *b)
 			size += ROUND_UP(b->hheap.size, blksize);
 		if (b->theap.base)
 			size += ROUND_UP(b->theap.size, blksize);
-		if (b->haccelerator.base)
-			size += ROUND_UP(b->haccelerator.size, blksize);
-		if (b->taccelerator.base)
-			size += ROUND_UP(b->taccelerator.size, blksize);
 		if (b->hhash_heap)
 			size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 		if (b->thash_heap)
@@ -1542,14 +1481,12 @@ CMDsave(bit *res, str input)
 }
 @c
 int
-CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp, int *hacc, int *tacc)
+CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 {
 	@:change_heap(bns,(*b->batBuns))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
-	@:change_heap(hacc,b->haccelerator)@
-	@:change_heap(tacc,b->taccelerator)@
-	if (BATmmap(*r = b, *bns, *hhp, *thp, *hacc, *tacc) == 0) {
+	if (BATmmap(*r = b, *bns, *hhp, *thp) == 0) {
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	}
@@ -1557,59 +1494,22 @@ CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp, int *hacc, int *tacc)
 }
 
 int
-CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp, int *hacc, int *tacc)
+CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 {
 	BBPfix(b->batCacheid);
-	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp, (*hacc == int_nil) ? -1 : *hacc, (*tacc == int_nil) ? -1 : *tacc) ? GDK_FAIL : GDK_SUCCEED;
+	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 @+ Accelerator Control
 @c
 int
-CMDaccbuild(BAT *b, str acc, ptr param, int dummy)
+CMDaccbuild(BAT *b, str acc )
 {
-	int acctpe = ACCindex(acc);
-
-	(void) dummy;
-	if (acctpe > 0 && ACCbuild(acctpe, b, &b->haccelerator, param) >= 0) {
+	if (strcmp(acc, "hash") == 0 && BAThash(b,0)) {
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
 }
-
-int
-CMDaccbuild_std(BAT *b, str acc)
-{
-	return CMDaccbuild(b, acc, NULL, 0);
-}
-
-int
-CMDaccdestroy(BAT *b, str acc)
-{
-	int acctpe = ACCindex(acc);
-
-	if (acctpe > 0 && ACCdestroy(acctpe, b, &b->haccelerator) >= 0) {
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int
-CMDaccpresent(str *retval, BAT *b)
-{
-	str nme = str_nil;
-
-	if (b->hacctype) {
-		int (*check) (Heap *, BAT *) = BATaccelerators[b->hacctype].accRepair;
-
-		if (check == NULL || (*check) (&b->haccelerator, b) == GDK_SUCCEED) {
-			nme = ACCname(b->hacctype);
-		}
-	}
-	*retval = GDKstrdup(nme);
-	return GDK_SUCCEED;
-}
-
 
 @+ Iterators
 @= hashiter

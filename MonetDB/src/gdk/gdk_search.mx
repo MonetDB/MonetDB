@@ -47,6 +47,12 @@ avoidance of excessive storage requirements, and
 @item
 limited maintenance overhead.
 @end itemize
+
+@-
+The idea that query intensive tasks need many different index methods has
+been proven invalid. The current direction is multiple copies of data, which
+can than be sorted or clustered.
+
 @-
 The BAT library automatically decides when an index becomes cost
 effective.
@@ -499,6 +505,7 @@ HASHremove(BAT *b)
 
 		if (p && b->hhash_heap == p->hhash_heap) {
 			GDKerror("HASHremove: view-bat cannot remove parent hash-table\n");
+			assert(0);
 		} else {
 			HEAPfree(b->hhash_heap);
 			if (b->hhash_heap->storage & STORE_MMAP)
@@ -576,6 +583,7 @@ gdk_export BUN SORTfndlast_dbl(BAT *b, ptr v);
 gdk_export BUN SORTfndlast_loc(BAT *b, ptr v);
 gdk_export BUN SORTfndlast_var(BAT *b, ptr v);
 
+#endif /* _GDK_SEARCH_H_ */
 
 @-
 @}
@@ -727,265 +735,6 @@ SORTfnd@2(BAT *b, ptr v)
 @:SORTfnd_switch(t,last)@
 @:SORTfnd_switch(t,first)@
 
-@+ User-defined Search Accelerators
-@h
-#define MAXACCS	24
-
-#define ACCins(id, b, acc, idx, val)					\
-		if (id > ACC_hash && BATaccelerators[id].accInsert) {	\
-			(*BATaccelerators[id].accInsert)(acc, idx, b, val); \
-			b->haccdirty=TRUE;				\
-		}
-#define ACCdel(id, b, acc, idx, val)					\
-		if (id > ACC_hash && BATaccelerators[id].accDelete) {	\
-			(*BATaccelerators[id].accDelete)(acc, idx, b, val); \
-			b->haccdirty=TRUE;				\
-		}
-#define ACCmove(id, b, acc, from, to, val)				\
-		if (id > ACC_hash && BATaccelerators[id].accMove) {	\
-			(*BATaccelerators[id].accMove)(acc, from, to, b, val); \
-			b->haccdirty=TRUE;				\
-		}
-#define ACCsave(id, b, acc)						\
-		if (id > ACC_hash && BATaccelerators[id].accSave) {	\
-			(*BATaccelerators[id].accSave)(acc, b);		\
-			 b->haccdirty=TRUE;				\
-		}
-#define ACCcluster(id, b, acc)						\
-		if (id > ACC_hash && BATaccelerators[id].accCluster) {	\
-			(*BATaccelerators[id].accCluster)(acc, b);	\
-			b->haccdirty=TRUE;				\
-		}
-#define ACCbuncluster(id, b, acc)					\
-		if (id > ACC_hash && BATaccelerators[id].accBuncluster) { \
-			(*BATaccelerators[id].accBuncluster)(acc, b);	\
-			b->dirtyBuns = TRUE;				\
-		}
-#define ACCrepair(id, b, acc)						\
-		((id > ACC_hash && BATaccelerators[id].accRepair)?	\
-		 (*BATaccelerators[id].accRepair)(acc, b):0)
-
-gdk_export int ACC_hash;
-
-#endif /* _GDK_SEARCH_H_ */
 @c
-int ACC_hash = 1;
-
-int
-ACCbuild(int id, BAT *b, Heap *acc, ptr extra)
-{
-	str nme = BBP_physical(b->batCacheid);
-
-	if (id == ACC_hash) {
-		size_t masksize = 127;
-
-		if (extra)
-			masksize = (size_t) *(lng *) extra;
-		return BAThash(b, masksize) ? 0 : -1;
-	} else if (b->hacctype == id) {
-		GDKwarning("ACCbuild: accelerator already present\n");
-		return 0;
-	} else if (b->hacctype) {
-		GDKwarning("ACCbuild: destroying %s first\n", ACCname(b->hacctype));
-		ACCdestroy(b->hacctype, b, acc);
-	}
-	sprintf(b->haccelerator.filename = (str) GDKmalloc(strlen(nme) + 12), "%s.%cacc", nme, (b->batCacheid > 0) ? 'h' : 't');
-	if (BATaccelerators[id].accBuild) {
-		str nme = BBP_physical(b->batCacheid);
-
-		b->haccelerator.filename = (str) GDKmalloc(strlen(nme) + 12);
-		sprintf(b->haccelerator.filename, "%s.%cacc", nme, b->batCacheid > 0 ? 'h' : 't');
-		(*BATaccelerators[id].accBuild) (acc, extra, b);
-
-		if (acc->base == NULL) {
-			GDKerror("ACCbuild: accelerator '%s' could not be created on %s.\n", ACCname(id), BBP_logical(b->batCacheid));
-
-			GDKfree(b->haccelerator.filename);
-			b->haccelerator.filename = NULL;
-			return -1;
-		}
-		b->hacctype = id;
-		strcpy(b->haccname, BATaccelerators[id].name);
-
-		b->batDirtydesc = b->haccdirty = TRUE;
-		return 0;
-	}
-	GDKerror("ACCbuild: invalid accelerator '%s'.\n", ACCname(id));
-	return -1;
-}
-
-int
-ACCunload(int id, BAT *b, Heap *acc)
-{
-	if (id == ACC_hash) {
-		HASHremove(b);
-	} else if (b->hacctype != id) {
-		GDKerror("ACCunload: invalid accelerator '%s'.\n", ACCname(id));
-
-		return -1;
-	} else if (BATaccelerators[id].accDestroy) {
-		(*BATaccelerators[id].accDestroy) (acc, b);
-
-		if (b->haccelerator.filename) {
-			GDKfree(b->haccelerator.filename);
-			b->haccelerator.filename = NULL;
-		}
-	}
-	return 0;
-}
-
-int
-ACCdestroy(int id, BAT *b, Heap *acc)
-{
-	int ret = 0;
-
-	if (b->haccCopiedtodisk || (b->haccelerator.storage & STORE_MMAP)) {
-		str nme = BBP_physical(b->batCacheid);
-
-		HEAPdelete(&b->haccelerator, nme, "hacc");
-		b->haccCopiedtodisk = 0;
-		b->batDirtydesc = TRUE;
-	}
-	if (id >ACC_hash) {
-		ret = ACCunload(id, b, acc);
-
-		BATmirror(b)->tacctype = b->hacctype = 0;
-		b->haccname[0] = 0;
-		b->batDirtydesc = TRUE;
-	}
-	return ret;
-}
-
-
-int
-ACCrepairSTD(Heap *hp, BAT *b)
-{
-	HeapRepair hr;
-	int ret = HEAP_check(hp, &hr);
-
-	if (hr.validmask) {
-		GDKfree(hr.validmask);
-		hr.validmask = NULL;
-	}
-	if (ret == FALSE) {
-		GDKerror("ACCrepairSTD: %s check failed, destroying accelerator.\n", b->batId);
-		ACCdestroy(b->hacctype, b, hp);
-	}
-	return ret;
-}
-
-void
-ACCunloadall(BAT *b)
-{
-	HASHdestroy(b);
-	if (b->hacctype) {
-		ACCunload(b->hacctype, b, &b->haccelerator);
-	}
-	if (b->tacctype) {
-		ACCunload(b->tacctype, BATmirror(b), &b->taccelerator);
-	}
-}
-
-void
-ACCremoveall(BAT *b)
-{
-	VIEWunlink(b);
-	HASHdestroy(b);
-	if (b->hacctype && b->haccelerator.base) {
-		ACCdestroy(b->hacctype, b, &b->haccelerator);
-	}
-	if (b->tacctype && b->taccelerator.base) {
-		ACCdestroy(b->tacctype, BATmirror(b), &b->taccelerator);
-	}
-}
-
-accDesc BATaccelerators[MAXACCS] = {
-	{"_dummy_", 0, 0, 0,
-	 0, 0, 0,
-	 0, 0, 0,
-	 0, 0, 0},
-	{"hash", 0, 0, 0,
-	 0, 0, 0,
-	 0, 0, 0,
-	 0, 0, 0}
-};
-
-
-
-int GDKacc_cnt = 3;
-
-int
-ACCindex(str name)
-{
-	int i, j = GDKacc_cnt;
-
-	if (strcmp(name, "hash") == 0) {
-		return ACC_hash;
-	}
-	for (i = 1; i < GDKacc_cnt; i++) {
-		if (BATaccelerators[i].name[0]) {
-			if (strcmp(BATaccelerators[i].name, name) == 0) {
-				return i;
-			}
-		} else if (j == GDKacc_cnt) {
-			j = i;
-		}
-	}
-	return -j;
-}
-
-void
-ACCdelete(int i)
-{
-	if (i >= GDKacc_cnt - 1) {
-		GDKacc_cnt--;
-	}
-	BATaccelerators[i].name[0] = 0;
-}
-
-void
-ACCproperty(str name, str prop, ptr fcn)
-{
-	int i;
-
-	gdk_set_lock(GDKthreadLock, "ACCproperty");
-	i = ACCindex(name);
-	if (i < 0) {
-		i = -i;
-		strcpy(BATaccelerators[i].name, name);
-		BATaccelerators[i].deleting = 1;
-		if (i >= GDKacc_cnt) {
-			GDKacc_cnt++;
-		}
-	}
-	if (strcmp(prop, "build") == 0) {
-		BATaccelerators[i].accBuild = (void (*)(Heap *, BAT *, void *param)) fcn;
-	} else if (strcmp(prop, "destroy") == 0) {
-		BATaccelerators[i].accDestroy = (void (*)(Heap *, BAT *)) fcn;
-	} else if (strcmp(prop, "insert") == 0) {
-		BATaccelerators[i].accInsert = (void (*)(Heap *, var_t, BAT *, ptr)) fcn;
-	} else if (strcmp(prop, "delete") == 0) {
-		BATaccelerators[i].accDelete = (void (*)(Heap *, var_t, BAT *, ptr)) fcn;
-	} else if (strcmp(prop, "move") == 0) {
-		BATaccelerators[i].accMove = (void (*)(Heap *, var_t, var_t, BAT *, ptr)) fcn;
-	} else if (strcmp(prop, "save") == 0) {
-		BATaccelerators[i].accSave = (void (*)(Heap *, BAT *)) fcn;
-	} else if (strcmp(prop, "commit") == 0) {
-		BATaccelerators[i].accCommit = (void (*)(Heap *, BAT *)) fcn;
-	} else if (strcmp(prop, "abort") == 0) {
-		BATaccelerators[i].accAbort = (void (*)(Heap *, BAT *)) fcn;
-	} else if (strcmp(prop, "cluster") == 0) {
-		BATaccelerators[i].accBuncluster = (int (*)(Heap *, BAT *)) fcn;
-	} else if (strcmp(prop, "repair") == 0) {
-		BATaccelerators[i].accRepair = (int (*)(Heap *, BAT *)) fcn;
-	}
-	gdk_unset_lock(GDKthreadLock, "ACCproperty");
-}
-
-char *
-ACCname(int t)
-{
-	return (t > 0 && t < GDKacc_cnt && BATaccelerators[t].name) ? BATaccelerators[t].name : "null";
-}
 
 @}

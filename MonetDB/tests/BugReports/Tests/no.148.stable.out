@@ -171,7 +171,7 @@ module(xtables);
 proc xtable_print(..any..) : void {
         var histo := $1.histogram();
         printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
-                $2, $1.count(), histo.count(), $1.batsize());
+                $2, $1.map().count(), histo.count(), $1.map().batsize());
         table(histo.col_name("count"), $(3..));
 }
  
@@ -198,13 +198,13 @@ proc xtable_test(str title, bat x, bat y, bat z) : void {
     var x1 := CTgroup(x);
     x1.xtable_print("CT(x)", x);
  
-    var x1y := CTgroup(x1,y);
+    var x1y := CTgroup(x1.map(),y);
     x1y.xtable_print("CT(x,y)", x, y);
  
     var v :=  y.uselect(dbl(2.0),dbl(3.0));
-    var xvy := CTsubgroup(x1,y,v);
+    var xvy := CTsubgroup(x1.map(),y,v);
     xvy.xtable_print("CT(x,y|v)", x, y);
-    var x1yz := CTgroup(x1y,z);
+    var x1yz := CTgroup(x1y.map(),z);
     x1yz.xtable_print("CT(x,y,z)", x, y, z);
 }
  

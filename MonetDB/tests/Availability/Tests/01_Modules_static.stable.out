@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 675 ]
+[ 672 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 675 ]
+[ 672 ]
 
 var All:=0;
 
@@ -567,8 +567,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 63 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 60 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature												help																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -576,11 +576,8 @@ Module: "bat"
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, int) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, lng) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
 [ "accbuild",	  "COMMAND:   ",  "accbuild(BAT[any,any], str) : void",									  "Build an accelerator on the head column of b. The builtin accelerator\n types index and hash will be created as transient accelerators. They\n will not be saved on disk. User-defined accelerators must always be\n persistent."									  ]
-[ "accbuild",	  "COMMAND:   ",  "accbuild(BAT[any,any], str, any) : void",								  "like accbuild(BAT[any,any] b, int acctype), but with a parameter that\n is provide to the specific accelerator build routine."																					  ]
-[ "accdestroy",	  "COMMAND:   ",  "accdestroy(BAT[any,any], str) : void",								  "Destroy the accelerator of type 'acctype'  that is present on\n the head-type of b."																											  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2]) : int",							  "Return the update access privilige of a BAT."																																																							  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2], int) : BAT[any::1,any::2]",					  "Try to change the update access priviliges to this BAT. Mode:\n BAT_READ   - allow only read access.\n BAT_APPEND - allow reads and insertions of new elements.\n BAT_WRITE  - allow reads, insertions, and updates.\n BATs are updateable by default. On making a BAT readonly, all\n subsequent updates fail with an error message.\n Returns the BAT itself."  ]
-[ "accpresent",	  "COMMAND:   ",  "accpresent(BAT[any,any]) : str",								  "Returns the accelerator type of the *persistent* accelerator present\n on the head column of b. Note that index and hash accelerators are\n generally *not* persistent, and will not be returned by this function!"											  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]",						  "append the content of u to i (renumbers u-oids' to unique numbers)"																													  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], any::1) : BAT[oid,any::1]",							  "append the value u to i"																																		  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[oid,void], BAT[oid,void]) : BAT[oid,void]",						  "Special case append for empty bats, works around impossible void,void case"																												  ]
@@ -613,9 +610,9 @@ Module: "bat"
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Insert one BUN[h,t] in a BAT.\n Returns the modified BAT."																														  ]
 [ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2]) : bit",							  "return whether the head column of a BAT is unique (key)."																																																						  ]
 [ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",						  "Sets the 'key' property of the head column to 'mode'. In 'key' mode,\n the kernel will silently block insertions that cause a duplicate entries\n in the head column.\n KNOWN BUG: when 'key' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.kunique;"	  ]
-[ "madvise",	  "COMMAND:   ",  "madvise(BAT[any::1,any::2], int, int, int, int, int) : BAT[any::1,any::2]",		  "Modern Operating Systems allow users to influence the buffer management\n policy of virtual memory. This is a crucial feature for database systems,\n and eliminates the need to reimplement the OS in a database buffer manager.\n The supported flags are BUF_NORMAL (the normal adaptive kernel algorithm),\n BUF_RANDOM (no page prefetching), BUF_SEQUENTIAL (prefetch and swapout),\n BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).\n These buffer management modes are not persistent.\n Returns the BAT operated upon."  ]
+[ "madvise",	  "COMMAND:   ",  "madvise(BAT[any::1,any::2], int, int, int) : BAT[any::1,any::2]",			  "Modern Operating Systems allow users to influence the buffer management\n policy of virtual memory. This is a crucial feature for database systems,\n and eliminates the need to reimplement the OS in a database buffer manager.\n The supported flags are BUF_NORMAL (the normal adaptive kernel algorithm),\n BUF_RANDOM (no page prefetching), BUF_SEQUENTIAL (prefetch and swapout),\n BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).\n These buffer management modes are not persistent.\n Returns the BAT operated upon."	  ]
 [ "mirror",	  "COMMAND:   ",  "mirror(BAT[any::1,any]) : BAT[any::1,any::1]",					  "Returns the head-mirror image of a BAT (two head columns)."																																																						  ]
-[ "mmap",	  "COMMAND:   ",  "mmap(BAT[any::1,any::2], int, int, int, int, int) : BAT[any::1,any::2]",			  "For each individual heap, you can change the allocation mode to\n either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.\n Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save\n (this has to happen before the heap can be mapped into virtual memory).\n These modes are persistent. "  ]
+[ "mmap",	  "COMMAND:   ",  "mmap(BAT[any::1,any::2], int, int, int) : BAT[any::1,any::2]",			  "For each individual heap, you can change the allocation mode to\n either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.\n Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save\n (this has to happen before the heap can be mapped into virtual memory).\n These modes are persistent. "																													  ]
 [ "order",	  "COMMAND:   ",  "order(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Sorts the BAT itself, in place, on ascending head values. Returns b."																																																				  ]
 [ "order_rev",	  "COMMAND:   ",  "order_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Sorts the BAT itself, in place, on descending head values. Returns b."																																																				  ]
 [ "ordered",	  "COMMAND:   ",  "ordered(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
@@ -810,7 +807,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 675 ]
+[ 672 ]
 
 quit();
 

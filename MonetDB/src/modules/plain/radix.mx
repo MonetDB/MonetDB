@@ -1375,7 +1375,7 @@ BATinteger(BAT **ret, BAT *b, int *width)
 		/* view implementation */
 		bn = VIEWcreate(b);
 		m = BATmirror(bn);
-		ACCremoveall(bn);
+		HASHdestroy(bn);
 		sprintf(bn->tatom, "integer%d", *width);
 		m->htype = bn->ttype = tpe;
 		bn->batDirty = 1;
@@ -1414,7 +1414,7 @@ BATpax(BAT **ret, BAT *b)
 {
 	BAT *bn = *ret = VIEWcreate(b);
 
-	ACCremoveall(bn);
+	HASHdestroy(bn);
 	bn->ttype = BATmirror(bn)->htype = bn->ttype + 1;
 	strcpy(bn->tatom, ATOMname(bn->ttype));
 	bn->batDirty = 1;
@@ -1427,7 +1427,7 @@ BATintX(BAT **ret, BAT *b)
 	BAT *bn = *ret = VIEWcreate(b);
 	int tpe = int_type(ATOMname(b->ttype));
 
-	ACCremoveall(bn);
+	HASHdestroy(bn);
 	bn->ttype = BATmirror(bn)->htype = tpe;
 	strcpy(bn->tatom, ATOMname(tpe));
 	bn->batDirty = 1;

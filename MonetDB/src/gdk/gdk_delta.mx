@@ -202,7 +202,6 @@ BATfakeCommit(BAT *b)
 		BATcommit(b);
 		b->batDirty = 0;
 		b->batDirtydesc = b->batDirtybuns = 0;
-		b->haccdirty = b->taccdirty = 0;
 		b->hheapdirty = b->theapdirty = 0;
 	}
 	return b;
@@ -223,18 +222,15 @@ BATundo(BAT *b)
 {
 	int bunsize = BUNsize(b);
 	BUN p, bunlast, bunfirst;
-	BAT *m = BATmirror(b);
 
 	BATcheck(b, "BATundo");
 	DELTAprintf("#BATundo %s \n", b->batId);
 	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->batDirtybuns = 1;
-		b->haccdirty = b->taccdirty = 1;
 	} else {
 		b->batDirty = 0;
 		b->batDirtydesc = b->batDirtybuns = 0;
-		b->haccdirty = b->taccdirty = 0;
 		b->hheapdirty = b->theapdirty = 0;
 	}
 	bunfirst = b->batInserted;
@@ -245,10 +241,8 @@ BATundo(BAT *b)
 		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
-		void (*haccdel) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->hacctype > 0) ? b->hacctype : 0].accDelete;
-		void (*taccdel) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->tacctype > 0) ? b->tacctype : 0].accDelete;
 
-		if (hunfix || tunfix || hatmdel || tatmdel || haccdel || taccdel) {
+		if (hunfix || tunfix || hatmdel || tatmdel) {
 			for (p = bunfirst; p <= bunlast; p += bunsize, i++) {
 				ptr h = BUNhead(b, p);
 				ptr t = BUNtail(b, p);
@@ -259,9 +253,6 @@ BATundo(BAT *b)
 				if (hunfix) {
 					(*hunfix) (h);
 				}
-				if (haccdel) {
-					(*haccdel) (&b->haccelerator, i, b, h);
-				}
 				if (hatmdel) {
 					(*hatmdel) (&b->hheap, (var_t *) (p + b->hloc));
 				}
@@ -270,9 +261,6 @@ BATundo(BAT *b)
 				}
 				if (tunfix) {
 					(*tunfix) (t);
-				}
-				if (taccdel) {
-					(*taccdel) (&b->taccelerator, i, b, t);
 				}
 				if (tatmdel) {
 					(*tatmdel) (&b->theap, (var_t *) (p + b->tloc));
@@ -286,8 +274,6 @@ BATundo(BAT *b)
 	bunlast = b->batHole;
 	if (bunlast > b->batDeleted) {
 		size_t i = BUNindex(b, bunfirst);
-		void (*haccins) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->hacctype > 0) ? b->hacctype : 0].accInsert;
-		void (*taccins) (Heap *, var_t, BAT *, ptr) = BATaccelerators[(b->tacctype > 0) ? b->tacctype : 0].accInsert;
 
 		memcpy(b->batHole, b->batDeleted, bunsize);
 
@@ -308,14 +294,8 @@ BATundo(BAT *b)
 			if (b->hhash_heap) {
 				HASHins(b->hhash, i, h);
 			}
-			if (haccins) {
-				(*haccins) (&b->hheap, i, m, h);
-			}
 			if (b->thash_heap) {
 				HASHins(b->thash, i, t);
-			}
-			if (taccins) {
-				(*taccins) (&b->theap, i, m, t);
 			}
 		}
 	}

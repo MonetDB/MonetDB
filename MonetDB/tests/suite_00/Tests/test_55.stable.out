@@ -45,18 +45,18 @@ h.print();
 # BAT:	  tmp_30	  #
 # (int)	  (BAT)		  #
 #-------------------------#
-[ 0,	  <tmp_30>	  ]
-[ 1,	  <tmp_31>	  ]
-[ 2,	  <tmp_32>	  ]
+[ 0,	  <tmp_28>	  ]
+[ 1,	  <tmp_29>	  ]
+[ 2,	  <tmp_30>	  ]
 dir("tmp");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "tmp_28",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_29",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_30",	  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_31",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_26",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_27",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_28",	  "int",  "int",  8,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_29",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_30",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 h.find(0).rename("dummy");
 dir("dummy");
 #---------------------------------------------------------------------------------------------------------#
@@ -67,10 +67,10 @@ dir("tmp");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "tmp_28",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_29",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_31",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
-[ "tmp_32",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_26",	  "int",  "BAT",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_27",	  "int",  "int",  11,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_29",	  "int",  "int",  3,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "tmp_30",	  "int",  "int",  0,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 quit();
 
 # 18:33:09 >  

@@ -68,7 +68,6 @@
 @:install_module(mprof)@
 @:install_module(oo7)@
 @:install_module(salgebra)@
-@:install_module(tpcd)@
 @:install_module(txtsim)@
 @:install_module(wisc)@
 @:install_module(mel)@

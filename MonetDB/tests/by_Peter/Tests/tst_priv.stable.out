@@ -28,7 +28,7 @@ while(i < 100) {
     i :+= 1;
 }
 
-bat("a").mmap(1,1,1,1,1);
+bat("a").mmap(1,1,1);
 unload("a");
 bat("a").info().reverse().select("theap.storage").reverse().print();
 #-------------------------------------------------#

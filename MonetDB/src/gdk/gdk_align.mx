@@ -234,8 +234,6 @@ use a copy.
 		/* slices are unequal to their parents; cannot use accs */
 		bn->hhash_heap = bn->thash_heap = NULL;
 		bn->hhash.link = bn->thash.link = NULL;
-		bn->hacctype = bn->tacctype = 0;
-		bn->haccelerator.base = bn->taccelerator.base = NULL;
 	} else {
 		/* equal pointers to parent mean view uses acc of parent */
 		bn->hhash_heap = b->hhash_heap;
@@ -271,7 +269,6 @@ VIEWhead(BAT *b)
 	bm->H = bn->T;
 	bn->ttype = bm->htype = TYPE_void;
 	bn->tvarsized = bm->hvarsized = 1;
-	bn->tacctype = bm->hacctype = 0;
 	bn->thash_heap = bm->hhash_heap = NULL;
 	BATseqbase(bm, oid_nil);
 
@@ -344,7 +341,7 @@ BATmaterialize(BAT *b, size_t size)
 		}
 
 		/* cleanup possible ACC's */
-		ACCunloadall(b);
+		HASHdestroy(b);
 
 		/* guess new bunwidth before setting the new dimensions, +3 to allow chr-on-int alignment */
 		b->batBuns->filename = NULL;
@@ -449,20 +446,12 @@ VIEWunlink(BAT *b)
 		if (p == NULL)
 			return;
 
-		/* unlink accelerators shared with parent */
+		/* unlink hash accelerators shared with parent */
 		if (b->hhash_heap && (b->hhash_heap == p->hhash_heap || b->hhash_heap == p->thash_heap)) {
 			b->hhash_heap = m->thash_heap = NULL;
 		}
 		if (b->thash_heap && (b->thash_heap == p->hhash_heap || b->thash_heap == p->thash_heap)) {
 			b->thash_heap = m->hhash_heap = NULL;
-		}
-		if (b->hacctype && (b->haccelerator.base == p->haccelerator.base || b->haccelerator.base == p->taccelerator.base)) {
-			b->hacctype = 0;
-			b->haccelerator.base = NULL;
-		}
-		if (b->tacctype && (b->taccelerator.base == p->haccelerator.base || b->taccelerator.base == p->taccelerator.base)) {
-			b->tacctype = 0;
-			b->taccelerator.base = NULL;
 		}
 	}
 }
@@ -627,8 +616,10 @@ VIEWdestroy(BAT *v)
 	BAT *b = BATreset(v);
 	BAT *m = BATmirror(b);
 
-	if (b)
-		ACCremoveall(b);
+	if (b) {
+		VIEWunlink(b);
+		HASHdestroy(b);
+	}
 
 	/* free memory private to this view */
 	if (m != NULL) {

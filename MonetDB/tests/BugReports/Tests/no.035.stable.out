@@ -47,7 +47,6 @@ monet_fcn_cnt
 monet_mod_nme
 monet_mod_cnt
 monet_mod_atm
-monet_mod_acc
 monet_mod_hdl
 monet_mod_dep
 monet_mod_use
@@ -56,7 +55,6 @@ monet_mod_drop
 monet_mod_proc
 monet_mod_var
 adm_fcntbl
-adm_acctbl
 adm_atomtbl
 monet_unicode_case
 quit();

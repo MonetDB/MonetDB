@@ -25,8 +25,8 @@ Over..
 # 22:09:51 >  
 
 rows received 2 with 2 fields
-h=John tmp_35=23 
-h=Mary tmp_35=22 
+h=John tmp_31=23 
+h=Mary tmp_31=22 
 
 # 22:25:17 >  
 # 22:25:17 >  Done.

@@ -800,7 +800,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	if (assignop && b1->batInserted==b1->batHole + BUNsize(b1)) {
 		replace = TRUE;
 		buntrick = ATOMsize(b1->ttype);
-		ACCremoveall(retb = b1);
+		HASHdestroy(retb = b1);
 		dst = BUNtloc(retb, BUNfirst(retb));
 	} else {
 		retb = BATnew(htpe, ret_tpe, size);
@@ -1054,7 +1054,7 @@ interpret_@1_merge(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 
 	if (assignop && b1->batInserted==b1->batHole+BUNsize(b1) && special == 0) {
 		replace = ATOMsize(b1->ttype);
-		ACCremoveall(retb = b1);
+		HASHdestroy(retb = b1);
 	} else {
 		retb = BATnew(htpe, ret_tpe, size);
 		BATseqbase(retb, b1->hseqbase);
@@ -1312,9 +1312,6 @@ Note also that result atoms with an unfix ADT routine must be unfixed (odSet, e.
 	if (nested->hhash_heap || nested->thash_heap) {
 		HASHdestroy(nested);
 	}
-	if (nested->hacctype) {
-		ACCdestroy(nested->hacctype, nested, &nested->haccelerator);
-	}
 	nested->halign = nested->talign = 0;
 	nested_rev->hkey = nested_rev->tkey = nested->hkey = nested->tkey = prop_key;
 	nested->hsorted = prop_sorted;
@@ -1470,7 +1467,7 @@ there are the {strings, polygons, images, etc}!
 		nested_rev->batHole = nested->batHole = b->batHole;
 		nested_rev->T = nested->H;
 		*nested->H = *b->T;
-		nested->halign = nested->hacctype = 0;
+		nested->halign = 0;
 		prop_sorted = BATtordered(b) & 1;
 	} else {
 		nested->hsorted = nested->tsorted = 0;

@@ -175,7 +175,7 @@ proc pow(int base, int raise) : int {
 proc arith_perftest(bat[any::1,any::2] b, any::2 div, str s) : void {
   var t := time(), reduce := [/](b,div); printf("[/](%s) = %dms\n", s, time()-t);
   t := time(); printf("join(%s=%d) = %d ms\n", s, join(b,b.reverse()).count(), time() - t);
-  t := time(); printf("group(%s=%d) = %d ms\n", s, CTgroup(reduce).tunique().count(), time() - t);
+  t := time(); printf("group(%s=%d) = %d ms\n", s, CTgroup(reduce).extend().count(), time() - t);
   t := time(); printf("[*](%s=%d) = %d ms\n", s, [*](b,div).count(), time() - t);
   t := time(); printf("[-](%s=%d) = %d ms\n", s, [-](b,b).count(), time() - t);
   t := time(); printf("[+](%s=%d) = %d ms\n", s, [+](b,b).count(), time() - t);

@@ -147,12 +147,12 @@ BATloaddesc(str nme)
 	b->batBuns->base = NULL;
 	b->batBuns->filename = NULL;
 	b->H->heap.base = NULL;
-	b->H->accelerator.base = NULL;
 	b->T->heap.base = NULL;
-	b->T->accelerator.base = NULL;
 	b->batId = dst->fullid;
 	b->batCopiedtodisk = 1;
 	b->batElmshift = BATelmshift(b);
+	b->H->props = NULL;
+	b->T->props = NULL;
 	return b;
 }
 

@@ -1,8 +1,6 @@
 var X := new(str,int);
-X.insert("adm_acctbl",bat("adm_acctbl").count());
 X.insert("adm_atomtbl",bat("adm_atomtbl").count());
 X.insert("adm_fcntbl",bat("adm_fcntbl").count());
-X.insert("monet_acctbl",monet_acctbl.count());
 X.insert("monet_atomtbl",monet_atomtbl.count());
 X.insert("monet_fcn_aut",monet_fcn_aut.count());
 X.insert("monet_fcn_dat",monet_fcn_dat.count());
@@ -15,7 +13,6 @@ X.insert("monet_fcn_pro",monet_fcn_pro.count());
 X.insert("monet_fcn_sig",monet_fcn_sig.count());
 X.insert("monet_fcn_tpe",monet_fcn_tpe.count());
 X.insert("monet_fcntbl",monet_fcntbl.count());
-X.insert("monet_mod_acc",monet_mod_acc.count());
 X.insert("monet_mod_atm",monet_mod_atm.count());
 X.insert("monet_mod_cnt",monet_mod_cnt.count());
 X.insert("monet_mod_dep",monet_mod_dep.count());
@@ -27,10 +24,8 @@ X.insert("monet_mod_use",monet_mod_use.count());
 {
 printf("\nMserver prologue: This is what Mserver says before MapiClient connects.\n");
 # X.print();
-# bat("adm_acctbl").print();
 # bat("adm_atomtbl").print();
 # bat("adm_fcntbl").mark(nil).sort().print();
-# monet_acctbl.print();
 # monet_atomtbl.print();
 # monet_fcntbl.mark(nil).sort().print();
 }

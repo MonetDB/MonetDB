@@ -406,15 +406,6 @@ DESCatom(str nme)
 		return -1;
 	return tpe;
 }
-static int
-DESCacc(str nme)
-{
-	int tpe = ACCindex(nme);
-
-	if (tpe < 0 || BATaccelerators[tpe].deleting)
-		return -1;
-	return tpe;
-}
 
 static BAT *
 DESCload(int i)
@@ -435,18 +426,6 @@ DESCload(int i)
 	if ((*b->hatom && ((b->htype = DESCatom(s = b->hatom)) < 0)) || (*b->tatom && ((b->ttype = DESCatom(s = b->tatom)) < 0))) {
 		GDKerror("DESCload: atom '%s' unknown, in BAT '%s'.\n", s, nme);
 		return 0;
-	}
-	b->hacctype = (b->hacctype && *b->haccname) ? DESCacc(b->haccname) : 0;
-	b->tacctype = (b->tacctype && *b->taccname) ? DESCacc(b->taccname) : 0;
-	if (b->hacctype < 0) {
-		GDKwarning("accelerator '%s' unknown, in BAT '%s'.\n", b->haccname, nme);
-		*b->haccname = 0;
-		b->hacctype = 0;
-	}
-	if (b->tacctype < 0) {
-		GDKwarning("accelerator '%s' unknown, in BAT '%s'.\n", b->taccname, nme);
-		*b->taccname = 0;
-		b->tacctype = 0;
 	}
 	b->hhash_heap = b->thash_heap = NULL;
 	b->batSharecnt = 0;
@@ -475,12 +454,6 @@ DESCsetmodes(BAT *b, BAT *img)
 	if (b->batMaptheap != (char) -1) {
 		img->theap.storage = b->batMaptheap;
 	}
-	if (b->batMaphacc != (char) -1) {
-		img->haccelerator.storage = b->batMaphacc;
-	}
-	if (b->batMaptacc != (char) -1) {
-		img->taccelerator.storage = b->batMaptacc;
-	}
 
 	/* change modes in img into legal modes, and reset b's mapdity if something had to be corrected */
 	b->batMapdirty |= BATcheckmodes(img, BBP_status(b->batCacheid) & BBPEXISTING, FALSE);
@@ -495,15 +468,13 @@ DESCclean(BAT *b)
 	b->batDirtybuns = 0;
 	b->hheapdirty = 0;
 	b->theapdirty = 0;
-	b->haccdirty = 0;
-	b->taccdirty = 0;
 }
 
 
 BAT *
 BATsave(BAT *bd)
 {
-	int err = 0, hsaved = 0, tsaved = 0;
+	int err = 0;
 	char *nme;
 	BATstore bs;
 	BAT *b = bd;
@@ -537,23 +508,6 @@ BATsave(BAT *bd)
 
 	b->batBuns = &b->U->buns;
 
-@+ NIELS broken needs correction of DELTA status
-	/* try to cut off unused bytes at the start of the heap */
-	if ((!(b->batBuns->storage & STORE_MMAP || b->batRestricted)) &&
-	    b->hacctype == 0 && b->tacctype == 0) {
-		size_t remap = (b->batDeleted - b->batBuns->base) / BUNsize(b);
-		if (BUNsize(b) < sizeof(int)) {
-			size_t x = sizeof(int)/BUNsize(b);
-			remap = (remap/x)*x;
-		}
-		if (remap) {
-			b->batBuns->free -= remap*BUNsize(b);
-			b->batBuns->base += remap*BUNsize(b);
-			b->batDirtydesc = TRUE; /* offsets will change in the bat descriptor */
-			bd->batMapdirty = TRUE; /* flush descriptor after unload */
-		}
-	}
-@c
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) {
@@ -570,32 +524,6 @@ BATsave(BAT *bd)
 			if (err == 0)
 				err = HEAPsave(&b->theap, nme, "theap");
 		}
-	if (b->haccCopiedtodisk == 0 || b->batDirty || b->haccdirty)
-		if (b->haccelerator.base) {
-			void (*fcn) (Heap *, BAT *) = BATaccelerators[b->hacctype].accSave;
-
-			if (fcn) {
-				strcpy(b->haccname, ACCname(b->hacctype));
-				(*fcn) (&b->haccelerator, b);
-				if (err == 0)
-					err = HEAPsave(&b->haccelerator, nme, "hacc");
-				if (err == 0)
-					hsaved = TRUE;
-			}
-		}
-	if (b->taccCopiedtodisk == 0 || b->batDirty || b->taccdirty)
-		if (b->taccelerator.base) {
-			void (*fcn) (Heap *, BAT *) = BATaccelerators[b->tacctype].accSave;
-
-			if (fcn) {
-				strcpy(b->taccname, ACCname(b->tacctype));
-				(*fcn) (&b->taccelerator, b);
-				if (err == 0)
-					err = HEAPsave(&b->taccelerator, nme, "tacc");
-				if (err == 0)
-					tsaved = TRUE;
-			}
-		}
 	/* correct heap modes such that they are ACID respecting */
 	DESCsetmodes(bd, b);
 
@@ -603,14 +531,10 @@ BATsave(BAT *bd)
 		if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtydesc) {
 			DESCclean(b);
 			b->batCopiedtodisk = 1;
-			b->haccCopiedtodisk |= hsaved;
-			b->taccCopiedtodisk |= tsaved;
 			err = BATsavedesc(b, nme);
 		}
 	if (err == 0) {
 		bd->batCopiedtodisk = 1;
-		bd->haccCopiedtodisk |= hsaved;
-		bd->taccCopiedtodisk |= tsaved;
 		return bd;
 	}
 	return NULL;
@@ -670,38 +594,6 @@ BATload_intern(bat i)
 	b->batSharecnt = 0;
 	DELTAload(b);
 
-	/* LOAD head accelerator heap */
-	if (b->hacctype && (BATaccelerators[b->hacctype].accSave == NULL || (ret = HEAPload(&b->haccelerator, nme, "hacc", b->batRestricted == BAT_READ)) < 0)) {
-		if (BATaccelerators[b->hacctype].accSave) {
-			b->batDirtydesc = TRUE;
-			GDKwarning("BATload: ignoring %s on head of %s.\n", BATaccelerators[b->hacctype].name, b->batId);
-		}
-		b->hacctype = 0;
-	}
-	if (b->hacctype == 0) {
-		memset(&b->haccelerator, 0, sizeof(Heap));
-	} else {
-		b->batMapdirty |= ret;	/* heap mode changed during load? */
-		b->haccCopiedtodisk = TRUE;	/* correct if not set yet */
-		HEAP_checkformat(&b->haccelerator);
-	}
-
-	/* LOAD tail accelerator heap */
-	if (b->tacctype && (BATaccelerators[b->tacctype].accSave == NULL || (ret = HEAPload(&b->taccelerator, nme, "tacc", b->batRestricted == BAT_READ)) < 0)) {
-		if (BATaccelerators[b->tacctype].accSave) {
-			b->batDirtydesc = TRUE;
-			GDKwarning("BATload: ignoring %s on tail of %s.\n", BATaccelerators[b->tacctype].name, b->batId);
-		}
-		b->tacctype = 0;
-	}
-	if (b->tacctype == 0) {
-		memset(&b->taccelerator, 0, sizeof(Heap));
-	} else {
-		b->batMapdirty |= ret;	/* heap mode changed during load? */
-		b->taccCopiedtodisk = TRUE;	/* correct if not set yet */
-		HEAP_checkformat(&b->taccelerator);
-	}
-
 	/* load succeeded; register it in BBP */
 	BBPcacheit(b);
 
@@ -712,8 +604,6 @@ BATload_intern(bat i)
 	b->batMapbuns = (char) b->batBuns->storage;
 	b->batMaphheap = (char) b->hheap.storage;
 	b->batMaptheap = (char) b->theap.storage;
-	b->batMaphacc = (char) b->haccelerator.storage;
-	b->batMaptacc = (char) b->taccelerator.storage;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;
@@ -760,7 +650,7 @@ BATdelete(BAT *b)
 
 	if (loaded) {
 		b = loaded;
-		ACCunloadall(b);
+		HASHdestroy(b);
 		GDKfree(BATmirror(b));
 		BBP_cache(-b->batCacheid) = NULL;
 	}
@@ -789,21 +679,7 @@ BATdelete(BAT *b)
 	} else if (b->theap.base) {
 		HEAPfree(&b->theap);
 	}
-	if (b->haccCopiedtodisk || (b->haccelerator.storage & STORE_MMAP)) {
-		if (HEAPdelete(&b->haccelerator, o, "hacc") && b->haccCopiedtodisk)
-			GDKwarning("BATdelete(%s): head accelerator\n", b->batId);
-	} else if (b->haccelerator.base) {
-		HEAPfree(&b->haccelerator);
-	}
-	if (b->taccCopiedtodisk || (b->taccelerator.storage & STORE_MMAP)) {
-		if (HEAPdelete(&b->taccelerator, o, "tacc") && b->taccCopiedtodisk)
-			GDKwarning("BATdelete(%s): tail accelerator\n", b->batId);
-	} else if (b->taccelerator.base) {
-		HEAPfree(&b->taccelerator);
-	}
 	b->batCopiedtodisk = FALSE;
-	b->haccCopiedtodisk = FALSE;
-	b->taccCopiedtodisk = FALSE;
 	return 0;
 }
 

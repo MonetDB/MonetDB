@@ -42,11 +42,11 @@ z.persists(true);
 module(xtables);
 print(x,y,z);
 
-var t1 := x.CTgroup();
+var t1 := x.CTgroup().map();
 t1.print();
-var t2 := t1.CTderive(y);
+var t2 := t1.CTderive(y).map();
 t2.print();
-t2 := t1.CTgroup(y);
+t2 := t1.CTgroup(y).map();
 t2.print();
 #print(t2.histogram,x,y);
 #CTprint(t2.histogram,y);

@@ -137,39 +137,31 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
       _MMjoin_8.info().col_name("MMjoin_8"),
       _MMreverse_9.info().col_name("MMreverse_9"),
       _MMjoin_10.info().col_name("MMjoin_10"));
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:				  indexA	| valuesA	| MMoper_2	| MMuselect_3	| MMoper_4	| MMuselect_5	| MMsemijoin_6	| MMcastnil_7	| MMjoin_8	| MMreverse_9	| MMjoin_10	  #
-# (str)				  (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		| (str)		  #
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "batBuns.filename",		  "29.buns",	  "28.buns",	  "30.buns",	  "30.buns",	  "32.buns",	  "33.buns",	  "30.buns",	  "30.buns",	  "38.buns",	  "30.buns",	  "39.buns"	  ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# h			indexA		valuesA		MMoper_2		MMuselect_3	MMoper_4		MMuselect_5	MMsemijoin_6	MMcastnil_7	MMjoin_8		MMreverse_9	MMjoin_10	  # name
+# str			str		str		str		str		str		str		str		str		str		str		str		  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "batBuns.filename",	  "27.buns",	  "26.buns",	  "28.buns",	  "28.buns",	  "30.buns",	  "31.buns",	  "28.buns",	  "28.buns",	  "36.buns",	  "28.buns",	  "37.buns"	  ]
 [ "batBuns.free",		  "20",		  "20",		  "8",		  "4",		  "8",		  "16",		  "3",		  "3",		  "12",		  "3",		  "12"		  ]
 [ "batBuns.maxsize",		  "212",	  "212",	  "56",		  "4",		  "56",		  "212",	  "3",		  "3",		  "212",	  "3",		  "212"		  ]
 [ "batBuns.size",		  "212",	  "212",	  "56",		  "4",		  "56",		  "212",	  "3",		  "3",		  "212",	  "3",		  "212"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
-[ "batCacheid",			  "29",		  "28",		  "30",		  "31",		  "32",		  "34",		  "-35",	  "36",		  "-38",	  "-36",	  "39"		  ]
+[ "batCacheid",		  "27",		  "26",		  "28",		  "29",		  "30",		  "32",		  "-33",	  "34",		  "-36",	  "-34",	  "37"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDeleted",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batHole",			  "0",		  "0",		  "3",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "batId",			  "tmp_29",	  "tmp_28",	  "tmp_30",	  "tmp_31",	  "tmp_32",	  "tmp_34",	  "tmp_35",	  "tmp_36",	  "tmp_38",	  "tmp_36",	  "tmp_39"	  ]
+[ "batId",		  "tmp_27",	  "tmp_26",	  "tmp_28",	  "tmp_29",	  "tmp_30",	  "tmp_32",	  "tmp_33",	  "tmp_34",	  "tmp_36",	  "tmp_34",	  "tmp_37"	  ]
 [ "batInserted",		  "1",		  "1",		  "4",		  "1",		  "4",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "batLRefcnt",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "2",		  "1",		  "2",		  "1"		  ]
-[ "batParentid",		  "0",		  "0",		  "0",		  "30",		  "0",		  "33",		  "-30",	  "30",		  "0",		  "30",		  "0"		  ]
+[ "batParentid",	  "0",		  "0",		  "0",		  "28",		  "0",		  "31",		  "-28",	  "28",		  "0",		  "28",		  "0"		  ]
 [ "batPersistence",		  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient"	  ]
 [ "batRefcnt",			  "1",		  "1",		  "2",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "batRestricted",		  "updatable",	  "updatable",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only",	  "read-only"	  ]
 [ "batSet",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "batSharecnt",		  "0",		  "0",		  "3",		  "1",		  "0",		  "1",		  "1",		  "1",		  "0",		  "1",		  "0"		  ]
-[ "haccCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "haccdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
-[ "haccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
-[ "haccelerator.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "haccelerator.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "haccelerator.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "haccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
-[ "hacctype",			  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null"	  ]
+[ "batSharecnt",	  "0",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "halign",			  "2020",	  "2021",	  "2021",	  "2029",	  "2021",	  "2035",	  "2029",	  "2029",	  "2048",	  "2044",	  "2044"	  ]
 [ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "head",			  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "oid",	  "void",	  "void"	  ]
@@ -190,14 +182,6 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "hseqbase",			  "0@0",	  "0@0",	  "0@0",	  "1@0",	  "0@0",	  "0@0",	  "1@0",	  "1@0",	  "1@0",	  "0@0",	  "0@0"		  ]
 [ "hsorted",			  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65",		  "65"		  ]
 [ "hvarsized",			  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "0",		  "1",		  "1"		  ]
-[ "taccCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "taccdirty",			  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
-[ "taccelerator.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
-[ "taccelerator.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "taccelerator.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "taccelerator.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "taccelerator.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
-[ "tacctype",			  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null",	  "null"	  ]
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
 [ "talign",			  "2010",	  "2018",	  "2023",	  "2032",	  "2034",	  "2039",	  "2032",	  "2044",	  "2044",	  "2029",	  "2052"	  ]
 [ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]

@@ -39,7 +39,6 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "mprof"	  ]
 [ "oo7"		  ]
 [ "qt"		  ]
-[ "tpcd"	  ]
 [ "txtsim"	  ]
 [ "uchr"	  ]
 [ "vector"	  ]
@@ -197,8 +196,8 @@ Module: "color"
 
 Module: "ddbench"
 
-[ 50 ]
-[ 50 ]
+[ 53 ]
+[ 53 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		| type		| signature										| help																																													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -209,6 +208,7 @@ Module: "ddbench"
 [ "enum_join",		  "COMMAND:   ",  "enum_join(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "positional join if the b2 head type is an enumerated oid"																																						  ]
 [ "enum_semijoin",	  "COMMAND:   ",  "enum_semijoin(BAT[void,any::1], BAT[any,any]) : BAT[oid,any::1]",			  "positional semijoin if the b2 head type is an enumerated oid"																																					  ]
 [ "enum_view",		  "COMMAND:   ",  "enum_view(BAT[void,any]) : BAT[oid,int]",						  "produces a histogram that is an adaptation of the enum-lookup table\n  of the tail of b. Its head column differs: it contains oids; namely \n  the first oid of 'b' where the original lookup head value occured\n  in the tail of 'b'. In other words :-), this produces the lookup\n  table needed to create an 'enumeration view' that represents CTgroup(b)."	  ]
+[ "extend",		  "PROC:      ",  "extend(grp) : BAT[any,int]",								  "not available"																																											  ]
 [ "fclose",		  "PROC:      ",  "fclose(Stream) : void",								  "not available"																																											  ]
 [ "fflush",		  "PROC:      ",  "fflush(Stream) : void",								  "not available"																																											  ]
 [ "fopen",		  "PROC:      ",  "fopen(str, str) : Stream",								  "not available"																																											  ]
@@ -217,7 +217,9 @@ Module: "ddbench"
 [ "group",		  "PROC:      ",  "group(BAT[oid,any], BAT[oid,any]) : BAT[oid,any]",					  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[void,any]) : BAT[oid,oid]",						  "not available"																																											  ]
 [ "group",		  "PROC:      ",  "group(BAT[void,any], BAT[void,any]) : BAT[oid,any]",					  "not available"																																											  ]
+[ "histogram",		  "PROC:      ",  "histogram(grp) : BAT[any,int]",							  "not available"																																											  ]
 [ "kintersect",		  "COMMAND:   ",  "kintersect(BAT[oid,any::1], BAT[void,bit32]) : BAT[oid,any::1]",			  "do b.semijoin(sel.tobat); b must be dense and sel must correspond to it.\n"																																				  ]
+[ "map",		  "PROC:      ",  "map(grp) : BAT[oid,oid]",								  "not available"																																											  ]
 [ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,any::3], BAT[any::3,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
 [ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,any], BAT[void,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
 [ "mjoin",		  "PROC:      ",  "mjoin(BAT[any::1,void], BAT[any,any::2]) : BAT[any::1,any::2]",			  "not available"																																											  ]
@@ -400,49 +402,6 @@ Module: "qt"
 [ "[qt_stats]",			  "COMMAND:   ",  "[qt_stats](int, str) : void",																		  "Control statistics output"																																																												  ]
 [ "test_bitvector",		  "PROC:      ",  "test_bitvector() : void",																			  "not available"																																																													  ]
 [ "test_uchr",			  "PROC:      ",  "test_uchr() : void",																				  "not available"																																																													  ]
-
-Module: "tpcd"
-
-
-[ 34 ]
-[ 34 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature										| help																		  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "avg",	  "PROC:      ",  "avg(..any..) : any",									  "not available"																  ]
-[ "debug",	  "PROC:      ",  "debug() : void",									  "not available"																  ]
-[ "dvjoin",	  "COMMAND:   ",  "dvjoin(BAT[oid,void], BAT[void,any::1], BAT[oid,any::2]) : BAT[any::1,any::2]",	  "Performs join(A.extent,A.vector,B) using a datavector on A.tail. \n     Creates a vextoridx on the head of B; if not present already."	  ]
-[ "dvsemijoin",	  "COMMAND:   ",  "dvsemijoin(BAT[oid,void], BAT[void,any::1], BAT[oid,any::2]) : BAT[oid,any::1]",	  "Performs semijoin(A.extent,A.vector,B) using a datavector on A.tail. \n     Creates a vextoridx on the head of B; if not present already."	  ]
-[ "extent",	  "COMMAND:   ",  "extent(BAT[oid,any::1]) : BAT[oid,void]",						  "If there is a datavector on the tail of the BAT, this returns\n     the associated extent BAT, else it gives an error."			  ]
-[ "gjoin",	  "PROC:      ",  "gjoin() : <predefinition>",								  "not available"																  ]
-[ "gjoin",	  "PROC:      ",  "gjoin(BAT[any,any], BAT[any,any]) : BAT[any,any]",					  "not available"																  ]
-[ "gorder",	  "PROC:      ",  "gorder(BAT[any,any]) : BAT[any,any]",						  "not available"																  ]
-[ "gselect",	  "PROC:      ",  "gselect(BAT[any,any], ..any..) : BAT[any,any]",					  "not available"																  ]
-[ "gsemijoin",	  "PROC:      ",  "gsemijoin(BAT[any,any], BAT[any,any]) : BAT[any,any]",				  "not available"																  ]
-[ "gsum",	  "PROC:      ",  "gsum(BAT[any,any]) : int",								  "not available"																  ]
-[ "guselect",	  "PROC:      ",  "guselect(BAT[any,any], ..any..) : BAT[any,any]",					  "not available"																  ]
-[ "udiff",	  "PROC:      ",  "udiff(..BAT[any,any]..) : BAT[any,any]",						  "not available"																  ]
-[ "uintersect",	  "PROC:      ",  "uintersect(..BAT[any,any]..) : BAT[any,any]",					  "not available"																  ]
-[ "uunion",	  "PROC:      ",  "uunion(..BAT[any,any]..) : BAT[any,any]",						  "not available"																  ]
-[ "uunique",	  "PROC:      ",  "uunique(..BAT[any,any]..) : BAT[any,any]",						  "not available"																  ]
-[ "vector",	  "COMMAND:   ",  "vector(BAT[oid,any::1]) : BAT[void,any::1]",						  "If there is a datavector on the tail of the BAT, this returns\n     the associated unary vector BAT, else it gives an error."		  ]
-[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail average"															  ]
-[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail average"															  ]
-[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail average"															  ]
-[ "{avg}",	  "COMMAND:   ",  "{avg}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail average"															  ]
-[ "{count}",	  "PROC:      ",  "{count}(..any..) : int",								  "not available"																  ]
-[ "{max}",	  "COMMAND:   ",  "{max}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail maximum"															  ]
-[ "{max}",	  "COMMAND:   ",  "{max}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail maximum"															  ]
-[ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail maximum"															  ]
-[ "{max}",	  "COMMAND:   ",  "{max}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail maximum"															  ]
-[ "{min}",	  "COMMAND:   ",  "{min}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail minimum"															  ]
-[ "{min}",	  "COMMAND:   ",  "{min}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail minimum"															  ]
-[ "{min}",	  "COMMAND:   ",  "{min}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail minimum"															  ]
-[ "{min}",	  "COMMAND:   ",  "{min}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail minimum"															  ]
-[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[int,flt], BAT[int,any]) : BAT[int,flt]",					  "grouped tail sum"																  ]
-[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[int,int], BAT[int,any]) : BAT[int,int]",					  "grouped tail sum"																  ]
-[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,flt], BAT[oid,any]) : BAT[oid,flt]",					  "grouped tail sum"																  ]
-[ "{sum}",	  "COMMAND:   ",  "{sum}(BAT[oid,int], BAT[oid,any]) : BAT[oid,int]",					  "grouped tail sum"																  ]
 
 Module: "txtsim"
 

@@ -43,13 +43,13 @@
 # print( docid, tid );
 # 
 # module( "xtables" );
-# CTgroup( docid, tid ).print;
+# CTgroup( docid, tid ).map().print;
 # 
 # # t_i, tf_ij
-# join( tid.reverse, CTgroup( docid, tid ).histogram).print;
+# join( tid.reverse, CTgroup( docid, tid ).histogram()).print;
 # # d_j, max tf_j
 # djtfij := new( oid, int );
-# djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram ) );
+# djtfij.insert( join( docid.reverse, CTgroup( docid, tid ).histogram() ) );
 # 
 # {max}(djtfij).print;
 # 
@@ -57,7 +57,7 @@
 # This way it works. However, if I do not do an explicit new and insert,
 # then the server crashes as follows:
 # 
-# > djtfij :=join( docid.reverse, CTgroup( docid, tid ).histogram );
+# > djtfij :=join( docid.reverse, CTgroup( docid, tid ).histogram() );
 # > {max}(djtfij).print;
 # !ERROR: BATcreate:tt error
 #  

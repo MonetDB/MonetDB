@@ -135,8 +135,6 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 			sprintf(bn->theap.filename, "%s.theap", nme);
 		}
 	}
-	bn->haccelerator.filename = NULL;
-	bn->taccelerator.filename = NULL;
 	return bn;
 }
 
@@ -370,17 +368,12 @@ that really disappear, we must free heapspace and unfix the atoms if
 they have fix/unfix handles. As an optimization, in the case of no stable
 elements, we quickly empty the heaps by copying a standard small empty image 
 over them.
-
-Also, the BATclear must take care of search accelerators. The builtin search
-accelerators are disposable, so BATclear kills them. Also it considers that
-the quickest way to rebuild an empty user accelerator is to destroy the
-old and build new. The accelerators are only preserved for very small BATs.
 @c
 @{
 BAT *
 BATclear(BAT *b)
 {	
-	int hacc, tacc, bs;
+	int bs;
 	BUN p, q;
 	int voidbat;
 	BAT *bm;
@@ -412,12 +405,6 @@ BATclear(BAT *b)
 	}
 	if (b->thash_heap) {
 		HASHremove(bm);
-	}
-	if ((hacc = b->hacctype) > 0) {
-		ACCdestroy(b->hacctype, b, &b->haccelerator);
-	}
-	if ((tacc = b->tacctype) > 0) {
-		ACCdestroy(b->tacctype, b, &b->taccelerator);
 	}
 
 	/* we must dispose of all inserted atoms */
@@ -472,14 +459,6 @@ BATclear(BAT *b)
 	b->batHole = b->batInserted - bs;
 	b->batBuns->free = b->batInserted - b->batBuns->base;
 	b->batDirty = TRUE;
-
-	/* the persistent accelerators are rebuilt on the now empty BAT */
-	if (hacc && BATaccelerators[hacc].accSave) {
-		ACCbuild(hacc, b, &b->haccelerator, 0);
-	}
-	if (tacc && BATaccelerators[tacc].accSave) {
-		ACCbuild(tacc, b, &b->taccelerator, 0);
-	}
 	return b; 
 }
 
@@ -490,7 +469,7 @@ BATfree(BAT *b)
 
 	/* deallocate all memory for a bat */
 	BATreset(b);
-	ACCunloadall(b);
+	HASHdestroy(b);
 	DELTAsave(b);	       /* convert to disk format */
 	HEAPfree(b->batBuns);
 	HEAPfree(&b->theap);
@@ -611,9 +590,6 @@ around and adapt search accelerator structures.
 @h
 #define hashins(h,i,v,n) HASHins(h,i,v)
 #define hashdel(h,i,v,n) HASHdel(h,i,v,n)
-#define accmov(acc) (acc?BATaccelerators[acc].accMove:NULL)
-#define accdel(acc) (acc?BATaccelerators[acc].accDelete:NULL)
-#define accins(acc) (acc?BATaccelerators[acc].accInsert:NULL)
 
 @= bun_move
 	if (bs == 8) {
@@ -628,57 +604,26 @@ around and adapt search accelerator structures.
 	}
 @= hacc_update
 {
-	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->hacctype);
-
-	if (update) {
-		(*update)(&b->haccelerator, @4, b, BUN@2(b,@3));
-	}
 	if (b->hhash_heap) {
 		hash@1(b->hhash, @4, BUN@2(b, @3), @3 < last); 
 	}
 } 
 @= tacc_update
 {
-	void (*update)(Heap*, var_t, BAT*, ptr) = acc@1(b->tacctype);
-
-	if (update) {
-		(*update)(&b->taccelerator, @4, bm, BUN@2(b,@3));
-	}
 	if (b->thash_heap) {
 		hash@1(b->thash, (hash_t)@4, BUN@2(b, @3), @3 < last); 
 	}
 }
 @= acc_move
 {
-	void (*update)(Heap*, var_t, BAT*, ptr) = accdel(b->hacctype);
-	void (*hmove)(Heap*, var_t, var_t, BAT*, ptr) = accmov(b->hacctype);
-	void (*tmove)(Heap*, var_t, var_t, BAT*, ptr) = NULL;
-
-	if (hmove) { 
-		(*hmove)(&b->haccelerator, @3, @4, b, BUNhead(b,@1));
-	} else if (update) {
-		(*update)(&b->haccelerator, @3, b, BUNhead(b,@1));
-	}
 	if (b->hhash_heap) {
 		HASHmove(b->hhash, (hash_t)@3, (hash_t)@4, BUNhead(b, @1), @1 < last); 
-	}
-	if ((tmove = accmov(b->tacctype)) != NULL) {
-		(*tmove)(&b->taccelerator, @3, @4, bm, BUNtail(b,@1));
-	} else if ((update = accdel(b->tacctype)) != NULL) {
-		(*update)(&b->taccelerator, @3, bm, BUNtail(b,@1));
 	}
 	if (b->thash_heap) {
 		HASHmove(b->thash, (hash_t)@3, (hash_t)@4, BUNtail(b, @1), @1 < last); 
 	}
 
 	@:bun_move(@1,@2)@
-
-	if (hmove == NULL && (update = accins(b->hacctype)) != NULL) {
-		(*update)(&b->haccelerator, @4, b, BUNhead(b,@2));
-	}
-	if (tmove == NULL && (update = accins(b->tacctype)) != NULL) {
-		(*update)(&b->taccelerator, @4, bm, BUNtail(b,@2));
-	}
 }
 
 @- BUN Insertion
@@ -835,12 +780,6 @@ BUNins(BAT *b, ptr h, ptr t)
 		}
 		if (b->thash_heap) {
 			HASHins(b->thash, (hash_t) i, t);
-		}
-		if (b->hacctype) {
-			ACCins(b->hacctype, b, &b->haccelerator, i, h);
-		}
-		if (b->tacctype) {
-			ACCins(b->tacctype, BATmirror(b), &b->taccelerator, i, t);
 		}
 	}
 	return b;
@@ -1283,11 +1222,7 @@ BATvmsize(BAT *b, int dirty)
 		((dirty == 0 || b->hheapdirty) ? 
 			HEAPvmsize(&b->hheap) : 0) + 
 		((dirty == 0 || b->theapdirty) ? 
-			HEAPvmsize(&b->theap) : 0) + 
-		((dirty == 0 || b->haccdirty) ? 
-			HEAPvmsize(&b->haccelerator) : 0) + 
-		((dirty == 0 || b->taccdirty) ? 
-			HEAPvmsize(&b->taccelerator) : 0);
+			HEAPvmsize(&b->theap) : 0);
 }
 
 size_t
@@ -1307,11 +1242,7 @@ BATmemsize(BAT *b, int dirty)
 		((dirty == 0 || b->hheapdirty) ? 
 			HEAPmemsize(&b->hheap) : 0) + 
 		((dirty == 0 || b->theapdirty) ? 
-			HEAPmemsize(&b->theap) : 0) + 
-		((dirty == 0 || b->haccdirty) ? 
-			HEAPmemsize(&b->haccelerator) : 0) + 
-		((dirty == 0 || b->taccdirty) ? 
-			HEAPmemsize(&b->taccelerator) : 0);
+			HEAPmemsize(&b->theap) : 0);
 }
 
 @
@@ -1525,32 +1456,26 @@ save a BAT directly.
 @{
 @c
 int
-BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc)
+BATmmap(BAT *b, int bns, int hhp, int thp )
 {
 	BATcheck(b, "BATmmap");
 	IODEBUG {
-		THRprintf(GDKerr, "BATmmap(%s,%d,%d,%d,%d,%d)\n", b->batId, bns, hhp, thp, hacc, tacc);
+		THRprintf(GDKerr, "BATmmap(%s,%d,%d,%d)\n", b->batId, bns, hhp, thp );
 	}
 	/* Reverse back if required, as this determines which heap is saved in the 
-	 * "hheap" file and which in the "theap" file (and haccelerator/taccelerator).
+	 * "hheap" file and which in the "theap" file.
 	 */
 	if (b->batCacheid < 0) {
 		int swap = hhp;
 
 		hhp = thp;
 		thp = swap;
-		swap = hacc;
-		hacc = tacc;
-		tacc = swap;
 		b = BATmirror(b);
 	}
 	b->batMapdirty = TRUE;
 	b->batMapbuns = bns;
 	b->batMaphheap = hhp;
 	b->batMaptheap = thp;
-	b->batMaphacc = hacc;
-	b->batMaptacc = tacc;
-
 	b->batDirtydesc = 1;
 	return 0;
 }
@@ -1568,14 +1493,12 @@ BATmmap(BAT *b, int bns, int hhp, int thp, int hacc, int tacc)
 	}
 @c
 int
-BATmadvise(BAT *b, int bns, int hhp, int thp, int hacc, int tacc)
+BATmadvise(BAT *b, int bns, int hhp, int thp )
 {
 	BATcheck(b, "BATmadvise");
 	@:madvise(bns,b->batBuns)@
 	@:madvise(hhp,&b->hheap)@
 	@:madvise(thp,&b->theap)@
-	@:madvise(hacc,&b->haccelerator)@
-	@:madvise(tacc,&b->taccelerator)@
 	return 0;
 }
 
@@ -1586,8 +1509,6 @@ BATmmap_pin(BAT *b)
 	@:pin(pin,b->batBuns)@
 	@:pin(pin,&b->hheap)@
 	@:pin(pin,&b->theap)@
-	@:pin(pin,&b->haccelerator)@
-	@:pin(pin,&b->taccelerator)@
 	return 0;
 }
 
@@ -1598,8 +1519,6 @@ BATmmap_unpin(BAT *b)
 	@:pin(unpin,b->batBuns)@
 	@:pin(unpin,&b->hheap)@
 	@:pin(unpin,&b->theap)@
-	@:pin(unpin,&b->haccelerator)@
-	@:pin(unpin,&b->taccelerator)@
 	return 0;
 }
 
@@ -1640,14 +1559,6 @@ BATcheckmodes(BAT *b, int persistent, int unloadable)
 	}
 	if (HEAPcheckmode(&b->theap, persistent, unloadable, b->batRestricted == BAT_WRITE || (b->batRestricted == BAT_APPEND && ATOMappendpriv(b->ttype, &b->theap)))) {
 		b->batMaptheap = STORE_PRIV;
-		dirty = TRUE;
-	}
-	if (HEAPcheckmode(&b->haccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
-		b->batMaphacc = STORE_PRIV;
-		dirty = TRUE;
-	}
-	if (HEAPcheckmode(&b->taccelerator, persistent, unloadable, b->batRestricted != BAT_READ)) {
-		b->batMaptacc = STORE_PRIV;
 		dirty = TRUE;
 	}
 	b->batMapdirty |= dirty;
@@ -1737,12 +1648,6 @@ never be dirty and as such never saved.
 
 HEAPsave on a writable BAT just needs to look at H (h->storage) to know what to do.
 
-Finally, accelerator heaps may indeed be saved even on readonly bats (basically
-after they have been created -- which can happen on readonly bats). In case of
-readonly mmap heaps, we see that due to H=map in all cases, HEAPsave will use
-the (efficient) msync. This is not dangerous when saving an accelerator heap the
-first time, as its file will be ignored if [ht]accCopiedtodisc in the .desc
-is not set (only happens after fully successful heap write).
 @{
 @c
 /* transition heap from readonly to writable (or appendable) */
@@ -1826,8 +1731,6 @@ BATsetaccess(BAT *b, int mode)
 		int m1 = 0, bak1 = b->batBuns->storage;
 		int m2 = 0, bak2 = b->hheap.storage;
 		int m3 = 0, bak3 = b->theap.storage;
-		int m4 = 0, bak4 = b->haccelerator.storage;
-		int m5 = 0, bak5 = b->taccelerator.storage;
 		int committed = BBP_status(b->batCacheid) & BBPEXISTING;
 		int bak = b->batRestricted;
 		int dirty = BATdirty(b);
@@ -1861,16 +1764,6 @@ BATsetaccess(BAT *b, int mode)
 			} else if (b->theap.storage == BAT_WRITE) {
 				m3 = HEAPsetmmap(&b->theap, &remap);
 			}
-			if (mode != BAT_READ && b->haccelerator.storage == BAT_READ) {
-				m4 = HEAPsetpriv(&b->haccelerator, committed, &remap, &reload);
-			} else if (mode == BAT_READ && b->haccelerator.storage != BAT_READ) {
-				m4 = HEAPsetmmap(&b->haccelerator, &remap);
-			}
-			if (mode != BAT_READ && b->taccelerator.storage == BAT_READ) {
-				m5 = HEAPsetpriv(&b->taccelerator, committed, &remap, &reload);
-			} else if (mode == BAT_READ && b->taccelerator.storage != BAT_READ) {
-				m5 = HEAPsetmmap(&b->taccelerator, &remap);
-			}
 		}
 		if (remap && b->batCopiedtodisk && dirty) {
 			/* make sure any disk images are clean */
@@ -1890,7 +1783,7 @@ BATsetaccess(BAT *b, int mode)
 		b->batDirtydesc = TRUE;
 
 		if (remap) {
-			BATmmap(b, m1, m2, m3, m4, m5);
+			BATmmap(b, m1, m2, m3);
 		}
 		if (reload) {
 			/* we assume total exclusive access when B.access() is done. MIL USER RESPONABILITY!!! */
@@ -1900,7 +1793,7 @@ BATsetaccess(BAT *b, int mode)
 			if (BBPsave(b)) {
 				/* deal with BAT write errors: no access mode change */
 				b->batRestricted = bak;
-				BATmmap(b, bak1, bak2, bak3, bak4, bak5);
+				BATmmap(b, bak1, bak2, bak3);
 				return NULL;
 			}
 			BATfree(b);
@@ -2080,7 +1973,7 @@ check if duplicated properties are equal
 
 		if (b->hhash_heap != bm->thash_heap) {
 			GDKerror("BATpropcheck: BAT %s has inconsistent accrefs\n", BBPname(b->batCacheid));
-			ACCremoveall(b);
+			HASHdestroy(b);
 			b->batDirty = TRUE;
 		}
 		if (b->dims.headkey != bm->dims.tailkey) {

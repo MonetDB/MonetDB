@@ -64,7 +64,7 @@ print(x,y,z);
 [ 7@0,	  c,	  a,	  c	  ]
 [ 8@0,	  c,	  a,	  a	  ]
 
-var t1 := x.CTgroup();
+var t1 := x.CTgroup().map();
 t1.print();
 #-----------------#
 # BAT:	  tmp_31  #
@@ -78,7 +78,7 @@ t1.print();
 [ 6@0,	  3@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
-var t2 := t1.CTderive(y);
+var t2 := t1.CTderive(y).map();
 t2.print();
 #-----------------#
 # BAT:	  tmp_33  #
@@ -92,7 +92,7 @@ t2.print();
 [ 6@0,	  6@0	  ]
 [ 7@0,	  7@0	  ]
 [ 8@0,	  7@0	  ]
-t2 := t1.CTgroup(y);
+t2 := t1.CTgroup(y).map();
 t2.print();
 #-----------------#
 # BAT:	  tmp_35  #

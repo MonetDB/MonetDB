@@ -28,7 +28,8 @@ proc xtable_print(..any..) : void {
 
 proc xtable_histo_direct(..any..) : void {
 	var histo := $2.histogram();
-	histo.xtable_print($(1..), histo.mirror().col_name("gid"));
+	var map := $2.map();
+	histo.xtable_print($(1), map, $(3..), histo.mirror().col_name("gid"));
 }
 
 proc xtable_histo_remap(..any..) : void {
@@ -62,7 +63,7 @@ proc xtable_test(str title, bat x, bat y, bat z) : void {
 	xtable_histo_direct("group(x)", b1, x);
 
 	# test derive
-	b1 := CTgroup(b1,y).access(BAT_WRITE);
+	b1 := CTgroup(b1.map(),y);#.access(BAT_WRITE);
 	xtable_histo_direct("group(x,y)", b1, x, y);
 
 	# test orderby
@@ -73,15 +74,15 @@ proc xtable_test(str title, bat x, bat y, bat z) : void {
  
 	# test subgroup
 	{
-		var b2 := {count}([<=](y,dbl(2.0)),b1,b1.histogram()).col_name("count");
+		var b2 := {count}([<=](y,dbl(2.0)),b1.map(),b1.histogram()).col_name("count");
 		b2.xtable_print("subhisto(x,y|1-2)", x, y, b2.mirror().col_name("gid"));
 	}
-	b1 := CTsubgroup(b1,y, y.uselect(dbl(1.0),dbl(2.0)));
+	b1 := CTsubgroup(b1.map(),y, y.uselect(dbl(1.0),dbl(2.0)));
 	xtable_histo_direct("group(x,y|1-2)", b1, x, y);
 
-	# test regroup
-	CTregroup(b1,z);
-	xtable_histo_direct("regroup(x,y,z)", b1, x, y, z);
+	# test derive
+	b1 := CTgroup(b1.map(),z);
+	xtable_histo_direct("group(x,y,z)", b1, x, y, z);
 }
 
 setoid(oid(20000000));
