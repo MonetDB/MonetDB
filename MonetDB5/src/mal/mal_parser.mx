@@ -840,9 +840,12 @@ parseInclude(Client cntxt)
         return parseError(cntxt,"<module path> expected\n");
 
     skipSpace(cntxt);
-	if (currChar(cntxt) != ';')
-            parseError(cntxt,"';' expected\n");
-    skipToEnd(cntxt);
+	if (currChar(cntxt) != ';') {
+		parseError(cntxt,"';' expected\n");
+		skipToEnd(cntxt);
+		return "";
+	}
+	skipToEnd(cntxt);
 
     malInclude(cntxt, modnme, modnme, 0);
     /* re-establish starting point in jumptable */
@@ -1719,6 +1722,9 @@ int parseMAL(Client cntxt, Symbol curPrg){
                 cntrl= LEAVEsymbol;
               goto allLeft;
         case 'M': case 'm': 
+              if( keyword(cntxt,"map",3)) {
+                cntrl = MAPsymbol; 
+              } else
               if( keyword(cntxt,"module",6) &&
                 parseModule(cntxt)!= 0) break;
               goto allLeft;
