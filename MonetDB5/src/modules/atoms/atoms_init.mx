@@ -39,7 +39,6 @@ client group or database.
 include "blob";
 include "str";
 include "url";
-include "uchr";
 include "mtime";
 @-
 @c
