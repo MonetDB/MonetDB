@@ -30,7 +30,9 @@ Last updated: @value{UPDATED}
 @insertcopying
 @end titlepage
 
+@iftex
 @contents
+@end iftex
 
 @ifnottex
 @page
@@ -40,36 +42,115 @@ Last updated: @value{UPDATED}
 @include Assets/General_information
 @menu
 * About this manual::
-* Introduction V5::
+* Introduction::
+* Scenarios::
+* MonetDB Assembler Language::
+* Parser::
+* Functions::
+* Factories::
+* Bootstrap::
+* Modules::
+* MAL interpreter::
+* Client administration::
+* Atom types::
+* Type resolution::
+* Boxed variables::
+* Optimizer framework::
+* Property management::
+* Name space management::
+* XML interface::
+* The MAL debugger::
+* The MAL profiler::
+* MAL syntax::
+
+--- Introduction ---
+* Backward compatibility:: 
+* Design considerations:: 
+* Architecture overview:: 
+* MAL Synopsis:: 
+* MAL interpretation:: 
+
+--- Scenarios ---
+* Scenario Interpretation::
+* Scenario Administration::
+
+--- MAL ---
+* MAL instructions::
+* Flow of control::
+* Instruction Records::
+* Call encapsulation::
+* Temporary variables::
+* MAL constants::
+* Reverse programming::
+
 @end menu
+
 @end ifnottex
 
-@node Introduction V5, ,About this manual, Top
 @include Assets/About_this_manual
 
+@node Introduction, Scenarios, About this manual , Top
 @include mal.bdy.texi
+
+@node Scenarios, MonetDB Assembler Language ,Introduction, Top
 @include mal_scenario.bdy.texi
+
+@node MonetDB Assembler Language , Parser, Scenarios, Top
 @include mal_instruction.bdy.texi
+
+@node Parser , Functions , MonetDB Assembler Language, Top
 @include mal_parser.bdy.texi
+
+@node Functions, Factories , Parser, Top
 @include mal_function.bdy.texi
+
+@node Factories, Bootstrap , Functions, Top
 @include mal_factory.bdy.texi
+
+@node Bootstrap , Modules ,Factories, Top
 @include mal_linker.bdy.texi
+
+@node Modules , MAL interpreter ,Bootstrap, Top
 @include mal_import.bdy.texi
+
+@node MAL interpreter, Client administration, Modules, Top
 @include mal_interpreter.bdy.texi
 @include mal_stack.bdy.texi
+
+@node Client administration, Atom types,MAL interpreter, Top
 @include mal_client.bdy.texi
 @include mal_session.bdy.texi
+
+@node Atom types, Type resolution,Client administration, Top
 @include mal_atom.bdy.texi
+
+@node Type resolution, Boxed variables, Atom types, Top
 @include mal_type.bdy.texi
 @include mal_resolve.bdy.texi
+
+@node Boxed variables, Optimizer framework , Type resolution, Top
 @include mal_box.bdy.texi
+
+@node Optimizer framework, Property management , Boxed variables, Top
 @include mal_optimizer.bdy.texi
+
+@node Property management, Name space management , Optimizer framework, Top
 @include mal_properties.bdy.texi
+
+@node Name space management, XML interface , Property management, Top
 @include mal_namespace.bdy.texi
 @include mal_scope.bdy.texi
+
+@node XML interface, The MAL debugger, Name space management, Top
 @include mal_xml.bdy.texi
+
+@node The MAL debugger, The MAL profiler , XML interface, Top
 @include mal_debugger.bdy.texi
+
+@node The MAL profiler, MAL syntax , The MAL debugger, Top
 @include mal_profiler.bdy.texi
+
+@node MAL syntax,, The MAL profiler, Top
 @include mal_syntax.bdy.texi
 @c @include mil_parser.bdy.texi
 
