@@ -1871,8 +1871,8 @@ Unmap already parsed memory, to keep the memory usage low.
 			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
 		} 
-	}
 #endif
+	}
 @-
 Cleanup and exit. Return the filled BAT.
 @c
