@@ -136,7 +136,6 @@ gdk_export int BBPincref(bat b, int logical);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 gdk_export void BBPunshare(bat b);
-gdk_export int BBPresurrect(str name);
 
 @
 @c
@@ -1225,7 +1224,7 @@ BBPincref(bat i, int logical)
 	}
 	if (i < 0)
 		i = -i;
-	if (i < BBPsize && BBP_logical(i)) {	/* no BBPcheck as BBPresurrect should not provoke an GDKerror */
+	if (BBPcheck(i, "BBPincref")) {
 		for (;;) {
 			if (lock)
 				gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref");
@@ -1237,13 +1236,11 @@ BBPincref(bat i, int logical)
 				break;
 			}
 		}
-		/* got the lock; but BBPresurrect must be prepared that the bat was destroyed in the meantime */
-		if (BBP_logical(i)) {
-			if (logical) {
-				refs = ++BBP_lrefs(i);
-			} else {
-				refs = ++BBP_refs(i);
-			}
+		/* got the lock */
+		if (logical) {
+			refs = ++BBP_lrefs(i);
+		} else {
+			refs = ++BBP_refs(i);
 		}
 		if (lock)
 			gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPfix");
@@ -1299,11 +1296,6 @@ decref(bat i, int logical, int lock)
 
 		if (sec > BBPLASTUSED(BBP_lastused(i)))
 			BBP_lastused(i) = sec;
-	} else if (b && b->batKeeparound == TRUE) {
-		/* bat could have been swapped out but user requested not to do so. Also renew its last usage stamp. */
-		MEMDEBUG THRprintf(GDKerr, "BBPdecref: keeping %s for resurrection (mode=%d).\n", BBPname(b->batCacheid), b->batPersistence);
-
-		BBP_lastused(i) = BBPLASTUSED(GDKstamp());
 	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit while locked so no other thread thinks its available anymore */
 		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
@@ -1356,32 +1348,6 @@ BBPunshare(bat parent)
 }
 
 @}
-@-
-Resurrect retrieves a BAT with a zero refcount from the dead. This routine can be
-used for implementing a dynamic caching scheme for transient BATs on top of the BBP
-caching mechanism.
-
-While this would best be implemented with a duple (bid,stamp), in the DD case where
-BATs get unique column names, a string lookup is also valid. Note that the string
-name match must be reconfirmed inside the lock (theoretically, between the BBPindex()
-and the BBPincref, the BAT could have been destroyed and its place filled by a new BAT).
-@{
-@c
-int
-BBPresurrect(str nme)
-{
-	bat bid = BBPindex(nme);
-
-	if (BBPincref(bid, FALSE) > 0) {
-		if (strcmp(nme, BBP_logical(bid)) != 0) {
-			BBPdecref(bid, FALSE);	/* too late: replaced by some other bat (unlikely) */
-		} else {
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
 @- 
 BBPreclaim is a user-exported function; the common way to destroy a BAT the hard way. 
 

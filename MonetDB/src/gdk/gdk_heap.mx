@@ -107,7 +107,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	}
 	h->base = NULL;
 	h->maxsize = h->size = MAX(1, nitems) * itemsize;
-	h->offset = h->free = 0;
+	h->free = 0;
 
 	/* check for overflow */
 	if (nitems > (h->size/itemsize)) 
@@ -294,7 +294,6 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	char priv[80];
 
 	h->maxsize = h->size;
-	h->offset = 0;
 	h->filename = NULL;
 
 	/* round up mmap heap sizes to 64K segments */
@@ -303,7 +302,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 		h->maxsize = MAX(minsize, h->maxsize);
 	}
 	IODEBUG {
-		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->offset, h->free, h->size);
+		THRprintf(GDKerr, "HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
 	 * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv 
@@ -386,8 +385,8 @@ int HEAPsave(Heap* h, str nme, str ext) {
 		store = STORE_COMPR; 
 	}
 	IODEBUG {
-		THRprintf(GDKerr, "HEAPsave(%s.%s,storage=%d,offset=" SZFMT ",free=" SZFMT ",size=" SZFMT ")\n", 
-			nme, ext, h->storage, h->offset, h->free, h->size);
+		THRprintf(GDKerr, "HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", 
+			nme, ext, h->storage, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
 }

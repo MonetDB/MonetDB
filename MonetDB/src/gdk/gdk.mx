@@ -668,7 +668,6 @@ typedef struct {
 } Hash;
 
 typedef struct {
-	size_t offset;		/* offset from start of file (bytes). */
 	size_t maxsize;		/* maximum realloc size (bytes) */
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
@@ -836,9 +835,6 @@ typedef struct {
 	sht set;		/* real set semantics */
 	sht restricted;		/* access priviliges */
 	MT_Id tid;		/* which thread created it */
-	bit keeparound;		/* keeparound even if refcnt == 0 */
-	chr dummy[3];		/* not used yet */
-	chr convert;		/* endian-conversion needed? */
 	chr dirty;		/* general dirty marker */
 	chr descdirty;		/* bat descriptor dirty marker */
 	chr bunsdirty;		/* bun heap dirty marker */
@@ -921,7 +917,6 @@ typedef struct {
 typedef int (*GDKfcn) ();
 
 /* macros's to hide complexity of BAT structure */
-#define batKeeparound	P->keeparound
 #define batPersistence	P->persistence
 #define batCopiedtodisk	P->copiedtodisk
 #define batSet		P->set

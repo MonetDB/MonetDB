@@ -337,11 +337,8 @@ allocated arena gets to be large, BATs may be swapped out.
 "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).
  or session (mode = bit(nil)). Returns the BAT itself."
 
-.COMMAND destroy(str nme, bit immediately) : bit = CMDdestroy;
+.COMMAND destroy(str nme ) : bit = CMDdestroy;
 "Destroys the BAT."
-
-.COMMAND resurrect( str name ) : bit = CMDresurrect;
-"Try to get back a session BAT from its name"
 
 .COMMAND save(str nme) : bit = CMDsave;
 "Save a BAT to storage, if it was loaded and dirty. Returns whether IO was necessary.
@@ -539,12 +536,8 @@ these 'sync' OIDs with their own propagation rules.
     CONST BAT_APPEND := 2;	# allow reads and insertions of new elements.
     CONST BAT_WRITE  := 0;	# allow reads, insertions, and updates.
 
-    PROC destroy(str s) : bit {
-	return destroy(s,true);
-	}
-
     PROC destroy(bat[any,any] b) : bit{
-	return destroy(str(b),true);
+	return destroy(str(b));
 	}
 
     PROC capacity(bat[any,any] b) : lng {
@@ -1115,7 +1108,7 @@ CMDpersists(BAT **r, BAT *input, bit *param)
 }
 
 int
-CMDdestroy(bit *res, str input, bit *immediately)
+CMDdestroy(bit *res, str input )
 {
 	int bid = BBPindex(input);
 
@@ -1125,22 +1118,11 @@ CMDdestroy(bit *res, str input, bit *immediately)
 		if (BBPindex(input) == bid) {
 			BAT *b = BBPquickdesc(ABS(bid), FALSE);
 
-			if (*immediately == FALSE) {
-				b->batKeeparound = 1;
-				b->batDirtydesc = 1;
-			}
 			BATmode(b, TRANSIENT);
 			*res = TRUE;
 		}
 		BBPunfix(bid);
 	}
-	return GDK_SUCCEED;
-}
-
-int
-CMDresurrect(bit *r, str nme)
-{
-	*r = BBPresurrect(nme);
 	return GDK_SUCCEED;
 }
 
@@ -1245,8 +1227,6 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced");
 	strcpy(p, "filename");
 	BUNins(bn, buf, hp->filename ? hp->filename : "no file");
-	strcpy(p, "offset");
-	BUNins(bn, buf, local_utoa(hp->offset));
 }
 
 static char *
@@ -1344,7 +1324,6 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
 	BUNins(bn, "batStamp", local_itoa(b->batStamp));
 	BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)));
-	BUNins(bn, "keepAround", local_itoa(b->batKeeparound));
 	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
 	BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));
 	BUNins(bn, "batDirtydesc", b->batDirtydesc ? "dirty" : "clean");

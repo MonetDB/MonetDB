@@ -671,7 +671,7 @@ BATload_intern(bat i)
 	DELTAload(b);
 
 	/* LOAD head accelerator heap */
-	if (b->hacctype && (BATaccelerators[b->hacctype].accSave == NULL || b->batConvert || (ret = HEAPload(&b->haccelerator, nme, "hacc", b->batRestricted == BAT_READ)) < 0)) {
+	if (b->hacctype && (BATaccelerators[b->hacctype].accSave == NULL || (ret = HEAPload(&b->haccelerator, nme, "hacc", b->batRestricted == BAT_READ)) < 0)) {
 		if (BATaccelerators[b->hacctype].accSave) {
 			b->batDirtydesc = TRUE;
 			GDKwarning("BATload: ignoring %s on head of %s.\n", BATaccelerators[b->hacctype].name, b->batId);
@@ -687,7 +687,7 @@ BATload_intern(bat i)
 	}
 
 	/* LOAD tail accelerator heap */
-	if (b->tacctype && (BATaccelerators[b->tacctype].accSave == NULL || b->batConvert || (ret = HEAPload(&b->taccelerator, nme, "tacc", b->batRestricted == BAT_READ)) < 0)) {
+	if (b->tacctype && (BATaccelerators[b->tacctype].accSave == NULL || (ret = HEAPload(&b->taccelerator, nme, "tacc", b->batRestricted == BAT_READ)) < 0)) {
 		if (BATaccelerators[b->tacctype].accSave) {
 			b->batDirtydesc = TRUE;
 			GDKwarning("BATload: ignoring %s on tail of %s.\n", BATaccelerators[b->tacctype].name, b->batId);
@@ -705,9 +705,6 @@ BATload_intern(bat i)
 	/* load succeeded; register it in BBP */
 	BBPcacheit(b);
 
-	if (b->batConvert) {
-		BATconvert(b, CONV_HTON);
-	}
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);
 	}

@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 677 ]
+[ 675 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 677 ]
+[ 675 ]
 
 var All:=0;
 
@@ -77,8 +77,8 @@ Static_mods@batloop() {
 
 Module: ""
 
-[ 57 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 56 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -87,7 +87,6 @@ Module: ""
 [ "capacity",	  "PROC:      ",  "capacity(BAT[any,any]) : lng",						  "not available"																																																													  ]
 [ "cold",	  "PROC:      ",  "cold(BAT[any::1,any::2]) : void",						  "not available"																																																													  ]
 [ "destroy",	  "PROC:      ",  "destroy(BAT[any,any]) : bit",						  "not available"																																																													  ]
-[ "destroy",	  "PROC:      ",  "destroy(str) : bit",								  "not available"																																																													  ]
 [ "dir",	  "PROC:      ",  "dir() : void",								  "not available"																																																													  ]
 [ "dir",	  "PROC:      ",  "dir(str) : void",								  "not available"																																																													  ]
 [ "dir_leaks",		  "PROC:      ",  "dir_leaks() : void",											  "not available"																																																													  ]
@@ -568,8 +567,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 64 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 63 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature												help																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -604,7 +603,7 @@ Module: "bat"
 [ "delete",	  "COMMAND:   ",  "delete(BAT[any::1,any::2], any::1) : BAT[any::1,any::2]",					  "Delete all BUNs with a certain head value.\n Returns the modified BAT."																												  ]
 [ "delete",	  "COMMAND:   ",  "delete(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Delete one specific BUN.\n Returns the modified BAT."																														  ]
 [ "deleteBuns",	  "COMMAND:   ",  "deleteBuns(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Delete from the first BAT all BUNs with a corresponding BUN in the second.\n Returns the modified BAT."																																																  ]
-[ "destroy",	  "COMMAND:   ",  "destroy(str, bit) : bit",								  "Destroys the BAT."																																																											  ]
+[ "destroy",	  "COMMAND:   ",  "destroy(str) : bit",									  "Destroys the BAT."																																											  ]
 [ "hashloop",	  "ITERATOR:  ",  "hashloop(BAT[any::1,any], ptr, any::1) : void",					  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@hashloop(v)..' iterates over all BUNs [$h,$t] of BAT b where ($h = val)."																																							  ]
 [ "head",	  "COMMAND:   ",  "head(int) : str",											  "Returns the type of the head column of a BAT, as a string."																														  ]
 [ "heat",	  "COMMAND:   ",  "heat(str) : int",									  "returns the current BBP heat (LRU stamp)"																																																								  ]
@@ -625,7 +624,6 @@ Module: "bat"
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																																																		  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Replace the tail value of one BUN that has some head value.\n Returns the modified BAT."																										  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]",					  "inplace replace values on the given locations"																															  ]
-[ "resurrect",	  "COMMAND:   ",  "resurrect(str) : bit",								  "Try to get back a session BAT from its name"																																																								  ]
 [ "reverse",	  "COMMAND:   ",  "reverse(BAT[any::1,any::2]) : BAT[any::2,any::1]",					  "Returns the reverse view of a BAT (head is tail and tail is head).\n BEWARE:  no copying is involved; input and output refer to the same object!"																																											  ]
 [ "revert",	  "COMMAND:   ",  "revert(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Puts all BUNs in a BAT in reverse order. Returns b."																																																							  ]
 [ "roles",	  "COMMAND:   ",  "roles(BAT[any::1,any::2], str, str) : BAT[any::1,any::2]",				  "Give a logical name to the columns of a BAT.\n Returns the BAT itself."																																																				  ]
@@ -812,7 +810,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
 
 All.print();
-[ 677 ]
+[ 675 ]
 
 quit();
 

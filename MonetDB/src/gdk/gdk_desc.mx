@@ -100,105 +100,6 @@ typedef unsigned int normal_int;
 #endif /* _GDK_DESC_H_ */
 @}
 
-@- 64 vs 32 BIT conversion
-The current BAT descriptor structures now work with full 64-bit
-pointers, directly in the format. We still support loading and saving
-of old BATs that use the 32-bit format(s). The old definitions
-are below (in a shortened format). We have macros that copy all
-relevant fields from a (new) 64-bit BAT structure to an (old) 32-bit
-BAT, and vice versa.
-@{
-@c
-@= Hash_ALL
-                (@2)->type = normal_int_@5(((@4))->type);
-                 (@2)->lim = normal_sizet_@5(((@4))->lim);
-                (@2)->mask = normal_hasht_@5(((@4))->mask);
-                (@2)->hash = (hash_t *) ((@4)->hash?-1L:0);
-                (@2)->link = (hash_t *) ((@4)->link?-1L:0);
-
-@= Heap_ALL
-              (@2)->offset = normal_sizet_@5(((@4))->offset);
-             (@2)->maxsize = normal_sizet_@5(((@4))->maxsize);
-                (@2)->free = normal_sizet_@5(((@4))->free);
-                (@2)->size = normal_sizet_@5(((@4))->size);
-             (@2)->storage = short_int_@5(((@4))->storage);
-                (@2)->base = (str) ((@4)->base?-1L:0);
-            (@2)->filename = (str) ((@4)->filename?-1L:0);
-
-@= BUNrec_ALL
-        @:Heap_ALL(@1,&(@2)->buns,@3,&(@4)->buns,@5)@
-             (@2)->deleted = normal_BUN_@5((@4)->deleted);
-                (@2)->hole = normal_BUN_@5((@4)->hole);
-            (@2)->inserted = normal_BUN_@5((@4)->inserted);
-            (@2)->sharecnt = normal_int_@5((@4)->sharecnt);
-@= COLrec_ALL
-        strcpy_@5((@2)->id,(@4)->id)
-        strcpy_@5((@2)->atom,(@4)->atom)
-        strcpy_@5((@2)->accname,(@4)->accname)
-        @:Heap_ALL(@1,&(@2)->heap,@3,&(@4)->heap,@5)@
-        @:Hash_ALL(@1,&(@2)->hash,@3,&(@4)->hash,@5)@
-        @:Heap_ALL(@1,&(@2)->accelerator,@3,&(@4)->accelerator,@5)@
-           (@2)->heapdirty = (@4)->heapdirty;
-            (@2)->accdirty = (@4)->accdirty;
-             (@2)->acctype = short_int_@5((@4)->acctype);
-              (@2)->sorted = (@4)->sorted;
-               (@2)->align = normal_oid_@5((@4)->align);
-        (@2)->nosorted_rev = normal_oid_@5((@4)->nosorted_rev);
-            (@2)->nokey[0] = normal_sizet_@5((@4)->nokey[0]);
-            (@2)->nokey[1] = normal_sizet_@5((@4)->nokey[1]);
-            (@2)->nosorted = normal_sizet_@5((@4)->nosorted);
-             (@2)->nodense = normal_sizet_@5((@4)->nodense);
-               (@2)->dense = (@4)->dense;
-     (@2)->accCopiedtodisk = normal_int_@5((@4)->accCopiedtodisk);
-             (@2)->aggr[0] = normal_int_@5((@4)->aggr[0]);
-             (@2)->aggr[1] = normal_int_@5((@4)->aggr[1]);
-             (@2)->aggr[2] = normal_int_@5((@4)->aggr[2]);
-
-@= Dimensions_ALL
-             (@2).headtype = short_int_@5((@4).headtype);
-             (@2).tailtype = short_int_@5((@4).tailtype);
-              (@2).headloc = normal_int_@5((@4).headloc);
-              (@2).tailloc = normal_int_@5((@4).tailloc);
-              (@2).headkey = (@4).headkey;
-              (@2).tailkey = (@4).tailkey;
-         (@2).headvarsized = (@4).headvarsized;
-         (@2).tailvarsized = (@4).tailvarsized;
-             (@2).bunshift = short_int_@5((@4).bunshift);
-             (@2).bunwidth = short_int_@5((@4).bunwidth);
-		 (@2).hseq = normal_oid_@5((@4).hseq);
-		 (@2).tseq = normal_oid_@5((@4).tseq);
-
-@= BAT_ALL
-	(@2)->GDKversion = normal_int_@5((@4)->GDKversion);
-	(@2)->batCacheid = normal_bat_@5((@4)->batCacheid);
-	@:Dimensions_ALL(@1,(@2)->dims,@3,(@4)->dims,@5)@
-
-@= BATrec_ALL
-        strcpy_@5((@2)->id,(@4)->id)
-        (@2)->dirtyflushed = (@4)->dirtyflushed;
-        (@2)->copiedtodisk = (@4)->copiedtodisk;
-               (@2)->stamp = normal_int_@5((@4)->stamp);
-         (@2)->persistence = short_int_@5((@4)->persistence);
-                 (@2)->set = short_int_@5((@4)->set);
-          (@2)->restricted = short_int_@5((@4)->restricted);
-          (@2)->keeparound = (@4)->keeparound;
-               (@2)->dirty = (@4)->dirty;
-           (@2)->descdirty = (@4)->descdirty;
-           (@2)->bunsdirty = (@4)->bunsdirty;
-            (@2)->parentid = normal_bat_@5((@4)->parentid);
-
-@= BATstore_ALL
-	@:BAT_ALL(@1,&(@2)->B,@3,&(@4)->B,@5)@
-	@:COLrec_ALL(@1,&(@2)->H,@3,&(@4)->H,@5)@
-	@:COLrec_ALL(@1,&(@2)->T,@3,&(@4)->T,@5)@
-	@:BATrec_ALL(@1,&(@2)->P,@3,&(@4)->P,@5)@
-	@:BUNrec_ALL(@1,&(@2)->U,@3,&(@4)->U,@5)@
-	strcpy_@5((@2)->fullid,@4->fullid)
-
-@- misc remappings
-Absolute pointers need to be mapped to byte offsets when a BAT is saved.
-That is where the DELTA macros are for.
-
 @+ implementations
 @- BATsavedesc
 @c
@@ -225,7 +126,7 @@ BATloaddesc(str nme)
 	BATstore *src = (BATstore *) GDKload(nme, "desc", sizeof(BATstore),
 					     sizeof(BATstore), STORE_MEM);
 	BATstore *dst = src;
-	int ver, conv = FALSE;
+	int ver;
 	BAT *b;
 
 	if (src == NULL) {
@@ -233,16 +134,9 @@ BATloaddesc(str nme)
 	}
 	ver = src->B.GDKversion;
 	if (!GDKversionOK(ver)) {
-		ver = normal_int_SWAP(ver);
-		conv = TRUE;
-	}
-	if (!GDKversionOK(ver)) {
 		GDKerror("GDKload: incompatible version %d.\n", src->B.GDKversion);
 		GDKfree(src);
 		return NULL;
-	}
-	if (conv) {
-		@:BATstore_ALL(normal_int,dst,normal_int,dst,SWAP,load)@
 	}
 	b = (BAT *) dst;
 	b->H = &dst->H;
@@ -259,8 +153,6 @@ BATloaddesc(str nme)
 	b->batId = dst->fullid;
 	b->batCopiedtodisk = 1;
 	b->batElmshift = BATelmshift(b);
-	b->batConvert = conv;
-
 	return b;
 }
 
