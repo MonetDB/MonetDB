@@ -5,11 +5,11 @@ if [ -f $MONETDB_BUILD/src/mapi/clients/java/mapi.jar ] ; then
   else
 	CLASSPATH="`$CYGPATH_WP "$MONETDB_PREFIX/lib/MonetDB/java/mapi.jar:$CLASSPATH"`"
 fi
-if [ -f $MONETDB_BUILD/src/mapi/examples/java/$TST.class ] ; then
+if [ -f $MONETDB_BUILD/src/mapi/examples/java/sample.class ] ; then
 	CLASSPATH="`$CYGPATH_WP "$MONETDB_BUILD/src/mapi/examples/java:$CLASSPATH"`"
   else
 	CLASSPATH="`$CYGPATH_WP "$MONETDB_PREFIX/lib/MonetDB/Tests:$CLASSPATH"`"
 fi
 export CLASSPATH
 
-Mlog -x java $TST $MAPIPORT
+Mlog -x java sample $HOST $MAPIPORT

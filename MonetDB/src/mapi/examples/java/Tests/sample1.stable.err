@@ -53,17 +53,139 @@ stderr of test 'sample1` in directory 'src/mapi/examples/java` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_mapi_examples_java
 
-# 19:06:02 >  
-# 19:06:02 >  Mtimeout -timeout 60 ./sample1.MAPI sample1 
-# 19:06:02 >  
+# 11:40:25 >  
+# 11:40:25 >  Mtimeout -timeout 60 ./sample1.MAPI sample1 
+# 11:40:25 >  
 
 
-# 19:06:02 >  
-# 19:06:02 >  java sample1 43397
-# 19:06:02 >  
+# 11:40:25 >  
+# 11:40:25 >  java sample pictor 45786 true
+# 11:40:25 >  
 
+Modified query:var emp:= new(str,int);
+execute:var emp:= new(str,int);
+toMonet:var emp:= new(str,int);
 
-# 19:06:04 >  
-# 19:06:04 >  Done.
-# 19:06:04 >  
+getRow:active:true reader:0 writer:0
+Start reading from server
+gotLine:
+promptText:
+query return:0
+Modified query:emp.insert("John",23);
+execute:emp.insert("John",23);
+toMonet:emp.insert("John",23);
+
+getRow:active:true reader:0 writer:0
+Start reading from server
+gotLine:
+promptText:
+query return:0
+Modified query:emp.insert("Mary",23);
+execute:emp.insert("Mary",23);
+toMonet:emp.insert("Mary",23);
+
+getRow:active:true reader:0 writer:0
+Start reading from server
+gotLine:
+promptText:
+query return:0
+Modified query:print(emp);
+execute:print(emp);
+toMonet:print(emp);
+
+getRow:active:true reader:0 writer:0
+Start reading from server
+gotLine:#-----------------#
+getRow:0
+header:#-----------------#
+slice:19:[ -----------------
+field [0][0 19]-----------------:false:
+fields extracted:1 fieldcnt:1
+columns 1
+Unrecognized header tag #
+getRow:active:true reader:1 writer:1
+Start reading from server
+gotLine:# h	tmp_35	  # name
+getRow:1
+header:# h	tmp_35	  # name
+slice:14:[  h	tmp_35	  
+field [1][0 4]h:false:
+field [1][1 11]tmp_35:false:
+fields extracted:2 fieldcnt:2
+columns 2
+getRow:active:true reader:2 writer:2
+Start reading from server
+gotLine:# str	int	  # type
+getRow:2
+header:# str	int	  # type
+slice:13:[  str	int	  
+field [2][0 6]str:false:
+field [2][1 10]int:false:
+fields extracted:2 fieldcnt:2
+columns 2
+column[0].type=str
+column[1].type=int
+getRow:active:true reader:3 writer:3
+Start reading from server
+gotLine:#-----------------#
+getRow:3
+header:#-----------------#
+slice:19:[ -----------------
+field [3][0 19]-----------------:false:
+fields extracted:1 fieldcnt:2
+columns 1
+Unrecognized header tag #
+getRow:active:true reader:4 writer:4
+Start reading from server
+gotLine:[ "John", 23	  ]
+getRow:4
+getRow:active:true reader:5 writer:5
+Start reading from server
+gotLine:[ "Mary", 23	  ]
+getRow:5
+getRow:active:true reader:6 writer:6
+Start reading from server
+gotLine:
+promptText:
+query return:0
+getRow:active:false reader:0 writer:6
+getRow:0
+header:#-----------------#
+columns 1
+Unrecognized header tag #
+getRow:active:false reader:1 writer:6
+getRow:1
+header:# h	tmp_35	  # name
+columns 2
+getRow:active:false reader:2 writer:6
+getRow:2
+header:# str	int	  # type
+columns 2
+column[0].type=str
+column[1].type=int
+getRow:active:false reader:3 writer:6
+getRow:3
+header:#-----------------#
+columns 1
+Unrecognized header tag #
+getRow:active:false reader:4 writer:6
+getRow:4
+slice:16:[ "John", 23	  ]
+field [4][0 7]John:true:
+skipped to:9
+field [4][1 12]23:false:
+fields extracted:2 fieldcnt:2
+getRow:active:false reader:5 writer:6
+getRow:5
+slice:16:[ "Mary", 23	  ]
+field [5][0 7]Mary:true:
+skipped to:9
+field [5][1 12]23:false:
+fields extracted:2 fieldcnt:2
+getRow:active:false reader:6 writer:6
+getRow: Default error exit
+
+# 11:40:25 >  
+# 11:40:25 >  Done.
+# 11:40:25 >  
 
