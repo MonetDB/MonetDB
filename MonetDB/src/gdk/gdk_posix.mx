@@ -95,6 +95,7 @@ extern void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t 
 extern struct mallinfo MT_mallinfo();
 
 #ifdef WIN32
+#include <winsock.h>
 extern int MT_gettimeofday(struct timeval *tv, int *ignore_zone); 
 #define gettimeofday(x,y)	MT_gettimeofday(x,y)
 #endif
@@ -228,14 +229,13 @@ MT_mallinfo(){
 }
 
 #else /* WIN32 native */
-
-#define DIR_SEP '\\' 
-#define DIR_SEP_STR "\\" 
+#include <windows.h>
 
 #define MT_PAGESIZE(s)		(((((s)-1) >> 12) + 1) << 12)
 #define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
 
 void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
+	void *ret = NULL;
 	int mode0 = GENERIC_READ;
 	int mode1 = FILE_SHARE_READ;
 	int mode2 = mode & MMAP_ADVISE;
@@ -244,7 +244,7 @@ void* MT_mmap(char *path, int mode, size_t off, size_t len, void* fixed) {
         SECURITY_ATTRIBUTES sa;
         HANDLE h1, h2;
 
-	if (mode & MAP_WRITABLE) {
+	if (mode & MMAP_WRITABLE) {
 		mode0 |= GENERIC_WRITE;
 		mode1 |= FILE_SHARE_WRITE;
 	}
@@ -296,11 +296,11 @@ int MT_munmap(void* p, size_t dummy) {
 	return UnmapViewOfFile(p);
 } 
 
-int MT_msync(void* p, size_t len) {
+int MT_msync(void* p, size_t len, int mode) {
 	return FlushViewOfFile(p, len);
 } 
 
-int MT_madvise(ptr p, size_t len, int advise) {
+int MT_madvise(void *p, size_t len, int advise) {
 	return 0; /* would -1 be better? */
 }
 
@@ -442,7 +442,7 @@ win_opendir (const char *dirname)
   if (dirname != NULL) return NULL;
 
   result = (DIR*)malloc(sizeof(DIR));
-  result->find_file_data = (WIN32_FIND_DATA*)malloc(sizeof(WIN32_FIND_DATA));
+  result->find_file_data = malloc(sizeof(WIN32_FIND_DATA));
   result->dir_name = strdup (dirname);
   
   k = strlen (result->dir_name);

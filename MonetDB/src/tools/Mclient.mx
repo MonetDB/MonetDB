@@ -278,6 +278,8 @@ In LINEMODE each line is sent and the monitor awaits the prompt
 of the server before continuing
 @c
 #define CHUNK_SIZE	1024
+
+#ifdef HAVE_LIBREADLINE
 #define SEND_MESSAGE()	{					\
 	message[m_index++] = '\n';				\
 	message[m_index] = 0;					\
@@ -285,6 +287,15 @@ of the server before continuing
 	add_history(start_cmd);					\
         *message = 0; m_index = 0;				\
 }
+#else
+#define SEND_MESSAGE()	{					\
+	message[m_index++] = '\n';				\
+	message[m_index] = 0;					\
+	cmd = doRequest(message, m_index);			\
+        *message = 0; m_index = 0;				\
+}
+#endif
+
 #define GROW_MESSAGE(x)	{					\
 	m_index += x;						\
        	if (m_size-m_index  < CHUNK_SIZE) {			\

@@ -33,7 +33,7 @@ thread_safe_flag_spec="-D_REENTRANT"
     thread_safe_flag_spec="-D_THREAD_SAFE $thread_safe_flag_spec"
     ;;
   cygwin*)
-    thread_safe_flag_spec="-mnocygwin $thread_safe_flag_spec"
+    thread_safe_flag_spec="-mno-cygwin $thread_safe_flag_spec"
     ;;
 esac ]
 
@@ -95,16 +95,23 @@ if test "x$have_pthread" != xno; then
 
   save_LIBS="$LIBS"
   LIBS="$LIBS $PTHREAD_LIBS"
-  AC_CHECK_LIB(pthread$libsuff, pthread_create, 
-	[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread$libsuff" 
+  AC_CHECK_LIB(pthread, pthread_create, 
+	[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread" 
           AC_DEFINE(HAVE_LIBPTHREAD) 
 	  have_pthread=yes ] , 
-	[ AC_CHECK_LIB(pthread$libsuff, pthread_create, 
-		[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread$libsuff -lposix4" 
+	dnl new sun
+	[ AC_CHECK_LIB(pthread, pthread_create, 
+		[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4" 
           	AC_DEFINE(HAVE_LIBPTHREAD) 
 	  	have_pthread=yes ] , 
-		have_pthread=no, "-lposix4" ) 
-  	] )
+	dnl old sun
+		[ AC_CHECK_LIB(pthread, pthread_create, 
+			[ PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lthread" 
+          		AC_DEFINE(HAVE_LIBPTHREAD) 
+	  		have_pthread=yes ] , 
+	  		[ have_pthread=no ], "-lthread" ) 
+		] , "-lposix4" ) 
+	] )
   LIBS="$save_LIBS"
 
 

@@ -2,10 +2,12 @@
 # This is the location of pthreads for Win32, 
 # see http://sourceware.cygnus.com/pthreads-win32/
 
+LIBC_INCS = -I\tmp\pthread
+
 PTHREAD = \tmp\pthread
 
 PTHREAD_LIBS = $(PTHREAD)\pthread.lib
-PTHREAD_INCS = -I$(PTHREAD)\
+PTHREAD_INCS = -I$(PTHREAD)
 SOCKET_LIBS = wsock32.lib
 
 MEL=$(TOPDIR)\src\mel\mel

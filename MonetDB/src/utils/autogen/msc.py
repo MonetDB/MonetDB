@@ -23,6 +23,12 @@ def msc_assignment(fd, var, values, msc ):
     o = o + " " + v
   fd.write("%s = %s\n" % (var,o) )
 
+def msc_cflags(fd, var, values, msc ):
+  o = ""
+  for v in values:
+    o = o + " " + v
+  fd.write("CFLAGS = $(CFLAGS) %s\n" % (o) )
+
 def msc_extra_dist(fd, var, values, msc ):
   for i in values:
     msc['EXTRA_DIST'].append(i)
@@ -271,8 +277,8 @@ def msc_library(fd, var, libmap, msc ):
       if (target not in SCRIPTS):
         SCRIPTS.append(target)
   fd.write(srcs + "\n")
-  fd.write( "lib"+sep+libname + ".dll: $(" + libname + "_OBJS) $(" +libname+ "_LIBS)\n" )
-  fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) \n\n" % (libname,sep,libname,libname))
+  fd.write( "lib"+sep+libname + ".dll: $(" + libname + "_OBJS) $(lib" +libname+ "_LIBS)\n" )
+  fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(lib%s_LIBS) $(LDFLAGS) \n\n" % (libname,sep,libname,libname))
 
   if (len(SCRIPTS) > 0):
     fd.write(libname+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -308,7 +314,7 @@ def msc_libs(fd, var, libsmap, msc ):
     elif (libsmap.has_key("LIBS")):
       fd.write(msc_additional_libs(lib, sep, "LIB", libsmap["LIBS"],msc))
 
-    srcs = "lib"+sep+lib+"_la_SOURCES ="
+    srcs = "lib"+sep+lib+"_OBJS ="
     for target in libsmap['TARGETS']:
       l = len(lib)
       if (target[0:l] == lib):
@@ -319,8 +325,8 @@ def msc_libs(fd, var, libsmap, msc ):
           if (target not in SCRIPTS):
             SCRIPTS.append(target)
     fd.write(srcs + "\n")
-    fd.write( "lib"+sep+lib + ".dll: $(" + lib + "_OBJS) $("+lib+"_LIBS)\n" )
-    fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(%s_OBJS) $(%s_LIBS) $(LDFLAGS) \n\n" % (lib,sep,lib,lib))
+    fd.write( "lib"+sep+lib + ".dll: $(lib"+sep+lib+"_OBJS) $(lib"+sep+lib+"_LIBS)\n" )
+    fd.write("\t$(CC) $(CFLAGS) -LD -Felib%s%s.dll $(lib%s%s_OBJS) $(lib%s%s_LIBS) $(LDFLAGS) \n\n" % (sep,lib,sep,lib,sep,lib))
 
   if (len(SCRIPTS) > 0):
     fd.write("SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -352,6 +358,7 @@ output_funcs = { 'SUBDIRS': msc_subdirs,
 		 'BIN' : msc_binary,
  		 'INCLUDES' : msc_includes,
 		 'MTSAFE' : msc_mtsafe,
+		 'CFLAGS' : msc_cflags,
 		}
 
 
@@ -378,7 +385,7 @@ INSTALL = copy
 MKDIR = mkdir
 CD = cd
 
-CFLAGS = -I. -I$(TOPDIR) -DHAVE_CONFIG_H
+CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) -DHAVE_CONFIG_H
 
 CXXEXT = \\\"cxx\\\"
 

@@ -1,7 +1,7 @@
 
 MTSAFE
 
-INCLUDES = $(THREAD_INCS)
+INCLUDES = $(PTHREAD_INCS)
 
 lib_gdk = { 
 	NAME = bat
