@@ -870,9 +870,13 @@ public class MonetConnection extends Thread implements Connection {
 	private final static int QUERY = 1;
 	/** The state DEAD represents this thread to be dead and unable to do anything */
 	private final static int DEAD = 2;
+	/** the default number of rows that are (attempted to) read at once */
+	private final static int DEF_FETCHSIZE = 250;
+	/** The sequence counter */
+	private static int seqCounter = 0;
+
 	/** An optional thread that is used for sending large queries */
 	SendThread sendThread = null;
-
 	/** Whether this CacheThread is still running, executing or waiting */
 	private int state = WAIT;
 
@@ -977,13 +981,13 @@ public class MonetConnection extends Thread implements Connection {
 		synchronized(queryQueue) {
 			int cacheSize = hdr.getCacheSize();
 			// get number of results to fetch
-			int size = Math.min(cacheSize, hdr.getTupleCount() - (block * cacheSize));
+			int size = Math.min(cacheSize, hdr.getTupleCount() - ((block * cacheSize) + hdr.getBlockOffset()));
 
 			if (size == 0) throw
 				new IllegalStateException("Should not fetch empty block!");
 
 			rawr = new RawResults(size,
-				"Xexport " + hdr.getID() + " " + block * cacheSize + " " + size,
+				"Xexport " + hdr.getID() + " " + ((block * cacheSize) + hdr.getBlockOffset()) + " " + size,
 				hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 
 			queryQueue.add(rawr);
@@ -1033,6 +1037,7 @@ public class MonetConnection extends Thread implements Connection {
 			// previous result sets.
 			monet.waitForPrompt();
 
+			int size;
 			try {
 				/**
 				 * Change the reply size of the server.  If the given
@@ -1040,8 +1045,8 @@ public class MonetConnection extends Thread implements Connection {
 				 * then ignore this call.  If it is set to 0 we get a
 				 * prompt after the server sent it's header.
 				 */
-				int size =
-					hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, hdrl.cachesize) : hdrl.cachesize;
+				size = hdrl.cachesize == 0 ? DEF_FETCHSIZE : hdrl.cachesize;
+				size = hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, size) : size;
 				// don't do work if it's not needed
 				if (size != 0 && size != curReplySize) {
 					monet.writeln("SSET reply_size = " + size + ";");
@@ -1101,7 +1106,8 @@ public class MonetConnection extends Thread implements Connection {
 						hdrl.cachesize,
 						hdrl.maxrows,
 						hdrl.rstype,
-						hdrl.rsconcur
+						hdrl.rsconcur,
+						hdrl.seqnr
 					);
 					if (rawr != null) rawr.finish();
 					rawr = null;
@@ -1113,7 +1119,7 @@ public class MonetConnection extends Thread implements Connection {
 					// complete the header info and add to list
 					if (lastState == MonetSocket.HEADER) {
 						hdr.complete();
-						rawr = new RawResults(hdrl.cachesize != 0 ? Math.min(hdrl.cachesize, hdr.getTupleCount()) : hdr.getTupleCount(), null, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
+						rawr = new RawResults(size != 0 ? Math.min(size, hdr.getTupleCount()) : hdr.getTupleCount(), null, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 						hdr.addRawResults(0, rawr);
 						// a RawResults must be in hdr at this point!!!
 						hdrl.addHeader(hdr);
@@ -1277,18 +1283,19 @@ public class MonetConnection extends Thread implements Connection {
 		/**
 		 * Retrieves the required row. If the row is not present, this method
 		 * blocks until the row is available. <br />
-		 * <b>Do *NOT* use multiple threads synchronously on this method</b>
 		 *
 		 * @param line the row to retrieve
 		 * @return the requested row as String
 		 * @throws IllegalArgumentException if the row to watch for is not
 		 *         within the possible range of values (0 - (size - 1))
 		 */
-		synchronized String getRow(int line) throws IllegalArgumentException, SQLException {
+		synchronized String getRow(int line)
+			throws IllegalArgumentException, SQLException
+		{
 			if (error != "") throw new SQLException(error);
 
 			if (line >= data.length || line < 0)
-				throw new IllegalArgumentException("Cannot get row outside data range (" + line + ")");
+				throw new IllegalArgumentException("Row index out of bounds: " + line);
 
 			while (setWatch(line)) {
 				try {
@@ -1386,6 +1393,8 @@ public class MonetConnection extends Thread implements Connection {
 		private int id;
 		/** The query type of this `result' */
 		private int queryType;
+		/** The query sequence number */
+		private final int seqnr;
 		/** The max string length for each column in this result */
 		private int[] columnLengths;
 		/** The table for each column in this result */
@@ -1403,6 +1412,8 @@ public class MonetConnection extends Thread implements Connection {
 		/** A local copy of fetchSize, so its protected from changes made by
 		 *  the Statement parent */
 		private int cacheSize;
+		/** Whether the fetchSize was explitly set by the user */
+		private boolean cacheSizeSetExplicitly = false;
 		/** A local copy of maxRows, so its protected from changes made by
 		 *  the Statement parent */
 		private int maxRows;
@@ -1412,9 +1423,11 @@ public class MonetConnection extends Thread implements Connection {
 		/** A local copy of resultSetConcurrency, so its protected from changes
 		 *  made by the Statement parent */
 		private int rsconcur;
-		/** Whether we should send an Xclose command to the server if we close this
-		 *  Header */
+		/** Whether we should send an Xclose command to the server
+		 *  if we close this Header */
 		private boolean destroyOnClose;
+		/** the offset to be used on Xexport queries */
+		private int blockOffset = 0;
 
 
 		/**
@@ -1426,15 +1439,30 @@ public class MonetConnection extends Thread implements Connection {
 		 * @param mr the maximum number of results to return
 		 * @param rst the ResultSet type to use
 		 * @param rsc the ResultSet concurrency to use
+		 * @param seq the query sequence number
 		 */
-		Header(MonetConnection parent, int cs, int mr, int rst, int rsc) {
+		Header(
+			MonetConnection parent,
+			int cs,
+			int mr,
+			int rst,
+			int rsc,
+			int seq)
+		{
 			isSet = new boolean[7];
 			resultBlocks = new HashMap();
 			cachethread = parent;
-			cacheSize = cs;
+			if (cs == 0) {
+				cacheSize = MonetConnection.DEF_FETCHSIZE;
+				cacheSizeSetExplicitly = false;
+			} else {
+				cacheSize = cs;
+				cacheSizeSetExplicitly = true;
+			}
 			maxRows = mr;
 			rstype = rst;
 			rsconcur = rsc;
+			seqnr = seq;
 			closed = false;
 			destroyOnClose = false;
 		}
@@ -1819,6 +1847,15 @@ public class MonetConnection extends Thread implements Connection {
 			return(rsconcur);
 		}
 
+		/**
+		 * Returns the current block offset
+		 *
+		 * @return the current block offset
+		 */
+		int getBlockOffset() {
+			return(blockOffset);
+		}
+
 
 		/**
 		 * Returns a line from the cache. If the line is already present in the
@@ -1834,30 +1871,51 @@ public class MonetConnection extends Thread implements Connection {
 		String getLine(int row) throws SQLException {
 			if (row >= tuplecount || row < 0) return null;
 
-			int block = row / cacheSize;
-			int blockLine = row % cacheSize;
+			int block = (row - blockOffset) / cacheSize;
+			int blockLine = (row - blockOffset) % cacheSize;
 
-			// do we have the right block (still) loaded?
-			RawResults rawr;
-			synchronized(resultBlocks) {
+			// do we have the right block loaded? (optimistic try)
+			RawResults rawr = (RawResults)(resultBlocks.get("" + block));
+			// if not, try again and load if appropriate
+			if (rawr == null) synchronized(resultBlocks) {
 				rawr = (RawResults)(resultBlocks.get("" + block));
 				if (rawr == null) {
-					// if we're running forward only, we can discard the old
-					// block loaded
-					if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
-						resultBlocks.clear();
-					}
-
 					/// TODO: ponder about a maximum number of blocks to keep
 					///       in memory when dealing with random access to
 					///       reduce memory blow-up
 
-					// set the cache size -> sliding window if forward only
+					// if we're running forward only, we can discard the old
+					// block loaded
 					if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
-						RawResults prev = (RawResults)(resultBlocks.get("" + (block - 1)));
-						if (prev != null) {
-							//if previousResult.getStatistics().fetchedUnInterrupted()
-							//then multiply cachesize by 10 if not explicitly set
+						resultBlocks.clear();
+
+						if (MonetConnection.seqCounter - 1 == seqnr) {
+							// there has no query been issued after this
+							// one, so we can consider this a uninterrupted
+							// continuation request.  Let's increase the
+							// blocksize if it was not explicitly set,
+							// as the chances are high that we won't bother
+							// anyone else by doing so, and just gaining
+							// some performance.
+							if (!cacheSizeSetExplicitly) {
+								// store the previous position in the
+								// blockOffset variable
+								blockOffset += cacheSize;
+								
+								// increase the cache size (a lot)
+								cacheSize *= 10;
+								
+								// by changing the cacheSize, we also
+								// change the block measures.  Luckily
+								// we don't care about previous blocks
+								// because we have a forward running
+								// pointer only.  However, we do have
+								// to recalculate the block number, to
+								// ensure the next call to find this
+								// new block.
+								block = (row - blockOffset) / cacheSize;
+								blockLine = (row - blockOffset) % cacheSize;
+							}
 						}
 					}
 					
@@ -1931,9 +1989,12 @@ public class MonetConnection extends Thread implements Connection {
 		final int rstype;
 		/** The ResultSet concurrency to produce */
 		final int rsconcur;
+		/** The sequence number of this HeaderList */
+		final int seqnr;
 		/** Whether there are more Headers to come or not */
 		private boolean complete;
-		/** A list of the Headers associated with the query, in the right order */
+		/** A list of the Headers associated with the query,
+		 *  in the right order */
 		private List headers;
 
 		/** The current header returned by getNextHeader() */
@@ -1960,6 +2021,7 @@ public class MonetConnection extends Thread implements Connection {
 			headers = new ArrayList();
 			curHeader = -1;
 			error = "";
+			seqnr = MonetConnection.seqCounter++;
 		}
 
 

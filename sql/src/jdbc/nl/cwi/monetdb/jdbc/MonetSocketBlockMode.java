@@ -303,9 +303,7 @@ class MonetSocketBlockMode extends MonetSocket {
 
 				// clean up the buffer
 				readBuffer.delete(0, readPos);
-				// we can position the cursor at the end, as no newline
-				// was found, it saves some scanning next time
-				readPos = readBuffer.length();
+				readPos = 0;
 				// append the stuff to the buffer; let String do the charset
 				// conversion stuff
 				readBuffer.append(new String(data, 0, size, "UTF-8"));

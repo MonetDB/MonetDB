@@ -46,8 +46,6 @@ import java.util.*;
  * @version 0.6
  */
 public class MonetStatement implements Statement {
-	/** the default number of rows that are (attempted to) read at once */
-	static final int DEF_FETCHSIZE = 250;
 	/** the default value of maxRows, 0 indicates unlimited */
 	static final int DEF_MAXROWS = 0;
 
@@ -62,7 +60,7 @@ public class MonetStatement implements Statement {
 	/** Whether this Statement object is closed or not */
 	private boolean closed;
 	/** The size of the blocks of results to ask for at the server */
-	private int fetchSize = DEF_FETCHSIZE;
+	private int fetchSize = 0;
 	/** The maximum number of rows to return in a ResultSet */
 	private int maxRows = DEF_MAXROWS;
 	/** The suggested direction of fetching data (implemented but not used) */
@@ -123,8 +121,6 @@ public class MonetStatement implements Statement {
 			addWarning("Change sensitive scrolling ResultSet objects are not supported, continuing with a change non-sensitive scrollable cursor.");
 			resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
 		}
-
-		setFetchSize(DEF_FETCHSIZE);
 
 		closed = false;
 	}
@@ -422,7 +418,8 @@ public class MonetStatement implements Statement {
 	 * Retrieves the number of result set rows that is the default fetch size
 	 * for ResultSet objects generated from this Statement object. If this
 	 * Statement object has not set a fetch size by calling the method
-	 * setFetchSize, the return value is DEF_FETCHSIZE.
+	 * setFetchSize, or the method setFetchSize was called as such to let
+	 * the driver ignore the hint, 0 is returned.
 	 *
 	 * @return the default fetch size for result sets generated from this
 	 *         Statement object
@@ -628,17 +625,14 @@ public class MonetStatement implements Statement {
 	 * Gives the JDBC driver a hint as to the number of rows that should be
 	 * fetched from the database when more rows are needed. The number of rows
 	 * specified affects only result sets created using this statement. If the
-	 * value specified is zero, then the hint is ignored. The default value is
-	 * defined in DEF_FETCHSIZE.<br />
+	 * value specified is zero, then the hint is ignored.
 	 *
 	 * @param rows the number of rows to fetch
 	 * @throws SQLException if the condition 0 <= rows <= this.getMaxRows()
 	 *         is not satisfied.
 	 */
 	public void setFetchSize(int rows) throws SQLException {
-		if (rows == 0) {
-			fetchSize = DEF_FETCHSIZE;
-		} else if (rows > 0 && !(getMaxRows() != 0 && rows > getMaxRows())) {
+		if (rows >= 0 && !(getMaxRows() != 0 && rows > getMaxRows())) {
 			fetchSize = rows;
 		} else {
 			throw new SQLException("Illegal fetch size value: " + rows);
