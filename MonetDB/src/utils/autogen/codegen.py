@@ -224,6 +224,9 @@ def find_org(deps,f):
 # do_deps finds the dependencies for the given list of targets
 # based on the includes (or alike)
 #
+# cache contains the includes of the local directory, and will be stored
+# in a .cache.
+
 def do_deps(targets,deps,includes,incmap,cwd):
     cache = {}
     do_scan(targets,deps,incmap,cwd,cache)
@@ -290,7 +293,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
             org = os.path.join(cwd,find_org(deps,target))
             if os.path.exists(org):
                 b = readfilepart(org,ext)
-                pat,sep,depext = scan_map[ext]
+                pat,sep,incext = scan_map[ext]
                 res = pat.search(b)
                 while res is not None:
                     p = res.start('fnd')
@@ -301,22 +304,22 @@ def do_scan_target(target,targets,deps,incmap,cwd,cache):
                             n = ressep.start(0)
                             fnd1 = b[p:n]
                             p = ressep.end(0) # start of next file
-                            if deps.has_key(fnd1+depext) or fnd1+depext in targets:
-                                if fnd1+depext not in inc_files:
-                                    inc_files.append(fnd1+depext)
-                            elif incmap.has_key(fnd1+depext):
-                                if fnd1+depext not in inc_files:
-                                    inc_files.append(os.path.join(incmap[fnd1+depext],fnd1+depext))
+                            if deps.has_key(fnd1+incext) or fnd1+incext in targets:
+                                if fnd1+incext not in inc_files:
+                                    inc_files.append(fnd1+incext)
+                            elif incmap.has_key(fnd1+incext):
+                                if fnd1+incext not in inc_files:
+                                    inc_files.append(os.path.join(incmap[fnd1+incext],fnd1+incext))
                             ressep = sep.search(b,p,e)
                     fnd = b[p:e]
-                    if deps.has_key(fnd+depext) or fnd+depext in targets:
-                        if fnd+depext not in inc_files:
-                            inc_files.append(fnd+depext)
-                    elif incmap.has_key(fnd+depext):
-                        if fnd+depext not in inc_files:
-                            inc_files.append(os.path.join(incmap[fnd+depext],fnd+depext))
+                    if deps.has_key(fnd+incext) or fnd+incext in targets:
+                        if fnd+incext not in inc_files:
+                            inc_files.append(fnd+incext)
+                    elif incmap.has_key(fnd+incext):
+                        if fnd+incext not in inc_files:
+                            inc_files.append(os.path.join(incmap[fnd+incext],fnd+incext))
 ##                    else:
-##                        print fnd + depext + " not in deps and incmap "
+##                        print fnd + incext + " not in deps and incmap "
                     res = pat.search(b,res.end(0))
         cache[target] = inc_files
 
@@ -444,6 +447,16 @@ def read_depsfile(incdirs, cwd, topdir):
                         incmap[dep] = i
 
     return includes,incmap
+
+# includes is an association between an include file (full path) and 
+# the list of files it includes (full path).
+
+# incmap is an association between an include file (basename) to directory 
+# where the include file can be found.
+
+# deps is an association between an target file and the files it depends on
+# these should for portability be relative or given using an environment
+# variable 
 
 def codegen(tree, cwd, topdir):
     includes = {}
