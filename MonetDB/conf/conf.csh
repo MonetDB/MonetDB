@@ -60,7 +60,7 @@ if ( ! -x bootstrap ) then
 		  else
 			echo 'Using LINK="dynamic" (default).'
 			set LINK = "d"
-		fi
+		endif
 	endif
 
 	# check for incorrectly set variables (BUILD, PREFIX, COMP, BITS, LINK)
