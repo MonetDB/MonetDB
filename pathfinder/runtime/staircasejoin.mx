@@ -63,7 +63,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:scj_init@
     max_post = -1;
 @:scj_desc(pre_cur++;)@
-@:scj_end
+@:scj_end@
 
 /* DESCENDANT-OR-SELF STEP */
 @:scj_head(_descorself)@
