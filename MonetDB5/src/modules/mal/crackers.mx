@@ -305,6 +305,7 @@ str CRKnew(int *cret, int *bid){
 	return MAL_SUCCEED;
 }
 str CRKnewGranule(int *cret, int *bid, int *gran){
+	(void) minGranule; /* fool compile on its use */
 	minGranule= *gran;
 	return CRKnew(cret,bid);
 }
@@ -564,19 +565,18 @@ returned previously to represent a cracker piece.
 @c
 int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
 	int l,h;
-	size_t low;
 	(void) view; /* fool compiler */
 
-	low= l= crackMap[mid].pieces[pid].idx_first;
+	l= crackMap[mid].pieces[pid].idx_first;
 	h= crackMap[mid].pieces[pid].idx_last;
 #ifdef DEBUG_CRACKERS
 	printf("set view to new dimension[%d,%d]: %d-%d\n",mid, pid,l,h);
 #endif
 	VIEWbounds(view,l,h);
-
 	if (pid > 0 && (size_t)pid == BATcount(b)) return 0;
 	return pid+1;
 }
+
 str CRKfirstPiece(int *newpid, int *vid, int *bid) 
 {
 	BAT *b, *view;

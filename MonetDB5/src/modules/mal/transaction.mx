@@ -162,6 +162,7 @@ str TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	for(i=p->retc; i<p->argc; i++){
 		bid = (int *) getArgReference(stk,p, i);
 		@:getBATdescriptor(&res,bid,b,commit)@
+		(void) res; /* fool compiler */
 		if( b )
 			BATclear(b);
 		else return throwMessage("trans_commit","BAT not accessible");
@@ -176,6 +177,7 @@ str TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	for(i=p->retc; i<p->argc; i++){
 		bid = (int *) getArgReference(stk,p, i);
 		@:getBATdescriptor(&res,bid,b,commit)@
+		(void) res; /* fool compiler */
 		if( b )
 			BATundo(b);
 		else return throwMessage("trans_commit","BAT not accessible");
@@ -190,6 +192,7 @@ str TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	for(i=p->retc; i<p->argc; i++){
 		bid = (int *) getArgReference(stk,p, i);
 		@:getBATdescriptor(&res,bid,b,commit)@
+		(void) res; /* fool compiler */
 		if( b )
 			BATcommit(b);
 		else return throwMessage("trans_commit","BAT not accessible");
@@ -202,6 +205,6 @@ str TRNtrans_alpha(int *ret, int *bid){
 	return BKCgetAlpha(ret,bid);
 }
 str TRNtrans_delta(int *ret, int *bid){
-	return BKCgetDelta(ret,bid);
+	eeturn BKCgetDelta(ret,bid);
 }
 @}

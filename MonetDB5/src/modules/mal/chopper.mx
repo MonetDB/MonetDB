@@ -143,6 +143,7 @@ str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
 	int ret=0;
 	size_t cnt,first;
 	@:getBATdescriptor(&ret,bid,b,newChunkIterator)@
+	(void) ret;
 	if( *vid ){
 		@:getBATdescriptor(&ret,vid,view,newIterator)@
 		/* it has the correct type, but does it also
@@ -166,10 +167,9 @@ The granule size may differ in each call.
 str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule){
 	BAT *b, *view;
 	int ret=0;
-	size_t cnt, i;
+	size_t i;
 	@:getBATdescriptor(&ret,bid,b,hasChunkMoreElements)@
 	@:getBATdescriptor(&ret,vid,view,hasChunkMoreElements)@
-	cnt = BATcount(b);
 	i = *res + BATcount(view);
 	if( i >= BUNindex(b,BUNlast(b)) ){
 		*res = -1;
@@ -192,7 +192,7 @@ to zero and end of stream has been reached.
 str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
-	bit ret;
+	int ret;
 	int *bid;
 	BUN p;
 	ValPtr head, tail;
@@ -203,6 +203,7 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,3);
 
 	@:getBATdescriptor(&ret,bid,b,bunIterator)@
+	(void) ret;
 
 	if( BATcount(b) == 0) {
 		*cursor = -1;
@@ -221,9 +222,8 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
-	bit ret;
+	int ret;
 	int *bid;
-	int limit;
 	BUN p;
 	ValPtr head, tail;
 
@@ -233,7 +233,7 @@ str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bid = (int *) getArgReference(stk,pci,3);
 
 	@:getBATdescriptor(&ret,bid,b,bunHasMoreElements)@
-	limit=  BUNindex(b,BUNlast(b));
+	(void) ret;
 
 	*cursor = *cursor+1;
 
