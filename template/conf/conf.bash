@@ -251,8 +251,11 @@ if [ "${os}" = "Linux" ] ; then
 		# 64-bit libgc on spin
 		conf_opts="${conf_opts} --with-gc=/soft/64/gc-6.3"
 	fi
-	if [ -x /ufs/sjoerd/bin/i686/swig ]; then
-		conf_opts="${conf_opts} --with-swig=/ufs/sjoerd/bin/i686/swig"
+	if [ -x /usr/local/bin/swig ]; then
+		conf_opts="${conf_opts} --with-swig=/usr/local/bin/swig"
+	fi
+	if [ -x /var/tmp/soft/local/bin/swig ]; then
+		conf_opts="${conf_opts} --with-swig=/var/tmp/soft/local/bin/swig"
 	fi
 fi
 
