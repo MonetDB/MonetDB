@@ -889,6 +889,7 @@ int CMDquit(Cntxt stk, YYSTREE lt, ValPtr res){
 			@:builtin_operand(0, TYPE_int, statusp)@
         	}
 		monet_running = 0;
+		stopProfiler();
 		/*
 		freeClient(c);
 		monet_exit(*statusp);

@@ -60,7 +60,7 @@ sets the default filters.
 
 .COMMAND getProfilerCount(): BAT[str,int] = getProfilerCountCMD;
 	"Get a copy of the profiler summary table"
-.COMMAND resetProfilerCount(): void = resetProfilerCountCMD;
+.COMMAND resetProfiler(): void = resetProfilerCMD;
 	"Set all counters to zero again"
 .END profiler;
 
@@ -162,8 +162,8 @@ int getProfilerCountCMD(BAT **res){
 	}
 	return GDK_SUCCEED;
 }
-int resetProfilerCountCMD(){
-	resetProfilerCount();
+int resetProfilerCMD(){
+	resetProfiler();
 	return GDK_SUCCEED;
 }
 int setFilterCmd(int *res, str left, str right){
