@@ -147,6 +147,7 @@ int pcre_select( BAT **res, str pattern, BAT *strs ) {
 			BUNins(r, BUNhead(strs, p), s);
 		}
 	}
+	my_pcre_free(re);
 	*res = r;
 	return GDK_SUCCEED;
 }
@@ -162,7 +163,7 @@ int pcre_uselect( BAT **res, str pattern, BAT *strs ) {
 		r = BATnew( TYPE_oid, TYPE_void, BATcount(strs));
 	else
 		r = BATnew( strs->htype, TYPE_void, BATcount(strs));
-	if ( (re = pcre_compile( pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	if ((re = pcre_compile( pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_select: pcre compile failed\n");
 		return GDK_FAIL;
 	}
@@ -172,6 +173,7 @@ int pcre_uselect( BAT **res, str pattern, BAT *strs ) {
 			BUNins(r, BUNhead(strs, p), NULL);
 		}
 	}
+	my_pcre_free(re);
 	*res = r;
 	return GDK_SUCCEED;
 }
