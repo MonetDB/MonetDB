@@ -49,8 +49,9 @@ Others accessing the running server, e.g.
 using the {\bf Mclient} utility, are 'normal' users. A separate
 authorization module is required to guard against malicious
 users.
+\end{description}
 
-On session init, for every user the script {\em monet_general} is executed.
+On session init, for every user the script {\em monet\_general} is executed.
 This script typically contains instructions to load kernel modules of
 general use.
 

@@ -49,7 +49,7 @@ making sure the bit string can be compared as an array of 32-bit words.
 @T
 The signatures contain, in a bit sequence, descriptions for all parameters.
 Each parameter starts with a length field of 4 bits. This can encode
-values between 0-13 (14/15 are the special values MONETSIG_BAT/MONETSIG_BATCONST
+values between 0-13 (14/15 are the special values MONETSIG\_BAT/MONETSIG\_BATCONST
 that indicate a BAT-value). An integer of this number of bits that encodes the 
 type number follows. Hence we can encode type numbers up till 4095 (13 bits 
 integers); The simple case - non-BAT types - gets encoded as follows:
@@ -59,7 +59,7 @@ integers); The simple case - non-BAT types - gets encoded as follows:
           $  |  |  |  $  |  | .....   |  $
     NBITS:      4           log(tpe)
 \end{verbatim}
-For BATs we use the previously mentioned MONETSIG_BAT or MONETSIG_BATCONST
+For BATs we use the previously mentioned MONETSIG\_BAT or MONETSIG\_BATCONST
 in the length field.  After this, we place two encoded types, namely the 
 head- and tail-type of the BAT. The format of these head- and tail-type 
 packings is like described above. This yields the below picture:
@@ -71,7 +71,7 @@ $  |  |  |  $  |  |  |  $  |  |  |  |  |  $  |  |  |  $  |  |  |  |  |  $
 \end{verbatim}
 In the worst case, a BAT-type occupies 4 + 4 + 14 + 4 + 14 = 40 bits = 5 bytes.
 In the very very worst case, MAXPARAMS(=32) BAT parameters are given. This would
-require 40 (=MONETSIG_MAXWORDS) 32-bit words to encode in a function signature.
+require 40 (=MONETSIG\_MAXWORDS) 32-bit words to encode in a function signature.
 @h
 #define MONETSIG_BAT		15
 #define MONETSIG_BATCONST	14

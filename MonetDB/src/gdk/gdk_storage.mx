@@ -705,7 +705,7 @@ Changing the storage status of heaps in a BAT is done in @:BATmmap@.
 The new semantics is that the mapping only takes effect the next time 
 the bat is loaded. 
 
-This makes the BATmmap safer&simpler as it is now
+This makes the BATmmap safer \& simpler as it is now
 incorporated in the normal bat loading and saving mechanism.
 
 It also makes the mmap faster as when through caching you

@@ -1202,12 +1202,12 @@ loaded	byuser	level	ACTION (in order!)
 1	1	>0	                                 incref
 \end{verbatim}
 \begin{description}
-\item[lock]	lock(tbl_writelock)
-\item[unlock]	unlock(tbl_writelock)
-\item[load]	openmod/mod_inst
-\item[unload]	TBL_unload (includes decref,cunstall)
-\item[cinstall]	copy TBL_ to client->
-\item[mod_inst]	dlsym/<name>_Module_Install (that calls TBL_Inst_Depend)
+\item[lock]	lock(tbl\_writelock)
+\item[unlock]	unlock(tbl\_writelock)
+\item[load]	openmod/mod\_inst
+\item[unload]	TBL\_unload (includes decref,cunstall)
+\item[cinstall]	copy TBL\_ to client->
+\item[mod\_inst]	dlsym/<name>\_Module\_Install (that calls TBL\_Inst\_Depend)
 \item[cinstall]	copies to client->xx tables and returns MIL init script.
 \begin{description}
 @
@@ -1730,7 +1730,7 @@ The last condition can only be checked at run-time. It actually splits the
 optimizations in two classes: namely array-lookup or merge-lookup.
 Both have differnt run-time constraints. we compute now whether
 our other criteria allow for execution of thexe optimizations, 
-and store the results in resp. sig->array_opt and sig->merge_opt.
+and store the results in resp. sig->array\_opt and sig->merge\_opt.
 @c
 	if (sig->special) {
 		optimize = optimize_true;

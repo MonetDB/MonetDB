@@ -518,7 +518,7 @@ fragmentation and greatly help enhance performance.
 The only "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the standard OS
 primitives is that the GDK versions try to do recovery from failure to malloc by 
 initiating a BBPtrim (to unload BAts and make space in the memory). This basic 
-behaviour is obtained by defining GDK\MEM\_SIMPLE. 
+behaviour is obtained by defining GDK\_MEM\_SIMPLE. 
 
 A number of different strategies are available using different switches, however:
 \begin{description}

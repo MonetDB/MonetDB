@@ -35,7 +35,7 @@ The {\tt inv} unary operation calculates the inverse of the input value.
 An error message is given when the input value is zero.
 
 \item[bitwise operators]
-For integers there are some additional operations. The {\tt $%$} operator
+For integers there are some additional operations. The {\tt $\%$} operator
 implements the congruent modulo operation. The {\tt $<<$} and {\tt $>>$} 
 are the left and right bit shift. The {\tt or}, {\tt and}, {\tt xor} and 
 {\tt not} for integers are implemented as bitwise boolean operations. 
@@ -52,7 +52,7 @@ subsequent calls to {\tt rand}() are pseudo random numbers (with the same
 seed the sequence can be repeated).
 
 \item[constants]
-The module also provides access to constants {\tt RAND_MAX}, and the maximum
+The module also provides access to constants {\tt RAND\_MAX}, and the maximum
 and minimum of the domains of numeric types {\tt chr, sht, int, lng}
 (excluding nil).
 \end{description}
@@ -595,7 +595,7 @@ int int_srand( int *seed ){
 }
 
 @T
-The {\tt c\_comp} and {\tt c\_comp_ops} macros implement the mil comparison 
+The {\tt c\_comp} and {\tt c\_comp\_ops} macros implement the mil comparison 
 operations.
 
 @= any_binary_minmax

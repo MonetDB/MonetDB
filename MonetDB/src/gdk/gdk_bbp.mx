@@ -39,7 +39,7 @@ tables must be written to disk in a safe way, that is immune for system
 failures (like disk full). To do so, the BBP implements an atomic commit and 
 recovery protocol: first all files to be overwitten are moved to a BACKUP/
 dir. If that succeeds, the writes are done. If that also fully succeeds
-the BACKUP/ dir is renamed to DELETE_ME/ and subsequently deleted.
+the BACKUP/ dir is renamed to DELETE\_ME/ and subsequently deleted.
 If not, all files in BACKUP/ are moved back to their original location.
 \end{description}
 @h
@@ -198,7 +198,7 @@ Note that this also means that updates to the BBP\_status indicator array
 must be protected by GDKswapLock. 
 
 To reduce contention GDKswapLock was split into multiple locks; it is now 
-an array of lock pointers which is accessed by GDKswapLock[ABS(bat)&BBPLOCKMASK]
+an array of lock pointers which is accessed by GDKswapLock[ABS(bat)\&BBPLOCKMASK]
 \end{description}
 
 Routines that need both locks should first acquire the locks in the GDKswapLock 
@@ -1199,7 +1199,7 @@ just one thread does a BBPtrim at a time (by having a BBPtrimLock set).
 \item
 while decisions are made as to which bats to unload (1) the BBP is
 scanned, and (2) unload decisions are made. Due to these properties,
-the search&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))i
+the search\&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))i
 and all GDKswapLocks (due to (2)). They must be released during the actual 
 unloading.  (as otherwise deadlock occurs => unloading a bat may e.g. kill 
 an accelerator that is a BAT, which in turn requires BBP lock acquisition).

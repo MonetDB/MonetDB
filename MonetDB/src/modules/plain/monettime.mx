@@ -131,9 +131,9 @@ in days) have a small error if the time difference spans many hundreds of years.
 
 TODO: we cannot handle well changes in the tzone rules (e.g., DST only exists since 
 40 years, and some countries make frequent changes to the DST policy). To accommodate
-this we should make tzone_local a function with a year parameter. The tool should 
+this we should make tzone\_local a function with a year parameter. The tool should 
 maintain and access the tzone database stored in two bats [str,tzone],[str,year]. 
-Lookup of the correct tzone would be dynamic in this structure. The tzone_setlocal 
+Lookup of the correct tzone would be dynamic in this structure. The tzone\_setlocal 
 would just set the string name of the tzone.
 
 @+ Concepts
@@ -267,7 +267,7 @@ iff {\bf D} in [-31,..,-1], {\bf W} in [-7,..,-1]
 \item exact {\bf D}th day of month {\bf M}.\\
 iff {\bf D} in [1,..,31], {\bf W}=0;
 
-\end{description}
+\end{itemize}
 The parameters {\bf M} is a month number between 1 and 12, and {\bf T} is a time 
 to the minute detail just like the time offset of the timezone.
 

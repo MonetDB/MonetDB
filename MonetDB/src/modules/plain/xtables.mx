@@ -17,7 +17,7 @@ without permission of the copyright owner. }
 for text corpora (many different clusters (>30000), widely varying size (Zipfian)).
 (May 2001:) Arjen added some minor changes to better handle `clustered' groups;
 for now, limited applicability to a derived property, using
-$$ \mathrm{sorted} \land \mathrm{keyed} \implies \mathrm{clustered} $$
+$$ \mathrm{sorted} \land \mathrm{keyed} \\implies \mathrm{clustered} $$
 
 (before:)
 \begin{verbatim}
@@ -550,7 +550,7 @@ identifiers, which are always OIDs.
 This strategy is also followed on binary groupings; here 
 we construct a special integer consisting of the XORed hashnumber 
 of both columns. In such a way, we can build a hash table on
-map_entries (instead of simple atomic values -- the unary case).
+map\_entries (instead of simple atomic values -- the unary case).
 
 In the unary group case, we optimized processing on 1-byte
 and 2-byte values by using direct mapping in an array instead of 

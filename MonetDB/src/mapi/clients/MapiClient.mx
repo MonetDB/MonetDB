@@ -51,11 +51,11 @@ Mclient users should be aware of the Monet initialization script
 stored in the database farm. They are shown below.
 @T
 \begin{tabular}{l l}
-$MONETFARM/$DB/users/$USER/general.mil & general MIL commands executed at start \\
+\$MONETFARM/\$DB/users/\$USER/general.mil & general MIL commands executed at start \\
   & of user session. Only the database administrator can change this file.\\
-$MONETFARM/$DB/users/$USER/prelude.mil & private MIL commands, executed \\
+\$MONETFARM/\$DB/users/\$USER/prelude.mil & private MIL commands, executed \\
   & at start of user session. Users can edit this file.\\
-$MONETFARM/$DB/users/$USER/epilogue.mil & private MIL commands, executed\\
+\$MONETFARM/\$DB/users/\$USER/epilogue.mil & private MIL commands, executed\\
   & at end of user session. Users can edit this file.\\
 \end{tabular}
 @

@@ -500,7 +500,7 @@ a zero char).
 In contrast, the types \{ bit, ptr, bat, oid\} are derived types. They 
 do not occur in the switches. The @%ATOMstorage@ macro maps them respectively
 onto a {\tt chr}, {\tt int} (pointers are 32-bit), {\tt int}, and
-{\tt int} (OIDs are 32-bit}.
+{\tt int} {OIDs are 32-bit}.
 \\
 This approach makes it tractable to switch to 64-bits OIDs,
 or to a fully 64-bits OS easily. One only has to map the {\tt oid}

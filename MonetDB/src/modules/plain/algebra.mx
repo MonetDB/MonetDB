@@ -806,7 +806,7 @@ this table-name, and need not give a domain size (the cost model infers
 this from the extent).
 
 \item 
-{\small select_est(Result, tries, domain)}\\
+{\small select\_est(Result, tries, domain)}\\
 This clause yields a result in the first parameter. It computes
 the expected number of different colors if you select $tries$ time
 from the same set of $domain$ different values.

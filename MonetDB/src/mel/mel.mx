@@ -91,19 +91,19 @@ includeing the once imported via the USE statement.
 
 The backends are implemented by overloading the language [language.mx] class. 
 Each mel keyword class needs to have a print function which calls its 
-gen_keyword method of the language class. This double dispatch solves the 
+gen\_keyword method of the language class. This double dispatch solves the 
 problem of finding out what to print in which form. The second parameter 
-tells what to print. In case of the gen_atom method an Atom should be
+tells what to print. In case of the gen\_atom method an Atom should be
 outputted. The output type, prototype, documentation etc., is defined in
 the class overloading the language.
 
 That construction allows us to have special generating classes foreach 
 needed option or even for parts of an option. The special generating 
 classes only implement the needed gen methods. So if only atoms should 
-generate output only the gen_atom method needs to be implemented. 
+generate output only the gen\_atom method needs to be implemented. 
 
 The language class has an method for handling the options following the
-one which equals the string returned from the method get_name. 
+one which equals the string returned from the method get\_name. 
 The last argument will not be given to this method. It is asummed to 
 be the mel module.
 

@@ -1287,8 +1287,8 @@ static void column_result(table_t* t, int i) {
 
 @+ multijoin entry routine
 @T
-The multijoin will cause a cascade of value_fcn() calls putting 
-values in to place, rounded off each time by a tuple_fcn() that is
+The multijoin will cause a cascade of value\_fcn() calls putting 
+values in to place, rounded off each time by a tuple\_fcn() that is
 executed on each produced tuple. If this corresponds 1-1 with 
 the elements of one of the parameter BAT, the 'result' of the
 operation would be aligned with it.
@@ -1392,15 +1392,15 @@ can be obtained with the CTorderby command from the xtables module.
 
 @- lead column traversal mode
 @T
-The default action is to do LEAD_TRAVERSE_SEQ: 1-by-1 traversal of the lead_col,
+The default action is to do LEAD\_TRAVERSE\_SEQ: 1-by-1 traversal of the lead\_col,
 and for each head value use the best possible matching algorithm. 
 A local optimization is to signal a sorted head column in the lead column, 
-so we can switch to LEAD_TRAVERSE_SRT; if double lead values occur we do them
+so we can switch to LEAD\_TRAVERSE\_SRT; if double lead values occur we do them
 in one match iteration. 
 Finally, if we are not obliged to follow the current order (lead == 0) and
-there is a binary tree present, then we do LEAD_TRAVERSE_IDX matching. 
+there is a binary tree present, then we do LEAD\_TRAVERSE\_IDX matching. 
 
-We record in MULTIJOIN_SORTED(status) whether the chosen traversal method
+We record in MULTIJOIN\_SORTED(status) whether the chosen traversal method
 visits the head values in the lead column in order. This is important 
 for the matching algorithms of the other columns (only if the head
 values are visited in order, merge algorithms may be employed).
@@ -1437,7 +1437,7 @@ synced with a previous column, this is registered, so it can copy the
 matching results of that previous column. If not, we use the fact that a
 column is ordered and if not, has an binary index on it. Both cases
 fall into two subcases: merge-lookup or binary-search; depending on
-whether we visit the head elements in order (MULTIJOIN_SORTED(status)).
+whether we visit the head elements in order (MULTIJOIN\_SORTED(status)).
 If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 @c
         for(k=1; k < argc; k++) {
