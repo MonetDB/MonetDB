@@ -37,10 +37,16 @@ The code speaks for itself
 
 module bat;
 
+pattern bat(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
+
 pattern new(ht:any::1, tt:any::2) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
 
 pattern new(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
+comment "Creates a new empty BAT, directly allocating for 'size' elements.";
+
+pattern bat(ht:any::1, tt:any::2, size:int) : bat[any::1,any::2] = CMDBATnew
 comment "Creates a new empty BAT, directly allocating for 'size' elements.";
 
 command reverse(b:bat[any::1,any::2]) : bat[any::2,any::1] = CMDreverse
@@ -173,29 +179,6 @@ comment "A version of BATsize that does not require loading the BAT.";
 command getBATrefcnt(b:bat) : int = CMDgetBATrefcnt
 comment "Utility for debugging MAL interpreter";
 
-@- BUN Access
-The BAT-loop iterator contructs take on a different flavour in MAL.
-They mimick a for-loop as described in 'iterator.mx'.
-The iterator is initialized with a value outside the range 0..BATcount(b).
-@mal
-
-command nextElement(i:int,b:bat[any,any]):bit = CMDnextElement
-comment "Iterate over the elements of a BAT using an index.";
-
-command nextElement(i:int,b:bat[any,any],low:int,high:int):bit = CMDnextSlice
-comment "Iterator over all BUNs of b.slice(low,high)";
-
-command nextHashElement(i:int, p:ptr, b:bat[any,any]):bit = CMDhashloop
-comment "Iterate over the elements of a BAT using its hash index.
-Each call we set 'i' to denote the next element";
-
-@-
-The remainder for the future
-pattern getHead(b:bat[any::1,any], i:int):any::1 = CMDgetHead
-comment "return the BUN head value using the iterator.";
-
-pattern getTail(b:bat[any::1,any], i:int):any::1 = CMDgetTail
-comment "return the BUN tail value using the iterator.";
 
 @- BAT I/O, Persistency
 @T
@@ -1240,55 +1223,6 @@ int CMDaccpresent(int *ret, int *bid) {
 	return GDK_SUCCEED;
 }
 
-
-@+ Iterators
-This section should still be upgraded to V 5.0, because iterators
-are handled in a completely different manner.
-@= hashiter
-	if (b->tvarsized) {
-		HASHloop@1(b, b->hhash, idx, v, p)
-			if ((i = ITERATE(v, BUNtvar(b,p), h)) < 0) return i;
-	} else {
-		HASHloop@1(b, b->hhash, idx, v, p)
-			if ((i = ITERATE(v, BUNtloc(b,p), h)) < 0) return i;
-	} break;
-@c
-int CMDhashloop(int *ret, int *cursor, int *bid)
-{
-	BAT *b;
-	@:batcheck(ret,bid,b,"CMDnextElement")@
-	GDKerror("not yet implemented\n");
-	return GDK_SUCCEED;
-}
-
-int CMDnextElement(int *ret, int *cursor, int *bid)
-{
-	BAT *b;
-	@:batcheck(ret,bid,b,"CMDnextElement")@
-	if( *cursor > BUNindex(b,BUNlast(b)) ){
-		*ret = FALSE;
-	} else
-	if( *cursor <0){
-		*ret = TRUE;
-		*cursor = BUNindex(b,BUNfirst(b));
-	} else
-		*cursor = *cursor+1;
-	return GDK_SUCCEED;
-}
-int CMDnextSlice(int *ret, int *cursor, int *bid, int *low, int *high)
-{
-	BAT *b;
-	@:batcheck(ret,bid,b,"CMDnextElement")@
-	if( *cursor > *high){
-		*ret = FALSE;
-	} else 
-	if( *cursor < *low){
-		*ret = TRUE;
-		*cursor = BUNindex(b,BUNfirst(b));
-	} else
-		*cursor = *cursor+1;
-	return GDK_SUCCEED;
-}
 
 
 int CMDseqbase(int *r, int *bid, oid* o){

@@ -27,6 +27,8 @@ GDK kernel. They have been retained for backward compatibility.
 @mal
 command view_gdk_cpu() : bat[str,int] = view_gdk_cpu
 	comment "Global cpu usage info";
+command usec() : lng = CMDusec
+	comment "return cpu microseconds info";
 command view_gdk_memory(): bat[str,int] = view_gdk_mem
 	comment "Global memory usage info";
 command view_gdk_io(): bat[str,int] = view_gdk_io
@@ -319,6 +321,11 @@ view_bbp_location(int *ret){
 
 
 #define monet_modulesilent (GDKdebug&4096)
+
+int CMDusec(int *ret){       
+	*ret= GDKusec();
+	return GDK_SUCCEED;
+}
 
 int view_bbp_heat(int *ret){       
 	BAT*    b;
@@ -1119,7 +1126,7 @@ int CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpe = TYPE_str;
 		val = (ptr) "nil";
 	}
-	if( isBatType(tpe)){
+	if( isaBatType(tpe)){
 		BAT *b = BATdescriptor(*(int*)val);
 		if( b== NULL) {
 			GDKerror("CMDprint_val:could not access descriptor\n");
@@ -1162,7 +1169,7 @@ int CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
 	for(; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = getArgReference(stk,pci,i);
-		if( !isBatType(tpe)) return GDK_FAIL;
+		if( !isaBatType(tpe)) return GDK_FAIL;
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) return GDK_FAIL;
                 piv[nbats++] = b;
@@ -1225,6 +1232,31 @@ int formatMarker(str format){
 @-
 Printing format values is limited to a single element each.
 This to simplify error handling
+@= formatConversion
+	for(c= format;*c; c++){
+		if( *c=='\\'){
+			c++;
+			@:escaped@
+		} else 
+		if( *c== '%'){
+			char newformat[1024];
+			int i=0;
+
+			if(*(c+1)=='%'){ 
+				*ret= fputc(*c,fd);
+				c++; continue;
+			}
+			while(*c != '@1' && *c && i<1024)
+				 newformat[i++]= *c++;
+			newformat[i++]='@1';
+			newformat[i]=0;
+			if(*c!= '@1') 
+			GDKerror("ERROR: printf format limitation\n");
+			else  fprintf(fd,newformat,@2);
+		} else fputc(*c,fd);
+	}
+@-
+
 @= printFormatted
 int CMDprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	FILE *fd = getClient()->fdout;
@@ -1235,36 +1267,37 @@ int CMDprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	if( format== NULL) return GDK_FAIL;
 	if( formatMarker(format)!=1) return GDK_FAIL;
 
-	if( s == &@1_nil) *ret = fputs("nil",fd); 
-	else {
-		for(c= format;*c; c++){
-			if( *c=='\\'){
-				c++;
-				@:escaped@
-			} else 
-			if( *c== '%'){
-				char newformat[1024];
-				int i=0;
-
-				if(*(c+1)=='%'){ 
-					*ret= fputc(*c,fd);
-					c++; continue;
-				}
-				while(*c != '@2' && *c && i<1024)
-					 newformat[i++]= *c++;
-				newformat[i++]='@2';
-				newformat[i]=0;
-				if(*c!= '@2') 
-				GDKerror("ERROR: printf format limitation\n");
-				else  fprintf(fd,newformat,*s);
-			} else *ret = fputc(*c,fd);
-		}
-	}
+	if( *s == @1_nil) return CMDprint_formatted_nil(fd,* (str*) fmt, ret);
+	@:formatConversion(@2,*s)@
 	return GDK_SUCCEED;
 }
 @-
 String nil testing is slightly different.
 @c
+int CMDprint_formatted_nil(FILE *fd, str format, int *ret){
+	str c;
+	for(c= format;*c; c++){
+		if( *c=='\\'){
+			c++;
+			@:escaped@
+		} else 
+		if( *c== '%'){
+			char newformat[1024];
+			int i=0;
+
+			if(*(c+1)=='%'){ 
+				*ret= fputc(*c,fd);
+				c++; continue;
+			}
+			while( !isalpha(*c) && *c && i<1024)
+				 newformat[i++]= *c++;
+			newformat[i++]='s';
+			newformat[i]=0;
+			fprintf(fd,newformat,"nil");
+		} else fputc(*c,fd);
+	}
+	return GDK_SUCCEED;
+}
 int CMDprint_formatted_str(int *ret, ptr fmt, str *s){
 	FILE *fd = getClient()->fdout;
 	char *format;
@@ -1274,31 +1307,8 @@ int CMDprint_formatted_str(int *ret, ptr fmt, str *s){
 	if( format== NULL) return GDK_FAIL;
 	if( formatMarker(format)!=1) return GDK_FAIL;
 
-	if( strNil( *s)) *ret = fputs("nil",fd); 
-	else {
-		for(c= format;*c; c++){
-			if( *c=='\\'){
-				c++;
-				@:escaped@
-			} else 
-			if( *c== '%'){
-				char newformat[1024];
-				int i=0;
-
-				if(*(c+1)=='%'){ 
-					*ret= fputc(*c,fd);
-					c++; continue;
-				}
-				while(*c != 's' && *c && i<1024)
-					 newformat[i++]= *c++;
-				newformat[i++]='s';
-				newformat[i]=0;
-				if(*c!= 's') 
-				GDKerror("ERROR: printf format limitation\n");
-				else  fprintf(fd,newformat,*s);
-			} else *ret = fputc(*c,fd);
-		}
-	}
+	if( strNil( *s)) return CMDprint_formatted_nil(fd,* (str*) fmt, ret);
+	@:formatConversion(s,*s)@
 	return GDK_SUCCEED;
 }
 int CMDprint_oid(int *ret, ptr fmt, oid *s){
@@ -1313,32 +1323,8 @@ int CMDprint_oid(int *ret, ptr fmt, oid *s){
 
 	if( *s == oid_nil) msg = GDKstrdup("nil");
 	else { msg = (str) GDKmalloc(len); OIDtoStr(&msg,&len,s);}
-	for(c= format;*c; c++){
-		if( *c=='\\'){
-			c++;
-			@:escaped@
-		} else 
-		if( *c== '%'){
-			char newformat[1024];
-			int i=0;
-
-			if(*(c+1)=='%'){ 
-				*ret= fputc(*c,fd);
-				c++; continue;
-			}
-			while(*c != 's' && *c && i<1024)
-				 newformat[i++]= *c++;
-			newformat[i++]='s';
-			newformat[i]=0;
-			if(*c!= 's') 
-			GDKerror("ERROR: printf format limitation\n");
-			else  fprintf(fd,newformat,msg);
-		} else *ret = fputc(*c,fd);
-	}
+	@:formatConversion(s,msg)@
 	GDKfree(msg);
-	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
-	if( *s == oid_nil) *ret = fputs("nil",fd);
-	else *ret= ATOMprint(TYPE_oid,s,fd);
 	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 }
 int CMDprint_formatted_bit(int *ret, ptr fmt, bit *s){
@@ -1354,28 +1340,7 @@ int CMDprint_formatted_bit(int *ret, ptr fmt, bit *s){
 	if( *s == bit_nil) msg = "nil";
 	else if( *s ) msg="true";
 	else 	msg="false";
-	for(c= format;*c; c++){
-		if( *c=='\\'){
-			c++;
-			@:escaped@
-		} else 
-		if( *c== '%'){
-			char newformat[1024];
-			int i=0;
-
-			if(*(c+1)=='%'){ 
-				*ret= fputc(*c,fd);
-				c++; continue;
-			}
-			while(*c != 's' && *c && i<1024)
-				 newformat[i++]= *c++;
-			newformat[i++]='s';
-			newformat[i]=0;
-			if(*c!= 's') 
-			GDKerror("ERROR: printf format limitation\n");
-			else  fprintf(fd,newformat,msg);
-		} else *ret = fputc(*c,fd);
-	}
+	@:formatConversion(s,msg)@
 	return (*ret==EOF? GDK_FAIL:GDK_SUCCEED);
 }
 
@@ -1395,7 +1360,7 @@ int CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for(i=1; i< pci->argc;i++) {
 		tpe = getArgType(mb,pci,i);
 		val = getArgReference(stk,pci,i);
-		if( !isBatType(tpe)) return GDK_FAIL;
+		if( !isaBatType(tpe)) return GDK_FAIL;
 		b= BATdescriptor(*(int*)val);
 		if(b == NULL) return GDK_FAIL;
                 piv[nbats++] = b;
