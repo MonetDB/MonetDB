@@ -51,18 +51,30 @@ done
 
 case `uname` in
   Linux)
-	pids1="$cpids`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g' | perl -pe 's| *'$PARENT'||g'`"
+	pids1="`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g'`"
+	if [ "$PARENT" ] ; then
+		pids1="`echo "$pids1" | perl -pe 's| *'$PARENT'||g'`"
+	fi
+	pids1="$cpids$pids1"
 	PS="ps -f $pids1"
 	FUSER="fuser -v"
 	;;
   IRIX|IRIX64)
-  	pids0="`echo $cpids | perl -pe 's| |,|g'``fuser -q $files | perl -pe 's|,*'$PARENT'||g'`"
+  	pids0="`fuser -q $files`"
+	if [ "$PARENT" ] ; then
+		pids0="`echo "$pids0" | perl -pe 's|,*'$PARENT'||g'`"
+	fi
+	pids0="`echo $cpids | perl -pe 's| |,|g'`$pids0"
   	pids1="`echo $pids0 | perl -pe 's|,| |g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
 	;;
   SunOS)
-	pids1="$cpids`fuser $files 2>/dev/null | perl -pe 's| *'$PARENT'||g'`"
+	pids1="`fuser $files 2>/dev/null`"
+	if [ "$PARENT" ] ; then
+		pids1="`echo "$pids1" | perl -pe 's| *'$PARENT'||g'`"
+	fi
+	pids1="$cpids$pids1"
 	pids0="`echo $pids1 | perl -pe 's| |,|g'`"
 	PS="ps -fp $pids0"
 	FUSER="fuser"
