@@ -3505,8 +3505,9 @@ static stmt *sql_bulkinsert(context * sql, sql_table *t, char *tsep, char *rsep,
 		sql_column *c = n->data;
 		inserts[i] = stmt_append( 
 		  stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), 
-		    stmt_find(bats, stmt_atom(atom_string(strtype, _strdup(c->name)))));
+		    stmt_find(stmt_dup(bats), stmt_atom(atom_string(strtype, _strdup(c->name)))));
 	}
+	stmt_destroy(bats);
 	res = sql_insert(sql, tv, inserts, len);
 	scp = scope_close(scp);
 	_DELETE(inserts);
