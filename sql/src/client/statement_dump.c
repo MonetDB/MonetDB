@@ -236,7 +236,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 	} 	break;
 	case st_unique: {
 		int l = statement_dump( s->op1.stval, nr, sql );
-		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().reverse().mirror();\n", *nr, l);
+		len += snprintf( buf+len, BUFSIZ, "s%d := s%d.tunique().mirror();\n", *nr, l);
 		s->nr = (*nr)++;
 	} 	break;
 	case st_order: {
