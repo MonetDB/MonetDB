@@ -1285,6 +1285,7 @@ static sql_column *column_dup(sql_trans *tr, sql_column * oc, sql_table *t)
 	c->colnr = oc->colnr;
 	c->bat.bid = oc->bat.bid;
 	c->bat.ubid = oc->bat.ubid;
+
 	c->t = t;
 	c->st = NULL;
 	return c;
@@ -1938,7 +1939,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset *fs, changeset *ts,
 			sql_base *fb = n->data;
 			sql_base *tb = cs_find_name(ts, fb->name)->data;
 
-			if (fb->flag == TR_OLD)
+			if (fb->wtime && fb->flag == TR_OLD)
 				rollforward_updates(tr, fb, tb);
 		}
 		/* add the new bases */
