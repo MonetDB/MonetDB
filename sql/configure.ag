@@ -26,7 +26,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE("sql", 2.6.0_rc3, [no-define])
+AM_INIT_AUTOMAKE("sql", 2.6.0, [no-define])
 AM_CONFIG_HEADER(sql_config.h:conf/config.h.in)
 CONFIG_H=sql_config.h
 AC_SUBST(CONFIG_H)
@@ -58,7 +58,7 @@ dnl values needed for the JDBC driver;
 dnl keep in sync with src/jdbc/build.properties and NT/configure.py !
 JDBC_MAJOR=1
 JDBC_MINOR=1
-JDBC_VER_SUFFIX="Rise_rc2"
+JDBC_VER_SUFFIX="Rise"
 JDBC_DEF_PORT=45123
 JDBC_DEF_BLOCKMODE=true
 AC_SUBST(JDBC_MAJOR)
