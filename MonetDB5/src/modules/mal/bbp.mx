@@ -112,7 +112,8 @@ address CMDbbpGetObjects
 	comment "View of the box content.";
 @+ BAT declarations
 A pattern block may be required to make the proper translation to
-the BAT library.
+the BAT library. In particular when the type information is needed
+to steer the process.
 @mal
 pattern new(ht:any$1, tt:any$2) 
 	:bat[:any$1,:any$2] 	

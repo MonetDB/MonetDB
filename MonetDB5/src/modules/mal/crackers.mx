@@ -146,12 +146,13 @@ the value ranges supported.
 str CRKnew(int *cret, int *vret, int *bid){
 	BAT *b, *cidx,*vrng;
 	int result=0;
-	ptr kmin=0, vmin=0, kmax=0, vmax=0;
-	ptr p,q;
+	BUN kmin=NULL, vmin=NULL, kmax=NULL, vmax=NULL;
+	BUN p,q;
 	int xx,yy;
 	char buf[128]; /* scratch space */
 
         @:getBATdescriptor(&result,bid,b,new)@
+	(void) result; /* fool compiler */
 @-
 The target BAT should not be modified by the applications,
 otherwise the partitioning scheme becomes void
@@ -495,7 +496,7 @@ iteration and flow-based processing.
 str CRKselectPieces(int *bid, int *vbid, int *low, int *hgh) 
 {
 	BAT *b,*vrng;
-	ptr v,s,w,p;
+	BUN v,s,w,p;
 	int result=0,yy,i;
 	oid o= oid_nil;
 	(void)result;
