@@ -81,7 +81,7 @@ static INLINE int roundup_num(int number, int alignment) {
 
 int HEAPalloc(Heap *h, int nitems, int itemsize) {
         h->base = NULL;
-        h->size = roundup_8(MAX(1,nitems)*itemsize);
+        h->size = MAX(1,nitems)*itemsize;
         h->offset = h->free = 0;
 	h->base = h->filename = NULL;
 	if (h->size > GDKmem_bigsize()) {
