@@ -290,7 +290,7 @@ Box openBox(str name){
 }
 int closeBox(str name ,int flag){
 	Box box;
-	flag= 0; /* fool the compiler */
+	(void) flag; /* fool the compiler */
 	if( (box=findBox(name))){
 		saveBox(box,flag);
 		return 0;
@@ -455,7 +455,7 @@ str getBoxName(Box box, lng i){
 	return GDKstrdup(s);
 }
 str toString(Box box, lng i){
-	box=0; i=0; /* fool the compiler */
+	(void) box; (void) i; /* fool the compiler */
 	return GDKstrdup("");
 }
 @+ Persistency
@@ -498,7 +498,7 @@ int saveBox(Box box,int flag){
 	stream *f;
 	str boxfile, boxfilebak;
 
-	flag=0; /*fool the compiler */
+	(void) flag; /*fool the compiler */
 	boxfile = boxFileName(box,0);
 	boxfilebak = boxFileName(box,"backup");
 

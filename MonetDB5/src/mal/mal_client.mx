@@ -597,7 +597,7 @@ str suspendClient(Client c, int sessionkey, int timeout){
 	return throwMessage("suspend","Not yet implemented");
 }
 str resumeClient(Client c,int sessionkey){
-	c=0; sessionkey=0; /* fool the compiler */
+	(void) c; (void) sessionkey; /* fool the compiler */
 	return throwMessage("suspend","Not yet implemented");
 }
 @+ Spying on clients

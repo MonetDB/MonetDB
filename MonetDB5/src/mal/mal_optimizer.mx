@@ -748,7 +748,7 @@ int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
 {
 	Symbol s=0;
 	Client c;
-	mb =0; /* fool the compiler */
+	(void) mb; /* fool the compiler */
 	if( q->fcn==0 || functionId(q)== 0) return FALSE;
 	c= getClient();
 	if( c ) s= getSymbol(c->nspace,q);
@@ -762,7 +762,7 @@ for the function call itself.
 @c
 int isUnsafeInstruction(MalBlkPtr mb, InstrPtr q)
 {	int j,k;
-	mb=0; /* fool compiler */
+	(void) mb; /* fool compiler */
 	if( isUnsafeFunction(mb, q)) return TRUE;
 	for(j=0; j<q->retc; j++)
 	for(k=q->retc; k<q->argc; k++)
@@ -960,7 +960,7 @@ str DCoptimizer(Client cntxt, MalBlkPtr mb, int pc)
 	InstrPtr p;
 	int *varused;
 	int *pcused;
-	pc=0;	/* to fool compilers */
+	(void) pc;	/* to fool compilers */
 
 	varused= GDKmalloc(mb->vtop * sizeof(int));
 	for(i=0;i<mb->vtop;i++) varused[i]=0;
@@ -1264,7 +1264,7 @@ of crucial properties, e.g. processing time, cost, size
 @c
 void showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
 	str s,msg;
-	stk=0; /* fool the compiler */
+	(void) stk; /* fool the compiler */
 	msg= instruction2str(mb,p,0);
 	stream_printf(f,"n%d [fontsize=8, shape=box, label=\"",pc);
 	for(s=msg; *s; s++)
@@ -1276,7 +1276,7 @@ void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
 	stream *f;
 	InstrPtr p;
 	int i,k;
-	stk=0; /* fool the compiler */
+	(void) stk; /* fool the compiler */
 
 	if(idcmp(fname,"stdout")==0) f= GDKout; else
 	f= open_wastream(fname);
@@ -1305,13 +1305,13 @@ We start with the latter. The primary steps to deal with is dead code removal.
 int removeDeadSink(MalBlkPtr mb, int pc, InstrPtr p){
 	/* detect if the destination variable is not used anymor*/
 	/* return if it worked out */
-	mb=0; pc=0; p=0; /* fool the compiler */
+	(void) mb; (void) pc; (void)p; /* fool the compiler */
 	return FALSE;
 }
 int removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p){
 	/* detect if the source variable is not used anymor*/
 	/* return if it worked out */
-	mb=0; pc=0; p=0; /* fool the compiler */
+	(void)mb; (void) pc; (void) p; /* fool the compiler */
 	return FALSE;
 }
 @+ Barrier related optimizations

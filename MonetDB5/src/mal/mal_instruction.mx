@@ -468,7 +468,7 @@ void expandMalBlk(MalBlkPtr mb, int lines){
 		trimexpand(mb,newlines,newlines);
 }
 void trimMalBlk(MalBlkPtr mb){
-	mb=0; /* fool the compiler */
+	(void) mb; /* fool the compiler */
 	 /* printf("safe %d %d\n",mb->vtop, (mb->vsize-mb->vtop)*sizeof(VarPtr));
 	trimexpand(mb,0); */
 }
@@ -577,7 +577,7 @@ void removeInstruction(MalBlkPtr mb, int pc){
 	freeInstruction(p);	
 }
 void moveInstruction(MalBlkPtr mb, int pc, int target){
-	mb=0; pc=0; target=0;/* fool the compiler */
+	(void) mb;  (void) pc;  (void)target;/* fool the compiler */
 }
 @-
 Beware that the first argument of a signature is reserved for the function
@@ -802,7 +802,7 @@ void	delVariable(MalBlkPtr mb, int varid){
 void	copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	VarPtr w;
 
-	src=0; /* fool the compiler */
+	(void) src; /* fool the compiler */
 	w = (VarPtr) GDKmalloc(sizeof(VarRecord));
 	bzero( (str) w , sizeof(VarRecord));
         w->name = v->name? GDKstrdup(v->name):0;

@@ -571,7 +571,7 @@ void printStack(stream *f, MalBlkPtr mb, MalStkPtr s){
 void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt,int first){
 	str nme,nmeOnStk;
 	char nmebuf[PATHLENGTH];
-	mb=0; /* fool the compiler */
+	(void) mb; /* fool the compiler */
 	if( n->tmpindex){
 		snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER, n->tmpindex);
 		nme= nmebuf;
