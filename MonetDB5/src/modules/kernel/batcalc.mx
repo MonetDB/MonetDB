@@ -17,7 +17,7 @@
 
 @f batcalc
 @a M.L. Kersten
-@* BAT accummulators
+@* BAT calculator
 Many applications require extension of the basic calculator and
 mathematic functions to work on BAT arguments. Although the
 MAL multiplex module contains a command ('multiplex.script')
@@ -28,8 +28,8 @@ The operators supported are limited to the built-in fixed length
 atoms, because they permit ease of storage of the operation result.
 Variable sized atoms, especially user defined, may require more
 administrative activities.
-Furthermore, the operands involved are assumed to be aligned,
-so as to assure the fastest possible join evaluation.
+Furthermore, the operands involved are assumed to be aligned
+to assure the fastest possible join evaluation.
 
 Optimal processing performance is further obtained when the operators
 can work as 'accumulators', for then we do not pay the price
@@ -40,7 +40,7 @@ the accumulator.
 
 The implementation does not take into account possible overflows
 caused by the operators. However, the operators respect the NIL
-semantics.
+semantics and division by zero produces a NIL.
 
 In addition to arithmetic and comparison operators, casting and
 mathematical functions are directly supported.
@@ -52,7 +52,6 @@ for NULLs in each and every basic operation +,-,/,* and comparisons.
 This variant can be obtained using a compile time flag (NULLTST) for the time
 being. If it turns out to be effective, we will derive a new
 version of batcalc.
-
 Preliminary experiments show that ignoring the NULLS saves about 15\%
 for larger instructions.
 @mal
@@ -61,25 +60,50 @@ module batcalc;
 @+ Basic arithmetic
 The first group of functions provide abstractions over the
 binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
-operands.
+operands. BAT initialization takes a reference void bat,
+or the required size.
+@= initGrp
+	command init(bsize:sht,v:@1):bat[:void,:@1]
+	address CMD@1init_sht
+	comment "Initialize a void BAT with a tail constant";
+
+	command init(bsize:int,v:@1):bat[:void,:@1]
+	address CMD@1init_int
+	comment "Initialize a void BAT with a tail constant";
+
+	command init(bsize:lng,v:@1):bat[:void,:@1]
+	address CMD@1init_lng
+	comment "Initialize a void BAT with a tail constant";
+
+	command init(b:bat[:any$1,:any],v:@1):bat[:any$1,:@1]
+	address CMDbat@1init
+	comment "Initialize a BAT with a tail constant";
+@-
+@mal
+	@:initGrp(oid)@
+	@:initGrp(int)@
+	@:initGrp(sht)@
+	@:initGrp(lng)@
+	@:initGrp(dbl)@
+	@:initGrp(flt)@
+	@:initGrp(bit)@
 @= calcGrp
-    command @1(b:bat[:any$1,:any$2], cst:any$2)
-		:bat[:any$1,:any$2] 
+
+    command @1(b:bat[:any$1,:any$2], cst:any$2) :bat[:any$1,:any$2] 
     address CMDbat@3cst
     comment "(BAT,Constant) calculator function with new BAT result";
 
-    command @1(cst:any$2, b:bat[:any$1,:any$2])
-		:bat[:any$1,:any$2] 
+    command @1(cst:any$2, b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
     address CMDcst@3bat
     comment "(BAT,Constant) calculator function with new BAT result";
 
     command @1(a:bat[:any$1,:any$2], b:bat[:any$1,:any$2], cst:any$2)
-	:void
+	:bat[:any$1,:any$2]
     address CMDbataccum@3cst
     comment "(BAT,Constant) calculator function with accumulator BAT result";
 
     command @1(a:bat[:any$1,:any$2], cst:any$2, b:bat[:any$1,:any$2])
-	:void
+	:bat[:any$1,:any$2]
     address CMDbataccum@3cst2
     comment "(BAT,Constant) calculator function with accumulator BAT result";
 
@@ -89,7 +113,7 @@ operands.
     comment "Binary BAT calculator function with new BAT result";
 
     command @1(a:bat[:any$1,:any$2], b:bat[:any$1,:any$2], c:bat[:any$1,:any$2])
-	:void
+	:bat[:any$1,:any$2]
     address CMDbataccum@3
     comment "Binary BAT calculator function with accumulator BAT result";
 @{
@@ -217,10 +241,6 @@ comment "If-then-else operation to assemble a conditional result ";
 command project(v:@1,b:bat[:any,:any$1]) :bat[:@1,:any$1] 
 address CMDprojecthead_@1
 comment "Fill the head with a constant, e.g. [0~b]";
-
-command project(b:bat[:any$1,:any], v:@1) :bat[:any$1,:@1] 
-address CMDfilltail_@1
-comment "Fill the tail with a constant, eg [b~0].";
 
 command ifthen(b:bat[:any$1,:bit], v:@1) :bat[:any$1,:@1] 
 address CMDifThenCst_@1
@@ -370,6 +390,19 @@ fixed-sized types.
 		p2= (ptr)( ((char*)p2) + s2);
 		p3= (ptr)( ((char*)p3) + s3);
 	}
+@= accumDIV
+	while( p1 < hend ){
+		/* this code is better as x?nil:y  */
+#ifdef NULLTST
+		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil || *(@1*)p3== 0)
+			*(@1*)p1= @1_nil;
+		else 
+#endif
+			*(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
+		p1= (ptr)( ((char*)p1) + s1);
+		p2= (ptr)( ((char*)p2) + s2);
+		p3= (ptr)( ((char*)p3) + s3);
+	}
 @-
 This code could be further improved by factoring
 out occurrences of the nil-tst on the constant provided.
@@ -378,6 +411,17 @@ This has been left out.
 	while( p1 < hend ){
 #ifdef NULLTST
 		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
+			*(@1*)p1= @1_nil;
+		else 
+#endif
+			*(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
+	}
+@= accumCstDIV
+	while( p1 < hend ){
+#ifdef NULLTST
+		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil || *(@1*)cst ==0)
 			*(@1*)p1= @1_nil;
 		else 
 #endif
@@ -413,15 +457,26 @@ str bataccum@1(BAT *dst, BAT *left, BAT *right)
 	@:batinit(2,left)@
 	@:batinit(3,right)@
 	hend = (str) BUNlast(dst);
-	switch(BATttype(dst)){
-	case TYPE_flt: @:accum(flt,@2)@ break;
-	case TYPE_dbl: @:accum(dbl,@2)@ break;
-	case TYPE_oid: @:accum(oid,@2)@ break;
-	case TYPE_sht: @:accum(sht,@2)@ break;
-	case TYPE_int: @:accum(int,@2)@ break;
-	case TYPE_lng: @:accum(lng,@2)@ break;
-	default: throwMessage("batcalc.@1", "unexpected type");
-	}
+	if( strcmp("@1","DIV")==0)
+		switch(BATttype(dst)){
+		case TYPE_flt: @:accumDIV(flt,@2)@ break;
+		case TYPE_dbl: @:accumDIV(dbl,@2)@ break;
+		case TYPE_oid: @:accumDIV(oid,@2)@ break;
+		case TYPE_sht: @:accumDIV(sht,@2)@ break;
+		case TYPE_int: @:accumDIV(int,@2)@ break;
+		case TYPE_lng: @:accumDIV(lng,@2)@ break;
+		default: throwMessage("batcalc.@1", "unexpected type");
+		}
+	else
+		switch(BATttype(dst)){
+		case TYPE_flt: @:accum(flt,@2)@ break;
+		case TYPE_dbl: @:accum(dbl,@2)@ break;
+		case TYPE_oid: @:accum(oid,@2)@ break;
+		case TYPE_sht: @:accum(sht,@2)@ break;
+		case TYPE_int: @:accum(int,@2)@ break;
+		case TYPE_lng: @:accum(lng,@2)@ break;
+		default: throwMessage("batcalc.@1", "unexpected type");
+		}
 	return MAL_SUCCEED;
 }
 
@@ -478,10 +533,12 @@ str CMDbataccum@1(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,right,CMDbataccum@1)@
 
 	msg= bataccum@1(dst,left,right);
+	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return msg;
 }
+
 str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
@@ -500,15 +557,27 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
 
-	switch(BATttype(left)){
-	case TYPE_flt: @:accumCst(flt,@2)@ break;
-	case TYPE_dbl: @:accumCst(dbl,@2)@ break;
-	case TYPE_oid: @:accumCst(oid,@2)@ break;
-	case TYPE_sht: @:accumCst(sht,@2)@ break;
-	case TYPE_int: @:accumCst(int,@2)@ break;
-	case TYPE_lng: @:accumCst(lng,@2)@ break;
-	default: return throwMessage("batcalc.@1", "unexpected type");
-	}
+	if( strcmp("@1","DIV")==0)
+		switch(BATttype(left)){
+		case TYPE_flt: @:accumCstDIV(flt,@2)@ break;
+		case TYPE_dbl: @:accumCstDIV(dbl,@2)@ break;
+		case TYPE_oid: @:accumCstDIV(oid,@2)@ break;
+		case TYPE_sht: @:accumCstDIV(sht,@2)@ break;
+		case TYPE_int: @:accumCstDIV(int,@2)@ break;
+		case TYPE_lng: @:accumCstDIV(lng,@2)@ break;
+		default: return throwMessage("batcalc.@1", "unexpected type");
+		}
+	else
+		switch(BATttype(left)){
+		case TYPE_flt: @:accumCst(flt,@2)@ break;
+		case TYPE_dbl: @:accumCst(dbl,@2)@ break;
+		case TYPE_oid: @:accumCst(oid,@2)@ break;
+		case TYPE_sht: @:accumCst(sht,@2)@ break;
+		case TYPE_int: @:accumCst(int,@2)@ break;
+		case TYPE_lng: @:accumCst(lng,@2)@ break;
+		default: return throwMessage("batcalc.@1", "unexpected type");
+		}
+	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
@@ -527,6 +596,7 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
     }
 	dst= BATcopy(left);
 	if( dst == NULL){
+		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
@@ -536,7 +606,6 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 		BBPdecref(d,TRUE);
 		return msg;
 	}
-	BBPincref(*ret= dst->batCacheid,TRUE);
 	BBPunfix(d);
 	return MAL_SUCCEED;
 }
@@ -550,6 +619,7 @@ str CMDcst@1bat(int *ret, void *cst, int *l)
     }
 	dst= BATcopy(left);
 	if( dst == NULL){
+		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
@@ -563,8 +633,88 @@ str CMDcst@1bat(int *ret, void *cst, int *l)
 	BBPunfix(d);
 	return MAL_SUCCEED;
 }
+@= initImpl
+void bat@1filler(BAT *dst, @1 cst, size_t cap){
+	int s1;
+	ptr p1, hend;
+	dst->batBuns->free+= cap * BUNsize(dst);
+	hend = (str) BUNlast(dst);
+	@:batinit(1,dst)@
+	while( p1 < hend ){
+#ifdef NULLTST
+		if((@1)cst == @1_nil)
+			*(@1*)p1= @1_nil;
+		else 
+#endif
+			*(@1*)p1 = (@1) cst;
+		p1= (ptr)( ((char *)p1) + s1);
+	}
+	BATkey(BATmirror(dst),0);           
+	dst->tsorted = GDK_SORTED;
+	BBPincref(dst->batCacheid,TRUE);
+	BBPunfix(dst->batCacheid);
+}
+str CMDbat@1init(int *ret, int *l, @1 *cst) {
+	BAT *left, *dst;
+    if( (left= BATdescriptor(*l)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+	dst= BATnew(TYPE_void, left->ttype, BATcount(left));
+	if( dst == NULL){
+		BBPunfix(left->batCacheid);
+		return throwMessage("batcalc.@1", "no space available ");
+	}
+	BATseqbase(dst,0);
+	bat@1filler(dst,*cst, (size_t) BATcount(left));
+	*ret= dst->batCacheid;
+	return MAL_SUCCEED;
+}
+str CMD@1init_int(int *ret, int *size, @1 *cst) {
+	BAT *dst;
+	size_t s= *size;
+	dst= BATnew(TYPE_void, TYPE_@1, s);
+	if( dst == NULL){
+		return throwMessage("batcalc.@1", "no space available ");
+	}
+	BATseqbase(dst,0);
+	bat@1filler(dst,*cst,s);
+	*ret= dst->batCacheid;
+	return MAL_SUCCEED;
+}
+str CMD@1init_lng(int *ret, lng *size, @1 *cst) {
+	BAT *dst;
+	size_t s= *size;
+	dst= BATnew(TYPE_void, TYPE_@1, s);
+	if( dst == NULL){
+		return throwMessage("batcalc.@1", "no space available ");
+	}
+	BATseqbase(dst,0);
+	bat@1filler(dst,*cst,s);
+	*ret= dst->batCacheid;
+	return MAL_SUCCEED;
+}
+str CMD@1init_sht(int *ret, sht *size, @1 *cst){
+	BAT *dst;
+	size_t s= *size;
+	dst= BATnew(TYPE_void, TYPE_@1, s);
+	if( dst == NULL){
+		return throwMessage("batcalc.@1", "no space available ");
+	}
+	BATseqbase(dst,0);
+	bat@1filler(dst,*cst,s);
+	*ret= dst->batCacheid;
+	return MAL_SUCCEED;
+}
 @c
 #include "batcalc.h"
+
+	@:initImpl(oid)@
+	@:initImpl(int)@
+	@:initImpl(sht)@
+	@:initImpl(lng)@
+	@:initImpl(dbl)@
+	@:initImpl(flt)@
+	@:initImpl(bit)@
 
 	@:arithmeticImpl(ADD,+)@
 	@:arithmeticImpl(MIN,-)@
@@ -1216,8 +1366,17 @@ str CMDconvertvoid_oid_oid(int *ret, int *bid){
 }
 str CMDconvertvoid_int_oid(int *ret, int *bid){
 #if SIZEOF_OID == SIZEOF_INT
+	BAT *b,*bn;
+
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.convert", "Cannot access descriptor");
+    }
+	bn= BATcopy(b);
+	bn->ttype= TYPE_int;
 	/* simply recast the BAT  without doing anything */
-	BBPincref( *ret= *bid,TRUE);
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 #else
 	BAT *b,*bn;
@@ -1444,26 +1603,6 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 		} else {
 			bunfastins(bn, h, eid);
 		} 
-	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(ib->batCacheid);
-	return MAL_SUCCEED;
-}
-str CMDfilltail_@1(int *ret, int *iid, ptr *val){
-	BAT *ib, *bn;
-	int xx;
-	BUN p,q;
-
-    if( (ib= BATdescriptor(*iid)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-
-	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
-	@:tstBat(CMDfilltail_@1)@
-	BATloopFast(ib, p, q, xx) {
-		ptr v = BUNhead(ib,p);
-		bunfastins(bn, v, val);
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
