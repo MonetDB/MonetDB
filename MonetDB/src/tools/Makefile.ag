@@ -77,9 +77,12 @@ largeTOC_SHARED_MODS =	\
 	../modules/plain/lib_vector	\
 	../modules/plain/lib_counters	\
 	\
-	../modules/plain/lib_iterator
+	../modules/plain/lib_iterator	\
+	\
+	../modules/plain/lib_pcl
 
 CONFLICT_MODS =	\
+	../modules/plain/lib_x100	\
 	../modules/plain/lib_perfex
 
 EXTRA_DIST = static_modules.mx 

@@ -74,9 +74,12 @@
 @:install_module(counters)@
 
 @:install_module(iterator)@
+
+@:install_module(pcl)@
 #endif
 /* conflicts */
 /*
+@:install_module(x100)@
 @:install_module(perfex)@
 */
 #endif
