@@ -203,7 +203,9 @@ str CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	@:OpenBox(release)@
         name = (str) getArgName(mb,pci,1);
-        releaseBox(box,name);
+        if( releaseBox(box,name))
+		return throwException(MALEXCEPTION,"const.release",
+			"failed to release '%s' from box",name);
 	return MAL_SUCCEED;
 }
 
