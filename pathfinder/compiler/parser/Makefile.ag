@@ -28,7 +28,7 @@ YFLAGS = -d
 ## disable -Werror
 X_CFLAGS = 
 
-INCLUDES = $(MONET_INCS) ../include
+INCLUDES = ../include $(MONET_INCS)
 
 lib_parser = {
 	NOINST

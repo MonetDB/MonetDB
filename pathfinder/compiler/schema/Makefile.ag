@@ -23,7 +23,7 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONET_INCS) ../include $(LIBXML2_CFLAGS)
+INCLUDES = ../include $(MONET_INCS) $(LIBXML2_CFLAGS)
 
 lib_schema = {
 	NOINST

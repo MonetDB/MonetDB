@@ -23,7 +23,7 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONET_INCS) ../include
+INCLUDES = ../include $(MONET_INCS)
 
 lib_mem = {
 	NOINST
