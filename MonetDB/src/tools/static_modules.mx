@@ -39,11 +39,12 @@
 @:install_module(xtables)@
 @:install_module(logger)@
 @:install_module(ascii_io)@
+@:install_module(streams)@
 
 @:install_module(qt)@
-@:install_module(vector)@
 /* conflicts */
 /*
+@:install_module(vector)@
 @:install_module(counters)@
 
 @:install_module(iterator)@

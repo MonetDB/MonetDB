@@ -43,11 +43,12 @@ SHARED_MODS =	\
 	../modules/plain/lib_xtables	\
 	../modules/plain/lib_logger	\
 	../modules/plain/lib_ascii_io	\
+	../modules/plain/lib_streams	\
 	\
-	../modules/plain/lib_qt	\
-	../modules/plain/lib_vector
+	../modules/plain/lib_qt
 
-CONFLICT_MODS = \
+CONFLICT_MODS =	\
+	../modules/plain/lib_vector	\
 	../modules/plain/lib_counters	\
 	\
 	../modules/plain/lib_iterator	\
