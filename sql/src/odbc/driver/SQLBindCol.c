@@ -27,10 +27,16 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 	   SQLINTEGER *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	OdbcOutHostVar outVar = NULL;
+	Mapi mid;
+	int mapitype;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
+
+	assert(stmt->Dbc);
+
+	mid = stmt->Dbc->mid;
+	assert(mid);
 
 	clearStmtErrors(stmt);
 
@@ -50,43 +56,71 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		return SQL_ERROR;
 	}
 
+	ODBCdelbindcol(stmt, nCol);
+
 	switch (nTargetType) {
 	case SQL_C_CHAR:
-	case SQL_C_SSHORT:
-	case SQL_C_USHORT:
-	case SQL_C_SLONG:
-	case SQL_C_ULONG:
-	case SQL_C_STINYINT:
-	case SQL_C_UTINYINT:
-	case SQL_C_SBIGINT:
-	case SQL_C_UBIGINT:
-	case SQL_C_FLOAT:
-	case SQL_C_DOUBLE:
-	case SQL_C_TYPE_DATE:
-	case SQL_C_TYPE_TIME:
-	case SQL_C_TYPE_TIMESTAMP:
-	case SQL_C_DEFAULT:
-		/* these are supported */
+#ifdef SQL_C_XML
+	case SQL_C_XML:
+#endif
+	case SQL_C_VARBOOKMARK:
+		/* mapi_store_field doesn't copy the data but only the
+		   pointer to the data */
+		mapitype = MAPI_VARCHAR;
+		pTargetValue = ODBCaddbindcol(stmt, nCol, pTargetValue, nTargetValueMax, pnLengthOrIndicator);
 		break;
-
-	case SQL_C_BINARY:
-	case SQL_C_NUMERIC:
-	case SQL_C_GUID:
-		/* these are NOT supported */
+	case SQL_C_LONG:
+	case SQL_C_SLONG:
+		mapitype = MAPI_LONG;
+		break;
+	case SQL_C_ULONG:
+		mapitype = MAPI_ULONG;
+		break;
+	case SQL_C_SHORT:
+	case SQL_C_SSHORT:
+		mapitype = MAPI_SHORT;
+		break;
+	case SQL_C_USHORT:
+		mapitype = MAPI_USHORT;
+		break;
+	case SQL_C_BIT:
+	case SQL_C_TINYINT:
+	case SQL_C_STINYINT:
+		mapitype = MAPI_TINY;
+		break;
+	case SQL_C_UTINYINT:
+		mapitype = MAPI_UTINY;
+		break;
+	case SQL_C_SBIGINT:
+		mapitype = MAPI_LONGLONG;
+		break;
+	case SQL_C_UBIGINT:
+		mapitype = MAPI_ULONGLONG;
+		break;
+	case SQL_C_FLOAT:
+		mapitype = MAPI_FLOAT;
+		break;
+	case SQL_C_DOUBLE:
+		mapitype = MAPI_DOUBLE;
+		break;
+	case SQL_C_TYPE_DATE:
+		mapitype = MAPI_DATE;
+		break;
+	case SQL_C_TYPE_TIME:
+		mapitype = MAPI_TIME;
+		break;
+	case SQL_C_TYPE_TIMESTAMP:
+		mapitype = MAPI_DATETIME;
+		break;
 	default:
+/* TODO: finish implementation */
+		/* unimplemented conversion */
 		/* HY003 = Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	if (pTargetValue == NULL) {
-		/* the ODBC spec specifies this should be possible, 
-		 *      (it unbinds a column) */
-		delOdbcOutArray(&(stmt->bindCols), nCol);
-		return SQL_SUCCESS;
-	}
-
-	if (nTargetValueMax <= 0 &&
+	if (pTargetValue != NULL && nTargetValueMax <= 0 &&
 	    (nTargetType == SQL_C_CHAR || nTargetType == SQL_C_BINARY ||
 	     nTargetType == SQL_C_NUMERIC)) {
 		/* for variable length data we need a buffer length */
@@ -95,14 +129,7 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		return SQL_ERROR;
 	}
 
-
-	/* Now store the bind information in stmt struct */
-	outVar = makeOdbcOutHostVar(nCol, nTargetType, pTargetValue,
-				    nTargetValueMax, pnLengthOrIndicator);
-
-	/* Note: there may already be bind information stored, in that
-	   case the column is rebound, so old bind info is overwritten */
-	addOdbcOutArray(&stmt->bindCols, outVar);
+	mapi_bind_var(stmt->Dbc->mid, nCol - 1, mapitype, pTargetValue);
 
 	return SQL_SUCCESS;
 }

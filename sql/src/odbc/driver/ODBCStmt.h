@@ -34,13 +34,6 @@
 
 /* utility struct to decribe result set column info */
 typedef struct tColumnHeader {
-	/* BINDING INFO (used by SQLBindCol()) */
-	SQLSMALLINT nTargetType;	/* C DATA TYPE ie SQL_C_CHAR */
-	SQLPOINTER pTargetValue;	/* POINTER FROM APPLICATION TO COPY TO */
-	SQLINTEGER nTargetValueMax;	/* MAX SPACE IN pTargetValue */
-	SQLINTEGER *pnLengthOrIndicator;	/* TO RETURN LENGTH OR NULL INDICATOR */
-
-
 	/* COLUMN DESCRIPTION (used by SQLColAttribute()) */
 	int bSQL_DESC_AUTO_UNIQUE_VALUE;	/* IS AUTO INCREMENT COL? */
 	char *pszSQL_DESC_BASE_COLUMN_NAME;	/* empty string if N/A */
@@ -79,6 +72,14 @@ typedef enum {
 } StatementState;
 
 
+typedef struct {
+	void *pTargetValue;
+	SQLINTEGER *pnLengthOrIndicator;
+	SQLINTEGER nTargetValueMax;
+	char *pszTargetStr;
+	SQLUSMALLINT column;
+} ODBCBIND;
+	
 typedef struct tODBCDRIVERSTMT {
 	/* Stmt properties */
 	int Type;		/* structure type, used for handle validy test */
@@ -86,18 +87,16 @@ typedef struct tODBCDRIVERSTMT {
 	ODBCDbc *Dbc;		/* Connection context */
 	struct tODBCDRIVERSTMT *next;	/* the linked list of stmt's in this Dbc */
 	StatementState State;	/* needed to detect invalid cursor state */
-	char *Query;		/* SQL command string */
-
-	OdbcInArray bindParams;	/* list of bind input parameters */
-	OdbcOutArray bindCols;	/* list of bind output columns */
 
 	unsigned int nrCols;	/* nr of result output columns */
-	unsigned int nrRows;	/* nr of valid rows in Result */
 	ColumnHeader *ResultCols;	/* 1+nrCols (0 not used) */
-	char **ResultRows;	/* 1+nrRows of char data pointers */
 	/* row 0 is not used (count starts at 1) */
 	unsigned int currentRow;	/* used by SQLFetch() */
+	unsigned int currentCol; /* used by SQLGetData() */
+	SQLINTEGER retrieved;	/* amount of data retrieved */
 
+	ODBCBIND *bindings;
+	int maxbindings;
 	/* Stmt children: none yet */
 } ODBCStmt;
 
@@ -176,9 +175,18 @@ void destroyODBCStmt(ODBCStmt *stmt);
  * be called multiple times from SQLFetch().
  * It gets the data of one field in the current result row of the result set.
  */
-SQLRETURN ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,	/* C DATA TYPE */
-		      SQLPOINTER pTarget, SQLINTEGER nTargetLength,
+SQLRETURN ODBCGetData(ODBCStmt *stmt, SQLUSMALLINT nCol,
+		      SQLSMALLINT nTargetType, SQLPOINTER pTarget,
+		      SQLINTEGER nTargetLength,
 		      SQLINTEGER *pnLengthOrIndicator);
 
+
+void *ODBCaddbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol,
+		     SQLPOINTER pTargetValue, SQLINTEGER nTargetValueMax,
+		     SQLINTEGER *pnLengthOrIndicator);
+void ODBCdelbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol);
+void ODBCfreebindcol(ODBCStmt *stmt);
+
+void ODBCfreeResultCol(ODBCStmt *stmt);
 
 #endif

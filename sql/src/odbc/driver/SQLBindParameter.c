@@ -33,7 +33,11 @@ SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 		 SQLINTEGER BufferLength, SQLINTEGER *StrLen_or_IndPtr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	OdbcInHostVar inVar = NULL;
+	MapiMsg rc = MOK;
+
+	(void) ColumnSize;
+	(void) DecimalDigits;
+	(void) BufferLength; /* only used for (unimplemented) output params */
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
@@ -59,19 +63,66 @@ SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 
 	switch (ValueType) {
 	case SQL_C_CHAR:
+		/* note about the cast: on a system with
+		   sizeof(long)==8, SQLINTEGER is typedef'ed as int,
+		   otherwise as long, but on those other systems, long
+		   and int are the same size, so the cast works */
+		rc = mapi_param_string(stmt->Dbc->mid, ParameterNumber - 1,
+				       ParameterType, ParameterValuePtr,
+				       (int *) StrLen_or_IndPtr);
+		break;
 	case SQL_C_SSHORT:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_SHORT, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_USHORT:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_USHORT, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_SLONG:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_LONG, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_ULONG:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_ULONG, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_STINYINT:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_TINY, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_UTINYINT:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_UTINY, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_SBIGINT:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_LONGLONG, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_UBIGINT:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_ULONGLONG, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_FLOAT:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_FLOAT, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_DOUBLE:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_DOUBLE, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_TYPE_DATE:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_DATE, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_TYPE_TIME:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_TIME, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_TYPE_TIMESTAMP:
+		rc = mapi_param_type(stmt->Dbc->mid, ParameterNumber - 1,
+				     MAPI_DATETIME, ParameterType, ParameterValuePtr);
+		break;
 	case SQL_C_DEFAULT:
 		/* these are supported */
 		break;
@@ -86,15 +137,9 @@ SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
 		return SQL_ERROR;
 	}
 
-	/* Now store the bind information in stmt struct */
-	inVar = makeOdbcInHostVar(ParameterNumber, InputOutputType, ValueType,
-				  ParameterType, ColumnSize, DecimalDigits,
-				  ParameterValuePtr, BufferLength,
-				  StrLen_or_IndPtr);
+	if (rc == MOK)
+		return SQL_SUCCESS;
 
-	/* Note: there may already be bind information stored, in that
-	   case the column is rebound, so old bind info is overwritten */
-	addOdbcInArray(&stmt->bindParams, inVar);
-
-	return SQL_SUCCESS;
+	addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+	return SQL_ERROR;
 }

@@ -53,8 +53,6 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
-	assert(stmt->Query == NULL);
-
 	fixODBCstring(szSchemaName, nSchemaNameLength);
 	fixODBCstring(szTableName, nTableNameLength);
 	fixODBCstring(szColumnName, nColumnNameLength);

@@ -53,9 +53,7 @@ newODBCDbc(ODBCEnv *env)
 
 	dbc->Connected = 0;
 	dbc->autocommit = 0;
-	dbc->socket = 0;
-	dbc->Mrs = NULL;
-	dbc->Mws = NULL;
+	dbc->mid = NULL;
 	dbc->Mdebug = 0;
 
 	dbc->FirstStmt = NULL;

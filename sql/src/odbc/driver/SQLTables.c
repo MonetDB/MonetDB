@@ -47,8 +47,6 @@ SQLTables(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
-	assert(stmt->Query == NULL);
-
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(szCatalogName, nCatalogNameLength);
 	fixODBCstring(szSchemaName, nSchemaNameLength);

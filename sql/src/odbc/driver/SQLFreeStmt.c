@@ -39,16 +39,8 @@ SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 		/* Note: this option is also called from SQLCancel() and
 		   SQLCloseCursor(), so be careful when changing the code */
 		/* close cursor, discard result set, set to prepared */
-		if (stmt->ResultCols) {
-			free(stmt->ResultCols);
-			stmt->ResultCols = NULL;
-		}
-		if (stmt->ResultRows) {
-			free(stmt->ResultRows);
-			stmt->ResultRows = NULL;
-		}
+		ODBCfreeResultCol(stmt);
 		stmt->nrCols = 0;
-		stmt->nrRows = 0;
 		stmt->currentRow = 0;
 
 		if (stmt->State == EXECUTED)
@@ -59,10 +51,11 @@ SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
 	case SQL_DROP:
 		return SQLFreeHandle(SQL_HANDLE_STMT, handle);
 	case SQL_UNBIND:
-		destroyOdbcOutArray(&stmt->bindCols);
+		mapi_clear_bindings(stmt->Dbc->mid);
+		ODBCfreebindcol(stmt);
 		return SQL_SUCCESS;
 	case SQL_RESET_PARAMS:
-		destroyOdbcInArray(&stmt->bindParams);
+		mapi_clear_params(stmt->Dbc->mid);
 		return SQL_SUCCESS;
 	default:
 		addStmtError(stmt, "HY092", NULL, 0);

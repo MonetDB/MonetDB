@@ -44,19 +44,13 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->Error = NULL;
 
 	stmt->State = INITED;
-	stmt->Query = NULL;
-
-	stmt->bindParams.array = NULL;
-	stmt->bindParams.size = 0;
-
-	stmt->bindCols.array = NULL;
-	stmt->bindCols.size = 0;
 
 	stmt->nrCols = 0;
-	stmt->nrRows = 0;
 	stmt->ResultCols = NULL;
-	stmt->ResultRows = NULL;
 	stmt->currentRow = 0;
+
+	stmt->maxbindings = 0;
+	stmt->bindings = NULL;
 
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt;
@@ -147,6 +141,44 @@ getStmtError(ODBCStmt *stmt)
 
 
 
+void
+ODBCfreeResultCol(ODBCStmt *stmt)
+{
+	if (stmt->ResultCols) {
+		ColumnHeader *pCol;
+
+		for (pCol = stmt->ResultCols + 1;
+		     pCol <= stmt->ResultCols + stmt->nrCols;
+		     pCol++) {
+			if (pCol->pszSQL_DESC_BASE_COLUMN_NAME)
+				free(pCol->pszSQL_DESC_BASE_COLUMN_NAME);
+			if (pCol->pszSQL_DESC_LABEL)
+				free(pCol->pszSQL_DESC_LABEL);
+			if (pCol->pszSQL_DESC_NAME)
+				free(pCol->pszSQL_DESC_NAME);
+			if (pCol->pszSQL_DESC_TYPE_NAME)
+				free(pCol->pszSQL_DESC_TYPE_NAME);
+			if (pCol->pszSQL_DESC_BASE_TABLE_NAME)
+				free(pCol->pszSQL_DESC_BASE_TABLE_NAME);
+			if (pCol->pszSQL_DESC_LOCAL_TYPE_NAME)
+				free(pCol->pszSQL_DESC_LOCAL_TYPE_NAME);
+			if (pCol->pszSQL_DESC_CATALOG_NAME)
+				free(pCol->pszSQL_DESC_CATALOG_NAME);
+			if (pCol->pszSQL_DESC_LITERAL_PREFIX)
+				free(pCol->pszSQL_DESC_LITERAL_PREFIX);
+			if (pCol->pszSQL_DESC_LITERAL_SUFFIX)
+				free(pCol->pszSQL_DESC_LITERAL_SUFFIX);
+			if (pCol->pszSQL_DESC_SCHEMA_NAME)
+				free(pCol->pszSQL_DESC_SCHEMA_NAME);
+			if (pCol->pszSQL_DESC_TABLE_NAME)
+				free(pCol->pszSQL_DESC_TABLE_NAME);
+		}
+		free(stmt->ResultCols);
+		stmt->ResultCols = NULL;
+	}
+
+}
+
 /*
  * Destroys the ODBCStmt object including its own managed data.
  *
@@ -183,18 +215,63 @@ destroyODBCStmt(ODBCStmt *stmt)
 	/* cleanup own managed data */
 	deleteODBCErrorList(stmt->Error);
 
-	if (stmt->Query)
-		free(stmt->Query);
+	mapi_clear_bindings(stmt->Dbc->mid);
+	ODBCfreebindcol(stmt);
+	mapi_clear_params(stmt->Dbc->mid);
 
-	destroyOdbcInArray(&stmt->bindParams);
-	destroyOdbcOutArray(&stmt->bindCols);
-
-	if (stmt->ResultCols) {
-		/* probably we need to free strings in here */
-		free(stmt->ResultCols);
-	}
-	if (stmt->ResultRows)
-		free(stmt->ResultRows);
+	ODBCfreeResultCol(stmt);
 
 	free(stmt);
+}
+
+void *
+ODBCaddbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLPOINTER pTargetValue,
+	       SQLINTEGER nTargetValueMax, SQLINTEGER *pnLengthOrIndicator)
+{
+	int i, f = -1;
+
+	for (i = 0; i < stmt->maxbindings; i++) {
+		if (stmt->bindings[i].column == nCol)
+			break;
+		if (stmt->bindings[i].column == 0)
+			f = i;
+	}
+	if (i == stmt->maxbindings) {
+		/* not found */
+		if (f >= 0)
+			i = f;	/* use free entry */
+		else if (stmt->maxbindings > 0)
+			stmt->bindings = realloc(stmt->bindings, ++stmt->maxbindings * sizeof(ODBCBIND));
+		else
+			stmt->bindings = malloc(++stmt->maxbindings * sizeof(ODBCBIND));
+	}
+
+	stmt->bindings[i].column = nCol;
+	stmt->bindings[i].pTargetValue = pTargetValue;
+	stmt->bindings[i].pnLengthOrIndicator = pnLengthOrIndicator;
+	stmt->bindings[i].nTargetValueMax = nTargetValueMax;
+	stmt->bindings[i].pszTargetStr = 0;
+
+	return &stmt->bindings[i].pszTargetStr;
+}
+
+void
+ODBCdelbindcol(ODBCStmt *stmt, SQLUSMALLINT nCol)
+{
+	int i;
+
+	for (i = 0; i < stmt->maxbindings; i++)
+		if (stmt->bindings[i].column == nCol) {
+			memset(&stmt->bindings[i], 0, sizeof(ODBCBIND));
+			break;
+		}
+}
+
+void
+ODBCfreebindcol(ODBCStmt *stmt)
+{
+	if (stmt->bindings)
+		free(stmt->bindings);
+	stmt->bindings = NULL;
+	stmt->maxbindings = 0;
 }

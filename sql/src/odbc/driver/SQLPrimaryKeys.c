@@ -52,8 +52,6 @@ SQLPrimaryKeys(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	assert(stmt->Query == NULL);
-
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(szSchemaName, nSchemaNameLength);
 	fixODBCstring(szTableName, nTableNameLength);

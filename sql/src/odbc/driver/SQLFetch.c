@@ -25,10 +25,7 @@ SQLRETURN
 SQLFetch(SQLHSTMT hStmt)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	SQLRETURN retCode = SQL_SUCCESS;
-	OdbcOutHostVar *outVars = NULL;
-	int idx = 0;
-
+	int i;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
@@ -43,59 +40,25 @@ SQLFetch(SQLHSTMT hStmt)
 		return SQL_ERROR;
 	}
 
-	if (stmt->ResultRows == NULL)
-		return SQL_NO_DATA;
-	if (stmt->nrRows <= 0)
-		return SQL_NO_DATA;
-	if (stmt->currentRow >= stmt->nrRows)
+	stmt->retrieved = 0;
+	stmt->currentCol = -1;
+
+	if (mapi_fetch_row(stmt->Dbc->mid) == 0)
 		return SQL_NO_DATA;
 
-	/* increase the current Row number */
+	for (i = 0; i < stmt->maxbindings; i++) {
+		ODBCBIND *p = &stmt->bindings[i];
+
+		if (p->pTargetValue && p->pszTargetStr) {
+			strncpy(p->pTargetValue, p->pszTargetStr,
+				p->nTargetValueMax);
+			((char *) p->pTargetValue)[p->nTargetValueMax - 1] = '\0';
+		}
+		if (p->pnLengthOrIndicator && p->pszTargetStr)
+			*p->pnLengthOrIndicator = strlen(p->pszTargetStr);
+	}
+
 	stmt->currentRow++;
 
-	outVars = stmt->bindCols.array;
-
-	if (outVars == NULL) {
-		/* there are no bound output columns, so we are done */
-		return SQL_SUCCESS;
-	}
-
-	/* transfer result column data to bound column buffers as requested */
-	/* do this for each bound column */
-	for (idx = 1; idx <= stmt->bindCols.size; idx++) {
-		OdbcOutHostVar var = outVars[idx];
-
-		if (var != NULL) {
-			/* it is a bound column */
-			SQLRETURN rc = ODBCGetData(stmt, var->icol,
-						   var->fCType, var->rgbValue,
-						   var->cbValueMax,
-						   var->pcbValue);
-
-			/* remember the intermediate return value to be
-			 * returned when we have processed all bound columns.
-			 */
-			switch (rc) {
-			case SQL_ERROR:
-				retCode = rc;
-				break;
-			case SQL_NO_DATA:
-				/* change only when NOT error detected before */
-				if (retCode != SQL_ERROR)
-					retCode = rc;
-				break;
-			case SQL_SUCCESS_WITH_INFO:
-				/* change only when up till now all went successful */
-				if (retCode == SQL_SUCCESS)
-					retCode = rc;
-				break;
-			case SQL_SUCCESS:
-			default:
-				/* do nothing */
-				break;
-			}
-		}
-	}
-
-	return retCode;
+	return SQL_SUCCESS;
 }

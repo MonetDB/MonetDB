@@ -26,9 +26,8 @@ SQLRETURN
 SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
-	int params = 0;
-	char *query = 0;
-
+	char *query;
+	MapiMsg ret;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
@@ -39,36 +38,17 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	if (stmt->State == EXECUTED) {
 		/* 24000 = Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
-	assert(stmt->ResultRows == NULL);
 
 	/* check input parameter */
 	if (szSqlStr == NULL) {
 		/* HY009 = Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
-	if (stmt->Query != NULL) {
-		/* there was already a prepared statement, free it */
-		free(stmt->Query);
-		stmt->Query = NULL;
-	}
-
-	/* make a duplicate of the SQL command string */
 	fixODBCstring(szSqlStr, nSqlStrLength);
-	stmt->Query = dupODBCstring(szSqlStr, nSqlStrLength);
-
-	if (stmt->Query == NULL) {
-		/* the value for nSqlStrLength was invalid */
-		/* HY090 = Invalid string or buffer length */
-		addStmtError(stmt, "HY090", NULL, 0);
-
-		return SQL_ERROR;
-	}
 
 	/* TODO: check (parse) the Query on correctness */
 	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
@@ -76,26 +56,18 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
 	/* count the number of parameter markers (question mark: ?) */
 
-	/* should move to the parser (or a parser should be moved in here) */
-	if (stmt->bindParams.size) {
-		query = stmt->Query;
-
-		while (query) {
-			/* problem with strings with ?s */
-			if ((query = strchr(query, '?')) != NULL)
-				params++;
-		}
-		if (stmt->bindParams.size != params) {
-			addStmtError(stmt, "HY000", NULL, 0);
-
-			return SQL_ERROR;
-		}
-	}
-
 	/* TODO: count the number of output columns and their description */
+
+	/* we need a null-terminated string, so allocate a copy */
+	query = dupODBCstring(szSqlStr, nSqlStrLength);
+	ret = mapi_prepare(stmt->Dbc->mid, query);
+	free(query);
+	if (ret != MOK) {
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	}
 
 	/* update the internal state */
 	stmt->State = PREPARED;
-
 	return SQL_SUCCESS;
 }

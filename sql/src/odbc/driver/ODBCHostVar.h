@@ -64,26 +64,4 @@ OdbcOutHostVar makeOdbcOutHostVar(SQLUSMALLINT, SQLSMALLINT, SQLPOINTER,
 void destroyOdbcInHostVar(OdbcInHostVar);
 void destroyOdbcOutHostVar(OdbcOutHostVar);
 
-
-
-typedef struct _OdbcInArray {
-	OdbcInHostVar *array;
-	int size;
-} OdbcInArray;
-
-typedef struct _OdbcOutArray {
-	OdbcOutHostVar *array;
-	int size;
-} OdbcOutArray;
-
-
-void addOdbcInArray(OdbcInArray *, OdbcInHostVar);
-void addOdbcOutArray(OdbcOutArray *, OdbcOutHostVar);
-
-void delOdbcInArray(OdbcInArray *, int n);
-void delOdbcOutArray(OdbcOutArray *, int n);
-
-void destroyOdbcInArray(OdbcInArray *);
-void destroyOdbcOutArray(OdbcOutArray *);
-
 #endif

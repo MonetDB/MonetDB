@@ -44,7 +44,7 @@ SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 	}
 
 
-	/* TODO: retrieve the parameter information from stmt->bindParams */
+	/* TODO: retrieve the parameter information */
 
 	/* for now return error IM001: driver not capable */
 	addStmtError(stmt, "IM001", NULL, 0);

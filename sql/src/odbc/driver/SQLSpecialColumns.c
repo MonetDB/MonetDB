@@ -55,8 +55,6 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType,
 		return SQL_ERROR;
 	}
 
-	assert(stmt->Query == NULL);
-
 	/* check for valid IdentifierType argument */
 	switch (nIdentifierType) {
 	case SQL_BEST_ROWID:

@@ -54,8 +54,6 @@ SQLProcedureColumns(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	assert(stmt->Query == NULL);
-
 	/* IM001 = Driver does not support this function */
 	addStmtError(stmt, "IM001", NULL, 0);
 

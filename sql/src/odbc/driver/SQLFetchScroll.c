@@ -41,33 +41,35 @@ SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT nOrientation, SQLINTEGER nOffset)
 		return SQL_ERROR;
 	}
 
-	if (stmt->ResultRows == NULL)
-		return SQL_NO_DATA;
-	if (stmt->nrRows <= 0)
+	if (mapi_get_row_count(stmt->Dbc->mid) <= 0)
 		return SQL_NO_DATA;
 
 	switch (nOrientation) {
 	case SQL_FETCH_NEXT:
 		break;
 	case SQL_FETCH_FIRST:
-		stmt->currentRow = 0;
+		mapi_seek_row(stmt->Dbc->mid, 0, MAPI_SEEK_SET);
 		break;
 	case SQL_FETCH_LAST:
-		stmt->currentRow = stmt->nrRows - 1;
+		mapi_seek_row(stmt->Dbc->mid, 0, MAPI_SEEK_END);
 		break;
 	case SQL_FETCH_PRIOR:
-		stmt->currentRow -= 2;
+		mapi_seek_row(stmt->Dbc->mid, -1, MAPI_SEEK_CUR);
 		break;
 	case SQL_FETCH_ABSOLUTE:
-		stmt->currentRow = nOffset - 1;
+		mapi_seek_row(stmt->Dbc->mid, nOffset - 1, MAPI_SEEK_SET);
 		break;
 	case SQL_FETCH_RELATIVE:
-		stmt->currentRow += nOffset;
+		mapi_seek_row(stmt->Dbc->mid, nOffset, MAPI_SEEK_CUR);
 		break;
 	default:
 		/* TODO change to unkown Orientation */
 		/* for now return error IM001: driver not capable */
 		addStmtError(stmt, "IM001", NULL, 0);
+		return SQL_ERROR;
+	}
+	if (mapi_error(stmt->Dbc->mid)) {
+		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	}
 	return SQLFetch(stmt);

@@ -16,4 +16,4 @@ setup(name="_odbc",
       ext_modules=[Extension("_odbc", ['odbc_wrap.c'],
                              define_macros = [('SWIG_COBJECT_TYPES', None)],
 			     libraries = ['MonetODBC'],
-			     library_dirs = ['/ufs/sjoerd/src/MonetDB/build-sql/src/odbc/driver/.libs'])])
+			     library_dirs = ['/ufs/sjoerd/Monet/lib'])])

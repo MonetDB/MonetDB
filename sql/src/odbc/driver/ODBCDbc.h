@@ -26,6 +26,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCEnv.h"
 #include "ODBCError.h"
+#include "C/Mapi.h"
 
 
 typedef struct tODBCDRIVERDBC {
@@ -45,9 +46,7 @@ typedef struct tODBCDRIVERDBC {
 	int autocommit;
 
 	/* MonetDB connection handle & status information */
-	int socket;		/* socket descriptor/handle */
-	stream *Mrs;		/* read stream for fetching the execution result set */
-	stream *Mws;		/* write stream for writing SQL statements */
+	Mapi mid;		/* connection with server */
 	int Mdebug;
 
 	/* Dbc children: list of ODBC Statement handles created within

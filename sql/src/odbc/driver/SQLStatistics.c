@@ -55,8 +55,6 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName,
 		return SQL_ERROR;
 	}
 
-	assert(stmt->Query == NULL);
-
 	/* check for valid Unique argument */
 	switch (nUnique) {
 	case SQL_INDEX_ALL:

@@ -33,9 +33,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 	char *uid = NULL;
 	char *pwd = NULL;
 	char *database = NULL;
-	char *db = NULL;
 	char *schema = NULL;
-	char *host = NULL;
 	int port = 0;
 	int debug = 0;
 	int trace = 0;
@@ -46,7 +44,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 #else
 	char ODBC_INI[] = "~/.odbc.ini";	/* name and place for the user DSNs */
 #endif
-	int socket_fd = 0;
+	Mapi mid;
 
 	if (!isValidDbc(dbc))
 		return SQL_INVALID_HANDLE;
@@ -92,9 +90,6 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 				     ODBC_INI);
 	database = strdup(buf);
 	/* TODO: Provided database/schema are currently not used/implemented */
-	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ,
-				     ODBC_INI);
-	host = strdup(buf);
 	__SQLGetPrivateProfileString(dsn, "PORT", "0", buf, BUFSIZ, ODBC_INI);
 	port = atoi(buf);
 	__SQLGetPrivateProfileString(dsn, "DEBUG", "0", buf, BUFSIZ, ODBC_INI);
@@ -104,85 +99,29 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 
 	/* Retrieved and checked the arguments.
 	   Now try to open a connection with the server */
-	fprintf(stderr, "SQLConnect %s %s %s %d\n", uid, database, host, port);
+	/* temporarily hold hostname in buf */
+	__SQLGetPrivateProfileString(dsn, "HOST", "localhost", buf, BUFSIZ,
+				     ODBC_INI);
+	fprintf(stderr, "SQLConnect %s %s %s %d\n", uid, database, buf, port);
 	/* connect to a server on host via port */
-	socket_fd = client(host, port);
-	if (socket_fd >= 0) {
-		stream *rs = NULL;
-		stream *ws = NULL;
-		int chars_printed;
-		char *login = NULL;
-
-		rs = block_stream(socket_rstream(socket_fd,
-						 "sql client read"));
-		ws = block_stream(socket_wstream(socket_fd,
-						 "sql client write"));
-		assert(!stream_errnr(rs));
-		assert(!stream_errnr(ws));
-
-		/*
-	 	 * client connect sequence
-	 	 *
-	 	 * 1) socket connect
-	 	 * 2) send 'api(sql,debug,trace,reply_size)' api(sql,0,0,-1);
-	 	 * 3) receive request for login 
-	 	 * 4) send user,passwd
-	   	 * 5) receive database,schema
-	 	 */
-		chars_printed = snprintf(buf, BUFSIZ, "api(sql,%d,%d,-1);\n",
-					 debug, trace);
-		stream_write(ws, buf, chars_printed, 1);
-		stream_flush(ws);
-		/* read login. The returned login value is not used yet. */
-		login = readblock(rs);
-
-		if (login)
-			free(login);
-
-		chars_printed = snprintf(buf, BUFSIZ, "login(%s,%s);\n",
-					 uid, pwd);
-		stream_write(ws, buf, chars_printed, 1);
-		stream_flush(ws);
-		/* read schema */
-		db = (char *) readblock(rs);
-		if (db) {
-			char *s = strrchr(db, ',');
-
-			if (s) {
-				*s = '\0';
-				schema = s + 1;
-				s = strrchr(schema, '\n');
-				if (s) {
-					*s = '\0';
-				}
-				schema = strdup(schema);
-			}
-		}
-		if (db != NULL) {
-			free(db);
-		}
-		if (schema && *schema) {
-			/* all went ok, store the connection info */
-			dbc->socket = socket_fd;
-			dbc->Mrs = rs;
-			dbc->Mws = ws;
-			dbc->Connected = 1;
-			dbc->Mdebug = debug;
-			/* TODO: if a database name is set, change the current schema to this database name */
-		} else {
-			/* 08001 = Client unable to establish connection */
-			addDbcError(dbc, "08001",
-				    "sockets not opened correctly", 0);
-			rc = SQL_ERROR;
-		}
-	} else {
+	mid = mapi_connect(buf, port, uid, pwd, "sql");
+	if (mid == NULL || mapi_error(mid)) {
 		/* 08001 = Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
 		rc = SQL_ERROR;
-	}
-
-	/* store internal information and clean up buffers */
-	if (dbc->Connected == 1) {
+		/* clean up */
+		if (mid)
+			mapi_destroy(mid);
+		if (uid != NULL)
+			free(uid);
+		if (pwd != NULL)
+			free(pwd);
+		if (database != NULL)
+			free(database);
+	} else {
+		/* store internal information and clean up buffers */
+		dbc->Connected = 1;
+		dbc->mid = mid;
 		if (dbc->DSN != NULL)
 			free(dbc->DSN);
 		dbc->DSN = dsn;
@@ -195,17 +134,7 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 		if (dbc->DBNAME != NULL)
 			free(dbc->DBNAME);
 		dbc->DBNAME = schema;
-
-	} else {
-		if (uid != NULL)
-			free(uid);
-		if (pwd != NULL)
-			free(pwd);
-		if (database != NULL)
-			free(database);
 	}
-	/* free allocated but not stored strings */
-	if (host != NULL)
-		free(host);
+
 	return rc;
 }

@@ -57,14 +57,7 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName,
 	}
 
 	/* OK */
-	assert(stmt->ResultCols != NULL);
 	pColumnHeader = stmt->ResultCols + nCol;
-
-	if (pColumnHeader == NULL) {
-		/* 07009 = Invalid descriptor index */
-		addStmtError(stmt, "07005", NULL, 0);
-		return SQL_ERROR;
-	}
 
 	colName = pColumnHeader->pszSQL_DESC_NAME;
 	if (colName)

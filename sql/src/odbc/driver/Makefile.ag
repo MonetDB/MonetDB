@@ -123,5 +123,5 @@ lib_MonetODBC = {
 	comm.c comm.h \
 	ini.c
 	WINLIBS = $(SOCKET_LIBS)
-	LIBS = $(MONET_LIBS) -lstream -lmutils $(ICONV_LIBS)
+	LIBS = $(MONET_LIBS) -lMapi -lstream -lmutils $(ICONV_LIBS)
 }

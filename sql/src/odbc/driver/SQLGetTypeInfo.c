@@ -43,8 +43,6 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 		return SQL_ERROR;
 	}
 
-	assert(stmt->Query == NULL);
-
 	switch (nSqlDataType) {
 	case SQL_ALL_TYPES:	/* 0 */
 	case SQL_CHAR:		/* 1 */

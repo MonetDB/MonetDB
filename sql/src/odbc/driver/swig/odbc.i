@@ -325,6 +325,8 @@
 %apply (SQLCHAR *MessageText, SQLSMALLINT BufferLength, SQLSMALLINT *TextLength) { (SQLCHAR *CursorName, SQLSMALLINT BufferLength, SQLSMALLINT *NameLength) };
 
 // SQLGetData
+// known problem: if the result value doesn't fit in tempbuf, you only
+// get part of the result
 %typemap(in, numinputs=1) (SQLSMALLINT TargetType, SQLPOINTER TargetValue, SQLLEN BufferLength, SQLLEN *StrLen_or_Ind) ($*4_type len, SQLCHAR tempbuf[2048]) {
 	$1 = ($1_ltype) PyInt_AsLong($input);
 	if (PyErr_Occurred()) SWIG_fail;
@@ -793,6 +795,10 @@
 		SQLGetDiagRec(tpe, hnd, 1, NULL, NULL, msg, 256, &len);	\
 		PyErr_SetString(PyExc_RuntimeError, msg);		\
 		return NULL;						\
+	}								\
+	if (res == SQL_INVALID_HANDLE) {				\
+		PyErr_SetString(PyExc_RuntimeError, "Invalid handle");	\
+		return NULL;						\
 	}
 %}
 %exception SQLCancel {
@@ -842,6 +848,10 @@
 %exception SQLGetData {
 	$action
 	CheckResult(result, SQL_HANDLE_STMT, arg1)
+	if (result == SQL_NO_DATA) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
 }
 %exception SQLGetStmtAttr {
 	$action

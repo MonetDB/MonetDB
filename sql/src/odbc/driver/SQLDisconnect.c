@@ -48,35 +48,14 @@ SQLDisconnect(SQLHDBC hDbc)
 #endif
 
 	/* Ready to close the connection and clean up */
-	{
-		int chars_printed;
-		stream *rs = dbc->Mrs;
-		stream *ws = dbc->Mws;
-		int debug = dbc->Mdebug;
-		char buf[BUFSIZ];
+	if (dbc->autocommit && dbc->Error == NULL)
+		mapi_query(dbc->mid, "COMMIT;");
 
-		if (dbc->autocommit && dbc->Error == NULL) {
-			chars_printed = snprintf(buf, BUFSIZ, "COMMIT;\n");
-			stream_write(ws, buf, chars_printed, 1);
-			stream_flush(ws);
+	/* client waves goodbye */
+	mapi_disconnect(dbc->mid);
+	mapi_destroy(dbc->mid);
 
-			simple_receive(rs, ws, debug);
-		}
-
-		/* client waves goodbye */
-		buf[0] = EOT;
-		stream_write(ws, buf, 1, 1);
-		stream_flush(ws);
-
-		stream_close(rs);
-		stream_destroy(rs);
-
-		stream_close(ws);
-		stream_destroy(ws);
-	}
-	dbc->socket = 0;
-	dbc->Mrs = NULL;
-	dbc->Mws = NULL;
+	dbc->mid = NULL;
 	dbc->Mdebug = 0;
 	dbc->Connected = 0;
 
