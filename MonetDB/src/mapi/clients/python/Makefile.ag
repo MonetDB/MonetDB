@@ -25,11 +25,18 @@ MTSAFE
 
 scripts_py = {
 	DIR = bindir
-	SOURCES = Mshutdown.py.in MapiClient.py.in Mapi.py
+	SOURCES = Mshutdown.py.in MapiClient.py.in 
 }
 
 scripts_bat = {
 	DIR = bindir
-	SOURCES = Mshutdown.py.bat MapiClient.py.bat Mapi.py
+	SOURCES = Mshutdown.py.bat MapiClient.py.bat 
+}
+
+
+scripts_python = {
+	EXT = py
+	DIR = pkgdatadir/python
+	SOURCES = Mapi.py
 }
 
