@@ -287,10 +287,8 @@ int CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res){
 
 	CNTXTclient(stk, &c);
         initscript = moduleClient(c, lt, FALSE);
-	printf("initscript %s\n", initscript?initscript:"no script");
         if (initscript) {
 		/* run initscript in the clients lowest stack */
-		printf("initscript %s\n", initscript);
                 return interpret_str(c->stk, initscript, res);
 	}
         return 0;
