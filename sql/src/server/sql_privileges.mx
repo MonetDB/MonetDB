@@ -46,7 +46,7 @@ extern int sql_create_role(mvc *m,  str auth, int grantor ) ;
 extern int sql_drop_role( mvc *m, str auth );
 extern int sql_grant_role( mvc *m, str grantee, str auth );
 extern int sql_revoke_role( mvc *m, str grantee, str auth );
-extern int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,int grantor );
+sql_export int sql_create_user( mvc *m, str user, str passwd,str  fullname, str schema_name,int grantor );
 extern int sql_drop_user(mvc *m,  str user);
 
 #endif /*_SQL_PRIV_H_ */

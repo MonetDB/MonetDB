@@ -181,7 +181,7 @@ typedef struct group {
 	stmt *ext;
 } group;
 
-extern const char * st_type2string(st_type type);
+sql_export const char * st_type2string(st_type type);
 
 extern stmt *stmt_none();
 extern stmt *stmt_assign( char *varname, stmt *val);

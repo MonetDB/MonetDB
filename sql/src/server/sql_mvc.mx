@@ -220,70 +220,70 @@ typedef struct mvc {
 } mvc;
 
 
-extern void mvc_init(int debug);
-extern void mvc_exit();
+sql_export void mvc_init(int debug);
+sql_export void mvc_exit();
 
-extern mvc *mvc_create( int debug );
-extern void mvc_destroy( mvc *c );
-extern char *mvc_login( mvc *c, char *user, char *passwd );
+sql_export mvc *mvc_create( int debug );
+sql_export void mvc_destroy( mvc *c );
+sql_export char *mvc_login( mvc *c, char *user, char *passwd );
 /* later a change_schema and a change_database could be added 
 	connect to ...
 */
 
-extern ssize_t mvc_status( mvc *c );
-extern int mvc_type( mvc *c );
+sql_export ssize_t mvc_status( mvc *c );
+sql_export int mvc_type( mvc *c );
 
 /* since Savepoints and transactions related the 
  * statement commit function includes the savepoint creation.
  * And rollbacks can be eigther full or until a given savepoint. 
  * The special statement_release can be used to release savepoints. 
  */
-extern int mvc_commit( mvc *c, int chain, char *name );
-extern int mvc_rollback( mvc *c, int chain, char *name );
-extern int mvc_release( mvc *c, char *name );
-extern int mvc_set_iso_level(mvc * m, int level);
+sql_export int mvc_commit( mvc *c, int chain, char *name );
+sql_export int mvc_rollback( mvc *c, int chain, char *name );
+sql_export int mvc_release( mvc *c, char *name );
+sql_export int mvc_set_iso_level(mvc * m, int level);
 
-extern BAT *mvc_bind( mvc *c, char *sname, char *tname, char *cname, int access );
-extern BAT *mvc_bind_ubat( mvc *c, char *sname, char *tname, char *cname, int access );
-extern BAT *mvc_bind_dbat( mvc *c, char *sname, char *tname, int access );
+sql_export BAT *mvc_bind( mvc *c, char *sname, char *tname, char *cname, int access );
+sql_export BAT *mvc_bind_ubat( mvc *c, char *sname, char *tname, char *cname, int access );
+sql_export BAT *mvc_bind_dbat( mvc *c, char *sname, char *tname, int access );
 
-extern BAT *mvc_bind_ibat(  mvc *c, char *sname, char *tname, char *idx, int access );
+sql_export BAT *mvc_bind_ibat(  mvc *c, char *sname, char *tname, char *idx, int access );
 
-extern sql_schema *mvc_bind_schema( mvc *c, char *sname );
-extern sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
-extern sql_column *mvc_bind_column( mvc *c, sql_table *t, char *cname );
-extern sql_idx *mvc_bind_idx( mvc *c, sql_schema *s, char *iname );
-extern sql_key *mvc_bind_key( mvc *c, sql_schema *s, char *kname );
+sql_export sql_schema *mvc_bind_schema( mvc *c, char *sname );
+sql_export sql_table *mvc_bind_table( mvc *c, sql_schema *s, char *tname );
+sql_export sql_column *mvc_bind_column( mvc *c, sql_table *t, char *cname );
+sql_export sql_idx *mvc_bind_idx( mvc *c, sql_schema *s, char *iname );
+sql_export sql_key *mvc_bind_key( mvc *c, sql_schema *s, char *kname );
 extern sql_key *mvc_bind_ukey( sql_table *t, list *cols );
 
-extern void mvc_drop_schema( mvc *c, char *name );
-extern sql_schema *mvc_create_schema( mvc *c, char *name, char *auth);
-extern void mvc_drop_table( mvc *c, sql_schema *s, char *name, int cascade );
-extern sql_table *mvc_create_view( mvc *c, sql_schema *s, char *name, char *sql);
-extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, table_type type);
-extern void mvc_drop_column( mvc *c, sql_table *t, char *name );
-extern sql_column *mvc_create_column( mvc *c, sql_table *t, char *name, char *type, int type_digits, int type_scale );
-extern sql_column *mvc_null( mvc *c, sql_column *col, int flag );
-extern sql_column *mvc_default( mvc *c, sql_column *col, char *val );
+sql_export void mvc_drop_schema( mvc *c, char *name );
+sql_export sql_schema *mvc_create_schema( mvc *c, char *name, char *auth);
+sql_export void mvc_drop_table( mvc *c, sql_schema *s, char *name, int cascade );
+sql_export sql_table *mvc_create_view( mvc *c, sql_schema *s, char *name, char *sql);
+sql_export sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, table_type type);
+sql_export void mvc_drop_column( mvc *c, sql_table *t, char *name );
+sql_export sql_column *mvc_create_column( mvc *c, sql_table *t, char *name, char *type, int type_digits, int type_scale );
+sql_export sql_column *mvc_null( mvc *c, sql_column *col, int flag );
+sql_export sql_column *mvc_default( mvc *c, sql_column *col, char *val );
 
-extern sql_key *mvc_create_key( mvc *m, sql_table *t, char *kname, key_type kt, sql_key *rk );
-extern sql_key *mvc_create_kc( mvc *m, sql_key *k, sql_column *c);
+sql_export sql_key *mvc_create_key( mvc *m, sql_table *t, char *kname, key_type kt, sql_key *rk );
+sql_export sql_key *mvc_create_kc( mvc *m, sql_key *k, sql_column *c);
 
-extern void mvc_drop_key( mvc *c, sql_schema *s, char *kname );
+sql_export void mvc_drop_key( mvc *c, sql_schema *s, char *kname );
 
-extern sql_idx *mvc_create_idx( mvc *m, sql_table *t, char *iname, idx_type it);
-extern sql_idx *mvc_create_ic( mvc *m, sql_idx *i, sql_column *c);
-extern void mvc_drop_idx( mvc *c, sql_schema *s, char *iname );
+sql_export sql_idx *mvc_create_idx( mvc *m, sql_table *t, char *iname, idx_type it);
+sql_export sql_idx *mvc_create_ic( mvc *m, sql_idx *i, sql_column *c);
+sql_export void mvc_drop_idx( mvc *c, sql_schema *s, char *iname );
 
-extern size_t void_insert_bat( BAT *b, BAT *u);
-extern size_t void_append_bat( BAT *b, BAT *u);
-extern size_t void_replace_bat( BAT *b, BAT *u);
+sql_export size_t void_insert_bat( BAT *b, BAT *u);
+sql_export size_t void_append_bat( BAT *b, BAT *u);
+sql_export size_t void_replace_bat( BAT *b, BAT *u);
 
-extern int mvc_result_table( mvc *c, int nr_cols, BAT *order );
-extern int mvc_result_row( mvc *c, int nr_cols );
-extern int mvc_result_column( mvc *c, char *name, char *typename, int digits, int scale, BAT *b);
-extern int mvc_result_value( mvc *c, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
-extern void mvc_clean_result( mvc *m, res_table *t);
+sql_export int mvc_result_table( mvc *c, int nr_cols, BAT *order );
+sql_export int mvc_result_row( mvc *c, int nr_cols );
+sql_export int mvc_result_column( mvc *c, char *name, char *typename, int digits, int scale, BAT *b);
+sql_export int mvc_result_value( mvc *c, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
+sql_export void mvc_clean_result( mvc *m, res_table *t);
 
 #endif /*_SQL_MVC_H*/
 @c
