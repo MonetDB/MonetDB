@@ -107,7 +107,7 @@ low value (say 64KB).
 @T
 Some explanation of what mem\_usage() and vm\_usage() display:
 \begin{verbatim}
-> mem_usage.print;
+> mem_usage().print();
 #------------------------------#
 # BAT:                 tmp_42  #
 # (str)                (lng)   #
@@ -129,7 +129,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 [ "_tot/valloc",        201266 ] total consumed via virtualalloc
 [ "_tot/mem",          3157314 ] total RAM+swap-file consumption
 >
-> vm_usage.print;
+> vm_usage().print();
 #------------------------------#
 # BAT:               tmp_42    #
 # (str)              (lng)     #
