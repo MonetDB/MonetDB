@@ -34,9 +34,11 @@ typedef struct var {
 static statement *query( context *sql, int distinct, dlist *selection, 
 			 dlist *into, dlist *table_exp , symbol *orderby );
 
+/* Stefan: conflicts with identically defined yywrap in monet_parse
 int yywrap(){
         return 1;
 }
+*/
 
 char *toLower( char *v ){
 	char *s = v;
