@@ -1,0 +1,15 @@
+bin
+com
+conf
+etc
+include
+info
+lib
+libexec
+man
+sbin
+share
+sql_config.h
+src
+unistd.h
+var
