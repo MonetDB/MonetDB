@@ -43,6 +43,9 @@
 #include "subtyping.h"
 #include "mil_opt.h"
 
+/* FIXME: throw this out asap */
+#include "coreprint.h"
+
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
 #define RIGHT_CHILD(p) ((p)->child[1])
@@ -8515,8 +8518,8 @@ simplifyCoreTree (PFcnode_t *c)
                 else if (TY_EQ (TY(DRL(c)), PFty_empty ()))
                     new_node = DL(c);
                 else
-                {
-                   new_node = PFcore_seq (DL(c), DRL(c));
+                {  /* use wire to avoid PFcore_seq() (because of IS_ATOM test) */
+                   new_node =  PFcore_wire2 (c_seq, DL(c), DRL(c));
                    TY(new_node) = *PFty_simplify (PFty_seq (TY(L(new_node)), TY(R(new_node))));
                 }
 
@@ -8671,22 +8674,11 @@ simplifyCoreTree (PFcnode_t *c)
             /* we want to avoid comparison between different types */
             if (input_type.type == ty_choice)
             {
-                if (TY_EQ (opt_expected, PFty_atomic ()))
-                    /* avoid dummy casts */ ;
-                else if (L(c)->kind == c_seqcast)
-                {
-                    TY(L(c))  =
-                    TY(LL(c)) =
-                    LL(c)->sem.type = expected;
-                }
-                else
-                {
-                    L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
-                    /* type new code, to avoid multiple casts */
-                    c->type     =
-                    L(c)->type  =
-                    LL(c)->type = PFty_string ();
-                }
+                L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
+                /* type new code, to avoid multiple casts */
+                c->type     =
+                L(c)->type  =
+                LL(c)->type = PFty_string ();
             }
             break;
         default: 
@@ -9871,12 +9863,31 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* resolves nodes, which are not supported and prunes
        code which is not needed (e.g. casts, let-bindings) */
+    fprintf(stdout, "# Core tree before simplification:\n");
+    PFcore_pretty (stdout, c);
+
+    simplifyCoreTree (c);
+
+    fprintf(stdout, "\n# Core tree after simplification:\n");
+    PFcore_pretty (stdout, c);
+    fprintf(stdout, "\n");
+
+    recognize_join (c,
+                    PFarray (sizeof (var_info *)),
+                    PFarray (sizeof (var_info *)),
+                    0);
+    fprintf(stdout, "\n# Core tree after join recognition:\n");
+    PFcore_pretty (stdout, c);
+    fprintf(stdout, "\n");
+
+/*
     simplifyCoreTree (c);
 
     recognize_join (c,
                     PFarray (sizeof (var_info *)),
                     PFarray (sizeof (var_info *)),
                     0);
+*/
 
     milprintf(f,
             "# MODULE DECLARATIONS\n"
