@@ -426,6 +426,8 @@ address CALCnil2bat;
 
 command str(v:void) :str 
 address CALCnil2str;
+command str(v:str) :str 
+address CALCstr2str;
 
 
 command void(v:void) :void 
@@ -1258,6 +1260,10 @@ str voidFromStrImpl(void *ret, str val){
 str CALCnil2str(str *ret, void *val){
 	(void) val; /* fool compiler */
 	*ret = ATOMnilptr(TYPE_str);
+	return MAL_SUCCEED;
+}
+str CALCstr2str(str *ret, str *val){
+	*ret = *val;
 	return MAL_SUCCEED;
 }
 str CALCstr2oid(oid *ret, str *val){

@@ -468,7 +468,7 @@ str MATHbinary@1@3(@3 *res, @3 *a, @3 *b ) {
    if (*a == @3_nil || *b == @3_nil) {
         *res = @3_nil;
    } else {
-        double r1 ,a1 = 0.0, b1 = 0.0;
+        dbl r1 ,a1 = *a, b1 = *b;
         @2_binary( &a1, &b1, &r1);
         *res= r1;
    }

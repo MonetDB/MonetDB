@@ -1847,7 +1847,7 @@ str ALGmark(int *result, int *bid, oid *base) {
 		"marking group failed");
 }
 str ALGmark0(int *result, int *bid, oid *base) {
-	oid o= 0;
+	oid o= oid_nil;
 	(void) base;
 	return ALGmark(result,bid,&o);
 }

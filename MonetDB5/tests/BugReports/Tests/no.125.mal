@@ -315,15 +315,15 @@
 	da_a := sin(ca_a);
 	ea_a := print(da_a);
 	mil.line("sin(M_PI_4).print();");
-	M_PI_4:= mil.take("M_PI_4");
+	M_PI_4:dbl:= mil.take("M_PI_4");
 	fa_a := sin(M_PI_4);
 	ga_a := print(fa_a);
 	mil.line("sin(M_PI_2).print();");
-	M_PI_2:= mil.take("M_PI_2");
+	M_PI_2:dbl:= mil.take("M_PI_2");
 	ha_a := sin(M_PI_2);
 	ia_a := print(ha_a);
 	mil.line("sin(M_PI).print();");
-	M_PI:= mil.take("M_PI");
+	M_PI:dbl:= mil.take("M_PI");
 	ja_a := sin(M_PI);
 	ka_a := print(ja_a);
 	mil.line("sin(3*M_PI_2).print();");
