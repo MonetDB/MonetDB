@@ -1329,7 +1329,6 @@ static void doGDKaddbuf(const char *prefix, const char *message, int messagelen,
 void GDKaddbuf(const char *message)
 {
 	const char *p, *q;
-	int preflen;
 	char prefix[16];
 
 	if (message == NULL || *message == '\0') /* empty message, nothing to do */
@@ -1338,10 +1337,11 @@ void GDKaddbuf(const char *message)
 	strcpy(prefix, "!");	/* default prefix */
 	while (p && *p) {
 		if (*p == '!') {
+			int preflen;
+
 			/* remember last ! prefix (e.g. "!ERROR: ")
 			   for any subsequent lines that start without ! */
 			message = p;
-			preflen = 0;
 			/* A prefix consists of a ! immediately
 			   followed by some text, followed by a : and
 			   a space.  Anything else results in no
@@ -1355,6 +1355,10 @@ void GDKaddbuf(const char *message)
 					preflen = sizeof(prefix) - 1;
 				strncpy(prefix, message, preflen);
 				prefix[preflen] = 0;
+			} else {
+				/* there is a ! but no proper prefix */
+				strcpy(prefix, "!");
+				preflen = 1;
 			}
 			p = message + preflen;
 		}
