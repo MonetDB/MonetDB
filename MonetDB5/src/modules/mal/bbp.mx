@@ -122,6 +122,11 @@ A pattern block may be required to make the proper translation to
 the BAT library. In particular when the type information is needed
 to steer the process.
 @mal
+pattern new(ht:any$1, tt:any$2, b:bat[:any,:any]) 
+	:bat[:any$1,:any$2] 	
+address CMDBATClone
+comment "Creates a new empty transient BAT
+	by cloning another";
 pattern new(ht:any$1, tt:any$2) 
 	:bat[:any$1,:any$2] 	
 address CMDBATnew
@@ -129,7 +134,7 @@ comment "Creates a new empty transient BAT,
 	with head- and tail-types as indicated.";
 pattern new(ht:any$1, tt:any$2, size:int) 
 	:bat[:any$1,:any$2] 	
-address CMDBATnew
+address CMDBATnewint
 comment "Creates a new BAT with sufficient space.";
 pattern new(ht:any$1, tt:any$2, size:lng) 
 	:bat[:any$1,:any$2] 	
@@ -449,6 +454,20 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @+ BAT enhancements
 The code to enhance thekernel
 @c
+str CMDBATClone(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	BAT *b;
+	int bid=0,cap, ht,tt, result;
+        int *res;
+	(void) m;
+
+	bid= *(int *) getArgReference(s,p,3);
+        @:getBATdescriptor(&result,&bid,b,clone)@
+        res= (int *) getArgReference(s,p,0);
+        ht= getArgType(m,p,1);
+        tt= getArgType(m,p,2);
+	cap= BATcount(b)+64;
+        return (str) BKCnewBATint(res,&ht,&tt,&cap);
+}
 str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
         int ht, tt;
 	int cap=0;
@@ -458,6 +477,18 @@ str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
         tt= getArgType(m,p,2);
         if( p->argc>3)
                 cap= *(int *) getArgReference(s,p,3);
+        res= (int *) getArgReference(s,p,0);
+
+        return (str) BKCnewBATint(res,&ht,&tt,&cap);
+}
+str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+        int ht, tt;
+	int cap=0;
+        int *res;
+
+        ht= getArgType(m,p,1);
+        tt= getArgType(m,p,2);
+	cap= *(int *) getArgReference(s,p,3);
         res= (int *) getArgReference(s,p,0);
 
         return (str) BKCnewBATint(res,&ht,&tt,&cap);
