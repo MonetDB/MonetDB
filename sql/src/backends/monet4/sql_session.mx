@@ -1126,6 +1126,10 @@ int sql_timestamp_tostr( void *M, char **buf, int *len, int type, ptr A)
 
 	(void)type;
 	if (*(lng*)a == lng_nil) {
+		if( *len <5){
+			if (*buf) GDKfree(*buf);
+			*buf = (str) GDKmalloc(*len = 16);
+		} s= *buf;
 		strcpy(s, "nil");
 		return 3;
 	}
