@@ -349,7 +349,7 @@ proc SQLclient_thread( int sock ):= {
 
 	while(cmd != ""){
 		if (cmd.startsWith("0")){
-			mvc_insert(myc, cmd );
+			mvc_fast_insert(myc, cmd );
 	        } else {
 			sqlexecute(cmd, Output );
 		}

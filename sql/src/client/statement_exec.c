@@ -559,7 +559,7 @@ int statement_dump( statement *s, int *nr, context *sql ){
 				n = n->next;
 			}
 		} else {
-			len += snprintf( buf+len, BUFSIZ, "mvc_insert(myc, \"0,%d,", 
+			len += snprintf( buf+len, BUFSIZ, "mvc_fast_insert(myc, \"0,%d,", 
 				 	list_length(s->op1.lval) );
 			while(n){
 				statement *r = n->data.stval;

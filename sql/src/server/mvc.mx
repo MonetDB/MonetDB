@@ -44,8 +44,17 @@
 .COMMAND mvc_default( mvc c, int cid, str val ) : int = mvc_default_wrap;
 	"Set column default value"
 
-.COMMAND mvc_insert( mvc c, str val ) = mvc_insert_wrap; 
+.COMMAND mvc_fast_insert( mvc c, str val ) = mvc_fast_insert_wrap; 
 	"Fast insert, string format 0,nr_args,(col_id,val)*nr_arg,"
+
+.COMMAND mvc_insert( mvc c, oid tid, ...any... ) = mvc_insert_wrap; 
+	"Insert, values in the table with the given table id"
+
+.COMMAND mvc_delete( mvc c, oid tid, oid rid ) = mvc_delete_wrap; 
+	"Delete, a row (rid) from the table with the given table id"
+
+.COMMAND mvc_update( mvc c, oid tid, oid rid, oid cid, any val ) = mvc_update_wrap; 
+	"Update the value of row(rid), column(cid) of table (tid)"
 
 .END mvc;
 @c
@@ -114,8 +123,30 @@ mvc_export int mvc_default_wrap( int* res, mvc* c, int* cid, str val){
 	return GDK_SUCCEED;
 }
 
-mvc_export int mvc_insert_wrap( mvc* c, str val){
-	mvc_insert( *(mvc**)c, val );
+mvc_export int mvc_fast_insert_wrap( mvc* c, str val){
+	mvc_fast_insert( *(mvc**)c, val );
+	return GDK_SUCCEED;
+}
+
+mvc_export int mvc_insert_wrap( mvc* c, oid *tid, ... ){
+	/* find tid and columns */
+	char *p;
+	int t;
+	va_list ap;
+
+	va_start(ap,tid);
+	while( (p = va_arg(ap,char*)) != NULL && (t = va_arg(ap,int)) ) {
+		;
+	}
+	va_end(ap);
+	return GDK_SUCCEED;
+}
+
+mvc_export int mvc_delete_wrap( mvc* c, oid *tid, oid *rid ){
+	return GDK_SUCCEED;
+}
+
+mvc_export int mvc_update_wrap( mvc* c, oid *tid, oid *rid, oid *cid, ptr v, int tpe){
 	return GDK_SUCCEED;
 }
 

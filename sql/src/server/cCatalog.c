@@ -3,6 +3,9 @@
 #include "mem.h"
 #include "cCatalog.h"
 
+/* todo use the catalog c-code to store the current catalog 
+ * We need a quick way to access the column-lists in pre-defined order 
+ */
 static 
 ptr *ADTfromStr( int type, char *s){
         int l = 0;
@@ -307,7 +310,7 @@ char *next_comma( char *s ){
 }
 
 
-void mvc_insert( mvc *c, char *insert_string ){
+void mvc_fast_insert( mvc *c, char *insert_string ){
 	char *next = insert_string+2;
 	int nr = strtol( next, &next, 10);
 	int cnt = 0;
