@@ -116,11 +116,9 @@ main(int argc, char **argv)
 			 (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
 
-#ifdef WITHOUT_AUTO_COMMIT
 	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
 				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_OFF, 0);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
-#endif
 
 	/* create a test table to be filled with values */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
@@ -200,6 +198,13 @@ main(int argc, char **argv)
 		ret = SQLExecute(stmt);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLExecute 1");
 	}
+
+	ret = SQLEndTran(SQL_HANDLE_DBC, dbc, SQL_COMMIT);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLEndTran");
+
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
+				(SQLPOINTER) (size_t) SQL_AUTOCOMMIT_ON, 0);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
 
 	/* Now we are going to read back the values from the test table.
 	   We create two statment handles, one of which will be used
