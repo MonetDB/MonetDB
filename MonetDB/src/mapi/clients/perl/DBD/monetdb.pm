@@ -370,7 +370,7 @@ sub execute {
     for (my $i = 0; $i < $num_param; $i++) {
 	# decode the parameter type
 	my $quoted_param = $dbh->quote($params->[$i]);
-	$statement =~ s/\?/$quoted_param/e;
+	$statement =~ s/\?/$quoted_param/;
     }
 
     my @data = ();
