@@ -363,13 +363,17 @@ if [ "${what}" != "MONET"  -a  "${WHAT_PREFIX}" != "${MONET_PREFIX}" ] ; then
 	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 	mtest_modpath="--monet_mod_path=`${MONET_PREFIX}/bin/monet-config --modpath`:${modpath}"
 fi
-if  [ "${os}" = "IRIX64" ] ; then
+if [ "${os}" = "IRIX64" ] ; then
 	# IRIX64 requires this to find dependend modules
 	if [ "${what}" = "MONET" ] ; then
 		libpath="${WHAT_PREFIX}/lib/MonetDB:${libpath}"
 	  else
 		libpath="${MONET_PREFIX}/lib/MonetDB:${libpath}"
 	fi
+fi
+if [ "${os}${COMP}${BITS}${what}" = "SunOSntv64MONET" ] ; then
+	# native 64-bit version on SunOS needs this to find libmonet
+	libpath="${WHAT_PREFIX}/lib:${libpath}"
 fi
 
 # remove trailing ':'
