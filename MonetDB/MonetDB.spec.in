@@ -31,9 +31,11 @@ Group: System
 Summary: MonetDB development package 
 Group: System 
 
+%if %{DOCTOOLS}
 %package docu
 Summary: MonetDB documentation
 Group: System 
+%endif
 
 %description
 MonetDB is a database management system that is developed from a
@@ -55,8 +57,10 @@ Requires: epsffit
 PreReq: /sbin/chkconfig, /sbin/service, sh-utils
 PreReq: %{_sbindir}/groupadd, %{_sbindir}/useradd
 
+%if %{DOCTOOLS}
 %description docu
 Add the MonetDB documentation description here
+%endif
 
 
 %prep
@@ -67,6 +71,7 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 ./configure \
+	--enable-debug \
 	--prefix=%{prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--localstatedir=%{localstatedir} 
@@ -162,6 +167,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/include/%{name}/*.h
 %{prefix}/include/%{name}/*/*.[hcm]
 
+%if %{DOCTOOLS}
 %files docu
 %defattr(-,monetdb,monetdb)
 %{prefix}/share/%{name}/docs/*/*.html
@@ -170,6 +176,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/share/%{name}/docs/*/*/*.html
 %{prefix}/share/%{name}/docs/*/*/*.pdf
 %{prefix}/share/%{name}/docs/*/*/*.ps
+%endif
 
 %post server
 umask 022
