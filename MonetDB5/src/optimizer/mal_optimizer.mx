@@ -1753,8 +1753,19 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,j,a;
     InstrPtr p;
     (void) pci; (void) stk;  /* to fool compilers */
-	Scope scope= getClient()->nspace;
+	Client cntxt= getClient();
+	Scope scope= cntxt->nspace;
+	char *olderr;
+	int errlen;
 
+@-
+Safe the errors encountered sofar. They have to be reset
+at the end of the optimization attempt.
+@c
+	errlen= strlen(cntxt->errbuf)+1;
+	olderr= alloca(errlen);
+	if( errlen) strncpy(olderr,cntxt->errbuf,errlen);
+	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
     for(i=1; i<mb->stop; i++){
         VarPtr v;
         p= getInstrPtr(mb,i);
@@ -1829,6 +1840,7 @@ str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
     } 
+	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
 	chkProgram(scope,mb);
     /* remove the ORoptimizer request */
 	if( mb->errors) {
