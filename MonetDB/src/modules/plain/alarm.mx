@@ -176,15 +176,13 @@ bat* CLKprelude(void){
 
 void CLKepilogue(void){
 	int k;
-#ifdef SIGALRM
+#if (defined(SIGALRM) && defined(SIG_IGN))
 /* HACK to pacify compiler */
 #if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))  
 #undef  SIG_IGN /*((__sighandler_t)1 )*/
 #define SIG_IGN   ((__sighandler_t)1L)
 #endif
-#if !(defined(WIN32) || defined(CYGWIN32) || defined(__MACH__))
 	(void) signal(SIGALRM, SIG_IGN);
-#endif
 #endif
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action) GDKfree(timer[k].action);
