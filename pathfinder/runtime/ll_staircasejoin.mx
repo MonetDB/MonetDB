@@ -78,9 +78,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
     self = FALSE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
     chunk_size = 1000;			/* FIXME: estimate size! */
-@:ll_resultallocation@
-@:ll_desc_tmp_res_alloc@
-@:ll_main(descendant)@
+@:ll_main(descendant,@:ll_desc_triv@)@
 @:ll_set_res_prop@
 @:ll_end@
 
@@ -90,9 +88,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
     self = TRUE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
     chunk_size = 1000;			/* FIXME: estimate size! */
-@:ll_resultallocation@
-@:ll_desc_tmp_res_alloc@
-@:ll_main(descendant)@
+@:ll_main(descendant,@:ll_desc_triv@)@
 @:ll_set_res_prop@
 @:ll_end@
 
@@ -100,8 +96,7 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:ll_head(child)@
 @:ll_specialcases@
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
-@:ll_resultallocation@
-@:ll_main(child)@
+@:ll_main(child,@:ll_resultallocation@)@
 @:ll_reorder_res@
 @:ll_end@
 
@@ -252,21 +247,23 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     oid max_num_iters = (lst_iter - fst_iter) + 1;
     num_tmp_res = MIN(chunk_size, max_num_iters);
     assert(num_tmp_res > 0);
-    tmp_res = (BAT**)GDKmalloc(num_tmp_res * sizeof(BAT*));
-    if (tmp_res == NULL) {
-        GDKerror("%s: could not allocate BAT array of size %d.\n", name, num_tmp_res);
-        @:ll_return(GDK_FAIL)@
-    }
-    memset(tmp_res, 0, num_tmp_res * sizeof(BAT*));
-    tmp_size = MAX(100, res_size/max_num_iters);	/* FIXME: estimate size! */
-    for (j=0; j<num_tmp_res; j++) {
-        tmp_res[j] = BATnew(TYPE_void, TYPE_oid, tmp_size);
-        if (tmp_res[j] == NULL) 
-        { 
-            GDKerror("%s: could not allocate result BAT[oid,oid] of size " SZFMT ".\n", name, tmp_size);
+    if (max_num_iters > 1) {
+        tmp_res = (BAT**)GDKmalloc(num_tmp_res * sizeof(BAT*));
+        if (tmp_res == NULL) {
+            GDKerror("%s: could not allocate BAT array of size %d.\n", name, num_tmp_res);
             @:ll_return(GDK_FAIL)@
         }
-        BATseqbase(tmp_res[j], oid_nil);
+        memset(tmp_res, 0, num_tmp_res * sizeof(BAT*));
+        tmp_size = MAX(100, res_size/max_num_iters);	/* FIXME: estimate size! */
+        for (j=0; j<num_tmp_res; j++) {
+            tmp_res[j] = BATnew(TYPE_void, TYPE_oid, tmp_size);
+            if (tmp_res[j] == NULL) 
+            { 
+                GDKerror("%s: could not allocate result BAT[oid,oid] of size " SZFMT ".\n", name, tmp_size);
+                @:ll_return(GDK_FAIL)@
+            }
+            BATseqbase(tmp_res[j], oid_nil);
+        }
     }
 }
 
@@ -343,6 +340,55 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         GDKerror("%s: leftfetchjoin failed.\n", name);
         @:ll_return(GDK_FAIL)@
     }
+
+@= ll_desc_triv
+{
+    BUN lst_BUN  = max_BUN;
+    oid fst_iter = *(oid*)BUNtail(iter_bat, fst_BUN);
+    oid lst_iter = *(oid*)BUNtail(iter_bat, lst_BUN - bun_size);
+    oid num_iters = (lst_iter - fst_iter) + 1;
+    oid fst_ctx = *(oid*)BUNtail(ctx_bat, BUNfirst(ctx_bat));
+    oid lst_ctx = *(oid*)BUNtail(ctx_bat, BUNlast(ctx_bat) - BUNsize(ctx_bat));
+    oid num_ctx = (lst_ctx - fst_ctx) + 1;
+    
+    if ( num_iters==1 && num_ctx==1 && !(BATtordered(ctx_bat)&1) ) {
+        bun_size = BUNsize(ctx_bat);
+        lst_BUN = BUNlast(ctx_bat);
+        p = BUNfirst(ctx_bat) + bun_size;
+        while ( p < lst_BUN && (lst_ctx = *(oid*)BUNtail(ctx_bat, p)) == fst_ctx ) {
+            p+=bun_size;
+        }
+        num_ctx = (lst_ctx - fst_ctx) + 1;
+    }
+
+    if ( num_iters==1 && num_ctx==1 ) {
+        BUN dst;
+
+        BUNfndVOID(p, pre_size_frag, &fst_ctx);
+        res_size = (size_t)(*(int*)BUNtloc(pre_size_frag, p) + (int)self);
+        res = BATnew(TYPE_oid, TYPE_void, res_size);
+        if (res == NULL) 
+        { 
+            GDKerror("%s: could not allocate a result BAT[oid,void] of size " SZFMT ".\n", name, res_size);
+            @:ll_return(GDK_FAIL)@
+        }
+        fst_ctx = fst_ctx + (oid)(1 - (int)self);
+        lst_ctx = fst_ctx + (oid)res_size;
+        BATseqbase (BATmirror(res), fst_ctx);
+        dst = BUNlast(res);
+        bun_size = BUNsize(res);
+        for ( ; fst_ctx < lst_ctx ; fst_ctx++ ) {
+            *(oid*)BUNhloc(res, dst) = fst_iter;
+            dst += bun_size;
+        }
+        res->batBuns->free = dst - res->batBuns->base;
+
+        fst_BUN = max_BUN;
+    } else {
+        @:ll_desc_tmp_res_alloc@
+        @:ll_resultallocation@
+    }
+}
      
 @= ll_main
     /* ---------------------------- main part ----------------------------- */
@@ -355,26 +401,37 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     BUN    fst_BUN  = BUNfirst(iter_bat);
     size_t fst_idx  = 0;
 
+    @2
+
     while (fst_BUN < max_BUN)
     {
+        BAT  **_tmp_res = tmp_res;
+        size_t lst_idx  = BATcount(iter_bat) + 1;
+        BUN    lst_BUN  = max_BUN;
         oid    fst_iter = *(oid*)BUNtail(iter_bat, fst_BUN);
-        oid    lst_iter = oid_nil;
-        oid    max_iter = fst_iter + chunk_size;
-        size_t lst_idx  = fst_idx  + 1;
-        BUN    lst_BUN  = fst_BUN  + bun_size;
+        oid    lst_iter = *(oid*)BUNtail(iter_bat, lst_BUN - bun_size);
+        oid    num_iters = (lst_iter - fst_iter) + 1;
 
-        /* FIXME/TODO: use binary search (SORTfndfirst/SORTfndlast) on [fst_BUN,max_BUN] ? */
-        while (lst_BUN < max_BUN && *(oid*)BUNtail(iter_bat, lst_BUN) < max_iter)
-        {
-            lst_BUN += bun_size;
-            lst_idx++;
+        if (num_iters > 1) {
+            oid max_iter = fst_iter + chunk_size;
+
+            lst_idx = fst_idx + 1;
+            lst_BUN = fst_BUN + bun_size;
+
+            /* FIXME/TODO: use binary search (SORTfndfirst/SORTfndlast) on [fst_BUN,max_BUN] ? */
+            while (lst_BUN < max_BUN && *(oid*)BUNtail(iter_bat, lst_BUN) < max_iter)
+            {
+                lst_BUN += bun_size;
+                lst_idx++;
+            }
+            lst_iter  = *(oid*)BUNtail(iter_bat, lst_BUN - bun_size);
+            num_iters = (lst_iter - fst_iter) + 1;
         }
-        lst_iter = *(oid*)BUNtail(iter_bat, lst_BUN - bun_size);
 
         iter_chunk = BATslice(iter_bat, fst_idx, lst_idx);
         ctx_chunk  = BATslice(ctx_bat,  fst_idx, lst_idx);
 
-        if (!(BATtordered(ctx_chunk)&1)  ||  fst_iter != lst_iter) {
+        if (!(BATtordered(ctx_chunk)&1)  ||  num_iters > 1) {
             /* ctx nodes not sorted or more than one iter => sort on ctx & iter */
             BAT *iter_tmp = iter_chunk, *ctx_tmp = ctx_chunk;
             @:ll_sort_2(ctx_chunk, iter_chunk)@
@@ -382,8 +439,11 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
             BBP_unfix_reclaim(ctx_tmp);
         }
 
-        assert((num_tmp_res==0) || (((lst_iter - fst_iter) + 1) <= num_tmp_res));
-        if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self, tmp_res) == GDK_FAIL)
+        assert((num_tmp_res==0) || (num_iters <= num_tmp_res));
+        if (num_iters == 1) {
+            _tmp_res = NULL;
+        }
+        if (ll_@1(&res, iter_chunk, ctx_chunk, pre_size_frag, doc_height, fst_iter, lst_iter, self, _tmp_res) == GDK_FAIL)
         {
             @:ll_return(GDK_FAIL)@
         }
@@ -391,7 +451,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
         BBP_unfix_reclaim(iter_chunk);
         ctx_chunk = iter_chunk = NULL;
 
-        if (tmp_res) {
+        if (tmp_res && (num_iters > 1)) {
             for (j=0; j<num_tmp_res; j++) {
                 if (tmp_res[j] && (BATcount(tmp_res[j])>0)) {
                     tmp_res[j]->batBuns->free = BUNfirst(tmp_res[j]) - tmp_res[j]->batBuns->base;
@@ -408,12 +468,12 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
 @= ll_set_res_prop
 {
     bit trivial = (BATcount(res) < 2);
-    oid fst_iter = *(oid*)BUNtail(res, BUNfirst(res));
-    oid lst_iter = *(oid*)BUNtail(res, BUNlast(res) - BUNsize(res));
+    oid fst_iter = *(oid*)BUNhead(res, BUNfirst(res));
+    oid lst_iter = *(oid*)BUNhead(res, BUNlast(res) - BUNsize(res));
     oid one_iter = (lst_iter == fst_iter);
     res->batDirty = TRUE;
     res->hdense = trivial; /* might be TRUE in some more cases... */
-    if (trivial) {
+    if (res->hdense) {
         if (BATcount(res) == 0) {
             BATseqbase (res, (oid)0); /* does not really matter */
         } else {
@@ -422,8 +482,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, oid *fragment, BAT *workings
     }
     res->hsorted = GDK_SORTED;
     BATkey(res,trivial); /* might be TRUE in some more cases... */
-    res->tdense = trivial; /* might be TRUE in some more cases... */
-    if (trivial) {
+    res->tdense = (trivial||(res->ttype==TYPE_void)); /* might be TRUE in some more cases... */
+    if (res->tdense) {
         if (BATcount(res) == 0) {
             BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
         } else {
@@ -553,7 +613,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int height,
 
     /* definition for "array-like" access on size values of given nodes */
     /* ! FIXME: works only if BUNsize(pre_size) == sizeof(int) !!!!!!!! */
-    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - pre_size->hseqbase;
+    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
 
     iter_bunsize = BUNsize(iter_bat);
     ctx_bunsize = BUNsize(ctx_bat);
@@ -715,13 +775,57 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
     int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, *size = 0;
     oid pre = 0, ctx = 0, iter_idx = 0;
     BUN iter_bun = 0, ctx_bun = 0, ctx_last = 0;
+    size_t res_start = BUNindex(res, BUNlast(res));
     oid num_iters = (lst_iter - fst_iter) + 1, i;
     int OST_bytes = sizeof(OST);
     int OST_bits  = OST_bytes * 8;
     int OST_mask  = OST_bits - 1;
     int OST_shift = 0;
-    size_t grow = 0;
+    oid fst_ctx = *(oid*)BUNtail(ctx_bat, BUNfirst(ctx_bat));
+    oid lst_ctx = *(oid*)BUNtail(ctx_bat, BUNlast(ctx_bat) - BUNsize(ctx_bat));
+    oid num_ctx = (lst_ctx - fst_ctx) + 1;
+
+    /* definition for "array-like" access on size values of given nodes */
+    /* ! FIXME: works only if BUNsize(pre_size) == sizeof(int) !!!!!!!! */
+    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+
+    if (num_ctx==1) {
+        BAT *bat_iter = BATmirror(iter_bat);
+        size_t bunsize = BUNsize(res);
+        BUN dst;
+        size_t grow = (size_t)(size[fst_ctx]);
+
+        lst_ctx = fst_ctx + (oid)grow;
+        fst_ctx = fst_ctx + (oid)(1 - (int)self);
+        grow += (size_t)self;
+        grow *= MIN((size_t)num_iters, BATcount(iter_bat));
+        
+        PFll_check_BAT_capacity(res, grow);
+        dst = BUNlast(res);
+
+        for ( i=0; i<num_iters; i++ ) {
+            BUN p;
+            oid iter = i + fst_iter;
+
+	    BUNfndOID(p, bat_iter, &iter);
+            if (p) {
+                for ( pre = fst_ctx ; pre <= lst_ctx ; pre++ ) {
+                    *(oid*)BUNhloc(res, dst) = iter;
+                    *(oid*)BUNtloc(res, dst) = pre;
+                    dst += bunsize;
+                }
+            }
+        }
+        res->batBuns->free = dst - res->batBuns->base;
+
+        *result = res;    
+        return GDK_SUCCEED;
+    }
     
+    assert((num_iters==1) || tmp_res);
+
+    if (tmp_res==NULL) tmp_res = &res;
+
     for (i=OST_mask; i; i>>=1) OST_shift++;
 
     /* stack for context set nodes will never grow over
@@ -742,10 +846,6 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         @:ll_fail_descendant@
     }
     memset(onstack, 0, onstack_size);
-
-    /* definition for "array-like" access on size values of given nodes */
-    /* ! FIXME: works only if BUNsize(pre_size) == sizeof(int) !!!!!!!! */
-    size = ((int*) BUNtloc(pre_size, BUNfirst(pre_size))) - pre_size->hseqbase;
 
     iter_bunsize = BUNsize(iter_bat);
     ctx_bunsize = BUNsize(ctx_bat);
@@ -769,12 +869,10 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         new_stack_item.eocs = ctx + size[ctx];
         stack[stack_top++] = new_stack_item;
         onstack_set(iter_idx);
-        pre = ctx;
         if (self) {
             oid iter = oid_nil;
             bunfastins(tmp_res[iter_idx], &iter, &pre);
         }
-        pre++;
     }
 @
 @= popctx_D
@@ -792,10 +890,12 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
         /* scan over all iters for the current ctx node;
            only a new (non-active) iters have to be added
            to the list of active iters */
+        pre = ctx;
         while (ctx_bun < ctx_last && ctx == cur_ctx) {
             @:pushctx_D@
             @:getnextctx_D@
         }
+        pre++;
         if (ctx_bun < ctx_last) {
             if (ctx <= stack[stack_top-1].eocs) {
                 /* find all results between the current ctx node
@@ -884,41 +984,53 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, int he
 
     GDKfree(stack);
 
-    grow = 0;
-    for ( i=0; i<num_iters; i++ ) {
-        grow += BATcount(tmp_res[i]);
-    }
-    PFll_check_BAT_capacity(res, grow);
-    for ( i=0; i<num_iters; i++ ) {
-        if (BATcount(tmp_res[i]) > 0) {
-            oid iter = i + fst_iter;
-            BUN fst_res = BUNfirst(tmp_res[i]);
-            BUN lst_res = BUNlast(tmp_res[i]);
-            size_t bunsize0 = BUNsize(tmp_res[i]);
-            size_t bunsize1 = BUNsize(res);
-            BUN dst = BUNlast(res), cur_res;
-            for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize0 ) {
-                *(oid*)BUNhloc(res, dst) = iter;
-                *(oid*)BUNtloc(res, dst) = *(oid*)BUNtloc(tmp_res[i], cur_res);
-                dst += bunsize1;
-            }
-            res->batBuns->free = dst - res->batBuns->base;
-#if 0
-            bit trivial = (BATcount(tmp_res[i]) < 2);
-            tmp_res[i]->batDirty = TRUE;
-            tmp_res[i]->hdense = FALSE;
-            tmp_res[i]->hsorted = GDK_SORTED; /* only one iter value */
-            BATkey(tmp_res[i],trivial);
-            tmp_res[i]->tdense = FALSE;
-            tmp_res[i]->tsorted = GDK_SORTED;
-            BATkey(BATmirror(tmp_res[i]),TRUE);
-            res = BATins(res, tmp_res[i]);
-            if (res == NULL) {
-                GDKerror("ll_descendant: BATins failed.\n");
-                @:ll_fail_descendant@
-            }
-#endif
+    if (tmp_res != &res) {
+        size_t grow = 0;
+        for ( i=0; i<num_iters; i++ ) {
+            grow += BATcount(tmp_res[i]);
         }
+        PFll_check_BAT_capacity(res, grow);
+        for ( i=0; i<num_iters; i++ ) {
+            if (BATcount(tmp_res[i]) > 0) {
+                oid iter = i + fst_iter;
+                BUN fst_res = BUNfirst(tmp_res[i]);
+                BUN lst_res = BUNlast(tmp_res[i]);
+                size_t bunsize0 = BUNsize(tmp_res[i]);
+                size_t bunsize1 = BUNsize(res);
+                BUN dst = BUNlast(res), cur_res;
+                for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize0 ) {
+                    *(oid*)BUNhloc(res, dst) = iter;
+                    *(oid*)BUNtloc(res, dst) = *(oid*)BUNtloc(tmp_res[i], cur_res);
+                    dst += bunsize1;
+                }
+                res->batBuns->free = dst - res->batBuns->base;
+#if 0
+                bit trivial = (BATcount(tmp_res[i]) < 2);
+                tmp_res[i]->batDirty = TRUE;
+                tmp_res[i]->hdense = FALSE;
+                tmp_res[i]->hsorted = GDK_SORTED; /* only one iter value */
+                BATkey(tmp_res[i],trivial);
+                tmp_res[i]->tdense = FALSE;
+                tmp_res[i]->tsorted = GDK_SORTED;
+                BATkey(BATmirror(tmp_res[i]),TRUE);
+                res = BATins(res, tmp_res[i]);
+                if (res == NULL) {
+                    GDKerror("ll_descendant: BATins failed.\n");
+                    @:ll_fail_descendant@
+                }
+#endif
+            }
+        }
+    } else {
+        BUN fst_res = BUNptr(res, res_start);
+        BUN lst_res = BUNlast(res);
+        size_t bunsize = BUNsize(res);
+        BUN cur_res;
+        for ( cur_res = fst_res ; cur_res < lst_res ; cur_res += bunsize ) {
+            *(oid*)BUNhloc(res, cur_res) = fst_iter;
+        }
+    }
+    for ( i=0; i<num_iters; i++ ) {
         if (onstack_get(i)) {
             GDKwarning("ll_descendant: iter %d still on stack !??\n", i + fst_iter);
         }
