@@ -269,27 +269,58 @@ public class JdbcClient {
 		cols.close();
 		ret += "\n";
 		cols = dbmd.getPrimaryKeys(cat, schem, table);
-		ret += "\tPRIMARY KEY(";
+		ret += "\tPRIMARY KEY (";
 		while (cols.next()) {
 			 ret += cols.getString("COLUMN_NAME") + ", ";
 		}
-		if (!ret.endsWith("\tPRIMARY KEY(")) {
-			ret = ret.substring(0, ret.length() - 2) + "),\n";
+		if (!ret.endsWith("\tPRIMARY KEY (")) {
+			ret = ret.substring(0, ret.length() - 2) + "), -- " + cols.getString("PK_NAME") + "\n";
 		} else {
-			ret = ret.substring(0, ret.length() - 13);
+			ret = ret.substring(0, ret.length() - 14);
 		}
+		cols.close();
+		cols = dbmd.getIndexInfo(cat, schem, table, true, true);
+		String lastIdxName = "";
+		while (cols.next()) {
+			if (lastIdxName.equals(cols.getString("INDEX_NAME"))) {
+				ret += ", " + cols.getString("COLUMN_NAME");
+			} else {
+				if (lastIdxName != "") ret += "), -- " + lastIdxName + "\n";
+				ret += "\tUNIQUE (" + cols.getString("COLUMN_NAME");
+			}
+			lastIdxName = cols.getString("INDEX_NAME");
+		}
+		if (lastIdxName != "") ret += "), -- " + lastIdxName + "\n";
 		cols.close();
 		cols = dbmd.getImportedKeys(cat, schem, table);
 		while (cols.next()) {
 			ret += "\tFOREIGN KEY (" + cols.getString("FKCOLUMN_NAME") + ") " +
 					"REFERENCES " + cols.getString("PKTABLE_SCHEM") + "." +
 					cols.getString("PKTABLE_NAME") + "(" +
-					cols.getString("PKCOLUMN_NAME") + "),\n";
+					cols.getString("PKCOLUMN_NAME") + "), -- " + cols.getString("FK_NAME") + "\n";
 		}
 		cols.close();
 		if (ret.endsWith(",\n\n")) ret = ret.substring(0, ret.length() - 3) + "\n";
 		else if (ret.endsWith(",\n")) ret = ret.substring(0, ret.length() - 2) + "\n";
 		ret += ");\n";
+
+		cols = dbmd.getIndexInfo(cat, schem, table, false, true);
+		lastIdxName = "";
+		while (cols.next()) {
+			if (!cols.getBoolean("NON_UNIQUE")) {
+				// we already covered this one as UNIQUE
+				continue;
+			} else if (lastIdxName.equals(cols.getString("INDEX_NAME"))) {
+				ret += ", " + cols.getString("COLUMN_NAME");
+			} else {
+				if (lastIdxName != "") ret += ");\n";
+				ret += "CREATE INDEX " + cols.getString("INDEX_NAME") + " ON " +
+					cols.getString("TABLE_NAME") + " (" + cols.getString("COLUMN_NAME");
+			}
+			lastIdxName = cols.getString("INDEX_NAME");
+		}
+		if (lastIdxName != "") ret += ");\n";
+		cols.close();
 		return(ret);
 	}
 

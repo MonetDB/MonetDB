@@ -2410,7 +2410,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 					"AND tables.schema_id = schemas.id " +
 					"AND keycolumns.id = idxs.id " +
 					"AND columns.name = keycolumns.\"column\" " +
-					"AND columns.table_id = tables.id ";
+					"AND columns.table_id = tables.id " +
+					"AND idxs.name NOT IN (SELECT name FROM keys WHERE type <> 1) ";
 
 		if (schema != null) {
 			query += "AND schemas.name LIKE '" + escapeQuotes(schema) + "' ";

@@ -109,4 +109,5 @@ null AS FILTER_CONDITION
 		AND keycolumns.id = idxs.id
 		AND columns.name = keycolumns."column"
 		AND columns.table_id = tables.id
+		AND idxs.name NOT IN (SELECT name FROM keys WHERE type <> 1)
 	ORDER BY nonunique, TYPE, INDEX_NAME, ORDINAL_POSITION;
