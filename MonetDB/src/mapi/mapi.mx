@@ -283,9 +283,15 @@ Get the new information for the server socket and start listening.
 			}
 			/* get user name */
 			stream_read(fdin, user, 1, 1);
-			for(i=0; i<BLOCK && *user != '\n'; i++){
+			for(i=0; !stream_errnr(fdin) && i<BLOCK && *user != '\n'; i++){
 				user++;
 				stream_read(fdin, user, 1, 1);
+			}
+			if (stream_errnr(fdin)) {
+				GDKsyserror("CLIENTlisten: fdin problems\n");
+				stream_close(fdin);
+				stream_destroy(fdin);
+				continue;
 			}
 			*user=0;
                         /* printf("mapi:Client accepted %s\n", name);fflush(stdout);*/
