@@ -235,6 +235,7 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #endif
     estimate = BATcount(joins[0]);
     b= BATjoin(joins[0],joins[1],estimate);
+    BBPfix(b->batCacheid);
     *(int*) getArgReference(stk,pci,0) = b->batCacheid;
     return NULL;
 }

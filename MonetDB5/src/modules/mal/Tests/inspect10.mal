@@ -1,5 +1,5 @@
 #self inspection of the code base
-function dummy(i:int):str;
+function dummy(i:int);
 	print(i);
 	b:= inspect.getDefinition();
 	print(b);

@@ -41,10 +41,12 @@ to allow for proper cloning
 module mil_algebra_procs;
 
 function clear(b:bat[:any$1,:any$2]):bat[:any$1,:any$2];
-	return aa_a :=delete(b);
+	delete(b);
+	return b;
 end clear;
 function unique(b:bat[:any$1,:any$2]):bat[:any$1,:any$2];
-	return ba_a :=sunique(b);
+	sunique(b);
+	return b;
 end unique;
 function diff(b1:bat[:any$1,:any$2], b2:bat[:any$1,:any$2]):bat[:any$1,:any$2];
 	return ca_a :=sdiff(b1,b2);
@@ -809,5 +811,3 @@ end count_no_nil;
 @-
 Dummy C code
 @c
-
-
