@@ -10,11 +10,9 @@ stdout of test 'A9` in directory 'tests/XPathMark` itself:
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="http://www.w3.org/2000/svg">
-<svg:SVG xmlns:svg="http://www.w3.org/2000/svg" svg:width="12cm" svg:height="10cm">
+<XQueryResult>
+<svg:SVG xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" svg:width="12cm" svg:height="10cm">
   <svg:ellipse svg:rx="110" svg:ry="130"/>
   <svg:rect svg:x="4cm" svg:y="1cm" svg:width="3cm" svg:height="6cm"/>
-</svg:SVG>
-<svg:ellipse svg:rx="110" svg:ry="130"/>
-<svg:rect svg:x="4cm" svg:y="1cm" svg:width="3cm" svg:height="6cm"/>
+</svg:SVG><svg:ellipse xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" svg:rx="110" svg:ry="130"/><svg:rect xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" svg:x="4cm" svg:y="1cm" svg:width="3cm" svg:height="6cm"/>
 </XQueryResult>

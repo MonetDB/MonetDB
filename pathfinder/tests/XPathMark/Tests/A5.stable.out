@@ -10,5 +10,6 @@ stdout of test 'A5` in directory 'tests/XPathMark` itself:
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="http://www.w3.org/2000/svg">
+<XQueryResult>
+
 </XQueryResult>

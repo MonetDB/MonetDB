@@ -10,9 +10,6 @@ stdout of test 'A1` in directory 'tests/XPathMark` itself:
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="http://www.w3.org/2000/svg">
-<!-- This example shows the use of namespaces, comments, processing instructions, and language attribute. The example has been adapted from Example 4-4 in Elliotte Rusty Harold and W. Scott Means, XML in a Nutshell, 2nd Edition, O'Reilly. -->
-<!-- This is a processing instruction to tell search-engines whether and how they should index this page. -->
-<!-- A namespace for XML Linking Language with prefix xlink and the attribute declaring the English language. -->
-<!-- This is the last comment. -->
+<XQueryResult>
+<!-- This example shows the use of namespaces, comments, processing instructions, and language attribute. The example has been adapted from Example 4-4 in Elliotte Rusty Harold and W. Scott Means, XML in a Nutshell, 2nd Edition, O'Reilly. --><!-- This is a processing instruction to tell search-engines whether and how they should index this page. --><!-- A namespace for XML Linking Language with prefix xlink and the attribute declaring the English language. --><!-- This is the last comment. -->
 </XQueryResult>
