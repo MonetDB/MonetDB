@@ -27,10 +27,13 @@ def Warn(THISFILE,TEXT) :
 def mFilter (FILE, IGNORE) :
 	fin = open(FILE, "r")
 	LINE = fin.readline()
-	while len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test "):
+	while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
 		LINE = fin.readline()
 	fin.close()
-	WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE).groups()
+	if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
+		WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE).groups()
+	else:
+		WHAT, TST, TSTDIR = "", "", ""
 
 	test = 	re.compile(IGNORE) , \
 		re.compile("^Mdestroydb: processing database ..*. in "	+ "|"	\
