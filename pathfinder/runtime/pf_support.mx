@@ -149,13 +149,89 @@ proc fetch(bat[any::1,any::2] b, bat[void,any] sel) : bat[any::1,any::2] {
 	return b.slice(lo,hi);
 }
 
-proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) : bat[oid,oid] {
-    if ((l.count() = 0) or (r.count() = 0)) { return l.join(r); }
 
+proc htordered_unique_thetajoin( bat[oid,any::2] l, 
+                                 int mode, 
+                                 bat[any::2,oid] r ) : bat[oid,oid] {
+	return htordered_unique_thetajoin( nil, l, mode, r, nil );
+}
+
+proc htordered_unique_thetajoin( bat[any::1,oid] lx, bat[oid,any::2] l, 
+                                 int mode, 
+                                 bat[any::2,oid] r ) : bat[any::1,oid] {
+	return htordered_unique_thetajoin( lx, l, mode, r, nil );
+}
+
+proc htordered_unique_thetajoin( bat[oid,any::2] l, 
+                                 int mode, 
+                                 bat[any::2,oid] r, bat[oid,any::3] rx ) : bat[oid,any::3] {
+	return htordered_unique_thetajoin( nil, l, mode, r, rx );
+}
+
+@= bat_any1_oid
+bat[any::1,oid]
+@
+@= bat_oid_any3
+bat[oid,any::3]
+@mil
+
+@:htordered_unique_thetajoin( void           , void           , oid   , oid   ,               ,               ,              ,              ,                        )@
+
+@:htordered_unique_thetajoin( @:bat_any1_oid@, void           , any::1, oid   , @:lx_join_opt@,               , @:lx_join(l)@,              ,                        )@
+
+@:htordered_unique_thetajoin( void           , @:bat_oid_any3@, oid   , any::3,               , @:rx_join_opt@,              , @:rx_join(r)@, @:rx_join(join_order)@ )@
+
+@:htordered_unique_thetajoin( @:bat_any1_oid@, @:bat_oid_any3@, any::1, any::3, @:lx_join_opt@, @:rx_join_opt@, @:lx_join(l)@, @:rx_join(r)@, @:rx_join(join_order)@ )@
+
+@= lx_join_opt
+    # try to reduce footprint, first:
+    if (htype(lx) <= 3) { # <= sht  hence  < oid
+        @:lx_join(l)@
+    }
+@
+@= rx_join_opt
+    # try to reduce footprint, first:
+    if (htype(rx) <= 3) { # <= sht  hence  < oid
+        @:rx_join(r)@
+    }
+@
+@= lx_join
+    if (not(isnil(lx))) {
+        @1 := reverse(leftfetchjoin(reverse(@1),reverse(lx)));
+        lx := nil;
+    }
+@
+@= rx_join
+    if (not(isnil(rx))) {
+        # if rx is not tail-ordered, it has to wait until after the CTrefine ...
+        if (force_rx_join or ordered(reverse(rx))) {
+            @1 := leftfetchjoin(@1,rx);
+            rx := nil;
+        }
+    }
+@mil
+
+@= htordered_unique_thetajoin
+proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
+                                 int mode,
+                                 bat[any::2,oid] r, @2 rx ) : bat[@3,@4]
+{
+    # if rx is not tail-ordered, it has to wait until after the CTrefine ...
+    var force_rx_join := FALSE;
+
+    if ((int(l).count() = 0LL) or (int(r).count() = 0LL)) { 
+        force_rx_join := TRUE;
+        @7
+        @8
+        return l.join(r); 
+    }
     if (not(l.ordered()) or not(r.reverse().ordered())) {
         ERROR("htordered_unique_thetajoin(): ordered l.head and r.tail columns (iters) expected.\n");
     }
+
     if (mode != EQ) {
+        @5
+        @6
         # trick: as we eliminate double matches anyway, let's not generate them to start with
         # pumps are efficient because merge-based
         if ((mode = GT) or (mode = GE)) {
@@ -169,10 +245,19 @@ proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) 
         var cnt := nlthetajoin(r.reverse(), l.sample(16).reverse(), mode, int(l).count());
         cnt := int(cnt).count();
         if (cnt > (int(r).count() / 16LL)) {
+            force_rx_join := TRUE;
+            @7
+            @8
             # a large intermediate result is better handled with nested loop
-           return nlthetajoin(l, r, mode, (cnt / 16LL)*int(l).count()); # no reordering necessary!!
+            return nlthetajoin(l, r, mode, (cnt / 16LL)*int(l).count()); # no reordering necessary!!
         }
     }
+    # lx, can be done in any case;
+    # unless it is tail-ordered, rx has to wait until after the CTrefine ...
+    # (or should actually both wait,
+    #  as the CTrefine might become too expensive with types > oid ?)
+    @7
+    @8
     var join_order := leftthetajoin(l, r, mode);
     var snd_iter := join_order.reverse().mark(0@0).reverse();
     var fst_iter := join_order.mark(0@0).reverse();
@@ -181,8 +266,11 @@ proc htordered_unique_thetajoin(bat[oid,any::1] l, bat[any::1,oid] r, int mode) 
         # the output of CTrefine allows to easily check if it is kunique
         sorting := sorting.reverse().kunique().reverse(); # merge-based kunique
     }
+    force_rx_join := TRUE;
+    @9
     return join_order.fetch(sorting); # this may hurt as well
 }
+@mil
 
 
 PROC fake_project (any::1 c) : bat[void,any::1]

@@ -3462,6 +3462,9 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
     PFcnode_t *fst, *snd, *res, *c;
     PFfun_t *fun;
     char *comp;
+    char lx[32], rx[32], order_snd[128];
+    
+    lx[0] = rx[0] = order_snd[0] = '\0';
 
     fst = args->child[0];
     args = args->child[1];
@@ -3778,12 +3781,28 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
 
     fprintf(f,
             "join_item1 := join_item1.reverse().leftfetchjoin(iter%03u).reverse();\n"
-            "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n"
-            "var join_result := htordered_unique_thetajoin(join_item1, join_item2.reverse(), %s);\n"
-            "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
-            "var fst_iter := join_result.mark(0@0).reverse();\n",
-            fst_res, snd_res, comp);
+            "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n",
+            fst_res, snd_res);
 
+
+    /* (try to) push some leftfetchjoin's below the theta-join */
+    snprintf(lx,32,"nil");
+    if ((snd->child[1]->kind == c_var && var_is_used (snd->child[0]->sem.var, res))
+        && !(res->kind == c_var && res->sem.var == snd->child[0]->sem.var)) /* see query11 hack below */
+    {
+        /* cannot be pushed below theta-join, as 'snd_iter.[int]()' is needed for 'addValues' (below) */
+        snprintf(rx,32,"nil");
+        snprintf(order_snd,128,
+                "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
+                snd_var);
+    }
+    else
+    {
+        snprintf(rx,32,"iter%03u.reverse()",snd_var);
+        snprintf(order_snd,128,
+                "var order_snd := snd_iter; #.leftfetchjoin(iter%03u.reverse()); pushed below theta-join\n",
+                snd_var);
+    }
     if (lev_fst && lev_snd)
     {
         PFoops (OOPS_FATAL, "no solution for join with dependence");
@@ -3795,47 +3814,74 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
     else if (!lev_fst && act_level)
     {
         fprintf(f,
+                "# (for now,?) the mapping prohibits to push leftfetchjoin's below the theta-join\n"
+                "# (unless we'd push the mapping, too, but that's a m-n join that might 'explode'...)\n"
+                "var join_result := htordered_unique_thetajoin(join_item1, %s, join_item2.reverse());\n"
+                "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
+                "var fst_iter := join_result.mark(0@0).reverse();\n",
+                comp);
+        fprintf(f,
                 "{\n"
                 "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
                 0, 0);
         for (i = 0; i < act_level; i++)
         {
             fprintf(f, 
-                    "mapping := mapping.leftjoin(outer%03u.reverse());\n"
-                    "mapping := mapping.leftfetchjoin(inner%03u);\n",
-                    i+1, i+1);
+                "mapping := mapping.leftjoin(outer%03u.reverse());\n"
+                "mapping := mapping.leftfetchjoin(inner%03u);\n",
+                i+1, i+1);
         }
         fprintf(f,
                 "fst_iter := fst_iter.leftjoin(mapping);\n"
                 "}\n"
                 "snd_iter := fst_iter.mark(0@0).reverse().leftfetchjoin(snd_iter);\n"
-                "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n"
-                "# var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse()); # doesn't needed until now\n"
-                "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n", 
-                act_level, snd_var);
+                "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n");
+        if (strcmp(lx,"nil")) {
+            fprintf(f,
+                "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
+                "fst_iter := fst_iter.leftjoin(reverse(lx));\n");
+        }
+        if (strcmp(rx,"nil")) {
+            fprintf(f,
+                "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
+                "snd_iter := snd_iter.leftjoin(rx);\n");
+        }
     }
     else
     {
         fprintf(f,
-                "# var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse()); # doesn't needed until now\n"
-                "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
-                act_level, snd_var);
+                "# if necessary, we (try to) push leftfetchjoin's below the theta-join\n"
+                "var join_result := htordered_unique_thetajoin(%s, join_item1, %s, join_item2.reverse(), %s);\n"
+                "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
+                "var fst_iter := join_result.mark(0@0).reverse();\n",
+                lx, comp, rx);
     }
+    fprintf(f,
+            "# order_fst isn't needed until now\n"
+            "# (cannot be pushed below the theta-join due to the 'iter := fst_iter;' hereafter)\n"
+            "# var order_fst := fst_iter.leftfetchjoin(inner%03u.reverse());\n"
+            "%s",
+            act_level, order_snd);
+
 
     /* really dirty optimization to speed up xmark query11 */
     if (res->kind == c_var && res->sem.var == snd->child[0]->sem.var)
     {
             fprintf(f,
+                    "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                     "item := order_snd.leftfetchjoin(item%03u);\n"
                     "iter := fst_iter;\n"
 /* NOpos
                     "pos := item.project(1@0);\n"
 */
+                    "# could also be pushed below theta-join, if order_snd wasn't needed for item (above) ...\n"
                     "kind := order_snd.leftfetchjoin(kind%03u);\n",
                     snd_var, snd_var);
             fprintf(f, "} # end of evaluate_join\n");
             return;
     }
+
+
     act_level++;
     fprintf(f, "{  # for-translation\n");
 
@@ -3853,9 +3899,11 @@ evaluate_join (FILE *f, int act_level, int counter, PFcnode_t *args)
     if (var_is_used (snd->child[0]->sem.var, res))
     {
         fprintf(f,
+                "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                 "item := order_snd.leftfetchjoin(item%03u);\n"
                 "iter := item.mark(1@0);\n"
                 "pos := item.project(1@0);\n"
+                "# could also be pushed below theta-join, if order_snd wasn't needed for item (above) ...\n"
                 "kind := order_snd.leftfetchjoin(kind%03u);\n",
                 snd_var, snd_var);
         insertVar (f, act_level, snd->child[0]->sem.var->vid);
