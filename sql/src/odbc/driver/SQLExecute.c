@@ -128,8 +128,8 @@ SQLRETURN SQLExecute( SQLHSTMT  hDrvStmt )
 				column *col = cs->op1.cval;
 				cHdr->pszSQL_DESC_BASE_COLUMN_NAME = strdup(col->name);
 				cHdr->pszSQL_DESC_BASE_TABLE_NAME = strdup(col->table->name);
-				cHdr->pszSQL_DESC_TYPE_NAME = strdup(col->tpe->sqlname);
-				cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup(col->tpe->name);
+				cHdr->pszSQL_DESC_TYPE_NAME = strdup(col->tpe->type->sqlname);
+				cHdr->pszSQL_DESC_LOCAL_TYPE_NAME = strdup(col->tpe->type->name);
 			}
 			cHdr->pszSQL_DESC_LABEL = strdup(column_name(n->data));
 			cHdr->pszSQL_DESC_CATALOG_NAME = strdup("catalog");
