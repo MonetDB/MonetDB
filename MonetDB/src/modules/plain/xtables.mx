@@ -579,8 +579,7 @@ hashing.
      however handle multiple accellerators, so this ain't a real problem for now :)
  */
 						    
-  /* TODO: this _unclustered def. should go!!! */
-#define declare_unclustered int samecluster = -1; /* avoid warning */
+#define declare_unclustered /* avoid warning */
 #define declare_clustered   int samecluster = TRUE;
 
 #define chain_unclustered   for (zz = hash[c]; zz > 0; zz = e->link)
@@ -685,12 +684,12 @@ BAT *CTgroup_@1_@4(BAT *b, BAT *bn, map_T *m){
 	BUN p, q, r;
 	BAT *map;
 	declare_@3
-	declare_@4
  
 	map_init(map,hash,mask,entry,mapsize); 
 
 	/* core hash grouping algorithm */
 	BATloopFast(b, p, q, xx) {
+		declare_@4
 		ptr tcur = BUN@2(b,p);
 
 		/* hash-lookup of 'tcur' in map */
@@ -896,7 +895,6 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 	mapentry_t entry, *e;
 	BAT *map;
 	declare_@4
-	declare_@5
    
 	map_init(map,hash,mask,entry,mapsize); 
 
@@ -905,6 +903,7 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 		ptr tcur = BUN@3(b,p);
 		unsigned int c;
 		oid hcur;
+		declare_@5
 
 		/* find corresponding value in 'ct' */
 		match_@1(ct, BUNhead(b,p), cp); 
@@ -916,13 +915,11 @@ BAT* CTderive_@1_@2_@5(BAT* ct, BAT *b, BAT *bn, map_T *m) {
 		chain_@5 {
 			r = BUNptr(map,zz);
 			e = (mapentry_t*) BUNhloc(map,r);
-			/* if (e->hcur == hcur && @4_EQ(BUN@3(map,r), tcur, @2)) { */
 			if (tst_derive_@5(@4_EQ, BUN@3(map,r), @2)) {
 				if (m == NULL) e->cnt++; 
 				goto found;
 			} 
 		} 
-
 		/* not found-> insert new element in map (and hash) */ 
 		if (m) {
 			zz = mapsize;
