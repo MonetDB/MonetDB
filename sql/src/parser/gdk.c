@@ -1,4 +1,4 @@
-#include <gdk.h>
+#include <stdlib.h>
 #include <string.h>
 
 void* 	GDKmalloc  (size_t size){

@@ -1,8 +1,8 @@
 
+#include "mem.h"
 #include "sql.h"
 #include "symbol.h"
 #include "context.h"
-#include "mem.h"
 
 int symbol_debug = 0;
 

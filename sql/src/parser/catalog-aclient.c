@@ -1,7 +1,7 @@
 
+#include "mem.h"
 #include "catalog.h"
 #include "statement.h"
-#include "mem.h"
 #include "sql.h"
 
 #include <stream.h>

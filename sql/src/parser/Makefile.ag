@@ -39,9 +39,7 @@ bin_sql_client = {
 
 bin_sql_aclient = {
 	SOURCES = sql_aclient.c catalog-aclient.c statement_adump.c \
-		  comm.c comm.h
+		  comm.c comm.h gdk.c gdk.h
 	LIBS = libsql \
-		-L$(MONETDIST)/lib/Monet -lstream \
-		-L$(MONETDIST)/lib -lbat \
-		$(READLINE_LIBS)
+		-L$(MONETDIST)/lib/Monet -lstream $(READLINE_LIBS)
 }

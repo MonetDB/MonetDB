@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "gdk.h"
+#include <gdk.h>
 #include <stdio.h>
 
 #define NEW( type ) (type*)GDKmalloc(sizeof(type) )
