@@ -123,6 +123,8 @@ In order to prevent recursion and result strings of unlimited size, repeating
 is only done iff src is not a substring of dst."
 .COMMAND split( str s, str sep ) : BAT[void,str] = strSplit;
 "Split the string s based on the seperator sep"
+.COMMAND split( str s ) : BAT[void,chr] = chrSplit;
+"Split the string s into separate chrs"
 
 .PRELUDE  = strPrelude;
 .EPILOGUE = strEpilogue;
@@ -1748,6 +1750,20 @@ strSplit(BAT **Res, str s, str sep)
 
 	if (x)
 		GDKfree(x);
+	*Res = res;
+	return GDK_SUCCEED;
+}
+
+int
+chrSplit(BAT **Res, str s)
+{
+	char * d = s;
+	BAT *res = BATnew(TYPE_void, TYPE_chr, BUFSIZ);
+	oid n = oid_nil;
+	if (res == NULL)
+		return GDK_FAIL;
+	while (*d) 
+		BUNins(res, (ptr) &n, (ptr) d++);
 	*Res = res;
 	return GDK_SUCCEED;
 }
