@@ -57,6 +57,7 @@ mal_export str BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 @c
 #include "mal_partitionedQuery.h"
+#include "mal_optimizer.h"
 #include "mal_interpreter.h"    /* for showErrors() */
 extern int BPTfindGrp(int bid);
 extern str BPTreplacement(MalBlkPtr mb, int first, int last, int varid);
@@ -65,11 +66,6 @@ str
 BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i,tpe,limit;
 	(void) stk; (void) pci;
-
-#ifdef DEBUG_MAL_PARTITIONED
-	stream_printf(GDKout,"BPToptimizer\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
-#endif
 
 	limit= mb->vtop;
 	for( i=0; i< limit; i++){
@@ -89,6 +85,7 @@ BPTreplacement(MalBlkPtr mb, int first, int last, int varid){
 	InstrPtr *old,p;
 	int i,limit,actions=0;
 	int idx= -1,bid= -1;
+	int pcf=0,pcl=0;
 	long clk= GDKusec();
 
 	setLifespan(mb);
@@ -113,14 +110,24 @@ BPTreplacement(MalBlkPtr mb, int first, int last, int varid){
 			setFunctionId(p,GDKstrdup("newIterator"));
 			p->barrier= BARRIERsymbol;
 			idx= p->argv[0]= newTmpVariable(mb,TYPE_int);
+			setVarUsed(mb,idx,TRUE);
 			bid= p->argv[1]= newTmpVariable(mb,getVarType(mb,varid));
+			setVarUsed(mb,bid,TRUE);
+			isVarInitialized(mb,bid)=TRUE;
 			p->retc=2;
 			p->argv[2]= varid;
 			p->argc=3;
 			pushInstruction(mb,p);
+			pcf= mb->stop;
 		}
 		pushInstruction(mb,old[i]);
 	}
+	pcl= mb->stop;
+@-
+Before we finalize, we should also check all operations for being applicable 
+to partitions as well. Where necessary they should be replaced by an
+accumulated version.
+@c
 	if(idx>=0 && bid>=0){
 		/* finalize the loop */
 			/* redo (idx,bid):= partitions.hasMoreElements(var); */
@@ -143,10 +150,13 @@ BPTreplacement(MalBlkPtr mb, int first, int last, int varid){
 			p->argc=2;
 			pushInstruction(mb,p);
 	}
-	/* copy rest of program into place */
+	/* copy the rest of the program back into place */
 	for(i=last;i<limit; i++)
 		pushInstruction(mb,old[i]);
 	GDKfree(old);
+
+	/* now replace variable with the alias bid */
+	ARreplaceAlias(mb,pcf,pcl,varid,bid);
 	optimizerCheck(mb,"BPTreplacement",actions,GDKusec()-clk);
 	return MAL_SUCCEED;
 }

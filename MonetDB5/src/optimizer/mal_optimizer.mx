@@ -500,6 +500,7 @@ mal_export void showOptimizerHistory();
 mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export int ARoptimizerStep(MalBlkPtr mb, int pc);
+mal_export void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
 mal_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
