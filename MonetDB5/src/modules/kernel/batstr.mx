@@ -134,18 +134,8 @@ comment "Substitute first occurrence of 'src' by
 
 @+ Implementation
 @c
-@h
-#ifndef __string_H__
-#define __string_H__
-
-#endif /* __string_H__ */
-@}
-
-@{
-@c
 #include <gdk.h>
 #include "ctype.h"
-#include "str.h"
 #include <string.h>
 #include "mal_exception.h"
 #include "../atoms/str.h"
@@ -183,7 +173,7 @@ str STRbat@1(int *ret, int *l)
         x= (@3) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y= @4_nil;
-		else @2(&y,x);
+		else @2(&y,&x);
         bunfastins(bn, h, &y);
     }
 bunins_failed:
