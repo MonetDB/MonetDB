@@ -25,6 +25,15 @@
 
 /* Manual config.h. needed for win32 .  */
 
+#if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
+/* In this case, malloc and friends are redefined in crtdbg.h to debug
+   versions.  We need to include stdlib.h and malloc.h first or else
+   we get conflicting declarations.
+*/
+#include <stdlib.h>
+#include <malloc.h>
+#include <crtdbg.h>
+#endif
 #include <process.h>
 
 #ifndef WIN32
