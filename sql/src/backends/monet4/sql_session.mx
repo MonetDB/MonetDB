@@ -343,8 +343,12 @@ int sqlexecute(context * c, stream *out, Cntxt stk )
 		c->mvc->type = q->type;
 		err = backend_fastpath( (Cntxt)(ptrdiff_t)q->stk, (YYSTREE)q->code, c->args);
 	}
-	if (c->mvc->type == Q_TRANS){
-		if (c->qc) qc_destroy(c->qc); 
+	/* 
+ 	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * and on schema changes 
+	 */
+	if (c->mvc->type == Q_TRANS || c->mvc->type == Q_SCHEMA){
+		if (c->qc) qc_destroy(c->qc);
 		c->qc = qc_create();
 	}
 
