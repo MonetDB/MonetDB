@@ -2,5 +2,4 @@ module("unix");
 
 var SQLprefix := getenv("SQL_PREFIX");
 
-source(SQLprefix+"/share/sql/catalog.mil");
 source(SQLprefix+"/share/sql/sqlserver.mil");

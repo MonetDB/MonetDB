@@ -8,8 +8,7 @@ fi
 
 #Mdestroydb -db sql
 #Mcreatedb -db sql
-#Mserver -db sql ~/data/sql/Linux/share/sql/catalog.mil \
-#		~/data/sql/Linux/share/sql/sqlserver.mil \
+#Mserver -db sql ~/data/sql/Linux/share/sql/sqlserver.mil \
 #		~/data/monet/Linux/share/Monet/mapi.mil 
 
 #sql_client < ~/data/sql/src/benchmarks/tpch/c.sql

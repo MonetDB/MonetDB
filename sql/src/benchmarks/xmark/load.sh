@@ -2,7 +2,7 @@
 
 PWD=`pwd`
 Mserver -db sql \
-	$SQL_PREFIX/share/sql/catalog.mil $MONET_PREFIX/share/Monet/mapi.mil \
+	$MONET_PREFIX/share/Monet/mapi.mil \
 	$SQL_PREFIX/share/sql/sqlserver.mil << EOF
 
 proc input( str tab, str filename ) := {
