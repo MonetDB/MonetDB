@@ -227,7 +227,6 @@ doFile(Mapi mid, const char *file)
 static int
 doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 {
-	int prepared = 0;
 	char *line = NULL;
 	char *buf = NULL;
 	size_t length;
@@ -243,7 +242,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		if (prompt) {
 			if (buf)
 				free(buf);
-			buf = readline(prepared ? "more>" : prompt);
+			buf = readline(hdl ? "more>" : prompt);
 			/* add a newline to the end since that makes
 			   further processing easier */
 			if (buf) {
@@ -259,7 +258,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		{
 #ifndef HAVE_LIBREADLINE
 			if (prompt) {
-				fputs(prepared ? "more>" : prompt, stdout);
+				fputs(hdl ? "more>" : prompt, stdout);
 				fflush(stdout);
 			}
 #endif
@@ -275,7 +274,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			continue;
 
 		if (!linemode ||
-		    (!prepared && length > 0 && line[length - 1] == '\n')) {
+		    (hdl == NULL && length > 0 && line[length - 1] == '\n')) {
 			/* test for special commands */
 			while (length > 0 && isspace((int) *line)) {
 				line++;
@@ -355,13 +354,11 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 			}
 		}
 
-		if (!prepared) {
-			assert(hdl == NULL);
+		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
 			if (mapi_error(mid))
 				break;
-			prepared = 1;
 		}
 		if (length > 0) {
 			assert(hdl != NULL);
@@ -372,12 +369,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode)
 		if ((length == 0 || line[length - 1] == '\n') && linemode) {
 			char *rtrn;
 
+			assert(hdl != NULL);
 			if (mapi_query_done(hdl) == MMORE)
 				continue; /* get more data */
 
 			if (mapi_error(mid))
 				break;
-			prepared = 0;
 
 			while ((rtrn = mapi_fetch_line(hdl)) != 0)
 				fprintf(toConsole, "%s\n", rtrn);
