@@ -1,0 +1,30 @@
+#testing the BAT partition table
+include partitions;
+
+a1:= new(:void,:int);
+setSequenceBase(a1,0@0);
+a2:= new(:void,:int);
+setSequenceBase(a2,10@0);
+a3:= new(:void,:int);
+setSequenceBase(a3,20@0);
+
+barrier (go,i):= newRange(0);
+	insert(a1,nil,i);
+	insert(a2,nil,i);
+	insert(a3,nil,i);
+	redo (go,i):= nextElement(1,10);
+exit (go,i);
+
+# now really add it
+partitions.deposit(a1);
+partitions.deposit(a1,a2);
+partitions.deposit(a1,a3);
+partitions.deposit(a3,a1);
+partitions.dump();
+
+#retrieve a range
+barrier (idx,b):= partitions.newIterator(a1);
+	print(idx);
+	print(b);
+	redo (idx,b):= partitions.hasMoreElements(a1);
+exit (idx,b);
