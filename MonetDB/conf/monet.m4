@@ -141,7 +141,7 @@ X_CFLAGS=''
 X_CXXFLAGS=''
 case $CC-$CXX in
 *gcc-*g++)
-	gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
+	gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
 	dnl  We need more features than the C89 standard offers, but not all
 	dnl  (if any at all) C/C++ compilers implements the complete C99
 	dnl  standard.  Moreover, there seems to be no standard for the
@@ -479,7 +479,7 @@ if test "x$enable_optim" = xyes; then
     dnl  Optimization flags
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
-      gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)[[^0-9]].*$|\1|'`"
+      gcc_ver="`$CC --version | head -1 | sed -e 's|^[[^0-9]]*\([[0-9]][[0-9\.]]*[[0-9]]\)\([[^0-9]].*\)*$|\1|'`"
       case "$host-$gcc_ver" in
       i*86-*-*-3.[[2-9]]*)
                       CFLAGS="$CFLAGS -O6"
