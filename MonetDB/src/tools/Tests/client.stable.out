@@ -1,16 +1,16 @@
 stdout of test 'client` in directory 'src/tools` itself:
 
 
-# 05:51:49 >  
-# 05:51:49 >  Mtimeout -timeout 924 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/mapi.mil
-# 05:51:49 >  
+# 15:15:17 >  
+# 15:15:17 >  Mtimeout -timeout 1260 Mserver -monetrc /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf -db Tests_src_tools /export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/mapi.mil
+# 15:15:17 >  
 
 # Monet Database Server V4.3.3
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# dbfarm:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm
+# dbfarm:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm
 # dbname:Tests_src_tools
-# dbdir:/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools
+# dbdir:/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools
 
 loaded;
 #---------------------------------#
@@ -29,9 +29,9 @@ Try: modules;                - for other modules.
      sigs("<module>")        - for available commands per module.
      help("<command>")       - for help one-liner for a command.
 
-# 05:51:58 >  
-# 05:51:58 >  Mtimeout -timeout 432 MapiClient -everything -prelude client.prelude < client.milC
-# 05:51:58 >  
+# 15:15:26 >  
+# 15:15:26 >  Mtimeout -timeout 600 MapiClient -everything -prelude client.prelude < client.milC
+# 15:15:26 >  
 
 Start of MIL server prelude.
 [ 1 ]
@@ -55,10 +55,12 @@ Start of MIL server prelude.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
+[ "blob",	  2		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  2		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
@@ -78,23 +80,27 @@ Start of MIL server prelude.
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
+[ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "SEEK_CUR",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "SEEK_SET",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "EOF",		  "int",  "liquid",	  "constant",	  "-1"			  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -128,22 +134,22 @@ Start of MIL server prelude.
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -339,6 +345,10 @@ Start of MIL server prelude.
 [ "monet_fcntbl",	  "constant"	  ]
 [ "mapi_params",	  "changeable"	  ]
 [ "_params",		  "changeable"	  ]
+[ "SEEK_END",		  "constant"	  ]
+[ "SEEK_CUR",		  "constant"	  ]
+[ "SEEK_SET",		  "constant"	  ]
+[ "EOF",		  "constant"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -395,6 +405,10 @@ Start of MIL server prelude.
 [ "monet_fcntbl",	  "frozen"	  ]
 [ "mapi_params",	  "liquid"	  ]
 [ "_params",		  "liquid"	  ]
+[ "SEEK_END",		  "liquid"	  ]
+[ "SEEK_CUR",		  "liquid"	  ]
+[ "SEEK_SET",		  "liquid"	  ]
+[ "EOF",		  "liquid"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -451,6 +465,10 @@ Start of MIL server prelude.
 [ "monet_fcntbl",	  "BAT"	  ]
 [ "mapi_params",	  "BAT"	  ]
 [ "_params",		  "BAT"	  ]
+[ "SEEK_END",		  "int"	  ]
+[ "SEEK_CUR",		  "int"	  ]
+[ "SEEK_SET",		  "int"	  ]
+[ "EOF",		  "int"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -501,31 +519,31 @@ Start of MIL server prelude.
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "mapi_params",	  "int",  "int",  1,	  0,	  "dirty",	  "load", "tran", 2	  ]
+[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 2	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  445,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1258,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  483,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1375,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  "str",  "oid",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  11,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_25",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "tmp_26",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
@@ -564,86 +582,86 @@ Start of MIL server prelude.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
 unknown(0)#"                            ]
 #[      3,         2,   running,         0, "listen(get_mapi_port(),5)#"                            ]
-#[     51,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+#[     51,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
 unknown(1)#"                            ]
 #[     52,         3,   running,        51, "queue()#"                            ]
 [ 3 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Thu Jun  7 05:51:50 2001",	  ""				  ]
-[ "monet",	  "Thu Jun  7 05:51:59 2001",	  "clients()"			  ]
-[ "adm",	  "Thu Jun  7 05:51:50 2001",	  "listen(get_mapi_port(),5)"	  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  ""				  ]
+[ "windhouw",	  "Mon Jun 25 15:15:31 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  0	  ]
+[ "user",	  30	  ]
 [ "elapuser",	  0	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env															  #
-# (str)			  (str)															  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"													  ]
-[ "gdk_distr",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28"					  ]
-[ "gdk_monetrc",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"												  ]
-[ "gdk_version",	  "4.3.3"														  ]
-[ "monet_cwd",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "31369"														  ]
-[ "monet_welcome",	  "yes"															  ]
-[ "monet_deamon",	  "yes"															  ]
-[ "monet_prompt",	  "\001\001"														  ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env															  #
-# (str)			  (str)															  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"													  ]
-[ "gdk_distr",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28"					  ]
-[ "gdk_monetrc",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"												  ]
-[ "gdk_version",	  "4.3.3"														  ]
-[ "monet_cwd",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "31369"														  ]
-[ "monet_welcome",	  "yes"															  ]
-[ "monet_deamon",	  "yes"															  ]
-[ "monet_prompt",	  "\001\001"														  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  9	  ]
-[ "majflt",	  45	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
-#-------------------------#
-# BAT:		  mem	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "memincr",	  983040  ]
-[ "arena",	  986944  ]
-[ "ordblks",	  295	  ]
-[ "smblks",	  0	  ]
-[ "hblkhd",	  0	  ]
-[ "hblks",	  0	  ]
-[ "usmblks",	  0	  ]
-[ "fsmblks",	  0	  ]
-[ "uordblks",	  766576  ]
-[ "fordblks",	  220368  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  1085440	  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  397		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  826416	  ]
+[ "fordblks",	  263064	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -655,67 +673,67 @@ unknown(1)#"                            ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Thu Jun  7 05:51:50 2001"	  ]
-[ 1,	  "Thu Jun  7 05:51:59 2001"	  ]
-[ 2,	  "Thu Jun  7 05:51:50 2001"	  ]
+[ 0,	  "Mon Jun 25 15:15:23 2001"	  ]
+[ 1,	  "Mon Jun 25 15:15:31 2001"	  ]
+[ 2,	  "Mon Jun 25 15:15:23 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
-[ 1,	  "monet"	  ]
+[ 1,	  "windhouw"	  ]
 [ 2,	  "adm"		  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  1	  ]
-[ "user",	  0	  ]
+[ "elapsed",	  0	  ]
+[ "user",	  30	  ]
 [ "elapuser",	  0	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env															  #
-# (str)			  (str)															  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"													  ]
-[ "gdk_distr",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28"					  ]
-[ "gdk_monetrc",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"												  ]
-[ "gdk_version",	  "4.3.3"														  ]
-[ "monet_cwd",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "31369"														  ]
-[ "monet_welcome",	  "yes"															  ]
-[ "monet_deamon",	  "yes"															  ]
-[ "monet_prompt",	  "\001\001"														  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  9	  ]
-[ "majflt",	  45	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
-#-------------------------#
-# BAT:		  mem	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "memincr",	  0	  ]
-[ "arena",	  986944  ]
-[ "ordblks",	  304	  ]
-[ "smblks",	  0	  ]
-[ "hblkhd",	  0	  ]
-[ "hblks",	  0	  ]
-[ "usmblks",	  0	  ]
-[ "fsmblks",	  0	  ]
-[ "uordblks",	  765496  ]
-[ "fordblks",	  221448  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  404		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  825352	  ]
+[ "fordblks",	  264128	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -747,10 +765,12 @@ Start of MIL script.
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
-[ "blob",	  1		  ]
+[ "blob",	  2		  ]
+[ "io",		  1		  ]
 [ "kernel",	  1		  ]
 [ "mapi",	  1		  ]
 [ "str",	  2		  ]
+[ "streams",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 [ "unix",	  1		  ]
@@ -770,23 +790,27 @@ Start of MIL script.
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<monet_atomtbl>"	  ]
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "mapi_params",	  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
 [ "_params",		  "BAT",  "liquid",	  "changeable",	  "<mapi_params>"	  ]
+[ "SEEK_END",		  "int",  "liquid",	  "constant",	  "2"			  ]
+[ "SEEK_CUR",		  "int",  "liquid",	  "constant",	  "1"			  ]
+[ "SEEK_SET",		  "int",  "liquid",	  "constant",	  "0"			  ]
+[ "EOF",		  "int",  "liquid",	  "constant",	  "-1"			  ]
 [ "GE",			  "int",  "liquid",	  "constant",	  "2"			  ]
 [ "GT",			  "int",  "liquid",	  "constant",	  "1"			  ]
 [ "LE",			  "int",  "liquid",	  "constant",	  "-2"			  ]
@@ -820,22 +844,22 @@ Start of MIL script.
 [ "monet_atomtbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_26>"		  ]
 [ "adm_acctbl",		  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<monet_acctbl>"	  ]
-[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
+[ "monet_acctbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
 [ "adm_fcntbl",		  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<monet_fcntbl>"	  ]
-[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_23>"		  ]
+[ "monet_fcntbl",	  "BAT",  "frozen",	  "constant",	  "<tmp_25>"		  ]
 [ "monet_mod_drop",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_drop>"	  ]
 [ "monet_mod_load",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_load>"	  ]
 [ "monet_mod_use",	  "BAT",  "frozen",	  "constant",	  "<monet_mod_use>"	  ]
@@ -1031,6 +1055,10 @@ Start of MIL script.
 [ "monet_fcntbl",	  "constant"	  ]
 [ "mapi_params",	  "changeable"	  ]
 [ "_params",		  "changeable"	  ]
+[ "SEEK_END",		  "constant"	  ]
+[ "SEEK_CUR",		  "constant"	  ]
+[ "SEEK_SET",		  "constant"	  ]
+[ "EOF",		  "constant"	  ]
 [ "GE",			  "constant"	  ]
 [ "GT",			  "constant"	  ]
 [ "LE",			  "constant"	  ]
@@ -1087,6 +1115,10 @@ Start of MIL script.
 [ "monet_fcntbl",	  "frozen"	  ]
 [ "mapi_params",	  "liquid"	  ]
 [ "_params",		  "liquid"	  ]
+[ "SEEK_END",		  "liquid"	  ]
+[ "SEEK_CUR",		  "liquid"	  ]
+[ "SEEK_SET",		  "liquid"	  ]
+[ "EOF",		  "liquid"	  ]
 [ "GE",			  "liquid"	  ]
 [ "GT",			  "liquid"	  ]
 [ "LE",			  "liquid"	  ]
@@ -1143,6 +1175,10 @@ Start of MIL script.
 [ "monet_fcntbl",	  "BAT"	  ]
 [ "mapi_params",	  "BAT"	  ]
 [ "_params",		  "BAT"	  ]
+[ "SEEK_END",		  "int"	  ]
+[ "SEEK_CUR",		  "int"	  ]
+[ "SEEK_SET",		  "int"	  ]
+[ "EOF",		  "int"	  ]
 [ "GE",			  "int"	  ]
 [ "GT",			  "int"	  ]
 [ "LE",			  "int"	  ]
@@ -1193,31 +1229,31 @@ Start of MIL script.
 #-------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
 #-------------------------------------------------------------------------------------------------#
-[ "mapi_params",	  "int",  "int",  1,	  0,	  "dirty",	  "load", "tran", 2	  ]
+[ "mapi_params",	  "int",  "str",  1,	  0,	  "dirty",	  "load", "tran", 2	  ]
 [ "monet_acctbl",	  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_atomtbl",	  "str",  "int",  14,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_aut",	  "oid",  "str",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dat",	  "oid",  "str",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_dsc",	  "oid",  "str",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_fcn",	  "oid",  "ptr",  445,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_imp",	  "oid",  "ptr",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_mid",	  "oid",  "oid",  480,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_nme",	  "oid",  "str",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_pro",	  "oid",  "str",  1258,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_sig",	  "oid",  "str",  36,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcn_tpe",	  "oid",  "int",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_fcntbl",	  "str",  "oid",  511,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_atomtbl",	  "str",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_aut",	  "oid",  "str",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dat",	  "oid",  "str",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_dsc",	  "oid",  "str",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_fcn",	  "oid",  "ptr",  483,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_imp",	  "oid",  "ptr",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_mid",	  "oid",  "oid",  527,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_nme",	  "oid",  "str",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_pro",	  "oid",  "str",  1375,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_sig",	  "oid",  "str",  37,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcn_tpe",	  "oid",  "int",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_fcntbl",	  "str",  "oid",  556,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_acc",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_atm",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_cnt",	  "oid",  "int",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_dep",	  "oid",  "str",  1,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_atm",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_cnt",	  "oid",  "int",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_dep",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "monet_mod_drop",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_load",	  "oid",  "str",  4,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_nme",	  "oid",  "str",  10,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "monet_mod_use",	  "oid",  "ptr",  11,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_23",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
-[ "tmp_25",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_load",	  "oid",  "str",  5,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_nme",	  "oid",  "str",  12,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "monet_mod_use",	  "oid",  "ptr",  14,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_23",		  "str",  "int",  2,	  0,	  "dirty",	  "load", "tran", 1	  ]
+[ "tmp_25",		  "str",  "oid",  0,	  0,	  "dirty",	  "load", "tran", 1	  ]
 [ "tmp_26",		  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1	  ]
 #---------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt  #
@@ -1256,86 +1292,86 @@ Start of MIL script.
 ##------------------------------------------------------------------#
 ## req      | tid      | status   | wakeup | action                 #
 ##------------------------------------------------------------------#
-#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+#[      2,         1,   running,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
 unknown(0)#"                            ]
 #[      3,         2,   running,         0, "listen(get_mapi_port(),5)#"                            ]
-#[    135,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003e2b0.
+#[    135,         0,         1,         0, "!ERROR: TBL_getname: inexistent function 0x4003469c.
 unknown(1)#"                            ]
 #[    136,         3,   running,       135, "queue()#"                            ]
 [ 3 ]
 #---------------------------------------------------------------------------------#
 # name		| login				| mil				  #
 #---------------------------------------------------------------------------------#
-[ "adm",	  "Thu Jun  7 05:51:50 2001",	  ""				  ]
-[ "monet",	  "Thu Jun  7 05:51:59 2001",	  "clients()"			  ]
-[ "adm",	  "Thu Jun  7 05:51:50 2001",	  "listen(get_mapi_port(),5)"	  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  ""				  ]
+[ "windhouw",	  "Mon Jun 25 15:15:31 2001",	  "clients()"			  ]
+[ "adm",	  "Mon Jun 25 15:15:23 2001",	  "listen(get_mapi_port(),5)"	  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  2	  ]
-[ "user",	  0	  ]
-[ "elapuser",	  0	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  50	  ]
+[ "elapuser",	  20	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env															  #
-# (str)			  (str)															  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"													  ]
-[ "gdk_distr",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28"					  ]
-[ "gdk_monetrc",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"												  ]
-[ "gdk_version",	  "4.3.3"														  ]
-[ "monet_cwd",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "31369"														  ]
-[ "monet_welcome",	  "yes"															  ]
-[ "monet_deamon",	  "yes"															  ]
-[ "monet_prompt",	  "\001\001"														  ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env															  #
-# (str)			  (str)															  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"													  ]
-[ "gdk_distr",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28"					  ]
-[ "gdk_monetrc",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"												  ]
-[ "gdk_version",	  "4.3.3"														  ]
-[ "monet_cwd",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "31369"														  ]
-[ "monet_welcome",	  "yes"															  ]
-[ "monet_deamon",	  "yes"															  ]
-[ "monet_prompt",	  "\001\001"														  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  9	  ]
-[ "majflt",	  45	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
-#-------------------------#
-# BAT:		  mem	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "memincr",	  0	  ]
-[ "arena",	  986944  ]
-[ "ordblks",	  296	  ]
-[ "smblks",	  0	  ]
-[ "hblkhd",	  0	  ]
-[ "hblks",	  0	  ]
-[ "usmblks",	  0	  ]
-[ "fsmblks",	  0	  ]
-[ "uordblks",	  766616  ]
-[ "fordblks",	  220328  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  398		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  826464	  ]
+[ "fordblks",	  263016	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1347,67 +1383,67 @@ unknown(1)#"                            ]
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Thu Jun  7 05:51:50 2001"	  ]
-[ 1,	  "Thu Jun  7 05:51:59 2001"	  ]
-[ 2,	  "Thu Jun  7 05:51:50 2001"	  ]
+[ 0,	  "Mon Jun 25 15:15:23 2001"	  ]
+[ 1,	  "Mon Jun 25 15:15:31 2001"	  ]
+[ 2,	  "Mon Jun 25 15:15:23 2001"	  ]
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
 #-------------------------#
 [ 0,	  "adm"		  ]
-[ 1,	  "monet"	  ]
+[ 1,	  "windhouw"	  ]
 [ 2,	  "adm"		  ]
 #-------------------------#
 # BAT:		  cpu	  #
 # (str)		  (int)	  #
 #-------------------------#
-[ "elapsed",	  2	  ]
-[ "user",	  0	  ]
+[ "elapsed",	  1	  ]
+[ "user",	  50	  ]
 [ "elapuser",	  0	  ]
 [ "system",	  0	  ]
 [ "elapsystem",	  0	  ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-# BAT:			  env															  #
-# (str)			  (str)															  #
-#-------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_dbfarm",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm"				  ]
-[ "gdk_dbname",		  "Tests_src_tools"													  ]
-[ "gdk_distr",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28"					  ]
-[ "gdk_monetrc",	  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
-[ "gdk_dir",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"		  ]
-[ "gdk_arch",		  "32biti686-pc-linux-gnu"												  ]
-[ "gdk_version",	  "4.3.3"														  ]
-[ "monet_cwd",		  "/export/scratch1/monet/tmp/monet.GNU_32-d.17473/monet/.GNU_32-d/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
-[ "monet_pid",		  "31369"														  ]
-[ "monet_welcome",	  "yes"															  ]
-[ "monet_deamon",	  "yes"															  ]
-[ "monet_prompt",	  "\001\001"														  ]
+#-----------------------------------------------------------------------------------------------------------------#
+# BAT:			  env											  #
+# (str)			  (str)											  #
+#-----------------------------------------------------------------------------------------------------------------#
+[ "gdk_dbfarm",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm"					  ]
+[ "gdk_dbname",		  "Tests_src_tools"									  ]
+[ "gdk_distr",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28"						  ]
+[ "gdk_monetrc",	  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/share/Monet/monet.Mtest.conf"	  ]
+[ "gdk_dir",		  "/ufs/windhouw/monet/Linux2.4.2-0.1.28/dbfarm/Tests_src_tools"			  ]
+[ "gdk_arch",		  "32biti686-pc-linux-gnu"								  ]
+[ "gdk_version",	  "4.3.3"										  ]
+[ "monet_cwd",		  "/export/scratch1/windhouw/monet/Linux2.4.2-0.1.28/Tests/src/tools"			  ]
+[ "monet_pid",		  "2766"										  ]
+[ "monet_welcome",	  "yes"											  ]
+[ "monet_deamon",	  "yes"											  ]
+[ "monet_prompt",	  "\001\001"										  ]
 #-------------------------#
 # BAT:		  io	  #
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  9	  ]
-[ "majflt",	  45	  ]
+[ "minflt",	  7	  ]
+[ "majflt",	  34	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  0	  ]
 [ "ninvcsw",	  0	  ]
-#-------------------------#
-# BAT:		  mem	  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "memincr",	  0	  ]
-[ "arena",	  986944  ]
-[ "ordblks",	  301	  ]
-[ "smblks",	  0	  ]
-[ "hblkhd",	  0	  ]
-[ "hblks",	  0	  ]
-[ "usmblks",	  0	  ]
-[ "fsmblks",	  0	  ]
-[ "uordblks",	  765536  ]
-[ "fordblks",	  221408  ]
+#---------------------------------#
+# BAT:		  mem		  #
+# (str)		  (int)		  #
+#---------------------------------#
+[ "memincr",	  0		  ]
+[ "arena",	  1089480	  ]
+[ "ordblks",	  405		  ]
+[ "smblks",	  0		  ]
+[ "hblkhd",	  0		  ]
+[ "hblks",	  0		  ]
+[ "usmblks",	  0		  ]
+[ "fsmblks",	  0		  ]
+[ "uordblks",	  825384	  ]
+[ "fordblks",	  264096	  ]
 #-------------------------#
 # BAT:	  thread	  #
 # (int)	  (str)		  #
@@ -1418,11 +1454,11 @@ unknown(1)#"                            ]
 #~EndVariableOutput~#
 End of MIL script.
 
-# 05:52:02 >  
-# 05:52:02 >  Mtimeout -timeout 432 Mshutdown
-# 05:52:02 >  
+# 15:15:34 >  
+# 15:15:34 >  Mtimeout -timeout 600 Mshutdown
+# 15:15:34 >  
 
-connection= bezaan:52324
+connection= landvast:53714
 template= shutdown;
 query= shutdown;
 Error text= !terminating connection
@@ -1430,7 +1466,7 @@ Error text= !terminating connection
 Reply= 
 # shutdown finished
 
-# 05:52:02 >  
-# 05:52:02 >  Done.
-# 05:52:02 >  
+# 15:15:34 >  
+# 15:15:34 >  Done.
+# 15:15:34 >  
 
