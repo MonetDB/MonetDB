@@ -516,8 +516,8 @@ void DESCclean(BAT* b) {
 #define PERSISTENT_TYPE(fcn, col, tpe)\
 	if (tpe != TYPE_bat && (BATatoms[tpe].atomUnfix||BATatoms[tpe].atomFix)) {\
 		GDKerror("%s: %s[%s,%s] has transient %s type.\n", \
-		    fcn, b->batId, ATOMname(b->htype), ATOMname(b->ttype), col);\
-		return b;\
+		    fcn, BBP_logical(b->batCacheid), ATOMname(b->htype), ATOMname(b->ttype), col);\
+		return NULL;\
 	}
 
 BAT *BATsave(BAT *bd) {
@@ -527,8 +527,12 @@ BAT *BATsave(BAT *bd) {
 	BAT *b = bd;
 	
 	BATcheck(b, "BATsave"); 
-	if (VIEWparent(b) || !BATdirty(b)) {
-		return b; 
+	if (VIEWparent(b)) {
+		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BBP_logical(b->batCacheid), BBP_logical(VIEWparent(b)));
+		return NULL;
+	}
+	if (!BATdirty(b)) {
+		return b;
 	}
 	if (b->batCacheid < 0) {
 		b = BATmirror(b);

@@ -2822,19 +2822,6 @@ the fetch.
 #define NOID(x)		((oid)(x))
 #define NOID_AGGR(x)	NOID_MULT(AGGR_MAGIC,x)
 #define NOID_MULT(x,y)	NOID( (lng)(y)*(lng)(x) )
-@
-@- BAT inline routines
-The following inline routines are (were) used  heavily in the
-dictionary code base for loaded functions. They may be of general
-use.
-@h
-#define BUNtailfnd(tp,  bt, bn, vl)                              \
-                  ((bn=BUNfnd(bt, vl))?(tp *) BUNtail(bt,bn):0)
-#define BUNtailptr(tp,  bt, bn, id)                              \
-                  ((tp *) BUNtail(bt, (bn=BUNptr(bt, id))))
-#define BUNheadptr(tp,  bt, bn, id)                              \
-                  ((tp *) BUNhead(bt, (bn=BUNptr(bt, id))))
-
 @}
 
 

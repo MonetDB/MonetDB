@@ -42,6 +42,8 @@ vice versa.
 #include "monet.h"
 #include <assert.h>
 
+#define BUNtailfnd(tp,  bt, bn, vl)	((bn=BUNfnd(bt, vl))?(tp *) BUNtail(bt,bn):0)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,6 +131,8 @@ m_export void
 TBL_Install_Accelerator(
   oid mid,
   str name);
+
+m_export void TBL_Install_DropRefs(oid mid, bat* batrefs);
 
 /* I think the types from parsing are only availiable as strings
    so we better input them as such */
@@ -1123,15 +1127,15 @@ int TBL_M_client_install(Client client, oid mid) {
 	hash_t i;
 	int aid, j;
 	oid fid;
-	BUN b;
+	BUN r;
 
 	dlPRINT("  TBL_M_client_install");
 
 	/* Install all atoms in user atomtbl.
 	 */
 	(void) BATprepareHash(TBL_mod_atm); 
-	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, &mid, b) {
-		nme = BUNtailptr(char, TBL_mod_atm, b, i);
+	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, &mid, r) {
+		nme = (char *) BUNtail(TBL_mod_atm, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
 		s[j] = 0;
 		if ((aid = ATOMindex(s)) < 0) {
@@ -1144,8 +1148,8 @@ int TBL_M_client_install(Client client, oid mid) {
 	/* Install all accelerators in user acctble
 	 */
 	(void) BATprepareHash(TBL_mod_acc); 
-	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, &mid, b) {
-		nme = BUNtailptr(char, TBL_mod_acc, b, i);
+	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, &mid, r) {
+		nme = (char *) BUNtail(TBL_mod_acc, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
 		s[j] = 0;
 		if ((aid = ACCindex(s)) < 0) {
@@ -1158,10 +1162,10 @@ int TBL_M_client_install(Client client, oid mid) {
 	/* Install all functions and operations in user fcntbl.
 	 */
 	(void) BATprepareHash(fcn_mid);
-	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, b) {
-		fid = *BUNtailptr(oid, fcn_mid, b, i);
+	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
+		fid = * (oid *) BUNtail(fcn_mid, r);
 		BUNins(client->fcntbl, 
-			BUNtailfnd(char, TBL_fcn_nme, b, &fid), &fid);
+			BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid);
 	}
 	return 1;
 }
@@ -1186,6 +1190,16 @@ int TBL_M_directloaded(Client client, oid mid, str module) {
 		GDKwarning("TBL_M_directloaded: %s relative refcounts are wrong (%d!=%d)!\n", module, zz, yy);
 
 	return FALSE;
+}
+
+static int TBL_M_clientrefs(oid mid, Client c) {
+	int xx, yy=0;
+	BUN p, q;
+
+	BATloopFast(TBL_mod_use, p, q, xx)
+		if (*(oid*)BUNhloc(TBL_mod_use,p) == mid && *(Client *) BUNtloc(TBL_mod_use, p) == c)
+			yy++;
+	return yy;
 }
 
 int TBL_M_countref(oid mid) {
@@ -1351,9 +1365,9 @@ static int unloadmod_exit(int ret, Client father, int *tpes, int *accs) {
 	return ret;
 }
 
-static unloadmod_bat(BAT* b, oid mid) {
+static int unloadmod_bat(BAT* b, oid mid) {
 	int xx, yy = 0;
-	if (BBP_refs(b->batCacheid) > 1) {
+	if (BBP_refs(b->batCacheid) > 0) {
 		BUN p, q;
 		BATloopFast(TBL_mod_drop, p, q, xx) {
 			if (*(oid*) BUNhloc(TBL_mod_drop,p) == mid &&
@@ -1362,7 +1376,7 @@ static unloadmod_bat(BAT* b, oid mid) {
 				yy++;
 			}
 		}
-		return MAX(0, (BBP_refs(b->batCacheid) - yy) - 1); 
+		return MAX(0, BBP_refs(b->batCacheid) - yy); 
 	}
 	return BBPreclaim(b);
 }
@@ -1387,7 +1401,7 @@ static int unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int na
 	/* Go through the entire BBP, looking for soon obsolete types and accelerators */
 	BBPlock("drop"); /* wait for all unloads to finish and block all trims and BAT load decisions */
         for(i=1; i < BBPsize; i++) {
-		if (BBPfix(i)) {
+		if (BBP_logical(i)) {
                 	BAT *b = (BBP_status(i)&BBPLOADING)?BBPdescriptor(i):BBP_cache(i);
 			if (b == NULL) continue; /* if not loaded; it is not a problem.. */ 
 
@@ -1427,7 +1441,6 @@ static int unloadmod_check_use(oid mid, str module, int ntpes, int *tpes, int na
 					return -1; /* will not be able to drop module */
 				}
 			}
-			BBPunfix(i);
 		}
         }
 	/* OK: drop can go through.*/
@@ -1497,7 +1510,7 @@ preparation phase (only meaningful for C-modules) */
 	/* find out which atoms and accelerators belong to it */
 	(void) BATprepareHash(TBL_mod_atm); 
 	HASHloop_oid(TBL_mod_atm, TBL_mod_atm->hhash, i, &mid, r) {
-		nme = BUNtailptr(char, TBL_mod_atm, r, i);
+		nme = (char *) BUNtail(TBL_mod_atm, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
 		s[j] = 0;
 		r = (char *) BUNfnd(father->atomtbl, s);
@@ -1508,7 +1521,7 @@ preparation phase (only meaningful for C-modules) */
 	}
 	(void) BATprepareHash(TBL_mod_acc); 
 	HASHloop_oid(TBL_mod_acc, TBL_mod_acc->hhash, i, &mid, r) {
-		nme = BUNtailptr(char, TBL_mod_acc, r, i);
+		nme = (char *) BUNtail(TBL_mod_acc, r);
 		for(j=0; nme[j] && nme[j] != '='; j++) s[j] = nme[j];
 		s[j] = 0;
 		r = (char *) BUNfnd(father->atomtbl, s);
@@ -1524,24 +1537,26 @@ check if the C-module is physically dropped that none of its atoms or accelerato
 		return unloadmod_exit(level, level?NULL:father, accs, tpes); /* NO GO */
 	}
 @-
-drop will go through; delete all the C-modules's atoms, accelerators and functions 
-@c
-	for(j=0; j<ntpes; j++)
-		BUNdelHead(father->atomtbl, tpes+j);
-	for(j=0; j<naccs; j++)
-		BUNdelHead(father->atomtbl, accs+j);
-
-	(void) BATprepareHash(fcn_mid);
-	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
-		fid = *BUNtailptr(oid, fcn_mid, r, i);
-		BUNfndOID(r,fcntbl, &fid);
-		assert(r);
-		BUNdelete(fcntbl, r);
-	}
-@-
 decrease the refount of the module. we are ready if it isn't zero (LOGICAL DROP).
 @c
 	refcnt = TBL_M_decref(father, mid);
+@-
+drop will go through; delete all the C-modules's atoms, accelerators and functions 
+@c
+	if (TBL_M_clientrefs(mid, client) == 0) {
+		for(j=0; j<ntpes; j++)
+			BUNdelHead(father->atomtbl, tpes+j);
+		for(j=0; j<naccs; j++)
+			BUNdelHead(father->atomtbl, accs+j);
+
+		(void) BATprepareHash(fcn_mid);
+		HASHloop_oid(fcn_mid, fcn_mid->hhash, i, &mid, r) {
+			fid = * (oid *) BUNtail(fcn_mid, r);
+			BUNfndOID(r,fcntbl, &fid);
+			assert(r);
+			BUNdelete(fcntbl, r);
+		}
+	}
 	if (refcnt > 0) 
 		return unloadmod_exit(level, level?NULL:father, accs, tpes);
 @- 
@@ -1687,8 +1702,8 @@ Try to resolve the function to an address.
 	    HASHloop_str(fcntbl, fcntbl->hhash, i, name) 
 	{
 		int j=0, tpe;
-		BUN p;
-		oid fid = *BUNtailptr(oid, fcntbl, p, i);
+		BUN p = BUNptr(fcntbl, i);
+		oid fid = * (oid *) BUNtail(fcntbl, p);
 
 		BUNfndOID(p,TBL_fcn_tpe,&fid);
 		tpe = *(int*) BUNtloc(TBL_fcn_tpe,p);
@@ -2048,7 +2063,6 @@ Like TBL_search, but intened to do lookup for iterators.
 void *TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv){
 	paramcheck_t pt;
         Client  c;
-	char *v;
 	hash_t i;
  
         CNTXTclient(stk, &c);
@@ -2058,7 +2072,8 @@ void *TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv){
 	if (TBL_checkparams_init(&pt, argc, argv, BATmirror(c->atomtbl)) >= 0)
 		HASHloop_str(c->fcntbl, c->fcntbl->hhash, i, name) 
 	{
-		oid fid = *BUNtailptr(oid, c->fcntbl, v, i);
+		char *v = BUNptr(c->fcntbl, i);
+		oid fid = * (oid *) BUNtail(c->fcntbl, v);
 		int tpe = *BUNtailfnd(int, TBL_fcn_tpe, v, &fid);
 
 		if (tpe != TOK_ITERATOR) continue;
@@ -2643,7 +2658,8 @@ void TBL_Install_Function_Res(oid fid, str tpe) {
 
 /* Use the output of the prelude function to register BAT hotfixes required by the module */
 void TBL_Install_DropRefs(oid mid, bat* batrefs) {
-	if (batrefs) 
+	if (batrefs == NULL)
+		return;
 	while(*batrefs) {
 		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(%ld,%s)\n", (long) mid, BBP_logical(*batrefs));
 		BUNins(TBL_mod_drop, &mid, batrefs); 
