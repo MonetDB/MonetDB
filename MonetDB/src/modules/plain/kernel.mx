@@ -711,10 +711,8 @@ int CMDthreadcnt(Cntxt stk, YYSTREE lt, ValPtr res){
 		GDKerror("CMDfork: cannot execute in -embedded mode.\n");
 		return -1;
 	} else
-	if( monet_forks > 0 && GDKprotected ==0){
-		printf("threadcnt need protected entry\n");
-		monet_forks++;
-	} 
+	if( monet_forks > 0 && GDKprotected ==0)
+		protectMonet(TRUE);
 	@:builtin_args(1)@;
 	@:builtin_operand(0, TYPE_int, i)@
 	res->vtype = TYPE_int;
