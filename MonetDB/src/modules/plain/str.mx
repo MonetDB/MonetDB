@@ -648,6 +648,7 @@ int strIconv( str *res, str org, str f, str t)
 		GDKerror("String convertion failed from (%s) to (%s)\n", f, t);
 		return GDK_FAIL;
 	}
+	*r = 0;
 	iconv_close(cd);
 	return GDK_SUCCEED;
 }
