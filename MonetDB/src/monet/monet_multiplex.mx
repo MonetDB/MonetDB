@@ -140,9 +140,9 @@ void bulkerror_format(bulkerror_t *bulkerror, int tpe, ptr val) {
 void bulkerror_finish(bulkerror_t *bulkerror, str fcn_nme) { 
 	GDKsetbuf(bulkerror->bak);
 	if (bulkerror->cnt > 0) {
-		GDKwarning("%s: %d times inserted nil due to errors at tuples %s.\n",
+		GDKerror("%s: %d times inserted nil due to errors at tuples %s.\n",
 			fcn_nme, bulkerror->cnt, bulkerror->where);
-		GDKwarning("%s: first error was: %s", fcn_nme, bulkerror->first);
+		GDKerror("%s: first error was:\n%s", fcn_nme, bulkerror->first);
 	}	
 }
 
@@ -527,7 +527,7 @@ Do simply an update for [+=]() kind of operations.
 	}
 	res->vtype = TYPE_bat;
 	res->len = 0;
-	return 0;
+	return (desc.bulkerror.cnt > 0) ? -1 : 0;
 }
 
 @- 
@@ -891,7 +891,7 @@ bunins_failed:
 	res->val.bval = retb->batCacheid;
 	res->vtype = TYPE_bat;
 	res->len = 0;
-	return 0;
+	return (bulkerror.cnt > 0) ? -1 : 0;
 }
 
 @- Optimized Multiplex Operators: Ordered Unique case
@@ -1116,7 +1116,7 @@ bunins_failed:
         res->val.bval = retb->batCacheid;
         res->vtype = TYPE_bat;
 	res->len = 0;
-	return 0;
+	return (bulkerror.cnt > 0) ? -1 : 0;
 }
 
 @- Optimized Special Multiplex Operators
@@ -1701,7 +1701,7 @@ bunins_failed:
 	if (ret_val < 0) {
 		BBPreclaim(ret);
 	}
-	return ret_val;
+	return (bulkerror.cnt > 0) ? -1 : ret_val;
 }
 
 @- quick bunins
