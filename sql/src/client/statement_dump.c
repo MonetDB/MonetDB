@@ -503,8 +503,8 @@ int statement_dump( statement *s, int *nr, context *sql ){
 		if (s->op2.stval){
 			int l = statement_dump( s->op2.stval, nr, sql );
 			len += snprintf( buf+len, BUFSIZ, 
-			"s%d := mvc_bind(myc, %ld).delete(s%d);\n", 
-			*nr, s->op1.cval->id, l);
+			"s%d := mvc_delete(myc, oid(%ld), s%d);\n", 
+			*nr, s->op1.cval->table->id, l);
 		} else {
 			len += snprintf( buf+len, BUFSIZ, 
 			"s%d := mvc_bind(myc, %ld).clear();\n",

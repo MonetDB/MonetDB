@@ -341,3 +341,35 @@ void mvc_fast_insert( mvc *c, char *insert_string ){
 	    	}
 	}
 }
+
+void mvc_delete( mvc *c, oid tid, oid rid ){
+	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
+	BUN p,q;
+
+	BATloop(columns, p, q ){
+		oid cid = *(oid*)BUNhead(columns,p);
+		BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
+				BUNfnd(c->column_bat, (ptr)&cid)));
+
+		BUNdelHead(b,  (ptr)&rid );
+	}	
+}
+
+void mvc_delete_bat( mvc *c, oid tid, BAT *rids ){
+	BAT *columns = BATselect(c->column_table, (ptr)&tid, (ptr)&tid);
+	BUN p,q;
+
+	/* bats should be void, ie. first translate the rids to 
+	 * positions then use deletes of positions 
+	 */
+	printf("mvc_delete_bat %ld \n", tid);
+	BATprint(rids);
+
+	BATloop(columns, p, q ){
+		oid cid = *(oid*)BUNhead(columns,p);
+		BAT *b = BATdescriptor(*(bat*)BUNtail(c->column_bat,
+				BUNfnd(c->column_bat, (ptr)&cid)));
+
+		BATdel(b,  rids );
+	}	
+}
