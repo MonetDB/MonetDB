@@ -502,6 +502,8 @@ char *script = NULL;
 
 extern void script_start( );
 extern void script_concat( int );
+/*<LOAD,DROP>"#"            { while (yyinput() != '\n'); return yylex();  }
+*/
 %}
 %p 3400 
 %a 2300 
@@ -528,7 +530,6 @@ YY_SPACE    	[\t\n ]*
 <LOAD,DROP>"#line"        { char line[1024], *p=line;
                             while ((*p = yyinput()) != '\n') p++;
                             check_lineno(line); return yylex();         }
-<LOAD,DROP>"#"            { while (yyinput() != '\n'); return yylex();  }
 <LOAD,DROP>{YY_SPACE}     { script_concat( yytext[0] );                 }
 <LOAD,DROP>.              { script_concat( yytext[0] );                 }
 
