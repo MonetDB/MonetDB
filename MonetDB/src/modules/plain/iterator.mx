@@ -187,10 +187,11 @@ that language.
 The data part of a stream consists of a BAT that contains the current result tuples,
 and an operator-specific handle.
 @c
-typedef BAT*   (*BATfcn)(/* ITER* */);
-typedef int    (*NEXTfcn)(/* ITER* */);
-typedef void   (*FREEfcn)(/* ITER* */);
-typedef int    (*GUESSfcn)(/* ITER* */);
+typedef struct _ITER ITER;
+typedef BAT*   (*BATfcn)(ITER *, BAT *);
+typedef int    (*NEXTfcn)(ITER *);
+typedef void   (*FREEfcn)(ITER *);
+typedef int    (*GUESSfcn)(ITER *);
 
 typedef union {                 
     ScanHandle scan;
@@ -599,7 +600,7 @@ int JoinGuess(ITER *it) {
     if (it->next == JoinNextVoid) {
 	return (int) lsize;
     }
-    return (int) lsize/MAX(div, ((flt) outer->tuples_seen) / MAX(1,it->tuples_seen));
+    return (int) (lsize/MAX(div, ((flt) outer->tuples_seen) / MAX(1,it->tuples_seen)));
 }
 
 int iter_join(iter *res, iter *input, BAT *inner) {
@@ -729,15 +730,16 @@ BATfcn groupby_fcn(str aggr, int valtpe, int grptpe) {
 @:groupby_grptpe(@1,dbl)@
 
 BATfcn groupby_fcn_@1(int valtpe, int grptpe) {
+    BATfcn f = NULL;
     switch(valtpe) {
-    case TYPE_chr: return groupby_fcn_@1_chr(grptpe);
-    case TYPE_sht: return groupby_fcn_@1_sht(grptpe);
-    case TYPE_int: return groupby_fcn_@1_int(grptpe);
-    case TYPE_flt: return groupby_fcn_@1_flt(grptpe);
-    case TYPE_lng: return groupby_fcn_@1_lng(grptpe);
-    case TYPE_dbl: return groupby_fcn_@1_dbl(grptpe);
+    case TYPE_chr: f = groupby_fcn_@1_chr(grptpe); break;
+    case TYPE_sht: f = groupby_fcn_@1_sht(grptpe); break;
+    case TYPE_int: f = groupby_fcn_@1_int(grptpe); break;
+    case TYPE_flt: f = groupby_fcn_@1_flt(grptpe); break;
+    case TYPE_lng: f = groupby_fcn_@1_lng(grptpe); break;
+    case TYPE_dbl: f = groupby_fcn_@1_dbl(grptpe); break;
     }
-    return NULL;
+    return f;
 }
 
 @= groupby_grptpe
@@ -747,12 +749,13 @@ BATfcn groupby_fcn_@1(int valtpe, int grptpe) {
 @:groupby_hash(@1,@2,any,tail)@
 
 BATfcn groupby_fcn_@1_@2(int grptpe) {
+    BATfcn f = groupby_@1_@2_any;
     switch(grptpe) {
-    case TYPE_chr: return groupby_@1_@2_char;
-    case TYPE_sht: return groupby_@1_@2_short;
-    case TYPE_int: return groupby_@1_@2_int;
+    case TYPE_chr: f = groupby_@1_@2_char; break;
+    case TYPE_sht: f = groupby_@1_@2_short; break;
+    case TYPE_int: f = groupby_@1_@2_int; break;
     }
-    return groupby_@1_@2_any;
+    return f;
 }
 
 @- hash-lookup
