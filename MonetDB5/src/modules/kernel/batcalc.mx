@@ -665,6 +665,7 @@ str CMDbat@1init(int *ret, int *l, @1 *cst) {
 	}
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst, (size_t) BATcount(left));
+	BBPunfix(left->batCacheid);
 	*ret= dst->batCacheid;
 	return MAL_SUCCEED;
 }
