@@ -232,43 +232,18 @@ BAT *BATreplace(BAT *b, BAT *n) {
 The @%BATmark@ operation is normally used to prepare a class of query
 results. Likewise, @%BATnumber@ is heavily used in the SQL front-end.
 @c
-#define BUNmark(bx, hx, tx) bunfastins_nocheck(bn, r, hx, NULL, yy); r += yy; 
 BAT *BATmark(BAT *b, oid oid_base) {
         BAT     *bn;
  
         BATcheck(b, "BATmark");
-	if (BATrestricted(b) == BAT_READ) {
-		bn = VIEWhead(b);
-	} else if (oid_base == oid_nil) {
-		return BATconst(b, TYPE_oid, (ptr)&oid_base);
-	} else {
-		size_t xx;
-		if (b->htype == TYPE_void) {
-			oid *base, cur = oid_base; 
-			bn = BATnew(TYPE_void, TYPE_oid, xx=BATcount(b)); 
-			if (bn == NULL) return NULL;
-			bn->batBuns->free += xx*sizeof(oid);
-			for(base=(oid*) BUNfirst(bn); xx--; cur++,base++) 
-				*base = cur; 
-		} else {
-			BUN r;
-			int yy;
-			bn = BATnew(b->htype, TYPE_void, BATcount(b)); 
-			if (bn == NULL) return NULL;
-			r = BUNfirst(bn);
-			yy = BUNsize(bn);
-			@:updateloop(bn,b,BUNmark)@
-		}
-		ALIGNsetH(bn,b);
-		bn->tsorted = GDK_SORTED;
-		bn->tdense = TRUE;
-		BATkey(BATmirror(bn), TRUE);
+	bn = VIEWhead(b);
+	if (bn && BATrestricted(b) != BAT_READ) {
+		BAT *v = bn;
+		bn = BATcopy(v);
+		BBPreclaim(v);
 	}
-	BATseqbase(BATmirror(bn), oid_base);
+	if (bn) BATseqbase(BATmirror(bn), oid_base);
         return bn;
-bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 #define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, yy); r += yy; i++;
