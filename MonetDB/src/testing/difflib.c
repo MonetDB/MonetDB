@@ -500,15 +500,15 @@ int lwc_diff2html (char *old_fn, char *new_fn,
 */
       fprintf(html_fp,"<HTML>\n<BODY BGCOLOR=#ffffff TEST=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>\n");
       fprintf(html_fp,"<CENTER>\n<TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=1>\n");
-      fprintf(html_fp,"<CAPTION><FONT FACE='helvetica, arial'><B>%s<B/></FONT></CAPTION>\n",caption);
+      fprintf(html_fp,"<CAPTION><FONT FACE='helvetica, arial'><B>%s</B></FONT></CAPTION>\n",caption);
       fprintf(html_fp,"<TR>");
       if(!new_fn)
         fprintf(html_fp,"<TH>&nbsp;</TH>");
-      fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A></FONT></TH>"
+      fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A></CODE></FONT></TH>"
                      ,filename(old_fn),filename(old_fn),revision);
       fprintf(html_fp,"<TH>&nbsp;</TH>");
       if(new_fn)
-        fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A></FONT></TH>"
+        fprintf(html_fp,"<TH><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A></CODE></FONT></TH>"
                        ,new_fn,new_fn);
       fprintf(html_fp,"</TR>\n");
       fprintf(html_fp,"<TR><TH COLSPAN=3 ALIGN=CENTER>No differences.</TH></TR>\n");
@@ -537,7 +537,7 @@ int lwc_diff2html (char *old_fn, char *new_fn,
     {
       if(!strncmp(line,"--- ",4)) old=strdup(line+4);
       else if(!strncmp(line,"+++ ",4)) new=strdup(line+4);
-      else fprintf(html_fp,"<TR><TD COLSPAN=7><FONT SIZE=1 COLOR=#000000><CODE>%s</FONT></TD></TR>\n",HTMLsave(line));
+      else fprintf(html_fp,"<TR><TD COLSPAN=7><FONT SIZE=1 COLOR=#000000><CODE>%s</CODE></FONT></TD></TR>\n",HTMLsave(line));
       ok=fgets(line,BUFLEN,lwc_diff_fp); line[strlen(line)-1]='\0';
     }
   old_time=strchr(old,'\t')+1; *strchr(old,'\t')='\0';
@@ -546,10 +546,10 @@ int lwc_diff2html (char *old_fn, char *new_fn,
   if (!strcmp(strrchr(old,'.'),".cp"))	*strrchr(old,'.')='\0';
   if (!strcmp(strrchr(new,'.'),".cp"))	*strrchr(new,'.')='\0';
 #endif
-  fprintf(html_fp,"<TR><TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A>\t%s</FONT></TH>"
+  fprintf(html_fp,"<TR><TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A>\t%s</CODE></FONT></TH>"
                  ,filename(old),filename(old_fn),revision,old_time);
   fprintf(html_fp,"<TH>&nbsp;</TH>");
-  fprintf(html_fp,"<TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A>\t%s</FONT></TH></TR>\n"
+  fprintf(html_fp,"<TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A>\t%s</CODE></FONT></TH></TR>\n"
                  ,new,new_fn,new_time);
   free(old); free(new);
   while(ok)
@@ -560,13 +560,13 @@ int lwc_diff2html (char *old_fn, char *new_fn,
       oln=atoi(olns); nln=atoi(nlns);
       if((oln>1)&&(nln>1))
         {
-          fprintf(html_fp,"<TR><TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
+          fprintf(html_fp,"<TR><TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
           fprintf(html_fp,"<TD>&nbsp;</TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD>");
-          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</FONT></TD></TR>\n");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
+          fprintf(html_fp,"<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD></TR>\n");
         }
       for(i=0;i<5;i++) clr[i]=0;
       orn=nrn=0;
