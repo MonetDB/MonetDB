@@ -68,7 +68,7 @@ extern void bm_commit( struct bm *bm, int tid );
 extern void bm_abort( struct bm *bm, int tid );
 extern int bm_version( struct bm *bm);
 
-extern oid bm_add_bat(struct bm *bm, oid bid, char *name, int version,int pers);
+extern oid bm_add_bat(struct bm *bm, oid bid, char *name, int version);
 extern void bm_del_bat(struct bm *bm, oid lbid);
 extern void bm_new_version(struct bm *bm, oid lbid, int version );
 extern void bm_new_bat(struct bm *bm, oid lbid, oid bid );
@@ -539,15 +539,14 @@ void bm_new_bat(bm *bm, oid lbid, oid bid )
 	BUNreplace(bm->bat_mode, (ptr)&vid, &mode);
 }
 
-oid bm_add_bat(bm *bm, oid bid, char *name, int version, int persistent)
+oid bm_add_bat(bm *bm, oid bid, char *name, int version)
 {
 	oid lbid = bm_find_bat(bm, name);
 
 	if (!lbid){
 		lbid = bm->lbid++;
 		bm_add_bat_intern(bm, lbid, bid, name, version, BM_WRITE);
-		if (persistent)
-			bat_rename(bid, name, version, BM_WRITE);
+		bat_rename(bid, name, version, BM_WRITE);
 	} else {
 		bm_new_bat(bm, lbid, bid);
 		bm_new_version(bm, lbid, version);

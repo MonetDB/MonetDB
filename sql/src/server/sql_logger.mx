@@ -288,7 +288,7 @@ static void log_read_create(logger *logger, logformat *l, char *name )
 				,name,ha,ta,ht,tt);
 			return;
 		}
-		bm_add_bat(logger->bm, b->batCacheid, name, logger->tid, 1);
+		bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
 		bat_destroy(b);
 	}
 	if (buf) _DELETE(buf);
@@ -569,7 +569,7 @@ oid log_bat_persists(logger *logger, BAT *b, char *name )
 	logformat l;
 	int havevoid = 0;
 
-	oid lbid = bm_add_bat(logger->bm, b->batCacheid, name, logger->tid, 1);
+	oid lbid = bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
 	l.flag = SQL_LOG_CREATE;
 	l.nr = 0;
 	logger->changes++;
