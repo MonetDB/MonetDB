@@ -173,6 +173,14 @@ Some explanation of what mem_usage() and vm_usage() display:
 	"List the values of all environment variables"
 .COMMAND view_gdk_thread( ): BAT[int,str] = view_gdk_thread; 
 	"Pseudo bat to map thread to name"
+@- ATOM table status
+@m
+.COMMAND view_atom_name() : BAT[int,str] = view_atom_name;
+	"Global type table names"
+.COMMAND view_atom_align() : BAT[int,int] = view_atom_align;
+	"Global type table alignment property"
+.COMMAND view_atom_size() : BAT[int,int] = view_atom_size;
+	"Global type table sizement property"
 
 @- Monet Client Data
 @m
@@ -288,24 +296,9 @@ Some explanation of what mem_usage() and vm_usage() display:
 	"list all loaded modules, and the number of active users.", "sys"); 
 
     PROC atoms():void :={
-	nme:= new(void,str); nme.seqbase(0@0); 
-	sze:= new(void,str); sze.seqbase(0@0); 
-	aln:= new(void,str); aln.seqbase(0@0);
-	monet_mod_atm@batloop(){
-		var i:= search($t,'=');
-		var j:= search($t,',');
-		nme.insert(nil,$t.string(0,i));
-		var k:= j - 1;
-		sze.insert(nil,$t.string(i+1,k-i));
-		if(j>0){
-		aln.insert(nil,$t.string(j+1,$t.length-j));
-		} else {
-		aln.insert(nil,$t.string(i+1,$t.length-i));
-		}
-	}
-	table(1,nme.col_name("atom type"),
-		sze.col_name("size"),
-		aln.col_name("alignment"));
+	table(1,view_atom_name.col_name("atom type"),
+		view_atom_size.col_name("size"),
+		view_atom_align.col_name("alignment"));
     }
     PROC sigs(str modname) : void := {
 	var modname2;
@@ -738,6 +731,53 @@ view_gdk_thread(
                 BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
 	}
 	@:Pseudo(gdk,thread)@
+        return GDK_SUCCEED;
+}
+int
+view_atom_name(
+   BAT**        retval  /* put pointer to BAT[int,str] record here. */
+){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_str,GDKatomcnt*2);
+        if (b == 0) return GDK_FAIL;
+
+        for(i=0; i < GDKatomcnt; i++)
+                BUNins(b, &i, BATatoms[i].name);
+	@:Pseudo(atom,name)@
+        return GDK_SUCCEED;
+}
+int
+view_atom_align(
+   BAT**        retval  /* put pointer to BAT[int,str] record here. */
+){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_int,GDKatomcnt*2);
+        if (b == 0) return GDK_FAIL;
+
+        for(i=0; i < GDKatomcnt; i++)
+                BUNins(b, &i, &BATatoms[i].align);
+	@:Pseudo(atom,align)@
+        return GDK_SUCCEED;
+}
+int
+view_atom_size(
+   BAT**        retval  /* put pointer to BAT[int,str] record here. */
+){       
+	BAT*    b;
+        int     i;
+
+        b= BATnew(TYPE_int,TYPE_int,GDKatomcnt*2);
+        if (b == 0) return GDK_FAIL;
+
+        for(i=0; i < GDKatomcnt; i++){
+		int z= BATatoms[i].size;
+                BUNins(b, &i, &z);
+	}
+	@:Pseudo(atom,size)@
         return GDK_SUCCEED;
 }
 
