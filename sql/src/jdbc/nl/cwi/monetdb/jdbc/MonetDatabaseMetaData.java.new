@@ -1556,7 +1556,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"10 AS NUM_PREC_RADIX, \"null\" AS nullable, null AS REMARKS, " +
 			"columns.default AS COLUMN_DEF, 0 AS SQL_DATA_TYPE, " +
 			"0 AS SQL_DATETIME_SUB, 0 AS CHAR_OCTET_LENGTH, " +
-			"columns.number + 1 AS ORDINAL_POSITION, null AS SCOPE_CATALOG " +
+			"columns.number + 1 AS ORDINAL_POSITION, null AS SCOPE_CATALOG, " +
 			"null AS SCOPE_SCHEMA, null AS SCOPE_TABLE " +
 				"FROM columns, tables, schemas " +
 				"WHERE columns.table_id = tables.id " +
@@ -1938,7 +1938,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		String query =
 			"SELECT null AS TABLE_CAT, schemas.name AS TABLE_SCHEM, " +
 			"tables.name AS TABLE_NAME, keycolumns.\"column\" AS COLUMN_NAME, " +
-			"0 AS KEY_SEQ, keys.name AS PK_NAME " +
+			"keys.type AS KEY_SEQ, keys.name AS PK_NAME " +
 				"FROM keys, keycolumns, tables, schemas " +
 				"WHERE keys.id = keycolumns.id AND keys.table_id = tables.id " +
 					"AND tables.schema_id = schemas.id " +
@@ -2014,16 +2014,39 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		throws SQLException
 	{
 		String query =
-			"SELECT pk.";
+			"SELECT null AS PKTABLE_CAT, pkschema.name AS PKTABLE_SCHEM, " +
+			"pktable.name AS PKTABLE_NAME, pkkeycol.\"column\" AS PKCOLUMN_NAME, " +
+			"null AS FKTABLE_CAT, fkschema.name AS FKTABLE_SCHEM, " +
+			"fktable.name AS FKTABLE_NAME, fkkeycol.\"column\" AS FKCOLUMN_NAME, " +
+			"fkkey.type AS KEY_SEQ, " + DatabaseMetaData.importedKeyNoAction + " AS UPDATE_RULE, " +
+			"" + DatabaseMetaData.importedKeyNoAction + " AS DELETE_RULE, " +
+			"fkkey.name AS FK_NAME, pkkey.name AS PK_NAME, " +
+			"" + DatabaseMetaData.importedKeyNotDeferrable + " AS DEFERRABILITY " +
+				"FROM keys AS fkkey, keys AS pkkey, keycolumns AS fkkeycol, " +
+				"keycolumns AS pkkeycol, tables AS fktable, tables AS fktable, " +
+				"schemas AS fkschema, schemas AS pkschema " +
+				"WHERE fktable.id = fkkey.table_id AND pktable.id = pkkey.table_id AND " +
+				"fkkey.id = fkkeycol.id AND pkkey.id = pkkeycol.id AND " +
+				"fkschema.id = fktable.schema_id AND pkschema.id = pktable.schema_id AND " +
+				"fkkey.rkey > -1 AND fkkey.rkey = pkkey.id ";
+
+		if (schema != null) {
+			query += "AND fkschema.name LIKE '" + escapeQuotes(schema) + "' ";
+		}
+		if (table != null) {
+			query += "AND fktable.name LIKE '" + escapeQuotes(table) + "' ";
+		}
+
+		query += "ORDER BY PKTABLE_CAT, PKTABLE_SCHEM, PKTABLE_NAME, KEY_SEQ";
+
+		return(getStmt().executeQuery(query));
 	}
 
-	/*
+	/**
 	 * Get a description of a foreign key columns that reference a
 	 * table's primary key columns (the foreign keys exported by a
 	 * table).	They are ordered by FKTABLE_CAT, FKTABLE_SCHEM,
 	 * FKTABLE_NAME, and KEY_SEQ.
-	 *
-	 * This method is currently unimplemented.
 	 *
 	 * <P>Each foreign key column description has the following columns:
 	 *	<OL>
@@ -2069,13 +2092,41 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @param table a table name
 	 * @return ResultSet each row is a foreign key column description
 	 * @see #getImportedKeys
+	 * @throws SQLException if a database error occurs
 	 */
-	public java.sql.ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException
+	public getImportedKeys(String catalog, String schema, String table)
+		throws SQLException
 	{
-		return getImportedExportedKeys(catalog, schema, table, null,null,null);
+		String query =
+			"SELECT null AS PKTABLE_CAT, pkschema.name AS PKTABLE_SCHEM, " +
+			"pktable.name AS PKTABLE_NAME, pkkeycol.\"column\" AS PKCOLUMN_NAME, " +
+			"null AS FKTABLE_CAT, fkschema.name AS FKTABLE_SCHEM, " +
+			"fktable.name AS FKTABLE_NAME, fkkeycol.\"column\" AS FKCOLUMN_NAME, " +
+			"fkkey.type AS KEY_SEQ, " + DatabaseMetaData.importedKeyNoAction + " AS UPDATE_RULE, " +
+			"" + DatabaseMetaData.importedKeyNoAction + " AS DELETE_RULE, " +
+			"fkkey.name AS FK_NAME, pkkey.name AS PK_NAME, " +
+			"" + DatabaseMetaData.importedKeyNotDeferrable + " AS DEFERRABILITY " +
+				"FROM keys AS fkkey, keys AS pkkey, keycolumns AS fkkeycol, " +
+				"keycolumns AS pkkeycol, tables AS fktable, tables AS fktable, " +
+				"schemas AS fkschema, schemas AS pkschema " +
+				"WHERE fktable.id = fkkey.table_id AND pktable.id = pkkey.table_id AND " +
+				"fkkey.id = fkkeycol.id AND pkkey.id = pkkeycol.id AND " +
+				"fkschema.id = fktable.schema_id AND pkschema.id = pktable.schema_id AND " +
+				"fkkey.rkey > -1 AND fkkey.rkey = pkkey.id ";
+
+		if (schema != null) {
+			query += "AND pkschema.name LIKE '" + escapeQuotes(schema) + "' ";
+		}
+		if (table != null) {
+			query += "AND pktable.name LIKE '" + escapeQuotes(table) + "' ";
+		}
+
+		query += "ORDER BY FKTABLE_CAT, FKTABLE_SCHEM, FKTABLE_NAME, KEY_SEQ";
+
+		return(getStmt().executeQuery(query));
 	}
 
-	/*
+	/**
 	 * Get a description of the foreign key columns in the foreign key
 	 * table that reference the primary key columns of the primary key
 	 * table (describe how one table imports another's key.) This
@@ -2130,10 +2181,50 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @param table a table name
 	 * @return ResultSet each row is a foreign key column description
 	 * @see #getImportedKeys
+	 * @throws SQLException if a database error occurs
 	 */
-	public java.sql.ResultSet getCrossReference(String primaryCatalog, String primarySchema, String primaryTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException
+	public getImportedKeys(
+		String pcatalog,
+		String pschema,
+		String ptable,
+		String fcatalog,
+		String fschema,
+		String ftable
+	) throws SQLException
 	{
-		return getImportedExportedKeys(primaryCatalog, primarySchema, primaryTable, foreignCatalog, foreignSchema, foreignTable);
+		String query =
+			"SELECT null AS PKTABLE_CAT, pkschema.name AS PKTABLE_SCHEM, " +
+			"pktable.name AS PKTABLE_NAME, pkkeycol.\"column\" AS PKCOLUMN_NAME, " +
+			"null AS FKTABLE_CAT, fkschema.name AS FKTABLE_SCHEM, " +
+			"fktable.name AS FKTABLE_NAME, fkkeycol.\"column\" AS FKCOLUMN_NAME, " +
+			"fkkey.type AS KEY_SEQ, " + DatabaseMetaData.importedKeyNoAction + " AS UPDATE_RULE, " +
+			"" + DatabaseMetaData.importedKeyNoAction + " AS DELETE_RULE, " +
+			"fkkey.name AS FK_NAME, pkkey.name AS PK_NAME, " +
+			"" + DatabaseMetaData.importedKeyNotDeferrable + " AS DEFERRABILITY " +
+				"FROM keys AS fkkey, keys AS pkkey, keycolumns AS fkkeycol, " +
+				"keycolumns AS pkkeycol, tables AS fktable, tables AS fktable, " +
+				"schemas AS fkschema, schemas AS pkschema " +
+				"WHERE fktable.id = fkkey.table_id AND pktable.id = pkkey.table_id AND " +
+				"fkkey.id = fkkeycol.id AND pkkey.id = pkkeycol.id AND " +
+				"fkschema.id = fktable.schema_id AND pkschema.id = pktable.schema_id AND " +
+				"fkkey.rkey > -1 AND fkkey.rkey = pkkey.id ";
+
+		if (pschema != null) {
+			query += "AND pkschema.name LIKE '" + escapeQuotes(pschema) + "' ";
+		}
+		if (ptable != null) {
+			query += "AND pktable.name LIKE '" + escapeQuotes(ptable) + "' ";
+		}
+		if (fschema != null) {
+			query += "AND fkschema.name LIKE '" + escapeQuotes(fschema) + "' ";
+		}
+		if (ftable != null) {
+			query += "AND fktable.name LIKE '" + escapeQuotes(ftable) + "' ";
+		}
+
+		query += "ORDER BY FKTABLE_CAT, FKTABLE_SCHEM, FKTABLE_NAME, KEY_SEQ";
+
+		return(getStmt().executeQuery(query));
 	}
 
 	/*
