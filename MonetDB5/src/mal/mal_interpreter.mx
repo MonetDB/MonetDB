@@ -1108,7 +1108,7 @@ starts with the exception identifer, followed by contextual details.
 	if( cntxt->timer){
 		long n= GDKusec();
 		long l= n - cntxt->timer;
-		stream_printf(cntxt->fdout,"#[%6d usec]",l);
+		stream_printf(cntxt->fdout,"#%6d usec",l);
 		printTraceCall(cntxt,mb,stk,pci);
 	}
 
