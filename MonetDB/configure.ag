@@ -281,6 +281,9 @@ else
 	fi
 fi
 
+AC_CHECK_HEADER(php.h, have_php=yes, have_php=no)
+AM_CONDITIONAL(HAVE_PHP, test x$have_php = xyes)
+
 AM_CONDITIONAL(CROSS_COMPILING,test x$cross_compiling = xyes)
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
