@@ -30,7 +30,7 @@ end v; #6:(v:bit)
     c := 1; #8:(c:int)<-($11:int)
     xz := multiplex.script("+",b,c); #9:(xz:bat[lng,lng])<-($13:str)(b:bat[lng,lng])(c:int)
     io.print(xz); #10:($14:int)<-(xz:bat[lng,lng])
-end function; #11:
+end main; #11:
 #-----------------#
 # BAT:	  tmp_4	  #
 # (lng)	  (lng)	  #

@@ -24,7 +24,7 @@ function Admin.main():int; #0:(main:int)
     io.print(c); #5:($9:int)<-(c:bat[any,any])
     x := catalog.bbpNames(); #6:(x:bat[int,str])
     io.print(x); #7:($11:int)<-(x:bat[int,str])
-end function; #8:
+end main; #8:
 #-----------------#
 # BAT:	  mybat	  #
 # (int)	  (int)	  #

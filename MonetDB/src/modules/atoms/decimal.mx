@@ -1102,12 +1102,6 @@ void decimal_put(Heap* h, int* bun, decimal* val) {
 
 @- operator implementations
 @c
-int isdecimal_nil(decimal *v){
-	return	v->scale== decimal_nil->scale && 
-		v->negative== decimal_nil->negative && 
-		v->precision==decimal_nil->precision &&
-		v->num[0]== decimal_nil->num[0];
-}
 str decimal_prelude() {
 	int x, y, z, r, s=0;
 	Box box;
@@ -1443,7 +1437,7 @@ str decimal_to_flt(flt* ret, decimal **valinput) {
 @- Comparison
 @= comparison
 str decimal_@1(int *ret, decimal **v, decimal **w){
-	if( isdecimal_nil(*v) || isdecimal_nil(*w))
+	if( ISNIL(*v) || ISNIL(*w))
 		*ret= bit_nil;
 	else	*ret = decimal_compare(*v,*w) @2 0;
 	return MAL_SUCCEED;
@@ -1455,44 +1449,6 @@ str decimal_@1(int *ret, decimal **v, decimal **w){
 	@:comparison(LE,<=)@
 	@:comparison(GT,>)@
 	@:comparison(GE,>=)@
-/*
-str decimal_EQ(int *ret, decimal **v, decimal **w){
-	if( isdecimal_nil(*v) || isdecimal_nil(*w))
-		*ret= bit_nil;
-	else	*ret = decimal_compare(*v,*w)==0;
-	return MAL_SUCCEED;
-}
-str decimal_NEQ(int *ret, decimal **v, decimal **w){
-	if( isdecimal_nil(*v) || isdecimal_nil(*w))
-		*ret= bit_nil;
-	else *ret = decimal_compare(*v,*w);
-	return MAL_SUCCEED;
-}
-str decimal_LT(int *ret, decimal **v, decimal **w){
-	if( isdecimal_nil(*v) || isdecimal_nil(*w))
-		*ret= bit_nil;
-	else *ret = decimal_compare(*v,*w)<0;
-	return MAL_SUCCEED;
-}
-str decimal_LE(int *ret, decimal **v, decimal **w){
-	if( isdecimal_nil(*v) || isdecimal_nil(*w))
-		*ret= bit_nil;
-	else *ret = decimal_compare(*v,*w)<=0;
-	return MAL_SUCCEED;
-}
-str decimal_GT(int *ret, decimal **v, decimal **w){
-	if( isdecimal_nil(*v) || isdecimal_nil(*w))
-		*ret= bit_nil;
-	else *ret = decimal_compare(*v,*w)>0;
-	return MAL_SUCCEED;
-}
-str decimal_GE(int *ret, decimal **v, decimal **w){
-	if( isdecimal_nil(*v) || isdecimal_nil(*w))
-		*ret= bit_nil;
-	else *ret = decimal_compare(*v,*w)>=0;
-	return MAL_SUCCEED;
-}
-*/
 @- misc operators
 @c
 /* Returns a decimal whose value is -1 * value. */

@@ -87,6 +87,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define PUSHsymbol	42	/* move constant to stack */
 #define PATTERNsymbol   44
 #define HANDLERsymbol     45
+#define FORKsymbol     46
 
 #define FCNcall		50	/* determines interpreter action*/
 #define RLRcall		51

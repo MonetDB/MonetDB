@@ -111,7 +111,7 @@ function Admin.main():int; #0:(main:int)
     io.fprintf(fp," %f\n",7.0); #30:($48:void)<-(fp:fstream)($34:str)($35:flt)
     oa_a := system.printf("%s\n",s); #31:(oa_a:int)<-($50:str)(s:str)
     quit := bbp.bind("quit"); #32:(quit:bat[any,any])<-($52:str)
-end function; #33:
+end main; #33:
 [ "Dit is een test\\n" ]
 !ERROR: MALexception:io.fprintf: not yet defined in version-5
 >

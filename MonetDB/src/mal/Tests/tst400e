@@ -4,7 +4,7 @@
 function simple(z:lng):lng;
 	z:= z+1:lng;  #type cast is error
 	return z;
-end function;
+end simple;
 
 	k:= 0:lng;
 barrier	v:= k<1000000:lng;

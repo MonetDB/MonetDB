@@ -33,5 +33,5 @@ end v; #6:(v:bit)
     x := multiplex.script("+",b,c); #9:(x:bat[lng,lng])<-($12:str)(b:bat[lng,lng])(c:bat[lng,lng])
     t1 := alarm.usec(); #10:(t1:lng)
     d0 := calc.-(t1,t0); #11:(d0:lng)<-(t1:lng)(t0:lng)
-end function; #12:
+end main; #12:
 >

@@ -4,7 +4,7 @@ function pr(format:str,arg:any...):void;
 	i:= -1;
 barrier  b:= iterator.argument(i,arg);
 end b;
-end function; 
+end pr; 
 
 # how to iterator through a variable list
 function prStr(format:str,arg:str...):void;
@@ -16,7 +16,7 @@ barrier  b:= nextElement(i,0,limit);	#elm:= arg[i]
 	printf(i);
 	printf(elm);
 end b;
-end function; 
+end prStr; 
 
 pr("hello",1,true);
 prStr("hello",1,true);

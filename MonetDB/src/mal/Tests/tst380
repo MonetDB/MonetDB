@@ -8,7 +8,7 @@ function get(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
 	z:= join(br,b);
 	setColumn(z,title);
 	return z;
-end function;
+end get;
 # Note the type of the variables will be fixed during the first call
 # Thus, a better schould would be a term rewriter call, which
 # replaces an instruction
@@ -18,13 +18,13 @@ function getInt(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
 	z:= join(br,b);
 	setColumn(z,title);
 	return z;
-end function;
+end getInt;
 function getLng(br:bat[any::1,any::2],nme:str, title:str):bat[any::3,any::4];
 	b:= catalog.nme();
 	z:= join(br,b);
 	setColumn(z,title);
 	return z;
-end function;
+end getLng;
 function dir(b:bat[int,str]):void;
 	atm:= catalog.atomNames();
 	brev:= reverse(b);
@@ -38,14 +38,14 @@ function dir(b:bat[int,str]):void;
 	bKind:= get(brev,"bbpKind","kind");
 	bRef:= getInt(brev,"bbpRefcnt","refcnt");
 	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
-end function;
+end dir;
 
 function dir(s:str):void;
 	t:= catalog.bbpNames();
 	tn:= like(t,s);
 	print(tn);
 	dir(tn);
-end function;
+end dir;
 b:=new(int,int);
 setColumn(b,"simplemind");
 

@@ -38,7 +38,7 @@
 #	bRef:= join(brev,bref);
 #	setColumn(bRef,"refcnt");
 #	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
-#end function;
+#end dir;
 function Admin.dir(b:bat[int,str]):void; #0:(dir:void)<-(b:bat[int,str])
     atm := catalog.atomNames(); #1:(atm:bat[int,str])
     brev := bat.reverse(b); #2:(brev:bat[str,int])<-(b:bat[int,str])
@@ -68,20 +68,21 @@ function Admin.dir(b:bat[int,str]):void; #0:(dir:void)<-(b:bat[int,str])
     bRef := algebra.join(brev,bref); #26:(bRef:bat[str,int])<-(brev:bat[str,int])(bref:bat[int,int])
     bbp.setColumn(bRef,"refcnt"); #27:($34:bat[str,int])<-(bRef:bat[str,int])($35:str)
     io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef); #28:($36:int)<-(brev:bat[str,int])(bm:bat[str,str])(bHead:bat[str,str])(bTail:bat[str,str])(bCount:bat[str,lng])(bHeat:bat[str,int])(bDirty:bat[str,str])(bStatus:bat[str,str])(bKind:bat[str,str])(bRef:bat[str,int])
-end function; #29:
+end dir; #29:
 #
 #function dir(s:str):void;
 #	t:= catalog.bbpNames();
 #	tn:= like(t,s);
 #	print(tn);
 #	dir(tn);
-#end function;
+#end dir;
 function Admin.dir(s:str):void; #0:(dir:void)<-(s:str)
     t := catalog.bbpNames(); #1:(t:bat[int,str])
     tn := algebra.like(t,s); #2:(tn:bat[int,str])<-(t:bat[int,str])(s:str)
     io.print(tn); #3:($4:int)<-(tn:bat[int,str])
     Admin.dir(tn); #4:($5:void)<-(tn:bat[int,str])
-end function; #5:
+end dir; #5:
+#
 #b:=new(int,int);
 #setColumn(b,"simplemind");
 #
@@ -97,14 +98,14 @@ function Admin.main():int; #0:(main:int)
     z := catalog.bbpNames(); #3:(z:bat[int,str])
     Admin.dir(z); #4:($6:void)<-(z:bat[int,str])
     Admin.dir("simple"); #5:($7:void)<-($8:str)
-end function; #6:
+end main; #6:
 #-----------------------------------------------------------------------------------------------------------------------------------------#
 # bbp	| t			| htype		| ttype		| count	| heat	| dirty		| status	| kind		| refcnt  #
 #-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",	  "str",	  10,	  39,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 2,	  "timezones",		  "tzone",	  "tzone",	  24,	  40,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 3,	  "tmp_3",		  "int",	  "int",	  1,	  195,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 4,	  "tmp_4",		  "int",	  "int",	  0,	  45,	  "dirty",	  "dirty",	  "transient",	  2	  ]
+[ 1,	  "monet_environment",	  "str",	  "str",	  10,	  63,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 2,	  "timezones",		  "tzone",	  "tzone",	  24,	  64,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 3,	  "tmp_3",		  "int",	  "int",	  1,	  220,	  "clean",	  "clean",	  "persistent",	  0	  ]
+[ 4,	  "tmp_4",		  "int",	  "int",	  0,	  69,	  "dirty",	  "dirty",	  "transient",	  2	  ]
 #-----------------#
 # BAT:	  tmp_21  #
 # (int)	  (str)	  #

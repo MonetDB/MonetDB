@@ -35,6 +35,6 @@ function Admin.main():int; #0:(main:int)
     k := 1; #6 unknown:(k:lng)<-($4:sht)
     y := new(int,int); #7 unknown:(y:bat[str,int])<-(int:int)(int:int)
     f := "wrong"; #8 unknown:(f:flt)<-($14:str)
-end function; #9:
+end main; #9:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

@@ -8,9 +8,9 @@
 # monetrc:/ufs/mk/.monet.conf
 ## check propagation of type variables over bats
 #
-#function f(a:any::1, b:any::2):bat[any::2,any::1] ; end function;
+#function f(a:any::1, b:any::2):bat[any::2,any::1] ; end f;
 function Admin.f(a:any::1,b:any::2):bat[any::2,any::1]; #0 polymorphic:(f:bat[any::2,any::1])<-(a:any::1)(b:any::2)
-end function; #1:
+end f; #1:
 #
 #a:= f(1,"hello");
 #b:= f(1,"world");
@@ -22,5 +22,5 @@ function Admin.main():int; #0:(main:int)
     b := Admin.f(1,"world"); #2:(b:int)<-($2:int)($5:str)
     c := Admin.f(1.0,-3); #3:(c:bat[int,flt])<-($7:flt)($8:int)
     d := Admin.f(true,false); #4:(d:bat[bit,bit])<-($10:bit)($11:bit)
-end function; #5:
+end main; #5:
 >

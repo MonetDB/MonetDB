@@ -14,12 +14,12 @@
 #	IllegalAccess:="new exception";
 #	raise IllegalAccess;
 #	print("should have left function ");
-#end function;
+#end myException;
 function Admin.myException():any; #0 polymorphic:(myException:any)
     IllegalAccess := "new exception"; #1:(IllegalAccess:str)<-($2:str)
     raise IllegalAccess; #2:(IllegalAccess:str)
     io.print("should have left function "); #3:($3:int)<-($4:str)
-end function; #4:
+end myException; #4:
 #
 #	myException();
 #	print("should not come here");
@@ -27,6 +27,6 @@ end function; #4:
 function Admin.main():int; #0:(main:int)
     Admin.myException(); #1:($1:any)
     io.print("should not come here"); #2:($2:int)<-($3:str)
-end function; #3:
+end main; #3:
 !ERROR: new exceptionMALexception:Admin.myException[4]: propagated
 >

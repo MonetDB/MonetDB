@@ -2,7 +2,7 @@
 function swap(x:str,y:str):(a:str,b:str);
 	a:=y; b:=x;
 	return (a,b);
-end function;
+end swap;
 
 (x,y):= swap("world","hello");
 print(x);

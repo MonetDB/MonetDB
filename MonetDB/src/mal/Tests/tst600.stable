@@ -31,7 +31,7 @@ function Admin.main():int; #0:(main:int)
     io.print(g); #8:($11:int)<-(g:flt)
     box.discard("chest","pi"); #9:($12:void)<-($2:str)($4:str)
     box.close("chest"); #10:($13:void)<-($2:str)
-end function; #11:
+end main; #11:
 [ 3.417 ]
 [ 3.417 ]
 >

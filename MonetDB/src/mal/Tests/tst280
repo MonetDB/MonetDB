@@ -2,7 +2,7 @@ function pow(i:int,j:int):int;
 	z:= i+j;
 	printf("result %d\n",z);
 	return z;
-end function;
+end pow;
 function tst(A2:bat[void,int],A3:bat[void,int]):bat[void,int]; 
 	print(A2);
 	resB := mal.new(void,int); 
@@ -23,7 +23,7 @@ catch   MALexception;
 end     MALexception; 
 end     mloop;  
         return resB;    
-end function;   
+end tst;   
 
 	b := new(void,int);
 	setSequenceBase(b,0@0);

@@ -16,6 +16,6 @@ function Admin.main():int; #0:(main:int)
     IllegalAccess := 1234; #1:(IllegalAccess:int)<-($2:int)
     raise IllegalAccess; #2:(IllegalAccess:int)
     io.print("should not come here\n"); #3:($3:int)<-($4:str)
-end function; #4:
+end main; #4:
 !ERROR: IllegalAccess:Admin.main[4]: propagated
 >

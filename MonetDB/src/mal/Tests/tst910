@@ -4,7 +4,7 @@
 function inc(a:lng,b:lng):lng;
 	z:= a+b;
 	return z;
-end function;
+end inc;
 
 b:= new(lng,lng);
 i:= -1:lng;

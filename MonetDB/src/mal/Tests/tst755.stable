@@ -12,12 +12,12 @@
 #function test(b:bat[any::1,any::2],c:any::2):int;
 #	k:= 1+"wrong";
 #	print(k);
-#end function;
+#end test;
 !ERROR: '+' undefined in Admin.test[1]
 function Admin.test(b:bat[any::1,any::2],c:any::2):int; #0:(test:int)<-(b:bat[any::1,any::2])(c:any::2)
     k := +(1,"wrong"); #1 unknown:(k:any)<-($4:int)($5:str)
     print(k); #2 unknown:($6:any)<-(k:any)
-end function; #3:
+end test; #3:
 #
 #c:=new(int,str);
 #test(c,"hello");
@@ -27,6 +27,6 @@ end function; #3:
 function Admin.main():int; #0:(main:int)
     c := mal.new(int,str); #1:(c:bat[int,str])<-(int:int)(str:str)
     Admin.test(c,"hello"); #2 unknown:($4:int)<-(c:bat[int,str])($5:str)
-end function; #3:
+end main; #3:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

@@ -41,7 +41,7 @@ function Admin.main():int; #0:(main:int)
 catch GDKerror; #10:(GDKerror:str) jump 13
     system.printf("Catched the renaming exception\n"); #11:($17:int)<-($18:str)
 end GDKerror; #12:(GDKerror:str)
-end function; #13:
+end main; #13:
 #-----------------#
 # BAT:	  mybat	  #
 # (int)	  (int)	  #

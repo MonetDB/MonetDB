@@ -59,7 +59,7 @@ command Trace(flag:bit):void = MAPItrace
 	#vm5:bat[int,int]:= bat(5:int,5:int);
 	#bat.setName(vm5,"view_mapi_timeout");
 	#bat.setRoles(vm5,"mapi","timeout");
-#end function;
+#end main;
 	
 @h
 /*

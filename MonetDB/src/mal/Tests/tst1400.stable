@@ -67,7 +67,7 @@ function Admin.main():int; #0:(main:int)
     io.print(y); #25:($41:int)<-(y:fruit)
     z := enum.lower(fruit,"grapes"); #26:(z:fruit)<-(fruit:fruit)($12:str)
     io.print(z); #27:($42:int)<-(z:fruit)
-end function; #28:
+end main; #28:
 #-------------------------#
 # BAT:	  tmp_4		  #
 # (int)	  (str)		  #

@@ -613,13 +613,13 @@ parallel_block:
 
 proc_definition:
         TOK_PROCDEF proc_name proc_header stmt
-	{ printf("end function;\n"); }
+	{ printf("end %s;\n",$2.val); }
     |   TOK_PROCDEF proc_name {printf(");\n");} stmt
-	{ printf("end function;\n"); }
+	{ printf("end %s;\n",$2.val); }
     |   TOK_PROCDEF proc_name {printf(");\n");} TOK_ASSIGNMENT stmt
-	{ printf("end function;\n"); }
+	{ printf("end %s;\n",$2.val); }
     |   TOK_PROCDEF proc_name proc_header TOK_ASSIGNMENT stmt
-	{ printf("end function;\n"); }
+	{ printf("end %s;\n",$2.val); }
     |   TOK_UNDEF tok_ident';'
 
 proc_name:
@@ -629,22 +629,26 @@ proc_name:
 		case '[':
 			$1.val[strlen($1.val)-1]=0;
 			printf("function multiplex(\"%s\",", $1.val+1);
+			$1.val= GDKstrdup("multiplex");
 			break;
 		case '{':
 			$1.val[strlen($1.val)-1]=0;
 			printf("function group.%s(", $1.val+1);
+			$1.val= GDKstrdup("group");
 			break;
 		case '(':
 			$1.val[strlen($1.val)-1]=0;
 			printf("function %s_inplace(", $1.val+1);
+			$1.val= GDKstrdup("inplace");
 			break;
 		default: printf("function %s(",$1.val);
 		}
+		$$=$1;
 	}
     |   TOK_STRING
-	{ printf("function %s(",$1.val);}
+	{ printf("function %s(",$1.val); $$=$1;}
     |   TOK_OPERATOR
-	{ printf("function %s(",$1.val);}
+	{ printf("function %s(",$1.val);$$=$1;}
 
 proc_header:
         '(' mel_header ')' mel_return

@@ -23,7 +23,7 @@
 #bbp.close();
 ## at the end of the call, the BBP should have discarded
 ## the temporary bats of the user
-#end function;
+#end test;
 function Admin.test():any; #0 polymorphic:(test:any)
     io.print("test"); #1:($1:int)<-($2:str)
     bbp.open(); #2:($3:void)
@@ -36,7 +36,7 @@ function Admin.test():any; #0 polymorphic:(test:any)
     c := bbp.take("myfirstbat"); #9:(c:bat[any,any])<-($13:str)
     io.print(c); #10:($15:int)<-(c:bat[any,any])
     bbp.close(); #11:($16:void)
-end function; #12:
+end test; #12:
 #
 #test();
 #print("continue");
@@ -52,7 +52,7 @@ function Admin.main():int; #0:(main:int)
     v := bbp.take("myfirstbat"); #4:(v:bat[any,any])<-($6:str)
     io.print(v); #5:($7:int)<-(v:bat[any,any])
     bbp.close(); #6:($8:void)
-end function; #7:
+end main; #7:
 [ "test" ]
 #-------------------------#
 # BAT:	  objects	  #

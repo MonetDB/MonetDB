@@ -25,7 +25,7 @@ function Admin.main():int; #0:(main:int)
     io.print(pi); #4:($6:int)<-(pi:flt)
     const.close(); #5:($7:void)
     io.print(pi); #6:($8:int)<-(pi:flt)
-end function; #7:
+end main; #7:
 [ 3.147 ]
 [ 3.147 ]
 >

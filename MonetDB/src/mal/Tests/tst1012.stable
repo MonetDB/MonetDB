@@ -40,7 +40,7 @@ function Admin.main():int; #0:(main:int)
     v := bbp.take("mysecondbat"); #12:(v:bat[any,any])<-($8:str)
     io.print(v); #13:($17:int)<-(v:bat[any,any])
     bbp.close(); #14:($18:void)
-end function; #15:
+end main; #15:
 #-----------------#
 # BAT:	  tmp_3	  #
 # (int)	  (int)	  #

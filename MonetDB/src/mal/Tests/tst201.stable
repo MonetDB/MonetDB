@@ -263,7 +263,7 @@ end MALexception; #33:(MALexception:str)
     _v83 := bat.reverse(b); #91:(_v83:bat[int,str])<-(b:bat[str,int])
     _v84 := algebra.like(_v83," fox"); #92:(_v84:bat[int,str])<-(_v83:bat[int,str])($130:str)
     _v85 := io.print(_v84); #93:(_v85:int)<-(_v84:bat[int,str])
-end function; #94:
+end main; #94:
 #-------------------------#
 # BAT:		  tmp_4	  #
 # (str)		  (int)	  #

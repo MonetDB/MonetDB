@@ -3,7 +3,7 @@
 function test(b:bat[any::1,any::2],c:any::2):int;
 	k:= 1+c;
 	print(k);
-end function;
+end test;
 
 c:=new(int,str);
 test(c,"hello");

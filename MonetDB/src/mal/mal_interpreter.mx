@@ -244,6 +244,9 @@ elements in the value stack.
 		@:redoControl@ break;
 	case BARRIERsymbol:
 		@:barrierControl@ stk->pc++;break;
+	case FORKsymbol:
+		printf("Forking not yet implemented\n");
+		stk->pc++; break;
 	case RLRcall:
 	case PATcall:
 		@:patterncall@ stk->pc++; break;

@@ -152,7 +152,8 @@ void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk){
 	if( p != NULL){
 		promptInstruction(cntxt->fdout,mb,p);
 		p= getInstrPtr(mb, 0);
-		fprintf(cntxt->fdout," at #%d in %s(", stk->pc, getFcnName(mb));
+		fprintf(cntxt->fdout," at #%d in %s(", 
+			getPC(mb,p), getFcnName(mb));
 		for(k= p->retc; k<p->argc; k++){
 			VALprint(cntxt->fdout, &stk->stk[p->argv[k]]);
 			if( k < p->argc-1 ) fprintf(cntxt->fdout,",");
@@ -382,8 +383,8 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	switch(stk->cmd){
 	case 'c':
 		if( newcmd= isBreakpoint(cntxt,p) ){
-			/* printf("stop at line %d\n",stk->pc);*/
-			if( newcmd == 't') fprintf(cntxt->fdout,"show value nyi \n");
+			if( newcmd == 't') 
+				fprintf(cntxt->fdout,"show value nyi \n");
 			mdbCommand(cntxt,mb,stk,p);
 		} 
 		break;
@@ -415,7 +416,7 @@ void printStack(FILE *f, MalBlkPtr mb, MalStkPtr s){
         int i = 0;
 
 	fprintf(f,MDBmarker);
-        fprintf(f,"Stack pc=%d size=%d top=%d\n",s->pc,s->stksize,s->stktop);
+        fprintf(f,"Stack size=%d top=%d\n",s->stksize,s->stktop);
         for( ; i<mb->vtop ; i++){
 		printStackElm(f, mb, getVar(mb,i), s->stk+i,i);
         }

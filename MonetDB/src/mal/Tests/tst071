@@ -2,7 +2,7 @@
 function swap(x:int,y:int):(a:int,b:int);
 	a:=y; b:=x;
 	return(a,b);
-end function;
+end swap;
 
 (x,y):= swap(1,2);
 print(x);

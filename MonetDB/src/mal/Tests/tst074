@@ -1,7 +1,7 @@
 # parsing operations with multi-assignments
 function swap(x:str):str;
 	return x;
-end function;
+end swap;
 
 x:= swap("world hello");
 print(x);

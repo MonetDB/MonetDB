@@ -363,6 +363,6 @@ barrier xd_a := bunStream(ors,xd_aH,xd_aT); #130 unknown:(xd_a:any)<-(ors:any)(x
     yd_a := print(xd_aT); #131 unknown:(yd_a:any)<-(xd_aT:any)
     redo xd_a ; #132:(xd_a:any) jump 130
 end xd_a; #133:(xd_a:any)
-end function; #134:
+end main; #134:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

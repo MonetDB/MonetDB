@@ -30,5 +30,5 @@ barrier t := calc.<(i,3); #6:(t:bit)<-(i:int)($7:int) jump 10
     redo t ; #8:(t:bit) jump 6
 end t; #9:(t:bit)
     i := 0; #10:(i:int)<-($2:int)
-end function; #11:
+end main; #11:
 >

@@ -31,7 +31,7 @@ function Admin.main():int; #0:(main:int)
     io.print(z); #11:($14:int)<-(z:bat[int,int])
     z := algebra.betweenOO(b,0,2); #12:(z:bat[int,int])<-(b:bat[int,int])($4:int)($8:int)
     io.print(z); #13:($15:int)<-(z:bat[int,int])
-end function; #14:
+end main; #14:
 #-----------------#
 # BAT:	  tmp_4	  #
 # (int)	  (int)	  #

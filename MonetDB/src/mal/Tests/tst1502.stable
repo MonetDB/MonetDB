@@ -90,7 +90,7 @@ function Admin.main():int; #0:(main:int)
     xrev := bat.reverse(x); #40:(xrev:bat[chr,oid])<-(x:bat[oid,chr])
     xsrev := algebra.sort(xrev); #41:(xsrev:bat[chr,oid])<-(xrev:bat[chr,oid])
     io.print(xsrev); #42:($73:int)<-(xsrev:bat[chr,oid])
-end function; #43:
+end main; #43:
 [ "sort x" ]
 #-----------------#
 # BAT:	  tmp_7	  #

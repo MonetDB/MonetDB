@@ -35,7 +35,7 @@ function Admin.main():int; #0:(main:int)
     io.print(z); #10:($18:int)<-(z:bit)
     z := calc.<(d1,2.0); #11:(z:bit)<-(d1:dbl)($17:dbl)
     io.print(z); #12:($19:int)<-(z:bit)
-end function; #13:
+end main; #13:
 [ true ]
 [ false ]
 >

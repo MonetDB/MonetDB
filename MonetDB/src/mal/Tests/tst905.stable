@@ -28,7 +28,7 @@ end v; #6:(v:bit)
     c := algebra.copy(b); #7:(c:bat[lng,lng])<-(b:bat[lng,lng])
     x := multiplex.script("+",b,c); #8:(x:bat[lng,lng])<-($11:str)(b:bat[lng,lng])(c:bat[lng,lng])
     io.print(x); #9:($12:int)<-(x:bat[lng,lng])
-end function; #10:
+end main; #10:
 #-----------------#
 # BAT:	  tmp_6	  #
 # (lng)	  (lng)	  #

@@ -62,7 +62,7 @@ function Admin.main():int; #0:(main:int)
     system.printf("bit %s\n",v); #29:($42:int)<-($43:str)(v:str)
     v := mal.typename(bbt); #30:(v:str)<-(bbt:int)
     system.printf("bat %s\n",v); #31:($44:int)<-($45:str)(v:str)
-end function; #32:
+end main; #32:
 string 11
 int 5
 flt 8

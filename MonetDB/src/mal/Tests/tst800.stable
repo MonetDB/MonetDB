@@ -37,7 +37,7 @@ barrier b := const.iterator(nme); #6:(b:lng)<-(nme:str) jump 12
     system.printf("%s\n",val); #9:($16:int)<-($17:str)(val:str)
     redo b ; #10:(b:lng) jump 6
 end b; #11:(b:lng)
-end function; #12:
+end main; #12:
 user=Admin
 database=demo
 dbfarm=/ufs/mk/monet_5-0/Linux/../dbfarm/demo

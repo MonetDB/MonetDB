@@ -24,7 +24,7 @@ function Admin.main():int; #0:(main:int)
     io.print(o11); #6:($9:int)<-(o11:oid)
     ox1 := 0@1; #7:(ox1:oid)<-($11:oid)
     io.print(ox1); #8:($12:int)<-(ox1:oid)
-end function; #9:
+end main; #9:
 [ 0@0 ]
 [ 1@0 ]
 [ 1@1 ]

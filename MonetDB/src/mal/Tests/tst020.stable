@@ -15,7 +15,7 @@
 #	leave l;
 #	redo l;
 #end l;
-#end function;
+#end pl;
 function Admin.pl(i:str):int; #0:(pl:int)<-(i:str)
     L := "something"; #1:(L:str)<-($3:str)
     r := 0; #2:(r:int)<-($5:int)
@@ -25,7 +25,7 @@ barrier l := calc.==(r,0); #3:(l:bit)<-(r:int)($5:int) jump 9
     leave l; #6:(l:bit) jump 9
     redo l ; #7:(l:bit) jump 3
 end l; #8:(l:bit)
-end function; #9:
+end pl; #9:
 #a:= "hello";
 #z:= pl(a);
 #print("done");
@@ -34,6 +34,6 @@ function Admin.main():int; #0:(main:int)
     a := "hello"; #1:(a:str)<-($2:str)
     z := Admin.pl(a); #2:(z:int)<-(a:str)
     io.print("done"); #3:($4:int)<-($5:str)
-end function; #4:
+end main; #4:
 [ "done" ]
 >

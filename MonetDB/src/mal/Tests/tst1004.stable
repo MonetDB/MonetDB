@@ -60,7 +60,7 @@ end MALexception; #20:(MALexception:str)
     x := catalog.bbpNames(); #22:(x:bat[int,str])
     io.print(x); #23:($27:int)<-(x:bat[int,str])
     bbp.close(); #24:($28:void)
-end function; #25:
+end main; #25:
 [ "Start test" ]
 #-----------------#
 # BAT:	  tmp_3	  #

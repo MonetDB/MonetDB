@@ -93,7 +93,7 @@ function Admin.main():int; #0:(main:int)
     io.table(o,x,y); #39:($68:int)<-(o:bat[oid,oid])(x:bat[oid,chr])(y:bat[oid,dbl])
     io.print(x,y,z); #40:($69:int)<-(x:bat[oid,chr])(y:bat[oid,dbl])(z:bat[oid,str])
     io.table(o,x,y,z); #41:($70:int)<-(o:bat[oid,oid])(x:bat[oid,chr])(y:bat[oid,dbl])(z:bat[oid,str])
-end function; #42:
+end main; #42:
 #-------------------------#
 # BAT:	  t	| t	  #
 # (oid)	  (chr)	| (dbl)	  #

@@ -19,5 +19,5 @@ function Admin.main():int; #0:(main:int)
     i := lock.try(l); #3:(i:int)<-(l:lock)
     lock.unset(l); #4:($4:any)<-(l:lock)
     lock.destroy(l); #5:($5:any)<-(l:lock)
-end function; #6:
+end main; #6:
 >

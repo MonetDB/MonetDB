@@ -115,7 +115,7 @@ function Admin.main():int; #0:(main:int)
     io.print(x,A,x3); #56:($82:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x3:bat[oid,bit])
     x4 := batcalc.or(x,A); #57:(x4:bat[oid,bit])<-(x:bat[oid,bit])(A:bat[oid,bit])
     io.print(x,A,x4); #58:($84:int)<-(x:bat[oid,bit])(A:bat[oid,bit])(x4:bat[oid,bit])
-end function; #59:
+end main; #59:
 #-----------------#
 # BAT:	  tmp_5	  #
 # (oid)	  (bit)	  #

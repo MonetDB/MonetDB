@@ -18,7 +18,7 @@
 #end	v;
 #	r:= 3.14:flt;
 #	return r;
-#end function;
+#end simple;
 function Admin.simple(i:int,lim:int,s:str):flt; #0:(simple:flt)<-(i:int)(lim:int)(s:str)
     system.printf("i=%d ",i); #1:($4:int)<-($5:str)(i:int)
     system.printf("lim=%d ",lim); #2:($6:int)<-($7:str)(lim:int)
@@ -29,13 +29,13 @@ barrier v := calc.<(i,lim); #5:(v:bit)<-(i:int)(lim:int) jump 8
 end v; #7:(v:bit)
     r := 3.14; #8:(r:flt)<-($14:flt)
     return r; #9:(r:flt)
-end function; #10:
+end simple; #10:
 #
 #r:= simple(0,2,"hello");
 #
 function Admin.main():int; #0:(main:int)
     r := Admin.simple(0,2,"hello"); #1:(r:flt)<-($2:int)($3:int)($4:str)
-end function; #2:
+end main; #2:
 i=0 lim=2 str=hello
 i=1 lim=2 str=hello
 >

@@ -49,7 +49,7 @@ barrier v := mal.bunStream(b,h,t); #15:(v:lng)<-(b:bat[int,int])(h:int)(t:int) j
     system.printf("%d\n",t); #17:($28:int)<-($29:str)(t:int)
     redo v ; #18:(v:lng) jump 15
 end v; #19:(v:lng)
-end function; #20:
+end main; #20:
 #-----------------#
 # BAT:	  tmp_4	  #
 # (int)	  (int)	  #

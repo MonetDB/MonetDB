@@ -57,7 +57,7 @@ function Admin.main():int; #0:(main:int)
     err := bat.insert(b,n0,81); #17:(err:bat[int,int])<-(b:bat[int,int])(n0:int)($28:int)
     io.print(b); #18:($29:int)<-(b:bat[int,int])
     io.print(b,b,b); #19:($30:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
-end function; #20:
+end main; #20:
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 #-----------------#

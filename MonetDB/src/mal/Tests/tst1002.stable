@@ -25,6 +25,6 @@ function Admin.main():int; #0:(main:int)
 catch MALexception; #5:(MALexception:str) jump 8
     io.print(MALexception); #6:($7:int)<-(MALexception:str)
 end MALexception; #7:(MALexception:str)
-end function; #8:
+end main; #8:
 [ "MALexception:Admin.main[2]:bbp.take:failed to take 'myfirstbat' from box\n" ]
 >

@@ -51,7 +51,7 @@ end v; #6:(v:bit)
     io.print(y); #18:($18:int)<-(y:bat[lng,bit])
     z := batcalc.not(y); #19:(z:bat[lng,bit])<-(y:bat[lng,bit])
     io.print(z); #20:($20:int)<-(z:bat[lng,bit])
-end function; #21:
+end main; #21:
 #-----------------#
 # BAT:	  tmp_5	  #
 # (lng)	  (lng)	  #

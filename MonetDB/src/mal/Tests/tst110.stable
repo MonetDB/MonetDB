@@ -25,5 +25,5 @@ barrier v := v; #3:(v:bit)<-(v:bit) jump 7
     j := 2; #5:(j:int)<-($7:int)
 end v; #6:(v:bit)
     k := 3; #7:(k:int)<-($9:int)
-end function; #8:
+end main; #8:
 >

@@ -16,13 +16,13 @@ command Admin.lookup(nme:str):bat[str,str] = CMDlookup; #0:(lookup:bat[str,str])
 #   t := count(h);
 #   x := print(t);
 #   y := print(val);
-#end function;
+#end sample;
 function Admin.sample(nme:str,val:any):bit; #0:(sample:bit)<-(nme:str)(val:any)
     b := Admin.lookup(nme); #1:(b:bat[str,str])<-(nme:str)
     h := select(b,val,val); #2 unknown:(h:any)<-(b:bat[str,str])(val:any)(val:any)
     t := count(h); #3 unknown:(t:any)<-(h:any)
     x := print(t); #4 unknown:(x:any)<-(t:any)
     y := print(val); #5 unknown:(y:any)<-(val:any)
-end function; #6:
+end sample; #6:
 #
 >

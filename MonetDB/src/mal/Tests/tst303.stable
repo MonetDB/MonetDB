@@ -29,7 +29,7 @@ catch IllegalAccess; #4:(IllegalAccess:str) jump 10
     io.print("should not come here either\n"); #8:($8:int)<-($9:str)
 end IllegalAccess; #9:(IllegalAccess:str)
     io.print("should not be done"); #10:($10:int)<-($11:str)
-end function; #11:
+end main; #11:
 catched an exception
 !ERROR: a second exception raiseMALexception:Admin.main[11]: propagated
 >

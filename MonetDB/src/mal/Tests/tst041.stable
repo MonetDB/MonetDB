@@ -86,7 +86,7 @@ function Admin.main():int; #0:(main:int)
     io.print(f); #46:($48:int)<-(f:chr)
     f := calc.chr("X"); #47:(f:chr)<-($49:str)
     io.print(f); #48:($50:int)<-(f:chr)
-end function; #49:
+end main; #49:
 [ nil ]
 [ 23 ]
 [ nil ]

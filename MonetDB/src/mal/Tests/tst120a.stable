@@ -7,8 +7,8 @@
 # gdk_distr:/ufs/mk/monet_5-0/Linux
 # monetrc:/ufs/mk/.monet.conf
 #module top;
-#function first(i:sht):sht; end function;
+#function first(i:sht):sht; end first;
 function top.first(i:sht):sht; #0:(first:sht)<-(i:sht)
-end function; #1:
+end first; #1:
 #
 >

@@ -69,7 +69,7 @@ function Admin.main():int; #0:(main:int)
     io.print(b,b,b); #23:($38:int)<-(b:bat[int,int])(b:bat[int,int])(b:bat[int,int])
     profiler.stop(); #24:($39:any)
     profiler.closeStream(); #25:($40:void)
-end function; #26:
+end main; #26:
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 # Start performance profiling

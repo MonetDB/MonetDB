@@ -23,6 +23,6 @@ function Admin.main():int; #0:(main:int)
 catch myNewException; #4:(myNewException:str) jump 7
     system.printf("catched exception\n"); #5:($5:int)<-($6:str)
 end myNewException; #6:(myNewException:str)
-end function; #7:
+end main; #7:
 catched exception
 >

@@ -898,19 +898,14 @@ int parseEnd(Client cntxt)
 		curPrg = cntxt->curprg;
 		curBlk = curPrg->def;	
 		l = idLength(cntxt);
-		if ( keyword(cntxt,"function",8)){
-			if( curPrg->kind != FUNCTIONsymbol) 
-				parseError(cntxt,"'end function' unexpected\n");
+		if(l==0) l= operatorLength(cntxt);
+		if(l== strlen(curPrg->name) &&
+		   strncmp(cntxt->nxt, curPrg->name,l)==0){
+			advance(cntxt,l);
                         pushEndInstruction(curBlk);
 			closeClientPrg(cntxt,TRUE);
 			showit= TRUE;
-		} else
-		if ( keyword(cntxt,"handler",5)){
-			if( curPrg->kind != HANDLERsymbol) 
-				parseError(cntxt,"'end agent' expected\n");
-                        pushEndInstruction(curBlk);
-			closeClientPrg(cntxt,TRUE);
-		} else{
+		} else {
 			i = findVariableLength(curBlk,cntxt->nxt,l);
 			if( i<0) {
 				v= idCopy(cntxt,l);
@@ -969,6 +964,7 @@ int parse@3(Client cntxt)
 	} else advance(cntxt,l); 
 	curInstr->argv[0]= i;
 	if(@3symbol== CATCHsymbol) curInstr->barrier= CATCHsymbol;
+	if(@3symbol== FORKsymbol) curInstr->barrier= FORKsymbol;
 	@:endparseCntrl@
 }
 @c
@@ -977,6 +973,7 @@ int parse@3(Client cntxt)
 @:parseCntrl("raise", 5,RAISE, TYPE_any)@
 @:parseCntrl("return", 6,RETURN, TYPE_any)@
 @:parseCntrl("leave", 5,LEAVE, TYPE_any)@
+@:parseCntrl("fork", 4,FORK, TYPE_any)@
 
 @-
 Most instructions are simple assignments, possibly
@@ -1309,6 +1306,7 @@ int parseMal(Client cntxt){
 			  if( parseEnd(cntxt)) break;
 			  goto allLeft;
 		case 'F': case 'f': 
+			  if( parseFORK(cntxt)) break;
 			  if( parseFunction(cntxt)) break;
 			  goto allLeft;
 		case 'H': case 'h':

@@ -4,7 +4,7 @@
 function simple(i:int):int;
 	i:= i+1;
 	return i;
-end function;
+end simple;
 
 k:= 0;
 r:= simple(k);

@@ -28,7 +28,7 @@ barrier v := const.iterator(nme); #4:(v:lng)<-(nme:str) jump 8
     redo v ; #6:(v:lng) jump 4
 end v; #7:(v:lng)
     const.close(); #8:($8:void)
-end function; #9:
+end main; #9:
 [ 3.147 ]
 [ "user" ]
 [ "database" ]

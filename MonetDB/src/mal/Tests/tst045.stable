@@ -12,12 +12,12 @@
 #
 #function dummy();
 #	pi:=0:int;
-#end function;
+#end dummy;
 function Admin.dummy():any; #0 polymorphic:(dummy:any)
     pi := 0; #1:(pi:int)<-($2:int)
-end function; #2:
+end dummy; #2:
 #
 function Admin.main():int; #0:(main:int)
     pi := 3.147; #1:(pi:flt)<-($2:flt)
-end function; #2:
+end main; #2:
 >

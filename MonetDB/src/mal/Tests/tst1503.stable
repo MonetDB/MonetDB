@@ -98,7 +98,7 @@ function Admin.main():int; #0:(main:int)
     b2 := group.group(b1,y); #43:(b2:bat[oid,oid])<-(b1:bat[oid,oid])(y:bat[oid,dbl])
     io.print("b2 becomes"); #44:($77:int)<-($78:str)
     io.print(b2); #45:($79:int)<-(b2:bat[oid,oid])
-end function; #46:
+end main; #46:
 [ "group x" ]
 #---------------------------------#
 # BAT:	  t	| t	| t	  #

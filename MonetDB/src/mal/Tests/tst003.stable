@@ -14,5 +14,5 @@
 function Admin.main():int; #0:(main:int)
     a := b; #1 unknown:(a:any)<-(b:any)
     b := c; #2 unknown:(b:any)<-(c:any)
-end function; #3:
+end main; #3:
 >

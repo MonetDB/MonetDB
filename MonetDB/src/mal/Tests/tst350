@@ -30,14 +30,15 @@ function dir(b:bat[int,str]):void;
 	bRef:= join(brev,bref);
 	setColumn(bRef,"refcnt");
 	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
-end function;
+end dir;
 
 function dir(s:str):void;
 	t:= catalog.bbpNames();
 	tn:= like(t,s);
 	print(tn);
 	dir(tn);
-end function;
+end dir;
+
 b:=new(int,int);
 setColumn(b,"simplemind");
 

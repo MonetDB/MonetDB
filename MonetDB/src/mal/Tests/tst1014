@@ -15,7 +15,7 @@ print(c);
 bbp.close();
 # at the end of the call, the BBP should have discarded
 # the temporary bats of the user
-end function;
+end test;
 
 test();
 print("continue");

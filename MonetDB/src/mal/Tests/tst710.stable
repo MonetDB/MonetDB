@@ -20,6 +20,6 @@ function Admin.main():int; #0:(main:int)
 catch GDKerror; #3:(GDKerror:str) jump 6
     system.printf("GDKerror, do something\n"); #4:($5:int)<-($6:str)
 end GDKerror; #5:(GDKerror:str)
-end function; #6:
+end main; #6:
 [ 1 ]
 >

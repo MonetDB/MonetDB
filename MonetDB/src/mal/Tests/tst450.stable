@@ -29,7 +29,7 @@ function Admin.main():int; #0:(main:int)
     io.print(n); #9:($12:int)<-(n:bat[int,str])
     d := catalog.symbolDefinition("catalog","dir"); #10:(d:bat[int,str])<-($14:str)($15:str)
     io.print(d); #11:($16:int)<-(d:bat[int,str])
-end function; #12:
+end main; #12:
 #-------------------------#
 # BAT:	  name		  #
 # (int)	  (str)		  #
@@ -106,6 +106,7 @@ end function; #12:
 [ nil,	  "lock"	  ]
 [ nil,	  "sema"	  ]
 [ nil,	  "unix"	  ]
+[ nil,	  "threads"	  ]
 [ nil,	  "tcpip"	  ]
 #-------------------------#
 # BAT:	  Comment	  #
@@ -118,13 +119,13 @@ end function; #12:
 [ 0,	  "function catalog.dir():void;"						  ]
 [ 1,	  "    t := catalog.bbpNames();"						  ]
 [ 2,	  "    catalog.dir(t);"								  ]
-[ 3,	  "end function;"								  ]
+[ 3,	  "end dir;"									  ]
 [ 0,	  "function catalog.dir(s:str):void;"						  ]
 [ 1,	  "    t := catalog.bbpNames();"						  ]
 [ 2,	  "    tn := algebra.like(t,s);"						  ]
 [ 3,	  "    io.print(tn);"								  ]
 [ 4,	  "    catalog.dir(tn);"							  ]
-[ 5,	  "end function;"								  ]
+[ 5,	  "end dir;"									  ]
 [ 0,	  "function catalog.dir(b:bat[int,str]):void;"					  ]
 [ 1,	  "    atm := catalog.atomNames();"						  ]
 [ 2,	  "    brev := bat.reverse(b);"							  ]
@@ -154,5 +155,5 @@ end function; #12:
 [ 26,	  "    bRef := algebra.join(brev,bref);"					  ]
 [ 27,	  "    bbp.setName(bRef,\"refcnt\");"						  ]
 [ 28,	  "    io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);"	  ]
-[ 29,	  "end function;"								  ]
+[ 29,	  "end dir;"									  ]
 >

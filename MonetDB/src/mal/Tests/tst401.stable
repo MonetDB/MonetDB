@@ -22,7 +22,7 @@ barrier v1 := mal.nextElement(i,0.0,2.5,1.3); #2:(v1:bit)<-(i:flt)($4:flt)($5:fl
     v := "do something"; #4:(v:str)<-($9:str)
     redo v1 ; #5:(v1:bit) jump 2
 end v1; #6:(v1:bit)
-end function; #7:
+end main; #7:
 [ 0 ]
 [ 1.3 ]
 >

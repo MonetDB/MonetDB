@@ -1,0 +1,20 @@
+#The 2000 serie  is focussed on parallelism
+#we start with a non-parallel version
+
+function clkticks(n:int):void;
+barrier	b:= n>0;
+	printf("clock tick\n");
+	alarm.sleep(2);
+	n:= n-1;
+	redo b;
+end	b;
+end clkticks;
+
+fork 	hdl;
+	clkticks(2);
+end	hdl;
+	printf("wait for child to exit\n");
+	ret:= join(hdl);
+	printf("child exit with %d\n",ret);
+	ret:= join(hdl);
+	printf("child exit with %d\n",ret);

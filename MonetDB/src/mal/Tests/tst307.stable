@@ -22,6 +22,6 @@ function Admin.main():int; #0:(main:int)
 catch MALexception; #4:(MALexception:str) jump 7
     io.print("catched the exception"); #5:($8:int)<-($9:str)
 end MALexception; #6:(MALexception:str)
-end function; #7:
+end main; #7:
 [ "catched the exception" ]
 >

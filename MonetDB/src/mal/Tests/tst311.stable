@@ -42,7 +42,7 @@ catch IllegalAccess; #9:(IllegalAccess:str) jump 12
     system.printf("catched IllegalAccess\n"); #10:($14:int)<-($15:str)
 end IllegalAccess; #11:(IllegalAccess:str)
     io.print("end of program"); #12:($16:int)<-($17:str)
-end function; #13:
+end main; #13:
 entering sqzAccess blocking 1 p1
     s0 := squeezer.access("p1"); #2:(s0:int)<-($4:str)
     squeezer.AccessTst(p1); #14:($18:int)<-(p1:int)
@@ -63,7 +63,7 @@ catch IllegalAccess; #10:(IllegalAccess:str) jump 12
     system.printf("catched IllegalAccess\n"); #11:($14:int)<-($15:str)
 end IllegalAccess; #12:(IllegalAccess:str)
     io.print("end of program"); #13:($16:int)<-($17:str)
-end function; #14:
+end main; #14:
 Entering AccessTst with argument -1
 catched IllegalAccess
 [ "end of program" ]

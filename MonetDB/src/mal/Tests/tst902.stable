@@ -47,7 +47,7 @@ catch GDKerror; #15:(GDKerror:str) jump 17
 end GDKerror; #16:(GDKerror:str)
 end w; #17:(w:lng)
     io.print(d); #18:($18:int)<-(d:bat[lng,lng])
-end function; #19:
+end main; #19:
 #-----------------#
 # BAT:	  tmp_6	  #
 # (lng)	  (lng)	  #

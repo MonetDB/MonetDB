@@ -43,7 +43,7 @@ function Admin.main():int; #0:(main:int)
     system.printf("%-8s\n",true); #15:($25:int)<-($26:str)($11:bit)
     system.printf("%6.2f\n",pi); #16:($27:int)<-($28:str)(pi:flt)
     system.printf("single line %s \n","hello"); #17:($29:int)<-($30:str)($31:str)
-end function; #18:
+end main; #18:
 [ 'c' ]
 [ "hello world" ]
 [ 0 ]

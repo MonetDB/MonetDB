@@ -260,7 +260,7 @@
 #print(dec_bat1.col_name("decimal1"),
 	ee_a := bbp.setColumn(dec_bat2,"decimal2");
 #      dec_bat2.col_name("decimal2"),
-	fe_a := +(dec_bat1,dec_bat2);
+	fe_a := multiplex.tactics("+",dec_bat1,dec_bat2);
 	ge_a := bbp.setColumn(fe_a,"+");
 	he_a := print(de_a,ee_a,ge_a);
 #      [+](dec_bat1,dec_bat2).col_name("+"));
@@ -269,7 +269,7 @@
 #print(dec_bat1.col_name("decimal1"),
 	je_a := bbp.setColumn(dec_bat2,"decimal2");
 #      dec_bat2.col_name("decimal2"),
-	ke_a := -(dec_bat1,dec_bat2);
+	ke_a := multiplex.tactics("-",dec_bat1,dec_bat2);
 	le_a := bbp.setColumn(ke_a,"-");
 	me_a := print(ie_a,je_a,le_a);
 #      [-](dec_bat1,dec_bat2).col_name("-"));
@@ -380,11 +380,11 @@ function pow(base:int, raise:int):int;
 	#printf("%d\n",pg_a);
 	return pg_a;
 #    return int(pow(dbl(base),dbl(raise)));
-end function;
+end pow;
 #}
 function int(i:int):int;
 	return i;
-end function;
+end int;
 #proc int(int i) : int return i;
 #
 function arith_perftest(b:bat[any::1,any::2], div:any::2, s:str#proc arith_perftest(bat[any::1,any::2] b, any::2 div, str s) {
@@ -501,7 +501,7 @@ barrier	ci_a:= <(bi_a,1000000);
 #
 #  }
 end	ci_a;
-end function;
+end arith_perftest;
 #}
 #
 function arith_perftest(b:bat[any::1,decimal], div:decimal, s:str#proc arith_perftest(bat[any::1,decimal] b, decimal div, str s) {
@@ -619,7 +619,7 @@ barrier	ci_a:= <(bi_a,1000000);
 #
 #  }
 end	ci_a;
-end function;
+end arith_perftest;
 #}
 #
 	i:= 10000;

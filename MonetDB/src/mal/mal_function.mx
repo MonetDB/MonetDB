@@ -127,7 +127,8 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 	v = pp->argv[0];
 	for(i= begBlk+1; i<mb->stop; i++){
 		InstrPtr p= getInstrPtr(mb,i);
-		if( p->barrier==BARRIERsymbol || p->barrier==CATCHsymbol) {
+		if( p->barrier==BARRIERsymbol || p->barrier==CATCHsymbol ||
+		    p->token== FORKsymbol) {
 			if( p->argv[0] != v){
 				i= chkBrackets(mb,p,i);
 				continue;
@@ -165,7 +166,8 @@ int chkBrackets(MalBlkPtr mb, InstrPtr pp, int begBlk)
 				continue;
 			}
 			if( p->token== LEAVEsymbol) continue;
-			if( pp->token == CATCHsymbol) continue;
+			if( pp->token== CATCHsymbol) continue;
+			if( pp->token== FORKsymbol) continue;
 			GDKerror("label '%s' is readonly in %s[%d]\n",
 				getVarName(mb,v), getFcnName(mb),getPC(mb,p));
 			mb->errors++;
@@ -204,6 +206,10 @@ void chkCatch(MalBlkPtr mb, InstrPtr pp)
 {
 	chkCntrl(mb,pp);
 }
+void chkFork(MalBlkPtr mb, InstrPtr pp)
+{
+	chkCntrl(mb,pp);
+}
 @-
 Loose END-statements should also be catched.
 @c
@@ -216,13 +222,14 @@ void chkEnd(MalBlkPtr mb, InstrPtr pp)
 	for(i=0; i<mb->stop;i++){
 		p= getInstrPtr(mb,i);
 		if( (p->barrier == BARRIERsymbol ||
-		     p->barrier == CATCHsymbol) &&
+		     p->barrier == CATCHsymbol ||
+		     p->token == FORKsymbol) &&
 		     p->argv[0] == v){
 			return;
 		} 
 	}
 	mb->errors++;
-	GDKerror("end-label '%s' without begin-label in%s[%d]\n", 
+	GDKerror("end-label '%s' without begin-label in %s[%d]\n", 
 		getVarName(mb,v), getFcnName(mb),getPC(mb,pp));
 }
 @-

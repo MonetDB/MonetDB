@@ -26,7 +26,7 @@ function Admin.main():int; #0:(main:int)
     bat.insert(y,xr); #7:($12:bat[chr,oid])<-(y:bat[chr,oid])(xr:bat[chr,oid])
     io.print("result?"); #8:($13:int)<-($14:str)
     io.print(y); #9:($15:int)<-(y:bat[chr,oid])
-end function; #10:
+end main; #10:
 #-----------------#
 # BAT:	  tmp_4	  #
 # (chr)	  (oid)	  #

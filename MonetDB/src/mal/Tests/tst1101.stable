@@ -60,7 +60,7 @@ barrier mloop := mal.bunStream(t,h,B2); #20:(mloop:lng)<-(t:bat[int,url])(h:int)
     redo mloop ; #22:(mloop:lng) jump 20
 end mloop; #23:(mloop:lng)
     io.print(rb); #24:($42:int)<-(rb:bat[int,url])
-end function; #25:
+end main; #25:
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
 # BAT:	  tmp_4								  #

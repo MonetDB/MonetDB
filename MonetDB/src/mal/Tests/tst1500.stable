@@ -39,7 +39,7 @@ function Admin.main():int; #0:(main:int)
     io.print(b1); #14:($30:int)<-(b1:bat[oid,oid])
     io.print("hb1 becomes"); #15:($31:int)<-($32:str)
     io.print(hb1); #16:($33:int)<-(hb1:bat[chr,int])
-end function; #17:
+end main; #17:
 [ "group x" ]
 #-----------------#
 # BAT:	  tmp_4	  #

@@ -21,6 +21,6 @@ function Admin.main():int; #0:(main:int)
 catch IllegalAccess; #4:(IllegalAccess:int) jump 7
     system.printf("catched %d\n",IllegalAccess); #5:($5:int)<-($6:str)(IllegalAccess:int)
 end IllegalAccess; #6:(IllegalAccess:int)
-end function; #7:
+end main; #7:
 catched 1234
 >

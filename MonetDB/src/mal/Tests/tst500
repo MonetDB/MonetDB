@@ -10,6 +10,6 @@ barrier	v:= i<lim;
 end	v;
 	r:= 3.14:flt;
 	return r;
-end function;
+end simple;
 
 r:= simple(0,2,"hello");

@@ -32,7 +32,7 @@ function Admin.main():int; #0:(main:int)
     b6 := bat.mirror(b); #8:(b6:bat[int,int])<-(b:bat[int,str])
     i := bat.getBATrefcnt(b); #9:(i:int)<-(b:bat[int,str])
     system.printf("after mirror assignment refcount =%d\n",i); #10:($13:int)<-($14:str)(i:int)
-end function; #11:
+end main; #11:
 refcount =1
 #-------------------------#
 # BAT:	  tmp_4		  #

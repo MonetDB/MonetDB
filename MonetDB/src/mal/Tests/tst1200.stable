@@ -900,7 +900,7 @@ end lf_a; #203:(lf_a:bit)
     hj_a := multiplex.script("dst",timestamp_bra,gj_a); #325:(hj_a:bat[int,bit])<-($555:str)(timestamp_bra:bat[int,timestamp])(gj_a:tzone)
     ij_a := bbp.setColumn(hj_a,"dst"); #326:(ij_a:bat[int,bit])<-(hj_a:bat[int,bit])($555:str)
     jj_a := io.print(wi_a,aj_a,bj_a,ej_a,fj_a,ij_a); #327:(jj_a:int)<-(wi_a:bat[int,date])(aj_a:bat[int,str])(bj_a:bat[int,timestamp])(ej_a:bat[int,bit])(fj_a:bat[int,timestamp])(ij_a:bat[int,bit])
-end function; #328:
+end main; #328:
 [ "ma_a,oa_a,qa_a,sa_a,ua_a" ]
 #---------------------------------------------------------------------------------------------------------#
 # BAT:	  rule						| month	| weekday	| day	| minutes	  #

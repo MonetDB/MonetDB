@@ -34,7 +34,7 @@ function Admin.main():int; #0:(main:int)
     b := b; #12:(b:bat[int,int])<-(b:bat[int,int])
     i := bat.getBATrefcnt(b); #13:(i:int)<-(b:bat[int,int])
     io.print(i); #14:($12:int)<-(i:int)
-end function; #15:
+end main; #15:
 [ "hello world" ]
 [ "hello world" ]
 [ "done" ]

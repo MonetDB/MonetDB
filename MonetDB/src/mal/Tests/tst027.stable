@@ -8,10 +8,10 @@
 # monetrc:/ufs/mk/.monet.conf
 #function test(s:str, b:bat[any::1,any::2]...);
 #	print(s);
-#end function;
+#end test;
 function Admin.test(s:str,b:bat[any::1,any::2]...):any; #0 polymorphic:(test:any)<-(s:str)(b:bat[any::1,any::2])
     io.print(s); #1:($3:int)<-(s:str)
-end function; #2:
+end test; #2:
 #b:= new(int,int);
 #c:= new(int,int);
 #test("hello",b,c);
@@ -20,6 +20,6 @@ function Admin.main():int; #0:(main:int)
     b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
     c := mal.new(int,int); #2:(c:bat[int,int])<-(int:int)(int:int)
     Admin.test("hello",b,c); #3:($4:any)<-($5:str)(b:bat[int,int])(c:bat[int,int])
-end function; #4:
+end main; #4:
 [ "hello" ]
 >

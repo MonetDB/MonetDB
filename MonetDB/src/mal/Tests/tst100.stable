@@ -20,5 +20,5 @@ function Admin.main():int; #0:(main:int)
     b := calc.+(3.5,2.7); #3:(b:flt)<-($8:flt)($9:flt)
     s := "hello world"; #4:(s:str)<-($11:str)
     d := calc.+(3,1); #5:(d:int)<-($2:int)($3:int)
-end function; #6:
+end main; #6:
 >

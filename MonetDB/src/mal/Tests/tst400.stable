@@ -30,7 +30,7 @@ barrier v2 := mal.nextElement(i,0,5,2); #8:(v2:bit)<-(i:int)($4:int)($11:int)($5
     io.print("do something else"); #9:($12:int)<-($13:str)
     redo v2 ; #10:(v2:bit) jump 8
 end v2; #11:(v2:bit)
-end function; #12:
+end main; #12:
 [ "do something" ]
 [ "do something" ]
 [ "next iteration" ]

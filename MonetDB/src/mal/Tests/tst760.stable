@@ -11,11 +11,11 @@
 #function test(b:bat[any::1,any::2],c:any::2):int;
 #	k:= 1+c;
 #	print(k);
-#end function;
+#end test;
 function Admin.test(b:bat[any::1,any::2],c:any::2):int; #0:(test:int)<-(b:bat[any::1,any::2])(c:any::2)
     k := +(1,c); #1 unknown:(k:any)<-($4:int)(c:any::2)
     print(k); #2 unknown:($5:any)<-(k:any)
-end function; #3:
+end test; #3:
 #
 #c:=new(int,str);
 #test(c,"hello");
@@ -25,10 +25,10 @@ end function; #3:
 function Admin.test(b:bat[int,str],c:str):str; #0:(c:str)<-(b:bat[int,str])(c:str)
     k := +(1,c); #1 unknown:(k:any)<-($4:int)(c:str)
     print(k); #2 unknown:($5:any)<-(k:any)
-end function; #3:
+end test; #3:
 function Admin.main():int; #0:(main:int)
     c := mal.new(int,str); #1:(c:bat[int,str])<-(int:int)(str:str)
     Admin.test(c,"hello"); #2:($4:int)<-(c:bat[int,str])($5:str)
-end function; #3:
+end main; #3:
 !ERROR: SyntaxError:Admin.test[0]:'Admin.test' contains errors
 >

@@ -23,6 +23,6 @@ barrier l; #3:(l:bit) jump 8
     l := false; #5:(l:bit)<-($5:bit)
     redo l ; #6:(l:bit) jump 3
 end l; #7:(l:bit)
-end function; #8:
+end main; #8:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

@@ -35,7 +35,7 @@ function Admin.main():int; #0:(main:int)
     io.print(l); #9:($15:int)<-(l:bat[int,lng])
     i := batcalc.int(f); #10:(i:bat[int,int])<-(f:bat[int,flt])
     io.print(i); #11:($17:int)<-(i:bat[int,int])
-end function; #12:
+end main; #12:
 #-----------------#
 # BAT:	  tmp_3	  #
 # (int)	  (int)	  #

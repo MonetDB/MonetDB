@@ -10,12 +10,12 @@
 #function swap(x:int,y:int):(a:int,b:int);
 #	a:=y; b:=x;
 #	return(a,b);
-#end function;
+#end swap;
 function Admin.swap(x:int,y:int):(a:int,b:int); #0:(a:int)(b:int)<-(x:int)(y:int)
     a := y; #1:(a:int)<-(y:int)
     b := x; #2:(b:int)<-(x:int)
     return (a,b); #3:(a:int)(b:int)
-end function; #4:
+end swap; #4:
 #
 #(x,y):= swap(1,2);
 #print(x);
@@ -30,6 +30,6 @@ function Admin.main():int; #0:(main:int)
     io.print(y); #3:($6:int)<-(y:int)
     a := swap(3,4); #4 unknown:(a:any)<-($8:int)($9:int)
     print(a); #5 unknown:($10:any)<-(a:any)
-end function; #6:
+end main; #6:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

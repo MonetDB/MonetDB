@@ -28,6 +28,6 @@ barrier b1; #5:(b1:bit) jump 9
     s1 := "bye"; #7:(s1:str)<-($7:str)
 end b1; #8:(b1:bit)
     io.print(s1); #9:($8:int)<-(s1:str)
-end function; #10:
+end main; #10:
 [ "bye" ]
 >

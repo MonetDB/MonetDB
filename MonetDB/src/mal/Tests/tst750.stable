@@ -11,11 +11,11 @@
 #function test(b:bat[any::1,any::2],c:any::2):int;
 #	k:= 1+c;
 #	print(k);
-#end function;
+#end test;
 function Admin.test(b:bat[any::1,any::2],c:any::2):int; #0:(test:int)<-(b:bat[any::1,any::2])(c:any::2)
     k := +(1,c); #1 unknown:(k:any)<-($4:int)(c:any::2)
     print(k); #2 unknown:($5:any)<-(k:any)
-end function; #3:
+end test; #3:
 #
 #b:=new(int,int);
 #test(b,2);
@@ -23,6 +23,6 @@ end function; #3:
 function Admin.main():int; #0:(main:int)
     b := mal.new(int,int); #1:(b:bat[int,int])<-(int:int)(int:int)
     Admin.test(b,2); #2:($3:int)<-(b:bat[int,int])($4:int)
-end function; #3:
+end main; #3:
 [ 3 ]
 >

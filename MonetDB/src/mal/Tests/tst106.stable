@@ -19,6 +19,6 @@ command Admin.f(a:any::1,b:any::2,c:any::1):bat[any::1,any::2] = f; #0 polymorph
 function Admin.main():int; #0:(main:int)
     b := f(1,2,"help"); #1 unknown:(b:any)<-($2:int)($3:int)($4:str)
     a := Admin.f(1,2,1); #2:(a:bat[int,int])<-($2:int)($3:int)($2:int)
-end function; #3:
+end main; #3:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

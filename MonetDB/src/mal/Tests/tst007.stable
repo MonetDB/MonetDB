@@ -81,7 +81,7 @@ barrier FTE := booleanexpr; #22 unknown:(FTE:any)<-(booleanexpr:any) jump 24
 end FTE; #23:(FTE:any)
 barrier FS := not(FTE); #24 unknown:(FS:any)<-(FTE:any) jump 26
 end FS; #25:(FS:any)
-end function; #26:
+end main; #26:
 !ERROR: 'bat.hasMoreElements' undefined in Admin.main[-1]
 !ERROR: MALexception:Admin.main[5]:Instruction type not fixed
 >

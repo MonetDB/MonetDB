@@ -31,7 +31,7 @@ function Admin.main():int; #0:(main:int)
     io.print(l); #12:($18:int)<-(l:lng)
     j := nil; #13:(j:int)<-($20:int)
     io.print(j); #14:($21:int)<-(j:int)
-end function; #15:
+end main; #15:
 [ nil ]
 [ nil ]
 [ nil ]

@@ -658,16 +658,16 @@ and should be checked.
 			}
 			break;
 		case ENDsymbol:
-			chkEnd(mb,p);
-			break;
+			chkEnd(mb,p); break;
 		case CATCHsymbol:
-			chkCatch(mb,p);
-			break;
+			chkCatch(mb,p); break;
+		case FORKsymbol:
+			chkFork(mb,p); break;
 		case LEAVEsymbol:
 		case REDOsymbol:
 			chkLabel(mb,p);
 		}
-		if( p->barrier == BARRIERsymbol)
+		if( p->barrier == BARRIERsymbol )
 			chkBarrier(mb,p);
 	}
 	if( signature == FALSE){

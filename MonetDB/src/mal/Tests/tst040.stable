@@ -22,6 +22,6 @@ function Admin.main():int; #0:(main:int)
     int := 1; #2 unknown:(int:int)<-($4:sht)
     flt := "wrong"; #3 unknown:(flt:flt)<-($6:str)
     i := true; #4:(i:bit)<-($8:bit)
-end function; #5:
+end main; #5:
 !ERROR: SyntaxError:Admin.main[0]:'Admin.main' contains errors
 >

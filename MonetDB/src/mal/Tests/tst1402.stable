@@ -33,7 +33,7 @@ function Admin.main():int; #0:(main:int)
     io.print(e1); #7:($11:int)<-(e1:enum)
     f1 := 14; #8:(f1:fruit)<-($13:fruit)
     io.print(f1); #9:($14:int)<-(f1:fruit)
-end function; #10:
+end main; #10:
 [ 12 ]
 [ 11 ]
 [ "conversions" ]

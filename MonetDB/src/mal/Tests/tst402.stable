@@ -20,5 +20,5 @@ barrier v1 := mal.nextElement(i,'A','C'); #2:(v1:bit)<-(i:chr)($4:chr)($5:chr) j
     v := "do something"; #3:(v:str)<-($7:str)
     redo v1 ; #4:(v1:bit) jump 2
 end v1; #5:(v1:bit)
-end function; #6:
+end main; #6:
 >
