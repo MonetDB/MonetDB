@@ -156,7 +156,7 @@ void mccValue(stream *f, MalBlkPtr mb, int i){
         l = (*tostr)(&buf,&sz,VALptr(val));
         c= strchr(buf,'@');
         if(c && *(c+1)=='0') *c=0;
-        stream_printf(f,buf);
+        stream_printf(f,"%s",buf);
         GDKfree(buf);
     }
 }
