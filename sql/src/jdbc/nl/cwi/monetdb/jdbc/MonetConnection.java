@@ -319,11 +319,11 @@ public class MonetConnection extends Thread implements Connection {
 		/**
 		 * do something with the challenge to salt the password hash here!!!
 		 */
-		response = username + ":" + password + ":" + language + ":";
+		response = username + ":" + password + ":" + language;
 		if (blocked) {
-			response += "blocked";
+			response += ":blocked";
 		} else if (version >= 5) {
-			response += "line";
+			response += ":line";
 		}
 		if (version < 5) {
 			// don't use database
