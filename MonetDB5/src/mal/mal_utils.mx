@@ -51,12 +51,12 @@ void
 unquote(char *msg)
 {
 	char *p = msg, *s;
-	char quote;
+	/*char quote;*//* StM: not used !? */
 
 	/* first skip over leading white space */
 	while (*p && isspace((int) *p))
 		p++;
-	quote = *p;
+	/*quote = *p;*//* StM: not used !? */
 	/* get quoted string and remove trailing bracket first */
 	p++;
 	s = p;
